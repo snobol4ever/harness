@@ -82,7 +82,7 @@ python3 - "$SO" "$TAB" > "$T/agree.txt" 2>&1 <<'PY'
 import importlib.util, os, re, sys
 so, tab = sys.argv[1], sys.argv[2]
 here = os.path.dirname(os.path.abspath(tab))
-spec = importlib.util.spec_from_file_location("c", os.path.join(os.path.dirname(so), "..", "scripts", "util_gc_census.py"))
+spec = importlib.util.spec_from_file_location("c", os.path.join(os.path.dirname(so), "..", "..", "harness", "scripts", "util_gc_census.py"))
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 live = m.allocating_entries_from_binary(so, out=lambda *a, **k: None)
 have = set(re.findall(r'^\s*\{ "([^"]+)",', open(tab, encoding="utf-8").read(), re.M))
