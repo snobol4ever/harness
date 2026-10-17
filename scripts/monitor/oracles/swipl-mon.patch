@@ -1,0 +1,247 @@
+--- a/boot/init.pl
++++ b/boot/init.pl
+@@ -3998,6 +3998,162 @@
+ 	'$qlf_assert_clause'(Ref, development)
+     ).
+ 
++%!  '$mon_clause'(+Clause0, ?Layout, -Clause, -Pred) is det.
++%
++%   swipl-mon, the IPC sync-step monitor (SCRIP ../harness/scripts/monitor/oracles/
++%   swipl-mon.patch).  While the monitor is on ('$mon_enabled': the
++%   MONITOR_READY_PIPE wire is named, or SWIPL_MON=1), a clause read from
++%   a program file -- never a file under the home directory, never a
++%   dynamic, multifile or system predicate, never a directive -- is
++%   stored with '$mon_stmt'(Line) before every body goal, Line being the
++%   line of the goal's first token, and '$mon_ret'(Name, Arity) at its
++%   end, so every clause success reports.  The control constructs ,/2
++%   ;/2 ->/2 *->/2 and '|'/2 are walked; every other goal is one
++%   statement and nothing inside it is instrumented.  Pred is the
++%   predicate the VM must fire CALL for at its entry ('$mon_mark'/1),
++%   or - when the clause is stored unchanged.
++
++'$mon_clause'(Clause0, Layout, Clause, M:Head) :-
++    '$mon_enabled',
++    source_location(File, Line),
++    \+ ( current_prolog_flag(home, Home),
++	 sub_atom(File, 0, _, _, Home)
++       ),
++    '$current_source_module'(SM),
++    '$mon_split'(Clause0, Layout, SM, M:Head, Clause, Body, BLayout, Body1),
++    atom(M),
++    callable(Head),
++    \+ '$get_predicate_attribute'(M:Head, (dynamic), 1),
++    \+ '$get_predicate_attribute'(M:Head, (multifile), 1),
++    \+ '$get_predicate_attribute'(M:Head, system, 1),
++    !,
++    functor(Head, Name, Arity),
++    (   Body == '$mon_fact'
++    ->  Body1 = '$mon_ret'(Name, Arity)
++    ;   '$mon_body'(Body, BLayout, File, Line, Body2),
++	Body1 = (Body2, '$mon_ret'(Name, Arity))
++    ).
++'$mon_clause'(Clause, _, Clause, -).
++
++'$mon_split'(M:C0, L, _, Pred, M:C, B, BL, B1) :-
++    !,
++    '$mon_arg'(L, 2, CL),
++    '$mon_split'(C0, CL, M, Pred, C, B, BL, B1).
++'$mon_split'((H :- B), L, SM, Pred, (H :- B1), B, BL, B1) :-
++    !,
++    '$mon_pred'(H, SM, Pred),
++    '$mon_arg'(L, 2, BL).
++'$mon_split'((H => B), L, SM, Pred, (H => B1), B, BL, B1) :-
++    !,
++    '$mon_pred'(H, SM, Pred),
++    '$mon_arg'(L, 2, BL).
++'$mon_split'(?=>(H, B), L, SM, Pred, ?=>(H, B1), B, BL, B1) :-
++    !,
++    '$mon_pred'(H, SM, Pred),
++    '$mon_arg'(L, 2, BL).
++'$mon_split'(H, _, SM, Pred, (H :- B1), '$mon_fact', _, B1) :-
++    '$mon_pred'(H, SM, Pred).
++
++'$mon_pred'(H, _, M:H1) :-
++    nonvar(H),
++    H = M:H1,
++    !.
++'$mon_pred'(H, SM, SM:H).
++
++'$mon_body'(G, L, F, D, G1) :-
++    nonvar(G),
++    '$mon_control'(G, A, B, G1, A1, B1),
++    !,
++    '$mon_unparen'(L, L1),
++    '$mon_arg'(L1, 1, LA),
++    '$mon_arg'(L1, 2, LB),
++    '$mon_body'(A, LA, F, D, A1),
++    '$mon_body'(B, LB, F, D, B1).
++'$mon_body'(G, L, F, D, ('$mon_stmt'(Ln), G)) :-
++    '$mon_goal_line'(L, F, D, Ln).
++
++'$mon_control'((A,B),    A, B, (A1,B1),    A1, B1).
++'$mon_control'((A;B),    A, B, (A1;B1),    A1, B1).
++'$mon_control'((A->B),   A, B, (A1->B1),   A1, B1).
++'$mon_control'((A*->B),  A, B, (A1*->B1),  A1, B1).
++'$mon_control'('|'(A,B), A, B, '|'(A1,B1), A1, B1).
++
++'$mon_unparen'(L0, L) :-
++    nonvar(L0),
++    L0 = parentheses_term_position(_, _, L1),
++    !,
++    '$mon_unparen'(L1, L).
++'$mon_unparen'(L, L).
++
++'$mon_arg'(L0, N, A) :-
++    '$mon_unparen'(L0, L),
++    nonvar(L),
++    L = term_position(_, _, _, _, As),
++    '$mon_nth'(N, As, A0),
++    !,
++    A = A0.
++'$mon_arg'(_, _, _).
++
++'$mon_nth'(1, [A|_], A).
++'$mon_nth'(2, [_,A|_], A).
++
++'$mon_goal_line'(L, F, _, Ln) :-
++    nonvar(L),
++    compound(L),
++    arg(1, L, From),
++    integer(From),
++    '$mon_line'(F, From, Ln0),
++    !,
++    Ln = Ln0.
++'$mon_goal_line'(_, _, D, D).
++
++%   '$mon_line'(+File, +CharOffset, -Line): the line holding a character
++%   offset of a source file, by a binary search over the offsets of the
++%   file's newlines, read once per file with the loader's own decoding
++%   and kept in the global variable '$mon_lf'.  Closing a stream on the
++%   file being loaded resets the loader's source location (freeStream()
++%   in pl-file.c), so it is restored after the close.
++
++'$mon_line'(File, Off, Line) :-
++    (   nb_current('$mon_lf', File-T)
++    ->  true
++    ;   (   source_location(SF, SL)
++	->  Restore = '$set_source_location'(SF, SL)
++	;   Restore = true
++	),
++	setup_call_cleanup(open(File, read, S), '$mon_nl'(S, 0, L), (close(S), Restore)),
++	T =.. [nl|L],
++	nb_setval('$mon_lf', File-T)
++    ),
++    functor(T, _, N),
++    '$mon_bsearch'(T, Off, 0, N, K),
++    Line is K + 1.
++
++'$mon_nl'(S, I, L) :-
++    get_char(S, C),
++    (   C == end_of_file
++    ->  L = []
++    ;   I1 is I + 1,
++	(   C == '\n'
++	->  L = [I|T]
++	;   L = T
++	),
++	'$mon_nl'(S, I1, T)
++    ).
++
++'$mon_bsearch'(T, Off, Lo, Hi, K) :-
++    (   Lo < Hi
++    ->  M is (Lo + Hi) // 2,
++	I is M + 1,
++	arg(I, T, V),
++	(   V < Off
++	->  Lo1 is M + 1,
++	    '$mon_bsearch'(T, Off, Lo1, Hi, K)
++	;   '$mon_bsearch'(T, Off, Lo, M, K)
++	)
++    ;   K = Lo
++    ).
++
+ %!  '$store_clause'(+Clause, ?Layout, +Owner, +SrcLoc) is det.
+ %
+ %   Store a clause into the database.
+@@ -4018,13 +4174,18 @@
+     ->  '$store_clause'((Head=>Body), _Layout, File, SrcLoc)
+     ;   '$store_clause'(?=>(Head,(Cond,!,Body)), _Layout, File, SrcLoc)
+     ).
+-'$store_clause'(Clause, _Layout, File, SrcLoc) :-
+-    '$valid_clause'(Clause),
++'$store_clause'(Clause0, Layout, File, SrcLoc) :-
++    '$valid_clause'(Clause0),
+     !,
++    '$mon_clause'(Clause0, Layout, Clause, Mon),
+     (   '$compilation_mode'(database)
+     ->  '$record_clause'(Clause, File, SrcLoc)
+     ;   '$record_clause'(Clause, File, SrcLoc, Ref),
+ 	'$qlf_assert_clause'(Ref, development)
++    ),
++    (   Mon == (-)
++    ->  true
++    ;   '$mon_mark'(Mon)
+     ).
+ 
+ '$is_true'(true)  => true.
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -91,7 +91,8 @@
+     pl-copyterm.c pl-debug.c pl-cont.c pl-ressymbol.c pl-dict.c
+     pl-trie.c pl-indirect.c pl-tabling.c pl-rsort.c pl-mutex.c
+     pl-allocpool.c pl-wrap.c pl-event.c pl-transaction.c
+-    pl-undo.c pl-alloc.c pl-index.c pl-fli.c pl-coverage.c)
++    pl-undo.c pl-alloc.c pl-index.c pl-fli.c pl-coverage.c
++    monitor_swx.c monitor_ipc_lib.c)
+ 
+ 
+ set(LIBSWIPL_SRC
+--- a/src/pl-ext.c
++++ b/src/pl-ext.c
+@@ -487,6 +487,7 @@
+ DECL_PLIST(undo);
+ DECL_PLIST(error);
+ DECL_PLIST(coverage);
++DECL_PLIST(mon);
+ #ifdef __EMSCRIPTEN__
+ DECL_PLIST(wasm);
+ #endif
+@@ -564,6 +565,7 @@
+   REG_PLIST(transaction);
+   REG_PLIST(undo);
+   REG_PLIST(error);
++  REG_PLIST(mon);
+ #ifdef O_COVERAGE
+   REG_PLIST(coverage);
+ #endif
+--- a/src/pl-incl.h
++++ b/src/pl-incl.h
+@@ -1087,6 +1087,7 @@
+ #define P_NEW			FLAG64(37) /* New predicate */
+ #define P_NO_CLAUSES		FLAG64(38) /* Foreign or thread local */
+ #define P_CHECK_SSU		FLAG64(39) /* Check mixed => and :- */
++#define P_MON_CALL		FLAG64(40) /* swipl-mon: fire CALL at entry */
+ 
+ /* Flags on clauses (unsigned int) */
+ 
+--- a/src/pl-vmi.c
++++ b/src/pl-vmi.c
+@@ -1905,6 +1905,8 @@
+   FR->prof_node = NULL;
+ #endif
+   LD->statistics.inferences++;
++  if ( unlikely(ison(DEF, P_MON_CALL)) )
++    mon_swx_call(DEF);
+ 
+ #ifdef O_DEBUGLOCAL
+ { Word ap = argFrameP(FR, DEF->functor->arity);
+--- a/src/pl-wam.c
++++ b/src/pl-wam.c
+@@ -62,6 +62,7 @@
+ #include "pl-proc.h"
+ #include "pl-attvar.h"
+ #include "pl-setup.h"
++void mon_swx_call(Definition def);
+ #include "pl-prims.h"
+ #include "pl-write.h"
+ #include "pl-supervisor.h"

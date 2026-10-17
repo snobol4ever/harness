@@ -1,0 +1,10 @@
+*  WITNESS for HB_ARR (212) -- a SNOBOL4 ARRAY held across forced collections.
+          A = ARRAY(8)
+          A[1] = 'ALPHA'
+          A[8] = 'OMEGA'
+          I = 0
+LOOP      I = I + 1
+          S = DUPL('z',100)
+          GT(300,I) :S(LOOP)
+          OUTPUT = A[1] A[8]
+END

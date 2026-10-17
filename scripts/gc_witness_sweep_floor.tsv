@@ -1,0 +1,13 @@
+# DECLARED FLOOR for util_gc_witness_sweep.sh -- the non-green witness/stress pairs that are STANDING on origin
+# and predate the sweep, each with the reason that put it here. ⛔ A FLOOR IS NOT AN XFAIL LIST AND IT IS NOT A
+# PERMISSION: every line is a live defect that stays VISIBLE and countable, and the sweep prints it as DECLARED
+# rather than swallowing it. The sweep REDS on any pair NOT named here, and it also reds on a STALE line -- a pair
+# declared here that now passes -- because a floor that outlives its defect silences the next regression.
+# Move a line out of this file in the LANDING THAT CURES IT, never to make a board green.
+# pair	reason
+# CURED AND REMOVED 2026-09-22 (ceo): hb_coexpr_sigma.icn:s5 was declared here as standing-on-origin and it is CURED by
+#   e42cc0909, which took bb_deref.cpp:39 and bb_scan_upto.cpp:52 from a bare poll to x86_rt_gc_poll_rec_sigma(0) where the
+#   subject base is live in r13. ⛔ THE LANDING THAT CURED IT DID NOT MOVE THIS LINE, so the sweep read RED(1) FOR EVERY SEAT
+#   until now -- the floor outliving its defect, which is the same debt shape as the census baseline that c60097828 left
+#   behind an hour earlier. The cfo found it and told me rather than moving another seat's line. Removing it in the landing
+#   that cures the sweep, with the attribution here, because a floor line deleted without its reason is a silenced regression.

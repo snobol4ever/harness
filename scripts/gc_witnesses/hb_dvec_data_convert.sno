@@ -1,0 +1,32 @@
+*  WITNESS for the core.c arm of HB_DVEC (214) -- a DESCR_t array whose every element the walker visits.
+*  It drives three of the five retyped sites, each named by gdb (pending break on rt_ws_alloc_descr, bt 2):
+*    core.c:1675 the ARBLK data vector CONVERT(table,'ARRAY') builds, and core.c:1689 the two-element row
+*    block it builds per pair (20 of them here); core.c:1780 the DATINST field array COPY() clones.
+*  ⛔ core.c:1675 IS THE ONE THAT NEEDED THE MEMSET rt_ws_alloc_descr DOES: the vector is n elements but
+*  only `row` of them are written, so under HB_WS the tail past `row` was whatever the arena last held and
+*  was word-swept as if it were descriptors. Under HB_DVEC every element is visited, so the zeroing is what
+*  makes the unwritten tail a DT_SNUL the walker declines rather than a garbage word it follows.
+*  P, Q, A and T are all held across 300 churn allocations. The .ref is cut from the SPITBOL oracle
+*  (/home/resources/x64/bin/sbl -bf), not from ./scrip.
+        DATA('PAIR(LEFT,RIGHT)')
+        T = TABLE()
+        N = 0
+FILL    N = LT(N,20) N + 1                                      :F(MK)
+        T['k' N] = 'v' N                                        :(FILL)
+MK      P = PAIR('one','two')
+        Q = COPY(P)
+        A = CONVERT(T,'ARRAY')
+        M = 0
+CHURN   M = LT(M,300) M + 1                                     :F(DONE)
+        JUNK = DUPL('y',150)                                    :(CHURN)
+DONE    OUTPUT = LEFT(P) ' ' RIGHT(P)
+        OUTPUT = LEFT(Q) ' ' RIGHT(Q)
+        OUTPUT = PROTOTYPE(A)
+        S = ''
+        I = 0
+SCAN    I = LT(I,20) I + 1                                      :F(OUT)
+        R = A[I,1] ':' A[I,2]
+        S = S R '|'                                             :(SCAN)
+OUT     OUTPUT = S
+        OUTPUT = T['k7']
+END

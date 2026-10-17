@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# test_gate_pas_sizeof_of_an_array_element_folds.sh -- SizeOf(a[i]) of a static or dynamic array (anonymous element type or a
+# dynamic-array alias) folds to the element's size, as fpc reads it, and fillchar(a[k], n * SizeOf(a[0]), v) fills exactly n elements.
+#
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): SizeOf of an element expression was never folded
+# and died as a by-name call ("error 22: undefined function called"), the common fillchar(G[0], length(G) * SizeOf(G[0]), #0) form
+# with it. THE CURE (lower_pascal_tree.c): pas_elem_size answers a static array's size over its count, else the size of its element
+# type (the array's scalar type, or pas_arrtype_elem of a dynamic-array alias) through pas_sizeof_builtin_size / pas_sizeof_lookup;
+# sizeof of an element folds to it, and the fillchar element-run lowering takes its element size from it.
+#
+# ARMS: elemsize against fpc -Mobjfpc, both modes, cut LIVE. MEASURED on the parent (in-tree swap): red. FAIL_ONCE=1 corrupts it.
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+set -uo pipefail
+G="$(basename "${BASH_SOURCE[0]}" .sh)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
+RT_DIR="${RT_DIR:-$ROOT/out}"; [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [$G]: no runtime at $RT_DIR/libscrip_rt.so"; exit 2; }
+FPC="${FPC_BIN:-/usr/bin/fpc}"; [ -x "$FPC" ] || { echo "⛔ GATE REFUSE(2) [$G]: no fpc at $FPC -- every expectation is CUT FROM THE ORACLE"; exit 2; }
+T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
+RC=0; N=0
+run() { local m="$1" p="$2"
+  if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); return $?; fi
+  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ $p m4: did not compile and link"; return 125; }
+  ( cd "$T" && timeout -k 5 20s "./$p.m4" </dev/null >"$T/o" 2>"$T/e" ); return $?; }
+fpcrun() { local mode="$2"; mkdir -p "$T/fpc"; ( cd "$T" && "$FPC" $mode -v0 -FE"$T/fpc" -o"$T/$1.fpc" "$T/$1.pas" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: fpc $mode would not compile $1"; exit 2; }; ( cd "$T" && timeout -k 5 20s "./$1.fpc" </dev/null >"$T/$1.want" 2>/dev/null ); echo $?; }
+cat > "$T/elemsize.pas" <<'PAS'
+program elemsize;
+{$mode objfpc}
+type TIA = array of int64;
+var g: array of integer; s: array [1..4] of word; t: TIA; r: array [0..2] of real; b: array of byte; i: integer;
+begin
+  setlength(g, 5); setlength(t, 4); setlength(b, 1);
+  writeln(SizeOf(g[0]), ' ', SizeOf(s[1]), ' ', SizeOf(t[0]), ' ', SizeOf(r[2]), ' ', SizeOf(b[0]), ' ', SizeOf(s), ' ', SizeOf(integer));
+  for i := 0 to 4 do g[i] := i + 1; fillchar(g[0], length(g) * SizeOf(g[0]), #0); writeln(g[0], g[4]);
+  for i := 0 to 3 do t[i] := 9; fillchar(t[1], 2 * SizeOf(t[0]), 0); for i := 0 to 3 do write(t[i]); writeln
+end.
+PAS
+for pm in "elemsize -Mobjfpc"; do p=${pm% *}; om=${pm#* }
+  frc=$(fpcrun $p $om) || exit 2
+  if [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/$p.want"; fi
+  for m in m3 m4; do run $m $p; rc=$?; N=$((N + 1))
+    if [ "$rc" = "$frc" ] && cmp -s "$T/$p.want" "$T/o"; then echo "  $p $m: rc=$rc, stdout byte-identical to fpc $om ($(wc -l < "$T/o") lines)"
+    else echo "  ⛔ $p $m FAILED: rc=$rc (fpc $frc)"; diff "$T/$p.want" "$T/o" | head -6 | sed 's/^/      /'; echo "      err : $(head -1 "$T/e" | cut -c1-140)"; RC=1; fi; done; done
+if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: SizeOf of an array element folds as fpc reads it, $N of $N arms"
+else echo "GATE FAIL(1) [$G]: examined one program in 2 modes"; fi
+echo "    tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)" \
+     " oracle: $FPC $($FPC -iV 2>/dev/null)  measured $(date -u +%Y-%m-%dT%H:%MZ)"
+exit $RC

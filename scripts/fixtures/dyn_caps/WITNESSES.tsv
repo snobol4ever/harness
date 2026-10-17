@@ -1,0 +1,10 @@
+# WITNESSES.tsv -- one row per LOUD guard of the fixed-caps census: the program that reaches its cap+1 and the refusal it must read
+# (ceo CEO-1231: "a witness verb that reads the refusal at cap+1"; row instruments-the-fixed-caps-ratchet-...; the coo).
+# FORMAT: file<TAB>name<TAB>program<TAB>switches<TAB>rc<TAB>refusal -- file and name as the census names the guard (a table, an arena
+# by its size macro, a local); program relative to the SCRIP root (./scrip --run <switches> <program>, stdin /dev/null); rc the exit
+# the refusal must end with; refusal a fixed string the run's stderr must contain, naming the table or the cap. The program is LEGAL:
+# the language's oracle runs it past the cap (say which in the program's own comment).
+# READ BY util_dyn_caps_witness.sh witness: "refusal read at the cap: K of N guards, silent: S" -- N the census's LOUD guards, K those
+# whose witness read the refusal, S those whose witness ran to rc 0 past the cap with nothing refusing. Each HQ's cure brings the
+# witness for any guard it leaves LOUD; a converted table leaves the LOUD set, and its row here goes with it (a stale row is RED).
+src/runtime/rt/rt_pl_trail.c	PL_TR_ARENA_BYTES	../harness/scripts/fixtures/dyn_caps/witness/trail_17200k.pl	-d2097152k -i1048576k -s8388608k	2	trail arena exhausted after 16777215 conditional bindings

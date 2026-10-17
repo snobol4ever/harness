@@ -1,0 +1,6 @@
+                  subj           =  'AA'
+                  subj           POS(0) *TRIM('AA  ') RPOS(0)                              :F(no)
+                  OUTPUT         =  'match'                                      :(done)
+no                OUTPUT         =  'nomatch'
+done
+END

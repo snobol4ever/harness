@@ -1,0 +1,19 @@
+# WITNESS for a GENERATOR CALLED BY VALUE INSIDE A SCAN (the rt.c generator-thread path, lazily started): the caller
+# scans `text`, hands the scan environment to the generator through the register contract (inherit_scan), and the
+# generator's FIRST yield back to main must leave the caller's &pos where the generator advanced it. The rung-2
+# landing's first cut reset the scan environment on that yield (main's context read as never started): "ac" was
+# rejected. Correct output: accepted, rejected, accepted, rejected.
+procedure recogn(goal, text)
+   return text ? (goal() & pos(0));
+end
+procedure s()
+   suspend (="a" || s()) | (t() || ="b") | ="c";
+end
+procedure t()
+   suspend (="d" || s() || ="d") | ="e" | ="f";
+end
+procedure main()
+   local line;
+   every line := !["ac", "acx", "eb", "xx"] do
+      if recogn(s, line) then write("accepted") else write("rejected");
+end

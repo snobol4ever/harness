@@ -1,0 +1,7 @@
+procedure main()
+   local i, s;
+   s := 0;
+   every i := 1 to 5 do s +:= i;
+   write(s);
+   write("done");
+end

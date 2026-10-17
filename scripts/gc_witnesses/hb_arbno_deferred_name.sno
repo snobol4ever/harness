@@ -1,0 +1,10 @@
+        $'W' = FENCE(SPAN(' ') | '')
+        S = '1,2,3'
+        S POS(0) ANY('123') ARBNO($'W' ',' ANY('123')) RPOS(0)   :S(OK)F(BAD)
+OK      OUTPUT = 'MATCH'                                          :(NEXT)
+BAD     OUTPUT = 'FAIL'
+NEXT    T = 'a b  c'
+        T POS(0) ARBNO(ANY('abc') SPAN(' ')) ANY('abc') RPOS(0)  :S(OK2)F(BAD2)
+OK2     OUTPUT = 'MATCH2'                                         :(END)
+BAD2    OUTPUT = 'FAIL2'
+END

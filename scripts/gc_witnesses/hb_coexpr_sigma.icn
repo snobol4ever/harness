@@ -1,0 +1,25 @@
+# WITNESS for the SUBJECT REGISTER ACROSS A CO-EXPRESSION SWITCH (Lon 2026-09-19: r13 for SNOBOL4 and Icon points
+# to the subject string). A co-expression scans a heap string and transmits each word to a second co-expression
+# that allocates and collects while the scanner is parked inside its scan with r13 = the subject base. The two
+# junk loops exhaust the startup string workspace so the subject lives in a later block that can slide; the
+# 2000-element lists die below it. Correct output: the words of the subject, then done.
+global words, writer
+procedure main()
+   words := create word();
+   writer := create output();
+   @writer;
+   write("done");
+end
+procedure word()
+   local line, letters, junk, i;
+   every i := 1 to 2 do junk := list(2000, i);
+   every i := 1 to 400 do junk := repl("w", 60);
+   letters := &lcase ++ &ucase;
+   line := repl("alpha beta gamma ", 4) || "omega";
+   line ? while tab(upto(letters)) do tab(many(letters)) @ writer;
+end
+procedure output()
+   local w, i, junk;
+   while w := @words do { every i := 1 to 40 do junk := list(3, i); write(w) };
+   @&main;
+end

@@ -1,0 +1,96 @@
+# c_allocator_sites_baseline.tsv -- WHAT EACH FILE HELD BEFORE THE SWEEP (coo, CEO-846).
+#
+# ⛔ THIS FILE IS THE DISCRIMINATOR AND IT IS THE WHOLE POINT OF THE SPLIT.  The clause `the
+# arena may not hold anything the runtime can reach` covers two different acts: a site that
+# was on the COLLECTED HEAP and is now in the arena is the EVASION (hard red, reverted on
+# sight), and a site that was a libc malloc and is now in the arena is transitional DEBT (the
+# same lifetime it already had, ratcheted to zero).  Nothing in the post-sweep tree can tell
+# those apart -- only what the site WAS can -- so this file is cut from the PRE-SWEEP tree and
+# a landing is graded against it.  Rewriting it from a post-sweep tree destroys the only
+# evidence that separates a cure from an evasion, and reads GREEN forever after.
+# CUT FROM: SCRIP 9208703c6-DIRTY  (forbidden_total=1182)
+# file	forbidden	rooted_heap	arena	mmap
+src/driver/csnobol4_shim.c	9	0	0	0
+src/driver/driver_call.c	0	2	0	0
+src/driver/driver_data.c	0	3	0	0
+src/driver/polyglot.c	8	0	0	0
+src/driver/scrip.c	46	0	0	0
+src/driver/stmt_ast.c	14	0	0	0
+src/driver/sync_monitor.c	7	0	0	0
+src/emitter/emit.cpp	20	0	0	0
+src/emitter/emit.h	0	1	0	0
+src/ir/ast.h	4	0	0	0
+src/ir/bb_box.h	1	0	0	0
+src/ir/bb_pool.c	0	0	0	1
+src/ir/frame_layout.c	26	0	0	0
+src/ir/scrip_ir.c	22	0	0	0
+src/ir/sm_prog.c	6	0	0	0
+src/lower/lower_common.c	1	10	0	0
+src/lower/lower_icon.c	10	0	0	0
+src/lower/lower_pascal.c	6	0	0	0
+src/lower/lower_prolog.c	29	0	0	0
+src/lower/lower_raku.c	3	0	0	0
+src/lower/lower_snobol4.c	23	5	0	0
+src/lower/tree_to_sno.c	2	0	0	0
+src/optimizer/branch_chain.c	2	0	0	0
+src/optimizer/const_fold.c	1	0	0	0
+src/optimizer/copy_prop.c	2	0	0	0
+src/optimizer/dead_goto.c	2	0	0	0
+src/optimizer/dead_pure.c	2	0	0	0
+src/optimizer/gva_collect.c	3	0	0	0
+src/optimizer/ir_index.h	9	0	0	0
+src/optimizer/proc_collect.c	1	0	0	0
+src/optimizer/region_report.c	24	0	0	0
+src/parsers/icon/icn_main.c	4	0	0	0
+src/parsers/icon/icon_driver.c	13	0	0	0
+src/parsers/icon/icon_lex.c	16	0	0	0
+src/parsers/icon/icon_lex_test.c	2	0	0	0
+src/parsers/icon/icon_parse.c	4	0	0	0
+src/parsers/icon/icon_parse_test.c	3	0	0	0
+src/parsers/pascal/pascal.l	1	0	0	0
+src/parsers/pascal/pascal.lex.c	4	0	0	0
+src/parsers/pascal/pascal.tab.c	4	0	0	0
+src/parsers/pascal/pascal.y	4	0	0	0
+src/parsers/prolog/pl_cell.h	0	4	0	0
+src/parsers/prolog/prolog_atom.c	0	4	0	0
+src/parsers/prolog/prolog_driver.c	4	0	0	0
+src/parsers/prolog/prolog_lex.c	8	0	0	0
+src/parsers/prolog/prolog_lower.c	2	0	0	0
+src/parsers/prolog/prolog_lower_test.c	7	0	0	0
+src/parsers/prolog/prolog_parse.c	10	0	0	0
+src/runtime/re.c	6	0	0	0
+src/parsers/rebus/lex.rebus.c	6	0	0	0
+src/parsers/rebus/rebus.h	2	0	0	0
+src/parsers/rebus/rebus.l	3	0	0	0
+src/parsers/rebus/rebus.tab.c	17	0	0	0
+src/parsers/rebus/rebus.y	17	0	0	0
+src/lower/lower_rebus.c	23	0	0	0
+src/parsers/snobol4/scrip_cc.h	2	0	0	0
+src/parsers/snobol4/snobol4.l	4	0	0	0
+src/parsers/snobol4/snobol4.lex.c	7	0	0	0
+src/parsers/snobol4/snobol4.tab.c	23	0	0	0
+src/parsers/snobol4/snobol4.y	23	0	0	0
+src/parsers/snocone/snocone_parse.tab.c	70	0	0	0
+src/parsers/snocone/snocone_parse.y	70	0	0	0
+src/runtime/aggregates.c	0	3	0	0
+src/runtime/bignum.c	0	3	0	0
+src/runtime/builtins/gen_runtime.c	1	0	0	0
+src/runtime/by_name_dispatch.c	43	192	0	0
+src/runtime/core/core.c	11	26	0	0
+src/runtime/core/runtime_shim.h	1	0	0	0
+src/runtime/icn_extfn.c	0	2	0	0
+src/runtime/keywords.c	5	7	0	0
+src/runtime/pattern_match.c	1	15	0	0
+src/runtime/rt/bbprof.c	3	0	0	0
+src/runtime/rt/gc_heap.c	12	2	0	1
+src/runtime/rt/pat_pool.c	0	0	0	1
+src/runtime/rt/portcount.c	5	0	0	0
+src/runtime/rt/porttrace.cpp	2	0	0	0
+src/runtime/rt/rt.c	7	5	0	2
+src/runtime/rt/rt_coexpr.c	4	0	0	0
+src/runtime/rt/rt_slab.c	2	0	0	0
+src/runtime/rt/rt_stack_overflow.c	1	0	0	0
+src/runtime/rt_runtime.c	0	5	0	0
+src/runtime/runtime_eval.c	0	3	0	0
+src/runtime/string_ops.c	0	1	0	0
+src/runtime/unification.c	19	21	0	0

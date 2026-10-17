@@ -1,0 +1,17 @@
+# WITNESS for the DT_BIG arm of gc_visit_one -- a bignum whose ONLY holder is inside a heap aggregate.
+# hb_wsb_bignum.icn holds its BIG_t in a stack local, so the conservative stack sweep finds the block by
+# value and the missing type arm is invisible. Here every bignum lives in a list element or a table value
+# and NOTHING on the stack points at its BIG_t: the block is reachable only through gc_visit_arblk /
+# gc_visit_tbblk -> gc_visit_one on the element DESCR. With no DT_BIG case that DESCR falls to `default:`,
+# the block is never marked, and the churn below reclaims it under the holder.
+# The .ref is cut from the Arizona oracle (/home/resources/icon-master/bin/icont -s -x), not from ./scrip.
+procedure main();
+   local L, T, i, churn, s;
+   L := [];
+   every i := 1 to 6 do put(L, 2 ^ (400 + i));
+   T := table();
+   every i := 1 to 6 do T[i] := 3 ^ (300 + i);
+   every i := 1 to 600 do churn := repl("q", 200);
+   every i := 1 to 6 do { s := string(L[i]); write("L", i, " ", *s, " ", s[1:10], " ", s[-10:0]); };
+   every i := 1 to 6 do { s := string(T[i]); write("T", i, " ", *s, " ", s[1:10], " ", s[-10:0]); };
+end

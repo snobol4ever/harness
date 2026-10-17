@@ -1,0 +1,7 @@
+        S = 'the quick brown fox jumps'
+        N = 0
+LOOP    N = LT(N, 300) N + 1                            :F(DONE)
+        S BREAK(' ') $ W1 ' ' BREAK(' ') $ W2 ' ' REM $ REST
+        T = W1 '/' W2 '/' REST                          :(LOOP)
+DONE    OUTPUT = T ' ' N
+END

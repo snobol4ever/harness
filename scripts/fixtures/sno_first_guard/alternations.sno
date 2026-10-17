@@ -1,0 +1,21 @@
+        'abcabd' ? ARBNO('ab' ('c' | 'x' | 'y')) . W 'abd'  :F(N1)
+        OUTPUT = '1 [' W ']'
+N1      'k:=v' ? (SPAN('kv') . A (':=' | '<-' | '+:=' | '||:=') . O SPAN('kv') . B)  :F(N2)
+        OUTPUT = '2 ' A O B
+N2      'k)v' ? (SPAN('kv') ('x' | 'y') | SPAN('kv') ')') . W  :F(N3)
+        OUTPUT = '3 [' W ']'
+N3      'aaq' ? ARBNO('a' | 'b') . W ('q' | 'r')  :F(N4)
+        OUTPUT = '4 [' W ']'
+N4      'zzz' ? ('a' | 'b' | 'c')  :S(N5)
+        OUTPUT = '5 none'
+N5      &ANCHOR = 1
+        'xy' ? ('y' | 'x') ('y' | 'z') . W  :F(N6)
+        OUTPUT = '6 [' W ']'
+N6      &ANCHOR = 0
+        'ab' ? (('a' | 'b') $ C ('q' | *NOSUCH))  :S(N7)
+        OUTPUT = '7 C=' C
+N7      S = 'x' CHAR(0) 'y'
+        S ? ('x' (CHAR(0) | 'z') 'y') . W  :F(N8)
+        OUTPUT = '8 ' SIZE(W)
+N8      OUTPUT = 'done'
+END

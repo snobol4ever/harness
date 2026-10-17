@@ -1,0 +1,8 @@
+5 cd
+7 ef
+after every: 1
+out of range &pos fails, &pos is still 1
+world 6 world
+receded: world 1
+restored: outer
+done

@@ -1,0 +1,9 @@
+# WITNESS for HB_WSC (205) -- the collected-heap string workspace (it was also the HB_WS witness until the Icon string path was typed; HB_WS itself is deleted, cfo 2026-09-19).
+# Holds a string across forced collections and reads every byte of it back. If the root is not found,
+# or is found but not FIXED UP when the block slides, the read returns 0xDB poison instead of the bytes.
+procedure main();
+   local i, held, churn;
+   held := "WITNESS-" || repl("x", 40) || "-END";
+   every i := 1 to 300 do churn := repl("z", 100);
+   write(held);
+end

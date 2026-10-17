@@ -1,0 +1,8 @@
+# DECLARED FLOOR for test_gate_gc_every_witness_passes_on_the_asm_walk_under_stress_in_both_modes.sh -- the gc witnesses that
+# fail on EVERY road (SCRIP_DIAG 0 and 1, with and without SCRIP_GC_STRESS, both modes), measured by hq_runtime 2026-10-17 at
+# SCRIP 43552a85a when the gate was cut. ⛔ A FLOOR IS NOT AN XFAIL LIST AND NOT A PERMISSION: each line names the live row that
+# owns the defect, the gate prints it as DECLARED every run, and a line whose witness now passes in both modes reads RED (stale),
+# so the landing that cures a witness moves its line out of this file in the same commit.
+# witness	row	reason
+hb_eval_chain_shim_saves_sigma.sno	c2bb-apply-of-eval-reaches-the-deleted-eval-chain-c-road-and-bombs-gc-witness-hb-eval-chain-shim-saves-sigma	APPLY('EVAL', ...) reaches eval_chain_run_guarded, the deleted C road into a box (CEO-1576): rt_c2bb_bomb, SIGSEGV
+hb_plj_batch_b.pl	prolog-gc-witness-plj-batch-b-prints-append-where-swipl-prints-write	prints append where swipl prints write

@@ -1,0 +1,27 @@
+*  WITNESS for the core.c/runtime_eval.c arm of HB_WSB (215) -- the ATOMIC collected-heap byte buffer.
+*  It drives TWO retyped sites, each a NUL-terminated byte copy that cannot hold a reference:
+*    runtime_eval.c eval_build_chain -- the "(%s)" snprintf buffer handed to the expression parser;
+*    core.c _define_cstr -- the DEFINE prototype copy, which is only taken when the prototype arrives
+*    as a computed DT_S descriptor, so PT and PR are BUILT BY CONCATENATION here on purpose: a literal
+*    DEFINE('TWICE(X)') returns VARVAL directly and never reaches the allocation at all.
+*  HELD and the two procedures are kept across 400 churn allocations and an EVAL per iteration, so a
+*  lost or unrelocated buffer shows as a wrong DEFINE, a failed EVAL or poison instead of the four lines.
+*  The .ref is cut from the SPITBOL oracle (/home/resources/x64/bin/sbl -bf), not from ./scrip.
+        PT = 'TWICE(' 'X' ')'
+        DEFINE(PT)                                              :(TWICE_END)
+TWICE   TWICE = X ' ' X                                         :(RETURN)
+TWICE_END
+        PR = 'TRIPLE(' 'Y' ')'
+        DEFINE(PR)                                              :(TRIPLE_END)
+TRIPLE  TRIPLE = Y Y Y                                          :(RETURN)
+TRIPLE_END
+        HELD = TWICE('keep')
+        N = 0
+CHURN   N = LT(N,400) N + 1                                     :F(DONE)
+        JUNK = DUPL('z',200)
+        E = EVAL('N + 1')                                       :(CHURN)
+DONE    OUTPUT = HELD
+        OUTPUT = TRIPLE('ab')
+        OUTPUT = EVAL('2 + 3 * 4')
+        OUTPUT = N
+END

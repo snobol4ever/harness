@@ -1,0 +1,30 @@
+# WITNESS for the ARIZONA transmit/coexpr &errout TRACE LOSS (icon-arizona-transmit-and-coexpr-lose-their-
+# errout-trace-output-under-scrip-gc-stress-5-twelve-to-two-and-eighteen-to-zero-lines): the &trace wildcard
+# registration ("*" TRK_CALL / "*" TRK_RETURN, tag "icn") is written by rt_trace_all_set() -> trace_register()
+# in src/runtime/core/core.c:90-102. trace_register() duplicates its name/tag strings onto the COLLECTED heap
+# via rt_heap_strdup_c() (core.c:96,100) and stores the raw char* into trace_tab[], a plain `static` C array
+# (core.c:46). trace_tab[] is never walked or registered as a GC root -- it is not part of any activation
+# frame's typed return-address map -- so the FIRST collection after &trace is armed treats that heap block as
+# garbage. Measured under gdb (SCRIP_GC_STRESS=1): before the collection, trace_tab[0].name/.tag read "*"/"icn"
+# at an address inside the mmap'd GC arena; immediately after, at the SAME address, both are the collector's
+# 0xDB poison fill. trace_find("*", kind) then strcmp()s against poison, never matches, and every subsequent
+# rt_trace_event_args() call silently no-ops via its `if (!e) return;` -- no crash, no stderr, just missing
+# lines. This is a MINIMAL witness (no co-expressions needed): a single traced procedure call already loses
+# BOTH its call and return trace line under any nonzero SCRIP_GC_STRESS, because the wildcard registration is
+# what gets poisoned, not anything specific to the traced procedure.
+#
+# CHECK (not a stdout diff -- the loss is on &errout, which iconx has no stress knob to compare against):
+#   a=$(SCRIP_GC_STRESS=1 timeout 8s ./scrip ../harness/scripts/gc_witnesses/hb_trace_wildcard_registry_root.icn </dev/null 2>&1 >/dev/null | wc -l)
+#   a0=$(timeout 8s ./scrip ../harness/scripts/gc_witnesses/hb_trace_wildcard_registry_root.icn </dev/null 2>&1 >/dev/null | wc -l)
+#   want a0=2 (call f + return f), want a==a0; measured on today's tree: a0=2, a=0 at stress 1,2,3,4,5.
+# STDOUT is untouched by the defect and must still match iconx exactly (sanity that the program itself is fine).
+procedure main()
+   &trace := -1;
+   f();
+   &trace := 0;
+   write("done");
+end
+
+procedure f()
+   return 1;
+end

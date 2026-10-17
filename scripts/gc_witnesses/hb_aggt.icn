@@ -1,0 +1,7 @@
+# WITNESS for HB_AGGT (208) and HB_AGGB (211) -- the table block and its bucket storage.
+procedure main();
+   local i, held, churn;
+   held := table(0); held["alpha"] := 77; held["beta"] := 88;
+   every i := 1 to 300 do churn := repl("z", 100);
+   write(held["alpha"] + held["beta"]);
+end

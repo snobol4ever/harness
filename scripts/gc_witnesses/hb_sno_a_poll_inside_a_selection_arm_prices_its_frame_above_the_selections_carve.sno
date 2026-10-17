@@ -1,0 +1,8 @@
+        A = '12'
+        B = '34'
+        I = 0
+LOOP    X = (EVAL(A) EVAL(B), 'NONE')
+        I = I + 1
+        LT(I, 200)                                  :S(LOOP)
+        OUTPUT = X
+END

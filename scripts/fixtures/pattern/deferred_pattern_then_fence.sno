@@ -1,0 +1,10 @@
+* A FENCE after a deferred pattern whose thunk stays live (P = ARBNO(' b') can recede, so its frame outlives its gamma): the
+* FENCE's slots must be found at the depth the thunk left, not the depth the tracker counts for a defer (cfo 2026-09-30).
+* The layout is the witness: the misplaced stores land on live fields here; one statement fewer and they land on dead ones.
+	P = ARBNO(' b')
+	Q = ' ' 'b'
+	S = 'a b'
+	S ? POS(0) 'a' *P FENCE(' ') RPOS(0)	:S(Y)F(N)
+Y	OUTPUT = 'yes'	:(END)
+N	OUTPUT = 'no'
+END

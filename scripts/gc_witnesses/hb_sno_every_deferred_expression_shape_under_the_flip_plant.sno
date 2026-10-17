@@ -1,0 +1,74 @@
+* w1: unevaluated expressions (*EXPR) as deferred pattern references, every shape
+        DEFINE('F(K)')                          :(F.END)
+F       F = LEN(K) . FT                         :(RETURN)
+F.END
+        DEFINE('G(S)')                          :(G.END)
+G       G = S S                                 :(RETURN)
+G.END
+        DEFINE('H(N)')                          :(H.END)
+H       N = LT(N, 3) N + 1                      :S(RETURN)F(FRETURN)
+H.END
+        X = 'ab'
+        N = 2
+        P1 = *X 'd'
+        'abd' P1                                :S(OK1)F(NO1)
+OK1     OUTPUT = 'ok1'                          :(N1)
+NO1     OUTPUT = 'no1'
+N1      X = 'zz'
+        'zzd' P1                                :S(OK2)F(NO2)
+OK2     OUTPUT = 'ok2'                          :(N2)
+NO2     OUTPUT = 'no2'
+N2      P2 = *(X X) 'e'
+        'zzzze' P2                              :S(OK3)F(NO3)
+OK3     OUTPUT = 'ok3'                          :(N3)
+NO3     OUTPUT = 'no3'
+N3      P3 = *F(N) 'q'
+        'xyq' P3                                :S(OK4)F(NO4)
+OK4     OUTPUT = 'ok4 ' FT                      :(N4)
+NO4     OUTPUT = 'no4'
+N4      N = 3
+        'xyzq' P3                               :S(OK5)F(NO5)
+OK5     OUTPUT = 'ok5 ' FT                      :(N5)
+NO5     OUTPUT = 'no5'
+N5      P4 = *G(X) 'k'
+        'zzzzk' P4                              :S(OK6)F(NO6)
+OK6     OUTPUT = 'ok6'                          :(N6)
+NO6     OUTPUT = 'no6'
+N6      P5 = ARBNO(*X) 'w'
+        'zzzzzzw' P5                            :S(OK7)F(NO7)
+OK7     OUTPUT = 'ok7'                          :(N7)
+NO7     OUTPUT = 'no7'
+N7      P6 = *H(N) 'm'
+        N = 1
+        'x2m' P6                                :S(OK8)F(NO8)
+OK8     OUTPUT = 'ok8'                          :(N8)
+NO8     OUTPUT = 'no8'
+N8      N = 5
+        'x6m' P6                                :S(OK9)F(NO9)
+OK9     OUTPUT = 'ok9'                          :(N9)
+NO9     OUTPUT = 'no9'
+N9      P7 = *LEN(N) . T7 'v'
+        N = 2
+        'abv' P7                                :S(OK10)F(NO10)
+OK10    OUTPUT = 'ok10 ' T7                     :(N10)
+NO10    OUTPUT = 'no10'
+N10     I = 0
+        C = 0
+LOOP    I = LT(I, 200) I + 1                    :F(N11)
+        X = 'a' I
+        (X 'z') P1                              :S(LOOP)
+        C = C + 1                               :(LOOP)
+N11     OUTPUT = 'loop ' I ' ' C
+        P8 = *(X Y)
+        Y = *(X 'q')
+        X = 'p'
+        'pq' P8                                 :S(OK12)F(NO12)
+OK12    OUTPUT = 'ok12'                         :(N12)
+NO12    OUTPUT = 'no12'
+N12     P9 = (*X | *(X X)) 'z' . Z9
+        X = 'pp'
+        'ppppz' P9                              :S(OK13)F(NO13)
+OK13    OUTPUT = 'ok13 ' Z9                     :(N13)
+NO13    OUTPUT = 'no13'
+N13     OUTPUT = 'done'
+END

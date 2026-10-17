@@ -1,0 +1,202 @@
+--- a/src/h/opdefs.h
++++ b/src/h/opdefs.h
+@@ -140,3 +140,4 @@
+ #define Op_Trace	108
+ #define Op_Lab		109
+ #define Op_Invocable	110
++#define Op_Stmt		111
+--- a/src/h/rproto.h
++++ b/src/h/rproto.h
+@@ -442,3 +442,9 @@
+ int	Omkrec			(int nargs, Fargs);
+ 
+ void	initalloc		(word codesize);
++
++void	icx_mon_stmt		(word line);
++void	icx_mon_call		(struct b_proc *p);
++void	icx_mon_return		(struct b_proc *p, dptr v);
++void	icx_mon_value		(dptr var, dptr val);
++void	icx_mon_output		(FILE *f, char *s, word len);
+--- a/src/icont/opcode.c
++++ b/src/icont/opcode.c
+@@ -92,6 +92,7 @@
+    { "sdup",	Op_Sdup },
+    { "sect",	Op_Sect },
+    { "size",	Op_Size },
++   { "stmt",	Op_Stmt },
+    { "str",	Op_Str },
+    { "subsc",	Op_Subsc },
+    { "swap",	Op_Swap },
+--- a/src/icont/lcode.c
++++ b/src/icont/lcode.c
+@@ -244,6 +244,12 @@
+                lemit(op, name);
+             break;
+ 
++         case Op_Stmt:
++            k = getdec();
++            newline();
++            lemitn(op, (word)k, name);
++            break;
++
+          case Op_Colm:
+             colmno = getdec();
+             if (lnfree >= &lntable[nsize])
+--- a/src/icont/tcode.c
++++ b/src/icont/tcode.c
+@@ -23,6 +23,7 @@
+ static void	emits		(char *s,char *a);
+ static void	emitfile	(nodeptr n);
+ static void	emitline	(nodeptr n);
++static void	emitstmt	(nodeptr n);
+ static void	setloc		(nodeptr n);
+ static int	traverse	(nodeptr t);
+ static void	unopa		(int op, nodeptr t);
+@@ -525,14 +526,19 @@
+ 	    lab = alclab(1);
+ 	    emitl("init", lab);
+ 	    emitl("mark", lab);
++	    if (TType(Tree1(t)) != N_Slist)
++	       emitstmt(Tree1(t));
+ 	    traverse(Tree1(t));
+ 	    emit("unmark");
+ 	    emitlab(lab);
+ 	    }
+          else
+ 	    free(Tree1(t));
+-	 if (TType(Tree2(t)) != N_Empty)
++	 if (TType(Tree2(t)) != N_Empty) {
++	    if (TType(Tree2(t)) != N_Slist)
++	       emitstmt(Tree2(t));
+ 	    traverse(Tree2(t));
++	    }
+          else
+ 	    free(Tree2(t));
+ 	 setloc(Tree3(t));
+@@ -603,12 +609,15 @@
+ 
+       case N_Slist:			/* semicolon-separated expr list */
+ 	 lab = alclab(1);
++	 emitstmt(Tree0(t));
+ 	 emitl("mark", lab);
+ 	 loopsp->markcount++;
+ 	 traverse(Tree0(t));
+ 	 loopsp->markcount--;
+ 	 emit("unmark");
+ 	 emitlab(lab);
++	 if (TType(Tree1(t)) != N_Slist)
++	    emitstmt(Tree1(t));
+ 	 traverse(Tree1(t));
+ 	 break;
+ 
+@@ -1005,6 +1014,12 @@
+          }
+    }
+ 
++static void emitstmt(nodeptr n)
++   {
++   if (n != NULL && TType(n) != N_Empty)
++      emitn("stmt", Line(n));
++   }
++
+ static void emitline(nodeptr n)
+    {
+    /*
+--- a/src/runtime/interp.r
++++ b/src/runtime/interp.r
+@@ -407,6 +407,10 @@
+ 	       countline(ipc.opnd);	/* note this line if we're profiling */
+             break;
+ 
++         case Op_Stmt:
++            icx_mon_stmt(GetWord);
++            break;
++
+ 				/* ---String Scanning--- */
+ 
+ 	 case Op_Bscan:		/* prepare for scanning */
+@@ -869,6 +873,7 @@
+                k_trace--;
+ 	       rtrace(&(rproc->pname), glbl_argp);
+                }
++	    icx_mon_return(rproc, glbl_argp);
+ Pret_uw:
+ 	    if (pfp->pf_ilevel < ilevel) {
+ 	       --ilevel;
+--- a/src/runtime/invoke.r
++++ b/src/runtime/invoke.r
+@@ -190,6 +190,7 @@
+       k_trace--;
+       ctrace(&(proc->pname), nargs, &newargp[1]);
+       }
++   icx_mon_call(proc);
+ 
+    /*
+     * Point ipc at the icode entry point of the procedure being invoked.
+--- a/src/runtime/oasgn.r
++++ b/src/runtime/oasgn.r
+@@ -110,6 +110,9 @@
+          }
+       }
+ 
++   inline {
++      icx_mon_value(&x, &y);
++      }
+ #enddef
+ 
+ 
+--- a/src/runtime/Makefile
++++ b/src/runtime/Makefile
+@@ -21,7 +21,8 @@
+ 	keyword.o lmisc.o oarith.o oasgn.o ocat.o ocomp.o\
+ 	omisc.o oref.o oset.o ovalue.o profile.o ralc.o rcoexpr.o rcomp.o\
+ 	rdebug.o rexternal.o rlrgint.o rmemmgt.o rmisc.o rstruct.o \
+-	rsys.o rwinrsc.o rwinsys.o rwindow.o rcolor.o rimage.o
++	rsys.o rwinrsc.o rwinsys.o rwindow.o rcolor.o rimage.o\
++	monitor_ipc_lib.o monitor_icx.o
+ 
+ RTT = ../rtt/rtt
+ .SUFFIXES: .o .r .c
+@@ -36,6 +37,11 @@
+ 	cp iconx ../../bin
+ 	strip $(SFLAGS) ../../bin/iconx$(EXE)
+ 
++monitor_ipc_lib.o: monitor_ipc_lib.c monitor_ipc_lib.h
++	$(CC) -o monitor_ipc_lib.o -c $(CFLAGS) monitor_ipc_lib.c
++monitor_icx.o: monitor_icx.c monitor_ipc_lib.h $(HDRS)
++	$(CC) -o monitor_icx.o -c $(CFLAGS) monitor_icx.c
++
+ $(COBJS):
+ 	cd ../common; $(MAKE)
+ 
+--- a/src/runtime/rsys.r
++++ b/src/runtime/rsys.r
+@@ -105,8 +105,8 @@
+    s = StrLoc(*d);
+    if (longwrite(s,l,f) < 0)
+       return Failed;
+-   else
+-      return Succeeded;
++   icx_mon_output(f, s, l);
++   return Succeeded;
+    }
+ 
+ /*
+--- a/src/runtime/fsys.r
++++ b/src/runtime/fsys.r
+@@ -754,6 +754,7 @@
+    else
+ #endif					/* Graphics */
+       putc('\n', f);
++      icx_mon_output(f, "\n", 1);
+ #endif					/* nl */
+ 
+    /*
+@@ -862,6 +863,7 @@
+ 		     else {
+ #endif					/* Graphics */
+ 			putc('\n', f);
++			icx_mon_output(f, "\n", 1);
+ 			if (ferror(f))
+ 			   runerr(214);
+ 			fflush(f);

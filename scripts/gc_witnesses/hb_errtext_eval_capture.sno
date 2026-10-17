@@ -1,0 +1,4 @@
+                  &ERRLIMIT      =  100
+                  junk           =  EVAL('1 +')                                  :S(ok)
+ok                OUTPUT         =  'errtext=' &ERRTEXT
+END

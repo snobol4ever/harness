@@ -1,0 +1,7 @@
+        A = mk()
+        OUTPUT = DATATYPE(A)
+        OUTPUT = PROTOTYPE(A)
+        L = mkl()
+        OUTPUT = DATATYPE(L)
+        OUTPUT = PROTOTYPE(L)
+END

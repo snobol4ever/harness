@@ -1,0 +1,13 @@
+        DEFINE('F(N)')                          :(F_END)
+F       F = DUPL('a', N) 'b'                    :(RETURN)
+F_END   DEFINE('G(N)')                          :(G_END)
+G       G = DUPL('c', N) 'd'                    :(RETURN)
+G_END   I = 0
+LOOP    I = I + 1
+        S = 'x' DUPL('a', I) 'b' DUPL('c', I + 1) 'dy'
+        S ('x' F(I) G(I + 1) 'y')               :S(OK)F(NO)
+OK      OUTPUT = 'ok ' I                        :(NX)
+NO      OUTPUT = 'no ' I
+NX      LT(I, 5)                                :S(LOOP)
+        OUTPUT = 'done'
+END

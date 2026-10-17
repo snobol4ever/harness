@@ -1,0 +1,13 @@
+*  WITNESS for the R-4(b) blob frame's static layout (ARCH-GC 6.2e): a stored pattern's deferred SPAN(*C) keeps the
+*  string pointer rt_pat_prim_str returned in the blob's leaf pointer slot, and *ALLOC() allocates INSIDE the frame so
+*  a forced collection walks the frame while that word and the DTP word [rbp-24] are live. Nothing dies, so nothing
+*  slides: under SCRIP_GC_BLOB_LAYOUT_PLANT=2 the reporter's raw_in_heap column must count the retagged pointer words.
+        DEFINE('ALLOC()')                        :(START)
+ALLOC   G = DUPL('g', 300)                       :(RETURN)
+START   C = 'ab' 'c'
+        E = DUPL('e', 256)
+        P = SPAN(*C) . X *ALLOC() 'q'
+        'abcq' P                                 :F(NO)
+        OUTPUT = X '-' SIZE(E) '-' SIZE(G)       :(END)
+NO      OUTPUT = 'nomatch'
+END

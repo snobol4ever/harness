@@ -1,0 +1,10 @@
+*  WITNESS for the names runtime-compiled code bakes: EVAL builds a chain whose target variable, folded literal, deferred call and capture must survive a collection between the build and the run.
+        DEFINE('bump(v)')                :(GO)
+bump    cnt = cnt + 1
+        bump = .dummy                    :(NRETURN)
+GO      w = EVAL("'x' 'y'")
+        p = POS(0) EVAL("epsilon . *bump('a')") 'ab' EVAL("'b' . X") RPOS(0)
+        'abb' ? p  :F(NO)
+        OUTPUT = 'EVAL-' w '-' cnt '-' X   :(END)
+NO      OUTPUT = 'EVAL-FAIL'
+END

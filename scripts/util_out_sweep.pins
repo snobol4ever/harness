@@ -1,0 +1,10 @@
+# util_out_sweep.pins — KNOWN-NONDETERMINISTIC programs, one absolute-or-relative path per line, '#' comments ok.
+# ⛔ A PIN IS A DECLARATION, NEVER AN EXCLUSION.  A pinned program is still run REPS times and still compared; the
+# pin only decides whether util_out_sweep.sh prints a flake as `pinned` (expected, already known) or as `⛔ NEW`
+# (this arm made it nondeterministic — a real finding, and the thing the s148/s150/s170 false movers all were).
+# The defence that actually kills the false mover is REPS, not this file; the file exists so a NEW flake reads as
+# an EVENT instead of as a count nobody looks at.  Regenerate with SWEEP_PIN_UPDATE=1, override with SWEEP_PIN=.
+# Measured s185 seat2, SCRIP ffbc1425, 16 cpus: EMPTY IS CORRECT HERE — 583 programs × 3 reps, flaky=0, and the
+# named seat1 witness `crosscheck/patterns/141_pat_eval_double_fn_arbno.sno` is DORMANT at this HEAD (14 full
+# sweeps + 648 direct runs at up to 32-way, zero instances).  Do not seed it speculatively: a pin for a program
+# that is stable today prints as a stale pin every sweep and teaches seats to ignore the report.

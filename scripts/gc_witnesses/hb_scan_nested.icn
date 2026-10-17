@@ -1,0 +1,14 @@
+procedure main();
+   local s, t, n, i;
+   s := repl("abc", 100);
+   n := 0;
+   s ? {
+      every i := 1 to 20 do {
+         t := "";
+         repl("x", 300) ? { while t := t || move(1); };
+         n := n + *t + *move(1);
+         };
+      n := n + *tab(0);
+      };
+   write(n);
+end

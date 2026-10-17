@@ -1,0 +1,12 @@
+# gc_differential_divergences.tsv -- THE DIVERGENCE REGISTER of the differential GC oracle
+# (coo, 2026-09-21, MODE TENET, row gc-the-differential-oracle-same-program-under-two-gc-configurations-must-agree)
+#
+# ⛔ THIS IS NOT AN XFAIL FILE AND THE GATE ENFORCES THAT (CEO-753: there is no such thing as XFAIL; a witness
+# exposing a defect enters the RED and is rowed on its rung). An entry here does NOT excuse a divergence and
+# does NOT make it pass -- it OBLIGATES one. Every row must name an OWNER seat and a ROW, and
+# test_gate_gc_differential_configs_agree.sh REDS on any row whose owner or row is empty, so a divergence
+# cannot be parked here to make a number look better. The register exists because a divergence found by a
+# board pass must still be nameable a week later by a seat who did not run it.
+#
+# program <TAB> config_a <TAB> config_b <TAB> owner <TAB> row <TAB> tree <TAB> what the two answers are
+hb_file_name_unrooted.icn	arena1	arena1_plant64k	hq_icon	icon-gc-the-icon-share-of-the-unmapped-slot-population	1b317bea3	arena1 prints the corrupt "B file(aaaa...)" (271 bytes), arena1_plant64k prints the CORRECT "B file(tmp3)" (26 bytes); first differing byte at offset 20, 0x61 'a' vs 0x74 't'; one collection under each, both sides re-run and each reproduced its own answer. ⛔ THE DIRECTION IS THE FINDING AND IT IS NOT hq_icon's DEFECT BUT AN INSTRUMENT HAZARD FOR THE WHOLE FLEET: the FORCED-MOVEMENT KNOB MASKS THE DEFECT. Swept at SCRIP_HEAP_MB=1 with telemetry on and the applied line counted at its anchor: plant=0 applied=0 wrong; 4096 applied=1 wrong; 16384 applied=1 gives a THIRD answer "B file()"; 65536 applied=1 CORRECT; 262144 applied=1 CORRECT; 1048576 applied=0 DECLINED wrong. The mechanism is plain -- the defect is an unrooted string whose bytes the arena re-issues to the next allocation, so a LARGE displacement puts the next allocation far away and the stale read finds the original intact bytes: the stale pointer ACCIDENTALLY STILL WORKS, which is the exact failure mode forced relocation exists to prevent. Corroborates the cfo's finding of the same day (forcing every block to move does not make a stale pointer fault and on first evidence it can hide one) from a third road and with NO oracle.

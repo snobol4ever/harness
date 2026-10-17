@@ -1,0 +1,23 @@
+# A record poll inside a scan: x86_rt_gc_poll_rec_res polls while r13 holds the scan subject base and hands the saved r13 to rt_gc_point_arr_probe_c, so a collection there rewrites it.
+# Unshielded, the next move() reads the vacated ground (error 102 on poison). Two boxes reach it: a record field store (o.c := ...) and a string subscript (line[3]). Since 52f822b69
+# a store-only field is a bare cell and allocates nothing, so the field store's poll never finds a collection pending; the subscript builds a one-character string inside its own box,
+# which is what makes the collection land at the record poll with r13 live.
+record r(c)
+procedure f(line)
+   local x, o, t;
+   o := r();
+   line ? {
+      o.c := move(4);
+      t := line[3] || line[4];
+      x := 0;
+      while x +:= move(4) - 5000 do
+         0
+   };
+   return x;
+end
+procedure main()
+   local i, n;
+   n := 0;
+   every i := 1 to 200 do n +:= f("ABCD5001" || right(i, 4, "0") || "50035004");
+   write(n);
+end

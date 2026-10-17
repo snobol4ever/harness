@@ -1,0 +1,15 @@
+#  hb_file_name_unrooted.icn -- an open file's NAME string is a collected-heap block held only by the C global
+#  g_fh[] (src/runtime/by_name_dispatch.c:7798, g_fh[idx].name = rt_heap_strdup_c(path)), and no *_gc_roots
+#  function names g_fh.  The string is therefore unreachable from every root the collector walks: one collection
+#  reclaims it and the arena re-issues its bytes to the next allocation, so image(f) prints the re-issued bytes.
+#  ORACLE (icont/iconx 9.5.25a) prints "B file(tmp3)".  SCRIP prints "B file(aaaa...)" at SCRIP_HEAP_MB=1 at
+#  EVERY stress point, and at the shipped arena at every stress point above 0.  rc stays 0: this class exits
+#  clean with a plausible wrong answer, which is why it is graded by oracle diff and never by rc.
+procedure main()
+   local f, s, i;
+   f := open("tmp3", "wt") | stop("cannot open");
+   write("A ", image(f));
+   every i := 1 to 8 do s := repl("a", 65536);
+   write("B ", image(f));
+   close(f);
+end

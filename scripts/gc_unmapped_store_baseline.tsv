@@ -1,0 +1,116 @@
+# gc_unmapped_store_baseline.tsv -- the PER-WITNESS ratchet of the unmapped-store class (cto, row
+# gc-the-planner-gives-a-call-result-live-across-a-safe-point-...).  Written by
+# `util_gc_unmapped_store_census.py <witnesses> --write-baseline <this file>` in the landing that earns a move.
+# ONE LINE PER WITNESS AND NEVER A TOTAL, on hq_snobol4's measurement of 2026-09-20: the population is a
+# directory glob, so nine witnesses arriving would move a total from 162 to 192 and the arm would print THE
+# CLASS GREW and name a compiler regression it never measured.  A witness ARRIVING is a file addition; a
+# witness's own numbers MOVING is the thing this row exists to catch, and only a name set can tell them apart.
+# THE FIFTH COLUMN IS THIS CENSUS'S OWN REACH (cto 2026-09-20): stores shielded at a safe point into a
+# FIXED SYMBOL rather than into the frame.  It is ratcheted because shielding MOVING from the graded road
+# to the unread one is a loss of coverage that every other number here reads as an improvement.
+# witness	members	undecidable	shielded	unread_static
+hb_aggt.icn	0	0	26	0
+hb_aggv.icn	0	0	22	0
+hb_apply_opens_and_lands.sno	0	2	2	0
+hb_arbno_deferred_name.sno	0	0	0	0
+hb_arena_grow.sno	34	0	34	0
+hb_arr.sno	20	0	20	0
+hb_big_in_aggregate.icn	0	0	84	0
+hb_bignum_length.icn	0	136	608	0
+hb_blob_span_defer.sno	8	0	8	0
+hb_coexpr_create.icn	0	4	40	0
+hb_coexpr_genp_scan.icn	0	18	30	0
+hb_coexpr_parked.icn	0	14	28	0
+hb_coexpr_refresh.icn	0	8	36	0
+hb_coexpr_sigma.icn	0	4	46	0
+hb_concat_augmented_then_subscript.icn	0	0	40	0
+hb_cv_spine_plain_redo.icn	0	0	56	0
+hb_datblk.sno	22	0	22	0
+hb_defer_close_after_a_deferred_capture_polled.sno	0	0	0	0
+hb_defer_subject.sno	4	0	4	0
+hb_deferexpr_a_dupl.sno	0	0	0	0
+hb_deferexpr_a_replace.sno	0	0	0	0
+hb_deferexpr_a_substr.sno	0	0	0	0
+hb_deferexpr_a_trim.sno	0	0	0	0
+hb_deferexpr_d_dupl.sno	0	0	0	0
+hb_deferexpr_d_replace.sno	0	0	0	0
+hb_deferexpr_d_substr.sno	0	0	0	0
+hb_deferexpr_d_trim.sno	0	0	0	0
+hb_deferexpr_nodefer.sno	0	0	0	0
+hb_define_with_an_entry_label_binds_its_entry_at_the_statement.sno	0	12	12	0
+hb_dinst.icn	0	0	14	0
+hb_dtp.sno	14	0	14	0
+hb_dvec_data_convert.sno	42	0	42	0
+hb_dvec_list.icn	0	0	230	0
+hb_dvec_list_slice.icn	0	0	134	0
+hb_dvec_sort_match.sno	80	0	80	0
+hb_errtext_eval_capture.sno	4	0	4	0
+hb_errtext_keyword.sno	2	0	2	0
+hb_eval_chain_shim_saves_sigma.sno	26	0	26	0
+hb_eval_names.sno	10	2	12	0
+hb_file_name_unrooted.icn	0	0	28	0
+hb_frame_map_anchor_recursive_marklists_mode4.icn	0	108	464	0
+hb_icn_a_call_to_main_from_another_procedure_takes_the_open_road.icn	0	10	18	0
+hb_icn_a_nine_argument_call_takes_the_staging_slow_path.icn	0	4	24	0
+hb_icn_a_suspended_scan_reenters_twenty_four_levels_deep.icn	0	24	30	0
+hb_icn_errorvalue_keyword.icn	0	0	38	0
+hb_icn_op_context_after_a_converted_error.icn	0	0	22	0
+hb_icn_op_context_held_into_a_builtin_traceback.icn	0	0	18	0
+hb_icn_procedure_call_shapes.icn	0	42	68	0
+hb_icn_reversible_assignment_to_pos_and_subject.icn	0	0	58	0
+hb_icn_seventy_files_open_at_once_past_the_old_handle_cap.icn	0	0	74	0
+hb_immediate_capture_into_a_gva_cell_polled.sno	14	0	14	0
+hb_kw_cset_index_across_a_collection.icn	0	0	30	0
+hb_match_enter_subject_polled.sno	0	0	0	0
+hb_match_value_close_polled.sno	0	0	0	0
+hb_mkexpr_unmapped_spine_store.sno	0	0	0	0
+hb_nested_match_outer_subject.sno	8	2	10	0
+hb_nv.sno	26	0	26	0
+hb_pl_a_twelve_argument_call_stages_past_the_fast_path.pl	0	32	546	0
+hb_pl_atom_codes_of_a_six_thousand_character_atom.pl	0	96	636	0
+hb_pl_atomic_list_concat_splits_five_thousand_pieces.pl	0	102	626	0
+hb_pl_findall.pl	0	200	738	0
+hb_pl_root_cells.pl	0	160	766	0
+hb_pldb.pl	0	102	638	0
+hb_plj_batch_b.pl	0	150	698	0
+hb_procval_in_aggregate.icn	0	0	86	0
+hb_protected_pattern_value_read.sno	10	0	10	0
+hb_raku_a_hundred_and_forty_grammars_register_and_the_last_parses.raku	0	0	18	0
+hb_raku_nextsame_seventy_method_frames_deep_reaches_the_parent_with_its_own_argument.raku	0	0	24	0
+hb_reloc_gaps_on_a_mostly_live_heap.pl	0	28	542	0
+hb_scan_nested.icn	0	0	28	0
+hb_scan_subject_across_a_failing_callee.icn	0	16	34	0
+hb_scan_subject_across_allocating_poll.icn	0	0	52	0
+hb_scan_subject_embedded_nul_across_a_collection.icn	0	2	36	0
+hb_scan_suspend_bank_across_a_collection.icn	0	14	50	0
+hb_shim_nv_road.sno	0	28	28	0
+hb_shim_rt_names_past_the_hidden_island_slots.sno	0	40	40	0
+hb_sibling_frames_leave_no_dead_map_cell.icn	0	48	890	0
+hb_size_result_polled.icn	0	0	10	0
+hb_sno_a_call_with_more_arguments_than_formals_takes_the_open_road.sno	0	2	2	0
+hb_sno_a_computed_capture_target_nests_past_a_thousand.sno	2	2	4	0
+hb_sno_a_data_type_with_seventy_fields_is_constructed_whole.sno	12	0	12	0
+hb_sno_a_hidden_gva_cell_holds_a_nested_unevaluated_expression.sno	0	4	4	0
+hb_sno_an_eager_call_result_held_in_a_nameless_patv_cell.sno	12	10	22	0
+hb_sno_data_field_name_held_across_collections.sno	22	0	22	0
+hb_sno_every_deferred_expression_shape_under_the_flip_plant.sno	22	12	34	0
+hb_sno_seventy_builtin_synonyms_past_the_old_cap.sno	8	0	8	0
+hb_sno_twenty_thousand_indirect_names.sno	22	0	22	0
+hb_table_dump_every_key_ref.icn	0	24	330	0
+hb_table_elem_ref_across_collections.icn	0	0	70	0
+hb_trace_wildcard_registry_root.icn	0	6	10	0
+hb_ws.icn	0	0	18	0
+hb_wsb.icn	0	0	22	0
+hb_wsb_bignum.icn	0	0	38	0
+hb_wsb_eval_define.sno	2	8	10	0
+hb_wsb_pl_atom_dup.pl	0	52	588	0
+hb_wsb_raku_junction.raku	0	0	46	0
+hb_wsb_raku_sprintf_multi.raku	0	0	54	0
+hb_wsb_rk_arr.raku	0	0	54	0
+hb_wsb_rk_gram_parse.raku	0	0	14	0
+hb_wsb_rk_iter_grep.raku	0	0	90	0
+hb_wsb_rk_iter_map.raku	0	0	78	0
+rk_list_array_marker.raku	0	0	108	0
+rk_marker_poly_a.raku	0	0	8	0
+rk_marker_poly_b.sno	0	0	0	0
+stack_top_under_valgrind.icn	0	0	18	0

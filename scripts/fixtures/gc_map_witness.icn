@@ -1,0 +1,15 @@
+#   gc_map_witness.icn -- the maps census's multi-graph witness (coo, section 6.4 arms (a), (b), (d)).
+#   Three activation-frame graphs (f, g, main) so the census compares the frame allocator's graph list,
+#   the emitter's [GC-MAP] cells in BOTH media, and the .s's .Lgcmap_* labels, leas and counted table
+#   against each other -- one graph would prove nothing about "exactly one".
+procedure f(x)
+  return x || "z";
+end
+procedure g(y)
+  local t;
+  t := [y, y, y];
+  return t[1];
+end
+procedure main()
+  write(f("a"), " ", g("b"));
+end

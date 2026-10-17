@@ -1,0 +1,13 @@
+P1 failed, V=[]
+P2 matched [y]
+P3 matched [q]
+P4 matched [b]
+P5 matched [qa]
+P6 matched []
+P7 matched [bc]
+P8 failed at end
+anchored failed
+P9 matched [3.14] N=3
+P10 matched size 2
+P11 matched size 2
+done

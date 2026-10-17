@@ -1,0 +1,24 @@
+# NOT_SHIPPED.tsv -- the census's third declaration (ceo CEO-1235 (3), 2026-09-24, on the coo's ask (C) of COO-182; named on
+# .github/ARCH-DYNAMIC-STORAGE.md section 2 beside CLASS_AB.tsv and WITNESSES.tsv). A compilation unit named here is a unit test, a tool
+# or a demo that no program's run reaches, so its fixed tables and the locals it fills leave EVERY line of util_dyn_caps_witness.sh:
+# the two ratchet counts, the no-guard and drop lines, and the LOUD guards that owe a witness.
+# ⛔ THE LINK IS THE EVIDENCE: each row is checked on every census run against the two link lines of the Makefile -- make's own
+# RT_PIC_SRCS (the objects `$(CC) -shared` links into libscrip_rt) and src/driver/scrip.c (the scrip link). A named file that either
+# link consumes, a header (shipped wherever a shipped unit includes it, which this file cannot prove), or a file the tree no longer has
+# reads RED by name. An unlinked unit that is NOT named here stays counted: counting too much is never a false green.
+# file<TAB>reason (what builds it, if anything)
+src/driver/csnobol4_shim.c	linked only by `make scrip-monitor` (the CSNOBOL4 fourth-executor build, Makefile rule scrip-monitor), never by scrip or libscrip_rt
+src/parsers/icon/icn_main.c	no Makefile rule or script compiles it; its one exported symbol icn_prescan_imports is referenced nowhere and nm finds it in neither libscrip_rt.so nor scrip (2026-09-24, cb1bc6d1b)
+src/parsers/icon/icon_lex_test.c	a unit test with its own main(); no Makefile rule or script compiles it
+src/parsers/icon/icon_parse_test.c	a unit test with its own main(); no Makefile rule or script compiles it
+src/parsers/prolog/pl_cell_test.c	a unit test with its own main(); no Makefile rule or script compiles it
+src/parsers/prolog/prolog_parse_test.c	a unit test with its own main(); no Makefile rule or script compiles it
+src/parsers/snobol4/test_lex.c	a unit test with its own main(); no Makefile rule or script compiles it
+src/runtime/rtx/rtx_str_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
+src/tools/demo_template_productions.c	a demo with its own main(); no Makefile rule or script compiles it
+src/tools/emit_per_kind_audit.c	a tool; its entry emit_per_kind_audit_run is called from no shipped unit and nm finds it in neither libscrip_rt.so nor scrip (2026-09-24, cb1bc6d1b)
+src/tools/test_template_byte_identity.c	a test tool with its own main(); its driver script ../harness/scripts/build_and_run_test_template_byte_identity.sh names src/runtime/x86/test_template_byte_identity.c, a path the tree no longer has, so nothing compiles this copy
+src/runtime/rtx/rtx_tins_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
+src/runtime/rtx/rtx_sval_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
+src/runtime/rtx/rtx_relop_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
+src/runtime/rtx/rtx_direct_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh

@@ -1,0 +1,51 @@
+# lib_logtalk_sequenced.tsv -- the logtalk_iso cases that are written against the database THEIR OWN FILE'S
+# EARLIER CASES LEAVE BEHIND, and are therefore graded with that file's prefix run first, in file order.
+# Read by util_logtalk_grade.py; format is  group<TAB>case<TAB>reason  (group is the DIRECTORY BASENAME).
+#
+# ⛔ A LINE HERE IS A CLAIM THE RUNNER CHECKS ON EVERY RUN, NOT A SILENCER. Every declared case is ALSO run
+# standalone on the same run, and if it PASSES standalone the board REFUSES rc=2 and tells you to delete the
+# line -- because a case that can be graded in isolation must be, and a prefix makes the verdict weaker than
+# this suite can support. A declared case that is the FIRST case in its file, or whose name is not in its
+# group, also REFUSES: this table cannot rot in silence.
+#
+# ⭐ WHY THIS IS FIDELITY AND NOT A WORKAROUND: lgtunit runs a tests.lgt IN FILE ORDER in one process, so the
+# state an earlier case leaves is part of what the suite's author wrote. One-program-per-case is THIS
+# runner's simplification -- right for 3615 of 3617 cases, and wrong for the ones below.
+#
+# Provenance: FINDING-2026-09-13-hq_C-five-logtalk-database-cases-cannot-pass-on-cures-in-this-lane-and-two-
+# of-them-can-never-pass-standalone.md claim 2 (hq_C measured them; the runner is hq_R's file and the
+# mechanism was hq_R's call, 2026-09-13).
+#
+# ⭐ A FOURTH COLUMN IS A SETUP GOAL (ceo CEO-1695, 2026-10-11, the cfo's Logtalk row): the case runs that goal inside itself ahead
+# of its own goal, INSTEAD of its file's prefix. unicode/encodings' _03 and _04 cases query the facts their fixture .lgt defines,
+# which lgtunit's run loads at _02 through logtalk_load/2 (a Logtalk system predicate no oracle has -- _01 and _02 are
+# EXCLUDED NO_ORACLE_ANSWER, CEO-1696); the setup REPLAYS _02 -- its own condition(set_encoding(E)), then the fixture loaded through
+# the suite's own backend adapter '$lgt_load_prolog_file'/1
+# (lib_logtalk_lgtunit.pl: read each term with the stream's BOM detection and the encoding flag, assert it). Replaying _02's condition
+# matters: utf_16_le_no_bom_04's own condition sets UTF-16BE, harmless in lgtunit's run where _02 loaded the file under UTF-16LE.
+# which is SCRIP reading a UTF-8/16/32 source -- the engine's job. A setup that throws is the case's FAIL, never UNGRADED.
+retract_1	iso_retract_1_04	ISO 8.9.3.4 -- the expected three-entry findall over retract((legs(X,Y):-Z)) is the state cases 01 and 03 leave; standalone legs/2 still has all five clauses and the findall yields five
+retract_1	iso_retract_1_05	ISO 8.9.3.4 -- retract((legs(_,_):-_)) can only FAIL after case 04 has drained legs/2; standalone it succeeds, whatever the engine does
+builtins	lgt_unicode_stream_property_2_11	the binary-stream read of sample_utf_8_bom needs that file to EXIST, and nothing in this suite ships it -- cases 03 and 06..10 of this same file create it by opening it for write; standalone the open throws existence_error(source_sink,sample_utf_8_bom) whatever stream_property/2 does
+builtins	lgt_unicode_stream_property_2_12	same fixture as case 11 -- sample_utf_8_bom is created by this file's earlier write-mode cases and by nothing else, so standalone this case can only ever throw existence_error(source_sink,...) and never reach the bom/1 property it is written to test
+close_2	lgt_close_1_11	lgtunit order -- case 11 opens bar for reading, and bar is the file case 10 of this same file creates by opening it for writing; nothing in the suite ships it, so standalone the open can only ever throw existence_error(source_sink, bar), whatever the engine does (hq_prolog 2026-09-25)
+encodings	lgt_unicode_utf_8_bom_03	queries the facts utf_8_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	'$lgt_load_prolog_file'('utf_8_bom.lgt')
+encodings	lgt_unicode_utf_8_bom_04	queries the facts utf_8_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	'$lgt_load_prolog_file'('utf_8_bom.lgt')
+encodings	lgt_unicode_utf_8_no_bom_03	queries the facts utf_8_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-8'), '$lgt_load_prolog_file'('utf_8_no_bom.lgt')
+encodings	lgt_unicode_utf_8_no_bom_04	queries the facts utf_8_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-8'), '$lgt_load_prolog_file'('utf_8_no_bom.lgt')
+encodings	lgt_unicode_utf_16_be_bom_03	queries the facts utf_16_be_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16LE'), '$lgt_load_prolog_file'('utf_16_be_bom.lgt')
+encodings	lgt_unicode_utf_16_be_bom_04	queries the facts utf_16_be_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16LE'), '$lgt_load_prolog_file'('utf_16_be_bom.lgt')
+encodings	lgt_unicode_utf_16_be_no_bom_03	queries the facts utf_16_be_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16BE'), '$lgt_load_prolog_file'('utf_16_be_no_bom.lgt')
+encodings	lgt_unicode_utf_16_be_no_bom_04	queries the facts utf_16_be_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16BE'), '$lgt_load_prolog_file'('utf_16_be_no_bom.lgt')
+encodings	lgt_unicode_utf_16_le_bom_03	queries the facts utf_16_le_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16BE'), '$lgt_load_prolog_file'('utf_16_le_bom.lgt')
+encodings	lgt_unicode_utf_16_le_bom_04	queries the facts utf_16_le_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16BE'), '$lgt_load_prolog_file'('utf_16_le_bom.lgt')
+encodings	lgt_unicode_utf_16_le_no_bom_03	queries the facts utf_16_le_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16LE'), '$lgt_load_prolog_file'('utf_16_le_no_bom.lgt')
+encodings	lgt_unicode_utf_16_le_no_bom_04	queries the facts utf_16_le_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-16LE'), '$lgt_load_prolog_file'('utf_16_le_no_bom.lgt')
+encodings	lgt_unicode_utf_32_be_bom_03	queries the facts utf_32_be_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32LE'), '$lgt_load_prolog_file'('utf_32_be_bom.lgt')
+encodings	lgt_unicode_utf_32_be_bom_04	queries the facts utf_32_be_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32LE'), '$lgt_load_prolog_file'('utf_32_be_bom.lgt')
+encodings	lgt_unicode_utf_32_be_no_bom_03	queries the facts utf_32_be_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32BE'), '$lgt_load_prolog_file'('utf_32_be_no_bom.lgt')
+encodings	lgt_unicode_utf_32_be_no_bom_04	queries the facts utf_32_be_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32BE'), '$lgt_load_prolog_file'('utf_32_be_no_bom.lgt')
+encodings	lgt_unicode_utf_32_le_bom_03	queries the facts utf_32_le_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32BE'), '$lgt_load_prolog_file'('utf_32_le_bom.lgt')
+encodings	lgt_unicode_utf_32_le_bom_04	queries the facts utf_32_le_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32BE'), '$lgt_load_prolog_file'('utf_32_le_bom.lgt')
+encodings	lgt_unicode_utf_32_le_no_bom_03	queries the facts utf_32_le_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32LE'), '$lgt_load_prolog_file'('utf_32_le_no_bom.lgt')
+encodings	lgt_unicode_utf_32_le_no_bom_04	queries the facts utf_32_le_no_bom.lgt defines, which lgtunit loads at _02 by logtalk_load/2; graded with _02 replayed first -- its condition, then the fixture loaded by the backend adapter (CEO-1695)	set_encoding('UTF-32LE'), '$lgt_load_prolog_file'('utf_32_le_no_bom.lgt')

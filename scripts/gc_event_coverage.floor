@@ -1,0 +1,19 @@
+# gc_event_coverage.floor -- THE RATCHET. Every key here was EXERCISED when it was written;
+# if any stops being exercised, test_gate_gc_event_coverage_reports_and_ratchets.sh REDS.
+# Raised deliberately with `util_gc_event_coverage.py --raise-floor`, never automatically.
+collection_at_safe_point
+arena_grow
+slide_with_displacement
+slide_without_displacement
+mark_worklist_growth
+interior_pointer_fixup
+fill_block_insertion
+cell_forwarding_fixup
+block_marked
+mark_multi_round
+coexpression_stack_visit
+visitor_kind_descr
+visitor_kind_ptr_gc
+blob_frame_walk
+dvec_visit
+quarantine_arm

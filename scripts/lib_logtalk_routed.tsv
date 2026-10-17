@@ -1,0 +1,30 @@
+# lib_logtalk_routed.tsv -- THE ROUTED-CASE DECLARATION TABLE for util_logtalk_family_done.sh.
+#
+# ⛔⭐ SCOPED MEANS ROUTED, NEVER SUBTRACTED (cto ruling to hq_C, 2026-09-13). A family row's DONE-WHEN may
+# narrow to the cases in its owner's lane -- a DONE-WHEN that can only be met by work in ANOTHER seat's lane
+# either stalls forever or makes its owner cross the lane line -- but narrowing a denominator is the single
+# easiest way to manufacture a false green: 138 becomes 127, the row closes, and eleven real defects leave
+# the accounting without anyone deciding they should. A case that is dropped silently and a case that was
+# never measured produce THE SAME OUTPUT. So a narrowed denominator NAMES EVERY CASE IT DROPS AND THE ROW
+# THAT NOW OWNS IT, here, in a file the gate reads on every run and prints by name in its verdict.
+#
+# ⛔⭐ AND THE DECLARATION EXPIRES BY ITSELF, which is the whole reason it is a table and not a prose list in
+# a baton. A tolerated-red list is written when the red is discovered and read long after it is closed, so it
+# goes stale in the FLATTERING direction -- it invites a reader to tolerate a failure that is now a real
+# regression (CLAUDE.md, THE CONTROL-ARM BAR: two successive digests each named the red that had just been
+# cured). This gate therefore REFUSES(2) rather than passing when a routed case PASSES -- the owning row has
+# landed and the case must come back into this row's denominator -- and REFUSES(2) when a routed case is not
+# in the group's population at all, because a name that matches nothing is a carve-out no one can audit.
+#
+# group<TAB>case<TAB>owner-row<TAB>why it is not this row's to cure
+builtins	lgt_unicode_open_4_04	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	open/4 with bom(true) must write the byte-order mark -- the BOM is written by the stream layer at open time, not by any Prolog builtin
+builtins	lgt_unicode_open_4_08	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	needs stream_property(S, encoding(E)) on a stream opened with no encoding option -- a stream property, and it will not close by any prolog_flag work
+builtins	lgt_unicode_set_stream_position_2_01	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	set_stream_position/2 on a reposition(true) text stream -- the stream layer owns the position token
+builtins	lgt_unicode_stream_property_2_01	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_stream_property_2_02	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_stream_property_2_03	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_stream_property_2_04	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_stream_property_2_05	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_stream_property_2_06	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	stream_property/2 encoding/1 and bom/1 on an open stream -- the 22 stream I/O groups are hq_R's lane under MODE line 2
+builtins	lgt_unicode_format_2_01	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	format/2 column fill ~8594t~8| -- the format family is hq_R's lane under MODE line 2 (format_2/3)
+builtins	lgt_unicode_format_3_01	prolog-logtalk-eleven-unicode-stream-cases-routed-from-the-builtins-family-row	format/3 column fill to an aliased UTF-8 stream -- same lane as format_2_01

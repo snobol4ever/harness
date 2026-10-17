@@ -1,0 +1,11 @@
+procedure main()
+   local L, T, i;
+   L := [];
+   every i := 1 to 12 do put(L, proc("~===", 2));
+   T := table();
+   every i := 1 to 12 do T[i] := proc("===", 2);
+   every i := 1 to 12 do write("L", i, ":", image(L[i](1)));
+   every i := 1 to 12 do write("T", i, ":", image(T[i](&null)));
+   every i := 1 to 12 do write("N", i, ":", image(L[i]));
+   every i := 1 to 12 do write("M", i, ":", image(T[i]));
+end

@@ -1,0 +1,5 @@
+        S = 'ALPHA-BETA'
+        S 'BETA'                                   :S(OK)F(NO)
+OK      OUTPUT = 'found'                           :(END)
+NO      OUTPUT = 'missing'
+END

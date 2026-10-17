@@ -1,0 +1,6 @@
+        DEFINE('NT()')                                   :(NT_END)
+NT      NT = K                                           :(RETURN)
+NT_END  K = 0
+        X = *(GT(NT(), 1), 0)
+        OUTPUT = EVAL(X)
+END

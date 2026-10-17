@@ -1,0 +1,34 @@
+# arena_env_setters_allowlist.txt -- the files that may still spell SCRIP_HEAP_KB / SCRIP_HEAP_MB / SCRIP_HEAP_MAX_MB / SCRIP_STACK with an
+# `=` after it (row instruments-ninety-two-scripts-and-the-makefile-size-the-arena-through-the-env-not-the-d-switch, the coo). FORMAT:
+# path<TAB>reason, one per line. A file belongs here only while its reason is true; the row's DONE-WHEN reads "outside the allowlist 0".
+# MEASURED 2026-09-24 on ee1654d5c: 84 files match; these 7 SET NOTHING -- every match is a comment, or a report line that prints the
+# arena a run used (which is the transcript naming its arena, the row's own goal). The other 77 set the arena for a run and are the
+# row's work, sequenced by the ceo (asked 2026-09-24): each lane's runner at its own next board run, the GC gates after the GC home
+# stretch with the cto.
+# ⭐ SINCE 2026-09-28 THIS IS THE ONE ALLOWLIST OF util_size_setters_census.py (ceo CEO-1353; the coo's row instruments-every-runner-passes-
+# each-units-declared-heap-and-stack-...): a script outside test_gate_* that sets the collector's WINDOW (SCRIP_HEAP_KB/MB) or types a size
+# (a literal -d/-s/-i, ulimit -s, an oracle's own size) is named by test_gate_no_runner_types_a_size_or_sets_the_window.sh unless its
+# row is here, WITH ITS REASON. A runner never belongs here: a test unit's heap and stack live with the unit and reach SCRIP through the one
+# reader. The rows below are instruments whose MEASUREMENT is the size, and tools that grade no SCRIP run. A row naming a file that no
+# longer sets a size is STALE and reds (util_progress_append.py's row left 2026-09-28: it sets nothing).
+scripts/test_gate_gc_a_coexpression_frame_image_lives_on_its_own_stack.sh	sets nothing: its one match is a report line naming the arena the run used
+scripts/test_gate_gc_event_coverage_reports_and_ratchets.sh	sets nothing: its matches are comments
+scripts/test_gate_gc_no_pinned_lifetime_class.sh	sets nothing: its matches are comments
+scripts/test_gate_gc_pacing_bounds_a_churning_program.sh	sets nothing: its matches are comments
+scripts/test_gate_gc_record_type_table_is_rooted_not_blanket_marked.sh	sets nothing: its matches are comments
+scripts/test_gate_gc_the_coexpression_roots_are_typed_and_the_parked_stacks_are_segments.sh	sets nothing: its one match is a report line naming the arena the run used
+scripts/test_gate_declared_arena_switches_agree_with_the_harness.sh	control arm: arm 2 runs a declared heap as the old SCRIP_HEAP_KB export beside the -d/-i switches to prove both read the same arena line -- the export is the subject of that comparison
+
+scripts/util_gc_event_coverage.py	GC instrument: pins the window explicitly at the shipped 1024 KB (SCRIP_HEAP_MB=1) so its collection counts, driven by SCRIP_GC_STRESS, are readings of a named window and not of the caller's environment (the cfo's wording, 2026-09-28)
+scripts/util_gc_population_machine.py	GC instrument: each configuration it names IS a window setting (nogc at 512 MB, the stress points at 128 KB); the window is the variable it sweeps
+scripts/util_gc_safe_point_contract.py	GC instrument: the bare-arena run sets the window (BARE_ARENA_MB) so the census reaches its safe points; the window is the instrument's input
+scripts/util_gc_witness_sweep.sh	GC instrument: sweeps the gc witness set at a named window (ARENA_KB) and stress point; the window is the sweep's axis
+scripts/util_arena_pin_census.py	a census, not a runner: its matches are the FIXTURE strings it plants and must classify (pinned, clean, comment); it runs no program
+scripts/util_oracle_flag_sweep.sh	an oracle-probing tool: sizes sbl -b and -bf itself to compare the oracle's two flag sets on one program; grades no SCRIP run
+scripts/util_fix_folding_dialect.py	an oracle-probing tool: runs sbl at a fixed size to classify a corpus source's case-folding dialect; grades no SCRIP run
+scripts/profile_callgrind.sh	a profiler, not a runner: ulimit -s unlimited gives the profiled process room under valgrind; it publishes no verdict
+scripts/profile_pcsample.sh	a profiler, not a runner: ulimit -s unlimited gives the sampled process room; it publishes no verdict
+scripts/util_pl_rung9_gamma_fence_witness_set.sh	a stack-depth instrument (hq_prolog's): it PINS the stack to PIN_KB to measure the depth a witness reaches -- the pinned stack is the measurement, and it refuses rc 2 when the pin cannot be taken
+scripts/util_gc_chain_matrix.sh	GC instrument: the chain matrix runs every gc witness at a named window (MATRIX_KB, default 64 KB) and stress point, so its collections happen; the window is the matrix's axis (hq_collector, ARCH-GC 13)
+scripts/util_gc_demo_porter_chain_reading.sh	GC witness reading of ONE entry, tests/snobol4 demo_porter: -d131072k -s4096k are that entry's own ALL.csv heap_kb and stack_kb, spelled on its command line as the harness passes them (hq_collector's porter reading, CEO-1697)
+scripts/util_witness_sc_collection_inside_a_match.sh	GC witness: -i3000m sets the INITIAL window large so the reference run collects nothing, the control beside the small-window run whose collection inside a match is the witness; the window is the variable the witness compares (CEO-1697)

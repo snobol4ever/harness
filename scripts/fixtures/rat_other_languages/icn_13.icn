@@ -1,0 +1,7 @@
+record Rat(n, d)
+procedure main()
+    local x, y;
+    x := Rat(1, 2);
+    y := x ^ 2;
+    write("done");
+end

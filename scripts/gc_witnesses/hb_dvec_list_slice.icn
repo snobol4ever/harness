@@ -1,0 +1,26 @@
+# WITNESS for pattern_match.c:412 -- the DESCR_t element vector an Icon list SLICE builds.
+# L[5:25] cuts a new element vector out of the source list's frame_elems and hands it to DATCON as the
+# list payload; every one of its rlen elements is written before use, and the slice is held across 500
+# churn allocations, so a lost or unrelocated vector prints poison or a short SLICE line.
+# The sort() here is Icon's, which is core.c's path, not this file's -- the slice is the site this
+# witness is for. The .ref is cut from the Arizona oracle (icont -s -x), not from ./scrip.
+procedure main();
+   local L, S, A, T, i, j, s, churn, P;
+   L := [];
+   every i := 1 to 40 do put(L, "e" || i || "-" || repl("w", i % 7 + 1));
+   S := L[5:25];
+   A := [];
+   every i := 1 to 30 do put(A, (37 * i) % 31);
+   T := table();
+   every i := 1 to 20 do T["key" || (23 * i) % 19] := "val" || i;
+   P := sort(T);
+   every i := 1 to 500 do churn := repl("c", 90);
+   s := "";
+   every j := 1 to *S do s := s || S[j] || "|";
+   write("SLICE=", *S, ":", s);
+   s := "";
+   every j := 1 to *P do s := s || P[j][1] || "=" || P[j][2] || "|";
+   write("SORT=", *P, ":", s);
+   write("L=", *L, " A=", *A, " T=", *T);
+   write("TAIL=", L[*L], " HEAD=", L[1]);
+end

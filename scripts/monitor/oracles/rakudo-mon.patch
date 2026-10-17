@@ -1,0 +1,220 @@
+--- a/src/vm/moar/ops/perl6_ops.c
++++ b/src/vm/moar/ops/perl6_ops.c
+@@ -176,6 +176,7 @@
+ }
+ 
+ /* Registers the extops with MoarVM. */
++void Rakudo_mon_ops_init(MVMThreadContext *tc);
+ MVM_DLL_EXPORT void Rakudo_ops_init(MVMThreadContext *tc) {
+     MVM_ext_register_extop(tc, "p6init",  p6init, 0, NULL, NULL, NULL, 0);
+     MVM_ext_register_extop(tc, "p6captureouters", p6captureouters, 2, s_p6captureouters, NULL, NULL, 0);
+@@ -187,4 +188,5 @@
+     MVM_ext_register_extop(tc, "p6inpre", p6inpre, 1, s_p6inpre, NULL, NULL, 0);
+     MVM_ext_register_extop(tc, "p6staticouter", p6staticouter, 2, s_p6staticouter, NULL, NULL, 0);
+     MVM_ext_register_extop(tc, "p6invokeunder", p6invokeunder, 3, s_p6invokeunder, NULL, NULL, MVM_EXTOP_NO_JIT);
++    Rakudo_mon_ops_init(tc);
+ }
+--- a/src/vm/moar/Perl6/Ops.nqp
++++ b/src/vm/moar/Perl6/Ops.nqp
+@@ -57,6 +57,19 @@
+     $MVM_operand_obj   +| $MVM_operand_write_reg,
+     $MVM_operand_obj   +| $MVM_operand_read_reg,
+     $MVM_operand_obj   +| $MVM_operand_read_reg);
++# The IPC sync-step monitor's fire-points (monitor_rkx.c beside perl6_ops.c): statement, call, value, return.
++MAST::ExtOpRegistry.register_extop('p6monstmt',
++    $MVM_operand_int64 +| $MVM_operand_read_reg);
++MAST::ExtOpRegistry.register_extop('p6moncall',
++    $MVM_operand_str   +| $MVM_operand_read_reg);
++MAST::ExtOpRegistry.register_extop('p6monval',
++    $MVM_operand_obj   +| $MVM_operand_write_reg,
++    $MVM_operand_str   +| $MVM_operand_read_reg,
++    $MVM_operand_obj   +| $MVM_operand_read_reg);
++MAST::ExtOpRegistry.register_extop('p6monret',
++    $MVM_operand_obj   +| $MVM_operand_write_reg,
++    $MVM_operand_str   +| $MVM_operand_read_reg,
++    $MVM_operand_obj   +| $MVM_operand_read_reg);
+ 
+ # Register a de-sugar from one QAST tree to another.
+ sub register_op_desugar(
+@@ -177,6 +190,10 @@
+ $ops.add_hll_moarop_mapping('Raku', 'p6clearpre',      'p6clearpre'     );
+ $ops.add_hll_moarop_mapping('Raku', 'p6setfirstflag',  'p6setfirstflag' );
+ $ops.add_hll_moarop_mapping('Raku', 'p6takefirstflag', 'p6takefirstflag');
++$ops.add_hll_moarop_mapping('Raku', 'p6monstmt',       'p6monstmt'      );
++$ops.add_hll_moarop_mapping('Raku', 'p6moncall',       'p6moncall'      );
++$ops.add_hll_moarop_mapping('Raku', 'p6monval',        'p6monval'       );
++$ops.add_hll_moarop_mapping('Raku', 'p6monret',        'p6monret'       );
+ 
+ $ops.add_hll_op('Raku', 'p6return', :!inlinable, -> $qastcomp, $op {
+     my $value_res := $qastcomp.as_mast(nqp::atpos($op, 0), :want($MVM_reg_obj));
+--- a/src/Perl6/Actions.nqp
++++ b/src/Perl6/Actions.nqp
+@@ -1352,6 +1352,7 @@
+             $*POD_PAST,
+             statementlist_with_handlers($/)
+         );
++        $mainline[1] := QAST::Stmts.new(mon_call('main'), $mainline[1]) if mon_active();
+ 
+         $world.install_lexical_symbol($unit, '$?SOURCE', $*OMIT-SOURCE
+             ?? $world.find_single_symbol_in_setting('Nil')
+@@ -1553,6 +1554,7 @@
+ 
+     method statementlist($/) {
+         my $past := QAST::Stmts.new( :node($/) );
++        my int $mon := mon_active();
+         if $<statement> {
+             my int $i := 0;
+             my int $e := nqp::elems($<statement>) - 1;
+@@ -1593,6 +1595,7 @@
+                         }
+                     }
+                     $ast.node($<statement>[$i]);
++                    $ast := mon_wrap_stmt($<statement>[$i], $ast) if $mon && !mon_is_decl_stmt($<statement>[$i]);
+                     $past.push( $ast );
+                 }
+                 ++$i;
+@@ -4206,6 +4209,9 @@
+                 $block[1] := wrap_return_type_check($block[1], $*DECLARAND);
+             }
+         }
++        if mon_active() && $<deflongname> && !$<onlystar> {
++            $block[1] := QAST::Stmts.new(mon_call(~$<deflongname>), mon_ret(~$<deflongname>, $block[1]));
++        }
+         $block.blocktype('declaration_static');
+ 
+         # Attach signature, building placeholder if needed.
+@@ -4666,6 +4672,9 @@
+                 $past[1] := wrap_return_type_check($past[1], $*DECLARAND);
+             }
+         }
++        if mon_active() && $<longname> {
++            $past[1] := QAST::Stmts.new(mon_call(~$<longname>), mon_ret(~$<longname>, $past[1]));
++        }
+         $past.blocktype('declaration_static');
+ 
+         my $name;
+@@ -7185,7 +7194,7 @@
+             $has_stuff := 0;
+         }
+         elsif $stmts == 1 {
+-            my $elem := try $past.ann('past_block')[1][0][0];
++            my $elem := try mon_first_stmt_child($past.ann('past_block')[1][0]);
+             $elem := $elem[0] if nqp::istype($elem, QAST::Want);
+             $elem := $elem[0] if nqp::istype($elem, QAST::Op) && $elem.op eq 'p6fatalize';
+             if nqp::istype($elem, QAST::Op) && $elem.name eq '&infix:<,>' {
+@@ -7570,6 +7579,10 @@
+             }
+         }
+ 
++        if $key eq 'infix' && nqp::istype($past, QAST::Op) && $past.op eq 'call' && !$past.name && +@($past) >= 1
++          && nqp::istype($past[0], QAST::Op) && $past[0].name eq '&METAOP_ASSIGN' && mon_active() && mon_is_named_store($/[0].ast) {
++            $past := mon_value_after($past, $/[0].ast);
++        }
+         make $past;
+     }
+ 
+@@ -7913,6 +7926,61 @@
+ #?if js
+     my @native_assign_ops := ['', 'assign_i', 'assign_n', 'assign_s', 'assign_i64', 'assign_u64'];
+ #?endif
++    # The IPC sync-step monitor (SCRIP MONITOR-BINARY-DESIGN.md, THE ORACLES ARE INSTRUMENTED IN THEIR OWN SOURCE): the
++    # user's compilation unit is compiled with a fire-point before every statement of every statement list, at every
++    # user routine's entry, after every store to a named variable and around every routine body so each return reports its value. CORE and
++    # any precompilation (--output) are never instrumented, so library code is never an event; RAKUDO_MON=0 turns the
++    # injection off for a control compile. The fire-points are silent unless the MONITOR_READY_PIPE/GO pipes are set.
++    sub mon_active() {
++        return 0 if $*COMPILING_CORE_SETTING;
++        my $o := %*COMPILING<%?OPTIONS>;
++        return 0 if nqp::ishash($o) && (nqp::existskey($o, 'output') || nqp::existskey($o, 'o'));
++        my $e := nqp::atkey(nqp::getenvhash(), 'RAKUDO_MON');
++        nqp::isnull($e) || $e ne '0'
++    }
++    sub mon_stmt($/) {
++        my $op := QAST::Op.new( :op('p6monstmt'), QAST::IVal.new( :value(HLL::Compiler.lineof($/.orig, $/.from, :cache(1))) ) );
++        $op.sunk(1);
++        $op
++    }
++    sub mon_wrap_stmt($/, $ast) {
++        QAST::Stmt.new( :node($/), :returns($ast.returns), mon_stmt($/), $ast )
++    }
++    sub mon_call($name) {
++        my $op := QAST::Op.new( :op('p6moncall'), QAST::SVal.new( :value($name) ) );
++        $op.sunk(1);
++        $op
++    }
++    sub mon_ret($name, $body) {
++        my $op := QAST::Op.new( :op('p6monret'), QAST::SVal.new( :value($name) ), $body );
++        $op.wanted(1);
++        $op
++    }
++    sub mon_first_stmt_child($stmt) {
++        $stmt := $stmt[1] if nqp::istype($stmt, QAST::Stmt) && nqp::elems(@($stmt)) > 1
++            && nqp::istype($stmt[0], QAST::Op) && $stmt[0].op eq 'p6monstmt';
++        $stmt[0]
++    }
++    sub mon_var_name($var) {
++        my $n := $var.name;
++        nqp::eqat($n, '$', 0) ?? nqp::substr($n, 1) !! $n
++    }
++    sub mon_is_named_store($var) {
++        nqp::istype($var, QAST::Var) && ($var.scope eq 'lexical' || $var.scope eq 'lexicalref')
++            && nqp::index('$@%', nqp::substr($var.name, 0, 1)) >= 0 && nqp::chars($var.name) > 1
++    }
++    sub mon_value_after($past, $var) {
++        my $read := QAST::Var.new( :name($var.name), :scope('lexical') );
++        $read.returns($var.returns) if $var.scope eq 'lexicalref';
++        my $op := QAST::Op.new( :op('p6monval'), QAST::SVal.new( :value(mon_var_name($var)) ), $read );
++        $op.sunk(1);
++        QAST::Stmts.new( :resultchild(0), $past, $op )
++    }
++    sub mon_is_decl_stmt($stmt) {
++        my $e := $stmt<EXPR>;
++        $e && ($e<routine_declarator> || $e<package_declarator> || $e<type_declarator> || $e<regex_declarator>) ?? 1 !! 0
++    }
++
+     sub assign_op($/, $lhs_ast, $rhs_ast, :$initialize) {
+         my $past;
+         my $var_sigil;
+@@ -8004,6 +8072,7 @@
+             $past := QAST::Op.new( :node($/), :op('p6store'),
+                 $lhs_ast, $rhs_ast);
+         }
++        $past := mon_value_after($past, $lhs_ast) if mon_active() && mon_is_named_store($lhs_ast);
+         $past
+     }
+ 
+--- a/tools/templates/moar/Makefile.in
++++ b/tools/templates/moar/Makefile.in
+@@ -47,6 +47,8 @@
+ @bpv(RAKUDO_OPS_DLL)@  = @bpm(RAKUDO_OPS_DIR)@@nfp(/@perl6_ops_dll@)@
+ @bpv(RAKUDO_OPS_OBJ)@  = @nfp(@bpm(RAKUDO_OPS_DIR)@/perl6_ops@moar::obj@)@
+ @bpv(RAKUDO_OPS_DLL_SRC)@  = @nfp(src/vm/moar/ops/perl6_ops.c)@
++@bpv(RAKUDO_MON_RKX_OBJ)@  = @nfp(@bpm(RAKUDO_OPS_DIR)@/monitor_rkx@moar::obj@)@
++@bpv(RAKUDO_MON_LIB_OBJ)@  = @nfp(@bpm(RAKUDO_OPS_DIR)@/monitor_ipc_lib@moar::obj@)@
+ 
+ @for_langalias(@for_toolchain(@bpv(@uclangalias@_@uctoolchain@_RUNNER)@ = @langalias@-@toolchain@-m@runner_suffix@
+ )@)@
+@@ -86,6 +88,8 @@
+   @bpm(INST_RAKUW)@@moar::obj@ \
+   @bpm(RAKUDO_OPS_DLL)@ \
+   @bpm(RAKUDO_OPS_OBJ)@ \
++  @bpm(RAKUDO_MON_RKX_OBJ)@ \
++  @bpm(RAKUDO_MON_LIB_OBJ)@ \
+ @for_langalias(@for_toolchain(  @bpm(@uclangalias@_@uctoolchain@_RUNNER)@ \
+ )@)@  rakudo-m.c \
+   rakudo-m@moar::obj@ \
+@@ -109,10 +113,12 @@
+ 
+ @include(Makefile-backend-common)@
+ 
+-@bpm(RAKUDO_OPS_DLL)@: @bpm(RAKUDO_OPS_DLL_SRC)@
++@bpm(RAKUDO_OPS_DLL)@: @bpm(RAKUDO_OPS_DLL_SRC)@ src/vm/moar/ops/monitor_rkx.c src/vm/moar/ops/monitor_ipc_lib.c src/vm/moar/ops/monitor_ipc_lib.h
+ 	@echo(+++ Compiling	$@)@
+ 	$(NOECHO)@bpm(CC)@ @moar::ccswitch@ @moar::ccshared@ @bpm(CFLAGS)@ @bpm(MOAR_INC_PATHS)@ @moar::ccout@@bpm(RAKUDO_OPS_OBJ)@ @bpm(RAKUDO_OPS_DLL_SRC)@
+-	$(NOECHO)@bpm(LD)@ @moar::ldswitch@ @moar::lddir@"@moar::libdir@" @moar::ldshared@ @bpm(LDFLAGS)@ @bpm(LDLIBS)@ @moar::ldout@@bpm(RAKUDO_OPS_DLL)@ @bpm(RAKUDO_OPS_OBJ)@ @moar_lib@
++	$(NOECHO)@bpm(CC)@ @moar::ccswitch@ @moar::ccshared@ @bpm(CFLAGS)@ @bpm(MOAR_INC_PATHS)@ @moar::ccout@@bpm(RAKUDO_MON_RKX_OBJ)@ src/vm/moar/ops/monitor_rkx.c
++	$(NOECHO)@bpm(CC)@ @moar::ccswitch@ @moar::ccshared@ @bpm(CFLAGS)@ @bpm(MOAR_INC_PATHS)@ @moar::ccout@@bpm(RAKUDO_MON_LIB_OBJ)@ src/vm/moar/ops/monitor_ipc_lib.c
++	$(NOECHO)@bpm(LD)@ @moar::ldswitch@ @moar::lddir@"@moar::libdir@" @moar::ldshared@ @bpm(LDFLAGS)@ @bpm(LDLIBS)@ @moar::ldout@@bpm(RAKUDO_OPS_DLL)@ @bpm(RAKUDO_OPS_OBJ)@ @bpm(RAKUDO_MON_RKX_OBJ)@ @bpm(RAKUDO_MON_LIB_OBJ)@ @moar_lib@
+ 
+ @backend_prefix@-runner-default: @bpm(INST_RAKUDO)@ @bpm(INST_RAKUDO_DEBUG)@
+ 

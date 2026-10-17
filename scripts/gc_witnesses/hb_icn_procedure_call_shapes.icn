@@ -1,0 +1,33 @@
+procedure p0()
+   return 1;
+end
+procedure p1(a)
+   return a + 1;
+end
+procedure p2(a, b)
+   return a + b;
+end
+procedure p3(a, b, c)
+   return a + b + c;
+end
+procedure p4(a, b, c, d)
+   return a + b + c + d;
+end
+procedure gen(n)
+   local i;
+   every i := 1 to n do suspend i;
+end
+procedure big(a, b, c, d, e, f)
+   local x, y;
+   x := a + b; y := c + d;
+   return x + y + e + f;
+end
+procedure main()
+   local s, i;
+   s := p0() + p1(1) + p2(1, 2) + p3(1, 2, 3) + p4(1, 2, 3, 4);
+   write(s);
+   every i := gen(3) do write(i);
+   write(big(1, 2, 3, 4, 5, 6));
+   p1(7);
+   if p2(1, 1) = 2 then write("two");
+end

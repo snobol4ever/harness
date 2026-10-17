@@ -1,0 +1,10 @@
+*  WITNESS for the by-name read arm of bb_var_global.cpp (NV_GET_fn): a protected pattern variable (ARB, FAIL, ...) is kept
+*  out of the global-address table (gva_collect.c), so reading it as a VALUE goes by name -- the shape of the Prolog parser's
+*  uop_on = FAIL. The ref is cut from /home/resources/x64/bin/sbl -bf, never from ./scrip.
+        X = ARB
+        F = FAIL
+        'abcd' X . Y 'c'
+        OUTPUT = 'Y=' Y
+        OUTPUT = ('abcd' F 'x') 'F matched'
+        OUTPUT = 'end'
+END

@@ -1,0 +1,5 @@
+        DEFINE('F()')                           :(F_END)
+F       F = 'f'                                 :(RETURN)
+F_END   OUTPUT = F(1)
+        OUTPUT = F(1, 2) F()
+END

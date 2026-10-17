@@ -1,0 +1,4 @@
+SLICE=20:e5-wwwwww|e6-wwwwwww|e7-w|e8-ww|e9-www|e10-wwww|e11-wwwww|e12-wwwwww|e13-wwwwwww|e14-w|e15-ww|e16-www|e17-wwww|e18-wwwww|e19-wwwwww|e20-wwwwwww|e21-w|e22-ww|e23-www|e24-wwww|
+SORT=19:key0=val19|key1=val5|key10=val12|key11=val17|key12=val3|key13=val8|key14=val13|key15=val18|key16=val4|key17=val9|key18=val14|key2=val10|key3=val15|key4=val20|key5=val6|key6=val11|key7=val16|key8=val2|key9=val7|
+L=40 A=30 T=19
+TAIL=e40-wwwwww HEAD=e1-ww

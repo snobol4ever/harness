@@ -1,0 +1,110 @@
+# c_allocator_baseline.tsv -- the counts Lon's eradication order drives to 0 (coo, CEO-842/843).
+# Written by `util_c_allocator_census.py --write-baseline`; the landing that lowers a count
+# rewrites this file in the same sitting.  key	count
+# CRITERION CHANGED 2026-09-18 (coo, ceo CEO-856): the ratcheted arena key is now arena_in_runtime_ratcheted,
+# the ARENA-IN-RUNTIME total MINUS class 3 RULED-PERMANENT. The raw total is still measured and PRINTED; it is
+# no longer the ratcheted number, because CEO-854 ruled five sites permanently and correctly arena and a ratchet
+# whose target is unreachable by construction teaches the fleet to raise baselines. The number is UNCHANGED at
+# 114 on this tree (class 3 is empty until a landing writes a row), so this line changes the CRITERION and not
+# the reading -- and any site that leaves the ratchet must be named with a ruling that resolves, or the census reds.
+# CRITERION ADDED 2026-09-18 (coo, CEO-850 / RULES.md line 29 as amended): `libc_owned_misuse` 6 -- a block
+# LIBC owns handed to OUR bookkeeping.  The sweep rewrote free(X) to ct_drop(X) mechanically, and six of
+# those X are getline-owned: core.c 601/604/610 (line), core.c 1343 (_io_chan[ch].buf, which is the cfo's
+# holder 12), by_name_dispatch.c 7178/7182 (ln).  ct_drop reads the 32 bytes BEFORE the block hunting a
+# magic header it does not own and returns silently when it does not match, so each of these LEAKS -- the
+# MAGIC guard makes it safe, not correct.  Ratcheted to 0; the cure is the cfo's, src/runtime is theirs.
+# ⛔ NOT the same population as the twelve forbidden names: RULES.md line 29 says the census gains THOSE
+# in the same landing as their cure, and it has not.  This counts ownership MISMATCHES and reads SIX, not
+# zero -- it names an open door rather than printing a zero over one.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-18 (cfo, CEO-847/850 destination (3)): `arena_in_runtime` and
+# `arena_in_runtime_debt` fall 126 -> 114.  ⛔ THOSE TWELVE LEFT BY DESTINATION (3), NOT BY BEING ROOTED, and
+# the distinction matters to anyone reading the ratchet as progress on holders: they are gc_heap.c's own
+# bookkeeping -- the live-block array and its flags, the visited set and its rehash, the slot set, the mark
+# worklist, the root-range table, the frame-map table, the segment table, the index buffer and the page map --
+# and they now mmap directly, because the collector's tables cannot live in the heap they manage and must not
+# depend on an allocator whose lifetime it does not control.  They are never reachable from the running
+# program and will NEVER acquire a root, so class-2 debt falling by twelve here is correct and is NOT evidence
+# that any holder was rooted.  The remaining 114 still ratchet to 0 the way RULES.md line 29 class (2) says.
+# The ceo's CEO-842 note recording the 0 -> 126 rise is regenerated away by --write-baseline and lives in git
+# history at SCRIP 36f0edab5, as its own last line predicted.
+# COUNT EARNED 2026-09-18 (cfo, CEO-850/854): `libc_owned_misuse` falls 6 -> 0 and NONE of the six lines the
+# coo named was edited.  The sweep had rewritten free(X) into ct_drop(X) over six glibc-owned getline buffers;
+# ct_drop hunts a magic header it does not own, does not find it and returns silently, so each one LEAKED --
+# the MAGIC guard made it safe rather than correct.  The five getline call sites now read through one shared
+# arena-backed reader, so THE BLOCK IS OURS and every one of those ct_drop calls is correct as written.  The
+# cure is in the declarations, not at the six sites, which is why the count moves without those lines changing.
+# ⛔ The same landing adds ONE ct_grow (the shared reader's buffer) which is CLASS 3, ruled permanent by
+# CEO-854 and licensed in c_allocator_ruled_permanent.tsv -- arena_in_runtime reads 115 while the ratcheted
+# debt stays 114, because a buffer the program only ever sees copies of can never repay a debt by being rooted.
+# CRITERION ADDED 2026-09-18 (coo, on the cto's finding): `outside_src_sites` enters the ratchet at 20 -- the
+# tracked malloc/calloc/realloc/free sites OUTSIDE src/, which every seat's census has read as ZERO because
+# every census was scoped to src/.  ⛔ LON'S ACCEPTANCE TEST IS TEXTUAL AND IT IS OVER THE SOURCE BASE: a grep
+# for the four names returns 20 today -- 16 in ../harness/scripts/monitor/monitor_ipc_bin_csn.c, 3 in
+# tools/rakugram/prec_test.c, 1 in tools/rakugram/rk_main.c.  CEO-842 splits the work one directory per seat
+# and TOP-LEVEL tools/ AND ../harness/scripts/ ARE NAMED IN NO LANE, so these survived every sweep while every instrument
+# reported zero -- the population the order sweeps and the population the acceptance test grades are not the
+# same population, and the gap is invisible from inside any single lane.
+# ⛔ IT IS RATCHETED, NOT HARD-ZERO, AND THAT IS DELIBERATE: whether these convert is a RULING nobody has made,
+# and an instrument does not rule.  It counts them, names them per file, and refuses to let the number grow
+# while the question is open.  If the ceo rules them in, the count falls to 0 and the ratchet reds asking for
+# the win to be recorded.
+# ⛔ AND THIS FILE'S NOTES NOW SURVIVE --write-baseline (same landing).  The writer opened with "w" and a fixed
+# header, deleting every note on each regeneration; the ceo's own note above says their CEO-842 note was
+# "regenerated away ... as its own last line predicted", and I destroyed both of the surviving ones by
+# regenerating before I fixed it.  Notes are carried forward now, so the convention no longer depends on each
+# caller remembering to restore them by hand.
+# RULED 2026-09-18 (ceo CEO-878, on the coo's measurement): THE 20 CONVERT, AND THEN THEY PARK until the
+# collector milestone. The ceo checked the sites rather than assuming -- all 16 in monitor_ipc_bin_csn.c allocate
+# and free their OWN blocks (names, lens, copy, the getline line buffer) and none frees csnobol4-owned memory, so
+# mechanical conversion is safe and does not repeat the getline ownership defect. A host-tool exemption was
+# refused as exactly the carve-out RULES.md forbids a seat writing for itself. ⛔ THE RATCHET STAYS AT 20 --
+# counted, named, not hard-zero, cannot grow -- because converting them moves neither conservative total nor
+# unpolled by one point and Lon's order is GC to 100%. The ceo takes the 20 themselves when unpolled reads 0.
+# ⛔ TWO FACTS RECORDED NOW SO THE NUMBER IS HONEST RATHER THAN SURPRISING LATER (CEO-878, each verified here by
+# the coo rather than carried on the telegram's word):
+#   (a) monitor_ipc_bin_csn.c also uses getline -- 1 site, measured -- which RULES.md line 31 forbids under
+#       CEO-850's widened set, so the conversion is 20 allocator sites PLUS one getline, not 20.
+#   (b) BOTH build recipes compile a SINGLE source file and will need ct_arena.c added to the command line:
+#       ../harness/scripts/build_monitor_ipc_bin_libraries.sh, and ../harness/scripts/test_gate_rakugram_precedence.sh which builds its
+#       temp-dir copies at lines 46 and 52 (`gcc -O0 -Wall -o .../prec_test ...prec_test.c` and the hll pair).
+#       Neither names ct_arena today, so a conversion that only edits the .c files will not link.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-19 cto, SCRIP this landing: arena_in_runtime 114 -> 112. THE CO-EXPRESSION CREATE PATH NO LONGER COPIES THE CREATOR'S ACTIVATION FRAME INTO A ct_alloc BLOCK (rt_coexpr.c: the snapshot `ct_alloc(span)` and its `ct_drop` are gone -- the new thread copies the creator's live frame onto its OWN stack at create time, ARCH-GC 6.2g, Lon's word that frame bytes never leave the RSP/RBP stack). NOTHING ABOUT THE CRITERION MOVED: same census, same spelling; two arena sites left the tree because the object they held is a frame image, which lives on a stack.
+# CRITERION UNCHANGED, TWO COUNTS RECORDED 2026-09-23 coo (ceo CEO-1213/CEO-1215, the cfo's 15:33 finding): arena_in_runtime 107 -> 111 is the cto's d363c713e (CTO-151: the runtime-compiled pattern strings moved to the compile-time arena ON PURPOSE) -- class-2 DEBT, ratcheted, and never class-1 evasion (arena_in_runtime_evasion stays 0); it is recorded here, with its reason, because the landing that made it never was. outside_src_sites 20 -> 25 is ../harness/scripts/monitor/oracles/monitor_ipc_lib.c from the ceo's d85e6186d, the IPC library linked into the Icon and GNU Prolog ORACLE forks -- COUNTED, NOT DECLARED OUT (CEO-1215 on CEO-878's precedent, which refused a host-tool exemption for monitor_ipc_bin_csn.c, the csnobol4 oracle's library): it joins that convert-then-park population. The regenerated file moves exactly these three keys; every other count reads unchanged.
+# CRITERION CHANGED 2026-09-23 coo (row instruments-the-c-allocator-census-knows-open-memstream-as-libc-owned-..., the cfo's CFO-153 item 4, ceo CEO-1208): a NEW ratcheted count, libc_doors -- every CALL under src/ of a libc HEAP door other than the four names (strdup, strndup, aligned_alloc, memalign, valloc, reallocarray, getline, getdelim, posix_memalign, asprintf, vasprintf, open_memstream, open_wmemstream; strdupa is stack and excluded) -- recorded at 1: the bare strdup at src/runtime/by_name_dispatch.c (6a6983d9e) that was in no count. open_memstream also joined the ownership test's out-parameter doors, so a memstream buffer handed to ct_drop is LIBC-OWNED-MISUSE again (0 on this tree since a35750d9b). Every other count unchanged.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-23 cto (CTO-152 registration, ceo CEO-1213/1215): arena_in_runtime_ratcheted and arena_in_runtime_debt fall 111 -> 107. The four sites the coo recorded at 107 -> 111 are the strings the runtime pattern compiler bakes (pattern_match.c ct_strndup x2, ct_strdup x2, SCRIP d363c713e); they are now CLASS 3 in c_allocator_ruled_permanent.tsv under CEO-924 -- imm64 operands of rtpat code that outlives every collection, whose collected-heap copy WAS the holder of CTO-152 -- so they leave the ratcheted debt without moving back to the collected heap. arena_in_runtime (the unsplit total) stays 111; CLASS-3-RULED-PERMANENT 1 -> 5.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-24 hq_prolog (row prolog-all-test-suites-...-the-home-stretch): arena_in_runtime_ratcheted and arena_in_runtime_debt fall 107 -> 106 BY STRUCTURE, NOT BY A CURE: the op/3 rewrite (by_name_dispatch.c, dop_pl_op -> rt_pl_dop_op_c) walks an atom and a list of names in one loop, so its two ct_strdup sites for an operator name became one. The runtime still copies the operator's type and name into the compile-time arena for the parser's operator table -- that debt is unchanged and is named here so the lower number is not read as a site retired.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-26 hq_icon (row icon-every-suite-to-100-under-nonet-ceo-1266): arena_in_runtime_ratcheted and arena_in_runtime_debt fall 106 -> 105 BY STRUCTURE, NOT BY A CURE: by_name_dispatch.c's two ct_zalloc sites for the ICN_OPGEN handle (the ... and ! arms of rt_call_value_gen_h) became the one in icn_opgen_new, and the handle no longer holds a heap DESCR.
+# RE-BASELINED 2026-09-26 (hq_raku, cto ruling on CEO-1289 phase 2): `arena_in_runtime_ratcheted` and
+# `arena_in_runtime_debt` 105 -> 111 (hq_icon lowered it to 105 the same evening) by RECLASSIFICATION, NOT A NEW SITE. re.c is the runtime regex engine (nfa_build,
+# called by by_name_dispatch.c re_match/re_match_global at run time for every smartmatch) and was misfiled under
+# src/parsers/raku, where the census's path test could not see it; it moved to src/runtime with the flex/bison parser's
+# deletion. Its six compile-time-arena calls were runtime-reachable all along: src/runtime/re.c:40 ct_grow (state growth),
+# :198 ct_alloc (code-assertion copy), :302 ct_alloc (the Nfa), :305 ct_alloc (the state vector), :322 ct_drop x2 (nfa_free).
+# Paid back by row raku-the-regex-engine-nfa-storage-leaves-the-compile-time-arena-for-the-runtime-allocator-and-the-arena-
+# in-runtime-ratchet-returns-to-106 (owner hq_raku, the cfo's allocator: the collected GC heap, one block per regex).
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-28 hq_prolog (ee6777bcc): arena_in_runtime_ratcheted 111 -> 108 -- acyclic_term/1 takes its path set and path array from rt_wsb_alloc/rt_wsb_realloc (workspace heap blocks the collector reclaims) instead of ct_alloc/ct_grow/ct_drop, so the three arena sites its old array walk carried leave the runtime.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-28 hq_pascal (row pascal-records-and-arrays-are-typed-storage-no-delimiter-joined-strings-lon-2026-09-28, step 1): arena_in_runtime_ratcheted and
+# arena_in_runtime_debt fall 108 -> 93 BY DELETION (111 -> 96 before hq_prolog's ee6777bcc landed first): a Pascal record is now an ARBLK_t block of DESCR slots on the collected heap, so
+# by_name_dispatch.c's record-string splicers (pas_nrec_subrec_set, __pas_nrec_pfield_set, __pas_nrec_field_set, __pas_nrec_update, __pas_nrec_deref_set) and their ct_alloc/ct_drop buffers left the tree.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-28 hq_prolog (Lon's lifetime rule, CEO-1354): arena_in_runtime_ratcheted and _debt 93 -> 91 -- the Prolog format column-stop segment (plc_fb_stop) is a stack array sized to its need, its ct_alloc/ct_drop pair gone from the runtime.
+# CRITERION UNCHANGED, COUNT EARNED 2026-09-28 hq_pascal (typed-storage row, step 3): arena_in_runtime_ratcheted and arena_in_runtime_debt fall 91 -> 88 (93 -> 90 before hq_prolog's lifetime landing arrived first) BY DELETION -- __pas_field_set's
+# ct_alloc splice copy and the SOH walks it fed are gone: a pointer-to-char-array cell takes a byte splice (pas_str_setch) on the collected heap.
+# CRITERION UNCHANGED, COUNT EARNED 2026-10-07 cfo (row snobol4-g-eval-frames-call-stack-v-and-the-four-dead-second-stacks-leave-the-runtime-...-ceo-1543, RULES.md FACT RULE NO GLOBAL HOLDS A STACK):
+# arena_in_runtime_ratcheted and arena_in_runtime_debt fall 88 -> 86 BY DELETION, two sites: runtime_shim.h's _core_abort_stack (a ct_grow'd jmp_buf* stack with zero callers of push_abort_handler/
+# pop_abort_handler/ABORT_fn) and porttrace.cpp's g_emit.pl_trace_stk (the RT_DIAG port trace's ct_grow'd uid/number stack in plt_push; the depth column it fed is now one counter cell) left the tree
+# as two of the four dead second stacks of CEO-1542/1543; nothing moved to the arena and nothing moved off the collected heap.
+# COUNT EARNED 2026-10-09 hq_raku (row raku-every-suite-to-100-under-nonet-ceo-1266): arena_in_runtime_ratcheted and arena_in_runtime_debt fall 86 -> 80 BY A CURE: re.c, the byte-wise Pike NFA that ct_alloc'd its states and capture pools at run time, is deleted; its replacement rx.c allocates only through rt_wsb_alloc, a work-space block the collector owns.
+forbidden_total	0
+malloc	0
+calloc	0
+realloc	0
+free	0
+aliases	0
+alias_calls	0
+arena_in_runtime_ratcheted	80
+arena_in_runtime_evasion	0
+arena_in_runtime_debt	80
+container_unmarked_live	1
+libc_owned_misuse	0
+libc_doors	0
+outside_src_sites	4

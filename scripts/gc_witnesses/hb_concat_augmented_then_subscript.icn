@@ -1,0 +1,7 @@
+procedure main()
+   local a, i;
+   a := "ab"; a ||:= "cd"; a[2:3] := "XYZ"; write(a);
+   every i := 1 to 5 do { a ||:= "-" || i; a[1:2] := "q" };
+   write(a);
+   a := "p"; a ||:= "q"; a[2:3] := "RS"; write(a, " ", *a);
+end

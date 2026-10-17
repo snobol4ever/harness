@@ -1,0 +1,9 @@
+	&ANCHOR = 1
+	S = "hello world"
+	S ARB . A " " REM . B	:F(NO)
+	OUTPUT = A ":" B
+	N = 3
+LOOP	OUTPUT = "n=" N
+	N = GT(N,0) N - 1	:S(LOOP)
+NO	OUTPUT = "done"
+END

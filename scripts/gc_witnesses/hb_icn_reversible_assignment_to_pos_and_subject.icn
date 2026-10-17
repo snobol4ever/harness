@@ -1,0 +1,17 @@
+# WITNESS for the two bare polls of bb_rev_assign_global.cpp's keyword arm: &pos <- v (rt_keyword_pos_set_strict) and &subject <- v (NV_GET_fn saves the old subject).
+procedure main();
+   local s;
+   "abcdef" ? {
+      every (&pos <- 3 | 5) & write(&pos, " ", move(2));
+      write("after every: ", &pos);
+      if (&pos <- 9) then write("no") else write("out of range &pos fails, &pos is still ", &pos);
+   };
+   "hello" ? {
+      move(2);
+      ((&subject <- "world") & write(&subject, " ", &pos, " ", tab(0))) | write("never");
+      ((&subject <- "moon") & move(9)) | write("receded: ", &subject, " ", &pos);
+   };
+   s := "outer";
+   s ? { ((&subject <- "inner") & &fail) | write("restored: ", &subject); };
+   write("done");
+end

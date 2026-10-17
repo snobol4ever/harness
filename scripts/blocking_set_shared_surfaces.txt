@@ -1,0 +1,40 @@
+# blocking_set_shared_surfaces.txt -- THE WATCHED SURFACE OF THE RACE DETECTOR, DECLARED (coo 2026-09-20, ceo
+# row instruments-the-blocking-set-is-367-serial-arms-and-it-caps-every-seat-in-the-fleet).
+#
+# run_blocking_set.sh --shards N snapshots the directories named below -- TOP LEVEL ONLY -- before and after
+# every arm it runs, and an arm whose observed change set intersects a CONCURRENT arm's ON THE SAME PATH is
+# rc=2 REFUSED, named with the other arm and the path, and NEVER a red.
+#
+# ⛔ WHY A REFUSAL AND NOT A RED, which is the whole reason this file exists: a fan-out that turns a collision
+# into a red manufactures an UNATTRIBUTABLE FINDING -- a seat reads a red arm, cannot reproduce it serially,
+# and either chases a defect that is not there or learns to ignore reds. Ten seats on one box cannot afford
+# either. rc=2 says the one true thing: THIS ARM WAS NOT MEASURED. The cure for a repeat offender is a line in
+# blocking_set_serial_arms.txt, not a tolerance.
+#
+# ⛔ WHAT IT DETECTS AND WHAT IT DOES NOT -- stated, because a detector that is silent about its blind spots
+# gets read as a proof of absence:
+#   · a TOP-LEVEL entry of a watched directory that is created, removed, or whose mtime or size moved. A
+#     directory's own mtime moves when an entry is added or removed inside it, so litter one level down IS
+#     seen; a file MODIFIED IN PLACE two or more levels down is NOT.
+#   · it is an OBSERVED-CHANGE set and not a proven write: an arm that merely READ a path another arm was
+#     rewriting records that path too and is named in the same cluster. That is deliberate -- a reader racing
+#     a writer is the same could-not-measure, and attributing a write to a process needs a tracer we are not
+#     paying for per arm.
+#   · NOT WATCHED: /tmp/si_objs-* (the per-tree build objects -- only a build writes there and the declaration
+#     carries no build arm), and the per-arm mktemp workdirs (280 of the arms build one; two mktemp names
+#     cannot collide, which is exactly why those arms are the shardable ones).
+#
+# FORMAT: a line beginning `!` is an EXCLUSION, an ERE matched against the absolute PATH; anything else is a
+# directory, relative to the checkout root or absolute. WHOLE-LINE COMMENTS ONLY -- a trailing comment would be
+# part of the path.
+.
+out
+# ⛔ .git IS EXCLUDED, AND IT IS THE ONE EXCLUSION THAT CHANGES A READING. Dozens of arms run git (status,
+# rev-parse, log, diff) and a plain READ refreshes .git/index, which moves .git's own mtime -- so watching it
+# would convict every concurrent pair of git-reading arms of racing. That is the detector's own greedy failure
+# mode, the one FAIL_ONCE=2 in the acceptance gate exists to prove it can still be caught. git's own index
+# lock makes the concurrent refresh safe; an arm that COMMITS is a different fault and the blocking set has none.
+!/\.git($|/)
+# __pycache__ is written by python's own temp-and-rename on import. Two arms importing the same helper are not
+# racing; they are both being imported for.
+!/__pycache__($|/)

@@ -1,0 +1,6 @@
+        DEFINE('F(X)')                              :(F_END)
+F       F = X + 1                                   :(RETURN)
+F_END
+        NAME = 'F'
+        OUTPUT = APPLY(NAME, 41)
+END

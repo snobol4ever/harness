@@ -1,0 +1,14 @@
+        DATA('PAIR(LEFT,RIGHT)')
+        P = PAIR('one','two')
+        N = .LEFT(P)
+        Q = PAIR('three','four')
+        M = .RIGHT(Q)
+        I = 0
+CHURN   I = LT(I,400) I + 1                        :F(DONE)
+        S = DUPL('x', 200) I
+        T = S S                                     :(CHURN)
+DONE    $N = 'uno'
+        $M = 'cuatro'
+        OUTPUT = LEFT(P) ' ' RIGHT(P) ' ' LEFT(Q) ' ' RIGHT(Q)
+        OUTPUT = SIZE(T)
+END

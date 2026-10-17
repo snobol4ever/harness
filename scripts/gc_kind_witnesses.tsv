@@ -1,0 +1,49 @@
+# gc_kind_witnesses.tsv -- THE DECIDABLE TEST'S PER-KIND TABLE (coo, F6 step 6; ceo CEO-869/876).
+#
+# ⛔ THE QUESTION THIS TABLE EXISTS TO ANSWER IS NOT "DOES THE COLLECTOR FIND THE ROOTS".  It is the one
+# hq_snocone asked and the ceo made critical path: CAN A SUITE BE GREEN WHILE IT DOES NOT?  The cto measured 320
+# rungs entries across four frontends with ZERO collections at default settings -- so every rung suite board we own
+# is green over a collector that never ran, and when three seats land 208 poll sites nothing we own can tell us
+# whether they are right.  A green suite is not evidence about the collector unless something forces the
+# collector to run, forces the heap to slide under a live value, and then READS THAT VALUE BACK.
+#
+# ⛔ THE DENOMINATOR IS THE DECLARATION, NEVER THIS FILE.  The gate parses every `#define HB_*` out of
+# src/runtime/rt/gc_heap.h and requires a row here for each one.  A kind added without a row REFUSES rc=2 --
+# because a kind nobody witnesses is exactly a kind the suite can stay green while the collector loses it, and a
+# hand-maintained list that silently falls behind its declaration is the defect wearing the cure's clothes.
+#
+# class:
+#   WITNESSED          -- a program holds a value of this kind across forced collections and reads it back.
+#                         ⛔ The gate PROVES the witness allocates the kind it claims, from SCRIP_ALLOC_HIST,
+#                         rather than believing this file: a witness that stopped allocating its kind is a
+#                         witness that passes while testing nothing, which is the whole disease.
+#   COLLECTOR-INTERNAL -- written by the collector itself; no program can hold one, so no program can witness it.
+#   BOUNDARY           -- not a block type at all: a comparison floor in a _Static_assert.
+#   NO-PRODUCER        -- the collector has a live arm for this kind and NOTHING IN THE TREE ALLOCATES IT.
+#                         ⛔ Named, not excused: an arm that cannot be reached has never run, so the day a
+#                         landing starts producing the kind, its walk is running for the first time in
+#                         production.  Measured 2026-09-18 by reading every rt_agg_alloc/rt_gcheap_alloc call
+#                         site in the tree, not by grepping for the name.
+#
+# kind	value	class	witness	expect	note
+HB_ZCOL	200	BOUNDARY	-	-	only appears in the _Static_assert at gc_heap.c:265 fixing DT_S below the block-type floor; never passed to rt_gcheap_alloc
+HB_FILL	202	COLLECTOR-INTERNAL	-	-	the filler block the collector writes over vacated space during compaction (gc_heap.c:254, :797); a program cannot hold one
+HB_ZBLK	204	NO-PRODUCER	-	-	read at gc_heap.c:745 when counting foreign blocks; allocated by no site in the tree
+HB_WSC	205	WITNESSED	hb_ws.icn	WITNESS-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-END	rt_heap_alloc_c; the same witness covers it because the Icon string path allocates both
+HB_AGGV	206	WITNESSED	hb_aggv.icn	66	rt_agg_alloc kind 0, the aggregate value vector; 19 call sites
+HB_AGGP	207	NO-PRODUCER	-	-	the mark walk has a dedicated TBPAIR arm at gc_heap.c:775, but rt_agg_alloc is called with kind 0 and kind 2 only -- never 1 -- so that arm is unreachable in this tree
+HB_AGGT	208	WITNESSED	hb_aggt.icn	165	rt_agg_alloc kind 2, the table block
+HB_AGGB	211	WITNESSED	hb_aggt.icn	165	the table's bucket storage; allocated by the same table witness
+HB_ARR	212	WITNESSED	hb_arr.sno	ALPHAOMEGA	aggregates.c / core.c / pattern_match.c; a SNOBOL4 ARRAY is the shortest path to one
+HB_DINST	213	WITNESSED	hb_dinst.icn	72	the datatype instance (an Icon record and its fields)
+HB_DVEC	214	WITNESSED	hb_arr.sno	ALPHAOMEGA	the descriptor-array backing store an ARBLK keeps its elements in; rt_ws_alloc_descr stamps the kind so the element count comes from the block header rather than from the owner, and the same SNOBOL4 ARRAY witness allocates one
+HB_WSB	215	WITNESSED	hb_wsb.icn	10-//	rt_wsb_alloc, the ATOMIC sibling of HB_WS: a byte buffer with no pointers in it, so the collector marks and RELOCATES the block but never scans its interior (the HB_AGGB shape, and Boehm & Weiser 1988's atomic/composite split). Converted sites hold only memcpy/snprintf/strftime bytes and a NUL.
+HB_PLDB	216	WITNESSED	hb_pldb.pl	WITNESS	the Prolog clause-database head (pl_db_t: one pointer to its slot vector); visitor pl_db_gc_visit in unification.c beside the structs; HB_PLJ (209) retired 2026-09-19 when its last eight sites took these four kinds
+HB_PLDBS	217	WITNESSED	hb_pldb.pl	WITNESS	the clause slot vector (pl_db_slot_t: one DESCR per slot, visited by count from the block size); assertz allocates it
+HB_PLDBR	218	WITNESSED	hb_pldb.pl	WITNESS	the database registry (pl_db_reg_t: one pointer to its key vector); the first assertz allocates it
+HB_PLDBK	219	WITNESSED	hb_pldb.pl	WITNESS	the registry key vector (pl_db_key_t: a name and one pointer to a database head)
+HB_PVEC	220	WITNESSED	hb_datblk.sno	PVEC-3-4-BOX-7-t	a vector of raw collected-heap pointers (rt_pvec_alloc; the visitor raw-visits every non-null word): minted 2026-09-19 on the coo's ask (coo-105) for driver_call.c:88 and driver_data.c:384/:387, which take it in the coo's landing together with this row's witness
+HB_DTP	221	WITNESSED	hb_dtp.sno	DTP-zz-abc-301	the pattern value head (DTP_t: a code pointer never visited, the rcp tree pointer, the frozen snapshot vector); visitor pm_struct_gc_visit beside the struct in pattern_match.c; a DT_P descriptor now marks its head through gc_visit_one
+HB_DTPRCP	222	WITNESSED	hb_dtp.sno	DTP-zz-abc-301	the pattern value's tree node (dtp_rcp_t: a string pointer and two child pointers, scalars); same visitor
+HB_TRIE	223	WITNESSED	hb_trie.pl	TRIE-39	the trie header (pl_trie_t: the root node, the entry vector -- an HB_PVEC -- and two DESCR, the tabling status and data); visitor pl_trie_gc_visit in unification.c beside the structs; reached from the registry's tries vector (pl_db_reg_t)
+HB_TRIEN	224	WITNESSED	hb_trie.pl	TRIE-39	the trie node (pl_trie_node_t: a token DESCR, a value DESCR, the parent pointer, the child vector -- an HB_PVEC); same visitor; one per token of every key inserted

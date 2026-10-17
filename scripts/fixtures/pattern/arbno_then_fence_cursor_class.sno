@@ -1,0 +1,40 @@
+* FENCE(P) backtracked into hands the element on its left the cursor it found at FENCE's alpha (cfo 2026-09-30, the class of
+* arbno_literal_body_then_fence.sno): a frameless ARBNO left of the fence, reached directly and through a literal, with a FENCE
+* body that takes the frame route (an alternation inside), and controls that never depended on the cursor. C4 (*P = ARBNO(' b')
+* left of the fence) is NOT here: a FENCE after a deferred pattern whose thunk stays live addresses its slots 128 bytes off (a
+* separate defect, rowed), and that arm passed only where the misplaced stores fell on dead slots.
+	Q = ' ' 'b'
+	S = 'a b b'
+	S ? POS(0) 'a' ARBNO(' b') FENCE(' ' 'b') RPOS(0)	:S(Y1)F(N1)
+Y1	OUTPUT = 'C1 yes'	:(T2)
+N1	OUTPUT = 'C1 no'
+T2	S ? POS(0) 'a' ARBNO(' b') FENCE(' ' 'b' | 'x') RPOS(0)	:S(Y2)F(N2)
+Y2	OUTPUT = 'C2 yes'	:(T3)
+N2	OUTPUT = 'C2 no'
+T3	S ? POS(0) 'a' ARBNO(' b') FENCE(' ') 'b' RPOS(0)	:S(Y3)F(N3)
+Y3	OUTPUT = 'C3 yes'	:(T5)
+N3	OUTPUT = 'C3 no'
+T5	S = 'a bxyz'
+	S ? POS(0) 'a' ARBNO(' b') 'x' FENCE(LEN(1)) 'q'	:S(Y5)F(N5)
+Y5	OUTPUT = 'C5 yes'	:(T6)
+N5	OUTPUT = 'C5 no'
+T6	S = 'a b'
+	S ? POS(0) 'a' ARBNO(LEN(2)) FENCE(LEN(1)) RPOS(0)	:S(Y6)F(N6)
+Y6	OUTPUT = 'C6 yes'	:(T7)
+N6	OUTPUT = 'C6 no'
+T7	S = 'a b b'
+	S ? POS(0) 'a' ARBNO(' b') FENCE(*Q) RPOS(0)	:S(Y7)F(N7)
+Y7	OUTPUT = 'C7 yes'	:(T8)
+N7	OUTPUT = 'C7 no'
+T8	S ? POS(0) 'a' ARBNO(' b') FENCE((' ' 'b') . X) RPOS(0)	:S(Y8)F(N8)
+Y8	OUTPUT = 'C8 yes ' X	:(T9)
+N8	OUTPUT = 'C8 no'
+T9	S = 'abbx'
+	S ? POS(0) ('a' | 'ab') FENCE(LEN(1) | LEN(2)) 'x' RPOS(0)	:S(Y9)F(N9)
+Y9	OUTPUT = 'C9 yes'	:(T10)
+N9	OUTPUT = 'C9 no'
+T10	S = 'a b b c'
+	S ? POS(0) 'a' ARBNO(' b' FENCE(' ' | '')) 'c' RPOS(0)	:S(Y10)F(N10)
+Y10	OUTPUT = 'C10 yes'	:(END)
+N10	OUTPUT = 'C10 no'
+END

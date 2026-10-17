@@ -1,0 +1,6 @@
+scrip: error 102: numeric expected
+  at icn_18.icn:5
+  offending value: record Rat_1(1,2)
+  in main()
+  in {record Rat_1(1,2) % 2} from line 5 in icn_18.icn
+rc=1

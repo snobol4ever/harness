@@ -1,0 +1,64 @@
+# gc_differential_configs.tsv -- THE DECLARED GC CONFIGURATIONS of the differential oracle (coo, 2026-09-21,
+# MODE TENET, row gc-the-differential-oracle-same-program-under-two-gc-configurations-must-agree).
+#
+# name <TAB> env assignments <TAB> why this is a DISTINCT axis and not a relabelling of another
+#
+# ⛔⭐ EVERY MODIFIER IS COMPOSED WITH A COLLECTING AXIS, AND THAT IS A MEASUREMENT AND NOT A STYLE CHOICE.
+# Measured on hb_bignum_length.icn at origin f7669a6a8 with SCRIP_ZETA_TELEM=1, collections per run:
+#     shipped 0 | SCRIP_GC_RELOC=1 0 | SCRIP_GC_POISON=0 0 | SCRIP_GC_PLANT_SHIFT=65536 0
+#     SCRIP_HEAP_MB=1 1 | SCRIP_GC_STRESS=3 2598
+# RELOC, POISON and PLANT_SHIFT were MODIFIERS OF A COLLECTION. Declared alone at the shipped arena they never
+# ran, their collector-event fingerprints were byte-identical (empty), and a differential over them reported
+# AGREEMENT over a population of ONE configuration wearing four names. Composed with SCRIP_HEAP_MB=1 they
+# separated: reloc changed the move fingerprint, plant64k took the collection count 1 -> 2, and nopoison dropped
+# the [ZGC-POISON] line entirely. The harness re-proves this per program and refuses UNDISTINGUISHED rather
+# than trusting this file, so a knob that stops taking is caught here on the day it stops.
+#
+# ⛔ shipped IS DELIBERATELY LAST AND IS EXPECTED TO COLLAPSE ON SMALL PROGRAMS. It is the configuration we
+# ship, so a divergence between it and any forced configuration is the most valuable finding this instrument
+# can produce -- but on a program that never allocates a megabyte it collects zero times and joins the
+# UNDISTINGUISHED group by measurement. Keeping it named makes that visible instead of absent.
+#
+# ⛔⭐ THE arena1 ROWS NAME THE GC-TESTING ARENA, SCRIP_HEAP_KB=128 (ceo CEO-1261, 2026-09-25): they spelled SCRIP_HEAP_MB=1, which
+# is 1024 KB -- and since Lon's word of 2026-09-25 ("Let's set our default stack size and heap size for SCRIP to be the same as
+# SPITBOL.") the shipped window IS SPITBOL's -i1m, so shipped and arena1 became ONE configuration under two names and hb_bignum_length
+# fell from 7 distinct fingerprints to 6. At 128 KB (the Makefile's SCRIP_HEAP_KB_TINY) hb_arr.sno reads 7 distinct where it read 2 and
+# arena1 collects 21 times on hb_bignum_length where MB=1 collected once: the rows now are the tiny arena their descriptions name.
+# ⛔ THE FIRST ROW IS THE REFERENCE CONFIGURATION: it is the one run TWICE for the determinism pre-pass, so it
+# must be a configuration that COLLECTS on nearly everything. arena1 is that row.
+#
+# ⛔⭐ RE-CUT 2026-10-15 (hq_runtime, ceo CEO-1794, ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 15): SCRIP_GC_RELOC and SCRIP_GC_PLANT_SHIFT
+# are RETIRED with the old collector road. The exact compactor moves every live block whose rank differs from its address, so "forced
+# relocation" is no longer a separate road through the collector, and the one forced-movement plant left is SCRIP_GC_PLANT_FLIP=1: the
+# slide's BASE word, which copies every live block to ground disjoint from its old address -- above the old top when the live set fits
+# there, else to the arena base when every block lands below its old address -- and 0xDB-poisons and PROT_NONE-quarantines ALL of the old
+# ground, so a stale pointer faults instead of reading intact bytes. The three retired rows (arena1_reloc, arena1_plant64k, arena1_plant4k)
+# collapsed onto arena1 by measurement on the day the knobs stopped being read, and are replaced by ONE row, arena1_stress3_flip, because
+# FLIP applies only where a collection has room to copy the live set away from itself: on hb_bignum_length.icn at 128 KB it DECLINES on
+# every one of the 10 on-demand collections (a full window has no disjoint ground) and applies on all 3062 collections under stress 3, 1020
+# of them to the arena base and 2042 above the old top -- both destinations in one run, so the flip row carries both sides of the plant's
+# own boundary and no second flip row is an axis. The two plant points of the masking boundary (4096 below it, 65536 above) have no FLIP
+# counterpart: FLIP has no size, and its poison-and-quarantine of the whole old ground is the cure for the masking the register's
+# hb_file_name_unrooted row describes, not a sample on either side of it.
+arena1	SCRIP_HEAP_KB=128	the tiny arena, Lon's mandatory pass (CEO-938/939): collects wherever a program allocates a megabyte. The reference row -- run twice per program to separate a program's own nondeterminism from a collector divergence.
+arena1_nopoison	SCRIP_HEAP_KB=128 SCRIP_GC_POISON=0	vacated ground is NOT overwritten with 0xDB. Distinguished by the ABSENCE of the [ZGC-POISON] line, which is why the fingerprint is taken over every tag and not over the move columns -- those are identical to arena1.
+arena1_stress3	SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3	collects at every third opportunity rather than on demand: 3062 collections on hb_bignum_length where arena1 takes 10. Not "more of the same axis" -- it reaches collection points that heap pressure alone never reaches.
+arena1_stress3_flip	SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3 SCRIP_GC_PLANT_FLIP=1	the forced-movement axis: the same 3062 collection points as arena1_stress3, every live block copied to ground disjoint from its old address at each of them (the [GC-FLIP] plant: banner once per collection), the old ground poisoned and quarantined, so a stale pointer faults and cannot accidentally still work. Composed with stress 3 because an on-demand collection at a full window has no disjoint ground and the plant DECLINES there (10 of 10 on hb_bignum_length at 128 KB).
+shipped		the configuration we actually ship, no knobs at all. Collects only where the program allocates past the shipped arena, so it is UNDISTINGUISHED on small programs by measurement and a genuine fifth axis on large ones.
+#
+# ⛔ KNOBS DELIBERATELY NOT DECLARED HERE, AND WHY -- a knob left out silently looks like an oversight, so the
+# omission is reasoned. SCRIP_GC_BIRTH_LEDGER (the cfo's rung 2, SCRIP 25e134aa3) records block births and is
+# observable ONLY when a stale read faults; declared as a configuration it would produce an identical
+# collector-event fingerprint on every program that does not fault, so it would be UNDISTINGUISHED on the
+# whole population and add cost for no axis. It is a MODIFIER in the sense this file uses the word, and the
+# cfo classified it that way themselves after this file's measurement reached them. SCRIP_GC_TRAP and
+# SCRIP_GC_POISON's trap half are the same shape: they change what happens AT a fault, not what the collector
+# does, and this instrument's population exits rc=0. ⭐ AND THE LIMIT THAT FOLLOWS IS WORTH STATING: THIS
+# HARNESS CANNOT GRADE A FAULT-ONLY KNOB AT ALL. It compares the bytes a program prints, so a knob whose whole
+# effect is the quality of a diagnostic is invisible to it and needs a planted fault, which is the cfo's gate
+# and not this one. The differential finds a SILENT WRONG ANSWER; the birth ledger NAMES THE BLOCK once
+# something faults. Neither reaches the other's class, and hb_file_name_unrooted is the proof: it exits 0
+# under every configuration and merely prints different bytes, so no trap fires and no ledger engages.
+# SCRIP_GC_PLANT_FLIP alone at the tiny arena is not declared for the reason the re-cut block gives: it declines on every on-demand
+# collection there, and a row that differs from arena1 only by its decline lines would be a fingerprint of the plant's refusal, not of
+# a relocation (the floor's 2026-09-25 note rejected the 64 KB shift plant on exactly that ground).

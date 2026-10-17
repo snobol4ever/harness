@@ -1,0 +1,22 @@
+procedure sq(n)
+   local r;
+   r := n * n;
+   return r;
+end
+procedure main()
+   local i, s, t, L, T, x, y;
+   s := "";
+   L := [];
+   T := table();
+   every i := 1 to 3 do {
+      s ||:= sq(i);
+      put(L, i);
+   };
+   T["k"] := 2.5;
+   L[1] := 10;
+   x := 1; y := 2;
+   x :=: y;
+   write(s, " ", L[1], " ", T["k"], " ", x, y);
+   if x < 5 then x <- 7;
+   write(x);
+end

@@ -1,0 +1,8 @@
+# WITNESS for HB_DINST (213) -- a record (datatype instance) and its fields.
+record pt(x, y)
+procedure main();
+   local i, held, churn;
+   held := pt(31, 41);
+   every i := 1 to 300 do churn := repl("z", 100);
+   write(held.x + held.y);
+end

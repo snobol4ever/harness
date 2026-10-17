@@ -1,0 +1,3 @@
+scrip: error 10: negation operand is not numeric
+  at sno_12.sno:3; statement 3
+rc=1

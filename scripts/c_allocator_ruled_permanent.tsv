@@ -1,0 +1,30 @@
+# c_allocator_ruled_permanent.tsv -- CLASS 3, RULED-PERMANENT ARENA (coo, on ceo CEO-856; the cfo's shape, CFO/cfo-859).
+#
+# ⛔ WHAT THIS FILE IS FOR.  Class 2 DEBT means "was a libc malloc, now in the arena, holder not yet rooted" and its
+# whole meaning is that it RATCHETS TO ZERO as each holder is rooted.  That model assumes every arena-in-runtime site
+# is a holder waiting to be rooted.  Some are not: the ceo ruled CEO-854 that all five getline buffers are PERMANENTLY
+# and CORRECTLY arena -- the program is always handed a copy through rt_heap_strdup_c and no buffer pointer ever enters
+# anything the collector walks, so there is no future landing in which rooting them becomes correct.  Counting a site
+# like that as debt makes the ratchet's target of zero UNREACHABLE BY CONSTRUCTION, which is how a ratchet stops being
+# believed.  Class 3 is counted and PRINTED, and is NOT driven to zero.
+#
+# ⛔⭐ THE CITATION IS A HARD ARM, NOT A COURTESY FIELD (ceo CEO-856, quoting the cfo's own sentence).  An entry whose
+# cited ruling DOES NOT RESOLVE in .github/GOAL-CEO.md REDS the gate, because a class-3 entry with no ruling behind it
+# is a CLASS 1 EVASION IN DISGUISE and this file would otherwise be the one hiding place in the whole census.  The
+# resolver reads the MERGED .github: an unmerged .github cannot resolve today's ruling and REFUSES rc=2 rather than
+# convicting an honest entry -- could-not-measure is never red and never green.
+#
+# ⛔ THE KEY IS (file, ALLOCATOR SYMBOL), NEVER A LINE NUMBER.  Line numbers do not survive a sweep that rewrites 79
+# files.  `symbol` is the allocator called (ct_alloc, ct_grow, ...), which is what the census records per site.  A row
+# licences AT MOST `sites` calls of that symbol in that file -- an extra one falls straight back into class 1/2 and is
+# graded exactly as before, so a row can never become a blanket amnesty for a file.
+#
+# ⛔ IT IS EMPTY TODAY AND THAT IS THE CORRECT RESTING STATE.  No site is ruled permanent until somebody writes it down
+# with the ruling that made it so.  The first row is the cfo's getline landing under CEO-854; the coo built the class,
+# not the entry, because naming another seat's site before their landing is guessing at code that does not exist yet.
+#
+# file	symbol	sites	ruling	reason
+src/runtime/core/core.c	ct_grow	1	CEO-854	the shared line readers buffer: every runtime getline buffer is scratch whose bytes are copied onto the collected heap by rt_heap_strdup_c before the program can see them, so no live DESCR ever points at it and there is no landing in which rooting it becomes correct
+src/runtime/pattern_match.c	ct_strndup	2	CEO-924	dtp_rcp_tree hands the RUNTIME pattern compiler (bb_compile_pat_tree_sz) the QLIT and cset literal copies it bakes as imm64 operands of rtpat code in the box pool, which outlives every collection; a collected-heap copy there is an address no root holds and was reclaimed at the next collection (CTO-152, SCRIP d363c713e; the imm64 scan [RTPAT-HEAPIMM] and test_gate_gc_runtime_compiled_code_bakes_no_arena_address.sh hold it) -- the compile-time arena is the only home that lives as long as the code, which is the rule CEO-924 applied to the strings the emitter bakes
+src/runtime/pattern_match.c	ct_strdup	2	CEO-924	the ARB$n iteration-variable name and the TT_DEFER variable name that dtp_rcp_tree bakes into runtime-compiled rtpat code as by-name load operands: the ARB$n heap copy (rt_heap_strdup_c) was the holder of CTO-152 -- read as vacated ground the first collection after the compile once the deferred entry was polled -- and the code that references them lives in the box pool for the process, so the compile-time arena is their only correct home under CEO-924
+src/runtime/rt/rt.c	ct_zalloc	1	CEO-1272	a registry that hands out addresses lives in the arena (CEO-1272 (1), the DatType precedent): the emitter bakes each direct-call slot address into emitted code, so the 64-slot chunks may never move and a collected-heap block would; the chunk table itself is a cv_t that grows geometrically, the chunks are permanent and correct arena

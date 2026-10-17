@@ -1,0 +1,18 @@
+# WITNESS for the CREATE RECORD's INHERITED SUBJECT: a co-expression created inside a string scan inherits
+# &subject/&pos, which iconx keeps global; collections between the create and the first activation slide the
+# subject block, and the trampoline loads r13/r15 at the body's first entry from the rooted global scan_subj,
+# which the collector relocates (the entry package holds no subject word). The body then reads the first word
+# of the subject through that register. Correct output: alpha, then done.
+global G, L
+procedure junk_maker()
+   return list(2000, 7);
+end
+procedure main()
+   local line, letters, junk, i, s, e;
+   every i := 1 to 2 do { L := junk_maker(); if i = 1 then G := L };
+   every i := 1 to 400 do junk := repl("w", 60);
+   letters := &lcase ++ &ucase;
+   line := repl("alpha beta gamma ", 4) || "omega";
+   line ? { tab(upto(letters)); e := create tab(many(letters)); G := &null; every i := 1 to 60 do junk := list(3, i); s := @e; write(s) };
+   write("done");
+end

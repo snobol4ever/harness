@@ -1,0 +1,113 @@
+               &ANCHOR        =  0
+               &FULLSCAN      =  1
+               epsilon        =
+
+               VOWELS         =  'aeiou'
+               LC             =  'abcdefghijklmnopqrstuvwxyz'
+
+               DEFINE('cons(i)c')                                   :(cons_end)
+cons           c              =  SUBSTR(stem, i, 1)
+               c              ANY(VOWELS)                          :S(FRETURN)
+               DIFFER(c, 'y')                                       :S(RETURN)
+               EQ(i, 1)                                             :S(RETURN)
+               cons(i - 1)                                          :S(FRETURN)F(RETURN)
+cons_end
+
+               DEFINE('m()i,n,L')                                   :(m_end)
+m              L              =  SIZE(stem)
+               EQ(L, 0)                                             :S(RETURN)
+               i              =  1
+               n              =  0
+mC0            GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :F(mV1)
+               i              =  i + 1                              :(mC0)
+mV1            i              =  i + 1
+mV             GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :S(mC1)
+               i              =  i + 1                              :(mV)
+mC1            i              =  i + 1
+               n              =  n + 1
+               m              =  n
+mC             GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :F(mV1)
+               i              =  i + 1                              :(mC)
+m_end
+
+               DEFINE('vowelinstem()i,L')                           :(vis_end)
+vowelinstem    L              =  SIZE(stem)
+               i              =  1
+visL           GT(i, L)                                             :S(FRETURN)
+               cons(i)                                              :F(RETURN)
+               i              =  i + 1                              :(visL)
+vis_end
+
+               DEFINE('doublec(j)')                                 :(dc_end)
+doublec        LT(j, 2)                                             :S(FRETURN)
+               DIFFER(SUBSTR(stem, j, 1), SUBSTR(stem, j - 1, 1))   :S(FRETURN)
+               cons(j)                                              :S(RETURN)F(FRETURN)
+dc_end
+
+               DEFINE('cvc(i)c')                                    :(cvc_end)
+cvc            LT(i, 3)                                             :S(FRETURN)
+               cons(i)                                              :F(FRETURN)
+               cons(i - 1)                                          :S(FRETURN)
+               cons(i - 2)                                          :F(FRETURN)
+               c              =  SUBSTR(stem, i, 1)
+               c              ANY('wxy')                           :S(FRETURN)F(RETURN)
+cvc_end
+
+               DEFINE('g_vis()')                                    :(g_vis_end)
+g_vis          vowelinstem()                                        :F(gv_no)
+               g_vis          =                                     :(RETURN)
+gv_no          g_vis          =  FAIL                               :(RETURN)
+g_vis_end
+
+               DEFINE('g_m_gt_0()')                                 :(g_m0_end)
+g_m_gt_0       GT(m(), 0)                                           :F(gm0_no)
+               g_m_gt_0       =                                     :(RETURN)
+gm0_no         g_m_gt_0       =  FAIL                               :(RETURN)
+g_m0_end
+
+               DEFINE('s_ee()')    :(s_ee_end)
+s_ee           target         =  'ee'
+               s_ee           =  .dummy                             :(NRETURN)
+s_ee_end
+
+               DEFINE('a_s1ab_cleanup()L,last,P')                   :(a_s1ab_end)
+a_s1ab_cleanup
+               L              =  SIZE(stem)
+               P              =  RTAB(2) ('at' | 'bl' | 'iz') RPOS(0)
+               stem           P                                     :F(a_s1_next1)
+               target         =  'e'                                :(a_s1_done)
+a_s1_next1     doublec(L)                                           :F(a_s1_next2)
+               last           =  SUBSTR(stem, L, 1)
+               last           ANY('lsz')                           :S(a_s1_next2)
+               stem           =  SUBSTR(stem, 1, L - 1)
+               target         =                                     :(a_s1_done)
+a_s1_next2     EQ(m(), 1)                                           :F(a_s1_else)
+               cvc(L)                                               :F(a_s1_else)
+               target         =  'e'                                :(a_s1_done)
+a_s1_else      target         =
+a_s1_done      a_s1ab_cleanup =  .dummy                             :(NRETURN)
+a_s1ab_end
+
+               p1b            =
++              POS(0)
++              ( RTAB(3) $ stem 'eed' (*g_m_gt_0() (epsilon . *s_ee()) | epsilon)
++              | RTAB(2) $ stem 'ed'  *g_vis() (epsilon . *a_s1ab_cleanup())
++              | RTAB(3) $ stem 'ing' *g_vis() (epsilon . *a_s1ab_cleanup())
++              )
++              RPOS(0)
+
+               DEFINE('stemmer(token)')                             :(stm_end)
+stemmer        token          =  REPLACE(token, &UCASE, LC)
+               target         =  'UNSET'
+               token          p1b                                   :F(stgz)
+               DIFFER(target, 'UNSET')                              :F(stgz)
+               token          =  stem target
+stgz           stemmer        =  token                              :(RETURN)
+stm_end
+
+NEXT           word           =  INPUT                              :F(END)
+               OUTPUT         =  stemmer(word)                      :(NEXT)
+END

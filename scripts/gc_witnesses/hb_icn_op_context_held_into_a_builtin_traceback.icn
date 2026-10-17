@@ -1,0 +1,13 @@
+#  hb_icn_op_context_held_into_a_builtin_traceback.icn -- the PLANT carrier of g_icn_op.  Unplanted, repl's push
+#  clears the context and the traceback ends as iconx's does.  Under SCRIP_GC_PLANT_ICN_OP=1 (HOLD) the context
+#  set by L.x outlives it, so the traceback reads operands stored before 200000 collections whether or not any
+#  site clears; under =2 (HOLD+UNROOT) core_gc_roots also skips its visits and the flip plant faults.
+procedure main()
+   local L, M, i;
+   &error := 1;
+   L := [7, 8, 9];
+   L.x;
+   every i := 1 to 200000 do M := [i, i, i];
+   &error := 0;
+   repl("a", -1);
+end

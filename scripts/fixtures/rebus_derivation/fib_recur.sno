@@ -1,0 +1,8 @@
+*       rival kernel for corpus/benchmarks/rebus/fib_recur.reb -- same naive double recursion.
+        DEFINE('FIB(N)')                        :(FIB_END)
+FIB     LT(N,2)                                 :S(FIB_LO)
+        FIB = FIB(N - 1) + FIB(N - 2)           :(RETURN)
+FIB_LO  FIB = N                                 :(RETURN)
+FIB_END
+        OUTPUT = FIB(24)
+END

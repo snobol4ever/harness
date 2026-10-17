@@ -1,0 +1,5 @@
+scrip: error 101: integer expected or out of range
+  at icn_15.icn:5
+  offending value: record Rat_1(1,2)
+  in main()
+rc=1

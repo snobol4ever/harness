@@ -1,0 +1,19 @@
+# DECLARED.tsv -- dead -I tokens the retired-include gate CARRIES BY NAME, keyed by script and dead directory (never by line:
+# lines move).  cfo 2026-09-28, row instruments-a-retired-include-directory-is-silently-ignored-by-gcc-so-seven-scripts-still-name-it.
+# Every row is a script NO RECIPE REACHES (grep of Makefile, ../harness/scripts/ and .claude/ on SCRIP 17e19edb8: referenced by nothing, or only
+# by a declaration file or another unwired script), last touched 2026-05-31..2026-08-29, compiling against a runtime layout the
+# srcreorg retired.  Repointing their paths would expose extinct APIs, as it did for test_sno_pat_bb_probe.sh; retiring them is
+# a sweep ruling, asked of the ceo.  A row whose (script, directory) no longer reads dead is STALE and reds the gate: remove it
+# in the landing that cured or deleted the script, so this list only shrinks.
+# script<TAB>dead directory<TAB>reason
+build_and_run_test_template_byte_identity.sh	src/runtime/x86	DEAD HARNESS: named only by ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv; last touched 2026-07-17
+build_scrip_rs23_diag.sh	src/runtime/x86	DEAD HARNESS: run only by test_rs23_diag_capture.sh, itself unwired; last touched 2026-08-19
+build_scrip_rs23_diag.sh	src/parser/snobol4	DEAD HARNESS: src/parser became src/parsers in the srcreorg; same script as above
+test_crosscheck_x86_backend.sh	src/runtime/asm	DEAD HARNESS: referenced by nothing; last touched 2026-05-31
+test_icon_x86_runner.sh	src/runtime/x86	DEAD HARNESS: referenced by nothing; last touched 2026-08-29
+test_invariants_3x3_harness.sh	src/runtime/x86	DEAD HARNESS: run only by bake_ird3_baseline.sh, itself unwired; last touched 2026-08-29
+test_invariants_3x3_harness.sh	src/runtime/boxes/shared	DEAD HARNESS: same script as above
+test_invariants_3x3_harness.sh	src/runtime/snobol4	DEAD HARNESS: same script as above
+test_ir_exec_unit.sh	src/runtime/common	DEAD HARNESS: referenced by nothing; last touched 2026-05-31
+test_ir_exec_unit.sh	src/runtime/x86	DEAD HARNESS: same script as above
+test_sm_generator_ch14.sh	src/runtime/x86	DEAD HARNESS: referenced by nothing; last touched 2026-08-19

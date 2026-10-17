@@ -1,0 +1,8 @@
+*       rival kernel for corpus/benchmarks/rebus/string_concat.reb -- same 4000 single-char appends.
+        S = ''
+        I = 1
+LOOP    GT(I,4000)                              :S(DONE)
+        S = S 'x'
+        I = I + 1                               :(LOOP)
+DONE    OUTPUT = SIZE(S)
+END

@@ -1,0 +1,89 @@
+# coercion_surface_sites.tsv -- THE DECLARED COERCION SURFACE (hq_T, ceo CEO-662, 2026-09-13).
+#
+# WHY THIS FILE EXISTS. A new descriptor tag owes an arm in every function that switches on a descriptor's
+# tag, and before this census nobody could say what that set IS. The DT_BOOL tag (CEO-654) leaked three
+# times in a row -- to_real, to_cstring, then is_numeric_like/to_int_slow/rt_concat_parts_d -- and each leak
+# was found the same way: by watching a program that worked yesterday stop working. Three asks in a row is
+# the finding, not the arms (CEO-662). This file turns "the tag leaks and I find out later" into a census.
+#
+# ⛔ IT IS A DATA FILE ON PURPOSE, NOT A GREP. util_coercion_surface_census.py DISCOVERS every
+# `switch (x.v)` / `switch (x->v)` under src/runtime and src/driver and REDS on any site not listed here --
+# so the list cannot quietly fall behind the tree -- but WHICH TAGS a site owes is a human judgement that a
+# grep cannot make, and it is recorded here where a reviewer can disagree with it.
+#
+# COLUMNS:  file <TAB> function <TAB> tags_required <TAB> why
+#   tags_required is a comma-separated list of DT_* names that MUST appear inside that function's body.
+#   `-` means the site is declared as covered-by-inspection and owes no specific tag (it is enumerated so
+#   the discovery arm stays silent, and the `why` says who decided that and on what ground).
+#
+# ⭐ WHAT THIS CENSUS DOES NOT CLAIM. It proves a tag is MENTIONED in a site, never that the arm is correct.
+# Correctness is the oracle's job. This is the cheap half that was missing entirely.
+#
+# ⛔ A SITE WHERE A BOOL MUST COERCE DIFFERENTLY FROM ITS 1/0 INTEGER VALUE IS AN ASK, NOT AN ARM
+# (CEO-662's one standing exception). Such sites carry OPEN-ASK in the `why` column and no DT_BOOL in
+# tags_required, so the census stays green while the question is with the ceo rather than silently answered.
+#
+file	function	tags_required	why
+src/runtime/core/core.c	to_real	DT_BOOL	numeric coercion; a Bool contributes its 1/0 integer value (ceo CEO-656)
+src/runtime/core/core.c	to_int_slow	DT_BOOL	integer twin of to_real; same 1/0 value (ceo CEO-662)
+src/runtime/core/core.c	c_VARVAL_fn	DT_BOOL	THE descriptor->string coercion; renders True/False, the same rendering CEO-656 ruled for to_cstring and CEO-662 for rt_concat_parts_d
+src/runtime/core/core.c	datatype	DT_BOOL	the type-name table; answers BOOL
+src/runtime/core/core.c	_CONVERT_	-	the CONVERT builtin: it tests DT_S only to materialize a counted string view once at entry (rt_cstr_d, hq_snobol4 2026-09-25) and DT_SNUL to route the null string; every value it returns is produced by VARVAL_fn / to_int / to_real / rt_str_to_real / pat_lit / code, each declared above or below, so a new tag is covered by delegation and owes no arm here
+src/runtime/core/core.c	trace_spell_value	DT_BOOL@VARVAL_fn	the tracer spells a value for a trace line; its default arm hands the value to VARVAL_fn, so it is correct BY DELEGATION and owes no arm of its own -- declared as a delegation rather than given a redundant case
+src/runtime/core/core.c	_VDIFFER_	DT_BOOL	DIFFER compares by value; a Bool differs from a value exactly as its 1/0 does
+src/runtime/pattern_match.c	rt_concat_parts_d	DT_BOOL	concatenation renders True/False (ceo CEO-662)
+src/runtime/pattern_match.c	_sort_type_rank	DT_BOOL	sort orders by type rank first; an unranked tag sorts arbitrarily against every other
+src/runtime/by_name_dispatch.c	to_cstring	DT_BOOL	method-dispatch string coercion; renders True/False (ceo CEO-656)
+src/runtime/by_name_dispatch.c	rt_mc_type_name	DT_BOOL	the name method dispatch reports for a receiver; answers Bool
+src/runtime/by_name_dispatch.c	rk_raku_scalar	DT_BOOL	the .raku rendering of one scalar for a typed Hash, Pair, List or Array element: Nil, Bool::True and Bool::False, a number as itself, anything else a quoted Str (hq_raku 2026-10-03)
+src/runtime/by_name_dispatch.c	rk_qh_w	DT_BOOL	a Set / Bag / Mix weight read as a double: an Int, a Num or a Bool (True is 1, False is 0), anything else weighs nothing (hq_raku 2026-10-07)
+src/runtime/by_name_dispatch.c	pas_elem_ref	-	a Pascal array or record element reference: it tests the base for an array block and answers a name-reference to the element cell, else hands the base to pas_arr_get's string element and parks the value in the caller's temporary; DT_BOOL is minted by the Raku lowering alone and a Pascal base is never a Bool, so it owes no arm of its own (hq_pascal 2026-10-09)
+src/runtime/string_builtins.c	ident	DT_BOOL	IDENT compares by value; a Bool is identical exactly as its 1/0 is
+src/runtime/aggregates.c	_tbl_hval	-	OPEN-ASK: the hash half of the same question; it must hash whatever tbl_key_str keys on, so it is ruled with it, never separately
+src/runtime/aggregates.c	_tbl_eq_d	-	OPEN-ASK: the equality half of the same question; same ruling, same reason
+src/runtime/core/coerce.c	descr_to_str	DT_BOOL	the IF-CHAIN descriptor->string coercion, and the one the `~` operator actually reaches (str_concat_d -> descr_to_str). It fell to FAILDESCR, which is why "x" ~ $bool rendered as "x": THE SITE THE SWITCH-ONLY DISCOVERY MISSED
+src/runtime/core/argval.c	VARVAL_d_fn	DT_BOOL	an independent descriptor->string coercion with its own DT_I/DT_R arms; it does NOT delegate to c_VARVAL_fn, so it owes its own True/False
+src/runtime/string_ops.c	c_str_concat_d	DT_BOOL@descr_to_str	concatenation hands every non-DT_S/non-DT_DATA operand to descr_to_str; covered by delegation
+src/runtime/string_ops.c	str_repeat_d	DT_BOOL@descr_to_str	string repetition stringifies its left operand through descr_to_str; covered by delegation
+src/runtime/arithmetic.c	rt_num_arith_body	DT_BOOL@is_numeric_like	all arithmetic gates on is_numeric_like and then coerces with to_real/to_int, each of which carries the tag; covered by delegation
+src/runtime/arithmetic.c	rt_num_pos_sno	DT_BOOL@is_numeric_like	SNOBOL4 affirmation (ceo CEO-1648): a string is read by SPITBOL's grammar (sno_numeric_operand), every other tag is gated by is_numeric_like, then to_real/to_int coerce, each carrying the tag; covered by delegation
+src/runtime/core/core.c	is_numeric_like	DT_BOOL	the gate every arithmetic operation passes through; without the tag here rt_num_arith_body returns FAILDESCR and Bool arithmetic yields nothing (ceo CEO-662)
+src/runtime/string_ops.c	c_str_concat_fracdigit_d	-	Icon's `||` only: it rejects any operand failing core_icn_str_ok before coercing, and no Icon program can hold a Bool -- DT_BOOL is minted by the Raku lowering alone
+src/runtime/arithmetic.c	big_route_operand	-	routes only bignum-shaped operands; a Bool is a 1/0 machine integer and is never a big
+src/runtime/arithmetic.c	rt_cset_compl	-	cset complement; a Bool is not a cset and FAILDESCR is the right answer
+src/runtime/rt/rt.c	c_rt_size_d	-	Icon's `*x`; unreachable from Raku, which is the only frontend that mints DT_BOOL
+src/runtime/pattern_match.c	subscript_get_s	-	subscripting; a Bool is not a container and FAILDESCR is the right answer
+src/runtime/pattern_match.c	subscript_get2_s	-	two-dimensional subscripting; same reason as subscript_get_s
+src/runtime/pattern_match.c	c_rt_subscript_var_s	-	subscripting a variable; same reason
+src/runtime/pattern_match.c	c_rt_subscript_var_container_only_s	-	subscripting restricted to containers; a Bool is explicitly not one
+src/runtime/pattern_match.c	rt_deref_slow	-	dereferences a name; a Bool is a value, never a name
+src/runtime/pattern_match.c	c_rt_assign_var_body	-	assignment target resolution; a Bool is never an lvalue
+src/runtime/pattern_match.c	rt_section_var_s	-	the s[i:j] variable; tests the base for a string that is not a cset (a subscripted cset is a value, hq_icon 2026-09-24), and a Bool is neither, so it takes the value path with FAILDESCR-or-value as before
+src/runtime/pattern_match.c	rt_swap_var	-	the :=: swap; its one-character fast path tests the base cell for a string that is not a cset (hq_icon 2026-09-24) and hands every other value to the two-assignment path, so a Bool is never coerced here
+src/runtime/pattern_match.c	rt_list_bang_var_body	-	list-bang over a container; a Bool is not one
+src/runtime/pattern_match.c	rt_random_var_body	-	random selection from a container; a Bool is not one
+src/runtime/pattern_match.c	EVAL_fn	-	EVAL of a string or expression value; a Bool is neither
+src/runtime/by_name_dispatch.c	rt_call_value	-	calls a value as a function; a Bool is not callable
+src/runtime/by_name_dispatch.c	rt_call_value_gen_h	-	generator half of rt_call_value; same reason
+src/runtime/by_name_dispatch.c	rt_pl_is_cold_c	-	Prolog is/2 arithmetic, the cold evaluator behind the R7 inline arm (rt_pl_dop_is_v_c until 2026-09-26); Prolog cannot hold a DT_BOOL
+src/runtime/by_name_dispatch.c	pl_anum_is_num	-	Prolog's ISO number test behind number_codes/number_chars (DT_I, DT_R, DT_BIG); Prolog cannot hold a DT_BOOL (hq_prolog 2026-09-24)
+src/runtime/by_name_dispatch.c	dop_cmp_fast	-	Prolog term comparison fast path; same reason
+src/runtime/builtins/gen_runtime.c	rt_keyword_random_set	-	SNOBOL4 &RANDOM setter; unreachable from Raku
+src/runtime/builtins/gen_runtime.c	rt_keyword_error_set	-	SNOBOL4 &ERROR setter; unreachable from Raku
+src/runtime/builtins/gen_runtime.c	rt_keyword_trace_set	-	SNOBOL4 &TRACE setter; unreachable from Raku
+src/runtime/builtins/gen_runtime.c	rt_keyword_dump_set	-	SNOBOL4 &DUMP setter; unreachable from Raku
+src/runtime/string_ops.c	core_icn_str_ok	DT_BOOL	⭐ THE SITE THAT PROVES THE NAMING IS NOT A GUIDE: an `icn_`-prefixed gate that Raku's `eq`/`ne`/`lt` REACH. Without the tag, `$bool eq "True"` dies with error 103 "string expected" -- a live defect shipped in the previous landing, which this census found and the switch-only discovery could not (it returns a 0/1 verdict, not FAILDESCR)
+src/runtime/core/core.c	core_icn_chars_ok	DT_BOOL	the chars-family twin of core_icn_str_ok, carried for the same reason: a Bool has a string value, and the previous site is standing proof that an icn_ name does not mean Icon-only
+src/runtime/arithmetic.c	icn_cset_operand_ok	-	cset operands only; Rakudo has no cset and a Bool is correctly rejected
+src/runtime/by_name_dispatch.c	icn_cvt_chars_ok	-	Icon's explicit conversion gate; unreachable from the one frontend that mints DT_BOOL
+src/runtime/by_name_dispatch.c	pl_val_unbound	-	Prolog unbound-variable test; Prolog cannot hold a DT_BOOL
+src/runtime/by_name_dispatch.c	plw_unbound_tag	-	Prolog unbound tag test; same reason
+src/runtime/by_name_dispatch.c	pl_iso_unbound	-	Prolog ISO unbound-variable test; Prolog cannot hold a DT_BOOL
+src/runtime/by_name_dispatch.c	pl_text_is_unbalanced	-	Prolog text balance check; same reason
+src/runtime/by_name_dispatch.c	rt_pl_dop_atomic_list_concat_c	-	Prolog atomic_list_concat/2,3; same reason
+src/runtime/by_name_dispatch.c	rt_pl_dop_concat_atom_c	-	Prolog atom_concat/3; same reason
+src/runtime/rt/gc_heap.c	gc_type_says_ref	-	SCRIP_GC_MAPS reporter only, never a coercion: it asks whether a tag REFERENCES THE HEAP, not what a value coerces to, and it is read-only beside the conservative scan. A new tag owes a row here only if the tag can hold a heap pointer; a new non-referencing tag correctly falls to default and is counted as not-a-slot (F6 step 3, ceo CEO-867)
+src/runtime/rt/gc_heap.c	gc_tag_known	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): it asks whether a byte in a DESCR-kinded frame slot is a known tag at all, so residue in an unzeroed slot is counted (i_badtag) instead of guessed at; a new tag owes a row here because the walker must know it exists.
+src/runtime/rt/gc_heap.c	gc_tag_bears_ptr	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): the pointer-bearing tags gc_visit_one visits, used to tell a tagged spine cell from a raw word beside it; a new tag owes a row here only if the tag can hold a heap pointer, exactly as gc_type_says_ref above.
+src/runtime/pattern_match.c	sort_impl	-	SORT/RSORT arguments: the first must be an array or table (256), a vector's second must convert to a field name (257) -- a Bool is not a name, so 257 is its right answer; the column goes through rt_sno_cnv_num (258)
+src/runtime/icn_extfn.c	icn_extfn_marshal_out	-	Icon loadfunc only: it reads the iconx descriptor word a loaded C function returned (ICNX_D_Integer/Real/Lrgint/External or a string length) and mints the SCRIP value; it switches on no SCRIP tag, so a new SCRIP tag owes no arm here (hq_icon 2026-09-28, external values)

@@ -1,0 +1,13 @@
+        DEFINE('TWICE(X)', 'TWICE_BODY')
+        DEFINE('JOIN(A,B)C', 'JOIN_BODY')
+        OUTPUT = TWICE(21)
+        OUTPUT = JOIN('AB', 'CD')
+        OUTPUT = TWICE(SIZE(JOIN(2, 3)))
+        DEFINE('TWICE(X,Y)', 'TWICE_PAIR')
+        OUTPUT = TWICE(4, 5)
+                                                        :(END)
+TWICE_BODY TWICE = X * 2                                 :(RETURN)
+TWICE_PAIR TWICE = (X + Y) * 2                           :(RETURN)
+JOIN_BODY  C = A B
+           JOIN = C '-' C                                :(RETURN)
+END

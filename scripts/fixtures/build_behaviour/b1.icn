@@ -1,0 +1,7 @@
+procedure main()
+   local x, y, L;
+   x := &null; y := (x === x); write("t=", type(y), " i=", image(y));
+   L := [1,2,3]; every write(!L);
+   write(1 < 2 < 3);
+   if "abc" ? (tab(2), ="c") then write("scan") else write("noscan");
+end

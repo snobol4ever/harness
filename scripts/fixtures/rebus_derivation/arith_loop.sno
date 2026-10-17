@@ -1,0 +1,8 @@
+*       rival kernel for corpus/benchmarks/rebus/arith_loop.reb -- same loop, same bounds.
+        N = 0
+        I = 1
+LOOP    GT(I,300000)                            :S(DONE)
+        N = N + I
+        I = I + 1                               :(LOOP)
+DONE    OUTPUT = N
+END

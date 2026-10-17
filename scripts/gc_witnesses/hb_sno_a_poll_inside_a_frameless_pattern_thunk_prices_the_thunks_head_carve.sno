@@ -1,0 +1,12 @@
+         DEFINE('M(L)')                                           :(ME)
+M        M = .DUMMY
+         N = N + SIZE(TX)                                         :(NRETURN)
+ME       DIGITS = '0123456789'
+         FN = SPAN('.' DIGITS &UCASE '_' &LCASE) $ TX $ *M(1)
+         I = 0
+AGAIN    S = 'ALPHA beta.1 GAMMA_2 delta ' DUPL('x', I)
+LOOP     S POS(0) FN =                                            :F(NEXT)
+         S POS(0) ' ' =                                           :S(LOOP)
+NEXT     I = LT(I, 400) I + 1                                     :S(AGAIN)
+         OUTPUT = 'TX=' SIZE(TX) ' DUMMY=' SIZE(DUMMY) ' N=' N
+END

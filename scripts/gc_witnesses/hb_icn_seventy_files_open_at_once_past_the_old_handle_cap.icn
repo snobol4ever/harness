@@ -1,0 +1,18 @@
+procedure main();
+   local f, i, total, g, n;
+   f := table();
+   every i := 1 to 70 do {
+      f[i] := open("hb_icn_seventy_" || i || ".tmp", "w") | stop("open for writing failed at ", i);
+      write(f[i], i * 3)
+   };
+   every i := 1 to 70 do close(f[i]);
+   total := 0;
+   every i := 1 to 70 do {
+      g := open("hb_icn_seventy_" || i || ".tmp", "r") | stop("open for reading failed at ", i);
+      n := read(g);
+      total +:= n;
+      close(g);
+      remove("hb_icn_seventy_" || i || ".tmp")
+   };
+   write(total);
+end

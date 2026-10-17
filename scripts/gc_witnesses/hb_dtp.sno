@@ -1,0 +1,10 @@
+*  WITNESS for HB_DTP and HB_DTPRCP -- a pattern value built at run time (a deferred variable, a capture, ARB) held in a variable across allocation churn, then matched.
+        Q = 'abc'
+        P = ARB . W *Q . V
+        I = 0
+CHURN   S = S 'x'
+        I = LT(I,300) I + 1                        :S(CHURN)
+        'zzabczz' P                              :F(NO)
+        OUTPUT = 'DTP-' W '-' V '-' SIZE(S)      :(END)
+NO      OUTPUT = 'nomatch'
+END

@@ -1,0 +1,9 @@
+procedure gen(s, n);
+   if n = 0 then { suspend "x" | "y"; fail };
+   s ? { move(1); suspend gen(s[2:0], n - 1) || ":" || *&subject || "/" || &pos };
+end
+procedure main();
+   local s, x;
+   s := repl("ab", 15);
+   every x := gen(s, 24) do write(x);
+end

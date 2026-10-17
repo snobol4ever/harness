@@ -1,0 +1,31 @@
+* An element after FENCE(P) inside an ARBNO body that fails backs into the FENCE, and the FENCE backs into what precedes it in the
+* same iteration -- an inner ARBNO that can still grow -- as SPITBOL does; it must not fail the whole iteration (cfo 2026-09-30).
+	S = 'bbz'
+	S ? POS(0) ARBNO(ARBNO('b') FENCE('b') 'z') RPOS(0)	:S(Y1)F(N1)
+Y1	OUTPUT = 'E1 yes'	:(T2)
+N1	OUTPUT = 'E1 no'
+T2	S = 'qbbz'
+	S ? POS(0) ARBNO('q' ARBNO('b') FENCE('b') 'z') RPOS(0)	:S(Y2)F(N2)
+Y2	OUTPUT = 'E2 yes'	:(T3)
+N2	OUTPUT = 'E2 no'
+T3	S = 'xabyz'
+	S ? POS(0) 'x' ARBNO(('a' | 'ab') FENCE(LEN(1)) 'z') RPOS(0)	:S(Y3)F(N3)
+Y3	OUTPUT = 'E3 yes'	:(T4)
+N3	OUTPUT = 'E3 no'
+T4	S = 'bzbz'
+	S ? POS(0) ARBNO(FENCE('b') 'z') RPOS(0)	:S(Y4)F(N4)
+Y4	OUTPUT = 'E4 yes'	:(T5)
+N4	OUTPUT = 'E4 no'
+T5	S = 'bbbz'
+	S ? POS(0) ARBNO(ARBNO('b') FENCE('b' | 'bb') 'z') RPOS(0)	:S(Y5)F(N5)
+Y5	OUTPUT = 'E5 yes'	:(T6)
+N5	OUTPUT = 'E5 no'
+T6	S = 'bbx'
+	S ? POS(0) ARBNO(ARBNO('b') FENCE('b') 'z') RPOS(0)	:S(Y6)F(N6)
+Y6	OUTPUT = 'E6 yes'	:(T7)
+N6	OUTPUT = 'E6 no'
+T7	S = 'bbz'
+	S ? POS(0) ARBNO(ARBNO('b') 'b' 'z') RPOS(0)	:S(Y7)F(N7)
+Y7	OUTPUT = 'E7 yes'	:(END)
+N7	OUTPUT = 'E7 no'
+END

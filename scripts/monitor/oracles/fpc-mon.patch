@@ -1,0 +1,207 @@
+--- a/compiler/globtype.pas
++++ b/compiler/globtype.pas
+@@ -248,7 +248,9 @@
+          { if applicable, the compiler generates an executable in uf2 format }
+          cs_generate_uf2,
+ 	 { Use ld.lld linker }
+-         cs_link_lld
++         cs_link_lld,
++       { fpc-mon: inject the IPC sync-step monitor's fire-points (-gi) }
++       cs_monitor_ipc
+        );
+        tglobalswitches = set of tglobalswitch;
+ 
+--- a/compiler/options.pas
++++ b/compiler/options.pas
+@@ -3282,6 +3282,14 @@
+                 include(init_settings.globalswitches,cs_use_heaptrc);
+               end;
+           end;
++        'i' :
++          begin
++            { fpc-mon: -gi instruments the module with the IPC sync-step monitor's fire-points }
++            if UnsetBool(More, j, opt, false) then
++              exclude(init_settings.globalswitches,cs_monitor_ipc)
++            else
++              include(init_settings.globalswitches,cs_monitor_ipc);
++          end;
+         'l' :
+           begin
+             if UnsetBool(More, j, opt, false) then
+--- a/compiler/pstatmnt.pas
++++ b/compiler/pstatmnt.pas
+@@ -50,7 +50,7 @@
+        paramgr,
+        { pass 1 }
+        pass_1,htypechk,
+-       nutils,ngenutil,nbas,ncal,nmem,nset,ncnv,ncon,nld,nflw,ninl,
++       nutils,ngenutil,nbas,ncal,nmem,nset,ncnv,ncon,nld,nflw,ninl,nmonipc,
+        { parser }
+        scanner,
+        pbase,ptype,pexpr,
+@@ -307,6 +307,20 @@
+          last:=nil;
+          while current_scanner.token<>_UNTIL do
+            begin
++              { fpc-mon: the statement event, as in statement_block }
++              if mon_ipc_on and not(current_scanner.token in endtokens) and (current_scanner.token<>_FINALIZATION) then
++                begin
++                   if first=nil then
++                     begin
++                        last:=cstatementnode.create(mon_ipc_stmt_node(current_tokenpos.line),nil);
++                        first:=last;
++                     end
++                   else
++                     begin
++                        tstatementnode(last).right:=cstatementnode.create(mon_ipc_stmt_node(current_tokenpos.line),nil);
++                        last:=tstatementnode(last).right;
++                     end;
++                end;
+               if first=nil then
+                 begin
+                    last:=cstatementnode.create(statement,nil);
+@@ -379,6 +393,7 @@
+              hto,hfrom : tnode;
+              backward : boolean;
+              loopvarsym : tabstractvarsym;
++             monname    : string;
+           begin
+              { Check loop variable }
+              loopvarsym:=nil;
+@@ -513,6 +528,10 @@
+              if assigned(loopvarsym) then
+                exclude(loopvarsym.varoptions,vo_is_loop_counter);
+ 
++             { fpc-mon: the control variable's store reports at the top of every iteration }
++             if mon_ipc_on and mon_ipc_store_name(hloopvar,monname) and (monname<>'<lval>') then
++               hblock:=cblocknode.create(cstatementnode.create(mon_ipc_value_node(MON_KIND_VALUE,monname,hloopvar.getcopy),
++                         cstatementnode.create(hblock,nil)));
+              result:=cfornode.create(hloopvar,hfrom,hto,hblock,backward);
+ 
+              { only in tp and mac pascal mode, we care about the value of the loop counter on loop exit
+@@ -1342,6 +1361,7 @@
+          srsym      : tsym;
+          srsymtable : TSymtable;
+          s          : TIDString;
++         monname    : string;
+       begin
+          filepos:=current_tokenpos;
+          code:=nil;
+@@ -1569,6 +1589,10 @@
+                    Message(parser_e_illegal_expression);
+                end;
+ 
++             { fpc-mon: a store to a named variable reports its name and the stored value after the store }
++             if mon_ipc_on and (p.nodetype=assignn) and mon_ipc_store_name(tassignmentnode(p).left,monname) then
++               p:=cblocknode.create(cstatementnode.create(p,
++                    cstatementnode.create(mon_ipc_value_node(MON_KIND_VALUE,monname,tassignmentnode(p).left.getcopy),nil)));
+              code:=p;
+            end;
+          end;
+@@ -1595,6 +1619,20 @@
+ 
+          while not((current_scanner.token=_END) or (current_scanner.token=_FINALIZATION)) do
+            begin
++              { fpc-mon: the statement event fires at the start of every element of a statement list, never for an empty one }
++              if mon_ipc_on and not(current_scanner.token in endtokens) and (current_scanner.token<>_FINALIZATION) then
++                begin
++                   if first=nil then
++                     begin
++                        last:=cstatementnode.create(mon_ipc_stmt_node(current_tokenpos.line),nil);
++                        first:=last;
++                     end
++                   else
++                     begin
++                        tstatementnode(last).right:=cstatementnode.create(mon_ipc_stmt_node(current_tokenpos.line),nil);
++                        last:=tstatementnode(last).right;
++                     end;
++                end;
+               if first=nil then
+                 begin
+                    last:=cstatementnode.create(statement,nil);
+--- a/compiler/psub.pas
++++ b/compiler/psub.pas
+@@ -143,7 +143,7 @@
+        paramgr,
+        fmodule,
+        { pass 1 }
+-       ngenutil,nld,ncal,ncon,nflw,nadd,ncnv,nmem,
++       ngenutil,nld,ncal,ncon,nflw,nadd,ncnv,nmem,nmonipc,
+        pass_1,
+     {$ifdef state_tracking}
+        nstate,
+@@ -933,6 +933,12 @@
+             procdef.parentfpinitblock:=nil;
+           end;
+         addstatement(newstatement,bodyentrycode);
++        { fpc-mon: the call event at every user procedure's entry, then one bind event per parameter }
++        if mon_ipc_proc_wanted(procdef) then
++          begin
++            addstatement(newstatement,mon_ipc_call_node(procdef));
++            addstatement(newstatement,mon_ipc_param_nodes(procdef));
++          end;
+ 
+         if (cs_implicit_exceptions in current_settings.moduleswitches) and
+            (pi_needs_implicit_finally in flags) and
+@@ -967,6 +973,9 @@
+             maybe_add_constructor_wrapper(wrappedbody,true);
+             addstatement(newstatement,wrappedbody);
+             addstatement(newstatement,exitlabel_asmnode);
++            { fpc-mon: the return event at the exit label, before the result is loaded into its register }
++            if mon_ipc_proc_wanted(procdef) then
++              addstatement(newstatement,mon_ipc_return_node(procdef));
+             addstatement(newstatement,bodyexitcode);
+             { set flag the implicit finally has been generated }
+             include(flags,pi_has_implicit_finally);
+@@ -983,6 +992,9 @@
+             if assigned(nestedexitlabel) then
+               addstatement(newstatement,clabelnode.create(cnothingnode.create,nestedexitlabel));
+             addstatement(newstatement,exitlabel_asmnode);
++            { fpc-mon: the return event at the exit label, before the result is loaded into its register }
++            if mon_ipc_proc_wanted(procdef) then
++              addstatement(newstatement,mon_ipc_return_node(procdef));
+             addstatement(newstatement,bodyexitcode);
+             if not is_constructor then
+               begin
+--- a/compiler/utils/ppuutils/ppudump.pp
++++ b/compiler/utils/ppuutils/ppudump.pp
+@@ -2403,7 +2403,8 @@
+         'Assemble on target OS', {cs_assemble_on_target}
+         'Use a memory model to support >2GB static data on 64 Bit target', {cs_large}
+         'Generate UF2 binary', {cs_generate_uf2}
+-        'Link using ld.lld GNU compatible LLVM linker' {cs_link_lld}
++        'Link using ld.lld GNU compatible LLVM linker', {cs_link_lld}
++        'Inject the IPC sync-step monitor fire-points' {cs_monitor_ipc}
+        );
+     localswitchname : array[tlocalswitch] of string[50] =
+        { Switches which can be changed locally }
+--- a/rtl/inc/systemh.inc
++++ b/rtl/inc/systemh.inc
+@@ -1795,6 +1795,9 @@
+ {$i compproc.inc}
+ {$endif fpdocsystem}
+ 
++{ fpc-mon: the IPC sync-step monitor's fire-points (-gi injects calls to them) }
++{$i monipch.inc}
++
+ {*****************************************************************************
+                                Heap
+ *****************************************************************************}
+--- a/rtl/inc/system.inc
++++ b/rtl/inc/system.inc
+@@ -1277,6 +1277,8 @@
+ {$ifdef SYSTEMDEBUG}
+   writeln('InternalExit');
+ {$endif SYSTEMDEBUG}
++  { fpc-mon: MWK_END on the monitor wire, a no-op when the pipes were never opened }
++  fpc_mon_end;
+ {$ifndef CPUAVR}
+   while exitProc<>nil Do
+    Begin
+@@ -2237,3 +2239,6 @@
+ end;
+ {$ENDIF FPC_HAS_SETCTRLBREAKHANDLER}
+ 
++{ fpc-mon: the IPC sync-step monitor's fire-points }
++{$i monipc.inc}
++

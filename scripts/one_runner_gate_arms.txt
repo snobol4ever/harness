@@ -1,0 +1,26 @@
+# one_runner_gate_arms.txt -- the gates that drive a runner as an INSTRUMENT FIXTURE (a slice inside the blocking set, never a
+# seat's board run). Each declares S4E_ONE_RUNNER_FIXTURE="why" on its line 2 and is admitted for every seat; the seat-level
+# S4E_ONE_RUNNER_OVERRIDE is not a road to another language's board (RULES.md SHARED-NODE VERDICT SCOPE, CEO-1232 clause 6;
+# enforced by lib_one_runner.sh and corpus_suite_harness.py, hq_prolog 2026-09-24).
+test_gate_absent_line_is_unproven_not_red
+test_gate_board_population_floor
+test_gate_ceo409_mask_is_read_by_the_bash_runners
+test_gate_crosscheck_family_list_autodiscovers
+test_gate_ec_uni_complete
+test_gate_gc_snocone_deferred_eval_survives_a_collection
+test_gate_gc_the_tiny_arena_is_the_default_of_gc_testing
+test_gate_icn_ipl_cutter_detects_a_nondeterministic_program
+test_gate_icn_ipl_reason_is_the_oracles_own_words
+test_gate_icon_runners_grade_the_preprocess_only_contract
+test_gate_no_library_is_ungradable_and_every_container_names_its_measurement
+test_gate_nreturn_by_name_value_broken
+test_gate_package_runners_grade_a_library_through_its_driver
+test_gate_package_runners_print_the_inventory
+test_gate_probe_suite_grading_path
+test_gate_ref_cutters_refuse_a_dead_oracle
+test_gate_runners_refuse_on_a_stale_binary
+test_gate_scorecard_suite_aware
+test_gate_sno_package_runners_append_progress_rows
+test_gate_snocone_returns_codegen
+test_gate_suite_refusal_names_stale_corpus
+test_gate_demos_suite_grades_each_demo_in_both_modes

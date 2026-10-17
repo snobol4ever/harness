@@ -1,0 +1,3 @@
+scrip: error 12: division left operand is not numeric
+  at sno_17.sno:3; statement 3
+rc=1

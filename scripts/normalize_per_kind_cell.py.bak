@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""normalize_per_kind_cell.py — canonicalize one audit cell file for diff.
+
+Reads stdin (or a single positional file), writes normalized form to stdout.
+Normalizations applied (driven by file extension):
+
+  Common to all text backends (.s, .j, .js, .il, .wat):
+    - Strip blank lines.
+    - Strip comment lines (#-prefixed in GAS, ;-prefixed in IL, //-prefixed in JS,
+      ;;-prefixed in WAT, comment-prefixed in Jasmin).
+    - Normalize internal node-id suffixes _<digits>_<digits>  →  _S_N (sid/nid drop).
+    - Normalize compiler-generated label names .L<digits>  →  .Lxxx.
+    - Normalize bare hex addresses 0x<hex 8+>             →  0xADDR.
+    - Normalize plain decimal addresses that look like rodata pointers
+      (any decimal >= 1_000_000) →  ADDR.   This catches the ival/sval union
+      leak (e.g. JS template's make_pat_5398772_41120 → make_pat_ADDR_S_N).
+
+  Binary (.bin):  passthrough (the bytes are the ground truth).
+
+The output is what gets committed as the baseline AND what the diff script
+compares.  Same script on both sides → no skew.
+
+Usage:
+    cat raw.s | normalize_per_kind_cell.py --ext s
+    normalize_per_kind_cell.py --ext s raw.s
+"""
+import re
+import sys
+
+# ── extension → list of normalization rules ──────────────────────────────────
+# Each rule is (pattern_regex, replacement_string).  Applied in order, line by
+# line.  Comment-stripping is handled separately because it's an outright drop.
+
+COMMENT_PREFIX = {
+    "s":   "#",      # GAS
+    "j":   ";",      # Jasmin (also accepts ; for comments)
+    "il":  "//",     # CIL / .NET MSIL
+    "js":  "//",     # JavaScript
+    "wat": ";;",     # WebAssembly text format
+}
+
+# Common patterns (applied after comment stripping)
+COMMON_RULES = [
+    # sid_nid suffix pairs:  _12345_67890  →  _S_N.
+    # The trailing context may be:
+    #   - end-of-token (\b)         e.g.  make_pat_5_67890$
+    #   - another _word segment     e.g.  alt_0_50208_beta_omega
+    #   - dot or colon              e.g.  bb_alt$pat_0_46112.try
+    # All three reduce to a (?=_|\b) lookahead.  Using lookahead avoids
+    # consuming a separator that would block adjacent matches.
+    (re.compile(r"_(\d+)_(\d+)(?=_|\b)"), "_S_N"),
+    # GAS / CIL labels: .L1234  →  .Lxxx
+    (re.compile(r"\.L\d+"),         ".Lxxx"),
+    # hex addresses: 0xdeadbeef (8+ hex digits)  →  0xADDR
+    (re.compile(r"0x[0-9a-fA-F]{8,}"), "0xADDR"),
+    # large decimal numbers (>= 1_000_000) — likely rodata pointers leaked
+    # through the ival/sval union.  Be conservative: only fire for standalone
+    # tokens, not for numbers inside larger identifiers.
+    (re.compile(r"\b\d{7,}\b"),     "ADDR"),
+]
+
+
+def strip_comments_for(ext, line):
+    """Return None if the line is a pure comment, else the line possibly
+    stripped of a trailing inline comment.  Quirk: # appears inside x86_text
+    BOX banners ('    # BOX LEN(5)') — those rows ARE the diagnostic content,
+    so for .s we keep them but strip the literal '#-----…' separator rows."""
+    if ext == "s":
+        # Drop pure separator rows of just '#---…'
+        if re.match(r"^\s*#-+\s*$", line):
+            return None
+        return line
+    prefix = COMMENT_PREFIX.get(ext)
+    if not prefix:
+        return line
+    stripped = line.lstrip()
+    if stripped.startswith(prefix):
+        return None
+    # Inline comment trim — only safe to do for // (JS/IL) and ;; (WAT).
+    # Skip GAS/Jasmin to avoid stripping legitimate semicolons in operands.
+    if prefix in ("//", ";;"):
+        idx = line.find(prefix)
+        if idx >= 0:
+            return line[:idx].rstrip()
+    return line
+
+
+def normalize_stream(ext, src):
+    out_lines = []
+    for raw in src:
+        line = raw.rstrip("\n")
+        line = strip_comments_for(ext, line)
+        if line is None:
+            continue
+        if not line.strip():
+            continue
+        for pat, repl in COMMON_RULES:
+            line = pat.sub(repl, line)
+        out_lines.append(line.rstrip())
+    return "\n".join(out_lines) + ("\n" if out_lines else "")
+
+
+def main():
+    import argparse
+    p = argparse.ArgumentParser()
+    p.add_argument("--ext", required=True,
+                   help="file extension (without dot): s/j/js/il/wat/bin")
+    p.add_argument("path", nargs="?",
+                   help="path to read (default: stdin)")
+    args = p.parse_args()
+
+    if args.ext == "bin":
+        # Binary: passthrough — the bytes themselves are the canonical form.
+        # We DO normalize trailing zeros (unresolved patches) to keep
+        # bb_emit_pos-padding-from-overshoot from corrupting comparisons,
+        # but for now passthrough is conservative.
+        data = sys.stdin.buffer.read() if args.path is None else open(args.path, "rb").read()
+        sys.stdout.buffer.write(data)
+        return
+
+    if args.path:
+        with open(args.path, "r", encoding="utf-8", errors="replace") as f:
+            sys.stdout.write(normalize_stream(args.ext, f))
+    else:
+        sys.stdout.write(normalize_stream(args.ext, sys.stdin))
+
+
+if __name__ == "__main__":
+    main()

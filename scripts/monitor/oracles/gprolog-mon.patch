@@ -1,0 +1,372 @@
+--- pristine-src/src/EnginePl/Makefile.in	2025-12-15 09:32:41.000000000 -0600
++++ work/src/EnginePl/Makefile.in	2026-09-23 05:47:48.602842712 -0500
+@@ -13,7 +13,8 @@
+           misc@OBJ_SUFFIX@ ../Tools/hash_fct@OBJ_SUFFIX@ hash@OBJ_SUFFIX@ obj_chain@OBJ_SUFFIX@ \
+           engine@OBJ_SUFFIX@ engine1@OBJ_SUFFIX@ wam_inst@OBJ_SUFFIX@ \
+           atom@OBJ_SUFFIX@ pred@OBJ_SUFFIX@ oper@OBJ_SUFFIX@ \
+-          mem_alloc@OBJ_SUFFIX@ if_no_fd@OBJ_SUFFIX@ main@OBJ_SUFFIX@
++          mem_alloc@OBJ_SUFFIX@ if_no_fd@OBJ_SUFFIX@ main@OBJ_SUFFIX@ \
++          monitor_ipc_lib@OBJ_SUFFIX@ monitor_gpx@OBJ_SUFFIX@
+ 
+ all: config wam_regs.h $(LIBNAME)
+ 
+--- pristine-src/src/BipsPl/parse_supp.c	2025-12-15 09:32:41.000000000 -0600
++++ work/src/BipsPl/parse_supp.c	2026-09-23 06:06:12.009215133 -0500
+@@ -75,6 +75,13 @@
+ 
+ static StmInf *pstm_i;
+ 
++static Bool pl_mon_mirror_on = FALSE;
++static WamWord pl_mon_last_mirror = NOT_A_WAM_WORD;
++static WamWord g_mir_ret = NOT_A_WAM_WORD;
++static int atom_mon_m;
++
++static WamWord Mon_Mirror_Node(PlLong line, WamWord m1, WamWord m2);
++
+ static Bool tok_present;
+ static char unget_tok_buffer[SCAN_BIG_BUFFER];
+ static TokInf unget_tok = { .name = unget_tok_buffer };
+@@ -176,6 +183,7 @@
+   atom_string = Pl_Create_Atom("string");
+   atom_punct = Pl_Create_Atom("punct");
+   atom_atom = Pl_Create_Atom("atom");
++  atom_mon_m = Pl_Create_Atom("$m");
+   atom_back_quotes = Pl_Create_Atom("back_quotes");
+   atom_full_stop = Pl_Create_Atom("full_stop");
+   atom_extend = Pl_Create_Atom("extend");
+@@ -253,6 +261,8 @@
+   if (jmp_val == 0)
+     {
+       term = Parse_Term(MAX_PREC, GENERAL_TERM, COMMA_ANY);
++      if (pl_mon_mirror_on)
++	pl_mon_last_mirror = (term == NOT_A_WAM_WORD) ? NOT_A_WAM_WORD : g_mir_ret;
+ 
+       Read_Next_Token(COMMA_ANY);
+       if (term == NOT_A_WAM_WORD)
+@@ -334,9 +344,14 @@
+   WamWord term, term1;
+   WamWord w[2];
+   Bool left_is_op = FALSE;
++  WamWord mir = NOT_A_WAM_WORD;
++  WamWord mir_r;
++  PlLong start_line;
++  int open_punct = 0;
+ 
+ 
+   Read_Next_Token(context != TRYING_PREFIX || comma_is_punct);
++  start_line = pl_token.line;
+   if (pl_last_read_line == -1)
+     Update_Last_Read_Position;
+ 
+@@ -400,8 +415,11 @@
+ 	}
+ 
+       atom = (pl_token.punct == '{') ? pl_atom_curly_brackets : ATOM_NIL;
++      open_punct = pl_token.punct;
+ 
+       term = Parse_Bracketed_Term();
++      if (open_punct == '(' && term != NOT_A_WAM_WORD)
++	mir = g_mir_ret;
+       if (term == NOT_A_WAM_WORD)	/* name: {} or [] */
+ 	{
+ 	  pl_token.type = TOKEN_NAME;
+@@ -523,6 +541,7 @@
+ 	{
+ 	  w[0] = term;
+ 	  w[1] = Parse_Term(oper->right, INSIDE_ANY_OP, comma_is_punct);
++	  mir_r = g_mir_ret;
+ 
+ 	  if (w[1] == NOT_A_WAM_WORD)
+ 	    Parse_Error("right operand expected for infix operator");
+@@ -535,6 +554,8 @@
+ 	    }
+  	  else
+ 	    term = Create_Structure(atom, 2, w);
++	  if (pl_mon_mirror_on)
++	    mir = Mon_Mirror_Node(start_line, (mir == NOT_A_WAM_WORD) ? Tag_INT(start_line) : mir, mir_r);
+ 	}
+       else
+ 	term = Create_Structure(atom, 1, &term); /* postfix operator */
+@@ -544,6 +565,8 @@
+ 
+  finish:
+   Unget_Token;
++  if (pl_mon_mirror_on)
++    g_mir_ret = (mir == NOT_A_WAM_WORD) ? Tag_INT(start_line) : mir;
+ 
+   return term;
+ }
+@@ -718,6 +741,67 @@
+ }
+ 
+ 
++
++
++/*-------------------------------------------------------------------------*
++ * MON_MIRROR_NODE                                                         *
++ *                                                                         *
++ * SCRIP monitor: the mirror of an infix-operator compound read by the     *
++ * parser -- '$m'(StartLine, [MirrorLeft, MirrorRight]); an atomic term or *
++ * any other compound mirrors as its start line (an integer). pl2wam asks  *
++ * for the mirror of each clause it reads and stamps every body goal with  *
++ * its own source line. Off unless Pl_Mon_Mirror_On_0 was called.         *
++ *-------------------------------------------------------------------------*/
++static WamWord
++Mon_Mirror_Node(PlLong line, WamWord m1, WamWord m2)
++{
++  WamWord lst2, lst1, res;
++
++  lst2 = Pl_Put_List();
++  Pl_Unify_Value(m2);
++  Pl_Unify_Value(NIL_WORD);
++
++  lst1 = Pl_Put_List();
++  Pl_Unify_Value(m1);
++  Pl_Unify_Value(lst2);
++
++  res = Pl_Put_Structure(atom_mon_m, 2);
++  Pl_Unify_Integer(line);
++  Pl_Unify_Value(lst1);
++
++  return res;
++}
++
++
++
++
++/*-------------------------------------------------------------------------*
++ * PL_MON_MIRROR_ON_0                                                      *
++ *                                                                         *
++ *-------------------------------------------------------------------------*/
++void
++Pl_Mon_Mirror_On_0(void)
++{
++  pl_mon_mirror_on = TRUE;
++}
++
++
++
++
++/*-------------------------------------------------------------------------*
++ * PL_MON_LAST_READ_MIRROR_1                                               *
++ *                                                                         *
++ *-------------------------------------------------------------------------*/
++Bool
++Pl_Mon_Last_Read_Mirror_1(WamWord m_word)
++{
++  if (pl_mon_last_mirror == NOT_A_WAM_WORD)
++    return FALSE;
++
++  return Pl_Unify(m_word, pl_mon_last_mirror);
++}
++
++
+ 
+ 
+ /*-------------------------------------------------------------------------*
+--- pristine-src/src/Pl2Wam/read_file.pl	2025-12-15 09:32:41.000000000 -0600
++++ work/src/Pl2Wam/read_file.pl	2026-09-23 06:05:23.858498260 -0500
+@@ -134,6 +134,7 @@
+ :- op(200, fx, ?).
+ 
+ read_file_init :-
++	'$call_c'('Pl_Mon_Mirror_On_0'),
+ 	pp_start,
+ 	retractall(buff_raw_clause(_, _)),
+ 	retractall(buff_src_clause(_, _, _)),
+@@ -435,6 +436,7 @@
+ 	'$catch'(read_term(Stream, Cl, [singletons(SingNames)]), error(syntax_error(Err), _), after_syn_error, any, 0, false),
+ 	(   var(Err) ->
+ 	    last_read_start_line_column(L1, _),
++	    mon_last_read_mirror(Mirror0),
+ 	    '$catch'('$expand_term1'(Cl, Cl1, TermExpans), error(Err, _), expand_error(Err, Cl, Cl1), any, 0, false),
+ 	    % ( Cl \== Cl1 -> format('Rewriting ~w -> ~w\n', [Cl, Cl1]) ; true ),
+ 	    stream_line_column(Stream, Line, Col),
+@@ -442,7 +444,11 @@
+ 	        L2 is Line - 1
+ 	    ;   L2 = Line
+ 	    ),
+-	    Where = OpenFileStack + (L1 - L2),
++	    (   var(TermExpans) ->
++	        Mirror = Mirror0
++	    ;   Mirror = none
++	    ),
++	    Where = OpenFileStack + (L1 - '$ln'(L2, Mirror)),
+ 	    g_assign(where, Where),
+ 	    get_next_clause1(Cl1, Where, SingNames, Pred, N, SrcCl, TermExpans)
+ 	;   get_next_clause(Pred, N, SrcCl)
+@@ -1465,6 +1471,10 @@
+ 
+ 
+ 
++disp_lines(L1 - '$ln'(L2, _)) :-
++	!,
++	disp_lines(L1 - L2).
++
+ disp_lines(L - L) :-
+ 	!,
+ 	format(':~d', [L]).
+@@ -1506,3 +1516,14 @@
+ 
+ exception(Err) :-
+ 	error('exception raised: ~q', [Err]).
++
++
++
++
++          % SCRIP monitor: the mirror of the last clause read (see parse_supp.c Mon_Mirror_Node);
++          % 'none' when the reader has no mirror for it.
++
++mon_last_read_mirror(M) :-
++	'$call_c_test'('Pl_Mon_Last_Read_Mirror_1'(M)), !.
++
++mon_last_read_mirror(none).
+--- pristine-src/src/Pl2Wam/pl2wam.pl	2025-12-15 09:32:41.000000000 -0600
++++ work/src/Pl2Wam/pl2wam.pl	2026-09-23 06:05:23.859026054 -0500
+@@ -99,10 +99,12 @@
+ 
+ compile_and_emit_pred(t, Pred, N, LSrcCl) :-
+ 	compile_emit_inits(Pred, N, LSrcCl, PlFile, PlLine),
+-	compile_lst_clause(LSrcCl, LCompCl),
++	mon_instrument_pred(Pred, N, LSrcCl, LSrcCl1, WamPre),
++	compile_lst_clause(LSrcCl1, LCompCl),
+ 	indexing(LCompCl, WamCode),
+ 	add_counter(user_indexing, real_indexing),
+-	emit_code(Pred, N, PlFile, PlLine, WamCode),
++	append(WamPre, WamCode, WamCode1),
++	emit_code(Pred, N, PlFile, PlLine, WamCode1),
+ 	add_counter(user_wam_emit, real_wam_emit).
+ 
+ compile_and_emit_pred(f, Pred, N, LSrcCl) :-
+@@ -519,3 +521,131 @@
+ 	pl2wam(LArg).
+ 
+ :- initialization(go).
++
++
++
++
++          % Monitor fire-points (SCRIP IPC sync-step monitor, monitor_gpx.c in EnginePl):
++          % every user predicate compiled to native code gets a call_c to Pl_Mon_Call at its
++          % entry, a call_c to Pl_Mon_Stmt before each body goal (the clause's first source
++          % line) and a call_c to Pl_Mon_Return at the end of each clause. Built-in, aux,
++          % dynamic, multifile and public predicates and directives are never instrumented.
++          % The fire-points are silent no-ops unless MONITOR_READY_PIPE/MONITOR_GO_PIPE are set.
++
++mon_instrument_pred(Pred, N, LSrcCl, LSrcCl1, WamPre) :-
++	mon_user_pred(Pred, N), !,
++	mon_instrument_clauses(LSrcCl, Pred, N, LSrcCl1),
++	WamPre = [call_c('Pl_Mon_Call', [fast_call], [Pred, N])].
++
++mon_instrument_pred(_, _, LSrcCl, LSrcCl, []).
++
++
++
++
++mon_user_pred(Pred, N) :-
++	atom(Pred),
++	Pred \== '$exe_user',
++	Pred \== '$exe_system',
++	\+ '$aux_name'(Pred),
++	\+ test_pred_flag(bpl, Pred, N),
++	\+ test_pred_flag(bfd, Pred, N),
++	\+ test_pred_flag(dyn, Pred, N),
++	\+ test_pred_flag(multi, Pred, N),
++	\+ test_pred_flag(pub, Pred, N).
++
++
++
++
++mon_instrument_clauses([], _, _, []).
++
++mon_instrument_clauses([Where + Cl|LSrcCl], Pred, N, [Where + Cl1|LSrcCl1]) :-
++	mon_clause_line(Where, Line),
++	mon_clause_mirror(Where, Mirror),
++	mon_instrument_clause(Cl, Pred, N, Line, Mirror, Cl1),
++	mon_instrument_clauses(LSrcCl, Pred, N, LSrcCl1).
++
++
++
++
++mon_clause_line(_ + (L1 - _), L1) :-
++	integer(L1), !.
++
++mon_clause_line(_, 0).
++
++
++mon_clause_mirror(_ + (_ - L2X), M) :-
++	nonvar(L2X),
++	L2X = '$ln'(_, M), !.
++
++mon_clause_mirror(_, none).
++
++
++mon_mirror_args('$m'(_, [MA, MB]), MA, MB) :-
++	!.
++
++mon_mirror_args(_, none, none).
++
++
++mon_mirror_line('$m'(L, _), _, L) :-
++	integer(L), !.
++
++mon_mirror_line(L, _, L) :-
++	integer(L), !.
++
++mon_mirror_line(_, Default, Default).
++
++
++
++
++mon_instrument_clause((Head :- Body), Pred, N, Line, Mirror, (Head :- Body2)) :-
++	!,
++	mon_mirror_args(Mirror, _, MB),
++	mon_body(Body, Line, MB, Body1),
++	mon_return_goal(Pred, N, Ret),
++	Body2 = (Body1, Ret).
++
++mon_instrument_clause(Head, Pred, N, _, _, (Head :- Ret)) :-
++	mon_return_goal(Pred, N, Ret).
++
++
++
++
++mon_return_goal(Pred, N, '$call_c'('Pl_Mon_Return'(Pred, N), [fast_call, by_value])).
++
++mon_stmt_goal(Line, '$call_c'('Pl_Mon_Stmt'(Line), [fast_call, by_value])).
++
++
++
++
++mon_body(G, Line, M, (Stmt , G)) :-
++	var(G), !,
++	mon_mirror_line(M, Line, L),
++	mon_stmt_goal(L, Stmt).
++
++mon_body((A , B), Line, M, (A1 , B1)) :-
++	!,
++	mon_mirror_args(M, MA, MB),
++	mon_body(A, Line, MA, A1),
++	mon_body(B, Line, MB, B1).
++
++mon_body((A ; B), Line, M, (A1 ; B1)) :-
++	!,
++	mon_mirror_args(M, MA, MB),
++	mon_body(A, Line, MA, A1),
++	mon_body(B, Line, MB, B1).
++
++mon_body((A -> B), Line, M, (A1 -> B1)) :-
++	!,
++	mon_mirror_args(M, MA, MB),
++	mon_body(A, Line, MA, A1),
++	mon_body(B, Line, MB, B1).
++
++mon_body((A *-> B), Line, M, (A1 *-> B1)) :-
++	!,
++	mon_mirror_args(M, MA, MB),
++	mon_body(A, Line, MA, A1),
++	mon_body(B, Line, MB, B1).
++
++mon_body(G, Line, M, (Stmt , G)) :-
++	mon_mirror_line(M, Line, L),
++	mon_stmt_goal(L, Stmt).

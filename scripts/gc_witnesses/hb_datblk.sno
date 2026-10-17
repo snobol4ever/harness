@@ -1,0 +1,10 @@
+*  WITNESS for HB_PVEC through the DATA type block's field-name vector -- a DATA type and an instance held across allocation churn, then read back by field.
+        DATA('POINT(PX,PY)')
+        DATA('BOX(LO,HI,TAG)')
+        P = POINT(3,4)
+        B = BOX(P,POINT(7,8),'t')
+        I = 0
+CHURN   S = S 'y'
+        I = LT(I,300) I + 1                        :S(CHURN)
+        OUTPUT = 'PVEC-' PX(P) '-' PY(P) '-' DATATYPE(B) '-' PX(HI(B)) '-' TAG(B)
+END

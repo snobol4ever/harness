@@ -1,0 +1,9 @@
+        X = 'ab'
+        P8 = *(X Y)
+        Y = *(X 'q')
+        X = 'p'
+        'pq' P8                                 :S(OK12)F(NO12)
+OK12    OUTPUT = 'ok12'                         :(N12)
+NO12    OUTPUT = 'no12'
+N12     OUTPUT = 'done'
+END

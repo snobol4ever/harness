@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# commit-msg — REJECT the forbidden harness-default trailers (snobol4ever policy).
+# Installed by harness/scripts/install_commit_msg_hook.sh. Do not edit in place: this file is
+# overwritten from that installer's canonical copy, so an edit here is lost at the next prompt.
+#
+# ⛔ WHY A HOOK AND NOT A REMINDER: the trailers are a HARNESS DEFAULT that every fresh session
+# silently re-applies. The reminder already exists, in bold, in every seat's CLAUDE.md -- and 26
+# of the last 400 commits carried the trailers anyway (SCRIP 17/200, corpus 9/200, 6.5%;
+# .github FINDING 2c66909f). A default that re-arms itself every session is not cured by asking
+# people to remember; it is cured by making the non-compliant commit impossible.
+#
+# ⛔ LINE-ANCHORED ON PURPOSE. Git trailers are line-initial by construction, so anchoring
+# catches every real one while letting prose DISCUSS them -- this very policy, its FINDING, and
+# the commit that landed this hook all name the trailers mid-sentence and must stay committable.
+# A hook that rejected those would stop every clone at once, which is the failure the row's own
+# brief warns about. Widen these patterns only with a test for BOTH directions.
+set -u
+f="${1:-}"; [ -n "$f" ] && [ -f "$f" ] || exit 0
+body="$(grep -v '^#' -- "$f" 2>/dev/null || true)"
+hits="$(printf '%s\n' "$body" | grep -nEi \
+    -e '^[[:space:]]*Co-authored-by:[[:space:]]' \
+    -e '^[[:space:]]*Claude-Session:[[:space:]]' \
+    -e '^[[:space:]]*(🤖[[:space:]]*)?Generated with \[Claude Code\]' \
+    -e '^[[:space:]]*https?://claude\.ai/code/session_' \
+    2>/dev/null || true)"
+[ -z "$hits" ] && exit 0
+{
+  echo ""
+  echo "⛔ COMMIT REJECTED — forbidden trailer(s) in the commit message:"
+  printf '%s\n' "$hits" | sed 's/^/     /'
+  echo ""
+  echo "   snobol4ever commits carry NO Co-Authored-By:, NO 'Generated with [Claude Code]',"
+  echo "   and NO claude.ai/code session URL. Identity is LCherryholmes <lcherryh@yahoo.com>"
+  echo "   as author AND committer; this deliberately overrides the harness default, which"
+  echo "   re-applies itself every fresh session (that is why this is a hook, not a reminder)."
+  echo ""
+  echo "   FIX: delete those lines and commit again."
+  echo "   Only the LINE-INITIAL trailer form is rejected -- you may freely mention these"
+  echo "   trailers inside prose, so documenting the policy never trips this hook."
+  echo ""
+} >&2
+exit 1

@@ -1,0 +1,3 @@
+                  &ERRTEXT       =  'ABCDEFGH'
+                  OUTPUT         =  &ERRTEXT
+END

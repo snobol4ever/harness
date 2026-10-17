@@ -1,0 +1,3 @@
+                  s              =  DUPL('AB',2)
+                  OUTPUT         =  s
+END

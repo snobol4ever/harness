@@ -1,0 +1,25 @@
+*   gc_roots_witness.sno -- hq_snocone's decidable test (coo, CEO-818/819 F6 step 6):
+*   CAN A SUITE BE GREEN WHILE THE COLLECTOR DOES NOT FIND THE ROOTS?
+*   One value of every registered zeta slot kind (src/ir/frame_layout.h) is held live across many
+*   forced collections and printed afterwards, so a lost root shows as a wrong byte, never as silence:
+*     ZK_DESCR    NAME, N       ZK_PTR_GC   T (a table), A (an array)
+*     ZK_PTR_CODE PAT (a compiled pattern graph, held unmatched across every collection)
+*     ZK_RAW      the loop counters and SIZE results
+*   Graded byte-for-byte against the ONE oracle (sbl -bf); the verdict is util_gc_decidable_roots.sh's.
+        &ANCHOR = 0
+        PAT = ARB . PRE '@' REM . POST
+        T = TABLE(64)
+        A = ARRAY('1:8','-')
+        NAME = 'witness-' DUPL('k',7)
+        N = 0
+LOOP    N = LT(N,400) N + 1                       :F(DONE)
+        S = DUPL('x',N) '@' NAME
+        T[N] = S
+        A[REMDR(N,8) + 1] = S                     :(LOOP)
+DONE    OUTPUT = NAME
+        OUTPUT = N ' ' SIZE(T[1]) ' ' SIZE(T[400])
+        OUTPUT = SIZE(A[1]) ' ' SIZE(A[8])
+        T[400] PAT                                :F(NOMATCH)
+        OUTPUT = SIZE(PRE) ' ' POST               :(END)
+NOMATCH OUTPUT = 'PATTERN LOST'
+END

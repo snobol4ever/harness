@@ -1,0 +1,315 @@
+function sqrt 4 -> 2.0
+function sqrt 0.5 -> 0.7071067812
+function sqrt -1 -> error 205
+function sqrt 0 -> 0.0
+function sqrt 1 -> 1.0
+function sqrt 2 -> 1.414213562
+function sqrt -0.5 -> error 205
+function sqrt 1.5 -> 1.224744871
+function sqrt 1000 -> 31.6227766
+function sqrt 12345678901234567890 -> 3513641829.0
+function sqrt "4" -> 2.0
+function sqrt " 4 " -> 2.0
+function sqrt "-1" -> error 205
+function sqrt "0.25" -> 0.5
+function sqrt "2e1" -> 4.472135955
+function sqrt "16r10" -> 4.0
+function sqrt "36rZZ" -> 35.98610843
+function sqrt "1e400" -> error 102
+function sqrt '4' -> 2.0
+function sqrt "" -> error 102
+function sqrt "abc" -> error 102
+function sqrt "0x10" -> error 102
+function sqrt &null -> error 102
+function sqrt record R_1(2) -> error 102
+function sqrt list_2(1) -> error 102
+function sqrt table_1(0) -> error 102
+function sin 4 -> -0.7568024953
+function sin 0.5 -> 0.4794255386
+function sin -1 -> -0.8414709848
+function sin 0 -> 0.0
+function sin 1 -> 0.8414709848
+function sin 2 -> 0.9092974268
+function sin -0.5 -> -0.4794255386
+function sin 1.5 -> 0.9974949866
+function sin 1000 -> 0.8268795405
+function sin 12345678901234567890 -> 0.8952062891
+function sin "4" -> -0.7568024953
+function sin " 4 " -> -0.7568024953
+function sin "-1" -> -0.8414709848
+function sin "0.25" -> 0.2474039593
+function sin "2e1" -> 0.9129452507
+function sin "16r10" -> -0.2879033167
+function sin "36rZZ" -> 0.6161354353
+function sin "1e400" -> error 102
+function sin '4' -> -0.7568024953
+function sin "" -> error 102
+function sin "abc" -> error 102
+function sin "0x10" -> error 102
+function sin &null -> error 102
+function sin record R_1(2) -> error 102
+function sin list_2(1) -> error 102
+function sin table_1(0) -> error 102
+function cos 4 -> -0.6536436209
+function cos 0.5 -> 0.8775825619
+function cos -1 -> 0.5403023059
+function cos 0 -> 1.0
+function cos 1 -> 0.5403023059
+function cos 2 -> -0.4161468365
+function cos -0.5 -> 0.8775825619
+function cos 1.5 -> 0.07073720167
+function cos 1000 -> 0.5623790763
+function cos 12345678901234567890 -> 0.4456519943
+function cos "4" -> -0.6536436209
+function cos " 4 " -> -0.6536436209
+function cos "-1" -> 0.5403023059
+function cos "0.25" -> 0.9689124217
+function cos "2e1" -> 0.4080820618
+function cos "16r10" -> -0.9576594803
+function cos "36rZZ" -> 0.7876402259
+function cos "1e400" -> error 102
+function cos '4' -> -0.6536436209
+function cos "" -> error 102
+function cos "abc" -> error 102
+function cos "0x10" -> error 102
+function cos &null -> error 102
+function cos record R_1(2) -> error 102
+function cos list_2(1) -> error 102
+function cos table_1(0) -> error 102
+function tan 4 -> 1.157821282
+function tan 0.5 -> 0.5463024898
+function tan -1 -> -1.557407725
+function tan 0 -> 0.0
+function tan 1 -> 1.557407725
+function tan 2 -> -2.185039863
+function tan -0.5 -> -0.5463024898
+function tan 1.5 -> 14.10141995
+function tan 1000 -> 1.470324156
+function tan 12345678901234567890 -> 2.008756385
+function tan "4" -> 1.157821282
+function tan " 4 " -> 1.157821282
+function tan "-1" -> -1.557407725
+function tan "0.25" -> 0.2553419212
+function tan "2e1" -> 2.237160944
+function tan "16r10" -> 0.300632242
+function tan "36rZZ" -> 0.7822549117
+function tan "1e400" -> error 102
+function tan '4' -> 1.157821282
+function tan "" -> error 102
+function tan "abc" -> error 102
+function tan "0x10" -> error 102
+function tan &null -> error 102
+function tan record R_1(2) -> error 102
+function tan list_2(1) -> error 102
+function tan table_1(0) -> error 102
+function asin 4 -> error 205
+function asin 0.5 -> 0.5235987756
+function asin -1 -> -1.570796327
+function asin 0 -> 0.0
+function asin 1 -> 1.570796327
+function asin 2 -> error 205
+function asin -0.5 -> -0.5235987756
+function asin 1.5 -> error 205
+function asin 1000 -> error 205
+function asin 12345678901234567890 -> error 205
+function asin "4" -> error 205
+function asin " 4 " -> error 205
+function asin "-1" -> -1.570796327
+function asin "0.25" -> 0.2526802551
+function asin "2e1" -> error 205
+function asin "16r10" -> error 205
+function asin "36rZZ" -> error 205
+function asin "1e400" -> error 102
+function asin '4' -> error 205
+function asin "" -> error 102
+function asin "abc" -> error 102
+function asin "0x10" -> error 102
+function asin &null -> error 102
+function asin record R_1(2) -> error 102
+function asin list_2(1) -> error 102
+function asin table_1(0) -> error 102
+function acos 4 -> error 205
+function acos 0.5 -> 1.047197551
+function acos -1 -> 3.141592654
+function acos 0 -> 1.570796327
+function acos 1 -> 0.0
+function acos 2 -> error 205
+function acos -0.5 -> 2.094395102
+function acos 1.5 -> error 205
+function acos 1000 -> error 205
+function acos 12345678901234567890 -> error 205
+function acos "4" -> error 205
+function acos " 4 " -> error 205
+function acos "-1" -> 3.141592654
+function acos "0.25" -> 1.318116072
+function acos "2e1" -> error 205
+function acos "16r10" -> error 205
+function acos "36rZZ" -> error 205
+function acos "1e400" -> error 102
+function acos '4' -> error 205
+function acos "" -> error 102
+function acos "abc" -> error 102
+function acos "0x10" -> error 102
+function acos &null -> error 102
+function acos record R_1(2) -> error 102
+function acos list_2(1) -> error 102
+function acos table_1(0) -> error 102
+function exp 4 -> 54.59815003
+function exp 0.5 -> 1.648721271
+function exp -1 -> 0.3678794412
+function exp 0 -> 1.0
+function exp 1 -> 2.718281828
+function exp 2 -> 7.389056099
+function exp -0.5 -> 0.6065306597
+function exp 1.5 -> 4.48168907
+function exp 1000 -> error 204
+function exp 12345678901234567890 -> error 204
+function exp "4" -> 54.59815003
+function exp " 4 " -> 54.59815003
+function exp "-1" -> 0.3678794412
+function exp "0.25" -> 1.284025417
+function exp "2e1" -> 485165195.4
+function exp "16r10" -> 8886110.521
+function exp "36rZZ" -> error 204
+function exp "1e400" -> error 102
+function exp '4' -> 54.59815003
+function exp "" -> error 102
+function exp "abc" -> error 102
+function exp "0x10" -> error 102
+function exp &null -> error 102
+function exp record R_1(2) -> error 102
+function exp list_2(1) -> error 102
+function exp table_1(0) -> error 102
+function log 4 -> 1.386294361
+function log 0.5 -> -0.6931471806
+function log -1 -> error 205
+function log 0 -> error 205
+function log 1 -> 0.0
+function log 2 -> 0.6931471806
+function log -0.5 -> error 205
+function log 1.5 -> 0.4054651081
+function log 1000 -> 6.907755279
+function log 12345678901234567890 -> 43.95983779
+function log "4" -> 1.386294361
+function log " 4 " -> 1.386294361
+function log "-1" -> error 205
+function log "0.25" -> -1.386294361
+function log "2e1" -> 2.995732274
+function log "16r10" -> 2.772588722
+function log "36rZZ" -> 7.166265974
+function log "1e400" -> error 102
+function log '4' -> 1.386294361
+function log "" -> error 102
+function log "abc" -> error 102
+function log "0x10" -> error 102
+function log &null -> error 102
+function log record R_1(2) -> error 102
+function log list_2(1) -> error 102
+function log table_1(0) -> error 102
+function dtor 4 -> 0.06981317008
+function dtor 0.5 -> 0.00872664626
+function dtor -1 -> -0.01745329252
+function dtor 0 -> 0.0
+function dtor 1 -> 0.01745329252
+function dtor 2 -> 0.03490658504
+function dtor -0.5 -> -0.00872664626
+function dtor 1.5 -> 0.02617993878
+function dtor 1000 -> 17.45329252
+function dtor 12345678901234567890 -> 2.154727452e+17
+function dtor "4" -> 0.06981317008
+function dtor " 4 " -> 0.06981317008
+function dtor "-1" -> -0.01745329252
+function dtor "0.25" -> 0.00436332313
+function dtor "2e1" -> 0.3490658504
+function dtor "16r10" -> 0.2792526803
+function dtor "36rZZ" -> 22.60201381
+function dtor "1e400" -> error 102
+function dtor '4' -> 0.06981317008
+function dtor "" -> error 102
+function dtor "abc" -> error 102
+function dtor "0x10" -> error 102
+function dtor &null -> error 102
+function dtor record R_1(2) -> error 102
+function dtor list_2(1) -> error 102
+function dtor table_1(0) -> error 102
+function rtod 4 -> 229.1831181
+function rtod 0.5 -> 28.64788976
+function rtod -1 -> -57.29577951
+function rtod 0 -> 0.0
+function rtod 1 -> 57.29577951
+function rtod 2 -> 114.591559
+function rtod -0.5 -> -28.64788976
+function rtod 1.5 -> 85.94366927
+function rtod 1000 -> 57295.77951
+function rtod 12345678901234567890 -> 7.073552963e+20
+function rtod "4" -> 229.1831181
+function rtod " 4 " -> 229.1831181
+function rtod "-1" -> -57.29577951
+function rtod "0.25" -> 14.32394488
+function rtod "2e1" -> 1145.91559
+function rtod "16r10" -> 916.7324722
+function rtod "36rZZ" -> 74198.03447
+function rtod "1e400" -> error 102
+function rtod '4' -> 229.1831181
+function rtod "" -> error 102
+function rtod "abc" -> error 102
+function rtod "0x10" -> error 102
+function rtod &null -> error 102
+function rtod record R_1(2) -> error 102
+function rtod list_2(1) -> error 102
+function rtod table_1(0) -> error 102
+function abs 4 -> 4
+function abs 0.5 -> 0.5
+function abs -1 -> 1
+function abs 0 -> 0
+function abs 1 -> 1
+function abs 2 -> 2
+function abs -0.5 -> 0.5
+function abs 1.5 -> 1.5
+function abs 1000 -> 1000
+function abs 12345678901234567890 -> 12345678901234567890
+function abs "4" -> 4
+function abs " 4 " -> 4
+function abs "-1" -> 1
+function abs "0.25" -> 0.25
+function abs "2e1" -> 20.0
+function abs "16r10" -> 16
+function abs "36rZZ" -> 1295
+function abs "1e400" -> error 102
+function abs '4' -> 4
+function abs "" -> error 102
+function abs "abc" -> error 102
+function abs "0x10" -> error 102
+function abs &null -> error 102
+function abs record R_1(2) -> error 102
+function abs list_2(1) -> error 102
+function abs table_1(0) -> error 102
+log 8 2 -> 3.0
+log 8 1 -> error 205
+log 8 0 -> error 205
+log 8 -2 -> error 205
+log 8 "abc" -> error 102
+log 8 &null -> 2.079441542
+log 8 "16r10" -> 0.75
+log 0 2 -> error 205
+log 0 1 -> error 205
+log 0 0 -> error 205
+log 0 -2 -> error 205
+log 0 "abc" -> error 205
+log 0 &null -> error 205
+log 0 "16r10" -> error 205
+log -1 2 -> error 205
+log -1 1 -> error 205
+log -1 0 -> error 205
+log -1 -2 -> error 205
+log -1 "abc" -> error 205
+log -1 &null -> error 205
+log -1 "16r10" -> error 205
+log "abc" 2 -> error 102
+log "abc" 1 -> error 102
+log "abc" 0 -> error 102
+log "abc" -2 -> error 102
+log "abc" "abc" -> error 102
+log "abc" &null -> error 102
+log "abc" "16r10" -> error 102
+rc=1

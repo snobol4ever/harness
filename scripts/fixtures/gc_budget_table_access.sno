@@ -1,0 +1,27 @@
+* gc_budget_table_access.sno -- THE FIXTURE OF test_gate_gc_a_collection_over_a_small_live_set_stays_under_its_instruction_budget.sh,
+* whose every line below this header is corpus benchmarks/snobol4/table_access.sno at corpus cb366317c^ byte-for-byte (the form the
+* 760 K Ir budget was measured on, CEO-1256).  corpus cb366317c (2026-09-25) made the kernel a straight-line snippet whose
+* live set is 964 blocks, not 712, and the gate read that change as a refusal; a cost gate pins the program it was
+* calibrated on.  Edit this file and the budget must be re-measured on it.
+* table_access -- fills a 500-entry TABLE of even numbers and totals it, N times over.
+* bottleneck: table creation, hashed store and fetch.
+* Standalone:  scrip table_access.sno   |   sbl -bf table_access.sno   |   snobol4 table_access.sno
+        &TRIM = 1
+        &ANCHOR = 0
+        DEFINE('TABLE_ACCESS(N)')                       :(TABLE_ACCESS_END)
+TABLE_ACCESS  ZI = 1
+ZBL     T = TABLE(512)
+        I = 1
+ZFILL   T[I] = I * 2
+        I = LT(I, 500) I + 1                            :S(ZFILL)
+        SUM = 0
+        I = 1
+ZREAD   SUM = SUM + T[I]
+        I = LT(I, 500) I + 1                            :S(ZREAD)
+        ZI = LT(ZI, N) ZI + 1                           :S(ZBL)
+        TABLE_ACCESS = SUM                              :(RETURN)
+TABLE_ACCESS_END
+*BENCH kernel=TABLE_ACCESS check=20 bud=500 flr=20
+        OUTPUT = 'sum of T[1..500] = ' TABLE_ACCESS(1)
+        OUTPUT = 'after 20 rebuilds = ' TABLE_ACCESS(20)
+END

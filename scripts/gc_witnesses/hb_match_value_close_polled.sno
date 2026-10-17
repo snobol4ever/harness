@@ -1,0 +1,7 @@
+        DEFINE('F()')                              :(START)
+F       F = 'BB'                                   :(RETURN)
+START   S = 'AABBCC'
+        S F() . X                                  :F(NO)
+        OUTPUT = X                                 :(END)
+NO      OUTPUT = 'no'
+END

@@ -1,0 +1,16 @@
+# Waivers for test_gate_pl_ctx_leaf_thunks_cannot_drop_a_ball.sh -- format: <leaf-name> <reason>
+#
+# A waiver is ONLY for a reach the gate's call graph reports that is provably not a real path. The graph is a
+# deliberate over-approximation: it says "this leaf can reach a function that writes a ball", not "it does".
+# A waiver with no reason is rejected by the gate, on purpose.
+#
+# ⛔ A WAIVER IS NEVER THE CURE FOR A REAL DROP. If the helper really can set a ball, the fix is to move the
+# name to PL_CTX_LEAF_BALL in rtx_plunify.s and mint its MOD_OP tag -- not to silence the measurement here.
+#
+# ⭐ THIS FILE IS EMPTY AND THAT IS A RESULT, NOT AN OVERSIGHT. atom_to_term and term_string were reported on
+# the gate's first run and would have been the first two entries. They were false positives with a findable
+# CAUSE: pl_text_is_unbalanced is a brace-balance checker whose body contains '{' and '}' CHARACTER LITERALS,
+# so the naive brace counter ran past its end and swallowed later functions that do write balls. Masking
+# string and character literals before scanning removed both, and the count fell from 13 to the 11 that were
+# independently confirmed by reading pl_stream_idx_ball and rt_pl_succ_plus_cell directly. Prefer finding the
+# cause to writing the line: every waiver here is a measurement this gate has agreed to stop making.

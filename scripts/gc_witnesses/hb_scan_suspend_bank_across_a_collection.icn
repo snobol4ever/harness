@@ -1,0 +1,23 @@
+procedure rows(pattern, chunk)
+   local hex, row;
+   pattern ? {
+      tab(upto(',') + 2);
+      hex := tab(0);
+      hex ? {
+         while row := move(chunk) do
+            suspend reverse(row)
+         }
+      };
+end
+
+procedure main()
+   local L, i, s, p;
+   every i := 1 to 60 do {
+      p := (8 + i % 5) || ",#01552b552b552bff" || right(i, 4, "0") || "a5c3";
+      L := [];
+      every put(L, rows(p, 2 + i % 3));
+      s := "";
+      every s ||:= !L || ":";
+      write(s);
+      };
+end

@@ -1,0 +1,18 @@
+        DEFINE('LOADF()')
+        DEFINE('DEX(PROTO,LBL)')
+        OUTPUT = 'start'
+        CODE('F  LOADF() ; :(F)')              :F(ERR)
+        DEX('F(F...AN.)F...I.', 'F')
+        OUTPUT = F(1)
+        OUTPUT = 'after: AN=' $('F.' DUPL('.', 2) 'AN.') ' I=' $('F.' DUPL('.', 2) 'I.')
+        OUTPUT = 'done'                        :(END)
+DEX     DEFINE(PROTO, LBL)                     :(RETURN)
+LOADF   PAT = POS(0) 'F' (' ' | RPOS(0))
+        'F' PAT                                :F(ERR)
+        B = 'F  OUTPUT = ' "'" 'in F: AN=' "'" ' F...AN. ; F...I. = 1 ;'
+        B = B ' EQ(F...AN., F...I.) :S(F.OK) ;'
+        B = B ' F = ' "'" 'AN is not I' "'" ' :(RETURN) ;'
+        B = B 'F.OK F = ' "'" 'AN equals I' "'" ' :(RETURN)'
+        CODE(B)                                :F(ERR)S(RETURN)
+ERR     OUTPUT = 'code error'                  :(END)
+END

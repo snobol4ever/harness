@@ -1,0 +1,3 @@
+scrip: error 281: char argument not integer
+  at sno_10.sno:3; statement 3
+rc=1

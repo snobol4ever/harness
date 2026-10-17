@@ -1,0 +1,6 @@
+procedure main()
+   local L, s;
+   L := [1, 2, 3];
+   s := "hello";
+   write(*L, " ", *s);
+end

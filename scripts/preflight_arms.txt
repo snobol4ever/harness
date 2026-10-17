@@ -1,0 +1,95 @@
+# preflight_arms.txt -- THE DECLARED POPULATION of `make preflight` (hq_T's ask, 2026-09-06; hq_R wired it).
+#
+# WHY THIS FILE EXISTS RATHER THAN A GLOB. hq_T measured the alternative and it fails in BOTH directions:
+#   1. grepping for `make`/`./scrip` over the whole script convicts strip_comments.py, which needs no build --
+#      these scripts say "make test" in their PROSE constantly. 18 vs 30 answers to one question, same files.
+#   2. and the comment-stripped grep is STILL wrong the other way: it clears test_gate_pl_quad_regs.sh (~45s)
+#      and test_gate_capture_stdin_and_red_exit.sh (~15s), which reach the compiler INDIRECTLY through lib_
+#      helpers rather than naming it. A static grep cannot see one level of indirection.
+# So THE POPULATION IS DECLARED HERE BY A HUMAN and the arithmetic is the gate's -- the same split
+# lib_port_trace.sh uses, and the same one hq_T ruled for the uniqueness gate.
+#
+# MEMBERSHIP (test_gate_preflight_arms_stay_cheap.sh enforces all four, and PINS BY MEASURED DURATION):
+#   seconds-cheap (<= 0.5s each)  ·  hermetic  ·  needs NO build  ·  NOT a live postoffice read.
+# The last clause is load-bearing: the baton/queue gates read the LIVE fleet and red on a dirty one BY
+# DESIGN, which is why they are out of test-postoffice and out of here.
+# ⛔ EVERY ARM IS GREEN ON ORIGIN THE DAY IT IS ADDED. A born-red target is one nobody runs, which is the
+# whole defect this target exists to cure -- the instrument was one second and it was bolted to a full build.
+../harness/scripts/strip_comments.py --check
+../harness/scripts/test_gate_absent_line_is_unproven_not_red.sh
+../harness/scripts/test_gate_no_rungs_ref_is_an_ast_dump.sh
+../harness/scripts/test_gate_coexpr_stack_of_uncreated_thread.sh
+../harness/scripts/test_gate_cross_suite_ref_agreement.sh
+../harness/scripts/test_gate_done_manifest_handoff.sh
+../harness/scripts/test_gate_emit_no_ir_mutation.sh
+../harness/scripts/test_gate_emit_no_slot_alloc.sh
+../harness/scripts/test_gate_icn_no_stack.sh
+../harness/scripts/test_gate_icn_one_reg_frame.sh
+../harness/scripts/test_gate_icn_tag_single_source.sh
+../harness/scripts/test_gate_icon_features_and_preprocessor_symbols_agree.sh
+../harness/scripts/test_gate_ladder_walk_v4_exempts_package_class_rows.sh
+../harness/scripts/test_gate_no_bb_bin_t.sh
+../harness/scripts/test_gate_no_handencoded_bytes.sh
+../harness/scripts/test_gate_no_o2_arm_in_scripts.sh
+../harness/scripts/test_gate_no_vstack.sh
+../harness/scripts/test_gate_no_weak_abort_stub.sh
+../harness/scripts/test_gate_no_worktree_blind_subject.sh
+../harness/scripts/test_gate_perf_fmt_refuses_a_dark_cell.sh
+../harness/scripts/test_gate_picker_lane_table_agrees_with_mode.sh
+../harness/scripts/test_gate_icon_scratch_names_are_not_tracked.sh
+../harness/scripts/test_gate_our_files_are_lf.sh
+../harness/scripts/test_gate_pl_no_value_stack.sh
+../harness/scripts/test_gate_pl_trail_mechanism.sh
+../harness/scripts/test_gate_pl_xfail_marker_consistent.sh
+../harness/scripts/test_gate_queue_census_placeholder_arm.sh
+../harness/scripts/test_gate_rtx_entries_keep_the_rtcc_four.sh
+../harness/scripts/test_gate_rtcc_claimed_regs.sh
+../harness/scripts/test_gate_same_suite_ref_agreement.sh
+../harness/scripts/test_gate_score_column_semantics.sh
+../harness/scripts/test_gate_score_unreadable_package_is_marked.sh
+../harness/scripts/test_gate_sm_dead.sh
+../harness/scripts/test_gate_term_wordref_ratchet.sh
+../harness/scripts/test_gate_two_region.sh
+../harness/scripts/util_coercion_surface_census.py
+../harness/scripts/util_tag_layout_verify.py
+../harness/scripts/test_gate_bench_prolog_kernels_pristine.sh
+../harness/scripts/test_gate_bench_wrap_raku_cuts_a_line_at_its_statements.sh
+../harness/scripts/test_gate_control_edges_live_on_ports.sh
+../harness/scripts/test_gate_library_driver_generator.sh
+../harness/scripts/test_gate_rungs_banner_seq_is_position.sh
+../harness/scripts/test_gate_mint_refuses_a_prose_donewhen.sh
+../harness/scripts/test_gate_triangulate_parsers_read_only_the_first_grid.sh
+../harness/scripts/util_gate_wiring.py check
+../harness/scripts/test_gate_icn_argcheck_filter_admits_every_table_row.sh
+../harness/scripts/test_gate_mode_line2_is_self_consistent.sh --selftest
+../harness/scripts/test_gate_runtime_trampolines_enter_generated_code_16_byte_aligned.sh
+../harness/scripts/test_gate_progress_writer_knows_every_verdict_a_runner_emits.sh
+../harness/scripts/test_gate_findings_live_in_the_findings_directory.sh
+../harness/scripts/test_gate_sn4_call_scope_rides_the_strict_field_not_an_opcode_flip.sh
+../harness/scripts/test_gate_suite_population_diff_reds_on_a_moved_skip.sh
+../harness/scripts/util_board_field_matcher_census.py
+../harness/scripts/test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh
+../harness/scripts/test_gate_finding_claims_are_folded_before_delete.sh
+../harness/scripts/test_gate_every_c_to_bb_box_entry_carries_its_hit.sh
+../harness/scripts/test_gate_the_tiny_open_protocol_and_its_glue_record_agree.sh
+../harness/scripts/test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh
+../harness/scripts/test_gate_every_graded_suite_has_an_attribute_csv.sh
+../harness/scripts/test_gate_sno_system_fn_table_is_sorted.sh
+../harness/scripts/util_suite_rows_vs_progress.py --selftest
+../harness/scripts/test_gate_excluded_not_spitbol_dialect_named_and_out_of_the_denominator.sh
+../harness/scripts/test_gate_fanout_ceiling.sh
+../harness/scripts/test_gate_fanout_width_reads_cpu_pressure_not_load1.sh
+../harness/scripts/test_gate_make_leaves_out_a_dep_file_whose_source_is_gone.sh
+../harness/scripts/test_gate_no_script_passes_a_retired_include_directory.sh
+../harness/scripts/test_gate_every_tree_kind_has_a_dump_name.sh
+../harness/scripts/test_gate_tmp_scratch_is_released.sh
+../harness/scripts/test_gate_a_descr_is_minted_whole_never_field_by_field.sh
+# ../harness/scripts/test_gate_pl_prelude_libs_in_sync.sh -- MOVED to make test (the coo 2026-10-14, ceo CEO-1697): it read 8.68 s CPU on 2781bf6e4
+#   against the 5 s budget, so it is a blocking arm, not a cheap one; it still blocks every landing through the blocking set
+../harness/scripts/test_gate_pas_prelude_units_in_sync.sh
+../harness/scripts/test_area_smoke.sh
+../harness/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh
+../harness/scripts/test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh
+../harness/scripts/test_gate_gprolog_output_filter_is_the_one_filter.sh
+../harness/scripts/test_gate_harness_stages_prolog_load_companions.sh
+../harness/scripts/test_gate_container_package_runner_counts_its_containers_as_excl.sh

@@ -1,0 +1,23 @@
+        P = FENCE 'x'
+        'ay' ? ('a' *P | 'a' 'y')  :F(N1)
+        OUTPUT = '1 matched'  :(N2)
+N1      OUTPUT = '1 failed'
+N2      Q = 'x' | FENCE 'y'
+        'az' ? ('a' *Q | 'a' 'z')  :F(N3)
+        OUTPUT = '2 matched'  :(N4)
+N3      OUTPUT = '2 failed'
+N4      W = FENCE 'x'
+        V = *W 'z'
+        'ay' ? ('a' *V | 'a' 'y')  :F(N5)
+        OUTPUT = '3 matched'  :(N6)
+N5      OUTPUT = '3 failed'
+N6      A = ABORT | 'x'
+        'ay' ? ('a' *A | 'a' 'y')  :F(N7)
+        OUTPUT = '4 matched'  :(N8)
+N7      OUTPUT = '4 failed'
+N8      E = FENCE ''
+        'ay' ? ('a' *E 'q' | 'a' 'y')  :F(N9)
+        OUTPUT = '5 matched'  :(N10)
+N9      OUTPUT = '5 failed'
+N10     OUTPUT = 'done'
+END

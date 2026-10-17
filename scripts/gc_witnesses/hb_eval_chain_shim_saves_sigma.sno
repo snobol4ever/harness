@@ -1,0 +1,9 @@
+        SUBJ = 'alpha beta gamma delta epsilon zeta eta theta iota kappa'
+        N = 0
+LOOP    N = N + 1
+        SUBJ ('beta' . B)
+        JUNK = SUBJ SUBJ SUBJ SUBJ SUBJ SUBJ SUBJ SUBJ
+        R = APPLY('EVAL', '3 + 4')
+        LT(N, 200)                                            :S(LOOP)
+        OUTPUT = 'R=' R ' B=' B ' N=' N
+END

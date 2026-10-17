@@ -1,0 +1,48 @@
+s01 woke 1
+s02 woke f(_)
+s03 woke 5
+s04 woke 7
+s05 woke 3
+s06 woke 3
+s07_bound_plain
+s07 woke 9
+s08_bound_plain
+s08 woke 10
+s09_joined
+s09a woke 11
+s09b woke 11
+s10 woke f(_,_)
+s11 woke 5
+s12 woke g(1)
+s13 woke 7
+s14([1,2,3])
+s15_failed_no_wake
+s16(2)
+s17_dif_blocks
+s18_dif_blocks
+s19_waiting
+s19_ground(1,2)
+s20(even)
+s20_even_ok
+s21_odd_rejected
+s22(freeze(_,user:w(s22,_)))
+s22 woke a
+s23 woke 5
+s24_plain
+s24(3)
+s25 woke 1
+s25 woke 2
+s25_second
+s26_wake_failed
+s27 woke 3
+s28 woke 1
+s28_copy_bound
+s28 woke 2
+s29 woke 1
+s29_after
+s30([_=b,_=1])
+s30_unbound
+s31_neq
+s32_caught(boom)
+s33 woke 1
+s33_after

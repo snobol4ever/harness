@@ -1,0 +1,4 @@
+# zone_migrated.list -- files fully migrated onto zone_ref() (U-5 ratchet).
+# EMPTY AT U-0 BY DESIGN. Add a file ONLY when it carries zero raw [rsp/[rbp spellings
+# and its manifest byte-identity has been re-proven. census --strict fails on any listed
+# file that still carries a raw spelling.

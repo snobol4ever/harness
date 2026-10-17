@@ -1,0 +1,9 @@
+        N = 3
+        S = 'AAAAB'
+        S LEN(*N) . X                              :F(NO)
+        OUTPUT = X
+        T = 'XYZ'
+        T *T . Y                                   :F(NO)
+        OUTPUT = Y                                 :(END)
+NO      OUTPUT = 'no'
+END

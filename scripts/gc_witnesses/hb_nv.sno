@@ -1,0 +1,9 @@
+*  WITNESS for the variable table as atomic blocks visited by the root walker -- eighty variables created by indirect reference, churn, then two read back.
+        I = 1
+MAKE    $('VAR' I) = 'value' I
+        I = LT(I,81) I + 1                        :S(MAKE)
+        I = 0
+CHURN   S = S 'z'
+        I = LT(I,300) I + 1                        :S(CHURN)
+        OUTPUT = 'NV-' $('VAR' 37) '-' $('VAR' 80) '-' SIZE(S)
+END

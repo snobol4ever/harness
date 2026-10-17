@@ -1,0 +1,13 @@
+# WITNESS for HB_WSB (215) -- the ATOMIC (pointer-free) collected-heap byte buffer.
+# &date is served by kw_read (keywords.c), which formats its result into a buffer from rt_wsb_alloc.
+# An HB_WSB block holds no pointers by construction, so the collector never scans its interior -- but it is
+# still MARKED and still RELOCATED like every other block, and the reference to it must still be fixed up when
+# it slides. This witness proves that distinction is the right one rather than a licence to ignore the block:
+# if the root is lost, or found and not fixed up, the read returns 0xDB poison instead of the bytes.
+# Positions 5 and 8 of &date are the yyyy/mm/dd separators, so the expectation is stable on any day.
+procedure main();
+   local held, i, churn;
+   held := &date;
+   every i := 1 to 300 do churn := repl("z", 100);
+   write(*held, "-", held[5], held[8]);
+end

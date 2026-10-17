@@ -1,0 +1,5 @@
+        DATA('RAT(N,D)')
+        X = RAT(1,2)
+        Y = -X
+        OUTPUT = 'done'
+END

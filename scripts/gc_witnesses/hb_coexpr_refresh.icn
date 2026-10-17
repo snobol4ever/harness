@@ -1,0 +1,14 @@
+# WITNESS for ^e REFRESH FROM THE ON-STACK IMAGE: the co-expression body reads the creator's locals as they were at
+# creation; two activations advance it; a refresh restarts from the pristine image while every block has moved.
+procedure main()
+   local base, e, f, junk, i;
+   base := "BASE-" || repl("m", 30) || "-END";
+   e := create (base || string(1 to 3));
+   write(@e);
+   write(@e);
+   every i := 1 to 200 do junk := repl("z", 100);
+   f := ^e;
+   write(@f);
+   write(@e);
+   write(@f);
+end

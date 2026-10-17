@@ -1,0 +1,7 @@
+# WITNESS for HB_AGGV (206) -- the aggregate value vector (an Icon list's elements) and the variable cell of an lvalue subscript.
+procedure main();
+   local i, held, churn;
+   held := [11, 22, 33, 44, 55];
+   every i := 1 to 300 do held[3] := (churn := repl("z", 100), 33);
+   write(held[1] + held[5]);
+end

@@ -1,0 +1,617 @@
+%---- cap_ctrl total=46
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string ,a
+(2) Exit: lit_string ,a -> assign_α
+(3) Call: assign LIST
+(3) Exit: assign LIST -> statement_end_α
+(4) Call: statement_end
+(4) Exit: statement_end -> statement_begin_α
+(5) Call: statement_begin
+(5) Exit: statement_begin -> var_α
+(6) Call: var LIST
+(6) Exit: var LIST -> match_begin_α
+(7) Call: match_begin
+(7) Exit: match_begin -> match_pos_α
+(8) Call: match_pos
+(8) Exit: match_pos -> match_lit_α
+(9) Call: match_lit ,
+(9) Exit: match_lit , -> match_assign_save_α
+(10) Call: match_assign_save CAP
+(10) Exit: match_assign_save CAP -> match_len_α
+(11) Call: match_len
+(11) Exit: match_len -> match_rem_α
+(12) Call: match_rem
+(12) Exit: match_rem -> match_assign_cond_α
+(13) Call: match_assign_cond CAP
+(13) Exit: match_assign_cond CAP -> match_end_α
+(14) Call: match_end
+(14) Exit: match_end -> statement_end_α
+(15) Call: statement_end
+(15) Exit: statement_end -> statement_begin_α
+(16) Call: statement_begin
+(16) Exit: statement_begin -> lit_string_α
+(17) Call: lit_string CAP=[
+(17) Exit: lit_string CAP=[ -> var_α
+(18) Call: var CAP
+(18) Exit: var CAP -> binop_α
+(19) Call: binop
+(19) Exit: binop -> lit_string_α
+(20) Call: lit_string ]
+(20) Exit: lit_string ] -> binop_α
+(21) Call: binop
+(21) Exit: binop -> assign_α
+(22) Call: assign OUTPUT
+(22) Exit: assign OUTPUT -> statement_end_α
+(23) Call: statement_end
+(23) Exit: statement_end -> main_γ
+%---- cap_pin_break total=53
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string ,a
+(2) Exit: lit_string ,a -> assign_α
+(3) Call: assign LIST
+(3) Exit: assign LIST -> statement_end_α
+(4) Call: statement_end
+(4) Exit: statement_end -> statement_begin_α
+(5) Call: statement_begin
+(5) Exit: statement_begin -> var_α
+(6) Call: var LIST
+(6) Exit: var LIST -> match_begin_α
+(7) Call: match_begin
+(7) Exit: match_begin -> match_pos_α
+(8) Call: match_pos
+(8) Exit: match_pos -> match_lit_α
+(9) Call: match_lit ,
+(9) Exit: match_lit , -> match_assign_save_α
+(10) Call: match_assign_save CAP
+(10) Exit: match_assign_save CAP -> match_len_α
+(11) Call: match_len
+(11) Exit: match_len -> match_alternate_α
+(12) Call: match_alternate
+(13) Call: match_break ,
+(13) Fail: match_break , -> .Lmatch_alternate_ω_11_af
+(12) Redo: .Lmatch_alternate_ω_11_af
+(14) Call: match_rem
+(14) Exit: match_rem -> .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_as
+(12) Exit: match_alternate -> match_assign_cond_α
+(15) Call: match_assign_cond CAP
+(15) Exit: match_assign_cond CAP -> match_end_α
+(16) Call: match_end
+(16) Exit: match_end -> statement_end_α
+(17) Call: statement_end
+(17) Exit: statement_end -> statement_begin_α
+(18) Call: statement_begin
+(18) Exit: statement_begin -> lit_string_α
+(19) Call: lit_string CAP=[
+(19) Exit: lit_string CAP=[ -> var_α
+(20) Call: var CAP
+(20) Exit: var CAP -> binop_α
+(21) Call: binop
+(21) Exit: binop -> lit_string_α
+(22) Call: lit_string ]
+(22) Exit: lit_string ] -> binop_α
+(23) Call: binop
+(23) Exit: binop -> assign_α
+(24) Call: assign OUTPUT
+(24) Exit: assign OUTPUT -> statement_end_α
+(25) Call: statement_end
+(25) Exit: statement_end -> main_γ
+%---- cap_pin_any total=53
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string ,a
+(2) Exit: lit_string ,a -> assign_α
+(3) Call: assign LIST
+(3) Exit: assign LIST -> statement_end_α
+(4) Call: statement_end
+(4) Exit: statement_end -> statement_begin_α
+(5) Call: statement_begin
+(5) Exit: statement_begin -> var_α
+(6) Call: var LIST
+(6) Exit: var LIST -> match_begin_α
+(7) Call: match_begin
+(7) Exit: match_begin -> match_pos_α
+(8) Call: match_pos
+(8) Exit: match_pos -> match_lit_α
+(9) Call: match_lit ,
+(9) Exit: match_lit , -> match_assign_save_α
+(10) Call: match_assign_save CAP
+(10) Exit: match_assign_save CAP -> match_len_α
+(11) Call: match_len
+(11) Exit: match_len -> match_alternate_α
+(12) Call: match_alternate
+(13) Call: match_any a
+(13) Fail: match_any a -> .Lmatch_alternate_ω_11_af
+(12) Redo: .Lmatch_alternate_ω_11_af
+(14) Call: match_rem
+(14) Exit: match_rem -> .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_as
+(12) Exit: match_alternate -> match_assign_cond_α
+(15) Call: match_assign_cond CAP
+(15) Exit: match_assign_cond CAP -> match_end_α
+(16) Call: match_end
+(16) Exit: match_end -> statement_end_α
+(17) Call: statement_end
+(17) Exit: statement_end -> statement_begin_α
+(18) Call: statement_begin
+(18) Exit: statement_begin -> lit_string_α
+(19) Call: lit_string CAP=[
+(19) Exit: lit_string CAP=[ -> var_α
+(20) Call: var CAP
+(20) Exit: var CAP -> binop_α
+(21) Call: binop
+(21) Exit: binop -> lit_string_α
+(22) Call: lit_string ]
+(22) Exit: lit_string ] -> binop_α
+(23) Call: binop
+(23) Exit: binop -> assign_α
+(24) Call: assign OUTPUT
+(24) Exit: assign OUTPUT -> statement_end_α
+(25) Call: statement_end
+(25) Exit: statement_end -> main_γ
+%---- cap_pin_notany total=53
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string ,a
+(2) Exit: lit_string ,a -> assign_α
+(3) Call: assign LIST
+(3) Exit: assign LIST -> statement_end_α
+(4) Call: statement_end
+(4) Exit: statement_end -> statement_begin_α
+(5) Call: statement_begin
+(5) Exit: statement_begin -> var_α
+(6) Call: var LIST
+(6) Exit: var LIST -> match_begin_α
+(7) Call: match_begin
+(7) Exit: match_begin -> match_pos_α
+(8) Call: match_pos
+(8) Exit: match_pos -> match_lit_α
+(9) Call: match_lit ,
+(9) Exit: match_lit , -> match_assign_save_α
+(10) Call: match_assign_save CAP
+(10) Exit: match_assign_save CAP -> match_len_α
+(11) Call: match_len
+(11) Exit: match_len -> match_alternate_α
+(12) Call: match_alternate
+(13) Call: match_notany x
+(13) Fail: match_notany x -> .Lmatch_alternate_ω_11_af
+(12) Redo: .Lmatch_alternate_ω_11_af
+(14) Call: match_rem
+(14) Exit: match_rem -> .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_as
+(12) Exit: match_alternate -> match_assign_cond_α
+(15) Call: match_assign_cond CAP
+(15) Exit: match_assign_cond CAP -> match_end_α
+(16) Call: match_end
+(16) Exit: match_end -> statement_end_α
+(17) Call: statement_end
+(17) Exit: statement_end -> statement_begin_α
+(18) Call: statement_begin
+(18) Exit: statement_begin -> lit_string_α
+(19) Call: lit_string CAP=[
+(19) Exit: lit_string CAP=[ -> var_α
+(20) Call: var CAP
+(20) Exit: var CAP -> binop_α
+(21) Call: binop
+(21) Exit: binop -> lit_string_α
+(22) Call: lit_string ]
+(22) Exit: lit_string ] -> binop_α
+(23) Call: binop
+(23) Exit: binop -> assign_α
+(24) Call: assign OUTPUT
+(24) Exit: assign OUTPUT -> statement_end_α
+(25) Call: statement_end
+(25) Exit: statement_end -> main_γ
+%---- cap_pin_span total=53
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string ,a
+(2) Exit: lit_string ,a -> assign_α
+(3) Call: assign LIST
+(3) Exit: assign LIST -> statement_end_α
+(4) Call: statement_end
+(4) Exit: statement_end -> statement_begin_α
+(5) Call: statement_begin
+(5) Exit: statement_begin -> var_α
+(6) Call: var LIST
+(6) Exit: var LIST -> match_begin_α
+(7) Call: match_begin
+(7) Exit: match_begin -> match_pos_α
+(8) Call: match_pos
+(8) Exit: match_pos -> match_lit_α
+(9) Call: match_lit ,
+(9) Exit: match_lit , -> match_assign_save_α
+(10) Call: match_assign_save CAP
+(10) Exit: match_assign_save CAP -> match_len_α
+(11) Call: match_len
+(11) Exit: match_len -> match_alternate_α
+(12) Call: match_alternate
+(13) Call: match_span a
+(13) Fail: match_span a -> .Lmatch_alternate_ω_11_af
+(12) Redo: .Lmatch_alternate_ω_11_af
+(14) Call: match_rem
+(14) Exit: match_rem -> .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_s1
+(12) Redo: .Lmatch_alternate_γ_11_as
+(12) Exit: match_alternate -> match_assign_cond_α
+(15) Call: match_assign_cond CAP
+(15) Exit: match_assign_cond CAP -> match_end_α
+(16) Call: match_end
+(16) Exit: match_end -> statement_end_α
+(17) Call: statement_end
+(17) Exit: statement_end -> statement_begin_α
+(18) Call: statement_begin
+(18) Exit: statement_begin -> lit_string_α
+(19) Call: lit_string CAP=[
+(19) Exit: lit_string CAP=[ -> var_α
+(20) Call: var CAP
+(20) Exit: var CAP -> binop_α
+(21) Call: binop
+(21) Exit: binop -> lit_string_α
+(22) Call: lit_string ]
+(22) Exit: lit_string ] -> binop_α
+(23) Call: binop
+(23) Exit: binop -> assign_α
+(24) Call: assign OUTPUT
+(24) Exit: assign OUTPUT -> statement_end_α
+(25) Call: statement_end
+(25) Exit: statement_end -> main_γ
+%---- park_pin_seize total=261
+(1) Call: statement_begin
+(1) Exit: statement_begin -> define_α
+(2) Call: define F
+(3) Call: statement_end
+(3) Exit: statement_end -> statement_begin_α
+(4) Call: statement_begin
+(4) Exit: statement_begin -> lit_string_α
+(5) Call: lit_string ,ABLE,ACTOR
+(5) Exit: lit_string ,ABLE,ACTOR -> lit_integer_α
+(6) Call: lit_integer
+(6) Exit: lit_integer -> call_α
+(7) Call: call F
+(8) Call: LBL__F
+(8) Exit: LBL__F -> lit_string_α
+(9) Call: lit_string PAT$0
+(9) Exit: lit_string PAT$0 -> call_α
+(10) Call: call SNO$MKPAT
+(10) Exit: call SNO$MKPAT -> assign_α
+(11) Call: assign ANC
+(11) Exit: assign ANC -> statement_end_α
+(12) Call: statement_end
+(12) Exit: statement_end -> statement_begin_α
+(13) Call: statement_begin
+(13) Exit: statement_begin -> lit_string_α
+(14) Call: lit_string PAT$1
+(14) Exit: lit_string PAT$1 -> call_α
+(15) Call: call SNO$MKPAT
+(15) Exit: call SNO$MKPAT -> assign_α
+(16) Call: assign SEIZE
+(16) Exit: assign SEIZE -> statement_end_α
+(17) Call: statement_end
+(17) Exit: statement_end -> statement_begin_α
+(18) Call: statement_begin
+(18) Exit: statement_begin -> var_α
+(19) Call: var K
+(19) Exit: var K -> lit_integer_α
+(20) Call: lit_integer
+(20) Exit: lit_integer -> coerce_numeric_α
+(21) Call: coerce_numeric
+(21) Exit: coerce_numeric -> coerce_numeric_α
+(22) Call: coerce_numeric
+(22) Exit: coerce_numeric -> cmp_test_α
+(23) Call: cmp_test
+(23) Exit: cmp_test -> statement_end_α
+(24) Call: statement_end
+(24) Exit: statement_end -> statement_begin_α
+(25) Call: statement_begin
+(25) Exit: statement_begin -> var_α
+(26) Call: var LIST
+(26) Exit: var LIST -> var_α
+(27) Call: var ANC
+(27) Exit: var ANC -> assign_α
+(28) Call: assign PATV$1
+(28) Exit: assign PATV$1 -> var_α
+(29) Call: var SEIZE
+(29) Exit: var SEIZE -> assign_α
+(30) Call: assign PATV$0
+(30) Exit: assign PATV$0 -> match_begin_α
+(31) Call: match_begin
+(31) Exit: match_begin -> match_defer_α
+(32) Call: match_defer PATV$1
+(33) Call: match_pos
+(33) Exit: match_pos -> match_lit_α
+(34) Call: match_lit ,
+(34) Exit: match_lit , -> PAT$0_γ
+(32) Exit: match_defer PATV$1 -> match_assign_save_α
+(35) Call: match_assign_save COMMON
+(35) Exit: match_assign_save COMMON -> match_assign_save_α
+(36) Call: match_assign_save IC
+(36) Exit: match_assign_save IC -> match_bal_α
+(37) Call: match_bal
+(37) Redo: match_bal
+(37) Exit: match_bal -> match_assign_cond_α
+(38) Call: match_assign_cond IC
+(38) Exit: match_assign_cond IC -> match_defer_α
+(39) Call: match_defer PATV$0
+(40) Call: match_rem
+(40) Exit: match_rem -> PAT$1_γ
+(39) Exit: match_defer PATV$0 -> match_assign_cond_α
+(41) Call: match_assign_cond COMMON
+(41) Exit: match_assign_cond COMMON -> match_end_α
+(42) Call: match_end
+(42) Exit: match_end -> statement_end_α
+(43) Call: statement_end
+(43) Exit: statement_end -> statement_begin_α
+(44) Call: statement_begin
+(44) Exit: statement_begin -> lit_string_α
+(45) Call: lit_string K=
+(45) Exit: lit_string K= -> var_α
+(46) Call: var K
+(46) Exit: var K -> binop_α
+(47) Call: binop
+(47) Exit: binop -> lit_string_α
+(48) Call: lit_string  COMMON=[
+(48) Exit: lit_string  COMMON=[ -> binop_α
+(49) Call: binop
+(49) Exit: binop -> var_α
+(50) Call: var COMMON
+(50) Exit: var COMMON -> binop_α
+(51) Call: binop
+(51) Exit: binop -> lit_string_α
+(52) Call: lit_string ] IC=[
+(52) Exit: lit_string ] IC=[ -> binop_α
+(53) Call: binop
+(53) Exit: binop -> var_α
+(54) Call: var IC
+(54) Exit: var IC -> binop_α
+(55) Call: binop
+(55) Exit: binop -> lit_string_α
+(56) Call: lit_string ]
+(56) Exit: lit_string ] -> binop_α
+(57) Call: binop
+(57) Exit: binop -> assign_α
+(58) Call: assign F
+(58) Exit: assign F -> statement_end_α
+(59) Call: statement_end
+(59) Exit: statement_end -> RETURN
+(60) Call: RETURN
+(7) Exit: call F -> assign_α
+(61) Call: assign OUTPUT
+(61) Exit: assign OUTPUT -> statement_end_α
+(62) Call: statement_end
+(62) Exit: statement_end -> statement_begin_α
+(63) Call: statement_begin
+(63) Exit: statement_begin -> lit_string_α
+(64) Call: lit_string ,ABLE,ACTOR
+(64) Exit: lit_string ,ABLE,ACTOR -> lit_integer_α
+(65) Call: lit_integer
+(65) Exit: lit_integer -> call_α
+(66) Call: call F
+(67) Call: LBL__F
+(67) Exit: LBL__F -> lit_string_α
+(68) Call: lit_string PAT$0
+(68) Exit: lit_string PAT$0 -> call_α
+(69) Call: call SNO$MKPAT
+(69) Exit: call SNO$MKPAT -> assign_α
+(70) Call: assign ANC
+(70) Exit: assign ANC -> statement_end_α
+(71) Call: statement_end
+(71) Exit: statement_end -> statement_begin_α
+(72) Call: statement_begin
+(72) Exit: statement_begin -> lit_string_α
+(73) Call: lit_string PAT$1
+(73) Exit: lit_string PAT$1 -> call_α
+(74) Call: call SNO$MKPAT
+(74) Exit: call SNO$MKPAT -> assign_α
+(75) Call: assign SEIZE
+(75) Exit: assign SEIZE -> statement_end_α
+(76) Call: statement_end
+(76) Exit: statement_end -> statement_begin_α
+(77) Call: statement_begin
+(77) Exit: statement_begin -> var_α
+(78) Call: var K
+(78) Exit: var K -> lit_integer_α
+(79) Call: lit_integer
+(79) Exit: lit_integer -> coerce_numeric_α
+(80) Call: coerce_numeric
+(80) Exit: coerce_numeric -> coerce_numeric_α
+(81) Call: coerce_numeric
+(81) Exit: coerce_numeric -> cmp_test_α
+(82) Call: cmp_test
+(82) Fail: cmp_test -> coerce_numeric_β
+(81) Redo: coerce_numeric
+(81) Fail: coerce_numeric -> coerce_numeric_β
+(80) Redo: coerce_numeric
+(80) Fail: coerce_numeric -> lit_integer_β
+(79) Redo: lit_integer
+(79) Fail: lit_integer -> statement_begin_β
+(77) Redo: statement_begin
+(77) Fail: statement_begin -> statement_begin_α
+(83) Call: statement_begin
+(83) Exit: statement_begin -> lit_string_α
+(84) Call: lit_string PAT$2
+(84) Exit: lit_string PAT$2 -> call_α
+(85) Call: call SNO$MKPAT
+(85) Exit: call SNO$MKPAT -> assign_α
+(86) Call: assign SEIZE
+(86) Exit: assign SEIZE -> statement_end_α
+(87) Call: statement_end
+(87) Exit: statement_end -> statement_begin_α
+(88) Call: statement_begin
+(88) Exit: statement_begin -> var_α
+(89) Call: var LIST
+(89) Exit: var LIST -> var_α
+(90) Call: var ANC
+(90) Exit: var ANC -> assign_α
+(91) Call: assign PATV$1
+(91) Exit: assign PATV$1 -> var_α
+(92) Call: var SEIZE
+(92) Exit: var SEIZE -> assign_α
+(93) Call: assign PATV$0
+(93) Exit: assign PATV$0 -> match_begin_α
+(94) Call: match_begin
+(94) Exit: match_begin -> match_defer_α
+(95) Call: match_defer PATV$1
+(96) Call: match_pos
+(96) Exit: match_pos -> match_lit_α
+(97) Call: match_lit ,
+(97) Exit: match_lit , -> PAT$0_γ
+(95) Exit: match_defer PATV$1 -> match_assign_save_α
+(98) Call: match_assign_save COMMON
+(98) Exit: match_assign_save COMMON -> match_assign_save_α
+(99) Call: match_assign_save IC
+(99) Exit: match_assign_save IC -> match_bal_α
+(100) Call: match_bal
+(100) Redo: match_bal
+(100) Exit: match_bal -> match_assign_cond_α
+(101) Call: match_assign_cond IC
+(101) Exit: match_assign_cond IC -> match_defer_α
+(102) Call: match_defer PATV$0
+(103) Call: match_alternate
+(104) Call: match_break ,
+(104) Exit: match_break , -> .Lmatch_alternate_γ_7_s0
+(103) Redo: .Lmatch_alternate_γ_7_s0
+(103) Redo: .Lmatch_alternate_γ_7_as
+(103) Exit: match_alternate -> PAT$2_γ
+(102) Exit: match_defer PATV$0 -> match_assign_cond_α
+(105) Call: match_assign_cond COMMON
+(105) Exit: match_assign_cond COMMON -> match_end_α
+(106) Call: match_end
+(106) Exit: match_end -> statement_end_α
+(107) Call: statement_end
+(107) Exit: statement_end -> statement_begin_α
+(108) Call: statement_begin
+(108) Exit: statement_begin -> lit_string_α
+(109) Call: lit_string K=
+(109) Exit: lit_string K= -> var_α
+(110) Call: var K
+(110) Exit: var K -> binop_α
+(111) Call: binop
+(111) Exit: binop -> lit_string_α
+(112) Call: lit_string  COMMON=[
+(112) Exit: lit_string  COMMON=[ -> binop_α
+(113) Call: binop
+(113) Exit: binop -> var_α
+(114) Call: var COMMON
+(114) Exit: var COMMON -> binop_α
+(115) Call: binop
+(115) Exit: binop -> lit_string_α
+(116) Call: lit_string ] IC=[
+(116) Exit: lit_string ] IC=[ -> binop_α
+(117) Call: binop
+(117) Exit: binop -> var_α
+(118) Call: var IC
+(118) Exit: var IC -> binop_α
+(119) Call: binop
+(119) Exit: binop -> lit_string_α
+(120) Call: lit_string ]
+(120) Exit: lit_string ] -> binop_α
+(121) Call: binop
+(121) Exit: binop -> assign_α
+(122) Call: assign F
+(122) Exit: assign F -> statement_end_α
+(123) Call: statement_end
+(123) Exit: statement_end -> RETURN
+(124) Call: RETURN
+(66) Exit: call F -> assign_α
+(125) Call: assign OUTPUT
+(125) Exit: assign OUTPUT -> statement_end_α
+(126) Call: statement_end
+(126) Exit: statement_end -> main_γ
+%---- arbno_ctrl total=91
+(1) Call: statement_begin
+(1) Exit: statement_begin -> lit_string_α
+(2) Call: lit_string PAT$0
+(2) Exit: lit_string PAT$0 -> call_α
+(3) Call: call SNO$MKPAT
+(3) Exit: call SNO$MKPAT -> assign_α
+(4) Call: assign G1
+(4) Exit: assign G1 -> statement_end_α
+(5) Call: statement_end
+(5) Exit: statement_end -> statement_begin_α
+(6) Call: statement_begin
+(6) Exit: statement_begin -> lit_string_α
+(7) Call: lit_string PAT$1
+(7) Exit: lit_string PAT$1 -> call_α
+(8) Call: call SNO$MKPAT
+(8) Exit: call SNO$MKPAT -> assign_α
+(9) Call: assign P
+(9) Exit: assign P -> statement_end_α
+(10) Call: statement_end
+(10) Exit: statement_end -> statement_begin_α
+(11) Call: statement_begin
+(11) Exit: statement_begin -> lit_string_α
+(12) Call: lit_string abcdef
+(12) Exit: lit_string abcdef -> match_begin_α
+(13) Call: match_begin
+(13) Exit: match_begin -> match_pos_α
+(14) Call: match_pos
+(14) Exit: match_pos -> match_defer_α
+(15) Call: match_defer P
+(16) Call: match_defer G1
+(17) Call: match_arbno
+(17) Exit: match_arbno -> PAT$0_γ
+(16) Exit: match_defer G1 -> match_rpos_α
+(18) Call: match_rpos
+(18) Fail: match_rpos -> match_defer_β
+(16) Redo: match_defer G1
+(17) Redo: match_arbno
+(19) Call: match_lit a
+(19) Exit: match_lit a -> .Lmatch_arbno_γ_0_as
+(17) Redo: .Lmatch_arbno_γ_0_as
+(17) Exit: match_arbno -> PAT$0_γ
+(16) Exit: match_defer G1 -> match_rpos_α
+(20) Call: match_rpos
+(20) Fail: match_rpos -> match_defer_β
+(16) Redo: match_defer G1
+(17) Redo: match_arbno
+(21) Call: match_lit a
+(21) Fail: match_lit a -> .Lmatch_arbno_ω_0_af
+(17) Redo: .Lmatch_arbno_ω_0_af
+(21) Redo: match_lit a
+(21) Fail: match_lit a -> .Lmatch_arbno_ω_0_af
+(17) Redo: .Lmatch_arbno_ω_0_af
+(17) Fail: match_arbno -> PAT$0_ω
+(16) Fail: match_defer G1 -> PAT$1_ω
+(15) Fail: match_defer P -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(22) Call: match_pos
+(22) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(23) Call: match_pos
+(23) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(24) Call: match_pos
+(24) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(25) Call: match_pos
+(25) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(26) Call: match_pos
+(26) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Exit: match_begin -> match_pos_α
+(27) Call: match_pos
+(27) Fail: match_pos -> match_begin_β
+(13) Redo: match_begin
+(13) Redo: .Lmatch_begin_γ_22_af
+(13) Redo: .Lmatch_begin_ω_22_af
+(13) Fail: match_begin -> statement_begin_α
+(28) Call: statement_begin
+(28) Exit: statement_begin -> lit_string_α
+(29) Call: lit_string nomatch
+(29) Exit: lit_string nomatch -> assign_α
+(30) Call: assign OUTPUT
+(30) Exit: assign OUTPUT -> statement_end_α
+(31) Call: statement_end
+(31) Exit: statement_end -> main_γ

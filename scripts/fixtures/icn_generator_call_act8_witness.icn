@@ -1,0 +1,8 @@
+procedure gen(n);
+    suspend 1 to n;
+end
+procedure main();
+    every write(gen(3));
+    if gen(2) = 2 then write("two");
+    every i := 1 to 2 do every write(gen(i));
+end

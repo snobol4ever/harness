@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# build_snobol4_x86.sh — compile + run a .sno file via scrip ASM backend
+# Usage: build_snobol4_x86.sh <file.sno>
+# MONITOR_FIFO env var: if set, trace events written there via comm_var()
+S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
+set -euo pipefail
+
+SNO="${1:?Usage: build_snobol4_x86.sh <file.sno>}"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+RT="$DIR/src/runtime"
+INC="${INC:-$S4E/corpus/include}"
+SCRIP_CC="${SCRIP_CC:-$DIR/scrip}"
+WORK=$(mktemp -d /tmp/snobol4_asm_XXXXXX)
+trap 'rm -rf "$WORK"' EXIT
+
+# Precompile runtime
+gcc -O0 -g -c "$RT/asm/snobol4_stmt_rt.c"    -I"$RT/snobol4" -I"$RT" -I"$DIR/src/parsers/snobol4" -w -o "$WORK/stmt_rt.o"
+gcc -O0 -g -c "$RT/snobol4/snobol4.c"         -I"$RT/snobol4" -I"$RT" -I"$DIR/src/parsers/snobol4" -w -o "$WORK/snobol4.o"
+gcc -O0 -g -c "$RT/mock/mock_includes.c"       -I"$RT/snobol4" -I"$RT" -I"$DIR/src/parsers/snobol4" -w -o "$WORK/mock_includes.o"
+gcc -O0 -g -c "$RT/snobol4/snobol4_pattern.c" -I"$RT/snobol4" -I"$RT" -I"$DIR/src/parsers/snobol4" -w -o "$WORK/pat.o"
+gcc -O0 -g -c "$RT/engine/engine.c"            -I"$RT/snobol4" -I"$RT" -I"$DIR/src/parsers/snobol4" -w -o "$WORK/eng.o"
+gcc -O0 -g -c "$RT/asm/blk_alloc.c"            -I"$RT/asm"                                            -w -o "$WORK/blk_alloc.o"
+gcc -O0 -g -c "$RT/asm/blk_reloc.c"            -I"$RT/asm"                                            -w -o "$WORK/blk_reloc.o"
+
+"$SCRIP_CC" -x86 -I"$INC" "$SNO" > "$WORK/prog.s" 2>/dev/null
+nasm -f elf64 -I"$RT/asm/" "$WORK/prog.s" -o "$WORK/prog.o" 2>/dev/null
+gcc -no-pie "$WORK/prog.o" "$WORK/stmt_rt.o" "$WORK/snobol4.o" \
+    "$WORK/mock_includes.o" "$WORK/pat.o" "$WORK/eng.o" \
+    "$WORK/blk_alloc.o" "$WORK/blk_reloc.o" \
+    -lm -o "$WORK/prog_asm" 2>/dev/null
+
+exec "$WORK/prog_asm"

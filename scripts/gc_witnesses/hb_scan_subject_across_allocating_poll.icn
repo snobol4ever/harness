@@ -1,0 +1,14 @@
+# WITNESS for THE SCAN SUBJECT REGISTER ACROSS AN ALLOCATING POLL: the subject of `?` lives in r13, the table
+# subscript inside the scan body allocates and polls, and a collection there moves the subject block. No walk
+# visits a register, so before the poll handed its saved r13 to the collector this read vacated ground at the
+# NEXT tab(upto(...)) byte load. scan_subj, the runtime's own copy, was relocated correctly all along.
+procedure main()
+   local t, s, i, x;
+   t := table(0);
+   every i := 1 to 40 do {
+      s := repl("alpha beta gamma delta ", 2) || "zeta" || string(i);
+      s ? while tab(upto(&lcase)) do t[tab(many(&lcase))] +:= 1;
+      };
+   x := sort(t, 3);
+   every i := 1 to *x - 1 by 2 do write(x[i], " ", x[i + 1]);
+end

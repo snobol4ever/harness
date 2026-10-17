@@ -1,0 +1,24 @@
+*  WITNESS for arena_grow (gc_heap.c:158-163, the soft end advancing) -- the ONE observable event that NO
+*  witness in the pool could reach. util_gc_event_coverage.py swept all 96 at SCRIP_HEAP_MB=1 stress 1 and
+*  read `grown N MB total` = 0 for every one, correctly diagnosing why: they all allocate heavily and RETAIN
+*  ALMOST NOTHING, so the collector reclaims faster than they allocate and the window is never outgrown.
+*  This witness is the missing SHAPE rather than more of the same -- it holds a LIVE SET LARGER THAN THE
+*  WINDOW, every element reachable through an ARRAY until after the sum reads it back, so the collector
+*  cannot reclaim its way out and the heap must grow. The sum is what makes the set genuinely live: without
+*  it a collector could prove the elements dead and the witness would measure nothing.
+*  SIZED FOR A PROBE, NOT FOR A BENCHMARK: the live set is ~2 MB in 2000 blocks rather than the same
+*  2 MB in 20000, because every collection walks the TITLE of every live block, so block COUNT and not
+*  byte count is what makes a retaining witness slow. The first shape timed out against the coverage
+*  tool's own 60s probe ceiling; this one holds the same bytes past the window at a tenth of the walk.
+*  The .ref is cut from /home/resources/x64/bin/sbl -bf, not from ./scrip.
+          N = 2000
+          A = ARRAY(N)
+          I = 0
+FILL      I = LT(I,N) I + 1                                     :F(SUM)
+          A[I] = DUPL('x',1000) I                               :(FILL)
+SUM       T = 0
+          I = 0
+ADD       I = LT(I,N) I + 1                                     :F(DONE)
+          T = T + SIZE(A[I])                                    :(ADD)
+DONE      OUTPUT = 'GROW=' T ' N=' N ' FIRST=' SIZE(A[1]) ' LAST=' SIZE(A[N])
+END

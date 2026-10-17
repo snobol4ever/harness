@@ -1,0 +1,43 @@
+        P1 = ('' $ V) 'x'
+        V = 'unset'
+        'y' ? P1  :S(E1)
+        OUTPUT = 'P1 failed, V=[' V ']'
+E1      P2 = POS(0) 'x' | 'y'
+        'zy' ? P2  . W  :F(E2)
+        OUTPUT = 'P2 matched [' W ']'
+E2      P3 = NOTANY('abc') . W
+        'aaq' ? P3  :F(E3)
+        OUTPUT = 'P3 matched [' W ']'
+E3      Q = 'q'
+        P4 = 'a' *Q | 'b'
+        'zbq' ? P4 . W  :F(E4)
+        OUTPUT = 'P4 matched [' W ']'
+E4      P5 = *Q 'a'
+        'zqa' ? P5 . W  :F(E5)
+        OUTPUT = 'P5 matched [' W ']'
+E5      P6 = 'a' | ''
+        'zzz' ? P6 . W  :F(E6)
+        OUTPUT = 'P6 matched [' W ']'
+E6      P7 = FENCE('a' | 'b') 'c'
+        'xxbc' ? P7 . W  :F(E7)
+        OUTPUT = 'P7 matched [' W ']'
+E7      P8 = 'x'
+        'abc' ? 'abc' P8  :S(E8)
+        OUTPUT = 'P8 failed at end'
+E8      &ANCHOR = 1
+        'zab' ? ('a' 'b')  :S(E9)
+        OUTPUT = 'anchored failed'
+E9      &ANCHOR = 0
+        P9 = SPAN('0123456789') . N ('.' SPAN('0123456789') | '')
+        'x = 3.14;' ? P9 . W  :F(E10)
+        OUTPUT = 'P9 matched [' W '] N=' N
+E10     P10 = ANY(CHAR(9) ' ') | CHAR(10) 'x'
+        S = 'ab' CHAR(10) 'x'
+        S ? P10 . W  :F(E11)
+        OUTPUT = 'P10 matched size ' SIZE(W)
+E11     P11 = (CHAR(0) | 'z') 'q'
+        S = 'a' CHAR(0) 'q'
+        S ? P11 . W  :F(E12)
+        OUTPUT = 'P11 matched size ' SIZE(W)
+E12     OUTPUT = 'done'
+END

@@ -1,0 +1,406 @@
+*// ---------------------------------------------------------------------------------------------------------
+*// porter.sno — Porter (1980) stemming algorithm in SNOBOL4
+*//
+*// Faithful translation of the Python PATTERN version from CSCE-5200 Project 1, which uses the
+*// snobol4python library (SNOBOL4python 0.5.2).  The snobol4python-to-SPITBOL primitive map is:
+*//
+*//   Python (snobol4python)       SNOBOL4 (SPITBOL)
+*//   ──────────────────────       ───────────────────────────────────────────────────────────
+*//   POS(0) / RPOS(0)             POS(0) / RPOS(0)
+*//   RTAB(n)                      RTAB(n)
+*//   σ('sses')                    'sses'
+*//   P @ "var"                    P $ var          (immediate — at match time; used for guards)
+*//   P % "var"                    P . var          (conditional — on commit; used to keep text)
+*//   Λ(callable)                  *pred_fn()       (pattern-valued fn: '' = ok, FAIL = nope)
+*//   λ("stmt")                    (epsilon . *action_fn())   (deferred commit-time side effect)
+*//   A | B                        A | B
+*//   A + B                        A B              (juxtaposition = concatenation)
+*//
+*// Oracle: SPITBOL x64 (/home/claude/x64/bin/sbl).  Test fixture: voc.txt / output.txt from
+*// tartarus.org/martin/PorterStemmer (23,531 words).
+*// ---------------------------------------------------------------------------------------------------------
+
+               &ANCHOR        =  0
+               &FULLSCAN      =  1
+               epsilon        =
+
+               VOWELS         =  'aeiou'
+               LC             =  'abcdefghijklmnopqrstuvwxyz'
+
+*// ---------------------------------------------------------------------------------------------------------
+*// cons(i): true if stem[i] is a consonant.  Letters 1-indexed (SNOBOL4 SUBSTR is 1-based).
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('cons(i)c')                                   :(cons_end)
+cons           c              =  SUBSTR(stem, i, 1)
+               c              ANY(VOWELS)                          :S(FRETURN)
+               DIFFER(c, 'y')                                       :S(RETURN)
+               EQ(i, 1)                                             :S(RETURN)
+               cons(i - 1)                                          :S(FRETURN)F(RETURN)
+cons_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// m(): Porter's measure — the number of VC sequences in 'stem'.  Returns integer.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('m()i,n,L')                                   :(m_end)
+m              L              =  SIZE(stem)
+               EQ(L, 0)                                             :S(RETURN)
+               i              =  1
+               n              =  0
+mC0            GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :F(mV1)
+               i              =  i + 1                              :(mC0)
+mV1            i              =  i + 1
+mV             GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :S(mC1)
+               i              =  i + 1                              :(mV)
+mC1            i              =  i + 1
+               n              =  n + 1
+               m              =  n
+mC             GT(i, L)                                             :S(RETURN)
+               cons(i)                                              :F(mV1)
+               i              =  i + 1                              :(mC)
+m_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// vowelinstem(): true if any char of stem is a vowel (y after consonant counts).
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('vowelinstem()i,L')                           :(vis_end)
+vowelinstem    L              =  SIZE(stem)
+               i              =  1
+visL           GT(i, L)                                             :S(FRETURN)
+               cons(i)                                              :F(RETURN)
+               i              =  i + 1                              :(visL)
+vis_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// doublec(j): stem[j] == stem[j-1] and both consonants.  j 1-based.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('doublec(j)')                                 :(dc_end)
+doublec        LT(j, 2)                                             :S(FRETURN)
+               DIFFER(SUBSTR(stem, j, 1), SUBSTR(stem, j - 1, 1))   :S(FRETURN)
+               cons(j)                                              :S(RETURN)F(FRETURN)
+dc_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// cvc(i): stem[i-2..i] = c-v-c  and  stem[i] not in {w,x,y}.  i 1-based.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('cvc(i)c')                                    :(cvc_end)
+cvc            LT(i, 3)                                             :S(FRETURN)
+               cons(i)                                              :F(FRETURN)
+               cons(i - 1)                                          :S(FRETURN)
+               cons(i - 2)                                          :F(FRETURN)
+               c              =  SUBSTR(stem, i, 1)
+               c              ANY('wxy')                           :S(FRETURN)F(RETURN)
+cvc_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// Guards — pattern-valued.  Return null pattern ('') on success, FAIL on failure.
+*// Called as *gX() inside a pattern.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('g_vis()')                                    :(g_vis_end)
+g_vis          vowelinstem()                                        :F(gv_no)
+               g_vis          =                                     :(RETURN)
+gv_no          g_vis          =  FAIL                               :(RETURN)
+g_vis_end
+
+               DEFINE('g_m_gt_0()')                                 :(g_m0_end)
+g_m_gt_0       GT(m(), 0)                                           :F(gm0_no)
+               g_m_gt_0       =                                     :(RETURN)
+gm0_no         g_m_gt_0       =  FAIL                               :(RETURN)
+g_m0_end
+
+               DEFINE('g_m_gt_1()')                                 :(g_m1_end)
+g_m_gt_1       GT(m(), 1)                                           :F(gm1_no)
+               g_m_gt_1       =                                     :(RETURN)
+gm1_no         g_m_gt_1       =  FAIL                               :(RETURN)
+g_m1_end
+
+               DEFINE('g_m_eq_1()')                                 :(g_me1_end)
+g_m_eq_1       EQ(m(), 1)                                           :F(gme1_no)
+               g_m_eq_1       =                                     :(RETURN)
+gme1_no        g_m_eq_1       =  FAIL                               :(RETURN)
+g_me1_end
+
+               DEFINE('g_not_cvc_last()L')                          :(g_ncvc_end)
+g_not_cvc_last L              =  SIZE(stem)
+               cvc(L)                                               :S(gnc_no)
+               g_not_cvc_last =                                     :(RETURN)
+gnc_no         g_not_cvc_last =  FAIL                               :(RETURN)
+g_ncvc_end
+
+               DEFINE('g_stem_not_m()L')                            :(g_snm_end)
+g_stem_not_m   L              =  SIZE(stem)
+               DIFFER(SUBSTR(stem, L, 1), 'm')                      :F(gsnm_no)
+               g_stem_not_m   =                                     :(RETURN)
+gsnm_no        g_stem_not_m   =  FAIL                               :(RETURN)
+g_snm_end
+
+               DEFINE('g_stem_last_st()L,last')                     :(g_sls_end)
+g_stem_last_st L              =  SIZE(stem)
+               last           =  SUBSTR(stem, L, 1)
+               last           ANY('st')                            :F(gsls_no)
+               g_stem_last_st =                                     :(RETURN)
+gsls_no        g_stem_last_st =  FAIL                               :(RETURN)
+g_sls_end
+
+               DEFINE('g_m_ll_gt_1()save,r')                        :(g_mll_end)
+g_m_ll_gt_1    save           =  stem
+               stem           =  save 'll'
+               r              =  m()
+               stem           =  save
+               GT(r, 1)                                             :F(gmll_no)
+               g_m_ll_gt_1    =                                     :(RETURN)
+gmll_no        g_m_ll_gt_1    =  FAIL                               :(RETURN)
+g_mll_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// Action setters.  Each corresponds to λ("target='X'") in the Python.  Called via
+*// (epsilon . *s_X()) so they fire at commit time on the winning arm.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('s_ss()')    :(s_ss_end)
+s_ss           target         =  'ss'
+               s_ss           =  .dummy                             :(NRETURN)
+s_ss_end
+               DEFINE('s_i()')     :(s_i_end)
+s_i            target         =  'i'
+               s_i            =  .dummy                             :(NRETURN)
+s_i_end
+               DEFINE('s_empty()') :(s_empty_end)
+s_empty        target         =
+               s_empty        =  .dummy                             :(NRETURN)
+s_empty_end
+               DEFINE('s_ee()')    :(s_ee_end)
+s_ee           target         =  'ee'
+               s_ee           =  .dummy                             :(NRETURN)
+s_ee_end
+               DEFINE('s_ate()')   :(s_ate_end)
+s_ate          target         =  'ate'
+               s_ate          =  .dummy                             :(NRETURN)
+s_ate_end
+               DEFINE('s_tion()')  :(s_tion_end)
+s_tion         target         =  'tion'
+               s_tion         =  .dummy                             :(NRETURN)
+s_tion_end
+               DEFINE('s_ence()')  :(s_ence_end)
+s_ence         target         =  'ence'
+               s_ence         =  .dummy                             :(NRETURN)
+s_ence_end
+               DEFINE('s_ance()')  :(s_ance_end)
+s_ance         target         =  'ance'
+               s_ance         =  .dummy                             :(NRETURN)
+s_ance_end
+               DEFINE('s_ize()')   :(s_ize_end)
+s_ize          target         =  'ize'
+               s_ize          =  .dummy                             :(NRETURN)
+s_ize_end
+               DEFINE('s_ble()')   :(s_ble_end)
+s_ble          target         =  'ble'
+               s_ble          =  .dummy                             :(NRETURN)
+s_ble_end
+               DEFINE('s_al()')    :(s_al_end)
+s_al           target         =  'al'
+               s_al           =  .dummy                             :(NRETURN)
+s_al_end
+               DEFINE('s_ent()')   :(s_ent_end)
+s_ent          target         =  'ent'
+               s_ent          =  .dummy                             :(NRETURN)
+s_ent_end
+               DEFINE('s_e()')     :(s_e_end)
+s_e            target         =  'e'
+               s_e            =  .dummy                             :(NRETURN)
+s_e_end
+               DEFINE('s_ous()')   :(s_ous_end)
+s_ous          target         =  'ous'
+               s_ous          =  .dummy                             :(NRETURN)
+s_ous_end
+               DEFINE('s_ive()')   :(s_ive_end)
+s_ive          target         =  'ive'
+               s_ive          =  .dummy                             :(NRETURN)
+s_ive_end
+               DEFINE('s_ful()')   :(s_ful_end)
+s_ful          target         =  'ful'
+               s_ful          =  .dummy                             :(NRETURN)
+s_ful_end
+               DEFINE('s_log()')   :(s_log_end)
+s_log          target         =  'log'
+               s_log          =  .dummy                             :(NRETURN)
+s_log_end
+               DEFINE('s_ic()')    :(s_ic_end)
+s_ic           target         =  'ic'
+               s_ic           =  .dummy                             :(NRETURN)
+s_ic_end
+               DEFINE('s_l()')     :(s_l_end)
+s_l            target         =  'l'
+               s_l            =  .dummy                             :(NRETURN)
+s_l_end
+
+*// step1ab_cleanup — Python's λ("porter_step1ab_cleanup()"): commit-time action (NOT a guard)
+*// that sets target and may mutate stem.
+               DEFINE('a_s1ab_cleanup()L,last,P')                   :(a_s1ab_end)
+a_s1ab_cleanup
+               L              =  SIZE(stem)
+               P              =  RTAB(2) ('at' | 'bl' | 'iz') RPOS(0)
+               stem           P                                     :F(a_s1_next1)
+               target         =  'e'                                :(a_s1_done)
+a_s1_next1     doublec(L)                                           :F(a_s1_next2)
+               last           =  SUBSTR(stem, L, 1)
+               last           ANY('lsz')                           :S(a_s1_next2)
+               stem           =  SUBSTR(stem, 1, L - 1)
+               target         =                                     :(a_s1_done)
+a_s1_next2     EQ(m(), 1)                                           :F(a_s1_else)
+               cvc(L)                                               :F(a_s1_else)
+               target         =  'e'                                :(a_s1_done)
+a_s1_else      target         =
+a_s1_done      a_s1ab_cleanup =  .dummy                             :(NRETURN)
+a_s1ab_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// Porter rule patterns.  Read these top-down next to the Python source — they are the same shape.
+*// ---------------------------------------------------------------------------------------------------------
+               p1a            =
++              POS(0)
++              ( RTAB(4) $ stem 'sses' (epsilon . *s_ss())
++              | RTAB(3) $ stem 'ies'  (epsilon . *s_i())
++              | RTAB(2) $ stem 'ss'   (epsilon . *s_ss())
++              | RTAB(1) $ stem 's'    (epsilon . *s_empty())
++              )
++              RPOS(0)
+
+               p1b            =
++              POS(0)
++              ( RTAB(3) $ stem 'eed' (*g_m_gt_0() (epsilon . *s_ee()) | epsilon)
++              | RTAB(2) $ stem 'ed'  *g_vis() (epsilon . *a_s1ab_cleanup())
++              | RTAB(3) $ stem 'ing' *g_vis() (epsilon . *a_s1ab_cleanup())
++              )
++              RPOS(0)
+
+               p1c            =
++              POS(0)
++              ( RTAB(1) $ stem 'y' *g_vis() (epsilon . *s_i())
++              )
++              RPOS(0)
+
+               p2             =
++              POS(0)
++              ( RTAB(7) $ stem 'ational' *g_m_gt_0() (epsilon . *s_ate())
++              | RTAB(6) $ stem 'tional'  *g_m_gt_0() (epsilon . *s_tion())
++              | RTAB(4) $ stem 'enci'    *g_m_gt_0() (epsilon . *s_ence())
++              | RTAB(4) $ stem 'anci'    *g_m_gt_0() (epsilon . *s_ance())
++              | RTAB(4) $ stem 'izer'    *g_m_gt_0() (epsilon . *s_ize())
++              | RTAB(3) $ stem 'bli'     *g_m_gt_0() (epsilon . *s_ble())
++              | RTAB(4) $ stem 'alli'    *g_m_gt_0() (epsilon . *s_al())
++              | RTAB(5) $ stem 'entli'   *g_m_gt_0() (epsilon . *s_ent())
++              | RTAB(3) $ stem 'eli'     *g_m_gt_0() (epsilon . *s_e())
++              | RTAB(5) $ stem 'ousli'   *g_m_gt_0() (epsilon . *s_ous())
++              | RTAB(7) $ stem 'ization' *g_m_gt_0() (epsilon . *s_ize())
++              | RTAB(5) $ stem 'ation'   *g_m_gt_0() (epsilon . *s_ate())
++              | RTAB(4) $ stem 'ator'    *g_m_gt_0() (epsilon . *s_ate())
++              | RTAB(5) $ stem 'alism'   *g_m_gt_0() (epsilon . *s_al())
++              | RTAB(7) $ stem 'iveness' *g_m_gt_0() (epsilon . *s_ive())
++              | RTAB(7) $ stem 'fulness' *g_m_gt_0() (epsilon . *s_ful())
++              | RTAB(7) $ stem 'ousness' *g_m_gt_0() (epsilon . *s_ous())
++              | RTAB(5) $ stem 'aliti'   *g_m_gt_0() (epsilon . *s_al())
++              | RTAB(5) $ stem 'iviti'   *g_m_gt_0() (epsilon . *s_ive())
++              | RTAB(6) $ stem 'biliti'  *g_m_gt_0() (epsilon . *s_ble())
++              | RTAB(4) $ stem 'logi'    *g_m_gt_0() (epsilon . *s_log())
++              )
++              RPOS(0)
+
+               p3             =
++              POS(0)
++              ( RTAB(5) $ stem 'icate' *g_m_gt_0() (epsilon . *s_ic())
++              | RTAB(5) $ stem 'ative' *g_m_gt_0() (epsilon . *s_empty())
++              | RTAB(5) $ stem 'alize' *g_m_gt_0() (epsilon . *s_al())
++              | RTAB(5) $ stem 'iciti' *g_m_gt_0() (epsilon . *s_ic())
++              | RTAB(4) $ stem 'ical'  *g_m_gt_0() (epsilon . *s_ic())
++              | RTAB(3) $ stem 'ful'   *g_m_gt_0() (epsilon . *s_empty())
++              | RTAB(4) $ stem 'ness'  *g_m_gt_0() (epsilon . *s_empty())
++              )
++              RPOS(0)
+
+               p4             =
++              POS(0)
++              ( RTAB(2) 'al'    *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(4) 'ance'  *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(4) 'ence'  *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(2) 'er'    *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(2) 'ic'    *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(4) 'able'  *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(4) 'ible'  *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(3) 'ant'   *g_m_gt_1() (epsilon . *s_empty())
++              | RTAB(5) $ stem 'ement' *g_m_gt_1() (epsilon . *s_empty())
++              )
++              RPOS(0)
+
+               p5a            =
++              POS(0)
++              ( RTAB(1) $ stem 'e'
++                ( *g_m_gt_1()
++                | *g_m_eq_1() *g_not_cvc_last()
++                )
++                (epsilon . *s_empty())
++              )
++              RPOS(0)
+
+               p5b            =
++              POS(0)
++              ( RTAB(2) $ stem 'll' *g_m_ll_gt_1() (epsilon . *s_l())
++              )
++              RPOS(0)
+
+*// ---------------------------------------------------------------------------------------------------------
+*// stemmer(token): run the Porter pipeline.  Sentinel 'UNSET' on target detects non-firing pattern.
+*// ---------------------------------------------------------------------------------------------------------
+               DEFINE('stemmer(token)')                             :(stm_end)
+stemmer        LE(SIZE(token), 2)                                   :F(stm_run)
+               stemmer        =  token                              :(RETURN)
+stm_run        token          =  REPLACE(token, &UCASE, LC)       :(stm_4)
+               target         =  'UNSET'
+               token          p1a                                   :F(stm_1b)
+               DIFFER(target, 'UNSET')                              :F(stm_1b)
+               token          =  stem target
+
+stm_1b         target         =  'UNSET'
+               token          p1b                                   :F(stm_1c)
+               DIFFER(target, 'UNSET')                              :F(stm_1c)
+               token          =  stem target
+
+stm_1c         target         =  'UNSET'
+               token          p1c                                   :F(stm_2)
+               DIFFER(target, 'UNSET')                              :F(stm_2)
+               token          =  stem target
+
+stm_2          target         =  'UNSET'
+               token          p2                                    :F(stm_3)
+               DIFFER(target, 'UNSET')                              :F(stm_3)
+               token          =  stem target
+
+stm_3          target         =  'UNSET'
+               token          p3                                    :F(stm_4)
+               DIFFER(target, 'UNSET')                              :F(stm_4)
+               token          =  stem target
+
+stm_4          target         =  'UNSET'
+               token          p4                                    :F(stm_done)
+               DIFFER(target, 'UNSET')                              :F(stm_done)
+               token          =  stem target                        :(stm_done)
+
+stm_5a         target         =  'UNSET'
+               token          p5a                                   :F(stm_5b)
+               DIFFER(target, 'UNSET')                              :F(stm_5b)
+               token          =  stem target
+
+stm_5b         target         =  'UNSET'
+               token          p5b                                   :F(stm_done)
+               DIFFER(target, 'UNSET')                              :F(stm_done)
+               token          =  stem target
+
+stm_done       stemmer        =  token                              :(RETURN)
+stm_end
+
+*// ---------------------------------------------------------------------------------------------------------
+*// Driver: read each word from INPUT, write its stem to OUTPUT.
+*// ---------------------------------------------------------------------------------------------------------
+NEXT           word           =  INPUT                              :F(END)
+               OUTPUT         =  stemmer(word)                      :(NEXT)
+END

@@ -1,0 +1,83 @@
+# corpus coverage classification manifest -- the data half of test_gate_corpus_coverage_classified.sh.
+# ⛔ THIS FILE IS NOT AUTHORITY FOR "THE CORPUS IS COVERED". It is authority for "every corpus subtree has been
+# CLASSIFIED". The gate proves TOTALITY (nothing falls through) and REFERENTIAL INTEGRITY (named harnesses and
+# rows still exist). It does NOT prove a named harness genuinely sweeps its subtree -- a harness can exist and be
+# vacuous (measured instance: prolog-parser-corpus-vacuous-gate-422-files). Vacuity is that row's question, not this gate's.
+#
+# ⭐ WHY A MANIFEST AND NOT A HAND LIST: the gate checks this file against the LIVE tree every run. An entry that
+# goes stale, or a subtree nobody added, turns the gate RED and names it. That is the property a hand-maintained
+# bash list cannot have -- the defect measured in SCRIP 1d38f034, where 98 crosscheck entries left the SNOBOL4
+# board silently while it kept printing GATE OK / MISSING=0. Omission here CANNOT hide; that is the whole point.
+#
+# FIELDS: kind <TAB> path <TAB> bucket <TAB> evidence
+#   kind=EXCLUDE -> path is a PREFIX, matched at any depth, removed before grouping (mirrors util_corpus_coverage_denominator.sh)
+#   kind=SUBTREE -> path is a depth-2 group of what remains; bucket is GATED or ROWD
+#   GATED evidence = a script under ../harness/scripts/ that must exist.  ROWD evidence = a task topic that must exist and NOT be DONE.
+#
+# ⛔ DO NOT PIN COUNTS IN THIS FILE (hq_C s272 §1, RULES.md:105). The gate recomputes them live.
+EXCLUDE	probe	EXCLUDED	witness ladders, not primary corpus -- hq_C RULING s272 §1, adopted as proposed
+EXCLUDE	packages/icon/ipl	EXCLUDED	third-party Icon reference archive; hq_C s272 §2 GATE-IT-THEN-MINE-IT -- excluded permanently, never preprocessed (that would rewrite third-party provenance)
+EXCLUDE	packages/icon/jcon-ref	EXCLUDED	JCON BB-gen reference; ruled by hq_P 2026-08-27 via git log --diff-filter=A (never existed as jcon-compiler/ref)
+EXCLUDE	programs	EXCLUDED	Lon 2026-08-27 RULES.md:55 -- "all the corpus/programs need work and cannot be converted to tests currently"; parser grading unrestricted, runtime and scored boards NO. Enforced structurally in scorecard_snobol4.sh:59-62
+# 2026-10-01 (the coo, round 3): four ROWD subtrees named rows the CEO-1386 zero-base sweep retired (no QUEUE.tsv row, so no seat could
+# pick them and the gate read UNDISPATCHABLE). Each is graded today by a board row of THE SUITE TABLE, so each is GATED by that runner:
+# packages/prolog by test_prolog_swi_suite.sh (SWI; INRIA, GNU and Logtalk by their own), benchmarks/raku by test_raku_bench_suite.sh
+# (RakBench), demos/scriptix by test_demos_suite.sh (TixDemo), benchmarks/rebus by test_rebus_bench_suite.sh (RebBench).
+SUBTREE	packages/snobol4	GATED	test_csnobol4_budne_suite.sh
+SUBTREE	tests/icon	GATED	test_icon_all_rungs.sh
+SUBTREE	tests/prolog	GATED	test_corpus_prolog_parser.sh
+SUBTREE	packages/prolog	GATED	test_prolog_swi_suite.sh
+SUBTREE	tests/snobol4	GATED	test_corpus_snobol4.sh
+# crosscheck/snocone RETIRED 2026-08-29 (hq_P, corpus-crosscheck-probe-total-conversion): all 181 .sc converted
+# into 30 suite pairs at tests/snocone/crosscheck_*.{sc,ref} -- 163 green + 18 XFAIL witnesses carried through
+# convert-blocks' new --xfail arm. The directory no longer exists, so this SUBTREE line went stale and
+# test_gate_corpus_coverage_classified.sh correctly refused on it. The converted pairs are gated by
+# test_snocone_crosscheck_suites.sh under the tests/snocone SUBTREE line below.
+SUBTREE	tests/pascal	GATED	test_gate_pascal_m3.sh
+# cfo 2026-09-16 (CEO-763): test_snocone_parser_fixtures.sh, test_raku_parser_fixtures.sh and test_rebus_parser_fixtures.sh RETIRED --
+# each graded ONLY the ast `parser` family, which Lon retired 2026-09-13 (corpus a6646f04c), so each refused rc=2 forever and was
+# wired nowhere. The two SUBTREE lines below now name the rungs runners that actually grade tests/snocone and tests/raku.
+SUBTREE	tests/snocone	GATED	test_snocone_corpus_suite.sh
+SUBTREE	tests/raku	GATED	test_raku_ir_full_suite.sh
+SUBTREE	benchmarks/prolog	GATED	test_bench_prolog_4way.sh
+SUBTREE	tests/rebus	GATED	test_crosscheck_rebus.sh
+SUBTREE	benchmarks/icon	GATED	test_icon_bench_corpus.sh
+SUBTREE	benchmarks/snobol4	GATED	test_bench_snobol4_timed.sh
+SUBTREE	demos/snobol4	GATED	test_corpus_snobol4.sh
+SUBTREE	library	GATED	test_corpus_snobol4.sh
+SUBTREE	demos/snocone	GATED	test_crosscheck_snocone.sh
+SUBTREE	packages/icon	GATED	test_gate_icn_scan.sh
+SUBTREE	benchmarks/pascal	GATED	test_gate_pascal_m3.sh
+SUBTREE	benchmarks/raku	GATED	test_raku_bench_suite.sh
+SUBTREE	demos/prolog	GATED	test_corpus_prolog_parser.sh
+SUBTREE	demos/icon	GATED	test_demo_icon_jcon.sh
+# crosscheck/beauty RETIRED 2026-08-27: seat08's crosscheck-finish (corpus 96283343) converted its two loose
+# .sno into tests/snobol4/crosscheck/beauty.{sno,ref}. The directory survives but holds ZERO program files now --
+# only .input/.ref fixtures -- so it is no longer a live subtree. The gate caught this drift within hours of the
+# conversion landing, which is exactly what a manifest checked against the live tree is for.
+# crosscheck/coverage RETIRED 2026-08-29 (corpus-crosscheck-probe-total-conversion, LON-20260828): coverage_sno_nodes.sno
+# moved to tests/snobol4/coverage/ (KEEP.md fixture -- IR-node-coverage witness, not runtime-gradeable; see that KEEP.md).
+# corpus/crosscheck/ now holds nothing at all -- this was its last SUBTREE entry. tests/snobol4 (below) already covers
+# the new location; no new line needed.
+SUBTREE	demos/scriptix	GATED	test_demos_suite.sh
+SUBTREE	demos/pascal	GATED	test_demos_suite.sh
+SUBTREE	benchmarks/snocone	GATED	test_snocone_bench_suite.sh
+SUBTREE	benchmarks/rebus	GATED	test_rebus_bench_suite.sh
+# tests/scrip_test is TRANSIENT STAGING, not a stable corpus location: SCRIP/test was moved here wholesale
+# (2026-08-29, "11a36c87", repo-boundary ruling, 594 files) and the ceo all-hands-consolidation broadcast the
+# same day split its per-language drain across seats (seat03=icon, hq_B+seat05=prolog, seat06=raku,
+# seat07=snocone+rebus, seat04+hq_P=pascal, seat09+seat10=snobol4). Every real destination is already its own
+# GATED SUBTREE above (tests/snobol4, tests/icon, tests/prolog, tests/pascal, tests/snocone, tests/raku,
+# tests/rebus) -- scrip_test itself never gets its own harness, it just shrinks toward zero as each language's
+# absorption lands. seat09's slice is DONE this session: 150/158 absorbed into tests/snobol4 (corpus a7ece65f),
+# residue is 8 permanently-loud-excluded files (4 library/* need cross-file deps isolated grading can't resolve,
+# 1113_table disagrees on table-iteration order, treebank-prepend crashes both modes, coverage_sno_nodes
+# disagrees with the oracle's own rc, polyglot_tri_main isn't a standalone program) -- see
+# corpus-suites-consolidation.task.md LEDGER for the full receipt. Other languages' residue is still draining.
+# When the last language's absorption lands this line goes STALE (0 live files) and should simply be deleted,
+# not replaced.
+EXCLUDE	tests/scrip_test	EXCLUDED	transient per-language absorption staging (see comment above) -- not primary corpus, drains to zero, never gets its own harness because every real destination already has one
+EXCLUDE	include	EXCLUDED	-INCLUDE library fragments, not programs: every file here is a DEFINE(...) body with NO `END` line, so none of them can run standalone -- they are pulled in by the programs that DO run (corpus/packages/snobol4/gimpel/*). The subtree was invisible to this gate until 2026-09-04, when corpus b7c674a17 (the SNOBOL4 xfail row) added the first four .sno-extension members (FORTPUT/LPAD/PUT/RPAD); the pre-existing .inc members carry an extension the denominator does not count, so a directory that had always been unclassified only became RED when its files were renamed into a counted extension. Classified EXCLUDE by hq_C 2026-09-04 -- it is support material for a graded suite, never a population of its own.
+EXCLUDE	archive	EXCLUDED	archived bisection scratch and retired probes, provenance in corpus/archive/*/README -- not gradeable, not test material; archived rather than deleted so a regressed cure can bisect against them
+EXCLUDE	packages/pascal	EXCLUDED	third-party upstream Pascal, imported never converted: (a) the Pascal-P4 reference compiler (pcom.pas/pint.pas/ppp.pas + grammar), ETH Zurich 1976, Free Pascal/Delphi port by Christophe Staiesse 2013, provenance in packages/pascal/README.md; (b) packages/pascal/pat -- the ISO 7185 validation suite (Pascal-P5 1.4.x, 1713 files, hq_T 2026-09-03), which IS graded, but by its own runner test_pascal_pat_suite.sh against the standard rather than by a corpus harness, and whose .cmp/.ecp files are deliberately NOT a portable oracle (see its README)
+EXCLUDE	reference/icon	EXCLUDED	reference material, not programs to grade: icont-bench is the 1993 Arizona icont benchmark HARNESS and its libraries (options/micsum/version/shuffle/post/micro -- timing scaffolding with no .ref, moved out of benchmarks/icon at corpus 5a128a38d so the bench suite grades only real programs; README.md there), goaldi is Townsend and Proebsting prose (adoc) -- neither has an oracle output to grade

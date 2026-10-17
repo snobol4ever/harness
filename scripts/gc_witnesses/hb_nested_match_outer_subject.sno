@@ -1,0 +1,12 @@
+        DEFINE('GC()')                          :(W)
+GC      T = DUPL('ab',300)
+        V = DUPL('c',4) 'y2y'
+        V 'y2y' . INNER                         :S(G1)F(G0)
+G1      T = DUPL('de',300)
+        GC = 'x3x'                              :(RETURN)
+G0      GC = 'zz'                               :(RETURN)
+W       U = DUPL('a',4) 'x3x'
+        U *GC() . OUT4                          :S(OK)F(NO)
+OK      OUTPUT = 'OK-' SIZE(OUT4) '-' INNER     :(END)
+NO      OUTPUT = 'NO'
+END

@@ -1,0 +1,16 @@
+global depth
+procedure main(a)
+   if /depth then {
+      depth := 1;
+      f();
+      g();
+      write("done")
+      }
+   else write(image(a));
+end
+procedure f()
+   main(1);
+end
+procedure g()
+   main(2, 3, 4, 5, 6, 7, 8, 9, 10);
+end

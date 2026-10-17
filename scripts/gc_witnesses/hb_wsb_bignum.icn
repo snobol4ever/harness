@@ -1,0 +1,20 @@
+# WITNESS for the bignum.c arm of HB_WSB (215) -- the ATOMIC (pointer-free) collected-heap byte buffer.
+# A BIG_t is { int32_t sign; uint32_t n; uint32_t limb[]; }: all scalars, no pointer and no DESCR, so the block
+# needs no layout at all -- but it is still MARKED and still RELOCATED, and the DT_BIG holder must still be
+# fixed up when it slides. This witness drives all three bignum.c sites: big_alloc (every ^, * and + below)
+# and rt_big_str's two scratch buffers (the uint32_t limb copy and the decimal char buffer, both reached by
+# string(c) and by write(a)). `a` is held across 400 churn allocations, so a lost or unrelocated BIG_t block
+# prints poison or a short number instead of the 121 digits of 2^400.
+# The .ref is cut from the Arizona oracle (/home/resources/icon-master/bin/icont -s -x), not from ./scrip.
+procedure main();
+   local a, b, c, i, churn, s;
+   a := 2 ^ 400;
+   b := 3 ^ 300;
+   c := a * b;
+   every i := 1 to 400 do churn := repl("q", 200);
+   s := string(c);
+   write("LEN=", *s);
+   write("HEAD=", s[1:12]);
+   write("TAIL=", s[-12:0]);
+   write("A=", a);
+end

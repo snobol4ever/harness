@@ -1,0 +1,5 @@
+plain every count 1
+gen every count 2
+cmp failed as expected
+repeat count 3
+sum 2

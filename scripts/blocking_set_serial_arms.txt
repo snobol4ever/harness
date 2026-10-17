@@ -1,0 +1,65 @@
+# blocking_set_serial_arms.txt -- ARMS THAT RUN ALONE, DECLARED (coo 2026-09-17, ceo CEO-829).
+#
+# run_blocking_set.sh --shards N fans the declared set out over N children. An arm whose COMMAND contains any
+# pattern below is in NO shard: the parent runs it, one at a time, before the fan-out starts.
+#
+# ⛔ WHY DECLARED AND NOT SNIFFED. The ceo's hazard census the hour this row was minted found 280 of 336 arms
+# building a mktemp workdir -- and SAID that the census UNDER-DETECTS, which is the honest reading: a null
+# result bounds the probe, not the thing probed. The three classes below are the ones already KNOWN to break
+# under a naive fan-out, each from a measurement someone already paid for. Add a pattern here with its reason
+# when a fourth is found; the acceptance gate (name-set identity against a sequential run) is what catches one
+# nobody has named yet, and an arm that changes verdict with HOW it was run is THE FINDING, not a nuisance.
+#
+# 1. ARMS THAT WRITE INTO THE CHECKOUT ROOT rather than a mktemp dir. The port-trace gates cd into the root and
+#    CLAUDE.md records their tmp3/tmp4 litter there -- two of them at once write each other's files.
+port_trace
+icn_port_trace
+# 2. THE ONE-RUNNER BOARD ARMS. lib_one_runner.sh admits one board per tree; two shards entering it at once is
+#    two boards on one tree, which is the thing that rule exists to forbid (RULES.md ONE RUNNER, ONE BOARD).
+test_corpus_
+board_
+# 3. TIMING AND RATE ARMS. Their verdict is a duration or a collections-per-program rate read off a box whose
+#    load the fan-out itself changes -- the one class where running faster makes the reading wrong.
+preflight_arms_stay_cheap
+instr_budget
+bench_
+gc_pacing_bounds
+gc_aggregates_are_collectable
+gc_record_type_table_is_rooted
+# 4. ARMS THAT RUN THEIR OWN FAN-OUT (coo 2026-09-20). Both blocking-set acceptance gates start shard children
+#    of their own; nested inside a shard they would be a fan-out inside a fan-out, and the parallel gate's two
+#    racing arms RENDEZVOUS with a 10-second ceiling -- on a box already carrying N shards that rendezvous can
+#    time out, which the gate correctly reports as COULD-NOT-MEASURE and which is a refusal nobody needs.
+blocking_set_parallel_agrees
+blocking_set_shards_agree
+# ⛔ MEASURED AND ADDED 2026-09-20 BY THE ARM-FOR-ARM COMPARISON ITSELF, which is the only way an arm of this
+#    class is ever found: test_gate_gc_every_allocating_runtime_entry_returns_to_a_safe_point.sh was the ONE arm
+#    that read GREEN sequentially (101s at load 8) and RED under a six-way fan-out (126s at load 16). Re-run
+#    alone on a quiet box it takes 63s at load 2 and passes. It wraps its compiler runs in `timeout 120` and
+#    `timeout 180` and its coverage arm counts safe points reached inside a bounded run, so its verdict is a
+#    DURATION read off a box whose load the fan-out changes -- class 3 exactly, found by the measurement rather
+#    than by reading. ⛔ AND THE LIMIT OF THIS FILE, STATED WHERE IT IS DISCOVERED: declaring an arm serial
+#    removes the FAN-OUT's load, never the FLEET's. preflight_arms_stay_cheap is declared here and still read RED
+#    in the SEQUENTIAL control at load 8 while reading GREEN in the parent of the fan-out -- the cfo measured the
+#    same arm red on origin under ten seats and named it: a timing gate that reds because the fleet grew is
+#    measuring the fleet. A duration-pinned arm's verdict is a fact about the box and must never be read as one
+#    about the tree.
+gc_every_allocating_runtime_entry_returns_to_a_safe_point
+# ⛔ AND THE DEATH GATE, coo 2026-09-20: it starts four background runs and a three-shard fan-out of its own and
+#    then KILLS them on a one-second timer. Nested inside a shard it would be a fan-out inside a fan-out with a
+#    load-sensitive fixture -- its wait_started budget is ten seconds -- and it is the one arm in the set that
+#    sends signals at all. It is root-scoped and pattern-scoped to its own mktemp dir, so it cannot reach another
+#    arm; it runs alone because its own MEASUREMENT would otherwise be a measurement of the box.
+a_blocking_set_death_names_its_killer
+# 4. ARMS THAT MOVE THE WATCHED SURFACE BY DESIGN (ceo 2026-09-23, CEO-1197: one pass of 409 arms read 123 refused,
+#    121 of them RACED on exactly these two). gc_conservative_auditor builds its OWN library configuration into out/
+#    (out/rt_pic-<tag>, out/libscrip_rt-<tag>.so, and the Makefile archives the previous .so under out/attic) --
+#    101 concurrent arms shared that path in one pass; gc_acceptance_never_prints moves ../harness/scripts/gc_event_coverage.floor
+#    in place to prove the display refuses -- 12 concurrent arms shared ./scripts. Each is correct alone and a race
+#    under any fan-out, so each runs in the parent.
+gc_conservative_auditor
+gc_acceptance_never_prints
+# 5. (RETIRED 2026-09-23, the coo, in the landing that cured it.) progress_configuration_declarations_do_not_regress ran alone
+#    here for ONE landing because util_progress_flips.py --ratchet held the whole progress table (4556 MB tree-wide). The
+#    reader now streams (ratchet_scan, 14 MB, byte-identical answers: test_gate_progress_readers_stream_and_answer_the_same.sh),
+#    so the reason is gone and the arm is shardable again. A class whose reason is cured leaves this file with its cure.

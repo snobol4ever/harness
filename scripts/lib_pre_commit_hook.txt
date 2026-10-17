@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# pre-commit — refuse a STAGED src/ file that carries a comment, at the moment it is being committed.
+#
+# ⛔⭐⭐ WHY THIS EXISTS, AND WHY DOCUMENTATION WAS NOT ENOUGH. src/ carries a repo-wide zero-comment
+# invariant (RULES.md § C style: one form only, the 200-char separator) and `strip_comments.py --check` is
+# the FIRST arm of `make test`. Three seats in three lanes broke it in one week — hq_B 92d300f07, hq_P
+# 84e02570, hq_T 589b0c78a — and `make test`'s own comment already documents the first two by name, with
+# the note "TWICE IN ONE EVENING, NEITHER SEAT AT FAULT in any way a reviewer would catch". A fourth
+# recurrence was a matter of time.
+#
+# ⭐ THE REASON IT KEEPS HAPPENING IS STRUCTURAL, and hq_C put it best while curing the third: a long
+# explanatory comment is the NATURAL and conscientious way to make a subtle shared-node change legible to
+# the next reader, and this codebase has deliberately closed that door. THE BETTER A SEAT EXPLAINS ITSELF
+# IN PLACE, THE REDDER THE BUILD. A rule that punishes the most careful instinct will keep catching the
+# most careful people, forever, until something makes the door visible AT THE MOMENT IT IS WALKED THROUGH.
+# More documentation is what already failed three times; this is the hook shape instead.
+#
+# ⛔ IT GRADES ONLY THE STAGED FILES, never the tree. A whole-tree check here would refuse an innocent
+# commit because a file the author never opened is dirty — which is how a guard earns a reputation for
+# being in the way and gets bypassed with --no-verify. It convicts the commit in front of it and nobody else.
+#
+# ⛔ IT SOURCES strip_comments.py RATHER THAN REIMPLEMENTING THE RULE. A second definition of "what counts
+# as a comment here" would drift from the one `make test` enforces, and the drift would be silent in
+# exactly the direction that lets a violation through.
+set -u
+root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+
+# ============================ ARM 1 — AN UNRESOLVED CONFLICT MARKER, IN ANY TRACKED FILE ============================
+# ⛔⭐⭐ WHY: a conflict marker committed to a shared authority does not fail where it was made, it fails for
+# everybody else, silently, in a file nobody edited. Measured 2026-09-06: hq_R landed a SCORE.md carrying markers,
+# util_score_row.py could not parse the table, THE LEADERBOARD WRITER WAS DEAD FOR AN HOUR AND EVERY BOARD STILL
+# READ GREEN, because a failed row-write is non-fatal by design (lib_gate.sh gate_score_row) -- correctly, so a
+# bookkeeping failure never reds a board. The two decisions compose into a hole: the writer may fail quietly AND
+# the file may be corrupt, so nothing anywhere says so. This arm closes it at the only moment the author is still
+# present. I hit the same conflict twice in one sitting on this very file; both times git produced NO markers on
+# the binary half (corpus ALL.ref) and clean markers on the text half, so the danger is uneven and easy to miss.
+#
+# ⭐ THE PATTERN IS DELIBERATELY NARROW, and this is measured, not cautious-by-feel: '^<<<<<<< ' and '^>>>>>>> '
+# (with the trailing space git always writes before the label) occur in exactly THREE tracked files across all
+# three repos, all archives of a historical conflict, all exempted below BY NAME. A bare '^=======$' occurs ZERO
+# times today -- but it is also the markdown setext H2 underline, so matching it would put a permanent
+# false-positive trap in every document for no detection gain: git writes all three markers together, so the two
+# angle forms already catch every real conflict. A guard that cries wolf gets bypassed with --no-verify, and then
+# it guards nothing.
+#
+# ⛔ IT READS THE STAGED BLOB (git show ":$f"), NEVER THE WORKTREE. Those differ exactly when it matters -- the
+# whole point is to grade what is ABOUT to be committed, and a resolved worktree over a conflicted index is the
+# case this must catch rather than wave through.
+# ⛔ AND IT GREPS WITH -a, because corpus/tests/snobol4/ALL.ref holds one NUL byte (a legitimate CHAR(0)
+# witness) and "no markers found" must never be able to mean "I refused to look". ⭐ MEASURED 2026-09-06, and
+# the cause is not what the fleet's standing note says: this box's INTERACTIVE shell defines `grep` as a
+# FUNCTION routing to ugrep 7.8.4, while a hook or script resolves /usr/bin/grep, GNU grep 3.11. On a
+# NUL-bearing file they DISAGREE -- ugrep answers rc=1 without -a, GNU grep answers rc=0 either way. So -a is
+# belt-and-braces HERE and load-bearing anywhere the ugrep shadow is on PATH. The general result matters more
+# than the flag: a claim measured at the prompt and relied on in a script is a claim measured with a DIFFERENT
+# TOOL, silently, and that is why the same grep has been reported as both blind and not-blind to ALL.ref.
+CONFLICT_EXEMPT="archive/ARCHIVE-ICON-JVM-HISTORY.md archive/ARCHIVE-MILESTONES.md archive/MILESTONE_ARCHIVE.md"
+conflicted=""
+while IFS= read -r -d '' f; do
+    case " $CONFLICT_EXEMPT " in *" $f "*) continue ;; esac
+    if git show ":$f" 2>/dev/null | grep -a -qE '^(<<<<<<< |>>>>>>> )'; then conflicted="$conflicted $f"; fi
+done < <(git diff --cached --name-only --diff-filter=ACM -z 2>/dev/null)
+if [ -n "$conflicted" ]; then
+    echo "⛔ COMMIT REJECTED — a staged file carries an unresolved conflict marker:" >&2
+    for f in $conflicted; do
+        echo "   $f" >&2
+        git show ":$f" 2>/dev/null | grep -a -nE '^(<<<<<<< |>>>>>>> )' | head -4 | sed 's/^/      /' >&2
+    done
+    cat >&2 <<'MSG'
+
+   A marker committed to a shared authority does not fail where it was made -- it fails for every other
+   seat, in a file they never touched. SCORE.md carrying markers took the leaderboard writer down for an
+   hour on 2026-09-06 while every board still read green, because a failed row-write is non-fatal BY
+   DESIGN so a bookkeeping failure never reds a board. Nothing was left to say the file was corrupt.
+
+   FIX: resolve the hunk, then re-stage. Take the newer half of each side rather than one side whole --
+   a rewrite-in-place row makes that decidable in one glance, which is what the format is for.
+   ⛔ If a conflict is genuinely part of the CONTENT (an archived history), add it to CONFLICT_EXEMPT in
+   ../harness/scripts/lib_pre_commit_hook.txt by name; do not bypass the hook for it.
+   Only if you are certain the rule should not apply here: git commit --no-verify
+MSG
+    exit 1
+fi
+
+# ============================ ARM 2 — A COMMENT IN A STAGED src/ FILE ============================
+staged="$(git diff --cached --name-only --diff-filter=ACM -- 'src/*' 2>/dev/null)"
+[ -n "$staged" ] || exit 0
+# Repos without a src/ tree (corpus, .github) never reach here; SCRIP finds its own ../harness/scripts/, and a sibling
+# checkout finds SCRIP next door — the same D-17 PORTABLE-HOME derivation every other script uses.
+sc=""
+for cand in "$root/scripts" "$root/../harness/scripts" "${S4E_HOME:-}/harness/scripts"; do
+    [ -n "$cand" ] && [ -f "$cand/strip_comments.py" ] && { sc="$cand"; break; }
+done
+[ -n "$sc" ] || exit 0
+out="$(cd "$root" && python3 "$sc/strip_comments.py" --check-files $staged 2>&1)"; rc=$?
+[ "$rc" -eq 0 ] && exit 0
+echo "⛔ COMMIT REJECTED — a staged src/ file carries a comment or a blank line." >&2
+echo "$out" | sed 's/^/   /' >&2
+cat >&2 <<'MSG'
+
+   src/ has a repo-wide ZERO-COMMENT invariant (RULES.md § C style: the only permitted form is the
+   200-char /*----*/ separator between functions). `strip_comments.py --check` is the FIRST arm of
+   `make test`, so a comment here turns arm one RED for EVERY seat on the box, on a file they never
+   touched — three seats in three lanes did exactly that in one week.
+
+   ⭐ YOUR EXPLANATION IS PROBABLY WORTH KEEPING. It is just in the wrong medium: a source comment is
+   found only by whoever opens that one file, while a FINDING is greppable from anywhere. Move the
+   prose to .github/FINDING-<date>-<seat>-<claim>.md and cite it from the commit message.
+
+   FIX: python3 ../harness/scripts/strip_comments.py --apply     (then re-stage and commit)
+   Only if you are certain the rule should not apply here: git commit --no-verify
+MSG
+exit 1

@@ -1,0 +1,14 @@
+# lf_gate_crlf_is_the_subject.tsv -- the ONLY tracked files test_gate_our_files_are_lf.sh lets carry a CR at end of line: files
+# whose carriage returns ARE what a test measures (Lon 2026-10-02, in-chat to the ceo, verbatim: "Get rid of all DOS line-endings;
+# just say no to CR-LF."; ceo CEO-1414). repo<TAB>path<TAB>reason, reason mandatory. A row whose file is gone or no longer holds a
+# CR reds the gate as STALE, so an exception cannot outlive its reason.
+corpus	packages/snobol4/csnobol4_suite/crlf.sno	CSNOBOL4 conformance test of reading input lines that end in CR: its data after END mixes CR-LF and LF lines on purpose
+corpus	packages/snobol4/csnobol4_suite/ALL.sno	the Budne container carries crlf.sno byte for byte (ceo CEO-1488: container, loose file and board are one population), its CR-LF data lines after END included
+corpus	packages/snobol4/csnobol4_suite/ALL.ref	the Budne container ref carries sbl -bf's answer for crlf.sno, which echoes its CR-ended input lines: those CRs are the program's output bytes
+corpus	packages/icon/ipl/progs/mszip.fixtures/msroot/DOS.TXT	the CR-LF fixture of IPL mszip, which classifies files as binary, newline, CR-LF or empty; its ref prints c DOS.TXT
+corpus	packages/icon/ipl/progs/oldicon.ref	the captured output of a program that drives vim through a terminal: its CRs are the program's output bytes
+corpus	packages/icon/ipl/ALL.ref	one line of captured program output in the IPL master ref ends in a CR the program writes
+corpus	packages/icon/ipl/progs/literat.dat	classic Mac data with bare CR line endings, not DOS CR-LF, read as data by IPL literat
+corpus	packages/icon/ipl/progs/nocr.fixtures/nocr_dos.txt	the CR-LF input of IPL nocr, whose whole job is to strip carriage returns from the files named on its command line: the unit's fixture must carry them
+corpus	packages/icon/ipl/progs/yescr.ref	the oracle's captured output of IPL yescr, which adds a carriage return to every line of its file: those CRs are the program's output bytes
+corpus	packages/icon/ipl/progs/filexref.ref	the oracle ref of IPL filexref, an MS-DOS report writer that ends its heading line with "\r\n" itself (filexref.icn:131 writes _q, "\r\n"): that CR is the program's output byte, graded in both modes (Lon CEO-1474)

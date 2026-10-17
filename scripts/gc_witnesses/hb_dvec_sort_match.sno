@@ -1,0 +1,39 @@
+*  WITNESS for the sort_fn arm of HB_DVEC (214) in pattern_match.c: SNOBOL4's SORT of a TABLE and of an
+*  ARRAY, which is a different code path from Icon's sort(). Named by gdb (pending break on each line):
+*    :551 the value vector of the ARRAY sort; :575 key_descrs and :576 vals of the TABLE sort;
+*    :606 the result ARBLK data vector; :610 the two-element row block, 19 of them for a 19-entry table.
+*  The pattern section drives the match spine beside them so a retype that disturbed the spine would show
+*  as a wrong W line rather than only as a wrong sort. REMDR is used instead of the % operator because
+*  SPITBOL has no % and the .ref must come from the oracle: it is cut from /home/resources/x64/bin/sbl -bf,
+*  not from ./scrip, and the pre-cure tree matched it too.
+        T = TABLE()
+        N = 0
+FILL    N = LT(N,20) N + 1                                      :F(SRT)
+        T['k' REMDR(23 * N,19)] = 'v' N                         :(FILL)
+SRT     S = SORT(T)
+        A = ARRAY('12')
+        I = 0
+AFILL   I = LT(I,12) I + 1                                      :F(ASRT)
+        A[I] = 'z' REMDR(37 * I,11)                             :(AFILL)
+ASRT    B = SORT(A)
+        SUBJ = 'alpha-beta-gamma-delta-epsilon'
+        PAT = BREAK('-') . W1 '-' BREAK('-') . W2 '-' REM . W3
+        SUBJ PAT                                                :F(NOPAT)
+NOPAT   PAT2 = *ARBNO(ANY('abcdefg')) . W4
+        'abcdefgabc' PAT2
+        M = 0
+CHURN   M = LT(M,300) M + 1                                     :F(DONE)
+        JUNK = DUPL('c',120)
+        'xxabcyy' *(BREAK('a') . W5 REM . W6)                   :(CHURN)
+DONE    OUT = ''
+        I = 0
+SC3     I = LT(I,19) I + 1                                      :F(SC4)
+        OUT = OUT S[I,1] '=' S[I,2] '|'                         :(SC3)
+SC4     OUTPUT = 'SORTT=' OUT
+        OUT = ''
+        I = 0
+SC5     I = LT(I,12) I + 1                                      :F(SC6)
+        OUT = OUT B[I] '|'                                      :(SC5)
+SC6     OUTPUT = 'SORTA=' OUT
+        OUTPUT = 'W=' W1 '/' W2 '/' W3 '/' W4 '/' W5 '/' W6
+END

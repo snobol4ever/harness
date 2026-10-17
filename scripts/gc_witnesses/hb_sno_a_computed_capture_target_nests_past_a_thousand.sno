@@ -1,0 +1,7 @@
+        DEFINE('F(N)')                                   :(GO)
+F       F = .X
+        GT(N, 1100)                                      :S(NRETURN)
+        'x' 'x' . *F(N + 1)                              :(NRETURN)
+GO      'x' 'x' . *F(1)
+        OUTPUT = 'done ' X
+END

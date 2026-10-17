@@ -1,0 +1,28 @@
+procedure p1()
+   return 1;
+end
+procedure g1()
+   suspend 1;
+   suspend 2;
+end
+procedure main()
+   local f, n, x;
+   f := p1;
+   n := 0;
+   every x := f() do n := n + 1;
+   write("plain every count ", n);
+   f := g1;
+   n := 0;
+   every x := f() do n := n + 1;
+   write("gen every count ", n);
+   f := p1;
+   if f() = 2 then write("cmp wrong") else write("cmp failed as expected");
+   n := 0;
+   every 1 to 3 do {
+      f := p1;
+      every x := f() do n := n + 1;
+      };
+   write("repeat count ", n);
+   f := p1;
+   write("sum ", f() + f());
+end

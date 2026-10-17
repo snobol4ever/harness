@@ -1,0 +1,14 @@
+# WITNESS for THE KEYWORD CSETS AFTER A MOVE: &cset and &ascii are 257/129-byte heap blocks. Their registry entry is a
+# visited root and moves correctly, but the POINTER-KEYED index that finds them is keyed on the pre-move address, and
+# kw_read kept its own function-local static copy of that address as well. Both csets begin with a NUL byte, so the
+# content-keyed fallback cannot find them either and the length reads 0 -- the bang then stops early or yields nothing
+# at all. Allocating inside the loop forces the move while the bang is live, which is what makes the truncation land.
+procedure main()
+   local i, n, s, junk;
+   n := 0;
+   every s := !&cset do { n +:= 1; every i := 1 to 20 do junk := repl("y", 1024) };
+   write("cset ", n);
+   n := 0;
+   every s := !&ascii do { n +:= 1; every i := 1 to 20 do junk := repl("z", 1024) };
+   write("ascii ", n);
+end

@@ -1,0 +1,25 @@
+        DEFINE('twice(n)')                            :(twice_end)
+twice   twice = n * 2                                  :(RETURN)
+twice_end
+        DEFINE('fails()')                              :(fails_end)
+fails                                                  :(FRETURN)
+fails_end
+        x = 1
+        y = twice(x) + 2
+        OUTPUT = y
+        s = 'hello world'
+        s BREAK(' ') . first ' ' REM . rest
+        OUTPUT = first
+        OUTPUT = rest
+        t = TABLE()
+        t['a'] = 5
+        OUTPUT = t['a']
+        a = ARRAY(3)
+        a[2] = 7
+        OUTPUT = a[2]
+        $'ind' = 'via dollar'
+        OUTPUT = ind
+        z = fails()
+        OUTPUT = 'not printed'                          :F(done)
+done    OUTPUT = 'done'
+END

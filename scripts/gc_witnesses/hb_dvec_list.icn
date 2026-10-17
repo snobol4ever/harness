@@ -1,0 +1,32 @@
+procedure main()
+   local L, i, j, s, T, C, K, M, P;
+   L := [];
+   every i := 1 to 60 do put(L, "elem-" || i || "-" || repl("x", i));
+   every i := 1 to 20 do push(L, "head-" || i);
+   T := [];
+   every i := 1 to 30 do put(T, [i, "pair-" || i]);
+   every i := 1 to 10 do get(L);
+   every i := 1 to 10 do pop(L);
+   C := copy(L);
+   K := L ||| ["tail-a", "tail-b"];
+   M := table();
+   every i := 1 to 25 do M["k" || i] := "v" || i;
+   s := "";
+   every j := 1 to *L do s := s || L[j][1:8] || "|";
+   write("LEN=", *L, " TLEN=", *T, " CLEN=", *C, " KLEN=", *K, " MLEN=", *M);
+   write("S=", s);
+   s := "";
+   every j := 1 to *T do s := s || T[j][1] || ":" || T[j][2] || "|";
+   write("T=", s);
+   s := "";
+   every j := 1 to *C do s := s || C[j][1:8] || "|";
+   write("C=", s);
+   write("K=", K[1][1:8], "/", K[*K], "/", K[*K - 1]);
+   s := "";
+   every j := 1 to 25 do s := s || M["k" || j] || "|";
+   write("M=", s);
+   P := sort(M);
+   s := "";
+   every j := 1 to *P do s := s || P[j][1] || "=" || P[j][2] || "|";
+   write("P=", *P, ":", s);
+end

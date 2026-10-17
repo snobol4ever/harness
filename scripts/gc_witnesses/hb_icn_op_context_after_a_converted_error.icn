@@ -1,0 +1,14 @@
+#  hb_icn_op_context_after_a_converted_error.icn -- the NATURAL carrier of g_icn_op (core.c), the Icon operator
+#  context a traceback prints.  L.x under &error sets it (pattern_match.c icn_field_get) and returns failure without
+#  clearing it; 200000 list constructions collect with no builtin call (a builtin's push clears it); the uncaught
+#  211 prints it.  Before core_gc_roots visited g_icn_op.a/.b the SHIPPED defaults read the moved list from its old
+#  ground: m3 SIGSEGV, m4 a garbage record (cfo 2026-09-26).  Graded against its own zero-collection answer.
+procedure main()
+   local L, M, i;
+   &error := 1;
+   L := [7, 8, 9];
+   L.x;
+   every i := 1 to 200000 do M := [i, i, i];
+   &error := 0;
+   every i := 1 to 3 by 0 do M := i;
+end

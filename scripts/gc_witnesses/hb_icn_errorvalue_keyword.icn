@@ -1,0 +1,8 @@
+procedure main()
+   local L, M, i;
+   &error := 1;
+   L := [7, 8, 9];
+   L || "x";
+   every i := 1 to 200000 do M := [i, i, i];
+   write(image(&errorvalue), " ", *&errorvalue, " ", &errorvalue[3], " ", if &errorvalue === L then "identical" else "different");
+end

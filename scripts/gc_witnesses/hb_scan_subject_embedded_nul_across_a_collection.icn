@@ -1,0 +1,18 @@
+# The scan subject carries an embedded NUL and is read by a CALLEE after the scan has allocated enough to collect and move
+# it: *&subject, image(&subject), move, pos and tab(0) there all go through the runtime's carried length, never through
+# the caller's registers. Graded against iconx (hb_scan_subject_embedded_nul_across_a_collection.ref) by
+# test_gate_icn_gc_a_scanned_subject_with_an_embedded_nul_keeps_its_length_across_a_collection.sh.
+procedure main()
+   local s, i, junk;
+   s := "ab\x00cd" || repl("e", 3);
+   s ? {
+      move(1);
+      every i := 1 to 400 do junk := repl("q", 512);
+      f()
+      };
+end
+procedure f()
+   write(*&subject, " ", &pos, " ", image(&subject));
+   write(image(move(2)), " ", &pos, " ", pos(4) | "pos fails");
+   write(image(tab(0)), " ", &pos);
+end

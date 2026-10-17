@@ -1,0 +1,16 @@
+	DEFINE("F(CODE)TRIM")				:(M)
+F	TRIM = CODE CODE
+	F = "f" TRIM						:(RETURN)
+M	OUTPUT = F("ab")
+	OUTPUT = F("xy") F("q")
+	DEFINE("G(CODE)")					:(M2)
+G	EQ(CODE, 0)						:S(FRETURN)
+	G = CODE + 1						:(RETURN)
+M2	OUTPUT = G(1) G(G(2))
+	OUTPUT = IDENT(G(0)) "g failed"
+	P = "H(X)CODE"
+	DEFINE(P)							:(M3)
+H	CODE = X X
+	H = CODE CODE						:(RETURN)
+M3	OUTPUT = H("r")
+END

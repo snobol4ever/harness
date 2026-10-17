@@ -1,0 +1,23 @@
+record R(a, b)
+procedure try(f, x)
+    local y;
+    &error := 1;
+    if y := f(x) then write(image(f), " ", image(x), " -> ", image(y))
+    else if &error = 0 then write(image(f), " ", image(x), " -> error ", &errornumber)
+    else write(image(f), " ", image(x), " -> fails");
+end
+procedure trylog(x, b)
+    local y;
+    &error := 1;
+    if y := log(x, b) then write("log ", image(x), " ", image(b), " -> ", image(y))
+    else if &error = 0 then write("log ", image(x), " ", image(b), " -> error ", &errornumber)
+    else write("log ", image(x), " ", image(b), " -> fails");
+end
+procedure main()
+    local fs, xs, f, x, b;
+    fs := [sqrt, sin, cos, tan, asin, acos, exp, log, dtor, rtod, abs];
+    xs := [4, 0.5, -1, 0, 1, 2, -0.5, 1.5, 1000, 12345678901234567890, "4", " 4 ", "-1", "0.25", "2e1", "16r10", "36rZZ", "1e400", '4', "", "abc", "0x10", &null, R(1, 2), [1], table()];
+    every f := !fs do every x := !xs do try(f, x);
+    every x := 8 | 0 | -1 | "abc" do every b := 2 | 1 | 0 | -2 | "abc" | &null | "16r10" do trylog(x, b);
+    write(sqrt(R(1, 2)));
+end
