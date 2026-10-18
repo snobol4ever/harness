@@ -143,6 +143,9 @@ def parse_modes(spec, where):
         refuse(f"{where}: --modes {spec!r} names {', '.join(bad) if bad else 'no mode'} -- a suite is graded in m3 and m4 only "
                f"(CEO-1218: every entry in both media). Mode ast (--dump-ast) grades a parse against a run ref and recorded "
                f"0 of 43 FAIL rows for the Rebus rungs three times; nothing was graded and no progress row was written.")
+    if _engine() != "scrip" and "m4" in modes:
+        refuse(f"{where}: --modes {spec!r} names m4 under S4E_ENGINE={_engine()} -- m4 is SCRIP's compiled binary and the port has "
+               f"none (CEO-1822); grade --modes m3, the port's one run")
     return modes
 
 
@@ -157,6 +160,17 @@ LANG_CHOICES = [""] + sorted(LANG_CONFIGS) + ["snobol4"]
 
 
 # ============================================================ paths / env ===
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, ceo CEO-1822): S4E_ENGINE names the program a board grades -- scrip, the
+# default and every board before CEO-1822, or dotnet, snobol4dotnet's executable (hq_dotnet's own board, Lon: "hq_dotnet runs
+# them"). An unknown name refuses: a board graded on a guessed engine would print a plausible table about the wrong program.
+ENGINES = ("scrip", "dotnet")
+def _engine():
+    e = os.environ.get("S4E_ENGINE", "").strip() or "scrip"
+    if e not in ENGINES:
+        refuse(f"S4E_ENGINE={e!r} names no engine this harness drives ({', '.join(ENGINES)})")
+    return e
+
+
 def resolve_paths():
     here = Path(__file__).resolve().parent            # harness/scripts
     scrip_root = (here.parent.parent / "SCRIP")                           # SCRIP/
@@ -167,6 +181,8 @@ def resolve_paths():
         "corpus": s4e_home / "corpus",
         "inc": Path(os.environ.get("INC", str(s4e_home / "corpus" / "include"))),
         "scrip_root": scrip_root,
+        "engine": _engine(),
+        "dotnet_dll": Path(os.environ.get("SNOBOL4DOTNET_DLL", str(s4e_home / "snobol4dotnet" / "Snobol4" / "bin" / "Release" / "net10.0" / "Snobol4.dll"))),
         "timeout": float(os.environ.get("TIMEOUT", "120")),
         "stdbuf_bin": _which("stdbuf"),
     }
@@ -224,6 +240,12 @@ def require_population(paths, count, floor, label):
 
 
 def check_scrip(paths):
+    if paths["engine"] == "dotnet":
+        if not paths["dotnet_dll"].is_file():
+            refuse(f"snobol4dotnet is not built at {paths['dotnet_dll']} -- dotnet build snobol4dotnet/Snobol4/Snobol4.csproj -c Release")
+        if not _which("dotnet"):
+            refuse("the dotnet host is not on PATH, so snobol4dotnet cannot run")
+        return
     if not (paths["scrip_bin"].is_file() and os.access(paths["scrip_bin"], os.X_OK)):
         refuse(f"scrip is not built/executable at {paths['scrip_bin']}")
     require_fresh(paths)
@@ -960,6 +982,10 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # ERROR NNN line naming the file) would otherwise embed this run's own ever-changing mktemp
     # directory, which no frozen .ref can ever match. cwd (set below) is what makes the bare name
     # still resolve to the right file.
+    if paths["engine"] == "dotnet":
+        return classify(_dotnet_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
+                        env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
+                        out_files=out_files, merge_stderr=merge_stderr)
     argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name])
     # ⛔⭐ THE `--` SEPARATOR IS MANDATORY AND IS WHAT MAKES THIS SAFE. The driver has NO unknown-flag
     # diagnostic: any unrecognised argument falls through to being treated as a FILENAME, so a declared
@@ -989,6 +1015,19 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
     return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr)
+
+
+def _dotnet_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
+    """THE DOTNET ARM OF run_m3 (hq_dotnet 2026-10-18, CEO-1822): dotnet Snobol4.dll <the oracle's own language flags> -d -s -u <name>
+    <argv>. The flags come from lib_oracle_flags.sh sbl_lang_flags -- the one authority the refs were cut under (-bf, no case
+    folding) -- so the port and its refs fold alike by construction, not by a second copy of the string. The unit's compile_args
+    are SCRIP's own switches (--stlimit, clause 8 (f)) and are not passed: SPITBOL and snobol4dotnet always count statements.
+    snobol4dotnet takes a program's argv after the source with no -- separator, as SPITBOL does. Measured shape: the scratch
+    adapter scrip_as_dotnet.sh, byte-identical to the ref on a rungs entry."""
+    if "dotnet_flags" not in paths:
+        paths["dotnet_flags"] = resolve_oracle_bin(paths, "snobol4")[1].split()
+    return stdbuf_wrap(paths, ["dotnet", str(paths["dotnet_dll"])] + paths["dotnet_flags"] + _size_switches(heap_kb, stack_kb)
+                       + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name] + [str(a) for a in (prog_argv or [])])
 
 
 def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
@@ -2848,9 +2887,12 @@ def _one_runner_who(lang=None):
     if not lanes:
         return ["ceo" if mode == "CEO" else "coo"]
     table = dict(kv.split("=", 1) for kv in lanes.split() if "=" in kv)
+    # ⛔⭐ THE ENGINE IS A RUNNER SETTING (CEO-1822), word for word lib_one_runner.sh:one_runner_who: under a port engine the lane is
+    # <lang>@<engine> and the bare key does not admit it; "all" is the bare keys only, so a port HQ is never a runner of every board.
     if lang == "all":
-        return sorted(set(table.values()))
-    return [table[lang]] if lang in table else []
+        return sorted(set(v for k, v in table.items() if "@" not in k))
+    key = lang if _engine() == "scrip" else f"{lang}@{_engine()}"
+    return [table[key]] if key in table else []
 
 def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     """ONE RUNNER PER LANGUAGE (Lon 2026-09-10 CEO-523 partitioned by Lon 2026-09-16 CEO-775): a run of a suite UNDER THE CORPUS
@@ -2920,7 +2962,8 @@ def cmd_run(args):
     if not os.environ.get("S4E_BIN_AT_START", "").strip():
         os.environ["S4E_BIN_AT_START"] = _upa_bin.bin_fingerprint().strip()
     # the baseline is STATED, like the tree stamp: a reader (and the gate's mid-run arm) can see what this run will be held to
-    print(f"BINARY_AT_START {os.environ['S4E_BIN_AT_START']} (md5/12 of scrip, libscrip_rt.so; a rebuild under this run refuses the board)", flush=True)
+    _bin_names = "Snobol4.dll, Snobol4.Common.dll" if paths["engine"] == "dotnet" else "scrip, libscrip_rt.so"
+    print(f"BINARY_AT_START {os.environ['S4E_BIN_AT_START']} (md5/12 of {_bin_names}; engine {paths['engine']}; a rebuild under this run refuses the board)", flush=True)
     # ⛔⭐ A BOARD NAMES THE ARENA IT RAN UNDER (Lon 2026-09-19, ceo CEO-931/934/938; RULES.md batch 28 CLAUSE 2).  The
     # tiny arena is the default of all GC testing, so the SAME suite legitimately reads two different populations on one
     # binary -- SnoRungs 1963/1974 at the shipped 512 MB window and 1959/1974 at 1 MB -- and a reader who cannot see which
@@ -2966,9 +3009,11 @@ def cmd_run(args):
     try:
         import hashlib
         _rt_so = os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"), "out", "libscrip_rt.so")
+        if paths["engine"] == "dotnet":
+            _rt_so = str(paths["dotnet_dll"].parent / "Snobol4.Common.dll")
         with open(os.path.realpath(_rt_so), "rb") as _f: _rt_md5 = hashlib.md5(_f.read()).hexdigest()[:12]
     except Exception: _rt_md5 = "unreadable"
-    print("RUNTIME libscrip_rt.so md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (CEO-1097)" % _rt_md5)
+    print(("RUNTIME Snobol4.Common.dll" if paths["engine"] == "dotnet" else "RUNTIME libscrip_rt.so") + " md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (CEO-1097)" % _rt_md5)
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
         if not Path(_p).is_file():
             refuse(f"{_label} file does not exist: {_p} -- nothing was graded, and a run that graded nothing is "
@@ -3402,10 +3447,13 @@ def progress_suite_for(sno_path, paths):
         return None
     if p.stem != "ALL":
         return None
+    # ⛔ A PORT ENGINE'S ROWS ARE KEYED <suite>@<engine> AND NEVER LAND IN SCRIP'S (CEO-1822): snobol4-rungs is SCRIP's series,
+    # snobol4-rungs@dotnet is snobol4dotnet's, so a dotnet board can neither move nor be mistaken for a SCRIP reading.
+    at = "" if paths["engine"] == "scrip" else "@" + paths["engine"]
     if len(parts) >= 3 and parts[-3] == "tests":
-        return ("rungs", f"{parts[-2]}-rungs", parts[-2])
+        return ("rungs", f"{parts[-2]}-rungs{at}", parts[-2])
     if len(parts) >= 4 and parts[-4] == "packages":
-        return ("package", PROGRESS_PACKAGE_KEYS.get(parts[-2], parts[-2]), parts[-3])
+        return ("package", PROGRESS_PACKAGE_KEYS.get(parts[-2], parts[-2]) + at, parts[-3])
     return None
 
 
@@ -3418,7 +3466,12 @@ def _progress_pin(paths):
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import util_progress_append as _pa
-        _pa.pin_context(str(paths["scrip_bin"]), str(paths["rt_dir"]))
+        # under S4E_ENGINE=dotnet the graded binary is Snobol4.dll beside Snobol4.Common.dll (CEO-1822): its own checkout's git
+        # toplevel is snobol4dotnet, so the rows' tree column names the snobol4dotnet commit that graded them, never a SCRIP one
+        if paths["engine"] == "dotnet":
+            _pa.pin_context(str(paths["dotnet_dll"]), str(paths["dotnet_dll"].parent))
+        else:
+            _pa.pin_context(str(paths["scrip_bin"]), str(paths["rt_dir"]))
     except Exception as e:
         print(f"⛔ PROGRESS PIN FAILED ({e.__class__.__name__}: {e}) -- this run's rows cannot be proven to name the "
               f"tree they graded, so the append will not be guarded. Fix the pin; never silence it.", file=sys.stderr)

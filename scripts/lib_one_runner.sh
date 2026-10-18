@@ -143,14 +143,22 @@ one_runner_seat_is_language_hq() {   # an hq_* seat IS a language HQ by its name
 one_runner_lanes_line() {
   grep -m1 '^LANES:' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | sed 's/^LANES://'
 }
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, ceo CEO-1822; "hq_dotnet runs them"): S4E_ENGINE names the program a board grades,
+# scrip by default. A port engine's board is its own HQ's, so under S4E_ENGINE=<port> the lane is looked up as <lang>@<port> (LANES:
+# snobol4@dotnet=hq_dotnet) and the bare <lang> key -- SCRIP's lane -- does not admit it. An unknown engine names no lane, so it refuses.
+# "all" stays the bare keys only (the [a-z0-9]*= pattern cannot match an @ key). Mirrored word for word by corpus_suite_harness.py.
+one_runner_engine() {
+  printf '%s' "${S4E_ENGINE:-scrip}"
+}
 one_runner_who() {
-  local lang="${1:-}" lanes
+  local lang="${1:-}" lanes key
   lanes="$(one_runner_lanes_line)"
   if [ -z "$lanes" ]; then printf ''; return 0; fi
+  key="$lang"; [ "$(one_runner_engine)" = scrip ] || key="$lang@$(one_runner_engine)"
   case "$lang" in
     all) printf '%s' "$lanes" | tr ' ' '\n' | sed -n 's/^[a-z0-9]*=//p' | sort -u | tr '\n' ' ' | sed 's/ $//';;
     ''|unknown) printf '';;
-    *) printf '%s' "$lanes" | tr ' ' '\n' | sed -n "s/^$lang=//p" | head -1;;
+    *) case "$key" in *[!a-z0-9_@]*) printf '';; *) printf '%s' "$lanes" | tr ' ' '\n' | sed -n "s/^$key=//p" | head -1;; esac;;
   esac
 }
 one_runner_seat_admitted() {
@@ -167,7 +175,16 @@ one_runner_seat_admitted() {
 one_runner_bin_fingerprint() {
   # the checkout THIS FILE lives in, whose scrip every runner beside it grades ($SD/scrip) -- never S4E_HOME/SCRIP, which in a worktree is
   # another binary (the coo 2026-09-28: util_progress_append.py reads the same tree, so the start and the append-time readings agree)
+  # ⛔ under S4E_ENGINE=dotnet the graded pair is snobol4dotnet's Snobol4.dll and Snobol4.Common.dll (CEO-1822; util_progress_append.py's
+  # bin_fingerprint reads the same pair), so a rebuild of the port under its board refuses that board as a SCRIP rebuild does
   local _t _b _r
+  if [ "$(one_runner_engine)" = dotnet ]; then
+    _b="${SNOBOL4DOTNET_DLL:-${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/snobol4dotnet/Snobol4/bin/Release/net10.0/Snobol4.dll}"
+    _r="$(dirname "$_b")/Snobol4.Common.dll"
+    [ -f "$_b" ] && [ -f "$_r" ] || return 1
+    md5sum "$_b" "$_r" 2>/dev/null | cut -c1-12 | tr '\n' ' '
+    return 0
+  fi
   _t="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
   _b="${SCRIP:-$_t/scrip}"; _r="${RT_DIR:-$_t/out}/libscrip_rt.so"
   [ -f "$_b" ] && [ -f "$_r" ] || return 1

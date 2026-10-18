@@ -234,7 +234,9 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
     rd = rt_dir or os.environ.get("RT_DIR") or os.path.join(S4E, "SCRIP", "out")
     h = hashlib.md5()
     ok = 0
-    for f in (sb, os.path.join(rd, "libscrip_rt.so")):
+    # under S4E_ENGINE=dotnet the driver is Snobol4.dll and the runtime it loads is Snobol4.Common.dll beside it (CEO-1822)
+    rt = "Snobol4.Common.dll" if (os.environ.get("S4E_ENGINE", "").strip() or "scrip") == "dotnet" else "libscrip_rt.so"
+    for f in (sb, os.path.join(rd, rt)):
         try:
             with open(f, "rb") as fh:
                 h.update(fh.read())
@@ -373,6 +375,13 @@ def bin_fingerprint():
     tree = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
     b = os.environ.get("SCRIP") or os.path.join(tree, "scrip")
     r = os.path.join(os.environ.get("RT_DIR") or os.path.join(tree, "out"), "libscrip_rt.so")
+    # ⛔ UNDER S4E_ENGINE=dotnet THE GRADED BINARY IS snobol4dotnet's (CEO-1822): Snobol4.dll and the engine it loads, Snobol4.Common.dll,
+    # the pair a rebuild rewrites -- the same default corpus_suite_harness.resolve_paths names. Without this arm a port root has no
+    # ./scrip, this read '' and the moved-binary refusal could never fire on a dotnet board.
+    if (os.environ.get("S4E_ENGINE", "").strip() or "scrip") == "dotnet":
+        root = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", ".."))
+        b = os.environ.get("SNOBOL4DOTNET_DLL") or os.path.join(root, "snobol4dotnet", "Snobol4", "bin", "Release", "net10.0", "Snobol4.dll")
+        r = os.path.join(os.path.dirname(b), "Snobol4.Common.dll")
     out = []
     for f in (b, r):
         try:
