@@ -16,9 +16,16 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 #
 # Exit: 0 iff m3_fail=0 and m4_fail=0 over the SCORED (non-ORACLE_FAIL) denominator.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 . "$HERE/lib_fixture_root.sh" || { echo "⛔ REFUSE(rc=2): cannot load lib_fixture_root.sh -- the one way a scratch corpus is staged"; exit 2; }
 SCRIP="$SD/scrip"
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): scorecard_snobol4.sh takes the port's face as its SCRIP under the
+# same engine, the port runner's --binaries is the one check, each driver is graded in m3 alone (its m4 column reads "-"), the AND is that one
+# mode, the rows are keyed gimpel@<engine> by the one writer, and no SCRIP score row is written -- the port's row is from-progress.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=gimpel; [ "$PORT" = 1 ] && ROWKEY="gimpel@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
 # does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
@@ -27,6 +34,7 @@ SCRIP="$SD/scrip"
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
 "$HERE/util_require_fresh.sh" --gate test_snobol4_gimpel_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
+fi
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # ⛔⭐ THE VENDORED FIXTURES ARE READ-ONLY, SO THE RUN HAPPENS ON A COPY (row snobol4-gimpel-runner-writes-
 # asmtemp-into-the-vendored-dir-and-blocks-its-own-score-write, ceo -> hq_T on hq_C's opening gimpel
@@ -91,7 +99,7 @@ if [ "$TOTAL" -eq 0 ]; then
 fi
 if rr_selected && [ -z "$SMOKE_KEYS" ]; then
     [ "$VEND_BEFORE" = "$(_vend_fingerprint)" ] || { echo "⛔ REFUSE(rc=2): the part's run changed the vendored gimpel directory"; exit 2; }
-    rr_end gimpel; exit 0   # the scorecard appended the part's rows under their libraries' names (progress_append_results_tsv); no suite row (CEO-1802)
+    rr_end "$ROWKEY"; exit 0   # the scorecard appended the part's rows under their libraries' names (progress_append_results_tsv); no suite row (CEO-1802)
 fi
 if [ -n "$SMOKE_KEYS" ]; then
     [ "$VEND_BEFORE" = "$(_vend_fingerprint)" ] || { echo "⛔ REFUSE(rc=2): the smoke run changed the vendored gimpel directory"; exit 2; }
@@ -109,7 +117,9 @@ M3P=$(awk -F'\t' '$3!="ORACLE_FAIL" && $3=="PASS"' "$TSV" | wc -l)
 M3F=$(awk -F'\t' '$3!="ORACLE_FAIL" && $3!="PASS"' "$TSV" | wc -l)
 M4P=$(awk -F'\t' '$3!="ORACLE_FAIL" && $4=="PASS"' "$TSV" | wc -l)
 M4F=$(awk -F'\t' '$3!="ORACLE_FAIL" && $4!="PASS"' "$TSV" | wc -l)
+[ "$PORT" = 1 ] && M4F=0   # a port has no mode 4
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
 SCORED=$((TOTAL-UNSCR))
 # ⛔⭐ A ZERO DENOMINATOR IS A REFUSAL, NEVER A STEADY STATE (RULES.md, the denominator law) -- AND THIS SCRIPT
@@ -181,7 +191,7 @@ LIBMAP="$(awk -F'\t' '{print $2}' "$TSV" | while IFS= read -r _p; do _l="$(_lib_
 [ -z "$ORPHAN_DRV" ] || { echo "⛔ REFUSE(rc=2): graded driver(s) whose library the package does not ship:$ORPHAN_DRV -- a vehicle with nothing to carry (CEO-1269)"; exit 2; }
 [ "$SHIPPED_LIBS" -ge "$TOTAL" ] || { echo "⛔ REFUSE(rc=2): $TOTAL graded drivers against $SHIPPED_LIBS shipped libraries -- more vehicles than programs, so the census and the board disagree (CEO-1269)"; exit 2; }
 OUTSIDE_TSV="$CORPUS_REAL/packages/snobol4/gimpel/OUTSIDE_SPITBOL_BASELINE.tsv"
-BOTH=$(awk -F'\t' '$3!="ORACLE_FAIL" && $3=="PASS" && $4=="PASS"' "$TSV" | wc -l)
+BOTH=$(awk -F'\t' -v port="$PORT" '$3!="ORACLE_FAIL" && $3=="PASS" && ($4=="PASS" || port==1)' "$TSV" | wc -l)   # a port's AND is its one mode
 if [ "$UNSCR" -gt 0 ]; then
     echo "OUTSIDE-SPITBOL-BASELINE ($UNSCR; the oracle answered none of these this run):"
     awk -F'\t' '$3=="ORACLE_FAIL"{sub(/.*\//,"",$2); printf "OUTSIDE\t%s\n", $2}' "$TSV"
@@ -197,9 +207,9 @@ if [ -f "$OUTSIDE_TSV" ]; then
 else echo "⚠ no OUTSIDE_SPITBOL_BASELINE.tsv beside the suite -- the outside-baseline set above is measured, not yet recorded"; fi
 echo "GIMPEL_LIBRARIES shipped=$SHIPPED_LIBS graded_through_a_driver=$TOTAL no_driver=$(printf '%s' "$NODRV_NAMES" | wc -w) (CEO-1269: the program is the library, its verdict is its driver's)"
 [ -n "$NODRV_NAMES" ] && echo "NO DRIVER (owed, UNGRADED.tsv NEEDS_DRIVER -- in the denominator, a non-pass):$NODRV_NAMES"
-echo "GIMPEL_BOARD total=$TOTAL scored=$SCORED unscr=$UNSCR m3_pass=$M3P m3_fail=$M3F m4_pass=$M4P m4_fail=$M4F -- SCRIP $SCRIP_HASH corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf (via scorecard_snobol4.sh --suites gimpel)"
+echo "GIMPEL_BOARD total=$TOTAL scored=$SCORED unscr=$UNSCR m3_pass=$M3P m3_fail=$M3F m4_pass=$M4P m4_fail=$M4F -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf (via scorecard_snobol4.sh --suites gimpel)"
 awk -F'\t' 'NR==FNR{lib[$1]=$2; next} $3=="ORACLE_FAIL"{printf "  UNSCR  %s (driver %s)  %s\n", lib[$2], $2, $7}' <(printf '%s\n' "$LIBMAP") "$TSV"
-awk -F'\t' 'NR==FNR{lib[$1]=$2; next} $3!="ORACLE_FAIL" && ($3!="PASS" || $4!="PASS"){printf "  RED    %s (driver %s)  m3=%s m4=%s%s\n", lib[$2], $2, $3, $4, ($7!="" ? "  "$7 : "")}' <(printf '%s\n' "$LIBMAP") "$TSV"
+awk -F'\t' -v port="$PORT" 'NR==FNR{lib[$1]=$2; next} $3!="ORACLE_FAIL" && ($3!="PASS" || ($4!="PASS" && port!=1)){printf "  RED    %s (driver %s)  m3=%s m4=%s%s\n", lib[$2], $2, $3, $4, ($7!="" ? "  "$7 : "")}' <(printf '%s\n' "$LIBMAP") "$TSV"
 # ⭐ THE PACKAGE LOCKDOWN (Lon 2026-09-06), through the SHARED body -- never a second copy of the arithmetic.
 #
 # ⛔⭐⭐ WHAT USED TO BE HERE COMPUTED `ungraded` AS A TAUTOLOGY, AND THE LOCKDOWN'S OWN CRITERION IS
@@ -259,7 +269,8 @@ if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (
 # row reads PASS over SHIPPED ($TOTAL = the graded drivers plus the $UNSCR the oracle refuses), OUTSIDE=$UNSCR named and
 # stamped through lib_outside_shape.sh -- the outside drivers stay in the denominator as debt to cure. Before this the
 # row published $BOTH/$SCORED, the graded set only, and nothing in the verdict instrument could see the difference.
-if [ "$SCORED" -gt 0 ] && [ -z "${GIMPEL_SUITE:-}" ]; then
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+elif [ "$SCORED" -gt 0 ] && [ -z "${GIMPEL_SUITE:-}" ]; then
 . "$HERE/lib_outside_shape.sh" || exit 2
 # ⛔⭐ CEO-1286 (Lon 2026-09-26): the libraries NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv, named by library; the live outside set names
 # their drivers) leave the denominator of shipped libraries; the drivers the oracle refuses for any other cause stay as debt.
