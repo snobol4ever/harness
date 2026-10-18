@@ -1090,7 +1090,8 @@ s4e_lane_owner_of_language() {
       # (every language the ceo) is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
        icon)     printf 'hq_icon';;
        prolog)   printf 'hq_prolog';;
-       snobol4)  printf 'hq_snobol4';;
+      # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (CEO-1827, 2026-10-18, Lon in-chat to the ceo: "we should run a reduced fleet until things settle"; roster ceo coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the ceo, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (CEO-1046).
+       snobol4)  printf 'ceo';;
        pascal)   printf 'ceo';;
        snocone)  printf 'ceo';;
        rebus)    printf 'ceo';;
