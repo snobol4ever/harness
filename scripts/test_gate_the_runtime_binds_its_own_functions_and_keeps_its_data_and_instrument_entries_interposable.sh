@@ -9,13 +9,18 @@
 #   1. the functions bind inside: the runtime's JUMP_SLOT relocations are under 400 (3,721 before);
 #   2. the data do not: rtccb and g_gc_pending, which every mode-4 program reads rip-relatively and so COPIES, keep a dynamic relocation in the runtime, so the library
 #      reads the executable's copy (bound locally the library reads its own and the program the other: split state, full -Bsymbolic's defect);
-#   3. every name in rt_interposable.list is an exported function the runtime still reaches through a dynamic relocation;
+#   3. every name in rt_interposable.list is an exported symbol the runtime still reaches through a dynamic relocation;
 #   4. pointer identity: no executable SCRIP builds or emits carries a canonical-PLT function (an undefined FUNC with an address), the only road by which an
 #      executable holds a runtime function's address the library does not -- ./scrip, out/scrip-ipp, out/parser_*, and a mode-4 hello linked -pie and -no-pie;
 #   5. ./scrip carries no R_X86_64_COPY (the driver is compiled -fPIC; 34 before);
 #   6. the phase profiler's road: a preloaded rt_time_ns counts both TIME() calls of a SNOBOL4 program in mode 3 and in mode 4;
 #   7. the parser tools' road: out/parser_icon under PARSER_LEX_CLOCK=1 counts its lexer calls.
-# FAIL-ONCE: arms 1 and 5 read red on the parent of the landing (3,721 and 34). Arms 6 and 7 read 0 against a runtime linked with plain -Bsymbolic-functions (no
+#   8. THE DATA BIND INSIDE TOO (cto 2026-10-17, row startup-an-empty-mode-4-program-costs-...): --dynamic-list-data is gone, so a datum stays
+#      interposable only by name in rt_interposable.list; every R_X86_64_COPY in every executable above (libc's stdin, stdout and stderr aside)
+#      names a symbol in that list, or that executable writes a copy the runtime never reads. Measured at the landing: rtccb (mode 4, scrip-ipp),
+#      sno_nerrors and rebus_nerrors (the parser tools); the runtime's GLOB_DAT relocations 252 -> 73, an empty mode-4 program 863,359 -> 756,573 Ir.
+# FAIL-ONCE: arms 1 and 5 read red on the parent of the landing (3,721 and 34); arm 8 reads red on the parent of the data landing (the
+# parser tools' sno_nerrors and rebus_nerrors were in no list). Arms 6 and 7 read 0 against a runtime linked with plain -Bsymbolic-functions (no
 # list), measured at the landing: TSHIM 0 in both modes, lex_calls=0, where this link reads 2, 2 and 1,449.
 # rc=0 clean · rc=1 a hazard present · rc=2 REFUSAL.
 set -u
@@ -40,11 +45,11 @@ for s in rtccb g_gc_pending; do
     n=$(awk -v s="$s" '$5 == s || $5 ~ "^"s"[+@]"' "$D/rel.txt" | wc -l)
     [ "$n" -ge 1 ] && say "GREEN arm 2: the runtime reaches $s through $n dynamic relocation(s)" || say "RED   arm 2: the runtime binds $s to its own copy -- a mode-4 program's copy relocation splits it"
 done
-nm -D --defined-only "$SO" | awk '$2 == "T" { print $3 }' | sort -u > "$D/funcs.txt"
+nm -D --defined-only "$SO" | awk '{ print $3 }' | sort -u > "$D/funcs.txt"
 names=$(tr -d '{};' < "$LIST" | tr -s ' \n' '\n' | grep -v '^$')
 [ -n "$names" ] || refuse "$LIST names no function"
 for s in $names; do
-    grep -qx "$s" "$D/funcs.txt" || { say "RED   arm 3: $s is in the list but the runtime exports no function of that name"; continue; }
+    grep -qx "$s" "$D/funcs.txt" || { say "RED   arm 3: $s is in the list but the runtime exports no symbol of that name"; continue; }
     n=$(awk -v s="$s" '$5 == s || $5 ~ "^"s"[+@]"' "$D/rel.txt" | wc -l)
     [ "$n" -ge 1 ] && say "GREEN arm 3: $s stays interposable ($n dynamic relocation(s))" || say "RED   arm 3: $s is bound inside the runtime -- the instrument that interposes it reads nothing"
 done
@@ -57,6 +62,15 @@ for x in "$B/scrip" "$B/out/scrip-ipp" "$B"/out/parser_* "$D/h.pie" "$D/h.nopie"
     [ -x "$x" ] || continue
     c=$(readelf --dyn-syms -W "$x" | awk '$4 == "FUNC" && $7 == "UND" && $2 !~ /^0+$/ { print $8 }' | sort -u)
     [ -z "$c" ] && say "GREEN arm 4: $(basename "$x") holds no canonical-PLT function" || say "RED   arm 4: $(basename "$x") holds a canonical-PLT address for: $(echo $c | head -c 300)"
+done
+for x in "$B/scrip" "$B/out/scrip-ipp" "$B"/out/parser_* "$D/h.pie" "$D/h.nopie"; do
+    [ -x "$x" ] || continue
+    bad=""
+    for s in $(readelf -rW "$x" | awk '/R_X86_64_COPY/ { print $5 }' | sed 's/@.*//' | sort -u); do
+        case "$s" in stdin|stdout|stderr) continue;; esac
+        printf '%s\n' $names | grep -qx "$s" || bad="$bad $s"
+    done
+    [ -z "$bad" ] && say "GREEN arm 8: $(basename "$x") copies no runtime datum outside rt_interposable.list" || say "RED   arm 8: $(basename "$x") copies$bad, which the runtime binds inside itself -- split state"
 done
 cp=$(readelf -rW "$B/scrip" | grep -c 'R_X86_64_COPY')
 [ "$cp" -eq 0 ] && say "GREEN arm 5: ./scrip carries no copy relocation" || say "RED   arm 5: ./scrip carries $cp copy relocation(s)"
