@@ -45,8 +45,10 @@
 #      the nodes SCRIP_ZD_DIAG reports claimed ([ZD-FINAL] rows) over w7's compile: the killswitch must claim FEWER (Q's
 #      i=25 VAR and i=26 CALL drop out of every run under SCRIP_ZD_TESTFAM=0 on fc306f22a), never the same.
 # EVERY ARM IS GRADED AGAINST THE ORACLE: the witness's --transpile run on sbl -bf (a Snocone program's oracle), both modes, stdout.
-# FAIL-ONCE, BUILT IN: witness 1 must go red under SCRIP_ZD_BLOBBACK=0, witness 3 under SCRIP_ZD_5B=1 and w5.sno under
-# SCRIP_ZD_OMEGA_STMTLAND=0. w6 (D) and w7 (E) have NO per-run control since 2026-10-14 (hq_zetas, row spine-zd-omega-test-kind-
+# FAIL-ONCE, BUILT IN UNTIL 2026-10-17: witness 1 went red under SCRIP_ZD_BLOBBACK=0, witness 3 under SCRIP_ZD_5B=1 and w5.sno
+# under SCRIP_ZD_OMEGA_STMTLAND=0. THOSE KILLSWITCHES ARE DELETED (hq_zetas, the spine flip, under the cto's review: ZETA HAS NO
+# MODES, and CEO-1680 allows no seam in SCRIP for a test); SCRIP_ZD_5B had already been read and never used since the flip's
+# ZD-5b went on, so its arm measured nothing. Their fail-once readings stand as history, like w6's and w7's below. w6 (D) and w7 (E) have NO per-run control since 2026-10-14 (hq_zetas, row spine-zd-omega-test-kind-
 # ...-ceo-1389, the cto's road (a)): their fail-once needed SCRIP_ZD_TESTFAM=0, which selected the test family's members per op at
 # run time and is deleted -- the family is ir_decides_own_failure_kind in src/ir/IR.h, a definition, not a switch, and CEO-1680
 # allows no seam in SCRIP for a test. PROVEN ONCE, at that landing, on a local uncommitted build whose family lacked IR_CALL and
@@ -170,22 +172,7 @@ for w in w5 w7; do want=$("$SBL" -bf "$T/$w.sno" </dev/null 2>/dev/null)
   for m in m3 m4; do N=$((N+1)); got=$(run_mode "$m" "$T/$w.sno")
     if [ "$got" = "$want" ]; then echo "  $w.sno $m PASS"; else echo "  $w.sno $m FAIL: got [$(printf '%s' "$got" | tr '\n' ' ' | cut -c1-60)] want [$(printf '%s' "$want" | tr '\n' ' ')]"; RC=1; fi; done
 done
-fo() {  # fo <witness> <ENV=V...> -- the killswitch must make the witness differ from the oracle in m3
-  local w="$1"; shift; local want got; want=$("$SBL" -bf "$T/$w.sno" </dev/null 2>/dev/null); got=$(run_mode m3 "$T/$w.sc" "$@")
-  if [ "$got" != "$want" ]; then echo "  fail-once $w under $*: RED as it must be"; else echo "  fail-once $w under $*: STILL GREEN -- this gate cannot see the defect it names"; RC=1; fi; }
-fo w1 SCRIP_ZD_BLOBBACK=0
-fo w3 SCRIP_ZD_5B=1
-fos() {  # fos <witness> <ENV=V...> -- the same, on the witness's TRANSPILED form
-  local w="$1"; shift; local want got; want=$("$SBL" -bf "$T/$w.sno" </dev/null 2>/dev/null); got=$(run_mode m3 "$T/$w.sno" "$@")
-  if [ "$got" != "$want" ]; then echo "  fail-once $w.sno under $*: RED as it must be"; else echo "  fail-once $w.sno under $*: STILL GREEN -- this gate cannot see the defect it names"; RC=1; fi; }
-fos w5 SCRIP_ZD_OMEGA_STMTLAND=0
-fzd() {  # fzd <witness> <ENV=V...> -- the killswitch must leave nodes of the witness's plan unclaimed (structural fail-once)
-  local w="$1"; shift; local on off
-  on=$(SCRIP_ZD_DIAG=1 "$SCRIP" --compile "$T/$w.sno" </dev/null 2>&1 >/dev/null | grep -c '^\[ZD-FINAL\]')
-  off=$(env "$@" SCRIP_ZD_DIAG=1 "$SCRIP" --compile "$T/$w.sno" </dev/null 2>&1 >/dev/null | grep -c '^\[ZD-FINAL\]')
-  if [ "$on" -gt 0 ] && [ "$off" -lt "$on" ]; then echo "  fail-once $w.sno under $* (structural): RED as it must be -- $off claimed nodes against $on shipped"
-  else echo "  fail-once $w.sno under $* (structural): STILL GREEN -- $off claimed nodes against $on shipped, this gate cannot see the defect it names"; RC=1; fi; }
-if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: $N arms (6 witnesses x m3+m4, plus w5's transpiled form x m3+m4) print the SPITBOL oracle's output, and the three remaining killswitches red their witness (w6 and w7: proven once at their landing, see the header)"
+if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: $N arms (6 witnesses x m3+m4, plus w5's transpiled form x m3+m4) print the SPITBOL oracle's output (every witness's fail-once: proven once at its landing, see the header)"
 else echo "GATE FAIL(1) [$G]: see the arms above"; fi
 echo "    tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)  oracle: $SBL -bf  measured $(date -u +%Y-%m-%dT%H:%MZ)"
 exit $RC

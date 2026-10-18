@@ -14,7 +14,7 @@
 # re-materialises it inside the omega run; a variable, a builtin call, a user call, a parenthesised concat all lose.
 # CURE (planner, never the lowering): after a run is built, no node stays in it whose result is consumed by a node
 # outside the run -- the run is CUT before that producer and re-checked until stable (SCRIP_ZD_CONSUMER_CUT=0 restores
-# the old plan). xop frame members (the blob rbp channel) are exempt because their reader has a frame home; literals are
+# the old plan; that killswitch is deleted (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680 allows no seam in SCRIP for a test)). xop frame members (the blob rbp channel) are exempt because their reader has a frame home; literals are
 # NOT exempt -- with them exempt the unplanned SIZE read its 'ab' from an unwritten frame slot and printed 29059.
 #
 # ARMS: the row's DONE-WHEN witness (a user-function result concatenated before a negation, two statements) plus eleven

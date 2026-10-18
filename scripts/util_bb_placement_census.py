@@ -49,6 +49,10 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       value (banned), discard_* a FENCE, ARBNO, cut or statement landing dropping rsp to a saved depth (allowed, counted apart)
   BB_UNWIND_MULTIPOP <lang> into=<box kind> count=..
   --tsv PATH writes one row per misplaced (lang state cause table graph@sig kind count).
+  --cells PATH writes one row per OFF-SPINE cell, naming the CEO-1750 test it fails (the cto's review of the spine flip,
+      2026-10-17): lang home state test why graph@sig table kind cell -- home RBP or RSP_CARVED, state *_forced or *_misplaced,
+      test operand, local or none (none: off the spine with no test failing, which is what misplaced means), why the dynamic
+      box's reason, cell the box id or the local's name.
 rc 0 = measured; rc 2 = the instrument did not measure (a program unmeasured).
 """
 import argparse, collections, hashlib, json, os, re, subprocess, sys, tempfile
@@ -347,12 +351,12 @@ def analyse(lang, src, tmp, seen, seen_sec):
             h = nodes.get((g, int(i.split('_')[1])))
             if h is None:
                 continue
-            cells.append(('A', boxes[i]['kind'], h[1], test.get(i)))
+            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i))
         for vn in sorted(vslots.get(g, ())):
             h = locs.get((g, vn))
             if h is None:
                 continue
-            cells.append(('L', vn, h[0], ltest.get(vn)))
+            cells.append(('L', vn, h[0], ltest.get(vn), vn))
         out.append({'name': gname[g], 'sig': sigs[g], 'cause': cause, 'emitted': emitted, 'cells': cells, 'n': len(ids)})
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
@@ -362,6 +366,7 @@ def main():
     ap.add_argument('--files', nargs='*', help='source files to measure instead of the committed-artifact set')
     ap.add_argument('--lang', choices=sorted(set(EXT.values())))
     ap.add_argument('--tsv')
+    ap.add_argument('--cells')
     ap.add_argument('--verbose', action='store_true')
     a = ap.parse_args()
     if not os.access(SCRIP, os.X_OK):
@@ -375,6 +380,7 @@ def main():
     tot = {l: collections.Counter() for l in langs}
     bases = {l: collections.Counter() for l in langs}
     rows, seen, unmeasured = collections.Counter(), set(), []
+    cellrows = []
     tests = {l: collections.Counter() for l in langs}
     unw = {l: collections.Counter() for l in langs}
     seen_sec = set()
@@ -405,10 +411,13 @@ def main():
                 if not gr['emitted']:
                     t['unemitted'] += gr['n']
                     continue
-                for (tb, kind, home, forced) in gr['cells']:
+                for (tb, kind, home, forced, cid) in gr['cells']:
                     t['operands' if tb == 'A' else 'locals'] += 1
                     if home in ('RBP', 'RSP_CARVED'):
                         tt = tests[lang]
+                        ftest, fwhy = forced.split(':', 1) if forced else ('none', '-')
+                        cellrows.append((lang, home, ('rbp' if home == 'RBP' else 'carved') + ('_forced' if forced else '_misplaced'), ftest, fwhy, gr['name'] + '@' + gr['sig'], tb, kind,
+                                         cid))
                         tt['offspine'] += 1
                         if forced:
                             tt[forced.split(':', 1)[0] + '_test'] += 1
@@ -484,6 +493,10 @@ def main():
         with open(a.tsv, 'w') as fh:
             for k in sorted(rows):
                 fh.write('\t'.join(list(k) + [str(rows[k])]) + '\n')
+    if a.cells:
+        with open(a.cells, 'w') as fh:
+            for r in cellrows:
+                fh.write('\t'.join(r) + '\n')
     return 0
 
 

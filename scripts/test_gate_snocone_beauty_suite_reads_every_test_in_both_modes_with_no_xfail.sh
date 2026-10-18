@@ -20,6 +20,9 @@
 # wrong answer in both modes. RE-MEASURED 2026-10-09 by hq_snocone (SCRIP ddd1d8bd7, the old container and the rungs view alike):
 # OBACK=0 and MATCHDIAMOND=0 no longer red any test; REPL_FREE=0 still reds test_Qize and test_case (m3 18/20, m4 18/20), so
 # `SCRIP_ZD_REPL_FREE=0 bash $0` must print RED. It grades output against the refs, never rc alone.
+# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680
+# allows no seam in SCRIP for a test): every killswitch named here is gone and the
+# fail-once readings above stand as history.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

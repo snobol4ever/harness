@@ -38,7 +38,8 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #   c1  a2 with no statement keyword -- the plain lowering, which the cure must not touch
 #   w1  the live witness: aisnobol TEST reduced to 89 self-contained lines (SPITCORE's DEXP, LISTARG, POP/UNCONS, MAPCAR,
 #       LREVERSE and READ/UNREAD inlined, LOADEX's spitlib reads cut) -- `|ARGUMENT.LIST`, the SNOLISP list print
-#       k1  the control, STRUCTURAL since 2026-10-14: w1's mode-4 .s under SCRIP_ZD_HOOK_RELEASE=0 must DIFFER from the shipped .s
+#       k1  DELETED 2026-10-17 with SCRIP_ZD_HOOK_RELEASE (hq_zetas, the spine flip, under the cto's review: ZETA HAS NO MODES,
+#           and CEO-1680 allows no seam in SCRIP for a test); its readings below stand as history. It was STRUCTURAL since 2026-10-14: w1's mode-4 .s under SCRIP_ZD_HOOK_RELEASE=0 must DIFFER from the shipped .s
 #           (67 lines at the re-cut) -- the release is live in emission; identical .s is UNPROVEN, not green. Its behavioural
 #           form was proven ONCE at the re-cut on a local uncommitted build whose own-failure family lacked IR_CALL and
 #           IR_BINOP_TEST (what SCRIP_ZD_TESTFAM=0 selected): w1 m3 under SCRIP_ZD_HOOK_RELEASE=0 died ZGC-STALE SIGSEGV.
@@ -202,13 +203,8 @@ if [ -f "$ROMAN" ] && [ -f "${ROMAN%.sno}.ref" ]; then
         else echo "  RED  roman $m -- csnobol4_suite/roman diverged from its shipped ref (rc=139 with RSP 4 MB below RBP is the over-release shape: the boundary release must be the exit-pop amount, not the raw residue, because a match box releases its own hook on the success path)"; bad=$((bad+1)); fi
     done
 else echo "  SKIP roman -- csnobol4_suite/roman.sno or its ref not present at $ROMAN (the ten minted arms still bind)"; fi
-ctl_fail=0
-k1on="$T/k1.on.s"; k1off="$T/k1.off.s"; "$SCRIP" --compile -o "$k1on" "$T/w1.sno" < /dev/null >/dev/null 2>&1; SCRIP_ZD_HOOK_RELEASE=0 "$SCRIP" --compile -o "$k1off" "$T/w1.sno" < /dev/null >/dev/null 2>&1
-k1d=0; [ -s "$k1on" ] && [ -s "$k1off" ] && k1d="$(diff "$k1on" "$k1off" | grep -c '^[<>]')"; [ "$k1d" -gt 0 ] && ctl_fail=1
-echo "  control: w1's .s under SCRIP_ZD_HOOK_RELEASE=0 differs from the shipped .s by $k1d line(s) -- $([ "$ctl_fail" -eq 1 ] && echo 'the release is live in emission' || echo 'IDENTICAL: the release switch is inert or the witness no longer reaches it')"
-echo "STATEMENT-MARK-HOOK-RELEASE graded=$graded bad=$bad control_failed=$ctl_fail"
+echo "STATEMENT-MARK-HOOK-RELEASE graded=$graded bad=$bad"
 [ "$graded" -eq 10 ] || { echo "UNPROVEN(2): expected 10 graded arms, got $graded -- a runner that cannot measure never prints the success shape"; exit 2; }
-[ "$ctl_fail" -eq 1 ] || { echo "UNPROVEN(2): w1's .s is identical with the release switched off -- SCRIP_ZD_HOOK_RELEASE is inert or w1 no longer reaches the release; this gate cannot tell a cure from a coincidence"; exit 2; }
 if [ "$bad" -ne 0 ]; then echo "GATE RED(1) [sno-statement-mark-mode-releases-the-hook-residue]: a statement in statement-mark mode ran at a different spine base than the plain lowering and its forward-failure or blank-statement path left the trampoline a descriptor instead of a continuation"; exit 1; fi
-echo "GATE GREEN(0) [sno-statement-mark-mode-releases-the-hook-residue]: a program that reads a statement keyword runs every statement at the plain base in both modes; the release is live in w1's emission"
+echo "GATE GREEN(0) [sno-statement-mark-mode-releases-the-hook-residue]: a program that reads a statement keyword runs every statement at the plain base in both modes"
 exit 0

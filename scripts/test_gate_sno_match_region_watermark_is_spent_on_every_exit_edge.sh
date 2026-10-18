@@ -34,6 +34,8 @@
 # reads 9/9, from the same ./scrip.  ⛔ THE KILLSWITCH IS A MEASUREMENT INSTRUMENT, NOT A SUPPORTED CONFIGURATION:
 # nothing may depend on the OFF position, which is the retired behaviour and is kept only so the next reader can
 # re-derive the delta without owning a second tree.
+# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680
+# allows no seam in SCRIP for a test): the 6/9 above was measured at the cure's landing and stands as history.
 set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1
 SCRIP=./scrip

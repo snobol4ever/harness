@@ -29,6 +29,8 @@
 # ⛔ NON-VACUOUS BY CONSTRUCTION, AND CHEAP TO RE-PROVE: SCRIP_ZD_DEFER_EXIT=0 restores the pre-cure bytes off
 # THE SAME BUILD, so no rebuild is needed to see the arms flip. Every b-arm is RED under it and every c-arm
 # stays GREEN. Prove that before trusting a green:  SCRIP_ZD_DEFER_EXIT=0 bash <this file>
+# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680
+# allows no seam in SCRIP for a test): the proof above was measured at the cure's landing and stands as history.
 #
 # ⭐ WHY A GATE AND NOT A BOARD LINE: the SNOBOL4 rungs board CANNOT SEE this cure. Censused at the landing,
 # ZERO of 32 sampled corpus SNOBOL4 programs outside the packages reach the arm, and Icon and Prolog emit no
