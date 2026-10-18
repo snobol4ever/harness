@@ -3,7 +3,9 @@
 # expression. Every line of ../harness/scripts/fixtures/expression_identity_deck.txt is compiled as X = <expr> by sbl -bf (the oracle
 # decides valid or invalid), by SCRIP's SNOBOL4 parser and by SCRIP's Snocone parser (X = <expr>;). Each parser's verdict
 # must be SPITBOL's, and for a valid expression the two parsers' trees must be byte-identical. Two exceptions are NAMED,
-# never silent: angle-bracket subscripts are out of Snocone by Lon's ruling (the Snocone verdict must be a refusal), and
+# never silent: angle-bracket subscripts are out of Snocone by Lon's ruling (the Snocone verdict must be a refusal) and out of
+# SCRIP's SNOBOL4 by Lon's 2026-10-02 ruling (CEO-1447, RULES.md SQUARE BRACKETS ARE THE ONE SUBSCRIPT; SCRIP 1a36cb772): an expression
+# SPITBOL accepts with a name, ] or > directly followed by < outside a literal is an angle subscript, and the SNOBOL4 verdict must be a refusal; and
 # lines listed in ../harness/scripts/fixtures/expression_identity_open.tsv are printed with the row that owns them -- and still read RED (no xfail).
 # SCRIP's non-ASCII identifier letters are KEPT (Lon 2026-09-28: "keep the extension"; src/parsers/snobol4/unicode_alpha_ranges.h): an
 # expression holding a byte >= 0x80 outside a literal is graded as valid whatever sbl -bf says, so both parsers must accept it alike.
@@ -51,7 +53,10 @@ def parse(e, lang):
 red = []; named = []
 for e in exprs:
     v = oracle(e) or bool(re.search(r"[\x80-\U0010ffff]", re.sub(r"'[^']*'|\"[^\"]*\"", "", e))); nok, nt = parse(e, "sno"); cok, ct = parse(e, "sc"); why = []
-    if nok != v: why.append("SNOBOL4 %s where SPITBOL %s" % ("accepts" if nok else "refuses", "accepts" if v else "refuses"))
+    ang = v and bool(re.search(r"[\w.\])>]<", re.sub(r"'[^']*'|\"[^\"]*\"", "", e)))
+    if ang:
+        if nok: why.append("SNOBOL4 accepts an angle-bracket subscript (ruled out, Lon 2026-10-02, CEO-1447)")
+    elif nok != v: why.append("SNOBOL4 %s where SPITBOL %s" % ("accepts" if nok else "refuses", "accepts" if v else "refuses"))
     if v and ("<" in e or ">" in e):
         if cok: why.append("Snocone accepts an angle-bracket subscript (ruled out, Lon 2026-09-28)")
     else:
