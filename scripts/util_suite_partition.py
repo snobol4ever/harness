@@ -141,7 +141,7 @@ def build(rows, feats, core_k=3, ubiquitous=0.5, chunk_entries=100, secs=None):
 
 def render(out, shape, params):
     b = io.StringIO()
-    b.write("# PARTITION.tsv -- built by ../harness/scripts/util_suite_partition.py (ceo CEO-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; "
+    b.write("# PARTITION.tsv -- built by util_suite_partition.py (ceo CEO-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; "
             "`util_suite_partition.py check <ALL.csv>` is the gate.\n")
     b.write("# params: core_k=%d ubiquitous=%s chunk_entries=%d secs=%s\n" % (params["core_k"], params["ubiquitous"], params["chunk_entries"], params["secs"] or "none"))
     b.write("# shape: entries=%d features=%d ubiquitous=%d(%s) distinctive=%d core=%d clusters=%d chunks=%d sizes=%s\n" % (
