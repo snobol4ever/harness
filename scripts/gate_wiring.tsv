@@ -716,6 +716,7 @@ test_gate_pl_bagof_setof_grouping.sh	WIRED	-	-	-
 test_gate_pl_between_through_a_variable_link_ttyflush_and_time_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_big_integer_multiplication_is_exact_at_every_size.sh	WIRED	-	-	-
 test_gate_pl_bom_is_written_detected_and_reported.sh	WIRED	-	-	-
+test_gate_pl_catch_between_sub_atom_and_atom_concat_exit_deterministically_on_their_last_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_clause_2_reads_static_code_on_every_road_and_obeys_the_iso_and_protect_flags.sh	WIRED	-	-	-
 test_gate_pl_clause_2_sees_the_clauses_of_its_call.sh	WIRED	-	-	-
 test_gate_pl_clpfd_helpers_called_by_name_answer_as_swipl.sh	WIRED	-	-	-
