@@ -60,7 +60,7 @@ def derive(root):
         if not entries: return None, 'the objects define no rtx_entry_names'
         ef = os.path.join(work, 'entries.txt')
         open(ef, 'w', encoding='utf-8').write(''.join(e + '\n' for e in entries))
-        walker = os.path.join(root, 'scripts', 'util_rtx_abi_walk.py')
+        walker = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'util_rtx_abi_walk.py')
         rc, out, err = run([sys.executable, walker] + objs + ['--entries', ef, '--clobber-table'])
         if rc != 0: return None, 'the walker could not derive the table (rc %d): %s' % (rc, (out + err).strip()[-600:])
         table = {}
@@ -84,7 +84,7 @@ def render(table):
 
 
 def main(argv):
-    root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+    root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'SCRIP'))
     out, check = None, False
     i = 0
     while i < len(argv):
