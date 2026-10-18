@@ -50,6 +50,9 @@
 #
 # rc=0 CLEAN (every witness matches its oracle-cut ref in BOTH modes), rc=1 VIOLATION, rc=2 UNPROVEN (no
 # oracle, no fresh binary, a missing witness, or a zero denominator -- never printed as a pass).
+# THE SIX PROGRAMS ARE MASTER ENTRIES (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-
+# unabsorbed-census-reads-zero): each is extracted from tests/snobol4/ALL.{sno,ref} by its ORIGIN (its old loose basename,
+# the durable key in ALL.csv), never by the entry name the builder assigns and may re-sort.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
@@ -70,29 +73,30 @@ CONTROLS=" pat_expr_interrogate_mixed pat_expr_fnc_control "
 
 n=0; bad=0; ctl_seen=0
 for p in $PROGS; do
-    [ -f "$W/$p.sno" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: missing witness $W/$p.sno"; exit 2; }
-    [ -f "$W/$p.ref" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: missing oracle-cut ref $W/$p.ref"; exit 2; }
+    python3 "$HERE/corpus_suite_harness.py" extract "$W/ALL.sno" "$W/ALL.ref" --origin "$p" "$T/w_$p.sno" --out-ref "$T/w_$p.ref" >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the master entry of origin $p could not be extracted from $W/ALL.{sno,ref,csv}"; exit 2; }
+    [ -f "$T/w_$p.sno" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: missing witness $T/w_$p.sno"; exit 2; }
+    [ -f "$T/w_$p.ref" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: missing oracle-cut ref $T/w_$p.ref"; exit 2; }
 done
 
 for p in $PROGS; do
     n=$((n+1))
     case "$CONTROLS" in *" $p "*) ctl_seen=$((ctl_seen+1));; esac
-    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" "$W/$p.sno" </dev/null >"$T/$p.m3" 2>&1 )
-    if ! diff -q "$W/$p.ref" "$T/$p.m3" >/dev/null 2>&1; then
+    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" "$T/w_$p.sno" </dev/null >"$T/$p.m3" 2>&1 )
+    if ! diff -q "$T/w_$p.ref" "$T/$p.m3" >/dev/null 2>&1; then
         bad=$((bad+1)); echo "⛔ $p: mode-3 DIVERGES from its oracle-cut ref"
-        diff "$W/$p.ref" "$T/$p.m3" | head -6
+        diff "$T/w_$p.ref" "$T/$p.m3" | head -6
         continue
     fi
-    if ! ( cd "$T" && timeout -k 5 60s "$ROOT/scrip" --compile -o "$p.s" "$W/$p.sno" </dev/null >/dev/null 2>&1 ); then
+    if ! ( cd "$T" && timeout -k 5 60s "$ROOT/scrip" --compile -o "$p.s" "$T/w_$p.sno" </dev/null >/dev/null 2>&1 ); then
         bad=$((bad+1)); echo "⛔ $p: mode-4 COMPILE failed"; continue
     fi
     if ! ( cd "$T" && gcc -no-pie "$p.s" -o "$p.bin" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ); then
         bad=$((bad+1)); echo "⛔ $p: mode-4 LINK failed"; continue
     fi
     ( cd "$T" && timeout -k 5 30s "./$p.bin" </dev/null >"$T/$p.m4" 2>&1 )
-    if ! diff -q "$W/$p.ref" "$T/$p.m4" >/dev/null 2>&1; then
+    if ! diff -q "$T/w_$p.ref" "$T/$p.m4" >/dev/null 2>&1; then
         bad=$((bad+1)); echo "⛔ $p: mode-4 DIVERGES from its oracle-cut ref"
-        diff "$W/$p.ref" "$T/$p.m4" | head -6
+        diff "$T/w_$p.ref" "$T/$p.m4" | head -6
     fi
 done
 
