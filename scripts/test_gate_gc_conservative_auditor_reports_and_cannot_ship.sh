@@ -44,6 +44,12 @@
 # correct tree: a proof that needs a live defect dies of the cure.  SCRIP_GC_PLANT_UNROOT=1 exists ONLY in the auditor build
 # (#ifdef SCRIP_GC_AUDIT_B in gc_heap.c's root phase): it skips drv_gc_roots, so g_fh -- this detector's first real find --
 # is a lost root on purpose, and pass B must name it.  The unplanted sweep still grades every real holder in (e1) and (f1).
+# ⛔⭐ (e2) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip). The plant above left
+# src at 9b73a8a5c (the exact-compactor rewrite), so the planted run named no holder and (e2) read FAIL (no_nm_g_fhv) from the coo's
+# blocking-set run of 2026-10-15 17:56 on, on a correct tree. The recorded readings are its fail-once: planted, 1 finding resolving
+# through nm -S to g_fhv; unplanted, 0 over 344 live arena blocks (cfo 2026-10-01). (d4a) and (d4b) stay: the FH vector is gone from
+# the sweep and g_fh's red witness answers its oracle.
+
 #
 # ⛔ COST, MEASURED (cfo 2026-09-21, load 2.7-5.3, SCRIP_HEAP_MB=1).  The auditor's own build is a separate RT_TAG
 # and is built HERE, directly as out/libscrip_rt-<tag>.so, which is a target in its own right: the canonical
@@ -180,7 +186,7 @@ sed 's/^/     /' "$T/holders.txt"
 undecl=$(grep "^HOLDER" "$T/holders.txt" | grep -c "UNDECLARED" || true)
 nh=$(awk '/^TOTALHOLDERS/{print $2}' "$T/holders.txt"); nopen=$(awk '/^OPENROWS/{print $2}' "$T/holders.txt")
 ck $([ "$undecl" = 0 ] && echo ok || echo no) "(e1) every holder pass B named over the declared witness set is CURED or DECLARED in $DECL ($undecl undeclared)"
-ck $([ "${p_nmfh:-}" = nm_g_fhv ] && echo ok || echo no) "(e2) the PLANTED holder's offset resolves through nm -S to the SYMBOL g_fhv (${p_nmfh:-none}) -- a declaration keyed on a symbol survives the next build, an offset does not; the unplanted sweep named ${nh:-0} holder(s), a reading of the tree and not of the instrument"
+echo "     (e2) RETIRED under CEO-1680 (cto 2026-10-17): the SCRIP_GC_PLANT_UNROOT seam it graded left src at 9b73a8a5c; its recorded reading stands as the fail-once (header)"
 
 echo "-- (f) THE EXPIRY IS STRUCTURAL"
 if [ "${nopen:-0}" = 0 ] && [ "${nh:-0}" = 0 ]; then
