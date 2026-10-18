@@ -263,6 +263,7 @@ rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request writes its
 # only ever set BY HAND -- this runner wrote no SCORE.md cell and no suite row at all, so its 5/5 had no
 # runner behind it. The table's reading is the ceo-372 AND per program over the SPITBOL baseline.
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+    if [ "$SUITE" = "$CANON_SUITE" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SUITE" = "$CANON_SUITE" ]; then
 # ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749):
 # PASS over SHIPPED ($TOTAL = graded plus the $UNSCR outside the SPITBOL baseline), OUTSIDE=$UNSCR named and stamped

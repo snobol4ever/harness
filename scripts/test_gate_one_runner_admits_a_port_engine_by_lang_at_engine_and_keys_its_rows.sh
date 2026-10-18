@@ -220,8 +220,12 @@ while IFS=: read -r key pkg run db board; do
         '[ "$rc" = 1 ] && grep -qE "$board" "$T/out_$key" && { [ "$db" = - ] || { [ "$(rows "$T/six_$key.tsv" "$db")" -ge 1 ] && [ "$(rows "$T/six_$key.tsv" "$db")" = "$(mode_rows "$T/six_$key.tsv" m3)" ] && ! grep -q "rc=126" "$T/six_$key.tsv"; }; }'
     arm "11-$key writes no SCRIP row and leaves its package as shipped" \
         '[ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ] && grep -qE "writes no SCRIP row|no progress row and no suite row written" "$T/out_$key" && cmp -s "$T/six.before" "$T/six.after"'
+    case "$key" in dotnet|snoflake|csnobol4|gimpel)   # canonical in the stage; SnoDemo and SnoBench are fixtures here, which publish nothing
+        arm "11-$key publishes $key@jvm itself, by from-progress over the rows it appended" \
+            'awk -F"\t" -v k="$key@jvm" "\$1==k && \$10>=1" "$T/SUITES.pkg.tsv" | grep -q . && grep -q "^SUITE_ROW suite=$key@jvm " "$T/out_$key"' ;;
+    esac
 done <<< "$SIX"
 
-[ $examined -ge 58 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 58 declared arms"; exit 2; }
+[ $examined -ge 62 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 62 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1

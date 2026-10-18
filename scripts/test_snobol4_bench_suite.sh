@@ -177,7 +177,7 @@ if [ "$IS_BOARD" = 0 ]; then
   echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
-  if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (CEO-1822), graded in m3 alone"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
+  if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (CEO-1822), graded in m3 alone"; [ "$NOWRITE" = 0 ] && one_runner_port_publish "$SUITE_KEY@$(one_runner_engine)"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
   . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
   read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/snobol4" "$BD" "" "$NOWRITE")"
   echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"

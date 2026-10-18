@@ -270,6 +270,7 @@ if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (
 # stamped through lib_outside_shape.sh -- the outside drivers stay in the denominator as debt to cure. Before this the
 # row published $BOTH/$SCORED, the graded set only, and nothing in the verdict instrument could see the difference.
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+    if [ -z "${GIMPEL_SUITE:-}" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $GIMPEL_SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SCORED" -gt 0 ] && [ -z "${GIMPEL_SUITE:-}" ]; then
 . "$HERE/lib_outside_shape.sh" || exit 2
 # ⛔⭐ CEO-1286 (Lon 2026-09-26): the libraries NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv, named by library; the live outside set names

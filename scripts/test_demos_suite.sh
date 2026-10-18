@@ -139,6 +139,7 @@ if [ "$IS_BOARD" = 1 ] || [ -n "${S4E_PROGRESS_DB:-}" ]; then
 fi
 rr_selected && { rr_end "$ROWKEY"; exit 0; }
 if [ "$PORT" = 1 ]; then echo "suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $ROWKEY, assembled from these progress rows (CEO-1822), graded in m3 alone"
+    if [ "$IS_BOARD" = 1 ] && [ "$NOWRITE" = 0 ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: not published (a fixture, or --no-write)"; fi
 elif [ "$IS_BOARD" = 1 ]; then
     if [ "$NOWRITE" = 0 ]; then
         python3 "$HERE/util_score_row.py" write --lang "$L" --column demos --modes m3,m4 --measurer "${S4E_SEAT:-}" ${S4E_CRITERION_CHANGED:+--criterion-changed "$S4E_CRITERION_CHANGED"} \

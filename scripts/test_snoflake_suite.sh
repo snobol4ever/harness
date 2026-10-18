@@ -472,6 +472,7 @@ rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request writes its
 # this one and csnobol4_suite's own runner were the two missing it (board-packages-into-make-test-
 # reported-then-blocking, seat13 2026-09-03).
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+    if [ "$SUITE" = "$CANON_SUITE" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SUITE" != "$CANON_SUITE" ]; then echo "SCORE.md: scratch suite $SUITE -- not written (only the canonical suite records the leaderboard)"; else
 # ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749): the
 # row publishes PASS over SHIPPED = the baseline fixtures plus the $OUTSIDE_N outside the SPITBOL baseline, OUTSIDE=k named and
