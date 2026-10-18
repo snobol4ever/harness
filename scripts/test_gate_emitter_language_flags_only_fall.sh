@@ -12,6 +12,10 @@
 # GREEN at or below. A floor may only FALL: the landing that removes reads lowers the floor in the same push. The campaign that
 # takes every floor to 0 replaces each flag with the behaviour fact it stands for, set by LOWER as IR (ARCH-ZETA-ONE-COORDINATE.md
 # section 7); when a flag reads 0 it moves to test_gate_emit_no_lang.sh's banned list and leaves this table.
+# DELETED OUTRIGHT 2026-10-18 on Lon's word (CEO-1838, verbatim: "which global specifies lanuage? which global struct specifies language.
+# DELETE those OUTRIGHT!"): icn_cells_graph, emit_pl_frame, zls_g_pl_frame, pl_frame, icn_retain -- any reappearance anywhere under src/,
+# parser and lower included (Lon: "it matters not if the global exists during parsing or if it exists during lower. The GLOBAL must be
+# deleted."), reds this gate. zframe_graph stays on the ratchet: a frame fact any lowerer may set, never a language.
 # rc 0 green, rc 1 a flag above its floor, rc 2 cannot measure (no SCRIP beside harness, or fewer than 100 source files).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,7 +23,8 @@ SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SC
 python3 - "$SCRIP" <<'PYEOF'
 import re, sys, glob, os
 root = sys.argv[1]
-FLOOR = {"icn_cells_graph": 68, "zframe_graph": 30, "emit_pl_frame": 23, "icn_retain": 7, "zls_g_pl_frame": 7, "pl_frame": 5}
+FLOOR = {"zframe_graph": 29}
+DELETED = ("icn_cells_graph", "emit_pl_frame", "zls_g_pl_frame", "pl_frame", "icn_retain")
 files = []
 for pat in ("src/emitter/*.cpp", "src/emitter/*.h", "src/templates/**/*.cpp", "src/templates/**/*.h", "src/templates/**/*.inc"):
     files += glob.glob(os.path.join(root, pat), recursive=True)
@@ -35,6 +40,14 @@ for f in files:
         n = len(re.findall(r"\b%s\b" % k, s))
         if n: count[k] += n; where[k][os.path.relpath(f, root)] = n
 red = 0
+allsrc = [f for pat in ("src/**/*.c", "src/**/*.cpp", "src/**/*.h", "src/**/*.inc") for f in glob.glob(os.path.join(root, pat), recursive=True)]
+for k in DELETED:
+    hits = []
+    for f in allsrc:
+        n = len(re.findall(r"\b%s\b" % k, strip(open(f, encoding="utf-8", errors="replace").read())))
+        if n: hits.append("%s %d" % (os.path.relpath(f, root), n))
+    red |= bool(hits)
+    print("EMIT_LANG_FLAG_DELETED flag=%s reads=%d%s" % (k, len(hits), ("  RETURNED in " + ", ".join(hits[:3])) if hits else ""))
 for k in FLOOR:
     over = count[k] > FLOOR[k]
     red |= over
