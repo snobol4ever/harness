@@ -1846,7 +1846,21 @@ def cmd_from_progress(a):
             return float(x)
         except ValueError:
             return 0.0
-    wall = int(round(sum(_f(v[4]) for v in last.values())))   # the row's Wall: the sum of the latest readings' own seconds (row (c))
+    # the row's Wall is the MINIMUM time to run the suite (Lon 2026-10-18: "That column is meant to represent the MINIMUM amount of time to run the test"):
+    # the sum, over the suite's programs and modes, of the smallest PASS seconds ever recorded for each (<db>.min, util_progress_append's ledger); the
+    # latest reading is a loaded run's, a timeout's or a crash's and says how long that one run took. Where the ledger does not exist (a scratch database)
+    # the latest readings' own seconds stand, as before (row (c)).
+    import util_progress_append as _upa
+    _mn = _upa.min_secs_table(db)
+    if _mn:
+        def _mnv(prog, m):   # a reading may be keyed by its stem here and by file name in the ledger (GNU writes BipsPl/x.pl, the table lists BipsPl/x)
+            for sfx in ("", ".pl", ".sno", ".spt", ".sbl", ".icn", ".pas", ".raku", ".sc", ".reb", ".inc", ".INC"):
+                if (dbsuite, prog + sfx, m) in _mn:
+                    return _mn[(dbsuite, prog + sfx, m)]
+            return 0.0
+        wall = int(round(sum(_mnv(prog, m) for (prog, m) in last)))
+    else:
+        wall = int(round(sum(_f(v[4]) for v in last.values())))
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]

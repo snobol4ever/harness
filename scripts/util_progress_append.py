@@ -482,6 +482,86 @@ def _attach_timeout_stamps(rows):
             print("progress: a timeout retry stamp matched no row (key %s, %s): %s" % (s[0], s[1], s[2]), file=sys.stderr)
 
 
+# ⛔⭐ THE MINIMUM-SECONDS LEDGER (the coo 2026-10-18, Lon in-chat: "The Wall column ... is meant to represent the MINIMUM amount of time to run the test."; CEO-1577's
+# idle-box seconds are the final home, this is the bridge that exists before the downtime pass): the CURRENT TABLE keeps one row per key, the LATEST reading, so a
+# load-inflated or timed-out run overwrites the fast one and no history says how fast a test can run. This sidecar, <db>.min, keeps per (class, suite, lang, program,
+# mode) the SMALLEST secs of any PASS reading (secs > 0; 0 means the runner did not know), written under the same flock as the append and only ever lowered.
+# A program that never passed has no minimum: it has no run time to speak of. util_score_row.py from-progress sums these for a suite's Wall.
+MIN_COLUMNS = ["class", "suite", "lang", "program", "mode", "min_secs", "scrip", "ts_utc"]
+
+
+def min_path(db=None):
+    return (db or db_path()) + ".min"
+
+
+def _read_min(mp):
+    out = collections.OrderedDict()
+    if os.path.exists(mp):
+        with open(mp, encoding="utf-8", errors="replace") as f:
+            f.readline()
+            for ln in f:
+                x = ln.rstrip("\n").split("\t")
+                if len(x) >= 8:
+                    out[tuple(x[:5])] = x
+    return out
+
+
+def _update_min(db, lines):
+    """lines: results.tsv rows as the writer builds them (ts scrip corpus measurer class suite lang program mode outcome secs ...). Under the caller's flock."""
+    mp = min_path(db)
+    cur = _read_min(mp)
+    changed = False
+    for ln in lines:
+        x = ln.split("\t")
+        if len(x) < 11 or x[9] != "PASS":
+            continue
+        try:
+            sv = float(x[10])
+        except ValueError:
+            continue
+        if not sv > 0:
+            continue
+        k = tuple(x[4:9])
+        if k not in cur or sv < float(cur[k][5]):
+            cur[k] = [x[4], x[5], x[6], x[7], x[8], ("%.4g" % sv) if sv < 1 else ("%.2f" % sv), x[1], x[0]]
+            changed = True
+    if changed:
+        tmp = mp + ".tmp"
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            f.write("\t".join(MIN_COLUMNS) + "\n")
+            for v in cur.values():
+                f.write("\t".join(v) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, mp)
+    return changed
+
+
+def min_secs_table(db=None):
+    """{(suite, program, mode): smallest PASS seconds} over every class and lang the ledger holds."""
+    out = {}
+    for k, v in _read_min(min_path(db)).items():
+        kk = (v[1], v[3], v[4])
+        sv = float(v[5])
+        if kk not in out or sv < out[kk]:
+            out[kk] = sv
+    return out
+
+
+def backfill_min(db=None):
+    """Seed the ledger from the current table's PASS readings (the first minimum is the latest reading; it only falls from here). Idempotent."""
+    path = db or db_path()
+    lock = path + ".lock"
+    with open(lock, "a") as lk:
+        fcntl.flock(lk.fileno(), fcntl.LOCK_EX)
+        with open(path, encoding="utf-8", errors="replace") as f:
+            f.readline()
+            lines = [ln.rstrip("\n") for ln in f if ln.strip()]
+        _update_min(path, lines)
+        fcntl.flock(lk.fileno(), fcntl.LOCK_UN)
+    return len(_read_min(min_path(path)))
+
+
 def append_rows(rows, db=None):
     moved = binary_moved_since_start()
     if moved:
@@ -557,6 +637,10 @@ def append_rows(rows, db=None):
                     f.write(payload)
                     f.flush()
                     os.fsync(f.fileno())
+            try:
+                _update_min(path, lines)
+            except (OSError, ValueError) as e:
+                print(f"progress: the minimum-seconds ledger {min_path(path)} was NOT updated ({e}); the rows above are recorded", file=sys.stderr)
             fcntl.flock(lk.fileno(), fcntl.LOCK_UN)
     except (OSError, ProgressUnwritable) as e:
         msg = f"⛔ PROGRESS DATABASE UNWRITABLE ({path}): {e} -- {len(rows)} row(s) NOT recorded. A run that leaves the table untouched is a defect of that run (progress/README.md, CEO-319); fix the table or the permission, never the caller."
@@ -688,10 +772,13 @@ def _main(argv):
     c = sub.add_parser("results-tsv"); c.add_argument("--suite", required=True); c.add_argument("--lang", required=True); c.add_argument("file")
     d = sub.add_parser("triangulation"); d.add_argument("--lang", required=True); d.add_argument("file")
     ctxp = sub.add_parser("context")
+    mnp = sub.add_parser("min-backfill"); mnp.add_argument("--db", default=None)
     args = ap.parse_args(argv)
     try:
         if args.cmd == "context":
             print("\t".join(f"{k}={v}" for k, v in context().items()) + f"\tdb={db_path()}\toff={recording_off()}"); return 0
+        if args.cmd == "min-backfill":
+            n = backfill_min(args.db); print(f"progress: the minimum-seconds ledger {min_path(args.db)} holds {n} key(s)"); return 0
         if args.cmd == "append":
             rows = [{k: getattr(args, k) for k in ("class", "suite", "lang", "program", "mode", "outcome", "secs", "note", "config")}]
         elif args.cmd == "rows-tsv":
