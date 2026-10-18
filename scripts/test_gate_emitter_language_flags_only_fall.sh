@@ -18,6 +18,8 @@
 # Live CODE only: comments and string literals are stripped before counting.
 # rc 0 green, rc 1 a deleted name returned or a count above its floor, rc 2 cannot measure (no SCRIP beside harness, or fewer than
 # 100 emitter/template files). Fail-once: a floor set one below today's count reads RED (ceo, 2026-10-18 15:2x CDT, in the ledger).
+# FLOORS measured 2026-10-18 16:2x CDT on the restore merged with hq_prolog's 8a5973d0b/f049ef7a8 (its restore reads emit_resumable_frame()
+# at three more sites and zls_g_resumable_frame() at four more than the pre-deletion tree did; zframe_graph one more through x86_resumable_frame).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }
@@ -25,7 +27,7 @@ python3 - "$SCRIP" <<'PYEOF'
 import re, sys, glob, os
 root = sys.argv[1]
 DELETED = ("icn_cells_graph", "emit_pl_frame", "zls_g_pl_frame", "pl_frame", "icn_retain")
-GRAPH_FACT = {"zframe_graph": 30, "cell_frame": 69, "resumable_frame": 5, "emit_resumable_frame": 22, "zls_g_resumable_frame": 7, "frame_retained": 7, "root_graph": 21, "body_root": 21}
+GRAPH_FACT = {"zframe_graph": 31, "cell_frame": 69, "resumable_frame": 5, "emit_resumable_frame": 25, "zls_g_resumable_frame": 11, "frame_retained": 7, "root_graph": 21, "body_root": 21}
 LANG_PREFIX = {"icn": 103, "pl": 178, "rk": 37, "sno": 39, "pas": 29, "snc": 0, "reb": 0, "raku": 0, "plw": 0}
 files = []
 for pat in ("src/emitter/*.cpp", "src/emitter/*.h", "src/templates/**/*.cpp", "src/templates/**/*.h", "src/templates/**/*.inc"):
