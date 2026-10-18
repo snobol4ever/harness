@@ -116,6 +116,7 @@ test_gate_emit_guard_sink_names_its_guard.sh	WIRED	-	-	-
 test_gate_emit_no_ir_mutation.sh	WIRED	-	-	-
 test_gate_emit_no_lang.sh	WIRED	-	-	-
 test_gate_emit_no_slot_alloc.sh	WIRED	-	-	-
+test_gate_emitter_language_flags_only_fall.sh	WIRED	-	-	-
 test_gate_errlimit_survival_is_measured_per_code.sh	WIRED	-	-	-
 test_gate_every_c_to_bb_box_entry_carries_its_hit.sh	WIRED	-	-	-
 test_gate_every_graded_suite_has_an_attribute_csv.sh	WIRED	-	-	-
