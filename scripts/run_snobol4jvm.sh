@@ -1,5 +1,5 @@
 #!/bin/bash
-# run_snobol4jvm.sh [-dNk] [-sNk] [-u STR] name.sno [-- arg ...]   |   run_snobol4jvm.sh --binaries [--lang LANG]
+# run_snobol4jvm.sh [-dNk] [-sNk] [-u STR] name.sno [-- arg ...]   |   --binaries [--lang LANG]   |   --paths
 # THE jvm ENGINE ARM (CEO-1822; Lon 2026-10-17, in-chat to hq_jvm, verbatim: "The suite banner should represent the snobol4jvm program,
 # not SCRIP." · "I suspect getting the test harness and benchmarks to run is the first order of business."): run one SNOBOL4 program
 # under snobol4jvm, the engine sibling at <root>/snobol4jvm, in the calling shape every port runner shares (hq_dotnet's proposal,
@@ -13,9 +13,12 @@
 # --binaries prints the graded file, one path per line (the jar): bin_fingerprint, the progress digest and the tree pin read it. It is
 # the board's one check, called before the first entry: it refuses rc 2 for a language snobol4jvm has no front end for (--lang, default
 # snobol4), and when the jar is missing or older than the snobol4jvm source it would stand for, so no board grades a stale build.
+# --paths prints the same file and checks nothing (hq_dotnet's addition): the fingerprints, the progress digest and the tree pin read it
+# at the END of a board too, where a source edited mid-run must not turn the jar it graded into "the binary moved".
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SJ="$(cd "$HERE/../.." && pwd)/snobol4jvm"
 J="$(ls -t "$SJ"/target/uberjar/*-standalone.jar 2>/dev/null | head -1)"
+[ "${1:-}" = "--paths" ] && { [ -n "$J" ] && printf '%s\n' "$J"; exit 0; }
 [ -f "$J" ] || { echo "⛔ REFUSE(rc=2): no snobol4jvm jar under $SJ/target/uberjar -- build it: bash $HERE/build_snobol4jvm.sh" >&2; exit 2; }
 if [ "${1:-}" = "--binaries" ]; then
   lang=snobol4; [ "${2:-}" = --lang ] && lang="${3:-}"

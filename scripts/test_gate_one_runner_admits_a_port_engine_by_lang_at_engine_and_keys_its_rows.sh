@@ -16,7 +16,7 @@
 # second port (hq_jvm; Lon 2026-10-17 to hq_jvm: "The suite banner should represent the snobol4jvm program, not SCRIP."): snobol4 under jvm
 # is hq_jvm's lane; hq_jvm under S4E_ENGINE=jvm is admitted, dispatched to run_snobol4jvm.sh (a stub java host over a stub uberjar), keys
 # every row snobol4-rungs@jvm and names the jar as its binary; hq_dotnet under jvm is refused; snocone under jvm and a jar older than the
-# snobol4jvm source each refuse the board rc 2 before any entry.
+# snobol4jvm source each refuse the board rc 2 before any entry; with that source still newer, both fingerprints name the jar (--paths).
 set -u
 unset S4E_DONE_WHEN_RUN S4E_ONE_RUNNER_OVERRIDE S4E_ONE_RUNNER_FIXTURE S4E_SEAT S4E_ENGINE S4E_BIN_AT_START S4E_CORPUS_ROOT
 H="$(cd "$(dirname "$0")" && pwd)"; L="$H/lib_one_runner.sh"; G=one_runner_admits_a_port_engine; fail=0; examined=0
@@ -130,7 +130,11 @@ arm "9e snocone under jvm refuses the board rc 2 (got $rc)"             '[ "$rc"
 touch "$JS/src/SNOBOL4clojure/core.clj"
 rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
 arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
+# 7c's twin: with the source still newer than the jar, run_snobol4jvm.sh --paths names it, so a board's end fingerprint is not "moved"
+jpy="$(S4E_ENGINE=jvm python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import util_progress_append as u; print(u.bin_fingerprint())' "$R/harness/scripts" 2>&1)"
+jsh="$(S4E_ENGINE=jvm FP_LIB="$R/harness/scripts/lib_one_runner.sh" bash -c '. "$FP_LIB"; one_runner_bin_fingerprint')"
+arm "9g with the source newer than the jar, both fingerprints still name the jar" '[ "$(echo $jpy | wc -w)" = 1 ] && [ "$(echo $jsh | wc -w)" = 1 ] && [ "$(echo $jpy)" = "$(echo $jsh)" ]'
 
-[ $examined -ge 30 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 30 declared arms"; exit 2; }
+[ $examined -ge 31 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 31 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
