@@ -21,7 +21,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 # REFUSES rc=2 WHEN IT CANNOT MEASURE -- never skip-as-success (RULES.md: a test that cannot measure refuses).
-[ -d scripts ] || { echo "GATE REFUSED (rc=2): cannot see ../harness/scripts/ from $ROOT -- nothing was checked" >&2; exit 2; }
+[ -d ../harness/scripts ] || { echo "GATE REFUSED (rc=2): cannot see ../harness/scripts/ from $ROOT -- nothing was checked" >&2; exit 2; }
 n=$(ls ../harness/scripts/*.sh 2>/dev/null | wc -l)
 [ "$n" -gt 0 ] || { echo "GATE REFUSED (rc=2): ../harness/scripts/*.sh matched 0 files -- a green here would be an empty claim" >&2; exit 2; }
 # DETECTION, in two stages, because the real offenders do not spell it literally. First cut of this gate
