@@ -18,7 +18,7 @@
 #   8. THE DATA BIND INSIDE TOO (cto 2026-10-17, row startup-an-empty-mode-4-program-costs-...): --dynamic-list-data is gone, so a datum stays
 #      interposable only by name in rt_interposable.list; every R_X86_64_COPY in every executable above (libc's stdin, stdout and stderr aside)
 #      names a symbol in that list, or that executable writes a copy the runtime never reads. Measured at the landing: rtccb (mode 4, scrip-ipp),
-#      sno_nerrors and rebus_nerrors (the parser tools); the runtime's GLOB_DAT relocations 252 -> 73, an empty mode-4 program 863,359 -> 756,573 Ir.
+#      sno_nerrors and rebus_nerrors (the parser tools); the runtime's GLOB_DAT relocations 252 -> 73, an empty mode-4 program 863,359 -> 756,573 Ir; with the C++ objects built -fno-gnu-unique (an inline function's static no longer a GNU-unique symbol, SCRIP d2e301195) 73 -> 25 and 715,103 Ir.
 # FAIL-ONCE: arms 1 and 5 read red on the parent of the landing (3,721 and 34); arm 8 reads red on the parent of the data landing (the
 # parser tools' sno_nerrors and rebus_nerrors were in no list). Arms 6 and 7 read 0 against a runtime linked with plain -Bsymbolic-functions (no
 # list), measured at the landing: TSHIM 0 in both modes, lex_calls=0, where this link reads 2, 2 and 1,449.
