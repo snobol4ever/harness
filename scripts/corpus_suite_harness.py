@@ -98,6 +98,7 @@ import shutil
 import time
 import tempfile
 from pathlib import Path
+HARNESS_SCRIPTS = Path(__file__).resolve().parent
 
 BANNER_WIDTH = 80
 ONE_LINE_CAP = 200
@@ -209,7 +210,7 @@ def require_population(paths, count, floor, label):
     check just above) never enters the grading loop, `fails` stays [], and this exits 0. A run that
     graded nothing must never read as a run that graded everything and found it clean (row every-board-
     wrapper-refuses-on-a-zero-population-instead-of-passing-vacuously, hq_T 2026-09-04)."""
-    shim = paths["scrip_root"] / ".." / "harness" / "scripts" / "util_require_population.sh"
+    shim = HARNESS_SCRIPTS / "util_require_population.sh"
     if not shim.is_file():
         print(f"⛔ REFUSED-TO-GRADE rc=2: {shim} missing -- cannot establish that this run graded "
               f"anything (the ONE population-floor authority, never reimplemented here)", file=sys.stderr)
@@ -254,7 +255,7 @@ def require_fresh(paths):
     built")), and turning another instrument's SKIP into a REFUSE is a different row's ruling, not this
     one's. A stale .so, though, is squarely this class and the dangerous half of it: an older runtime
     still exports what source deleted, so m4 grades a program nobody is shipping."""
-    shim = paths["scrip_root"] / ".." / "harness" / "scripts" / "util_require_fresh.sh"
+    shim = HARNESS_SCRIPTS / "util_require_fresh.sh"
     if not shim.is_file():
         print(f"⛔ REFUSED-TO-GRADE rc=2: {shim} missing -- cannot establish that the binary about to be "
               f"graded is current (the ONE stale-binary authority, never reimplemented here)", file=sys.stderr)
@@ -307,7 +308,7 @@ def resolve_oracle_bin(paths, lang=""):
     with no entry point at all falls through to the toplevel, hits EOF on `/dev/null` stdin, and exits
     0 with at most a trailing newline -- already stripped by this function's own `.rstrip("\n")`,
     verified empirically against a no-directive witness before this change landed."""
-    lib = paths["scrip_root"] / ".." / "harness" / "scripts" / "lib_oracle_flags.sh"
+    lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
     if not lib.is_file():
         refuse(f"lib_oracle_flags.sh missing at {lib} -- the ONE oracle-flag authority (RULES.md)")
     if lang in ("", "snobol4"):
@@ -349,7 +350,7 @@ def resolve_oracle_bin(paths, lang=""):
         # source directory) and execs the result, matching run_oracle()'s single-process contract exactly
         # the way icon_bin's real one-step binary does. `-Miso` is passed as this resolver's own flags, same
         # shape as snobol4's `-bf`/prolog's `-q` -- never hand-assembled a second time at a call site.
-        wrapper = paths["scrip_root"] / ".." / "harness" / "scripts" / "fpc_oracle_run.sh"
+        wrapper = HARNESS_SCRIPTS / "fpc_oracle_run.sh"
         if not wrapper.is_file():
             refuse(f"fpc_oracle_run.sh missing at {wrapper} -- the one-step FPC oracle driver")
         return str(wrapper), "-Miso"
@@ -374,7 +375,7 @@ def resolve_oracle_bin(paths, lang=""):
         # builder's empty-output guard launders into a per-program "vacuous ref" exclusion -- see that
         # script's own header for the four programs it silently cost. rakudo_bin() is still called above so
         # a missing oracle refuses HERE, with lib_oracle_flags.sh's own message, rather than inside a wrapper.
-        wrapper = paths["scrip_root"] / ".." / "harness" / "scripts" / "raku_oracle_run.sh"
+        wrapper = HARNESS_SCRIPTS / "raku_oracle_run.sh"
         if not wrapper.is_file():
             refuse(f"raku_oracle_run.sh missing at {wrapper} -- the prelude-staging rakudo driver")
         return str(wrapper), ""   # no flags: `raku <file>` is the whole invocation
@@ -511,7 +512,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
     run_oracle does; a translation that fails returns kind "TRANSLATE" and the translator's first line as text."""
     src_path = Path(src_path)
     d, stem = src_path.parent, src_path.stem
-    lib = paths["scrip_root"] / ".." / "harness" / "scripts" / "lib_oracle_flags.sh"
+    lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
     r = subprocess.run(["bash", "-c", f". '{lib}' && icont_bin"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
         refuse(f"lib_oracle_flags.sh refused (icont_bin): {r.stderr.strip()}")
@@ -3535,7 +3536,7 @@ def resolve_extension_oracle(paths, accessor):
     """(binary, flags) for an EXTENSION_ORACLES accessor, through lib_oracle_flags.sh -- never a hand-built path."""
     if accessor not in EXTENSION_ORACLES:
         refuse(f"extension oracle {accessor!r} is not one of {sorted(EXTENSION_ORACLES)}")
-    lib = paths["scrip_root"] / ".." / "harness" / "scripts" / "lib_oracle_flags.sh"
+    lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
     r = subprocess.run(["bash", "-c", f". '{lib}' && {accessor}"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip():
         refuse(f"lib_oracle_flags.sh refused ({accessor}): {r.stderr.strip()}")
@@ -4784,7 +4785,7 @@ def _smoke_delegate(paths, runner, names):
     """{entry: {"m3": kind, "m4": kind}} from the board runner's smoke mode; an entry the board does not run-grade maps to None.
     Refuses rc=2 when the runner refuses or answers for fewer entries than it was asked."""
     env = dict(os.environ, S4E_AREA_SMOKE_ENTRIES=" ".join(names), S4E_PROGRESS_OFF="1")
-    r = subprocess.run(["bash", str(paths["scrip_root"] / ".." / "harness" / "scripts" / runner)], capture_output=True, text=True, env=env,
+    r = subprocess.run(["bash", str(HARNESS_SCRIPTS / runner)], capture_output=True, text=True, env=env,
                        timeout=180 + 90 * len(names), stdin=subprocess.DEVNULL)
     out = {}
     for ln in r.stdout.splitlines():
