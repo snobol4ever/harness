@@ -53,7 +53,7 @@ wired() { grep -q 'declared_oracle_env_beside "$D/jtran.icn"' "$1" && grep -q '"
 SH="$HERE/test_demo_icon_jcon_selfhost.sh"
 [ -f "$SH" ] || { echo "⛔ GATE REFUSE(2) [$G]: $SH absent"; exit 2; }
 if wired "$SH"; then ok "W  the self-host gate reads jtran.oracle_env and hands it to the oracle's env"; else bad "W  the self-host gate no longer passes jtran's declared oracle environment"; fi
-sed 's/"\${OENV\[@\]}" timeout "\$TMO" "\$W\/jtran_oracle"/timeout -k 5 "$TMO" "$W\/jtran_oracle"/' "$SH" > "$W/doctored.sh"
+sed 's/"\${OENV\[@\]}" timeout -k 5 "\$TMO" "\$W\/jtran_oracle"/timeout -k 5 "$TMO" "$W\/jtran_oracle"/' "$SH" > "$W/doctored.sh"
 cmp -s "$SH" "$W/doctored.sh" && { echo "⛔ GATE REFUSE(2) [$G]: the doctoring edit did not apply"; exit 2; }
 if wired "$W/doctored.sh"; then bad "W' a copy that drops the env still reads as wired"; else ok "W' a copy that drops the env reads RED (fail once)"; fi
 if [ "$RED" = 0 ]; then echo "✅ GATE PASS [$G]: the oracle's declared environment is read by the one reader, refused when malformed, needed by the oracle, and passed by the self-host gate"; exit 0; fi
