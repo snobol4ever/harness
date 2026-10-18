@@ -167,6 +167,12 @@ one_runner_port_ready() {   # one_runner_port_ready <lang>
     *) echo "⛔ REFUSE(rc=2): S4E_ENGINE=$(one_runner_engine) names no port engine (dotnet, jvm)" >&2; return 2;; esac
   bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries --lang "${1:-snobol4}" > /dev/null || return 2
 }
+# one_runner_port_time_unit_ns -- nanoseconds per TIME() unit of the port engine, for a wrapper that budgets by TIME() (SnoBench's angle 3).
+# snobol4dotnet mimics SPITBOL exactly (Lon 2026-10-18, in-chat to hq_dotnet, verbatim: "The snobol4dotnet is meant to mimic SPITBOL exactly.
+# So make decisions based on that. This however is not true of snobol4jvm."), and SPITBOL's TIME() is milliseconds (the manual: "Returns the
+# execution time in milliseconds"; Dewar and Emmer's zystm), where the fleet's own SPITBOLs answer nanoseconds by NS-TIME (x64 ec80390).
+# Nothing for an engine whose unit is not declared here: its runner leaves the TIME()-budgeted angle unrun and says so.
+one_runner_port_time_unit_ns() { case "$(one_runner_engine)" in dotnet) printf 1000000;; esac; }
 # one_runner_port_tree -- the port engine's checkout as a board line names it, "<engine> <short hash>[-dirty]": the git toplevel of the
 # driver its runner's --paths names first, the tree its progress rows pin (util_progress_append.py), so a port's board never prints SCRIP's
 one_runner_port_tree() {

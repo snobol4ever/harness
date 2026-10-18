@@ -55,11 +55,13 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 # are keyed snobol4-bench-ref@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
 PORT=0; one_runner_is_port && PORT=1
 MODES="m3 m4"; [ "$PORT" = 1 ] && MODES=m3
-# ⛔ ANGLE 3 IS NOT RUN UNDER A PORT: its budget is TIME() read as nanoseconds (bench_wrap_snobol4.py, SCRIP's rt_time_ns; both SPITBOLs
-# on this box are patched to answer the same), and snobol4dotnet answers TIME() in milliseconds, as the SPITBOL manual has it (measured
-# 2026-10-18: 1879 for a 1.9 s loop where sbl -bf answers 90812757 for 0.09 s) -- so a 200 ms budget is 55 hours and every kernel rode the
-# 300 s cap. Which unit a port owes is Lon's to rule; until then a port is graded on the process and fixed-iteration angles, said so on the line.
-ANGLES=process,iter,time; [ "$PORT" = 1 ] && ANGLES=process,iter
+# ⭐ ANGLE 3 BUDGETS BY TIME(), IN THE ENGINE'S OWN UNIT: the generator spells the budget in nanoseconds (SCRIP's rt_time_ns; the fleet's
+# SPITBOLs answer the same by NS-TIME), and a port declares its unit through one_runner_port_time_unit_ns -- snobol4dotnet mimics SPITBOL
+# exactly (Lon 2026-10-18), whose TIME() is milliseconds, so it runs at 1000000 ns per unit (read as nanoseconds, its 200 ms budget was 55
+# hours and every kernel rode the 300 s cap, measured 2026-10-18). A port with no declared unit is graded on angles 1 and 2, said on the line.
+TUARG=(); TIME_ANGLE=1
+if [ "$PORT" = 1 ]; then TU="$(one_runner_port_time_unit_ns)"; if [ -n "$TU" ]; then TUARG=(--time-unit-ns "$TU"); else TIME_ANGLE=0; fi; fi
+ANGLES=process,iter,time; [ "$TIME_ANGLE" = 0 ] && ANGLES=process,iter
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || refuse "the $(one_runner_engine) engine is not ready (its runner said why above)"; else
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
@@ -117,7 +119,7 @@ for k in "${KERNELS[@]}"; do
     printf '%-20s %-4s %s\n' "$k" both "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; NAMED="$NAMED $k(no-ref)"; continue
   fi
   gen_ok=1
-  for a in iter time; do python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" -o "$T/$k.$a.$EXT" 2>"$T/$k.$a.gen" || gen_ok=0; done
+  for a in iter time; do python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" ${TUARG[@]+"${TUARG[@]}"} -o "$T/$k.$a.$EXT" 2>"$T/$k.$a.gen" || gen_ok=0; done
   okboth=1
   sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_beside "$f")" || refuse "$k: a .heap or .stack sidecar is refused (the reader said why above)"; }   # a port reads its declared heap and stack as -dNk -sNk
   for m in $MODES; do
@@ -135,9 +137,9 @@ for k in "${KERNELS[@]}"; do
         if [ "$rc" = 0 ] && cmp -s "$T/$k.$m.p.out" "$ref"; then r1=PASS; else why="process: rc=$rc$(cmp -s "$T/$k.$m.p.out" "$ref" || echo ', output differs from .ref')"; fi
         run1 "$T/$k.$m.i" "$kb" "${I[@]}"; rc=$?; w="$(bench_ok "$T/$k.$m.i.err" iter)"
         if [ "$rc" = 0 ] && cmp -s "$T/$k.$m.i.out" "$ref" && [ -z "$w" ]; then r2=PASS; else why="$why; iter: rc=$rc$(cmp -s "$T/$k.$m.i.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
-        if [ "$PORT" = 1 ]; then r3=PASS; rc=0; w=""   # angle 3 is not run under a port (ANGLES above); the table prints it as -
+        if [ "$TIME_ANGLE" = 0 ]; then r3=PASS; rc=0; w=""   # a port with no declared TIME() unit does not run angle 3 (ANGLES above); the table prints -
         else run1 "$T/$k.$m.t" "$kb" "${TM[@]}"; rc=$?; w="$(bench_ok "$T/$k.$m.t.err" time)"; fi
-        if [ "$PORT" = 1 ]; then :
+        if [ "$TIME_ANGLE" = 0 ]; then :
         elif [ "$rc" = 0 ] && cmp -s "$T/$k.$m.t.out" "$ref" && [ -z "$w" ]; then r3=PASS; else why="$why; time: rc=$rc$(cmp -s "$T/$k.$m.t.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
         grep -h '^BENCH_RUSAGE' "$T/$k.$m.p.err" | sed "s/^/    scouting $k $m: /"
         for x in i t; do grep -hs '^BENCH mode=' "$T/$k.$m.$x.err" | sed "s/^/    scouting $k $m: /"; done
@@ -147,7 +149,7 @@ for k in "${KERNELS[@]}"; do
     else v=FAIL; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; NAMED="$NAMED $k.$m"; fi
     SM="$(progress_secs_since "$_tm")"
     printf 'benchmark\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$v" "$SM" "$note" "$cfg" >>"$PROG_ROWS"
-    printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$([ "$PORT" = 1 ] && echo - || echo "$r3")" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"
+    printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$([ "$TIME_ANGLE" = 0 ] && echo - || echo "$r3")" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"
   done
   [ "$okboth" = 1 ] && BOTH=$((BOTH+1))
   if [ "$ORACLE_ARM" = 1 ] && [ "$gen_ok" = 1 ]; then
@@ -156,7 +158,9 @@ for k in "${KERNELS[@]}"; do
     if [ "$rc" = 0 ] && cmp -s "$T/$k.sbl.p.out" "$ref"; then o1=PASS; else owhy="process: rc=$rc$(cmp -s "$T/$k.sbl.p.out" "$ref" || echo ', output differs from .ref')"; fi
     run1 "$T/$k.sbl.i" "" "$SBL" -bf "$T/$k.iter.$EXT"; rc=$?; w="$(bench_ok "$T/$k.sbl.i.err" iter)"
     if [ "$rc" = 0 ] && cmp -s "$T/$k.sbl.i.out" "$ref" && [ -z "$w" ]; then o2=PASS; else owhy="$owhy; iter: rc=$rc${w:+, $w}"; fi
-    run1 "$T/$k.sbl.t" "" "$SBL" -bf "$T/$k.time.$EXT"; rc=$?; w="$(bench_ok "$T/$k.sbl.t.err" time)"
+    TO="$T/$k.time.$EXT"   # the oracle's NS-TIME clock reads nanoseconds: a twin spelled in a port's unit is cut again in SPITBOL's
+    [ "${#TUARG[@]}" -gt 0 ] && python3 "$GEN" "$f" --mode time --bud-ms "$BUD_MS" -o "$T/$k.time.sbl.$EXT" 2>/dev/null && TO="$T/$k.time.sbl.$EXT"
+    run1 "$T/$k.sbl.t" "" "$SBL" -bf "$TO"; rc=$?; w="$(bench_ok "$T/$k.sbl.t.err" time)"
     if [ "$rc" = 0 ] && cmp -s "$T/$k.sbl.t.out" "$ref" && [ -z "$w" ]; then o3=PASS; else owhy="$owhy; time: rc=$rc${w:+, $w}"; fi
     grep -h '^BENCH_RUSAGE' "$T/$k.sbl.p.err" | sed "s/^/    scouting $k sbl: /"
     for x in i t; do grep -h '^BENCH mode=' "$T/$k.sbl.$x.err" | sed "s/^/    scouting $k sbl: /"; done
