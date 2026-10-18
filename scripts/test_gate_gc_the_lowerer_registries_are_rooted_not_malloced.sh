@@ -45,9 +45,10 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2)
 LIBDIR="$ROOT/out"; [ -f "$LIBDIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [$G]: no libscrip_rt.so in $LIBDIR"; exit 2; }
 SBL="${SBL_BIN:-/home/resources/x64/bin/sbl}"; [ -x "$SBL" ] || { echo "⛔ GATE REFUSE(2) [$G]: no sbl at $SBL -- the ref is CUT FROM THE ORACLE at run time, never typed"; exit 2; }
 LC="$ROOT/src/lower/lower_common.c"; [ -f "$LC" ] || { echo "⛔ GATE REFUSE(2) [$G]: no $LC"; exit 2; }
-W="$ROOT/../corpus/tests/snobol4/code_call_runtime_define_pending_entry.sno"
-[ -f "$W" ] || { echo "⛔ GATE REFUSE(2) [$G]: the witness $W is not there, so nothing was measured"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
+M="$ROOT/../corpus/tests/snobol4"; W="$T/code_call_runtime_define_pending_entry.sno"   # a master entry, extracted by its origin (hq_snobol4 2026-10-17, the absorb row)
+python3 "$HERE/corpus_suite_harness.py" extract "$M/ALL.sno" "$M/ALL.ref" --origin code_call_runtime_define_pending_entry "$W" >/dev/null 2>&1
+[ -f "$W" ] || { echo "⛔ GATE REFUSE(2) [$G]: the witness (master origin code_call_runtime_define_pending_entry) could not be extracted from $M/ALL.{sno,ref,csv}, so nothing was measured"; exit 2; }
 RC=0
 n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" lower_gc_roots | awk '/&e->name\)/{a++} /&e->landing\)/{c++} /&g_lower\.lc\.bb_labels\.data\)/{d++} /^bb_src_gc_roots\(\);/{b++} END{printf "%d %d %d %d", a+0, c+0, b+0, d+0}')
 if [ "$n" = "1 1 1 0" ] && grep -q 'lower_gc_roots();' "$ROOT/src/runtime/rt/gc_heap.c"; then
