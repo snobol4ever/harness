@@ -27,8 +27,16 @@ DD="${DEMOS_DIR:-$S4E/corpus/demos/$L}"
 SCRIP="$HERE/../../SCRIP/scrip"; RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"; TMO="${DEMO_TIMEOUT:-60}"
 [ -d "$DD" ] || refuse "no demo tree at $DD"
 DEMOS_PARENT="$(cd "$DD/.." && pwd)"; ROOT="$(cd "$DD/../.." && pwd)"   # <root>/demos/<lang>: the roots beside demos/ are mirrored
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries for <lang> is the one check (a port refuses a language it has no front end for), each demo runs in m3 alone, the AND is that one
+# mode, the rows are keyed <lang>-demos@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY="$L-demos"; [ "$PORT" = 1 ] && ROWKEY="$L-demos@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready "$L" || refuse "the $(one_runner_engine) engine is not ready for $L (its runner said why above)"; else
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 "$HERE/util_require_fresh.sh" --gate "$G" "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
+fi
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 . "$HERE/lib_icon_ipl_isolation.sh" 2>/dev/null || refuse "lib_icon_ipl_isolation.sh unloadable -- the one reader of an Icon .argv"
@@ -62,7 +70,7 @@ for r in "${PROGS[@]}"; do
     export S4E_TIMEOUT_KEY="demos/$L/$r"   # the unit a retried timeout's stamp names (CEO-1335)
     if [ -s "$stem.workhorse" ]; then declared_workhorse_beside "$f" > /dev/null || refuse "$r: its .workhorse sidecar is refused (the reader said why above)"; WH=$((WH+1)); fi
     if [ ! -s "$ref" ]; then
-        for m in m3 m4; do printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\t%s\tFAIL\t0\tno-ref\n' "$L" "$L" "$L" "$r" "$m" >> "$PROG_ROWS"; done
+        for m in m3 m4; do [ "$PORT" = 1 ] && [ "$m" = m4 ] && continue; printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\t%s\tFAIL\t0\tno-ref\n' "$L" "$L" "$L" "$r" "$m" >> "$PROG_ROWS"; done
         printf '%-40s %-6s %-6s %s\n' "$r" FAIL FAIL "no .ref: a demo without its oracle's answer cannot be graded, and is counted, not skipped"; NAMED="$NAMED $r(no-ref)"; continue
     fi
     sw="$(declared_switches_beside "$f")" || refuse "$r: a .heap or .stack sidecar is refused (the reader said why above)"
@@ -99,7 +107,8 @@ for r in "${PROGS[@]}"; do
     s3="$(progress_secs_since "$t0")"; t0="$(progress_clock)"   # each mode's own seconds for its row (CEO-1676 (c)); m4's take compile and link
     v3="$(verdict "$r3" "$W/.m3" "$ref")"
     # shellcheck disable=SC2086
-    if ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" --compile $ca "$b" < /dev/null > "$W/.p.s" 2> "$W/.p.cc" ) && [ -s "$W/.p.s" ] \
+    if [ "$PORT" = 1 ]; then v4=-; r4=0   # a port has no mode 4: no compile, no row
+    elif ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" --compile $ca "$b" < /dev/null > "$W/.p.s" 2> "$W/.p.cc" ) && [ -s "$W/.p.s" ] \
        && cc -m64 -no-pie "$W/.p.s" -o "$W/.p4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >> "$W/.p.cc" 2>&1; then
         # shellcheck disable=SC2086
         ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$W/.p4" $sw ${args[@]+"${args[@]}"} < "$in" > "$W/.m4" 2> "$W/.m4e" ); r4=$?
@@ -107,15 +116,15 @@ for r in "${PROGS[@]}"; do
     else v4=FAIL; r4=125; fi
     s4="$(progress_secs_since "$t0")"
     note=""; [ "$v3" = PASS ] || note="m3 rc=$r3$(head -c 90 "$W/.m3e" 2>/dev/null | tr '\n' ' ' | sed 's/^/ /')"
-    [ "$v4" = PASS ] || note="$note${note:+; }m4 rc=$r4$( [ "$r4" = 125 ] && head -c 90 "$W/.p.cc" | tr '\n' ' ' | sed 's/^/ compile: /')"
+    [ "$v4" = PASS ] || [ "$PORT" = 1 ] || note="$note${note:+; }m4 rc=$r4$( [ "$r4" = 125 ] && head -c 90 "$W/.p.cc" | tr '\n' ' ' | sed 's/^/ compile: /')"
     [ "$v3" = PASS ] && M3P=$((M3P+1)); [ "$v4" = PASS ] && M4P=$((M4P+1))
-    if [ "$v3" = PASS ] && [ "$v4" = PASS ]; then BOTH=$((BOTH+1)); else NAMED="$NAMED $r(m3=$v3,m4=$v4)"; fi
+    if [ "$v3" = PASS ] && { [ "$PORT" = 1 ] || [ "$v4" = PASS ]; }; then BOTH=$((BOTH+1)); else NAMED="$NAMED $r(m3=$v3,m4=$v4)"; fi   # a port's AND is its one mode
     printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\tm3\t%s\t%s\t%s\n' "$L" "$L" "$L" "$r" "$v3" "$s3" "sample" >> "$PROG_ROWS"
-    printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\tm4\t%s\t%s\t%s\n' "$L" "$L" "$L" "$r" "$v4" "$s4" "sample" >> "$PROG_ROWS"
+    [ "$PORT" = 1 ] || printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\tm4\t%s\t%s\t%s\n' "$L" "$L" "$L" "$r" "$v4" "$s4" "sample" >> "$PROG_ROWS"
     printf '%-40s %-6s %-6s %s\n' "$r" "$v3" "$v4" "$note"
     rm -rf "$M"
 done
-SCRIP_HASH="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"; CORP_HASH="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+SCRIP_HASH="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"; [ "$PORT" = 1 ] && SCRIP_HASH="$(one_runner_port_tree | tr ' ' @)"; CORP_HASH="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
 # ⭐ THE BOARD LINE IS THE RECEIPT (CEO-827/839, ceo CEO-1325 ask 1, coo COO-207): a *SUITE_BOARD line in key=value form, its
 # fraction stated as all_pass=/all_n= so util_score_row.py READS the row off the line that measured it (never typed beside
 # it) and archives it verbatim under .github/board-lines/. shipped= is the whole census, containers= the declared library
@@ -128,8 +137,9 @@ echo "$LINE (the sample input against each demo's oracle ref; both_modes_pass=al
 if [ "$IS_BOARD" = 1 ] || [ -n "${S4E_PROGRESS_DB:-}" ]; then
     progress_append_rows_tsv "$PROG_ROWS" || refuse "the progress database did not take this run's rows -- no row is written without them (CEO-750)"
 fi
-rr_selected && { rr_end "$L-demos"; exit 0; }
-if [ "$IS_BOARD" = 1 ]; then
+rr_selected && { rr_end "$ROWKEY"; exit 0; }
+if [ "$PORT" = 1 ]; then echo "suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $ROWKEY, assembled from these progress rows (CEO-1822), graded in m3 alone"
+elif [ "$IS_BOARD" = 1 ]; then
     if [ "$NOWRITE" = 0 ]; then
         python3 "$HERE/util_score_row.py" write --lang "$L" --column demos --modes m3,m4 --measurer "${S4E_SEAT:-}" ${S4E_CRITERION_CHANGED:+--criterion-changed "$S4E_CRITERION_CHANGED"} \
             --text "$LINE" \
