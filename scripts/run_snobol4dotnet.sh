@@ -45,6 +45,23 @@ fi
 # The harness serves the shared includes (corpus/include) through SNO_LIB, SCRIP's name for it; SPITBOL and snobol4dotnet read the same
 # search path as SNOLIB (SPITBOL manual, Directories: "searched for files given in an -INCLUDE control statement or in the LOAD function").
 [ -n "${SNO_LIB:-}" ] && export SNOLIB="$SNO_LIB${SNOLIB:+:$SNOLIB}"
+# The declared heap is a HARD CAP, as the harness passes it (-d<kb>k, "THE HARD CAP is each program's declared heap_kb") and as SPITBOL
+# enforces -d. snobol4dotnet records -d but the .NET GC sizes its own heap, so a runaway program grew to the board's 8 GB cgroup cap and
+# the kill refused the whole part (measured 2026-10-18: demo_porter, 1 GB in 16 s, where sbl peaks at 2.8 MB). The cap reaches the engine
+# as DOTNET_GCHeapHardLimit, floored at 32 MB so the runtime itself starts; an OutOfMemoryException at the cap is then an ordinary,
+# recorded failure of that one program.
+if [ -z "${DOTNET_GCHeapHardLimit:-}" ]; then
+    for a in "$@"; do
+        case "$a" in
+            -d[0-9]*[kK]) cap=$(( ${a:2:-1} * 1024 )) ;;
+            -d[0-9]*[mM]) cap=$(( ${a:2:-1} * 1024 * 1024 )) ;;
+            -d[0-9]*)     cap=${a:2} ;;
+            *) continue ;;
+        esac
+        [ "$cap" -lt $((32 * 1024 * 1024)) ] && cap=$((32 * 1024 * 1024))
+        export DOTNET_GCHeapHardLimit="$(printf '0x%x' "$cap")"
+    done
+fi
 # shellcheck source=lib_oracle_flags.sh
 . "$HERE/lib_oracle_flags.sh" || exit 2
 read -r -a lang_flags <<< "$(sbl_lang_flags)"

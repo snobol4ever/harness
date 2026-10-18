@@ -82,6 +82,13 @@ mkdir -p "$T/snolib_bin"; printf '#!/bin/sh\nprintf "%%s" "$SNOLIB"\n' > "$T/sno
 got7d="$(cd "$R/corpus/tests/snobol4" && env PATH="$T/snolib_bin:$PATH" SNO_LIB=/shared/include SNOLIB=/seat/lib bash "$R/harness/scripts/run_snobol4dotnet.sh" ALL.sno)"
 arm "7d the runner hands SNO_LIB to the engine as SNOLIB, first (got $got7d)" '[ "$got7d" = "/shared/include:/seat/lib" ]'
 
+# the declared heap reaches the engine as its GC hard limit (SPITBOL's -d is a cap), floored at 32 MB so the runtime can start
+printf '#!/bin/sh\nprintf "%%s" "$DOTNET_GCHeapHardLimit"\n' > "$T/snolib_bin/dotnet"
+got7e="$(cd "$R/corpus/tests/snobol4" && env -u DOTNET_GCHeapHardLimit PATH="$T/snolib_bin:$PATH" bash "$R/harness/scripts/run_snobol4dotnet.sh" -d131072k -s4096k ALL.sno)"
+got7f="$(cd "$R/corpus/tests/snobol4" && env -u DOTNET_GCHeapHardLimit PATH="$T/snolib_bin:$PATH" bash "$R/harness/scripts/run_snobol4dotnet.sh" -d64k ALL.sno)"
+arm "7e -d131072k reaches the engine as a 128 MB GC hard limit (got $got7e)" '[ "$got7e" = 0x8000000 ]'
+arm "7f a tiny -d is floored at 32 MB so the runtime starts (got $got7f)" '[ "$got7f" = 0x2000000 ]'
+
 # the unset path, which the coo's loop takes for every board: SCRIP's lane and SCRIP's bare key, unchanged
 probe() { env -u S4E_ENGINE S4E_POST="$T/post" S4E_HOME="$R" python3 -c '
 import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h
@@ -124,6 +131,6 @@ touch "$JS/src/SNOBOL4clojure/core.clj"
 rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
 arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
 
-[ $examined -ge 28 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 28 declared arms"; exit 2; }
+[ $examined -ge 30 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 30 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
