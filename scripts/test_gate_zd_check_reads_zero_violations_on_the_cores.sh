@@ -12,7 +12,11 @@
 # the FENCE release, the match-end restore), so a green language reads false violations there -- measured 2026-10-18 at
 # 5c37a2dee: SNOBOL4 65 relative over 25 compiled core entries while every one of them passes; a count that cannot tell a defect
 # from the verifier's own gap is a ledger line, never a verdict. As a language gains the absolute coordinate its count enters
-# the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the ceo's fourth landing).
+# the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the ceo's fourth landing). THE RELATIVE COUNTS ARE A RATCHET meanwhile:
+# RELATIVE_FLOOR below is each language's relative count at SCRIP dda4f93ff (2026-10-18 12:0x CDT, after three calibrations:
+# snobol4 0, rebus 0, raku 0, pascal 8, snocone 7), and a language reading above its floor is RED (RELATIVE-OVER-FLOOR) -- a
+# planner change that breaks a green language's plan trips here the same tick; a floor may only fall, by editing this table in
+# the landing that lowers the count.
 # compiled=<c> below entries=<n> names the core entries the gate could not compile standalone: a block entry the extractor does
 # not cut (SNOBOL4's eight demo/benchmark blocks) or a program needing an include directory (arbno_span_len_replace_branch_1's
 # FORTPUT.INC); they are not graded here and their plans are read by the suite runner's path, never counted as green.
@@ -27,6 +31,7 @@ CORPUS="$(cd "$HERE/../../corpus" 2>/dev/null && pwd)" || { echo "REFUSE(2): no 
 ONLY=""; while [ $# -gt 0 ]; do case "$1" in --lang) ONLY="$2"; shift;; *) echo "REFUSE(2): unknown argument $1"; exit 2;; esac; shift; done
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_zdcheck.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
+declare -A RELATIVE_FLOOR=( [snobol4]=0 [icon]=0 [prolog]=0 [raku]=0 [rebus]=0 [pascal]=8 [snocone]=7 )
 rc=0; TN=0; TC=0; TG=0; TV=0; TR=0; NL=0
 for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus:reb; do
     lang="${pair%%:*}"; ext="${pair##*:}"
@@ -53,9 +58,10 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
         if [ "$ev" -gt "$wv" ]; then wv=$ev; worst="$entry:$ev"; fi
     done < "$D/PARTITION.tsv"
     [ "$c" -gt 0 ] || { echo "REFUSE(2): $lang core compiled 0 entries of $n"; exit 2; }
-    echo "ZD_CHECK_BOARD lang=$lang entries=$n compiled=$c graphs=$g absolute=$ga violations=$v worst=${worst:--} relative_reported=$vr"
+    floor="${RELATIVE_FLOOR[$lang]:-0}"; over=0; [ "$vr" -le "$floor" ] || over=1
+    echo "ZD_CHECK_BOARD lang=$lang entries=$n compiled=$c graphs=$g absolute=$ga violations=$v worst=${worst:--} relative_reported=$vr relative_floor=$floor$( [ "$over" = 1 ] && echo ' RELATIVE-OVER-FLOOR' )"
     NL=$((NL+1)); TN=$((TN+n)); TC=$((TC+c)); TG=$((TG+g)); TV=$((TV+v)); TR=$((TR+vr))
-    [ "$v" -eq 0 ] || rc=1
+    [ "$v" -eq 0 ] && [ "$over" = 0 ] || rc=1
 done
 echo "ZD_CHECK_TOTAL languages=$NL entries=$TN compiled=$TC graphs=$TG violations=$TV relative_reported=$TR"
 [ "$rc" -eq 0 ] && echo "GATE OK [zd_check_reads_zero_violations_on_the_cores]: every core graph's depth plan is consistent" || echo "GATE RED [zd_check_reads_zero_violations_on_the_cores]: $TV violation(s) -- the lines above name the worst entry per language; SCRIP_ZD_CHECK=1 ./scrip --compile <entry> prints each edge"
