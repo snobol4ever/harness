@@ -16,7 +16,8 @@
 # RELATIVE_FLOOR below is each language's relative count at the ceo's cut of hq_zetas's two zd_plan branches (2026-10-18 12:4x CDT:
 # snobol4 0, rebus 0, raku 0, pascal 0, snocone 3; was pascal 8, snocone 7 at dda4f93ff), and a language reading above its floor is RED (RELATIVE-OVER-FLOOR) -- a
 # planner change that breaks a green language's plan trips here the same tick; a floor may only fall, by editing this table in
-# the landing that lowers the count.
+# the landing that lowers the count. snocone falls to 0 with hq_zetas's item-1 branch (every graph on the absolute coordinate; an omega
+# into MATCH_BEGIN read as the FENCE abort it is, a discard), cut by the ceo with its SCRIP half.
 # compiled=<c> below entries=<n> names the core entries the gate could not compile standalone: a block entry the extractor does
 # not cut (SNOBOL4's eight demo/benchmark blocks) or a program needing an include directory (arbno_span_len_replace_branch_1's
 # FORTPUT.INC); they are not graded here and their plans are read by the suite runner's path, never counted as green.
@@ -31,7 +32,7 @@ CORPUS="$(cd "$HERE/../../corpus" 2>/dev/null && pwd)" || { echo "REFUSE(2): no 
 ONLY=""; while [ $# -gt 0 ]; do case "$1" in --lang) ONLY="$2"; shift;; *) echo "REFUSE(2): unknown argument $1"; exit 2;; esac; shift; done
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_zdcheck.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
-declare -A RELATIVE_FLOOR=( [snobol4]=0 [icon]=0 [prolog]=0 [raku]=0 [rebus]=0 [pascal]=0 [snocone]=3 )
+declare -A RELATIVE_FLOOR=( [snobol4]=0 [icon]=0 [prolog]=0 [raku]=0 [rebus]=0 [pascal]=0 [snocone]=0 )
 rc=0; TN=0; TC=0; TG=0; TV=0; TR=0; NL=0
 for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus:reb; do
     lang="${pair%%:*}"; ext="${pair##*:}"
