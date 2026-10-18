@@ -50,13 +50,18 @@ M="$ROOT/../corpus/tests/snobol4"; W="$T/code_call_runtime_define_pending_entry.
 python3 "$HERE/corpus_suite_harness.py" extract "$M/ALL.sno" "$M/ALL.ref" --origin code_call_runtime_define_pending_entry "$W" >/dev/null 2>&1
 [ -f "$W" ] || { echo "⛔ GATE REFUSE(2) [$G]: the witness (master origin code_call_runtime_define_pending_entry) could not be extracted from $M/ALL.{sno,ref,csv}, so nothing was measured"; exit 2; }
 RC=0
-n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" lower_gc_roots | awk '/&e->name\)/{a++} /&e->landing\)/{c++} /&g_lower\.lc\.bb_labels\.data\)/{d++} /^bb_src_gc_roots\(\);/{b++} END{printf "%d %d %d %d", a+0, c+0, b+0, d+0}')
-if [ "$n" = "1 1 1 0" ] && grep -q 'lower_gc_roots();' "$ROOT/src/runtime/rt/gc_heap.c"; then
-    echo "  structural labels PASS (lower_gc_roots visits every g_lower.lc.bb_labels entry's name and landing and calls bb_src_gc_roots, and the collector calls lower_gc_roots; the label block itself is arena memory and is not visited -- CEO-1272)"
-else echo "  structural labels FAIL (lower_gc_roots visits [e->name e->landing bb_src_gc_roots &g_lower.lc.bb_labels.data] = [$n], want [1 1 1 0], or gc_heap.c never calls lower_gc_roots)"; RC=1; fi
-n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" bb_src_gc_roots | awk '/&g_lower\.lc\.bb_src\.nd\[i\]\)/{a++} /&g_lower\.lc\.bb_src\.src\[i\]\)/{b++} /&g_lower\.lc\.bb_src\.(nd|src|line)\)/{c++} END{printf "%d %d %d", a+0, b+0, c+0}')
-if [ "$n" = "1 1 0" ]; then echo "  structural bb_src PASS (bb_src_gc_roots visits every entry's node and source text; the three parallel arrays are arena memory and are not visited -- CEO-1272)"
-else echo "  structural bb_src FAIL (bb_src_gc_roots visits [nd[i] src[i] block] = [$n], want [1 1 0]: an element a registry holds is not rooted, or an arena block is being visited as if the collector owned it)"; RC=1; fi
+# RE-CUT 2026-10-17 hq_runtime (the cfo's relay of hq_snobol4's reading at SCRIP 3f4275bd5): SCRIP 166763060 moved both functions' per-entry visits into
+# one rt_gc_run_ptr_fields run over an offsetof table, so the arms read the table and the run: lower_gc_roots names offsetof(bb_label_entry_t, name) and
+# (..., landing) and runs them over g_lower.lc.bb_labels.data with 2 fields; bb_src_gc_roots runs one field at offset 0 over .nd and over .src. A visit of a
+# block itself (&...data), &...nd, &...src, &...line) still reads red. FAIL-ONCE MEASURED on a scratch copy of lower_common.c with the landing offset deleted
+# from the table (labels [1 0 1 1 0]) and with the .src run deleted (bb_src [1 0 0]); both arms red, both green on the tree.
+n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" lower_gc_roots | awk '/offsetof\(bb_label_entry_t, name\)/{a++} /offsetof\(bb_label_entry_t, landing\)/{c++} /rt_gc_run_ptr_fields\(g_lower\.lc\.bb_labels\.data, .*, 2, off\)/{r++} /&g_lower\.lc\.bb_labels\.data\)/{d++} /^bb_src_gc_roots\(\);/{b++} END{printf "%d %d %d %d %d", a+0, c+0, r+0, b+0, d+0}')
+if [ "$n" = "1 1 1 1 0" ] && grep -q 'lower_gc_roots();' "$ROOT/src/runtime/rt/gc_heap.c"; then
+    echo "  structural labels PASS (lower_gc_roots runs the name and landing fields of every g_lower.lc.bb_labels entry through rt_gc_run_ptr_fields and calls bb_src_gc_roots, and the collector calls lower_gc_roots; the label block itself is arena memory and is not visited -- CEO-1272)"
+else echo "  structural labels FAIL (lower_gc_roots [offsetof name, offsetof landing, the 2-field run over bb_labels.data, bb_src_gc_roots, &g_lower.lc.bb_labels.data] = [$n], want [1 1 1 1 0], or gc_heap.c never calls lower_gc_roots)"; RC=1; fi
+n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" bb_src_gc_roots | awk '/rt_gc_run_ptr_fields\(g_lower\.lc\.bb_src\.nd, .*, 1, off\)/{a++} /rt_gc_run_ptr_fields\(g_lower\.lc\.bb_src\.src, .*, 1, off\)/{b++} /&g_lower\.lc\.bb_src\.(nd|src|line)\)/{c++} END{printf "%d %d %d", a+0, b+0, c+0}')
+if [ "$n" = "1 1 0" ]; then echo "  structural bb_src PASS (bb_src_gc_roots runs every entry's node and source text through rt_gc_run_ptr_fields; the three parallel arrays are arena memory and are not visited -- CEO-1272)"
+else echo "  structural bb_src FAIL (bb_src_gc_roots [the run over nd, the run over src, a block visit] = [$n], want [1 1 0]: an element a registry holds is not rooted, or an arena block is being visited as if the collector owned it)"; RC=1; fi
 # ⛔⭐ THE COLLECTED-HEAP ALLOCATOR FAMILY COMES FROM ITS ONE AUTHORITY, NOT FROM A SPELLING TYPED HERE (ceo CEO-946).
 # THIS ARM WAS RED ON ORIGIN FOR DAYS AND THE HOLDERS WERE FINE: it grepped for rt_ws_alloc / rt_ws_realloc, and the
 # HB_WS kind with both of those names was DELETED at place D (the cfo, CEO-925) when its sites took typed kinds. The
