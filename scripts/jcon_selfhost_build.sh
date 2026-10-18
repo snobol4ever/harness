@@ -11,22 +11,21 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -euo pipefail
 
-SCRIP=${SCRIP:-$S4A/work/SCRIP}
-CORPUS=${CORPUS:-$S4A/work/corpus}
-JCONREPO=${JCONREPO:-$S4A/work/jcon-master/jcon-master}
-ICONREPO=${ICONREPO:-$S4A/work/icon-master/icon-master}
+SCRIP=${SCRIP:-$S4E/SCRIP}
+CORPUS=${CORPUS:-$S4E/corpus}
+JCONREPO=${JCONREPO:-/home/resources/jcon-master}
+ICONREPO=${ICONREPO:-/home/resources/icon-master}
 JT=${JT:-$S4A/jt}
 RT="$SCRIP/out"
-JCOMPILER="$CORPUS/icon/jcon-compiler"
+JCOMPILER="$CORPUS/packages/icon/jcon-compiler"
 SEMI="$SCRIP/tools/semicolonize_icon.py"
 RTOPT='-O0 -g -fno-strict-aliasing -fwrapv -fno-omit-frame-pointer'
 
-echo "== [1/7] link repos to expected paths + refs =="
-ln -sfn "$SCRIP" $S4E/SCRIP; ln -sfn "$CORPUS" $S4E/corpus
-mkdir -p "$SCRIP/refs"; ln -sfn "$JCONREPO" "$SCRIP/refs/jcon-master"; ln -sfn "$ICONREPO" "$SCRIP/refs/icon-master"
+echo "== [1/7] the sibling layout: SCRIP, corpus and the /home/resources drops read in place (no link, no refs/: CEO-765, CEO-1820) =="
+for d in "$SCRIP" "$CORPUS" "$JCONREPO" "$ICONREPO"; do [ -d "$d" ] || { echo "FAIL: $d is not a directory"; exit 2; }; done
 
 echo "== [2/7] system packages (build tools + JDK for jcon.zip) =="
-bash "$harness/scripts/install_system_packages.sh" >/dev/null 2>&1 || true
+bash "$S4E/harness/scripts/install_system_packages.sh" >/dev/null 2>&1 || true
 command -v javac >/dev/null 2>&1 || apt-get install -y openjdk-21-jdk-headless >/dev/null 2>&1
 
 echo "== [3/7] build scrip (-O0 from CBASE) =="

@@ -53,6 +53,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+. "$HERE/lib_fixture_root.sh" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=package_runners_read_each_units_declared_compile_args
@@ -210,9 +211,9 @@ if [ -f "$W/xf/fx.cmdline" ] && [ ! -e "$W/xf/ALL.csv" ]; then
 else red X2 "extract-family wrote no fx.cmdline beside the extracted pair"; fi
 # ⛔ THE SCORECARD APPENDS ITS results.tsv TO THE PROGRESS TABLE ON EVERY run, scratch corpus or not, so S1 and S2 name a scratch table:
 # the first draft of these arms did not, and one run put 4 fixture rows (decl_driver, nodecl_driver; dev-pass, -dirty) into the live one.
-sc_overlay() {  # <corpus dir> <top-level dir the fixture replaces> -- every other top-level dir of the real corpus symlinked in, as the gimpel runner does
+sc_overlay() {  # <corpus dir> <top-level dir the fixture replaces> -- the light top-level dirs of the real corpus copied in, as the gimpel runner does
     local c="$1" keep="$2" d b; mkdir -p "$c"
-    for d in "$ROOT/../corpus"/*/; do b="$(basename "$d")"; [ "$b" = "$keep" ] && continue; ln -s "$d" "$c/$b" 2>/dev/null || true; done; }
+    fixture_corpus_light "$ROOT/../corpus" "$c" $([ "$keep" = tests ] || echo tests) || return 2; }
 sc_pair() {  # <arm> <rc> <results.tsv> <decl program path> <nodecl program path>
     st() { awk -F'\t' -v p="$1" -v c="$2" '$2==p {print $c; exit}' "$3" 2>/dev/null; }
     pair "$1" "$2" "$(st "$4" 3 "$3")" "$(st "$4" 4 "$3")" "$(st "$5" 3 "$3")" "$(st "$5" 4 "$3")"; }
@@ -244,7 +245,7 @@ if printf '%s' "$fns" | grep -q '^run_test() {' && printf '%s' "$fns" | grep -q 
 else red D1 "run_test and compile_mode4 are no longer in test_corpus_snobol4.sh as sed can lift them -- this arm grades nothing"; fi
 
 # ── landing 5: A, the accept arm; R, the ratchet ───────────────────────────────────────────────────────────
-adm="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0, "scripts"); import corpus_suite_harness as h; print(" ".join(h.COMPILE_ARGS_ADMITTED))' 2>/dev/null)"
+adm="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import corpus_suite_harness as h; print(" ".join(h.COMPILE_ARGS_ADMITTED))' 2>/dev/null)"
 if [ -z "$adm" ]; then red A "COMPILE_ARGS_ADMITTED could not be read from the harness"; else
     # A word is graded on a witness in its own language (cfo 2026-10-17, CEO-1810): --stlimit on cnt.sno against sbl's output, --dialect=gnu on dia.pl,
     # which prints the '$dialect' flag -- gnu with the switch, iso without it (the control: a switch scrip ignored would read iso).
@@ -257,7 +258,7 @@ if [ -z "$adm" ]; then red A "COMPILE_ARGS_ADMITTED could not be read from the h
     ( cd "$W" && timeout -k 5 20 "$SCRIP" --compile --nosuchswitch cnt.sno < /dev/null > "$W/u.s" 2>/dev/null ); u4=$?
     census="$(cd "$ROOT" && python3 - "$ROOT/../corpus" <<'PYC' 2>&1
 import csv, glob, os, sys
-sys.path.insert(0, "scripts"); import corpus_suite_harness as h
+sys.path.insert(0, "../harness/scripts"); import corpus_suite_harness as h
 root = sys.argv[1]; words = 0; cells = 0; bad = []
 for t in sorted(glob.glob(os.path.join(root, "tests", "*", "ALL.csv")) + glob.glob(os.path.join(root, "packages", "*", "*", "ALL.csv"))):
     with open(t, newline="") as f:

@@ -71,7 +71,7 @@ _cleanup(){ if [ "$GATE_VERDICT" = 0 ]; then rm -rf "$W"; else echo "⭐ EVIDENC
 trap _cleanup EXIT
 # ⭐ THE ARMS SHARE ONE PINNED BINARY FINGERPRINT ON PURPOSE -- a rebuild between arms cannot pass itself off as
 # an arena or stress effect (the exact race that refused hq_raku's own shipped-arena arm on this row's history).
-S4E_BIN_AT_START="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0,"scripts"); import util_progress_append as p; print(p.bin_fingerprint().strip())' 2>/dev/null)"
+S4E_BIN_AT_START="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import util_progress_append as p; print(p.bin_fingerprint().strip())' 2>/dev/null)"
 [ -n "$S4E_BIN_AT_START" ] || refuse "could not fingerprint the binary -- no pinned baseline, so no comparable set"
 export S4E_BIN_AT_START
 echo "TREE SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null) binary=$S4E_BIN_AT_START"

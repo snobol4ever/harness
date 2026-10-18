@@ -17,6 +17,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # Exit: 0 iff m3_fail=0 and m4_fail=0 over the SCORED (non-ORACLE_FAIL) denominator.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+. "$HERE/lib_fixture_root.sh" || { echo "⛔ REFUSE(rc=2): cannot load lib_fixture_root.sh -- the one way a scratch corpus is staged"; exit 2; }
 SCRIP="$SD/scrip"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
@@ -55,10 +56,7 @@ VEND_BEFORE="$(_vend_fingerprint)"
 mkdir -p "$W/corpus/packages/snobol4"
 cp -a "$CORPUS_REAL/packages/snobol4/gimpel" "$W/corpus/packages/snobol4/gimpel" || {
     echo "⛔ REFUSE(rc=2): could not copy the gimpel package to a scratch overlay -- refusing to grade in the vendored dir"; exit 2; }
-for d in "$CORPUS_REAL"/*/; do
-    b="$(basename "$d")"; [ "$b" = packages ] && continue
-    ln -s "$d" "$W/corpus/$b" 2>/dev/null || true
-done
+fixture_corpus_light "$CORPUS_REAL" "$W/corpus" tests || { echo "⛔ REFUSE(rc=2): could not stage the light corpus (include library reference editor_configs tests, copied) beside the gimpel overlay"; exit 2; }
 # ⭐ AREA SMOKE MODE (the coo 2026-10-03, on hq_snobol4's report: gimpel's area smoke selected 79 of 145 and ran 0, exiting 0, because the
 # harness graded the package's ALL.sno container, which still holds the 120 entries cut before CEO-1269 while ALL.csv names the 145
 # drivers this board grades): S4E_AREA_SMOKE_ENTRIES="agt_driver ai_driver ..." -- ALL.csv entry keys -- grades those drivers exactly as

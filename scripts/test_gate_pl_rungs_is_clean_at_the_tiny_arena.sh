@@ -102,7 +102,7 @@ trap _cleanup EXIT
 # libscrip_rt.so moves mid-run; pinning S4E_BIN_AT_START across ALL arms extends that guarantee to the SET, so a
 # rebuild between arms cannot pass itself off as an arena or stress effect. This is the REBASE-BASELINE
 # COROLLARY in binary form: a before/after pair is a measurement only if both arms are the same tree.
-S4E_BIN_AT_START="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0,"scripts"); import util_progress_append as p; print(p.bin_fingerprint().strip())' 2>/dev/null)"
+S4E_BIN_AT_START="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import util_progress_append as p; print(p.bin_fingerprint().strip())' 2>/dev/null)"
 [ -n "$S4E_BIN_AT_START" ] || refuse "could not fingerprint the binary -- no pinned baseline, so no comparable set"
 export S4E_BIN_AT_START
 echo "TREE SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null) binary=$S4E_BIN_AT_START"

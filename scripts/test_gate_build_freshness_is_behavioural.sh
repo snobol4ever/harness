@@ -33,12 +33,12 @@ chk(){ if [ "$2" = "$3" ]; then ok "$1 ($2)"; else no "$1: expected $3, got $2";
 
 [ -x "$ROOT/scrip" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: no $ROOT/scrip -- this gate probes a binary and cannot invent one"; gate_stamp; exit 2; }
 
-W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-mkdir -p "$W/src" "$W/out"
+X="$(mktemp -d)"; trap 'rm -rf "$X"' EXIT
+. "$HERE/lib_fixture_root.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: cannot load lib_fixture_root.sh"; gate_stamp; exit 2; }
+fixture_root "$X" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: could not stage the scratch root (harness/scripts copied beside a scratch SCRIP, never linked -- CEO-1820)"; gate_stamp; exit 2; }
+W="$X/SCRIP"; rm -rf "$W/out"; mkdir -p "$W/src" "$W/out"
 printf 'int a(void){return 1;}\n' > "$W/src/a.c"
 printf 'all:\n\t@true\n'          > "$W/Makefile"
-ln -s "$ROOT/../harness/scripts" "$W/scripts"
-ln -s "$ROOT/scrip"   "$W/scrip"
 
 echo "== tree signature =="
 T1="$(gate_tree_signature "$W")"; T2="$(gate_tree_signature "$W")"
@@ -91,15 +91,15 @@ out="$(gate_require_built_from "$W" "$ROOT/scrip" 2>&1)"; rc=$?
 chk "12 an unreadable ledger RECORDS, it never refuses" "$rc" "0"
 
 echo "== a ledger belongs to the checkout it describes =="
-# ⛔ ARM 12b IS THE RACED-ARMS CAUSE (the coo 2026-10-15): a scratch root whose out/ is a SYMLINK to another checkout's out/ -- five gates build one -- must not append its
-# own path-signed tree line to that checkout's ledger. Fixture: L is the scratch root, REALOUT stands for the real checkout's out/ with a ledger of one known line.
+# ⛔ ARM 12b WAS THE RACED-ARMS CAUSE (the coo 2026-10-15): a scratch root whose out/ was a SYMLINK to another checkout's out/ appended its own tree line to that
+# checkout's ledger. No link exists any more (CEO-1820): a scratch root's out/ is its own COPY, so its line lands in its own ledger and the other checkout's is untouched.
 REALOUT="$W/realout"; mkdir -p "$REALOUT"; printf 'cafebabecafebabecafebabecafebabe deadbeefdeadbeefdeadbeefdeadbeef none 2026-01-01T00:00:00Z fixture\n' > "$REALOUT/build_behaviour.sig"
-L="$W/linkroot"; mkdir -p "$L/src"; printf 'int c(void){return 3;}\n' > "$L/src/c.c"; printf 'all:\n\t@true\n' > "$L/Makefile"
-ln -s "$ROOT/../harness/scripts" "$L/scripts"; ln -s "$ROOT/scrip" "$L/scrip"; ln -s "$REALOUT" "$L/out"
+L="$X/copyroot"; mkdir -p "$L/src"; printf 'int c(void){return 3;}\n' > "$L/src/c.c"; printf 'all:\n\t@true\n' > "$L/Makefile"
+cp -a "$REALOUT" "$L/out"
 before="$(md5sum < "$REALOUT/build_behaviour.sig")"
 out="$(gate_require_built_from "$L" "$ROOT/scrip" 2>&1)"; rc=$?
-chk "12b a root whose out/ links to another checkout passes (rc)" "$rc" "0"
-case "$out" in *"not recorded"*) ok "12c and says it did not record";; *) no "12c a linked-out root did not announce that it recorded nothing: $out";; esac
+chk "12b a root whose out/ is a COPY of another checkout's ledger passes (rc)" "$rc" "0"
+case "$out" in *RECORDED*) ok "12c and records into its OWN ledger";; *) no "12c a copied-out root did not record into its own ledger: $out";; esac
 chk "12d the other checkout's ledger is byte-for-byte untouched" "$(md5sum < "$REALOUT/build_behaviour.sig")" "$before"
 
 echo "== the one-copy invariant =="

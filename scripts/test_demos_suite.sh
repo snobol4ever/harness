@@ -18,6 +18,7 @@ L="${1:-}"; shift || true
 NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_fixture_root.sh" || { echo "⛔ REFUSE(2): cannot load lib_fixture_root.sh -- the one way a scratch root is staged"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 G=test_demos_suite
 refuse() { echo "⛔ REFUSED(2) [$G $L]: $*" >&2; exit 2; }
@@ -74,9 +75,14 @@ for r in "${PROGS[@]}"; do
     # calculator, the scrip demos), so it runs in a copy; but the JCON demos are link manifests naming
     # ../../../packages/icon/jcon-compiler/<module>, and a copy at any other depth reads "link: cannot open" in both modes --
     # a runner-made red that the tree does not have. So the copy sits at demos/<lang>/<dir> under a mirror root whose other
-    # entries (packages, include, library, tests, ...) are symlinks to the real ones: every source-relative path resolves.
+    # entries are COPIES of the light real ones (include library reference editor_configs and packages/icon/jcon-compiler, the one link target the demos name): every source-relative path resolves.
     M="$T/w.$TOTAL"; W="$M/${DEMOS_PARENT##*/}/${DD##*/}/$(dirname "$r")"; mkdir -p "$W" && cp -a "$d"/. "$W"/
-    for x in "$ROOT"/*/; do x="${x%/}"; [ "${x##*/}" = "${DEMOS_PARENT##*/}" ] && continue; ln -s "$x" "$M/${x##*/}"; done
+    _extras=""
+    while IFS= read -r _lnk; do
+        _f="${_lnk%%:*}"; _t="${_lnk#*:}"; _rel="${DEMOS_PARENT##*/}/${DD##*/}/$(dirname "$r")/${_f#$d/}"
+        _extras="$_extras $(python3 -c 'import os,sys; print(os.path.normpath(os.path.join(os.path.dirname(sys.argv[1]), os.path.dirname(sys.argv[2]))))' "$_rel" "$_t")"
+    done < <(grep -roE 'link +"\.\./[^"]+"' --include='*.icn' "$d" 2>/dev/null | sed -E 's/:link +"/:/; s/"$//')
+    fixture_corpus_light "$ROOT" "$M" packages/icon/jcon-compiler $_extras || { echo "⛔ REFUSE(2): could not stage the light mirror root beside the demo copy"; exit 2; }
     # ⛔ A CHAINED DEMO (hq_snocone and coo 2026-09-27, beauty.sc; coo COO-212): <stem>.chain lists the units the program is
     # concatenated AFTER, paths relative to the corpus root, in order (lib_declared_arena.sh declared_chain_beside, the ONE reader).
     # The scratch copy's program becomes units-then-program under its own name and extension, so both modes, the sidecars and the

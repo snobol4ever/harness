@@ -12,7 +12,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
-LN_CEILING=11
+LN_CEILING=0
 fail=0; repos=0
 for g in "$ROOT"/*/.git "$ROOT"/.github/.git; do
     [ -d "$g" ] || continue

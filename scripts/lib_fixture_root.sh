@@ -33,3 +33,16 @@ fixture_root_corpus() {
     cp -r "$_c" "$_d/corpus" || return 2
     return 0
 }
+fixture_corpus_light() {
+    local _c="$1" _d="$2" _x
+    shift 2
+    [ -d "$_c" ] || return 2
+    mkdir -p "$_d" || return 2
+    for _x in include library reference editor_configs "$@"; do
+        [ -e "$_c/$_x" ] || continue
+        [ -e "$_d/$_x" ] && continue
+        mkdir -p "$_d/$(dirname "$_x")" || return 2
+        cp -a "$_c/$_x" "$_d/$_x" || return 2
+    done
+    return 0
+}

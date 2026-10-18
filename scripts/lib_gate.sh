@@ -286,14 +286,8 @@ gate_require_built_from() {
     mkdir -p "$_root/out" 2>/dev/null
     _now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     if [ -z "$_prev" ]; then
-        # ⛔ A LEDGER BELONGS TO THE CHECKOUT IT DESCRIBES (the coo 2026-10-15, found by a sampler of probe processes during a blocking set). Five gates build a scratch
-        # root whose out/ is a symlink to the real checkout's (for f in scrip out src Makefile; do ln -s ...), so a probe taken from that root signed a tree of its own -- the
-        # hashed text carries the scratch path and find does not follow a symlinked src/ -- and appended its line, through the link, to the REAL ledger in the middle of a
-        # fan-out: the cause of the RACED refusals on out/build_behaviour.sig, a different handful of arms every set. A root whose out/ resolves outside it records nothing.
-        if [ "$(cd "$_root/out" 2>/dev/null && pwd -P)" != "$(cd "$_root" 2>/dev/null && pwd -P)/out" ]; then
-            echo "build-behaviour probe [${GATE_NAME:-gate}]: not recorded -- $_root/out resolves outside this checkout, so its ledger is another checkout's (tree $_ts -> behaviour $_bs)"
-            return 0
-        fi
+        # A LEDGER BELONGS TO THE CHECKOUT IT DESCRIBES (the coo 2026-10-15): a scratch root's out/ was once a symlink to the real checkout's, and its probe line landed
+        # in the REAL ledger mid fan-out (the RACED refusals). No link exists any more (CEO-1820): a staged root copies out/, so the line below lands in the root that was probed.
         printf '%s %s %s %s %s\n' "$_ts" "$_bs" "$_so" "$_now" "${S4E_SEAT:-unknown}" >> "$_led"
         # bounded, and pruned HERE rather than by a cron nobody runs (THE PACE RULES). One line per distinct tree.
         if [ "$(wc -l < "$_led" 2>/dev/null || echo 0)" -gt 400 ] 2>/dev/null; then tail -n 200 "$_led" > "$_led.t" 2>/dev/null && mv -f "$_led.t" "$_led" 2>/dev/null; fi

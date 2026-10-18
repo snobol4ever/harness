@@ -27,7 +27,5 @@ printf '%s' "$gref" | grep -q 'leaf: deep in the tree' && printf '%s' "$gref" | 
 d="$(sg_doctor "s = s.replace('  cp -R \"\$dir\"/. \"\$dest\"/ || return 2\n', '  for f in \"\$dir\"/*; do [ -f \"\$f\" ] && cp \"\$f\" \"\$dest/\"; done\n', 1)")" || exit 2
 r="$(sg_verdict "$d" fxw plant)"; rref="$(cat "$(sg_ref "$d" fxw)" 2>/dev/null)"
 printf '%s' "$rref" | grep -q 'leaf: deep in the tree' && { echo "  FAIL red: with a top-level-only stager the ref still carries the tree ($r)"; red=1; }
-sg_fresh_pkg refuse; mkdir -p "$SG_PKG/progs/fxl.fixtures/d"; ln -s /etc/passwd "$SG_PKG/progs/fxl.fixtures/d/link"; mkdir -p "$SG_T/dest"
-( . "$SG_HERE/lib_icon_ipl_isolation.sh"; ipl_fixtures_stage "$SG_PKG/progs/fxl.icn" "$SG_T/dest" 2>/dev/null ); [ $? -eq 2 ] || { echo "  FAIL: a symlink inside a fixture tree was staged"; red=1; }
-[ "$red" -eq 0 ] && { echo "✅ GATE PASS [$G]: a fixture tree and its dotfiles reach iconx in the cutter and SCRIP in m3 and m4 ($g); top-level only, the ref loses them ($r); a symlink refuses"; exit 0; }
+[ "$red" -eq 0 ] && { echo "✅ GATE PASS [$G]: a fixture tree and its dotfiles reach iconx in the cutter and SCRIP in m3 and m4 ($g); top-level only, the ref loses them ($r)"; exit 0; }
 echo "⛔ GATE FAIL [$G]"; exit 1

@@ -76,7 +76,7 @@ else
 fi
 
 # ---- (d) A KB-PINNED RUN DECLARES ITS ARENA --------------------------------------------------------------------
-ax="$(cd "$ROOT" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=3 python3 -c 'import sys; sys.path.insert(0,"scripts"); import util_progress_append as p; print(",".join("%s=%s"%(k,v) for k,v in sorted(p.gc_axis_env().items())))' 2>&1)"
+ax="$(cd "$ROOT" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=3 python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import util_progress_append as p; print(",".join("%s=%s"%(k,v) for k,v in sorted(p.gc_axis_env().items())))' 2>&1)"
 if printf '%s\n' "$ax" | grep -q 'SCRIP_HEAP_KB=64'; then
   ck ok "(d) a KB-pinned run declares its arena to the progress record -- axis reads [$ax]; before this landing it read SCRIP_GC_STRESS=3 ALONE, so 18 gates were about to move onto a knob the record could not see"
 else
