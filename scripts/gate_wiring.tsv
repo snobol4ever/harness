@@ -1477,3 +1477,4 @@ test_gate_xfail_has_reason.sh	TASK	-	-	-
 test_gate_zdp_on_null.sh	TASK	-	-	-
 test_gate_zeta_no_arena.sh	TASK	-	-	-
 test_gate_zpop_whitelist.sh	TASK	-	-	-
+test_gate_template_form_choices_outside_lower_only_fall.sh	WIRED	-	-	-
