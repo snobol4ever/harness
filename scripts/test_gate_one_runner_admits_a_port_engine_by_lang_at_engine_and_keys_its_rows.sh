@@ -77,6 +77,11 @@ fpy="$(S4E_ENGINE=dotnet python3 -c 'import sys; sys.path.insert(0, sys.argv[1])
 fsh="$(S4E_ENGINE=dotnet FP_LIB="$R/harness/scripts/lib_one_runner.sh" bash -c '. "$FP_LIB"; one_runner_bin_fingerprint')"
 arm "7c with the source newer than the build, both fingerprints still name both files" '[ "$(echo $fpy | wc -w)" = 2 ] && [ "$(echo $fsh | wc -w)" = 2 ] && [ "$(echo $fpy)" = "$(echo $fsh)" ]'
 
+# the runner passes the harness's include path (SNO_LIB, SCRIP's name) to the engine as SNOLIB, SPITBOL's, ahead of any SNOLIB already set
+mkdir -p "$T/snolib_bin"; printf '#!/bin/sh\nprintf "%%s" "$SNOLIB"\n' > "$T/snolib_bin/dotnet"; chmod +x "$T/snolib_bin/dotnet"
+got7d="$(cd "$R/corpus/tests/snobol4" && env PATH="$T/snolib_bin:$PATH" SNO_LIB=/shared/include SNOLIB=/seat/lib bash "$R/harness/scripts/run_snobol4dotnet.sh" ALL.sno)"
+arm "7d the runner hands SNO_LIB to the engine as SNOLIB, first (got $got7d)" '[ "$got7d" = "/shared/include:/seat/lib" ]'
+
 # the unset path, which the coo's loop takes for every board: SCRIP's lane and SCRIP's bare key, unchanged
 probe() { env -u S4E_ENGINE S4E_POST="$T/post" S4E_HOME="$R" python3 -c '
 import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h
@@ -119,6 +124,6 @@ touch "$JS/src/SNOBOL4clojure/core.clj"
 rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
 arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
 
-[ $examined -ge 27 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 27 declared arms"; exit 2; }
+[ $examined -ge 28 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 28 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1

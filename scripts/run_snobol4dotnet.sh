@@ -42,6 +42,9 @@ if [ "${1:-}" = --binaries ]; then
     printf '%s\n%s\n' "$DLL" "$RT"
     exit 0
 fi
+# The harness serves the shared includes (corpus/include) through SNO_LIB, SCRIP's name for it; SPITBOL and snobol4dotnet read the same
+# search path as SNOLIB (SPITBOL manual, Directories: "searched for files given in an -INCLUDE control statement or in the LOAD function").
+[ -n "${SNO_LIB:-}" ] && export SNOLIB="$SNO_LIB${SNOLIB:+:$SNOLIB}"
 # shellcheck source=lib_oracle_flags.sh
 . "$HERE/lib_oracle_flags.sh" || exit 2
 read -r -a lang_flags <<< "$(sbl_lang_flags)"
