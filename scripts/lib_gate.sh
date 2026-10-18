@@ -492,6 +492,9 @@ gate_floor() {
 # compared after the oracle's trailer -- and the blank-line padding SPITBOL prints immediately before it
 # -- is stripped; command substitution's trailing-newline trim absorbs that padding on both sides.
 #
+# SCRIP'S SIDE IS READ IN EITHER VOICE (the coo 2026-10-18): the old `** Error nnn in statement` line, or SCRIP's one error voice
+# (`scrip: error nnn: ...`, CEO-623) rendered through util_render_error_voice.py spitbol, the equivalence list, into SPITBOL's
+# `ERROR nnn --` line; the stale reading of the first voice alone failed X64T's cfreq, which raises the oracle's own ERROR 235.
 # Returns 0 (match) or 1 (mismatch); prints nothing, same silent contract as the `cmp -s` it replaces.
 gate_oracle_stdout_match() {
     local ora="$1" act_out="$2" act_err="$3" act_rc="$4"
@@ -507,6 +510,9 @@ gate_oracle_stdout_match() {
     [ "$ora_pre" = "$act_pre" ] || return 1
     [ "$act_rc" -ne 0 ] || return 1
     act_code="$(sed -n 's/^\*\* Error \([0-9][0-9]*\) in statement.*$/\1/p' "$act_err" | head -1)"
+    if [ -z "$act_code" ]; then
+        act_code="$(python3 "$(dirname "${BASH_SOURCE[0]}")/util_render_error_voice.py" spitbol < "$act_err" 2>/dev/null | sed -n 's/^.*: ERROR \([0-9][0-9]*\) -- .*$/\1/p' | head -1)"
+    fi
     [ -n "$act_code" ] || return 1
     [ "$((10#$ora_code))" -eq "$((10#$act_code))" ]
 }

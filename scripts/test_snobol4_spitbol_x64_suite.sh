@@ -139,6 +139,19 @@ fi
 # includes), so a run in place would both dirty the corpus checkout and let one program's output become
 # the next one's input.  The copy is made once and both engines run inside it.
 RUN="$W/run"; mkdir -p "$RUN"; cp -R "$SUITE"/. "$RUN"/ 2>/dev/null
+# ⛔⭐ EACH PROGRAM'S OWN STDIN (ceo to the coo 2026-10-18, rank 1, from hq_jvm's measurement: "DARK is worse than RED"): most of these
+# programs are SPITBOL's own build-time filters that read INPUT, and run on /dev/null they print nothing and exit 0, so the stream arm
+# passed ANY engine that printed nothing (a stub passed X32T 14 and X64T 7). Each filter carries <stem>.in beside it, cut from the
+# program's purpose (def, enum and equ: the data their author bundled after END), and the oracle and both modes read it; a program with
+# no .in reads /dev/null as before (the testpgms runner's stdin_of shape, CEO-1410). The witness is
+# test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh.
+stdin_of() { if [ -f "$RUN/$1.in" ]; then printf '%s' "$RUN/$1.in"; else printf '%s' /dev/null; fi; }
+# ⛔⭐ AN EMPTY ORACLE ANSWER IS NO GRADE UNLESS IT IS DECLARED: a stream PASS over an oracle stdout of zero bytes proves only that the
+# program compiled and terminated, so such a program is UNGRADED (NEEDS_STDIN_FIXTURE when it has no .in, NEEDS_RUNNER_WIRING when its
+# .in did not make the oracle print: its answer is on another channel, arcget's TERMINAL lines and the files it writes) unless
+# EMPTY_ANSWER.tsv beside the suite declares that nothing IS the answer (name<TAB>reason; e and en are a bare END). Re-asked both ways below.
+EMPTY_TSV="$SUITE/EMPTY_ANSWER.tsv"; EMPTY_LIVE=""
+empty_declared() { [ -f "$EMPTY_TSV" ] && awk -F'\t' -v n="$1" '$1 !~ /^#/ && $1 == n && NF > 1 && $2 != "" {f=1} END{exit !f}' "$EMPTY_TSV"; }
 # ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board.
@@ -202,7 +215,7 @@ for sno in "$SUITE"/*.sbl; do
     # ⛔ THE ORACLE FIRST, AND IT DECIDES BOTH WHETHER AND HOW.  Whether: a program our mandated -bf arm
     # cannot get an answer for is UNGRADED (work owed, declared in UNGRADED.tsv).  How: whether its own
     # run carried verdict lines picks the instrument.  Nothing here is read off a name.
-    "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" $3 "$4" < /dev/null > "$5" 2> "$6"' _ "$RUN" "$SBL" "$SBL_FLAGS" "$base" "$W/o.out" "$W/o.err" 2>/dev/null; rcO=$?
+    "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" $3 "$4" < "$7" > "$5" 2> "$6"' _ "$RUN" "$SBL" "$SBL_FLAGS" "$base" "$W/o.out" "$W/o.err" "$(stdin_of "$name")" 2>/dev/null; rcO=$?
     if grep -q 'No END statement found' "$W/o.out" "$W/o.err" 2>/dev/null; then
         UNGRADED_N=$((UNGRADED_N+1)); UNG_LIST="${UNG_LIST}${base}\tORACLE_FAIL\tsbl -bf rc=$rcO \"No END statement found in source file(s).\"\n"
         prog_row "$name" m3 UNGRADED "the oracle gives no answer under sbl -bf: No END statement found"
@@ -212,6 +225,15 @@ for sno in "$SUITE"/*.sbl; do
         UNGRADED_N=$((UNGRADED_N+1)); UNG_LIST="${UNG_LIST}${base}\tORACLE_FAIL\tsbl -bf parses it and then raises ERROR 022 -- undefined function called (the name lives inside an EVAL'd string literal)\n"
         prog_row "$name" m3 UNGRADED "the oracle raises ERROR 022 under sbl -bf: the name lives inside an EVAL'd string literal"
         prog_row "$name" m4 UNGRADED "the oracle raises ERROR 022 under sbl -bf: the name lives inside an EVAL'd string literal"; continue
+    fi
+    if [ ! -s "$W/o.out" ] && ! inventory_is_excluded "$SUITE" "$base"; then   # an EXCLUDED program is out of pass, fail and the denominator already (CEO-1345)
+        if empty_declared "$base"; then EMPTY_LIVE="$EMPTY_LIVE $base"
+        else
+            UNGRADED_N=$((UNGRADED_N+1)); _ecls=NEEDS_STDIN_FIXTURE; [ -f "$RUN/$name.in" ] && _ecls=NEEDS_RUNNER_WIRING
+            UNG_LIST="${UNG_LIST}${base}\t${_ecls}\tsbl -bf rc=$rcO prints nothing on stdout on $(basename "$(stdin_of "$name")") -- a PASS over an empty answer proves only compile-and-terminate\n"
+            prog_row "$name" m3 UNGRADED "the oracle prints nothing on stdout and EMPTY_ANSWER.tsv does not declare it ($_ecls)"
+            prog_row "$name" m4 UNGRADED "the oracle prints nothing on stdout and EMPTY_ANSWER.tsv does not declare it ($_ecls)"; continue
+        fi
     fi
     GRADED=$((GRADED+1))
     # ⛔ AN EXCLUDED PROGRAM THE ORACLE RUNS (EXCLUDED.tsv class DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, ceo CEO-1345: EXIT(3,file)'s
@@ -231,7 +253,7 @@ for sno in "$SUITE"/*.sbl; do
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
     SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
-    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" --run $6 "$3" < /dev/null > "$4" 2> "$5"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" 2>/dev/null; rc3=$?
+    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" --run $6 "$3" < "$7" > "$4" 2> "$5"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" "$(stdin_of "$name")" 2>/dev/null; rc3=$?
     ROW_S3="$(progress_secs_since "$_t0")"
     if [ "$rc3" -eq 124 ] || [ "$rc3" -ge 128 ]; then OUT3="$(verdict_of "$rc3")"; N3="rc=$rc3: $(head -1 "$W/m3.err" | cut -c1-90)"
     elif [ "$ARM" = self ]; then
@@ -246,7 +268,7 @@ for sno in "$SUITE"/*.sbl; do
     _t0="$(progress_clock)"
     m4why=""; if [ "$PORT" = 1 ]; then OUT4=""; N4=""   # a port has no mode 4: no compile, no row
     elif m4why="$(compile_m4 "$base" "$W/prog.bin" "$ca")"; then
-        run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" < /dev/null > "$3" 2> "$4"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" 2>/dev/null; rc4=$?
+        run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" < "$5" > "$3" 2> "$4"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" "$(stdin_of "$name")" 2>/dev/null; rc4=$?
         if [ "$rc4" -eq 124 ] || [ "$rc4" -ge 128 ]; then OUT4="$(verdict_of "$rc4")"; N4="rc=$rc4: $(head -1 "$W/m4.err" | cut -c1-90)"
         elif [ "$ARM" = self ]; then
             sp="$(pass_lines "$W/m4.out")"; sf="$(fail_lines "$W/m4.out")"
@@ -283,6 +305,12 @@ printf '%b' "$MASK_LINES"
 # the fact it recorded -- the coo's own board rule this week, off gimpel's OUTSIDE_SPITBOL_BASELINE.tsv
 # naming sixteen programs as unanswerable by an oracle that now answers them.  So: measured set vs
 # declared set, both directions, said aloud, never a red board.
+if [ -f "$EMPTY_TSV" ] && ! rr_selected; then   # a chunk grades a part, so only a whole-package run re-asks the declaration
+    erec="$(awk -F'\t' 'NF>1 && $1 !~ /^#/{print $1}' "$EMPTY_TSV" | grep . | sort)"; elive="$(printf '%s\n' $EMPTY_LIVE | grep . | sort)"
+    estale="$(comm -23 <(printf '%s\n' "$erec" | grep .) <(printf '%s\n' "$elive" | grep .) | tr '\n' ' ')"
+    [ -n "$estale" ] && echo "⚠ EMPTY_ANSWER.tsv STALE -- declared as answering nothing, but the oracle printed on stdout this run (or the program was not graded); delete their rows: $estale"
+    [ -z "$estale" ] && echo "EMPTY_ANSWER.tsv agrees with the measured empty answers ($(printf '%s\n' "$erec" | grep -c .))"
+fi
 UNG_TSV="$SUITE/UNGRADED.tsv"
 if [ -f "$UNG_TSV" ]; then
     # ⛔ grep . ON BOTH OPERANDS, ALWAYS.  `printf '%s\n' "$empty"` emits ONE BLANK LINE, and comm counts
