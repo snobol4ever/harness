@@ -2,22 +2,26 @@
 # test_gate_one_runner_admits_a_port_engine_by_lang_at_engine_and_keys_its_rows.sh -- THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17 to
 # hq_dotnet: "The suite banner should represent the snobol4dotnet executable program, not SCRIP." and, asked who runs the SNOBOL4 suites on
 # the snobol4dotnet engine, "hq_dotnet runs them"; ceo CEO-1822). Hermetic, no build: a scratch MODE whose LANES line carries
-# snobol4@dotnet=hq_dotnet, a plain-copy two-entry rungs suite (no checkout, so the guard judges it a board and the lane decides), a stub
-# dotnet host that prints nothing (both entries' refs are empty), stub DLLs, and a scratch progress table. Nothing live is read or written.
-# ARMS: (1) lib_one_runner.sh one_runner_who looks up <lang>@<engine> under a port engine -- snobol4 under dotnet is hq_dotnet, under scrip
-# the coo; "all" stays the bare keys; another language and an unknown engine name no lane. (2) corpus_suite_harness.py run under
-# S4E_ENGINE=dotnet as hq_dotnet is ADMITTED and every row it writes is keyed snobol4-rungs@dotnet, none snobol4-rungs. (3) the same run as
-# hq_dotnet without the engine is REFUSED rc 2 (ONE SEAT, ONE LANGUAGE). (4) as the coo with the engine it is REFUSED rc 2 (the coo grades
-# SCRIP's lane). (5) an unknown engine REFUSES rc 2. (6) m4 under dotnet REFUSES rc 2 (the port has no mode 4).
+# snobol4@dotnet=hq_dotnet, and a staged root in the real shape -- a COPY of this folder at <root>/harness/scripts, a stub engine tree at
+# <root>/snobol4dotnet, a plain-copy two-entry rungs suite at <root>/corpus (no checkout, so the guard judges it a board and the lane
+# decides) -- with a stub dotnet host that prints nothing (both entries' refs are empty) and scratch progress tables. Nothing live is read or
+# written. ARMS: (1) lib_one_runner.sh one_runner_who looks up <lang>@<engine> under a port engine -- snobol4 under dotnet is hq_dotnet,
+# under scrip the coo; "all" stays the bare keys; another language and an unknown engine name no lane. (2) corpus_suite_harness.py run
+# under S4E_ENGINE=dotnet as hq_dotnet is ADMITTED, dispatched to run_snobol4dotnet.sh, and every row it writes is keyed
+# snobol4-rungs@dotnet, none snobol4-rungs. (3) as hq_dotnet without the engine it is REFUSED rc 2 (ONE SEAT, ONE LANGUAGE). (4) as the coo
+# with the engine it is REFUSED rc 2 by the lane. (5) an unknown engine REFUSES rc 2. (6) m4 under dotnet REFUSES rc 2. (7) the runner's
+# --binaries is the board's one check: a language the engine has no front end for, and a build older than its source, refuse the board
+# rc 2 before any entry. (8) THE UNSET PATH IS SCRIP'S, UNCHANGED (the coo's ask): with no S4E_ENGINE the lane is the coo's and the key is
+# the bare snobol4-rungs, and from-progress for the bare sno-rungs key reads none of the @dotnet rows.
 set -u
-unset S4E_DONE_WHEN_RUN S4E_ONE_RUNNER_OVERRIDE S4E_ONE_RUNNER_FIXTURE S4E_SEAT S4E_ENGINE S4E_BIN_AT_START SNOBOL4DOTNET_DLL
-H="$(cd "$(dirname "$0")" && pwd)"; L="$H/lib_one_runner.sh"; HARN="$H/corpus_suite_harness.py"; G=one_runner_admits_a_port_engine; fail=0; examined=0
-[ -r "$L" ] && [ -r "$HARN" ] || { echo "REFUSE(2) [$G]: $L or $HARN missing -- cannot measure"; exit 2; }
+unset S4E_DONE_WHEN_RUN S4E_ONE_RUNNER_OVERRIDE S4E_ONE_RUNNER_FIXTURE S4E_SEAT S4E_ENGINE S4E_BIN_AT_START S4E_CORPUS_ROOT
+H="$(cd "$(dirname "$0")" && pwd)"; L="$H/lib_one_runner.sh"; G=one_runner_admits_a_port_engine; fail=0; examined=0
+[ -r "$L" ] && [ -r "$H/corpus_suite_harness.py" ] && [ -r "$H/run_snobol4dotnet.sh" ] || { echo "REFUSE(2) [$G]: the guard, the harness or run_snobol4dotnet.sh is missing beside this gate -- cannot measure"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 arm() { examined=$((examined+1)); if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fail=$((fail+1)); fi; }
 
-# the scratch law: SCRIP's bare lanes beside one port lane
-mkdir -p "$T/post"; printf 'TENET\n# scratch MODE for %s\nLANES: snobol4=coo icon=coo snobol4@dotnet=hq_dotnet\n' "$G" > "$T/post/MODE"
+# the scratch law: SCRIP's bare lanes beside the port lanes (snocone@dotnet exists only so arm 7a reaches the runner's own refusal)
+mkdir -p "$T/post"; printf 'TENET\n# scratch MODE for %s\nLANES: snobol4=coo icon=coo snocone=coo snobol4@dotnet=hq_dotnet snocone@dotnet=hq_dotnet\n' "$G" > "$T/post/MODE"
 # sourced, never named as $0: the library runs its own CLI (and prints its usage) when BASH_SOURCE[0] is $0
 who() { S4E_POST="$T/post" S4E_ENGINE="$1" WHO_LIB="$L" WHO_LANG="$2" bash -c '. "$WHO_LIB"; one_runner_who "$WHO_LANG"'; }
 arm "1a snobol4 under dotnet is hq_dotnet's lane"        '[ "$(who dotnet snobol4)" = hq_dotnet ]'
@@ -26,15 +30,21 @@ arm "1c all under dotnet is the bare keys only"          '[ "$(who dotnet all)" 
 arm "1d icon under dotnet names no lane"                 '[ -z "$(who dotnet icon)" ]'
 arm "1e an unknown engine names no lane"                 '[ -z "$(who nope snobol4)" ]'
 
-# the scratch world: a plain-copy rungs suite, a stub dotnet host and stub DLLs
-R="$T/root"; mkdir -p "$R/corpus/tests/snobol4" "$R/corpus/include" "$T/bin" "$T/dll"
-printf " X = 1;END;* gate_engine_e1\n Y = 2;END;* gate_engine_e2\n" > "$R/corpus/tests/snobol4/ALL.sno"
-printf "\n\n" > "$R/corpus/tests/snobol4/ALL.ref"
+# the staged root, in the real shape and of real files: harness copied, a stub engine built after its one source, a plain-copy suite
+R="$T/root"; B="$R/snobol4dotnet/Snobol4/bin/Release/net10.0"
+mkdir -p "$R/harness/scripts" "$R/corpus/tests/snobol4" "$R/corpus/tests/snocone" "$R/corpus/include" "$R/snobol4dotnet/Snobol4.Common" "$B" "$T/bin" "$R/.github"
+cp -r "$H/." "$R/harness/scripts/"
+: > "$R/.github/SCORE.md"   # util_score_row.py asks only that the leaderboard exists; a dry run reads and writes none of it
+printf 'class Stub {}\n' > "$R/snobol4dotnet/Snobol4.Common/Stub.cs"; touch -d '2 minutes ago' "$R/snobol4dotnet/Snobol4.Common/Stub.cs"
+printf 'stub driver\n' > "$B/Snobol4.dll"; printf 'stub engine\n' > "$B/Snobol4.Common.dll"
 printf '#!/bin/sh\nexit 0\n' > "$T/bin/dotnet"; chmod +x "$T/bin/dotnet"
-printf 'stub driver\n' > "$T/dll/Snobol4.dll"; printf 'stub engine\n' > "$T/dll/Snobol4.Common.dll"
-run() {  # run <seat> <engine> <db> [modes]: the harness over the scratch suite; prints its rc last
+for d in snobol4 snocone; do
+    printf " X = 1;END;* gate_engine_e1\n Y = 2;END;* gate_engine_e2\n" > "$R/corpus/tests/$d/ALL.sno"; printf "\n\n" > "$R/corpus/tests/$d/ALL.ref"
+done
+printf 'rank,entry\n1,gate_engine_e1\n2,gate_engine_e2\n' > "$R/corpus/tests/snobol4/ALL.csv"
+run() {  # run <seat> <engine> <db> [modes] [lang-dir]: the staged harness over a staged suite; prints its rc
     env PATH="$T/bin:$PATH" S4E_POST="$T/post" S4E_HOME="$R" S4E_SEAT="$1" ${2:+S4E_ENGINE="$2"} S4E_PROGRESS_DB="$3" \
-        SNOBOL4DOTNET_DLL="$T/dll/Snobol4.dll" python3 "$HARN" run "$R/corpus/tests/snobol4/ALL.sno" "$R/corpus/tests/snobol4/ALL.ref" \
+        python3 "$R/harness/scripts/corpus_suite_harness.py" run "$R/corpus/tests/${5:-snobol4}/ALL.sno" "$R/corpus/tests/${5:-snobol4}/ALL.ref" \
         --modes "${4:-m3}" > "$T/out" 2>&1
     echo $?
 }
@@ -44,6 +54,7 @@ rc="$(run hq_dotnet dotnet "$T/admitted.tsv")"
 arm "2a hq_dotnet under dotnet is admitted and graded (rc $rc)"       '[ "$rc" = 0 ]'
 arm "2b its rows are keyed snobol4-rungs@dotnet (2 of 2)"             '[ "$(rows "$T/admitted.tsv" snobol4-rungs@dotnet)" -eq 2 ]'
 arm "2c none of its rows lands in SCRIP's snobol4-rungs"              '[ "$(rows "$T/admitted.tsv" snobol4-rungs)" -eq 0 ]'
+arm "2d the board names the runner's files as its binary"             'grep -q "md5/12 of Snobol4.dll, Snobol4.Common.dll; engine dotnet" "$T/out"'
 rc="$(run hq_dotnet "" "$T/bare.tsv")"
 arm "3 hq_dotnet without the engine is refused rc 2 (got $rc)"        '[ "$rc" = 2 ] && grep -q "ONE SEAT, ONE LANGUAGE" "$T/out"'
 rc="$(run coo dotnet "$T/coo.tsv")"
@@ -52,7 +63,22 @@ rc="$(run hq_dotnet nope "$T/nope.tsv")"
 arm "5 an unknown engine refuses rc 2 (got $rc)"                      '[ "$rc" = 2 ] && grep -q "names no engine" "$T/out"'
 rc="$(run hq_dotnet dotnet "$T/m4.tsv" m3,m4)"
 arm "6 m4 under dotnet refuses rc 2 (got $rc)"                        '[ "$rc" = 2 ] && grep -q "has none" "$T/out"'
+rc="$(run hq_dotnet dotnet "$T/snc.tsv" m3 snocone)"
+arm "7a a language with no front end refuses the board rc 2 (got $rc)" '[ "$rc" = 2 ] && grep -q "NO ENGINE for snocone" "$T/out" && [ ! -s "$T/snc.tsv" ]'
+touch "$R/snobol4dotnet/Snobol4.Common/Stub.cs"
+rc="$(run hq_dotnet dotnet "$T/stale.tsv")"
+arm "7b a build older than its source refuses the board rc 2 (got $rc)" '[ "$rc" = 2 ] && grep -q "build is older than" "$T/out" && [ ! -s "$T/stale.tsv" ]'
 
-[ $examined -ge 12 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 12 declared arms"; exit 2; }
+# the unset path, which the coo's loop takes for every board: SCRIP's lane and SCRIP's bare key, unchanged
+probe() { env -u S4E_ENGINE S4E_POST="$T/post" S4E_HOME="$R" python3 -c '
+import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h
+p = h.resolve_paths(); print(p["engine"], ",".join(h._one_runner_who("snobol4")), h.progress_suite_for(sys.argv[2], p)[1])' "$R/harness/scripts" "$R/corpus/tests/snobol4/ALL.sno" 2>&1; }
+arm "8a no S4E_ENGINE is scrip, the coo's lane and the bare key"      '[ "$(probe)" = "scrip coo snobol4-rungs" ]'
+assemble() { env -u S4E_ENGINE S4E_PROGRESS_DB="$1" python3 "$R/harness/scripts/util_score_row.py" from-progress --suite sno-rungs --dry-run 2>&1 | grep -m1 '^SUITE_ROW '; }
+arm "8b the bare sno-rungs assembly reads none of the @dotnet rows"   'assemble "$T/admitted.tsv" | grep -q " read=0 unread=2 "'
+sed 's/\tsnobol4-rungs@dotnet\t/\tsnobol4-rungs\t/' "$T/admitted.tsv" > "$T/bare_control.tsv"
+arm "8c CONTROL: the same rows under the bare key are read (2 of 2)"  'assemble "$T/bare_control.tsv" | grep -q " read=2 unread=0 "'
+
+[ $examined -ge 18 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 18 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1

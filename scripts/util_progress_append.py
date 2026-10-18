@@ -234,16 +234,17 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
     rd = rt_dir or os.environ.get("RT_DIR") or os.path.join(S4E, "SCRIP", "out")
     h = hashlib.md5()
     ok = 0
-    # under S4E_ENGINE=dotnet the driver is Snobol4.dll and the runtime it loads is Snobol4.Common.dll beside it (CEO-1822)
-    rt = "Snobol4.Common.dll" if (os.environ.get("S4E_ENGINE", "").strip() or "scrip") == "dotnet" else "libscrip_rt.so"
-    for f in (sb, os.path.join(rd, rt)):
+    files = (sb, os.path.join(rd, "libscrip_rt.so"))
+    if engine() != "scrip":  # a port engine's driver and runtime are the files its runner names (CEO-1822)
+        files = tuple(engine_binaries())
+    for f in files:
         try:
             with open(f, "rb") as fh:
                 h.update(fh.read())
             ok += 1
         except Exception:
             return "unknown"
-    return h.hexdigest() if ok == 2 else "unknown"
+    return h.hexdigest() if ok == len(files) and ok >= 1 else "unknown"   # a port engine may be one file (snobol4jvm's jar)
 
 
 def _tree_of_binary(scrip_bin):
@@ -367,6 +368,29 @@ def normalize_row(r):
     return out
 
 
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17 to hq_dotnet, ceo CEO-1822): S4E_ENGINE names the program a board grades, scrip by
+# default. A PORT engine is run through its own runner script beside this file, and that script is the ONE list of its graded files
+# (--binaries, driver first): the fingerprints, the progress digest and the tree pin read it here, so no second list of an engine's files
+# lives anywhere. corpus_suite_harness.py and lib_one_runner.sh take this map from here.
+ENGINE_RUNNERS = {"dotnet": "run_snobol4dotnet.sh", "jvm": "run_snobol4jvm.sh"}
+
+
+def engine():
+    return os.environ.get("S4E_ENGINE", "").strip() or "scrip"
+
+
+def engine_binaries(e=None):
+    """A port engine's graded files from its runner's --binaries, driver first; [] under scrip or when the runner cannot say."""
+    r = ENGINE_RUNNERS.get(e or engine())
+    if not r:
+        return []
+    try:
+        out = subprocess.run(["bash", os.path.join(HERE, r), "--binaries"], capture_output=True, text=True, timeout=30)
+    except Exception:
+        return []
+    return [l for l in out.stdout.splitlines() if l.strip()] if out.returncode == 0 else []
+
+
 def bin_fingerprint():
     """lib_gate.sh's shape: md5 first 12 of ./scrip and out/libscrip_rt.so (resolved), space-joined; '' when either is missing."""
     import hashlib
@@ -375,15 +399,15 @@ def bin_fingerprint():
     tree = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
     b = os.environ.get("SCRIP") or os.path.join(tree, "scrip")
     r = os.path.join(os.environ.get("RT_DIR") or os.path.join(tree, "out"), "libscrip_rt.so")
-    # ⛔ UNDER S4E_ENGINE=dotnet THE GRADED BINARY IS snobol4dotnet's (CEO-1822): Snobol4.dll and the engine it loads, Snobol4.Common.dll,
-    # the pair a rebuild rewrites -- the same default corpus_suite_harness.resolve_paths names. Without this arm a port root has no
-    # ./scrip, this read '' and the moved-binary refusal could never fire on a dotnet board.
-    if (os.environ.get("S4E_ENGINE", "").strip() or "scrip") == "dotnet":
-        root = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", ".."))
-        b = os.environ.get("SNOBOL4DOTNET_DLL") or os.path.join(root, "snobol4dotnet", "Snobol4", "bin", "Release", "net10.0", "Snobol4.dll")
-        r = os.path.join(os.path.dirname(b), "Snobol4.Common.dll")
+    # ⛔ under a port engine the graded files are the ones its runner names (CEO-1822): without this a port root has no ./scrip, this read
+    # '' and the moved-binary refusal could never fire on a port board
+    files = (b, r)
+    if engine() != "scrip":
+        files = tuple(engine_binaries())
+        if not files:
+            return ""
     out = []
-    for f in (b, r):
+    for f in files:
         try:
             with open(f, "rb") as fh:
                 out.append(hashlib.md5(fh.read()).hexdigest()[:12])

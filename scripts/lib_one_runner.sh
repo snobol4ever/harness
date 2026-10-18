@@ -175,14 +175,14 @@ one_runner_seat_admitted() {
 one_runner_bin_fingerprint() {
   # the checkout THIS FILE lives in, whose scrip every runner beside it grades ($SD/scrip) -- never S4E_HOME/SCRIP, which in a worktree is
   # another binary (the coo 2026-09-28: util_progress_append.py reads the same tree, so the start and the append-time readings agree)
-  # ⛔ under S4E_ENGINE=dotnet the graded pair is snobol4dotnet's Snobol4.dll and Snobol4.Common.dll (CEO-1822; util_progress_append.py's
-  # bin_fingerprint reads the same pair), so a rebuild of the port under its board refuses that board as a SCRIP rebuild does
-  local _t _b _r
-  if [ "$(one_runner_engine)" = dotnet ]; then
-    _b="${SNOBOL4DOTNET_DLL:-${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/snobol4dotnet/Snobol4/bin/Release/net10.0/Snobol4.dll}"
-    _r="$(dirname "$_b")/Snobol4.Common.dll"
-    [ -f "$_b" ] && [ -f "$_r" ] || return 1
-    md5sum "$_b" "$_r" 2>/dev/null | cut -c1-12 | tr '\n' ' '
+  # ⛔ under a port engine the graded files are the ones its runner names with --binaries (CEO-1822; util_progress_append.py's
+  # bin_fingerprint reads the same list), so a rebuild of the port under its board refuses that board as a SCRIP rebuild does
+  local _t _b _r _run _f _bins
+  if [ "$(one_runner_engine)" != scrip ]; then
+    case "$(one_runner_engine)" in dotnet) _run=run_snobol4dotnet.sh;; jvm) _run=run_snobol4jvm.sh;; *) return 1;; esac
+    _bins="$(bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries 2>/dev/null)" && [ -n "$_bins" ] || return 1
+    while IFS= read -r _f; do [ -f "$_f" ] || return 1; done <<< "$_bins"
+    while IFS= read -r _f; do md5sum "$_f" | cut -c1-12; done <<< "$_bins" | tr '\n' ' '
     return 0
   fi
   _t="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
