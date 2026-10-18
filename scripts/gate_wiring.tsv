@@ -1040,6 +1040,7 @@ test_gate_sno_a_by_name_call_survives_collect.sh	WIRED	-	-	-
 test_gate_sno_a_call_and_return_trace_handler_is_entered_by_the_define_shim_box_and_its_chain_reads_clean.sh	WIRED	-	-	-
 test_gate_sno_a_call_saves_binds_and_restores_an_io_associated_name_without_io.sh	WIRED	-	-	-
 test_gate_sno_a_call_through_an_opsyn_alias_is_the_functions_own_call.sh	WIRED	-	-	-
+test_gate_sno_a_capture_into_an_element_binds_its_name_before_the_match_as_spitbol_does.sh	WIRED	-	-	-
 test_gate_sno_a_capture_into_an_item_call_assigns_the_element_in_both_modes.sh	WIRED	-	-	-
 test_gate_sno_a_capture_over_an_alternation_whose_arms_each_capture_reads_its_own_save_cell.sh	WIRED	-	-	-
 test_gate_sno_a_capture_over_succeed_or_a_bare_fence_reads_its_own_saved_cursor.sh	WIRED	-	-	-
