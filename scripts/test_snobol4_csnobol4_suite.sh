@@ -118,8 +118,9 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8}"
 # ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries is the one check, each pair runs in m3 alone with its declared heap and stack as switches, its rows are keyed csnobol4@<engine>
-# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. A preload pair (-L, a CSNOBOL4 switch SCRIP took)
-# reads the face's rc 2 refusal: the port has no such switch. Under scrip every line below reads as it did.
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. A preload pair runs WITHOUT -L under a port (preload_for
+# below): the switch is CSNOBOL4's, which SCRIP took, and the ref was cut by sbl -bf without it, so the port runs the program as the oracle did.
+# Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
 ROWKEY=csnobol4; [ "$PORT" = 1 ] && ROWKEY="csnobol4@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
@@ -372,6 +373,10 @@ for sno in "$SUITE"/*.sno; do
     [ -n "$dep" ] && { dca="$(declared_compile_args_from_table "$DECL" "$dep")" || exit 2; [ "$PORT" = 1 ] && { dca="$dca $(declared_switches_from_table "$DECL" "$dep")" || exit 2; }; (cd "$RUN" && run_at_declared_table "$DECL" "$dep" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT --run $dca "$dep.sno" > /dev/null 2>&1); }
     xargs_extra="$(argv_for "$name")"
     pre_extra="$(preload_for "$name")"
+    # ⭐ A PORT RUNS A PRELOAD PAIR AS THE ORACLE DID, WITHOUT -L: snobol4dotnet mimics SPITBOL exactly (Lon 2026-10-18, in-chat to hq_dotnet,
+    # verbatim: "The snobol4dotnet is meant to mimic SPITBOL exactly."), SPITBOL has no -L, and the ref (one empty line) is sbl -bf's answer to
+    # the bare program -- handed the switch, the face refused rc 2 and the pair read REJECT for a switch no SPITBOL takes
+    [ "$PORT" = 1 ] && pre_extra=""
     if [ "$RECUT" != 0 ] && is_extension "$name"; then echo "RECUT SKIPS $name.sno: an EXTENSION REF (EXTENSIONS.tsv), not sbl's to cut"; continue; fi
     if [ "$RECUT" != 0 ]; then
         gotr="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS "$relprog" $xargs_extra < "$inp" 2>&1)"; rcr=$?
