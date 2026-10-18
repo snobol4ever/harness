@@ -76,7 +76,7 @@ if [ "$rc" = 124 ]; then
         role=m4; isscrip=0; isoracle=0; compile=0
         for a in "$@"; do
             case "$(basename -- "$a" 2>/dev/null)" in
-                scrip) isscrip=1 ;;
+                scrip|run_port_as_scrip.sh) isscrip=1 ;;   # a port engine's face takes SCRIP's m3 call (CEO-1822)
                 sbl|spitbol|fpc|gprolog|swipl|icont|iconx|raku|rakudo|csnobol4|snobol4|jcont|jconx) isoracle=1 ;;
             esac
             case "$a" in *--compile*) compile=1 ;; esac
