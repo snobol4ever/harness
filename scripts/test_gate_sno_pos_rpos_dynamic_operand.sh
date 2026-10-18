@@ -33,6 +33,9 @@
 #
 # rc=0 CLEAN (nothing swept diverges from the oracle, in either mode), rc=1 VIOLATION (at least one does),
 # rc=2 UNPROVEN (no oracle, no fresh binary, or a zero denominator -- never printed as a pass).
+# THE SEVEN PROGRAMS ARE MASTER ENTRIES (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-
+# unabsorbed-census-reads-zero): each is extracted from tests/snobol4/ALL.{sno,ref} by its ORIGIN (its old loose basename,
+# the durable key in ALL.csv), never by the entry name the builder assigns and may re-sort.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
@@ -60,9 +63,9 @@ m4_run() {   # $1 = source .sno (absolute), $2 = basename (no ext), writes stdou
 
 red=0; examined=0; RED_NAMES=''; GRADED_NAMES=''
 for p in $PROGS; do
-    src="$W/$p.sno"; ref="$W/$p.ref"
-    if [ ! -f "$src" ] || [ ! -f "$ref" ]; then
-        echo "GATE UNPROVEN(2) [$GATE_NAME]: missing committed fixture $p (.sno/.ref)"; gate_stamp; exit 2
+    src="$T/w_$p.sno"; ref="$T/w_$p.ref"
+    if ! python3 "$HERE/corpus_suite_harness.py" extract "$W/ALL.sno" "$W/ALL.ref" --origin "$p" "$src" --out-ref "$ref" >/dev/null 2>&1 || [ ! -f "$src" ] || [ ! -f "$ref" ]; then
+        echo "GATE UNPROVEN(2) [$GATE_NAME]: the master entry of origin $p could not be extracted from $W/ALL.{sno,ref,csv}"; gate_stamp; exit 2
     fi
     timeout -k 5 20 "$O" -bf "$src" </dev/null >"$T/$p.oref" 2>/dev/null
     if ! cmp -s "$T/$p.oref" "$ref"; then
