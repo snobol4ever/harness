@@ -2088,6 +2088,11 @@ def write_suite_row_only(a):
 
 
 def cmd_write(a):
+    # ⛔ A PORT ENGINE NEVER WRITES SCRIP'S ROW (CEO-1822): write sets the bare suite's cell, which is SCRIP's reading; a package runner run
+    # under S4E_ENGINE=<port> records its rows keyed <suite>@<port>, and the port's row is from-progress --suite <suite>@<port>
+    _eng = os.environ.get("S4E_ENGINE", "").strip() or "scrip"
+    if _eng != "scrip":
+        die("S4E_ENGINE=%s: write sets SCRIP's row for %s; a port engine's row is from-progress --suite <key>@%s -- nothing written" % (_eng, a.suite, _eng))
     _suite_table_lock()
     if not a.measurer or a.measurer.strip().lower() in _PLACEHOLDER_MEASURERS:
         stale = a.measurer

@@ -324,6 +324,10 @@ def normalize_row(r):
         out[f] = _clean(r.get(f, ""), f)
         if not out[f]:
             raise ValueError(f"{f} is empty")
+    # ⛔ A PORT ENGINE'S ROW IS KEYED <suite>@<engine> HERE, BY THE ONE WRITER (CEO-1822): corpus_suite_harness.py keys its own, and a
+    # bash package runner names its suite bare (testpgms, spitbol_x64); under a port engine that bare name is SCRIP's series, so it is never written
+    if engine() != "scrip" and "@" not in out["suite"]:
+        out["suite"] += "@" + engine()
     out["mode"] = _clean(r.get("mode", ""), "mode") or "m3"
     out["outcome"] = _clean(r.get("outcome", ""), "outcome").upper()
     if out["outcome"] not in OUTCOMES:
