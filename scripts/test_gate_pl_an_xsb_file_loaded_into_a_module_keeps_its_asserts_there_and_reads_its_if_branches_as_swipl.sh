@@ -15,6 +15,10 @@
 #     right for a goal that is CALLED, but get_residual reads a table, and the wrapper has none (xsb/sub_tests test_answer_abstraction printed nothing).
 # (3c) get_returns_for_call/2 and get_calls/3 written in a clause loaded into M look their goal up as M:Goal (current_table strips the module and answers
 #     unqualified): get_returns_for_call(b(_), R) found no table (xsb/neg_tests ldynstrat3/4 lost their "b(1) is true" line).
+# (3d) assert OF A FACT FOR A PREDICATE THE FILE DECLARES BOTH table AND dynamic reaches the table's implementation ('$tbl M:u'), so calling u/1 fills
+#     its table: the loader qualified the asserted head to M:u, beside the tabling wrapper, so u(_) answered from the facts directly and no table was
+#     made (2026-10-18, xsb/table_tests atc_test lost a3_2, a4_2, a5_3, a9_3; '$lfx_mh' now targets '$tbl M:p' when it exists). Fail-once: on SCRIP
+#     de14c4404 plus hq_prolog's loader commits and the abolish landing, without the cure, both modes printed [] for that line.
 # (4) file_name_extension/3 is linked for a run-time-loaded file (Driver.P calls it; existence_error before).
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: the expectation below was cut 2026-10-17 from /usr/bin/swipl by absolute path and every run
 # re-cuts it from the live swipl and REFUSES rc=2 when oracle and table disagree or swipl is absent.
@@ -51,6 +55,9 @@ t(1).
 t(2).
 res(G, R) :- get_residual(G, R).
 rc(L) :- findall(R, get_returns_for_call(t(_), R), L0), msort(L0, L).
+:- table u/1.
+:- dynamic u/1.
+ua :- assert(u(a)), assert(u(b)).
 PL
 printf ":- include('drv').\n" > "$d/a.P"
 printf ":- include('drv').\n" > "$d/b.P"
@@ -72,6 +79,7 @@ main :- load_files(m1:'a.P', [dialect(xsb)]), load_files(m2:'b.P', [dialect(xsb)
         ( catch(r(_), error(existence_error(_, _), _), fail) -> write(user_r) ; write(no_user_r) ), nl,
         ( in(m1, t(_)), fail ; true ), findall(X-R, in(m1, res(t(X), R)), L6), msort(L6, L7), write(L7), nl,
         in(m1, rc(L8)), write(L8), nl,
+        in(m1, ua), ( in(m1, u(_)), fail ; true ), findall(X-R, in(m1, res(u(X), R)), L9), msort(L9, L10), write(L10), nl,
         halt.
 PL
 cat > "$d/want" <<'WANT'
@@ -87,6 +95,7 @@ no_user_p
 no_user_r
 [1-[],2-[]]
 [t(1),t(2)]
+[a-[],b-[]]
 WANT
 (cd "$d" && "$SWIPL" -q -g main -t halt w.pl </dev/null > "$d/oracle" 2>/dev/null)
 cmp -s "$d/want" "$d/oracle" || { echo "⛔ REFUSED(2) [$GATE_NAME]: the expectation table is not what $SWIPL prints now"; diff "$d/want" "$d/oracle" | head -5; exit 2; }
