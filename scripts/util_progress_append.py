@@ -380,15 +380,21 @@ def engine():
 
 
 def engine_binaries(e=None):
-    """A port engine's graded files from its runner's --binaries, driver first; [] under scrip or when the runner cannot say."""
+    """A port engine's graded files from its runner's --paths (the list, checking nothing), driver first; [] under scrip or when the
+    runner cannot say. ⛔ NOT --binaries, which is the board's one CHECK and refuses a build older than its source: read here, a source
+    edited under a running board made the end-of-run fingerprint '' and the board refused as THE BINARY MOVED when no binary had (measured,
+    2026-10-18: start [fa779c77a352 18cffdac938b] end []). A runner that predates --paths is read through --binaries."""
     r = ENGINE_RUNNERS.get(e or engine())
     if not r:
         return []
-    try:
-        out = subprocess.run(["bash", os.path.join(HERE, r), "--binaries"], capture_output=True, text=True, timeout=30)
-    except Exception:
-        return []
-    return [l for l in out.stdout.splitlines() if l.strip()] if out.returncode == 0 else []
+    for verb in ("--paths", "--binaries"):
+        try:
+            out = subprocess.run(["bash", os.path.join(HERE, r), verb], capture_output=True, text=True, timeout=30)
+        except Exception:
+            return []
+        if out.returncode == 0 and out.stdout.strip():
+            return [l for l in out.stdout.splitlines() if l.strip()]
+    return []
 
 
 def bin_fingerprint():

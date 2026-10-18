@@ -72,6 +72,10 @@ arm "7a a language with no front end refuses the board rc 2 (got $rc)" '[ "$rc" 
 touch "$R/snobol4dotnet/Snobol4.Common/Stub.cs"
 rc="$(run hq_dotnet dotnet "$T/stale.tsv")"
 arm "7b a build older than its source refuses the board rc 2 (got $rc)" '[ "$rc" = 2 ] && grep -q "build is older than" "$T/out" && [ ! -s "$T/stale.tsv" ]'
+# a source edited UNDER a running board is not a moved binary: the fingerprint still names both files (measured: end [] refused a board)
+fpy="$(S4E_ENGINE=dotnet python3 -c 'import sys; sys.path.insert(0, sys.argv[1]); import util_progress_append as u; print(u.bin_fingerprint())' "$R/harness/scripts" 2>&1)"
+fsh="$(S4E_ENGINE=dotnet FP_LIB="$R/harness/scripts/lib_one_runner.sh" bash -c '. "$FP_LIB"; one_runner_bin_fingerprint')"
+arm "7c with the source newer than the build, both fingerprints still name both files" '[ "$(echo $fpy | wc -w)" = 2 ] && [ "$(echo $fsh | wc -w)" = 2 ] && [ "$(echo $fpy)" = "$(echo $fsh)" ]'
 
 # the unset path, which the coo's loop takes for every board: SCRIP's lane and SCRIP's bare key, unchanged
 probe() { env -u S4E_ENGINE S4E_POST="$T/post" S4E_HOME="$R" python3 -c '
@@ -101,6 +105,6 @@ touch "$JS/src/SNOBOL4clojure/core.clj"
 rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
 arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
 
-[ $examined -ge 24 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 24 declared arms"; exit 2; }
+[ $examined -ge 25 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 25 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
