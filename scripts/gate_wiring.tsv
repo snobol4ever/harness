@@ -701,6 +701,7 @@ test_gate_pl_an_int64_overflow_promotes_to_the_bignum_core_instead_of_raising.sh
 test_gate_pl_an_opaque_goal_barrier_releases_the_frame_its_goal_carved.sh	WIRED	-	-	-
 test_gate_pl_an_operator_atom_operand_is_bracketed.sh	WIRED	-	-	-
 test_gate_pl_an_unbounded_integer_is_an_integer_to_arg_functor_and_format.sh	WIRED	-	-	-
+test_gate_pl_an_unbounded_integer_is_an_integer_to_arg_functor_and_sub_atom.sh	WIRED	-	-	-
 test_gate_pl_an_uncaught_error_holding_a_float_is_reported_not_a_crash.sh	WIRED	-	-	-
 test_gate_pl_an_unknown_stream_alias_throws_and_never_dies_silently.sh	WIRED	-	-	-
 test_gate_pl_an_xsb_file_loaded_into_a_module_keeps_its_asserts_there_and_reads_its_if_branches_as_swipl.sh	WIRED	-	-	-
