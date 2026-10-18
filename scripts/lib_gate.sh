@@ -387,7 +387,14 @@ gate_bin_unmoved() {
 # ⛔ THE SCRIP WATCHED IS THE CHECKOUT THIS LIBRARY LIVES IN (coo 2026-10-08, the class of CEO-1573): every board grades its own
 # checkout's scrip, so a board run from a worktree watched <root>/SCRIP -- the directory BESIDE the worktree, by name -- and refused
 # "cannot read HEAD" (or, beside a seat root, watched a tree it was not grading). corpus stays <root>/corpus, the caller's root.
-_gate_tree_repo() { case "$2" in SCRIP) (cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd);; *) printf '%s/%s\n' "$1" "$2";; esac; }
+# ⛔ UNDER A PORT ENGINE THE GRADED CHECKOUT IS THE PORT'S (CEO-1822): S4E_ENGINE=<port> grades the driver its runner's --paths names first,
+# and a port root holds no SCRIP, so the SCRIP slot watches that driver's git toplevel (snobol4dotnet) -- it refused "cannot read HEAD" there.
+_gate_tree_repo() { case "$2" in
+    SCRIP) if [ "${S4E_ENGINE:-scrip}" != scrip ]; then
+             local _drv; _drv="$(bash "$(dirname "${BASH_SOURCE[0]}")/run_snobol4${S4E_ENGINE}.sh" --paths 2>/dev/null | head -1)"
+             git -C "$(dirname "${_drv:-/nonexistent}")" rev-parse --show-toplevel 2>/dev/null
+           else (cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd); fi;;
+    *) printf '%s/%s\n' "$1" "$2";; esac; }
 gate_tree_watch() {
     local _root="$1" _r _h _d _fp="" _p
     for _r in SCRIP corpus; do
