@@ -1569,6 +1569,34 @@ def db_crosscheck(key, p, t):
 FROM_PROGRESS_PACKAGES = {"x64tests": "packages/snobol4/spitbol_x64_tests", "x32tests": "packages/snobol4/spitbol_x32_tests", "logtalk": "packages/prolog/logtalk_iso"}
 FROM_PROGRESS_MASTERS = {"sno-rungs": "tests/snobol4", "icn-rungs": "tests/icon", "pl-rungs": "tests/prolog", "pas-rungs": "tests/pascal",
                          "raku-rungs": "tests/raku", "snc-rungs": "tests/snocone", "reb-rungs": "tests/rebus"}
+# ⭐ THE BENCH AND DEMO TREES CARRY NO ALL.csv, so their population is the CENSUS their runner grades (CEO-1822; Lon 2026-10-18, in-chat to
+# hq_dotnet, verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): test_snobol4_bench_suite.sh grades every *.sno directly
+# under the tree, keyed by its stem; test_demos_suite.sh every program three levels deep that CONTAINERS.tsv does not name, keyed
+# demos/<lang>/<path>. A PORT's row only: SCRIP's bench and demo rows are written from their runner's board line, as before.
+FROM_PROGRESS_CENSUS = {"snobol4-bench-ref": "benchmarks/snobol4", "snobol4-demos": "demos/snobol4"}
+_DEMO_EXTS = (".sno", ".icn", ".pl", ".sc", ".pas", ".raku", ".reb")
+
+
+def _census_population(tdir, key):
+    """The programs a bench or demo runner grades under tdir, keyed as its progress rows key them (see FROM_PROGRESS_CENSUS)."""
+    if key.endswith("-bench-ref"):
+        return sorted(f[:-4] for f in os.listdir(tdir) if f.endswith(".sno") and os.path.isfile(os.path.join(tdir, f)))
+    cont = set()
+    cp = os.path.join(tdir, "CONTAINERS.tsv")
+    if os.path.exists(cp):
+        cont = {l.split("\t")[0].strip() for l in open(cp, encoding="utf-8", errors="replace") if l.strip() and not l.startswith("#")}
+    pre = "demos/%s/" % os.path.basename(tdir.rstrip(os.sep))
+    progs = []
+    for root, dirs, files in os.walk(tdir):
+        rel = os.path.relpath(root, tdir)
+        depth = 0 if rel == "." else rel.count(os.sep) + 1
+        if depth >= 3:
+            dirs[:] = []
+        for f in files:
+            r = f if rel == "." else os.path.join(rel, f)
+            if f.endswith(_DEMO_EXTS) and depth <= 2 and r not in cont:
+                progs.append(pre + r)
+    return sorted(progs)
 
 
 def _logtalk_case_population(tdir, names):
@@ -1659,6 +1687,8 @@ def from_progress_table(corpus, key):
     full, key = key, key.partition("@")[0]   # a port key (sno-rungs@dotnet) reads its bare key's table; its progress name keeps the engine
     if key in FROM_PROGRESS_MASTERS:
         return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.dbname(full)
+    if "@" in full and key in FROM_PROGRESS_CENSUS and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_CENSUS[key])):
+        return os.path.join(corpus, FROM_PROGRESS_CENSUS[key]), _aud.dbname(full)
     if key in FROM_PROGRESS_PACKAGES and os.path.exists(os.path.join(corpus, FROM_PROGRESS_PACKAGES[key], "ALL.csv")):
         return os.path.join(corpus, FROM_PROGRESS_PACKAGES[key]), _aud.dbname(full)
     import corpus_suite_harness as _h
@@ -1684,8 +1714,11 @@ def cmd_from_progress(a):
     if not tdir:
         print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (full_key, corpus))
         return 2
-    with open(os.path.join(tdir, "ALL.csv"), encoding="utf-8", errors="replace", newline="") as f:
-        pop = [r.get("entry", "") for r in _csv.DictReader(f) if r.get("entry", "")]
+    if key in FROM_PROGRESS_CENSUS:
+        pop = _census_population(tdir, key)
+    else:
+        with open(os.path.join(tdir, "ALL.csv"), encoding="utf-8", errors="replace", newline="") as f:
+            pop = [r.get("entry", "") for r in _csv.DictReader(f) if r.get("entry", "")]
     part = {}
     pp = os.path.join(tdir, "PARTITION.tsv")
     if os.path.exists(pp):
@@ -1703,7 +1736,7 @@ def cmd_from_progress(a):
     # population is its ALL.csv entries together with every shipped <name>.<ext> beside the container, less the EXCLUDED.tsv rows and the CONTAINERS.tsv
     # fragments (CEO-1286/1288/1696), so shipped = denominator + Excl as lib_container_package_runner.sh publishes it. A shipped program the container does
     # not grade is debt with no reading needed (the runner's UNGRADED row). A reading names its program with or without the extension (GNU writes x.pl).
-    pkg = key not in FROM_PROGRESS_MASTERS
+    pkg = key not in FROM_PROGRESS_MASTERS and key not in FROM_PROGRESS_CENSUS
     ext, shipped, xnames, cnames, nex = "", set(), set(), set(), 0
     if pkg:
         _EXTS = ("sno", "spt", "sbl", "icn", "pl", "pas", "raku", "sc", "reb")
