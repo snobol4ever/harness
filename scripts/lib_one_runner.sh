@@ -150,6 +150,23 @@ one_runner_lanes_line() {
 one_runner_engine() {
   printf '%s' "${S4E_ENGINE:-scrip}"
 }
+# ⭐ A PACKAGE RUNNER GRADES A PORT WITH ITS OWN GRADING (Lon 2026-10-18, in-chat to hq_jvm, verbatim: "Get all SNOBOL4 test suite package
+# runners working with snobol4jvm."): under a port engine one_runner_port_face prints the SCRIP-shaped face of the port (run_port_as_scrip.sh,
+# which takes SCRIP's m3 call and execs run_<engine>.sh) for the runner to use as its SCRIP, and one_runner_port_ready is the board's one
+# check in place of util_require_fresh.sh: the port runner's --binaries, which refuses a language it has no front end for and a build older
+# than its source. The runner grades m3 alone and writes no SCRIP score row; its rows are keyed <suite>@<engine> by the one writer.
+one_runner_is_port() {
+  [ "$(one_runner_engine)" != scrip ]
+}
+one_runner_port_face() {
+  printf '%s' "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/run_port_as_scrip.sh"
+}
+one_runner_port_ready() {   # one_runner_port_ready <lang>
+  local _run
+  case "$(one_runner_engine)" in dotnet) _run=run_snobol4dotnet.sh;; jvm) _run=run_snobol4jvm.sh;;
+    *) echo "⛔ REFUSE(rc=2): S4E_ENGINE=$(one_runner_engine) names no port engine (dotnet, jvm)" >&2; return 2;; esac
+  bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries --lang "${1:-snobol4}" > /dev/null || return 2
+}
 one_runner_who() {
   local lang="${1:-}" lanes key
   lanes="$(one_runner_lanes_line)"
