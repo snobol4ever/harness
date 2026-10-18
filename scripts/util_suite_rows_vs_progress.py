@@ -33,6 +33,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CRITERION_NOTE_RX = re.compile(r"^(?!xfail$)[a-z]+(-[a-z]+)+$")   # a criterion label in the note column, e.g. outcome-class; hashes and xfail never match
 DBNAME = {"sno-rungs": "snobol4-rungs", "icn-rungs": "icon-rungs", "pl-rungs": "prolog-rungs", "pas-rungs": "pascal-rungs",
           "raku-rungs": "raku-rungs", "snc-rungs": "snocone-rungs", "reb-rungs": "rebus-rungs", "x64tests": "spitbol_x64", "x32tests": "spitbol_x32"}
+
+
+def dbname(key):
+    """The progress table's suite name for a SUITES.tsv key. A port engine's key carries its engine (sno-rungs@dotnet) and so does its
+    progress name (snobol4-rungs@dotnet): the map is read for the bare key and the engine rides through (CEO-1822), so a port's rows
+    and SCRIP's can never be joined to one another's key."""
+    base, at, engine = key.partition("@")
+    return DBNAME.get(base, base) + at + engine
 SIDECAR = {"sno-rungs": "tests/snobol4/ALL.outside.tsv",
            "gimpel": "packages/snobol4/gimpel/OUTSIDE_SPITBOL_BASELINE.tsv",
            "csnobol4": "packages/snobol4/csnobol4_suite/OUTSIDE_SPITBOL_BASELINE.tsv",
@@ -222,7 +230,7 @@ def audit(suites, db, corpus, out=print):
     if not rows:
         out("⛔ REFUSES (rc=2): SUITES.tsv carries no rows")
         return 2
-    want = {(DBNAME.get(c[0], c[0]), c[10]): c[0] for c in rows if c[10]}
+    want = {(dbname(c[0]), c[10]): c[0] for c in rows if c[10]}
     last = read_db(db, want)
     progs = collections.defaultdict(lambda: collections.defaultdict(dict))
     meas = collections.defaultdict(set)
@@ -245,7 +253,7 @@ def audit(suites, db, corpus, out=print):
             unproven.append(key)
             out(f"{tag} {'-':>10} {'-':>5}  {'-':10} {'-':19}  UNPROVEN: no tree on the row (never measured)")
             continue
-        d = progs.get((DBNAME.get(key, key), tree), {})
+        d = progs.get((dbname(key), tree), {})
         d, side, s_ungradable, s_ungraded = population_inputs(corpus, key, d)
         if not d:
             unproven.append(key)
@@ -255,8 +263,8 @@ def audit(suites, db, corpus, out=print):
         graded += 1
         p_row = int(P) if P.isdigit() else -1
         t_row = int(T) if T.isdigit() else -1
-        who = ",".join(sorted(x for x in meas[(DBNAME.get(key, key), tree)] if x))[:10]
-        line = f"{tag} {str(cnt['PASS']) + '/' + str(pop):>10} {xpass:>5}  {who:10} {lastts[(DBNAME.get(key, key), tree)][:19]:19}"
+        who = ",".join(sorted(x for x in meas[(dbname(key), tree)] if x))[:10]
+        line = f"{tag} {str(cnt['PASS']) + '/' + str(pop):>10} {xpass:>5}  {who:10} {lastts[(dbname(key), tree)][:19]:19}"
         why = []
         if bounded and p_row <= cnt["PASS"]:
             pass   # the DB's criterion is looser than the row's: its count bounds the row from above (verdict printed below)

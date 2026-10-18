@@ -1522,7 +1522,7 @@ def db_crosscheck(key, p, t):
         die("the progress DB %s does not exist, so this write's --suite-pass cannot be held against the append behind it.\n"
             "        NOTHING WAS WRITTEN: SCORE.md and SUITES.tsv are both untouched." % db)
     tree = suite_tree_stamp().replace("-DIRTY", "-dirty")
-    suite = _aud.DBNAME.get(key, key)
+    suite = _aud.dbname(key)
     last = _aud.read_db(db, {(suite, tree): key})
     if not last:
         die("no progress rows for suite %r on tree %s in %s: a row without per-program evidence is DARK wearing a number\n"
@@ -1656,16 +1656,17 @@ def from_progress_table(corpus, key):
     (PROGRESS_PACKAGE_KEYS: a package directory's progress key, else its name), or (None, None)."""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import util_suite_rows_vs_progress as _aud
+    full, key = key, key.partition("@")[0]   # a port key (sno-rungs@dotnet) reads its bare key's table; its progress name keeps the engine
     if key in FROM_PROGRESS_MASTERS:
-        return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.DBNAME.get(key, key)
+        return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.dbname(full)
     if key in FROM_PROGRESS_PACKAGES and os.path.exists(os.path.join(corpus, FROM_PROGRESS_PACKAGES[key], "ALL.csv")):
-        return os.path.join(corpus, FROM_PROGRESS_PACKAGES[key]), _aud.DBNAME.get(key, key)
+        return os.path.join(corpus, FROM_PROGRESS_PACKAGES[key]), _aud.dbname(full)
     import corpus_suite_harness as _h
     for lang in sorted(os.listdir(os.path.join(corpus, "packages"))) if os.path.isdir(os.path.join(corpus, "packages")) else []:
         ld = os.path.join(corpus, "packages", lang)
         for pkg in sorted(os.listdir(ld)) if os.path.isdir(ld) else []:
             if _h.PROGRESS_PACKAGE_KEYS.get(pkg, pkg) == key and os.path.exists(os.path.join(ld, pkg, "ALL.csv")):
-                return os.path.join(ld, pkg), _aud.DBNAME.get(key, key)
+                return os.path.join(ld, pkg), _aud.dbname(full)
     return None, None
 
 
@@ -1673,11 +1674,15 @@ def cmd_from_progress(a):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import csv as _csv, collections as _c
     import util_suite_rows_vs_progress as _aud
-    key = a.suite
+    # ⛔ A PORT ENGINE'S KEY (sno-rungs@dotnet, CEO-1822) reads its bare key's table and is graded in m3 alone -- a port has no mode 4 --
+    # while every line this prints and the row it writes carry the full key, so the port's row and SCRIP's are never one another's
+    full_key = a.suite
+    key, _at, port = full_key.partition("@")
+    modes = ("m3",) if port else ("m3", "m4")
     corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus")
-    tdir, dbsuite = from_progress_table(corpus, key)
+    tdir, dbsuite = from_progress_table(corpus, full_key)
     if not tdir:
-        print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (key, corpus))
+        print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (full_key, corpus))
         return 2
     with open(os.path.join(tdir, "ALL.csv"), encoding="utf-8", errors="replace", newline="") as f:
         pop = [r.get("entry", "") for r in _csv.DictReader(f) if r.get("entry", "")]
@@ -1812,12 +1817,12 @@ def cmd_from_progress(a):
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
-    halfread = [e for e in pop if e in d and set(d[e]) != {"m3", "m4"}]
+    halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
     excluded = None
     if pkg:
         def _both(e):
             r = last_by.get(e, {})
-            return r.get("m3", ("",))[0] == "PASS" and r.get("m4", ("",))[0] == "PASS"
+            return all(r.get(m, ("",))[0] == "PASS" for m in modes)
         last_by = _c.defaultdict(dict)
         for (prog, m), v in last.items():
             last_by[prog][m] = v
@@ -1845,13 +1850,13 @@ def cmd_from_progress(a):
             print("SUITE_ROW_LOGTALK cases=%d excluded=%d graded=%d (EXCLUDED_CASES.tsv by class; OUTSIDE stays in the denominator, as the runner's row)"
                   % (len(pop) + _swi_excl, _swi_excl, len(pkg_pop)))
         _outside = set() if key == "logtalk" else \
-            {e for e in pkg_pop if all(last_by.get(e, {}).get(m, ("",))[0] == "OUTSIDE" for m in ("m3", "m4")) and e in last_by}
+            {e for e in pkg_pop if all(last_by.get(e, {}).get(m, ("",))[0] == "OUTSIDE" for m in modes) and e in last_by}
         _outside_new = _outside - xnames - cnames
         pkg_pop = pkg_pop - _outside
         cnt = _c.Counter(cnt)
         cnt["PASS"] = sum(1 for e in pkg_pop if _both(e))
         unread = [e for e in pop if e in pkg_pop and e not in last_by and e not in _owed]
-        halfread = [e for e in pop if e in pkg_pop and e in last_by and set(last_by[e]) != {"m3", "m4"}]
+        halfread = [e for e in pop if e in pkg_pop and e in last_by and set(last_by[e]) != set(modes)]
         excluded = nex + len(cnames - xnames) + len(_outside_new)
         if _swi_excl is not None:
             excluded = _swi_excl
@@ -1861,10 +1866,10 @@ def cmd_from_progress(a):
     total = len(pkg_pop) if pkg else len(pop)
     if pkg:
         print("SUITE_ROW_PACKAGE suite=%s shipped=%d table=%d excluded_rows=%d containers=%d outside=%d excluded=%d denominator=%d debt_unread_by_design=%d"
-              % (key, len(set(pop) | shipped), len(pop), nex, len(cnames - xnames), len(_outside_new), excluded, total, len(pkg_pop - set(pop))))
+              % (full_key, len(set(pop) | shipped), len(pop), nex, len(cnames - xnames), len(_outside_new), excluded, total, len(pkg_pop - set(pop))))
     print("SUITE_ROW suite=%s pass=%d total=%d read=%d unread=%d half_read=%d oldest_tree=%s@%s newest_tree=%s@%s secs=%d db_suite=%s table=%s "
           "(PASS %d FAIL %d OUTSIDE %d UNGRADABLE %d UNGRADED %d DEFERRED %d) timed=%d"
-          % (key, cnt["PASS"], total, len(d), len(unread), len(halfread), oldest[1], oldest[0], newest[1], newest[0], wall, dbsuite,
+          % (full_key, cnt["PASS"], total, len(d), len(unread), len(halfread), oldest[1], oldest[0], newest[1], newest[0], wall, dbsuite,
              os.path.relpath(tdir, corpus), cnt["PASS"], cnt["FAIL"], cnt["OUTSIDE"], cnt["UNGRADABLE"], cnt["UNGRADED"], cnt["DEFERRED"], timed))
     if part:
         byc = _c.defaultdict(list)
@@ -1880,14 +1885,14 @@ def cmd_from_progress(a):
     if unread:
         print("SUITE_ROW_UNREAD %d: %s%s" % (len(unread), " ".join(unread[:30]), " ..." if len(unread) > 30 else ""))
     if a.dry_run:
-        print("from-progress --dry-run: nothing written (would set %s -> %d/%d%s stamped %s, the oldest reading's tree)" % (key, cnt["PASS"], total, "" if excluded is None else " excluded=%d" % excluded, oldest[1]))
+        print("from-progress --dry-run: nothing written (would set %s -> %d/%d%s stamped %s, the oldest reading's tree)" % (full_key, cnt["PASS"], total, "" if excluded is None else " excluded=%d" % excluded, oldest[1]))
         return 0
     if unread or halfread:
         print("REFUSE(2): from-progress: %d entr(y/ies) have no reading and %d only one mode's -- the row is current when every chunk has a "
               "reading (CEO-1676); nothing written" % (len(unread), len(halfread)))
         return 2
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
-    cmd = [sys.executable, SUITE_BANNER, "--set", key, str(cnt["PASS"]), str(total), _box_clock_day(), oldest[1]]
+    cmd = [sys.executable, SUITE_BANNER, "--set", full_key, str(cnt["PASS"]), str(total), _box_clock_day(), oldest[1]]
     if (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip():
         cmd += ["--criterion-changed", (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip()]
     # ⛔ the Wall is written only when EVERY reading carries its seconds: a sum over the few readings a subset re-took is a fraction of the
