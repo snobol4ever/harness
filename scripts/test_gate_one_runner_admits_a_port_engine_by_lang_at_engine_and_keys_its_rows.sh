@@ -12,16 +12,20 @@
 # with the engine it is REFUSED rc 2 by the lane. (5) an unknown engine REFUSES rc 2. (6) m4 under dotnet REFUSES rc 2. (7) the runner's
 # --binaries is the board's one check: a language the engine has no front end for, and a build older than its source, refuse the board
 # rc 2 before any entry. (8) THE UNSET PATH IS SCRIP'S, UNCHANGED (the coo's ask): with no S4E_ENGINE the lane is the coo's and the key is
-# the bare snobol4-rungs, and from-progress for the bare sno-rungs key reads none of the @dotnet rows.
+# the bare snobol4-rungs, and from-progress for the bare sno-rungs key reads none of the @dotnet rows. (9) THE jvm ARM, the same law for the
+# second port (hq_jvm; Lon 2026-10-17 to hq_jvm: "The suite banner should represent the snobol4jvm program, not SCRIP."): snobol4 under jvm
+# is hq_jvm's lane; hq_jvm under S4E_ENGINE=jvm is admitted, dispatched to run_snobol4jvm.sh (a stub java host over a stub uberjar), keys
+# every row snobol4-rungs@jvm and names the jar as its binary; hq_dotnet under jvm is refused; snocone under jvm and a jar older than the
+# snobol4jvm source each refuse the board rc 2 before any entry.
 set -u
 unset S4E_DONE_WHEN_RUN S4E_ONE_RUNNER_OVERRIDE S4E_ONE_RUNNER_FIXTURE S4E_SEAT S4E_ENGINE S4E_BIN_AT_START S4E_CORPUS_ROOT
 H="$(cd "$(dirname "$0")" && pwd)"; L="$H/lib_one_runner.sh"; G=one_runner_admits_a_port_engine; fail=0; examined=0
-[ -r "$L" ] && [ -r "$H/corpus_suite_harness.py" ] && [ -r "$H/run_snobol4dotnet.sh" ] || { echo "REFUSE(2) [$G]: the guard, the harness or run_snobol4dotnet.sh is missing beside this gate -- cannot measure"; exit 2; }
+[ -r "$L" ] && [ -r "$H/corpus_suite_harness.py" ] && [ -r "$H/run_snobol4dotnet.sh" ] && [ -r "$H/run_snobol4jvm.sh" ] || { echo "REFUSE(2) [$G]: the guard, the harness, run_snobol4dotnet.sh or run_snobol4jvm.sh is missing beside this gate -- cannot measure"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 arm() { examined=$((examined+1)); if eval "$2"; then echo "  ok   $1"; else echo "  FAIL $1"; fail=$((fail+1)); fi; }
 
 # the scratch law: SCRIP's bare lanes beside the port lanes (snocone@dotnet exists only so arm 7a reaches the runner's own refusal)
-mkdir -p "$T/post"; printf 'TENET\n# scratch MODE for %s\nLANES: snobol4=coo icon=coo snocone=coo snobol4@dotnet=hq_dotnet snocone@dotnet=hq_dotnet\n' "$G" > "$T/post/MODE"
+mkdir -p "$T/post"; printf 'TENET\n# scratch MODE for %s\nLANES: snobol4=coo icon=coo snocone=coo snobol4@dotnet=hq_dotnet snocone@dotnet=hq_dotnet snobol4@jvm=hq_jvm snocone@jvm=hq_jvm\n' "$G" > "$T/post/MODE"
 # sourced, never named as $0: the library runs its own CLI (and prints its usage) when BASH_SOURCE[0] is $0
 who() { S4E_POST="$T/post" S4E_ENGINE="$1" WHO_LIB="$L" WHO_LANG="$2" bash -c '. "$WHO_LIB"; one_runner_who "$WHO_LANG"'; }
 arm "1a snobol4 under dotnet is hq_dotnet's lane"        '[ "$(who dotnet snobol4)" = hq_dotnet ]'
@@ -79,6 +83,24 @@ arm "8b the bare sno-rungs assembly reads none of the @dotnet rows"   'assemble 
 sed 's/\tsnobol4-rungs@dotnet\t/\tsnobol4-rungs\t/' "$T/admitted.tsv" > "$T/bare_control.tsv"
 arm "8c CONTROL: the same rows under the bare key are read (2 of 2)"  'assemble "$T/bare_control.tsv" | grep -q " read=2 unread=0 "'
 
-[ $examined -ge 18 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 18 declared arms"; exit 2; }
+# the jvm arm: a stub snobol4jvm tree whose jar is built after its source, and a stub java host that prints nothing
+JS="$R/snobol4jvm"; mkdir -p "$JS/src/SNOBOL4clojure" "$JS/target/uberjar"
+printf '(ns SNOBOL4clojure.core)\n' > "$JS/src/SNOBOL4clojure/core.clj"; printf '(defproject stub "0")\n' > "$JS/project.clj"
+touch -d '2 minutes ago' "$JS/src/SNOBOL4clojure/core.clj" "$JS/project.clj"
+printf 'stub jar\n' > "$JS/target/uberjar/SNOBOL4clojure-0.2.0-standalone.jar"
+printf '#!/bin/sh\nexit 0\n' > "$T/bin/java"; chmod +x "$T/bin/java"
+arm "9a snobol4 under jvm is hq_jvm's lane"                            '[ "$(who jvm snobol4)" = hq_jvm ]'
+rc="$(run hq_jvm jvm "$T/jvm.tsv")"
+arm "9b hq_jvm under jvm is admitted, its rows keyed snobol4-rungs@jvm (rc $rc)" '[ "$rc" = 0 ] && [ "$(rows "$T/jvm.tsv" snobol4-rungs@jvm)" -eq 2 ] && [ "$(rows "$T/jvm.tsv" snobol4-rungs)" -eq 0 ]'
+arm "9c the board names the jar as its binary"                          'grep -q "md5/12 of SNOBOL4clojure-0.2.0-standalone.jar; engine jvm" "$T/out"'
+rc="$(run hq_dotnet jvm "$T/jvm_dotnet.tsv")"
+arm "9d hq_dotnet under jvm is refused rc 2 (got $rc)"                  '[ "$rc" = 2 ] && [ "$(rows "$T/jvm_dotnet.tsv" snobol4-rungs@jvm)" -eq 0 ]'
+rc="$(run hq_jvm jvm "$T/jvm_snc.tsv" m3 snocone)"
+arm "9e snocone under jvm refuses the board rc 2 (got $rc)"             '[ "$rc" = 2 ] && grep -q "NO ENGINE for snocone" "$T/out" && [ ! -s "$T/jvm_snc.tsv" ]'
+touch "$JS/src/SNOBOL4clojure/core.clj"
+rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
+arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
+
+[ $examined -ge 24 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 24 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
