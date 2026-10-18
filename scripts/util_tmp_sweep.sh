@@ -19,22 +19,27 @@
 # a shorter cutoff to session scratchpads of a seat MODE's ROSTER line does not name (a stood-down seat runs nothing) --
 # the ceo's reading of Lon's order this day, default 0 (off) so the grant's 48 h is the rule unless the caller says so.
 #
+# (5) ANONYMOUS SCRATCH (ceo CEO-1842, 2026-10-18 17:0x CDT, measured: 15 GB of mktemp debris under 48 h -- a1.A.bin bench trees,
+# verify_s_owed.XXXXXX, tmp.XXXXXXXXXX from gates killed on their timeout -- while /tmp read 22G): an entry whose NAME is a mktemp
+# pattern (tmp.XXXXXXXXXX, tmpXXXXXXXX, <word>.XXXXXX) has no owner but the run that made it, so it is dead when that run is: no live
+# process has its cwd or an OPEN FILE inside it and nothing in it is newer than --scratch-hours N (default 3; 0 turns the arm off).
+# A named entry keeps the 48 h rule. The receipt counts these as scratch=<n> scratch_mb=<mb>.
 # USE: bash harness/scripts/util_tmp_sweep.sh            # dry run: what would go, by class, with bytes
 #      bash harness/scripts/util_tmp_sweep.sh --apply    # delete it, print the receipt line, append it to the ledger
 # RECEIPT: TMP_SWEEP applied=<0|1> cutoff_hours=<h> entries=<n> freed_mb=<mb> sessions=<n> session_mb=<mb> free_after=<...>
 # LEDGER: /home/resources/progress/TMP-SWEEP.tsv (one row per --apply), folded into GOAL-CFO.md by the ceo per sitting.
 # EXIT: 0 swept or nothing to sweep; 2 refused (not on this box's layout, or /tmp unreadable).
 set -u
-HOURS=48; DEAD_H=0; APPLY=0
-while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --hours) HOURS="$2"; shift;; --dead-sessions-hours) DEAD_H="$2"; shift;;
+HOURS=48; DEAD_H=0; SCR_H=3; APPLY=0
+while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --hours) HOURS="$2"; shift;; --dead-sessions-hours) DEAD_H="$2"; shift;; --scratch-hours) SCR_H="$2"; shift;;
   -h|--help) sed -n '2,30p' "$0"; exit 0;; *) echo "REFUSE(2): unknown argument $1" >&2; exit 2;; esac; shift; done
 [ -d /tmp ] && [ -r /tmp ] || { echo "REFUSE(2): /tmp unreadable"; exit 2; }
 LEDGER=/home/resources/progress/TMP-SWEEP.tsv
 PO=/home/resources/postoffice
 ROSTER="$(grep -m1 '^ROSTER:' "$PO/MODE" 2>/dev/null | sed 's/^ROSTER://')"
-python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" <<'PYEOF'
+python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" "$SCR_H" <<'PYEOF'
 import os, sys, time, shutil, subprocess, datetime
-hours = float(sys.argv[1]); dead_h = float(sys.argv[2]); apply = sys.argv[3] == "1"; ledger = sys.argv[4]; roster = set(sys.argv[5].split())
+hours = float(sys.argv[1]); dead_h = float(sys.argv[2]); apply = sys.argv[3] == "1"; ledger = sys.argv[4]; roster = set(sys.argv[5].split()); scr_h = float(sys.argv[6])
 now = time.time(); cutoff = now - hours * 3600
 KEEP_PREFIX = (".", "systemd-", "snap.", "tmux-", "ssh-", "si_objs", "claude-1000", "pulse-", "dbus-", "Temp-")
 def newest_in(path, limit=400000):
@@ -55,11 +60,23 @@ def newest_in(path, limit=400000):
 def size_kb(path):
     try: return int(subprocess.run(["du", "-xsk", path], capture_output=True, text=True).stdout.split("\t")[0])
     except Exception: return 0
-live_cwd = set()
+live_cwd = set(); live_fd = set()
 for p in os.listdir("/proc"):
     if not p.isdigit(): continue
     try: live_cwd.add(os.readlink("/proc/%s/cwd" % p))
     except OSError: pass
+    try:
+        for fd in os.listdir("/proc/%s/fd" % p):
+            try:
+                t = os.readlink("/proc/%s/fd/%s" % (p, fd))
+                if t.startswith("/tmp/"): live_fd.add(t)
+            except OSError: pass
+    except OSError: pass
+import re
+SCRATCH = re.compile(r"^(tmp\.[A-Za-z0-9]{6,}|tmp[a-z0-9_]{6,}|[A-Za-z0-9_-]+\.[A-Za-z0-9]{6})$")
+def held_fd(path):
+    pre = path.rstrip("/") + "/"
+    return any(c == path or c.startswith(pre) for c in live_fd)
 def held(path):
     pre = path.rstrip("/") + "/"
     return any(c == path or c.startswith(pre) for c in live_cwd)
@@ -68,6 +85,8 @@ for name in sorted(os.listdir("/tmp")):
     if name.startswith(KEEP_PREFIX): continue
     path = "/tmp/" + name
     if held(path): continue
+    if SCRATCH.match(name) and scr_h > 0 and os.path.isdir(path) and not held_fd(path) and newest_in(path) < now - scr_h * 3600:
+        victims.append(("scratch", path, size_kb(path))); continue
     if newest_in(path) >= cutoff: continue
     victims.append(("entry", path, size_kb(path)))
 sessions = []
@@ -92,7 +111,7 @@ if os.path.isdir(root):
             if down and dead_h > 0: lim = max(lim, now - dead_h * 3600)
             if newest_in(p) >= lim: continue
             sessions.append(("session", p, size_kb(p)))
-freed = 0; sfreed = 0
+freed = 0; sfreed = 0; scr_n = 0; scr_kb = 0
 for kind, path, kb in victims + sessions:
     age_h = (now - newest_in(path)) / 3600
     print("%-8s %8.1fM %6.1fh %s" % (kind, kb / 1024, age_h, path))
@@ -102,10 +121,11 @@ for kind, path, kb in victims + sessions:
             else: os.unlink(path)
         except OSError as e: print("   not removed: %s" % e); continue
     if kind == "entry": freed += kb
+    elif kind == "scratch": freed += kb; scr_n += 1; scr_kb += kb
     else: sfreed += kb
 st = os.statvfs("/tmp"); free_after = st.f_bavail * st.f_frsize / 1048576
-line = "TMP_SWEEP applied=%d cutoff_hours=%g dead_sessions_hours=%g entries=%d freed_mb=%d sessions=%d session_mb=%d free_after_mb=%d" % (
-    1 if apply else 0, hours, dead_h, len(victims), freed // 1024, len(sessions), sfreed // 1024, free_after)
+line = "TMP_SWEEP applied=%d cutoff_hours=%g dead_sessions_hours=%g scratch_hours=%g entries=%d freed_mb=%d scratch=%d scratch_mb=%d sessions=%d session_mb=%d free_after_mb=%d" % (
+    1 if apply else 0, hours, dead_h, scr_h, len(victims), freed // 1024, scr_n, scr_kb // 1024, len(sessions), sfreed // 1024, free_after)
 print(line)
 if apply:
     try:
