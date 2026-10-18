@@ -44,10 +44,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # (FINDING-2026-08-24-hq_C-the-regrid-turned-a-red-board-green.md).
 # Exit: 0 iff FAIL3=0 and FAIL4=0 and SKIP(cc)=0 over the printed denominator (verdict = matches the oracle).
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 SUITE="${SNOFLAKE_SUITE:-$ROOT/corpus/packages/snobol4/snoflake_suite}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8s}"; ARM_SBL="${ARM_SBL:-1}"; ARM_CSN="${ARM_CSN:-1}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE — a missing corpus is not a green board"; exit 2; }
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each fixture runs in m3 alone with its declared heap and stack as switches, its rows are keyed snoflake@<engine>
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=snoflake; [ "$PORT" = 1 ] && ROWKEY="snoflake@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP — build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
 # does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
@@ -57,6 +64,7 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8s}"; ARM_SBL="${ARM_SB
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
 "$HERE/util_require_fresh.sh" --gate test_snoflake_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
+fi
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable"; exit 2; }
 SBL=""
@@ -141,9 +149,10 @@ BASE=0; BASE_BOTH=0; OUTSIDE_N=0; OUTSIDE_LIST=""; OUTSIDE_TSV="$SUITE/OUTSIDE_S
 # every pattern here silently moves fixtures OUT of the denominator, which is the direction that
 # flatters the board. One pattern per line, each with the date and seat that measured it.
 ORACLE_REFUSAL_RE='No END statement found in source file'   # measured 2026-09-08 (ceo, coo)
-prog_row() { printf 'package\tsnoflake\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
+prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tsnoflake\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
 verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then echo CRASH; else echo FAIL; fi; }
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
 DIA=0; DIAL=""; ORACLE_OUT=""; ORACLE_MEETS_EXPECT=0; P3=0; F3=0; P4=0; F4=0; S4=0; PS=0; FS=0; PC=0; FC=0; N3P=0; N3F=0; N4P=0; N4F=0; NSP=0; NSF=0; NCP=0; NCF=0
 FL3=""; FL4=""; FLS=""; FLC=""; OPTS_LIST=""; TOTAL=0
@@ -285,7 +294,8 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         # Identical class to the Arizona runner's cure (SCRIP 3bb0a210c).
         m3)  cp -pf "$2" "$RUN/f.sno"
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
-             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca f.sno < "$inp" 2>&1)"; RC=$?;;
+             local sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
+             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1)"; RC=$?;;
         m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1)"; RC=$?;;
         # ⛔⭐ THE ORACLE IS HANDED A SHORT NAME, NEVER THE ABSOLUTE PATH, AND IT IS A GRADING BUG IF YOU
         # "TIDY" THIS BACK (hq_B 2026-09-04, measured). SPITBOL formats its diagnostic as
@@ -371,8 +381,9 @@ for sno in "$SUITE"/*.sno; do
         [ "$ORACLE_MEETS_EXPECT" = 0 ] && { DIA=$((DIA+1)); DIAL="$DIAL $name"; }
     else [ "$NSTD" = 1 ] && N3F=$((N3F+1)) || { F3=$((F3+1)); FL3="$FL3 $name"; }
         OUT3="$(verdict_of "$RC")"; NOTE3="rc=$RC vs sbl -bf"; [ "$NSTD" = 1 ] && { NOTE3="@nonstandard by snoflake's own header, yet SPITBOL runs it, so it is graded in the baseline; $NOTE3"; }; fi
-    _t0="$(progress_clock)"; compile_m4 "$sno" "$W/prog.bin"; m4rc=$?; OUT4=""; NOTE4=""
-    if [ "$m4rc" -eq 0 ]; then
+    _t0="$(progress_clock)"; OUT4=""; NOTE4=""; m4rc=3; [ "$PORT" = 1 ] || { compile_m4 "$sno" "$W/prog.bin"; m4rc=$?; }
+    if [ "$PORT" = 1 ]; then :   # a port has no mode 4: no compile, no row
+    elif [ "$m4rc" -eq 0 ]; then
         run_one m4 "$sno"; M4RC=$RC
         if oracle_equal "$(mask_apply "$GOT")" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
             if [ "$OE_KIND" = exact ]; then OUT4=PASS; else OUT4=UNGRADED; NOTE4="error_number_only: same ERROR number as sbl -bf, stream differs (narrower instrument)"; fi
@@ -389,9 +400,9 @@ for sno in "$SUITE"/*.sno; do
     [ "${M3RC:-0}" -eq 124 ] && { OUT3=HANG; NOTE3="SCRIP hit the $TIMEOUT timeout; $NOTE3"; }
     [ "${M4RC:-0}" -eq 124 ] && { OUT4=HANG; NOTE4="SCRIP hit the $TIMEOUT timeout; $NOTE4"; }
     [ "$OUT3" = PASS ] && ST3=$((ST3+1)); [ "$OUT4" = PASS ] && ST4=$((ST4+1))
-    [ "$OUT3" = PASS ] && [ "$OUT4" = PASS ] && BOTH_STREAM=$((BOTH_STREAM+1))
+    [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH_STREAM=$((BOTH_STREAM+1))   # a port's AND is its one mode
     if [ "$OUTSIDE" = 1 ]; then OUT3=UNGRADED; OUT4=UNGRADED; NOTE3="OUTSIDE_SPITBOL_BASELINE: SPITBOL itself does not run it -- $OERR"; NOTE4="$NOTE3"
-    elif [ "$OUT3" = PASS ] && [ "$OUT4" = PASS ]; then BASE_BOTH=$((BASE_BOTH+1)); fi
+    elif [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; }; then BASE_BOTH=$((BASE_BOTH+1)); fi
     ROW_S4="$(progress_secs_since "$_t0")"
     prog_row "$name" m3 "$OUT3" "$NOTE3"; prog_row "$name" m4 "$OUT4" "$NOTE4"
     if [ -n "$CSN" ]; then
@@ -400,7 +411,7 @@ for sno in "$SUITE"/*.sno; do
         else [ "$NSTD" = 1 ] && NCF=$((NCF+1)) || { FC=$((FC+1)); FLC="$FLC $name"; }; fi
     fi
 done
-echo "── snoflake_suite: $TOTAL fixtures · SCRIP $SCRIP_HASH · corpus $CORP_HASH · RT_OPT -O0 · timeout -k 5 $TIMEOUT · graded vs the ORACLE sbl -bf (ceo CEO-251); @expect is informational and drives only the dialect tally"
+echo "── snoflake_suite: $TOTAL fixtures · $TREE_LABEL · corpus $CORP_HASH · RT_OPT -O0 · timeout -k 5 $TIMEOUT · graded vs the ORACLE sbl -bf (ceo CEO-251); @expect is informational and drives only the dialect tally"
 echo "mode-3 (--run):     PASS=$P3 FAIL=$F3  NSTD $N3P/$((N3P+N3F))  stream_equality=$SE3 error_number_only=$EN3"
 echo "mode-4 (--compile): PASS=$P4 FAIL=$F4 SKIP(cc)=$S4  NSTD $N4P/$((N4P+N4F))"
 # ⭐ THE SUITE-TABLE READING (ceo-372: the AND per program; CEO-383: the stream-equal basis -- the PASS= counts above
@@ -454,13 +465,14 @@ fi
 if [ "$PROG_RECORD" = 1 ]; then
     progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS ROWS NOT RECORDED (writer rc=$? above) -- a run that leaves the table untouched is a defect of that run (progress/README.md), not a red board" >&2
 else echo "progress: scratch suite $SUITE -- $(grep -c . "$PROG_ROWS") row(s) NOT recorded (only the canonical suite, or S4E_PROGRESS_DB, records)"; fi
-rr_selected && { rr_end snoflake; exit 0; }   # a chunk or a request writes its rows and no suite row (CEO-1802)
+rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request writes its rows and no suite row (CEO-1802)
 # ⛔ ONE LEADERBOARD (RULES.md FACT RULE, Lon 2026-09-03 ~16:05). Records what this script just
 # measured into .github/SCORE.md; runs nothing itself. Non-fatal: a bookkeeping failure must never
 # turn a real measurement into a red board. Matches the other package suites (Arizona/JCON/fpc/GNU/SWI);
 # this one and csnobol4_suite's own runner were the two missing it (board-packages-into-make-test-
 # reported-then-blocking, seat13 2026-09-03).
-if [ "$SUITE" != "$CANON_SUITE" ]; then echo "SCORE.md: scratch suite $SUITE -- not written (only the canonical suite records the leaderboard)"; else
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+elif [ "$SUITE" != "$CANON_SUITE" ]; then echo "SCORE.md: scratch suite $SUITE -- not written (only the canonical suite records the leaderboard)"; else
 # ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749): the
 # row publishes PASS over SHIPPED = the baseline fixtures plus the $OUTSIDE_N outside the SPITBOL baseline, OUTSIDE=k named and
 # stamped through lib_outside_shape.sh. Before this it read $BASE_BOTH/$BASE with 56 programs listed outside.
