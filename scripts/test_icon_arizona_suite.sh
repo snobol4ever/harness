@@ -180,6 +180,15 @@ done
 # this run's litter, not pre-existing content -- removed by plain `rm`, never `git clean` (no destructive
 # git verb needed or wanted for a known, self-caused, named set of new files).
 PRESNAP_FILE=$(mktemp)
+# ⛔ A SHIPPED FILE A PROGRAM REWRITES IS PUT BACK TOO (coo 2026-10-18): general/foo.baz is a TRACKED file of the package, so the
+# new-file sweep below never saw fncs1/checkc append to it; the corpus stayed modified, util_score_row refused the GNU row on the
+# dirty tree (10-17 21:38) and the coo's regen stopped the verifier loop for 11 h (10-17 22:27). Every shipped file is copied
+# aside before grading and restored by NAME after it when its bytes moved -- a plain cp of this run's own snapshot, no git verb.
+PRESAVE="$RUNDIR/presave"
+for sub in $SUITE_SUBDIRS; do
+  [ -d "$PKG/$sub" ] || continue
+  mkdir -p "$PRESAVE/$sub" && cp -pR "$PKG/$sub/." "$PRESAVE/$sub/" || { echo "⛔ GATE REFUSES: cannot snapshot $PKG/$sub" >&2; exit 2; }
+done
 for sub in $SUITE_SUBDIRS; do
   d="$PKG/$sub"
   [ -d "$d" ] || continue
@@ -427,6 +436,10 @@ for sub in $SUITE_SUBDIRS; do
   comm -13 <(sort "$PRESNAP_FILE") <(sort "${PRESNAP_FILE}.post") | while IFS= read -r new; do
     [ -n "$new" ] && rm -f -- "$PKG/$new"
   done
+done
+( cd "$PRESAVE" && find . -type f ) | while IFS= read -r f; do
+  f="${f#./}"
+  cmp -s "$PRESAVE/$f" "$PKG/$f" || { cp -p "$PRESAVE/$f" "$PKG/$f" && echo "  restored $f (a graded program rewrote this shipped file)"; }
 done
 rm -f "$PRESNAP_FILE" "${PRESNAP_FILE}.post"
 
