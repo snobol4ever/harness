@@ -112,7 +112,13 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # ladder__rung02_proc_an_if_case_block_or_limitation_is_a_variable_when_its_arm_is); w_control_structures is deleted, w_return_forms stays
 # loose only because hq_zetas' live row spine-zd-planner-arms-... compiles it by path (tests/icon/PENDING.md re-points its deferral there,
 # and the builder's regenerated ALL.excluded.txt records it, so this census no longer counts it an orphan).
-FLOOR_icon=0 FLOOR_pascal=0 FLOOR_prolog=0 FLOOR_raku=0 FLOOR_rebus=0 FLOOR_snobol4=39 FLOOR_snocone=0
+# ⭐ FLOOR_snobol4 39 -> 1 (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-unabsorbed-census-
+# reads-zero): 38 of the 39 pairs are master entries now (corpus 6fed95b5c, 542589286, f1ac5ce03 and the landings after it) and
+# ORPHANED-WITNESSES.tsv is regenerated; the gates that compiled them by path extract them from the master by origin. The one left is
+# nested_arbno_rpos: it SIGSEGVs again in both modes (rc 139) where sbl -bf prints match, first bad e53f5dcd6 (the spine flip; its
+# parent prints match 3 of 3 per mode), and the builder absorbs a red pair only as an auto-minted XFAIL (the class named below), so it
+# stays loose until the flip's cure lands and is absorbed green then.
+FLOOR_icon=0 FLOOR_pascal=0 FLOOR_prolog=0 FLOOR_raku=0 FLOOR_rebus=0 FLOOR_snobol4=1 FLOOR_snocone=0
 out="$(python3 ../harness/scripts/util_orphaned_witness_census.py "$CORPUS" --counts 2>&1)" || { echo "⛔ GATE REFUSES(2): census generator failed:"; echo "$out"; exit 2; }
 printf %s "$out" | grep -q . || { echo "⛔ GATE REFUSES(2): census produced NO output -- an empty census is not a green board"; exit 2; }
 rc=0 tot=0 seen=0
