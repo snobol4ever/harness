@@ -798,6 +798,7 @@ test_gate_pl_occurs_check_error_raises_on_every_unify_road.sh	WIRED	-	-	-
 test_gate_pl_only_tree_t_crosses_parser_to_lower.sh	WIRED	-	-	-
 test_gate_pl_open_a_file_it_may_not_open_is_a_permission_error.sh	WIRED	-	-	-
 test_gate_pl_outside_the_swi_dialect_predicate_property_answers_the_meta_predicate_template_of_a_builtin_and_a_declared_predicate.sh	WIRED	-	-	-
+test_gate_pl_phrase_of_a_non_callable_body_is_a_callable_type_error_as_both_oracles.sh	WIRED	-	-	-
 test_gate_pl_pipe_2_and_open_null_stream_1_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_port_trace_oracle_diff.sh	WIRED	-	-	-
 test_gate_pl_portray_reaches_every_subterm_of_print_and_write_term.sh	WIRED	-	-	-
