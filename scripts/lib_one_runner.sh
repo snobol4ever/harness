@@ -171,8 +171,12 @@ one_runner_port_ready() {   # one_runner_port_ready <lang>
 # snobol4dotnet mimics SPITBOL exactly (Lon 2026-10-18, in-chat to hq_dotnet, verbatim: "The snobol4dotnet is meant to mimic SPITBOL exactly.
 # So make decisions based on that. This however is not true of snobol4jvm."), and SPITBOL's TIME() is milliseconds (the manual: "Returns the
 # execution time in milliseconds"; Dewar and Emmer's zystm), where the fleet's own SPITBOLs answer nanoseconds by NS-TIME (x64 ec80390).
+# snobol4jvm is no SPITBOL mimic (the same words), so its unit is measured, not borrowed: its TIME() is System/currentTimeMillis
+# (src/SNOBOL4clojure/functions.clj), milliseconds counted from the epoch rather than from the program's start -- a wrapper's
+# difference of two readings is exact, a program printing TIME() itself is not SPITBOL's reading (hq_jvm 2026-10-18: a loop until
+# TIME() - T0 reaches 1500 ran 2.51 s against a 1.03 s empty start).
 # Nothing for an engine whose unit is not declared here: its runner leaves the TIME()-budgeted angle unrun and says so.
-one_runner_port_time_unit_ns() { case "$(one_runner_engine)" in dotnet) printf 1000000;; esac; }
+one_runner_port_time_unit_ns() { case "$(one_runner_engine)" in dotnet|jvm) printf 1000000;; esac; }
 # one_runner_port_tree -- the port engine's checkout as a board line names it, "<engine> <short hash>[-dirty]": the git toplevel of the
 # driver its runner's --paths names first, the tree its progress rows pin (util_progress_append.py), so a port's board never prints SCRIP's
 one_runner_port_tree() {
