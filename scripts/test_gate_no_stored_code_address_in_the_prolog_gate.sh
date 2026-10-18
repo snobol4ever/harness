@@ -49,7 +49,7 @@
 # soft cut and is superseded for catch/3. The census stays a list of NAMED lowerings, so the exception stays enforceable.
 # EXIT 0 all arms green; 1 an arm red (named); 2 REFUSED -- could not measure, never a quiet pass.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSED (rc=2): no $SCRIP -- nothing was checked" >&2; exit 2; }
 # ⛔ THE STALE-BINARY GUARD, ADDED 2026-09-13 BY hq_R (not this gate's author): arm 2 runs ./scrip, and

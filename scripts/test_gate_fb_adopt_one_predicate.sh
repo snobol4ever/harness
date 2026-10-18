@@ -23,7 +23,7 @@
 # EXIT 0 = one definition site and no re-derivation.  EXIT 1 = a copy came back.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT" || exit 1
 DEF_FILE="src/emitter/emit.h"
 DEF_FN="emit_heap_fb_adopt"

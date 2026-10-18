@@ -53,7 +53,7 @@
 # not), rc=2 UNPROVEN (no oracle, no fresh binary, a missing fixture, or a zero denominator -- never printed
 # as a pass).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
 GATE_NAME=sno_define_redefinition_per_binding_dispatch
 . "$HERE/lib_oracle_flags.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_oracle_flags.sh unavailable"; exit 2; }

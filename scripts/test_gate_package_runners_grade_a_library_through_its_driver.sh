@@ -23,7 +23,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: three package runners invoked 
 # shipped programs and record their names.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (an oracle or the fixture could not be built -- nothing was measured).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED(2): lib_oracle_flags.sh unloadable"; exit 2; }
 ICONT="$(icont_bin 2>/dev/null)"; ICONX="$(iconx_bin 2>/dev/null)"; SBL="$(sbl_correctness_bin 2>/dev/null)"
 for b in "$ICONT" "$ICONX" "$SBL"; do [ -n "$b" ] && [ -x "$b" ] || { echo "⛔ REFUSED(2): an oracle is missing (icont='$ICONT' iconx='$ICONX' sbl='$SBL') -- a ref cannot be cut, so nothing can be graded"; exit 2; }; done

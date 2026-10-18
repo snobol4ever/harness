@@ -23,7 +23,7 @@
 # HERMETIC: arms 1-8 run against a SCRATCH root (tiny src/, a Makefile, ../harness/scripts/ and scrip symlinked in) so the live
 # out/build_behaviour.sig is never written and no rebuild is needed. ~1s, offline.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 GATE_NAME="build_freshness_is_behavioural"; export GATE_NAME
 PASS=0; FAIL=0

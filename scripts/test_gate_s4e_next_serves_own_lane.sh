@@ -33,6 +33,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUT="${SUT:-$HERE/s4e_msg.sh}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$SUT" ] || refuse "picker under test not found: $SUT"
+[ -x "$HERE/../../SCRIP/scrip" ] || refuse "no built SCRIP beside harness at $HERE/../../SCRIP (a port root): the picker's dispatch probe reads SCRIP/scrip, so lane serving cannot be measured here"
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_lane.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"

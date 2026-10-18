@@ -51,7 +51,7 @@
 # rc=0 CLEAN (every witness matches its oracle-cut ref in BOTH modes), rc=1 VIOLATION, rc=2 UNPROVEN (no
 # oracle, no fresh binary, a missing witness, or a zero denominator -- never printed as a pass).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
 GATE_NAME=sno_pattern_position_expression
 . "$HERE/lib_oracle_flags.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_oracle_flags.sh unavailable"; exit 2; }

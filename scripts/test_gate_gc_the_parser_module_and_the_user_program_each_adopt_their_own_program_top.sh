@@ -13,7 +13,7 @@
 # else the arm proves nothing and the gate refuses) and exits 0; (b) mode 3 under the module stage equals sbl; (c) (b) under SCRIP_GC_STRESS=1
 # SCRIP_GC_CHAIN_CHECK=1. Two-part proof: on 68afc1b19 arm (a) aborts rc 134; with (1) alone arm (b) refuses top-above-segment; green here.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G="$(basename "${BASH_SOURCE[0]}" .sh)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G="$(basename "${BASH_SOURCE[0]}" .sh)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2) [$G]: cannot load lib_oracle_flags.sh"; exit 2; }
 SBL="$(sbl_correctness_bin)" || { echo "⛔ GATE REFUSE(2) [$G]: no SPITBOL correctness oracle"; exit 2; }

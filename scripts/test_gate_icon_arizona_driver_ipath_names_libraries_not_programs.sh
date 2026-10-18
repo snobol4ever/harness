@@ -14,7 +14,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona runner invoked as 
 #      library's call of helper, m3, so L's PASS is the mirror's doing and not a fixture that cannot fail.
 #   S  the runner's driver IPATH names LIBPATH, and LIBPATH skips an .icn that declares procedure main.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=test_gate_icon_arizona_driver_ipath_names_libraries_not_programs
 SCRIP="$ROOT/scrip"; R="$HERE/test_icon_arizona_suite.sh"
 [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: scrip not built"; exit 2; }

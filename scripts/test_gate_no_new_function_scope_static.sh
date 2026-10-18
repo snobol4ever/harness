@@ -49,7 +49,7 @@
 # in the SAME commit. This script never rewrites the baseline itself.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 CENSUS_ROOT="${FSS_ROOT:-$ROOT/src/runtime}"
 BASELINE="${FSS_BASELINE:-$HERE/func_scope_static_baseline.tsv}"
 CENSUS="$HERE/util_census_function_scope_statics.py"

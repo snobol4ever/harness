@@ -34,7 +34,7 @@
 #   --informational: print hazard surface + collision class, exit 0 regardless of collisions.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 strict=1   # V2-5 (gate honesty): STRICT IS THE DEFAULT.  Nothing in ../harness/scripts/ ever passed --strict,
 [ "${1:-}" = "--informational" ] && strict=0   # so the enforcement arm was unreachable and this gate could not say no.

@@ -46,7 +46,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # rejected. Curing a leaf means moving it to PL_CTX_LEAF_BALL, never adding it here.
 # EXIT 0 every ball-capable leaf reads its ball; 1 at least one drops it (named, with path); 2 REFUSED.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SRC="$ROOT/src"
 ASM="$SRC/runtime/rtx/rtx_plunify.s"
 WAIVERS="$HERE/pl_ctx_leaf_ball_waivers.txt"

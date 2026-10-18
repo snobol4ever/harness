@@ -22,7 +22,7 @@
 # that cannot safely re-enter itself (the recursive call landed with _setexit_label already cleared,
 # which made the original bug's silent double-absorption invisible instead of loud).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S="$ROOT/scrip"
 [ -x "$S" ] || { echo "⛔ GATE REFUSES: no $S -- make first. A missing binary proves NOTHING about this defect."; exit 2; }
 if ! . "$HERE/lib_gate.sh" 2>/dev/null || ! command -v gate_require_fresh >/dev/null 2>&1; then

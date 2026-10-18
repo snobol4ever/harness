@@ -11,7 +11,7 @@
 # which is the [ZHP] "CORRUPTED LENGTH" path.  With the arm: 16 of 16 green (stress 0,1,3,5 x m3,m4 x arena 1 MB and 512 MB).
 # The .ref is cut from the Arizona oracle (icont -s -x), never from ./scrip.  A stale binary or a missing witness REFUSES rc=2.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=gc_a_bignum_held_only_in_a_heap_aggregate_survives

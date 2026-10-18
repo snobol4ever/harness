@@ -16,7 +16,7 @@
 # here would freeze a defect into a gate. Guard the leak; do not bless the bug.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 NAME=icn_range_operands_must_be_integers
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }

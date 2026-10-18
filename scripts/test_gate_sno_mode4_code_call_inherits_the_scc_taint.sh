@@ -19,7 +19,7 @@
 # Fail-once (2026-09-07 13:1x CDT, coo, MEASURED by rebuilding with the pre-cure driver): 4 of 10 red -- T, S and F in mode 4 (ERROR 022)
 # and the T assembly arm (no mark); mode 3 and the untainted U stay green, as they must.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 . "$HERE/lib_gate.sh"; gate_parse_args "$@"
 G=sno_mode4_code_call_inherits_the_scc_taint
 "$HERE/util_require_fresh.sh" --gate test_gate_$G "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$G]: this tree's binary is stale or unbuilt -- run make"; exit 2; }

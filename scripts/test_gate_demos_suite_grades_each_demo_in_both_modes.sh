@@ -17,7 +17,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: test_demos_suite.sh invoked on
 # runner's concatenation line replaced by a no-op (the chained demo reads m3=FAIL,m4=FAIL, 12 rows with two FAIL), 2026-09-27.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (the fixture could not be built).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=demos_suite_grades_each_demo_in_both_modes
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSED(2) [$G]: no scrip binary -- make first"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?   # the runner it drives carries the same guard; the gate names it too (test_gate_runners_refuse_on_a_stale_binary)

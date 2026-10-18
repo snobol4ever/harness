@@ -50,7 +50,7 @@
 # the SHELL from grading the run, and does nothing about an ARITHMETIC that quietly uses a different limit
 # than the measurement did. A number's divisor is part of its label.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 SCRIP="$ROOT/scrip"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE(2): no ./scrip at $SCRIP -- nothing was checked" >&2; exit 2; }

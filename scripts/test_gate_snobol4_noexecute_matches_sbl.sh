@@ -7,7 +7,7 @@
 # FAIL_ONCE (recorded 2026-10-14, this tree with the lexer and lowerer change stashed): 8 of 14 runs RED -- noex_first, noex_late, noex_last print and exit 0 where sbl prints nothing and exits 231, noex_list loses the exit code; with the cure 14 of 14 agree.
 # EXIT 0 every witness in both modes; 1 a red (named); 2 REFUSED (oracle or build missing, or sbl does not answer as pinned).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_oracle_flags.sh"
 SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "REFUSED(2): correctness oracle missing ($SBL)"; exit 2; }
 [ -x "$ROOT/scrip" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "REFUSED(2): $ROOT/scrip or out/libscrip_rt.so not built"; exit 2; }

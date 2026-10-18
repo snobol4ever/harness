@@ -18,7 +18,7 @@
 # EXIT: 0 every arm passes · 1 an arm failed · 2 REFUSED (no binary, a toolchain failure).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"; RT_DIR="$ROOT/out"; NAME=m4_a_proc_the_startup_skips_keeps_its_compile_time_slot
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP"

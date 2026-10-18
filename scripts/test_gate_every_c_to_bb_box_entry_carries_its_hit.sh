@@ -36,7 +36,7 @@
 # to red on it.  A census that cannot fail is the instrument this gate exists to catch.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT" || exit 2
 
 ENTRY_PRIMS='rt_proc_enter|rt_proc_enter_named|rt_tiny_record_enter|rt_chain_enter|rt_chain_enter_v'

@@ -23,7 +23,7 @@
 # four-line witness hb_pl_an_if_then_else_commit_over_a_callees_choice_point_leaves_a_stale_frame_link.pl; when it closes, the
 # tolerance comes out of this gate. FAIL_ONCE=1 grades against a ref with its first line removed, so every arm must red.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G=pl_an_attributed_variable_wakes_inside_a_multi_goal_branch
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=pl_an_attributed_variable_wakes_inside_a_multi_goal_branch
 STALE_LINK_ROW=gc-an-if-then-else-commit-over-a-callees-choice-point-leaves-a-stale-frame-link-in-the-callers-map
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2

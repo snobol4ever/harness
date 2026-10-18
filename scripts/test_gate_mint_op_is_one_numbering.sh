@@ -29,7 +29,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # rc 0 green · 1 red · 2 could not measure.
 set -uo pipefail
 GATE=test_gate_mint_op_is_one_numbering
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 PASS=0; FAIL=0; N=0
 D=$(mktemp -d) || { echo "⛔ REFUSE(2) [$GATE]: no tmpdir"; exit 2; }
 trap 'rm -rf "$D"' EXIT

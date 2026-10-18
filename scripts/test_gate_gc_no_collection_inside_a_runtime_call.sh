@@ -24,7 +24,7 @@
 # reds; a declared caller that is gone reds too, so the list moves in the landing that earns it.  FAIL_ONCE=1 plants one.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 DECLARED="src/runtime/builtins/gen_runtime.c:rt_scan_enter"
 ENTRIES='rt_gc_point_arr_probe_c|rt_gc_point_arr_c|rt_gc_point_arr|rt_gc_point|rt_gc_poll_slow|rt_gc_collect_now'
 OWN='src/runtime/rt/gc_heap.c|src/runtime/rt/gc_heap.h|src/runtime/rt/rt_asm_helpers.S|src/runtime/rt/rtx/'

@@ -21,7 +21,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on
 #   present), G reds (the old arm read the post-mortem as UNSCORED: scored=0, rc 2) and R1/R2 red with it; the cure greens all nine.
 # EXIT: 0 every arm passes . 1 an arm is red . 2 REFUSED (no oracle, stale binary, the premise moved, no pre-cure runner in history)
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 GATE_NAME="$(basename "${BASH_SOURCE[0]}" .sh)"
 . "$HERE/lib_oracle_flags.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_oracle_flags.sh unavailable"; exit 2; }
 . "$HERE/lib_gate.sh"          || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_gate.sh unavailable"; exit 2; }

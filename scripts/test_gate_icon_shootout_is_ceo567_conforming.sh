@@ -21,7 +21,7 @@
 # ⛔ NOT A BOARD: it grades the five kernels of one directory and prints no suite pass/total.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 GATE="$(basename "${BASH_SOURCE[0]}" .sh)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(2) [$GATE]: lib_oracle_flags.sh unloadable"; exit 2; }

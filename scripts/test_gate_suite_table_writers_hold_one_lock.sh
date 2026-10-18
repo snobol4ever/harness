@@ -13,7 +13,7 @@
 # ⛔ FAILED ONCE (measured at the landing): on the scripts before the lock, arm 1 kept 1 of 4 and arms 2 and 3 went through a held lock.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (the fixture could not be built -- nothing measured).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; GH="$(cd "$ROOT/.." && pwd)/.github"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; GH="$(cd "$ROOT/.." && pwd)/.github"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh" || { echo "REFUSED(2): cannot load lib_suites_tsv.sh"; exit 2; }
 B="$GH/scripts/util_suite_banner.py"; R="$HERE/util_score_row.py"
 [ -f "$B" ] && [ -f "$SUITES_TSV_REAL" ] && [ -f "$GH/SCORE.md" ] && [ -f "$R" ] || { echo "⛔ REFUSED(2): $B, the shared SUITES.tsv, SCORE.md or util_score_row.py missing"; exit 2; }

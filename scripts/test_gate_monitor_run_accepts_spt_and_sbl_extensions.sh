@@ -11,7 +11,7 @@
 # THE WITNESS: a three-statement OUTPUT='hello' program, copied under all three extensions, run with --oracle. Must AGREE
 # identically (same step count, same AGREE/DIVERGE/UNGRADED) on .spt and .sbl as it already does on .sno.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSED(2): cannot load lib_gate.sh"; exit 2; }; GATE_NAME=monitor_run_accepts_spt_and_sbl_extensions
 gate_require_fresh "$ROOT" src "$ROOT/scrip" || exit 2
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSED(2): no $ROOT/scrip -- run make"; exit 2; }

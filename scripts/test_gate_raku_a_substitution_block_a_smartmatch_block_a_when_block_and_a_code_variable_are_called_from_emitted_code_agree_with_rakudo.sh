@@ -16,7 +16,7 @@
 # EXIT: 0 every witness matches in both modes with 0 non-open entries; 1 a mismatch, a crash or an entry; 2 REFUSED (stale binary, no gcc).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_a_substitution_block_a_smartmatch_block_a_when_block_and_a_code_variable_are_called_from_emitted_code_agree_with_rakudo"

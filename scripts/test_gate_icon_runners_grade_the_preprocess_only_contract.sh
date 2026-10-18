@@ -12,7 +12,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners i
 # ⛔ FAILED ONCE (measured at the landing): on the runners before the contract, arm 1 reads shipped=2 graded=0 and arm 2 graded=0.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (icont missing or the fixture could not be cut -- nothing measured).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED(2): lib_oracle_flags.sh unloadable"; exit 2; }
 ICONT="$(icont_bin 2>/dev/null)"; [ -n "$ICONT" ] && [ -x "$ICONT" ] || { echo "⛔ REFUSED(2): icont missing -- the contract's ref cannot be cut"; exit 2; }
 SCRATCH="${S4E_SCRATCH:-$(cd "$ROOT/.." && pwd)/.scratch}"; mkdir -p "$SCRATCH" || { echo "⛔ REFUSED(2): cannot create $SCRATCH"; exit 2; }

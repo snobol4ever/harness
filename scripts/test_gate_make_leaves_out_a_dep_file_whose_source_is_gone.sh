@@ -11,7 +11,7 @@
 #   4  the Makefile carries no by-name filter (grep -L on a source path) and names the awk.
 # Hermetic (mktemp, no build, no corpus), under a second. EXIT 0 all hold; 1 an arm failed; 2 could not measure.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=make_leaves_out_a_dep_file_whose_source_is_gone
 gate_parse_args "$@"

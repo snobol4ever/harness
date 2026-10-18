@@ -14,7 +14,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 #   - it began at 2a81a02db (the switch), where the graders started arming the statement hooks for every program.
 # EXIT 0 both modes print the oracle's line; 1 a mode crashes or differs (the red of 2026-09-24); 2 REFUSED (fixture or binary missing).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 F="$HERE/fixtures/sno_switch/porter_step4_nine_arms"
 [ -f "$F.sno" ] && [ -f "$F.in" ] && [ -f "$F.ref" ] || { echo "REFUSED(2): fixture $F.{sno,in,ref} missing"; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "REFUSED(2): $ROOT/scrip not built"; exit 2; }

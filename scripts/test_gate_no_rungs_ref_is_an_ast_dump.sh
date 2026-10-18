@@ -10,7 +10,7 @@
 # EXIT: 0 no dump-shaped ref in any rung suite · 1 at least one, each named · 2 could not measure.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "GATE UNPROVEN(2): cannot load lib_gate.sh"; exit 2; }
 gate_parse_args "$@"

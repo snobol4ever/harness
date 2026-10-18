@@ -17,7 +17,7 @@
 # compared) and arm 1 carries no OUTPUT=graded; on the icx fork before it, arm 6 finds no OUTPUT record.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (a prerequisite is missing, or arm 7 waits on the SCRIP plug).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSED(2): cannot load lib_gate.sh"; exit 2; }; GATE_NAME=monitor_grades_the_output_event
 gate_require_fresh "$ROOT" src "$ROOT/scrip" || exit 2
 CTRL="$HERE/monitor/monitor_sync_bin.py"; [ -f "$CTRL" ] || { echo "REFUSED(2): $CTRL missing"; exit 2; }

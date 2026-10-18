@@ -14,7 +14,7 @@
 # the gate reaches its arms): S red on all seven. R is an invariant, not a fail-once arm: the runners' own older guard (IS_BOARD,
 # CEO-547) already kept a population outside the corpus from writing, and this landing keeps it so.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=bench_runners_publish_by_default_never_on_a_subset
 unproven() { echo "GATE UNPROVEN(2) [$G]: $*"; exit 2; }
 L="$HERE/lib_bench_write.sh"; [ -f "$L" ] || unproven "no lib_bench_write.sh -- the one write rule is missing"

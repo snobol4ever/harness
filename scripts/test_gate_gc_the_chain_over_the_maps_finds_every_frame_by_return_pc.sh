@@ -16,7 +16,7 @@
 # subject cell, so a spine change that moved a collection crashed it in mode 4). The proof that these arms can fail is the commit before STEP B: the same programs under the marker scan
 # (ea957ffc5 on that tree: demo_porter mode 4 SIGSEGV after collection 10, parser_pascal mode 3 'Parse Error').
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 G=test_gate_gc_the_chain_over_the_maps_finds_every_frame_by_return_pc
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; WD="$HERE/gc_witnesses"

@@ -25,7 +25,7 @@ set -euo pipefail
 # the script at rc 1 with no output. It now reads parsers?/, normalizes every include to parsers/..., and a scan with no match
 # counts zero instead of ending the run. The allowlist entries were renamed to the parsers/ spelling and nothing else.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 
 ALLOW=(

@@ -34,7 +34,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # VACUOUS, rc=2. A gate that cannot measure must never print what a clean one prints.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 NAME=no_bench_kernel_qualifies_for_gva_demotion
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }

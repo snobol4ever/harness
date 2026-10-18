@@ -43,7 +43,7 @@
 # push-rbx form.  (4) FAIL_ONCE=1 plants a sixth rbx spelling into arm 1's population and requires this gate to red.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 RC=0; examined=0
 echo "  HOLDS: rbx carries no scratch in any emitted template, the six blob pins are declared in code rather than only on a page, and the aligned-call saver needs no callee-saved register"
 examined=$((examined + 1))

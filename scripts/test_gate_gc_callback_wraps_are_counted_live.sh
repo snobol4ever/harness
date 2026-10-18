@@ -19,7 +19,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 command -v gdb >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: gdb is not installed"; exit 2; }
 R="$ROOT/../harness/scripts/util_gc_callback_reach.py"; W="$ROOT/../harness/scripts/gc_witnesses"
 for w in hb_wsb_rk_iter_map.raku hb_wsb_rk_iter_grep.raku; do [ -s "$W/$w" ] || { echo "⛔ GATE REFUSE(2) [$G]: witness $w missing"; exit 2; }; done

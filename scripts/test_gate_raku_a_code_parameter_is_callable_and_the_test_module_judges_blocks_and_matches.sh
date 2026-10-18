@@ -19,7 +19,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_a_code_parameter_is_callable_and_the_test_module_judges_blocks_and_matches.sh   (~2s)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_a_code_parameter_is_callable_and_the_test_module_judges_blocks_and_matches"

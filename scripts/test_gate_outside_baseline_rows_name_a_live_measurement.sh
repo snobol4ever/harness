@@ -54,7 +54,7 @@
 # rc=0 every recorded row names a live measurement · rc=1 a row does not · rc=2 cannot measure.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 PKGROOT="$ROOT/../corpus/packages/snobol4"
 ONLY=""; STRICT=0; TMO=25
 while [ $# -gt 0 ]; do case "$1" in --package) ONLY="${2:-}"; shift 2;; --strict) STRICT=1; shift;; --timeout) TMO="${2:-}"; shift 2;; *) echo "⛔ REFUSES(2): unknown argument $1" >&2; exit 2;; esac; done

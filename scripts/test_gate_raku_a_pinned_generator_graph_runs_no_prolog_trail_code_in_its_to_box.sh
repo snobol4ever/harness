@@ -16,7 +16,7 @@
 # PROLOG CONTROL: a nondeterministic clause enumerating between/3 under a binding that must be undone on retry still carries the
 # pl_tr_unwind note at its TO beta in its .s and answers as swipl in both modes. FAIL_ONCE=1 expects the mask in the Raku .s, so arm 1 reds.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G=raku_a_pinned_generator_graph_runs_no_prolog_trail_code_in_its_to_box
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=raku_a_pinned_generator_graph_runs_no_prolog_trail_code_in_its_to_box
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 command -v gcc >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: gcc absent"; exit 2; }

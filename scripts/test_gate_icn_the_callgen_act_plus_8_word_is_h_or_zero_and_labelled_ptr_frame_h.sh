@@ -7,7 +7,7 @@
 # another, labelled PTR_CODE -- and the omega landing left the released frame's H behind. ONE compile of the fixture grades the layout rows and the stores by offset; ONE m3 run
 # grades that a generator still resumes (a store of zero on a gamma landing sends beta through H = 0 and dies at fault address 0x28).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=icn_the_callgen_act_plus_8_word_is_h_or_zero_and_labelled_ptr_frame_h

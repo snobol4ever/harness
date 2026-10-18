@@ -14,7 +14,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_an_unknown_method_throws_x_method_notfound_dot_question_calls_it_maybe_can_finds_methods_and_attributes_and_fallback_catches_the_rest_agree_with_rakudo.sh   (~10s, no oracle at run time, no network)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_an_unknown_method_throws_x_method_notfound_dot_question_calls_it_maybe_can_finds_methods_and_attributes_and_fallback_catches_the_rest_agree_with_rakudo"

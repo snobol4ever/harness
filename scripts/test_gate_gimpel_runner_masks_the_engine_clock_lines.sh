@@ -10,7 +10,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the scorecard's one verb invok
 # (2) PLANTED, the same fixture with an ALL.mask that has no timegc row -- an unmasked timing difference -- reads DIFF in both modes;
 # (3) FAIL-ONCE, the scorecard with grade()'s SCRIP-side mask step removed (the pre-cure compare) reads DIFF on arm 1's fixture, so arm 1
 # would red on the defect this gate names. rc 2 when the oracle, the binary or a fixture file is missing.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(2): no lib_gate.sh" >&2; exit 2; }
 GATE_NAME=gimpel_runner_masks_the_engine_clock_lines; gate_parse_args "$@" 2>/dev/null || true
 SRC="${CORPUS:-$(cd "$ROOT/.." && pwd)/corpus}/packages/snobol4/gimpel"

@@ -20,7 +20,7 @@
 #
 # ⛔ REFUSES rc=2 unless all 4 runs (2 witnesses x 2 modes) are graded -- never skip-as-success.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 [ -x ./scrip ] && [ -f out/libscrip_rt.so ] || { echo "⛔ GATE REFUSES (rc=2): scrip/runtime not built at $ROOT"; exit 2; }
 d=$(mktemp -d) || exit 2; trap 'rm -rf "$d"' EXIT
 printf 'procedure f(x)\n  return case x of { default: 1 } + 2;\nend\nprocedure main()\n  write(f(1));\nend\n' > "$d/case_lhs.icn"

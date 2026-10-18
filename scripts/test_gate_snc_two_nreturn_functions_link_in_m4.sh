@@ -8,7 +8,7 @@
 # keeps the bare names. CONTROL ARM: the SNOBOL4 twin is one graph and must still define exactly ONE bare NRETURN: -- proving the
 # suffix reaches proc_ graphs only and single-graph output is untouched. A stale binary REFUSES rc=2.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 printf 'function f() { f = 1; nreturn; }\nfunction g() { g = 2; nreturn; }\nOUTPUT = f() g();\n' > "$W/w.sc"

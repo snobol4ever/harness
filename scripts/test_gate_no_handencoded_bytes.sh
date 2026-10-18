@@ -20,7 +20,7 @@
 # gate scans BB_templates/*.cpp only, where any such token is a BAD site).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 DIR="$ROOT/src/templates"
 STRICT=1; [ "${1:-}" = "--informational" ] && STRICT=0   # V2-5: strict by default
 [ "${1:-}" = "--strict" ] && STRICT=1

@@ -14,7 +14,7 @@
 # words -- out of the map cell's way, and visited by type rather than found by a sweep (which is what E removes).
 # A stale binary or a missing witness REFUSES rc=2.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=gc_the_prolog_root_cells_live_inside_the_value_region_and_are_visited_by_type

@@ -24,7 +24,7 @@
 #     src/lower object, beyond OPEN -- the parser writing a structure the lowerer reads (g_stage2's dynamic set and prelude keys)
 #     is the crossing whatever function names carry it
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT" || exit 2
 RT_OBJDIR="$(make -s -f Makefile -f <(printf 'p:\n\t@echo $(RT_OBJDIR)\n') p 2>/dev/null)"
 DRV_OBJ="$(make -s -f Makefile -f <(printf 'p:\n\t@echo $(OBJ)\n') p 2>/dev/null)/scrip_driver.o"

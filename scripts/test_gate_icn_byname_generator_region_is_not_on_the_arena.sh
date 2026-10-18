@@ -37,7 +37,7 @@
 set -u
 GATE=icn_byname_generator_region_is_not_on_the_arena
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 refuse() { echo "GATE REFUSE(2) [$GATE]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"

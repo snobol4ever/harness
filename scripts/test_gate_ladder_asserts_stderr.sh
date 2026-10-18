@@ -22,7 +22,7 @@
 # staleness preflight because there is no binary whose age could change its answer.
 # EXIT: 0 all arms · 1 an arm failed · 2 REFUSED (cannot measure).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE rc=2: lib_gate.sh unavailable"; exit 2; }
 GATE_NAME="ladder_asserts_stderr"; export GATE_NAME
 L="$HERE/lib_ladder.sh"

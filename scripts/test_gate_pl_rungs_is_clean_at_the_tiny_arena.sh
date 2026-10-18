@@ -61,7 +61,7 @@
 # no SUITE_BOARD line, two arms whose entry sets differ, or an inconclusive HANG. A short count is never a green
 # here -- the whole failure mode this gate is built against is a plausible wrong answer at exit 0.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 SHARDS="${SHARDS:-16}"; CONTROL_MB="${CONTROL_MB:-512}"

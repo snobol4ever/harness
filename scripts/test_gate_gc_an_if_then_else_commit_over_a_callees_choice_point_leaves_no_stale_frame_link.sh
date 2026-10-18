@@ -12,7 +12,7 @@
 # ARMS: (1) mode 3 and (2) mode 4 at a 64 KB window under SCRIP_GC_STRESS=1 with SCRIP_GC_CHAIN_CHECK=3 print the ref line and read
 # bad-link 0, offchain-swept 0, mismatch 0 and missing 0. FAIL_ONCE=1 grades against an empty ref, so both arms must red.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G=gc_an_if_then_else_commit_over_a_callees_choice_point_leaves_no_stale_frame_link
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=gc_an_if_then_else_commit_over_a_callees_choice_point_leaves_no_stale_frame_link
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 command -v gcc >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: gcc absent"; exit 2; }

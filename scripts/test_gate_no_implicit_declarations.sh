@@ -18,7 +18,7 @@
 # ⛔ REFUSES rc=2 RATHER THAN PASSING VACUOUSLY: if make -n fails, if fewer than 80 C translation units are found, or if any replayed
 # unit reports an error: (which would mean the replay is not faithful and its silence proves nothing).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 WFLAGS="-Wimplicit-function-declaration -Wint-conversion -Wincompatible-pointer-types"
 TU_FLOOR=80

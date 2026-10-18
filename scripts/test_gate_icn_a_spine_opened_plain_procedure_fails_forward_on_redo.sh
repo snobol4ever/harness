@@ -13,7 +13,7 @@
 # under `timeout` and reads a timeout as RED rather than letting a board hang.
 # The ref is cut from the ORACLE (/home/resources/icon-master/bin/icon), not from our own output, so it does not rot on our own improvements.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=icn_a_spine_opened_plain_procedure_fails_forward_on_redo

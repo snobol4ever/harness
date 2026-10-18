@@ -43,7 +43,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # EXIT: 0 the owed count is at or below the pinned floor · 1 it GREW (or a floor needs lowering and did not)
 #       · 2 REFUSED -- cannot measure (no corpus, no rungs, census returned an empty denominator).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="test_gate_rungs_sidecars_cover_stdin_and_argv"
 gate_parse_args "$@"

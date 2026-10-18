@@ -46,7 +46,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 unset SCRIP_HEAP_MB; : "${SCRIP_HEAP_KB:=128}"; export SCRIP_HEAP_KB
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no scrip at $SCRIP"; exit 2; }
 ASM="$ROOT/src/runtime/rtx/rtx_plunify.s"; TRC="$ROOT/src/runtime/rt/rt_pl_trail.c"; GCH="$ROOT/src/runtime/rt/gc_heap.c"
 for f in "$ASM" "$TRC" "$GCH"; do [ -f "$f" ] || { echo "⛔ REFUSE(2): $f absent -- this gate is measuring nothing"; exit 2; }; done

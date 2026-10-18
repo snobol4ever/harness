@@ -31,7 +31,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # EXIT: 0 all arms · 1 an arm failed · 2 REFUSED (no python3/harness/corpus, or an unbuilt tree).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 H="$HERE/corpus_suite_harness.py"
 FAM="$S4E/corpus/tests/snobol4"

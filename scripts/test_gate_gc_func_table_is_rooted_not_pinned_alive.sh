@@ -9,7 +9,7 @@
 # collections) is vacuous today and becomes the real guard the day FNCBLK_t blocks slide. Red on the pre-cure tree by the structural
 # arm (measured rc=1 2026-09-16 10:49); a stale binary or an unreachable witness REFUSES rc=2.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
 bad=0
 n=$(awk '/^void core_gc_roots\(void\)/{f=1} f&&/_func_buckets/{c++} f&&/^}/{exit} END{print c+0}' src/runtime/core/core.c)

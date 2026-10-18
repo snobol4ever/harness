@@ -16,7 +16,7 @@
 # ⛔ REFUSES (rc=2) on a missing oracle, a missing package, a corpus that is not a git repo, or a vendored tree that extracts empty.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 WS="$(cd "$ROOT/.." && pwd)"
 . "$HERE/lib_oracle_flags.sh" || { echo "REFUSE: cannot load lib_oracle_flags.sh"; exit 2; }
 SBL="$(sbl_correctness_bin 2>/dev/null)"

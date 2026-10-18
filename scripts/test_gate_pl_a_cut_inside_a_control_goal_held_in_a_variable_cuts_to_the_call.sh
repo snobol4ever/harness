@@ -11,7 +11,7 @@
 # The ref is cut from swipl at run time; m3 and m4 must each equal it byte for byte. rc 0 GREEN, 1 RED, 2 REFUSED.
 set -u
 GATE_NAME=test_gate_pl_a_cut_inside_a_control_goal_held_in_a_variable_cuts_to_the_call
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"; SWIPL="${SWIPL:-/usr/bin/swipl}"
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make"

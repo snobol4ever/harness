@@ -53,7 +53,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # EXIT: 0 every witness's alpha/gamma/omega sequence matches the oracle in both modes; 1 a mismatch or a
 # perturbation/killswitch failure; 2 REFUSED (cannot measure).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 CUT=0; for a in "$@"; do [ "$a" = --cut ] && CUT=1; done

@@ -29,7 +29,7 @@
 # six files. PASS-ONCE: 0 on origin 8e3d82c2a and on the probe f9209478d.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 TREE="${SN4_SCOPE_GATE_TREE:-$ROOT}"
 [ -d "$TREE/src" ] || { echo "⛔ GATE REFUSE(2) [$G]: no src/ under $TREE"; exit 2; }
 rc=0

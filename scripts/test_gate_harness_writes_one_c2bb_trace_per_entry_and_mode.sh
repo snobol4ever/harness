@@ -14,7 +14,7 @@
 #   ARM 5  the census counts apply.open on 1 entry, m3 1 and m4 1, witness apply_witness; on an empty directory it REFUSES rc=2
 # EXIT: 0 all arms pass · 1 an arm failed · 2 could not measure.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=harness_writes_one_c2bb_trace_per_entry_and_mode
 [ -x "$ROOT/scrip" ] || { echo "GATE UNPROVEN(2) [$G]: no $ROOT/scrip (make first)"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "test_gate_$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2

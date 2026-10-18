@@ -29,7 +29,7 @@
 # S red (8 of the 10 arms before F), and F refuses rc 2 because the old guard carries no block to restore; on this landing 11 of 11.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=one_runner_fixture_is_admitted_only_outside_the_shared_corpus

@@ -18,7 +18,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # SPITBOL switches, -i128k -d128k (window = cap = 128 KB), and a run that grew or hit the cap is REFUSED (clause 4).
 # Re-measured on this fixture 2026-09-26: 240 collections, grew=0, 676,429 Ir per collection.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 K="$HERE/fixtures/gc_budget_table_access.sno"; [ -f "$K" ] && [ -f "${K%.sno}.ref" ] || { echo "REFUSED(2): the fixture $K or its .ref is missing"; exit 2; }
 [ -x "$ROOT/scrip" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "REFUSED(2): $ROOT/scrip or out/libscrip_rt.so not built"; exit 2; }
 command -v valgrind >/dev/null 2>&1 && command -v callgrind_annotate >/dev/null 2>&1 || { echo "REFUSED(2): valgrind/callgrind_annotate missing -- the budget is an instruction count"; exit 2; }

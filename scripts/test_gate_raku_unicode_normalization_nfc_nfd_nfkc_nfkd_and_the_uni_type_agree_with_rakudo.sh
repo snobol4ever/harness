@@ -15,7 +15,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_unicode_normalization_nfc_nfd_nfkc_nfkd_and_the_uni_type_agree_with_rakudo.sh   (~10s, no oracle at run time, no network)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_unicode_normalization_nfc_nfd_nfkc_nfkd_and_the_uni_type_agree_with_rakudo"

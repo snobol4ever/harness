@@ -22,7 +22,7 @@
 #          it (the coo 2026-10-03: treebank's full input dies ERROR 246 at sbl's default stack; demos/snobol4/treebank/treebank.oracle_args).
 # EXIT: 0 every arm holds; 1 an arm is red; 2 could not measure.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2) [$G]: lib_declared_arena.sh unloadable"; exit 2; }
 declare -F declared_oracle_args_beside >/dev/null || { echo "⛔ GATE REFUSE(2) [$G]: lib_declared_arena.sh no longer defines declared_oracle_args_beside"; exit 2; }

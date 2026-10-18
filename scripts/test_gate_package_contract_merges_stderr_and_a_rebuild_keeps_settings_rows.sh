@@ -36,7 +36,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 NAME=package_contract_merges_stderr_and_a_rebuild_keeps_settings_rows
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$ROOT/scrip" ] || refuse "no scrip binary -- cannot measure"

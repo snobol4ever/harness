@@ -15,7 +15,7 @@
 # empty -- an extraction that silently yields nothing would grade an empty program against an empty ref
 # and print the success shape over the gap.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 SRC="$ROOT/../corpus/tests/icon/rung36_all.icn"; REF="$ROOT/../corpus/tests/icon/rung36_all.ref"
 [ -x ./scrip ] && [ -f out/libscrip_rt.so ] || { echo "⛔ GATE REFUSES (rc=2): scrip/runtime not built at $ROOT"; exit 2; }
 [ -f "$SRC" ] && [ -f "$REF" ] || { echo "⛔ GATE REFUSES (rc=2): rung36_all.icn/.ref missing -- cannot measure"; exit 2; }

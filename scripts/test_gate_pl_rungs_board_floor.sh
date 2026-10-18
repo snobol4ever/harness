@@ -19,7 +19,7 @@
 # the pre-cure 198 deliberately, because this row's claim is "the cure did not cost the board", and a floor raised
 # to the post-cure number in the same commit can no longer make that statement about the next change.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 PIN_M3="${PIN_M3:-230}"; PIN_M4="${PIN_M4:-230}"; SHARDS="${SHARDS:-16}"

@@ -112,7 +112,7 @@ d3="$(awk -F'\t' '$8=="delta" {print $12}' "$W/t9.tsv" 2>/dev/null)"
 if [ "$r9" = 0 ] && [[ "$g3" == *"retried=1 load1=31.00/12.50 nproc=16"* ]] && [[ "$g4" != *retried* ]] && [[ "$d3" != *retried* ]] && [ ! -e "$W/t9.stamp" ] && printf '%s' "$e9" | grep -q 'matched no row (key nobody'; then
     ck ok "the writer: gamma's m3 row carries the stamp, gamma m4 and delta do not, the file is consumed, the stamp naming no row is said aloud"
 else ck no "arm 9: rc=$r9 gamma.m3=[$g3] gamma.m4=[$g4] delta=[$d3] stamp-left=$([ -e "$W/t9.stamp" ] && echo yes || echo no) said=[$(printf '%s' "$e9" | grep -c 'matched no row')]"; fi
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 if [ -x "$ROOT/scrip" ] && "$HERE/util_require_fresh.sh" --gate test_gate_timeout_under_load_is_could_not_measure_and_retried_once "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" >/dev/null 2>&1; then
     mkdir -p "$W/fpc"
     printf 'program spin(input, output);\nvar i: integer;\nbegin\n  i := 0;\n  while true do i := (i + 1) mod 7;\n  writeln(i)\nend.\n' > "$W/fpc/spin.pas"

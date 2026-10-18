@@ -11,7 +11,7 @@
 # (4) STATIC: bb_match_breakx.cpp never writes r9 (a mov, lea, pop or xor naming r9 or r9d as its destination; r8 is ordinary scratch).
 # FAIL_ONCE=1 greps the static arm for rsi instead of r9, which the template does write, so arm 4 must red.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G=sno_a_deferred_breakx_take_never_writes_the_r9_global_area_base
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=sno_a_deferred_breakx_take_never_writes_the_r9_global_area_base
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 command -v gcc >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: gcc absent"; exit 2; }

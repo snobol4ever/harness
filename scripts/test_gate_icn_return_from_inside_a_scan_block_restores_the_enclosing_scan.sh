@@ -19,7 +19,7 @@
 # run time; a hand-typed `zzA` in this file would be a self-pin wearing an oracle's clothes.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 NAME=icn_return_from_inside_a_scan_block_restores_the_enclosing_scan
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }

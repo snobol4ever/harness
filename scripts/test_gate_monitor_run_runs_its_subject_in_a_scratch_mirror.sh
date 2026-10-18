@@ -13,7 +13,7 @@
 # (found with `git log -S` in this tree's history). It must red (a) and (c) and hold (b) and (d) -- the old script read the
 # companion from the caller and wrote there.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSED(2): cannot load lib_gate.sh"; exit 2; }; GATE_NAME=monitor_run_runs_its_subject_in_a_scratch_mirror
 gate_require_fresh "$ROOT" src "$ROOT/scrip" || exit 2   # a stale binary is a refusal, never a verdict (test_gate_runners_refuse_on_a_stale_binary.sh census #2)
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSED(2): no $ROOT/scrip -- run make"; exit 2; }

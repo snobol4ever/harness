@@ -15,7 +15,7 @@
 # ⭐ SELF-TEST SEAM: GATE_FAIL_ONCE=1 rewrites our extracted File line to the last argument so the gate is seen to say no.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 GATE="$(basename "${BASH_SOURCE[0]}" .sh)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(2) [$GATE]: lib_oracle_flags.sh unloadable"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2) [$GATE]: no scrip at $SCRIP"; exit 2; }

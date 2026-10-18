@@ -25,7 +25,7 @@
 # write the caller's variable). Expected outputs are PINNED from icont/iconx 9.5 (2026-09-09); the gate is hermetic
 # and never consults the oracle, so it cannot go green because an oracle install moved.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 GATE_NAME="icon_arguments_dereference_at_the_call"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"

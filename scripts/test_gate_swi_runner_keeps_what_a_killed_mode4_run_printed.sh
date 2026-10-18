@@ -10,7 +10,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 #   K  a scratch swi_tests package of ONE file: test(a) succeeds, test(b) loops for ever. Want: a PASS m3, a PASS m4, b HANG m3, b HANG m4.
 # Costs about two minutes: the runner's own 60 s timeout fires once per mode on test(b).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 GATE_NAME=swi_runner_keeps_what_a_killed_mode4_run_printed
 . "$HERE/lib_gate.sh"
 SCRIP="${SCRIP:-$ROOT/scrip}"; gate_require_exec "$SCRIP" "scrip binary"

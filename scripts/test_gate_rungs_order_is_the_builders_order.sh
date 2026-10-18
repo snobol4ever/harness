@@ -20,7 +20,7 @@
 # rungs_sort_key within each kind -- byte-identical to rungs_sort_key for every other (single-kind) rungs.
 # LANGS= overrides the rung suites checked (default: every corpus/tests/<lang>/ carrying an ALL.csv).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$HERE/util_build_rungs_suite.py" ] || refuse "builder not found -- the sort key has no authority to import"

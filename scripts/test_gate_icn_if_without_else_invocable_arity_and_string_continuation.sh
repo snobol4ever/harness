@@ -34,7 +34,7 @@
 # a gate that pins an over-acceptance freezes it. Recorded so the next reader does not "restore" the swallow.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED(2): lib_oracle_flags.sh unloadable" >&2; exit 2; }
 ICONT="$(icont_bin 2>/dev/null)"; [ -x "$ICONT" ] || { echo "⛔ REFUSED(2): no icont oracle at '${ICONT:-<empty>}'" >&2; exit 2; }

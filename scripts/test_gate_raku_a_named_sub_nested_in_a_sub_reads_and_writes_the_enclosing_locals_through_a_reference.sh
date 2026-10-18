@@ -11,7 +11,7 @@
 # EXIT: 0 every witness-mode pair equals Rakudo's output; 1 one differs; 2 REFUSED (stale binary, no gcc).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_a_named_sub_nested_in_a_sub_reads_and_writes_the_enclosing_locals_through_a_reference"

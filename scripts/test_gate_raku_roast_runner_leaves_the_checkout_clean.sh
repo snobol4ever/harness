@@ -16,7 +16,7 @@
 # EXIT: 0 all arms pass · 1 an arm failed · 2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 BOARD="$HERE/raku_roast_scoreboard.sh"
 [ -f "$BOARD" ] || { echo "GATE UNPROVEN(2): missing $BOARD"; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "GATE UNPROVEN(2): no $ROOT/scrip (make first)"; exit 2; }

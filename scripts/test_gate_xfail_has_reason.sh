@@ -23,7 +23,7 @@
 # REFUSED (examined nothing -- corpus/tests absent, or truly zero XFAIL banners anywhere, too suspicious to
 # certify as a silent pass).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 CORPUS="${CORPUS:-$S4E/corpus/tests}"
 . "$HERE/lib_gate.sh"

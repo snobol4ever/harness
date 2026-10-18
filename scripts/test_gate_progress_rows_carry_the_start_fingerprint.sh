@@ -38,7 +38,7 @@
 # otherwise. Arms 3 and 5 therefore mutate the copied DRIVER, whose digest is what the fingerprint must notice.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=progress_rows_carry_the_start_fingerprint

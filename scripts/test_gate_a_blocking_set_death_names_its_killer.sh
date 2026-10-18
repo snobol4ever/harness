@@ -46,7 +46,7 @@
 # killer is worse than admitting the record is missing.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; cd "$HERE/../../SCRIP" || exit 2
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 D0="$HERE/run_blocking_set.sh"; K="$HERE/s4e_kill_mine.sh"
 refuse(){ echo "⛔ REFUSED-TO-GRADE (rc=2): $*"; exit 2; }
 [ -f "$D0" ] || refuse "no driver at $D0"

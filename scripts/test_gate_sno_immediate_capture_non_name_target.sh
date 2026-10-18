@@ -42,7 +42,7 @@
 # ⛔ REFUSES rc=2 unless EVERY witness is graded in BOTH modes, and rc=2 if the oracle is absent or its
 # own run fails -- a missing oracle prints a full, plausible, entirely false table.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSES (rc=2): lib_oracle_flags.sh not sourceable"; exit 2; }
 [ -x ./scrip ] && [ -f out/libscrip_rt.so ] || { echo "⛔ GATE REFUSES (rc=2): scrip/runtime not built at $ROOT"; exit 2; }
 SBL="/home/resources/x64/bin/sbl"; [ -x "$SBL" ] || { echo "⛔ GATE REFUSES (rc=2): correctness oracle $SBL is missing -- a board without an oracle prints a false all-FAIL table"; exit 2; }

@@ -12,7 +12,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_sprintf_under_use_v6e_agrees_with_rakudos_own_b_d_e_f_o_s_u_x_spec_tables.sh   (~10s, needs /home/resources/roast-master)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_sprintf_under_use_v6e_agrees_with_rakudos_own_b_d_e_f_o_s_u_x_spec_tables"

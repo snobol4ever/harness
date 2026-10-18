@@ -14,7 +14,7 @@
 # monitor_run.sh, arm 3 reads DIVERGE rc=1.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (the binary or an oracle is missing -- nothing measured).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSED(2): cannot load lib_gate.sh"; exit 2; }; GATE_NAME=monitor_a_long_run_agrees_past_one_hundred_thousand_events
 gate_require_fresh "$ROOT" src "$ROOT/scrip" || exit 2   # a stale binary is a refusal, never a verdict (test_gate_runners_refuse_on_a_stale_binary.sh census #2)
 [ -x "$ROOT/scrip" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "⛔ REFUSED(2): $ROOT/scrip or out/libscrip_rt.so not built"; exit 2; }

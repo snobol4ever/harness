@@ -16,7 +16,7 @@
 # three arms, c3 recedes into a plain literal arm, and w4 recedes into the inner alternation and then SUCCEEDS on
 # its next arm -- a cure that merely stopped the loop by conceding would leave w4 red.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 GATE_NAME="a_nested_alternation_receded_into_resumes_its_own_arm_not_the_outer_beta"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT:-$ROOT/out}"

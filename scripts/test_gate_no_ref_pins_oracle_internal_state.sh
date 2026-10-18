@@ -51,7 +51,7 @@
 # wired blocking; what it prevents is a 23rd ref being minted against an oracle's death.
 # EXIT: 0 at or below the floor · 1 the count GREW · 2 REFUSED (no corpus, or zero refs found to scan).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="test_gate_no_ref_pins_oracle_internal_state"
 gate_parse_args "$@"

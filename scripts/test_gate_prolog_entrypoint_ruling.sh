@@ -23,7 +23,7 @@
 #        GATE_D2_CEILING=<n>  override the arm-E ratchet ceiling
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 GATE_NAME="prolog-entrypoint-ruling"
 GATE_STRICT=1

@@ -6,7 +6,7 @@
 # CURRENT: a table edited without `util_suite_partition.py build <ALL.csv>` in the same landing is a RED, named; a missing PARTITION.tsv is a RED too.
 # rc 0 every partition current; 1 a stale or missing one, named; 2 no table found (a census that cannot look reports nothing, never zero).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 C="${S4E_CORPUS:-${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus}"
 tables=$(ls "$C"/tests/*/ALL.csv "$C"/packages/*/*/ALL.csv 2>/dev/null)
 [ -n "$tables" ] || { echo "REFUSE(2) [suite_partitions_are_current]: no ALL.csv under $C/tests or $C/packages"; exit 2; }

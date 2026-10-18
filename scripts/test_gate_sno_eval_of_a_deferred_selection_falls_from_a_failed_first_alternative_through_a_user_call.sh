@@ -5,7 +5,7 @@
 # with NT() returning 0 died SIGSEGV at pc 0x1 or nil on e9d9e2b60 plus the base-cell change, where SPITBOL prints 0. Measured 2026-10-11 at SCRIP ea957ffc5: the
 # witness prints 0 in both modes; the unevaluated-expression road moved to the star record (spine-bake chunk 2) and the cure came with it. This gate holds the shape.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=sno_eval_of_a_deferred_selection_falls_from_a_failed_first_alternative_through_a_user_call

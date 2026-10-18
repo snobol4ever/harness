@@ -29,7 +29,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 ORACLE="${SPITBOL:-$(command -v spitbol 2>/dev/null || true)}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE rc=2: no ./scrip at $SCRIP -- run 'make'"; exit 2; }

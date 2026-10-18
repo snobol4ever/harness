@@ -22,7 +22,7 @@
 # Fail-once (2026-09-07 12:3x CDT, coo, MEASURED by rebuilding the pre-cure rt.c): 9 of 10 gradings red -- P, R, W, N in both modes
 # and U in mode 3; U in mode 4 stays green because SCRIP_SCC_OFF is a mode-3 switch and the mode-4 binary compiled on the direct path.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"; gate_parse_args "$@"
 G=sno_deferred_capture_keeps_the_name_save_stack_balanced
 "$HERE/util_require_fresh.sh" --gate test_gate_$G "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$G]: this tree's binary is stale or unbuilt -- run make"; exit 2; }

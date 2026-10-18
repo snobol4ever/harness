@@ -18,7 +18,7 @@
 # ⛔ rc=2 REFUSED-TO-GRADE (could not measure) is deliberately distinct from rc=1 FAILED.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 DEMO="${DEMO:-$ROOT/../corpus/demos/snobol4/roman/roman.sno}"
 refuse() { echo "⛔ REFUSED TO GRADE: $*" >&2; exit 2; }

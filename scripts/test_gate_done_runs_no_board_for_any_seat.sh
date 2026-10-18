@@ -13,7 +13,7 @@
 #   5  FAIL-ONCE: a copy of lib_one_runner.sh with the old exemption planted back admits the run -- this gate reads that as the defect.
 # EXIT: 0 every arm holds; 1 an arm failed; 2 could not measure. Population printed. Hermetic: a scratch S4E_HOME, no board runs.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=done_runs_no_board_for_any_seat
 gate_parse_args "$@"

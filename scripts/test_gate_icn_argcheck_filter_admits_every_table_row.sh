@@ -21,7 +21,7 @@
 # execution: (1) every row's c0/c1 equal the first two bytes of that row's own string literal, and
 # (2) exhaustively over all 65,280 two-byte prefixes, every prefix any row matches is admitted by the mask.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 SRC=src/runtime/core/core.c
 # REFUSES rc=2 WHEN IT CANNOT MEASURE -- never skip-as-success (RULES.md: a test that cannot measure refuses).
 [ -f "$SRC" ] || { echo "GATE REFUSED (rc=2): $SRC not found from $ROOT -- nothing was checked" >&2; exit 2; }

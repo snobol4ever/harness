@@ -17,7 +17,7 @@
 #       oracle ever disagrees, this REFUSES rather than grading SCRIP against a premise that has moved.
 # ⛔ Hermetic: programs are written under mktemp, nothing in corpus/ is read or written.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP (a test that cannot measure REFUSES, never skips-as-success)"

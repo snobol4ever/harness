@@ -49,7 +49,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # name. No witness reaches it.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 refuse() { echo "⛔ GATE REFUSES (cannot measure): $*"; exit 2; }
 command -v as      >/dev/null 2>&1 || refuse "no 'as' assembler on PATH"
 command -v gcc     >/dev/null 2>&1 || refuse "no gcc on PATH"

@@ -33,7 +33,7 @@
 # arena out of the Makefile and grade it, and the shipped window is printed beside it, never repeated here.
 set -uo pipefail
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G="gc_an_arena_pin_names_the_shipped_window_and_the_record_can_see_it"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"
 checks=0; fails=0

@@ -27,7 +27,7 @@
 # EXIT: 0 every clause green · 1 a clause is red (the report names which) · 2 REFUSED -- cannot measure.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 HARNESS="$HERE/corpus_suite_harness.py"; JCON="$HERE/test_icon_jcon_suite.sh"; ARIZ="$HERE/test_icon_arizona_suite.sh"
 . "$HERE/lib_oracle_flags.sh"

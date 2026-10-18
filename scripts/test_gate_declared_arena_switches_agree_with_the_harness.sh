@@ -17,7 +17,7 @@
 # rc 0 every arm holds; rc 1 a FAIL named; rc 2 REFUSED-TO-GRADE (no binary, no harness).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$HERE/corpus_suite_harness.py" ] || refuse "no harness"
 [ -x "$ROOT/scrip" ] || refuse "no ./scrip -- make first"

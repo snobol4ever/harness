@@ -10,7 +10,7 @@
 # more such sites (computed-goto target names and folded literals), converted in the same landing.
 # The witness runs at SCRIP_GC_STRESS=0,1,3,5,10 in BOTH modes against a ref cut from sbl -bf; a stale binary or a missing witness REFUSES rc=2.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=gc_eval_built_names_survive_a_collection

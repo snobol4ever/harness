@@ -38,7 +38,7 @@
 # EXIT: 0 every iteration matched the oracle in every mode graded · 1 a mismatch (the defect) · 2 REFUSED to grade.
 set -uo pipefail
 GATE_NAME=test_gate_pl_an_asserted_atom_survives_a_collection
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT_DIR="${RT_DIR:-$ROOT/out}"
 SWIPL="${SWIPL:-/usr/bin/swipl}"
 ITERS="${ITERS:-20}"; STRESS="${SCRIP_GC_STRESS_VALUE:-1}"; N="${WITNESS_N:-10}"

@@ -61,7 +61,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 #   failure; 2 REFUSED (cannot measure -- missing binary, empty population, instrument silent).
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 TO=""; ONLY=""; ARGS=(); while [ $# -gt 0 ]; do case "$1" in --to) TO="${2:-}"; shift 2;; --to=*) TO="${1#--to=}"; shift;; --only) ONLY="${2:-}"; shift 2;; --only=*) ONLY="${1#--only=}"; shift;; *) ARGS+=("$1"); shift;; esac; done; set -- "${ARGS[@]}"
 case "$TO" in ""|*[!0-9]*) [ -z "$TO" ] || { echo "GATE UNPROVEN(2) [test_gate_icn_port_trace]: --to wants a rung number, got '$TO'"; exit 2; };; esac

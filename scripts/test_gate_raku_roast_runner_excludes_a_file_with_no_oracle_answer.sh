@@ -9,7 +9,7 @@
 #       (2) CONTROL without EXCLUDED.tsv: total=3 excluded=0 and refused has its rows -- the exclusion is what moved it
 #       (3) a row whose class is not in the vocabulary refuses rc 2 before grading
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; BOARD="$HERE/raku_roast_scoreboard.sh"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; BOARD="$HERE/raku_roast_scoreboard.sh"
 [ -f "$BOARD" ] || { echo "GATE UNPROVEN(2): missing $BOARD"; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "GATE UNPROVEN(2): no $ROOT/scrip (make first)"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate test_gate_raku_roast_runner_excludes_a_file_with_no_oracle_answer "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2

@@ -36,7 +36,7 @@
 # agree with itself while the tree drifted.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 NAME=shared_builtin_id_table_is_self_consistent
 FLOOR=188
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }

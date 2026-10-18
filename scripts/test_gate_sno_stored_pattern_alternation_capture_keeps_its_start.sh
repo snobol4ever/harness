@@ -12,7 +12,7 @@
 # sbl -bf and BLOCK.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; SCRIP="$ROOT/scrip"; RT="$ROOT/out"
+HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; SCRIP="$ROOT/scrip"; RT="$ROOT/out"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 SBL="${SBL:-$(sbl_correctness_bin 2>/dev/null || echo /home/resources/x64/bin/sbl)}"
 [ -x "$SCRIP" ] && [ -f "$RT/libscrip_rt.so" ] || { echo "⛔ REFUSE(2): no ./scrip or out/libscrip_rt.so -- build first"; exit 2; }

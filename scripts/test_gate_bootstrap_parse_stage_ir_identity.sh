@@ -26,7 +26,7 @@
 # make test or make preflight: it needs a capture, and its full-corpus pass is minutes, not seconds (preflight's arm ceiling is 5 s); the stage-1 row's DONE-WHEN
 # calls it by name once it exists.
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; CORPUS="${CORPUS:-$S4E/corpus}"
 refuse() { echo "⛔ GATE REFUSE(2) [$G]: $*"; exit 2; }
 MODE=compare; AGAINST=latest; LANGS=snobol4; POP=sample; ONLY=""; DIFFS_OUT=""

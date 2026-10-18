@@ -20,7 +20,7 @@
 # and is the proof the preflight let them past, so each arm asserts on the OUTPUT TEXT, never on rc alone.
 # SUT= overrides the script under test -- used to prove this gate FAILS against the pre-cure verifier (fail-once).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SUT="${SUT:-$HERE/util_verify_s_artifacts_owed.sh}"
 refuse() { echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$SUT" ] || refuse "script under test not found: $SUT"

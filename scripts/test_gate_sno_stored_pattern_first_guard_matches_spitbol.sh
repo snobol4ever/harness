@@ -15,7 +15,7 @@
 # first character fails at its entry when none can start) inside ARBNO, under &ANCHOR, after a capture, beside a NUL subject byte.
 # Exit 0 = all eight runs match; 1 = a divergence; 2 = cannot measure.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G="$(basename "${BASH_SOURCE[0]}" .sh)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G="$(basename "${BASH_SOURCE[0]}" .sh)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
 FX="$HERE/fixtures/sno_first_guard"; T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0

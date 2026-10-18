@@ -41,7 +41,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 # yields a reference to its variable (through a chain: ((s := "ab") ||:= "cd")[1:3]). A generator on the right-hand side
 # backtracks through it. RED on the parent 170172244: a3 died at its first line, error 111, both modes.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no scrip at $SCRIP"; exit 2; }
 command -v gcc >/dev/null || { echo "⛔ REFUSE(2): no gcc for mode 4"; exit 2; }
 ICONT="${ICONT_BIN:-/home/resources/icon-master/bin/icont}"

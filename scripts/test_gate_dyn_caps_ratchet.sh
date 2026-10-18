@@ -114,7 +114,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_fanout.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- a census runs serially under nice 19 (CEO-1333)"; exit 2; }
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=dyn_caps_ratchet
 GATE_STRICT=1

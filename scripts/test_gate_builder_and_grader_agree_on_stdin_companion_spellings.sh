@@ -31,7 +31,7 @@
 #       · 1 a spelling the grader knows is INVISIBLE to the builder (the absorb-unfed defect is back)
 #       · 2 REFUSED -- cannot measure (no python3, harness will not import, no spellings, builder not found).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 command -v python3 >/dev/null 2>&1 || { echo "REFUSED: no python3 -- cannot measure"; exit 2; }
 [ -f "$HERE/util_build_rungs_suite.py" ] || { echo "REFUSED: no util_build_rungs_suite.py -- cannot measure"; exit 2; }
 SUFFIXES="$(python3 -c "

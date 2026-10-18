@@ -12,7 +12,7 @@
 # mode, by test_gate_gc_the_chain_over_the_maps_finds_every_frame_by_return_pc.sh.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 CORPUS="$ROOT/../corpus/benchmarks"; [ -d "$CORPUS" ] || { echo "REFUSE(2): corpus/benchmarks not beside SCRIP"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 bad=0

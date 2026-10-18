@@ -18,7 +18,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # comparison was shown red once against a ref with one line altered.
 # EXIT 0 all arms; 1 a red (named); 2 REFUSED (oracle or the build missing, an Ir reading that is not a number).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_oracle_flags.sh"
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || { echo "REFUSED(2): cannot load lib_ir_measure.sh -- this gate will not read Ir by hand"; exit 2; }
 SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "REFUSED(2): correctness oracle missing ($SBL)"; exit 2; }

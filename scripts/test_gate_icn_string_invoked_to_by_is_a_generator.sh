@@ -15,7 +15,7 @@
 # and must stay so: the string form is required to agree with the operator it names, not merely with the oracle.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 NAME=icn_string_invoked_to_by_is_a_generator
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }

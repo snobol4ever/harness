@@ -20,7 +20,7 @@
 # expression fails silently, x stays 0 -- a cure that raised 111 eagerly would move it); g07 is a plain variable
 # target and g08 a subscript target, the two lvalue paths the fallback must never capture.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 GATE_NAME="an_assignment_to_a_value_raises_111_at_run_time_instead_of_aborting"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT:-$ROOT/out}"

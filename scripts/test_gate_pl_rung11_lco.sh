@@ -29,7 +29,7 @@
 # proving it FAILS ONCE -- part 3's RSS bound was checked to reject an O(N) stack by running the high-N witness with a
 # deliberately un-flat control. A DONE-WHEN nobody has seen fail is not an acceptance test.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 [ -x "$SCRIP" ] || { echo "GATE UNPROVEN(2) [pl_rung11_lco]: no scrip binary at $SCRIP"; exit 2; }
 

@@ -30,7 +30,7 @@
 # Usage: bash ../harness/scripts/test_gate_rungs_suite_deferral_and_scope.sh [--informational]
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 GATE_NAME="master-suite-deferral-and-scope"
 GATE_STRICT=1

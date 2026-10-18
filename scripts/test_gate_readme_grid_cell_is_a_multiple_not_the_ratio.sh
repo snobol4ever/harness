@@ -19,7 +19,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # and one multiple cell and proves rc=1 naming the ratio cell, then rc=0 once it is the multiple. FAIL_ONCE=1 corrupts the
 # selftest's planted multiple cell into the ratio to prove the arm trips.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 README="${S4E_README:-$ROOT/README.md}"; CORPUS="${S4E_CORPUS_ROOT:-$ROOT/../corpus}"
 grade(){ python3 - "$1" "$2" <<'PY'
 import sys, re, os

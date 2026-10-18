@@ -22,7 +22,7 @@
 # EXIT: 0 every arm holds in both modes; 1 a mismatch or a crash; 2 REFUSED (stale binary, no gcc).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_a_numeric_relop_numifies_the_empty_and_the_blank_string_as_rakudo_does_and_icon_keeps_error_102"

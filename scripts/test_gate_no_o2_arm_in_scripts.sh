@@ -19,7 +19,7 @@
 # RT_OPT= / RTOPT=. A gate broader than its rule gets disabled by the first person it blocks for a good
 # reason, and then it guards nothing at all.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 # REFUSES rc=2 WHEN IT CANNOT MEASURE -- never skip-as-success (RULES.md: a test that cannot measure refuses).
 [ -d scripts ] || { echo "GATE REFUSED (rc=2): cannot see ../harness/scripts/ from $ROOT -- nothing was checked" >&2; exit 2; }
 n=$(ls ../harness/scripts/*.sh 2>/dev/null | wc -l)

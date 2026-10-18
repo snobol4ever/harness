@@ -30,7 +30,7 @@
 #     PASCAL 1 and RAKU 1, never OTHER
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 C="$ROOT/../harness/scripts/audit_delimited_aggregates_census.py"; B="$ROOT/../harness/scripts/fixtures/delimited/BASELINE.tsv"; NM="$ROOT/../harness/scripts/fixtures/delimited/NON_MEMBERS.tsv"
 for f in "$C" "$B" "$NM"; do [ -s "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT

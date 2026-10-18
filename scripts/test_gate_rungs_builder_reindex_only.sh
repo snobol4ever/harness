@@ -35,7 +35,7 @@ if [ -z "${LANG_T:-}" ]; then
   done
   [ "$red" = 1 ] && exit 1; [ "$refused" = 1 ] && exit 2; exit 0
 fi
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E_REAL="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SUT="${SUT:-$HERE/util_build_rungs_suite.py}"
 LANG_T="${LANG_T:-prolog}"; EXT_T="${EXT_T:-.pl}"

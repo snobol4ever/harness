@@ -32,7 +32,7 @@
 # EXIT: 0 every witness agrees with the oracle in both modes · 1 any disagreement · 2 REFUSED (cannot measure).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
 RT="$ROOT/out"
 # ⭐ FAIL-ONCE HOOK: the ONLY override this gate honours -- point it at a binary with the cure backed out and

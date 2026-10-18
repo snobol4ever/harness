@@ -22,7 +22,7 @@
 # and copies g_call_args, and the open no longer guards how=2 on nargs -- or, if the glue ever goes back to a fixed
 # zero-count record that copies nothing, the guard must return.  FAIL_ONCE=1 pretends the guard is still there.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 RT="src/runtime/rt/rt.c"; GLUE="src/templates/bb/bb_glue_flat.cpp"; ASM="src/runtime/rt/rt_asm_helpers.S"
 [ -f "$RT" ] && [ -f "$GLUE" ] && [ -f "$ASM" ] || { echo "REFUSE(2): a source file this gate grades is missing"; exit 2; }
 

@@ -18,7 +18,7 @@
 # and its telemetry read verify=<n> and a poison line at every collection (arms 1-3 RED, arm 4 green: the witness's live set is bounded,
 # a hundred keys, so it answers under the old 4 MB cap too). EXIT 0 all arms; 1 a red (named); 2 REFUSED.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SBL=/home/resources/spitbol-bench-oracle/sbl; [ -x "$SBL" ] || { echo "REFUSED(2): the SPITBOL oracle $SBL is missing"; exit 2; }
 [ -x "$ROOT/scrip" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "REFUSED(2): $ROOT/scrip or out/libscrip_rt.so not built"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT

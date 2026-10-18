@@ -35,7 +35,7 @@
 # rc=0 CLEAN (every witness and control matches the icont-cut ref in both modes), rc=1 VIOLATION (at least one
 # does not), rc=2 UNPROVEN (no oracle, no fresh binary, a missing fixture, or a zero denominator).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
 GATE_NAME=icn_list_element_alternation_position
 . "$HERE/lib_oracle_flags.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_oracle_flags.sh unavailable"; exit 2; }

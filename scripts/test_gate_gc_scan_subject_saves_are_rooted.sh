@@ -20,7 +20,7 @@
 # Both refs are cut LIVE from icont; FAIL_ONCE=1 corrupts arm 1's ref (CEO-1680: a proper fail-once is a witness red against a
 # corrupted ref or the oracle's different answer). A stale binary or a missing icont REFUSES rc=2; a refusal is not a red.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 G=gc_scan_subject_saves_are_rooted
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
 . "$HERE/lib_oracle_flags.sh"

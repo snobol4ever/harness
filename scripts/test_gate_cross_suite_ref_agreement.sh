@@ -21,7 +21,7 @@
 # and flagging it would make this gate noise. Only byte-identical sources are evidence about refs.
 # EXIT 0 no contradictions; 1 at least one (names them); 2 REFUSED (cannot measure -- never skip-as-success).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 CORPUS="${CORPUS:-$S4E/corpus/tests}"
 [ -d "$CORPUS" ] || { echo "⛔ GATE REFUSED (rc=2): cannot see $CORPUS -- nothing was checked" >&2; exit 2; }

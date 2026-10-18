@@ -16,7 +16,7 @@
 # ORACLE: fpc -Miso (ISO Pascal is CASE-INSENSITIVE; that is Pascal's rule, not SNOBOL4's).
 # EXIT: 0 both witnesses match the oracle in both modes; 1 a mismatch; 2 REFUSED -- cannot measure.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 refuse() { echo "GATE UNPROVEN(2) [pas-forward-param-record-fields]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no ./scrip at $SCRIP -- run make"

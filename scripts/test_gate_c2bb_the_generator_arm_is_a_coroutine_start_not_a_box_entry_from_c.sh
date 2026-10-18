@@ -66,7 +66,7 @@
 #         holds no gen_h.coro and no gen_h.enter (the generator never left the spine for a coroutine or a C entry).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT" || exit 2
 
 CORO_WITNESSES="../harness/scripts/fixtures/c2bb_raku_seq_coro.raku"

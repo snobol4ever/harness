@@ -14,7 +14,7 @@
 #   5  and that scratch run WRITES NO SCORE ROW: the real SUITES.tsv is byte-identical before and after (the fixture door, COO-216).
 # EXIT: 0 every arm holds; 1 an arm failed; 2 could not measure (no oracle, no binary, stale binary). Population printed.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=harness_renders_a_spitbol_fatal_into_stdout
 gate_parse_args "$@"

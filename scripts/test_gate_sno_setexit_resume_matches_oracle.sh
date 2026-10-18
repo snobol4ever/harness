@@ -20,7 +20,7 @@ set -u
 #       runner on 2026-09-04 and put the rule in lib_gate.sh as ONE copy -- and this gate was written the same day
 #       and did not inherit it. A cure that lands as a shared helper still has to be ADOPTED by each new instrument,
 #       and the newest instrument is the one least likely to know the helper exists.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 H="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 S="$ROOT/scrip"
 [ -x "$S" ] || { echo "⛔ GATE REFUSES: no $S -- make first. A missing binary proves NOTHING about this defect."; exit 2; }

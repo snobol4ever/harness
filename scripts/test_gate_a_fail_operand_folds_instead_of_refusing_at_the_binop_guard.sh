@@ -21,7 +21,7 @@
 # all three; p07 puts a SIDE EFFECT in the folded BINOP's live operand and must still print it, because the fold
 # rewrites only the consumer and must leave the operands it dropped wired and running.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 GATE_NAME="a_fail_operand_folds_instead_of_refusing_at_the_binop_guard"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="$ROOT/out"

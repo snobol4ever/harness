@@ -15,7 +15,7 @@
 # kw_cset_intern to still allocate from the COLLECTED HEAP. Moving the interned bytes to the arena or to libc would make the band green
 # while taking the object out of the collector's sight, which is the same evasion as pinning it, one name further out.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
 bad=0
 if grep -qE 'rt_wsb?_alloc|rt_ws_alloc_descr' src/runtime/keywords.c && ! grep -qE '\b(malloc|calloc|realloc|strdup)\b' src/runtime/keywords.c; then echo "  FACT-RULE PASS: kw_cset_intern still allocates the interned bytes on the COLLECTED heap (rt_ws_alloc or its atomic sibling rt_wsb_alloc -- same rt_gcheap_alloc, same marking, same relocation, only the interior scan differs) AND the interned bytes reach no libc allocator"

@@ -21,7 +21,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_io_path_and_handle_are_typed_values_as_rakudo_has_them.sh   (~10s, no oracle at run time, no network; writes only under /tmp/rk_iogate_<pid>)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_io_path_and_handle_are_typed_values_as_rakudo_has_them"

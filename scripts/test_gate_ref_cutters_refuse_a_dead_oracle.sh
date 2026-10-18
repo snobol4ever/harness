@@ -35,7 +35,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # EXIT: 0 all arms · 1 an arm failed · 2 REFUSED (could not measure: no python3, missing cutter, mktemp failed).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 command -v python3 >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE rc=2: python3 not on PATH"; exit 2; }
 for f in corpus_suite_harness.py util_build_package_suite.py util_ref_mint.sh util_mint_bench_refs.sh scorecard_snobol4.sh; do

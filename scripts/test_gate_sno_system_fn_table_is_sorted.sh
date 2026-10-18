@@ -6,7 +6,7 @@
 # pins it: the table is parsed out of the header and checked in strcmp (byte) order. No build, ~0.1 s.
 # EXIT 0 sorted and unique; 1 a violation (named); 2 REFUSED (the header or the table cannot be found/parsed).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 H="$ROOT/src/runtime/snobol4_system_fns.h"
 [ -r "$H" ] || { echo "REFUSED(2): $H not readable"; exit 2; }
 python3 - "$H" <<'PY'

@@ -12,7 +12,7 @@
 # error-path population" (hq_P), not specific to DATA, and is out of scope here -- see the companion FINDING.
 # EXIT 0 mode-4 binary reports ERROR 248 and does not continue · 1 it doesn't/does · 2 REFUSED (not built)
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [sno-data-protect-mode4]: $SCRIP not built"; exit 2; }
 LIBDIR="$ROOT/out"; [ -f "$LIBDIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [sno-data-protect-mode4]: $LIBDIR/libscrip_rt.so missing"; exit 2; }
 W="/tmp/$$-sno-data-protect-mode4"; mkdir -p "$W"; trap 'rm -rf "$W"' EXIT

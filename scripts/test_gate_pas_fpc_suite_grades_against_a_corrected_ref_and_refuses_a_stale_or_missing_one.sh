@@ -6,7 +6,7 @@
 # green in BOTH modes -- SCRIP's stdout equals its corrected ref and its exit code equals ALL.wantrc. FAIL_ONCE=1 corrupts the shipped corrected ref.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$G" || exit $?
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; RUNNER="$HERE/test_pascal_fpc_suite.sh"; SHIP="$ROOT/../corpus/packages/pascal/fpc_tests"
 [ -f "$RUNNER" ] && [ -d "$SHIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: runner or shipped suite missing"; exit 2; }

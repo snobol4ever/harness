@@ -23,7 +23,7 @@
 #   caller, 2026-09-23; kept as the arm that proves the restore still hands back the grown array).
 # rc 0 GREEN · 1 RED (named) · 2 REFUSE (cannot measure).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 GATE_NAME=ct_grow_grows_in_place_at_the_frontier_or_allocs_copies_and_abandons
 . "$HERE/lib_gate.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: lib_gate.sh unavailable"; exit 2; }
 gate_parse_args "$@"

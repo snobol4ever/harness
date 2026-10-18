@@ -15,7 +15,7 @@
 # same-shaped ARRAY('0:2') and ARRAY('0:1').
 # The .ref of the witness is cut by Rakudo (/usr/bin/raku), never from ./scrip. A stale binary, a missing witness or no gcc REFUSES rc=2.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 G=gc_a_raku_list_array_marker_survives_a_collection_and_snobol4_never_sees_it

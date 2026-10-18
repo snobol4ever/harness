@@ -12,7 +12,7 @@
 # (2026-10-09, hq_snobol4: the layer body is rt_trace_event_args_ip since the trace hooks carry their island and the VALUE tap carries its pend; rt_trace_event_args and _i are one-line wrappers, so the counter sits on the body.)
 # FAIL-ONCE: on 65bb1f417 (before the cure) arms m3 and m4 read trace_idle=400 rt_trace_event_args=400 each (one entry per call; the control arm read 2010 entries).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSED(2): cannot load lib_gate.sh"; exit 2; }; GATE_NAME=sno_a_define_call_on_a_default_build_never_enters_the_trace_layer
 gate_require_fresh "$ROOT" src "$ROOT/scrip" || exit 2
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSED(2): no $ROOT/scrip -- run make"; exit 2; }

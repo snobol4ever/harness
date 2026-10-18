@@ -27,7 +27,7 @@
 #
 # EXIT: 0 both witnesses m4=PASS · 1 either m4-red (the regression is live) · 2 REFUSED (cannot measure).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 RUNNER="$HERE/test_prolog_ladder.sh"
 S="$ROOT/scrip"; RT="$ROOT/out/libscrip_rt.so"
 [ -x "$RUNNER" ] || { echo "REFUSE (rc=2): no test_prolog_ladder.sh at $RUNNER"; exit 2; }

@@ -22,7 +22,7 @@
 set -u
 GATE_NAME=test_gate_preflight_arms_stay_cheap
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh"
 LIST="$HERE/preflight_arms.txt"
 BUDGET_S=${PREFLIGHT_ARM_BUDGET_S:-5}

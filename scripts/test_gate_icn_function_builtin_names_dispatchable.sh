@@ -52,7 +52,7 @@
 # REFUSES rc=2 rather than reporting green whenever it cannot measure: no oracle, no arity list, zero names
 # graded. A test that cannot measure never prints the success shape.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="$ROOT/scrip"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSES(2): lib_oracle_flags.sh unloadable"; exit 2; }
 ICONT="$(icont_bin 2>/dev/null)"

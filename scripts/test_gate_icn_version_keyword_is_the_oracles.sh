@@ -7,7 +7,7 @@ set -uo pipefail
 # output (IPL progs/gftrace writes it into the header of the file it generates) carried a line no oracle-cut ref could match. ⛔ SCOPE: the keyword's
 # text only. Measured on the oracle and not on SCRIP: the other keywords the old Jcon kwds.std disagrees about (&allocated, &regions, &storage, &features)
 # are a separate row; this gate says nothing about them.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no scrip at $SCRIP"; exit 2; }
 ICONT="${ICONT_BIN:-/home/resources/icon-master/bin/icont}"; [ -x "$ICONT" ] || { echo "⛔ REFUSE(2): no icont at $ICONT -- the expected text is read from the ORACLE, never typed here"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT

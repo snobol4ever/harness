@@ -17,7 +17,7 @@
 #       Without (c) the gate would certify a file the grader cannot load, which is the exact failure it exists to stop.
 #   (d) banner width is uniform, so a promotion that drops ` XFAIL` re-pads instead of leaving a ragged column.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 for f in ALL.pl ALL.ref ALL.csv; do [ -f "$P/$f" ] || refuse "missing $P/$f"; done

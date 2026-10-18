@@ -45,7 +45,7 @@
 # the report still fits, and the arm is green either way.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no scrip at $SCRIP"; exit 2; }
 SRC="$ROOT/src/runtime/rt/gc_heap.c"; [ -f "$SRC" ] || { echo "⛔ REFUSE(2): $SRC absent"; exit 2; }
 command -v /usr/bin/time >/dev/null || { echo "⛔ REFUSE(2): /usr/bin/time is the RSS instrument and it is absent"; exit 2; }

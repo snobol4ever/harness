@@ -28,7 +28,7 @@
 # hb_defer_subject.sno, so that rule reds this gate's arm 7 on the tree it was proposed against) was measured and
 # declined for exactly this reason. Arm 1 holds the one thing that IS gradeable: the line never appears with the knob off.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || exit 2
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT; bad=0
 cat > "$W/w.sno" <<'EOS'

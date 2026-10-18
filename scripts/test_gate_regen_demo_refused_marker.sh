@@ -19,7 +19,7 @@
 # failure mode this project has already paid for twice (util_oracle_flag_sweep.sh, test_gate_argnote_sweep.sh).
 # SUT= overrides the script under test (used to prove the gate FAILS against the pre-cure script -- fail-once).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SUT="${SUT:-$HERE/util_regen_demo_s_artifacts.sh}"
 SCRIP="${SCRIP:-$ROOT/scrip}"
 refuse() { echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }

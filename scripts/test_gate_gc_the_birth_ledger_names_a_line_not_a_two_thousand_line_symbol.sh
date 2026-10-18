@@ -33,7 +33,7 @@
 # pass tomorrow.  FAIL_ONCE=1 plants a phantom kind and must red.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 S4E="$(cd "$ROOT/.." && pwd)"
 H="$ROOT/src/runtime/rt/gc_heap.h"

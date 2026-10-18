@@ -71,7 +71,7 @@
 # out EXPIRED WITH ITS NAMED ROW, exactly as that ruling said it would, and the row is closed.
 set -uo pipefail
 GATE_NAME=test_gate_pl_atom_name_survives_a_collect_mid_operation
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT_DIR="${RT_DIR:-$ROOT/out}"; SWIPL="${SWIPL:-/usr/bin/swipl}"
 ATOMC="$ROOT/src/runtime/rt/prolog_atom.c"
 QUICK=0; for a in "$@"; do case "$a" in --quick) QUICK=1 ;; esac; done

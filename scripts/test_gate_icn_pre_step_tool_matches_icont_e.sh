@@ -15,7 +15,7 @@
 # The oracle is the GATE here, never a step of the product. PROVEN FAIL-ONCE: IPP_BIN=/bin/true reads FAIL on every file. ~30 s.
 # Exit 0 = every file agrees; 1 = a disagreement, named; 2 = cannot measure.
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G="$(basename "${BASH_SOURCE[0]}" .sh)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G="$(basename "${BASH_SOURCE[0]}" .sh)"
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"; CORPUS="${CORPUS:-$S4E/corpus}"
 TOOL="${IPP_BIN:-$ROOT/out/scrip-ipp}"; [ -x "$TOOL" ] || { echo "⛔ GATE REFUSE(2) [$G]: no pre-step at $TOOL -- make"; exit 2; }
 ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || { echo "⛔ GATE REFUSE(2) [$G]: no icont at $ICONT"; exit 2; }

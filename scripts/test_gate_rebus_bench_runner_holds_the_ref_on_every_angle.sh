@@ -13,7 +13,7 @@
 # and the board line all_pass=1 all_n=3. Needs the build (it runs scrip in both modes); ~5 s at BENCH_BUD_MS=50.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=rebus_bench_runner_holds_the_ref_on_every_angle
 GATE_STRICT=1

@@ -18,7 +18,7 @@
 # Usage: bash ../harness/scripts/test_gate_raku_the_regex_engine_is_rx_and_agrees_with_rakudo_on_quantifiers_alternation_captures_aliases_and_classes.sh   (~40s, no oracle at run time, no network)
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="raku_the_regex_engine_is_rx_and_agrees_with_rakudo"

@@ -14,7 +14,7 @@
 # (3) FAIL-ONCE, the pre-cure smoke (the harness with SMOKE_DELEGATES emptied, grading the container) reads at least one witness red --
 #     puzz seeds &random from &clock, which only the board's .pin shim fixes -- so arm 1 reds on the defect this gate names.
 # rc 2 when the binary, the runner or a witness is missing, or the smoke refuses.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(2): no lib_gate.sh" >&2; exit 2; }
 GATE_NAME=area_smoke_grades_ipl_entries_the_boards_way; gate_parse_args "$@" 2>/dev/null || true
 H="$HERE/corpus_suite_harness.py"

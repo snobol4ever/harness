@@ -29,7 +29,7 @@
 # removes it from the corpus.
 # EXIT: 0 every pinned package still carries a clause · 1 one or more vanished · 2 REFUSED (no SCORE.md).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 GATE_NAME="test_gate_score_inventory_clauses_never_vanish"
 gate_parse_args "$@"

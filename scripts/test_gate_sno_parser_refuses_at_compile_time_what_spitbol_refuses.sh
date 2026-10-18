@@ -13,7 +13,7 @@
 # control-refuse read ACCEPT and the gate red for a reason that was not SCRIP's parser (the cto and the cfo, 2026-10-03).
 set -u
 ONLY="${1:-}"
-HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; PS="$ROOT/out/parser_snobol4"
+HERE="$(cd "$(dirname "$0")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; PS="$ROOT/out/parser_snobol4"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 SBL="${SBL:-$(sbl_correctness_bin 2>/dev/null || echo /home/resources/x64/bin/sbl)}"
 [ -x "$PS" ] || { echo "⛔ REFUSE(2): no out/parser_snobol4 -- make parsers first"; exit 2; }

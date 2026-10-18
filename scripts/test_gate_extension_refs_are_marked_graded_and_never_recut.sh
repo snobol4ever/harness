@@ -18,7 +18,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the harness's run, extension-r
 # (5) extension-check passes a package ledger, and REFUSES rc=2 on a stale sha and on a program also named in EXCLUDED.tsv;
 # (6) capture-oracle-refs REFUSES rc=2 to overwrite a package program the ledger names.
 # rc 2 when sbl, csnobol4 or the binary is missing.
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || { echo "⛔ REFUSE(2): cannot cd to SCRIP root" >&2; exit 2; }
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(2): no lib_gate.sh" >&2; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(2): no lib_oracle_flags.sh" >&2; exit 2; }
 GATE_NAME=extension_refs_are_marked_graded_and_never_recut; gate_parse_args "$@" 2>/dev/null || true

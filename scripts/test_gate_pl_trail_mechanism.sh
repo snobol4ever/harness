@@ -12,7 +12,7 @@
 #   (5) f(X,1) = f(2,3): the partial binding of X is undone by the failing unify itself (B.11 atomicity), tr back to its entry mark.
 #   (6) the arena limit REFUSES rc=2 with a named limit -- never an abort, never a wrap into the next arena.
 # EXIT: 0 every check passes · 1 a check fails · 2 UNPROVEN (no runtime library / no compiler / harness will not build).
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; cd "$ROOT"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT"
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 RT="${RT_DIR:-$ROOT/out}"

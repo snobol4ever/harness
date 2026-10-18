@@ -24,7 +24,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners i
 # NEEDS_DRIVER and a LOADED_BY row was refused as an unknown KIND.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (an oracle, the fixture or the corpus could not be read -- nothing measured).
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 CORPUS_REAL="${S4E_CORPUS:-$(cd "$ROOT/.." && pwd)/corpus}"
 U="$HERE/util_container_or_library.py"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED(2): lib_oracle_flags.sh unloadable"; exit 2; }
