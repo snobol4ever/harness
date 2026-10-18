@@ -185,7 +185,7 @@ _CTX = {}
 def context():
     if _CTX:
         return _CTX
-    _CTX["scrip"] = _git_short(os.path.join(S4E, "SCRIP"))
+    _CTX["scrip"] = _git_short(_tree_default())
     _CTX["corpus"] = _git_short(os.path.join(S4E, "corpus"))
     # ⛔ S4E_SEAT WINS OVER THE ROOT PATH (coo 2026-09-16; hq_raku via the cfo: base-vs-head boards graded on two DETACHED WORKTREES
     # were attributed to root:base and root:head -- a pseudo-seat no LANES: line names -- so a batch audit keyed on measurer could not
@@ -247,6 +247,17 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
     return h.hexdigest() if ok == len(files) and ok >= 1 else "unknown"   # a port engine may be one file (snobol4jvm's jar)
 
 
+def _tree_default():
+    """The checkout a row's tree column names when no graded binary is pinned: S4E_HOME/SCRIP -- or, under a port engine, the checkout of
+    the driver its runner names first (CEO-1822). A port root holds no SCRIP, so every bash package runner's row read "unknown" there
+    (measured 2026-10-18: test_snobol4_dotnet_suite.sh under S4E_ENGINE=dotnet, 13 rows), where the harness's own pin names the port commit."""
+    if engine() != "scrip":
+        b = engine_binaries()
+        if b:
+            return _tree_of_binary(b[0])
+    return os.path.join(S4E, "SCRIP")
+
+
 def _tree_of_binary(scrip_bin):
     """The SCRIP checkout a graded binary was built in: the git toplevel of the binary's own directory (a worktree's scrip lives in
     the worktree), or S4E_HOME/SCRIP when there is no binary path or it is in no checkout."""
@@ -267,7 +278,7 @@ def _ground(scrip_bin=None, rt_dir=None):
     SCRIP=), and this used to re-read S4E_HOME/SCRIP/scrip at append time -- so every worktree run ended THE GROUND MOVED rc 2 after a
     green board, and a row's scrip stamp named the seat root's commit, a tree that never graded it. The tree hash is the graded binary's
     own checkout; the corpus stays S4E_HOME's (the population the run read)."""
-    return {"scrip": _git_short(_tree_of_binary(scrip_bin) if scrip_bin else os.path.join(S4E, "SCRIP")),
+    return {"scrip": _git_short(_tree_of_binary(scrip_bin) if scrip_bin else _tree_default()),
             "corpus": _git_short(os.path.join(S4E, "corpus")), "fp": _bin_digest(scrip_bin, rt_dir)}
 
 
