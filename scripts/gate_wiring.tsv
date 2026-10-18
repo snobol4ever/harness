@@ -671,6 +671,7 @@ test_gate_pl_a_meta_call_of_a_compiled_predicate_jumps_to_it_and_resumes_through
 test_gate_pl_a_meta_called_format_reads_its_empty_argument_list.sh	WIRED	-	-	-
 test_gate_pl_a_module_qualified_goal_runs_its_goal_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_negative_unbounded_integer_literal_reads_as_its_own_value.sh	WIRED	-	-	-
+test_gate_pl_a_number_in_unicode_digits_or_digit_groups_converts_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_predicate_with_more_than_64_clauses_keeps_every_clause.sh	WIRED	-	-	-
 test_gate_pl_a_predicates_frame_overlays_its_clauses_construct_slots.sh	WIRED	-	-	-
 test_gate_pl_a_prefix_operator_wins_the_write_over_a_postfix_one.sh	WIRED	-	-	-
