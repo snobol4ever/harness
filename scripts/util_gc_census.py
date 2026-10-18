@@ -2887,7 +2887,7 @@ def main(argv):
         elif c == "maps":
             langs = ZLS_LANGS_ALL if a.zls_langs == "all" else (ZLS_LANGS_FAST if a.zls_langs == "fast" else [x.strip() for x in a.zls_langs.split(",") if x.strip()])
             wits = [x.strip() for x in a.map_witness.split(",") if x.strip()] or \
-                   [os.path.join(R, "scripts", "fixtures", "gc_roots_witness.sno"), os.path.join(R, "scripts", "fixtures", "gc_map_witness.icn")]
+                   [os.path.join(HERE, "fixtures", "gc_roots_witness.sno"), os.path.join(HERE, "fixtures", "gc_map_witness.icn")]
             rcs.append(census_maps(R, scrip, langs, wits))
     rc = worst(rcs)
     print(f"population: {len(want)} census(es): {rcs.count(0)} green, {rcs.count(1)} red, {rcs.count(2)} not measured -- rc={rc}")
