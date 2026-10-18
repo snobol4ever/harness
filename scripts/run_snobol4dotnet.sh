@@ -65,9 +65,13 @@ fi
 # shellcheck source=lib_oracle_flags.sh
 . "$HERE/lib_oracle_flags.sh" || exit 2
 read -r -a lang_flags <<< "$(sbl_lang_flags)"
+# The listing sink: the SNOBOL4 package runners keep a program's -LIST listing out of the compared stream by giving the oracle
+# -o=<file> (sbl_listing_sink_flag) and SCRIP the same file through SCRIP_SNO_LIST_SINK. The port engine honours SPITBOL's own form
+# (snobol4dotnet 2c7d1d9: -o=file writes file.lst), so the sink the runner exported reaches it as -o=<file> (hq_dotnet, 2026-10-18).
+sink=(); [ -n "${SCRIP_SNO_LIST_SINK:-}" ] && sink=("-o=$SCRIP_SNO_LIST_SINK")
 args=(); sep=0
 for a in "$@"; do
     if [ "$a" = -- ] && [ "$sep" = 0 ]; then sep=1; continue; fi
     args+=("$a")
 done
-exec dotnet "$DLL" "${lang_flags[@]}" "${args[@]}"
+exec dotnet "$DLL" "${lang_flags[@]}" "${sink[@]}" "${args[@]}"
