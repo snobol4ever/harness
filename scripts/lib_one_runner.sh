@@ -185,6 +185,14 @@ one_runner_port_tree() {
   _t="$(git -C "$(dirname "${_d:-/}")" rev-parse --show-toplevel 2>/dev/null)" || { printf '%s ?' "$_e"; return 0; }
   printf '%s %s%s' "$_e" "$(git -C "$_t" rev-parse --short HEAD)" "$(git -C "$_t" diff --quiet HEAD 2>/dev/null || printf -- -dirty)"
 }
+# one_runner_port_publish <suite>@<engine> -- a port's whole canonical pass publishes its row, as SCRIP's runners publish theirs on a
+# whole-population pass (CEO-1302 (a); agreed by hq_jvm and hq_dotnet on the bus, 2026-10-18): util_score_row.py from-progress over the
+# rows the pass appended. Shut by S4E_SCORE_NO_WRITE as SCRIP's write is; a refusal is said aloud and never turns the board red.
+one_runner_port_publish() {
+  if [ -n "${S4E_SCORE_NO_WRITE:-}" ]; then echo "SUITES.tsv: $1 NOT PUBLISHED -- this run publishes nothing by its caller's own declaration (S4E_SCORE_NO_WRITE): $S4E_SCORE_NO_WRITE"; return 0; fi
+  python3 "$(dirname "${BASH_SOURCE[0]}")/util_score_row.py" from-progress --suite "$1" \
+    || echo "⚠ SUITES.tsv: $1 NOT PUBLISHED -- from-progress refused (above); the board line still stands"
+}
 one_runner_who() {
   local lang="${1:-}" lanes key
   lanes="$(one_runner_lanes_line)"

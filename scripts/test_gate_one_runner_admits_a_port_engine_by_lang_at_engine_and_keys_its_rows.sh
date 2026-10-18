@@ -138,9 +138,9 @@ arm "9g with the source newer than the jar, both fingerprints still name the jar
 # THE PACKAGE RUNNERS TAKE THE PORT (Lon 2026-10-18 to hq_jvm: "Get all SNOBOL4 test suite package runners working with snobol4jvm."): each of
 # hq_jvm's four grades a plain copy of its package in the staged root with its own grading, under the stub java (which prints nothing, so every
 # graded program is red) and the live sbl oracle: m3 alone, every row keyed <suite>@jvm, no m4 row, the face exec'd (no rc=126, cannot
-# execute), no SCRIP row written but its from-progress line printed (and the engine, never SCRIP, on a bash-graded board line), and its rows
-# assembled into <key>@jvm by from-progress beside the bare row they leave untouched. Unset, the same runner takes SCRIP's path and refuses
-# rc 2 for want of a scrip binary in the staged root.
+# execute), no SCRIP row written but its from-progress line printed (and the engine, never SCRIP, on a bash-graded board line), and <key>@jvm
+# published by the runner itself through one_runner_port_publish beside the bare row it leaves untouched -- and nothing published under
+# S4E_SCORE_NO_WRITE. Unset, the same runner takes SCRIP's path and refuses rc 2 for want of a scrip binary in the staged root.
 arm "10a the face is executable, as the runners exec it"               '[ -x "$H/run_port_as_scrip.sh" ]'
 touch "$JS/target/uberjar/SNOBOL4clojure-0.2.0-standalone.jar"   # 9f left the stub source newer than the jar
 mkdir -p "$R/corpus/packages/snobol4"; cp "$T/SUITES.before" "$T/SUITES.pkg.tsv"
@@ -160,19 +160,19 @@ pkgrun() {  # pkgrun <runner> <db> [engine]: one package runner over its staged 
 mode_rows() { awk -F'\t' -v m="$2" 'NR>1 && $9==m' "$1" | wc -l; }
 for p in $PKGS; do
     IFS=: read -r pkg db key bl r <<< "$p"
-    cp "$T/SUITES.pkg.tsv" "$T/SUITES.pkg.pre"; rc="$(pkgrun "$r" "$T/pkg_$key.tsv" jvm)"; cp "$T/out" "$T/out_$key"
+    rc="$(pkgrun "$r" "$T/pkg_$key.tsv" jvm)"; cp "$T/out" "$T/out_$key"
     arm "10-$key under jvm grades m3 alone, keyed $db@jvm, no m4 row or count, no rc=126 (rc $rc)" \
         'grep -iqE "^$bl .*m4_pass=0 m4_fail=0" "$T/out_$key" && [ "$rc" = 1 ] && [ "$(rows "$T/pkg_$key.tsv" "$db@jvm")" -ge 1 ] && [ "$(rows "$T/pkg_$key.tsv" "$db@jvm")" = "$(mode_rows "$T/pkg_$key.tsv" m3)" ] && [ "$(mode_rows "$T/pkg_$key.tsv" m4)" = 0 ] && [ "$(rows "$T/pkg_$key.tsv" "$db")" = 0 ] && ! grep -q "rc=126" "$T/pkg_$key.tsv"'
     arm "10-$key writes no SCRIP row and prints from-progress --suite $key@jvm" \
-        'cmp -s "$T/SUITES.pkg.tsv" "$T/SUITES.pkg.pre" && grep -q "its row is util_score_row.py from-progress --suite $key@jvm " "$T/out_$key" && { [ "$key" = aisnobol ] || grep -qE "^$bl .* -- engine jvm " "$T/out_$key"; }'
-    env -u S4E_ENGINE S4E_SUITES_TSV="$T/SUITES.pkg.tsv" S4E_PROGRESS_DB="$T/pkg_$key.tsv" S4E_POST="$T/post" S4E_SEAT=hq_jvm \
-        python3 "$R/harness/scripts/util_score_row.py" from-progress --suite "$key@jvm" > "$T/pub_$key" 2>&1
-    arm "10-$key its rows assemble into $key@jvm by from-progress, the bare row untouched" \
-        'awk -F"\t" -v k="$key@jvm" "\$1==k && \$10>=1" "$T/SUITES.pkg.tsv" | grep -q . && [ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ]'
+        '[ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ] && grep -q "its row is util_score_row.py from-progress --suite $key@jvm " "$T/out_$key" && { [ "$key" = aisnobol ] || grep -qE "^$bl .* -- engine jvm " "$T/out_$key"; }'
+    arm "10-$key publishes $key@jvm itself, by from-progress over the rows it appended" \
+        'awk -F"\t" -v k="$key@jvm" "\$1==k && \$10>=1" "$T/SUITES.pkg.tsv" | grep -q . && grep -q "^SUITE_ROW suite=$key@jvm " "$T/out_$key"'
 done
+cp "$T/SUITES.pkg.before" "$T/SUITES.pkg.tsv"; rc="$(S4E_SCORE_NO_WRITE="gate arm 10c" pkgrun test_snobol4_spitbol_testpgms_suite.sh "$T/pkg_nowrite.tsv" jvm)"
+arm "10c under S4E_SCORE_NO_WRITE a port runner grades and publishes nothing (rc $rc)" '[ "$rc" = 1 ] && cmp -s "$T/SUITES.pkg.tsv" "$T/SUITES.pkg.before" && grep -q "testpgms@jvm NOT PUBLISHED" "$T/out" && [ "$(rows "$T/pkg_nowrite.tsv" testpgms@jvm)" -ge 1 ]'
 rc="$(pkgrun test_snobol4_spitbol_testpgms_suite.sh "$T/pkg_unset.tsv")"
 arm "10b unset, testpgms takes SCRIP's path: no scrip in the staged root refuses rc 2 (got $rc)" '[ "$rc" = 2 ] && grep -q "no scrip binary at" "$T/out" && [ ! -s "$T/pkg_unset.tsv" ]'
 
-[ $examined -ge 45 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 45 declared arms"; exit 2; }
+[ $examined -ge 46 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 46 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1

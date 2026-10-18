@@ -351,6 +351,7 @@ fi
 # program would do it), so refuse before the vacuous-clean verdict below can be reached.
 "$HERE/util_require_population.sh" --gate test_snobol4_spitbol_x64_suite "$GRADED" 1 "graded programs (shipped=$SHIPPED ungraded=$UNGRADED_N deferred_m4=$D4)" || exit 2
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+    if [ "$SUITE" = "$CANON_SUITE" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SUITE" = "$CANON_SUITE" ]; then
 # ⛔⭐ CEO-1286 (Lon 2026-09-26): the denominator is SHIPPED minus the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv) -- none here, the
 # 36 are our oracle's own upstream tests -- so the row publishes over shipped, the unreadable ones named in UNGRADED.tsv as debt.

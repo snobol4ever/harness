@@ -168,6 +168,7 @@ echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the
 CONT_N="$(inventory_containers_of "${INV_LINE:-}")"; EXCL_ROW=$((EXCL_D_N + CONT_N))
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp aisnobol "$DENOM" "$OUTSIDE_N" "$EXCL_ROW" "$CONT_N")" || exit 2
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+    if [ "$SUITE" = "$ROOT/corpus/packages/snobol4/aisnobol" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 else
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite aisnobol --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
