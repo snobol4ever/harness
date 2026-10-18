@@ -1271,6 +1271,7 @@ test_gate_swi_runner_grades_a_signal_death_crash_never_fail.sh	WIRED	-	-	-
 test_gate_swi_runner_keeps_what_a_killed_mode4_run_printed.sh	WIRED	-	-	-
 test_gate_table_convert_creation_order.sh	WIRED	-	-	-
 test_gate_template_form_census_names_a_planted_two_form_box.sh	WIRED	-	-	-
+test_gate_template_form_choices_outside_lower_only_fall.sh	WIRED	-	-	-
 test_gate_template_medium_invisible.sh	WIRED	-	-	-
 test_gate_template_returns_count_per_function.sh	WIRED	-	-	-
 test_gate_template_watch_names_a_planted_violation_by_commit.sh	WIRED	-	-	-
@@ -1280,6 +1281,7 @@ test_gate_the_code_pool_refuses_loudly_at_its_cap_never_a_wild_jump.sh	WIRED	-	-
 test_gate_the_default_stack_and_heap_are_spitbols.sh	WIRED	-	-	-
 test_gate_the_runtime_binds_its_own_functions_and_keeps_its_data_and_instrument_entries_interposable.sh	WIRED	-	-	-
 test_gate_the_tiny_open_protocol_and_its_glue_record_agree.sh	WIRED	-	-	-
+test_gate_the_wall_column_is_the_minimum_time.sh	WIRED	-	-	-
 test_gate_timeout_under_load_is_could_not_measure_and_retried_once.sh	WIRED	-	-	-
 test_gate_tmp_scratch_is_released.sh	WIRED	-	-	-
 test_gate_triangulate_parsers_read_only_the_first_grid.sh	WIRED	-	-	-
@@ -1477,4 +1479,3 @@ test_gate_xfail_has_reason.sh	TASK	-	-	-
 test_gate_zdp_on_null.sh	TASK	-	-	-
 test_gate_zeta_no_arena.sh	TASK	-	-	-
 test_gate_zpop_whitelist.sh	TASK	-	-	-
-test_gate_template_form_choices_outside_lower_only_fall.sh	WIRED	-	-	-
