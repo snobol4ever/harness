@@ -17,10 +17,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # Population: 8 shipped .sno programs. absorbed + excluded == shipped is asserted by the builder itself
 # (refuses otherwise) -- not re-checked here, this script only grades what the container already holds.
 set -u
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
 SUITE="${AISNOBOL_SUITE:-$ROOT/corpus/packages/snobol4/aisnobol}"
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_jvm,
+# verbatim: "Get all SNOBOL4 test suite package runners working with snobol4jvm."): the harness dispatches each entry to the port's runner, whose
+# --binaries is the one check; the port is graded in m3 alone, its rows are keyed aisnobol@<engine> by the harness, and no SCRIP score row is
+# written -- the port's row is from-progress. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+MODES=m3,m4; ROWKEY=aisnobol; [ "$PORT" = 1 ] && { MODES=m3; ROWKEY="aisnobol@$(one_runner_engine)"; }
+if [ "$PORT" = 1 ]; then one_runner_port_ready snobol4 || exit 2; cd "$ROOT" || exit 2; else
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
@@ -32,6 +39,7 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 "$HERE/util_require_fresh.sh" --gate test_snobol4_aisnobol_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
 cd "$SD" || exit 2
+fi
 
 if [ ! -f "$SUITE/ALL.sno" ] || [ ! -f "$SUITE/ALL.ref" ]; then
   echo "⛔ GATE REFUSES(rc=2): no container at $SUITE/ALL.{sno,ref} -- run:" >&2
@@ -44,7 +52,7 @@ fi
 # proven for this runner on a fixture by the coo on CEO-1229). Line 2 hands the guard the suite this runner grades (AISNOBOL_SUITE).
 # ⭐ S4E_CHUNK (ceo CEO-1802/1806): the round robin's part (core, chunk:NN, either @<entry>) or a request's entry:<a>[,entry:<b>...] -- the harness
 # grades that selection, appends each test's rows as it ends, and no suite row is written; util_score_row.py from-progress --suite aisnobol assembles it.
-OUT="$(python3 ../harness/scripts/corpus_suite_harness.py run "$SUITE/ALL.sno" "$SUITE/ALL.ref" --modes m3,m4 ${S4E_CHUNK:+--partition "$S4E_CHUNK"} 2>&1)"
+OUT="$(python3 "$HERE/corpus_suite_harness.py" run "$SUITE/ALL.sno" "$SUITE/ALL.ref" --modes "$MODES" ${S4E_CHUNK:+--partition "$S4E_CHUNK"} 2>&1)"
 rc=$?
 printf '%s\n' "$OUT"
 if [ -n "${S4E_CHUNK:-}" ]; then
@@ -62,7 +70,7 @@ if [ -z "$board" ]; then
   # measured directly 2026-09-05 (seat02): every count field came back empty and still got written to
   # the shared leaderboard. An instrument that refused must say so, not print the pass/fail shape.
   echo "AISNOBOL_BOARD REFUSED -- harness printed no SUITE_BOARD line, see REFUSING output above"
-  python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite aisnobol --modes m3,m4 \
+  [ "$PORT" = 1 ] || python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite aisnobol --modes m3,m4 \
     ${S4E_CRITERION_CHANGED:+--criterion-changed "$S4E_CRITERION_CHANGED"} \
       --measurer "${S4E_SEAT:-}" \
       --text "aisnobol: REFUSED -- corpus_suite_harness.py produced no measurement this run, see \`test_snobol4_aisnobol_suite.sh\` REFUSING output (\`test_snobol4_aisnobol_suite.sh\`)" \
@@ -78,6 +86,7 @@ excl=0; [ -s "$SUITE/ALL.excluded.txt" ] && excl=$(cut -d: -f1 "$SUITE/ALL.exclu
 shipped=$((scored + excl))
 m3p="$(field m3_pass)"; m3f="$(field m3_fail)"; m3c="$(field m3_crash)"; m3h="$(field m3_hang)"
 m4p="$(field m4_pass)"; m4f="$(field m4_fail)"; m4c="$(field m4_crash)"; m4h="$(field m4_hang)"
+[ "$PORT" = 1 ] && { m4p=0; m4f=0; m4c=0; m4h=0; }   # a port has no mode 4, so the harness prints no m4 field
 
 # ⭐ THE SPITBOL BASELINE, MEASURED LIVE (Lon 2026-09-08; ceo ruling 18:49 on this seat's own ask). This runner
 # is a thin face over the harness and never ran the oracle per program, so unlike the other package runners it
@@ -158,10 +167,13 @@ echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the
 # line, plus the EXCLUDED.tsv programs of this run's outside set -- the denominator does not move, only its classification.
 CONT_N="$(inventory_containers_of "${INV_LINE:-}")"; EXCL_ROW=$((EXCL_D_N + CONT_N))
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp aisnobol "$DENOM" "$OUTSIDE_N" "$EXCL_ROW" "$CONT_N")" || exit 2
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+else
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite aisnobol --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
     --suite-pass "$bothp" --suite-total "$DENOM" --excluded "$EXCL_ROW" \
     --measurer "${S4E_SEAT:-}" --text "aisnobol both_modes_pass=$bothp/$DENOM ($shipped shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, CEO-1286; OUTSIDE=$OUTSIDE_N kept as debt) . $m3p/$scored m3 . $m4p/$scored m4 SCORED (of $shipped shipped, $excl not in ALL.sno and named) . m3 FAIL=$m3f CRASH=$m3c HANG=$m3h . m4 FAIL=$m4f CRASH=$m4c HANG=$m4h${INV_LINE:+ . $INV_LINE} (\`test_snobol4_aisnobol_suite.sh\`)" \
     || echo "WARNING SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
+fi
 
 exit $rc
