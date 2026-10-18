@@ -108,13 +108,21 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # module/* coverage rows added below — measured RED today for reasons unrelated to this denominator, see
 # the MODULE-REPLACEMENT COVERAGE paragraph further down).
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_flag_gate.sh unloadable"; exit 2; }
 [ $# -eq 0 ] || flaggate_reject "$1" "(none -- set CSNOBOL4_SUITE / TIMEOUT via environment instead)"
 SUITE="${CSNOBOL4_SUITE:-$ROOT/corpus/packages/snobol4/csnobol4_suite}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8}"
 
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each pair runs in m3 alone with its declared heap and stack as switches, its rows are keyed csnobol4@<engine>
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. A preload pair (-L, a CSNOBOL4 switch SCRIP took)
+# reads the face's rc 2 refusal: the port has no such switch. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=csnobol4; [ "$PORT" = 1 ] && ROWKEY="csnobol4@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP — build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
 # does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
@@ -124,6 +132,7 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8}"
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
 "$HERE/util_require_fresh.sh" --gate test_snobol4_csnobol4_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
+fi
 # THE --compat SWITCH IS RETIRED (Lon 2026-09-07): there is one dialect, SPITBOL's, and no per-suite flag.
 COMPAT=""
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_oracle_flags.sh unloadable"; exit 2; }
@@ -281,6 +290,7 @@ declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a de
 . "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE rc=2: lib_gate.sh unloadable -- this board cannot tell whether its corpus moves under it" >&2; exit 2; }
 GATE_NAME=test_snobol4_csnobol4_suite gate_tree_watch "$(cd "$HERE/../.." && pwd)"
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
 
 compile_m4() { local sno="$1" out="$2" ca="${3:-}" t pre; t="$(mktemp -d)"; pre="$(preload_for "$(basename "$sno" .sno)")"
@@ -319,6 +329,7 @@ for sno in "$SUITE"/*.sno; do
     ref="$SUITE/$name.ref"
     if [ ! -f "$ref" ]; then           # not a graded pair (support file) — never hand-curated
         inventory_is_excluded "$SUITE" "$name.sno" && NOA_LIST="$NOA_LIST $name"   # unless EXCLUDED.tsv names it: a shipped program the oracle gives no answer for (CEO-1696)
+        [ "$PORT" = 1 ] && is_outside_baseline "$name" && { progress_append package csnobol4 snobol4 "$name" m3 UNGRADED 0 "unscored: OUTSIDE_SPITBOL_BASELINE.tsv names it, the oracle gives no answer and it has no ref" >/dev/null 2>&1 || true; }   # a port's row reads every shipped program (from-progress)
         continue
     fi
     # ⛔ ALL.sno IS OUR OWN GENERATED CONCATENATION (2006 lines, every entry run together), NOT A SHIPPED
@@ -328,7 +339,8 @@ for sno in "$SUITE"/*.sno; do
     # .ref (concatenated from every entry's own historical run) and was being silently graded before this.
     [ "$name" = "ALL" ] && continue
     if is_excluded_test "$name"; then EXCLUDED_LIST="$EXCLUDED_LIST $name"; if [ "$RECUT" != 0 ]; then awk -F"\t" -v n="$name.sno" '$1!=n' "$OUTSIDE" > "$OUTSIDE.tmp" 2>/dev/null; mv -f "$OUTSIDE.tmp" "$OUTSIDE" 2>/dev/null; printf '%s.sno\tORACLE_REFUSES\toutside the SPITBOL baseline (Lon 2026-09-07): CSNOBOL4 LOAD() module test\n' "$name" >> "$OUTSIDE"; fi; continue; fi
-    if [ "$RECUT" = 0 ] && is_outside_baseline "$name"; then OUTSIDE_LIST="$OUTSIDE_LIST $name"; continue; fi
+    # under a port its row is assembled by from-progress, which reads every shipped program, so an outside program carries its reading there
+    if [ "$RECUT" = 0 ] && is_outside_baseline "$name"; then OUTSIDE_LIST="$OUTSIDE_LIST $name"; [ "$PORT" = 1 ] && { progress_append package csnobol4 snobol4 "$name" m3 UNGRADED 0 "unscored: OUTSIDE_SPITBOL_BASELINE.tsv names it, the oracle gives no answer" >/dev/null 2>&1 || true; }; continue; fi
     TOTAL=$((TOTAL+1))
     exp="$(normalize "$name" "$(cat "$ref")")"
     _mn="$(cat "$W/mask_n" 2>/dev/null || echo 0)"
@@ -355,8 +367,9 @@ for sno in "$SUITE"/*.sno; do
         rm -f "$prog"; split_at_end "$sno" "$prog" "$W/stdin"; inp="$W/stdin"
     fi
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
+    sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     dep="$(setup_dep_for "$name")"
-    [ -n "$dep" ] && { dca="$(declared_compile_args_from_table "$DECL" "$dep")" || exit 2; (cd "$RUN" && run_at_declared_table "$DECL" "$dep" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT --run $dca "$dep.sno" > /dev/null 2>&1); }
+    [ -n "$dep" ] && { dca="$(declared_compile_args_from_table "$DECL" "$dep")" || exit 2; [ "$PORT" = 1 ] && { dca="$dca $(declared_switches_from_table "$DECL" "$dep")" || exit 2; }; (cd "$RUN" && run_at_declared_table "$DECL" "$dep" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT --run $dca "$dep.sno" > /dev/null 2>&1); }
     xargs_extra="$(argv_for "$name")"
     pre_extra="$(preload_for "$name")"
     if [ "$RECUT" != 0 ] && is_extension "$name"; then echo "RECUT SKIPS $name.sno: an EXTENSION REF (EXTENSIONS.tsv), not sbl's to cut"; continue; fi
@@ -373,7 +386,7 @@ for sno in "$SUITE"/*.sno; do
     # bare name the .ref expects — a harness artifact, not a SCRIP or oracle divergence (found triaging
     # row snobol4-csnobol4-thirty-regen-candidate-refs-stale-pin-or-real-defect, seat07 2026-09-04).
     _t0="$(progress_clock)"   # each mode's own wall for its row (CEO-1676 (c)); m4's takes its compile and link
-    got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT $pre_extra --run $ca "$relprog" ${xargs_extra:+-- $xargs_extra} < "$inp" 2>&1)"; rc3=$?
+    got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT $pre_extra --run $ca $sz "$relprog" ${xargs_extra:+-- $xargs_extra} < "$inp" 2>&1)"; rc3=$?
     s3="$(progress_secs_since "$_t0")"
     got3="$(normalize "$name" "$got3")"
     st3="$(status_of "$got3" "$rc3" "$exp")"
@@ -387,7 +400,8 @@ for sno in "$SUITE"/*.sno; do
     esac
 
     _t0="$(progress_clock)"
-    if (cd "$RUN" && compile_m4 "$relprog" "$W/prog.bin" "$ca"); then
+    if [ "$PORT" = 1 ]; then [ "$st3" = PASS ] && BOTH_PASS=$((BOTH_PASS+1))   # a port has no mode 4: no compile, no row; its AND is its one mode
+    elif (cd "$RUN" && compile_m4 "$relprog" "$W/prog.bin" "$ca"); then
         got4="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" $xargs_extra < "$inp" 2>&1)"; rc4=$?
         s4="$(progress_secs_since "$_t0")"
         got4="$(normalize "$name" "$got4")"
@@ -417,7 +431,7 @@ for sno in "$SUITE"/*.sno; do
 done
 
 
-echo "── csnobol4_suite: $TOTAL pairs · SCRIP $SCRIP_HASH · corpus $CORP_HASH · RT_OPT -O0 · timeout ${TIMEOUT}s · oracle sbl -bf (SPITBOL; Lon 2026-09-07: the one SNOBOL4 oracle; formerly csnobol4, Phil Budne, home dialect) · .ref primary, live csnobol4 = triangulation + tiebreak/regen"
+echo "── csnobol4_suite: $TOTAL pairs · $TREE_LABEL · corpus $CORP_HASH · RT_OPT -O0 · timeout ${TIMEOUT}s · oracle sbl -bf (SPITBOL; Lon 2026-09-07: the one SNOBOL4 oracle; formerly csnobol4, Phil Budne, home dialect) · .ref primary, live csnobol4 = triangulation + tiebreak/regen"
 # ⛔ AND THE BASELINE IS COMPARED, not merely taken: a gate_tree_watch with no gate_tree_unmoved is a
 # half-instrument -- it records what nobody checks. Placed BEFORE the board line for the same reason the
 # binary guard is: a refusal that fires after the row is published is an annotation, not a refusal.
@@ -463,7 +477,7 @@ fi
 # above counts the GRADED fixtures only (an outside one takes its `continue` first), so the row publishes PASS over SHIPPED =
 # graded plus the OUTSIDE_LIST, OUTSIDE=k named and stamped through lib_outside_shape.sh. Before this it read 71/71 with 49
 # programs listed in OUTSIDE_SPITBOL_BASELINE.tsv -- a 100% the law does not allow.
-rr_selected && { rr_end csnobol4; exit 0; }   # a chunk or a request wrote its rows as it went, and writes no suite row (CEO-1802)
+rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request wrote its rows as it went, and writes no suite row (CEO-1802)
 OUT_N="$(printf '%s\n' $OUTSIDE_LIST | grep -c .)"; NOA_N="$(printf '%s\n' $NOA_LIST | grep -c .)"; SHIPPED=$((TOTAL + OUT_N + NOA_N))
 . "$HERE/lib_outside_shape.sh" || exit 2
 # ⛔⭐ CEO-1286 (Lon 2026-09-26): the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv beside the suite) leave the denominator; the
@@ -474,6 +488,7 @@ EXCL_D_N="$(excluded_in_outside "$SUITE" "$OUTSIDE_LIST $NOA_LIST")" || exit 2; 
 [ -z "$NOA_LIST" ] || echo "EXCLUDED_NO_ORACLE_ANSWER=$NOA_N shipped with no ref and named NO_ORACLE_ANSWER in EXCLUDED.tsv (CEO-1696):$NOA_LIST"
 echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, CEO-1286): pass over $DENOM"
 python3 "$HERE/corpus_suite_harness.py" extension-check "$SUITE" || exit 2
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"; else
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp csnobol4 "$DENOM" "$OUT_N" "$EXCL_D_N")" || exit 2
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite CSNOBOL4 --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
@@ -481,6 +496,7 @@ python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite C
     --measurer "${S4E_SEAT:-}" \
     --text "both_modes_pass=$BOTH_PASS/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect or with no oracle answer, EXCLUDED.tsv, CEO-1286 and CEO-1696; NO_ORACLE_ANSWER=$NOA_N) OUTSIDE=$OUT_N EXTENSION=$EXT_N (refs not cut by sbl, named in EXTENSIONS.tsv), graded $BOTH_PASS/$TOTAL · total=$TOTAL m3 PASS=$M3_PASS FAIL=$M3_FAIL REJECT=$M3_REJECT CRASH=$M3_CRASH HANG=$M3_HANG · m4 PASS=$M4_PASS FAIL=$M4_FAIL REJECT=$M4_REJECT CRASH=$M4_CRASH HANG=$M4_HANG · masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s) (CEO-409, excluded at the line, fixture stays in the denominator)${INV_LINE:+ · $INV_LINE (\`test_snobol4_csnobol4_suite.sh\`)} · the $(inventory_containers_of "${INV_LINE:-}") include fragments of CONTAINERS.tsv (CEO-1272) are outside this graded-pair population, so they are named here and are not Excl (CEO-1288)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
+fi
 
 # ⛔⭐ POPULATION FLOOR (row every-board-wrapper-refuses-on-a-zero-population-instead-of-passing-
 # vacuously, hq_T 2026-09-04): every _FAIL/_REJECT/_CRASH/_HANG bucket reads 0 over TOTAL=0 too
