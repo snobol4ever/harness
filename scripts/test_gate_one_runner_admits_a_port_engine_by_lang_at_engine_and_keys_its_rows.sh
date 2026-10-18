@@ -160,11 +160,13 @@ pkgrun() {  # pkgrun <runner> <db> [engine]: one package runner over its staged 
 mode_rows() { awk -F'\t' -v m="$2" 'NR>1 && $9==m' "$1" | wc -l; }
 for p in $PKGS; do
     IFS=: read -r pkg db key bl r <<< "$p"
+    find "$R/corpus/packages/snobol4/$pkg" -type f | LC_ALL=C sort > "$T/pkg.before"
     rc="$(pkgrun "$r" "$T/pkg_$key.tsv" jvm)"; cp "$T/out" "$T/out_$key"
+    find "$R/corpus/packages/snobol4/$pkg" -type f | LC_ALL=C sort > "$T/pkg_files_$key"
     arm "10-$key under jvm grades m3 alone, keyed $db@jvm, no m4 row or count, no rc=126 (rc $rc)" \
         'grep -iqE "^$bl .*m4_pass=0 m4_fail=0" "$T/out_$key" && [ "$rc" = 1 ] && [ "$(rows "$T/pkg_$key.tsv" "$db@jvm")" -ge 1 ] && [ "$(rows "$T/pkg_$key.tsv" "$db@jvm")" = "$(mode_rows "$T/pkg_$key.tsv" m3)" ] && [ "$(mode_rows "$T/pkg_$key.tsv" m4)" = 0 ] && [ "$(rows "$T/pkg_$key.tsv" "$db")" = 0 ] && ! grep -q "rc=126" "$T/pkg_$key.tsv"'
-    arm "10-$key writes no SCRIP row and prints from-progress --suite $key@jvm" \
-        '[ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ] && grep -q "its row is util_score_row.py from-progress --suite $key@jvm " "$T/out_$key" && { [ "$key" = aisnobol ] || grep -qE "^$bl .* -- engine jvm " "$T/out_$key"; }'
+    arm "10-$key writes no SCRIP row, prints from-progress --suite $key@jvm, leaves its package as shipped" \
+        'cmp -s "$T/pkg.before" "$T/pkg_files_$key" && [ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ] && grep -q "its row is util_score_row.py from-progress --suite $key@jvm " "$T/out_$key" && { [ "$key" = aisnobol ] || grep -qE "^$bl .* -- engine jvm " "$T/out_$key"; }'
     arm "10-$key publishes $key@jvm itself, by from-progress over the rows it appended" \
         'awk -F"\t" -v k="$key@jvm" "\$1==k && \$10>=1" "$T/SUITES.pkg.tsv" | grep -q . && grep -q "^SUITE_ROW suite=$key@jvm " "$T/out_$key"'
 done
@@ -173,6 +175,53 @@ arm "10c under S4E_SCORE_NO_WRITE a port runner grades and publishes nothing (rc
 rc="$(pkgrun test_snobol4_spitbol_testpgms_suite.sh "$T/pkg_unset.tsv")"
 arm "10b unset, testpgms takes SCRIP's path: no scrip in the staged root refuses rc 2 (got $rc)" '[ "$rc" = 2 ] && grep -q "no scrip binary at" "$T/out" && [ ! -s "$T/pkg_unset.tsv" ]'
 
-[ $examined -ge 46 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 46 declared arms"; exit 2; }
+# HQ_DOTNET'S SIX TAKE THE PORT TOO (hq_dotnet asked for them in this loop, 2026-10-18): dotnet, snoflake, csnobol4, gimpel (through
+# scorecard_snobol4.sh), SnoDemo and SnoBench, each over a copy of its population in the staged root, the three large packages cut to
+# their first four programs and the ALL.csv rows of those (a red board under the stub sends every program to snoflake's CSNOBOL4 classifier,
+# and gimpel-asm-machine-m runs away there: the whole package cost 4 min). The staged corpus and the stub engine become scratch git repos,
+# since csnobol4's gate_tree_watch reads both HEADs; a scratch repo is still no checkout of the shared corpus. Per runner: m3 alone (its
+# board line shows m4 at zero, and names the engine where it names one; its rows are keyed <suite>@jvm, none m4, no rc=126 -- SnoBench, a
+# fixture here, writes no row), and no SCRIP row written, its package left exactly as shipped (hq_dotnet's arm: an engine that resolves a
+# file name against the program's folder once wrote two stray files into the dotnet package).
+for d in packages/snobol4/dotnet packages/snobol4/snoflake_suite packages/snobol4/csnobol4_suite packages/snobol4/gimpel demos/snobol4 benchmarks/snobol4 tests/snobol4; do
+    mkdir -p "$R/corpus/$(dirname "$d")"; rm -rf -- "$R/corpus/$d"
+    cp -r "$H/../../corpus/$d" "$R/corpus/$d" || { echo "REFUSE(2) [$G]: no corpus/$d beside this harness -- hq_dotnet's arms cannot be measured"; exit 2; }
+done
+for d in snoflake_suite csnobol4_suite gimpel; do
+    n=0; for f in "$R/corpus/packages/snobol4/$d"/*.sno; do [ "${f##*/}" = ALL.sno ] && continue; n=$((n+1)); [ "$n" -gt 4 ] && rm -f -- "$f"; done
+    python3 - "$R/corpus/packages/snobol4/$d" <<'PY'
+import csv, os, sys
+d = sys.argv[1]; keep = {f[:-4] for f in os.listdir(d) if f.endswith(".sno") and f != "ALL.sno"}
+rows = list(csv.reader(open(os.path.join(d, "ALL.csv"), newline="")))
+i = rows[0].index("entry")
+csv.writer(open(os.path.join(d, "ALL.csv"), "w", newline="")).writerows([rows[0]] + [r for r in rows[1:] if r[i] in keep])
+PY
+done
+for g in "$R/corpus" "$JS"; do
+    git -C "$g" init -q && git -C "$g" add -A && git -C "$g" -c user.name=gate -c user.email=gate@invalid -c commit.gpgsign=false commit -qm stage --no-verify \
+        || { echo "REFUSE(2) [$G]: could not make $g a scratch git repo -- csnobol4's tree watch cannot be staged"; exit 2; }
+done
+for k in dotnet snoflake csnobol4 gimpel snobol4-demos snobol4-bench-ref; do   # SCRIP's bare rows, which a port run must leave untouched
+    printf '%s\t%s\tx\tsnobol4\t2026-09-01\t1\t2\t2026-09-01\t1\t2\tabc123\t\t0\t\t\n' "$k" "$k" | tee -a "$T/SUITES.pkg.tsv" >> "$T/SUITES.pkg.before"
+done
+SIX="dotnet:packages/snobol4/dotnet:test_snobol4_dotnet_suite.sh:dotnet@jvm:^DOTNET_BOARD .*m4_pass=0 m4_fail=0 m4_skip=0 .*-- engine jvm
+     snoflake:packages/snobol4/snoflake_suite:test_snoflake_suite.sh:snoflake@jvm:^SNOFLAKE_BOARD .*m4_stream_pass=0 m4_skip=0
+     csnobol4:packages/snobol4/csnobol4_suite:test_snobol4_csnobol4_suite.sh:csnobol4@jvm:^CSNOBOL4_SUITE_BOARD .*m4_PASS=0 m4_FAIL=0
+     gimpel:packages/snobol4/gimpel:test_snobol4_gimpel_suite.sh:gimpel@jvm:^GIMPEL_BOARD .*m4_pass=0 m4_fail=0 -- engine jvm
+     snobol4-demos:demos/snobol4:test_demos_suite.sh snobol4:snobol4-demos@jvm:^DEMOS_SUITE_BOARD lang=snobol4 .*m4_pass=0 .*tree=jvm@
+     snobol4-bench-ref:benchmarks/snobol4:test_snobol4_bench_suite.sh:-:^SUITE_BOARD family=snobol4-bench-ref .*m4_pass=0 .*engine=jvm modes=m3"
+while IFS=: read -r key pkg run db board; do
+    key="${key#"${key%%[! ]*}"}"; read -r script args <<< "$run"   # the SIX lines are indented; SnoDemo's runner takes its language
+    find "$R/corpus/$pkg" -type f | LC_ALL=C sort > "$T/six.before"
+    env PATH="$T/bin:$PATH" S4E_POST="$T/post" S4E_HOME="$R" S4E_SEAT=hq_jvm S4E_ENGINE=jvm S4E_PROGRESS_DB="$T/six_$key.tsv" S4E_SUITES_TSV="$T/SUITES.pkg.tsv" \
+        TIMEOUT=20 bash "$R/harness/scripts/$script" $args > "$T/out_$key" 2>&1; rc=$?
+    find "$R/corpus/$pkg" -type f | LC_ALL=C sort > "$T/six.after"
+    arm "11-$key under jvm grades m3 alone: m4 at zero on its board line, rows keyed $db, no m4 row, no rc=126 (rc $rc)" \
+        '[ "$rc" = 1 ] && grep -qE "$board" "$T/out_$key" && { [ "$db" = - ] || { [ "$(rows "$T/six_$key.tsv" "$db")" -ge 1 ] && [ "$(rows "$T/six_$key.tsv" "$db")" = "$(mode_rows "$T/six_$key.tsv" m3)" ] && ! grep -q "rc=126" "$T/six_$key.tsv"; }; }'
+    arm "11-$key writes no SCRIP row and leaves its package as shipped" \
+        '[ "$(grep "^$key	" "$T/SUITES.pkg.tsv")" = "$(grep "^$key	" "$T/SUITES.pkg.before")" ] && grep -qE "writes no SCRIP row|no progress row and no suite row written" "$T/out_$key" && cmp -s "$T/six.before" "$T/six.after"'
+done <<< "$SIX"
+
+[ $examined -ge 58 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 58 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
