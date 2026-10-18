@@ -8,8 +8,9 @@
 # banner for the others) must include every entry named by the package's ALL.csv entry column, its PARTITION.tsv entry column and its
 # ALL.mask entry column (the * wildcard excepted). A package with no container is counted and named, never a pass. GREEN iff no package
 # container misses a name. RED on corpus a5735c4a9, measured by the coo 2026-10-18 11:0x CDT: 6 of 11 containers drift, 861 names
-# (icon/ipl 773, prolog/rosetta-prolog 30, icon/arizona_tests 28, snobol4/csnobol4_suite 22, icon/jcon_tests 7, snobol4/gimpel 1), every
-# sampled one a declared exclusion (ALL.excluded.txt, CONTAINERS.tsv, EXCLUDED.tsv). rc 0 green, 1 red, 2 could not measure.
+# (icon/ipl 773, prolog/rosetta-prolog 30, icon/arizona_tests 28, snobol4/csnobol4_suite 22, icon/jcon_tests 7, snobol4/gimpel 1). Classified
+# in full (the first cut's 'every sampled one a declared exclusion' sampled rosetta-prolog alone, RETRACTED): 849 are declared exclusions and 12 are
+# not (ipl dd2wif painterc evallist huffstuf interpe iundecl; csnobol4_suite conv2 diag1 ord rewind1 space space2). rc 0 green, 1 red, 2 could not measure.
 set -u
 H="$(cd "$(dirname "$0")" && pwd)"; G=package_containers_hold_every_entry_their_sidecars_name; C="$H/../../corpus/packages"
 [ -d "$C" ] || { echo "REFUSE(2) [$G]: no corpus/packages beside the harness at $C -- cannot measure"; exit 2; }
