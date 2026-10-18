@@ -49,13 +49,14 @@ command -v python3 >/dev/null || { echo "GATE safe-point-emitted-paths REFUSED(2
 D=$(mktemp -d) || { echo "GATE safe-point-emitted-paths REFUSED(2): mktemp failed"; exit 2; }
 trap 'rm -rf "$D"' EXIT
 mkdir -p "$D/out" "$D/src/templates" || exit 2
-ln -s "$ROOT/out/libscrip_rt.so" "$D/out/libscrip_rt.so"      || exit 2
-ln -s "$ROOT/src/emitter"        "$D/src/emitter"             || exit 2
-ln -s "$ROOT/src/templates/xa"   "$D/src/templates/xa"        || exit 2
-ln -s "$ROOT/src/templates/x86"  "$D/src/templates/x86"       || exit 2
+cp -p "$ROOT/out/libscrip_rt.so" "$D/out/libscrip_rt.so"      || exit 2
+[ -f "$ROOT/out/sc_mod/scparsers.o" ] && { mkdir -p "$D/out/sc_mod" && cp -p "$ROOT/out/sc_mod/scparsers.o" "$D/out/sc_mod/scparsers.o" || exit 2; }
+cp -r "$ROOT/src/emitter"        "$D/src/emitter"             || exit 2
+cp -r "$ROOT/src/templates/xa"   "$D/src/templates/xa"        || exit 2
+cp -r "$ROOT/src/templates/x86"  "$D/src/templates/x86"       || exit 2
 cp -r "$ROOT/src/templates/bb"   "$D/src/templates/bb"        || exit 2
 
-run_census() { SCRIP_GC_CENSUS_LIST_ALL=1 timeout -k 5 600 python3 "$ROOT/$CENSUS" safe-points --list-polled --root "$1" 2>&1; }
+run_census() { SCRIP_GC_CENSUS_LIST_ALL=1 timeout -k 5 600 python3 "$ROOT/$CENSUS" safe-points --list-polled --root "$1" --built-from "$ROOT" 2>&1; }
 
 # ---- ARM A: the columns exist at all, and they partition the denominator -------------------------------
 base=$(run_census "$D") || true

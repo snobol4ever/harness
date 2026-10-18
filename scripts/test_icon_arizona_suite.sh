@@ -210,7 +210,7 @@ LIBPATH="$RUNDIR/libpath/$sub"; mkdir -p "$LIBPATH" || { echo "⛔ GATE REFUSES:
 for _f in "$SUITE"/*; do
   [ -f "$_f" ] || continue
   case "$_f" in *.icn) grep -qE '^[[:space:]]*procedure[[:space:]]+main[[:space:]]*\(' "$_f" && continue ;; esac
-  ln -sf "$_f" "$LIBPATH/" || { echo "⛔ GATE REFUSES: cannot link $_f into $LIBPATH" >&2; exit 2; }
+  cp -pf "$_f" "$LIBPATH/" || { echo "⛔ GATE REFUSES: cannot copy $_f into $LIBPATH" >&2; exit 2; }
 done
 for std in "$SUITE"/*.ref; do
   [ -f "$std" ] || continue

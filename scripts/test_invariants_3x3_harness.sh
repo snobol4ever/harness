@@ -965,7 +965,7 @@ for cell in snobol4_js snobol4_x86 snobol4_jvm snobol4_net snobol4_wasm icon_x86
   [[ -n "$status" ]] && printf 'SKIP,%s,_summary,,%s\n' "$cell" "$(date '+%Y-%m-%d %H:%M:%S')" >> "$CSV" \
                      || printf 'SUMMARY,%s,_summary,pass=%d fail=%d,%s\n' "$cell" "$p" "$f" "$(date '+%Y-%m-%d %H:%M:%S')" >> "$CSV"
 done
-ln -sf "$(basename "$CSV")" "$CSV_DIR/invariants_latest.csv"
+cp -pf "$CSV" "$CSV_DIR/invariants_latest.csv"
 echo -e "${BOLD}Report: $CSV${RESET}"
 
 if [[ $OVERALL_FAIL -eq 0 ]]; then

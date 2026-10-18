@@ -39,7 +39,7 @@ while IFS= read -r f; do
     n=$((n+1))
     rel="${f#"$FPC_TESTS"/}"
     link="$TMP/f${n}.pas"
-    ln -sf "$f" "$link"
+    cp -pf "$f" "$link"
     out="$TMP/f${n}.s"
     log="$TMP/f${n}.log"
     timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$link" -o "$out" < /dev/null > "$log" 2>&1

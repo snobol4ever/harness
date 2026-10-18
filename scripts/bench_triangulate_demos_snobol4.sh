@@ -79,7 +79,7 @@ trap 'rm -rf "$W"' EXIT
 scaled_input() {                       # $1=name $2=srcfile $3=scale ; echoes path
   local f="$W/$1.x$3"
   [ -s "$f" ] && { echo "$f"; return; }
-  if [ "$3" = 1 ]; then ln -sf "$2" "$f"; else local i; for ((i=0;i<$3;i++)); do cat "$2"; done > "$f"; fi
+  if [ "$3" = 1 ]; then cp -p "$2" "$f"; else local i; for ((i=0;i<$3;i++)); do cat "$2"; done > "$f"; fi
   echo "$f"
 }
 # ---- ONE run. echoes: cpu_ms elapsed_ms inblock oublock rc <TAB> output-digest ----------------

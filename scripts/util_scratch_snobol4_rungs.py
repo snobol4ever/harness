@@ -85,7 +85,7 @@ def main(argv):
         subprocess.run(["git", "init", "-q", str(root / "corpus")], check=True)
     inc = root / "corpus" / "include"
     if not inc.exists():
-        inc.symlink_to(corpus / "include")
+        shutil.copytree(corpus / "include", inc)
     demos = root / "corpus" / "demos" / "snobol4"
     if not demos.exists():
         demos.parent.mkdir(parents=True, exist_ok=True)

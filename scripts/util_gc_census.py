@@ -2817,6 +2817,7 @@ def main(argv):
     ap.add_argument("--ratchet", default="", help="a baseline TSV (census<TAB>key<TAB>count<TAB>note); refuse an increase, and a fall the baseline has not recorded")
     ap.add_argument("--write-baseline", default="", help="write today's counts as a baseline TSV (the landing that earned the fall runs this)")
     ap.add_argument("--root", default=ROOT)
+    ap.add_argument("--built-from", default="", help="the checkout whose build the --root scratch copied its out/ and src/ from (a staged root is copies, never links -- CEO-1820); the build-currency question is asked of that tree")
     ap.add_argument("--poll-window", type=int, default=12,
                     help="lines, read ONLY under SCRIP_GC_CENSUS_WINDOW_UNIT=lines; the default window is SCRIP_GC_CENSUS_WINDOW_X86 x86 calls (14)")
     ap.add_argument("--poll-helper", default="")
@@ -2847,15 +2848,14 @@ def main(argv):
     # ⛔ AND THERE IS DELIBERATELY NO ESCAPE HATCH.  Every other knob in this file has one for an auditor comparing
     # across a criterion change; a bypass HERE would re-admit the exact false green the refusal exists to stop.
     # THE QUESTION IS ASKED OF THE TREE THAT OWNS THE RUNTIME ARTIFACT (cto 2026-09-24, the seventeen-red row): when
-    # --root's out/libscrip_rt.so is a SYMLINK into ROOT -- the emitted-paths gate censuses a scratch root that links
-    # ROOT's .so and COPIES the templates it doctors, so that root has no ../harness/scripts/ and its copies are newer than any
+    # --root is a scratch the emitted-paths gate staged by COPYING ROOT's .so and the templates it doctors (no link, CEO-1820),
+    # it names ROOT with --built-from, since that root has no ../harness/scripts/ and its copies are newer than any
     # binary by construction, and asked there the check refused every run (rc=2, "census printed no headline") while
-    # grading nothing -- the artifacts are ROOT's and ROOT's src is what built them; a scratch whose .so is its own
-    # file (this file's selftest plants one with 1970 mtimes beside a newer src/) is asked about itself and refuses.
-    _so = os.path.join(R, "out", "libscrip_rt.so")
-    _owner = ROOT if (os.path.islink(_so) and os.path.realpath(_so).startswith(os.path.realpath(ROOT) + os.sep)) else R
+    # grading nothing -- the artifacts are ROOT's and ROOT's src is what built them; a scratch that names no
+    # --built-from (this file's selftest plants one with 1970 mtimes beside a newer src/) is asked about itself and refuses.
+    _owner = os.path.abspath(a.built_from) if a.built_from else R
     bc = subprocess.run(["bash", "-c",
-                         'set -e; . "$1/scripts/lib_build_currency.sh"; '
+                         'set -e; . "$1/../harness/scripts/lib_build_currency.sh"; '
                          'assert_binary_current "$1/scrip" "$1"; assert_so_current "$1/out/libscrip_rt.so" "$1"',
                          "_", _owner], capture_output=True, text=True)
     if bc.returncode != 0:

@@ -102,9 +102,9 @@ sleep 60 & FAKE_PID=$!
 FAKE_BOARDS="$W/fake_boards"; mkdir -p "$FAKE_BOARDS"
 printf '%s|%s|%s|%s|%s\n' "$FAKE_PID" "/fake/root" "/fake/out" "1" "2026-01-01T00:00:00" > "$FAKE_BOARDS/$FAKE_PID.board"
 # ⛔ ON A SCRATCH CORPUS (ceo CEO-1302 (c), coo 2026-09-27): the fixture exemption no longer admits the shared corpus, so the wrapper
-# grades a copy of the gimpel package with include linked back, the population it would copy into its own overlay anyway.
+# grades a copy of the gimpel package with include copied beside it, the population it would copy into its own overlay anyway.
 PFC="$W/pfcorpus"; mkdir -p "$PFC/packages/snobol4"; cp -a "$(cd "$HERE/../.." && pwd)/corpus/packages/snobol4/gimpel" "$PFC/packages/snobol4/gimpel"
-ln -s "$(cd "$HERE/../.." && pwd)/corpus/include" "$PFC/include"
+cp -a "$(cd "$HERE/../.." && pwd)/corpus/include" "$PFC/include"
 out="$(CORPUS="$PFC" S4E_PROGRESS_DB="$W/pf_progress.tsv" S4E_BOARDS="$FAKE_BOARDS" bash "$HERE/test_snobol4_gimpel_suite.sh" 2>&1)"; rc=$?
 kill "$FAKE_PID" 2>/dev/null; wait "$FAKE_PID" 2>/dev/null
 [ "$rc" = 2 ] && ck ok "forced board contention -> gimpel wrapper rc=2 (was rc=0 before this row: M3F=M4F=0 over the truncated-empty results.tsv)" \

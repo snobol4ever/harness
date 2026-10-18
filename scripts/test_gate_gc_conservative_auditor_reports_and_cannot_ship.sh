@@ -102,7 +102,7 @@ ck $([ -z "$bad" ] && echo ok || echo no) "(c1) $SRC calls nothing that marks, f
 mut=$(grep -c "rt_hblk_t \*)" "$ROOT/$HDR" || true); cst=$(grep -c "const rt_hblk_t \*" "$ROOT/$HDR" || true)
 ck $([ "$cst" -ge 2 ] && echo ok || echo no) "(c2) the view hands pass B only CONST block pointers (saw $cst const forms) -- it has no mutable handle to mark with"
 
-mkdir -p "$T/lib"; ln -sf "$AUD_SO" "$T/lib/libscrip_rt.so"
+mkdir -p "$T/lib"; cp -p "$AUD_SO" "$T/lib/libscrip_rt.so"
 WITS="../harness/scripts/gc_witnesses/hb_coexpr_genp_scan.icn ../harness/scripts/gc_witnesses/hb_cv_spine_plain_redo.icn ../harness/scripts/gc_witnesses/hb_file_name_unrooted.icn ../harness/scripts/gc_witnesses/hb_blob_span_defer.sno"
 for w in $WITS; do [ -f "$ROOT/$w" ] || refuse "$w is missing -- this gate's declared witness set is not on the tree"; done
 run_aud() { LD_LIBRARY_PATH="$T/lib" SCRIP_ZETA_TELEM=1 SCRIP_GC_STRESS="${2:-3}" env ${3:+SCRIP_GC_AUDIT_B=$3} timeout -k 5 300s "$ROOT/scrip" "$ROOT/$1" 2>"$T/e" ; }

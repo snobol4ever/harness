@@ -51,7 +51,7 @@ D="$S4E/corpus/demos/snobol4/treebank"; P="$D/treebank.sno"; IN="$D/treebank.inp
 [ -f "$P" ] && [ -f "$IN" ] || refuse "missing $P or $IN"
 : > "$T/in"; for ((i = 0; i < 1024; i++)); do cat "$IN" >> "$T/in"; done
 "$ROOT/scrip" --compile -o "$T/d.s" "$P" < /dev/null 2> "$T/cc.err" && gcc "$T/d.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/d.prog" 2>> "$T/cc.err" || { head -3 "$T/cc.err"; refuse "treebank did not build in mode 4"; }
-mkdir -p "$T/ship" "$T/d0"; ln -s "$SHIP" "$T/ship/libscrip_rt.so"; ln -s "$D0LIB" "$T/d0/libscrip_rt.so"
+mkdir -p "$T/ship" "$T/d0"; cp -p "$SHIP" "$T/ship/libscrip_rt.so"; cp -p "$D0LIB" "$T/d0/libscrip_rt.so"
 . "$HERE/lib_declared_arena.sh" || refuse "no lib_declared_arena.sh"
 SW="$(declared_switches_beside "$HERE/fixtures/rt_diag_cost/treebank_x1024.sno")" || refuse "the treebank x1024 unit's .heap/.stack sidecars are refused"; [ -n "$SW" ] || refuse "the treebank x1024 unit declares no size (fixtures/rt_diag_cost/treebank_x1024.heap/.stack)"
 run() { ( cd "$S4E/corpus/include" && LD_LIBRARY_PATH="$T/$1" "$PERF" stat -x, -e instructions:u -o "$T/$1.stat" "$T/d.prog" $SW < "$T/in" > "$T/$1.out" 2> /dev/null ) || return 1

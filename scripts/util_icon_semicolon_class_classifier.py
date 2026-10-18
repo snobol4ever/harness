@@ -178,7 +178,7 @@ def classify(icont, corpus, staged_root, rel):
             sp = os.path.join(corpus, d, s)
             if s != name and os.path.isfile(sp):
                 try:
-                    os.symlink(sp, os.path.join(tmp, s))
+                    shutil.copy2(sp, os.path.join(tmp, s))
                 except OSError:
                     pass
         removed, rebraced = 0, 0

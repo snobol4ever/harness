@@ -93,11 +93,11 @@ for f in "${FILES[@]}"; do
         # ⛔⛔ REGULAR FILES ONLY, AND THIS IS THE LOAD-BEARING LINE OF THE WHOLE STAGING SCHEME. Linking a
         # SUBDIRECTORY makes `$WORK/<d>/<sub>` a symlink INTO THE CORPUS; the next iteration's `mkdir -p
         # "$WORK/<d>/<sub>"` then succeeds silently (the path exists, through the link), and every subsequent
-        # `ln` and every `icont` in that directory resolves THROUGH IT AND WRITES INTO THE SHIPPED TREE.
+        # copy and every `icont` in that directory resolves THROUGH IT AND WRITES INTO THE SHIPPED TREE.
         # MEASURED, not hypothesised: the first cut of this gate did exactly that and left 362 untracked
         # `.u1`/`.u2` artifacts in corpus/benchmarks/icon, which is a dirty tree that every runner we own
         # refuses (CEO-174) -- this gate would have broken the next seat's measurement, not its own.
-        for s in "$CORPUS/$d"/*; do [ -f "$s" ] && ln -sf "$s" "$WORK/$d/"; done
+        for s in "$CORPUS/$d"/*; do [ -f "$s" ] && cp -pf "$s" "$WORK/$d/"; done
         STAGED[$d]=1
     fi
     if ( cd "$WORK/$d" && "$ICONT" -s -c "$b" ) >/dev/null 2>&1; then

@@ -98,9 +98,9 @@ SCRIP_LIST_SINK=""
 GIMPEL="$SUITE/gimpel"
 # ⛔ ALL ARMS RUN WITH cwd IN SCRATCH, never in a repo tree: OUTPUT unit-I/O associations create
 # files named by their third argument (SPITBOL dialect: a FILE SPEC, e.g. '(121A1)') in the cwd,
-# which dirties whatever tree the runner happened to be launched from. Symlinked INCs keep the
+# which dirties whatever tree the runner happened to be launched from. Copied INCs keep the
 # gimpel includes resolvable for the sbl arm, whose include search is cwd-relative.
-RUN="$W/run"; mkdir -p "$RUN"; ln -s "$GIMPEL"/*.INC "$GIMPEL"/*.IN "$RUN"/ 2>/dev/null || true
+RUN="$W/run"; mkdir -p "$RUN"; cp -p "$GIMPEL"/*.INC "$GIMPEL"/*.IN "$RUN"/ 2>/dev/null || true
 # ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
 # each fixture runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board. The oracle runs as before.
@@ -255,7 +255,7 @@ compile_m4() { local sno="$1" out="$2" t rc ca; t="$(mktemp -d)"
     ca="$(declared_compile_args_from_table "$DECL" "$(basename "$sno" .sno)")" || exit 2
     # Same spelling as the m3 and sbl arms (see run_one): mode 4 bakes `&FILE` at COMPILE time, so the
     # staged short name has to be handed to `--compile`, not just to the run.
-    ln -sf "$sno" "$RUN/f.sno"
+    cp -pf "$sno" "$RUN/f.sno"
     (cd "$RUN" && SNO_LIB="$GIMPEL" "$SCRIP" --compile $ca f.sno) > "$t/p.s" 2>"$t/compile.err"; rc=$?
     if [ "$rc" -ne 0 ]; then
         # ⭐ snoflake-sixteen-fixtures-pass-mode-3-and-fail-mode-4 (seat01 2026-09-04): a `SCRIP: ERROR N -- ...`
@@ -283,7 +283,7 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         # either keyword could never match, whatever the compiler did. Measured: `sbl -bf f.sno` and
         # `scrip --run f.sno` both print `FILE=f.sno`; `scrip --run <abspath>` prints the abspath.
         # Identical class to the Arizona runner's cure (SCRIP 3bb0a210c).
-        m3)  ln -sf "$2" "$RUN/f.sno"
+        m3)  cp -pf "$2" "$RUN/f.sno"
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
              GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca f.sno < "$inp" 2>&1)"; RC=$?;;
         m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1)"; RC=$?;;
@@ -313,7 +313,7 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         # everything above it is the listing this sink is here to divert. topological-sort is why the split is
         # positional rather than whole-file: its .lst carries an ERROR 248 diagnostic for 21 lines and THEN
         # the dump, and appending the whole file would re-furnish the stream the sink just cleaned.
-        sbl) ln -sf "$2" "$RUN/f.sno"
+        sbl) cp -pf "$2" "$RUN/f.sno"
              rm -f "${SBL_SINK#-o=}.lst"
              GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1)"; RC=$?
              if grep -qE '&DUMP[[:space:]]*=' "$2" 2>/dev/null; then

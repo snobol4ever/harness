@@ -54,7 +54,7 @@ for m in 3 4; do
 done
 GIMPEL="$ROOT/../corpus/packages/snobol4/snoflake_suite/gimpel"
 if [ -d "$GIMPEL" ]; then
-  ln -sf "$GIMPEL"/*.INC "$TD"/ 2>/dev/null || true
+  cp -pf "$GIMPEL"/*.INC "$TD"/ 2>/dev/null || true
   SW="$(cd "$TD" && timeout -k 5 20s "$SBL" -bf s.sno </dev/null 2>&1 | grep -v '^$' | tail -1)"
   SG="$(cd "$TD" && SNO_LIB="$GIMPEL" timeout -k 5 20s "$SCRIP" --run s.sno </dev/null 2>&1 | tail -1)"
   GRADED=$((GRADED+1))

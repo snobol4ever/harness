@@ -63,7 +63,7 @@ OBJ_DIR="$(bi | sed -n 's/^compiler *: *//p' | awk '{print $1}')"
 case "$OPT_A" in *-O2*) refuse "arm A's RT_OPT carries -O2 ($OPT_A) -- NO -O2 BUILDS, EVER (s262 FACT RULE)";; esac
 SO_A="out/libscrip_rt-$TAG_A.so"; [ -f "$SO_A" ] || refuse "arm A's .so is missing: $SO_A"
 [ -f "$OBJ_DIR/scrip_driver.o" ] || refuse "driver object missing: $OBJ_DIR/scrip_driver.o"
-ln -sfn "$ROOT/$SO_A" "$T/armA/libscrip_rt.so"
+cp -p "$ROOT/$SO_A" "$T/armA/libscrip_rt.so"
 link_driver() { g++ -m64 -no-pie -rdynamic "$OBJ_DIR/scrip_driver.o" -Wl,-rpath,"$1" -L"$1" -lscrip_rt -lm -lpthread -o "$1/scrip" 2>"$T/ld.err" || { cat "$T/ld.err" >&2; refuse "linking the $2 driver failed"; }
   ldd "$1/scrip" | grep -q "libscrip_rt.so => $1/libscrip_rt.so" || { ldd "$1/scrip" | grep libscrip_rt >&2; refuse "$2 driver does not resolve its OWN .so -- the arm would measure the wrong object"; }; }
 link_driver "$T/armA" "arm A"
@@ -102,7 +102,7 @@ TAG_B="$(bi RT_OPT="$OPT_B" | sed -n 's/^RT_TAG *: *//p' | tr -d '[:space:]')"; 
 SO_B0="out/libscrip_rt-$TAG_B.so"
 make -s RT_OPT="$OPT_B" "$SO_B0" >"$T/makeB.log" 2>&1 || { tail -8 "$T/makeB.log" >&2; refuse "build of arm B0 ($SO_B0) failed"; }
 [ -f "$SO_B0" ] || refuse "arm B0 .so not produced: $SO_B0"
-ln -sfn "$ROOT/$SO_B0" "$T/armB0/libscrip_rt.so"; link_driver "$T/armB0" "arm B0"
+cp -p "$ROOT/$SO_B0" "$T/armB0/libscrip_rt.so"; link_driver "$T/armB0" "arm B0"
 # ---- arm B: B0's objects relinked through the Makefile's OWN link line plus the ordering fragment -------------------
 firstobj="$(ls out/rt_pic-$TAG_B/*.o 2>/dev/null | head -1)"; [ -n "$firstobj" ] || refuse "no objects under out/rt_pic-$TAG_B"
 LINK_LINE="$(make -n -W "$firstobj" RT_OPT="$OPT_B" "$SO_B0" 2>/dev/null | grep -m1 -- ' -shared ')"; [ -n "$LINK_LINE" ] || refuse "could not recover the Makefile's .so link line for arm B"

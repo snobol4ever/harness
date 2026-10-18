@@ -46,11 +46,11 @@ W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
 # measurement). Every run below -- the traced and untraced mode 3, both mode-4 binaries and the participants -- inherited
 # whatever directory the seat stood in. So fpc_tests' test_tisobuf2, test_tisobuf3 and test_tisoread, run from SCRIP/, left
 # testfile, textfile and tisoread.tmp in SCRIP/ (16:36-16:41), the tree read dirty, and the PAT runner skipped its SCORE
-# row. A relative read also resolved against the caller, not the program. The mirror symlinks every entry of the source's
+# row. A relative read also resolved against the caller, not the program. The mirror copies every entry of the source's
 # directory, so a relative read resolves as it does in the package, and a new file lands in the scratch and dies with it.
-# (A program that rewrites an EXISTING companion still writes through the link; none in the corpus is known to.)
+# (A program that rewrites an EXISTING companion rewrites the scratch copy, and the package stays clean.)
 RUNDIR="$W/cwd"; mkdir -p "$RUNDIR" || { echo "REFUSE(2): no scratch cwd under $W"; exit 2; }
-for _e in "$(dirname "$src")"/* "$(dirname "$src")"/.[!.]*; do [ -e "$_e" ] && ln -s "$_e" "$RUNDIR/" 2>/dev/null; done
+for _e in "$(dirname "$src")"/* "$(dirname "$src")"/.[!.]*; do [ -e "$_e" ] && cp -rp "$_e" "$RUNDIR/" 2>/dev/null; done
 cd "$RUNDIR" || { echo "REFUSE(2): cannot enter the scratch cwd $RUNDIR"; exit 2; }
 if [ "$mode" = trace ]; then
     timeout -k 5 60 "$SCRIP" --trace --run $SW "$src" < "$input"; rc=$?

@@ -49,7 +49,7 @@ arm live "$MSG"; live=$?
 MUT="$W/s4e_msg.mutant.sh"
 grep -v 'no QUEUE.tsv row is named' "$MSG" > "$MUT"
 [ "$(wc -l < "$MUT")" -lt "$(wc -l < "$MSG")" ] || { echo "⛔ REFUSED: the guard line is not where the mutant expects it -- the mutation would be a no-op"; exit 2; }
-for f in "$HERE"/lib_*.sh; do [ -e "$W/$(basename "$f")" ] || ln -s "$f" "$W/$(basename "$f")"; done
+for f in "$HERE"/lib_*.sh; do [ -e "$W/$(basename "$f")" ] || cp -p "$f" "$W/$(basename "$f")"; done
 arm mutant "$MUT" > "$W/mut.out" 2>&1; mut=$?
 sed 's/^/    /' "$W/mut.out"
 grep -q 'FAIL  (1)' "$W/mut.out"; mred=$?

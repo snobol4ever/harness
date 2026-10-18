@@ -28,8 +28,8 @@ PATCH
     echo "OK  spitbol built: $X64/bin/sbl"
 fi
 
-# bootsbl symlink (monitor uses this name)
-[ -e "$X64/bin/bootsbl" ] || ln -sf "$X64/bin/sbl" "$X64/bin/bootsbl"
+# bootsbl copy (monitor uses this name; a copy, never a link -- CEO-1820)
+[ -e "$X64/bin/bootsbl" ] || cp -p "$X64/bin/sbl" "$X64/bin/bootsbl"
 
 # Smoke test — SPITBOL exits 1 in sandbox (segfault-on-exit) but output is correct
 . "$(dirname "${BASH_SOURCE[0]}")/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255)." >&2; exit 3; }

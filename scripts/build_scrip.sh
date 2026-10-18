@@ -18,6 +18,4 @@ make libscrip_rt >> /tmp/build_full.log 2>&1 || { echo "BUILD FAILED (libscrip_r
 [ -f "$SCRIP/out/libscrip_rt.so" ] || { echo "FAIL out/libscrip_rt.so not found after build"; exit 1; }
 echo "OK  libscrip_rt built"
 
-# scrip_jvm symlink (build_snobol4_jvm.sh expects scrip_jvm in $HOME)
-[ -e "$HOME/scrip_jvm" ] || ln -sf "$SCRIP/scrip" "$HOME/scrip_jvm"
 echo "OK  scrip: $SCRIP/scrip"

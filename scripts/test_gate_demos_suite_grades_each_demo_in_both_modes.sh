@@ -4,7 +4,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: test_demos_suite.sh invoked on
 # demos are also benchmarks. They are work-horse benchmarks." and "So demos are test suites in that they have a small input ... and a ref
 # file."; ceo CEO-1312/1313; coo COO-206).
 # ONE SCRATCH DEMO TREE (outside every corpus checkout), graded by test_demos_suite.sh snobol4:
-#   a/hello.sno   PASS both modes, a .workhorse sidecar            b/echo.sno   reads its SAMPLE stdin from echo.in (a symlink to a shared
+#   a/hello.sno   PASS both modes, a .workhorse sidecar            b/echo.sno   reads its SAMPLE stdin from echo.in (a copy of a shared
 #   c/bad.sno     a wrong ref: FAIL, named                                        file, the shape shared demo inputs take), PASS both modes
 #   d/noref.sno   no .ref: FAIL, counted and named, never skipped  lib/util.sno declared in CONTAINERS.tsv: out of the population
 #   e/linked.icn  a link manifest into the mirrored packages root (its statements end in ';', as SCRIP Icon requires since c299b8a03)  f/chained.sno  a .chain sidecar: concatenated after library/gate_unit.sno
@@ -27,7 +27,7 @@ fails=0; checks=0
 ck() { checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 F="$T/demos/snobol4"; mkdir -p "$F/a" "$F/b" "$F/c" "$F/d" "$F/lib"
 printf "\tOUTPUT = 'hi'\nEND\n" > "$F/a/hello.sno"; printf 'hi\n' > "$F/a/hello.ref"; printf 'stdin\t-\nwhy\tgate fixture\n' > "$F/a/hello.workhorse"
-printf "LOOP\tOUTPUT = INPUT\t:S(LOOP)\nEND\n" > "$F/b/echo.sno"; printf 'one\ntwo\n' > "$F/b/shared.input"; ln -s shared.input "$F/b/echo.in"; printf 'one\ntwo\n' > "$F/b/echo.ref"
+printf "LOOP\tOUTPUT = INPUT\t:S(LOOP)\nEND\n" > "$F/b/echo.sno"; printf 'one\ntwo\n' > "$F/b/shared.input"; cp -p "$F/b/shared.input" "$F/b/echo.in"; printf 'one\ntwo\n' > "$F/b/echo.ref"
 printf "\tOUTPUT = 'two'\nEND\n" > "$F/c/bad.sno"; printf 'one\n' > "$F/c/bad.ref"
 printf "\tOUTPUT = 'x'\nEND\n" > "$F/d/noref.sno"
 printf "\tDEFINE('U()')\t:(U_END)\nU\t:(RETURN)\nU_END\n" > "$F/lib/util.sno"

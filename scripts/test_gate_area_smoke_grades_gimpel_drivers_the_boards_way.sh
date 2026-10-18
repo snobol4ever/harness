@@ -48,7 +48,7 @@ else
     # 120 entries cut before CEO-1269 -- until corpus 0b8fac0c4 (10-03 17:44) re-cut Gimpel's container to its drivers, after which the
     # pre-cure smoke graded fine, exited 0, and this arm read red ('0 0 0') for six days with nothing wrong. A copy of the package whose
     # container holds one entry the table does not name is the disagreement this arm exists to see, on any corpus.
-    P="$T/prehome"; mkdir -p "$P/corpus/packages/snobol4"; cp -r "$CORPUS/packages/snobol4/gimpel" "$P/corpus/packages/snobol4/"; ln -s "$GH" "$P/.github"
+    P="$T/prehome"; mkdir -p "$P/corpus/packages/snobol4"; cp -r "$CORPUS/packages/snobol4/gimpel" "$P/corpus/packages/snobol4/"; mkdir -p "$P/.github"; tar -C "$GH" --exclude=.git -cf - . | tar -C "$P/.github" -xf -
     find "$P/corpus/packages/snobol4/gimpel" -maxdepth 1 -name 'ALL.*' ! -name 'ALL.csv' -delete   # the container and its sidecars; the table stays
     python3 - "$P/corpus/packages/snobol4/gimpel" <<'PY'
 import sys
