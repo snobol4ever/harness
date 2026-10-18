@@ -13,8 +13,8 @@
 # 5c37a2dee: SNOBOL4 65 relative over 25 compiled core entries while every one of them passes; a count that cannot tell a defect
 # from the verifier's own gap is a ledger line, never a verdict. As a language gains the absolute coordinate its count enters
 # the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the ceo's fourth landing). THE RELATIVE COUNTS ARE A RATCHET meanwhile:
-# RELATIVE_FLOOR below is each language's relative count at SCRIP dda4f93ff (2026-10-18 12:0x CDT, after three calibrations:
-# snobol4 0, rebus 0, raku 0, pascal 8, snocone 7), and a language reading above its floor is RED (RELATIVE-OVER-FLOOR) -- a
+# RELATIVE_FLOOR below is each language's relative count at the ceo's cut of hq_zetas's two zd_plan branches (2026-10-18 12:4x CDT:
+# snobol4 0, rebus 0, raku 0, pascal 0, snocone 3; was pascal 8, snocone 7 at dda4f93ff), and a language reading above its floor is RED (RELATIVE-OVER-FLOOR) -- a
 # planner change that breaks a green language's plan trips here the same tick; a floor may only fall, by editing this table in
 # the landing that lowers the count.
 # compiled=<c> below entries=<n> names the core entries the gate could not compile standalone: a block entry the extractor does
@@ -31,7 +31,7 @@ CORPUS="$(cd "$HERE/../../corpus" 2>/dev/null && pwd)" || { echo "REFUSE(2): no 
 ONLY=""; while [ $# -gt 0 ]; do case "$1" in --lang) ONLY="$2"; shift;; *) echo "REFUSE(2): unknown argument $1"; exit 2;; esac; shift; done
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_zdcheck.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
-declare -A RELATIVE_FLOOR=( [snobol4]=0 [icon]=0 [prolog]=0 [raku]=0 [rebus]=0 [pascal]=8 [snocone]=7 )
+declare -A RELATIVE_FLOOR=( [snobol4]=0 [icon]=0 [prolog]=0 [raku]=0 [rebus]=0 [pascal]=0 [snocone]=3 )
 rc=0; TN=0; TC=0; TG=0; TV=0; TR=0; NL=0
 for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus:reb; do
     lang="${pair%%:*}"; ext="${pair##*:}"
