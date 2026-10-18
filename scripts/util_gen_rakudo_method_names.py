@@ -37,7 +37,8 @@ def names(raku):
 
 def emit(ns):
     body = ",\n".join("    " + '"' + n.replace("\\", "\\\\").replace('"', '\\"') + '"' for n in ns)
-    return "static const char *const rk_rakudo_methods[] = {\n%s\n};\nstatic const int rk_rakudo_methods_n = %d;\n" % (body, len(ns))
+    w = max(len(n.encode("utf-8")) for n in ns) + 1
+    return "static const char rk_rakudo_methods[][%d] = {\n%s\n};\nstatic const int rk_rakudo_methods_n = %d;\n" % (w, body, len(ns))
 
 def main():
     ap = argparse.ArgumentParser()

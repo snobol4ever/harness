@@ -79,7 +79,7 @@ def render(table):
         regs = table[name]
         mask = '|'.join(REGBIT[r] for r in ('r8', 'r9', 'r10', 'r11') if r in regs) or '0'
         rows.append('    { "%s", %s },' % (name, mask))
-    body = 'static const struct { const char * sym; unsigned mask; } rtx_clob_tab[] = {\n'
+    body = 'static const struct { char sym[%d]; unsigned mask; } rtx_clob_tab[] = {\n' % (max(len(n) for n in table) + 1)
     return body + '\n'.join(rows) + '\n};\n#define RTX_CLOB_TAB_N ((int)(sizeof rtx_clob_tab / sizeof rtx_clob_tab[0]))\n'
 
 
