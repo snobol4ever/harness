@@ -196,22 +196,24 @@ gate_tree_signature() {
     { find "$_root/src" -type f -print0 2>/dev/null | LC_ALL=C sort -z | xargs -0 md5sum 2>/dev/null; md5sum "$_root/Makefile" 2>/dev/null; } | md5sum | cut -c1-32
 }
 # gate_behaviour_signature <repo-root> <scrip-binary> -- md5 of the .s this binary EMITS for the pinned witnesses in
-# ../harness/scripts/fixtures/build_behaviour/. Prints the signature on stdout; returns 1 and prints nothing if it could not
-# compile every witness (the caller turns that into rc=2 -- "I could not establish what you are about to grade").
+# ../harness/scripts/fixtures/build_behaviour/. Prints the signature on stdout; returns 1 and prints nothing if NO witness compiles
+# (the caller turns that into rc=2 -- "I could not establish what you are about to grade"). A witness that does not compile signs as
+# one fixed line naming it and its rc (the coo 2026-10-18: CEO-1838 left Icon and Prolog aborting at compile by order, and the old
+# all-three rule refused every runner in every language); when every witness emits, the signature is byte-identical to the old one.
 # ~0.10s MEASURED for all three witnesses. Emission is deterministic TWICE OVER, and the second is the load-bearing one:
 # two runs on ONE binary are byte-identical, AND a 155-object rebuild of an UNCHANGED tree reproduces the signature
 # exactly -- so emission is a pure function of the tree, and a green tree cannot be turned red merely by rebuilding it.
 gate_behaviour_signature() {
-    local _root="$1" _bin="$2" _tmp _w _rc=0 _n=0
+    local _root="$1" _bin="$2" _tmp _w _s _r _n=0 _emit=0
     [ -x "$_bin" ] || return 1
     _tmp="$(mktemp -d 2>/dev/null)" || return 1
     for _w in "$_root"/../harness/scripts/fixtures/build_behaviour/*.icn "$_root"/../harness/scripts/fixtures/build_behaviour/*.sno "$_root"/../harness/scripts/fixtures/build_behaviour/*.pl; do
         [ -f "$_w" ] || continue
-        _n=$((_n+1))
-        env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS "$_bin" --compile -o "$_tmp/$(basename "$_w").s" "$_w" </dev/null >/dev/null 2>&1 || _rc=1
-        [ -s "$_tmp/$(basename "$_w").s" ] || _rc=1
+        _n=$((_n+1)); _s="$_tmp/$(basename "$_w").s"
+        ( env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS "$_bin" --compile -o "$_s" "$_w" </dev/null >/dev/null 2>&1; _x=$?; exit $_x; ) >/dev/null 2>&1; _r=$?   # the subshell keeps an abort's job notice out of the caller's output
+        if [ "$_r" = 0 ] && [ -s "$_s" ]; then _emit=$((_emit+1)); else printf '# build-behaviour witness %s did not compile, rc=%s\n' "$(basename "$_w")" "$_r" > "$_s"; fi
     done
-    if [ "$_n" = 0 ] || [ "$_rc" != 0 ]; then rm -rf "$_tmp"; return 1; fi
+    if [ "$_n" = 0 ] || [ "$_emit" = 0 ]; then rm -rf "$_tmp"; return 1; fi
     ( cd "$_tmp" && LC_ALL=C ls *.s | LC_ALL=C sort | xargs cat ) | md5sum | cut -c1-32
     rm -rf "$_tmp"
 }
