@@ -33,6 +33,10 @@
 # Whatever a band finds is a LOWER BOUND, never a population (hq_prolog 2026-09-20: their window is ragged and non-monotonic, wrong at 1,2,3,5,10,25 and right
 # at 0,20,40,50 -- a sample of {20,40,50} would have called it clean).
 set -u
+# ⛔ CEO-1680 (ceo 2026-10-17): the detector arm that ran each witness under SCRIP_TEST_PLANT_PAS_ROOT_SKIP=1 is GONE with the seam it read -- no switch
+# in SCRIP exists so a test can fail. The root walk's fail-once is a PROPER test: the same witnesses on a worktree of f0d0adf5b^ (the commit before
+# pas_gc_roots visited the heap table) read red under this band, measured once at the landing that deleted the seam; each run's own fail-once is the
+# oracle comparison below, which reads RED on any wrong answer, over a collector the INERT and NO-MOVE arms prove live and moving.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 SCRIP="${SCRIP:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)/scrip}"
 . "$(dirname "$0")/lib_gate.sh"
@@ -141,18 +145,9 @@ for w in $WITNESSES; do
     done
   done
 done
-DET_FAIL=0
-for w in $WITNESSES; do
-  REF=$(cat "$W/$w.ref")
-  c0=$(date +%s); ( cd "$W" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3 timeout -k 5 300 "$SCRIP" "$w.pas" < /dev/null >/dev/null 2>&1 ); c1=$(date +%s)
-  clean=$((c1-c0)); [ "$clean" -lt 1 ] && clean=1
-  det_to=$((clean*20)); [ "$det_to" -lt 20 ] && det_to=20
-  out=$( cd "$W" && env -u SCRIP_HEAP_MB SCRIP_TEST_PLANT_PAS_ROOT_SKIP=1 SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3 timeout -k 5 "$det_to" "$SCRIP" "$w.pas" < /dev/null 2>/dev/null ); rc=$?
-  if [ "$out" = "$REF" ] && [ "$rc" -eq 0 ]; then echo "DETECTOR-DEAD $w -- SCRIP_TEST_PLANT_PAS_ROOT_SKIP=1 drops the Pascal root walk entirely and the answer was STILL right: this witness cannot see a lost root, so its green means nothing"; DET_FAIL=$((DET_FAIL+1)); else echo "detector $w: planted root-loss DIVERGES (rc=$rc) -- this witness can see a lost root (clean arm ${clean}s, detector bound ${det_to}s = 20x it, so a timeout here is a hang and not slowness -- hq_prolog 2026-09-20: a timeout cannot tell needs-8.1s from never-finishes unless the bound is derived from a measurement in the same run)"; fi
-done
-echo "pas-heap-forced-movement: graded=$GRADED match=$MATCH red=$RED inert=$INERT no_move=$NOMOVE unplanted=$UNPLANTED nostart=$NOSTART detector_dead=$DET_FAIL (denominator: match+red+inert+no_move+unplanted+nostart = $((MATCH+RED+INERT+NOMOVE+UNPLANTED+NOSTART)) of $GRADED)"
-if [ "$INERT" -gt 0 ] || [ "$NOMOVE" -gt 0 ] || [ "$UNPLANTED" -gt 0 ] || [ "$NOSTART" -gt 0 ] || [ "$DET_FAIL" -gt 0 ] || [ "$GRADED" -eq 0 ]; then
-  echo "REFUSE(2) [$(basename "$0" .sh)]: this run COULD NOT MEASURE what it claims to measure (inert=$INERT no_move=$NOMOVE unplanted=$UNPLANTED nostart=$NOSTART detector_dead=$DET_FAIL graded=$GRADED). Workdir PRESERVED at $W -- a refusal that deletes its own evidence destroys the diagnosis with the same motion (hq_prolog 2026-09-20)."
+echo "pas-heap-forced-movement: graded=$GRADED match=$MATCH red=$RED inert=$INERT no_move=$NOMOVE unplanted=$UNPLANTED nostart=$NOSTART (denominator: match+red+inert+no_move+unplanted+nostart = $((MATCH+RED+INERT+NOMOVE+UNPLANTED+NOSTART)) of $GRADED)"
+if [ "$INERT" -gt 0 ] || [ "$NOMOVE" -gt 0 ] || [ "$UNPLANTED" -gt 0 ] || [ "$NOSTART" -gt 0 ] || [ "$GRADED" -eq 0 ]; then
+  echo "REFUSE(2) [$(basename "$0" .sh)]: this run COULD NOT MEASURE what it claims to measure (inert=$INERT no_move=$NOMOVE unplanted=$UNPLANTED nostart=$NOSTART graded=$GRADED). Workdir PRESERVED at $W -- a refusal that deletes its own evidence destroys the diagnosis with the same motion (hq_prolog 2026-09-20)."
   KEEP=1; exit 2
 fi
 if [ "$RED" -gt 0 ]; then echo "GATE RED [$(basename "$0" .sh)]: $RED of $GRADED graded points disagree with fpc -Miso under forced collection AND forced movement. Workdir PRESERVED at $W."; KEEP=1; exit 1; fi
