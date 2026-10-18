@@ -26,11 +26,19 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # EXIT: 0 every SCORED program passes both modes · 1 a scored program is red · 2 REFUSED (unbuilt/stale tree,
 # missing suite, oracle unreachable, or ZERO programs scored -- a run that graded nothing is never green).
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$(cd "$HERE/../../SCRIP" && pwd)"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 SUITE="${SPITBOL_TESTPGMS_SUITE:-$ROOT/corpus/packages/snobol4/spitbol_testpgms}"
 SCRIP="${SCRIP:-$SD/scrip}"; RT_DIR="${RT_DIR:-$SD/out}"; T="${TIMEOUT:-60}"
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_jvm,
+# verbatim: "Get all SNOBOL4 test suite package runners working with snobol4jvm."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed testpgms@<engine>
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=testpgms; [ "$PORT" = 1 ] && ROWKEY="testpgms@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate test_snobol4_spitbol_testpgms_suite "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
+fi
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): no suite at $SUITE"; exit 2; }
 [ -f "$SUITE/testpgms.in" ] || { echo "⛔ REFUSE(rc=2): $SUITE/testpgms.in missing -- every program reads it on stdin"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority; a private fallback would grade a DIFFERENT LANGUAGE (s189: -bf is the only correct arm)"; exit 2; }
@@ -74,7 +82,7 @@ declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a de
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/spitbol_testpgms"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
-prog_row() { printf 'package\ttestpgms\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "${4:-}" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
+prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\ttestpgms\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "${4:-}" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
 verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then echo CRASH; else echo FAIL; fi; }
 # graded_same <scrip-stdout> -- the one comparison, both modes (CEO-1316): stdout byte for byte against the oracle's stdout, or against
 # its body with the post-mortem block removed; and for a post-mortem answer, SCRIP's stderr (<stdout>.err) rendered through the one
@@ -137,19 +145,24 @@ for p in $progs; do
         if [ "$crc" = 0 ]; then
             SCORED=$((SCORED+1)); CR_GRADED=$((CR_GRADED+1))
             ca="$(declared_compile_args_from_table "$DECL" "$p")" || exit 2
-            _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
+            SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$p")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
+            _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
             got3="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$m3.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
+            if [ "$PORT" = 1 ]; then r4=""   # a port has no mode 4: no compile, no row
+            else
             _t0="$(progress_clock)"; s4="$W/$p.s"; (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt --compile $ca "$p.spt" > "$s4" 2>"$s4.err") </dev/null; r4=$?; ROW_S4="$(progress_secs_since "$_t0")"
             got4="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$s4.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
+            fi
             want="$(printf '%s' "$cr_pairs" | tr '\t\n' ': ' | sed 's/ *$//')"
             _p3=0; _p4=0
             if [ "$r3" -ne 0 ] && [ ! -s "$m3" ] && [ "$got3" = "$cr_pairs" ]; then M3P=$((M3P+1)); _p3=1
             else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got3" | tr '\t\n' ': ')], stdout $(grep -c '' "$m3") line(s))
 "; fi
-            if [ "$r4" -ne 0 ] && [ ! -s "$s4" ] && [ "$got4" = "$cr_pairs" ]; then M4P=$((M4P+1)); _p4=1
+            if [ "$PORT" = 1 ]; then :
+            elif [ "$r4" -ne 0 ] && [ ! -s "$s4" ] && [ "$got4" = "$cr_pairs" ]; then M4P=$((M4P+1)); _p4=1
             else M4F=$((M4F+1)); RED_LINES="$RED_LINES  RED  $p m4 (compile rc=$r4; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got4" | tr '\t\n' ': ')], assembly $(grep -c '' "$s4") line(s))
 "; fi
-            if [ "$_p3" = 1 ] && [ "$_p4" = 1 ]; then BOTH=$((BOTH+1)); fi
+            if [ "$_p3" = 1 ] && { [ "$PORT" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
             if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS; else prog_row "$p" m3 FAIL "sbl refuses at compile ($want); SCRIP rc=$r3"; fi
             if [ "$_p4" = 1 ]; then prog_row "$p" m4 PASS; else prog_row "$p" m4 FAIL "sbl refuses at compile ($want); SCRIP compile rc=$r4"; fi
             CR_LINES="$CR_LINES  COMPILE-REFUSAL  $p  sbl rc $orc, line:code $want -- graded by code and line (CEO-1323)
@@ -232,10 +245,13 @@ for p in $progs; do
     SCORED=$((SCORED+1))
     # ── mode 3 and mode 4, same scratch cwd, same stdin.
     ca="$(declared_compile_args_from_table "$DECL" "$p")" || exit 2
-    _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
+    SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$p")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
+    _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
     _p3=0
     if graded_same "$m3"; then M3P=$((M3P+1)); _p3=1; else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3, $(why_red "$m3"))
 "; fi
+    if [ "$PORT" = 1 ]; then _p4=0; r4=""   # a port has no mode 4: no compile, no row
+    else
     s4="$W/$p.s"; b4="$W/$p.bin"; _t0="$(progress_clock)"
     (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt --compile $ca "$p.spt" > "$s4" 2>/dev/null) </dev/null
     m4="$W/$p.m4"; r4=0
@@ -248,9 +264,10 @@ for p in $progs; do
     _p4=0
     if graded_same "$m4"; then M4P=$((M4P+1)); _p4=1; else M4F=$((M4F+1)); RED_LINES="$RED_LINES  RED  $p m4 (rc=$r4, $(why_red "$m4"))
 "; fi
+    fi
     # written as an if, not an && chain: this file is set -uo pipefail today, but an && chain whose last
     # link is false returns non-zero and would abort the loop the day someone adds -e.
-    if [ "$_p3" = 1 ] && [ "$_p4" = 1 ]; then BOTH=$((BOTH+1)); fi
+    if [ "$_p3" = 1 ] && { [ "$PORT" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
     if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS; else prog_row "$p" m3 "$(verdict_of "$r3")" "rc=$r3"; fi
     if [ "$_p4" = 1 ]; then prog_row "$p" m4 PASS
     elif [ "$r4" = 125 ]; then prog_row "$p" m4 FAIL "mode-4 compile or link failed"
@@ -258,7 +275,8 @@ for p in $progs; do
 done
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
-echo "SPITBOL_TESTPGMS_BOARD total=$TOTAL scored=$SCORED unscored=$UNSCR m3_pass=$M3P m3_fail=$M3F m4_pass=$M4P m4_fail=$M4F -- SCRIP $SCRIP_HASH corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf (the one SNOBOL4 oracle, Lon 2026-09-07) refs cut live"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
+echo "SPITBOL_TESTPGMS_BOARD total=$TOTAL scored=$SCORED unscored=$UNSCR m3_pass=$M3P m3_fail=$M3F m4_pass=$M4P m4_fail=$M4F -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf (the one SNOBOL4 oracle, Lon 2026-09-07) refs cut live"
 echo "SPITBOL_TESTPGMS_POST_MORTEM graded=$PM_GRADED voice_only=$PM_VOICE_ONLY -- programs whose sbl answer is a fatal post-mortem, graded through it (CEO-1316): stdout minus the block byte for byte, the banner and statement through the one error voice, the accounting ungraded (CEO-420 (b)); they pass by stopping exactly where SPITBOL x64 stops -- running them to completion would widen the dialect, Lon's call, not taken; voice_only counts those whose whole sbl stdout IS the post-mortem, so their body compared is empty and they pass on the banner and statement alone (the coo's review, 2026-09-27)"
 echo "SPITBOL_TESTPGMS_COMPILE_REFUSAL graded=$CR_GRADED -- programs sbl -bf refuses to compile, graded by the code and line of every diagnostic through the one error voice (CEO-1323): they pass by being refused where SPITBOL x64 refuses them"
 printf '%s' "$CR_LINES"
@@ -321,7 +339,8 @@ _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp t
 # ⛔ ONLY THE CANONICAL SUITE WRITES THE LEADERBOARD (the x64 and dotnet runners' guard; absent here until 2026-09-26, and
 # harmless only while nothing was appended: a scratch suite graded under a scratch S4E_PROGRESS_DB now passes the write's
 # DB check, so without this a fixture run would set the live testpgms row).
-if [ "$SUITE" = "$CANON_SUITE" ]; then
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+elif [ "$SUITE" = "$CANON_SUITE" ]; then
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite testpgms --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
