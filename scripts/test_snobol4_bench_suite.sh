@@ -48,13 +48,31 @@ BUD_MS="${BENCH_BUD_MS:-200}"
 NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each kernel runs its three angles in m3 alone with its declared heap and stack as switches, angle 1's external
+# stopwatch is /usr/bin/time (SCRIP's tools/bench_rusage lives in SCRIP, which a port root does not hold; stdout untouched either way), the rows
+# are keyed snobol4-bench-ref@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+MODES="m3 m4"; [ "$PORT" = 1 ] && MODES=m3
+# ⛔ ANGLE 3 IS NOT RUN UNDER A PORT: its budget is TIME() read as nanoseconds (bench_wrap_snobol4.py, SCRIP's rt_time_ns; both SPITBOLs
+# on this box are patched to answer the same), and snobol4dotnet answers TIME() in milliseconds, as the SPITBOL manual has it (measured
+# 2026-10-18: 1879 for a 1.9 s loop where sbl -bf answers 90812757 for 0.09 s) -- so a 200 ms budget is 55 hours and every kernel rode the
+# 300 s cap. Which unit a port owes is Lon's to rule; until then a port is graded on the process and fixed-iteration angles, said so on the line.
+ANGLES=process,iter,time; [ "$PORT" = 1 ] && ANGLES=process,iter
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || refuse "the $(one_runner_engine) engine is not ready (its runner said why above)"; else
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
+fi
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared arena"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 GEN="$HERE/bench_wrap_snobol4.py"; [ -f "$GEN" ] || refuse "no wrapper generator at $GEN -- angles 2 and 3 have nothing to run"
 WRAP="$HERE/../../SCRIP/tools/bench_rusage"
+if [ "$PORT" = 1 ]; then WRAPV=(/usr/bin/time -f 'BENCH_RUSAGE: elapsed_s=%e user_s=%U sys_s=%S maxrss_kb=%M exit=%x'); [ -x /usr/bin/time ] || refuse "no /usr/bin/time -- angle 1 has no external stopwatch under a port"
+else
 [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
+WRAPV=("$WRAP")
+fi
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 ORACLE_ARM="${BENCH_ORACLE_ARM:-0}"; SBL=""
@@ -95,43 +113,46 @@ for k in "${KERNELS[@]}"; do
   cfg="shipped"; [ -n "$kb" ] && { cfg="SCRIP_HEAP_CAP_KB=$kb"; HEAPD=$((HEAPD+1)); }
   [ -n "$st" ] && { cfg="$([ "$cfg" = shipped ] || printf '%s,' "$cfg")SCRIP_STACK=${st}k"; HEAPD=$((HEAPD+1)); }
   if [ ! -s "$ref" ]; then
-    for m in m3 m4; do printf 'benchmark\t%s\t%s\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
+    for m in $MODES; do printf 'benchmark\t%s\t%s\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
     printf '%-20s %-4s %s\n' "$k" both "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; NAMED="$NAMED $k(no-ref)"; continue
   fi
   gen_ok=1
   for a in iter time; do python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" -o "$T/$k.$a.$EXT" 2>"$T/$k.$a.gen" || gen_ok=0; done
   okboth=1
-  for m in m3 m4; do
+  sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_beside "$f")" || refuse "$k: a .heap or .stack sidecar is refused (the reader said why above)"; }   # a port reads its declared heap and stack as -dNk -sNk
+  for m in $MODES; do
     _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (CEO-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
     else
-      if [ "$m" = m3 ]; then P=("$SCRIP" --run "$f"); I=("$SCRIP" --run "$T/$k.iter.$EXT"); TM=("$SCRIP" --run "$T/$k.time.$EXT")
+      if [ "$m" = m3 ]; then P=("$SCRIP" --run $sz "$f"); I=("$SCRIP" --run $sz "$T/$k.iter.$EXT"); TM=("$SCRIP" --run $sz "$T/$k.time.$EXT")
       else
         if build4 "$f" "$T/$k.p4" && build4 "$T/$k.iter.$EXT" "$T/$k.i4" && build4 "$T/$k.time.$EXT" "$T/$k.t4"; then P=("$T/$k.p4"); I=("$T/$k.i4"); TM=("$T/$k.t4")
         else why="m4 compile/link failed: $(cat "$T/$k.p4.cc" "$T/$k.i4.cc" "$T/$k.t4.cc" 2>/dev/null | head -c 160 | tr '\n' ' ')"; fi
       fi
       if [ -z "$why" ]; then
-        run1 "$T/$k.$m.p" "$kb" "$WRAP" "${P[@]}"; rc=$?
+        run1 "$T/$k.$m.p" "$kb" "${WRAPV[@]}" "${P[@]}"; rc=$?
         if [ "$rc" = 0 ] && cmp -s "$T/$k.$m.p.out" "$ref"; then r1=PASS; else why="process: rc=$rc$(cmp -s "$T/$k.$m.p.out" "$ref" || echo ', output differs from .ref')"; fi
         run1 "$T/$k.$m.i" "$kb" "${I[@]}"; rc=$?; w="$(bench_ok "$T/$k.$m.i.err" iter)"
         if [ "$rc" = 0 ] && cmp -s "$T/$k.$m.i.out" "$ref" && [ -z "$w" ]; then r2=PASS; else why="$why; iter: rc=$rc$(cmp -s "$T/$k.$m.i.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
-        run1 "$T/$k.$m.t" "$kb" "${TM[@]}"; rc=$?; w="$(bench_ok "$T/$k.$m.t.err" time)"
-        if [ "$rc" = 0 ] && cmp -s "$T/$k.$m.t.out" "$ref" && [ -z "$w" ]; then r3=PASS; else why="$why; time: rc=$rc$(cmp -s "$T/$k.$m.t.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
+        if [ "$PORT" = 1 ]; then r3=PASS; rc=0; w=""   # angle 3 is not run under a port (ANGLES above); the table prints it as -
+        else run1 "$T/$k.$m.t" "$kb" "${TM[@]}"; rc=$?; w="$(bench_ok "$T/$k.$m.t.err" time)"; fi
+        if [ "$PORT" = 1 ]; then :
+        elif [ "$rc" = 0 ] && cmp -s "$T/$k.$m.t.out" "$ref" && [ -z "$w" ]; then r3=PASS; else why="$why; time: rc=$rc$(cmp -s "$T/$k.$m.t.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
         grep -h '^BENCH_RUSAGE' "$T/$k.$m.p.err" | sed "s/^/    scouting $k $m: /"
-        for x in i t; do grep -h '^BENCH mode=' "$T/$k.$m.$x.err" | sed "s/^/    scouting $k $m: /"; done
+        for x in i t; do grep -hs '^BENCH mode=' "$T/$k.$m.$x.err" | sed "s/^/    scouting $k $m: /"; done
       fi
     fi
     if [ "$r1$r2$r3" = PASSPASSPASS ]; then v=PASS; PASSN[$m]=$((PASSN[$m]+1)); note="ref-under-three-angles"
     else v=FAIL; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; NAMED="$NAMED $k.$m"; fi
     SM="$(progress_secs_since "$_tm")"
     printf 'benchmark\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$v" "$SM" "$note" "$cfg" >>"$PROG_ROWS"
-    printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$r3" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"
+    printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$([ "$PORT" = 1 ] && echo - || echo "$r3")" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"
   done
   [ "$okboth" = 1 ] && BOTH=$((BOTH+1))
   if [ "$ORACLE_ARM" = 1 ] && [ "$gen_ok" = 1 ]; then
     o1=FAIL; o2=FAIL; o3=FAIL; owhy=""
-    run1 "$T/$k.sbl.p" "" "$WRAP" "$SBL" -bf "$f"; rc=$?
+    run1 "$T/$k.sbl.p" "" "${WRAPV[@]}" "$SBL" -bf "$f"; rc=$?
     if [ "$rc" = 0 ] && cmp -s "$T/$k.sbl.p.out" "$ref"; then o1=PASS; else owhy="process: rc=$rc$(cmp -s "$T/$k.sbl.p.out" "$ref" || echo ', output differs from .ref')"; fi
     run1 "$T/$k.sbl.i" "" "$SBL" -bf "$T/$k.iter.$EXT"; rc=$?; w="$(bench_ok "$T/$k.sbl.i.err" iter)"
     if [ "$rc" = 0 ] && cmp -s "$T/$k.sbl.i.out" "$ref" && [ -z "$w" ]; then o2=PASS; else owhy="$owhy; iter: rc=$rc${w:+, $w}"; fi
@@ -142,15 +163,17 @@ for k in "${KERNELS[@]}"; do
     printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" sbl "$o1" "$o2" "$o3" "$([ "$o1$o2$o3" = PASSPASSPASS ] && echo PASS || echo "FAIL -- $(echo "$owhy" | sed 's/^[; ]*//')") (oracle arm, informational)"
   fi
 done
-LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=process,iter,time iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
+LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
+[ "$PORT" = 1 ] && LINE="$LINE engine=$(one_runner_engine) modes=m3"
 echo
 echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
-echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
+[ "$PORT" = 1 ] && echo "  tree: engine $(one_runner_port_tree) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)" || echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
 if [ "$IS_BOARD" = 0 ]; then
   echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
+  if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (CEO-1822), graded in m3 alone"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
   . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
   read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/snobol4" "$BD" "" "$NOWRITE")"
   echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"
