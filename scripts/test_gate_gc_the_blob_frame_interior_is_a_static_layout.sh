@@ -39,6 +39,10 @@
 # word the planted column counts is [rbp-24], the DTP (HB_DTP, a moving type), while the leaf's string word resolved
 # to a NON-moving block in this witness. The reporter's column is the discriminator this gate holds. (5) the reporter
 # prints the frame under SCRIP_GC_MAPS=1 with raw_in_heap=0 unplanted, and counts the head's DTP cell as a DESCR (descr >= 1).
+# ⛔⭐ ARMS (3) AND (4b) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
+# SCRIP_GC_BLOB_LAYOUT_PLANT seam left emit.cpp (row emit-the-three-emitter-plants-...). Their recorded readings stand as their fail-once:
+# =1 (the last entry dropped) aborted the emitter rc 134 'does not tile' in both media; =2 (DESCR and PTR_GC retagged RAW) moved the
+# reporter's raw_in_heap from 0 to above 0 on the frame holding the pointer, in both media. Arms 1, 2, 4a and 5 grade the shipped build.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -71,10 +75,7 @@ for pair in "$W2:$T/fx" "$W1:$T/hb" "$T/w4.sno:$T/w4"; do
     if [ -s "$T/l3.txt" ] && cmp -s "$T/l3.txt" "$T/l4.txt"; then a2=$((a2 + $(wc -l < "$T/l3.txt"))); else echo "  arm 2 FAIL ($(basename "$src"): mode 3 and mode 4 layouts differ or are absent: $(wc -l < "$T/l3.txt") vs $(wc -l < "$T/l4.txt") lines)"; diff "$T/l3.txt" "$T/l4.txt" | head -4; RC=1; fi
 done
 [ "$a2" -gt 0 ] && echo "  arm 2 PASS: $a2 blob layout(s) read back through rt_gc_frame_maps_dump agree entry for entry in both media (offset:kind:size)"
-SCRIP_GC_BLOB_LAYOUT_PLANT=1 "$SCRIP" "$W3" >/dev/null 2>"$T/p3.err" </dev/null; p3=$?
-SCRIP_GC_BLOB_LAYOUT_PLANT=1 "$SCRIP" --compile "$W3" >/dev/null 2>"$T/p4.err" </dev/null; p4=$?
-if [ "$p3" = 134 ] && [ "$p4" = 134 ] && grep -q 'does not tile' "$T/p3.err" && grep -q 'does not tile' "$T/p4.err"; then echo "  arm 3 PASS: the coverage plant (one entry dropped) aborts the emitter in both media (rc 134, 'does not tile')"
-else echo "  arm 3 FAIL: coverage plant not caught (rc $p3 / $p4)"; RC=1; fi
+echo "  arm 3 RETIRED under CEO-1680: the coverage plant left emit.cpp; its recorded reading (one entry dropped, rc 134 does not tile in both media) is the fail-once (header)"
 ref="$(cat "$R1")"; a4=""; a4bad=0
 for st in 1 3 5; do
     o3="$(SCRIP_GC_STRESS=$st timeout -k 5 60 "$SCRIP" "$W1" 2>/dev/null </dev/null)"; o4="$(SCRIP_GC_STRESS=$st timeout -k 5 60 "$T/hb" 2>/dev/null </dev/null)"
@@ -83,15 +84,11 @@ done
 if [ "$a4bad" = 0 ]; then echo "  arm 4a PASS: hb_blob_span_defer matches its oracle ref '$ref' at SCRIP_GC_STRESS=1,3,5 in both modes --$a4"
 else echo "  arm 4a FAIL: the pointer slot did not survive forced collection --$a4"; RC=1; fi
 rih() { grep '^\[GC-BLOB\] frames=[1-9]' | sed -n 's/.*raw_in_heap=\([0-9]*\).*/\1/p' | sort -n | tail -1; }
-u3=$(SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 "$SCRIP" "$W1" 2>&1 >/dev/null </dev/null | rih); k3=$(SCRIP_GC_BLOB_LAYOUT_PLANT=2 SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 "$SCRIP" "$W1" 2>&1 >/dev/null </dev/null | rih)
-SCRIP_GC_BLOB_LAYOUT_PLANT=2 "$SCRIP" --compile "$W1" > "$T/hbp.s" 2>/dev/null && gcc "$T/hbp.s" -o "$T/hbp" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" 2>/dev/null
-u4=$(SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 "$T/hb" 2>&1 >/dev/null </dev/null | rih); k4=$(SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 "$T/hbp" 2>&1 >/dev/null </dev/null | rih)
-if [ "${u3:-x}" = 0 ] && [ "${u4:-x}" = 0 ] && [ "${k3:-0}" -gt 0 ] && [ "${k4:-0}" -gt 0 ]; then echo "  arm 4b PASS: the kind plant (heap-pointer words retagged RAW) is counted by the reporter -- raw_in_heap unplanted m3=$u3 m4=$u4, planted m3=$k3 m4=$k4 (the layout lie the column exists to see)"
-else echo "  arm 4b FAIL: raw_in_heap unplanted m3=${u3:-none} m4=${u4:-none}, planted m3=${k3:-none} m4=${k4:-none} -- the reporter does not see the kind plant"; RC=1; fi
+echo "  arm 4b RETIRED under CEO-1680: the kind plant left emit.cpp; its recorded reading (raw_in_heap 0 unplanted, above 0 planted, both media) is the fail-once (header)"
 line=$(SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 "$SCRIP" "$W1" 2>&1 >/dev/null </dev/null | grep '^\[GC-BLOB\] frames=[1-9]' | head -1)
 if [ -n "$line" ] && echo "$line" | grep -q 'descr=[1-9]' && echo "$line" | grep -q 'raw_in_heap=0'; then echo "  arm 5 PASS: the reporter prints the blob frame it visited: $line"
 else echo "  arm 5 FAIL: reporter line '$line'"; RC=1; fi
-if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the blob frame interior is a static layout in both media, coverage is enforced, the pointer slot survives forced collection, and the kind plant is counted (examined 6 arms, two with planted violations)"
-else echo "GATE FAIL(1) [$G]: the blob static layout does not hold (examined 6 arms)"; fi
+if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the blob frame interior is a static layout in both media, coverage is enforced, and the pointer slot survives forced collection (examined 4 live arms; arms 3 and 4b retired under CEO-1680)"
+else echo "GATE FAIL(1) [$G]: the blob static layout does not hold (examined 4 live arms)"; fi
 echo "    tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)  measured $(date -u +%Y-%m-%dT%H:%MZ)"
 exit $RC

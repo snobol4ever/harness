@@ -59,6 +59,10 @@
 # (CEO-554), and if this comes back green the read-back has stopped reading. Arm 4 plants in ALL SEVEN
 # frontends, not just the first: a fail-once demonstrated in Icon says nothing about whether the Rebus or
 # Pascal read-back discriminates, and an arm that never fired for a frontend has not measured it.
+# ⛔⭐ ARM (4) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
+# SCRIP_GC_MAPTAB_PLANT seam left emit.cpp (row emit-the-three-emitter-plants-...). Its recorded reading is its fail-once: a mode-4
+# compile with frame_bytes perturbed by 16 moved the installed table in every one of the seven frontends. FAIL_ONCE=1 now corrupts the
+# mode-4 READING of each witness (its first entry's frame_bytes) and requires arm (2) to red -- the comparison can say no.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -138,9 +142,8 @@ end
 EOF
 
 read_m3(){ SCRIP_GC_MAPS_DUMP=1 timeout -k 5 120 "$SCRIP" "$1" </dev/null >/dev/null 2>"$2"; }
-read_m4(){ local src="$1" out="$2" plant="${3:-0}"; local s="$T/x.s" x="$T/x.bin"; rm -f "$s" "$x"
-    if [ "$plant" = 1 ]; then SCRIP_GC_MAPTAB_PLANT=1 timeout -k 5 120 "$SCRIP" --compile -o "$s" "$src" </dev/null >/dev/null 2>&1
-    else timeout -k 5 120 "$SCRIP" --compile -o "$s" "$src" </dev/null >/dev/null 2>&1; fi
+read_m4(){ local src="$1" out="$2"; local s="$T/x.s" x="$T/x.bin"; rm -f "$s" "$x"
+    timeout -k 5 120 "$SCRIP" --compile -o "$s" "$src" </dev/null >/dev/null 2>&1
     [ -s "$s" ] || return 1
     gcc "$s" -o "$x" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null || return 1
     SCRIP_GC_MAPS_DUMP=1 timeout -k 5 120 "$x" </dev/null >/dev/null 2>"$out"; }
@@ -152,6 +155,7 @@ for w in a.icn b.sno c.pl d.sc e.raku f.pas g.reb; do
     read_m3 "$src" "$T/$w.m3.raw"
     if ! read_m4 "$src" "$T/$w.m4.raw"; then echo "  present FAIL ($w: mode 4 did not compile, link or run -- the table could not be read back)"; RC=1; continue; fi
     tab "$T/$w.m3.raw" > "$T/$w.m3.tab"; tab "$T/$w.m4.raw" > "$T/$w.m4.tab"
+    [ "${FAIL_ONCE:-0}" = 1 ] && sed -i '1s/frame_bytes=[0-9]*/frame_bytes=99999/' "$T/$w.m4.tab"
     n3=$(wc -l < "$T/$w.m3.tab"); n4=$(wc -l < "$T/$w.m4.tab")
     if [ "$n3" -gt 0 ] && [ "$n4" -gt 0 ]; then pop="$pop $w:m3=$n3/m4=$n4"
     else echo "  present FAIL ($w: the installed table is EMPTY in a medium -- m3=$n3 m4=$n4 entries. A gate that compared two empty tables would report agreement while measuring nothing)"; RC=1; continue; fi
@@ -164,18 +168,9 @@ for w in a.icn b.sno c.pl d.sc e.raku f.pas g.reb; do
 done
 [ "$RC" = 0 ] && echo "  present/agree/identity PASS (population graded --$pop -- read back through rt_gc_frame_maps() in both media, identical entry for entry, entry graph named main, no mangling in any name)"
 
-plantpop=""
-for w in a.icn b.sno c.pl d.sc e.raku f.pas g.reb; do
-    if read_m4 "$T/$w" "$T/$w.plant.raw" 1; then
-        tab "$T/$w.plant.raw" > "$T/$w.plant.tab"
-        dp=$(diff "$T/$w.m3.tab" "$T/$w.plant.tab" 2>/dev/null | grep -c '^[<>]')
-        if [ "$dp" -gt 0 ]; then plantpop="$plantpop $w:$dp"
-        else echo "  planted FAIL ($w: a mode-4 table emitted with a perturbed frame_bytes still reads identical to mode 3 -- the read-back is not reading THIS frontend's installed table, so arms 1-3 are measuring nothing for it)"; RC=1; fi
-    else echo "  planted FAIL ($w: the planted mode-4 witness did not build -- the arm could not measure)"; RC=1; fi
-done
-[ -n "$plantpop" ] && echo "  planted PASS (SCRIP_GC_MAPTAB_PLANT=1 on the mode-4 compile alone moves this many lines of the installed table, per frontend --$plantpop -- so the read-back has been SEEN to catch a cross-media divergence in EVERY frontend it grades, not just in the one it was first written against)"
+echo "  planted RETIRED under CEO-1680: the SCRIP_GC_MAPTAB_PLANT seam left emit.cpp; its recorded reading is the fail-once (header)"
 
-if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the map table is present and installed in both media and the two readings agree entry for entry (examined 4 arms)"
-else echo "GATE FAIL(1) [$G]: the compile-time map table diverges between the media, is empty, or the read-back stopped discriminating (examined 4 arms)"; fi
+if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the map table is present and installed in both media and the two readings agree entry for entry (examined 3 arms, the planted arm retired)"
+else echo "GATE FAIL(1) [$G]: the compile-time map table diverges between the media, is empty, or the read-back stopped discriminating (examined 3 arms)"; fi
 echo "    tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)  measured $(date -u +%Y-%m-%dT%H:%MZ)"
 exit $RC
