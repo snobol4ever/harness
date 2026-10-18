@@ -118,7 +118,9 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # nested_arbno_rpos: it SIGSEGVs again in both modes (rc 139) where sbl -bf prints match, first bad e53f5dcd6 (the spine flip; its
 # parent prints match 3 of 3 per mode), and the builder absorbs a red pair only as an auto-minted XFAIL (the class named below), so it
 # stays loose until the flip's cure lands and is absorbed green then.
-FLOOR_icon=0 FLOOR_pascal=0 FLOOR_prolog=0 FLOOR_raku=0 FLOOR_rebus=0 FLOOR_snobol4=1 FLOOR_snocone=0
+# ⭐ FLOOR_snobol4 1 -> 0 (hq_snobol4 2026-10-17): nested_arbno_rpos cured at SCRIP 0c92d38f5 (a node of an ARBNO's body keeps its cells at its
+# gamma into the ARBNO) and is the master entry arbno_rpos_alt_branch_4, its ref sbl -bf's.
+FLOOR_icon=0 FLOOR_pascal=0 FLOOR_prolog=0 FLOOR_raku=0 FLOOR_rebus=0 FLOOR_snobol4=0 FLOOR_snocone=0
 out="$(python3 ../harness/scripts/util_orphaned_witness_census.py "$CORPUS" --counts 2>&1)" || { echo "⛔ GATE REFUSES(2): census generator failed:"; echo "$out"; exit 2; }
 printf %s "$out" | grep -q . || { echo "⛔ GATE REFUSES(2): census produced NO output -- an empty census is not a green board"; exit 2; }
 rc=0 tot=0 seen=0
