@@ -200,15 +200,16 @@ for sno in "$SUITE"/*.sno; do
     if [ "$got3" = "$gotS" ]; then P3=$((P3+1)); OUT3=PASS; else F3=$((F3+1)); FL3="$FL3 $name"; OUT3="$(verdict_of "$rc3")"; fi
     # ⛔ A HANG NEVER COLLAPSES INTO PASS (the verdict ladder): measured 2026-09-07 (coo) on code/palin/temp -- the
     # oracle reads TERMINAL from /dev/null, sees EOF and exits rc=0 with 0 bytes in 0 s; SCRIP spins to the timeout
-    # with 0 bytes, and "0 bytes equals 0 bytes" graded it PASS. The board's P3 keeps this runner's own label; the
-    # progress row and the AND line say HANG, which is what happened.
-    [ "$rc3" -eq 124 ] && OUT3=HANG
+    # with 0 bytes, and "0 bytes equals 0 bytes" graded it PASS. The board's P3 takes that pass back (the coo 2026-10-18, on hq_jvm's
+    # and hq_dotnet's reading: the DOTNET_BOARD line read m3_pass=5 where its rows read 3 PASS + 2 HANG), so the board, the progress
+    # row and the AND line all say HANG, which is what happened (ceo-372: a timed-out run is HANG, never PASS, whatever its stream).
+    if [ "$rc3" -eq 124 ]; then [ "$OUT3" = PASS ] && { P3=$((P3-1)); F3=$((F3+1)); FL3="$FL3 $name(HANG)"; }; OUT3=HANG; fi
     rc4=""; _t0="$(progress_clock)"; if [ "$PORT" = 1 ]; then OUT4=""   # a port has no mode 4: no compile, no row
     elif compile_m4 "$sno" "$W/prog.bin" "$ca"; then
         got4="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>"$W/err4")"; rc4=$?
         if [ "$DIED" = 1 ]; then got4="$(mask_dot "$(fatal_render "$got4" "$W/err4")" "$name" scrip)"; else got4="$(mask_dot "$got4" "$name" scrip)"; fi
         if [ "$got4" = "$gotS" ]; then P4=$((P4+1)); OUT4=PASS; else F4=$((F4+1)); FL4="$FL4 $name"; OUT4="$(verdict_of "$rc4")"; fi
-        [ "$rc4" -eq 124 ] && OUT4=HANG
+        if [ "$rc4" -eq 124 ]; then [ "$OUT4" = PASS ] && { P4=$((P4-1)); F4=$((F4+1)); FL4="$FL4 $name(HANG)"; }; OUT4=HANG; fi
     else S4=$((S4+1)); FL4="$FL4 $name(CC)"; OUT4=SKIP
     fi
     ROW_S4="$(progress_secs_since "$_t0")"
