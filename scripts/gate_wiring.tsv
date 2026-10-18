@@ -775,6 +775,7 @@ test_gate_pl_iso_rung7_a_cut_inside_a_findall_bagof_setof_goal_has_its_own_barri
 test_gate_pl_iso_rung8_an_unbounded_integer_literal_reads_writes_and_computes.sh	WIRED	-	-	-
 test_gate_pl_library_main_argv_options_and_a_module_qualified_current_predicate_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_library_record_and_dcg_data_terms_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_maplist_include_and_exclude_exit_deterministically_and_fast_term_io_round_trips_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_max_arity_is_the_functor_tables_int_bound.sh	WIRED	-	-	-
 test_gate_pl_max_integer_is_not_an_evaluable_functor.sh	WIRED	-	-	-
 test_gate_pl_max_integer_min_integer_absent_when_bounded_is_false.sh	WIRED	-	-	-
