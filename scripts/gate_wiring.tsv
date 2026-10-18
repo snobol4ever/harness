@@ -232,6 +232,7 @@ test_gate_gc_the_pending_prolog_ball_is_a_rooted_cell.sh	WIRED	-	-	-
 test_gate_gc_the_plant_says_whether_it_applied.sh	WIRED	-	-	-
 test_gate_gc_the_poll_is_a_register_preserving_asm_leaf.sh	WIRED	-	-	-
 test_gate_gc_the_prolog_root_cells_live_inside_the_value_region_and_are_visited_by_type.sh	WIRED	-	-	-
+test_gate_gc_the_record_check_after_each_collection_names_a_misfixed_slot.sh	WIRED	-	-	-
 test_gate_gc_the_safe_point_census_counts_emitted_paths_not_source_proximity.sh	WIRED	-	-	-
 test_gate_gc_the_scan_enter_poll_never_roots_an_unestablished_subject_base.sh	WIRED	-	-	-
 test_gate_gc_the_scan_subject_base_is_reloaded_after_a_call_inside_a_scan.sh	WIRED	-	-	-
