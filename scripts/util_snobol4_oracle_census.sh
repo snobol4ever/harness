@@ -76,6 +76,16 @@ for pkg in $PKGS; do
     # The copy keeps the package's corpus-relative path, with the trees a -INCLUDE reaches ('../../benchmarks/snobol4/
     # harness.inc', library/, include/) beside it -- the rungs' probes resolved in the tree and not in a flat copy.
     rel="${pkg#$CORPUS/}"; run="$SCRATCH/$rel"; rm -rf "$run"; mkdir -p "$(dirname "$run")"; cp -r "$pkg" "$run"; rm -f "$run/ORACLE_ACCEPTANCE.tsv"
+    # ⛔ A PACKAGE WHOSE RUNNER STAGES ITS INCLUDES INTO THE PROGRAM'S CWD DECLARES THE DIRECTORY IN INCLUDE_STAGING.tsv (dir<TAB>why), and the census
+    # stages it the same way (the coo 2026-10-18, ceo's ruling): SPITBOL's -INCLUDE search is cwd-relative, and snoflake's 51 gimpel-* programs read
+    # ERR "include file cannot be opened" here while test_snoflake_suite.sh, which copies gimpel/*.INC and *.IN beside them, gets their answers.
+    if [ -f "$pkg/INCLUDE_STAGING.tsv" ]; then
+        while IFS=$'\t' read -r sd _why; do
+            case "$sd" in ''|'#'*) continue;; esac
+            [ -d "$run/$sd" ] || { echo "⛔ REFUSE(2): $pkg/INCLUDE_STAGING.tsv names $sd, which is not a directory of the package" >&2; exit 2; }
+            cp -pn "$run/$sd"/*.INC "$run/$sd"/*.IN "$run"/ 2>/dev/null || true
+        done < "$pkg/INCLUDE_STAGING.tsv"
+    fi
     for side in benchmarks/snobol4 library include; do
         [ -d "$CORPUS/$side" ] && [ ! -e "$SCRATCH/$side" ] && { mkdir -p "$SCRATCH/$(dirname "$side")"; cp -r "$CORPUS/$side" "$SCRATCH/$side"; }
     done
