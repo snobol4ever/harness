@@ -167,6 +167,14 @@ one_runner_port_ready() {   # one_runner_port_ready <lang>
     *) echo "⛔ REFUSE(rc=2): S4E_ENGINE=$(one_runner_engine) names no port engine (dotnet, jvm)" >&2; return 2;; esac
   bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries --lang "${1:-snobol4}" > /dev/null || return 2
 }
+# one_runner_port_tree -- the port engine's checkout as a board line names it, "<engine> <short hash>[-dirty]": the git toplevel of the
+# driver its runner's --paths names first, the tree its progress rows pin (util_progress_append.py), so a port's board never prints SCRIP's
+one_runner_port_tree() {
+  local _e _d _t; _e="$(one_runner_engine)"
+  _d="$(bash "$(dirname "${BASH_SOURCE[0]}")/run_snobol4$_e.sh" --paths 2>/dev/null | head -1)"
+  _t="$(git -C "$(dirname "${_d:-/}")" rev-parse --show-toplevel 2>/dev/null)" || { printf '%s ?' "$_e"; return 0; }
+  printf '%s %s%s' "$_e" "$(git -C "$_t" rev-parse --short HEAD)" "$(git -C "$_t" diff --quiet HEAD 2>/dev/null || printf -- -dirty)"
+}
 one_runner_who() {
   local lang="${1:-}" lanes key
   lanes="$(one_runner_lanes_line)"

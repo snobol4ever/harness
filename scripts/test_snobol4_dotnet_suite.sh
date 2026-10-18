@@ -45,10 +45,17 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 #
 # Exit: 0 iff FAIL3=0 and FAIL4=0 over the printed (scoreable) denominator. REFUSE entries never gate.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 SUITE="${DOTNET_SUITE:-$ROOT/corpus/packages/snobol4/dotnet}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-20s}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed dotnet@<engine>
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=dotnet; [ "$PORT" = 1 ] && ROWKEY="dotnet@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
 # does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
@@ -58,6 +65,7 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-20s}"
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
 "$HERE/util_require_fresh.sh" --gate test_snobol4_dotnet_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
+fi
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_oracle_flags.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable"; exit 2; }
@@ -66,6 +74,7 @@ SBL="$(sbl_correctness_bin)"; SBL_FLAGS="$(sbl_lang_flags)"
 sbl_assert_bf "$SBL" 2>/dev/null || { echo "⛔ REFUSE(rc=2): oracle at $SBL failed the -bf capability check"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
 TOTAL=0; UNSCR=0; UNGR=0; FLG=""; P3=0; F3=0; P4=0; F4=0; S4=0
 FL3=""; FL4=""; FLU=""
@@ -102,7 +111,7 @@ PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/dotnet"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
 BOTH=0
-prog_row() { printf 'package\tdotnet\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
+prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tdotnet\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (CEO-1676 (c))
 # ⭐ THE SPITBOL BASELINE (Lon 2026-09-08, row snobol4-every-package-runner-states-its-row-over-the-spitbol-
 # baseline-measured-live; test_snoflake_suite.sh is the shape). A program the ONE ORACLE cannot run is OUTSIDE
 # the baseline and out of the denominator. This runner already MEASURES that set live -- it is exactly the
@@ -182,8 +191,9 @@ for sno in "$SUITE"/*.sno; do
     # are per-entry rows); a row that matches nothing changes nothing, so a program without one is compared byte for byte as before
     gotS="$(mask_dot "$gotS" "$name" oracle)"
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
+    SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
-    got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca "$sno" < "$inp" 2>"$W/err3")"; rc3=$?
+    got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $SZ "$sno" < "$inp" 2>"$W/err3")"; rc3=$?
     ROW_S3="$(progress_secs_since "$_t0")"
     if [ "$DIED" = 1 ]; then got3="$(mask_dot "$(fatal_render "$got3" "$W/err3")" "$name" scrip)"; else got3="$(mask_dot "$got3" "$name" scrip)"; fi
     [ -n "${DOTNET_DEBUG_DIR:-}" ] && { printf '%s' "$gotS" > "$DOTNET_DEBUG_DIR/$name.oracle"; printf '%s' "$got3" > "$DOTNET_DEBUG_DIR/$name.m3"; cp "$W/err3" "$DOTNET_DEBUG_DIR/$name.err3" 2>/dev/null; }   # what this runner compared, on request (a red a reader cannot see is a red nobody can cure)
@@ -193,7 +203,8 @@ for sno in "$SUITE"/*.sno; do
     # with 0 bytes, and "0 bytes equals 0 bytes" graded it PASS. The board's P3 keeps this runner's own label; the
     # progress row and the AND line say HANG, which is what happened.
     [ "$rc3" -eq 124 ] && OUT3=HANG
-    rc4=""; _t0="$(progress_clock)"; if compile_m4 "$sno" "$W/prog.bin" "$ca"; then
+    rc4=""; _t0="$(progress_clock)"; if [ "$PORT" = 1 ]; then OUT4=""   # a port has no mode 4: no compile, no row
+    elif compile_m4 "$sno" "$W/prog.bin" "$ca"; then
         got4="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>"$W/err4")"; rc4=$?
         if [ "$DIED" = 1 ]; then got4="$(mask_dot "$(fatal_render "$got4" "$W/err4")" "$name" scrip)"; else got4="$(mask_dot "$got4" "$name" scrip)"; fi
         if [ "$got4" = "$gotS" ]; then P4=$((P4+1)); OUT4=PASS; else F4=$((F4+1)); FL4="$FL4 $name"; OUT4="$(verdict_of "$rc4")"; fi
@@ -201,13 +212,13 @@ for sno in "$SUITE"/*.sno; do
     else S4=$((S4+1)); FL4="$FL4 $name(CC)"; OUT4=SKIP
     fi
     ROW_S4="$(progress_secs_since "$_t0")"
-    [ "$OUT3" = PASS ] && [ "$OUT4" = PASS ] && BOTH=$((BOTH+1))
+    [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
     N3="vs live sbl -bf, rc=$rc3"; [ "$OUT3" = HANG ] && N3="SCRIP hit the ${TIMEOUT} timeout (rc=124) while the oracle exited rc=$rcS; streams equal at the cut"
     N4="vs live sbl -bf${rc4:+, rc=$rc4}"; [ "$OUT4" = HANG ] && N4="SCRIP hit the ${TIMEOUT} timeout (rc=124) while the oracle exited rc=$rcS; streams equal at the cut"
     prog_row "$name" m3 "$OUT3" "$N3"; prog_row "$name" m4 "$OUT4" "$N4"
 done
 SCORED=$((TOTAL-UNSCR-UNGR))
-echo "DOTNET_BOARD total=$TOTAL scored=$SCORED unscr=$UNSCR ungradable=$UNGR m3_pass=$P3 m3_fail=$F3 m4_pass=$P4 m4_fail=$F4 m4_skip=$S4 -- SCRIP $SCRIP_HASH corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf timeout=$TIMEOUT"
+echo "DOTNET_BOARD total=$TOTAL scored=$SCORED unscr=$UNSCR ungradable=$UNGR m3_pass=$P3 m3_fail=$F3 m4_pass=$P4 m4_fail=$F4 m4_skip=$S4 -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf timeout=$TIMEOUT"
 [ -n "$FLU" ] && echo "UNSCR (missing corpus dependency, not a SCRIP defect):$FLU"
 [ -n "$FLG" ] && echo "UNGRADABLE ($UNGR, named in UNGRADABLE.tsv with the oracle's own measurement, out of the denominator, CEO-1460):$FLG"
 [ -n "${FATAL_GRADED:-}" ] && echo "FATAL_GRADED (the oracle ended these in a run-time fatal block; graded through the rendered block and ALL.mask, CEO-1344):$FATAL_GRADED"
@@ -243,7 +254,7 @@ fi
 if [ "$PROG_RECORD" = 1 ]; then
     progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS ROWS NOT RECORDED (writer rc=$? above) -- a run that leaves the table untouched is a defect of that run (progress/README.md), not a red board" >&2
 else echo "progress: scratch suite $SUITE -- $(grep -c . "$PROG_ROWS") row(s) NOT recorded (only the canonical suite, or S4E_PROGRESS_DB, records)"; fi
-rr_selected && { rr_end dotnet; exit 0; }   # a chunk or a request writes its rows and no suite row (CEO-1802)
+rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request writes its rows and no suite row (CEO-1802)
 # ⛔⭐ POPULATION FLOOR (row every-board-wrapper-refuses-on-a-zero-population-instead-of-passing-
 # vacuously, hq_T 2026-09-04): F3/F4/S4 all read 0 over zero SCORED entries too (empty corpus dir,
 # every witness oracle-crashed/died) -- refuse before the vacuous-clean verdict below can be reached.
@@ -251,7 +262,8 @@ rr_selected && { rr_end dotnet; exit 0; }   # a chunk or a request writes its ro
 # ⭐ THE ROW, NAMING ITS OWN FRACTION (the shape test_snoflake_suite.sh uses). Before this the dotnet row was
 # only ever set BY HAND -- this runner wrote no SCORE.md cell and no suite row at all, so its 5/5 had no
 # runner behind it. The table's reading is the ceo-372 AND per program over the SPITBOL baseline.
-if [ "$SUITE" = "$CANON_SUITE" ]; then
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+elif [ "$SUITE" = "$CANON_SUITE" ]; then
 # ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749):
 # PASS over SHIPPED ($TOTAL = graded plus the $UNSCR outside the SPITBOL baseline), OUTSIDE=$UNSCR named and stamped
 # through lib_outside_shape.sh; the outside programs stay in the denominator as debt to cure.
