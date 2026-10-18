@@ -30,10 +30,15 @@ S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
-SC="$(cd "$HERE/../../SCRIP" && pwd)"
+SC="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)"
 CORPUS="${CORPUS:-$S4E/corpus}"
 SBL="${SBL:-$S4A/x64/bin/sbl}"
-SCRIP="${SCRIP:-$SC/scrip}"
+# ⭐ UNDER A PORT ENGINE THE SCORECARD GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face) unless the caller
+# names one, each program runs in m3 alone with its declared heap and stack as switches (run_at_declared_table exports SCRIP's env, which a port
+# never reads), m4 is not compiled, and results-tsv reads the m3 column alone under a port. Under scrip every line reads as it did.
+SC_PORT=""; one_runner_is_port && SC_PORT="$(one_runner_engine)"
+if [ -n "$SC_PORT" ]; then SCRIP="${SCRIP:-$(one_runner_port_face)}"; else SCRIP="${SCRIP:-$SC/scrip}"; fi
 DEMO="$CORPUS/demos"
 # ---------------------------------------------------------------- WEIGHTS (name  weight  root  find-args  lib  run-timeout  norm)
 # norm=ms : measurement lines (^iters:/^ns:/^ms:) are DELETED from both sides before diff (timing is not correctness; the check: line is).
@@ -298,7 +303,7 @@ sc_sampler() {  # $1 = out dir  $2 = owner pid -- appends `epoch load1 runnable 
 # oracle's live answer with --side=oracle, each SCRIP mode with --side=scrip, keyed by the program's own name; the masked line
 # counts travel in the note column.  A suite with no ALL.mask beside its program is compared exactly as before.
 sc_mask() {  # $1 = ALL.mask, $2 = entry name, $3 = oracle|scrip, $4 = file masked in place -> prints the masked line count; rc 2 = the masker refused
-  python3 "$SC/../harness/scripts/util_apply_ceo409_mask.py" "$1" "$2" "$4.maskn" "--side=$3" < "$4" > "$4.masked" 2>"$4.maskerr" || return 2
+  python3 "$_LDA_HERE/util_apply_ceo409_mask.py" "$1" "$2" "$4.maskn" "--side=$3" < "$4" > "$4.masked" 2>"$4.maskerr" || return 2
   mv "$4.masked" "$4"; cat "$4.maskn" 2>/dev/null || echo 0
 }
 run_one() {  # suite lib prog norm run_to
@@ -336,6 +341,7 @@ run_one() {  # suite lib prog norm run_to
   # committed file a reader can ls, and an unknown dialect REFUSES rather than silently grading in the default.
   local cflag=""
   local ca; ca="$(declared_compile_args_from_table "$SC_DECL" "$prog")" || ca=""   # the program's own compile_args (sc_decl_build), after --run and --compile
+  local sz=""; [ -n "$SC_PORT" ] && sz="$(declared_switches_from_table "$SC_DECL" "$prog")"   # a port reads its declared heap and stack as -dNk -sNk
   W="$(mktemp -d)"
   if [ "$suite" = beauty_self ]; then in="$prog"; fi
   # ---- ground truth
@@ -368,12 +374,13 @@ run_one() {  # suite lib prog norm run_to
   # t3/t4: each mode's own wall in decimal seconds ($EPOCHREALTIME, CEO-1676 (c)); $SECONDS read 0 for every program under a second,
   # so 213 of gimpel's 290 progress rows of 2026-10-11 carried 0 and no chunk could be sized by them
   t0="${EPOCHREALTIME/,/.}"
-  (cd "$d" && run_at_declared_table "$SC_DECL" "$prog" -- env SNO_LIB="$lib" "$TIMEOUT_RETRY" "$rto" "$SCRIP" $cflag --run $ca "$prog" < "$in" > "$W/m3" 2>"$W/m3e"); rc=$?
+  (cd "$d" && run_at_declared_table "$SC_DECL" "$prog" -- env SNO_LIB="$lib" "$TIMEOUT_RETRY" "$rto" "$SCRIP" $cflag --run $ca $sz "$prog" < "$in" > "$W/m3" 2>"$W/m3e"); rc=$?
   if [ ! -s "$W/m3" ] && [ $rc -ne 0 ] && grep -q 'emit_chain.*FAILED\|unresolved forward\|bb_emit_end\|[Pp]arse error\|syntax error\|COMPILE' "$W/m3e" 2>/dev/null; then st3=COMPILE_FAIL; else st3="$(grade "$W/m3" $rc)"; fi
   t3="$(awk -v a="$t0" -v b="${EPOCHREALTIME/,/.}" 'BEGIN { printf "%.3f", b - a }')"
   # ---- m4
   t0="${EPOCHREALTIME/,/.}"
-  if ! (cd "$d" && SNO_LIB="$lib" "$TIMEOUT_RETRY" 60 "$SCRIP" $cflag --compile $ca "$prog" </dev/null > "$W/p.s" 2>/dev/null) || [ ! -s "$W/p.s" ]; then st4=COMPILE_FAIL
+  if [ -n "$SC_PORT" ]; then st4=-   # a port has no mode 4; results-tsv reads the m3 column alone under a port
+  elif ! (cd "$d" && SNO_LIB="$lib" "$TIMEOUT_RETRY" 60 "$SCRIP" $cflag --compile $ca "$prog" </dev/null > "$W/p.s" 2>/dev/null) || [ ! -s "$W/p.s" ]; then st4=COMPILE_FAIL
   elif ! gcc -no-pie "$W/p.s" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$W/p.bin" 2>/dev/null; then st4=ASM_FAIL
   else
     (cd "$d" && run_at_declared_table "$SC_DECL" "$prog" -- env SNO_LIB="$lib" "$TIMEOUT_RETRY" "$rto" "$W/p.bin" < "$in" > "$W/m4" 2>/dev/null); rc=$?
@@ -387,7 +394,7 @@ run_one() {  # suite lib prog norm run_to
   echo -e "$suite\t${prog#$CORPUS/}\t$st3\t$st4\t$t3\t$t4\t$note"
   rm -rf "$W"
 }
-export -f run_one sc_mask stdin_for sc_libpath sbl_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside; export CORPUS SBL SCRIP SC DEMO _LDA_HERE
+export -f run_one sc_mask stdin_for sc_libpath sbl_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside declared_switches_from_table _declared_switch_words; export CORPUS SBL SCRIP SC DEMO _LDA_HERE SC_PORT
 # ---------------------------------------------------------------- run
 cmd_run() {
   set -f
