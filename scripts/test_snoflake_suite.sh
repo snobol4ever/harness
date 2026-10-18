@@ -47,6 +47,12 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 SUITE="${SNOFLAKE_SUITE:-$ROOT/corpus/packages/snobol4/snoflake_suite}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8s}"; ARM_SBL="${ARM_SBL:-1}"; ARM_CSN="${ARM_CSN:-1}"
+# ⛔ EVERY CAPTURED STREAM IS CAPPED (the coo 2026-10-18, on hq_jvm's finding: a board died rc 139 after 1291 s with no rows when an engine, then CSNOBOL4's
+# triangulation arm, ran away and printed tens of megabytes inside the timeout -- bash holds each stream in variables and copies it for the mask and the
+# oracle comparison). run_one keeps the first $OUT_CAP bytes (default 16 MB, SNOFLAKE_OUT_CAP) and the producer meets SIGPIPE past it (rc 141, a CRASH
+# at the verdict ladder), so a runaway grades red for that one fixture and costs the board nothing. Bytes beyond the cap are never compared: an
+# oracle that also floods is cut at the same byte and the two compare as their first $OUT_CAP bytes.
+OUT_CAP="${SNOFLAKE_OUT_CAP:-16777216}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE — a missing corpus is not a green board"; exit 2; }
 # ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
@@ -295,8 +301,8 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         m3)  cp -pf "$2" "$RUN/f.sno"
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
              local sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
-             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1)"; RC=$?;;
-        m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1)"; RC=$?;;
+             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
+        m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
         # ⛔⭐ THE ORACLE IS HANDED A SHORT NAME, NEVER THE ABSOLUTE PATH, AND IT IS A GRADING BUG IF YOU
         # "TIDY" THIS BACK (hq_B 2026-09-04, measured). SPITBOL formats its diagnostic as
         # `<path>(<line>) : ERROR <n> -- <text>`, wraps it at column 119 into the LISTING, and spills only
@@ -325,7 +331,7 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         # the dump, and appending the whole file would re-furnish the stream the sink just cleaned.
         sbl) cp -pf "$2" "$RUN/f.sno"
              rm -f "${SBL_SINK#-o=}.lst"
-             GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1)"; RC=$?
+             GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?
              if grep -qE '&DUMP[[:space:]]*=' "$2" 2>/dev/null; then
                  _lst="${SBL_SINK#-o=}.lst"
                  if [ -s "$_lst" ] && grep -qE '^dump of ' "$_lst"; then
@@ -336,7 +342,7 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
                      GOT="${GOT}$(awk '/^dump of /{f=1; for(i=1;i<=nb;i++) print ""; nb=0} !f && /^[[:space:]]*$/{nb++; next} !f{nb=0; next} f' "$_lst")"
                  fi
              fi;;
-        csn) GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$CSN" "$2" < "$inp" 2>&1)"; RC=$?;;
+        csn) GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$CSN" "$2" < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
     esac; }
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one chunk or a request's entries, rows as each test ends
 for sno in "$SUITE"/*.sno; do
