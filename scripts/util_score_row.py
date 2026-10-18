@@ -1892,6 +1892,14 @@ def cmd_from_progress(a):
               "reading (CEO-1676); nothing written" % (len(unread), len(halfread)))
         return 2
     env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
+    # ⛔⭐ A PORT ENGINE'S ROW IS OPENED BY ITS FIRST PUBLISH, HERE (ceo CEO-1822): --set refuses a key with no row, so the engine's first
+    # from-progress opens <key>@<engine> through the table's own writer (util_suite_banner.py --open: the bare row's nick, emoji and lang,
+    # readings empty, under the same lock and the history writer) and the --set below fills it. Never by hand; a no-op once it is open.
+    if port:
+        o = subprocess.run([sys.executable, SUITE_BANNER, "--open", full_key, key], capture_output=True, text=True, env=env)
+        sys.stdout.write(o.stdout); sys.stderr.write(o.stderr)
+        if o.returncode != 0:
+            return o.returncode
     cmd = [sys.executable, SUITE_BANNER, "--set", full_key, str(cnt["PASS"]), str(total), _box_clock_day(), oldest[1]]
     if (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip():
         cmd += ["--criterion-changed", (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip()]

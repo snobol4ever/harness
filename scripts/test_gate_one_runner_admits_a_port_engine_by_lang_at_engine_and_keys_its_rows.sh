@@ -86,6 +86,20 @@ assemble() { env -u S4E_ENGINE S4E_PROGRESS_DB="$1" python3 "$R/harness/scripts/
 arm "8b the bare sno-rungs assembly reads none of the @dotnet rows"   'assemble "$T/admitted.tsv" | grep -q " read=0 unread=2 "'
 sed 's/\tsnobol4-rungs@dotnet\t/\tsnobol4-rungs\t/' "$T/admitted.tsv" > "$T/bare_control.tsv"
 arm "8c CONTROL: the same rows under the bare key are read (2 of 2)"  'assemble "$T/bare_control.tsv" | grep -q " read=2 unread=0 "'
+# THE FIRST PUBLISH OPENS THE PORT ROW (ceo CEO-1822): from-progress --suite sno-rungs@dotnet over a table that holds only SCRIP's bare row
+# opens sno-rungs@dotnet through util_suite_banner.py --open (the bare row's nick, emoji, lang) and fills it; a second publish adds no row
+B="$H/../../.github/scripts/util_suite_banner.py"
+[ -r "$B" ] || { echo "REFUSE(2) [$G]: no util_suite_banner.py at $B beside this harness -- the first-publish arms cannot be measured"; exit 2; }
+mkdir -p "$R/.github/scripts"; cp "$B" "$R/.github/scripts/"
+printf 'key\tnick\temoji\tlang\tfirst_date\tfirst_pass\tfirst_total\ttoday_date\ttoday_pass\ttoday_total\ttree\tcriterion_changed\ttoday_excluded\ttoday_secs\ttoday_void\n' > "$T/SUITES.tsv"
+printf 'sno-rungs\tSnoRungs\tx\tsnobol4\t2026-09-01\t1\t2\t2026-09-01\t2\t2\tabc123\t\t0\t\t\n' >> "$T/SUITES.tsv"
+cp "$T/SUITES.tsv" "$T/SUITES.before"
+publish() { env -u S4E_ENGINE S4E_SUITES_TSV="$T/SUITES.tsv" S4E_PROGRESS_DB="$T/admitted.tsv" S4E_POST="$T/post" S4E_SEAT=hq_dotnet \
+    python3 "$R/harness/scripts/util_score_row.py" from-progress --suite sno-rungs@dotnet > "$T/pub" 2>&1; echo $?; }
+rc="$(publish)"
+arm "8d the first publish opens sno-rungs@dotnet and fills it 2/2 (rc $rc)" '[ "$rc" = 0 ] && awk -F"\t" "\$1==\"sno-rungs@dotnet\" && \$2==\"SnoRungs\" && \$4==\"snobol4\" && \$9==2 && \$10==2" "$T/SUITES.tsv" | grep -q . && grep -q "sno-rungs@dotnet" "$T/SUITES.history.tsv"'
+rc="$(publish)"
+arm "8e a second publish opens no second row, and SCRIP's bare row is untouched" '[ "$rc" = 0 ] && [ "$(grep -c "^sno-rungs@dotnet	" "$T/SUITES.tsv")" = 1 ] && [ "$(grep "^sno-rungs	" "$T/SUITES.tsv")" = "$(grep "^sno-rungs	" "$T/SUITES.before")" ]'
 
 # the jvm arm: a stub snobol4jvm tree whose jar is built after its source, and a stub java host that prints nothing
 JS="$R/snobol4jvm"; mkdir -p "$JS/src/SNOBOL4clojure" "$JS/target/uberjar"
@@ -105,6 +119,6 @@ touch "$JS/src/SNOBOL4clojure/core.clj"
 rc="$(run hq_jvm jvm "$T/jvm_stale.tsv")"
 arm "9f a jar older than its source refuses the board rc 2 (got $rc)"   '[ "$rc" = 2 ] && grep -q "jar .* is older than" "$T/out" && [ ! -s "$T/jvm_stale.tsv" ]'
 
-[ $examined -ge 25 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 25 declared arms"; exit 2; }
+[ $examined -ge 27 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 27 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE OK [$G]: $examined arms"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1
