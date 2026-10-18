@@ -13,6 +13,9 @@
 # 5c37a2dee: SNOBOL4 65 relative over 25 compiled core entries while every one of them passes; a count that cannot tell a defect
 # from the verifier's own gap is a ledger line, never a verdict. As a language gains the absolute coordinate its count enters
 # the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the ceo's fourth landing).
+# compiled=<c> below entries=<n> names the core entries the gate could not compile standalone: a block entry the extractor does
+# not cut (SNOBOL4's eight demo/benchmark blocks) or a program needing an include directory (arbno_span_len_replace_branch_1's
+# FORTPUT.INC); they are not graded here and their plans are read by the suite runner's path, never counted as green.
 # rc 0 total violations 0 over every core; rc 1 a violation; rc 2 cannot measure (no scrip, a master without a partition,
 # a language whose core compiled 0 entries). --lang <l> limits it to one language (a seat's handful; the board is the coo's).
 # Fail-once: ARCH-ZETA-ONE-COORDINATE.md section 4 and the ceo's ledger record the Icon core reading violations at 6d138d652.
