@@ -10,8 +10,12 @@ graph of every program it is pointed at and reports every word the table does NO
                     the return-value cell IR_RETURN writes at frame +0 was never registered -- found by this
                     census on the Raku rungs, ceo 2026-09-17, CEO-820)
   scope-gap         a byte inside a scope's [lo, hi) between two registered fields
-  overlap           a byte two fields of one scope both claim (two kinds for one word)
-  vslot-unmapped    a named variable slot (vslot) not covered by exactly one field
+  overlap           a byte two fields of one scope claim with two different kinds (two kinds for one word); two
+                    fields of ONE kind over the same bytes are not a hole -- the Prolog clause overlay lays every
+                    alternative clause over one base, never two live at once, and its kind map keeps each
+                    overlaid word one kind (ceo CEO-1844 (b), 2026-10-18; 0 two-kind words in 280682 fields)
+  vslot-unmapped    a named variable slot (vslot) not covered by exactly one field (one offset, size and kind;
+                    the overlay's repeats of it count once)
   provisional-kind  a field printed with `(audit)` -- a kind nobody verified against the template
   unknown-kind      a kind name outside the ZK_ enum of src/ir/frame_layout.h (read from it, never a copied list)
 
@@ -96,7 +100,7 @@ def kinds_of_the_enum():
 
 KINDS = kinds_of_the_enum()
 RE_GRAPH = re.compile(r"^; graph (\d+) '(.*)' \S+ slots=(\d+) region_end=(\d+) resume=(-?\d+) vslots=(\d+) scopes=(\d+)")
-RE_SCOPE = re.compile(r"^;   scope (\d+)\s+(\S+)\s+(\S+)\s+parent=(-?\d+)\s+(?:\[(\d+)\.\.(\d+)\)|\(no frame fields\))")
+RE_SCOPE = re.compile(r"^;   scope (\d+)\s+(\S+)\s+(.+?)\s+parent=(-?\d+)\s+(?:\[(\d+)\.\.(\d+)\)|\(no frame fields\))")
 RE_FIELD = re.compile(r"^;     \+(\d+)\s+(\d+)\s+(\S+)\s+(.*?)\s*$")
 RE_VSLOT = re.compile(r"^;   vslot \+(\d+)\s+(\d+)\s+(\S+)\s+(.*?)\s*$")
 
@@ -142,11 +146,17 @@ def holes_of(graph):
             continue
         cur = sc["lo"] if sc["lo"] is not None else fs[0]["off"]
         prev = None
+        claim = {}
         for f in fs:
             if f["off"] > cur:
                 out.append(("scope-gap", sc, cur, f["off"], f"between {prev['what'] if prev else 'scope start'} and {f['what']}"))
-            elif f["off"] < cur:
-                out.append(("overlap", sc, f["off"], min(cur, f["off"] + f["size"]), f"{prev['what'] if prev else '?'} and {f['what']}"))
+            clash = None
+            for b in range(f["off"], f["off"] + f["size"]):
+                had = claim.setdefault(b, f)
+                if had["kind"] != f["kind"]:
+                    clash = (clash[0], b + 1, had) if clash else (b, b + 1, had)
+            if clash:
+                out.append(("overlap", sc, clash[0], clash[1], f"{clash[2]['kind']} {clash[2]['what']} and {f['kind']} {f['what']}"))
             cur = max(cur, f["off"] + f["size"]); prev = f
         hi = sc["hi"] if sc["hi"] is not None else cur
         if cur < hi:
@@ -164,7 +174,7 @@ def holes_of(graph):
     for v in graph["vslots"]:
         if v["off"] >= graph["region_end"]:
             continue  # a block-protocol argument (ARCH-PROLOG-C-OUT-OF-THE-BOX 1.2): the caller's typed cell above the frame, not this frame's field
-        n = sum(1 for f in allf if f["off"] <= v["off"] and v["off"] + v["size"] <= f["off"] + f["size"])
+        n = len({(f["off"], f["size"], f["kind"]) for f in allf if f["off"] <= v["off"] and v["off"] + v["size"] <= f["off"] + f["size"]})
         if n != 1:
             out.append(("vslot-unmapped", None, v["off"], v["off"] + v["size"], f"vslot {v['name']} covered by {n} field(s)"))
     return out
