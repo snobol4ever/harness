@@ -1859,9 +1859,15 @@ def cmd_from_progress(a):
                     return _mn[(dbsuite, prog + sfx, m)]
             return 0.0
         wall = int(round(sum(_mnv(prog, m) for (prog, m) in last)))
+        # the ledger spans every PASS ever recorded, so a subset re-take cannot shrink the sum (the reason for the timed == len(last) guard below): the Wall is
+        # complete when every program that PASSES NOW has its minimum; a program that does not pass has no run time to add
+        _ledger_complete = all(_mnv(prog, m) > 0 for (prog, m), v in last.items() if v[0] == "PASS")
     else:
+        _ledger_complete = None
         wall = int(round(sum(_f(v[4]) for v in last.values())))
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
+    if _ledger_complete is not None:
+        timed = len(last) if _ledger_complete else 0
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
     halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
