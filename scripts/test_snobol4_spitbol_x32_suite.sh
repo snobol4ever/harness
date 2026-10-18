@@ -21,17 +21,25 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 #
 # Exit: 0 iff FAIL=0 in both modes over the graded population; rc=2 when it cannot measure.
 set -u
-HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 SUITE="${SPITBOL_X32_SUITE:-$ROOT/corpus/packages/snobol4/spitbol_x32_tests}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 TIMEOUT="${TIMEOUT:-600}"; M4_ASM_MB="${SPITBOL_X32_M4_ASM_MB:-256}"; SHIPPED_EXPECT="${SPITBOL_X32_SHIPPED:-21}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_jvm,
+# verbatim: "Get all SNOBOL4 test suite package runners working with snobol4jvm."): SCRIP is the port's face (one_runner_port_face), the port runner's
+# --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed <suite>@<engine>
+# by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
+PORT=0; one_runner_is_port && PORT=1
+ROWKEY=x32tests; [ "$PORT" = 1 ] && ROWKEY="x32tests@$(one_runner_engine)"
+if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT.  NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority.  A vendor board is exactly where a stale binary is least visible,
 # because a plausible all-FAIL table is this class's normal output.
 "$HERE/util_require_fresh.sh" --gate test_snobol4_spitbol_x32_suite "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
 [ -f "$RT_DIR/libscrip_rt.so" ] || { echo "⛔ REFUSE(rc=2): no $RT_DIR/libscrip_rt.so"; exit 2; }
+fi
 . "$HERE/lib_gate.sh"        2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_gate.sh unloadable"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_oracle_flags.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh"   2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
@@ -42,6 +50,7 @@ sbl_assert_bf "$SBL" >/dev/null 2>&1 || { echo "⛔ REFUSE(rc=2): oracle at $SBL
 W="$(mktemp -d)" || { echo "⛔ REFUSE(rc=2): mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
 CORP_HASH="$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
+TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
 # ⛔ THE POPULATION PIN, this row's own refusal clause.  A fresh filesystem census every run, never a
 # cached count, and a size that is not the vendored size refuses instead of grading.
 SHIPPED=0; for f in "$SUITE"/*.spt; do [ -e "$f" ] && SHIPPED=$((SHIPPED+1)); done
@@ -85,7 +94,7 @@ verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then 
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/spitbol_x32_tests"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
-prog_row() { local o="$3"; [ "$o" = COMPILE_FAIL ] && o=FAIL; printf 'package\tspitbol_x32\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
+prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; local o="$3"; [ "$o" = COMPILE_FAIL ] && o=FAIL; printf 'package\tspitbol_x32\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
 verdict_lines() { grep -cE '^( pass: |\*FAIL: )' "$1" 2>/dev/null | tr -d ' '; }
 pass_lines()    { grep -c '^ pass: '  "$1" 2>/dev/null | tr -d ' '; }
 fail_lines()    { grep -c '^\*FAIL: ' "$1" 2>/dev/null | tr -d ' '; }
@@ -145,8 +154,9 @@ for sno in "$SUITE"/*.spt; do
     fi
     # --- mode 3
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
+    SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
-    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" --run $6 "$3" < /dev/null > "$4" 2> "$5"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca" 2>/dev/null; rc3=$?
+    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" --run $6 "$3" < /dev/null > "$4" 2> "$5"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" 2>/dev/null; rc3=$?
     ROW_S3="$(progress_secs_since "$_t0")"
     if [ "$rc3" -eq 124 ] || [ "$rc3" -ge 128 ]; then OUT3="$(verdict_of "$rc3")"; N3="rc=$rc3: $(head -1 "$W/m3.err" | cut -c1-90)"
     elif [ "$ARM" = self ]; then
@@ -159,7 +169,8 @@ for sno in "$SUITE"/*.spt; do
     if [ "$isx" = 1 ]; then :; elif [ "$OUT3" = PASS ]; then P3=$((P3+1)); else F3=$((F3+1)); FL3="$FL3 $name($OUT3)"; fi
     # --- mode 4
     _t0="$(progress_clock)"
-    m4why=""; if m4why="$(compile_m4 "$base" "$W/prog.bin" "$ca")"; then
+    m4why=""; if [ "$PORT" = 1 ]; then OUT4=""; N4=""   # a port has no mode 4: no compile, no row
+    elif m4why="$(compile_m4 "$base" "$W/prog.bin" "$ca")"; then
         run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" < /dev/null > "$3" 2> "$4"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" 2>/dev/null; rc4=$?
         if [ "$rc4" -eq 124 ] || [ "$rc4" -ge 128 ]; then OUT4="$(verdict_of "$rc4")"; N4="rc=$rc4: $(head -1 "$W/m4.err" | cut -c1-90)"
         elif [ "$ARM" = self ]; then
@@ -175,13 +186,13 @@ for sno in "$SUITE"/*.spt; do
         if [ "$isx" = 1 ]; then :; elif [ "$OUT4" = DEFERRED ]; then D4=$((D4+1)); DEFER_LIST="$DEFER_LIST $name"
         else F4=$((F4+1)); FL4="$FL4 $name($OUT4)"; fi
     fi
-    [ "$isx" = 0 ] && [ "$OUT3" = PASS ] && [ "$OUT4" = PASS ] && BOTH=$((BOTH+1))
+    [ "$isx" = 0 ] && [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
     [ "$isx" = 1 ] && { XG_N=$((XG_N+1)); XG_LIST="$XG_LIST $name(m3=$OUT3,m4=$OUT4)"; XG_NAMES="$XG_NAMES $base"; }
     ROW_S4="$(progress_secs_since "$_t0")"
     prog_row "$name" m3 "$OUT3" "$N3"; prog_row "$name" m4 "$OUT4" "$N4"
 done
 GC=$((GRADED - XG_N))
-echo "SPITBOL_X32_BOARD shipped=$SHIPPED graded=$GRADED excluded_graded=$XG_N ungraded=$UNGRADED_N m3_pass=$P3 m3_fail=$F3 m4_pass=$P4 m4_fail=$F4 m4_deferred=$D4 self_check_arm=$SELF stream_arm=$STREAM -- SCRIP $SCRIP_HASH corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf timeout=${TIMEOUT}s m4_asm_budget=${M4_ASM_MB}MB"
+echo "SPITBOL_X32_BOARD shipped=$SHIPPED graded=$GRADED excluded_graded=$XG_N ungraded=$UNGRADED_N m3_pass=$P3 m3_fail=$F3 m4_pass=$P4 m4_fail=$F4 m4_deferred=$D4 self_check_arm=$SELF stream_arm=$STREAM -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf timeout=${TIMEOUT}s m4_asm_budget=${M4_ASM_MB}MB"
 echo "SPITBOL_X32_AND both_modes_pass=$BOTH/$GC -- the suite table states this reading (ceo-372: the AND per program; a timed-out or crashed run is HANG/CRASH, never PASS, whatever its stream; a mode 4 we DEFERRED on a declared threshold is never PASS either, and one OUR OWN toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, never in a bucket beside it -- hq_T 2026-09-12)"
 # ⛔ THE ROW'S OWN CLAUSE: the population, said in one line, with the remainder NAMED rather than counted.
 echo "SPITBOL_X32_POPULATION graded $GRADED of $SHIPPED shipped -- the ungraded remainder ($UNGRADED_N), each with the oracle's own words:"
@@ -264,7 +275,8 @@ fi
 # ⛔⭐ POPULATION FLOOR: F3/F4/D4 all read 0 over zero graded entries too (the oracle refusing every
 # program would do it), so refuse before the vacuous-clean verdict below can be reached.
 "$HERE/util_require_population.sh" --gate test_snobol4_spitbol_x32_suite "$GRADED" 1 "graded programs (shipped=$SHIPPED ungraded=$UNGRADED_N deferred_m4=$D4)" || exit 2
-if [ "$SUITE" = "$CANON_SUITE" ]; then
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+elif [ "$SUITE" = "$CANON_SUITE" ]; then
 # ⛔⭐ CEO-1286 (Lon 2026-09-26): the denominator is SHIPPED minus the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv) -- none here, the
 # 36 are our oracle's own upstream tests -- so the row publishes over shipped, the unreadable ones named in UNGRADED.tsv as debt.
 . "$HERE/lib_outside_shape.sh" || exit 2
