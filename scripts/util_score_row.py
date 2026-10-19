@@ -1831,7 +1831,7 @@ def cmd_from_progress(a):
         _owed = set(pop) - _driven
         shipped = set()
         _gst = lambda k: k.rsplit("/", 1)[-1].rsplit(".", 1)[0]   # EXCLUDED.tsv and CONTAINERS.tsv name a library by file; _stem dropped its extension
-        _gx, _gc = xnames, cnames
+        _gx, _gc = {_gst(x) for x in xnames}, {_gst(x) for x in cnames}   # both sides by library stem: a name like dextern.inc (_stem keeps .inc) named nothing before
         xnames = {k for k in pop if _gst(k) in _gx}
         cnames = {k for k in pop if _gst(k) in _gc}
         pkg_pop = set(pop) - xnames - cnames
