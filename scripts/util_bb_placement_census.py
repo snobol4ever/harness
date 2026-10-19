@@ -154,7 +154,8 @@ def port_of(lab):
 def asm_unwind(path, seen_sec):
     """BB_UNWIND (CEO-1755) from the emitted code: every rsp load and every failure-edge pop, by the port of the label it sits under.
     retry_restore = an rsp load (mov/lea/xchg/pop rsp, leave) under a box's beta or omega label or a redo entry; discard_restore = the same
-    under a FENCE, ARBNO, cut or statement label (CEO-1759: a discard may drop rsp to a saved depth); multi_pop = a jump to a beta label preceded
+    under a FENCE, ARBNO, cut or statement label, or one whose straight line leaves by a jmp to another box's alpha (an exit out of the
+    region, ARCH-ZETA-ONE-COORDINATE 1.2: CEO-1759, a discard may drop rsp to a saved depth); multi_pop = a jump to a beta label preceded
     in its straight line by more than one add rsp, or by one that differs from the box's own carve (sub rsp at its alpha).  Graph exits
     (the procedure's own gamma/omega label), alpha and gamma roads, the gc site and the program's startup are counted apart by class."""
     c = collections.Counter()
@@ -170,11 +171,23 @@ def asm_unwind(path, seen_sec):
         if key in seen_sec:
             continue
         seen_sec.add(key)
-        lab, box, carve, adds = '', '', 0, []
+        lab, box, carve, adds, pend = '', '', 0, [], None
+
+        def settle(p, exit_to):
+            cls, plab, pins = p
+            if exit_to:
+                cls = 'discard_exit_' + cls[len('restore_'):]
+            c['rspload:' + cls] += 1
+            if os.environ.get('BB_UNWIND_DIAG') and (cls.startswith('restore_') or cls == os.environ.get('BB_UNWIND_DIAG')):
+                print('[UNWIND] %s %s | %s' % (cls, plab, pins), file=sys.stderr)
+            c['discard_restore' if exit_to else 'retry_restore'] += 1
         for ln in sec:
             code = ln.split('#')[0].rstrip('\n')
             m = LABEL.match(code)
             if m:
+                if pend:
+                    settle(pend, False)
+                    pend = None
                 lab = m.group(1)
                 code = code[m.end():]
                 adds = []
@@ -205,12 +218,16 @@ def asm_unwind(path, seen_sec):
                     bk = BOXLAB.match(lab)
                     if cls.startswith('restore_') and bk and re.match(r'^(match_fence|match_arbno|cut|statement)', bk.group(1) or bk.group(2)):
                         cls = 'discard_' + cls[len('restore_'):]
-                    c['rspload:' + cls] += 1
-                    if os.environ.get('BB_UNWIND_DIAG') and (cls.startswith('restore_') or cls == os.environ.get('BB_UNWIND_DIAG')):
-                        print('[UNWIND] %s %s | %s' % (cls, lab, ins), file=sys.stderr)
                     if cls.startswith('restore_'):
-                        c['retry_restore'] += 1
-                    elif cls.startswith('discard_'):
+                        if pend:
+                            settle(pend, False)
+                        pend = (cls, lab, ins)
+                        adds = []
+                        continue
+                    c['rspload:' + cls] += 1
+                    if os.environ.get('BB_UNWIND_DIAG') and cls == os.environ.get('BB_UNWIND_DIAG'):
+                        print('[UNWIND] %s %s | %s' % (cls, lab, ins), file=sys.stderr)
+                    if cls.startswith('discard_'):
                         c['discard_restore'] += 1
                     adds = []
                     continue
@@ -224,6 +241,10 @@ def asm_unwind(path, seen_sec):
                 jm = JUMP.match(ins)
                 if jm:
                     tgt = jm.group(1)
+                    if pend and ins.startswith('jmp'):
+                        tb = re.match(r'^(n\d+_[a-z_0-9]+?)_α$', tgt)
+                        settle(pend, bool(tb) and tb.group(1) != box)
+                        pend = None
                     if port_of(tgt) == 'beta' and adds and (len(adds) > 1 or adds[0] != carve):
                         tk = re.sub(r'^n\d+_|_β.*$|\d+', '', tgt)
                         c['multipop:' + tk] += 1
@@ -233,6 +254,8 @@ def asm_unwind(path, seen_sec):
                     continue
                 if not ins.startswith('add') and not ins.startswith('mov qword ptr [rax') and not ins.startswith('mov rax'):
                     adds = []
+        if pend:
+            settle(pend, False)
     return c
 
 
