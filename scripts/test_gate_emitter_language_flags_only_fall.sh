@@ -27,7 +27,7 @@ python3 - "$SCRIP" <<'PYEOF'
 import re, sys, glob, os
 root = sys.argv[1]
 DELETED = ("icn_cells_graph", "emit_pl_frame", "zls_g_pl_frame", "pl_frame", "icn_retain")
-GRAPH_FACT = {"zframe_graph": 31, "cell_frame": 39, "spine_cells": 27, "resumable_frame": 0, "emit_resumable_frame": 23, "zls_g_resumable_frame": 11, "frame_retained": 7, "root_graph": 21, "body_root": 21}
+GRAPH_FACT = {"zframe_graph": 31, "cell_frame": 39, "spine_cells": 26, "resumable_frame": 0, "emit_resumable_frame": 23, "zls_g_resumable_frame": 11, "frame_retained": 7, "root_graph": 21, "body_root": 21}
 LANG_PREFIX = {"icn": 99, "pl": 178, "rk": 37, "sno": 39, "pas": 10, "snc": 0, "reb": 0, "raku": 0, "plw": 0}
 files = []
 for pat in ("src/emitter/*.cpp", "src/emitter/*.h", "src/templates/**/*.cpp", "src/templates/**/*.h", "src/templates/**/*.inc"):
