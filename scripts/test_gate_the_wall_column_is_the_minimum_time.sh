@@ -39,5 +39,16 @@ set_row 18 3
 arm "6 a smaller wall replaces it"                                               '[ "$(secs)" = 3 ]'
 set_row 20 800 "2026-10-18:the-denominator-moved-for-the-gate"
 arm "7 a moved denominator starts the wall again at the new value"               '[ "$(secs)" = 800 ]'
-if [ "$fail" = 0 ]; then echo "GATE PASS [$G]: $n arms -- the ledger keeps the smallest PASS seconds and the banner keeps the smaller wall"; exit 0; fi
+# THE WALL IS THE SUM OF EACH MEMBER'S MINIMUM TIME (Lon 2026-10-18, in-chat to the coo, verbatim: "Fix the test-suite display banner to show the sum of minimum
+# times of eac member. NOT the maximum nor the current."): util_score_row.py from-progress computes that sum and the banner's --set-wall REPLACES the cell with
+# it -- a larger sum when a member gains its first minimum, a blank when no member has one -- and a write no longer forwards a run's clock.
+set_wall() { S4E_SUITES_TSV="$T/SUITES.tsv" S4E_SCORE_MD="$T/SCORE.md" python3 "$B" --set-wall xx "$1" > "$T/wall.out" 2>&1; }
+set_wall 900
+arm "8 --set-wall REPLACES the cell, a larger sum included (a member gained its first minimum)" '[ "$(secs)" = 900 ]'
+set_wall 0
+arm "9 --set-wall 0 blanks the cell: no member has a minimum, so no number is shown"        '[ -z "$(secs)" ]'
+set_wall 41 ; set_wall abc
+arm "10 --set-wall refuses a non-number and leaves the cell as it stood"                     '[ "$(secs)" = 41 ] && grep -q "REFUSE(rc=2)" "$T/wall.out"'
+arm "11 a write forwards no run's clock to the banner (the --secs forwarding is gone)"      '! grep -nE "cmd \+= \[\"--secs\"" "$H/util_score_row.py" | grep -q .'
+if [ "$fail" = 0 ]; then echo "GATE PASS [$G]: $n arms -- the ledger keeps the smallest PASS seconds, the banner keeps the smaller wall under --secs, and --set-wall sets the sum of minimums"; exit 0; fi
 echo "GATE FAIL [$G]: $fail of $n arm(s) red -- Wall would again be a loaded run's clock, not the minimum time to run the test"; exit 1

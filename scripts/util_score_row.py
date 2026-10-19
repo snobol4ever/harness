@@ -1700,6 +1700,33 @@ def from_progress_table(corpus, key):
     return None, None
 
 
+def _wall_only_without_a_table(full_key, _aud):
+    """--wall-only for a key with no ALL.csv under corpus (a benchmark or demo row, graded whole by its runner): the Wall is still the sum of each member's
+    minimum (Lon 2026-10-18), the members being the programs the progress table holds readings for under the key's suite name, in the modes it holds."""
+    import util_progress_append as _upa
+    db = os.environ.get("S4E_PROGRESS_DB", "/home/resources/progress/results.tsv")
+    if not os.path.exists(db):
+        print("REFUSE(2): from-progress --wall-only: the progress DB %s does not exist" % db)
+        return 2
+    mn = _upa.min_secs_table(db)
+    if not mn:
+        print("REFUSE(2): from-progress --wall-only: no minimum-seconds ledger beside %s -- the Wall is the sum of minimums and none exists to sum" % db)
+        return 2
+    dbs = _aud.dbname(full_key)
+    present = set()
+    with open(db, encoding="utf-8", errors="replace") as fh:
+        fh.readline()
+        for line in fh:
+            fl = line.rstrip("\n").split("\t")
+            if len(fl) >= 10 and fl[5] == dbs and fl[8] in ("m3", "m4"):
+                present.add((fl[7], fl[8]))
+    wall = int(round(sum(mn.get((dbs, p, m), 0.0) for (p, m) in present)))
+    env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
+    r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+    sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    return r.returncode
+
+
 def cmd_from_progress(a):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import csv as _csv, collections as _c
@@ -1712,6 +1739,8 @@ def cmd_from_progress(a):
     corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus")
     tdir, dbsuite = from_progress_table(corpus, full_key)
     if not tdir:
+        if getattr(a, "wall_only", False):
+            return _wall_only_without_a_table(full_key, _aud)
         print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (full_key, corpus))
         return 2
     if key in FROM_PROGRESS_CENSUS:
@@ -1852,6 +1881,7 @@ def cmd_from_progress(a):
     # the latest readings' own seconds stand, as before (row (c)).
     import util_progress_append as _upa
     _mn = _upa.min_secs_table(db)
+    _have_ledger = bool(_mn)
     if _mn:
         def _mnv(prog, m):   # a reading may be keyed by its stem here and by file name in the ledger (GNU writes BipsPl/x.pl, the table lists BipsPl/x)
             for sfx in ("", ".pl", ".sno", ".spt", ".sbl", ".icn", ".pas", ".raku", ".sc", ".reb", ".inc", ".INC"):
@@ -1937,6 +1967,17 @@ def cmd_from_progress(a):
                                                                               "%s@%s" % (r[-1][1], r[-1][0]) if r else "-"))
     if unread:
         print("SUITE_ROW_UNREAD %d: %s%s" % (len(unread), " ".join(unread[:30]), " ..." if len(unread) > 30 else ""))
+    if getattr(a, "wall_only", False):
+        # ⛔⭐ THE WALL IS THE SUM OF EACH MEMBER'S MINIMUM TIME (Lon 2026-10-18, in-chat to the coo, verbatim: "Fix the test-suite display banner to show the sum of
+        # minimum times of eac member. NOT the maximum nor the current."): this arm sets the Wall and no other cell, so the loop and every row writer can keep it
+        # current without a pass, a total or a tree; a suite whose members have no minimum yet is set blank (a zero), never left at a run's clock
+        if not _have_ledger:
+            print("REFUSE(2): from-progress --wall-only: no minimum-seconds ledger beside %s -- the Wall is the sum of minimums and none exists to sum" % db)
+            return 2
+        env = dict(os.environ); env["S4E_SUITES_TSV"] = SUITES_TSV; env["S4E_SCORE_MD"] = SCORE_MD
+        r = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+        sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+        return r.returncode
     if a.dry_run:
         print("from-progress --dry-run: nothing written (would set %s -> %d/%d%s stamped %s, the oldest reading's tree)" % (full_key, cnt["PASS"], total, "" if excluded is None else " excluded=%d" % excluded, oldest[1]))
         return 0
@@ -1960,12 +2001,13 @@ def cmd_from_progress(a):
     # suite's time printed as all of it (IcnRungs read WALL=221s from one tier-2 subset, 2026-10-11 14:1x); until then the row keeps its own
     if excluded is not None:
         cmd += ["--excluded", str(excluded)]
-    if wall > 0 and timed == len(last):
-        cmd += ["--secs", str(wall)]
-    elif wall > 0:
-        print("  wall NOT written: %d of %d readings carry their seconds (the rest predate the runner recording them); the row keeps its Wall" % (timed, len(last)))
     r = subprocess.run(cmd, capture_output=True, text=True, env=env)
     sys.stdout.write(r.stdout); sys.stderr.write(r.stderr)
+    if r.returncode == 0 and _have_ledger:
+        # the Wall is the sum of each member's minimum (see --wall-only): REPLACED here, so a run's clock or an older, larger sum never stands
+        w = subprocess.run([sys.executable, SUITE_BANNER, "--set-wall", full_key, str(wall)], capture_output=True, text=True, env=env)
+        sys.stdout.write(w.stdout); sys.stderr.write(w.stderr)
+        return w.returncode
     return r.returncode
 
 
@@ -2023,23 +2065,10 @@ def suite_sync(a, tree, dry_run, decided=None):
                 "        DROP the count while this writer reports it recorded). Pull .github to origin (CEO-1286) and re-run.\n"
                 "        NOTHING WAS WRITTEN: SCORE.md and SUITES.tsv are both untouched." % SUITE_BANNER)
         cmd += ["--excluded", str(_exc)]
-    # ⭐ THE ROW'S WALL CLOCK (Lon 2026-10-08: "List in a grid the total time for each test suite to run."; CEO-1562): --secs when the caller
-    # measured it, else now minus S4E_RUN_T0, which one_runner_guard stamps at the runner's start; a stamp older than a week is no run's.
-    # Forwarded only to a banner that knows the flag -- an older one is named, and the row is written without it rather than refused.
-    _secs = getattr(a, "secs", None)
-    if _secs is None and os.environ.get("S4E_RUN_T0", "").isdigit():
-        _d = int(time.time()) - int(os.environ["S4E_RUN_T0"])
-        _secs = _d if 0 <= _d < 7 * 86400 else None
-    if _secs is not None:
-        try:
-            _btxt = open(SUITE_BANNER, encoding="utf-8").read()
-        except OSError:
-            _btxt = ""
-        if "--secs" in _btxt:
-            cmd += ["--secs", str(_secs)]
-        else:
-            print("  ⚠ wall clock %ds NOT recorded: the banner %s does not know --secs (pull .github to origin, CEO-1562)" % (_secs, SUITE_BANNER), file=sys.stderr)
-            _secs = None
+    # ⛔⭐ A RUN'S CLOCK IS NOT THE WALL (Lon 2026-10-18, in-chat to the coo, verbatim: "Fix the test-suite display banner to show the sum of minimum times of eac
+    # member. NOT the maximum nor the current."): this writer used to forward now - S4E_RUN_T0 (CEO-1562, Lon 10-08) as --secs, the CURRENT run's seconds; the
+    # Wall is the sum of each member's minimum, set by from-progress (and --wall-only after this write), so no clock is forwarded.
+    _secs = None
     r = subprocess.run(cmd, capture_output=True, text=True, env=env)
     # ⛔ THE BANNER IS A SUBPROCESS, SO ITS WRITE IS DECLARED HERE ON ITS RC, NOT ASSUMED FROM THE CALL.
     # A banner that moved the row and THEN failed is a real partial state, and the digest is what tells
@@ -2073,6 +2102,13 @@ def suite_sync(a, tree, dry_run, decided=None):
             "        Row util-score-row-forwards-the-criterion-stamp-to-a-banner-it-never-checked-and-never-reads-the-row-back."
             % (SUITES_TSV, (_r or {}).get("today_pass"), (_r or {}).get("today_total"), ("PRESENT" if (_stamp and _cc.endswith(_stamp)) else ("ABSENT" if _stamp else "none forwarded")))
             + ("\n        excluded forwarded %r, row carries %r; secs forwarded %r, row carries %r" % (_exc, (_r or {}).get("today_excluded"), _secs, (_r or {}).get("today_secs")) if _exc_bad else ""))
+    if SUITES_TSV == _root_suites_tsv() and not os.environ.get("S4E_SUITES_TSV") and not os.environ.get("S4E_PROGRESS_OFF"):
+        # the REAL table only (a fixture's scratch table has no ledger to sum): keep this row's Wall the sum of each member's minimum, best effort -- a suite
+        # whose key has no table (a bench or demo row graded whole) is left as it stood, and a refusal here never fails the row just written
+        try:
+            subprocess.run([sys.executable, os.path.abspath(__file__), "from-progress", "--suite", key, "--wall-only"], capture_output=True, text=True, timeout=300)
+        except Exception:
+            pass
     return "  suite table: %s -> %s/%s on %s (tree %s) -- SUITES.tsv rewritten in the same call%s%s%s" % (key, p, t, day, tree, (" · criterion stamped and read back" if _stamp else ""), (" · EXCLUDED=%d read back" % _exc if _exc is not None else ""), (" · WALL=%ds read back" % _secs if _secs is not None else ""))
 
 
@@ -4025,19 +4061,19 @@ def cmd_selftest(a):
             print("SELFTEST: a reading that REALLY moved prints no notice (the notice is about stamps, not about writes)")
         else:
             print("SELFTEST FAIL: the unchanged-reading notice fired on a write that moved the reading"); ok = False
-        # ⭐ THE WALL CLOCK (Lon 2026-10-08: "List in a grid the total time for each test suite to run."; CEO-1562): a write under the run start
-        # one_runner_guard stamps carries now - S4E_RUN_T0 into today_secs, reads it back, and the suite-table cell shows it as WALL=.
+        # ⛔⭐ A RUN'S CLOCK NEVER REACHES THE WALL (Lon 2026-10-18: "show the sum of minimum times of eac member. NOT the maximum nor the current."; it replaces the
+        # CEO-1562 arm that proved a write under S4E_RUN_T0 landed now - S4E_RUN_T0 as WALL=): the same write leaves today_secs blank and the cell without WALL=.
         os.environ["S4E_RUN_T0"] = str(int(time.time()) - 125)
         try:
-            if not _arm("a bench-ref write under S4E_RUN_T0 lands with its wall clock",
+            if not _arm("a bench-ref write under S4E_RUN_T0 lands without a wall clock",
                         lambda: cmd_write(_A(column="bench-ref", text=_bl.replace("all_pass=2", "all_pass=3"))), False): ok = False
         finally:
             os.environ.pop("S4E_RUN_T0", None)
         _ws = ((_tsv_row("rebus-bench-ref") or {}).get("today_secs") or "")
-        if _ws.isdigit() and 125 <= int(_ws) <= 245 and any(l.startswith("| RebBench | rebus | 3/3 WALL=%ss |" % _ws) for l in open(SCORE_MD, encoding="utf-8").read().split("\n")):
-            print("SELFTEST: ...the run's wall clock reads back from today_secs (%ss) and shows as WALL= in the suite table" % _ws)
+        if _ws == "" and not any(l.startswith("| RebBench | rebus | 3/3 WALL=") for l in open(SCORE_MD, encoding="utf-8").read().split("\n")):
+            print("SELFTEST: ...a run's clock never reaches today_secs or the WALL= cell (the Wall is the sum of each member's minimum)")
         else:
-            print("SELFTEST FAIL: the wall clock did not land -- today_secs %r, RebBench line %r" % (_ws, [l for l in open(SCORE_MD, encoding="utf-8").read().split("\n") if l.startswith("| RebBench ")][:1])); ok = False
+            print("SELFTEST FAIL: a run's clock reached the Wall -- today_secs %r, RebBench line %r" % (_ws, [l for l in open(SCORE_MD, encoding="utf-8").read().split("\n") if l.startswith("| RebBench ")][:1])); ok = False
     finally:
         SCORE_MD = real
         SUITES_TSV = real_tsv
@@ -5367,6 +5403,7 @@ def main():
     fp.add_argument("--suite", required=True, help="the SUITES.tsv key (reb-rungs, swi, ...)")
     fp.add_argument("--dry-run", action="store_true", help="print the row and the population it read; write nothing")
     fp.add_argument("--criterion-changed", default="", metavar="'YYYY-MM-DD:reason'", help="stamp a criterion change on the row (passed to util_suite_banner.py --set; S4E_CRITERION_CHANGED fills it)")
+    fp.add_argument("--wall-only", action="store_true", help="set ONLY the row's Wall (the sum of each member's minimum time) and nothing else: no pass, total, date or tree; needs the minimum-seconds ledger")
     fp.set_defaults(fn=cmd_from_progress)
     n = sub.add_parser("seat-name", help="print THE ONE seat identity derived from the root path; runs no suite")
     n.set_defaults(fn=cmd_seat_name)
