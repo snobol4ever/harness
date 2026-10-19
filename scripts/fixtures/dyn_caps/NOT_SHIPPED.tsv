@@ -8,7 +8,6 @@
 # reads RED by name. An unlinked unit that is NOT named here stays counted: counting too much is never a false green.
 # file<TAB>reason (what builds it, if anything)
 src/driver/csnobol4_shim.c	linked only by `make scrip-monitor` (the CSNOBOL4 fourth-executor build, Makefile rule scrip-monitor), never by scrip or libscrip_rt
-src/parsers/icon/icn_main.c	no Makefile rule or script compiles it; its one exported symbol icn_prescan_imports is referenced nowhere and nm finds it in neither libscrip_rt.so nor scrip (2026-09-24, cb1bc6d1b)
 src/parsers/icon/icon_lex_test.c	a unit test with its own main(); no Makefile rule or script compiles it
 src/parsers/icon/icon_parse_test.c	a unit test with its own main(); no Makefile rule or script compiles it
 src/parsers/prolog/pl_cell_test.c	a unit test with its own main(); no Makefile rule or script compiles it

@@ -41,7 +41,6 @@ src/optimizer/gva_collect.c	3	0	0	0
 src/optimizer/ir_index.h	9	0	0	0
 src/optimizer/proc_collect.c	1	0	0	0
 src/optimizer/region_report.c	24	0	0	0
-src/parsers/icon/icn_main.c	4	0	0	0
 src/parsers/icon/icon_driver.c	13	0	0	0
 src/parsers/icon/icon_lex.c	16	0	0	0
 src/parsers/icon/icon_lex_test.c	2	0	0	0
