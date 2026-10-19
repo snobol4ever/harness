@@ -90,7 +90,7 @@ TOOLS=(
   "util_parser_phase_profile.sh|SW=\"\$(declared_switches_beside \"\$B/parser_\$L.sc\")\""
   "test_bootstrap_parsers.py|_harness.heap_declarations(str(drv))|_harness.oracle_args_declarations(|[str(SBL), \"-bf\"] + sbl_args(lang)|[str(SCRIP)] + scrip_arena(lang)|[str(exe)] + scrip_arena(lang)"
 )
-wired() { local f="$1"; shift; local p; for p in "$@"; do grep -qF -- "$p" "$f" || return 1; done; return 0; }
+wired() { local f="$1"; shift; local p; for p in "$@"; do case "$p" in EXPORT:*) grep -E '^[[:space:]]*export -f ' "$f" | grep -qw -- "${p#EXPORT:}" || return 1;; *) grep -qF -- "$p" "$f" || return 1;; esac; done; return 0; }
 unwired=""
 for t in "${TOOLS[@]}"; do
   IFS='|' read -r -a parts <<<"$t"; f="$HERE/${parts[0]}"
@@ -104,7 +104,7 @@ cmp -s "$FC" "$W/doctored.sh" && { echo "⛔ GATE REFUSE(2) [$G]: the doctoring 
 IFS='|' read -r -a parts <<<"${TOOLS[2]}"
 if wired "$W/doctored.sh" "${parts[@]:1}"; then bad "W' a copy that types sbl's size again still reads as wired"; else ok "W' a copy of util_parser_furthest_cursor.sh that types sbl's size again reads RED (fail once)"; fi
 SNO_TOOLS=(
-  "scorecard_snobol4.sh|oa=\"\$(declared_oracle_args_beside \"\$prog\")\"|\"\$SBL\" \$(sbl_flags) \$oa \"\$prog\"|declared_oracle_args_beside; export"
+  "scorecard_snobol4.sh|oa=\"\$(declared_oracle_args_beside \"\$prog\")\"|\"\$SBL\" \$(sbl_flags) \$oa \"\$prog\"|EXPORT:declared_oracle_args_beside"
   "util_mint_bench_refs.sh|oa=\"\$(declared_oracle_args_beside \"\$sno\")\"|\"\$SBL\" \$(sbl_lang_flags) \$oa \"\$sno\""
   "test_demo_full_3way.sh|sw=\"\$(declared_switches_beside \"\$src\")\" && oa=\"\$(declared_oracle_args_beside \"\$src\")\"|\"\$SBL\" \$(sbl_lang_flags) \$oa|--run \$sw \"\$src\"|\"\$W/\$nm.prog\" \$sw"
   'bench_rep_loop_demos_snobol4.sh|SWD="$(declared_switches_beside "$1")" && OAD="$(declared_oracle_args_beside "$1")"|$(sbl_lang_flags) $OAD "$v"|"$SCRIP" $SWD "$v"|"$W/$stem.bin" $SWD|decl_of "$P"'
