@@ -24,6 +24,9 @@
 # programs, beta_allocs (Lon: "I'd like to also see a count of ALLOCATIONS at BETA." -- reported, not forbidden: util_alloc_by_port_census.py's
 # beta segments whose code leaves rsp below where it found it) -- util_rsp_reset_by_port_census.py over every committed-artifact program plus every Pascal, Raku, Snocone and Rebus demo and benchmark
 # source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
+# FRAME HOMES: /home/resources/progress/FRAMEHOME.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, homes, agree,
+# home_without_test, test_without_home -- the same census's BB_PLACEMENT_FRAMEHOME, the compiler's RBP operand homes against Lon's operand test
+# (Lon 2026-10-21: "Will we get all the proper allocations on the RSP spine?"; ceo CEO-1865; test_gate_frame_homes_agree_with_lons_tests.sh).
 # rc 0 shown/measured/nothing to do · rc 2 could not measure (named: fetch, worktree, build or census failed).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -31,6 +34,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 W="/tmp/s4e-placement-$(basename "$ROOT")"
 REC=/home/resources/progress/PLACEMENT.tsv
 BREC=/home/resources/progress/BETA_RESETS.tsv
+FREC=/home/resources/progress/FRAMEHOME.tsv
 LOCK="$W.lock"
 LOG="$W.log"
 HDR='when	scrip	corpus	harness	lang	ops_rsp	ops_rbp	ops_precarved	ops_none	loc_rsp	loc_rbp	loc_rbp_forced	loc_rbp_misplaced	loc_none	graphs	ops_prealloc'
@@ -39,9 +43,9 @@ tips() { for r in SCRIP corpus harness; do git -C "$ROOT/$r" rev-parse --short=9
 
 do_show() {
     if [ ! -s "$REC" ] || [ "$(wc -l < "$REC")" -lt 2 ]; then echo "PLACEMENT: no reading yet -- the first is measuring (util_placement_watch.sh)"; return 0; fi
-    python3 - "$REC" "$LOCK" "$(git -C "$ROOT/SCRIP" rev-parse --short=9 origin/main 2>/dev/null)" "$BREC" <<'PY'
+    python3 - "$REC" "$LOCK" "$(git -C "$ROOT/SCRIP" rev-parse --short=9 origin/main 2>/dev/null)" "$BREC" "$FREC" <<'PY'
 import sys, os, fcntl
-rec, lock, tip, brec = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+rec, lock, tip, brec, frec = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 rows = [l.rstrip('\n').split('\t') for l in open(rec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
 keys = []
 for r in rows:
@@ -102,6 +106,20 @@ if os.path.isfile(brec):
         print('  RSP resets at beta @ SCRIP %s: %s%s -- %s' % (bk[-1][1], f(tot), prev, ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(cb.items(), key=lambda kv: -kv[1]))))
         if ca:
             print('  allocations at beta (reported, allowed): %s -- %s' % (f(sum(ca.values())), ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(ca.items(), key=lambda kv: -kv[1]))))
+if os.path.isfile(frec):
+    fr = [l.rstrip('\n').split('\t') for l in open(frec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
+    fk = []
+    for r in fr:
+        if not fk or fk[-1] != (r[0], r[1]):
+            fk.append((r[0], r[1]))
+    if fk:
+        cf = {r[4]: list(map(int, r[5:9])) for r in fr if (r[0], r[1]) == fk[-1]}
+        dis = sum(v[2] + v[3] for v in cf.values())
+        prev = ''
+        if len(fk) > 1:
+            pd = sum(int(r[7]) + int(r[8]) for r in fr if (r[0], r[1]) == fk[-2])
+            prev = ' (%+d since SCRIP %s)' % (dis - pd, fk[-2][1])
+        print("  RBP homes vs Lon's operand test @ SCRIP %s: %s disagree%s -- %s  (homes agree/homed-without-test/test-without-home; the test is being calibrated, CEO-1865)" % (fk[-1][1], f(dis), prev, ' · '.join('%s %s %s/%s/%s' % (l, f(v[0]), f(v[1]), f(v[2]), f(v[3])) for l, v in sorted(cf.items()) if v[0] or v[3])))
 PY
 }
 
@@ -139,6 +157,10 @@ for ln in open(out, encoding='utf-8'):
         cols = [v[k] for k in ('ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none')]
         sys.stdout.write('\t'.join([now, s, c, h, p[1]] + cols + [str(progs.get(p[1], 0)), v.get('ops_prealloc', '-1')]) + '\n')
 PY
+    [ -s "$FREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\thomes\tagree\thome_without_test\ttest_without_home\n' > "$FREC"
+    grep '^BB_PLACEMENT_FRAMEHOME ' "$out" | while read -r _ lang rest; do
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "$(echo "$rest" | tr ' ' '\n' | cut -d= -f2 | paste -sd'\t')"
+    done > "$W/fh_rows.tmp" && cat "$W/fh_rows.tmp" >> "$FREC"; rm -f "$W/fh_rows.tmp"
     local A="$W/asm" i=0 lang f stem e
     rm -rf "$A"; mkdir -p "$A"
     bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" > "$A/list"
