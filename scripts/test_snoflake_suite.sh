@@ -280,7 +280,7 @@ compile_m4() { local sno="$1" out="$2" t rc ca; t="$(mktemp -d)"
         # compiles fine and only raises at execution. Recognize this ONE shape and let oracle_equal grade it
         # by ERROR NUMBER like any other error; anything else (segfault, an unrecognized message, no
         # diagnostic at all) is a real toolchain failure and stays SKIP(cc), rc=1.
-        CTERR="$(cat "$t/compile.err")"; rm -rf "$t"
+        CTERR="$(cat "$t/compile.err"; printf .)"; CTERR="${CTERR%.}"; rm -rf "$t"
         printf '%s' "$CTERR" | grep -qE '^SCRIP: ERROR [0-9]+ -- ' && return 2
         return 1
     fi
@@ -301,8 +301,8 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         m3)  cp -pf "$2" "$RUN/f.sno"
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
              local sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
-             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
-        m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
+             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
+        m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
         # ⛔⭐ THE ORACLE IS HANDED A SHORT NAME, NEVER THE ABSOLUTE PATH, AND IT IS A GRADING BUG IF YOU
         # "TIDY" THIS BACK (hq_B 2026-09-04, measured). SPITBOL formats its diagnostic as
         # `<path>(<line>) : ERROR <n> -- <text>`, wraps it at column 119 into the LISTING, and spills only
@@ -331,7 +331,7 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         # the dump, and appending the whole file would re-furnish the stream the sink just cleaned.
         sbl) cp -pf "$2" "$RUN/f.sno"
              rm -f "${SBL_SINK#-o=}.lst"
-             GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?
+             GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}"
              if grep -qE '&DUMP[[:space:]]*=' "$2" 2>/dev/null; then
                  _lst="${SBL_SINK#-o=}.lst"
                  if [ -s "$_lst" ] && grep -qE '^dump of ' "$_lst"; then
@@ -339,11 +339,15 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
                      # writes three of them, and so does SCRIP -- measured byte-for-byte on dump-ordered --
                      # so a split that starts exactly at the header hands the oracle side three fewer lines
                      # than the compiler's and turns one false red into a different false red.
-                     GOT="${GOT}$(awk '/^dump of /{f=1; for(i=1;i<=nb;i++) print ""; nb=0} !f && /^[[:space:]]*$/{nb++; next} !f{nb=0; next} f' "$_lst")"
+                     GOT="${GOT}$(awk '/^dump of /{f=1; for(i=1;i<=nb;i++) print ""; nb=0} !f && /^[[:space:]]*$/{nb++; next} !f{nb=0; next} f' "$_lst"; printf .)"; GOT="${GOT%.}"
                  fi
              fi;;
-        csn) GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$CSN" "$2" < "$inp" 2>&1 | head -c "$OUT_CAP"; exit "${PIPESTATUS[0]}")"; RC=$?;;
+        csn) GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$CSN" "$2" < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
     esac; }
+# ⛔⭐ EVERY CAPTURE ABOVE, AND EVERY MASKED STREAM BELOW, KEEPS ITS TRAILING NEWLINES (Lon 2026-10-21, "measuring failure not success"; ceo CEO-1865): a bare $(...) strips them, so an
+# oracle that prints ONE EMPTY LINE (case-folding, indirect-real-illegal-type) compared equal to an engine that printed NOTHING, and
+# util_false_green_census.sh's silent stub passed both. Each capture ends in a sentinel byte the subshell prints and the caller strips, so the
+# comparison is the byte-for-byte oracle diff the law asks for.
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one chunk or a request's entries, rows as each test ends
 for sno in "$SUITE"/*.sno; do
     _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue; rr_yield "$_rrn" && break; [ "$PROG_RECORD" = 1 ] && rr_flush "$PROG_ROWS"
@@ -375,11 +379,11 @@ for sno in "$SUITE"/*.sno; do
         fi
         if [ "$MC" -gt 0 ]; then MASKED_LINES=$((MASKED_LINES+MC)); MASKED_FIX=$((MASKED_FIX+1)); MASKED_LIST="$MASKED_LIST $name($MC)"; fi
     fi
-    ORACLE_CMP="$(mask_apply "$ORACLE_OUT")"
+    ORACLE_CMP="$(mask_apply "$ORACLE_OUT"; printf .)"; ORACLE_CMP="${ORACLE_CMP%.}"
     if grade "$ORACLE_OUT" "$RC" "$MATCH" "$IC"; then [ "$NSTD" = 1 ] && NSP=$((NSP+1)) || PS=$((PS+1)); ORACLE_MEETS_EXPECT=1
     else [ "$NSTD" = 1 ] && NSF=$((NSF+1)) || { FS=$((FS+1)); FLS="$FLS $name"; }; ORACLE_MEETS_EXPECT=0; fi
     _t0="$(progress_clock)"; run_one m3 "$sno"; M3RC=$RC; M4RC=0; OUT3=""; NOTE3=""; ROW_S3="$(progress_secs_since "$_t0")"
-    if oracle_equal "$(mask_apply "$GOT")" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N3P=$((N3P+1)) || P3=$((P3+1))
+    _g="$(mask_apply "$GOT"; printf .)"; _g="${_g%.}"; if oracle_equal "$_g" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N3P=$((N3P+1)) || P3=$((P3+1))
         if [ "$OE_KIND" = exact ]; then OUT3=PASS; else OUT3=UNGRADED; NOTE3="error_number_only: same ERROR number as sbl -bf, stream differs (narrower instrument)"; fi
         if [ "$NSTD" != 1 ]; then
             if [ "$OE_KIND" = exact ]; then SE3=$((SE3+1)); else EN3=$((EN3+1)); ENL3="$ENL3 $name"; fi
@@ -391,12 +395,12 @@ for sno in "$SUITE"/*.sno; do
     if [ "$PORT" = 1 ]; then :   # a port has no mode 4: no compile, no row
     elif [ "$m4rc" -eq 0 ]; then
         run_one m4 "$sno"; M4RC=$RC
-        if oracle_equal "$(mask_apply "$GOT")" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
+        _g="$(mask_apply "$GOT"; printf .)"; _g="${_g%.}"; if oracle_equal "$_g" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
             if [ "$OE_KIND" = exact ]; then OUT4=PASS; else OUT4=UNGRADED; NOTE4="error_number_only: same ERROR number as sbl -bf, stream differs (narrower instrument)"; fi
         else [ "$NSTD" = 1 ] && N4F=$((N4F+1)) || { F4=$((F4+1)); FL4="$FL4 $name"; }
             OUT4="$(verdict_of "$RC")"; NOTE4="rc=$RC vs sbl -bf"; [ "$NSTD" = 1 ] && { NOTE4="@nonstandard by snoflake's own header, yet SPITBOL runs it, so it is graded in the baseline; $NOTE4"; }; fi
     elif [ "$m4rc" -eq 2 ]; then
-        if oracle_equal "$(mask_apply "$CTERR")" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
+        _g="$(mask_apply "$CTERR"; printf .)"; _g="${_g%.}"; if oracle_equal "$_g" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
             if [ "$OE_KIND" = exact ]; then OUT4=PASS; NOTE4="compile-time diagnostic equals sbl -bf"; else OUT4=UNGRADED; NOTE4="error_number_only: compile-time diagnostic carries the oracle ERROR number, stream differs"; fi
         else [ "$NSTD" = 1 ] && N4F=$((N4F+1)) || { F4=$((F4+1)); FL4="$FL4 $name(CTERR)"; }
             OUT4=FAIL; NOTE4="compile-time diagnostic differs from sbl -bf"; [ "$NSTD" = 1 ] && { NOTE4="@nonstandard by snoflake's own header, yet SPITBOL runs it, so it is graded in the baseline; $NOTE4"; }; fi

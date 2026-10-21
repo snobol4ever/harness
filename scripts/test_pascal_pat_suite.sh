@@ -67,6 +67,40 @@ if [ -f "$ACCEPT_TSV" ]; then
     while IFS=$'\t' read -r _an _arest; do case "$_an" in ''|'#'*) continue;; esac
         [ -f "$SUITE/$_an" ] || refuse "ISO_ACCEPTS.tsv names $_an, which is not in $SUITE"; ACCEPT_SET[${_an%.pas}]=1; ACCEPT_FILES+=("$SUITE/$_an"); done < "$ACCEPT_TSV"
 fi
+# ⛔⭐⭐ A PASS A BROKEN ENGINE CAN EARN IS NOT A PASS (Lon 2026-10-21 16:5x CDT, in-chat to the coo, verbatim: "I suspect you know not what you are
+# doing and are measuring failure not success." · "You better fix your flawed measurement system for the test suites."; his ruling on the coo's
+# question, "Tighten, else exclude"; ceo CEO-1865). MEASURED by util_false_green_census.sh on harness 54425c7: an engine whose every program prints
+# an error and exits 1 earned 417 rejection tests here (834 PASS rows, every refused-with-a-diagnostic PASS of the real table), because a refusal
+# passed on ANY non-zero exit with ANY output; an engine that prints nothing earned iso7185prt1702c and prt1850, whose oracle answer is no output.
+# THE TIGHTENED VERDICT: a rejection test passes only when SCRIP's refusal NAMES ITS REASON -- the source line Pascal-P5's reference transcript marks
+# for a COMPILE-TIME test (its .ecp marks "N ****"; within one line, since P5 marks the token that detects the error and that token is often the
+# next line's), or an ISO 7185 clause ("ISO 7185 6.2.1 violation: ...", "pascal runtime error: ISO 7185 6.6.6.2: ..."). Any clause, not the one a
+# RUN-TIME test's header cites: measured on 77fe69586, the headers' numbers are not reliable (prt1733's ln(x) cites 6.6.5.2, the clause is 6.6.6.2,
+# which SCRIP names). Neither stub engine names a line or a clause, and neither does a generic "error 262: division caused real overflow". A test
+# with no marked line and no clause in its header, and a test whose oracle answer is empty, cannot tell SCRIP from a broken engine: it is EXCLUDED
+# as CEO-1696 rules, its answer not known in any form a refusal can be checked against (EXCLUDED.tsv class NO_ORACLE_ANSWER, an iso7185prt* row,
+# with what it lacks), never debt and never a pass.
+declare -A FAKE_SET=()
+[ -f "$SUITE/EXCLUDED.tsv" ] && while IFS=$'\t' read -r _fn _fc _frest; do case "$_fn" in iso7185prt*) [ "$_fc" = NO_ORACLE_ANSWER ] && FAKE_SET[${_fn%.pas}]=1;; esac; done < "$SUITE/EXCLUDED.tsv"
+prt_want() {  # f: "line N..." (the .ecp's marked lines) | "clause X..." (the header's ISO 7185 reference) | "" (nothing a refusal can be checked against)
+    local _l _c
+    _l="$(awk '/^[ \t]*[0-9]+[ \t]+\*\*\*\*/ {print $1}' "${1%.pas}.ecp" 2>/dev/null | sort -un | tr '\n' ' ')"
+    [ -n "${_l// /}" ] && { echo "line $_l"; return; }
+    _c="$(sed -n 's/.*ISO 7185 reference:[[:space:]]*//p' "$1" | grep -oE '[0-9]+(\.[0-9]+)+' | tr '\n' ' ')"
+    [ -n "${_c// /}" ] && { echo "clause $_c"; return; }
+    echo ""
+}
+prt_refusal_names_it() {  # want output-file: prints what the refusal named (a marked line, +-1, or an ISO 7185 clause), or fails
+    local _k="${1%% *}" _v="${1#* }" _x _c
+    if [ "$_k" = line ]; then
+        for _x in $_v; do
+            for _c in $((_x - 1)) "$_x" $((_x + 1)); do grep -qE "line $_c([^0-9]|\$)" "$2" && { echo "line-$_c"; return 0; }; done
+        done
+    fi
+    _c="$(grep -oE 'ISO 7185 [0-9]+(\.[0-9]+)+' "$2" | head -1 | sed 's/ISO 7185 //')"
+    [ -n "$_c" ] && { echo "clause-$_c"; return 0; }
+    return 1
+}
 # ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06), accumulated across BOTH populations below -- the rejection
 # tests and the acceptance tests -- because both feed the one TOTAL this row is stated over. A per-program
 # accumulator is the only shape that survives two loops; a post-hoc min() of P[m3] and P[m4] would not even be
@@ -77,7 +111,9 @@ BOTH=0
 for f in "$SUITE"/iso7185prt*.pas; do
     [ -e "$f" ] || continue
     b="$(basename "$f" .pas)"; rr_admits "$b" || continue; rr_yield "$b" && { RR_STOP=1; break; }; rr_flush "$PROG_ROWS"
-    [ -n "${ACCEPT_SET[$b]:-}" ] && continue; TOTAL=$((TOTAL+1)); okboth=1
+    [ -n "${ACCEPT_SET[$b]:-}" ] && continue; [ -n "${FAKE_SET[$b]:-}" ] && continue; TOTAL=$((TOTAL+1)); okboth=1
+    WANT="$(prt_want "$f")"
+    [ -n "$WANT" ] || refuse "$b carries no marked line in its .ecp and no ISO 7185 reference in its header, and EXCLUDED.tsv does not name it NO_ORACLE_ANSWER -- a refusal of it cannot be checked (Lon 2026-10-21, tighten else exclude)"
     export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (CEO-1335)
     if [ -n "${OUTSIDE_SET[$b]:-}" ]; then
         _oerr="$(cd "$TMP" && "$TIMEOUT_RETRY" 8s "$SCRIP" --dump-ast "$f" </dev/null 2>&1 >/dev/null)"; _orc=$?
@@ -132,13 +168,15 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # banner above applied to the database: CRASH and HANG are real values in that table's vocabulary,
         # and writing them here would put this suite's crash column OUTSIDE its fail column for every reader
         # who counts FAIL -- the exact two-HQs-disagree defect the verdict/diagnosis split was cut to end.
-        if [ "$rc" -ne 0 ] && [ "$rc" -lt 124 ] && [ -s "$TMP/o" ]; then P[$m]=$((P[$m]+1))
-            printf 'package\tpat\tpascal\t%s\t%s\tPASS\t%s\trefused-with-a-diagnostic\n' "$b" "$m" "$SM" >>"$PROG_ROWS"
+        NAMED_IT=""; [ "$rc" -ne 0 ] && [ "$rc" -lt 124 ] && [ -s "$TMP/o" ] && NAMED_IT="$(prt_refusal_names_it "$WANT" "$TMP/o")"
+        if [ -n "$NAMED_IT" ]; then P[$m]=$((P[$m]+1))
+            printf 'package\tpat\tpascal\t%s\t%s\tPASS\t%s\trefused-naming-the-%s\n' "$b" "$m" "$SM" "$NAMED_IT" >>"$PROG_ROWS"
             [ -n "${PAT_VERBOSE:-}" ] && echo "  $m PASS $b"
         else
             F[$m]=$((F[$m]+1)); okboth=0
             if   [ "$rc" -eq 124 ]; then C[$m]=$((C[$m]+1)); DIAG="accepted-and-ran-to-bound"
             elif [ "$rc" -gt 124 ]; then C[$m]=$((C[$m]+1)); DIAG="crash(rc=$rc)"
+            elif [ "$rc" -ne 0 ] && [ -s "$TMP/o" ]; then DIAG="refused-but-not-naming-the-$(echo $WANT | tr ' ' '-')"
             elif [ "$rc" -ne 0 ];   then DIAG="rejected-silently-no-diagnostic"
             else                         DIAG="accepted"; fi
             NAMED="$NAMED $b:$m:FAIL/diag=$DIAG"
@@ -163,6 +201,7 @@ for f in "$SUITE"/iso7185pat*.pas "${ACCEPT_FILES[@]}"; do
     [ -n "${RR_STOP:-}" ] && break
     [ -e "$f" ] || continue
     b="$(basename "$f" .pas)"; rr_admits "$b" || continue; rr_yield "$b" && break; rr_flush "$PROG_ROWS"
+    [ -n "${FAKE_SET[$b]:-}" ] && continue
     export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (CEO-1335)
     [ -n "$FPC" ] || { echo "note: fpc absent -- acceptance test $b not graded (its oracle is fpc -Miso); rejection population unaffected"; break; }
     in="$SUITE/$b.inp"; [ -f "$in" ] || in=/dev/null

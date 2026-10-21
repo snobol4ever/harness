@@ -182,7 +182,7 @@ verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then 
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/spitbol_x64_tests"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
-prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; local o="$3"; [ "$o" = COMPILE_FAIL ] && o=FAIL; printf 'package\tspitbol_x64\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
+prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; local o="$3"; case "$o" in COMPILE_FAIL|LINK_FAIL) o=FAIL;; esac; printf 'package\tspitbol_x64\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
 verdict_lines() { grep -cE '^( pass: |\*FAIL: )' "$1" 2>/dev/null | tr -d ' '; }
 pass_lines()    { grep -c '^ pass: '  "$1" 2>/dev/null | tr -d ' '; }
 fail_lines()    { grep -c '^\*FAIL: ' "$1" 2>/dev/null | tr -d ' '; }
