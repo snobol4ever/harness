@@ -37,7 +37,7 @@ STRICT=1; [ "${1:-}" = "--informational" ] && STRICT=0   # V2-5: strict by defau
 [ "$STRICT" = "0" ] && echo "⛔ --informational: verdict NOT enforced."
 # ⭐ V2-5 COVERAGE FLOOR (gate honesty): examining NOTHING must never read the same as examining everything.
 . "$HERE/lib_gate.sh"
-gate_floor "$(ls "$HERE"/../src/emitter/*.c "$HERE"/../src/emitter/*.cpp "$HERE"/../src/templates/{bb,xa}/*.cpp "$HERE"/../src/runtime/*.c 2>/dev/null | wc -l)" 100 "source files under src/ -- an empty tree is UNPROVEN(2), not a pass"
+gate_floor "$(ls "$REPO"/src/emitter/*.c "$REPO"/src/emitter/*.cpp "$REPO"/src/templates/{bb,xa}/*.cpp "$REPO"/src/runtime/*.c 2>/dev/null | wc -l)" 100 "source files under src/ -- an empty tree is UNPROVEN(2), not a pass"
 
 
 SCAN_DIRS="src/runtime src/driver src/ir src/lower src/parsers src/optimizer"
