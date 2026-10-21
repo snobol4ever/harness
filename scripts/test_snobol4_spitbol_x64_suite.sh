@@ -215,8 +215,9 @@ for sno in "$SUITE"/*.sbl; do
     # ⛔ THE ORACLE FIRST, AND IT DECIDES BOTH WHETHER AND HOW.  Whether: a program our mandated -bf arm
     # cannot get an answer for is UNGRADED (work owed, declared in UNGRADED.tsv).  How: whether its own
     # run carried verdict lines picks the instrument.  Nothing here is read off a name.
+    SE="$(declared_stderr_from_table "$DECL" "$name")" || exit 2   # a unit declaring stderr=merged has both streams captured as ONE pipe, 2>&1, exactly as the harness runs it (CEO-1866)
     declared_answer_clear "$DECL" "$name" "$RUN" || exit 2   # a unit whose answer includes files it writes (arcget: ALL.csv out_files/stderr) starts each engine's run without the last one's files
-    "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" $3 "$4" < "$7" > "$5" 2> "$6"' _ "$RUN" "$SBL" "$SBL_FLAGS" "$base" "$W/o.out" "$W/o.err" "$(stdin_of "$name")" 2>/dev/null; rcO=$?
+    "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$5"; if [ "$8" = merged ]; then : > "$6"; exec 2>&1; else exec 2> "$6"; fi; exec "$2" $3 "$4" < "$7"' _ "$RUN" "$SBL" "$SBL_FLAGS" "$base" "$W/o.out" "$W/o.err" "$(stdin_of "$name")" "$SE" 2>/dev/null; rcO=$?
     declared_answer_compose "$DECL" "$name" "$RUN" "$W/o.out" "$W/o.err" || exit 2   # the oracle's answer, composed exactly as both modes' will be (a no-op for a unit declaring neither cell)
     if grep -q 'No END statement found' "$W/o.out" "$W/o.err" 2>/dev/null; then
         UNGRADED_N=$((UNGRADED_N+1)); UNG_LIST="${UNG_LIST}${base}\tORACLE_FAIL\tsbl -bf rc=$rcO \"No END statement found in source file(s).\"\n"
@@ -256,7 +257,7 @@ for sno in "$SUITE"/*.sbl; do
     SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
     declared_answer_clear "$DECL" "$name" "$RUN" || exit 2
-    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" --run $6 "$3" < "$7" > "$4" 2> "$5"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" "$(stdin_of "$name")" 2>/dev/null; rc3=$?
+    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$4"; if [ "$8" = merged ]; then : > "$5"; exec 2>&1; else exec 2> "$5"; fi; exec "$2" --run $6 "$3" < "$7"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" "$(stdin_of "$name")" "$SE" 2>/dev/null; rc3=$?
     ROW_S3="$(progress_secs_since "$_t0")"
     declared_answer_compose "$DECL" "$name" "$RUN" "$W/m3.out" "$W/m3.err" || exit 2
     if [ "$rc3" -eq 124 ] || [ "$rc3" -ge 128 ]; then OUT3="$(verdict_of "$rc3")"; N3="rc=$rc3: $(head -1 "$W/m3.err" | cut -c1-90)"
@@ -273,7 +274,7 @@ for sno in "$SUITE"/*.sbl; do
     m4why=""; if [ "$PORT" = 1 ]; then OUT4=""; N4=""   # a port has no mode 4: no compile, no row
     elif m4why="$(compile_m4 "$base" "$W/prog.bin" "$ca")"; then
         declared_answer_clear "$DECL" "$name" "$RUN" || exit 2
-        run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; "$2" < "$5" > "$3" 2> "$4"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" "$(stdin_of "$name")" 2>/dev/null; rc4=$?
+        run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$3"; if [ "$6" = merged ]; then : > "$4"; exec 2>&1; else exec 2> "$4"; fi; exec "$2" < "$5"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" "$(stdin_of "$name")" "$SE" 2>/dev/null; rc4=$?
         declared_answer_compose "$DECL" "$name" "$RUN" "$W/m4.out" "$W/m4.err" || exit 2
         if [ "$rc4" -eq 124 ] || [ "$rc4" -ge 128 ]; then OUT4="$(verdict_of "$rc4")"; N4="rc=$rc4: $(head -1 "$W/m4.err" | cut -c1-90)"
         elif [ "$ARM" = self ]; then

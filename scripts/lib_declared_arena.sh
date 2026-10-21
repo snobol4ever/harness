@@ -468,10 +468,12 @@ declared_answer_clear() {
 
 # declared_answer_compose <table_file> <entry> <run_dir> <stdout_file> <stderr_file> -- turn one run's captured streams into the entry's
 #   ANSWER, in place in <stdout_file>, exactly as corpus_suite_harness.py composes it (its own _out_files_append is the body, never a second
-#   spelling): a stderr cell of "merged" appends the stderr bytes, and every out_files name appends that file from the run directory, a
-#   missing one as the harness spells it (<<out_files: NAME was not written>>). An entry that declares neither is left untouched, byte for
-#   byte. ⛔ rc 2 for "merged" when stdout AND stderr both hold bytes: the harness interleaves the two as one pipe does, this runner keeps
-#   them in two files and can only append, and a runner that cannot reproduce the contract refuses instead of grading a different one.
+#   spelling): every out_files name appends that file from the run directory, a missing one as the harness spells it (<<out_files: NAME was
+#   not written>>). An entry that declares neither is left untouched, byte for byte. A stderr cell of "merged" is the CAPTURE's business, not
+#   this function's: the harness reads stdout and stderr as one pipe (subprocess stderr=STDOUT), so the runner runs the unit with 2>&1 into
+#   <stdout_file> and leaves <stderr_file> empty (declared_stderr_from_table names the cell); nothing is appended here, and an engine that
+#   writes to both streams is graded on their true interleaving, a mismatch being that unit's FAIL and never a refusal of the board. ⛔ rc 2
+#   only for a runner that declared "merged" and did not merge (bytes left in <stderr_file>): that is the runner's own wiring, not a program.
 declared_answer_compose() {
   local tbl="$1" entry="$2" dir="$3" outf="$4" errf="$5" of se
   of="$(declared_out_files_from_table "$tbl" "$entry")" || return 2
@@ -488,9 +490,8 @@ if se == "merged":
         err = open(errf, "rb").read()
     except FileNotFoundError:
         err = b""
-    if out and err:
-        sys.stderr.write("⛔ REFUSE(2) %s declares stderr=merged and wrote bytes to both streams -- the harness interleaves them as one pipe, this runner appends stderr after stdout and cannot reproduce that\n" % entry); sys.exit(2)
-    out += err
+    if err:
+        sys.stderr.write("⛔ REFUSE(2) %s declares stderr=merged and this runner left %d byte(s) in the separate stderr file -- the capture must be 2>&1 into the stdout file, as the harness runs it\n" % (entry, len(err))); sys.exit(2)
 out = h._out_files_append(out, d, of.split())
 open(outf, "wb").write(out)
 PY
