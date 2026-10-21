@@ -3,8 +3,9 @@
 # COUNT of RSP hosted locals and operands, and a COUNT of RBP hosted locals and operands. I should see that at every turn. As you fix the
 # programs I should see the numbers changing." · "I should also see a count of RSP resets at BETA and see the count go to ZERO."; ceo CEO-1855).
 #
-# The count is util_bb_placement_census.py's BB_HOSTS line per language over the committed-artifact programs (every benchmark and demo that
-# carries a .s), compiled by SCRIP at origin/main. A census takes minutes, so it never runs inside a turn: `kick` starts a measurement in the
+# The count is util_bb_placement_census.py's BB_HOSTS line per language over util_spine_population.sh's programs (the committed-artifact
+# SNOBOL4, Icon and Prolog programs and every Pascal, Raku, Snocone and Rebus demo and benchmark source), compiled by SCRIP at origin/main --
+# the population test_gate_no_spine_preallocation.sh and test_gate_no_rsp_reset_at_beta.sh close their rows on. A census takes minutes, so it never runs inside a turn: `kick` starts a measurement in the
 # background when origin/main of SCRIP, corpus or harness has moved past the last reading, and `show` prints the newest reading and its change
 # against the reading before it, instantly, from the record. The measurement runs in git worktrees of this root's own repos under
 # /tmp/s4e-placement-<root> (never a link, never this root's working tree, so nothing the seat is doing moves under it), built with its own
@@ -72,7 +73,7 @@ cur = keys[-1]
 t, per = agg(cur)
 f = lambda n: format(n, ',')
 state = '' if tip == cur[1] else (' -- measuring origin %s now' % tip if busy else ' -- origin is at %s, not yet measured' % tip)
-print('PLACEMENT @ SCRIP %s, read %s, %d graphs of the committed Icon/Prolog/SNOBOL4 programs%s' % (cur[1], cur[0][11:16], t['graphs'], state))
+print('PLACEMENT @ SCRIP %s, read %s, %d graphs over %d languages (util_spine_population.sh)%s' % (cur[1], cur[0][11:16], t['graphs'], len(per), state))
 print('  operands: RSP %s  RBP %s   |   locals: RSP %s  RBP %s (%s forced, %s misplaced)' % (f(t['ops_rsp']), f(t['ops_rbp']), f(t['loc_rsp']), f(t['loc_rbp']), f(t['loc_rbp_forced']), f(t['loc_rbp_misplaced'])))
 pa = t['prealloc'] if all(v['prealloc'] >= 0 for v in per.values()) else None
 print('  PRE-ALLOCATIONS: %s (frame slots granted to a non-RBP box %s, operands carved at entry %s, locals carved at entry that pass both tests %s)' % (f(pa), f(t['ops_prealloc']), f(t['ops_precarved']), f(t['loc_rbp_misplaced'])) if pa is not None else '  PRE-ALLOCATIONS: not in this reading (the next one carries it)')
@@ -116,7 +117,7 @@ do_run() {
     done
     ( cd "$W/SCRIP" && nice -n 10 make -j8 ) >>"$LOG" 2>&1 || { echo "REFUSE(2): build at $s" >>"$LOG"; return 2; }
     local out="$W/census.out"
-    ( cd "$W/SCRIP" && env -u S4E_HOME nice -n 10 python3 "$W/harness/scripts/util_bb_placement_census.py" ) >"$out" 2>>"$LOG" || { echo "REFUSE(2): census at $s" >>"$LOG"; return 2; }
+    ( cd "$W/SCRIP" && env -u S4E_HOME nice -n 10 python3 "$W/harness/scripts/util_bb_placement_census.py" --files $(bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" | cut -f2) ) >"$out" 2>>"$LOG" || { echo "REFUSE(2): census at $s" >>"$LOG"; return 2; }
     grep -q '^BB_HOSTS ' "$out" || { echo "REFUSE(2): census printed no BB_HOSTS at $s" >>"$LOG"; return 2; }
     [ -s "$REC" ] || printf '%s\n' "$HDR" > "$REC"
     local now; now="$(date '+%Y-%m-%dT%H:%M:%S')"
@@ -137,10 +138,8 @@ for ln in open(out, encoding='utf-8'):
 PY
     local A="$W/asm" i=0 lang f stem e
     rm -rf "$A"; mkdir -p "$A"
-    { find "$W/corpus/benchmarks" "$W/corpus/demos" -name '*.s' | sort | while read -r f; do stem="${f%.s}"; for e in sno icn pl; do [ -f "$stem.$e" ] && echo "$e $stem.$e"; done; done
-      for e in pas raku sc reb; do find "$W/corpus/demos" "$W/corpus/benchmarks" -name "*.$e" | sort | sed "s|^|$e |"; done; } > "$A/list"
-    while read -r e f; do
-        case "$e" in sno) lang=snobol4;; icn) lang=icon;; pl) lang=prolog;; pas) lang=pascal;; raku) lang=raku;; sc) lang=snocone;; reb) lang=rebus;; esac
+    bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" > "$A/list"
+    while IFS=$'\t' read -r lang f; do
         i=$((i+1)); mkdir -p "$A/$lang"
         ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
     done < "$A/list"
