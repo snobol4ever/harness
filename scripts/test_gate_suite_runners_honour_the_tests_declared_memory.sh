@@ -401,7 +401,7 @@ for r in test_snobol4_dotnet_suite.sh test_snobol4_spitbol_testpgms_suite.sh tes
 done
 need scorecard_snobol4.sh table 'sc_decl_build' 3; need scorecard_snobol4.sh runs 'run_at_declared_table "\$SC_DECL"' 2
 need test_snobol4_gimpel_suite.sh through-the-scorecard 'scorecard_snobol4.sh" run --suites gimpel' 1
-need test_snobol4_aisnobol_suite.sh through-the-harness 'corpus_suite_harness.py run "\$SUITE/ALL.sno"' 1
+need test_snobol4_aisnobol_suite.sh through-the-harness 'corpus_suite_harness.py"\{0,1\} run "\$SUITE/ALL.sno"' 1
 # ⭐ INRIA AND THE LOGTALK GRADER PASS THE DECLARATION AS SWITCHES (the coo 2026-09-28, CEO-1353/1355: both handed the declared heap to
 # SCRIP_HEAP_KB, the collector's initial WINDOW, and the stack to SCRIP_STACK): -d<kb>k -s<kb>k after --run in m3, leading the binary in m4.
 need test_prolog_inria_suite.sh begin 'declared_memory_begin "\$SUITE/ALL.csv"' 1
