@@ -475,10 +475,10 @@ def main():
                 for (tb, kind, home, forced, cid, xf, xfwhy, off) in gr['cells']:
                     t['operands' if tb == 'A' else 'locals'] += 1
                     hs = hosts[lang]
-                    if tb == 'A' and home in ('SPINE', 'NONE') and off >= 0 and xf < 0:
+                    if tb == 'A' and home in ('SPINE', 'NONE') and off >= 0 and xf == -1:
                         hs['ops_prealloc'] += 1
                     if tb == 'A':
-                        hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf >= 0)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
+                        hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf != -1)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
                     elif home == 'SPINE':
                         hs['loc_rsp'] += 1
                     elif home in ('RBP', 'RSP_CARVED'):
@@ -488,7 +488,7 @@ def main():
                         hs['loc_none'] += 1
                     if tb == 'A' and home == 'SPINE':
                         fh = fhome[lang]
-                        if xf >= 0:
+                        if xf != -1:
                             fh['homes'] += 1
                             fh[('why', xfwhy, kind)] += 1
                             fh['agree' if forced else 'home_without_test'] += 1
