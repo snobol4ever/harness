@@ -49,6 +49,10 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends)
   BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|nohome:<test> kind=<box kind> count=..
+  BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
+      (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
+      mirrors its spine cell to a frame slot; a local is RBP-hosted when it is a frame slot, forced = it fails the local test, misplaced =
+      it does not. util_placement_watch.sh records these per tree in /home/resources/progress/PLACEMENT.tsv.)
   BB_UNWIND <lang>|total rsp_loads=.. retry_restore=.. discard_restore=.. multi_pop=..   (CEO-1755/1759, from the emitted .s: see asm_unwind)
   BB_UNWIND_RSPLOAD <lang> <class> count=..   every rsp load by the label it sits under: restore_* is a RETRY loading rsp from a saved
       value (banned), discard_* a FENCE, ARBNO, cut or statement landing dropping rsp to a saved depth (allowed, counted apart)
@@ -389,6 +393,7 @@ def main():
     tests = {l: collections.Counter() for l in langs}
     unw = {l: collections.Counter() for l in langs}
     fhome = {l: collections.Counter() for l in langs}
+    hosts = {l: collections.Counter() for l in langs}
     seen_sec = set()
     seen_standing = set()
     with tempfile.TemporaryDirectory() as td:
@@ -419,6 +424,16 @@ def main():
                     continue
                 for (tb, kind, home, forced, cid, xf, xfwhy) in gr['cells']:
                     t['operands' if tb == 'A' else 'locals'] += 1
+                    hs = hosts[lang]
+                    if tb == 'A':
+                        hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf >= 0)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
+                    elif home == 'SPINE':
+                        hs['loc_rsp'] += 1
+                    elif home in ('RBP', 'RSP_CARVED'):
+                        hs['loc_rbp'] += 1
+                        hs['loc_rbp_forced' if forced else 'loc_rbp_misplaced'] += 1
+                    else:
+                        hs['loc_none'] += 1
                     if tb == 'A' and home == 'SPINE':
                         fh = fhome[lang]
                         if xf >= 0:
@@ -483,6 +498,10 @@ def main():
         for k, v in sorted(tt.items()):
             if k.startswith('why:'):
                 print('BB_PLACEMENT_TESTS_WHY %s %s count=%d' % (lang, k[4:], v))
+    for lang in langs:
+        hs = hosts[lang]
+        print('BB_HOSTS %s ops_rsp=%d ops_rbp=%d ops_precarved=%d ops_none=%d loc_rsp=%d loc_rbp=%d loc_rbp_forced=%d loc_rbp_misplaced=%d loc_none=%d' %
+              (lang, hs['ops_rsp'], hs['ops_rbp'], hs['ops_precarved'], hs['ops_none'], hs['loc_rsp'], hs['loc_rbp'], hs['loc_rbp_forced'], hs['loc_rbp_misplaced'], hs['loc_none']))
     for lang in langs:
         fh = fhome[lang]
         print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home']))
