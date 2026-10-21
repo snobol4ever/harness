@@ -25,7 +25,11 @@ ACTIVATION FRAME. ALL the rest/remaining must be RSP SPINE CELLS."), per cell, o
 compiler's own rsp facts (`scrip --dump-homes`):
   [RSPFX] rsp=dynamic why=W  a box whose gamma leaves rsp at a distance from its alpha the compiler cannot state: suspend,
                              coexpression, unknown-callee (CALL_VALUE), generator-callee, retaining-callee (a call whose callee
-                             graph retains: more than one SUCCEED or any dynamic box of its own, closed transitively);
+                             graph retains: more than one SUCCEED or any dynamic box of its own, closed transitively -- the compiler's
+                             dump-only proxy, which calls an Icon procedure with two plain returns retaining; CEO-1865: this census keeps
+                             a retaining-callee box dynamic only when the callee's EMITTED procedure holds a suspend or coexpression box
+                             or an exit (its _γ or _ω) that does not restore rsp by lea rsp, [rbp + K] before the jump through the return
+                             address -- a callee that returns at a fixed distance from its frame base leaves the caller's cells reachable);
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
   [LOCALUSE] local=V         a box that touches local V (the compiler's own name, VAR_REF included);
   [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
@@ -48,7 +52,9 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends)
-  BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|nohome:<test> kind=<box kind> count=..
+  BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|hwt:<rule>|nohome:<test> kind=<box kind> count=..   (why: every home by the planner's rule;
+      hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
+      them frame_homed_untested and spine_unhomed)
   BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
       (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
       mirrors its spine cell to a frame slot; a local is RBP-hosted when it is a frame slot, forced = it fails the local test, misplaced =
@@ -106,13 +112,14 @@ def homes_of(lang, src, tmp):
     r = run(args, cwd)
     if r.returncode != 0 or not os.path.isfile(tmp) or os.path.getsize(tmp) == 0:
         return None, None, None
-    nodes, locs, fx = {}, {}, {'dyn': {}, 'renorm': set(), 'standing': [], 'uses': {}}
+    nodes, locs, fx = {}, {}, {'dyn': {}, 'callee': {}, 'renorm': set(), 'standing': [], 'uses': {}}
     for ln in r.stderr.decode('utf-8', 'replace').splitlines():
         m = RSPFX.match(ln)
         if m:
             k = (int(m.group(1)), int(m.group(3)))
             if m.group(5) == 'dynamic':
                 fx['dyn'][k] = m.group(6)
+                fx['callee'][k] = m.group(7)
             else:
                 fx['renorm'].add(k)
             continue
@@ -147,8 +154,45 @@ def asm_bases(path):
     return c
 
 
+LIVE_BOX = re.compile(r'^n\d+_(?:suspend|create|activate|coret|cofail)\w*_α:')
+EXIT_LEA = re.compile(r'^lea\s+rsp\s*,\s*\[rbp\s*\+\s*-?\d+\]$')
+EXIT_RSPW = re.compile(r'^(?:mov|add|sub|lea|pop|xchg)\s+rsp\b|^leave\b')
+EXIT_JMP = re.compile(r'^jmp\s+qword ptr \[rsp')
+
+
+def asm_fixed_exit_procs(path):
+    lines = [ln.split('#')[0].strip() for ln in open(path, encoding='utf-8', errors='replace').read().split('\n')]
+    live, at, cur = {}, {}, None
+    for i, ln in enumerate(lines):
+        if ln.startswith('FN__') and ln.endswith(':'):
+            cur = ln[4:-1]
+            live[cur] = False
+            at[cur] = {}
+        elif cur is not None:
+            if LIVE_BOX.match(ln):
+                live[cur] = True
+            for port in ('γ', 'ω'):
+                if ln.split(None, 1)[:1] == [cur + '_' + port + ':']:
+                    at[cur][port] = i
+
+    def fixed_from(i):
+        last = None
+        for ln in lines[i + 1:i + 121]:
+            if re.match(r'^[^\s.][^\s:]*:', ln):
+                return False
+            for piece in ln.split(';'):
+                p = piece.strip()
+                if EXIT_RSPW.match(p):
+                    last = p
+                if EXIT_JMP.match(p):
+                    return bool(last and EXIT_LEA.match(last))
+        return False
+
+    return {n for n, ports in at.items() if not live[n] and set(ports) == {'γ', 'ω'} and all(fixed_from(i) for i in ports.values())}
+
+
 LABEL = re.compile(r'^([^\s#][^\s:]*):')
-RSPLOAD = re.compile(r'^(?:mov|lea|xchg|pop|cmov\w+)\s+rsp\s*,\s*(\S.*)$|^pop\s+rsp\s*$|^leave\b')
+RSPLOAD =re.compile(r'^(?:mov|lea|xchg|pop|cmov\w+)\s+rsp\s*,\s*(\S.*)$|^pop\s+rsp\s*$|^leave\b')
 ADDRSP = re.compile(r'^add\s+rsp\s*,\s*(-?\d+)\s*$')
 SUBRSP = re.compile(r'^sub\s+rsp\s*,\s*(-?\d+)\s*$')
 JUMP = re.compile(r'^j\w*\s+(\S+)\s*$')
@@ -269,6 +313,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         return None
     bases = asm_bases(tmp)
     unwind = asm_unwind(tmp, seen_sec)
+    fixed_exit = asm_fixed_exit_procs(tmp) if 'retaining-callee' in fx['dyn'].values() else frozenset()
     names, vslots = zeta_names(src, lang)
     raw = run([SCRIP, '--dump-bb', os.path.basename(src)], os.path.dirname(src)).stdout
     dump = json.loads(raw.decode('utf-8', 'replace'))
@@ -302,7 +347,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         seen.add(key)
         ids = by[g]
         emitted = any((g, int(i.split('_')[1])) in nodes for i in ids)
-        dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn']}
+        dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn'] and not (fx['dyn'][bkey(i)] == 'retaining-callee' and fx['callee'].get(bkey(i)) in fixed_exit)}
         renorm = {i for i in ids if bkey(i) in fx['renorm']}
         succ, ops = collections.defaultdict(list), []
         for e in gedges[g]:
@@ -444,7 +489,9 @@ def main():
                             fh['homes'] += 1
                             fh[('why', xfwhy, kind)] += 1
                             fh['agree' if forced else 'home_without_test'] += 1
-                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
+                            if not forced:
+                                fh[('hwt', xfwhy, kind)] += 1
+                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
                         elif forced:
                             fh['test_without_home'] += 1
                             fh[('nohome', forced, kind)] += 1
