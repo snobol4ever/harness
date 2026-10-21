@@ -1,0 +1,6 @@
+procedure main()
+   local x;
+   every write((1 to 3) | (7 to 8));
+   every write(("a" | "b") || (1 to 2));
+   every x := ((1 to 2) | 5) do write(x * 10);
+end
