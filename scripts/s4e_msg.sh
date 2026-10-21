@@ -1088,8 +1088,11 @@ s4e_lane_owner_of_language() {
       # the fleet."): QUINTET's five plus those four -- CEO-1793's NONET roster, whose guard arm already admits exactly hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime.
       # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; hq_zetas and hq_runtime own no language. The QUINTET table
       # (every language the ceo) is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       icon)     printf 'hq_icon';;
-       prolog)   printf 'hq_prolog';;
+      # ⛔ MODE QUARTET (CEO-1852, 2026-10-21 09:1x CDT, Lon in-chat to the ceo, verbatim: "Go to QUARTET mode, four officers seated as Opus 5.5 xhigh."): hq_icon and hq_prolog
+      # stand down with the rest of the reduced fleet, so ICON and PROLOG route to the ceo, who assigns, as CEO-1773's table; the two lines below this comment were hq_icon and hq_prolog
+      # under CEO-1827 and are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+       icon)     printf 'ceo';;
+       prolog)   printf 'ceo';;
       # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (CEO-1827, 2026-10-18, Lon in-chat to the ceo: "we should run a reduced fleet until things settle"; roster ceo coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the ceo, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (CEO-1046).
        snobol4)  printf 'ceo';;
        pascal)   printf 'ceo';;
