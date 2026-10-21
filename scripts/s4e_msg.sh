@@ -121,6 +121,7 @@ if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_runtime)          ME=hq_runtime;;
     /home/claude_collector)        ME=hq_collector;;
     /home/claude_zetas)            ME=hq_zetas;;
+    /home/claude_packages)         ME=hq_packages;;
     /home/claude_dotnet)           ME=hq_dotnet;;
     /home/claude_jvm)              ME=hq_jvm;;
     # the nine lettered HQ roots were renamed by language on 2026-09-16 (ceo CEO-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
@@ -714,7 +715,7 @@ s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
 # that INVENTS a dead seat is worse than one that reports nothing: the ceo acts on it. The forward map gained
 # hq_T when the fourth HQ opened; this one did not, because nothing checks that two hand-written tables of the
 # same fact still agree -- the same class as the per-root digests drifting from RULES.md.
-s4e_root() { case "$1" in ceo|hq) if [ -d /home/claude_ceo ]; then echo /home/claude_ceo; else echo /home/claude; fi;; cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; hq_icon) echo /home/claude_icon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
+s4e_root() { case "$1" in ceo|hq) if [ -d /home/claude_ceo ]; then echo /home/claude_ceo; else echo /home/claude; fi;; cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; hq_icon) echo /home/claude_icon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
 s4e_hqboxes() { for _h in hq hq_icon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_dotnet hq_jvm hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V ceo cto coo cfo; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done; }
 s4e_is_hq() { case "$1" in hq|hq_icon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_dotnet|hq_jvm|hq_C|hq_P|hq_B|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|ceo|cto|coo|cfo) return 0;; *) return 1;; esac; }
