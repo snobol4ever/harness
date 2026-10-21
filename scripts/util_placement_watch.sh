@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_placement_watch.sh -- THE RSP/RBP HOST COUNT, KEPT CURRENT PER ORIGIN TREE (Lon 2026-10-21, in-chat to the ceo, verbatim: "I want to see a
 # COUNT of RSP hosted locals and operands, and a COUNT of RBP hosted locals and operands. I should see that at every turn. As you fix the
-# programs I should see the numbers changing."; ceo CEO-1855).
+# programs I should see the numbers changing." · "I should also see a count of RSP resets at BETA and see the count go to ZERO."; ceo CEO-1855).
 #
 # The count is util_bb_placement_census.py's BB_HOSTS line per language over the committed-artifact programs (every benchmark and demo that
 # carries a .s), compiled by SCRIP at origin/main. A census takes minutes, so it never runs inside a turn: `kick` starts a measurement in the
@@ -16,12 +16,16 @@
 #
 # RECORD: /home/resources/progress/PLACEMENT.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, ops_rsp, ops_rbp,
 # ops_precarved, ops_none, loc_rsp, loc_rbp, loc_rbp_forced, loc_rbp_misplaced, loc_none, graphs (each distinct graph once).
+# BETA RESETS: /home/resources/progress/BETA_RESETS.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, beta_resets, functions,
+# programs -- util_rsp_reset_by_port_census.py over every committed-artifact program plus every Pascal, Raku, Snocone and Rebus demo and benchmark
+# source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
 # rc 0 shown/measured/nothing to do · rc 2 could not measure (named: fetch, worktree, build or census failed).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 W="/tmp/s4e-placement-$(basename "$ROOT")"
 REC=/home/resources/progress/PLACEMENT.tsv
+BREC=/home/resources/progress/BETA_RESETS.tsv
 LOCK="$W.lock"
 LOG="$W.log"
 HDR='when	scrip	corpus	harness	lang	ops_rsp	ops_rbp	ops_precarved	ops_none	loc_rsp	loc_rbp	loc_rbp_forced	loc_rbp_misplaced	loc_none	graphs'
@@ -30,9 +34,9 @@ tips() { for r in SCRIP corpus harness; do git -C "$ROOT/$r" rev-parse --short=9
 
 do_show() {
     if [ ! -s "$REC" ] || [ "$(wc -l < "$REC")" -lt 2 ]; then echo "PLACEMENT: no reading yet -- the first is measuring (util_placement_watch.sh)"; return 0; fi
-    python3 - "$REC" "$LOCK" "$(git -C "$ROOT/SCRIP" rev-parse --short=9 origin/main 2>/dev/null)" <<'PY'
+    python3 - "$REC" "$LOCK" "$(git -C "$ROOT/SCRIP" rev-parse --short=9 origin/main 2>/dev/null)" "$BREC" <<'PY'
 import sys, os, fcntl
-rec, lock, tip = sys.argv[1], sys.argv[2], sys.argv[3]
+rec, lock, tip, brec = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 rows = [l.rstrip('\n').split('\t') for l in open(rec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
 keys = []
 for r in rows:
@@ -69,6 +73,20 @@ if len(keys) > 1:
     p, _ = agg(keys[-2])
     d = lambda k: '%+d' % (t[k] - p[k])
     print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp')))
+if os.path.isfile(brec):
+    br = [l.rstrip('\n').split('\t') for l in open(brec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
+    bk = []
+    for r in br:
+        if not bk or bk[-1] != (r[0], r[1]):
+            bk.append((r[0], r[1]))
+    if bk:
+        cb = {r[4]: int(r[5]) for r in br if (r[0], r[1]) == bk[-1]}
+        tot = sum(cb.values())
+        prev = ''
+        if len(bk) > 1:
+            pb = sum(int(r[5]) for r in br if (r[0], r[1]) == bk[-2])
+            prev = ' (%+d since SCRIP %s)' % (tot - pb, bk[-2][1])
+        print('  RSP resets at beta @ SCRIP %s: %s%s -- %s' % (bk[-1][1], f(tot), prev, ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(cb.items(), key=lambda kv: -kv[1]))))
 PY
 }
 
@@ -106,6 +124,24 @@ for ln in open(out, encoding='utf-8'):
         cols = [v[k] for k in ('ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none')]
         sys.stdout.write('\t'.join([now, s, c, h, p[1]] + cols + [str(progs.get(p[1], 0))]) + '\n')
 PY
+    local A="$W/asm" i=0 lang f stem e
+    rm -rf "$A"; mkdir -p "$A"
+    { find "$W/corpus/benchmarks" "$W/corpus/demos" -name '*.s' | sort | while read -r f; do stem="${f%.s}"; for e in sno icn pl; do [ -f "$stem.$e" ] && echo "$e $stem.$e"; done; done
+      for e in pas raku sc reb; do find "$W/corpus/demos" "$W/corpus/benchmarks" -name "*.$e" | sort | sed "s|^|$e |"; done; } > "$A/list"
+    while read -r e f; do
+        case "$e" in sno) lang=snobol4;; icn) lang=icon;; pl) lang=prolog;; pas) lang=pascal;; raku) lang=raku;; sc) lang=snocone;; reb) lang=rebus;; esac
+        i=$((i+1)); mkdir -p "$A/$lang"
+        ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
+    done < "$A/list"
+    [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\n' > "$BREC"
+    for lang in $(ls "$A" | grep -v '^list$'); do
+        local n; n="$(ls "$A/$lang"/*.s 2>/dev/null | wc -l)"; [ "$n" -gt 0 ] || continue
+        local line; line="$(nice -n 10 python3 "$W/harness/scripts/util_rsp_reset_by_port_census.py" "$A/$lang"/*.s 2>>"$LOG" | grep '^RSP_RESET functions=')"
+        [ -n "$line" ] || { echo "REFUSE(2): rsp reset census measured nothing for $lang at $s" >>"$LOG"; continue; }
+        local b fn; b="$(echo "$line" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; fn="$(echo "$line" | grep -o 'functions=[0-9]*' | cut -d= -f2)"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" >> "$BREC"
+    done
+    rm -rf "$A"
     return 0
 }
 
