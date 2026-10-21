@@ -44,6 +44,11 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
   BB_PLACEMENT_CLASS <lang> <state>:<cause> <A|L> <kind> count=..
   BB_PLACEMENT_TESTS <lang>|total offspine=.. operand_test=.. local_test=.. standing=.. other=..   (other = off the spine, no test fails)
   BB_PLACEMENT_TESTS_WHY <lang> <test>:<why> count=..
+  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. home_without_test=.. test_without_home=..   (CEO-1854: an operand the compiler carves on the spine
+      AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
+      fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
+      read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends)
+  BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|nohome:<test> kind=<box kind> count=..
   BB_UNWIND <lang>|total rsp_loads=.. retry_restore=.. discard_restore=.. multi_pop=..   (CEO-1755/1759, from the emitted .s: see asm_unwind)
   BB_UNWIND_RSPLOAD <lang> <class> count=..   every rsp load by the label it sits under: restore_* is a RETRY loading rsp from a saved
       value (banned), discard_* a FENCE, ARBNO, cut or statement landing dropping rsp to a saved depth (allowed, counted apart)
@@ -62,9 +67,9 @@ SC = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
 ROOT = os.environ.get('S4E_HOME') or os.path.dirname(SC)
 SCRIP = os.path.join(SC, 'scrip')
 CORPUS = os.path.join(ROOT, 'corpus')
-EXT = {'.sno': 'snobol4', '.icn': 'icon', '.pl': 'prolog', '.sc': 'snocone', '.reb': 'rebus'}
+EXT = {'.sno': 'snobol4', '.icn': 'icon', '.pl': 'prolog', '.sc': 'snocone', '.reb': 'rebus', '.pas': 'pascal', '.raku': 'raku'}
 GEN_KINDS = {'SUSPEND', 'PROC_GEN', 'CREATE', 'ACTIVATE', 'CORET', 'COFAIL'}
-HOMES = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) (all|local)=(\S+) (?:kind=(\S+) )?home=(\S+) off=(-?\d+)$')
+HOMES = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) (all|local)=(\S+) (?:kind=(\S+) )?home=(\S+) off=(-?\d+)(?: xf=(-?\d+) xfwhy=(\S+))?$')
 RSPFX = re.compile(r'^\[RSPFX\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) rsp=(dynamic|renormal) why=(\S+) callee=(\S+)$')
 LOCALUSE = re.compile(r'^\[LOCALUSE\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) local=(\S+)$')
 STANDING = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) standing=(\d+) home=STANDING why=(\S+)$')
@@ -118,7 +123,7 @@ def homes_of(lang, src, tmp):
             continue
         gi = int(m.group(1))
         if m.group(3) == 'all':
-            nodes[(gi, int(m.group(4)))] = (m.group(5), m.group(6), int(m.group(7)))
+            nodes[(gi, int(m.group(4)))] = (m.group(5), m.group(6), int(m.group(7)), int(m.group(8)) if m.group(8) else -1, m.group(9) or '-')
         else:
             locs[(gi, m.group(4))] = (m.group(6), int(m.group(7)))
     return nodes, locs, fx
@@ -351,12 +356,12 @@ def analyse(lang, src, tmp, seen, seen_sec):
             h = nodes.get((g, int(i.split('_')[1])))
             if h is None:
                 continue
-            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i))
+            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4]))
         for vn in sorted(vslots.get(g, ())):
             h = locs.get((g, vn))
             if h is None:
                 continue
-            cells.append(('L', vn, h[0], ltest.get(vn), vn))
+            cells.append(('L', vn, h[0], ltest.get(vn), vn, -1, '-'))
         out.append({'name': gname[g], 'sig': sigs[g], 'cause': cause, 'emitted': emitted, 'cells': cells, 'n': len(ids)})
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
@@ -383,6 +388,7 @@ def main():
     cellrows = []
     tests = {l: collections.Counter() for l in langs}
     unw = {l: collections.Counter() for l in langs}
+    fhome = {l: collections.Counter() for l in langs}
     seen_sec = set()
     seen_standing = set()
     with tempfile.TemporaryDirectory() as td:
@@ -411,8 +417,19 @@ def main():
                 if not gr['emitted']:
                     t['unemitted'] += gr['n']
                     continue
-                for (tb, kind, home, forced, cid) in gr['cells']:
+                for (tb, kind, home, forced, cid, xf, xfwhy) in gr['cells']:
                     t['operands' if tb == 'A' else 'locals'] += 1
+                    if tb == 'A' and home == 'SPINE':
+                        fh = fhome[lang]
+                        if xf >= 0:
+                            fh['homes'] += 1
+                            fh[('why', xfwhy, kind)] += 1
+                            fh['agree' if forced else 'home_without_test'] += 1
+                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
+                        elif forced:
+                            fh['test_without_home'] += 1
+                            fh[('nohome', forced, kind)] += 1
+                            cellrows.append((lang, 'SPINE', 'spine_unhomed', 'operand', forced.split(':', 1)[1], gr['name'] + '@' + gr['sig'], tb, kind, cid))
                     if home in ('RBP', 'RSP_CARVED'):
                         tt = tests[lang]
                         ftest, fwhy = forced.split(':', 1) if forced else ('none', '-')
@@ -466,6 +483,11 @@ def main():
         for k, v in sorted(tt.items()):
             if k.startswith('why:'):
                 print('BB_PLACEMENT_TESTS_WHY %s %s count=%d' % (lang, k[4:], v))
+    for lang in langs:
+        fh = fhome[lang]
+        print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home']))
+        for k, v in sorted(((k, v) for k, v in fh.items() if isinstance(k, tuple)), key=lambda kv: -kv[1]):
+            print('BB_PLACEMENT_FRAMEHOME_WHY %s %s:%s kind=%s count=%d' % (lang, k[0], k[1], k[2], v))
     print('BB_PLACEMENT_TESTS total offspine=%d operand_test=%d local_test=%d standing=%d other=%d' % (tg['offspine'], tg['operand_test'], tg['local_test'], tg['standing'], tg['other']))
     ug = collections.Counter()
     for lang in langs:
