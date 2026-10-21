@@ -46,16 +46,20 @@ declare -F inventory_refuse >/dev/null 2>&1 || inventory_refuse() { echo "⛔ IN
 # rc 2 on a row that is not name<TAB>CLASS<TAB>evidence with CLASS one of NOT_SPITBOL_DIALECT (Lon's SPITBOL test, one outcome),
 # NEEDS_GRAPHICS_FACILITY (Lon's graphics word), NEEDS_TERMINAL, NEEDS_NETWORK or NEEDS_LOADFUNC (Lon's words below), DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27
 # (Lon's EXIT() word, CEO-1345), OUTSIDE_CLPFD (CEO-1593), NO_ORACLE_ANSWER (CEO-1696) or SCRIP_EXCEEDS_ORACLE (CEO-1710: the
-# oracle's answer comes from a fixed limit SCRIP grows past, or from an oracle defect its own upstream has fixed; Lon 2026-10-14).
+# oracle's answer comes from a fixed limit SCRIP grows past, or from an oracle defect its own upstream has fixed; Lon 2026-10-14) or
+# FAKEABLE_NO_OBSERVABLE (CEO-1869; Lon 2026-10-21 16:5x CDT, to the coo, "tighten, else exclude"): a rung entry the oracle answers with empty output and
+# rc 0 whose construct has NO observable a do-nothing engine lacks (a comment-only null program), so no output it could carry would still witness the
+# construct. ⛔ Only for such an entry -- never for one that can OUTPUT what it computed, which is tightened and its ref re-cut from the oracle. The
+# evidence names the oracle's measurement (what sbl -bf printed, and its rc).
 inventory_excluded_names() {
     local d="${1:-${INV_DIR:-}}" f
     f="$d/EXCLUDED.tsv"
     [ -f "$f" ] || return 0
     awk -F'\t' '
         $0 ~ /^#/ || NF == 0 { next }
-        NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "SCRIP_EXCEEDS_ORACLE") || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
+        NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE") || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
         { print $1 }
-        END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER or SCRIP_EXCEEDS_ORACLE<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
+        END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER, SCRIP_EXCEEDS_ORACLE or FAKEABLE_NO_OBSERVABLE<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
 }
 # inventory_is_excluded <pkgdir> <name> -- 0 when EXCLUDED.tsv names <name> (bare or package-relative), 1 otherwise.
 inventory_is_excluded() {
