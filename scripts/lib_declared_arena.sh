@@ -326,7 +326,10 @@ PY
 
 # declared_memory_table <all_csv> -- one line "entry<TAB>heap_kb<TAB>stack_kb" per entry declaring either (the other cell empty), with
 #   "<TAB>compile_args" after them when the entry declares compile switches; nothing when the file or every column is absent (every
-#   entry at the shipped default); rc 2 naming the cell on a refused cell.
+#   entry at the shipped default); rc 2 naming the cell on a refused cell. Two more cells follow compile_args (trailing empty fields are
+#   not printed, so a row declaring neither prints byte-for-byte as before): out_files (field 5, space-separated bare names) and stderr
+#   (field 6, "merged"), the harness's own columns validated by its own validators -- an entry whose answer is its TERMINAL lines and
+#   the files it writes (SPITBOL's arcget) declares them, and declared_answer_compose below gives every engine the same composed answer.
 declared_memory_table() {
   local csv="$1"
   [ -n "$csv" ] && [ -f "$csv" ] || return 0
@@ -347,19 +350,24 @@ for n, r in rows:
     ca = " ".join(h.validate_args_cell(r.get("compile_args"), "compile_args", where) or []) if "compile_args" in cols else ""
     if "run_args" in cols and h.validate_args_cell(r.get("run_args"), "run_args", where):
         sys.stderr.write("⛔ REFUSE(2) %s declares run_args, and this reader's runners pass argv from their own sidecars -- a declaration no reader honours is not graded\n" % where); sys.exit(2)
-    if kb is None and st is None and not ca:
+    of = " ".join(h.validate_out_files_cell(r.get("out_files"), where) or []) if "out_files" in cols else ""
+    se = "merged" if "stderr" in cols and h.validate_stderr_cell(r.get("stderr"), where) else ""
+    if kb is None and st is None and not ca and not of and not se:
         continue
     e = (r.get("entry") or "").strip()
     if not e or "\t" in e:
         sys.stderr.write("⛔ REFUSE(2) %s declares memory for an entry with no usable name (%r)\n" % (where, e)); sys.exit(2)
     if e in seen:
-        if seen[e][1] == (kb, st, ca):
+        if seen[e][1] == (kb, st, ca, of, se):
             continue
         sys.stderr.write("⛔ REFUSE(2) %s declares memory for %s differently from line %d -- one entry, one declaration (the same declaration repeated is one declaration)\n" % (where, e, seen[e][0])); sys.exit(2)
-    seen[e] = (n, (kb, st, ca))
-    out.append((e, "" if kb is None else kb, "" if st is None else st, ca))
-for e, kb, st, ca in out:
-    print("%s\t%s\t%s%s" % (e, kb, st, "\t" + ca if ca else ""))
+    seen[e] = (n, (kb, st, ca, of, se))
+    out.append((e, "" if kb is None else kb, "" if st is None else st, ca, of, se))
+for e, kb, st, ca, of, se in out:
+    f = [e, str(kb), str(st), ca, of, se]
+    while len(f) > 3 and f[-1] == "":
+        f.pop()
+    print("\t".join(f))
 PY
 }
 
@@ -432,6 +440,60 @@ declared_compile_args_from_table() {
   local tbl="$1" entry="$2"
   [ -n "$tbl" ] && [ -f "$tbl" ] || { echo "⛔ REFUSE(2) declared_compile_args_from_table: no declared-memory table at '${tbl}' -- build it with declared_memory_begin first" >&2; return 2; }
   awk -F'\t' -v e="$entry" '$1 == e { print $4; exit }' "$tbl"
+}
+
+# declared_out_files_from_table <table_file> <entry> -- the entry's declared out_files (the bare names of the files its run writes and whose
+#   bytes are part of its answer), one line of space-separated words; nothing when it declares none; rc 2 when the table is missing.
+declared_out_files_from_table() {
+  local tbl="$1" entry="$2"
+  [ -n "$tbl" ] && [ -f "$tbl" ] || { echo "⛔ REFUSE(2) declared_out_files_from_table: no declared-memory table at '${tbl}' -- build it with declared_memory_begin first" >&2; return 2; }
+  awk -F'\t' -v e="$entry" '$1 == e { print $5; exit }' "$tbl"
+}
+
+# declared_stderr_from_table <table_file> <entry> -- "merged" when the entry's answer is stdout and stderr as one stream, nothing otherwise.
+declared_stderr_from_table() {
+  local tbl="$1" entry="$2"
+  [ -n "$tbl" ] && [ -f "$tbl" ] || { echo "⛔ REFUSE(2) declared_stderr_from_table: no declared-memory table at '${tbl}' -- build it with declared_memory_begin first" >&2; return 2; }
+  awk -F'\t' -v e="$entry" '$1 == e { print $6; exit }' "$tbl"
+}
+
+# declared_answer_clear <table_file> <entry> <run_dir> -- delete the files the entry declares in out_files from the run directory, so a file an
+#   earlier engine's run wrote is never read as this engine's answer; a no-op for the entry that declares none.
+declared_answer_clear() {
+  local tbl="$1" entry="$2" dir="$3" of f
+  of="$(declared_out_files_from_table "$tbl" "$entry")" || return 2
+  for f in $of; do rm -f "$dir/$f"; done
+  return 0
+}
+
+# declared_answer_compose <table_file> <entry> <run_dir> <stdout_file> <stderr_file> -- turn one run's captured streams into the entry's
+#   ANSWER, in place in <stdout_file>, exactly as corpus_suite_harness.py composes it (its own _out_files_append is the body, never a second
+#   spelling): a stderr cell of "merged" appends the stderr bytes, and every out_files name appends that file from the run directory, a
+#   missing one as the harness spells it (<<out_files: NAME was not written>>). An entry that declares neither is left untouched, byte for
+#   byte. ⛔ rc 2 for "merged" when stdout AND stderr both hold bytes: the harness interleaves the two as one pipe does, this runner keeps
+#   them in two files and can only append, and a runner that cannot reproduce the contract refuses instead of grading a different one.
+declared_answer_compose() {
+  local tbl="$1" entry="$2" dir="$3" outf="$4" errf="$5" of se
+  of="$(declared_out_files_from_table "$tbl" "$entry")" || return 2
+  se="$(declared_stderr_from_table "$tbl" "$entry")" || return 2
+  [ -z "$of$se" ] && return 0
+  python3 - "$dir" "$outf" "$errf" "$se" "$of" "$entry" "$_LDA_HERE" <<'PY'
+import sys
+d, outf, errf, se, of, entry, here = sys.argv[1:8]
+sys.path.insert(0, here)
+import corpus_suite_harness as h
+out = open(outf, "rb").read()
+if se == "merged":
+    try:
+        err = open(errf, "rb").read()
+    except FileNotFoundError:
+        err = b""
+    if out and err:
+        sys.stderr.write("⛔ REFUSE(2) %s declares stderr=merged and wrote bytes to both streams -- the harness interleaves them as one pipe, this runner appends stderr after stdout and cannot reproduce that\n" % entry); sys.exit(2)
+    out += err
+out = h._out_files_append(out, d, of.split())
+open(outf, "wb").write(out)
+PY
 }
 
 # declared_row_in_table <table_file> <entry> -- rc 0 when the entry declares something in the declared-memory table, rc 1 when it
