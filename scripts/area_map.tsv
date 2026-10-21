@@ -180,7 +180,6 @@ DUPL	src/runtime/rtx/rtx_str.s
 SIZE	src/runtime/rtx/rtx_str.s
 # ---- Icon features: the scan boxes, generators and co-expressions ----
 scan	src/templates/bb/bb_gen_scan.cpp
-scan	src/templates/bb/bb_scan_sequence.cpp
 scan_with_tab	src/templates/bb/bb_scan_tab.cpp
 scan_with_tab	src/templates/bb/bb_gen_scan.cpp
 find	src/templates/bb/bb_scan_find.cpp
