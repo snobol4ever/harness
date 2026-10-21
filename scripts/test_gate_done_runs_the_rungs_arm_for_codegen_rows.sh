@@ -63,8 +63,10 @@ dirty_codegen() { echo '/* touched */' >> "$HOME_T/SCRIP/src/ir/IR.h"; }
 # tree trivially touches no codegen. They were green about NOTHING -- the exact "fixture that passes for a reason
 # the gate does not name" this suite exists to catch, produced while writing the suite. The assert is the cure:
 # a fixture that cannot establish its precondition must REFUSE, never quietly hand an arm a free pass.
-dirty_other()   { mkdir -p "$HOME_T/harness/scripts" || return 2
-  echo 'note' >> "$HOME_T/corpus/tests/notes.txt"; echo 'doc' >> "$HOME_T/harness/scripts/readme.md" || return 2
+# ⛔ THE HARNESS MOVE (CEO-1819, 10-17) re-pointed this write to harness/scripts/, a sibling repo outside SCRIP's git tree, so SCRIP
+# stayed clean and the assert below refused every run since (the coo's loop, bset-16, 10-21). The non-codegen path is SCRIP's own docs/.
+dirty_other()   { mkdir -p "$HOME_T/SCRIP/docs" || return 2
+  echo 'note' >> "$HOME_T/corpus/tests/notes.txt"; echo 'doc' >> "$HOME_T/SCRIP/docs/readme.md" || return 2
   git -C "$HOME_T/SCRIP" add -A >/dev/null 2>&1
   [ -n "$(git -C "$HOME_T/SCRIP" diff --name-only HEAD 2>/dev/null)" ] || return 2; }
 # dirty_codegen asserts its own precondition for the same reason, in the other direction.
