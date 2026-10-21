@@ -1101,7 +1101,9 @@ s4e_lane_owner_of_language() {
       # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (CEO-1870, 2026-10-21 17:3x CDT, Lon in-chat to the ceo, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
       # hq_pascal, RAKU to hq_raku; snocone and rebus stay the ceo's, who assigns. The two arms ceo for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
        pascal)   printf 'hq_pascal';;
-       snocone)  printf 'ceo';;
+      # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (CEO-1871, 2026-10-21 17:4x CDT, Lon in-chat to the ceo, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
+      # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the ceo's. The arm ceo for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+       snocone)  printf 'hq_snocone';;
        rebus)    printf 'ceo';;
        raku)     printf 'hq_raku';;
     esac
