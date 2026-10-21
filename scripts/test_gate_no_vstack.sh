@@ -21,7 +21,7 @@ strict=1   # V2-5 (gate honesty): STRICT IS THE DEFAULT (VSX-8 is the hard gate 
 [ "$strict" = "0" ] && echo "⛔ --informational: verdict NOT enforced."
 # ⭐ V2-5 COVERAGE FLOOR (gate honesty): examining NOTHING must never read the same as examining everything.
 . "$HERE/lib_gate.sh"
-gate_floor "$(ls "$HERE"/../src/emitter/*.c "$HERE"/../src/emitter/*.cpp "$HERE"/../src/templates/{bb,xa}/*.cpp "$HERE"/../src/runtime/*.c 2>/dev/null | wc -l)" 100 "source files under src/ -- an empty tree is UNPROVEN(2), not a pass"
+gate_floor "$(ls "$HERE"/../../SCRIP/src/emitter/*.c "$HERE"/../../SCRIP/src/emitter/*.cpp "$HERE"/../../SCRIP/src/templates/{bb,xa}/*.cpp "$HERE"/../../SCRIP/src/runtime/*.c 2>/dev/null | wc -l)" 100 "source files under src/ -- an empty tree is UNPROVEN(2), not a pass"
 
 
 # strip_comments FILE — FILE with /* ... */ block comments and // line comments removed (code only, so a

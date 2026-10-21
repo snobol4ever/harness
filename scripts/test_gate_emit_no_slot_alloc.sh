@@ -8,7 +8,7 @@ cd "$HERE/../../SCRIP"
 n=0
 # ⭐ V2-5 GATE HONESTY: examining nothing must exit UNPROVEN(2), never read as a pass.
 . "$HERE/lib_gate.sh"
-gate_floor "$(ls "$HERE"/../src/emitter/*.cpp "$HERE"/../src/templates/{bb,xa}/*.cpp 2>/dev/null | wc -l)" 100 "emitter/template source files"
+gate_floor "$(ls "$HERE"/../../SCRIP/src/emitter/*.cpp "$HERE"/../../SCRIP/src/templates/{bb,xa}/*.cpp 2>/dev/null | wc -l)" 100 "emitter/template source files"
 for f in $(grep -rlE 'bb_slot_alloc16|bb_slot_claim|bb_flat_cursor_reserve' src --include=*.c --include=*.cpp --include=*.h 2>/dev/null); do
   c=$(gcc -fpreprocessed -dD -E -P "$f" 2>/dev/null | grep -cE '\bbb_slot_alloc16(_or_get)?\b|\bbb_slot_claim\b|\bbb_flat_cursor_reserve\b')
   n=$((n+c))
