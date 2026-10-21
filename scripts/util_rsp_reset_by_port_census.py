@@ -8,6 +8,7 @@ import collections, hashlib, re, sys
 LAB = re.compile(r'^([^\s#][^\s:]*):\s*(.*)$')
 BOX = re.compile(r'^n\d+_([a-z0-9_]+?)_(α|β|γ|ω|bx)$')
 INNER = re.compile(r'^\.L([a-z0-9_]+?)_(α|β|γ|ω)_\d+(?:_\d+)?$')
+GPORT = re.compile(r'^\.L(\S+?)_(α|β|γ|ω)$')
 PORT = {'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'ω': 'omega', 'bx': 'box'}
 RESET = re.compile(r'^(?:mov\s+rsp\s*,|lea\s+rsp\s*,\s*\[(?!\s*rsp\b)|xchg\s+rsp\b|xchg\s+\w+\s*,\s*rsp\b|and\s+rsp\b|pop\s+rsp\b|leave\b)')
 
@@ -35,6 +36,8 @@ def main():
                         fn, owner = lab[4:], ('prologue', '-')
                     elif mb:
                         owner = (PORT[mb.group(2)], mb.group(1))
+                    elif GPORT.match(lab):
+                        owner = ('graph-' + PORT[GPORT.match(lab).group(2)], '-')
                     elif not lab.startswith('.L'):
                         owner = ('graph-protocol', '-') if (lab.endswith('_step') or '_α_body' in lab or lab.startswith('$')) else ('entry-glue', '-')
                 for part in rest.split('#')[0].split(';'):

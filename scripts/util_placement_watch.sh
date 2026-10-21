@@ -145,14 +145,16 @@ PY
         ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
     done < "$A/list"
     [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\tbeta_allocs\n' > "$BREC"
+    local BTMP="$W/beta_rows.tmp"; : > "$BTMP"
     for lang in $(ls "$A" | grep -v '^list$'); do
         local n; n="$(ls "$A/$lang"/*.s 2>/dev/null | wc -l)"; [ "$n" -gt 0 ] || continue
         local line; line="$(nice -n 10 python3 "$W/harness/scripts/util_rsp_reset_by_port_census.py" "$A/$lang"/*.s 2>>"$LOG" | grep '^RSP_RESET functions=')"
         [ -n "$line" ] || { echo "REFUSE(2): rsp reset census measured nothing for $lang at $s" >>"$LOG"; continue; }
         local b fn; b="$(echo "$line" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; fn="$(echo "$line" | grep -o 'functions=[0-9]*' | cut -d= -f2)"
         local ba; ba="$(nice -n 10 python3 "$W/harness/scripts/util_alloc_by_port_census.py" "$A/$lang.alloc.tsv" "$A/$lang"/*.s 2>>"$LOG" | grep '^NET_PORT port=beta ' | grep -o 'allocating=[0-9]*' | cut -d= -f2)"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" "${ba:--1}" >> "$BREC"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" "${ba:--1}" >> "$BTMP"
     done
+    cat "$BTMP" >> "$BREC"; rm -f "$BTMP"
     rm -rf "$A"
     return 0
 }

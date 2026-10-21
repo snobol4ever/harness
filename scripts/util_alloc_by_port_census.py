@@ -13,6 +13,7 @@ import collections, hashlib, re, sys
 LAB = re.compile(r'^([^\s#][^\s:]*):\s*(.*)$')
 BOX = re.compile(r'^n\d+_([a-z0-9_]+?)_(α|β|γ|ω|bx)$')
 INNER = re.compile(r'^\.L([a-z0-9_]+?)_(α|β|γ|ω)_\d+(?:_\d+)?$')
+GPORT = re.compile(r'^\.L(\S+?)_(α|β|γ|ω)$')
 PORT = {'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'ω': 'omega', 'bx': 'box'}
 RSPW = re.compile(r'^(?:mov|lea|xchg|and|or|cmov\w+)\s+rsp\s*,|^leave\b|^pop\s+rsp\b')
 
@@ -74,6 +75,8 @@ def main():
                         if live and d < 0 and owner and owner[0] != 'prologue':
                             worst = min(worst, d)
                         close(); owner = (PORT[mb.group(2)], mb.group(1)); d = 0; live = True; worst = 0
+                    elif GPORT.match(lab):
+                        close(); owner = ('graph-' + PORT[GPORT.match(lab).group(2)], '-'); d = 0; live = True; worst = 0
                     elif not lab.startswith('.L'):
                         close(); owner = None; live = False
                 if owner is None or not live:
