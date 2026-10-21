@@ -79,9 +79,12 @@ pa = t['prealloc'] if all(v['prealloc'] >= 0 for v in per.values()) else None
 print('  PRE-ALLOCATIONS: %s (frame slots granted to a non-RBP box %s, operands carved at entry %s, locals carved at entry that pass both tests %s)' % (f(pa), f(t['ops_prealloc']), f(t['ops_precarved']), f(t['loc_rbp_misplaced'])) if pa is not None else '  PRE-ALLOCATIONS: not in this reading (the next one carries it)')
 print('  ' + ' · '.join('%s RSP %s/%s RBP %s/%s' % (l, f(v['ops_rsp']), f(v['loc_rsp']), f(v['ops_rbp']), f(v['loc_rbp'])) for l, v in sorted(per.items())) + '  (operands/locals)')
 if len(keys) > 1:
-    p, _ = agg(keys[-2])
+    p, pper = agg(keys[-2])
     d = lambda k: '%+d' % (t[k] - p[k])
-    print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s | pre-allocations %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp'), d('prealloc') if p.get('prealloc', -1) >= 0 and t.get('prealloc', -1) >= 0 else 'n/a'))
+    if sorted(pper) != sorted(per):
+        print('  since SCRIP %s: no delta -- the population changed (%d languages then, %d now), so the two readings count different programs' % (keys[-2][1], len(pper), len(per)))
+    else:
+        print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s | pre-allocations %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp'), d('prealloc') if p.get('prealloc', -1) >= 0 and t.get('prealloc', -1) >= 0 else 'n/a'))
 if os.path.isfile(brec):
     br = [l.rstrip('\n').split('\t') for l in open(brec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
     bk = []
