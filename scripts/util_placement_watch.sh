@@ -20,7 +20,8 @@
 # PER BOX and at ALPHA at EACH BOX.") = ops_prealloc (a box granted a frame slot at entry that is not its RBP home) + ops_precarved (an operand
 # carved at entry) + loc_rbp_misplaced (a local carved at entry that passes both tests).
 # BETA RESETS: /home/resources/progress/BETA_RESETS.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, beta_resets, functions,
-# programs -- util_rsp_reset_by_port_census.py over every committed-artifact program plus every Pascal, Raku, Snocone and Rebus demo and benchmark
+# programs, beta_allocs (Lon: "I'd like to also see a count of ALLOCATIONS at BETA." -- reported, not forbidden: util_alloc_by_port_census.py's
+# beta segments whose code leaves rsp below where it found it) -- util_rsp_reset_by_port_census.py over every committed-artifact program plus every Pascal, Raku, Snocone and Rebus demo and benchmark
 # source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
 # rc 0 shown/measured/nothing to do · rc 2 could not measure (named: fetch, worktree, build or census failed).
 set -u
@@ -88,12 +89,15 @@ if os.path.isfile(brec):
             bk.append((r[0], r[1]))
     if bk:
         cb = {r[4]: int(r[5]) for r in br if (r[0], r[1]) == bk[-1]}
+        ca = {r[4]: int(r[8]) for r in br if (r[0], r[1]) == bk[-1] and len(r) > 8 and int(r[8]) >= 0}
         tot = sum(cb.values())
         prev = ''
         if len(bk) > 1:
             pb = sum(int(r[5]) for r in br if (r[0], r[1]) == bk[-2])
             prev = ' (%+d since SCRIP %s)' % (tot - pb, bk[-2][1])
         print('  RSP resets at beta @ SCRIP %s: %s%s -- %s' % (bk[-1][1], f(tot), prev, ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(cb.items(), key=lambda kv: -kv[1]))))
+        if ca:
+            print('  allocations at beta (reported, allowed): %s -- %s' % (f(sum(ca.values())), ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(ca.items(), key=lambda kv: -kv[1]))))
 PY
 }
 
@@ -140,13 +144,14 @@ PY
         i=$((i+1)); mkdir -p "$A/$lang"
         ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
     done < "$A/list"
-    [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\n' > "$BREC"
+    [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\tbeta_allocs\n' > "$BREC"
     for lang in $(ls "$A" | grep -v '^list$'); do
         local n; n="$(ls "$A/$lang"/*.s 2>/dev/null | wc -l)"; [ "$n" -gt 0 ] || continue
         local line; line="$(nice -n 10 python3 "$W/harness/scripts/util_rsp_reset_by_port_census.py" "$A/$lang"/*.s 2>>"$LOG" | grep '^RSP_RESET functions=')"
         [ -n "$line" ] || { echo "REFUSE(2): rsp reset census measured nothing for $lang at $s" >>"$LOG"; continue; }
         local b fn; b="$(echo "$line" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; fn="$(echo "$line" | grep -o 'functions=[0-9]*' | cut -d= -f2)"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" >> "$BREC"
+        local ba; ba="$(nice -n 10 python3 "$W/harness/scripts/util_alloc_by_port_census.py" "$A/$lang.alloc.tsv" "$A/$lang"/*.s 2>>"$LOG" | grep '^NET_PORT port=beta ' | grep -o 'allocating=[0-9]*' | cut -d= -f2)"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" "${ba:--1}" >> "$BREC"
     done
     rm -rf "$A"
     return 0
