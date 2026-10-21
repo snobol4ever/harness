@@ -119,7 +119,7 @@ fi
 # ---------------------------------------------------------------------------------------------------------
 # (d) ANSWER ARM: the witness still agrees with the icont oracle, at a collection count of zero and under stress.
 arms=$((arms+1))
-ORACLE="${ICONT:-/home/resources/icon-build/bin/icont}"
+ORACLE="${ICONT:-/home/resources/icon-master/bin/icont}"
 if [ -x "$ORACLE" ]; then
     ( cd "$W" && "$ORACLE" -s g.icn -x >ref.txt 2>&1 )
     z=$(SCRIP_HEAP_MB=512 timeout -k 5 60 ./scrip "$W/g.icn" 2>/dev/null)

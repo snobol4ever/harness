@@ -234,15 +234,10 @@ gprolog_output_filter() {
 # must be LOUD on stderr with a non-zero return, never a silent empty string a caller can string-
 # concat into a broken command line.
 # Canonical shared build (verified executable this session): /home/resources/icon-master/bin/{icont,iconx}.
-# ⭐ CORRECTED s266 by hq_C, who created it: /home/resources/icon-build is NOT a separate tree -- it is a
-# SYMLINK to /home/resources/icon-master (`ls -ld` says so). The md5s match because they are the same file,
-# so the divergent-shared-oracle hazard flagged here cannot occur by construction: there is nothing to
-# rebuild independently. ⛔ DO NOT "fix" this by deleting the symlink -- several Icon scripts default their
-# oracle to "$S4A/icon-build" (honest_icon_correctness.sh, scorecard_icon.sh ORACLE_BIN), and removing it
-# breaks them while these accessors are still being adopted. The symlink exists precisely so those callers
-# resolve to the one canonical tree instead of guessing. ⭐ The original note's instinct was right and worth
-# keeping in spirit -- two oracle paths IS the hazard shape, and it deserved the flag; what makes it safe
-# here is that one path is a link to the other, which `ls -l` answers and md5 cannot.
+# ⭐ ONE PATH, NO ALIAS (ceo CEO-1853, 2026-10-21; Lon in-chat to the ceo, verbatim: "We use proper absolute and relative paths."
+# · "I am concerned only with ones we create."): /home/resources/icon-build was a symlink to icon-master that hq_C made in s266
+# so callers defaulting to it would land on the one tree. Every caller now names /home/resources/icon-master and the link is
+# removed; test_gate_no_symlinks.sh ARM 5 keeps the top level of /home/resources free of links we make.
 icont_bin() {
     local c="/home/resources/icon-master/bin/icont"
     if [ ! -x "$c" ]; then
