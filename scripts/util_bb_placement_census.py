@@ -52,7 +52,9 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
   BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
       (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
       mirrors its spine cell to a frame slot; a local is RBP-hosted when it is a frame slot, forced = it fails the local test, misplaced =
-      it does not. util_placement_watch.sh records these per tree in /home/resources/progress/PLACEMENT.tsv.)
+      it does not. ops_prealloc = a box granted a frame slot at entry whose cell is NOT an RBP home (on the spine, or no cell): a PRE-ALLOCATION
+      (Lon 2026-10-21: "SPINE allocations MUST ONLY be allocated PER BOX and at ALPHA at EACH BOX."); the pre-allocation count is
+      ops_prealloc + ops_precarved + loc_rbp_misplaced. util_placement_watch.sh records these per tree in /home/resources/progress/PLACEMENT.tsv.)
   BB_UNWIND <lang>|total rsp_loads=.. retry_restore=.. discard_restore=.. multi_pop=..   (CEO-1755/1759, from the emitted .s: see asm_unwind)
   BB_UNWIND_RSPLOAD <lang> <class> count=..   every rsp load by the label it sits under: restore_* is a RETRY loading rsp from a saved
       value (banned), discard_* a FENCE, ARBNO, cut or statement landing dropping rsp to a saved depth (allowed, counted apart)
@@ -360,12 +362,12 @@ def analyse(lang, src, tmp, seen, seen_sec):
             h = nodes.get((g, int(i.split('_')[1])))
             if h is None:
                 continue
-            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4]))
+            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4], h[2]))
         for vn in sorted(vslots.get(g, ())):
             h = locs.get((g, vn))
             if h is None:
                 continue
-            cells.append(('L', vn, h[0], ltest.get(vn), vn, -1, '-'))
+            cells.append(('L', vn, h[0], ltest.get(vn), vn, -1, '-', h[1]))
         out.append({'name': gname[g], 'sig': sigs[g], 'cause': cause, 'emitted': emitted, 'cells': cells, 'n': len(ids)})
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
@@ -422,9 +424,11 @@ def main():
                 if not gr['emitted']:
                     t['unemitted'] += gr['n']
                     continue
-                for (tb, kind, home, forced, cid, xf, xfwhy) in gr['cells']:
+                for (tb, kind, home, forced, cid, xf, xfwhy, off) in gr['cells']:
                     t['operands' if tb == 'A' else 'locals'] += 1
                     hs = hosts[lang]
+                    if tb == 'A' and home in ('SPINE', 'NONE') and off >= 0 and xf < 0:
+                        hs['ops_prealloc'] += 1
                     if tb == 'A':
                         hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf >= 0)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
                     elif home == 'SPINE':
@@ -500,8 +504,9 @@ def main():
                 print('BB_PLACEMENT_TESTS_WHY %s %s count=%d' % (lang, k[4:], v))
     for lang in langs:
         hs = hosts[lang]
-        print('BB_HOSTS %s ops_rsp=%d ops_rbp=%d ops_precarved=%d ops_none=%d loc_rsp=%d loc_rbp=%d loc_rbp_forced=%d loc_rbp_misplaced=%d loc_none=%d' %
-              (lang, hs['ops_rsp'], hs['ops_rbp'], hs['ops_precarved'], hs['ops_none'], hs['loc_rsp'], hs['loc_rbp'], hs['loc_rbp_forced'], hs['loc_rbp_misplaced'], hs['loc_none']))
+        print('BB_HOSTS %s ops_rsp=%d ops_rbp=%d ops_precarved=%d ops_none=%d loc_rsp=%d loc_rbp=%d loc_rbp_forced=%d loc_rbp_misplaced=%d loc_none=%d ops_prealloc=%d' %
+              (lang, hs['ops_rsp'], hs['ops_rbp'], hs['ops_precarved'], hs['ops_none'], hs['loc_rsp'], hs['loc_rbp'], hs['loc_rbp_forced'], hs['loc_rbp_misplaced'], hs['loc_none'],
+               hs['ops_prealloc']))
     for lang in langs:
         fh = fhome[lang]
         print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home']))

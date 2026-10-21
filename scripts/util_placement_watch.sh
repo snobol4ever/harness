@@ -15,7 +15,10 @@
 #   util_placement_watch.sh run     measure now, in the foreground (what kick runs)
 #
 # RECORD: /home/resources/progress/PLACEMENT.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, ops_rsp, ops_rbp,
-# ops_precarved, ops_none, loc_rsp, loc_rbp, loc_rbp_forced, loc_rbp_misplaced, loc_none, graphs (each distinct graph once).
+# ops_precarved, ops_none, loc_rsp, loc_rbp, loc_rbp_forced, loc_rbp_misplaced, loc_none, graphs (each distinct graph once), ops_prealloc.
+# PRE-ALLOCATIONS (Lon 2026-10-21: "I should see a count of pre-allocations and see it go to ZERO. SPINE allocations MUST ONLY be allocated
+# PER BOX and at ALPHA at EACH BOX.") = ops_prealloc (a box granted a frame slot at entry that is not its RBP home) + ops_precarved (an operand
+# carved at entry) + loc_rbp_misplaced (a local carved at entry that passes both tests).
 # BETA RESETS: /home/resources/progress/BETA_RESETS.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, beta_resets, functions,
 # programs -- util_rsp_reset_by_port_census.py over every committed-artifact program plus every Pascal, Raku, Snocone and Rebus demo and benchmark
 # source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
@@ -28,7 +31,7 @@ REC=/home/resources/progress/PLACEMENT.tsv
 BREC=/home/resources/progress/BETA_RESETS.tsv
 LOCK="$W.lock"
 LOG="$W.log"
-HDR='when	scrip	corpus	harness	lang	ops_rsp	ops_rbp	ops_precarved	ops_none	loc_rsp	loc_rbp	loc_rbp_forced	loc_rbp_misplaced	loc_none	graphs'
+HDR='when	scrip	corpus	harness	lang	ops_rsp	ops_rbp	ops_precarved	ops_none	loc_rsp	loc_rbp	loc_rbp_forced	loc_rbp_misplaced	loc_none	graphs	ops_prealloc'
 
 tips() { for r in SCRIP corpus harness; do git -C "$ROOT/$r" rev-parse --short=9 origin/main 2>/dev/null || echo '?'; done | tr '\n' ' '; }
 
@@ -48,7 +51,9 @@ def agg(k):
     for r in rows:
         if (r[0], r[1]) != k:
             continue
-        v = dict(zip(['ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none', 'graphs'], map(int, r[5:15])))
+        v = dict(zip(['ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none', 'graphs', 'ops_prealloc'], map(int, r[5:16])))
+        v.setdefault('ops_prealloc', -1)
+        v['prealloc'] = v['ops_prealloc'] + v['ops_precarved'] + v['loc_rbp_misplaced'] if v['ops_prealloc'] >= 0 else -1
         per[r[4]] = v
         for kk, vv in v.items():
             t[kk] = t.get(kk, 0) + vv
@@ -68,11 +73,13 @@ f = lambda n: format(n, ',')
 state = '' if tip == cur[1] else (' -- measuring origin %s now' % tip if busy else ' -- origin is at %s, not yet measured' % tip)
 print('PLACEMENT @ SCRIP %s, read %s, %d graphs of the committed Icon/Prolog/SNOBOL4 programs%s' % (cur[1], cur[0][11:16], t['graphs'], state))
 print('  operands: RSP %s  RBP %s   |   locals: RSP %s  RBP %s (%s forced, %s misplaced)' % (f(t['ops_rsp']), f(t['ops_rbp']), f(t['loc_rsp']), f(t['loc_rbp']), f(t['loc_rbp_forced']), f(t['loc_rbp_misplaced'])))
+pa = t['prealloc'] if all(v['prealloc'] >= 0 for v in per.values()) else None
+print('  PRE-ALLOCATIONS: %s (frame slots granted to a non-RBP box %s, operands carved at entry %s, locals carved at entry that pass both tests %s)' % (f(pa), f(t['ops_prealloc']), f(t['ops_precarved']), f(t['loc_rbp_misplaced'])) if pa is not None else '  PRE-ALLOCATIONS: not in this reading (the next one carries it)')
 print('  ' + ' · '.join('%s RSP %s/%s RBP %s/%s' % (l, f(v['ops_rsp']), f(v['loc_rsp']), f(v['ops_rbp']), f(v['loc_rbp'])) for l, v in sorted(per.items())) + '  (operands/locals)')
 if len(keys) > 1:
     p, _ = agg(keys[-2])
     d = lambda k: '%+d' % (t[k] - p[k])
-    print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp')))
+    print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s | pre-allocations %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp'), d('prealloc') if p.get('prealloc', -1) >= 0 and t.get('prealloc', -1) >= 0 else 'n/a'))
 if os.path.isfile(brec):
     br = [l.rstrip('\n').split('\t') for l in open(brec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
     bk = []
@@ -122,7 +129,7 @@ for ln in open(out, encoding='utf-8'):
         p = ln.split()
         v = dict(x.split('=') for x in p[2:])
         cols = [v[k] for k in ('ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none')]
-        sys.stdout.write('\t'.join([now, s, c, h, p[1]] + cols + [str(progs.get(p[1], 0))]) + '\n')
+        sys.stdout.write('\t'.join([now, s, c, h, p[1]] + cols + [str(progs.get(p[1], 0)), v.get('ops_prealloc', '-1')]) + '\n')
 PY
     local A="$W/asm" i=0 lang f stem e
     rm -rf "$A"; mkdir -p "$A"
