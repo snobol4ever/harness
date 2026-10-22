@@ -9,7 +9,7 @@ picker (`s4e_msg.sh next`) serves Lon's order with no new column and no bus chan
   correctness   rank 1   a suite entry, a gate, a ladder rung or an oracle diff that reads red  (rank 0 stays 0: a blocking-gate red)
   instrument    rank 2   the harness, the bus, a census, a runner's own defect
   law           rank 2   a ruling, a digest, a GOAL/ARCH page
-  speed         rank 3   a bench bar, a multiple, callgrind, and the whole RSP/RBP placement programme
+  speed         rank 3   a bench bar, a multiple, callgrind (the RSP/RBP placement programme is CORRECTNESS since CEO-1895)
   bootstrap     rank 3   the Snocone bootstrap parsers replacing the C parsers (after speed, CEO-1562)
 `classify` prints the proposal (class, old rank, new rank per row) and with --apply writes `CLASS: <class>` into each baton (after its
 LINKS line, replacing an older CLASS line) and the new rank into QUEUE.tsv in binary under the bus's .mint.lock, touching only the rank
@@ -43,7 +43,7 @@ def classify(topic, t):
     if re.match(r"^(law|rules|protocol|digest|announce)-", tl) or (dw and re.search(r"grep .*(GOAL-|RULES\.md|ARCH-|MASTER-PLAN)", donewhen(t)) and not re.search(r"test_gate_|corpus_suite_harness|\./scrip", dw)): return "law"
     if re.search(r"bootstrap|parser-sc|parsers-match|self-hosted-parser|the-seven-self-hosted", tl): return "bootstrap"
     if re.search(r"^(instruments?|harness|gate|coo|s4e|donewhen|regen|bus|postoffice|queue|census|handoff|runner|modules|fleet|relay)-|-instrument-|the-loop-|the-dispatch-probe|results-tsv|score-row|suite-table-shows|housekeeping", tl) or re.search(r"selftest|util_queue_|util_gate_wiring|s4e_msg\.sh|util_suite_banner|util_score_row", dw): return "instrument"
-    if re.search(r"-speed-|speed-|bench|perf|callgrind|clock|prealloc|pre-alloc|placement|-rsp-|-rbp-|rsp-spine|frame-regime|frame-home|rbp-home|zd-check|zd-planner|zetas-|multiple-of|instructions-in|slower|faster|times-|-x-spitbol|-percent-of", tl) or re.search(r"bench_|placement_census|no_spine_preallocation|frame_homes_agree|rsp_reset_by_port|zd_check|callgrind|lib_perf_fmt", dw): return "speed"
+    if re.search(r"-speed-|speed-|bench|perf|callgrind|clock|multiple-of|instructions-in|slower|faster|times-|-x-spitbol|-percent-of", tl) or re.search(r"bench_|callgrind|lib_perf_fmt", dw): return "speed"
     if re.search(r"ungraded|ungradable|needs-driver|driver-rows|drivers?-for|inventory|runner-wiring|grades-the-|oracle-invocation|denominator|no-way-to|shipped|reach-their-full|is-graded|get-graded|ported-to", tl) or re.search(r"UNGRADED\.tsv|UNGRADABLE\.tsv|NEEDS_DRIVER|INVENTORY", donewhen(t)): return "completeness"
     return "correctness"
 def transcript_age_h(seat):
