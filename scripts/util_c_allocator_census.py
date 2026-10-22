@@ -50,7 +50,7 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
 FORBIDDEN = ("malloc", "calloc", "realloc", "free")
 DESTINATIONS = {
     "ROOTED-HEAP": ("rt_wsb_alloc", "rt_ws_alloc_descr", "rt_wsb_realloc", "rt_pvec_alloc", "rt_pvec_realloc", "rt_pl_struct_alloc", "rt_pm_struct_alloc"),
-    "ARENA":       ("ct_alloc", "ct_zalloc", "ct_grow", "ct_strdup", "ct_strndup", "ct_drop", "ct_calloc", "ct_realloc"),
+    "ARENA":       ("ct_alloc", "ct_try_alloc", "ct_zalloc", "ct_grow", "ct_strdup", "ct_strndup", "ct_drop", "ct_calloc", "ct_realloc"),
     "MMAP":        ("mmap",),
 }
 SRC_EXT = (".c", ".h", ".cpp", ".hpp", ".cc", ".S", ".s", ".y", ".l")
