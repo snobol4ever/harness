@@ -23,7 +23,16 @@ WHAT THE GENERATED PROGRAM DOES, IN ORDER:
      quiet body whose output was lost (a capture that reads empty) or that computes something else fails; mismatched= counts
      repetitions whose capture differs from the first.
 
-REFUSED BY NAME (no silent fallback): a kernel that reads stdin ($*IN, get, lines, slurp, prompt); an identifier spelled
+THE SHAPES THE WRAPPER CARRIES (hq_raku 2026-10-21, row raku-every-suite-to-100-under-nonet-ceo-1266; test_gate_bench_wrap_raku_wraps_a_main_kernel_a_multiline_say_and_file_scope_state.sh):
+  * `sub MAIN`: never in the generated program as MAIN (the runtime would call it again at the end, after the repetitions had advanced the state it reads). It enters twice, renamed:
+    bench_tmain (verbatim; bench_test calls it last, so the test's stdout is the .ref) and bench_qmain (its output calls quiet; bench_quiet calls it).
+  * a string literal that runs over several lines in a say/put/print line is one logical line, the newlines kept; an output line with no semicolon before a closing brace is terminated;
+    a bare `.say` captures `$_`.
+  * a top-level `my` (one plain variable, optionally typed) that a hoisted declaration READS and does not declare itself is declared once at file scope (untyped) and its statement
+    becomes an assignment, so the hoisted code sees the same variable and every repetition starts again from the initial value.
+  * `slurp(FILE)` reads a named file and is repeatable; only `slurp()` with no argument and $*IN are stdin.
+
+REFUSED BY NAME (no silent fallback): a kernel that reads stdin ($*IN, get, lines, slurp(), prompt); an identifier spelled
 bench_...; an output call that is not a whole statement (`say` inside a block, `.say` / `.print` method forms inside an
 expression, `printf`, `sprintf`-less formats); a hoisted declaration that itself prints (its output could not be made quiet).
 
@@ -36,11 +45,13 @@ import sys
 USE = re.compile(r'^use\s')
 DECL = re.compile(r'^(sub|multi|proto|class|role|grammar|enum|constant|unit|module)\s')
 MODS = r'(\s+(for|if|unless|while|until|given|with|without)\s.*)?'
-OUT_LINE = re.compile(r'^(\s*)(say|put|print)\s+(.*?)' + MODS + r';\s*(#.*)?$')
-METHOD_LINE = re.compile(r'^(\s*)(.*?)\.(say|put|print)\s*(\(\s*\))?' + MODS + r';\s*(#.*)?$')
+OUT_LINE = re.compile(r'^(\s*)(say|put|print)\s+(.*?)' + MODS + r';\s*(#.*)?$', re.S)
+METHOD_LINE = re.compile(r'^(\s*)(.*?)\.(say|put|print)\s*(\(\s*\))?' + MODS + r';\s*(#.*)?$', re.S)
+MAIN_DECL = re.compile(r'^sub\s+MAIN\b')
+MY_TOP = re.compile(r'^my\s+(?:([A-Z][\w:]*)\s+)?([$@%][\w-]+)\s*(?==|;|$)')
 OUT_WORD = re.compile(r'(?<![A-Za-z0-9_.\-])(say|put|print|printf)(?![A-Za-z0-9_\-])')
 METHOD_OUT = re.compile(r'\.(say|put|print|printf)\b')
-STDIN = re.compile(r'\$\*IN\b|(?<![A-Za-z0-9_\-])(get|lines|slurp|prompt)\s*\(')
+STDIN = re.compile(r'\$\*IN\b|(?<![A-Za-z0-9_\-])(get|lines|prompt)\s*\(|(?<![A-Za-z0-9_\-])slurp\s*\(\s*\)')
 BENCH = re.compile(r'(?<![A-Za-z0-9_])bench_', re.I)
 
 
@@ -52,6 +63,59 @@ def refuse(msg):
 def code(l):
     """the line without a trailing # comment (a # inside a string is rare in these kernels; a false read only refuses)"""
     return l.split('#', 1)[0]
+
+
+def open_quote(l, q):
+    """the quote still open at the end of the physical line `l` when it starts in state `q` (None, '"' or "'"); a # outside a string ends the scan"""
+    i = 0
+    while i < len(l):
+        ch = l[i]
+        if q:
+            if ch == '\\' and i + 1 < len(l):
+                i += 1
+            elif ch == q:
+                q = None
+        elif ch == '#':
+            break
+        elif ch in '"\'':
+            q = ch
+        i += 1
+    return q
+
+
+def join_strings(lines):
+    """one logical line for an OUTPUT statement whose string literal runs over several physical lines (a quote still open at the end of
+    a say/put/print line pulls the next line in, the newline kept, so the literal's bytes are exactly as written). Only an output line is
+    read for quotes: a quote inside a regex character class (`<-["\\\\]>`) is not a string and must not join anything. A kernel with no
+    such literal comes back unchanged"""
+    out, i = [], 0
+    while i < len(lines):
+        cur = lines[i]
+        q = open_quote(cur, None) if re.match(r'\s*(say|put|print)\b', cur) else None
+        while q and i + 1 < len(lines):
+            i += 1
+            cur += '\n' + lines[i]
+            q = open_quote(lines[i], q)
+        out.append(cur)
+        i += 1
+    return out
+
+
+def end_statements(lines):
+    """the last statement of a block needs no semicolon (`print "\\n"` before the closing brace); the quiet rewrite wants an output
+    statement to end with one, so an output line that has none and is followed by a line opening with `}` is terminated (only an
+    output line: the last item of a multi-line hash literal reads the same and must stay as written)"""
+    out = list(lines)
+    for i, l in enumerate(out):
+        c = code(l).rstrip()
+        if not re.match(r'\s*(say|put|print)\b', c) or c.endswith((';', '{', '}', ',')):
+            continue
+        j = i + 1
+        while j < len(out) and not code(out[j]).strip():
+            j += 1
+        if j < len(out) and code(out[j]).lstrip().startswith('}'):
+            out[i] = c + ';' + l[len(c):]
+    return out
 
 
 def block_end(lines, i):
@@ -69,7 +133,7 @@ def block_end(lines, i):
 
 
 def split(lines, path):
-    uses, hoist, body = [], [], []
+    uses, hoist, body, mainq = [], [], [], []
     i = 0
     while i < len(lines):
         l = lines[i]
@@ -81,7 +145,9 @@ def split(lines, path):
                 j = block_end(lines, i)
                 if j is None:
                     refuse('%s:%d: the declaration\'s brace block never closes' % (path, i + 1))
-                if prints(lines[i:j + 1]):
+                if MAIN_DECL.match(l):
+                    mainq += lines[i:j + 1]
+                elif prints(lines[i:j + 1]):
                     body += lines[i:j + 1]
                 else:
                     hoist += lines[i:j + 1]
@@ -92,7 +158,7 @@ def split(lines, path):
         else:
             body.append(l)
             i += 1
-    return uses, hoist, body
+    return uses, hoist, body, mainq
 
 
 def cut(text, sep):
@@ -151,7 +217,7 @@ def quiet_line(l, path, ln):
     if m and METHOD_OUT.search(c):
         ind, expr, verb, mod = m.group(1), m.group(2), m.group(3), m.group(5) or ''
         nl = ' ~ "\\n"' if verb in ('say', 'put') else ''
-        return '%s$bench_c = $bench_c ~ (%s)%s%s;' % (ind, expr, nl, mod)
+        return '%s$bench_c = $bench_c ~ (%s)%s%s;' % (ind, expr.strip() or '$_', nl, mod)
     if METHOD_OUT.search(c):
         refuse('%s:%d: a .say/.print method form that is not a whole statement line: %r' % (path, ln, l.strip()))
     m = OUT_LINE.match(c.rstrip())
@@ -177,6 +243,7 @@ def generate(path, mode, n, bud_ms):
             refuse('%s:%d reads stdin -- a kernel that reads its input cannot be repeated' % (path, i))
         if BENCH.search(c):
             refuse('%s:%d uses an identifier spelled bench_... -- the wrapper\'s own names would collide with it' % (path, i))
+    lines = end_statements(join_strings(lines))
     last = max((i for i, l in enumerate(lines) if code(l).strip()), default=None)
     if last is not None:
         c = code(lines[last]).rstrip()
@@ -184,9 +251,28 @@ def generate(path, mode, n, bud_ms):
             # the program's final statement needs no semicolon (`...; say $k` ends seven raku-bench bodies); once it is
             # wrapped inside a sub, more statements follow it, so it is terminated here
             lines[last] = c + ';' + lines[last][len(c):]
-    uses, hoist, body = split(lines, path)
+    uses, hoist, body, mainq = split(lines, path)
+    gdecl = []
+    htext = '\n'.join(code(l) for l in hoist + mainq)
+    for k, l in enumerate(body):
+        m = MY_TOP.match(l)
+        if not m:
+            continue
+        v = re.escape(m.group(2)[1:])
+        read = re.search(r'[$@%]' + v + r'(?![\w-])', htext)
+        own = re.search(r'\b(my|our|state)\s+([A-Z][\w:]*\s+)?[$@%]' + v + r'(?![\w-])', htext) or re.search(r'(sub|method|multi|->)[^\n{]*[$@%]' + v + r'(?![\w-])', htext)
+        if read and not own:
+            d = 'my %s;' % m.group(2)
+            if d not in gdecl:
+                gdecl.append(d)
+            body[k] = m.group(2) + l[m.end(2):]
     quiet = [quiet_line(l, path, i + 1) for i, l in enumerate(body)]
-    if not prints(body):
+    qmain = [quiet_line(l, path, i + 1) for i, l in enumerate(mainq)]
+    tmain = list(mainq)
+    if mainq:
+        qmain[0] = re.sub(r'^(\s*)sub\s+MAIN\b', r'\1sub bench_qmain', qmain[0])
+        tmain[0] = re.sub(r'^(\s*)sub\s+MAIN\b', r'\1sub bench_tmain', tmain[0])
+    if not prints(body) and not (mainq and prints(mainq)):
         refuse('%s: the kernel prints nothing at top level -- nothing to hold to the .ref' % path)
     if mode == 'iter':
         cond, tail = '$bench_k < %d' % n, ''
@@ -194,9 +280,12 @@ def generate(path, mode, n, bud_ms):
         cond, tail = '(wall_us() - $bench_t0) * 1000 < %d' % (bud_ms * 1000000), ' ~ " budget_ms=%d"' % bud_ms
     out = ['# GENERATED by harness/scripts/bench_wrap_raku.py --mode %s from %s -- never edited, never committed; the kernel is the' % (mode, path),
            '# pristine source (RULES.md THE KERNEL CONVENTION). The test runs once, then the quiet repetitions report on stderr.']
-    out += uses + hoist
-    out += ['sub bench_test() {'] + ['    ' + l for l in body] + ['}']
-    out += ['sub bench_quiet() {', '    my $bench_c = "";'] + ['    ' + l for l in quiet] + ['    return $bench_c;', '}']
+    out += uses + gdecl + hoist
+    if mainq:
+        out += ['my $bench_c = "";'] + tmain + qmain
+    out += ['sub bench_test() {'] + ['    ' + l for l in body] + (['    bench_tmain();'] if mainq else []) + ['}']
+    out += ['sub bench_quiet() {', '    $bench_c = "";' if mainq else '    my $bench_c = "";'] + ['    ' + l for l in quiet]
+    out += (['    bench_qmain();'] if mainq else []) + ['    return $bench_c;', '}']
     out += ['bench_test();',
             'my $bench_want = bench_quiet();',
             'my int $bench_k = 0;',

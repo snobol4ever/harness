@@ -67,6 +67,7 @@ test_gate_bench_prolog_kernels_pristine.sh	WIRED	-	-	-
 test_gate_bench_rivals_coverage.sh	WIRED	-	-	-
 test_gate_bench_runners_publish_by_default_never_on_a_subset.sh	WIRED	-	-	-
 test_gate_bench_wrap_raku_cuts_a_line_at_its_statements.sh	WIRED	-	-	-
+test_gate_bench_wrap_raku_wraps_a_main_kernel_a_multiline_say_and_file_scope_state.sh	WIRED	-	-	-
 test_gate_benchmarks_run_with_every_diagnostic_off.sh	WIRED	-	-	-
 test_gate_blocking_set_parallel_agrees_with_serial.sh	WIRED	-	-	-
 test_gate_blocking_set_records_the_build_behaviour_ledger_before_the_fan_out.sh	WIRED	-	-	-

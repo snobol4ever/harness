@@ -54,6 +54,7 @@
 ../harness/scripts/util_tag_layout_verify.py
 ../harness/scripts/test_gate_bench_prolog_kernels_pristine.sh
 ../harness/scripts/test_gate_bench_wrap_raku_cuts_a_line_at_its_statements.sh
+../harness/scripts/test_gate_bench_wrap_raku_wraps_a_main_kernel_a_multiline_say_and_file_scope_state.sh
 ../harness/scripts/test_gate_control_edges_live_on_ports.sh
 ../harness/scripts/test_gate_library_driver_generator.sh
 ../harness/scripts/test_gate_rungs_banner_seq_is_position.sh
