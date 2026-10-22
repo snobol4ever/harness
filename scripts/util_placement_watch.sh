@@ -174,10 +174,12 @@ case "${1:-show}" in
         # ⛔ THE WATCH MUST NOT LOAD THE BOX IT WATCHES (Lon 2026-10-22: "You are meant to fix the load not hurt it"; ceo CEO-1894). Measured
         # 10:01: every origin landing started a full SCRIP rebuild in /tmp (outside ccache's /home base, so every compile missed) plus 274
         # program compiles, and it held all 8 box-wide compile slots. So a kick measures at most once an hour, and only while the
-        # five-minute load is under half the cores; `show` still prints the newest reading every turn.
+        # five-minute load is under three quarters of the cores (ceo CEO-1921: at half, a busy fleet's steady load of 8 to 9 on 16 cores held
+        # the table from 15:27 past the Pascal switch's last landing and the Raku switch -- the very readings Lon asked to see move; the build
+        # is make -j2 at nice 19 and the compiles nice 10, so the hourly cap and the priority are the throttle); `show` prints every turn.
         last="$(stat -c %Y "$REC" 2>/dev/null || echo 0)"; now="$(date +%s)"
-        load5="$(cut -d' ' -f2 /proc/loadavg)"; half="$(( $(nproc) / 2 ))"
-        if [ $((now - last)) -lt 3600 ] || awk -v l="$load5" -v h="$half" 'BEGIN{exit !(l >= h)}'; then exit 0; fi
+        load5="$(cut -d' ' -f2 /proc/loadavg)"; bar="$(( $(nproc) * 3 / 4 ))"
+        if [ $((now - last)) -lt 3600 ] || awk -v l="$load5" -v h="$bar" 'BEGIN{exit !(l >= h)}'; then exit 0; fi
         ( setsid nohup nice -n 19 bash "$HERE/util_placement_watch.sh" run >/dev/null 2>&1 & ) ; exit 0 ;;
     run)  do_run; exit $? ;;
     *) echo "usage: util_placement_watch.sh show|kick|run" >&2; exit 2 ;;
