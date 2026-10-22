@@ -112,7 +112,9 @@ for k in "${KERNELS[@]}"; do
       fi
     fi
     if [ "$r1$r2$r3" = PASSPASSPASS ]; then v=PASS; PASSN[$m]=$((PASSN[$m]+1)); note="ref-under-three-angles"
-    else v=FAIL; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; NAMED="$NAMED $k.$m"; fi
+    # a wrapper the generator refused is no grade of the program: REFUSE, could not measure, never FAIL (the coo 2026-10-22, COO-396: RakBench's four
+    # 10-15 refusals read FAIL in the red lists the cto was sent)
+    else v=FAIL; [ "$gen_ok" = 0 ] && v=REFUSE; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; NAMED="$NAMED $k.$m$([ "$v" = REFUSE ] && echo "(refused)")"; fi
     SM="$(progress_secs_since "$_tm")"
     printf 'benchmark\trebus-bench-ref\trebus\t%s\t%s\t%s\t%s\t%s\t%s\n' "$k" "$m" "$v" "$SM" "$note" "$cfg" >>"$PROG_ROWS"
     printf '%-16s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$r3" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"

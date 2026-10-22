@@ -133,7 +133,8 @@ for k in "${KERNELS[@]}"; do
       fi
     fi
     if [ "$r1$r2$r3" = PASSPASSPASS ]; then v=PASS; [ -n "$ocls" ] || PASSN[$m]=$((PASSN[$m]+1)); note="ref-under-three-angles"
-    else v=FAIL; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; [ -n "$ocls" ] || NAMED="$NAMED $k.$m"; fi
+    # a wrapper the generator refused is no grade of the program: REFUSE, could not measure, never FAIL (the coo 2026-10-22, COO-396)
+    else v=FAIL; [ "$gen_ok" = 0 ] && v=REFUSE; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; [ -n "$ocls" ] || NAMED="$NAMED $k.$m$([ "$v" = REFUSE ] && echo "(refused)")"; fi
     [ -n "$ocls" ] && note="$ocls (OUTSIDE.tsv, out of the denominator): $note"
     SM="$(progress_secs_since "$_tm")"
     printf 'benchmark\tprolog-bench-ref\tprolog\t%s\t%s\t%s\t%s\t%s\t%s\n' "$k" "$m" "$v" "$SM" "$note" "$cfg" >>"$PROG_ROWS"
