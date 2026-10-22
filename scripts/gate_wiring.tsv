@@ -579,6 +579,7 @@ test_gate_pas_char_ansichar_and_widechar_typecasts_in_the_fpc_dialects.sh	WIRED	
 test_gate_pas_conditional_compilation_and_initialized_vars_answer_as_fpc.sh	WIRED	-	-	-
 test_gate_pas_declared_locals_get_frame_slots.sh	WIRED	-	-	-
 test_gate_pas_dispose_of_a_pointer_whose_pointee_a_with_statement_references_is_refused.sh	WIRED	-	-	-
+test_gate_pas_division_by_zero_is_the_iso_6_7_2_2_error_and_in_the_fpc_dialects_fpcs_runtime_error_code.sh	WIRED	-	-	-
 test_gate_pas_dynamic_and_open_arrays_and_const_and_out_parameters_answer_as_fpc.sh	WIRED	-	-	-
 test_gate_pas_dynamic_array_fields_of_records_and_classes_and_a_methods_own_name.sh	WIRED	-	-	-
 test_gate_pas_eoln_needs_a_defined_file_not_at_its_end.sh	WIRED	-	-	-
