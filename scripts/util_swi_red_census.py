@@ -20,7 +20,7 @@ exactly one class. Rows are minted per class (a predicate family, a library modu
 
 A CLASS IS ROWED when a live QUEUE row (FREE, CLAIMED, ASSIGNED, BLOCKED-ON, GRANT-NEEDED, PARKED-LON-HOLD, PARKED-UMBRELLA,
 PARKED-AWAITING) COVERS it: the row's topic carries the file's slug (core-test-read: a whole-file row), or the row's DONE-WHEN runs
-the file (names core/test_read or core/test_read.pl) -- every class of that file, unless the DONE-WHEN names families with
+the file (names core/test_read or core/test_read.pl, or core/test_(read|write)[.]pl as a regex) -- every class of that file, unless the DONE-WHEN names families with
 `util_swi_red_census.py --witness FILE FAMILY`, which then covers exactly those. Prose in a GOAL or a ledger covers nothing: a row is
 what it RUNS. A class is EXCLUDED when every red it holds is in EXCLUDED_CASES.tsv.
 
@@ -338,6 +338,20 @@ def file_slug(rel):
     return noext, noext.replace('/', '-').replace('_', '-').lower()
 
 
+GROUP_RX = re.compile(r'([\w/.-]*)\(([\w|.-]+)\)([\w/.\[\]\\-]*)')
+
+
+def regex_names(dw, noext):
+    """True when a DONE-WHEN names the file as a regex does: dir/test_(a|b|c)[.]pl or ^xsb/(incremental_tests|nonmt_tests)/."""
+    for pre, alts, post in GROUP_RX.findall(dw):
+        post = re.sub(r'(\[\.\]|\\\.)pl.*$', '', post)
+        for alt in alts.split('|'):
+            cand = pre.lstrip('^') + alt + post
+            if cand == noext or (cand.endswith('/') and noext.startswith(cand)):
+                return True
+    return False
+
+
 def row_for(cls_file, cls_family, rows):
     """The live row that covers class (file, family): its topic carries the file's slug (a whole-file row), or its DONE-WHEN runs the file --
     every class of it, unless the DONE-WHEN names families with `--witness FILE FAMILY`, which then covers exactly those."""
@@ -347,7 +361,7 @@ def row_for(cls_file, cls_family, rows):
     for topic, state, dw, tl in rows:
         if slug in tl:
             return topic, state
-        if not path.search(dw):
+        if not (path.search(dw) or regex_names(dw, noext)):
             continue
         fams = [x.strip('\'"') for x in wit.findall(dw)]
         if not fams or cls_family in fams:
@@ -462,16 +476,22 @@ def witness(rel, family):
     if r.returncode == 2 or 'SWI_BOARD' not in r.stdout:
         refuse('the runner could not grade %s (rc %d): %s' % (rel, r.returncode, (r.stdout + r.stderr).strip().split('\n')[-1][:200]))
     fams = source_families(os.path.join(SWIT, rel))
-    rx = re.compile(r'^\s*RED\s+(\S+\.pl):(.+#\d+):(m3|m4):')
+    rx = re.compile(r'^\s*RED\s+(\S+\.pl):(.+#\d+):(m3|m4):(.*)$')
     bad = collections.OrderedDict()
+    why = collections.Counter()
     for line in r.stdout.split('\n'):
         m = rx.match(line)
         if m and m.group(1) == rel and (family == '*' or case_family(fams, rel, m.group(2)) == family):
             bad.setdefault(m.group(2), []).append(m.group(3))
+            why[re.sub(r'\d+', 'N', m.group(4)).strip()[:110]] += 1
     if not bad:
         print('GREEN: %s :: %s has no red case in either mode' % (rel, family))
         return 0
+    byfam = collections.Counter(case_family(fams, rel, k) for k in bad)
     print('RED: %s :: %s -- %d case(s) still red: %s' % (rel, family, len(bad), '; '.join('%s [%s]' % (k, ','.join(v)) for k, v in list(bad.items())[:6])))
+    print('  by family: ' + ' '.join('%s=%d' % kv for kv in byfam.most_common(12)))
+    for w, n in why.most_common(4):
+        print('  reading x%d: %s' % (n, w))
     return 1
 
 
@@ -516,6 +536,10 @@ def selftest():
         ok &= run('a DONE-WHEN witness for the file and the class family -> GREEN', 0)
         task('python3 util_swi_red_census.py --witness core/test_x.pl sub_atom')
         ok &= run('a DONE-WHEN witness for the file but another family -> RED', 1)
+        task("awk -v re='^core/test_(x|y)[.]pl:' results.tsv")
+        ok &= run('a DONE-WHEN that names the file as a regex alternation -> GREEN', 0)
+        task("awk -v re='^core/(x_tests|y_tests)/' results.tsv")
+        ok &= run('a DONE-WHEN regex naming other directories only -> RED', 1)
         task('for f in core/test_x.pl; do bash runner --file "$f"; done')
         ok &= run('a DONE-WHEN that runs the whole file -> GREEN', 0)
         open(q, 'w').write('# rank\ttopic\towner\tstate\n')

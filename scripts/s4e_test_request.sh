@@ -30,7 +30,7 @@ table_of() { local e; for e in $SUITES; do [ "${e%%|*}" = "$1" ] && { echo "${e#
 seat() {
   [ -n "${S4E_SEAT:-}" ] && { echo "$S4E_SEAT"; return; }
   local r; r="$(cd "$HERE/../.." && pwd)"; r="${r##*/claude_}"
-  case "$r" in ceo|cto|cfo|coo) echo "$r";; icon|pascal|prolog|raku|snobol4|snocone|templates|runtime|collector|zetas) echo "hq_$r";; *) echo "";; esac
+  case "$r" in ceo|cto|cfo|coo) echo "$r";; icon|pascal|prolog|raku|snobol4|snocone|templates|runtime|collector|zetas|packages) echo "hq_$r";; *) echo "";; esac
 }
 case "${1:-}" in
   ""|-h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0;;
