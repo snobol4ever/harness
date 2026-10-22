@@ -19,7 +19,7 @@ export SCRIP_DIAG=0
 #         dump leaves the count). Only the scratch copy changes: bootstrap/ is never edited (NEVER REWRITE A parser_*.sc). What stays in SC beyond the parse:
 #         INPUT/SIZE per file and one OUTPUT line per file, small and linear in the file count.
 #   THE POPULATION IS GRADED FILE BY FILE BEFORE ANY Ir RUN: each file of the sorted corpus population is read ALONE and NATIVELY by both engines
-#   (PARSER_TREE_HASH=1, SNO_LIB=corpus/library) and joins the ladder only when both print the SAME tree number; a file either engine refuses, dies on, outlasts
+#   (PARSER_TREE_HASH=1, SNO_LIB=corpus/include:corpus/library plus the file's own directory for the chain) and joins the ladder only when both print the SAME tree number; a file either engine refuses, dies on, outlasts
 #   PIS_ONE_TIMEOUT (20 s) or prints a different tree for is DROPPED -- not a speed question, the tree gate's -- and the header counts the drops by class
 #   (the grid's rule). PIS_TREES=0 relaxes "the same tree" to "both print a tree" (Raku, whose C parser still prints desugared forms: speed alone, said in
 #   the header). Examination stops once the accepted bytes reach 4B; a population that ends sooner shrinks the ladder to total/4, total/2, total, said too.
@@ -31,7 +31,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; W="$HERE/../../SCRIP"; CORPUS="${CORPUS:-$HERE/../../corpus}"; G=bench_parser_ir_slope
 refuse() { echo "⛔ PARSER Ir SLOPE REFUSED (rc=2) [$G]: $*" >&2; exit 2; }
 L="${1:-snocone}"; BYTES="${PIS_BYTES:-60000}"; TOL="${PIS_LIN_TOL:-10}"; TMO="${PIS_IR_TIMEOUT:-1800}"; FULL="${PIS_FULL:-0}"; TMO1="${PIS_ONE_TIMEOUT:-20}"; TREES="${PIS_TREES:-1}"
-export SNO_LIB="${SNO_LIB:-$CORPUS/library}"
+SNO_LIB_BASE="${SNO_LIB:-$CORPUS/include:$CORPUS/library}"
 declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [pascal]=pas [raku]=raku)
 declare -A PARSE_FN=([snobol4]="sno_reset sno_parse_ast_buf" [snocone]=snocone_compile_parse [icon]=icon_compile_parse [prolog]=prolog_compile_parse [rebus]=rebus_compile_parse [pascal]=pascal_compile_parse [raku]=raku_compile_whole)
 ext="${EXT[$L]:-}"; [ -n "$ext" ] || refuse "'$L' is not a parser language (${!EXT[*]})"
@@ -73,11 +73,14 @@ one() {   # $1 engine (c|s), $2 file: the file's tree number, or REFUSED (no num
     local e="$1" f="$2" rc out; printf '%s\n' "$f" > "$T/one"
     if [ "$e" = c ]; then
         out="$(timeout -k 2 "$TMO1" bash -c 'cd "$1" && PARSER_FILES="$2" PARSER_TREE_HASH=1 IPATH="$1/packages/icon/ipl/procs" exec "$3"' _ "$CORPUS" "$T/one" "$W/out/parser_$L" < /dev/null 2> "$T/one.err")"; rc=$?
-    else out="$(PARSER_FILES="$T/one" PARSER_TREE_HASH=1 timeout -k 2 "$TMO1" "$T/full.bin" $SWS < /dev/null 2> "$T/one.err")"; rc=$?; fi
+    else out="$(cd "$(dirname "$f")" && SNO_LIB="$(sclib "$T/one")" PARSER_FILES="$T/one" PARSER_TREE_HASH=1 timeout -k 2 "$TMO1" "$T/full.bin" $SWS < /dev/null 2> "$T/one.err")"; rc=$?; fi
     [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ] && { echo TIMEOUT; return; }
     [ "$(metric "$T/one.err" files)" = 1 ] || { echo DIED; return; }
     out="$(printf '%s\n' "$out" | awk '/^== / { next } NF { print; exit }')"
     case "$out" in ''|*[!0-9]*) echo REFUSED ;; *) echo "$out" ;; esac
+}
+sclib() {   # $1 = a list file: SNO_LIB for the chain over it -- the corpus include dirs plus each listed file's own directory (the C parser finds an -INCLUDE beside the including file, the chain looks in cwd and SNO_LIB)
+    printf '%s:%s' "$SNO_LIB_BASE" "$(xargs -d '\n' -n1 dirname < "$1" | sort -u | paste -sd:)"
 }
 isnum() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
 pick() {   # $1 = base bytes: the three nested prefixes of the accepted files as "k1 k2 k3" -- the first file reaching 1*, 2*, 4* the base, each strictly after the last; fails when there are none
@@ -102,7 +105,7 @@ SHRUNK=""; BASE="$BYTES"; if [ "$ACC" -lt "$TARGET" ]; then BASE=$((ACC / 4)); S
 read -r k1 k2 k3 < <(pick "$BASE") || refuse "the $NACC accepted $L files cannot make three distinct nested prefixes at $BASE/$((BASE * 2))/$((BASE * 4)) bytes ($EXAM examined, drops:$DROPCLS); lower PIS_BYTES"
 : > "$T/b"; n=0; for k in $k1 $k2 $k3; do n=$((n + 1)); head -n "$k" "$T/acc" > "$T/l$n"; echo "$k $(sed -n "${k}p" "$T/cum")" >> "$T/b"; done
 read -r K1 B1 < <(sed -n 1p "$T/b"); read -r K2 B2 < <(sed -n 2p "$T/b"); read -r K3 B3 < <(sed -n 3p "$T/b")
-runs() { PARSER_FILES="$1" PARSER_TREE_HASH="${2:-1}" "$T/${3:-full}.bin" $SWS < /dev/null; }
+runs() { SNO_LIB="$(sclib "$1")" PARSER_FILES="$1" PARSER_TREE_HASH="${2:-1}" "$T/${3:-full}.bin" $SWS < /dev/null; }
 listrun_agrees() {   # $1 engine (c|s): the engine's native run over the whole ladder list prints, file by file, the number its single-file run printed
     local out
     if [ "$1" = c ]; then out="$(cd "$CORPUS" && PARSER_FILES="$T/l3" PARSER_TREE_HASH=1 IPATH="$CORPUS/packages/icon/ipl/procs" "$W/out/parser_$L" < /dev/null 2> /dev/null)"
@@ -121,7 +124,7 @@ ir_of() {  # $1 engine (c|full|nodump) $2 list $3 out-name $4 fn... -> parse Ir 
     local e="$1" lst="$2" cg="$T/$3.cg" v; shift 3
     export PARSER_FILES="$lst" PARSER_TREE_HASH=1 IPATH="$CORPUS/packages/icon/ipl/procs"
     if [ "$e" = c ]; then v="$(cd "$CORPUS" && IR_TMO="$TMO" IR_OUT="$cg" ir_measure "$W/out/parser_$L" < /dev/null)"
-    else v="$(IR_TMO="$TMO" IR_OUT="$cg" ir_measure "$T/$e.bin" $SWS < /dev/null)"; fi
+    else v="$(SNO_LIB="$(sclib "$lst")" IR_TMO="$TMO" IR_OUT="$cg" ir_measure "$T/$e.bin" $SWS < /dev/null)"; fi
     ir_is_number "$v" || { echo "⚠ Ir arm voided: $(ir_cell "$v") -- $(ir_reason "$v")" >&2; return 0; }
     if [ $# -gt 0 ]; then incl "$cg" "$@"; else echo "$v"; fi
 }
