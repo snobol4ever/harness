@@ -68,11 +68,20 @@ def census():
             seat = state.split(":", 1)[1] if ":" in state else owner
             age = transcript_age_h(seat)
             if age is not None and age > STALE_H: stale.append((topic, seat, int(age)))
-    print("QUEUE_ORDER_BOARD classed=%d unclassed=%d rank_mismatch=%d stale_claims=%d  %s" % (sum(counts.values()), len(unclassed), len(mismatch), len(stale), " ".join("%s=%d" % kv for kv in sorted(counts.items()))))
+    free_hi = {}
+    held_lo = []
+    for f in rows():
+        rank, topic, owner, state = f[0], f[1], f[2], f[3]
+        st = state.split(":")[0]
+        if st == "FREE" and rank in ("0", "1"): free_hi[owner] = free_hi.get(owner, 0) + 1
+        if st in ("CLAIMED", "ASSIGNED") and rank == "3": held_lo.append((topic, state.split(":", 1)[1] if ":" in state else owner))
+    ahead = [(t, s, free_hi[s]) for t, s in held_lo if free_hi.get(s)]
+    print("QUEUE_ORDER_BOARD classed=%d unclassed=%d rank_mismatch=%d stale_claims=%d speed_ahead=%d  %s" % (sum(counts.values()), len(unclassed), len(mismatch), len(stale), len(ahead), " ".join("%s=%d" % kv for kv in sorted(counts.items()))))
     for x in unclassed[:40]: print("  UNCLASSED %s" % x)
     for x in mismatch[:40]: print("  RANK %s is %s but class %s" % (x[0], x[2], x[1]))
     for x in stale: print("  STALE CLAIM %s on %s (transcript %d h old)" % x)
-    return 1 if (unclassed or mismatch or stale) else 0
+    for x in ahead: print("  SPEED AHEAD %s held by %s while its lane has %d FREE rank-0/1 rows (Lon's order, CEO-1886)" % x)
+    return 1 if (unclassed or mismatch or stale or ahead) else 0
 def do_classify(apply, out):
     plan = []
     for f in rows():
