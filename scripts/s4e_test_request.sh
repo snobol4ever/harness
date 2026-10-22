@@ -78,6 +78,15 @@ else
   done
 fi
 n=$(printf '%s\n' $ents | grep -c .)
+# ⛔ A REQUEST IS THE HANDFUL (Lon 2026-10-22, in-chat to the ceo, verbatim: "So when I say one test at a time, I mean one source program at a time.
+# Would not any HQ request that only a handful of programs get re-tested at anytime since it will filter based on the feature?"; ceo CEO-1890/1891,
+# CEO-1677's REPS_CAP): a seat's SCRIP request names at most eight programs -- the feature's representatives (test_feature_reps.sh <lang> <feature>
+# --list names them) or the named witnesses of its row; a whole core, shell or chunk is the coo's round robin, never a seat's request. The coo's own
+# re-filings and the port engines' requests (one per chunk by CEO-1872, served at most one a turn) are not capped here.
+REQUEST_CAP=8
+if [ "$engine" = scrip ] && [ "$who" != coo ] && [ "$n" -gt "$REQUEST_CAP" ]; then
+  refuse "$n programs is not a handful: a seat's request names at most $REQUEST_CAP (the feature's representatives: bash ../harness/scripts/test_feature_reps.sh <lang> <feature> --list, or your row's witnesses); a whole ${part:-set} is the coo's round robin (CEO-1891)"
+fi
 mkdir -p "$REQ_DIR" || refuse "cannot create $REQ_DIR"
 id="$(date -u +%Y%m%dT%H%M%S)-$who-$key-$$"; [ "$engine" = scrip ] || id="$(date -u +%Y%m%dT%H%M%S)-$who-$key-$engine-$$"
 tmp="$REQ_DIR/.$id.tmp"
