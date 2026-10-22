@@ -482,6 +482,7 @@ test_gate_pas_a_constant_is_hidden_by_a_variable_parameter_or_constant_of_the_sa
 test_gate_pas_a_currency_prints_as_its_exact_four_decimal_value_in_e_format.sh	WIRED	-	-	-
 test_gate_pas_a_declared_label_prefixes_exactly_one_statement_of_its_block.sh	WIRED	-	-	-
 test_gate_pas_a_double_slash_line_comment_is_a_comment_as_fpc_miso_reads_it.sh	WIRED	-	-	-
+test_gate_pas_a_dynamic_array_var_takes_its_initializer_and_move_into_an_open_array_copies_the_byte_count.sh	WIRED	-	-	-
 test_gate_pas_a_field_of_an_anonymous_record_variable_keeps_its_record_type.sh	WIRED	-	-	-
 test_gate_pas_a_file_carries_its_iso_mode_and_says_so.sh	WIRED	-	-	-
 test_gate_pas_a_file_component_is_never_itself_a_file.sh	WIRED	-	-	-
