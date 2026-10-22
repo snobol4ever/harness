@@ -21,7 +21,7 @@ exactly one class. Rows are minted per class (a predicate family, a library modu
 A CLASS IS ROWED when a live QUEUE row (FREE, CLAIMED, ASSIGNED, BLOCKED-ON, GRANT-NEEDED, PARKED-LON-HOLD, PARKED-UMBRELLA,
 PARKED-AWAITING) COVERS it: the row's topic carries the file's slug (core-test-read: a whole-file row), or the row's DONE-WHEN runs
 the file (names core/test_read or core/test_read.pl, or core/test_(read|write)[.]pl as a regex) -- every class of that file, unless the DONE-WHEN names families with
-`util_swi_red_census.py --witness FILE FAMILY`, which then covers exactly those. Prose in a GOAL or a ledger covers nothing: a row is
+`util_swi_red_census.py --witness FILE FAMILY`, which then covers exactly those (FAMILY `*` is the whole file). Prose in a GOAL or a ledger covers nothing: a row is
 what it RUNS. A class is EXCLUDED when every red it holds is in EXCLUDED_CASES.tsv.
 
     util_swi_red_census.py --witness FILE FAMILY|'*'   THE ROW'S DONE-WHEN: one-file run of the SWI runner (no board, no row written), rc 0
@@ -364,7 +364,7 @@ def row_for(cls_file, cls_family, rows):
         if not (path.search(dw) or regex_names(dw, noext)):
             continue
         fams = [x.strip('\'"') for x in wit.findall(dw)]
-        if not fams or cls_family in fams:
+        if not fams or '*' in fams or cls_family in fams:
             return topic, state
     return None
 
@@ -536,6 +536,8 @@ def selftest():
         ok &= run('a DONE-WHEN witness for the file and the class family -> GREEN', 0)
         task('python3 util_swi_red_census.py --witness core/test_x.pl sub_atom')
         ok &= run('a DONE-WHEN witness for the file but another family -> RED', 1)
+        task("python3 util_swi_red_census.py --witness core/test_x.pl '*'")
+        ok &= run('a DONE-WHEN witness for the whole file (*) -> GREEN', 0)
         task("awk -v re='^core/test_(x|y)[.]pl:' results.tsv")
         ok &= run('a DONE-WHEN that names the file as a regex alternation -> GREEN', 0)
         task("awk -v re='^core/(x_tests|y_tests)/' results.tsv")
