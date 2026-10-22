@@ -15,9 +15,10 @@
 # closure run (S4E_DONE_WHEN_RUN=1) every corpus program of the language (every *.<ext> outside .git and corpus/library, not
 # ALL.*) -- the whole-corpus run is a closure run, one at a time (CEO-1341). Each file goes to the C parser and to the .sc parser
 # compiled ONCE per language to a mode-4 binary (Lon 2026-09-28: "forget mode 3 runs."), run at the largest arena on the file's own
-# stdin; the two dumps are compared for THAT file. Raku is not graded yet: parser_raku.sc is the 2026-09-29 conversion of
-# rk_syntax.c + rk_tree.c, not yet byte-identical on every corpus file, and its direct .sc compile hits a Snocone-frontend defect
-# (a second statement hangs; its own transpile runs) -- it joins this gate the landing it matches 100%.
+# stdin; the two dumps are compared for THAT file. Raku is graded like the six (2026-10-21, Lon to the ceo, verbatim: "I want it to
+# work on parser.sc programs completeness and speed performance versus the SCRIP C parsers."): the 2026-09-29 hang that kept its
+# direct .sc compile out is gone (the chain compiles to a mode-4 binary in seconds), and a Raku file the .sc does not print the C
+# parser's tree for is a red of the row like any other language's.
 # THE TREE HASH (Lon 2026-09-29 18:5x CDT, in-chat to the ceo, verbatim: "You might consider creating a hash calculated of the
 # trees to compare quickly success and delay the details." and "hashing the output tree is what I meant. In memory. Then output
 # the one number per-test for comparison. It shows only how many do not match, not in what ay do they not match."): each side runs
@@ -27,7 +28,7 @@
 # both sides and each number is re-derived from its dump here, so a hash that stopped folding cannot read as MATCH (rc 2).
 # GATE_DETAIL=1 dumps the first DIFF file of each language in full and prints its first differing line pair. GATE_REDS=<file> appends one
 # line per file that is not a MATCH or a both-refused (language, kind, path under the corpus) -- the list a whole-corpus run owes the lane that cures it. GATE_LANGS="snobol4 icon"
-# grades those languages alone (a landing's own arm; the closure run grades all six).
+# grades those languages alone (a landing's own arm; the closure run grades all seven).
 # THE C SIDE DUMPS WHAT ITS PARSER BUILT (the ceo's row, CEO-1364: "the C side dumps the parse tree the .sc reproduces"): Icon
 # before link resolution, Pascal before its semantic check, Rebus before lower_rebus.c, Prolog each clause's tree before
 # prolog_lower (a clause list with a parse error is refused), Snocone code_to_ast of the statements its parser builds, SNOBOL4
@@ -51,7 +52,7 @@ for f in $CHAIN; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: chain file m
 POP="${GATE_POPULATION:-sample}"; [ "${S4E_DONE_WHEN_RUN:-}" = 1 ] && POP=corpus
 TMO="${GATE_TIMEOUT:-300}"
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [pascal]=pas)
+declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [pascal]=pas [raku]=raku)
 refused() { grep -q '^Parse Error' "$1"; }
 tree_fold() { python3 -c 'import sys
 b=open(sys.argv[1],"rb").read(); h=0
@@ -76,7 +77,7 @@ sc_run() { local f="$1"; shift; ( [ "$L" = snobol4 ] && cd "$(dirname "$f")"; "$
 red() { [ -n "${GATE_REDS:-}" ] && printf '%s\t%s\t%s\n' "$L" "$1" "${f#$CORPUS/}" >> "$GATE_REDS"; true; }
 RC=0; GRADED=0; GREEN=0
 echo "TREE-FOR-TREE [$G]: population=$POP, EACH FILE ALONE through out/parser_<lang> and the .sc chain compiled once to a mode-4 binary at the chain's declared heap and stack (bootstrap/parser_<lang>.heap, .stack), one tree hash per file per side (PARSER_TREE_HASH=1), timeout ${TMO}s per run"
-for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal}; do
+for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal raku}; do
     ext=${EXT[$L]}; exe="$ROOT/out/parser_$L"
     ( . "$HERE/lib_build_currency.sh" && assert_parser_current "$L" "$ROOT" ) || { echo "  $L: ⛔ REFUSE(2) $exe is missing or older than a source it was compiled from (named above) -- make parsers"; RC=2; continue; }
     SW="$(declared_switches_beside "$B/parser_$L.sc")" && [ -n "$SW" ] || { echo "  $L: ⛔ REFUSE(2) bootstrap/parser_$L.sc declares no heap or stack, or the declaration is refused"; RC=2; continue; }
@@ -114,7 +115,6 @@ for L in ${GATE_LANGS:-snobol4 snocone icon prolog rebus pascal}; do
     echo "  $L: $verdict files=$nf hashes-compared=$hc MATCH=$m DIFF=$d REFUSED-by-C=$rc_ REFUSED-by-.sc=$rs refused-by-both=$rb CRASH-C=$kc CRASH-.sc=$ks timeout=$u${first:+ -- first: $first}"
     case "$verdict" in MATCH) GREEN=$((GREEN + 1)) ;; RED) [ $RC -eq 2 ] || RC=1 ;; *) RC=2 ;; esac
 done
-echo "  raku: not graded yet (parser_raku.sc, the rk_syntax.c conversion, joins at 100%)"
 [ $RC -eq 2 ] && { echo "⛔ GATE REFUSE(2) [$G]: a language could not be measured (see above)"; exit 2; }
 if [ $RC -eq 0 ]; then echo "✅ GATE PASS(0) [$G]: $GREEN/$GRADED graded languages print the same tree from the C parser and the .sc parser on every file ($POP population)"
 else echo "⛔ GATE FAIL(1) [$G]: $GREEN/$GRADED graded languages match on every file ($POP population) -- the shape classes are in the cursor"; fi
