@@ -880,6 +880,7 @@ test_gate_pl_the_prelude_sees_every_clause_of_the_program.sh	WIRED	-	-	-
 test_gate_pl_the_press_and_chat80_dec10_surface_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_the_query_neck_reads_as_an_atom_and_a_prefix_operator.sh	WIRED	-	-	-
 test_gate_pl_the_reclaim_report_names_every_erased_fragment_and_its_holders.sh	WIRED	-	-	-
+test_gate_pl_the_standard_output_streams_report_mode_append_in_the_iso_default_and_write_in_the_swi_dialect.sh	WIRED	-	-	-
 test_gate_pl_the_writer_writes_not_as_a_plain_functor_as_swipl_and_gprolog.sh	WIRED	-	-	-
 test_gate_pl_trail_mechanism.sh	WIRED	-	-	-
 test_gate_pl_tries_and_table_inspection_answer_as_swipl.sh	WIRED	-	-	-
