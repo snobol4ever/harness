@@ -17,9 +17,11 @@ while [ $# -gt 0 ]; do case "$1" in --modes) MODES="$2"; shift;; -*) echo "⛔ R
 "$HERE/util_require_fresh.sh" --gate test_xsb_package_entries_vs_swipl "$SCRIP" "$OUT/libscrip_rt.so" || exit 2
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED(2): lib_declared_arena.sh unloadable"; exit 2; }
 d=$(mktemp -d) || exit 2; trap 'rm -rf "$d"' EXIT
+# a program may write files beside itself (tempfile.P): run everything in a scratch copy of the package, never in the corpus
+cp -r "$PKG" "$d/pkg" || exit 2; SRC="$PKG"; PKG="$d/pkg"
 n=0; pass=0; fail=0
 for e in "${ENTRIES[@]}"; do
-    [ -f "$PKG/$e.pl" ] || { echo "⛔ REFUSED(2): no entry $e in $PKG"; exit 2; }
+    [ -f "$PKG/$e.pl" ] || { echo "⛔ REFUSED(2): no entry $e in $SRC"; exit 2; }
     (cd "$PKG" && timeout -k 5 60 "$SWIPL" -q "$e.pl" </dev/null > "$d/oracle" 2>/dev/null)
     for m in ${MODES//,/ }; do
         n=$((n + 1)); : > "$d/got"; rc=0
