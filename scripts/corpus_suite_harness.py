@@ -97,6 +97,7 @@ import sys
 import shutil
 import time
 import tempfile
+import threading
 from pathlib import Path
 HARNESS_SCRIPTS = Path(__file__).resolve().parent
 
@@ -676,6 +677,65 @@ def _mem_scope():
             _m = _NoMemScope
         _MEM_SCOPE_MOD = _m
     return _MEM_SCOPE_MOD
+# ⛔⭐ A CHILD'S OUTPUT IS BOUNDED, AND A CHILD DIES WITH ITS HARNESS (the coo 2026-10-22, COO-394; the ceo's ask at CEO-1883): a port
+# entry printing in a loop through its 600 s timeout retry grew this harness to 8.15 GB anon RSS inside its 8192 MB mem scope; the kernel
+# killed the HARNESS (oom-kill 03:36:05, pid 1099808 python3, request 20261022T004850-hq_jvm-sno-rungs-jvm read 59 of 100 and REFUSED rc 2),
+# and the java it ran lost its reader and spun 3 h 55 min at 100% CPU with no parent until the ceo killed it. Each stream now keeps at most
+# S4E_OUTPUT_CAP_MB (256, ninety times the corpus's largest ref, packages/prolog/puzzles/ALL.ref at 2.8 MB) and the child is killed the
+# moment one passes it: kind OVERFLOW, a FAIL for a graded program (never retried, since no ref can match it) and no answer for an oracle,
+# whose callers take every kind but RAN as none. Every child runs under setpriv --pdeathsig KILL, which execs, so the program keeps its pid
+# and dies with the harness however the harness dies; setpriv's own exec failure (rc 127) is the FileNotFoundError arm it always was.
+_OUTPUT_CAP = int(float(os.environ.get("S4E_OUTPUT_CAP_MB", "256")) * 1048576)
+_SETPRIV = shutil.which("setpriv")
+def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
+    """(rc, stdout, stderr, why): why is None, "HANG" (the timeout passed, or a pipe stayed open past it) or "OVERFLOW"."""
+    p = subprocess.Popen(([_SETPRIV, "--pdeathsig", "KILL", "--"] if _SETPRIV else []) + list(argv), cwd=cwd, env=env,
+                         stdin=subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT if merge_stderr else subprocess.PIPE)
+    over = threading.Event()
+    def drain(f, keep):
+        n = 0
+        for b in iter(lambda: f.read1(1 << 16), b""):
+            if n < _OUTPUT_CAP:
+                keep.append(b[:_OUTPUT_CAP - n])
+            n += len(b)
+            if n > _OUTPUT_CAP and not over.is_set():
+                over.set()
+                p.kill()
+        f.close()
+    def feed(f):
+        try:
+            f.write(stdin_bytes)
+            f.close()
+        except (BrokenPipeError, OSError):
+            pass
+    outs, errs = [], []
+    drains = [threading.Thread(target=drain, args=(f, k), daemon=True) for f, k in ((p.stdout, outs), (p.stderr, errs)) if f is not None]
+    ts = drains + ([threading.Thread(target=feed, args=(p.stdin,), daemon=True)] if p.stdin is not None else [])
+    for t in ts:
+        t.start()
+    deadline = time.monotonic() + timeout
+    # a timer kills at the limit while the wait blocks: p.wait(timeout=) polls, and its sleeps cost 0.9 ms a run (true: 0.64 ms bare, 1.53 polled)
+    fired = threading.Event()
+    def expire():
+        fired.set()
+        p.kill()
+    timer = threading.Timer(timeout, expire)
+    timer.daemon = True
+    timer.start()
+    try:
+        rc = p.wait()
+    except BaseException:
+        p.kill()
+        p.wait()
+        raise
+    finally:
+        timer.cancel()
+    hung = fired.is_set()
+    for t in ts:
+        t.join(max(0.0, deadline - time.monotonic()) if not hung else 5)
+    hung = hung or any(t.is_alive() for t in drains)
+    return rc, b"".join(outs), b"".join(errs), ("OVERFLOW" if over.is_set() else "HANG" if hung else None)
 def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=False):
     # ⛔ A PROGRAM THE CGROUP MEMORY CAP KILLED IS UNPROVEN, NEVER A CRASH (row instrument-698-runners-..., the ceo's clause): a
     # SIGKILL alone cannot say who sent it, so the enclosing scope's own oom_kill count is read on both sides of the run and only
@@ -684,23 +744,21 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
     _k0 = _ms.oom_kills()
     # ⭐ merge_stderr: the unit's answer is stdout and stderr as ONE stream, interleaved as the shell's `> out 2>&1` writes it --
     # the contract of a package whose own harness cut its refs that way (ALL.csv's stderr column, read_command_line_columns).
-    _io = dict(stdout=subprocess.PIPE, stderr=subprocess.STDOUT) if merge_stderr else dict(capture_output=True)
     try:
-        if stdin_text is None:
-            r = subprocess.run(argv, stdin=subprocess.DEVNULL,
-                                timeout=timeout, cwd=cwd, env=env, **_io)
-        else:
-            r = subprocess.run(argv, input=stdin_text.encode(),
-                                timeout=timeout, cwd=cwd, env=env, **_io)
-    except subprocess.TimeoutExpired as e:
-        return "HANG", (e.stdout or b""), (e.stderr or b""), None
+        rc, out, err, why = _bounded_run(argv, timeout, cwd, env, None if stdin_text is None else stdin_text.encode(), merge_stderr)
     except FileNotFoundError as e:
         return "UNPROVEN", b"", str(e).encode(), None
-    if r.returncode == -9 and _k0 is not None:
+    if why == "OVERFLOW":
+        return "OVERFLOW", out, err + b"\n[harness] output passed the S4E_OUTPUT_CAP_MB bound of %d bytes; the child was killed\n" % _OUTPUT_CAP, None
+    if why == "HANG":
+        return "HANG", out, err, None
+    if rc == 127 and _SETPRIV and (err or out)[:200].startswith(b"setpriv: failed to execute"):
+        return "UNPROVEN", b"", (err or out).split(b"\n")[0], None
+    if rc == -9 and _k0 is not None:
         _k1 = _ms.oom_kills()
         if _k1 is not None and _k1 > _k0:
-            return "UNPROVEN", r.stdout, _ms.kill_detail(_k1 - _k0).encode(), None
-    return "RAN", r.stdout, (r.stderr or b""), r.returncode
+            return "UNPROVEN", out, _ms.kill_detail(_k1 - _k0).encode(), None
+    return "RAN", out, err, rc
 
 
 # ============================================================ CEO-409 line masks ===
@@ -950,6 +1008,8 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
     out = _out_files_append(out, cwd, out_files) if out_files else out
     if kind == "HANG":
         return Verdict("HANG", out, err, None, detail=f"exceeded {timeout}s")
+    if kind == "OVERFLOW":
+        return Verdict("FAIL", out, err, None, detail=f"output passed the S4E_OUTPUT_CAP_MB bound of {_OUTPUT_CAP} bytes; the child was killed")
     if kind == "UNPROVEN":
         return Verdict("UNPROVEN", out, err, None, detail=err.decode("utf-8", "replace"))
     if rc is not None and rc < 0:
