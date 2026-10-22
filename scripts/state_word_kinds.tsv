@@ -1,0 +1,7 @@
+# state_word_kinds.tsv -- THE DECLARED STATE WORDS (ARCH-ZETA-ONE-COORDINATE section 3.1; the cto under CEO-1885/1888, 2026-10-22).
+# One row per box kind (or named cell) whose template keeps a frame word beyond its operand cell: key<TAB>class<TAB>template<TAB>pattern
+#   key       the IR kind (IR_TABLE_HDR) or the cell's name as --dump-homes prints it
+#   class     address-escapes | beta-read | continuation (the xfwhy= the dump prints for it)
+#   template  the file under SCRIP that proves it (src/templates/bb/bb_xxx.cpp)
+#   pattern   a substring of that file carrying the read or the lea that proves the class; util_bb_placement_census.py REFUSES rc 2 a row whose template no longer carries it
+# util_template_state_words.py (to be written with the first switch that needs it) derives rows from the templates; a row here is that derivation, cited, never a bare assertion.

@@ -425,6 +425,28 @@ def analyse(lang, src, tmp, seen, seen_sec):
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
 
+def state_word_kinds():
+    path = os.path.join(HERE, 'state_word_kinds.tsv')
+    out = {}
+    if not os.path.isfile(path):
+        return out
+    for ln in open(path, encoding='utf-8'):
+        if not ln.strip() or ln.startswith('#'):
+            continue
+        f = ln.rstrip('\n').split('\t')
+        if len(f) < 4:
+            print('BB_PLACEMENT REFUSE: state_word_kinds.tsv row %r has fewer than four columns (key, class, template, pattern)' % ln.strip()); sys.exit(2)
+        key, cls, tpl, pat = f[0], f[1], f[2], f[3]
+        tp = os.path.join(SC, tpl)
+        if not os.path.isfile(tp) or pat not in open(tp, encoding='utf-8', errors='replace').read():
+            print('BB_PLACEMENT REFUSE: state_word_kinds.tsv row %s cites %s for %r and that template does not carry it (ARCH-ZETA-ONE-COORDINATE section 3.1: a state word is derived from the template, never asserted)' % (key, tpl, pat)); sys.exit(2)
+        out[key] = cls
+    return out
+
+
+STATE_WORDS = state_word_kinds()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--files', nargs='*', help='source files to measure instead of the committed-artifact set')
@@ -448,6 +470,7 @@ def main():
     tests = {l: collections.Counter() for l in langs}
     unw = {l: collections.Counter() for l in langs}
     fhome = {l: collections.Counter() for l in langs}
+    stw = collections.defaultdict(collections.Counter)
     hosts = {l: collections.Counter() for l in langs}
     seen_sec = set()
     seen_standing = set()
@@ -478,6 +501,11 @@ def main():
                     t['unemitted'] += gr['n']
                     continue
                 for (tb, kind, home, forced, cid, xf, xfwhy, off) in gr['cells']:
+                    sw = STATE_WORDS.get(kind) or STATE_WORDS.get(cid)
+                    if sw and xfwhy == sw and home in ('RBP', 'RSP_CARVED', 'SPINE') and (xf != -1 or home != 'SPINE'):
+                        stw[lang][(kind or cid, sw)] += 1
+                        if not forced:
+                            forced = 'state:' + sw
                     t['operands' if tb == 'A' else 'locals'] += 1
                     hs = hosts[lang]
                     if tb == 'A' and home in ('SPINE', 'NONE') and off >= 0 and xf == -1:
@@ -565,6 +593,8 @@ def main():
     for lang in langs:
         fh = fhome[lang]
         print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home']))
+        for k, v in sorted(stw[lang].items(), key=lambda kv: -kv[1]):
+            print('BB_PLACEMENT_STATE %s key=%s class=%s count=%d' % (lang, k[0], k[1], v))
         for k, v in sorted(((k, v) for k, v in fh.items() if isinstance(k, tuple)), key=lambda kv: -kv[1]):
             print('BB_PLACEMENT_FRAMEHOME_WHY %s %s:%s kind=%s count=%d' % (lang, k[0], k[1], k[2], v))
     print('BB_PLACEMENT_TESTS total offspine=%d operand_test=%d local_test=%d standing=%d other=%d' % (tg['offspine'], tg['operand_test'], tg['local_test'], tg['standing'], tg['other']))
