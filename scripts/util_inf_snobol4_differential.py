@@ -128,7 +128,9 @@ def main():
         o = options(a.seed0, n)
         batch = os.path.join(a.out, 'batch_%d.txt' % n)
         args = ['%s=%s' % kv for kv in o.items()] + ['count=%d' % (a.size * 4), 'size=%d' % a.size, 'out=' + batch]
-        subprocess.run([gen] + args, capture_output=True, timeout=300, cwd=a.out)
+        # the generator runs in a co-expression, whose stack Icon sizes from COEXPSIZE; at the default the closed world's recursive
+        # expression walk overflows it (run-time error 302) after a few tests, and an expression batch held its preset lines alone
+        subprocess.run([gen] + args, capture_output=True, timeout=300, cwd=a.out, env=dict(os.environ, COEXPSIZE='100000'))
         if not os.path.exists(batch):
             refuse('the generator wrote no batch %d' % n)
         tests = [t for t in open(batch, encoding='latin-1').read().split('\n') if t.strip()]
