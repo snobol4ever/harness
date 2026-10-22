@@ -4,8 +4,11 @@
 # Six bars, every one a reading of today's tree:
 #   CONSTRUCTS  src/ir/IR.h declares the construct registry (IR_construct_t; IR_graph_t's constructs and n_constructs), and --dump-plan counts
 #               constructs > 0 over the witnesses (the lowerers set it because the construct is in the source)
-#   PASSES      src/planner defines the six passes and the stage driver calls them in dependency order: planner_pass_definiteness, _homes,
-#               _carves, _depths, _layout, _site_rules, inside planner_stage, which the driver calls between lower and the emitter
+#   PASSES      src/planner defines the six passes and the stage driver planner_stage, which the driver calls between lower and the emitter,
+#               calls them with definiteness before homes before carves before depths before site_rules, and layout after homes. LAYOUT'S PLACE
+#               IS NOT PINNED HERE (the cto's correction of 3.5, CEO-1888): today's chain plans read what the layout grants every value box (the
+#               vslots, the chain anchors, the release offsets, the finalised cells), the pre-allocations each language's switch deletes, so
+#               layout-after-depths is the switches' consequence, checked by the last switch's finish line, never this chunk's
 #   STAGE_LINE  src/planner names g_emitter, g_emit_cfg and g_emit nowhere and calls no emit_* function (at 642aac59f: 366 + 100 + 21 and 27)
 #   DELETED     drive_slots_all, zd_edge_retains, planner_home_dyn and planner_retains_emitter_view are named nowhere in src/; xop_frame_slot nowhere in
 #               src/planner (the retains column of the table replaces the three views; the planner calls no emitter decider)
@@ -30,7 +33,10 @@ red() { echo "RED: $*"; bad=1; }
 grep -q 'IR_construct_t' "$SRC/ir/IR.h" && grep -q 'n_constructs' "$SRC/ir/IR.h" || red "CONSTRUCTS src/ir/IR.h declares no construct registry (IR_construct_t, n_constructs)"
 for p in definiteness homes carves depths layout site_rules; do grep -q "planner_pass_$p(" $PL || red "PASSES src/planner defines no planner_pass_$p"; done
 order=$(awk '/^[a-z].* planner_stage\(/{f=1} f{print} f&&/^}/{exit}' $PL | grep -o 'planner_pass_[a-z_]*(' | tr -d '(' | awk '!s[$0]++' | tr '\n' ' ')
-[ "$order" = "planner_pass_definiteness planner_pass_homes planner_pass_carves planner_pass_depths planner_pass_layout planner_pass_site_rules " ] || red "PASSES planner_stage calls, in order: '${order:-none}'"
+pos() { echo "$order" | tr ' ' '\n' | grep -n -x "planner_pass_$1" | head -1 | cut -d: -f1; }
+pd=$(pos definiteness); ph=$(pos homes); pc=$(pos carves); pp=$(pos depths); pl=$(pos layout); ps=$(pos site_rules)
+if [ -n "$pd" ] && [ -n "$ph" ] && [ -n "$pc" ] && [ -n "$pp" ] && [ -n "$pl" ] && [ -n "$ps" ] && [ "$pd" -lt "$ph" ] && [ "$ph" -lt "$pc" ] && [ "$pc" -lt "$pp" ] && [ "$pp" -lt "$ps" ] && [ "$ph" -lt "$pl" ]; then :
+else red "PASSES planner_stage calls, in order: '${order:-none}' (want definiteness < homes < carves < depths < site_rules, layout after homes)"; fi
 grep -q 'planner_stage(' "$SRC/driver/scrip.c" || red "PASSES the driver (src/driver/scrip.c) never calls planner_stage"
 ne=$(cat $PL | grep -o '\bg_emitter\b' | wc -l); nc=$(cat $PL | grep -o '\bg_emit_cfg\b' | wc -l); ng=$(cat $PL | grep -o '\bg_emit\b' | wc -l)
 nf=$(cat $PL | grep -oP '\bemit_\w+(?=\s*\()' | wc -l)
