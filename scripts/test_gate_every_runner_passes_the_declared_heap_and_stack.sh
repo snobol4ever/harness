@@ -561,12 +561,14 @@ ortr=$(RAKU_DIR="$RK" KERNELS="$UNITS" SCRIP="$SCRIP" RT_DIR="$RT" timeout -k 5 
 pbtab "$ortr" '$1 == u && $2 == m && $3 ~ /^[0-9]+\/[0-9]+$/ {split($3, r, "/"); print (r[1] > 0 ? "PASS" : "FAIL"); exit}' > "$W/rtr.tsv"
 quad RTR "$W/rtr.tsv" "bench_triangulate_raku.sh over scratch kernels (rc $rrtr)"
 
-# THE SNOCONE AND REBUS BENCHES (the coo 2026-10-03). Witnesses MEASURED 2026-10-03 on the b1bee0c53 build, both modes: Snocone d(20000)
+# THE SNOCONE AND REBUS BENCHES (the coo 2026-10-03). Snocone RE-CUT 2026-10-22 (coo COO-394): its frames got cheaper and r(20000) answered at the shipped
+# 4 MB stack on fb35bf3d1, so SCB and SCT read deepnodecl PASS; r(100000) is ERROR 246 at -s4096k and depth=100000 at -s262144k, m3 and m4, on 37138a1dd.
+# Witnesses MEASURED 2026-10-03 on the b1bee0c53 build, both modes: Snocone d(20000)
 # and Rebus d(50000) -- ERROR 246 at the shipped 4 MB stack (Snocone from 10000 deep, Rebus only past 20000), their answer at -s262144k;
 # live = the SNOBOL4 witness's 30000-entry TABLE of DUPL('x',100) -- error 204 at the HARD CAP at -d2048k, built 30000 at the default.
 CR="$W/cr"; CSC="$CR/corpus/benchmarks/snocone"; CSN="$CR/corpus/benchmarks/snobol4"; CRB="$CR/corpus/benchmarks/rebus"; mkdir -p "$CSC" "$CSN" "$CRB"
 for u in $UNITS; do case "$u" in
-  deep*) printf 'procedure r(n) {\n    if (EQ(n, 0)) { r = 0; } else { r = r(n - 1) + 1; }\n}\nOUTPUT = %sdepth=%s r(20000);\n' "'" "'" > "$CSC/$u.sc"; echo depth=20000 > "$CSC/$u.ref"
+  deep*) printf 'procedure r(n) {\n    if (EQ(n, 0)) { r = 0; } else { r = r(n - 1) + 1; }\n}\nOUTPUT = %sdepth=%s r(100000);\n' "'" "'" > "$CSC/$u.sc"; echo depth=100000 > "$CSC/$u.ref"
          printf 'function r(n)\n  if n = 0 then return 0\n  return r(n - 1) + 1\nend\n\nfunction main()\n  OUTPUT := "depth=" || r(50000)\nend\n' > "$CRB/$u.reb"; echo depth=50000 > "$CRB/$u.ref"
          sed 's/R(50000)/R(20000)/' "$W/deep.sno" > "$CSN/${u}_twin.sno" ;;
   *) printf 't = TABLE();\ni = 0;\nwhile (LT(i, 30000)) {\n    i = i + 1;\n    t[i] = DUPL(%sx%s, 100);\n}\nOUTPUT = %sbuilt %s i;\n' "'" "'" "'" "'" > "$CSC/$u.sc"; echo 'built 30000' > "$CSC/$u.ref"
