@@ -1956,6 +1956,22 @@ def cmd_from_progress(a):
           "(PASS %d FAIL %d OUTSIDE %d UNGRADABLE %d UNGRADED %d DEFERRED %d) timed=%d"
           % (full_key, cnt["PASS"], total, len(d), len(unread), len(halfread), oldest[1], oldest[0], newest[1], newest[0], wall, dbsuite,
              os.path.relpath(tdir, corpus), cnt["PASS"], cnt["FAIL"], cnt["OUTSIDE"], cnt["UNGRADABLE"], cnt["UNGRADED"], cnt["DEFERRED"], timed))
+    if getattr(a, "reds", False):
+        # ⭐ --reds (the coo 2026-10-22; CEO-1886, Lon's order to send the cto the red entry lists of the near-100 suites): every member of the row's
+        # population that is not PASS in every mode, with each mode's newest reading and its tree, read from the population the count reads; the
+        # list's length must equal total - pass or the listing refuses, so it cannot drift from the row it explains
+        def _cell(e, m):
+            v = last.get((e, m))
+            return "%s=%s@%s" % (m, v[0], v[2]) if v else "%s=UNREAD" % m
+        if pkg:
+            reds = [e for e in sorted(pkg_pop) if not _both(e)]
+        else:
+            reds = [e for e in pop if not (e in d and all(d[e].get(m, ("",))[0] == "PASS" for m in modes))]
+        for e in reds:
+            print("SUITE_ROW_RED %s %s" % (e, " ".join(_cell(e, m) for m in modes)))
+        if len(reds) != total - cnt["PASS"]:
+            print("REFUSE(2): from-progress --reds: %d entries listed where the row reads total %d - pass %d = %d" % (len(reds), total, cnt["PASS"], total - cnt["PASS"]))
+            return 2
     if part:
         byc = _c.defaultdict(list)
         _pk = (lambda p: p.split(":", 1)[0][:-3]) if key == "swi" else (lambda p: p)   # an SWI case is in its file's part
@@ -5404,6 +5420,7 @@ def main():
     fp = sub.add_parser("from-progress", help="assemble ONE SUITE TABLE row from the latest per-program readings in the progress DB (CEO-1676 row (b)): the AND per program over m3 and m4 at each entry's newest reading, any tree; prints SUITE_ROW with the oldest and newest reading's tree (and per partition part); runs no suite")
     fp.add_argument("--suite", required=True, help="the SUITES.tsv key (reb-rungs, swi, ...)")
     fp.add_argument("--dry-run", action="store_true", help="print the row and the population it read; write nothing")
+    fp.add_argument("--reds", action="store_true", help="also print SUITE_ROW_RED <entry> <mode>=<outcome>@<tree>... for every member not PASS in every mode (with --dry-run, writes nothing); refuses rc 2 when the list's length is not total - pass")
     fp.add_argument("--criterion-changed", default="", metavar="'YYYY-MM-DD:reason'", help="stamp a criterion change on the row (passed to util_suite_banner.py --set; S4E_CRITERION_CHANGED fills it)")
     fp.add_argument("--wall-only", action="store_true", help="set ONLY the row's Wall (the sum of each member's minimum time) and nothing else: no pass, total, date or tree; needs the minimum-seconds ledger")
     fp.set_defaults(fn=cmd_from_progress)
