@@ -30,6 +30,8 @@ compiler's own rsp facts (`scrip --dump-homes`):
                              a retaining-callee box dynamic only when the callee's EMITTED procedure holds a suspend or coexpression box
                              or an exit (its _γ or _ω) that does not restore rsp by lea rsp, [rbp + K] before the jump through the return
                              address -- a callee that returns at a fixed distance from its frame base leaves the caller's cells reachable);
+  MATCH_DEFER (a deferred-pattern match, any graph): dynamic by its kind -- it runs a pattern built at run time to a depth no compile-time offset knows
+                             (the ceo, CEO-1882), so a consumer past it cannot reach the operand at a fixed rsp offset;
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
   [LOCALUSE] local=V         a box that touches local V (the compiler's own name, VAR_REF included);
   [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
@@ -350,6 +352,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         ids = by[g]
         emitted = any((g, int(i.split('_')[1])) in nodes for i in ids)
         dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn'] and not (fx['dyn'][bkey(i)] == 'retaining-callee' and fx['callee'].get(bkey(i)) in fixed_exit)}
+        dyn.update({i: 'deferred-pattern' for i in ids if boxes[i]['kind'] == 'MATCH_DEFER'})
         renorm = {i for i in ids if bkey(i) in fx['renorm']}
         succ, succ_value, ops = collections.defaultdict(list), collections.defaultdict(list), []
         for e in gedges[g]:
@@ -497,7 +500,7 @@ def main():
                             if not forced:
                                 fh[('hwt', xfwhy, kind)] += 1
                             cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
-                        elif forced:
+                        elif forced and off >= 0:
                             fh['test_without_home'] += 1
                             fh[('nohome', forced, kind)] += 1
                             cellrows.append((lang, 'SPINE', 'spine_unhomed', 'operand', forced.split(':', 1)[1], gr['name'] + '@' + gr['sig'], tb, kind, cid))
