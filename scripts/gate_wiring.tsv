@@ -551,7 +551,6 @@ test_gate_pas_an_array_keeps_its_declared_low_bound.sh	WIRED	-	-	-
 test_gate_pas_an_array_of_arrays_holds_each_row_as_an_array_and_copies_a_row_as_fpc_does.sh	WIRED	-	-	-
 test_gate_pas_an_array_of_records_held_as_a_record_field_compiles_and_runs.sh	WIRED	-	-	-
 test_gate_pas_an_fpc_dialect_case_with_no_matching_constant_does_nothing.sh	WIRED	-	-	-
-test_gate_pas_the_dialect_switch_stands_in_for_a_mode_directive_the_source_lacks.sh	WIRED	-	-	-
 test_gate_pas_an_identifier_is_defined_before_it_is_used_in_its_block.sh	WIRED	-	-	-
 test_gate_pas_an_if_while_or_until_condition_must_be_boolean.sh	WIRED	-	-	-
 test_gate_pas_an_index_outside_its_type_is_a_diagnosed_error.sh	WIRED	-	-	-
@@ -625,6 +624,7 @@ test_gate_pas_sysutils_now_date_time_and_the_tick_counters_answer_in_range.sh	WI
 test_gate_pas_the_activation_frame_is_carved_and_released_by_the_emitted_prologue.sh	WIRED	-	-	-
 test_gate_pas_the_c_parser_builds_the_pruned_parse_tree.sh	WIRED	-	-	-
 test_gate_pas_the_classes_unit_tstringlist_and_tlist_answer_as_fpc.sh	WIRED	-	-	-
+test_gate_pas_the_dialect_switch_stands_in_for_a_mode_directive_the_source_lacks.sh	WIRED	-	-	-
 test_gate_pas_the_input_buffer_variable_is_the_next_character.sh	WIRED	-	-	-
 test_gate_pas_the_tag_of_a_variable_passed_by_reference_is_not_changed_during_the_call.sh	WIRED	-	-	-
 test_gate_pas_two_routines_of_one_name_get_distinct_assembler_labels.sh	WIRED	-	-	-
@@ -1207,6 +1207,7 @@ test_gate_sno_real_literal_overflow_is_a_parse_error.sh	WIRED	-	-	-
 test_gate_sno_real_zero_over_zero_is_real_zero_as_in_spitbol.sh	WIRED	-	-	-
 test_gate_sno_recede_free_stored_pattern_runs_on_the_rsp_spine.sh	WIRED	-	-	-
 test_gate_sno_repl_lvalue_subject.sh	WIRED	-	-	-
+test_gate_sno_replace_is_an_asm_leaf_that_agrees_with_sbl_and_its_c_twin.sh	WIRED	-	-	-
 test_gate_sno_rewind_on_an_unopened_unit_raises_174.sh	WIRED	-	-	-
 test_gate_sno_rtntype_is_set_by_an_asm_leaf.sh	WIRED	-	-	-
 test_gate_sno_runtime_define.sh	WIRED	-	-	-
