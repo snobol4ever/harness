@@ -10,14 +10,16 @@
 # snap vector (an out-of-range subscript fails the statement); the $ and @ boxes read the slot through the pattern header and assign at once; the
 # . box pushes TWO island entries -- the element sentinel with the span, then the address of the pattern's head cell and the slot -- and the
 # commit pump reads the NAME through the LIVE head, so nothing that moves is held by the r12 CAS island (the cfo's review, hq_snobol4 2026-10-22).
-# THE WITNESSES are two master entries of corpus/tests/snobol4: break_len_table_replace_branch_1 (origin capture_into_an_element_of_a_stored_pattern:
+# THE WITNESSES are three master entries of corpus/tests/snobol4: break_len_table_replace_branch_1 (origin capture_into_an_element_of_a_stored_pattern:
 # . $ @ into an element, a table, the loop-built PAT[I], a name bound at construction and not at match, an out-of-range subscript) and
 # user_function_arbno_any_replace_branch_1 (origin ..._across_collections: a conditional capture through a composed pattern, an alternation that
-# fails, an ARBNO, and a deferred function that allocates 100 arrays between the capture and the commit). Each is graded in mode 3 and mode 4
+# fails, an ARBNO, and a deferred function that allocates 100 arrays between the capture and the commit) and user_function_arbno_fence_replace_branch_2
+# (origin ..._inside_fence: the capture inside FENCE(p), a FENCE'd ARBNO, a nested FENCE and an ARBNO of FENCE, the commit after the fence's gamma, which
+# the gamma law may pop -- the cfo's case, 2026-10-22). Each is graded in mode 3 and mode 4
 # against the ref sbl -bf prints, CUT FROM THE ORACLE at run time, with the grader's conventions (SNO_LIB, SCRIP_SNO_STMTKW=1, --stlimit); the second
 # is graded again under SCRIP_GC_STRESS=1 with SCRIP_GC_PLANT_FLIP=1 (every collection moves the live blocks and traps the stale copies).
 # FAIL_ONCE=1 corrupts the oracle's cut ref (a line is appended) and requires every arm to read red -- the comparison is live, not a constant.
-# FAIL_ONCE (2026-10-22): RED 8 of 8 on the corrupted refs. RED on the tree before the cure (SCRIP f0d1c392a, built in a scratch root with its
+# FAIL_ONCE (2026-10-22): RED 12 of 12 on the corrupted refs. RED on the tree before the cure (SCRIP f0d1c392a, built in a scratch root with its
 # harness sibling): both entries FATAL at compile in both modes, 4 of 4 -- "capture target in a runtime-built pattern is not a simple variable".
 # rc 0 every arm equals the oracle / 1 an arm diverged / 2 could not measure (no scrip, runtime, oracle, corpus entry, or the oracle printed nothing).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -42,7 +44,7 @@ arm() {
         else echo "  $label FAIL (first difference: $(diff "$got" "$want" | grep -m2 '^[<>]' | tr '\n' ' ' | cut -c1-160))"; RC=1; red="$red $label"; fi
     fi
 }
-for e in break_len_table_replace_branch_1 user_function_arbno_any_replace_branch_1; do
+for e in break_len_table_replace_branch_1 user_function_arbno_any_replace_branch_1 user_function_arbno_fence_replace_branch_2; do
     python3 "$HERE/corpus_suite_harness.py" extract "$M/ALL.sno" "$M/ALL.ref" "$e" "$T/$e.sno" --out-ref "$T/$e.mref" --out-in "$T/$e.in" > /dev/null 2>&1 \
         || { echo "⛔ GATE REFUSE(2) [$G]: cannot extract $e from the SNOBOL4 master"; exit 2; }
     [ -f "$T/$e.in" ] || : > "$T/$e.in"
@@ -69,7 +71,7 @@ done
 if [ "${FAIL_ONCE:-0}" = 1 ]; then
     if [ "$RC" = 0 ]; then echo "⛔ GATE FAIL_ONCE(1) [$G]: every arm read RED on the corrupted ref, as required -- the comparison is live ($n of $n arms)"; RC=1
     else echo "⛔ GATE FAIL_ONCE(2) [$G]: an arm did not read red on the corrupted ref:$red"; RC=2; fi
-elif [ "$RC" = 0 ]; then echo "✅ GATE PASS(0) [$G]: a stored pattern's capture into an element binds its name at construction as sbl -bf does, across collections that move the array -- $n of $n arms (2 witnesses x 2 modes x plain and stress+flip)"
+elif [ "$RC" = 0 ]; then echo "✅ GATE PASS(0) [$G]: a stored pattern's capture into an element binds its name at construction as sbl -bf does, across collections that move the array -- $n of $n arms (3 witnesses x 2 modes x plain and stress+flip)"
 else echo "⛔ GATE FAIL(1) [$G]: diverged from sbl -bf:$red"; fi
 echo "    tree: SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)  measured $(date -u +%Y-%m-%dT%H:%MZ)"
 exit $RC
