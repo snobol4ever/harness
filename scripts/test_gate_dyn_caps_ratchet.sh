@@ -54,6 +54,9 @@
 #   gone, nothing added. The ceo's by-name compare that read "the same 202 at both trees" is not reproduced here: after the not-shipped
 #   set-aside the file/static/field rows read 195 -> 194 (op_df_clbl the one), and the arena is outside file/static/field -- the ratchet
 #   counts scope `arena` with them on purpose (CEO-1231 stage 2 (b): a constant 64 KiB or more from an allocator).
+# ⛔ BASELINE_FUNCTION_SCOPE 24 -> 20, 2026-10-21 (hq_prolog, on the cfo's ask about eb1634198): that landing's memmove under a skip-at-cap guard in pl_real_iso_str moved seven callers' buffers
+# out of class B (31 against 24); ddf41edc4 restores the original shape (numeric formats only into the caller's buffer), the seven read fixed by construction again, and the census reads 20, so the
+# baseline falls with the conversion in the same landing, as this arm requires.
 # ⛔ BASELINE_FUNCTION_SCOPE 404 -> 401, 2026-10-02 (the cto, ceo rank-1 row snocone-a-setexit-trap-is-not-taken-...): the
 # three char _ab[300] locals that spelled an LBL__ alias in src/driver/scrip.c (the mode-4 and mode-3 main-chain alias builders and
 # the mode-3 alias registration) are gone -- one helper spells each alias in a stack array sized to its need (the lifetime rule).
