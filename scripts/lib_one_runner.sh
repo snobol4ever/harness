@@ -27,18 +27,22 @@
 # or under make test) enters nothing; a `bash -c "source ..."` probe is not a runner ($0 is not the file at the bottom of the source
 # stack); and a verb that never calls the guard -- scorecard_snobol4.sh oracle, whose last line util_ref_mint.sh parses -- is not a
 # board and is left exactly as it was (measured: the first shape, entered at source time, broke that verb's protocol line).
+# ⭐ THE LIBRARY'S OWN FOLDER, RESOLVED ONCE WHEN SOURCED (ceo CEO-1917; hq_jvm 2026-10-22: a port runner called by a relative path published no
+# row -- test_snobol4_aisnobol_suite.sh cds into the engine root, and one_runner_port_publish then took dirname of a RELATIVE BASH_SOURCE[0],
+# "can't open file /home/claude_jvm/../harness/scripts/util_score_row.py"). Every function below reads _ONE_RUNNER_HERE, never BASH_SOURCE at call time.
+_ONE_RUNNER_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 one_runner_mem_scope() {
   [ -f "$0" ] && [ "${BASH_SOURCE[-1]}" = "$0" ] || return 0
   [ "${S4E_MEM_SCOPE:-}" != unbounded ] || return 0
   grep -qs '/s4e-mem-' /proc/self/cgroup && return 0
-  [ -f "$(dirname "${BASH_SOURCE[0]}")/util_mem_scope.py" ] || return 0
+  [ -f "$_ONE_RUNNER_HERE/util_mem_scope.py" ] || return 0
   local _s4e_mem_argv
   mapfile -d '' _s4e_mem_argv < /proc/$$/cmdline
-  exec python3 "$(dirname "${BASH_SOURCE[0]}")/util_mem_scope.py" enter --kind board -- "${_s4e_mem_argv[@]}"
+  exec python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" enter --kind board -- "${_s4e_mem_argv[@]}"
 }
 one_runner_seat() {
   if [ -n "${S4E_SEAT:-}" ]; then printf '%s\n' "$S4E_SEAT"; return 0; fi
-  local here; here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  local here; here="$_ONE_RUNNER_HERE"
   S4E_HOME="${S4E_HOME:-$(cd "$here/../.." && pwd)}" python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import util_score_row as u; print(u.derive_measurer() or "")' "$here" 2>/dev/null
 }
 # ⛔⭐ WHOSE corpus IS IT? (coo 2026-09-18, row instruments-the-progress-fingerprint-gate-appends-no-rows-arms-1-and-2-red-and-arm-4-
@@ -82,7 +86,7 @@ one_runner_in_a_shared_checkout() {  # rc 0 = inside a checkout of the shared co
 }
 one_runner_suite_is_a_board() {
   local suite="$1" corpus sp cr
-  corpus="${S4E_CORPUS:-${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus}"
+  corpus="${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}"
   sp="$(cd "$(dirname "$suite")" 2>/dev/null && pwd)/$(basename "$suite")" || return 0
   cr="$(cd "$corpus" 2>/dev/null && pwd)" || return 0
   [ -n "$cr" ] || return 0
@@ -159,13 +163,13 @@ one_runner_is_port() {
   [ "$(one_runner_engine)" != scrip ]
 }
 one_runner_port_face() {
-  printf '%s' "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/run_port_as_scrip.sh"
+  printf '%s' "$_ONE_RUNNER_HERE/run_port_as_scrip.sh"
 }
 one_runner_port_ready() {   # one_runner_port_ready <lang>
   local _run
   case "$(one_runner_engine)" in dotnet) _run=run_snobol4dotnet.sh;; jvm) _run=run_snobol4jvm.sh;;
     *) echo "⛔ REFUSE(rc=2): S4E_ENGINE=$(one_runner_engine) names no port engine (dotnet, jvm)" >&2; return 2;; esac
-  bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries --lang "${1:-snobol4}" > /dev/null || return 2
+  bash "$_ONE_RUNNER_HERE/$_run" --binaries --lang "${1:-snobol4}" > /dev/null || return 2
 }
 # one_runner_port_time_unit_ns -- nanoseconds per TIME() unit of the port engine, for a wrapper that budgets by TIME() (SnoBench's angle 3).
 # snobol4dotnet mimics SPITBOL exactly (Lon 2026-10-18, in-chat to hq_dotnet, verbatim: "The snobol4dotnet is meant to mimic SPITBOL exactly.
@@ -181,7 +185,7 @@ one_runner_port_time_unit_ns() { case "$(one_runner_engine)" in dotnet|jvm) prin
 # driver its runner's --paths names first, the tree its progress rows pin (util_progress_append.py), so a port's board never prints SCRIP's
 one_runner_port_tree() {
   local _e _d _t; _e="$(one_runner_engine)"
-  _d="$(bash "$(dirname "${BASH_SOURCE[0]}")/run_snobol4$_e.sh" --paths 2>/dev/null | head -1)"
+  _d="$(bash "$_ONE_RUNNER_HERE/run_snobol4$_e.sh" --paths 2>/dev/null | head -1)"
   _t="$(git -C "$(dirname "${_d:-/}")" rev-parse --show-toplevel 2>/dev/null)" || { printf '%s ?' "$_e"; return 0; }
   printf '%s %s%s' "$_e" "$(git -C "$_t" rev-parse --short HEAD)" "$(git -C "$_t" diff --quiet HEAD 2>/dev/null || printf -- -dirty)"
 }
@@ -190,7 +194,7 @@ one_runner_port_tree() {
 # rows the pass appended. Shut by S4E_SCORE_NO_WRITE as SCRIP's write is; a refusal is said aloud and never turns the board red.
 one_runner_port_publish() {
   if [ -n "${S4E_SCORE_NO_WRITE:-}" ]; then echo "SUITES.tsv: $1 NOT PUBLISHED -- this run publishes nothing by its caller's own declaration (S4E_SCORE_NO_WRITE): $S4E_SCORE_NO_WRITE"; return 0; fi
-  python3 "$(dirname "${BASH_SOURCE[0]}")/util_score_row.py" from-progress --suite "$1" \
+  python3 "$_ONE_RUNNER_HERE/util_score_row.py" from-progress --suite "$1" \
     || echo "⚠ SUITES.tsv: $1 NOT PUBLISHED -- from-progress refused (above); the board line still stands"
 }
 one_runner_who() {
@@ -224,13 +228,13 @@ one_runner_bin_fingerprint() {
   local _t _b _r _run _f _bins
   if [ "$(one_runner_engine)" != scrip ]; then
     case "$(one_runner_engine)" in dotnet) _run=run_snobol4dotnet.sh;; jvm) _run=run_snobol4jvm.sh;; *) return 1;; esac
-    _bins="$(bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --paths 2>/dev/null)" && [ -n "$_bins" ] \
-      || _bins="$(bash "$(dirname "${BASH_SOURCE[0]}")/$_run" --binaries 2>/dev/null)" && [ -n "$_bins" ] || return 1
+    _bins="$(bash "$_ONE_RUNNER_HERE/$_run" --paths 2>/dev/null)" && [ -n "$_bins" ] \
+      || _bins="$(bash "$_ONE_RUNNER_HERE/$_run" --binaries 2>/dev/null)" && [ -n "$_bins" ] || return 1
     while IFS= read -r _f; do [ -f "$_f" ] || return 1; done <<< "$_bins"
     while IFS= read -r _f; do md5sum "$_f" | cut -c1-12; done <<< "$_bins" | tr '\n' ' '
     return 0
   fi
-  _t="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+  _t="$(cd "$_ONE_RUNNER_HERE/../../SCRIP" && pwd)"
   _b="${SCRIP:-$_t/scrip}"; _r="${RT_DIR:-$_t/out}/libscrip_rt.so"
   [ -f "$_b" ] && [ -f "$_r" ] || return 1
   md5sum "$_b" "$_r" 2>/dev/null | cut -c1-12 | tr '\n' ' '
@@ -255,7 +259,7 @@ one_runner_guard() {
   local board="${1:-${0##*/}}" suite="${2:-}" seat who lang
   if [ -n "$suite" ] && ! one_runner_suite_is_a_board "$suite"; then return 0; fi
   one_runner_mem_scope
-  if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$(dirname "${BASH_SOURCE[0]}")/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
+  if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
   seat="$(one_runner_seat)"; lang="$(one_runner_lang "$board" "$suite")"; who="$(one_runner_who "$lang")"
   if [ -n "$seat" ] && one_runner_seat_admitted "$seat" "$who"; then return 0; fi
   # ⛔⭐ ONE SEAT, ONE LANGUAGE: A LANGUAGE HQ NEVER RUNS ANOTHER LANGUAGE'S BOARD -- NEITHER EXEMPTION BELOW ADMITS IT (Lon 2026-09-24,
@@ -290,7 +294,7 @@ one_runner_guard() {
     printf 'ONE-RUNNER SINGLE FILE by %s on %s: %s, no progress row and no score row\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_SINGLE_FILE"; return 0
   fi
   if [ -n "${S4E_ONE_RUNNER_FIXTURE:-}" ]; then
-    local _fxpop="${S4E_CORPUS:-${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus}"
+    local _fxpop="${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}"
     if [ -z "$suite" ] && ! one_runner_in_a_shared_checkout "$_fxpop"; then printf 'ONE-RUNNER FIXTURE by %s on %s: %s\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_FIXTURE"; return 0; fi
     printf '⛔ ONE-RUNNER FIXTURE NOT ADMITTED: %s grades %s, the shared corpus or a population a board reads -- the exemption admits a scratch population only (ceo CEO-1302 (c)); point the fixture at one (S4E_HOME, --corpus, the runner'"'"'s *_SUITE) with a scratch S4E_PROGRESS_DB\n' "$board" "${suite:-$_fxpop}" >&2
   fi
@@ -326,12 +330,12 @@ one_runner_guard() {
 ONE_RUNNER_PROBE_SEAT='__one_runner_probe_not_a_seat__'
 one_runner_prove_seam() {
   local out rc fails=0 outside
-  out=$(S4E_SEAT="$ONE_RUNNER_PROBE_SEAT" S4E_DONE_WHEN_RUN='' S4E_ONE_RUNNER_OVERRIDE='' S4E_ONE_RUNNER_FIXTURE='' one_runner_guard 'one-runner-seam-probe' "${S4E_CORPUS:-${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus}" 2>&1); rc=$?
+  out=$(S4E_SEAT="$ONE_RUNNER_PROBE_SEAT" S4E_DONE_WHEN_RUN='' S4E_ONE_RUNNER_OVERRIDE='' S4E_ONE_RUNNER_FIXTURE='' one_runner_guard 'one-runner-seam-probe' "${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}" 2>&1); rc=$?
   if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q 'REFUSE(2) ONE RUNNER'; then printf '  OK   ARM 1 the guard REFUSES a board to a seat its language LANE does not name (rc=2, message asserted)
 '
   else printf '  FAIL ARM 1 expected rc=2 and a REFUSE message on a corpus-rooted board, got rc=%s: %s
 ' "$rc" "${out:-<silent>}"; fails=$((fails+1)); fi
-  outside="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  outside="$_ONE_RUNNER_HERE"
   S4E_SEAT="$ONE_RUNNER_PROBE_SEAT" S4E_DONE_WHEN_RUN='' S4E_ONE_RUNNER_OVERRIDE='' S4E_ONE_RUNNER_FIXTURE='' one_runner_guard 'one-runner-seam-probe' "$outside" >/dev/null 2>&1; rc=$?
   if [ "$rc" = 0 ]; then printf '  OK   ARM 2 the guard ADMITS a suite path OUTSIDE the corpus tree (a gate fixture is not a board)
 '
