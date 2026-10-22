@@ -35,7 +35,8 @@ compiler's own rsp facts (`scrip --dump-homes`):
   [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
   OPERAND TEST: result cell P fails iff for some consumer O a control path P ... O (not through P again) crosses a dynamic box
   with no cut after it, or P is itself dynamic (the path starts at P's gamma edges: once P fails (its omega) its cell is popped and
-  nothing reads it, CEO-1865); LOCAL TEST: local V fails iff some box touching it can be entered, at alpha or
+  nothing reads it, CEO-1865; an Icon DISJUNCTION is no consumer: its op edges name its arms, and the emitted box reads only its own carve --
+  the arm selector at [rsp + 16] -- while each arm's last box copies its result into that carve); LOCAL TEST: local V fails iff some box touching it can be entered, at alpha or
   beta, on a path from a dynamic box with no cut between.  No graph-level proxy (generator, retained graph, more than one SUCCEED)
   forces anything by itself.
 STATES per cell: SPINE; RBP_FORCED; RBP_MISPLACED (behind rbp, the criterion admits the spine); CARVED_FORCED (printed, owed to
@@ -353,7 +354,8 @@ def analyse(lang, src, tmp, seen, seen_sec):
         succ, succ_value, ops = collections.defaultdict(list), collections.defaultdict(list), []
         for e in gedges[g]:
             if e.get('rel') == 'op':
-                ops.append((e['from'], e['to']))
+                if not (lang == 'icon' and boxes[e['from']]['kind'] == 'DISJUNCTION'):
+                    ops.append((e['from'], e['to']))
             else:
                 succ[e['from']].append(e['to'])
                 if e.get('fp') != 'omega':
