@@ -102,9 +102,11 @@ src/templates/bb/bb_limit.cpp:core_icn_limit_count_check#3	hb_sibling_frames_lea
 src/templates/bb/bb_lit_scalar.cpp:rt_icn_cset_register#1	hb_scan_subject_across_a_failing_callee.icn
 src/templates/bb/bb_make_list.cpp:rt_make_list#1	hb_size_result_polled.icn
 src/templates/bb/bb_make_list.cpp:rt_make_list#2	UNWITNESSED
+src/templates/bb/bb_match_atp.cpp:rt_at_cursor_patv#1	hb_sno_a_stored_pattern_captures_into_an_element_polled.sno
 src/templates/bb/bb_match_atp.cpp:rt_at_cursor_open#1	UNWITNESSED
 src/templates/bb/bb_match_atp.cpp:rt_at_cursor_land_γ#1	UNWITNESSED
 src/templates/bb/bb_match_atp.cpp:rt_at_cursor#1	hb_value_trace_during_match.sno
+src/templates/bb/bb_match_capture.cpp:rt_cap_assign_patv#1	hb_sno_a_stored_pattern_captures_into_an_element_polled.sno
 src/templates/bb/bb_match_capture.cpp:rt_value_trace_open#1	hb_immediate_capture_into_a_gva_cell_polled.sno
 src/templates/bb/bb_match_capture.cpp:rt_cap_open_gva#1	hb_immediate_capture_into_a_gva_cell_polled.sno
 src/templates/bb/bb_match_capture.cpp:rt_cap_open_plain/rt_cap_open#1	UNWITNESSED

@@ -1,0 +1,8 @@
+        A = ARRAY(3)
+        P = LEN(1) $ A[1]
+        Q = LEN(1) @A[2]
+        N = 0
+LOOP    N = LT(N, 300) N + 1                            :F(DONE)
+        'xyz' P Q                                       :(LOOP)
+DONE    OUTPUT = A[1] ' ' A[2] ' ' N
+END
