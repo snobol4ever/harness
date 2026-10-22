@@ -3,9 +3,9 @@
 # Compiles every program of util_spine_population.sh with SCRIP_PLANNER_REPORT=1 in mode 4 (--compile) and runs it in mode 3 (--run, stdin
 # closed, 20 s), counting the [PLANNER-FALLBACK] lines the emitter prints when a chain reaches emission with no record from the planner's pass.
 #   util_planner_pass_census.sh [--lang L] [--scrip PATH]      (--scrip: grade another built tree's binary, for a two-tree proof)
-# Prints PLANNER_PASS lang=<l>|total programs=<p> m4_fallbacks=<n> m3_fallbacks=<m> m3_rc_nonzero=<k> m4_unreported=<u>; rc 0 when m4_fallbacks is 0
+# Prints PLANNER_PASS lang=<l>|total programs=<p> m4_fallbacks=<n> m3_fallbacks=<m> m3_rc_nonzero=<k> m4_unreported=<u>; rc 0 when m4_fallbacks and m3_fallbacks are 0
 # everywhere, rc 1 otherwise, rc 2 when it could not measure (a compile that prints no [PLANNER-PASS] summary is a binary without the pass report, never a
-# green). A mode-3 fallback is reported, not graded, until the run-time compile roads join the pass.
+# green). Mode-3 fallbacks are graded too since B2d: the run-time compile roads plan through the pass (planner_rt_plan in emit_chain).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -33,4 +33,4 @@ for l in $(printf '%s\n' "${!P4[@]}" | sort); do
 done
 echo "PLANNER_PASS total programs=$tp m4_fallbacks=$t4 m3_fallbacks=$t3 m3_rc_nonzero=$tk m4_unreported=$tu (binary $SCRIP, tree $(git -C "$(dirname "$SCRIP")" rev-parse --short HEAD 2>/dev/null))"
 [ "$tu" = 0 ] || { echo "REFUSE(2): $tu mode-4 compiles printed no [PLANNER-PASS] line -- this binary carries no planner pass report, so the reading is not a measurement"; exit 2; }
-[ "$t4" = 0 ] && exit 0 || exit 1
+[ "$t4" = 0 ] && [ "$t3" = 0 ] && exit 0 || exit 1
