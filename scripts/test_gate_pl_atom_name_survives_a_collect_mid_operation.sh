@@ -96,14 +96,14 @@ echo "CLAUSE 1 -- THE PRECONDITION: atom-name storage is outside the collected h
 # one of the four spellings I thought of", and a new spelling passes it silently. So: resolve the allocator that
 # ACTUALLY produces the name pointer, and require it to be on a short list of off-heap sources. An allocator this
 # clause cannot resolve REFUSES rc=2 -- it must never be able to report a pass about a line it did not understand.
-# ⛔ AND IT IS SCOPED TO THE NAME, NOT THE FILE: prolog_atom.c's TABLES (g_ht, g_atom_names) come from rt_wsb_alloc,
+# ⛔ AND IT IS SCOPED TO THE NAME, NOT THE FILE: prolog_atom.c's TABLES (g_runtime.atoms.ht, g_runtime.atoms.atom_names) come from rt_wsb_alloc,
 # which IS the collected heap and is CORRECT -- pl_gc_roots visits both blocks and their slots are registered, so
 # a slide fixes them up. Only the NAME may not be collected, because a raw C local holds it across operations and
 # no root scan sees that local. A file-wide allowlist would red the two table allocations, which are not the bug.
-NAMEVAR="$(grep -oE 'g_atom_names\[[A-Za-z_][A-Za-z0-9_]*\][[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
-[ -n "$NAMEVAR" ] || refuse "cannot find the assignment into g_atom_names[] in $ATOMC -- this clause must never pass on a file it did not parse"
+NAMEVAR="$(grep -oE 'g_runtime\.atoms\.atom_names\[[A-Za-z_][A-Za-z0-9_]*\][[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
+[ -n "$NAMEVAR" ] || refuse "cannot find the assignment into g_runtime.atoms.atom_names[] in $ATOMC -- this clause must never pass on a file it did not parse"
 NAMEALLOC="$(grep -oE "\\b$NAMEVAR[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(" "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//; s/[[:space:]]*\($//')"
-[ -n "$NAMEALLOC" ] || refuse "found g_atom_names[...] = $NAMEVAR but cannot resolve where $NAMEVAR is allocated -- refusing rather than guessing"
+[ -n "$NAMEALLOC" ] || refuse "found g_runtime.atoms.atom_names[...] = $NAMEVAR but cannot resolve where $NAMEVAR is allocated -- refusing rather than guessing"
 case "$NAMEALLOC" in
     ct_strdup|ct_alloc|strdup|malloc|calloc)
         ck ok "the atom name is allocated by $NAMEALLOC, which is off the collected heap -- a name pointer held in a raw C local cannot be invalidated by a slide" ;;
@@ -116,7 +116,7 @@ case "$NAMEALLOC" in
     *)
         ck no "the atom name is allocated by $NAMEALLOC, which is not on the off-heap allowlist (ct_strdup ct_alloc strdup malloc calloc pool_strdup) -- if $NAMEALLOC is genuinely off-heap, ADD IT HERE with the reason; if it is the collected heap, this row's cure has been reverted" ;;
 esac
-KEYSRC="$(grep -oE 'g_ht\[[A-Za-z_][A-Za-z0-9_]*\]\.key[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
+KEYSRC="$(grep -oE 'g_runtime\.atoms\.ht\[[A-Za-z_][A-Za-z0-9_]*\]\.key[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
 if [ "$KEYSRC" = "$NAMEVAR" ]; then
     ck ok "the hash key and the table entry are the SAME pointer ($NAMEVAR), so neither can be cured while the other dangles"
 else

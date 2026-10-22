@@ -66,7 +66,7 @@ case "$SHARED_OBJ" in *"/by_name_dispatch.o"*) ;; *) echo "⛔ REFUSED(2) [$GATE
 # ---- the frozen survivors: a name is added only with its reason, never for a section-10 structure -------------------
 # The atom table (prolog_atom.c; RULES.md rebuild gate clause 2, "the atom table stays"): the interned names, their
 # lengths and hash, the functor table and its hash, the operator columns, the five well-known atoms and './2'.
-ALLOW_ATOMS="g_atom_cut g_atom_dot g_atom_fail g_atom_nil g_atom_true g_functor_dot2 g_atom_cap g_atom_len g_atom_names g_fht g_fht_size g_fht_used g_functor_cap g_functor_len g_functors g_ht g_ht_size g_ht_used g_name_pool g_name_pool_left g_opcols g_opcols_cap g_opcols_ready"
+ALLOW_ATOMS="g_runtime"
 # g_pl_flags (by_name_dispatch.c): the ISO flag store of current_prolog_flag/2 and set_prolog_flag/2, per-process
 # configuration sanctioned by Lon's directive (PL-ISO-12), not a stack.
 # rtx_gate_plunify (rtx_plunify.s): the leaf's RTX switch, set once at startup by rtx_init.c from SCRIP_RTX_PLUNIFY.
