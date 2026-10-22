@@ -35,11 +35,12 @@ cat > "$T/hb.c" <<'FIXTUREC'
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <dlfcn.h>
 void *rt_gcheap_alloc(uint16_t type, uint64_t payload_bytes);
 long rt_gc_collect(void);
 void *rt_pl_tr_init(void);
 typedef struct { char *top; char *end; } fr_t;
-extern fr_t g_hp_fr;
+static fr_t *hp;
 typedef struct { void *cell; uint64_t pad; uint64_t o0, o1; } ent_t;
 static char *tr;
 static ent_t *push(void *cell, uint64_t pad) {
@@ -54,21 +55,22 @@ static ent_t *push(void *cell, uint64_t pad) {
 }
 static char *dvec(uint64_t n) { char *p = (char *)rt_gcheap_alloc(214, n); memset(p, 0, n); return p; }
 int main(void) {
+    hp = (fr_t *)dlsym(RTLD_DEFAULT, "g_runtime");
     tr = (char *)rt_pl_tr_init();
     (void)dvec(4096);
     ent_t *k = push(dvec(32), 0);
-    char *hb1 = g_hp_fr.top;
+    char *hb1 = hp->top;
     ent_t *s1 = push((void *)0, (uint64_t)(uintptr_t)hb1);
     (void)dvec(4096);
     ent_t *y = push(dvec(32), 0);
-    char *hb2 = g_hp_fr.top;
+    char *hb2 = hp->top;
     ent_t *s2 = push((void *)0, (uint64_t)(uintptr_t)hb2);
     (void)dvec(4096);
     long r = rt_gc_collect();
     printf("HB reclaimed=%ld\n", r);
     printf("HB a_mark=%p a_expect=%p a_unmoved=%p\n", (void *)(uintptr_t)s1->pad, (void *)((char *)y->cell - 16), (void *)hb1);
     printf("HB a_kbelow=%d a_yabove=%d\n", (char *)k->cell < (char *)(uintptr_t)s1->pad, (char *)y->cell >= (char *)(uintptr_t)s1->pad);
-    printf("HB b_mark=%p b_expect=%p b_unmoved=%p\n", (void *)(uintptr_t)s2->pad, (void *)g_hp_fr.top, (void *)hb2);
+    printf("HB b_mark=%p b_expect=%p b_unmoved=%p\n", (void *)(uintptr_t)s2->pad, (void *)hp->top, (void *)hb2);
     return 0;
 }
 FIXTUREC

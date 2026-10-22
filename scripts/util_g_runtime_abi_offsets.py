@@ -16,7 +16,8 @@ INC = os.path.join(ROOT, "src/runtime/core/g_runtime_abi.inc")
 CHK = os.path.join(ROOT, "src/runtime/core/g_runtime_abi_check.inc")
 def members():
     s = open(H, encoding="utf-8").read()
-    body = s[s.index("typedef struct {"):s.index("} g_abi_t;")]
+    end = s.index("} g_abi_t;")
+    body = s[s.rindex("typedef struct {", 0, end):end]
     return re.findall(r"\b(\w+)(?:\[[^\]]*\])?;", body)
 def main():
     ms = members()
@@ -30,7 +31,7 @@ def main():
             print(r.stderr); sys.exit(2)
         out = subprocess.run([x], capture_output=True, text=True).stdout.split("\n")
     text = "".join("#define G_RT_OFF_%s %s\n" % (l.split()[0].upper(), l.split()[1]) for l in out if l.strip())
-    chk = "".join('_Static_assert(offsetof(g_runtime_t, abi.%s) == G_RT_OFF_%s, "g_runtime.abi.%s moved: asm leaves, templates and the poll leaf address it by G_RT_OFF_%s; run harness/scripts/util_g_runtime_abi_offsets.py");\n' % (m, m.upper(), m, m.upper()) for m in ms)
+    chk = "".join('_Static_assert(offsetof(g_runtime_t, abi.%s) == G_RT_OFF_%s, "abi.%s moved: run util_g_runtime_abi_offsets.py");\n' % (m, m.upper(), m) for m in ms)
     if "--check" in sys.argv:
         cur = open(INC).read() if os.path.exists(INC) else ""
         cur2 = open(CHK).read() if os.path.exists(CHK) else ""

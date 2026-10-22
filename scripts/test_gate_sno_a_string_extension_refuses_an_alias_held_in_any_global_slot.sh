@@ -48,7 +48,7 @@ set breakpoint pending on
 break sno_concat_d
 ignore 1 1500
 run < /dev/null > /dev/null 2>&1
-set $n = g_sxt_fr.gva_n
+set $n = g_runtime.abi.sxt_fr.gva_n
 set $xk = -1
 set $k = 0
 while $k < $n
