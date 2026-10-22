@@ -68,11 +68,12 @@ for src in "$WITDIR"/*.icn "$WITDIR"/*.sno "$WITDIR"/*.pl "$WITDIR"/*.raku "$WIT
   fi
 done
 [ "$graded" -ge "$MIN_WITS" ] || refuse "only $graded witnesses with refs were graded (floor $MIN_WITS) -- a shrunken population is not a pass"
-cat > "$T/count.gdb" <<'GDB'
+for sym in rt_gc_sw_step_a gc_collect_ex gc_collect_ex_c; do
+cat > "$T/count.$sym.gdb" <<GDB
 set pagination off
 set confirm off
 set breakpoint pending on
-break rt_gc_sw_step_a
+break $sym
 commands
 silent
 continue
@@ -80,11 +81,12 @@ end
 run
 info breakpoints
 GDB
+done
 step_hits() {
-  local log="$T/gdb.$1.$2"
-  shift 2
+  local sym="$1" log="$T/gdb.$1.$2.$3"
+  shift 3
   timeout -k 5 300s "$@" < /dev/null > "$log" 2>&1
-  grep -q 'in rt_gc_sw_step_a' "$log" || { echo "UNRESOLVED"; return; }
+  grep -q "in $sym at" "$log" || { echo "UNRESOLVED"; return; }
   local n; n="$(sed -n 's/.*breakpoint already hit \([0-9]*\) time.*/\1/p' "$log" | head -1)"
   echo "${n:-0}"
 }
@@ -93,8 +95,8 @@ sext="${STEPW##*.}"; cp "$WITDIR/$STEPW" "$T/s.$sext"
   || refuse "the step witness $STEPW does not compile and link in mode 4"
 step_red=""
 for d in 0 1; do
-  h3="$(step_hits m3 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gdb" --args "$SCRIP" "$WITDIR/$STEPW")"
-  h4="$(step_hits m4 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gdb" "$T/s.x")"
+  h3="$(step_hits rt_gc_sw_step_a m3 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.rt_gc_sw_step_a.gdb" --args "$SCRIP" "$WITDIR/$STEPW")"
+  h4="$(step_hits rt_gc_sw_step_a m4 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.rt_gc_sw_step_a.gdb" "$T/s.x")"
   echo "STEP SCRIP_DIAG=$d $STEPW: rt_gc_sw_step_a entered m3=$h3 m4=$h4"
   for h in "$h3" "$h4"; do [ "$h" = UNRESOLVED ] && refuse "gdb could not place a breakpoint on rt_gc_sw_step_a -- the asm step was renamed or deleted; re-cut arm (b) in that landing"; done
   if [ "$d" = 0 ]; then
@@ -102,6 +104,21 @@ for d in 0 1; do
     [ "$h4" -gt 0 ] || step_red="$step_red m4"
   else
     { [ "$h3" = 0 ] && [ "$h4" = 0 ]; } || refuse "the control (SCRIP_DIAG=1, the C walk) entered the asm step (m3=$h3 m4=$h4) -- the counter can no longer tell the two roads apart; re-cut the control"
+  fi
+done
+fast_red=""
+for d in 0 1; do
+  f3="$(step_hits gc_collect_ex m3 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gc_collect_ex.gdb" --args "$SCRIP" "$WITDIR/$STEPW")"
+  f4="$(step_hits gc_collect_ex m4 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gc_collect_ex.gdb" "$T/s.x")"
+  c3="$(step_hits gc_collect_ex_c m3 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gc_collect_ex_c.gdb" --args "$SCRIP" "$WITDIR/$STEPW")"
+  c4="$(step_hits gc_collect_ex_c m4 "$d" env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB SCRIP_DIAG=$d SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 gdb -q -batch -x "$T/count.gc_collect_ex_c.gdb" "$T/s.x")"
+  echo "FUNNEL SCRIP_DIAG=$d $STEPW: gc_collect_ex entered m3=$f3 m4=$f4, its C instruments road gc_collect_ex_c entered m3=$c3 m4=$c4"
+  for h in "$f3" "$f4" "$c3" "$c4"; do [ "$h" = UNRESOLVED ] && refuse "gdb could not place a breakpoint on the collection funnel or its C road -- re-cut arm (c) in the landing that renamed them"; done
+  { [ "$f3" -gt 0 ] && [ "$f4" -gt 0 ]; } || refuse "the funnel gc_collect_ex was never entered at SCRIP_DIAG=$d (m3=$f3 m4=$f4) -- the witness collects nothing, so arm (c) measures nothing"
+  if [ "$d" = 0 ]; then
+    { [ "$c3" = 0 ] && [ "$c4" = 0 ]; } || fast_red="$fast_red m3=$c3,m4=$c4"
+  else
+    { [ "$c3" -gt 0 ] && [ "$c4" -gt 0 ]; } || refuse "the control (SCRIP_DIAG=1) never took the C instruments road (m3=$c3 m4=$c4) -- the counter can no longer tell the two roads apart; re-cut the control"
   fi
 done
 nd=0; for x in $declared; do nd=$((nd+1)); done
@@ -113,6 +130,7 @@ red=0
 if [ "$ns" != 0 ]; then echo "  ⛔ STALE floor line(s) -- the witness passes in both modes, so the line would silence its next regression:"; for x in $stale; do echo "    $x"; done; red=1; fi
 if [ "$nn" != 0 ]; then echo "  ⛔ NEW red witness(es) on the asm walk:"; for x in $newbad; do echo "    $x"; done; red=1; fi
 if [ -n "$step_red" ]; then echo "  ⛔ the asm step was never entered at SCRIP_DIAG=0 in:$step_red -- the shipped road went ungraded"; red=1; fi
+if [ -n "$fast_red" ]; then echo "  ⛔ the asm collection funnel handed a SCRIP_DIAG=0 collection to its C instruments road (gc_collect_ex_c):$fast_red -- the shipped road is not the asm funnel"; red=1; fi
 if [ "$red" = 1 ]; then echo "GATE RED [gc_every_witness_passes_on_the_asm_walk]"; exit 1; fi
-echo "GATE PASS [gc_every_witness_passes_on_the_asm_walk]: $pass_both of $graded witnesses match their refs in both modes on the road the benchmarks ship, $nd declared on the floor with their rows, and the asm step ran"
+echo "GATE PASS [gc_every_witness_passes_on_the_asm_walk]: $pass_both of $graded witnesses match their refs in both modes on the road the benchmarks ship, $nd declared on the floor with their rows, and the asm step ran and the asm funnel took every SCRIP_DIAG=0 collection"
 exit 0

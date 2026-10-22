@@ -14,14 +14,19 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
 H = os.path.join(ROOT, "src/runtime/core/g_runtime_abi.h")
 INC = os.path.join(ROOT, "src/runtime/core/g_runtime_abi.inc")
 CHK = os.path.join(ROOT, "src/runtime/core/g_runtime_abi_check.inc")
+EXTRA = os.path.join(ROOT, "src/runtime/core/g_runtime_asm_members.txt")
 def members():
     s = open(H, encoding="utf-8").read()
     end = s.index("} g_abi_t;")
     body = s[s.rindex("typedef struct {", 0, end):end]
     return re.findall(r"\b(\w+)(?:\[[^\]]*\])?;", body)
+def extras():
+    return [l.strip() for l in open(EXTRA, encoding="utf-8").read().split("\n") if l.strip()] if os.path.exists(EXTRA) else []
 def main():
     ms = members()
-    probe = '#include <stdio.h>\n#include <stddef.h>\n#include "g_runtime.h"\nint main(void) {\n' + "".join('    printf("%s %%zu\\n", offsetof(g_runtime_t, abi.%s));\n' % (m, m) for m in ms) + "    return 0;\n}\n"
+    xs = extras()
+    paths = [("abi." + m, m.upper()) for m in ms] + [(x, x.upper().replace(".", "_")) for x in xs]
+    probe = '#include <stdio.h>\n#include <stddef.h>\n#include "g_runtime.h"\nint main(void) {\n' + "".join('    printf("%s %%zu\\n", offsetof(g_runtime_t, %s));\n' % (n, pth) for pth, n in paths) + "    return 0;\n}\n"
     with tempfile.TemporaryDirectory() as d:
         c = os.path.join(d, "p.c"); x = os.path.join(d, "p")
         open(c, "w").write(probe)
@@ -31,11 +36,11 @@ def main():
             print(r.stderr); sys.exit(2)
         out = subprocess.run([x], capture_output=True, text=True).stdout.split("\n")
     text = "".join("#define G_RT_OFF_%s %s\n" % (l.split()[0].upper(), l.split()[1]) for l in out if l.strip())
-    chk = "".join('_Static_assert(offsetof(g_runtime_t, abi.%s) == G_RT_OFF_%s, "abi.%s moved: run util_g_runtime_abi_offsets.py");\n' % (m, m.upper(), m) for m in ms)
+    chk = "".join('_Static_assert(offsetof(g_runtime_t, %s) == G_RT_OFF_%s, "%s moved: run util_g_runtime_abi_offsets.py");\n' % (pth, n, pth) for pth, n in paths)
     if "--check" in sys.argv:
         cur = open(INC).read() if os.path.exists(INC) else ""
         cur2 = open(CHK).read() if os.path.exists(CHK) else ""
         ok = cur == text and cur2 == chk
-        print("FRESH: %d offsets" % len(ms) if ok else "STALE: run util_g_runtime_abi_offsets.py"); sys.exit(0 if ok else 1)
-    open(INC, "w").write(text); open(CHK, "w").write(chk); print("wrote %s and %s (%d offsets)" % (INC, CHK, len(ms)))
+        print("FRESH: %d offsets" % len(paths) if ok else "STALE: run util_g_runtime_abi_offsets.py"); sys.exit(0 if ok else 1)
+    open(INC, "w").write(text); open(CHK, "w").write(chk); print("wrote %s and %s (%d offsets)" % (INC, CHK, len(paths)))
 main()
