@@ -20,6 +20,13 @@
 # 100 emitter/template files). Fail-once: a floor set one below today's count reads RED (ceo, 2026-10-18 15:2x CDT, in the ledger).
 # FLOORS measured 2026-10-18 16:2x CDT on the restore merged with hq_prolog's 8a5973d0b/f049ef7a8 (its restore reads emit_resumable_frame()
 # at three more sites and zls_g_resumable_frame() at four more than the pre-deletion tree did; zframe_graph one more through x86_resumable_frame).
+# RE-FLOORED 2026-10-22 15:4x CDT by the cto on the coo's red of 15:3x (CEO-1895): zls_g_resumable_frame 10 -> 12, the one retains table's
+# unresolved-callee-in-a-resumable-frame rule (planner_retains and its home view, SCRIP e351e13d4/dace004b6) MOVED out of src/ir/frame_layout.c's
+# deleted zls_home_dyn, which this gate does not count, into src/planner, where ARCH-ZETA-ONE-COORDINATE 3.5 (i.b) puts the decision -- it goes
+# with the Prolog switch's per-predicate retains fact; home_frame 0 -> 2, zst_plan admitting the Pascal switch's home-frame graphs and giving them a
+# second hosting pass (SCRIP 2eb1aadd9, 6e1dd9a8b) -- both go when zst_plan's regime returns are deleted (3.5 WHAT THIS REPLACES). The other five
+# reads above the floor were CURED, not floored: x86_zop's ZSM call reads the branch it sits in (zframe_graph, frame_retained and icn_frame_rbp
+# were re-derived beside it, from bcd2ef252), planner.h's duplicate zls_g_resumable_frame prototype, and the uplevel skip reads the declared reason.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }
@@ -27,7 +34,7 @@ python3 - "$SCRIP" <<'PYEOF'
 import re, sys, glob, os
 root = sys.argv[1]
 DELETED = ("icn_cells_graph", "emit_pl_frame", "zls_g_pl_frame", "pl_frame", "icn_retain")
-GRAPH_FACT = {"zframe_graph": 30, "cell_frame": 38, "spine_cells": 26, "resumable_frame": 0, "emit_resumable_frame": 19, "zls_g_resumable_frame": 10, "frame_retained": 6, "root_graph": 21, "body_root": 21, "home_frame": 0, "zls_g_home_frame": 2}
+GRAPH_FACT = {"zframe_graph": 30, "cell_frame": 38, "spine_cells": 26, "resumable_frame": 0, "emit_resumable_frame": 19, "zls_g_resumable_frame": 12, "frame_retained": 6, "root_graph": 21, "body_root": 21, "home_frame": 2, "zls_g_home_frame": 2}
 LANG_PREFIX = {"icn": 97, "pl": 165, "rk": 37, "sno": 41, "pas": 10, "snc": 0, "reb": 0, "raku": 0, "plw": 0}
 files = []
 for pat in ("src/emitter/*.cpp", "src/emitter/*.h", "src/planner/*.cpp", "src/planner/*.h", "src/templates/**/*.cpp", "src/templates/**/*.h", "src/templates/**/*.inc"):
