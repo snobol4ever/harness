@@ -63,8 +63,9 @@ refuse() { echo "⛔ REFUSE(2) [$G]: $*"; exit 2; }
 W="$(cd "${GRID_ROOT:-$SELF}" 2>/dev/null && pwd)" || refuse "GRID_ROOT=${GRID_ROOT:-} is not a directory"
 S4E="${S4E_HOME:-$(cd "$SELF/.." && pwd)}"; CORPUS="${CORPUS:-$S4E/corpus}"
 [ -d "$CORPUS/tests" ] || refuse "no corpus at $CORPUS"
-[ -x "$W/scripts/util_require_fresh.sh" ] || refuse "$W is not a SCRIP checkout (no ../harness/scripts/util_require_fresh.sh)"
-"$W/scripts/util_require_fresh.sh" --gate "$G" "$W/scrip" "$W/out/libscrip_rt.so" || exit 2
+[ -x "$HERE/util_require_fresh.sh" ] || refuse "no $HERE/util_require_fresh.sh"
+[ -x "$W/scrip" ] || refuse "$W is not a built SCRIP checkout (no $W/scrip)"
+"$HERE/util_require_fresh.sh" --gate "$G" "$W/scrip" "$W/out/libscrip_rt.so" || exit 2
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh -- the ONE oracle-path authority"
 SBL="$(sbl_clean_bin)" || refuse "no clean benchmark oracle (sbl_clean_bin)"
 B="$W/bootstrap"; CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/counter.sc $B/stack.sc $B/tree.sc $B/ShiftReduce.sc $B/tdump.sc $B/gen.sc $B/qize.sc $B/semantic.sc $B/omega.sc $B/trace.sc"
