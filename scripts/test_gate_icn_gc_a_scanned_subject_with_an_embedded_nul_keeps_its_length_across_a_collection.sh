@@ -36,8 +36,8 @@ echo "  HOLDS: a scan subject with an embedded NUL keeps its carried length acro
 body="$(sed -n '/^long rt_scan_subj_len(void) {/,/^}/p' "$GR")"
 fb=$(printf '%s\n' "$body" | grep -c 'strlen')
 ab=$(printf '%s\n' "$body" | grep -c 'abort()')
-sl=$(grep -cF 'g_scan_subj_ptr == g_scan_subj) rt_gc_visit_raw(&g_scan_subj_ptr);' "$GR")
-ms=$(grep -rn 'strlen(g_scan_subj)' "$ROOT/src/runtime" | wc -l)
+sl=$(grep -cF 'g_runtime.abi.scan_subj_ptr == g_runtime.abi.scan_subj) rt_gc_visit_raw(&g_runtime.abi.scan_subj_ptr);' "$GR")
+ms=$(grep -rnF -e 'strlen(g_scan_subj)' -e 'strlen(g_runtime.abi.scan_subj)' "$ROOT/src/runtime" | wc -l)
 if [ -n "$body" ] && [ "$fb" = 0 ] && [ "$ab" = 1 ] && [ "$sl" = 1 ] && [ "$ms" = 0 ]; then
   echo "  arm 1 PASS: rt_scan_subj_len has no strlen and aborts on a miss, gen_gc_roots registers the cache slot under the alias test, no strlen(g_scan_subj) left under src/runtime"
 else echo "  arm 1 FAIL: body_found=$([ -n "$body" ] && echo 1 || echo 0) strlen_in_body=$fb abort_in_body=$ab cache_slot_registered=$sl strlen_of_scan_subj_sites=$ms"; RC=1; fi

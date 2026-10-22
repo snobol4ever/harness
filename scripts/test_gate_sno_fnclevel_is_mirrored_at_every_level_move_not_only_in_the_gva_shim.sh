@@ -112,7 +112,7 @@ src="$ROOT/src/runtime/rt/rt.c"
 read -r mv bare < <(python3 - "$src" <<'PYEOF'
 import re, sys
 t = open(sys.argv[1], encoding="utf-8").read()
-moves = list(re.finditer(r"g_rt_k_level(\+\+|--);", t))
+moves = list(re.finditer(r"g_runtime\.abi\.rt_k_level(\+\+|--);", t))
 bare = [m for m in moves if not re.match(r"\s*rt_k_level_mirror\(\);", t[m.end():])]
 print(len(moves), len(bare))
 for m in bare[:6]:

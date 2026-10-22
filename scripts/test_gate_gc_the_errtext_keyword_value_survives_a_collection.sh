@@ -134,9 +134,9 @@ ok=0; no=0
 ck(){ if [ "$1" = ok ]; then ok=$((ok+1)); echo "  ok   $2"; else no=$((no+1)); echo "  no   $2"; fi; }
 if [ "$fails" = 0 ]; then ck ok "(a) BOTH witnesses answer at every one of the $arms arms walked -- the &ERRTEXT block survives every collection point"
 else ck no "(a) $fails of $arms arms RED. ⛔ THE UNIT IS THE NAME SET, NEVER THE COUNT, and a band point is a property of WHERE the collection lands:$redset"; fi
-if grep -q 'rt_gc_visit_raw(&g_sno_errtext)' "$KW"; then ck ok "(b) g_sno_errtext is VISITED BY A ROOT WALK -- the slot is marked and registered for the slide, not merely reachable"
+if grep -q 'rt_gc_visit_raw(&g_runtime.kw.sno_errtext)' "$KW"; then ck ok "(b) g_sno_errtext is VISITED BY A ROOT WALK -- the slot is marked and registered for the slide, not merely reachable"
 else ck no "(b) NO ROOT WALK VISITS g_sno_errtext in $KW. The keyword's value is an unrooted collected heap string again and arm (a)'s green, if it is green, is a lottery over where the plant happens to collect"; fi
-ORD="$(awk '/^void kw_cset_gc_roots/,/^}/' "$KW" | grep -n 'kw_errtext_gc_root()\|g_kw_cset_names) return' | head -2 | cut -d: -f1 | tr '\n' ' ')"
+ORD="$(awk '/^void kw_cset_gc_roots/,/^}/' "$KW" | grep -n 'kw_errtext_gc_root()\|g_runtime.kw.kw_cset_names) return' | head -2 | cut -d: -f1 | tr '\n' ' ')"
 set -- $ORD
 if [ "${1:-0}" != 0 ] && [ "${2:-0}" != 0 ] && [ "$1" -lt "$2" ]; then
   ck ok "(c) the errtext visit is called BEFORE kw_cset_gc_roots' early return (lines $1 < $2 of the function) -- measured load-bearing: below it, the cure is INERT and the band reads BYTE-IDENTICAL TO BASE"

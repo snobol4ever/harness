@@ -76,10 +76,10 @@ SRC="$ROOT/src/runtime/pattern_match.c"
 [ -f "$SRC" ] || { echo "⛔ REFUSE(2): $SRC absent"; exit 2; }
 nsite=0; nbad=0
 while IFS= read -r line; do
-  case "$line" in *'g_dcap_nv_key['*'=='*) ;; *) continue ;; esac
+  case "$line" in *'g_runtime.abi.dcap_nv_key['*'=='*) ;; *) continue ;; esac
   nsite=$((nsite+1)); examined=$((examined+1))
-  probe="$line"; [ -n "${FAIL_ONCE:-}" ] && probe="${probe//g_dcap_nv_seen/g_XXXX_removed}"
-  case "$probe" in *'g_dcap_nv_seen['*) echo "  ok   generation-checked: $(echo "$line" | sed 's/^ *//' | cut -c1-110)" ;;
+  probe="$line"; [ -n "${FAIL_ONCE:-}" ] && probe="${probe//g_runtime.abi.dcap_nv_seen/g_XXXX_removed}"
+  case "$probe" in *'g_runtime.abi.dcap_nv_seen['*) echo "  ok   generation-checked: $(echo "$line" | sed 's/^ *//' | cut -c1-110)" ;;
     *) echo "  FAIL read site compares a key but not the generation: $(echo "$line" | sed 's/^ *//' | cut -c1-110)"; nbad=$((nbad+1)); RC=1 ;; esac
 done < "$SRC"
 [ "$nsite" -ge 2 ] || { echo "⛔ REFUSE(2): found $nsite g_dcap_nv_key comparison sites, expected >= 2 -- the cache was renamed or removed and this gate is measuring nothing"; exit 2; }
