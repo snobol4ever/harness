@@ -5,3 +5,4 @@
 #   template  the file under SCRIP that proves it (src/templates/bb/bb_xxx.cpp)
 #   pattern   a substring of that file carrying the read or the lea that proves the class; util_bb_placement_census.py REFUSES rc 2 a row whose template no longer carries it
 # util_template_state_words.py (to be written with the first switch that needs it) derives rows from the templates; a row here is that derivation, cited, never a bare assertion.
+IR_TABLE_HDR	address-escapes	src/templates/bb/bb_table_hdr.cpp	x86("lea", "rdi", TH_REC(0))

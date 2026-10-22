@@ -501,9 +501,10 @@ def main():
                     t['unemitted'] += gr['n']
                     continue
                 for (tb, kind, home, forced, cid, xf, xfwhy, off) in gr['cells']:
-                    sw = STATE_WORDS.get(kind) or STATE_WORDS.get(cid)
+                    swk = next((k for k in (kind, kind and 'IR_' + kind, cid) if k and k in STATE_WORDS), None)
+                    sw = STATE_WORDS.get(swk) if swk else None
                     if sw and xfwhy == sw and home in ('RBP', 'RSP_CARVED', 'SPINE') and (xf != -1 or home != 'SPINE'):
-                        stw[lang][(kind or cid, sw)] += 1
+                        stw[lang][(swk, sw)] += 1
                         if not forced:
                             forced = 'state:' + sw
                     t['operands' if tb == 'A' else 'locals'] += 1
