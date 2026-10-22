@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_an_xsb_file_loaded_at_run_time_reads_meta_predicate_module_import_dync_loading_attributes_and_table_tries_as_swipl.sh -- six behaviours of a file the XSB
+# test_gate_pl_an_xsb_file_loaded_at_run_time_reads_meta_predicate_module_import_dync_loading_attributes_and_table_tries_as_swipl.sh -- seven behaviours of a file the XSB
 # loader (load_files/2 with dialect(xsb)) installs at run time, answered as swipl 9.0.4, m3 and m4 (hq_packages 2026-10-21, SWI xsb/ptq 0 of 25, xsb/attv_tests 5 of 7,
 # xsb/table_tests abol_test2/abol_test2a/concomp).
 # (1) ATTRIBUTES: put_attr/3 and get_attr/3 imported "from machine" are linked for a program that references load_files (the loaded copyterm_attv.P / findall_attv.P died
@@ -12,6 +12,8 @@
 #     them (xsb_test_ptq's write_table/2).
 # (6) context_module/1 in a loaded file is the module it is loaded into, and abolish_module_tables(+Module) (imported "from tables") destroys the tables of that module
 #     (xsb/table_tests abol_test2: context_module(M), abolish_module_tables(M)).
+# (7) a lattice(Order/3) answer-subsumption mode whose Order the loaded file defines: the engine called the bare name from the user module (existence_error gt/3, xsb test_3vwfs_1); the loader
+#     qualifies an order, or a po(Order/2), that the file itself defines.
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: every run re-cuts them from the live /usr/bin/swipl and REFUSES rc=2 when oracle and table disagree.
 # Usage: bash ../harness/scripts/test_gate_pl_an_xsb_file_loaded_at_run_time_reads_meta_predicate_module_import_dync_loading_attributes_and_table_tries_as_swipl.sh
 set -uo pipefail
@@ -33,6 +35,7 @@ printf '%s\n' 'arc(1,2).' 'arc(1,3).' ':- import mp1/1 from hm.' ':- prolog_load
 printf '%s\n' 'node(a).' 'node(b).' > "$d/factsP"
 printf '%s\n' ':- import ensure_dync_loaded/1 from consult.' ":- ensure_dync_loaded('factsP')." 'n(X) :- node(X).' > "$d/dl.P"
 printf '%s\n' ':- import abolish_module_tables/1 from tables.' ':- table tp/1.' 'tp(1).' 'tp(2).' 'c1(B-A) :- context_module(M), tp(_), findall(x, current_table(M:tp(_), _), L0), length(L0, B), abolish_module_tables(M), findall(x, current_table(M:tp(_), _), L1), length(L1, A).' > "$d/ab.P"
+printf '%s\n' ':- table lp(_, lattice(gt(_,_,_))).' 'lp(a,1).' 'lp(a,3).' 'lp(a,2).' 'gt(X,Y,Z) :- ( X > Y -> Z = X ; Z = Y ).' > "$d/lt.P"
 cat > "$d/w.pl" <<'PL'
 :- use_module(library(lists)).
 :- table tt/1.
@@ -44,6 +47,7 @@ main :- load_files(m1:'at.P', [dialect(xsb)]), in(m1, a1(V1)), write(V1), nl,
         load_files(m2:'mc.P', [dialect(xsb)]), in(m2, t(V2)), write(V2), nl,
         load_files(m3:'im.P', [dialect(xsb)]), findall(Y, in(m3, w3(Y)), L3), msort(L3, S3), write(S3), nl,
         load_files(m4:'dl.P', [dialect(xsb)]), findall(N, in(m4, n(N)), L4), msort(L4, S4), write(S4), nl,
+        load_files(m6:'lt.P', [dialect(xsb)]), findall(R7, in(m6, lp(a, R7)), L7), write(L7), nl,
         load_files(m5:'ab.P', [dialect(xsb)]), in(m5, c1(C6)), write(C6), nl,
         tt(_), '$tbl_trienode'(R),
         findall(A, ( current_table(M5:V5, T), subsumes_term(user:tt(_), M5:V5), '$tbl_table_status'(T, _, user:A, Sk), trie_gen(T, Sk, R) ), L5), msort(L5, S5), write(S5), nl,
@@ -54,6 +58,7 @@ v(a)
 x
 [2,3]
 [a,b]
+[3]
 1-0
 [tt(1),tt(2)]
 WANT
@@ -67,6 +72,6 @@ if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile -o w.s w.pl </dev/null >/dev/
     (cd "$d" && timeout -k 5 60 ./w.bin </dev/null 2>/dev/null > "$d/m4"); rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m4"; then fails=$((fails + 1)); echo "  m4 rc=$rc differs:"; diff "$d/want" "$d/m4" | head -10; fi
 else fails=$((fails + 1)); echo "  m4 did not compile or link"; fi
-echo "PLXSBLOAD_BOARD behaviours=6 modes=2 graded=$graded PASS=$((graded - fails)) FAIL=$fails"
+echo "PLXSBLOAD_BOARD behaviours=7 modes=2 graded=$graded PASS=$((graded - fails)) FAIL=$fails"
 [ $fails -eq 0 ] || exit 1
 exit 0
