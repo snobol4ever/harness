@@ -112,6 +112,7 @@ function layer(ob, fl,   b, rel) {
   b = base(ob)
   if (b ~ /^lib(c|m)([-.].*)?\.so/) return "libc"
   if (ob !~ /libscrip_rt[^\/]*\.so/ && ob != scrip_ob) return (b ~ /^ld-linux/ ? "loader" : "rest")
+  if (index(fl, "./src/") == 1) fl = src substr(fl, 7)
   if (index(fl, src) != 1) return "compiler"
   rel = substr(fl, length(src) + 1)
   if (rel ~ /^runtime\/.*\.[sS]$/) return "asm_leaf"
