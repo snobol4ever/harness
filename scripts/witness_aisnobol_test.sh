@@ -19,7 +19,10 @@ trap 'rm -rf "$W"' EXIT
 python3 "$HERE/corpus_suite_harness.py" extract "$PKG/ALL.sno" "$PKG/ALL.ref" TEST "$W/TEST.sno" --out-ref "$W/TEST.ref" --out-in "$W/TEST.in" > "$W/extract.log" 2>&1 || { echo "REFUSE(2): extract of TEST failed: $(tail -1 "$W/extract.log" | cut -c1-120)"; exit 2; }
 cp -a "$PKG"/. "$W/pkg/" 2>/dev/null || mkdir -p "$W/pkg"; cp -a "$PKG"/. "$W/pkg/"
 export SNO_LIB="$W/pkg"
-SW="-d131072k -s4096k --stlimit"
+. "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): lib_declared_arena.sh unloadable"; exit 2; }
+declared_memory_table "$PKG/ALL.csv" > "$W/decl.tsv" || { echo "REFUSE(2): the package's ALL.csv declaration was refused"; exit 2; }
+SW="$(declared_switches_from_table "$W/decl.tsv" TEST) $(declared_compile_args_from_table "$W/decl.tsv" TEST)"
+[ -n "${SW// /}" ] || { echo "REFUSE(2): TEST declares no heap, stack or compile switches in $PKG/ALL.csv"; exit 2; }
 ( cd "$W/pkg" && timeout -k 2 20 "$SCRIP/scrip" $SW BUILDLIB.sno < /dev/null > /dev/null 2>&1 ) || { echo "REFUSE(2): BUILDLIB (the library index TEST reads) did not run"; exit 2; }
 [ -f "$W/pkg/spitlib.idx" ] || { echo "REFUSE(2): BUILDLIB wrote no spitlib.idx"; exit 2; }
 rc=0
