@@ -765,6 +765,7 @@ test_gate_pl_directory_files_agc_file_property_and_max_path_length_answer_as_swi
 test_gate_pl_every_choice_leaving_builtin_keeps_its_callers_retaining_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_findall_4_serves_a_bound_tail_and_an_unbound_one.sh	WIRED	-	-	-
 test_gate_pl_format_column_fill_is_a_character_not_a_byte.sh	WIRED	-	-	-
+test_gate_pl_format_writes_the_text_it_produced_before_an_argument_count_error_as_swipl_and_gprolog.sh	WIRED	-	-	-
 test_gate_pl_gnu_all_solutions_dec10_io_for_and_name_answer_as_gprolog.sh	WIRED	-	-	-
 test_gate_pl_gnu_consult_reconsults_listing_and_load_answer_as_gprolog.sh	WIRED	-	-	-
 test_gate_pl_gnu_dialect_value_builtins_answer_as_gnu_prolog.sh	WIRED	-	-	-
