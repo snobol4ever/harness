@@ -79,6 +79,14 @@ count(N) :- N > 0, write(N), nl, N1 is N - 1, count(N1).
 main :- count(3).
 EOF
 
+# a clause ending in a bare disjunction, retried under findall: SIGSEGV from e41bf8a6a to a650ba35a, three days unseen by every smoke and
+# core entry (ceo CEO-1864, the cfo's suggestion); the answer is swipl 9.0.4's
+pl "clause_ends_in_a_bare_disjunction" "[1,2]" << 'EOF'
+:- initialization(main).
+cq(X) :- (X = 1 ; X = 2).
+main :- findall(X, cq(X), L), write(L), nl.
+EOF
+
 echo ""
 echo "mode-2 (--run):            PASS=$P2 FAIL=$F2                / $N   (HARD GATE)"
 echo "mode-3 (--run):               PASS=$P3 FAIL=$F3 REFUSED=$X3   / $N   (tracked)"
