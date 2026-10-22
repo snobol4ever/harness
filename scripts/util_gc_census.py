@@ -1326,8 +1326,8 @@ def _ternary_sibling_offsets(lines, i, window_lines, counts=None):
 # MEASURED, NOT ARGUED, on SCRIP 5bcb99a7b: bb_call_fn.cpp:207 reads UNPOLLED at EVERY --poll-window from 12 to 120
 # (the knob is INERT on this tree, which is worth knowing on its own), and the EMITTED mode-4 output for
 # `p(hello). q(42). main :- p(hello), q(42), write(ok), nl.` is
-#     call rt_pl_dop_unify_cs@PLT | 3 rtccb reloads | mov [rbp+64], rax | mov [rbp+72], rdx |
-#     cmp al, 104 ; je p$2F1_step | 3 rtccb writebacks | call rt_gc_poll_asm@PLT
+#     call rt_pl_dop_unify_cs@PLT | 3 g_rtccb reloads | mov [rbp+64], rax | mov [rbp+72], rdx |
+#     cmp al, 104 ; je p$2F1_step | 3 g_rtccb writebacks | call rt_gc_poll_asm@PLT
 # -- the poll is SIX instructions after the call, and [rbp+64] is inside `.Lgcmap_p$2F1`'s `[0 .. 80) GC_LAY_DESCR`
 # run (frame_bytes 192, header 80, value_bytes 96, flags GC_FRAME_MAP_LAYOUT), which gc_walk_interior visits by KIND at
 # every 16 bytes with no reference to the slot's declared role -- the role text is --dump-zeta commentary and

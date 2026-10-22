@@ -3,14 +3,14 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icn_apply_invocation_of_a_generator_opens_one_level_not_two.sh -- invoking a GENERATOR through
 # the apply operator (`p ! args`, and every other route that reaches rt_call_value_gen_h) opened TWO
-# activation levels for ONE activation: rt_proc_call_gen_h raised rt_k_level around scrip_coexpr_activate
+# activation levels for ONE activation: rt_proc_call_gen_h raised g_rt_k_level around scrip_coexpr_activate
 # AND the coroutine body's own rt_proc_call_open -> rt_proc_call_prologue_lex raised it again through
 # rt_lvl_open(own=0), which is the arm a generator always takes. A DIRECT call of the same generator opens
 # exactly one, which is why only the apply route was wrong (row: jcon tracing, cfo, under CEO-545).
 #
 # ⭐ THE VISIBLE FACE WAS THE TRACE INDENT, THE DEFECT WAS &level. The extra level printed one extra "| "
 # on the call and on the first suspend, and -- because rt_trace_resume_hook walks g_icn_act DOWNWARD from
-# rt_k_level looking for the activation with this name -- it made the "NAME resumed" line report a STALE
+# g_rt_k_level looking for the activation with this name -- it made the "NAME resumed" line report a STALE
 # earlier call site's line. Both are cosmetics of one wrong number: measured pre-cure, `&level` read inside
 # a generator reached by `g ! args` answered 3 where iconx 9.5.25a answers 2, with the direct call of the
 # same procedure answering 2 on both. A2 is the load-bearing arm for exactly that reason -- a cure written

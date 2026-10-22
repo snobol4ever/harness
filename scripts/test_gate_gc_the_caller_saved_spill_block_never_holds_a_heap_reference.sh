@@ -3,14 +3,14 @@
 # REGISTRATION, MEASURED INSTEAD OF WRITTEN DOWN (cto 2026-09-20, MODE TENET; asked CTO-153, ruled by the cfo).
 #
 # THE FINDING.  rtcc_init.c registers the runtime's caller-saved spill block as a GC root range --
-# rt_gc_root_range_add_seamsafe(&rtccb[0], &rtccb[32]) -- and gc_heap.c's ONLY walk over the root-range table opens
+# rt_gc_root_range_add_seamsafe(&g_rtccb[0], &g_rtccb[32]) -- and gc_heap.c's ONLY walk over the root-range table opens
 # `if (g_gc_rrng[i].hi) continue;`, which is exactly how that range and only that range is registered.  The other
 # caller, the Prolog trail, uses the topword form with a null hi and IS visited.  g_gc_rrng_ss is incremented at
 # registration and read nowhere; g_gc_segs is collected and read nowhere, so no conservative segment scan covers it
 # either -- correctly, per CEO-812.  THE REGISTRATION'S ONLY EFFECT IS TO INCREMENT A COUNTER NOBODY READS: to every
-# reader rtccb is a registered GC root, and to the collector it is not.
+# reader g_rtccb is a registered GC root, and to the collector it is not.
 #
-# ⛔ THE cfo RULED THAT VISITING IT IS NOT AN OPTION AT ALL, AND THE LAW DECIDES IT RATHER THAN TASTE.  rtccb is
+# ⛔ THE cfo RULED THAT VISITING IT IS NOT AN OPTION AT ALL, AND THE LAW DECIDES IT RATHER THAN TASTE.  g_rtccb is
 # thirty-two RAW MACHINE WORDS WITH NO TYPE TAGS.  Visiting them means asking of each word "does this look like it
 # points into a heap block", WHICH IS A CONSERVATIVE SCAN BY DEFINITION, and CEO-812 froze that out: everything on
 # the emitted stack is a DESCR and its type field is the only tag, the heap walks typed visitors, no conservative
@@ -38,7 +38,7 @@
 # sharper hazard is STALENESS rather than sweeping: an unvisited slot cannot be rewritten when a root walk
 # FORWARDS a moving block, and the emitted reload after the poll restores the pre-move word.
 #
-# THE INVARIANT, as the cfo states it and as this grades it: rtccb is CALLER-SAVED SCRATCH and nothing that must
+# THE INVARIANT, as the cfo states it and as this grades it: g_rtccb is CALLER-SAVED SCRATCH and nothing that must
 # survive a collection may live there -- r8 the anchor, r9 the GVA, r10 and r11 scratch, per the declared
 # convention in rtx/rtcc.h.  A value that must survive a poll goes in a frame slot covered by that frame's static
 # map, or is handed to the shield as a TAGGED DESCR cell in arr[], which the poll's own refusal text says in words
@@ -70,7 +70,7 @@ echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is 
 src="$ROOT/src/runtime/rt/gc_heap.c"
 [ -f "$src" ] || refuse "no $src -- the reporter this arm grades cannot be located"
 if grep -q "GC-WALK-RTCCB" "$src" && grep -q "g_gc_rtccb_heap" "$src"; then
-  ck ok "(a) the runtime's own rtccb reporter is present in gc_heap.c -- this gate grades a counter that something increments"
+  ck ok "(a) the runtime's own g_rtccb reporter is present in gc_heap.c -- this gate grades a counter that something increments"
 else
   ck no "(a) gc_heap.c carries no GC-WALK-RTCCB reporter or no g_gc_rtccb_heap counter, so every arm below would read zero by never looking. If the reporter was deliberately removed, this gate must be retired in the same landing and the invariant re-homed, NOT left grading nothing"
 fi
@@ -99,9 +99,9 @@ done
 [ "$coll" -gt 0 ] || refuse "ZERO of $witn witness(es) collected at arena ${SCRIP_HEAP_KB:-64} KB stress $STRESS -- this arm would be a statement about a population that never ran the collector, not about the spill block"
 uslots="$(printf '%s' "$slots" | tr ', ' '\n\n' | grep -E '^[0-9]+$' | sort -un | tr '\n' ' ')"
 if [ "$hits" = 0 ]; then
-  ck ok "(b) THE INVARIANT HOLDS: over $witn witness(es), $coll of which actually collected, NO rtccb slot held a pointer into a heap block at any collection"
+  ck ok "(b) THE INVARIANT HOLDS: over $witn witness(es), $coll of which actually collected, NO g_rtccb slot held a pointer into a heap block at any collection"
 else
-  ck no "(b) ⛔ A CALLER-SAVED SPILL SLOT HELD A POINTER INTO A HEAP BLOCK AT A COLLECTION, $hits time(s), slot(s) [$uslots], in:$named. ⛔⭐ WHAT THIS ESTABLISHES AND WHAT IT DOES NOT, stated because the difference is this row's own subject: it establishes that the invariant the cfo stated -- rtccb is CALLER-SAVED SCRATCH and nothing that must survive a collection lives there -- IS NOT TRUE OF THIS TREE. It does NOT establish a lost value: a pointer in an unvisited slot is NECESSARY BUT NOT SUFFICIENT, exactly as a store below the region base was (CTO-101), because the same block may be rooted elsewhere -- the subject is, through the shield and through the visit of the subject pointer itself. ⭐ THE SHARPER HAZARD IS NOT SWEEPING BUT STALENESS: this block is never visited, so a root walk that FORWARDS a moving block cannot rewrite rtccb's copy, and the emitted reload after the poll restores the pre-move word. THE CURE IS NOT TO VISIT rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: put the value in a frame slot covered by that frame's static map, or hand it to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints the slot index and the word"
+  ck no "(b) ⛔ A CALLER-SAVED SPILL SLOT HELD A POINTER INTO A HEAP BLOCK AT A COLLECTION, $hits time(s), slot(s) [$uslots], in:$named. ⛔⭐ WHAT THIS ESTABLISHES AND WHAT IT DOES NOT, stated because the difference is this row's own subject: it establishes that the invariant the cfo stated -- g_rtccb is CALLER-SAVED SCRATCH and nothing that must survive a collection lives there -- IS NOT TRUE OF THIS TREE. It does NOT establish a lost value: a pointer in an unvisited slot is NECESSARY BUT NOT SUFFICIENT, exactly as a store below the region base was (CTO-101), because the same block may be rooted elsewhere -- the subject is, through the shield and through the visit of the subject pointer itself. ⭐ THE SHARPER HAZARD IS NOT SWEEPING BUT STALENESS: this block is never visited, so a root walk that FORWARDS a moving block cannot rewrite g_rtccb's copy, and the emitted reload after the poll restores the pre-move word. THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: put the value in a frame slot covered by that frame's static map, or hand it to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints the slot index and the word"
 fi
 
 # (c) THE POPULATION IS DECIDABLE AND SAYS SO.  ⛔ hq_prolog MEASURED THAT AT THE TINY ARENA WITH NO STRESS PLANT
@@ -143,7 +143,7 @@ fi
 # the detector is PROVEN TO FIRE (arm g).  A declaration that can be deleted in silence is the counter again.
 hdr="$ROOT/src/runtime/rtx/rtcc.h"
 if [ -f "$hdr" ] && grep -q "CALLER-SAVED SPILL BLOCK AND IT IS NOT A GC ROOT" "$hdr" && grep -q "_Static_assert" "$hdr"; then
-  ck ok "(f) the convention is declared in rtx/rtcc.h as a _Static_assert naming the block, the words (slot 5 = r8 the anchor, 6 = r9 the GVA, 7 and 8 = r10/r11 scratch) and the reason -- a reader of rtccb cannot open the header without reading why nothing that must survive a collection may live there"
+  ck ok "(f) the convention is declared in rtx/rtcc.h as a _Static_assert naming the block, the words (slot 5 = r8 the anchor, 6 = r9 the GVA, 7 and 8 = r10/r11 scratch) and the reason -- a reader of g_rtccb cannot open the header without reading why nothing that must survive a collection may live there"
 else
   ck no "(f) ⛔ rtx/rtcc.h carries no declaration of the caller-saved convention. THE MECHANISM IS THEN UNHELD: CEO-1053 admits a declared convention as one of the four mechanisms shielding a value across a safe point ONLY while a gate holds it and a declaration states it. Restore the _Static_assert or retire this gate in the same landing"
 fi
@@ -184,9 +184,9 @@ fi
 if [ $((unrep + swept)) = 0 ]; then
   ck ok "(i) THE SHARPER HALF HOLDS: over $hits detection(s), $movd named a block the collector moved and NONE was left wrong by the collection -- 0 unrepaired, 0 swept"
 else
-  ck no "(i) ⛔ $((unrep + swept)) CALLER-SAVED WORD(S) WERE WRONG AFTER A COLLECTION -- $unrep UNREPAIRED (the collector forwarded the block and nothing rewrote the word) and $swept SWEPT (the block was never forwarded, so the word names ground the arena will re-issue), out of $hits detection(s) of which $movd named a moved block, in:$stale_named. ⭐ THE REMAINING $((hits - unrep - swept)) ARE HARMLESS BY LUCK AND NOT BY MECHANISM: the block they name did not move at this collection, and nothing in the engine promises that. ⛔ THE CURE IS NOT TO VISIT rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: a value live across a safe point goes in a frame slot covered by that frame's static map, or is handed to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints one GC-RTCCB-STALE line per detection naming the slot, the word, the block's type and size, and which of the two ways it went wrong"
+  ck no "(i) ⛔ $((unrep + swept)) CALLER-SAVED WORD(S) WERE WRONG AFTER A COLLECTION -- $unrep UNREPAIRED (the collector forwarded the block and nothing rewrote the word) and $swept SWEPT (the block was never forwarded, so the word names ground the arena will re-issue), out of $hits detection(s) of which $movd named a moved block, in:$stale_named. ⭐ THE REMAINING $((hits - unrep - swept)) ARE HARMLESS BY LUCK AND NOT BY MECHANISM: the block they name did not move at this collection, and nothing in the engine promises that. ⛔ THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: a value live across a safe point goes in a frame slot covered by that frame's static map, or is handed to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints one GC-RTCCB-STALE line per detection naming the slot, the word, the block's type and size, and which of the two ways it went wrong"
 fi
 
-echo "population: $checks arm(s) graded, $fails FAIL; $witn witness(es), $coll collected, $hits rtccb heap reference(s), $movd naming a moved block, $unrep unrepaired, $swept swept"
+echo "population: $checks arm(s) graded, $fails FAIL; $witn witness(es), $coll collected, $hits g_rtccb heap reference(s), $movd naming a moved block, $unrep unrepaired, $swept swept"
 [ "$fails" = 0 ] && { echo "GATE PASS [gc_the_caller_saved_spill_block_never_holds_a_heap_reference]: $checks of $checks arms hold"; exit 0; }
 echo "⛔ GATE RED [gc_the_caller_saved_spill_block_never_holds_a_heap_reference]: $fails of $checks arms FAIL"; exit 1

@@ -314,7 +314,7 @@ def walk(name, code, funcs, rtx, clob=None):
                     k = rsp_disp(o[1]) // 8
                     ok = k < len(stack) and 'PAD' not in stack[len(stack) - 1 - k:]
                     setr(d, regval(d, stack[-1 - k]) if ok else 'X')
-                elif d == 'r9' and mn == 'mov' and c['rel'] is not None and c['rel'][1] == 'rtccb':
+                elif d == 'r9' and mn == 'mov' and c['rel'] is not None and c['rel'][1] == 'g_rtccb':
                     setr('r9', 'RTCCK' if getr('r9') in ('KX', 'GK', 'RTCCK') else 'RTCC')
                 elif d == 'r9' and mn == 'mov' and getr('r9') in ('RTCC', 'RTCCK') and re.fullmatch(r'QWORD PTR \[r9\+0x30\]', o[1].strip() if len(o) > 1 else ''):
                     setr('r9', 'GK' if getr('r9') == 'RTCCK' else 'G')

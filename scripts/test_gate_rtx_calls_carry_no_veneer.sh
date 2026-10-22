@@ -7,13 +7,13 @@
 #
 # THE EMITTER HALF OF THE CONTRACT whose callee half test_gate_rtx_entries_keep_the_rtcc_four.sh proves. Before this row
 # x86_rtcc_clob_raw() hand-listed thirteen asm callees and defaulted every other symbol to the full veneer, so 12,862 of
-# 14,813 emitted calls into the asm runtime across the committed .s artifacts spilled r8/r10/r11 into rtccb and reloaded
+# 14,813 emitted calls into the asm runtime across the committed .s artifacts spilled r8/r10/r11 into g_rtccb and reloaded
 # r8-r11 after (958 across this gate's thirteen witnesses at SCRIP 8a2e9bdff). The list is now DERIVED: the emitter asks
 # rtx_entry_is(), which scans the rtx_entry_names section RTX_FUNC and RTX_ENTRY write.
 #
 # FOUR READINGS over two mode-4 compiles per language (the first two corpus/benchmarks programs of each of the seven):
-#   (a) veneered calls into a registered entry -- a write-back into rtccb before, or a reload after, LOOKING THROUGH up to six
-#       intervening moves that do not touch rtccb (hq_runtime 2026-10-07, on the cto's word: the bb_call_fn by-name road put a
+#   (a) veneered calls into a registered entry -- a write-back into g_rtccb before, or a reload after, LOOKING THROUGH up to six
+#       intervening moves that do not touch g_rtccb (hq_runtime 2026-10-07, on the cto's word: the bb_call_fn by-name road put a
 #       mov ecx between its write-back and its call_bare and the adjacent-line read never saw it) -- must be 0, beyond the
 #       DECLARED count (a2): the by-name road's hand veneer into rt_call_bid_sn4, measured 10 over the eight
 #       benchmarks/snocone/parsers chains this gate also compiles, a ceiling that may only fall;
@@ -59,15 +59,15 @@ work, n = sys.argv[1], int(sys.argv[2])
 names = set(x.decode('utf-8') for x in open(os.path.join(work, 'names.bin'), 'rb').read().split(b'\0') if x)
 if len(names) < 200:
     print('REFUSED(2): the library registers %d entries (floor 200)' % len(names)); sys.exit(2)
-WB = re.compile(r'^\s*mov\s+qword ptr \[rip \+ rtccb\+\d+\],\s*r(?:8|9|10|11)\s*$')
-RL = re.compile(r'^\s*mov\s+r(?:8|9|10|11),\s*qword ptr \[rip \+ rtccb\+\d+\]\s*$')
+WB = re.compile(r'^\s*mov\s+qword ptr \[rip \+ g_rtccb\+\d+\],\s*r(?:8|9|10|11)\s*$')
+RL = re.compile(r'^\s*mov\s+r(?:8|9|10|11),\s*qword ptr \[rip \+ g_rtccb\+\d+\]\s*$')
 CALL = re.compile(r'^\s*call\s+(?:qword ptr \[rip \+ ([^\]@\s]+)@GOTPCREL\]|([A-Za-z_.$][^\s@]*)(@PLT)?)\s*$')
 MOVE = re.compile(r'^\s*(?:mov|movabs|lea|xor)\s')
 def near(body, i, step, pat):
     j = i + step
     while 0 <= j < len(body) and abs(j - i) <= 6:
         if pat.match(body[j]): return True
-        if not MOVE.match(body[j]) or 'rtccb' in body[j]: return False
+        if not MOVE.match(body[j]) or 'g_rtccb' in body[j]: return False
         j += step
     return False
 def read(path):
@@ -102,7 +102,7 @@ pl = read(os.path.join(work, 'plant.s'))
 print('=== %d witnesses + the by-name parser chains, %d registered entries ===' % (n, len(names)))
 print('  (a) veneered calls into an asm entry ........ %d   (want 0)' % tot['ven'])
 for k in sorted(KNOWN):
-    print('  (a2) DECLARED hand veneer into %s ..... %d   (ceiling %d, may only fall: the bb_call_fn by-name road writes rtccb back and reloads it around its call_bare; the spine-bake row retires it)' % (k, held.get(k, 0), KNOWN[k]))
+    print('  (a2) DECLARED hand veneer into %s ..... %d   (ceiling %d, may only fall: the bb_call_fn by-name road writes g_rtccb back and reloads it around its call_bare; the spine-bake row retires it)' % (k, held.get(k, 0), KNOWN[k]))
     if held.get(k, 0) < KNOWN[k]: print('       RATCHET: the count fell to %d -- lower KNOWN[%s] to it in this gate' % (held.get(k, 0), k))
 print('  (b) asm-entry calls through a PLT or bare ... %d   (want 0)' % tot['plt'])
 print('  (c) asm-entry calls through the GOT ......... %d   (want > 0)' % tot['got'])

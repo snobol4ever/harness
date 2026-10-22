@@ -9,7 +9,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # anything else and every other case takes the C body c_rt_call_bid_sn4 (the name-keyed dispatcher). json spent 6.9% of its
 # cycles in try_call_builtin_by_name_bl_s and porter 5%: the DATA-instance scan, the display test, strlen, the dtax cache and the
 # length/first-char switch ran before every SIZE or SUBSTR.
-# THREE ARMS: (1) the witness's .s calls rt_call_bid_sn4 bare through the GOT (no rtccb write-back before it); (2) the witness --
+# THREE ARMS: (1) the witness's .s calls rt_call_bid_sn4 bare through the GOT (no g_rtccb write-back before it); (2) the witness --
 # every table body with in-range, out-of-range, empty, numeric and null arguments, the predicates through assignment, a 20,000-
 # iteration loop over SIZE / DUPL / REMDR / SUBSTR -- prints the oracle's lines in m3 and m4; (3) the C body stays reachable: the
 # same builtins after &ERRLIMIT is set (the entry hands every call to the C body then) print the same answers, and a DATA field
@@ -48,7 +48,7 @@ SNO
 grep -q 'ERROR' "$W/bid.ref" && { echo "REFUSED(2): the oracle rejected the witness:"; grep 'ERROR' "$W/bid.ref" | head -2; exit 2; }
 red=0
 ( cd "$W" && "$ROOT/scrip" --compile -o "$W/bid.s" bid.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: bid.sno did not compile"; exit 1; }
-nc=$(grep -c 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s"); nv=$(grep -B3 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s" | grep -c 'rtccb')
+nc=$(grep -c 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s"); nv=$(grep -B3 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s" | grep -c 'g_rtccb')
 [ "$nc" -ge 20 ] && [ "$nv" -eq 0 ] && echo "ok  rt_call_bid_sn4: $nc bare GOT calls, no veneer" || { echo "RED: calls=$nc (want >= 20) veneered=$nv"; red=1; }
 ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" bid.sno < /dev/null > "$W/bid.m3" 2>&1 ); cmp -s "$W/bid.m3" "$W/bid.ref" && echo "ok  m3 = oracle" || { echo "RED m3 differs from the oracle:"; diff "$W/bid.ref" "$W/bid.m3" | head -8; red=1; }
 if gcc "$W/bid.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/bid.bin" 2>/dev/null; then

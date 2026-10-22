@@ -1,5 +1,5 @@
 import re, sys, subprocess, os, tempfile
-RELOAD = re.compile(r'\br8\s*,\s*qword ptr \[rip \+ rtccb\+40\]')
+RELOAD = re.compile(r'\br8\s*,\s*qword ptr \[rip \+ g_rtccb\+40\]')
 R8ANY  = re.compile(r'\br8[bwd]?\b')
 DEREF  = re.compile(r'\[[^\]]*\br8[bwd]?\b[^\]]*\]')
 WRITE  = re.compile(r'^\s*(mov|movq|lea|xor|pop|movabs)\s+r8[bwd]?\s*,')
@@ -39,10 +39,10 @@ def main():
     through = '--through-labels' in args
     args = [a for a in args if a != '--through-labels']
     if args and args[0] == '--selftest':
-        fix = ["  mov r8,  qword ptr [rip + rtccb+40]", "  mov rax, qword ptr [r8 + 8]",
-               "  mov r8,  qword ptr [rip + rtccb+40]", "  mov r8, rcx",
-               "  mov r8,  qword ptr [rip + rtccb+40]", "  add r8, 16",
-               "  mov r8,  qword ptr [rip + rtccb+40]", "  jmp .Lsomewhere"]
+        fix = ["  mov r8,  qword ptr [rip + g_rtccb+40]", "  mov rax, qword ptr [r8 + 8]",
+               "  mov r8,  qword ptr [rip + g_rtccb+40]", "  mov r8, rcx",
+               "  mov r8,  qword ptr [rip + g_rtccb+40]", "  add r8, 16",
+               "  mov r8,  qword ptr [rip + g_rtccb+40]", "  jmp .Lsomewhere"]
         with tempfile.NamedTemporaryFile('w', suffix='.s', delete=False) as f:
             f.write('\n'.join(fix)); p = f.name
         got = [r[0] for r in census(p, 'selftest')]; os.unlink(p)

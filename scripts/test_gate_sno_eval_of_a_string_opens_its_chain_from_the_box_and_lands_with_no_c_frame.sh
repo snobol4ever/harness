@@ -10,7 +10,7 @@
 # EVAL$, restore it, keep or release the chain, restore g_error). rax = 0 is a DECLINE (a non-string, a numeric text, a text that does
 # not build, SCRIP_EVAL_FAILS=0 or SCRIP_EVAL_OPEN=0) and the site falls back to the by-name C call, which owns every such case.
 # THE UNWIND, MEASURED (the baton's first step): only core_setexit_handler_return sets SNO_LVL_UNWIND, and it unwinds only when
-# _setexit_resume >= 0, which only sno_setexit_fire_on_end sets, and core_setexit_on_end() is 0 -- so NO live path unwinds across an
+# g_setexit_resume >= 0, which only sno_setexit_fire_on_end sets, and core_setexit_on_end() is 0 -- so NO live path unwinds across an
 # EVAL today. An error inside EVAL is quiet under the EVAL stage and the handler fires on the failure path of the statement holding
 # the EVAL (IR_SETEXIT_TEST, after the EVAL has landed: a gdb trace reads open, land, then the handler); the out-of-memory road fires
 # at once but its handler RETURN ends in error 242 on both roads. The eval_frames_unwind hook this landing first carried was deleted

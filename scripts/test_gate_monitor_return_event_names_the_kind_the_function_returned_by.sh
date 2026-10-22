@@ -7,9 +7,9 @@
 # sno_trace_return (src/runtime/core/core.c) spelled the wire kind from the returned VALUE alone -- FRETURN when it failed, else
 # RETURN -- so an NRETURN never reached the wire, and every bracket over a bootstrap parser (nPush, Shift, Reduce all NRETURN) read
 # DIVERGE at its first one: spl @2 RETURN F (NRETURN), scr @2 RETURN F (RETURN). The program itself was right (&RTNTYPE NRETURN).
-# The cfo's reading that kw_rtntype was stale when the event was sent is REFUTED by gdb: at sno_trace_return, reached from
-# rt_proc_epilogue_p after the body's IR_DEFINE return floater ran rt_kw_set_rtntype_role, kw_rtntype already reads NRETURN.
-# THE CURE: sno_trace_return sends FRETURN for a failed return, NRETURN when kw_rtntype says the function returned by name, else RETURN.
+# The cfo's reading that g_kw_rtntype was stale when the event was sent is REFUTED by gdb: at sno_trace_return, reached from
+# rt_proc_epilogue_p after the body's IR_DEFINE return floater ran rt_kw_set_rtntype_role, g_kw_rtntype already reads NRETURN.
+# THE CURE: sno_trace_return sends FRETURN for a failed return, NRETURN when g_kw_rtntype says the function returned by name, else RETURN.
 #
 # THE ARMS:
 #   1  monitor_run.sh --oracle on the row's nine-line witness (an NRETURN and a RETURN function) reads AGREE, DIVERGE=0 -- RED on base

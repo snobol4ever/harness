@@ -2,7 +2,7 @@
 # test_gate_raku_a_code_variable_call_keeps_the_global_base_in_r9.sh
 #
 # THE DEFECT (the cfo 2026-10-07, row gc-rt-c-c-to-bb-entries-..., found walking the Raku code-variable call road): r9 is the
-# global variable area's base for the whole program (RTCC_GLOBAL_R9_GVA: every global reads [r9 + off], rtccb+48 seeds it,
+# global variable area's base for the whole program (RTCC_GLOBAL_R9_GVA: every global reads [r9 + off], g_rtccb+48 seeds it,
 # no box writes it). The staged entry of a block-protocol graph (xa_flat_block_staged_entry, the FN__<name> head that every
 # by-name road, glue and C entry jumps to) counted the staged arguments in r9d, so a sub reached through a code variable, a
 # pointy block or a recursive code variable died of SIGSEGV at its first read of a global, both modes (fault address 0x8:

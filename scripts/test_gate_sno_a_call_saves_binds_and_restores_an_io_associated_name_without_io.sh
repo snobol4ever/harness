@@ -12,7 +12,7 @@
 # lines early); an output-associated local wrote two extra blank records; an output-associated parameter wrote the argument into
 # the file and the body saw an empty V. SPITBOL's call never performs I/O on these names and its value TRACE does not fire on a
 # binding. THE CURE: the save, bind, restore and result read use the value cell whenever one exists; the few side-effecting names
-# with no cell (rt_name_side_effecting) still go through NV_*_fn, now under monitor_quiet_depth like driver_call.c's call path.
+# with no cell (rt_name_side_effecting) still go through NV_*_fn, now under g_monitor_quiet_depth like driver_call.c's call path.
 #
 # THE ARMS (expectations cut from sbl -bf AT RUN TIME):
 #   1-2  IN-LOCAL   m3 / m4: a local input-associated to a 5-line file reads a,b,c,d,e in order across two calls

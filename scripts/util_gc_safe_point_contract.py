@@ -989,8 +989,8 @@ def selftest():
     ck(any(r[4] == "K1" for r in rows),
        "K1 PLANTED: a poll with no call before it is NAMED K1 and never OK (%s)" % (rows,))
 
-    rows, _s, _r = run(ok_body.replace("mov qword ptr [rsp + 0], rax", "mov qword ptr [rip + rtccb+40], rax")
-                              .replace("mov qword ptr [rsp + 8], rdx", "mov qword ptr [rip + rtccb+48], rdx"))
+    rows, _s, _r = run(ok_body.replace("mov qword ptr [rsp + 0], rax", "mov qword ptr [rip + g_rtccb+40], rax")
+                              .replace("mov qword ptr [rsp + 8], rdx", "mov qword ptr [rip + g_rtccb+48], rdx"))
     ck(any(r[5] == "UNDECIDABLE" and "STATIC-ONLY" in r[6] for r in rows),
        "STATIC ROAD: a result shielded only into a fixed symbol is UNDECIDABLE here and never OK (%s)" % (rows,))
 
@@ -1390,8 +1390,8 @@ def bare_selftest(ck):
     ck(bare_verdict(139, ex % (0, 0), b"a\n", b"a\n")[0] == "DIVERGING", "BARE-POLL PLANTED: rc 139 with collections 0 reads DIVERGING")
     ck(bare_verdict(0, ex % (0, 0), b"a\n", None)[0] == "NO-REF", "BARE-POLL PLANTED: a witness with no .ref reads NO-REF, never WITNESSED")
     ck(bare_verdict(0, "", b"a\n", b"a\n")[0] == "NO-EXERCISE", "BARE-POLL PLANTED: a run with no [GC-EXERCISE] line reads NO-EXERCISE -- collections are read, never assumed")
-    asm_ok = "        mov qword ptr [rip + rtccb+40], r8       # gc_poll bb_x.cpp:12\n        call rt_gc_poll_asm@PLT\n" \
-             "        mov qword ptr [rip + rtccb+40], r8       # gc_poll bb_y.cpp:7\n        call rt_gc_poll_asm@PLT\n"
+    asm_ok = "        mov qword ptr [rip + g_rtccb+40], r8       # gc_poll bb_x.cpp:12\n        call rt_gc_poll_asm@PLT\n" \
+             "        mov qword ptr [rip + g_rtccb+40], r8       # gc_poll bb_y.cpp:7\n        call rt_gc_poll_asm@PLT\n"
     calls, notes, keys = bare_reach(asm_ok)
     ck(calls == 2 and notes == 2 and keys == {"bb_x.cpp:12", "bb_y.cpp:7"}, "BARE-POLL REACH: two stamped polls read two calls, two notes, two site keys (%s)" % (keys,))
     calls, notes, keys = bare_reach(asm_ok + "        call rt_gc_poll_asm@PLT\n")

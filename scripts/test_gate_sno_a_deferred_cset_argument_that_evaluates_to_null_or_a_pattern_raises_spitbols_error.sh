@@ -8,7 +8,7 @@
 # THE CURE: each box's take (rt_pat_prim_str_take) carries its code pair, coerces through rt_coerce_str_d and fails when it
 # raised; ANY and NOTANY evaluate the argument before the cursor test, as sbl does (an error at the end of the subject too);
 # the error ENDS THE MATCH, as sbl's does -- MATCH_BEGIN's retry and MATCH_END's success both fail while a SETEXIT exit is
-# pending (rtccb[25], the slot MATCH_DEFER already reads), and a raise that left none pending (an &ERRLIMIT count, or
+# pending (g_rtccb[25], the slot MATCH_DEFER already reads), and a raise that left none pending (an &ERRLIMIT count, or
 # SETEXIT('CONTINUE')) arms the CONTINUE trampoline there, so the statement's own exit test resumes its failure edge. Without
 # that, every scan position re-raised: &ERRLIMIT drained per position and a later trap died fatal.
 # NOT HERE: mode 4 dies in rt_pat_prim_str_take on a deferred ANY/NOTANY after a BREAK or SPAN was built (its own row,

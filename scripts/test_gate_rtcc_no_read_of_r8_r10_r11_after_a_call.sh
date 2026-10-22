@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_rtcc_no_read_of_r8_r10_r11_after_a_call.sh -- EMITTED CODE NEVER READS r8, r10 OR r11 AFTER A CALL OR A POLL
-# BEFORE IT WRITES IT, SO NOTHING SPILLS THEM INTO rtccb AND NOTHING RELOADS THEM (cto ruling-retire-the-r8-r10-r11-writeback-
+# BEFORE IT WRITES IT, SO NOTHING SPILLS THEM INTO g_rtccb AND NOTHING RELOADS THEM (cto ruling-retire-the-r8-r10-r11-writeback-
 # yes-with-a-standing-reader-gate, 2026-10-09, condition (1); hq_runtime).
 #
-# THE RETIREMENT IT HOLDS: the rtcc bracket around a C call and the poll wrote r8, r10 and r11 into rtccb+40, +56, +64 and
+# THE RETIREMENT IT HOLDS: the rtcc bracket around a C call and the poll wrote r8, r10 and r11 into g_rtccb+40, +56, +64 and
 # reloaded them after; nothing in C reads those slots, and a masked asm leaf leaving a heap word in r8 or r10 had that word
 # spilled into the block at the next poll (hq_collector, 3925 detections). The bracket now carries r9 alone (the GVA base) and
 # r11 only under SCRIP_DIAG_REGS; the driver's entry trampolines load r9 alone. That is sound only while no emitted path reads
@@ -15,9 +15,9 @@
 # across the languages, dumped by gdb at bb_seal, cut at the slab's ZMAP frame-map block (the data the emitter appends after
 # the last instruction, which a linear disassembly would read as code), disassembled by objdump, want reads=0; (d) THE PLANT,
 # both media: a read of r8 inserted after the first call of a real witness stream reads red and names r8; (e) THE BRACKET IS
-# GONE: no witness .s stores or reloads r8, r10 or r11 through rtccb; (f) THE DIAG ROAD (the cto's review, condition 2):
+# GONE: no witness .s stores or reloads r8, r10 or r11 through g_rtccb; (f) THE DIAG ROAD (the cto's review, condition 2):
 # five witnesses under SCRIP_DIAG_REGS=1 print exactly what they print without it, in both modes under stress 1, and
-# carry r11 (its rtccb+64 reload) and not r8 or r10; a plant that drops r11 from the mask is seen.
+# carry r11 (its g_rtccb+64 reload) and not r8 or r10; a plant that drops r11 from the mask is seen.
 # LIMIT, NAMED: a later call that takes r8 as its fifth argument without writing it is a read no stream reader can see.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -75,8 +75,8 @@ fi
 [ $rc4 -eq 1 ] && grep -q 'READ .* r8 ' "$T/p4.txt" && [ $rc3 -eq 1 ] && grep -q 'READ .* r8 ' "$T/p3.txt" \
     && arm ok "(d) the plant: a read of r8 after the first call reads red by name in both media" \
     || arm fail "(d) the plant did not red (mode 4 rc=$rc4, mode 3 rc=$rc3) -- the detector fails open"
-nb=$(cat "${ASMS[@]/--asm/}" 2>/dev/null | grep -cE 'rtccb\+(40|56|64)')
-[ "$nb" -eq 0 ] && arm ok "(e) the bracket is gone: no witness .s spills or reloads r8, r10 or r11 through rtccb" || arm fail "(e) $nb rtccb+40/56/64 store or reload(s) remain in the witness .s"
+nb=$(cat "${ASMS[@]/--asm/}" 2>/dev/null | grep -cE 'g_rtccb\+(40|56|64)')
+[ "$nb" -eq 0 ] && arm ok "(e) the bracket is gone: no witness .s spills or reloads r8, r10 or r11 through g_rtccb" || arm fail "(e) $nb g_rtccb+40/56/64 store or reload(s) remain in the witness .s"
 run4() { "$SCRIP" --compile -o "$1.s" "$2" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$1" 2>/dev/null \
     && { SCRIP_GC_STRESS=1 timeout -k 5 120 "$1" < /dev/null; echo "rc=$?"; }; }
 dbad=""; dn=0
@@ -89,12 +89,12 @@ for w in hb_arr.sno hb_datblk.sno hb_coexpr_sigma.icn hb_pl_findall.pl hb_cv_spi
     SCRIP_DIAG_REGS=1 run4 "$d/q" "$WD/$w" > "$d/m4.diag" 2>&1
     cmp -s "$d/m3.plain" "$d/m3.diag" || dbad="$dbad $w:m3"
     cmp -s "$d/m4.plain" "$d/m4.diag" || dbad="$dbad $w:m4"
-    r11=$(grep -cE 'mov +r11, +qword ptr \[rip \+ rtccb\+64\]' "$d/q.s"); rest=$(grep -cE 'rtccb\+(40|56)' "$d/q.s")
+    r11=$(grep -cE 'mov +r11, +qword ptr \[rip \+ g_rtccb\+64\]' "$d/q.s"); rest=$(grep -cE 'g_rtccb\+(40|56)' "$d/q.s")
     [ "$r11" -gt 0 ] && [ "$rest" -eq 0 ] || dbad="$dbad $w:r11=$r11,r8r10=$rest"
     dn=$((dn+1))
 done
 SCRIP_DIAG_REGS=1 SCRIP_RTCC_VENEER=2 "$SCRIP" --compile -o "$T/dplant.s" "$WD/hb_arr.sno" < /dev/null > /dev/null 2>&1
-dpl=$(grep -cE 'mov +r11, +qword ptr \[rip \+ rtccb\+64\]' "$T/dplant.s")
+dpl=$(grep -cE 'mov +r11, +qword ptr \[rip \+ g_rtccb\+64\]' "$T/dplant.s")
 [ "$dn" -eq 5 ] && [ -z "$dbad" ] && [ "$dpl" -eq 0 ] \
     && arm ok "(f) SCRIP_DIAG_REGS: $dn witnesses print the same with and without it in both modes under stress 1, r11 still carried and r8/r10 not; the plant that drops r11 (SCRIP_RTCC_VENEER=2) is seen" \
     || arm fail "(f) SCRIP_DIAG_REGS: graded $dn of 5;${dbad:- none differ}; plant r11 reloads=$dpl (want 0)"

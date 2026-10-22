@@ -7,7 +7,7 @@ GUESSES NOTHING.)
 ⛔ WHY THIS EXISTS, NAMED BY THE GATE IT CONTINUES.  test_gate_gc_the_caller_saved_spill_block_never_holds_a_heap_
 reference.sh arm (i) measured the standing population and then wrote down its own next step verbatim: "The step
 after this one is to ask, per member, whether the reloaded register is read as a pointer before it is next
-written."  That gate proved 806 heap references sit in rtccb across collections and that 161 of them name a block
+written."  That gate proved 806 heap references sit in g_rtccb across collections and that 161 of them name a block
 THE COLLECTOR MOVED AND ARE LEFT UNREPAIRED, because nothing visits that block and nothing can (32 untagged words;
 visiting them is a conservative scan and CEO-812 froze that out).  A wrong word is only SPENT when the reload's
 register is then used as a pointer -- so the unrepaired count is an upper bound and this reader is what turns it
@@ -164,7 +164,7 @@ def reg_tokens(text):
     return set(re.findall(r"\b(r[0-9]{1,2}[dwb]?|[er]?[abcd]x|[er]?[sd]i|[abcd][lh]|sil|dil|spl|bpl)\b", text))
 
 
-RELOAD_RX = re.compile(r"^\s*mov\s+(r8|r9|r10|r11)\s*,\s*qword ptr \[rip \+ rtccb\+\d+\]\s*$")
+RELOAD_RX = re.compile(r"^\s*mov\s+(r8|r9|r10|r11)\s*,\s*qword ptr \[rip \+ g_rtccb\+\d+\]\s*$")
 
 
 def reload_block(prog, i):
@@ -336,29 +336,29 @@ def emit_asm(prog_path, scrip=None):
 
 PLANT_CLEAN = """
 main_bx:                call             rt_gc_poll_asm@PLT
-                        mov              r8,  qword ptr [rip + rtccb+40]
+                        mov              r8,  qword ptr [rip + g_rtccb+40]
                         cmp              r13, 5
                         mov              r13, 0
                         ret
 """
 PLANT_BAD = """
 main_bx:                call             rt_gc_poll_asm@PLT
-                        mov              r8,  qword ptr [rip + rtccb+40]
+                        mov              r8,  qword ptr [rip + g_rtccb+40]
                         mov              rax, qword ptr [r13 + 8]
                         mov              r13, 0
                         ret
 """
 PLANT_JUMP = """
 main_bx:                call             rt_gc_poll_asm@PLT
-                        mov              r11, qword ptr [rip + rtccb+64];     jmp   other_α
+                        mov              r11, qword ptr [rip + g_rtccb+64];     jmp   other_α
                         mov              r13, 0
 other_α:                mov              rcx, qword ptr [r13 + 16]
                         ret
 """
 PLANT_R8_BAD = """
 main_bx:                call             rt_gc_poll_asm@PLT
-                        mov              r8,  qword ptr [rip + rtccb+40]
-                        mov              r9,  qword ptr [rip + rtccb+48]
+                        mov              r8,  qword ptr [rip + g_rtccb+40]
+                        mov              r9,  qword ptr [rip + g_rtccb+48]
                         mov              r9,  0
                         mov              rax, qword ptr [r8 + 24]
                         ret

@@ -14,13 +14,13 @@ CURE is graded by ORACLE DIFF on the witness and the POPULATION is graded here, 
 THE UNREAD ROAD, AND WHY IT IS COUNTED HERE RATHER THAN LEFT TO THE READER'S MEMORY (cto 2026-09-20).  This
 census grades stores to [rsp+D] and [rbp+D].  A value can also be shielded across a safe point by spilling it to
 a FIXED SYMBOL -- the emitter does exactly that in x86_asm.h, saving r8/r10/r11 into the runtime's caller-saved
-block `rtccb` on either side of the poll -- and no frame map can ever cover one of those, because a frame map
+block `g_rtccb` on either side of the poll -- and no frame map can ever cover one of those, because a frame map
 describes memory in a frame.  REFUSING to grade them is correct and the selftest has always held it.  ⛔ WHAT WAS
 WRONG IS THAT THE REFUSAL WAS SILENT: the store was dropped on the floor, so a language whose shielding rides this
 road printed `members=0 undecidable=0`, which is spelled exactly like clean.  Raku was published as CLEAN and
 DECIDED COMPLETELY in three cursor entries on the strength of EIGHT graded frame stores, while 207 of its shielded
 stores went unread and its rungs was losing 65 gradings at SCRIP_GC_STRESS=16 the same evening.  MEASURED over
-the shared witness set: 2230 safe points, 972 frame stores graded, 6690 shielded into `rtccb` -- this census reads
+the shared witness set: 2230 safe points, 972 frame stores graded, 6690 shielded into `g_rtccb` -- this census reads
 about an eighth of the shielding at its own safe points, and every run now says so.  THE SAFETY OF THAT ROAD IS A
 ROOT-SET QUESTION AND NOT A MAP QUESTION, and it is open: rtcc_init.c registers the block with
 rt_gc_root_range_add_seamsafe, and the only walk over the root-range table in gc_heap.c begins
@@ -611,8 +611,8 @@ SPILL_65B_HEAD = ("sub rsp, 32", "mov qword ptr [rsp + 0], r13", "mov qword ptr 
                   "xor edi, edi", "xor esi, esi", "mov rdx, rsp", "lea rcx, [rsp + 16]")
 SPILL_65B_TAIL = ("mov r13, qword ptr [rsp + 0]", "mov rax, qword ptr [rsp + 16]", "mov rdx, qword ptr [rsp + 24]", "add rsp, 32")
 SPILL_65B_STORES = (1, 2, 3)
-RTCC_WRITEBACK = re.compile(r"^mov qword ptr \[rip \+ rtccb\+\d+\], r(?:8|9|10|11)$")
-RTCC_RELOAD = re.compile(r"^mov r(?:8|9|10|11), qword ptr \[rip \+ rtccb\+\d+\]$")
+RTCC_WRITEBACK = re.compile(r"^mov qword ptr \[rip \+ g_rtccb\+\d+\], r(?:8|9|10|11)$")
+RTCC_RELOAD = re.compile(r"^mov r(?:8|9|10|11), qword ptr \[rip \+ g_rtccb\+\d+\]$")
 
 
 def _norm(ins):
@@ -624,8 +624,8 @@ def spill65b_at(insns, i):
 
     THE SHAPE, from x86_rt_gc_poll_res in x86_asm.h (the cfo's ruling of 2026-10-04, every result-preserving poll
     shields r13 as the plain poll does): `sub rsp, 32 / mov [rsp+0], r13 / mov [rsp+16], rax / mov [rsp+24], rdx /
-    xor edi, edi / xor esi, esi / mov rdx, rsp / lea rcx, [rsp+16]`, the rtccb write-backs of r8-r11, `call
-    rt_gc_point_arr_probe_c`, the rtccb reloads, `mov r13, [rsp+0] / mov rax, [rsp+16] / mov rdx, [rsp+24] / add
+    xor edi, edi / xor esi, esi / mov rdx, rsp / lea rcx, [rsp+16]`, the g_rtccb write-backs of r8-r11, `call
+    rt_gc_point_arr_probe_c`, the g_rtccb reloads, `mov r13, [rsp+0] / mov rax, [rsp+16] / mov rdx, [rsp+24] / add
     rsp, 32`.  The box's result lives in rax:rdx at the poll, so it is spilled as ONE DESCR cell at the sweep floor,
     swept by the collector's spine walk and relocated by its tag, and reloaded; the r13 word sits BELOW the floor
     (never swept) and is handed to the probe entry as the saved subject, which rewrites it only when it aliases
@@ -1398,7 +1398,7 @@ def selftest():
 
     arm("disp_of reads the emitter's [rsp + -48] spelling", disp_of("qword ptr [rsp + -48]") == ("rsp", -48))
     arm("disp_of reads a bare [rsp]", disp_of("qword ptr [rsp]") == ("rsp", 0))
-    arm("disp_of refuses a rip-relative operand", disp_of("qword ptr [rip + rtccb+40]") == (None, None))
+    arm("disp_of refuses a rip-relative operand", disp_of("qword ptr [rip + g_rtccb+40]") == (None, None))
     lay = [(0, 0, 144), (144, 1, 8), (152, 2, 16), (168, 1, 72), (240, 0, 176)]
     arm("classify: a DESCR entry is MAPPED", classify(0, lay, 416, False) == "MAPPED")
     arm("classify: a PTR_GC entry is MAPPED", classify(152, lay, 416, False) == "MAPPED")
@@ -1415,35 +1415,35 @@ def selftest():
     arm("grid: the witness's own pointer word at -24 is OFF-GRID as a floor", grid_verdict(-24) == "OFF-GRID")
     arm("grid: the region base itself is ON-GRID", grid_verdict(0) == "ON-GRID")
     arm("grid: an 8-byte push below the base takes the floor OFF-GRID", grid_verdict(-8) == "OFF-GRID")
-    spill = CS.Insn(1, "mov qword ptr [rip + rtccb+40], r8", [])
+    spill = CS.Insn(1, "mov qword ptr [rip + g_rtccb+40], r8", [])
     gated = [CS.Insn(1, "mov qword ptr [rsp + 0], rax", (".Lcall_a_1",)), CS.Insn(2, "mov qword ptr [rsp + 8], rdx", ()),
              CS.Insn(3, "push rax", ()), CS.Insn(4, "mov rax, qword ptr [rip + g_gc_pending@GOTPCREL]", ()),
              CS.Insn(5, "mov eax, dword ptr [rax + 0]", ()), CS.Insn(6, "test eax, eax", ()), CS.Insn(7, "pop rax", ()),
-             CS.Insn(8, "je 1f", ()), CS.Insn(9, "mov qword ptr [rip + rtccb+40], r8", ()), CS.Insn(10, "call rt_gc_poll_asm@PLT", ())]
+             CS.Insn(8, "je 1f", ()), CS.Insn(9, "mov qword ptr [rip + g_rtccb+40], r8", ()), CS.Insn(10, "call rt_gc_poll_asm@PLT", ())]
     arm("GATED POLL: the stores before the inline pending test are FOUND -- the je 1f skips only the poll body, so the walk steps over the six-instruction preamble as the poll's own",
-        shielded_stores(gated, 9) == ([("rsp", 8, "rdx"), ("rsp", 0, "rax")], [("rtccb", 40, "r8")]))
+        shielded_stores(gated, 9) == ([("rsp", 8, "rdx"), ("rsp", 0, "rax")], [("g_rtccb", 40, "r8")]))
     branched = list(gated); branched[7] = CS.Insn(8, "je .Lelse_1", ())
     arm("GATED POLL NEGATIVE: a real branch between the store and the poll still stops the walk -- the preamble is matched by all six texts, never by 'any je'",
-        shielded_stores(branched, 9) == ([], [("rtccb", 40, "r8")]))
+        shielded_stores(branched, 9) == ([], [("g_rtccb", 40, "r8")]))
     reshaped = list(gated); reshaped[5] = CS.Insn(6, "test rax, rax", ())
     arm("GATED POLL RESHAPED: a gate whose test changed spelling is a stop again, not a silent skip",
-        shielded_stores(reshaped, 9) == ([], [("rtccb", 40, "r8")]))
+        shielded_stores(reshaped, 9) == ([], [("g_rtccb", 40, "r8")]))
     joined = list(gated); joined[2] = CS.Insn(3, "push rax", (".Lpoll_entry",))
     arm("GATED POLL JOINED: a label on the preamble's own push is another path entering, so the walk stops after the gate and reads no store",
-        shielded_stores(joined, 9) == ([], [("rtccb", 40, "r8")]))
+        shielded_stores(joined, 9) == ([], [("g_rtccb", 40, "r8")]))
     res = [CS.Insn(1, "mov qword ptr [rsp + 0], rax", (".Lcall_b_1",)), CS.Insn(2, "mov qword ptr [rsp + 8], rdx", ()),
            CS.Insn(3, "push rax", ()), CS.Insn(4, "mov rax, qword ptr [rip + g_gc_pending@GOTPCREL]", ()),
            CS.Insn(5, "mov eax, dword ptr [rax + 0]", ()), CS.Insn(6, "test eax, eax", ()), CS.Insn(7, "pop rax", ()),
            CS.Insn(8, "je 1f", ()), CS.Insn(9, "sub rsp, 32", ()), CS.Insn(10, "mov qword ptr [rsp + 0], r13", ()),
            CS.Insn(11, "mov qword ptr [rsp + 16], rax", ()), CS.Insn(12, "mov qword ptr [rsp + 24], rdx", ()),
            CS.Insn(13, "xor edi, edi", ()), CS.Insn(14, "xor esi, esi", ()), CS.Insn(15, "mov rdx, rsp", ()),
-           CS.Insn(16, "lea rcx, [rsp + 16]", ()), CS.Insn(17, "mov qword ptr [rip + rtccb+40], r8", ()),
-           CS.Insn(18, "call rt_gc_point_arr_probe_c@PLT", ()), CS.Insn(19, "mov r8,  qword ptr [rip + rtccb+40]", ()),
+           CS.Insn(16, "lea rcx, [rsp + 16]", ()), CS.Insn(17, "mov qword ptr [rip + g_rtccb+40], r8", ()),
+           CS.Insn(18, "call rt_gc_point_arr_probe_c@PLT", ()), CS.Insn(19, "mov r8,  qword ptr [rip + g_rtccb+40]", ()),
            CS.Insn(20, "mov r13, qword ptr [rsp + 0]", ()), CS.Insn(21, "mov rax, qword ptr [rsp + 16]", ()),
            CS.Insn(22, "mov rdx, qword ptr [rsp + 24]", ()), CS.Insn(23, "add rsp, 32", ()),
            CS.Insn(24, "mov qword ptr [rbp + 1280], rax", ("1",))]
     arm("6.5b SPILL: the exact shape names its three stores by POSITION, so the box's own identical result stores above the gate are still read",
-        spill65b_at(res, 17) == frozenset((9, 10, 11)) and shielded_stores(res, 17, spill65b_at(res, 17)) == ([("rsp", 8, "rdx"), ("rsp", 0, "rax")], [("rtccb", 40, "r8")]))
+        spill65b_at(res, 17) == frozenset((9, 10, 11)) and shielded_stores(res, 17, spill65b_at(res, 17)) == ([("rsp", 8, "rdx"), ("rsp", 0, "rax")], [("g_rtccb", 40, "r8")]))
     res_l = list(res); res_l[10] = CS.Insn(11, "mov qword ptr [rsp + 16], rax", (".Ljoin_9",))
     arm("6.5b NEGATIVE: a label on the result store is another path entering the shape, so it is NOT the cell and the stores are graded",
         spill65b_at(res_l, 17) is None)
@@ -1458,7 +1458,7 @@ def selftest():
         spill65b_at(res_o, 17) is None)
     arm("6.5b NEGATIVE: the plain gated poll (no spill) is not the cell", spill65b_at(gated, 9) is None)
     arm("a rip-relative shield is NAMED with its symbol and offset, not dropped",
-        _static_store_of(spill) == [("rtccb", 40, "r8")])
+        _static_store_of(spill) == [("g_rtccb", 40, "r8")])
     arm("the frame reader still REFUSES that same store -- the reach boundary is counted, never graded",
         _store_of(spill) == [])
     arm("a bare symbol with no offset reads as offset 0",

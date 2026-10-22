@@ -2,9 +2,9 @@
 # test_gate_no_asm_c_asm.sh — ⛔ LON'S LAW (2026-08-20 s194, in-chat): "You must guarantee that no ASM -> C -> ASM."
 #
 # THE RULE: emitted asm may call C, and C may call asm, but emitted asm must NEVER reach asm THROUGH C.  The middle C
-# frame is where the machine loses its wires: gamma/omega ride r10/r11 (Lon s55) while RTCC banks r10/r11 in rtccb[32],
+# frame is where the machine loses its wires: gamma/omega ride r10/r11 (Lon s55) while RTCC banks r10/r11 in g_rtccb[32],
 # a FLAT GLOBAL with NO nesting, so an inner activation entered through C overwrites the OUTER activation's banked
-# continuations.  beauty's M1 SIGSEGV is that exact shape -- at the fault r11 = rip = &rtccb (FINDING s194c).
+# continuations.  beauty's M1 SIGSEGV is that exact shape -- at the fault r11 = rip = &g_rtccb (FINDING s194c).
 #
 # ⛔ THIS IS A RATCHET, NOT A CLEAN GATE, AND THE COUNT IS COMPUTED, NEVER TYPED (the s169 lesson: a ratchet assembled
 # from the violations already seen is permanently one syntax behind the code).  The floor is the measured census, 0 since

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_func_table_is_rooted_not_pinned_alive.sh -- THE DEFINE TABLE IS A ROOT, NOT A BLOCK THAT SURVIVES BECAUSE IT CANNOT MOVE.
 # ⛔ THE MEASURED DEFECT (hq_V 2026-09-14, row icon-gc-root-the-func-buckets-static-array-before-rung-2-...): _func_buckets (core.c) is a
-# static array of FNCBLK_t chains, every field of every entry rt_pinned_alloc'd, and core_gc_roots walked _var_buckets and _udef_types
+# static array of FNCBLK_t chains, every field of every entry rt_pinned_alloc'd, and core_gc_roots walked _var_buckets and g_udef_types
 # but NEVER _func_buckets -- pinning was the only thing keeping the DEFINE table's pointers valid, and making the four aggregate
 # types slide (GC-5 rung 2) segfaulted a five-statement SNOBOL4 program 20/20 in strcmp under APPLY. Same class as dat_types[].blk
 # (gc2, SCRIP 5dafed741) one table over. TWO ARMS, HONESTLY LABELLED: the STRUCTURAL arm (core_gc_roots must name _func_buckets) is

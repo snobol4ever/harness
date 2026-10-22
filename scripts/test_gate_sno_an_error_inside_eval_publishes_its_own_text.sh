@@ -11,7 +11,7 @@
 # ⭐ THE CLASS, because the fix is small and the shape is not: g_error carried TWO meanings -- Icon's error
 # trap AND "an EVAL guard is armed" -- and the arithmetic read it as the first while EVAL wrote it as the
 # second. One global, two owners, and the arm that lost is the one that publishes the text a program reads.
-# The discriminator is now kw_errlimit, which is a SNOBOL4 keyword rather than a language test, so this stays
+# The discriminator is now g_kw_errlimit, which is a SNOBOL4 keyword rather than a language test, so this stays
 # inside the no-language-discriminator law.
 #
 # ⛔ WHAT IT COST: chks.inc grades the x64 math programs by comparing &ERRTEXT against the expected error

@@ -12,7 +12,7 @@
 # spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11; Lon in-chat to the ceo, verbatim:
 # "get rid of veneer for all RT ASM instances.").
 #
-# WHY THIS IS THE LOAD-BEARING CHECK OF THE ROW. Emitted code now calls every RTX entry BARE -- no rtccb write-back before
+# WHY THIS IS THE LOAD-BEARING CHECK OF THE ROW. Emitted code now calls every RTX entry BARE -- no g_rtccb write-back before
 # the call, no reload after it -- so a single entry that leaves r10 (the statement number), r11 (the box id), r8 or r9 (the
 # GVA base every global access indexes) changed on ONE path hands its caller a wrong register with no error anywhere. The
 # emitter side is measured by test_gate_rtx_calls_carry_no_veneer.sh; THIS gate proves the callee side, and a green here is

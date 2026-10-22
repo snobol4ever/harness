@@ -7,7 +7,7 @@
 # FUNCTION binds inside the library except the ones an instrument interposes by name, every DATUM stays interposable, the relative relocations are packed (hello
 # 1,710,925 Ir). The three hazards CEO-1501 kept the flag off for are held here, each by its own arm:
 #   1. the functions bind inside: the runtime's JUMP_SLOT relocations are under 400 (3,721 before);
-#   2. the data do not: rtccb and g_gc_pending, which every mode-4 program reads rip-relatively and so COPIES, keep a dynamic relocation in the runtime, so the library
+#   2. the data do not: g_rtccb and g_gc_pending, which every mode-4 program reads rip-relatively and so COPIES, keep a dynamic relocation in the runtime, so the library
 #      reads the executable's copy (bound locally the library reads its own and the program the other: split state, full -Bsymbolic's defect);
 #   3. every name in rt_interposable.list is an exported symbol the runtime still reaches through a dynamic relocation;
 #   4. pointer identity: no executable SCRIP builds or emits carries a canonical-PLT function (an undefined FUNC with an address), the only road by which an
@@ -17,7 +17,7 @@
 #   7. the parser tools' road: out/parser_icon under PARSER_LEX_CLOCK=1 counts its lexer calls.
 #   8. THE DATA BIND INSIDE TOO (cto 2026-10-17, row startup-an-empty-mode-4-program-costs-...): --dynamic-list-data is gone, so a datum stays
 #      interposable only by name in rt_interposable.list; every R_X86_64_COPY in every executable above (libc's stdin, stdout and stderr aside)
-#      names a symbol in that list, or that executable writes a copy the runtime never reads. Measured at the landing: rtccb (mode 4, scrip-ipp),
+#      names a symbol in that list, or that executable writes a copy the runtime never reads. Measured at the landing: g_rtccb (mode 4, scrip-ipp),
 #      sno_nerrors and rebus_nerrors (the parser tools); the runtime's GLOB_DAT relocations 252 -> 73, an empty mode-4 program 863,359 -> 756,573 Ir; with the C++ objects built -fno-gnu-unique (an inline function's static no longer a GNU-unique symbol, SCRIP d2e301195) 73 -> 25 and 715,103 Ir.
 # FAIL-ONCE: arms 1 and 5 read red on the parent of the landing (3,721 and 34); arm 8 reads red on the parent of the data landing (the
 # parser tools' sno_nerrors and rebus_nerrors were in no list). Arms 6 and 7 read 0 against a runtime linked with plain -Bsymbolic-functions (no
@@ -41,7 +41,7 @@ say() { echo "$1"; case "$1" in RED*) red=1;; esac; }
 readelf -rW "$SO" > "$D/rel.txt" || refuse "readelf -r failed on $SO"
 js=$(grep -c 'R_X86_64_JUMP_SLOT' "$D/rel.txt")
 [ "$js" -lt 400 ] && say "GREEN arm 1: the runtime's JUMP_SLOT relocations read $js (under 400)" || say "RED   arm 1: the runtime's JUMP_SLOT relocations read $js -- its functions are not bound inside it"
-for s in rtccb g_gc_pending; do
+for s in g_rtccb g_gc_pending; do
     n=$(awk -v s="$s" '$5 == s || $5 ~ "^"s"[+@]"' "$D/rel.txt" | wc -l)
     [ "$n" -ge 1 ] && say "GREEN arm 2: the runtime reaches $s through $n dynamic relocation(s)" || say "RED   arm 2: the runtime binds $s to its own copy -- a mode-4 program's copy relocation splits it"
 done

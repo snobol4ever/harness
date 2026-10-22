@@ -120,7 +120,7 @@ def _defines_ret(ins, r):
     return ins.ops[0].strip() in _RET_ALIAS[r]
 def _return_seed(insns, i, r, hops=0):
     """\u26d4 THE SEED IS FOUND BY ROUTE, NOT BY A WINDOW (cfo CFO-149, 2026-09-23, measured on concord.icn.s graph
-    n16_scan_enter_alpha): between `call rt_scan_enter` and `mov r13, rax` sit four rtccb reloads, the spill of rax and
+    n16_scan_enter_alpha): between `call rt_scan_enter` and `mov r13, rax` sit four g_rtccb reloads, the spill of rax and
     rdx into the poll's record, the poll, four more reloads, the two reloads out of the record, add rsp 32 and test
     rax -- fourteen instructions, never the two the old window looked back over, which is why 13 SNOBOL4 seedings
     read SUBJECT and 270 Icon seedings of the SAME ScanSubjRegs pair read UNCLASSIFIED. So: walk back from i to the
@@ -891,12 +891,12 @@ def selftest():
         " mov qword ptr [rbp + 96], r13\n"
         " mov qword ptr [rbp + 112], r15\n"
         " mov rdi, qword ptr [rbp + 1520]\n"
-        " mov qword ptr [rip + rtccb+40], r8\n"
+        " mov qword ptr [rip + g_rtccb+40], r8\n"
         " call rt_scan_enter\n"
-        " mov r8, qword ptr [rip + rtccb+40]\n"
-        " mov r9, qword ptr [rip + rtccb+48]\n"
-        " mov r10, qword ptr [rip + rtccb+56]\n"
-        " mov r11, qword ptr [rip + rtccb+64]\n"
+        " mov r8, qword ptr [rip + g_rtccb+40]\n"
+        " mov r9, qword ptr [rip + g_rtccb+48]\n"
+        " mov r10, qword ptr [rip + g_rtccb+56]\n"
+        " mov r11, qword ptr [rip + g_rtccb+64]\n"
         " sub rsp, 32\n"
         " mov dword ptr [rsp + 0], 2\n"
         " mov dword ptr [rsp + 4], edx\n"
@@ -907,7 +907,7 @@ def selftest():
         " mov edx, 0\n"
         " lea rcx, [rsp + 32]\n"
         " call rt_gc_point_arr_c\n"
-        " mov r8, qword ptr [rip + rtccb+40]\n"
+        " mov r8, qword ptr [rip + g_rtccb+40]\n"
         " mov rax, qword ptr [rsp + 8]\n"
         " mov rdx, qword ptr [rsp + 24]\n"
         " add rsp, 32\n"
@@ -930,12 +930,12 @@ def selftest():
         " mov qword ptr [rbp + 96], r13\n"
         " mov qword ptr [rbp + 112], r15\n"
         " mov rdi, qword ptr [rbp + 1520]\n"
-        " mov qword ptr [rip + rtccb+40], r8\n"
+        " mov qword ptr [rip + g_rtccb+40], r8\n"
         " call rt_scan_enter\n"
-        " mov r8, qword ptr [rip + rtccb+40]\n"
-        " mov r9, qword ptr [rip + rtccb+48]\n"
-        " mov r10, qword ptr [rip + rtccb+56]\n"
-        " mov r11, qword ptr [rip + rtccb+64]\n"
+        " mov r8, qword ptr [rip + g_rtccb+40]\n"
+        " mov r9, qword ptr [rip + g_rtccb+48]\n"
+        " mov r10, qword ptr [rip + g_rtccb+56]\n"
+        " mov r11, qword ptr [rip + g_rtccb+64]\n"
         " sub rsp, 32\n"
         " mov dword ptr [rsp + 0], 2\n"
         " mov dword ptr [rsp + 4], edx\n"
@@ -948,7 +948,7 @@ def selftest():
         " mov edx, 0\n"
         " lea rcx, [rsp + 32]\n"
         " call rt_gc_point_arr_c\n"
-        " mov r8, qword ptr [rip + rtccb+40]\n"
+        " mov r8, qword ptr [rip + g_rtccb+40]\n"
         " mov rax, qword ptr [rsp + 8]\n"
         " mov rdx, qword ptr [rsp + 24]\n"
         " add rsp, 32\n"

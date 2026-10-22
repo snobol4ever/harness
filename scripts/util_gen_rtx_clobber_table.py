@@ -8,7 +8,7 @@ WHAT IT WRITES.  src/templates/x86/rtx_clobber_table.inc: one row per registered
 rtx_entry_names section RTX_FUNC and RTX_ENTRY append to, read out of the objects -- never typed), naming which of the RTCC
 four the entry can hand back changed: r8, r10, r11 other than as received, r9 other than the GVA base.  The emitter's
 x86_rtcc_clob_raw() reads it for every call into the asm runtime: mask 0 keeps the bare call, a named register is
-re-established at the call site after the call (r9 from its master slot rtccb+48, r11 from the box id the site holds) --
+re-established at the call site after the call (r9 from its master slot g_rtccb+48, r11 from the box id the site holds) --
 the site knows what is live, the leaf saves nothing.
 
 HOW.  The same recipe as test_gate_rtx_entries_keep_the_rtcc_four.sh: every src/runtime/rtx/*.s assembled into a scratch

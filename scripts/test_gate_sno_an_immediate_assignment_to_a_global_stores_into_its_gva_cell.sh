@@ -9,7 +9,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # NV_CELL_IF_FASTSET_fn 7.7% + strcmp 6.7% of cycles under the by-name form; 4.43 G -> 3.76 G instructions on the cure). The entry
 # falls back to rt_cap_open_plain (the by-name store, unchanged) whenever an I/O association exists (g_call_fastpath_off), the
 # monitor is attached, a TRACE is set or the debug trace is on -- so every observable side effect is the plain path's (a
-# TRACE'd target therefore takes the direct entry and the runtime's trace_set_n test sends it down the plain path, where the
+# TRACE'd target therefore takes the direct entry and the runtime's g_trace_set_n test sends it down the plain path, where the
 # trace line fires). The emitter keeps the by-name form for an I/O-associated name (the GVA collector refuses it) and a protected
 # pattern name; a function's LOCAL of the name shares the global's cell (the name-save on entry swaps the cell's value), so the
 # direct store is the local's store too. SCRIP_CAP_GVA=0 is the control arm (every site calls rt_cap_open_plain).

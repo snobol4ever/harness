@@ -2,10 +2,10 @@
 # util_asm_c_asm_census.py — ⛔ THE NO-ASM->C->ASM CENSUS (Lon 2026-08-20 s194, in-chat: "You must guarantee that no ASM -> C -> ASM.").
 #
 # WHY THE RULE EXISTS, MEASURED (FINDING-2026-08-20-s194c): the Byrd wire contract puts gamma in r10 and omega in r11
-# (Lon s55) while RTCC banks r10/r11 as VM globals in rtccb[32] (x86_asm.h:12 "R10=7, R11=8"; bank/reload at :427/:428/
-# :440/:441).  rtccb is a FLAT GLOBAL -- one slot per register, program-wide, WITH NO NESTING.  So when emitted asm calls
+# (Lon s55) while RTCC banks r10/r11 as VM globals in g_rtccb[32] (x86_asm.h:12 "R10=7, R11=8"; bank/reload at :427/:428/
+# :440/:441).  g_rtccb is a FLAT GLOBAL -- one slot per register, program-wide, WITH NO NESTING.  So when emitted asm calls
 # a C function and that C function re-enters asm, the INNER activation banks its wires into the SAME two slots and the
-# OUTER activation's continuations are lost.  beauty's M1 SIGSEGV is exactly this: at the fault r11 = rip = &rtccb.
+# OUTER activation's continuations are lost.  beauty's M1 SIGSEGV is exactly this: at the fault r11 = rip = &g_rtccb.
 # The shape is the defect; forbidding the shape retires the whole class instead of defending against instances.
 #
 # WHAT IT COMPUTES: the intersection of

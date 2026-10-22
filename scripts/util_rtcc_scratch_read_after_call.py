@@ -2,7 +2,7 @@
 """util_rtcc_scratch_read_after_call.py -- DOES EMITTED CODE READ r8, r10 OR r11 AFTER A CALL BEFORE IT WRITES IT?
 
 The cto's ruling ruling-retire-the-r8-r10-r11-writeback-yes-with-a-standing-reader-gate (2026-10-09), condition (1): the
-write-back of r8, r10 and r11 into rtccb before a C call or a poll and their reload after it retire, and this reader
+write-back of r8, r10 and r11 into g_rtccb before a C call or a poll and their reload after it retire, and this reader
 is the standing proof that nothing in emitted code reads one of them after a call before a write.  A read there would
 see whatever the callee left, so after the retirement a single one is a defect, named by file and instruction.
 
@@ -45,8 +45,8 @@ END_RX = re.compile(r"^(ret|ud2|hlt)$")
 GLOBAL_RX = re.compile(r"^\s*\.globl\s+([\w.$]+)", re.M)
 
 
-WB_RX = re.compile(r"^qword ptr \[rip \+ rtccb\+\d+\]\s*,\s*(r8|r9|r10|r11)$")
-RL_RX = re.compile(r"^(r8|r9|r10|r11)\s*,\s*qword ptr \[rip \+ rtccb\+\d+\]$")
+WB_RX = re.compile(r"^qword ptr \[rip \+ g_rtccb\+\d+\]\s*,\s*(r8|r9|r10|r11)$")
+RL_RX = re.compile(r"^(r8|r9|r10|r11)\s*,\s*qword ptr \[rip \+ g_rtccb\+\d+\]$")
 
 
 def touch(mnem, ops, reg):
@@ -225,13 +225,13 @@ def selftest():
         nonlocal fails
         print(("  ok    " if cond else "  FAIL  ") + msg)
         fails += 0 if cond else 1
-    base = "f:\n  mov qword ptr [rip + rtccb+40], r8\n  call rt_x\nL1:\n  mov r8, 5\n  add r8, 1\n  ret\n"
+    base = "f:\n  mov qword ptr [rip + g_rtccb+40], r8\n  call rt_x\nL1:\n  mov r8, 5\n  add r8, 1\n  ret\n"
     n, reads, _ = grade(base, "clean")
     ck(n == 1 and not reads, "a write before any read reads clean")
     plant = "f:\n  call rt_x\n  mov rax, r8\n  ret\n"
     _, reads, _ = grade(plant, "plant")
     ck(len(reads) == 1 and reads[0][4] == "r8", "a planted read of r8 after a call is a finding")
-    reload = "f:\n  call rt_x\n  mov r8,  qword ptr [rip + rtccb+40]\n  mov r10, qword ptr [rip + rtccb+56]\n  mov rax, r10\n  ret\n"
+    reload = "f:\n  call rt_x\n  mov r8,  qword ptr [rip + g_rtccb+40]\n  mov r10, qword ptr [rip + g_rtccb+56]\n  mov rax, r10\n  ret\n"
     _, reads, _ = grade(reload, "reload")
     ck(len(reads) == 1 and reads[0][4] == "r10", "the rtcc reload run is skipped, never taken as the write (the fail-once)")
     branch = "f:\n  call rt_x\n  test eax, eax\n  je L2\n  mov r11, 1\n  ret\nL2:\n  cmp r11d, 3\n  ret\n"
@@ -243,7 +243,7 @@ def selftest():
     xz = "f:\n  call rt_x\n  xor r8d, r8d\n  mov rax, r8\n  ret\n"
     _, reads, _ = grade(xz, "xor")
     ck(not reads, "a self-xor is a write")
-    wb = "f:\n  call rt_x\n  mov qword ptr [rip + rtccb+40], r8\n  call rt_y\n  ret\n"
+    wb = "f:\n  call rt_x\n  mov qword ptr [rip + g_rtccb+40], r8\n  call rt_y\n  ret\n"
     _, reads, _ = grade(wb, "wb")
     ck(not reads, "the rtcc write-back store before the next call is transparent (it is what retires)")
     base_reg = "f:\n  call rt_x\n  mov rax, qword ptr [r8 + 8]\n  ret\n"

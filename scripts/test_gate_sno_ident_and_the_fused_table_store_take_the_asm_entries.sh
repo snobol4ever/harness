@@ -11,7 +11,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # the frontier's owner); a miss, an array, a pending collection, an element trace or a trace budget goes to the C body
 # c_rt_table_assign_fast. claws5 spent 4.6% of its cycles in the IDENT box + 6.7% in descr_identical + 5.8% in table_set_descr_d,
 # each through a veneered C call; the entries are bare through the GOT now and the rtcc-four walker proves them.
-# THREE ARMS: (1) the witness's .s calls both entries bare (no rtccb write-back in the three lines before the call); (2) the
+# THREE ARMS: (1) the witness's .s calls both entries bare (no g_rtccb write-back in the three lines before the call); (2) the
 # witness -- IDENT/DIFFER over equal and unequal strings, a null against '' and against a null-valued variable, integers, an
 # integer against its string spelling, reals, names, the same table, two tables, a stamped string against SUBSTR of it, and
 # the fused store over existing keys (integer and string values, a NAME value), new keys, a 5000-key growth loop and a
@@ -54,7 +54,7 @@ SNO
 red=0
 ( cd "$W" && "$ROOT/scrip" --compile -o "$W/id.s" id.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: id.sno did not compile"; exit 1; }
 for f in descr_identical rt_table_assign_fast; do
-    nc=$(grep -c "call .*\[rip + $f@GOTPCREL\]" "$W/id.s"); nv=$(grep -B3 "call .*\[rip + $f@GOTPCREL\]" "$W/id.s" | grep -c 'rtccb')
+    nc=$(grep -c "call .*\[rip + $f@GOTPCREL\]" "$W/id.s"); nv=$(grep -B3 "call .*\[rip + $f@GOTPCREL\]" "$W/id.s" | grep -c 'g_rtccb')
     [ "$nc" -gt 0 ] && [ "$nv" -eq 0 ] && echo "ok  $f: $nc bare GOT calls, no veneer" || { echo "RED $f: calls=$nc veneered=$nv"; red=1; }
 done
 ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" id.sno < /dev/null > "$W/id.m3" 2>&1 ); cmp -s "$W/id.m3" "$W/id.ref" && echo "ok  m3 = oracle" || { echo "RED m3 differs from the oracle:"; diff "$W/id.ref" "$W/id.m3" | head -8; red=1; }

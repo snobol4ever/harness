@@ -4,18 +4,18 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # ⭐ CURE GATE for row snobol4-fnclevel-not-incremented-entering-a-defined-function (cfo 2026-09-13, released to
 # cfo by hq_P the same hour: under NONET hq_P is CONCERN 2 SPEED and SNOBOL4 completeness is CONCERN 1, cfo's).
 # THE DEFECT: &FNCLEVEL read 0 at every depth inside a program-defined function -- a constant, not an off-by-one --
-# and every trace banner raised inside a call lost its depth marks with it, because the banner's depth IS kw_fnclevel
+# and every trace banner raised inside a call lost its depth marks with it, because the banner's depth IS g_kw_fnclevel
 # (core.c trace_print_banner_args).
 # ⛔⭐ WHY A ROW THAT READ DONE WAS STILL LIVE, AND IT IS THE GENERAL SHAPE: the sibling row conform-fnclevel-not-
 # tracked landed the enter/leave pair in bb_define's ROLE-4 TINY SHIM (bb_fnclevel_enter/bb_fnclevel_leave), and that
 # shim is only CHOSEN when the program builds a GVA island. Every program that does not take that arm kept the
 # original defect, and nothing measured it, because the witness that would have shown it lands on the other side of
 # an emit-time branch. A CURE CONDITIONAL ON AN EMIT-TIME ARM IS LIVE FOR EVERY PROGRAM THAT DOES NOT TAKE THAT ARM.
-# ⭐ THE CAUSE, READ OUT OF THE EMITTED ASSEMBLY RATHER THAN REASONED: a demoted .s carries two kw_fnclevel
-# references and BOTH ARE READS; the GVA .s carries five, three of them WRITES. In the runtime, rt_k_level was MOVED
-# at thirteen sites in rt.c and MIRRORED into kw_fnclevel at only two of them (rt_ab_enter_env/rt_ab_leave_env) --
-# hq_P counted the thirteen independently. THE CURE IS THE INVARIANT, not a site: kw_fnclevel == rt_k_level - 1
-# wherever rt_k_level moves, expressed once as rt_k_level_mirror() and called at every move.
+# ⭐ THE CAUSE, READ OUT OF THE EMITTED ASSEMBLY RATHER THAN REASONED: a demoted .s carries two g_kw_fnclevel
+# references and BOTH ARE READS; the GVA .s carries five, three of them WRITES. In the runtime, g_rt_k_level was MOVED
+# at thirteen sites in rt.c and MIRRORED into g_kw_fnclevel at only two of them (rt_ab_enter_env/rt_ab_leave_env) --
+# hq_P counted the thirteen independently. THE CURE IS THE INVARIANT, not a site: g_kw_fnclevel == g_rt_k_level - 1
+# wherever g_rt_k_level moves, expressed once as rt_k_level_mirror() and called at every move.
 # ⛔ THE CONTROL ARM IS THE POINT OF THIS GATE AND IT USES NO TRACE AT ALL. SCRIP_M3_GVA=0 turns the island off for
 # a program that would otherwise build one, so arm 'gva_off_control' exercises the slim path on a source with no
 # TRACE in it -- which is what proves the defect was never about ACCESS, and what would go red again if a future
@@ -26,8 +26,8 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # 'manual_repro', 'nested' and 'ctl_no_call' were ALREADY GREEN there -- they take the GVA shim, which the sibling
 # row cured -- and they are kept as the arms that go red if a future cure fixes the slim path by breaking that one.
 # A gate whose green arms are counted as evidence of the cure is the same disease this row was minted for.
-# ⛔ NOT ASSERTED HERE: Icon's &level. It reads rt_k_level DIRECTLY (keywords.c "level"), not kw_fnclevel, and this
-# cure moves no rt_k_level value -- the Icon ladder was measured 688/688 before and after and is the arm for that.
+# ⛔ NOT ASSERTED HERE: Icon's &level. It reads g_rt_k_level DIRECTLY (keywords.c "level"), not g_kw_fnclevel, and this
+# cure moves no g_rt_k_level value -- the Icon ladder was measured 688/688 before and after and is the arm for that.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_subject_tree.sh"
@@ -103,25 +103,25 @@ if [ "$got" = "$want" ] && [ "$gotb" = "$want" ]; then
   [ "${q:-0}" -gt 0 ] || { echo "⛔ REFUSE(2): the control source emits no GVA island at all, so SCRIP_M3_GVA=0 turns nothing off and this arm cannot discriminate"; exit 2; }
 fi
 # ⛔ THE INVARIANT IS ASSERTED AT THE SOURCE TOO, because the four oracle arms above only reach the call paths a
-# SNOBOL4 program can reach: rt.c must not grow a bare rt_k_level move again. Counted, not eyeballed -- every
+# SNOBOL4 program can reach: rt.c must not grow a bare g_rt_k_level move again. Counted, not eyeballed -- every
 # ++/-- line carries its mirror, and the count is printed so a future reader sees the population, not a boolean.
 src="$ROOT/src/runtime/rt/rt.c"
 [ -f "$src" ] || { echo "⛔ REFUSE(2): no $src"; exit 2; }
 # ⛔ READ AS STATEMENTS, NOT LINES (the 200-column re-flow, CEO-1565, lays every child statement on its own line, so the mirror is the NEXT statement and no longer shares the move's physical line):
-# a move is a  rt_k_level++;  or  rt_k_level--;  statement and it is mirrored when the statement that follows it, whitespace and newlines skipped, is  rt_k_level_mirror();
+# a move is a  g_rt_k_level++;  or  g_rt_k_level--;  statement and it is mirrored when the statement that follows it, whitespace and newlines skipped, is  rt_k_level_mirror();
 read -r mv bare < <(python3 - "$src" <<'PYEOF'
 import re, sys
 t = open(sys.argv[1], encoding="utf-8").read()
-moves = list(re.finditer(r"rt_k_level(\+\+|--);", t))
+moves = list(re.finditer(r"g_rt_k_level(\+\+|--);", t))
 bare = [m for m in moves if not re.match(r"\s*rt_k_level_mirror\(\);", t[m.end():])]
 print(len(moves), len(bare))
 for m in bare[:6]:
     sys.stderr.write("    rt.c:%d: %s\n" % (t.count("\n", 0, m.start()) + 1, t.splitlines()[t.count("\n", 0, m.start())].strip()[:120]))
 PYEOF
 )
-[ "$mv" -ge 8 ] || { echo "⛔ REFUSE(2): only $mv rt_k_level move line(s) in rt.c -- the level machinery has moved and this arm is grading a file that no longer holds it"; exit 2; }
+[ "$mv" -ge 8 ] || { echo "⛔ REFUSE(2): only $mv g_rt_k_level move line(s) in rt.c -- the level machinery has moved and this arm is grading a file that no longer holds it"; exit 2; }
 if [ "$bare" -ne 0 ]; then
-  rc=1; echo "⛔ RED bare_level_move: $bare of $mv rt_k_level move statement(s) in rt.c are not followed by rt_k_level_mirror():"
+  rc=1; echo "⛔ RED bare_level_move: $bare of $mv g_rt_k_level move statement(s) in rt.c are not followed by rt_k_level_mirror():"
 fi
-[ "$rc" = 0 ] && echo "GATE OK: 4 oracle arms x 2 modes + the island-off control + the source invariant -- &FNCLEVEL tracks a DEFINE'd call on the slim path as well as in the GVA shim, and all $mv rt_k_level move statements in rt.c mirror it"
+[ "$rc" = 0 ] && echo "GATE OK: 4 oracle arms x 2 modes + the island-off control + the source invariant -- &FNCLEVEL tracks a DEFINE'd call on the slim path as well as in the GVA shim, and all $mv g_rt_k_level move statements in rt.c mirror it"
 exit "$rc"

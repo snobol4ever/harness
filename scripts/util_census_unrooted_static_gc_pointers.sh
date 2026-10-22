@@ -49,10 +49,10 @@ n_visitors=$(printf '%s\n' "$VISITORS" | wc -l)
 # ---- POSITIVE CONTROL (cto, 2026-09-22): a reader that only ever reports absence goes quietly blind the
 # moment its own matcher stops matching -- a renamed visitor, a pointer reached through a typedef, a table
 # declared in a header. Point this census at an object KNOWN to be correctly rooted (core_gc_roots visits
-# _udef_types -- verified by hand, not by this script, the day this control was added) and REFUSE rc=2 if the
+# g_udef_types -- verified by hand, not by this script, the day this control was added) and REFUSE rc=2 if the
 # census's own visitor-body extraction cannot find it: a broken matcher must never be mistaken for a clean tree.
-if ! grep -qw '_udef_types' "$VISITOR_BODY_FILE"; then
-  echo "REFUSE(2): positive control failed -- _udef_types is known-rooted (core_gc_roots, src/runtime/core/core.c)"
+if ! grep -qw 'g_udef_types' "$VISITOR_BODY_FILE"; then
+  echo "REFUSE(2): positive control failed -- g_udef_types is known-rooted (core_gc_roots, src/runtime/core/core.c)"
   echo "    and this census's own visitor-body extraction did not find it. The matcher is broken; every"
   echo "    CANDIDATE line this run would print is unproven, and every absence is unproven too."
   exit 2
@@ -94,7 +94,7 @@ while IFS=: read -r file ln name; do
 done < "$CANDIDATES"
 
 echo "------------------------------------------------------------"
-echo "positive control: _udef_types (known-rooted) FOUND in the visitor-body blob -- the matcher can see a real root"
+echo "positive control: g_udef_types (known-rooted) FOUND in the visitor-body blob -- the matcher can see a real root"
 echo "population: $SRCDIR, static file-scope pointer/array declarations examined=$n_cand"
 echo "  visited by a *_gc_roots-family function (by name, same-file or cross-file)=$visited_n"
 echo "  NOT sourced by a same-file direct call to a GC-heap allocator (excluded -- may be a different allocator"

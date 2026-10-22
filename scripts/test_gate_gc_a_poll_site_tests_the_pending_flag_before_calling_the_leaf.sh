@@ -3,7 +3,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_a_poll_site_tests_the_pending_flag_before_calling_the_leaf.sh -- EVERY EMITTED POLL SITE TESTS g_gc_pending IN
 # LINE AND SKIPS THE CALL WHEN NOTHING IS PENDING (ceo 2026-09-25, CEO-1251). The poll helpers in x86_asm.h wrap their body
-# (the bare rt_gc_poll_asm call with its rtccb veneer, or a rooted spill + rt_gc_point_arr_c + reload) in x86_gc_gate: push rax,
+# (the bare rt_gc_poll_asm call with its g_rtccb veneer, or a rooted spill + rt_gc_point_arr_c + reload) in x86_gc_gate: push rax,
 # load the flag's address (GOT in mode 4, absolute in mode 3), load the dword, test, pop rax, and a forward je over the body --
 # a numeric local label in the text medium, a computed rel8/rel32 over the record string in the binary medium. claws5 spent 8.7%
 # of its cycles in the leaf plus its PLT and the veneer's seven memory ops per site. THE TRIGGER IS EQUIVALENT: the allocator

@@ -17,7 +17,7 @@
 # between frames are read as DESCR cells BY THEIR TAG BYTE with the per-kind block checks the sniff carried (a
 # C-built descriptor sets only the byte; emitted stores write 32 bits), a ROOT cell ends a segment only when no frame
 # follows it (a co-expression thread carries the creator's frame image twice), and the registered ranges are typed
-# (the Prolog trail by its entry layout, rtccb by a meter). The raw arm, the sniff, cons_stack, pz, the seam sweep and
+# (the Prolog trail by its entry layout, g_rtccb by a meter). The raw arm, the sniff, cons_stack, pz, the seam sweep and
 # rt_cas_live_span are DELETED, not gated: conservative total 10 -> 0, coverage words_scanned 0.
 #
 # THE HOLDERS THE SWEEP HID, cured with the switch and each held by a witness below: the Prolog standing cells sat

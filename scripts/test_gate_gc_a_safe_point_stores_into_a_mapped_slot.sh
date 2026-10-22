@@ -22,7 +22,7 @@
 # no store target, because a frame map describes memory.  302 sites over the shared witness set are UNDECIDABLE
 # rather than green: the wired regime enters those boxes through an indirect jump, so no path from the frame's own
 # prologue reaches them.  ⛔ AND 6690 STORES -- against 972 the census grades -- SHIELD THEIR VALUE AT A SAFE POINT
-# INTO A FIXED SYMBOL (`rtccb`, the runtime's caller-saved spill block) RATHER THAN INTO THE FRAME.  No frame map
+# INTO A FIXED SYMBOL (`g_rtccb`, the runtime's caller-saved spill block) RATHER THAN INTO THE FRAME.  No frame map
 # can cover those and no planner cure can reach them; their safety rests entirely on the collector's ROOT SET, and
 # rt_gc_root_range_add_seamsafe registers that block as a root range which gc_heap.c's only walk over the range
 # table SKIPS (`if (g_gc_rrng[i].hi) continue;`).  Measured the same evening: 47 witnesses at the tiny arena,
@@ -153,7 +153,7 @@ fi
 
 # (i) THE CENSUS'S OWN REACH IS A MEASUREMENT AND NOT AN ASSUMPTION.
 # ⛔ THIS ARM EXISTS BECAUSE THE SELFTEST ARM THAT PROVED THE BLIND SPOT IS THE ARM THAT SHOULD HAVE COUNTED IT.
-# `disp_of refuses a rip-relative operand` has held since this census landed, with `[rip + rtccb+40]` as its very
+# `disp_of refuses a rip-relative operand` has held since this census landed, with `[rip + g_rtccb+40]` as its very
 # example -- the refusal is correct, because a frame map describes memory IN A FRAME and no planner cure can reach
 # a fixed symbol.  What was never measured is the CONSEQUENCE: a language whose shielding rides that road reads
 # `members=0 undecidable=0`, which is spelled exactly like clean.  Raku read CLEAN AND DECIDED COMPLETELY in three
@@ -165,10 +165,10 @@ reach="$(printf '%s\n' "$pop" | grep -m1 '^CENSUS unmapped-store REACH ')"
 rst="$(printf '%s\n' "$reach" | sed -n 's/.* static_shielded=\([0-9]*\) .*/\1/p')"
 rfr="$(printf '%s\n' "$reach" | sed -n 's/.* frame_shielded=\([0-9]*\) .*/\1/p')"
 # ⛔⭐ STRENGTHENED 2026-09-21 ON CEO-1042's CONDITION, AND THE OLD FORM OF THIS ARM IS WHY IT NEEDED IT.  It
-# grepped for `symbol=rtccb ` and passed on the presence of ONE line naming ONE SYMBOL over 6825 stores.  A symbol
+# grepped for `symbol=g_rtccb ` and passed on the presence of ONE line naming ONE SYMBOL over 6825 stores.  A symbol
 # is a SIZE, not a name: it cannot say WHICH WORD a collector would have to visit, so this arm certified that the
-# road was named while the naming could not adjudicate anything.  Keyed by WORD the whole road is THREE -- rtccb+40,
-# rtccb+56, rtccb+64, slots 5, 7 and 8 of rtx/rtcc.h, r8/r10/r11 spilled at x86_asm.h 386-389 -- each at all 2275
+# road was named while the naming could not adjudicate anything.  Keyed by WORD the whole road is THREE -- g_rtccb+40,
+# g_rtccb+56, g_rtccb+64, slots 5, 7 and 8 of rtx/rtcc.h, r8/r10/r11 spilled at x86_asm.h 386-389 -- each at all 2275
 # safe points.  ⛔ AND THE ARM NOW CHECKS THE ACCOUNTING RATHER THAN THE PRESENCE: the per-word stores must SUM to
 # static_shielded exactly.  Without that a word silently dropped from the naming reads identically to a road with
 # no such word in it, which is this gate's own defect class one level down.  The census's own summary line carries
@@ -178,7 +178,7 @@ wsum="$(printf '%s\n' "$words" | sed -n 's/.* stores=\([0-9]*\) .*/\1/p')"
 wn="$(printf '%s\n' "$words" | sed -n 's/.* words=\([0-9]*\) .*/\1/p')"
 nmd="$(printf '%s\n' "$pop" | grep -c '^CENSUS unmapped-store UNREAD-ROAD symbol=')"
 # ⛔ RE-CUT 2026-10-09 BY hq_collector, ON hq_runtime's 4daa72f89 (the rtcc bracket carries r9 alone): the r8, r10 and
-# r11 write-backs into rtccb retired, so the static road is EMPTY, not unread -- unread_static read 0 on all 104
+# r11 write-backs into g_rtccb retired, so the static road is EMPTY, not unread -- unread_static read 0 on all 104
 # baseline rows and the old arm, which demanded a non-empty road, went red on a win. A CLOSED road passes only on
 # an INDEPENDENT reading: the census's own accounting reads 0 words summing to 0, its frame road is non-empty (it
 # was looking), and the emitted text of hb_aggt.icn -- 57 unread static stores in the old baseline -- carries no

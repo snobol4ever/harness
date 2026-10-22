@@ -6,7 +6,7 @@
 # SCRIP zeroed &FTRACE around the callback (core.c, three sites), returned before the callback for a CALL or RETURN event while &FTRACE ran (the callback never fired), kept the
 # recursion guard in front of the banner, and ran a CALL/RETURN callback one &FNCLEVEL too deep (its banner carried an 'i', &FNCLEVEL read 2 where sbl reads 1).
 # THE CURE: the callback leaves &FTRACE alone and the recursion guard lets the banner through; a CALL/RETURN event runs the callback first and prints the function's banner after
-# (the emitted road defers it to rt_trace_pend_close); the callback runs at the call site's level (rt_k_level and kw_fnclevel lowered by one, restored at the close).
+# (the emitted road defers it to rt_trace_pend_close); the callback runs at the call site's level (g_rt_k_level and g_kw_fnclevel lowered by one, restored at the close).
 # NOT HERE: the statement number of the function's own RETURN banner after a RETURN-kind callback (sbl prints the caller's statement), a separate row.
 # Every expected output is cut from sbl -bf and pinned: a program sbl no longer answers as pinned is a REFUSAL, never a green. Both modes, SCRIP_SNO_STMTKW=1 at compile and run.
 # rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.
