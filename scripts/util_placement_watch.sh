@@ -121,7 +121,7 @@ do_run() {
         if [ -e "$W/$r/.git" ]; then git -C "$W/$r" checkout -q --detach origin/main 2>>"$LOG" || { echo "REFUSE(2): checkout in $W/$r" >>"$LOG"; return 2; }
         else git -C "$ROOT/$r" worktree prune; git -C "$ROOT/$r" worktree add -q --detach "$W/$r" origin/main 2>>"$LOG" || { echo "REFUSE(2): worktree $r" >>"$LOG"; return 2; }; fi
     done
-    ( cd "$W/SCRIP" && nice -n 10 make -j8 ) >>"$LOG" 2>&1 || { echo "REFUSE(2): build at $s" >>"$LOG"; return 2; }
+    ( cd "$W/SCRIP" && nice -n 19 make -j2 ) >>"$LOG" 2>&1 || { echo "REFUSE(2): build at $s" >>"$LOG"; return 2; }
     local out="$W/census.out"
     ( cd "$W/SCRIP" && env -u S4E_HOME nice -n 10 python3 "$W/harness/scripts/util_bb_placement_census.py" --files $(bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" | cut -f2) ) >"$out" 2>>"$LOG" || { echo "REFUSE(2): census at $s" >>"$LOG"; return 2; }
     grep -q '^BB_HOSTS ' "$out" || { echo "REFUSE(2): census printed no BB_HOSTS at $s" >>"$LOG"; return 2; }
@@ -170,7 +170,15 @@ PY
 
 case "${1:-show}" in
     show) do_show ;;
-    kick) ( setsid nohup bash "$HERE/util_placement_watch.sh" run >/dev/null 2>&1 & ) ; exit 0 ;;
+    kick)
+        # ⛔ THE WATCH MUST NOT LOAD THE BOX IT WATCHES (Lon 2026-10-22: "You are meant to fix the load not hurt it"; ceo CEO-1894). Measured
+        # 10:01: every origin landing started a full SCRIP rebuild in /tmp (outside ccache's /home base, so every compile missed) plus 274
+        # program compiles, and it held all 8 box-wide compile slots. So a kick measures at most once an hour, and only while the
+        # five-minute load is under half the cores; `show` still prints the newest reading every turn.
+        last="$(stat -c %Y "$REC" 2>/dev/null || echo 0)"; now="$(date +%s)"
+        load5="$(cut -d' ' -f2 /proc/loadavg)"; half="$(( $(nproc) / 2 ))"
+        if [ $((now - last)) -lt 3600 ] || awk -v l="$load5" -v h="$half" 'BEGIN{exit !(l >= h)}'; then exit 0; fi
+        ( setsid nohup nice -n 19 bash "$HERE/util_placement_watch.sh" run >/dev/null 2>&1 & ) ; exit 0 ;;
     run)  do_run; exit $? ;;
     *) echo "usage: util_placement_watch.sh show|kick|run" >&2; exit 2 ;;
 esac
