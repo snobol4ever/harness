@@ -693,6 +693,7 @@ test_gate_pl_a_predicate_with_more_than_64_clauses_keeps_every_clause.sh	WIRED	-
 test_gate_pl_a_predicates_frame_overlays_its_clauses_construct_slots.sh	WIRED	-	-	-
 test_gate_pl_a_prefix_operator_wins_the_write_over_a_postfix_one.sh	WIRED	-	-	-
 test_gate_pl_a_prelude_dcg_rule_reaches_the_program_that_calls_it.sh	WIRED	-	-	-
+test_gate_pl_a_program_that_links_setup_call_cleanup_compiles_and_links_a_predicate_of_three_unit_clauses_in_mode_4.sh	WIRED	-	-	-
 test_gate_pl_a_program_with_more_than_64_dynamic_declarations_keeps_every_one.sh	WIRED	-	-	-
 test_gate_pl_a_programs_dialect_follows_its_own_markers.sh	WIRED	-	-	-
 test_gate_pl_a_quoted_atom_doubles_its_apostrophe.sh	WIRED	-	-	-
