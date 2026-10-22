@@ -551,6 +551,7 @@ test_gate_pas_an_array_keeps_its_declared_low_bound.sh	WIRED	-	-	-
 test_gate_pas_an_array_of_arrays_holds_each_row_as_an_array_and_copies_a_row_as_fpc_does.sh	WIRED	-	-	-
 test_gate_pas_an_array_of_records_held_as_a_record_field_compiles_and_runs.sh	WIRED	-	-	-
 test_gate_pas_an_fpc_dialect_case_with_no_matching_constant_does_nothing.sh	WIRED	-	-	-
+test_gate_pas_the_dialect_switch_stands_in_for_a_mode_directive_the_source_lacks.sh	WIRED	-	-	-
 test_gate_pas_an_identifier_is_defined_before_it_is_used_in_its_block.sh	WIRED	-	-	-
 test_gate_pas_an_if_while_or_until_condition_must_be_boolean.sh	WIRED	-	-	-
 test_gate_pas_an_index_outside_its_type_is_a_diagnosed_error.sh	WIRED	-	-	-
