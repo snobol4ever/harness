@@ -6,8 +6,9 @@
 # CEO-1822): the harness's SPITBOL-shaped switches, the bare file name in the entry's own folder, stdin from the input sidecar, and the
 # program's own argv after a bare --. The runner execs the engine; stdout, stderr and the exit code are the program's.
 # THE SWITCHES ARE ACCEPTED AND NOT MAPPED, and each is a measured gap rather than a silent one: snobol4jvm has no heap cap (-d), its
-# recursion depth is the JVM thread stack rather than a SPITBOL stack (-s), it has no HOST() for -u to feed, and its command line takes
-# no program argv (everything after -- reaches no program). The JVM's own defaults stand until a measurement asks for more.
+# recursion depth is the JVM thread stack rather than a SPITBOL stack (-s). -u STR reaches the engine before the file, as sbl -u takes it:
+# HOST(0) answers it (snobol4jvm e9ebbb4; CEO-1907), and the program's argv after -- reaches it too, which HOST(0) joins when there is no
+# -u. The JVM's own defaults stand until a measurement asks for more.
 # stdout carries the program's OUTPUT and nothing else: the JVM's log goes to stderr at error level, so a stale class archive (a
 # warning) never lands in a graded stream. build_snobol4jvm.sh records the archive; it is used only while it is at least as new as the jar.
 # --binaries prints the graded file, one path per line (the jar): bin_fingerprint, the progress digest and the tree pin read it. It is
@@ -27,10 +28,11 @@ if [ "${1:-}" = "--binaries" ]; then
   [ -z "$newer" ] || { echo "⛔ REFUSE(rc=2): the snobol4jvm jar $J is older than $newer -- rebuild: bash $HERE/build_snobol4jvm.sh" >&2; exit 2; }
   printf '%s\n' "$J"; exit 0
 fi
+u=()
 while [ $# -gt 0 ]; do
   case "$1" in
     -d*|-s*) shift ;;
-    -u) shift 2 ;;
+    -u) [ $# -ge 2 ] || { echo "⛔ REFUSE(rc=2): -u takes a string" >&2; exit 2; }; u=(-u "$2"); shift 2 ;;
     --) echo "⛔ REFUSE(rc=2): no program file before --" >&2; exit 2 ;;
     *) break ;;
   esac
@@ -40,4 +42,4 @@ prog="$1"; shift
 [ "${1:-}" = "--" ] && shift
 A="${J%.jar}.jsa"
 cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
-exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -jar "$J" "$prog" "$@"
+exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -jar "$J" "${u[@]}" "$prog" "$@"
