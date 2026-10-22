@@ -1,0 +1,18 @@
+# WITNESS for a GENERATOR CALLED FROM ANOTHER GENERATOR'S SUSPEND (hq_icon's inv/gen, the shape of IPL gprocs/fstartbl):
+# gen suspends and keeps its frame below inv's cells, so inv's next collection sees a retained callee frame under it.
+# Since the spine flip a generator body's sites took base = R + a static depth that knew nothing of that frame and the chain
+# stopped short (GC-CHAIN REFUSED, bad-link) at the first collection; sites now find the frame from rbp (rule 2).
+# Correct output: points: 300.
+procedure inv(n)
+   suspend gen(n);
+end
+procedure gen(n)
+   local i;
+   every i := 1 to n do suspend [i];
+end
+procedure main()
+   local n;
+   n := 0;
+   every inv(300) do n +:= 1;
+   write("points: ", n);
+end

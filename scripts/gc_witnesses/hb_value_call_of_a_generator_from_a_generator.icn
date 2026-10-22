@@ -1,0 +1,17 @@
+# WITNESS for a GENERATOR CALLED THROUGH A PROCEDURE VALUE FROM ANOTHER GENERATOR'S SUSPEND (the call_value road,
+# the shape of hb_coexpr_genp_scan's goal()): the same retained callee frame under the caller's cells as the named call,
+# reached through the value box's generator arm instead of the named call box's.
+# Correct output: points: 300.
+procedure inv(p, n)
+   suspend p(n);
+end
+procedure gen(n)
+   local i;
+   every i := 1 to n do suspend [i];
+end
+procedure main()
+   local n;
+   n := 0;
+   every inv(gen, 300) do n +:= 1;
+   write("points: ", n);
+end

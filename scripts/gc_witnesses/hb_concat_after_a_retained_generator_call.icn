@@ -1,0 +1,13 @@
+# WITNESS for an OPERATION AFTER A RETAINED GENERATOR CALL IN A GENERATOR BODY, with no scan and no call through a value:
+# g calls itself, the callee frame stays below g's cells, and the concatenation allocates after the call returns, so the
+# collection it triggers enters at a site whose static depth missed the retained frame (544 bytes for this shape).
+# Correct output: count: 1.
+procedure g(n)
+   if n > 0 then suspend ("x" || g(n - 1)) else suspend "";
+end
+procedure main()
+   local c;
+   c := 0;
+   every g(12) do c +:= 1;
+   write("count: ", c);
+end

@@ -27,6 +27,7 @@
 # (7) the redo road (hq_prolog's xsb basics abort, 2026-10-14): a call box resumed through its act word into a dynamic predicate whose
 # next clause runs in a different frame left the act word naming the released clause frame until the callee returned; the chain
 # refused it link-below-gap. The block arm now zeroes the act word before the jump. Red on the parent 0ac9b9b04 (rc 134, both modes).
+# ARMS: (7) hb_gen_called_from_another_generators_suspend, hb_concat_after_a_retained_generator_call and hb_value_call_of_a_generator_from_a_generator (refs cut from iconx), both modes, stress 1 with the chain check on: iconx's answer, offchain-swept=0, bad-link=0 -- a generator body's collection sites find their frame from rbp, whatever generator frame is retained below the caller's cells (SCRIP d048caea2; each aborts rc 134 on its parent, 6b5768871).
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
 "$ROOT/../harness/scripts/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -98,6 +99,18 @@ for b in hb_coexpr_parked hb_coexpr_genp_scan; do
     oc="$(num "$s" offchain-swept)"; bl="$(num "$s" bad-link)"; fl="$(num "$s" frame-links)"
     if [ -n "$s" ] && [ "$oc" = 0 ] && [ "$bl" = 0 ] && [ "${fl:-0}" -gt 0 ]; then ck ok "(5) Icon $b mode $m: offchain-swept=0 bad-link=0 ($fl generator frame link(s) followed through act +8 H)"
     else ck no "(5) Icon $b mode $m: offchain-swept=${oc:-?} bad-link=${bl:-?} frame-links=${fl:-?} -- a retained Icon generator frame is off the chain and off every typed H link"; fi
+  done
+done
+for b in hb_gen_called_from_another_generators_suspend hb_concat_after_a_retained_generator_call hb_value_call_of_a_generator_from_a_generator; do
+  f="$ROOT/../harness/scripts/gc_witnesses/$b.icn"; r="$ROOT/../harness/scripts/gc_witnesses/$b.ref"
+  [ -f "$f" ] && [ -f "$r" ] || refuse "no Icon witness $f or no oracle-cut ref $r"
+  build4i "$f" "$b"
+  for m in 3 4; do
+    if [ "$m" = 3 ]; then ( cd "$W" && run_env SCRIP_GC_STRESS=1 timeout -k 5 300 "$SCRIP" "$f" > o7 2> e < /dev/null ); else ( cd "$W" && run_env SCRIP_GC_STRESS=1 timeout -k 5 300 "./$b.x" > o7 2> e < /dev/null ); fi
+    s="$(grep -a '^\[CHAIN-WALK\] SUMMARY ' "$W/e" | tail -1)"
+    oc="$(num "$s" offchain-swept)"; bl="$(num "$s" bad-link)"
+    if cmp -s "$W/o7" "$r" && [ -n "$s" ] && [ "$oc" = 0 ] && [ "$bl" = 0 ]; then ck ok "(7) Icon $b mode $m stress 1: iconx's answer, offchain-swept=0 bad-link=0"
+    else ck no "(7) Icon $b mode $m stress 1: the answer differs from iconx's or the chain walk refused (offchain-swept=${oc:-?} bad-link=${bl:-?}) -- a generator body's site read its frame base wrong with a callee frame retained below it"; fi
   done
 done
 z="$(cd "$W" && "$SCRIP" --dump-zeta w.pl < /dev/null 2>/dev/null | grep -c 'PTR_FRAME callgen.act +0')"
