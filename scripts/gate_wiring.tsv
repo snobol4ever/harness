@@ -1493,3 +1493,4 @@ test_gate_xfail_has_reason.sh	TASK	-	-	-
 test_gate_zdp_on_null.sh	TASK	-	-	-
 test_gate_zeta_no_arena.sh	TASK	-	-	-
 test_gate_zpop_whitelist.sh	TASK	-	-	-
+test_gate_raku_a_used_module_keeps_the_file_scope_value_its_subs_read.sh	WIRED	-	-	-
