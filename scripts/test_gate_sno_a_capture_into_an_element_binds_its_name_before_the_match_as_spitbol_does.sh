@@ -5,8 +5,8 @@
 # SPITBOL evaluates the target's NAME when the pattern is built; SCRIP refused every such statement at compile (FATAL lower_snobol4,
 # GZ#5 subset). The cure (lower_snobol4.c sno_capt_elem_rewrite): before the match the statement assigns each element target's NAME to a
 # hidden SN4$CAPN<k> and the capture reads it back as the deferred indirect *$SN4$CAPN<k>, a road both modes already take. A STORED
-# pattern with an element target (P = 'y' . A[2]) still refuses loudly: it needs the name in the pattern's own snap vector (the cfo's
-# design in the row's baton), not a statement temporary.
+# pattern with an element target (P = 'y' . A[2]) keeps its name in the pattern's own snap vector, not a statement temporary: that half is
+# test_gate_sno_a_stored_pattern_capture_into_an_element_binds_its_name_at_construction_as_spitbol_does.sh.
 # THE WITNESSES are two master entries, extracted from corpus/tests/snobol4: arbno_break_len_replace_branch_1 (origin
 # capture_into_an_element_target: cond, imm, table, both cursor forms, a subscript read before @I moves I, an unmatched pattern, an
 # out-of-range subscript, ARBNO and an alternation) and len_array_capture_replace_1 (origin gimpel's gim_cassign_array_elt_loud,
