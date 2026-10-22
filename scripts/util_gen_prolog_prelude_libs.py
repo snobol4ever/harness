@@ -107,9 +107,9 @@ LIB_PATH = {"dcg_basics": "dcg/basics"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"}}
-LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables"}
+LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling"}
 SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"}}
-QUIET = {"gnu_fd": {("fd_dom", 2)}}
+QUIET = {"gnu_fd": {("fd_dom", 2)}, "tabling": {("undefined", 0)}}
 QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
 WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=<", 2), ("#>=", 2), ("#/\\", 2), ("#\\/", 2), ("#\\", 1), ("#==>", 2)}}}
 EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
