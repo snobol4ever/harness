@@ -5,7 +5,8 @@
 # (2) the language HQ the LANES line names passes rc=0 silently, and the cfo on a rebus board; (3) the bus computed done
 # (S4E_DONE_WHEN_RUN=1) passes and says so; (4) a loud override passes and prints its reason; (5) --check <board> exits 2 for a
 # wrong seat and 0 for the lane owner; (6) CENSUS: every runner named in ../harness/scripts/one_runner_boards.txt sources the guard on
-# line 2 and corpus_suite_harness.py guards cmd_run with the suite it holds, and (6d) every runner that calls the guard and writes
+# line 2 and corpus_suite_harness.py guards cmd_run with the suite it holds before it grades (a handful of at most eight named entries
+# excepted, CEO-1893), and (6d) every runner that calls the guard and writes
 # a score row IS named there, so the list cannot fall behind the runners it censuses; (7) a non-coo run of a CORPUS suite is refused;
 # (8/10) CEO-547 part 1 DETECTOR: a suite outside the corpus tree -- a gate own mktemp fixture -- is NOT a board and is graded,
 # not refused; (9/11/12) CONTROL: a corpus suite is still refused, both copies carry the narrowing, and a caller that does not say
@@ -64,7 +65,19 @@ arm "6a census: every listed board runner sources the guard on line 2 and calls 
 # 6a reads only the runners the list names, and five row-writing boards were never added to it -- the Icon, Pascal and Snocone bench
 # suites, spitbol_x64 and logtalk. Four of them had the switch export on line 2 and the guard on line 3, which 6a could not see.
 arm "6d census, the inverse: every runner that calls the guard and writes a score row is on the list 6a reads" 'miss=""; for f in "$H"/*.sh; do b=${f##*/}; case "$b" in lib_one_runner.sh|test_gate_*) continue;; esac; grep -q one_runner_guard "$f" && grep -q util_score_row "$f" && ! grep -qxF "$b" "$H/one_runner_boards.txt" && miss="$miss $b"; done; [ -z "$miss" ] || { echo "     unlisted:$miss"; false; }'
-arm "6b census: the rungs harness guards cmd_run before it grades, with the suite it holds" 'grep -A2 "^def cmd_run(args):" "$H/corpus_suite_harness.py" | grep -q "_one_runner_guard(args.sno, paths\\[.corpus.\\], getattr(args, .lang., None))"'
+# ⛔ 6b READS cmd_run's FIRST FOUR CODE LINES, comments skipped (re-cut by the coo 2026-10-22, CEO-1917): resolve_paths, the partition parse, the handful
+# test of CEO-1893 (harness 8439169: a run naming at most eight entry: parts is any seat's own test of its program), then the guard. The old arm read the
+# guard within two lines of the def, and 8439169 put the handful test above it, so 6b read red from 09:51 on a tree that guarded every board. Read this
+# way nothing can grade before the guard, and the exemption cannot widen (a larger cap, a part other than entry:) without this arm going red.
+cmd_run_head() { awk '/^def cmd_run\(args\):/ {f = 1; next} f && /^def / {exit} f && $0 !~ /^[ \t]*#/ && NF {print; if (++n == 4) exit}' "$1"; }
+guard_heads_cmd_run() {
+  local h; h=$(cmd_run_head "$1")
+  sed -n 1p <<<"$h" | grep -qF 'paths = resolve_paths()' &&
+  sed -n 2p <<<"$h" | grep -qF '_parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]' &&
+  sed -n 3p <<<"$h" | grep -qF 'if not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):' &&
+  sed -n 4p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
+}
+arm "6b census: the rungs harness guards cmd_run before it grades, with the suite it holds, a handful of at most eight named entries excepted (CEO-1893)" 'guard_heads_cmd_run "$H/corpus_suite_harness.py"'
 arm "6c the bus done run exports S4E_DONE_WHEN_RUN=1" 'grep -q "S4E_DONE_WHEN_RUN=1 timeout" "$H/s4e_msg.sh"'
 arm "7 harness detector: a wrong-language run of a CORPUS suite is refused rc=2 before any grading" 'out=$(cd "$H/../../SCRIP" && S4E_SEAT=hq_pascal python3 ../harness/scripts/corpus_suite_harness.py run "$CORPUS/tests/icon/ALL.icn" "$CORPUS/tests/icon/ALL.ref" --lang icon 2>&1); rc=$?; [ $rc -eq 2 ] && grep -q "ONE RUNNER, ONE BOARD" <<<"$out"'
 
