@@ -5,7 +5,8 @@
 # tables as usual, m3 and m4 (hq_packages 2026-10-22, SWI xsb/table_tests test_calldepth: p(X) :- p(f(X)) died ERROR 246 stack overflow and the run's later cases read no verdict).
 # THE RULE (swipl's pl-trie.c trie_lookup_abstract, size_abstract from_depth 2): the compound at depth N+3 of the goal (the goal itself is depth 1) is the first abstracted,
 # so a chain of compounds in an argument trips when it is N+2 deep; the check runs where a NEW table is created ('$tbl_restrain' in prolog_parse.c's '$tbl_get').
-# ARMS: (1) p(X) :- p(f(X)) at N=4 trips with the flag name and user:p(_); (2) the same program with a goal 2 deep (N=4) tables and answers; (3) the flag unset: no check.
+# ARMS: (1) p(X) :- p(f(X)) at N=4 trips with the flag name and user:p(_); (2) the same program with a goal 2 deep (N=4) tables and answers; (3) the flag unset: no check;
+# (4) max_table_answer_size 10 with action error: an answer 30 compounds deep trips with max_table_answer_size (swipl's second argument is the table, not a goal).
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: every run re-cuts them from the live /usr/bin/swipl and REFUSES rc=2 when oracle and table disagree.
 # The program names library(lists) because a SCRIP program creates an unknown flag (set_prolog_flag) only under the SWI dialect that a library load selects.
 # Usage: bash ../harness/scripts/test_gate_pl_a_tabled_subgoal_deeper_than_max_table_subgoal_size_raises_the_tripwire_as_swipl.sh
@@ -22,18 +23,23 @@ d=$(mktemp -d) || exit 2
 trap 'rm -rf "$d"' EXIT
 cat > "$d/w.pl" <<'PL'
 :- use_module(library(lists)).
-:- table p/1, r/1.
+:- table p/1, r/1, rr/1.
+mk(0, 0) :- !.
+mk(N, f(X)) :- N1 is N - 1, mk(N1, X).
+rr(X) :- mk(30, X).
 p(X) :- p(f(X)).
 r(X) :- member(X, [a, f(a), f(f(a))]).
 show(G) :- copy_term(G, G2), numbervars(G2, 0, _), writeq(G2).
 t1 :- set_prolog_flag(max_table_subgoal_size, 4), set_prolog_flag(max_table_subgoal_size_action, error),
       catch(p(_), error(resource_error(tripwire(F, M:G)), _), (write(caught(F, M)), write(' '), show(G), nl)).
 t2 :- abolish_all_tables, findall(X, r(X), L), msort(L, S), write(within(S)), nl.
+t4 :- abolish_all_tables, set_prolog_flag(max_table_answer_size, 10), set_prolog_flag(max_table_answer_size_action, error),
+      catch(rr(_), error(resource_error(tripwire(F, _)), _), (write(caught(F)), nl)).
 t3 :- abolish_all_tables, set_prolog_flag(max_table_subgoal_size, infinite), findall(X, r(X), L), msort(L, S), write(unset(S)), nl.
-:- initialization((t1, t2, t3, halt)).
+:- initialization((t1, t2, t3, t4, halt)).
 PL
 (cd "$d" && timeout -k 5 60 "$SWIPL" -q w.pl </dev/null > "$d/want" 2>/dev/null)
-[ "$(wc -l < "$d/want")" -eq 3 ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: the oracle did not print three lines"; head -3 "$d/want"; exit 2; }
+[ "$(wc -l < "$d/want")" -eq 4 ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: the oracle did not print four lines"; head -3 "$d/want"; exit 2; }
 grep -q '^caught(max_table_subgoal_size,user) p(A)$' "$d/want" || { echo "⛔ REFUSED(2) [$GATE_NAME]: the oracle's first line is not the tripwire: $(head -1 "$d/want")"; exit 2; }
 fails=0; graded=0
 (cd "$d" && timeout -k 5 60 "$SCRIP" w.pl </dev/null 2>/dev/null > "$d/m3"); rc=$?; graded=$((graded + 1))
@@ -43,6 +49,6 @@ if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile -o w.s w.pl </dev/null >/dev/
     (cd "$d" && timeout -k 5 60 ./w.bin </dev/null 2>/dev/null > "$d/m4"); rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m4"; then fails=$((fails + 1)); echo "  m4 rc=$rc differs:"; diff "$d/want" "$d/m4" | head -8; fi
 else fails=$((fails + 1)); echo "  m4 did not compile or link"; fi
-echo "PLTBLTRIP_BOARD arms=3 modes=2 graded=$graded PASS=$((graded - fails)) FAIL=$fails"
+echo "PLTBLTRIP_BOARD arms=4 modes=2 graded=$graded PASS=$((graded - fails)) FAIL=$fails"
 [ $fails -eq 0 ] || exit 1
 exit 0
