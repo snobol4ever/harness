@@ -550,12 +550,16 @@ undeclared_beside_named() {
 #   its own). ⛔ rc 2 on a sidecar that declares nothing for the program beside it (the name is the program's stem, as for .heap), on a
 #   word outside COMPILE_ARGS_ADMITTED, and on a run_args cell: no standalone runner passes a declared argv yet, and a declaration no
 #   reader honours grades green while it is ignored (declared_memory_table's rule).
+#   --compile-only (the cfo's ask, 2026-10-22 13:3x; util_zsm_frame_census.sh): for a reader that COMPILES and runs nothing, the compile half
+#   of the same sidecar under the same NAME and format refusals, its run_args read and ignored because nothing is run. A reader that runs
+#   the program never passes it, and keeps the refusal.
 declared_compile_args_beside() {
-  local prog="$1"
+  local prog="$1" only="${2:-}"
+  [ -z "$only" ] || [ "$only" = --compile-only ] || { echo "⛔ REFUSE(2) declared_compile_args_beside: unknown option '$only' (only --compile-only)" >&2; return 2; }
   [ -n "$prog" ] && [ -f "${prog%.*}.cmdline" ] || return 0
-  python3 - "$prog" "$_LDA_HERE" <<'PY'
+  python3 - "$prog" "$_LDA_HERE" "$only" <<'PY'
 import os, sys
-prog, here = sys.argv[1], sys.argv[2]
+prog, here, only = sys.argv[1], sys.argv[2], sys.argv[3]
 sys.path.insert(0, here)
 import corpus_suite_harness as h
 side = h.cmdline_sidecar_path(prog)
@@ -567,7 +571,7 @@ if src != os.path.basename(side) or stem not in decl:
                      % (side, os.path.basename(prog), stem))
     sys.exit(2)
 ca, ra = decl[stem]
-if ra:
+if ra and only != '--compile-only':
     sys.stderr.write("⛔ REFUSE(2) %s declares run_args %s for %s, and no standalone runner passes a declared argv yet -- a declaration "
                      "no reader honours is not graded\n" % (side, " ".join(ra), stem))
     sys.exit(2)

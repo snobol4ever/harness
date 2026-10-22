@@ -25,6 +25,8 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 #
 #   L3  landing 4: declared_compile_args_beside reads a standalone program's <stem>.cmdline (NAME<TAB>compile_args<TAB>run_args) and
 #       refuses rc 2 on another unit's name, a word outside the admitted list and a run_args cell
+#   L4  its --compile-only reader (a compile-only census, the cfo 2026-10-22): a run_args cell is read and ignored, the compile half
+#       returned; another unit's name, a word outside the admitted list and an unknown option still refuse rc 2
 #   X1  corpus_suite_harness.py extract carries the unit's heap, stack and command line out beside it, named by the output's stem
 #       (CEO-1127: an entry extracted standalone is how every seat cures); an undeclaring unit gets no .cmdline
 #   X2  extract-family carries <stem>.cmdline, and the harness run on the extracted pair -- no ALL.csv beside it -- applies it
@@ -195,6 +197,13 @@ b_v="$(declared_compile_args_beside "$W/sa/argvonly.sno" 2>&1)"; rv=$?
 if [ "$rd" = 0 ] && [ "$b_d" = "--stlimit" ] && [ "$rn" = 0 ] && [ -z "$b_n" ] && [ "$ro" = 2 ] && [ "$rb" = 2 ] && [ "$rr" = 2 ] && [ "$rv" = 0 ] && [ -z "$b_v" ]; then
     ok L3 "decl.cmdline reads '--stlimit', nodecl (no sidecar) reads nothing, an Icon argv .args beside a program is not read; another unit's name, a word outside the admitted list and a run_args cell each refuse rc 2"
 else red L3 "decl=[$b_d] rc $rd, nodecl=[$b_n] rc $rn, argv .args=[$b_v] rc $rv, other rc $ro, bad word rc $rb, run_args rc $rr (want --stlimit/0, empty/0, empty/0, 2, 2, 2)"; fi
+cp "$W/cnt.sno" "$W/sa/rac.sno"; printf 'rac\t--stlimit\tprd prr\n' > "$W/sa/rac.cmdline"
+c_rac="$(declared_compile_args_beside "$W/sa/rac.sno" --compile-only)"; crac=$?; c_ra="$(declared_compile_args_beside "$W/sa/ra.sno" --compile-only)"; cra=$?
+declared_compile_args_beside "$W/sa/rac.sno" >/dev/null 2>&1; rrac=$?; declared_compile_args_beside "$W/sa/other.sno" --compile-only >/dev/null 2>&1; cro=$?
+declared_compile_args_beside "$W/sa/bad.sno" --compile-only >/dev/null 2>&1; crb=$?; declared_compile_args_beside "$W/sa/decl.sno" --run-too >/dev/null 2>&1; cru=$?
+if [ "$crac" = 0 ] && [ "$c_rac" = "--stlimit" ] && [ "$cra" = 0 ] && [ -z "$c_ra" ] && [ "$rrac" = 2 ] && [ "$cro" = 2 ] && [ "$crb" = 2 ] && [ "$cru" = 2 ]; then
+    ok L4 "--compile-only reads rac.cmdline's compile half '--stlimit' past its run_args (the plain reader refuses it rc 2) and ra's empty one; another unit's name, a word outside the admitted list and an unknown option each refuse rc 2"
+else red L4 "rac=[$c_rac] rc $crac, ra=[$c_ra] rc $cra, rac plain rc $rrac, other rc $cro, bad word rc $crb, unknown option rc $cru (want --stlimit/0, empty/0, 2, 2, 2, 2)"; fi
 mkdir -p "$W/xt"
 python3 "$HERE/corpus_suite_harness.py" extract "$W/fam/ALL.sno" "$W/fam/ALL.ref" decl "$W/xt/one.sno" >/dev/null 2>&1; x1=$?
 python3 "$HERE/corpus_suite_harness.py" extract "$W/fam/ALL.sno" "$W/fam/ALL.ref" nodecl "$W/xt/two.sno" >/dev/null 2>&1; x2=$?
@@ -309,6 +318,6 @@ else red R "${new:+NEW, type the switch without a named reason: $new}${stale:+ S
 
 echo "------------------------------------------------------------"
 N=$((PASS + FAIL))
-if [ "$FAIL" = 0 ]; then echo "GATE PASS(0) [$G]: $PASS of $N arms green (denominator: $N arms -- the premise, three reader arms, the harness, ten package runners, the extract and extract-family carry, the scorecard by table and by sidecar, the demo runner's own functions, the accept arm and the ratchet, each runner on a decl/nodecl pair in both modes)"; exit 0; fi
+if [ "$FAIL" = 0 ]; then echo "GATE PASS(0) [$G]: $PASS of $N arms green (denominator: $N arms -- the premise, four reader arms, the harness, ten package runners, the extract and extract-family carry, the scorecard by table and by sidecar, the demo runner's own functions, the accept arm and the ratchet, each runner on a decl/nodecl pair in both modes)"; exit 0; fi
 if [ -n "$UNM" ] && [ "$FAIL" = "$(printf '%s' "$UNM" | wc -w)" ]; then echo "GATE UNPROVEN(2) [$G]: $FAIL of $N arms could not measure their fixtures:$UNM"; exit 2; fi
 echo "GATE FAIL(1) [$G]: $FAIL of $N arms red${UNM:+ (could not measure:$UNM)}"; exit 1

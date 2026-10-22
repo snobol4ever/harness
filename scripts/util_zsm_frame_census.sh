@@ -74,7 +74,7 @@ def population(langs, files):
 
 
 def compile_args(prog):
-    r = subprocess.run(['bash', '-c', '. "$1/lib_declared_arena.sh"; declared_compile_args_beside "$2"', '-', HERE, prog], capture_output=True, text=True)
+    r = subprocess.run(['bash', '-c', '. "$1/lib_declared_arena.sh"; declared_compile_args_beside "$2" --compile-only', '-', HERE, prog], capture_output=True, text=True)
     return r.stdout.split() if r.returncode == 0 else None
 
 
