@@ -29,11 +29,14 @@ rows=0; ok=0; okb=0; missing=(); unknown=()
 while IFS=$'\t' read -r key rest; do
   [ -z "$key" ] && continue; case "$key" in \#*|key) continue;; esac
   rows=$((rows+1))
-  d="${DIR[$key]:-}"
+  # ⭐ A PORT ENGINE'S ROW (key <suite>@dotnet or <suite>@jvm, CEO-1822) grades the bare suite's own programs on the same corpus, so it is placed
+  # by the bare key; an engine no runner knows stays an unknown key.
+  k="$key"; case "$key" in *@dotnet|*@jvm) k="${key%@*}";; esac
+  d="${DIR[$k]:-}"
   if [ -z "$d" ]; then unknown+=("$key"); continue; fi
   # ⭐ A DEMO ROW (key *-demos, CEO-1312/1313; coo COO-206) is a benchmark row too: every demo declares its memory, command line and
   # workhorse run in sidecars beside it (NAME.heap/.stack/.cmdline/.workhorse), never a per-tree attribute file -- placed like *-bench-ref.
-  case "$key" in *-bench-ref|*-demos) if [ -d "$S4E/$d" ]; then okb=$((okb+1)); else missing+=("$key -> $d (its benchmark or demo tree)"); fi; continue;; esac
+  case "$k" in *-bench-ref|*-demos) if [ -d "$S4E/$d" ]; then okb=$((okb+1)); else missing+=("$key -> $d (its benchmark or demo tree)"); fi; continue;; esac
   if [ -s "$S4E/$d/ALL.csv" ]; then ok=$((ok+1)); else missing+=("$key -> $d/ALL.csv"); fi
 done < "$T"
 echo "ATTRIBUTE-FILES suites=$rows with_all_csv=$ok benchmark_rows_by_sidecar=$okb missing=${#missing[@]} unknown=${#unknown[@]}"
