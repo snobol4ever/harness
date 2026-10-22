@@ -20,11 +20,15 @@
 # inside reads its own measured E; the end's departure is graded against the owner's live activation (the owner's node id rides in rcx).
 # AN UNREADABLE DECLARATION IS A REFUSAL, NEVER A 0 (the cto, 3.4): an event of a box no plan declares, or a gamma or omega whose published
 # gpop/wpop do not belong to the plan's nodes, counts refused=, apart from checked= and bad=.
+# A RETAINING EDGE IS NOT A FIXED DEPTH (the cto's re-ruling of 12:4x on MATCH_DEFER): a box the compiler declares retaining -- today the home pass's
+# reason (zls_home_dyn through zls_retains_why: suspend, coexpression, unknown callee, generator, retaining callee, deferred pattern), the planner's
+# one retains table when it lands -- leaves gamma (and is re-entered at beta) at its callee's depth, so its beta and gamma count retained=, never
+# checked; its omega is graded as any box's.
 # Activations are kept per (node, frame) as a small LIFO of entry depths (a SNOBOL4 function recurses inside one frame); a departure is matched
 # to the live activation the law names, and a slot evicted or overflowed counts UNANCHORED, never bad. At exit the runtime prints
-# [ZSM-DECL-SUM] op=<kind> port=<p> checked=<n> bad=<m> refused=<r>, one [ZSM-DECL-SITE] per node that ever disagreed (its K, gpop and wpop, and per
+# [ZSM-DECL-SUM] op=<kind> port=<p> checked=<n> bad=<m> refused=<r> retained=<t>, one [ZSM-DECL-SITE] per node that ever disagreed (its K, gpop and wpop, and per
 # port checked/bad/declared/actual/second-actual, and omega_to= the op and port the first bad omega landed on), and [ZSM-DECL-TOTAL] ...
-# unanchored=<u> refused=<r> sites_overflow=<o> (the first three mismatches per kind and port as [ZSM-DECL] lines). A conditional departure (a
+# unanchored=<u> refused=<r> retained=<t> sites_overflow=<o> (the first three mismatches per kind and port as [ZSM-DECL] lines). A conditional departure (a
 # jcc to gamma or omega) carries no event and is not graded; the unanchored count varies a little between runs and modes with the stack's
 # addresses, the bad count of a lawful population does not.
 #
@@ -54,8 +58,8 @@ SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
 SCRIP = os.path.join(SC, 'scrip')
 OUT = os.path.join(SC, 'out')
 ZSM = {'SCRIP_ZSM': '1', 'SCRIP_ZSM_ALL': '1', 'SCRIP_ZSM_DECL': '1', 'SCRIP_ZSM_AEXP': '0'}
-SUM = re.compile(r'^\[ZSM-DECL-SUM\] op=(\S+) port=(\S+) checked=(\d+) bad=(\d+) refused=(\d+)$')
-TOT = re.compile(r'^\[ZSM-DECL-TOTAL\] checked=(\d+) bad=(\d+) events=(\d+) unanchored=(\d+) refused=(\d+) sites_overflow=(\d+)$')
+SUM = re.compile(r'^\[ZSM-DECL-SUM\] op=(\S+) port=(\S+) checked=(\d+) bad=(\d+) refused=(\d+) retained=(\d+)$')
+TOT = re.compile(r'^\[ZSM-DECL-TOTAL\] checked=(\d+) bad=(\d+) events=(\d+) unanchored=(\d+) refused=(\d+) retained=(\d+) sites_overflow=(\d+)$')
 SITE = re.compile(r'^\[ZSM-DECL-SITE\] op=(\S+) node=(\d+) st=(-?\d+) K=(-?\d+) gp=(-?\d+) wp=(-?\d+) beta=(\S+) gamma=(\S+) omega=(\S+) end=(\S+) omega_to=(\S+)$')
 DET = re.compile(r'^\[ZSM-DECL\] ')
 sites = False
@@ -143,7 +147,7 @@ def measure(job):
     for line in err.splitlines():
         m = SUM.match(line)
         if m:
-            sums.append((m.group(1), m.group(2), int(m.group(3)), int(m.group(4)), int(m.group(5))))
+            sums.append((m.group(1), m.group(2), int(m.group(3)), int(m.group(4)), int(m.group(5)), int(m.group(6))))
             continue
         m = SITE.match(line)
         if m:
@@ -188,8 +192,8 @@ def main():
     if not progs:
         refuse('an empty population')
     jobs = [(l, p, m, timeout) for (l, p) in progs for m in modes]
-    agg = collections.defaultdict(lambda: [0, 0, 0])
-    tot = collections.defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0])
+    agg = collections.defaultdict(lambda: [0, 0, 0, 0])
+    tot = collections.defaultdict(lambda: [0, 0, 0, 0, 0, 0, 0, 0])
     unmeasured = []
     width = max(1, int(os.environ.get('S4E_RUN_SLOTS', '8')))
     with concurrent.futures.ThreadPoolExecutor(max_workers=width) as ex:
@@ -200,18 +204,20 @@ def main():
             if res is None:
                 unmeasured.append((lang, mode, prog, why))
                 continue
-            sums, (chk, bad, ev, una, ref, ovf), det, rc, sl = res
+            sums, (chk, bad, ev, una, ref, ret, ovf), det, rc, sl = res
             t[1] += 1
             t[2] += chk
             t[3] += bad
             t[4] += una
             t[5] += ref
             t[6] += ovf
-            for (op, port, c, b, r) in sums:
+            t[7] += ret
+            for (op, port, c, b, r, k) in sums:
                 a = agg[(lang, mode, op, port)]
                 a[0] += c
                 a[1] += b
                 a[2] += r
+                a[3] += k
             rel = os.path.relpath(prog, os.path.dirname(SC))
             if bad or verbose:
                 print('ZSM_DECL_PROG lang=%s mode=%s prog=%s checked=%d bad=%d refused=%d rc=%s' % (lang, mode, rel, chk, bad, ref, rc))
@@ -223,19 +229,20 @@ def main():
                 print('ZSM_DECL_SITE lang=%s mode=%s prog=%s op=%s node=%s bad=%s declared_K=%d carved=%s gpop=%d declared_wpop=%d omega_popped=%s omega_to=%s gamma=%s omega=%s end=%s' %
                       (lang, mode, rel, site[0], site[1], bad_ports, K, carved, gp, wp, popped, to, site[7], site[8], site[9]))
     for (lang, mode, op, port) in sorted(agg):
-        c, b, r = agg[(lang, mode, op, port)]
-        if b or r or verbose:
-            print('ZSM_DECL lang=%s mode=%s op=%s port=%s checked=%d bad=%d refused=%d' % (lang, mode, op, port, c, b, r))
+        c, b, r, k = agg[(lang, mode, op, port)]
+        if b or r or k or verbose:
+            print('ZSM_DECL lang=%s mode=%s op=%s port=%s checked=%d bad=%d refused=%d retained=%d' % (lang, mode, op, port, c, b, r, k))
     for (lang, mode, prog, why) in unmeasured:
         print('ZSM_DECL_UNMEASURED lang=%s mode=%s prog=%s why=%s' % (lang, mode, os.path.relpath(prog, os.path.dirname(SC)), why))
     allbad = allmeas = allun = allref = 0
     for (lang, mode) in sorted(tot):
-        n, m, c, b, u, r, o = tot[(lang, mode)]
+        n, m, c, b, u, r, o, k = tot[(lang, mode)]
         allbad += b
         allmeas += m
         allun += n - m
         allref += r
-        print('ZSM_DECL_TOTAL lang=%s mode=%s programs=%d measured=%d unmeasured=%d checked=%d bad=%d refused=%d unanchored=%d sites_overflow=%d' % (lang, mode, n, m, n - m, c, b, r, u, o))
+        print('ZSM_DECL_TOTAL lang=%s mode=%s programs=%d measured=%d unmeasured=%d checked=%d bad=%d refused=%d retained=%d unanchored=%d sites_overflow=%d' %
+              (lang, mode, n, m, n - m, c, b, r, k, u, o))
     print('ZSM_DECL_VERDICT measured=%d unmeasured=%d bad=%d refused=%d' % (allmeas, allun, allbad, allref))
     if not allmeas:
         sys.exit(2)
