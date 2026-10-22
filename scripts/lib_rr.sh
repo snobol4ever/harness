@@ -12,7 +12,8 @@
 #   rr_flush <rows-tsv>    after each program's rows are written to <rows-tsv>: under S4E_RR=1 or a selection, append them NOW through the one writer and
 #                          empty the file, so results.tsv holds every finished test (the row the runner would append at its end is then already there)
 #   rr_yield <name>        before grading the next program: rc 0 when a test request waits in S4E_RR_YIELD_DIR during a round-robin run (never during a
-#                          request); the runner then prints the RR_YIELD line this prints and stops, and the loop resumes the chunk at <name>
+#                          request); the runner then prints the RR_YIELD line this prints and stops, and the loop resumes the chunk at <name>. A port
+#                          request (a file carrying engine=, CEO-1872) waits its turn and never stops a part (corpus_suite_harness.rr_request_waits)
 #   rr_over_budget <name>  before grading the next program: rc 0 when the part has run S4E_RR_BUDGET seconds or more since rr_load (never during a request,
 #                          which is never split); the runner prints the RR_YIELD line this prints and stops, and the loop resumes the part at <name> on the
 #                          member's next turn, so a part of long tests stays a bounded unit (10-17: SWI's chunk:01 is 100 files and about 1,900 cases)
@@ -69,8 +70,11 @@ rr_flush() {
 }
 rr_yield() {
   [ "${S4E_RR:-}" = 1 ] && [ -z "${S4E_REQ:-}" ] && [ -n "${S4E_RR_YIELD_DIR:-}" ] || return 1
-  ls "$S4E_RR_YIELD_DIR"/*.req > /dev/null 2>&1 || return 1
-  echo "RR_YIELD next=$1 -- a test request waits (CEO-1806); resume with S4E_CHUNK=${S4E_CHUNK%%@*}@$1"
+  local _q
+  for _q in "$S4E_RR_YIELD_DIR"/*.req; do
+    [ -f "$_q" ] && ! grep -q '^engine=' "$_q" 2> /dev/null && { echo "RR_YIELD next=$1 -- a test request waits (CEO-1806); resume with S4E_CHUNK=${S4E_CHUNK%%@*}@$1"; return 0; }
+  done
+  return 1
 }
 rr_over_budget() {
   [ -n "${S4E_CHUNK:-}" ] && [ -n "${S4E_RR_BUDGET:-}" ] && [ -z "${S4E_REQ:-}" ] || return 1

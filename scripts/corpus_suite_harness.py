@@ -136,6 +136,19 @@ LANG_CONFIGS = {
 # A plausible, entirely false 0 of N. Every entry is graded in both media (CEO-1218), so the defaults are m3,m4 and a mode
 # outside them is a could-not-measure, never a grade. run_ast stays: util_build_rungs_suite.py's classifier calls it.
 GRADED_MODES = ("m3", "m4")
+def rr_request_waits(queue):
+    """A request a round-robin run yields to (CEO-1806): a SCRIP request file in the loop's queue, one carrying no engine= line. A port request
+    (engine=dotnet|jvm, CEO-1872) waits its turn -- the loop serves at most one a turn, after every SCRIP request -- so it never stops a rotation part:
+    with thirty port requests queued, every part yielded at its first test (10-21 20:34, testpgms core). Mirrored by lib_rr.sh rr_yield."""
+    for p in Path(queue).glob("*.req"):
+        try:
+            if not any(line.startswith("engine=") for line in p.read_text(errors="replace").splitlines()):
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def parse_modes(spec, where):
     modes = [m for m in (spec or "").split(",") if m]
     bad = [m for m in modes if m not in GRADED_MODES]
@@ -3298,7 +3311,7 @@ def cmd_run(args):
         for _ei, e in enumerate(run_entries):
             # ⭐ A WAITING REQUEST GOES FIRST (CEO-1806): before each next test of a round-robin run, a request file in the loop's queue stops the run here;
             # the tests already graded are recorded, and the loop serves the request and resumes the part at this entry (RR_YIELD names it).
-            if _rr_yield is not None and _ei > 0 and any(_rr_yield.glob("*.req")):
+            if _rr_yield is not None and _ei > 0 and rr_request_waits(_rr_yield):
                 print(f"RR_YIELD next={e.name} graded={_ei} of {len(run_entries)} -- a test request waits (CEO-1806); resume with --partition {PARTITION_RUN['name'] or '?'}@{e.name}")
                 break
             if _rr_stream and len(_progress_rows) > _rr_done[0]:

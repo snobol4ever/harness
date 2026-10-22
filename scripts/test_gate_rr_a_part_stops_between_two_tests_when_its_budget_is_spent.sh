@@ -13,6 +13,11 @@
 #          a runner grading its own list in sorted order would yield at one name and resume past the others (10-17: SWI's GC/ files sort after files/).
 #   ARM 6  a table with no PARTITION.tsv (the benchmarks and the demos, CEO-1812) takes a request's entry: names, each a file of the suite dir by stem or
 #          path: entry:k1,entry:sub/d1.md admits k1 and sub/d1.md; an unknown name and a core selection refuse rc 2.
+#   ARM 7  a SCRIP request (a .req with no engine= line) in S4E_RR_YIELD_DIR under S4E_RR=1: rr_yield e2 is rc 0 and prints RR_YIELD next=e2.
+#   ARM 8  only port requests (engine=dotnet, engine=jvm; CEO-1872) in the queue: rr_yield is rc 1 and prints nothing -- a port request waits its turn
+#          (one a turn, after every SCRIP request) and never stops a rotation part (10-21 20:34: thirty queued port requests yielded testpgms core at
+#          its first test). ARM 9  corpus_suite_harness.rr_request_waits reads the two queues the same way (True, False) and an empty queue False.
+#          Arms 8 and 9 FAIL on origin 226db4d (any .req stopped a part; rr_request_waits is not defined).
 # PROVEN TO FAIL on lib_rr.sh before this rule (origin 821026ee0): arms 1-5 FAIL (rr_over_budget and rr_entries are not commands, rc 127).
 # Arm 6 FAILS on origin 04e51ccab's lib_rr.sh (every selection on a table with no partition refuses). RR_LIB=<path> grades another copy.
 # EXIT 0 every arm holds; 1 an arm failed; 2 could not measure.
@@ -36,7 +41,17 @@ N="$T/nopart"; mkdir -p "$N/sub"; : > "$N/k1.pl"; : > "$N/sub/d1.md"
 o6="$( (export S4E_CHUNK=entry:k1,entry:sub/d1.md; . "$LIB"; rr_load "$N" > /dev/null; echo "rc=$? $(rr_admits k1 && echo k1) $(rr_admits sub/d1.md && echo d1) $(rr_admits k2 || echo no-k2)") 2>&1)"
 o6b="$( (export S4E_CHUNK=entry:nosuch; . "$LIB"; rr_load "$N" > /dev/null; echo "rc=$?") 2>&1)"; o6c="$( (export S4E_CHUNK=core; . "$LIB"; rr_load "$N" > /dev/null; echo "rc=$?") 2>&1)"
 ck "6 no partition: entry: names by file are admitted, an unknown name and core refuse rc 2" '[ "$o6" = "rc=0 k1 d1 no-k2" ] && [ "$o6b" = "rc=2" ] && [ "$o6c" = "rc=2" ]'
+Q1="$T/q-scrip"; Q2="$T/q-port"; Q3="$T/q-empty"; mkdir -p "$Q1" "$Q2" "$Q3"
+printf 'seat=hq_x\nsuite=gimpel\nentries=a\n' > "$Q1/1-hq_x-gimpel-1.req"; printf 'seat=hq_y\nsuite=gimpel\nentries=a\nengine=jvm\n' > "$Q1/0-hq_y-gimpel-jvm-2.req"
+printf 'seat=hq_y\nsuite=gimpel\nentries=a\nengine=dotnet\n' > "$Q2/1-hq_y-gimpel-dotnet-3.req"; printf 'seat=hq_z\nsuite=sno-rungs\nentries=b\nengine=jvm\n' > "$Q2/2-hq_z-sno-rungs-jvm-4.req"
+yprobe() { (unset S4E_REQ; export S4E_RR=1 S4E_CHUNK=chunk:01 S4E_RR_YIELD_DIR="$1"; . "$LIB"; rr_load "$T" > /dev/null || exit 2; rr_yield e2; echo "rc=$?"); }
+o7="$(yprobe "$Q1")"; o8="$(yprobe "$Q2")"
+ck "7 a SCRIP request waits: rr_yield e2 is rc 0 with RR_YIELD next=e2" 'grep -q "^RR_YIELD next=e2 -- a test request waits" <<<"$o7" && grep -qx "rc=0" <<<"$o7"'
+ck "8 only port requests wait: rr_yield is rc 1, nothing printed" '[ "$o8" = "rc=1" ]'
+o9="$(cd "$T" && python3 -c "import sys; sys.path.insert(0, '$HERE'); import corpus_suite_harness as c; print(c.rr_request_waits('$Q1'), c.rr_request_waits('$Q2'), c.rr_request_waits('$Q3'))" 2>&1 | tail -1)"
+ck "9 the harness reads the queues alike: True False False" '[ "$o9" = "True False False" ]'
+[ "$fails" = 0 ] || printf '      arm7: %s\n      arm8: %s\n      arm9: %s\n' "$o7" "$o8" "$o9"
 [ "$fails" = 0 ] || printf '      arm6: %s | %s | %s\n' "$o6" "$o6b" "$o6c"
 [ "$fails" = 0 ] || printf '      arm1: %s\n      arm2: %s\n      arm3: %s\n      arm4: %s\n      arm5: %s\n' "$o1" "$o2" "$o3" "$o4" "$o5"
-if [ "$fails" = 0 ]; then echo "✅ GATE PASS [rr_a_part_stops_between_two_tests_when_its_budget_is_spent]: $n of $n arms hold (population: 3 entries, 5 probes; 2 files, 3 selections)"; exit 0; fi
+if [ "$fails" = 0 ]; then echo "✅ GATE PASS [rr_a_part_stops_between_two_tests_when_its_budget_is_spent]: $n of $n arms hold (population: 3 entries, 5 probes; 2 files, 3 selections; 3 queues, 4 request files)"; exit 0; fi
 echo "⛔ GATE FAIL [rr_a_part_stops_between_two_tests_when_its_budget_is_spent]: $fails of $n arm(s) failed"; exit 1
