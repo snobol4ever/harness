@@ -141,7 +141,7 @@ ST3=0; ST4=0; BOTH_STREAM=0
 # ERROR NNN -- is OUTSIDE the baseline and out of the denominator. The suite table states both_modes_pass/baseline. The
 # record of the outside set is OUTSIDE_SPITBOL_BASELINE.tsv beside the suite, mirrored by UNGRADABLE.tsv (name, ORACLE_REFUSES, the SPITBOL error and a source
 # check per program); the live set is measured every run and any drift between the two is said aloud below.
-BASE=0; BASE_BOTH=0; OUTSIDE_N=0; OUTSIDE_LIST=""; OUTSIDE_TSV="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"; MIRROR_TSV="$SUITE/UNGRADABLE.tsv"
+BASE=0; BASE_BOTH=0; OUTSIDE_N=0; OUTSIDE_LIST=""; RAN_SET=""; OUTSIDE_TSV="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"; MIRROR_TSV="$SUITE/UNGRADABLE.tsv"
 # ⛔⭐ SPITBOL ALSO REFUSES WITHOUT AN ERROR NUMBER, and the numbered-only test above missed it (ceo
 # 2026-09-08, re-measured by the coo at a296d8d04): `sbl -bf` on a source whose only END is the
 # lowercase `end` prints `No END statement found in source file(s).` and EXITS 1 -- SPITBOL never runs
@@ -364,6 +364,7 @@ for sno in "$SUITE"/*.sno; do
     OERR="$(printf '%s' "$ORACLE_OUT" | grep -iE 'ERROR +[0-9]+' | head -1 | tr -d '\t' | cut -c1-140)"; OUTSIDE=0
     # a numbered refusal first, then SPITBOL's measured un-numbered ones (see ORACLE_REFUSAL_RE above)
     [ -z "$OERR" ] && OERR="$(printf '%s' "$ORACLE_OUT" | grep -E "$ORACLE_REFUSAL_RE" | head -1 | tr -d '\t' | cut -c1-140)"
+    RAN_SET="${RAN_SET}${name}\n"
     if [ -n "$OERR" ]; then OUTSIDE=1; OUTSIDE_N=$((OUTSIDE_N+1)); OUTSIDE_LIST="${OUTSIDE_LIST}${name}\t${OERR}\n"; else BASE=$((BASE+1)); fi
     # ⛔ OERR IS READ FROM THE UNMASKED STREAM ABOVE, ON PURPOSE: the outside-baseline classification must
     # never be able to see through a mask, and guardrail 4 already refuses a mask that could cover a
@@ -434,7 +435,9 @@ echo "MASKED_LINES total=$MASKED_LINES across $MASKED_FIX fixture(s)${MASKED_LIS
 echo "SNOFLAKE_BASELINE baseline=$BASE both_modes_pass=$BASE_BOTH masked=$MASKED_LINES outside_spitbol_baseline=$OUTSIDE_N of $TOTAL -- THE SUITE TABLE STATES both_modes_pass/baseline (a fixture SPITBOL itself cannot run is outside the baseline and out of the denominator; Lon 2026-09-08)"
 if [ "$OUTSIDE_N" -gt 0 ]; then echo "OUTSIDE-SPITBOL-BASELINE ($OUTSIDE_N; name<TAB>SPITBOL's own error):"; printf '%b' "$OUTSIDE_LIST" | sed 's/^/OUTSIDE\t/'; fi
 if [ -f "$OUTSIDE_TSV" ]; then
-    rec="$(awk -F'\t' 'NF>2 && $1 !~ /^#/{sub(/\.sno$/,"",$1); print $1}' "$OUTSIDE_TSV" | sort)"; live="$(printf '%b' "$OUTSIDE_LIST" | cut -f1 | grep . | sort)"
+    # ⛔ ONLY THE FIXTURES THIS RUN GAVE THE ORACLE (coo 10-21, CEO-1872 sitting): a chunk or a request runs a subset, and a recorded-outside fixture it
+    # never ran is not "ran clean" -- the 100-entry part named arbitrarily-long-integers, which sits in the 18-entry part and read UNGRADED there
+    rec="$(awk -F'\t' 'NF>2 && $1 !~ /^#/{sub(/\.sno$/,"",$1); print $1}' "$OUTSIDE_TSV" | sort | comm -12 - <(printf '%b' "$RAN_SET" | grep . | sort))"; live="$(printf '%b' "$OUTSIDE_LIST" | cut -f1 | grep . | sort)"
     stale="$(comm -23 <(printf '%s\n' "$rec") <(printf '%s\n' "$live") | grep . | tr '\n' ' ')"; unrec="$(comm -13 <(printf '%s\n' "$rec") <(printf '%s\n' "$live") | grep . | tr '\n' ' ')"
     [ -n "$stale" ] && echo "⚠ OUTSIDE_SPITBOL_BASELINE.tsv STALE -- recorded as not running in SPITBOL, but SPITBOL ran it clean this run; move it back into the baseline record: $stale"
     [ -n "$unrec" ] && echo "⚠ OUTSIDE_SPITBOL_BASELINE.tsv UNRECORDED -- SPITBOL errors on these and the record does not name them; record each with its error and a source check: $unrec"
