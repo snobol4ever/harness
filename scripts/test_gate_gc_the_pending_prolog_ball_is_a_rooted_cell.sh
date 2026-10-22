@@ -89,7 +89,7 @@ done < "$LINES"
 [ "$nw" -ge 20 ] || { echo "⛔ REFUSE(2): only $nw pending-ball sites in $(basename "$ASM"), expected >= 20 -- the convention was renamed and this arm is measuring nothing (the CFO-111 shape: a census keyed on one spelling of a name misses its sibling)"; exit 2; }
 echo "  ball sites=$nw bare=$nbad"
 echo "ARM 3 -- THE ROOT IS JOINED: the root-range walk reaches the trail header's ball slot"
-vis=$(sed -n '/^void pl_tr_gc_root_ball/,/^}/p' "$TRC"); call=$(grep -c 'pl_tr_gc_root_ball(g_gc_rrng\[i\].lo)' "$GCH" || true)
+vis=$(sed -n '/^void pl_tr_gc_root_ball/,/^}/p' "$TRC"); call=$(grep -c 'pl_tr_gc_root_ball(g_runtime\.gc\.gc_rrng\[i\]\.lo)' "$GCH" || true)
 examined=$((examined+2))
 if [ -n "${FAIL_ONCE:-}" ]; then vis="${vis//rt_gc_visit_raw/rt_gc_nothing}"; call=0; fi
 case "$vis" in *'rt_gc_visit_raw((const char **)slot)'*) echo "  ok   the visit marks the block AND registers the slot, so a moved ball is forwarded" ;;

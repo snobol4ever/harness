@@ -69,7 +69,7 @@ echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is 
 # LOOKING, which is the failure THE INSTRUMENT LAWS exist to catch and the reason this arm comes first.
 src="$ROOT/src/runtime/rt/gc_heap.c"
 [ -f "$src" ] || refuse "no $src -- the reporter this arm grades cannot be located"
-if grep -q "GC-WALK-RTCCB" "$src" && grep -q "g_gc_rtccb_heap" "$src"; then
+if grep -q "GC-WALK-RTCCB" "$src" && grep -q "gc_rtccb_heap" "$src"; then
   ck ok "(a) the runtime's own g_rtccb reporter is present in gc_heap.c -- this gate grades a counter that something increments"
 else
   ck no "(a) gc_heap.c carries no GC-WALK-RTCCB reporter or no g_gc_rtccb_heap counter, so every arm below would read zero by never looking. If the reporter was deliberately removed, this gate must be retired in the same landing and the invariant re-homed, NOT left grading nothing"
