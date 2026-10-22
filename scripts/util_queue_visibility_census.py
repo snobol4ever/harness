@@ -222,14 +222,26 @@ def _minted(t):
         mm = _LEDGER.match(ln)
         if mm and 'Minted via' in ln: return _ledger_when(mm.group(2))
     return None
-HQ, HQx = [], []
+import subprocess as _sp0
+try: _MODE1 = open(os.path.join(PO, "MODE"), encoding="utf-8").readline().strip()
+except OSError: _MODE1 = ""
+_GUARD = 'PO="%s"; eval "$(sed -n "/^s4e_mode_stands()/,/^}/p" "%s")"; _dr(){ return 1; }; s4e_mode_stands "$1" "$2"' % (PO, os.path.join(os.path.dirname(os.path.abspath(__file__)), "s4e_msg.sh"))
+_stand = {}
+def _standing(seat):
+    if seat not in _stand:
+        try: _stand[seat] = _sp0.run(["bash", "-c", _GUARD, "_", seat, _MODE1], capture_output=True, timeout=10).returncode == 0
+        except Exception: _stand[seat] = True
+    return _stand[seat]
+HQ, HQx, HQdown = [], [], {}
 for t, r in rows.items():
     if r['state'] not in ('FREE', '') or r['rank'] not in ('0', '1') or not r['owner'].startswith('hq_') or t in claims: continue
     others = [x for x in live_by.get(r['owner'], []) if x != t]
     if not others: continue
     mt = _minted(t)
     if mt is None: HQx.append(t); continue
-    if NOW - mt > _td(hours=24): HQ.append((r['rank'], -(NOW - mt).total_seconds(), t, r['owner'], others[0], NOW - mt))
+    if NOW - mt <= _td(hours=24): continue
+    if not _standing(r['owner']): HQdown[r['owner']] = HQdown.get(r['owner'], 0) + 1; continue
+    HQ.append((r['rank'], -(NOW - mt).total_seconds(), t, r['owner'], others[0], NOW - mt))
 BR.sort(key=lambda x: -x[0].total_seconds()); HQ.sort()
 print(f"BLOCKING-RED PAST WINDOW: {len(BR)}  (window: two hours from the later of the BLOCKING-RED `since` time and the first assignment; now {NOW:%Y-%m-%dT%H:%MZ})")
 for late, t, owner, rank, state, start in BR:
@@ -239,6 +251,7 @@ print(f"HQ-LANE UNSERVED PAST 24H: {len(HQ)}  (FREE, rank 0 or 1, minted over 24
 for rank, _, t, owner, other, age in HQ:
     print(f"    {t}  [rank {rank}, minted {age.total_seconds() / 3600:.0f} h ago, {owner} holds {other}] -> {_route(t)}")
 if HQx: print(f"    (named, not counted: {len(HQx)} such row(s) whose mint time the baton does not carry -- {' '.join(HQx[:5])})")
+if HQdown: print(f"    (kept by MODE, not counted: {' '.join('%s=%d' % kv for kv in sorted(HQdown.items()))} -- a seat MODE stands down keeps its rows in place and serves none (ceo CEO-1905; CEO-1895), as util_ceo_followups.py reads it)")
 findings += len(BR) + len(HQ)
 # DONE-WHEN RUNS A BOARD (ceo CEO-1342 clause 5; the coo's row bus-done-runs-no-board-for-any-seat-..., 2026-09-28): the bus's
 # computed done no longer admits a board run for any seat but the lane owner, so a live row whose DONE-WHEN runs a suite, a board or
