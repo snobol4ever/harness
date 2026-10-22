@@ -188,7 +188,10 @@ argv_usage(M:Level) :-"""),
     "gensym": [("atom_concat/3 is ISO outside the SWI dialect (a number argument is a type_error), so the library's own symbol is built by atomic_list_concat/2, which takes "
                 "the number in every dialect", """    New is Old+1,
     atom_concat(Base, New, Atom).""", """    New is Old+1,
-    atomic_list_concat([Base, New], Atom).""")]}
+    atomic_list_concat([Base, New], Atom).""")],
+    "nb_set": [("the :- if condition catch((A = f(A), variant_hash(A,_)), _, fail) reads false, as swipl 9.0.4 reads it (variant_hash/2 raises type_error(acyclic_term) "
+                "on a cyclic term, measured 2026-10-22); SCRIP's reader has no read-time catch/3, so the verbatim condition warned on stderr in every program reaching "
+                "nb_set (distinct/1,2, order_by/2) and read false anyway", """:- if(catch((A = f(A), variant_hash(A,_)), _, fail)).""", """:- if(fail).""")]}
 # A module-qualified head extending ANOTHER vendored library's local predicate (rule (3) drops every other one): the qualifier
 # and name are replaced by that library's renamed local, so the clause joins the other library's predicate when both are
 # selected (cfo 2026-10-14): library(record)'s error:has_type(record(M:Name), X) is what makes must_be(record(...), V) check a
