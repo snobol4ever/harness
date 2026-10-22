@@ -687,8 +687,35 @@ def _mem_scope():
 # and dies with the harness however the harness dies; setpriv's own exec failure (rc 127) is the FileNotFoundError arm it always was.
 _OUTPUT_CAP = int(float(os.environ.get("S4E_OUTPUT_CAP_MB", "256")) * 1048576)
 _SETPRIV = shutil.which("setpriv")
+# ⭐ ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (Lon 2026-10-22: "You are meant to fix the load not hurt it" · "don't flag things, fix things."; ceo
+# CEO-1894): every seat may now run its own programs, so every child this harness starts takes one of S4E_RUN_SLOTS (default 8) flock slots
+# under /tmp/s4e-run-slots, taken HERE before the child starts -- a wait for a slot is never counted against the child's timeout, so it can
+# never read as a HANG -- and released when the child ends. A child inherits S4E_RUN_SLOT_HELD, so a harness run under another harness's slot
+# takes none of its own (no nested wait, no deadlock).
+def _run_slot():
+    if os.environ.get("S4E_RUN_SLOT_HELD"):
+        return None
+    import fcntl
+    try:
+        n = max(1, int(os.environ.get("S4E_RUN_SLOTS", "8"))); d = "/tmp/s4e-run-slots"; os.makedirs(d, exist_ok=True)
+        for i in range(n):
+            f = open(os.path.join(d, "slot%d" % i), "a")
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); return f
+            except OSError:
+                f.close()
+        f = open(os.path.join(d, "slot%d" % (os.getpid() % n)), "a"); fcntl.flock(f, fcntl.LOCK_EX); return f
+    except OSError:
+        return None
 def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     """(rc, stdout, stderr, why): why is None, "HANG" (the timeout passed, or a pipe stayed open past it) or "OVERFLOW"."""
+    slot = _run_slot()
+    try:
+        return _bounded_run_in_slot(argv, timeout, cwd, dict(env if env is not None else os.environ, S4E_RUN_SLOT_HELD="1") if slot else env, stdin_bytes, merge_stderr)
+    finally:
+        if slot:
+            slot.close()
+def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     p = subprocess.Popen(([_SETPRIV, "--pdeathsig", "KILL", "--"] if _SETPRIV else []) + list(argv), cwd=cwd, env=env,
                          stdin=subprocess.DEVNULL if stdin_bytes is None else subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT if merge_stderr else subprocess.PIPE)
