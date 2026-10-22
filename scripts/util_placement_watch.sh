@@ -11,7 +11,7 @@
 # /tmp/s4e-placement-<root> (never a link, never this root's working tree, so nothing the seat is doing moves under it), built with its own
 # objdir at make -j8 under nice.
 #
-#   util_placement_watch.sh show    the newest reading (four lines), whether a newer origin is being measured
+#   util_placement_watch.sh show    the newest reading as ONE TABLE (a row per language, a column per count, a goal row, the change since the reading before; Lon 2026-10-22: the old four lines were unreadable), and whether a newer origin is being measured
 #   util_placement_watch.sh kick    start a measurement in the background if origin moved; returns at once
 #   util_placement_watch.sh run     measure now, in the foreground (what kick runs)
 #
@@ -46,80 +46,65 @@ do_show() {
     python3 - "$REC" "$LOCK" "$(git -C "$ROOT/SCRIP" rev-parse --short=9 origin/main 2>/dev/null)" "$BREC" "$FREC" <<'PY'
 import sys, os, fcntl
 rec, lock, tip, brec, frec = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
-rows = [l.rstrip('\n').split('\t') for l in open(rec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
-keys = []
-for r in rows:
-    k = (r[0], r[1])
-    if not keys or keys[-1] != k:
-        keys.append(k)
-def agg(k):
-    t, per = {}, {}
+def load(path):
+    if not os.path.isfile(path): return []
+    return [l.rstrip('\n').split('\t') for l in open(path, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
+def readings(rows):
+    ks = []
     for r in rows:
-        if (r[0], r[1]) != k:
-            continue
-        v = dict(zip(['ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none', 'graphs', 'ops_prealloc'], map(int, r[5:16])))
-        v.setdefault('ops_prealloc', -1)
+        if not ks or ks[-1] != (r[0], r[1]): ks.append((r[0], r[1]))
+    return ks
+rows = load(rec); keys = readings(rows)
+NAMES = ['ops_rsp', 'ops_rbp', 'ops_precarved', 'ops_none', 'loc_rsp', 'loc_rbp', 'loc_rbp_forced', 'loc_rbp_misplaced', 'loc_none', 'graphs', 'ops_prealloc']
+def agg(k):
+    per = {}
+    for r in rows:
+        if (r[0], r[1]) != k: continue
+        v = dict(zip(NAMES, map(int, r[5:16]))); v.setdefault('ops_prealloc', -1)
         v['prealloc'] = v['ops_prealloc'] + v['ops_precarved'] + v['loc_rbp_misplaced'] if v['ops_prealloc'] >= 0 else -1
         per[r[4]] = v
-        for kk, vv in v.items():
-            t[kk] = t.get(kk, 0) + vv
-    return t, per
+    return per
 busy = False
 try:
     fd = os.open(lock, os.O_RDONLY)
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB); fcntl.flock(fd, fcntl.LOCK_UN)
-    except OSError:
-        busy = True
-except OSError:
-    pass
-cur = keys[-1]
-t, per = agg(cur)
-f = lambda n: format(n, ',')
-state = '' if tip == cur[1] else (' -- measuring origin %s now' % tip if busy else ' -- origin is at %s, not yet measured' % tip)
-print('PLACEMENT @ SCRIP %s, read %s, %d graphs over %d languages (util_spine_population.sh)%s' % (cur[1], cur[0][11:16], t['graphs'], len(per), state))
-print('  operands: RSP %s  RBP %s   |   locals: RSP %s  RBP %s (%s forced, %s misplaced)' % (f(t['ops_rsp']), f(t['ops_rbp']), f(t['loc_rsp']), f(t['loc_rbp']), f(t['loc_rbp_forced']), f(t['loc_rbp_misplaced'])))
-pa = t['prealloc'] if all(v['prealloc'] >= 0 for v in per.values()) else None
-print('  PRE-ALLOCATIONS: %s (frame slots granted to a non-RBP box %s, operands carved at entry %s, locals carved at entry that pass both tests %s)' % (f(pa), f(t['ops_prealloc']), f(t['ops_precarved']), f(t['loc_rbp_misplaced'])) if pa is not None else '  PRE-ALLOCATIONS: not in this reading (the next one carries it)')
-print('  ' + ' · '.join('%s RSP %s/%s RBP %s/%s' % (l, f(v['ops_rsp']), f(v['loc_rsp']), f(v['ops_rbp']), f(v['loc_rbp'])) for l, v in sorted(per.items())) + '  (operands/locals)')
+    try: fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB); fcntl.flock(fd, fcntl.LOCK_UN)
+    except OSError: busy = True
+except OSError: pass
+cur = keys[-1]; per = agg(cur)
+br = load(brec); bk = readings(br); bper = {r[4]: (int(r[5]), int(r[7]), int(r[8]) if len(r) > 8 else -1) for r in br if bk and (r[0], r[1]) == bk[-1]}
+fr = load(frec); fk = readings(fr); fper = {r[4]: list(map(int, r[5:9])) for r in fr if fk and (r[0], r[1]) == fk[-1]}
+f = lambda n: format(n, ',') if isinstance(n, int) else n
+langs = ['snobol4', 'snocone', 'rebus', 'icon', 'prolog', 'pascal', 'raku'] + sorted(l for l in per if l not in ('snobol4', 'snocone', 'rebus', 'icon', 'prolog', 'pascal', 'raku'))
+langs = [l for l in langs if l in per]
+progs = sum(v[1] for v in bper.values()) if bper and bk[-1][1] == cur[1] else 0
+state = '' if tip == cur[1] else ('   -- measuring origin %s now' % tip if busy else '   -- origin is at %s, not yet measured' % tip)
+print('PLACEMENT at SCRIP %s, read %s today%s%s' % (cur[1], cur[0][11:16], (', %d programs, %s graphs' % (progs, f(sum(v['graphs'] for v in per.values()))) if progs else ', %s graphs' % f(sum(v['graphs'] for v in per.values()))), state))
+W = [10] + [11] * 9
+def line(cells): print('  ' + ''.join(str(c).rjust(w) if i else str(c).ljust(w) for i, (c, w) in enumerate(zip(cells, W))))
+print('  ' + ''.ljust(10) + '----------- operands -----------'.rjust(33) + '------------ locals ------------'.rjust(33))
+line(['language', 'on RSP', 'on RBP', 'RBP wrong?', 'on RSP', 'on RBP', 'RBP wrong', 'pre-allocs', 'RSP resets', 'allocs'])
+line(['', '', '', '(the test)', '', '', '', '', 'at beta', 'at beta'])
+tot = [0] * 9
+for l in langs:
+    v = per[l]; b = bper.get(l, (0, 0, -1)); h = fper.get(l, [0, 0, 0, 0])
+    row = [v['ops_rsp'], v['ops_rbp'], h[2] + h[3], v['loc_rsp'], v['loc_rbp'], v['loc_rbp_misplaced'], v['prealloc'], b[0], max(b[2], 0)]
+    tot = [a + c for a, c in zip(tot, row)]
+    line([l] + [f(c) for c in row])
+line(['TOTAL'] + [f(c) for c in tot])
+line(['goal', 'all', 'forced', '0', 'all', 'forced', '0', '0', '0', 'allowed'])
+forced_ops = sum(v['ops_rbp'] for v in per.values()) - tot[2]
+print("  RBP is right only where your two tests force it. Operands: %s RBP homes, %s disputed by the test (%s homed without it, %s it forces that have no home; the test is still being calibrated, CEO-1865). Locals: %s on RBP, %s forced, %s wrong." % (f(sum(v['ops_rbp'] for v in per.values())), f(tot[2]), f(sum(h[2] for h in fper.values())), f(sum(h[3] for h in fper.values())), f(tot[4]), f(sum(v['loc_rbp_forced'] for v in per.values())), f(tot[5])))
 if len(keys) > 1:
-    p, pper = agg(keys[-2])
-    d = lambda k: '%+d' % (t[k] - p[k])
-    if sorted(pper) != sorted(per):
-        print('  since SCRIP %s: no delta -- the population changed (%d languages then, %d now), so the two readings count different programs' % (keys[-2][1], len(pper), len(per)))
+    p = agg(keys[-2])
+    if sorted(p) == sorted(per):
+        d = lambda n: sum(v[n] for v in per.values()) - sum(v[n] for v in p.values())
+        dg = d('graphs')
+        parts = ['operands on RSP %+d, on RBP %+d' % (d('ops_rsp'), d('ops_rbp')), 'locals on RSP %+d, on RBP %+d' % (d('loc_rsp'), d('loc_rbp')), 'pre-allocations %+d' % d('prealloc')]
+        if len(bk) > 1: parts.append('RSP resets at beta %+d' % (sum(int(r[5]) for r in br if (r[0], r[1]) == bk[-1]) - sum(int(r[5]) for r in br if (r[0], r[1]) == bk[-2])))
+        if len(fk) > 1: parts.append('disputed homes %+d' % (sum(int(r[7]) + int(r[8]) for r in fr if (r[0], r[1]) == fk[-1]) - sum(int(r[7]) + int(r[8]) for r in fr if (r[0], r[1]) == fk[-2])))
+        print('  since SCRIP %s (read %s): %s%s' % (keys[-2][1], keys[-2][0][11:16], '; '.join(parts), ' -- %+d graphs in the population' % dg if dg else ''))
     else:
-        print('  since SCRIP %s: operands RSP %s RBP %s | locals RSP %s RBP %s | pre-allocations %s' % (keys[-2][1], d('ops_rsp'), d('ops_rbp'), d('loc_rsp'), d('loc_rbp'), d('prealloc') if p.get('prealloc', -1) >= 0 and t.get('prealloc', -1) >= 0 else 'n/a'))
-if os.path.isfile(brec):
-    br = [l.rstrip('\n').split('\t') for l in open(brec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
-    bk = []
-    for r in br:
-        if not bk or bk[-1] != (r[0], r[1]):
-            bk.append((r[0], r[1]))
-    if bk:
-        cb = {r[4]: int(r[5]) for r in br if (r[0], r[1]) == bk[-1]}
-        ca = {r[4]: int(r[8]) for r in br if (r[0], r[1]) == bk[-1] and len(r) > 8 and int(r[8]) >= 0}
-        tot = sum(cb.values())
-        prev = ''
-        if len(bk) > 1:
-            pb = sum(int(r[5]) for r in br if (r[0], r[1]) == bk[-2])
-            prev = ' (%+d since SCRIP %s)' % (tot - pb, bk[-2][1])
-        print('  RSP resets at beta @ SCRIP %s: %s%s -- %s' % (bk[-1][1], f(tot), prev, ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(cb.items(), key=lambda kv: -kv[1]))))
-        if ca:
-            print('  allocations at beta (reported, allowed): %s -- %s' % (f(sum(ca.values())), ' · '.join('%s %s' % (l, f(v)) for l, v in sorted(ca.items(), key=lambda kv: -kv[1]))))
-if os.path.isfile(frec):
-    fr = [l.rstrip('\n').split('\t') for l in open(frec, encoding='utf-8') if l.strip() and not l.startswith('when\t')]
-    fk = []
-    for r in fr:
-        if not fk or fk[-1] != (r[0], r[1]):
-            fk.append((r[0], r[1]))
-    if fk:
-        cf = {r[4]: list(map(int, r[5:9])) for r in fr if (r[0], r[1]) == fk[-1]}
-        dis = sum(v[2] + v[3] for v in cf.values())
-        prev = ''
-        if len(fk) > 1:
-            pd = sum(int(r[7]) + int(r[8]) for r in fr if (r[0], r[1]) == fk[-2])
-            prev = ' (%+d since SCRIP %s)' % (dis - pd, fk[-2][1])
-        print("  RBP homes vs Lon's operand test @ SCRIP %s: %s disagree%s -- %s  (homes agree/homed-without-test/test-without-home; the test is being calibrated, CEO-1865)" % (fk[-1][1], f(dis), prev, ' · '.join('%s %s %s/%s/%s' % (l, f(v[0]), f(v[1]), f(v[2]), f(v[3])) for l, v in sorted(cf.items()) if v[0] or v[3])))
+        print('  since SCRIP %s: no comparison, the population changed' % keys[-2][1])
 PY
 }
 
