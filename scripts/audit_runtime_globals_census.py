@@ -56,6 +56,7 @@ def population(tree, root=ROOT):
         if len(p) < 5 or p[2] not in ("B", "D", "b", "d"):
             continue
         f, _, ln = p[4].partition(":")
+        f = f if os.path.isabs(f) else os.path.normpath(os.path.join(root, f))
         if not f.startswith(dirs):
             continue
         s = sec.get((int(p[0], 16), p[3]))
