@@ -2,6 +2,9 @@
 # test_gate_pl_a_use_module_directive_after_the_clauses_changes_nothing_in_mode_4.sh -- a program prints the same in m3 and m4, and the same as swipl 9.0.4, when its  :- use_module(library(lists)).  directive
 # carries a long trailing % comment and sits just before the clauses of an appended driver (hq_packages 2026-10-22, found moving the XSB package's dialect marker: the vendored table_tests/abol_test.pl printed
 # nothing in mode 4 while mode 3 was right; the SAME text with the directive bare, or with the comment but on the first line, prints right in both modes -- so the trigger is the comment in that position, measured).
+# CAUSE (measured 2026-10-22, SCRIP cure in the same landing): the comment is not the trigger -- the WORD  listing  in it (or any real reference to listing/1) makes the program seed its predicates into the database, so the xsb driver's
+# call(G) lowers test/0 at run time in the compiled binary, which carries neither the program's predicate table nor the compile-time dialect; the lowerer then read the XSB program's own print/2 as the builtin. The smaller witness is
+# test_gate_pl_a_clause_built_at_run_time_calls_the_programs_own_print_2_not_the_builtin_in_mode_4.sh.
 # WITNESS: corpus/packages/prolog/xsb_tests/table_tests_abol_test.pl (a static tabled program using get_calls/3 and abolish_table_pred/1); the gate moves its first line to just before the appended driver block (the driver's own predicates follow it).
 # THE REF IS CUT FROM THE ORACLE, NEVER FROM SCRIP: swipl 9.0.4 runs the same text live each time and the gate REFUSES rc=2 when swipl prints nothing.
 # Usage: bash ../harness/scripts/test_gate_pl_a_use_module_directive_after_the_clauses_changes_nothing_in_mode_4.sh
