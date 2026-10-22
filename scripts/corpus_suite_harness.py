@@ -334,7 +334,8 @@ def resolve_oracle_bin(paths, lang=""):
 
     lang="" or "snobol4" (the original, only path until 2026-08-29): sbl_correctness_bin +
     sbl_lang_flags, i.e. SPITBOL `-bf`. lang="prolog": swipl_bin() from the same lib, invoked
-    `-q` alone. lang="icon"/"raku": the one-step driver, no flags. lang="pascal": the fpc wrapper.
+    `-q` alone. lang="icon"/"raku": the one-step driver, no flags. lang="pascal": the fpc wrapper. lang="snocone":
+    snocone_oracle_run.sh, scrip --transpile then sbl -bf on the SNOBOL4 text (SPITBOL grades Snocone).
     No other --lang has an oracle wired here yet; refuses rather than guessing one.
 
     ⛔ WAS `-q -g halt` until 2026-09-05 (row prolog-every-non-package-source-...-with-oracle-refs,
@@ -363,6 +364,17 @@ def resolve_oracle_bin(paths, lang=""):
         if len(lines) != 2 or not lines[0] or not lines[1]:
             refuse(f"unexpected output from sbl_correctness_bin/sbl_lang_flags: {r.stdout!r}")
         return lines[0], lines[1]  # oracle binary path, language flags (e.g. "-bf")
+    if lang == "snocone":
+        # ⭐ SPITBOL GRADES SNOCONE (the grade side's mapping, _fatal_render_voice_for, says so too); snocone_oracle_run.sh is the one-step driver that
+        # transpiles the entry to SNOBOL4 text in a tmpdir and runs sbl -bf on it, so the ref is SPITBOL's answer to the faithful SNOBOL4 twin, never SCRIP's
+        # own run. sbl_correctness_bin is called here so a missing oracle refuses with lib_oracle_flags.sh's message rather than inside the wrapper.
+        r = subprocess.run(["bash", "-c", f". '{lib}' && sbl_correctness_bin"], capture_output=True, text=True)
+        if r.returncode != 0:
+            refuse(f"lib_oracle_flags.sh refused (sbl_correctness_bin): {r.stderr.strip()}")
+        wrapper = HARNESS_SCRIPTS / "snocone_oracle_run.sh"
+        if not wrapper.is_file():
+            refuse(f"snocone_oracle_run.sh missing at {wrapper} -- the transpile-then-SPITBOL driver")
+        return str(wrapper), ""   # no flags: the wrapper takes sbl's from sbl_lang_flags
     if lang == "prolog":
         r = subprocess.run(["bash", "-c", f". '{lib}' && swipl_bin"], capture_output=True, text=True)
         if r.returncode != 0:
@@ -443,7 +455,7 @@ def resolve_oracle_bin(paths, lang=""):
                f"ref and re-performed by test_gate_rebus_derived_refs_match_their_rival_oracle.sh. ⛔ Do NOT cut a "
                f"ref from SCRIP's own output: a ref cut from the implementation it grades proves only that the "
                f"implementation is deterministic")
-    refuse(f"no oracle wired for --lang {lang!r} in capture-oracle-refs yet (only snobol4/prolog/icon/pascal/raku so far)")
+    refuse(f"no oracle wired for --lang {lang!r} in capture-oracle-refs yet (only snobol4/snocone/prolog/icon/pascal/raku so far)")
 
 
 def _size_switches(heap_kb, stack_kb):
