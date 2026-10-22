@@ -1,0 +1,63 @@
+# box_cell_shapes.tsv -- THE CELL-SHAPE TABLE: the words each box kind carves on the spine at its alpha (ARCH-ZETA-ONE-COORDINATE 3.5 (iii);
+# ARCH-THREE-ZETAS-EMISSION 2 (ZALPHA) and 10 (3); the cto, CEO-1923). The planner's carve K_i is this row's alpha_words plus 16 x the spine
+# locals first used at the box plus a disjunction's arm extra. util_gen_box_cell_shapes.py writes SCRIP/src/planner/box_cell_shapes.inc from this
+# file (--write) and refuses a stale one (--check); the planner's zd_k_own reads the generated rows. Started from zd_k_own (zeta_plan.cpp) as it
+# stood at SCRIP c22b86a9b, row for row, so the first landing is byte-identical; a switch moves a kind's state into its own carve by editing its row.
+# ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. Columns:
+#   kind          the IR kind (IR_*), or * for any kind
+#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine)
+#   when          always | call_curmov (a call that moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
+#                 icn_suspend (an Icon suspend in a spine-cells graph) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
+#   gamma_release, omega_release, fenced    the gamma law's columns, '-' until pass (iv) reads them from here
+#   source        why the box carves what it carves
+kind	alpha_words	when	gamma_release	omega_release	fenced	source
+IR_MATCH_ARBNO	16	always	-	-	-	the ARBNO record
+*	32	call_curmov	-	-	-	the result cell beside the moved cursor
+IR_VAR	0	icn_local	-	-	-	the local's own cell is its home; the read carves nothing
+IR_SUSPEND	0	icn_suspend	-	-	-	the suspend passes its value up; its resume is the beta
+IR_TO	32	always	-	-	-	the value beside the counter and the limit
+IR_DISJUNCTION	arm_spine	has_operands	-	-	-	the arms' live cells (zd_dj_spine)
+IR_MATCH_DEFER	0	patv	-	-	-	a static deferred pattern resolves in place
+IR_DISJUNCTION	0	no_operands	-	-	-	no arms, nothing live
+IR_MATCH_RKRUN	0	always	-	-	-	a raku regex run marker
+IR_MATCH_RKCAPS	0	always	-	-	-	a raku capture start
+IR_MATCH_RKCAPE	0	always	-	-	-	a raku capture end
+IR_MATCH_RKLAND	0	always	-	-	-	a raku regex landing
+IR_ASSIGN	0	always	-	-	-	the assignment writes its target in place
+IR_GOTO	0	always	-	-	-	control only
+IR_GOTO_DEFERRED	0	always	-	-	-	control only
+IR_DEFINE	0	always	-	-	-	a definition, no value
+IR_MATCH_BEGIN	0	always	-	-	-	the match frame is the construct's shape, not a spine cell
+IR_MATCH_END	0	always	-	-	-	the match's discard
+IR_MATCH_REPLACE	0	always	-	-	-	the match's discard
+IR_STATEMENT	0	always	-	-	-	a statement boundary
+IR_STATEMENT_BEGIN	0	always	-	-	-	a statement boundary
+IR_STATEMENT_END	0	always	-	-	-	a statement boundary
+IR_STMT_MARK	0	always	-	-	-	a statement mark
+IR_SETEXIT_TEST	0	always	-	-	-	a test, no value
+IR_LINE_MARK	0	always	-	-	-	a source line record
+IR_MATCH_LIT	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_LEN	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_ANY	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_NOTANY	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_POS	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_RPOS	0	always	-	-	-	a matcher moves the cursor only
+IR_MATCH_ASSIGN_COND	0	always	-	-	-	a capture writes its variable
+IR_MATCH_ASSIGN_IMM	0	always	-	-	-	a capture writes its variable
+IR_MATCH_VALUE	0	always	-	-	-	the value rides the match
+IR_MATCH_ALTERNATE	0	always	-	-	-	the alternation's record is the match frame's
+IR_MATCH_FENCE1	0	always	-	-	-	a fence's record is the match frame's
+IR_MATCH_FENCE0	0	always	-	-	-	a fence's record is the match frame's
+IR_MATCH_ABORT	0	always	-	-	-	control only
+IR_BOUND	0	always	-	-	-	the bound's record is a frame word today (chunk 2, the switches)
+IR_UNMARK	0	always	-	-	-	a discard
+IR_CONJUNCTION	0	always	-	-	-	its value is its last operand's
+IR_CUT	0	always	-	-	-	a discard
+IR_GATE_ARM	0	always	-	-	-	control only
+IR_CLEANUP	0	always	-	-	-	control only
+IR_TABLE_HDR	0	always	-	-	-	the table header is resident
+IR_UNIFY_CONST	0	always	-	-	-	a unification binds in place
+IR_UNIFY_FIRST	0	always	-	-	-	a unification binds in place
+IR_UNIFY_VALUE	0	always	-	-	-	a unification binds in place
+IR_RETURN	0	always	-	-	-	the result leaves through the return block
+*	16	always	-	-	-	one DESCR, the value the box produces

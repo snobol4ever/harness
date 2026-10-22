@@ -76,6 +76,7 @@ test_gate_blocking_set_records_the_build_behaviour_ledger_before_the_fan_out.sh	
 test_gate_blocking_set_shards_agree_with_sequential.sh	WIRED	-	-	-
 test_gate_board_population_floor.sh	WIRED	-	-	-
 test_gate_boards_refuse_when_the_binary_moves.sh	WIRED	-	-	-
+test_gate_box_cell_shapes_inc_is_current.sh	WIRED	-	-	-
 test_gate_build_freshness_is_behavioural.sh	WIRED	-	-	-
 test_gate_builder_and_grader_agree_on_stdin_companion_spellings.sh	WIRED	-	-	-
 test_gate_bus_verbs_refuse_with_usage.sh	WIRED	-	-	-
