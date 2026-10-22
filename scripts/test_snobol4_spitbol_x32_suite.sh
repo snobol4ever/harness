@@ -92,7 +92,10 @@ FL3=""; FL4=""; UNG_LIST=""; DEFER_LIST=""; SELF_LIST=""; MASKED_TOTAL=0; MASKED
 stream_match() {  # stream_match <m3|m4> <rc>
     [ "$mask_major" = 1 ] && return 1
     python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/ALL.ref" "$name" "$W/$1.mn" --side=scrip < "$W/$1.out" > "$W/$1.cmp" || return 1
-    gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2"
+    gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2" && return 0
+    # ⭐ A PORT MAY ANSWER IN sbl's OWN VOICE (ceo CEO-1858 (2), CEO-1864 (3)): the error report on stdout and sbl's exit status, as
+    # snobol4dotnet does; the one comparison is lib_gate.sh's gate_port_answer_matches, offered under a port engine only (SCRIP's rows unmoved)
+    [ "$PORT" = 1 ] && gate_port_answer_matches "$W/o.cmp" "$W/$1.cmp" "$rcO" "$2"
 }
 stream_note() {  # stream_note <PASS|FAIL> <rc>
     if [ "$1" = PASS ] && [ "$mask_n" -gt 0 ]; then echo "stream: byte-equal stdout vs live sbl -bf, $mask_n line(s) masked by ALL.mask, rc=$2 (oracle rc=$rcO)"

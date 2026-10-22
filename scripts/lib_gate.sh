@@ -518,6 +518,16 @@ gate_oracle_stdout_match() {
     [ -n "$act_code" ] || return 1
     [ "$((10#$ora_code))" -eq "$((10#$act_code))" ]
 }
+# gate_port_answer_matches <oracle-stdout> <engine-stdout> <oracle-rc> <engine-rc> -- 0 when a PORT engine answered exactly as sbl -bf did, its
+# error report and compile errors on STDOUT where sbl writes them (ceo CEO-1858 (2) to hq_dotnet) and its exit status sbl's, 231 after a compile
+# error (CEO-1864 (3)): the two stdouts byte-equal once the fatal report's ACCOUNTING lines are dropped from both (stmts executed, execution time,
+# the three stmt / rates, REGENERATIONS, memory used and left: the engine's bookkeeping, never graded, CEO-420 (b) and util_spitbol_post_mortem.py),
+# and the two rcs equal. The accounting is dropped only after an ERROR banner, so an answer that prints such a line itself is still compared whole.
+# SCRIP's own voice (stderr, a nonzero exit) stays gate_oracle_stdout_match's; a runner offers this arm only under a port engine.
+gate_port_answer_matches() {
+    local f='/: ERROR [0-9][0-9]* -- /{pm=1} pm && /^(stmts executed|execution time msec|stmt \/ (microsec|millisec|second)|REGENERATIONS|memory (used|left) \(bytes\)) /{next} {print}'
+    [ -f "$1" ] && [ -f "$2" ] && [ "$3" = "$4" ] && cmp -s <(awk "$f" "$1") <(awk "$f" "$2")
+}
 # gate_verdict <violation-count> <what-was-violated> -- the computed verdict.  Never declared.
 gate_verdict() {
     if [ "${1:-0}" -ne 0 ] 2>/dev/null; then

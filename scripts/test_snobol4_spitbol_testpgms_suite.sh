@@ -44,6 +44,7 @@ fi
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority; a private fallback would grade a DIFFERENT LANGUAGE (s189: -bf is the only correct arm)"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
 . "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable"; exit 2; }
+. "$HERE/lib_gate.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_gate.sh unloadable -- gate_port_answer_matches, the port's compile-refusal arm (CEO-1864 (3))"; exit 2; }
 SBL="$(sbl_correctness_bin)" || exit 2
 FLAGS="$(sbl_lang_flags)"
 # ⛔⭐⭐ CEO-281 CLAUSE (2) -- SUPERSEDED BY CEO-1316 (2026-09-27): test5 and test8 are graded against sbl itself, through its post-mortem block (the CEO-1316 arm below); what follows is the history of why they once read against csnobol4.
@@ -154,8 +155,18 @@ for p in $progs; do
             got4="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$s4.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
             fi
             want="$(printf '%s' "$cr_pairs" | tr '\t\n' ': ' | sed 's/ *$//')"
-            _p3=0; _p4=0
-            if [ "$r3" -ne 0 ] && [ ! -s "$m3" ] && [ "$got3" = "$cr_pairs" ]; then M3P=$((M3P+1)); _p3=1
+            _p3=0; _p4=0; _pa=1
+            # ⭐ A PORT REFUSES IN sbl's OWN VOICE (ceo CEO-1864 (3), to hq_dotnet: "A port engine's compile-refusal arm compares stdout with sbl's,
+            # and yes, exit 231 after a compile error as sbl does"; CEO-1858 (2)): under a port engine the listing page and its diagnostics on stdout,
+            # masked by ALL.mask on both sides (the listing's identity line, CEO-1344), must equal sbl's and the rc must be sbl's; SCRIP's arm stays
+            if [ "$PORT" = 1 ]; then
+                _pa=0
+                python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/ALL.ref" "$p" "$ora.mn" --side=oracle < "$ora" > "$ora.pm" \
+                    && python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/ALL.ref" "$p" "$m3.mn" --side=scrip < "$m3" > "$m3.pm" \
+                    && gate_port_answer_matches "$ora.pm" "$m3.pm" "$orc" "$r3" && _pa=1
+            fi
+            if [ "$PORT" = 1 ] && [ "$_pa" = 1 ]; then M3P=$((M3P+1)); _p3=1
+            elif [ "$r3" -ne 0 ] && [ ! -s "$m3" ] && [ "$got3" = "$cr_pairs" ]; then M3P=$((M3P+1)); _p3=1
             else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got3" | tr '\t\n' ': ')], stdout $(grep -c '' "$m3") line(s))
 "; fi
             if [ "$PORT" = 1 ]; then :
@@ -163,7 +174,9 @@ for p in $progs; do
             else M4F=$((M4F+1)); RED_LINES="$RED_LINES  RED  $p m4 (compile rc=$r4; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got4" | tr '\t\n' ': ')], assembly $(grep -c '' "$s4") line(s))
 "; fi
             if [ "$_p3" = 1 ] && { [ "$PORT" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
-            if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS; else prog_row "$p" m3 FAIL "sbl refuses at compile ($want); SCRIP rc=$r3"; fi
+            if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS
+            elif [ "$PORT" = 1 ]; then prog_row "$p" m3 FAIL "sbl refuses at compile ($want, rc $orc); the engine rc=$r3, stdout against sbl's: $(diff "$ora.pm" "$m3.pm" 2>/dev/null | grep -c '^[<>]') line(s) differ"
+            else prog_row "$p" m3 FAIL "sbl refuses at compile ($want); SCRIP rc=$r3"; fi
             if [ "$_p4" = 1 ]; then prog_row "$p" m4 PASS; else prog_row "$p" m4 FAIL "sbl refuses at compile ($want); SCRIP compile rc=$r4"; fi
             CR_LINES="$CR_LINES  COMPILE-REFUSAL  $p  sbl rc $orc, line:code $want -- graded by code and line (CEO-1323)
 "

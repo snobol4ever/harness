@@ -95,3 +95,4 @@
 ../harness/scripts/test_gate_harness_stages_prolog_load_companions.sh
 ../harness/scripts/test_gate_container_package_runner_counts_its_containers_as_excl.sh
 ../harness/scripts/test_gate_test_request_takes_a_port_engine.sh
+../harness/scripts/test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh

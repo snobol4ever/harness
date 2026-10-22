@@ -47,6 +47,7 @@ test_gate_a_descr_is_minted_whole_never_field_by_field.sh	WIRED	-	-	-
 test_gate_a_fail_operand_folds_instead_of_refusing_at_the_binop_guard.sh	WIRED	-	-	-
 test_gate_a_frame_local_written_at_a_join_fix_depth_reaches_its_one_cell.sh	WIRED	-	-	-
 test_gate_a_nested_alternation_receded_into_resumes_its_own_arm_not_the_outer_beta.sh	WIRED	-	-	-
+test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh	WIRED	-	-	-
 test_gate_a_program_with_more_functions_than_the_old_cell_table_held_compiles_and_runs.sh	WIRED	-	-	-
 test_gate_a_rungs_with_xfails_never_reads_done.sh	WIRED	-	-	-
 test_gate_a_stack_overflow_exit_flushes_stdout.sh	WIRED	-	-	-
@@ -1279,6 +1280,7 @@ test_gate_template_medium_invisible.sh	WIRED	-	-	-
 test_gate_template_returns_count_per_function.sh	WIRED	-	-	-
 test_gate_template_watch_names_a_planted_violation_by_commit.sh	WIRED	-	-	-
 test_gate_term_wordref_ratchet.sh	WIRED	-	-	-
+test_gate_test_request_takes_a_port_engine.sh	WIRED	-	-	-
 test_gate_testpgms_grades_a_spitbol_post_mortem_through_the_one_error_voice.sh	WIRED	-	-	-
 test_gate_the_code_pool_refuses_loudly_at_its_cap_never_a_wild_jump.sh	WIRED	-	-	-
 test_gate_the_default_stack_and_heap_are_spitbols.sh	WIRED	-	-	-

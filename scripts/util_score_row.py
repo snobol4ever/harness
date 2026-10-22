@@ -1788,13 +1788,15 @@ def cmd_from_progress(a):
             # a table whose entries are not <name>.<ext> files beside it (INRIA's entries are tests inside family files) ships its table
             if pop and sum(1 for e in pop if e in shipped) * 2 < len(pop):
                 shipped = set()
-        for fn, acc in (("EXCLUDED.tsv", xnames), ("CONTAINERS.tsv", cnames)):
+        # ⭐ A PORT KEY ALSO LEAVES OUT ITS ENGINE'S OWN LIST, EXCLUDED.<engine>.tsv (ceo CEO-1864 (4); lib_excluded.sh reads it for the runners)
+        for fn, acc in (("EXCLUDED.tsv", xnames), ("CONTAINERS.tsv", cnames)) + ((("EXCLUDED.%s.tsv" % port, xnames),) if port else ()):
             fp = os.path.join(tdir, fn)
             if os.path.exists(fp):
                 for line in open(fp, encoding="utf-8", errors="replace"):
                     if line.strip() and not line.startswith("#"):
-                        acc.add(_stem(line.split("\t")[0]))
-                        nex += fn == "EXCLUDED.tsv"
+                        n_ = _stem(line.split("\t")[0])
+                        nex += fn == "EXCLUDED.tsv" or (fn != "CONTAINERS.tsv" and n_ not in acc)   # a name both lists carry is excluded once
+                        acc.add(n_)
         pkg_pop = (set(pop) | shipped) - xnames - cnames
     _owed = set()
     if pkg and os.sep + os.path.join("packages", "icon") + os.sep in tdir + os.sep:

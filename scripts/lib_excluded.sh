@@ -51,15 +51,23 @@ declare -F inventory_refuse >/dev/null 2>&1 || inventory_refuse() { echo "⛔ IN
 # rc 0 whose construct has NO observable a do-nothing engine lacks (a comment-only null program), so no output it could carry would still witness the
 # construct. ⛔ Only for such an entry -- never for one that can OUTPUT what it computed, which is tightened and its ref re-cut from the oracle. The
 # evidence names the oracle's measurement (what sbl -bf printed, and its rc).
+# ⭐ AND AN ENGINE'S OWN LIST (ceo CEO-1864 (4), 2026-10-21, to hq_dotnet; landed by the coo on CEO-1872): EXCLUDED.<engine>.tsv beside the package's
+# EXCLUDED.tsv is read only while S4E_ENGINE names that engine, so its rows leave that engine's denominator and no other's; SCRIP's rows read
+# EXCLUDED.tsv alone, as before. Class LON_UNICODE_BY_DESIGN is admitted on EXCLUDED.dotnet.tsv and nowhere else (ceo CEO-1859, Lon, verbatim:
+# "Continue having snobol4dotnet support Unicode as designed."): a program whose only difference from sbl -bf is bytes against characters, its
+# evidence the measured difference. util_score_row.py from-progress reads the same file for an <engine> key.
 inventory_excluded_names() {
-    local d="${1:-${INV_DIR:-}}" f
-    f="$d/EXCLUDED.tsv"
-    [ -f "$f" ] || return 0
-    awk -F'\t' '
-        $0 ~ /^#/ || NF == 0 { next }
-        NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE") || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
-        { print $1 }
-        END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER, SCRIP_EXCEEDS_ORACLE or FAKEABLE_NO_OBSERVABLE<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
+    local d="${1:-${INV_DIR:-}}" f e="${S4E_ENGINE:-scrip}" extra
+    for f in "$d/EXCLUDED.tsv" "$d/EXCLUDED.$e.tsv"; do
+        [ "$f" = "$d/EXCLUDED.scrip.tsv" ] && continue
+        [ -f "$f" ] || continue
+        extra=""; [ "$f" = "$d/EXCLUDED.dotnet.tsv" ] && extra=LON_UNICODE_BY_DESIGN
+        awk -F'\t' -v extra="${extra:-\001}" '
+            $0 ~ /^#/ || NF == 0 { next }
+            NF < 3 || ($2 != "NOT_SPITBOL_DIALECT" && $2 != "NEEDS_GRAPHICS_FACILITY" && $2 != "NEEDS_TERMINAL" && $2 != "NEEDS_NETWORK" && $2 != "NEEDS_LOADFUNC" && $2 != "DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27" && $2 != "OUTSIDE_CLPFD" && $2 != "NO_ORACLE_ANSWER" && $2 != "SCRIP_EXCEEDS_ORACLE" && $2 != "FAKEABLE_NO_OBSERVABLE" && $2 != extra) || length($3) < 60 { bad = bad " " $1 "(" NF " fields, class " $2 ")"; next }
+            { print $1 }
+            END { if (bad != "") { print "MALFORMED:" bad > "/dev/stderr"; exit 2 } }' "$f" || { inventory_refuse "$f carries a malformed row (name<TAB>NOT_SPITBOL_DIALECT, NEEDS_GRAPHICS_FACILITY, NEEDS_TERMINAL, NEEDS_NETWORK, NEEDS_LOADFUNC, DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, OUTSIDE_CLPFD, NO_ORACLE_ANSWER, SCRIP_EXCEEDS_ORACLE or FAKEABLE_NO_OBSERVABLE (and LON_UNICODE_BY_DESIGN on EXCLUDED.dotnet.tsv alone)<TAB>evidence of 60+ chars naming the feature and the oracle's verdict)"; return 2; }
+    done
 }
 # inventory_is_excluded <pkgdir> <name> -- 0 when EXCLUDED.tsv names <name> (bare or package-relative), 1 otherwise.
 inventory_is_excluded() {

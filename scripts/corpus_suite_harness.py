@@ -725,7 +725,8 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
 # the fixture that prints nothing would match the fixture that prints a clock. Line count and position are
 # preserved by rewriting the matched line to a canonical marker in BOTH streams.
 def read_mask_sidecar(ref_path):
-    """<stem>.mask beside the ref: `entry<TAB>python-regex<TAB>reason`, or `entry<TAB>L<n><TAB>reason` for a
+    """<stem>.mask beside the ref: `entry<TAB>python-regex<TAB>reason[<TAB>engine=NAME[,NAME]]` (the qualifier, CEO-1864 (1), keeps a
+    row from every engine it does not name), or `entry<TAB>L<n><TAB>reason` for a
     fixed OUTPUT line number (1-indexed), when content alone cannot reach the value (CEO-1167 ruling on
     gc2.icn): apply_line_mask sees one line at a time, with no neighbor and no position, so a value sharing
     its digit alphabet with legitimate surrounding output cannot be isolated by a content regex without also
@@ -749,6 +750,18 @@ def read_mask_sidecar(ref_path):
             # refuse() is the one authority (CEO-233, one refusal code and it is 2); the local raise bypassed it.
             refuse("%s: every mask row needs entry<TAB>regex-or-L<n><TAB>reason, and a reason that "
                    "is empty is a mask nobody can audit -- got %r" % (mp, ln))
+        # ⭐ THE ENGINE QUALIFIER (ceo CEO-1864 (1), 2026-10-21, to hq_dotnet; landed by the coo on CEO-1872): an optional fourth column
+        # engine=NAME[,NAME] offers the row only to the engines it names (S4E_ENGINE, scrip by default); a row without one is every engine's.
+        # testpgms test1's six CEO-1293 rows are SCRIP's (SCRIP keeps VALUE, sbl and snobol4dotnet raise error 22, CEO-1858 (3)), so they carry
+        # engine=scrip and a port that answers as sbl does is graded on the oracle's whole stream. A name no engine has, or any other fourth
+        # column, is refused: a typo would silently offer a mask to nobody, or to everybody.
+        if len(parts) > 3 and parts[3].strip():
+            em = re.match(r"^engine=([a-z0-9]+(?:,[a-z0-9]+)*)$", parts[3].strip())
+            if not em or any(n not in ENGINES for n in em.group(1).split(",")):
+                refuse("%s: a mask row's fourth column is engine=NAME[,NAME] with each NAME one of %s (ceo CEO-1864 (1)) -- got %r"
+                       % (mp, ", ".join(ENGINES), ln))
+            if _engine() not in em.group(1).split(","):
+                continue
         pat = parts[1].strip()
         m = re.match(r"^L(\d+)$", pat)
         # ⭐ ORACLE-ONLY:<exact line> (ceo CEO-1316 (2), 2026-09-27, on Lon's "I want to see TPgm go to 8/8"): the one mask kind that
