@@ -1900,10 +1900,21 @@ def cmd_from_progress(a):
     timed = sum(1 for v in last.values() if _f(v[4]) > 0)        # a reading taken before the runner recorded seconds carries 0
     if _ledger_complete is not None:
         timed = len(last) if _ledger_complete else 0
+    # ⭐ A MASTER'S EXCLUDED.tsv AND CONTAINERS.tsv NAMES LEAVE ITS DENOMINATOR and show as its Excl, as its own runner's row leaves them (the coo
+    # 2026-10-22, COO-394): population_inputs dropped their readings but the entry stayed in pop, so SnoRungs read 2034/2035 with its one EXCLUDED.tsv entry
+    # (simple_program_11, corpus 59210542e, FAKEABLE_NO_OBSERVABLE) counted unread, where test_corpus_snobol4.sh publishes pass / (shipped - EXCLUDED)
+    _mexcl = None
+    if not pkg and key in _aud.SIDECAR:
+        _mx = _aud.container_stems(corpus, key)
+        _n0 = len(pop)
+        pop = [e for e in pop if _aud.stem(e) not in _mx]
+        _mexcl = _n0 - len(pop)
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
     halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
     excluded = None
+    if _mexcl:
+        excluded = _mexcl
     if pkg:
         def _both(e):
             r = last_by.get(e, {})
