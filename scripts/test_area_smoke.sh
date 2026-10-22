@@ -34,7 +34,7 @@ LIST=""; FEATS=(); for a in "$@"; do case "$a" in --list-only) LIST=--list-only;
 # selector -- for each origin landing the coo runs the feature the diff marks FIRST, through this map and the attribute rows -- and no other
 # seat runs it (a shared node selects hundreds of programs in both modes; fourteen seats ran it per landing and the load read 29 on 16 cores).
 # --list-only stays open to every seat: the selection costs nothing and tells a lander which feature its diff marks.
-if [ -z "$LIST" ]; then _as_seat="$(bash "$HERE/lib_one_runner.sh" --seat 2>/dev/null)"; if [ "$_as_seat" != coo ] && [ -z "${S4E_ONE_TEST_ADMIT:-}" ]; then echo "AREA_SMOKE REFUSE(2): ZERO OR ONE TEST PER SEAT (CEO-1671) -- the smoke runs only in the coo's loop; seat ${_as_seat:-?} may run --list-only, and its row's DONE-WHEN"; exit 2; fi; fi
+# CEO-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the CEO-1671 coo-only refusal is released.
 
 # expand_features: `*` -> every feature column of every table; `lang:<x>` -> the columns of x's tables; else itself.
 expand_features() {

@@ -206,7 +206,7 @@ one_runner_who() {
 }
 one_runner_seat_admitted() {
   local seat="$1" who="$2" w
-  for w in $who; do [ "$seat" = "$w" ] && return 0; done
+  for w in ${who//,/ }; do [ "$seat" = "$w" ] && return 0; done
   return 1
 }
 # ⛔⭐ THE BINARY IS STAMPED WHERE EVERY BOARD STARTS (coo 2026-09-16; hq_raku's report against themselves, ceo CEO-802; row instruments-

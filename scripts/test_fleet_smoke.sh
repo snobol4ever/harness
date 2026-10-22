@@ -15,7 +15,7 @@ LANGS="snobol4 icon prolog snocone rebus raku pascal polyglot"
 RECORD="${S4E_SMOKE_RECORD:-/home/resources/progress/SMOKE.tsv}"
 if [ "${1:-}" = --list ]; then for l in $LANGS; do echo "../harness/scripts/test_smoke_$l.sh"; done; exit 0; fi
 seat="$(bash "$HERE/lib_one_runner.sh" --seat 2>/dev/null)"
-if [ "$seat" != coo ] && [ -z "${S4E_ONE_TEST_ADMIT:-}" ]; then echo "FLEET_SMOKE REFUSE(2): ZERO OR ONE TEST PER SEAT (CEO-1671) -- the fleet smoke is the coo's tier-1 run; seat ${seat:-?} verifies a landing by its row's DONE-WHEN alone"; exit 2; fi
+# CEO-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the CEO-1671 coo-only refusal is released.
 [ -x ./scrip ] || { echo "FLEET_SMOKE REFUSE(2): ./scrip is not built"; exit 2; }
 for l in $LANGS; do [ -f "../harness/scripts/test_smoke_$l.sh" ] || { echo "FLEET_SMOKE REFUSE(2): ../harness/scripts/test_smoke_$l.sh is missing"; exit 2; }; done
 tree="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"; ctree="$(git -C "$ROOT/../corpus" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"

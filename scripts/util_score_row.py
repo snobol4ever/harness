@@ -1074,7 +1074,7 @@ def one_runner_declines(measurer, what, lang=None):
         print("⚠ LANE OWNER NOT DETERMINED: %s -- writing %s as the 2026-09-03 FACT RULE requires (any suite run "
               "updates the leaderboard); the seat that measured it stays the writer of record." % (why, what))
         return None
-    if (measurer or "").strip() == writer:
+    if (measurer or "").strip() in [w.strip() for w in writer.split(",")]:
         print("  lane owner: %s writes %s rows (%s)" % (writer, lang or "these", why))
         return None
     sw = os.environ.get("S4E_SCORE_WRITE", "").strip()

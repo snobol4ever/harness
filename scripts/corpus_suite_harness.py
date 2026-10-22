@@ -2994,10 +2994,11 @@ def _one_runner_who(lang=None):
     table = dict(kv.split("=", 1) for kv in lanes.split() if "=" in kv)
     # ⛔⭐ THE ENGINE IS A RUNNER SETTING (CEO-1822), word for word lib_one_runner.sh:one_runner_who: under a port engine the lane is
     # <lang>@<engine> and the bare key does not admit it; "all" is the bare keys only, so a port HQ is never a runner of every board.
+    # A lane may name several seats, comma-separated (CEO-1893: the language's HQs beside the coo); each is admitted.
     if lang == "all":
-        return sorted(set(v for k, v in table.items() if "@" not in k))
+        return sorted(set(s for k, v in table.items() if "@" not in k for s in v.split(",") if s))
     key = lang if _engine() == "scrip" else f"{lang}@{_engine()}"
-    return [table[key]] if key in table else []
+    return [s for s in table[key].split(",") if s] if key in table else []
 
 def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     """ONE RUNNER PER LANGUAGE (Lon 2026-09-10 CEO-523 partitioned by Lon 2026-09-16 CEO-775): a run of a suite UNDER THE CORPUS
@@ -3045,7 +3046,12 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
 
 def cmd_run(args):
     paths = resolve_paths()
-    _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))
+    # ⭐ A HANDFUL OF NAMED ENTRIES IS NOT A BOARD (Lon 2026-10-22: "An HQ knows it is done when the program it fixes fails before and passes
+    # after a fix. And it can run a handful of related programs based on attributes to check for breakage."; ceo CEO-1893): a run whose
+    # --partition names only entry:<name> parts, at most eight, is any seat's own test of its program and is admitted for every seat.
+    _parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]
+    if not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):
+        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))
     # ⛔⭐ ONE MEMORY SCOPE AT THE OUTERMOST RUN (row instrument-698-runners-..., the coo 2026-09-23; util_mem_scope.py): an
     # ADMITTED run over a corpus population -- the guard's own test, just above -- re-runs itself once inside ONE cgroup scope at
     # the board cap unless it is already inside one; a gate's mktemp fixture is not a board and is left alone (CEO-547). After the
