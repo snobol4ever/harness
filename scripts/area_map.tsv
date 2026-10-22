@@ -108,6 +108,7 @@ lang:prolog	src/templates/bb/bb_unify_struct.cpp
 lang:prolog	src/templates/bb/bb_unify_first.cpp
 lang:prolog	src/templates/bb/bb_unify_value.cpp
 lang:prolog	src/templates/bb/bb_cleanup.cpp
+lang:prolog	src/templates/bb/bb_table_hdr.cpp
 lang:raku	src/parsers/raku/
 lang:raku	src/lower/lower_raku.c
 lang:pascal	src/parsers/pascal/
