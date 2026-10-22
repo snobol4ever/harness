@@ -444,6 +444,7 @@ test_gate_no_xfail_survives.sh	WIRED	-	-	-
 test_gate_no_zeta_frame_switches.sh	WIRED	-	-	-
 test_gate_nreturn_by_name_value_broken.sh	WIRED	-	-	-
 test_gate_one_function_installs_a_compiled_proc_for_the_mode_3_loop_and_raku_eval.sh	WIRED	-	-	-
+test_gate_one_retains_table.sh	WIRED	-	-	-
 test_gate_one_runner_admits_a_port_engine_by_lang_at_engine_and_keys_its_rows.sh	WIRED	-	-	-
 test_gate_one_runner_fixture_is_admitted_only_outside_the_shared_corpus.sh	WIRED	-	-	-
 test_gate_one_runner_one_board.sh	WIRED	-	-	-
