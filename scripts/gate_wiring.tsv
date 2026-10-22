@@ -41,6 +41,7 @@
 # 166 -> 165 (coo 2026-09-25): test_gate_diag_regs_survive.sh retired -- its r10 statement number was removed by design at 2a81a02db, and r11 cannot stand in, because a later box stamp masks a planted clobber; the survival property is test_gate_rtx_entries_keep_the_rtcc_four.sh's.
 test_gate_a_blocking_set_death_names_its_killer.sh	WIRED	-	-	-
 test_gate_a_cgroup_kill_is_a_refusal_not_a_red.sh	WIRED	-	-	-
+test_gate_a_childs_output_is_bounded_and_it_dies_with_its_harness.sh	WIRED	-	-	-
 test_gate_a_compile_refusal_grades_through_the_one_voice_in_both_modes.sh	WIRED	-	-	-
 test_gate_a_compiled_program_runs_on_a_stack_it_maps_itself.sh	WIRED	-	-	-
 test_gate_a_descr_is_minted_whole_never_field_by_field.sh	WIRED	-	-	-
