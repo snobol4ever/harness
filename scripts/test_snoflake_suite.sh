@@ -288,6 +288,11 @@ compile_m4() { local sno="$1" out="$2" t rc ca; t="$(mktemp -d)"
     gcc -c "$t/p.s" -o "$t/p.o" 2>/dev/null || { rm -rf "$t"; return 1; }
     gcc "$t/p.o" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$out" 2>/dev/null || { rm -rf "$t"; return 1; }
     rm -rf "$t"; }
+# dump_tail <sno> <lst>: the &DUMP termination dump a listing sink swallowed, recovered from <lst> -- printed only when the fixture sets &DUMP and
+# <lst> holds a `dump of ` header (the sbl arm's comment below says why, and why the blank lines above the header come with it)
+dump_tail() {
+    grep -qE '&DUMP[[:space:]]*=' "$1" 2>/dev/null && [ -s "$2" ] && grep -qE '^dump of ' "$2" || return 0
+    awk '/^dump of /{f=1; for(i=1;i<=nb;i++) print ""; nb=0} !f && /^[[:space:]]*$/{nb++; next} !f{nb=0; next} f' "$2"; }
 run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
     local inp=/dev/null; [ "$HASINP" = 1 ] && inp="$W/inp"
     case "$1" in
@@ -301,7 +306,12 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         m3)  cp -pf "$2" "$RUN/f.sno"
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
              local sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
-             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
+             [ "$PORT" = 1 ] && [ -n "$SCRIP_LIST_SINK" ] && rm -f "$SCRIP_LIST_SINK"
+             GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}"
+             # ⭐ A PORT THAT HONOURS THE SINK WRITES ITS &DUMP INTO IT, AS sbl DOES (hq_dotnet 2026-10-22, measured by the coo: run_snobol4dotnet.sh hands
+             # snobol4dotnet the sink as -o=, and on dump-ordered its listing is byte-identical to sbl's, stdout 0 bytes on both), so a port's dump is
+             # recovered from its own sink exactly as the oracle's is from $SBL_SINK; SCRIP prints its dump on stdout and keeps the arm it had.
+             [ "$PORT" = 1 ] && [ -n "$SCRIP_LIST_SINK" ] && { GOT="${GOT}$(dump_tail "$2" "$SCRIP_LIST_SINK"; printf .)"; GOT="${GOT%.}"; };;
         m4)  GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
         # ⛔⭐ THE ORACLE IS HANDED A SHORT NAME, NEVER THE ABSOLUTE PATH, AND IT IS A GRADING BUG IF YOU
         # "TIDY" THIS BACK (hq_B 2026-09-04, measured). SPITBOL formats its diagnostic as
@@ -332,16 +342,11 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
         sbl) cp -pf "$2" "$RUN/f.sno"
              rm -f "${SBL_SINK#-o=}.lst"
              GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS $SBL_SINK f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}"
-             if grep -qE '&DUMP[[:space:]]*=' "$2" 2>/dev/null; then
-                 _lst="${SBL_SINK#-o=}.lst"
-                 if [ -s "$_lst" ] && grep -qE '^dump of ' "$_lst"; then
-                     # ⛔ THE BLANK LINES IMMEDIATELY ABOVE THE FIRST `dump of ` BELONG TO THE DUMP. SPITBOL
-                     # writes three of them, and so does SCRIP -- measured byte-for-byte on dump-ordered --
-                     # so a split that starts exactly at the header hands the oracle side three fewer lines
-                     # than the compiler's and turns one false red into a different false red.
-                     GOT="${GOT}$(awk '/^dump of /{f=1; for(i=1;i<=nb;i++) print ""; nb=0} !f && /^[[:space:]]*$/{nb++; next} !f{nb=0; next} f' "$_lst"; printf .)"; GOT="${GOT%.}"
-                 fi
-             fi;;
+             # ⛔ THE BLANK LINES IMMEDIATELY ABOVE THE FIRST `dump of ` BELONG TO THE DUMP. SPITBOL
+             # writes three of them, and so does SCRIP -- measured byte-for-byte on dump-ordered --
+             # so a split that starts exactly at the header hands the oracle side three fewer lines
+             # than the compiler's and turns one false red into a different false red (dump_tail, above).
+             GOT="${GOT}$(dump_tail "$2" "${SBL_SINK#-o=}.lst"; printf .)"; GOT="${GOT%.}";;
         csn) GOT="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$CSN" "$2" < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}";;
     esac; }
 # ⛔⭐ EVERY CAPTURE ABOVE, AND EVERY MASKED STREAM BELOW, KEEPS ITS TRAILING NEWLINES (Lon 2026-10-21, "measuring failure not success"; ceo CEO-1865): a bare $(...) strips them, so an

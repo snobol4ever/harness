@@ -12,13 +12,15 @@
 # reads EXCLUDED.dotnet.tsv under S4E_ENGINE=dotnet and not under scrip or jvm. (8) LON_UNICODE_BY_DESIGN is refused rc 2 on EXCLUDED.tsv and on
 # EXCLUDED.jvm.tsv. (9) util_score_row.py from-progress leaves a port key's engine list out of its denominator, a name both lists carry counted once in
 # Excl, and the SCRIP key reads EXCLUDED.tsv alone. (10) the x64 and x32 runners offer gate_port_answer_matches after SCRIP's arm and only under a port
-# engine, and the testpgms compile-refusal arm grades a port by it.
+# engine, and the testpgms compile-refusal arm grades a port by it. (11) the snoflake runner recovers a port's &DUMP termination dump from the
+# port's own listing sink, as it recovers sbl's from $SBL_SINK (hq_dotnet 2026-10-22: snobol4dotnet takes the sink as -o= and writes the dump there).
 # PROVEN TO FAIL on harness origin 6a20d66 (this gate copied beside its scripts): arms 1, 2, 3, 7, 8, 9 and 10 FAIL (no qualifier: the scrip-only row is
 # offered to dotnet and the fourth column is ignored; no gate_port_answer_matches; no engine list is read, so none refuses). Arm 9 alone FAILS on these
 # edits with the shared-name dedupe taken out of from-progress (2/2 excluded=3: b counted from both lists).
+# Arm 11 FAILS on harness origin 601a389 (no dump_tail: a port's dump stays in its sink and dump-ordered@dotnet read FAIL rc=0 vs sbl -bf).
 set -u
 H="$(cd "$(dirname "$0")" && pwd)"; G=a_port_answers_in_sbls_voice_and_reads_its_own_exclusions; fail=0; examined=0
-for f in corpus_suite_harness.py lib_gate.sh lib_excluded.sh util_score_row.py test_snobol4_spitbol_x64_suite.sh test_snobol4_spitbol_x32_suite.sh test_snobol4_spitbol_testpgms_suite.sh; do
+for f in corpus_suite_harness.py lib_gate.sh lib_excluded.sh util_score_row.py test_snobol4_spitbol_x64_suite.sh test_snobol4_spitbol_x32_suite.sh test_snobol4_spitbol_testpgms_suite.sh test_snoflake_suite.sh; do
   [ -f "$H/$f" ] || { echo "REFUSE(2) [$G]: no $H/$f"; exit 2; }
 done
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
@@ -58,6 +60,7 @@ o9b="$(S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" python3 "$H/util_score_
 arm "(9) from-progress: zzpkg@dotnet is 2/2 excluded=2 (b once, c by the engine list); zzpkg is 3/3 excluded=1" 'grep -q "would set zzpkg@dotnet -> 2/2 excluded=2 " <<<"$o9a" && grep -q "would set zzpkg -> 3/3 excluded=1 " <<<"$o9b"'
 wired() { grep -qF '    gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2" && return 0' "$1" && grep -qF '    [ "$PORT" = 1 ] && gate_port_answer_matches "$W/o.cmp" "$W/$1.cmp" "$rcO" "$2"' "$1"; }
 arm "(10) x64 and x32 offer the port arm after SCRIP's and only under a port engine; testpgms grades a port's compile refusal by it" 'wired "$H/test_snobol4_spitbol_x64_suite.sh" && wired "$H/test_snobol4_spitbol_x32_suite.sh" && grep -qF '"'"'&& gate_port_answer_matches "$ora.pm" "$m3.pm" "$orc" "$r3" && _pa=1'"'"' "$H/test_snobol4_spitbol_testpgms_suite.sh"'
+arm "(11) snoflake recovers a port's dump from the port's own sink, and sbl's from its sink, by the one dump_tail" 'grep -qF '"'"'[ "$PORT" = 1 ] && [ -n "$SCRIP_LIST_SINK" ] && { GOT="${GOT}$(dump_tail "$2" "$SCRIP_LIST_SINK"; printf .)"'"'"' "$H/test_snoflake_suite.sh" && grep -qF '"'"'GOT="${GOT}$(dump_tail "$2" "${SBL_SINK#-o=}.lst"; printf .)"'"'"' "$H/test_snoflake_suite.sh"'
 [ "$fail" = 0 ] || { printf '%s\n' "$o9a" | grep -E 'would set|REFUSE' | head -2; printf '%s\n' "$o9b" | grep -E 'would set|REFUSE' | head -2; }
 echo "GATE [$G] examined=$examined failed=$fail"
 [ $fail = 0 ] || { echo "RED [$G]"; exit 1; }
