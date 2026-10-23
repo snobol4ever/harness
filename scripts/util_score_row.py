@@ -1946,11 +1946,12 @@ def cmd_from_progress(a):
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
     halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
-    if rr_excl:
-        _mexcl = len(rr_excl)   # the runner's own out-of-denominator members (RR_EXCL), as its board line's excluded= reads
     excluded = None
     if _mexcl:
         excluded = _mexcl
+    if rr_excl is not None:
+        excluded = len(rr_excl)   # the runner's own out-of-denominator members (RR_EXCL), 0 included: a cell the runner left stale is cleared (ProBench
+                                  # read EXCLUDED=1 for eleven days after queens_clpfd re-entered on 10-11, the runner's own write omitting excluded= at 0)
     if pkg:
         def _both(e):
             r = last_by.get(e, {})

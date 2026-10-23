@@ -13,7 +13,8 @@
 #   3 the raku bench runner lists k1 and k2 and names k3 (OUTSIDE.tsv OUTSIDE_SLOW) RR_EXCL; raku-bench-ref assembles 2/2 excluded=1
 #   4 an S4E_CHUNK in from-progress's environment does not narrow the population (still 1/2)
 #   5 a runner that lists no member (an empty demo tree) refuses rc 2 -- a population of zero is never a row
-# FAIL-ONCE: on util_score_row.py before this gate's landing every from-progress here refuses "no suite table for key" (rc 2) -- arms 2-5 red.
+#   6 a runner that names nothing out of the denominator reads excluded=0 -- a cell the runner's own write left stale is cleared (ProBench, 10-11..10-23)
+# FAIL-ONCE: on util_score_row.py before this gate's landing every from-progress here refuses "no suite table for key" (rc 2) -- arms 2-6 red.
 set -uo pipefail
 GATE_NAME=test_gate_from_progress_takes_a_bench_or_demo_population_from_its_runner
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -45,7 +46,10 @@ o4="$(S4E_CHUNK=entry:alpha python3 "$SR" from-progress --suite prolog-demos --d
 ck "4 an S4E_CHUNK in the environment does not narrow the population (1/2)" 'grep -q "would set prolog-demos -> 1/2 excluded=1 " <<<"$o4"'
 o5="$(DEMOS_DIR="$E" python3 "$SR" from-progress --suite icon-demos --dry-run 2>&1)"; r5=$?
 ck "5 a runner that lists no member refuses rc 2 (rc $r5)" '[ "$r5" = 2 ] && grep -q "^REFUSE(2)" <<<"$o5"'
-echo "population: 5 arms, a scratch demo tree of 3 (1 container), a scratch raku bench of 3 (1 OUTSIDE), 8 progress rows"
+Z="$T/corpus2/demos/prolog"; mkdir -p "$Z/alpha" "$Z/beta"; cp "$D/alpha/alpha.pl" "$D/alpha/alpha.ref" "$Z/alpha/"; cp "$D/beta/beta.pl" "$D/beta/beta.ref" "$Z/beta/"
+o6="$(S4E_CORPUS_ROOT="$T/corpus2" DEMOS_DIR="$Z" python3 "$SR" from-progress --suite prolog-demos --dry-run 2>&1)"
+ck "6 a runner that names nothing out reads excluded=0, never a stale count (1/2 excluded=0)" 'grep -q "would set prolog-demos -> 1/2 excluded=0 " <<<"$o6"'
+echo "population: 6 arms, a scratch demo tree of 3 (1 container), a scratch raku bench of 3 (1 OUTSIDE), 8 progress rows"
 if [ "$fails" != 0 ]; then printf '%s\n' "$o2" "$o3" "$o5" | grep -E 'REFUS|would set' | head -4 | sed 's/^/    /'; echo "⛔ GATE FAIL [$GATE_NAME]: $fails arm(s) red"; exit 1; fi
 echo "✅ GATE PASS [$GATE_NAME]: a bench or demo row assembles from the readings over the population its runner lists"
 exit 0
