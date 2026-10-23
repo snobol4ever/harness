@@ -1575,6 +1575,31 @@ FROM_PROGRESS_MASTERS = {"sno-rungs": "tests/snobol4", "icn-rungs": "tests/icon"
 # demos/<lang>/<path>. A PORT's row only: SCRIP's bench and demo rows are written from their runner's board line, as before.
 FROM_PROGRESS_CENSUS = {"snobol4-bench-ref": "benchmarks/snobol4", "snobol4-demos": "demos/snobol4"}
 _DEMO_EXTS = (".sno", ".icn", ".pl", ".sc", ".pas", ".raku", ".reb")
+# ⭐ SCRIP'S BENCH AND DEMO ROWS FROM THE PER-PROGRAM READINGS, THE POPULATION FROM THE RUNNER ITSELF (the coo 2026-10-23, on the ceo's CEO-1926/1927
+# word, verbatim: "from-progress: yes, teach it the bench and demo keys, so a one-program re-grade writes those rows."): under S4E_LIST=1 the runner
+# prints the members it grades (RR_POP <key>, the program key its progress rows carry) and those it names out of the denominator (RR_EXCL <key>:
+# OUTSIDE.tsv, a demo tree's CONTAINERS.tsv) and grades nothing (lib_rr.sh rr_list), so the enumeration stays the runner's one rule. A bench runner
+# joins this map when it carries rr_list (the seam census, CEO-1927).
+FROM_PROGRESS_RUNNER_POP = {"raku-bench-ref": ("benchmarks/raku", ["test_raku_bench_suite.sh"]),
+                            "prolog-bench-ref": ("benchmarks/prolog", ["test_prolog_bench_suite.sh"])}
+for _l in ("icon", "prolog", "snobol4", "snocone", "scriptix", "pascal", "raku", "rebus"):
+    FROM_PROGRESS_RUNNER_POP["%s-demos" % _l] = ("demos/%s" % _l, ["test_demos_suite.sh", _l])
+
+
+def _runner_population(key):
+    """(members, excluded) as the key's runner enumerates them under S4E_LIST=1, or a REFUSE string (the runner refused or printed no member)."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    argv = ["bash", os.path.join(here, FROM_PROGRESS_RUNNER_POP[key][1][0])] + FROM_PROGRESS_RUNNER_POP[key][1][1:]
+    env = {k: v for k, v in os.environ.items() if k not in ("S4E_CHUNK", "S4E_RR")}
+    env["S4E_LIST"] = "1"
+    r = subprocess.run(argv, cwd=os.path.join(here, "..", "..", "SCRIP"), env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300)
+    pop = [l[7:].strip() for l in r.stdout.splitlines() if l.startswith("RR_POP ")]
+    exc = [l[8:].strip() for l in r.stdout.splitlines() if l.startswith("RR_EXCL ")]
+    if r.returncode != 0 or not pop:
+        why = (r.stderr or r.stdout).strip().splitlines()
+        return "REFUSE(2): from-progress: %s's runner (%s, S4E_LIST=1) listed %d member(s), rc %d: %s" % (key, " ".join(argv[1:]), len(pop), r.returncode,
+                                                                                                        why[-1][:200] if why else "no output")
+    return pop, exc
 
 
 def _census_population(tdir, key):
@@ -1689,6 +1714,8 @@ def from_progress_table(corpus, key):
         return os.path.join(corpus, FROM_PROGRESS_MASTERS[key]), _aud.dbname(full)
     if "@" in full and key in FROM_PROGRESS_CENSUS and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_CENSUS[key])):
         return os.path.join(corpus, FROM_PROGRESS_CENSUS[key]), _aud.dbname(full)
+    if "@" not in full and key in FROM_PROGRESS_RUNNER_POP and os.path.isdir(os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0])):
+        return os.path.join(corpus, FROM_PROGRESS_RUNNER_POP[key][0]), _aud.dbname(full)
     if key in FROM_PROGRESS_PACKAGES and os.path.exists(os.path.join(corpus, FROM_PROGRESS_PACKAGES[key], "ALL.csv")):
         return os.path.join(corpus, FROM_PROGRESS_PACKAGES[key]), _aud.dbname(full)
     import corpus_suite_harness as _h
@@ -1743,7 +1770,14 @@ def cmd_from_progress(a):
             return _wall_only_without_a_table(full_key, _aud)
         print("REFUSE(2): from-progress: no suite table for key %r under %s (the seven masters and the packages with an ALL.csv)" % (full_key, corpus))
         return 2
-    if key in FROM_PROGRESS_CENSUS:
+    rr_excl = None
+    if key in FROM_PROGRESS_RUNNER_POP and not port:
+        _rp = _runner_population(key)
+        if isinstance(_rp, str):
+            print(_rp)
+            return 2
+        pop, rr_excl = _rp
+    elif key in FROM_PROGRESS_CENSUS:
         pop = _census_population(tdir, key)
     else:
         with open(os.path.join(tdir, "ALL.csv"), encoding="utf-8", errors="replace", newline="") as f:
@@ -1765,7 +1799,7 @@ def cmd_from_progress(a):
     # population is its ALL.csv entries together with every shipped <name>.<ext> beside the container, less the EXCLUDED.tsv rows and the CONTAINERS.tsv
     # fragments (CEO-1286/1288/1696), so shipped = denominator + Excl as lib_container_package_runner.sh publishes it. A shipped program the container does
     # not grade is debt with no reading needed (the runner's UNGRADED row). A reading names its program with or without the extension (GNU writes x.pl).
-    pkg = key not in FROM_PROGRESS_MASTERS and key not in FROM_PROGRESS_CENSUS
+    pkg = key not in FROM_PROGRESS_MASTERS and key not in FROM_PROGRESS_CENSUS and rr_excl is None
     ext, shipped, xnames, cnames, nex = "", set(), set(), set(), 0
     if pkg:
         _EXTS = ("sno", "spt", "sbl", "icn", "pl", "pas", "raku", "sc", "reb")
@@ -1912,6 +1946,8 @@ def cmd_from_progress(a):
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
     halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
+    if rr_excl:
+        _mexcl = len(rr_excl)   # the runner's own out-of-denominator members (RR_EXCL), as its board line's excluded= reads
     excluded = None
     if _mexcl:
         excluded = _mexcl

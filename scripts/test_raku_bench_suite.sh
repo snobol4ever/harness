@@ -106,6 +106,7 @@ if [ -f "$BD/OUTSIDE.tsv" ]; then
     OUTS[$_ok]="$_ocls"
   done < "$BD/OUTSIDE.tsv"
 fi
+if [ "${S4E_LIST:-}" = 1 ]; then _lp=(); for k in "${KERNELS[@]}"; do [ -n "${OUTS[$k]:-}" ] || _lp+=("$k"); done; rr_list_excl "${!OUTS[@]}"; rr_list ${_lp[@]+"${_lp[@]}"}; fi
 printf '%-28s %-4s %-7s %-7s %-7s %s\n' kernel mode process iter time verdict
 declare -A PASSN; PASSN[m3]=0; PASSN[m4]=0; BOTH=0; TOTAL=0; NAMED=""; HEAPD=0
 for k in "${KERNELS[@]}"; do

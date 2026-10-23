@@ -58,6 +58,7 @@ if [ -f "$BD/OUTSIDE.tsv" ]; then
     OUTS[$_ok]="$_ocls"
   done < "$BD/OUTSIDE.tsv"
 fi
+if [ "${S4E_LIST:-}" = 1 ]; then _lp=(); for k in "${KERNELS[@]}"; do [ -n "${OUTS[$k]:-}" ] || _lp+=("$k"); done; rr_list_excl "${!OUTS[@]}"; rr_list ${_lp[@]+"${_lp[@]}"}; fi
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 PROG_ROWS="$T/progress.tsv"; : >"$PROG_ROWS"
 run1() {

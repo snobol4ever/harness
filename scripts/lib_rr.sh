@@ -20,6 +20,11 @@
 #   rr_selected            rc 0 when a selection is set: the runner writes NO suite row and prints its <KEY>_CHUNK line (rr_end) -- the row is assembled
 #                          from the per-program readings by util_score_row.py from-progress (CEO-1802)
 #   rr_end <key>           the <KEY>_CHUNK line
+#   rr_list <key>...       THE POPULATION FROM THE RUNNER ITSELF (the coo 2026-10-23, on the ceo's CEO-1926/1927 word "teach it the bench and demo keys"):
+#                          under S4E_LIST=1, after the runner has enumerated its population and read its exclusions, print each member it grades as
+#                          `RR_POP <key>` -- the program key its progress rows carry -- and exit 0, grading nothing; util_score_row.py from-progress reads
+#                          a bench or demo row's population this way, so the runner's enumeration stays the one rule. rr_list_excl <key>... first
+#                          prints each member it names out of the denominator (OUTSIDE.tsv, CONTAINERS.tsv) as `RR_EXCL <key>`.
 RR_SEL=""; RR_SET=""; RR_FROM=""; RR_T0=$SECONDS
 rr_load() {
   local d="${1:?rr_load <suite-dir>}" p part rest
@@ -81,4 +86,6 @@ rr_over_budget() {
   [ $(( SECONDS - RR_T0 )) -ge "$S4E_RR_BUDGET" ] || return 1
   echo "RR_YIELD next=$1 -- the part's budget of $S4E_RR_BUDGET s is spent ($(( SECONDS - RR_T0 )) s); resume with S4E_CHUNK=${S4E_CHUNK%%@*}@$1"
 }
+rr_list_excl() { [ "${S4E_LIST:-}" = 1 ] && [ $# -gt 0 ] && printf 'RR_EXCL %s\n' "$@"; return 0; }
+rr_list() { [ "${S4E_LIST:-}" = 1 ] || return 0; [ $# -gt 0 ] && printf 'RR_POP %s\n' "$@"; exit 0; }
 rr_end() { echo "$(printf '%s' "${1:?rr_end <key>}" | tr 'a-z-' 'A-Z_')_CHUNK ${S4E_CHUNK:-} graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $1 (CEO-1802)"; }

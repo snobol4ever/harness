@@ -47,6 +47,8 @@ mapfile -t PROGS < <(cd "$DD" && find . -maxdepth 3 -type f \( -name '*.sno' -o 
 # ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812): under S4E_CHUNK=entry:<demo>[,...] (a request: the demo's path under the tree, or its stem) only those
 # demos are graded, their rows appended, and no suite row is written (rr_end)
 . "$HERE/lib_rr.sh" && rr_load "$DD" || exit 2
+if [ "${S4E_LIST:-}" = 1 ]; then _lp=(); _lx=(); for r in "${PROGS[@]}"; do if [ -f "$CONT" ] && awk -F'\t' -v n="$r" '$1 == n { f = 1 } END { exit !f }' "$CONT"; then _lx+=("demos/$L/$r"); else _lp+=("demos/$L/$r"); fi; done
+  rr_list_excl ${_lx[@]+"${_lx[@]}"}; rr_list ${_lp[@]+"${_lp[@]}"}; fi
 if rr_selected; then _ps=(); for r in "${PROGS[@]}"; do rr_admits "$r" && _ps+=("$r"); done; PROGS=(${_ps[@]+"${_ps[@]}"}); fi
 bash "$HERE/util_require_population.sh" --gate "$G" "${#PROGS[@]}" 1 "demo programs under $DD (a population of zero is not a green board; the ONE floor authority, lib_gate.sh gate_floor)" || exit 2
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT

@@ -143,6 +143,7 @@ test_gate_frame_reuse_rung3d_the_dead_result_scratch_overlays_a_pool_slot.sh	WIR
 test_gate_frame_reuse_rung3e_a_single_reader_temp_takes_its_sealed_calls_argv_slot.sh	WIRED	-	-	-
 test_gate_frame_reuse_rung3f_a_first_occurrence_head_variable_is_its_param_slot.sh	WIRED	-	-	-
 test_gate_from_progress_assembles_a_package_as_shipped_minus_excluded.sh	WIRED	-	-	-
+test_gate_from_progress_takes_a_bench_or_demo_population_from_its_runner.sh	WIRED	-	-	-
 test_gate_gate_wiring_ratchet.sh	WIRED	-	-	-
 test_gate_gc_a_bare_deferred_expression_name_survives_every_collection_point.sh	WIRED	-	-	-
 test_gate_gc_a_bignum_held_only_in_a_heap_aggregate_survives.sh	WIRED	-	-	-
