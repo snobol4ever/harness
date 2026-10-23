@@ -1154,6 +1154,7 @@ test_gate_sno_an_array_element_read_or_store_allocates_nothing.sh	WIRED	-	-	-
 test_gate_sno_an_array_or_table_as_a_pattern_operand_raises_the_operand_errors_of_spitbol_in_both_modes.sh	WIRED	-	-	-
 test_gate_sno_an_assignment_whose_value_is_a_match_assigns_and_returns_the_matched_substring.sh	WIRED	-	-	-
 test_gate_sno_an_element_after_a_fence_inside_an_arbno_body_backs_into_the_fence.sh	WIRED	-	-	-
+test_gate_sno_an_error_inside_eval_fails_that_eval.sh	WIRED	-	-	-
 test_gate_sno_an_error_inside_eval_of_a_string_fails_the_eval_and_counts_against_errlimit.sh	WIRED	-	-	-
 test_gate_sno_an_error_inside_eval_publishes_its_own_text.sh	WIRED	-	-	-
 test_gate_sno_an_error_while_an_unevaluated_expression_is_evaluated_fails_the_innermost_statement.sh	WIRED	-	-	-
