@@ -240,7 +240,11 @@ if [ "$DO_RUN" = 1 ]; then
   printf 'ROAST_POPULATION tree_t=%d manifest_lines=%d manifest_in_tier=%d manifest_named_but_absent=%d graded=tree_t\n' \
     "$TREE_T" "$MAN_ALL" "$MAN_TIER" "$MAN_MISSING"
   FAILED_M3=""; FAILED_M4=""
-  roast_outcome() { case "$1" in PASS) echo PASS ;; FAIL) echo FAIL ;; PARSE-FAIL) echo REJECT ;; CRASH) echo CRASH ;; NO-TAP) echo UNPROVEN ;; *) echo UNPROVEN ;; esac; }
+  # ⛔ A TIMEOUT IS A HANG, NEVER A CRASH (coo 2026-10-23): classify() files rc 124 under CRASH (its board line says CRASH / TIMEOUT), and this
+  # map wrote that CRASH into the progress DB, so ten S15-normalization files that ran past the 30 s m3 cap under the pool's load (nfc-9:
+  # 22.8 s alone on 26e79fe3e, 2.0 s on 2f03e45cf) read CRASH m3 and were telegrammed as crashes. The ladder's HANG is the timeout's verdict:
+  # the second argument is the run's rc, and 124 (the retried timeout fired) is HANG whatever TAP came out.
+  roast_outcome() { [ "${2:-}" = 124 ] && { echo HANG; return; }; case "$1" in PASS) echo PASS ;; FAIL) echo FAIL ;; PARSE-FAIL) echo REJECT ;; CRASH) echo CRASH ;; NO-TAP) echo UNPROVEN ;; *) echo UNPROVEN ;; esac; }
   . "$ROOT/../harness/scripts/lib_rr.sh" && rr_load "$ROAST_PKG" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one part or a request's entries
   while IFS= read -r -d '' src; do
     _xn="${src#$ROAST/}"; _xn="${_xn%.t}"
@@ -255,7 +259,7 @@ if [ "$DO_RUN" = 1 ]; then
     incwd "$TIMEOUT_RETRY" 5 "$SCRIP" --run "${RSW[@]}" "$stage" > "$so" 2> "$se" < /dev/null; rc=$?; _s3="$(progress_secs_since "$_t0")"
     v3="$(classify "$so" "$se" "$rc")"
     _e3=""; [ "$v3" = PASS ] || _e3="$(grep -v '^[[:space:]]*$' "$se" 2>/dev/null | head -1 | tr '\t' ' ' | cut -c1-200)"
-    progress_append package roast raku "$pname" m3 "$(roast_outcome "$v3")" "$_s3" "$_e3" >/dev/null 2>&1 || true
+    progress_append package roast raku "$pname" m3 "$(roast_outcome "$v3" "$rc")" "$_s3" "$_e3" >/dev/null 2>&1 || true
     if [ "$v3" = PASS ]; then m3p=$((m3p+1)); else m3f=$((m3f+1)); FAILED_M3="$FAILED_M3 $pname:$v3"; fi
     s4="$TMP/c.s"; o4="$TMP/c.o"; b4="$TMP/c.bin"
     _t0="$(progress_clock)"
@@ -266,7 +270,7 @@ if [ "$DO_RUN" = 1 ]; then
       compiled_ok=$((compiled_ok+1))
       incwd "$TIMEOUT_RETRY" 10 "$b4" "${RSW[@]}" > "$TMP/o4" 2> "$TMP/e4" < /dev/null; rc4=$?; _s4="$(progress_secs_since "$_t0")"
       v4="$(classify "$TMP/o4" "$TMP/e4" "$rc4")"
-      progress_append package roast raku "$pname" m4 "$(roast_outcome "$v4")" "$_s4" >/dev/null 2>&1 || true
+      progress_append package roast raku "$pname" m4 "$(roast_outcome "$v4" "$rc4")" "$_s4" >/dev/null 2>&1 || true
       if [ "$v4" = PASS ]; then m4p=$((m4p+1)); else m4f=$((m4f+1)); FAILED_M4="$FAILED_M4 $pname:$v4"; fi
       [ "$v3" = PASS ] && [ "$v4" = PASS ] && bothp=$((bothp+1))
     else

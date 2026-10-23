@@ -970,6 +970,7 @@ test_gate_raku_port_trace.sh	WIRED	-	-	-
 test_gate_raku_predeclared_names_agree_with_rakudo.sh	WIRED	-	-	-
 test_gate_raku_rat_base_prints_the_fraction_digits_rakudo_prints.sh	WIRED	-	-	-
 test_gate_raku_reversed_meta_operator_agrees_with_rakudo.sh	WIRED	-	-	-
+test_gate_raku_roast_a_timeout_reads_hang_not_crash.sh	WIRED	-	-	-
 test_gate_raku_roast_ablation_ranker.sh	WIRED	-	-	-
 test_gate_raku_roast_bucket_names_the_stage_the_file_died_in.sh	WIRED	-	-	-
 test_gate_raku_roast_runner_excludes_a_file_with_no_oracle_answer.sh	WIRED	-	-	-
