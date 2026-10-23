@@ -100,6 +100,13 @@ import tempfile
 import threading
 from pathlib import Path
 HARNESS_SCRIPTS = Path(__file__).resolve().parent
+# ⛔ EVERY CHILD RUNS HEADLESS (the ceo 2026-10-23, after the coo's oracle re-measure opened "Hello, world" and "Click me !" windows on
+# Lon's desktop at 11:09: rosetta-pascal's hello-world-graphical and simple-windowed-application inherited the session's display). A graded
+# program, an oracle and every helper this harness or util_build_package_suite.py starts inherit this process's environment, so the two
+# display variables leave it here, once: an X or Wayland client finds no display and fails, never opens a window. A unit that needs one
+# is NEEDS_DISPLAY, never graded.
+for _dv in ("DISPLAY", "WAYLAND_DISPLAY"):
+    os.environ.pop(_dv, None)
 
 BANNER_WIDTH = 80
 ONE_LINE_CAP = 200

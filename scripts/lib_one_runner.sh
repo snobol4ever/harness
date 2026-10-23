@@ -31,6 +31,10 @@
 # row -- test_snobol4_aisnobol_suite.sh cds into the engine root, and one_runner_port_publish then took dirname of a RELATIVE BASH_SOURCE[0],
 # "can't open file /home/claude_jvm/../harness/scripts/util_score_row.py"). Every function below reads _ONE_RUNNER_HERE, never BASH_SOURCE at call time.
 _ONE_RUNNER_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# ⛔ EVERY CHILD RUNS HEADLESS (the ceo 2026-10-23, after an oracle re-measure opened GUI windows on Lon's desktop): every guarded runner
+# sources this file first, so the display variables leave the runner's environment here and no program, oracle or helper it starts can
+# open a window; corpus_suite_harness.py drops them for its own children the same way.
+unset DISPLAY WAYLAND_DISPLAY
 one_runner_mem_scope() {
   [ -f "$0" ] && [ "${BASH_SOURCE[-1]}" = "$0" ] || return 0
   [ "${S4E_MEM_SCOPE:-}" != unbounded ] || return 0

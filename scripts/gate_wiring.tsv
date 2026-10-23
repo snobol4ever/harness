@@ -255,6 +255,7 @@ test_gate_gimpel_runner_masks_the_engine_clock_lines.sh	WIRED	-	-	-
 test_gate_globals_census_counts_writable_sections_only.sh	WIRED	-	-	-
 test_gate_gprolog_output_filter_is_the_one_filter.sh	WIRED	-	-	-
 test_gate_handoff_status_lane_scoped_debt_and_refusal_never_reads_complete.sh	WIRED	-	-	-
+test_gate_harness_children_run_headless.sh	WIRED	-	-	-
 test_gate_harness_containers_break_lines_on_lf_only.sh	WIRED	-	-	-
 test_gate_harness_extract_refuses_before_it_writes.sh	WIRED	-	-	-
 test_gate_harness_red_carries_a_fingerprint_and_a_shard_run_says_so.sh	WIRED	-	-	-
