@@ -246,6 +246,22 @@ def read_contract(pkg_dir):
     return out
 
 
+def read_staged(pkg_dir):
+    """STAGED.tsv (CEO-1927): name<TAB>stage<TAB>answer<TAB>evidence -- an entry whose SCRIP run needs its upstream test directory staged
+    (stage=upstream: it loads a sibling by its upstream name) and whose answer is stdout or the file temp it writes (answer=stdout|temp-sorted, as
+    wfs_tests' own harness grades it). Absent file: none. A malformed row refuses."""
+    sf = pkg_dir / "STAGED.tsv"
+    out = {}
+    for n, line in enumerate(sf.read_text().splitlines() if sf.is_file() else [], 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        f = line.split("\t")
+        if len(f) < 4 or f[1] != "upstream" or f[2] not in ("stdout", "temp-sorted") or not f[3].strip():
+            h.refuse(f"{sf}:{n}: a staged row is name, upstream, stdout|temp-sorted, evidence -- got {line[:120]!r}")
+        out[f[0][:-3] if f[0].endswith(".pl") else f[0]] = f[2]
+    return out
+
+
 def read_oracle_runs(pkg_dir):
     """ORACLE_RUNS.tsv: one row per program XSB's own test scripts run, as util_xsb_oracle_runs.py recorded it from them --
     name<TAB>dir<TAB>kind<TAB>file<TAB>cmd<TAB>emu_args<TAB>script. A name twice, a kind other than gentest/wfs, or a short row refuses."""
@@ -278,6 +294,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     ref_beside = contract["units"] == "ref-beside"
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
+    staged = read_staged(pkg_dir)
     if xsb:
         xsb_bin = h.xsb_oracle_bin()
         xsb_runs = read_oracle_runs(pkg_dir)
@@ -428,7 +445,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             if _r is None:
                 _why = ("XSB's own test scripts run it nowhere (no ORACLE_RUNS.tsv row): a library its loader opens (CONTAINERS.tsv LOADED_BY) "
                         "or a program no XSB script runs (EXCLUDED.tsv NO_ORACLE_ANSWER)")
-            elif name in xsb_owed:
+            elif name in xsb_owed and name not in staged:
                 _why = "UNGRADED NEEDS_RUNNER_WIRING: XSB answers it in its upstream directory, and SCRIP's run needs that directory staged (owed)"
             else:
                 _k1, _a1, _e1, _rc1 = h.run_xsb_gentest(xsb_bin, contract["upstream"], _r, paths["timeout"])
@@ -629,6 +646,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
     _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
     _cm_col = ["compare"] if contract["compare"] == "ignore-all-space" else []   # derived from CONTRACT.tsv, every build (CEO-1927)
+    _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (CEO-1927)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
     # 657 such rows), and a unit this build does not absorb -- a library graded through its driver, a program whose oracle output
@@ -657,19 +675,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                     _old_cmd[_row.get("entry")] = _c
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + ["ignore-all-space" for c in _cm_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + ["ignore-all-space" for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
                         (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c, _fn in cols])
+                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)

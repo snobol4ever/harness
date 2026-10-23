@@ -1048,7 +1048,7 @@ def _timeout_load():
         return 0.0, os.cpu_count() or 1
 
 
-def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False):
+def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     # ⛔ A TIMEOUT UNDER LOAD MEASURED THE SCHEDULER, NOT THE PROGRAM (ceo CEO-1335; the coo 2026-10-09): at load 39 two Prolog rung
     # entries that run in 0.1 to 0.6 s read m4 TIMEOUT, and at load ~25 pass 42's RakBench lost point_class_add's iter angle the same
     # way. When a program times out while the 1-minute load exceeds the cores, the reading is COULD NOT MEASURE: the program is run
@@ -1057,7 +1057,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     # as before -- a timeout scaled by load is NOT the cure (it would hide a real hang at high load). S4E_TIMEOUT_RETRY=0 disables
     # the retry (the gate's fail-once arm).
     v = _classify_run(argv, timeout, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                      out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+                      out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
     # ⛔⭐ SUPERSEDED IN PART (Lon 2026-10-15 15:3x CDT, in-chat to the coo, verbatim: "So timeout SHOULD NOT count as valid." and "The
     # strategy should be to accumulate a list of timeouts, and do a retry with longer timeouts."): EVERY timeout is retried once,
     # whatever the load, at lib_timeout_retry.longer(timeout) -- six times the first limit, capped at 600 s -- and only a timeout at
@@ -1069,7 +1069,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     import lib_timeout_retry as _ltr
     at = _ltr.longer(timeout)
     v2 = _classify_run(argv, at, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                       out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+                       out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
     l2, _n = _timeout_load()
     v2.retry = "retried=1 load1=%.2f/%.2f nproc=%d at=%gs" % (l1, l2, n, at)
     if v2.kind == "HANG":
@@ -1077,10 +1077,19 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     return v2
 
 
-def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False):
+def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     _out_files_clear(cwd, out_files)
+    if answer_file:
+        _out_files_clear(cwd, [answer_file])
     kind, out, err, rc = _run_raw(argv, timeout, cwd=cwd, env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, cwd, out_files) if out_files else out
+    if answer_file:
+        # ⭐ THE ANSWER IS A FILE THE PROGRAM WRITES, SORTED (ceo CEO-1927; XSB's gentest.sh: `[FILE]. tell(temp). CMD. told.`, then `sort temp`):
+        # ALL.csv's answer column reads temp-sorted for an entry whose own harness grades the file it writes (wfs_tests' test/1 opens temp
+        # itself). The file is deleted before every run (m3, m4) and its non-empty lines, sorted, are the graded output; stdout is not.
+        _af = Path(cwd) / answer_file
+        out = (("\n".join(sorted(l for l in _af.read_bytes().decode("utf-8", "replace").split("\n") if l != "")) + "\n").encode()
+               if _af.is_file() else f"<<answer file {answer_file} was not written>>\n".encode())
     if kind == "HANG":
         return Verdict("HANG", out, err, None, detail=f"exceeded {timeout}s")
     if kind == "OVERFLOW":
@@ -1160,7 +1169,7 @@ def stdbuf_wrap(paths, argv):
     return argv
 
 
-def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
+def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     timeout = timeout or paths["timeout"]
     # ⛔⭐ ARGV IS THE BARE NAME, NOT THE FULL PATH (row suite-harness-argv-echoes-a-mktemp-path-so-
     # diagnostic-programs-cannot-be-graded) -- a diagnostic that echoes its own argv (e.g. a SPITBOL
@@ -1170,7 +1179,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     if paths["engine"] != "scrip":
         return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
                         env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                        out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+                        out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
     argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name])
     # ⛔⭐ THE `--` SEPARATOR IS MANDATORY AND IS WHAT MAKES THIS SAFE. The driver has NO unknown-flag
     # diagnostic: any unrecognised argument falls through to being treated as a FILENAME, so a declared
@@ -1199,7 +1208,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -1252,7 +1261,7 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     return None
 
 
-def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
+def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
@@ -1317,7 +1326,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -1482,6 +1491,8 @@ class Entry:
                                    # "merged"): the contract of a package whose own harness cut its refs as `prog < in > out 2>&1`
                                    # (the Icon packages, CEO-445), applied alike to the oracle's ref cut and to m3 and m4.
         self.compare_ws = False   # True when ALL.csv's compare column reads ignore-all-space: each line graded with its white space removed (CEO-1927)
+        self.stage_upstream = False   # True when ALL.csv's stage column reads upstream: the run directory is the entry's upstream test directory (CEO-1927)
+        self.answer_file = None       # "temp" when ALL.csv's answer column reads temp-sorted: the graded output is that file's lines, sorted (CEO-1927)
         self.stack_kb = None      # int KB of STACK this entry declares (CEO-1225), or None = the runtime's 64 MB floor.
         self.heap_kb = None       # int KB this entry DECLARES it needs, or None = the shipped default.
                                    # Lon 2026-09-23 / CEO-1167. DECLARED in ALL.csv's heap_kb column (or a
@@ -1601,7 +1612,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, CEO-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1615,14 +1626,14 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -2423,6 +2434,11 @@ def _copy_companions(text, companion_dir, dest_dir):
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
         cand = Path(td) / f"{entry.name}{ext}"
+        if getattr(entry, 'stage_upstream', False) and companion_dir:
+            _sd = stage_upstream(companion_dir, entry.name, Path(td) / "u", ext)
+            if _sd is None:
+                refuse(f"{entry.name}: ALL.csv stages it upstream and {companion_dir}/SOURCES.tsv names no upstream file for it")
+            cand = _sd / f"{entry.name}{ext}"
         if entry.kind == "line":
             text = entry.sno_lines[0] + "\n"
             expected = entry.ref
@@ -2470,7 +2486,8 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
                              mask=getattr(entry, 'mask', None),
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None),
                              compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
-                             merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False))
+                             merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
+                             answer_file=getattr(entry, 'answer_file', None))
 
 
 # ================================================================== CLI ===
@@ -4497,6 +4514,62 @@ def validate_compare_cell(raw, where):
     refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or 'ignore-all-space' only")
 
 
+def validate_stage_cell(raw, where):
+    """ONE stage cell: empty = the entry runs alone in a fresh directory with its named companions (every table before the column existed);
+    "upstream" = the run directory is staged as the entry's upstream test directory (stage_upstream, CEO-1927). Anything else refuses rc=2."""
+    v = (raw or "").strip()
+    if v == "":
+        return False
+    if v == "upstream":
+        return True
+    refuse(f"{where}: stage cell {v!r} -- the column admits the empty cell or 'upstream' only")
+
+
+def validate_answer_cell(raw, where):
+    """ONE answer cell: empty = stdout is the answer; "temp-sorted" = the file temp the program writes, its non-empty lines sorted, as XSB's
+    gentest.sh grades it (CEO-1927). Anything else refuses rc=2."""
+    v = (raw or "").strip()
+    if v == "":
+        return False
+    if v == "temp-sorted":
+        return True
+    refuse(f"{where}: answer cell {v!r} -- the column admits the empty cell or 'temp-sorted' only")
+
+
+def stage_upstream(companion_dir, name, td, ext):
+    """THE RUN DIRECTORY AS THE PROGRAM'S UPSTREAM TEST DIRECTORY (the coo 2026-10-23, ceo CEO-1927): a flat package vendors each upstream file under a
+    prefixed name (xsb_tests: <dir>_<path>_<stem>.pl), so a program that loads a sibling by its UPSTREAM name -- `:- [fd].`, wfs_test.P's consult(P),
+    load_dyn('type0_testdir/initialization_file.P') -- finds nothing beside it. SOURCES.tsv maps each vendored name to its upstream path; every vendored
+    file of the entry's top-level test directory is written under td at its path below that directory, as <stem>.pl (SCRIP's consult finds a .pl,
+    not XSB's .P) and under its own upstream name, its vendoring's appended driver cut off (it would run again on a load). Returns the directory,
+    below td, the entry runs in: its own upstream directory, so relative paths resolve as they do upstream. None when SOURCES.tsv does not name it."""
+    src = {}
+    for ln in (Path(companion_dir) / "SOURCES.tsv").read_text(encoding="utf-8", errors="replace").splitlines():
+        c = ln.split("\t")
+        if len(c) >= 3 and "/" in c[2]:
+            src[c[0]] = c[2]
+    mine = src.get(name)
+    if not mine:
+        return None
+    parts = mine.split("/")
+    pre = "/".join(parts[:3])            # xsb/xsbtests/<top>
+    for n, up in src.items():
+        if not up.startswith(pre + "/"):
+            continue
+        f = Path(companion_dir) / f"{n}{ext}"
+        if not f.is_file():
+            continue
+        t = f.read_text(encoding="utf-8", errors="replace")
+        cut = t.find("\n% DRIVER (appended by the vendoring")
+        if cut >= 0:
+            t = t[:cut + 1]
+        rel = up[len(pre) + 1:]
+        for dst in {Path(td) / rel, (Path(td) / rel).with_suffix(".pl")}:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(t, encoding="utf-8")
+    return Path(td) / Path(mine[len(pre) + 1:]).parent
+
+
 def validate_stderr_cell(raw, where):
     """ONE stderr cell: empty = stdout alone is the answer (every table before the column existed); "merged" = stdout and stderr
     as one stream. Anything else refuses rc=2 naming the cell -- a contract word the reader does not know is never guessed."""
@@ -4645,6 +4718,10 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.merge_stderr = True
         if validate_compare_cell(row.get("compare"), where):
             e.compare_ws = True
+        if validate_stage_cell(row.get("stage"), where):
+            e.stage_upstream = True
+        if validate_answer_cell(row.get("answer"), where):
+            e.answer_file = "temp"
 
 
 def cmd_extract_family(args):
