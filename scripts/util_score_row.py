@@ -1579,9 +1579,9 @@ _DEMO_EXTS = (".sno", ".icn", ".pl", ".sc", ".pas", ".raku", ".reb")
 # word, verbatim: "from-progress: yes, teach it the bench and demo keys, so a one-program re-grade writes those rows."): under S4E_LIST=1 the runner
 # prints the members it grades (RR_POP <key>, the program key its progress rows carry) and those it names out of the denominator (RR_EXCL <key>:
 # OUTSIDE.tsv, a demo tree's CONTAINERS.tsv) and grades nothing (lib_rr.sh rr_list), so the enumeration stays the runner's one rule. A bench runner
-# joins this map when it carries rr_list (the seam census, CEO-1927).
-FROM_PROGRESS_RUNNER_POP = {"raku-bench-ref": ("benchmarks/raku", ["test_raku_bench_suite.sh"]),
-                            "prolog-bench-ref": ("benchmarks/prolog", ["test_prolog_bench_suite.sh"])}
+# carries rr_list; all seven do since the seam census (CEO-1927).
+FROM_PROGRESS_RUNNER_POP = {"%s-bench-ref" % _l: ("benchmarks/%s" % _l, ["test_%s_bench_suite.sh" % _l])
+                            for _l in ("raku", "prolog", "icon", "pascal", "rebus", "snobol4", "snocone")}
 for _l in ("icon", "prolog", "snobol4", "snocone", "scriptix", "pascal", "raku", "rebus"):
     FROM_PROGRESS_RUNNER_POP["%s-demos" % _l] = ("demos/%s" % _l, ["test_demos_suite.sh", _l])
 

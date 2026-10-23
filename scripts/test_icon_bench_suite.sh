@@ -66,6 +66,12 @@ POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")
 done < <(find "$BD" -type f -name '*.icn' | LC_ALL=C sort)
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
+# population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
+. "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
+if [ "${S4E_LIST:-}" = 1 ]; then _lp=(); for f in "${POP[@]}"; do _lp+=("${f#"$BD"/}"); done; rr_list ${_lp[@]+"${_lp[@]}"}; fi
+if rr_selected; then _ps=(); for f in "${POP[@]}"; do rr_admits "${f#"$BD"/}" && _ps+=("$f"); done; POP=(${_ps[@]+"${_ps[@]}"}); fi
 [ "${#POP[@]}" -gt 0 ] || refuse "an empty population under $BD -- a suite that grades nothing is not a pass"
 stdin_of() { local b="${1%.icn}" x; for x in in stdin dat; do [ -f "$b.$x" ] && { echo "$b.$x"; return; }; done; echo /dev/null; }
 refx() { local i; : >"$2"; for ((i = 0; i < $3; i++)); do cat "$1" >>"$2"; done; }
@@ -170,6 +176,7 @@ N=${#POP[@]}
 printf 'SCOUTING DATA -- one run each on a loaded box, NOT A GRID (timing waits for the quiet box, CEO-1219):%b\n' "$SCOUT"
 LINE="SUITE_BOARD family=icon-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$P4 angles=process,iter,time loop_in=$LIN loop_proc=$LPROC refless=$REFLESS ref_drift=$DRIFT wrapper_sensitive=$WSENS heap_declared=$HEAPD"
 echo "$LINE"
+rr_selected && { rr_end icon-bench-ref; [ "$PASS" = "$N" ] && exit 0 || exit 1; }
 [ "$PREFUSED" = 0 ] || echo "⚠ $PREFUSED progress row(s) REFUSED (named above) -- the board stands, but it cannot be published until they are recorded"
 . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
 read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/icon" "$BD" "$WANT" "$NOWRITE")"

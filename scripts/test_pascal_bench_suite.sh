@@ -49,6 +49,12 @@ OUTDIR="${BENCH_OUT_DIR:-$(mktemp -d -t pascal_bench_runs.XXXXXX)}"; mkdir -p "$
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
 mapfile -t KERNELS < <(find "$B" -maxdepth 1 -type f -name '*.pas' -printf '%f\n' | sed 's/\.pas$//' | sort)
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
+# population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
+. "$HERE/lib_rr.sh" && rr_load "$B" || exit 2
+rr_list ${KERNELS[@]+"${KERNELS[@]}"}
+if rr_selected; then _ks=(); for k in "${KERNELS[@]}"; do rr_admits "$k" && _ks+=("$k"); done; KERNELS=(${_ks[@]+"${_ks[@]}"}); fi
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.pas under $B -- a population of zero is not a green board"
 now() { date +%s.%N; }
 # run_kernel <mode> <kernel> <stdin-file> <out-file> [wrap] -- one run; prints nothing, returns the run's rc. m4 runs the prebuilt binary.
@@ -127,6 +133,7 @@ if [ -s "$PROG_ROWS" ]; then
 fi
 LINE="SUITE_BOARD family=pascal-bench-ref total=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=wrap,iter,time"
 echo "$LINE"
+rr_selected && { rr_end pascal-bench-ref; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }
 . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
 read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/pascal" "$B" "" "$NOWRITE")"
 echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"

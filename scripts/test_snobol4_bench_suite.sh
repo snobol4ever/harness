@@ -84,6 +84,12 @@ if [ "$ORACLE_ARM" = 1 ]; then
 fi
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name "*.$EXT" -printf '%f\n' | sed "s/\.$EXT\$//" | LC_ALL=C sort)
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
+# population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
+. "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
+rr_list ${KERNELS[@]+"${KERNELS[@]}"}
+if rr_selected; then _ks=(); for k in "${KERNELS[@]}"; do rr_admits "$k" && _ks+=("$k"); done; KERNELS=(${_ks[@]+"${_ks[@]}"}); fi
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.$EXT under $BD -- a population of zero is not a green board"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 PROG_ROWS="$T/progress.tsv"; : >"$PROG_ROWS"
@@ -179,6 +185,7 @@ if [ "$IS_BOARD" = 0 ]; then
   echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
+  rr_selected && { rr_end $SUITE_KEY; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }
   if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (CEO-1822), graded in m3 alone"; [ "$NOWRITE" = 0 ] && one_runner_port_publish "$SUITE_KEY@$(one_runner_engine)"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
   . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
   read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/snobol4" "$BD" "" "$NOWRITE")"
