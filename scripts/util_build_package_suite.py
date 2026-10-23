@@ -295,6 +295,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
+    xsb_excl = {}
+    if xsb and (pkg_dir / "EXCLUDED.tsv").is_file():
+        # ⭐ A MEASURED EXCLUSION HOLDS ACROSS BUILDS (the coo 2026-10-23): basic_tests/preproc-opt/preproc_test writes XSB's own load messages into its
+        # answer, some carrying the cpu time ("[xsbbrat loaded, cpu time used: 0.001 seconds]"), so two runs agree on one build and differ on the next
+        # -- a two-run check cannot hold it. A program EXCLUDED.tsv names (its measurement recorded) is not absorbed; the row is the declaration.
+        for _ln in (pkg_dir / "EXCLUDED.tsv").read_text().splitlines():
+            _f = _ln.split("\t")
+            if len(_f) >= 3 and not _ln.startswith("#"):
+                xsb_excl[_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0]] = _f[1]
     if xsb:
         xsb_bin = h.xsb_oracle_bin()
         xsb_runs = read_oracle_runs(pkg_dir)
@@ -442,7 +451,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         if xsb:
             _why = None
             _r = xsb_runs.get(name)
-            if _r is None:
+            if name in xsb_excl:
+                _why = f"EXCLUDED.tsv names it {xsb_excl[name]} (a measured exclusion holds across builds)"
+            elif _r is None:
                 _why = ("XSB's own test scripts run it nowhere (no ORACLE_RUNS.tsv row): a library its loader opens (CONTAINERS.tsv LOADED_BY) "
                         "or a program no XSB script runs (EXCLUDED.tsv NO_ORACLE_ANSWER)")
             elif name in xsb_owed and name not in staged:

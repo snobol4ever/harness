@@ -48,7 +48,7 @@ printf ':- [helper].\ntest :- h(X), write(X), nl.\n' > $U/ft_tests/t_sib.P
 printf 'h(5).\n' > $U/ft_tests/helper.P
 printf 'test :- write(y), nl, write(x), nl.\n' > $U/ft_tests/t_tmp.P
 printf 'name\tset\tsource\tlicense\n' > $P/SOURCES.tsv
-for t in t_sorted t_stale t_silent t_ws t_tok t_norun t_cr t_sib helper t_tmp; do printf 'ft_tests_%s\tft_tests\txsb/xsbtests/ft_tests/%s.P\tfixture\n' $t $t >> $P/SOURCES.tsv; done
+for t in t_sorted t_stale t_silent t_ws t_tok t_norun t_cr t_sib helper t_tmp t_xcl; do printf 'ft_tests_%s\tft_tests\txsb/xsbtests/ft_tests/%s.P\tfixture\n' $t $t >> $P/SOURCES.tsv; done
 # the vendored files SCRIP runs: each prints its own answer at initialization (t_ws and t_tok differ from XSB's in white space and in a token)
 printf ':- initialization((write(c), nl, write(a), nl, write(b), nl)).\n' > $P/ft_tests_t_sorted.pl
 printf ':- initialization((write(new), nl)).\n' > $P/ft_tests_t_stale.pl
@@ -61,9 +61,11 @@ printf ':- initialization(true).\n' > $P/ft_tests_t_cr.pl
 printf ':- [helper].\n:- initialization((h(X), write(X), nl)).\n' > $P/ft_tests_t_sib.pl
 printf 'h(5).\n\n%% DRIVER (appended by the vendoring, CEO-700): fixture\n:- initialization((write(driver_ran), nl)).\n' > $P/ft_tests_helper.pl
 printf ':- initialization((tell(temp), write(y), nl, write(x), nl, told)).\n' > $P/ft_tests_t_tmp.pl
+cp $U/ft_tests/t_sorted.P $U/ft_tests/t_xcl.P; printf ':- initialization((write(a), nl)).\n' > $P/ft_tests_t_xcl.pl
+printf '# fixture\nft_tests_t_xcl.pl\tNO_ORACLE_ANSWER\tfixture: its answer carries the cpu time on some runs\n' > $P/EXCLUDED.tsv
 printf '# fixture\nft_tests_t_sib.pl\tupstream\tstdout\tloads helper by its upstream name\nft_tests_t_tmp.pl\tupstream\ttemp-sorted\twrites its answer to temp\n' > $P/STAGED.tsv
 printf 'oracle\txsb-gentest\tgate fixture (CEO-1927)\nupstream\t%s\tgate fixture\ncompare\tignore-all-space\tgate fixture (gentest.sh diff -w)\n' "$U" > $P/CONTRACT.tsv
-{ echo "# fixture"; for t in t_sorted t_stale t_silent t_ws t_tok t_cr t_sib t_tmp; do printf 'ft_tests_%s\tft_tests\tgentest\t%s\ttest.\t-e segfault_handler\\(warn\\).\tft_tests/test.sh\n' $t $t; done; } > $P/ORACLE_RUNS.tsv
+{ echo "# fixture"; for t in t_sorted t_stale t_silent t_ws t_tok t_cr t_sib t_tmp t_xcl; do printf 'ft_tests_%s\tft_tests\tgentest\t%s\ttest.\t-e segfault_handler\\(warn\\).\tft_tests/test.sh\n' $t $t; done; } > $P/ORACLE_RUNS.tsv
 cd "$HERE/../../SCRIP" || { echo "⛔ REFUSED(2) [$GATE_NAME]: no SCRIP beside the harness"; exit 2; }
 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$P" --lang prolog --twice > $T/build.out 2>&1; brc=$?
 grep -q 'binary older than the tree' $T/build.out && { echo "⛔ REFUSED(2) [$GATE_NAME]: the SCRIP binary is older than its tree -- make, then re-run (nothing measured)"; exit 2; }
@@ -74,6 +76,7 @@ grep -qP '^ft_tests_t_sorted\tMATCH$' $P/ALL.xsbold 2>/dev/null && grep -qP '^ft
   && ok "arm 2: ALL.xsbold: t_sorted MATCH, t_stale DIFF" || bad "arm 2: ALL.xsbold lacks t_sorted MATCH / t_stale DIFF: $(tr '\n' ' ' < $P/ALL.xsbold 2>/dev/null | cut -c1-160)"
 grep -q '^ft_tests_t_silent: .*FAKEABLE_NO_OBSERVABLE' $P/ALL.excluded.txt 2>/dev/null && ok "arm 3: t_silent excluded FAKEABLE_NO_OBSERVABLE" || bad "arm 3: t_silent not excluded as FAKEABLE_NO_OBSERVABLE"
 grep -q '^ft_tests_t_cr: .*carriage returns' $P/ALL.excluded.txt 2>/dev/null && ! grep -q $'\r' $P/ALL.ref && ok "arm 4b: t_cr's answer carries a CR: not absorbed, no CR in ALL.ref" || bad "arm 4b: t_cr was absorbed or ALL.ref holds a CR"
+grep -q '^ft_tests_t_xcl: EXCLUDED.tsv names it NO_ORACLE_ANSWER' $P/ALL.excluded.txt 2>/dev/null && ! grep -q '^[0-9]*,ft_tests_t_xcl,' $P/ALL.csv && ok "arm 4c: a program EXCLUDED.tsv names is not absorbed, though XSB answers it the same twice" || bad "arm 4c: t_xcl was absorbed despite its EXCLUDED.tsv row"
 grep -q '^ft_tests_t_norun: .*run it nowhere' $P/ALL.excluded.txt 2>/dev/null && ok "arm 4: t_norun excluded, run nowhere" || bad "arm 4: t_norun not excluded as run nowhere"
 n_cmp=$(python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); print(sum(1 for x in r if x.get('compare')=='ignore-all-space'), len(r))" 2>/dev/null)
 [ "$n_cmp" = "6 6" ] && ok "arm 5: 6 of 6 absorbed rows read compare=ignore-all-space" || bad "arm 5: compare cells [$n_cmp], want 6 of 6"
@@ -103,7 +106,7 @@ printf ':- initialization((write(hi), nl, halt)).\n' > $O/once.pl
 S4E_OUTPUT_CAP_MB=1 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$O" --lang prolog --twice > $T/ovf.out 2>&1; orc=$?
 if grep -q '^forever: .*bound' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'forever' $O/ALL.csv 2>/dev/null; then ok "arm 7: an OVERFLOW run is excluded, never absorbed (rc $orc)"
 else bad "arm 7: forever.pl was not excluded as an OVERFLOW (rc $orc; ALL.ref $(stat -c %s $O/ALL.ref 2>/dev/null || echo -) bytes)"; fi
-echo "population: 10 fixture programs under xsb-gentest, 2 under the plain prolog builder; the oracle $XSB"
+echo "population: 11 fixture programs under xsb-gentest, 2 under the plain prolog builder; the oracle $XSB"
 if [ "$fail" != 0 ]; then echo "⛔ GATE FAIL [$GATE_NAME]"; tail -5 $T/build.out | sed 's/^/    build: /'; exit 1; fi
 echo "✅ GATE PASS [$GATE_NAME]: XSB's answer is the ref, sorted and checked against NAME_old; an empty or unrun program is excluded; diff -w grades; an OVERFLOW is no answer"
 exit 0
