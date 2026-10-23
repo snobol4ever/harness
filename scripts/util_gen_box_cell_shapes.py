@@ -14,7 +14,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TSV = os.path.join(HERE, 'box_cell_shapes.tsv')
 INC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'planner', 'box_cell_shapes.inc'))
 WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': 'BCS_ICN_LOCAL', 'icn_suspend': 'BCS_ICN_SUSPEND',
-        'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV'}
+        'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME',
+        'home_state': 'BCS_HOME_STATE'}
 
 
 def refuse(msg):
