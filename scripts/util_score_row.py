@@ -1949,11 +1949,18 @@ def cmd_from_progress(a):
             {e for e in pkg_pop if all(last_by.get(e, {}).get(m, ("",))[0] == "OUTSIDE" for m in modes) and e in last_by}
         _outside_new = _outside - xnames - cnames
         pkg_pop = pkg_pop - _outside
+        # ⛔⭐ A PROGRAM THAT CANNOT BE MEASURED IS NEVER A FAILURE (Lon 2026-10-23, in-chat to the ceo, verbatim: "How can a program that can not be
+        # measured be a FAILURE?"; CEO-1926): a shipped program with no table row has no ref, and a table entry with no driver has nothing to run, so
+        # both leave the denominator and show in Excl until the coo cuts its ref from the oracle or excludes it as NO_ORACLE_ANSWER (CEO-1696);
+        # debt_unread_by_design still counts the shipped programs with no row, the coo's work list
+        _norow = pkg_pop - set(pop)
+        _noref = _norow | (pkg_pop & _owed)
+        pkg_pop = pkg_pop - _noref
         cnt = _c.Counter(cnt)
         cnt["PASS"] = sum(1 for e in pkg_pop if _both(e))
         unread = [e for e in pop if e in pkg_pop and e not in last_by and e not in _owed]
         halfread = [e for e in pop if e in pkg_pop and e in last_by and set(last_by[e]) != set(modes)]
-        excluded = nex + len(cnames - xnames) + len(_outside_new)
+        excluded = nex + len(cnames - xnames) + len(_outside_new) + len(_noref)
         if _swi_excl is not None:
             excluded = _swi_excl
     # the row is current at the OLDEST reading of its POPULATION: an excluded or ungraded program's old reading is not one of the row's
@@ -1962,7 +1969,7 @@ def cmd_from_progress(a):
     total = len(pkg_pop) if pkg else len(pop)
     if pkg:
         print("SUITE_ROW_PACKAGE suite=%s shipped=%d table=%d excluded_rows=%d containers=%d outside=%d excluded=%d denominator=%d debt_unread_by_design=%d"
-              % (full_key, len(set(pop) | shipped), len(pop), nex, len(cnames - xnames), len(_outside_new), excluded, total, len(pkg_pop - set(pop))))
+              % (full_key, len(set(pop) | shipped), len(pop), nex, len(cnames - xnames), len(_outside_new), excluded, total, len(_norow)))
     print("SUITE_ROW suite=%s pass=%d total=%d read=%d unread=%d half_read=%d oldest_tree=%s@%s newest_tree=%s@%s secs=%d db_suite=%s table=%s "
           "(PASS %d FAIL %d OUTSIDE %d UNGRADABLE %d UNGRADED %d DEFERRED %d) timed=%d"
           % (full_key, cnt["PASS"], total, len(d), len(unread), len(halfread), oldest[1], oldest[0], newest[1], newest[0], wall, dbsuite,
