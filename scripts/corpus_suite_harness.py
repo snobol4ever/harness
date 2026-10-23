@@ -4567,6 +4567,16 @@ def stage_upstream(companion_dir, name, td, ext):
         for dst in {Path(td) / rel, (Path(td) / rel).with_suffix(".pl")}:
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_text(t, encoding="utf-8")
+    # ⭐ THE DATA A PROGRAM READS BY ITS UPSTREAM PATH (the coo 2026-10-23, CEO-1926): a file that is no Prolog source -- json_tests' data/*.json,
+    # prolog_tests' format_tests/format.tst and utf8.txt -- is vendored under the package's upstream/<top>/ at its path below the test directory
+    # and written there byte for byte (a CR-LF fixture keeps its CRs), so parse_json('data/test1.json') opens it as XSB's own run does.
+    dd = Path(companion_dir) / "upstream" / parts[2]
+    if dd.is_dir():
+        for f in sorted(dd.rglob("*")):
+            if f.is_file():
+                dst = Path(td) / f.relative_to(dd)
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                dst.write_bytes(f.read_bytes())
     return Path(td) / Path(mine[len(pre) + 1:]).parent
 
 

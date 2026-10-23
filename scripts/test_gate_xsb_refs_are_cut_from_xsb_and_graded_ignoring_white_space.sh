@@ -10,15 +10,21 @@
 #   1 the ref of ft_tests_t_sorted is XSB's temp SORTED (the program writes c, a, b): ALL.ref holds a, b, c
 #   2 ALL.xsbold names t_sorted MATCH (its NAME_old is a b c) and t_stale DIFF (its NAME_old is stale; the ref is still XSB's, CEO-1927 (1))
 #   3 t_silent writes nothing: EXCLUDED, FAKEABLE_NO_OBSERVABLE (CEO-1865) -- a silent engine would pass an empty ref
-#   4 t_norun has no ORACLE_RUNS.tsv row: EXCLUDED, "run it nowhere" -- never cut from another oracle; 4b t_cr's answer carries a CR: not absorbed
+#   4 t_norun has no ORACLE_RUNS.tsv row: EXCLUDED, "run it nowhere" -- never cut from another oracle; 4b t_cr's answer carries a CR (a\rb):
+#     ABSORBED, ALL.ref holding it byte for byte (ceo CEO-1926, 2026-10-23: a CR in an oracle's answer is the program's output byte)
 #   5 every absorbed ALL.csv row's compare cell reads ignore-all-space
 #   6 graded: t_ws (SCRIP prints p06:p, XSB p06 : p) PASSES -- diff -w; t_tok (SCRIP prints p06:q) FAILS -- a token is not white space
 #   8 PHASE 2, STAGED (STAGED.tsv stage=upstream): t_sib loads helper by its upstream name -- PASSES with the run directory staged as its upstream
 #     test directory (helper.pl written there, its appended driver cut off), FAILS without the column; 9 t_tmp's answer is the file temp it writes
-#     (answer=temp-sorted): PASSES graded as temp's lines sorted, FAILS without the column (stdout is empty)
+#     (answer=temp-sorted): PASSES graded as temp's lines sorted, FAILS without the column (stdout is empty); 10 t_dat reads data/d.txt by its
+#     upstream path, a data file vendored under the package's upstream/ft_tests/data/: PASSES staged, FAILS without the stage column
 #   7 THE OVERFLOW ARM (CEO-1927 (5)): a plain prolog package (swipl) whose one program prints without end, built under S4E_OUTPUT_CAP_MB=1:
 #     EXCLUDED as an OVERFLOW, never absorbed (rosetta-pascal's seven interactive programs were, at 268435457 bytes each, 2026-10-23)
+#  11 THE CR ARM (CEO-1926): in that plain package cr.pl prints x CR LF y LF -- absorbed, its ref carrying the CR at end of line; graded, it
+#     PASSES (SCRIP prints the same CR), and a control container whose cr.pl prints LF where the oracle printed CR FAILS against that ref
 # FAIL-ONCE: on the harness before this gate's landing the builder refuses the contract (rc 2) and absorbs the overflow -- arms 1-7 read red there.
+# Arms 4b, 10 and 11 read red on harness 23cdfb0, before the CR ruling and the upstream data staging landed (t_cr and cr excluded for their CR,
+# t_dat staged without its data file).
 set -u
 GATE_NAME=test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -44,11 +50,13 @@ EOF
 cp $U/ft_tests/t_ws.P $U/ft_tests/t_tok.P
 printf 'test :- true.\n' > $U/ft_tests/t_norun.P
 printf "test :- atom_codes(A, [0'a, 13, 0'b]), write(A), nl.\n" > $U/ft_tests/t_cr.P
+mkdir -p $U/ft_tests/data $P/upstream/ft_tests/data; printf 'from_data.\n' > $U/ft_tests/data/d.txt; cp $U/ft_tests/data/d.txt $P/upstream/ft_tests/data/d.txt
+printf "test :- see('data/d.txt'), read(X), seen, write(X), nl.\n" > $U/ft_tests/t_dat.P
 printf ':- [helper].\ntest :- h(X), write(X), nl.\n' > $U/ft_tests/t_sib.P
 printf 'h(5).\n' > $U/ft_tests/helper.P
 printf 'test :- write(y), nl, write(x), nl.\n' > $U/ft_tests/t_tmp.P
 printf 'name\tset\tsource\tlicense\n' > $P/SOURCES.tsv
-for t in t_sorted t_stale t_silent t_ws t_tok t_norun t_cr t_sib helper t_tmp t_xcl; do printf 'ft_tests_%s\tft_tests\txsb/xsbtests/ft_tests/%s.P\tfixture\n' $t $t >> $P/SOURCES.tsv; done
+for t in t_sorted t_stale t_silent t_ws t_tok t_norun t_cr t_sib helper t_tmp t_xcl t_dat; do printf 'ft_tests_%s\tft_tests\txsb/xsbtests/ft_tests/%s.P\tfixture\n' $t $t >> $P/SOURCES.tsv; done
 # the vendored files SCRIP runs: each prints its own answer at initialization (t_ws and t_tok differ from XSB's in white space and in a token)
 printf ':- initialization((write(c), nl, write(a), nl, write(b), nl)).\n' > $P/ft_tests_t_sorted.pl
 printf ':- initialization((write(new), nl)).\n' > $P/ft_tests_t_stale.pl
@@ -57,15 +65,16 @@ printf ":- initialization((write('p06:p'), nl)).\n" > $P/ft_tests_t_ws.pl
 printf ":- initialization((write('p06:q'), nl)).\n" > $P/ft_tests_t_tok.pl
 printf ':- initialization(true).\n' > $P/ft_tests_t_norun.pl
 printf ':- initialization(true).\n' > $P/ft_tests_t_cr.pl
+printf ":- initialization((see('data/d.txt'), read(X), seen, write(X), nl)).\n" > $P/ft_tests_t_dat.pl
 # phase 2 (CEO-1927): t_sib loads its sibling by the UPSTREAM name; the vendored helper carries a driver the staging must cut off; t_tmp's answer is temp
 printf ':- [helper].\n:- initialization((h(X), write(X), nl)).\n' > $P/ft_tests_t_sib.pl
 printf 'h(5).\n\n%% DRIVER (appended by the vendoring, CEO-700): fixture\n:- initialization((write(driver_ran), nl)).\n' > $P/ft_tests_helper.pl
 printf ':- initialization((tell(temp), write(y), nl, write(x), nl, told)).\n' > $P/ft_tests_t_tmp.pl
 cp $U/ft_tests/t_sorted.P $U/ft_tests/t_xcl.P; printf ':- initialization((write(a), nl)).\n' > $P/ft_tests_t_xcl.pl
 printf '# fixture\nft_tests_t_xcl.pl\tNO_ORACLE_ANSWER\tfixture: its answer carries the cpu time on some runs\n' > $P/EXCLUDED.tsv
-printf '# fixture\nft_tests_t_sib.pl\tupstream\tstdout\tloads helper by its upstream name\nft_tests_t_tmp.pl\tupstream\ttemp-sorted\twrites its answer to temp\n' > $P/STAGED.tsv
+printf '# fixture\nft_tests_t_sib.pl\tupstream\tstdout\tloads helper by its upstream name\nft_tests_t_tmp.pl\tupstream\ttemp-sorted\twrites its answer to temp\nft_tests_t_dat.pl\tupstream\tstdout\treads data/d.txt by its upstream path\n' > $P/STAGED.tsv
 printf 'oracle\txsb-gentest\tgate fixture (CEO-1927)\nupstream\t%s\tgate fixture\ncompare\tignore-all-space\tgate fixture (gentest.sh diff -w)\n' "$U" > $P/CONTRACT.tsv
-{ echo "# fixture"; for t in t_sorted t_stale t_silent t_ws t_tok t_cr t_sib t_tmp t_xcl; do printf 'ft_tests_%s\tft_tests\tgentest\t%s\ttest.\t-e segfault_handler\\(warn\\).\tft_tests/test.sh\n' $t $t; done; } > $P/ORACLE_RUNS.tsv
+{ echo "# fixture"; for t in t_sorted t_stale t_silent t_ws t_tok t_cr t_sib t_tmp t_xcl t_dat; do printf 'ft_tests_%s\tft_tests\tgentest\t%s\ttest.\t-e segfault_handler\\(warn\\).\tft_tests/test.sh\n' $t $t; done; } > $P/ORACLE_RUNS.tsv
 cd "$HERE/../../SCRIP" || { echo "⛔ REFUSED(2) [$GATE_NAME]: no SCRIP beside the harness"; exit 2; }
 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$P" --lang prolog --twice > $T/build.out 2>&1; brc=$?
 grep -q 'binary older than the tree' $T/build.out && { echo "⛔ REFUSED(2) [$GATE_NAME]: the SCRIP binary is older than its tree -- make, then re-run (nothing measured)"; exit 2; }
@@ -75,13 +84,14 @@ r=$(ref_of ft_tests_t_sorted); [ "$r" = "a b c " ] && ok "arm 1: t_sorted's ref 
 grep -qP '^ft_tests_t_sorted\tMATCH$' $P/ALL.xsbold 2>/dev/null && grep -qP '^ft_tests_t_stale\tDIFF' $P/ALL.xsbold 2>/dev/null \
   && ok "arm 2: ALL.xsbold: t_sorted MATCH, t_stale DIFF" || bad "arm 2: ALL.xsbold lacks t_sorted MATCH / t_stale DIFF: $(tr '\n' ' ' < $P/ALL.xsbold 2>/dev/null | cut -c1-160)"
 grep -q '^ft_tests_t_silent: .*FAKEABLE_NO_OBSERVABLE' $P/ALL.excluded.txt 2>/dev/null && ok "arm 3: t_silent excluded FAKEABLE_NO_OBSERVABLE" || bad "arm 3: t_silent not excluded as FAKEABLE_NO_OBSERVABLE"
-grep -q '^ft_tests_t_cr: .*carriage returns' $P/ALL.excluded.txt 2>/dev/null && ! grep -q $'\r' $P/ALL.ref && ok "arm 4b: t_cr's answer carries a CR: not absorbed, no CR in ALL.ref" || bad "arm 4b: t_cr was absorbed or ALL.ref holds a CR"
+grep -q '^[0-9]*,ft_tests_t_cr,' $P/ALL.csv 2>/dev/null && [ "$(ref_of ft_tests_t_cr)" = $'a\rb ' ] && ok "arm 4b: t_cr's answer carries a CR: absorbed, ALL.ref holding a CR b byte for byte" \
+  || bad "arm 4b: t_cr not absorbed, or its ref reads [$(ref_of ft_tests_t_cr | od -c | head -1 | cut -c9-)] -- want a CR b"
 grep -q '^ft_tests_t_xcl: EXCLUDED.tsv names it NO_ORACLE_ANSWER' $P/ALL.excluded.txt 2>/dev/null && ! grep -q '^[0-9]*,ft_tests_t_xcl,' $P/ALL.csv && ok "arm 4c: a program EXCLUDED.tsv names is not absorbed, though XSB answers it the same twice" || bad "arm 4c: t_xcl was absorbed despite its EXCLUDED.tsv row"
 grep -q '^ft_tests_t_norun: .*run it nowhere' $P/ALL.excluded.txt 2>/dev/null && ok "arm 4: t_norun excluded, run nowhere" || bad "arm 4: t_norun not excluded as run nowhere"
 n_cmp=$(python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); print(sum(1 for x in r if x.get('compare')=='ignore-all-space'), len(r))" 2>/dev/null)
-[ "$n_cmp" = "6 6" ] && ok "arm 5: 6 of 6 absorbed rows read compare=ignore-all-space" || bad "arm 5: compare cells [$n_cmp], want 6 of 6"
+[ "$n_cmp" = "8 8" ] && ok "arm 5: 8 of 8 absorbed rows read compare=ignore-all-space" || bad "arm 5: compare cells [$n_cmp], want 8 of 8"
 n_stg=$(python3 -c "import csv; r={x['entry']:x for x in csv.DictReader(open('$P/ALL.csv'))}; print(r.get('ft_tests_t_sib',{}).get('stage'), r.get('ft_tests_t_tmp',{}).get('answer'), r.get('ft_tests_t_ws',{}).get('stage'))" 2>/dev/null)
-[ "$n_stg" = "upstream temp-sorted " ] && ok "arm 5b: STAGED.tsv's two entries are absorbed with stage=upstream (t_tmp answer=temp-sorted); an unstaged entry's cells are empty" || bad "arm 5b: stage/answer cells read [$n_stg]"
+[ "$n_stg" = "upstream temp-sorted " ] && ok "arm 5b: STAGED.tsv's entries are absorbed with stage=upstream (t_tmp answer=temp-sorted); an unstaged entry's cells are empty" || bad "arm 5b: stage/answer cells read [$n_stg]"
 S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$P/ALL.pl" "$P/ALL.ref" --lang prolog --modes m3 > $T/grade.out 2>&1
 v_of() {  # the board lists every non-pass by name; an entry on a board that ran and not listed passed
   local f="${2:-$T/grade.out}" v; v=$(grep -E "^  [A-Z_]+ m3 $1:" "$f" | grep -oE 'FAIL|CRASH|HANG|UNPROVEN' | head -1)
@@ -90,26 +100,40 @@ v_of() {  # the board lists every non-pass by name; an entry on a board that ran
 [ "$(v_of ft_tests_t_tok)" = FAIL ] && ok "arm 6: t_tok FAILS (p06:q is not white space)" || bad "arm 6: t_tok reads [$(v_of ft_tests_t_tok)], want FAIL"
 [ "$(v_of ft_tests_t_sib)" = PASS ] && ok "arm 8: t_sib PASSES staged upstream (helper found by its upstream name, its appended driver cut off)" || bad "arm 8: t_sib reads [$(v_of ft_tests_t_sib)], want PASS"
 [ "$(v_of ft_tests_t_tmp)" = PASS ] && ok "arm 9: t_tmp PASSES with answer=temp-sorted (y, x written to temp; graded x, y)" || bad "arm 9: t_tmp reads [$(v_of ft_tests_t_tmp)], want PASS"
+[ "$(v_of ft_tests_t_dat)" = PASS ] && ok "arm 10: t_dat PASSES staged (data/d.txt written from the package's upstream/ft_tests/data/)" || bad "arm 10: t_dat reads [$(v_of ft_tests_t_dat)], want PASS"
 # the control: the same container with the compare column cut out of ALL.csv grades t_ws byte for byte, and must FAIL -- the column is what passes it
-C=$T/pkg/ctl; mkdir -p $C; cp $P/* $C/
+C=$T/pkg/ctl; mkdir -p $C; cp -r $P/* $C/
 python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); f=[c for c in r[0].keys() if c!='compare']; w=csv.DictWriter(open('$C/ALL.csv','w',newline=''),f,extrasaction='ignore',lineterminator='\\n'); w.writeheader(); [w.writerow(x) for x in r]"
 S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$C/ALL.pl" "$C/ALL.ref" --lang prolog --modes m3 > $T/ctl.out 2>&1
-S2=$T/pkg/ctl2; mkdir -p $S2; cp $P/* $S2/
+S2=$T/pkg/ctl2; mkdir -p $S2; cp -r $P/* $S2/
 python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); f=[c for c in r[0].keys() if c not in ('stage','answer')]; w=csv.DictWriter(open('$S2/ALL.csv','w',newline=''),f,extrasaction='ignore',lineterminator='\\n'); w.writeheader(); [w.writerow(x) for x in r]"
 S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$S2/ALL.pl" "$S2/ALL.ref" --lang prolog --modes m3 > $T/ctl2.out 2>&1
-[ "$(v_of ft_tests_t_sib $T/ctl2.out)" = FAIL ] && [ "$(v_of ft_tests_t_tmp $T/ctl2.out)" = FAIL ] && ok "arm 8/9: control -- without the stage and answer columns t_sib and t_tmp FAIL (the columns are what pass them)" \
-  || bad "arm 8/9: control -- without the columns t_sib reads [$(v_of ft_tests_t_sib $T/ctl2.out)], t_tmp [$(v_of ft_tests_t_tmp $T/ctl2.out)], want FAIL FAIL"
+[ "$(v_of ft_tests_t_sib $T/ctl2.out)" = FAIL ] && [ "$(v_of ft_tests_t_tmp $T/ctl2.out)" = FAIL ] && [ "$(v_of ft_tests_t_dat $T/ctl2.out)" = FAIL ] \
+  && ok "arm 8/9/10: control -- without the stage and answer columns t_sib, t_tmp and t_dat FAIL (the columns are what pass them)" \
+  || bad "arm 8/9/10: control -- without the columns t_sib reads [$(v_of ft_tests_t_sib $T/ctl2.out)], t_tmp [$(v_of ft_tests_t_tmp $T/ctl2.out)], t_dat [$(v_of ft_tests_t_dat $T/ctl2.out)], want FAIL FAIL FAIL"
 [ "$(v_of ft_tests_t_ws $T/ctl.out)" = FAIL ] && ok "arm 6: control -- without the compare column t_ws FAILS (the column is what passes it)" || bad "arm 6: control -- without the column t_ws reads [$(v_of ft_tests_t_ws $T/ctl.out)], want FAIL"
 O=$T/pkg/ovf; mkdir -p $O
 printf ':- initialization((repeat, write(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx), nl, fail)).\n' > $O/forever.pl
 printf ':- initialization((write(hi), nl, halt)).\n' > $O/once.pl
 printf ":- initialization((write('[ModalShowX11Window] Cannot open display'), nl, halt)).\n" > $O/window.pl
+printf ':- initialization((write(x), put_code(13), nl, write(y), nl, halt)).\n' > $O/cr.pl
 S4E_OUTPUT_CAP_MB=1 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$O" --lang prolog --twice > $T/ovf.out 2>&1; orc=$?
 if grep -q '^forever: .*bound' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'forever' $O/ALL.csv 2>/dev/null; then ok "arm 7: an OVERFLOW run is excluded, never absorbed (rc $orc)"
 else bad "arm 7: forever.pl was not excluded as an OVERFLOW (rc $orc; ALL.ref $(stat -c %s $O/ALL.ref 2>/dev/null || echo -) bytes)"; fi
 if grep -q '^window: .*could not open a display' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'window' $O/ALL.csv 2>/dev/null; then ok "arm 7b: an oracle's display refusal is no answer, never absorbed"
 else bad "arm 7b: window.pl's 'Cannot open display' was absorbed as a ref"; fi
-echo "population: 11 fixture programs under xsb-gentest, 3 under the plain prolog builder; the oracle $XSB"
+crref() { awk '/^%-+ [0-9]+ cr$/{f=1; next} /^%-+ [0-9]+ /{f=0} f' "$1/ALL.ref" 2>/dev/null | od -An -c | tr -s ' ' | tr -d '\n'; }
+if grep -q '^[0-9]*,cr,' $O/ALL.csv 2>/dev/null && [ "$(crref $O)" = ' x \r \n y \n' ]; then ok "arm 11: cr.pl's answer (x CR LF y) is absorbed, its ref carrying the CR at end of line byte for byte"
+else bad "arm 11: cr.pl not absorbed, or its ref reads [$(crref $O)] -- want x CR LF y LF"; fi
+S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$O/ALL.pl" "$O/ALL.ref" --lang prolog --modes m3 > $T/cr.out 2>&1
+grep -q '^[0-9]*,cr,' $O/ALL.csv 2>/dev/null && [ "$(v_of cr $T/cr.out)" = PASS ] && ok "arm 11: graded, cr PASSES -- SCRIP prints the same CR the oracle printed" \
+  || bad "arm 11: cr is not on the board or reads [$(v_of cr $T/cr.out)], want PASS"
+O2=$T/pkg/ovf_lf; mkdir -p $O2; cp $O/ALL.* $O2/; sed -i 's/put_code(13)/put_code(10)/' $O2/ALL.pl
+if grep -q 'put_code(10)' $O2/ALL.pl; then
+  S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$O2/ALL.pl" "$O2/ALL.ref" --lang prolog --modes m3 > $T/cr2.out 2>&1
+  [ "$(v_of cr $T/cr2.out)" = FAIL ] && ok "arm 11: control -- cr printing LF where the oracle printed CR FAILS against the same ref" || bad "arm 11: control -- the LF cr reads [$(v_of cr $T/cr2.out)], want FAIL"
+else bad "arm 11: control -- the LF substitution did not apply to the control's ALL.pl (nothing measured)"; fi
+echo "population: 12 fixture programs under xsb-gentest, 4 under the plain prolog builder; the oracle $XSB"
 if [ "$fail" != 0 ]; then echo "⛔ GATE FAIL [$GATE_NAME]"; tail -5 $T/build.out | sed 's/^/    build: /'; exit 1; fi
-echo "✅ GATE PASS [$GATE_NAME]: XSB's answer is the ref, sorted and checked against NAME_old; an empty or unrun program is excluded; diff -w grades; an OVERFLOW is no answer"
+echo "✅ GATE PASS [$GATE_NAME]: XSB's answer is the ref, sorted and checked against NAME_old; an empty or unrun program is excluded; diff -w grades; an OVERFLOW is no answer; a CR answer is kept byte for byte"
 exit 0

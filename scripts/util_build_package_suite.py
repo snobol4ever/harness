@@ -471,9 +471,6 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                     if (_k2, _L2) != (_k1, _L1):
                         _why = (f"XSB answers differently on two runs ({len(_L1)} lines, then " + (f"{len(_L2)} lines" if _L2 is not None else f"{_k2}, no temp")
                                 + ") -- no one ground truth")
-                if _why is None and any("\r" in _x for _x in _L1):
-                    _why = ("UNGRADED NEEDS_RUNNER_WIRING: XSB's answer carries carriage returns -- a ref with CR breaks OUR FILES ARE LF and the harness "
-                            "reader splits a line on CR (as the general path below refuses one); owed: a reader that holds it")
                 if _why is None and not _L1:
                     _op0 = Path(contract["upstream"]) / _r["dir"] / f"{_r['file']}_old"
                     _n0 = len(h.xsb_answer_lines(_op0.read_bytes())) if _op0.is_file() else 0
@@ -567,13 +564,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             excluded.append((name, "oracle produced EMPTY output -- refusing to mint a vacuous ref"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (empty oracle output)", file=sys.stderr)
             continue
-        if "\r" in ora_text:
-            # ⛔ A REF WITH A CARRIAGE RETURN IS NO REF (the coo 2026-10-09, measured on rosetta-pascal at corpus df56f1058: gapful-numbers-1,
-            # ludic-numbers-2 and two-sum redraw a progress line with #13): ALL.ref would breach OUR FILES ARE LF (test_gate_our_files_are_lf.sh
-            # read it red) and the harness reader splits a line on CR, so the container falls out of step with its own sources.
-            excluded.append((name, "the oracle output carries carriage returns -- a ref with CR breaks OUR FILES ARE LF and the harness reader"))
-            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle output carries CR)", file=sys.stderr)
-            continue
+        # ⭐ A CR IN THE ORACLE'S ANSWER IS THE PROGRAM'S OUTPUT BYTE (ceo CEO-1926, ruled 2026-10-23, .github fda2eb592; withdraws the coo's
+        # exclusion of 2026-10-09): the ref keeps it byte for byte -- the container is read back split on LF only (_read_lf_lines), so a CR
+        # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
         want_rc = ora_rc if ora_rc else 0
         e = h.Entry("block", len(entries) + 1, name, text.splitlines(), ora_text.split("\n"),
                      stdin=stdin_text, want_rc=want_rc)
