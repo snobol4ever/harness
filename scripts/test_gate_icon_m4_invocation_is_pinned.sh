@@ -51,8 +51,8 @@ if grep -qE 'PATH="\$rundir:\$PATH" .*(timeout|"\$TIMEOUT_RETRY") "\$TIMEOUT" "\
 else
   say_fail "jcon runner: the mode-4 binary is not invoked by its bare stem through PATH"
 fi
-if grep -qE 'PATH="\$SUITE:\$PATH" .*(timeout|"\$TIMEOUT_RETRY") "\$TIMEOUT" "\$name"' "$ARIZ"; then
-  say_ok "arizona runner: invokes <stem> with the suite directory first on PATH"
+if grep -qE 'PATH="\$RUNDIR/m4bin:\$SUITE:\$PATH" .*(timeout|"\$TIMEOUT_RETRY") "\$TIMEOUT" "\$name"' "$ARIZ"; then
+  say_ok "arizona runner: invokes <stem> by its bare name, its run directory's m4bin first on PATH (the binary never lands in the corpus, coo 2026-10-23)"
 else
   say_fail "arizona runner: the mode-4 binary is not invoked by its bare stem through PATH"
 fi

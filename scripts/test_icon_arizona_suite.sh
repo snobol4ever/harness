@@ -341,11 +341,13 @@ for std in "$SUITE"/*.ref; do
   # TRUTH at the head of this file, compiles NAME.icn to NAME and runs ./NAME; that is what the .ref files
   # were cut under, so that is what we reproduce. The binary is litter like any other and is removed by name
   # below, both explicitly and by the pre-run snapshot sweep.
-  s4=$(mktemp /tmp/ariz_XXXXXX.s); bin4="$SUITE/$name"
-  # ⛔ REFUSE rather than overwrite: if a shipped file already owns that name, building over it would destroy
-  # tracked corpus content, and the snapshot sweep would NOT remove it (it is not new) -- so the damage would
-  # be silent and permanent. No arizona name collides today; this is the guard for the day one does.
-  if [ -e "$bin4" ]; then echo "REFUSE(2): $sub/$name -- cannot pin the m4 binary to $bin4, a shipped file already owns that name" >&2; rm -f "$s4"; exit 2; fi
+  # ⛔ THE m4 BINARY LIVES IN THIS RUN'S SCRATCH DIR, NEVER THE CORPUS (coo 2026-10-23): it was linked to $SUITE/$name and removed by name only
+  # when its program's grading ended, so a run killed in between (a pool deadline, a scope stop, a SIGKILL that runs no trap) left it in the corpus:
+  # 18 ELF binaries under arizona_tests/general and special after the 10-22/23 night, every later row SKIPPED on the dirty tree and the next run of
+  # that program REFUSED by the shipped-name guard that stood here. Linked into $RUNDIR/m4bin and run by its bare name through PATH from $SUITE, its
+  # argv[0] is still the bare stem the refs were cut under (&progname, the pin above), it dies with RUNDIR's trap, and a kill leaves it in /tmp for
+  # the tmp sweep; with no binary in $SUITE no shipped file can be overwritten, so the guard has nothing left to guard.
+  s4=$(mktemp /tmp/ariz_XXXXXX.s); mkdir -p "$RUNDIR/m4bin" || { echo "⛔ GATE REFUSES: cannot create $RUNDIR/m4bin" >&2; exit 2; }; bin4="$RUNDIR/m4bin/$name"
   AZ_T0="$(progress_clock)"
   m4diag=$(cd "$SUITE" && ${_ipath[@]+"${_ipath[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --compile $_ca "$name.icn" 2>&1 >"$s4" </dev/null)
   m4out=""
@@ -355,7 +357,7 @@ for std in "$SUITE"/*.ref; do
         # ⛔⭐ PTY-GRADED, see the m3 arm above for the reasoning -- the compiled binary, not the stdin path.
         m4out=$(cd "$SUITE" && "$TIMEOUT_RETRY" $((TIMEOUT+5)) python3 "$HERE/icn_keyboard_pty_drive.py" "$SUITE" "$TIMEOUT" -- "$bin4" $_sw); m4rc=$?
       else
-        m4out=$(cd "$SUITE" && PATH="$SUITE:$PATH" ${_fp[@]+"${_fp[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$name" $_sw < "$stdin_file" 2>&1); m4rc=$?
+        m4out=$(cd "$SUITE" && PATH="$RUNDIR/m4bin:$SUITE:$PATH" ${_fp[@]+"${_fp[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$name" $_sw < "$stdin_file" 2>&1); m4rc=$?
         m4out=$(printf '%s\n' "$m4out" | python3 "$HERE/util_render_error_voice.py" icon)
       fi
     fi
