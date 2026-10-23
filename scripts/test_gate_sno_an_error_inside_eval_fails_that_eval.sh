@@ -2,7 +2,7 @@
 # test_gate_sno_an_error_inside_eval_fails_that_eval.sh -- AN ERROR RAISED DIRECTLY IN AN EVALED EXPRESSION FAILS THAT EVAL (cfo 2026-10-23, CEO-1926;
 # the cto's ruling (b): the innermost EVAL's &FNCLEVEL rides in the G_ERROR_EVAL_STAGE range, an errored EVAL a second range rt_eval_land turns into FAIL).
 # Every expectation is CUT FROM THE ORACLE, sbl -bf, at run time. BLOCKING: SCRIP m3 and m4 print what sbl prints for an error inside EVAL of a string
-# under a negation and an alternation (fails, &ERRTYPE 14), at &ERRLIMIT 0 (fails, does not terminate), for a nested EVAL (only the innermost fails)
+# under a negation and an alternation (fails, &ERRTYPE 14), for EVAL of an unevaluated expression (the DT_X road, its own landing), at &ERRLIMIT 0 (fails, does not terminate), for a nested EVAL (only the innermost fails)
 # and for a function the EVAL calls (statement semantics, succeeds). REPORTED, never blocking: THE SIDE-EFFECT GAP (c) -- under (b) the chain still runs
 # to its end after the error before the land fails it, so a later arm with a side effect runs where sbl's does not; this arm prints OPEN or CLOSED so the
 # gap is measured, not assumed (the cto: "that witness is the row for (c), the redirect through g_rtccb[25] to the fragment's failure exit").
@@ -28,7 +28,10 @@ Y3      OUTPUT = '3 S [' V ']'
 E3      V = EVAL("(1 / N, 'd')")                    :S(Y4)
         OUTPUT = '4 F ' &ERRTYPE                    :(E4)
 Y4      OUTPUT = '4 S [' V ']'
-E4      V = EVAL("(EVAL('1 / N'), 'g')")            :S(Y7)
+E4      V = EVAL(*((1 / N), 'e'))                   :S(Y5)
+        OUTPUT = '5 F'                              :(E5)
+Y5      OUTPUT = '5 S [' V ']'
+E5      V = EVAL("(EVAL('1 / N'), 'g')")            :S(Y7)
         OUTPUT = '7 F'                              :(E7)
 Y7      OUTPUT = '7 S [' V ']'
 E7      V = EVAL('NEG()')                           :S(Y8)
