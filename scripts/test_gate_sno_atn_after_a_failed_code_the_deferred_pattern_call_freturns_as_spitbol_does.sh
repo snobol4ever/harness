@@ -6,6 +6,11 @@
 # calls ERROR and leaves by FRETURN. This gate feeds ATN its own ATN.IN with one FUNCTION body made a syntax error that sbl -bf also rejects (LEXICAL_FEATURES[X) for LEXICAL_FEATURES[X]):
 # sbl -bf prints Compilation error, Compilation failed and FATAL ERROR and exits 0; SCRIP stops after Compilation error with SIGSEGV, a jump to an address inside the live GC heap (ZGC-STALE).
 # The answer is cut from sbl -bf at run time; the two wall-clock lines ATN prints are masked as ALL.mask masks them. rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.
+# THE REGRESSION (cfo 2026-10-23, row snobol4-atn-segfaults-again-...-ceo-1926): ATN read red again from e53f5dcd6 (THE SPINE FLIP; bisected from e71e5253b), and two smaller witnesses carry the two
+# defects it exposed. sto: a FENCE'd capture stored as its own pattern, A = (LEN(1) $ V) FENCE, then 'xyz' A 'q' -- the outer 'q' fails, re-enters the stored blob at its beta, and that entry jumped
+# to the on-spine MATCH_ABORT without popping the capture's save cell its gamma had kept, so the abort's exit read the blob frame's DT_P word as its continuation. two: P = (LEN(1) $ V) FENCE
+# (LEN(1) $ W) 'q' -- the second capture's inner beta was folded through its save's beta (the ZPOP fold) with the save's own cell but not its fence whack-pop (zd_wp), 16 bytes short; red on
+# 2f03e45cf too. Both answer failed under sbl -bf; both SIGSEGV'd into the GC heap in both modes before the cure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 B="$HERE/../../SCRIP"
@@ -39,15 +44,18 @@ for m in m3 m4; do
 done
 printf "        P = ('' \$ *V) FENCE 'q'\n        'xyz' P                         :S(Y)F(N)\nY       OUTPUT = 'ok'                   :(END)\nN       OUTPUT = 'failed'\nEND\n" > "$D/val.sno"
 printf "        'xyz' ('' \$ *V) FENCE 'q'        :S(Y)F(N)\nY       OUTPUT = 'ok'                   :(END)\nN       OUTPUT = 'failed'\nEND\n" > "$D/inl.sno"
-for w in val inl; do
+printf "        P = (LEN(1) \$ V) FENCE (LEN(1) \$ W) 'q'\n        'xyz' P                         :S(Y)F(N)\nY       OUTPUT = 'ok'                   :(END)\nN       OUTPUT = 'failed'\nEND\n" > "$D/two.sno"
+printf "        A = (LEN(1) \$ V) FENCE\n        'xyz' A 'q'                     :S(Y)F(N)\nY       OUTPUT = 'ok'                   :(END)\nN       OUTPUT = 'failed'\nEND\n" > "$D/sto.sno"
+desc() { case "$1" in val) echo "P = ('' \$ *V) FENCE 'q'";; inl) echo "inline ('' \$ *V) FENCE 'q'";; two) echo "P = (LEN(1) \$ V) FENCE (LEN(1) \$ W) 'q'";; sto) echo "A = (LEN(1) \$ V) FENCE then A 'q'";; esac; }
+for w in val inl two sto; do
     ( cd "$D" && timeout -k 5 10 "$SBL" -bf $w.sno < /dev/null > $w.want 2>&1 )
     [ "$(cat "$D/$w.want")" = failed ] || refuse "sbl -bf answered [$(tr '\n' '|' < "$D/$w.want")] for the $w witness, not failed"
     ( cd "$D" && timeout -k 5 10 "$B/scrip" $w.sno < /dev/null > $w.m3 2> $w.m3.err )
     ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $w.s $w.sno < /dev/null 2> $w.cerr && gcc $w.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $w.bin 2>> $w.cerr && timeout -k 5 10 ./$w.bin < /dev/null > $w.m4 2> $w.m4.err )
     for m in m3 m4; do
-        if cmp -s "$D/$w.want" "$D/$w.$m"; then arm "the $w witness ('' \$ *V) FENCE 'q' $m prints failed as sbl -bf does" ok
+        if cmp -s "$D/$w.want" "$D/$w.$m"; then arm "the $w witness $(desc $w) $m prints failed as sbl -bf does" ok
         else arm "the $w witness $m" "got [$(tr '\n' '|' < "$D/$w.$m")] $(head -1 "$D/$w.$m.err" | cut -c1-100)"; fi
     done
 done
-if [ "$red" -eq 0 ]; then echo "GATE PASS(0) [sno_atn_failed_code_deferred_freturn]: 6 of 6 arms equal sbl -bf (ATN, the pattern-value witness and its inline control, both modes)"; exit 0; fi
-echo "GATE FAIL(1) [sno_atn_failed_code_deferred_freturn]: $red of 6 arms diverge from sbl -bf"; exit 1
+if [ "$red" -eq 0 ]; then echo "GATE PASS(0) [sno_atn_failed_code_deferred_freturn]: 10 of 10 arms equal sbl -bf (ATN, the pattern-value witness and its inline control, the two-capture and stored-fence witnesses, both modes)"; exit 0; fi
+echo "GATE FAIL(1) [sno_atn_failed_code_deferred_freturn]: $red of 10 arms diverge from sbl -bf"; exit 1
