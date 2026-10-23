@@ -58,7 +58,16 @@ ANGLES="$( { [ $DO_P = 1 ] && printf 'process,'; [ $DO_I = 1 ] && printf 'iter,'
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name "*.$EXT" -printf '%f\n' | sed "s/\.$EXT\$//" | LC_ALL=C sort)
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.$EXT under $BD -- a population of zero is not a green board"
+# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded,
+# their rows appended, and no suite row is written (rr_end) -- one program at a time (Lon 2026-10-23, CEO-1926)
+. "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
+if rr_selected; then _ks=(); for k in "${KERNELS[@]}"; do rr_admits "$k" && _ks+=("$k"); done; KERNELS=(${_ks[@]+"${_ks[@]}"}); fi
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+# ⭐ A WRAPPER READS ITS KERNEL'S DATA FROM ITS OWN DIRECTORY (cfo 2026-10-23, CEO-1926): parse-json and parse-json-no-obj-creation open
+# $*PROGRAM.parent.add('panda-projects.json'); the pristine kernel runs from $BD and finds it, but the iter and time twins are generated into $T and
+# died rc 1 "Failed to open file" on every reading since the angles ran. Every data file of the tree that a kernel names is copied beside them.
+for _d in "$BD"/*; do case "${_d##*/}" in *."$EXT"|*.ref|*.heap|*.stack|*.ast|*.s|*.tsv|*.md|LICENSE*) continue;; esac
+  [ -f "$_d" ] && grep -lqF -- "${_d##*/}" "$BD"/*."$EXT" && cp "$_d" "$T/"; done
 PROG_ROWS="$T/progress.tsv"; : >"$PROG_ROWS"
 run1() {
   local o="$1" kb="$2"; shift 2
@@ -157,6 +166,7 @@ if [ "$IS_BOARD" = 0 ]; then
   echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
+  rr_selected && { rr_end "$SUITE_KEY"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }
   . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
   read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/raku" "$BD" "" "$NOWRITE")"
   echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"
