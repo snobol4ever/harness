@@ -211,8 +211,12 @@ def read_contract(pkg_dir):
     m4 the same way). And `units<TAB>ref-beside` -- the package's own harness grades a source only when a <stem>.ref sits beside
     it (the Icon packages' boards), so a source without one (a library graded through its driver, a spliced include) is no unit
     here either. Absent file = stdout alone and every source a unit, as every package before the file existed. Any other key or
-    value refuses."""
-    out = {"stderr": "", "units": "", "dialect": ""}
+    value refuses. ⭐ XSB's own contract (ceo CEO-1927, 2026-10-23; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB
+    PACKAGE): `oracle<TAB>xsb-gentest` -- each ref is cut from XSB 5.0.0 (xsb_bin) as XSB's own test scripts run the program, the run each
+    entry's row of ORACLE_RUNS.tsv records, in a copy of `upstream<TAB><dir>` (the upstream test tree, an absolute path), its answer the
+    sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
+    harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space."""
+    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -228,9 +232,37 @@ def read_contract(pkg_dir):
             out["units"] = "ref-beside"
         elif f[0] == "dialect" and f[1] == "any-fpc-mode":
             out["dialect"] = "any-fpc-mode"
+        elif f[0] == "oracle" and f[1] == "xsb-gentest":
+            out["oracle"] = "xsb-gentest"
+        elif f[0] == "upstream" and f[1].startswith("/"):
+            out["upstream"] = f[1]
+        elif f[0] == "compare" and f[1] == "ignore-all-space":
+            out["compare"] = "ignore-all-space"
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside and dialect=any-fpc-mode only")
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, dialect=any-fpc-mode, "
+                     f"oracle=xsb-gentest, upstream=<absolute dir> and compare=ignore-all-space only")
+    if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
+        h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
     return out
+
+
+def read_oracle_runs(pkg_dir):
+    """ORACLE_RUNS.tsv: one row per program XSB's own test scripts run, as util_xsb_oracle_runs.py recorded it from them --
+    name<TAB>dir<TAB>kind<TAB>file<TAB>cmd<TAB>emu_args<TAB>script. A name twice, a kind other than gentest/wfs, or a short row refuses."""
+    rf = pkg_dir / "ORACLE_RUNS.tsv"
+    if not rf.is_file():
+        h.refuse(f"{rf} missing -- oracle=xsb-gentest cuts each ref from the run XSB's own scripts make, and this file records them")
+    runs = {}
+    for n, line in enumerate(rf.read_text().splitlines(), 1):
+        if not line.strip() or line.startswith("#"):
+            continue
+        f = line.split("\t")
+        if len(f) != 7 or f[2] not in ("gentest", "wfs") or not f[0] or not f[3]:
+            h.refuse(f"{rf}:{n}: a run row is name, dir, kind (gentest|wfs), file, cmd, emu_args, script -- got {line[:120]!r}")
+        if f[0] in runs:
+            h.refuse(f"{rf}:{n}: {f[0]} has two runs -- one program, one recorded run")
+        runs[f[0]] = dict(name=f[0], dir=f[1], kind=f[2], file=f[3], cmd=f[4], emu_args=f[5], script=f[6])
+    return runs
 
 
 def build(pkg_dir, lang, out_prefix="ALL", twice=False):
@@ -244,6 +276,18 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     ref_beside = contract["units"] == "ref-beside"
+    xsb = contract["oracle"] == "xsb-gentest"
+    xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
+    if xsb:
+        xsb_bin = h.xsb_oracle_bin()
+        xsb_runs = read_oracle_runs(pkg_dir)
+        _ug = pkg_dir / "UNGRADED.tsv"
+        for _ln in (_ug.read_text().splitlines() if _ug.is_file() else []):
+            _f = _ln.split("\t")
+            if len(_f) >= 2 and not _ln.startswith("#") and _f[1] == "NEEDS_RUNNER_WIRING":
+                xsb_owed.add(_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0])
+        print(f"contract: oracle xsb-gentest (CONTRACT.tsv) -- {xsb_bin}, each ref as XSB's own test scripts run the program "
+              f"({len(xsb_runs)} runs in ORACLE_RUNS.tsv), in a copy of {contract['upstream']}; {len(xsb_owed)} UNGRADED NEEDS_RUNNER_WIRING held", file=sys.stderr)
     if ref_beside:
         print("contract: units ref-beside (CONTRACT.tsv) -- a source is a unit only with its <stem>.ref beside it", file=sys.stderr)
     # ⭐ ONE LEVEL OF SUBDIRS, MATCHING THE TASK'S OWN DONE-WHEN EXACTLY (`find "$d" -maxdepth 2 ...`,
@@ -378,6 +422,51 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         # file, from the oracle."): under CONTRACT.tsv dialect=any-fpc-mode a Pascal program fpc refuses to compile under -Miso (the wrapper's
         # exit 126 with nothing on stdout) is compiled again in fpc's default mode (which honours the source's own {$mode}), then objfpc,
         # delphi and tp; the first that compiles cuts the ref, and ALL.dialect names the mode per entry.
+        if xsb:
+            _why = None
+            _r = xsb_runs.get(name)
+            if _r is None:
+                _why = ("XSB's own test scripts run it nowhere (no ORACLE_RUNS.tsv row): a library its loader opens (CONTAINERS.tsv LOADED_BY) "
+                        "or a program no XSB script runs (EXCLUDED.tsv NO_ORACLE_ANSWER)")
+            elif name in xsb_owed:
+                _why = "UNGRADED NEEDS_RUNNER_WIRING: XSB answers it in its upstream directory, and SCRIP's run needs that directory staged (owed)"
+            else:
+                _k1, _a1, _e1, _rc1 = h.run_xsb_gentest(xsb_bin, contract["upstream"], _r, paths["timeout"])
+                _L1 = h.xsb_answer_lines(_a1) if _a1 is not None else None
+                if _k1 != "RAN":
+                    _why = f"XSB's run ended {_k1} (rc {_rc1}) -- no answer"
+                elif _L1 is None:
+                    _why = f"XSB wrote no temp file (rc {_rc1}) -- no answer"
+                elif twice:
+                    _k2, _a2, _e2, _rc2 = h.run_xsb_gentest(xsb_bin, contract["upstream"], _r, paths["timeout"])
+                    _L2 = h.xsb_answer_lines(_a2) if _a2 is not None else None
+                    if (_k2, _L2) != (_k1, _L1):
+                        _why = (f"XSB answers differently on two runs ({len(_L1)} lines, then " + (f"{len(_L2)} lines" if _L2 is not None else f"{_k2}, no temp")
+                                + ") -- no one ground truth")
+                if _why is None and any("\r" in _x for _x in _L1):
+                    _why = ("UNGRADED NEEDS_RUNNER_WIRING: XSB's answer carries carriage returns -- a ref with CR breaks OUR FILES ARE LF and the harness "
+                            "reader splits a line on CR (as the general path below refuses one); owed: a reader that holds it")
+                if _why is None and not _L1:
+                    _op0 = Path(contract["upstream"]) / _r["dir"] / f"{_r['file']}_old"
+                    _n0 = len(h.xsb_answer_lines(_op0.read_bytes())) if _op0.is_file() else 0
+                    _why = (f"XSB prints nothing where its NAME_old has {_n0} lines -- no answer (NO_ORACLE_ANSWER, CEO-1927 (3))" if _n0 else
+                            "XSB's answer is empty, as its NAME_old is -- a silent engine passes it, so it measures nothing (FAKEABLE_NO_OBSERVABLE, CEO-1865)")
+            if _why:
+                excluded.append((name, _why))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({_why[:90]})", file=sys.stderr)
+                continue
+            _op = Path(contract["upstream"]) / _r["dir"] / f"{_r['file']}_old"
+            if _op.is_file():
+                _o = h.xsb_answer_lines(_op.read_bytes())
+                _w = lambda L: sorted("".join(x.split()) for x in L)
+                _chk = "MATCH" if _o == _L1 else ("MATCH-w" if _w(_o) == _w(_L1) else f"DIFF {len(_o)} lines in NAME_old, {len(_L1)} in XSB's answer")
+            else:
+                _chk = "NO_OLD"
+            xsbold.append((name, _chk))
+            e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _L1, stdin=None, want_rc=0)
+            entries.append(e)
+            print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
+            continue
         _ladder = [flags, "", "-Mobjfpc", "-Mdelphi", "-Mtp"] if (lang == "pascal" and contract["dialect"] == "any-fpc-mode") else [flags]
         for _fl in _ladder:
             ora_text, ora_rc, ora_kind = _oracle_isolated(_fl)
@@ -391,7 +480,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         # oracle."): a program that prints the time, a random draw or an address answers differently on every run, so a ref cut from
         # one run grades SCRIP against an accident. Under --twice the oracle runs again in a fresh directory and a program whose
         # output or exit code differs is excluded with that reason, never absorbed.
-        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN") and _oracle_isolated(_fl)[:2] != (ora_text, ora_rc):
+        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and _oracle_isolated(_fl)[:2] != (ora_text, ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
             continue
@@ -402,6 +491,13 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         if ora_kind == "HANG":
             excluded.append((name, "oracle timed out -- non-terminating or too slow for the grading timeout"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle HANG)", file=sys.stderr)
+            continue
+        if ora_kind == "OVERFLOW":
+            # ⛔ A RUN THE OUTPUT BOUND KILLED IS NO ANSWER (the coo 2026-10-23, measured on rosetta-pascal: seven interactive programs that loop at
+            # EOF printing a prompt -- menu, nim-game, pig-the-dice-game -- each wrote exactly the bound, 268435457 bytes, twice, and were absorbed:
+            # ALL.ref grew from 236 KB to 1.88 GB; ceo CEO-1927 (5)). _run_raw hands back the truncated stream with kind OVERFLOW and no rc.
+            excluded.append((name, f"the oracle's output passed the harness's bound (S4E_OUTPUT_CAP_MB, {h._OUTPUT_CAP} bytes) and the run was killed -- no answer"))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle output OVERFLOW)", file=sys.stderr)
             continue
         if ora_kind == "UNPROVEN":
             h.refuse(f"oracle binary not runnable at all: {oracle_bin}")
@@ -487,6 +583,13 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     if not wrote_in and out_in.exists():
         out_in.unlink()
 
+    out_xsbold = pkg_dir / f"{out_prefix}.xsbold"
+    if xsbold:
+        out_xsbold.write_text("# each absorbed entry's XSB answer against the upstream NAME_old XSB ships, as gentest.sh compares (sorted; MATCH-w: equal once "
+                              "white space is removed, diff -w): name<TAB>check. The ref is XSB's answer either way (ceo CEO-1927 (1)).\n"
+                              + "".join(f"{n}\t{c}\n" for n, c in xsbold))
+    elif out_xsbold.exists():
+        out_xsbold.unlink()
     out_dialect = pkg_dir / f"{out_prefix}.dialect"
     if dialects:
         out_dialect.write_text("# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode\n"
@@ -525,6 +628,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
     _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
+    _cm_col = ["compare"] if contract["compare"] == "ignore-all-space" else []   # derived from CONTRACT.tsv, every build (CEO-1927)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
     # 657 such rows), and a unit this build does not absorb -- a library graded through its driver, a program whose oracle output
@@ -553,19 +657,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                     _old_cmd[_row.get("entry")] = _c
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + ["ignore-all-space" for c in _cm_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
                         (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c, _fn in cols])
+                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)

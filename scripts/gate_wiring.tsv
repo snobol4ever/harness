@@ -1327,6 +1327,7 @@ test_gate_umbrella_done_whens_anchor_on_the_board_line.sh	WIRED	-	-	-
 test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh	WIRED	-	-	-
 test_gate_x86_cmp_and_or_reg_mem_source_never_falls_through_silently.sh	WIRED	-	-	-
 test_gate_xfail_marker_and_index_agree.sh	WIRED	-	-	-
+test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space.sh	WIRED	-	-	-
 test_gate_zd_a_back_edge_leaves_a_blob_run_and_alternation_arms_stay_unplanned.sh	WIRED	-	-	-
 test_gate_zd_a_run_keeps_no_producer_whose_consumer_is_outside_it.sh	WIRED	-	-	-
 test_gate_zd_check_reads_zero_violations_on_the_cores.sh	WIRED	-	-	-

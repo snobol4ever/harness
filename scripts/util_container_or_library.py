@@ -487,6 +487,21 @@ def main(argv):
         print('REFUSED(2): %s is missing' % ct, file=sys.stderr)
         return 2
     red, n = [], 0
+    # ⭐ A LIBRARY XSB's OWN RUN OPENED (ceo CEO-1927, 2026-10-23): a package whose CONTRACT.tsv names oracle=xsb-gentest records, in
+    # ORACLE_LOADS.tsv, every vendored file XSB opened while its own test scripts ran ANOTHER program (strace, util_xsb_oracle_runs.py
+    # loaders). XSB loads by upstream name and by load_dyn, load_dync, `import ... from`, or a script's own run -- forms no static reading of
+    # the flat package names -- so a LOADED_BY row there re-derives from that recorded measurement: its first word is one of the loaders.
+    xsb_loads = None
+    _cf = os.path.join(root, 'CONTRACT.tsv')
+    if os.path.isfile(_cf) and any(l.split('\t')[:2] == ['oracle', 'xsb-gentest'] for l in open(_cf, encoding='utf-8')):
+        _lf = os.path.join(root, 'ORACLE_LOADS.tsv')
+        if not os.path.isfile(_lf):
+            print('REFUSED(2): %s declares oracle=xsb-gentest and %s is missing -- its LOADED_BY rows re-derive from it' % (_cf, _lf), file=sys.stderr)
+            return 2
+        xsb_loads = {}
+        for _ln, _c in tsv_rows(_lf):
+            if len(_c) >= 3:
+                xsb_loads[_c[0]] = {w.split()[0] for w in _c[2].split(' | ') if w.strip()}
     for ln, c in tsv_rows(ct):
         n += 1
         if len(c) < 3:
@@ -495,6 +510,8 @@ def main(argv):
         rel, kind, meas = c[0], c[1], (c[2].split() or [''])[0]
         if kind not in KINDS:
             red.append('%s: KIND %r is none of %s -- a class-less or unknown row names no measurement' % (rel, kind, '/'.join(KINDS)))
+            continue
+        if xsb_loads is not None and kind == 'LOADED_BY' and meas in xsb_loads.get(re.sub(r'\.pl$', '', rel), ()):
             continue
         v, k, m = classify(pkg, rel)
         if v != 'CONTAINER' or k != kind:

@@ -564,6 +564,47 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
 
 
+def xsb_oracle_bin():
+    """THE XSB ORACLE (ceo CEO-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE), reached
+    through lib_oracle_flags.sh's xsb_bin() alone -- a missing launcher refuses rc=2 with the accessor's own words."""
+    lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
+    r = subprocess.run(["bash", "-c", f". '{lib}' && xsb_bin"], capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip():
+        refuse(f"lib_oracle_flags.sh refused (xsb_bin): {r.stderr.strip() or r.stdout!r}")
+    return r.stdout.strip()
+
+
+def xsb_answer_lines(raw):
+    """XSB's answer as gentest.sh compares it and as the vendored driver xsb_sorted_output prints SCRIP's: the non-empty lines of the
+    temp file, sorted (code-point order, the standard order msort gives strings), duplicates kept."""
+    return sorted(ln for ln in raw.decode("utf-8", "replace").split("\n") if ln != "")
+
+
+def run_xsb_gentest(xsb_bin, upstream, run, timeout):
+    """ONE XSB RUN AS XSB'S OWN TEST SCRIPTS MAKE IT (ceo CEO-1927, 2026-10-23). `run` is a row of the package's ORACLE_RUNS.tsv, recorded from
+    XSB's own test.sh (util_xsb_oracle_runs.py): dir (the upstream directory the script runs in, below `upstream`), kind, file, cmd, emu_args.
+    A fresh copy of the run's TOP-LEVEL test directory (its stale *.xwam, *_new and temp left out, so every source compiles here), cwd the
+    run's dir inside it; stdin as the script writes it -- kind gentest (gentest.sh, the stest.sh testall.sh runs): `[FILE].\\ntell(temp).\\nCMD\\ntold.`,
+    kind wfs (wfs_tests/gentest.sh, whose test/1 opens temp itself): `[wfs_test].\\nCMD\\ntold.` -- to `xsb <emu_args>` (testall.sh's -e
+    segfault_handler(warn).). The answer is the file temp the run wrote. Returns (kind, answer_bytes or None, stderr_bytes, rc): kind is
+    _run_raw's (RAN, HANG, OVERFLOW, UNPROVEN), CRASH for a signal."""
+    import shlex
+    top = run["dir"].split("/")[0]
+    src = Path(upstream) / top
+    if not src.is_dir():
+        refuse(f"ORACLE_RUNS.tsv names {run['dir']!r}, and {src} is no directory -- the upstream tree the package's CONTRACT.tsv names is not there")
+    with tempfile.TemporaryDirectory(prefix="xsb_gentest_") as t:
+        dst = Path(t) / top
+        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("*.xwam", "*_new", "temp"))
+        cwd = Path(t) / run["dir"]
+        stdin = (f"[{run['file']}].\ntell(temp).\n{run['cmd']}\ntold.\n" if run["kind"] == "gentest" else f"[wfs_test].\n{run['cmd']}\ntold.\n")
+        kind, out, err, rc = _run_raw([xsb_bin] + shlex.split(run["emu_args"]), timeout, cwd=str(cwd), stdin_text=stdin)
+        if kind == "RAN" and rc is not None and rc < 0:
+            kind = "CRASH"
+        tp = cwd / "temp"
+        return kind, (tp.read_bytes() if tp.is_file() else None), err, rc
+
+
 def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None):
     """THE ICON ORACLE AS THE ICON PACKAGES' OWN HARNESS RUNS IT, for a package whose CONTRACT.tsv merges stderr (the coo
     2026-10-01, measured on jcon_tests): `icont -s -o <stem> <name>` in the file's own directory, its stderr kept apart, then
@@ -1007,7 +1048,7 @@ def _timeout_load():
         return 0.0, os.cpu_count() or 1
 
 
-def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False):
+def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False):
     # ⛔ A TIMEOUT UNDER LOAD MEASURED THE SCHEDULER, NOT THE PROGRAM (ceo CEO-1335; the coo 2026-10-09): at load 39 two Prolog rung
     # entries that run in 0.1 to 0.6 s read m4 TIMEOUT, and at load ~25 pass 42's RakBench lost point_class_add's iter angle the same
     # way. When a program times out while the 1-minute load exceeds the cores, the reading is COULD NOT MEASURE: the program is run
@@ -1016,7 +1057,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     # as before -- a timeout scaled by load is NOT the cure (it would hide a real hang at high load). S4E_TIMEOUT_RETRY=0 disables
     # the retry (the gate's fail-once arm).
     v = _classify_run(argv, timeout, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                      out_files=out_files, merge_stderr=merge_stderr)
+                      out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
     # ⛔⭐ SUPERSEDED IN PART (Lon 2026-10-15 15:3x CDT, in-chat to the coo, verbatim: "So timeout SHOULD NOT count as valid." and "The
     # strategy should be to accumulate a list of timeouts, and do a retry with longer timeouts."): EVERY timeout is retried once,
     # whatever the load, at lib_timeout_retry.longer(timeout) -- six times the first limit, capped at 600 s -- and only a timeout at
@@ -1028,7 +1069,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     import lib_timeout_retry as _ltr
     at = _ltr.longer(timeout)
     v2 = _classify_run(argv, at, expected_text, cwd=cwd, env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                       out_files=out_files, merge_stderr=merge_stderr)
+                       out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
     l2, _n = _timeout_load()
     v2.retry = "retried=1 load1=%.2f/%.2f nproc=%d at=%gs" % (l1, l2, n, at)
     if v2.kind == "HANG":
@@ -1036,7 +1077,7 @@ def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, 
     return v2
 
 
-def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False):
+def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False):
     _out_files_clear(cwd, out_files)
     kind, out, err, rc = _run_raw(argv, timeout, cwd=cwd, env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, cwd, out_files) if out_files else out
@@ -1048,10 +1089,10 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
         return Verdict("UNPROVEN", out, err, None, detail=err.decode("utf-8", "replace"))
     if rc is not None and rc < 0:
         return Verdict("CRASH", out, err, rc, detail=f"signal {-rc}")
-    return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr)
+    return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
-def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False):
+def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
     its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (CEO-1354), so the two cannot disagree."""
     got = out.decode("utf-8", "replace").rstrip("\n")
@@ -1093,7 +1134,11 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # snobol4 1 (the defect), prolog 4 (declared below), and ZERO in icon/raku/rebus/snocone/pascal (seat15).
     # ⭐ Declared-not-derived, same principle as the `modes` column: "rc!=0 plus an empty ref" is a heuristic
     # that is right on today's two languages and silently wrong on the next one.
-    if exp is not None and got == exp:
+    # ⭐ A PACKAGE WHOSE OWN HARNESS COMPARES IGNORING WHITESPACE IS GRADED THAT WAY (ceo CEO-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD
+    # PROLOG ORACLE): XSB's gentest.sh diffs its sorted answer with `diff -w`, all white space within a line ignored (XSB writes `p06 : p` where
+    # SCRIP writes `p06:p`). ALL.csv's compare column reads ignore-all-space for such an entry (read_command_line_columns); lines still count.
+    _same = exp is not None and (got == exp or (ws_blind and ["".join(x.split()) for x in got.split("\n")] == ["".join(x.split()) for x in exp.split("\n")]))
+    if _same:
         if rc is not None and rc != want_rc:
             return _oom_verdict(out, err, rc, masked_n) or Verdict("FAIL", out, err, rc,
                            detail=f"output matched but rc={rc}, expected {want_rc} (declare want_rc if this is correct)")
@@ -1115,7 +1160,7 @@ def stdbuf_wrap(paths, argv):
     return argv
 
 
-def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False):
+def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
     timeout = timeout or paths["timeout"]
     # ⛔⭐ ARGV IS THE BARE NAME, NOT THE FULL PATH (row suite-harness-argv-echoes-a-mktemp-path-so-
     # diagnostic-programs-cannot-be-graded) -- a diagnostic that echoes its own argv (e.g. a SPITBOL
@@ -1125,7 +1170,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     if paths["engine"] != "scrip":
         return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
                         env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
-                        out_files=out_files, merge_stderr=merge_stderr)
+                        out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
     argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name])
     # ⛔⭐ THE `--` SEPARATOR IS MANDATORY AND IS WHAT MAKES THIS SAFE. The driver has NO unknown-flag
     # diagnostic: any unrecognised argument falls through to being treated as a FILENAME, so a declared
@@ -1154,7 +1199,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr)
+    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -1207,7 +1252,7 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     return None
 
 
-def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False):
+def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
@@ -1254,7 +1299,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
         if (skip.detail == "scrip --compile failed" and skip.returncode is not None and skip.returncode > 0
                 and os.environ.get("S4E_M4_COMPILE_REFUSAL_SKIP", "") != "1"):
             v = _grade_output(skip.stderr if merge_stderr else b"", skip.stderr, skip.returncode, expected_text, want_rc=want_rc,
-                              mask=mask, merge_stderr=merge_stderr)
+                              mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
             v.detail = "compile refusal, graded as mode 3 grades it" + (": " + v.detail if v.detail else "")
             return v
         return skip
@@ -1272,7 +1317,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr)
+    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -1436,6 +1481,7 @@ class Entry:
         self.merge_stderr = False # True when the entry's answer is stdout and stderr as ONE stream (ALL.csv's stderr column reads
                                    # "merged"): the contract of a package whose own harness cut its refs as `prog < in > out 2>&1`
                                    # (the Icon packages, CEO-445), applied alike to the oracle's ref cut and to m3 and m4.
+        self.compare_ws = False   # True when ALL.csv's compare column reads ignore-all-space: each line graded with its white space removed (CEO-1927)
         self.stack_kb = None      # int KB of STACK this entry declares (CEO-1225), or None = the runtime's 64 MB floor.
         self.heap_kb = None       # int KB this entry DECLARES it needs, or None = the shipped default.
                                    # Lon 2026-09-23 / CEO-1167. DECLARED in ALL.csv's heap_kb column (or a
@@ -1555,7 +1601,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, CEO-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1569,14 +1615,14 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr)
+        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -2424,7 +2470,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
                              mask=getattr(entry, 'mask', None),
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None),
                              compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
-                             merge_stderr=getattr(entry, 'merge_stderr', False))
+                             merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False))
 
 
 # ================================================================== CLI ===
@@ -4440,6 +4486,17 @@ def validate_out_files_cell(raw, where):
     return words
 
 
+def validate_compare_cell(raw, where):
+    """ONE compare cell: empty = byte for byte (every table before the column existed); "ignore-all-space" = each line compared with its white
+    space removed, as `diff -w` compares (XSB's gentest.sh, CEO-1927). Anything else refuses rc=2 naming the cell."""
+    v = (raw or "").strip()
+    if v == "":
+        return False
+    if v == "ignore-all-space":
+        return True
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or 'ignore-all-space' only")
+
+
 def validate_stderr_cell(raw, where):
     """ONE stderr cell: empty = stdout alone is the answer (every table before the column existed); "merged" = stdout and stderr
     as one stream. Anything else refuses rc=2 naming the cell -- a contract word the reader does not know is never guessed."""
@@ -4586,6 +4643,8 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.out_files = of
         if validate_stderr_cell(row.get("stderr"), where):
             e.merge_stderr = True
+        if validate_compare_cell(row.get("compare"), where):
+            e.compare_ws = True
 
 
 def cmd_extract_family(args):
