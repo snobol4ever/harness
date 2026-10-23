@@ -142,6 +142,10 @@ if [ -n "$ONLY_DRIVER" ]; then
     FILES=("$PKG/$ONLY_DRIVER")
     progress_append() { :; }   # one driver is not a board: no progress row
 fi
+# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<dir/stem>[,...] (PARTITION.tsv's keys) only those programs
+# are graded and their rows appended, and no suite row is written (rr_end) -- one program at a time, re-graded after each fix (Lon 2026-10-23, CEO-1926)
+. "$HERE/lib_rr.sh" && rr_load "$PKG" || exit 2
+if rr_selected; then _fs=(); for f in "${FILES[@]}"; do _r="${f#"$PKG"/}"; rr_admits "${_r%.pl}" && _fs+=("$f"); done; FILES=(${_fs[@]+"${_fs[@]}"}); fi
 TOTAL=${#FILES[@]}
 [ "$TOTAL" -gt 0 ] || { echo "⛔ REFUSED-TO-GRADE: zero .pl files found under $PKG"; exit 2; }
 
@@ -470,6 +474,7 @@ if [ "$OK_TIMEOUT" -gt 0 ]; then
     for n in "${OK_TIMEOUT_NAMES[@]}"; do echo "   $n"; done
 fi
 echo "GNU_SUITE_BOARD population=$POP pass=$OK_PASS driven=$DRIVEN excluded=$((CON_N + EXN)) containers=$CON_N no_oracle_answer=$EXN empty=$EMPTY ungradable=$UGB total=$TOTAL lib=$LIB ok=$OK_TOTAL ok_pass=$OK_PASS/$OK_TOTAL ok_fail=$OK_FAIL reject=$REJECT ladder=$LADDER(subset of ok_fail) unexpected=$UNEXPECTED timeout_under_load=$OK_TIMEOUT"
+if rr_selected; then rr_end gnu; [ "$OK_FAIL" -eq 0 ] && [ "$UNEXPECTED" -eq 0 ] && [ "$OK_TIMEOUT" -eq 0 ] && exit 0; exit 1; fi
 # ⭐ THE PACKAGE LOCKDOWN inventory line, via the shared body (lib_inventory.sh) -- never a second copy
 # of the arithmetic. LIB (bootstrap/library files, no independent behavior) is a ruling about what the
 # file IS, so it is UNGRADABLE/CONTAINER_OR_LIBRARY; REJECT (hang after parse error, a known, filed,
