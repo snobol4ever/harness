@@ -103,10 +103,13 @@ S4E_PROGRESS_OFF=1 timeout 300 python3 "$HERE/corpus_suite_harness.py" run "$S2/
 O=$T/pkg/ovf; mkdir -p $O
 printf ':- initialization((repeat, write(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx), nl, fail)).\n' > $O/forever.pl
 printf ':- initialization((write(hi), nl, halt)).\n' > $O/once.pl
+printf ":- initialization((write('[ModalShowX11Window] Cannot open display'), nl, halt)).\n" > $O/window.pl
 S4E_OUTPUT_CAP_MB=1 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$O" --lang prolog --twice > $T/ovf.out 2>&1; orc=$?
 if grep -q '^forever: .*bound' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'forever' $O/ALL.csv 2>/dev/null; then ok "arm 7: an OVERFLOW run is excluded, never absorbed (rc $orc)"
 else bad "arm 7: forever.pl was not excluded as an OVERFLOW (rc $orc; ALL.ref $(stat -c %s $O/ALL.ref 2>/dev/null || echo -) bytes)"; fi
-echo "population: 11 fixture programs under xsb-gentest, 2 under the plain prolog builder; the oracle $XSB"
+if grep -q '^window: .*could not open a display' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'window' $O/ALL.csv 2>/dev/null; then ok "arm 7b: an oracle's display refusal is no answer, never absorbed"
+else bad "arm 7b: window.pl's 'Cannot open display' was absorbed as a ref"; fi
+echo "population: 11 fixture programs under xsb-gentest, 3 under the plain prolog builder; the oracle $XSB"
 if [ "$fail" != 0 ]; then echo "⛔ GATE FAIL [$GATE_NAME]"; tail -5 $T/build.out | sed 's/^/    build: /'; exit 1; fi
 echo "✅ GATE PASS [$GATE_NAME]: XSB's answer is the ref, sorted and checked against NAME_old; an empty or unrun program is excluded; diff -w grades; an OVERFLOW is no answer"
 exit 0

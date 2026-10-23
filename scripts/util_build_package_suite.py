@@ -537,6 +537,13 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             excluded.append((name, "oracle died: graceful fatal report (e.g. undefined function) -- no ground truth to grade against"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle died)", file=sys.stderr)
             continue
+        if re.search(r"cannot open display", ora_text, re.I):
+            # ⛔ A DISPLAY REFUSAL IS NO ANSWER (the coo 2026-10-23, measured on rosetta-pascal window-creation-x11: its ref came out as
+            # "[ModalShowX11Window] Cannot open display"): every child runs headless (harness e3856ca, DISPLAY and WAYLAND_DISPLAY unset), so a
+            # program that opens a window can only print the oracle's refusal -- a fact about the box, never the program's answer (NEEDS_DISPLAY).
+            excluded.append((name, "the oracle could not open a display (every run is headless) -- its output is the refusal, no answer (NEEDS_DISPLAY)"))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (the oracle could not open a display)", file=sys.stderr)
+            continue
         if not ora_text.strip():
             # ⛔⭐ AN EMPTY RUN IS NOT ALWAYS AN EMPTY PROGRAM (measured on jcon_tests, the first package
             # with argv-consuming entries: 14 of 91 files ship a same-stem `.dat` that JCON's own
