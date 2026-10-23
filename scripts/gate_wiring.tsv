@@ -423,6 +423,7 @@ test_gate_monitor_run_accepts_spt_and_sbl_extensions.sh	WIRED	-	-	-
 test_gate_monitor_run_runs_its_subject_in_a_scratch_mirror.sh	WIRED	-	-	-
 test_gate_next_honours_the_lane_cut.sh	WIRED	-	-	-
 test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh	WIRED	-	-	-
+test_gate_no_bare_xsb_outside_the_accessor.sh	WIRED	-	-	-
 test_gate_no_bb_bin_t.sh	WIRED	-	-	-
 test_gate_no_bench_kernel_qualifies_for_gva_demotion.sh	WIRED	-	-	-
 test_gate_no_c_to_bb.sh	WIRED	-	-	-

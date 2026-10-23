@@ -91,6 +91,7 @@
 ../harness/scripts/test_area_smoke.sh
 ../harness/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh
 ../harness/scripts/test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh
+../harness/scripts/test_gate_no_bare_xsb_outside_the_accessor.sh
 ../harness/scripts/test_gate_gprolog_output_filter_is_the_one_filter.sh
 ../harness/scripts/test_gate_harness_stages_prolog_load_companions.sh
 ../harness/scripts/test_gate_container_package_runner_counts_its_containers_as_excl.sh

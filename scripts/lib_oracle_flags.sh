@@ -318,6 +318,22 @@ gplc_bin() {
     fi
     printf '%s\n' "$w"
 }
+# ⛔⭐⭐⭐ XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE (Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin
+# to use XSB system as the third oracle."; ceo CEO-1927, RULES.md § Oracles FACT RULE of the same name). XSB 5.0.0 (Green Tea, built 2026-09-13) under /home/resources/prologs/xsb
+# grades packages/prolog/xsb_tests alone, each program run as XSB's own gentest.sh runs it ([NAME]. tell(temp). GOAL. told. on stdin of "xsb -e segfault_handler(warn).",
+# testall.sh's options); swi_tests/xsb and every other Prolog package keep their oracle. XSB_ORACLE_BIN is the launcher XSB ships (bin/xsb, a script that finds its own
+# install); nothing under ../harness/scripts/ names it any other way (test_gate_no_bare_xsb_outside_the_accessor.sh).
+XSB_ORACLE_BIN="/home/resources/prologs/xsb/XSB/bin/xsb"
+xsb_bin() {
+    local c="$XSB_ORACLE_BIN"
+    if [ ! -x "$c" ]; then
+        printf "⛔ THE XSB ORACLE IS MISSING: %s\n" "$c" >&2
+        printf "   An XsbTests ref cut or a column measured with it absent is not slow, it is ABSENT -- and a harness that fills it anyway publishes a false number.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to a bare 'xsb' on PATH (ORACLES.md, XSB, CEO-1927) -- rebuild the shared drop, then re-run.\n" >&2
+        return 1
+    fi
+    printf '%s\n' "$c"
+}
 # ⛔⭐ JCON RE-EXECS BY NAME, SO THE ACCESSOR EXPORTS PATH -- CALLING IT BY ABSOLUTE PATH ALONE IS NOT ENOUGH (CEO s272,
 # measured: the launcher scripts resolve their siblings off PATH). Use as: eval "$(jcon_path_export)"; then run jcont/jcon.
 jcont_bin() {
