@@ -868,6 +868,7 @@ test_gate_pl_swi_determinism_marks_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_dialect_format_s_does_not_pad_and_listing_prints_a_dynamic_predicate_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_every_shipped_case_is_graded_by_path.sh	WIRED	-	-	-
 test_gate_pl_swi_file_and_text_builtins_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_swi_incremental_tabling_a_plain_assert_or_retract_on_an_incremental_dynamic_invalidates_the_tables_that_read_it.sh	WIRED	-	-	-
 test_gate_pl_swi_libraries_hashtable_nb_set_solution_sequences_csv_terms_random_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_library_modules_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_calls_a_condition_it_does_not_recognise.sh	WIRED	-	-	-
