@@ -3,7 +3,13 @@
 # locals first used at the box plus a disjunction's arm extra. util_gen_box_cell_shapes.py writes SCRIP/src/planner/box_cell_shapes.inc from this
 # file (--write) and refuses a stale one (--check); the planner's zd_k_own reads the generated rows. Started from zd_k_own (zeta_plan.cpp) as it
 # stood at SCRIP c22b86a9b, row for row, so the first landing is byte-identical; a switch moves a kind's state into its own carve by editing its row.
-# ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. Columns:
+# ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. THE CONDITIONS OF ONE KIND'S ROWS ARE DISJOINT ACROSS REGIMES (the cfo, 2026-10-24, on the
+# ceo's 7ed02df91 finding: the Icon switch's IR_BOUND 16 home_frame row sat ahead of D3's IR_BOUND 0 pl_home and stole 23 Prolog core entries, because home_frame
+# and home_state were true of a Prolog home-frame graph too): a condition that names a regime (icn_*, pl_*) is true of that regime's graphs ONLY -- BCS_ICN_HOME is
+# false for a Prolog resumable callable (08efb562e, 8e3edbe62), BCS_PL_HOME false for an Icon graph -- so no row of one regime can match another regime's node
+# whatever the order; a generic condition (home_frame, home_state, has_operands, always) comes AFTER every regime row of the same kind, and row order carries no
+# other meaning. A new row for a kind another regime also carves names its regime in its condition or goes below that regime's rows; util_gen_box_cell_shapes.py
+# --check regenerates the .inc and a reviewer reads the kind's rows together. Columns:
 #   kind          the IR kind (IR_*), or * for any kind
 #   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
 #   when          always | call_curmov (a call that moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
