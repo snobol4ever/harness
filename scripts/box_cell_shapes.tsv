@@ -19,7 +19,7 @@ IR_SCAN_FIND	32	icn_home	-	-	-	exp
 IR_SCAN_ENTER	32	icn_home	-	-	-	exp
 IR_REV_ASSIGN_VAR	32	icn_home	-	-	-	exp
 IR_REV_ASSIGN	32	icn_home	-	-	-	exp
-IR_REV_SWAP	32	icn_home	-	-	-	exp
+IR_REV_SWAP	80	icn_home	-	-	-	the result cell, the saved descriptor at +16, the scan registers at +48 and +56 and the global cell pointer at +64 that bb_rev_swap.cpp keeps
 IR_SCAN_BAL	32	icn_home	-	-	-	exp
 IR_SCAN_MATCH	32	icn_home	-	-	-	exp
 IR_CREATE	80	icn_home	-	-	-	the result cell and the seven-register record scrip_coexpr_create copies during the call
