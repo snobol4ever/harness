@@ -224,7 +224,11 @@ done
 for std in "$SUITE"/*.ref; do
   [ -f "$std" ] || continue
   name=$(basename "$std" .ref)
-  rr_admits "$sub/$name" || continue; rr_yield "$sub/$name" && { RR_STOP=1; break; }   # the round robin's part (CEO-1802/1806), keyed as ALL.csv keys it
+  # ⛔ A PART ADMITS A DRIVEN LIBRARY BY EITHER KEY (coo 2026-10-24): PARTITION.tsv names 18 driven libraries twice (general/convert and
+  # general/convert_driver) but six by the library alone (cfunc io_lib lists_lib random_lib scan_lib sets_lib); admitting by the driver's
+  # stem only graded none of the six in any part or request (S4E_CHUNK=entry:general/io_lib read graded=0, rc 0), so their 10-15 readings
+  # were never refreshed and the Zona row stayed stamped bae359133. The resume key is the one the part holds.
+  _rk="$sub/$name"; rr_admits "$_rk" || { _rk="$sub/${name%_driver}"; rr_admits "$_rk"; } || continue; rr_yield "$_rk" && { RR_STOP=1; break; }   # the round robin's part (CEO-1802/1806), keyed as ALL.csv keys it
   icn="$SUITE/$name.icn"
   [ -f "$icn" ] || continue
   # ⛔⭐ THE IDENTITY IS THE LIBRARY, THE EXECUTABLE IS ITS DRIVER (ceo CEO-1269). $name stays the file that RUNS -- the ref was
