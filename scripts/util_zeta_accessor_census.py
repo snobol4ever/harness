@@ -79,11 +79,12 @@ for path, lines in texts.items():
                 j += 1
             i = j
         i += 1
+ANY = re.compile("|".join(rx for _, rx in FORMS) + "|" + ALLOWED.pattern)
+cand = {path: [(i, ln) for i, ln in enumerate(lines) if i not in body.get(path, set()) and ANY.search(ln)] for path, lines in texts.items()}
 def sites_of(rx):
     sites = {}
-    for path in sorted(texts):
-        skip = body.get(path, set())
-        hits = [str(i + 1) for i, ln in enumerate(texts[path]) if i not in skip and rx.search(ln)]
+    for path in sorted(cand):
+        hits = [str(i + 1) for i, ln in cand[path] if rx.search(ln)]
         if hits: sites[path] = hits
     return sites
 def show(label, sites):
