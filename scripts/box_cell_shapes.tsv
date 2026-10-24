@@ -31,7 +31,6 @@ IR_BOUND	0	home_state	-	-	-	exp
 IR_LIMIT_GATE	0	home_state	-	-	-	exp
 IR_LIMIT_GATE	32	home_frame	-	-	-	exp
 IR_BOUND	16	home_frame	-	-	-	exp
-IR_CONJUNCTION	16	home_frame	-	-	-	exp
 IR_MATCH_ARBNO	16	always	-	-	-	the ARBNO record
 *	32	call_curmov	-	-	-	the result cell beside the moved cursor
 IR_VAR	0	icn_local	-	-	-	the local's own cell is its home; the read carves nothing
