@@ -98,3 +98,4 @@
 ../harness/scripts/test_gate_test_request_takes_a_port_engine.sh
 ../harness/scripts/test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh
 ../harness/scripts/test_gate_raku_a_used_module_keeps_the_file_scope_value_its_subs_read.sh
+../harness/scripts/util_zeta_accessor_census.py
