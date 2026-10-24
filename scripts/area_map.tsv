@@ -69,7 +69,6 @@
 *	src/templates/bb/bb_goto.cpp
 *	src/templates/bb/bb_goto_deferred.cpp
 *	src/templates/bb/bb_glue_flat.cpp
-*	src/templates/bb/bb_glue_framed.cpp
 *	src/templates/bb/bb_succeed.cpp
 *	src/templates/bb/bb_fail.cpp
 *	src/templates/bb/bb_return.cpp
