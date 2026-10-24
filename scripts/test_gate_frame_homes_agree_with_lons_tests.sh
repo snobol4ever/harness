@@ -22,16 +22,18 @@ bash "$HERE/util_spine_population.sh" --corpus "$ROOT/corpus" ${L:+--lang "$L"} 
 grep -q '^BB_PLACEMENT_FRAMEHOME ' "$T/out" || { echo "REFUSE(2): the census printed no BB_PLACEMENT_FRAMEHOME"; exit 2; }
 python3 - "$T/out" "$(git -C "$ROOT/SCRIP" rev-parse --short HEAD)" <<'PY'
 import sys
-tot = [0, 0, 0, 0]
+tot = [0, 0, 0, 0, 0]
 for ln in open(sys.argv[1], encoding='utf-8'):
     if ln.startswith('BB_PLACEMENT_FRAMEHOME '):
         p = ln.split(); v = dict(x.split('=') for x in p[2:])
-        h, a, x, y = int(v['homes']), int(v['agree']), int(v['home_without_test']), int(v['test_without_home'])
-        print('FRAME_HOME_AGREE_BOARD lang=%s disagree=%d homes=%d agree=%d home_without_test=%d test_without_home=%d' % (p[1], x + y, h, a, x, y))
-        tot = [tot[0] + h, tot[1] + a, tot[2] + x, tot[3] + y]
-print('FRAME_HOME_AGREE_BOARD total disagree=%d homes=%d agree=%d home_without_test=%d test_without_home=%d (tree %s)' % (tot[2] + tot[3], tot[0], tot[1], tot[2], tot[3], sys.argv[2]))
+        h, a, x, y, r = int(v['homes']), int(v['agree']), int(v['home_without_test']), int(v['test_without_home']), int(v.get('ruled', 0))
+        print('FRAME_HOME_AGREE_BOARD lang=%s disagree=%d homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d' % (p[1], x + y, h, a, r, x, y))
+        tot = [tot[0] + h, tot[1] + a, tot[2] + x, tot[3] + y, tot[4] + r]
+    elif ln.startswith('BB_PLACEMENT_FRAMEHOME_RULED '):
+        print(ln.strip())
+print('FRAME_HOME_AGREE_BOARD total disagree=%d homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d (tree %s)' % (tot[2] + tot[3], tot[0], tot[1], tot[4], tot[2], tot[3], sys.argv[2]))
 open(sys.argv[1] + '.total', 'w').write(str(tot[2] + tot[3]))
 PY
 n="$(cat "$T/out.total")"
-[ "$n" = 0 ] && { echo "GATE OK [test_gate_frame_homes_agree_with_lons_tests]: every RBP home is one the path test forces, and every forced operand has one"; exit 0; }
+[ "$n" = 0 ] && { echo "GATE OK [test_gate_frame_homes_agree_with_lons_tests]: every RBP home is one the path test forces or one the ceo ruled right by the planner's own fact (CEO-1949), and every forced operand has one"; exit 0; }
 echo "GATE FAIL [test_gate_frame_homes_agree_with_lons_tests]: $n disagreement(s) between the compiler's RBP homes and the path test"; exit 1

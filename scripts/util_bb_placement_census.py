@@ -26,10 +26,10 @@ compiler's own rsp facts (`scrip --dump-homes`):
   [RSPFX] rsp=dynamic why=W  a box whose gamma leaves rsp at a distance from its alpha the compiler cannot state: suspend,
                              coexpression, unknown-callee (CALL_VALUE), generator-callee, retaining-callee (a call whose callee
                              graph retains: more than one SUCCEED or any dynamic box of its own, closed transitively -- the compiler's
-                             dump-only proxy, which calls an Icon procedure with two plain returns retaining; CEO-1865: this census keeps
-                             a retaining-callee box dynamic only when the callee's EMITTED procedure holds a suspend or coexpression box
-                             or an exit (its _γ or _ω) that does not restore rsp by lea rsp, [rbp + K] before the jump through the return
-                             address -- a callee that returns at a fixed distance from its frame base leaves the caller's cells reachable);
+                             dump-only proxy, which calls an Icon procedure with two plain returns retaining; CEO-1949: this census keeps
+                             a retaining-callee box dynamic unless the planner declares the callee graph NOT resumable -- the plan dump's
+                             PLAN ... resumable= field, zls_g_resumable_frame -- so a callee the planner keeps resumable retains, and a callee
+                             that returns at a fixed distance from its frame base leaves the caller's cells reachable; never a grep of the asm);
   MATCH_DEFER (a deferred-pattern match, any graph): dynamic by its kind -- it runs a pattern built at run time to a depth no compile-time offset knows
                              (the ceo, CEO-1882), so a consumer past it cannot reach the operand at a fixed rsp offset;
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
@@ -52,10 +52,16 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
   BB_PLACEMENT_CLASS <lang> <state>:<cause> <A|L> <kind> count=..
   BB_PLACEMENT_TESTS <lang>|total offspine=.. operand_test=.. local_test=.. standing=.. other=..   (other = off the spine, no test fails)
   BB_PLACEMENT_TESTS_WHY <lang> <test>:<why> count=..
-  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. home_without_test=.. test_without_home=..   (CEO-1854: an operand the compiler carves on the spine
+  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. ruled=.. home_without_test=.. test_without_home=..   (CEO-1854: an operand the compiler carves on the spine
       AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
-      read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends)
+      read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends;
+      CEO-1949: ruled = a home the path test does not force that the planner's own facts name a class the ceo ruled right by Lon's first test -- a
+      PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge, in a graph whose PLAN line prints resumable=1) or a RETAINING
+      DISJUNCTION (xfwhy retaining-disjunction on an IR_DISJUNCTION, zls_dj_retains); it is no disagreement and no agreement, and
+      BB_PLACEMENT_FRAMEHOME_RULED <lang> class=<c> witnessed|unwitnessed|planner count=.. says how far the ruling reaches: witnessed = a box with an incoming
+      beta edge lies on a gamma path between the write and a consumer's read, a retry re-reading the cell; unwitnessed = no such box, the planner's
+      reuse-class rule alone homes it)
   BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|hwt:<rule>|nohome:<test> kind=<box kind> count=..   (why: every home by the planner's rule;
       hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
       them frame_homed_untested and spine_unhomed)
@@ -88,6 +94,8 @@ GEN_KINDS = {'SUSPEND', 'PROC_GEN', 'CREATE', 'ACTIVATE', 'CORET', 'COFAIL'}
 HOMES = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) (all|local)=(\S+) (?:kind=(\S+) )?home=(\S+) off=(-?\d+)(?: xf=(-?\d+) xfwhy=(\S+))?$')
 RSPFX = re.compile(r'^\[RSPFX\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) rsp=(dynamic|renormal) why=(\S+) callee=(\S+)$')
 LOCALUSE = re.compile(r'^\[LOCALUSE\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) local=(\S+)$')
+HTEST = re.compile(r'^\[HOMETEST\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) test=(\S+)$')
+PLANF = re.compile(r'^PLAN graph=(\S+) serial=-?\d+ chain=\S+ n=\d+ constructs=\d+ resumable=([01])$')
 STANDING = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) standing=(\d+) home=STANDING why=(\S+)$')
 MEM = re.compile(r'\[\s*([a-z0-9]+)')
 
@@ -112,11 +120,15 @@ def discover():
 
 def homes_of(lang, src, tmp):
     cwd, base = os.path.dirname(src), os.path.basename(src)
-    args = [SCRIP, '--dump-homes', '--compile'] + (['--target=x86'] if lang == 'prolog' else []) + ['-o', tmp, base]
+    args = [SCRIP, '--dump-homes', '--dump-plan', '--compile'] + (['--target=x86'] if lang == 'prolog' else []) + ['-o', tmp, base]
     r = run(args, cwd)
     if r.returncode != 0 or not os.path.isfile(tmp) or os.path.getsize(tmp) == 0:
         return None, None, None
-    nodes, locs, fx = {}, {}, {'dyn': {}, 'callee': {}, 'renorm': set(), 'standing': [], 'uses': {}}
+    nodes, locs, fx = {}, {}, {'dyn': {}, 'callee': {}, 'renorm': set(), 'standing': [], 'uses': {}, 'resumable': {}, 'htest': {}}
+    for ln in r.stdout.decode('utf-8', 'replace').splitlines():
+        m = PLANF.match(ln)
+        if m:
+            fx['resumable'][m.group(1)] = int(m.group(2))
     for ln in r.stderr.decode('utf-8', 'replace').splitlines():
         m = RSPFX.match(ln)
         if m:
@@ -126,6 +138,10 @@ def homes_of(lang, src, tmp):
                 fx['callee'][k] = m.group(7)
             else:
                 fx['renorm'].add(k)
+            continue
+        m = HTEST.match(ln)
+        if m:
+            fx['htest'][(int(m.group(1)), int(m.group(3)))] = m.group(5)
             continue
         m = LOCALUSE.match(ln)
         if m:
@@ -143,6 +159,9 @@ def homes_of(lang, src, tmp):
             nodes[(gi, int(m.group(4)))] = (m.group(5), m.group(6), int(m.group(7)), int(m.group(8)) if m.group(8) else -1, m.group(9) or '-')
         else:
             locs[(gi, m.group(4))] = (m.group(6), int(m.group(7)))
+    if nodes and not fx['resumable']:
+        print('BB_PLACEMENT REFUSE: the dump of %s carries no PLAN line with resumable= -- ./scrip is older than the dump field (CEO-1949: a callee retains by the planner\'s resumable fact, never by a grep of the asm)' % src)
+        sys.exit(2)
     return nodes, locs, fx
 
 
@@ -156,43 +175,6 @@ def asm_bases(path):
             b = m.group(1)
             c['rsp' if b == 'rsp' else 'rbp' if b == 'rbp' else 'rip' if b == 'rip' else 'r12' if b == 'r12' else 'r13' if b == 'r13' else 'other' if b[0] == 'r' else 'abs'] += 1
     return c
-
-
-LIVE_BOX = re.compile(r'^n\d+_(?:suspend|create|activate|coret|cofail)\w*_α:')
-EXIT_LEA = re.compile(r'^lea\s+rsp\s*,\s*\[rbp\s*\+\s*-?\d+\]$')
-EXIT_RSPW = re.compile(r'^(?:mov|add|sub|lea|pop|xchg)\s+rsp\b|^leave\b')
-EXIT_JMP = re.compile(r'^jmp\s+qword ptr \[rsp')
-
-
-def asm_fixed_exit_procs(path):
-    lines = [ln.split('#')[0].strip() for ln in open(path, encoding='utf-8', errors='replace').read().split('\n')]
-    live, at, cur = {}, {}, None
-    for i, ln in enumerate(lines):
-        if ln.startswith('FN__') and ln.endswith(':'):
-            cur = ln[4:-1]
-            live[cur] = False
-            at[cur] = {}
-        elif cur is not None:
-            if LIVE_BOX.match(ln):
-                live[cur] = True
-            for port in ('γ', 'ω'):
-                if ln.split(None, 1)[:1] == [cur + '_' + port + ':']:
-                    at[cur][port] = i
-
-    def fixed_from(i):
-        last = None
-        for ln in lines[i + 1:i + 121]:
-            if re.match(r'^[^\s.][^\s:]*:', ln):
-                return False
-            for piece in ln.split(';'):
-                p = piece.strip()
-                if EXIT_RSPW.match(p):
-                    last = p
-                if EXIT_JMP.match(p):
-                    return bool(last and EXIT_LEA.match(last))
-        return False
-
-    return {n for n, ports in at.items() if not live[n] and set(ports) == {'γ', 'ω'} and all(fixed_from(i) for i in ports.values())}
 
 
 LABEL = re.compile(r'^([^\s#][^\s:]*):')
@@ -317,7 +299,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         return None
     bases = asm_bases(tmp)
     unwind = asm_unwind(tmp, seen_sec)
-    fixed_exit = asm_fixed_exit_procs(tmp) if 'retaining-callee' in fx['dyn'].values() else frozenset()
+    resumable = fx['resumable']
     names, vslots = zeta_names(src, lang)
     raw = run([SCRIP, '--dump-bb', os.path.basename(src)], os.path.dirname(src)).stdout
     dump = json.loads(raw.decode('utf-8', 'replace'))
@@ -351,7 +333,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         seen.add(key)
         ids = by[g]
         emitted = any((g, int(i.split('_')[1])) in nodes for i in ids)
-        dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn'] and not (fx['dyn'][bkey(i)] == 'retaining-callee' and fx['callee'].get(bkey(i)) in fixed_exit)}
+        dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn'] and not (fx['dyn'][bkey(i)] == 'retaining-callee' and resumable.get(fx['callee'].get(bkey(i))) == 0)}
         dyn.update({i: 'deferred-pattern' for i in ids if boxes[i]['kind'] == 'MATCH_DEFER'})
         renorm = {i for i in ids if bkey(i) in fx['renorm']}
         succ, succ_value, ops = collections.defaultdict(list), collections.defaultdict(list), []
@@ -384,6 +366,39 @@ def analyse(lang, src, tmp, seen, seen_sec):
                     dirty, why = True, dyn[x]
                 for y in succ[x]:
                     st.append((y, dirty, why))
+        betat = {e['to'] for e in gedges[g] if e.get('tp') == 'beta'}
+        cons = collections.defaultdict(list)
+        for (o, p) in ops:
+            cons[p].append(o)
+
+        def retry_read(p):
+            for o in cons[p]:
+                fwd, st = set(), list(succ_value[p])
+                while st:
+                    x = st.pop()
+                    if x in fwd or x == p:
+                        continue
+                    fwd.add(x)
+                    if x != o:
+                        st.extend(succ_value[x])
+                if o not in fwd:
+                    continue
+                pred = collections.defaultdict(list)
+                for x in fwd:
+                    for y in succ_value[x]:
+                        if y in fwd:
+                            pred[y].append(x)
+                bk, st = set(), [o]
+                while st:
+                    x = st.pop()
+                    for y in pred[x]:
+                        if y not in bk:
+                            bk.add(y)
+                            st.append(y)
+                if any(x in betat for x in bk if x != o):
+                    return True
+            return False
+
         tainted, st = {}, []
         for d in dyn:
             for y in succ[d]:
@@ -415,12 +430,14 @@ def analyse(lang, src, tmp, seen, seen_sec):
             h = nodes.get((g, int(i.split('_')[1])))
             if h is None:
                 continue
-            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4], h[2]))
+            ht = fx['htest'].get((g, int(i.split('_')[1])), '-')
+            wit = retry_read(i) if (h[3] != -1 and not test.get(i) and ht == 'operand:pinned-temp') else None
+            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4], h[2], ht, resumable.get(gname[g]), wit))
         for vn in sorted(vslots.get(g, ())):
             h = locs.get((g, vn))
             if h is None:
                 continue
-            cells.append(('L', vn, h[0], ltest.get(vn), vn, -1, '-', h[1]))
+            cells.append(('L', vn, h[0], ltest.get(vn), vn, -1, '-', h[1], '-', None, None))
         out.append({'name': gname[g], 'sig': sigs[g], 'cause': cause, 'emitted': emitted, 'cells': cells, 'n': len(ids)})
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
@@ -500,7 +517,7 @@ def main():
                 if not gr['emitted']:
                     t['unemitted'] += gr['n']
                     continue
-                for (tb, kind, home, forced, cid, xf, xfwhy, off) in gr['cells']:
+                for (tb, kind, home, forced, cid, xf, xfwhy, off, ht, res, wit) in gr['cells']:
                     swk = next((k for k in (kind, kind and 'IR_' + kind, cid) if k and k in STATE_WORDS), None)
                     sw = STATE_WORDS.get(swk) if swk else None
                     if sw and xfwhy == sw and home in ('RBP', 'RSP_CARVED', 'SPINE') and (xf != -1 or home != 'SPINE'):
@@ -526,10 +543,14 @@ def main():
                         if xf != -1:
                             fh['homes'] += 1
                             fh[('why', xfwhy, kind)] += 1
-                            fh['agree' if forced else 'home_without_test'] += 1
-                            if not forced:
+                            ruled = None if forced else ('pinned-temp' if (ht == 'operand:pinned-temp' and xfwhy == 'read-across-retaining-edge' and res == 1) else
+                                                         'retaining-disjunction' if (xfwhy == 'retaining-disjunction' and kind == 'DISJUNCTION') else None)
+                            fh['agree' if forced else 'ruled' if ruled else 'home_without_test'] += 1
+                            if ruled:
+                                fh[('ruled', ruled, 'witnessed' if wit else 'unwitnessed' if ruled == 'pinned-temp' else 'planner')] += 1
+                            elif not forced:
                                 fh[('hwt', xfwhy, kind)] += 1
-                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
+                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_ruled' if ruled else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
                         elif forced and off >= 0:
                             fh['test_without_home'] += 1
                             fh[('nohome', forced, kind)] += 1
@@ -594,7 +615,9 @@ def main():
                hs['ops_prealloc']))
     for lang in langs:
         fh = fhome[lang]
-        print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home']))
+        print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['ruled'], fh['home_without_test'], fh['test_without_home']))
+        for k, v in sorted((k, v) for k, v in fh.items() if isinstance(k, tuple) and k[0] == 'ruled'):
+            print('BB_PLACEMENT_FRAMEHOME_RULED %s class=%s %s count=%d' % (lang, k[1], k[2], v))
         for k, v in sorted(stw[lang].items(), key=lambda kv: -kv[1]):
             print('BB_PLACEMENT_STATE %s key=%s class=%s count=%d' % (lang, k[0], k[1], v))
         for k, v in sorted(((k, v) for k, v in fh.items() if isinstance(k, tuple)), key=lambda kv: -kv[1]):
