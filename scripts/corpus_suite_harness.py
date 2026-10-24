@@ -3603,6 +3603,9 @@ def cmd_run(args):
             _e1 = next((l.strip() for l in (v.stderr or b'').decode('utf-8', 'replace').splitlines() if l.strip()), "")
             _e1 = " err1=" + (_e1[:160].replace("\t", " ") if _e1 else "(none)")
         print(f"  {tag} {m} {name}: {v.detail} [fp={hashlib.md5(v.stdout or b'').hexdigest()[:8]} rc={'-' if v.returncode is None else v.returncode}]{_e1}", file=sys.stderr)
+    # a cut sample says it is cut (the coo 2026-10-24, COO-422: D3's 5 m3 crashes printed 4, the fifth past line 40 with no word)
+    if len(fails) > 40 and not _os.environ.get('SUITE_LIST_ALL'):
+        print(f"  (sample: 40 of {len(fails)} non-PASS lines shown, {len(fails) - 40} not shown; SUITE_LIST_ALL=1 lists every one)", file=sys.stderr)
     sys.exit(0 if not fails else 1)
 
 

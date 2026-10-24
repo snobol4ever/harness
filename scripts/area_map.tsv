@@ -21,6 +21,7 @@
 # ---- SHARED NODES: every language reaches them (the CEO-405 widening) ----
 *	src/runtime/
 *	src/emitter/
+*	src/planner/
 *	src/optimizer/
 *	src/ir/
 *	src/driver/
