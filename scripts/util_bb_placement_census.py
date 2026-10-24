@@ -52,7 +52,7 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
   BB_PLACEMENT_CLASS <lang> <state>:<cause> <A|L> <kind> count=..
   BB_PLACEMENT_TESTS <lang>|total offspine=.. operand_test=.. local_test=.. standing=.. other=..   (other = off the spine, no test fails)
   BB_PLACEMENT_TESTS_WHY <lang> <test>:<why> count=..
-  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. ruled=.. home_without_test=.. test_without_home=..   (CEO-1854: an operand the compiler carves on the spine
+  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. home_without_test=.. test_without_home=.. ruled=..   (CEO-1854: an operand the compiler carves on the spine
       AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends;
@@ -615,7 +615,7 @@ def main():
                hs['ops_prealloc']))
     for lang in langs:
         fh = fhome[lang]
-        print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d' % (lang, fh['homes'], fh['agree'], fh['ruled'], fh['home_without_test'], fh['test_without_home']))
+        print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d ruled=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home'], fh['ruled']))
         for k, v in sorted((k, v) for k, v in fh.items() if isinstance(k, tuple) and k[0] == 'ruled'):
             print('BB_PLACEMENT_FRAMEHOME_RULED %s class=%s %s count=%d' % (lang, k[1], k[2], v))
         for k, v in sorted(stw[lang].items(), key=lambda kv: -kv[1]):
