@@ -1,28 +1,37 @@
 #!/usr/bin/env python3
 # util_zeta_accessor_census.py -- THE ADDRESS-FORM CENSUS: EVERY SITE OF THE TEMPLATES AND THE EMITTER THAT ADDRESSES A CELL BY A FORM OF ITS OWN, COUNTED
-# UNTIL ONE ACCESSOR READS THE PLAN'S ZETA COLUMN (ceo CEO-1943/1944; Lon 2026-10-24 11:0x CDT, in-chat to the ceo, verbatim: "You must find a way to in
-# the code templates, emitter and planner, to switch easily between the THREE ZETAS."). A cell's home is ONE fact, the plan row's zeta column (SPINE on
-# RSP by default, ACTIVATION-FRAME on RBP when the planner's unbounded test forces it, STANDING through the RBP chain), and every site reaches a cell
-# through ONE ACCESSOR that reads it (ARCH-THREE-ZETAS-EMISSION.md section 2, ZCELL). Each form below chooses rsp or rbp by a predicate of its own, so
-# every site naming one is a second decider; the re-pointing of the templates at the accessor makes this total fall, and nothing may make it rise.
-# THE FORMS are the ceo's census of 2026-10-24 10:5x at SCRIP 65c05d8d0, counted the way it was counted (`grep -rF FORM src/templates src/emitter | wc -l`):
-# a SITE is a line under SCRIP/src/templates or SCRIP/src/emitter holding the form's text, a line holding it twice is one site, a line holding two forms is a
-# site of each, and the total is the sum over the forms. The definitions of the forms count too: the accessor deletes them or keeps them as its own body.
-# THE CEILING is the first reading, 480 at SCRIP 65c05d8d0 (the same 480 at the D0 parent e840d8e39): RDQ("rbp" 67, RDD("rbp" 23, RDQ("rsp" 112,
-# RDD("rsp" 17, x86_rsp_load64( 59, x86_rsp_store64( 65, x86_frame_ 60, x86_zref( 36, xop_frame_slot( 14, x86_zop( 10, ZOPQS( 7, ZRES_SPINE( 4,
-# zls_frame_off( 3, gen_frame_top() 3. A landing that lowers the total lowers CEILING here in the same landing (the census says FALLEN and names the
-# number); when the ceo names the accessor, its own definition becomes the one allowed site and the census counts the direct forms left.
+# DOWN TO THE ONE ACCESSOR, ZCELL, THAT READS THE PLAN'S ZETA COLUMN (ceo CEO-1943/1944; Lon 2026-10-24 11:0x CDT, in-chat to the ceo, verbatim: "You must
+# find a way to in the code templates, emitter and planner, to switch easily between the THREE ZETAS."). A cell's home is ONE fact, the plan row's zeta
+# column (SPINE on RSP by default, ACTIVATION-FRAME on RBP when the planner's unbounded test forces it, STANDING through the RBP chain), and every site
+# reaches a cell through ZCELL(owner, word, width) or ZCELL_ADDR(owner, word), which read the owner's plan row and emit the SPINE, ACT or STANDING form
+# (ARCH-THREE-ZETAS-EMISSION.md section 2 and section 10 chunk 3b-2, the cto). Each counted form reaches a cell by an offset or a predicate of its own, a
+# second decider beside the plan; the re-pointing of the templates at ZCELL makes the total fall, and nothing may make it rise.
+# THE FORMS are the ceo's list of 2026-10-24 11:2x: x86_zop, x86_zref, ZRES, ZRES_SPINE, ZOPQ, ZOPD, ZOPQS, FR, FRQ, the rbp and rsp RDQ and RDD forms,
+# x86_rsp_load64, x86_rsp_store64, x86_frame_*, xop_frame_slot, zls_frame_off, gen_frame_top. A SITE is a line under SCRIP/src/templates or
+# SCRIP/src/emitter where the form's name starts a word; a line holding it twice is one site, a line holding two forms is a site of each, and the total is
+# the sum over the forms (the ceo's `grep -rF FORM src/templates src/emitter | wc -l` reading, word-bounded so that FR( is not read inside another name).
+# The definitions count too. THE ALLOWED FORM is ZCELL and ZCELL_ADDR: their sites print as the RISING line beside the falling total, and the lines of
+# their own definitions (from the head to the brace that closes it) are not counted, being the one place the direct forms may remain.
+# THE CEILING is the first reading of these nineteen forms, 1871 at SCRIP 65c05d8d0 and at the D0 parent e840d8e39 (the first cut of 10-24 11:1x, harness
+# f226390, counted the ceo's first fourteen forms, 480): x86_zop 10, x86_zref 36, ZRES 112, ZRES_SPINE 4, ZOPQ 153, ZOPD 22, ZOPQS 7, FR 51, FRQ 1053,
+# RDQ("rbp" 67, RDD("rbp" 23, RDQ("rsp" 112, RDD("rsp" 17, x86_rsp_load64 59, x86_rsp_store64 65, x86_frame_ 60, xop_frame_slot 14, zls_frame_off 3,
+# gen_frame_top 3; ZCELL 0. A landing that lowers the total lowers CEILING here in the same landing (the census prints FALLEN and the number).
 # USE: python3 harness/scripts/util_zeta_accessor_census.py [--at-most N] [--rev REV]   (N defaults to CEILING; --rev reads SCRIP's commit REV, not the tree)
-# PRINTS: one line per form (its sites, then file:line,line,... grouped by file) and ZETA_ACCESSOR_FORMS total=<n> forms=<f> ceiling=<c> bar=at-most-<N>
+# PRINTS: one line per form (its sites, then file:line,line,... grouped by file), the ZCELL line, and
+#         ZETA_ACCESSOR_FORMS total=<n> forms=<f> ceiling=<c> bar=at-most-<N> zcell=<z> zcell_body=<b> files=<k> tree=<worktree|REV>
 # EXIT: 0 total <= N; 1 total > N (a direct form came back, or N is below what is left); 2 could not measure (no SCRIP, no such REV, no source read).
-import os, subprocess, sys
+import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 SCRIP = os.path.normpath(os.path.join(HERE, "..", "..", "SCRIP"))
 DIRS = ("src/templates", "src/emitter")
 EXTS = (".c", ".cpp", ".h", ".inc")
-FORMS = ['RDQ("rbp"', 'RDD("rbp"', 'RDQ("rsp"', 'RDD("rsp"', "x86_rsp_load64(", "x86_rsp_store64(", "x86_frame_", "x86_zref(", "xop_frame_slot(",
-         "x86_zop(", "ZOPQS(", "ZRES_SPINE(", "zls_frame_off(", "gen_frame_top()"]
-CEILING = 480
+FORMS = [("x86_zop(", r"\bx86_zop\("), ("x86_zref(", r"\bx86_zref\("), ("ZRES(", r"\bZRES\("), ("ZRES_SPINE(", r"\bZRES_SPINE\("), ("ZOPQ(", r"\bZOPQ\("),
+         ("ZOPD(", r"\bZOPD\("), ("ZOPQS(", r"\bZOPQS\("), ("FR(", r"\bFR\("), ("FRQ(", r"\bFRQ\("), ('RDQ("rbp"', r'\bRDQ\("rbp"'), ('RDD("rbp"', r'\bRDD\("rbp"'),
+         ('RDQ("rsp"', r'\bRDQ\("rsp"'), ('RDD("rsp"', r'\bRDD\("rsp"'), ("x86_rsp_load64(", r"\bx86_rsp_load64\("), ("x86_rsp_store64(", r"\bx86_rsp_store64\("),
+         ("x86_frame_", r"\bx86_frame_\w"), ("xop_frame_slot(", r"\bxop_frame_slot\("), ("zls_frame_off(", r"\bzls_frame_off\("), ("gen_frame_top()", r"\bgen_frame_top\(\)")]
+ALLOWED = re.compile(r"\bZCELL(?:_ADDR)?\(")
+ALLOWED_HEAD = re.compile(r"^\s*(?:static\s+|inline\s+|extern\s+)*[A-Za-z_][\w\s\*&:<>,]*?\bZCELL(?:_ADDR)?\s*\(")
+CEILING = 1871
 args = sys.argv[1:]
 at_most = CEILING
 rev = None
@@ -53,15 +62,39 @@ else:
             show = git("show", "%s:%s" % (rev, path))
             if show.returncode == 0: texts[path] = show.stdout.decode("utf-8", errors="replace").split("\n")
 if not texts: print("REFUSE(2): no template or emitter source read under %s%s" % (SCRIP, " at " + rev if rev else "")); sys.exit(2)
-total = 0
-for form in FORMS:
+# THE ACCESSOR'S OWN BODY: a definition of ZCELL or ZCELL_ADDR opens a body on its head line or continues past it (a prototype ends in ";" with no "{");
+# its lines run from the head to the "}" that brings the brace depth back to zero.
+body = {}
+for path, lines in texts.items():
+    i = 0
+    while i < len(lines):
+        m = ALLOWED_HEAD.match(lines[i])
+        if m and ("{" in lines[i][m.end():] or not lines[i].rstrip().endswith(";")):
+            depth, opened, j = 0, False, i
+            while j < len(lines):
+                depth += lines[j].count("{") - lines[j].count("}")
+                opened = opened or "{" in lines[j]
+                body.setdefault(path, set()).add(j)
+                if opened and depth <= 0: break
+                j += 1
+            i = j
+        i += 1
+def sites_of(rx):
     sites = {}
     for path in sorted(texts):
-        hits = [str(i + 1) for i, ln in enumerate(texts[path]) if form in ln]
+        skip = body.get(path, set())
+        hits = [str(i + 1) for i, ln in enumerate(texts[path]) if i not in skip and rx.search(ln)]
         if hits: sites[path] = hits
+    return sites
+def show(label, sites):
     n = sum(len(h) for h in sites.values())
-    total += n
-    print("  %-18s %4d  %s" % (form, n, " ".join("%s:%s" % (p, ",".join(h)) for p, h in sites.items())))
-print("ZETA_ACCESSOR_FORMS total=%d forms=%d ceiling=%d bar=at-most-%d files=%d tree=%s" % (total, len(FORMS), CEILING, at_most, len(texts), rev or "worktree"))
+    print("  %-18s %4d  %s" % (label, n, " ".join("%s:%s" % (p, ",".join(h)) for p, h in sites.items())))
+    return n
+total = 0
+for label, rx in FORMS: total += show(label, sites_of(re.compile(rx)))
+zcell = show("ZCELL (allowed)", sites_of(ALLOWED))
+zbody = sum(len(s) for s in body.values())
+print("ZETA_ACCESSOR_FORMS total=%d forms=%d ceiling=%d bar=at-most-%d zcell=%d zcell_body=%d files=%d tree=%s"
+      % (total, len(FORMS), CEILING, at_most, zcell, zbody, len(texts), rev or "worktree"))
 if total < CEILING: print("FALLEN: the total is %d, below CEILING %d -- lower CEILING to %d in this script in the landing that made it fall" % (total, CEILING, total))
 sys.exit(0 if total <= at_most else 1)
