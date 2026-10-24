@@ -5,7 +5,7 @@ bottom and takes the first that matches the node's kind and condition.
   util_gen_box_cell_shapes.py --write     rewrite the .inc
   util_gen_box_cell_shapes.py --check     rc 1 when the committed .inc differs from what the table generates (it names the file), rc 0 when current
 rc 2: the table or the SCRIP sibling cannot be read, or a row is malformed (an unknown condition, a non-numeric width other than arm_spine,
-arm_spine_hdr -- the computed widths: the disjunction's arm extent, and that extent plus the Prolog choice header)."""
+arm_spine_hdr, call_args -- the computed widths: the disjunction's arm extent, that extent plus the Prolog choice header, and a call's argument block)."""
 import os
 import subprocess
 import sys
@@ -18,7 +18,7 @@ WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': '
         'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME',
         'home_state': 'BCS_HOME_STATE', 'pl_home': 'BCS_PL_HOME', 'pl_home_dyn': 'BCS_PL_HOME_DYN', 'pl_home_range_hdr': 'BCS_PL_HOME_RANGE_HDR',
         'pl_home_has_operands': 'BCS_PL_HOME_HAS_OPERANDS'}
-WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2'}
+WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2', 'call_args': '-3'}
 
 
 def refuse(msg):
