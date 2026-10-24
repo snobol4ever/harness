@@ -88,11 +88,25 @@ END" "42"
 run_all "arith_sm" "        OUTPUT = 2 + 3
 END" "5"
 
+# CORE ARM (ceo CEO-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."): the hand cases above missed 8 SnoRungs
+# core crashes and 105 pattern-shell reds on main that day (521c5afcd, 8eb445d88). The arm grades the SnoRungs PARTITION core -- every distinctive
+# feature three times -- plus the FENCE/ARBNO/BAL witnesses that crashed then, through the one extraction authority in BOTH modes, HARD in both, with
+# the declared heap, stack, stdin and argv; progress off, so it writes no results row.
+FRAGILE="arbno_fence_bal_branch_1 arbno_fence_bal_replace_branch_2 arbno_fence_pos_branch_18 arbno_fence_pos_branch_28 arbno_arb_rpos_replace_branch_1 fence_tab_pos_branch_2 user_function_fence_tab_branch_1 user_function_eval_arbno_replace_branch_2"
+CORE_PARTS="core$(for e in $FRAGILE; do printf ',entry:%s' "$e"; done)"
+CT="${HERE}/../../corpus/tests/snobol4"
+COUT="$(cd "${HERE}/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_ONE_RUNNER_OVERRIDE="test_smoke_snobol4.sh core arm (CEO-1952)" timeout -k 5 300 python3 "${HERE}/corpus_suite_harness.py" run "$CT/ALL.sno" "$CT/ALL.ref" --lang snobol4 --modes m3,m4 --partition "$CORE_PARTS" 2>&1)"
+CB="$(printf '%s\n' "$COUT" | grep -m1 '^SUITE_BOARD')"
+[ -n "$CB" ] || { printf '%s\n' "$COUT" | tail -3 | sed 's/^/  /'; echo "core arm REFUSE(2): the harness printed no SUITE_BOARD line"; exit 2; }
+cv() { printf '%s\n' "$CB" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }
+CN3=$(cv m3_n); CP3=$(cv m3_pass); CN4=$(cv m4_n); CP4=$(cv m4_pass); CF3=$((CN3-CP3)); CF4=$((CN4-CP4))
+printf '%s\n' "$COUT" | grep -E '^ +(FAIL|CRASH|HANG|UNPROVEN) m[34] ' | sed 's/^ */  CORE-/'
 TT=$((SECONDS-T0))
 echo ""
 echo "mode-3 (--run):     PASS=$P3 FAIL=$F3"
 echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE)"
+echo "core arm (SnoRungs core + $(echo $FRAGILE | wc -w) fragile, $CN4 entries): m3 PASS=$CP3 FAIL=$CF3  m4 PASS=$CP4 FAIL=$CF4   (HARD GATE, both modes)"
 echo "PASS=$P4 FAIL=$F4"
 printf "TIME TOTAL=%ds\n" "$TT"
 
-[ "$F4" -eq 0 ]
+[ "$F4" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]
