@@ -52,12 +52,11 @@ IR_MATCH_FENCE1	0	always	-	-	-	a fence's record is the match frame's
 IR_MATCH_FENCE0	0	always	-	-	-	a fence's record is the match frame's
 IR_MATCH_ABORT	0	always	-	-	-	control only
 IR_BOUND	0	home_state	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)
-IR_BOUND	48	pl_home	-	-	-	the bound's choice header on a home-set Prolog graph: mark +0, rsp at entry +8, banked B +16, boundary +32 (D1), carved at alpha and read back at omega (D3)
+IR_BOUND	0	pl_home	-	-	-	the bound's record (mark +0, rsp at entry +8, banked B +16, boundary +32) outlives the commit's whack-pop and is read by the fence's omega UNMARK and the gate at the construct's base depth: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
 IR_CALL_PROC_STAGED	16	pl_home_dyn	-	-	-	a call that may retain its callee's frame: the result cell, with the act word resident in the activation frame (Lon's TEST 2) (D3)
 IR_CALL_PROC_STAGED	32	pl_home	-	-	-	a definite call: the result beside the act word (+16, +24), read back at beta at a fixed rsp distance (D3)
 IR_CALL_VALUE	16	pl_home	-	-	-	call/N never knows its callee (PR_UNKNOWN_CALLEE): the result cell, with the argument block and the act word resident (D3)
-IR_GATE	16	pl_home_dyn	-	-	-	a gate an arm of which may retain: the value cell, with the live-arm index resident -- GATE_ARM writes it from an indefinite depth (D3)
-IR_GATE	32	pl_home	-	-	-	a definite gate: the value beside its live-arm index (+16), written by GATE_ARM at each arm's success and dispatched on at beta (D3)
+IR_GATE	0	pl_home	-	-	-	the live-arm index (+16) is written by GATE_ARM at each arm's depth and read at the gate's beta at the construct's base, across the arms' pops: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
 IR_BOUND	0	always	-	-	-	the bound's record is a frame word today (chunk 2, the switches)
 IR_UNMARK	0	always	-	-	-	a discard
 IR_CONJUNCTION	0	always	-	-	-	its value is its last operand's
