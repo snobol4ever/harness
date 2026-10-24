@@ -16,6 +16,8 @@ PLAN_ROW ... all=<ai>), so a seat can read every scream beside its plan row; --l
 
 USE:  python3 harness/scripts/util_zop_unbacked_census.py [--op IR_KIND]... [--lines] [--empty-prolog] [--timeout S] [--prune] PROGRAM...
       --op IR_KIND      the kinds this run grades (repeatable); rc 0 iff their lines read 0 -- without it, rc 0 iff every line reads 0
+      --core LANG       adds every CORE entry of corpus/tests/LANG/PARTITION.tsv (CEO-1676), each materialized once through corpus_suite_harness.py extract
+                        under <root>/.scratch/zop-census/core-LANG/ (re-extracted when the suite container is newer); repeatable
       --empty-prolog    adds the empty Prolog program (:- initialization(main). main.) -- the prelude alone
       --lines           prints every count line under its program
       --prune           removes the scratch worktrees and exits
@@ -101,13 +103,33 @@ def compile_one(path, prog, timeout):
         return "HANG", (e.stderr or b"").decode(errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
     finally:
         if slot: slot.close()
+SUITE_EXTS = (".sno", ".spt", ".sbl", ".sc", ".reb", ".icn", ".pl", ".raku", ".pas", ".scrip")
+def core_programs(lang):
+    d = os.path.join(ROOT, "corpus", "tests", lang); part = os.path.join(d, "PARTITION.tsv")
+    if not os.path.isfile(part): refuse("no partition for %s at %s" % (lang, part))
+    suites = [f for f in os.listdir(d) if f.startswith("ALL.") and os.path.splitext(f)[1] in SUITE_EXTS]
+    if len(suites) != 1: refuse("no single suite container ALL.<ext> under %s (found %s)" % (d, suites))
+    suite = os.path.join(d, suites[0]); ref = os.path.join(d, "ALL.ref"); ext = os.path.splitext(suite)[1]
+    names = [ln.split("\t")[0] for ln in open(part, encoding="utf-8") if not ln.startswith("#") and ln.split("\t")[1:2] == ["core"]]
+    if not names: refuse("no core entry in %s" % part)
+    out = os.path.join(CENSUS, "core-" + lang); os.makedirs(out, exist_ok=True); progs = []
+    for nm in names:
+        p = os.path.join(out, nm + ext)
+        if not (os.path.isfile(p) and os.path.getmtime(p) >= os.path.getmtime(suite)):
+            x = subprocess.run([sys.executable, os.path.join(HERE, "corpus_suite_harness.py"), "extract", suite, ref, nm, p], capture_output=True, text=True, errors="replace")
+            if x.returncode != 0 or not os.path.isfile(p): refuse("could not extract core entry %s of %s: %s" % (nm, lang, (x.stdout + x.stderr).strip().split("\n")[-1:]))
+        progs.append(p)
+    return progs
 def main():
-    args = sys.argv[1:]; ops = []; lines = False; empty = False; timeout = 300; progs = []
+    args = sys.argv[1:]; ops = []; lines = False; empty = False; timeout = 300; progs = []; cores = []
     while args:
         a = args.pop(0)
         if a == "--op":
             if not args: refuse("--op takes an IR kind")
             ops.append(args.pop(0))
+        elif a == "--core":
+            if not args: refuse("--core takes a language")
+            cores.append(args.pop(0))
         elif a == "--lines": lines = True
         elif a == "--empty-prolog": empty = True
         elif a == "--timeout":
@@ -122,7 +144,8 @@ def main():
     if not os.path.isdir(os.path.join(SCRIP, "src")): refuse("no SCRIP beside this harness at %s" % SCRIP)
     if empty:
         os.makedirs(CENSUS, exist_ok=True); e = os.path.join(CENSUS, "empty.pl"); open(e, "w").write(":- initialization(main).\nmain.\n"); progs.insert(0, e)
-    if not progs: refuse("no program named (PROGRAM... or --empty-prolog)")
+    for lang in cores: progs.extend(core_programs(lang))
+    if not progs: refuse("no program named (PROGRAM..., --core LANG or --empty-prolog)")
     for p in progs:
         if not os.path.isfile(p): refuse("no such program %s" % p)
     head = worktree(SCRIP, WT); worktree(os.path.normpath(HARNESS), WH)
