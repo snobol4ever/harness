@@ -14,7 +14,7 @@ ICONT="${ICONT:-$(icont_bin)}" || exit 2
 ICONX="${ICONX:-$(iconx_bin)}" || exit 2
 CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
 REPS="${REPS:-3}"
-WORK="$(mktemp -d /tmp/icn_micro_XXXXXX)"
+mkdir -p "$HERE/../../.scratch" && WORK="$(mktemp -d "$HERE/../../.scratch/icn_micro_XXXXXX")"
 export PATH="$(dirname "$ICONT"):$PATH"
 
 # best-of-N wall clock in milliseconds

@@ -7,6 +7,7 @@ SNORT_J="$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRt.j"
 SNORT_MS_J="$HERE/../../SCRIP/miscellaneous/runtimes/jvm/SnoRtMatchState.j"
 PASS=0; FAIL=0
 tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT INT TERM
 # Step 1: assemble SnoRt.j
 if timeout -k 5 15 java -jar "$JASMIN" "$SNORT_J" -d "$tmp/" > "$tmp/asm.out" 2>&1; then
     echo "PASS SnoRt.j assembles"

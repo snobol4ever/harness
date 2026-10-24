@@ -3,6 +3,7 @@
 set -eu
 REPO="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
 T=$(mktemp -d)
+trap 'rm -rf "$T"' EXIT INT TERM
 cat > "$T/t.c" <<'EOF'
 #include "rt_arena.h"
 #include <assert.h>

@@ -46,6 +46,7 @@ FPC=/usr/bin/fpc
 BAND="${PAS_GC_BAND:-3 16}"
 SHIFTS="${PAS_GC_SHIFTS:-1}"
 W=$(mktemp -d) || exit 2
+trap 'rm -rf "$W"' EXIT INT TERM
 KEEP=0
 cat > "$W/pasrec.pas" <<'FIX'
 program pasrec(output);

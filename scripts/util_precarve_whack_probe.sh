@@ -22,7 +22,7 @@ SEAT="$(cat "$HERE/../../HQ" 2>/dev/null || basename "$(cd "$HERE/../.." && pwd)
 cd "$SCRIP" || { echo "REFUSE(2): no SCRIP at $SCRIP"; exit 2; }
 ulimit -v 8000000
 [ -s "$LOG" ] || printf 'when\tseat\tscrip\tsite\ttest\trc\tsummary\n' >> "$LOG"
-SCRATCH="$(mktemp -d /tmp/precarve-probe.XXXXXX)"
+mkdir -p "$HERE/../../.scratch" && SCRATCH="$(mktemp -d "$HERE/../../.scratch/precarve-probe.XXXXXX")"
 for site in "$@"; do
   echo "=== $site $(date '+%H:%M:%S')"
   out="$(python3 "$PAT" "$site" 2>&1)"; prc=$?; echo "$out"

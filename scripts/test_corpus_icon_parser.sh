@@ -23,6 +23,7 @@ PARSER_SRC=$(icn_src icon_parser.icn)     || exit 2
 RECOG_SRC=$(icn_src icon_recognizer.icn)  || exit 2
 
 TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT INT TERM
 "$ICONT" -s -o "$TMP/icon_parser"     "$PARSER_SRC"  2>/dev/null || { echo "ERROR: icon_parser compile failed ($PARSER_SRC)"; exit 2; }
 "$ICONT" -s -o "$TMP/icon_recognizer" "$RECOG_SRC"   2>/dev/null || { echo "ERROR: icon_recognizer compile failed ($RECOG_SRC)"; exit 2; }
 

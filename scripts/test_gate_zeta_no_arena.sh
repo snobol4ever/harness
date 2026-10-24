@@ -10,6 +10,7 @@ set -u
 SCRIP="${SCRIP:-$(dirname "$0")/../../SCRIP/scrip}"
 CORP="${CORP:-$S4E/corpus/benchmarks/snobol4}"
 W=$(mktemp -d)
+trap 'rm -rf "$W"' EXIT INT TERM
 cat > "$W/defer_probe.sno" <<'EOF'
     N = 3
     P = LEN(*N) . V

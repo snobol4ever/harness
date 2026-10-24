@@ -29,6 +29,7 @@ if [[ ! -x "$BIN" ]]; then
     SCRIP_BIN="${SCRIP:-$REPO/SCRIP/scrip}"; RTDIR="${RT_DIR:-$REPO/SCRIP/out}"
     [[ -x "$SCRIP_BIN" ]] || { echo "REFUSING rc=2: no scrip at $SCRIP_BIN — cannot build the beauty binary, so this test never ran. Not a FAIL." >&2; exit 2; }
     TMPS="$(mktemp -d)/beauty.s"
+    trap 'rm -rf "${TMPS%/*}"' EXIT INT TERM
     ( cd "$INC" && timeout -k 5 300 "$SCRIP_BIN" --compile "$BEAUTY" -o "$TMPS" < /dev/null ) 2>/dev/null || { echo "REFUSING rc=2: scrip could not COMPILE $BEAUTY — a compiler defect to chase on its own, not a self-beautify result." >&2; exit 2; }
     gcc -no-pie "$TMPS" -L"$RTDIR" -lscrip_rt -lm -Wl,-rpath,"$RTDIR" -o "$BIN" 2>/dev/null || { echo "REFUSING rc=2: could not link the beauty binary against $RTDIR — this test never ran." >&2; exit 2; }
     echo "Built: $BIN"

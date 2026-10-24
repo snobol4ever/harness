@@ -27,7 +27,7 @@ GATE_NAME="test_gate_scratch_is_bounded"
 . "$HERE/lib_gate.sh" || { echo "REFUSING: cannot load lib_gate.sh -- the three-exit-code authority (V2-5)." >&2; exit 3; }
 gate_parse_args "$@"
 gate_require "$HERE" "the scripts directory"
-RATCHET="${SCRATCH_LEAK_RATCHET:-23}"
+RATCHET="${SCRATCH_LEAK_RATCHET:-22}"
 examined=0; danger=0; leak=0; danger_list=""; leak_list=""
 for f in "$HERE"/*.sh; do
     [ -f "$f" ] || continue
@@ -40,7 +40,7 @@ for f in "$HERE"/*.sh; do
     grep -qE 'mktemp -d +"?/tmp|mktemp -d *$|mktemp -d *\)|mktemp -d *`' "$f" || continue
     # Does cleanup survive a kill?  A trap on EXIT/INT/TERM is the only thing that runs when `timeout` fires,
     # and `timeout` is how these scripts normally die -- so success-path `rm -rf` does not count.
-    grep -qE 'trap [^;]*(EXIT|INT|TERM)' "$f" && continue
+    grep -qE "trap +('[^']*'|\"[^\"]*\"|[^ ]+) +([A-Z0-9]+ +)*(EXIT|INT|TERM)\b" "$f" && continue
     # Untrapped + root-partition scratch.  Now: is the write BOUNDED?  Unbounded means a program's own stdout is
     # redirected into the scratch dir with no cap -- that is the shape that turns a wrong answer into an outage.
     if grep -qE '> *"?\$\{?(WORK|TMPD|TMPDIR|TMP|SCRATCH|D)\b' "$f" \

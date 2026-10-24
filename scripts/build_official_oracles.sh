@@ -66,6 +66,7 @@ echo "OK  official csnobol4: $CSN/snobol4 (regression: $p passed)"
 
 echo "══ certification: fixed point (stage-1 regenerates its own tables) ══"
 cd "$CSN"; SNAP=$(mktemp -d)
+trap 'rm -rf "$SNAP"' EXIT INT TERM
 for f in $GEN; do cp "$f" "$SNAP/"; done
 touch v311.sil gendata.sno gensyn.sno genc.sno syntax.tbl procs globals
 make SNO="$CSN/snobol4 -b" > /tmp/_csn_fixedpoint.log 2>&1 \

@@ -52,6 +52,7 @@ S=${S4E_RATE:-$S4E/corpus/benchmarks/icon/rate}
 WARM=${WARM:-500}; BUD=${BUD:-1500}; REPS=${REPS:-3}
 LOAD0=$(cut -d" " -f1-3 /proc/loadavg)
 W=$(mktemp -d /tmp/rate3_XXXXXX); cd "$W"; cp $S/*.icn .
+trap 'rm -rf "$W"' EXIT INT TERM
 declare -A UNIT=( [int_loop]=20000 [int_mod]=20000 [concat_dispatch]=20000 [concat_int_dispatch]=20000 \
   [concat_intvar]=20000 [concat_strvar]=20000 [concat_table]=10000 [sub_list]=20000 \
   [sub_table_miss]=20000 [table_semantics]=15000 )

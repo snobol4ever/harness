@@ -106,6 +106,7 @@ m4p="$(field m4_pass)"; m4f="$(field m4_fail)"; m4c="$(field m4_crash)"; m4h="$(
 _SBL="$(sbl_correctness_bin)" || exit 2; _SBLF="$(sbl_lang_flags)"
 OUTSIDE_TSV="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"; MIRROR_TSV="$SUITE/UNGRADABLE.tsv"; OUTSIDE_LIST=""; OUTSIDE_N=0
 _ow="$(mktemp -d)"; cp -a "$SUITE"/. "$_ow/" 2>/dev/null
+trap 'rm -rf "$_ow"' EXIT INT TERM
 for _f in "$_ow"/*.sno; do
     _n="$(basename "$_f" .sno)"; [ "$_n" = ALL ] && continue
     inventory_is_container "$SUITE" "$_n.sno" && continue   # not a program (CONTAINERS.tsv, CEO-1272): neither inside nor outside the baseline

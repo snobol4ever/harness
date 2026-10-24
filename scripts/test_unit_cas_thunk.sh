@@ -12,6 +12,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 RT="${RT_DIR:-$ROOT/out}"
 [ -f "$RT/libscrip_rt.so" ] || { echo "REFUSING rc=2: $RT/libscrip_rt.so missing -- cannot measure the C.A.S. thunk arm. Build first; a skip here would read as a pass." >&2; exit 2; }
 BIN="$(mktemp -d)/cas_thunk_test"
+trap 'rm -rf "${BIN%/*}"' EXIT INT TERM
 gcc -O0 -g -Wall -o "$BIN" "$ROOT/tools/cas_thunk_test.c" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" 2>&1 || { echo "REFUSING rc=2: cas_thunk_test.c did not build against the RT" >&2; exit 2; }
 "$BIN"; rc=$?
 [ $rc -eq 0 ] && echo "✅ CAS-THUNK GATE OK" || echo "⛔ CAS-THUNK GATE FAIL (rc=$rc)"
