@@ -69,13 +69,18 @@ arm "6d census, the inverse: every runner that calls the guard and writes a scor
 # test of CEO-1893 (harness 8439169: a run naming at most eight entry: parts is any seat's own test of its program), then the guard. The old arm read the
 # guard within two lines of the def, and 8439169 put the handful test above it, so 6b read red from 09:51 on a tree that guarded every board. Read this
 # way nothing can grade before the guard, and the exemption cannot widen (a larger cap, a part other than entry:) without this arm going red.
-cmd_run_head() { awk '/^def cmd_run\(args\):/ {f = 1; next} f && /^def / {exit} f && $0 !~ /^[ \t]*#/ && NF {print; if (++n == 4) exit}' "$1"; }
+# ⭐ RE-CUT by the ceo 2026-10-24 (CEO-1952): the smoke core arm of test_smoke_snobol4.sh and test_smoke_snocone.sh is the second exemption, pinned to
+# S4E_SMOKE_CORE_ARM with progress off and exactly one core part plus entry: parts; any other widening still reads red here.
+cmd_run_head() { awk '/^def cmd_run\(args\):/ {f = 1; next} f && /^def / {exit} f && $0 !~ /^[ \t]*#/ && NF {print; if (++n == 7) exit}' "$1"; }
 guard_heads_cmd_run() {
   local h; h=$(cmd_run_head "$1")
   sed -n 1p <<<"$h" | grep -qF 'paths = resolve_paths()' &&
   sed -n 2p <<<"$h" | grep -qF '_parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]' &&
-  sed -n 3p <<<"$h" | grep -qF 'if not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):' &&
-  sed -n 4p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
+  sed -n 3p <<<"$h" | grep -qF '_smoke = bool(os.environ.get("S4E_SMOKE_CORE_ARM")) and os.environ.get("S4E_PROGRESS_OFF") == "1" and _parts.count("core") == 1 and all(p == "core" or p.startswith("entry:") for p in _parts)' &&
+  sed -n 4p <<<"$h" | grep -qF 'if _smoke:' &&
+  sed -n 5p <<<"$h" | grep -qF 'print("ONE-RUNNER SMOKE CORE ARM by %s' &&
+  sed -n 6p <<<"$h" | grep -qF 'elif not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):' &&
+  sed -n 7p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
 }
 arm "6b census: the rungs harness guards cmd_run before it grades, with the suite it holds, a handful of at most eight named entries excepted (CEO-1893)" 'guard_heads_cmd_run "$H/corpus_suite_harness.py"'
 arm "6c the bus done run exports S4E_DONE_WHEN_RUN=1" 'grep -q "S4E_DONE_WHEN_RUN=1 timeout" "$H/s4e_msg.sh"'

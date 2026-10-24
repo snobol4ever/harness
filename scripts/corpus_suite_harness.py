@@ -3147,7 +3147,14 @@ def cmd_run(args):
     # after a fix. And it can run a handful of related programs based on attributes to check for breakage."; ceo CEO-1893): a run whose
     # --partition names only entry:<name> parts, at most eight, is any seat's own test of its program and is admitted for every seat.
     _parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]
-    if not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):
+    # ⭐ A SMOKE'S CORE ARM IS NOT A BOARD (ceo CEO-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."):
+    # test_smoke_snobol4.sh and test_smoke_snocone.sh grade their language's PARTITION core plus named entries under S4E_SMOKE_CORE_ARM with
+    # progress off. A smoke is open to every seat (CEO-1893) and a fix smokes every language its diff touches before the push (CEO-1928), so
+    # the arm is admitted for every seat; it writes no progress row and no score row, and it names nothing but core and entry: parts.
+    _smoke = bool(os.environ.get("S4E_SMOKE_CORE_ARM")) and os.environ.get("S4E_PROGRESS_OFF") == "1" and _parts.count("core") == 1 and all(p == "core" or p.startswith("entry:") for p in _parts)
+    if _smoke:
+        print("ONE-RUNNER SMOKE CORE ARM by %s: %s, no progress row and no score row" % (os.environ.get("S4E_SEAT") or "?", os.environ["S4E_SMOKE_CORE_ARM"]))
+    elif not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):
         _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))
     # ⛔⭐ ONE MEMORY SCOPE AT THE OUTERMOST RUN (row instrument-698-runners-..., the coo 2026-09-23; util_mem_scope.py): an
     # ADMITTED run over a corpus population -- the guard's own test, just above -- re-runs itself once inside ONE cgroup scope at

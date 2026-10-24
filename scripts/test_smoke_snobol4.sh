@@ -95,7 +95,7 @@ END" "5"
 FRAGILE="arbno_fence_bal_branch_1 arbno_fence_bal_replace_branch_2 arbno_fence_pos_branch_18 arbno_fence_pos_branch_28 arbno_arb_rpos_replace_branch_1 fence_tab_pos_branch_2 user_function_fence_tab_branch_1 user_function_eval_arbno_replace_branch_2"
 CORE_PARTS="core$(for e in $FRAGILE; do printf ',entry:%s' "$e"; done)"
 CT="${HERE}/../../corpus/tests/snobol4"
-COUT="$(cd "${HERE}/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_ONE_RUNNER_OVERRIDE="test_smoke_snobol4.sh core arm (CEO-1952)" timeout -k 5 300 python3 "${HERE}/corpus_suite_harness.py" run "$CT/ALL.sno" "$CT/ALL.ref" --lang snobol4 --modes m3,m4 --partition "$CORE_PARTS" 2>&1)"
+COUT="$(cd "${HERE}/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_SMOKE_CORE_ARM="test_smoke_snobol4.sh (CEO-1952)" timeout -k 5 300 python3 "${HERE}/corpus_suite_harness.py" run "$CT/ALL.sno" "$CT/ALL.ref" --lang snobol4 --modes m3,m4 --partition "$CORE_PARTS" 2>&1)"
 CB="$(printf '%s\n' "$COUT" | grep -m1 '^SUITE_BOARD')"
 [ -n "$CB" ] || { printf '%s\n' "$COUT" | tail -3 | sed 's/^/  /'; echo "core arm REFUSE(2): the harness printed no SUITE_BOARD line"; exit 2; }
 cv() { printf '%s\n' "$CB" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }
