@@ -22,7 +22,8 @@ tree="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"; ctr
 T0=$(date +%s.%N); green=0; red=0; refused=0; pass=0; fail=0; reds=""; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 for l in $LANGS; do
   t0=$(date +%s.%N); timeout -k 5 300 bash "../harness/scripts/test_smoke_$l.sh" </dev/null >"$W/$l.out" 2>&1; rc=$?; t1=$(date +%s.%N)
-  p=$(grep -oE 'PASS=[0-9]+' "$W/$l.out" | sed 's/PASS=//' | awk '{s+=$1} END{print s+0}'); f=$(grep -oE 'FAIL=[0-9]+' "$W/$l.out" | sed 's/FAIL=//' | awk '{s+=$1} END{print s+0}')
+  # the smoke's own summary lines start at column 0; the indented was:/now: lines are a score receipt's echo and count nothing (COO-422: rebus read 20 for 4)
+  p=$(grep -E '^[^[:space:]]' "$W/$l.out" | grep -oE 'PASS=[0-9]+' | sed 's/PASS=//' | awk '{s+=$1} END{print s+0}'); f=$(grep -E '^[^[:space:]]' "$W/$l.out" | grep -oE 'FAIL=[0-9]+' | sed 's/FAIL=//' | awk '{s+=$1} END{print s+0}')
   pass=$((pass + p)); fail=$((fail + f))
   case "$rc" in 0) v=GREEN; green=$((green + 1));; 2) v=REFUSED; refused=$((refused + 1)); reds="$reds $l(refused)";; *) v=RED; red=$((red + 1)); reds="$reds $l";; esac
   printf 'FLEET_SMOKE lang=%-8s %-7s rc=%-3s pass=%-4s fail=%-3s secs=%s\n' "$l" "$v" "$rc" "$p" "$f" "$(echo "$t1 - $t0" | bc | sed 's/^\./0./')"
