@@ -116,7 +116,7 @@ def core_programs(lang):
     for nm in names:
         p = os.path.join(out, nm + ext)
         if not (os.path.isfile(p) and os.path.getmtime(p) >= os.path.getmtime(suite)):
-            x = subprocess.run([sys.executable, os.path.join(HERE, "corpus_suite_harness.py"), "extract", suite, ref, nm, p], capture_output=True, text=True, errors="replace")
+            x = subprocess.run([sys.executable, os.path.join(HERE, "corpus_suite_harness.py"), "extract", suite, ref, nm, p, "--out-in", p + ".in"], capture_output=True, text=True, errors="replace")
             if x.returncode != 0 or not os.path.isfile(p): refuse("could not extract core entry %s of %s: %s" % (nm, lang, (x.stdout + x.stderr).strip().split("\n")[-1:]))
         progs.append(p)
     return progs
