@@ -15,7 +15,7 @@ IR_MATCH_ARBNO	16	always	-	-	-	the ARBNO record
 *	32	call_curmov	-	-	-	the result cell beside the moved cursor
 IR_VAR	0	icn_local	-	-	-	the local's own cell is its home; the read carves nothing
 IR_SUSPEND	0	icn_suspend	-	-	-	the suspend passes its value up; its resume is the beta
-IR_TO	64	pl_home_range_hdr	-	-	-	the value, the counter and the limit, then a trailed range's choice header (hdr +16..+63: prev B +48, boundary +56), carved at alpha on a home-set Prolog graph (D3)
+IR_TO	0	pl_home	-	-	-	a generator's resumption state is ACT: the range's counter and limit and the db walk's enumeration state are written at alpha and read at beta across the whole continuation, so the slot set is resident in the activation frame (the cfo's ruling for the kind, D3 kind 4)
 IR_TO	32	always	-	-	-	the value beside the counter and the limit
 IR_DISJUNCTION	arm_spine_hdr	pl_home_has_operands	-	-	-	the arms' live cells plus the disjunction's choice header (+24..+63: mark, prev B +48, boundary +56) on a home-set Prolog graph (D3)
 IR_DISJUNCTION	arm_spine	has_operands	-	-	-	the arms' live cells (zd_dj_spine)
