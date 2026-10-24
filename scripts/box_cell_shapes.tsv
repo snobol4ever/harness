@@ -16,6 +16,7 @@ IR_SCAN_TAB	32	icn_home	-	-	-	exp
 IR_SCAN_UPTO	32	icn_home	-	-	-	exp
 IR_SCAN_MOVE	32	icn_home	-	-	-	exp
 IR_SCAN_FIND	32	icn_home	-	-	-	exp
+IR_SCAN_ENTER	0	home_state	-	-	-	the scan's saved outer environment read by the scan exit across a generator callee is a frame word (Lon's TEST 1)
 IR_SCAN_ENTER	32	icn_home	-	-	-	exp
 IR_REV_ASSIGN_VAR	32	icn_home	-	-	-	exp
 IR_REV_ASSIGN	32	icn_home	-	-	-	exp
