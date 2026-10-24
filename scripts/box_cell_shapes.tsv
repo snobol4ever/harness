@@ -22,6 +22,7 @@ IR_REV_ASSIGN	32	home_frame	-	-	-	exp
 IR_REV_SWAP	32	home_frame	-	-	-	exp
 IR_SCAN_BAL	32	home_frame	-	-	-	exp
 IR_SCAN_MATCH	32	home_frame	-	-	-	exp
+IR_CREATE	80	home_frame	-	-	-	the result cell and the seven-register record scrip_coexpr_create copies during the call
 IR_CALL_GEN	call_args	home_frame	-	-	-	the result cell, one cell per argument and the generator's resume word (op_call_genoff = resoff + 16 * (1 + narg))
 IR_TO_BY	80	home_frame	-	-	-	exp
 IR_SCAN	48	home_frame	-	-	-	exp
