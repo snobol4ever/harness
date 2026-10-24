@@ -4,7 +4,7 @@
 bottom and takes the first that matches the node's kind and condition.
   util_gen_box_cell_shapes.py --write     rewrite the .inc
   util_gen_box_cell_shapes.py --check     rc 1 when the committed .inc differs from what the table generates (it names the file), rc 0 when current
-rc 2: the table or the SCRIP sibling cannot be read, or a row is malformed (an unknown condition, a non-numeric width other than arm_spine)."""
+rc 2: the table or the SCRIP sibling cannot be read, or a row is malformed (an unknown condition, a non-numeric width other than arm_spine or call_args)."""
 import os
 import subprocess
 import sys
@@ -43,8 +43,8 @@ def rows():
         kind, words, when = f[0], f[1], f[2]
         if when not in WHEN:
             refuse('%s:%d: unknown condition %r' % (TSV, n, when))
-        if words != 'arm_spine' and not words.isdigit():
-            refuse('%s:%d: alpha_words %r is neither a number nor arm_spine' % (TSV, n, words))
+        if words not in ('arm_spine', 'call_args') and not words.isdigit():
+            refuse('%s:%d: alpha_words %r is neither a number, arm_spine nor call_args' % (TSV, n, words))
         if kind != '*' and not kind.startswith('IR_'):
             refuse('%s:%d: kind %r is neither * nor an IR kind' % (TSV, n, kind))
         out.append((kind, words, when))
@@ -54,7 +54,7 @@ def rows():
 
 
 def render(rs):
-    body = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, '-1' if w == 'arm_spine' else w, WHEN[c]) for k, w, c in rs]
+    body = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, '-1' if w == 'arm_spine' else '-2' if w == 'call_args' else w, WHEN[c]) for k, w, c in rs]
     lines, cur = [], 'static const struct { int op; int words; int when; } box_cell_shapes[] = {'
     for i, b in enumerate(body):
         item = ' ' + b + (',' if i + 1 < len(body) else ' };')
