@@ -53,12 +53,12 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends;
-      CEO-1949: ruled = a home the path test does not force that the planner's own facts name a class the ceo ruled right by Lon's first test -- a
-      PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge, with the cell not path-forced) or a RETAINING
-      DISJUNCTION (xfwhy retaining-disjunction on an IR_DISJUNCTION, zls_dj_retains); it is no disagreement and no agreement, and
-      BB_PLACEMENT_FRAMEHOME_RULED <lang> class=<c> witnessed|unwitnessed|planner count=.. says how far the ruling reaches: witnessed = a box with an incoming
-      beta edge lies on a gamma path between the write and a consumer's read, a retry re-reading the cell; unwitnessed = no such box, the planner's
-      reuse-class rule alone homes it)
+      CEO-1949 (narrowed by the ceo): ruled = a home the path test does not force that the planner's own facts name a class the ceo ruled right by Lon's
+      first test -- a PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge) WITNESSED by a retry edge, i.e. a box with an incoming beta
+      edge lies on a gamma path between the write and a consumer's read, so a retry re-reads the cell; or a RETAINING DISJUNCTION (xfwhy retaining-disjunction
+      on an IR_DISJUNCTION, zls_dj_retains). A pinned temp with NO such box is not read across a retaining edge: it counts as home_without_test, the planner's
+      reuse-class rule alone homes it. BB_PLACEMENT_FRAMEHOME_PINNED <lang> witnessed=.. unwitnessed=.. prints the split of every pinned temp the path test
+      does not force; BB_PLACEMENT_FRAMEHOME_RULED <lang> class=<c> witnessed|planner count=.. prints what is ruled
   BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|hwt:<rule>|nohome:<test> kind=<box kind> count=..   (why: every home by the planner's rule;
       hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
       them frame_homed_untested and spine_unhomed)
@@ -554,11 +554,13 @@ def main():
                         if xf != -1:
                             fh['homes'] += 1
                             fh[('why', xfwhy, kind)] += 1
-                            ruled = None if forced else ('pinned-temp' if (ht == 'operand:pinned-temp' and xfwhy == 'read-across-retaining-edge') else
-                                                         'retaining-disjunction' if (xfwhy == 'retaining-disjunction' and kind == 'DISJUNCTION') else None)
+                            pinned = not forced and ht == 'operand:pinned-temp' and xfwhy == 'read-across-retaining-edge'
+                            ruled = None if forced else ('pinned-temp' if (pinned and wit) else 'retaining-disjunction' if (xfwhy == 'retaining-disjunction' and kind == 'DISJUNCTION') else None)
                             fh['agree' if forced else 'ruled' if ruled else 'home_without_test'] += 1
+                            if pinned:
+                                fh[('pinned', 'witnessed' if wit else 'unwitnessed')] += 1
                             if ruled:
-                                fh[('ruled', ruled, 'witnessed' if wit else 'unwitnessed' if ruled == 'pinned-temp' else 'planner')] += 1
+                                fh[('ruled', ruled, 'witnessed' if wit else 'planner')] += 1
                             elif not forced:
                                 fh[('hwt', xfwhy, kind)] += 1
                             cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_ruled' if ruled else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
@@ -629,9 +631,11 @@ def main():
         print('BB_PLACEMENT_FRAMEHOME %s homes=%d agree=%d home_without_test=%d test_without_home=%d ruled=%d' % (lang, fh['homes'], fh['agree'], fh['home_without_test'], fh['test_without_home'], fh['ruled']))
         for k, v in sorted((k, v) for k, v in fh.items() if isinstance(k, tuple) and k[0] == 'ruled'):
             print('BB_PLACEMENT_FRAMEHOME_RULED %s class=%s %s count=%d' % (lang, k[1], k[2], v))
+        if fh[('pinned', 'witnessed')] or fh[('pinned', 'unwitnessed')]:
+            print('BB_PLACEMENT_FRAMEHOME_PINNED %s witnessed=%d unwitnessed=%d' % (lang, fh[('pinned', 'witnessed')], fh[('pinned', 'unwitnessed')]))
         for k, v in sorted(stw[lang].items(), key=lambda kv: -kv[1]):
             print('BB_PLACEMENT_STATE %s key=%s class=%s count=%d' % (lang, k[0], k[1], v))
-        for k, v in sorted(((k, v) for k, v in fh.items() if isinstance(k, tuple)), key=lambda kv: -kv[1]):
+        for k, v in sorted(((k, v) for k, v in fh.items() if isinstance(k, tuple) and len(k) == 3 and k[0] in ('why', 'hwt', 'nohome')), key=lambda kv: -kv[1]):
             print('BB_PLACEMENT_FRAMEHOME_WHY %s %s:%s kind=%s count=%d' % (lang, k[0], k[1], k[2], v))
     print('BB_PLACEMENT_TESTS total offspine=%d operand_test=%d local_test=%d standing=%d other=%d' % (tg['offspine'], tg['operand_test'], tg['local_test'], tg['standing'], tg['other']))
     ug = collections.Counter()

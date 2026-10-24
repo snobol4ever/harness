@@ -29,7 +29,7 @@ for ln in open(sys.argv[1], encoding='utf-8'):
         h, a, x, y, r = int(v['homes']), int(v['agree']), int(v['home_without_test']), int(v['test_without_home']), int(v.get('ruled', 0))
         print('FRAME_HOME_AGREE_BOARD lang=%s disagree=%d homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d' % (p[1], x + y, h, a, r, x, y))
         tot = [tot[0] + h, tot[1] + a, tot[2] + x, tot[3] + y, tot[4] + r]
-    elif ln.startswith('BB_PLACEMENT_FRAMEHOME_RULED '):
+    elif ln.startswith(('BB_PLACEMENT_FRAMEHOME_RULED ', 'BB_PLACEMENT_FRAMEHOME_PINNED ')):
         print(ln.strip())
 print('FRAME_HOME_AGREE_BOARD total disagree=%d homes=%d agree=%d ruled=%d home_without_test=%d test_without_home=%d (tree %s)' % (tot[2] + tot[3], tot[0], tot[1], tot[4], tot[2], tot[3], sys.argv[2]))
 open(sys.argv[1] + '.total', 'w').write(str(tot[2] + tot[3]))
