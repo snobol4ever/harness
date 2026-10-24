@@ -4,7 +4,8 @@
 bottom and takes the first that matches the node's kind and condition.
   util_gen_box_cell_shapes.py --write     rewrite the .inc
   util_gen_box_cell_shapes.py --check     rc 1 when the committed .inc differs from what the table generates (it names the file), rc 0 when current
-rc 2: the table or the SCRIP sibling cannot be read, or a row is malformed (an unknown condition, a non-numeric width other than arm_spine)."""
+rc 2: the table or the SCRIP sibling cannot be read, or a row is malformed (an unknown condition, a non-numeric width other than arm_spine,
+arm_spine_hdr -- the computed widths: the disjunction's arm extent, and that extent plus the Prolog choice header)."""
 import os
 import subprocess
 import sys
@@ -14,7 +15,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TSV = os.path.join(HERE, 'box_cell_shapes.tsv')
 INC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP', 'src', 'planner', 'box_cell_shapes.inc'))
 WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': 'BCS_ICN_LOCAL', 'icn_suspend': 'BCS_ICN_SUSPEND',
-        'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV'}
+        'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME',
+        'home_state': 'BCS_HOME_STATE', 'pl_home': 'BCS_PL_HOME', 'pl_home_dyn': 'BCS_PL_HOME_DYN', 'pl_home_range_hdr': 'BCS_PL_HOME_RANGE_HDR',
+        'pl_home_has_operands': 'BCS_PL_HOME_HAS_OPERANDS'}
+WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2'}
 
 
 def refuse(msg):
@@ -42,8 +46,8 @@ def rows():
         kind, words, when = f[0], f[1], f[2]
         if when not in WHEN:
             refuse('%s:%d: unknown condition %r' % (TSV, n, when))
-        if words != 'arm_spine' and not words.isdigit():
-            refuse('%s:%d: alpha_words %r is neither a number nor arm_spine' % (TSV, n, words))
+        if words not in WORDS and not words.isdigit():
+            refuse('%s:%d: alpha_words %r is neither a number nor one of %s' % (TSV, n, words, ' '.join(sorted(WORDS))))
         if kind != '*' and not kind.startswith('IR_'):
             refuse('%s:%d: kind %r is neither * nor an IR kind' % (TSV, n, kind))
         out.append((kind, words, when))
@@ -53,7 +57,7 @@ def rows():
 
 
 def render(rs):
-    body = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, '-1' if w == 'arm_spine' else w, WHEN[c]) for k, w, c in rs]
+    body = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, WORDS.get(w, w), WHEN[c]) for k, w, c in rs]
     lines, cur = [], 'static const struct { int op; int words; int when; } box_cell_shapes[] = {'
     for i, b in enumerate(body):
         item = ' ' + b + (',' if i + 1 < len(body) else ' };')
