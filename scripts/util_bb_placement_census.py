@@ -23,15 +23,12 @@ THE TWO TESTS (CEO-1750, Lon 2026-10-14: "first assumption is RSP-spine, but if 
 offset, or a BB local can not be reached by same RSP relative address for ALPHA and BETA ... ONLY these two cases go to an RBP
 ACTIVATION FRAME. ALL the rest/remaining must be RSP SPINE CELLS."), per cell, over the box graph (`scrip --dump-bb` edges) and the
 compiler's own rsp facts (`scrip --dump-homes`):
-  [RSPFX] rsp=dynamic why=W  a box whose gamma leaves rsp at a distance from its alpha the compiler cannot state: suspend,
-                             coexpression, unknown-callee (CALL_VALUE), generator-callee, retaining-callee (a call whose callee
-                             graph retains: more than one SUCCEED or any dynamic box of its own, closed transitively -- the compiler's
-                             dump-only proxy, which calls an Icon procedure with two plain returns retaining; CEO-1949: this census keeps
-                             a retaining-callee box dynamic unless the planner declares the callee graph NOT resumable -- the plan dump's
-                             PLAN ... resumable= field, zls_g_resumable_frame -- so a callee the planner keeps resumable retains, and a callee
-                             that returns at a fixed distance from its frame base leaves the caller's cells reachable; never a grep of the asm);
-  MATCH_DEFER (a deferred-pattern match, any graph): dynamic by its kind -- it runs a pattern built at run time to a depth no compile-time offset knows
-                             (the ceo, CEO-1882), so a consumer past it cannot reach the operand at a fixed rsp offset;
+  PLAN_ROW retains_code > 0  a DYNAMIC box (CEO-1949, the cto's ruling as design seat): a box whose gamma leaves rsp at a distance from its alpha no
+                             compile-time offset states. The census asks the planner's ONE RETAINS TABLE (planner_retains, SCRIP src/planner/zeta_plan.cpp,
+                             the plan dump's retains_code column, found by its NAME in PLAN_COLUMNS) and nothing else: 1 suspend, 2 coexpression,
+                             3 unknown-callee, 4 generator-callee, 5 retaining-callee, 6 unresolved-callee, 7 deferred-pattern, 8 gate-holds,
+                             9 disjunction-holds, 10 db-generator, 11 retaining-target. The compiler's dump-only retaining-callee proxy, the callee's
+                             resumable= and a grep of the callee's asm decide nothing;
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
   [LOCALUSE] local=V         a box that touches local V (the compiler's own name, VAR_REF included);
   [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
@@ -57,7 +54,7 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends;
       CEO-1949: ruled = a home the path test does not force that the planner's own facts name a class the ceo ruled right by Lon's first test -- a
-      PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge, in a graph whose PLAN line prints resumable=1) or a RETAINING
+      PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge, with the cell not path-forced) or a RETAINING
       DISJUNCTION (xfwhy retaining-disjunction on an IR_DISJUNCTION, zls_dj_retains); it is no disagreement and no agreement, and
       BB_PLACEMENT_FRAMEHOME_RULED <lang> class=<c> witnessed|unwitnessed|planner count=.. says how far the ruling reaches: witnessed = a box with an incoming
       beta edge lies on a gamma path between the write and a consumer's read, a retry re-reading the cell; unwitnessed = no such box, the planner's
@@ -95,7 +92,10 @@ HOMES = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) (all|local)=(\S+) (?:kind=
 RSPFX = re.compile(r'^\[RSPFX\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) rsp=(dynamic|renormal) why=(\S+) callee=(\S+)$')
 LOCALUSE = re.compile(r'^\[LOCALUSE\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) local=(\S+)$')
 HTEST = re.compile(r'^\[HOMETEST\] g=(-?\d+) graph=(\S+) all=(\d+) kind=(\S+) test=(\S+)$')
-PLANF = re.compile(r'^PLAN graph=(\S+) serial=-?\d+ chain=\S+ n=\d+ constructs=\d+ resumable=([01])$')
+PLANG = re.compile(r'^PLAN graph=(\S+) ')
+PLANR = re.compile(r'^PLAN_ROW i=\d+ all=(-?\d+) kind=\S+ (.*)$')
+RETAINS = {1: 'suspend', 2: 'coexpression', 3: 'unknown-callee', 4: 'generator-callee', 5: 'retaining-callee', 6: 'unresolved-callee', 7: 'deferred-pattern', 8: 'gate-holds',
+           9: 'disjunction-holds', 10: 'db-generator', 11: 'retaining-target'}
 STANDING = re.compile(r'^\[HOMES\] g=(-?\d+) graph=(\S+) standing=(\d+) home=STANDING why=(\S+)$')
 MEM = re.compile(r'\[\s*([a-z0-9]+)')
 
@@ -124,19 +124,28 @@ def homes_of(lang, src, tmp):
     r = run(args, cwd)
     if r.returncode != 0 or not os.path.isfile(tmp) or os.path.getsize(tmp) == 0:
         return None, None, None
-    nodes, locs, fx = {}, {}, {'dyn': {}, 'callee': {}, 'renorm': set(), 'standing': [], 'uses': {}, 'resumable': {}, 'htest': {}}
+    nodes, locs, fx = {}, {}, {'renorm': set(), 'standing': [], 'uses': {}, 'retains': {}, 'htest': {}}
+    cur, ri, named, name_gi = None, None, {}, collections.defaultdict(set)
     for ln in r.stdout.decode('utf-8', 'replace').splitlines():
-        m = PLANF.match(ln)
+        if ln.startswith('PLAN_COLUMNS '):
+            cols = ln.split()[1:]
+            ri = cols.index('retains_code') if 'retains_code' in cols else None
+            continue
+        m = PLANG.match(ln)
         if m:
-            fx['resumable'][m.group(1)] = int(m.group(2))
+            cur = m.group(1)
+            continue
+        m = PLANR.match(ln)
+        if m and ri is not None:
+            v = m.group(2).split()
+            c = int(v[ri]) if ri < len(v) and v[ri].lstrip('-').isdigit() else 0
+            k = (cur, int(m.group(1)))
+            named[k] = max(c, named.get(k, 0))
     for ln in r.stderr.decode('utf-8', 'replace').splitlines():
         m = RSPFX.match(ln)
         if m:
             k = (int(m.group(1)), int(m.group(3)))
-            if m.group(5) == 'dynamic':
-                fx['dyn'][k] = m.group(6)
-                fx['callee'][k] = m.group(7)
-            else:
+            if m.group(5) == 'renormal':
                 fx['renorm'].add(k)
             continue
         m = HTEST.match(ln)
@@ -155,12 +164,16 @@ def homes_of(lang, src, tmp):
         if not m:
             continue
         gi = int(m.group(1))
+        name_gi[m.group(2)].add(gi)
         if m.group(3) == 'all':
             nodes[(gi, int(m.group(4)))] = (m.group(5), m.group(6), int(m.group(7)), int(m.group(8)) if m.group(8) else -1, m.group(9) or '-')
         else:
             locs[(gi, m.group(4))] = (m.group(6), int(m.group(7)))
-    if nodes and not fx['resumable']:
-        print('BB_PLACEMENT REFUSE: the dump of %s carries no PLAN line with resumable= -- ./scrip is older than the dump field (CEO-1949: a callee retains by the planner\'s resumable fact, never by a grep of the asm)' % src)
+    for (name, ai), c in named.items():
+        for gi in name_gi.get(name, ()):
+            fx['retains'][(gi, ai)] = max(c, fx['retains'].get((gi, ai), 0))
+    if nodes and ri is None:
+        print('BB_PLACEMENT REFUSE: the plan dump of %s carries no retains_code column -- ./scrip is older than the planner\'s one retains table (CEO-1949: a retaining edge is planner_retains above 0, nothing else)' % src)
         sys.exit(2)
     return nodes, locs, fx
 
@@ -299,7 +312,6 @@ def analyse(lang, src, tmp, seen, seen_sec):
         return None
     bases = asm_bases(tmp)
     unwind = asm_unwind(tmp, seen_sec)
-    resumable = fx['resumable']
     names, vslots = zeta_names(src, lang)
     raw = run([SCRIP, '--dump-bb', os.path.basename(src)], os.path.dirname(src)).stdout
     dump = json.loads(raw.decode('utf-8', 'replace'))
@@ -333,8 +345,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
         seen.add(key)
         ids = by[g]
         emitted = any((g, int(i.split('_')[1])) in nodes for i in ids)
-        dyn = {i: fx['dyn'][bkey(i)] for i in ids if bkey(i) in fx['dyn'] and not (fx['dyn'][bkey(i)] == 'retaining-callee' and resumable.get(fx['callee'].get(bkey(i))) == 0)}
-        dyn.update({i: 'deferred-pattern' for i in ids if boxes[i]['kind'] == 'MATCH_DEFER'})
+        dyn = {i: RETAINS.get(fx['retains'].get((g, int(i.split('_')[1])), 0), 'retains') for i in ids if fx['retains'].get((g, int(i.split('_')[1])), 0) > 0}
         renorm = {i for i in ids if bkey(i) in fx['renorm']}
         succ, succ_value, ops = collections.defaultdict(list), collections.defaultdict(list), []
         for e in gedges[g]:
@@ -432,7 +443,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
                 continue
             ht = fx['htest'].get((g, int(i.split('_')[1])), '-')
             wit = retry_read(i) if (h[3] != -1 and not test.get(i) and ht == 'operand:pinned-temp') else None
-            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4], h[2], ht, resumable.get(gname[g]), wit))
+            cells.append(('A', boxes[i]['kind'], h[1], test.get(i), i, h[3], h[4], h[2], ht, None, wit))
         for vn in sorted(vslots.get(g, ())):
             h = locs.get((g, vn))
             if h is None:
@@ -543,7 +554,7 @@ def main():
                         if xf != -1:
                             fh['homes'] += 1
                             fh[('why', xfwhy, kind)] += 1
-                            ruled = None if forced else ('pinned-temp' if (ht == 'operand:pinned-temp' and xfwhy == 'read-across-retaining-edge' and res == 1) else
+                            ruled = None if forced else ('pinned-temp' if (ht == 'operand:pinned-temp' and xfwhy == 'read-across-retaining-edge') else
                                                          'retaining-disjunction' if (xfwhy == 'retaining-disjunction' and kind == 'DISJUNCTION') else None)
                             fh['agree' if forced else 'ruled' if ruled else 'home_without_test'] += 1
                             if ruled:
