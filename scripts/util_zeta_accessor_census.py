@@ -7,15 +7,18 @@
 # (ARCH-THREE-ZETAS-EMISSION.md section 2 and section 10 chunk 3b-2, the cto). Each counted form reaches a cell by an offset or a predicate of its own, a
 # second decider beside the plan; the re-pointing of the templates at ZCELL makes the total fall, and nothing may make it rise.
 # THE FORMS are the ceo's list of 2026-10-24 11:2x: x86_zop, x86_zref, ZRES, ZRES_SPINE, ZOPQ, ZOPD, ZOPQS, FR, FRQ, the rbp and rsp RDQ and RDD forms,
-# x86_rsp_load64, x86_rsp_store64, x86_frame_*, xop_frame_slot, zls_frame_off, gen_frame_top. A SITE is a line under SCRIP/src/templates or
+# x86_rsp_load64, x86_rsp_store64, x86_frame_*, xop_frame_slot, zls_frame_off, gen_frame_top, and (the ceo's ruling of 11:3x, one sentence: a helper that
+# hands a template a cell operand and picks its own zeta -- rsp, rbp, the frame, the chain -- is a direct form, and only ZCELL and ZCELL_ADDR are not)
+# ZRESD (RDD rbp or x86_zref), XSAQ (RDQ rbp or FRQ), ZLOC (x86_zref), ZTOS and ZTOSD (x86_ztos) and x86_ztos itself. A SITE is a line under SCRIP/src/templates or
 # SCRIP/src/emitter where the form's name starts a word; a line holding it twice is one site, a line holding two forms is a site of each, and the total is
 # the sum over the forms (the ceo's `grep -rF FORM src/templates src/emitter | wc -l` reading, word-bounded so that FR( is not read inside another name).
 # The definitions count too. THE ALLOWED FORM is ZCELL and ZCELL_ADDR: their sites print as the RISING line beside the falling total, and the lines of
 # their own definitions (from the head to the brace that closes it) are not counted, being the one place the direct forms may remain.
-# THE CEILING is the first reading of these nineteen forms, 1871 at SCRIP 65c05d8d0 and at the D0 parent e840d8e39 (the first cut of 10-24 11:1x, harness
-# f226390, counted the ceo's first fourteen forms, 480): x86_zop 10, x86_zref 36, ZRES 112, ZRES_SPINE 4, ZOPQ 153, ZOPD 22, ZOPQS 7, FR 51, FRQ 1053,
-# RDQ("rbp" 67, RDD("rbp" 23, RDQ("rsp" 112, RDD("rsp" 17, x86_rsp_load64 59, x86_rsp_store64 65, x86_frame_ 60, xop_frame_slot 14, zls_frame_off 3,
-# gen_frame_top 3; ZCELL 0. A landing that lowers the total lowers CEILING here in the same landing (the census prints FALLEN and the number).
+# THE CEILING is the first reading of these twenty-five forms, 1899 at SCRIP 65c05d8d0 and at the D0 parent e840d8e39 (the cuts before it: 10-24 11:1x
+# harness f226390, the ceo's first fourteen forms, 480; 11:2x 3707cd2, nineteen forms down to ZCELL, 1871; each rise a RE-CUT of the census, never a
+# regression): x86_zop 10, x86_zref 36, ZRES 112, ZRES_SPINE 4, ZOPQ 153, ZOPD 22, ZOPQS 7, FR 51, FRQ 1053, RDQ("rbp" 67, RDD("rbp" 23, RDQ("rsp" 112,
+# RDD("rsp" 17, x86_rsp_load64 59, x86_rsp_store64 65, x86_frame_ 60, xop_frame_slot 14, zls_frame_off 3, gen_frame_top 3, ZRESD 9, XSAQ 13, ZLOC 1,
+# ZTOS 1, ZTOSD 1, x86_ztos 3; ZCELL 0. A landing that lowers the total lowers CEILING here in the same landing (the census prints FALLEN and the number).
 # USE: python3 harness/scripts/util_zeta_accessor_census.py [--at-most N] [--rev REV]   (N defaults to CEILING; --rev reads SCRIP's commit REV, not the tree)
 # PRINTS: one line per form (its sites, then file:line,line,... grouped by file), the ZCELL line, and
 #         ZETA_ACCESSOR_FORMS total=<n> forms=<f> ceiling=<c> bar=at-most-<N> zcell=<z> zcell_body=<b> files=<k> tree=<worktree|REV>
@@ -28,10 +31,11 @@ EXTS = (".c", ".cpp", ".h", ".inc")
 FORMS = [("x86_zop(", r"\bx86_zop\("), ("x86_zref(", r"\bx86_zref\("), ("ZRES(", r"\bZRES\("), ("ZRES_SPINE(", r"\bZRES_SPINE\("), ("ZOPQ(", r"\bZOPQ\("),
          ("ZOPD(", r"\bZOPD\("), ("ZOPQS(", r"\bZOPQS\("), ("FR(", r"\bFR\("), ("FRQ(", r"\bFRQ\("), ('RDQ("rbp"', r'\bRDQ\("rbp"'), ('RDD("rbp"', r'\bRDD\("rbp"'),
          ('RDQ("rsp"', r'\bRDQ\("rsp"'), ('RDD("rsp"', r'\bRDD\("rsp"'), ("x86_rsp_load64(", r"\bx86_rsp_load64\("), ("x86_rsp_store64(", r"\bx86_rsp_store64\("),
-         ("x86_frame_", r"\bx86_frame_\w"), ("xop_frame_slot(", r"\bxop_frame_slot\("), ("zls_frame_off(", r"\bzls_frame_off\("), ("gen_frame_top()", r"\bgen_frame_top\(\)")]
+         ("x86_frame_", r"\bx86_frame_\w"), ("xop_frame_slot(", r"\bxop_frame_slot\("), ("zls_frame_off(", r"\bzls_frame_off\("), ("gen_frame_top()", r"\bgen_frame_top\(\)"),
+         ("ZRESD(", r"\bZRESD\("), ("XSAQ(", r"\bXSAQ\("), ("ZLOC(", r"\bZLOC\("), ("ZTOS(", r"\bZTOS\("), ("ZTOSD(", r"\bZTOSD\("), ("x86_ztos(", r"\bx86_ztos\(")]
 ALLOWED = re.compile(r"\bZCELL(?:_ADDR)?\(")
 ALLOWED_HEAD = re.compile(r"^\s*(?:static\s+|inline\s+|extern\s+)*[A-Za-z_][\w\s\*&:<>,]*?\bZCELL(?:_ADDR)?\s*\(")
-CEILING = 1871
+CEILING = 1899
 args = sys.argv[1:]
 at_most = CEILING
 rev = None
