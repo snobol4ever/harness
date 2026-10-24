@@ -669,6 +669,7 @@ test_gate_pl_a_body_less_procedure_returns_a_defined_result.sh	WIRED	-	-	-
 test_gate_pl_a_body_term_is_built_by_the_emitted_allocation_sequence.sh	WIRED	-	-	-
 test_gate_pl_a_bounded_conditional_runs_assert_2_exists_and_a_huge_length_is_a_resource_error.sh	WIRED	-	-	-
 test_gate_pl_a_call_whose_first_argument_selects_one_clause_enters_it_without_a_choice.sh	WIRED	-	-	-
+test_gate_pl_a_cell_less_box_gets_no_backed_frame_slot.sh	WIRED	-	-	-
 test_gate_pl_a_cell_written_before_a_disjunction_or_inside_its_arms_is_read_after_the_join.sh	WIRED	-	-	-
 test_gate_pl_a_choice_inside_a_dynamic_clause_body_is_retried.sh	WIRED	-	-	-
 test_gate_pl_a_clause_body_variable_reads_as_call_and_gnu_open_close_consult_check_their_arguments.sh	WIRED	-	-	-
