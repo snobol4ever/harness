@@ -5,6 +5,7 @@
 # 32 plus the choice header at +24..+63), so every cell below a disjunction was read 32 bytes off: X = 1, ( true ; true ), write(X) printed _G0. (ii) a variable first written in an
 # arm ( Y = 1 ; Y = 2 ), write(Y) was hosted at its plan-order first use, the read after the join, and the arms wrote it before that box carved it: the FATAL of x86_zop (an IR_VAR with
 # no frame bytes). Every expectation is CUT FROM THE ORACLE, swipl, at run time, one program per cell, graded in m3 (--run) and m4 (--compile, run_prolog_via_x86_backend.sh).
+# THE LAST TWO CELLS BEFORE guard_then_value (a user call after a clause-level disjunction, then fail) ARE RED UNTIL THE PLANNER'S JOIN-HEAD RULE LANDS (the cfo's cure (a), 2026-10-24: the call is a join head of unknown base, its omega pops its own carve only); the gate does not go green by leaving them out.
 # FAIL_ONCE=1 corrupts the first expectation so the gate reads red once. rc 0 green, 1 red, 2 could not measure.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -28,6 +29,16 @@ CELLS=(
 "before_and_arm_write|main :- X = 5, ( ( Y = 1 ; Y = 2 ) ; Y = 3 ), write(X-Y), nl, fail. main."
 "generator_then_arm_value|main :- ( between(1,3,X), ( Y is X*2 ; Y is X*3 ), write(X-Y), nl, fail ; true )."
 "findall_over_arms|main :- findall(X-Y, ( member(X,[1,2,3]), ( Y = a ; Y = b ) ), L), write(L), nl."
+"fresh_after_leading_disjunction|main :- ( true ; true ), M is 3*3, write(M), nl, fail. main."
+"fresh_after_leading_disjunction_no_fail|main :- ( true ; true ), M = 1, write(M), nl."
+"fresh_after_arm_write|main :- ( N = 3 ; N = 4 ), M is N*N, write(M), nl, fail. main."
+"fresh_after_leading_disjunction_head_arg|p(X) :- ( true ; true ), M is X*2, write(M), nl, fail. p(_). main :- p(4)."
+"fresh_after_arms_that_write|main :- ( write(a) ; write(b) ), M = 1, write(M), nl, fail. main."
+"call_after_a_leading_disjunction|foo1(A) :- write(A), nl. main :- ( true ; true ), foo1(a), fail."
+"call_after_arm_writes|foo1(A) :- write(A), nl. main :- ( B = x ; B = y ), foo1(B), fail ; true."
+"cut_inside_a_retaining_arm|main :- ( member(X,[1,2,3]), X > 1, ! ; X = 0 ), write(X), nl."
+"retaining_arm_then_value|q(1). q(2). q(3). main :- ( q(X), X > 1 ; X = 0 ), write(X), nl, fail. main."
+"retaining_arm_and_plain_arm_then_arith|main :- ( member(X,[1,2]) ; X = 9 ), M is X*2, write(M), nl, fail. main."
 "guard_then_value|main :- ( between(1,3,X), ( X > 1 ; X < 0 ), Z is X*10, write(Z), nl, fail ; true )."
 )
 swi() { ( cd "$T" && timeout -k 5 20s "$SWI" -q -g halt -t halt "$1" </dev/null 2>/dev/null ); }
