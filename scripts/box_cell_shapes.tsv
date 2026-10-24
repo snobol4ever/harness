@@ -5,7 +5,7 @@
 # stood at SCRIP c22b86a9b, row for row, so the first landing is byte-identical; a switch moves a kind's state into its own carve by editing its row.
 # ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. Columns:
 #   kind          the IR kind (IR_*), or * for any kind
-#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count))
+#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
 #   when          always | call_curmov (a call that moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
 #                 icn_suspend (an Icon suspend in a spine-cells graph) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
 #   gamma_release, omega_release, fenced    the gamma law's columns, '-' until pass (iv) reads them from here
@@ -67,8 +67,8 @@ IR_MATCH_RPOS	0	always	-	-	-	a matcher moves the cursor only
 IR_MATCH_ASSIGN_COND	0	always	-	-	-	a capture writes its variable
 IR_MATCH_ASSIGN_IMM	0	always	-	-	-	a capture writes its variable
 IR_MATCH_VALUE	0	always	-	-	-	the value rides the match
-IR_MATCH_ALTERNATE	0	always	-	-	-	the alternation's record is the match frame's
-IR_MATCH_FENCE1	0	always	-	-	-	a fence's record is the match frame's
+IR_MATCH_ALTERNATE	alt_spine	always	-	-	-	the 32-byte record plus the uniform exit pad to its largest arm (planner_alt_k), 48 when an arm is unbounded (the record plus the beta cell)
+IR_MATCH_FENCE1	fence_spine	always	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; CEO-1938/1942)
 IR_MATCH_FENCE0	0	always	-	-	-	a fence's record is the match frame's
 IR_MATCH_ABORT	0	always	-	-	-	control only
 IR_BOUND	0	home_state	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)

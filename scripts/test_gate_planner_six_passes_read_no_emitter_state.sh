@@ -56,7 +56,7 @@ for lang in snobol4 icon prolog pascal raku snocone rebus; do
     cols=$(grep -m1 '^PLAN_COLUMNS ' "$T/d" | cut -d' ' -f2-)
     c=$(grep '^PLAN graph=' "$T/d" | grep -o 'constructs=[0-9]*' | cut -d= -f2 | awk '{s+=$1} END {print s+0}'); ncons=$((ncons + c))
     echo "TABLE lang=$lang witness=$(basename "$f") graphs=$np rows=$nr constructs=$c fallbacks=$nfb"
-    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the thirteen columns (read '${cols:-none}')"
+    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore act" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the fourteen columns (read '${cols:-none}'; act is the ACT word's cause, ARCH-THREE-ZETAS-EMISSION 6.1, CEO-1942/1943, the cto 2026-10-24)"
     [ "$np" -gt 0 ] && [ "$nr" -gt 0 ] || red "TABLE $lang: --dump-plan printed $np PLAN lines and $nr rows"
     [ "$nfb" = 0 ] || red "TABLE $lang: $nfb [PLANNER-FALLBACK] lines"
 done
