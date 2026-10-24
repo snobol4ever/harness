@@ -18,9 +18,10 @@
 # planner change that breaks a green language's plan trips here the same tick; a floor may only fall, by editing this table in
 # the landing that lowers the count. snocone falls to 0 with hq_zetas's item-1 branch (every graph on the absolute coordinate; an omega
 # into MATCH_BEGIN read as the FENCE abort it is, a discard), cut by the ceo with its SCRIP half.
-# compiled=<c> below entries=<n> names the core entries the gate could not compile standalone: a block entry the extractor does
-# not cut (SNOBOL4's eight demo/benchmark blocks) or a program needing an include directory (arbno_span_len_replace_branch_1's
-# FORTPUT.INC); they are not graded here and their plans are read by the suite runner's path, never counted as green.
+# compiled=<c> below entries=<n> names the core entries the gate could not cut standalone. Until 2026-10-24 that was SNOBOL4's eight
+# stdin-carrying entries (porter, claws5, treebank, json and user_function_fence_span_replace_branch_1): the extractor REFUSES an entry
+# that carries stdin unless --out-in names where it goes, and the gate passed none, so eight plans went unread (hq_snobol4, CEO-1962);
+# the extract now writes the stdin beside the source, compiling reads none of it, and SNOBOL4 compiles 31 of 31.
 # rc 0 total violations 0 over every core; rc 1 a violation; rc 2 cannot measure (no scrip, a master without a partition,
 # a language whose core compiled 0 entries). --lang <l> limits it to one language (a seat's handful; the board is the coo's).
 # Fail-once: ARCH-ZETA-ONE-COORDINATE.md section 4 and the ceo's ledger record the Icon core reading violations at 6d138d652.
@@ -45,7 +46,7 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
         [ "$cls" = "core" ] || continue
         n=$((n+1))
         src="$W/$lang.$n.$ext"
-        python3 "$HERE/corpus_suite_harness.py" extract "$D/ALL.$ext" "$D/ALL.ref" "$entry" "$src" --out-ref "$W/$lang.$n.ref" > /dev/null 2>&1 || continue
+        python3 "$HERE/corpus_suite_harness.py" extract "$D/ALL.$ext" "$D/ALL.ref" "$entry" "$src" --out-ref "$W/$lang.$n.ref" --out-in "$W/$lang.$n.in" > /dev/null 2>&1 || continue
         [ -s "$src" ] || continue
         out="$( cd "$SCRIP" && SCRIP_ZD_CHECK=1 timeout -k 2 60 ./scrip --compile -o "$W/$lang.$n.s" "$src" < /dev/null 2>&1 >/dev/null | grep '^\[ZD-CHECK\]' )"
         c=$((c+1))
