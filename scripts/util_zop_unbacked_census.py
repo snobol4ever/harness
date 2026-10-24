@@ -49,7 +49,7 @@ def git(cwd, *a, check=True):
 def worktree(repo, path):
     head = git(repo, "rev-parse", "HEAD").stdout.strip()
     if os.path.isdir(os.path.join(path, ".git")) or os.path.isfile(os.path.join(path, ".git")):
-        git(path, "checkout", "-q", "--detach", head); git(path, "reset", "-q", "--hard"); git(path, "clean", "-qfd", "--", "src")
+        git(path, "reset", "-q", "--hard"); git(path, "clean", "-qfd", "--", "src"); git(path, "checkout", "-q", "--detach", head)
     else:
         os.makedirs(os.path.dirname(path), exist_ok=True); git(repo, "worktree", "prune"); git(repo, "worktree", "add", "-q", "--detach", path, head)
     return head
