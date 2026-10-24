@@ -62,6 +62,7 @@ IR_UNMARK	0	always	-	-	-	a discard
 IR_CONJUNCTION	0	always	-	-	-	its value is its last operand's
 IR_CUT	0	always	-	-	-	a discard
 IR_GATE_ARM	0	always	-	-	-	control only
+IR_CLEANUP	0	pl_home	-	-	-	the setup_call_cleanup record (state, link, banked B at +16..+40) is ACT by construction: its goal is the retaining edge, so on a home-set Prolog graph the record is resident in the activation frame and carves nothing on the spine (D3 kind 3)
 IR_CLEANUP	0	always	-	-	-	control only
 IR_TABLE_HDR	0	always	-	-	-	the table header is resident
 IR_UNIFY_CONST	0	always	-	-	-	a unification binds in place
