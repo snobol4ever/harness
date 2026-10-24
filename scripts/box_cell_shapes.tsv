@@ -34,6 +34,7 @@ IR_CALL_GEN	call_args	icn_home	-	-	-	the result cell, one cell per argument and 
 IR_KW_ICON_GEN	32	icn_home	-	-	-	the result cell and the generator keyword's counter word (bb_keyword_icon reads the counter at op_off + 16)
 IR_TO_BY	80	icn_home	-	-	-	exp
 IR_SCAN	48	icn_home	-	-	-	exp
+IR_BOUND	48	pl_bound_spine	-	-	-	D3 kind 7 (the cfo's ruling of 2026-10-24 16:15): an if-then-else or negation BOUND (its omega is the GATE, a fence UNMARK commits it) whose CONDITION span carries no excursion (planner_bound_spine: no retaining call, generator, suspend or retaining disjunction between the BOUND and its UNMARKs) carves its record on the spine -- mark +0, saved rsp +8, banked B +16, the choice header to +40 -- read by its UNMARKs through the planner's cross-cell distance; the arm-failure road reads nothing of it after the fence
 IR_BOUND	0	pl_home	-	-	-	the bound's record (mark +0, rsp at entry +8, banked B +16, boundary +32) outlives the commit's whack-pop and is read by the fence's omega UNMARK and the gate at the construct's base depth: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
 IR_BOUND	0	home_state	-	-	-	exp
 IR_LIMIT_GATE	0	home_state	-	-	-	exp
