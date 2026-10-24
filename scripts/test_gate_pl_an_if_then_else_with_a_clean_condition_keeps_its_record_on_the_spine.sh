@@ -5,7 +5,8 @@
 # and the condition's failure read it at the plan's distance and pop it, the arm-failure road (pl_lower_ite's unmk_c, ival bit 32) reads nothing of it, and every other BOUND keeps
 # its record in the activation frame as before. TWO ARMS: (i) the [HOMES] row of the BOUND of q/1 below reads home=SPINE (the frame regime printed home=NONE: red on 005253b63);
 # (ii) every cell, compiled whole, agrees with swipl in m3 and m4 (expectations CUT FROM THE ORACLE at run time) -- two ites in a row whose second takes its else arm and a
-# variable hosted in the BOUND's carve read after the construct are the shapes that broke while the cure was built. FAIL_ONCE=1 corrupts the first expectation. rc 0 green, 1 red,
+# variable hosted in the BOUND's carve read after the construct are the shapes that broke while the cure was built; a double negation after a retaining call (the
+# outer BOUND's condition holds the inner BOUND: XsbTests delay_tests_fa, get_residual/2's \+ \+ V=G, segfaulted on 275416cf5) and a tabled negation are the arms CEO-1960 added. FAIL_ONCE=1 corrupts the first expectation. rc 0 green, 1 red,
 # 2 could not measure.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -26,6 +27,8 @@ CELLS=(
 "retaining_then_arm|p(1). p(2). p(3). main :- ( true -> p(X) ; X = 0 ), write(X), nl, X >= 2, !."
 "ite_inside_findall|p(1). p(2). p(3). main :- findall(Z, ( p(Z), ( Z > 1 -> true ; fail ) ), L), write(L), nl."
 "once_and_ignore|p(1). p(2). main :- ( once(p(A)) -> write(A) ; true ), nl, ( ignore(p(9)) -> write(ign) ; true ), nl."
+"double_negation_after_a_retaining_call|main :- member(X, [b,a,c]), \\+ \\+ X = a, member(Y, [1,2]), write(X-Y), nl, fail. main."
+"tabled_double_negation_and_tnot|:- table p/1. p(X) :- member(X, [1,2,3]), \\+ \\+ X = 2. :- table q/1. q(X) :- member(X, [a,b]), tnot(r(X)). :- table r/1. r(b). main :- findall(X, p(X), L), write(L), nl, findall(Y, q(Y), M), write(M), nl."
 )
 swi() { ( cd "$T" && timeout -k 5 20s "$SWI" -q -g halt -t halt "$1" </dev/null 2>/dev/null ); }
 run3() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" "$1" </dev/null 2>/dev/null ); }
