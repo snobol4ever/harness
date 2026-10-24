@@ -7,8 +7,6 @@
 # site -> list of (file, old, new, required_min_count)
 T = "src/templates/bb/"
 P = {
- "06-glue_framed-fc_bytes": [(T+"bb_glue_framed.cpp", '         + x86("sub", "rsp", ((_.op_fc_bytes + 15) & ~15L));', '         + std::string();', 1),
-                             (T+"bb_glue_framed.cpp", '    return x86("add", "rsp", ((_.op_fc_bytes + 15) & ~15L));', '    return std::string();', 1)],
  "07-glue_flat-fc_bytes":   [(T+"bb_glue_flat.cpp", '    return IF(_.op_fc_bytes > 0, x86("sub", "rsp", _.op_fc_bytes));', '    return std::string();', 1),
                              (T+"bb_glue_flat.cpp", '    return IF(_.op_fc_bytes > 0, x86("add", "rsp", _.op_fc_bytes));', '    return std::string();', 1)],
  "08-call_fn-CF_N-argblock": [(T+"bb_call_fn.cpp", '               emit_seq({ x86("sub", "rsp", (long)(CF_N() * 16)),', '               emit_seq({ std::string(),', 1),
