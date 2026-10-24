@@ -32,6 +32,9 @@ compiler's own rsp facts (`scrip --dump-homes`):
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
   [LOCALUSE] local=V         a box that touches local V (the compiler's own name, VAR_REF included);
   [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
+  PATTERN ENTRY (CEO-1954): a MATCH combinator's operand edge to a MATCH child is a CONTROL successor (the child is entered through its combinator, no
+                             gamma edge reaches it), and entering an ARBNO's child is an UNBOUNDED-PUSH edge -- each iteration pushes state, the planner's act cause
+                             arbno_iteration -- so a cell written outside an ARBNO and read inside its body is read an unknown number of pushes later.
   OPERAND TEST: result cell P fails iff for some consumer O a control path P ... O (not through P again) crosses a dynamic box
   with no cut after it, or P is itself dynamic (the path starts at P's gamma edges: once P fails (its omega) its cell is popped and
   nothing reads it, CEO-1865; an Icon DISJUNCTION is no consumer: its op edges name its arms, and the emitted box reads only its own carve --
@@ -348,10 +351,14 @@ def analyse(lang, src, tmp, seen, seen_sec):
         dyn = {i: RETAINS.get(fx['retains'].get((g, int(i.split('_')[1])), 0), 'retains') for i in ids if fx['retains'].get((g, int(i.split('_')[1])), 0) > 0}
         renorm = {i for i in ids if bkey(i) in fx['renorm']}
         succ, succ_value, ops = collections.defaultdict(list), collections.defaultdict(list), []
+        arbno_in = {(e['from'], e['to']) for e in gedges[g] if e.get('rel') == 'op' and boxes[e['from']]['kind'] == 'MATCH_ARBNO' and boxes[e['to']]['kind'].startswith('MATCH_')}
         for e in gedges[g]:
             if e.get('rel') == 'op':
                 if not (lang == 'icon' and boxes[e['from']]['kind'] == 'DISJUNCTION'):
                     ops.append((e['from'], e['to']))
+                if boxes[e['from']]['kind'].startswith('MATCH_') and boxes[e['to']]['kind'].startswith('MATCH_'):
+                    succ[e['from']].append(e['to'])
+                    succ_value[e['from']].append(e['to'])
             else:
                 succ[e['from']].append(e['to'])
                 if e.get('fp') != 'omega':
@@ -376,7 +383,7 @@ def analyse(lang, src, tmp, seen, seen_sec):
                 elif x in dyn:
                     dirty, why = True, dyn[x]
                 for y in succ[x]:
-                    st.append((y, dirty, why))
+                    st.append((y, True, 'arbno-iteration') if (x, y) in arbno_in else (y, dirty, why))
         betat = {e['to'] for e in gedges[g] if e.get('tp') == 'beta'}
         cons = collections.defaultdict(list)
         for (o, p) in ops:
