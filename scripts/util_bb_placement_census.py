@@ -511,6 +511,7 @@ def main():
                     hs = hosts[lang]
                     if tb == 'A' and home in ('SPINE', 'NONE') and off >= 0 and xf == -1:
                         hs['ops_prealloc'] += 1
+                        cellrows.append((lang, home, 'prealloc', 'none', '-', gr['name'] + '@' + gr['sig'], tb, kind, cid))
                     if tb == 'A':
                         hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf != -1)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
                     elif home == 'SPINE':
