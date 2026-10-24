@@ -61,7 +61,7 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       does not force; BB_PLACEMENT_FRAMEHOME_RULED <lang> class=<c> witnessed|planner count=.. prints what is ruled
   BB_PLACEMENT_FRAMEHOME_WHY <lang> why:<rule>|hwt:<rule>|nohome:<test> kind=<box kind> count=..   (why: every home by the planner's rule;
       hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
-      them frame_homed_untested and spine_unhomed)
+      them frame_homed_untested and spine_unhomed; a frame_homed row's tenth column is the planner's HOMETEST why, e.g. operand:pinned-temp, so a residue names its rule at once)
   BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
       (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
       mirrors its spine cell to a frame slot; a local is RBP-hosted when it is a frame slot, forced = it fails the local test, misplaced =
@@ -563,7 +563,7 @@ def main():
                                 fh[('ruled', ruled, 'witnessed' if wit else 'planner')] += 1
                             elif not forced:
                                 fh[('hwt', xfwhy, kind)] += 1
-                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_ruled' if ruled else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid))
+                            cellrows.append((lang, 'SPINE+RBP', 'frame_homed' if forced else 'frame_homed_ruled' if ruled else 'frame_homed_untested', 'operand', xfwhy, gr['name'] + '@' + gr['sig'], tb, kind, cid, ht))
                         elif forced and off >= 0:
                             fh['test_without_home'] += 1
                             fh[('nohome', forced, kind)] += 1
