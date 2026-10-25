@@ -679,6 +679,7 @@ test_gate_pl_a_clause_built_at_run_time_calls_the_programs_own_print_2_not_the_b
 test_gate_pl_a_clause_lowered_at_run_time_reads_a_live_program_tree.sh	WIRED	-	-	-
 test_gate_pl_a_clause_with_a_cut_then_a_disjunction_retries_when_the_program_links_setup_call_cleanup.sh	WIRED	-	-	-
 test_gate_pl_a_closed_stream_is_not_a_current_stream_argument.sh	WIRED	-	-	-
+test_gate_pl_a_closure_called_inside_a_module_costs_instructions_linear_in_the_list_not_quadratic.sh	WIRED	-	-	-
 test_gate_pl_a_clpfd_program_compiles_in_seconds_not_minutes_the_bound_spine_decision_is_not_quadratic.sh	WIRED	-	-	-
 test_gate_pl_a_cut_inside_a_control_goal_held_in_a_variable_cuts_to_the_call.sh	WIRED	-	-	-
 test_gate_pl_a_cut_redo_reaches_its_own_barrier.sh	WIRED	-	-	-
