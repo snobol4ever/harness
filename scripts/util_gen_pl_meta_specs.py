@@ -13,10 +13,6 @@ the control constructs) gets it from the table this script writes, never from a 
              prints them (0..9 : ^ // ? + - * for swipl, 0..9 : ? + - for gprolog -- verbatim, never normalised).
   (default)  write SCRIP/src/runtime/pl_meta_specs.inc from the TSV: one token array and two row tables (swi, gnu), each row
              { name, arity, index of its first token }; the runtime and the lowerer read it through rt_pl_meta_builtin.
-  SCRIP_CONTROL  rows render adds to BOTH tables for a control construct SCRIP lowers in every dialect and neither oracle
-             defines (today if/3, SCRIP's soft-cut control): an INTERIM kept at origin's answer, built_in with if(0,0,0) as Logtalk
-             ISO's predicate_property_2_23 asserts for a system that has it, until the cto rules q-sec-4c-if3-has-no-row-in-either-
-             oracle-table; it is never written to the TSV, which stays the oracles' alone.
   --check    rc 1 when the .inc is not what the TSV gives (an .inc edited by hand, or a TSV re-cut without a regeneration).
 
 rc 0 written or current; rc 1 stale; rc 2 cannot read or run what it needs.
@@ -33,7 +29,6 @@ SWIPL = "/usr/bin/swipl"
 GPLC = "/usr/bin/gplc"
 SWI_GOAL = ("forall((predicate_property(system:H, meta_predicate(S)), functor(S, N, A)), "
             "(S =.. [_|Ts], format('swi~a~w~a~w', ['\\t', N, '\\t', A]), forall(member(T, Ts), format('~a~w', ['\\t', T])), nl))")
-SCRIP_CONTROL = [("if", 3, ["0", "0", "0"])]
 GNU_PROG = (":- initialization(main).\n"
             "main :- ( predicate_property(H, meta_predicate(S)), functor(S, N, A), S =.. [_|Ts], "
             "write(gnu), put_char('\\t'), write(N), put_char('\\t'), write(A), "
@@ -91,11 +86,6 @@ def render():
             refuse("a malformed row in the TSV: " + "|".join(r))
         tables[r[0]].append((r[1], int(r[2]), len(toks)))
         toks += r[3:]
-    for n, a, ts in SCRIP_CONTROL:
-        for d in ("swi", "gnu"):
-            if not any(r[0] == n and r[1] == a for r in tables[d]):
-                tables[d].append((n, a, len(toks)))
-                toks += ts
     o = ["static const char *const pl_meta_tok[] = {"]
     o += ["    " + c_str(t) + "," for t in toks]
     o.append("    (const char *)0 };")
