@@ -678,6 +678,7 @@ test_gate_pl_a_choice_inside_a_dynamic_clause_body_is_retried.sh	WIRED	-	-	-
 test_gate_pl_a_clause_body_variable_reads_as_call_and_gnu_open_close_consult_check_their_arguments.sh	WIRED	-	-	-
 test_gate_pl_a_clause_built_at_run_time_calls_the_programs_own_print_2_not_the_builtin_in_mode_4.sh	WIRED	-	-	-
 test_gate_pl_a_clause_lowered_at_run_time_reads_a_live_program_tree.sh	WIRED	-	-	-
+test_gate_pl_a_clause_retry_reseeds_only_the_frames_own_local_cells.sh	WIRED	-	-	-
 test_gate_pl_a_clause_with_a_cut_then_a_disjunction_retries_when_the_program_links_setup_call_cleanup.sh	WIRED	-	-	-
 test_gate_pl_a_closed_stream_is_not_a_current_stream_argument.sh	WIRED	-	-	-
 test_gate_pl_a_closure_called_inside_a_module_costs_instructions_linear_in_the_list_not_quadratic.sh	WIRED	-	-	-
@@ -947,6 +948,7 @@ test_gate_progress_records_the_configuration_it_exercised.sh	WIRED	-	-	-
 test_gate_progress_rows_carry_the_start_fingerprint.sh	WIRED	-	-	-
 test_gate_progress_writer_knows_every_verdict_a_runner_emits.sh	WIRED	-	-	-
 test_gate_prolog_a_dead_frame_slot_is_not_a_root.sh	WIRED	-	-	-
+test_gate_prolog_a_dead_slot_kill_spares_a_cell_another_frame_cell_names.sh	WIRED	-	-	-
 test_gate_prolog_a_reference_into_a_block_traces_one_cell.sh	WIRED	-	-	-
 test_gate_prolog_bench_runner_holds_the_ref_on_every_angle.sh	WIRED	-	-	-
 test_gate_prolog_dynamic_predicate_with_file_clauses.sh	WIRED	-	-	-
