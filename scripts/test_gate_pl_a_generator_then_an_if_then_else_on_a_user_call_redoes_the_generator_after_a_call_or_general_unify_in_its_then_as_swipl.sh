@@ -10,7 +10,7 @@
 # AFTER the condition's 48 bytes of operand cells instead of at the fence the BOUND saved ([rbp+264], the rsp at the arm's entry), so every then-branch distance the plan bakes is 48 bytes short and the then-branch
 # call's failure road pops 48 too few before the chain's step resumes between's choice point at the wrong rsp. The planner's own check (zd_check) reads zero violations because it grades the plan against itself.
 # SCRIP_OPT=0 changes nothing; every build back to 10-21 shows it; -d2g -s64m change nothing (not the collector).
-# THE GATE IS RED ON ORIGIN BY DESIGN and is the DONE-WHEN of that row (wired as a TASK gate, not in the blocking set) until hq_zetas's cure flips it; then it is wired WIRED in the same landing.
+# CURED 2026-10-25 (hq_zetas, SCRIP 579537ddb): the then-branch run, headed by the UNMARK that restores the condition's BOUND, joins the BOUND's family in zd_pl_bases, so the clause exit prices the then-branch's cells as its pop; the gate is WIRED (the Makefile arm and the wiring row flip in that landing). Measured RED before in m3 and m4 (s1-s5, s7, s8 answer [1]); SWI library/test_csv 0/8 before, 8/8 after.
 # The witness has 8 shapes that must answer [1,2,3] (s1-s8, the class) and 7 controls that already do (p1-p7); the ref was cut from swipl 9.0.4 and swipl 10.1.5 reads it byte-identically.
 # rc 0 both modes equal the swipl-cut ref; rc 1 a mode differs; rc 2 cannot measure (no ./scrip, no witness runner).
 HERE="$(cd "$(dirname "$0")" && pwd)"
