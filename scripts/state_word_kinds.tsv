@@ -10,25 +10,25 @@
 #   via       the helper line the template's call expands to (x86_asm.h, a bb header, a static), or - when the access is on the template line
 #   when      the template conditions guarding the access that the emitter arm's constants do not decide (a graph fact such as
 #             x86_resumable_frame(), a node field), joined by &&; - when none -- the lowerer's per-node declaration reads them
-IR_BOUND	address-escapes	src/templates/bb/bb_bound.cpp	x86_pl_header_open(_.op_off, _.op_off + 16)	37	alpha	src/templates/x86/x86_asm.h:2271	!(_.op_off < 0) && x86_resumable_frame()
-IR_CALL	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_CALL_BUILTIN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_CALL_BUILTIN_GEN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_CALL_ICON	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_CALL_PROC_STAGED	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_CALL_SNOBOL4	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_BOUND	address-escapes	src/templates/bb/bb_bound.cpp	x86_pl_header_open(_.op_off, _.op_off + 16)	40	alpha	src/templates/x86/x86_asm.h:2285	!(_.op_off < 0) && x86_resumable_frame()
+IR_CALL	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_CALL_BUILTIN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_CALL_BUILTIN_GEN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_CALL_ICON	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_CALL_PROC_STAGED	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_CALL_SNOBOL4	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
 IR_CALL_VALUE	address-escapes	src/templates/bb/bb_call_value.cpp	x86("lea", "rdi", FRQ(CV_H()))	86	alpha	-	!(_.op_off < 0 || _.op_sa < 0) && !(std :: count_if(_.op_... && !(((_.op_sval && strcmp(_.op_sval, "goal") == 0) && x86_res...) && !((!(_.op_sval && strcmp(_.op_sval, "goal") == 0) && g_emit...)
 IR_CLEANUP	address-escapes	src/templates/bb/bb_cleanup.cpp	x86("lea", "rcx", CL_REC(0))	29	alpha	-	(!(_.op_off < 0 && _.op_ival != CLEANUP_PROBE && _.op_iva...
-IR_DISJUNCTION	address-escapes	src/templates/bb/bb_disjunction.cpp	x86_pl_header_open(_.op_off + 24, _.op_off + 48)) \	36	alpha	src/templates/x86/x86_asm.h:2271	!(_.op_off < 0) && x86_resumable_frame()
+IR_DISJUNCTION	address-escapes	src/templates/bb/bb_disjunction.cpp	x86_pl_header_open(_.op_off + 24, _.op_off + 48)) \	36	alpha	src/templates/x86/x86_asm.h:2285	!(_.op_off < 0) && x86_resumable_frame()
 IR_GATE	beta-read	src/templates/bb/bb_gate.cpp	x86("mov", "eax", FR(_.op_off + 16))	31	beta	-	!(_.op_off < 0)
-IR_LIMIT	beta-read	src/templates/bb/bb_limit.cpp	x86("mov", "rax", FRQ(lim_count()))	45	beta	-	_.op_off >= 0 && _.op_sa >= 0 && _.op_sc >= 0 && _.lbl_t0
+IR_LIMIT	beta-read	src/templates/bb/bb_limit.cpp	x86("mov", "rax", FRQ(lim_count()))	46	beta	-	_.op_off >= 0 && _.op_sa >= 0 && _.op_sc >= 0 && _.lbl_t0
 IR_MATCH_RKRUN	beta-read	src/templates/bb/bb_match_rkrun.cpp	x86("mov", "ecx", RUN_START())	30	beta	-	!(_.op_off > - 16) && !(((_.op_ival >> 32) & 1)) && !((_.op_ival >> 32) & 2)
-IR_PROC_GEN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1215	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
-IR_REV_SWAP	address-escapes	src/templates/bb/bb_rev_swap.cpp	x86("lea", "r8", FRQ(_.op_off + 16)) \	48	alpha	-	!((lk < 0 || rk < 0)) && !((_.op_off < 0))
-IR_SCAN	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "rdi", FRQ(_.op_off + 8))	61	beta	-	_.op_sb != 1 && _.op_off >= 0
+IR_PROC_GEN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax", FRQ(act))	1263	beta	-	(_.op_call_route ==(CALL_ROUTE_PROC_STAGED)) && is_gen && bcps_pl()
+IR_REV_SWAP	address-escapes	src/templates/bb/bb_rev_swap.cpp	x86("lea", "r8", FRQ(_.op_off + 16)) \	47	alpha	-	!((lk < 0 || rk < 0)) && !((_.op_off < 0))
+IR_SCAN	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "r13", FRQ(_.op_off + 8))	46	beta	-	_.op_sb != 1 && _.op_off >= 0
 IR_SCAN_ALTERNATE	beta-read	src/templates/bb/bb_scan_alternate.cpp	x86("movsxd", "rsi", FR(_.op_off + 16))	30	reentry	-	!(_.op_off < 0)
 IR_SCAN_BAL	beta-read	src/templates/bb/bb_scan_bal.cpp	x86("mov", "rax", FRQ(_.op_off + 16))	96	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
-IR_SCAN_ENTER	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "rdi", FRQ(_.op_off + 8))	61	beta	-	_.op_sb != 1 && _.op_off >= 0
+IR_SCAN_ENTER	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "r13", FRQ(_.op_off + 8))	46	beta	-	_.op_sb != 1 && _.op_off >= 0
 IR_SCAN_FIND	beta-read	src/templates/bb/bb_scan_find.cpp	x86("inc", FRQ(_.op_off + 16))	67	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
 IR_SCAN_MOVE	beta-read	src/templates/bb/bb_scan_move.cpp	x86("mov", "r14", FRQ(_.op_off + 16))	53	beta	-	!(!(_.op_off >= 0))
 IR_SCAN_TAB	beta-read	src/templates/bb/bb_scan_tab.cpp	x86("mov", "r14", FRQ(_.op_off + 16))	56	beta	-	!((!tab_admit()))
@@ -36,4 +36,4 @@ IR_SCAN_UPTO	beta-read	src/templates/bb/bb_scan_upto.cpp	x86("inc", FRQ(_.op_off
 IR_TABLE_HDR	address-escapes	src/templates/bb/bb_table_hdr.cpp	x86("lea", "rax", TH_REC(16))	19	alpha	-	_.op_off >= 0
 IR_TO	beta-read	src/templates/bb/bb_to.cpp	x86("mov", "rsi", FRQ(_.op_off + 16)) + xa_to_db_load_store(24) + xa_to_db_slot_addr()	73	beta	-	_.op_db_walk && (x86_resumable_frame() && _.op_off >= 0 && _.op_sa >= 0)
 IR_TO_BY	address-escapes	src/templates/bb/bb_to_by.cpp	x86("lea", "rdi", FRQ(TBZ_CUR))	91	alpha	-	(_.op_zres && !_.op_num_real && _.op_off >= 0 && g_emit_c...
-IR_UNMARK	beta-read	src/templates/bb/bb_bound.cpp	x86("mov", "rsp", FRQ(_.op_off))	16	alpha	-	!(_.op_off < 0) && !x86_resumable_frame() && _.op_zres &&... && !((_.op_unmark_chain && x86_release_acts(true, 5).empty()))
+IR_UNMARK	beta-read	src/templates/bb/bb_bound.cpp	x86("mov", "rsp", FRQ(_.op_off))	19	alpha	-	!(_.op_off < 0) && !x86_resumable_frame() && _.op_zres &&... && !((_.op_unmark_chain && x86_release_acts(true, 5).empty()))
