@@ -4,7 +4,7 @@
 # MODE DECTET, chunk A sub-batch 4 of the standing chop; CEO-1133 ruling ONE keeps chunk A on rec_sigma).
 #
 # THE FINDING.  Chunk A's baton names x86_rt_gc_poll_rec_sigma_needle() as the candidate form for the two
-# rt_scan_enter sites in bb_gen_scan.cpp, on the reasoning that rt_scan_enter returns ScanSubjRegs {ptr,len}
+# rt_icn_subject_coerce sites in bb_gen_scan.cpp, on the reasoning that rt_scan_enter returns ScanSubjRegs {ptr,len}
 # in rax:rdx and so mirrors rt_scan_needle, whose site uses exactly that form.  THE RETURN SHAPE MATCHES AND
 # THE SITE DOES NOT.  rec_sigma_needle's cell 0 is {DT_S, r15d, r13} -- it roots r13 as a string pointer --
 # and rt_scan_enter IS THE CALL THAT ESTABLISHES r13.  At the OUTERMOST scan of a program r13 has never been
@@ -39,6 +39,9 @@
 # ⛔ THIS GATE READS THE EMITTED ASM, NOT THE TEMPLATE SOURCE (RULES.md ASM-DIFF-FIRST).  A source-shape check
 # on bb_gen_scan.cpp would pass for a form reached through a helper, an alias or a second call site, and the
 # census cannot see a FORM at all -- it counts polled against unpolled and reads the same number either way.
+# RE-CUT 2026-10-25 (hq_icon, ARCH-ICON-RTX 10 R3, the cfo's small roll-out): rt_scan_enter is deleted -- bb_gen_scan loads a DT_S subject that carries
+# its length in three moves and polls nothing, and takes the coercion leaf rt_icn_subject_coerce for any other subject, polling the NEW subject (rax:edx)
+# after it. The anchor is that call; the witness gains an integer subject (12345 ? tab(3)) so the slow path is emitted; the invariant is unchanged.
 S4E_HOME="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 SCRIP="$S4E_HOME/SCRIP"
 cd "$SCRIP" || { echo "REFUSE(2): no SCRIP tree at $SCRIP"; exit 2; }
@@ -47,6 +50,7 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 cat > "$W/g.icn" <<'ICN'
 procedure main()
    local s, t, c;
+   write((12345 ? tab(3)));
    s := "abc" || "defgh";
    c := 'abc';
    t := (s ? tab(4));
@@ -56,7 +60,7 @@ procedure main()
 end
 ICN
 ./scrip --compile "$W/g.icn" > "$W/g.s" 2>"$W/g.err" || { echo "REFUSE(2): mode 4 emission failed"; sed -n '1,5p' "$W/g.err"; exit 2; }
-grep -q 'call *rt_scan_enter' "$W/g.s" || { echo "REFUSE(2): the witness emitted no rt_scan_enter -- this gate would grade an absence"; exit 2; }
+grep -q 'call *rt_icn_subject_coerce' "$W/g.s" || { echo "REFUSE(2): the witness emitted no rt_icn_subject_coerce (the scan ENTER slow path) -- this gate would grade an absence"; exit 2; }
 fail=0; arms=0
 # ---------------------------------------------------------------------------------------------------------
 # (a) THE PREMISE, RE-DERIVED AT SCRIP d76ca4ead (2026-10-15): the emitted entry ESTABLISHES the scan registers before any scan runs -- exactly one
@@ -64,12 +68,15 @@ fail=0; arms=0
 # pointer and the length is 0, no longer the C caller's residue. The control is in the arm: the SAME reader aimed at the emission with that lea deleted
 # must report the premise gone, so a pass is a reading and not a reader that cannot fail (CEO-1680: the trip is in the instrument, never in src/).
 arms=$((arms+1))
-first_enter=$(grep -n 'call *rt_scan_enter' "$W/g.s" | head -1 | cut -d: -f1)
+first_enter=$(grep -n 'call *rt_icn_subject_coerce' "$W/g.s" | head -1 | cut -d: -f1)
 est_nil() {
     local f="$1" fe w l x
-    fe=$(grep -n 'call *rt_scan_enter' "$f" | head -1 | cut -d: -f1); [ -n "$fe" ] || return 2
+    fe=$(grep -n 'call *rt_icn_subject_coerce' "$f" | head -1 | cut -d: -f1); [ -n "$fe" ] || return 2
     sed -n "1,${fe}p" "$f" > "$W/pre.s"
     w=$(grep -cE '^[^#]*\b(mov|xor|lea|pop|add|sub|and|or)\b[^;#]*\br13\b *,' "$W/pre.s")
+    # RE-CUT 2026-10-25 (hq_icon, ARCH-ICON-RTX 10 R6): every poll of a scan_regs graph reloads r13 from its own described cell (mov r13, qword ptr
+    # [rsp + 8]) -- the established subject coming back from the collector, not a second establishing write -- so those reloads are not counted.
+    w=$((w - $(grep -cE '^ *mov +r13, qword ptr \[rsp \+ [0-9]+\]' "$W/pre.s")))
     l=$(grep -cE '^ *lea +r13, \[rip \+ \.Lscan_nil\]' "$W/pre.s")
     x=$(grep -cE '^ *xor +r15d, r15d' "$W/pre.s")
     [ "$w" = 1 ] && [ "$l" = 1 ] && [ "$x" -ge 1 ]
@@ -78,9 +85,9 @@ grep -vE '^ *lea +r13, \[rip \+ \.Lscan_nil\]' "$W/g.s" > "$W/g_noinit.s"
 est_nil "$W/g.s"; held=$?
 est_nil "$W/g_noinit.s"; ctl=$?
 if [ "$held" = 0 ] && [ "$ctl" != 0 ]; then
-    echo "  ok   (a) PREMISE HOLDS (re-derived at d76ca4ead): the $first_enter line(s) before the first rt_scan_enter write r13 once, lea r13, [rip + .Lscan_nil], with r15d zeroed, so at the outermost scan r13 is a valid pointer to the empty subject and not the C caller's residue; CONTROL: with that lea deleted the same reader reports the premise gone"
+    echo "  ok   (a) PREMISE HOLDS (re-derived at d76ca4ead): the $first_enter line(s) before the first rt_icn_subject_coerce write r13 once, lea r13, [rip + .Lscan_nil], with r15d zeroed, so at the outermost scan r13 is a valid pointer to the empty subject and not the C caller's residue; CONTROL: with that lea deleted the same reader reports the premise gone"
 elif [ "$held" != 0 ]; then
-    echo "  FAIL (a) ⛔ THE PREMISE HAS CHANGED AGAIN: the entry no longer establishes the empty scan subject once (lea r13, [rip + .Lscan_nil] and xor r15d, r15d) before the first rt_scan_enter, so at the outermost scan r13 is the C caller's residue and tab, move, many and any outside a scan read it. Restore the nil subject in the mode-4 entry (src/driver/scrip.c), or re-derive this gate's premise -- do not simply relax this arm"
+    echo "  FAIL (a) ⛔ THE PREMISE HAS CHANGED AGAIN: the entry no longer establishes the empty scan subject once (lea r13, [rip + .Lscan_nil] and xor r15d, r15d) before the first rt_icn_subject_coerce, so at the outermost scan r13 is the C caller's residue and tab, move, many and any outside a scan read it. Restore the nil subject in the mode-4 entry (src/driver/scrip.c), or re-derive this gate's premise -- do not simply relax this arm"
     fail=$((fail+1))
 else
     echo "  FAIL (a) ⛔ THE CONTROL DID NOT TRIP: the same reader still reports the nil-subject premise on an emission with the lea deleted, so arm (a)'s pass proves nothing -- its pattern no longer matches the entry's shape"
@@ -95,11 +102,11 @@ while IFS=: read -r ln _; do
     win=$(sed -n "$((ln+1)),$((ln+34))p" "$W/g.s" | sed -n '1,/test *rax, *rax/p')
     printf '%s\n' "$win" | grep -qE 'rt_gc_point_arr_c|rt_gc_poll' || continue
     if printf '%s\n' "$win" | grep -qE 'qword ptr \[rsp \+ [0-9]+\], r13'; then bad=$((bad+1)); fi
-done < <(grep -n 'call *rt_scan_enter' "$W/g.s")
+done < <(grep -n 'call *rt_icn_subject_coerce' "$W/g.s")
 if [ "$bad" = 0 ]; then
-    echo "  ok   (b) $sites rt_scan_enter site(s) emitted: no poll between the call and its result test writes r13 into a poll cell, so every site roots the NEW subject rt_scan_enter returned and none roots the outer r13 (the form kept after the premise of arm (a) was re-derived)"
+    echo "  ok   (b) $sites rt_icn_subject_coerce site(s) emitted: no poll between the call and its result test writes r13 into a poll cell, so every site roots the NEW subject rt_icn_subject_coerce returned and none roots the outer r13 (the form kept after the premise of arm (a) was re-derived)"
 else
-    echo "  FAIL (b) ⛔ $bad of $sites rt_scan_enter site(s) SPILL r13 INTO A POLL CELL. That form roots the OUTER subject base, which rt_scan_enter is about to replace -- the NEW subject it returned in rax:rdx is the pointer this site must keep, and a rec_sigma-shaped root keeps the old one instead. Use x86_rt_gc_poll_rec_subject_new() ({DT_S, edx, rax} with keep_rdx), never a rec_sigma-shaped form, at a call that ESTABLISHES the subject"
+    echo "  FAIL (b) ⛔ $bad of $sites rt_icn_subject_coerce site(s) SPILL r13 INTO A POLL CELL. That form roots the OUTER subject base, which rt_scan_enter is about to replace -- the NEW subject it returned in rax:rdx is the pointer this site must keep, and a rec_sigma-shaped root keeps the old one instead. Use x86_rt_gc_poll_rec_subject_new() ({DT_S, edx, rax} with keep_rdx), never a rec_sigma-shaped form, at a call that ESTABLISHES the subject"
     fail=$((fail+1))
 fi
 # ---------------------------------------------------------------------------------------------------------
@@ -109,11 +116,11 @@ polled=0
 while IFS=: read -r ln _; do
     win=$(sed -n "$((ln+1)),$((ln+34))p" "$W/g.s" | sed -n '1,/test *rax, *rax/p')
     printf '%s\n' "$win" | grep -qE 'rt_gc_point_arr_c|rt_gc_poll' && polled=$((polled+1))
-done < <(grep -n 'call *rt_scan_enter' "$W/g.s")
+done < <(grep -n 'call *rt_icn_subject_coerce' "$W/g.s")
 if [ "$polled" -gt 0 ]; then
-    echo "  ok   (c) $polled of $sites emitted rt_scan_enter site(s) carry a poll, so arm (b) graded a form that exists rather than reporting clean over an unpolled site"
+    echo "  ok   (c) $polled of $sites emitted rt_icn_subject_coerce site(s) carry a poll, so arm (b) graded a form that exists rather than reporting clean over an unpolled site"
 else
-    echo "  FAIL (c) ⛔ NO emitted rt_scan_enter site carries a poll, so arm (b)'s clean is VACUOUS -- it cannot distinguish the right form from no form at all. An instrument that reports success while doing nothing is the failure the INSTRUMENT LAWS exist to catch"
+    echo "  FAIL (c) ⛔ NO emitted rt_icn_subject_coerce site carries a poll, so arm (b)'s clean is VACUOUS -- it cannot distinguish the right form from no form at all. An instrument that reports success while doing nothing is the failure the INSTRUMENT LAWS exist to catch"
     fail=$((fail+1))
 fi
 # ---------------------------------------------------------------------------------------------------------
@@ -157,6 +164,6 @@ else
     echo "  FAIL (e) ⛔ THE DETECTOR FOUND r13 AT ONLY $nfound OF $nsites rt_scan_needle SITE(S). Either the mirror site stopped rooting the subject base -- which would be a real defect at that site, not here -- or this gate's reader no longer matches the emitted spill shape and arm (b) has been passing blind"
     fail=$((fail+1))
 fi
-echo "population: $arms arm(s) graded, $fail FAIL; $sites rt_scan_enter site(s) in the emitted witness"
+echo "population: $arms arm(s) graded, $fail FAIL; $sites rt_icn_subject_coerce site(s) in the emitted witness"
 if [ "$fail" = 0 ]; then echo "✅ GATE GREEN [gc_the_scan_enter_poll_never_roots_an_unestablished_subject_base]"; exit 0; fi
 echo "⛔ GATE RED [gc_the_scan_enter_poll_never_roots_an_unestablished_subject_base]: $fail of $arms arms FAIL"; exit 1

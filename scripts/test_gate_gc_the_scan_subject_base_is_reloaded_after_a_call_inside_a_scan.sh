@@ -60,9 +60,11 @@ done
 [ $cdecl -gt 0 ] && { echo "⛔ GATE REFUSE(2) [$G]: the shift plant DECLINED at $cdecl of 8 points (no arena headroom), so arm (b) could not force the displacement -- CANNOT MEASURE is not a red"; exit 2; }
 if [ $chit -eq 0 ]; then echo "  ok   (b) FORCED DISPLACEMENT: under SCRIP_GC_PLANT_FLIP=1 the witness answers its ref at all 8 stress points --$cband -- the subject the callee's collection moved is read where it went"
 else echo "  FAIL (b) under forced displacement the witness loses at $chit of 8 points ($cband) -- the subject base read after a call inside a scan is stale"; RC=1; fi
-n=$(grep -c 'x86_scan_sigma_reload()' "$ROOT/src/templates/x86/x86_asm.h")
-if [ "$n" -ge 3 ] && grep -q 'rt_scan_live_subj' "$ROOT/src/templates/x86/x86_asm.h" && ! grep -rq 'SCRIP_GC_PLANT_STALE_SIGMA' "$ROOT/src"; then echo "  ok   (c) both scan sync-in helpers emit the sigma reload from rt_scan_live_subj (x86_asm.h, $n mentions)"
-else echo "  FAIL (c) the sigma reload is missing from a sync-in helper in x86_asm.h ($n mentions)"; RC=1; fi
+# RE-CUT 2026-10-25 (hq_icon, ARCH-ICON-RTX 10 R6, the cfo's small roll-out): the sync-in helpers and x86_scan_sigma_reload are deleted -- in a scan_regs
+# graph EVERY poll spills {DT_S, r15d, r13} as one described cell and reloads r13 from it, so the source fact is that poll shape, gated on the graph fact.
+n=$(grep -c 'x86_rsp_load64("r13", 8)' "$ROOT/src/templates/x86/x86_asm.h")
+if [ "$n" -ge 2 ] && grep -q 'x86_scan_regs_graph() ? x86_rt_gc_poll_scan_regs()' "$ROOT/src/templates/x86/x86_asm.h" && ! grep -rq 'SCRIP_GC_PLANT_STALE_SIGMA' "$ROOT/src"; then echo "  ok   (c) every poll of a scan_regs graph spills the subject pair as a described cell and reloads r13 from it (x86_rt_gc_poll_scan_regs and the result poll)"
+else echo "  FAIL (c) the scan_regs poll no longer reloads r13 from its described cell in x86_asm.h ($n reloads)"; RC=1; fi
 echo "population: 3 arm(s) graded"
 if [ $RC = 0 ]; then echo "✅ GATE PASS(0) [$G]: a call inside a scan body hands the subject base back from the collector's root, and forced displacement cannot make it read the old ground"; else echo "⛔ GATE FAIL(1) [$G]: the scan subject base is stale after a call inside a scan, or forced displacement loses it"; fi
 exit $RC
