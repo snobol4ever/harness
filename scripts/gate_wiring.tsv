@@ -682,6 +682,7 @@ test_gate_pl_a_closed_stream_is_not_a_current_stream_argument.sh	WIRED	-	-	-
 test_gate_pl_a_closure_called_inside_a_module_costs_instructions_linear_in_the_list_not_quadratic.sh	WIRED	-	-	-
 test_gate_pl_a_clpfd_program_compiles_in_seconds_not_minutes_the_bound_spine_decision_is_not_quadratic.sh	WIRED	-	-	-
 test_gate_pl_a_cut_inside_a_control_goal_held_in_a_variable_cuts_to_the_call.sh	WIRED	-	-	-
+test_gate_pl_a_cut_local_to_a_shifted_goal_resumes_its_continuation_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_cut_redo_reaches_its_own_barrier.sh	WIRED	-	-	-
 test_gate_pl_a_cyclic_term_hashes_in_finite_time.sh	WIRED	-	-	-
 test_gate_pl_a_dcg_pushback_is_translated_as_a_body_and_a_bare_brace_atom_is_an_empty_goal.sh	WIRED	-	-	-
