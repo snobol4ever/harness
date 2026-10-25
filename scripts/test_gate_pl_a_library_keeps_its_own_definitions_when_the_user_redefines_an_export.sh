@@ -5,7 +5,7 @@
 # load-time assert of a LIBRARY key takes it as the program's own, dynamic, re-pointing that key alone. So a user definition, at compile time or at load time (term_expansion), is reached by
 # every user call and by no library call, as swipl resolves a library body in its module and the user's definition in user. CELLS: the own-export arm (dcg/basics digits//1 calling its
 # digit//1 after the user redefines digit//1, at compile time and at load time), the cross-library arm (aggregate's sum and max over lists' sum_list/2 and max_list/2 after the user
-# redefines both, both times), a load-time assert of a LIBRARY key (digit/3), issues_test1142's shape (the user's term-expanded digits//1 and digit//1 both), and the base prelude as module system (memberchk/2 keeps the base member/2 under the program's own member/2). Each clause of a cell sits on its own line (the loader defers a clause by its line, after the term_expansion line). Every cell runs in m3 and
+# redefines both, both times), a load-time assert of a LIBRARY key (digit/3), issues_test1142's shape (the user's term-expanded digits//1 and digit//1 both), an export written with SSU rules (=>) that its own library also calls (ordsets' ord_subtract/3: the private copy needs the SSU head, red on 239bb6f83), and the base prelude as module system (memberchk/2 keeps the base member/2 under the program's own member/2). Each clause of a cell sits on its own line (the loader defers a clause by its line, after the term_expansion line). Every cell runs in m3 and
 # m4 against swipl (expectations CUT FROM THE ORACLE at run time); FAIL_ONCE=1 corrupts the first expectation. The parent of the cure reads red on five cells (four print the user's answer
 # from library code or refuse the assert as static_procedure). rc 0 green, 1 red, 2 could not measure.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -26,6 +26,7 @@ CELLS=(
 "cross_library_export_redefined_at_load_time|:- use_module(library(aggregate)).@term_expansion(mk, [sum_list(_, 999), max_list(_, 888)]).@mk.@$AG"
 "a_load_time_clause_takes_a_library_key|term_expansion(mk, digit(1, a, b)).@mk.@main :- digit(X, Y, Z), write(X-Y-Z), nl."
 "the_base_prelude_keeps_its_member_under_a_user_member|member(X, [X|_]) :- X \\== skip.@member(X, [_|T]) :- member(X, T).@main :- ( memberchk(skip, [skip]) -> write(chk_ok) ; write(chk_no) ), nl, findall(X, member(X, [skip,1,skip,2]), L), write(L), nl, subtract([a,b,c], [b], S), write(S), nl, union([a,b], [b,c], U), write(U), nl."
+"an_ssu_library_export_called_by_its_library|:- use_module(library(ordsets)).@main :- ord_subtract([a,b,c], [b], X), write(X), nl, ord_union([a,c], [b], U), write(U), nl, ord_symdiff([a,b], [b,c], S), write(S), nl, ord_union([[a],[c],[b]], V), write(V), nl."
 "term_expanded_digits_and_digit_both|term_expansion(mk, [(digits([D|Ds]) --> digit(D), digits(Ds)), (digits([D]) --> digit(D)), (digit(D) --> [D], { memberchk(D, [zero,one]) })]).@mk.@main :- ( phrase(digits(L), [one,zero,one]) -> write(L) ; write(no) ), nl, ( phrase(digits(_), [one,nine]) -> write(yes) ; write(rejected) ), nl."
 )
 swi() { ( cd "$T" && timeout -k 5 30s "$SWI" -q -g halt -t halt "$1" </dev/null 2>/dev/null ); }
