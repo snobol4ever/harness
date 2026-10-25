@@ -107,7 +107,10 @@ while IFS=: read -r f l shape; do
         # one entry into the graph -- and they lived in src/runtime/rt/rt.c only because that file held the asm. They are the driver's, beside
         # icn_zf_main_call, so libscrip_rt.so exports no C→BB thunk for the main program at all. m3_enter_with_rbx above no longer exists
         # (kept in the case list as history; a hit can never carry that name).
-        src/driver/scrip.c:rt_outer_call|src/driver/scrip.c:rt_outer_call_delta0) continue ;;
+        # hq_icon 2026-10-25 (ARCH-ICON-RTX 10 R8): Icon's root takes its own twin of the same thunk, rt_outer_call_root (r13 = the empty string's byte, the
+        # root environment, where rt_outer_call zeroes r13 for every other language's templates that test it), entered through rt_outer_call_icn_root
+        # (r14 = 0), which replaces rt_outer_call_delta0 -- the same one original invocation, a second spelling of it.
+        src/driver/scrip.c:rt_outer_call|src/driver/scrip.c:rt_outer_call_root|src/driver/scrip.c:rt_outer_call_icn_root) continue ;;
         src/runtime/rt/rt_coexpr.c:scrip_coexpr_trampoline_entry) continue ;;
         # ⭐ THE TWO COROUTINE SPINES, SANCTIONED PER CEO-970 AND MOVED HERE BESIDE THEIR TWIN (cto 2026-09-20):
         # rt_genp_spine_enter and rt_genp_spine_enter_n2 are reached ONLY from rt_genp_entry_c, which
