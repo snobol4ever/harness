@@ -1077,6 +1077,11 @@ def one_runner_declines(measurer, what, lang=None):
     if (measurer or "").strip() in [w.strip() for w in writer.split(",")]:
         print("  lane owner: %s writes %s rows (%s)" % (writer, lang or "these", why))
         return None
+    # THE ceo AND THE coo ARE NEVER REFUSED (Lon 2026-10-25, CEO-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words): a
+    # board either runs writes its own row, whatever LANES: names.
+    if (measurer or "").strip() in ("ceo", "coo"):
+        print("  %s writes %s rows: the ceo and the coo are never refused (CEO-1976; lane owner %s, %s)" % (measurer.strip(), lang or "these", writer, why))
+        return None
     sw = os.environ.get("S4E_SCORE_WRITE", "").strip()
     if sw:
         print("⚠ LEADERBOARD WRITE CONSENT by %s (%s is the lane owner, %s): %s" % (measurer, writer, why, sw))

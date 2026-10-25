@@ -42,12 +42,12 @@ OWN_ICON="$(_who icon)"; OWN_REBUS="$(_who rebus)"
 [ -n "$OWN_REBUS" ] || { echo "REFUSE(2) [$G]: MODE LANES: names no owner for rebus, so the second-language arm cannot be built. That is a finding about the LANES line, not a broken fixture."; exit 2; }
 # A refusal arm needs a seat the lane does NOT name. Derive one instead of trusting that any particular name
 # is still a non-owner: under a one-owner table most names are, but WHICH ones depends on the live line.
-_not_owner_of() { local _own="$1" _c; for _c in hq_pascal hq_prolog hq_icon hq_B cto cfo coo; do [ "$_c" = "$_own" ] || { printf '%s' "$_c"; return 0; }; done; return 1; }
+_not_owner_of() { local _own="$1" _c; for _c in hq_pascal hq_prolog hq_icon hq_B cto cfo; do [ "$_c" = "$_own" ] || { printf '%s' "$_c"; return 0; }; done; return 1; }
 NOT_ICON="$(_not_owner_of "$OWN_ICON")"   || { echo "REFUSE(2) [$G]: every candidate seat owns icon -- no refusal arm can be built"; exit 2; }
 NOT_REBUS="$(_not_owner_of "$OWN_REBUS")" || { echo "REFUSE(2) [$G]: every candidate seat owns rebus -- no refusal arm can be built"; exit 2; }
 # arm 5 drives two refused seats and the owner; both refused seats must really not own icon.
 REF_A=hq_B; [ "$REF_A" = "$OWN_ICON" ] && REF_A="$NOT_ICON"
-REF_B=coo;  [ "$REF_B" = "$OWN_ICON" ] && REF_B=cto
+REF_B=cfo;  [ "$REF_B" = "$OWN_ICON" ] && REF_B=cto
 echo "    lanes (read from MODE LANES: via one_runner_who): icon -> $OWN_ICON, rebus -> $OWN_REBUS; refusal seats: $NOT_ICON (icon), $NOT_REBUS (rebus), $REF_A + $REF_B (--check)"
 arm "1a detector: legacy seat hq_B refused rc=2 on an icon board, naming the ruling" 'out=$(S4E_SEAT=hq_B bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); rc=$?; [ $rc -eq 2 ] && grep -q "ONE RUNNER, ONE BOARD" <<<"$out" && grep -q "test_icon_x_suite.sh" <<<"$out"'
 arm "1b detector: a seat the LANES line does not name for icon ($NOT_ICON) is refused rc=2 on an icon board -- the runner is whoever LANES names, the coo for every language since CEO-1342" 'out=$(S4E_SEAT=$NOT_ICON bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 2 ] && grep -q "ONE RUNNER PER LANGUAGE" <<<"$out"'
@@ -123,7 +123,20 @@ arm "17 harness: the same language HQ with the override is refused rc=2 by the g
 # by S4E_HOME, the runner naming no suite), and 18b the refusal on the real rungs, in both copies of the guard.
 arm "18 a GATE's instrument fixture still admits a language HQ on a scratch population (S4E_HOME=<git world, no remote>, no suite named)" 'E=$(mktemp -d) || exit 1; git init -q "$E/corpus" || exit 1; out=$(S4E_SEAT=$HQSEAT S4E_ONE_RUNNER_FIXTURE="probe fixture" S4E_HOME="$E" bash -c "source $L; one_runner_guard test_x_suite.sh" 2>&1); rc=$?; rm -rf "$E"; [ $rc -eq 0 ] && grep -q "ONE-RUNNER FIXTURE" <<<"$out"'
 arm "18b the fixture exemption does NOT admit a language HQ to a real corpus suite -- refused rc=2, naming the rule (bash and harness)" 'out=$(S4E_SEAT=$HQSEAT S4E_ONE_RUNNER_FIXTURE="probe fixture" bash -c "source $L; one_runner_guard test_x_suite.sh $CORPUS/tests/rebus/ALL.reb" 2>&1); [ $? -eq 2 ] && grep -q "ONE-RUNNER FIXTURE NOT ADMITTED" <<<"$out" && out2=$(cd "$H/../../SCRIP" && S4E_SEAT=$HQSEAT S4E_ONE_RUNNER_FIXTURE="probe fixture" python3 -c "import sys; sys.path.insert(0, \"../harness/scripts\"); import corpus_suite_harness as h; h._one_runner_guard(\"$CORPUS/tests/rebus/ALL.reb\", \"$CORPUS\", \"rebus\")" 2>&1); [ $? -eq 2 ] && grep -q "ONE-RUNNER FIXTURE NOT ADMITTED" <<<"$out2"'
+# ⛔⭐ THE ceo AND THE coo ARE NEVER REFUSED (Lon 2026-10-25 18:2x CDT, in-chat to the ceo, verbatim: "Ensure the test and package
+# runner never refuse CEO in addition to allowing COO."; ceo CEO-1976): arms 20-24 read a scratch MODE whose LANES: names neither seat
+# (icon and rebus hq_icon, the dotnet port hq_dotnet), so each admission is the rule's and not the live line's; cto is the control. The
+# refusal candidates above no longer offer the coo, whom every SCRIP board admits.
+P20="$(mktemp -d)"; printf 'TENET\n# scratch MODE for %s arms 20-24\nLANES: icon=hq_icon rebus=hq_icon snobol4@dotnet=hq_dotnet\n' "$G" > "$P20/MODE"
+_g20() { S4E_POST="$P20" S4E_SEAT="$1" S4E_ENGINE="${2:-scrip}" bash -c "source $L; one_runner_guard ${3:-test_icon_x_suite.sh}" >/dev/null 2>&1; }
+_h20() { (cd "$H/../../SCRIP" && S4E_POST="$P20" S4E_SEAT="$1" python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import corpus_suite_harness as h; h._one_runner_guard(sys.argv[1], sys.argv[2], "rebus")' "$CORPUS/tests/rebus/ALL.reb" "$CORPUS") >/dev/null 2>&1; }
+arm "20 the ceo is admitted rc=0 on an icon board whose lane names hq_icon (CEO-1976)" '_g20 ceo'
+arm "21 the coo is admitted rc=0 on that same icon board (CEO-1976)" '_g20 coo'
+arm "22 the ceo is admitted rc=0 on a dotnet port board whose lane names hq_dotnet, and the coo is still refused rc=2 there (CEO-1912/1913)" '_g20 ceo dotnet test_snobol4_x_suite.sh && { _g20 coo dotnet test_snobol4_x_suite.sh; [ $? -eq 2 ]; }'
+arm "23 control: cto is refused rc=2 on the icon board under the same scratch lanes" '_g20 cto; [ $? -eq 2 ]'
+arm "24 harness: _one_runner_guard admits the ceo and the coo on the rebus rungs under the same scratch lanes and refuses cto rc=2" '_h20 ceo && _h20 coo && { _h20 cto; [ $? -eq 2 ]; }'
+rm -rf "$P20"
 echo "$G: examined=$examined fail=$fail"
-[ $examined -ge 26 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 26 declared arms"; exit 2; }
+[ $examined -ge 31 ] || { echo "REFUSE(2) [$G]: examined=$examined below the 31 declared arms"; exit 2; }
 [ $fail -eq 0 ] && { echo "GATE PASS(0) [$G]: $examined/$examined -- one runner PER LANGUAGE, one board"; exit 0; }
 echo "GATE FAIL(1) [$G]: $fail of $examined arms red"; exit 1

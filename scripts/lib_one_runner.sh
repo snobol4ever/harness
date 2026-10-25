@@ -212,8 +212,14 @@ one_runner_who() {
     *) case "$key" in *[!a-z0-9_@]*) printf '';; *) printf '%s' "$lanes" | tr ' ' '\n' | sed -n "s/^$key=//p" | head -1;; esac;;
   esac
 }
+# ⛔⭐ THE ceo AND THE coo ARE NEVER REFUSED (Lon 2026-10-25 18:2x CDT, in-chat to the ceo, verbatim: "Ensure the test and package runner
+# never refuse CEO in addition to allowing COO."; ceo CEO-1976): the ceo is admitted to every board, a port engine's included, whatever
+# LANES: names; the coo, the testing officer, to every SCRIP board whatever LANES: names (a port board stays its port HQ's, CEO-1912/1913).
+# corpus_suite_harness.py:_one_runner_guard and util_score_row.py's lane-owner write mirror this.
 one_runner_seat_admitted() {
   local seat="$1" who="$2" w
+  [ "$seat" = ceo ] && return 0
+  [ "$seat" = coo ] && [ "$(one_runner_engine)" = scrip ] && return 0
   for w in ${who//,/ }; do [ "$seat" = "$w" ] && return 0; done
   return 1
 }
