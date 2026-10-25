@@ -29,6 +29,7 @@
 #   rc 0  every measured language reads outside=0 unbacked=0 excess=0 multi=0 · rc 1 one does not (named) · rc 2 could not measure
 # A COMPILE-ONLY census (no program runs); each compile takes a cc slot of the box-wide pool (util_cc_slot.sh). Grading the population is a BOARD:
 # the coo's loop runs it; a seat reads one program with --files.
+# RULING (the cto, 2026-10-25 02:3x CDT, CEO-1888; the coo's rises at bc63b803b and 6efe5b2eb): a rise whose moved graphs are ALL "new since the floor" (no graph that existed at the floor moved) is a POPULATION MOVE -- a predicate joined the base prelude or the injector's roots admitted a graph into every program -- and the loop RE-CUTS that language's floor to the landing's reading by itself, naming the landing in its record; only a rise in which an EXISTING graph moved is a placement regression telegrammed to the lander. A new graph's own excess is that graph's pre-allocation, the Prolog switch row's population (D3), never a row of its own.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 exec python3 - "$HERE" "$@" <<'PY'
