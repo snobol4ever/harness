@@ -847,6 +847,7 @@ test_gate_pl_multifile_initialization_runs_every_file.sh	WIRED	-	-	-
 test_gate_pl_nb_linkarg_links_without_copying_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_no_new_global.sh	WIRED	-	-	-
 test_gate_pl_no_value_stack.sh	WIRED	-	-	-
+test_gate_pl_number_chars_codes_and_atom_number_read_a_zero_quote_character_literal_in_any_script_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_number_syntax_iso.sh	WIRED	-	-	-
 test_gate_pl_numbervars_4_scans_its_options_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_occurs_check_error_raises_on_every_unify_road.sh	WIRED	-	-	-
