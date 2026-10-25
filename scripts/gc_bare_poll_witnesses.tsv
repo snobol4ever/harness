@@ -73,12 +73,10 @@ src/templates/bb/bb_iterate.cpp:rt_list_bang_key_at#2	UNWITNESSED
 src/templates/bb/bb_iterate.cpp:rt_list_bang_elem_at#2	UNWITNESSED
 src/templates/bb/bb_iterate.cpp:rt_list_bang_var_at#2	UNWITNESSED
 src/templates/bb/bb_iterate.cpp:rt_list_bang_at#2	UNWITNESSED
-src/templates/bb/bb_keyword_assign.cpp:rt_keyword_pos_set_strict#1	hb_icn_assign_the_scan_position_and_subject.icn
-src/templates/bb/bb_keyword_assign.cpp:rt_keyword_subject_set_strict/rt_keyword_subject_set#1	hb_icn_assign_the_scan_position_and_subject.icn
 src/templates/bb/bb_keyword_assign.cpp:rt_keyword_trace_set#1	hb_trace_wildcard_registry_root.icn
 src/templates/bb/bb_keyword_assign_snobol4.cpp:rt_kw_write_idx#1	hb_errtext_keyword.sno
 src/templates/bb/bb_keyword_assign_snobol4.cpp:rt_kw_write_idx#2	UNWITNESSED
-src/templates/bb/bb_keyword_icon.cpp:rt_keyword_var#1	hb_icn_assign_the_scan_position_and_subject.icn
+src/templates/bb/bb_keyword_icon.cpp:rt_keyword_var#1	hb_icn_a_keyword_var_form_other_than_the_scan_pair.icn
 src/templates/bb/bb_keyword_icon.cpp:rt_keyword_read#1	hb_icn_errorvalue_keyword.icn
 src/templates/bb/bb_keyword_icon.cpp:rt_keyword_read#2	UNWITNESSED
 src/templates/bb/bb_keyword_snobol4.cpp:rt_keyword_read_snobol4#1	UNWITNESSED
@@ -108,11 +106,7 @@ src/templates/bb/bb_match_value.cpp:rt_match_value_get_pat_dtp#1	UNWITNESSED
 src/templates/bb/bb_random.cpp:rt_random_var_strict/rt_random_var#1	hb_table_dump_every_key_ref.icn
 src/templates/bb/bb_return.cpp:rt_trace_gen_return_hook#1	UNWITNESSED
 src/templates/bb/bb_return.cpp:rt_trace_gen_return_hook#2	UNWITNESSED
-src/templates/bb/bb_rev_assign_global.cpp:NV_GET_fn#1	hb_icn_reversible_assignment_to_pos_and_subject.icn
-src/templates/bb/bb_rev_assign_global.cpp:rt_keyword_pos_set_strict#1	hb_icn_reversible_assignment_to_pos_and_subject.icn
-src/templates/bb/bb_rev_assign_global.cpp:rt_keyword_subject_set_strict/rt_keyword_subject_set#1	hb_icn_reversible_assignment_to_pos_and_subject.icn
-src/templates/bb/bb_rev_assign_global.cpp:rt_keyword_subject_set_strict/rt_keyword_subject_set#2	hb_icn_reversible_assignment_to_pos_and_subject.icn
-src/templates/bb/bb_rev_assign_global.cpp:NV_GET_fn#2	UNWITNESSED
+src/templates/bb/bb_rev_assign_global.cpp:NV_GET_fn#1	UNWITNESSED
 src/templates/bb/bb_rev_assign_global.cpp:NV_SET_fn#1	UNWITNESSED
 src/templates/bb/bb_rev_assign_global.cpp:NV_SET_fn#2	UNWITNESSED
 src/templates/bb/bb_rev_assign_var.cpp:rt_deref#1	hb_table_elem_ref_across_collections.icn

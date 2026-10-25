@@ -1,0 +1,9 @@
+# WITNESS for bb_keyword_icon.cpp's var form (rt_keyword_var and its poll): a keyword other than &subject and &pos passed to a by-name call is
+# its variable form, dereferenced at the call -- &subject and &pos are the register pair and take the value form (ARCH-ICON-RTX 10 R4).
+procedure main();
+   write(&random);
+   &random := 7;
+   write(&random, " ", &error);
+   &error := 2;
+   write(&error);
+end

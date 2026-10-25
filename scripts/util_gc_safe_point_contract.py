@@ -1090,6 +1090,11 @@ def selftest():
 BARE_TABLE = os.path.join(HERE, "gc_bare_poll_witnesses.tsv")
 BARE_NOTE_RX = re.compile(r"gc_poll ([A-Za-z0-9_]+\.cpp):(\d+)")
 BARE_CALL_RX = re.compile(r"\bcall\s+rt_gc_poll_asm\b")
+# hq_icon 2026-10-25 (ARCH-ICON-RTX 10 R6, the cfo's scan small roll-out): in a scan_regs graph (every Icon graph) the bare poll's body is
+# x86_rt_gc_poll_scan_regs -- the subject pair spilled as ONE described cell {DT_S, r15d, r13} under a 64-byte carve, then a call to
+# rt_gc_point_arr_c -- so the site's call is that body, read by its first three instructions (no other poll shape carves 64 and writes the
+# DT_S tag and r15d first); the note still names the site, and calls == notes stays the identity the reading refuses on.
+BARE_SCANREGS_RX = re.compile(r"sub\s+rsp, 64\s*\n\s*mov\s+dword ptr \[rsp \+ 0\], 2\s*\n\s*mov\s+dword ptr \[rsp \+ 4\], r15d")
 BARE_EXERCISE_RX = re.compile(r"\[GC-EXERCISE\].*?\bcollections=(\d+)\b.*?\bgrew=(\d+)\b")
 BARE_ARENA_MB = "512"
 BARE_TABLE_HEADER = (
@@ -1144,7 +1149,7 @@ def bare_sites_from_census(root=ROOT):
 def bare_reach(asm_text):
     """(calls, notes, set of 'base.cpp:line' the emission reaches) -- calls != len(notes) is a refusal upstream"""
     notes = BARE_NOTE_RX.findall(asm_text)
-    return len(BARE_CALL_RX.findall(asm_text)), len(notes), {"%s:%s" % (b, l) for b, l in notes}
+    return len(BARE_CALL_RX.findall(asm_text)) + len(BARE_SCANREGS_RX.findall(asm_text)), len(notes), {"%s:%s" % (b, l) for b, l in notes}
 
 
 def bare_verdict(rc, stderr_text, stdout_bytes, ref_bytes):
