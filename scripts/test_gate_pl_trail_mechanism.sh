@@ -91,7 +91,7 @@ int main(void) {
     return fails ? 1 : 0;
 }
 CEOF
-gcc -O0 -g -I "$ROOT/src/ir" -I "$ROOT/src/runtime" -o "$W/h" "$W/h.c" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" >"$W/build.log" 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: harness does not build"; sed 's/^/    /' "$W/build.log" | head -20; gate_stamp; exit 2; }
+gcc -O0 -g -I "$ROOT/src/ir" -I "$ROOT/src/runtime" -I "$ROOT/src/runtime/core" -I "$ROOT/src/runtime/rt" -o "$W/h" "$W/h.c" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" >"$W/build.log" 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: harness does not build"; sed 's/^/    /' "$W/build.log" | head -20; gate_stamp; exit 2; }
 "$W/h" > "$W/out.txt" 2>"$W/err.txt"; rc=$?
 grep -E '^  (ok|FAIL) ' "$W/out.txt" | sort -u
 n_ok=$(grep -c '^  ok ' "$W/out.txt"); n_fail=$(grep -c '^  FAIL ' "$W/out.txt")
