@@ -6,7 +6,7 @@
 # its record in the activation frame as before. TWO ARMS: (i) the [HOMES] row of the BOUND of q/1 below reads home=SPINE (the frame regime printed home=NONE: red on 005253b63);
 # (ii) every cell, compiled whole, agrees with swipl in m3 and m4 (expectations CUT FROM THE ORACLE at run time) -- two ites in a row whose second takes its else arm and a
 # variable hosted in the BOUND's carve read after the construct are the shapes that broke while the cure was built; a double negation after a retaining call (the
-# outer BOUND's condition holds the inner BOUND: XsbTests delay_tests_fa, get_residual/2's \+ \+ V=G, segfaulted on 275416cf5) and a tabled negation are the arms CEO-1960 added. FAIL_ONCE=1 corrupts the first expectation. rc 0 green, 1 red,
+# outer BOUND's condition holds the inner BOUND: XsbTests delay_tests_fa, get_residual/2's \+ \+ V=G, segfaulted on 275416cf5) and a tabled negation are the arms CEO-1960 added. Three cells after them are a fail-condition ite followed by (or holding) another ite inside a retried loop: the arm-failure road of a spine BOUND leaves rsp where the arms put it, and the gate's exit pop was re-derived from the BOUND's level (48 short), so the loop lost its retry or its variable (275416cf5..c5272c8cd: "1 done" and "1 _G0 3"). FAIL_ONCE=1 corrupts the first expectation. rc 0 green, 1 red,
 # 2 could not measure.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -29,6 +29,9 @@ CELLS=(
 "once_and_ignore|p(1). p(2). main :- ( once(p(A)) -> write(A) ; true ), nl, ( ignore(p(9)) -> write(ign) ; true ), nl."
 "double_negation_after_a_retaining_call|main :- member(X, [b,a,c]), \\+ \\+ X = a, member(Y, [1,2]), write(X-Y), nl, fail. main."
 "tabled_double_negation_and_tnot|:- table p/1. p(X) :- member(X, [1,2,3]), \\+ \\+ X = 2. :- table q/1. q(X) :- member(X, [a,b]), tnot(r(X)). :- table r/1. r(b). main :- findall(X, p(X), L), write(L), nl, findall(Y, q(Y), M), write(M), nl."
+"a_fail_condition_ite_then_an_ite_in_a_retried_loop|main :- ( between(1, 3, J), ( fail -> true ; true ), ( J > 100 -> write(big) ; write(J) ), nl, fail ; true ), write(done), nl."
+"nested_ites_under_a_fail_condition_keep_the_loop_variable|main :- ( between(1, 3, J), ( fail -> true ; ( fail -> write(big) ; write(J) ) ), nl, fail ; true ), write(done), nl."
+"an_ite_in_the_else_arm_of_a_fail_condition|main :- ( member(K, [1,2,3]), ( fail -> true ; ( K > 100 -> write(big) ; write(K) ) ), nl, fail ; true ), write(done), nl."
 )
 swi() { ( cd "$T" && timeout -k 5 20s "$SWI" -q -g halt -t halt "$1" </dev/null 2>/dev/null ); }
 run3() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" "$1" </dev/null 2>/dev/null ); }
