@@ -27,11 +27,16 @@ references it finds in the parsed library, selects the libraries that one needs,
       A reference written in operator form REFUSES rc=2 (a renamed operator would not parse), and --show lists every
       helper name left standing as data, for review.  The '$' prefix is what the injector already keys on: a '$' name
       is pulled only through the closure of what the program calls.
-  (2) DIRECTIVES.  The module system's own directives (module, use_module, autoload, meta_predicate, multifile, public,
-      det, set_prolog_flag ...) are dropped, each counted on stdout; conditional compilation (if/elif/else/endif) is
+  (2) DIRECTIVES.  The module system's own directives (module, use_module, autoload, multifile, public, det,
+      set_prolog_flag ...) are dropped, each counted on stdout; conditional compilation (if/elif/else/endif) is
       kept for SCRIP's reader.  :- use_foreign_library(foreign(F)) is dropped: SCRIP loads no foreign library, and the predicates F
       defines are answered by the base prelude, measured against swipl (library(http/json)'s json_skip_ws/3, json_write_string/2 and
       json_write_indent/3).  :- expects_dialect(swi) is dropped: SCRIP reads every vendored library as SWI.
+      :- meta_predicate S is kept as :- '$meta_spec'((S)) (ARCH-PROLOG-DATABASE.md 4c): the
+      lowerer writes each spec into the predicate record's column, which predicate_property reads at run time, and the
+      name keeps it out of the module qualification masks, which read only the program's own :- meta_predicate; the
+      library's export specs are also emitted as its METAS table, from which the injector declares the specs of the names
+      a program references when that library is not appended (maplist's from apply when the base prelude answers maplist).
       ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
       (dynamic, initialization, a term-expansion trigger) is decided when a library brings one, never dropped silently.
       A library(settings) declaration, :- setting(M:Name, Type, Default, Comment), is dropped (the cto's ruling 4,
@@ -117,7 +122,9 @@ REFS_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_refs.pl")
 
 HOOK_DYN = ("directive multifile of a hook the library calls and defines no clause for, kept as :- dynamic: swipl fails such a call quietly, and an "
             "undeclared predicate would raise existence_error (library(http/json)'s json_write_hook/4)")
-DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multifile", "public", "det", "set_prolog_flag",
+META_KEPT = ("directive meta_predicate kept as :- '$meta_spec'(Specs) -- the spec column of each predicate's record (ARCH-PROLOG-DATABASE.md 4c); "
+             "the name keeps it out of the module qualification masks, which read the program's own :- meta_predicate")
+DROP_DIRECTIVES = {"module", "use_module", "autoload", "multifile", "public", "det", "set_prolog_flag",
                    "$clausable", "noprofile", "license", "discontiguous", "module_transparent", "predicate_options",
                    "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting", "use_foreign_library",
                    "expects_dialect"}
@@ -566,7 +573,7 @@ def process(path):
         s = sig(cl)
         if s and atom_value(s[0]) == ":-" and len(s) > 1:
             d = directive_name(s)
-            if d not in KEEP_DIRECTIVES and d not in DROP_DIRECTIVES and d != "module" and d != "initialization" and not (d == "record" and lib in EXPANDED):
+            if d not in KEEP_DIRECTIVES and d not in DROP_DIRECTIVES and d not in ("module", "initialization", "meta_predicate") and not (d == "record" and lib in EXPANDED):
                 raise Refuse("%s clause %d: the directive :- %s is neither dropped nor kept by this generator -- decide what it means for SCRIP first" % (path, no, d))
     if lib in LOCAL:
         heads, refs = local_heads(toks, path), []
@@ -575,7 +582,7 @@ def process(path):
     if read_path:
         os.unlink(read_path)
     mod, exports, ops, kept, drops, keyed, hooks, libops = None, [], [], [], dict(init_drops), [], [], set()
-    cross, dynrep, uses = {}, {}, []
+    cross, dynrep, uses, metaspec, metas = {}, {}, [], {}, []
     defined = {(n, a) for k, a, n in heads.values() if k not in ("directive", "unkeyable", "qualified") and n}
     off = 0
     for no, cl in enumerate(split_clauses(toks), 1):
@@ -613,6 +620,29 @@ def process(path):
                         for t in args[2]:
                             if atom_value(t) is not None:
                                 libops.add(atom_value(t))
+            if d == "meta_predicate":
+                pos, name_at, last_at = start, None, None
+                for t in cl:
+                    if name_at is None and t[0] in ("atom", "qatom") and atom_value(t) == "meta_predicate":
+                        name_at = pos
+                    if t[0] not in ("ws", "comment"):
+                        last_at = pos
+                    pos += len(t[1])
+                if name_at is None or last_at is None or src[last_at:last_at + 1] != ".":
+                    raise Refuse("%s clause %d: a :- meta_predicate directive this generator cannot rewrite in place" % (path, no))
+                metaspec[start] = (name_at, last_at)
+                j = next(k for k, t in enumerate(s) if t[0] in ("atom", "qatom") and atom_value(t) == "meta_predicate")
+                body = [t for t in s[j + 1:] if t[0] != "end"]
+                if body and body[0] == ("punct", "(") and top_level_args(body, 0)[1] == len(body):
+                    terms = top_level_args(body, 0)[0]
+                else:
+                    terms = top_level_args([("punct", "(")] + body + [("punct", ")")], 0)[0]
+                for tm in terms:
+                    if len(tm) > 1 and tm[1] == ("punct", "(") and atom_value(tm[0]) is not None:
+                        metas.append((atom_value(tm[0]), len(top_level_args(tm, 1)[0]), "".join(t[1] for t in tm)))
+                kept.append((start, off))
+                drops[META_KEPT] = drops.get(META_KEPT, 0) + 1
+                continue
             if d in KEEP_DIRECTIVES:
                 kept.append((start, off)); continue
             if d == "multifile":
@@ -678,6 +708,9 @@ def process(path):
     renamed, chunks = {}, []
     for cs, ce in sorted(kept + [(cs, ce) for cs, _, ce, _ in hooks]):
         raw = src[cs:ce]
+        if cs in metaspec:
+            na, dot = metaspec[cs]
+            raw = raw[:na - cs] + "'$meta_spec'((" + raw[na - cs + len("meta_predicate"):dot - cs] + "))" + raw[dot - cs:]
         hk = next((h for h in hooks if h[0] == cs), None)
         for f, t, ar, kd, nm in sorted((r for r in refs if cs <= r[0] < ce and (r[4], r[2]) in local), reverse=True):
             if kd == "c" and src[t:t + 1] != "(":
@@ -717,7 +750,8 @@ def process(path):
         drops["shadows %s/%d of other libraries: %s" % (k[0], k[1], why)] = 1
     return {"lib": lib, "exports": [e for e in exports if e not in OMIT.get(lib, {}) and e not in cside], "cside": cside, "renames": renamed, "ops": ops, "as_op": as_op,
             "shadows": sorted(SHADOWS.get(lib, {})), "quiet": sorted(QUIET.get(lib, set())),
-            "drops": drops, "as_data": as_data, "text": text, "atoms": {atom_value(t) for t in out_toks if t[0] in ("atom", "qatom")}, "uses": uses}
+            "drops": drops, "as_data": as_data, "text": text, "atoms": {atom_value(t) for t in out_toks if t[0] in ("atom", "qatom")}, "uses": uses,
+            "metas": sorted({m for m in metas if (m[0], m[1]) in set(exports)})}
 
 
 def c_string_lines(text):
@@ -774,7 +808,9 @@ def generate(pdir):
             L["drops"]["selected only when the program imports it, or a library it imports loads it (IMPORT_ONLY_FRONTS)"] = 1
     o = ["typedef struct { const char *nm; int ar; } pl_prelude_lib_pi_t;",
          "typedef struct { int pri; const char *type; const char *nm; } pl_prelude_lib_op_t;",
-         "typedef struct { const char *lib; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; const char *const *loads; int import_only; } pl_prelude_lib_t;"]
+         "typedef struct { const char *nm; int ar; const char *spec; } pl_prelude_lib_meta_t;",
+         "typedef struct { const char *lib; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; "
+         "const pl_prelude_lib_meta_t *metas; const char *const *loads; int import_only; } pl_prelude_lib_t;"]
     for i, L in enumerate(libs):
         o.append("static const pl_prelude_lib_pi_t PL_PRELUDE_LIB_%d_EXPORTS[] = {" % i)
         for n, a in L["exports"]:
@@ -793,13 +829,19 @@ def generate(pdir):
         o.append("    { 0, 0, 0 }")
         o.append("};")
         o.append("static const char *const PL_PRELUDE_LIB_%d_LOADS[] = { %s0 };" % (i, "".join('"%s", ' % m for m in L["loads"])))
+        o.append("static const pl_prelude_lib_meta_t PL_PRELUDE_LIB_%d_METAS[] = {" % i)
+        for n, a, sp in L.get("metas", []):
+            o.append('    { "%s", %d, "%s" },' % (n.replace("\\", "\\\\").replace('"', '\\"'), a, sp.replace("\\", "\\\\").replace('"', '\\"')))
+        o.append("    { 0, 0, 0 }")
+        o.append("};")
         o.append("static const char PL_PRELUDE_LIB_%d_SRC[] =" % i)
         o.extend(c_string_lines(L["text"]))
         o[-1] += ";"
     o.append("static const pl_prelude_lib_t PL_PRELUDE_LIBS[] = {")
     for i, L in enumerate(libs):
-        o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC, PL_PRELUDE_LIB_%d_LOADS, %d },' % (L["lib"], i, i, i, i, i, i, int(L["import_only"])))
-    o.append("    { 0, 0, 0, 0, 0, 0, 0, 0 }")
+        o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC, PL_PRELUDE_LIB_%d_METAS, PL_PRELUDE_LIB_%d_LOADS, %d },'
+                 % (L["lib"], i, i, i, i, i, i, i, int(L["import_only"])))
+    o.append("    { 0, 0, 0, 0, 0, 0, 0, 0, 0 }")
     o.append("};")
     return libs, "\n".join(o) + "\n"
 

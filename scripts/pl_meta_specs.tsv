@@ -1,0 +1,203 @@
+# pl_meta_specs.tsv -- written by util_gen_pl_meta_specs.py --cut from swipl 9.0.4 and gprolog 1.4.5; never edited by hand.
+# columns: dialect <TAB> name <TAB> arity <TAB> one argument spec per column, verbatim as the oracle prints it
+gnu	*->	2	0	0
+gnu	,	2	0	0
+gnu	->	2	0	0
+gnu	.	2	:	+
+gnu	;	2	0	0
+gnu	\+	1	0
+gnu	abolish	1	:
+gnu	asserta	1	:
+gnu	assertz	1	:
+gnu	bagof	3	?	0	-
+gnu	call	2	1	?
+gnu	call	3	2	?	?
+gnu	call	4	3	?	?	?
+gnu	call	5	4	?	?	?	?
+gnu	call	6	5	?	?	?	?	?
+gnu	call	7	6	?	?	?	?	?	?
+gnu	call	8	7	?	?	?	?	?	?	?
+gnu	call	9	8	?	?	?	?	?	?	?	?
+gnu	call	10	9	?	?	?	?	?	?	?	?	?
+gnu	call	11	10	?	?	?	?	?	?	?	?	?	?
+gnu	call_det	2	0	?
+gnu	call_with_args	1	1
+gnu	call_with_args	2	1	?
+gnu	call_with_args	3	2	?	?
+gnu	call_with_args	4	3	?	?	?
+gnu	call_with_args	5	4	?	?	?	?
+gnu	call_with_args	6	5	?	?	?	?	?
+gnu	call_with_args	7	6	?	?	?	?	?	?
+gnu	call_with_args	8	7	?	?	?	?	?	?	?
+gnu	call_with_args	9	8	?	?	?	?	?	?	?	?
+gnu	call_with_args	10	9	?	?	?	?	?	?	?	?	?
+gnu	call_with_args	11	10	?	?	?	?	?	?	?	?	?	?
+gnu	catch	3	0	?	0
+gnu	clause	2	:	?
+gnu	consult	1	:
+gnu	current_predicate	1	:
+gnu	fd_maximize	2	0	?
+gnu	fd_minimize	2	0	?
+gnu	findall	3	?	0	-
+gnu	forall	2	0	0
+gnu	listing	1	:
+gnu	maplist	2	1	?
+gnu	maplist	3	2	?	?
+gnu	maplist	4	3	?	?	?
+gnu	maplist	5	4	?	?	?	?
+gnu	nospy	1	:
+gnu	once	1	0
+gnu	phrase	2	2	?
+gnu	phrase	3	2	?	?
+gnu	predicate_property	2	:	?
+gnu	retract	1	:
+gnu	retractall	1	:
+gnu	setof	3	?	0	-
+gnu	spy	1	:
+swi	$	1	0
+swi	$autoload	1	:
+swi	$clausable	1	:
+swi	$define_predicate	1	:
+swi	$defined_predicate	1	:
+swi	$dwim_correct_goal	3	:	+	-
+swi	$find_predicate	2	:	-
+swi	$hide	1	:
+swi	$ifcompiling	1	0
+swi	$iso	1	:
+swi	$load_wic_files	1	:
+swi	$meta_call	1	0
+swi	$similar_module	2	:	-
+swi	$valid_directive	1	:
+swi	$wfs_call	2	0	:
+swi	$wrap_predicate	5	:	+	-	-	+
+swi	*->	2	0	0
+swi	,	2	0	0
+swi	->	2	0	0
+swi	;	2	0	0
+swi	@	2	0	+
+swi	[|]	2	:	+
+swi	\+	1	0
+swi	abolish_table_subgoals	1	:
+swi	apply	2	:	+
+swi	assert	1	:
+swi	assert	2	:	-
+swi	asserta	1	:
+swi	asserta	2	:	-
+swi	assertz	1	:
+swi	assertz	2	:	-
+swi	at_halt	1	0
+swi	autoload	1	:
+swi	autoload	2	:	+
+swi	bagof	3	?	^	-
+swi	call	1	0
+swi	call	2	1	?
+swi	call	3	2	?	?
+swi	call	4	3	?	?	?
+swi	call	5	4	?	?	?	?
+swi	call	6	5	?	?	?	?	?
+swi	call	7	6	?	?	?	?	?	?
+swi	call	8	7	?	?	?	?	?	?	?
+swi	call_cleanup	2	0	0
+swi	call_cleanup	3	0	?	0
+swi	call_dcg	3	//	?	?
+swi	call_residue_vars	2	0	-
+swi	call_with_depth_limit	3	0	+	-
+swi	call_with_inference_limit	3	0	+	-
+swi	catch	3	0	?	0
+swi	catch_with_backtrace	3	0	?	0
+swi	clause	2	:	?
+swi	compile_predicates	1	:
+swi	consult	1	:
+swi	current_op	3	+	+	:
+swi	current_predicate	2	?	:
+swi	current_resource	2	:	?
+swi	current_signal	3	?	?	:
+swi	current_table	2	:	-
+swi	det	1	:
+swi	discontiguous	1	:
+swi	dwim_predicate	2	:	-
+swi	dynamic	1	:
+swi	dynamic	2	:	+
+swi	engine_create	3	?	0	-
+swi	engine_create	4	?	0	-	+
+swi	ensure_loaded	1	:
+swi	findall	3	?	0	-
+swi	findall	4	?	0	-	?
+swi	findnsols	4	+	?	0	-
+swi	findnsols	5	+	?	0	-	?
+swi	forall	2	0	0
+swi	format	2	+	:
+swi	format	3	+	+	:
+swi	format_predicate	2	+	0
+swi	freeze	2	?	0
+swi	ignore	1	0
+swi	initialization	1	0
+swi	initialization	2	0	+
+swi	load_files	1	:
+swi	load_files	2	:	+
+swi	module_transparent	1	:
+swi	multifile	1	:
+swi	non_terminal	1	:
+swi	noprofile	1	:
+swi	not	1	0
+swi	not_exists	1	0
+swi	notrace	1	0
+swi	on_signal	3	+	:	:
+swi	once	1	0
+swi	op	3	+	+	:
+swi	open_resource	2	:	-
+swi	open_resource	3	:	-	+
+swi	phrase	2	//	?
+swi	phrase	3	//	?	?
+swi	predicate_property	2	:	?
+swi	prolog_frame_attribute	3	+	+	:
+swi	prolog_listen	2	+	:
+swi	prolog_listen	3	+	:	+
+swi	prolog_unlisten	2	+	:
+swi	public	1	:
+swi	qcompile	1	:
+swi	qcompile	2	:	+
+swi	reexport	1	:
+swi	reexport	2	:	+
+swi	register_iri_scheme	3	+	3	+
+swi	require	1	:
+swi	reset	3	0	?	-
+swi	residual_goals	1	2
+swi	retract	1	:
+swi	retractall	1	:
+swi	rule	2	:	-
+swi	rule	3	:	-	?
+swi	setof	3	?	^	-
+swi	setup_call_catcher_cleanup	4	0	0	?	0
+swi	setup_call_cleanup	3	0	0	0
+swi	sig_atomic	1	0
+swi	sig_block	1	:
+swi	sig_unblock	1	:
+swi	snapshot	1	0
+swi	source_file	2	:	?
+swi	start_abstract_tabling	3	+	+	0
+swi	start_moded_tabling	5	+	+	0	+	?
+swi	start_tabling	3	+	+	0
+swi	table	1	:
+swi	thread_create	2	0	-
+swi	thread_create	3	0	?	+
+swi	thread_idle	2	0	+
+swi	thread_initialization	1	0
+swi	thread_local	1	:
+swi	thread_signal	2	+	0
+swi	thread_update	2	0	:
+swi	thread_wait	2	0	:
+swi	tnot	1	0
+swi	transaction	1	0
+swi	transaction	3	0	0	+
+swi	undo	1	0
+swi	untable	1	:
+swi	unwrap_predicate	2	:	?
+swi	use_foreign_library	1	:
+swi	use_foreign_library	2	:	+
+swi	use_module	1	:
+swi	use_module	2	:	+
+swi	volatile	1	:
+swi	with_mutex	2	+	0
+swi	with_output_to	2	+	0
+swi	with_tty_raw	1	0
