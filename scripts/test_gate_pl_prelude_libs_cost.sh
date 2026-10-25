@@ -38,6 +38,12 @@
 #          207,504, was 295,005). Measured 14,116,171 on c399cd256 + this landing, 14,224,525 with quintus vendored (was 25,810,564
 #          by the linear scans on c399cd256, the cfo's reading; quintus cost 0.88M under them on 70f3505ed and costs 0.11M now);
 #          the cap keeps ~5% over the reading.
+#          RE-PINNED 15,000,000 -> 17,300,000 (hq_runtime 2026-10-25, the cto's ruling (a), ARCH-PROLOG-DATABASE.md 4b: the injector
+#          compiles a library's reachable closure, not the whole file): the closure is a worklist over one name index of the base
+#          and library clauses, so a clause is walked only once a reached name matches it. Measured 15,106,309 on b3da059be (the
+#          last tree before the closure; the arm had drifted over the 15,000,000 pin by then) and 16,427,470 with the closure;
+#          the cap keeps ~5% over the reading. The parse count reads the calls pl_libs_append makes to pl_prelude_parse, the
+#          one road to prolog_parse since ae43ed256 (the count read 0 there, red with the right libraries parsed).
 #     are parsed -- rbtrees and error (must_be/2), 2 parses, pinned from the measurement and re-pinned with a reason when
 #     the vendored set changes what rbtrees reaches -- and pl_libs_append <= 25,000,000 instructions (measured 20,842,950:
 #     rbtrees is 1152 lines and error 463, parsed at ~40,000 instructions a line as the base prelude is; apply alone was
@@ -100,7 +106,7 @@ for line in open(sys.argv[1]):
         else: callee = names[i]
         continue
     m = re.match(r'^calls=(\d+)', line)
-    if m and cur == 'pl_libs_append' and callee == 'prolog_parse': parses += int(m.group(1))
+    if m and cur == 'pl_libs_append' and callee in ('prolog_parse', 'pl_prelude_parse'): parses += int(m.group(1))
 print(parses, found)
 PY
 }
@@ -116,7 +122,7 @@ read -r p4 f4 <<< "$(reading data)"
 [ "$f2" = True ] && [ -n "$i2" ] || refuse "arm 2: pl_libs_append is not in the profile -- the reader found nothing"
 if [ "$p1" = 0 ] && [ "$i1" -le 540000 ]; then echo "  ARM 1 GREEN: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (<= 540,000)"
 else echo "  ARM 1 RED: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (want 0 and <= 540,000)"; red=1; fi
-b2=15000000
+b2=17300000
 if [ "$p2" = "$want" ] && [ "$i2" -le "$b2" ]; then echo "  ARM 2 GREEN: naming rbtrees parsed $p2 libraries (rbtrees and error: $want), pl_libs_append $i2 instructions (<= $b2)"
 else echo "  ARM 2 RED: naming rbtrees parsed $p2 libraries (want rbtrees and error, $want), pl_libs_append $i2 instructions (want <= $b2)"; red=1; fi
 if [ "$p3" = 0 ]; then echo "  ARM 3 GREEN: a program whose aggregate_all/3 calls SCRIP lowers itself parsed $p3 libraries"
