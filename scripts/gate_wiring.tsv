@@ -768,6 +768,7 @@ test_gate_pl_bom_is_written_detected_and_reported.sh	WIRED	-	-	-
 test_gate_pl_catch_between_sub_atom_and_atom_concat_exit_deterministically_on_their_last_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_clause_2_reads_static_code_on_every_road_and_obeys_the_iso_and_protect_flags.sh	WIRED	-	-	-
 test_gate_pl_clause_2_sees_the_clauses_of_its_call.sh	WIRED	-	-	-
+test_gate_pl_clause_of_a_variable_head_in_a_plunit_unit_returns_its_body_goals_unqualified_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_clpfd_helpers_called_by_name_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_compiled_tables_refuse_a_mismatch.sh	WIRED	-	-	-
 test_gate_pl_consult_loads_a_file_of_clauses_directives_and_initialization_goals.sh	WIRED	-	-	-
