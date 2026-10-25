@@ -713,6 +713,7 @@ test_gate_pl_a_program_that_links_setup_call_cleanup_compiles_and_links_a_predic
 test_gate_pl_a_program_with_more_than_64_dynamic_declarations_keeps_every_one.sh	WIRED	-	-	-
 test_gate_pl_a_programs_dialect_follows_its_own_markers.sh	WIRED	-	-	-
 test_gate_pl_a_quoted_atom_doubles_its_apostrophe.sh	WIRED	-	-	-
+test_gate_pl_a_retaining_if_then_else_inside_an_inline_between_loop_retries_its_generator_every_iteration_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_run_time_clause_calling_a_predicate_created_by_assert_sees_every_clause.sh	WIRED	-	-	-
 test_gate_pl_a_run_time_compile_indexes_the_root_cells_through_the_roots_registry.sh	WIRED	-	-	-
 test_gate_pl_a_shift_outside_the_int64_window_is_computed_not_wrapped.sh	WIRED	-	-	-
