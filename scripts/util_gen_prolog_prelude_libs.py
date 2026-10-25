@@ -112,7 +112,7 @@ LIB_PATH = {"dcg_basics": "dcg/basics"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
-                  "listing": {"portray_blob"}}
+                  "listing": {"portray_blob"}, "simplex": {"clear_parent"}}
 LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines"}
 WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
 SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"},
@@ -122,7 +122,8 @@ QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
 WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=<", 2), ("#>=", 2), ("#/\\", 2), ("#\\/", 2), ("#\\", 1), ("#==>", 2)}}}
 EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
 INIT_DROPS = {"clpfd": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
-              "random": {"check_gmp": "only prints a warning when SWI is built without GMP; SCRIP's integers are unbounded"}}
+              "random": {"check_gmp": "only prints a warning when SWI is built without GMP; SCRIP's integers are unbounded"},
+              "simplex": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"}}
 # An initialization directive whose only effect, with no foreign library, is to ASSERT clauses: the directive's text is replaced by those
 # clauses, verbatim from the library's own fallback branch, before the file is read and keyed, so they are keyed, renamed and exported
 # like any other clause (cfo 2026-10-14, row prolog-swi-library-test-pio-...-ceo-1664): readutil's link_foreign/0 tries
