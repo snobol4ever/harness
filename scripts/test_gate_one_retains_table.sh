@@ -21,7 +21,9 @@ if awk '/^static int zls_home_dyn\(/{f=1} f&&/case IR_/{print; exit} f&&/^}/{exi
 grep -q 'planner_home_dyn' "$SRC/ir/frame_layout.c" || { echo "RED: frame_layout.c does not read planner_home_dyn"; bad=1; }
 # the emitter's retaining kinds must be the planner's view
 if grep -q 'static int icn_retaining_kind(int op) { return op == IR_' "$SRC/emitter/emit.cpp"; then echo "RED: emit.cpp icn_retaining_kind lists kinds itself (a second retains table)"; bad=1; fi
-grep -q 'planner_retains_emitter_view' "$SRC/emitter/emit.cpp" || { echo "RED: emit.cpp does not read planner_retains_emitter_view"; bad=1; }
+grep -q 'planner_retains_emitter_view' "$SRC/planner/act_words.cpp" || { echo "RED: the planner's act_words.cpp does not read planner_retains_emitter_view (the emitter's retains fact is planner_graph_retains since SCRIP 7affeda58, the emitter half)"; bad=1; }
+grep -q 'planner_graph_retains' "$SRC/emitter/emit.cpp" || { echo "RED: emit.cpp does not read planner_graph_retains (the one retains fact the emitter may read)"; bad=1; }
+grep -q 'planner_retains_emitter_view' "$SRC/emitter/emit.cpp" && { echo "RED: emit.cpp reads planner_retains_emitter_view itself (the emitter decides nothing since 7affeda58: its fact is planner_graph_retains)"; bad=1; }
 n_outside=$(grep -l 'IR_PROC_GEN || op == IR_CALL_VALUE\|case IR_CALL_GEN:' "$SRC"/emitter/*.cpp "$SRC"/ir/*.c "$SRC"/templates/bb/*.cpp 2>/dev/null | wc -l)
 echo "ONE_RETAINS_TABLE root=$ROOT planner_retains=$(grep -c '^int planner_retains(const IR_t \* nd) {' "$SRC/planner/zeta_plan.cpp") kind_lists_outside_planner=$n_outside verdict=$([ $bad = 0 ] && echo GREEN || echo RED)"
 [ $bad = 0 ]
