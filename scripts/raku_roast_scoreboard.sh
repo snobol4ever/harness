@@ -331,7 +331,14 @@ if [ "$DO_RUN" = 1 ]; then
   # the operator was sent to reproduce a refusal that had already happened. A refusal only works if someone can
   # read it, which is the same rule this board already applies to its own arms.
   PC_ERR="$TMP/parse_census.err"
-  if PC_LINE=$(bash "$ROOT/../harness/scripts/util_raku_parse_census.sh" $PC_ARGS 2>"$PC_ERR" | grep '^RAKU_PARSE_COVERAGE '); then
+  # ⛔ A PART RUN (S4E_CHUNK set: one entry, a shell or a chunk) TAKES NO CENSUS (ceo 2026-10-25, Lon: "the fleet is idle. figure out why
+  # the machine is busy."): the census parses the WHOLE roast population with scrip --dump-ast, about 25 s, and the coo's loop grades roast
+  # one entry at a time, up to eight at once, so every one-entry grade re-parsed all of roast; a part is never the suite's row (CEO-1802),
+  # so its board line names the census as not taken, and a whole run still takes it.
+  if [ -n "${S4E_CHUNK:-}" ]; then
+    PC_LINE="RAKU_PARSE_COVERAGE NOT-TAKEN -- a part run (S4E_CHUNK=$S4E_CHUNK) is never the suite's row; the census runs on a whole board"
+    printf '%s\n' "$PC_LINE"
+  elif PC_LINE=$(bash "$ROOT/../harness/scripts/util_raku_parse_census.sh" $PC_ARGS 2>"$PC_ERR" | grep '^RAKU_PARSE_COVERAGE '); then
     printf '%s\n' "$PC_LINE"
   else
     PC_WHY=$(grep -m1 -E 'REFUS|⛔' "$PC_ERR" 2>/dev/null | sed 's/^[[:space:]]*//' | cut -c1-200)
