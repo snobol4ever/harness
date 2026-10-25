@@ -31,6 +31,11 @@ references it finds in the parsed library, selects the libraries that one needs,
       det, set_prolog_flag ...) are dropped, each counted on stdout; conditional compilation (if/elif/else/endif) is
       kept for SCRIP's reader.  ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
       (dynamic, initialization, a term-expansion trigger) is decided when a library brings one, never dropped silently.
+      A library(settings) declaration, :- setting(M:Name, Type, Default, Comment), is dropped (the cto's ruling 4,
+      ARCH-PROLOG-DATABASE.md sec 4): the base prelude answers setting/2 for exactly the settings a vendored library
+      reads, with swipl 9.0.4's measured defaults (library(listing)'s five), so a setting no base rule answers raises
+      existence_error at its first read, never a silent default.  :- thread_local is kept: SCRIP's reader takes it as
+      :- dynamic, its meaning in a single-threaded runtime.
   (3) HOOK CLAUSES.  A module-qualified head (sandbox:safe_primitive(...), prolog:message(...)) and a term_expansion or
       goal_expansion clause are dropped and named: they extend another module or the loader, and the expansion clause
       would turn on the program's own expansion machinery.
@@ -100,15 +105,18 @@ REFS_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_refs.pl")
 
 DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multifile", "public", "det", "set_prolog_flag",
                    "$clausable", "noprofile", "license", "discontiguous", "module_transparent", "predicate_options",
-                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide"}
-KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic"}
+                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting"}
+KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
 EXPANDED = {"clpfd", "csv"}
 LIB_PATH = {"dcg_basics": "dcg/basics"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
-                            "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"}}
+                            "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
+                  "listing": {"portray_blob"}}
 LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines"}
-SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"}}
+WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
+SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"},
+           "listing": {("portray_clause", 1): WHY_LISTING_PC, ("portray_clause", 2): WHY_LISTING_PC, ("portray_clause", 3): WHY_LISTING_PC}}
 QUIET = {"gnu_fd": {("fd_dom", 2)}, "tabling": {("undefined", 0)}}
 QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
 WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=<", 2), ("#>=", 2), ("#/\\", 2), ("#\\/", 2), ("#\\", 1), ("#==>", 2)}}}
@@ -185,6 +193,11 @@ argv_usage(M:Level) :-"""),
     ;   true
     ),
 """, "")],
+    "listing": [("%s (portray_clause/3)" % WHY_MAIN_META, """portray_clause(Stream, Term, M:Options) :-""", """portray_clause(Stream, Term, Options) :-
+    Options \\= _:_,
+    !,
+    portray_clause(Stream, Term, user:Options).
+portray_clause(Stream, Term, M:Options) :-""")],
     "gensym": [("atom_concat/3 is ISO outside the SWI dialect (a number argument is a type_error), so the library's own symbol is built by atomic_list_concat/2, which takes "
                 "the number in every dialect", """    New is Old+1,
     atom_concat(Base, New, Atom).""", """    New is Old+1,
