@@ -704,6 +704,7 @@ test_gate_pl_a_library_keeps_its_own_definitions_when_the_user_redefines_an_expo
 test_gate_pl_a_library_reaching_with_output_to_pulls_its_stream_sink_road.sh	WIRED	-	-	-
 test_gate_pl_a_list_goal_consults_its_files_directly_and_through_call.sh	WIRED	-	-	-
 test_gate_pl_a_loaded_clause_creates_its_dynamic_predicate_and_a_dot_P_file_loads_as_named.sh	WIRED	-	-	-
+test_gate_pl_a_malformed_term_raises_swipls_syntax_error_name_in_the_swi_dialect.sh	WIRED	-	-	-
 test_gate_pl_a_memory_limit_is_a_catchable_resource_error_for_length_numlist_and_the_trail_arena_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_meta_call_of_a_compiled_predicate_jumps_to_it_and_resumes_through_its_token.sh	WIRED	-	-	-
 test_gate_pl_a_meta_called_format_reads_its_empty_argument_list.sh	WIRED	-	-	-
