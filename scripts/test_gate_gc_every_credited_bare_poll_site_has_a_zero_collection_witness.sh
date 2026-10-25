@@ -66,7 +66,8 @@ TABLE="$ROOT/../harness/scripts/gc_bare_poll_witnesses.tsv"
 # 57 over 165 on the re-key after cf6af2b58 (cto 2026-10-09, hq_raku's report): the SNOBOL4 trace-hook landing renamed the three role-4 shim hook polls to their _i forms and added
 # sno_trace_return, so origin read undeclared 5 and retired 4 (unwitnessed 62); every one of the five is reached by hb_sno_a_call_with_more_arguments_than_formals_takes_the_open_road.sno
 # or hb_shim_nv_road.sno at zero collections in both modes, and the table carried two more witnessed rows than the old ceiling credited, so the ceiling falls to 57 and nothing arrives.
-CEILING="${BARE_POLL_UNWITNESSED_CEILING:-60}"
+# 55 over 154 on the re-key after the spine flip and the witnesses it owed (hq_collector 2026-10-24, row gc-bare-poll-witness-table-is-stale-...): the table read undeclared 1 and retired 16 against origin 336a29fcd (bb_call_fn.cpp's by-name road changed its callee set) and 64 unwitnessed; nothing arrives. The 64 were 37 declared before, 12 arrivals and 15 that HAD a witness and lost it to the flip (the frame-slot arms of the templates, reached only by a cell off the spine). Nine new witnesses reach nine sites at zero collections in both modes, each with a ref cut from the oracle: hb_icn_swap_two_list_elements (bb_swap_var.cpp:24), hb_icn_section_of_a_string_and_a_list (bb_section.cpp:69), hb_icn_scan_any_and_bal_with_a_cset (bb_scan_any.cpp:69 and :91, bb_scan_bal.cpp:75 and :123), hb_icn_assign_the_scan_position_and_subject (bb_keyword_assign.cpp:38 and :54) and hb_sno_a_computed_goto_to_a_label_name (bb_goto_deferred.cpp:36); the ceiling falls from 60 to the 55 that remain.
+CEILING="${BARE_POLL_UNWITNESSED_CEILING:-55}"
 [ "${FAIL_ONCE:-0}" = 1 ] && CEILING=0
 checks=0; fails=0
 ck() { checks=$((checks+1)); if [ "$1" = ok ]; then echo "  ok   $2"; else fails=$((fails+1)); echo "  FAIL $2"; fi; }

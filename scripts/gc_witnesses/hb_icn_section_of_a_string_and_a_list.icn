@@ -1,0 +1,9 @@
+procedure main()
+   local s, k, L;
+   s := "abcdefghijklmnopqrstuvwxyz";
+   k := s[3+:4];
+   write(k);
+   L := [10, 20, 30, 40, 50];
+   write(*L[2:4], " ", L[2:4][1]);
+   write(s[2:0]);
+end

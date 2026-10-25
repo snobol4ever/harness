@@ -1,0 +1,5 @@
+        L = 'DONE'
+        :($L)
+        OUTPUT = 'skipped'
+DONE    OUTPUT = 'landed'
+END

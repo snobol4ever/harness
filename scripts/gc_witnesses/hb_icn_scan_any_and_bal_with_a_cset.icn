@@ -1,0 +1,11 @@
+procedure main()
+   local s, c, d;
+   s := "abc(def)ghi";
+   c := 'abc';
+   d := '(';
+   s ? write(any(c));
+   s ? write(tab(any('abc')));
+   s ? every write(bal(d));
+   s ? every write(bal('+'));
+   s ? write(bal(d, '(', ')'));
+end

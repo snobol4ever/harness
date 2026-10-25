@@ -1,0 +1,6 @@
+procedure main()
+   local s;
+   s := "abcdefgh";
+   s ? { &pos := 3; write(&pos, " ", tab(0)) };
+   s ? { &subject := "xyz"; write(&subject, " ", &pos) };
+end
