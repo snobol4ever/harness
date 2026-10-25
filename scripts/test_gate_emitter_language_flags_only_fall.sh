@@ -27,6 +27,14 @@
 # second hosting pass (SCRIP 2eb1aadd9, 6e1dd9a8b) -- both go when zst_plan's regime returns are deleted (3.5 WHAT THIS REPLACES). The other five
 # reads above the floor were CURED, not floored: x86_zop's ZSM call reads the branch it sits in (zframe_graph, frame_retained and icn_frame_rbp
 # were re-derived beside it, from bcd2ef252), planner.h's duplicate zls_g_resumable_frame prototype, and the uplevel skip reads the declared reason.
+# RE-FLOORED 2026-10-25 00:xx CDT by the cfo, in its name, on the cto's read of 7affeda58 (CEO-1954/1971; the planner half 0d3a92f14 and the emitter half 7affeda58 both
+# read graph_fact_reads 218 over 177): THE PLACEMENT RECORD moved the emitter's placement reads into src/planner (planner_home_icn, planner_home_pl, zd_place) --
+# spine_cells 26 -> 37 (zeta_plan.cpp 24), emit_resumable_frame 19 -> 21 (zeta_plan.cpp 15), zls_g_resumable_frame 12 -> 16 (zeta_plan.cpp 4), body_root 21 -> 24
+# (act_words.cpp 3), home_frame 2 -> 9 (zeta_plan.cpp 8), zls_g_home_frame 2 -> 16 (zeta_plan.cpp 6, emit.cpp 7, x86_asm.h 2), root_graph 21 -> 22 (emit.cpp 13,
+# xa_flat.cpp 6, bb_glue_flat.cpp 2); frame_retained FELL 6 -> 5 (the emitter half's deletion) and the floor follows it down. The planner's reads are the one decider
+# reading the lowerer's coarse facts and FALL as each regime switch replaces zd_pl_home()/zls_g_home_frame/zls_g_resumable_frame with the retains table and node
+# facts (ARCH-PROLOG-ACTIVATION-LIFETIME.md section 3, ARCH-THREE-ZETAS 6.3 step (d)); the emitter's zls_g_home_frame 9 and root_graph 22 are debt named to those
+# same landings. A floor may only fall from here.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }
@@ -34,7 +42,7 @@ python3 - "$SCRIP" <<'PYEOF'
 import re, sys, glob, os
 root = sys.argv[1]
 DELETED = ("icn_cells_graph", "emit_pl_frame", "zls_g_pl_frame", "pl_frame", "icn_retain")
-GRAPH_FACT = {"zframe_graph": 30, "cell_frame": 38, "spine_cells": 26, "resumable_frame": 0, "emit_resumable_frame": 19, "zls_g_resumable_frame": 12, "frame_retained": 6, "root_graph": 21, "body_root": 21, "home_frame": 2, "zls_g_home_frame": 2}
+GRAPH_FACT = {"zframe_graph": 30, "cell_frame": 38, "spine_cells": 37, "resumable_frame": 0, "emit_resumable_frame": 21, "zls_g_resumable_frame": 16, "frame_retained": 5, "root_graph": 22, "body_root": 24, "home_frame": 9, "zls_g_home_frame": 16}
 LANG_PREFIX = {"icn": 97, "pl": 165, "rk": 37, "sno": 41, "pas": 10, "snc": 0, "reb": 0, "raku": 0, "plw": 0}
 files = []
 for pat in ("src/emitter/*.cpp", "src/emitter/*.h", "src/planner/*.cpp", "src/planner/*.h", "src/templates/**/*.cpp", "src/templates/**/*.h", "src/templates/**/*.inc"):
