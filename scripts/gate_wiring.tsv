@@ -726,6 +726,7 @@ test_gate_pl_a_text_stream_reads_characters_not_bytes.sh	WIRED	-	-	-
 test_gate_pl_a_thousand_asserted_clauses_cost_a_thousand_clause_compilations_not_a_million.sh	WIRED	-	-	-
 test_gate_pl_a_thrown_ball_never_redoes_a_builtin_generator.sh	WIRED	-	-	-
 test_gate_pl_a_traced_run_answers_as_the_untraced_run_in_both_modes.sh	WIRED	-	-	-
+test_gate_pl_a_transaction_or_snapshot_undoes_the_database_and_leaves_the_tables_as_swipl_does.sh	WIRED	-	-	-
 test_gate_pl_a_use_module_directive_after_the_clauses_changes_nothing_in_mode_4.sh	WIRED	-	-	-
 test_gate_pl_a_write_to_a_binary_current_output_raises_permission_error.sh	WIRED	-	-	-
 test_gate_pl_a_zero_arity_term_is_the_atom_in_both_modes.sh	WIRED	-	-	-
