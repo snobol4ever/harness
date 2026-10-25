@@ -31,7 +31,8 @@ references it finds in the parsed library, selects the libraries that one needs,
       det, set_prolog_flag ...) are dropped, each counted on stdout; conditional compilation (if/elif/else/endif) is
       kept for SCRIP's reader.  :- use_foreign_library(foreign(F)) is dropped: SCRIP loads no foreign library, and the predicates F
       defines are answered by the base prelude, measured against swipl (library(http/json)'s json_skip_ws/3, json_write_string/2 and
-      json_write_indent/3).  ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
+      json_write_indent/3).  :- expects_dialect(swi) is dropped: SCRIP reads every vendored library as SWI.
+      ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
       (dynamic, initialization, a term-expansion trigger) is decided when a library brings one, never dropped silently.
       A library(settings) declaration, :- setting(M:Name, Type, Default, Comment), is dropped (the cto's ruling 4,
       ARCH-PROLOG-DATABASE.md sec 4): the base prelude answers setting/2 for exactly the settings a vendored library
@@ -65,7 +66,16 @@ for rbtrees where it wants 2, red since 43a241a77 added list_or_partial_list/1);
 bare closure.
 
 A library whose SWI path is not its file stem is named in LIB_PATH (dcg_basics.pl is SWI's library/dcg/basics.pl, module
-dcg_basics): the reader resolves and identity-checks it there.
+dcg_basics): the reader resolves and identity-checks it there.  A library SWI builds from several module files is vendored
+ONE FILE PER LIBRARY, each under its module's name (library(clpq): clpq.pl, its sub-files bb_q.pl ... store_q.pl from
+clp/clpq/ and clpqr_class.pl ... clpqr_redund.pl from clp/clpqr/), so a sub-file's helpers are renamed <module>:<name> and
+a module-qualified call from one sub-file into another (bv_q:pivot(...) in clpqr_project) names exactly that private copy.
+A library in IMPORT_ONLY_FRONTS and every library it loads through a RELATIVE use_module (its own sub-files, followed
+transitively) is IMPORT-ONLY: the injector selects it by name only when the program imports it or an imported library
+loads it, the LOADS list emitted beside its exports (swipl autoloads none of clpq: its exports are also clpr's, and its
+sub-files are in no autoload index).  Without it a data term selected a sub-file -- rbtrees' DCG body {L == ''} is the
+functor {}/1 that nf_q exports, and naming rbtrees parsed 14 libraries.  A library loaded as library(X) (lists, ugraphs)
+keeps the ordinary selection by name.
 
 A library in LOCAL is SCRIP's OWN text (gnu_fd.pl, AGPL): no SWI reader, no identity check, no renames (its helpers are
 '$'-named by hand); its exports and operators come from its module directive and its clause heads are keyed by this
@@ -109,10 +119,12 @@ HOOK_DYN = ("directive multifile of a hook the library calls and defines no clau
             "undeclared predicate would raise existence_error (library(http/json)'s json_write_hook/4)")
 DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multifile", "public", "det", "set_prolog_flag",
                    "$clausable", "noprofile", "license", "discontiguous", "module_transparent", "predicate_options",
-                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting", "use_foreign_library"}
+                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting", "use_foreign_library",
+                   "expects_dialect"}
 KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
 EXPANDED = {"clpfd", "csv", "lazy_lists", "json"}
-LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json"}
+IMPORT_ONLY_FRONTS = {"clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files"}
+LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
@@ -379,8 +391,28 @@ def parse_exports(s, path):
         if len(e) == 3 and atom_value(e[0]) is not None and atom_value(e[1]) in ("/", "//") and e[2][0] == "num":
             exports.append((atom_value(e[0]), int(e[2][1]) + (2 if atom_value(e[1]) == "//" else 0)))
             continue
+        if len(e) == 4 and e[0] == ("punct", "{") and e[1] == ("punct", "}") and atom_value(e[2]) in ("/", "//") and e[3][0] == "num":
+            exports.append(("{}", int(e[3][1]) + (2 if atom_value(e[2]) == "//" else 0)))
+            continue
         raise Refuse("%s: an export this generator cannot read (%s)" % (path, " ".join(t[1] for t in e)))
     return mod, exports, ops
+
+
+def use_module_specs(s):
+    """s are the significant tokens of ':- use_module(Spec[, Imports])'.  Returns its specs as ("library", Path) or ("relative", Path)."""
+    if len(s) < 3 or s[2] != ("punct", "("):
+        return []
+    args, _ = top_level_args(s, 2)
+    if not args:
+        return []
+    elems = top_level_args(args[0], 0)[0] if args[0][0] == ("punct", "[") else [args[0]]
+    out = []
+    for e in elems:
+        kind = "relative"
+        if len(e) > 2 and atom_value(e[0]) == "library" and e[1] == ("punct", "("):
+            kind, e = "library", e[2:-1]
+        out.append((kind, "".join(atom_value(t) if t[0] in ("atom", "qatom") else t[1] for t in e)))
+    return out
 
 
 def expanded_text(path, lib):
@@ -542,7 +574,7 @@ def process(path):
     if read_path:
         os.unlink(read_path)
     mod, exports, ops, kept, drops, keyed, hooks, libops = None, [], [], [], dict(init_drops), [], [], set()
-    cross, dynrep = {}, {}
+    cross, dynrep, uses = {}, {}, []
     defined = {(n, a) for k, a, n in heads.values() if k not in ("directive", "unkeyable", "qualified") and n}
     off = 0
     for no, cl in enumerate(split_clauses(toks), 1):
@@ -594,6 +626,8 @@ def process(path):
                     kept.append((start, off))
                     drops[HOOK_DYN] = drops.get(HOOK_DYN, 0) + len(hooks_dyn)
                     continue
+            if d == "use_module":
+                uses.extend(use_module_specs(s))
             if d in DROP_DIRECTIVES:
                 drops["directive " + d] = drops.get("directive " + d, 0) + 1
                 continue
@@ -682,7 +716,7 @@ def process(path):
         drops["shadows %s/%d of other libraries: %s" % (k[0], k[1], why)] = 1
     return {"lib": lib, "exports": [e for e in exports if e not in OMIT.get(lib, {}) and e not in cside], "cside": cside, "renames": renamed, "ops": ops, "as_op": as_op,
             "shadows": sorted(SHADOWS.get(lib, {})), "quiet": sorted(QUIET.get(lib, set())),
-            "drops": drops, "as_data": as_data, "text": text, "atoms": {atom_value(t) for t in out_toks if t[0] in ("atom", "qatom")}}
+            "drops": drops, "as_data": as_data, "text": text, "atoms": {atom_value(t) for t in out_toks if t[0] in ("atom", "qatom")}, "uses": uses}
 
 
 def c_string_lines(text):
@@ -719,9 +753,27 @@ def generate(pdir):
             L["quiet"] = sorted(set(L["quiet"]) | {(n, 0) for n, _ in L["exports"]})
     for L in libs:
         L["names"] = sorted(M["lib"] for M in libs if M is not L and any(n in L["atoms"] for n, _ in M["exports"]))
+    by_path = {LIB_PATH.get(L["lib"], L["lib"]): L["lib"] for L in libs}
+    for L in libs:
+        base = os.path.dirname(LIB_PATH.get(L["lib"], L["lib"]))
+        L["loads_rel"] = sorted({by_path[q] for q in (os.path.normpath(os.path.join(base, p)) for k, p in L["uses"] if k == "relative") if q in by_path})
+    import_only, todo = set(), sorted(IMPORT_ONLY_FRONTS)
+    for f in todo:
+        if f not in by_lib:
+            raise Refuse("IMPORT_ONLY_FRONTS names %s, which is not a vendored library" % f)
+    while todo:
+        f = todo.pop()
+        if f not in import_only:
+            import_only.add(f)
+            todo.extend(by_lib[f]["loads_rel"])
+    for L in libs:
+        L["import_only"] = L["lib"] in import_only
+        L["loads"] = L["loads_rel"] if L["import_only"] else []
+        if L["import_only"]:
+            L["drops"]["selected only when the program imports it, or a library it imports loads it (IMPORT_ONLY_FRONTS)"] = 1
     o = ["typedef struct { const char *nm; int ar; } pl_prelude_lib_pi_t;",
          "typedef struct { int pri; const char *type; const char *nm; } pl_prelude_lib_op_t;",
-         "typedef struct { const char *lib; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; } pl_prelude_lib_t;"]
+         "typedef struct { const char *lib; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; const char *const *loads; int import_only; } pl_prelude_lib_t;"]
     for i, L in enumerate(libs):
         o.append("static const pl_prelude_lib_pi_t PL_PRELUDE_LIB_%d_EXPORTS[] = {" % i)
         for n, a in L["exports"]:
@@ -739,13 +791,14 @@ def generate(pdir):
             o.append('    { %d, "%s", "%s" },' % (pri, ty, n.replace("\\", "\\\\").replace('"', '\\"')))
         o.append("    { 0, 0, 0 }")
         o.append("};")
+        o.append("static const char *const PL_PRELUDE_LIB_%d_LOADS[] = { %s0 };" % (i, "".join('"%s", ' % m for m in L["loads"])))
         o.append("static const char PL_PRELUDE_LIB_%d_SRC[] =" % i)
         o.extend(c_string_lines(L["text"]))
         o[-1] += ";"
     o.append("static const pl_prelude_lib_t PL_PRELUDE_LIBS[] = {")
     for i, L in enumerate(libs):
-        o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC },' % (L["lib"], i, i, i, i, i))
-    o.append("    { 0, 0, 0, 0, 0, 0 }")
+        o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC, PL_PRELUDE_LIB_%d_LOADS, %d },' % (L["lib"], i, i, i, i, i, i, int(L["import_only"])))
+    o.append("    { 0, 0, 0, 0, 0, 0, 0, 0 }")
     o.append("};")
     return libs, "\n".join(o) + "\n"
 
