@@ -29,7 +29,9 @@ references it finds in the parsed library, selects the libraries that one needs,
       is pulled only through the closure of what the program calls.
   (2) DIRECTIVES.  The module system's own directives (module, use_module, autoload, meta_predicate, multifile, public,
       det, set_prolog_flag ...) are dropped, each counted on stdout; conditional compilation (if/elif/else/endif) is
-      kept for SCRIP's reader.  ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
+      kept for SCRIP's reader.  :- use_foreign_library(foreign(F)) is dropped: SCRIP loads no foreign library, and the predicates F
+      defines are answered by the base prelude, measured against swipl (library(http/json)'s json_skip_ws/3, json_write_string/2 and
+      json_write_indent/3).  ANY OTHER DIRECTIVE REFUSES rc=2 by name: a directive that changes what a library means
       (dynamic, initialization, a term-expansion trigger) is decided when a library brings one, never dropped silently.
       A library(settings) declaration, :- setting(M:Name, Type, Default, Comment), is dropped (the cto's ruling 4,
       ARCH-PROLOG-DATABASE.md sec 4): the base prelude answers setting/2 for exactly the settings a vendored library
@@ -103,12 +105,14 @@ PRELUDE_DIR = os.path.join(ROOT, "src", "parsers", "prolog", "prelude")
 DEFAULT_OUT = os.path.join(ROOT, "src", "parsers", "prolog", "prolog_prelude_libs.inc")
 REFS_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_refs.pl")
 
+HOOK_DYN = ("directive multifile of a hook the library calls and defines no clause for, kept as :- dynamic: swipl fails such a call quietly, and an "
+            "undeclared predicate would raise existence_error (library(http/json)'s json_write_hook/4)")
 DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multifile", "public", "det", "set_prolog_flag",
                    "$clausable", "noprofile", "license", "discontiguous", "module_transparent", "predicate_options",
-                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting"}
+                   "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting", "use_foreign_library"}
 KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
-EXPANDED = {"clpfd", "csv", "lazy_lists"}
-LIB_PATH = {"dcg_basics": "dcg/basics"}
+EXPANDED = {"clpfd", "csv", "lazy_lists", "json"}
+LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
@@ -384,7 +388,7 @@ def expanded_text(path, lib):
     restored after the last clause."""
     if not shutil.which("swipl"):
         raise Refuse("swipl is not on PATH -- %s is embedded as SWI expands it" % path)
-    r = subprocess.run(["swipl", EXPAND_PL, "--", path, lib], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    r = subprocess.run(["swipl", EXPAND_PL, "--", path, LIB_PATH.get(lib, lib)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if r.returncode != 0 or not r.stdout:
         raise Refuse("SWI's expander refused %s (rc=%d): %s" % (path, r.returncode, r.stderr.strip()[:300]))
     return r.stdout
@@ -538,7 +542,8 @@ def process(path):
     if read_path:
         os.unlink(read_path)
     mod, exports, ops, kept, drops, keyed, hooks, libops = None, [], [], [], dict(init_drops), [], [], set()
-    cross = {}
+    cross, dynrep = {}, {}
+    defined = {(n, a) for k, a, n in heads.values() if k not in ("directive", "unkeyable", "qualified") and n}
     off = 0
     for no, cl in enumerate(split_clauses(toks), 1):
         start = off
@@ -577,6 +582,18 @@ def process(path):
                                 libops.add(atom_value(t))
             if d in KEEP_DIRECTIVES:
                 kept.append((start, off)); continue
+            if d == "multifile":
+                hooks_dyn = []
+                for j in range(1, len(s) - 2):
+                    t, sl, ar = s[j], s[j + 1], s[j + 2]
+                    if t[0] in ("atom", "qatom") and sl[1] == "/" and ar[1].isdigit() and s[j - 1][1] != ":" and atom_value(t) != "multifile":
+                        if (atom_value(t), int(ar[1])) not in defined:
+                            hooks_dyn.append("%s/%s" % (quote(atom_value(t)), ar[1]))
+                if hooks_dyn:
+                    dynrep[start] = (first, ":- dynamic %s.\n" % ", ".join(hooks_dyn))
+                    kept.append((start, off))
+                    drops[HOOK_DYN] = drops.get(HOOK_DYN, 0) + len(hooks_dyn)
+                    continue
             if d in DROP_DIRECTIVES:
                 drops["directive " + d] = drops.get("directive " + d, 0) + 1
                 continue
@@ -650,6 +667,8 @@ def process(path):
             raw = raw[:hk[1] - cs] + hk[3] + ":" + raw[hk[1] - cs:]
         elif hk:
             raw = raw[:hk[1] - cs] + raw[hk[1] - cs + len("user:"):]
+        if cs in dynrep:
+            raw = raw[:dynrep[cs][0] - cs] + dynrep[cs][1]
         chunks.append(strip_comments(raw, path))
     text = "".join(":- create_prolog_flag(%s, %s, []).\n" % (f, v) for f, v, _ in LIB_FLAGS.get(lib, [])) + "".join(chunks)
     for f, v, why in LIB_FLAGS.get(lib, []):
