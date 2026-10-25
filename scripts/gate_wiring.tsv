@@ -703,6 +703,7 @@ test_gate_pl_a_loaded_clause_creates_its_dynamic_predicate_and_a_dot_P_file_load
 test_gate_pl_a_memory_limit_is_a_catchable_resource_error_for_length_numlist_and_the_trail_arena_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_meta_call_of_a_compiled_predicate_jumps_to_it_and_resumes_through_its_token.sh	WIRED	-	-	-
 test_gate_pl_a_meta_called_format_reads_its_empty_argument_list.sh	WIRED	-	-	-
+test_gate_pl_a_module_qualified_argument_is_swipls_compound_and_clause_and_qualifier_cycles_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_module_qualified_goal_runs_its_goal_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_negative_unbounded_integer_literal_reads_as_its_own_value.sh	WIRED	-	-	-
 test_gate_pl_a_number_in_unicode_digits_or_digit_groups_converts_as_swipl.sh	WIRED	-	-	-
