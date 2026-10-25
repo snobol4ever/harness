@@ -661,6 +661,7 @@ test_gate_pattern_operand_reentry.sh	WIRED	-	-	-
 test_gate_perf_fmt_refuses_a_dark_cell.sh	WIRED	-	-	-
 test_gate_picker_autounblock.sh	WIRED	-	-	-
 test_gate_picker_lane_table_agrees_with_mode.sh	WIRED	-	-	-
+test_gate_pl_a_backquoted_string_first_in_a_file_reads_no_uninitialised_lexer_state.sh	WIRED	-	-	-
 test_gate_pl_a_ball_propagates_past_the_remaining_clauses_of_a_dynamic_predicate.sh	WIRED	-	-	-
 test_gate_pl_a_bar_inside_an_argument_is_the_infix_operator_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_bare_bang_is_a_prefix_operator_when_declared_and_op_3_accepts_the_empty_list_in_the_swi_dialect.sh	WIRED	-	-	-
