@@ -4,6 +4,10 @@
 # Each source is run in mode 3 (./scrip <src>) and in mode 4 (./scrip --compile -o, linked the harness's way, run) from its own directory, stdin
 # /dev/null, and its stdout compared byte for byte with <ref>. Prints WITNESS <mode> <PASS|FAIL rc=N> <src> per run and WITNESS_TOTAL pass= fail=.
 # rc 0 every run equal to its ref; rc 1 any run differs or crashes; rc 2 cannot measure (no ./scrip or out/libscrip_rt.so, a missing file, no pair).
+# NOT THIS RUNNER'S SHAPE (the cfo, 2026-10-25): a corpus benchmark kernel with a <stem>.dat/.fasta (stdin), <stem>.argv (column 2 is its argv) or
+# <stem>.heap/.stack sidecar -- this runner feeds /dev/null, no argv and no -d/-s, so such a kernel reads FAIL rc=0 here on every tree (12 of 16 scanning
+# kernels did, identical on the cut under review and on origin); grade it through bench_<lang>_bar.sh or with its sidecars by hand, and read a FAIL that
+# is identical on both trees as the runner's shape, never as the landing's red.
 HERE="$(cd "$(dirname "$0")" && pwd)"; SCRIP_DIR="$HERE/../../SCRIP"; SCRIP_BIN="$SCRIP_DIR/scrip"; RT="$SCRIP_DIR/out"
 [ -x "$SCRIP_BIN" ] && [ -f "$RT/libscrip_rt.so" ] || { echo "REFUSE(2): no $SCRIP_BIN or $RT/libscrip_rt.so -- run make -j8 in SCRIP"; exit 2; }
 [ $# -ge 2 ] && [ $(( $# % 2 )) -eq 0 ] || { echo "REFUSE(2): usage: test_witness_both_modes.sh <src> <ref> [<src> <ref> ...]"; exit 2; }
