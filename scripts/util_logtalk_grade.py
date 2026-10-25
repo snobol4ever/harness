@@ -130,7 +130,10 @@ EXCLUDED_CLASSES = {
     # predicate (LOGTALK_SYSTEM below), which the oracle answers with existence_error; or (ceo CEO-1697) it builds a term by functor/3
     # with an arity literal of 20 or more digits (beyond 2^64) -- unbounded's functor_01/02 and arg_02/03 assert that a term of arity
     # ~1.8e45 is built, and swipl, whose max_arity is unbounded, raises representation_error(size_t): no run reproduces the answer.
-    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, or builds a term of an arity beyond 2^64 that no run builds",
+    # ceo CEO-1977 (2026-10-25), the third evidence form: a format/2,3 column-stop case (a ~t fill point and a ~N+ column stop) whose asserted
+    # text is not the text the pinned oracle swipl 9.0.4 prints -- the assertion is a ref that is not the oracle's, so the answer is not known.
+    # test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh runs swipl on every such row and reds the row the day swipl agrees with it.
+    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, or asserts a column-stop format/2 text that swipl 9.0.4 does not print",
 }
 
 
@@ -160,9 +163,15 @@ def _dotless_float_read(case):
     return bool(re.search(r"set_text_input\('\d+[eE][+-]?\d+\. '\)", case.goal or "")) and "syntax_error" in (case.expect or "")
 
 
+def _column_stop_format(g):
+    """The goal calls format/2,3 on a control string with a ~t fill point and a ~N+ column stop (the third NO_ORACLE_ANSWER evidence form, CEO-1977)."""
+    m = re.search(r'(?<![A-Za-z0-9_])format\s*\((?:[^"()]*,)?\s*"([^"]*)"', g)
+    return bool(m) and "~t" in m.group(1) and bool(re.search(r"~\d+\+", m.group(1)))
+
+
 def _no_oracle_answer(case):
     g = case.goal or ""
-    return any(k in LOGTALK_SYSTEM for k in called_predicates(g)) or bool(re.search(r"(?<![A-Za-z0-9_])functor\s*\([^()]*,\s*\d{20,}\s*\)", g))
+    return any(k in LOGTALK_SYSTEM for k in called_predicates(g)) or bool(re.search(r"(?<![A-Za-z0-9_])functor\s*\([^()]*,\s*\d{20,}\s*\)", g)) or _column_stop_format(g)
 
 
 def _bounded_max_arity_only(case):

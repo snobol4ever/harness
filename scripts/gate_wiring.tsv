@@ -405,6 +405,7 @@ test_gate_ladder_forms_check_selftest.sh	WIRED	-	-	-
 test_gate_ladder_walk_v4_exempts_package_class_rows.sh	WIRED	-	-	-
 test_gate_lib_rungs_extract_refuses_without_a_language.sh	WIRED	-	-	-
 test_gate_library_driver_generator.sh	WIRED	-	-	-
+test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh	WIRED	-	-	-
 test_gate_logtalk_population_is_named_and_sums.sh	WIRED	-	-	-
 test_gate_m4_a_proc_the_startup_skips_keeps_its_compile_time_slot.sh	WIRED	-	-	-
 test_gate_make_leaves_out_a_dep_file_whose_source_is_gone.sh	WIRED	-	-	-
