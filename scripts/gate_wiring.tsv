@@ -844,6 +844,7 @@ test_gate_pl_predicate_property_of_a_head_known_only_at_run_time_asks_the_regist
 test_gate_pl_prelude_libs_cost.sh	WIRED	-	-	-
 test_gate_pl_prelude_libs_in_sync.sh	WIRED	-	-	-
 test_gate_pl_print_1_honours_portray_and_costs_nothing_without_it.sh	WIRED	-	-	-
+test_gate_pl_print_message_calls_the_user_hooks_and_a_term_string_singletons_warning_reports_the_names.sh	WIRED	-	-	-
 test_gate_pl_quad_regs.sh	WIRED	-	-	-
 test_gate_pl_raising_directive_does_not_abort_the_load.sh	WIRED	-	-	-
 test_gate_pl_random_permutation_answers_as_swipl.sh	WIRED	-	-	-
