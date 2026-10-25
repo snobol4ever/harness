@@ -107,7 +107,7 @@ DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multif
                    "$clausable", "noprofile", "license", "discontiguous", "module_transparent", "predicate_options",
                    "reexport", "type", "pred", "quasi_quotation_syntax", "volatile", "encoding", "$hide", "setting"}
 KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
-EXPANDED = {"clpfd", "csv"}
+EXPANDED = {"clpfd", "csv", "lazy_lists"}
 LIB_PATH = {"dcg_basics": "dcg/basics"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",

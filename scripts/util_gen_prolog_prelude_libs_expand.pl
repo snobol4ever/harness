@@ -19,6 +19,11 @@
     parse tables where SWI and SCRIP read => at 1200 xfx as the SSU neck) a restoring :- op directive is printed after
     the last clause, so the library's local operators never leak into the text parsed after it.
 
+    DIRECTIVES THAT DEFINE PREDICATES.  A directive is printed where it stands, except the two whose term_expansion writes the
+    library's clauses: :- record(R) (library(record)) and :- lazy_list_iterator(It, One, GetNext, TestEnd) (library(lazy_lists),
+    its system:term_expansion defines the iterator predicate).  Those two are expand_term'd and their clauses printed; every
+    other directive stays a directive, so conditional compilation and predicate_options keep their meaning for SCRIP's reader.
+
     USAGE: swipl util_gen_prolog_prelude_libs_expand.pl -- <vendored file> <lib>     (stdout: the expanded text)
 */
 :- initialization(main, main).
@@ -42,8 +47,10 @@ expand_all(S, M) :-
     (   T == end_of_file -> true
     ;   emit(T, M), expand_all(S, M)
     ).
-emit((:- record(R)), M) :- !,
-    @(expand_term((:- record(R)), Ts), M),
+emit((:- D), M) :-
+    functor(D, F, _),
+    memberchk(F, [record, lazy_list_iterator]), !,
+    @(expand_term((:- D), Ts), M),
     (   is_list(Ts) -> Cs = Ts ; Cs = [Ts] ),
     forall(member(C, Cs), emit_clause(C, M)).
 emit((:- D), M) :- !,
