@@ -860,6 +860,7 @@ test_gate_pl_phrase_of_a_non_callable_body_is_a_callable_type_error_as_both_orac
 test_gate_pl_pipe_2_and_open_null_stream_1_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_port_trace_oracle_diff.sh	WIRED	-	-	-
 test_gate_pl_portray_reaches_every_subterm_of_print_and_write_term.sh	WIRED	-	-	-
+test_gate_pl_predicate_property_of_a_directive_or_bar_name_has_no_property_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_predicate_property_of_a_head_known_only_at_run_time_asks_the_registry.sh	WIRED	-	-	-
 test_gate_pl_prelude_libs_cost.sh	WIRED	-	-	-
 test_gate_pl_prelude_libs_in_sync.sh	WIRED	-	-	-
