@@ -1302,6 +1302,7 @@ test_gate_snocone_expressions_are_snobol4_expressions.sh	WIRED	-	-	-
 test_gate_snocone_returns_codegen.sh	WIRED	-	-	-
 test_gate_spitbol_x32_case_conversion_is_oracle_equivalent.sh	WIRED	-	-	-
 test_gate_spitbol_x64_case_conversion_is_oracle_equivalent.sh	WIRED	-	-	-
+test_gate_stdin_block_keeps_a_missing_final_newline.sh	WIRED	-	-	-
 test_gate_suite_argv_sidecar.sh	WIRED	-	-	-
 test_gate_suite_banner_check_writes_nothing_and_render_is_scoped.sh	WIRED	-	-	-
 test_gate_suite_board_line_prints_shipped_with_outside_named.sh	WIRED	-	-	-

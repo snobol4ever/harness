@@ -1863,6 +1863,13 @@ def loose_stdin_companion(src):
     return text, cands[0], None
 
 
+# A stdin block is lines, and the reader ends it with a newline; a stdin that ends WITHOUT one (ProRosetta
+# universal-lambda-machine.in, 8 bytes, its ref cut from those 8; with a ninth byte swipl and SCRIP both halt silent;
+# hq_runtime 2026-10-24) closes its block with this line, diff's own words for the same fact, which the writer emits
+# and the reader drops. test_gate_stdin_block_keeps_a_missing_final_newline.sh holds both sides.
+STDIN_NO_FINAL_NEWLINE = "\\ No newline at end of file"
+
+
 def read_stdin_sidecar(in_path, banner_re, entries):
     """Attach .in blocks to entries BY NAME. Absent file, or an entry with no block, leaves
     entry.stdin as None (= /dev/null). Refuses on a block naming no entry -- the shape a rename or
@@ -1883,7 +1890,10 @@ def read_stdin_sidecar(in_path, banner_re, entries):
         seg = []
         while i < len(lines) and not banner_re.match(lines[i]):
             seg.append(lines[i]); i += 1
-        by_name[name] = ("\n".join(seg) + "\n") if seg else ""
+        if seg and seg[-1] == STDIN_NO_FINAL_NEWLINE:
+            by_name[name] = "\n".join(seg[:-1])
+        else:
+            by_name[name] = ("\n".join(seg) + "\n") if seg else ""
     unknown = sorted(set(by_name) - {e.name for e in entries})
     if unknown:
         raise ValueError(f"{in_path}: stdin blocks with no matching entry: {unknown}")
@@ -1918,6 +1928,8 @@ def write_stdin_sidecar(entries, out_in, comment_open, comment_close):
         out.append(make_banner_cfg(e.seq, e.name, comment_open, comment_close))
         if e.stdin:
             out.extend(e.stdin.splitlines())
+            if not e.stdin.endswith("\n"):
+                out.append(STDIN_NO_FINAL_NEWLINE)
     Path(out_in).write_text("\n".join(out) + "\n")
     return True
 
