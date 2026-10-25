@@ -123,8 +123,9 @@ DROP_DIRECTIVES = {"module", "use_module", "autoload", "meta_predicate", "multif
                    "expects_dialect"}
 KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
 EXPANDED = {"clpfd", "csv", "lazy_lists", "json"}
-IMPORT_ONLY_FRONTS = {"clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files"}
-LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
+IMPORT_ONLY_FRONTS = {"clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files",
+                      "clpr": "the same as clpq: its exports are clpq's names, and a program names one of the two"}
+LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "clpr": "clp/clpr", "bb_r": "clp/clpr/bb_r", "bv_r": "clp/clpr/bv_r", "fourmotz_r": "clp/clpr/fourmotz_r", "ineq_r": "clp/clpr/ineq_r", "itf_r": "clp/clpr/itf_r", "nf_r": "clp/clpr/nf_r", "store_r": "clp/clpr/store_r", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
