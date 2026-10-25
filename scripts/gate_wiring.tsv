@@ -851,6 +851,7 @@ test_gate_pl_raising_directive_does_not_abort_the_load.sh	WIRED	-	-	-
 test_gate_pl_random_permutation_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_read_raises_catchable_syntax_error.sh	WIRED	-	-	-
 test_gate_pl_read_term_from_atom_of_the_atom_nil_reads_the_text_brackets_not_end_of_file.sh	WIRED	-	-	-
+test_gate_pl_read_term_subterm_positions_and_comments_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_read_term_syntax_error_option_answers_as_the_oracles.sh	WIRED	-	-	-
 test_gate_pl_readutil_and_the_file_name_builtins_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_retract_body_variable_is_call_and_the_gnu_dialect_raises_as_gprolog.sh	WIRED	-	-	-
