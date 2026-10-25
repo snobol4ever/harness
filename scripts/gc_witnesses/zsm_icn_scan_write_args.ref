@@ -1,0 +1,18 @@
+root subject=[] len=0 pos=1
+empty subject pos=1 move=ok tab0=
+empty var subject pos=1
+real subject=[3.5] pos=1
+int subject=[1234] type=string move2=12
+gen in scan pos=1 subj=abc
+gen in scan pos=1 subj=abc
+after every subj=abc
+nested inner=[xyz] pos=1
+after nested=[] pos=1
+inner2=[zz] pos=1
+outer back pos=7 rest=cdef
+n=3
+assigned subject=[fresh] pos=4 move=fre pos=4
+pos set, rest=[resh] pos=6
+assign in scan=[77] pos=1
+after scan assign in scan=[fresh] pos=6
+pos test ok

@@ -1,0 +1,32 @@
+# zsm_icn_scan_write_args.icn -- THE ICON ZSM WITNESS (the cfo, 2026-10-25, found reviewing hq_icon d5fec4590; identical on origin 5f0f016f3).
+# The program is right in both modes against iconx (its .ref), yet SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 prints a run of [ZSM-AEXP] rows through
+# the write-argument chain under a scan (IR_DEREF, IR_BOUND, IR_LIT_STRING, IR_KW_ICON, IR_LINE_MARK, IR_CALL_BYNAME, IR_UNMARK) with one
+# constant delta (352 in the richer probe, 240 here) and one [ZSM-DISC] at the UNMARK: the plan's declared depth and the machine disagree
+# by a constant, so the emitter is right in a coordinate the planner did not declare -- two deciders.  Cured when the run prints no
+# ZSM-AEXP and no ZSM-DISC row and the output still equals the .ref.
+procedure g();
+  suspend 1 | 2;
+end
+procedure main();
+  local s, n;
+  write("root subject=[", &subject, "] len=", *&subject, " pos=", &pos);
+  "" ? { write("empty subject pos=", &pos, " move=", if move(0) then "ok" else "fail", " tab0=", tab(0)) };
+  s := "";
+  s ? { write("empty var subject pos=", &pos) };
+  3.5 ? { write("real subject=[", &subject, "] pos=", &pos) };
+  1234 ? { write("int subject=[", &subject, "] type=", type(&subject), " move2=", move(2)) };
+  "abc" ? { every g() do write("gen in scan pos=", &pos, " subj=", &subject); write("after every subj=", &subject) };
+  "abc" ? "xyz" ? write("nested inner=[", &subject, "] pos=", &pos);
+  write("after nested=[", &subject, "] pos=", &pos);
+  "abcdef" ? { tab(3); "zz" ? write("inner2=[", &subject, "] pos=", &pos); write("outer back pos=", &pos, " rest=", tab(0)) };
+  n := 0;
+  "aaa" ? while tab(upto('a')+1) do n +:= 1;
+  write("n=", n);
+  &subject := "fresh";
+  write("assigned subject=[", &subject, "] pos=", &pos, " move=", move(3), " pos=", &pos);
+  &pos := 2;
+  write("pos set, rest=[", tab(0), "] pos=", &pos);
+  "q" ? { &subject := 77; write("assign in scan=[", &subject, "] pos=", &pos) };
+  write("after scan assign in scan=[", &subject, "] pos=", &pos);
+  write(if "abc" ? (move(1) & &pos = 2) then "pos test ok" else "pos test bad");
+end
