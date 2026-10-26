@@ -120,14 +120,17 @@ run1() {
 # fpc/quick as a direct, reproducible result (not noise -- it repeated in the same direction both times,
 # unlike the genuine load-contention DISAGREEs elsewhere in this campaign, which flip direction run to
 # run). The cap now applies only to the engines that actually crash.
-kernel_reps_cap() { local k="$1" eng="$2"; case "$k:$eng" in quick:m3|quick:m4) echo 12;; *) echo "$NMAX";; esac; }
+# ⭐ THE CLIFF IS GONE (ceo CEO-1987, 2026-10-26): quick prints fpc's output at reps 12, 13, 100, 1000 and 5000 in m3 and m4 on SCRIP
+# 9bd097fa9 (-O2) and 60ec01b8a (-O0), 0.3 s at 5000 -- the cap of 12 left both SCRIP arms too few reps to fit a slope, so both read
+# UNPROVEN; no kernel carries a crash cap now, and a new one is named here with its row and its measurement.
+kernel_reps_cap() { echo "$NMAX"; }
 # kernel_crash_cap: a REAL reps ceiling past which a kernel/engine crashes, or empty if none is known.
 # ⛔ DISTINCT FROM kernel_reps_cap/NMAX ABOVE, ON PURPOSE: NMAX just bounds angle 1's live search from
 # running away on a kernel with negligible per-rep cost -- it is not a safety limit, and applying it to
 # the x1/x4/x16 spacing decision below wrongly shrank fpc bases that have no crash risk at all (fpc's
 # committed reps regularly exceed NMAX, e.g. queens=500000, and that is fine). Only quick:m3/m4 has a
 # real crash boundary (pascal-quick-m3-recursive-reps-cliff-13).
-kernel_crash_cap() { case "$1:$2" in quick:m3|quick:m4) echo 12;; *) echo "";; esac; }
+kernel_crash_cap() { echo ""; }
 # slope3 a b c na nb nc tol -> "WORK OVERHEAD LIN" where a/b/c are cpu-us measured at na/nb/nc reps (same
 # fit as bench_ir_slope.sh's Ir(n)=OVERHEAD+n*WORK, applied to wall-clock cpu-us instead of Ir, generalised
 # to unequal segment widths): WORK is the SLOPE (us/rep, fixed cost cancelled exactly) from the (nb,nc)

@@ -96,7 +96,8 @@ done
 
 echo
 grid_incomplete=0
-perf_grid_begin "FACT-RULE grid: m3 vs fpc, m4 vs fpc (angle 1 numbers; WORK metric, us/rep COST basis, axis named once here, RT_OPT=-O0 SCRIP / fpc -O2 released default)"
+RT_OPT_READ=$(readelf --debug-dump=info "$ROOT/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' '); RT_OPT_READ="${RT_OPT_READ:-?}"
+perf_grid_begin "FACT-RULE grid: m3 vs fpc, m4 vs fpc (angle 1 numbers; WORK metric, us/rep COST basis, axis named once here, RT_OPT=$RT_OPT_READ SCRIP read from libscrip_rt.so DWARF / fpc -O2 released default)"
 # ⛔ perf_row/perf_mult (lib_perf_fmt.sh) take (LABEL, REF, OURS) and are documented as COST inputs
 # (lower=better; multiple=ref/ours). fpc is the reference, m3/m4 are ours -- REF FIRST, OURS SECOND. The
 # pre-slope code here fed RATE values (reps/s, bigger=better) with the args the OTHER way round (ours in

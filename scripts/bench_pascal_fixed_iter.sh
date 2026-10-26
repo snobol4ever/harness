@@ -62,7 +62,8 @@ fpc_build() {
 # identical copy of test_bench_pascal_timed.sh's function (see that file's header for why this is kept
 # distinct from any NMAX-style search ceiling: only quick:m3/m4 has a genuine crash boundary, and a
 # generic "cap" would wrongly shrink bases like fpc's that have no crash risk at all).
-kernel_crash_cap() { case "$1:$2" in quick:m3|quick:m4) echo 12;; *) echo "";; esac; }
+# ⭐ quick's cliff is gone (ceo CEO-1987, 2026-10-26: fpc's output at reps 12..5000 in m3 and m4); no kernel carries a crash cap now.
+kernel_crash_cap() { echo ""; }
 # pick_spacing / slope3: identical copies of test_bench_pascal_timed.sh's functions (see that file's
 # header for the full derivation and the live measurement that picked x4/x16 over x2/x4) -- kept as exact
 # copies so the two angles cannot silently drift onto different formulas for the same quantity.

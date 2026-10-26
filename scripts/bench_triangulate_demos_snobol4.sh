@@ -136,11 +136,12 @@ echo "THREE-ANGLE DEMO TRIANGULATION -- SNOBOL4 demo programs"
 echo "⛔ BASIS: one iteration = ONE WHOLE PROGRAM RUN. Every number is a TOTAL carrying process"
 echo "   startup AND compile -- NOT a kernel slope. Never share a column with benchmarks/snobol4."
 echo "instrument: tools/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
-echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=-O0; sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (CEO-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
+RT_OPT_READ=$(readelf --debug-dump=info "$(dirname "$SCRIP")/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' '); RT_OPT_READ="${RT_OPT_READ:-?}"
+echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=$RT_OPT_READ (read from libscrip_rt.so's DWARF); sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (CEO-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
 echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).
-perf_grid_begin "demo vs SPITBOL -- x on the FASTER axis (SPITBOL/ours) · TOTAL basis, whole-program run incl startup+compile · instrument tools/bench_rusage cpu(user+sys) · RT_OPT=-O0"
+perf_grid_begin "demo vs SPITBOL -- x on the FASTER axis (SPITBOL/ours) · TOTAL basis, whole-program run incl startup+compile · instrument tools/bench_rusage cpu(user+sys) · RT_OPT=$RT_OPT_READ"
 echo
 printf "%-11s %-6s %12s %12s %9s %-9s %7s %7s %s\n" DEMO ENGINE "a1 runs/s" "a2 runs/s" "ratio" "VERDICT" "inblk" "oublk" "answer"
 printf '%s\n' "-------------------------------------------------------------------------------------------------------"
