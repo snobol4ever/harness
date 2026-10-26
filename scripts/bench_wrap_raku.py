@@ -31,6 +31,9 @@ THE SHAPES THE WRAPPER CARRIES (hq_raku 2026-10-21, row raku-every-suite-to-100-
   * a top-level `my` (one plain variable, optionally typed) that a hoisted declaration READS and does not declare itself is declared once at file scope (untyped) and its statement
     becomes an assignment, so the hoisted code sees the same variable and every repetition starts again from the initial value.
   * `slurp(FILE)` reads a named file and is repeatable; only `slurp()` with no argument and $*IN are stdin.
+  * a `class`/`role`/`grammar`/`enum` declared without a scope declarator in the body or in MAIN is package-scoped (`our`), so its two
+    copies collide (Rakudo: "Redeclaration of symbol 'A'"; mb-loop_object_accessor's one-line body, rc-forest-fire-stringify's enum
+    inside MAIN): the test copy stays verbatim and the quiet copy declares it `my` (ceo CEO-1987, 2026-10-26).
 
 REFUSED BY NAME (no silent fallback): a kernel that reads stdin ($*IN, get, lines, slurp(), prompt); an identifier spelled
 bench_...; an output call that is not a whole statement (`say` inside a block, `.say` / `.print` method forms inside an
@@ -228,6 +231,22 @@ def quiet_line(l, path, ln):
     return '%s$bench_c = $bench_c ~ %s%s%s;' % (ind, joined(expr), nl, mod)
 
 
+PKG = re.compile(r'^(\s*)(class|role|grammar|enum)(\s)')
+PKG_ANY = re.compile(r'(?<![\w\-$@%&.])(class|role|grammar|enum)\s')
+
+
+def lexical_packages(l):
+    """the quiet copy's package declarations made lexical (`my class A`), so they do not redeclare the test copy's"""
+    c = code(l)
+    if not PKG_ANY.search(c):
+        return l
+    parts = statements(c)
+    if len(parts) == 1:
+        return PKG.sub(r'\1my \2\3', l)
+    ind = c[:len(c) - len(c.lstrip())]
+    return ind + ' '.join(PKG.sub(r'\1my \2\3', p.strip()) for p in parts)
+
+
 def prints(block):
     return any(OUT_WORD.search(code(l)) or METHOD_OUT.search(code(l)) for l in block)
 
@@ -266,8 +285,8 @@ def generate(path, mode, n, bud_ms):
             if d not in gdecl:
                 gdecl.append(d)
             body[k] = m.group(2) + l[m.end(2):]
-    quiet = [quiet_line(l, path, i + 1) for i, l in enumerate(body)]
-    qmain = [quiet_line(l, path, i + 1) for i, l in enumerate(mainq)]
+    quiet = [lexical_packages(quiet_line(l, path, i + 1)) for i, l in enumerate(body)]
+    qmain = [lexical_packages(quiet_line(l, path, i + 1)) for i, l in enumerate(mainq)]
     tmain = list(mainq)
     if mainq:
         qmain[0] = re.sub(r'^(\s*)sub\s+MAIN\b', r'\1sub bench_qmain', qmain[0])
