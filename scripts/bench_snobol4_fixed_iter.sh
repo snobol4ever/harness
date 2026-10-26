@@ -86,7 +86,8 @@ run1() {
          out=$(cd "$W" && SCRIP_NOHUGE="$NOHUGE" SCRIP_ZETA_TELEM=1 "$WRAP" timeout -k 5 "$T" "./$s.prog" $SW 2>"$W/gc.err" <"$in") ;;
   esac
   local ck gc rusage_line user_us sys_us nivcsw cpu_ms
-  ck=$(sed -n 's/^check: //p' <<<"$out")
+  ck=$(sed -n 's/^BENCH mode=iter .* iters='"$N"' .* mismatched=0 value=//p' "$W/gc.err" | tail -1)
+  local ref="${twin%.bench.sno}"; ref="$B/$(basename "$ref").ref"; [ -n "$ck" ] && [ -f "$ref" ] && [ "$out" != "$(cat "$ref")" ] && ck="REF-DIFF:$ck"
   gc=$(grep -c 'regeneration #' "$W/gc.err" 2>/dev/null); gc="${gc:-0}"
   rusage_line=$(grep '^BENCH_RUSAGE:' "$W/gc.err" | tail -1)
   [ -n "$rusage_line" ] || { echo "- - - CRASH"; return; }
@@ -128,7 +129,8 @@ for sno in "$B"/*.sno; do
   # (sysperf attribution), and a 2>&1 here folded that stamp INTO the twin path -- every engine then
   # ran a nonexistent file, and the sbl/m3 arms rated N against the ~2ms error exit (42G iters/s
   # "SPITBOL"). Only m4's BUILD-ERR made the run visibly wrong (2026-08-31, ceo).
-  if ! TWIN=$(bash "$HERE/bench_wrap.sh" "$sno" -o "$W/$s.bench.sno" --mode=iter --n="$N" 2>"$W/wrap.err"); then
+  # ⛔ THE TWIN IS bench_wrap_snobol4.py's (ceo CEO-1984): the pristine kernels carry no `*BENCH` line and bench_wrap.sh refused all of them.
+  if python3 "$HERE/bench_wrap_snobol4.py" "$sno" --mode iter --n "$N" -o "$W/$s.bench.sno" 2>"$W/wrap.err"; then TWIN="$W/$s.bench.sno"; else
     TWIN="$(cat "$W/wrap.err")"
     UNGRADED="$UNGRADED $s"; echo "  ⛔ $s: $TWIN" >&2; continue; fi
   declare -A R=(); declare -A C=(); declare -A G=(); declare -A NV=()
@@ -173,7 +175,7 @@ if [ -n "$UNSCALED" ]; then
   echo "   Every benchmark needs a committed N in SCALE.tsv -- run ../harness/scripts/calibrate_bench_scale.sh to add it."
 fi
 if [ -n "$UNGRADED" ]; then
-  echo "⛔ UNGRADED (has a SCALE.tsv row but bench_wrap.sh refused it):$UNGRADED"
+  echo "⛔ UNGRADED (has a SCALE.tsv row but bench_wrap_snobol4.py refused it):$UNGRADED"
 fi
 [ -z "$UNSCALED" ] && [ -z "$UNGRADED" ] && echo "coverage: every SCALE.tsv-listed kernel measured."
 if [ "$tot_gc" -gt 0 ]; then

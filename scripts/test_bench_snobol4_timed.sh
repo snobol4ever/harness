@@ -44,6 +44,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"  # BM-ONE (s153): timed family PROMOTED -- one copy, legacy retired, harness.inc is the driver
 T="${TIMEOUT:-60}"; REPS="${REPS:-1}"; NOHUGE="${NOHUGE:-1}"
+# ⛔ THE TWIN IS bench_wrap_snobol4.py's (ceo CEO-1984, Lon 2026-10-25: "Fix the S4 triangulation script since it is broken, duh!"): the kernels are
+# PRISTINE since the kernel convention (CEO-1221/1267) and carry no `*BENCH kernel=... check=...` line, so bench_wrap.sh refused all 23 and this
+# angle measured nothing. The one generator test_snobol4_bench_suite.sh uses writes the fixed-time twin (--mode time --bud-ms BUD_MS), whose
+# stdout is the kernel's own output (the .ref) and whose TERMINAL line `BENCH mode=time ... iters=N ... mismatched=M value=V` carries the count
+# and the check. BENCH_BUD_MS is the suite runner's own knob, 500 ms by default.
+BUD_MS="${BENCH_BUD_MS:-500}"
 # ⛔ GC-FREE WINDOW IS A MEASUREMENT PRECONDITION, NOT A TUNING KNOB (BM-3).  SCRIP's collector is
 # EXHAUSTION-TRIGGERED (gc_heap.c: rt_gcheap_alloc collects only when the arena is full) and its cost
 # scales with EVERY BLOCK EVER ALLOCATED, not with the live set: one measured regeneration walked
@@ -98,8 +104,9 @@ run1() {
          out=$(cd "$W" && SCRIP_NOHUGE="$NOHUGE" SCRIP_ZETA_TELEM=1 "$WRAP" timeout -k 5 "$T" "./$s.prog" $sw 2>"$W/gc.err" <"$in") ;;
   esac
   local it ck gc rusage_line user_us sys_us nivcsw cpu_ms
-  it=$(sed -n 's/^iters: //p' <<<"$out")
-  ck=$(sed -n 's/^check: //p' <<<"$out")
+  it=$(sed -n 's/^BENCH mode=time .* iters=\([0-9][0-9]*\) .*/\1/p' "$W/gc.err" | tail -1)
+  ck=$(sed -n 's/^BENCH mode=time .* mismatched=0 value=//p' "$W/gc.err" | tail -1)
+  local ref="${sno%.sno}.ref"; [ -n "$ck" ] && [ -f "$ref" ] && [ "$out" != "$(cat "$ref")" ] && ck="REF-DIFF:$ck"
   gc=$(grep -c 'regeneration #' "$W/gc.err" 2>/dev/null); gc="${gc:-0}"
   [ -n "$it" ] || { echo "- - - - CRASH"; return; }
   # gc.err carries BOTH the engine's own stderr (regeneration lines, counted above) and bench_rusage's
@@ -147,7 +154,7 @@ for sno in "$B"/*.sno; do
   # timeable is its *BENCH marker, and the timed twin is BUILT HERE, on the fly, into $W.  The old gate
   # asked "does it include harness.inc" -- which after the revamp is false for every program in the
   # corpus, so the whole suite would have read as UNGRADED rather than failing loudly.
-  if ! TWIN=$(bash "$HERE/bench_wrap.sh" "$sno" -o "$W/$s.bench.sno" 2>&1); then
+  if ! TWIN=$(python3 "$HERE/bench_wrap_snobol4.py" "$sno" --mode time --bud-ms "$BUD_MS" -o "$W/$s.bench.sno" 2>&1); then
     UNGRADED="$UNGRADED $s"; echo "  ⛔ $s: $TWIN" >&2; continue; fi
   TWIN="$W/$s.bench.sno"
   declare -A R=(); declare -A C=(); declare -A G=(); declare -A N=()
@@ -216,7 +223,7 @@ fi
 [ -n "$XPASSED" ] && echo "⛔ XPASS:$XPASSED -- passes WITH a sibling .xfail present. Re-measure, then RETIRE the marker."
 if [ -n "$UNGRADED" ]; then
   echo "⛔ UNGRADED (in $B, not harness-driven, absent from the table above):$UNGRADED"
-  echo "   Every benchmark here must carry a '*BENCH kernel=... check=...' marker so ../harness/scripts/bench_wrap.sh"
+  echo "   Every benchmark here is wrapped by ../harness/scripts/bench_wrap_snobol4.py (CEO-1984); a kernel it refuses is named here and"
   echo "   can build its timed twin -- convert it or delete it (BM-2, s265 shape). This is a FAILURE."
 else
   echo "ungraded: none -- every .sno in $B is a standalone program with a *BENCH marker and was wrapped and graded (BM-2, s265)."

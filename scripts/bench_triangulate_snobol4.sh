@@ -67,7 +67,7 @@ if [ "$CHECK_SHAPE" -eq 1 ]; then
   [ -f "$B/$KERNEL.sno" ] || { echo "⛔ REFUSED: --check-shape kernel '$KERNEL' has no $B/$KERNEL.sno" >&2; exit 2; }
   RUN_B="$(mktemp -d)"; CLEANUP="$RUN_B"
   for ext in sno ref dat xfail; do [ -f "$B/$KERNEL.$ext" ] && cp "$B/$KERNEL.$ext" "$RUN_B/"; done
-  [ -f "$B/harness.inc" ] && cp "$B/harness.inc" "$RUN_B/"   # bench_wrap.sh looks beside the program for this
+  for side in heap stack; do [ -f "$B/$KERNEL.$side" ] && cp "$B/$KERNEL.$side" "$RUN_B/"; done   # the declared arena travels with the kernel (CEO-1353)
 fi
 trap '[ -n "$CLEANUP" ] && rm -rf "$CLEANUP"' EXIT
 
@@ -75,7 +75,7 @@ TS="$(date -u +%Y%m%dT%H%M%SZ)"
 if [ "$CHECK_SHAPE" -eq 1 ]; then OUT_TSV="${OUT_TSV:-$(mktemp)}"; else OUT_TSV="${OUT_TSV:-$B/triangulation-$TS.tsv}"; fi
 
 echo "THREE-ANGLE TRIANGULATION -- angle 1 (fixed time) vs angle 2 (fixed iters) vs disk telemetry"
-echo "tree=SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?') corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?') RT_OPT=-O0 date=$(date -u +%Y-%m-%d)"
+echo "tree=SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?') corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?') RT_OPT=$(readelf --debug-dump=info "$ROOT/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') date=$(date -u +%Y-%m-%d)"
 echo "tolerance: PER-ROW, = 3*sqrt(cv_angle1^2 + cv_angle2^2) from $([ -f "${FLOORTSV:-$B/NOISE-FLOOR.tsv}" ] && echo NOISE-FLOOR.tsv || echo '<UNBAKED -- flat floor only>'), floored at TOL_PCT=$TOL%; each row prints the tolerance it was judged against"
 [ "$CHECK_SHAPE" -eq 1 ] && echo "mode: --check-shape (kernel=$KERNEL, RUN_B=$RUN_B, OUT_TSV is scratch, not committed)"
 echo
