@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_emitter_memory_model_census.py [--at-most N] [--list] -- THE MEMORY MODEL IS CALCULATED IN THE PLANNER AND NOWHERE ELSE (ceo CEO-1988).
+"""util_emitter_memory_model_census.py [--at-most N] [--list] [--only A|B|D] [--in f1,f2] [--not-in f1,f2] -- THE MEMORY MODEL IS CALCULATED IN THE PLANNER AND NOWHERE ELSE (ceo CEO-1988).
 
 Lon 2026-10-26, in-chat to the ceo, verbatim: "Oh, big dummy, you've been lying again. So get the memory-model calculations moved out of EMITTER and
 SOLELY into PLANNER."  The deletion of the 27 named placement predicates (util_placement_predicates_census.py, alive=0/27) was reported as
@@ -17,7 +17,8 @@ Read from SCRIP's source, no build, no run:
       "the planner reads no emitter state");
   (C) whole-graph index reads in src/emitter/ (`g_emit_cfg->all` and `->all[`), REPORTED, not in the bar: the emitter emits a chain and walks it,
       and which of these reads computes a memory fact is the landing's to show.
-The bar is A + B + D. --at-most N exits 1 when A + B > N (the ratchet each landing owes: it may only fall); rc 2 when the tree cannot be read.
+The bar is A + B + D. Per seat (CEO-1990): --only A|B|D makes the bar that part alone; --in / --not-in keep or drop the A calls made inside the
+named functions (a function's body runs from its column-0 definition to the next one), so a track's DONE-WHEN is its own count. --at-most N exits 1 when A + B > N (the ratchet each landing owes: it may only fall); rc 2 when the tree cannot be read.
 """
 import os
 import re
@@ -52,6 +53,9 @@ def defined(paths):
 def main(argv):
     at_most = None
     lst = '--list' in argv
+    only = argv[argv.index('--only') + 1] if '--only' in argv else ''
+    fin = set(argv[argv.index('--in') + 1].split(',')) if '--in' in argv else None
+    fout = set(argv[argv.index('--not-in') + 1].split(',')) if '--not-in' in argv else set()
     if '--at-most' in argv:
         try:
             at_most = int(argv[argv.index('--at-most') + 1])
@@ -70,9 +74,15 @@ def main(argv):
     a_files = {}
     for p in emitter + templates:
         rel = os.path.relpath(p, SCRIP)
+        cur_fn = ''
         for line in open(p, encoding='utf-8', errors='replace'):
             if not call_re:
                 break
+            dm = DEF.match(line)
+            if dm and not line[:1].isspace():
+                cur_fn = dm.group(1)
+            if (fin is not None and cur_fn not in fin) or cur_fn in fout:
+                continue
             line = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
             for stmt in line.split(';'):
                 if re.search(r'\bextern\b', stmt):
@@ -110,8 +120,11 @@ def main(argv):
             print('  A-fn %-44s %5d' % (n, k))
         for n in b_names:
             print('  B-def %s' % n)
-    if at_most is not None and a + b + d > at_most:
-        print('⛔ RED: A+B+D=%d is over the ratchet %d -- the memory model is not the planner alone (CEO-1988)' % (a + b + d, at_most))
+    bar = {'A': a, 'B': b, 'D': d}.get(only, a + b + d)
+    if only or fin is not None or fout:
+        print('SCOPED_BAR=%d only=%s in=%s not-in=%s' % (bar, only or 'A+B+D', ','.join(sorted(fin)) if fin is not None else '-', ','.join(sorted(fout)) or '-'))
+    if at_most is not None and bar > at_most:
+        print('⛔ RED: the bar %d is over the ratchet %d -- the memory model is not the planner alone (CEO-1988)' % (bar, at_most))
         return 1
     return 0
 
