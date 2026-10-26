@@ -6,6 +6,9 @@
 # omega path of a SPAN-then-FENCE pattern released 16 bytes too many: SCRIP cde9bfc80, cured at a11ed1ed8). The link is the honest measure: every object compiled from src/planner/
 # is read with nm, its undefined symbols are intersected with the symbols DEFINED by the objects compiled from src/emitter/ and src/templates/, and each hit is one planner
 # dependence on the emitter (a function it calls or a datum it reads). A hit moves to src/planner, or to a neutral header the two share, or the planner is handed its value.
+# THE SECOND READING, emitter_headers: the dependency files the compiler wrote beside those objects (the .d files) list every header each planner object includes; a header under
+# src/emitter/ or src/templates/ in that list is the planner compiled inside the emitter's world (its types, its inline code, its state structs), so the planner has its own head
+# header (src/planner/planner_head.h) and this counts the DISTINCT emitter or template headers across the planner objects (11 across seven objects before the split, 0 after).
 #   --list        print each hit with the emitter object that defines it and the planner objects that need it (default prints only the count line)
 #   --at-most N   the bar (default 0): rc 1 when the count is above it
 # rc 0 the count is at most the bar · rc 1 above it · rc 2 could not measure (no objects built from this tree, an unreadable source dir, a stale binary).
@@ -43,9 +46,11 @@ while read -r o; do nm --defined-only "$o" 2>/dev/null | awk 'NF == 3 && $2 ~ /^
 awk -F'\t' 'NR == FNR {def[$1] = def[$1] (def[$1] ? "," : "") $2; next} ($1 in def) {need[$1] = need[$1] (need[$1] ? "," : "") $2; dby[$1] = def[$1]} END {for (s in need) print s "\t" dby[s] "\t" need[s]}' "$TMP/def.tsv" "$TMP/need.tsv" | sort > "$TMP/hits.tsv"
 awk -F'\t' 'NR == FNR {own[$1] = 1; next} !($1 in own)' "$TMP/own.txt" "$TMP/hits.tsv" > "$TMP/hits2.tsv"
 N=$(wc -l < "$TMP/hits2.tsv")
-echo "PLANNER_LINK emitter_symbols=$N bar=$BAR planner_objects=$np emitter_objects=$ne objdir=$(basename "$OBJDIR")"
-if [ "$LIST" = 1 ] || [ "$N" -gt "$BAR" ]; then
+H=$(cd "$SC" && python3 "$HERE/util_planner_link_headers.py" "$OBJDIR" "$TMP/planner.objs" "$TMP/hdrs.txt")
+echo "PLANNER_LINK emitter_symbols=$N emitter_headers=$H bar=$BAR planner_objects=$np emitter_objects=$ne objdir=$(basename "$OBJDIR")"
+if [ "$LIST" = 1 ] || [ "$N" -gt "$BAR" ] || [ "$H" -gt "$BAR" ]; then
     while IFS=$'\t' read -r s d n; do printf '  %-40s defined in %-28s needed by %s\n' "$(echo "$s" | c++filt)" "$d" "$n"; done < "$TMP/hits2.tsv"
 fi
-[ "$N" -le "$BAR" ] && exit 0
+while read -r h; do [ -n "$h" ] && printf '  header %s\n' "$h"; done < "$TMP/hdrs.txt"
+[ "$N" -le "$BAR" ] && [ "$H" -le "$BAR" ] && exit 0
 exit 1
