@@ -19,6 +19,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S4E = os.path.normpath(os.path.join(HERE, '..', '..'))
@@ -73,17 +74,47 @@ def tree_programs(kind, lang):
     return sorted(out)
 
 
+def run_slot():
+    # ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (CEO-1894), the same flock pool corpus_suite_harness.py takes: three seats proving moves at once
+    # ran 20 compile workers beside the box's 8 slots (load 15-25 on 16 cores, ceo 2026-10-26 12:10 CDT, Lon: "what's the health of the machine?").
+    # A wait for a slot is taken BEFORE the compile's timeout starts, so it can never read as a hang.
+    if os.environ.get('S4E_RUN_SLOT_HELD'):
+        return None
+    import fcntl
+    try:
+        n = max(1, int(os.environ.get('S4E_RUN_SLOTS', '8')))
+        d = '/tmp/s4e-run-slots'
+        os.makedirs(d, exist_ok=True)
+        for i in range(n):
+            f = open(os.path.join(d, 'slot%d' % i), 'a')
+            try:
+                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return f
+            except OSError:
+                f.close()
+        f = open(os.path.join(d, 'slot%d' % (threading.get_ident() % n)), 'a')
+        fcntl.flock(f, fcntl.LOCK_EX)
+        return f
+    except OSError:
+        return None
+
+
 def compile_one(scrip, prog, outs):
     env = dict(os.environ)
     d = os.path.dirname(prog)
     env['SNO_LIB'] = d + ':' + os.path.join(CORPUS, 'include')
     env['SCRIP_DIAG'] = '0'
+    env['S4E_RUN_SLOT_HELD'] = '1'
+    slot = run_slot()
     try:
         r = subprocess.run([scrip, '--compile', '-o', outs, prog], cwd=d, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                            stderr=subprocess.PIPE, timeout=300)
         rc, err = r.returncode, r.stderr.decode('utf-8', 'replace')
     except subprocess.TimeoutExpired:
         rc, err = 124, 'timeout'
+    finally:
+        if slot:
+            slot.close()
     data = open(outs, 'rb').read() if rc == 0 and os.path.exists(outs) else b''
     return rc, data, err
 
