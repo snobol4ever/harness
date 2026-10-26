@@ -55,6 +55,17 @@ for _a in "${_angs[@]}"; do case "$_a" in process) DO_P=1;; iter) DO_I=1;; time)
 [ "$DO_P$DO_I$DO_T" != 000 ] || refuse "BENCH_ANGLES names no angle (got '$ANGLES')"
 [ "$((DO_P+DO_I+DO_T))" = "${#_angs[@]}" ] || refuse "BENCH_ANGLES names an angle twice (got '$ANGLES')"
 ANGLES="$( { [ $DO_P = 1 ] && printf 'process,'; [ $DO_I = 1 ] && printf 'iter,'; [ $DO_T = 1 ] && printf 'time,'; } | sed 's/,$//')"
+# ⭐ THE ORACLE ARM (BENCH_ORACLE_ARM=1; ceo CEO-1987, Lon 2026-10-25: "Let's do the Pascal benchmarks and then Raku next." -- bench_triangulate_raku.sh
+# times only self-timed kernels and every kernel is pristine since the kernel convention, so it refuses with 0 measurable): the SAME generated
+# fixed-time twin runs under rakudo with the benchmark prelude staged as raku_oracle_run.sh stages it (-I<staged> -Mprelude_rakudo: wall_us()
+# is a SCRIP builtin), printed as `scouting <k> raku:` lines beside the m3/m4 ones and an informational `<k> raku PASS|FAIL` line
+# (stdout == .ref, the BENCH line held). As test_snobol4_bench_suite.sh's SPITBOL arm, it never enters the board line: the row grades SCRIP.
+ORACLE_ARM="${BENCH_ORACLE_ARM:-0}"; RAKU=""
+if [ "$ORACLE_ARM" = 1 ]; then
+  RAKU="$(. "$HERE/lib_oracle_flags.sh" && rakudo_bin)"; [ -n "$RAKU" ] && [ -x "$RAKU" ] || refuse "BENCH_ORACLE_ARM=1 but rakudo_bin names no executable ($RAKU)"
+  [ "$DO_T" = 1 ] || refuse "BENCH_ORACLE_ARM=1 times the fixed-time twin, and BENCH_ANGLES ($ANGLES) leaves time out"
+  [ -f "$BD/prelude_rakudo.rakumod" ] || refuse "BENCH_ORACLE_ARM=1 but $BD carries no prelude_rakudo.rakumod for rakudo's wall_us()"
+fi
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name "*.$EXT" -printf '%f\n' | sed "s/\.$EXT\$//" | LC_ALL=C sort)
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.$EXT under $BD -- a population of zero is not a green board"
@@ -69,6 +80,7 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 for _d in "$BD"/*; do case "${_d##*/}" in *."$EXT"|*.ref|*.heap|*.stack|*.ast|*.s|*.tsv|*.md|LICENSE*) continue;; esac
   [ -f "$_d" ] && grep -lqF -- "${_d##*/}" "$BD"/*."$EXT" && cp "$_d" "$T/"; done
 PROG_ROWS="$T/progress.tsv"; : >"$PROG_ROWS"
+if [ "$ORACLE_ARM" = 1 ]; then mkdir -p "$T/prelude" && cp "$BD/prelude_rakudo.rakumod" "$T/prelude/" || refuse "could not stage the rakudo prelude"; fi
 run1() {
   local o="$1" kb="$2"; shift 2
   ( cd "$T" && [ -n "$kb" ] && export SCRIP_HEAP_CAP_KB="$kb" && unset SCRIP_HEAP_MB SCRIP_HEAP_KB; [ -n "${st:-}" ] && export SCRIP_STACK="${st}k"
@@ -156,6 +168,12 @@ for k in "${KERNELS[@]}"; do
     printf '%-28s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$r1" "$r2" "$r3" "$v${why:+ -- $(echo "$why" | sed 's/^[; ]*//')}"
   done
   [ "$okboth" = 1 ] && BOTH=$((BOTH+1))
+  if [ "$ORACLE_ARM" = 1 ] && [ "$gen_ok" = 1 ]; then
+    run1 "$T/$k.raku.t" "" "$RAKU" -I"$T/prelude" -Mprelude_rakudo "$T/$k.time.$EXT"; rc=$?; w="$(bench_ok "$T/$k.raku.t.err" time "$want")"
+    grep -h '^BENCH mode=' "$T/$k.raku.t.err" | sed "s/^/    scouting $k raku: /"
+    if [ "$rc" = 0 ] && cmp -s "$T/$k.raku.t.out" "$ref" && [ -z "$w" ]; then o=PASS; else o="FAIL -- rc=$rc$(cmp -s "$T/$k.raku.t.out" "$ref" || echo ', stdout differs from .ref')${w:+, $w}"; fi
+    printf '%-28s %-4s %s (oracle arm, informational)\n' "$k" raku "$o"
+  fi
 done
 LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$((TOTAL+NOUT))$([ "$NOUT" -gt 0 ] && echo " excluded=$NOUT") all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
 echo
