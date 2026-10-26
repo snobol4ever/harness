@@ -944,6 +944,7 @@ test_gate_pl_write_term_variable_names_take_unicode_uppercase_names.sh	WIRED	-	-
 test_gate_pl_writef_dcg_basics_and_clpfd_goal_terms_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh	WIRED	-	-	-
 test_gate_pl_xfail_marker_consistent.sh	WIRED	-	-	-
+test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
 test_gate_postoffice_identity.sh	WIRED	-	-	-
 test_gate_pre_commit_refuses_a_conflict_marker.sh	WIRED	-	-	-
 test_gate_preflight_arms_stay_cheap.sh	WIRED	-	-	-
