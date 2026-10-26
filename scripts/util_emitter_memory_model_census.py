@@ -11,9 +11,13 @@ Read from SCRIP's source, no build, no run:
       emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call;
   (B) DEFINITIONS in src/emitter/ of a memory-model function (a name in the fc_ frame_ zd_ zls_ xop_ act_ planner_ families) -- a calculation that
       lives in the emitter;
+  (D) references in src/planner/ to the EMITTER'S state -- `g_emitter.` (the emitter's global struct, where the planner keeps its own tables
+      today), `g_emit_cfg` (the emitter's current-graph pointer, the planner's input today) and `g_emit.` (the emitter's per-node fields) -- the
+      planner that reads or keeps emitter state cannot run as its own stage before emission (ARCH-THREE-ZETAS-EMISSION.md section 8 chunk 1:
+      "the planner reads no emitter state");
   (C) whole-graph index reads in src/emitter/ (`g_emit_cfg->all` and `->all[`), REPORTED, not in the bar: the emitter emits a chain and walks it,
       and which of these reads computes a memory fact is the landing's to show.
-The bar is A + B. --at-most N exits 1 when A + B > N (the ratchet each landing owes: it may only fall); rc 2 when the tree cannot be read.
+The bar is A + B + D. --at-most N exits 1 when A + B > N (the ratchet each landing owes: it may only fall); rc 2 when the tree cannot be read.
 """
 import os
 import re
@@ -83,19 +87,31 @@ def main(argv):
     for p in emitter:
         txt = open(p, encoding='utf-8', errors='replace').read()
         c += txt.count('g_emit_cfg->all') + len(re.findall(r'->all\[', txt))
+    d_by = {}
+    for p in mm_src:
+        if not os.path.exists(p):
+            continue
+        txt = re.sub(r'"(?:\\.|[^"\\])*"', '""', open(p, encoding='utf-8', errors='replace').read())
+        for key, pat in (('g_emitter.', r'\bg_emitter\.'), ('g_emit_cfg', r'\bg_emit_cfg\b'), ('g_emit.', r'\bg_emit\.')):
+            n = len(re.findall(pat, txt))
+            if n:
+                d_by[(os.path.relpath(p, SCRIP), key)] = n
+    d = sum(d_by.values())
     a = sum(a_by.values())
     b = len(b_names)
-    print('EMITTER_MEMORY_MODEL A_calls=%d (into %d planner/layout functions, from %d files) B_emitter_defs=%d C_graph_reads=%d bar=A+B=%d%s' % (
-        a, len(a_by), len(a_files), b, c, a + b, '' if at_most is None else ' at-most=%d' % at_most))
+    print('EMITTER_MEMORY_MODEL A_calls=%d (into %d planner/layout functions, from %d files) B_emitter_defs=%d D_planner_emitter_state=%d C_graph_reads=%d bar=A+B+D=%d%s' % (
+        a, len(a_by), len(a_files), b, d, c, a + b + d, '' if at_most is None else ' at-most=%d' % at_most))
     for f, n in sorted(a_files.items(), key=lambda kv: -kv[1]):
         print('  A %-44s %5d' % (f, n))
+    for (f, k), n in sorted(d_by.items(), key=lambda kv: -kv[1]):
+        print('  D %-34s %-11s %5d' % (f, k, n))
     if lst:
         for n, k in sorted(a_by.items(), key=lambda kv: -kv[1]):
             print('  A-fn %-44s %5d' % (n, k))
         for n in b_names:
             print('  B-def %s' % n)
-    if at_most is not None and a + b > at_most:
-        print('⛔ RED: A+B=%d is over the ratchet %d -- the emitter calculates the memory model (CEO-1988)' % (a + b, at_most))
+    if at_most is not None and a + b + d > at_most:
+        print('⛔ RED: A+B+D=%d is over the ratchet %d -- the memory model is not the planner alone (CEO-1988)' % (a + b + d, at_most))
         return 1
     return 0
 
