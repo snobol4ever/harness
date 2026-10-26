@@ -21,7 +21,7 @@
 # FLOORS measured 2026-10-18 16:2x CDT on the restore merged with hq_prolog's 8a5973d0b/f049ef7a8 (its restore reads emit_resumable_frame()
 # at three more sites and zls_g_resumable_frame() at four more than the pre-deletion tree did; zframe_graph one more through x86_resumable_frame).
 # RE-FLOORED 2026-10-22 15:4x CDT by the cto on the coo's red of 15:3x (CEO-1895): zls_g_resumable_frame 10 -> 12, the one retains table's
-# unresolved-callee-in-a-resumable-frame rule (planner_retains and its home view, SCRIP e351e13d4/dace004b6) MOVED out of src/ir/frame_layout.c's
+# unresolved-callee-in-a-resumable-frame rule (planner_retains and its home view, SCRIP e351e13d4/dace004b6) MOVED out of src/planner/frame_layout.c's
 # deleted zls_home_dyn, which this gate does not count, into src/planner, where ARCH-ZETA-ONE-COORDINATE 3.5 (i.b) puts the decision -- it goes
 # with the Prolog switch's per-predicate retains fact; home_frame 0 -> 2, zst_plan admitting the Pascal switch's home-frame graphs and giving them a
 # second hosting pass (SCRIP 2eb1aadd9, 6e1dd9a8b) -- both go when zst_plan's regime returns are deleted (3.5 WHAT THIS REPLACES). The other five

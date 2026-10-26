@@ -5,7 +5,7 @@
 # the switch's second finish line for every language, so make it read per graph and per language"; built by the cfo).
 #
 # WHAT IT MEASURES. `SCRIP_ZSM=1 scrip --compile` prints one [ZSM-FRAME] line per graph that carves a frame or forms a frame address
-# (src/planner/zeta_plan.cpp zsm_frame_addr/zsm_frame_carve, read through the layout's own tables in src/ir/frame_layout.c zls_g_key_class):
+# (src/planner/zeta_plan.cpp zsm_frame_addr/zsm_frame_carve, read through the layout's own tables in src/planner/frame_layout.c zls_g_key_class):
 #   total=     the frame bytes the graph's GC frame map registers (emit_gc_map_register), the frame as carved
 #   region=    the layout's value region (zls_g_frame_region: 0 keys-only, the resident region under the home_frame fact, else every key)
 #   resident=  the bytes of that region the declaration covers: frame words (layout fields no node owns: the resume and mark words, the header)

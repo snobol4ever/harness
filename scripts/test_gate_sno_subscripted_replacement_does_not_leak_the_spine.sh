@@ -4,7 +4,7 @@
 # ⛔⭐ THE CLASS (hq_S 2026-09-13, measured; cure site is hq_U's ζ-SPINE depth planner, NOT this seat's files):
 # a match WITH REPLACEMENT whose SUBJECT is a SUBSCRIPTED reference (an array element) leaks exactly 64 bytes of
 # ζ-SPINE (RSP) every time the statement executes. The statement trailer's whack constant -- op_zgpop, staged from
-# g_zd_gpop and stamped by zd_plan (src/emitter/emit.cpp:2620 -- NOT src/ir/zeta_depth.c, see below), emitted on the X86H_JMP gamma hook arm at
+# g_zd_gpop and stamped by zd_plan (src/emitter/emit.cpp:2620 -- NOT src/planner/zeta_depth.c, see below), emitted on the X86H_JMP gamma hook arm at
 # x86_asm.h:1910 -- does not account for the FOUR 16-byte value-stack slots pushed by the store chain that exists
 # ONLY for an indexed target: var -> call (rt_call_arr_bl, the SNO$NAME lvalue store) -> var -> assign_var.
 # MEASURED, not inferred: RSP falls 0x40 per iteration across five consecutive iterations of the loop form, and in

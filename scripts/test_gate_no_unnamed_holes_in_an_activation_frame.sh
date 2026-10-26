@@ -14,7 +14,7 @@
 # change to what a frame CARRIES and would teach the next seat to bump the number; a tiling census only ever fires
 # when the layout reserves something it cannot name, which is never correct.  A NAMED pad field (gate.pad,
 # resume.pad, callgen.act pad) is COVERED and therefore fine -- the gate is about unnamed reservation.
-# ⛔ EVERY FRONTEND, because the granter is language-blind (zls_grant in src/ir/frame_layout.c) and a per-call
+# ⛔ EVERY FRONTEND, because the granter is language-blind (zls_grant in src/planner/frame_layout.c) and a per-call
 # over-reservation reaches all seven: SNOBOL4, Icon and Prolog witnesses here, each chosen to contain calls with
 # different arities, because the suspected formula error scales with the NUMBER OF CALLS and not with their size.
 # ⛔ REFUSES rc=2 rather than grading when --dump-zeta yields no parsable graph at all -- a runner that cannot

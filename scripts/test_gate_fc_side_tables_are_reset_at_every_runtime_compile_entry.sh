@@ -61,7 +61,7 @@ G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
-FL="$ROOT/src/ir/frame_layout.c"; [ -f "$FL" ] || { echo "⛔ GATE REFUSE(2) [$G]: $FL absent"; exit 2; }
+FL="$ROOT/src/planner/frame_layout.c"; [ -f "$FL" ] || { echo "⛔ GATE REFUSE(2) [$G]: $FL absent"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 # RE-CUT 2026-10-09 cfo (CEO-1575, the g_lower stage landing B): frame_layout.c's counters and node maps are members of
 # g_lower_ir_t in src/lower/g_lower.h, so arm 1 reads the declared counters there (int <name>_n;) and the map checks the

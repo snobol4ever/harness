@@ -6,7 +6,7 @@
 #
 # WHY A REAL SCANNER AND NOT `grep '^\s+static'`: this codebase's C style crams a whole function body
 # (signature + locals + logic) onto ONE physical line under the 200-char/zero-blank-line convention --
-# e.g. `static int zd_omega_test_kind(IR_e op) { static int _tf = -1; ... }` in src/ir/zeta_depth.c.
+# e.g. `static int zd_omega_test_kind(IR_e op) { static int _tf = -1; ... }` in src/planner/zeta_depth.c.
 # The file-scope FUNCTION's own `static` sits at column 0; the function-LOCAL static a few tokens later
 # on the SAME line is what this row exists to find, and a leading-indentation grep cannot see it (it is
 # not the first token on its line). So this walks a real brace-depth stack after stripping comments and

@@ -22,7 +22,7 @@ src/emitter/emit.h	0	1	0	0
 src/ir/ast.h	4	0	0	0
 src/ir/bb_box.h	1	0	0	0
 src/ir/bb_pool.c	0	0	0	1
-src/ir/frame_layout.c	26	0	0	0
+src/planner/frame_layout.c	26	0	0	0
 src/ir/scrip_ir.c	22	0	0	0
 src/ir/sm_prog.c	6	0	0	0
 src/lower/lower_common.c	1	10	0	0

@@ -20,7 +20,7 @@
 # should appear there with a nonzero push count, and vice versa.
 import re, sys, os
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
-ZS   = open(os.path.join(ROOT, 'src/ir/frame_layout.c')).read()
+ZS   = open(os.path.join(ROOT, 'src/planner/frame_layout.c')).read()
 EM   = open(os.path.join(ROOT, 'src/emitter/emit.cpp')).read()
 def body(src, start, end):
     i = src.index(start); j = src.index(end, i); return src[i:j]

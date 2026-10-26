@@ -49,7 +49,7 @@ echo "r/1 region_end=$end (bar <= 208; rung-3(e) tree read 224) scratch=${scr:-a
 # storing a result slot; the claim spans the planner and three templates, so this arm reads the templates: a store to the box's
 # own slot (FRQ(_.op_off ...)) in any of them reds here, and the planner must learn it before that box can write.
 nw=0; for b in bb_unify_const bb_unify_first bb_unify_value; do [ -f "src/templates/bb/$b.cpp" ] || { echo "⛔ REFUSE(2): src/templates/bb/$b.cpp is missing"; exit 2; }; k="$(grep -c 'FRQ(_.op_off' "src/templates/bb/$b.cpp")"; [ "$k" -eq 0 ] || { echo "  ⛔ $b.cpp stores its result slot ($k sites) but zls_writes_no_result skips it as a dead writer"; bad=$((bad+1)); nw=1; }; done
-grep -q 'static int zls_writes_no_result(IR_e op) { return op == IR_UNIFY_CONST || op == IR_UNIFY_FIRST || op == IR_UNIFY_VALUE; }' src/ir/frame_layout.c || { echo "  ⛔ zls_writes_no_result in frame_layout.c is not the three boxes this arm reads"; bad=$((bad+1)); nw=1; }
+grep -q 'static int zls_writes_no_result(IR_e op) { return op == IR_UNIFY_CONST || op == IR_UNIFY_FIRST || op == IR_UNIFY_VALUE; }' src/planner/frame_layout.c || { echo "  ⛔ zls_writes_no_result in frame_layout.c is not the three boxes this arm reads"; bad=$((bad+1)); nw=1; }
 [ "$nw" -eq 0 ] && echo "no-result writers: bb_unify_const, bb_unify_first, bb_unify_value store no result slot, as zls_writes_no_result assumes"
 al="$(grep -E "^;   reuse 'atom_length/2'" "$T/pl.dump")"
 printf '%s\n' "$al" | grep -qE 'scratch=own\(REFUSED: IR_CALL dead write at [0-9]+ lands inside IR_VAR_REF \[[0-9]+\.\.[0-9]+\] on every pool slot\)' || { echo "  ⛔ the prelude's atom_length/2 (guard and builtin share the operand temps) is not visibly REFUSED: $al"; bad=$((bad+1)); }

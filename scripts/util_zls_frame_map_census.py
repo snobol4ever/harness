@@ -17,7 +17,7 @@ graph of every program it is pointed at and reports every word the table does NO
   vslot-unmapped    a named variable slot (vslot) not covered by exactly one field (one offset, size and kind;
                     the overlay's repeats of it count once)
   provisional-kind  a field printed with `(audit)` -- a kind nobody verified against the template
-  unknown-kind      a kind name outside the ZK_ enum of src/ir/frame_layout.h (read from it, never a copied list)
+  unknown-kind      a kind name outside the ZK_ enum of src/planner/frame_layout.h (read from it, never a copied list)
 
 WHAT IT DOES NOT SEE, SAID HERE SO NOBODY READS A CLEAN CENSUS AS A CLEAN FRAME: the emitter's wire header
 beyond region_end (the saved gamma/omega continuations and the saved rsp the prologue stores, 48 or 80 bytes;

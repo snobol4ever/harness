@@ -3,7 +3,7 @@
 #   CAN A SUITE BE GREEN WHILE THE COLLECTOR DOES NOT FIND THE ROOTS?
 #
 # The question is decidable with one witness and three runs.  ../harness/scripts/fixtures/gc_roots_witness.sno holds one value of
-# EVERY registered zeta slot kind (src/ir/frame_layout.h: ZK_DESCR, ZK_PTR_GC, ZK_PTR_CODE, ZK_RAW) live across the
+# EVERY registered zeta slot kind (src/planner/frame_layout.h: ZK_DESCR, ZK_PTR_GC, ZK_PTR_CODE, ZK_RAW) live across the
 # whole program and prints all of them at the end, so a lost root is a wrong byte and never a silence:
 #
 #   ORACLE     sbl -bf                                  -- the reference bytes; no oracle is rc=2, never a verdict

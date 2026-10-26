@@ -1,6 +1,6 @@
 *   gc_roots_witness.sno -- hq_snocone's decidable test (coo, CEO-818/819 F6 step 6):
 *   CAN A SUITE BE GREEN WHILE THE COLLECTOR DOES NOT FIND THE ROOTS?
-*   One value of every registered zeta slot kind (src/ir/frame_layout.h) is held live across many
+*   One value of every registered zeta slot kind (src/planner/frame_layout.h) is held live across many
 *   forced collections and printed afterwards, so a lost root shows as a wrong byte, never as silence:
 *     ZK_DESCR    NAME, N       ZK_PTR_GC   T (a table), A (an array)
 *     ZK_PTR_CODE PAT (a compiled pattern graph, held unmatched across every collection)

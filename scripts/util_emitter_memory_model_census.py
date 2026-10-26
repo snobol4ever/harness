@@ -6,7 +6,8 @@ SOLELY into PLANNER."  The deletion of the 27 named placement predicates (util_p
 "placement decided once" while the emitter went on calculating the memory model; this census counts what that one did not.
 
 Read from SCRIP's source, no build, no run:
-  (A) CALLS from src/emitter/ and src/templates/ into a function DEFINED in src/planner/ or in the frame layout (src/ir/frame_layout.c) -- the
+  (A) CALLS from src/emitter/ and src/templates/ into a function DEFINED in src/planner/, the frame layout (src/planner/frame_layout.c) or the
+      zeta-depth analysis (src/planner/zeta_depth.c) -- the
       emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call;
   (B) DEFINITIONS in src/emitter/ of a memory-model function (a name in the fc_ frame_ zd_ zls_ xop_ act_ planner_ families) -- a calculation that
       lives in the emitter;
@@ -56,7 +57,7 @@ def main(argv):
     if not os.path.isdir(os.path.join(SCRIP, 'src', 'emitter')):
         print('REFUSED(2): no SCRIP tree at %s' % SCRIP, file=sys.stderr)
         return 2
-    mm_src = files(os.path.join(SCRIP, 'src', 'planner'), ('.c', '.cpp', '.h', '.inc')) + [os.path.join(SCRIP, 'src', 'ir', 'frame_layout.c')]
+    mm_src = files(os.path.join(SCRIP, 'src', 'planner'), ('.c', '.cpp', '.h', '.inc')) + [os.path.join(SCRIP, 'src', 'ir', f) for f in ('frame_layout.c', 'zeta_depth.c') if os.path.exists(os.path.join(SCRIP, 'src', 'ir', f))]
     mm = defined([p for p in mm_src if os.path.exists(p)]) - ALLOW
     emitter = files(os.path.join(SCRIP, 'src', 'emitter'), ('.c', '.cpp', '.h', '.inc'))
     templates = files(os.path.join(SCRIP, 'src', 'templates'), ('.c', '.cpp', '.h', '.inc'))
@@ -68,6 +69,7 @@ def main(argv):
         for line in open(p, encoding='utf-8', errors='replace'):
             if not call_re:
                 break
+            line = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
             for stmt in line.split(';'):
                 if re.search(r'\bextern\b', stmt):
                     continue
