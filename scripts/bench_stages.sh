@@ -9,7 +9,8 @@ export SCRIP_DIAG=0
 # program's own BENCH line), START+COMPILE = the stopwatch's elapsed - RUNTIME. For SPITBOL and mode 3 that is process start-up plus the compile
 # (both compile every run); for the mode-4 binary it is start-up alone (its compile ran before, by scrip --compile and the link). No hook in any
 # compiler: the clock reads are lines of the program. Every run's stdout is held to the program's .ref (or, with --prog, to the rival's answer).
-# Medians over R runs (default 5). EXIT 0 every cell measured; 1 a run gave a wrong answer or no BENCH line; 2 REFUSED.
+# Medians over the good runs of R (default 5); a run with a wrong answer or no BENCH line is counted and named, never timed. EXIT 0 every run
+# of every cell measured; 1 a run failed; 2 REFUSED.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="$(cd "$ROOT/.." && pwd)"
 LANG_="${1:-}"; shift || true
@@ -43,7 +44,7 @@ for f in "${POP[@]}"; do
   if [ -n "$PROG" ]; then (cd "$W/cwd" && timeout -k 5 300 "$RBIN" $(sbl_lang_flags 2>/dev/null) $OAD "$f" < "$IN" > "$W/want" 2>/dev/null); else cp "$D/$k.ref" "$W/want"; fi
   (cd "$W/cwd" && "$SCRIP" --compile -o "$W/$k.s" "$W/$k.once.$EXT" < /dev/null 2> "$W/c.err") && gcc "$W/$k.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/$k.m4" 2>> "$W/c.err" || { echo "⛔ $k m4 does not build: $(head -1 "$W/c.err" | cut -c1-120)"; RC=1; }
   for e in "$RIVAL" m3 m4; do
-    : > "$W/tot"; : > "$W/run"; : > "$W/oh"; chk=ok
+    : > "$W/tot"; : > "$W/run"; : > "$W/oh"; chk=ok; bad=0; why=""
     for ((i=1;i<=REPS;i++)); do
       case "$e" in
         sbl)    (cd "$W/cwd" && "$WRAP" timeout -k 5 300 "$RBIN" $(sbl_lang_flags) $OAD "$W/$k.once.$EXT" < "$IN" > "$W/o" 2> "$W/e") ;;
@@ -52,10 +53,11 @@ for f in "${POP[@]}"; do
         m4)     [ -x "$W/$k.m4" ] || { chk="no binary"; break; }; (cd "$W/cwd" && "$WRAP" timeout -k 5 300 "$W/$k.m4" $SWD < "$IN" > "$W/o" 2> "$W/e") ;;
       esac
       el="$(grep -o 'elapsed_ns=[0-9]*' "$W/e" | tail -1 | cut -d= -f2)"; ns="$(grep -o 'BENCH mode=once kernel=main iters=1 ns=[0-9]*' "$W/e" | tail -1 | sed 's/.*ns=//')"
-      cmp -s "$W/o" "$W/want" || { chk="WRONG ANSWER"; break; }
-      [ -n "$el" ] && [ -n "$ns" ] || { chk="no BENCH line"; break; }
+      if ! cmp -s "$W/o" "$W/want"; then bad=$((bad+1)); [ -n "$why" ] || why="wrong answer: $(grep -v BENCH "$W/e" | head -1 | cut -c1-90)"; continue; fi
+      if [ -z "$el" ] || [ -z "$ns" ]; then bad=$((bad+1)); [ -n "$why" ] || why="no BENCH line"; continue; fi
       echo "$el" >> "$W/tot"; echo "$ns" >> "$W/run"; echo $((el - ns)) >> "$W/oh"
     done
+    [ "$bad" = 0 ] || chk="FAILED $bad of $REPS runs ($why)"
     [ "$chk" = ok ] || RC=1
     printf '%-34s %-7s %12s %12s %16s  %s\n' "$k" "$e" "$(ms "$(med < "$W/tot")")" "$(ms "$(med < "$W/run")")" "$(ms "$(med < "$W/oh")")" "$chk"
   done
