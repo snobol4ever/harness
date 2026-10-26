@@ -66,6 +66,9 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
       them frame_homed_untested and spine_unhomed; a frame_homed row's tenth column is the planner's HOMETEST why, e.g. operand:pinned-temp, so a residue names its rule at once)
   BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
+  BB_HOSTS_RBP_CLASS <lang> class=<c> count=..   (ceo CEO-1980, Lon 2026-10-25: "there is no reason that the LIFO can not be enforced": every ops_rbp operand by class --
+      call-act-word (a call box's frame/beta pair), construct-record (a BOUND/GATE/TO record), record-across-excursion (the same read across a
+      retaining edge), operand-across-retaining-edge (a spine cell mirrored to the frame), address-escapes; the classes sum to ops_rbp)
       (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
       mirrors its spine cell to a frame slot; a local is RBP-hosted when it is a frame slot, forced = it fails the local test, misplaced =
       it does not. ops_prealloc = a box granted a frame slot at entry whose cell is NOT an RBP home (on the spine, or no cell): a PRE-ALLOCATION
@@ -460,6 +463,21 @@ def analyse(lang, src, tmp, seen, seen_sec):
     return {'graphs': out, 'bases': bases, 'standing': fx['standing'], 'unwind': unwind}
 
 
+def rbp_class(kind, xfwhy, home):
+    k = (kind or '').replace('IR_', '')
+    if xfwhy == 'resident-result' and k in ('CALL_PROC_STAGED', 'CALL_VALUE', 'CALL', 'CALL_DIRECT'):
+        return 'call-act-word'
+    if home == 'SPINE':
+        return 'operand-across-retaining-edge'
+    if xfwhy == 'construct-record':
+        return 'construct-record'
+    if xfwhy == 'address-escapes':
+        return 'address-escapes'
+    if k in ('BOUND', 'GATE', 'CLEANUP', 'TO'):
+        return 'record-across-excursion'
+    return 'other:%s:%s' % (k, xfwhy)
+
+
 def state_word_kinds():
     path = os.path.join(HERE, 'state_word_kinds.tsv')
     out = {}
@@ -507,6 +525,7 @@ def main():
     fhome = {l: collections.Counter() for l in langs}
     stw = collections.defaultdict(collections.Counter)
     hosts = {l: collections.Counter() for l in langs}
+    rbpcls = {l: collections.Counter() for l in langs}
     seen_sec = set()
     seen_standing = set()
     with tempfile.TemporaryDirectory() as td:
@@ -549,6 +568,8 @@ def main():
                         cellrows.append((lang, home, 'prealloc', 'none', '-', gr['name'] + '@' + gr['sig'], tb, kind, cid))
                     if tb == 'A':
                         hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf != -1)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
+                        if home == 'RBP' or (home == 'SPINE' and xf != -1):
+                            rbpcls[lang][rbp_class(kind, xfwhy, home)] += 1
                     elif home == 'SPINE':
                         hs['loc_rsp'] += 1
                     elif home in ('RBP', 'RSP_CARVED'):
@@ -630,6 +651,8 @@ def main():
                 print('BB_PLACEMENT_TESTS_WHY %s %s count=%d' % (lang, k[4:], v))
     for lang in langs:
         hs = hosts[lang]
+        for k, v in sorted(rbpcls[lang].items(), key=lambda kv: -kv[1]):
+            print('BB_HOSTS_RBP_CLASS %s class=%s count=%d' % (lang, k, v))
         print('BB_HOSTS %s ops_rsp=%d ops_rbp=%d ops_precarved=%d ops_none=%d loc_rsp=%d loc_rbp=%d loc_rbp_forced=%d loc_rbp_misplaced=%d loc_none=%d ops_prealloc=%d' %
               (lang, hs['ops_rsp'], hs['ops_rbp'], hs['ops_precarved'], hs['ops_none'], hs['loc_rsp'], hs['loc_rbp'], hs['loc_rbp_forced'], hs['loc_rbp_misplaced'], hs['loc_none'],
                hs['ops_prealloc']))
