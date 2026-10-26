@@ -8,7 +8,7 @@ SOLELY into PLANNER."  The deletion of the 27 named placement predicates (util_p
 Read from SCRIP's source, no build, no run:
   (A) CALLS from src/emitter/ and src/templates/ into a function DEFINED in src/planner/, the frame layout (src/planner/frame_layout.c) or the
       zeta-depth analysis (src/planner/zeta_depth.c) -- the
-      emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call;
+      emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call, and a call inside a one-line definition (`int f(void) { return g(); }`) is one (the census skipped those until ceo CEO-1995: 10 calls hidden at SCRIP ef933fe08);
   (B) DEFINITIONS in src/emitter/ of a memory-model function (a name in the fc_ frame_ zd_ zls_ xop_ act_ planner_ families) -- a calculation that
       lives in the emitter;
   (D) references in src/planner/ to the EMITTER'S state -- `g_emitter.` (the emitter's global struct, where the planner keeps its own tables
@@ -85,11 +85,13 @@ def main(argv):
                 continue
             line = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
             for stmt in line.split(';'):
-                if re.search(r'\bextern\b', stmt):
+                if re.search(r'\bextern\b', stmt) and '{' not in stmt:
                     continue
+                if DEF.match(stmt + '{') and stmt.strip().endswith(')') and '{' not in stmt:
+                    continue
+                if '{' in stmt and DEF.match(stmt[:stmt.index('{') + 1]):
+                    stmt = stmt[stmt.index('{') + 1:]
                 for m in call_re.finditer(stmt):
-                    if DEF.match(stmt + '{') and stmt.strip().endswith(')'):
-                        continue
                     a_by[m.group(1)] = a_by.get(m.group(1), 0) + 1
                     a_files[rel] = a_files.get(rel, 0) + 1
     b_names = sorted(n for n in defined(emitter) if n.startswith(FAMILIES))
