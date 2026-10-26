@@ -5,7 +5,7 @@ A landing that MOVES a calculation (the emitter's memory model into the planner,
 of the seven master suites (corpus/tests/<lang>/ALL.*, extracted by corpus_suite_harness's own readers, the one extraction authority), every
 benchmark kernel (corpus/benchmarks/<lang>/) and every demo (corpus/demos/<lang>/) to mode-4 assembly with TWO scrip binaries -- the base tree's
 and the new tree's -- and compares the bytes. Each compile runs in its program's own directory with SNO_LIB = that directory and corpus/include,
-stdin /dev/null. A pair is IDENTICAL (same rc, same bytes), DIFFERENT (both compiled, bytes differ), REFUSED-BOTH (both refused the same way: the
+stdin /dev/null. A pair is IDENTICAL (same rc, same bytes), LINE-ONLY (same rc, same instruction bytes, only a <template file>:<line> comment reference moved; counted apart, never in different; coo 10-26), DIFFERENT (both compiled, bytes differ), REFUSED-BOTH (both refused the same way: the
 program is outside today's compiler on both trees, so the pair proves nothing either way and is counted apart), or SPLIT (one compiled, one did
 not). EXIT 0 every pair IDENTICAL or REFUSED-BOTH; 1 a DIFFERENT or SPLIT pair (the first 30 named, with the first differing line); 2 REFUSED.
 Calibrate first: --base and --new the same tree reads 0 DIFFERENT, or the compiler is not deterministic and this instrument cannot measure.
@@ -15,6 +15,7 @@ import concurrent.futures
 import hashlib
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -119,6 +120,16 @@ def compile_one(scrip, prog, outs):
     return rc, data, err
 
 
+SRCREF = re.compile(rb'(\.(?:cpp|c|h|inc)):[0-9]+')
+
+
+def line_only(a, b):
+    """Two differing asm lines whose instruction text (before the first '#') is equal and whose comments differ only in a <source file>:<line> reference."""
+    ca, _, ma = a.partition(b'#')
+    cb, _, mb = b.partition(b'#')
+    return ca == cb and bool(ma) and bool(mb) and SRCREF.sub(rb'\1:N', ma) == SRCREF.sub(rb'\1:N', mb)
+
+
 def one(args):
     label, prog, base, new, tmp = args
     h = hashlib.sha1(label.encode()).hexdigest()[:16]
@@ -133,11 +144,15 @@ def one(args):
         if db == dn:
             return label, 'IDENTICAL', ''
         lb, ln = db.split(b'\n'), dn.split(b'\n')
+        first = None
         for i in range(max(len(lb), len(ln))):
             a = lb[i] if i < len(lb) else b'<eof>'
             b = ln[i] if i < len(ln) else b'<eof>'
-            if a != b:
+            if a != b and not line_only(a, b):
                 return label, 'DIFFERENT', 'line %d: base %r | new %r' % (i + 1, a[:90], b[:90])
+            if a != b and first is None:
+                first = i + 1
+        return label, 'LINE-ONLY', 'first at line %d' % first
     if rb != 0 and rn != 0:
         return label, 'REFUSED-BOTH', 'rc %d/%d' % (rb, rn)
     return label, 'SPLIT', 'base rc %d, new rc %d: %s' % (rb, rn, (eb if rb else en).strip().split('\n')[0][:120])
@@ -164,7 +179,7 @@ def main(argv):
             pop += tree_programs('benchmarks', lang) + tree_programs('demos', lang)
         tmp = os.path.join(work, 's')
         os.makedirs(tmp)
-        res = {'IDENTICAL': 0, 'DIFFERENT': 0, 'REFUSED-BOTH': 0, 'SPLIT': 0}
+        res = {'IDENTICAL': 0, 'LINE-ONLY': 0, 'DIFFERENT': 0, 'REFUSED-BOTH': 0, 'SPLIT': 0}
         bad = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=a.jobs) as ex:
             for label, v, why in ex.map(one, [(l, p, os.path.abspath(a.base), os.path.abspath(a.new), tmp) for l, p in pop]):
@@ -176,8 +191,8 @@ def main(argv):
                 return subprocess.run(['git', '-C', t, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip()
             except Exception:
                 return '?'
-        print('ASM_IDENTITY population=%d identical=%d different=%d refused_both=%d split=%d base=%s new=%s langs=%s' % (
-            len(pop), res['IDENTICAL'], res['DIFFERENT'], res['REFUSED-BOTH'], res['SPLIT'], head(a.base), head(a.new), a.langs))
+        print('ASM_IDENTITY population=%d identical=%d different=%d refused_both=%d split=%d line_only=%d base=%s new=%s langs=%s' % (
+            len(pop), res['IDENTICAL'], res['DIFFERENT'], res['REFUSED-BOTH'], res['SPLIT'], res['LINE-ONLY'], head(a.base), head(a.new), a.langs))
         for label, v, why in bad[:30]:
             print('  %-10s %s -- %s' % (v, label, why))
         return 1 if bad else 0
