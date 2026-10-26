@@ -75,6 +75,11 @@ W="${DEMO_WORK:-${TMPDIR:-/tmp}/demo3a.$$}"; mkdir -p "$W" || exit 2
 RT="$ROOT/out"
 trap 'rm -rf "$W"' EXIT
 
+# ⛔ SPITBOL RESOLVES -INCLUDE FROM ITS CURRENT DIRECTORY (beauty/ORACLE-REF.md; SNOLIB does not reach this binary), so its arm runs in a
+# directory holding a copy of corpus/include/*.inc -- run from anywhere else beauty's sixteen -INCLUDEs fail, SPITBOL prints a compile
+# listing at rc 1, and the grid graded SCRIP's right answer against it (ceo CEO-1987, 2026-10-26: from that directory sbl and m3 both
+# print beauty.sno back byte for byte, its fixed point; the 2026-10-25 grid's "beauty wrong answer" was this)
+SBLCWD="$W/sbl-cwd"; mkdir -p "$SBLCWD" && cp -p "$S4E/corpus/include/"*.inc "$SBLCWD/" || { echo "⛔ REFUSED: cannot stage corpus/include for SPITBOL's -INCLUDE ($SBLCWD)." >&2; exit 2; }
 # ---- scaled input, built once and cached by (name,scale) -------------------------------------
 scaled_input() {                       # $1=name $2=srcfile $3=scale ; echoes path
   local f="$W/$1.x$3"
@@ -86,7 +91,7 @@ scaled_input() {                       # $1=name $2=srcfile $3=scale ; echoes pa
 run1() {                               # $1=engine $2=prog $3=input $4=stem $5=sblflags
   local eng="$1" prog="$2" in="$3" stem="$4" out rl u s el ib ob rc
   case "$eng" in                       # SWD and OAD: the row's program's declaration, read once per row
-    sbl) out=$("$WRAP" timeout -k 5 300 "$SBL" $(sbl_lang_flags) $OAD "$prog" <"$in" 2>"$W/e.err") ;;
+    sbl) out=$(cd "$SBLCWD" && "$WRAP" timeout -k 5 300 "$SBL" $(sbl_lang_flags) $OAD "$prog" <"$in" 2>"$W/e.err") ;;
     m3)  out=$(SCRIP_NOHUGE="$NOHUGE" "$WRAP" timeout -k 5 300 "$SCRIP" --run $SWD "$prog" <"$in" 2>"$W/e.err") ;;
     m4)  [ -x "$W/$stem.prog" ] || {
            "$SCRIP" --compile "$prog" > "$W/$stem.s" 2>/dev/null
