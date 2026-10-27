@@ -1,0 +1,2 @@
+rc	suite	seconds	board_line
+0	INRIA	1185	INRIA_SUITE_BOARD total=445 m3_pass=442 m3_fail=0 m3_crash=0 m4_pass=442 m4_fail=0 m4_crash=0 OUTSIDE=3 is the OUTCOME-CLASS-ONLY upper bound, which ignores what a goal bound and can only move down wh
