@@ -34,7 +34,7 @@ IR_CALL_GEN	call_args	icn_home	-	-	-	the result cell, one cell per argument and 
 IR_KW_ICON_GEN	32	icn_home	-	-	-	the result cell and the generator keyword's counter word (bb_keyword_icon reads the counter at op_off + 16)
 IR_TO_BY	80	icn_home	-	-	-	exp
 IR_SCAN	48	icn_home	-	-	-	exp
-IR_BOUND	48	pl_bound_spine	-	-	-	D3 kind 7 (the cfo's ruling of 2026-10-24 16:15): an if-then-else or negation BOUND (its omega is the GATE, a fence UNMARK commits it) whose CONDITION span carries no excursion (planner_bound_spine: no retaining call, generator, suspend or retaining disjunction between the BOUND and its UNMARKs) carves its record on the spine -- mark +0, saved rsp +8, banked B +16, the choice header to +40 -- read by its UNMARKs through the planner's cross-cell distance; the arm-failure road reads nothing of it after the fence
+IR_BOUND	48	pl_bound_spine	-	-	-	D3 kind 7 (the cfo's ruling of 2026-10-24 16:15): an if-then-else or negation BOUND (its omega is the GATE, a fence UNMARK commits it) whose CONDITION span carries no excursion, or a BOUND the home pass proves sits in a definite run (planner_bound_spine), carves its record on the spine -- mark +0, saved rsp +8, banked B +16, the choice header to +40 -- read by its UNMARKs through the planner's cross-cell distance or the rbp alias; the arm-failure road reads nothing of it after the fence
 IR_BOUND	0	pl_home	-	-	-	the bound's record (mark +0, rsp at entry +8, banked B +16, boundary +32) outlives the commit's whack-pop and is read by the fence's omega UNMARK and the gate at the construct's base depth: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
 IR_BOUND	0	home_state	-	-	-	exp
 IR_LIMIT_GATE	0	home_state	-	-	-	exp
@@ -44,7 +44,8 @@ IR_MATCH_ARBNO	16	always	-	-	-	the ARBNO record
 *	32	call_curmov	-	-	-	the result cell beside the moved cursor
 IR_VAR	0	icn_local	-	-	-	the local's own cell is its home; the read carves nothing
 IR_SUSPEND	0	icn_suspend	-	-	-	the suspend passes its value up; its resume is the beta
-IR_TO	0	pl_home	-	-	-	a generator's resumption state is ACT: the range's counter and limit and the db walk's enumeration state are written at alpha and read at beta across the whole continuation, so the slot set is resident in the activation frame (the cfo's ruling for the kind, D3 kind 4)
+IR_TO	80	pl_to_trailed	-	-	-	a trailed range's resumption state is the TO's own spine cell under LIFO (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2): the value +0, the counter +16, the choice header at +24 (its mark +24, the banked B +48, the boundary +56), the limit +64 past it; written at alpha and read at beta, which the continuation enters at the TO's exit depth after every box of it popped its own carve
+IR_TO	64	pl_to_db	-	-	-	a db walk's enumeration state (the slot +16, G +32, its choice header) stays resident in the activation frame -- a retract reads it across its own retaining edge (D3 kind 4) -- and its value is the spine cell's +0
 IR_TO	32	always	-	-	-	the value beside the counter and the limit
 IR_DISJUNCTION	arm_spine_hdr	pl_home_has_operands	-	-	-	the arms' live cells plus the disjunction's choice header (+24..+63: mark, prev B +48, boundary +56) on a home-set Prolog graph (D3)
 IR_DISJUNCTION	arm_spine	has_operands	-	-	-	the arms' live cells (zd_dj_spine)
@@ -81,14 +82,17 @@ IR_MATCH_FENCE1	fence_spine	always	-	-	-	the fence's own 16-byte record when its
 IR_MATCH_FENCE0	0	always	-	-	-	a fence's record is the match frame's
 IR_MATCH_ABORT	0	always	-	-	-	control only
 IR_BOUND	0	home_state	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)
+IR_CALL_PROC_STAGED	32	pl_spine_record	-	-	-	a call whose callee may retain, through the block protocol (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
 IR_CALL_PROC_STAGED	16	pl_home_dyn	-	-	-	a call that may retain its callee's frame: the result cell, with the act word resident in the activation frame (Lon's TEST 2) (D3)
 IR_CALL_PROC_STAGED	32	pl_home	-	-	-	a definite call: the result beside the act word (+16, +24), read back at beta at a fixed rsp distance (D3)
+IR_CALL_VALUE	32	pl_spine_record	-	-	-	call/N on a home-set Prolog graph (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; the goal and its extra arguments are read from their own cells, no staging and no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
 IR_CALL_VALUE	16	pl_home	-	-	-	call/N never knows its callee (PR_UNKNOWN_CALLEE): the result cell, with the argument block and the act word resident (D3)
 IR_GATE	0	pl_home	-	-	-	the live-arm index (+16) is written by GATE_ARM at each arm's depth and read at the gate's beta at the construct's base, across the arms' pops: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
 IR_BOUND	0	always	-	-	-	the bound's record is a frame word today (chunk 2, the switches)
 IR_UNMARK	0	always	-	-	-	a discard
 IR_CONJUNCTION	0	always	-	-	-	its value is its last operand's
 IR_CUT	0	always	-	-	-	a discard
+IR_GATE_ARM	16	pl_gate_arm	-	-	-	the end of an if-then-else arm on a home-set Prolog graph pushes its live-arm index {DT_RAW, arm} as its own spine cell, below the join wall, so the GATE's beta -- entered when the continuation popped back to the construct's exit depth -- reads it at [rsp + 8] and pops it with the arm's pair distance; no gate word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2)
 IR_GATE_ARM	0	always	-	-	-	control only
 IR_CLEANUP	0	pl_home	-	-	-	the setup_call_cleanup record (state, link, banked B at +16..+40) is ACT by construction: its goal is the retaining edge, so on a home-set Prolog graph the record is resident in the activation frame and carves nothing on the spine (D3 kind 3)
 IR_CLEANUP	0	always	-	-	-	control only

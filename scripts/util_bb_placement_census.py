@@ -526,6 +526,7 @@ def main():
     stw = collections.defaultdict(collections.Counter)
     hosts = {l: collections.Counter() for l in langs}
     rbpcls = {l: collections.Counter() for l in langs}
+    rbpkind = collections.Counter()
     seen_sec = set()
     seen_standing = set()
     with tempfile.TemporaryDirectory() as td:
@@ -570,6 +571,7 @@ def main():
                         hs['ops_rbp' if (home == 'RBP' or (home == 'SPINE' and xf != -1)) else 'ops_rsp' if home == 'SPINE' else 'ops_precarved' if home == 'RSP_CARVED' else 'ops_none'] += 1
                         if home == 'RBP' or (home == 'SPINE' and xf != -1):
                             rbpcls[lang][rbp_class(kind, xfwhy, home)] += 1
+                            rbpkind[(lang, rbp_class(kind, xfwhy, home), kind, xfwhy)] += 1
                     elif home == 'SPINE':
                         hs['loc_rsp'] += 1
                     elif home in ('RBP', 'RSP_CARVED'):
@@ -651,6 +653,8 @@ def main():
                 print('BB_PLACEMENT_TESTS_WHY %s %s count=%d' % (lang, k[4:], v))
     for lang in langs:
         hs = hosts[lang]
+        for (l2, c2, k2, w2), v in sorted(rbpkind.items(), key=lambda kv: -kv[1]):
+            if l2 == lang: print('BB_HOSTS_RBP_KIND %s class=%s kind=%s why=%s count=%d' % (lang, c2, k2, w2, v))
         for k, v in sorted(rbpcls[lang].items(), key=lambda kv: -kv[1]):
             print('BB_HOSTS_RBP_CLASS %s class=%s count=%d' % (lang, k, v))
         print('BB_HOSTS %s ops_rsp=%d ops_rbp=%d ops_precarved=%d ops_none=%d loc_rsp=%d loc_rbp=%d loc_rbp_forced=%d loc_rbp_misplaced=%d loc_none=%d ops_prealloc=%d' %
