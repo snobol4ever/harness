@@ -656,17 +656,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
     _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
-    # ⭐ fresh-vars: a Prolog ref cut from swipl prints a fresh variable as _<digits> (ISO 13211-1 7.10.5 leaves the name to the implementation),
-    # so such an entry is graded with each line's fresh variable names renamed in order of first appearance (corpus_suite_harness.py _grade_output).
-    _fv_rx = re.compile(r"(?<![A-Za-z0-9_])_[0-9]+(?![A-Za-z0-9_])")
+    # ⭐ fresh-vars and error-context (corpus_suite_harness.py _grade_output): a Prolog ref prints a fresh variable as the oracle names it
+    # (ISO/IEC 13211-1 7.10.5) and an error term's context as the oracle builds it (7.12.1), both the implementation's; each is derived
+    # from the entry's own ref, every build.
+    _fv_rx = re.compile(r"(?<![A-Za-z0-9_])_[A-Za-z]?[0-9]+(?![A-Za-z0-9_])")
+    _ec_rx = re.compile(r"(?<![A-Za-z0-9_])error\(")
     def _ref_text(e):
         r = getattr(e, "ref", "") or ""
         return "\n".join(r) if isinstance(r, (list, tuple)) else str(r)
-    _fv = {e.name for e in entries if lang == "prolog" and _fv_rx.search(_ref_text(e))}
-    _cm_col = ["compare"] if contract["compare"] == "ignore-all-space" or _fv else []   # derived from CONTRACT.tsv and the refs, every build (CEO-1927)
     def _cm_val(e):
-        ws = contract["compare"] == "ignore-all-space"
-        return ("fresh-vars+ignore-all-space" if ws else "fresh-vars") if e.name in _fv else ("ignore-all-space" if ws else "")
+        t = _ref_text(e) if lang == "prolog" else ""
+        toks = (["fresh-vars"] if _fv_rx.search(t) else []) + (["error-context"] if _ec_rx.search(t) else []) + (["ignore-all-space"] if contract["compare"] == "ignore-all-space" else [])
+        return "+".join(toks)
+    _cm_col = ["compare"] if any(_cm_val(e) for e in entries) else []   # derived from CONTRACT.tsv and the refs, every build (CEO-1927)
     _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (CEO-1927)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added

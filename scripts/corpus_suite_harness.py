@@ -1101,7 +1101,33 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
     return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
-FRESH_VAR_RX = re.compile(r"(?<![A-Za-z0-9_])_G?[0-9]+(?![A-Za-z0-9_])")
+FRESH_VAR_RX = re.compile(r"(?<![A-Za-z0-9_])_[A-Za-z]?[0-9]+(?![A-Za-z0-9_])")
+def _mask_error_context(ln):
+    """Every error(E, C) on the line with C replaced by `_CTX`, brackets balanced, quoted atoms skipped; E is kept verbatim."""
+    out, i, n = [], 0, len(ln)
+    while True:
+        j = ln.find("error(", i)
+        if j < 0:
+            out.append(ln[i:])
+            return "".join(out)
+        if j > 0 and (ln[j - 1].isalnum() or ln[j - 1] == "_"):
+            out.append(ln[i:j + 6]); i = j + 6
+            continue
+        k, depth, comma, q = j + 6, 1, -1, ""
+        while k < n and depth > 0:
+            c = ln[k]
+            if q:
+                if c == "\\": k += 1
+                elif c == q: q = ""
+            elif c in "'\"`": q = c
+            elif c in "([{": depth += 1
+            elif c in ")]}": depth -= 1
+            elif c == "," and depth == 1 and comma < 0: comma = k
+            k += 1
+        if comma < 0 or depth:
+            out.append(ln[i:k]); i = k
+            continue
+        out.append(ln[i:comma + 1] + "_CTX)"); i = k
 def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
     its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (CEO-1354), so the two cannot disagree."""
@@ -1148,17 +1174,22 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # PROLOG ORACLE): XSB's gentest.sh diffs its sorted answer with `diff -w`, all white space within a line ignored (XSB writes `p06 : p` where
     # SCRIP writes `p06:p`). ALL.csv's compare column reads ignore-all-space for such an entry (read_command_line_columns); lines still count.
     # ⭐ A FRESH VARIABLE'S PRINTED NAME IS THE IMPLEMENTATION'S (ISO/IEC 13211-1 7.10.5: `_` followed by an implementation-dependent name):
-    # swipl writes `_5292`, SCRIP `_G0`. ALL.csv's compare column reads fresh-vars for an entry whose ref carries such a name; each line's
-    # `_<digits>` and `_G<digits>` names are renamed `_V1`, `_V2`, ... in order of first appearance in both streams, so two distinct variables
-    # still read distinct and one variable printed twice on a line still reads the same.
-    _vars = ws_blind in ("fresh-vars", "fresh-vars+ignore-all-space")
-    _ws = ws_blind is True or ws_blind == "fresh-vars+ignore-all-space"
+    # swipl writes `_5292`, XSB `_h5292`, SCRIP `_G0`. ALL.csv's compare column carries fresh-vars for an entry whose ref prints such a name; each
+    # line's names are renamed `_V1`, `_V2`, ... in order of first appearance in both streams, so two distinct variables still read distinct and
+    # one variable printed twice on a line still reads the same.
+    # ⭐ AN ERROR TERM'S CONTEXT IS THE IMPLEMENTATION'S (ISO/IEC 13211-1 7.12.1: error(E, Imp_def)): swipl's names its own frames --
+    # context(system:catch/3,_), context('$bags':findall_loop/4,_), the caller left after last-call optimisation -- which no other system
+    # reproduces. error-context grades every error(E, C) with C replaced by one marker in both streams; E is still compared exactly.
+    _toks = set(ws_blind.split("+")) if isinstance(ws_blind, str) else ({"ignore-all-space"} if ws_blind is True else set())
+    _vars, _ectx, _ws = "fresh-vars" in _toks, "error-context" in _toks, "ignore-all-space" in _toks
     def _norm(t):
         out = []
         for ln in t.split("\n"):
             if _vars:
                 seen = {}
                 ln = FRESH_VAR_RX.sub(lambda m: seen.setdefault(m.group(0), "_V%d" % (len(seen) + 1)), ln)
+            if _ectx:
+                ln = _mask_error_context(ln)
             out.append("".join(ln.split()) if _ws else ln)
         return out
     _same = exp is not None and (got == exp or (bool(ws_blind) and _norm(got) == _norm(exp)))
@@ -4552,9 +4583,9 @@ def validate_compare_cell(raw, where):
         return False
     if v == "ignore-all-space":
         return True
-    if v in ("fresh-vars", "fresh-vars+ignore-all-space"):
+    if v and set(v.split("+")) <= {"fresh-vars", "error-context", "ignore-all-space"}:
         return v
-    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell, 'ignore-all-space', 'fresh-vars' or 'fresh-vars+ignore-all-space' only")
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or a '+'-joined set of ignore-all-space, fresh-vars, error-context")
 
 
 def validate_stage_cell(raw, where):
