@@ -656,7 +656,17 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
     _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
-    _cm_col = ["compare"] if contract["compare"] == "ignore-all-space" else []   # derived from CONTRACT.tsv, every build (CEO-1927)
+    # ⭐ fresh-vars: a Prolog ref cut from swipl prints a fresh variable as _<digits> (ISO 13211-1 7.10.5 leaves the name to the implementation),
+    # so such an entry is graded with each line's fresh variable names renamed in order of first appearance (corpus_suite_harness.py _grade_output).
+    _fv_rx = re.compile(r"(?<![A-Za-z0-9_])_[0-9]+(?![A-Za-z0-9_])")
+    def _ref_text(e):
+        r = getattr(e, "ref", "") or ""
+        return "\n".join(r) if isinstance(r, (list, tuple)) else str(r)
+    _fv = {e.name for e in entries if lang == "prolog" and _fv_rx.search(_ref_text(e))}
+    _cm_col = ["compare"] if contract["compare"] == "ignore-all-space" or _fv else []   # derived from CONTRACT.tsv and the refs, every build (CEO-1927)
+    def _cm_val(e):
+        ws = contract["compare"] == "ignore-all-space"
+        return ("fresh-vars+ignore-all-space" if ws else "fresh-vars") if e.name in _fv else ("ignore-all-space" if ws else "")
     _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (CEO-1927)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
@@ -691,7 +701,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + ["ignore-all-space" for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1

@@ -1101,6 +1101,7 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
     return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
+FRESH_VAR_RX = re.compile(r"(?<![A-Za-z0-9_])_G?[0-9]+(?![A-Za-z0-9_])")
 def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
     its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (CEO-1354), so the two cannot disagree."""
@@ -1146,7 +1147,21 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # ⭐ A PACKAGE WHOSE OWN HARNESS COMPARES IGNORING WHITESPACE IS GRADED THAT WAY (ceo CEO-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD
     # PROLOG ORACLE): XSB's gentest.sh diffs its sorted answer with `diff -w`, all white space within a line ignored (XSB writes `p06 : p` where
     # SCRIP writes `p06:p`). ALL.csv's compare column reads ignore-all-space for such an entry (read_command_line_columns); lines still count.
-    _same = exp is not None and (got == exp or (ws_blind and ["".join(x.split()) for x in got.split("\n")] == ["".join(x.split()) for x in exp.split("\n")]))
+    # ⭐ A FRESH VARIABLE'S PRINTED NAME IS THE IMPLEMENTATION'S (ISO/IEC 13211-1 7.10.5: `_` followed by an implementation-dependent name):
+    # swipl writes `_5292`, SCRIP `_G0`. ALL.csv's compare column reads fresh-vars for an entry whose ref carries such a name; each line's
+    # `_<digits>` and `_G<digits>` names are renamed `_V1`, `_V2`, ... in order of first appearance in both streams, so two distinct variables
+    # still read distinct and one variable printed twice on a line still reads the same.
+    _vars = ws_blind in ("fresh-vars", "fresh-vars+ignore-all-space")
+    _ws = ws_blind is True or ws_blind == "fresh-vars+ignore-all-space"
+    def _norm(t):
+        out = []
+        for ln in t.split("\n"):
+            if _vars:
+                seen = {}
+                ln = FRESH_VAR_RX.sub(lambda m: seen.setdefault(m.group(0), "_V%d" % (len(seen) + 1)), ln)
+            out.append("".join(ln.split()) if _ws else ln)
+        return out
+    _same = exp is not None and (got == exp or (bool(ws_blind) and _norm(got) == _norm(exp)))
     if _same:
         if rc is not None and rc != want_rc:
             return _oom_verdict(out, err, rc, masked_n) or Verdict("FAIL", out, err, rc,
@@ -4537,7 +4552,9 @@ def validate_compare_cell(raw, where):
         return False
     if v == "ignore-all-space":
         return True
-    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell or 'ignore-all-space' only")
+    if v in ("fresh-vars", "fresh-vars+ignore-all-space"):
+        return v
+    refuse(f"{where}: compare cell {v!r} -- the column admits the empty cell, 'ignore-all-space', 'fresh-vars' or 'fresh-vars+ignore-all-space' only")
 
 
 def validate_stage_cell(raw, where):
@@ -4752,8 +4769,9 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.out_files = of
         if validate_stderr_cell(row.get("stderr"), where):
             e.merge_stderr = True
-        if validate_compare_cell(row.get("compare"), where):
-            e.compare_ws = True
+        _cmp = validate_compare_cell(row.get("compare"), where)
+        if _cmp:
+            e.compare_ws = _cmp
         if validate_stage_cell(row.get("stage"), where):
             e.stage_upstream = True
         if validate_answer_cell(row.get("answer"), where):
