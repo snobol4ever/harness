@@ -71,7 +71,7 @@ census_class() {   # $1 class, $2 kind or '' -> the count over the witnesses' wh
 pv=""; pr=RED
 case "$probe" in
     beta-reset)
-        if [ -n "$sfiles" ]; then b="$(python3 "$HERE/util_rsp_reset_by_port_census.py" $sfiles | grep '^RSP_RESET functions=' | grep -o 'beta=[0-9]*' | cut -d= -f2)"; pv="beta-resets=${b:-?}"; [ "${b:-1}" = 0 ] && pr=GREEN; else pv="no .s"; pr=REFUSED; fi ;;
+        if [ -n "$sfiles" ]; then cl="$(python3 "$HERE/util_rsp_reset_by_port_census.py" $sfiles | grep '^RSP_RESET functions=')"; b="$(echo "$cl" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; [ -n "$cl" ] && b="${b:-0}"; pv="beta-resets=${b:-?}"; [ "${b:-1}" = 0 ] && pr=GREEN; else pv="no .s"; pr=REFUSED; fi ;;
     defcmp)
         t=0; for w in $wits; do c="$( cd "$WD" && SCRIP_PL_DEFCMP=1 "$SC/scrip" --compile -o /dev/null "$w.pl" < /dev/null 2>&1 | grep -c 'PL-DEFCMP' )"; t=$((t + c)); done
         pv="predicted-vs-planned=$t"; [ "$t" = 0 ] && pr=GREEN ;;
