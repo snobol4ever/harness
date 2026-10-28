@@ -112,7 +112,7 @@ listrun_agrees() {   # $1 engine (c|s): the engine's native run over the whole l
     else out="$(runs "$T/l3" 1 full 2> /dev/null)"; fi
     [ "$(printf '%s\n' "$out" | awk '/^== / { next } NF { print }')" = "$(head -n "$K3" "$T/acc$1")" ]
 }
-listrun_agrees c || refuse "out/parser_$L over the $K3-file ladder list prints other tree numbers than its single-file runs did: it carries state from one file to the next (the rebus C parser does: the second file of a list reads a syntax error it does not read alone), so a list-run Ir is not the parse of these files"
+listrun_agrees c || refuse "out/parser_$L over the $K3-file ladder list prints other tree numbers than its single-file runs did: it carries state from one file to the next, so a list-run Ir is not the parse of these files"
 listrun_agrees s || refuse "the $L chain over the $K3-file ladder list prints other tree numbers than its single-file runs did: it carries state from one file to the next"
 runs "$T/l3" 1 nodump > "$T/n.out" 2> "$T/n.err"; [ "$(metric "$T/n.err" files)" = "$K3" ] && ! grep -q 'Parse Error' "$T/n.out" || refuse "the dump-less chain did not parse all $K3 files of the ladder"
 incl() {   # $1 callgrind file, $2.. function names: the summed INCLUSIVE Ir of the entry points, or nothing
