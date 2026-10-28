@@ -72,9 +72,9 @@ pv=""; pr=RED
 case "$probe" in
     beta-reset)
         if [ -n "$sfiles" ]; then cl="$(python3 "$HERE/util_rsp_reset_by_port_census.py" $sfiles | grep '^RSP_RESET functions=')"; b="$(echo "$cl" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; [ -n "$cl" ] && b="${b:-0}"; pv="beta-resets=${b:-?}"; [ "${b:-1}" = 0 ] && pr=GREEN; else pv="no .s"; pr=REFUSED; fi ;;
-    defcmp)
-        t=0; for w in $wits; do c="$( cd "$WD" && SCRIP_PL_DEFCMP=1 "$SC/scrip" --compile -o /dev/null "$w.pl" < /dev/null 2>&1 | grep -c 'PL-DEFCMP' )"; t=$((t + c)); done
-        pv="predicted-vs-planned=$t"; [ "$t" = 0 ] && pr=GREEN ;;
+    one-decider)
+        t=0; for f in "$SC"/src/planner/*.c "$SC"/src/planner/*.cpp "$SC"/src/planner/*.h; do c="$(grep -c 'planner_pl_indef0\|planner_pl_definite\|SCRIP_PL_DEFCMP' "$f" 2>/dev/null)"; t=$((t + ${c:-0})); done
+        pv="predictor-names=$t"; [ "$t" = 0 ] && pr=GREEN ;;
     gate-record)
         c="$(census_class construct-record GATE)"; pv="construct-record(GATE)=$c"; [ "$c" = 0 ] && pr=GREEN ;;
     bound-record)
