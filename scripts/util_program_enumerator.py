@@ -5,6 +5,14 @@
 #   python3 ../harness/scripts/util_program_enumerator.py --lang snobol4 --to-length 6 --report          # every program up to 6 tokens
 #   python3 ../harness/scripts/util_program_enumerator.py --lang snobol4 --random 2000 --seed 7 --report  # a seeded random walk, same grammar
 #   python3 ../harness/scripts/util_program_enumerator.py --selftest                                       # the fail-once arms, no oracle needed
+#   python3 harness/scripts/util_program_enumerator.py --engine jvm --to-length 5                          # the same population under a port
+#
+# THE ENGINE ARM (step 13 of the cto's DESIGN-PLAN random-codegen-scope, ARCH-RANDOM-SNOBOL4-GENERATOR.md; CEO-1999, hq_jvm):
+# --engine scrip (the default) runs SCRIP once per --modes entry (m3 interprets, m4 compiles, assembles and links); --engine dotnet|jvm
+# runs the batch once through the port's harness runner, run_snobol4<engine>.sh, in the calling shape every port runner shares (the
+# bare file name in the program's own folder), after the runner's --binaries check has passed, so a root without that engine, or with a
+# stale build of it, refuses rather than reading DIFF on every id. --modes is scrip's alone: a port's one mode is named by the engine.
+# The POPULATION line names the engine and its tree, and the witnesses carry the engine in their names (gen_<lang>_<engine>_...).
 #
 # LINEAGE: harness/adapters/tiny/Expressions.py (Lon, 2026-03-11) -- its grammar is THE grammar here, verbatim:
 #   term := factor | factor '+' term | factor '-' term        factor := element | element '*' factor | element '/' factor
@@ -22,13 +30,16 @@
 # The oracle (sbl -bf, lib_oracle_flags.sh's correctness oracle) runs the same batch; verdicts per id: AGREE, DIFF,
 # CRASH (a signal or rc!=0 with ids missing), HANG (timeout), ORACLE-BAD (the oracle itself gave no line). A batch that
 # yields no ids at all is bisected until each offending expression stands alone. Divergences are written as single-
-# expression witnesses (<out>/gen_<lang>_len<N>_<k>.sno + .ref) deduplicated to the first of each canonical shape.
+# expression witnesses (<out>/gen_<lang>_<engine>_len<N>_<k>.sno + .ref) deduplicated to the first of each canonical shape.
 # rc=0 every graded program AGREE / rc=1 divergences (named) / rc=2 cannot measure (oracle absent, compiler absent, an
 # empty population). A report that could not run is never a zero.
 import argparse, collections, functools, itertools, os, random, re, subprocess, sys, tempfile
 S4E = os.environ.get('S4E_HOME') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SCRIP_DIR = os.path.join(S4E, 'SCRIP'); SCRIP = os.path.join(SCRIP_DIR, 'scrip'); RT = os.path.join(SCRIP_DIR, 'out')
 SBL = '/home/resources/x64/bin/sbl'; SBL_FLAGS = ['-bf']
+HERE = os.path.dirname(os.path.abspath(__file__)); PORTS = ('dotnet', 'jvm')
+TREES = {'scrip': SCRIP_DIR, 'dotnet': os.path.join(S4E, 'snobol4dotnet'), 'jvm': os.path.join(S4E, 'snobol4jvm')}
+def runner(engine): return os.path.join(HERE, 'run_snobol4%s.sh' % engine)
 LEAF = 'L'
 BIN_TERM = ['+', '-']; BIN_FACTOR = ['*', '/']; UNARY = ['+', '-']
 def refuse(msg):
@@ -131,6 +142,11 @@ def scrip_run(mode, path, work, tmo):
     rc, out, err = run(['gcc', '-no-pie', '-o', b, o, os.path.join(RT, 'libscrip_rt.so'), '-lm', '-lstdc++', '-Wl,-rpath,' + RT], tmo * 4)
     if rc != 0: return ('LINK', rc), {}
     rc, out, err = run([b], tmo, cwd=work); return rc, parse_ids(out)
+def port_run(engine, path, tmo):
+    rc, out, err = run(['bash', runner(engine), os.path.basename(path)], tmo, cwd=os.path.dirname(path)); return rc, parse_ids(out)
+def engine_run(mode, path, work, tmo):
+    """A mode is scrip's m3 or m4, or a port engine's name: the one way that port runs."""
+    return port_run(mode, path, tmo) if mode in PORTS else scrip_run(mode, path, work, tmo)
 def verdict_of(rc, got, oracle, i):
     if i not in oracle: return 'ORACLE-BAD'
     if i in got: return 'AGREE' if got[i] == oracle[i] else 'DIFF'
@@ -155,7 +171,7 @@ class Grader:
         self.oracle_rows.update(oracle)
         res = {i: {} for i, _ in exprs}
         for mode in self.modes:
-            rc, got = scrip_run(mode, path, self.work, self.tmo)
+            rc, got = engine_run(mode, path, self.work, self.tmo)
             missing = [i for i, _ in exprs if i in oracle and i not in got]
             if missing and len(exprs) > 1 and (rc != 0 or not got):
                 h = len(exprs) // 2
@@ -169,13 +185,13 @@ class Grader:
         path = os.path.join(self.work, 'b%05d_%d%s.sno' % (self.n_batches, depth, mode))
         open(path, 'w').write(program(exprs, self.env))
         oracle = {i: self.oracle_rows[i] for i, _ in exprs if i in self.oracle_rows}
-        rc, got = scrip_run(mode, path, self.work, self.tmo)
+        rc, got = engine_run(mode, path, self.work, self.tmo)
         missing = [i for i, _ in exprs if i in oracle and i not in got]
         if missing and len(exprs) > 1 and (rc != 0 or not got):
             h = len(exprs) // 2; r = self.grade_mode(mode, exprs[:h], depth + 1); r.update(self.grade_mode(mode, exprs[h:], depth + 1)); return r
         return {i: verdict_of(rc, got, oracle, i) for i, _ in exprs}
-def write_witness(outdir, lang, length, k, expr, env, oracle_val):
-    base = os.path.join(outdir, 'gen_%s_len%02d_%03d' % (lang, length, k))
+def write_witness(outdir, lang, engine, length, k, expr, env, oracle_val):
+    base = os.path.join(outdir, 'gen_%s_%s_len%02d_%03d' % (lang, engine, length, k))
     open(base + '.sno', 'w').write(program([(1, expr)], env))
     open(base + '.ref', 'w').write('1=%s\n' % oracle_val); return base + '.sno'
 def selftest():
@@ -210,8 +226,10 @@ def main():
     ap.add_argument('--random', type=int, default=0, help='random: this many seeded programs over the same grammar')
     ap.add_argument('--seed', type=int, default=7); ap.add_argument('--depth', type=int, default=4)
     ap.add_argument('--alphabet', default='x,y,z,0,1,2'); ap.add_argument('--per-shape', type=int, default=64, help='leaf assignments per shape: all when <= this, else this many seeded samples')
-    ap.add_argument('--env', default='x=7,y=-3,z=2'); ap.add_argument('--modes', default='m3,m4'); ap.add_argument('--batch', type=int, default=400)
-    ap.add_argument('--timeout', type=int, default=20); ap.add_argument('--out', default=os.path.join(RT, 'enumerator'))
+    ap.add_argument('--engine', default='scrip', choices=('scrip',) + PORTS, help='scrip (once per --modes entry) or a port through run_snobol4<engine>.sh')
+    ap.add_argument('--env', default='x=7,y=-3,z=2'); ap.add_argument('--modes', help='scrip only (default m3,m4)'); ap.add_argument('--batch', type=int, default=400)
+    ap.add_argument('--timeout', type=int, default=20)
+    ap.add_argument('--out', help='witness folder (default SCRIP/out/enumerator for scrip, <root>/.scratch/enumerator/<engine> for a port)')
     ap.add_argument('--report', action='store_true'); ap.add_argument('--count-only', action='store_true', help='print shape and program counts per length and exit')
     ap.add_argument('--selftest', action='store_true'); ap.add_argument('--keep-batches', action='store_true')
     a = ap.parse_args()
@@ -226,8 +244,15 @@ def main():
         return 0
     if not a.to_length and not a.random: refuse('nothing to enumerate: pass --to-length N and/or --random K')
     if not os.path.exists(SBL): refuse('oracle absent at %s -- every verdict would be a plausible false table' % SBL)
-    if not os.path.exists(SCRIP): refuse('compiler absent at %s -- build it first' % SCRIP)
-    modes = a.modes.split(','); env = [(kv.split('=')[0], kv.split('=')[1]) for kv in a.env.split(',')]
+    if a.engine in PORTS:
+        if a.modes: refuse('--modes is scrip\'s; the %s engine runs one way, through %s' % (a.engine, os.path.basename(runner(a.engine))))
+        r = subprocess.run(['bash', runner(a.engine), '--binaries'], capture_output=True, text=True)
+        if r.returncode != 0: refuse(r.stderr.strip() or runner(a.engine) + ' --binaries refused')
+        modes = [a.engine]; a.out = a.out or os.path.join(S4E, '.scratch', 'enumerator', a.engine)
+    else:
+        if not os.path.exists(SCRIP): refuse('compiler absent at %s -- build it first' % SCRIP)
+        modes = (a.modes or 'm3,m4').split(','); a.out = a.out or os.path.join(RT, 'enumerator')
+    env = [(kv.split('=')[0], kv.split('=')[1]) for kv in a.env.split(',')]
     os.makedirs(a.out, exist_ok=True); work = tempfile.mkdtemp(prefix='enum_', dir=a.out if a.keep_batches else None)
     pop = []
     if a.to_length:
@@ -251,10 +276,11 @@ def main():
             key = (mode, v, canon(e))
             if key in seen: seen[key] += 1; continue
             seen[key] = 1; k = len(witnesses)
-            witnesses.append((mode, v, n, e, write_witness(a.out, a.lang, n, k, e, env, grader.oracle_rows.get(i, '?')), grader.oracle_rows.get(i, '?')))
+            witnesses.append((mode, v, n, e, write_witness(a.out, a.lang, a.engine, n, k, e, env, grader.oracle_rows.get(i, '?')), grader.oracle_rows.get(i, '?')))
     total = len(ids); graded = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) not in (None, 'UNGRADED', 'ORACLE-BAD'))
     agree = sum(1 for i, _ in ids for m in modes if results.get(i, {}).get(m) == 'AGREE')
-    print('=== ENUMERATOR %s: to-length=%d random=%d alphabet=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (a.lang, a.to_length, a.random, a.alphabet, a.per_shape, a.env, a.modes, grader.n_batches))
+    print('=== ENUMERATOR %s: engine=%s to-length=%d random=%d alphabet=%s per-shape<=%d env=%s modes=%s batches=%d ===' % (
+        a.lang, a.engine, a.to_length, a.random, a.alphabet, a.per_shape, a.env, ','.join(modes), grader.n_batches))
     print('length(tokens) shapes programs  ' + '  '.join('%s:AGREE/DIFF/CRASH/HANG/ORACLE-BAD' % m for m in modes))
     for n in sorted(by_len):
         sh = shape_count(n) if a.to_length and n <= a.to_length else '-'
@@ -265,8 +291,10 @@ def main():
             cells.append('%s:%d/%d/%d/%d/%d' % (m, c[(m, 'AGREE')], c[(m, 'DIFF')], crash, c[(m, 'HANG')], c[(m, 'ORACLE-BAD')]))
         print('%2d %8s %8d  %s' % (n, sh, progs, '  '.join(cells)))
     print('char-length histogram: ' + ' '.join('%d:%d' % (k, chars[k]) for k in sorted(chars)))
-    print('POPULATION programs=%d graded=%d (programs x modes, oracle-bad excluded) AGREE=%d DIVERGENCE-CLASSES=%d tree: SCRIP=%s' % (
-        total, graded, agree, len(witnesses), subprocess.run(['git', '-C', SCRIP_DIR, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or '?'))
+    tree = TREES[a.engine]
+    print('POPULATION programs=%d graded=%d (programs x modes, oracle-bad excluded) AGREE=%d DIVERGENCE-CLASSES=%d engine=%s tree: %s=%s' % (
+        total, graded, agree, len(witnesses), a.engine, os.path.basename(tree),
+        subprocess.run(['git', '-C', tree, 'rev-parse', '--short', 'HEAD'], capture_output=True, text=True).stdout.strip() or '?'))
     for mode, v, n, e, path, oval in witnesses:
         print('  [%s %-12s] x%-4d len=%d  %-40s oracle=%-10s -> %s' % (mode, v, seen[(mode, v, canon(e))], n, e[:40], oval[:10], os.path.basename(path)))
     if graded == 0: refuse('zero programs graded -- the oracle produced no lines (batch dir kept: %s)' % work)
