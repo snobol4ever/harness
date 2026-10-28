@@ -100,6 +100,7 @@ lang:icon	src/parsers/icon/
 lang:icon	src/lower/lower_icon.c
 lang:prolog	src/parsers/prolog/
 lang:prolog	src/lower/lower_prolog.c
+lang:prolog	src/lower/lower_prolog_chr.c
 lang:prolog	src/lower/pl_arith_names.h
 lang:prolog	src/lower/pl_control_names.h
 lang:prolog	src/lower/pl_aggregate_names.h
