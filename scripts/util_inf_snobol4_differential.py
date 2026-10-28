@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_inf_snobol4_differential.py -- the infinite_snobol4 generator run offline against an engine, one reproducible batch at a time.
 
-usage: util_inf_snobol4_differential.py --engine dotnet|jvm|scrip BATCH [BATCH ...] [--size 300] [--seed0 20261022] [--out DIR]
+usage: util_inf_snobol4_differential.py --engine dotnet|jvm|scrip BATCH [BATCH ...] [--size 300] [--seed0 20261022] [--out DIR] [--scope N] [--pin KEY=VALUE]... [--generate-only]
        BATCH is a number or a range A-B; util_inf_snobol4_differential.py --engine dotnet 1-20 runs batches 1 to 20.
 
 Lon 2026-10-22, in-chat to hq_dotnet, verbatim: "Go resurrect the random SNOBOL4 source generator we used a few weeks ago to test SCRIP. Find
@@ -26,6 +26,14 @@ and one verdict line per batch on stdout:
 then a total line. rc 0 when no batch differs, 1 when one does, 2 when it cannot measure (no generator, no oracle, no engine).
 A shape that hangs both engines is the language, not a defect: it goes into inf_exclude.tsv beside the generator, and into
 inf_exclusions() in the Icon section, with its reason and measurement.
+
+THE SCOPE LADDER (the cto, 2026-10-28, CEO-1999; ARCH-RANDOM-SNOBOL4-GENERATOR.md DESIGN-PLAN: random-codegen-scope): --scope N passes the
+generator word scope=N, under which the generator emits the construct families of DESIGN-PLAN steps 1..N and no later one, so a batch is
+identified by (scope, seed0, N) for ever; --scope 0 (the default) passes no word and is today's grammar, so every batch hq_dotnet has run
+under seed0 20261022 keeps its text. --pin key=value overrides one of the options the batch would draw (walk, kind, preset, limit, elimit,
+plimit, climit, seed), printed on the verdict line; --generate-only writes the batch files and runs no oracle and no engine (the coverage
+census and a step's red-before reading). A generator that refuses the scope word (bad option scope=N) is the measured state of a step that has
+not landed: the driver refuses rc 2 and names it.
 """
 import argparse, hashlib, os, random, subprocess, sys
 
@@ -118,22 +126,38 @@ def main():
     p.add_argument('--size', type=int, default=300)
     p.add_argument('--seed0', default='20261022')
     p.add_argument('--out', default=os.path.join(ROOT, '.scratch', 'inf_snobol4'))
+    p.add_argument('--scope', type=int, default=0, help='the scope ladder level: scope=N to the generator (0 passes no word, today\'s grammar)')
+    p.add_argument('--pin', action='append', default=[], metavar='KEY=VALUE', help='override a drawn option (walk, kind, preset, limit, elimit, plimit, climit, seed); repeatable')
+    p.add_argument('--generate-only', action='store_true', help='write the batch files and run no oracle and no engine')
     a = p.parse_args()
     if not (os.access(ICONT, os.X_OK) and os.access(SBL, os.X_OK)):
         refuse('icont or the correctness oracle is missing (%s, %s)' % (ICONT, SBL))
     os.makedirs(a.out, exist_ok=True)
-    gen, eng = build_generator(a.out), engine_argv(a.engine)
+    gen, eng = build_generator(a.out), (None if a.generate_only else engine_argv(a.engine))
     total = differ = bad = 0
     for n in batches(a.batch):
         o = options(a.seed0, n)
+        for kv in a.pin:
+            k, _, v = kv.partition('=')
+            if k not in o or not v:
+                refuse('--pin takes one of %s as key=value, not %r' % (sorted(o), kv))
+            o[k] = v
         batch = os.path.join(a.out, 'batch_%d.txt' % n)
         args = ['%s=%s' % kv for kv in o.items()] + ['count=%d' % (a.size * 4), 'size=%d' % a.size, 'out=' + batch]
         # the generator runs in a co-expression, whose stack Icon sizes from COEXPSIZE; at the default the closed world's recursive
         # expression walk overflows it (run-time error 302) after a few tests, and an expression batch held its preset lines alone
-        subprocess.run([gen] + args, capture_output=True, timeout=300, cwd=a.out, env=dict(os.environ, COEXPSIZE='100000'))
+        if a.scope > 0:
+            args.append('scope=%d' % a.scope)
+        g = subprocess.run([gen] + args, capture_output=True, text=True, timeout=300, cwd=a.out, env=dict(os.environ, COEXPSIZE='100000'))
+        if 'bad option' in (g.stdout + g.stderr):
+            refuse('the generator refuses scope=%d (the step that adds it has not landed): %s' % (a.scope, (g.stdout + g.stderr).strip()[:120]))
         if not os.path.exists(batch):
             refuse('the generator wrote no batch %d' % n)
         tests = [t for t in open(batch, encoding='latin-1').read().split('\n') if t.strip()]
+        if a.generate_only:
+            total += len(tests)
+            print('batch %d scope=%d seed=%s preset=%s kind=%s walk=%s limit=%s: lines=%d generate-only' % (n, a.scope, o['seed'], o['preset'], o['kind'], o['walk'], o['limit'], len(tests)), flush=True)
+            continue
         (s, src), (d, drc) = run([SBL, '-bf'], batch, INF), run(eng, batch, INF)
         at = lambda out, i: out[i] if i < len(out) else '<none>'
         diffs = [i for i in range(len(tests)) if at(s, i) != at(d, i)]
@@ -141,9 +165,9 @@ def main():
             for i in diffs:
                 f.write('line %d\nTEST   %s\nORACLE %s\nENGINE %s\n' % (i + 1, tests[i], at(s, i), at(d, i)))
         total += len(tests); differ += len(diffs); bad += bool(diffs)
-        print('batch %d seed=%s preset=%s kind=%s walk=%s limit=%s: lines=%d differ=%d oracle_rc=%d engine_rc=%d'
-              % (n, o['seed'], o['preset'], o['kind'], o['walk'], o['limit'], len(tests), len(diffs), src, drc), flush=True)
-    print('total %s: lines=%d differ=%d batches_differing=%d' % (a.engine, total, differ, bad))
+        print('batch %d scope=%d seed=%s preset=%s kind=%s walk=%s limit=%s: lines=%d differ=%d oracle_rc=%d engine_rc=%d'
+              % (n, a.scope, o['seed'], o['preset'], o['kind'], o['walk'], o['limit'], len(tests), len(diffs), src, drc), flush=True)
+    print('total %s scope=%d: lines=%d differ=%d batches_differing=%d' % (a.engine, a.scope, total, differ, bad))
     return 1 if bad else 0
 
 if __name__ == '__main__':
