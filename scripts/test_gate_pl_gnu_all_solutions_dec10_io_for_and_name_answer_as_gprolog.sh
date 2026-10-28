@@ -10,6 +10,9 @@
 # code guards, tab/1 evaluates its argument with is/2 and requires an integer; tell(user), see(user) and append(user) switch to
 # the terminal instead of creating a file named user.
 #
+# THE DIALECT IS DECLARED (hq_prolog 2026-10-28, CEO-1995): the GNU tables declare --dialect=gnu (CEO-1810), so both arms run with it. Without it put/1
+# is swipl's (3621a8ddd, a one-character atom is written) and put(a) prints "<a> true" where gprolog raises type_error(integer, a); the gate read RED on
+# that one line in both modes with SCRIP right, because it was cut before the dialect was a switch.
 # THE ARM: one program in the drivers' own style, 32 lines written out from gprolog 1.4.5, both modes, and no file named user
 # left behind. rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.
 set -u
@@ -70,8 +73,8 @@ tell(A) => error(instantiation_error)
 see(A) => error(instantiation_error)
 no_user_file
 WANT
-( cd "$D" && timeout -k 5 30 "$B/scrip" g.pl < /dev/null > g.m3 2>/dev/null )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o g.s g.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl: mode 4 did not build"
+( cd "$D" && timeout -k 5 30 "$B/scrip" --dialect=gnu g.pl < /dev/null > g.m3 2>/dev/null )
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --dialect=gnu -o g.s g.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl: mode 4 did not build"
 ( cd "$D" && rm -f user && timeout -k 5 30 ./g.bin < /dev/null > g.m4 2>/dev/null )
 red=0
 for m in m3 m4; do
