@@ -103,6 +103,42 @@ echo "CLAUSE 1 -- THE PRECONDITION: atom-name storage is outside the collected h
 NAMEVAR="$(grep -oE 'g_runtime\.atoms\.atom_names\[[A-Za-z_][A-Za-z0-9_]*\][[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
 [ -n "$NAMEVAR" ] || refuse "cannot find the assignment into g_runtime.atoms.atom_names[] in $ATOMC -- this clause must never pass on a file it did not parse"
 NAMEALLOC="$(grep -oE "\\b$NAMEVAR[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(" "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//; s/[[:space:]]*\($//')"
+NAMEPATH=""
+if [ -z "$NAMEALLOC" ]; then
+    # ⛔⭐ THE NAME MAY ARRIVE AS A PARAMETER (hq_prolog 2026-10-28, CEO-1995): since 2385766c3 (cto ruling B2/A, 2026-10-22) the store is `static int atom_add(char *copy, ...)`
+    # and the two callers carve the name, so `copy = alloc(` never appears and this clause REFUSED on a tree whose names are off the collected heap. Resolve through the
+    # storing function's callers in this file: each argument must be assigned from a named allocator here, or arrive from outside the file -- and then the only public
+    # source of such a pointer, prolog_atom_carve(), must return pool_carve(). A caller this reading cannot resolve still REFUSES; CLAUSE 2 grades the runtime half.
+    STORER="$(grep -E "^[[:space:]]*(static[[:space:]]+)?[A-Za-z_][A-Za-z0-9_ ]*[[:space:]*]+[A-Za-z_][A-Za-z0-9_]*\([^)]*\*[[:space:]]*$NAMEVAR[[:space:]]*[,)]" "$ATOMC" | head -1 | grep -oE '[A-Za-z_][A-Za-z0-9_]*\(' | head -1 | tr -d '(')"
+    [ -n "$STORER" ] || refuse "found g_runtime.atoms.atom_names[...] = $NAMEVAR but $NAMEVAR is neither assigned from an allocator nor a parameter of a function this clause can name -- refusing rather than guessing"
+    # Per ENCLOSING FUNCTION, never file-wide: a local that this reading cannot parse must REFUSE, and only a real parameter of the calling function may fall back to the carve contract.
+    CALLS="$(python3 - "$ATOMC" "$STORER" <<'PY'
+import re, sys
+lines = open(sys.argv[1]).read().split('\n'); st = sys.argv[2]; fns = []; cur = None
+for ln in lines:
+    if re.match(r'^[A-Za-z_].*\)\s*\{\s*$', ln): cur = [ln]; fns.append(cur); continue
+    if cur is not None: cur.append(ln)
+    if ln.startswith('}'): cur = None
+for f in fns:
+    head, body = f[0], '\n'.join(f[1:])
+    if re.search(r'\b' + st + r'\s*\(', head): continue
+    for m in re.finditer(r'\b' + st + r'\s*\(\s*([A-Za-z_]\w*)', body):
+        a = m.group(1); am = re.search(r'\b' + a + r'\s*=\s*(\([^)]*\)\s*)?([A-Za-z_]\w*)\s*\(', body)
+        print(a + '\t' + (am.group(2) if am else 'PARAM' if re.search(r'\*\s*' + a + r'\s*[,)]', head) else 'UNRESOLVED'))
+PY
+)"
+    [ -n "$CALLS" ] || refuse "$NAMEVAR is a parameter of $STORER but no call of $STORER is visible inside a function of $ATOMC -- refusing rather than guessing"
+    while IFS=$'\t' read -r A AALLOC; do
+        [ -n "$A" ] || continue
+        [ "$AALLOC" != UNRESOLVED ] || refuse "$STORER($A, ...) is fed by a local $A whose allocator this clause cannot read -- refusing rather than guessing"
+        if [ "$AALLOC" = PARAM ]; then
+            grep -qE '^char[[:space:]]*\*[[:space:]]*prolog_atom_carve\([^)]*\)[[:space:]]*\{[[:space:]]*return[[:space:]]+pool_carve\(' "$ATOMC" || refuse "$STORER($A, ...) takes a pointer from outside the file and prolog_atom_carve() does not return pool_carve() -- refusing rather than guessing"
+            AALLOC="pool_carve"
+        fi
+        if [ -n "$NAMEALLOC" ] && [ "$NAMEALLOC" != "$AALLOC" ]; then NAMEALLOC="$NAMEALLOC and $AALLOC"; else NAMEALLOC="$AALLOC"; fi
+        NAMEPATH=" (the argument of $STORER)"
+    done <<< "$CALLS"
+fi
 [ -n "$NAMEALLOC" ] || refuse "found g_runtime.atoms.atom_names[...] = $NAMEVAR but cannot resolve where $NAMEVAR is allocated -- refusing rather than guessing"
 case "$NAMEALLOC" in
     ct_strdup|ct_alloc|strdup|malloc|calloc)
@@ -113,8 +149,16 @@ case "$NAMEALLOC" in
         # the collected heap. Confirmed 2026-10-01: CLAUSE 2 (byte-equal under SCRIP_GC_STRESS=1 SCRIP_GC_POISON=1,
         # both modes) is green on this same tree, which a dangling-pointer class could not pass by chance.
         ck ok "the atom name is allocated by $NAMEALLOC, which bump-allocates out of rt_slab_region()/ct_alloc() -- off the collected heap, never slid or poisoned" ;;
+    pool_carve)
+        # pool_carve (this file, 2385766c3) bump-allocates a name out of a 64 KiB-or-larger chunk from rt_slab_try_region(), which takes its chunks from rt_slab_try_get() ->
+        # ct_try_alloc() (src/runtime/rt/rt_slab.c, ct_arena.h) -- the same recycled slab pool pool_strdup used, never the collected heap. The chain is READ here, not remembered.
+        if grep -A12 -E '^static char \*pool_carve' "$ATOMC" | grep -q 'rt_slab_try_region' && grep -q 'ct_try_alloc' "$ROOT/src/runtime/rt/rt_slab.c"; then
+            ck ok "the atom name is allocated by $NAMEALLOC$NAMEPATH, which carves out of rt_slab_try_region() -> rt_slab_try_get() -> ct_try_alloc() -- off the collected heap, never slid or poisoned"
+        else
+            ck no "the atom name is allocated by $NAMEALLOC, but its chain to ct_try_alloc through rt_slab_try_region() no longer reads in $ATOMC / rt_slab.c -- re-read where the pool comes from"
+        fi ;;
     *)
-        ck no "the atom name is allocated by $NAMEALLOC, which is not on the off-heap allowlist (ct_strdup ct_alloc strdup malloc calloc pool_strdup) -- if $NAMEALLOC is genuinely off-heap, ADD IT HERE with the reason; if it is the collected heap, this row's cure has been reverted" ;;
+        ck no "the atom name is allocated by $NAMEALLOC, which is not on the off-heap allowlist (ct_strdup ct_alloc strdup malloc calloc pool_strdup pool_carve) -- if $NAMEALLOC is genuinely off-heap, ADD IT HERE with the reason; if it is the collected heap, this row's cure has been reverted" ;;
 esac
 KEYSRC="$(grep -oE 'g_runtime\.atoms\.ht\[[A-Za-z_][A-Za-z0-9_]*\]\.key[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*' "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//')"
 if [ "$KEYSRC" = "$NAMEVAR" ]; then
