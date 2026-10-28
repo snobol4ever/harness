@@ -26,7 +26,9 @@
 # source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
 # FRAME HOMES: /home/resources/progress/FRAMEHOME.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, homes, agree,
 # home_without_test, test_without_home -- the same census's BB_PLACEMENT_FRAMEHOME, the compiler's RBP operand homes against Lon's operand test
-# (Lon 2026-10-21: "Will we get all the proper allocations on the RSP spine?"; ceo CEO-1865; test_gate_frame_homes_agree_with_lons_tests.sh).
+# (Lon 2026-10-21: "Will we get all the proper allocations on the RSP spine?"; ceo CEO-1865; test_gate_frame_homes_agree_with_lons_tests.sh),
+# then ruled, then ops_rbp_misplaced (BB_PLACEMENT rbp_misplaced less BB_HOSTS loc_rbp_misplaced: an operand record BEHIND rbp -- a GATE, BOUND or CLEANUP
+# record -- that no test forces; the frame-home comparison judges only the mirrored spine cells, so the "RBP wrong?" column adds this, ceo CEO-2004).
 # rc 0 shown/measured/nothing to do · rc 2 could not measure (named: fetch, worktree, build or census failed).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -72,7 +74,7 @@ try:
 except OSError: pass
 cur = keys[-1]; per = agg(cur)
 br = load(brec); bk = readings(br); bper = {r[4]: (int(r[5]), int(r[7]), int(r[8]) if len(r) > 8 else -1) for r in br if bk and (r[0], r[1]) == bk[-1]}
-fr = load(frec); fk = readings(fr); fper = {r[4]: list(map(int, r[5:9])) for r in fr if fk and (r[0], r[1]) == fk[-1]}
+fr = load(frec); fk = readings(fr); fper = {r[4]: list(map(int, r[5:9])) + [max(int(r[10]), 0) if len(r) > 10 else 0] for r in fr if fk and (r[0], r[1]) == fk[-1]}
 f = lambda n: format(n, ',') if isinstance(n, int) else n
 langs = ['snobol4', 'snocone', 'rebus', 'icon', 'prolog', 'pascal', 'raku'] + sorted(l for l in per if l not in ('snobol4', 'snocone', 'rebus', 'icon', 'prolog', 'pascal', 'raku'))
 langs = [l for l in langs if l in per]
@@ -86,14 +88,14 @@ line(['language', 'on RSP', 'on RBP', 'RBP wrong?', 'on RSP', 'on RBP', 'RBP wro
 line(['', '', '', '(the test)', '', '', '', '', 'at beta', 'at beta'])
 tot = [0] * 9
 for l in langs:
-    v = per[l]; b = bper.get(l, (0, 0, -1)); h = fper.get(l, [0, 0, 0, 0])
-    row = [v['ops_rsp'], v['ops_rbp'], h[2] + h[3], v['loc_rsp'], v['loc_rbp'], v['loc_rbp_misplaced'], v['prealloc'], b[0], max(b[2], 0)]
+    v = per[l]; b = bper.get(l, (0, 0, -1)); h = fper.get(l, [0, 0, 0, 0, 0])
+    row = [v['ops_rsp'], v['ops_rbp'], h[2] + h[3] + h[4],v['loc_rsp'], v['loc_rbp'], v['loc_rbp_misplaced'], v['prealloc'], b[0], max(b[2], 0)]
     tot = [a + c for a, c in zip(tot, row)]
     line([l] + [f(c) for c in row])
 line(['TOTAL'] + [f(c) for c in tot])
 line(['goal', 'all', 'forced', '0', 'all', 'forced', '0', '0', '0', 'allowed'])
 forced_ops = sum(v['ops_rbp'] for v in per.values()) - tot[2]
-print("  RBP is right only where your two tests force it. Operands: %s RBP homes, %s disputed by the test (%s homed without it, %s it forces that have no home; the test is still being calibrated, CEO-1865). Locals: %s on RBP, %s forced, %s wrong." % (f(sum(v['ops_rbp'] for v in per.values())), f(tot[2]), f(sum(h[2] for h in fper.values())), f(sum(h[3] for h in fper.values())), f(tot[4]), f(sum(v['loc_rbp_forced'] for v in per.values())), f(tot[5])))
+print("  RBP is right only where your two tests force it. Operands: %s RBP homes, %s disputed by the test (%s homed without it, %s it forces that have no home, %s records behind rbp that no test forces; the test is still being calibrated, CEO-1865). Locals: %s on RBP, %s forced, %s wrong." % (f(sum(v['ops_rbp'] for v in per.values())), f(tot[2]), f(sum(h[2] for h in fper.values())), f(sum(h[3] for h in fper.values())), f(sum(h[4] for h in fper.values())),f(tot[4]), f(sum(v['loc_rbp_forced'] for v in per.values())), f(tot[5])))
 if len(keys) > 1:
     p = agg(keys[-2])
     if sorted(p) == sorted(per):
@@ -144,7 +146,7 @@ for ln in open(out, encoding='utf-8'):
 PY
     [ -s "$FREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\thomes\tagree\thome_without_test\ttest_without_home\n' > "$FREC"
     grep '^BB_PLACEMENT_FRAMEHOME ' "$out" | while read -r _ lang rest; do
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "$(echo "$rest" | tr ' ' '\n' | cut -d= -f2 | paste -sd'\t')"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "$(echo "$rest" | tr ' ' '\n' | cut -d= -f2 | paste -sd'\t')" "$(awk -v L="$lang" '$2 == L && ($1 == "BB_PLACEMENT" || $1 == "BB_HOSTS") { for (i = 3; i <= NF; i++) { split($i, a, "="); if ($1 == "BB_PLACEMENT" && a[1] == "rbp_misplaced") r = a[2]; if ($1 == "BB_HOSTS" && a[1] == "loc_rbp_misplaced") l = a[2] } } END { print (r == "" ? -1 : r - l) }' "$out")"
     done > "$W/fh_rows.tmp" && cat "$W/fh_rows.tmp" >> "$FREC"; rm -f "$W/fh_rows.tmp"
     local A="$W/asm" i=0 lang f stem e
     rm -rf "$A"; mkdir -p "$A"
