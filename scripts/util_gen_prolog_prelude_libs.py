@@ -130,14 +130,18 @@ DROP_DIRECTIVES = {"module", "use_module", "autoload", "multifile", "public", "d
                    "expects_dialect"}
 KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "dynamic", "thread_local"}
 EXPANDED = {"clpfd", "csv", "lazy_lists", "json"}
+INCLUDES = {"chr_runtime": {"chr_op": "chr/chr_op"}}
+GOAL_DROPS = {"hprolog": {"push_hprolog_library": "it only adds swipl's dialect/hprolog directory to the library search path while the hprolog dialect loads"}}
 IMPORT_ONLY_FRONTS = {"clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files",
-                      "clpr": "the same as clpq: its exports are clpq's names, and a program names one of the two"}
-LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "clpr": "clp/clpr", "bb_r": "clp/clpr/bb_r", "bv_r": "clp/clpr/bv_r", "fourmotz_r": "clp/clpr/fourmotz_r", "ineq_r": "clp/clpr/ineq_r", "itf_r": "clp/clpr/itf_r", "nf_r": "clp/clpr/nf_r", "store_r": "clp/clpr/store_r", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
+                      "clpr": "the same as clpq: its exports are clpq's names, and a program names one of the two",
+                      "chr": "SCRIP's own library(chr): its operators and, through chr_runtime, the CHR runtime a lowered CHR program calls",
+                      "hprolog": "swipl's dialect/hprolog, loaded only by chr_runtime; its exports (take/3, drop/3, sublist/2 ...) are in no autoload index"}
+LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "chr_runtime": "chr/chr_runtime", "hprolog": "dialect/hprolog", "clpr": "clp/clpr", "bb_r": "clp/clpr/bb_r", "bv_r": "clp/clpr/bv_r", "fourmotz_r": "clp/clpr/fourmotz_r", "ineq_r": "clp/clpr/ineq_r", "itf_r": "clp/clpr/itf_r", "nf_r": "clp/clpr/nf_r", "store_r": "clp/clpr/store_r", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
                   "listing": {"portray_blob"}, "simplex": {"clear_parent"}}
-LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines", "plunit"}
+LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines", "plunit", "chr"}
 WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
 SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"},
            "listing": {("portray_clause", 1): WHY_LISTING_PC, ("portray_clause", 2): WHY_LISTING_PC, ("portray_clause", 3): WHY_LISTING_PC}}
@@ -147,7 +151,9 @@ WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=
 EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
 INIT_DROPS = {"clpfd": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "random": {"check_gmp": "only prints a warning when SWI is built without GMP; SCRIP's integers are unbounded"},
-              "simplex": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"}}
+              "simplex": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
+              "chr_runtime": {"chr_init": "it only sets chr_id, chr_global, chr_debug and chr_debug_history, which the library's own exception/3 hook sets at their first read",
+                              "chr_debug_init": "it only sets chr_leash, which the library's own exception/3 hook sets at its first read"}}
 # An initialization directive whose only effect, with no foreign library, is to ASSERT clauses: the directive's text is replaced by those
 # clauses, verbatim from the library's own fallback branch, before the file is read and keyed, so they are keyed, renamed and exported
 # like any other clause (cfo 2026-10-14, row prolog-swi-library-test-pio-...-ceo-1664): readutil's link_foreign/0 tries
@@ -406,6 +412,38 @@ def parse_exports(s, path):
     return mod, exports, ops
 
 
+def system_fallbacks(toks):
+    """The (name, arity) keys a library defines only inside an :- if(\\+current_predicate(Name/Arity)) branch."""
+    out, stack = set(), []
+    for cl in split_clauses(toks):
+        s = sig(cl)
+        if not s:
+            continue
+        if atom_value(s[0]) == ":-" and len(s) > 1:
+            d = directive_name(s)
+            if d == "if":
+                v = [t[1] if t[0] != "qatom" else atom_value(t) for t in s]
+                m = re.fullmatch(r":-if\(\\\+current_predicate\(([a-z][A-Za-z0-9_]*)/(\d+)\)\)\.", "".join(v))
+                stack.append((m.group(1), int(m.group(2))) if m else None)
+            elif d in ("elif", "else") and stack:
+                stack[-1] = None
+            elif d == "endif" and stack:
+                stack.pop()
+            continue
+        if stack and stack[-1] is not None:
+            out.add(stack[-1])
+    return out
+
+
+def swipl_library_file(lpath):
+    """The file swipl resolves library(lpath) to."""
+    r = subprocess.run(["swipl", "-q", "-g", "absolute_file_name(library('%s'), F, [file_type(prolog), access(read)]), write(F)" % lpath, "-t", "halt"],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode != 0 or not r.stdout:
+        raise Refuse("swipl resolves no library(%s)" % lpath)
+    return r.stdout.strip()
+
+
 def use_module_specs(s):
     """s are the significant tokens of ':- use_module(Spec[, Imports])'.  Returns its specs as ("library", Path) or ("relative", Path)."""
     if len(s) < 3 or s[2] != ("punct", "("):
@@ -561,6 +599,24 @@ def process(path):
         init_drops["directive initialization(%s) replaced by the %d clauses it asserts: %s" % (g, len(clauses), why)] = 1
         read_path = os.path.join(os.environ.get("TMPDIR", "/tmp"), "pl_prelude_initclauses_%s_%d.pl" % (lib, os.getpid()))
         open(read_path, "w", encoding="utf-8").write(src)
+    for inc, ipath in INCLUDES.get(lib, {}).items():
+        m = re.search(r":-\s*include\(\s*%s\s*\)\s*\." % re.escape(inc), src)
+        if not m:
+            raise Refuse("%s: INCLUDES names include(%s), which the library does not carry" % (path, inc))
+        ifile = swipl_library_file(ipath)
+        itext = open(ifile, encoding="utf-8").read()
+        idirs = []
+        for cl in split_clauses(tokenize(itext, ifile)):
+            si = sig(cl)
+            if not si:
+                continue
+            if atom_value(si[0]) != ":-" or directive_name(si) != "op":
+                raise Refuse("%s: the included %s carries a clause that is not :- op(...) -- decide what it means for SCRIP first" % (path, ifile))
+            idirs.append("".join(t[1] for t in cl if t[0] != "comment").strip())
+        src = src[:m.start()] + "\n".join(idirs) + src[m.end():]
+        init_drops["directive include(%s) replaced by its %d op directives (%s)" % (inc, len(idirs), ipath)] = 1
+        read_path = os.path.join(os.environ.get("TMPDIR", "/tmp"), "pl_prelude_included_%s_%d.pl" % (lib, os.getpid()))
+        open(read_path, "w", encoding="utf-8").write(src)
     for why, old, new in SOURCE_EDITS.get(lib, []):
         if src.count(old) != 1:
             raise Refuse("%s: SOURCE_EDITS text for '%s' occurs %d times, not once" % (path, why, src.count(old)))
@@ -573,7 +629,7 @@ def process(path):
         s = sig(cl)
         if s and atom_value(s[0]) == ":-" and len(s) > 1:
             d = directive_name(s)
-            if d not in KEEP_DIRECTIVES and d not in DROP_DIRECTIVES and d not in ("module", "initialization", "meta_predicate") and not (d == "record" and lib in EXPANDED):
+            if d not in KEEP_DIRECTIVES and d not in DROP_DIRECTIVES and d not in ("module", "initialization", "meta_predicate") and not (d == "record" and lib in EXPANDED) and d not in GOAL_DROPS.get(lib, {}):
                 raise Refuse("%s clause %d: the directive :- %s is neither dropped nor kept by this generator -- decide what it means for SCRIP first" % (path, no, d))
     if lib in LOCAL:
         heads, refs = local_heads(toks, path), []
@@ -605,6 +661,9 @@ def process(path):
                 continue
             if d == "dynamic" and any(t[1] == ":" for t in s):
                 drops["directive dynamic (module-qualified)"] = drops.get("directive dynamic (module-qualified)", 0) + 1
+                continue
+            if d in GOAL_DROPS.get(lib, {}):
+                drops["directive %s: %s" % (d, GOAL_DROPS[lib][d])] = 1
                 continue
             if d == "initialization":
                 k = 3 if s[1] == ("punct", "(") else 2
@@ -703,7 +762,10 @@ def process(path):
         raise Refuse("%s: no :- module directive -- only a module library is vendored" % path)
     exp = set(exports)
     cside = [e for e in exports if e not in keyed and e not in OMIT.get(lib, {})]
-    local = {k for k in keyed if k not in exp and k[0] not in libops}
+    fallbacks = system_fallbacks(toks)
+    for k in sorted(fallbacks & set(keyed)):
+        drops["%s/%d defined only under :- if(\\+current_predicate(%s/%d)): a fallback for the system predicate, its references keep the name" % (k[0], k[1], k[0], k[1])] = 1
+    local = {k for k in keyed if k not in exp and k[0] not in libops and k not in fallbacks}
     as_op = sorted({k[0] for k in keyed if k not in exp and k[0] in libops})
     renamed, chunks = {}, []
     for cs, ce in sorted(kept + [(cs, ce) for cs, _, ce, _ in hooks]):
@@ -792,6 +854,7 @@ def generate(pdir):
     for L in libs:
         base = os.path.dirname(LIB_PATH.get(L["lib"], L["lib"]))
         L["loads_rel"] = sorted({by_path[q] for q in (os.path.normpath(os.path.join(base, p)) for k, p in L["uses"] if k == "relative") if q in by_path})
+        L["loads_lib"] = sorted({by_path[p] for k, p in L["uses"] if k == "library" and p in by_path})
     import_only, todo = set(), sorted(IMPORT_ONLY_FRONTS)
     for f in todo:
         if f not in by_lib:
@@ -803,7 +866,7 @@ def generate(pdir):
             todo.extend(by_lib[f]["loads_rel"])
     for L in libs:
         L["import_only"] = L["lib"] in import_only
-        L["loads"] = L["loads_rel"] if L["import_only"] else []
+        L["loads"] = sorted(m for m in set(L["loads_rel"]) | set(L["loads_lib"]) if m in import_only) if L["import_only"] else []
         if L["import_only"]:
             L["drops"]["selected only when the program imports it, or a library it imports loads it (IMPORT_ONLY_FRONTS)"] = 1
     o = ["typedef struct { const char *nm; int ar; } pl_prelude_lib_pi_t;",
