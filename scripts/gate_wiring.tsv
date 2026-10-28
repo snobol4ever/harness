@@ -708,6 +708,7 @@ test_gate_pl_a_last_call_in_a_disjunction_or_soft_cut_branch_pops_this_frames_de
 test_gate_pl_a_last_call_in_an_if_then_else_branch_releases_its_frame.sh	WIRED	-	-	-
 test_gate_pl_a_library_arms_the_wakeup_road_only_when_the_program_imports_it.sh	WIRED	-	-	-
 test_gate_pl_a_library_keeps_its_own_definitions_when_the_user_redefines_an_export.sh	WIRED	-	-	-
+test_gate_pl_a_local_definition_overrides_the_weak_import_of_a_module_file_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_library_reaching_with_output_to_pulls_its_stream_sink_road.sh	WIRED	-	-	-
 test_gate_pl_a_list_goal_consults_its_files_directly_and_through_call.sh	WIRED	-	-	-
 test_gate_pl_a_loaded_clause_creates_its_dynamic_predicate_and_a_dot_P_file_loads_as_named.sh	WIRED	-	-	-
