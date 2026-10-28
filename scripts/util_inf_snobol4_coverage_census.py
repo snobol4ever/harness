@@ -51,6 +51,8 @@ def read_vocab():
 NULL_CAPS = '(' + ' = '.join('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + " = '')"
 
 def is_preset(line):
+    if re.fullmatch(r'\(&[A-Z]+ = [^()]*\)', line) or re.fullmatch(r'\((OPSYN|DATA)\(.*\)\)', line):
+        return True
     if line != NULL_CAPS and not re.match(r'\(\s*[a-z]', line):
         return False
     depth = 0
@@ -138,7 +140,7 @@ def main():
             hits = probe(row, presets, enum_help, drv_help)
         else:
             pat = re.compile(rx)
-            pool = enum_lines if row['instrument'] == 'enum' else (presets if 'preset line' in row['note'] else tests)
+            pool = enum_lines if row['instrument'] == 'enum' else (presets if 'preset line' in row['note'] or 'batch-level preset' in row['note'] else tests)
             hits = sum(1 for ln in pool if pat.search(ln))
         results.append((row, hits))
     print('=== COVERAGE CENSUS scope=%d seeds=%d size=%d test_lines=%d preset_lines=%d enumerator_lines=%d ===' % (a.scope, a.seeds, a.size, len(tests), len(presets), len(enum_lines)))
