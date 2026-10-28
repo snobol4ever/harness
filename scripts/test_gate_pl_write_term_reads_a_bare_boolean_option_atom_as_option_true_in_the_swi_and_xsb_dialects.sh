@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_write_term_reads_a_bare_boolean_option_atom_as_option_true_in_the_swi_and_xsb_dialects.sh -- write_term(T, [quoted]) IS write_term(T, [quoted(true)]) WHERE THE ORACLE SAYS SO.
 # swipl 9.0.4 and 10.1.5 read a bare atom naming a boolean write option (quoted, ignore_ops, numbervars, ...) as Option(true); XSB does too (its ref for
-# prolog_tests_pip_write_term prints 'a b' for write_term('a b',[quoted]) and A for write_term('$VAR'(0),[numbervars])); gprolog 1.4.5 and ISO do NOT: they raise
+# prolog_tests_pip_write_term prints 'a b' for write_term('a b',[quoted]) and A for write_term('$VAR'(0),[numbervars])); the gprolog oracle (gprolog_bin) and ISO do NOT: they raise
 # domain_error(write_option, quoted), and the default dialect keeps that answer. SCRIP raised it in every dialect (the SWI dialect lost all 11 lines of pip_write_term's
 # first call to it). The two sites (by_name_dispatch.c pl_write_opts_check and unification.c rt_pl_write_term_cell) now accept the bare form in the SWI and XSB dialects only.
 # The expected text for the SWI and default arms is RE-CHECKED on every run against live swipl and gprolog (an oracle that cannot answer REFUSES rc 2, one that disagrees
@@ -14,8 +14,9 @@ ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 SWIPL=/usr/bin/swipl
-GPROLOG=/usr/bin/gprolog
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
+. "$HERE/lib_oracle_flags.sh" || refuse "lib_oracle_flags.sh is missing"
+GPROLOG="$(gprolog_bin)" || refuse "the gprolog oracle accessor refused"
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 [ -x "$SWIPL" ] || refuse "no swipl oracle at $SWIPL"
 [ -x "$GPROLOG" ] || refuse "no gprolog oracle at $GPROLOG"

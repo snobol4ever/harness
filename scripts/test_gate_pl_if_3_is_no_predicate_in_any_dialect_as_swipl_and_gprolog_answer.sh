@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer.sh -- if/3 IS NOT A PREDICATE OF THE LANGUAGE (cto CEO-1888/1996, ARCH-PROLOG-DATABASE.md 4c addendum).
-# swipl 9.0.4, swipl 10.1.5 and gprolog 1.4.5 all answer a call of if(C,T,E) with existence_error(procedure, if/3), as a body goal and through call/1, and
+# swipl 9.0.4, swipl 10.1.5 and the gprolog oracle (gprolog_bin) all answer a call of if(C,T,E) with existence_error(procedure, if/3), as a body goal and through call/1, and
 # predicate_property(if(_,_,_), _) has no answer in any of them. SCRIP defined it as a soft cut in every dialect but the SWI one (added by abd2fb800 for a
 # Logtalk unit that runs only where predicate_property(if(_,_,_), built_in) holds, which neither oracle satisfies); the three sites are deleted, so SCRIP
 # ships no control construct its dialect's oracle lacks. A program that defines its OWN if/3 keeps it (arm own). The expected text below is cut from the
@@ -14,8 +14,9 @@ ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SCRIP="$HERE/../../SCRIP/scrip"
 RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 SWIPL=/usr/bin/swipl
-GPROLOG=/usr/bin/gprolog
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
+. "$HERE/lib_oracle_flags.sh" || refuse "lib_oracle_flags.sh is missing"
+GPROLOG="$(gprolog_bin)" || refuse "the gprolog oracle accessor refused"
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 [ -x "$SWIPL" ] || refuse "no swipl oracle at $SWIPL"
 [ -x "$GPROLOG" ] || refuse "no gprolog oracle at $GPROLOG"
