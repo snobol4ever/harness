@@ -62,6 +62,20 @@ for w in $wits; do
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc$( [ "$rc" = 132 ] && echo ,depth-check ))"; fi
     else reds="$reds m4:$w(no-build)"; fi
 done
+# THE SHIPPED BEHAVIOUR (hq_prolog 2026-10-28): the RTCHECK run above is a diagnostic, and a witness that traps there can still answer as swipl in the binary the coo grades. Every witness also runs PLAIN, both modes, and a plain red is a
+# regression or a defect of the shipped build whatever the probe says (LIFO step 2 once landed with the two clpfd witnesses segfaulting plain while the parent ran them EQUAL: a baseline taken only under RTCHECK read that as unchanged).
+q3=0; q4=0; preds=""
+for w in $wits; do
+    src="$WD/$w.pl"; ref="$WD/$w.ref"; o="$OUT/step$step/$w.plain"
+    ( cd "$WD" && timeout -k 5 120 "$SC/scrip" "$w.pl" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
+    if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then q3=$((q3 + 1)); else preds="$preds plain-m3:$w(rc$rc)"; fi
+    if ( cd "$WD" && timeout -k 5 300 "$SC/scrip" --compile -o "$o.s" "$w.pl" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+       && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
+        ( cd "$WD" && timeout -k 5 120 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
+        if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then q4=$((q4 + 1)); else preds="$preds plain-m4:$w(rc$rc)"; fi
+    else preds="$preds plain-m4:$w(no-build)"; fi
+done
+rm -f "$OUT/step$step"/*.plain.s "$OUT/step$step"/*.plain.o
 sfiles=$(ls "$OUT/step$step"/*.s 2>/dev/null)
 srcs=""; for w in $wits; do srcs="$srcs $WD/$w.pl"; done
 census_class() {   # $1 class, $2 kind or '' -> the count over the witnesses' whole compiles (the prelude included)
@@ -93,6 +107,7 @@ case "$probe" in
     *) refuse "step $step names a probe this harness does not grade: $probe" ;;
 esac
 wit=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] || wit=RED
+[ "$q3" = "$n" ] && [ "$q4" = "$n" ] || wit=RED
 verdict=GREEN; { [ "$wit" = RED ] || [ "$pr" = RED ]; } && verdict=RED; [ "$pr" = REFUSED ] && [ "$wit" = GREEN ] && verdict=REFUSED
-echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$pv${reds:+ reds:$reds} -> $verdict"
+echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n plain=$q3/$n,$q4/$n probe=$pv${reds:+ reds:$reds}${preds:+ PLAIN-REDS:$preds} -> $verdict"
 case "$verdict" in GREEN) exit 0 ;; RED) exit 1 ;; *) exit 2 ;; esac
