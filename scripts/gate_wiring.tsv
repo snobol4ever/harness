@@ -76,6 +76,7 @@ test_gate_blocking_set_records_the_build_behaviour_ledger_before_the_fan_out.sh	
 test_gate_blocking_set_shards_agree_with_sequential.sh	WIRED	-	-	-
 test_gate_board_population_floor.sh	WIRED	-	-	-
 test_gate_boards_refuse_when_the_binary_moves.sh	WIRED	-	-	-
+test_gate_bootstrap_parsers_define_no_functions.sh	WIRED	-	-	-
 test_gate_box_cell_shapes_inc_is_current.sh	WIRED	-	-	-
 test_gate_build_freshness_is_behavioural.sh	WIRED	-	-	-
 test_gate_builder_and_grader_agree_on_stdin_companion_spellings.sh	WIRED	-	-	-
@@ -954,6 +955,7 @@ test_gate_pl_writef_dcg_basics_and_clpfd_goal_terms_answer_as_swipl.sh	WIRED	-	-
 test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh	WIRED	-	-	-
 test_gate_pl_xfail_marker_consistent.sh	WIRED	-	-	-
 test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh	WIRED	-	-	-
+test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh	WIRED	-	-	-
 test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
 test_gate_postoffice_identity.sh	WIRED	-	-	-
 test_gate_pre_commit_refuses_a_conflict_marker.sh	WIRED	-	-	-
