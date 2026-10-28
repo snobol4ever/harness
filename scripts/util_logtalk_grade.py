@@ -133,7 +133,10 @@ EXCLUDED_CLASSES = {
     # ceo CEO-1977 (2026-10-25), the third evidence form: a format/2,3 column-stop case (a ~t fill point and a ~N+ column stop) whose asserted
     # text is not the text the pinned oracle swipl 9.0.4 prints -- the assertion is a ref that is not the oracle's, so the answer is not known.
     # test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh runs swipl on every such row and reds the row the day swipl agrees with it.
-    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, or asserts a column-stop format/2 text that swipl 9.0.4 does not print",
+    # ceo CEO-2002 and cto (2026-10-28), the fourth evidence form: the case's UNIT carries `condition :- G.` and every Prolog oracle answers G false, so lgtunit skips the
+    # whole unit under every oracle (control/if_3: G is predicate_property(if(_,_,_), built_in), false on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle).
+    # test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh runs each oracle on every such row's condition and reds the row the day one of them answers true.
+    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, asserts a column-stop format/2 text that swipl 9.0.4 does not print, or sits in a unit whose own condition/0 every oracle answers false",
 }
 
 
@@ -167,6 +170,18 @@ def _column_stop_format(g):
     """The goal calls format/2,3 on a control string with a ~t fill point and a ~N+ column stop (the third NO_ORACLE_ANSWER evidence form, CEO-1977)."""
     m = re.search(r'(?<![A-Za-z0-9_])format\s*\((?:[^"()]*,)?\s*"([^"]*)"', g)
     return bool(m) and "~t" in m.group(1) and bool(re.search(r"~\d+\+", m.group(1)))
+
+
+ORACLE_FALSE_UNIT_CONDITIONS = ("predicate_property(if(_,_,_),built_in)",)
+
+
+def _unit_condition_false_on_oracle(db):
+    """The file's object carries `condition :- G.` with G a goal every Prolog oracle answers false (the fourth NO_ORACLE_ANSWER evidence form, CEO-2002)."""
+    for cl in db:
+        m = re.match(r"condition\s*:-\s*(.*?)\.?\s*$", cl.strip(), re.S)
+        if m and "".join(m.group(1).split()) in ORACLE_FALSE_UNIT_CONDITIONS:
+            return True
+    return False
 
 
 def _no_oracle_answer(case):
@@ -1047,9 +1062,9 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
                 excl_hits.append((xk, xr[0], xr[1]))
                 continue
             if xr is not None and xr[0] == "NO_ORACLE_ANSWER":
-                if not _no_oracle_answer(c):
+                if not (_no_oracle_answer(c) or _unit_condition_false_on_oracle(fc.db)):
                     exerr.append((xk, "is excluded NO_ORACLE_ANSWER and its goal %r neither calls a Logtalk system predicate nor builds a "
-                                      "term of an arity beyond 2^64 -- the row is stale or names the wrong case" % ((c.goal or "")[:80],)))
+                                      "term of an arity beyond 2^64, and its unit carries no condition every oracle answers false -- the row is stale or names the wrong case" % ((c.goal or "")[:80],)))
                     continue
                 excl_hits.append((xk, xr[0], xr[1]))
                 continue
@@ -1265,6 +1280,12 @@ def main(argv):
     # predicates/sub_atom_5` (the path, where the group is the basename) matched no file and this runner
     # printed a complete board reading population=0, identity 0 == 0 ✓, AND per case 0/0 -- the success
     # shape over an empty measurement, which is the one thing every gate in this tree is forbidden to do.
+    if args.group and not work and seqinfo.get("excluded"):
+        # the group matched its file and EVERY case in it is excluded by name (control/if_3, CEO-2002): the measurement is the exclusion list, printed whole
+        print("GROUP %s: none of its %d case(s) is in the graded population -- each is excluded by name (EXCLUDED_CASES.tsv), with its own condition:" % (args.group, len(seqinfo["excluded"])))
+        for k, cls, why in seqinfo["excluded"]:
+            print("  EXCLUDED %s [%s] %s" % (k, cls, why))
+        return 0
     if args.group and not work:
         groups = sorted({fc.group for fc in ex.parse_suite(args.suite)[0]})
         sys.stderr.write("⛔ REFUSED(2) [logtalk_iso]: --group %r matched no file -- the group is the "
