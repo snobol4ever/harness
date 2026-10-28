@@ -934,6 +934,7 @@ test_gate_pl_the_standard_output_streams_report_mode_append_in_the_iso_default_a
 test_gate_pl_the_writer_writes_not_as_a_plain_functor_as_swipl_and_gprolog.sh	WIRED	-	-	-
 test_gate_pl_trail_mechanism.sh	WIRED	-	-	-
 test_gate_pl_tries_and_table_inspection_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_two_foralls_over_member_then_an_if_then_else_in_one_clause_compile_and_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_two_variables_compare_one_way_only.sh	WIRED	-	-	-
 test_gate_pl_utf16_and_utf32_text_streams_read_and_write.sh	WIRED	-	-	-
 test_gate_pl_variant_sha1_and_variant_hash_answer_as_swipl.sh	WIRED	-	-	-
