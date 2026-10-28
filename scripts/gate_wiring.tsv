@@ -288,6 +288,7 @@ test_gate_icn_a_suspended_variable_images_as_a_variable_not_its_value.sh	WIRED	-
 test_gate_icn_a_suspended_variable_survives_the_procedure_boundary.sh	WIRED	-	-	-
 test_gate_icn_a_traceback_images_the_left_operand_after_its_conversion.sh	WIRED	-	-	-
 test_gate_icn_a_trapped_substring_past_its_shrunk_subject_raises_205.sh	WIRED	-	-	-
+test_gate_icn_a_value_producer_inside_a_user_procedure_call_argument_gets_its_frame_slot_and_answers_as_iconx.sh	WIRED	-	-	-
 test_gate_icn_a_variable_operand_derefs_at_the_operation.sh	WIRED	-	-	-
 test_gate_icn_alternation_beyond_32_arms.sh	WIRED	-	-	-
 test_gate_icn_an_error_after_a_return_reports_the_callers_line.sh	WIRED	-	-	-
