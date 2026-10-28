@@ -562,7 +562,12 @@ def program_text(plan, db, shim_src, loaded=()):
     # are local to it, and case 03's X spliced beside case 04's X is ONE variable and a different program.
     for k, g in enumerate(plan.prefix or (), 1):
         parts.append("'$lgt_pre%d' :- %s." % (k, g))
-    parts.append("'$lgt_cond' :- %s." % (plan.condition if plan.condition else "true"))
+    # ⛔ THE UNIT'S OWN condition/0 IS A CONDITION OF EVERY CASE IN IT (cto CEO-1888/1996, hq_packages 2026-10-28): lgtunit skips a whole unit whose
+    # `condition :- G.` fails, and swipl skips control/if_3 (if/3 is no builtin in either oracle). The object body's clause already travels in db;
+    # calling it from '$lgt_cond' makes a skipped unit read UNGRADED, named, where it read FAIL (if_3: 12 FAIL once SCRIP stopped defining if/3).
+    unit_cond = any(re.match(r"condition\s*(:-|$)", cl) for cl in db)
+    cond_goals = (["condition"] if unit_cond else []) + (["(%s)" % plan.condition] if plan.condition else [])
+    parts.append("'$lgt_cond' :- %s." % (", ".join(cond_goals) if cond_goals else "true"))
     parts.append("'$lgt_case' :- %s." % plan.goal)
     parts.append(
         "'$lgt_run' :- catch( ( catch('$lgt_cond', _, fail) -> "
@@ -1202,7 +1207,7 @@ def verdict(plan, outcome):
     if outcome in ("harness", "toplevel"):
         return "UNGRADED", "harness could not set the case up"
     if outcome == "skipped":
-        return "UNGRADED", "the case's own condition(...) option is false on this system"
+        return "UNGRADED", "the case's own condition(...) option or its unit's condition/0 is false on this system"
     if plan.want == "succ":
         return ("PASS", "") if outcome == "succ" else ("FAIL", outcome)
     if plan.want == "fail":

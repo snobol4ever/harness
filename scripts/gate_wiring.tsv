@@ -825,6 +825,7 @@ test_gate_pl_goal_expansion_reaches_meta_arguments_and_asserted_bodies_ending_in
 test_gate_pl_gz6b.sh	WIRED	-	-	-
 test_gate_pl_ieee754_float_flags_special_values_and_number_order_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_ieee_float_flags_and_ceil_lgamma_powm_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer.sh	WIRED	-	-	-
 test_gate_pl_include_splices_in_place_and_ensure_loaded_loads_once.sh	WIRED	-	-	-
 test_gate_pl_integer_division_floors_and_int64_overflow_promotes.sh	WIRED	-	-	-
 test_gate_pl_iso_rung1_database_builtins_and_call_local_cut.sh	WIRED	-	-	-
@@ -832,7 +833,6 @@ test_gate_pl_iso_rung2_runtime_heads_and_meta_call_wrappers.sh	WIRED	-	-	-
 test_gate_pl_iso_rung3_current_predicate_generator_and_halt_type_checks.sh	WIRED	-	-	-
 test_gate_pl_iso_rung4_run_time_meta_call_of_builtins_through_compiled_wrappers.sh	WIRED	-	-	-
 test_gate_pl_iso_rung5_body_conversion_of_a_run_time_goal_list_guard_and_declared_empty_predicates.sh	WIRED	-	-	-
-test_gate_pl_iso_rung6_the_soft_cut_if_3_predicate.sh	WIRED	-	-	-
 test_gate_pl_iso_rung7_a_cut_inside_a_findall_bagof_setof_goal_has_its_own_barrier.sh	WIRED	-	-	-
 test_gate_pl_iso_rung8_an_unbounded_integer_literal_reads_writes_and_computes.sh	WIRED	-	-	-
 test_gate_pl_lazy_monotonic_tabling_queues_the_deltas_forces_its_sources_and_hard_invalidates_a_retract_as_swipl.sh	WIRED	-	-	-
