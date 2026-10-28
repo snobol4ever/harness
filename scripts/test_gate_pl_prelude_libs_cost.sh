@@ -64,6 +64,12 @@
 #     stream_property/2 cases opening alias(in) timed out at 10 s.  The generator's QUIET_BARE now holds clpfd as it holds
 #     dcg_basics.  FAIL-ONCE: this arm with the table of SCRIP 59d6aad80 (before the cure) restored and rebuilt read 7 parses
 #     -- clpfd, apply, assoc, error, lists, pairs, gnu_builtins (a gdb break on register_lib_ops names them) -- red; 0 with it.
+#   ARM 5 (a program naming no library; CEO-2004): the base prelude's key set (g_stage2.pl_prelude_keys) is built ONCE, from the prelude parse
+#     prolog_inject_prelude already holds (pl_prelude_keys_seed), with a binary-searched sorted vector: pl_prelude_defines costs <= 100,000
+#     instructions inclusive. ARM 1 and ARM 2 read pl_libs_append only, so a cost outside it could not be seen: pl_prelude_defines re-parsed the whole
+#     base prelude (67 M) and then deduped 2,052 keys with a linear scan per key (50 M), 118 M of every Prolog compile (a hello-world --dump-ast read
+#     224 M, 94 M with the cure), and a7126e791 moved its first call inside pl_libs_append, which is how ARM 2 went 16.4 M -> 127 M. FAIL-ONCE: this arm
+#     on SCRIP 6279e6bca (before the cure) reads 118,436,380 -- red; 5,026 with it. Once the cost is under the bound it refuses rc=2 if pl_prelude_keys_seed is not in the profile.
 # A reading that does not find pl_libs_append in the profile refuses rc=2 (a reader that finds nothing reads 0 and passes).
 # ~4 s.  rc=0 all arms · rc=1 a red · rc=2 refused (valgrind missing, a stale build, a reader that found nothing).
 set -u
@@ -111,8 +117,9 @@ print(parses, found)
 PY
 }
 incl_of() { callgrind_annotate --inclusive=yes --auto=no --threshold=100 "$D/cg.$1" 2>/dev/null | grep -E 'prolog_parse\.c:pl_libs_append ' | head -1 | awk '{gsub(",", "", $1); print $1}'; }
+incl_fn() { callgrind_annotate --inclusive=yes --auto=no --threshold=100 "$D/cg.$1" 2>/dev/null | grep -E "prolog_parse\.c:$2 " | head -1 | awk '{gsub(",", "", $1); print $1}'; }
 red=0
-read -r p1 f1 <<< "$(reading nothing)"; i1="$(incl_of nothing)"
+read -r p1 f1 <<< "$(reading nothing)"; i1="$(incl_of nothing)"; i5="$(incl_fn nothing pl_prelude_defines)"; s5="$(incl_fn nothing pl_prelude_keys_seed)"; i5="${i5:-0}"
 read -r p2 f2 <<< "$(reading apply)"; i2="$(incl_of apply)"
 read -r p3 f3 <<< "$(reading native)"
 read -r p4 f4 <<< "$(reading data)"
@@ -129,5 +136,10 @@ if [ "$p3" = 0 ]; then echo "  ARM 3 GREEN: a program whose aggregate_all/3 call
 else echo "  ARM 3 RED: a program whose aggregate_all/3 calls SCRIP lowers itself parsed $p3 libraries (want 0)"; red=1; fi
 if [ "$p4" = 0 ]; then echo "  ARM 4 GREEN: a program naming clpfd's exports only as data (alias(in), f(sum, ...)) parsed $p4 libraries"
 else echo "  ARM 4 RED: a program naming clpfd's exports only as data (alias(in), f(sum, ...)) parsed $p4 libraries (want 0)"; red=1; fi
+if [ "$i5" -gt 100000 ]; then echo "  ARM 5 RED: a program naming no library: pl_prelude_defines cost $i5 instructions inclusive (want <= 100,000) -- the base prelude was parsed again or its keys deduped by a linear scan"; red=1
+else
+    [ -n "$s5" ] || refuse "arm 5: pl_prelude_keys_seed is not in the profile -- the base prelude key set was not built by the seed, or the reader found nothing"
+    echo "  ARM 5 GREEN: a program naming no library built the base prelude key set in pl_prelude_keys_seed ($s5 instructions) and pl_prelude_defines cost $i5 instructions (<= 100,000)"
+fi
 [ "$red" = 0 ] && echo "PASS test_gate_pl_prelude_libs_cost"
 exit "$red"
