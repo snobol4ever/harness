@@ -22,7 +22,7 @@ BOOT="$HERE/../../SCRIP/bootstrap"
 GATE_NAME=test_gate_bootstrap_parsers_define_no_functions
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
-FLOORS="snobol4:22 snocone:1 rebus:2 icon:14 prolog:5 raku:1 pascal:50"
+FLOORS="snobol4:22 snocone:1 rebus:2 icon:14 prolog:4 raku:1 pascal:50"
 DEFINE_FLOOR=0
 strip_comments() { awk 'in_c { if (index($0, "*/")) in_c = 0; next } /^[ \t]*\/\*/ { if (!index($0, "*/")) in_c = 1; next } /^[ \t]*\/\// { next } { print }' "$1"; }
 fn_pat='(^|[;{}])[[:space:]]*(function|procedure)[[:space:]]+[A-Za-z_][A-Za-z_0-9]*[[:space:]]*\('
