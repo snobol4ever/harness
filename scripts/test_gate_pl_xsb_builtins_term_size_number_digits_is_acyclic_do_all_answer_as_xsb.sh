@@ -2,7 +2,7 @@
 # test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh -- XSB'S OWN BUILTINS, AS XSB ANSWERS THEM (hq_icon 2026-10-28, row prolog-xsbtests-to-100-the-58-failing-programs-ceo-1926; ARCH-PROLOG-DIALECTS.md sec 5, THE CONFLICTING BUILTINS live in xsb_builtins.pl).
 #
 # term_to_atom/2,3 and term_to_codes/2,3 (XSB's string.P: write-only, canonical, variables _h0.._hN, the quoted, ignore_ops and numbervars options and their four error forms) join the
-# witness, replacing SWI's parsing term_to_atom/2 in the XSB dialect (lower_prolog.c pl_xsb_library_replaces).
+# witness, with the renaming import (:- import append/3 from basics as myappend/3.), replacing SWI's parsing term_to_atom/2 in the XSB dialect (lower_prolog.c pl_xsb_library_replaces).
 # term_size/2 (XSB's term_sizew: an atom, an integer, a variable or [] is 1, a float 4, a compound or list cell 1 plus its arguments' sizes), number_digits/2 (digits as the integers
 # 0 to 9, '-' '.' 'e' '+' as atoms; syntax_error and type_error(digit|list|number) carry the whole list or the culprit as XSB raises them), is_acyclic/1 and do_all/1,2 with if_none
 # (findall over the variables Gen and Do share, sorted, once each) are XSB's, measured on XSB 5.0.0. xsb_builtins is selected ONLY in the XSB dialect (prolog_parse.c
@@ -11,7 +11,7 @@
 #
 # THE REFS ARE THE ORACLES' OUTPUT, cut when the gate was written: XSB 5.0.0 (xsb_bin) and swipl 9; each is re-cut when its oracle is on the box and the gate refuses rc=2 on disagreement.
 # RED BEFORE (measured on SCRIP 44274bf58, hq_icon 2026-10-28): term_size, number_digits, is_acyclic and do_all raised existence_error or counted SWI's cells (xsb_tests prolog_tests_test_term_size
-# read 200/300/20 for 101/201/15, prolog_tests_n2c lacked number_digits). GREEN AFTER: m3 and m4 byte-identical to XSB's 75 lines, and the SWI program byte-identical to swipl's 4.
+# read 200/300/20 for 101/201/15, prolog_tests_n2c lacked number_digits). GREEN AFTER: m3 and m4 byte-identical to XSB's 77 lines, and the SWI program byte-identical to swipl's 4.
 #
 # Usage: bash ../harness/scripts/test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh
 set -uo pipefail
@@ -28,6 +28,7 @@ command -v gcc >/dev/null || { echo "⛔ REFUSED(2) [$GATE_NAME]: no gcc -- the 
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 cat > "$T/w.pl" <<'PL'
 :- import term_to_atom/2, term_to_atom/3, term_to_codes/2, term_to_codes/3 from string.
+:- import append/3 from basics as myappend/3.
 :- op(1150, fx, do_all).
 p(1,a). p(2,b). p(1,c).
 sz(I, T) :- term_size(T, S), write(sz(I, S)), nl.
@@ -48,7 +49,8 @@ main2 :- tt(1, f(X,Y,X,'a b',[1,2.5],'$VAR'(3),-(1),1+2)), tt(2, [a|b]), tt(3, [
     tc(1, f(a,_)), tc(2, [a|b]), tc(3, abc),
     er(1, term_to_atom(f, _, [bad(1)])), er(2, term_to_atom(f, _, [quoted(maybe)])), er(3, term_to_atom(f, _, _)), er(4, term_to_atom(f, _, foo)),
     write(done), nl.
-main :- main1, main2.
+ia :- myappend([a],[b,c],L), write(ia(L)), nl, ( catch(myappend(x,y,_), _, fail) -> write(ia_bad) ; write(ia_ok) ), nl.
+main :- main1, main2, ia.
 PL
 cat > "$T/s.pl" <<'PL'
 :- use_module(library(lists)).
@@ -132,6 +134,8 @@ er(2) domain_error(write_option,quoted(maybe))
 er(3) instantiation_error
 er(4) type_error(list,foo)
 done
+ia([a,b,c])
+ia_ok
 REF
 cat > "$T/swi.ref" <<'REF'
 4
@@ -145,7 +149,7 @@ REF
 recut() { cmp -s "$T/$1.out" "$T/$1.ref" || { echo "⛔ REFUSED(2) [$GATE_NAME]: $2 no longer prints the carried $1.ref -- re-cut it from the oracle, never from SCRIP"; diff "$T/$1.ref" "$T/$1.out" | head -4; exit 2; }; }
 if xb="$(xsb_bin 2>/dev/null)"; then ( cd "$T" && timeout -k 5 60 "$xb" --noprompt --quietload --nobanner -e "consult(w), main, halt." < /dev/null 2>/dev/null | grep -v '^\[' > xsb.out ); recut xsb "XSB 5.0.0"; fi
 if command -v swipl > /dev/null; then ( cd "$T" && timeout -k 5 60 swipl -q s.pl < /dev/null > swi.out 2>/dev/null ); recut swi "swipl"; fi
-{ echo ':- compiler_options([]).'; echo ':- op(1050, fy, import).'; echo ':- op(1040, xfx, from).'; cat "$T/w.pl"; echo ':- initialization((main, halt)).'; } > "$T/x.pl"
+{ echo ':- compiler_options([]).'; echo ':- op(1050, fy, import).'; echo ':- op(1040, xfx, from).'; echo ':- op(1045, xfx, as).'; cat "$T/w.pl"; echo ':- initialization((main, halt)).'; } > "$T/x.pl"
 fail=0
 arm() {
     local name=$1 src=$2 ref=$3
