@@ -48,7 +48,11 @@ def read_vocab():
     head, rows = rows[0], rows[1:]
     return [dict(zip(head, r)) for r in rows]
 
+NULL_CAPS = '(' + ' = '.join('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + " = '')"
+
 def is_preset(line):
+    if line != NULL_CAPS and not re.match(r'\(\s*[a-z]', line):
+        return False
     depth = 0
     for i, ch in enumerate(line):
         if ch == '(':
