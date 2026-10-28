@@ -132,14 +132,17 @@ KEEP_DIRECTIVES = {"if", "elif", "else", "endif", "op", "create_prolog_flag", "d
 EXPANDED = {"clpfd", "csv", "lazy_lists", "json"}
 INCLUDES = {"chr_runtime": {"chr_op": "chr/chr_op"}}
 GOAL_DROPS = {"hprolog": {"push_hprolog_library": "it only adds swipl's dialect/hprolog directory to the library search path while the hprolog dialect loads"}}
-IMPORT_ONLY_FRONTS = {"clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files",
+IMPORT_ONLY_FRONTS = {"clpb": "swipl autoloads no clpb export (sat/1, taut/2, labeling/1, sat_count/2 are named only by a program that imports library(clpb), measured on swipl 9.0.4)",
+                      "clpq": "swipl autoloads no clpq export (every one is also clpr's, so the autoload index is ambiguous) and none of its sub-files",
                       "clpr": "the same as clpq: its exports are clpq's names, and a program names one of the two",
                       "chr": "SCRIP's own library(chr): its operators and, through chr_runtime, the CHR runtime a lowered CHR program calls",
                       "hprolog": "swipl's dialect/hprolog, loaded only by chr_runtime; its exports (take/3, drop/3, sublist/2 ...) are in no autoload index"}
-LIB_PATH = {"dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "chr_runtime": "chr/chr_runtime", "hprolog": "dialect/hprolog", "clpr": "clp/clpr", "bb_r": "clp/clpr/bb_r", "bv_r": "clp/clpr/bv_r", "fourmotz_r": "clp/clpr/fourmotz_r", "ineq_r": "clp/clpr/ineq_r", "itf_r": "clp/clpr/itf_r", "nf_r": "clp/clpr/nf_r", "store_r": "clp/clpr/store_r", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
+LIB_PATH = {"clpb": "clp/clpb", "dcg_basics": "dcg/basics", "json": "http/json", "clpq": "clp/clpq", "chr_runtime": "chr/chr_runtime", "hprolog": "dialect/hprolog", "clpr": "clp/clpr", "bb_r": "clp/clpr/bb_r", "bv_r": "clp/clpr/bv_r", "fourmotz_r": "clp/clpr/fourmotz_r", "ineq_r": "clp/clpr/ineq_r", "itf_r": "clp/clpr/itf_r", "nf_r": "clp/clpr/nf_r", "store_r": "clp/clpr/store_r", "bb_q": "clp/clpq/bb_q", "bv_q": "clp/clpq/bv_q", "fourmotz_q": "clp/clpq/fourmotz_q", "ineq_q": "clp/clpq/ineq_q", "itf_q": "clp/clpq/itf_q", "nf_q": "clp/clpq/nf_q", "store_q": "clp/clpq/store_q", "clpqr_class": "clp/clpqr/class", "clpqr_dump": "clp/clpqr/dump", "clpqr_geler": "clp/clpqr/geler", "clpqr_itf": "clp/clpqr/itf", "clpqr_ordering": "clp/clpqr/ordering", "clpqr_project": "clp/clpqr/project", "clpqr_redund": "clp/clpqr/redund"}
 RENAME_TERMS_AS_DATA = {"clpfd": {"neq_num"}, "pure_input": {"attr_unify_hook_ndebug"}}
 RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "circuit_successors", "g0_successors", "gcc_successors", "clear_parent", "fd_variable",
                             "conjunction", "disjunction", "sink", "source", "clpfd_equal_", "clpfd_geq_", "clpfd_neq"},
+                  "clpb": {"ignore_node", "nodevar_put_empty_hash", "var_unbound", "is_visited", "put_visited", "unvisit", "eq_1", "monotonic_variable", "further_branching",
+                           "negative_decisive"},
                   "listing": {"portray_blob"}, "simplex": {"clear_parent"}}
 LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines", "plunit", "chr"}
 WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
@@ -149,7 +152,8 @@ QUIET = {"gnu_fd": {("fd_dom", 2)}, "tabling": {("undefined", 0)}}
 QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
 WRAPS = {"gnu_fd": {"clpfd": {("#=", 2), ("#\\=", 2), ("#<", 2), ("#>", 2), ("#=<", 2), ("#>=", 2), ("#/\\", 2), ("#\\/", 2), ("#\\", 1), ("#==>", 2)}}}
 EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
-INIT_DROPS = {"clpfd": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
+INIT_DROPS = {"clpb": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
+              "clpfd": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "random": {"check_gmp": "only prints a warning when SWI is built without GMP; SCRIP's integers are unbounded"},
               "simplex": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "chr_runtime": {"chr_init": "it only sets chr_id, chr_global, chr_debug and chr_debug_history, which the library's own exception/3 hook sets at their first read",
