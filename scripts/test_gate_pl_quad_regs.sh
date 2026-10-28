@@ -65,14 +65,25 @@ nc=0
 for f in $(find "$S4E/corpus/demos/prolog" "$S4E/corpus/benchmarks/prolog" -name '*.pl' 2>/dev/null | sort); do srcs+=("$f"); nc=$((nc+1)); done
 [ "${#srcs[@]}" -gt 0 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: zero .pl sources (ladder=$nl probe_plz=$np corpus=$nc)"; gate_stamp; exit 2; }
 compiled=0; refused=0; other=0; : > "$W/refused.txt"; : > "$W/other.txt"
-for f in "${srcs[@]}"; do
-  b=$(printf '%s' "$f" | sed 's#^.*/corpus/##; s#^.*/src/##' | tr '/' '_')
-  if timeout -k 5 "$T" "$SCRIP" --compile -o "$W/s/$b.s" "$f" </dev/null >/dev/null 2>"$W/s/$b.err" && [ -s "$W/s/$b.s" ]; then compiled=$((compiled+1))
+# ⭐ PARALLEL (hq_prolog 2026-10-28, row prolog-gate-quad-regs-does-not-finish-in-400-seconds-at-head-ceo-1663): the population is every rung, demo and benchmark program (about 750 now that they compile,
+# each emitting ~15 MB of prelude-heavy asm); one compile at a time and one scanner over all of it took more than 900 s unloaded and never reached its verdict. Each program is compiled by its own
+# worker (QUAD_JOBS, default 6) and each worker prints ONE result line; the counts below are read from those lines, so the verdict is the sequential gate's, only sooner.
+# every worker holds ONE box-wide run slot for its job (CEO-1894: harness children go through S4E_RUN_SLOTS, default 8, slots under /tmp/s4e-run-slots; the kernel frees the lock when the worker exits)
+quad_slot() { local n="${S4E_RUN_SLOTS:-8}" i; mkdir -p /tmp/s4e-run-slots 2>/dev/null || return 0
+  for i in $(seq 0 $((n - 1))); do exec 9>"/tmp/s4e-run-slots/slot$i" || return 0; flock -n 9 && return 0; done
+  exec 9>"/tmp/s4e-run-slots/slot$(( $$ % n ))" && flock 9; }
+compile_one() {
+  quad_slot; f="$1"; b=$(printf '%s' "$f" | sed 's#^.*/corpus/##; s#^.*/src/##' | tr '/' '_')
+  if timeout -k 5 "$T" "$SCRIP" --compile -o "$W/s/$b.s" "$f" </dev/null >/dev/null 2>"$W/s/$b.err" && [ -s "$W/s/$b.s" ]; then echo "C"
   else rm -f "$W/s/$b.s"
-    if grep -q 'not on the ladder yet' "$W/s/$b.err" 2>/dev/null; then refused=$((refused+1)); printf '%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)" >> "$W/refused.txt"
-    else other=$((other+1)); printf '%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)" >> "$W/other.txt"; fi
+    if grep -q 'not on the ladder yet' "$W/s/$b.err" 2>/dev/null; then printf 'R\t%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)"
+    else printf 'O\t%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)"; fi
   fi
-done
+}
+export -f compile_one quad_slot; export W T SCRIP
+printf '%s\0' "${srcs[@]}" | xargs -0 -n1 -P "${QUAD_JOBS:-6}" bash -c 'compile_one "$1"' _ > "$W/compile.res"
+compiled=$(grep -c '^C$' "$W/compile.res"); refused=$(grep -c '^R' "$W/compile.res"); other=$(grep -c '^O' "$W/compile.res")
+grep '^R' "$W/compile.res" | sed 's/^R\t//' | sort > "$W/refused.txt"; grep '^O' "$W/compile.res" | sed 's/^O\t//' | sort > "$W/other.txt"
 echo "population: ladder=$nl probe_plz=$np corpus=$nc -> compiled=$compiled refused(not-on-the-ladder-yet)=$refused other-compile-fail=$other  (mode-4 TEXT; refusals are counted, never graded)"
 [ "$other" -eq 0 ] || { echo "  other compile failures (informational -- this gate grades register writes, not compilation; the ladder runner owns these):"; sed 's/^/    /' "$W/other.txt" | head -10; }
 [ "$compiled" -gt 0 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: zero witnesses compiled (refused=$refused other=$other) -- nothing to examine"; gate_stamp; exit 2; }
@@ -90,12 +101,32 @@ python3 "$SCAN" --rtx-dir "$W/rtx" "$W/canary2.s" > "$W/c2.out" 2>&1; c2=$?
 # --- (c3) no input must REFUSE ---
 python3 "$SCAN" >/dev/null 2>&1; c3=$?
 [ "$c3" -eq 2 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: canary c3 (scanner with no input) exited $c3, not 2 -- an instrument that cannot measure must refuse"; gate_stamp; exit 2; }
-echo "canaries: c1 injected-scratch-write RED ok · c2 reachable-rtx-write RED ok · c3 empty-input REFUSE(2) ok"
+# --- (c4) the two shapes enrolled for the inline header-open and the trail tidy admit ONLY their shape: each synthetic box below is scanned alone ---
+# (hq_prolog 2026-10-28) `lea r13, [rsp|rbp + N]` is B := the construct's own choice header only when the store of the old B comes right before it (pl_header_open inline); `mov r12, rdi` is TR := the
+# compacted top only right after the tidy loop's `cmp rsi, r12; jb` (pl_tr_tidy inline). The same instruction without its context is the scratch write this gate exists to catch, and must read RED.
+quad_syn() { printf '.type n1_bound_bx, @function\nn1_bound_bx:\nn1_bound_α: %s\n%s\n' "$1" "$2" > "$W/syn.s"; python3 "$SCAN" "$W/syn.s" > "$W/syn.out" 2>&1; return $?; }
+c4=""
+quad_syn 'lea r13, [rsp + 8]' 'ret' && c4="$c4 lea-without-bank-admitted"
+quad_syn 'mov qword ptr [rsp + 16], r13' 'lea r13, [rsp + 0]' || c4="$c4 bank-then-lea-refused"
+quad_syn 'mov qword ptr [rsp + 16], r13' 'lea r13, [rip + foo]' && c4="$c4 lea-rip-admitted"
+quad_syn 'mov r12, rdi' 'ret' && c4="$c4 bare-mov-r12-rdi-admitted"
+quad_syn 'cmp rsi, r12; jb .Lx' 'mov r12, rdi' || c4="$c4 tidy-top-refused"
+quad_syn 'cmp rsi, r12; jb .Lx' 'mov rax, 1
+mov r12, rdi' && c4="$c4 tidy-with-intervening-insn-admitted"
+[ -z "$c4" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: canary c4 (the enrolled header-open and tidy shapes admit exactly their context) failed:$c4"; gate_stamp; exit 2; }
+echo "canaries: c1 injected-scratch-write RED ok · c2 reachable-rtx-write RED ok · c3 empty-input REFUSE(2) ok · c4 header-open and tidy shapes admit only their context ok"
 # --- the real run ---
 [ -z "${QUAD_HELPER_RX:-}" ] || echo "QUAD_HELPER_RX='$QUAD_HELPER_RX' (rtx routine names enrolled as the TR helper)"
-python3 "$SCAN" --rtx-dir "$RTX" "$W"/s/*.s > "$W/scan.out" 2>&1; rc=$?
-cat "$W/scan.out"
-sum=$(grep '^quad-scan:' "$W/scan.out" | tail -1)
+# the scan is also chunked: every program is scanned on its own, so independent chunks (QUAD_CHUNK files each, QUAD_JOBS at a time) give the same violations; the rtx part is reachability from each chunk's calls,
+# so an rtx routine that violates is reported by every chunk that reaches it and the count may repeat, never vanish. A chunk the scanner REFUSES (rc 2) makes the gate UNPROVEN.
+mkdir -p "$W/scan"; ls "$W"/s/*.s | xargs -n "${QUAD_CHUNK:-60}" -P "${QUAD_JOBS:-6}" bash -c 'quad_slot; o=$(mktemp "$0/scan.XXXXXX"); python3 "$1" --rtx-dir "$2" "${@:3}" > "$o" 2>&1; echo "rc=$?" >> "$o"' "$W/scan" "$SCAN" "$RTX"
+cat "$W"/scan/scan.* | grep -v '^rc=' > "$W/scan.out"
+rc=0; grep -q '^rc=2$' "$W"/scan/scan.* && rc=2; [ "$rc" -ne 0 ] || { grep -q '^rc=1$' "$W"/scan/scan.* && rc=1; }
+grep -v '^quad-scan:' "$W/scan.out" | awk '/^rtx reachable/{ if (r++) next } { print }'
+fa=0; wr=0; en=0; vi=0; rd=0; rr=0; rw=0; rv=0
+while read -r a b c d e f g h; do fa=$((fa+${a#files=})); wr=$((wr+${b#writes=})); en=$((en+${c#enrolled=})); vi=$((vi+${d#violations=})); rd=${e#rtx-defined=}; rr=$((rr+${f#rtx-reachable=})); rw=$((rw+${g#rtx-writes=})); rv=$((rv+${h#rtx-violations=})); done < <(grep -h '^quad-scan: files=' "$W/scan.out" | sed 's/^quad-scan: //')
+echo "quad-scan: files=$fa writes=$wr enrolled=$en violations=$vi rtx-defined=$rd rtx-reachable=$rr rtx-writes=$rw rtx-violations=$rv" >> "$W/scan.out"
+sum=$(grep '^quad-scan: files=' "$W/scan.out" | tail -1); echo "$sum"
 [ -n "$sum" ] && [ "$rc" -ne 2 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the scanner did not produce a summary (rc=$rc)"; gate_stamp; exit 2; }
 v1=$(printf '%s' "$sum" | sed -nE 's/.* violations=([0-9]+) .*/\1/p'); v2=$(printf '%s' "$sum" | sed -nE 's/.*rtx-violations=([0-9]+).*/\1/p')
 bad=$(( ${v1:-0} + ${v2:-0} ))

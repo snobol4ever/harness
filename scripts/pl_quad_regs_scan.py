@@ -46,9 +46,11 @@ PORT  = re.compile(r'^(n\d+)_([\w$]+?)_([αβγω])(?:_|$)')
 RTXF  = re.compile(r'^\s*RTX_FUNC\((\w+)\)')
 RTXE  = re.compile(r'^\s*RTX_ENDF\((\w+)\)')
 XFER  = re.compile(r'^(?:call|jmp)\s+\**([A-Za-z_][\w.$]*)(?:@\w+)?$')
-MEMFR = re.compile(r'^(?:qword\s+ptr\s+)?\[\s*(rbp|rsp|r13)\s*(?:[+-]\s*\d+)?\s*\]$')
+MEMFR = re.compile(r'^(?:qword\s+ptr\s+)?\[\s*(rbp|rsp|r13)\s*(?:[+-]\s*-?\d+)?\s*\]$')
 R12B  = re.compile(r'^\[\s*r12\s*[+-]\s*\d+\s*\]$')
 RSPB  = re.compile(r'^(?:qword\s+ptr\s+)?\[\s*rsp\s*(?:[+-]\s*\d+)?\s*\]$')
+HDRMEM = re.compile(r'^\[\s*(?:rbp|rsp)\s*\+\s*\d+\s*\]$')
+BANKB = re.compile(r'^mov (?:qword ptr )?\[[^\]]+\], r13$')
 RCX   = {'rcx', 'ecx', 'cx', 'cl', 'ch'}
 RCXIMP = {'loop', 'loope', 'loopne', 'loopz', 'loopnz', 'cpuid', 'rdtscp', 'syscall', 'call'}
 DISJ_OPEN_KINDS = {'bound', 'to', 'disjunction'}
@@ -82,7 +84,7 @@ def rcx_written(mn, ops, rep):
     if rep or mn in RCXIMP: return True
     if not ops or mn in READ_FIRST: return False
     return ops[0].strip().lower() in RCX or (mn == 'xchg' and len(ops) > 1 and ops[1].strip().lower() in RCX)
-def enrolled(site, reg, mn, ops, kind, seg, rcx_h=False):
+def enrolled(site, reg, mn, ops, kind, seg, rcx_h=False, prev=('', '')):
     both = len(ops) == 2 and canon(ops[0]) == reg and canon(ops[1]) == reg
     if mn not in KNOWN: return None
     if site == 'driver': return 'ROOT/driver-seed'
@@ -90,6 +92,10 @@ def enrolled(site, reg, mn, ops, kind, seg, rcx_h=False):
         return 'B/choice-open B:=H in the pinned prologue (ARCH-PROLOG-C-OUT-OF-THE-BOX § 2.2)'
     if site == 'box' and kind in DISJ_OPEN_KINDS and seg == 'α' and reg == 'r13' and mn == 'mov' and len(ops) == 2 and ops[1] == 'rcx' and rcx_h:
         return 'B/disj-open take B:=H, rcx the lea of this frame header (ARCH-PROLOG-C-OUT-OF-THE-BOX § 2.2)'
+    if site == 'box' and kind in DISJ_OPEN_KINDS and seg == 'α' and reg == 'r13' and mn == 'lea' and len(ops) == 2 and HDRMEM.match(ops[1]) and BANKB.match(prev[1]):
+        return 'B/header-open B:=the construct\'s own choice header, the old B banked by the store just before (pl_header_open inline, ARCH-PROLOG-C-OUT-OF-THE-BOX § 2.10 D1)'
+    if site == 'box' and reg == 'r12' and mn == 'mov' and len(ops) == 2 and ops[1] == 'rdi' and prev[0] == 'cmp rsi, r12' and prev[1].startswith('jb '):
+        return 'TR/tidy TR:=the compacted top, rdi the loop\'s write cursor (pl_tr_tidy inline, the trail rule; ARCH-PROLOG-C-OUT-OF-THE-BOX § 2.10 D1)'
     if site == 'rootseed':
         if reg == 'r13' and mn == 'xor' and both: return 'ROOT/seed B=0 (ARCH § A.1)'
         if reg == 'r15' and mn == 'xor' and both: return 'ROOT/seed ball=0 (ARCH § A.1)'
@@ -107,7 +113,7 @@ def scan_program(path):
     try: lines = open(path, encoding='utf-8', errors='replace').read().split('\n')
     except OSError as e: return None
     site = 'graph'; kind = None; seg = None; driver_on = False; root = None; rootseed_on = False; func = '?'
-    targets = set(); rows = []; last_driver_jmp = None; rcx_h = False
+    targets = set(); rows = []; last_driver_jmp = None; rcx_h = False; prev = ['', '']
     for ln, raw in enumerate(lines, 1):
         rest = raw
         m = LBL.match(raw.lstrip())
@@ -136,12 +142,13 @@ def scan_program(path):
                 if reg not in QUAD: continue
                 shape = norm(mn, ops) if mn in KNOWN else '?' + norm(mn, ops)
                 where = site if site != 'driver-done' else 'graph'
-                cls = enrolled(where, reg, mn, ops, kind, seg, rcx_h)
+                cls = enrolled(where, reg, mn, ops, kind, seg, rcx_h, prev)
                 loc = f'{where}' + (f' {func}' if where in ('driver', 'rootseed') else (f' box={kind}_{seg or "?"}' if kind else f' fn={func}'))
                 rows.append((cls is None, f'{os.path.basename(path)}:{ln}', reg, loc, shape, cls))
             if rcx_written(mn, ops, rep):
                 fm = MEMFR.match(ops[1]) if mn == 'lea' and len(ops) == 2 and ops[0].strip().lower() == 'rcx' else None
                 rcx_h = bool(fm and fm.group(1) in ('rbp', 'rsp'))
+            prev = [prev[1], norm(mn, ops)]
     return rows, targets
 def scan_rtx(rtx_dir):
     funcs = {}
