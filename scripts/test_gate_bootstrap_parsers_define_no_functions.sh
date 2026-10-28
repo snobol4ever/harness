@@ -15,6 +15,7 @@
 # EXACTLY its floor; 4 FAIL-ONCE BUILT IN: a scratch copy of parser_snocone.sc with three planted functions (a line-start function, a procedure, one
 # after a semicolon), two comment lines naming a function and one DEFINE call reads +3 functions and +1 DEFINE -- the comments set aside -- and the
 # verdict arm names the file RED above its floor and RED below it.
+# `--finish` reads every floor as 0: green only when no bootstrap parser defines a function (the DONE-WHEN of the row that carries the direction); without it the gate is the ratchet.
 # rc 0 green · rc 1 red · rc 2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,6 +24,9 @@ GATE_NAME=test_gate_bootstrap_parsers_define_no_functions
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 FLOORS="snobol4:22 snocone:1 rebus:2 icon:14 prolog:4 raku:1 pascal:49"
+FINISH=0
+for a in "$@"; do [ "$a" = --finish ] && FINISH=1; done
+[ "$FINISH" = 1 ] && FLOORS="snobol4:0 snocone:0 rebus:0 icon:0 prolog:0 raku:0 pascal:0"
 DEFINE_FLOOR=0
 strip_comments() { awk 'in_c { if (index($0, "*/")) in_c = 0; next } /^[ \t]*\/\*/ { if (!index($0, "*/")) in_c = 1; next } /^[ \t]*\/\// { next } { print }' "$1"; }
 fn_pat='(^|[;{}])[[:space:]]*(function|procedure)[[:space:]]+[A-Za-z_][A-Za-z_0-9]*[[:space:]]*\('
@@ -39,7 +43,7 @@ for fl in $FLOORS; do
     v="$(verdict_of "$n" "$floor")"; dv="$(verdict_of "$d" "$DEFINE_FLOOR")"
     printf '  %-4s %-8s functions %3s (floor %s)   DEFINE %s (floor %s)   %s\n' "$v" "$lang" "$n" "$floor" "$d" "$DEFINE_FLOOR" "$(names_fns "$f" | cut -c1-120)"
     case "$v" in
-        ROSE) echo "         RED: $lang rose above its floor -- a function was added; write the grammar as a pattern (or, if it is truly the one Lon-granted function, the cto rules it)"; fail=1 ;;
+        ROSE) [ "$FINISH" = 1 ] && echo "         RED: $lang still defines $n function(s); the finish line is 0 (a pattern for each one the grammar needs)" || echo "         RED: $lang rose above its floor -- a function was added; write the grammar as a pattern (or, if it is truly the one Lon-granted function, the cto rules it)"; fail=1 ;;
         FELL) echo "         RED: $lang fell below its floor -- lower the floor to $n in this gate IN THE SAME LANDING that re-cut the function, so the ratchet keeps it"; fail=1 ;;
     esac
     [ "$dv" = ok ] || { echo "         RED: $lang calls DEFINE( $d time(s), floor $DEFINE_FLOOR"; fail=1; }
