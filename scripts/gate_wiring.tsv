@@ -942,10 +942,12 @@ test_gate_pl_variant_sha1_and_variant_hash_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_wall_us_arity1.sh	WIRED	-	-	-
 test_gate_pl_wildcard_match_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_write_1_never_silently_drops_a_term_shape.sh	WIRED	-	-	-
+test_gate_pl_write_term_reads_a_bare_boolean_option_atom_as_option_true_in_the_swi_and_xsb_dialects.sh	WIRED	-	-	-
 test_gate_pl_write_term_variable_names_take_unicode_uppercase_names.sh	WIRED	-	-	-
 test_gate_pl_writef_dcg_basics_and_clpfd_goal_terms_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh	WIRED	-	-	-
 test_gate_pl_xfail_marker_consistent.sh	WIRED	-	-	-
+test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh	WIRED	-	-	-
 test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
 test_gate_postoffice_identity.sh	WIRED	-	-	-
 test_gate_pre_commit_refuses_a_conflict_marker.sh	WIRED	-	-	-
@@ -1378,6 +1380,7 @@ test_gate_unbacked_read_census_calibrated.sh	WIRED	-	-	-
 test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh	WIRED	-	-	-
 test_gate_x86_cmp_and_or_reg_mem_source_never_falls_through_silently.sh	WIRED	-	-	-
 test_gate_xfail_marker_and_index_agree.sh	WIRED	-	-	-
+test_gate_xsb_a_vendored_driver_stands_before_its_programs_end_of_file.sh	WIRED	-	-	-
 test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space.sh	WIRED	-	-	-
 test_gate_zd_a_back_edge_leaves_a_blob_run_and_alternation_arms_stay_unplanned.sh	WIRED	-	-	-
 test_gate_zd_a_run_keeps_no_producer_whose_consumer_is_outside_it.sh	WIRED	-	-	-
