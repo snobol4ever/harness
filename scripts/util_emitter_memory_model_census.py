@@ -85,6 +85,8 @@ def main(argv):
                 continue
             line = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
             for stmt in line.split(';'):
+                if '{' in stmt and re.match(r'\s*extern\b', stmt[stmt.rindex('{') + 1:]):
+                    stmt = stmt[:stmt.rindex('{') + 1]
                 if re.search(r'\bextern\b', stmt) and '{' not in stmt:
                     continue
                 if DEF.match(stmt + '{') and stmt.strip().endswith(')') and '{' not in stmt:
