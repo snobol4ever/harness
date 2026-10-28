@@ -12,6 +12,8 @@
 # nothing is graded.  THE GRADE: the same witness under SCRIP_GC_STRESS=3, both modes, must print the same ref.  RED on the commit before the cure (78fa7c46d: freeze, attr,
 # restore and frozen hang, dif and when print the wrong answer), green on the cure.  natural_collections (the cfo's churn of 20,000 under put_attr and freeze) is graded with NO stress:
 # it hung on 78fa7c46d from natural collections alone, and stress 3 over it costs about 80 s.
+# BOTH COLLECTION DRIVERS (2026-10-28, the coo's ProBench reds): gc_collect_ex runs the asm production driver when no diagnostic knob is on (SCRIP_DIAG=0, every benchmark's setting)
+# and the C driver gc_collect_ex_c otherwise.  Every reading is taken under both, the default first, then SCRIP_DIAG=0.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }
@@ -24,30 +26,33 @@ for w in $WITS $NAT; do
 done
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 SW="-d131072k -s4096k"
-run_m3() { ( cd "$ROOT" && SCRIP_GC_STRESS="$3" timeout 60 ./scrip $SW "$1" < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
+run_m3() { ( cd "$ROOT" && env $DG SCRIP_GC_STRESS="$3" timeout 60 ./scrip $SW "$1" < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 run_m4() {
     local b="$T/$(basename "$1" .pl).bin"
     if [ ! -x "$b" ]; then
         ( cd "$ROOT" && timeout 60 ./scrip --compile -o "$b.s" "$1" < /dev/null > /dev/null 2> "$b.cerr" ) || { echo 2; return; }
         gcc "$b.s" -o "$b" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$b.lerr" || { echo 2; return; }
     fi
-    ( SCRIP_GC_STRESS="$3" timeout 60 "$b" $SW < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
+    ( env $DG SCRIP_GC_STRESS="$3" timeout 60 "$b" $SW < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 red=0; graded=0
+for drv in diag fast; do
+DG=""; [ "$drv" = fast ] && DG="SCRIP_DIAG=0"
 for w in $WITS; do
     src="$HERE/gc_witnesses/pl_attvar_$w.pl"; ref="$HERE/gc_witnesses/pl_attvar_$w.ref"
     for mode in m3 m4; do
-        rc=$(run_$mode "$src" "$T/$w.$mode.ctl" 0)
-        if [ "$rc" != 0 ] || ! cmp -s "$T/$w.$mode.ctl.out" "$ref"; then echo "⛔ REFUSE(2) [$G]: control $w $mode rc=$rc -- without stress the witness does not print its swipl ref, so the instrument cannot read green and nothing is graded"; exit 2; fi
-        rc=$(run_$mode "$src" "$T/$w.$mode.st" 3)
+        rc=$(run_$mode "$src" "$T/$w.$mode.$drv.ctl" 0)
+        if [ "$rc" != 0 ] || ! cmp -s "$T/$w.$mode.$drv.ctl.out" "$ref"; then echo "⛔ REFUSE(2) [$G]: control $w $mode ($drv driver) rc=$rc -- without stress the witness does not print its swipl ref, so the instrument cannot read green and nothing is graded"; exit 2; fi
+        rc=$(run_$mode "$src" "$T/$w.$mode.$drv.st" 3)
         graded=$((graded + 1))
-        if [ "$rc" != 0 ] || ! cmp -s "$T/$w.$mode.st.out" "$ref"; then echo "⛔ RED [$G]: $w $mode under SCRIP_GC_STRESS=3 rc=$rc -- the attributed variable lost its attribute word to the collector (section 6.4 R2)"; red=1; else echo "[$G] $w $mode stress 3 prints its ref"; fi
+        if [ "$rc" != 0 ] || ! cmp -s "$T/$w.$mode.$drv.st.out" "$ref"; then echo "⛔ RED [$G]: $w $mode ($drv driver) under SCRIP_GC_STRESS=3 rc=$rc -- the attributed variable lost its attribute word to the collector (section 6.4 R2)"; red=1; else echo "[$G] $w $mode ($drv driver) stress 3 prints its ref"; fi
     done
 done
 for mode in m3 m4; do
     src="$HERE/gc_witnesses/pl_attvar_$NAT.pl"; ref="$HERE/gc_witnesses/pl_attvar_$NAT.ref"
-    rc=$(run_$mode "$src" "$T/$NAT.$mode" 0)
+    rc=$(run_$mode "$src" "$T/$NAT.$mode.$drv" 0)
     graded=$((graded + 1))
-    if [ "$rc" != 0 ] || ! cmp -s "$T/$NAT.$mode.out" "$ref"; then echo "⛔ RED [$G]: $NAT $mode with no stress rc=$rc -- a natural collection under churn cost the attributed variable its attribute word (section 6.4 R2)"; red=1; else echo "[$G] $NAT $mode natural collections print the ref"; fi
+    if [ "$rc" != 0 ] || ! cmp -s "$T/$NAT.$mode.$drv.out" "$ref"; then echo "⛔ RED [$G]: $NAT $mode ($drv driver) with no stress rc=$rc -- a natural collection under churn cost the attributed variable its attribute word (section 6.4 R2)"; red=1; else echo "[$G] $NAT $mode ($drv driver) natural collections print the ref"; fi
 done
-[ $red = 0 ] && echo "PASS [$G]: $graded stress readings print the swipl ref, an attributed variable keeps its attribute word through a collection in both modes"
+done
+[ $red = 0 ] && echo "PASS [$G]: $graded stress readings print the swipl ref, an attributed variable keeps its attribute word through a collection in both modes under both collection drivers"
 exit $red
