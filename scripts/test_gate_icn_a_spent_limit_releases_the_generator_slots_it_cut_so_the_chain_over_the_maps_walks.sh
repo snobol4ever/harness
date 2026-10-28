@@ -12,7 +12,9 @@
 #   1 witness A (hq_collector's twelve lines: every p := gen(2,3) \ 3, then a second every over the same generator) prints iconx's answer plain, both modes
 #   2 witness A under SCRIP_GC_STRESS=1 and =3 (a collection at every allocation / every third) prints it too, both modes
 #   3 witness B (limits over a generator in a procedure, a scan, allocation between the limits, a limit conjoined with a plain generator) equals iconx plain and at stress 3, both modes
-# FAIL-ONCE: arms 2 and 3 read red (the collector BOMB, no answer) on SCRIP 22e10e4a6, the commit before the cure -- a worktree of <cure>^.
+#   4 witness C (two limited procedure generators in ONE conjunction, and the same under a nested every) equals iconx plain and at stress 3, both modes -- the homed gate's third record word
+#     (limit.mark) was granted outside its slot and aliased the next literal's slot, so the second limit read a garbage count (error 101)
+# FAIL-ONCE: arms 2 and 3 read red (the collector BOMB, no answer) and arm 4 reads red (error 101) on SCRIP 22e10e4a6, the commit before the cure -- a worktree of <cure>^.
 set -uo pipefail
 GATE_NAME=test_gate_icn_a_spent_limit_releases_the_generator_slots_it_cut_so_the_chain_over_the_maps_walks
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -74,7 +76,27 @@ procedure main();
    write(fill(3));
 end
 EOF
-for w in a b; do
+cat > "$T/c.icn" <<'EOF'
+procedure g(n);
+   suspend 1 to n;
+end
+procedure gen(a, b);
+   local i;
+   every i := 1 to 40 do suspend [i, a * i + b];
+end
+procedure main();
+   local p, t, u;
+   t := 0;
+   every (g(5) \ 2) & (g(5) \ 2) do t +:= 1;
+   write(t);
+   every p := (gen(3, 1) \ 2) & (gen(5, 2) \ 2) do t +:= 1;
+   write(t);
+   u := 0;
+   every p := gen(3, 1) \ 2 do { every (g(4) \ 3) & (g(2) \ 2) do u +:= 1 };
+   write(u);
+end
+EOF
+for w in a b c; do
     ( cd "$T" && "$ICONT" -s -o "$w.ix" "$w.icn" > "$w.cerr" 2>&1 && "./$w.ix" < /dev/null > "$w.ref" 2> /dev/null ) || { echo "⛔ REFUSED(2) [$GATE_NAME]: icont could not build or run witness $w"; exit 2; }
     ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie "$w.s" -Wl,-rpath,"$RT" -L"$RT" -lscrip_rt -lm -lpthread -o "$w.bin" 2> /dev/null ) || { echo "⛔ REFUSED(2) [$GATE_NAME]: SCRIP could not compile and link witness $w in mode 4"; exit 2; }
 done
@@ -93,6 +115,9 @@ for m in m3 m4; do for st in 1 3; do
 done; done
 for m in m3 m4; do for st in 0 3; do
     r="$(run b $m $st)"; if [ "$r" = PASS ]; then ok "(3) witness B, $m, SCRIP_GC_STRESS=$st: iconx's answer"; else bad "(3) witness B, $m, SCRIP_GC_STRESS=$st: $r"; fi
+done; done
+for m in m3 m4; do for st in 0 3; do
+    r="$(run c $m $st)"; if [ "$r" = PASS ]; then ok "(4) witness C, $m, SCRIP_GC_STRESS=$st: iconx's answer"; else bad "(4) witness C, $m, SCRIP_GC_STRESS=$st: $r"; fi
 done; done
 [ "$fail" = 0 ] && { echo "✅ GATE PASS [$GATE_NAME]: a spent limitation releases the generator slots it cut, and the chain over the maps walks the caller's frame"; exit 0; }
 echo "⛔ GATE RED [$GATE_NAME]"; exit 1
