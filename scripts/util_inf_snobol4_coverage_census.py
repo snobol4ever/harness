@@ -73,6 +73,8 @@ def generate(gen, out, scope, seeds, size):
                 refuse('the generator refuses scope=%d (DESIGN-PLAN step 1 has not landed): %s' % (scope, (r.stdout + r.stderr).strip()[:120]))
             if not os.path.exists(name):
                 refuse('the generator wrote no batch for %s: %s' % (cfg, (r.stdout + r.stderr).strip()[:200]))
+            if r.returncode != 0:
+                refuse('the generator died rc=%d for %s, so its batch is partial: %s' % (r.returncode, cfg, (r.stdout + r.stderr).strip()[-200:]))
             for ln in open(name, encoding='latin-1').read().split('\n'):
                 if not ln.strip():
                     continue

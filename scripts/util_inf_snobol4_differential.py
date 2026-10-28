@@ -153,6 +153,8 @@ def main():
             refuse('the generator refuses scope=%d (the step that adds it has not landed): %s' % (a.scope, (g.stdout + g.stderr).strip()[:120]))
         if not os.path.exists(batch):
             refuse('the generator wrote no batch %d' % n)
+        if g.returncode != 0:
+            refuse('the generator died rc=%d on batch %d, so its batch is partial: %s' % (g.returncode, n, (g.stdout + g.stderr).strip()[-200:]))
         tests = [t for t in open(batch, encoding='latin-1').read().split('\n') if t.strip()]
         if a.generate_only:
             total += len(tests)
