@@ -144,9 +144,10 @@ RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "cir
                   "clpb": {"ignore_node", "nodevar_put_empty_hash", "var_unbound", "is_visited", "put_visited", "unvisit", "eq_1", "monotonic_variable", "further_branching",
                            "negative_decisive"},
                   "listing": {"portray_blob"}, "simplex": {"clear_parent"}}
-LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "prolog_source", "engines", "plunit", "chr"}
+LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "xsb_dialect", "prolog_source", "engines", "plunit", "chr"}
 WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
 SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"},
+           "xsb_dialect": {("term_size", 2): "XSB's term_size/2 counts functors and leaves (emu/std_pred_xsb_i.h term_sizew: a float 4, anything else without arguments 1) where library(terms) counts SWI's cells; the library is selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-28)"},
            "listing": {("portray_clause", 1): WHY_LISTING_PC, ("portray_clause", 2): WHY_LISTING_PC, ("portray_clause", 3): WHY_LISTING_PC}}
 QUIET = {"gnu_fd": {("fd_dom", 2)}, "tabling": {("undefined", 0)}}
 QUIET_BARE = {"dcg_basics", "clpfd", "gnu_builtins", "backcomp"}
