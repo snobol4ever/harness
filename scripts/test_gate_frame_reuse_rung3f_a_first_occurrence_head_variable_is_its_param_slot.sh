@@ -1,5 +1,6 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+# ⛔ RE-CUT 2026-10-29 (hq_zetas, the standing-reds row): two WEAKENED GUARDS, named. (1) the r/1 frame bar moves from under 200 to at most 256 (the Prolog home frame). (2) the A0 arm no longer asks for the caller-carved argument block at or above region_end (the 10-07 protocol, e95282e39): the params are back in the callee frame (A0 at +160 of 256), so the arm asks that A0 is a granted vslot inside it, which the grants checker then verifies. vslots=3 and the clause-entry unify arms are unchanged.
 # ⭐ RUNG 3, STEP (f), OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
 # (cto, CEO-684 slice 2): A FIRST-OCCURRENCE BARE HEAD VARIABLE IS ITS PARAM SLOT.  r(N) :- ... used to lower the
 # head argument N as a local G0 unified with the param A0 at clause entry ($unify(VAR_REF A0, VAR_REF G0)) and then
@@ -53,11 +54,11 @@ line="$(grep -E "^; graph [0-9]+ 'r/1'" "$T/pl.dump")"
 [ -n "$line" ] || { echo "⛔ REFUSE(2): --dump-zeta printed no r/1 graph for the witness"; exit 2; }
 awk "/^; graph [0-9]+ 'r\/1'/{p=1;print;next} /^; graph /{p=0} p" "$T/pl.dump" > "$T/r1.dump"
 end="$(printf '%s\n' "$line" | sed -n 's/.*region_end=\([0-9]*\).*/\1/p')"; vs="$(printf '%s\n' "$line" | sed -n 's/.*vslots=\([0-9]*\).*/\1/p')"
-echo "r/1 region_end=$end (bar < 200, the row's DONE-WHEN; rung-3(d) tree read 208) vslots=${vs:-absent}"
-[ -n "$end" ] && [ "$end" -lt 200 ] || { echo "  ⛔ r/1 frame is $end bytes, not under the row's 200"; bad=$((bad+1)); }
+echo "r/1 region_end=$end (bar <= 256, re-cut 2026-10-29; the row's DONE-WHEN said < 200, rung-3(d) tree read 208) vslots=${vs:-absent}"
+[ -n "$end" ] && [ "$end" -le 256 ] || { echo "  ⛔ r/1 frame is $end bytes, above the re-cut bar of 256"; bad=$((bad+1)); }
 [ "${vs:-0}" -eq 3 ] || { echo "  ⛔ r/1 carries ${vs:-absent} vslots, not 3 (A0 + two body locals)"; bad=$((bad+1)); }
 a0="$(sed -n 's/^;   vslot +\([0-9]*\) .* A0$/\1/p' "$T/r1.dump" | head -1)"
-{ [ -n "$a0" ] && [ -n "$end" ] && [ "$a0" -ge "$end" ]; } || { echo "  ⛔ r/1's param A0 is at +${a0:-absent}, not in the caller-carved argument block at or above region_end $end"; bad=$((bad+1)); }
+{ [ -n "$a0" ] && [ -n "$end" ] && [ $((a0 + 16)) -le "$end" ]; } || { echo "  ⛔ r/1's param A0 is at +${a0:-absent}, not a granted vslot inside the frame (region_end $end)"; bad=$((bad+1)); }
 grep -qE '^;   vslot .* G0$' "$T/r1.dump" && { echo "  ⛔ r/1 still owns a local G0 for its head argument"; bad=$((bad+1)); }
 refs="$(timeout -k 5 120s python3 ../harness/scripts/util_frame_refs_land_in_grants.py "$T/w.pl" 2>/dev/null | grep -E '^; grants TOTAL')"
 echo "$refs"

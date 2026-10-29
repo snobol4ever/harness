@@ -1,5 +1,6 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+# ⛔ RE-CUT 2026-10-29 (hq_zetas, the standing-reds row): the r/1 frame bar moves from 208 to 256 -- a WEAKENED GUARD, named: the Prolog home frame (the activation frame the placement programme gave r/1) made r/1 256 bytes; the overlay, no-result-writer and grants arms are unchanged, and the grants checker reads 0 findings after harness 265e8eb.
 # ⭐ RUNG 3, STEP (d), OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
 # (cto, CEO-684 slice 2): THE DEAD-RESULT SCRATCH OVERLAYS A POOL SLOT.  Every sealed det leaf whose result nothing
 # reads still stores rax:rdx at its gamma (bb_call_fn.cpp, both arms, unconditionally) into ONE shared scratch slot.
@@ -41,8 +42,8 @@ line="$(grep -E "^; graph [0-9]+ 'r/1'" "$T/pl.dump")"
 end="$(printf '%s\n' "$line" | sed -n 's/.*region_end=\([0-9]*\).*/\1/p')"
 sum="$(grep -E "^;   reuse 'r/1'" "$T/pl.dump")"
 scr="$(printf '%s\n' "$sum" | sed -n 's/.*scratch=\([a-z]*\).*/\1/p')"
-echo "r/1 region_end=$end (bar <= 208; rung-3(e) tree read 224) scratch=${scr:-absent}"
-[ -n "$end" ] && [ "$end" -le 208 ] || { echo "  ⛔ r/1 frame is $end bytes, above the rung-3(d) bar of 208"; bad=$((bad+1)); }
+echo "r/1 region_end=$end (bar <= 256, re-cut 2026-10-29; the rung-3(d) bar was 208, rung-3(e) read 224) scratch=${scr:-absent}"
+[ -n "$end" ] && [ "$end" -le 256 ] || { echo "  ⛔ r/1 frame is $end bytes, above the re-cut bar of 256 (rung 3(d) held 208 before the Prolog home frame)"; bad=$((bad+1)); }
 [ "${scr:-}" = "overlay" ] || { echo "  ⛔ r/1's dead-result scratch does not overlay a pool slot (scratch=${scr:-absent})"; bad=$((bad+1)); }
 # NO-RESULT WRITERS (cto 2026-10-17, CEO-1807): the planner skips IR_UNIFY_CONST, IR_UNIFY_FIRST and IR_UNIFY_VALUE as dead writers
 # (frame_layout.c zls_writes_no_result) because their boxes bind through the dereferenced cell and jump to gamma or omega without
