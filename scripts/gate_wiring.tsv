@@ -808,6 +808,7 @@ test_gate_pl_det_declarations_and_the_dollar_guard_report_their_culprit_as_swipl
 test_gate_pl_dict_methods_defined_with_colon_equals_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_directives_run_in_place_in_source_order_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_directory_files_agc_file_property_and_max_path_length_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_dynamic_first_argument_index_answers_as_swipl_and_a_keyed_call_costs_the_same_at_either_end_of_the_table.sh	WIRED	-	-	-
 test_gate_pl_every_choice_leaving_builtin_keeps_its_callers_retaining_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_exists_source_answers_a_library_the_prelude_holds_and_a_file_that_exists_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_findall_4_serves_a_bound_tail_and_an_unbound_one.sh	WIRED	-	-	-
