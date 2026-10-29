@@ -705,6 +705,7 @@ test_gate_pl_a_directive_name_before_an_infix_operator_is_an_atom.sh	WIRED	-	-	-
 test_gate_pl_a_dollar_named_dynamic_predicate_is_dynamic_at_run_time.sh	WIRED	-	-	-
 test_gate_pl_a_double_quoted_text_holding_code_0_keeps_its_length_in_all_four_double_quotes_modes.sh	WIRED	-	-	-
 test_gate_pl_a_dynamic_clause_with_a_disjunction_then_an_if_then_else_then_fail_retries_the_disjunction.sh	WIRED	-	-	-
+test_gate_pl_a_dynamic_predicate_of_ground_facts_asserts_without_a_code_fragment_and_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_fact_with_a_user_1200_infix_operator_reads_as_swipl_reads_it.sh	WIRED	-	-	-
 test_gate_pl_a_float_is_written_at_its_dialects_precision_xsb_15_gnu_17_swi_shortest.sh	WIRED	-	-	-
 test_gate_pl_a_float_literal_past_the_double_range_reads_as_syntax_error_float_overflow_unless_the_flag_is_infinity.sh	WIRED	-	-	-

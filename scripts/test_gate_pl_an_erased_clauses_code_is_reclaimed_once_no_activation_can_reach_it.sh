@@ -29,6 +29,7 @@
 #       choice (w3, a frame holds the fragment) -- are graded in both modes against a corrupted copy of their swipl refs and must
 #       read DIFF, so arm (2)'s equality is a measurement and not a grader that passes anything.
 # FAIL_ONCE=1 requires the throw witness to reclaim nothing, so arm (2) must red.
+# THE FACTS-ONLY DATA PATH (hq_runtime, ARCH-PROLOG-DATABASE section 13): a dynamic predicate of ground facts keeps NO code fragment, so the assert/retract loop of arm (1) asserts a clause with a body (true, true), which keeps its fragment and so keeps what this gate reclaims.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=pl_an_erased_clauses_code_is_reclaimed_once_no_activation_can_reach_it
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
@@ -36,7 +37,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 command -v gcc >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: gcc absent"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/plrc.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
 CH=':- initialization(main).'
-printf '%s\n' "$CH" ':- dynamic(pi/3).' 'loop(0) :- !.' 'loop(N) :- ( retract(pi(a, 1, M)) -> true ; M = 0 ), M1 is M + 1, assertz(pi(a, 1, M1)), N1 is N - 1, loop(N1).' 'main :- loop(3000), pi(a, 1, V), write(V), nl, halt.' > "$W/w1.pl"
+printf '%s\n' "$CH" ':- dynamic(pi/3).' 'loop(0) :- !.' 'loop(N) :- ( retract((pi(a, 1, M) :- _)) -> true ; M = 0 ), M1 is M + 1, assertz((pi(a, 1, M1) :- true, true)), N1 is N - 1, loop(N1).' 'main :- loop(3000), pi(a, 1, V), write(V), nl, halt.' > "$W/w1.pl"
 printf '3000\n' > "$W/w1.ref"
 printf '%s\n' "$CH" ':- dynamic(f/1).' 'main :- assertz(f(1)), assertz(f(2)), assertz(f(3)), forall(f(X), (retract(f(X)), Y is X + 10, assertz(f(Y)), write(X), nl)), findall(Z, f(Z), L), write(L), nl, halt.' > "$W/w2.pl"
 printf '1\n2\n3\n[11,12,13]\n' > "$W/w2.ref"
