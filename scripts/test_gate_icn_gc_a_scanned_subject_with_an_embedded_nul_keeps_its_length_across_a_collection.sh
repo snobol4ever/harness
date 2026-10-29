@@ -18,8 +18,9 @@
 # one shared object -- so the strlen() fallback is DELETED: a subject whose length was not carried is an internal error that
 # aborts loudly, never a shorter answer. tab(), move() and pos() read the carried length and tab() returns it with BSTRVAL.
 #
-# ARMS. (1) STRUCTURE, both directions: rt_scan_subj_len has no strlen and aborts on a miss; gen_gc_roots registers the cache
-# slot under the alias test; no strlen(g_scan_subj) is left anywhere under src/runtime. (2) BAND, both media: the witness matches
+# ARMS. (1) STRUCTURE (RE-CUT 2026-10-29, icon scanning step 6: the cache, rt_scan_subj_len and the mirror are DELETED, the length is the
+# r15 word of the context record the by-name window reads): no scan-length cache or scan-subject member exists under src, bn_win has no
+# strlen and reads (uint32_t) env[2], and no strlen(scan subject) is left anywhere under src/runtime. (2) BAND, both media: the witness matches
 # its iconx-cut ref at stress 0,1,3,5 under in a 128 KB arena, and EVERY arm reports collections>0 from the
 # run's own report. (3) NO COLLECTION: in a 64 MB arena the same witness matches in both media -- the tab() arm's own path.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -29,18 +30,18 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
-GR="$ROOT/src/runtime/builtins/gen_runtime.c"
 WIT="$HERE/gc_witnesses/hb_scan_subject_embedded_nul_across_a_collection.icn"; REF="${WIT%.icn}.ref"
-for f in "$GR" "$WIT" "$REF"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
+for f in "$WIT" "$REF"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
 echo "  HOLDS: a scan subject with an embedded NUL keeps its carried length across a collection that moves it, and a callee's tab/move/pos/&subject read that length"
-body="$(sed -n '/^long rt_scan_subj_len(void) {/,/^}/p' "$GR")"
-fb=$(printf '%s\n' "$body" | grep -c 'strlen')
-ab=$(printf '%s\n' "$body" | grep -c 'abort()')
-sl=$(grep -cF 'g_runtime.abi.scan_subj_ptr == g_runtime.abi.scan_subj) rt_gc_visit_raw(&g_runtime.abi.scan_subj_ptr);' "$GR")
+BN="$ROOT/src/runtime/by_name_dispatch.c"
+wbody="$(sed -n '/^static bn_win_t bn_win(void) {/,/^}/p' "$BN")"
+ws=$(printf '%s\n' "$wbody" | grep -c 'strlen')
+wl=$(printf '%s\n' "$wbody" | grep -c '(uint32_t)w.env\[2\]')
+cc=$(grep -rn -e 'rt_scan_subj_len' -e 'scan_subj_ptr' -e 'abi\.scan_subj' "$ROOT/src" --include=*.c --include=*.h --include=*.cpp --include=*.s --include=*.inc | wc -l)
 ms=$(grep -rnF -e 'strlen(g_scan_subj)' -e 'strlen(g_runtime.abi.scan_subj)' "$ROOT/src/runtime" | wc -l)
-if [ -n "$body" ] && [ "$fb" = 0 ] && [ "$ab" = 1 ] && [ "$sl" = 1 ] && [ "$ms" = 0 ]; then
-  echo "  arm 1 PASS: rt_scan_subj_len has no strlen and aborts on a miss, gen_gc_roots registers the cache slot under the alias test, no strlen(g_scan_subj) left under src/runtime"
-else echo "  arm 1 FAIL: body_found=$([ -n "$body" ] && echo 1 || echo 0) strlen_in_body=$fb abort_in_body=$ab cache_slot_registered=$sl strlen_of_scan_subj_sites=$ms"; RC=1; fi
+if [ -n "$wbody" ] && [ "$ws" = 0 ] && [ "$wl" = 1 ] && [ "$cc" = 0 ] && [ "$ms" = 0 ]; then
+  echo "  arm 1 PASS: there is no scan-length cache and no scan-subject mirror under src (icon scanning step 6, 2026-10-29): the by-name window takes its length from the carried r15 word of the context record (bn_win, no strlen), and no strlen(scan subject) is left"
+else echo "  arm 1 FAIL: window_body_found=$([ -n "$wbody" ] && echo 1 || echo 0) strlen_in_window=$ws length_from_r15_word=$wl mirror_or_cache_sites=$cc strlen_of_scan_subj_sites=$ms"; RC=1; fi
 "$SCRIP" --compile --out="$T/w.s" "$WIT" </dev/null >/dev/null 2>&1 && gcc -no-pie "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 \
   || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
 want="$(cat "$REF")"; band=""; bad=0

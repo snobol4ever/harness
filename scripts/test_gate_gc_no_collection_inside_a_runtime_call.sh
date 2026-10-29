@@ -19,13 +19,13 @@
 # rt_gc_point_arr_probe_c, rt_gc_poll_slow, rt_gc_collect_now) OUTSIDE the collector's own files is counted from source.
 # The standing set is DECLARED BY NAME below: ONE function since the by_name_dispatch.c landing of 2026-09-23 removed its 18
 # (19 sites: the dop entries, rt_call_arr_impl's conditional seam, the Prolog rt_pl_dop_*_c leaves and the PL_CX_LEAF_HEAD
-# macro) -- rt_scan_enter in gen_runtime.c, left for the landing after hq_icon's g_scan_subj_ptr row in the same file.  Each is resolved to its ENCLOSING FUNCTION by the python pass
+# macro) -- rt_scan_enter in gen_runtime.c, which icon scanning step 6 (2026-10-29, hq_icon) DELETED: the standing set is EMPTY and the ratchet reads zero.  Each is resolved to its ENCLOSING FUNCTION by the python pass
 # below, so a site that moves within a function does not move the list.  A caller not on the list is a regression and
 # reds; a declared caller that is gone reds too, so the list moves in the landing that earns it.  FAIL_ONCE=1 plants one.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
-DECLARED="src/runtime/builtins/gen_runtime.c:rt_scan_enter"
+DECLARED=""
 ENTRIES='rt_gc_point_arr_probe_c|rt_gc_point_arr_c|rt_gc_point_arr|rt_gc_point|rt_gc_poll_slow|rt_gc_collect_now'
 OWN='src/runtime/rt/gc_heap.c|src/runtime/rt/gc_heap.h|src/runtime/rt/rt_asm_helpers.S|src/runtime/rt/rtx/'
 RC=0
@@ -51,8 +51,8 @@ PY
 )"
 [ "${FAIL_ONCE:-0}" = 1 ] && callers="$(printf '%s\n%s\n' "$callers" "src/runtime/planted.c:planted_by_fail_once" | sort -u)"
 want="$(printf '%s\n' "$DECLARED" | sed '/^$/d' | sort -u)"
-new="$(comm -13 <(printf '%s\n' "$want") <(printf '%s\n' "$callers") | tr '\n' ';')"
-gone="$(comm -23 <(printf '%s\n' "$want") <(printf '%s\n' "$callers") | tr '\n' ';')"
+new="$(comm -13 <(printf '%s\n' "$want" | sed '/^$/d') <(printf '%s\n' "$callers" | sed '/^$/d' | sort -u) | tr '\n' ';')"
+gone="$(comm -23 <(printf '%s\n' "$want" | sed '/^$/d') <(printf '%s\n' "$callers" | sed '/^$/d' | sort -u) | tr '\n' ';')"
 n=$(printf '%s\n' "$callers" | sed '/^$/d' | wc -l)
 if [ -n "$new" ]; then echo "  FAIL (a) a runtime function collects INSIDE its own call and is not on the declared standing set: $new -- the safe point belongs to the emitted code at the call's return (CEO-812); delete the seam, never add one"; RC=1
 elif [ -n "$gone" ]; then echo "  FAIL (a) a declared seam is gone and the standing set still names it: $gone -- move the list in the landing that earned it"; RC=1
