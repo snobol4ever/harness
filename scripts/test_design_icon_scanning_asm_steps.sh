@@ -8,7 +8,7 @@
 #                the step's probe tokens: census=f1,f2:N (emitted calls to the named C functions over corpus/benchmarks/icon/*.icn and
 #                is00_kw.icn in mode 4, at most N; ALL = the nine scan functions, rt_keyword_var and rt_substr), nosym=a,b (no definition
 #                or reference of the names under SCRIP/src/runtime, READ), nomirror (no reader of g_runtime.abi.scan_ under SCRIP/src, READ),
-#                smoke (test_smoke_icon.sh green), rows (SUITES.tsv's icon rows today_pass equal to total, READ). Red before the step
+#                witcensus=f1,f2:N (the same count over the step's OWN witnesses, mode 4, at most N: the 2b step's rt_call_arr family against the one write), smoke (test_smoke_icon.sh green), rows (SUITES.tsv's icon rows today_pass equal to total, READ). Red before the step
 #                lands, green after.
 #   --cut        re-cut every witness ref from iconx (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --out DIR    where the runs go (default <root>/.scratch/icon_scanning_asm)
@@ -100,6 +100,10 @@ for tok in $probe; do
     case "$key" in
         census) fl="${val%%:*}"; lim="${val##*:}"; [ "$fl" = ALL ] && fl="$ALLF" || fl="${fl//,/ }"; c="$(census "$fl")"
                 [ "$c" = REFUSED ] && refuse "a benchmark did not compile for the census"; readings="$readings census[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
+        witcensus) fl="${val%%:*}"; lim="${val##*:}"; fl="${fl//,/ }"; c=0
+                for w in $wits; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile -o "$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
+                    t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($(printf '%s' "$fl" | sed 's/ /|/g'))\b" "$OUT/step$step/w.s")"; c=$((c + t)); done
+                readings="$readings witcensus[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src/runtime" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
         nomirror) c="$(grep -rc 'abi\.scan_' "$SC/src" --include=*.c --include=*.cpp --include=*.h --include=*.inc 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')"; readings="$readings mirror_readers=$c"; [ "$c" = 0 ] || pgreen=0 ;;
         smoke) if ( cd "$SC" && timeout -k 10 600 bash "$HERE/test_smoke_icon.sh" > "$OUT/step$step/smoke.log" 2>&1 ); then readings="$readings smoke=green"; else readings="$readings smoke=red"; pgreen=0; fi ;;
