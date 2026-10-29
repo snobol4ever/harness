@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_zd_check_a_read_across_a_retaining_box_goes_through_its_frame.sh -- A GREEN READING THAT CAN FAIL AND IS SHOWN TO HAVE BEEN EXERCISED
 # (the coo's 14:4x audit of the closed row zsm-match-defer-gamma-depth-..., the cto's row zd-check-a-read-across-a-retaining-box-reaches-its-cell-
 # through-a-frame-home-counted-and-able-to-fail-ceo-1925). The law: a box after a box the planner grades as retaining (a nonzero retains code, 1 to 11,

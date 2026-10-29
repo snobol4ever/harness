@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_zd_check_reads_zero_violations_on_the_cores.sh -- THE PLAN IS CONSISTENT ON EVERY MASTER'S CORE (ceo CEO-1830,
 # ARCH-ZETA-ONE-COORDINATE.md section 4). For each of the seven masters it extracts every PARTITION.tsv core entry, compiles
 # it with SCRIP_ZD_CHECK=1 (mode 4, asm to scratch, nothing linked or run) and sums the verifier's violations: the three edge

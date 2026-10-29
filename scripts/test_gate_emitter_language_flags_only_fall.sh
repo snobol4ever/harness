@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_emitter_language_flags_only_fall.sh -- LANGUAGE IDENTITY STOPS AT LOWER, AS THREE RATCHETS (ceo CEO-1836/1838/1840;
 # Lon 2026-10-18, in-chat to the ceo, verbatim: "How much of the emitter is language specific? Did you know that is not allowed past
 # the lower stage. Will you fix that?" -- "which global specifies lanuage? which global struct specifies language. DELETE those

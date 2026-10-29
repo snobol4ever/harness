@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask.sh -- THE SPINE WALK IS TOLD ITS CELLS (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16 step (2), the
 # cto 2026-10-29, CEO-2011). Every site entry of the GC site table is {pc_off, w, mask}: w = kind | rule << 16 | depth << 32, and mask the word-kind bits of a rule 0 or
 # rule 4 site over [r + 8, r + depth) -- bit j the word at r + 8 + 8j, set on the first word of a DESCR cell -- inline in the third quad when depth is at most 512 bytes,

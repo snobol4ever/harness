@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_template_form_choices_outside_lower_only_fall.sh -- A BOX SERVES ONE FORM; THE FORM IS CHOSEN IN LOWER (ceo CEO-1840;
 # Lon 2026-10-18, in-chat to the ceo, verbatim: "Will you be able to properly design IR, BB, such that the templates are perfectly
 # granular and which has all language specific variances encoded within?" -- "Did those last several template violations ever get

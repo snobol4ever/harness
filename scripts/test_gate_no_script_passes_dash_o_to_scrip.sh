@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_no_script_passes_dash_o_to_scrip.sh -- THE ASSEMBLY OUTPUT IS --out=FILE, AND NO SCRIPT HANDS IT TO SCRIP AS -o FILE (Lon, "Do make our
 # SCRIP command-line switches just like SPITBOL." CEO-1224: SPITBOL's -o=file names the compilation LISTING, so SCRIP's --compile output moved to
 # --out=FILE; the cto's row spine-scrip-assembly-output-moves-from-o-file-to-out-file-and-every-script-that-passes-o-migrates-in-the-same-landing,

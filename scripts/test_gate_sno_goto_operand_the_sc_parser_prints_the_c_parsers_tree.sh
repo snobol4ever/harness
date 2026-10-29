@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_goto_operand_the_sc_parser_prints_the_c_parsers_tree.sh -- THE .sc PARSER AND THE C PARSER AGREE ON A GOTO OPERAND THAT IS AN EXPRESSION
 # (hq_raku 2026-10-28, row snobol4-the-sc-parser-takes-a-goto-operand-that-is-an-expression-as-the-c-parser-does; the C side is SCRIP 716bddf56,
 # CEO-1926). The C parser hands the goto field's parenthesised operand to the statement grammar unless it is one of the legacy shapes (a label, $L,
