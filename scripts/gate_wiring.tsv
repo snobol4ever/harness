@@ -124,6 +124,7 @@ test_gate_emit_no_slot_alloc.sh	WIRED	-	-	-
 test_gate_emitter_language_flags_only_fall.sh	WIRED	-	-	-
 test_gate_errlimit_survival_is_measured_per_code.sh	WIRED	-	-	-
 test_gate_every_c_to_bb_box_entry_carries_its_hit.sh	WIRED	-	-	-
+test_gate_every_frame_reference_lands_in_a_granted_cell.sh	WIRED	-	-	-
 test_gate_every_graded_suite_has_an_attribute_csv.sh	WIRED	-	-	-
 test_gate_every_tree_kind_has_a_dump_name.sh	WIRED	-	-	-
 test_gate_excluded_not_spitbol_dialect_named_and_out_of_the_denominator.sh	WIRED	-	-	-

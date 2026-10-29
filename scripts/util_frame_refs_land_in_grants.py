@@ -3,6 +3,7 @@ import re, sys, os
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import util_frame_field_reference_census as C
 SUB = re.compile(r"^\s*sub\s+rsp,\s*(\d+)")
+BOX = re.compile(r"^(n\d+_[a-z0-9_]+?)_(?:\u03b1|\u03b2|bx)\b")
 VSL = re.compile(r"^;\s+vslot\s+\+(\d+)\s+(\d+)\s+\S+\s+(\S+)\s*$")
 def parse_graphs(zeta):
     graphs = []; cur = None
@@ -31,7 +32,7 @@ def main():
     else: zeta = C.run(["./scrip", "--dump-zeta", a[0]]); asm = C.run(["./scrip", "--compile", a[0]])
     graphs = parse_graphs(zeta); bodies = bodies_of(asm)
     if not graphs: print("REFUSE(2): --dump-zeta printed no graph"); return 2
-    graded = 0; findings = 0; refs_total = 0
+    graded = 0; findings = 0; refs_total = 0; ungranted = []
     for g in graphs:
         if only and g["name"] not in only: continue
         if g["name"] == "main": print("; grants 'main' NOT GRADED: the root graph's carve is not the flat activation frame this instrument reads (no 64-byte entry header at the top)"); continue
@@ -42,22 +43,29 @@ def main():
         for l in body:
             m = SUB.match(l)
             if m: carve = int(m.group(1)); break
-        rbp = [int(m.group(2)) for l in body for m in C.REF.finditer(l) if m.group(1) == "rbp"]
+        box = "-"; refs = []
+        for l in body:
+            bm = BOX.match(l)
+            if bm: box = bm.group(1)
+            for m in C.REF.finditer(l):
+                if m.group(1) == "rbp": refs.append((int(m.group(2)), box))
+        rbp = [r[0] for r in refs]
         rsp = sum(1 for l in body for m in C.REF.finditer(l) if m.group(1) == "rsp")
         if not rbp and rsp: print("; grants '%s' NOT GRADED: the frame is not rbp-addressed in this body (rsp refs=%d)" % (g["name"], rsp)); continue
         if carve is None: print("; grants '%s' NOT GRADED: no 'sub rsp, K' carve in the body" % g["name"]); continue
         graded += 1; bad = set(); ingrant = 0; header = 0
-        for n in rbp:
+        for n, bx in refs:
             refs_total += 1
             if n >= carve - 64 and n < carve: header += 1
             elif n < g["end"]:
                 if any(f["off"] <= n < f["off"] + f["size"] for f in g["fields"]): ingrant += 1
-                else: bad.add("[rbp+%d] lies below region_end=%d and inside no granted field" % (n, g["end"]))
+                else: bad.add("[rbp+%d] lies below region_end=%d and inside no granted field" % (n, g["end"])); ungranted.append((g["name"], bx, n, g["end"]))
             elif n >= carve - 64: header += 1
-            else: bad.add("[rbp+%d] lies above region_end=%d and below the entry header at %d: a quad the emitter addresses and the dump does not grant" % (n, g["end"], carve - 64))
+            else: bad.add("[rbp+%d] lies above region_end=%d and below the entry header at %d: a quad the emitter addresses and the dump does not grant" % (n, g["end"], carve - 64)); ungranted.append((g["name"], bx, n, g["end"]))
         for b in sorted(bad): print(";   grants '%s' ⛔ %s" % (g["name"], b))
         findings += len(bad)
         print("; grants '%s' refs=%d in_grant=%d header=%d ungranted=%d region_end=%d carve=%d" % (g["name"], len(rbp), ingrant, header, len(bad), g["end"], carve))
+    for gn, bx, n, en in ungranted: print("UNGRANTED graph=%s box=%s off=%d region_end=%d" % (gn, bx, n, en))
     print("; grants TOTAL graphs=%d graded=%d refs=%d findings=%d" % (len(graphs), graded, refs_total, findings))
     print("; grants MEASURES every literal [rbp+N] in the graph's own FN__ body against the --dump-zeta grant table of the same binary; a frame addressed through another base register is not graded; a reference that lands in no grant is a finding, never a lead")
     if graded == 0: return 2
