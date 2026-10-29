@@ -10,6 +10,8 @@
 #                     module (basics) has no file beside (the companion module file is the witness's .d directory, copied beside it)
 #   xbi04_file_io     file_write/2, file_flush/2, file_seek/4 (place 0, 1, 2), file_truncate/3 (leaves the position at the new end), print_file_contents/1, rm/1 and xsb_configuration(os_type, _) over the stream
 #                     file_open/3 returns, every status 0 (io_tests io_basics)
+#   xbi05_storage_concat_atom  concat_atom/2,3 join atomic elements, numbers included, and fail on a compound one; gc_heap/0; lib/storage.P's storage_insert_fact/3, storage_find_fact/2 and
+#                     storage_delete_all/1 (prolog_tests gctest; the m4 binary used to raise type_error(atom, 1) from concat_atom's route through atom_concat)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
