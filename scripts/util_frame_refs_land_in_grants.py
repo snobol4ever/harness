@@ -3,6 +3,7 @@ import re, sys, os
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import util_frame_field_reference_census as C
 SUB = re.compile(r"^\s*sub\s+rsp,\s*(\d+)")
+VSL = re.compile(r"^;\s+vslot\s+\+(\d+)\s+(\d+)\s+\S+\s+(\S+)\s*$")
 def parse_graphs(zeta):
     graphs = []; cur = None
     for line in zeta.splitlines():
@@ -10,6 +11,8 @@ def parse_graphs(zeta):
         if m: cur = {"name": m.group(2), "end": int(m.group(4)), "fields": []}; graphs.append(cur); continue
         m = C.FLD.match(line)
         if m and cur is not None: cur["fields"].append({"off": int(m.group(1)), "size": int(m.group(2)), "what": m.group(4).strip()})
+        m = VSL.match(line)
+        if m and cur is not None: cur["fields"].append({"off": int(m.group(1)), "size": int(m.group(2)), "what": "vslot " + m.group(3)})
     return graphs
 def bodies_of(asm):
     lines = asm.splitlines(); labels = []
@@ -46,7 +49,8 @@ def main():
         graded += 1; bad = set(); ingrant = 0; header = 0
         for n in rbp:
             refs_total += 1
-            if n < g["end"]:
+            if n >= carve - 64 and n < carve: header += 1
+            elif n < g["end"]:
                 if any(f["off"] <= n < f["off"] + f["size"] for f in g["fields"]): ingrant += 1
                 else: bad.add("[rbp+%d] lies below region_end=%d and inside no granted field" % (n, g["end"]))
             elif n >= carve - 64: header += 1
