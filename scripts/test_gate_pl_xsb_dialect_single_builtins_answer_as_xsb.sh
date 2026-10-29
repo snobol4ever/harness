@@ -8,6 +8,8 @@
 #                     type_error(variable, N) for a bound one (the count itself is XSB's storage timing, never printed: CEO-1934, CEO-2012 (c))
 #   xbi03_qualified_call_loads_the_module_file  the first call M:Goal of a module not yet loaded loads the file M.P beside the program (its ?- directive prints once), a later call loads nothing, a system
 #                     module (basics) has no file beside (the companion module file is the witness's .d directory, copied beside it)
+#   xbi04_file_io     file_write/2, file_flush/2, file_seek/4 (place 0, 1, 2), file_truncate/3 (leaves the position at the new end), print_file_contents/1, rm/1 and xsb_configuration(os_type, _) over the stream
+#                     file_open/3 returns, every status 0 (io_tests io_basics)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
