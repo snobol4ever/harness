@@ -107,7 +107,11 @@ for tok in $probe; do
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src/runtime" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
         nomirror) c="$(grep -rc 'abi\.scan_' "$SC/src" --include=*.c --include=*.cpp --include=*.h --include=*.inc 2>/dev/null | awk -F: '{ s += $2 } END { print s + 0 }')"; readings="$readings mirror_readers=$c"; [ "$c" = 0 ] || pgreen=0 ;;
         smoke) if ( cd "$SC" && timeout -k 10 600 bash "$HERE/test_smoke_icon.sh" > "$OUT/step$step/smoke.log" 2>&1 ); then readings="$readings smoke=green"; else readings="$readings smoke=red"; pgreen=0; fi ;;
-        rows) [ -r "$SUITES" ] || refuse "no $SUITES"; bad="$(awk -F'\t' 'NR == 2 { for (i = 1; i <= NF; i++) h[$i] = i } $4 == "icon" { if ($(h["today_pass"]) != $(h["today_total"])) b++ } END { print b + 0 }' "$SUITES")"; readings="$readings icon_rows_short=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
+        rows) [ -r "$SUITES" ] || refuse "no $SUITES"
+              # CTO 11.8 (d), 2026-10-29: IcnRungs, IPL, IcnBench and IcnDemo at 100 percent, Zona and Jcon at 100 percent of their entries OUTSIDE Lon's loadfunc hold (an entry is held iff the loadfunc row's baton names it; those held entries are named in
+              # that baton, sit in ipl's EXCLUDED.tsv as NEEDS_LOADFUNC and are not in any denominator here, so none of the six rows carries a held entry and the reading is the plain one). The reading names the short rows.
+              short="$(awk -F'\t' 'NR == 2 { for (i = 1; i <= NF; i++) h[$i] = i } $4 == "icon" && $(h["today_pass"]) != $(h["today_total"]) { printf "%s %s/%s ", $1, $(h["today_pass"]), $(h["today_total"]) }' "$SUITES")"
+              bad="$(printf '%s' "$short" | wc -w)"; bad=$((bad / 2)); readings="$readings icon_rows_short=$bad[${short% }]"; [ "$bad" = 0 ] || pgreen=0 ;;
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
