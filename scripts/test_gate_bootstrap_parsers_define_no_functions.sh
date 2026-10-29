@@ -23,7 +23,7 @@ BOOT="$HERE/../../SCRIP/bootstrap"
 GATE_NAME=test_gate_bootstrap_parsers_define_no_functions
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
-FLOORS="snobol4:22 snocone:0 rebus:0 icon:13 prolog:4 raku:0 pascal:48"
+FLOORS="snobol4:22 snocone:0 rebus:0 icon:13 prolog:0 raku:0 pascal:48"
 FINISH=0
 for a in "$@"; do [ "$a" = --finish ] && FINISH=1; done
 [ "$FINISH" = 1 ] && FLOORS="snobol4:0 snocone:0 rebus:0 icon:0 prolog:0 raku:0 pascal:0"
