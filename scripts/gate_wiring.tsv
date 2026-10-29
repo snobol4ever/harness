@@ -968,6 +968,7 @@ test_gate_pl_xsb_dialect_a_module_file_declaring_immutable_is_never_reloaded_as_
 test_gate_pl_xsb_dialect_a_run_time_consulted_file_reaches_the_xsb_builtins_and_reads_a_raw_newline_in_a_quoted_atom.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_auto_table_and_suppl_table_table_the_predicates_xsb_tables.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh	WIRED	-	-	-
+test_gate_pl_xsb_dialect_single_builtins_answer_as_xsb.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_table_introspection_builtins_answer_as_xsb.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_write_term_options_listing_format_and_read_routines_answer_as_xsb.sh	WIRED	-	-	-
