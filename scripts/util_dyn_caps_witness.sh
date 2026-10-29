@@ -73,6 +73,14 @@ runtime)
   ( cd "$T/w" && "$ICONT" -s -o args70x args70.icn > /dev/null 2>&1 && PATH=/home/resources/icon-master/bin:$PATH ./args70x > "$T/c.ref" 2>&1 ) || { echo "REFUSE(2): the oracle could not run args70.icn"; exit 2; }
   timeout -k 5 60 ./scrip --run "$T/w/args70.icn" < /dev/null > "$T/c.out" 2> "$T/c.err"
   if cmp -s "$T/c.ref" "$T/c.out"; then echo "PASS args70.icn: a 70-argument call reads $(tr -d '\n' < "$T/c.ref") in both"; else echo "RED args70.icn: iconx prints $(tr -d '\n' < "$T/c.ref"), scrip prints '$(head -c 40 "$T/c.out" | tr -d '\n')' -- $(head -c 140 "$T/c.err" | tr '\n' ' ')"; red=1; fi
+  RAKUDO=$(rakudo_bin) || exit 2
+  timeout -k 5 300 "$RAKUDO" "$T/w/multi300.raku" < /dev/null > "$T/e.ref" 2> /dev/null || { echo "REFUSE(2): the oracle could not run multi300.raku"; exit 2; }
+  timeout -k 5 120 ./scrip --run -s256m -d1024m "$T/w/multi300.raku" < /dev/null > "$T/e.out" 2> "$T/e.err"
+  if cmp -s "$T/e.ref" "$T/e.out"; then echo "PASS multi300.raku: 300 multi candidates that all accept one call read $(tr '\n' ' ' < "$T/e.ref")in both"; else echo "RED multi300.raku: rakudo prints $(tr '\n' ' ' < "$T/e.ref"), scrip prints '$(head -c 60 "$T/e.out" | tr '\n' ' ')' -- $(head -c 140 "$T/e.err" | tr '\n' ' ')"; red=1; fi
+  SWIPL=$(swipl_bin) || exit 2
+  timeout -k 5 300 "$SWIPL" -q -g "consult('$T/w/cmpdeep.pl')" -t halt < /dev/null > "$T/f.ref" 2> /dev/null || { echo "REFUSE(2): the oracle could not run cmpdeep.pl"; exit 2; }
+  timeout -k 5 300 ./scrip --run -s512m -d1024m "$T/w/cmpdeep.pl" < /dev/null > "$T/f.out" 2> "$T/f.err"
+  if cmp -s "$T/f.ref" "$T/f.out"; then echo "PASS cmpdeep.pl: compare/3 on terms nested 200000 deep reads $(wc -l < "$T/f.ref") lines identical to swipl"; else echo "RED cmpdeep.pl: swipl prints $(wc -l < "$T/f.ref") lines, scrip $(wc -l < "$T/f.out") -- $(head -c 140 "$T/f.err" | tr '\n' ' ')"; red=1; fi
   L=$(count_caps '^src/runtime/' "$RUNTIME_CAPS"); n=$(printf '%s' "$L" | grep -c .); D=$(count_caps_declared '^src/runtime/' "$RUNTIME_CAPS"); d=$(printf '%s' "$D" | grep -c .); echo "runtime tables still bound by a population cap: $n ($d declared class A/B in $(_ab_file), set aside)"; [ "$d" = 0 ] || printf '%s\n' "$D"; [ "$n" = 0 ] || { printf '%s\n' "$L"; red=1; }
   ;;
 census)
