@@ -4,6 +4,8 @@
 # adds a witness and no gate.
 #   xbi01_arithmetic  round, ceiling, floor and truncate pass an integer through (ISO and GNU raise type_error(float, 5)); round is floor(X + 0.5); the xor evaluable is ><; an expression that is not evaluable
 #                     is type_error(evaluable, Term) with the term itself, not Name/Arity (the culprit of a top-level unary function is its argument, XSB's own quirk); a list is never evaluated, [a] included
+#   xbi02_retract_nr_gc_dynamic  retract_nr/1 is retract/1 (the clause goes, a failing or undefined target fails, an unbound one is instantiation_error); gc_dynamic/1 answers an integer for an unbound argument and
+#                     type_error(variable, N) for a bound one (the count itself is XSB's storage timing, never printed: CEO-1934, CEO-2012 (c))
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
