@@ -58,7 +58,7 @@ if [ "$mode" = cut ]; then
         w="$(wname "$spec")"; g="$(wgoal "$spec")"; k="$(wkind "$spec")"
         ( cd "$T" && rm -f temp && { if [ "$k" = temp ]; then printf '[%s]. %s. halt.\n' "$w" "$g"; else printf '[%s]. tell(temp). %s. told. halt.\n' "$w" "$g"; fi; } \
             | timeout -k 5 300 "$XSB" --nobanner --quietload -e 'segfault_handler(warn).' > "$T/$w.xsb.log" 2>&1
-          [ -f temp ] && grep -v '^$' temp | sort > "$WD/$w.ref" || : > "$WD/$w.ref" )
+          [ -f temp ] && grep -v '^$' temp | LC_ALL=C sort > "$WD/$w.ref" || : > "$WD/$w.ref" )
         echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -qi '++Error' "$T/$w.xsb.log" && echo ' (XSB RAISED: read the log)')"
     done
     rm -rf "$T"; exit 0
@@ -82,7 +82,7 @@ stage() { # $1 dir: every witness .P beside, under its name and as .pl (as corpu
     for f in "$WD"/*.P; do b="$(basename "$f" .P)"; cp "$f" "$1/$b.P"; cp "$f" "$1/$b.pl"; done
 }
 answer() { # $1 kind, $2 run dir, $3 stdout file -> the graded text on stdout
-    if [ "$1" = temp ]; then [ -f "$2/temp" ] && grep -v '^$' "$2/temp" | sort; else grep -v '^$' "$3"; fi
+    if [ "$1" = temp ]; then [ -f "$2/temp" ] && grep -v '^$' "$2/temp" | LC_ALL=C sort; else grep -v '^$' "$3"; fi
 }
 m3p=0; m4p=0; n=0; reds=""
 for spec in $wits; do
