@@ -5,7 +5,7 @@
 # (existence_error(procedure, table/1)) and the untabled left recursion overflowed the stack; the XSB dialect now sends consult/1 down the load_files(_, [dialect(xsb)]) road ensure_loaded already took,
 # and the prelude library xsb_builtins defines load_dync/1 and ensure_dync_loaded/1 on it. The expected text is the first four lines of the vendored XSB-cut ref corpus/tests/prolog/xsb_wfs/xw01_loader_table.ref.
 # ARMS: (1) the five entry points and the list goal each print the four path(1,Y) answers (m3; the call and the list goal also in m4; the program is XSB's own text under the xsb package prelude)
-#       (2) a consult of a missing file raises existence_error(source_sink, F) with context consult/1, as the plain road did
+#       (2) a consult of a missing file raises existence_error(source_sink, F) with context consult/1, as the plain road did; the arm prints it as XSB 5.0.0 writes the indicator, consult / 1 (the writer landing of 2026-10-28 made the old text consult/1 stale)
 #       (3) the default dialect's consult/1 is the plain reader still: a file of facts consulted from a plain program loads and answers (the xsb clause is guarded by the dialect flag)
 # RED BEFORE (measured 2026-10-28 on SCRIP c22bbf71e, the tree before the cure): consult(xw01_prog) and [xw01_prog] overflowed the stack after 'directive raised: existence_error(procedure,table/1)',
 # load_dync/1 and ensure_dync_loaded/1 raised existence_error(procedure, ...); ensure_loaded/1 already answered. Arm (3) is the guard against the cure reaching the other dialects.
@@ -58,7 +58,7 @@ for form in "consult(xw01_prog)|m3,m4" "[xw01_prog]|m3,m4" "consult([xw01_prog])
     arm "the_xsb_dialect_${key}_loads_the_tabled_sibling" "$TMPD/$key.pl" "$WANT_PATHS" "$modes"
 done
 { printf '%s\n' "$PRE"; printf ':- initialization(catch(consult(nonexistent_zz), error(E, C), (write(E), write(%s), write(C), nl))).\n' "' in '"; } > "$TMPD/missing.pl"
-arm a_missing_file_is_existence_error_source_sink_in_consult_1 "$TMPD/missing.pl" "existence_error(source_sink,nonexistent_zz) in consult/1" m3
+arm a_missing_file_is_existence_error_source_sink_in_consult_1 "$TMPD/missing.pl" "existence_error(source_sink,nonexistent_zz) in consult / 1" m3
 printf ':- initialization(main).\nmain :- consult(plainfacts), forall(f(X), (write(f(X)), nl)), halt.\n' > "$TMPD/plain.pl"
 arm the_default_dialect_consult_is_the_plain_reader_still "$TMPD/plain.pl" "$(printf 'f(1)\nf(2)')"
 echo "$GATE_NAME: arms=$total red=$red modes=$MODES"
