@@ -57,7 +57,7 @@ bad() { FAIL=$((FAIL+1)); printf '  FAIL %s\n' "$1"; }
 island() {
     local src="$1" out="$TD/isl.s"
     rm -f "$out"
-    if ! timeout -k 5 120s "$SCRIP" --compile -o "$out" "$src" </dev/null >"$TD/isl.log" 2>&1; then echo -1; return; fi
+    if ! timeout -k 5 120s "$SCRIP" --compile --out="$out" "$src" </dev/null >"$TD/isl.log" 2>&1; then echo -1; return; fi
     [ -r "$out" ] || { echo -1; return; }
     # ⛔ `grep -c` PRINTS 0 *and* exits 1 when it matches nothing, so `grep -c ... || echo 0` emits TWO
     # lines ("0\n0") and every downstream [ -eq ] dies with "integer expression expected". Caught by arm A

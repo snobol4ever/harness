@@ -53,7 +53,7 @@ for src in "$WITDIR"/*.icn "$WITDIR"/*.sno "$WITDIR"/*.pl "$WITDIR"/*.raku "$WIT
   graded=$((graded+1))
   ( $ENVW $stk timeout -k 5 60s "$SCRIP" $ca "$src" < "$inp" > "$T/m3.out" 2> "$T/m3.err" ) 2> /dev/null; rc=$?; v3="$(grade "$T/m3.out" "$ref" "$rc")"
   rm -f "$T/w".* "$T/w.x"; cp "$src" "$T/w.$ext"
-  if ( cd "$T" && timeout -k 5 90s "$SCRIP" --compile $ca -o w.s "w.$ext" < /dev/null > /dev/null 2> w.cerr \
+  if ( cd "$T" && timeout -k 5 90s "$SCRIP" --compile $ca --out=w.s "w.$ext" < /dev/null > /dev/null 2> w.cerr \
       && gcc -m64 w.s -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o w.x 2>> w.cerr ); then
     ( $ENVW $stk timeout -k 5 60s "$T/w.x" < "$inp" > "$T/m4.out" 2> "$T/m4.err" ) 2> /dev/null; rc=$?; v4="$(grade "$T/m4.out" "$ref" "$rc")"
   else
@@ -91,7 +91,7 @@ step_hits() {
   echo "${n:-0}"
 }
 sext="${STEPW##*.}"; cp "$WITDIR/$STEPW" "$T/s.$sext"
-( cd "$T" && "$SCRIP" --compile -o s.s "s.$sext" < /dev/null > /dev/null 2>&1 && gcc -m64 s.s -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o s.x ) \
+( cd "$T" && "$SCRIP" --compile --out=s.s "s.$sext" < /dev/null > /dev/null 2>&1 && gcc -m64 s.s -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o s.x ) \
   || refuse "the step witness $STEPW does not compile and link in mode 4"
 step_red=""
 for d in 0 1; do

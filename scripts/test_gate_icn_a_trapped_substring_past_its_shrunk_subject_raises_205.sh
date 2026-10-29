@@ -82,7 +82,7 @@ pass=0; fail=0; lines=""
 for w in asg swp lst lit err mut; do
   ( cd "$T" && "$ICONT" -s -o "$w.x" "$w.icn" ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses $w.icn"; exit 2; }
   want="$( cd "$T" && ./"$w.x" </dev/null 2>/dev/null )"; wrc=$?
-  ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+  ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
     || { echo "  $w FAIL: does not build in mode 4"; fail=$((fail+1)); continue; }
   o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" </dev/null 2>/dev/null )"; r3=$?
   o4="$( cd "$T" && timeout -k 5 20 ./"$w.4" </dev/null 2>/dev/null )"; r4=$?

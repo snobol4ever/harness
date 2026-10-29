@@ -50,7 +50,7 @@ for arm in a b; do
     case $arm in a) what="a prelude predicate called only from an included file is injected" ;; b) what="a user's reverse/2 defined after 600 clauses wins and nothing is appended" ;; esac
     ( cd "$T/$arm" && timeout -k 5 20 "$SCRIP" w.pl < /dev/null > m3.out 2>&1 ); rc3=$?
     if cmp -s "$T/$arm/m3.out" "$T/ref"; then echo "  ok   ($arm m3) $what"; else echo "  FAIL ($arm m3) rc=$rc3: $(tr '\n' ' ' < "$T/$arm/m3.out" | cut -c1-160)"; fail=1; fi
-    if ( cd "$T/$arm" && "$SCRIP" --compile -o w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -o w w.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
+    if ( cd "$T/$arm" && "$SCRIP" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -o w w.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
         ( cd "$T/$arm" && timeout -k 5 20 ./w < /dev/null > m4.out 2>&1 ); rc4=$?
         if cmp -s "$T/$arm/m4.out" "$T/ref"; then echo "  ok   ($arm m4) $what"; else echo "  FAIL ($arm m4) rc=$rc4: $(tr '\n' ' ' < "$T/$arm/m4.out" | cut -c1-160)"; fail=1; fi
     else echo "  FAIL ($arm m4) the witness did not compile or link in mode 4"; fail=1; fi

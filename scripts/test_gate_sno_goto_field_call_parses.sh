@@ -40,7 +40,7 @@ printf "        DEFINE('S()')                   :(MAIN)\nS       S  =  .L3      
 bad=0
 for w in zeroarg strarg multiarg fnamed snamed; do
     for m in m3 m4; do
-        if [ "$m" = m3 ]; then out="$("$SCRIP" "$T/$w.sno" < /dev/null 2>&1)"; else out="$("$SCRIP" --compile -o "$T/$w.s" "$T/$w.sno" < /dev/null 2>&1)"; fi
+        if [ "$m" = m3 ]; then out="$("$SCRIP" "$T/$w.sno" < /dev/null 2>&1)"; else out="$("$SCRIP" --compile --out="$T/$w.s" "$T/$w.sno" < /dev/null 2>&1)"; fi
         case "$out" in
             *"parse error"*|*"no code generated"*) echo "  RED  $w $m -- the goto-field call REGRESSED to a parse error: $(echo "$out" | head -1)"; bad=1 ;;
             *) echo "  ok   $w $m parses" ;;

@@ -327,7 +327,7 @@ def emit_asm(prog_path, scrip=None):
     scrip = scrip or os.path.join(ROOT, "scrip")
     fd, out = tempfile.mkstemp(suffix=".s"); __import__("atexit").register(lambda p=out: os.path.exists(p) and os.unlink(p))
     os.close(fd)
-    r = subprocess.run([scrip, "--compile", "-o", out, prog_path], stdin=subprocess.DEVNULL,
+    r = subprocess.run([scrip, "--compile", f"--out={out}", prog_path], stdin=subprocess.DEVNULL,
                        capture_output=True, text=True, timeout=120)
     if r.returncode != 0 or not os.path.exists(out) or os.path.getsize(out) == 0:
         return None, (r.stderr or r.stdout or "").strip().splitlines()[-1:] or ["no asm produced"]

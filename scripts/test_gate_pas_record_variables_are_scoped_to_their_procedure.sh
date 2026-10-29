@@ -69,7 +69,7 @@ end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 s.pas >/dev/null 2>&1 && ./s ) > "$T/s.ref" 2>&1
 grep -q '^outer 1 2 sum 3$' "$T/s.ref" || { echo "GATE REFUSE(2) [$G]: the oracle did not produce the outer-scope line this gate pins -- the oracle moved: $(tail -1 "$T/s.ref")"; exit 2; }
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o s.s s.pas </dev/null && gcc s.s -o s.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build -- the frontend still refuses or crashes on a shadowed record variable"; exit 1; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=s.s s.pas </dev/null && gcc s.s -o s.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build -- the frontend still refuses or crashes on a shadowed record variable"; exit 1; }
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 60 "$SCRIP" --run s.pas </dev/null ) >"$T/$M.out" 2>&1

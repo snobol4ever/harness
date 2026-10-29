@@ -29,7 +29,7 @@ grep -q '^done 60000 60001$' "$T/d60.ref" && grep -q '^done 200000 1$' "$T/r200.
 RC=0
 for M in m3 m4; do
   for W in d20 d60 r20 r200; do
-    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile -o $W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
+    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile --out=$W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
     LIM=120; [ "$W" = r200 ] && LIM=20
     ( cd "$T" && if [ "$M" = m3 ]; then SCRIP_GC_EXERCISE=1 "$TIMEB" -f 'MAXRSS_KB=%M' -o $M.$W.rss timeout -k 5 $LIM "$SCRIP" $W.sno </dev/null; else SCRIP_GC_EXERCISE=1 LD_LIBRARY_PATH="$ROOT/out" "$TIMEB" -f 'MAXRSS_KB=%M' -o $M.$W.rss timeout -k 5 $LIM ./$W.bin </dev/null; fi ) >"$T/$M.$W.out" 2>"$T/$M.$W.err"; echo $? > "$T/$M.$W.rc"
     if cmp -s "$T/$W.ref" "$T/$M.$W.out"; then echo "  $M arm C $W PASS (byte-identical to sbl -bf: $(head -1 "$T/$M.$W.out"))"

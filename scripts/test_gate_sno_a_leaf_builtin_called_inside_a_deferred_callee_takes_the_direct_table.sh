@@ -65,7 +65,7 @@ grep -q '^done errlimit 14$' "$W/stage.ref" || { echo "REFUSED(2): the oracle's 
 red=0
 ( cd "$W" && timeout -k 5 30 "$ROOT/scrip" stage.sno < /dev/null > "$W/stage.m3" 2>&1 )
 if cmp -s "$W/stage.m3" "$W/stage.ref"; then echo "ok  (1) m3 = oracle over $(wc -l < "$W/stage.ref") lines"; else echo "RED (1) m3 differs from the oracle:"; diff "$W/stage.ref" "$W/stage.m3" | head -6; red=1; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/stage.s" stage.sno < /dev/null > /dev/null 2>&1 && gcc "$W/stage.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/stage.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/stage.s" stage.sno < /dev/null > /dev/null 2>&1 && gcc "$W/stage.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/stage.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
 ( cd "$W" && timeout -k 5 30 ./stage.bin < /dev/null > "$W/stage.m4" 2>&1 )
 if cmp -s "$W/stage.m4" "$W/stage.ref"; then echo "ok  (1) m4 = oracle"; else echo "RED (1) m4 differs from the oracle:"; diff "$W/stage.ref" "$W/stage.m4" | head -6; red=1; fi
 cat > "$W/loop.sno" <<'SNO'
@@ -80,7 +80,7 @@ bad     OUTPUT = 'failed at ' i
 fin
 END
 SNO
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/loop.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop.bin" 2>/dev/null ) || { echo "REFUSED(2): the loop twin did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/loop.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop.bin" 2>/dev/null ) || { echo "REFUSED(2): the loop twin did not build"; exit 2; }
 ( cd "$W" && timeout -k 5 30 ./loop.bin < /dev/null > "$W/loop.out" 2>&1 ); grep -q '^done 1000$' "$W/loop.out" || { echo "REFUSED(2): the loop twin did not print its line: $(head -1 "$W/loop.out")"; exit 2; }
 hits() { ( cd "$W" && timeout -k 5 300 gdb -q -batch -ex 'set breakpoint pending on' -ex "break $1" -ex 'ignore 1 100000000' -ex 'run < /dev/null > /dev/null 2>&1' -ex 'info breakpoints' ./loop.bin 2>&1 | grep -o 'already hit [0-9]* time' | grep -o '[0-9]*' | head -1 ); }
 ctail=$(hits c_rt_call_bid_sn4); arr=$(hits rt_call_arr_impl); ctail=${ctail:-0}; arr=${arr:-0}

@@ -77,7 +77,7 @@ for w in $wits; do
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.icn" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
-            if ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile -o "$d/run.s" "$w.icn" < /dev/null > /dev/null 2> "$d/cerr" ) \
+            if ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile --out="$d/run.s" "$w.icn" < /dev/null > /dev/null 2> "$d/cerr" ) \
                && gcc -c "$d/run.s" -o "$d/run.o" 2> /dev/null && gcc "$d/run.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$d/run.bin" 2> /dev/null; then
                 ( cd "$d" && timeout -k 5 120 "$d/run.bin" -d131072k -s4096k < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
             else rc=no-binary; fi
@@ -88,7 +88,7 @@ done
 census() { # $1 space-separated function names -> the emitted call count over the benchmarks and is00_kw, mode 4
     local pat; pat="$(printf '%s' "$1" | sed 's/ /|/g')"; local c=0 t; local d="$OUT/step$step/census"; mkdir -p "$d"
     for f in "$BENCH"/*.icn "$WD/is00_kw.icn"; do
-        ( cd "$d" && timeout -k 2 120 "$SC/scrip" --compile -o "$d/x.s" "$f" < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED"; return; }
+        ( cd "$d" && timeout -k 2 120 "$SC/scrip" --compile --out="$d/x.s" "$f" < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED"; return; }
         t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($pat)\b" "$d/x.s")"; c=$((c + t))
     done
     echo "$c"
@@ -101,7 +101,7 @@ for tok in $probe; do
         census) fl="${val%%:*}"; lim="${val##*:}"; [ "$fl" = ALL ] && fl="$ALLF" || fl="${fl//,/ }"; c="$(census "$fl")"
                 [ "$c" = REFUSED ] && refuse "a benchmark did not compile for the census"; readings="$readings census[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         witcensus) fl="${val%%:*}"; lim="${val##*:}"; fl="${fl//,/ }"; c=0
-                for w in $wits; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile -o "$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
+                for w in $wits; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile --out="$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
                     t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($(printf '%s' "$fl" | sed 's/ /|/g'))\b" "$OUT/step$step/w.s")"; c=$((c + t)); done
                 readings="$readings witcensus[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src/runtime" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;

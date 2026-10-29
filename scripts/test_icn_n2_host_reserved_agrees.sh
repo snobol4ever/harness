@@ -43,7 +43,7 @@ printf '%s\n' 'procedure inner()' '   suspend 1 | 2;' 'end' 'procedure outer()' 
 printf '%s\n' 'procedure leaf()' '   suspend 1 | 2;' 'end' 'procedure mid()' '   suspend leaf();' 'end' 'procedure main()' '   every write(leaf());' '   every write(mid());' 'end' > "$tmp/mixed.icn"
 : > "$tmp/all.log"
 for w in single nested mixed; do
-    SCRIP_ICN_GENFRAME2=1 SEAT01_N2_STEP3_DBG=1 timeout -k 5 30s "$scrip" --compile -o "$tmp/$w.s" "$tmp/$w.icn" </dev/null 2>>"$tmp/all.log" >/dev/null
+    SCRIP_ICN_GENFRAME2=1 SEAT01_N2_STEP3_DBG=1 timeout -k 5 30s "$scrip" --compile --out="$tmp/$w.s" "$tmp/$w.icn" </dev/null 2>>"$tmp/all.log" >/dev/null
 done
 grep -a 'N2-STEP3-DBG' "$tmp/all.log" > "$tmp/dbg.txt" 2>/dev/null
 sites=$(wc -l < "$tmp/dbg.txt")

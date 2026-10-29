@@ -62,7 +62,7 @@ grep -q '^B2 NAME V=z$' "$T/b.ref" && grep -q '^C2 NAME$' "$T/c.ref" && grep -q 
 RC=0
 for M in m3 m4; do
   for W in a b c; do
-    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile -o $W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
+    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile --out=$W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
     ( cd "$T" && if [ "$M" = m3 ]; then timeout -k 5 30 "$SCRIP" $W.sno </dev/null; else LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 30 ./$W.bin </dev/null; fi ) >"$T/$M.$W.out" 2>"$T/$M.$W.err"; echo $? > "$T/$M.$W.rc"
   done
   [ -n "${FAIL_ONCE:-}" ] && sed -i 's/^B2 NAME/B2 NAMEX/' "$T/$M.b.out"

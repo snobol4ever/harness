@@ -80,7 +80,7 @@ for src in SourceLines001 hide debug_list p_title p_print p_chain p_page50 p_pag
     timeout -k 5 60 "$SBL" -bf $src.sno < /dev/null 2>/dev/null | cut_at_end > $src.o
     [ "$(grep -c 'spitbol version' $src.o)" -ge 1 ] || { echo "REFUSED(2): sbl printed no listing for $src"; exit 2; }
     timeout -k 5 60 "$ROOT/scrip" --stlimit $src.sno < /dev/null 2>/dev/null | cut_at_end > $src.m3
-    timeout -k 5 60 "$ROOT/scrip" --compile -o $src.s $src.sno < /dev/null > /dev/null 2>&1 \
+    timeout -k 5 60 "$ROOT/scrip" --compile --out=$src.s $src.sno < /dev/null > /dev/null 2>&1 \
         && gcc -m64 -no-pie $src.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o $src.bin > /dev/null 2>&1 \
         && timeout -k 5 60 ./$src.bin --stlimit < /dev/null 2>/dev/null | cut_at_end > $src.m4 || : > $src.m4
     for m in m3 m4; do

@@ -59,7 +59,7 @@ norm() { sed -E 's/_G[0-9]+|_[0-9]+/_V/g'; }
 red=0
 out3="$(cd "$TMPD" && timeout 60 "$SCRIP" w.pl < /dev/null 2>&1 | norm)"
 if [ "$out3" != "$WANT" ]; then echo "⛔ RED [$GATE_NAME]: m3 printed:"; echo "$out3" | head -3; red=1; else echo "[$GATE_NAME] m3 answers as swipl"; fi
-if ! (cd "$TMPD" && timeout 60 "$SCRIP" --compile -o w.s w.pl < /dev/null > /dev/null 2> w.cerr); then refuse "mode-4 compile failed: $(head -c 200 "$TMPD/w.cerr")"; fi
+if ! (cd "$TMPD" && timeout 60 "$SCRIP" --compile --out=w.s w.pl < /dev/null > /dev/null 2> w.cerr); then refuse "mode-4 compile failed: $(head -c 200 "$TMPD/w.cerr")"; fi
 gcc "$TMPD/w.s" -o "$TMPD/w.bin" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> "$TMPD/w.lerr" || refuse "mode-4 link failed: $(head -c 200 "$TMPD/w.lerr")"
 out4="$(cd "$TMPD" && timeout 60 ./w.bin < /dev/null 2>&1 | norm)"
 if [ "$out4" != "$WANT" ]; then echo "⛔ RED [$GATE_NAME]: m4 printed:"; echo "$out4" | head -3; red=1; else echo "[$GATE_NAME] m4 answers as swipl"; fi

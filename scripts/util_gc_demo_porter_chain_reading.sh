@@ -15,7 +15,7 @@ SCRIP="$ROOT/scrip"
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 python3 "$ROOT/../harness/scripts/corpus_suite_harness.py" extract "$C/tests/snobol4/ALL.sno" "$C/tests/snobol4/ALL.ref" demo_porter "$W/w.sno" --out-ref "$W/w.ref" --out-in "$W/w.in" > /dev/null 2>&1 || { echo "REFUSE(2): demo_porter is not extractable from $C"; exit 2; }
 head -300 "$W/w.in" > "$W/w.small.in"
-( cd "$W" && "$SCRIP" --compile -o w.s w.sno > /dev/null 2>&1 < /dev/null && gcc w.s -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o w4 2> /dev/null ) || { echo "REFUSE(2): mode 4 could not build demo_porter"; exit 2; }
+( cd "$W" && "$SCRIP" --compile --out=w.s w.sno > /dev/null 2>&1 < /dev/null && gcc w.s -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o w4 2> /dev/null ) || { echo "REFUSE(2): mode 4 could not build demo_porter"; exit 2; }
 num() { printf '%s\n' "$1" | sed -n "s/.* $2=\([0-9]*\).*/\1/p"; }
 bad=0
 for run in natural stress; do

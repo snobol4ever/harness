@@ -35,7 +35,7 @@ for w in chain2 chain3 assign_rhs assign_lhs plain subscript; do
     if [ "$r" != 0 ] || [ "$o" != "$want" ]; then
         echo "  ⛔ RED m3 $w: rc=$r out=[$(printf '%s' "$o" | tr '\n' '|' | cut -c1-90)] -- want rc=0 out=[$want] (iconx)"; bad=1
     fi
-    if timeout -k 5 60 ./scrip --compile -o "$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
+    if timeout -k 5 60 ./scrip --compile --out="$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
        && gcc -m64 -no-pie "$d/$w.s" -o "$d/$w.m4" -L./out -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then
         o=$(timeout -k 5 10 "$d/$w.m4" </dev/null 2>&1); r=$?; graded=$((graded+1))
         if [ "$r" != 0 ] || [ "$o" != "$want" ]; then

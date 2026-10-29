@@ -22,7 +22,7 @@ W="$S4E/corpus/packages/pascal/pat/iso7185prt1841.pas"; [ -f "$W" ] || { echo "�
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
 e3=$( cd "$T" && timeout -k 5 10s "$SCRIP" "$W" </dev/null 2>&1 >/dev/null ); r3=$?
-e4=$( cd "$T" && timeout -k 5 10s "$SCRIP" --compile -o "$T/w.s" "$W" </dev/null 2>&1 >/dev/null ); r4=$?
+e4=$( cd "$T" && timeout -k 5 10s "$SCRIP" --compile --out="$T/w.s" "$W" </dev/null 2>&1 >/dev/null ); r4=$?
 if [ "$r3" -ne 0 ] && [ "$r3" -lt 124 ] && [ "$r4" -ne 0 ] && [ "$r4" -lt 124 ] && printf '%s' "$e3" | grep -q 'ISO 7185 6\.1\.7' && printf '%s' "$e4" | grep -q 'ISO 7185 6\.1\.7'; then
      echo "  witness iso7185prt1841: refused naming ISO 7185 6.1.7 in both modes"
 else echo "  ⛔ witness iso7185prt1841 ACCEPTED or refused without 6.1.7: m3 rc=$r3, m4 rc=$r4"; echo "      m3 err: $(printf '%s' "$e3" | head -1 | cut -c1-140)"; RC=1; fi
@@ -39,7 +39,7 @@ PAS
 [ -s "$T/ok.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced no control-arm output"; exit 2; }
 if [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/ok.ref"; fi
 o3=$( cd "$T" && timeout -k 5 20s "$SCRIP" --run ok.pas </dev/null 2>&1 ); c3=$?
-( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/ok.s" ok.pas </dev/null >/dev/null 2>&1 ) && \
+( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/ok.s" ok.pas </dev/null >/dev/null 2>&1 ) && \
 ( cd "$T" && cc -m64 -no-pie ok.s -o okm4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ control arm: m4 would not compile or link"; RC=1; }
 o4=$( cd "$T" && timeout -k 5 20s ./okm4 </dev/null 2>&1 ); c4=$?
 if [ "$c3" = 0 ] && [ "$c4" = 0 ] && [ "$o3" = "$(cat "$T/ok.ref")" ] && [ "$o4" = "$(cat "$T/ok.ref")" ]; then echo "  control arm: doubled apostrophes run byte-identical to fpc -Miso in both modes"

@@ -45,7 +45,7 @@ verdict "the stored ref is what live XSB 5.0.0 writes" "$TMPD/temp" "$REF"
 # (2) m3 and (3) m4
 case "$MODES" in *m3*) ( cd "$TMPD" && timeout -k 5 120 "$SCRIP" run.pl </dev/null > "$TMPD/m3.out" 2> "$TMPD/m3.err" ); verdict "SCRIP m3 writes the witness as XSB does" "$TMPD/m3.out" "$REF" ;; esac
 case "$MODES" in *m4*)
-    if ( cd "$TMPD" && timeout -k 5 240 "$SCRIP" --compile -o run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$TMPD/run.s" -o "$TMPD/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$TMPD/m4.lerr"; then
+    if ( cd "$TMPD" && timeout -k 5 240 "$SCRIP" --compile --out=run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$TMPD/run.s" -o "$TMPD/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$TMPD/m4.lerr"; then
         ( cd "$TMPD" && timeout -k 5 120 "$TMPD/run.bin" </dev/null > "$TMPD/m4.out" 2> "$TMPD/m4.err" ); verdict "SCRIP m4 writes the witness as XSB does" "$TMPD/m4.out" "$REF"
     else total=$((total+1)); red=$((red+1)); echo "  RED SCRIP m4 did not compile or link: $(head -c 200 "$TMPD/m4.cerr" "$TMPD/m4.lerr" 2>/dev/null)"; fi ;;
 esac

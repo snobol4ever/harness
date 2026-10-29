@@ -140,7 +140,7 @@ tmp = tempfile.mkdtemp()
 
 def build_m4(prog, tag):
     s = os.path.join(tmp, tag + ".s"); b = os.path.join(tmp, tag + ".bin")
-    c = subprocess.run([scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=60,
+    c = subprocess.run([scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=60,
                        stdin=subprocess.DEVNULL, cwd=tmp)
     if c.returncode != 0: return None
     g = subprocess.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(out_dir, "out"), "-lscrip_rt",

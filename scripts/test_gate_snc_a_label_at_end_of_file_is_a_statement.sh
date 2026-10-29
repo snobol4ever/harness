@@ -54,7 +54,7 @@ twin3="$(run3 twin.sc)"; twin3rc=$?
 if [ "$twin3rc" != 0 ]; then echo "⛔ GATE REFUSE(2) [$G]: the CONTROL spelling 'fin: ;' does not run (rc=$twin3rc) -- with no control there is nothing to diff against"; exit 2; fi
 if [ "$bare3" = "$twin3" ] && [ "$bare3rc" = "$twin3rc" ]; then echo "  m3 PASS (trailing label is byte-identical to the empty-statement twin, rc=$bare3rc: $(printf '%s' "$twin3" | tr '\n' '|'))"
 else echo "  m3 FAIL (trailing label rc=$bare3rc out=$(printf '%s' "$bare3" | tr '\n' '|') vs twin rc=$twin3rc out=$(printf '%s' "$twin3" | tr '\n' '|'))"; RC=1; fi
-m4() { ( cd "$T" && "$SCRIP" --compile "$1.sc" -o "$1.s" </dev/null >/dev/null 2>&1 ) && gcc -m64 -no-pie -rdynamic "$T/$1.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$1.bin" 2>"$T/$1.ld"; }
+m4() { ( cd "$T" && "$SCRIP" --compile "$1.sc" --out="$1.s" </dev/null >/dev/null 2>&1 ) && gcc -m64 -no-pie -rdynamic "$T/$1.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$1.bin" 2>"$T/$1.ld"; }
 if ! m4 twin; then echo "⛔ GATE REFUSE(2) [$G]: the CONTROL twin would not compile or link in mode 4, so arm 2 has no baseline and measured nothing (see $T/twin.ld)"; exit 2; fi
 if ! m4 bare; then echo "  m4 FAIL (the control twin compiles in mode 4 and the trailing-label form does not -- that asymmetry IS the defect, not an inability to measure: $(head -1 "$T/bare.ld" 2>/dev/null))"; RC=1
 else

@@ -40,7 +40,7 @@ prog w8 "" "'ab' ? ((ARBNO('a' FENCE) 'z' | 'a') | 'ab')"
 for n in $names; do
     w="$(cd "$W" && timeout -k 5 20 "$SBL" $(sbl_lang_flags) "$n.sno" </dev/null 2>/dev/null)"
     case "$w" in MATCH|FAIL) printf '%s' "$w" > "$W/$n.want";; *) echo "⛔ REFUSE(rc=2) [$G]: the oracle printed '$w' for $n, not MATCH or FAIL -- the arms cannot grade"; exit 2;; esac
-    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
+    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
         && gcc -no-pie "$W/$n.s" -L"$SD/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SD/out" -o "$W/$n.bin" 2>/dev/null \
         || { echo "⛔ REFUSE(rc=2) [$G]: $n did not compile and link in mode 4"; exit 2; }
 done
@@ -58,7 +58,7 @@ for n in $names; do
         v="$v3"; [ "$m" = m4 ] && v="$v4"
         if grade "$v" "$want"; then echo "  PASS arm1/2 $n $m = sbl ($want)"; else echo "  ⛔ arm1/2 $n $m RED: got '$v', sbl '$want'"; fail=1; fi
     done
-    SCRIP_ARBNO_DIAG=1 "$SCRIP" --compile -o "$W/$n.d.s" "$W/$n.sno" </dev/null 2>&1 | grep -q 'ARBNO-ARM\] ARBNO-FRAME' && reached=$((reached + 1))
+    SCRIP_ARBNO_DIAG=1 "$SCRIP" --compile --out="$W/$n.d.s" "$W/$n.sno" </dev/null 2>&1 | grep -q 'ARBNO-ARM\] ARBNO-FRAME' && reached=$((reached + 1))
 done
 [ "$reached" -ge 6 ] || { echo "⛔ REFUSE(rc=2) [$G]: arm 3 -- only $reached of 8 witnesses reach the ARBNO frame arm; the set no longer tests the frame"; exit 2; }
 echo "  PASS arm3 $reached of 8 witnesses reach the ARBNO frame arm"

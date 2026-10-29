@@ -137,7 +137,7 @@ for L in $LANGS; do
     cat $CHAIN "$B/parser_$L.sc" > "$T/$L.sc"
     "$W/scrip" --transpile "$T/$L.sc" > "$T/$L.sno" 2> "$T/$L.tr.err" && [ -s "$T/$L.sno" ] || { echo "$L ⛔ REFUSE(2): scrip --transpile of the chain failed"; RC=2; continue; }
     src="$T/$L.sc"; via=""; case "$VIA" in *" $L "*) src="$T/$L.sno"; via=" | via transpile" ;; esac
-    "$W/scrip" --compile "$src" -o "$T/$L.s" < /dev/null > "$T/$L.cc.err" 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$W/out" -L"$W/out" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>> "$T/$L.cc.err" \
+    "$W/scrip" --compile "$src" --out="$T/$L.s" < /dev/null > "$T/$L.cc.err" 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$W/out" -L"$W/out" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>> "$T/$L.cc.err" \
         || { echo "$L ⛔ REFUSE(2): the ${via:+transpiled }chain did not compile or link to a mode-4 binary ($(head -1 "$T/$L.cc.err" | cut -c1-100))"; RC=2; continue; }
     sbl_clean_refuse_if_load "$T/$L.sno" > /dev/null || { echo "$L ⛔ REFUSE(2): the transpiled chain calls LOAD(), unverified on the clean oracle"; RC=2; continue; }
     find "$CORPUS" -type f -name "*.$ext" -not -name 'ALL.*' -not -path '*/.git/*' -not -path "$CORPUS/library/*" | sort > "$T/$L.pop"

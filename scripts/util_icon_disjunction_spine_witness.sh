@@ -33,10 +33,10 @@ for w in icn_dj_spine_alt icn_dj_spine_nested; do
     need=0; [ "$w" = icn_dj_spine_alt ] && need=1
     src="$HERE/fixtures/$w.icn"; ref="$HERE/fixtures/$w.ref"
     [ -f "$src" ] && [ -f "$ref" ] || { echo "REFUSE(2): no fixture $w"; exit 2; }
-    homes="$("$SC/scrip" --dump-homes --compile -o "$T/$w.homes.s" "$src" < /dev/null 2>&1 | grep '^\[HOMES\]' | grep -c 'kind=IR_DISJUNCTION .*xfwhy=retaining-disjunction')"
+    homes="$("$SC/scrip" --dump-homes --compile --out="$T/$w.homes.s" "$src" < /dev/null 2>&1 | grep '^\[HOMES\]' | grep -c 'kind=IR_DISJUNCTION .*xfwhy=retaining-disjunction')"
     m3=FAIL; m4=FAIL
     timeout 60 "$SC/scrip" "$src" < /dev/null > "$T/$w.m3" 2>&1 && cmp -s "$T/$w.m3" "$ref" && m3=PASS
-    if "$SC/scrip" --compile -o "$T/$w.s" "$src" < /dev/null > /dev/null 2>&1 \
+    if "$SC/scrip" --compile --out="$T/$w.s" "$src" < /dev/null > /dev/null 2>&1 \
         && gcc "$T/$w.s" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$T/$w.bin" > /dev/null 2>&1 \
         && timeout 60 "$T/$w.bin" < /dev/null > "$T/$w.m4" 2>&1 && cmp -s "$T/$w.m4" "$ref"; then m4=PASS; fi
     echo "ICON_DJ_SPINE_WITNESS witness=$w m3=$m3 m4=$m4 retaining_disjunction_homes=$homes"

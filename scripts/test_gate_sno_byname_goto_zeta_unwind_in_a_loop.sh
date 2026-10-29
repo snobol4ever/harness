@@ -66,7 +66,7 @@ for a in b1 b2 c1 c2; do
         if [ "$m" = m3 ]; then
             got="$(timeout -k 5 60s "$SCRIP" "$T/$a.sno" < /dev/null 2>&1 | tr '\n' '/')"
         else
-            "$SCRIP" --compile -o "$T/$a.s" "$T/$a.sno" < /dev/null >/dev/null 2>&1 || { echo "  RED  $a $m -- compile failed"; bad=$((bad+1)); graded=$((graded+1)); continue; }
+            "$SCRIP" --compile --out="$T/$a.s" "$T/$a.sno" < /dev/null >/dev/null 2>&1 || { echo "  RED  $a $m -- compile failed"; bad=$((bad+1)); graded=$((graded+1)); continue; }
             gcc -no-pie "$T/$a.s" -o "$T/$a.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  $a $m -- link failed"; bad=$((bad+1)); graded=$((graded+1)); continue; }
             got="$(timeout -k 5 60s "$T/$a.x" < /dev/null 2>&1 | tr '\n' '/')"
         fi

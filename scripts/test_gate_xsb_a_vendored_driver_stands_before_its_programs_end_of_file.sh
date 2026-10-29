@@ -50,7 +50,7 @@ if cmp -s "$P/e2.pl" "$T/e2.before" && head -1 "$P/e1.pl" | cmp -s - "$T/e1.head
 before="$(cat "$P/e1.pl" "$P/ALL.pl")"; out="$(python3 "$TOOL" --check "$P" 2>&1)"; rc=$?; python3 "$TOOL" --apply "$P" > /dev/null 2>&1
 if [ "$rc" = 0 ] && [ "$before" = "$(cat "$P/e1.pl" "$P/ALL.pl")" ]; then ok "(4) --check exits 0 after the move and a second --apply changes nothing"; else bad "(4) --check rc=$rc after the move, or --apply is not idempotent"; fi
 m3=$( cd "$T" && timeout -k 5 20 "$SCRIP" "$P/e1.pl" < /dev/null 2>&1 )
-if ( cd "$T" && "$SCRIP" --compile -o e1.s "$P/e1.pl" < /dev/null > /dev/null 2>&1 && gcc -o e1.bin e1.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> /dev/null ); then m4=$( cd "$T" && timeout -k 5 20 ./e1.bin < /dev/null 2>&1 ); else m4="(did not compile or link)"; fi
+if ( cd "$T" && "$SCRIP" --compile --out=e1.s "$P/e1.pl" < /dev/null > /dev/null 2>&1 && gcc -o e1.bin e1.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> /dev/null ); then m4=$( cd "$T" && timeout -k 5 20 ./e1.bin < /dev/null 2>&1 ); else m4="(did not compile or link)"; fi
 if [ "$m3" = driver_ran ] && [ "$m4" = driver_ran ]; then ok "(5) the cure: SCRIP prints driver_ran for e1 in mode 3 and in mode 4"; else bad "(5) mode 3 printed '$m3', mode 4 printed '$m4'"; fi
 out="$(python3 "$TOOL" --check "$REAL" 2>&1)"; rc=$?
 if [ "$rc" = 0 ]; then ok "(6) the real package: no vendored program or ALL.pl entry carries its driver after an end_of_file. clause"; else bad "(6) the real package, --check rc=$rc: $(echo "$out" | tail -3)"; fi

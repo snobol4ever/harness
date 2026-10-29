@@ -38,9 +38,9 @@ mkroot(){ # mkroot <name> [prime=0|1] -> $R, a fixture root whose driver is a re
   printf 'int main(void){return 0;}\n' > "$R/src/a.c"; printf 'all:\n' > "$R/Makefile"; : > "$R/out/libscrip_rt.so"
   cat > "$R/scrip" <<'EOS'
 #!/bin/sh
-# stub compiler: --compile -o OUT FILE -- a deterministic emission after a pause, so every concurrent first observation is inside the check-then-append window
+# stub compiler: --compile --out=OUT FILE -- a deterministic emission after a pause, so every concurrent first observation is inside the check-then-append window
 sleep 0.3
-out=""; while [ $# -gt 0 ]; do case "$1" in -o) out="$2"; shift;; esac; shift; done
+out=""; while [ $# -gt 0 ]; do case "$1" in --out=*) out="${1#--out=}";; esac; shift; done
 [ -n "$out" ] && echo "stub emission" > "$out"
 exit 0
 EOS

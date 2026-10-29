@@ -80,7 +80,7 @@ for k in "${KERNELS[@]}"; do
   DECL_SW=(); dw=$(declared_switches_beside "$B/$k.pas") || refuse "$k: a .heap or .stack sidecar the reader refuses (it said why above)"; [ -n "$dw" ] && read -r -a DECL_SW <<<"$dw"
   knob=0; if [ "$in" != /dev/null ] && [ "$(grep -c . "$in")" = 1 ] && grep -qE '^[[:space:]]*[0-9]+[[:space:]]*$' "$in"; then knob=1; fi
   tc="$(progress_clock)"
-  m4ok=1; ( cd "$TMP" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile -o "$TMP/$k.s" "$B/$k.pas" </dev/null >"$TMP/$k.cc.err" 2>&1 ) \
+  m4ok=1; ( cd "$TMP" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile --out="$TMP/$k.s" "$B/$k.pas" </dev/null >"$TMP/$k.cc.err" 2>&1 ) \
     && ( cd "$TMP" && cc -m64 -no-pie "$k.s" -o "$k.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >>"$TMP/$k.cc.err" 2>&1 ) || m4ok=0
   cs="$(progress_secs_since "$tc")"
   for m in m3 m4; do

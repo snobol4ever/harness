@@ -46,7 +46,7 @@ printf '3628800\n' > "$D/r.want"
 red=0; n=0; staged=0
 for p in p q r; do
     ( cd "$D" && timeout -k 5 30 "$B/scrip" "$p.raku" < /dev/null > "$p.m3" 2>/dev/null )
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o "$p.s" "$p.raku" < /dev/null > /dev/null 2>&1 && gcc -no-pie "$p.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$p.bin" 2>/dev/null ) || refuse "$p.raku: mode 4 did not build"
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out="$p.s" "$p.raku" < /dev/null > /dev/null 2>&1 && gcc -no-pie "$p.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$p.bin" 2>/dev/null ) || refuse "$p.raku: mode 4 did not build"
     ( cd "$D" && timeout -k 5 30 "./$p.bin" < /dev/null > "$p.m4" 2>/dev/null )
     w=$(awk '/^FN__[^ :]*:/ { on = 1; next } /_αblk:/ { on = 0 } on && $1 == "mov" && $2 ~ /^r(8|9|10|11)[dwb]?,$/ { c++ } END { print c + 0 }' "$D/$p.s")
     s=$(grep -c '^FN__[^ :]*:' "$D/$p.s")

@@ -35,7 +35,7 @@ printf 'procedure main()\n   every 1 to 3000000 do image("ab\\tcd");\n   write("
 rss_of() { grep -o 'RSS=[0-9]*' "$1" | tail -1 | cut -d= -f2; }
 RC=0; examined=0
 ( cd "$T" && /usr/bin/time -f 'RSS=%M' timeout -k 5 120 "$SCRIP" churn.icn ) >"$T/m3.out" 2>"$T/m3.err"; r3=$(rss_of "$T/m3.err")
-( cd "$T" && timeout -k 5 30 "$SCRIP" --compile -o churn.s churn.icn </dev/null && gcc churn.s -o churn.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
+( cd "$T" && timeout -k 5 30 "$SCRIP" --compile --out=churn.s churn.icn </dev/null && gcc churn.s -o churn.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
 ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" /usr/bin/time -f 'RSS=%M' timeout -k 5 120 ./churn.bin ) >"$T/m4.out" 2>"$T/m4.err"; r4=$(rss_of "$T/m4.err")
 ( cd "$T" && SCRIP_GC_LINE_MB=0 /usr/bin/time -f 'RSS=%M' timeout -k 5 120 "$SCRIP" churn.icn ) >"$T/c.out" 2>"$T/c.err"; rc_=$(rss_of "$T/c.err")
 [ -n "${FAIL_ONCE:-}" ] && r3="$rc_"

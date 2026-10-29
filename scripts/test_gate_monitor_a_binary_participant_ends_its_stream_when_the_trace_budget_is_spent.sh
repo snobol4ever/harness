@@ -22,7 +22,7 @@ command -v gcc > /dev/null 2>&1 || { echo "⛔ REFUSED(2): no gcc -- the mode-4 
 T="$(mktemp -d)" || { echo "⛔ REFUSED(2): mktemp failed"; exit 2; }; trap 'rm -rf "$T"' EXIT
 BUDGET=10
 printf '        I = 0\nLOOP    I = I + 1\n        X = I * 2\n        LE(I, 20)   :S(LOOP)\n        OUTPUT = "done " I\nEND\n' > "$T/loop.sno"
-( cd "$T" && "$ROOT/scrip" --trace --compile --monitor -o loop4.s loop.sno < /dev/null > cc4.out 2>&1 && gcc loop4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o loop4.bin > ld4.out 2>&1 ) || { echo "⛔ REFUSED(2): the witness did not build in mode 4"; cat "$T/cc4.out" "$T/ld4.out" 2>/dev/null; exit 2; }
+( cd "$T" && "$ROOT/scrip" --trace --compile --monitor --out=loop4.s loop.sno < /dev/null > cc4.out 2>&1 && gcc loop4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o loop4.bin > ld4.out 2>&1 ) || { echo "⛔ REFUSED(2): the witness did not build in mode 4"; cat "$T/cc4.out" "$T/ld4.out" 2>/dev/null; exit 2; }
 red=0
 arm() {   # arm <label> <command...> : runs the participant against a fresh acking reader and grades the wire
   local label="$1"; shift; local d="$T/$label"; mkdir -p "$d"

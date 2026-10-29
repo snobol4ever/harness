@@ -37,7 +37,7 @@ for a in a0 a1 a2; do
     (cd "$d" && timeout -k 5 30 "$SCRIP" "$a.pl" </dev/null 2>/dev/null > "$d/$a.m3"); rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/$a.want" "$d/$a.m3"; then fails=$((fails + 1)); echo "  $a m3 rc=$rc differs:"; diff "$d/$a.want" "$d/$a.m3" | head -6; fi
     graded=$((graded + 1))
-    if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile -o "$a.s" "$a.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$a.bin" "$a.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
+    if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile --out="$a.s" "$a.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$a.bin" "$a.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
         (cd "$d" && timeout -k 5 30 "./$a.bin" </dev/null 2>/dev/null > "$d/$a.m4"); rc=$?
         if [ $rc -ne 0 ] || ! cmp -s "$d/$a.want" "$d/$a.m4"; then fails=$((fails + 1)); echo "  $a m4 rc=$rc differs:"; diff "$d/$a.want" "$d/$a.m4" | head -6; fi
     else fails=$((fails + 1)); echo "  $a m4 did not compile or link"; fi

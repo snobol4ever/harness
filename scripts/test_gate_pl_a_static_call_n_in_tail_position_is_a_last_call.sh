@@ -19,7 +19,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 command -v gcc >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: gcc absent"; exit 2; }
 command -v swipl >/dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: swipl absent"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/plcalln.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
-m4() { ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$1.s" "$W/$1.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1; }
+m4() { ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1; }
 body() { printf ':- initialization(main).\n%s\nmain :- count(%s), write(done), nl, halt.\n' "$1" "$2"; }
 P1='count(N) :- ( N =:= 0 -> true ; N1 is N-1, call(count, N1) ).'
 P2='count(N) :- ( N =:= 0 -> true ; N1 is N-1, call(count(N1)) ).'

@@ -53,7 +53,7 @@ for w in traced plain; do
     sw=(); [ "$w" = traced ] && sw=(--stlimit)
     ( cd "$T" && "$IC" -s -o "$w.ox" "$w.icn" >/dev/null 2>&1 && ./"$w.ox" > "$w.oracle.txt" 2>&1 ); [ -s "$T/$w.oracle.txt" ] || { echo "⛔ GATE REFUSE(2) [$G]: icont/iconx did not run $w"; exit 2; }
     ( cd "$T" && "$S" "${sw[@]}" "$w.icn" < /dev/null 2>&1 | python3 "$HERE/util_render_error_voice.py" icon > "$w.m3.txt" )
-    ( cd "$T" && "$S" --compile "${sw[@]}" -o "$w.s" "$w.icn" < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/$w.x" "$T/$w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+    ( cd "$T" && "$S" --compile "${sw[@]}" --out="$w.s" "$w.icn" < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/$w.x" "$T/$w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
         || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build $w"; exit 2; }
     ( cd "$T" && ./"$w.x" < /dev/null 2>&1 | python3 "$HERE/util_render_error_voice.py" icon > "$w.m4.txt" )
     grep -q 'lib1.icn' "$T/$w.oracle.txt" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle's $w run names no linked file -- the witness no longer measures this"; exit 2; }

@@ -33,7 +33,7 @@ D="$(mktemp -d)" || refuse "no scratch dir"
 trap 'rm -rf "$D"' EXIT
 RT="$B/out"; RC=0; n=0
 words() { grep -o 'ERROR [0-9]*\|error [0-9]*\|trapped [0-9]*\|at L1\|at L2\|fell\|in C\|compiled CODE\|before\|ran\|stno [0-9]*' | sed 's/^error /ERROR /' | awk '!seen[$0]++' | tr '\n' '|'; }
-m4run() { "$B/scrip" --compile -o "$D/$1.s" "$D/$1.sno" < /dev/null > "$D/$1.c" 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
+m4run() { "$B/scrip" --compile --out="$D/$1.s" "$D/$1.sno" < /dev/null > "$D/$1.c" 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
           && (cd "$D" && timeout -k 5 10 "./$1.bin" < /dev/null 2>&1) || cat "$D/$1.c"; }
 arm() {
     n=$((n + 1)); local w; w=$(cd "$D" && timeout -k 5 10 "$SBL" -bf "$1.sno" < /dev/null 2>&1 | words)

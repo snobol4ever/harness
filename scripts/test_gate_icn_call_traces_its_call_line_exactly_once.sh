@@ -50,7 +50,7 @@ for k in 1 2 3 4 5 6 7 8; do
   ( cd "$T" && timeout -k 5 30 "$SCRIP" "a$k.icn" < /dev/null > "a$k.m3" 2>&1 )
   graded=$((graded+1))
   if cmp -s "$T/a$k.ora" "$T/a$k.m3"; then echo "  PASS m3 arity $k"; else fail=$((fail+1)); echo "  FAIL m3 arity $k: $(diff "$T/a$k.ora" "$T/a$k.m3" | grep -m1 '^[<>]' | cut -c1-80)"; fi
-  ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o "a$k.s" "a$k.icn" </dev/null >/dev/null 2>&1 \
+  ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out="a$k.s" "a$k.icn" </dev/null >/dev/null 2>&1 \
       && gcc -no-pie "a$k.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -o "a$k.b" >/dev/null 2>&1 \
       && timeout -k 5 30 "./a$k.b" < /dev/null > "a$k.m4" 2>&1 ) || true
   graded=$((graded+1))

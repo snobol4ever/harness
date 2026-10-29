@@ -27,7 +27,7 @@ pass=0; fail=0
 chk() { if [ "$1" = 0 ]; then pass=$((pass+1)); else fail=$((fail+1)); echo "  FAIL: $2"; fi; }
 gen() { n="$1"; out="$2"; { printf '\t&USER_DECLARED_CONSTANTS = 1\n\t&Num = SPAN("0123456789")\n'; i=1; while [ "$i" -le "$n" ]; do printf '\tT%d = "x123y" ; T%d ?  &Num  :F(NO)\n' "$i" "$i"; i=$((i+1)); done; printf '\tOUTPUT = "matched"\nNO\tOUTPUT = "done"\nEND\n'; } > "$out"; }
 gen 1  "$T/n1.sno"; gen 25 "$T/n25.sno"
-for w in n1 n25; do "$SCRIP" --compile "$T/$w.sno" -o "$T/$w.s" < /dev/null > /dev/null 2>&1; chk $? "mode-4 compile $w"; done
+for w in n1 n25; do "$SCRIP" --compile "$T/$w.sno" --out="$T/$w.s" < /dev/null > /dev/null 2>&1; chk $? "mode-4 compile $w"; done
 l1=$(wc -l < "$T/n1.s"); l25=$(wc -l < "$T/n25.s"); marg=$(( (l25 - l1) / 24 ))
 echo "CONST-GRAPH: 1 site=${l1} lines  25 sites=${l25} lines  MARGINAL=${marg} lines/site  (watermark ${CG_WATERMARK}, CN-13 target < 20)"
 [ "$marg" -le "$CG_WATERMARK" ]; chk $? "marginal cost ${marg} exceeds watermark ${CG_WATERMARK} -- a use site got MORE expensive"

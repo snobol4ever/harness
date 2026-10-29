@@ -26,7 +26,7 @@ printf 'my @list = gather { take $_ for 1..10 };\nsay @list.first({ $_ > 3 });\n
 printf 'my @list = gather { take 1; take 2; take 5 };\nsay @list.first({ $_ > 1 });\n' > "$W/g.raku"
 printf 'my @list = gather { take $_ for 1..10 };\nsay @list.map({ $_ * 2 }).elems;\n' > "$W/m.raku"
 printf ':- initialization(main).\np(X, Y) :- between(1, 4, X), Y = f(X), X >= 3.\nq(L) :- findall(X-Y, p(X, Y), L).\nmain :- q(L), write(L), nl, ( p(A, B), A > 3 -> write(A-B) ; write(none) ), nl, halt.\n' > "$W/c.pl"
-build() { ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$1.s" "$W/$1.$2" < /dev/null > "$W/$1.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $1.$2 does not compile ($(head -c 120 "$W/$1.cerr"))"; exit 2; }
+build() { ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.$2" < /dev/null > "$W/$1.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $1.$2 does not compile ($(head -c 120 "$W/$1.cerr"))"; exit 2; }
           gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: $1 does not link"; exit 2; }
           ( cd "$W" && timeout -k 5 60 "$W/$1.bin" < /dev/null > "$W/$1.m4" 2>&1 ); echo $? > "$W/$1.rc"; }
 build w raku; build g raku; build m raku; build c pl

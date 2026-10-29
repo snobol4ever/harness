@@ -67,7 +67,7 @@ done
 printf "        X = 'a' 'b'\n        Y = (1 , 2)\n        Z = 9223372036854775807\n        OUTPUT = X ' ' Y ' ' Z\nEND\n" > "$D/good.sno"
 run_scrip() {  # $1 name $2 mode $3 stdin -> stdout; rc 3 = refused to compile
     if [ "$2" = m3 ]; then (cd "$D" && timeout -k 5 30 "$B/scrip" "$1.sno" < "$3" 2>/dev/null)
-    else "$B/scrip" --compile -o "$D/$1.s" "$D/$1.sno" </dev/null >/dev/null 2>&1 || return 3
+    else "$B/scrip" --compile --out="$D/$1.s" "$D/$1.sno" </dev/null >/dev/null 2>&1 || return 3
          gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null || refuse "could not link the m4 arm of $1"
          (cd "$D" && timeout -k 5 30 "./$1.bin" < "$3" 2>/dev/null); fi
 }

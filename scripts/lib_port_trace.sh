@@ -165,7 +165,7 @@ port_trace_main() {
     n=$((n+1)); srcbn="w$PORTTRACE_EXT"; src="$W/$srcbn"; ref="$W/$o.ref"
     rm -f "$W/$srcbn" "$W/${srcbn%.*}.in"
     rungs_extract_origin "$o" "$src" "$ref" >/dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot extract $o from the rungs suite"; gate_stamp; exit 2; }
-    (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0" "$srcbn" </dev/null >/dev/null 2>"$W/$o.cc.err"); crc=$?; (cd "$W" && env "$PORT_TRACE_ENV=0" timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0b" "$srcbn" </dev/null >/dev/null 2>&1)
+    (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0" "$srcbn" </dev/null >/dev/null 2>"$W/$o.cc.err"); crc=$?; (cd "$W" && env "$PORT_TRACE_ENV=0" timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0b" "$srcbn" </dev/null >/dev/null 2>&1)
     # ⛔⭐ A WITNESS THAT NEVER COMPILED HAS NOTHING TO TRACE, AND THAT IS NOT A TRACER THAT IS NOT FIRING (row
     # port-trace-zero-lines-check-cannot-tell-a-compile-time-refusal-from-a-tracer-that-is-not-firing; seat09's
     # find, hq_C's ruling, cfo 2026-09-07). The zero-trace-lines check below used to fold THREE causes into one
@@ -181,7 +181,7 @@ port_trace_main() {
       porttrace_release "$o"
       continue
     fi
-    (cd "$W" && env "$PORT_TRACE_ENV=1" timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s1" "$srcbn" </dev/null >/dev/null 2>&1)
+    (cd "$W" && env "$PORT_TRACE_ENV=1" timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s1" "$srcbn" </dev/null >/dev/null 2>&1)
     ks=OK; { cmp -s "$W/$o.s0" "$W/$o.s0b" && [ -s "$W/$o.s0" ] && ! cmp -s "$W/$o.s0" "$W/$o.s1"; } || { ks=FAIL; bad=$((bad+1)); }
     # the m3 arms are the ones that did NOT cd into $W, so they are where the absolute path entered the trace
     # each run at the heap and stack the entry declares: extract writes them beside the witness as w.heap / w.stack, keyed by the

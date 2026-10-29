@@ -71,7 +71,7 @@ for p in "${PROGS[@]}"; do
   ok=1
   ( cd "$T" && timeout -k 5 30 "$SCRIP" "$p.icn" -- "${ARGS[@]}" <"$stdin_src" >"$T/$p.m3" 2>"$T/$p.m3.err" ); rc3=$?
   cmp -s "$T/$p.ref" "$T/$p.m3" || { RED+=("$p SCRIP m3 (rc=$rc3): $(cmp "$T/$p.ref" "$T/$p.m3" 2>&1 | head -1)"); ok=0; }
-  if ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o "$p.s" "$p.icn" </dev/null >/dev/null 2>"$T/$p.m4c.err" && gcc -no-pie "$p.s" -o "$p.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >>"$T/$p.m4c.err" 2>&1 ); then
+  if ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out="$p.s" "$p.icn" </dev/null >/dev/null 2>"$T/$p.m4c.err" && gcc -no-pie "$p.s" -o "$p.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >>"$T/$p.m4c.err" 2>&1 ); then
     ( cd "$T" && timeout -k 5 30 "./$p.bin" "${ARGS[@]}" <"$stdin_src" >"$T/$p.m4" 2>"$T/$p.m4.err" ); rc4=$?
     cmp -s "$T/$p.ref" "$T/$p.m4" || { RED+=("$p SCRIP m4 (rc=$rc4): $(cmp "$T/$p.ref" "$T/$p.m4" 2>&1 | head -1)"); ok=0; }
   else RED+=("$p SCRIP m4: would not compile or link: $(head -1 "$T/$p.m4c.err")"); ok=0; fi

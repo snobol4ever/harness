@@ -66,7 +66,7 @@ for w in stdout control file name; do oracle "$w"; done
 fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
 m3() { ( cd "$T" && rm -f out.txt && SCRIP_SNO_STMTKW=1 timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>/dev/null; rc=$?; [ ! -f out.txt ] || { echo '--file--'; cat out.txt; } >> "$1.m3"; echo $rc ); }
-m4() { ( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile -o "$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 ) || { echo cc; return; }
+m4() { ( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile --out="$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 ) || { echo cc; return; }
        gcc "$T/$1.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$T/$1.bin" > /dev/null 2>&1 || { echo link; return; }
        ( cd "$T" && rm -f out.txt && timeout -k 5 10 "./$1.bin" < /dev/null > "$1.m4" 2>/dev/null; rc=$?; [ ! -f out.txt ] || { echo '--file--'; cat out.txt; } >> "$1.m4"; echo $rc ); }
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(head -c 90 "$T/$2" | tr '\n' '|')] want [$(head -c 90 "$T/$3" | tr '\n' '|')]"; }

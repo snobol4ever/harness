@@ -41,7 +41,7 @@ for arm in sticky nested deep; do
     for m in m3 m4; do
         if [ "$m" = m3 ]; then got="$(cd "$T" && timeout -k 5 20s "$SCRIP" "$arm.sno" < /dev/null 2>&1)"
         else
-            "$SCRIP" --compile -o "$T/$arm.s" "$T/$arm.sno" < /dev/null >/dev/null 2>&1 || { echo "  RED  $arm $m -- compile failed"; bad=1; continue; }
+            "$SCRIP" --compile --out="$T/$arm.s" "$T/$arm.sno" < /dev/null >/dev/null 2>&1 || { echo "  RED  $arm $m -- compile failed"; bad=1; continue; }
             gcc -no-pie "$T/$arm.s" -o "$T/$arm.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  $arm $m -- link failed"; bad=1; continue; }
             got="$(cd "$T" && timeout -k 5 20s "./$arm.x" < /dev/null 2>&1)"
         fi

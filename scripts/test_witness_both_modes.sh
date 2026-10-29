@@ -18,7 +18,7 @@ while [ $# -ge 2 ]; do
   d="$(dirname "$src")"; b="$(basename "$src")"
   ( cd "$d" && timeout -k 2 60 "$SCRIP_BIN" "$b" < /dev/null > "$T/m3.out" 2> "$T/m3.err" ); r3=$?
   if [ $r3 -lt 124 ] && cmp -s "$T/m3.out" "$ref"; then echo "WITNESS m3 PASS $src"; pass=$((pass+1)); else echo "WITNESS m3 FAIL rc=$r3 $src"; fail=$((fail+1)); fi
-  r4=0; ( cd "$d" && timeout -k 2 120 "$SCRIP_BIN" --compile -o "$T/w.s" "$b" < /dev/null > /dev/null 2> "$T/m4c.err" ) || r4=$?
+  r4=0; ( cd "$d" && timeout -k 2 120 "$SCRIP_BIN" --compile --out="$T/w.s" "$b" < /dev/null > /dev/null 2> "$T/m4c.err" ) || r4=$?
   [ $r4 -eq 0 ] && { gcc "$T/w.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$T/w" 2> "$T/m4l.err" || r4=98; }
   [ $r4 -eq 0 ] && { ( cd "$d" && timeout -k 2 60 "$T/w" < /dev/null > "$T/m4.out" 2> "$T/m4.err" ); r4=$?; }
   if [ $r4 -lt 124 ] && [ -f "$T/m4.out" ] && cmp -s "$T/m4.out" "$ref"; then echo "WITNESS m4 PASS $src"; pass=$((pass+1)); else echo "WITNESS m4 FAIL rc=$r4 $src"; fail=$((fail+1)); fi

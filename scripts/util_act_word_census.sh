@@ -23,7 +23,7 @@ if [ ${#FILES[@]} -gt 0 ]; then for f in "${FILES[@]}"; do case "$f" in *.sno|*.
 else bash "$HERE/util_spine_population.sh" | awk -v want=" ${LANGS[*]} " 'index(want, " " $1 " ") {print $1, $2}' > "$T/pop"; fi
 while read -r lang prog; do
     d="$(dirname "$prog")"; b="$(basename "$prog")"
-    if ( cd "$d" && timeout -k 5 300 "$SCRIP" --dump-plan --compile -o /dev/null "$b" < /dev/null > "$T/dump" 2>/dev/null ); then compiled=$((compiled + 1)); else continue; fi
+    if ( cd "$d" && timeout -k 5 300 "$SCRIP" --dump-plan --compile --out=/dev/null "$b" < /dev/null > "$T/dump" 2>/dev/null ); then compiled=$((compiled + 1)); else continue; fi
     awk -v L="$lang" -v P="$b" '$1 == "PLAN_ROW" && $NF != "-" { a = $3; sub(/^all=/, "", a); k = $4; sub(/^kind=/, "", k); print L, P, a, k, $NF }' "$T/dump" | sort -u >> "$T/sites"
 done < "$T/pop"
 [ "$compiled" -gt 0 ] || { echo "ACT_WORDS REFUSE(2): no program of ${LANGS[*]} compiled"; exit 2; }

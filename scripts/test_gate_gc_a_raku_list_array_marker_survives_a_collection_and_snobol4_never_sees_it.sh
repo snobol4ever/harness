@@ -28,8 +28,8 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/gc_rkmark.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
 BAND="${GC_RKMARK_BAND:-0 1 3 5}"
 unset SCRIP_HEAP_MB; export SCRIP_HEAP_KB="${SCRIP_HEAP_KB:-128}" SCRIP_HEAP_MAX_MB="${SCRIP_HEAP_MAX_MB:-512}"
-( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile -o rk.s "$WIT" < /dev/null 2>c.err && gcc rk.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o rk 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link of the witness failed: $(head -2 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ' | cut -c1-200)"; exit 2; }
-( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile -o pm.s "$PB" "$PA" < /dev/null 2>pc.err && gcc pm.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pm 2>pl.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link of the polyglot failed: $(head -2 "$W/pc.err" "$W/pl.err" 2>/dev/null | tr '\n' ' ' | cut -c1-200)"; exit 2; }
+( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile --out=rk.s "$WIT" < /dev/null 2>c.err && gcc rk.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o rk 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link of the witness failed: $(head -2 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ' | cut -c1-200)"; exit 2; }
+( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile --out=pm.s "$PB" "$PA" < /dev/null 2>pc.err && gcc pm.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pm 2>pl.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link of the polyglot failed: $(head -2 "$W/pc.err" "$W/pl.err" 2>/dev/null | tr '\n' ' ' | cut -c1-200)"; exit 2; }
 echo "arena: SCRIP_HEAP_KB=$SCRIP_HEAP_KB SCRIP_HEAP_MAX_MB=$SCRIP_HEAP_MAX_MB (a collector window shrunk so the stress band collects; the heap itself is the shipped one)"
 want="$(cat "$REF")"; pwant="$(cat "$PREF")"; bad=0; runs=0
 for mode in m3 m4; do line="  witness $mode"

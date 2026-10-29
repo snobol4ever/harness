@@ -74,7 +74,7 @@ for w in w1 w2 w3; do
     ( cd "$D" && timeout -k 5 30 "$SW" -q $w.pl -t halt < /dev/null 2>/dev/null | sed '/^$/d' > $w.want )
     [ -s "$D/$w.want" ] || refuse "swipl printed nothing for $w"
     ( cd "$D" && timeout -k 5 30 "$B/scrip" --run $w.pl < /dev/null 2>/dev/null | sed '/^$/d' > $w.m3 )
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $w.s $w.pl < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie $w.s -o $w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 \
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=$w.s $w.pl < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie $w.s -o $w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 \
         && timeout -k 5 30 ./$w.bin < /dev/null 2>/dev/null | sed '/^$/d' > $w.m4 ) || : > "$D/$w.m4"
     n=$(wc -l < "$D/$w.want")
     for m in m3 m4; do

@@ -89,7 +89,7 @@ def measure(job):
     env = dict(os.environ, SCRIP_ZSM='1')
     env.pop('SCRIP_ZSM_FRAME_DIAG', None)
     try:
-        c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), SCRIP, '--compile'] + ca + [prog, '-o', '/dev/null'], cwd=os.path.dirname(prog), env=env,
+        c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), SCRIP, '--compile'] + ca + [prog, '--out=/dev/null'], cwd=os.path.dirname(prog), env=env,
                            stdin=subprocess.DEVNULL, capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return job, None, 'a compile past %d s' % timeout

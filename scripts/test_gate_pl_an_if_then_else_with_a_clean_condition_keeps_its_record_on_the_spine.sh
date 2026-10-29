@@ -47,7 +47,7 @@ for c in "${CELLS[@]}"; do n="${c%%|*}"; body="${c#*|}"; f="$n.pl"
   if [ "$g4" = "$want" ]; then A4=$((A4 + 1)); else RC=1; BAD="$BAD
       m4 $n: swipl [$(echo "$want" | tr '\n' ' ')] scrip [$(echo "$g4" | tr '\n' ' ' | cut -c1-80)]"; fi
 done
-SP="$( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --dump-homes --compile -o /dev/null ite_then_and_else.pl </dev/null 2>&1 | grep -E '^\[HOMES\] .* graph=q/1 .* kind=IR_BOUND ' | grep -c ' home=SPINE ' )"
+SP="$( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --dump-homes --compile --out=/dev/null ite_then_and_else.pl </dev/null 2>&1 | grep -E '^\[HOMES\] .* graph=q/1 .* kind=IR_BOUND ' | grep -c ' home=SPINE ' )"
 if [ "$SP" -lt 1 ]; then RC=1; BAD="$BAD
       homes: the BOUND of q/1 (a clean condition) is not home=SPINE"; fi
 echo "  blocking: m3 $A3 of $N cells agree with swipl; m4 $A4 of $N; spine BOUNDs in q/1: $SP (want 1)"

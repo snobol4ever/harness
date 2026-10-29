@@ -62,7 +62,7 @@ if [ "$n" -ge 1 ] && [ "$bad" = 0 ]; then echo "  ok   (a) $n runtime compile(s)
 else echo "  FAIL (a) $n runtime compile(s), $bad with a heap immediate: $(grep -oE 'heapimm=[0-9]+' "$T/a.err" | sort | uniq -c | tr '\n' ' ') -- a runtime-compiled pattern bakes an arena address"; RC=1; fi
 band=""; pbad=0
 for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_GC_STRESS=$st timeout -k 5 60s "$SCRIP" w.sno </dev/null > m3_$st.out 2> m3_$st.err ); if cmp -s "$T/m3_$st.out" "$T/w.ref"; then band="$band m3@$st:ok"; else band="$band m3@$st:DIFF"; pbad=$((pbad+1)); fi; done
-if ( cd "$T" && "$SCRIP" --compile w.sno -o w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
+if ( cd "$T" && "$SCRIP" --compile w.sno --out=w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
   for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_GC_STRESS=$st timeout -k 5 60s ./w4 </dev/null > m4_$st.out 2> m4_$st.err ); if cmp -s "$T/m4_$st.out" "$T/w.ref"; then band="$band m4@$st:ok"; else band="$band m4@$st:DIFF"; pbad=$((pbad+1)); fi; done
 else echo "  FAIL (c) the mode-4 witness did not build"; RC=1; fi
 if [ "$pbad" = 0 ]; then echo "  ok   (c) THE PROPERTY: the witness answers its oracle-cut ref at stress 1/3/5 under forced relocation with the deferred entry polled --$band"

@@ -76,7 +76,7 @@ for w in $wits; do
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.pas" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
-            if ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile -o "$d/run.s" "$w.pas" < /dev/null > /dev/null 2> "$d/cerr" ) \
+            if ( cd "$d" && timeout -k 5 300 "$SC/scrip" --compile --out="$d/run.s" "$w.pas" < /dev/null > /dev/null 2> "$d/cerr" ) \
                && gcc -c "$d/run.s" -o "$d/run.o" 2> /dev/null && gcc "$d/run.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$d/run.bin" 2> /dev/null; then
                 ( cd "$d" && timeout -k 5 120 "$d/run.bin" -d131072k -s4096k < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
             else rc=no-binary; fi
@@ -91,7 +91,7 @@ for tok in $probe; do
     case "$key" in
         shadow) bad=0; seen=0
                 for w in $wits; do d="$OUT/step$step/$w.shadow"; mkdir -p "$d"
-                    ( cd "$d" && timeout -k 5 120 "$SC/scrip" --dump-pas-types --compile -o /dev/null "$WD/$w.pas" < /dev/null > "$d/out" 2> "$d/err" )
+                    ( cd "$d" && timeout -k 5 120 "$SC/scrip" --dump-pas-types --compile --out=/dev/null "$WD/$w.pas" < /dev/null > "$d/out" 2> "$d/err" )
                     lines="$(grep -c '^PTY-STATS ' "$d/err")"; [ "$lines" -ge 1 ] || { bad=$((bad + 1)); continue; }
                     seen=$((seen + 1)); dis="$(awk '/^PTY-STATS /{ for (i = 1; i <= NF; i++) { split($i, kv, "="); if (kv[1] == "answered") a = kv[2]; if (kv[1] == "agreed") g = kv[2] } d += a - g } END { print d + 0 }' "$d/err")"
                     [ "$dis" = 0 ] || bad=$((bad + 1)); done

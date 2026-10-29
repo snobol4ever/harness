@@ -53,7 +53,7 @@ oracle() { ( cd "$W" && cp "$1.icn" "o_$1.icn" && "$ICONT" -s "o_$1.icn" -x </de
 WANT_W="$(oracle w)"; WANT_C="$(oracle c)"
 [ -n "$WANT_W" ] && [ -n "$WANT_C" ] || { echo "⛔ GATE REFUSE(2) [$G]: icont printed nothing for a witness (w='$WANT_W' c='$WANT_C')"; exit 2; }
 [ "${FAIL_ONCE:-0}" = 1 ] && WANT_W="n=corrupted"
-build4() { ( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile -o "$1.s" "$1.icn" </dev/null >/dev/null 2>&1 && gcc "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$1.m4" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: mode 4 did not build $1"; exit 2; }; }
+build4() { ( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile --out="$1.s" "$1.icn" </dev/null >/dev/null 2>&1 && gcc "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$1.m4" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: mode 4 did not build $1"; exit 2; }; }
 build4 w; build4 c
 num() { printf '%s\n' "$1" | sed -n "s/.* $2=\([0-9]*\).*/\1/p"; }
 bad=0

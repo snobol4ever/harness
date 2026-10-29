@@ -119,7 +119,7 @@ for w in a1 a2 a3; do
   ( cd "$T" && timeout -k 5 30 "$SCRIP" "$w.icn" </dev/null > "$w.m3" 2>&1 ); rc3=$?
   graded=$((graded+1))
   if cmp -s "$T/$w.m3" "$T/$w.want"; then echo "  PASS  m3 $w (rc=$rc3)"; else echo "  FAIL  m3 $w rc=$rc3"; diff "$T/$w.want" "$T/$w.m3" | head -10; fail=1; fi
-  if ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o "$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie "$w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$w.bin" >/dev/null 2>&1 ); then
+  if ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out="$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie "$w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$w.bin" >/dev/null 2>&1 ); then
     ( cd "$T" && timeout -k 5 30 "./$w.bin" </dev/null > "$w.m4" 2>&1 ); rc4=$?
     graded=$((graded+1))
     if cmp -s "$T/$w.m4" "$T/$w.want"; then echo "  PASS  m4 $w (rc=$rc4)"; else echo "  FAIL  m4 $w rc=$rc4"; diff "$T/$w.want" "$T/$w.m4" | head -10; fail=1; fi

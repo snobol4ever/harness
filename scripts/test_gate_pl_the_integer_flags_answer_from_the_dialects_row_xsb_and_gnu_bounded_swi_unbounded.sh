@@ -63,7 +63,7 @@ arm() {
     local name=$1 src=$2 ref=$3 sw=$4
     ( cd "$T" && timeout -k 5 20 "$SCRIP" $sw "$src" < /dev/null > "$name.m3" 2>&1 ); local rc3=$?
     if cmp -s "$T/$name.m3" "$T/$ref"; then echo "  ok   ($name m3) 4 flags as $ref"; else echo "  FAIL ($name m3) rc=$rc3, first difference:"; diff "$T/$ref" "$T/$name.m3" | head -6 | sed 's/^/         /'; fail=1; fi
-    if ( cd "$T" && "$SCRIP" $sw --compile -o "$name.s" "$src" < /dev/null > /dev/null 2>&1 && gcc -o "$name.bin" "$name.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> /dev/null ); then
+    if ( cd "$T" && "$SCRIP" $sw --compile --out="$name.s" "$src" < /dev/null > /dev/null 2>&1 && gcc -o "$name.bin" "$name.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> /dev/null ); then
         ( cd "$T" && timeout -k 5 20 "./$name.bin" < /dev/null > "$name.m4" 2>&1 ); local rc4=$?
         if cmp -s "$T/$name.m4" "$T/$ref"; then echo "  ok   ($name m4) the same, from the standalone build"; else echo "  FAIL ($name m4) rc=$rc4, first difference:"; diff "$T/$ref" "$T/$name.m4" | head -6 | sed 's/^/         /'; fail=1; fi
     else echo "  FAIL ($name m4) the witness did not compile or link in mode 4"; fail=1; fi

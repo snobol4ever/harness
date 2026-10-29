@@ -33,7 +33,7 @@ fail=0; examined=0
 for mode in m3 m4; do
   examined=$((examined+1))
   if [ "$mode" = m3 ]; then out="$(timeout -k 5 20 "$SCRIP" "$W/w.pl" </dev/null 2>&1)"
-  else out="$(timeout -k 5 30 "$SCRIP" --compile -o "$W/w.s" "$W/w.pl" </dev/null 2>&1 && cd "$W" && gcc -no-pie w.s -L"$HERE/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"$HERE/../../SCRIP/out" -o w.bin 2>&1 && timeout -k 5 20 ./w.bin </dev/null 2>&1)"; fi
+  else out="$(timeout -k 5 30 "$SCRIP" --compile --out="$W/w.s" "$W/w.pl" </dev/null 2>&1 && cd "$W" && gcc -no-pie w.s -L"$HERE/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"$HERE/../../SCRIP/out" -o w.bin 2>&1 && timeout -k 5 20 ./w.bin </dev/null 2>&1)"; fi
   if printf '%s' "$out" | grep -q 'existence_error(procedure,wall_us/1)'; then
     echo "  FAIL  $mode -- wall_us/1 does not exist: Prolog cannot self-time, so the speed axis cannot be measured at all"; fail=$((fail+1))
   elif printf '%s' "$out" | grep -q 'us_ok' && printf '%s' "$out" | grep -q 'ms_ok'; then

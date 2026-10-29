@@ -36,7 +36,7 @@ grep -q '^File tb.icn; Line 4$' "$T/ref.files" || { echo "⛔ REFUSE(2) [$GATE]:
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" tb.icn -- x y </dev/null >"$T/$M.out" 2>"$T/$M.err" )
-  else ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile -o tb.s tb.icn </dev/null >/dev/null 2>&1 && gcc -no-pie tb.s -o tb.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1 || { echo "  m4 RED: the witness would not compile or link"; RC=1; continue; }
+  else ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile --out=tb.s tb.icn </dev/null >/dev/null 2>&1 && gcc -no-pie tb.s -o tb.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1 || { echo "  m4 RED: the witness would not compile or link"; RC=1; continue; }
        ( cd "$T" && timeout -k 5 20 ./tb.bin x y </dev/null >"$T/$M.out" 2>"$T/$M.err" )
   fi
   python3 "$HERE/util_render_error_voice.py" icon < "$T/$M.err" | grep -E '^File .*; Line [0-9]+$|from line [0-9]+ in ' > "$T/$M.files"

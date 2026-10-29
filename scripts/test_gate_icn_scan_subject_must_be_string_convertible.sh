@@ -53,7 +53,7 @@ EXP_ok_cset='abc'
 REJECTS="rej_list rej_var_list rej_null rej_table rej_set rej_proc rej_file rej_nested"
 ACCEPTS="ok_str ok_int ok_real ok_cset conv_scan conv_match conv_move conv_pos conv_tab conv_upto conv_any conv_many conv_find conv_bal conv_pos_top"
 GRADED=0; FAIL=0
-build_m4() { "$SCRIP" --compile -o "$TD/$1.s" "$TD/$1.icn" </dev/null >/dev/null 2>&1 || refuse "$1: mode-4 compile failed -- cannot measure"
+build_m4() { "$SCRIP" --compile --out="$TD/$1.s" "$TD/$1.icn" </dev/null >/dev/null 2>&1 || refuse "$1: mode-4 compile failed -- cannot measure"
   gcc -no-pie "$TD/$1.s" -o "$TD/$1.bin" -L "$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1 || refuse "$1: mode-4 link failed -- cannot measure"; }
 for w in $REJECTS $ACCEPTS; do
   for m in 3 4; do

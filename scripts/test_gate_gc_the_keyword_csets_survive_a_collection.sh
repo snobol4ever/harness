@@ -45,7 +45,7 @@ ref=$(grep -c 'kw_cset_hindex_refresh' "$K")
 gen=$(grep -c 'rt_gc_runs_count' "$K")
 if [ "$raw" = 0 ] && [ "$slot" -ge 2 ] && [ "$ref" -ge 2 ] && [ "$gen" -ge 1 ]; then echo "  arm 1 PASS: no raw address cache ($raw), both keyword branches cache a registry slot ($slot), the index refresh exists and is reached ($ref) and is stamped on the collection count ($gen)"
 else echo "  arm 1 FAIL: raw_address_caches=$raw int_slot_caches=$slot index_refresh=$ref generation_stamp=$gen"; RC=1; fi
-"$SCRIP" --compile -o "$T/w.s" "$WIT" >/dev/null 2>&1 && gcc "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 || { echo "  arm 2 REFUSE: the witness does not build in mode 4"; RC=1; }
+"$SCRIP" --compile --out="$T/w.s" "$WIT" >/dev/null 2>&1 && gcc "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 || { echo "  arm 2 REFUSE: the witness does not build in mode 4"; RC=1; }
 want="$(cat "$REF")"; band=""; bad=0
 for st in 0 1 3 5; do
   for md in m3 m4; do
@@ -59,7 +59,7 @@ if [ "$bad" = 0 ]; then echo "  arm 2 PASS: the bang over &cset and &ascii yield
 else echo "  arm 2 FAIL: a keyword cset bang is truncated or the collector never ran --$band"; RC=1; fi
 printf 'procedure main()\n   local i, junk;\n   every i := 1 to 400 do junk := repl("q", 512);\n   write(*&cset, " ", *&ascii, " ", *&lcase);\nend\n' > "$T/len.icn"
 ( cd "$T" && "$ICONT" -s -o len len.icn >/dev/null 2>&1 ) && lw="$( cd "$T" && ./len 2>/dev/null )" || { echo "⛔ GATE REFUSE(2) [$G]: the Icon oracle did not cut the length want"; exit 2; }
-"$SCRIP" --compile -o "$T/len.s" "$T/len.icn" >/dev/null 2>&1 && gcc "$T/len.s" -o "$T/len4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1
+"$SCRIP" --compile --out="$T/len.s" "$T/len.icn" >/dev/null 2>&1 && gcc "$T/len.s" -o "$T/len4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1
 lb=""; lbad=0
 for st in 0 5; do
   o3="$(cd "$T" && env SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=$st timeout -k 5 120 "$SCRIP" "$T/len.icn" 2>/dev/null </dev/null)"

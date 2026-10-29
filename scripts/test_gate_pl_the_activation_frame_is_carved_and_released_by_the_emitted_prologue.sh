@@ -23,7 +23,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 red=0
-timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/nrev.s" "$B/nrev.pl" </dev/null 2>"$TMPD/err" || refuse "nrev.pl did not compile: $(head -c 200 "$TMPD/err")"
+timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/nrev.s" "$B/nrev.pl" </dev/null 2>"$TMPD/err" || refuse "nrev.pl did not compile: $(head -c 200 "$TMPD/err")"
 named=""
 for h in rt_jmp_frame_lexprep2 rt_icn_zframe_args_install rt_arg_stage rt_proc_call_open_det rt_proc_drop_frame_h rt_nret_fix_tiny; do
     c=$(grep -cE "call\s+(qword ptr \[rip \+ ${h}@GOTPCREL\]|${h}(@PLT)?)\s*$" "$TMPD/nrev.s"); [ "$c" = 0 ] || named="$named $h:$c"
@@ -104,7 +104,7 @@ for w in w_det w_nondet w_tail w_refused w_meta; do
     for mode in m3 m4; do
         if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 60 "$SCRIP" "$w.pl" </dev/null 2>"$TMPD/err")"; rc=$?
         else
-            timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED $w $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
+            timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED $w $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
             gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || { echo "  RED $w $mode: the assembler or linker refused: $(grep -m1 -E 'Error|error' "$TMPD/err" | head -c 200)"; red=$((red+1)); continue; }
             got="$(cd "$TMPD" && timeout -k 5 60 "./$w.bin" </dev/null 2>"$TMPD/err")"; rc=$?
             rm -f "$TMPD/$w.s" "$TMPD/$w.bin"
@@ -124,7 +124,7 @@ for mode in m3 m4; do
     want="$want_w_dyn"
     if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 60 "$SCRIP" w_dyn.pl </dev/null 2>"$TMPD/err")"; rc=$?
     else
-        timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/w_dyn.s" "$TMPD/w_dyn.pl" </dev/null 2>"$TMPD/err" || { echo "  RED w_dyn $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
+        timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/w_dyn.s" "$TMPD/w_dyn.pl" </dev/null 2>"$TMPD/err" || { echo "  RED w_dyn $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
         gcc -m64 -no-pie "$TMPD/w_dyn.s" -o "$TMPD/w_dyn.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || { echo "  RED w_dyn $mode: the assembler or linker refused"; red=$((red+1)); continue; }
         got="$(cd "$TMPD" && timeout -k 5 60 ./w_dyn.bin </dev/null 2>"$TMPD/err")"; rc=$?
     fi
@@ -135,7 +135,7 @@ printf 'my $f = -> $x { $x + 1 }; say $f(1);\n' > "$TMPD/w_blk.raku"
 for mode in m3 m4; do
     if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 60 "$SCRIP" w_blk.raku </dev/null 2>"$TMPD/err")"; rc=$?
     else
-        timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/w_blk.s" "$TMPD/w_blk.raku" </dev/null 2>"$TMPD/err" || { echo "  RED w_blk $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
+        timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/w_blk.s" "$TMPD/w_blk.raku" </dev/null 2>"$TMPD/err" || { echo "  RED w_blk $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
         gcc -m64 -no-pie "$TMPD/w_blk.s" -o "$TMPD/w_blk.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || { echo "  RED w_blk $mode: the assembler or linker refused"; red=$((red+1)); continue; }
         got="$(cd "$TMPD" && timeout -k 5 60 ./w_blk.bin </dev/null 2>"$TMPD/err")"; rc=$?
     fi

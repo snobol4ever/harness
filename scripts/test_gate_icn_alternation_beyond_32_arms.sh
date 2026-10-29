@@ -31,7 +31,7 @@ grep -q '^coex 40 "s40"$' "$T/a.ref" || { echo "⛔ REFUSE(2): the oracle's own 
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" a.icn </dev/null ) >"$T/$M.out" 2>&1
-  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o a.s a.icn </dev/null && gcc a.s -o a.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
+  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=a.s a.icn </dev/null && gcc a.s -o a.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
        ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./a.bin </dev/null ) >"$T/$M.out" 2>&1
   fi
   if [ -n "${FAIL_ONCE:-}" ]; then sed -i 's/^plain s33$/plain s32/' "$T/$M.out"; fi

@@ -98,7 +98,7 @@ end
 EOF
 for w in a b c; do
     ( cd "$T" && "$ICONT" -s -o "$w.ix" "$w.icn" > "$w.cerr" 2>&1 && "./$w.ix" < /dev/null > "$w.ref" 2> /dev/null ) || { echo "⛔ REFUSED(2) [$GATE_NAME]: icont could not build or run witness $w"; exit 2; }
-    ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie "$w.s" -Wl,-rpath,"$RT" -L"$RT" -lscrip_rt -lm -lpthread -o "$w.bin" 2> /dev/null ) || { echo "⛔ REFUSED(2) [$GATE_NAME]: SCRIP could not compile and link witness $w in mode 4"; exit 2; }
+    ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie "$w.s" -Wl,-rpath,"$RT" -L"$RT" -lscrip_rt -lm -lpthread -o "$w.bin" 2> /dev/null ) || { echo "⛔ REFUSED(2) [$GATE_NAME]: SCRIP could not compile and link witness $w in mode 4"; exit 2; }
 done
 # run <witness> <mode> <stress>: prints PASS when the program's stdout equals the oracle's and it exits 0
 run() {

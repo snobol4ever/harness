@@ -81,7 +81,7 @@ for ref in "$WD"/*.ref; do n=$(basename "$ref" .ref); src=""; for x in sno icn p
     if ! base_w "$src" "$n"; then reported="$reported $n"; continue; fi
     nw=$((nw + 1)); dec="$(declared_of "$n")"; [ -n "$dec" ] && { declared="$declared $n($dec)"; dec_ok=1; }
     for st in 1 5; do if run_w 3 "$st" "$src" "$n"; then band3="$band3 $n@$st:ok"; else band3="$band3 $n@$st:RED"; [ -n "$dec" ] && { band3="$band3(DECLARED-OPEN)"; dec_ok=0; } || bad3=$((bad3 + 1)); fi; done
-    if ( cd "$T" && "$SCRIP" --compile -o "$T/$n.s" "$src" </dev/null 2>/dev/null && gcc "$T/$n.s" -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$T/$n.m4" 2>/dev/null ); then
+    if ( cd "$T" && "$SCRIP" --compile --out="$T/$n.s" "$src" </dev/null 2>/dev/null && gcc "$T/$n.s" -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$T/$n.m4" 2>/dev/null ); then
         if run_w 4 5 "$src" "$n"; then band4="$band4 $n@5:ok"; else band4="$band4 $n@5:RED"; [ -n "$dec" ] && { band4="$band4(DECLARED-OPEN)"; dec_ok=0; } || bad4=$((bad4 + 1)); fi
     else band4="$band4 $n:NOBUILD"; [ -n "$dec" ] && { band4="$band4(DECLARED-OPEN)"; dec_ok=0; } || bad4=$((bad4 + 1)); fi
     [ -n "$dec" ] && [ "${dec_ok:-0}" = 1 ] && dec_all_ok="$dec_all_ok $n"
@@ -94,7 +94,7 @@ else echo "  arm 3 FAIL: witnesses=$nw red_arms=$bad3 --$band3"; RC=1; fi
 if [ "$nw" -ge 20 ] && [ "$bad4" = 0 ]; then echo "  arm 4 PASS: $nw witnesses match their refs in mode 4 at SCRIP_GC_STRESS=5 under SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} SCRIP_GC_POISON=1 --$band4"
 else echo "  arm 4 FAIL: witnesses=$nw red_arms=$bad4 --$band4"; RC=1; fi
 examined=$((examined + 1)); ok3=0; ok4=0
-( cd "$T" && "$SCRIP" --compile -o gc2.s "$GC2" </dev/null 2>/dev/null && gcc gc2.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o gc2.m4 2>/dev/null ) || echo "  arm 5 note: gc2 did not build in mode 4"
+( cd "$T" && "$SCRIP" --compile --out=gc2.s "$GC2" </dev/null 2>/dev/null && gcc gc2.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o gc2.m4 2>/dev/null ) || echo "  arm 5 note: gc2 did not build in mode 4"
 for i in 1 2 3 4 5; do ( cd "$T" && env -u SCRIP_HEAP_KB SCRIP_HEAP_MB=512 timeout -k 5 120 "$SCRIP" "$GC2" </dev/null > g3.txt 2>/dev/null ) && cmp -s "$T/g3.txt" "${GC2%.icn}.ref" && ok3=$((ok3 + 1)); [ -x "$T/gc2.m4" ] && ( cd "$T" && env -u SCRIP_HEAP_KB SCRIP_HEAP_MB=512 timeout -k 5 120 ./gc2.m4 </dev/null > g4.txt 2>/dev/null ) && cmp -s "$T/g4.txt" "${GC2%.icn}.ref" && ok4=$((ok4 + 1)); done
 if [ "$ok3" = 5 ] && [ "$ok4" = 5 ]; then echo "  arm 5 PASS: gc2 byte-identical to its .ref 5 of 5 in both media at the shipped arena (the arena is named here because &collections is what it prints)"
 else echo "  arm 5 FAIL: gc2 m3 $ok3 of 5, m4 $ok4 of 5 at the shipped arena"; RC=1; fi

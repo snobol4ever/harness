@@ -73,7 +73,7 @@ for w in w1 w2; do
     want="$(cd "$D" && timeout -k 5 20 "$SW" -q $w.pl -t halt < /dev/null 2>/dev/null | grep .)"
     [ -n "$want" ] || refuse "swipl did not answer $w"
     m4ok=1
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $w.s $w.pl < /dev/null > /dev/null 2>&1 && [ -s $w.s ] \
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=$w.s $w.pl < /dev/null > /dev/null 2>&1 && [ -s $w.s ] \
       && gcc -m64 -no-pie $w.s -o $w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
     arm() {
         local label="$1"; shift

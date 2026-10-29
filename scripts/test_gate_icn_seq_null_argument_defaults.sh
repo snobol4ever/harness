@@ -44,7 +44,7 @@ ora="$( cd "$W" && timeout -k 5 20s "$ICONX" ./o.ico < /dev/null 2>&1 )"
 forms=$(printf '%s\n' "$ora" | grep -c '^[A-G]:') || true
 [ "${forms:-0}" -ge 7 ] || { echo "⛔ REFUSE(rc=2): oracle emitted $forms graded lines, want at least 7"; exit 2; }
 m3="$( cd "$W" && timeout -k 5 20s "$SCRIP" s.icn < /dev/null 2>&1 )"; r3=$?
-if ( cd "$W" && timeout -k 5 30s "$SCRIP" --compile -o s.s s.icn >/dev/null 2>&1 ) \
+if ( cd "$W" && timeout -k 5 30s "$SCRIP" --compile --out=s.s s.icn >/dev/null 2>&1 ) \
    && ( cd "$W" && gcc -no-pie s.s -o s.bin -L"$RT_DIR" -Wl,-rpath,"$RT_DIR" -lscrip_rt -lm -lpthread >/dev/null 2>&1 ); then
      m4="$( cd "$W" && timeout -k 5 20s ./s.bin < /dev/null 2>&1 )"; r4=$?
 else m4="<compile/link failed>"; r4=99; fi

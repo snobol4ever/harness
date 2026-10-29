@@ -84,7 +84,7 @@ run_one() {
         ( ulimit -s "$PIN_KB"; timeout -k 5 300 "$SCRIP" "$src" </dev/null 2>&1 )
     else
         ( ulimit -s "$PIN_KB"
-          timeout -k 5 300 "$SCRIP" --compile -o "$W/$tag.s" "$src" </dev/null 2>&1 >/dev/null || exit 9
+          timeout -k 5 300 "$SCRIP" --compile --out="$W/$tag.s" "$src" </dev/null 2>&1 >/dev/null || exit 9
           cd "$W" && gcc -no-pie "$tag.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -o "$tag.bin" 2>&1 >/dev/null || exit 9
           timeout -k 5 300 "./$tag.bin" </dev/null 2>&1 )
     fi

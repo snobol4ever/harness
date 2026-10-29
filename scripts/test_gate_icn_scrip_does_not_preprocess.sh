@@ -32,7 +32,7 @@ for w in o1 o2; do
     want="$(firstline "$T/$w.icont.err")"
     [ "$orc" -ne 0 ] && [ -n "$want" ] || { echo "⛔ GATE REFUSE(2) [$G]: icont accepted $w.icn or named no line (rc=$orc) -- the witness no longer measures"; exit 2; }
     ( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" < /dev/null > /dev/null 2> "$w.m3.err" ); m3rc=$?
-    ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o "$w.s" "$w.icn" < /dev/null > /dev/null 2> "$w.m4.err" ); m4rc=$?
+    ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out="$w.s" "$w.icn" < /dev/null > /dev/null 2> "$w.m4.err" ); m4rc=$?
     for m in m3 m4; do
         rc=$m3rc; [ "$m" = m4 ] && rc=$m4rc
         got="$(firstline "$T/$w.$m.err")"
@@ -43,7 +43,7 @@ done
 printf '$define N 3\n$ifdef N\n$define M "on"\n$else\n$define M "off"\n$endif\n$undef N\n$ifndef N\n$define K 7\n$endif\nprocedure main();\n  write(M, " ", K);\nend\n' > "$T/d.icn"
 ( cd "$T" && timeout -k 5 20 "$ICONT" -s -o d.ox d.icn < /dev/null > /dev/null 2>&1 && timeout -k 5 20 ./d.ox < /dev/null > d.ref 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the oracle would not run the directive witness"; exit 2; }
 ( cd "$T" && timeout -k 5 20 "$SCRIP" d.icn < /dev/null > d.m3 2>&1 ); m3rc=$?
-( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o d.s d.icn < /dev/null > /dev/null 2>&1 && gcc -no-pie d.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o d.bin 2>/dev/null && timeout -k 5 20 ./d.bin < /dev/null > d.m4 2>&1 ); m4rc=$?
+( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=d.s d.icn < /dev/null > /dev/null 2>&1 && gcc -no-pie d.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o d.bin 2>/dev/null && timeout -k 5 20 ./d.bin < /dev/null > d.m4 2>&1 ); m4rc=$?
 [ "$m3rc" -eq 0 ] && cmp -s "$T/d.m3" "$T/d.ref" && echo "  PASS directives in mode 3 == iconx ($(cat "$T/d.ref"))" || { RC=1; echo "  FAIL directives in mode 3: rc=$m3rc, got '$(head -c 60 "$T/d.m3")' want '$(cat "$T/d.ref")'"; }
 [ "$m4rc" -eq 0 ] && cmp -s "$T/d.m4" "$T/d.ref" && echo "  PASS directives in mode 4 == iconx" || { RC=1; echo "  FAIL directives in mode 4: rc=$m4rc, got '$(head -c 60 "$T/d.m4" 2>/dev/null)' want '$(cat "$T/d.ref")'"; }
 text() { grep -v '^#line ' "$1" | grep -v '^[[:space:]]*$'; }

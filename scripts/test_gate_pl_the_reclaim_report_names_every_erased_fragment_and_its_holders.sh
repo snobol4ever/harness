@@ -31,7 +31,7 @@ printf 'self(done)\n' > "$W/w2.ref"
 printf '%s\n' ':- initialization(main).' ':- dynamic(q/1).' ':- dynamic(s/1).' 'r(X) :- q(X).' 'main :- assertz((s(X) :- member(X, [1, 2, 3]))), assertz((q(X) :- s(Y), X = f(Y))), r(B), B == f(1), retract((s(_) :- _)), write(kept(B)), nl, halt.' > "$W/w3.pl"
 printf 'kept(f(1))\n' > "$W/w3.ref"
 for w in w1 w2 w3; do
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $w does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $w does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
     gcc -no-pie -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$w.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: $w does not link"; exit 2; }
 done
 run() {

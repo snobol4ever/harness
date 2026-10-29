@@ -26,7 +26,7 @@ one() {
     local orc; orc="$(cat "$D/$name.orc")"
     case "$orc" in 0|1|2) ;; *) refuse "$name.pl: swipl exited $orc -- no oracle answer";; esac
     ( cd "$D" && timeout -k 5 30 "$B/scrip" "$name.pl" < /dev/null > "$name.m3" 2>/dev/null; echo $? > "$name.rc3" )
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o "$name.s" "$name.pl" < /dev/null > /dev/null 2>&1 && gcc -no-pie "$name.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$name.bin" 2>/dev/null ) || refuse "$name.pl: mode 4 did not compile"
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out="$name.s" "$name.pl" < /dev/null > /dev/null 2>&1 && gcc -no-pie "$name.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$name.bin" 2>/dev/null ) || refuse "$name.pl: mode 4 did not compile"
     ( cd "$D" && timeout -k 5 30 "./$name.bin" < /dev/null > "$name.m4" 2>/dev/null; echo $? > "$name.rc4" )
     for m in 3 4; do
         n=$((n + 1)); local rc; rc="$(cat "$D/$name.rc$m")"

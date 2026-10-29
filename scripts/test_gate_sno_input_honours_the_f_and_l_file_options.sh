@@ -64,7 +64,7 @@ for a in $ARMS; do (cd "$D" && timeout -k 5 20 "$SBL" -bf "$a.sno" < in.txt > "$
 fails=0; arms=0
 for a in $ARMS; do
     (cd "$D" && timeout -k 5 20 "$B/scrip" "$a.sno" < in.txt > "$a.m3" 2>/dev/null)
-    "$B/scrip" --compile -o "$D/$a.s" "$D/$a.sno" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$D/$a.bin" "$D/$a.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null || refuse "could not build the m4 arm of $a -- a toolchain failure, not a verdict"
+    "$B/scrip" --compile --out="$D/$a.s" "$D/$a.sno" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$D/$a.bin" "$D/$a.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null || refuse "could not build the m4 arm of $a -- a toolchain failure, not a verdict"
     (cd "$D" && timeout -k 5 20 "./$a.bin" < in.txt > "$a.m4" 2>/dev/null)
     for m in m3 m4; do arms=$((arms+1))
         if cmp -s "$D/$a.sbl" "$D/$a.$m"; then echo "  ok    $m $a"

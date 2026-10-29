@@ -63,7 +63,7 @@ for w in direct apply r243_ARRAY2 r243_LEN1 r243_null; do
     timeout -k 5 20s "$SBL" -bf $w.sno < /dev/null > $w.ref 2>&1
     [ -s $w.ref ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for $w"; exit 2; }
     timeout -k 5 20s "$SCRIP" $w.sno < /dev/null > $w.m3 2> $w.e3
-    if "$SCRIP" --compile -o $w.s $w.sno < /dev/null > $w.c 2>&1 && gcc $w.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $w.x 2>> $w.c; then
+    if "$SCRIP" --compile --out=$w.s $w.sno < /dev/null > $w.c 2>&1 && gcc $w.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $w.x 2>> $w.c; then
         timeout -k 5 20s ./$w.x < /dev/null > $w.m4 2> $w.e4
     else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed for $w: $(grep -m1 . $w.c | cut -c1-160)"; exit 2; fi
     for m in m3 m4; do

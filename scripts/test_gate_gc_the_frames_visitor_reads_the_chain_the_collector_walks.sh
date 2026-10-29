@@ -48,7 +48,7 @@ num() { printf '%s\n' "$1" | sed -n "s/.* $2=\([0-9]*\).*/\1/p"; }
 run_both() {
   local w="$1" b="${1%.*}"
   ( cd "$W" && run_env timeout -k 5 300 "$SCRIP" "$WD/$w" > "$b.o3" 2> "$b.e3" < /dev/null )
-  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$b.s" "$WD/$w" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $w: $(head -c 200 "$W/$b.c4")"
+  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$b.s" "$WD/$w" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $w: $(head -c 200 "$W/$b.c4")"
   gcc "$W/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$b.x" 2> "$W/$b.ld4" || refuse "mode 4 link failed for $w: $(head -c 200 "$W/$b.ld4")"
   ( cd "$W" && run_env timeout -k 5 300 "./$b.x" > "$b.o4" 2> "$b.e4" < /dev/null )
 }
@@ -91,7 +91,7 @@ for wpl in "$W/ballcatch.pl" "$WD/hb_pl_occurs_check_error_raises_on_the_asm_uni
   [ -f "$wpl" ] || refuse "witness $wpl is missing"
   bn="$(basename "$wpl" .pl)"
   ( cd "$W" && run_env timeout -k 5 300 "$SCRIP" "$wpl" > "$bn.o3" 2> "$bn.e3" < /dev/null )
-  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$bn.s" "$wpl" > /dev/null 2> "$bn.c4" < /dev/null ) || refuse "mode 4 could not compile $wpl"
+  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$bn.s" "$wpl" > /dev/null 2> "$bn.c4" < /dev/null ) || refuse "mode 4 could not compile $wpl"
   gcc "$W/$bn.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$bn.x" 2> "$W/$bn.ld4" || refuse "mode 4 link failed for $wpl"
   ( cd "$W" && run_env timeout -k 5 300 "./$bn.x" > "$bn.o4" 2> "$bn.e4" < /dev/null )
   for m in 3 4; do

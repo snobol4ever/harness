@@ -58,7 +58,7 @@ for k in $KERNELS; do
   vgs="${IR_VG_FLAGS:-}"; [ -n "$skb" ] && vgs="$vgs --main-stacksize=$(( (skb + 1024) * 1024 ))"
   m3ir="$(IR_VG_FLAGS="$vgs" ir_measure "$SCRIP_BIN" --run $sw "$f" < /dev/null)"
   s="$(mktemp -d)"
-  "$SCRIP_BIN" --compile "$f" -o "$s/p.s" < /dev/null 2>/dev/null || { echo "⛔ REFUSED (rc=2): $k failed to compile mode-4"; exit 2; }
+  "$SCRIP_BIN" --compile "$f" --out="$s/p.s" < /dev/null 2>/dev/null || { echo "⛔ REFUSED (rc=2): $k failed to compile mode-4"; exit 2; }
   gcc "$s/p.s" -o "$s/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" 2>/dev/null || { echo "⛔ REFUSED (rc=2): $k failed to link mode-4"; exit 2; }
   m4ir="$(IR_VG_FLAGS="$vgs" ir_measure "$s/p.bin" $sw < /dev/null)"
   rm -rf "$s"

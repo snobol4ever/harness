@@ -314,7 +314,7 @@ run_snobol4_wasm() {
       local wasm="$W/${base}.wasm"
       local got="$W/${base}.got"
 
-      if ! "$SCRIP_CC" -wasm -o "$wat" "$sno" 2>/dev/null; then
+      if ! "$SCRIP_CC" -wasm --out="$wat" "$sno" 2>/dev/null; then
         fail=$((fail+1)); echo "  FAIL $cell $base [compile]"; continue
       fi
       save_artifact "$wat" "$sno"
@@ -368,7 +368,7 @@ run_snobol4_js() {
       local js="$W/${base}.js"
       local got="$W/${base}.got"
 
-      if ! "$SCRIP_CC" -js -o "$js" "$sno" 2>/dev/null; then
+      if ! "$SCRIP_CC" -js --out="$js" "$sno" 2>/dev/null; then
         fail=$((fail+1)); echo "  FAIL $cell $base [compile]"
         csv_row FAIL "$cell" "$base" "compile"; continue
       fi
@@ -467,7 +467,7 @@ run_snobol4_jvm() {
       local ref="${sno%.sno}.ref"; [[ -f "$ref" ]] || continue
       local input="${sno%.sno}.input"
       local jfile="$W/${base}.j"
-      if "$SCRIP_CC" -jvm -o "$jfile" "$sno" 2>/dev/null; then
+      if "$SCRIP_CC" -jvm --out="$jfile" "$sno" 2>/dev/null; then
         save_artifact "$jfile" "$sno"
         # Extract class name — SnoHarness looks for <classname>.ref not <basename>.ref
         local classname; classname=$(grep '\.class public' "$jfile" | head -1 | awk '{print $3}')
@@ -554,7 +554,7 @@ run_icon_x86() {
     local exp="${icn%.icn}.expected"; [[ -f "$exp" ]] || continue
     [[ -f "${icn%.icn}.xfail" ]] && { pass=$((pass+1)); continue; }
     local asm="$W/${base}.s" obj="$W/${base}.o" bin="$W/${base}"
-    if "$SCRIP_CC" -icn "$icn" -o "$asm" 2>/dev/null &&
+    if "$SCRIP_CC" -icn "$icn" --out="$asm" 2>/dev/null &&
        nasm -f elf64 "$asm" -o "$obj" 2>/dev/null &&
        gcc -nostdlib -no-pie -Wl,--no-warn-execstack \
            "$obj" "$ICN_INC/icon_runtime.c" \
@@ -597,7 +597,7 @@ run_icon_jvm() {
     local exp="${icn%.icn}.expected"; [[ -f "$exp" ]] || continue
     [[ -f "${icn%.icn}.xfail" ]] && continue
     local jfile="$W/${base}.j"
-    if "$SCRIP_CC" -jvm -o "$jfile" "$icn" 2>/dev/null; then
+    if "$SCRIP_CC" -jvm --out="$jfile" "$icn" 2>/dev/null; then
       save_artifact "$jfile" "$icn"
       local classname; classname=$(grep '\.class public' "$jfile" | head -1 | awk '{print $3}')
       [[ -z "$classname" ]] && classname="$base"
@@ -657,7 +657,7 @@ run_icon_wasm() {
     local got="$W/${base}.got"
 
     # compile: scrip -icn -wasm → .wat
-    if ! "$SCRIP_CC" -icn -wasm -o "$wat" "$icn" 2>/dev/null; then
+    if ! "$SCRIP_CC" -icn -wasm --out="$wat" "$icn" 2>/dev/null; then
       fail=$((fail+1)); echo "  FAIL $cell $base [compile]"; continue
     fi
     save_artifact "$wat" "$icn"
@@ -702,7 +702,7 @@ run_prolog_x86() {
     local xfail="${pl%.pl}.xfail"
     [[ -f "$xfail" ]] && { rpass=$((rpass+1)); continue; }
     local asm="$W/${base}.s" obj="$W/${base}.o" bin="$W/${base}"
-    if "$SCRIP_CC" -pl -x86 -o "$asm" "$pl" 2>/dev/null &&
+    if "$SCRIP_CC" -pl -x86 --out="$asm" "$pl" 2>/dev/null &&
        nasm -f elf64 "$asm" -o "$obj" 2>/dev/null &&
        gcc -O0 -no-pie "$obj" "$PL_LIB" -lm -o "$bin" 2>/dev/null; then
       local got; got=$(timeout -k 5 "$TIMEOUT_X86" "$bin" 2>/dev/null) || got="__FAIL__"
@@ -739,7 +739,7 @@ run_prolog_jvm() {
     local expected="${pl%.pl}.expected"; [[ -f "$expected" ]] || continue
     local xfail="${pl%.pl}.xfail"; [[ -f "$xfail" ]] && continue
     local jfile="$W/${base}.j"
-    if "$SCRIP_CC" -pl -jvm -o "$jfile" "$pl" 2>/dev/null; then
+    if "$SCRIP_CC" -pl -jvm --out="$jfile" "$pl" 2>/dev/null; then
       save_artifact "$jfile" "$pl"
       local classname; classname=$(grep '\.class public' "$jfile" | head -1 | awk '{print $3}')
       [[ -z "$classname" ]] && classname="$base"
@@ -887,7 +887,7 @@ run_prolog_wasm() {
     [[ -f "$xfail" ]] && { pass=$((pass+1)); continue; }
     local wat="$W/${base}.wat"
     local wasm="$W/${base}.wasm"
-    if ! "$SCRIP_CC" -pl -wasm -o "$wat" "$pl" 2>/dev/null; then
+    if ! "$SCRIP_CC" -pl -wasm --out="$wat" "$pl" 2>/dev/null; then
       fail=$((fail+1)); echo "  FAIL $cell $base [compile]"
       csv_row COMPILE_FAIL "$cell" "$base" "compile"; continue
     fi

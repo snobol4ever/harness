@@ -14,7 +14,7 @@ pl_witness() {
     local label="$1" main="$2" want="$3" got rc
     got="$(cd "$PLW_TMP" && timeout -k 5 60 "$SCRIP" "$main" </dev/null 2>"$PLW_TMP/err")"; rc=$?
     if [ "$rc" = 0 ] && [ "$got" = "$want" ]; then echo "  ok  $label m3"; else echo "  RED $label m3: rc=$rc out=[$(printf '%s' "$got" | tr '\n' '|' | cut -c1-120)] err=[$(head -c 200 "$PLW_TMP/err" | tr '\n' '|')]"; PLW_RED=$((PLW_RED+1)); fi
-    if (cd "$PLW_TMP" && timeout -k 5 120 "$SCRIP" --compile -o "$PLW_TMP/w.s" "$main" </dev/null 2>"$PLW_TMP/err") && gcc -m64 -no-pie "$PLW_TMP/w.s" -o "$PLW_TMP/w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$PLW_TMP/err"; then
+    if (cd "$PLW_TMP" && timeout -k 5 120 "$SCRIP" --compile --out="$PLW_TMP/w.s" "$main" </dev/null 2>"$PLW_TMP/err") && gcc -m64 -no-pie "$PLW_TMP/w.s" -o "$PLW_TMP/w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$PLW_TMP/err"; then
         got="$(cd "$PLW_TMP" && timeout -k 5 60 ./w.bin </dev/null 2>"$PLW_TMP/err")"; rc=$?
         if [ "$rc" = 0 ] && [ "$got" = "$want" ]; then echo "  ok  $label m4"; else echo "  RED $label m4: rc=$rc out=[$(printf '%s' "$got" | tr '\n' '|' | cut -c1-120)] err=[$(head -c 200 "$PLW_TMP/err" | tr '\n' '|')]"; PLW_RED=$((PLW_RED+1)); fi
     else echo "  RED $label m4: the compile or link refused: $(head -c 200 "$PLW_TMP/err" | tr '\n' '|')"; PLW_RED=$((PLW_RED+1)); fi

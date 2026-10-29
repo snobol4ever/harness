@@ -334,7 +334,7 @@ for _tidx, (fam, goal, exp) in enumerate(tests):
                 r = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--run"] + decl_sw(_tidx, fam) + [prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
             else:
                 s = os.path.join(tmp, "t.s"); b = os.path.join(tmp, "t.bin")
-                c = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
+                c = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
                 if c.returncode != 0: res[mode][1] += 1; named.append("%s:%s:m4:NOBUILD" % (fam, goal[:28])); continue
                 g = _ltr.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(os.path.dirname(scrip), "out"),
                                     "-lscrip_rt", "-Wl,-rpath," + os.path.join(os.path.dirname(scrip), "out"), "-lm"],
@@ -533,7 +533,7 @@ for _tidx, (fam, goal, exp) in enumerate(tests):
                 r = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--run"] + decl_sw(_tidx, fam) + [prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
             else:
                 s = os.path.join(tmp, "t.s"); b = os.path.join(tmp, "t.bin")
-                c = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
+                c = _ltr.run(key="%s#%d" % (fam, _tidx), argv=[scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL, cwd=tmp)
                 if c.returncode != 0: bres[mode][1] += 1; bnamed.append("%s:%s:m4:NOBUILD" % (fam, goal[:28])); continue
                 g = _ltr.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(os.path.dirname(scrip), "out"),
                                     "-lscrip_rt", "-Wl,-rpath," + os.path.join(os.path.dirname(scrip), "out"), "-lm"],

@@ -52,7 +52,7 @@ for p in data pio; do
     wk="$(cd "$D" && timeout -k 5 120 "$B/scrip" --dump-ast $p.pl < /dev/null 2>/dev/null | grep -c 'wakeup')"
     got3="$(cd "$D" && timeout -k 5 120 "$B/scrip" --run $p.pl < /dev/null 2>/dev/null | grep .)"
     got4=""
-    if ( cd "$D" && timeout -k 5 120 "$B/scrip" --compile -o $p.s $p.pl < /dev/null > /dev/null 2>&1 && [ -s $p.s ] \
+    if ( cd "$D" && timeout -k 5 120 "$B/scrip" --compile --out=$p.s $p.pl < /dev/null > /dev/null 2>&1 && [ -s $p.s ] \
          && gcc -m64 -no-pie $p.s -o $p.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ); then
         got4="$(cd "$D" && timeout -k 5 120 ./$p.bin < /dev/null 2>/dev/null | grep .)"
     fi

@@ -45,7 +45,7 @@ printf ':- initialization(run_tests).\n' > "$D/g.pl"
 want="$(cd "$D" && timeout -k 5 20 "$SW" -q -g run_tests -t halt w.pl < /dev/null 2>/dev/null | grep -E '^[a-z_]+-')"
 [ "$(printf '%s\n' "$want" | grep -c .)" = 6 ] || refuse "swipl did not answer the six lines: [$want]"
 m4ok=1   # a program SCRIP refuses to compile is this gate's red, never a refusal
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s "$PLUNIT" w.pl g.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s "$PLUNIT" w.pl g.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
   && gcc -m64 -no-pie w.s -o w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
 red=0
 arm() {

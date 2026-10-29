@@ -68,7 +68,7 @@ fail=0
 for w in g b; do
     ( cd "$T" && timeout -k 5 30 "$SCRIP" "$w.pl" < /dev/null > "$w.m3" 2>/dev/null ); rc3=$?
     if cmp -s "$T/$w.m3" "$T/$w.ref"; then echo "  ok   (m3) $w: $(wc -l < "$T/$w.ref") lines equal the ref"; else echo "  FAIL (m3) $w rc=$rc3, first difference:"; diff "$T/$w.ref" "$T/$w.m3" | head -6 | sed 's/^/         /'; fail=1; fi
-    if ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.pl" < /dev/null > /dev/null 2>&1 && gcc -o "$w.x" "$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
+    if ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.pl" < /dev/null > /dev/null 2>&1 && gcc -o "$w.x" "$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
         ( cd "$T" && timeout -k 5 30 "./$w.x" < /dev/null > "$w.m4" 2>/dev/null ); rc4=$?
         if cmp -s "$T/$w.m4" "$T/$w.ref"; then echo "  ok   (m4) $w: the same, from the standalone build"; else echo "  FAIL (m4) $w rc=$rc4, first difference:"; diff "$T/$w.ref" "$T/$w.m4" | head -6 | sed 's/^/         /'; fail=1; fi
     else echo "  FAIL (m4) $w did not compile or link in mode 4"; fail=1; fi

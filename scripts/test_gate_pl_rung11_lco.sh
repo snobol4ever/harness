@@ -62,7 +62,7 @@ P3=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then LO_CMD=("$SCRIP" "$W/lo.pl"); HI_CMD="\"$SCRIP\" \"$W/hi.pl\""
   else
-    for n in lo hi; do timeout -k 5 120 "$SCRIP" --compile -o "$W/$n.s" "$W/$n.pl" </dev/null >/dev/null 2>&1; m4build "$W/$n.s" "$W/$n.bin" || { echo "GATE UNPROVEN(2) [pl_rung11_lco]: part 3 m4 witness $n would not compile+link -- cannot measure, and an unbuilt witness is never a pass"; exit 2; }; done
+    for n in lo hi; do timeout -k 5 120 "$SCRIP" --compile --out="$W/$n.s" "$W/$n.pl" </dev/null >/dev/null 2>&1; m4build "$W/$n.s" "$W/$n.bin" || { echo "GATE UNPROVEN(2) [pl_rung11_lco]: part 3 m4 witness $n would not compile+link -- cannot measure, and an unbuilt witness is never a pass"; exit 2; }; done
     LO_CMD=("$W/lo.bin"); HI_CMD="\"$W/hi.bin\""
   fi
   LO_OUT="$(/usr/bin/time -v "${LO_CMD[@]}" </dev/null 2>"$W/$M.lo.time")"; LO_RC=$?

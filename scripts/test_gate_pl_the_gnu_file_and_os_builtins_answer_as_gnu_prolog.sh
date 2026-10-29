@@ -124,7 +124,7 @@ cp "$d/w.pl" "$d/m3/gate_cwd/"; cp "$d/w.pl" "$d/m4/gate_cwd/"
 fails=0; graded=0
 (cd "$d/m3/gate_cwd" && timeout -k 5 20 "$SCRIP" w.pl </dev/null 2>/dev/null) > "$d/m3.out"; rc=$?; graded=$((graded + 1))
 if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m3.out"; then fails=$((fails + 1)); echo "  m3 rc=$rc differs:"; diff "$d/want" "$d/m3.out" | head -20; fi
-if (cd "$d/m4/gate_cwd" && timeout -k 5 60 "$SCRIP" --compile -o w.s w.pl </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie w.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o w.bin 2>/dev/null); then
+if (cd "$d/m4/gate_cwd" && timeout -k 5 60 "$SCRIP" --compile --out=w.s w.pl </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie w.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o w.bin 2>/dev/null); then
     (cd "$d/m4/gate_cwd" && timeout -k 5 20 ./w.bin </dev/null 2>/dev/null) > "$d/m4.out"; rc=$?; graded=$((graded + 1))
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m4.out"; then fails=$((fails + 1)); echo "  m4 rc=$rc differs:"; diff "$d/want" "$d/m4.out" | head -20; fi
 else graded=$((graded + 1)); fails=$((fails + 1)); echo "  m4 did not compile or link"; fi

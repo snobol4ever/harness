@@ -37,7 +37,7 @@ grep -q 'Run-time error 107' "$T/r.ref" || { echo "⛔ REFUSE(2): the oracle's s
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" r.icn </dev/null ) 2>&1 | python3 "$HERE/util_render_error_voice.py" icon >"$T/$M.out"
-  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o r.s r.icn </dev/null && gcc r.s -o r.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
+  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=r.s r.icn </dev/null && gcc r.s -o r.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
        ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./r.bin </dev/null ) 2>&1 | python3 "$HERE/util_render_error_voice.py" icon >"$T/$M.out"
   fi
   if [ -n "${FAIL_ONCE:-}" ]; then sed -i '1s/^null 107/null 114/' "$T/$M.out"; fi

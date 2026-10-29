@@ -38,7 +38,7 @@ EOF
 timeout -k 5 60 "$SW" -q -t halt "$W/z.pl" < /dev/null > "$W/z.ref" 2> "$W/ref.err"
 [ "$(grep -c . "$W/z.ref")" -eq 12 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the 12 probe lines ($(grep -c . "$W/z.ref") of them; $(head -c 160 "$W/ref.err"))"; exit 2; }
 ( cd "$W" && timeout -k 5 120 "$ROOT/scrip" z.pl < /dev/null > m3.out 2>&1 ); r3=$?
-( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile -o z.s z.pl < /dev/null > c.err 2>&1 && gcc -no-pie -o z.bin z.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > link.err 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile or link in mode 4 ($(head -c 120 "$W/c.err" "$W/link.err" 2>/dev/null | tr '\n' ' '))"; exit 2; }
+( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile --out=z.s z.pl < /dev/null > c.err 2>&1 && gcc -no-pie -o z.bin z.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > link.err 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile or link in mode 4 ($(head -c 120 "$W/c.err" "$W/link.err" 2>/dev/null | tr '\n' ' '))"; exit 2; }
 ( cd "$W" && timeout -k 5 120 ./z.bin < /dev/null > m4.out 2>&1 ); r4=$?
 bad=0
 for m in m3 m4; do rc=$([ $m = m3 ] && echo $r3 || echo $r4)

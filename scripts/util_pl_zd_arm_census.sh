@@ -32,7 +32,7 @@ census_arm() {
     local armname="$1"
     local env_pfx="$2"
     local out="$TMP/$armname"
-    printf '%s\n' "${FILES[@]}" | xargs -P "$JOBS" -I{} env $env_pfx SCRIP_ZD_DIAG=1 timeout -k 5 20 "$SCRIP" --compile {} -o /dev/null 2>>"$out" >/dev/null
+    printf '%s\n' "${FILES[@]}" | xargs -P "$JOBS" -I{} env $env_pfx SCRIP_ZD_DIAG=1 timeout -k 5 20 "$SCRIP" --compile {} --out=/dev/null 2>>"$out" >/dev/null
     local armed refused
     # ⛔ THE COUNTER TRAP (measured PZ-0(c), 2026-08-21): "[ZD] run ... REFUSED" is the ONLY line a
     # refused run prints, and an ARMED run prints NO "run" line at all -- it prints one

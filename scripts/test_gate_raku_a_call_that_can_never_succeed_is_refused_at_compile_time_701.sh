@@ -43,7 +43,7 @@ bad=0
 for i in $(seq 1 $n); do
     kind=$(cat "$W/a$i.kind"); want=$(cat "$W/a$i.out"); wrc=$(cat "$W/a$i.rc")
     o3=$(cd "$W" && timeout -k 5 60 "$ROOT/scrip" "$W/a$i.raku" < /dev/null 2> "$W/a$i.e3"); r3=$?
-    ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/a$i.s" "$W/a$i.raku" < /dev/null > /dev/null 2> "$W/a$i.ec" ); rc=$?
+    ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/a$i.s" "$W/a$i.raku" < /dev/null > /dev/null 2> "$W/a$i.ec" ); rc=$?
     v3=$(grep -c '^scrip: error 701: ' "$W/a$i.e3"); vc=$(grep -c '^scrip: error 701: ' "$W/a$i.ec")
     if [ "$kind" = refuse ]; then
         if [ "$o3" = "$want" ] && [ $r3 -eq 1 ] && [ "$v3" -eq 1 ] && [ $rc -eq 1 ] && [ "$vc" -eq 1 ] && [ ! -e "$W/a$i.s" ]; then echo "  ok  ($i) refused 701 before any code: m3 rc 1, no output; m4 compile rc 1, no .s"

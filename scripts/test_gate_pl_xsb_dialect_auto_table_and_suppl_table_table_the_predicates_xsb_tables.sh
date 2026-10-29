@@ -47,7 +47,7 @@ for w in $WITNESSES; do
     verdict "$w: the stored ref is what live XSB 5.0.0 writes" "$d/temp" "$WIT/$w.ref"
     case "$MODES" in *m3*) ( cd "$d" && timeout -k 5 120 "$SCRIP" run.pl </dev/null > m3.out 2> m3.err ); verdict "$w: SCRIP m3 tables what XSB tables" "$d/m3.out" "$WIT/$w.ref" ;; esac
     case "$MODES" in *m4*)
-        if ( cd "$d" && timeout -k 5 240 "$SCRIP" --compile -o run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$d/run.s" -o "$d/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$d/m4.lerr"; then
+        if ( cd "$d" && timeout -k 5 240 "$SCRIP" --compile --out=run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$d/run.s" -o "$d/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$d/m4.lerr"; then
             ( cd "$d" && timeout -k 5 120 "$d/run.bin" </dev/null > m4.out 2> m4.err ); verdict "$w: SCRIP m4 tables what XSB tables" "$d/m4.out" "$WIT/$w.ref"
         else total=$((total+1)); red=$((red+1)); echo "  RED $w: SCRIP m4 did not compile or link: $(head -c 200 "$d/m4.cerr" "$d/m4.lerr" 2>/dev/null)"; fi ;;
     esac

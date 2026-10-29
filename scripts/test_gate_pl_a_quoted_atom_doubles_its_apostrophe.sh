@@ -55,7 +55,7 @@ TEOF
 run_mode() {          # run_mode <mode> <program-file> -> prints stdout, returns the program's rc
     local mode="$1" prog="$2"
     if [ "$mode" = m3 ]; then timeout -k 5 20 "$SCRIP" "$prog" </dev/null 2>&1; return $?; fi
-    timeout -k 5 40 "$SCRIP" --compile -o "$D/e.s" "$prog" </dev/null >"$D/cc.log" 2>&1 || { echo "COMPILEFAIL $(tail -1 "$D/cc.log")"; return 3; }
+    timeout -k 5 40 "$SCRIP" --compile --out="$D/e.s" "$prog" </dev/null >"$D/cc.log" 2>&1 || { echo "COMPILEFAIL $(tail -1 "$D/cc.log")"; return 3; }
     gcc -m64 -no-pie "$D/e.s" -o "$D/e.bin" -L "$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm >"$D/ld.log" 2>&1 || { echo "LINKFAIL $(tail -1 "$D/ld.log")"; return 3; }
     timeout -k 5 20 "$D/e.bin" </dev/null 2>&1; return $?
 }

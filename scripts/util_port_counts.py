@@ -205,7 +205,7 @@ def run_pipeline(program, stdin_file, root, top, keep):
     stem = os.path.splitext(os.path.basename(program))[0]
     s, o, b = os.path.join(w, stem + ".s"), os.path.join(w, stem + ".o"), os.path.join(w, stem)
     env = dict(os.environ, SCRIP_NOHUGE="1")
-    r = subprocess.run([scrip, "--compile", "-o", s, program], stdin=subprocess.DEVNULL,
+    r = subprocess.run([scrip, "--compile", f"--out={s}", program], stdin=subprocess.DEVNULL,
                        capture_output=True, text=True, env=env, timeout=600)
     if r.returncode != 0 or not os.path.isfile(s): die("mode-4 compile failed for %s: %s" % (program, r.stderr.strip()[:300]))
     if subprocess.run(["as", "--64", "-o", o, s], capture_output=True).returncode != 0: die("assembly failed for %s" % s)

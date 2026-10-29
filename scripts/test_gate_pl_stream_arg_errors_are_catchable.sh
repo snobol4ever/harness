@@ -32,7 +32,7 @@ PLEOF
   got=$(timeout -k 5 20 "$SCRIP" "$D/c.pl" 2>/dev/null); rc=$?
   if [ "$got" != "$want" ]; then printf '  m3 RED  %-16s rc=%s got [%s] want [%s]\n' "$nm" "$rc" "$got" "$want"; FAIL=$((FAIL+1)); else PASS=$((PASS+1)); fi
   N=$((N+1))
-  if ! timeout -k 5 60 "$SCRIP" --compile -o "$D/c.s" "$D/c.pl" >/dev/null 2>&1; then printf '  m4 RED  %-16s compile failed\n' "$nm"; FAIL=$((FAIL+1)); return; fi
+  if ! timeout -k 5 60 "$SCRIP" --compile --out="$D/c.s" "$D/c.pl" >/dev/null 2>&1; then printf '  m4 RED  %-16s compile failed\n' "$nm"; FAIL=$((FAIL+1)); return; fi
   if ! gcc -m64 -no-pie "$D/c.s" -o "$D/c.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then printf '  m4 RED  %-16s link failed\n' "$nm"; FAIL=$((FAIL+1)); return; fi
   got=$(timeout -k 5 20 "$D/c.bin" 2>/dev/null); rc=$?
   if [ "$got" != "$want" ]; then printf '  m4 RED  %-16s rc=%s got [%s] want [%s]\n' "$nm" "$rc" "$got" "$want"; FAIL=$((FAIL+1)); else PASS=$((PASS+1)); fi

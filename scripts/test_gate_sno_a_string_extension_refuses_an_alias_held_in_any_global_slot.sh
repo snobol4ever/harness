@@ -25,7 +25,7 @@ SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "REFUSED(2): correctness o
 [ -x "$ROOT/scrip" ] && [ -f "$ROOT/out/libscrip_rt.so" ] || { echo "REFUSED(2): $ROOT/scrip or out/libscrip_rt.so not built"; exit 2; }
 command -v gdb >/dev/null 2>&1 || { echo "REFUSED(2): gdb missing"; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
-build() { ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/$1.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/$1.bin" 2>/dev/null ) || { echo "REFUSED(2): $1 did not build in mode 4"; exit 2; }; }
+build() { ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/$1.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/$1.bin" 2>/dev/null ) || { echo "REFUSED(2): $1 did not build in mode 4"; exit 2; }; }
 pad() { for i in $(seq -w 1 400); do echo "        v$i = 'k$i'"; done; }
 { pad; echo "        x = 'seed'"
 for v in 001 002 003 004 005 006 007 008 009 010 011 012 013 014 015 016 200 201 202 203 204 205 206 207 393 394 395 396 397 398 399 400; do

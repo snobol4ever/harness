@@ -49,7 +49,7 @@ command -v gcc >/dev/null || { echo "⛔ REFUSED (rc=2): gcc missing -- mode-4 n
 O="$(mktemp -d)"; trap 'rm -rf "$O"' EXIT
 RT="$(cd out && pwd)"
 bash ../harness/scripts/bench_wrap.sh "$SNO" --mode=iter --n="$NITER" -o "$O/k.sno" >/dev/null 2>"$O/wrap.err" || { echo "⛔ REFUSED (rc=2): bench_wrap.sh could not build the scaled kernel:"; sed 's/^/    /' "$O/wrap.err"; exit 2; }
-./scrip --compile -o "$O/k.s" "$O/k.sno" < /dev/null > "$O/compile.log" 2>&1 || { echo "⛔ REFUSED (rc=2): mode-4 compile of the scaled kernel failed -- see that before reading any number"; tail -5 "$O/compile.log" | sed 's/^/    /'; exit 2; }
+./scrip --compile --out="$O/k.s" "$O/k.sno" < /dev/null > "$O/compile.log" 2>&1 || { echo "⛔ REFUSED (rc=2): mode-4 compile of the scaled kernel failed -- see that before reading any number"; tail -5 "$O/compile.log" | sed 's/^/    /'; exit 2; }
 gcc -no-pie "$O/k.s" -o "$O/k.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread > "$O/link.log" 2>&1 || { echo "⛔ REFUSED (rc=2): link of the mode-4 kernel failed"; tail -5 "$O/link.log" | sed 's/^/    /'; exit 2; }
 timeout -k 5 900s valgrind --tool=callgrind --callgrind-out-file="$O/cg.out" "$O/k.bin" < /dev/null > "$O/run.log" 2>&1 || { echo "⛔ REFUSED (rc=2): the callgrind run itself failed -- see that before reading any number"; exit 2; }
 

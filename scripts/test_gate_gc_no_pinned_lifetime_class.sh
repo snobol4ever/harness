@@ -62,7 +62,7 @@ printf '        T = TABLE()\n        A = ARRAY(50)\n        DATA("R(F)")\n      
 [ -s "$T/w.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced an EMPTY ref"; exit 2; }
 ( cd "$T" && SCRIP_ZETA_TELEM=1 timeout -k 5 60s "$SCRIP" w.sno </dev/null > m3.out 2> m3.err ); r=$?; c=$(grep -c regeneration "$T/m3.err" || true)
 if [ "$r" -eq 0 ] && cmp -s "$T/m3.out" "$T/w.ref" && [ "$c" -ge 1 ]; then echo "  m3 PASS (rc=0, $c collections, byte-identical to the oracle)"; else echo "  m3 FAIL (rc=$r collections=$c; a live table, array or record did not survive the slide, or the run was vacuous)"; RC=1; fi
-if "$SCRIP" --compile "$T/w.sno" -o "$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then
+if "$SCRIP" --compile "$T/w.sno" --out="$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then
     ( cd "$T" && SCRIP_ZETA_TELEM=1 timeout -k 5 60s ./w4 </dev/null > m4.out 2> m4.err ); r=$?; c=$(grep -c regeneration "$T/m4.err" || true)
     if [ "$r" -eq 0 ] && cmp -s "$T/m4.out" "$T/w.ref" && [ "$c" -ge 1 ]; then echo "  m4 PASS (rc=0, $c collections, byte-identical to the oracle)"; else echo "  m4 FAIL (rc=$r collections=$c)"; RC=1; fi
 else echo "  m4 FAIL (compile or link refused: $(head -c 200 "$T/ld.log"))"; RC=1; fi

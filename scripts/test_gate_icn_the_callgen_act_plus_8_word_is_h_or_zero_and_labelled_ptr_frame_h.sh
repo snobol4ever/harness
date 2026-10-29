@@ -18,7 +18,7 @@ SC="${ICN_ACT8_SCRIP:-$ROOT/scrip}"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnact8.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
 timeout -k 5 60 "$SC" --dump-zeta "$FIX" < /dev/null > "$W/zeta.txt" 2> "$W/zeta.err"
-timeout -k 5 60 "$SC" --compile -o "$W/w.s" "$FIX" < /dev/null > /dev/null 2> "$W/c.err" || { echo "GATE UNPROVEN(2) [$G]: the fixture did not compile: $(head -2 "$W/c.err")"; exit 2; }
+timeout -k 5 60 "$SC" --compile --out="$W/w.s" "$FIX" < /dev/null > /dev/null 2> "$W/c.err" || { echo "GATE UNPROVEN(2) [$G]: the fixture did not compile: $(head -2 "$W/c.err")"; exit 2; }
 hrows="$(grep -c 'PTR_FRAME_H *callgen.act +8' "$W/zeta.txt")"
 crows="$(grep -c 'PTR_CODE *callgen.act +8' "$W/zeta.txt")"
 bad=0

@@ -141,7 +141,7 @@ graded=0; agreed=0
 for w in ev.sno code.sno; do
     m3=$(timeout -k 5 300 "$SCRIP" "$T/$w" 2>/dev/null | tail -1)
     s4="$T/$w.s"; b4="$T/$w.bin"; m4=""
-    if timeout -k 5 300 "$SCRIP" --compile -o "$s4" "$T/$w" >/dev/null 2>&1 && gcc "$s4" -o "$b4" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then m4=$(timeout -k 5 300 "$b4" 2>/dev/null | tail -1); fi
+    if timeout -k 5 300 "$SCRIP" --compile --out="$s4" "$T/$w" >/dev/null 2>&1 && gcc "$s4" -o "$b4" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then m4=$(timeout -k 5 300 "$b4" 2>/dev/null | tail -1); fi
     if [ -n "$ORACLE" ]; then orc=$(cd "$T" && timeout -k 5 300 "$ORACLE" "$T/$w" 2>/dev/null | tail -1); else orc="$m3"; fi
     graded=$((graded+1))
     if [ "$m3" = "$orc" ] && [ "$m4" = "$orc" ]; then agreed=$((agreed+1))

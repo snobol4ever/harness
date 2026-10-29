@@ -28,7 +28,7 @@ EOF
 timeout -k 5 20 "$SW" -q -t halt "$W/z.pl" < /dev/null > "$W/z.ref" 2> "$W/ref.err"
 [ "$(grep -c . "$W/z.ref")" -eq 4 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the 4 probe lines ($(grep -c . "$W/z.ref") of them; $(head -c 160 "$W/ref.err"))"; exit 2; }
 timeout -k 5 30 "$ROOT/scrip" "$W/z.pl" < /dev/null > "$W/m3.out" 2>&1; r3=$?
-"$ROOT/scrip" --compile -o "$W/z.s" "$W/z.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 160 "$W/c.err"))"; exit 2; }
+"$ROOT/scrip" --compile --out="$W/z.s" "$W/z.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 160 "$W/c.err"))"; exit 2; }
 gcc -no-pie -o "$W/z.bin" "$W/z.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/link.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link ($(head -c 160 "$W/link.err"))"; exit 2; }
 timeout -k 5 20 "$W/z.bin" < /dev/null > "$W/m4.out" 2>&1; r4=$?
 sed '1s/.*/corrupted/' "$W/z.ref" > "$W/z.bad"

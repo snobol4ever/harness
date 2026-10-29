@@ -36,7 +36,7 @@ for P in p1 p2 p3; do
   ( cd "$T" && "$ICONT" -s $P.icn -x ) >"$T/$P.ref" 2>&1 || { echo "⛔ REFUSE(2): the oracle itself did not run $P"; exit 2; }
   for M in m3 m4; do
     if [ "$M" = m3 ]; then ( cd "$T" && ICONPATH="$T" timeout -k 5 20 "$SCRIP" $P.icn </dev/null ) >"$T/$P.$M.out" 2>&1
-    else ( cd "$T" && ICONPATH="$T" timeout -k 5 20 "$SCRIP" --compile -o $P.s $P.icn </dev/null && gcc $P.s -o $P.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $P did not build"; exit 2; }
+    else ( cd "$T" && ICONPATH="$T" timeout -k 5 20 "$SCRIP" --compile --out=$P.s $P.icn </dev/null && gcc $P.s -o $P.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $P did not build"; exit 2; }
          ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./$P.bin </dev/null ) >"$T/$P.$M.out" 2>&1
     fi
     examined=$((examined+1))

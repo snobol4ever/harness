@@ -47,7 +47,7 @@ for i in $(seq 1 20); do
 done
 if [ "$bad" = 0 ]; then echo "  m3 PASS (20/20 byte-identical to the oracle across two COLLECTs: $(tr '\n' '|' < "$T/w.ref"))"
 else echo "  m3 FAIL ($bad/20 diverged -- the by-name call lost its function name across COLLECT; first divergence: $(echo "$first" | tr '\n' '|'); oracle: $(tr '\n' '|' < "$T/w.ref"))"; RC=1; fi
-if "$SCRIP" --compile "$T/w.sno" -o "$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w" 2>"$T/ld.log"; then
+if "$SCRIP" --compile "$T/w.sno" --out="$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w" 2>"$T/ld.log"; then
     got4="$(timeout -k 5 8s "$T/w" </dev/null 2>&1)"
     if [ "$got4" = "$(cat "$T/w.ref")" ]; then echo "  m4 PASS (the .rodata copy is outside the heap and stays outside it: $(echo "$got4" | tr '\n' '|'))"
     else echo "  m4 FAIL (mode 4 diverged from the oracle: got $(echo "$got4" | tr '\n' '|'), oracle $(tr '\n' '|' < "$T/w.ref"))"; RC=1; fi

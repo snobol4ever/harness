@@ -173,7 +173,7 @@ run_jvm_backend() {
                 SKIP_COUNT=$((SKIP_COUNT+1))
                 return
             fi
-            "$SCRIP_CC" -jvm "$src" -o "$jfile" 2>/dev/null || true
+            "$SCRIP_CC" -jvm "$src" --out="$jfile" 2>/dev/null || true
             ;;
         ICON-JVM)
             if [ -z "$SCRIP_CC" ]; then
@@ -181,7 +181,7 @@ run_jvm_backend() {
                 SKIP_COUNT=$((SKIP_COUNT+1))
                 return
             fi
-            "$SCRIP_CC" -icn -jvm "$src" -o "$jfile" 2>/dev/null || true
+            "$SCRIP_CC" -icn -jvm "$src" --out="$jfile" 2>/dev/null || true
             ;;
         PROLOG-JVM)
             if [ -z "$SCRIP_CC" ]; then
@@ -189,7 +189,7 @@ run_jvm_backend() {
                 SKIP_COUNT=$((SKIP_COUNT+1))
                 return
             fi
-            "$SCRIP_CC" -pl -jvm "$src" -o "$jfile" 2>/dev/null || true
+            "$SCRIP_CC" -pl -jvm "$src" --out="$jfile" 2>/dev/null || true
             ;;
     esac
 

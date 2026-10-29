@@ -104,7 +104,7 @@ arm() {
 for p in g s; do
     if [ "$p" = g ]; then w="$want_g"; o=gprolog; else w="$want_s"; o=swipl; fi
     arm "$p.pl m3" "$w" "$o" timeout -k 5 20 "$B/scrip" --run $([ "$p" = g ] && printf %s --dialect=gnu) "$p.pl" < /dev/null
-    if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile $([ "$p" = g ] && printf %s --dialect=gnu) -o "$p.s" "$p.pl" < /dev/null > /dev/null 2>&1 && [ -s "$p.s" ] \
+    if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile $([ "$p" = g ] && printf %s --dialect=gnu) --out="$p.s" "$p.pl" < /dev/null > /dev/null 2>&1 && [ -s "$p.s" ] \
          && gcc -m64 -no-pie "$p.s" -o "$p.bin" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ); then
         arm "$p.pl m4" "$w" "$o" timeout -k 5 20 "./$p.bin" < /dev/null
     else echo "  $p.pl m4 RED: the program did not compile or link in mode 4"; red=1; fi

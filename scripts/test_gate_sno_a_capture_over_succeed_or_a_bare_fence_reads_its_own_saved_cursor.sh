@@ -120,7 +120,7 @@ arm() { local n="$1" what="$2" got="$3" err="$4" w="$5"
     else fail=$((fail + 1)); echo "  arm $n FAIL  $what"; diff "$w" "$got" | head -8 | sed 's/^/      /'; grep -m2 'CORRUPT CAPTURE ENTRY' "$err" | cut -c1-160 | sed 's/^/      stderr: /'; fi; }
 m3() { timeout -k 5 30 "$SCRIP" "$T/$1.sno" < "$2" > "$T/$1.m3$3" 2> "$T/$1.e3$3"; }
 m4() { : > "$T/$1.m4$3"; : > "$T/$1.e4$3"
-       if [ -x "$T/$1.bin" ] || { timeout -k 5 120 "$SCRIP" --compile -o "$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
+       if [ -x "$T/$1.bin" ] || { timeout -k 5 120 "$SCRIP" --compile --out="$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
           && gcc -no-pie "$T/$1.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$T/$1.bin" 2>/dev/null; }
        then timeout -k 5 30 "$T/$1.bin" < "$2" > "$T/$1.m4$3" 2> "$T/$1.e4$3"; else echo COMPILE-FAILED > "$T/$1.m4$3"; fi; }
 m3 st /dev/null ""; arm 1 "m3 static + stored: captures over SUCCEED and a stored bare FENCE assign what they matched" "$T/st.m3" "$T/st.e3" "$T/st.want"

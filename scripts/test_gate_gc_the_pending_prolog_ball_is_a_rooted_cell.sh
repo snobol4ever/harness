@@ -58,7 +58,7 @@ main :- catch(( X is foo + 1, write(X) ), error(type_error(evaluable, foo/0), _)
 PL
 RC=0; examined=0
 echo "ARM 1 -- BEHAVIOUR: the structured catcher catches under collection (arena SCRIP_HEAP_KB=$SCRIP_HEAP_KB)"
-"$SCRIP" --compile -o "$T/w.s" "$T/w.pl" >/dev/null 2>&1 || { echo "⛔ REFUSE(2): --compile refused the witness"; exit 2; }
+"$SCRIP" --compile --out="$T/w.s" "$T/w.pl" >/dev/null 2>&1 || { echo "⛔ REFUSE(2): --compile refused the witness"; exit 2; }
 gcc "$T/w.s" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/w.bin" 2>/dev/null \
   || { echo "⛔ REFUSE(2): the mode 4 witness would not link"; exit 2; }
 nred=0

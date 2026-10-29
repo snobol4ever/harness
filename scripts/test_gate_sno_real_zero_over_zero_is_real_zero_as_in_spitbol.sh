@@ -46,7 +46,7 @@ SNO
 grep -qx "X=0. REAL" "$D/z.sbl" && grep -qx "nonzero/zr fails 262" "$D/z.sbl" || refuse "the oracle no longer reads 0. REAL for 0 / 0.0 and 262 for 1.5 / 0.0 -- re-read sbl"
 fails=0
 (cd "$D" && timeout -k 5 20 "$B/scrip" z.sno < /dev/null > z.m3 2>/dev/null)
-"$B/scrip" --compile -o "$D/z.s" "$D/z.sno" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$D/z.bin" "$D/z.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null || refuse "could not build the m4 arm -- a toolchain failure, not a verdict"
+"$B/scrip" --compile --out="$D/z.s" "$D/z.sno" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$D/z.bin" "$D/z.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null || refuse "could not build the m4 arm -- a toolchain failure, not a verdict"
 (cd "$D" && timeout -k 5 20 ./z.bin < /dev/null > z.m4 2>/dev/null)
 for m in m3 m4; do
     if cmp -s "$D/z.sbl" "$D/z.$m"; then echo "  ok    $m $(wc -l < "$D/z.sbl") lines, byte-identical to sbl"

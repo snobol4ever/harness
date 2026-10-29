@@ -102,7 +102,7 @@ for E in "$D"/*.icn; do
 
     # ---- SCRIP mode 4 (--compile -> as -> ld -> run) ------------------------------------------
     m4_out=""; m4_rc=""
-    if ( cd "$D" && "$SCRIP" --compile -o "$W/$N.s" "$E" </dev/null ) >"$W/$N.m4c.log" 2>&1 \
+    if ( cd "$D" && "$SCRIP" --compile --out="$W/$N.s" "$E" </dev/null ) >"$W/$N.m4c.log" 2>&1 \
        && as --64 -o "$W/$N.o" "$W/$N.s" 2>>"$W/$N.m4c.log" \
        && gcc -no-pie -o "$W/$N.m4bin" "$W/$N.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>>"$W/$N.m4c.log"; then
         if [ "$STREAM" = stderr ]; then m4_out="$(cd "$D" && timeout -k 5 "$TMO" "$W/$N.m4bin" ${SWA[@]+"${SWA[@]}"} ${M3ARGS[@]+"${M3ARGS[@]}"} <"$IN" 2>&1 >/dev/null)"

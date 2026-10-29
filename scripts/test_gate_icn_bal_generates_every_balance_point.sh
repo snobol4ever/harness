@@ -37,7 +37,7 @@ grep -q '^6 8 12 $' "$T/b.ref" || { echo "⛔ REFUSE(2): the oracle's own first 
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" b.icn </dev/null ) >"$T/$M.out" 2>&1
-  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o b.s b.icn </dev/null && gcc b.s -o b.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
+  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=b.s b.icn </dev/null && gcc b.s -o b.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
        ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./b.bin </dev/null ) >"$T/$M.out" 2>&1
   fi
   if [ -n "${FAIL_ONCE:-}" ]; then sed -i '1s/^6 8 12 $/6 /' "$T/$M.out"; fi

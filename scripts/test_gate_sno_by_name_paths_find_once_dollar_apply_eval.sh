@@ -117,7 +117,7 @@ printf "        N = 'NOSUCH' 'FN'\n        OUTPUT = APPLY(N, 1)\nEND\n" > "$W/u.
 red=0
 for p in w gc; do ( cd "$W" && "$SBL" $(sbl_lang_flags) $p.sno < /dev/null > $p.ref 2>/dev/null ); [ -s "$W/$p.ref" ] || { echo "REFUSED(2): the oracle printed nothing for $p.sno"; exit 2; }
   fl=""; [ $p = w ] && fl="--stlimit"
-  ( cd "$W" && "$ROOT/scrip" --compile $fl -o $p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }; done
+  ( cd "$W" && "$ROOT/scrip" --compile $fl --out=$p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }; done
 for m in m3 m4; do
   if [ $m = m3 ]; then o=$( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --stlimit w.sno < /dev/null 2>/dev/null ); else o=$( cd "$W" && timeout -k 5 60 ./w.bin < /dev/null 2>/dev/null ); fi
   [ "$o" = "$(cat "$W/w.ref")" ] && echo "ok  (1) $m: the \$, APPLY and EVAL witness answers the oracle" || { echo "RED (1) $m differs from the oracle: $(diff <(echo "$o") "$W/w.ref" | head -4 | tr '\n' ' ')"; red=1; }
@@ -125,12 +125,12 @@ for m in m3 m4; do
   [ "$o" = "$(cat "$W/gc.ref")" ] && echo "ok  (2) $m: a variable created through \$ answers the oracle across collections at every opportunity ($o)" || { echo "RED (2) $m under SCRIP_GC_STRESS=1: [$o] against [$(cat "$W/gc.ref")]"; red=1; }
 done
 uo="$( cd "$W" && "$SBL" $(sbl_lang_flags) u.sno < /dev/null 2>/dev/null )"; u3="$( cd "$W" && timeout -k 5 60 "$ROOT/scrip" u.sno < /dev/null 2>&1 >/dev/null )"
-( cd "$W" && "$ROOT/scrip" --compile -o u.s u.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o u.bin 2>/dev/null ) || { echo "REFUSED(2): u.sno did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out=u.s u.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o u.bin 2>/dev/null ) || { echo "REFUSED(2): u.sno did not build in mode 4"; exit 2; }
 u4="$( cd "$W" && timeout -k 5 60 ./u.bin < /dev/null 2>&1 >/dev/null )"
 case "$uo" in *"ERROR 022"*) ;; *) echo "REFUSED(2): the oracle did not raise ERROR 022 for APPLY of an unknown name: [$(echo "$uo" | head -3 | tr '\n' ' ')]"; exit 2;; esac
 for m in m3 m4; do [ $m = m3 ] && ue="$u3" || ue="$u4"
   case "$ue" in *"error 22:"*) echo "ok  (1) $m: APPLY of an unknown name raises error 22, as the oracle's ERROR 022";; *) echo "RED (1) $m: APPLY of an unknown name did not raise error 22: [$(echo "$ue" | head -2 | tr '\n' ' ')]"; red=1;; esac; done
-( cd "$W" && "$ROOT/scrip" --compile -o cnt.s cnt.sno < /dev/null > /dev/null 2>&1 && gcc cnt.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o cnt.bin 2>/dev/null ) || { echo "REFUSED(2): the counting witness did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out=cnt.s cnt.sno < /dev/null > /dev/null 2>&1 && gcc cnt.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o cnt.bin 2>/dev/null ) || { echo "REFUSED(2): the counting witness did not build"; exit 2; }
 cw="$( cd "$W" && "$SBL" $(sbl_lang_flags) cnt.sno < /dev/null 2>/dev/null )"; co="$( cd "$W" && timeout -k 5 60 ./cnt.bin < /dev/null 2>/dev/null )"
 [ "$cw" = "$co" ] || { echo "RED (3-5) the counting witness itself does not answer the oracle: [$co] against [$cw]"; red=1; }
 hits() { local o; o="$( cd "$W" && timeout -k 5 600 gdb -q -batch -ex 'set breakpoint pending on' -ex "break $1" -ex 'ignore 1 100000000' -ex 'run < /dev/null > /dev/null 2>&1' -ex 'info breakpoints' ./cnt.bin 2>&1 )"

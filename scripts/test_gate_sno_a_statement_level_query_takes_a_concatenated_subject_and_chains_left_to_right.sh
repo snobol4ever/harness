@@ -98,7 +98,7 @@ arm() { local n="$1" what="$2" ok="$3"
     if [ "$ok" = 1 ]; then pass=$((pass + 1)); echo "  arm $n PASS  $what"; else fail=$((fail + 1)); echo "  arm $n FAIL  $what"; fi; }
 same_m3() { timeout -k 5 60 "$SCRIP" "$T/$1.sno" < /dev/null > "$T/$1.m3" 2>&1
     cmp -s "$T/$1.want" "$T/$1.m3" || { diff "$T/$1.want" "$T/$1.m3" | head -6 | cut -c1-160 | sed 's/^/      /'; return 1; }; }
-same_m4() { timeout -k 5 120 "$SCRIP" --compile -o "$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
+same_m4() { timeout -k 5 120 "$SCRIP" --compile --out="$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
         && gcc -no-pie "$T/$1.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$T/$1.bin" 2>/dev/null || { echo "      COMPILE-FAILED"; return 1; }
     timeout -k 5 60 "$T/$1.bin" < /dev/null > "$T/$1.m4" 2>&1
     cmp -s "$T/$1.want" "$T/$1.m4" || { diff "$T/$1.want" "$T/$1.m4" | head -6 | cut -c1-160 | sed 's/^/      /'; return 1; }; }
@@ -121,7 +121,7 @@ CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/counter.sc $B/stack.s
 ( . "$HERE/lib_build_currency.sh" && assert_parser_current snobol4 "$ROOT" ) > "$T/cur.txt" 2>&1 || { cat "$T/cur.txt"; refuse "out/parser_snobol4 is missing or older than a source it was compiled from -- make parsers"; }
 SW="$(declared_switches_beside "$B/parser_snobol4.sc")" && [ -n "$SW" ] || refuse "bootstrap/parser_snobol4.sc declares no heap or stack"
 cat $CHAIN "$B/parser_snobol4.sc" > "$T/chain.sc"
-"$SCRIP" --compile "$T/chain.sc" -o "$T/chain.s" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$RT_DIR" -L"$RT_DIR" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
+"$SCRIP" --compile "$T/chain.sc" --out="$T/chain.s" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$RT_DIR" -L"$RT_DIR" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
     || refuse "the .sc parser chain did not compile or link to a mode-4 binary"
 for p in coo concat chain ctl; do
     ( cd "$T"; SNO_LIB="$CORPUS/include" timeout -k 5 60 "$ROOT/out/parser_snobol4" - < "$p.sno" > "$T/$p.cdump" 2> /dev/null ); crc=$?

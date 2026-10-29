@@ -65,7 +65,7 @@ PL
 want="$(cd "$D" && { timeout -k 5 20 "$SW" -q a.pl -t halt < /dev/null 2>/dev/null; timeout -k 5 20 "$SW" -q b.pl -t halt < /dev/null 2>/dev/null; } | grep .)"
 [ "$(printf '%s\n' "$want" | grep -c .)" = 26 ] || refuse "swipl did not answer the twenty-six properties: [$want]"
 for p in a b; do
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $p.s $p.pl < /dev/null > /dev/null 2>&1 ) || refuse "mode 4 compile of $p.pl failed"
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=$p.s $p.pl < /dev/null > /dev/null 2>&1 ) || refuse "mode 4 compile of $p.pl failed"
     ( cd "$D" && gcc -m64 -no-pie $p.s -o $p.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || refuse "mode 4 link of $p.pl failed"
 done
 red=0

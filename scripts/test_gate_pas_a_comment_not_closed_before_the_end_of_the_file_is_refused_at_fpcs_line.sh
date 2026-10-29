@@ -28,7 +28,7 @@ refusal() { local p="$1" om="$2" fl
   if [ -z "$fl" ]; then echo "⛔ GATE REFUSE(2) [$G]: fpc $om did not refuse $p with a line -- the oracle gives no line to compare"; exit 2; fi
   for m in m3 m4; do N=$((N + 1))
     if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?
-    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
+    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/$p.s" "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
     sl=$(grep -o '6\.1\.8 violation line [0-9]*' "$T/e" | head -1 | tr -dc '0-9' | sed 's/^618//')
     if [ "$rc" != 0 ] && [ "$rc" -lt 124 ] && [ "$sl" = "$fl" ] && [ ! -s "$T/o" ]; then echo "  $p $m: refused rc=$rc naming 6.1.8 at line $sl, the line fpc $om gives"
     else echo "  ⛔ $p $m FAILED: rc=$rc, line '$sl' (fpc $fl): $(head -1 "$T/e" | cut -c1-120)"; RC=1; fi; done; }
@@ -40,7 +40,7 @@ refusal cmtbrace2 -Mobjfpc
 [ -n "${FAIL_ONCE:-}" ] && echo "corrupted by FAIL_ONCE" >> "$T/cmtok.want"
 for m in m3 m4; do N=$((N + 1))
   if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run cmtok.pas </dev/null >"$T/o" 2>"$T/e" ); rc=$?
-  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/cmtok.s" cmtok.pas </dev/null >/dev/null 2>"$T/e" && cc -m64 -no-pie cmtok.s -o cmtok.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./cmtok.m4 </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
+  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/cmtok.s" cmtok.pas </dev/null >/dev/null 2>"$T/e" && cc -m64 -no-pie cmtok.s -o cmtok.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./cmtok.m4 </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
   if [ "$rc" = "$frc" ] && cmp -s "$T/cmtok.want" "$T/o"; then echo "  cmtok $m: rc=$rc, stdout byte-identical to fpc -Miso ($(tr '\n' '|' < "$T/o"))"
   else echo "  ⛔ cmtok $m FAILED: rc=$rc (fpc $frc)"; diff "$T/cmtok.want" "$T/o" | head -4 | sed 's/^/      /'; echo "      err : $(head -1 "$T/e" | cut -c1-140)"; RC=1; fi; done
 if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: an unclosed comment is refused naming 6.1.8 at fpc's line, closed comments run, $N of $N arms"

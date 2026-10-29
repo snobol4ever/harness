@@ -50,7 +50,7 @@ if [ ! -x "$SCRIP" ]; then
   exit 1
 fi
 
-"$SCRIP" --compile "$DEMO/json/json.sno" -o /tmp/gate_json_fence0.s < /dev/null > /dev/null 2>&1
+"$SCRIP" --compile "$DEMO/json/json.sno" --out=/tmp/gate_json_fence0.s < /dev/null > /dev/null 2>&1
 gcc -no-pie /tmp/gate_json_fence0.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o /tmp/gate_json_fence0.bin 2>/dev/null
 
 for w in synth_perf223 synth_perf224; do

@@ -29,7 +29,7 @@ cat > "$W/cas.sno" <<'EOF'
 BAD	OUTPUT  =  'fail'
 END
 EOF
-(cd "$W" && timeout -k 5 120 "$SCRIP" --compile -o cas.s cas.sno </dev/null >/dev/null 2>&1) \
+(cd "$W" && timeout -k 5 120 "$SCRIP" --compile --out=cas.s cas.sno </dev/null >/dev/null 2>&1) \
     && gcc -no-pie "$W/cas.s" -L"$SD/out" -lscrip_rt -lm -Wl,-rpath,"$SD/out" -o "$W/cas.bin" 2>/dev/null \
     || { echo "⛔ REFUSE(rc=2) [$G]: the witness did not compile and link in mode 4"; exit 2; }
 fail=0

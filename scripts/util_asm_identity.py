@@ -108,7 +108,7 @@ def compile_one(scrip, prog, outs):
     env['S4E_RUN_SLOT_HELD'] = '1'
     slot = run_slot()
     try:
-        r = subprocess.run([scrip, '--compile', '-o', outs, prog], cwd=d, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+        r = subprocess.run([scrip, '--compile', f"--out={outs}", prog], cwd=d, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                            stderr=subprocess.PIPE, timeout=300)
         rc, err = r.returncode, r.stderr.decode('utf-8', 'replace')
     except subprocess.TimeoutExpired:

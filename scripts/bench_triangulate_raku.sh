@@ -159,7 +159,7 @@ run1() {
 }
 build_m4() {  # compile+link once per kernel; the .s and .bin live in $W, never beside the kernel
   local k="$1" s="$W/$1.s" o="$W/$1.o" b="$W/$1.bin"
-  (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$s" "$RDIR/$k.raku" </dev/null >/dev/null 2>"$W/$k.m4build.err") && [ -s "$s" ] || return 1
+  (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$s" "$RDIR/$k.raku" </dev/null >/dev/null 2>"$W/$k.m4build.err") && [ -s "$s" ] || return 1
   as --64 -o "$o" "$s" 2>>"$W/$k.m4build.err" && gcc -no-pie -o "$b" "$o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>>"$W/$k.m4build.err"
 }
 

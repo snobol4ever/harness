@@ -6,7 +6,7 @@
 # PARENT build and the changed build:
 #   (a) `scrip --dump-ir FILE`  stdout + rc   -- the shape of every statement graph. It prints STATEMENT_BEGIN/END with an EMPTY payload, so it is blind to
 #                                               the statement number, the line and the source text; it proves the shape and nothing more;
-#   (b) `scrip --compile -o X.s FILE` the assembly -- which carries the source text of every statement as a comment (:src), a `.loc` line (:line) and the
+#   (b) `scrip --compile --out=X.s FILE` the assembly -- which carries the source text of every statement as a comment (:src), a `.loc` line (:line) and the
 #                                               statement-number-to-line table (:stno). The assembly is the half that proves the placement.
 # Either half alone is insufficient (measured 2026-10-08: two runs of one build are byte-identical, so the comparison is exact).
 # THE PARENT IS NEVER REBUILT PER RUN (cfo: a parent build in a scratch worktree is 7 min 19 s at load 20): its outputs are CAPTURED ONCE, from the build that
@@ -70,8 +70,8 @@ one() {
     [ "$r" = 124 ] && { r=0; timeout -k 5 "$TMO_ALONE" nice -n 19 "$SCRIP" --dump-ir "$b" < /dev/null > "$out.ir" 2>/dev/null || r=$?; }
     [ "$r" = 124 ] && : > "$out.ir"
     echo "rc=$r" >> "$out.ir"
-    r=0; timeout -k 5 "$TMO" nice -n 19 "$SCRIP" --compile -o "$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?
-    [ "$r" = 124 ] && { r=0; rm -f "$out.s"; timeout -k 5 "$TMO_ALONE" nice -n 19 "$SCRIP" --compile -o "$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?; }
+    r=0; timeout -k 5 "$TMO" nice -n 19 "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?
+    [ "$r" = 124 ] && { r=0; rm -f "$out.s"; timeout -k 5 "$TMO_ALONE" nice -n 19 "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?; }
     [ "$r" = 124 ] && rm -f "$out.s"
     echo "rc=$r" > "$out.rc"
     [ -f "$out.s" ] || : > "$out.s"

@@ -31,7 +31,7 @@ for n in "$@"; do
     bad=""
     [ "$rc3" = "$want_rc" ] || bad="$bad m3-rc=$rc3(want $want_rc)"
     [ "$out3" = "$(cat "$d/w.ref")" ] || bad="$bad m3-stdout"
-    if (cd "$d" && timeout -k 5 60 "$root/scrip" --compile -o w.s w.raku >/dev/null 2>&1) \
+    if (cd "$d" && timeout -k 5 60 "$root/scrip" --compile --out=w.s w.raku >/dev/null 2>&1) \
        && (cd "$d" && gcc -no-pie w.s -o w.exe -L"$root/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1); then
         out4=$(cd "$d" && LD_LIBRARY_PATH="$root/out" timeout -k 5 30 ./w.exe < "$stdin_f" 2>/dev/null); rc4=$?
         [ "$rc4" = "$want_rc" ] || bad="$bad m4-rc=$rc4(want $want_rc)"

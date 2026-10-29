@@ -93,7 +93,7 @@ PL
 ( cd "$D" && timeout 60 swipl -q -t halt nd.pl < /dev/null > want 2> /dev/null )
 [ "$(wc -l < "$D/want")" = 22 ] || refuse "swipl did not print twenty-two answers"
 [ "${GATE_CORRUPT_REF:-0}" = 1 ] && sed -i '10s/.*/10-[a,b]/' "$D/want"
-( cd "$D" && timeout 120 "$B/scrip" --compile -o nd.s nd.pl < /dev/null > /dev/null 2> m4.err && gcc nd.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o nd 2>> m4.err ) || refuse "mode 4 did not build: $(tail -2 "$D/m4.err")"
+( cd "$D" && timeout 120 "$B/scrip" --compile --out=nd.s nd.pl < /dev/null > /dev/null 2> m4.err && gcc nd.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o nd 2>> m4.err ) || refuse "mode 4 did not build: $(tail -2 "$D/m4.err")"
 red=0; n=0
 for env in "PLAIN=1" "SCRIP_GC_STRESS=1" "SCRIP_GC_CHAIN_CHECK=1" "SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=1"; do
     for m in m3 m4; do

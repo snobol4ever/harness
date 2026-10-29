@@ -26,7 +26,7 @@ CELLS=(
 )
 swi() { ( cd "$T" && timeout -k 5 20s "$SWI" -q -g halt -t halt "$1" </dev/null 2>/dev/null ); }
 run3() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" "$1" </dev/null 2>/dev/null ); }
-backed() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --dump-homes --compile -o /dev/null "$1" </dev/null 2>&1 | grep -E '^\[HOMES\] .* kind=IR_(UNMARK|UNIFY_CONST|UNIFY_FIRST|UNIFY_VALUE) ' | grep -vc ' off=-1 ' ); }
+backed() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --dump-homes --compile --out=/dev/null "$1" </dev/null 2>&1 | grep -E '^\[HOMES\] .* kind=IR_(UNMARK|UNIFY_CONST|UNIFY_FIRST|UNIFY_VALUE) ' | grep -vc ' off=-1 ' ); }
 RC=0; N=0; A3=0; BAD=""; FIRST=1; TOTAL=0
 for c in "${CELLS[@]}"; do n="${c%%|*}"; body="${c#*|}"; f="$n.pl"
   printf ':- initialization(main).\n%s\n' "$body" > "$T/$f"

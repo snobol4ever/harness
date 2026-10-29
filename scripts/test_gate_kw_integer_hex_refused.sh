@@ -21,7 +21,7 @@ SBL=/home/resources/x64/bin/sbl
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
 mk(){ printf '\t&ANCHOR = "%s"\n\tOUTPUT = "anchor=" &ANCHOR\nEND\n' "$1" > "$W/k.sno"; }
 run3(){ timeout -k 5 8 ./scrip --run "$W/k.sno" </dev/null 2>&1 || true; }
-run4(){ ./scrip --compile -o "$W/k.s" "$W/k.sno" </dev/null >/dev/null 2>&1 || { echo COMPILEFAIL; return; }
+run4(){ ./scrip --compile --out="$W/k.s" "$W/k.sno" </dev/null >/dev/null 2>&1 || { echo COMPILEFAIL; return; }
   as -o "$W/k.o" "$W/k.s" 2>/dev/null && gcc -o "$W/k.bin" "$W/k.o" out/libscrip_rt.so -Wl,-rpath,"$PWD/out" 2>/dev/null || { echo LINKFAIL; return; }
   timeout -k 5 8 "$W/k.bin" </dev/null 2>&1 || true; }
 mk '0x10'; og=$("$SBL" -bf "$W/k.sno" </dev/null 2>&1 || true)

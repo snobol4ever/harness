@@ -35,7 +35,7 @@ for w in w_do w_then w_case w_conj w_compound w_lastarg; do
     ( cd "$T" && "$IC" -s -o "$w.ox" "$w.icn" >/dev/null 2>&1 && ./"$w.ox" > "$w.oracle.txt" 2>&1 )
     grep -q 'Run-time error 106' "$T/$w.oracle.txt" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle's $w run raised no error 106 -- the witness no longer measures this"; exit 2; }
     ( cd "$T" && "$S" "$w.icn" < /dev/null 2>&1 | python3 "$HERE/util_render_error_voice.py" icon > "$w.m3.txt" )
-    ( cd "$T" && "$S" --compile -o "$w.s" "$w.icn" < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/$w.x" "$T/$w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+    ( cd "$T" && "$S" --compile --out="$w.s" "$w.icn" < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/$w.x" "$T/$w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
         || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build $w"; exit 2; }
     ( cd "$T" && ./"$w.x" < /dev/null 2>&1 | python3 "$HERE/util_render_error_voice.py" icon > "$w.m4.txt" )
     cmp -s "$T/$w.oracle.txt" "$T/$w.m3.txt" || { echo "  $w: m3 differs from iconx:"; diff "$T/$w.oracle.txt" "$T/$w.m3.txt" | head -8; red=1; }

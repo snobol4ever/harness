@@ -25,7 +25,7 @@ D="$(mktemp -d)" || refuse "no scratch dir"
 trap 'rm -rf "$D"' EXIT
 RT="$B/out"; RC=0; n=0
 m3() { (cd "$D" && timeout -k 5 60 "$B/scrip" "$1.sno" < /dev/null 2>&1); }
-m4() { "$B/scrip" --compile -o "$D/$1.s" "$D/$1.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
+m4() { "$B/scrip" --compile --out="$D/$1.s" "$D/$1.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
       || { echo "M4-BUILD-FAILED"; return; }; (cd "$D" && timeout -k 5 60 "./$1.bin" < /dev/null 2>&1); }
 ok()  { n=$((n + 1)); echo "  ok    $*"; }
 red() { n=$((n + 1)); RC=1; echo "  RED   $*"; }

@@ -38,7 +38,7 @@ done
 grep -qx '\[768\] INTEGER' "$T/c0.oracle" && grep -qx 'hi' "$T/c1.oracle" && grep -qx 'IN' "$T/c7.oracle" || refuse "the oracle's HOST(1) answers moved: [$(tr '\n' '|' < "$T/c0.oracle")] [$(tr '\n' '|' < "$T/c7.oracle")]"
 fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
-run() { ( cd "$T" && if [ "$2" = m3 ]; then echo IN | timeout -k 5 20 "$SCRIP" "$1.sno"; else timeout -k 5 30 "$SCRIP" --compile -o "$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$1.bin" > /dev/null 2>&1 && echo IN | timeout -k 5 20 "./$1.bin"; fi ) 2>&1; }
+run() { ( cd "$T" && if [ "$2" = m3 ]; then echo IN | timeout -k 5 20 "$SCRIP" "$1.sno"; else timeout -k 5 30 "$SCRIP" --compile --out="$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$1.bin" > /dev/null 2>&1 && echo IN | timeout -k 5 20 "./$1.bin"; fi ) 2>&1; }
 matrix() { local bad=""
     for i in "${!CASES[@]}"; do
         run "c$i" "$1" > "$T/c$i.$1"

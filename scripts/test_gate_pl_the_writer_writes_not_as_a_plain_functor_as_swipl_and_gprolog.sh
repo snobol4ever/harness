@@ -39,7 +39,7 @@ for w in iso swi; do
     timeout -k 5 30 "$SCRIP" "$d/$w.pl" </dev/null 2>/dev/null > "$d/$w.m3"; rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/$w.m3"; then fails=$((fails + 1)); echo "  $w m3 rc=$rc differs:"; diff "$d/want" "$d/$w.m3" | head -6; fi
     graded=$((graded + 1))
-    if timeout -k 5 60 "$SCRIP" --compile -o "$d/$w.s" "$d/$w.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$d/$w.bin" "$d/$w.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null; then
+    if timeout -k 5 60 "$SCRIP" --compile --out="$d/$w.s" "$d/$w.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$d/$w.bin" "$d/$w.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null; then
         timeout -k 5 30 "$d/$w.bin" </dev/null 2>/dev/null > "$d/$w.m4"; rc=$?
         if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/$w.m4"; then fails=$((fails + 1)); echo "  $w m4 rc=$rc differs:"; diff "$d/want" "$d/$w.m4" | head -6; fi
     else fails=$((fails + 1)); echo "  $w m4 did not compile or link"; fi

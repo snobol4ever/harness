@@ -42,7 +42,7 @@ DONE	OUTPUT  =  'ok ' count ' ' V1 ' ' V1024 ' ' V1025 ' ' V1500	:(END)
 BAD	OUTPUT  =  'fail at ' i ' V=' $('V' i)
 END
 EOF
-(cd "$W" && timeout -k 5 120 "$SCRIP" --compile -o spill.s spill.sno </dev/null >/dev/null 2>&1) \
+(cd "$W" && timeout -k 5 120 "$SCRIP" --compile --out=spill.s spill.sno </dev/null >/dev/null 2>&1) \
     && gcc "$W/spill.s" -L"$SD/out" -lscrip_rt -lm -Wl,-rpath,"$SD/out" -o "$W/spill.bin" 2>/dev/null \
     || { echo "⛔ REFUSE(rc=2) [$G]: the witness did not compile and link in mode 4"; exit 2; }
 want="$(cd "$W" && timeout -k 5 60 "$SBL" $(sbl_lang_flags) spill.sno </dev/null 2>/dev/null)"

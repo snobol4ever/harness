@@ -83,7 +83,7 @@ run_sbl() {  # -> $1.sbl.out (stdout before the error), $1.sbl.fatal (FATAL/CLEA
 run_scrip() {  # $1 name $2 mode -> $1.$2.out/.err/.fatal
     local n="$1" m="$2" rc
     if [ "$m" = m3 ]; then (cd "$D" && timeout -k 5 20 "$B/scrip" "$n.sno" </dev/null > "$n.$m.out" 2> "$n.$m.err"); rc=$?
-    else "$B/scrip" --compile -o "$D/$n.s" "$D/$n.sno" </dev/null >/dev/null 2>&1 \
+    else "$B/scrip" --compile --out="$D/$n.s" "$D/$n.sno" </dev/null >/dev/null 2>&1 \
            && as -o "$D/$n.o" "$D/$n.s" 2>/dev/null \
            && gcc -o "$D/$n.bin" "$D/$n.o" "$B/out/libscrip_rt.so" -lm -Wl,-rpath,"$B/out" 2>/dev/null \
            || refuse "could not build the m4 arm of $n -- a toolchain failure, not a verdict"

@@ -2,7 +2,7 @@
 # test_gate_pas_pat_m4_arm_links_and_runs.sh -- the PAT rejection arm's m4 column may never go back to compile-only
 #
 # WHY THIS GATE EXISTS (hq_pascal 2026-09-16, cfo ruling with the ceo copied, row pascal-pat-suite-427-to-100-percent-by-class).
-# test_pascal_pat_suite.sh graded its REJECTION arm's m4 column with `--compile -o /dev/null`, which only COMPILES. A
+# test_pascal_pat_suite.sh graded its REJECTION arm's m4 column with `--compile --out=/dev/null`, which only COMPILES. A
 # rejection test whose ISO condition fires at RUN time therefore could never fail that arm, so the m4 column did not mean
 # "refused in m4", it meant "refused AT COMPILE TIME in m4", and both_pass was floored by the instrument rather than by
 # the engine. MEASURED ON ONE TREE (SCRIP e83244874): old arm both_pass=284 m4_pass=284 m4_fail=143; new arm
@@ -12,7 +12,7 @@
 # vendored PAT population, so it carries no one-runner guard and any seat may run it (CEO-547: the population decides).
 #
 # THE TWO ARMS:
-#  (1) STRUCTURAL -- the runner's m4 rejection arm must link and run, and must not grade with `--compile -o /dev/null`.
+#  (1) STRUCTURAL -- the runner's m4 rejection arm must link and run, and must not grade with `--compile --out=/dev/null`.
 #      A structural check alone would be a grep that a refactor could satisfy while changing the meaning, which is why
 #      arm (2) exists and is the one that actually decides.
 #  (2) BEHAVIOURAL, AND IT IS THE POINT -- a minted witness whose ISO condition fires ONLY at run time is compiled,
@@ -36,9 +36,9 @@ RC=0
 # explanation, which is the worst possible thing to incentivise.
 ARM=$(sed -n '/^    for m in m3 m4; do$/,/^        # .*THE VERDICT IS STABLE/p' "$RUNNER" | sed -E 's/^[[:space:]]*#.*$//')
 [ -n "$(printf '%s' "$ARM" | tr -d '[:space:]')" ] || { echo "⛔ GATE REFUSE(2) [$G]: could not locate the rejection arm in $RUNNER -- this gate cannot grade what it cannot find"; exit 2; }
-if printf '%s' "$ARM" | grep -q -- '--compile -o /dev/null'; then
-  echo "  ⛔ the m4 rejection arm grades with --compile -o /dev/null again -- it can no longer see a runtime refusal"; RC=1
-else echo "  structural: the m4 rejection arm does not grade with --compile -o /dev/null"; fi
+if printf '%s' "$ARM" | grep -q -- '--compile --out=/dev/null'; then
+  echo "  ⛔ the m4 rejection arm grades with --compile --out=/dev/null again -- it can no longer see a runtime refusal"; RC=1
+else echo "  structural: the m4 rejection arm does not grade with --compile --out=/dev/null"; fi
 if printf '%s' "$ARM" | grep -q 'lscrip_rt'; then echo "  structural: the m4 rejection arm links against the runtime"
 else echo "  ⛔ the m4 rejection arm no longer links -- a compiled program that is never run cannot be observed to fail"; RC=1; fi
 cat > "$T/w.pas" <<'PAS'
@@ -54,7 +54,7 @@ begin
    undeclaredthing := 1
 end.
 PAS
-( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/w.s" w.pas </dev/null >"$T/co" 2>&1 ); crc=$?
+( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/w.s" w.pas </dev/null >"$T/co" 2>&1 ); crc=$?
 if [ "$crc" != 0 ]; then
   echo "  ⛔ GATE REFUSE(2) [$G]: the minted witness is refused AT COMPILE TIME (rc=$crc), so it cannot tell a compile-only arm from a running one"; exit 2; fi
 echo "  compile-only arm on the minted runtime-only witness: rc=$crc (blind, as expected -- this is what the old arm measured)"

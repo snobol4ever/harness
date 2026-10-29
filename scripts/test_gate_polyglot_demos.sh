@@ -54,7 +54,7 @@ run_m4() {
     local src="$1"
     local s o bin
     s=$(mktemp /tmp/pgdemo_XXXXXX.s); o="${s%.s}.o"; bin="${s%.s}.bin"
-    if timeout -k 5 "$TIMEOUT" "$SCRIP" --compile --target=x86 -o "$s" "$src" < /dev/null 2>/dev/null \
+    if timeout -k 5 "$TIMEOUT" "$SCRIP" --compile --target=x86 --out="$s" "$src" < /dev/null 2>/dev/null \
        && as "$s" -o "$o" 2>/dev/null \
        && gcc -no-pie "$o" -L"$OUTDIR" -lscrip_rt -Wl,-rpath,"$OUTDIR" \
               -Wl,--allow-shlib-undefined -lm -o "$bin" 2>/dev/null; then

@@ -36,7 +36,7 @@ ORA_ERRTEXT="$(printf '%s\n' "$ORA" | grep -m1 '^&ERRTEXT = ')"
 [ -n "$ORA_ERRTYPE" ] && [ -n "$ORA_ERRTEXT" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: oracle produced no &ERRTYPE/&ERRTEXT dump line (rc=$orc) -- witness moved, re-measure"; exit 2; }
 case "$ORA_ERRTYPE" in "&ERRTYPE = 0") echo "GATE UNPROVEN(2) [$GATE_NAME]: oracle's own &ERRTYPE reads 0 -- witness no longer raises a real error"; exit 2;; esac
 M3="$( cd "$T" && timeout -k 5 30s "$ROOT/scrip" errtype_fatal.sno </dev/null 2>/dev/null )"
-( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile -o errtype_fatal.s errtype_fatal.sno </dev/null >/dev/null 2>&1 ) \
+( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile --out=errtype_fatal.s errtype_fatal.sno </dev/null >/dev/null 2>&1 ) \
   || { echo "GATE UNPROVEN(2) [$GATE_NAME]: mode-4 compile failed"; exit 2; }
 ( cd "$T" && gcc -no-pie errtype_fatal.s -o errtype_fatal.bin -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
   || { echo "GATE UNPROVEN(2) [$GATE_NAME]: mode-4 link failed"; exit 2; }

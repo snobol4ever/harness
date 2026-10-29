@@ -84,7 +84,7 @@ EOF
 run_both() { local w="$1" tag="$2"
   ( cd "$T" && timeout -k 5 30s "$SBL" -bf "$w.sno" < /dev/null > "$tag.ref" 2>/dev/null )
   ( cd "$T" && timeout -k 5 30s "$SCRIP" "$w.sno" < /dev/null > "$tag.m3" 2>/dev/null ); local r3=$?
-  ( cd "$T" && timeout -k 5 60s "$SCRIP" --compile -o "$w.s" "$w.sno" < /dev/null > /dev/null 2>&1 && gcc "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$w.4" 2>/dev/null && timeout -k 5 30s "./$w.4" < /dev/null > "$tag.m4" 2>/dev/null ); local r4=$?
+  ( cd "$T" && timeout -k 5 60s "$SCRIP" --compile --out="$w.s" "$w.sno" < /dev/null > /dev/null 2>&1 && gcc "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$w.4" 2>/dev/null && timeout -k 5 30s "./$w.4" < /dev/null > "$tag.m4" 2>/dev/null ); local r4=$?
   [ -s "$T/$tag.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for $w"; exit 2; }
   if [ $r3 -eq 0 ] && cmp -s "$T/$tag.ref" "$T/$tag.m3" && [ $r4 -eq 0 ] && cmp -s "$T/$tag.ref" "$T/$tag.m4"; then return 0; fi
   echo "     m3 rc=$r3 m4 rc=$r4; ref: $(cat -v "$T/$tag.ref" | tr '\n' '/' | cut -c1-120) | m3: $(cat -v "$T/$tag.m3" | tr '\n' '/' | cut -c1-120) | m4: $(cat -v "$T/$tag.m4" | tr '\n' '/' | cut -c1-120)"; return 1; }

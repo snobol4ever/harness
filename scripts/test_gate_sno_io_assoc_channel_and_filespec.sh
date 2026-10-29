@@ -55,7 +55,7 @@ oracle_error_face() {
 # ── m4 (--compile) must agree with m3 -- BOTH-MEDIUM MANDATORY ──
 m4_error_face() {
     local name="$1" errno="$2" got
-    ( cd "$W" && timeout -k 5 10 "$S" --compile -o "$name.s" "$name.sno" </dev/null >/dev/null 2>&1
+    ( cd "$W" && timeout -k 5 10 "$S" --compile --out="$name.s" "$name.sno" </dev/null >/dev/null 2>&1
       gcc -no-pie "$name.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -o "$name.bin" 2>/dev/null )
     got="$(cd "$W" && timeout -k 5 10 "./$name.bin" </dev/null 2>&1)"
     case "$got" in

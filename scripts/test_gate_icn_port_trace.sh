@@ -149,8 +149,8 @@ for o in $origins; do
     lines+=("$(printf '%-40s SKIP (no suspend -- not a proc_gen/generator witness)' "$o")"); skip=$((skip+1)); continue
   fi
   n=$((n+1))
-  (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0" "$src" </dev/null >/dev/null 2>&1); (cd "$W" && SCRIP_PL_TRACE=0 timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0b" "$src" </dev/null >/dev/null 2>&1)
-  (cd "$W" && SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s1" "$src" </dev/null >/dev/null 2>&1)
+  (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0" "$src" </dev/null >/dev/null 2>&1); (cd "$W" && SCRIP_PL_TRACE=0 timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0b" "$src" </dev/null >/dev/null 2>&1)
+  (cd "$W" && SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s1" "$src" </dev/null >/dev/null 2>&1)
   ks=OK; { cmp -s "$W/$o.s0" "$W/$o.s0b" && [ -s "$W/$o.s0" ] && ! cmp -s "$W/$o.s0" "$W/$o.s1"; } || { ks=FAIL; bad=$((bad+1)); }
   timeout -k 5 "$T" "$SCRIP" --run "$src" <"$IN" >"$W/$o.m3.out0" 2>/dev/null; r30=$?
   SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --run "$src" <"$IN" >"$W/$o.m3.out1" 2>"$W/$o.m3.raw"; r31=$?

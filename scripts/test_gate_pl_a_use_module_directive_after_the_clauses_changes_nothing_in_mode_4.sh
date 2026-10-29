@@ -32,7 +32,7 @@ fails=0; graded=0
 (cd "$d" && SCRIP_HEAP_CAP_KB=131072 SCRIP_STACK=8192k timeout -k 5 60 "$SCRIP" late.pl </dev/null 2>/dev/null > "$d/m3"); graded=$((graded + 1))
 [ "$(cat "$d/want")" = "$(cat "$d/m3")" ] || { fails=$((fails + 1)); echo "  m3 differs: $(wc -l < "$d/want") oracle lines, $(wc -l < "$d/m3") got"; }
 graded=$((graded + 1))
-if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile -o late.s late.pl </dev/null >/dev/null 2>&1 && gcc -no-pie -o late.bin late.s "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
+if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile --out=late.s late.pl </dev/null >/dev/null 2>&1 && gcc -no-pie -o late.bin late.s "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
     (cd "$d" && SCRIP_HEAP_CAP_KB=131072 SCRIP_STACK=8192k timeout -k 5 60 ./late.bin </dev/null 2>/dev/null > "$d/m4")
     [ "$(cat "$d/want")" = "$(cat "$d/m4")" ] || { fails=$((fails + 1)); echo "  m4 differs: $(wc -l < "$d/want") oracle lines, $(wc -l < "$d/m4") got"; }
 else fails=$((fails + 1)); echo "  m4 did not compile or link"; fi

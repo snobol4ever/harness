@@ -64,7 +64,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1 [$(tr '\n' '|' < "$T/$2" | head -c 110)]"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && timeout -k 5 20 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 ur); arm "m3: UNREAD(READ('(X Y)')) is the STRING (X Y)" "$(same "$rc" ur.m3 ur.oracle)"
-rc=$( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o u.s ur.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o u.bin > /dev/null 2>&1 && timeout -k 5 20 ./u.bin < /dev/null > ur.m4 2>&1; echo $? )
+rc=$( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=u.s ur.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o u.bin > /dev/null 2>&1 && timeout -k 5 20 ./u.bin < /dev/null > ur.m4 2>&1; echo $? )
 arm "m4: UNREAD(READ('(X Y)')) is the STRING (X Y)" "$(same "$rc" ur.m4 ur.oracle)"
 rc=$(m3 ur2); arm "m3: a nested list round-trips through READ and UNREAD" "$(same "$rc" ur2.m3 ur2.oracle)"
 mout=$( cd "$T" && MONITOR_SKIP_VALUE_NAMES=NULL,null,epsilon S4E_HOME="$S4E" timeout -k 5 400 bash "$MON" "$T/ur.sno" --oracle 2>&1 ); mrc=$?

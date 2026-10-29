@@ -25,7 +25,7 @@ END
 SNO
 want="$(/home/resources/x64/bin/sbl -bf u.sno < /dev/null 2>/dev/null)"; [ -n "$want" ] || exit 2
 m3="$(timeout -k 5 30 "$R/scrip" u.sno < /dev/null 2>/dev/null)"
-"$R/scrip" --compile -o u.s u.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$R/out" -lscrip_rt -lm -Wl,-rpath,"$R/out" -o u.bin 2>/dev/null || exit 2
+"$R/scrip" --compile --out=u.s u.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$R/out" -lscrip_rt -lm -Wl,-rpath,"$R/out" -o u.bin 2>/dev/null || exit 2
 m4="$(timeout -k 5 30 ./u.bin < /dev/null 2>/dev/null)"
 [ "$m3" = "$want" ] && [ "$m4" = "$want" ] && { echo "GREEN: a procedure that unloads itself returns and restores its formal like the oracle, in m3 and m4"; exit 0; }
 echo "RED: oracle [$(echo $want)] m3 [$(echo $m3)] m4 [$(echo $m4)]"; exit 1

@@ -83,7 +83,7 @@ EOF
 ( cd "$T" && "$ICONT" -s -o w.x w.icn ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses the witness"; exit 2; }
 want="$( cd "$T" && timeout -k 5 20 ./w.x </dev/null 2>/dev/null )" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run the witness"; exit 2; }
 [ -n "$want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing"; exit 2; }
-build4() { ( cd "$T" && "$SCRIP" --compile -o "$1.s" "$1.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$1.4" "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ); }
+build4() { ( cd "$T" && "$SCRIP" --compile --out="$1.s" "$1.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$1.4" "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ); }
 build4 w || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
 o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" w.icn </dev/null 2>/dev/null )"; o4="$( cd "$T" && timeout -k 5 20 ./w.4 </dev/null 2>/dev/null )"
 if [ "$o3" = "$want" ] && [ "$o4" = "$want" ]; then echo "  arm 2 PASS: $(printf '%s\n' "$want" | wc -l) lines of swaps match iconx byte for byte in both media"

@@ -87,7 +87,7 @@ for w in w1 w2 w3 w4 w5; do
   got3="$( timeout -k 5 20 "$SCRIP" "$TD/$w.icn" </dev/null 2>&1 )"; GRADED=$((GRADED+1))
   if [ "$got3" = "$exp" ]; then echo "  PASS $w m3: $(printf '%s' "$exp" | tr '\n' '/')"
   else echo "  FAIL $w m3: got '$(printf '%s' "$got3" | tr '\n' '/')' want '$(printf '%s' "$exp" | tr '\n' '/')' (iconx)"; FAIL=$((FAIL+1)); fi
-  "$SCRIP" --compile -o "$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: --compile failed -- the m4 arm CANNOT MEASURE"
+  "$SCRIP" --compile --out="$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: --compile failed -- the m4 arm CANNOT MEASURE"
   gcc -no-pie "$TD/$w.s" -o "$TD/$w.bin" -L "$ROOT/out" -Wl,-rpath,"$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1 || refuse "$w: link failed -- the m4 arm CANNOT MEASURE"
   got4="$( timeout -k 5 20 "$TD/$w.bin" </dev/null 2>&1 )"; GRADED=$((GRADED+1))
   if [ "$got4" = "$exp" ]; then echo "  PASS $w m4: $(printf '%s' "$exp" | tr '\n' '/')"

@@ -64,7 +64,7 @@ for src in name_stmt name_var name_eval; do
     [ -s $src.o ] || { echo "REFUSED(2): sbl printed nothing for $src (rc $orc)"; exit 2; }
     echo "rc=$orc" >> $src.o
     timeout -k 5 60 "$ROOT/scrip" $src.sno < /dev/null 2>/dev/null | grep -v '^x86-64 ' > $src.m3; echo "rc=${PIPESTATUS[0]}" >> $src.m3
-    timeout -k 5 60 "$ROOT/scrip" --compile -o $src.s $src.sno < /dev/null > /dev/null 2>&1 \
+    timeout -k 5 60 "$ROOT/scrip" --compile --out=$src.s $src.sno < /dev/null > /dev/null 2>&1 \
         && gcc -m64 -no-pie $src.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o $src.bin > /dev/null 2>&1 \
         && { timeout -k 5 60 ./$src.bin < /dev/null 2>/dev/null | grep -v '^x86-64 ' > $src.m4; echo "rc=${PIPESTATUS[0]}" >> $src.m4; } || echo "no-binary" > $src.m4
     for m in m3 m4; do

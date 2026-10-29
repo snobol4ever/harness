@@ -89,7 +89,7 @@ for n in 101 103 110 113 114 201 202 204; do
     orc="$(timeout -k 5 20 "$TD/e$n.oracle" </dev/null 2>&1 | grep -oE 'Run-time error [0-9]+' | grep -oE '[0-9]+' | head -1)"
     [ -n "$orc" ] || { echo "  ⛔ REFUSE: the error-$n witness raises nothing under iconx -- the witness is wrong, not the tree"; rm -rf "$TD"; exit 2; }
     m3="$(timeout -k 5 20 "$SCRIP" "$src" </dev/null 2>&1 | grep -oE 'scrip: error [0-9]+' | grep -oE '[0-9]+' | head -1)"
-    ( cd "$TD" && "$SCRIP" --compile -o "$TD/e$n.s" "$src" ) >/dev/null 2>&1
+    ( cd "$TD" && "$SCRIP" --compile --out="$TD/e$n.s" "$src" ) >/dev/null 2>&1
     m4=""
     if [ -s "$TD/e$n.s" ] && gcc -no-pie "$TD/e$n.s" -o "$TD/e$n.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1; then
         m4="$(timeout -k 5 20 "$TD/e$n.bin" </dev/null 2>&1 | grep -oE 'scrip: error [0-9]+' | grep -oE '[0-9]+' | head -1)"

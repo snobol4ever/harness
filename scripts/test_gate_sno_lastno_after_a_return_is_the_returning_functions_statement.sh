@@ -92,7 +92,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 10 "$SCRIP" --stlimit "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 ret); arm "m3: the statement keywords in the calling statement after RETURN and FRETURN" "$(same "$rc" ret.m3 ret.oracle)"
-rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --stlimit --compile -o r.s ret.sno < /dev/null > /dev/null 2>&1 && gcc r.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o r.bin > /dev/null 2>&1 && SCRIP_SNO_STMTKW=1 timeout -k 5 10 ./r.bin < /dev/null > ret.m4 2>&1; echo $? )
+rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --stlimit --compile --out=r.s ret.sno < /dev/null > /dev/null 2>&1 && gcc r.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o r.bin > /dev/null 2>&1 && SCRIP_SNO_STMTKW=1 timeout -k 5 10 ./r.bin < /dev/null > ret.m4 2>&1; echo $? )
 arm "m4: the statement keywords in the calling statement after RETURN and FRETURN" "$(same "$rc" ret.m4 ret.oracle)"
 rc=$(m3 paths); arm "m3: &LASTNO after an OPSYN operator call, an APPLY() and a direct call" "$(same "$rc" paths.m3 paths.oracle)"
 rc=$(m3 trace); arm "m3: &LASTNO / &STNO inside a TRACE function around the calls it makes" "$(same "$rc" trace.m3 trace.oracle)"

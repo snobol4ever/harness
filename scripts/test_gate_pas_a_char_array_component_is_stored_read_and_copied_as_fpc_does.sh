@@ -30,7 +30,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 inp() { if [ -f "$T/$1.in" ]; then echo "$T/$1.in"; else echo /dev/null; fi; }
 run() { local m="$1" p="$2" i; i=$(inp "$p")
   if [ "$m" = m3 ]; then ( cd "$T" && timeout -k 5 60s "$SCRIP" --run "$p.pas" <"$i" >"$T/o" 2>"$T/e" ); return $?; fi
-  ( cd "$T" && timeout -k 5 60s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ $p m4 did not compile or link" >&2; return 99; }
+  ( cd "$T" && timeout -k 5 60s "$SCRIP" --compile --out="$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ $p m4 did not compile or link" >&2; return 99; }
   ( cd "$T" && timeout -k 5 60s "./$p.m4" <"$i" >"$T/o" 2>"$T/e" ); return $?; }
 want() { ( cd "$T" && "$FPC" -Miso -v0 -o"$1.fpc" $1.pas >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: fpc -Miso would not compile $1"; exit 2; }; ( cd "$T" && timeout -k 5 60s ./$1.fpc <"$(inp "$1")" >"$T/$1.want" 2>/dev/null ); return $?; }
 cat > "$T/anon.pas" <<'PAS'

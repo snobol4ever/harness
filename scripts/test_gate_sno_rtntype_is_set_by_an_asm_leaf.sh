@@ -35,7 +35,7 @@ SNO
 "$SBL" $(sbl_lang_flags) "$W/rt.sno" < /dev/null > "$W/rt.ref" 2>&1 || true
 [ -s "$W/rt.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 red=0
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/rt.s" rt.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: rt.sno did not compile"; exit 1; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/rt.s" rt.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: rt.sno did not compile"; exit 1; }
 nc=$(grep -c 'call .*\[rip + rt_kw_set_rtntype_role@GOTPCREL\]' "$W/rt.s"); nv=$(grep -B3 'call .*\[rip + rt_kw_set_rtntype_role@GOTPCREL\]' "$W/rt.s" | grep -c 'g_rtccb')
 [ "$nc" -gt 0 ] && [ "$nv" -eq 0 ] && echo "ok  rt_kw_set_rtntype_role: $nc bare GOT calls, no veneer" || { echo "RED: calls=$nc veneered=$nv"; red=1; }
 ( cd "$W" && timeout -k 5 20 "$ROOT/scrip" rt.sno < /dev/null > "$W/rt.m3" 2>&1 ); cmp -s "$W/rt.m3" "$W/rt.ref" && echo "ok  m3 = oracle" || { echo "RED m3 differs from the oracle:"; diff "$W/rt.ref" "$W/rt.m3" | head -8; red=1; }

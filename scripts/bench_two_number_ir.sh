@@ -131,7 +131,7 @@ rival_ir() {  # $1 = kernel source path -> Ir on the rival engine, or empty if n
 }
 scrip_m4_ir() {  # $1 = source -> Ir of the linked mode-4 binary
   local f="$1" d; d="$(mktemp -d "$WORKDIR/m4.XXXXXX")"
-  "$SCRIP_BIN" --compile "$f" -o "$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
+  "$SCRIP_BIN" --compile "$f" --out="$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
   gcc "$d/p.s" -o "$d/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread >/dev/null 2>&1 || return 0
   ir_of "$d/p.bin" < /dev/null
 }

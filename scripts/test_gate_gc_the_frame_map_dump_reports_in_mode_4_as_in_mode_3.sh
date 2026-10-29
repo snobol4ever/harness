@@ -19,7 +19,7 @@ printf ':- initialization(main).\nmain :- X = f(a, [b, c]), write(X), nl.\n' > "
 printf "        X = 'map' 'dump'\n        OUTPUT = X\nEND\n" > "$T/w.sno"
 RC=0
 for W in w.pl w.sno; do
-  ( cd "$T" && "$SCRIP" --compile -o "$W.s" "$W" </dev/null && gcc "$W.s" -o "$W.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }
+  ( cd "$T" && "$SCRIP" --compile --out="$W.s" "$W" </dev/null && gcc "$W.s" -o "$W.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }
   m3=$( cd "$T" && SCRIP_GC_MAPS_DUMP=1 timeout -k 5 30 "$SCRIP" "$W" </dev/null 2>&1 >/dev/null | grep -ciE 'GC-MAP|frame map' )
   m4=$( cd "$T" && SCRIP_GC_MAPS_DUMP=1 LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 30 "./$W.bin" </dev/null 2>&1 >/dev/null | grep -ciE 'GC-MAP|frame map' )
   o0=$( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 30 "./$W.bin" </dev/null 2>/dev/null )

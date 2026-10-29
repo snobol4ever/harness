@@ -35,14 +35,14 @@ for i in 1 2 3 4; do
     [ "$want" = done ] || { echo "GATE REFUSED(2) [$G]: swipl prints '$want' for arm $i"; exit 2; }
     [ "${FAIL_ONCE:-0}" = 1 ] && want='scrip: runtime error: ERROR 246'
     o3=$(cd "$W" && timeout -k 5 120 "$ROOT/scrip" -s512k "$W/a$i.pl" < /dev/null 2>&1 | head -1 | cut -c1-31)
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/a$i.s" "$W/a$i.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/a$i.bin" "$W/a$i.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1 \
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/a$i.s" "$W/a$i.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/a$i.bin" "$W/a$i.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1 \
         && o4=$(cd "$W" && timeout -k 5 120 "$W/a$i.bin" -s512k < /dev/null 2>&1 | head -1 | cut -c1-31) || o4='(no build)'
     if [ "$o3" = "$want" ] && [ "$o4" = "$want" ]; then echo "  ok  ($i) count(1000000) under -s512k, m3 and m4: $o3"; else echo "  RED ($i) want '$want', m3 '$o3', m4 '$o4'"; bad=1; fi
 done
 for i in 1 2 3 4; do
     for m in m3 m4; do
         if [ $m = m3 ]; then r=$(cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3 timeout -k 5 300 "$ROOT/scrip" "$W/c$i.pl" < /dev/null 2>&1)
-        else ( cd "$W" && "$ROOT/scrip" --compile -o "$W/c$i.s" "$W/c$i.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/c$i.bin" "$W/c$i.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1
+        else ( cd "$W" && "$ROOT/scrip" --compile --out="$W/c$i.s" "$W/c$i.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/c$i.bin" "$W/c$i.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1
              r=$(cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3 timeout -k 5 300 "$W/c$i.bin" < /dev/null 2>&1); fi
         out=$(printf '%s\n' "$r" | grep -v '^\[' | head -1); chain=$(printf '%s\n' "$r" | grep -o 'bad-link=[0-9]*\|offchain-swept=[0-9]*\|mismatch=[0-9]*\|missing=[0-9]*' | head -4 | sort | tr '\n' ' ')
         if [ "$out" = done ] && [ "$chain" = "bad-link=0 mismatch=0 missing=0 offchain-swept=0 " ]; then echo "  ok  (5.$i) $m under stress: done, $chain"; else echo "  RED (5.$i) $m under stress: '$out' $chain"; bad=1; fi

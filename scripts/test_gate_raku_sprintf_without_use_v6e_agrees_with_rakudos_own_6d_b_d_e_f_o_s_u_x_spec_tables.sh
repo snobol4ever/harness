@@ -29,7 +29,7 @@ ck() {
     cp "$R/sprintf-$f.t" "$W/sp_$f.raku"
     if [ "$m" = m3 ]; then out="$(cd "$R" && timeout -k 5 300 "$ROOT/scrip" --run "$W/sp_$f.raku" 2>/dev/null </dev/null)"; rc=$?
     else
-        if ! (cd "$R" && timeout -k 5 120 "$ROOT/scrip" --compile -o "$W/sp_$f.s" "$W/sp_$f.raku" </dev/null >"$W/sp_$f.cerr" 2>&1) \
+        if ! (cd "$R" && timeout -k 5 120 "$ROOT/scrip" --compile --out="$W/sp_$f.s" "$W/sp_$f.raku" </dev/null >"$W/sp_$f.cerr" 2>&1) \
            || ! gcc -o "$W/sp_$f.bin" "$W/sp_$f.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/sp_$f.cerr" 2>&1; then
             printf '  FAIL %-9s %s: did not build (%s)\n' "sprintf-$f" "$m" "$(head -1 "$W/sp_$f.cerr" | cut -c1-110)"; fails=$((fails + 1)); return; fi
         out="$(cd "$R" && timeout -k 5 300 "$W/sp_$f.bin" 2>/dev/null </dev/null)"; rc=$?

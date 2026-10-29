@@ -38,7 +38,7 @@ for w in alloc.sc replace.sc capnull.sc tix.md; do
     b="${w%.*}"
     timeout -k 5 20s "$SBL" -bf $b.sno < /dev/null > $b.ref 2>&1
     [ -s $b.ref ] && ! grep -q 'ERROR' $b.ref || { echo "⛔ GATE REFUSE(2) [$G]: the oracle gave no clean answer for the twin $b.sno -- no ref to grade against"; exit 2; }
-    "$SCRIP" --compile -o $b.s $w < /dev/null > $b.c 2>&1 && gcc $b.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $b.x 2>> $b.c || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed for $w: $(grep -m1 . $b.c | cut -c1-160)"; exit 2; }
+    "$SCRIP" --compile --out=$b.s $w < /dev/null > $b.c 2>&1 && gcc $b.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $b.x 2>> $b.c || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed for $w: $(grep -m1 . $b.c | cut -c1-160)"; exit 2; }
     for st in 0 1 3; do
         SCRIP_GC_STRESS=$st timeout -k 5 60s "$SCRIP" $w < /dev/null > $b.m3 2> $b.e3; r3=$?
         SCRIP_GC_STRESS=$st timeout -k 5 60s ./$b.x < /dev/null > $b.m4 2> $b.e4; r4=$?

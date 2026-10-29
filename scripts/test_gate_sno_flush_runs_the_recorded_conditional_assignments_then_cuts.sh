@@ -35,7 +35,7 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2)
 LIBDIR="$ROOT/out"; [ -f "$LIBDIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [$G]: no libscrip_rt.so in $LIBDIR"; exit 2; }
 SBL="${SBL_BIN:-/home/resources/x64/bin/sbl}"; [ -x "$SBL" ] || { echo "⛔ GATE REFUSE(2) [$G]: no sbl at $SBL -- this gate's refs are CUT FROM THE ORACLE at run time, never typed"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-link4() { "$SCRIP" --compile "$1" -o "$T/$2.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$2.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$2" 2>"$T/$2.ld.log"; }
+link4() { "$SCRIP" --compile "$1" --out="$T/$2.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$2.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$2" 2>"$T/$2.ld.log"; }
 cat > "$T/w.sno" <<'EOF'
         DEFINE('NM()')                                :(NM_END)
 NM      NM = .X                                       :(RETURN)

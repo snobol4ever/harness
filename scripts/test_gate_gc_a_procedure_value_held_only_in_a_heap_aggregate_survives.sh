@@ -25,7 +25,7 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/gc_procagg.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
 BAND="${GC_PROCAGG_BAND:-0 1 3 5 8}"
 want="$(cat "$REF")"; bad=0; runs=0
-( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile -o pv.s "$WIT" < /dev/null 2>c.err && gcc pv.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pv 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
+( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile --out=pv.s "$WIT" < /dev/null 2>c.err && gcc pv.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pv 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
 col="$(SCRIP_GC_EXERCISE=1 SCRIP_GC_STRESS=3 timeout -k 5 180 "$ROOT/scrip" "$WIT" < /dev/null 2>&1 >/dev/null | sed -n 's/.*collections=\([0-9]*\).*/\1/p' | tail -1)"
 echo "arena: the compiled-in default (GC_HEAP_KB); collector ran collections=${col:-unknown} at stress=3"
 [ -n "$col" ] || { echo "GATE UNPROVEN(2) [$G]: the run printed no collections= field, so nothing states whether the collector ran"; exit 2; }

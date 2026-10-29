@@ -41,7 +41,7 @@ grade() { local p="$1" mode="$2" args="${3:-}" d="$T/$1"
   ( cd "$d" && "$FPC" $mode -v0 -FE"$d/fpc" -FU"$d/fpc" -o"$d/fpc/$p" "$p.pas" >/dev/null 2>&1 && rm -f zz_out.txt && timeout -k 5 20s "$d/fpc/$p" $args < "$p.in" | head -c 8000 ) > "$d/want" 2>/dev/null
   [ -s "$d/want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced no output for arm $p"; exit 2; }
   if [ -n "${FAIL_ONCE:-}" ] && [ "$p" = s1 ]; then echo "corrupted by FAIL_ONCE" >> "$d/want"; fi
-  ( cd "$d" && timeout -k 5 20s "$SCRIP" --compile -o "$p.s" "$p.pas" </dev/null >/dev/null 2>"$d/m4.err" && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ arm $p m4: did not compile and link"; RC=1; }
+  ( cd "$d" && timeout -k 5 20s "$SCRIP" --compile --out="$p.s" "$p.pas" </dev/null >/dev/null 2>"$d/m4.err" && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ arm $p m4: did not compile and link"; RC=1; }
   ARMS=$((ARMS + 1))
   for m in m3 m4; do
     if [ "$m" = m3 ]; then ( cd "$d" && rm -f zz_out.txt && timeout -k 5 20s "$SCRIP" --run "$p.pas" ${args:+-- $args} < "$p.in" 2>"$d/$m.err" | head -c 8000 > "$d/$m.out" )

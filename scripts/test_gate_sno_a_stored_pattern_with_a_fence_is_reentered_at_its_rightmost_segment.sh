@@ -76,7 +76,7 @@ RC=0
 got="$(timeout -k 5 20s "$SCRIP" "$T/w.sno" </dev/null 2>&1)"
 if [ "$got" = "$(cat "$T/w.ref")" ]; then echo "  m3 PASS (9/9 lines byte-identical to the oracle)"
 else echo "  m3 FAIL (diverged from the oracle on: $(diff <(echo "$got") "$T/w.ref" | grep '^<' | cut -c3- | tr '\n' '|'))"; RC=1; fi
-if "$SCRIP" --compile "$T/w.sno" -o "$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w" 2>"$T/ld.log"; then
+if "$SCRIP" --compile "$T/w.sno" --out="$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w" 2>"$T/ld.log"; then
     got4="$(timeout -k 5 20s "$T/w" </dev/null 2>&1)"
     if [ "$got4" = "$(cat "$T/w.ref")" ]; then echo "  m4 PASS (9/9 lines byte-identical to the oracle)"
     else echo "  m4 FAIL (diverged from the oracle on: $(diff <(echo "$got4") "$T/w.ref" | grep '^<' | cut -c3- | tr '\n' '|'))"; RC=1; fi

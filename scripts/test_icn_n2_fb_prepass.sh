@@ -27,7 +27,7 @@ for prog in "${progs[@]}"; do
   base=$(basename "$prog")
   for mode in 4 3; do
     log="$tmp/$base.m$mode.log"
-    if [ "$mode" = 4 ]; then SCRIP_N2_FB_PREPASS=1 timeout -k 5 60s "$scrip" --compile -o "$tmp/o.s" "$prog" </dev/null >/dev/null 2>"$log"
+    if [ "$mode" = 4 ]; then SCRIP_N2_FB_PREPASS=1 timeout -k 5 60s "$scrip" --compile --out="$tmp/o.s" "$prog" </dev/null >/dev/null 2>"$log"
     else                     SCRIP_N2_FB_PREPASS=1 timeout -k 5 60s "$scrip" --run "$prog" </dev/null >/dev/null 2>"$log"; fi
     grep -aq '\[N2-FB\] PREPASS-END' "$log" || { noprobe=$((noprobe+1)); continue; }
     scanned=$((scanned+1))

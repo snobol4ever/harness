@@ -60,7 +60,7 @@ open(sys.argv[2], 'w', encoding='utf-8').write(s.replace(a, "function TreeDump(x
 PY
     fi
     for f in $CHAIN; do if [ "$f" = tdump ]; then c="$c $tdump"; else c="$c $B/$f.sc"; fi; done
-    cat $c "$P" > "$T/$1.sc" && "$W/scrip" --compile "$T/$1.sc" -o "$T/$1.s" < /dev/null > "$T/$1.cc.err" 2>&1 &&
+    cat $c "$P" > "$T/$1.sc" && "$W/scrip" --compile "$T/$1.sc" --out="$T/$1.s" < /dev/null > "$T/$1.cc.err" 2>&1 &&
         gcc -m64 -no-pie -rdynamic "$T/$1.s" -Wl,-rpath,"$W/out" -L"$W/out" -lscrip_rt -lm -lpthread -o "$T/$1.bin" 2>> "$T/$1.cc.err"
 }
 build full 0 || refuse "the $L chain did not compile or link ($(head -1 "$T/full.cc.err" | cut -c1-120))"

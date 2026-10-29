@@ -40,10 +40,10 @@ timeout -k 5 30 "$SCRIP" twin.sno < /dev/null > twin.m3 2> twin.e3; rc=$?
 if [ $rc -ne 0 ] && grep -qi 'duplicate label' twin.e3; then echo "  arm 2 PASS (the SNOBOL4 parser refuses the twin, rc $rc)"; else echo "  arm 2 FAIL (control gone: SNOBOL4 twin rc $rc, stderr [$(head -c 120 twin.e3)])"; RC=1; fi
 timeout -k 5 30 "$SCRIP" dup.sc < /dev/null > dup.m3 2> dup.e3; rc=$?
 if [ $rc -ne 0 ] && grep -qi 'duplicate label' dup.e3 && [ ! -s dup.m3 ]; then echo "  arm 3 PASS (m3 refuses: rc $rc, $(grep -i -m1 'duplicate label' dup.e3 | cut -c1-80))"; else echo "  arm 3 FAIL (m3: rc $rc, stdout [$(tr '\n' '|' < dup.m3)], stderr [$(head -c 120 dup.e3)])"; RC=1; fi
-timeout -k 5 60 "$SCRIP" --compile -o dup.s dup.sc < /dev/null > /dev/null 2> dup.e4; rc=$?
+timeout -k 5 60 "$SCRIP" --compile --out=dup.s dup.sc < /dev/null > /dev/null 2> dup.e4; rc=$?
 if [ $rc -ne 0 ] && grep -qi 'duplicate label' dup.e4; then echo "  arm 4 PASS (m4 refuses: rc $rc)"; else echo "  arm 4 FAIL (m4: rc $rc, stderr [$(head -c 120 dup.e4)])"; RC=1; fi
 timeout -k 5 30 "$SCRIP" ctl.sc < /dev/null > ctl.m3 2> ctl.e3; rc3=$?
-timeout -k 5 60 "$SCRIP" --compile -o ctl.s ctl.sc < /dev/null > /dev/null 2> ctl.e4 && gcc ctl.s -L "$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o ctl > /dev/null 2>&1 && timeout -k 5 30 ./ctl < /dev/null > ctl.m4 2> ctl.e4r; rc4=$?
+timeout -k 5 60 "$SCRIP" --compile --out=ctl.s ctl.sc < /dev/null > /dev/null 2> ctl.e4 && gcc ctl.s -L "$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o ctl > /dev/null 2>&1 && timeout -k 5 30 ./ctl < /dev/null > ctl.m4 2> ctl.e4r; rc4=$?
 if [ $rc3 -eq 0 ] && [ "$(cat ctl.m3)" = "fg" ] && [ $rc4 -eq 0 ] && [ "$(cat ctl.m4)" = "fg" ]; then echo "  arm 5 PASS (control: distinct labels in two functions print fg in m3 and m4)"; else echo "  arm 5 FAIL (control: m3 rc $rc3 [$(tr '\n' '|' < ctl.m3)] m4 rc $rc4 [$(tr '\n' '|' < ctl.m4 2>/dev/null)])"; RC=1; fi
 if [ $RC -eq 0 ]; then echo "GATE PASS(0) [$NAME]: a duplicate Snocone label is refused at parse in both media, the oracle and the SNOBOL4 parser agree, the distinct-label control runs"; else echo "GATE FAIL(1) [$NAME]"; fi
 exit $RC

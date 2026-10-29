@@ -56,7 +56,7 @@ CONTROLS=" pos_dyn_lit rpos_dyn_lit pos_dyn_noarbno rpos_dyn_inline "
 
 m4_run() {   # $1 = source .sno (absolute), $2 = basename (no ext), writes stdout+stderr to $3
     local src="$1" name="$2" outfile="$3"
-    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile -o "$name.s" "$src" </dev/null >/dev/null 2>&1 ) || { echo "M4-COMPILE-FAILED" > "$outfile"; return; }
+    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile --out="$name.s" "$src" </dev/null >/dev/null 2>&1 ) || { echo "M4-COMPILE-FAILED" > "$outfile"; return; }
     ( cd "$T" && gcc -no-pie "$name.s" -o "$name.bin" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) || { echo "M4-LINK-FAILED" > "$outfile"; return; }
     ( cd "$T" && timeout -k 5 10s "./$name.bin" </dev/null >"$outfile" 2>&1 )
 }

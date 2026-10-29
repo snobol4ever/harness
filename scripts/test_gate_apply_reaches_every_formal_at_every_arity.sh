@@ -57,7 +57,7 @@ for m in m3 m4; do
     if [ "$m" = m3 ]; then
         got="$(timeout -k 5 30s "$SCRIP" "$T/ap.sno" < /dev/null 2>&1 | tr '\n' '/')"; rc=$?
     else
-        "$SCRIP" --compile -o "$T/ap.s" "$T/ap.sno" < /dev/null >/dev/null 2>&1
+        "$SCRIP" --compile --out="$T/ap.s" "$T/ap.sno" < /dev/null >/dev/null 2>&1
         gcc -no-pie "$T/ap.s" -o "$T/ap.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  $m -- link failed"; bad=1; continue; }
         got="$(timeout -k 5 30s "$T/ap.x" < /dev/null 2>&1 | tr '\n' '/')"; rc=$?
     fi

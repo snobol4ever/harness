@@ -144,7 +144,7 @@ for a in b1 b2 b3 c1 c2 c3 c4 c5; do
         if [ "$m" = m3 ]; then
             got="$(timeout -k 5 20s "$SCRIP" "$T/$a.sno" < /dev/null 2>&1 | tr '\n' '/')"
         else
-            "$SCRIP" --compile -o "$T/$a.s" "$T/$a.sno" < /dev/null >/dev/null 2>&1
+            "$SCRIP" --compile --out="$T/$a.s" "$T/$a.sno" < /dev/null >/dev/null 2>&1
             gcc -no-pie "$T/$a.s" -o "$T/$a.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  $a $m -- link failed"; bad=1; continue; }
             got="$(timeout -k 5 20s "$T/$a.x" < /dev/null 2>&1 | tr '\n' '/')"
         fi

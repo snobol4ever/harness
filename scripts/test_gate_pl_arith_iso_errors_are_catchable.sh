@@ -132,7 +132,7 @@ def run(mode):
         r = subprocess.run([scrip, prog], capture_output=True, text=True, timeout=15, stdin=subprocess.DEVNULL, cwd=tmp)
         return r.stdout, None
     s = os.path.join(tmp, "t.s"); b = os.path.join(tmp, "t.bin")
-    c = subprocess.run([scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=15, stdin=subprocess.DEVNULL, cwd=tmp)
+    c = subprocess.run([scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=15, stdin=subprocess.DEVNULL, cwd=tmp)
     if c.returncode != 0: return None, "NOBUILD"
     g = subprocess.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(out_dir, "out"), "-lscrip_rt",
                         "-Wl,-rpath," + os.path.join(out_dir, "out"), "-lm"], capture_output=True, text=True, timeout=90, cwd=tmp)

@@ -65,7 +65,7 @@ def write_prog(body):
     with open(prog, "w") as f: f.write(":- %s, nl.\n" % body)
 def build_m4():
     s = os.path.join(tmp, "t.s"); b = os.path.join(tmp, "t.bin")
-    c = subprocess.run([scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL, cwd=tmp)
+    c = subprocess.run([scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL, cwd=tmp)
     if c.returncode != 0: return None, "NOBUILD rc=%d %s" % (c.returncode, (c.stderr or "").strip()[:70])
     g = subprocess.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(out_dir, "out"), "-lscrip_rt",
                         "-Wl,-rpath," + os.path.join(out_dir, "out"), "-lm", "-lpthread"], capture_output=True, text=True, timeout=120, cwd=tmp)

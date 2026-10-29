@@ -39,7 +39,7 @@ for m in 3 4; do
   if [ "$m" = 3 ]; then
     GOT="$(cd "$TD" && timeout -k 5 20s "$SCRIP" --run w.sno </dev/null 2>&1)"
   else
-    (cd "$TD" && "$SCRIP" --compile -o w.s w.sno </dev/null >/dev/null 2>&1) || refuse "mode-4 compile failed -- cannot measure"
+    (cd "$TD" && "$SCRIP" --compile --out=w.s w.sno </dev/null >/dev/null 2>&1) || refuse "mode-4 compile failed -- cannot measure"
     (cd "$TD" && gcc -no-pie w.s -o w.bin -L "$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1) || refuse "mode-4 link failed -- cannot measure"
     GOT="$(cd "$TD" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20s ./w.bin </dev/null 2>&1)"
   fi

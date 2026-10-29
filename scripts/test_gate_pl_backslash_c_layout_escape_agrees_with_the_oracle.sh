@@ -29,7 +29,7 @@ exp="$(timeout -k 5 30 "$SWIPL" -q -g halt "$W/w.pl" 2>/dev/null)"
 rc=0
 for m in 3 4; do
   if [ "$m" = 3 ]; then got="$(timeout -k 5 20 ./scrip "$W/w.pl" </dev/null 2>&1)"; else
-    timeout -k 5 60 ./scrip --compile -o "$W/w.s" "$W/w.pl" </dev/null >"$W/c.log" 2>&1 || { echo "⛔ m$m: compile failed"; cat "$W/c.log"; rc=1; continue; }
+    timeout -k 5 60 ./scrip --compile --out="$W/w.s" "$W/w.pl" </dev/null >"$W/c.log" 2>&1 || { echo "⛔ m$m: compile failed"; cat "$W/c.log"; rc=1; continue; }
     gcc -no-pie "$W/w.s" -Lout -lscrip_rt -Wl,-rpath,"$PWD/out" -lm -lpthread -o "$W/w.bin" >>"$W/c.log" 2>&1 || { echo "⛔ m$m: link failed"; cat "$W/c.log"; rc=1; continue; }
     got="$(timeout -k 5 20 "$W/w.bin" </dev/null 2>&1)"; fi
   if [ "$got" = "$exp" ]; then echo "✅ m$m agrees with the oracle on \\c, all five forms"

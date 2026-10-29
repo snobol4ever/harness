@@ -26,7 +26,7 @@ S1="$HERE/fixtures/hb_pl_attvar_wakes_on_every_bind_road.pl"
 W="$(mktemp -d "${TMPDIR:-/tmp}/plattv.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
 cp "$S1" "$W/r.pl"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then awk '!d && / woke / {d=1; next} {print}' "${S1%.pl}.ref" > "$W/r.ref"; else cp "${S1%.pl}.ref" "$W/r.ref"; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
 gcc -o "$W/r.bin" "$W/r.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/r.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link"; exit 2; }
 run_arm() {
     local n="$1" mode="$2" stress="$3" rc
@@ -57,7 +57,7 @@ run_arm 5 m4 "SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3" || bad=
 run_arm 6 m4 "SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=3 SCRIP_GC_CHAIN_CHECK=3" || bad=1
 Z="$HERE/fixtures/hb_pl_setup_call_cleanup_runs_its_cleanup_on_every_road.pl"
 if [ ! -f "$Z" ]; then echo "  RED (7) the unarmed fixture $Z is missing"; bad=1
-elif ! ( cd "$W" && cp "$Z" "$W/z.pl" && "$ROOT/scrip" --compile -o "$W/z.s" "$W/z.pl" < /dev/null > "$W/z.cerr" 2>&1 ); then echo "  RED (7) the unarmed fixture does not compile"; bad=1
+elif ! ( cd "$W" && cp "$Z" "$W/z.pl" && "$ROOT/scrip" --compile --out="$W/z.s" "$W/z.pl" < /dev/null > "$W/z.cerr" 2>&1 ); then echo "  RED (7) the unarmed fixture does not compile"; bad=1
 else
     za=$(grep -c "cmp *edx, *1448367169" "$W/z.s"); zw=$(grep -c "wakeup" "$W/z.s"); ra=$(grep -c "cmp *edx, *1448367169" "$W/r.s"); rw=$(grep -c "wakeup" "$W/r.s")
     if [ "$za" -ne 0 ] || [ "$zw" -ne 0 ]; then echo "  RED (7) the unarmed program carries $za flag tests and $zw wakeup references"; bad=1

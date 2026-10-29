@@ -33,7 +33,7 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/irbar.XXXXXX")" || refuse "no workdir"; trap 'rm
 DECL=""; if [ -f "$HERE/lib_declared_arena.sh" ]; then . "$HERE/lib_declared_arena.sh" 2>/dev/null && DECL="$(declared_switches_beside "$SRC" 2>/dev/null || true)"; fi
 twin() { local n="$1" eng="$2"; local o="$W/k_${eng}_$n.pl"; bash "$HERE/bench_prolog_wrap.sh" "$SRC" -o "$o" --mode=iter --n="$n" --engine="$eng" >/dev/null 2>&1 && [ -s "$o" ] && echo "$o"; }
 ir_num() { local v; v="$(ir_measure "$@")"; ir_is_number "$v" && echo "$v"; }
-ir_m4() { local f="$1" d; d="$(mktemp -d "$W/m4.XXXXXX")"; "$SCRIP_BIN" --compile "$f" -o "$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
+ir_m4() { local f="$1" d; d="$(mktemp -d "$W/m4.XXXXXX")"; "$SCRIP_BIN" --compile "$f" --out="$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
   gcc -no-pie "$d/p.s" -o "$d/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread >/dev/null 2>&1 || return 0; ir_num "$d/p.bin" $DECL < /dev/null; }
 ir_rival() { local f="$1" d; case "$RIVAL" in
   gplc) d="$(mktemp -d "$W/gplc.XXXXXX")"; (cd "$d" && timeout -k 5 300 "$GPLC" --no-top-level -o "$d/p.bin" "$f" >/dev/null 2>&1) && [ -x "$d/p.bin" ] || return 0; ir_num "$d/p.bin" < /dev/null;;

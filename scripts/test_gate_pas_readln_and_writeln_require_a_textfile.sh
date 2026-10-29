@@ -37,7 +37,7 @@ N=$((N+1)); bad=""
 o3=$( cd "$T" && timeout -k 5 10s "$SCRIP" "$f" </dev/null 2>&1 ); rc3=$?
 [ -n "${FAIL_ONCE:-}" ] && { rc3=0; o3=""; }
 { [ "$rc3" -ne 0 ] && [ "$rc3" -lt 124 ] && [ -n "$o3" ]; } || bad="m3 (rc=$rc3, ${#o3} bytes of diagnostic)"
-o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o /dev/null "$f" </dev/null 2>&1 ); rc4=$?
+o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out=/dev/null "$f" </dev/null 2>&1 ); rc4=$?
 { [ "$rc4" -ne 0 ] && [ "$rc4" -lt 124 ] && [ -n "$o4" ]; } || bad="$bad m4 (rc=$rc4, ${#o4} bytes of diagnostic)"
 if [ -n "$bad" ]; then echo "  $b ACCEPTED where ISO 7185 6.9.2 requires refusal: $bad"; RC=1; else echo "  $b refused with a diagnostic in both modes"; fi
 cat > "$T/wl.pas" <<'PAS'
@@ -49,7 +49,7 @@ end.
 PAS
 N=$((N+1))
 w3=$( cd "$T" && timeout -k 5 10s "$SCRIP" wl.pas </dev/null 2>&1 ); wrc3=$?
-w4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o /dev/null wl.pas </dev/null 2>&1 ); wrc4=$?
+w4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out=/dev/null wl.pas </dev/null 2>&1 ); wrc4=$?
 if { [ "$wrc3" -ne 0 ] && [ -n "$w3" ]; } && { [ "$wrc4" -ne 0 ] && [ -n "$w4" ]; }
 then echo "  writeln on a file of integer refused with a diagnostic in both modes (ISO 7185 6.9.4, no PAT witness)"
 else echo "  writeln on a file of integer ACCEPTED: m3 rc=$wrc3 (${#w3}b), m4 rc=$wrc4 (${#w4}b)"; RC=1; fi

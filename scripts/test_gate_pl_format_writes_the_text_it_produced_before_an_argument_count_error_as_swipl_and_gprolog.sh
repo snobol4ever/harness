@@ -54,7 +54,7 @@ cmp -s "$d/scc.want" "$d/scc.oracle" || { echo "⛔ REFUSED(2) [$GATE_NAME]: the
 timeout -k 5 20 "$SCRIP" "$d/scc.pl" </dev/null 2>/dev/null > "$d/scc.m3"; rc=$?; graded=$((graded + 1))
 if [ $rc -ne 0 ] || ! cmp -s "$d/scc.want" "$d/scc.m3"; then fails=$((fails + 1)); echo "  m3 rc=$rc differs:"; diff "$d/scc.want" "$d/scc.m3" | head -10; fi
 graded=$((graded + 1))
-if timeout -k 5 60 "$SCRIP" --compile -o "$d/scc.s" "$d/scc.pl" </dev/null >/dev/null 2>&1; then
+if timeout -k 5 60 "$SCRIP" --compile --out="$d/scc.s" "$d/scc.pl" </dev/null >/dev/null 2>&1; then
     if as --64 -o "$d/scc.o" "$d/scc.s" 2> "$d/scc.aserr" && gcc -no-pie -o "$d/scc.bin" "$d/scc.o" "$OUT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$OUT" 2>/dev/null; then
         timeout -k 5 20 "$d/scc.bin" </dev/null 2>/dev/null > "$d/scc.m4"; rc=$?
         if [ $rc -ne 0 ] || ! cmp -s "$d/scc.want" "$d/scc.m4"; then fails=$((fails + 1)); echo "  m4 rc=$rc differs:"; diff "$d/scc.want" "$d/scc.m4" | head -10; fi

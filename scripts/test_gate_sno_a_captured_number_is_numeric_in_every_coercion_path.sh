@@ -56,7 +56,7 @@ for mode in m3 m4; do
     if [ "$mode" = m3 ]; then
         (cd "$D" && timeout -k 5 20 "$B/scrip" w.sno </dev/null > "out.$mode" 2>&1)
     else
-        "$B/scrip" --compile -o "$D/w.s" "$D/w.sno" </dev/null >/dev/null 2>&1 \
+        "$B/scrip" --compile --out="$D/w.s" "$D/w.sno" </dev/null >/dev/null 2>&1 \
           && as -o "$D/w.o" "$D/w.s" 2>/dev/null \
           && gcc -o "$D/w.bin" "$D/w.o" "$B/out/libscrip_rt.so" -Wl,-rpath,"$B/out" 2>/dev/null \
           || { echo "⛔ REFUSES rc=2: could not build the m4 arm -- that is a toolchain failure, not a verdict"; exit 2; }

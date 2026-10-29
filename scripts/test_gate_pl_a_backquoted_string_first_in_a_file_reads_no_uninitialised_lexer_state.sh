@@ -13,7 +13,7 @@ cd "$HERE/../../SCRIP" 2>/dev/null || { echo "REFUSE(2): no SCRIP beside the har
 command -v valgrind > /dev/null 2>&1 || { echo "REFUSE(2): valgrind is not installed"; exit 2; }
 T="$HERE/../../.scratch/lxi-$$"; mkdir -p "$T"; trap 'rm -rf "$T"' EXIT
 printf 'p(`abc`).\n' > "$T/bq.pl"
-timeout -k 5 300 valgrind -q --error-exitcode=99 ./scrip --compile -o "$T/bq.s" "$T/bq.pl" < /dev/null > "$T/o.txt" 2> "$T/vg.txt"; rc=$?
+timeout -k 5 300 valgrind -q --error-exitcode=99 ./scrip --compile --out="$T/bq.s" "$T/bq.pl" < /dev/null > "$T/o.txt" 2> "$T/vg.txt"; rc=$?
 if [ $rc -eq 0 ]; then echo "GATE OK -- a file whose first quoted token is a backquoted string compiles clean under valgrind (rc 0)"; exit 0; fi
 echo "GATE FAIL -- valgrind rc=$rc reading a file whose first quoted token is a backquoted string; the first report:"
 grep -m3 -E '==[0-9]+== +(Conditional|Use of|Invalid|at 0x|by 0x)' "$T/vg.txt" | cut -c1-160

@@ -68,7 +68,7 @@ for name in "${PROGS[@]}"; do
         printf 'package\t%s\tpascal\t%s\tm3\tFAIL\t%s\t%s\n' "$KEY" "$name" "$S3" "$_d3" >>"$PROG_ROWS"
     fi
     m4bin="$TMP/${name}.bin"; m4s="$TMP/${name}.s"; _t0="$(progress_clock)"
-    if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" -o "$m4s" < /dev/null 2>/dev/null \
+    if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" --out="$m4s" < /dev/null 2>/dev/null \
         && gcc -no-pie "$m4s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$m4bin" 2>/dev/null; then
         m4out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$m4bin" < "$inp" 2>/dev/null); m4rc=$?
         S4="$(progress_secs_since "$_t0")"

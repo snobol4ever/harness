@@ -85,7 +85,7 @@ run_test() {
         bin="$WORK/${base}_bin"
 
         # scrip --compile --target=x86 (timeout guards against hangs on unimplemented constructs)
-        if ! timeout -k 5 15 "$SCRIP_CC" --compile --target=x86 "$sc" -o "$s_file" 2>"$WORK/${base}.scrip_err"; then
+        if ! timeout -k 5 15 "$SCRIP_CC" --compile --target=x86 "$sc" --out="$s_file" 2>"$WORK/${base}.scrip_err"; then
             echo -e "${RED}FAIL${RESET} $base  [scrip error/timeout]"
             cat "$WORK/${base}.scrip_err" | head -3
             FAIL=$((FAIL+1))

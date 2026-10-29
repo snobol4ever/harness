@@ -99,7 +99,7 @@ if [ "$got" != "$want" ]; then
 fi
 [ "$gotb" = "$want" ] || { rc=1; echo "⛔ RED gva_on_control: the island-ON spelling of the same source diverges from the oracle"; }
 if [ "$got" = "$want" ] && [ "$gotb" = "$want" ]; then
-  q="$(cd "$ROOT" && ./scrip --compile -o "$T/n.s" "$T/nested.sno" </dev/null >/dev/null 2>&1 && grep -c '__gva_names' "$T/n.s")" || q=0
+  q="$(cd "$ROOT" && ./scrip --compile --out="$T/n.s" "$T/nested.sno" </dev/null >/dev/null 2>&1 && grep -c '__gva_names' "$T/n.s")" || q=0
   [ "${q:-0}" -gt 0 ] || { echo "⛔ REFUSE(2): the control source emits no GVA island at all, so SCRIP_M3_GVA=0 turns nothing off and this arm cannot discriminate"; exit 2; }
 fi
 # ⛔ THE INVARIANT IS ASSERTED AT THE SOURCE TOO, because the four oracle arms above only reach the call paths a

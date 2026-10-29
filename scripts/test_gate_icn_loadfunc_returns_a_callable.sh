@@ -96,7 +96,7 @@ grade() { # grade <label> <expected-file> <actual-file>
     else echo "  FAIL  $1"; diff "$2" "$3" | sed -n '1,8p' | sed 's/^/        /'; FAIL=$((FAIL+1)); fi
 }
 ( cd "${T}" && timeout -k 5 30 "${SCRIP}" w.icn </dev/null >w.m3 2>&1 ); grade "m3 marshalling (12 arms: int real str cstr null fail image type coercion, NAME CLASH both ways)" "${T}/w.ref" "${T}/w.m3"
-if ( cd "${T}" && timeout -k 5 60 "${SCRIP}" --compile -o w.s w.icn </dev/null >/dev/null 2>&1 ) \
+if ( cd "${T}" && timeout -k 5 60 "${SCRIP}" --compile --out=w.s w.icn </dev/null >/dev/null 2>&1 ) \
    && gcc -no-pie "${T}/w.s" -L"${ROOT}/out" -lscrip_rt -Wl,-rpath,"${ROOT}/out" -o "${T}/w.m4b" >/dev/null 2>&1; then
     ( cd "${T}" && timeout -k 5 30 ./w.m4b </dev/null >w.m4 2>&1 ); grade "m4 marshalling (same 12 arms)" "${T}/w.ref" "${T}/w.m4"
 else

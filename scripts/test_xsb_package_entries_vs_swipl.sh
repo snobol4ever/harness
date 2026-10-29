@@ -27,7 +27,7 @@ for e in "${ENTRIES[@]}"; do
         n=$((n + 1)); : > "$d/got"; rc=0
         if [ "$m" = m3 ]; then (cd "$PKG" && run_at_declared_arena "$PKG/ALL.csv" "$e" -- timeout -k 5 60 "$SCRIP" "$e.pl" </dev/null > "$d/got" 2>/dev/null); rc=$?
         else
-            if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile -o "$e.s" "$PKG/$e.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$e.bin" "$e.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
+            if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile --out="$e.s" "$PKG/$e.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$e.bin" "$e.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
                 (cd "$PKG" && run_at_declared_arena "$PKG/ALL.csv" "$e" -- timeout -k 5 60 "$d/$e.bin" </dev/null > "$d/got" 2>/dev/null); rc=$?
             else rc=125; fi
         fi

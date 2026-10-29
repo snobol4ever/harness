@@ -68,12 +68,12 @@ for m in m3 m4; do
   echo "--- $m ---"
   run(){ if [ "$m" = m3 ]; then ( cd "$W" && timeout -k 5 60 "$SCRIP" "$1.pl" </dev/null 2>/dev/null ); else
            rm -f "$W/out.s" "$W/out.bin"
-           ( cd "$W" && timeout -k 5 90 "$SCRIP" --compile -o out.s "$1.pl" </dev/null >/dev/null 2>&1 ) || return 97
+           ( cd "$W" && timeout -k 5 90 "$SCRIP" --compile --out=out.s "$1.pl" </dev/null >/dev/null 2>&1 ) || return 97
            timeout -k 5 90 gcc -no-pie -o "$W/out.bin" "$W/out.s" -L"$ROOT/out" -lscrip_rt -lm >/dev/null 2>&1 || return 98
            ( cd "$W" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 60 ./out.bin </dev/null 2>/dev/null ); fi; }
   run_err(){ if [ "$m" = m3 ]; then ( cd "$W" && timeout -k 5 60 "$SCRIP" "$1.pl" </dev/null 2>&1 >/dev/null ); else
            rm -f "$W/e.s" "$W/e.bin"
-           ( cd "$W" && timeout -k 5 90 "$SCRIP" --compile -o e.s "$1.pl" </dev/null >/dev/null 2>&1 ) || return 97
+           ( cd "$W" && timeout -k 5 90 "$SCRIP" --compile --out=e.s "$1.pl" </dev/null >/dev/null 2>&1 ) || return 97
            timeout -k 5 90 gcc -no-pie -o "$W/e.bin" "$W/e.s" -L"$ROOT/out" -lscrip_rt -lm >/dev/null 2>&1 || return 98
            ( cd "$W" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 60 ./e.bin </dev/null 2>&1 >/dev/null ); fi; }
   o="$(run direct)";  [ "$o" = "$EXP_direct" ]  && ck ok "$m (a) consult/1 makes t_foo/2 callable -> [$o]" || ck no "$m (a) printed [$o], oracle says [$EXP_direct]"

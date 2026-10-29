@@ -52,7 +52,7 @@ for e in break_len_table_replace_branch_1 user_function_arbno_any_replace_branch
     [ -s "$T/$e.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for $e"; exit 2; }
     [ "${FAIL_ONCE:-0}" = 1 ] && echo "corrupted" >> "$T/$e.ref"
     ( cd "$T" && timeout -k 5 20s "$SCRIP" --stlimit "$e.sno" < "$e.in" > "$e.m3" 2> "$e.e3" )
-    if ( cd "$T" && "$SCRIP" --stlimit --compile -o "$e.s" "$e.sno" < /dev/null > "$e.c" 2>&1 && gcc "$e.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$e.x" 2>> "$e.c" ); then
+    if ( cd "$T" && "$SCRIP" --stlimit --compile --out="$e.s" "$e.sno" < /dev/null > "$e.c" 2>&1 && gcc "$e.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$e.x" 2>> "$e.c" ); then
         ( cd "$T" && timeout -k 5 20s "./$e.x" < "$e.in" > "$e.m4" 2> "$e.e4" )
         ( cd "$T" && SCRIP_GC_EXERCISE=1 SCRIP_GC_STRESS=1 SCRIP_GC_PLANT_FLIP=1 timeout -k 5 60s "./$e.x" < "$e.in" > "$e.m4s" 2> "$e.e4s" )
     else

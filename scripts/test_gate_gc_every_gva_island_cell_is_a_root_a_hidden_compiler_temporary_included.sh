@@ -40,7 +40,7 @@ for w in $WS; do [ -s "$WD/$w.sno" ] && [ -s "$WD/$w.ref" ] || { echo "⛔ GATE 
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; band=""; bad=0; noplant=""; reach=""; n=0
 for w in $WS; do
-  if ! ( cd "$T" && "$SCRIP" --compile "$WD/$w.sno" -o "$w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$w.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$w.4" 2>/dev/null ); then
+  if ! ( cd "$T" && "$SCRIP" --compile "$WD/$w.sno" --out="$w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$w.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$w.4" 2>/dev/null ); then
     echo "  FAIL (a) the mode-4 witness $w did not build"; RC=1; continue; fi
   if awk '/^__gva_names:/{on=1;next} on&&/\.quad[ \t]+0[ \t]*$/{z=1} on&&!/\.quad/{on=0} END{exit z?0:1}' "$T/$w.s" && grep -q 'rt_defer_open_cell' "$T/$w.s"; then reach="$reach $w"; fi
   for st in 1 3; do

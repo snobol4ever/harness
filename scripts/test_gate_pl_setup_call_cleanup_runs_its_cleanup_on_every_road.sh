@@ -25,7 +25,7 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/plscc.XXXXXX")" || { echo "GATE REFUSED(2) [$G]:
 cp "$S1" "$W/r.pl"; cp "$S2" "$W/c.pl"; cp "${S2%.pl}.ref" "$W/c.ref"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then awk '!d && /^cleanup/ {d=1; next} {print}' "${S1%.pl}.ref" > "$W/r.ref"; else cp "${S1%.pl}.ref" "$W/r.ref"; fi
 for w in r c; do
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the $w witness does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the $w witness does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
     gcc -no-pie -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$w.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: the $w witness does not link"; exit 2; }
 done
 run_arm() {

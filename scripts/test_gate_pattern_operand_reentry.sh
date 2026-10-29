@@ -93,7 +93,7 @@ grade() {  # $1 label  $2 file
     [ -n "$want" ] || { echo "  ⛔ REFUSE(rc=2): $lab -- the oracle printed nothing for $f"; exit 2; }
     m3="$(cd "$W" && timeout -k 5 20 "$SCRIP" --run "$f" </dev/null 2>&1)"
     [ "$m3" = "$want" ] || { echo "  ⛔ $lab m3 RED:"; diff <(printf '%s\n' "$want") <(printf '%s\n' "$m3") | sed 's/^/      /'; rc=1; }
-    if (cd "$W" && timeout -k 5 60 "$SCRIP" --compile -o "$W/p.s" "$f" </dev/null >/dev/null 2>&1) \
+    if (cd "$W" && timeout -k 5 60 "$SCRIP" --compile --out="$W/p.s" "$f" </dev/null >/dev/null 2>&1) \
        && gcc -no-pie "$W/p.s" -L"$SD/out" -lscrip_rt -lm -Wl,-rpath,"$SD/out" -o "$W/p.bin" 2>/dev/null; then
         m4="$(cd "$W" && timeout -k 5 20 "$W/p.bin" </dev/null 2>&1)"
         [ "$m4" = "$want" ] || { echo "  ⛔ $lab m4 RED:"; diff <(printf '%s\n' "$want") <(printf '%s\n' "$m4") | sed 's/^/      /'; rc=1; }

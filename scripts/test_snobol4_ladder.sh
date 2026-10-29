@@ -9,7 +9,7 @@
 # POPULATION: every origin `ladder__rungNN_<slug>` of corpus/tests/snobol4/ALL.csv with NN <= N, materialized OUT of
 # the rungs by origin through lib_rungs_extract.sh (RUNGS_DIR=corpus/tests/snobol4, RUNGS_EXT=.sno) -- keyed on
 # the CSV `origin` column, never on the entry name and never on a filename glob.
-# EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile -o x.s + as --64 + gcc -no-pie + run
+# EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
 # Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.wantrc, keyed
 # on the entry NAME; default 0). A timeout is a FAIL(rc=124), never a hang.
 # ⭐ THE ORACLE THAT MUST CUT THIS LANGUAGE'S REFS: the SPITBOL oracle `/home/resources/x64/bin/sbl`, ALWAYS with `-bf` (`sbl_correctness_bin()` in

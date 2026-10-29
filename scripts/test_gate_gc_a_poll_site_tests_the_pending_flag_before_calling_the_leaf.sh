@@ -40,7 +40,7 @@ END
 SNO
 "$SBL" $(sbl_lang_flags) "$W/churn.sno" < /dev/null > "$W/churn.ref" 2>&1 || true
 [ -s "$W/churn.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/churn.s" churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: churn.sno did not compile"; exit 1; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/churn.s" churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: churn.sno did not compile"; exit 1; }
 loads=$(grep -c 'g_gc_pending@GOTPCREL' "$W/churn.s"); calls=$(grep -cE 'call +(rt_gc_poll_asm|rt_gc_poll|rt_gc_point_arr_c|rt_gc_point_arr_probe_c)($|@)' "$W/churn.s"); lbls=$(grep -c '^1:' "$W/churn.s"); jes=$(grep -c 'je 1f' "$W/churn.s")
 [ "$calls" -gt 0 ] && [ "$loads" -eq "$calls" ] && [ "$lbls" -eq "$calls" ] && [ "$jes" -eq "$calls" ] && echo "ok  every poll form is gated: $calls poll calls, $loads flag loads, $jes skips, $lbls landing labels" || { echo "RED: poll calls=$calls flag loads=$loads skips=$jes labels=$lbls (want all equal and > 0)"; red=1; }
 gcc "$W/churn.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/churn.bin" 2>/dev/null || { echo "RED: churn.s did not link"; exit 1; }

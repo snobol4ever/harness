@@ -14,8 +14,8 @@
 # BOTH modes. ⛔ A non-zero exit with an EMPTY diagnostic is NOT a rejection and is not scored as one -- 1710 and 1715
 # exit 1 in m3 while printing nothing, and a runner that graded on rc alone would call them cured.
 #
-# ⛔⭐ THE m4 ARM LINKS AND RUNS, AND THIS AUDIT GOT IT WRONG ONCE. Its first version graded m4 with --compile -o
-# /dev/null, which only COMPILES -- so a witness whose ISO condition is detected at RUN time could never fail that
+# ⛔⭐ THE m4 ARM LINKS AND RUNS, AND THIS AUDIT GOT IT WRONG ONCE. Its first version graded m4 with --compile --out=/dev/null,
+# which only COMPILES -- so a witness whose ISO condition is detected at RUN time could never fail that
 # arm, and the audit reported 21 owed while the cure for eight of them was already landed and working in both modes.
 # MEASURED 2026-09-16: 1710 compiled rc=0 under the old arm and, linked and run, exits 1 with its diagnostic. A
 # compile-only arm cannot see a runtime check, and a rejection suite is mostly runtime checks. So m4 now compiles,
@@ -45,7 +45,7 @@ for grp in "PACK-UNPACK(ISO-7185-6.6.5.4):$PU" "FILE-STATE(the-coo-15):$FS" "FIL
     f="$SRC/iso7185prt$n.pas"
     [ -f "$f" ] || { echo "⛔ REFUSE(2) [$A]: missing vendored witness $f -- the denominator is not what this audit names"; exit 2; }
     o3=$( cd "$T" && timeout -k 5 10s "$SCRIP" "$f" </dev/null 2>&1 ); rc3=$?
-    o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/w.s" "$f" </dev/null 2>&1 ); rc4=$?
+    o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/w.s" "$f" </dev/null 2>&1 ); rc4=$?
     if [ "$rc4" = 0 ]; then
         if ( cd "$T" && cc -m64 -no-pie w.s -o w -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ); then
             o4=$( cd "$T" && timeout -k 5 20s ./w </dev/null 2>&1 ); rc4=$?

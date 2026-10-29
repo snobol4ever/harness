@@ -29,7 +29,7 @@ EOF
 rc=0
 for m in 3 4; do
   if [ "$m" = 3 ]; then out="$(timeout -k 5 20 ./scrip "$W/w.pl" </dev/null 2>&1)"; else
-    timeout -k 5 20 ./scrip --compile -o "$W/w.s" "$W/w.pl" </dev/null >"$W/c.log" 2>&1 || { echo "⛔ m$m: compile failed"; cat "$W/c.log"; rc=1; continue; }
+    timeout -k 5 20 ./scrip --compile --out="$W/w.s" "$W/w.pl" </dev/null >"$W/c.log" 2>&1 || { echo "⛔ m$m: compile failed"; cat "$W/c.log"; rc=1; continue; }
     gcc -no-pie "$W/w.s" -Lout -lscrip_rt -Wl,-rpath,"$PWD/out" -lm -lpthread -o "$W/w.bin" >>"$W/c.log" 2>&1 || { echo "⛔ m$m: link failed"; cat "$W/c.log"; rc=1; continue; }
     out="$(timeout -k 5 20 "$W/w.bin" </dev/null 2>&1)"; fi
   bnd="$(printf '%s\n' "$out" | sed -n 's/^bounded(\(.*\))$/\1/p')"

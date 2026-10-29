@@ -51,7 +51,7 @@ for m in 3 4; do
     src="$W/$arm.pl"
     if [ "$m" = 3 ]; then out="$(timeout -k 5 20 ./scrip "$src" </dev/null 2>&1)"; else
       rm -f "$W/a.s" "$W/a.bin"
-      timeout -k 5 20 ./scrip --compile -o "$W/a.s" "$src" </dev/null >"$W/c.log" 2>&1
+      timeout -k 5 20 ./scrip --compile --out="$W/a.s" "$src" </dev/null >"$W/c.log" 2>&1
       if [ -s "$W/a.s" ] && gcc -no-pie "$W/a.s" -Lout -lscrip_rt -Wl,-rpath,"$PWD/out" -lm -lpthread -o "$W/a.bin" >>"$W/c.log" 2>&1
       then out="$(cat "$W/c.log"; timeout -k 5 20 "$W/a.bin" </dev/null 2>&1)"
       else out="$(cat "$W/c.log")"; fi

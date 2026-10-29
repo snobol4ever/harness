@@ -33,7 +33,7 @@ WANT="$(cat "$TD/g.ref")"
 case "$WANT" in *"reached the end"*) : ;; *) refuse "oracle output does not reach the end -- the witness itself is broken, not SCRIP" ;; esac
 ( cd "$TD" && timeout -k 5 30 "$SCRIP" g.icn </dev/null > g.m3 2>&1 ) || true
 grade "m3: <-> on a global (was an rc=134 TE-4 compile abort, so nothing ran at all)" "$WANT" "$(cat "$TD/g.m3")"
-( cd "$TD" && timeout -k 5 60 "$SCRIP" --compile -o g.s g.icn </dev/null >/dev/null 2>&1 && gcc -no-pie g.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread -o g.m4b >/dev/null 2>&1 && timeout -k 5 30 ./g.m4b </dev/null > g.m4 2>&1 ) || true
+( cd "$TD" && timeout -k 5 60 "$SCRIP" --compile --out=g.s g.icn </dev/null >/dev/null 2>&1 && gcc -no-pie g.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread -o g.m4b >/dev/null 2>&1 && timeout -k 5 30 ./g.m4b </dev/null > g.m4 2>&1 ) || true
 grade "m4: same, through the compiled path" "$WANT" "$(cat "$TD/g.m4" 2>/dev/null)"
 cat > "$TD/l.icn" <<'ICNEOF'
 procedure main();

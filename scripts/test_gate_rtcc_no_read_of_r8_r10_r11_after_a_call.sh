@@ -38,7 +38,7 @@ ASMS=(); n=0
 for w in "$WD"/*.sno "$WD"/*.icn "$WD"/*.pl "$WD"/*.raku "$WD"/*.pas "$WD"/*.sc; do
     [ -f "$w" ] || continue
     o="$T/m4_$(basename "$w").s"
-    timeout -k 5 60 "$SCRIP" --compile -o "$o" "$w" < /dev/null > /dev/null 2>&1 && [ -s "$o" ] && { ASMS+=(--asm "$o"); n=$((n+1)); }
+    timeout -k 5 60 "$SCRIP" --compile --out="$o" "$w" < /dev/null > /dev/null 2>&1 && [ -s "$o" ] && { ASMS+=(--asm "$o"); n=$((n+1)); }
 done
 [ "$n" -gt 0 ] || { echo "⛔ GATE REFUSE(2) [$G]: no witness compiled"; exit 2; }
 python3 "$R" "${ASMS[@]}" --entry > "$T/m4.txt" 2>&1; rc=$?
@@ -77,7 +77,7 @@ fi
     || arm fail "(d) the plant did not red (mode 4 rc=$rc4, mode 3 rc=$rc3) -- the detector fails open"
 nb=$(cat "${ASMS[@]/--asm/}" 2>/dev/null | grep -cE 'g_rtccb\+(40|56|64)')
 [ "$nb" -eq 0 ] && arm ok "(e) the bracket is gone: no witness .s spills or reloads r8, r10 or r11 through g_rtccb" || arm fail "(e) $nb g_rtccb+40/56/64 store or reload(s) remain in the witness .s"
-run4() { "$SCRIP" --compile -o "$1.s" "$2" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$1" 2>/dev/null \
+run4() { "$SCRIP" --compile --out="$1.s" "$2" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$1" 2>/dev/null \
     && { SCRIP_GC_STRESS=1 timeout -k 5 120 "$1" < /dev/null; echo "rc=$?"; }; }
 dbad=""; dn=0
 for w in hb_arr.sno hb_datblk.sno hb_coexpr_sigma.icn hb_pl_findall.pl hb_cv_spine_plain_redo.icn; do
@@ -93,7 +93,7 @@ for w in hb_arr.sno hb_datblk.sno hb_coexpr_sigma.icn hb_pl_findall.pl hb_cv_spi
     [ "$r11" -gt 0 ] && [ "$rest" -eq 0 ] || dbad="$dbad $w:r11=$r11,r8r10=$rest"
     dn=$((dn+1))
 done
-SCRIP_DIAG_REGS=1 SCRIP_RTCC_VENEER=2 "$SCRIP" --compile -o "$T/dplant.s" "$WD/hb_arr.sno" < /dev/null > /dev/null 2>&1
+SCRIP_DIAG_REGS=1 SCRIP_RTCC_VENEER=2 "$SCRIP" --compile --out="$T/dplant.s" "$WD/hb_arr.sno" < /dev/null > /dev/null 2>&1
 dpl=$(grep -cE 'mov +r11, +qword ptr \[rip \+ g_rtccb\+64\]' "$T/dplant.s")
 [ "$dn" -eq 5 ] && [ -z "$dbad" ] && [ "$dpl" -eq 0 ] \
     && arm ok "(f) SCRIP_DIAG_REGS: $dn witnesses print the same with and without it in both modes under stress 1, r11 still carried and r8/r10 not; the plant that drops r11 (SCRIP_RTCC_VENEER=2) is seen" \

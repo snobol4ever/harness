@@ -16,7 +16,7 @@ main :- X in 1..5, X #> 3, label([X]), write(X), nl.
 PL
 cd "$HERE/../../SCRIP" 2>/dev/null || { echo "REFUSE(2): no SCRIP beside the harness"; exit 2; }
 [ -x ./scrip ] || { echo "REFUSE(2): no ./scrip -- run make -j8 in SCRIP"; exit 2; }
-t0=$(date +%s); timeout -k 5 100 ./scrip --compile -o "$T/c.s" "$T/c.pl" < /dev/null > "$T/c.out" 2>&1; rc=$?; secs=$(( $(date +%s) - t0 ))
+t0=$(date +%s); timeout -k 5 100 ./scrip --compile --out="$T/c.s" "$T/c.pl" < /dev/null > "$T/c.out" 2>&1; rc=$?; secs=$(( $(date +%s) - t0 ))
 if [ $rc -eq 0 ] && [ -s "$T/c.s" ]; then echo "GATE OK -- a clpfd program compiled in ${secs}s (cap 100 s)"; exit 0; fi
 if [ $rc -eq 124 ] || [ $rc -eq 137 ]; then echo "GATE FAIL -- a clpfd program did not compile inside 100 s (rc=$rc): the planner's bound-spine decision is quadratic again"; exit 1; fi
 echo "GATE FAIL -- the clpfd witness did not compile (rc=$rc): $(head -c 300 "$T/c.out")"; exit 1

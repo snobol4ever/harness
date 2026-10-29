@@ -36,7 +36,7 @@ dir="$(declared_clib_beside "$P/general/w.icn" "$P")"; rc=$?
 ( cd "$P/general" && "$IC" -s -o w.ox w.icn >/dev/null 2>&1 && FPATH=". $dir" ./w.ox > "$T/oracle.txt" 2>&1 )
 [ "$(cat "$T/oracle.txt")" = 4244 ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not answer 4244 through the fixture library: $(head -c 200 "$T/oracle.txt")"; exit 2; }
 ( cd "$P/general" && FPATH=". $dir" "$S" w.icn < /dev/null > "$T/m3.txt" 2>&1 )
-( cd "$P/general" && "$S" --compile -o "$T/w.s" w.icn < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+( cd "$P/general" && "$S" --compile --out="$T/w.s" w.icn < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
     || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build the witness"; exit 2; }
 ( cd "$P/general" && FPATH=". $dir" "$T/w.x" < /dev/null > "$T/m4.txt" 2>&1 )
 for m in m3 m4; do cmp -s "$T/oracle.txt" "$T/$m.txt" && echo "  arm 2 PASS $m: 4244 through the built library, as iconx" || { echo "  arm 2 RED $m: $(head -c 200 "$T/$m.txt")"; red=1; }; done

@@ -38,7 +38,7 @@ colls() { grep -o 'collections=[0-9]*' "$1" | tail -1 | cut -d= -f2; }
 o0=$(clean timeout -k 5 60 "$C" -d4m big.sno < /dev/null 2>/dev/null); r0=$?; od=$(clean timeout -k 5 60 "$C" big.sno < /dev/null 2>/dev/null)
 [ "$o0" != "done 20001" ] && [ "$od" = "done 20001" ] && ck ok "(1a) the witness does NOT fit -d4m (rc=$r0, output '$o0') and answers at the default cap" || ck no "(1a) -d4m printed '$o0' (rc=$r0), the default cap printed '$od' -- the witness must die at 4 MB and answer at SPITBOL's 128 MB"
 o1=$(clean timeout -k 5 60 "$C" -d64m big.sno < /dev/null 2>/dev/null); [ "$o1" = "done 20001" ] && ck ok "(1b) -d64m: the witness prints its answer in mode 3" || ck no "(1b) -d64m in mode 3 printed '$o1'"
-if clean "$C" --compile -o big.s big.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o bigbin big.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
+if clean "$C" --compile --out=big.s big.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o bigbin big.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
     o2=$(clean timeout -k 5 60 ./bigbin -d4m < /dev/null 2>/dev/null); o3=$(clean timeout -k 5 60 ./bigbin -d64m < /dev/null 2>/dev/null)
     [ "$o2" != "done 20001" ] && [ "$o3" = "done 20001" ] && ck ok "(2) the mode-4 binary dies at -d4m and prints the answer with -d64m, each on its own command line" || ck no "(2) mode-4: with -d4m '$o2', with -d64m '$o3'"
 else ck no "(2) could not compile or link the witness for mode 4"; fi
@@ -51,7 +51,7 @@ clean env SCRIP_HEAP_KB=128 SCRIP_GC_EXERCISE=1 timeout -k 5 60 "$C" churn.sno <
 [ -n "$c4" ] && [ "$c4" -gt 10 ] && ck ok "(5) the seam alone still sizes a run: SCRIP_HEAP_KB=128 reads collections=$c4" || ck no "(5) SCRIP_HEAP_KB=128 alone reads collections=${c4:-?}"
 s1=$(clean timeout -k 5 120 "$C" deep.sno < /dev/null 2>/dev/null); rs1=$?; s2=$(clean timeout -k 5 120 "$C" -s512m deep.sno < /dev/null 2>/dev/null); rs2=$?
 [ "$s2" = "depth 1000000" ] && { [ "$rs1" != 0 ] || [ "$s1" != "depth 1000000" ]; } && ck ok "(6a) -s: the deep witness overflows the 4 MB default (rc=$rs1) and completes at -s512m, mode 3" || ck no "(6a) -s mode 3: default rc=$rs1 '$s1', at -s512m rc=$rs2 '$s2' (if both complete, the depth is too small to measure -s)"
-if clean "$C" --compile -o deep.s deep.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o deepbin deep.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
+if clean "$C" --compile --out=deep.s deep.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o deepbin deep.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
     s3=$(clean timeout -k 5 120 ./deepbin < /dev/null 2>/dev/null); rs3=$?; s4=$(clean timeout -k 5 120 ./deepbin -s512m < /dev/null 2>/dev/null)
     [ "$s4" = "depth 1000000" ] && { [ "$rs3" != 0 ] || [ "$s3" != "depth 1000000" ]; } && ck ok "(6b) -s on the mode-4 binary's command line: overflows at the 4 MB default (rc=$rs3), completes at -s512m" || ck no "(6b) -s mode 4: default rc=$rs3 '$s3', at -s512m '$s4'"
 else ck no "(6b) could not compile or link the deep witness"; fi

@@ -19,7 +19,7 @@ WANT="$(cat "$TD/g.ref")"
 [ -n "$WANT" ] || refuse "oracle produced no output -- cannot measure"
 ( cd "$TD" && timeout -k 5 30 "$SCRIP" g.icn </dev/null > g.m3 2>&1 ) || true
 grade "icon m3: globals named PI TRACE ANCHOR OUTPUT read back their own values" "$WANT" "$(cat "$TD/g.m3")"
-( cd "$TD" && timeout -k 5 60 "$SCRIP" --compile -o g.s g.icn </dev/null >/dev/null 2>&1 && gcc -no-pie g.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread -o g.m4b >/dev/null 2>&1 && timeout -k 5 30 ./g.m4b </dev/null > g.m4 2>&1 ) || true
+( cd "$TD" && timeout -k 5 60 "$SCRIP" --compile --out=g.s g.icn </dev/null >/dev/null 2>&1 && gcc -no-pie g.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread -o g.m4b >/dev/null 2>&1 && timeout -k 5 30 ./g.m4b </dev/null > g.m4 2>&1 ) || true
 grade "icon m4: same, through the compiled path" "$WANT" "$(cat "$TD/g.m4" 2>/dev/null)"
 printf '\tOUTPUT = "hello"\nEND\n' > "$TD/s1.sno"
 ( cd "$TD" && timeout -k 5 30 "$SCRIP" s1.sno </dev/null > s1.out 2>&1 ) || true

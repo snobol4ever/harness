@@ -67,13 +67,13 @@ if ! cmp -s "$W/plain.out" "$W/traced.stripped" || [ "$prc" != "$trc" ]; then
 fi
 nev=$(grep -oE '\*\*\*\*[0-9]+' "$W/traced.out" | wc -l); echo "[monitor_run] monitor-safe: untraced output identical under trace; $nev trace event(s) in mode 3"
 if [ "$mode" = modes ]; then
-    ( cd "$(dirname "$src")" && timeout -k 5 60 "$SCRIP" --compile -o "$W/plain4.s" "$src" < /dev/null ) > "$W/plain4.cc.out" 2>&1; pcc=$?
+    ( cd "$(dirname "$src")" && timeout -k 5 60 "$SCRIP" --compile --out="$W/plain4.s" "$src" < /dev/null ) > "$W/plain4.cc.out" 2>&1; pcc=$?
     [ "$pcc" = 0 ] || { echo "REFUSE(2): mode-4 plain compile failed (rc=$pcc): $(tail -2 "$W/plain4.cc.out")"; exit 2; }
     gcc "$W/plain4.s" -L"$SD/out" -lscrip_rt -Wl,-rpath,"$SD/out" -lm -o "$W/plain4.bin" > "$W/plain4.link.out" 2>&1
     [ -x "$W/plain4.bin" ] || { echo "REFUSE(2): mode-4 plain link failed: $(tail -2 "$W/plain4.link.out")"; exit 2; }
     timeout -k 5 60 "$W/plain4.bin" $SW < "$input" > "$W/plain4.out" 2> "$W/plain4.err"; prc4=$?
 
-    ( cd "$(dirname "$src")" && timeout -k 5 60 "$SCRIP" --trace --compile --monitor -o "$W/traced4.s" "$src" < /dev/null ) > "$W/traced4.cc.out" 2>&1; tcc=$?
+    ( cd "$(dirname "$src")" && timeout -k 5 60 "$SCRIP" --trace --compile --monitor --out="$W/traced4.s" "$src" < /dev/null ) > "$W/traced4.cc.out" 2>&1; tcc=$?
     [ "$tcc" = 0 ] || { echo "REFUSE(2): mode-4 traced compile failed (rc=$tcc): $(tail -2 "$W/traced4.cc.out")"; exit 2; }
     gcc "$W/traced4.s" -L"$SD/out" -lscrip_rt -Wl,-rpath,"$SD/out" -lm -o "$W/traced4.bin" > "$W/traced4.link.out" 2>&1
     [ -x "$W/traced4.bin" ] || { echo "REFUSE(2): mode-4 traced link failed: $(tail -2 "$W/traced4.link.out")"; exit 2; }

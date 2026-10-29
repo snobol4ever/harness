@@ -52,7 +52,7 @@ SNO
 "$SBL" $(sbl_lang_flags) "$W/id.sno" < /dev/null > "$W/id.ref" 2>&1 || true
 [ -s "$W/id.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 red=0
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/id.s" id.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: id.sno did not compile"; exit 1; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/id.s" id.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: id.sno did not compile"; exit 1; }
 for f in descr_identical rt_table_assign_fast; do
     nc=$(grep -c "call .*\[rip + $f@GOTPCREL\]" "$W/id.s"); nv=$(grep -B3 "call .*\[rip + $f@GOTPCREL\]" "$W/id.s" | grep -c 'g_rtccb')
     [ "$nc" -gt 0 ] && [ "$nv" -eq 0 ] && echo "ok  $f: $nc bare GOT calls, no veneer" || { echo "RED $f: calls=$nc veneered=$nv"; red=1; }

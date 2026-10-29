@@ -65,7 +65,7 @@ end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 n.pas >/dev/null 2>&1 && ./n ) > "$T/n.ref" 2>&1
 grep -q '^ptr xq 4096' "$T/n.ref" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not produce the nested-char line this gate pins -- the oracle moved: $(head -1 "$T/n.ref")"; exit 2; }
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o n.s n.pas </dev/null && gcc n.s -o n.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the mode-4 witness did not build"; exit 2; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=n.s n.pas </dev/null && gcc n.s -o n.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the mode-4 witness did not build"; exit 2; }
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 60 "$SCRIP" --run n.pas </dev/null ) >"$T/$M.out" 2>&1

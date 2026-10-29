@@ -51,8 +51,8 @@ PL
 ( cd "$D" && timeout -k 5 60 swipl -q t.pl < /dev/null > twant 2> /dev/null )
 [ "$(cat "$D/twant")" = bound ] || refuse "swipl did not bind the five million variables: $(cat "$D/twant")"
 ( cd "$D" && timeout -k 5 60 "$B/scrip" --run w.pl < /dev/null > m3 2> m3.err; timeout -k 5 120 "$B/scrip" --run -d1024m t.pl < /dev/null > tm3 2> tm3.err )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s w.pl < /dev/null 2> m4.err && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && timeout -k 5 60 ./w < /dev/null > m4 2>> m4.err
-  timeout -k 5 60 "$B/scrip" --compile -o t.s t.pl < /dev/null 2> tm4.err && gcc -no-pie t.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o t 2>> tm4.err && timeout -k 5 120 ./t -d1024m < /dev/null > tm4 2>> tm4.err )
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s w.pl < /dev/null 2> m4.err && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && timeout -k 5 60 ./w < /dev/null > m4 2>> m4.err
+  timeout -k 5 60 "$B/scrip" --compile --out=t.s t.pl < /dev/null 2> tm4.err && gcc -no-pie t.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o t 2>> tm4.err && timeout -k 5 120 ./t -d1024m < /dev/null > tm4 2>> tm4.err )
 n=$(wc -l < "$D/want"); red=0
 for m in m3 m4; do
     if cmp -s "$D/want" "$D/$m"; then echo "  $m GREEN: $n of $n lines as swipl"

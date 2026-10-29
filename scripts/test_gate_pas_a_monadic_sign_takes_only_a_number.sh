@@ -25,7 +25,7 @@ FPC="${FPC_BIN:-/usr/bin/fpc}"; [ -x "$FPC" ] || { echo "⛔ GATE REFUSE(2) [$G]
 SRC="$S4E/corpus/packages/pascal/pat"
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0
-m4_run() { M4O=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/w.s" "$1" </dev/null 2>&1 ); M4RC=$?
+m4_run() { M4O=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/w.s" "$1" </dev/null 2>&1 ); M4RC=$?
   if [ "$M4RC" = 0 ]; then
     ( cd "$T" && cc -m64 -no-pie w.s -o w -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: $1 compiled but would not link -- cannot grade the m4 arm"; exit 2; }
     M4O=$( cd "$T" && timeout -k 5 20s ./w </dev/null 2>&1 ); M4RC=$?
@@ -63,7 +63,7 @@ begin x := 'q' end;
 begin x := 5; p; x := -x end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 shadow.pas >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: fpc -Miso refused the shadow arm's program -- its verdict is the ref"; exit 2; }
-if sh4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/sh.s" shadow.pas </dev/null 2>&1 ); then echo "  shadow arm: -x on a global integer x shadowed by a local x: char is accepted, as fpc -Miso accepts it (compile-only, see header)"
+if sh4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/sh.s" shadow.pas </dev/null 2>&1 ); then echo "  shadow arm: -x on a global integer x shadowed by a local x: char is accepted, as fpc -Miso accepts it (compile-only, see header)"
 else echo "  ⛔ shadow arm FAILED -- a legal sign on a variable with a same-named local of another type was refused: $sh4"; RC=1; fi
 if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: $N monadic signs on a non-numeric operand refused with a NAMED diagnostic in both modes, and legal signs are untouched"
 else echo "GATE FAIL(1) [$G]: examined $N vendored PAT witnesses plus one legal control"; fi

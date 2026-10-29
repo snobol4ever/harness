@@ -30,7 +30,7 @@ main :- p(X), writeq(X), nl, X =.. [N | Args], writeq(N), nl, length(Args, K), w
 :- initialization(main).
 EOF
 "$ROOT/scrip" "$W/w.pl" < /dev/null > "$W/m3.out" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not run in mode 3 ($(head -c 120 "$W/m3.out"))"; exit 2; }
-"$ROOT/scrip" --compile -o "$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
+"$ROOT/scrip" --compile --out="$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
 grep -q '^\.Lpl_functor_tab:' "$W/w.s" && grep -q '^\.Lpl_atom_tab:' "$W/w.s" || { echo "GATE REFUSED(2) [$G]: the .s carries no .Lpl_functor_tab / .Lpl_atom_tab -- the table emission moved; re-aim this gate"; exit 2; }
 link() { gcc -no-pie -o "$2" "$1" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$2.link" 2>&1; }
 bad=0

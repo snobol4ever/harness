@@ -28,7 +28,7 @@ for w in $WITS; do [ -s "$W/$w" ] && [ -s "$W/${w%.*}.ref" ] || refuse "witness 
 bad=0
 for w in $WITS; do
     b="${w%.*}"
-    ( cd "$T" && "$ROOT/scrip" --compile -o "$T/$b.s" "$W/$w" < /dev/null > /dev/null 2>&1 ) && gcc "$T/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$T/$b.bin" 2> /dev/null || refuse "$w did not build in mode 4"
+    ( cd "$T" && "$ROOT/scrip" --compile --out="$T/$b.s" "$W/$w" < /dev/null > /dev/null 2>&1 ) && gcc "$T/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$T/$b.bin" 2> /dev/null || refuse "$w did not build in mode 4"
     for m in m3 m4; do
         if [ $m = m3 ]; then ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_VALIDATE=1 timeout -k 5 300 "$ROOT/scrip" "$W/$w" < /dev/null > "$T/o" 2> "$T/e" )
         else ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_VALIDATE=1 timeout -k 5 300 "$T/$b.bin" < /dev/null > "$T/o" 2> "$T/e" ); fi

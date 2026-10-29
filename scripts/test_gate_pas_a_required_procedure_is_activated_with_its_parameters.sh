@@ -28,7 +28,7 @@ for pair in get:6.6.5.2 put:6.6.5.2 reset:6.6.5.2 rewrite:6.6.5.2 new:6.6.5.3 di
   printf 'program r%s(input, output);\nbegin\n  %s\nend.\n' "$nm" "$nm" > "$T/r$nm.pas"
   for m in m3 m4; do
     if [ "$m" = m3 ]; then ( cd "$T" && timeout -k 5 20s "$SCRIP" --run "r$nm.pas" </dev/null >"$T/r$nm.$m.out" 2>"$T/r$nm.$m.err" ); rc=$?
-    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/r$nm.s" "r$nm.pas" </dev/null >"$T/r$nm.$m.out" 2>"$T/r$nm.$m.err" ); rc=$?; fi
+    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/r$nm.s" "r$nm.pas" </dev/null >"$T/r$nm.$m.out" 2>"$T/r$nm.$m.err" ); rc=$?; fi
     want="ISO 7185 $cl violation: the required procedure '$nm'"
     if [ -n "${FAIL_ONCE:-}" ] && [ "$nm" = get ] && [ "$m" = m3 ]; then want="corrupted by FAIL_ONCE"; fi
     if [ "$rc" -ne 0 ] && [ "$rc" -ne 124 ] && grep -qF "$want" "$T/r$nm.$m.err"; then echo "  arm $nm $m: refused rc=$rc, names $cl"
@@ -50,7 +50,7 @@ PAS
 [ -s "$T/ctl.want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced no output for the control arm"; exit 2; }
 for m in m3 m4; do
   if [ "$m" = m3 ]; then ( cd "$T" && timeout -k 5 20s "$SCRIP" --run ctl.pas </dev/null >"$T/ctl.$m.out" 2>"$T/ctl.$m.err" ); rc=$?
-  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/ctl.s" ctl.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie ctl.s -o ctl.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 \
+  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/ctl.s" ctl.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie ctl.s -o ctl.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 \
          && timeout -k 5 20s ./ctl.m4 </dev/null >"$T/ctl.$m.out" 2>"$T/ctl.$m.err" ); rc=$?; fi
   if [ "$rc" = 0 ] && cmp -s "$T/ctl.want" "$T/ctl.$m.out"; then echo "  control arm $m: byte-identical to fpc -Miso"
   else echo "  ⛔ control arm $m FAILED: rc=$rc"; echo "      want: $(tr '\n' '|' < "$T/ctl.want")"; echo "      got : $(tr '\n' '|' < "$T/ctl.$m.out")"; RC=1; fi

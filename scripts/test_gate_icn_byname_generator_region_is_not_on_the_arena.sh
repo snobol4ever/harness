@@ -76,7 +76,7 @@ for w in byname direct; do
     if [ "$m" = 3 ]; then
       out="$(timeout -k 5 20s "$SCRIP" "$TD/$w.icn" </dev/null 2>"$TD/err.$w.$m")"; rc=$?
     else
-      "$SCRIP" --compile -o "$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: mode-4 compile failed -- cannot measure"
+      "$SCRIP" --compile --out="$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: mode-4 compile failed -- cannot measure"
       gcc -no-pie "$TD/$w.s" -o "$TD/$w.bin" -L "$ROOT/out" -lscrip_rt -lm >/dev/null 2>&1 || refuse "$w: mode-4 link failed -- cannot measure"
       out="$(LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20s "$TD/$w.bin" </dev/null 2>"$TD/err.$w.$m")"; rc=$?
     fi

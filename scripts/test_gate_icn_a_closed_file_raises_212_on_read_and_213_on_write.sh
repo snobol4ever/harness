@@ -82,7 +82,7 @@ for w in w1 w2 w3 w4 w5; do
   ( cd "$T" && timeout -k 5 20 "./$w.x" <"$inf" >"$w.io" 2>"$w.ie" ); ir=$?
   [ "$ir" -le 1 ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run witness $w (rc=$ir)"; exit 2; }
   ( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" <"$inf" >"$w.3o" 2>"$w.3e" ); r3=$?
-  ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+  ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
     || { echo "⛔ GATE REFUSE(2) [$G]: witness $w does not build in mode 4"; exit 2; }
   ( cd "$T" && timeout -k 5 20 "./$w.4" <"$inf" >"$w.4o" 2>"$w.4e" ); r4=$?
   ie="$(errno_of "$T/$w.ie")"; e3="$(errno_of "$T/$w.3e")"; e4="$(errno_of "$T/$w.4e")"

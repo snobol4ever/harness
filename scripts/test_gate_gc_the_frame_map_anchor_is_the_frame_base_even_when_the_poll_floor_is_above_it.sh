@@ -59,7 +59,7 @@ for st in 1 5; do
   else echo "ok  stress=$st PASS collections=$col walks=$walks phase=0 floor_above_base=$above"; fi
 done
 [ "$exercised" = 1 ] || { echo "RED no collection had its poll floor above the frame's declared base (s_words=0) -- the band never reached the shape this gate grades"; fail=1; }
-if timeout -k 5 60 ./scrip --compile -o "$TMP/m.s" "$M.icn" < /dev/null 2>"$TMP/m.cerr" && gcc -c "$TMP/m.s" -o "$TMP/m.o" 2>/dev/null && gcc "$TMP/m.o" -Lout -lscrip_rt -lm -lpthread -Wl,-rpath,"$R/out" -o "$TMP/m" 2>/dev/null; then
+if timeout -k 5 60 ./scrip --compile --out="$TMP/m.s" "$M.icn" < /dev/null 2>"$TMP/m.cerr" && gcc -c "$TMP/m.s" -o "$TMP/m.o" 2>/dev/null && gcc "$TMP/m.o" -Lout -lscrip_rt -lm -lpthread -Wl,-rpath,"$R/out" -o "$TMP/m" 2>/dev/null; then
   env -u SCRIP_HEAP_MB SCRIP_GC_EXERCISE=1 SCRIP_HEAP_KB=128 timeout -k 5 60 "$TMP/m" < "$M.in" > "$TMP/m.out" 2> "$TMP/m.err"; rc=$?
   col=$(grep -o 'collections=[0-9]*' "$TMP/m.err" | tail -1); col=${col#collections=}; col=${col:-0}
   if [ $rc -ne 0 ]; then echo "RED mode4 marklists rc=$rc collections=$col"; fail=1

@@ -66,7 +66,7 @@ fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
-m4() { ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o "$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$1.bin" > /dev/null 2>&1 && timeout -k 5 10 "./$1.bin" < /dev/null > "$1.m4" 2>&1; echo $? ); }
+m4() { ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out="$1.s" "$1.sno" < /dev/null > /dev/null 2>&1 && gcc "$1.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$1.bin" > /dev/null 2>&1 && timeout -k 5 10 "./$1.bin" < /dev/null > "$1.m4" 2>&1; echo $? ); }
 rc=$(m3 code); arm "m3: ARG stops at the last formal; LOCAL names the locals (CODE-defined)" "$(same "$rc" code.m3 code.oracle)"
 rc=$(m4 code); arm "m4: ARG stops at the last formal; LOCAL names the locals (CODE-defined)" "$(same "$rc" code.m4 code.oracle)"
 rc=$(m4 main); arm "m4: ARG and LOCAL over a main-program DEFINE" "$(same "$rc" main.m4 main.oracle)"

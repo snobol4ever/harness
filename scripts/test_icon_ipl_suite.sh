@@ -221,7 +221,7 @@ for f in "${FILES[@]}"; do
 
     decl_ask "$(basename "$(dirname "$f")")/$base"
     _ca="$(declared_compile_args_from_table "$CA_TBL" "$(basename "$(dirname "$f")")/$base")" || exit 2
-    "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --compile $_ca "$f" -o "$out" < /dev/null > "$log" 2>&1
+    "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --compile $_ca "$f" --out="$out" < /dev/null > "$log" 2>&1
     rc=$?
 
     if [ "$rc" -eq 124 ]; then

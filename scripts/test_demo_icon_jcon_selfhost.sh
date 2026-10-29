@@ -47,7 +47,7 @@ mkdir -p "$W/src" && cp "$PKG"/*.icn "$W/src/" || refuse "cannot stage the packa
 for m in $MODS; do [ -f "$W/src/$m.icn" ] || refuse "jtran links $m but $PKG/$m.icn does not exist."; done
 ( cd "$W/src" && "$ICONT" -s -o "$W/jtran_oracle" $(for m in $MODS; do printf '%s.icn ' "$m"; done) ) >"$W/icont.log" 2>&1 \
     || refuse "icont refused to build the oracle jtran: $(tail -2 "$W/icont.log")"
-( cd "$D" && "$SCRIP" --compile -o "$W/jtran.s" jtran.icn </dev/null ) >"$W/scrip.log" 2>&1 \
+( cd "$D" && "$SCRIP" --compile --out="$W/jtran.s" jtran.icn </dev/null ) >"$W/scrip.log" 2>&1 \
     || refuse "SCRIP could not compile jtran (rc=$?): $(grep -v '^$' "$W/scrip.log" | tail -1 | cut -c1-200)"
 as --64 -o "$W/jtran.o" "$W/jtran.s" 2>>"$W/scrip.log" && gcc -no-pie -o "$W/jtran_scrip" "$W/jtran.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>>"$W/scrip.log" \
     || refuse "SCRIP-built jtran did not assemble or link: $(tail -2 "$W/scrip.log")"

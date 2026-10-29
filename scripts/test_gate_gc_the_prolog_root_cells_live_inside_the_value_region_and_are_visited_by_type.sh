@@ -26,7 +26,7 @@ trap 'rm -rf "$W"' EXIT
 BAND="${GC_PLROOT_BAND:-0 1 3 5}"
 unset SCRIP_HEAP_MB; export SCRIP_HEAP_KB="${SCRIP_HEAP_KB:-128}" SCRIP_HEAP_MAX_MB="${SCRIP_HEAP_MAX_MB:-512}"
 want="$(cat "$REF")"; bad=0; runs=0
-( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile -o pr.s "$WIT" < /dev/null 2>c.err && gcc pr.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pr 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
+( cd "$W" && timeout -k 5 180 "$ROOT/scrip" --compile --out=pr.s "$WIT" < /dev/null 2>c.err && gcc pr.s -L "$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o pr 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
 echo "arena: SCRIP_HEAP_KB=$SCRIP_HEAP_KB SCRIP_HEAP_MAX_MB=$SCRIP_HEAP_MAX_MB    oracle: swipl -q -t halt (the shipped window; the CEO-1146 sweep moved this off the MB=1 spelling)"
 for mode in m3 m4; do line="  $mode"
   for s in $BAND; do runs=$((runs+1))

@@ -25,8 +25,8 @@ tot=0; ok=0; bad=0; gtot=0; gok=0
 for arm in OFF ARMED; do
   : > "$tmp/$arm.log"
   for prog in "${progs[@]}"; do
-    if [ "$arm" = ARMED ]; then SCRIP_N2_FT_PROBE=1 SCRIP_ICN_GENFRAME2=1 timeout -k 5 30s "$scrip" --compile -o "$tmp/x.s" "$prog" </dev/null 2>>"$tmp/$arm.log" >/dev/null
-    else                        SCRIP_N2_FT_PROBE=1                       timeout -k 5 30s "$scrip" --compile -o "$tmp/x.s" "$prog" </dev/null 2>>"$tmp/$arm.log" >/dev/null; fi
+    if [ "$arm" = ARMED ]; then SCRIP_N2_FT_PROBE=1 SCRIP_ICN_GENFRAME2=1 timeout -k 5 30s "$scrip" --compile --out="$tmp/x.s" "$prog" </dev/null 2>>"$tmp/$arm.log" >/dev/null
+    else                        SCRIP_N2_FT_PROBE=1                       timeout -k 5 30s "$scrip" --compile --out="$tmp/x.s" "$prog" </dev/null 2>>"$tmp/$arm.log" >/dev/null; fi
   done
   grep -aq '\[N2-FT\] EMIT' "$tmp/$arm.log" || { echo "⛔ REFUSE: arm $arm produced no [N2-FT] probe output -- the probe is missing, not the defect absent"; exit 2; }
   read -r t o b gt go < <(awk -v arm="$arm" '

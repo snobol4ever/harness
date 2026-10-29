@@ -86,7 +86,7 @@ arm() { local n="$1" what="$2" ok="$3"
     if [ "$ok" = 1 ]; then pass=$((pass + 1)); echo "  arm $n PASS  $what"; else fail=$((fail + 1)); echo "  arm $n FAIL  $what"; fi; }
 same_m3() { timeout -k 5 60 "$SCRIP" -d131072k -s4096k "$T/$1.sno" < /dev/null > "$T/$1.m3" 2>&1
     cmp -s "$T/$1.want" "$T/$1.m3" || { diff "$T/$1.want" "$T/$1.m3" | head -6 | cut -c1-160 | sed 's/^/      /'; return 1; }; }
-same_m4() { timeout -k 5 120 "$SCRIP" --compile -o "$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
+same_m4() { timeout -k 5 120 "$SCRIP" --compile --out="$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
         && gcc -no-pie "$T/$1.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$T/$1.bin" 2>/dev/null || { echo "      COMPILE-FAILED"; return 1; }
     timeout -k 5 60 "$T/$1.bin" -d131072k -s4096k -- < /dev/null > "$T/$1.m4" 2>&1
     cmp -s "$T/$1.want" "$T/$1.m4" || { diff "$T/$1.want" "$T/$1.m4" | head -6 | cut -c1-160 | sed 's/^/      /'; return 1; }; }

@@ -39,7 +39,7 @@ D="$(mktemp -d)" || refuse "no scratch dir"
 trap 'rm -rf "$D"' EXIT
 RT="$B/out"; RC=0; n=0
 m3() { (cd "$D" && timeout -k 5 60 "$B/scrip" "$1.sno" < /dev/null 2>&1); }
-m4() { "$B/scrip" --compile -o "$D/$1.s" "$D/$1.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
+m4() { "$B/scrip" --compile --out="$D/$1.s" "$D/$1.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
       || { echo "M4-BUILD-FAILED"; return; }; (cd "$D" && timeout -k 5 60 "./$1.bin" < /dev/null 2>&1); }
 ok()  { n=$((n + 1)); echo "  ok    $*"; }
 red() { n=$((n + 1)); RC=1; echo "  RED   $*"; }
@@ -54,7 +54,7 @@ for o in 1 0; do (cd "$D" && SCRIP_EVAL_OPEN=$o SCRIP_C2BB_TRACE="$D/road$o.tr" 
 grep -q 'chain\.eval' "$D/road0.tr" 2>/dev/null || refuse "with SCRIP_EVAL_OPEN=0 the program wrote no chain.eval line -- the arm cannot see the C road it grades"
 if [ "$(tr '\n' '|' < "$D/road1.out")" = "7|5|" ] && ! grep -q 'chain\.eval' "$D/road1.tr"; then ok "A road: EVAL(\"3 + 4\") prints 7 with no chain.eval crossing ($(cut -f1 "$D/road1.tr" | sort -u | tr '\n' ' ')written by the control; the switch-off run writes $(grep -c 'chain\.eval' "$D/road0.tr"))"
 else red "A road: out [$(tr '\n' '|' < "$D/road1.out")] trace [$(cut -f1 "$D/road1.tr" | tr '\n' ' ')]"; fi
-"$B/scrip" --compile -o "$D/road.s" "$D/road.sno" < /dev/null > /dev/null 2>&1 || refuse "the witness does not compile in mode 4"
+"$B/scrip" --compile --out="$D/road.s" "$D/road.sno" < /dev/null > /dev/null 2>&1 || refuse "the witness does not compile in mode 4"
 if grep -q 'rt_eval_open' "$D/road.s" && grep -q 'rt_eval_land' "$D/road.s"; then ok "B emission: the mode-4 text calls rt_eval_open and rt_eval_land"; else red "B emission: no rt_eval_open/rt_eval_land call in the mode-4 text"; fi
 cat > "$D/u1.sno" <<'SNO'
         DEFINE('F()')

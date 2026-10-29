@@ -39,7 +39,7 @@ red=0
 for p in fit grow; do
   ref="$( cd "$W" && "$SBL" $(sbl_lang_flags) $p.sno < /dev/null 2>/dev/null )"; [ -n "$ref" ] || { echo "REFUSED(2): the oracle printed nothing for $p.sno"; exit 2; }
   rg="$( cd "$W" && "$SBL" $(sbl_lang_flags) -x $p.sno < /dev/null 2>/dev/null | grep -m1 'REGENERATIONS' | grep -oE '[0-9]+$' )"; [ -n "$rg" ] || { echo "REFUSED(2): sbl -x printed no REGENERATIONS for $p.sno"; exit 2; }
-  ( cd "$W" && "$ROOT/scrip" --compile -o $p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }
+  ( cd "$W" && "$ROOT/scrip" --compile --out=$p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }
   if [ $p = fit ]; then bound=$rg; else bound=$((2 * rg + 2)); fi
   for m in m3 m4; do
     if [ $m = m3 ]; then run=( "$ROOT/scrip" $p.sno ); else run=( ./$p.bin ); fi

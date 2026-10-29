@@ -58,7 +58,7 @@ AFTER"
 m4build() {
     local n="$1"
     rm -f "$W/$n.s" "$W/$n.bin"
-    ( cd "$W" && timeout -k 5 30s "$S" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1 ) || return 1
+    ( cd "$W" && timeout -k 5 30s "$S" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1 ) || return 1
     gcc -m64 -no-pie "$W/$n.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$W/$n.bin" 2>/dev/null || return 1
     ( cd "$W" && timeout -k 5 20s "./$n.bin" </dev/null 2>&1 )
 }

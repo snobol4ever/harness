@@ -24,7 +24,7 @@ SW="$(declared_switches_beside "$B/parser_snobol4.sc")" && [ -n "$SW" ] || { ech
 TMO="${GATE_TIMEOUT:-120}"
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 cat $CHAIN "$B/parser_snobol4.sc" > "$T/chain.sc"
-"$SCRIP" --compile "$T/chain.sc" -o "$T/chain.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
+"$SCRIP" --compile "$T/chain.sc" --out="$T/chain.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
     || { echo "⛔ GATE REFUSE(2) [$G]: the .sc chain did not compile or link to a mode-4 binary"; exit 2; }
 OPS=("X ? 'a'" "1 + 2" "'a' 'b'" "'a' | 'b'" "~X" "\\X" "(X = 1)" "'L'" "1" "-X" "X . Y" "X" "\$X" "A[1]" "F(X)" "*X" "&ANCHOR" "(X)" "\$\$X" "F(1 + 2)" "\$(A + B)" "X @ Y")
 N=0; OK=0; BAD=""

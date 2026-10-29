@@ -56,9 +56,9 @@ WANT="onetwo;onedos;unotwo;unodos;twodos|snobol4|"
 graded=0; fail=0
 arm() { graded=$((graded+1)); if [ "$2" = "$3" ]; then echo "  PASS $1  [$2]"; else echo "  FAIL $1  want[$2] got[$3]"; fail=$((fail+1)); fi; }
 M3="$(cd "$T" && timeout -k 5 20 "$SCRIP" w.md < /dev/null 2>&1 | tr '\n' '|')"
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile w.md -o w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build of the witness failed -- a toolchain failure, not a verdict"
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile w.md --out=w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build of the witness failed -- a toolchain failure, not a verdict"
 M4="$(cd "$T" && timeout -k 5 20 ./w.bin < /dev/null 2>&1 | tr '\n' '|')"
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile c.sno -o c.s > /dev/null 2>&1 ) || refuse "mode-4 compile of the control failed -- a toolchain failure, not a verdict"
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile c.sno --out=c.s > /dev/null 2>&1 ) || refuse "mode-4 compile of the control failed -- a toolchain failure, not a verdict"
 arm "m3-runs-the-icon-generators-and-the-snobol4-function" "$WANT" "$M3"
 arm "m4-runs-the-same" "$WANT" "$M4"
 arm "detector-m4-keeps-the-define-slot" "kept" "$(grep -q '"\\001<slot>f"' "$T/w.s" && echo kept || echo missing)"

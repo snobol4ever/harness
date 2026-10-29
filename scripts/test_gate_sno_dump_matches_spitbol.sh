@@ -139,7 +139,7 @@ for p in dump dump2b dump3 tord hash; do
     if [ "$m" = 3 ]; then
       (cd "$TD" && timeout -k 5 20s "$SCRIP" --run --stlimit "$p.sno" </dev/null >"$p.got$m" 2>&1)
     else
-      (cd "$TD" && "$SCRIP" --compile --stlimit -o "$p.s" "$p.sno" </dev/null >/dev/null 2>&1) || refuse "mode-4 compile of $p.sno failed -- cannot measure"
+      (cd "$TD" && "$SCRIP" --compile --stlimit --out="$p.s" "$p.sno" </dev/null >/dev/null 2>&1) || refuse "mode-4 compile of $p.sno failed -- cannot measure"
       (cd "$TD" && gcc -no-pie "$p.s" -o "$p.bin" -L "$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1) || refuse "mode-4 link of $p.sno failed -- cannot measure"
       (cd "$TD" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20s "./$p.bin" </dev/null >"$p.got$m" 2>&1)
     fi

@@ -186,7 +186,7 @@ nmd="$(printf '%s\n' "$pop" | grep -c '^CENSUS unmapped-store UNREAD-ROAD symbol
 ripst=x
 if [ "${rst:-x}" = 0 ]; then
   ags="$(mktemp --suffix=.s)"
-  timeout -k 5 120 "$ROOT/scrip" --compile -o "$ags" "$ROOT/../harness/scripts/gc_witnesses/hb_aggt.icn" < /dev/null > /dev/null 2>&1 && [ -s "$ags" ] && ripst="$(grep -cE '^[[:space:]]*mov[a-z]*[[:space:]]+[a-z]+ ptr \[rip \+ [^]]+\],' "$ags")"
+  timeout -k 5 120 "$ROOT/scrip" --compile --out="$ags" "$ROOT/../harness/scripts/gc_witnesses/hb_aggt.icn" < /dev/null > /dev/null 2>&1 && [ -s "$ags" ] && ripst="$(grep -cE '^[[:space:]]*mov[a-z]*[[:space:]]+[a-z]+ ptr \[rip \+ [^]]+\],' "$ags")"
   rm -f "$ags"
 fi
 if [ "${rst:-x}" = 0 ] && [ "${wsum:-x}" = 0 ] && [ "${wn:-x}" = 0 ] && [ "${nmd:-x}" = 0 ] && [ "${rfr:-0}" -gt 0 ] && [ "$ripst" = 0 ]; then

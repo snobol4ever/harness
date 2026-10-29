@@ -34,7 +34,7 @@ END
 SNO
 (cd "$T" && timeout 30 "$SBL" $(sbl_lang_flags) w.sno < /dev/null > ref 2>&1); [ -s "$T/ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for the witness"; exit 2; }
 RC=0
-(cd "$T" && env -u SCRIP_HEAP_MB SCRIP_PARSE_STAGE=sc SCRIP_HEAP_KB=64 SCRIP_GC_EXERCISE=1 timeout 60 "$SCRIP" --compile -o w.s w.sno < /dev/null > cc.out 2> cc.err); r=$?
+(cd "$T" && env -u SCRIP_HEAP_MB SCRIP_PARSE_STAGE=sc SCRIP_HEAP_KB=64 SCRIP_GC_EXERCISE=1 timeout 60 "$SCRIP" --compile --out=w.s w.sno < /dev/null > cc.out 2> cc.err); r=$?
 col=$(grep -o 'collections=[0-9]*' "$T/cc.err" | head -1 | cut -d= -f2)
 [ "$r" = 0 ] || [ -n "$col" ] || grep -q 'GC-CHAIN' "$T/cc.err" || { echo "⛔ GATE REFUSE(2) [$G]: the module-stage compile neither ran nor collected (rc $r): $(head -1 "$T/cc.err" | cut -c1-120)"; exit 2; }
 if [ "$r" != 0 ]; then echo "  arm a FAIL: the module-stage compile exits rc $r -- $(grep -m1 'REFUSED' "$T/cc.err" | cut -c1-200)"; RC=1

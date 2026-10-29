@@ -9,7 +9,7 @@ RT="$ROOT/src/runtime"
 ICN_INC="$ROOT/src/parsers/icon"
 icn="$1"
 base=$(mktemp /tmp/icon_x86_XXXXXX)
-"$SCRIP_CC" -icn "$icn" -o "${base}.s" 2>/dev/null
+"$SCRIP_CC" -icn "$icn" --out="${base}.s" 2>/dev/null
 nasm -f elf64 "${base}.s" -o "${base}.o" 2>/dev/null
 gcc -nostdlib -no-pie -Wl,--no-warn-execstack \
     "${base}.o" "$ICN_INC/icon_runtime.c" \

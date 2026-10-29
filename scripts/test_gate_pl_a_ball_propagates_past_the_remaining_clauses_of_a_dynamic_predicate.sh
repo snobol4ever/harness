@@ -137,7 +137,7 @@ dyn_ok
 for w in ball big cut cut2; do eval "want=\$want_$w"
     for mode in m3 m4; do
         if [ "$mode" = m3 ]; then got=$(cd "$TMPD" && timeout -k 5 30 "$SCRIP" "$w.pl" </dev/null 2>/dev/null)
-        else got=$( (cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile -o "$w.s" "$w.pl" </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null && cd "$TMPD" && timeout -k 5 30 "./$w.bin" </dev/null 2>/dev/null); fi
+        else got=$( (cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile --out="$w.s" "$w.pl" </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null && cd "$TMPD" && timeout -k 5 30 "./$w.bin" </dev/null 2>/dev/null); fi
         if [ "$got" = "$want" ]; then echo "  ok  $w $mode"; else echo "  RED $w $mode: got [$(printf '%s' "$got" | tr '\n' '|' | cut -c1-160)] want [$(printf '%s' "$want" | tr '\n' '|')]"; red=$((red+1)); fi
     done
 done

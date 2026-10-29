@@ -76,7 +76,7 @@ for w in w1 w2 w3; do
     ( cd "$D" && timeout -k 5 60 "$SW" -q $w.pl < /dev/null 2> /dev/null > $w.want )
     [ -s "$D/$w.want" ] || refuse "swipl printed nothing for $w"
     ( cd "$D" && timeout -k 5 60 "$B/scrip" --run $w.pl < /dev/null 2> $w.m3.err > $w.m3 )
-    ( cd "$D" && timeout -k 5 300 "$B/scrip" --compile -o $w.s $w.pl < /dev/null 2> $w.m4.err && gcc -no-pie $w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o $w.bin 2>> $w.m4.err && timeout -k 5 60 ./$w.bin < /dev/null 2>> $w.m4.err > $w.m4 )
+    ( cd "$D" && timeout -k 5 300 "$B/scrip" --compile --out=$w.s $w.pl < /dev/null 2> $w.m4.err && gcc -no-pie $w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o $w.bin 2>> $w.m4.err && timeout -k 5 60 ./$w.bin < /dev/null 2>> $w.m4.err > $w.m4 )
     n=$(wc -l < "$D/$w.want")
     for m in m3 m4; do
         if cmp -s "$D/$w.want" "$D/$w.$m"; then echo "  $w $m GREEN: $n of $n lines as swipl"

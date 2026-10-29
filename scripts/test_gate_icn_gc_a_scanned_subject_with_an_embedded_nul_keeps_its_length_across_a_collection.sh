@@ -41,7 +41,7 @@ ms=$(grep -rnF -e 'strlen(g_scan_subj)' -e 'strlen(g_runtime.abi.scan_subj)' "$R
 if [ -n "$body" ] && [ "$fb" = 0 ] && [ "$ab" = 1 ] && [ "$sl" = 1 ] && [ "$ms" = 0 ]; then
   echo "  arm 1 PASS: rt_scan_subj_len has no strlen and aborts on a miss, gen_gc_roots registers the cache slot under the alias test, no strlen(g_scan_subj) left under src/runtime"
 else echo "  arm 1 FAIL: body_found=$([ -n "$body" ] && echo 1 || echo 0) strlen_in_body=$fb abort_in_body=$ab cache_slot_registered=$sl strlen_of_scan_subj_sites=$ms"; RC=1; fi
-"$SCRIP" --compile -o "$T/w.s" "$WIT" </dev/null >/dev/null 2>&1 && gcc -no-pie "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 \
+"$SCRIP" --compile --out="$T/w.s" "$WIT" </dev/null >/dev/null 2>&1 && gcc -no-pie "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 \
   || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
 want="$(cat "$REF")"; band=""; bad=0
 for st in 0 1 3 5; do

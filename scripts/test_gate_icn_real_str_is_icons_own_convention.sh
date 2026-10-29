@@ -83,7 +83,7 @@ n=$((n+1))
 if diff -q "$W/icn.ref" "$W/m3.out" >/dev/null; then echo "  ok   ARM A1 (m3): Icon real-to-string is iconx's 10-significant-digit convention, signed exponent, over 13 probes"
 else bad=$((bad+1)); echo "  FAIL ARM A1 (m3): Icon real-to-string diverges from icont"; diff "$W/icn.ref" "$W/m3.out" | head -10; fi
 n=$((n+1))
-if "$SCRIP" --compile -o "$W/p.s" "$W/p.icn" </dev/null >/dev/null 2>&1 &&
+if "$SCRIP" --compile --out="$W/p.s" "$W/p.icn" </dev/null >/dev/null 2>&1 &&
    gcc -no-pie "$W/p.s" -o "$W/p.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >/dev/null 2>&1; then
   "$W/p.bin" </dev/null > "$W/m4.out" 2>&1
   if diff -q "$W/icn.ref" "$W/m4.out" >/dev/null; then echo "  ok   ARM A2 (m4): the same 13 probes, byte-identical through the compiled arm"

@@ -44,7 +44,7 @@ end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 d.pas >/dev/null 2>&1 && ./d ) > "$T/d.ref" 2>&1
 grep -q 'sum 124$' "$T/d.ref" || { echo "GATE REFUSE(2) [$G]: the oracle did not produce the sum this gate pins -- the oracle moved: $(head -1 "$T/d.ref")"; exit 2; }
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o d.s d.pas </dev/null && gcc d.s -o d.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build"; exit 1; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=d.s d.pas </dev/null && gcc d.s -o d.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build"; exit 1; }
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 60 "$SCRIP" --run d.pas </dev/null ) >"$T/$M.out" 2>&1

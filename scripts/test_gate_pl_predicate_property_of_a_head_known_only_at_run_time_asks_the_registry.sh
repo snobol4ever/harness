@@ -31,7 +31,7 @@ main :- F = 'gen.txt', consult(F), dynamic(e/1), assertz(f(1)),
 PL
 printf 'd_dynamic\ne_dynamic\nf_dynamic\nd_defined\ng_not\n' > "$D/want"
 ( cd "$D" && timeout -k 5 30 "$B/scrip" w.pl < /dev/null > m3 2>/dev/null )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o w.bin 2>/dev/null ) || refuse "w.pl: mode 4 did not build"
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o w.bin 2>/dev/null ) || refuse "w.pl: mode 4 did not build"
 ( cd "$D" && timeout -k 5 30 ./w.bin < /dev/null > m4 2>/dev/null )
 red=0
 for m in m3 m4; do

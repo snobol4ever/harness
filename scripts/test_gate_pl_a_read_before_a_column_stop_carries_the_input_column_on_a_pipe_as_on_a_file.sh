@@ -27,7 +27,7 @@ done
 cmp -s "$W/ref.file" "$W/ref.pipe" || { echo "GATE REFUSED(2) [$G]: swipl itself answers differently for a file and a pipe -- the premise of this gate is gone"; exit 2; }
 timeout -k 5 30 "$ROOT/scrip" "$W/z.pl" < "$W/z.in" > "$W/m3.file" 2>&1
 cat "$W/z.in" | timeout -k 5 30 "$ROOT/scrip" "$W/z.pl" > "$W/m3.pipe" 2>&1
-"$ROOT/scrip" --compile -o "$W/z.s" "$W/z.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 160 "$W/c.err"))"; exit 2; }
+"$ROOT/scrip" --compile --out="$W/z.s" "$W/z.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 160 "$W/c.err"))"; exit 2; }
 gcc -no-pie -o "$W/z.bin" "$W/z.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/link.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link ($(head -c 160 "$W/link.err"))"; exit 2; }
 timeout -k 5 20 "$W/z.bin" < "$W/z.in" > "$W/m4.file" 2>&1
 cat "$W/z.in" | timeout -k 5 20 "$W/z.bin" > "$W/m4.pipe" 2>&1

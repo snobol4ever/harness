@@ -37,7 +37,7 @@ main :- t(noread, nr, read), t(nowrite, nw, write), t(noappend, nw, append), t(r
 PL
 want="$(cd "$D" && timeout -k 5 20 "$GP" --consult-file w.pl --query-goal halt < /dev/null 2>&1 | grep '^@ ')"
 [ "$(printf '%s\n' "$want" | grep -c '^@ ')" = 6 ] || refuse "gprolog did not answer the six shapes: [$want]"
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s w.pl < /dev/null > /dev/null 2>&1 ) || refuse "mode 4 compile failed"
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 ) || refuse "mode 4 compile failed"
 ( cd "$D" && gcc -m64 -no-pie w.s -o w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || refuse "mode 4 link failed"
 red=0
 arm() {

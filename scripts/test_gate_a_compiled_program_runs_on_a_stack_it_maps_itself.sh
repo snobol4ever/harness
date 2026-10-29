@@ -44,7 +44,7 @@ RD      R = R + SIZE(S)                                 :(RETURN)
 REND    OUTPUT = R(1)
 END
 SNO
-for p in deep rec gcdeep; do ( cd "$W" && "$ROOT/scrip" --compile -o $p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }; done
+for p in deep rec gcdeep; do ( cd "$W" && "$ROOT/scrip" --compile --out=$p.s $p.sno < /dev/null > /dev/null 2>&1 && gcc $p.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o $p.bin 2>/dev/null ) || { echo "REFUSED(2): $p.sno did not build in mode 4"; exit 2; }; done
 red=0
 cat > "$W/rsp.py" <<'PY'
 import gdb

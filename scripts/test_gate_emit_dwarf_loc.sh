@@ -32,8 +32,8 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 nloc()  { grep -cE '^[[:space:]]*\.loc'  "$1" 2>/dev/null || true; }
 nfile() { grep -cE '^[[:space:]]*\.file' "$1" 2>/dev/null || true; }
 grep -q '!strcmp(mnem, "loc")' "$ROOT/src/templates/x86/x86_asm.h" || fail "x86(\"loc\",...) encoder not found in x86_asm.h"
-"$SCRIP" --compile -o "$W/def.s" "$DEMO" </dev/null >/dev/null 2>"$W/def.err" || refuse "default compile failed: $(cat "$W/def.err")"
-SCRIP_DWARF_LOC=0 "$SCRIP" --compile -o "$W/off.s" "$DEMO" </dev/null >/dev/null 2>"$W/off.err" || refuse "killswitch compile failed: $(cat "$W/off.err")"
+"$SCRIP" --compile --out="$W/def.s" "$DEMO" </dev/null >/dev/null 2>"$W/def.err" || refuse "default compile failed: $(cat "$W/def.err")"
+SCRIP_DWARF_LOC=0 "$SCRIP" --compile --out="$W/off.s" "$DEMO" </dev/null >/dev/null 2>"$W/off.err" || refuse "killswitch compile failed: $(cat "$W/off.err")"
 [ "$(nloc  "$W/def.s")" -gt 0 ] || fail "DEFAULT build emits no .loc -- the feature is not on by default (Instrument Law 1)"
 [ "$(nfile "$W/def.s")" -gt 0 ] || fail "DEFAULT build emits no .file"
 [ "$(nloc  "$W/off.s")" -eq 0 ] || fail "SCRIP_DWARF_LOC=0 still emits .loc -- killswitch does not work"
@@ -49,7 +49,7 @@ echo "$LINES" | awk -v max="$SRC_MAXLINE" '{ if ($1 < 1 || $1 > max) { print "li
 mkdir -p "$W/inc"
 printf "        incval1 = 'I1'\n        incval2 = 'I2'\n" > "$W/inc/gatehelper.inc"
 printf "* comment\n        before = 'B'\n-INCLUDE 'gatehelper.inc'\n        after = 'A'\n        OUTPUT = before after incval1 incval2\nEND\n" > "$W/inc/gatewit.sno"
-( cd "$W/inc" && "$SCRIP" --compile -o wit.s gatewit.sno </dev/null >/dev/null 2>&1 ) || refuse "-INCLUDE witness failed to compile"
+( cd "$W/inc" && "$SCRIP" --compile --out=wit.s gatewit.sno </dev/null >/dev/null 2>&1 ) || refuse "-INCLUDE witness failed to compile"
 WN="$(wc -l < "$W/inc/gatewit.sno")"
 BOGUS="$(awk -v n="$WN" '/^[[:space:]]*\.loc/ && $2 == 1 && $3 > n' "$W/inc/wit.s" | wc -l)"
 [ "$BOGUS" -eq 0 ] || fail "$BOGUS .loc directive(s) name file 1 with a line past the main file's end -- included code is being attributed to the main source"

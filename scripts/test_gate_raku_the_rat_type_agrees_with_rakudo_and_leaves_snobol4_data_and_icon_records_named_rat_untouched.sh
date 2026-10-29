@@ -61,7 +61,7 @@ ck() {
     GATE_EXAMINED=$((GATE_EXAMINED + 1))
     if [ "$m" = m3 ]; then out="$(env ${ST:+SCRIP_GC_STRESS=$ST} timeout -k 5 120 "$ROOT/scrip" --run "$W/$w.raku" 2>/dev/null </dev/null)"; rc=$?
     else
-        if ! timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
+        if ! timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
            || ! gcc -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/$w.cerr" 2>&1; then
             printf '  FAIL %-13s %s: did not build (%s)\n' "$w" "$m" "$(head -1 "$W/$w.cerr" | cut -c1-110)"; fails=$((fails + 1)); return; fi
         out="$(env ${ST:+SCRIP_GC_STRESS=$ST} timeout -k 5 120 "$W/$w.bin" 2>/dev/null </dev/null)"; rc=$?
@@ -80,7 +80,7 @@ for f in "$FX"/sno_*.sno "$FX"/icn_*.icn; do
         if [ "$m" = m3 ]; then want="$FX/$b.ref"; got="$(cd "$FX" && timeout -k 5 30 "$ROOT/scrip" "$(basename "$f")" </dev/null 2>&1; echo "rc=$?")"
         else
             want="$FX/$b.ref4"
-            if (cd "$FX" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/$b.s" "$(basename "$f")" </dev/null >"$W/$b.cerr" 2>&1) && gcc -o "$W/$b.bin" "$W/$b.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/$b.cerr" 2>&1; then
+            if (cd "$FX" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/$b.s" "$(basename "$f")" </dev/null >"$W/$b.cerr" 2>&1) && gcc -o "$W/$b.bin" "$W/$b.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/$b.cerr" 2>&1; then
                 got="$(cd "$FX" && timeout -k 5 30 "$W/$b.bin" </dev/null 2>&1; echo "rc=$?")"
             else got="COMPILE-FAIL: $(head -1 "$W/$b.cerr" | cut -c1-100)
 rc=1"; fi

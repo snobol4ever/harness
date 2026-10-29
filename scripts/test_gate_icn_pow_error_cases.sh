@@ -56,7 +56,7 @@ for w in zero_negexp_trapped negbase_real_trapped zero_zero_trapped overflow_tra
     if [ "$o" != "$want" ] || [ "$r" != "$wrc" ]; then
         echo "  ⛔ RED m3 $w: rc=$r stdout=[$(printf '%s' "$o" | tr '\n' '|')] -- iconx rc=$wrc stdout=[$(printf '%s' "$want" | tr '\n' '|')]"; bad=1
     fi
-    if timeout -k 5 120 ./scrip --compile -o "$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
+    if timeout -k 5 120 ./scrip --compile --out="$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
        && gcc -m64 -no-pie "$d/$w.s" -o "$d/$w.m4" -L./out -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then
         o=$(timeout -k 5 20 "$d/$w.m4" </dev/null 2>/dev/null); r=$?; graded=$((graded+1))
         if [ "$o" != "$want" ] || [ "$r" != "$wrc" ]; then
@@ -71,7 +71,7 @@ for w in zero_negexp negbase_real; do
     if [ "$o" != "before" ] || [ "$r" != 1 ]; then
         echo "  ⛔ RED m3 $w: rc=$r stdout=[$(printf '%s' "$o" | tr '\n' '|')] -- want rc=1 stdout=[before]"; bad=1
     fi
-    timeout -k 5 60 ./scrip --compile -o "$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
+    timeout -k 5 60 ./scrip --compile --out="$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
         || { echo "⛔ GATE REFUSES (rc=2): mode-4 compile failed for $w"; exit 2; }
     gcc -m64 -no-pie "$d/$w.s" -o "$d/$w.m4" -L./out -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null \
         || { echo "⛔ GATE REFUSES (rc=2): mode-4 link failed for $w"; exit 2; }

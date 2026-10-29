@@ -35,7 +35,7 @@ for e in arbno_break_len_replace_branch_1 len_array_capture_replace_1; do
     ( cd "$T" && timeout -k 5 20s "$SBL" -bf "$e.sno" < "$e.in" > "$e.ref" 2> /dev/null )
     [ -s "$T/$e.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for $e"; exit 2; }
     ( cd "$T" && timeout -k 5 20s "$SCRIP" --stlimit "$e.sno" < "$e.in" > "$e.m3" 2> "$e.e3" )
-    if ( cd "$T" && "$SCRIP" --stlimit --compile -o "$e.s" "$e.sno" < /dev/null > "$e.c" 2>&1 && gcc "$e.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$e.x" 2>> "$e.c" ); then
+    if ( cd "$T" && "$SCRIP" --stlimit --compile --out="$e.s" "$e.sno" < /dev/null > "$e.c" 2>&1 && gcc "$e.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$e.x" 2>> "$e.c" ); then
         ( cd "$T" && timeout -k 5 20s "./$e.x" < "$e.in" > "$e.m4" 2> "$e.e4" )
     else
         : > "$T/$e.m4"; echo "  $e: mode-4 compile or link failed: $(grep -m1 . "$T/$e.c" | cut -c1-160)"

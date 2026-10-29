@@ -29,7 +29,7 @@ rc=0
 for m in $MODES; do
     case "$m" in
         m3) ( cd "$W/pkg" && timeout -k 2 20 "$SCRIP/scrip" $SW TEST.sno < "$W/TEST.in" > "$W/TEST.$m.out" 2> "$W/TEST.$m.err" ); r=$?;;
-        m4) ( cd "$W/pkg" && "$SCRIP/scrip" --compile $SW -o "$W/TEST.s" TEST.sno < /dev/null > /dev/null 2> "$W/TEST.c.err" && gcc "$W/TEST.s" -L"$SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$SCRIP/out" -o "$W/TEST.bin" 2>> "$W/TEST.c.err" && timeout -k 2 20 "$W/TEST.bin" < "$W/TEST.in" > "$W/TEST.$m.out" 2> "$W/TEST.$m.err" ); r=$?;;
+        m4) ( cd "$W/pkg" && "$SCRIP/scrip" --compile $SW --out="$W/TEST.s" TEST.sno < /dev/null > /dev/null 2> "$W/TEST.c.err" && gcc "$W/TEST.s" -L"$SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$SCRIP/out" -o "$W/TEST.bin" 2>> "$W/TEST.c.err" && timeout -k 2 20 "$W/TEST.bin" < "$W/TEST.in" > "$W/TEST.$m.out" 2> "$W/TEST.$m.err" ); r=$?;;
         *) echo "REFUSE(2): mode $m"; exit 2;;
     esac
     if [ "$r" -eq 0 ] && cmp -s "$W/TEST.$m.out" "$W/TEST.ref"; then echo "AISNOBOL_TEST mode=$m PASS lines=$(wc -l < "$W/TEST.$m.out")"

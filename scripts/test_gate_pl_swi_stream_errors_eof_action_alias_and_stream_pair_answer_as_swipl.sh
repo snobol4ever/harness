@@ -53,7 +53,7 @@ norm() { sed -E "s/<stream>\\(0x[0-9a-f]+\\)/<stream>/g; s/'\\\$stream'\\([0-9]+
 want="$(cd "$D" && timeout -k 5 20 "$SW" -q w.pl -t halt < /dev/null 2>/dev/null | norm)"
 [ "$(printf '%s\n' "$want" | grep -c .)" = 28 ] || refuse "swipl did not answer the twenty-eight lines: [$(printf '%s\n' "$want" | grep -c .)]"
 m4ok=1   # a program SCRIP refuses to compile is this gate's red, never a refusal
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s w.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
   && gcc -m64 -no-pie w.s -o w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
 red=0
 arm() {

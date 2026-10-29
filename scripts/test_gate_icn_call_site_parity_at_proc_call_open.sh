@@ -79,7 +79,7 @@ end
 EOF
 GRADED=0; FAIL=0
 for w in gen_arg gen_noarg nongen_arg gen_via_value; do
-  "$SCRIP" --compile -o "$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: --compile failed -- cannot measure"
+  "$SCRIP" --compile --out="$TD/$w.s" "$TD/$w.icn" </dev/null >/dev/null 2>&1 || refuse "$w: --compile failed -- cannot measure"
   gcc -no-pie "$TD/$w.s" -o "$TD/$w.bin" -L "$ROOT/out" -Wl,-rpath,"$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1 || refuse "$w: link failed -- cannot measure"
   sites="$(objdump -d "$TD/$w.bin" 2>/dev/null | grep -oE '^ *[0-9a-f]+:.*call.*rt_proc_call_open(_det)?' | awk -F: '{print $1}' | tr -d ' ')"
   [ -n "$sites" ] || { echo "  SKIPPED $w: no rt_proc_call_open call site in this witness"; continue; }
@@ -156,7 +156,7 @@ run_named() {   # $1=label $2=dir $3=source $4=stdin-file ; extra argv in $5.. (
   GRADED=$((GRADED+1))
   if [ "$rc3" -ge 128 ]; then echo "  FAIL $src m3: died on signal $((rc3-128)) (rc=$rc3) -- a parity fault presents exactly this way"; FAIL=$((FAIL+1))
   else echo "  PASS $src m3: rc=$rc3, no signal death"; fi
-  if ! (cd "$dir" && "$SCRIP" --compile -o "$TD/$src.s" "$src" </dev/null >/dev/null 2>&1); then
+  if ! (cd "$dir" && "$SCRIP" --compile --out="$TD/$src.s" "$src" </dev/null >/dev/null 2>&1); then
     refuse "$src: --compile failed -- the m4 arm CANNOT MEASURE"; fi
   if ! gcc -no-pie "$TD/$src.s" -o "$TD/$src.bin" -L "$ROOT/out" -Wl,-rpath,"$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1; then
     refuse "$src: link failed -- the m4 arm CANNOT MEASURE"; fi

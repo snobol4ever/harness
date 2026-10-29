@@ -171,7 +171,7 @@ fail=0; pass=0; names=""
 for w in rv e1 e2 cv sh tr; do
   ( cd "$T" && "$ICONT" -s -o "$w.x" "$w.icn" ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses $w.icn"; exit 2; }
   want="$( cd "$T" && ./"$w.x" </dev/null 2>"$w.ix.err" )"; wrc=$?
-  ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+  ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
     || { echo "  $w FAIL: does not build in mode 4"; fail=$((fail+1)); continue; }
   o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" </dev/null 2>"$w.m3.err" )"; r3=$?
   o4="$( cd "$T" && timeout -k 5 20 ./"$w.4" </dev/null 2>"$w.m4.err" )"; r4=$?

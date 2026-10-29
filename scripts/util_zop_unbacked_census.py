@@ -130,7 +130,7 @@ def run_slot():
 def compile_one(path, prog, timeout):
     slot = run_slot()
     try:
-        p = subprocess.run(["bash", "-c", 'ulimit -v %d; ulimit -c 0; exec "$@"' % (AS_LIMIT // 1024), "bash", os.path.join(path, "scrip"), "--compile", "-o", "/dev/null", prog], cwd=path,
+        p = subprocess.run(["bash", "-c", 'ulimit -v %d; ulimit -c 0; exec "$@"' % (AS_LIMIT // 1024), "bash", os.path.join(path, "scrip"), "--compile", '--out=/dev/null', prog], cwd=path,
                            stdin=subprocess.DEVNULL, capture_output=True, text=True, errors="replace", timeout=timeout, env=dict(os.environ, S4E_RUN_SLOT_HELD="1", SNO_LIB=os.path.join(CORPUS, "include")))
         return p.returncode, p.stderr
     except subprocess.TimeoutExpired as e:

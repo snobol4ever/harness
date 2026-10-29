@@ -96,7 +96,7 @@ if [ "${GC_BAND_FULL:-0}" = 1 ]; then PTS="0 1 2 3 4 5 6 8 10 12 16 20 25 30 35 
 for n in "$ORACLE_WIT" "$STABLE_WIT"; do
   [ -f "$WIT/$n.sno" ] || refuse "witness $WIT/$n.sno is missing -- a shorter population is not a greener gate"
   cp "$WIT/$n.sno" "$T/$n.sno"
-  ( cd "$T" && timeout -k 5 60s "$OLDPWD/scrip" --compile -o "$n.s" "$n.sno" < /dev/null > /dev/null 2>&1 \
+  ( cd "$T" && timeout -k 5 60s "$OLDPWD/scrip" --compile --out="$n.s" "$n.sno" < /dev/null > /dev/null 2>&1 \
       && gcc -m64 -no-pie -rdynamic "$n.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$n.x4" 2> "$n.ld.log" ) \
       || refuse "mode-4 compile or link failed for $n, so every m4 arm measured nothing ($(head -c 160 "$T/$n.ld.log" 2>/dev/null))"
 done

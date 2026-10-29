@@ -44,7 +44,7 @@ else echo "  structural FAIL (rt_gcheap_carve advances g_hp_virgin only for a bl
 printf '        T = TABLE()\n        A = ARRAY(50)\n        DATA("R(F)")\n        X = R(1)\n        I = 0\nL       I = I + 1\n        T[I] = DUPL("k", 10)\n        A[1 + REMDR(I, 50)] = I\n        S = DUPL("x", 20000)\n        LT(I, 3000)   :S(L)\n        OUTPUT = T[7] A[8] F(X)\nEND\n' > "$T/w.sno"
 ( cd "$T" && timeout -k 5 20s "$SBL" -bf w.sno </dev/null ) > "$T/w.ref" 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the oracle refused its own witness -- no ref to grade against"; exit 2; }
 [ -s "$T/w.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced an EMPTY ref"; exit 2; }
-if "$SCRIP" --compile "$T/w.sno" -o "$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then :; else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link refused ($(head -c 200 "$T/ld.log"))"; exit 2; fi
+if "$SCRIP" --compile "$T/w.sno" --out="$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then :; else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link refused ($(head -c 200 "$T/ld.log"))"; exit 2; fi
 for st in 20 200; do
     ( cd "$T" && SCRIP_GC_STRESS=$st timeout -k 5 40s "$SCRIP" w.sno </dev/null > m3.out 2>/dev/null ); r=$?
     if [ "$r" -eq 0 ] && cmp -s "$T/m3.out" "$T/w.ref"; then echo "  m3 stress=$st PASS (rc=0, byte-identical to the oracle)"; else echo "  m3 stress=$st FAIL (rc=$r; 139 is the unzeroed-bucket SIGSEGV in _tbl_lower)"; RC=1; fi

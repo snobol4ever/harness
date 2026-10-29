@@ -36,7 +36,7 @@ for W in arr dat; do
     ( cd "$T" && SCRIP_GC_STRESS="$STRESS" timeout -k 5 300 "$SCRIP" "$W.sno" </dev/null ) >"$T/$W.m3" 2>&1
     if diff -q "$T/$W.ref" "$T/$W.m3" >/dev/null; then echo "  $W m3 PASS (live aggregate held across $STRESS-allocation-spaced collections, byte-identical to sbl -bf: $(cat "$T/$W.ref"))"
     else echo "  $W m3 FAIL (rc=$? got \"$(head -2 "$T/$W.m3" | tr '\n' '|')\" sbl \"$(cat "$T/$W.ref")\" -- a live aggregate's interior was swept)"; RC=1; fi
-    ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o "$W.s" "$W.sno" </dev/null && gcc "$W.s" -o "$W.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 witness $W did not build"; exit 2; }
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out="$W.s" "$W.sno" </dev/null && gcc "$W.s" -o "$W.bin" -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 witness $W did not build"; exit 2; }
     ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" SCRIP_GC_STRESS="$STRESS" timeout -k 5 300 "./$W.bin" </dev/null ) >"$T/$W.m4" 2>&1
     if diff -q "$T/$W.ref" "$T/$W.m4" >/dev/null; then echo "  $W m4 PASS (same witness compiled, byte-identical to sbl -bf: $(cat "$T/$W.ref"))"
     else echo "  $W m4 FAIL (got \"$(head -2 "$T/$W.m4" | tr '\n' '|')\" sbl \"$(cat "$T/$W.ref")\" -- a live aggregate's interior was swept)"; RC=1; fi

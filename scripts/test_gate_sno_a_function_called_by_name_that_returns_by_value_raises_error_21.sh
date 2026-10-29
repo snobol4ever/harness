@@ -73,7 +73,7 @@ echo "  PASS arm0 the comparator reads a corrupted ref RED"
 RC=0
 for M in m3 m4; do
   for P in $R $N; do
-    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile -o $P.s $P.sno </dev/null && gcc $P.s -o $P.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 probe $P did not build"; exit 2; }; fi
+    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile --out=$P.s $P.sno </dev/null && gcc $P.s -o $P.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 probe $P did not build"; exit 2; }; fi
     IN=/dev/null
     ( cd "$T" && if [ "$M" = m3 ]; then timeout -k 5 30 "$SCRIP" $P.sno <"$IN"; else LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 30 ./$P.bin <"$IN"; fi ) >"$T/$M.$P.out" 2>"$T/$M.$P.err"; echo $? > "$T/$M.$P.rc"
   done

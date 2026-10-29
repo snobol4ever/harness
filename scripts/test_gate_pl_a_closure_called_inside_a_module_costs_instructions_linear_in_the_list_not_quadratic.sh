@@ -16,7 +16,7 @@ mk() {
     printf '%s\n' ":- initialization(main)." "inc(X, Y) :- Y is X + 1." "main :- numlist(1, $1, L), maplist(inc, L, L2), sum_list(L2, S), write(S), nl." > "$D/p$1.pl"
 }
 ir() {
-    ( cd "$S" && ./scrip --compile -o "$D/$1.s" "$D/$1.pl" < /dev/null > /dev/null 2>&1 ) || refuse "scrip --compile $1.pl failed"
+    ( cd "$S" && ./scrip --compile --out="$D/$1.s" "$D/$1.pl" < /dev/null > /dev/null 2>&1 ) || refuse "scrip --compile $1.pl failed"
     gcc -no-pie "$D/$1.s" -L"$S/out" -lscrip_rt -lm -Wl,-rpath,"$S/out" -o "$D/$1.bin" > /dev/null 2>&1 || refuse "link $1 failed"
     ( cd "$D" && valgrind --tool=callgrind --callgrind-out-file="$D/cg.$1" "./$1.bin" < /dev/null > /dev/null 2> "$D/vg.$1" ) || refuse "callgrind $1 failed"
     grep -o "Collected : [0-9]*" "$D/vg.$1" | grep -o "[0-9]*$"

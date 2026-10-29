@@ -79,7 +79,7 @@ for p in $PROGS; do
     ( cd "$T" && timeout -k 5 10s "$ROOT/scrip" "$src" </dev/null >"$T/$p.m3" 2>&1 )
     ok3=0; cmp -s "$T/$p.m3" "$ref" && ok3=1
     ok4=0
-    if ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile -o "$p.s" "$src" </dev/null >/dev/null 2>&1 ) \
+    if ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile --out="$p.s" "$src" </dev/null >/dev/null 2>&1 ) \
        && ( cd "$T" && gcc -no-pie "$p.s" -o "$p.bin" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ); then
         ( cd "$T" && timeout -k 5 10s "./$p.bin" </dev/null >"$T/$p.m4" 2>&1 )
         cmp -s "$T/$p.m4" "$ref" && ok4=1

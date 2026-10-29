@@ -37,7 +37,7 @@ WD="$ROOT/../harness/scripts/gc_witnesses"; W="$WD/hb_nested_match_outer_subject
 [ -s "$W.sno" ] && [ -s "$W.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: witness or .ref missing under gc_witnesses"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
-( cd "$T" && "$SCRIP" --compile -o w.s "$W.sno" < /dev/null > /dev/null 2> c.err ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness did not compile in mode 4: $(head -1 "$T/c.err")"; exit 2; }
+( cd "$T" && "$SCRIP" --compile --out=w.s "$W.sno" < /dev/null > /dev/null 2> c.err ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness did not compile in mode 4: $(head -1 "$T/c.err")"; exit 2; }
 sed 's/^\( *\)mov  *rdx, rsp$/\1xor edx, edx/' "$T/w.s" > "$T/wp.s"
 nplant=$(diff "$T/w.s" "$T/wp.s" | grep -c '^<')
 shape=$(awk '
@@ -73,7 +73,7 @@ if [ "$phit" -ge 4 ]; then echo "  ok   (c) PLANTED: with the saved-subject argu
 else echo "  FAIL (c) the unshielded plant lost at only $phit of 6 points ($pband) -- the witness no longer holds a subject in r13 across a poll_res, and (b) proves nothing"; RC=1; fi
 RW="$WD/hb_icn_record_poll_inside_a_scan_keeps_its_subject"
 [ -s "$RW.icn" ] && [ -s "$RW.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the record-form witness or its .ref is missing under gc_witnesses"; exit 2; }
-( cd "$T" && "$SCRIP" --compile -o r.s "$RW.icn" < /dev/null > /dev/null 2> rc.err ) || { echo "⛔ GATE REFUSE(2) [$G]: the record-form witness did not compile in mode 4"; exit 2; }
+( cd "$T" && "$SCRIP" --compile --out=r.s "$RW.icn" < /dev/null > /dev/null 2> rc.err ) || { echo "⛔ GATE REFUSE(2) [$G]: the record-form witness did not compile in mode 4"; exit 2; }
 sed 's/^\( *\)lea  *rdx, \[rsp + 16\]$/\1xor edx, edx/' "$T/r.s" > "$T/rp.s"
 rplant=$(diff "$T/r.s" "$T/rp.s" | grep -c '^<')
 rshape=$(awk '

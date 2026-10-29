@@ -44,7 +44,7 @@ read_term_from_codes([107,40,97,41,46],A,[]) => [read_term_from_codes([107,40,97
 WANT
 )"
 m4ok=1
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --dialect=gnu -o w.s w.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --dialect=gnu --out=w.s w.pl < /dev/null > /dev/null 2>&1 && [ -s w.s ] \
   && gcc -m64 -no-pie w.s -o w.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
 red=0
 arm() {

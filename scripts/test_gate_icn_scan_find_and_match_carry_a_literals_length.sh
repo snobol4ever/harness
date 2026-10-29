@@ -40,7 +40,7 @@ for kind in find match; do
     ( cd "$T" && "$ICONT" -s -o "w$i.x" "w$i.icn" ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses witness w$i ($kind $needle)"; exit 2; }
     want="$( cd "$T" && timeout -k 5 20 "./w$i.x" </dev/null 2>/dev/null )" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run witness w$i"; exit 2; }
     o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" "w$i.icn" </dev/null 2>&1 )"
-    o4=""; ( cd "$T" && "$SCRIP" --compile -o "w$i.s" "w$i.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "w$i.4" "w$i.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+    o4=""; ( cd "$T" && "$SCRIP" --compile --out="w$i.s" "w$i.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "w$i.4" "w$i.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
       && o4="$( cd "$T" && timeout -k 5 20 "./w$i.4" </dev/null 2>&1 )"
     tag="$kind(${needle:0:10})"
     if [ "$o3" = "$want" ] && [ "$o4" = "$want" ]; then res="$res $tag:ok"; else res="$res $tag:RED[m3=$(printf '%s' "$o3" | head -c 50 | tr '\n' '|') m4=$(printf '%s' "$o4" | head -c 50 | tr '\n' '|') iconx=$(printf '%s' "$want" | tr '\n' '|')]"; bad=1; fi

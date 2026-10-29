@@ -39,7 +39,7 @@ END
 SNO
 "$SBL" $(sbl_lang_flags) "$W/churn.sno" < /dev/null > "$W/churn.ref" 2>&1 || true
 [ -s "$W/churn.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/churn.s" churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED(2): the witness did not compile"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/churn.s" churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED(2): the witness did not compile"; exit 2; }
 gcc "$W/churn.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/churn.bin" 2>/dev/null || { echo "REFUSED(2): the witness did not link"; exit 2; }
 red=0
 unset SCRIP_HEAP_MB; export SCRIP_HEAP_KB=128

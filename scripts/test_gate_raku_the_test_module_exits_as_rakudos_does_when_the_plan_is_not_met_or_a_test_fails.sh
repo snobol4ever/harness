@@ -126,7 +126,7 @@ not ok 1 - a
 echo 1 > "$W/p9.rc"
 fails=0; GATE_EXAMINED=0
 for w in p1 p2 p3 p4 p5 p6 p7 p8 p9; do
-    if ! timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
+    if ! timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
        || ! gcc -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/$w.cerr" 2>&1; then
         printf '  FAIL %-3s m4: did not build\n' "$w"; fails=$((fails + 1)); continue; fi
     for m in m3 m4; do

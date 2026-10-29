@@ -10,7 +10,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 B="$S4E/corpus/benchmarks/prolog/bench"; [ -x "$ROOT/scrip" ] || { echo "⛔ census REFUSE(2): no ./scrip"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT; n=0; bad=0
-for p in "$B"/*.pl; do k=$(basename "$p" .pl); "$ROOT/scrip" --compile -o "$T/$k.s" "$p" < /dev/null > "$T/$k.err" 2>&1 || { echo "⛔ census: $k did not compile ($(head -c 100 "$T/$k.err" | tr '\n' ' '))"; bad=1; continue; }; n=$((n+1)); done
+for p in "$B"/*.pl; do k=$(basename "$p" .pl); "$ROOT/scrip" --compile --out="$T/$k.s" "$p" < /dev/null > "$T/$k.err" 2>&1 || { echo "⛔ census: $k did not compile ($(head -c 100 "$T/$k.err" | tr '\n' ' '))"; bad=1; continue; }; n=$((n+1)); done
 [ "$n" -gt 0 ] || { echo "⛔ census REFUSE(2): no kernel compiled"; exit 2; }
 [ "$bad" = 0 ] || { echo "⛔ census REFUSE(2): a kernel did not compile (above)"; exit 2; }
 sites() { cat "$T"/*.s | grep -oE 'call\s+(qword ptr \[rip \+ [A-Za-z_$0-9]+@GOTPCREL\]|[A-Za-z_$][A-Za-z_$0-9]*(@PLT)?)' | sed -E 's/.*\+ ([A-Za-z_$0-9]+)@GOTPCREL.*/\1/; s/^call\s+//; s/@PLT$//'; }

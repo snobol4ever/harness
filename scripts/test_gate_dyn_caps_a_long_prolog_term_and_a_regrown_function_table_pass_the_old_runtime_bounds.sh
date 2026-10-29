@@ -38,7 +38,7 @@ EOF
 [ "$(tr '\n' ';' < "$T/f.ref")" = "8407050;4100 1 2053;" ] || { echo "⛔ REFUSE(2): sbl's stream is not the one this gate was cut on"; exit 2; }
 RC=0
 for M in m3 m4; do
-  if [ "$M" = m4 ]; then for W in r f; do ext=pl; [ $W = f ] && ext=sno; ( cd "$T" && "$SCRIP" --compile -o $W.s $W.$ext </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; done; fi
+  if [ "$M" = m4 ]; then for W in r f; do ext=pl; [ $W = f ] && ext=sno; ( cd "$T" && "$SCRIP" --compile --out=$W.s $W.$ext </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; done; fi
   run() { if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 120 "$SCRIP" "$1" </dev/null ); else ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 120 "./${1%.*}.bin" </dev/null ); fi; }
   ra=$(run r.pl 2>/dev/null | tr '\n' ';'); [ -n "${FAIL_ONCE:-}" ] && ra="65528;$ra"
   if [ "$ra" = "70000;200000;A;" ]; then echo "  $M arm A PASS (read/1 70000, read_term/2 200000 with its escape, as swipl)"; else echo "  $M arm A FAIL (got '$ra', swipl 70000;200000;A;)"; RC=1; fi

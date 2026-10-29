@@ -56,7 +56,7 @@ for w in $wits; do
     [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .pl or .ref in $WD"
     ( cd "$WD" && SCRIP_ZD_RTCHECK=1 timeout -k 5 120 "$SC/scrip" "$w.pl" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc$( [ "$rc" = 132 ] && echo ,depth-check ))"; fi
-    if ( cd "$WD" && SCRIP_ZD_RTCHECK=1 timeout -k 5 300 "$SC/scrip" --compile -o "$o.s" "$w.pl" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+    if ( cd "$WD" && SCRIP_ZD_RTCHECK=1 timeout -k 5 300 "$SC/scrip" --compile --out="$o.s" "$w.pl" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
         ( cd "$WD" && SCRIP_ZD_RTCHECK=1 timeout -k 5 120 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc$( [ "$rc" = 132 ] && echo ,depth-check ))"; fi
@@ -69,7 +69,7 @@ for w in $wits; do
     src="$WD/$w.pl"; ref="$WD/$w.ref"; o="$OUT/step$step/$w.plain"
     ( cd "$WD" && timeout -k 5 120 "$SC/scrip" "$w.pl" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then q3=$((q3 + 1)); else preds="$preds plain-m3:$w(rc$rc)"; fi
-    if ( cd "$WD" && timeout -k 5 300 "$SC/scrip" --compile -o "$o.s" "$w.pl" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+    if ( cd "$WD" && timeout -k 5 300 "$SC/scrip" --compile --out="$o.s" "$w.pl" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
         ( cd "$WD" && timeout -k 5 120 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then q4=$((q4 + 1)); else preds="$preds plain-m4:$w(rc$rc)"; fi

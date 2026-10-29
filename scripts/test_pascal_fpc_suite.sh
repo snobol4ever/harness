@@ -121,7 +121,7 @@ for name in "${PAIRS[@]}"; do
             M3_FAIL=$((M3_FAIL+1)); M3_FAIL_NAMES+=("$name(expected-refusal)")
             printf 'package\tfpc\tpascal\t%s\tm3\tFAIL\t%s\texpected-refusal-not-refused-with-an-iso-diagnostic(rc=%s)\n' "$name" "$S3" "$_r3" >>"$PROG_ROWS"
         fi
-        _e4="$(cd "$TMP" && "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "$pas" -o "$TMP/$name.s" </dev/null 2>&1 >/dev/null)"; _r4=$?
+        _e4="$(cd "$TMP" && "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "$pas" --out="$TMP/$name.s" </dev/null 2>&1 >/dev/null)"; _r4=$?
         if [ "$_r4" = 0 ] && gcc -no-pie "$TMP/$name.s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$TMP/$name.bin" 2>/dev/null; then
             _e4="$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$TMP/$name.bin" <"$inp" 2>&1 >/dev/null)"; _r4=$?
         fi
@@ -174,7 +174,7 @@ for name in "${PAIRS[@]}"; do
     fi
 
     m4bin="$TMP/${name}.bin"; m4s="$TMP/${name}.s"; _t0="$(progress_clock)"
-    if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" -o "$m4s" < /dev/null 2>/dev/null \
+    if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" --out="$m4s" < /dev/null 2>/dev/null \
         && gcc -no-pie "$m4s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$m4bin" 2>/dev/null; then
         m4out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$m4bin" < "$inp" 2>/dev/null); m4rc=$?
         S4="$(progress_secs_since "$_t0")"

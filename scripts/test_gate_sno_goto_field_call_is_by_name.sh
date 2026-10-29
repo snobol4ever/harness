@@ -43,8 +43,8 @@ for m in m3 m4; do
         g="$("$SCRIP" "$T/nret.sno" < /dev/null 2>/dev/null | tr '\n' '/')"
         v="$("$SCRIP" "$T/val.sno" < /dev/null 2>&1)"
     else
-        "$SCRIP" --compile -o "$T/nret.s" "$T/nret.sno" < /dev/null >/dev/null 2>&1
-        "$SCRIP" --compile -o "$T/val.s"  "$T/val.sno"  < /dev/null >/dev/null 2>&1
+        "$SCRIP" --compile --out="$T/nret.s" "$T/nret.sno" < /dev/null >/dev/null 2>&1
+        "$SCRIP" --compile --out="$T/val.s"  "$T/val.sno"  < /dev/null >/dev/null 2>&1
         gcc -no-pie "$T/nret.s" -o "$T/nret.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  nret $m -- link failed"; bad=1; continue; }
         gcc -no-pie "$T/val.s"  -o "$T/val.x"  -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo "  RED  val $m -- link failed";  bad=1; continue; }
         g="$(timeout -k 5 20s "$T/nret.x" < /dev/null 2>/dev/null | tr '\n' '/')"

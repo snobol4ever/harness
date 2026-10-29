@@ -36,7 +36,7 @@ ck() { arms=$((arms+1)); if [ "$1" = ok ]; then echo "  ok   $2"; else echo "  F
 clean timeout -k 5 60 "$C" -d8m w.sno < /dev/null > o1 2> e1; r1=$?
 if [ "$r1" -ge 1 ] && [ "$r1" -lt 128 ] && grep -qE '^scrip: error 204: memory overflow' e1 && grep -qiE 'cap' e1 && grep -q 'COLLECTIONS RUN' e1; then ck ok "(1) -d8m cap, mode 3: rc=$r1, [$(grep -m1 -E '^scrip: error' e1 | cut -c1-110)], the [ZHP] classification kept"; else ck no "(1) default cap, mode 3: rc=$r1 stderr: $(grep -m1 -E 'scrip: error|Aborted|ZHP' e1 | cut -c1-140)"; fi
 o2=$(clean timeout -k 5 60 "$C" -d64m w.sno < /dev/null 2>/dev/null); [ "$o2" = "done 20001" ] && ck ok "(2) -d64m, mode 3: done 20001" || ck no "(2) -d64m, mode 3 printed '$o2'"
-if clean "$C" --compile -o w.s w.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o wbin w.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
+if clean "$C" --compile --out=w.s w.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o wbin w.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null; then
     clean timeout -k 5 60 ./wbin -d8m < /dev/null > o3 2> e3; r3=$?; o4=$(clean timeout -k 5 60 ./wbin -d64m < /dev/null 2>/dev/null)
     if [ "$r3" -ge 1 ] && [ "$r3" -lt 128 ] && grep -qE '^scrip: error 204: memory overflow' e3 && [ "$o4" = "done 20001" ]; then ck ok "(3) mode 4: rc=$r3 with the error at -d8m, done 20001 with -d64m, each on the binary's line"; else ck no "(3) mode 4: rc=$r3 [$(grep -m1 -E 'scrip: error|Aborted' e3 | cut -c1-100)] / -d64m '$o4'"; fi
 else ck no "(3) could not compile or link the witness for mode 4"; fi

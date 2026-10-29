@@ -134,7 +134,7 @@ def measure(job):
     else:
         with tempfile.TemporaryDirectory(prefix='zsmdecl.') as t:
             s, b = os.path.join(t, 'p.s'), os.path.join(t, 'p.bin')
-            c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), SCRIP, '--compile'] + ca + [prog, '-o', s], cwd=cwd, env=env, stdin=subprocess.DEVNULL,
+            c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), SCRIP, '--compile'] + ca + [prog, f'--out={s}'], cwd=cwd, env=env, stdin=subprocess.DEVNULL,
                                capture_output=True, timeout=max(timeout, 300))
             if c.returncode != 0 or not os.path.isfile(s):
                 return job, None, 'mode-4 compile rc %d' % c.returncode

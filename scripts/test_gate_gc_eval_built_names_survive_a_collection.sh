@@ -21,7 +21,7 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/gc_evalnames.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
 BAND="${GC_EVALNAMES_BAND:-0 1 3 5 10}"
 want="$(cat "$REF")"; bad=0; runs=0
-( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile -o ev.s "$WIT" < /dev/null 2>c.err && gcc ev.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o ev 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
+( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile --out=ev.s "$WIT" < /dev/null 2>c.err && gcc ev.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o ev 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
 for mode in m3 m4; do line="  $mode"
   for s in $BAND; do runs=$((runs+1))
     if [ "$mode" = m3 ]; then got="$(SCRIP_GC_STRESS=$s timeout -k 5 30 "$ROOT/scrip" "$WIT" < /dev/null 2>/dev/null)"; else got="$(SCRIP_GC_STRESS=$s timeout -k 5 30 "$W/ev" < /dev/null 2>/dev/null)"; fi

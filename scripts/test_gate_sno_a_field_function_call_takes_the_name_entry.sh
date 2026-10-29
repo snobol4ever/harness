@@ -52,7 +52,7 @@ red=0
 [ -s "$W/fld.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 for arm in on off; do
     if [ "$arm" = on ]; then unset SCRIP_SN4_DIRECT; else export SCRIP_SN4_DIRECT=0; fi
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/fld_$arm.s" fld.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: fld.sno did not compile (arm $arm)"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/fld_$arm.s" fld.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: fld.sno did not compile (arm $arm)"; red=1; continue; }
     nn=$(grep -c 'call *rt_call_name_sn4' "$W/fld_$arm.s"); nb=$(grep -cE 'call *(rt_call_fld_sn4|rt_call_callee_sn4)' "$W/fld_$arm.s")
     if [ "$arm" = on ]; then [ "$nb" -ge 10 ] && [ "$nn" -eq 0 ] && echo "ok  arm on: $nb baked callee-record sites, 0 name-entry sites" || { echo "RED arm on: baked callee-record sites=$nb (want >= 10), name-entry sites=$nn (want 0)"; red=1; }
     else [ "$nn" -eq 0 ] && [ "$nb" -eq 0 ] && echo "ok  arm off: 0 baked and 0 name-entry sites" || { echo "RED arm off: $nb baked and $nn name-entry sites under SCRIP_SN4_DIRECT=0"; red=1; }; fi

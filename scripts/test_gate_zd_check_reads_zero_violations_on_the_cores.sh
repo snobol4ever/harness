@@ -48,7 +48,7 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
         src="$W/$lang.$n.$ext"
         python3 "$HERE/corpus_suite_harness.py" extract "$D/ALL.$ext" "$D/ALL.ref" "$entry" "$src" --out-ref "$W/$lang.$n.ref" --out-in "$W/$lang.$n.in" > /dev/null 2>&1 || continue
         [ -s "$src" ] || continue
-        out="$( cd "$SCRIP" && SCRIP_ZD_CHECK=1 timeout -k 2 60 ./scrip --compile -o "$W/$lang.$n.s" "$src" < /dev/null 2>&1 >/dev/null | grep '^\[ZD-CHECK\]' )"
+        out="$( cd "$SCRIP" && SCRIP_ZD_CHECK=1 timeout -k 2 60 ./scrip --compile --out="$W/$lang.$n.s" "$src" < /dev/null 2>&1 >/dev/null | grep '^\[ZD-CHECK\]' )"
         c=$((c+1))
         eg="$(printf '%s\n' "$out" | grep -c ' violations=')"
         ea="$(printf '%s\n' "$out" | grep -c ' coordinate=absolute ')"

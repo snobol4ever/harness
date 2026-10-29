@@ -40,7 +40,7 @@ for b in iso7185prt1726 iso7185prt1728 iso7185prt1729 iso7185prt1731 iso7185prt1
   o3=$( cd "$T" && timeout -k 5 10s "$SCRIP" "$f" </dev/null 2>&1 ); rc3=$?
   if [ -n "${FAIL_ONCE:-}" ] && [ "$b" = iso7185prt1726 ]; then rc3=0; o3=""; fi
   { [ "$rc3" -ne 0 ] && [ "$rc3" -lt 124 ] && [ -n "$o3" ]; } || bad="m3 (rc=$rc3, ${#o3} bytes of diagnostic)"
-  o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o /dev/null "$f" </dev/null 2>&1 ); rc4=$?
+  o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out=/dev/null "$f" </dev/null 2>&1 ); rc4=$?
   { [ "$rc4" -ne 0 ] && [ "$rc4" -lt 124 ] && [ -n "$o4" ]; } || bad="$bad m4 (rc=$rc4, ${#o4} bytes of diagnostic)"
   if [ -n "$bad" ]; then echo "  $b ACCEPTED where ISO 7185 6.6.5.4 requires refusal: $bad"; RC=1; else echo "  $b refused with a diagnostic in both modes"; fi
 done

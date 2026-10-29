@@ -18,7 +18,7 @@ grep -q 'StmtPosA\[StmtPosN\] = StmtAt;' "$B/parser_snobol4.sc" || { echo "⛔ R
 sed -e 's/StmtPosA\[StmtPosN\] = StmtAt;/StmtPosT[StmtPosN] = StmtAt;/' -e 's/StmtPosA = ARRAY(SIZE(Src) + 2);/StmtPosT = TABLE(64);/' -e 's/p = StmtPosA\[StmtNo + 1\];/p = StmtPosT[StmtNo + 1];/' "$B/parser_snobol4.sc" > "$T/parser_variant.sc"
 grep -q 'StmtPosT' "$T/parser_variant.sc" || { echo "⛔ REFUSE(2): the substitution produced no TABLE variant"; exit 2; }
 cat "$B/global.sc" "$B/case.sc" "$B/assign.sc" "$B/match.sc" "$B/counter.sc" "$B/stack.sc" "$B/tree.sc" "$B/ShiftReduce.sc" "$B/tdump.sc" "$B/gen.sc" "$B/qize.sc" "$B/semantic.sc" "$B/omega.sc" "$B/trace.sc" "$T/parser_variant.sc" > "$T/chain.sc"
-"$ROOT/scrip" --compile "$T/chain.sc" -o "$T/chain.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
+"$ROOT/scrip" --compile "$T/chain.sc" --out="$T/chain.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/chain.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/chain.bin" 2>/dev/null \
     || { echo "⛔ REFUSE(2): the TABLE variant of the chain did not compile or link"; exit 2; }
 ( cd "$(dirname "$W")"; PARSER_TREE_HASH=1 timeout -k 5 300 "$T/chain.bin" $SW < "$W" > "$T/out.txt" 2> "$T/err.txt" ); rc=$?
 ( cd "$(dirname "$W")"; PARSER_TREE_HASH=1 timeout -k 5 300 "$T/chain.bin" $SW -i3000m < "$W" > "$T/out_big.txt" 2> "$T/err_big.txt" ); rcb=$?

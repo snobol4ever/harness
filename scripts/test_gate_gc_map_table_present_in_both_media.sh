@@ -143,7 +143,7 @@ EOF
 
 read_m3(){ SCRIP_GC_MAPS_DUMP=1 timeout -k 5 120 "$SCRIP" "$1" </dev/null >/dev/null 2>"$2"; }
 read_m4(){ local src="$1" out="$2"; local s="$T/x.s" x="$T/x.bin"; rm -f "$s" "$x"
-    timeout -k 5 120 "$SCRIP" --compile -o "$s" "$src" </dev/null >/dev/null 2>&1
+    timeout -k 5 120 "$SCRIP" --compile --out="$s" "$src" </dev/null >/dev/null 2>&1
     [ -s "$s" ] || return 1
     gcc "$s" -o "$x" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null || return 1
     SCRIP_GC_MAPS_DUMP=1 timeout -k 5 120 "$x" </dev/null >/dev/null 2>"$out"; }

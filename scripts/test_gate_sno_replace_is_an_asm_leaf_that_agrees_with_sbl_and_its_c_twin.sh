@@ -73,7 +73,7 @@ grep -q '^done$' "$W/rep.ref" || { echo "REFUSED(2): the oracle's witness did no
 red=0
 chk() { if cmp -s "$2" "$W/rep.ref"; then echo "ok  $1 = oracle over $(wc -l < "$W/rep.ref") lines"; else echo "RED $1 differs from the oracle:"; diff "$W/rep.ref" "$2" | head -6; red=1; fi; }
 ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" rep.sno < /dev/null > "$W/rep.m3" 2>&1 ); chk "(1) m3" "$W/rep.m3"
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/rep.s" rep.sno < /dev/null > /dev/null 2>&1 && gcc "$W/rep.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/rep.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/rep.s" rep.sno < /dev/null > /dev/null 2>&1 && gcc "$W/rep.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/rep.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
 ( cd "$W" && timeout -k 5 60 ./rep.bin < /dev/null > "$W/rep.m4" 2>&1 ); chk "(1) m4" "$W/rep.m4"
 ( cd "$W" && SCRIP_RTX_STR=0 timeout -k 5 60 ./rep.bin < /dev/null > "$W/rep.m4off" 2>&1 ); chk "(2) m4 SCRIP_RTX_STR=0 (the C twin road)" "$W/rep.m4off"
 ( cd "$W" && SCRIP_REPLMAP_OFF=1 timeout -k 5 60 ./rep.bin < /dev/null > "$W/rep.m4nomap" 2>&1 ); chk "(3) m4 SCRIP_REPLMAP_OFF=1 (no map cache)" "$W/rep.m4nomap"
@@ -87,7 +87,7 @@ loop    r = REPLACE(s, u, l)
         OUTPUT = 'done ' i ' ' r
 END
 SNO
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/loop.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop.bin" 2>/dev/null ) || { echo "REFUSED(2): the loop did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/loop.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop.bin" 2>/dev/null ) || { echo "REFUSED(2): the loop did not build"; exit 2; }
 ( cd "$W" && timeout -k 5 30 ./loop.bin < /dev/null > "$W/loop.out" 2>&1 ); grep -q '^done 1000 hello world$' "$W/loop.out" || { echo "REFUSED(2): the loop printed '$(head -1 "$W/loop.out")', not 'done 1000 hello world'"; exit 2; }
 hits() { ( cd "$W" && timeout -k 5 300 env $2 gdb -q -batch -ex 'set breakpoint pending on' -ex "break $1" -ex 'ignore 1 100000000' -ex 'run < /dev/null > /dev/null 2>&1' -ex 'info breakpoints' ./loop.bin 2>&1 | grep -o 'already hit [0-9]* time' | grep -o '[0-9]*' | head -1 ); }
 leaf=$(hits bn_replace_leaf X=1); cbody=$(hits c_bn_replace X=1); cctl=$(hits c_bn_replace SCRIP_RTX_STR=0); leaf=${leaf:-0}; cbody=${cbody:-0}; cctl=${cctl:-0}

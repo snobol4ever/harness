@@ -23,7 +23,7 @@ for f in "${FORMS[@]}"; do
       if [ "$f" = "3037000500" ] && [ "$op" = '*' ]; then sed -i 's/B = 1/B = 3037000500/' "$p"; fi
       o3="$(cd "$W" && timeout -k 5 20 "$ROOT/scrip" "$p" < /dev/null 2>/dev/null)"; r3=$?
       o4=""; r4=99
-      if (cd "$W" && "$ROOT/scrip" --compile -o "$W/t.s" "$p" < /dev/null >/dev/null 2>&1) && gcc "$W/t.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/t" 2>/dev/null; then
+      if (cd "$W" && "$ROOT/scrip" --compile --out="$W/t.s" "$p" < /dev/null >/dev/null 2>&1) && gcc "$W/t.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/t" 2>/dev/null; then
         o4="$(cd "$W" && timeout -k 5 20 "$W/t" < /dev/null 2>/dev/null)"; r4=$?
       fi
       os="$(cd "$W" && timeout -k 5 20 "$SBL" -bf "$p" < /dev/null 2>&1)"; rs=$?

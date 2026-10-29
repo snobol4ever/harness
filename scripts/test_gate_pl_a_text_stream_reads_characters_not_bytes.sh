@@ -57,7 +57,7 @@ for mode in m3 m4; do
     N=$((N+1))
     if [ "$mode" = m3 ]; then got=$(cd "$D" && timeout -k 5 20 "$SCRIP" "$D/rd.pl" </dev/null 2>&1)
     else
-        if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile -o "$D/rd.s" "$D/rd.pl" >/dev/null 2>&1) \
+        if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile --out="$D/rd.s" "$D/rd.pl" >/dev/null 2>&1) \
            && gcc -m64 -no-pie "$D/rd.s" -o "$D/rd.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
             got=$(cd "$D" && timeout -k 5 20 "$D/rd.bin" 2>&1)
         else echo "  RED  $mode: the witness failed to compile or link"; FAIL=$((FAIL+1)); continue; fi

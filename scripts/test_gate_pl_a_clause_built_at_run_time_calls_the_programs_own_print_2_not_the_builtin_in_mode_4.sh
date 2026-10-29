@@ -36,7 +36,7 @@ for p in a1 a2; do
     (cd "$d" && SCRIP_HEAP_CAP_KB=131072 SCRIP_STACK=8192k timeout -k 5 60 "$SCRIP" "$p.pl" </dev/null 2>/dev/null > "$d/$p.m3"); graded=$((graded + 1))
     [ "$(cat "$d/$p.want")" = "$(cat "$d/$p.m3")" ] || { fails=$((fails + 1)); echo "  $p m3 differs: want [$(tr '\n' '|' < "$d/$p.want")] got [$(tr '\n' '|' < "$d/$p.m3")]"; }
     graded=$((graded + 1))
-    if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile -o "$p.s" "$p.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$p.bin" "$p.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
+    if (cd "$d" && timeout -k 5 120 "$SCRIP" --compile --out="$p.s" "$p.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$p.bin" "$p.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
         (cd "$d" && SCRIP_HEAP_CAP_KB=131072 SCRIP_STACK=8192k timeout -k 5 60 "./$p.bin" </dev/null 2>/dev/null > "$d/$p.m4")
         [ "$(cat "$d/$p.want")" = "$(cat "$d/$p.m4")" ] || { fails=$((fails + 1)); echo "  $p m4 differs: want [$(tr '\n' '|' < "$d/$p.want")] got [$(tr '\n' '|' < "$d/$p.m4")]"; }
     else fails=$((fails + 1)); echo "  $p m4 did not compile or link"; fi

@@ -134,7 +134,7 @@ ORACLE=/home/resources/x64/bin/sbl
 [ -x "$ORACLE" ] || { echo "UNPROVEN(2): correctness oracle absent at $ORACLE -- this gate grades against SPITBOL, never against SCRIP's own output"; exit 2; }
 bad=0
 for a in a4; do
-    "$SCRIP" --compile -o "$T/$a.s" "$T/$a.sno" < /dev/null > /dev/null 2>&1 || { echo "  RED  $a -- does not compile"; bad=1; continue; }
+    "$SCRIP" --compile --out="$T/$a.s" "$T/$a.sno" < /dev/null > /dev/null 2>&1 || { echo "  RED  $a -- does not compile"; bad=1; continue; }
     n=$(grep -cE 'EXPR(NM)?\$' "$T/$a.s")
     if [ "$n" -ne 0 ]; then echo "  RED  $a m4 -- the asm names a thunk on $n line(s): $(grep -m1 -E 'EXPR(NM)?\$' "$T/$a.s")"; bad=1; else echo "  ok   $a m4 -- the asm names no thunk (asm only: its runs reach rt_at_cursor's C road, a named bomb under CEO-1576)"; fi
 done
@@ -145,7 +145,7 @@ for a in a1 a2 a3 a5; do
         if [ "$m" = m3 ]; then
             got="$(timeout -k 5 20s "$SCRIP" "$T/$a.sno" < /dev/null 2>&1 | sed '/dump of keyword values/,$d' | tr '\n' '/')"
         else
-            "$SCRIP" --compile -o "$T/$a.s" "$T/$a.sno" < /dev/null > /dev/null 2>&1
+            "$SCRIP" --compile --out="$T/$a.s" "$T/$a.sno" < /dev/null > /dev/null 2>&1
             n=$(grep -cE 'EXPR(NM)?\$' "$T/$a.s")
             if [ "$n" -ne 0 ]; then echo "  RED  $a $m -- the asm names a thunk on $n line(s): $(grep -m1 -E 'EXPR(NM)?\$' "$T/$a.s")"; bad=1; fi
             gcc "$T/$a.s" -o "$T/$a.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread > /dev/null 2>&1 || { echo "  RED  $a $m -- link failed"; bad=1; continue; }

@@ -42,7 +42,7 @@ while IFS= read -r f; do
     cp -pf "$f" "$link"
     out="$TMP/f${n}.s"
     log="$TMP/f${n}.log"
-    timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$link" -o "$out" < /dev/null > "$log" 2>&1
+    timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$link" --out="$out" < /dev/null > "$log" 2>&1
     rc=$?
     diag="$(head -1 "$log" | cut -c1-100)"
     if [ "$rc" -eq 0 ] && [ -s "$out" ]; then

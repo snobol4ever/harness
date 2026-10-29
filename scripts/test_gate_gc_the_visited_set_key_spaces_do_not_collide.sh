@@ -33,14 +33,14 @@ RC=0; plant=""; RA="$W.ref"; [ "${FAIL_ONCE:-0}" = 1 ] && RA=/dev/null
 S="$WD/hb_sno_data_field_name_held_across_collections"; [ -s "$S.sno" ] && [ -s "$S.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the record-field name witness or its ref is missing under gc_witnesses"; exit 2; }
 band=""; bad=0
 for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB $plant SCRIP_GC_STRESS=$st timeout -k 5 60s "$SCRIP" --run "$W.icn" </dev/null > m3_$st.out 2> m3_$st.err ); r=$?; if [ $r = 0 ] && cmp -s "$T/m3_$st.out" "$RA"; then band="$band m3@$st:ok"; else band="$band m3@$st:red(rc=$r)"; bad=$((bad+1)); fi; done
-if ( cd "$T" && "$SCRIP" --compile "$W.icn" -o w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
+if ( cd "$T" && "$SCRIP" --compile "$W.icn" --out=w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
   for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB $plant SCRIP_GC_STRESS=$st timeout -k 5 60s ./w4 </dev/null > m4_$st.out 2> m4_$st.err ); r=$?; if [ $r = 0 ] && cmp -s "$T/m4_$st.out" "$RA"; then band="$band m4@$st:ok"; else band="$band m4@$st:red(rc=$r)"; bad=$((bad+1)); fi; done
 else echo "  FAIL (a) the mode-4 witness did not build"; RC=1; fi
 if [ "$bad" = 0 ]; then echo "  ok   (a) THE PROPERTY: the table witness answers its iconx ref at stress 1/3/5 under forced relocation in both modes --$band"
 else echo "  FAIL (a) a table lost its buckets across collections --$band"; RC=1; fi
 bandb=""; badb=0
 for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_GC_STRESS=$st timeout -k 5 60s "$SCRIP" --run "$S.sno" </dev/null > s3_$st.out 2> s3_$st.err ); r=$?; if [ $r = 0 ] && cmp -s "$T/s3_$st.out" "$S.ref"; then bandb="$bandb m3/s$st=REF"; else bandb="$bandb m3/s$st=rc$r"; badb=1; fi; done
-if ( cd "$T" && "$SCRIP" --compile "$S.sno" -o s.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic s.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o s4 2>/dev/null ); then
+if ( cd "$T" && "$SCRIP" --compile "$S.sno" --out=s.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic s.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o s4 2>/dev/null ); then
   for st in 1 3 5; do ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_GC_STRESS=$st timeout -k 5 60s ./s4 </dev/null > s4_$st.out 2> s4_$st.err ); r=$?; if [ $r = 0 ] && cmp -s "$T/s4_$st.out" "$S.ref"; then bandb="$bandb m4/s$st=REF"; else bandb="$bandb m4/s$st=rc$r"; badb=1; fi; done
 else echo "  FAIL (b) the mode-4 record-field witness did not build"; RC=1; fi
 if [ "$badb" = 0 ]; then echo "  ok   (b) THE ONLY PRODUCER OF THE PLANTED SHAPE TODAY: a record field used as a name is a slen-1 cell into the record field block (rt_field_var, the DT_N slen-1 visitor case), held across 1200 collections and assigned through, answers its SPITBOL ref at stress 1/3/5 under forced relocation in both modes --$bandb"

@@ -47,7 +47,7 @@ for m in m3 m4; do
   echo "--- $m ---"
   run(){ if [ "$m" = m3 ]; then timeout -k 5 60 "$SCRIP" "$@" </dev/null 2>/dev/null; else
            s="$W/out.s"; b="$W/out.bin"; rm -f "$s" "$b"
-           timeout -k 5 90 "$SCRIP" --compile -o "$s" "$@" </dev/null >/dev/null 2>&1 || return 97
+           timeout -k 5 90 "$SCRIP" --compile --out="$s" "$@" </dev/null >/dev/null 2>&1 || return 97
            timeout -k 5 90 gcc -no-pie -o "$b" "$s" -L"$ROOT/out" -lscrip_rt -lm >/dev/null 2>&1 || return 98
            LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 60 "$b" </dev/null 2>/dev/null; fi; }
   out="$(run "$W/one.pl" "$W/two.pl")"; rc=$?

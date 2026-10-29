@@ -69,7 +69,7 @@ WANT_ANS='X=AAA Y=AABBBBBCCCCC'
 ans_ok() { [ "$1" = "$WANT_ANS" ]; }
 
 A3="$(SCRIP_GC_STRESS=1 "$SCRIP" "$T/w.sno" 2>/dev/null | head -1)"
-"$SCRIP" --compile -o "$T/w.s" "$T/w.sno" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode 4 emission failed"; exit 2; }
+"$SCRIP" --compile --out="$T/w.s" "$T/w.sno" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode 4 emission failed"; exit 2; }
 A4=""
 if gcc -c "$T/w.s" -o "$T/w.o" 2>/dev/null && gcc "$T/w.o" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/w" 2>/dev/null; then
     A4="$(SCRIP_GC_STRESS=1 "$T/w" 2>/dev/null | head -1)"
@@ -104,7 +104,7 @@ D4      S TAB(*N) . X5                              :F(D5)
 D5
 END
 EOF
-"$SCRIP" --compile -o "$T/d.s" "$T/d.sno" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the deferred-pattern witness did not emit"; exit 2; }
+"$SCRIP" --compile --out="$T/d.s" "$T/d.sno" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the deferred-pattern witness did not emit"; exit 2; }
 python3 "$CENSUS" "$T/d.s" > "$T/c.txt" 2>&1
 HEAPN="$(grep -oE '^SUMMARY .*' "$T/c.txt" | tr ' ' '\n' | awk -F= '$1=="heap"{print $2}')"
 cover_uncovered() {

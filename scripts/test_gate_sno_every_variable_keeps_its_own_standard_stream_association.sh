@@ -41,7 +41,7 @@ case_arm() {
     rm -f "$T/f3.txt"; ora="$(cd "$T" && timeout -k 5 10 "$SBL" -bf w.sno < in.txt 2>&1 | grep -v '^$' | tr '\n' '|')"
     [ -n "$ora" ] || refuse "sbl printed nothing for arm '$name' -- the witness or the oracle moved"
     rm -f "$T/f3.txt"; m3="$(cd "$T" && timeout -k 5 10 "$SCRIP" w.sno < in.txt 2>&1 | grep -v '^$' | tr '\n' '|')"
-    ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno -o w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build of arm '$name' failed -- a toolchain failure, not a verdict"
+    ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno --out=w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build of arm '$name' failed -- a toolchain failure, not a verdict"
     rm -f "$T/f3.txt"; m4="$(cd "$T" && timeout -k 5 10 ./w.bin < in.txt 2>&1 | grep -v '^$' | tr '\n' '|')"
     for mode in m3 m4; do
         graded=$((graded+1)); got="$m3"; [ "$mode" = m4 ] && got="$m4"

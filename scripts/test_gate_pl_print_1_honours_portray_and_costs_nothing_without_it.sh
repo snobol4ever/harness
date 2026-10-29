@@ -56,7 +56,7 @@ gate_emit_md5() {   # $1 = .pl to compile, $2 = .s to write -- path- AND basenam
   # carries the source path as .byte data in the atom table (a predicate's file/line properties), which the sed below cannot rewrite,
   # so two different file names made two equal programs differ by their name alone.
   cp "$1" "$D/prog.pl" || return 1
-  timeout -k 5 60 "$SCRIP" --compile -o "$2" "$D/prog.pl" >/dev/null 2>&1 || return 1
+  timeout -k 5 60 "$SCRIP" --compile --out="$2" "$D/prog.pl" >/dev/null 2>&1 || return 1
   sed "s|$D|@|g; s|noportray|@PROG@|g; s|nowrite|@PROG@|g; s|yesportray|@PROG@|g; s|yeswrite|@PROG@|g" "$2" | md5sum | cut -d' ' -f1
 }
 N=$((N+1))
@@ -103,7 +103,7 @@ N=$((N+1))
 got=$(timeout -k 5 20 "$SCRIP" "$D/portray.pl" </dev/null 2>/dev/null)
 if [ "$got" = "$want2" ]; then PASS=$((PASS+1)); else printf '  m3 RED  portray goal: got [%s] want [%s]\n' "$got" "$want2"; FAIL=$((FAIL+1)); fi
 N=$((N+1))
-if timeout -k 5 60 "$SCRIP" --compile -o "$D/p.s" "$D/portray.pl" >/dev/null 2>&1 \
+if timeout -k 5 60 "$SCRIP" --compile --out="$D/p.s" "$D/portray.pl" >/dev/null 2>&1 \
    && gcc -m64 -no-pie "$D/p.s" -o "$D/p.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
   got=$(timeout -k 5 20 "$D/p.bin" 2>/dev/null)
   if [ "$got" = "$want2" ]; then PASS=$((PASS+1)); else printf '  m4 RED  portray goal: got [%s] want [%s]\n' "$got" "$want2"; FAIL=$((FAIL+1)); fi
@@ -137,7 +137,7 @@ N=$((N+1))
 got=$(cd "$D" && timeout -k 5 20 "$SCRIP" "$D/fp.pl" </dev/null 2>/dev/null)
 if [ "$got" = "$want4" ]; then PASS=$((PASS+1)); else printf '  m3 RED  format ~~p: got [%s]\n       want [%s]\n' "$got" "$want4"; FAIL=$((FAIL+1)); fi
 N=$((N+1))
-if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile -o "$D/fp.s" "$D/fp.pl" >/dev/null 2>&1) && gcc -m64 -no-pie "$D/fp.s" -o "$D/fp.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
+if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile --out="$D/fp.s" "$D/fp.pl" >/dev/null 2>&1) && gcc -m64 -no-pie "$D/fp.s" -o "$D/fp.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
   got=$(cd "$D" && timeout -k 5 20 "$D/fp.bin" 2>/dev/null)
   if [ "$got" = "$want4" ]; then PASS=$((PASS+1)); else printf '  m4 RED  format ~~p: got [%s]\n       want [%s]\n' "$got" "$want4"; FAIL=$((FAIL+1)); fi
 else echo "  m4 RED  the ~~p program failed to compile or link"; FAIL=$((FAIL+1)); fi
@@ -165,7 +165,7 @@ for a in fc:want7 fn:want8; do w=${a%%:*}; eval "want=\$${a#*:}"
   N=$((N+1)); got=$(cd "$D" && timeout -k 5 60 "$SCRIP" "$D/$w.pl" </dev/null 2>/dev/null)
   if [ "$got" = "$want" ]; then PASS=$((PASS+1)); else printf '  m3 RED  %s: got [%s]\n       want [%s]\n' "$w" "$got" "$want"; FAIL=$((FAIL+1)); fi
   N=$((N+1))
-  if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile -o "$D/$w.s" "$D/$w.pl" >/dev/null 2>&1) && gcc -m64 -no-pie "$D/$w.s" -o "$D/$w.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
+  if (cd "$D" && timeout -k 5 60 "$SCRIP" --compile --out="$D/$w.s" "$D/$w.pl" >/dev/null 2>&1) && gcc -m64 -no-pie "$D/$w.s" -o "$D/$w.bin" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1; then
     got=$(cd "$D" && timeout -k 5 60 "$D/$w.bin" </dev/null 2>/dev/null)
     if [ "$got" = "$want" ]; then PASS=$((PASS+1)); else printf '  m4 RED  %s: got [%s]\n       want [%s]\n' "$w" "$got" "$want"; FAIL=$((FAIL+1)); fi
   else printf '  m4 RED  %s failed to compile or link\n' "$w"; FAIL=$((FAIL+1)); fi

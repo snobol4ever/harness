@@ -117,7 +117,7 @@ arm() {
     else echo "  $label RED: $n of $n_want gprolog lines missing or different"; diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") | head -20 | sed 's/^/    /'; red=1; fi
 }
 arm m3 timeout -k 5 20 "$B/scrip" --run --dialect=gnu g.pl < /dev/null
-if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --dialect=gnu -o g.s g.pl < /dev/null > /dev/null 2>&1 && [ -s g.s ] \
+if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --dialect=gnu --out=g.s g.pl < /dev/null > /dev/null 2>&1 && [ -s g.s ] \
      && gcc -m64 -no-pie g.s -o g.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ); then
     arm m4 timeout -k 5 20 ./g.bin < /dev/null
 else echo "  m4 RED: the program did not compile or link in mode 4"; red=1; fi

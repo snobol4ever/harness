@@ -48,9 +48,9 @@ if [ ! -f "$DEMO/citm_catalog.json" ] || [ ! -f "$PROBE/$JFJC_JSON_REF" ] || [ !
 fi
 
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-"$SCRIP" --compile "$DEMO/json.sno" -o "$T/json.s" < /dev/null > /dev/null 2>&1
+"$SCRIP" --compile "$DEMO/json.sno" --out="$T/json.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "$T/json.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "$T/json.bin" 2>/dev/null
-"$SCRIP" --compile "$DEMO/json-match-fence.sno" -o "$T/jmf.s" < /dev/null > /dev/null 2>&1
+"$SCRIP" --compile "$DEMO/json-match-fence.sno" --out="$T/jmf.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "$T/jmf.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "$T/jmf.bin" 2>/dev/null
 
 timeout -k 5 60 "$SCRIP" $JSON_SW --run "$DEMO/json.sno" < "$DEMO/citm_catalog.json" > "$T/m3_json.txt" 2>/dev/null

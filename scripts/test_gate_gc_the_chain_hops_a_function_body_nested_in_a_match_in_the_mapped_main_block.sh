@@ -32,7 +32,7 @@ ck() { checks=$((checks+1)); if [ "$1" = ok ]; then echo "  ok   $2"; else fails
 run_env() { env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB SCRIP_HEAP_KB=64 SCRIP_GC_CHAIN_CHECK=3 SCRIP_GC_STRESS=1 "$@"; }
 num() { printf '%s\n' "$1" | sed -n "s/.* $2=\([0-9]*\).*/\1/p"; }
 ( cd "$W" && run_env timeout -k 5 300 "$SCRIP" "$WD/$N.sno" > o3 2> e3 < "$WD/$N.in" )
-( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o w.s "$WD/$N.sno" > /dev/null 2> c4 < /dev/null ) || refuse "mode 4 could not compile the witness: $(head -c 200 "$W/c4")"
+( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out=w.s "$WD/$N.sno" > /dev/null 2> c4 < /dev/null ) || refuse "mode 4 could not compile the witness: $(head -c 200 "$W/c4")"
 gcc "$W/w.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/w.x" 2> "$W/ld4" || refuse "mode 4 link failed: $(head -c 200 "$W/ld4")"
 ( cd "$W" && run_env timeout -k 5 300 ./w.x > o4 2> e4 < "$WD/$N.in" )
 for m in 3 4; do

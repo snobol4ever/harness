@@ -86,7 +86,7 @@ PAS
 for p in loop cases; do
   frc=$(fpcrun $p)
   if [ "$p" = cases ] && [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/$p.want"; fi
-  ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --compile -o "$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) \
+  ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --compile --out="$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) \
     || { echo "  ⛔ $p: did not compile and link in mode 4"; RC=1; N=$((N + 3)); continue; }
   awk '/^main:/{m=1} m && /^n[0-9]+_[a-z_]+_bx:/{sub(":", "", $1); print $1}' "$T/$p.s" > "$T/$p.boxes"
   [ -s "$T/$p.boxes" ] || { echo "⛔ GATE REFUSE(2) [$G]: no box label follows main: in $p.s -- the depth arm has nothing to watch"; exit 2; }

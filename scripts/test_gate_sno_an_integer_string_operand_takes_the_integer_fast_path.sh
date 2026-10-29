@@ -74,7 +74,7 @@ SNO
 [ -s "$W/arith.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 red=0
 ( cd "$W" && timeout -k 5 20 "$ROOT/scrip" arith.sno < /dev/null > "$W/arith.m3" 2>&1 ); cmp -s "$W/arith.m3" "$W/arith.ref" && echo "ok  (1) m3 = oracle over $(wc -l < "$W/arith.ref") lines" || { echo "RED (1) m3 differs from the oracle:"; diff "$W/arith.ref" "$W/arith.m3" | head -6; red=1; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/arith.s" arith.sno < /dev/null > /dev/null 2>&1 && gcc "$W/arith.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/arith.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/arith.s" arith.sno < /dev/null > /dev/null 2>&1 && gcc "$W/arith.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/arith.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
 ( cd "$W" && timeout -k 5 20 ./arith.bin < /dev/null > "$W/arith.m4" 2>&1 ); cmp -s "$W/arith.m4" "$W/arith.ref" && echo "ok  (1) m4 = oracle" || { echo "RED (1) m4 differs from the oracle:"; diff "$W/arith.ref" "$W/arith.m4" | head -6; red=1; }
 for n in 4000 8000; do cat > "$W/slope$n.sno" <<SNO
         a = '1234'; b = '5678'; n = 0
@@ -83,7 +83,7 @@ loop    s = a + b
         OUTPUT = s
 END
 SNO
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/slope$n.s" slope$n.sno < /dev/null > /dev/null 2>&1 && gcc "$W/slope$n.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/slope$n.bin" 2>/dev/null ) || { echo "REFUSED(2): the slope twin $n did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/slope$n.s" slope$n.sno < /dev/null > /dev/null 2>&1 && gcc "$W/slope$n.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/slope$n.bin" 2>/dev/null ) || { echo "REFUSED(2): the slope twin $n did not build"; exit 2; }
 ( cd "$W" && timeout -k 5 300 valgrind --tool=callgrind --callgrind-out-file="$W/cg$n.out" ./slope$n.bin < /dev/null > "$W/slope$n.out" 2>/dev/null ); grep -q '^6912$' "$W/slope$n.out" || { echo "REFUSED(2): the slope twin $n did not print 6912"; exit 2; }
 eval "ir$n=\$(grep '^summary:' \"\$W/cg$n.out\" | awk '{print \$2}')"
 done

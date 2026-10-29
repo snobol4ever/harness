@@ -119,8 +119,8 @@ o="$CANARY"; src="$W/$o.pl"; ref="$W/$o.ref"
 NAMES="$(user_preds_of "$src")"
 [ -n "$NAMES" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: could not parse a predicate name out of the embedded canary -- fixture is broken"; gate_stamp; exit 2; }
 n=1
-(cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0" "$src" </dev/null >/dev/null 2>&1); (cd "$W" && SCRIP_PL_TRACE=0 timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s0b" "$src" </dev/null >/dev/null 2>&1)
-(cd "$W" && SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --compile -o "$o.s1" "$src" </dev/null >/dev/null 2>&1)
+(cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0" "$src" </dev/null >/dev/null 2>&1); (cd "$W" && SCRIP_PL_TRACE=0 timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s0b" "$src" </dev/null >/dev/null 2>&1)
+(cd "$W" && SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --compile --out="$o.s1" "$src" </dev/null >/dev/null 2>&1)
 ks=OK; { cmp -s "$W/$o.s0" "$W/$o.s0b" && [ -s "$W/$o.s0" ] && ! cmp -s "$W/$o.s0" "$W/$o.s1"; } || { ks=FAIL; bad=$((bad+1)); }
 timeout -k 5 "$T" "$SCRIP" --run "$src" </dev/null >"$W/$o.m3.out0" 2>/dev/null; r30=$?
 SCRIP_PL_TRACE=1 timeout -k 5 "$T" "$SCRIP" --run "$src" </dev/null >"$W/$o.m3.out1" 2>"$W/$o.m3.raw"; r31=$?

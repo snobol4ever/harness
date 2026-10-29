@@ -52,11 +52,11 @@ for e in $engines; do
     [ -x "$BASE/SCRIP/scrip" ] && [ -f "$BASE/SCRIP/out/libscrip_rt.so" ] || refuse "--engine real: no built SCRIP at $BASE/SCRIP"
     cp "$BASE/SCRIP/scrip" "$ROOT/SCRIP/scrip"; for so in "$BASE/SCRIP/out/"*.so; do case "${so##*/}" in *-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].so) ;; *) cp "$so" "$ROOT/SCRIP/out/";; esac; done
   elif [ "$e" = silent ]; then
-    printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; -o) shift; o="${1:-}";; esac; shift; done' \
+    printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; --out=*) o="${1#--out=}";; esac; shift; done' \
       '[ "$c" = 1 ] || exit 0' 'if [ -n "$o" ]; then echo "# stub engine: prints nothing" > "$o"; else echo "# stub engine: prints nothing"; fi' 'exit 0' > "$ROOT/SCRIP/scrip"
   else
     # --compile succeeds (a build probe refuses a compiler that cannot emit), and what it emits is a program that prints the same error and exits 1
-    printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; -o) shift; o="${1:-}";; esac; shift; done' \
+    printf '%s\n' '#!/bin/sh' 'c=0; o=""' 'while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; --out=*) o="${1#--out=}";; esac; shift; done' \
       'if [ "$c" = 0 ]; then echo "error 1: refused by the stub engine"; echo "error 1: refused by the stub engine" >&2; exit 1; fi' \
       'a="	.text
 	.globl main

@@ -77,7 +77,7 @@ for w in w0 w1 w2; do
         GRADED=$((GRADED+1))
         if [ "$mode" = m3 ]; then got="$( cd "$WD" && timeout -k 5 20s "$SCRIP" "$w.pas" </dev/null 2>&1 )"
         else
-            if ! ( cd "$WD" && timeout -k 5 20s "$SCRIP" --compile -o "$w.s" "$w.pas" >/dev/null 2>&1 ); then
+            if ! ( cd "$WD" && timeout -k 5 20s "$SCRIP" --compile --out="$w.s" "$w.pas" >/dev/null 2>&1 ); then
                 echo "  $w/$mode FAIL: --compile refused (this is the emit_drive guard arm)"; FAIL=$((FAIL+1)); [ "$w" = w0 ] && CTRL_FAIL=$((CTRL_FAIL+1)); continue
             fi
             if ! ( cd "$WD" && gcc -m64 -no-pie "$w.s" -o "$w.x" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm >/dev/null 2>&1 ); then

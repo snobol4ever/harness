@@ -163,7 +163,7 @@ n=$(wc -l < "$T/w.sbl")
 grep -qx 'construction: the pattern statement completes, P is PATTERN' "$T/w.sbl" || refuse "the oracle did not build the construction pattern -- not the oracle this gate was written against"
 grep -qx 'construction: P matches c' "$T/w.sbl" || refuse "the oracle's construction pattern does not match 'c' -- not the oracle this gate was written against"
 ( cd "$T" && timeout -k 5 30 "$SCRIP" w.sno ) < /dev/null > "$T/w.m3" 2>&1
-"$SCRIP" --compile -o "$T/w.s" "$T/w.sno" < /dev/null > /dev/null 2>&1 && as -o "$T/w.o" "$T/w.s" 2>/dev/null \
+"$SCRIP" --compile --out="$T/w.s" "$T/w.sno" < /dev/null > /dev/null 2>&1 && as -o "$T/w.o" "$T/w.s" 2>/dev/null \
   && gcc -o "$T/w.bin" "$T/w.o" "$RT_DIR/libscrip_rt.so" -Wl,-rpath,"$RT_DIR" -lm 2>/dev/null \
   || refuse "could not build the m4 arm -- a toolchain failure, not a verdict"
 ( cd "$T" && timeout -k 5 30 ./w.bin ) < /dev/null > "$T/w.m4" 2>&1

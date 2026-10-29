@@ -45,7 +45,7 @@ for m in m3 m4; do
     GATE_EXAMINED=$((GATE_EXAMINED + 1))
     if [ "$m" = m3 ]; then out="$(timeout -k 5 120 "$BIN" --run "$W/main.raku" 2>"$W/$m.err" </dev/null)"; rc=$?
     else
-        if ! timeout -k 5 60 "$BIN" --compile -o "$W/main.s" "$W/main.raku" </dev/null >"$W/$m.err" 2>&1 \
+        if ! timeout -k 5 60 "$BIN" --compile --out="$W/main.s" "$W/main.raku" </dev/null >"$W/$m.err" 2>&1 \
            || ! gcc -o "$W/main.bin" "$W/main.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >>"$W/$m.err" 2>&1; then
             printf '  FAIL main %s: did not build (%s)\n' "$m" "$(grep -m1 . "$W/$m.err" | cut -c1-120)"; fails=$((fails + 1)); continue; fi
         out="$(timeout -k 5 120 "$W/main.bin" 2>>"$W/$m.err" </dev/null)"; rc=$?

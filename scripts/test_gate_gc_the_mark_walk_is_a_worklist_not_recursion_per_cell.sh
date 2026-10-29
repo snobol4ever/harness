@@ -100,7 +100,7 @@ refuse_on_clock "$r3" "m3 600000-cell" "$CEIL_CHAIN" "$T/e3"
 if [ "$r3" = 0 ] && [ "$(cat "$T/o3")" = 600000 ] && [ "$c3" -ge 1 ]; then echo "  m3 PASS (600000-cell CONS chain live across a COLLECT(): rc=0, walked $(cat "$T/o3") cells back, $c3 collection(s))"
 else echo "  m3 FAIL (rc=$r3 out=[$(cat "$T/o3")] collections=$c3 -- $(head -1 "$T/e3" | cut -c1-90))"; RC=1; fi
 examined=$((examined+1))
-( cd "$T" && timeout -k 5 "$CEIL_CHAIN" "$SCRIP" --compile -o w.s w.sno </dev/null >/dev/null 2>&1 && gcc -no-pie w.s -o w.x -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the m4 witness did not build"; exit 2; }
+( cd "$T" && timeout -k 5 "$CEIL_CHAIN" "$SCRIP" --compile --out=w.s w.sno </dev/null >/dev/null 2>&1 && gcc -no-pie w.s -o w.x -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the m4 witness did not build"; exit 2; }
 SCRIP_ZETA_TELEM=1 timeout -k 5 "$CEIL_CHAIN" "$T/w.x" </dev/null >"$T/o4" 2>"$T/e4"; r4=$?; c4=$(grep -c regeneration "$T/e4")
 refuse_on_clock "$r4" "m4 600000-cell" "$CEIL_CHAIN" "$T/e4"
 if [ "$r4" = 0 ] && [ "$(cat "$T/o4")" = 600000 ] && [ "$c4" -ge 1 ]; then echo "  m4 PASS (same chain in mode 4: rc=0, walked $(cat "$T/o4") cells back, $c4 collection(s))"

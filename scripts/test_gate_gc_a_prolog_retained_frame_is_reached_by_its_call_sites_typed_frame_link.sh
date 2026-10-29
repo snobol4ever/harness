@@ -57,7 +57,7 @@ printf '2020\n[k5,k6,k7,k8,k9]\n' > "$W/w.ref"
 run_env() { env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB SCRIP_HEAP_KB=64 SCRIP_GC_CHAIN_CHECK=3 "$@"; }
 build4() {
   local src="$1" b="$2"
-  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $src: $(head -c 200 "$W/$b.c4")"
+  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $src: $(head -c 200 "$W/$b.c4")"
   gcc "$W/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$b.x" 2> "$W/$b.ld4" || refuse "mode 4 link failed for $src: $(head -c 200 "$W/$b.ld4")"
 }
 build4 "$W/w.pl" w
@@ -86,7 +86,7 @@ for f in "$ROOT"/../harness/scripts/gc_witnesses/*.pl; do
 done
 build4i() {
   local src="$1" b="$2"
-  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $src: $(head -c 200 "$W/$b.c4")"
+  ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) || refuse "mode 4 could not compile $src: $(head -c 200 "$W/$b.c4")"
   gcc "$W/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$b.x" 2> "$W/$b.ld4" || refuse "mode 4 link failed for $src: $(head -c 200 "$W/$b.ld4")"
 }
 for b in hb_coexpr_parked hb_coexpr_genp_scan; do

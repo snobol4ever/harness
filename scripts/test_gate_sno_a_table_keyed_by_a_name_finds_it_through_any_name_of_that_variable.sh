@@ -65,7 +65,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 conv); arm "m3: a NAME key is found through a second CONVERT, .ABC and ITEM" "$(same "$rc" conv.m3 conv.oracle)"
-rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o c.s conv.sno < /dev/null > /dev/null 2>&1 && gcc c.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o c.bin > /dev/null 2>&1 && timeout -k 5 10 ./c.bin < /dev/null > conv.m4 2>&1; echo $? )
+rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=c.s conv.sno < /dev/null > /dev/null 2>&1 && gcc c.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o c.bin > /dev/null 2>&1 && timeout -k 5 10 ./c.bin < /dev/null > conv.m4 2>&1; echo $? )
 arm "m4: a NAME key is found through a second CONVERT, .ABC and ITEM" "$(same "$rc" conv.m4 conv.oracle)"
 rc=$(m3 dot); arm "m3: T<.ABC> read back with .ABC; another name is another key" "$(same "$rc" dot.m3 dot.oracle)"
 rc=$(m3 ctl); arm "m3: a STRING key and the NAME key of one spelling are two keys, each found" "$(same "$rc" ctl.m3 ctl.oracle)"

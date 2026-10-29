@@ -78,7 +78,7 @@ for W in a b; do ( cd "$T" && "$SBL" -bf $W.sno < /dev/null ) > "$T/$W.ref" 2>&1
 RC=0
 for M in m3 m4; do
   for W in a b c; do
-    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile -o $W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
+    if [ "$M" = m4 ]; then ( cd "$T" && "$SCRIP" --compile --out=$W.s $W.sno </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }; fi
     ( cd "$T" && if [ "$M" = m3 ]; then SCRIP_CODE_POOL_MB=16 timeout -k 5 120 "$SCRIP" $W.sno </dev/null; else SCRIP_CODE_POOL_MB=16 LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 120 ./$W.bin </dev/null; fi ) >"$T/$M.$W.out" 2>"$T/$M.$W.err"; echo $? > "$T/$M.$W.rc"
   done
   if [ -n "${FAIL_ONCE:-}" ]; then sed -i 's/^all 6000 answered$/all 6000 answeredX/' "$T/$M.a.out"; fi

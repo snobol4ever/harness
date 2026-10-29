@@ -26,7 +26,7 @@ for call in 'exit(3)' 'exit(3.0)' 'exit(abs(3.0))' 'exit("3")' 'exit(3.9)' 'exit
   ( cd "$d" && ./e.x </dev/null > want 2>/dev/null ); wrc=$?
   [ "$wrc" -ne 0 ] && nonzero=$((nonzero+1))
   ( cd "$d" && timeout -k 5 30 "$SCRIP" e.icn </dev/null > m3 2>/dev/null ); r3=$?
-  ( cd "$d" && timeout -k 5 60 "$SCRIP" --compile -o e.s e.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o e.4 e.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+  ( cd "$d" && timeout -k 5 60 "$SCRIP" --compile --out=e.s e.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o e.4 e.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
     || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 build of the $call witness failed -- cannot measure"; exit 2; }
   ( cd "$d" && timeout -k 5 30 ./e.4 </dev/null > m4 2>/dev/null ); r4=$?
   if [ "$r3" = "$wrc" ] && [ "$r4" = "$wrc" ] && cmp -s "$d/m3" "$d/want" && cmp -s "$d/m4" "$d/want"; then echo "  PASS $call: rc $wrc in both media, stdout as iconx's"

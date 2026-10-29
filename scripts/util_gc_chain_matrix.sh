@@ -21,7 +21,7 @@ for f in "$WD"/*; do
   if [ $# -gt 0 ]; then keep=0; for p in "$@"; do case "$w" in *"$p"*) keep=1;; esac; done; [ $keep = 1 ] || continue; fi
   b="${w%.*}"; i=/dev/null; [ -f "$WD/$b.in" ] && i="$WD/$b.in"
   ( cd "$W" && run_env timeout -k 5 300 "$SCRIP" "$f" > "$b.o3" 2> "$b.e3" < "$i" )
-  if ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$b.s" "$f" > /dev/null 2> "$b.c4" < /dev/null ) && gcc "$W/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$b.x" 2> "$W/$b.ld4"; then
+  if ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$b.s" "$f" > /dev/null 2> "$b.c4" < /dev/null ) && gcc "$W/$b.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$W/$b.x" 2> "$W/$b.ld4"; then
     ( cd "$W" && run_env timeout -k 5 300 "./$b.x" > "$b.o4" 2> "$b.e4" < "$i" )
   else : > "$W/$b.e4"; fi
   if [ -n "${MATRIX_PLANT:-}" ]; then

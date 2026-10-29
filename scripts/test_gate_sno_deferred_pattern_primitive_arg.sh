@@ -122,7 +122,7 @@ for a in a1 a2 a3 a4 a5 a6 a7; do
     if [ $orc -ge 124 ]; then echo "⛔ REFUSE(rc=2): the oracle timed out on $a -- cannot measure"; exit 2; fi
     m3="$(cd "$W" && timeout -k 5 20s "$SCRIP" "$f" < /dev/null 2>&1)"; r3=$?
     N=$((N+1)); if [ "$m3" = "$ora" ]; then PASS=$((PASS+1)); else FAIL=$((FAIL+1)); FAILED="$FAILED $a/m3(rc=$r3)"; fi
-    if (cd "$W" && timeout -k 5 20s "$SCRIP" --compile -o "$a.s" "$a.sno" >/dev/null 2>&1) \
+    if (cd "$W" && timeout -k 5 20s "$SCRIP" --compile --out="$a.s" "$a.sno" >/dev/null 2>&1) \
        && (cd "$W" && gcc -no-pie "$a.s" -o "$a.bin" -L"$RT_DIR" -Wl,-rpath,"$RT_DIR" -lscrip_rt -lm -lpthread >/dev/null 2>&1); then
         m4="$(cd "$W" && timeout -k 5 20s "./$a.bin" < /dev/null 2>&1)"; r4=$?
     else m4="<compile/link failed>"; r4=99; fi
@@ -131,7 +131,7 @@ done
 # ARM 5 -- the emitted asm must not name a bare callee as a match-time variable. `LEN(*F(0))` emitting a
 # rt_pat_prim_int lookup of the string "F" is the defect's own signature, and it is invisible to a stream
 # diff the moment F's value happens to coincide with the call's result.
-(cd "$W" && timeout -k 5 20s "$SCRIP" --compile -o sig.s a1.sno >/dev/null 2>&1) || { echo "⛔ REFUSE(rc=2): could not compile the signature probe"; exit 2; }
+(cd "$W" && timeout -k 5 20s "$SCRIP" --compile --out=sig.s a1.sno >/dev/null 2>&1) || { echo "⛔ REFUSE(rc=2): could not compile the signature probe"; exit 2; }
 SIG=0
 if grep -qE '^\.S[0-9]+:[[:space:]]+\.string[[:space:]]+"F"$' "$W/sig.s"; then SIG=1; FAIL=$((FAIL+1)); FAILED="$FAILED arm5/callee-name-emitted-as-a-match-time-variable"; else PASS=$((PASS+1)); fi
 N=$((N+1))

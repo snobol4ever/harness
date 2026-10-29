@@ -45,9 +45,9 @@ for w in w_disj w_neg w_ite; do
     traced3="$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 30 "$SCRIP" "$w.pl" </dev/null 2>"$TMPD/$w.m3.trace")"; rct3=$?
     if [ "$rc3" = 0 ] && [ "$rct3" = 0 ] && [ "$plain3" = "$traced3" ] && grep -q '_call_proc_staged ' "$TMPD/$w.m3.trace"; then echo "  ok  $w m3: traced == untraced, the trace names the call boxes"
     else echo "  RED $w m3: plain rc=$rc3 [$(printf '%s' "$plain3" | tr '\n' '|' | cut -c1-60)] traced rc=$rct3 [$(printf '%s' "$traced3" | tr '\n' '|' | cut -c1-60)] call_proc_staged lines=$(grep -c '_call_proc_staged ' "$TMPD/$w.m3.trace")"; red=$((red+1)); fi
-    timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>/dev/null && gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null || { echo "  RED $w m4: the untraced compile or link refused"; red=$((red+1)); continue; }
+    timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>/dev/null && gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null || { echo "  RED $w m4: the untraced compile or link refused"; red=$((red+1)); continue; }
     plain4="$(cd "$TMPD" && timeout -k 5 30 "./$w.bin" </dev/null 2>/dev/null)"; rc4=$?
-    if ! SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/$w.t.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err"; then echo "  RED $w m4: the traced compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; fi
+    if ! SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/$w.t.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err"; then echo "  RED $w m4: the traced compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; fi
     if ! gcc -m64 -no-pie "$TMPD/$w.t.s" -o "$TMPD/$w.t.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err"; then echo "  RED $w m4: the traced text does not assemble: $(grep -m1 -E 'Error|error' "$TMPD/err" | head -c 200)"; red=$((red+1)); continue; fi
     traced4="$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 30 "./$w.t.bin" </dev/null 2>"$TMPD/$w.m4.trace")"; rct4=$?
     if [ "$rc4" = 0 ] && [ "$rct4" = 0 ] && [ "$plain4" = "$traced4" ] && [ "$plain4" = "$plain3" ] && grep -q '_call_proc_staged ' "$TMPD/$w.m4.trace"; then echo "  ok  $w m4: traced == untraced == m3, the trace names the call boxes"

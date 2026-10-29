@@ -35,7 +35,7 @@ grep -q 'FATAL ERROR' "$D/want" || refuse "sbl -bf did not reach the lines after
 red=0
 arm() { if [ "$2" = ok ]; then echo "  ok   $1"; else echo "  FAIL $1: $2"; red=$((red + 1)); fi; }
 ( cd "$D" && timeout -k 5 60 "$B/scrip" -d131072k -s4096k --stlimit ATN.sno < in > m3.raw 2> m3.err; echo $? > m3.rc )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --stlimit -o m4.s ATN.sno < /dev/null 2> m4.cerr && gcc m4.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o m4.bin 2>> m4.cerr \
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --stlimit --out=m4.s ATN.sno < /dev/null 2> m4.cerr && gcc m4.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o m4.bin 2>> m4.cerr \
   && timeout -k 5 60 ./m4.bin -d131072k -s4096k < in > m4.raw 2> m4.err; echo $? > m4.rc )
 for m in m3 m4; do
     mask "$D/$m.raw" > "$D/$m"
@@ -51,7 +51,7 @@ for w in val inl two sto; do
     ( cd "$D" && timeout -k 5 10 "$SBL" -bf $w.sno < /dev/null > $w.want 2>&1 )
     [ "$(cat "$D/$w.want")" = failed ] || refuse "sbl -bf answered [$(tr '\n' '|' < "$D/$w.want")] for the $w witness, not failed"
     ( cd "$D" && timeout -k 5 10 "$B/scrip" $w.sno < /dev/null > $w.m3 2> $w.m3.err )
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $w.s $w.sno < /dev/null 2> $w.cerr && gcc $w.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $w.bin 2>> $w.cerr && timeout -k 5 10 ./$w.bin < /dev/null > $w.m4 2> $w.m4.err )
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=$w.s $w.sno < /dev/null 2> $w.cerr && gcc $w.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $w.bin 2>> $w.cerr && timeout -k 5 10 ./$w.bin < /dev/null > $w.m4 2> $w.m4.err )
     for m in m3 m4; do
         if cmp -s "$D/$w.want" "$D/$w.$m"; then arm "the $w witness $(desc $w) $m prints failed as sbl -bf does" ok
         else arm "the $w witness $m" "got [$(tr '\n' '|' < "$D/$w.$m")] $(head -1 "$D/$w.$m.err" | cut -c1-100)"; fi

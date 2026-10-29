@@ -690,7 +690,7 @@ def main(argv):
         for s in srcs:
             o = os.path.join(d, os.path.basename(s) + ".s")
             try:
-                r = subprocess.run([os.path.join(ROOT, "scrip"), "--compile", "-o", o, s],
+                r = subprocess.run([os.path.join(ROOT, "scrip"), "--compile", f"--out={o}", s],
                                    capture_output=True, timeout=120)
                 if r.returncode == 0 and os.path.exists(o) and os.path.getsize(o): paths.append(o)
             except Exception: pass

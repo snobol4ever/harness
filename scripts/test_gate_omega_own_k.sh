@@ -53,7 +53,7 @@ for fam in $CC_FAMILIES; do
         sno="$CC_WORK/${name}.sno"
         rungs_extract_origin "$origin" "$sno" >/dev/null 2>&1 || continue
         s="$CC_WORK/${name}.s"
-        "$SCRIP/scrip" --compile "$sno" -o "$s" < /dev/null >/dev/null 2>&1 && [ -s "$s" ] && CC_S_FILES+=("$s")
+        "$SCRIP/scrip" --compile "$sno" --out="$s" < /dev/null >/dev/null 2>&1 && [ -s "$s" ] && CC_S_FILES+=("$s")
     done < <(rungs_origins_of_family "$fam")
 done
 

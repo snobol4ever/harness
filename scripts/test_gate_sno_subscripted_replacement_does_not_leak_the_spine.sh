@@ -82,7 +82,7 @@ grade() {   # grade <label> <writer> <modes>
             got="$( cd "$t" && timeout -k 5 200 "$S" --run w.sno < /dev/null 2>&1 )"; rc=$?
         else
             rm -f "$t/p.s" "$t/p.o" "$t/p.bin"
-            if ! ( cd "$t" && timeout -k 5 200 "$S" --compile -o p.s w.sno >/dev/null 2>&1 ) \
+            if ! ( cd "$t" && timeout -k 5 200 "$S" --compile --out=p.s w.sno >/dev/null 2>&1 ) \
                || ! as --64 "$t/p.s" -o "$t/p.o" 2>/dev/null \
                || ! gcc "$t/p.o" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$t/p.bin" 2>/dev/null; then
                 FAIL=$((FAIL+1)); printf '  FAIL %-52s %s  mode-4 compile/link failed\n' "$label" "$m"; continue

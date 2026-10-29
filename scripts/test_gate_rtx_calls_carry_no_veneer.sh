@@ -41,17 +41,17 @@ n=0
 for le in snobol4:sno icon:icn prolog:pl pascal:pas raku:raku snocone:sc rebus:reb; do
     l=${le%%:*}; e=${le#*:}
     for f in $(find "$CORPUS/benchmarks/$l" -type f -name "*.$e" | sort | head -2); do
-        ( cd "$WORK" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$WORK/w$n.s" "$f" < /dev/null > /dev/null 2>&1 ) && n=$((n+1))
+        ( cd "$WORK" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$WORK/w$n.s" "$f" < /dev/null > /dev/null 2>&1 ) && n=$((n+1))
     done
 done
 [ "$n" -ge 10 ] || { echo "REFUSED(2): only $n witnesses compiled (floor 10)"; exit 2; }
 nb=0
 for f in $(find "$CORPUS/benchmarks/snocone/parsers" -maxdepth 1 -type f -name 'parser_*.sc' | sort); do
-    ( cd "$(dirname "$f")" && timeout -k 5 120 "$ROOT/scrip" --compile -o "$WORK/v$nb.s" "$(basename "$f")" < /dev/null > /dev/null 2>&1 ) && nb=$((nb+1))
+    ( cd "$(dirname "$f")" && timeout -k 5 120 "$ROOT/scrip" --compile --out="$WORK/v$nb.s" "$(basename "$f")" < /dev/null > /dev/null 2>&1 ) && nb=$((nb+1))
 done
 [ "$nb" -ge 7 ] || { echo "REFUSED(2): only $nb by-name witnesses (benchmarks/snocone/parsers) compiled (floor 7)"; exit 2; }
 plant_src=$(find "$CORPUS/benchmarks/icon" -type f -name "*.icn" | sort | head -1)
-( cd "$WORK" && SCRIP_RTX_PLANT_VENEER=1 timeout -k 5 60 "$ROOT/scrip" --compile -o "$WORK/plant.s" "$plant_src" < /dev/null > /dev/null 2>&1 ) \
+( cd "$WORK" && SCRIP_RTX_PLANT_VENEER=1 timeout -k 5 60 "$ROOT/scrip" --compile --out="$WORK/plant.s" "$plant_src" < /dev/null > /dev/null 2>&1 ) \
     || { echo "REFUSED(2): the plant witness did not compile"; exit 2; }
 python3 - "$WORK" "$n" <<'PY'
 import re, sys, glob, os

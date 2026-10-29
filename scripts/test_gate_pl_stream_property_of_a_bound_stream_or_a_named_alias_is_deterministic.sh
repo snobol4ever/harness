@@ -60,7 +60,7 @@ arm() {
     else echo "  $label RED: $n of 15 swipl lines missing or different"; diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") | sed 's/^/    /'; red=1; fi
 }
 arm m3 timeout -k 5 20 "$B/scrip" --run s.pl < /dev/null
-if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o s.s s.pl < /dev/null > /dev/null 2>&1 && [ -s s.s ] \
+if ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=s.s s.pl < /dev/null > /dev/null 2>&1 && [ -s s.s ] \
      && gcc -m64 -no-pie s.s -o s.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ); then
     arm m4 timeout -k 5 20 ./s.bin < /dev/null
 else echo "  m4 RED: the program did not compile or link in mode 4"; red=1; fi

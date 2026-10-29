@@ -56,7 +56,7 @@ SNO
 [ -s "$W/star.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 red=0
 ( cd "$W" && timeout -k 5 30 "$ROOT/scrip" star.sno < /dev/null > "$W/star.m3" 2>&1 ); cmp -s "$W/star.m3" "$W/star.ref" && echo "ok  (1) m3 = oracle" || { echo "RED (1) m3 differs from the oracle:"; diff "$W/star.ref" "$W/star.m3" | head -6; red=1; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/star.s" star.sno < /dev/null > /dev/null 2>&1 && gcc "$W/star.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/star.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/star.s" star.sno < /dev/null > /dev/null 2>&1 && gcc "$W/star.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/star.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
 ( cd "$W" && timeout -k 5 30 ./star.bin < /dev/null > "$W/star.m4" 2>&1 ); cmp -s "$W/star.m4" "$W/star.ref" && echo "ok  (1) m4 = oracle" || { echo "RED (1) m4 differs from the oracle:"; diff "$W/star.ref" "$W/star.m4" | head -6; red=1; }
 hits=$( cd "$W" && timeout -k 5 300 gdb -q -batch -ex 'set breakpoint pending on' -ex 'break rt_proc_find' -ex 'ignore 1 100000000' -ex 'run < /dev/null > /dev/null 2>&1' -ex 'info breakpoints' ./star.bin 2>&1 | grep -o 'already hit [0-9]* time' | grep -o '[0-9]*' | head -1 )
 [ -n "$hits" ] || { echo "REFUSED(2): gdb did not report a hit count for rt_proc_find"; exit 2; }

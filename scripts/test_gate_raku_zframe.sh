@@ -56,7 +56,7 @@ else
     FAIL=1
 fi
 A4S=$(mktemp /tmp/rk_zc8_XXXXXX.s); A4B=$(mktemp /tmp/rk_zc8_XXXXXX.bin)
-if timeout -k 5 20 "$SCRIP" --compile -o "$A4S" "$W2" >/dev/null 2>&1 \
+if timeout -k 5 20 "$SCRIP" --compile --out="$A4S" "$W2" >/dev/null 2>&1 \
    && gcc -m64 -no-pie "$A4S" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -lm -lpthread -o "$A4B" >/dev/null 2>&1; then
     M4OUT=$(timeout -k 5 8 "$A4B" 2>/dev/null </dev/null); M4RC=$?
     if [ "$M4RC" = "0" ] && [ "$M4OUT" = "42" ]; then

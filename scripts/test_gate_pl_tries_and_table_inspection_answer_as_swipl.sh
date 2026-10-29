@@ -109,7 +109,7 @@ tables(0)
 [1-2,1-3,2-3]
 REF
 ( cd "$D" && timeout -k 5 60 "$B/scrip" g.pl < /dev/null > g.m3 2>/dev/null )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o g.s g.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl: mode 4 did not build"
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=g.s g.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl: mode 4 did not build"
 ( cd "$D" && timeout -k 5 60 ./g.bin < /dev/null > g.m4 2>/dev/null )
 red=0
 for m in m3 m4; do

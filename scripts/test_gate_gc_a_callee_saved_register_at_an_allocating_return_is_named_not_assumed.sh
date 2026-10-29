@@ -222,7 +222,7 @@ END
 EOF
 asm=""
 for w in w.icn w.sno w.pl w.sc w.raku w.pas w.reb w.defer.sno; do
-    if timeout -k 5 120 "$SCRIP" --compile -o "$T/$w.s" "$T/$w" </dev/null >/dev/null 2>&1 && [ -s "$T/$w.s" ]; then asm="$asm $T/$w.s"
+    if timeout -k 5 120 "$SCRIP" --compile --out="$T/$w.s" "$T/$w" </dev/null >/dev/null 2>&1 && [ -s "$T/$w.s" ]; then asm="$asm $T/$w.s"
     else echo "  arm 2 RED ($w: mode 4 did not emit asm -- this frontend could not be censused)"; RC=1; fi
 done
 nasm=$(echo $asm | wc -w)

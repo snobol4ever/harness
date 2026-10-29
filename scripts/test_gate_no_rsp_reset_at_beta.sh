@@ -19,7 +19,7 @@ bash "$HERE/util_spine_population.sh" --corpus "$ROOT/corpus" ${L:+--lang "$L"} 
 i=0; un=0
 while IFS=$'\t' read -r lang f; do
     i=$((i+1)); mkdir -p "$T/$lang"
-    ( cd "$(dirname "$f")" && timeout -k 5 300 "$SC" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$T/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || { rm -f "$T/$lang/$i.s"; un=$((un+1)); echo "  unmeasured: $f"; }
+    ( cd "$(dirname "$f")" && timeout -k 5 300 "$SC" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) --out="$T/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || { rm -f "$T/$lang/$i.s"; un=$((un+1)); echo "  unmeasured: $f"; }
 done < "$T/list"
 tb=0; tf=0; tp=0
 for d in "$T"/*/; do

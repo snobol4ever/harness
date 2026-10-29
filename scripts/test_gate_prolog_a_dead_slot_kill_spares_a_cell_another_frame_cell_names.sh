@@ -28,7 +28,7 @@ for mode in m3 m4; do
     if [ "$mode" = m3 ]; then
         ( cd "$T" && timeout 60 "$ROOT/scrip" "$WIT" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
     else
-        ( cd "$T" && timeout 60 "$ROOT/scrip" --compile -o "$T/w.s" "$WIT" < /dev/null > /dev/null 2> "$T/cc.err" ) || { echo "⛔ REFUSE(2) [$G]: the m4 compile failed"; sed -n '1,3p' "$T/cc.err"; exit 2; }
+        ( cd "$T" && timeout 60 "$ROOT/scrip" --compile --out="$T/w.s" "$WIT" < /dev/null > /dev/null 2> "$T/cc.err" ) || { echo "⛔ REFUSE(2) [$G]: the m4 compile failed"; sed -n '1,3p' "$T/cc.err"; exit 2; }
         gcc "$T/w.s" -o "$T/w.bin" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$T/l.err" || { echo "⛔ REFUSE(2) [$G]: the m4 link failed"; exit 2; }
         ( cd "$T" && timeout 60 "$T/w.bin" < /dev/null > "$T/$mode.out" 2> "$T/$mode.err" ); rc=$?
     fi

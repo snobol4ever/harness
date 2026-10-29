@@ -69,7 +69,7 @@ for n in $NAMES; do
     m3="?"; if timeout -k 5 60s "$SCRIP" "$PROBE/$n.sno" < /dev/null > "$W/m3.out" 2>/dev/null; then
         cmp -s "$W/m3.out" "$ref" && m3=PASS || m3=WRONG; else m3=CRASH; fi
     amb="?"; minr="?"; vg="?"
-    if timeout -k 5 60s "$SCRIP" --compile -o "$W/$n.s" "$PROBE/$n.sno" < /dev/null >/dev/null 2>&1 \
+    if timeout -k 5 60s "$SCRIP" --compile --out="$W/$n.s" "$PROBE/$n.sno" < /dev/null >/dev/null 2>&1 \
        && gcc -no-pie "$W/$n.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/$n.bin" 2>/dev/null; then
         if bash -c 'timeout -k 5 60s "$0" < /dev/null > "$1" 2>/dev/null' "$W/$n.bin" "$W/a.out" 2>/dev/null; then cmp -s "$W/a.out" "$ref" && amb=PASS || amb=WRONG; else amb=CRASH; fi
         bad=0; for i in $(seq "$REPS"); do

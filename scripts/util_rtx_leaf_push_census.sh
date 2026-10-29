@@ -50,7 +50,7 @@ n=0
 for le in snobol4:sno icon:icn prolog:pl pascal:pas raku:raku snocone:sc rebus:reb; do
     l=${le%%:*}; e=${le#*:}
     for f in $(find "$CORPUS/benchmarks/$l" -type f -name "*.$e" | sort | head -2); do
-        ( cd "$WORK/wit" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$WORK/wit/w$n.s" "$f" < /dev/null > /dev/null 2>&1 ) && n=$((n+1))
+        ( cd "$WORK/wit" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$WORK/wit/w$n.s" "$f" < /dev/null > /dev/null 2>&1 ) && n=$((n+1))
     done
 done
 [ "$n" -ge 10 ] || { echo "REFUSED(2): only $n fresh witnesses compiled (floor 10)"; exit 2; }

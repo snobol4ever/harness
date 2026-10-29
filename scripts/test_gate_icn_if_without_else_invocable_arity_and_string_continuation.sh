@@ -59,7 +59,7 @@ run_case() { # name <<program
     exp="$(cat "$orc")"
     scrip3="$(cd "$WORK" && timeout -k 5 20 "$SCRIP" --run "$src" < /dev/null 2>&1)"
     local m4bin="$WORK/$name.bin" m4s="$WORK/$name.s" ok4=1
-    if ! ( cd "$WORK" && timeout -k 5 40 "$SCRIP" --compile "$src" -o "$m4s" < /dev/null ) >/dev/null 2>&1 \
+    if ! ( cd "$WORK" && timeout -k 5 40 "$SCRIP" --compile "$src" --out="$m4s" < /dev/null ) >/dev/null 2>&1 \
        || ! gcc -no-pie "$m4s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -o "$m4bin" 2>/dev/null; then
         ok4=0; scrip4="<compile/link failed>"
     else

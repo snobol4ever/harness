@@ -57,7 +57,7 @@ case "$ORA" in *"ERROR 174"*) ;; *) refuse "the oracle raised something other th
 echo "  ARM 1 oracle expectation cut at run time: $ORA"
 graded=$((graded+1))
 ( cd "$T" && timeout -k 5 30 "$SCRIP" --run w.sno < w.in > m3.raw 2>&1 )
-( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno -o w.s > cc.log 2>&1 ) || refuse "mode-4 compile of the witness failed -- cannot measure"
+( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno --out=w.s > cc.log 2>&1 ) || refuse "mode-4 compile of the witness failed -- cannot measure"
 ( cd "$T" && gcc -c w.s -o w.o >> cc.log 2>&1 && gcc w.o -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o w.bin >> cc.log 2>&1 ) || refuse "mode-4 link of the witness failed -- cannot measure"
 ( cd "$T" && timeout -k 5 30 ./w.bin < w.in > m4.raw 2>&1 )
 python3 "$VOICE" spitbol < "$T/m3.raw" > "$T/m3.out" || refuse "the error-voice renderer refused on the mode-3 capture"
@@ -67,7 +67,7 @@ arm "m4-raises-174" "$ORA" "$(grep -m1 -E '^w\.sno\([0-9]+\) : ERROR [0-9]+ -- '
 arm "m3-keeps-output-before-the-raise" "hello world" "$(head -2 "$T/m3.out" | tr '\n' ' ' | sed 's/ $//')"
 arm "m4-keeps-output-before-the-raise" "hello world" "$(head -2 "$T/m4.out" | tr '\n' ' ' | sed 's/ $//')"
 ( cd "$T" && timeout -k 5 30 "$SCRIP" --run d.sno < w.in > d3.raw 2>&1 )
-( cd "$T" && timeout -k 5 30 "$SCRIP" --compile d.sno -o d.s > dcc.log 2>&1 && gcc -c d.s -o d.o >> dcc.log 2>&1 && gcc d.o -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o d.bin >> dcc.log 2>&1 && timeout -k 5 30 ./d.bin < w.in > d4.raw 2>&1 ) || refuse "the detector witness would not build -- cannot prove the arms discriminate"
+( cd "$T" && timeout -k 5 30 "$SCRIP" --compile d.sno --out=d.s > dcc.log 2>&1 && gcc -c d.s -o d.o >> dcc.log 2>&1 && gcc d.o -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o d.bin >> dcc.log 2>&1 && timeout -k 5 30 ./d.bin < w.in > d4.raw 2>&1 ) || refuse "the detector witness would not build -- cannot prove the arms discriminate"
 arm "detector-no-rewind-raises-nothing" "m3=0 m4=0" "m3=$(grep -c 'ERROR ' "$T/d3.raw" || true) m4=$(grep -c 'ERROR ' "$T/d4.raw" || true)"
 echo "graded=$graded FAIL=$fail  (expectation cut from $SBL -bf at run time; SCRIP's own voice rendered through util_render_error_voice.py spitbol, never taught the oracle's shape. SPITBOL's termination accounting -- memory used/left, REGENERATIONS, stmts executed, execution time -- is deliberately NOT graded: it is what dead-pinned csnobol4_suite/rewind1 and it is state no correct implementation reproduces.)"
 [ "$graded" = 6 ] || refuse "expected 6 arms, graded $graded"

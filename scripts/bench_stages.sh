@@ -42,7 +42,7 @@ for f in "${POP[@]}"; do
   SWD="$(declared_switches_beside "$f")" && OAD="$(declared_oracle_args_beside "$f")" || { echo "⛔ $k: declared sizes refused"; RC=1; continue; }
   "${GEN[@]}" -o "$W/$k.once.$EXT" "$f" 2> "$W/gen.err" || { printf '%-34s %-7s %s\n' "$k" all "UNMEASURED -- the generator refused: $(head -1 "$W/gen.err" | cut -c1-120)"; RC=1; continue; }
   if [ -n "$PROG" ]; then (cd "$W/cwd" && timeout -k 5 300 "$RBIN" $(sbl_lang_flags 2>/dev/null) $OAD "$f" < "$IN" > "$W/want" 2>/dev/null); else cp "$D/$k.ref" "$W/want"; fi
-  (cd "$W/cwd" && "$SCRIP" --compile -o "$W/$k.s" "$W/$k.once.$EXT" < /dev/null 2> "$W/c.err") && gcc "$W/$k.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/$k.m4" 2>> "$W/c.err" || { echo "⛔ $k m4 does not build: $(head -1 "$W/c.err" | cut -c1-120)"; RC=1; }
+  (cd "$W/cwd" && "$SCRIP" --compile --out="$W/$k.s" "$W/$k.once.$EXT" < /dev/null 2> "$W/c.err") && gcc "$W/$k.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/$k.m4" 2>> "$W/c.err" || { echo "⛔ $k m4 does not build: $(head -1 "$W/c.err" | cut -c1-120)"; RC=1; }
   for e in "$RIVAL" m3 m4; do
     : > "$W/tot"; : > "$W/run"; : > "$W/oh"; chk=ok; bad=0; why=""
     for ((i=1;i<=REPS;i++)); do

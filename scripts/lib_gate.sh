@@ -210,7 +210,7 @@ gate_behaviour_signature() {
     for _w in "$_root"/../harness/scripts/fixtures/build_behaviour/*.icn "$_root"/../harness/scripts/fixtures/build_behaviour/*.sno "$_root"/../harness/scripts/fixtures/build_behaviour/*.pl; do
         [ -f "$_w" ] || continue
         _n=$((_n+1)); _s="$_tmp/$(basename "$_w").s"
-        ( env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS -u SCRIP_ZD_RTCHECK "$_bin" --compile -o "$_s" "$_w" </dev/null >/dev/null 2>&1; _x=$?; exit $_x; ) >/dev/null 2>&1; _r=$?   # the subshell keeps an abort's job notice out of the caller's output
+        ( env -u SCRIP_SNO_STMTKW -u SCRIP_DIAG -u SCRIP_DIAG_REGS -u SCRIP_ZD_RTCHECK "$_bin" --compile --out="$_s" "$_w" </dev/null >/dev/null 2>&1; _x=$?; exit $_x; ) >/dev/null 2>&1; _r=$?   # the subshell keeps an abort's job notice out of the caller's output
         if [ "$_r" = 0 ] && [ -s "$_s" ]; then _emit=$((_emit+1)); else printf '# build-behaviour witness %s did not compile, rc=%s\n' "$(basename "$_w")" "$_r" > "$_s"; fi
     done
     if [ "$_n" = 0 ] || [ "$_emit" = 0 ]; then rm -rf "$_tmp"; return 1; fi

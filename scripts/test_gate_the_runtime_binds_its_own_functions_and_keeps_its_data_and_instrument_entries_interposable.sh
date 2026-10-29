@@ -54,7 +54,7 @@ for s in $names; do
     [ "$n" -ge 1 ] && say "GREEN arm 3: $s stays interposable ($n dynamic relocation(s))" || say "RED   arm 3: $s is bound inside the runtime -- the instrument that interposes it reads nothing"
 done
 printf 'procedure main()\n   write("hi");\nend\n' > "$D/h.icn"
-"$B/scrip" --compile -o "$D/h.s" "$D/h.icn" < /dev/null > /dev/null 2>&1 || refuse "the hello did not compile"
+"$B/scrip" --compile --out="$D/h.s" "$D/h.icn" < /dev/null > /dev/null 2>&1 || refuse "the hello did not compile"
 gcc "$D/h.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$D/h.pie" 2> /dev/null || refuse "the hello did not link -pie"
 gcc -no-pie "$D/h.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$D/h.nopie" 2> /dev/null || refuse "the hello did not link -no-pie"
 [ "$("$D/h.pie" < /dev/null)" = hi ] || refuse "the -pie hello did not print hi"
@@ -86,7 +86,7 @@ __attribute__((destructor)) static void rep(void) { fprintf(stderr, "TSHIM %ld\n
 EOF
 gcc -shared -fPIC -o "$D/tshim.so" "$D/tshim.c" -ldl 2> /dev/null || refuse "the rt_time_ns shim did not build"
 printf "\tT1 = TIME()\n\tT2 = TIME()\n\tOUTPUT = 'ok'\nEND\n" > "$D/t.sno"
-"$B/scrip" --compile -o "$D/t.s" "$D/t.sno" < /dev/null > /dev/null 2>&1 || refuse "the TIME() witness did not compile"
+"$B/scrip" --compile --out="$D/t.s" "$D/t.sno" < /dev/null > /dev/null 2>&1 || refuse "the TIME() witness did not compile"
 gcc "$D/t.s" -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o "$D/t.m4" 2> /dev/null || refuse "the TIME() witness did not link"
 m3=$(cd "$D" && LD_PRELOAD="$D/tshim.so" timeout -k 5 30 "$B/scrip" t.sno < /dev/null 2>&1 | sed -n 's/^TSHIM //p')
 m4=$(cd "$D" && LD_PRELOAD="$D/tshim.so" timeout -k 5 30 ./t.m4 < /dev/null 2>&1 | sed -n 's/^TSHIM //p')

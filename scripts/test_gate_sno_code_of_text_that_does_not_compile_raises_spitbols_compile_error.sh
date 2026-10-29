@@ -88,7 +88,7 @@ SNO
 RT="$B/out"
 run() {
     if [ "$1" = m3 ]; then (cd "$D" && timeout -k 5 20 "$B/scrip" "$2.sno" < "${3:-/dev/null}" 2>/dev/null)
-    else "$B/scrip" --compile -o "$D/$2.s" "$D/$2.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$2.bin" "$D/$2.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
+    else "$B/scrip" --compile --out="$D/$2.s" "$D/$2.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/$2.bin" "$D/$2.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null \
            || { echo "M4-BUILD-FAILED"; return; }
          (cd "$D" && timeout -k 5 20 "./$2.bin" < "${3:-/dev/null}" 2>/dev/null); fi
 }

@@ -30,7 +30,7 @@ end
 ICN
 ( cd "$T" && "$IC" -s -o w.ox w.icn >/dev/null 2>&1 && ./w.ox > oracle.txt 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: icont/iconx did not run the witness"; exit 2; }
 "$S" "$T/w.icn" > "$T/m3.txt" 2>&1 < /dev/null || { echo "⛔ GATE REFUSE(2) [$G]: m3 did not run"; exit 2; }
-"$S" --compile -o "$T/w.s" "$T/w.icn" < /dev/null >/dev/null 2>&1 && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+"$S" --compile --out="$T/w.s" "$T/w.icn" < /dev/null >/dev/null 2>&1 && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
     || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build"; exit 2; }
 "$T/w.x" > "$T/m4.txt" 2>&1 < /dev/null || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not run"; exit 2; }
 red=0
@@ -48,7 +48,7 @@ end
 ICN
 ( cd "$T" && "$IC" -s -o s.ox s.icn >/dev/null 2>&1 && ./s.ox > soracle.txt 2>&1 ); [ -s "$T/soracle.txt" ] || { echo "⛔ GATE REFUSE(2) [$G]: icont/iconx did not run the stop witness"; exit 2; }
 "$S" "$T/s.icn" > "$T/s3.txt" 2>&1 < /dev/null
-"$S" --compile -o "$T/s.s" "$T/s.icn" < /dev/null >/dev/null 2>&1 && gcc -no-pie -o "$T/s.x" "$T/s.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+"$S" --compile --out="$T/s.s" "$T/s.icn" < /dev/null >/dev/null 2>&1 && gcc -no-pie -o "$T/s.x" "$T/s.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
     || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build the stop witness"; exit 2; }
 "$T/s.x" > "$T/s4.txt" 2>&1 < /dev/null
 cmp -s "$T/soracle.txt" "$T/s3.txt" || { echo "  stop: m3 merged output differs from iconx:"; diff "$T/soracle.txt" "$T/s3.txt" | head -6; red=1; }

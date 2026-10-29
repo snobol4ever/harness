@@ -27,7 +27,7 @@ arm() { n="$1"; body="$2"; printf "\tS = 'hello'\n%b\nEND\n" "$body" > "$T/$n.sn
   ran=$((ran + 1))
   timeout -k 5 8s ./scrip "$T/$n.sno" </dev/null > "$T/$n.m3" 2>&1
   cmp -s "$T/$n.ref" "$T/$n.m3" || { echo "⛔ RED $n m3 (< oracle, > scrip):"; diff "$T/$n.ref" "$T/$n.m3" | head -4; rc=1; }
-  if ./scrip --compile -o "$T/$n.s" "$T/$n.sno" </dev/null >/dev/null 2>&1 && as -o "$T/$n.o" "$T/$n.s" 2>/dev/null && gcc -o "$T/$n.bin" "$T/$n.o" out/libscrip_rt.so -Wl,-rpath,"$PWD/out" 2>/dev/null; then
+  if ./scrip --compile --out="$T/$n.s" "$T/$n.sno" </dev/null >/dev/null 2>&1 && as -o "$T/$n.o" "$T/$n.s" 2>/dev/null && gcc -o "$T/$n.bin" "$T/$n.o" out/libscrip_rt.so -Wl,-rpath,"$PWD/out" 2>/dev/null; then
     timeout -k 5 8s "$T/$n.bin" </dev/null > "$T/$n.m4" 2>&1
     cmp -s "$T/$n.ref" "$T/$n.m4" || { echo "⛔ RED $n m4 (< oracle, > scrip):"; diff "$T/$n.ref" "$T/$n.m4" | head -4; rc=1; }
   else echo "⛔ RED $n m4: compile/assemble/link failed -- a BUILD failure, not a run diff"; rc=1; fi; }

@@ -29,7 +29,7 @@ ORA="$(cd "$T" && timeout -k 5 20 "$SBL" -bf w.sno < in.txt 2>&1 | grep -m1 '^IN
 [ "$ORA" = "INPUT = 'second'" ] || refuse "the oracle's dump line moved: [$ORA] -- re-measure rather than score"
 graded=$((graded+1)); echo "  ARM 1 oracle: [$ORA]"
 M3="$(cd "$T" && timeout -k 5 20 "$SCRIP" w.sno < in.txt 2>&1 | grep -m1 '^INPUT = ')"
-( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno -o w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build failed -- a toolchain failure, not a verdict"
+( cd "$T" && timeout -k 5 30 "$SCRIP" --compile w.sno --out=w.s > /dev/null 2>&1 && gcc -no-pie w.s -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o w.bin > /dev/null 2>&1 ) || refuse "mode-4 build failed -- a toolchain failure, not a verdict"
 M4="$(cd "$T" && timeout -k 5 20 ./w.bin < in.txt 2>&1 | grep -m1 '^INPUT = ')"
 arm "m3-dumps-the-last-record" "$ORA" "$M3"
 arm "m4-dumps-the-last-record" "$ORA" "$M4"

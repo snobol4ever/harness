@@ -39,7 +39,7 @@ EOP
 RX='Fail: n[0-9]+_unify_(const|struct) -> app(/|.2F)3_step'
 n3=$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 60 "$SCRIP" w_trace.pl </dev/null 2>&1 | grep -cE "$RX")
 n4=REFUSED
-if (cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile -o w_trace.s w_trace.pl </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/w_trace.s" -o "$TMPD/w_trace.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null; then
+if (cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile --out=w_trace.s w_trace.pl </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/w_trace.s" -o "$TMPD/w_trace.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null; then
     n4=$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 60 ./w_trace.bin </dev/null 2>&1 | grep -cE "$RX"); fi
 if [ "$n3" = 0 ] && [ "$n4" = 0 ]; then echo "  ok  arm 1: the traced app([1,2],[3],L), fail shows no head failure inside app/3 in either mode"
 else echo "  RED arm 1: head failures inside app/3 in the trace: m3=$n3 m4=$n4 (clause 1 tried on a list, or clause 2 on [] after a redo)"; red=$((red+1)); fi
@@ -63,16 +63,16 @@ EOP
 RX2='Fail: n[0-9]+_unify_(const|struct) -> q(/|.2F)2_step'
 m3=$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 60 "$SCRIP" w_v2.pl </dev/null 2>&1 | grep -cE "$RX2")
 m4=REFUSED
-if (cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile -o w_v2t.s w_v2.pl </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/w_v2t.s" -o "$TMPD/w_v2t.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null; then
+if (cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 120 "$SCRIP" --compile --out=w_v2t.s w_v2.pl </dev/null >/dev/null 2>&1) && gcc -m64 -no-pie "$TMPD/w_v2t.s" -o "$TMPD/w_v2t.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null; then
     m4=$(cd "$TMPD" && SCRIP_PL_TRACE=1 timeout -k 5 60 ./w_v2t.bin </dev/null 2>&1 | grep -cE "$RX2"); fi
 if [ "$m3" = 0 ] && [ "$m4" = 0 ]; then echo "  ok  arm 1b: V2 -- the traced q/2 calls show no head failure of a clause outside the key's set in either mode"
 else echo "  RED arm 1b: head failures inside q/2 in the trace: m3=$m3 m4=$m4 (a multi-candidate key walked clauses outside its set)"; red=$((red+1)); fi
-timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/nrev.s" "$B/nrev.pl" </dev/null 2>"$TMPD/err" || refuse "nrev.pl did not compile: $(head -c 200 "$TMPD/err")"
+timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/nrev.s" "$B/nrev.pl" </dev/null 2>"$TMPD/err" || refuse "nrev.pl did not compile: $(head -c 200 "$TMPD/err")"
 sa=$(grep -cE '^app\$2F3_switch:' "$TMPD/nrev.s"); sn=$(grep -cE '^nrev\$2F2_switch:' "$TMPD/nrev.s")
 if [ "$sa" -ge 1 ] && [ "$sn" -ge 1 ]; then echo "  ok  arm 2: nrev.pl's mode-4 text carries the switch for app/3 and nrev/2"
 else echo "  RED arm 2: nrev.pl's mode-4 text: app/3 switch=$sa nrev/2 switch=$sn"; red=$((red+1)); fi
-(cd "$TMPD" && timeout -k 5 120 "$SCRIP" --trace --compile -o w_tr.s w_trace.pl </dev/null >/dev/null 2>&1) || refuse "w_trace.pl did not compile under --trace"
-(cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile -o w_nt.s w_trace.pl </dev/null >/dev/null 2>&1) || refuse "w_trace.pl did not compile"
+(cd "$TMPD" && timeout -k 5 120 "$SCRIP" --trace --compile --out=w_tr.s w_trace.pl </dev/null >/dev/null 2>&1) || refuse "w_trace.pl did not compile under --trace"
+(cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile --out=w_nt.s w_trace.pl </dev/null >/dev/null 2>&1) || refuse "w_trace.pl did not compile"
 swblk() { awk '/^app\$2F3_switch:/{f=1; next} f && /^app\$2F3_(ixdet|ixfail|res|β)/{exit} f' "$1"; }
 tdet=$(swblk "$TMPD/w_tr.s" | grep -cE 'je +app\$2F3_(alt|ixdet)'); tchain=$(swblk "$TMPD/w_tr.s" | grep -cE 'je +n[0-9]+_'); ndet=$(swblk "$TMPD/w_nt.s" | grep -cE 'je +app\$2F3_alt1')
 if [ "$tdet" = 0 ] && [ "$tchain" -ge 1 ] && [ "$ndet" -ge 1 ]; then echo "  ok  arm 2b: under --trace the wrapper reads VAR and the list key takes the chain (no DET stub); untraced, it enters app/3's last alternative"
@@ -200,7 +200,7 @@ for w in w_keys w_var w_cut w_lists w_misc w_v2; do
     for mode in m3 m4; do
         if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 60 "$SCRIP" "$w.pl" </dev/null 2>"$TMPD/err")"; rc=$?
         else
-            timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED $w $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
+            timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/$w.s" "$TMPD/$w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED $w $mode: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
             gcc -m64 -no-pie "$TMPD/$w.s" -o "$TMPD/$w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || { echo "  RED $w $mode: the assembler or linker refused: $(grep -m1 -E 'Error|error' "$TMPD/err" | head -c 200)"; red=$((red+1)); continue; }
             got="$(cd "$TMPD" && timeout -k 5 60 "./$w.bin" </dev/null 2>"$TMPD/err")"; rc=$?
             rm -f "$TMPD/$w.s" "$TMPD/$w.bin"

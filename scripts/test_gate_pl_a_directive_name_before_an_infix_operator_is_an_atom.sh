@@ -95,7 +95,7 @@ fails=0; graded=0
 for w in a b; do
     (cd "$d" && timeout -k 5 20 "$SCRIP" $w.pl </dev/null 2>/dev/null) > "$d/$w.m3"; rc=$?; graded=$((graded + 1))
     if [ $rc -ne 0 ] || ! cmp -s "$d/$w.want" "$d/$w.m3"; then fails=$((fails + 1)); echo "  witness $w m3 rc=$rc differs:"; diff "$d/$w.want" "$d/$w.m3" | head -12; fi
-    if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile -o $w.s $w.pl </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie $w.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o $w.bin 2>/dev/null); then
+    if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile --out=$w.s $w.pl </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie $w.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o $w.bin 2>/dev/null); then
         (cd "$d" && timeout -k 5 20 ./$w.bin </dev/null 2>/dev/null) > "$d/$w.m4"; rc=$?; graded=$((graded + 1))
         if [ $rc -ne 0 ] || ! cmp -s "$d/$w.want" "$d/$w.m4"; then fails=$((fails + 1)); echo "  witness $w m4 rc=$rc differs:"; diff "$d/$w.want" "$d/$w.m4" | head -12; fi
     else graded=$((graded + 1)); fails=$((fails + 1)); echo "  witness $w m4 did not compile or link"; fi

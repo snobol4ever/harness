@@ -66,7 +66,7 @@ for w in $wits; do
     n=$((n + 1))
     ( cd "$dir" && timeout -k 5 120 "$SC/scrip" "$name.$ext" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
-    if ( cd "$dir" && timeout -k 5 300 "$SC/scrip" --compile -o "$o.s" "$name.$ext" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
+    if ( cd "$dir" && timeout -k 5 300 "$SC/scrip" --compile --out="$o.s" "$name.$ext" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
         ( cd "$dir" && timeout -k 5 120 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc)"; fi

@@ -33,7 +33,7 @@ S1="$HERE/fixtures/hb_pl_attvar_wakes_inside_a_multi_goal_branch.pl"
 W="$(mktemp -d "${TMPDIR:-/tmp}/plattvb.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
 cp "$S1" "$W/r.pl"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then sed '1d' "${S1%.pl}.ref" > "$W/r.ref"; else cp "${S1%.pl}.ref" "$W/r.ref"; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
 gcc -o "$W/r.bin" "$W/r.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/r.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link"; exit 2; }
 run_arm() {
     local n="$1" mode="$2" stress="$3" rc

@@ -49,7 +49,7 @@ REF
 red=0
 for p in swi gnu; do
     ( cd "$D" && timeout -k 5 60 "$B/scrip" $p.pl < /dev/null > $p.m3 2>&1 )
-    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o $p.s $p.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie $p.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $p.bin 2>/dev/null ) || refuse "$p.pl: mode 4 did not build"
+    ( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=$p.s $p.pl < /dev/null > /dev/null 2>&1 && gcc -no-pie $p.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $p.bin 2>/dev/null ) || refuse "$p.pl: mode 4 did not build"
     ( cd "$D" && timeout -k 5 60 ./$p.bin < /dev/null > $p.m4 2>&1 )
     for m in m3 m4; do
         if cmp -s "$D/$p.ref" "$D/$p.$m"; then echo "  ok   $p $m: answers as its dialect's oracle"

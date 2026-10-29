@@ -79,7 +79,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 ops); arm "m3: all ten reachable unused operators call their OPSYN'd function" "$(same "$rc" ops.m3 ops.oracle)"
-rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o o.s ops.sno < /dev/null > /dev/null 2>&1 && gcc o.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o o.bin > /dev/null 2>&1 && timeout -k 5 10 ./o.bin < /dev/null > ops.m4 2>&1; echo $? )
+rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=o.s ops.sno < /dev/null > /dev/null 2>&1 && gcc o.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o o.bin > /dev/null 2>&1 && timeout -k 5 10 ./o.bin < /dev/null > ops.m4 2>&1; echo $? )
 arm "m4: all ten reachable unused operators call their OPSYN'd function" "$(same "$rc" ops.m4 ops.oracle)"
 rc=$(m3 bang); arm "m3: unary ! in a concatenation, an argument and nested" "$(same "$rc" bang.m3 bang.oracle)"
 rc=$(m3 ctl); arm "CONTROL: unary ! with no OPSYN raises error 29 after 'before'" "$( { [ "$rc" != 0 ] && head -1 "$T/ctl.m3" | grep -qx before && grep -q 'error 29' "$T/ctl.m3" && ! grep -qx after "$T/ctl.m3"; } && echo ok || echo "rc=$rc [$(tr '\n' '|' < "$T/ctl.m3" | head -c 120)]")"

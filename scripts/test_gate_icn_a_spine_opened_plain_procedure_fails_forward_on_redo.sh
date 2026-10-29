@@ -22,7 +22,7 @@ WIT="$HERE/gc_witnesses/hb_cv_spine_plain_redo.icn"; REF="$HERE/gc_witnesses/hb_
 bash "$HERE/util_require_fresh.sh" --gate "$G" "$ROOT/scrip" "$ROOT/out/libscrip_rt.so" || exit 2
 W="$(mktemp -d "${TMPDIR:-/tmp}/cvspine.XXXXXX")" || exit 2
 trap 'rm -rf "$W"' EXIT
-( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile -o cv.s "$WIT" < /dev/null 2>c.err && gcc cv.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o cv 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
+( cd "$W" && timeout -k 5 120 "$ROOT/scrip" --compile --out=cv.s "$WIT" < /dev/null 2>c.err && gcc cv.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o cv 2>l.err ) || { echo "GATE UNPROVEN(2) [$G]: mode-4 compile or link failed: $(head -c 200 "$W/c.err" "$W/l.err" 2>/dev/null | tr '\n' ' ')"; exit 2; }
 BAND="${CVSPINE_BAND:-0 1 3 5}"
 want="$(cat "$REF")"; bad=0; runs=0
 for mode in m3 m4; do line="  $mode"

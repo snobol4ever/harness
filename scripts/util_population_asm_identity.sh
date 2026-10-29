@@ -82,7 +82,7 @@ def declared(prog):
 
 def compile_with(binary, prog, ca, out):
     try:
-        c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), 'timeout', str(timeout), binary, '--compile'] + ca + [os.path.basename(prog), '-o', out],
+        c = subprocess.run(['bash', os.path.join(HERE, 'util_cc_slot.sh'), 'timeout', str(timeout), binary, '--compile'] + ca + [os.path.basename(prog), f'--out={out}'],
                            cwd=os.path.dirname(prog), stdin=subprocess.DEVNULL, capture_output=True)
     except OSError as e:
         return None, 'compile could not start: %s' % e

@@ -27,7 +27,7 @@ if [ "$KIND" = demo ]; then
   ICONT=/home/resources/icon-master/bin/icont; [ -x "$ICONT" ] || refuse "no icont at $ICONT"; WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || refuse "bench_rusage did not build"
   MODS=$(sed -n 's/^[[:space:]]*link[[:space:]]*"\([^"]*\)".*$/\1/p' "$D/jtran.icn" | sed 's|.*/||' | sed "s|^|$PKG/|; s|$|.icn|" | tr '\n' ' ')
   ( cd "$T" && "$ICONT" -s -o "$T/jtran.oracle" $MODS ) > "$T/icont.log" 2>&1 || refuse "icont did not build the oracle"
-  ( cd "$D" && "$ROOT/scrip" --compile -o "$T/jtran.s" jtran.icn < /dev/null ) > "$T/m4c.log" 2>&1 && gcc "$T/jtran.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/jtran.m4" 2>> "$T/m4c.log" || refuse "jtran did not build in mode 4"
+  ( cd "$D" && "$ROOT/scrip" --compile --out="$T/jtran.s" jtran.icn < /dev/null ) > "$T/m4c.log" 2>&1 && gcc "$T/jtran.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/jtran.m4" 2>> "$T/m4c.log" || refuse "jtran did not build in mode 4"
   cp "$PKG/gen_bc.icn" "$T/gen_bc.icn"; MODE="${BAR_MODE:-m4}"
   best() { local tag=$1 dir=$2; shift 2; local b=999999999999 i e; for ((i=0;i<${BAR_REPS:-5};i++)); do ( cd "$dir" && "$WRAP" timeout -k 5 600 "$@" > "$T/$tag.out" 2> "$T/$tag.err" ); e=$(grep -oE 'elapsed_ns=[0-9]+' "$T/$tag.err" | tail -1 | cut -d= -f2); [ -n "$e" ] && [ "$e" -lt "$b" ] && b=$e; done; echo "$b"; }
   so=$(best oracle "$T" "$T/jtran.oracle" preproc "$T/gen_bc.icn" : stdout)

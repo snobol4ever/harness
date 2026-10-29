@@ -43,7 +43,7 @@ END
 SNO
 (cd "$T" && timeout -k 5 20 "$SBL" $(sbl_lang_flags) w.sno < /dev/null > ref 2>&1); [ -s "$T/ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for the witness"; exit 2; }
 timeout -k 5 20 "$SCRIP" "$T/w.sno" < /dev/null > "$T/m3" 2>&1
-timeout -k 5 20 "$SCRIP" --compile -o "$T/w.s" "$T/w.sno" < /dev/null > "$T/cc.err" 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile failed: $(head -1 "$T/cc.err" | cut -c1-120)"; exit 2; }
+timeout -k 5 20 "$SCRIP" --compile --out="$T/w.s" "$T/w.sno" < /dev/null > "$T/cc.err" 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile failed: $(head -1 "$T/cc.err" | cut -c1-120)"; exit 2; }
 gcc -m64 -no-pie "$T/w.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$T/w.bin" 2>> "$T/cc.err" || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 link failed"; exit 2; }
 timeout -k 5 20 "$T/w.bin" < /dev/null > "$T/m4" 2>&1
 RC=0

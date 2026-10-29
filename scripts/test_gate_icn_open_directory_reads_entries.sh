@@ -88,7 +88,7 @@ for w in armA armB; do
     if [ "$got" != "$want" ] || [ "$grc" != "$wrc" ]; then
         echo "  ⛔ RED m3 $w: rc=$grc (oracle rc=$wrc)"; diff <(printf '%s\n' "$want") <(printf '%s\n' "$got") | sed 's/^/      /'; bad=1
     fi
-    if timeout -k 5 180 "$ROOT/scrip" --compile -o "$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
+    if timeout -k 5 180 "$ROOT/scrip" --compile --out="$d/$w.s" "$d/$w.icn" </dev/null >/dev/null 2>&1 \
        && gcc -m64 -no-pie "$d/$w.s" -o "$d/$w.m4" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then
         got=$( cd "$d/run" && timeout -k 5 30 "$d/$w.m4" </dev/null 2>/dev/null ); grc=$?
         graded=$((graded+1))

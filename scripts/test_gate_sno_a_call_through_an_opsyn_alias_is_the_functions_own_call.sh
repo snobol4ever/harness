@@ -68,7 +68,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 tr_UNCONS); arm "TRACE UNCONS m3: POP() and UNCONS() both traced as UNCONS" "$(same "$rc" tr_UNCONS.m3 tr_UNCONS.oracle)"
-rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile -o u.s tr_UNCONS.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o u.bin > /dev/null 2>&1 && timeout -k 5 10 ./u.bin < /dev/null > tr_UNCONS.m4 2>&1; echo $? )
+rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile --out=u.s tr_UNCONS.sno < /dev/null > /dev/null 2>&1 && gcc u.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o u.bin > /dev/null 2>&1 && timeout -k 5 10 ./u.bin < /dev/null > tr_UNCONS.m4 2>&1; echo $? )
 arm "TRACE UNCONS m4: POP() and UNCONS() both traced as UNCONS" "$(same "$rc" tr_UNCONS.m4 tr_UNCONS.oracle)"
 rc=$(m3 tr_POP); arm "TRACE POP m3: both calls traced, as UNCONS" "$(same "$rc" tr_POP.m3 tr_POP.oracle)"
 mout=$( cd "$T" && S4E_HOME="$(cd "$ROOT/.." && pwd)" SCRIP_SNO_STMTKW=1 timeout -k 5 200 bash "$MON" "$T/mon.sno" --oracle 2>&1 ); mrc=$?

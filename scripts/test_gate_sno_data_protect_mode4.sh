@@ -17,7 +17,7 @@ SCRIP="${SCRIP:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [sn
 LIBDIR="$ROOT/out"; [ -f "$LIBDIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [sno-data-protect-mode4]: $LIBDIR/libscrip_rt.so missing"; exit 2; }
 W="/tmp/$$-sno-data-protect-mode4"; mkdir -p "$W"; trap 'rm -rf "$W"' EXIT
 printf "\tDATA(%sITEM(COUNT,TOP)%s)\n\tOUTPUT = %sunreached%s\nEND\n" "'" "'" "'" "'" > "$W/w.sno"
-"$SCRIP" --compile "$W/w.sno" -o "$W/w.s" </dev/null || { echo "⛔ GATE FAIL(1) [sno-data-protect-mode4]: mode-4 compile itself aborted -- protection must fire at RUNTIME, not compile time"; exit 1; }
+"$SCRIP" --compile "$W/w.sno" --out="$W/w.s" </dev/null || { echo "⛔ GATE FAIL(1) [sno-data-protect-mode4]: mode-4 compile itself aborted -- protection must fire at RUNTIME, not compile time"; exit 1; }
 gcc -m64 -no-pie -rdynamic "$W/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$W/w" 2>"$W/ld.log" || { echo "⛔ GATE REFUSE(2) [sno-data-protect-mode4]: link failed, see $W/ld.log"; exit 2; }
 out="$("$W/w" </dev/null 2>&1)"
 echo "$out" | grep -qi 'error 248' || { echo "⛔ GATE FAIL(1) [sno-data-protect-mode4]: no ERROR 248 in mode-4 output: $out"; exit 1; }

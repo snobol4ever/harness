@@ -29,7 +29,7 @@ EOF
 timeout -k 5 20 "$SW" -q -t halt "$W/w.pl" < /dev/null > "$W/w.ref" 2> "$W/ref.err"
 [ "$(grep -c . "$W/w.ref")" -eq 4 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the 4 probe lines ($(grep -c . "$W/w.ref") of them; $(head -c 160 "$W/ref.err"))"; exit 2; }
 "$ROOT/scrip" "$W/w.pl" < /dev/null > "$W/m3.out" 2>&1; r3=$?
-"$ROOT/scrip" --compile -o "$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
+"$ROOT/scrip" --compile --out="$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
 gcc -no-pie -o "$W/w.bin" "$W/w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/link.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link ($(head -c 120 "$W/link.err"))"; exit 2; }
 timeout -k 5 20 "$W/w.bin" < /dev/null > "$W/m4.out" 2>&1; r4=$?
 bad=0

@@ -160,7 +160,7 @@ for L in $LANGS; do
         echo "lang parser_$L.sc" >> "$T/$L.map" ;;
     esac
     for f in $CHAIN parser_$L.sc; do sed -n 's/^[[:space:]]*function[[:space:]]\{1,\}\([A-Za-z_][A-Za-z0-9_]*\).*/func \1 '"$f"'/p' "$B/$f"; done >> "$T/$L.map"
-    "$W/scrip" --compile "$src" -o "$T/$L.raw.s" < /dev/null > "$T/$L.cc.err" 2>&1 && python3 "$PY" annotate "$T/$L.raw.s" "$T/$L.s" > "$T/$L.ann" 2>> "$T/$L.cc.err" && build "$T/$L.s" "$T/$L.bin" \
+    "$W/scrip" --compile "$src" --out="$T/$L.raw.s" < /dev/null > "$T/$L.cc.err" 2>&1 && python3 "$PY" annotate "$T/$L.raw.s" "$T/$L.s" > "$T/$L.ann" 2>> "$T/$L.cc.err" && build "$T/$L.s" "$T/$L.bin" \
         || { echo "$L ⛔ REFUSE(2): the ${via:+transpiled }chain did not compile or link to a mode-4 binary ($(head -1 "$T/$L.cc.err" | cut -c1-100))"; RC=2; continue; }
     grep -q '^[[:space:]]*\.loc[[:space:]]' "$T/$L.s" || { echo "$L ⛔ REFUSE(2): the mode-4 .s carries no .loc line, so no emitted statement can be placed in its chain file"; RC=2; continue; }
     build "$T/$L.raw.s" "$T/$L.raw.bin" && objcopy -O binary --only-section=.text "$T/$L.raw.bin" "$T/$L.raw.text" && objcopy -O binary --only-section=.text "$T/$L.bin" "$T/$L.text" \

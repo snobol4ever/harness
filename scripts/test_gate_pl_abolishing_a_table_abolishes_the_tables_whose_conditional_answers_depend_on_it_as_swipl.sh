@@ -64,7 +64,7 @@ graded=$((graded + 1))
 timeout -k 5 30 "$SCRIP" "$d/g.pl" </dev/null 2>/dev/null > "$d/m3"; rc=$?
 if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m3"; then fails=$((fails + 1)); echo "  m3 rc=$rc differs:"; diff "$d/want" "$d/m3" | head -8; fi
 graded=$((graded + 1))
-if timeout -k 5 60 "$SCRIP" --compile -o "$d/g.s" "$d/g.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$d/g.bin" "$d/g.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null; then
+if timeout -k 5 60 "$SCRIP" --compile --out="$d/g.s" "$d/g.pl" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$d/g.bin" "$d/g.s" "$OUT/libscrip_rt.so" -lm -Wl,-rpath,"$OUT" 2>/dev/null; then
     timeout -k 5 30 "$d/g.bin" </dev/null 2>/dev/null > "$d/m4"; rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m4"; then fails=$((fails + 1)); echo "  m4 rc=$rc differs:"; diff "$d/want" "$d/m4" | head -8; fi
 else fails=$((fails + 1)); echo "  m4 did not compile or link"; fi

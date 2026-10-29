@@ -61,7 +61,7 @@ grade() {
     (cd "$d" && timeout -k 5 30 "$SCRIP" "$@" "$prog" </dev/null 2>/dev/null > "$d/$tag.m3"); local rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/$want" "$d/$tag.m3"; then fails=$((fails + 1)); echo "  $tag m3 rc=$rc differs:"; diff "$d/$want" "$d/$tag.m3" | head -6; fi
     graded=$((graded + 1))
-    if (cd "$d" && timeout -k 5 60 "$SCRIP" "$@" --compile -o "$tag.s" "$prog" </dev/null >/dev/null 2>&1 \
+    if (cd "$d" && timeout -k 5 60 "$SCRIP" "$@" --compile --out="$tag.s" "$prog" </dev/null >/dev/null 2>&1 \
         && gcc -no-pie -o "$tag.bin" "$tag.s" -L"$OUT" -lscrip_rt -lm -Wl,-rpath,"$OUT" 2>/dev/null); then
         (cd "$d" && timeout -k 5 30 "./$tag.bin" </dev/null 2>/dev/null > "$d/$tag.m4"); rc=$?
         if [ $rc -ne 0 ] || ! cmp -s "$d/$want" "$d/$tag.m4"; then fails=$((fails + 1)); echo "  $tag m4 rc=$rc differs:"; diff "$d/$want" "$d/$tag.m4" | head -6; fi

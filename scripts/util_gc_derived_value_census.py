@@ -51,7 +51,7 @@ def main():
         tmp = tempfile.mkdtemp(prefix="gc_derived."); __import__("atexit").register(__import__("shutil").rmtree, tmp, True)
         for src in a.files:
             o = os.path.join(tmp, os.path.basename(src) + '.s')
-            if subprocess.call([os.path.join(ROOT, 'scrip'), '--compile', '-o', o, src],
+            if subprocess.call([os.path.join(ROOT, 'scrip'), '--compile', f"--out={o}", src],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
                                timeout=60) == 0 and os.path.exists(o): asm.append(o)
     if not asm:

@@ -100,7 +100,7 @@ for f in $WITNESSES; do
     [ -f "$f" ] || { echo "⛔ GATE REFUSED(2) [test_gate_bb_block_label_prefix]: witness $f is missing -- a missing witness grades nothing, never a green"; exit 2; }
     b="$(basename "$f" | sed 's/\.[^.]*$//')"
     out="$WITDIR/$b.s"
-    if ! "$SCRIP_BIN" --compile -o "$out" "$f" < /dev/null > "$WITDIR/$b.err" 2>&1; then
+    if ! "$SCRIP_BIN" --compile --out="$out" "$f" < /dev/null > "$WITDIR/$b.err" 2>&1; then
         echo "SKIP (pre-existing compile failure, not this gate's concern): $f"
         continue
     fi

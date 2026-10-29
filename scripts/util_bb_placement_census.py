@@ -126,7 +126,7 @@ def discover():
 
 def homes_of(lang, src, tmp):
     cwd, base = os.path.dirname(src), os.path.basename(src)
-    args = [SCRIP, '--dump-homes', '--dump-plan', '--compile'] + (['--target=x86'] if lang == 'prolog' else []) + ['-o', tmp, base]
+    args = [SCRIP, '--dump-homes', '--dump-plan', '--compile'] + (['--target=x86'] if lang == 'prolog' else []) + [f'--out={tmp}', base]
     r = run(args, cwd)
     if r.returncode != 0 or not os.path.isfile(tmp) or os.path.getsize(tmp) == 0:
         return None, None, None

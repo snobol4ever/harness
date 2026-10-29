@@ -20,7 +20,7 @@ for f in "$W"/rtdef_*.sno; do
   cmp -s "$T/$b.oref" "$W/$b.ref" || { echo "RED $b: committed ref disagrees with the live oracle"; red=$((red+1)); continue; }
   timeout -k 5 20 ./scrip "$f" </dev/null >"$T/$b.m3" 2>/dev/null
   cmp -s "$T/$b.m3" "$W/$b.ref" || { echo "RED m3 $b"; red=$((red+1)); }
-  if timeout -k 5 60 ./scrip --compile -o "$T/$b.s" "$f" </dev/null >/dev/null 2>&1 && gcc -no-pie "$T/$b.s" -o "$T/$b.bin" -L./out -lscrip_rt -lm -Wl,-rpath,"$PWD/out" >/dev/null 2>&1; then
+  if timeout -k 5 60 ./scrip --compile --out="$T/$b.s" "$f" </dev/null >/dev/null 2>&1 && gcc -no-pie "$T/$b.s" -o "$T/$b.bin" -L./out -lscrip_rt -lm -Wl,-rpath,"$PWD/out" >/dev/null 2>&1; then
     timeout -k 5 20 "$T/$b.bin" </dev/null >"$T/$b.m4" 2>/dev/null
     cmp -s "$T/$b.m4" "$W/$b.ref" || { echo "RED m4 $b"; red=$((red+1)); }
   else echo "RED m4 $b: compile or link failed"; red=$((red+1)); fi

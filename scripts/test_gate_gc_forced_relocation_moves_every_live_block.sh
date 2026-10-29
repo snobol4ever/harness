@@ -60,7 +60,7 @@ for w in $WITS; do
   wit_coll=0
   ext="${w##*.}"
   cp "$src" "$T/w.$ext"
-  ( cd "$T" && timeout -k 5 90s "$ROOT/scrip" --compile -o "w_$w.s" "w.$ext" < /dev/null > /dev/null 2>&1 \
+  ( cd "$T" && timeout -k 5 90s "$ROOT/scrip" --compile --out="w_$w.s" "w.$ext" < /dev/null > /dev/null 2>&1 \
       && gcc -m64 "w_$w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "w_$w.x4" 2> "w_$w.ld.log" ) \
       || refuse "mode-4 compile or link failed for $w, so its m4 arms measured nothing ($(head -c 160 "$T/w_$w.ld.log" 2>/dev/null))"
   for mode in m3 m4; do

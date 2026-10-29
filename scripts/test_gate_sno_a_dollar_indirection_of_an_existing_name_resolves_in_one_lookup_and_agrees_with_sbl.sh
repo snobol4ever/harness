@@ -60,7 +60,7 @@ END
 SNO
 want="$(cd "$D" && timeout -k 5 60 "$SBL" -bf d.sno < /dev/null 2>&1)"
 [ -n "$want" ] || refuse "the oracle printed nothing for the witness"
-"$B/scrip" --compile -o "$D/d.s" "$D/d.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/d.bin" "$D/d.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null || refuse "the witness does not build in mode 4"
+"$B/scrip" --compile --out="$D/d.s" "$D/d.sno" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$D/d.bin" "$D/d.s" -L "$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" 2> /dev/null || refuse "the witness does not build in mode 4"
 for env in "" "SCRIP_GC_STRESS=1"; do
   got3="$(cd "$D" && env $env timeout -k 5 120 "$B/scrip" d.sno < /dev/null 2>&1)"
   got4="$(cd "$D" && env $env timeout -k 5 120 ./d.bin < /dev/null 2>&1)"

@@ -153,7 +153,7 @@ PY
     bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" > "$A/list"
     while IFS=$'\t' read -r lang f; do
         i=$((i+1)); mkdir -p "$A/$lang"
-        ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) -o "$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
+        ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) --out="$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
     done < "$A/list"
     [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\tbeta_allocs\n' > "$BREC"
     local BTMP="$W/beta_rows.tmp"; : > "$BTMP"

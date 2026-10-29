@@ -65,7 +65,7 @@ for w in test4 test5 test7 test8 arith1 arith2; do
     got3="$(rendered_stno < "$T/$w.m3.err")"
     [ "$got3" = "$want" ] && arm "$w m3 loc" ok || arm "$w m3 loc" red "sbl wants statement $want, rendered SCRIP (no --stlimit) said ${got3:-<none>}"
 
-    ( cd "$TPGM" && "$ROOT/scrip" --compile -o "$T/$w.s" "$w.spt" < /dev/null > /dev/null 2>&1 ) \
+    ( cd "$TPGM" && "$ROOT/scrip" --compile --out="$T/$w.s" "$w.spt" < /dev/null > /dev/null 2>&1 ) \
       && ( as -o "$T/$w.o" "$T/$w.s" 2>/dev/null ) \
       && ( gcc -o "$T/$w.bin" "$T/$w.o" "$ROOT/out/libscrip_rt.so" -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null ) \
       || { echo "GATE UNPROVEN(2) [$GATE_NAME]: could not build the m4 arm of $w -- a toolchain failure, not a verdict"; exit 2; }
@@ -75,7 +75,7 @@ for w in test4 test5 test7 test8 arith1 arith2; do
 done
 
 printf ' X = 1\n Y = 2\n OUTPUT = X + Y\nEND\n' > "$T/three.sno"
-"$ROOT/scrip" --compile -o "$T/three.s" "$T/three.sno" < /dev/null > /dev/null 2>&1
+"$ROOT/scrip" --compile --out="$T/three.s" "$T/three.sno" < /dev/null > /dev/null 2>&1
 hits="$(grep -c 'g_stno' "$T/three.s" 2>/dev/null || true)"
 [ "${hits:-1}" = 0 ] && arm "nostore" ok || arm "nostore" red "the default --compile .s carries $hits reference(s) to g_stno, want 0"
 

@@ -39,7 +39,7 @@ for c in "${CELLS[@]}"; do n="${c%%|*}"; pat="${c#*|}"; f="$T/$n.sno"
   [ -n "${FAIL_ONCE:-}" ] && [ "$FIRST" = 1 ] && want="$want corrupted by FAIL_ONCE"; FIRST=0
   N=$((N + 1))
   g3="$( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" "$f" </dev/null 2>/dev/null )"
-  g4=""; if ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --compile -o "$T/$n.s" "$f" </dev/null >/dev/null 2>&1 ) \
+  g4=""; if ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 60s "$SCRIP" --compile --out="$T/$n.s" "$f" </dev/null >/dev/null 2>&1 ) \
       && gcc -m64 -no-pie "$T/$n.s" -L"$RT_DIR" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT_DIR" -o "$T/$n.bin" 2>/dev/null; then
     g4="$( cd "$T" && timeout -k 5 20s "$T/$n.bin" </dev/null 2>/dev/null )"; fi
   if [ "$g3" = "$want" ]; then A3=$((A3 + 1)); else RC=1; BAD="$BAD

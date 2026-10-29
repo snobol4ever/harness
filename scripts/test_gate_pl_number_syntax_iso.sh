@@ -94,7 +94,7 @@ def write_prog(goal):
                 "   ( write('@ER('), write(E), write(')') ) ), nl.\n" % goal)
 def build_m4():
     s = os.path.join(tmp, "t.s"); b = os.path.join(tmp, "t.bin")
-    c = subprocess.run([scrip, "--compile", "-o", s, prog], capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL, cwd=tmp)
+    c = subprocess.run([scrip, "--compile", f"--out={s}", prog], capture_output=True, text=True, timeout=30, stdin=subprocess.DEVNULL, cwd=tmp)
     if c.returncode != 0: return None
     g = subprocess.run(["gcc", "-m64", "-no-pie", s, "-o", b, "-L", os.path.join(out_dir, "out"), "-lscrip_rt",
                         "-Wl,-rpath," + os.path.join(out_dir, "out"), "-lm", "-lpthread"], capture_output=True, text=True, timeout=90, cwd=tmp)

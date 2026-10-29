@@ -495,7 +495,7 @@ def cmd_grade(a):
             if a.m4:
                 base = Path(td) / f"{rel.replace('/', '_')}{tag}"
                 s_, o_, b_ = str(base) + ".s", str(base) + ".o", str(base) + ".bin"
-                ok = subprocess.run(NICE + [a.scrip, "--compile", ur, "-o", s_], cwd=str(m), stdin=subprocess.DEVNULL, capture_output=True).returncode == 0
+                ok = subprocess.run(NICE + [a.scrip, "--compile", ur, f"--out={s_}"], cwd=str(m), stdin=subprocess.DEVNULL, capture_output=True).returncode == 0
                 ok = ok and subprocess.run(["gcc", "-c", s_, "-o", o_], capture_output=True).returncode == 0
                 ok = ok and subprocess.run(["gcc", o_, "-o", b_, f"-L{rt}", "-lscrip_rt", "-lm", f"-Wl,-rpath,{rt}"], capture_output=True).returncode == 0
                 got["m4"] = tapset(runout([b_], str(m))) if ok else set()

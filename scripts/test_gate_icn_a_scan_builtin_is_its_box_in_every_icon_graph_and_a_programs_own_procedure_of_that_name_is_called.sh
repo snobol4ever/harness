@@ -96,7 +96,7 @@ fail=0
 for w in w1 w2; do
     ( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" < /dev/null > "$w.m3" 2>&1 ); rc3=$?
     if cmp -s "$T/$w.m3" "$T/$w.ref"; then echo "  ok   ($w m3) as iconx"; else echo "  FAIL ($w m3) rc=$rc3, first difference:"; diff "$T/$w.ref" "$T/$w.m3" | head -6 | sed 's/^/         /'; fail=1; fi
-    if ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$w.bin" "$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread 2> /dev/null ); then
+    if ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" < /dev/null > /dev/null 2>&1 && gcc -no-pie -o "$w.bin" "$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread 2> /dev/null ); then
         ( cd "$T" && timeout -k 5 20 "./$w.bin" < /dev/null > "$w.m4" 2>&1 ); rc4=$?
         if cmp -s "$T/$w.m4" "$T/$w.ref"; then echo "  ok   ($w m4) the same, from the standalone build"; else echo "  FAIL ($w m4) rc=$rc4, first difference:"; diff "$T/$w.ref" "$T/$w.m4" | head -6 | sed 's/^/         /'; fail=1; fi
     else echo "  FAIL ($w m4) the witness did not compile or link in mode 4"; fail=1; fi

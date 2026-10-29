@@ -69,7 +69,7 @@ RC=0
 # warns about (its own `--as-needed` near-miss). Real if/else so STATIC=1 either links static or fails.
 m4_build() {  # $1=prog.sno $2=dst.bin $3=workstem (used for $3.s / $3.o)
   local prog="$1" dst="$2" stem="$3"
-  "$SCRIP" --compile -o "$stem.s" "$prog" </dev/null >/dev/null 2>&1 || return 1
+  "$SCRIP" --compile --out="$stem.s" "$prog" </dev/null >/dev/null 2>&1 || return 1
   as -o "$stem.o" "$stem.s" 2>/dev/null || return 1
   if [ "$STATIC" = 1 ]; then
     m4_link_static "$dst" "$stem.o" "$ROOT"

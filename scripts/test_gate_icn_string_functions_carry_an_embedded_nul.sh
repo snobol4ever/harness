@@ -67,7 +67,7 @@ for w in w1 w2; do
   ( cd "$T" && "$ICONT" -s -o "$w.x" "$w.icn" ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses witness $w"; exit 2; }
   want="$( cd "$T" && timeout -k 5 20 "./$w.x" </dev/null 2>&1 )" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run witness $w"; exit 2; }
   o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" "$w.icn" </dev/null 2>&1 )"
-  o4=""; ( cd "$T" && "$SCRIP" --compile -o "$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+  o4=""; ( cd "$T" && "$SCRIP" --compile --out="$w.s" "$w.icn" </dev/null >/dev/null 2>&1 && gcc -no-pie -o "$w.4" "$w.s" -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
     && o4="$( cd "$T" && timeout -k 5 20 "./$w.4" </dev/null 2>&1 )"
   if [ "$o3" = "$want" ] && [ "$o4" = "$want" ]; then res="$res $w:ok"
   else res="$res $w:RED"; bad=1

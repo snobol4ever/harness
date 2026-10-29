@@ -41,7 +41,7 @@ run() {
     local m=$1 f=$2 b; b="$T/$(basename "$f" | tr . _)"
     if [ "$m" = m3 ]; then (cd "$T" && timeout -k 5 30 "$SCRIP" "$f" < /dev/null > "$b.$m" 2>&1); echo $? > "$b.$m.rc"; return; fi
     rm -f "$b.bin" "$b.s"
-    if "$SCRIP" --compile -o "$b.s" "$f" < /dev/null > /dev/null 2>&1 && gcc -o "$b.bin" "$b.s" -L "$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm 2> /dev/null
+    if "$SCRIP" --compile --out="$b.s" "$f" < /dev/null > /dev/null 2>&1 && gcc -o "$b.bin" "$b.s" -L "$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm 2> /dev/null
     then (cd "$T" && timeout -k 5 30 "$b.bin" < /dev/null > "$b.$m" 2>&1); echo $? > "$b.$m.rc"; else echo M4-BUILD-FAILED > "$b.$m"; echo 2 > "$b.$m.rc"; fi
 }
 RC=0; n=0; ok=0

@@ -57,7 +57,7 @@ printf 'void f(void) { char *p = rt_gcheap_alloc(k, 8); }\nvoid g(void *p) { p =
 [ "$(printf '%s\n' "$pbad" | grep -c .)" = 2 ] && ! printf '%s\n' "$pbad" | grep -q 'HB_WSB' || { echo "⛔ GATE REFUSE(2) [$G]: the allocation reader must flag the two planted variable-kind calls (bare and cast) and pass the cast typed kind, read: $pbad"; exit 2; }
 if [ -z "$bad" ]; then echo "  arm 2 PASS: no rt_ws_alloc( call and no variable-kind heap allocation outside gc_heap.c; the planted call is flagged"
 else echo "  arm 2 FAIL: untyped heap allocation sites:"; printf '%s\n' "$bad" | head -10 | sed 's/^/    /'; RC=1; fi
-( cd "$T" && "$SCRIP" --compile "$W" -o w.s < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w.bin 2>/dev/null ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
+( cd "$T" && "$SCRIP" --compile "$W" --out=w.s < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w.bin 2>/dev/null ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
 run() { if [ "$1" = 3 ]; then ( cd "$T" && env "${@:2}" timeout -k 5 120 "$SCRIP" "$W" < /dev/null ); else ( cd "$T" && env "${@:2}" timeout -k 5 120 ./w.bin < /dev/null ); fi; }
 ok=0; tot=0; ncol_min=-1; nbad=0
 for m in 3 4; do for k in 1 2 3; do tot=$((tot + 1))

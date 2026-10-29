@@ -63,7 +63,7 @@ cat > "$d/want" <<'WANT'
 WANT
 (cd "$d" && timeout -k 5 20 "$SCRIP" c.icn </dev/null 2>/dev/null) > "$d/m3"; rc=$?
 if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m3"; then fails=$((fails + 1)); echo "  arm B m3 rc=$rc differs:"; diff "$d/want" "$d/m3" | head -10; fi
-if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile -o c.s c.icn </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie c.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o c.bin 2>/dev/null); then
+if (cd "$d" && timeout -k 5 60 "$SCRIP" --compile --out=c.s c.icn </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie c.s -L"$OUT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$OUT" -o c.bin 2>/dev/null); then
     (cd "$d" && timeout -k 5 20 ./c.bin </dev/null 2>/dev/null) > "$d/m4"; rc=$?
     if [ $rc -ne 0 ] || ! cmp -s "$d/want" "$d/m4"; then fails=$((fails + 1)); echo "  arm B m4 rc=$rc differs:"; diff "$d/want" "$d/m4" | head -10; fi
 else fails=$((fails + 1)); echo "  arm B m4 did not compile or link"; fi

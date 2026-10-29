@@ -32,7 +32,7 @@ for k in range(c):
     L.append("p(%d, X) :- %s." % (k, ", ".join(g)))
 L.append("q(_, _).\nmain :- p(0, a), write(ok), nl, halt.")
 open(out, "w").write("\n".join(L) + "\n")' "$@"; }
-frame() { ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$1.s" "$W/$1.pl" < /dev/null > /dev/null 2>&1 ) || { echo 0; return; }
+frame() { ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > /dev/null 2>&1 ) || { echo 0; return; }
           awk '/^FN__p\$2F2:/ { f = 1; next } f && /sub +rsp, *[0-9]+/ { sub(/.*rsp, */, ""); print $1 + 0; exit } f && ++n > 4 { exit }' "$W/$1.s"; }
 bad=0; F1=0
 [ "${FAIL_ONCE:-0}" = 1 ] && F1=1
@@ -66,7 +66,7 @@ main :- forall(between(1, 200, I), ( p(I, R), ( I =:= 200 -> write(R), nl ; true
 EOF
 gw=$(cd "$W" && timeout -k 5 60 swipl -q "$W/g.pl" < /dev/null 2>/dev/null | head -1)
 [ -n "$gw" ] || { echo "GATE REFUSED(2) [$G]: swipl printed nothing for the stress witness"; exit 2; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/g.s" "$W/g.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/g.bin" "$W/g.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: the stress witness does not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/g.s" "$W/g.pl" < /dev/null > /dev/null 2>&1 ) && gcc -no-pie -o "$W/g.bin" "$W/g.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > /dev/null 2>&1 || { echo "GATE REFUSED(2) [$G]: the stress witness does not build in mode 4"; exit 2; }
 for m in m3 m4; do
     if [ $m = m3 ]; then r=$(cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3 timeout -k 5 300 "$ROOT/scrip" "$W/g.pl" < /dev/null 2>&1)
     else r=$(cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3 timeout -k 5 300 "$W/g.bin" < /dev/null 2>&1); fi

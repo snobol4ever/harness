@@ -76,7 +76,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 90)] want [$(tr '\n' '|' < "$T/$3" | head -c 90)]"; }
 rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 10 "$SCRIP" two.sno < /dev/null > two.m3 2>/dev/null; echo $? )
 arm "TWO BLOCKS m3: statements 9, then 11 and 12" "$(same "$rc" two.m3 two.oracle)"
-rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile -o two.s two.sno < /dev/null > /dev/null 2>&1 && gcc two.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o two.bin > /dev/null 2>&1 && timeout -k 5 10 ./two.bin < /dev/null > two.m4 2>/dev/null; echo $? )
+rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 20 "$SCRIP" --compile --out=two.s two.sno < /dev/null > /dev/null 2>&1 && gcc two.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o two.bin > /dev/null 2>&1 && timeout -k 5 10 ./two.bin < /dev/null > two.m4 2>/dev/null; echo $? )
 arm "TWO BLOCKS m4: statements 9, then 11 and 12" "$(same "$rc" two.m4 two.oracle)"
 rc=$( cd "$T" && SCRIP_SNO_STMTKW=1 timeout -k 5 10 "$SCRIP" infn.sno < /dev/null > infn.m3 2>/dev/null; echo $? )
 arm "IN A FUNCTION m3: a block compiled inside a function body numbers after the program" "$(same "$rc" infn.m3 infn.oracle)"

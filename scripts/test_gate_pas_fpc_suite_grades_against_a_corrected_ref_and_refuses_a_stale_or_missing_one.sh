@@ -28,7 +28,7 @@ wantrc=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$SHIP/ALL.wantrc"); wantr
 W="$T/w"; mkdir -p "$W"; cp "$SHIP/$n.pas" "$W/"
 got3=$(cd "$W" && timeout -k 5 20 "$SCRIP" --run "$n.pas" </dev/null 2>/dev/null); rc3=$?
 chk "$n m3 prints the corrected ref" "$got3" "$want"; chk "$n m3 exits as ALL.wantrc says" "$rc3" "$wantrc"
-( cd "$W" && timeout -k 5 20 "$SCRIP" --compile -o "$n.s" "$n.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$n.s" -o "$n.m4" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: $n would not compile or link in mode 4"; exit 2; }
+( cd "$W" && timeout -k 5 20 "$SCRIP" --compile --out="$n.s" "$n.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$n.s" -o "$n.m4" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: $n would not compile or link in mode 4"; exit 2; }
 got4=$(cd "$W" && timeout -k 5 20 "./$n.m4" </dev/null 2>/dev/null); rc4=$?
 chk "$n m4 prints the corrected ref" "$got4" "$want"; chk "$n m4 exits as ALL.wantrc says" "$rc4" "$wantrc"
 if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: the corrected-ref block reads, refuses stale/missing/unknown rows, and $n grades green in both modes, $N of $N arms"; else echo "GATE FAIL(1) [$G]: see above"; fi

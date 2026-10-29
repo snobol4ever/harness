@@ -37,7 +37,7 @@ red=0
 for mode in m3 m4; do
     if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 20 "$SCRIP" main.pl </dev/null 2>"$TMPD/err")"; rc=$?
     else
-        (cd "$TMPD" && timeout -k 5 60 "$SCRIP" --compile -o w.s main.pl </dev/null 2>"$TMPD/err") || refuse "m4 compile failed: $(head -c 160 "$TMPD/err")"
+        (cd "$TMPD" && timeout -k 5 60 "$SCRIP" --compile --out=w.s main.pl </dev/null 2>"$TMPD/err") || refuse "m4 compile failed: $(head -c 160 "$TMPD/err")"
         gcc -m64 -no-pie "$TMPD/w.s" -o "$TMPD/w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || refuse "m4 link failed: $(head -c 160 "$TMPD/err")"
         got="$(cd "$TMPD" && timeout -k 5 20 ./w.bin </dev/null 2>"$TMPD/err")"; rc=$?
         rm -f "$TMPD/w.s" "$TMPD/w.bin"

@@ -189,7 +189,7 @@ for w in $WITNESSES; do
     t3="${m3##* }"; m3="${m3%% *}"
     case "$m3" in NOWRITE) echo "⛔ REFUSE rc=2: the harness could not create its own output file for witness '$w' (mode 3) -- scratch dir '$WORK' gone or unwritable mid-run. Runs that never executed are NOT gradeable and are NOT non-crashes."; REFUSED=1; break;; esac
     m4="REFUSED"; t4="-"   # ⛔ do NOT reset t3 here -- it was already computed by the m3 run_reps above, and clobbering it printed "CRASH (crash 0/10)", a row that contradicts itself.
-    if ( cd "$WORK" && timeout -k 5 10s "$ROOT/scrip" --compile -o "$w.s" "$w.icn" </dev/null ) >/dev/null 2>&1 \
+    if ( cd "$WORK" && timeout -k 5 10s "$ROOT/scrip" --compile --out="$w.s" "$w.icn" </dev/null ) >/dev/null 2>&1 \
        && ( cd "$WORK" && as -o "$w.o" "$w.s" ) >/dev/null 2>&1 \
        && ( cd "$WORK" && gcc -o "$w.bin" "$w.o" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1; then
         m4="$(cd "$WORK" && run_reps "$WORK/$w.oracle.out" "$REPS" "$w.m4.out" timeout -k 5 10s "./$w.bin"; printf ' %s' "$REP_TALLY")"

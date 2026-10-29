@@ -141,7 +141,7 @@ EOF
 run_mode() {  # run_mode <m3|m4> <prog> [ENV=V...] -> stdout on fd 1
   local m="$1" p="$2"; shift 2
   if [ "$m" = m3 ]; then env "$@" timeout -k 5 20 "$SCRIP" "$p" </dev/null 2>/dev/null; return; fi
-  env "$@" "$SCRIP" --compile -o "$p.s" "$p" </dev/null >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
+  env "$@" "$SCRIP" --compile --out="$p.s" "$p" </dev/null >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
   gcc -no-pie -o "$p.x" "$p.s" -L"$RT" -Wl,-rpath,"$RT" -lscrip_rt -lm >/dev/null 2>&1 || { echo "LINK-FAIL"; return; }
   timeout -k 5 20 "$p.x" </dev/null 2>/dev/null; }
 RC=0; N=0

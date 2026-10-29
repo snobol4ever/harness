@@ -87,7 +87,7 @@ for p in $PROGS; do
         diff "$T/w_$p.ref" "$T/$p.m3" | head -6
         continue
     fi
-    if ! ( cd "$T" && timeout -k 5 60s "$ROOT/scrip" --compile -o "$p.s" "$T/w_$p.sno" </dev/null >/dev/null 2>&1 ); then
+    if ! ( cd "$T" && timeout -k 5 60s "$ROOT/scrip" --compile --out="$p.s" "$T/w_$p.sno" </dev/null >/dev/null 2>&1 ); then
         bad=$((bad+1)); echo "⛔ $p: mode-4 COMPILE failed"; continue
     fi
     if ! ( cd "$T" && gcc -no-pie "$p.s" -o "$p.bin" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ); then

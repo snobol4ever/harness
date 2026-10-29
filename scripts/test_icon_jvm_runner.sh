@@ -8,7 +8,7 @@ SCRIP_CC="${SCRIP_CC:-$ROOT/scrip}"
 JASMIN="${JASMIN:-$ROOT/miscellaneous/jasmin.jar}"
 icn="$1"
 base=$(mktemp /tmp/icon_jvm_XXXXXX)
-"$SCRIP_CC" -icn -jvm "$icn" -o "${base}.j" 2>/dev/null
+"$SCRIP_CC" -icn -jvm "$icn" --out="${base}.j" 2>/dev/null
 cls=$(grep -m1 '\.class' "${base}.j" 2>/dev/null | awk '{print $NF}')
 timeout -k 5 30 java -jar "$JASMIN" "${base}.j" -d /tmp/ >/dev/null 2>&1
 timeout -k 5 5 java -cp /tmp/ "$cls" 2>/dev/null

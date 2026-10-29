@@ -40,11 +40,11 @@ LOOP    I = I + 1
         OUTPUT = SIZE(T[REMDR(I, 100)]) ' ' SIZE(S)
 END
 SNO
-( cd "$W" && env -u SCRIP_DIAG SCRIP_DIAG_REGS=1 "$ROOT/scrip" --compile -o on.s churn.sno < /dev/null > /dev/null 2>&1 && gcc on.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o on.bin 2>/dev/null \
-  && env -u SCRIP_DIAG_REGS SCRIP_DIAG=0 "$ROOT/scrip" --compile -o off.s churn.sno < /dev/null > /dev/null 2>&1 && gcc off.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o off.bin 2>/dev/null ) \
+( cd "$W" && env -u SCRIP_DIAG SCRIP_DIAG_REGS=1 "$ROOT/scrip" --compile --out=on.s churn.sno < /dev/null > /dev/null 2>&1 && gcc on.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o on.bin 2>/dev/null \
+  && env -u SCRIP_DIAG_REGS SCRIP_DIAG=0 "$ROOT/scrip" --compile --out=off.s churn.sno < /dev/null > /dev/null 2>&1 && gcc off.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o off.bin 2>/dev/null ) \
   || { echo "REFUSED(2): the churn witness did not build in mode 4"; exit 2; }
 non=$(grep -cE 'mov[[:space:]]+r11, [0-9]+' "$W/on.s"); noff=$(grep -cE 'mov[[:space:]]+r11, [0-9]+' "$W/off.s")
-( cd "$W" && env -u SCRIP_DIAG -u SCRIP_DIAG_REGS "$ROOT/scrip" --compile -o dflt.s churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED(2): the churn witness did not compile by default"; exit 2; }
+( cd "$W" && env -u SCRIP_DIAG -u SCRIP_DIAG_REGS "$ROOT/scrip" --compile --out=dflt.s churn.sno < /dev/null > /dev/null 2>&1 ) || { echo "REFUSED(2): the churn witness did not compile by default"; exit 2; }
 ndef=$(grep -cE 'mov[[:space:]]+r11, [0-9]+' "$W/dflt.s")
 if [ "$non" -gt 0 ] && [ "$noff" -eq 0 ] && [ "$ndef" -eq 0 ]; then echo "ok  (2) the node-id stores: $non with SCRIP_DIAG_REGS=1, $ndef by default, $noff with SCRIP_DIAG=0"
 else echo "RED (2) the node-id stores do not follow the switch: $non with SCRIP_DIAG_REGS=1, $ndef by default, $noff with SCRIP_DIAG=0 (want >0, 0 and 0)"; red=1; fi

@@ -33,7 +33,7 @@ end
 EOF
 ( cd "$T" && "$ICONT" -s -o w.x w.icn ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses the witness"; exit 2; }
 want="$( cd "$T" && ./w.x </dev/null 2>/dev/null )" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run the witness"; exit 2; }
-( cd "$T" && "$SCRIP" --compile -o w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o w4 w.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+( cd "$T" && "$SCRIP" --compile --out=w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o w4 w.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
   || { echo "⛔ GATE REFUSE(2) [$G]: the witness does not build in mode 4"; exit 2; }
 o3="$( cd "$T" && timeout -k 5 20 "$SCRIP" w.icn </dev/null 2>/dev/null )"; o4="$( cd "$T" && timeout -k 5 20 ./w4 </dev/null 2>/dev/null )"
 echo "  HOLDS: !f generates each line whole, whatever its length and whether it carries a NUL, exactly as read() and iconx do"

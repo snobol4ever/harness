@@ -35,7 +35,7 @@ for p in arr rec arg true; do
   ( cd "$T" && "$FPC" -Miso -v0 -o"$p.fpc" "$p.pas" >/dev/null 2>&1 ) || { echo "⛔ REFUSE(2): fpc -Miso would not compile $p"; exit 2; }
   ( cd "$T" && ./"$p.fpc" </dev/null >"$p.want" 2>/dev/null )
   ( cd "$T" && timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null >"$p.m3" 2>"$p.m3e" )
-  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./"$p.m4" </dev/null >"$p.m4o" 2>"$p.m4e" ) || : > "$T/$p.m4o"
+  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./"$p.m4" </dev/null >"$p.m4o" 2>"$p.m4e" ) || : > "$T/$p.m4o"
   for m in m3 m4; do f="$T/$p.m3"; [ $m = m4 ] && f="$T/$p.m4o"
     if cmp -s "$T/$p.want" "$f"; then echo "  $p $m: identical to fpc -Miso"
     else echo "  ⛔ $p $m DIFFERS: want [$(tr '\n' '|' < "$T/$p.want")] got [$(tr '\n' '|' < "$f" | head -c 60)] err [$(head -1 "$T/$p.${m/m4/m4}e" 2>/dev/null | head -c 70)]"; RC=1; fi

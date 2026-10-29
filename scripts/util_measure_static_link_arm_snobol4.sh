@@ -64,7 +64,7 @@ for name in $DEMOS; do
     echo "⛔ REFUSE $name -- no .ref beside $sno" >&2
     row "$name" BOTH - - - - - NO-REF; FAIL=1; continue
   fi
-  if ! "$SCRIP" --compile -o "$W/$name.s" "$sno" </dev/null >/dev/null 2>&1; then
+  if ! "$SCRIP" --compile --out="$W/$name.s" "$sno" </dev/null >/dev/null 2>&1; then
     echo "⛔ $name: --compile failed" >&2; row "$name" BOTH - - - - - COMPILE-FAIL; FAIL=1; continue
   fi
   if ! as -o "$W/$name.o" "$W/$name.s" 2>/dev/null; then

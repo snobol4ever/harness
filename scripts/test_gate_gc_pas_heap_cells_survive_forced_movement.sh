@@ -119,7 +119,7 @@ for w in $WITNESSES; do
   ( cd "$W" && "$FPC" -Miso "$w.pas" >"$W/$w.fpclog" 2>&1 ) || { echo "REFUSE(2) [$(basename "$0" .sh)]: the oracle could not compile $w.pas"; tail -3 "$W/$w.fpclog"; exit 2; }
   ( cd "$W" && "./$w" > "$w.ref" 2>/dev/null ) || { echo "REFUSE(2) [$(basename "$0" .sh)]: the oracle could not run $w"; exit 2; }
   [ -s "$W/$w.ref" ] || { echo "REFUSE(2) [$(basename "$0" .sh)]: the oracle produced an EMPTY ref for $w -- an empty ref makes every wrong answer a match"; exit 2; }
-  ( cd "$W" && timeout -k 5 120 "$SCRIP" --compile -o "$w.s" "$w.pas" >/dev/null 2>&1 ) || { echo "REFUSE(2) [$(basename "$0" .sh)]: scrip could not emit asm for $w"; exit 2; }
+  ( cd "$W" && timeout -k 5 120 "$SCRIP" --compile --out="$w.s" "$w.pas" >/dev/null 2>&1 ) || { echo "REFUSE(2) [$(basename "$0" .sh)]: scrip could not emit asm for $w"; exit 2; }
   ( cd "$W" && gcc -o "${w}_m4" "$w.s" -L"$(dirname "$SCRIP")/out" -lscrip_rt -Wl,-rpath,"$(dirname "$SCRIP")/out" >/dev/null 2>&1 ) || { echo "REFUSE(2) [$(basename "$0" .sh)]: mode-4 link failed for $w"; exit 2; }
 done
 echo "pas-heap-forced-movement: workdir=$W path_len=${#W} band='$BAND' shifts='$SHIFTS' modes='m3 m4' poison=on-by-default (a band is a property of program, runner AND path length -- hq_raku 2026-09-20)"

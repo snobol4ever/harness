@@ -23,7 +23,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0
 for k in bubble intmm perm queens quick sieve towers whet; do
   [ -f "$KD/$k.pas" ] || { echo "⛔ GATE REFUSE(2) [$G]: no kernel $KD/$k.pas"; exit 2; }
-  ( cd "$T" && timeout -k 5 120s "$SCRIP" --compile -o "$k.s" "$KD/$k.pas" </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: kernel $k did not compile to asm"; exit 2; }
+  ( cd "$T" && timeout -k 5 120s "$SCRIP" --compile --out="$k.s" "$KD/$k.pas" </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: kernel $k did not compile to asm"; exit 2; }
   inl=$(grep -cE 'mov +rdx, qword ptr \[rsi \+ 32\]' "$T/$k.s"); cold=$(grep -cE 'call +pas_arr_(get|set)@PLT' "$T/$k.s"); N=$((N + 1))
   if [ "$inl" = "$cold" ] && { [ "$inl" -gt 0 ] || [ "$k" = towers ]; }; then echo "  $k: $inl inline element sites, $cold cold-path calls"; else echo "  ⛔ $k: $inl inline element sites against $cold cold-path calls"; RC=1; fi
 done
@@ -65,7 +65,7 @@ if ! ( cd "$T" && "$FPC" -Miso -v0 -octl.fpc ctl.pas >/dev/null 2>&1 ); then ech
 if [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/ctl.want"; fi
 runm() { local m="$1" p="$2" e="$3"
   if [ "$m" = m3 ]; then ( cd "$T" && SCRIP_PAS_ELEM=$e timeout -k 5 60s "$SCRIP" --run "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); return $?; fi
-  ( cd "$T" && SCRIP_PAS_ELEM=$e timeout -k 5 60s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || return 99
+  ( cd "$T" && SCRIP_PAS_ELEM=$e timeout -k 5 60s "$SCRIP" --compile --out="$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || return 99
   ( cd "$T" && timeout -k 5 60s "./$p.m4" </dev/null >"$T/o" 2>"$T/e" ); return $?; }
 for m in m3 m4; do for e in 1 0; do runm $m ctl $e; rc=$?; N=$((N + 1))
   if [ "$rc" = "$frc" ] && cmp -s "$T/ctl.want" "$T/o"; then echo "  ctl $m arm=$e: rc=$rc, stdout byte-identical to fpc -Miso ($(wc -l < "$T/o") lines)"

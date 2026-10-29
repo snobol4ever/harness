@@ -59,7 +59,7 @@ P.E     X = 'xv'
         OUTPUT = 'done ' &RTNTYPE
 END
 SNO
-"$B/scrip" --compile -o "$D/n.s" "$D/n.sno" < /dev/null > /dev/null 2>&1 || refuse "the witness does not compile in mode 4"
+"$B/scrip" --compile --out="$D/n.s" "$D/n.sno" < /dev/null > /dev/null 2>&1 || refuse "the witness does not compile in mode 4"
 h=$(grep -cE 'call[[:space:]]+(rt_nret_fix_tiny|rt_nret_fix|rt_cap_name_strict)\b' "$D/n.s"); d=$(grep -cE 'call[[:space:]]+rt_deref\b' "$D/n.s")
 [ "$d" -ge 1 ] || refuse "the witness holds no rt_deref call -- the cold path is not emitted, arm A cannot see what it grades"
 if [ "$h" = 0 ]; then ok "A census: 0 NRETURN helper call sites, $d rt_deref call site(s)"; else red "A census: $h call site(s) of rt_nret_fix_tiny / rt_nret_fix / rt_cap_name_strict remain"; fi

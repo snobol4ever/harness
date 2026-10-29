@@ -43,7 +43,7 @@ EOS
 printf 'bee\nsame\nnull\n' > "$T/va.want"
 run_m3() { local src="$1" in="$2" out="$3"; shift 3; (cd "$T" && timeout -k 5 60 "$SCRIP" "$@" "$src" < "$in" > "$out" 2>/dev/null); }
 run_m4() { local src="$1" in="$2" out="$3"; shift 3; local b="$out.bin"; : > "$out"
-    if (cd "$T" && timeout -k 5 120 "$SCRIP" "$@" --compile -o "$out.s" "$src" < /dev/null > /dev/null 2>&1) && gcc -no-pie "$out.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$b" 2>/dev/null
+    if (cd "$T" && timeout -k 5 120 "$SCRIP" "$@" --compile --out="$out.s" "$src" < /dev/null > /dev/null 2>&1) && gcc -no-pie "$out.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$b" 2>/dev/null
     then (cd "$T" && timeout -k 5 60 "$b" < "$in" > "$out" 2>/dev/null); else echo COMPILE-FAILED > "$out"; fi; }
 mask() { python3 "$HERE/util_apply_ceo409_mask.py" "$1" "$2" "$3.n" "--side=$4" < "$3" > "$3.masked" 2>/dev/null || refuse "the mask sidecar of $1 is refused"; }
 run_m3 "$T/va.sno" /dev/null "$T/va.m3"; arm 1 "m3 VALUE answers the variable's value and the null string for an unset name" "$(cmp -s "$T/va.want" "$T/va.m3" && echo 1 || echo 0)"

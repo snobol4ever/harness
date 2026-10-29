@@ -44,7 +44,7 @@ rb="$(ls "$CORPUS/benchmarks/rebus" 2>/dev/null | grep '\.reb$' | head -1)"; [ -
 bad2=0; seen2=0
 for f in "$W"/w.*; do
   [ -f "$f" ] || continue
-  timeout -k 5 120 "$SCRIP" --compile -o "$W/a.s" "$f" > /dev/null 2>&1 < /dev/null || continue
+  timeout -k 5 120 "$SCRIP" --compile --out="$W/a.s" "$f" > /dev/null 2>&1 < /dev/null || continue
   seen2=$((seen2+1))
   lea=$(grep -cE 'lea +[a-z0-9]+, *\[rip *\+ *\.Lgcmap_' "$W/a.s")
   [ "$lea" = 0 ] || { bad2=$((bad2+1)); echo "       $(basename "$f"): $lea lea of a map label in emitted code"; }
@@ -62,7 +62,7 @@ live() {
   ( cd "$W" && timeout -k 5 300 "$SCRIP" "$src" > "$b.plain" 2> /dev/null < "$in" ); local r0=$?
   [ -n "$ref" ] && [ -f "$ref" ] && cp "$ref" "$b.ref" || cp "$b.plain" "$b.ref"
   ( cd "$W" && run_env timeout -k 5 300 "$SCRIP" "$src" > "$b.o3" 2> "$b.e3" < "$in" ); local r3=$?
-  if ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile -o "$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) && gcc "$b.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o "$b.x" 2> "$b.ld4"; then
+  if ( cd "$W" && timeout -k 5 300 "$SCRIP" --compile --out="$b.s" "$src" > /dev/null 2> "$b.c4" < /dev/null ) && gcc "$b.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o "$b.x" 2> "$b.ld4"; then
     ( cd "$W" && run_env timeout -k 5 300 "$b.x" > "$b.o4" 2> "$b.e4" < "$in" ); local r4=$?
   else r4=build; : > "$b.o4"; : > "$b.e4"; fi
   local m rc o s fr stops
@@ -96,7 +96,7 @@ H="$ROOT/../harness/scripts/corpus_suite_harness.py"
 if python3 "$H" extract "$CORPUS/tests/snobol4/ALL.sno" "$CORPUS/tests/snobol4/ALL.ref" demo_porter "$W/dp.sno" --out-ref "$W/dp.ref" --out-in "$W/dp.in" > /dev/null 2>&1; then
   head -300 "$W/dp.in" > "$W/dp.small.in"
   ( cd "$W" && timeout -k 5 300 "$SCRIP" -d131072k -s4096k --stlimit dp.sno < dp.in > dp.o3 2> dp.e3 ); r3=$?
-  ( cd "$W" && "$SCRIP" --compile -o dp.s dp.sno > /dev/null 2>&1 < /dev/null && gcc dp.s -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o dp.x 2> /dev/null && timeout -k 5 300 ./dp.x -d131072k -s4096k --stlimit -- < dp.in > dp.o4 2> dp.e4 ); r4=$?
+  ( cd "$W" && "$SCRIP" --compile --out=dp.s dp.sno > /dev/null 2>&1 < /dev/null && gcc dp.s -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o dp.x 2> /dev/null && timeout -k 5 300 ./dp.x -d131072k -s4096k --stlimit -- < dp.in > dp.o4 2> dp.e4 ); r4=$?
   if cmp -s "$W/dp.o3" "$W/dp.ref" && [ "$r3" = 0 ]; then ck ok "(5) demo_porter mode 3 prints its ref"; else ck no "(5) demo_porter mode 3 rc=$r3 or the output differs from the ref"; fi
   if cmp -s "$W/dp.o4" "$W/dp.ref" && [ "$r4" = 0 ]; then ck ok "(5) demo_porter mode 4 prints its ref"; else ck no "(5) demo_porter mode 4 rc=$r4 or the output differs from the ref"; fi
   ( cd "$W" && env SCRIP_GC_STRESS=5 timeout -k 5 300 "$SCRIP" -d131072k -s4096k --stlimit dp.sno < dp.small.in > dp.s3 2> dp.se3 ); s3=$?
@@ -106,7 +106,7 @@ else ck no "(5) demo_porter is not extractable from $CORPUS"; fi
 K="$CORPUS/benchmarks/snocone/parsers/parser_pascal"
 if [ -f "$K.sc" ] && [ -f "$K.input" ] && [ -f "$K.ref" ]; then
   ( cd "$CORPUS" && SNO_LIB="$CORPUS/include" timeout -k 5 600 "$SCRIP" -d4194304k -s2097152k --run "$K.sc" < "$K.input" > "$W/pp.o3" 2> "$W/pp.e3" ); r3=$?
-  ( cd "$CORPUS" && "$SCRIP" --compile -o "$W/pp.s" "$K.sc" > /dev/null 2>&1 < /dev/null && gcc "$W/pp.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o "$W/pp.x" 2> /dev/null && SNO_LIB="$CORPUS/include" timeout -k 5 600 "$W/pp.x" -d4194304k -s2097152k < "$K.input" > "$W/pp.o4" 2> "$W/pp.e4" ); r4=$?
+  ( cd "$CORPUS" && "$SCRIP" --compile --out="$W/pp.s" "$K.sc" > /dev/null 2>&1 < /dev/null && gcc "$W/pp.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" -o "$W/pp.x" 2> /dev/null && SNO_LIB="$CORPUS/include" timeout -k 5 600 "$W/pp.x" -d4194304k -s2097152k < "$K.input" > "$W/pp.o4" 2> "$W/pp.e4" ); r4=$?
   if cmp -s "$W/pp.o3" "$K.ref" && [ "$r3" = 0 ]; then ck ok "(5) parser_pascal mode 3 prints its ref"; else ck no "(5) parser_pascal mode 3 rc=$r3 or the output differs from the ref ($(head -c 20 "$W/pp.o3" | head -1))"; fi
   if cmp -s "$W/pp.o4" "$K.ref" && [ "$r4" = 0 ]; then ck ok "(5) parser_pascal mode 4 prints its ref"; else ck no "(5) parser_pascal mode 4 rc=$r4 or the output differs from the ref: $(grep -a -m1 -E 'REFUSED|fatal signal' "$W/pp.e4" | cut -c1-200)"; fi
 else ck no "(5) parser_pascal is missing from $CORPUS/benchmarks/snocone/parsers"; fi

@@ -9,7 +9,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 fail=0; n=0; hits=0
 for k in "$CORPUS"/benchmarks/icon/*.icn "$CORPUS"/benchmarks/icon/*/*.icn; do
   [ -f "$k" ] || continue
-  ( cd "$(dirname "$k")" && timeout -k 5 120 "$SCRIP" --compile -o "$T/k.s" "$k" < /dev/null > /dev/null 2>&1 ) || continue
+  ( cd "$(dirname "$k")" && timeout -k 5 120 "$SCRIP" --compile --out="$T/k.s" "$k" < /dev/null > /dev/null 2>&1 ) || continue
   n=$((n + 1)); c=$(grep -cE 'call[[:space:]]+(rt_jmp_frame_lexprep2|rt_icn_zframe_args_install|rt_arg_stage|rt_proc_drop_frame_h|rt_proc_call_open_det[0-4]?|rt_nret_fix_tiny)\b' "$T/k.s"); hits=$((hits + c))
   [ "$c" -gt 0 ] && echo "  FAIL  arm 1 $(basename "$k"): $c call sites into the six frame helpers"
 done

@@ -53,7 +53,7 @@ printf '1\n2\n3\nend\n' > "$W/w7.ref"
 printf '%s\n' "$CH" ':- dynamic(r/2).' 'churn(0) :- !.' 'churn(N) :- M is 1000 + N, assertz(r(M, x)), retract(r(M, x)), N1 is N - 1, churn(N1).' 'main :- assertz(r(0, z)), retract(r(0, z)), assertz((r(X, Y) :- between(1, 3, X), Y = v(X))), assertz(r(9, w)), findall(X-Y, (r(X, Y), (X == 1 -> retract((r(_, _) :- between(_, _, _), _)), churn(60) ; true)), L), write(L), nl, halt.' > "$W/w8.pl"
 printf '[1-v(1),2-v(2),3-v(3),9-w]\n' > "$W/w8.ref"
 for w in w1 w2 w3 w4 w5 w6 w7 w8; do
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $w does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $w does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
     gcc -no-pie -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$w.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: $w does not link"; exit 2; }
 done
 run() {

@@ -35,7 +35,7 @@ for e in e41 e42; do
     elif [ "$r" != 0 ] || ! printf '%s\n' "$o" | diff -q - "$d/$e.ref" >/dev/null; then
         echo "  ⛔ RED m3 $e: rc=$r, output differs from its rung36_all.ref segment: $(printf '%s\n' "$o" | diff - "$d/$e.ref" | head -2 | tr '\n' ' ' | cut -c1-100)"; bad=1
     fi
-    if timeout -k 5 120 ./scrip --compile -o "$d/$e.s" "$d/$e.icn" </dev/null >/dev/null 2>&1 \
+    if timeout -k 5 120 ./scrip --compile --out="$d/$e.s" "$d/$e.icn" </dev/null >/dev/null 2>&1 \
        && gcc -m64 -no-pie "$d/$e.s" -o "$d/$e.m4" -L./out -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then
         o=$(timeout -k 5 60 "$d/$e.m4" </dev/null 2>&1); r=$?; graded=$((graded+1))
         if [ "$r" = 124 ]; then echo "  ⛔ RED m4 $e: STILL HANGS (SIGTERM at 60s, $(printf '%s' "$o" | wc -l) lines)"; bad=1

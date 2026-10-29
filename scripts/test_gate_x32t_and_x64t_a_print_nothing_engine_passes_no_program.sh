@@ -30,7 +30,7 @@ cp -r "$H/." "$R/harness/scripts/"
 cat > "$R/SCRIP/scrip" <<'STUB'
 #!/bin/sh
 c=0; o=""
-while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; -o) shift; o="${1:-}";; esac; shift; done
+while [ $# -gt 0 ]; do case "$1" in --compile) c=1;; --out=*) o="${1#--out=}";; esac; shift; done
 [ "$c" = 1 ] || exit 0
 if [ -n "$o" ]; then echo "# stub engine: prints nothing" > "$o"; else echo "# stub engine: prints nothing"; fi
 exit 0

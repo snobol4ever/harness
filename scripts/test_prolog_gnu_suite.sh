@@ -262,7 +262,7 @@ for f in "${FILES[@]}"; do
         # (a SCRIP defect the driver exposed) and a dirty SCRIP skips every row this pass writes.
         # each mode's own wall for its row (CEO-1676 (c)): m3 its run, m4 the compile, link and run
         drv_lock "$drv"; _t0="$(progress_clock)"
-        "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" -o "$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
+        "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
         _cs="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
         m3_out=$(cd "$TMP" && run_at_declared_table "$DECL" "${rel%.pl}" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --run "${CA[@]}" "$drv" ${dargv[0]+--} "${dargv[@]}" < "$din" 2>/dev/null); m3rc=$?
         S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
@@ -329,7 +329,7 @@ for f in "${FILES[@]}"; do
     fi
 
     _t0="$(progress_clock)"
-    "$TIMEOUT_RETRY" "$CLASSIFY_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$f" -o "$out" < /dev/null > "$probe_log" 2>&1
+    "$TIMEOUT_RETRY" "$CLASSIFY_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$f" --out="$out" < /dev/null > "$probe_log" 2>&1
     rc=$?; _cs="$(progress_secs_since "$_t0")"   # the classify compile is mode 4's compile: its row carries it (CEO-1676 (c))
 
     if [ "$rc" -eq 124 ]; then

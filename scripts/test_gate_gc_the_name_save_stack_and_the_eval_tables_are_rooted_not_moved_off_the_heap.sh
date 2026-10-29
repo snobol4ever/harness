@@ -87,7 +87,7 @@ grep -q 'rt_rk_cb_grow\|g_rk_cb_hold' "$ROOT/src/runtime/rt/rt.c" && { echo "  f
 if [ "$bad" -eq 0 ]; then echo "  fact-rule PASS (both eval holders still allocate from the COLLECTED heap and the Raku holds are frame cells, never a grown holder -- this gate cannot be made green by taking them out of the collector's sight)"; else RC=1; fi
 ( cd "$T" && timeout -k 5 20s "$SBL" -bf w.sno </dev/null ) > "$T/w.ref" 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the oracle refused its own witness -- no ref to grade against"; exit 2; }
 [ -s "$T/w.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced an EMPTY ref"; exit 2; }
-if "$SCRIP" --compile "$T/w.sno" -o "$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then :; else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed, so every m4 arm measured nothing (see $T/ld.log)"; exit 2; fi
+if "$SCRIP" --compile "$T/w.sno" --out="$T/w.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/w4" 2>"$T/ld.log"; then :; else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed, so every m4 arm measured nothing (see $T/ld.log)"; exit 2; fi
 red=0; ran=0
 for st in 0 5 10 15 20 30 40 200; do
     ( cd "$T" && SCRIP_GC_STRESS=$st timeout -k 5 20s "$SCRIP" w.sno </dev/null > m3.out 2>/dev/null ); r=$?; ran=$((ran+1))

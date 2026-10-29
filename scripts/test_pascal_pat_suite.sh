@@ -138,7 +138,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # form: a runner that executes its subjects in the repo root has made the repo part of the experiment.
         # ⛔⭐⭐ THE m4 ARM COMPILES, LINKS AND RUNS -- IT USED TO ONLY COMPILE, AND THAT WAS A FALSE READING, NOT A
         # CHEAP ONE (hq_pascal 2026-09-16, cfo ruling, ceo copied; INSTRUMENT CHANGE in the CEO-749 shape, never a cure).
-        # `--compile -o /dev/null` answers "was it refused AT COMPILE TIME", so a witness whose ISO condition fires at
+        # `--compile --out=/dev/null` answers "was it refused AT COMPILE TIME", so a witness whose ISO condition fires at
         # RUN time could never fail this arm -- and most of a REJECTION suite is runtime conditions. MEASURED: eleven
         # witnesses cured on 2026-09-16 (1826/1827/1842 statically, 1709/1710/1712/1714/1715/1716/1740/1757 at run time)
         # moved both_pass by ONE, because the m4 column floored it. The acceptance arm below ALREADY compiles, links and
@@ -149,7 +149,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # refused) rather than passing on a toolchain accident. test_gate_pas_pat_m4_arm_links_and_runs.sh pins this.
         _t0="$(progress_clock)"   # the mode's own wall for its row (CEO-1676 (c)): m4's takes its compile and link
         if [ "$m" = m3 ]; then ( cd "$TMP" && run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 2s "$SCRIP" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
-        else ( cd "$TMP" && exec "$TIMEOUT_RETRY" 8s "$SCRIP" --compile -o "$TMP/rj.s" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
+        else ( cd "$TMP" && exec "$TIMEOUT_RETRY" 8s "$SCRIP" --compile --out="$TMP/rj.s" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
              if [ "$rc" = 0 ]; then
                  if ( cd "$TMP" && cc -m64 -no-pie rj.s -o rj -L"$HERE/../../SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$HERE/../../SCRIP/out" >/dev/null 2>&1 ); then
                      ( cd "$TMP" && run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 2s ./rj </dev/null >"$TMP/o" 2>&1 ); rc=$?
@@ -241,7 +241,7 @@ for f in "$SUITE"/iso7185pat*.pas "${ACCEPT_FILES[@]}"; do
     for m in m3 m4; do
         _t0="$(progress_clock)"
         if [ "$m" = m3 ]; then run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 20s "$SCRIP" "$f" <"$in" >"$TMP/got" 2>&1; rc=$?
-        else "$TIMEOUT_RETRY" 20s "$SCRIP" --compile -o "$TMP/b.s" "$f" </dev/null >/dev/null 2>&1 && \
+        else "$TIMEOUT_RETRY" 20s "$SCRIP" --compile --out="$TMP/b.s" "$f" </dev/null >/dev/null 2>&1 && \
              gcc -m64 -no-pie "$TMP/b.s" -o "$TMP/bin" -L"$HERE/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"$HERE/../../SCRIP/out" -lm 2>/dev/null && \
              run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 20s "$TMP/bin" <"$in" >"$TMP/got" 2>&1; rc=$?; fi
         SM="$(progress_secs_since "$_t0")"

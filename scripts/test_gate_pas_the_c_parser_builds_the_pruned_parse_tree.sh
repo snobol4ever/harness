@@ -50,7 +50,7 @@ grep -q '(TT_DIV (TT_VAR loc) (TT_ILIT 2))' "$T/ast" && arm ok "loc / 2 is one D
 grep -q '(TT_VAR r) (TT_ILIT 6) (TT_ILIT 2)' "$T/ast" && ! grep -q -- '-3' "$T/ast" && arm ok "the field widths follow r in source order, no sentinel" || arm bad "writeln(r:6:2) does not carry r, 6, 2 in source order without a sentinel"
 run() { local m="$1"
   if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run prune.pas </dev/null >"$T/o" 2>"$T/e" ); return $?; fi
-  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/prune.s" prune.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie prune.s -o prune.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || return 125
+  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/prune.s" prune.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie prune.s -o prune.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || return 125
   ( cd "$T" && timeout -k 5 20s ./prune.m4 </dev/null >"$T/o" 2>"$T/e" ); return $?; }
 ( cd "$T" && "$FPC" -Miso -v0 -oprune.fpc prune.pas >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: fpc -Miso would not compile the witness"; exit 2; }
 ( cd "$T" && timeout -k 5 20s ./prune.fpc </dev/null >"$T/want" 2>/dev/null ); frc=$?

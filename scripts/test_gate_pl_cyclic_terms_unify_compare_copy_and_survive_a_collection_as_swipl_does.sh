@@ -81,7 +81,7 @@ run_arm() {
     local arm="$1" got rc
     case "$arm" in
         m3) got="$(cd "$TMPD" && env -u SCRIP_GC_STRESS -u SCRIP_GC_PLANT_FLIP timeout -k 5 60 "$SCRIP" w_cyc.pl </dev/null 2>"$TMPD/err")"; rc=$? ;;
-        m4) timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/w_cyc.s" "$TMPD/w_cyc.pl" </dev/null 2>"$TMPD/err" || { echo "  RED m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); return; }
+        m4) timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/w_cyc.s" "$TMPD/w_cyc.pl" </dev/null 2>"$TMPD/err" || { echo "  RED m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); return; }
             gcc -m64 -no-pie "$TMPD/w_cyc.s" -o "$TMPD/w_cyc.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || { echo "  RED m4: the assembler or linker refused: $(grep -m1 -E 'Error|error' "$TMPD/err")"; red=$((red+1)); return; }
             got="$(cd "$TMPD" && env -u SCRIP_GC_STRESS -u SCRIP_GC_PLANT_FLIP timeout -k 5 60 ./w_cyc.bin </dev/null 2>"$TMPD/err")"; rc=$? ;;
         stress) got="$(cd "$TMPD" && SCRIP_GC_STRESS=1 timeout -k 5 300 "$SCRIP" w_cyc.pl </dev/null 2>"$TMPD/err" | grep -v '^\[GC-')"; rc=${PIPESTATUS[0]} ;;

@@ -72,7 +72,7 @@ stdin_of() { local b="${1%.sc}" d fam; [ -f "$b.input" ] && { echo "$b.input"; r
 run_one() { local mode="$1" prog="$2" in="$3" tag="$4"; shift 4
   if [ "$mode" = m3 ]; then "$@" timeout -k 5 "$TMO" "$SCRIP" "${SW[@]}" "$prog" <"$in" >"$W/o" 2>"$W/e"; RC=$?  # timeout-retry: exempt -- a timed run: the rusage prefix wraps this timeout, so the tool's own process would enter the measurement -- and a timeout is retried once at util_timeout_retry.sh --longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
     [ "$RC" = 124 ] && { "$@" timeout "$("$HERE/util_timeout_retry.sh" --longer "$TMO")" "$SCRIP" "${SW[@]}" "$prog" <"$in" >"$W/o" 2>"$W/e"; RC=$?; }; return; fi  # timeout-retry: exempt -- the longer retry of the timed run above
-  if ! "$SCRIP" --compile -o "$W/$tag.s" "$prog" </dev/null >"$W/c.err" 2>&1 || ! gcc -no-pie -o "$W/$tag.x" "$W/$tag.s" -L"$RT" -Wl,-rpath,"$RT" -lscrip_rt -lm >>"$W/c.err" 2>&1; then
+  if ! "$SCRIP" --compile --out="$W/$tag.s" "$prog" </dev/null >"$W/c.err" 2>&1 || ! gcc -no-pie -o "$W/$tag.x" "$W/$tag.s" -L"$RT" -Wl,-rpath,"$RT" -lscrip_rt -lm >>"$W/c.err" 2>&1; then
     : >"$W/o"; cp "$W/c.err" "$W/e"; RC=97; return; fi
   "$@" timeout -k 5 "$TMO" "$W/$tag.x" "${SW[@]}" <"$in" >"$W/o" 2>"$W/e"; RC=$?  # timeout-retry: exempt -- a timed run: the rusage prefix wraps this timeout, so the tool's own process would enter the measurement -- and a timeout is retried once at util_timeout_retry.sh --longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
   [ "$RC" = 124 ] && { "$@" timeout "$("$HERE/util_timeout_retry.sh" --longer "$TMO")" "$W/$tag.x" "${SW[@]}" <"$in" >"$W/o" 2>"$W/e"; RC=$?; }; }  # timeout-retry: exempt -- the longer retry of the timed run above

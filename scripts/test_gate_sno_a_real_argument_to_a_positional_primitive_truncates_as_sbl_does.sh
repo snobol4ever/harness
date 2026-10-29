@@ -42,7 +42,7 @@ for n in $names; do
     w="$(cd "$W" && timeout -k 5 20 "$SBL" $(sbl_lang_flags) "$n.sno" </dev/null 2>&1 | norm)"
     [ -n "$w" ] || { echo "⛔ REFUSE(rc=2) [$G]: the oracle printed nothing gradable for $n"; exit 2; }
     printf '%s' "$w" > "$W/$n.want"
-    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
+    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
         && gcc -no-pie "$W/$n.s" -L"$SD/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SD/out" -o "$W/$n.bin" 2>/dev/null \
         || { echo "⛔ REFUSE(rc=2) [$G]: $n did not compile and link in mode 4"; exit 2; }
 done

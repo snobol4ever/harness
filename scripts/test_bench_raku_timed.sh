@@ -78,7 +78,7 @@ run1() {
   case "$eng" in
     m3)     "$WRAP" timeout -k 5 "$T" "$SCRIP" --run "${DECL_SW[@]}" "$src" </dev/null >/dev/null 2>"$W/e.$$" ;;
     m4)     local s="$W/$$.s" b="$W/$$.bin"
-            if ! (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$s" "$src" </dev/null >/dev/null 2>/dev/null) || [ ! -s "$s" ]; then echo "- BUILD-ERR"; return; fi
+            if ! (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$s" "$src" </dev/null >/dev/null 2>/dev/null) || [ ! -s "$s" ]; then echo "- BUILD-ERR"; return; fi
             if ! (as --64 -o "$W/$$.o" "$s" 2>/dev/null && gcc -no-pie -o "$b" "$W/$$.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null); then echo "- LINKFAIL"; return; fi
             "$WRAP" timeout -k 5 "$T" "$b" "${DECL_SW[@]}" </dev/null >/dev/null 2>"$W/e.$$" ;;
     rakudo) "$WRAP" timeout -k 5 "$T" "$RAKU" -I"$W/prelude" -Mprelude_rakudo "$src" </dev/null >/dev/null 2>"$W/e.$$" ;;
@@ -130,7 +130,7 @@ for f in "$RDIR"/*.raku; do
   cmp -s "$m3o" "$ref" || ckstat="m3:DIFF"
   if [ "$ckstat" = ok ]; then
     m4s="$W/m4c.$$.s"; m4b="$W/m4c.$$.bin"; m4o="$W/m4o.$$"
-    if (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o "$m4s" "$f" </dev/null >/dev/null 2>/dev/null) && [ -s "$m4s" ] \
+    if (cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out="$m4s" "$f" </dev/null >/dev/null 2>/dev/null) && [ -s "$m4s" ] \
        && as --64 -o "$m4s.o" "$m4s" 2>/dev/null && gcc -no-pie -o "$m4b" "$m4s.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null; then
       timeout -k 5 "$T" "$m4b" "${DECL_SW[@]}" </dev/null >"$m4o" 2>/dev/null; cmp -s "$m4o" "$ref" || ckstat="m4:DIFF"
     else ckstat="m4:BUILD-ERR"; fi

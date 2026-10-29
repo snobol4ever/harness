@@ -54,7 +54,7 @@ prog() {
 runm() {
     if [ "$1" = m3 ]; then timeout -k 5 20 "$SCRIP" "$T/w.sno" < /dev/null 2>&1
     else rm -f "$T/w" "$T/w.s"
-        "$SCRIP" --compile -o "$T/w.s" "$T/w.sno" < /dev/null > "$T/c.out" 2>&1 || { cat "$T/c.out"; echo "M4-COMPILE-REFUSED"; return; }
+        "$SCRIP" --compile --out="$T/w.s" "$T/w.sno" < /dev/null > "$T/c.out" 2>&1 || { cat "$T/c.out"; echo "M4-COMPILE-REFUSED"; return; }
         gcc -o "$T/w" "$T/w.s" -L "$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm 2> /dev/null || { echo "M4-BUILD-FAILED"; return; }
         (cd "$T" && timeout -k 5 20 ./w < /dev/null 2>&1); fi
 }

@@ -135,7 +135,7 @@ def scrip_run(mode, path, work, tmo):
         rc, out, err = run([SCRIP, path], tmo, cwd=work); return rc, parse_ids(out)
     base = os.path.splitext(os.path.basename(path))[0]
     s = os.path.join(work, base + '.s'); o = os.path.join(work, base + '.o'); b = os.path.join(work, base + '.bin')
-    rc, out, err = run([SCRIP, '--compile', '-o', s, path], tmo * 4, cwd=work)
+    rc, out, err = run([SCRIP, '--compile', f"--out={s}", path], tmo * 4, cwd=work)
     if rc != 0: return ('COMPILE', rc), {}
     rc, out, err = run(['as', '--64', '-o', o, s], tmo * 4)
     if rc != 0: return ('AS', rc), {}

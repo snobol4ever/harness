@@ -22,7 +22,7 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 red=0
 ( cd "$W" && SCRIP_SNO_STMTKW=1 timeout -k 5 30 "$ROOT/scrip" --stlimit "$F.sno" < "$F.in" > m3.out 2> m3.err ); rc=$?
 if [ "$rc" -ne 0 ] || ! cmp -s "$W/m3.out" "$F.ref"; then echo "RED m3: rc=$rc out=$(head -c 40 "$W/m3.out" | tr '\n' '|') err=$(tail -c 120 "$W/m3.err" | tr '\n' ' ')"; red=1; else echo "ok  m3: rc=0 output = ref"; fi
-if ( cd "$W" && SCRIP_SNO_STMTKW=1 "$ROOT/scrip" --compile --stlimit -o "$W/w.s" "$F.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/w.bin" 2>/dev/null ); then
+if ( cd "$W" && SCRIP_SNO_STMTKW=1 "$ROOT/scrip" --compile --stlimit --out="$W/w.s" "$F.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/w.bin" 2>/dev/null ); then
     ( cd "$W" && SCRIP_SNO_STMTKW=1 timeout -k 5 30 ./w.bin < "$F.in" > m4.out 2> m4.err ); rc=$?
     if [ "$rc" -ne 0 ] || ! cmp -s "$W/m4.out" "$F.ref"; then echo "RED m4: rc=$rc out=$(head -c 40 "$W/m4.out" | tr '\n' '|') err=$(tail -c 120 "$W/m4.err" | tr '\n' ' ')"; red=1; else echo "ok  m4: rc=0 output = ref"; fi
 else echo "RED m4: the witness did not compile or link"; red=1; fi

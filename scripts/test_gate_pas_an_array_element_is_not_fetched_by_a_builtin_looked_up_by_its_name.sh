@@ -21,7 +21,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0; SITES=0
 for k in bubble intmm perm queens quick sieve towers whet; do
   [ -f "$KD/$k.pas" ] || { echo "⛔ GATE REFUSE(2) [$G]: no kernel $KD/$k.pas"; exit 2; }
-  ( cd "$T" && timeout -k 5 120s "$SCRIP" --compile -o "$k.s" "$KD/$k.pas" </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: kernel $k did not compile to asm"; exit 2; }
+  ( cd "$T" && timeout -k 5 120s "$SCRIP" --compile --out="$k.s" "$KD/$k.pas" </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: kernel $k did not compile to asm"; exit 2; }
   c=$(grep -c '"arr_get"\|"arr_set_pure"\|"arr_set"\|"iand"' "$T/$k.s"); N=$((N + 1)); SITES=$((SITES + c))
   if [ "$c" = 0 ]; then echo "  $k: no by-name array call in the asm"; else echo "  ⛔ $k: $c by-name array call sites in the asm"; RC=1; fi
 done
@@ -54,7 +54,7 @@ if [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/ctl.want";
 for m in m3 m4; do
   if [ "$m" = m3 ]; then ( cd "$T" && timeout -k 5 20s "$SCRIP" --run ctl.pas </dev/null >"$T/o" 2>"$T/e" ); rc=$?
   else
-    ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o ctl.s ctl.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie ctl.s -o ctl.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ ctl m4 did not compile or link"; RC=1; continue; }
+    ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out=ctl.s ctl.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie ctl.s -o ctl.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ ctl m4 did not compile or link"; RC=1; continue; }
     ( cd "$T" && timeout -k 5 20s ./ctl.m4 </dev/null >"$T/o" 2>"$T/e" ); rc=$?
   fi
   N=$((N + 1))

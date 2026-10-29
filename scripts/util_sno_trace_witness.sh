@@ -31,7 +31,7 @@ if [ "$mode" != error ] && printf '%s\n' "$ref" | grep -q 'ERROR 199 -- trace se
   O="$O2"; ref=$(timeout -k 5 8s "$O" -bf "$w" </dev/null 2>&1)
 fi
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-m4build() { ./scrip --compile -o "$T/w.s" "$w" </dev/null >/dev/null 2>&1 && as -o "$T/w.o" "$T/w.s" 2>/dev/null && gcc -o "$T/w.bin" "$T/w.o" out/libscrip_rt.so -Wl,-rpath,"$PWD/out" 2>/dev/null; }
+m4build() { ./scrip --compile --out="$T/w.s" "$w" </dev/null >/dev/null 2>&1 && as -o "$T/w.o" "$T/w.s" 2>/dev/null && gcc -o "$T/w.bin" "$T/w.o" out/libscrip_rt.so -Wl,-rpath,"$PWD/out" 2>/dev/null; }
 rc=0
 if [ "$mode" = error ]; then
   printf '%s\n' "$ref" | grep -qiE "error 0*$errno([^0-9]|$)" || { echo "REFUSED rc=2: oracle $O did not print ERROR $errno on $w:"; printf '%s\n' "$ref" | head -8; exit 2; }

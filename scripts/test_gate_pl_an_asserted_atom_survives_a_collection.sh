@@ -77,7 +77,7 @@ run_mode_m3(){ SCRIP_GC_STRESS="$STRESS" timeout -k 5 60 "$SCRIP" "$W/w.pl" </de
 M4DIR="$W/m4"; mkdir -p "$M4DIR"
 m4_build(){
     rm -f "$M4DIR/w.s" "$M4DIR/w.bin"
-    timeout -k 5 120 "$SCRIP" --compile -o "$M4DIR/w.s" "$W/w.pl" </dev/null >"$M4DIR/compile.log" 2>&1 || return 1
+    timeout -k 5 120 "$SCRIP" --compile --out="$M4DIR/w.s" "$W/w.pl" </dev/null >"$M4DIR/compile.log" 2>&1 || return 1
     [ -s "$M4DIR/w.s" ] || return 1
     timeout -k 5 120 gcc -no-pie "$M4DIR/w.s" -o "$M4DIR/w.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm >>"$M4DIR/compile.log" 2>&1 || return 1
     [ -x "$M4DIR/w.bin" ] || return 1

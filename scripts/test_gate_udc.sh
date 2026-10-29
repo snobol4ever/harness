@@ -54,7 +54,7 @@ if [ -z "${CN:-}" ]; then
 fi
 for w in cn_udc_declare cn_udc_reopen; do
   extract_witness "$w" || continue
-  "$SCRIP" --compile "$EX_SNO" -o "/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
+  "$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
   gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
   timeout -k 5 20 "$SCRIP" --run "$EX_SNO" < /dev/null > /tmp/gate_m3.txt 2>&1
   diff -q /tmp/gate_m3.txt "$EX_REF" > /dev/null 2>&1; chk $? "m3 $w"
@@ -74,7 +74,7 @@ for t1 in 0 1; do
   # nothing and "m4 $w CONST_T1=0" re-tested the T1=1 program twice -- the s68 vacuous-gate class. Measured proof:
   # with the CN-11 defect present, m3 CONST_T1=0 went red while m4 CONST_T1=0 stayed green on the SAME program.
   # Compiling INSIDE the loop with the arm's env applied is what makes the m4 column a second real medium.
-  SCRIP_CONST_T1=$t1 "$SCRIP" --compile "$EX_SNO" -o "/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
+  SCRIP_CONST_T1=$t1 "$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
   gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
   SCRIP_CONST_T1=$t1 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null > /tmp/gate_m4.txt 2>/dev/null
   diff -q /tmp/gate_m4.txt "$EX_REF" > /dev/null 2>&1; chk $? "m4 $w CONST_T1=$t1"
@@ -86,7 +86,7 @@ done
 # the oracle assigns in total silence, and a 341 printed before an otherwise-correct stdout is a regression the .ref alone structurally cannot see.
 for w in cn_t1_eval_undecl cn_eval_fails_not_aborts cn_indirect_is_ordinary_var cn_indirect_rewrite cn_indirect_seal; do
 extract_witness "$w" || continue
-"$SCRIP" --compile "$EX_SNO" -o "/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
+"$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
 timeout -k 5 20 "$SCRIP" --run "$EX_SNO" < /dev/null 2>/dev/null > /tmp/gate_u3.txt
 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null 2>/dev/null > /tmp/gate_u4.txt
@@ -106,7 +106,7 @@ done
 # (no oracle text to diff against at all). Structurally does not fit the suite's one-.ref-per-entry model;
 # see tests/snobol4/probe_loose/cn/KEEP.md. Read directly from $CN, same as before this row.
 w=cn_udc_closed
-"$SCRIP" --compile "$CN/$w.err_sno" -o "/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
+"$SCRIP" --compile "$CN/$w.err_sno" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
 timeout -k 5 20 "$SCRIP" --run "$CN/$w.err_sno" < /dev/null 2>/dev/null > /tmp/gate_o3.txt
 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null 2>/dev/null > /tmp/gate_o4.txt

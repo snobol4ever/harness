@@ -43,7 +43,7 @@ for w in cmt card blank stmt inc_inc inc_line nested blank_after cmt_line; do
     timeout -k 5 20s "$SBL" -bf $w.sno < /dev/null > $w.ref 2>&1
     [ -s $w.ref ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for witness $w -- no ref to grade against"; exit 2; }
     SCRIP_SNO_STMTKW=1 timeout -k 5 20s "$SCRIP" $w.sno < /dev/null > $w.m3 2>&1
-    if SCRIP_SNO_STMTKW=1 "$SCRIP" --compile -o $w.s $w.sno < /dev/null > $w.c 2>&1 && gcc $w.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $w.x 2>> $w.c; then
+    if SCRIP_SNO_STMTKW=1 "$SCRIP" --compile --out=$w.s $w.sno < /dev/null > $w.c 2>&1 && gcc $w.s -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o $w.x 2>> $w.c; then
         SCRIP_SNO_STMTKW=1 timeout -k 5 20s ./$w.x < /dev/null > $w.m4 2>&1
     else echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed for witness $w: $(grep -m1 . $w.c | cut -c1-160)"; exit 2; fi
     for m in m3 m4; do

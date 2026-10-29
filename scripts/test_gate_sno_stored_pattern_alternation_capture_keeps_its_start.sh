@@ -35,7 +35,7 @@ ref="$("$SBL" -bf "$W/cap.sno" </dev/null 2>/dev/null)"
 [ "$ref" = "$(printf '[ABS]\n[ACOS]\n[ACC]')" ] || { echo "⛔ REFUSE(2): the oracle did not answer [ABS] [ACOS] [ACC] -- got: $ref"; exit 2; }
 m3="$(cd "$W" && timeout -k 5 10 "$SCRIP" cap.sno </dev/null 2>&1)"
 ck "$([ "$m3" = "$ref" ] && echo ok || echo no)" "mode 3, shipped default: the three captures match sbl (got: $(printf '%s' "$m3" | tr '\n' ' ' | cut -c1-80))"
-(cd "$W" && timeout -k 5 10 "$SCRIP" --compile -o cap.s cap.sno </dev/null >/dev/null 2>&1 && gcc -o cap cap.s "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null)
+(cd "$W" && timeout -k 5 10 "$SCRIP" --compile --out=cap.s cap.sno </dev/null >/dev/null 2>&1 && gcc -o cap cap.s "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null)
 m4="$(cd "$W" && timeout -k 5 10 ./cap </dev/null 2>&1)"
 ck "$([ "$m4" = "$ref" ] && echo ok || echo no)" "mode 4, shipped default: the same (got: $(printf '%s' "$m4" | tr '\n' ' ' | cut -c1-80))"
 [ "$fail" = 0 ] && { echo "✅ GATE OK: a stored pattern's alternation-arm leaf keeps the capture's start cursor on the spine road, both modes"; exit 0; }

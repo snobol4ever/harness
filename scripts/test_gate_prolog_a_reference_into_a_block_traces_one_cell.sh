@@ -26,7 +26,7 @@ SW="-d131072k -s4096k -i2048k"
 grew_of() { sed -n 's/.*\[GC-EXERCISE\].* grew=\([0-9][0-9]*\).*/\1/p' "$1" | tail -1; }
 run_m3() { ( cd "$ROOT" && SCRIP_GC_EXERCISE=1 timeout 60 ./scrip $SW "$1" < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 run_m4() {
-    ( cd "$ROOT" && timeout 60 ./scrip --compile -o "$2.s" "$1" < /dev/null > /dev/null 2> "$2.cerr" ) || { echo 2; return; }
+    ( cd "$ROOT" && timeout 60 ./scrip --compile --out="$2.s" "$1" < /dev/null > /dev/null 2> "$2.cerr" ) || { echo 2; return; }
     gcc "$2.s" -o "$2.bin" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$2.lerr" || { echo 2; return; }
     ( SCRIP_GC_EXERCISE=1 timeout 60 "$2.bin" $SW < /dev/null > "$2.out" 2> "$2.err" ); echo $?; }
 red=0

@@ -27,7 +27,7 @@ for src in noex_first noex_undone noex_late noex_last noex_list noex_chain exec_
     [ -s $src.o ] || [ "$orc" -ne 0 ] || [ $src = exec_default ] || { echo "REFUSED(2): sbl does not answer as pinned for $src (rc $orc)"; exit 2; }
     echo "rc=$orc" >> $src.o
     timeout -k 5 60 "$ROOT/scrip" --stlimit $src.sno < /dev/null 2>/dev/null | run_cut > $src.m3; echo "rc=${PIPESTATUS[0]}" >> $src.m3
-    timeout -k 5 60 "$ROOT/scrip" --compile -o $src.s $src.sno < /dev/null > /dev/null 2>&1 \
+    timeout -k 5 60 "$ROOT/scrip" --compile --out=$src.s $src.sno < /dev/null > /dev/null 2>&1 \
         && gcc -m64 -no-pie $src.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o $src.bin > /dev/null 2>&1 \
         && { timeout -k 5 60 ./$src.bin --stlimit < /dev/null 2>/dev/null | run_cut > $src.m4; echo "rc=${PIPESTATUS[0]}" >> $src.m4; } || echo "no-binary" > $src.m4
     for m in m3 m4; do

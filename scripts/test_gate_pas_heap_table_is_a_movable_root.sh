@@ -97,7 +97,7 @@ end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 w.pas >/dev/null 2>&1 && ./w ) > "$T/w.ref" 2>&1
 grep -q '^nodes 300 sum 45150 churn 20000 bad 0$' "$T/w.ref" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not produce the kept-list line this gate pins -- the oracle moved: $(head -1 "$T/w.ref")"; exit 2; }
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o w.s w.pas </dev/null && gcc w.s -o w.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the mode-4 witness did not build"; exit 2; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=w.s w.pas </dev/null && gcc w.s -o w.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the mode-4 witness did not build"; exit 2; }
 RC=0
 for M in m3 m4; do
   for ARM in plain forced; do

@@ -78,7 +78,7 @@ arm() { local n="$1" what="$2" got="$3" w="$4"
     else fail=$((fail + 1)); echo "  arm $n FAIL  $what"; diff "$w" "$got" | head -8 | sed 's/^/      /'; fi; }
 m3() { timeout -k 5 30 "$SCRIP" "$T/$1.sno" < /dev/null > "$T/$1.m3" 2>/dev/null; }
 m4() { : > "$T/$1.m4"
-       if timeout -k 5 120 "$SCRIP" --compile -o "$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
+       if timeout -k 5 120 "$SCRIP" --compile --out="$T/$1.s" "$T/$1.sno" < /dev/null > /dev/null 2>&1 \
           && gcc -no-pie "$T/$1.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$T/$1.bin" 2>/dev/null
        then timeout -k 5 30 "$T/$1.bin" < /dev/null > "$T/$1.m4" 2>/dev/null; else echo COMPILE-FAILED > "$T/$1.m4"; fi; }
 m3 rd; arm 1 "m3: a DEFINE used as a value rebinds entry and prototype" "$T/rd.m3" "$T/rd.want"

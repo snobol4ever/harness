@@ -20,7 +20,7 @@ mkdir -p "$W/cwd" && cp -p "$S4E/corpus/include/"*.inc "$W/cwd/"
 for ((i=0;i<SCALE;i++)); do cat "$SRC"; done > "$W/in"
 (cd "$W/cwd" && timeout -k 5 120 "$SBL" $(sbl_lang_flags) $OAD "$P" < "$W/in" > "$W/want" 2> /dev/null); orc=$?
 [ "$orc" = 0 ] && [ -s "$W/want" ] || { echo "⛔ REFUSED: SPITBOL gave no answer for $FAM at x$SCALE (rc=$orc)" >&2; exit 2; }
-"$SCRIP" --compile -o "$W/p.s" "$P" < /dev/null 2> "$W/c.err" && gcc "$W/p.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/p4" 2>> "$W/c.err" || { echo "⛔ $FAM m4 does not build: $(head -1 "$W/c.err")"; exit 1; }
+"$SCRIP" --compile --out="$W/p.s" "$P" < /dev/null 2> "$W/c.err" && gcc "$W/p.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/p4" 2>> "$W/c.err" || { echo "⛔ $FAM m4 does not build: $(head -1 "$W/c.err")"; exit 1; }
 bad3=0; bad4=0; first=""
 for ((i=1;i<=N;i++)); do
   (cd "$W/cwd" && timeout -k 5 120 "$SCRIP" --run $SWD "$P" < "$W/in" > "$W/o3" 2> "$W/e3"); cmp -s "$W/o3" "$W/want" || { bad3=$((bad3+1)); [ -n "$first" ] || first="m3 run $i: $(head -1 "$W/e3" | cut -c1-200)"; }

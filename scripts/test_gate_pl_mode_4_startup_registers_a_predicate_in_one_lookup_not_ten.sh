@@ -29,7 +29,7 @@ N=200
     echo "main :- p1(a, X), p$N(b, Y), Z is X + Y, write(Z), nl."
     echo ":- initialization(main)."
 } > "$TMPD/w.pl"
-timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/w.s" "$TMPD/w.pl" </dev/null 2>"$TMPD/err" || refuse "the witness did not compile: $(head -c 200 "$TMPD/err")"
+timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/w.s" "$TMPD/w.pl" </dev/null 2>"$TMPD/err" || refuse "the witness did not compile: $(head -c 200 "$TMPD/err")"
 gcc -m64 -no-pie "$TMPD/w.s" -o "$TMPD/w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || refuse "the witness did not link: $(grep -m1 -iE 'error' "$TMPD/err" | head -c 200)"
 recs=$(grep -cE 'call\s+rt_proc_register_rec' "$TMPD/w.s"); [ "$recs" -ge "$N" ] || refuse "the mode-4 text registers $recs records for $N predicates -- the registration road changed shape; re-cut this gate"
 maps=$(grep -cE 'call\s+rt_gc_frame_maps_install_counted' "$TMPD/w.s"); [ "$maps" = 1 ] || refuse "the mode-4 text installs its frame maps $maps times, not once -- re-cut this gate"

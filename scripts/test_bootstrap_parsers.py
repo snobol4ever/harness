@@ -164,7 +164,7 @@ def build_arm(lang, arm, work):
     exe = d / f"{prog.stem}.{arm}.bin"
     asm = d / f"{prog.stem}.{arm}.s"
     obj = d / f"{prog.stem}.{arm}.o"
-    for cmd in ([str(SCRIP), "--compile", "-o", str(asm), str(prog)],
+    for cmd in ([str(SCRIP), "--compile", f"--out={str(asm)}", str(prog)],
                 ["as", "--64", "-o", str(obj), str(asm)],
                 ["gcc", "-no-pie", "-o", str(exe), str(obj), "-L", str(RTLIB), "-lscrip_rt", f"-Wl,-rpath,{RTLIB}", "-lm"]):
         r = subprocess.run(cmd, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=600)

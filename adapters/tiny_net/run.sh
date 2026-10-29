@@ -56,7 +56,7 @@ exe="$NET_CACHE/${key}.exe"
 stamp="$NET_CACHE/${key}.stamp"
 
 # Emit .il (fast — ~1ms)
-"$SCRIP_CC" -net -o "$il" "$SNO_FILE" 2>/dev/null
+"$SCRIP_CC" -net --out="$il" "$SNO_FILE" 2>/dev/null
 
 # Assemble .exe only if .il changed (slow — ~350ms)
 il_md5="$(md5sum "$il" | cut -d' ' -f1)"

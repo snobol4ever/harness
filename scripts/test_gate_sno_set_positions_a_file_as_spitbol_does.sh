@@ -56,7 +56,7 @@ mkdir "$T/bo" && cp "$PKG/BUILDLIB.sno" "$PKG/BUILDLIB.IN" "$PKG/spitlib.spt" "$
 ( cd "$T/bo" && timeout -k 5 20 "$SBL" -bf BUILDLIB.sno < BUILDLIB.IN > out 2>&1 ) && [ -s "$T/bo/spitlib.idx" ] || refuse "sbl did not write spitlib.idx from BUILDLIB"
 fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
-run() { ( cd "$1" && if [ "$3" = m3 ]; then timeout -k 5 20 "$SCRIP" "$2.sno"; else timeout -k 5 30 "$SCRIP" --compile -o "$2.s" "$2.sno" < /dev/null > /dev/null 2>&1 && gcc "$2.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$2.bin" > /dev/null 2>&1 && timeout -k 5 20 "./$2.bin"; fi ) }
+run() { ( cd "$1" && if [ "$3" = m3 ]; then timeout -k 5 20 "$SCRIP" "$2.sno"; else timeout -k 5 30 "$SCRIP" --compile --out="$2.s" "$2.sno" < /dev/null > /dev/null 2>&1 && gcc "$2.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$2.bin" > /dev/null 2>&1 && timeout -k 5 20 "./$2.bin"; fi ) }
 matrix() { local bad=""
     for i in "${!CASES[@]}"; do
         run "$T" "c$i" "$1" < /dev/null > "$T/c$i.$1.out" 2> "$T/c$i.$1.err"

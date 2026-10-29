@@ -33,7 +33,7 @@ byname  sum = sum + APPLY(fname, i)
         OUTPUT = 'sum = ' sum
 END
 SNO
-( cd "$T" && "$ROOT/scrip" --compile -o w4.s w.sno < /dev/null > cc4.out 2>&1 && gcc w4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w4.bin > ld4.out 2>&1 ) || { echo "⛔ REFUSED(2): the witness did not build in mode 4"; cat "$T/cc4.out" "$T/ld4.out" 2>/dev/null; exit 2; }
+( cd "$T" && "$ROOT/scrip" --compile --out=w4.s w.sno < /dev/null > cc4.out 2>&1 && gcc w4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w4.bin > ld4.out 2>&1 ) || { echo "⛔ REFUSED(2): the witness did not build in mode 4"; cat "$T/cc4.out" "$T/ld4.out" 2>/dev/null; exit 2; }
 count() {   # count <label> <program...> : gdb hit counts of the two functions; prints "label idle=N args=N rc=R"
   local label="$1"; shift
   ( cd "$T" && timeout -k 5 120 gdb -batch -q -ex 'set breakpoint pending on' -ex 'set pagination off' -ex 'set confirm off' -ex 'break trace_idle' -ex 'ignore 1 1000000000' -ex 'break rt_trace_event_args_ip' -ex 'ignore 2 1000000000' -ex run -ex 'info breakpoints' --args "$@" > "$T/$label.gdb" 2>&1 < /dev/null ); local rc=$?

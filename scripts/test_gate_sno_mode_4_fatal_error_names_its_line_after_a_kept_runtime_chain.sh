@@ -29,7 +29,7 @@ norm() { sed -n -E -e 's/^[^ ]*\.sno\(([0-9]+)\) : ERROR 0*([0-9]+).*/error \2 l
 for n in $names; do
     w="$(cd "$W" && timeout -k 5 20 "$SBL" $(sbl_lang_flags) "$n.sno" </dev/null 2>&1 | norm)"
     case "$w" in "error 14 line "*) printf '%s' "$w" > "$W/$n.want";; *) echo "⛔ REFUSE(rc=2) [$G]: the oracle read '$w' for $n, not 'error 14 line N' -- the arms cannot grade"; exit 2;; esac
-    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
+    (cd "$W" && timeout -k 5 60 "$SCRIP" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1) \
         && gcc -no-pie "$W/$n.s" -L"$SD/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SD/out" -o "$W/$n.bin" 2>/dev/null \
         || { echo "⛔ REFUSE(rc=2) [$G]: $n did not compile and link in mode 4"; exit 2; }
 done

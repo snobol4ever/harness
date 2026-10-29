@@ -35,7 +35,7 @@ red=0
 for p in fa cap; do
     ( cd "$W" && timeout -k 5 120 "$SW" -q "$p.pl" < /dev/null > "$W/$p.ref" 2> /dev/null ) || true
     [ -s "$W/$p.ref" ] || { echo "REFUSED(2): swipl printed nothing for $p.pl"; exit 2; }
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$p.s" "$p.pl" < /dev/null > /dev/null 2>&1 && gcc "$p.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$p.bin" 2> /dev/null ) || { echo "RED: $p.pl did not compile and link"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$p.s" "$p.pl" < /dev/null > /dev/null 2>&1 && gcc "$p.s" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" -o "$p.bin" 2> /dev/null ) || { echo "RED: $p.pl did not compile and link"; red=1; continue; }
 done
 [ "$red" -eq 0 ] || { echo "GATE FAILED: see the RED lines above"; exit 1; }
 run() { local p="$1" m="$2" st="$3" d="$4"; if [ "$m" = m3 ]; then ( cd "$W" && SCRIP_GC_STRESS="$st" timeout -k 5 120 "$ROOT/scrip" $d -s4096k "$p.pl" < /dev/null 2> /dev/null ); else ( cd "$W" && SCRIP_GC_STRESS="$st" timeout -k 5 120 "./$p.bin" $d -s4096k < /dev/null 2> /dev/null ); fi; }

@@ -33,7 +33,7 @@ if [ -n "$stk" ]; then stk=$(( stk * 1024 )); else stk="none (no compiled RT_STA
 if [ "$cap" = "$sd" ] && [ "$win" = "$si" ] && [ "$stk" = "$ss" ]; then echo "ok  (1) SPITBOL prints -d${sd}k -i${si}k -s${ss}k and SCRIP compiles GC_HEAP_CAP_KB=$cap GC_HEAP_KB=$win RT_STACK_DEFAULT=${stk}k"
 else echo "RED (1) SPITBOL's defaults -d${sd}k -i${si}k -s${ss}k differ from SCRIP's GC_HEAP_CAP_KB=$cap GC_HEAP_KB=$win RT_STACK_DEFAULT=${stk}k"; red=1; fi
 printf "        OUTPUT = 'hello'\nEND\n" > "$W/h.sno"
-( cd "$W" && "$ROOT/scrip" --compile -o h.s h.sno < /dev/null > /dev/null 2>&1 && gcc h.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o h.bin 2>/dev/null ) || { echo "REFUSED(2): hello did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out=h.s h.sno < /dev/null > /dev/null 2>&1 && gcc h.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o h.bin 2>/dev/null ) || { echo "REFUSED(2): hello did not build in mode 4"; exit 2; }
 r3=$( cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB SCRIP_ZETA_TELEM=1 timeout -k 5 20 "$ROOT/scrip" h.sno < /dev/null 2>&1 | grep -o 'arena=[0-9]*KB\|cap=[0-9]*KB' | tr '\n' ' ')
 r4=$( cd "$W" && env -u SCRIP_HEAP_KB -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB SCRIP_ZETA_TELEM=1 timeout -k 5 20 ./h.bin < /dev/null 2>&1 | grep -o 'arena=[0-9]*KB\|cap=[0-9]*KB' | tr '\n' ' ')
 want="arena=${si}KB cap=${sd}KB "
@@ -47,7 +47,7 @@ r_end
         OUTPUT = r($d)
 END
 SNO
-( cd "$W" && "$ROOT/scrip" --compile -o d$d.s d$d.sno < /dev/null > /dev/null 2>&1 && gcc d$d.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o d$d.bin 2>/dev/null ) || { echo "REFUSED(2): the recursion witness $d did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out=d$d.s d$d.sno < /dev/null > /dev/null 2>&1 && gcc d$d.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o d$d.bin 2>/dev/null ) || { echo "REFUSED(2): the recursion witness $d did not build"; exit 2; }
 done
 ok20=$( cd "$W" && env -u SCRIP_STACK timeout -k 5 30 "$ROOT/scrip" d20000.sno < /dev/null 2>/dev/null; env -u SCRIP_STACK timeout -k 5 30 ./d20000.bin < /dev/null 2>/dev/null; timeout -k 5 30 "$SBL" -bf d20000.sno < /dev/null 2>/dev/null | head -1 )
 of3=$( cd "$W" && env -u SCRIP_STACK timeout -k 5 30 "$ROOT/scrip" d200000.sno < /dev/null 2>&1 | grep -c 'ERROR 246' ); of4=$( cd "$W" && env -u SCRIP_STACK timeout -k 5 30 ./d200000.bin < /dev/null 2>&1 | grep -c 'ERROR 246' ); ofs=$( cd "$W" && timeout -k 5 30 "$SBL" -bf d200000.sno < /dev/null 2>&1 | grep -c 'ERROR 246' )

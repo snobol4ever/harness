@@ -101,7 +101,7 @@ runq() {
         ( ulimit -s "$PIN_KB"; timeout -k 5 180 "$SCRIP" "$f" </dev/null 2>&1 )
     else
         ( ulimit -s "$PIN_KB"
-          timeout -k 5 180 "$SCRIP" --compile -o "$W/x.s" "$f" </dev/null >/dev/null 2>&1 || exit 9
+          timeout -k 5 180 "$SCRIP" --compile --out="$W/x.s" "$f" </dev/null >/dev/null 2>&1 || exit 9
           cd "$W" && gcc -no-pie x.s -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -o x.bin >/dev/null 2>&1 || exit 9
           timeout -k 5 180 ./x.bin </dev/null 2>&1 )
     fi

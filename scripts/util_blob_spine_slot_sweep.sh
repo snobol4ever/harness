@@ -49,7 +49,7 @@ else while IFS= read -r f; do FILES+=("$f"); done < <(find "$ROOT/corpus" -name 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 nprog=0; nblob=0; nhit=0; nfile=0; nskip=0
 for f in "${FILES[@]}"; do
-    if ! timeout -k 5 20 "$SCRIP" --compile -o "$TMP/p.s" "$f" < /dev/null > /dev/null 2>&1; then nskip=$((nskip+1)); continue; fi
+    if ! timeout -k 5 20 "$SCRIP" --compile --out="$TMP/p.s" "$f" < /dev/null > /dev/null 2>&1; then nskip=$((nskip+1)); continue; fi
     nprog=$((nprog+1))
     out="$(awk '
         /^\.LTp[0-9]+_α_body:/ { inblob=1; blob=$0; sub(/_α_body:.*/,"",blob); blobs[blob]=1; next }

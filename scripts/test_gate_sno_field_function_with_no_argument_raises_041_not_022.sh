@@ -35,7 +35,7 @@ for arm in "no-argument|X()" "string|X('hello')" "integer|X(7)" "array|X(AR)" "t
     [ -n "$want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced no gradable verdict for $name ($expr)"; exit 2; }
     got3="$( timeout -k 5 20 "$SCRIP" "$W/w.sno" </dev/null 2>&1 | verdict )"
     got4=""
-    if "$SCRIP" --compile "$W/w.sno" -o "$W/w.s" </dev/null >/dev/null 2>&1 &&
+    if "$SCRIP" --compile "$W/w.sno" --out="$W/w.s" </dev/null >/dev/null 2>&1 &&
        gcc -m64 -no-pie -rdynamic "$W/w.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$W/w" 2>"$W/ld.log"; then
         got4="$( timeout -k 5 20 "$W/w" </dev/null 2>&1 | verdict )"
     else

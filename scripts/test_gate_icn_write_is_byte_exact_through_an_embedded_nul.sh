@@ -43,7 +43,7 @@ RC=0
 for M in m3 m4; do
   rm -f "$T/w.out"
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" w.icn </dev/null >"$T/$M.out" 2>"$T/$M.err" )
-  else ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile -o w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie w.s -o w.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1 || { echo "  m4 RED: the witness would not compile or link"; RC=1; continue; }
+  else ( cd "$T" && timeout -k 5 30 "$SCRIP" --compile --out=w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie w.s -o w.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1 || { echo "  m4 RED: the witness would not compile or link"; RC=1; continue; }
        ( cd "$T" && timeout -k 5 20 ./w.bin </dev/null >"$T/$M.out" 2>"$T/$M.err" )
   fi
   if [ -n "${GATE_FAIL_ONCE:-}" ]; then head -c 7 "$T/$M.out" > "$T/$M.cut"; mv "$T/$M.cut" "$T/$M.out"; fi

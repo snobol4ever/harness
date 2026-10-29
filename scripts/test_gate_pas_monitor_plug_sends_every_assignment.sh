@@ -44,7 +44,7 @@ else echo "  ⛔ arm 1 FAILED: monitor rc=$mrc"; printf '%s\n' "$mon" | grep -a 
 [ -s "$T/plug.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced no output for arm 2"; exit 2; }
 if [ -n "${FAIL_ONCE:-}" ]; then echo "corrupted by FAIL_ONCE" >> "$T/plug.ref"; fi
 o3=$( cd "$T" && timeout -k 5 20s "$SCRIP" --run plug.pas </dev/null 2>&1 ); c3=$?
-( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o plug.s plug.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie plug.s -o plug.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) \
+( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out=plug.s plug.pas </dev/null >/dev/null 2>&1 && cc -m64 -no-pie plug.s -o plug.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) \
   || { echo "⛔ GATE REFUSE(2) [$G]: arm 2 would not compile or link in m4"; exit 2; }
 o4=$( cd "$T" && timeout -k 5 20s ./plug.m4 </dev/null 2>&1 ); c4=$?
 if [ "$c3" = 0 ] && [ "$c4" = 0 ] && [ "$o3" = "$(cat "$T/plug.ref")" ] && [ "$o4" = "$(cat "$T/plug.ref")" ]; then echo "  arm 2: byte-identical to fpc -Miso in both modes"

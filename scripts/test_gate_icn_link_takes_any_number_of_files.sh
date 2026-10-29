@@ -30,7 +30,7 @@ for i in $(seq 1 $N); do printf 'procedure p%d()\n   return %d;\nend\n' "$i" "$i
 want="$( cd "$T" && ./main.x </dev/null 2>/dev/null )"; wrc=$?
 [ -n "$want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing"; exit 2; }
 o3="$( cd "$T" && timeout -k 5 60 "$SCRIP" main.icn </dev/null 2>"$T/m3.err" )"; r3=$?
-( cd "$T" && timeout -k 5 120 "$SCRIP" --compile -o main.s main.icn </dev/null >/dev/null 2>"$T/c4.err" && gcc -no-pie -o main.4 main.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 )
+( cd "$T" && timeout -k 5 120 "$SCRIP" --compile --out=main.s main.icn </dev/null >/dev/null 2>"$T/c4.err" && gcc -no-pie -o main.4 main.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 )
 o4="$( cd "$T" && timeout -k 5 60 ./main.4 </dev/null 2>/dev/null )"; r4=$?
 echo "  HOLDS: an Icon program may link any number of files, as iconx allows -- no fixed table of linked names"
 if [ "$o3" = "$want" ] && [ "$r3" = "$wrc" ] && [ "$o4" = "$want" ] && [ "$r4" = "$wrc" ]; then

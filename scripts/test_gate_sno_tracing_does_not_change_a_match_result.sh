@@ -65,7 +65,7 @@ run() {  # run <m3|m4> <prog> <stdin> [--trace] [ENV=V...] -> stdout; rc in $T/r
   local m="$1" p="$2" in="$3"; shift 3; local tr=""; [ "${1:-}" = --trace ] && { tr=--trace; shift; }
   if [ "$m" = m3 ]; then env "$@" timeout -k 5 120 "$SCRIP" $tr --run "$p" < "$in" 2>/dev/null; echo $? > "$T/rc"; return; fi
   local x="$p.$m${tr:+.t}"
-  env "$@" "$SCRIP" $tr --compile -o "$x.s" "$p" </dev/null >/dev/null 2>&1 || { echo "COMPILE-FAIL"; echo 99 > "$T/rc"; return; }
+  env "$@" "$SCRIP" $tr --compile --out="$x.s" "$p" </dev/null >/dev/null 2>&1 || { echo "COMPILE-FAIL"; echo 99 > "$T/rc"; return; }
   gcc -no-pie -o "$x.bin" "$x.s" -L"$RT" -Wl,-rpath,"$RT" -lscrip_rt -lm >/dev/null 2>&1 || { echo "LINK-FAIL"; echo 99 > "$T/rc"; return; }
   env "$@" ${tr:+SCRIP_TRACE=2000000000} timeout -k 5 120 "$x.bin" < "$in" 2>/dev/null; echo $? > "$T/rc"; }
 strip_trace() { grep -v '^\*\*\*\*'; }

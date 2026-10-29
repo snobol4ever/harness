@@ -50,7 +50,7 @@ for c in a b c; do
     ( cd "$W" && timeout -k 5 20 "$SW" -q -t halt "$c.pl" < /dev/null > "$c.ref" 2> /dev/null )
     [ -s "$W/$c.ref" ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer program $c"; exit 2; }
     ( cd "$W" && timeout -k 5 30 "$ROOT/scrip" "$c.pl" < /dev/null > "$c.m3" 2>&1 ); r3=$?
-    ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$c.s" "$c.pl" < /dev/null > "$c.cerr" 2>&1 && gcc -no-pie -o "$c.bin" "$c.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$c.lerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: program $c does not compile or link in mode 4 ($(head -c 120 "$W/$c.cerr" "$W/$c.lerr" 2>/dev/null | tr '\n' ' '))"; exit 2; }
+    ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$c.s" "$c.pl" < /dev/null > "$c.cerr" 2>&1 && gcc -no-pie -o "$c.bin" "$c.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$c.lerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: program $c does not compile or link in mode 4 ($(head -c 120 "$W/$c.cerr" "$W/$c.lerr" 2>/dev/null | tr '\n' ' '))"; exit 2; }
     ( cd "$W" && timeout -k 5 20 "./$c.bin" < /dev/null > "$c.m4" 2>&1 ); r4=$?
     for m in m3 m4; do rc=$([ $m = m3 ] && echo $r3 || echo $r4)
         if [ "$rc" -eq 0 ] && cmp -s "$W/$c.ref" "$W/$c.$m"; then echo "  ok  $c $m: rc=0, as swipl ($(tr '\n' ' ' < "$W/$c.ref"))"

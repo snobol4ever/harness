@@ -23,7 +23,7 @@ CTX=("dot| Y = .(%s)" "at| Y = @(%s)" "amp| Y = &(%s)" "capt| Y = A . (%s)" "imm
 GAP=" dot_13 lhs_13 subj_13 subj_14 "
 cell() { printf "        &ERRLIMIT = 100\n        DEFINE('F(X)')\n        A = ARRAY(3)\n        S = \"%s\"\n        CODE(S)    :F(BAD)\n        OUTPUT = 'compiled'   :(END)\nBAD     OUTPUT = &ERRTYPE\nEND\n" "$1" > "$T/$2.sno"; }
 run3() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 10s "$SCRIP" --run "$1" </dev/null 2>/dev/null | head -1 ); }
-run4() { ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/${1%.sno}.s" "$1" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$T/${1%.sno}.s" -o "$T/${1%.sno}.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 10s "$T/${1%.sno}.m4" </dev/null 2>/dev/null | head -1 ); }
+run4() { ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/${1%.sno}.s" "$1" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$T/${1%.sno}.s" -o "$T/${1%.sno}.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 10s "$T/${1%.sno}.m4" </dev/null 2>/dev/null | head -1 ); }
 oracle() { ( cd "$T" && "$SBL" $(sbl_lang_flags) "$1" </dev/null 2>/dev/null | head -1 ); }
 RC=0; NB=0; AB=0; NG=0; AG=0; NX=0; AX=0; BAD=""; FIRST=1
 for c in "${CTX[@]}"; do k="${c%%|*}"; f="${c#*|}"; for i in "${!OPS[@]}"; do n="$(printf '%s_%02d' "$k" "$i")"; s="$(printf "$f" "${OPS[$i]}")"; cell "$s" "$n"

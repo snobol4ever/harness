@@ -70,14 +70,14 @@ done
 # ⭐ THE DISCRIMINATION ARM, asserted POSITIVELY IN BOTH DIRECTIONS on one binary (hq_P: "a positive assertion over
 # the delta, not a not-equal check").  Absence alone would pass on a compiler with no GVA left, so presence in the
 # twin is asserted in the same breath.  The two sources differ ONLY in the TRACE type literal.
-(cd "$ROOT" && ./scrip --compile -o "$T/q.s" "$T/plain_read.sno" </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): qualifying witness did not compile in m4"; exit 2; }
-(cd "$ROOT" && ./scrip --compile -o "$T/n.s" "$T/ctl_value.sno"  </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): control witness did not compile in m4"; exit 2; }
+(cd "$ROOT" && ./scrip --compile --out="$T/q.s" "$T/plain_read.sno" </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): qualifying witness did not compile in m4"; exit 2; }
+(cd "$ROOT" && ./scrip --compile --out="$T/n.s" "$T/ctl_value.sno"  </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): control witness did not compile in m4"; exit 2; }
 # ⛔⭐ THE FOURTH QUALIFYING FORM, ASSERTED STRUCTURALLY ONLY, AND THAT IS DELIBERATE.  A lowercase type is
 # rowed as a SEPARATE divergence (trace_type_parse uses strcmp; sbl folds), so its RUNTIME behaviour is red today
 # and is not asserted anywhere here.  What IS asserted is that the TRIGGER does not care: it demotes on a spelling
 # the runtime will go on to refuse, which is the whole point of a trigger that fails TOWARD demotion.  This arm
 # stays TRUE whether or not that row ever lands, so curing it cannot turn this gate red.
-(cd "$ROOT" && ./scrip --compile -o "$T/lc.s" "$T/ctl_lowercase.sno" </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): lowercase witness did not compile in m4"; exit 2; }
+(cd "$ROOT" && ./scrip --compile --out="$T/lc.s" "$T/ctl_lowercase.sno" </dev/null >/dev/null 2>&1) || { echo "⛔ REFUSE(2): lowercase witness did not compile in m4"; exit 2; }
 lcn=$(grep -c '__gva_names' "$T/lc.s" || true)
 [ "$lcn" -eq 0 ] || { echo "⛔ RED lowercase_still_demotes: a lowercase ACCESS type left the GVA island in place ($lcn) -- the trigger has started trusting the runtime's type parse"; rc=1; }
 qn=$(grep -c '__gva_names' "$T/q.s" || true); qs=$(grep -cE 'qword ptr \[r9 \+ [0-9]+\]' "$T/q.s" || true)

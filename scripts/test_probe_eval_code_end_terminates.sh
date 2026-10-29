@@ -46,7 +46,7 @@ in fragment"
 run_m3() { local w="$1"
     ( cd "$WORK" && timeout -k 5 8 "$ROOT/scrip" --run "$w.sno" </dev/null >"$w.m3.out" 2>"$w.m3.err" ); echo $?; }
 run_m4() { local w="$1"
-    if ( cd "$WORK" && timeout -k 5 8 "$ROOT/scrip" --compile -o "$w.s" "$w.sno" </dev/null ) >/dev/null 2>&1 \
+    if ( cd "$WORK" && timeout -k 5 8 "$ROOT/scrip" --compile --out="$w.s" "$w.sno" </dev/null ) >/dev/null 2>&1 \
        && ( cd "$WORK" && as -o "$w.o" "$w.s" ) >/dev/null 2>&1 \
        && ( cd "$WORK" && gcc -o "$w.bin" "$w.o" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" ) >/dev/null 2>&1; then
         ( cd "$WORK" && timeout -k 5 8 "./$w.bin" </dev/null >"$w.m4.out" 2>"$w.m4.err" ); echo $?

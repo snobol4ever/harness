@@ -55,7 +55,7 @@ refusal() { local p="$1" om="$2" fr
   if [ "$fr" = 0 ]; then echo "⛔ GATE REFUSE(2) [$G]: fpc $om accepted $p -- the oracle does not refuse it, so this arm measures nothing"; exit 2; fi
   for m in m3 m4; do N=$((N + 1))
     if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?
-    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
+    else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/$p.s" "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
     if [ "$rc" != 0 ] && [ "$rc" -lt 124 ] && grep -q 'static-storage limit' "$T/e" && [ ! -s "$T/o" ]; then echo "  $p $m: refused rc=$rc, as fpc $om refuses it ($(head -1 "$T/e" | cut -c1-70)...)"
     else echo "  ⛔ $p $m FAILED: rc=$rc, expected a refusal naming the static-storage limit: $(head -1 "$T/e" | cut -c1-120)"; RC=1; fi; done; }
 refusal bigchar -Miso
@@ -66,7 +66,7 @@ refusal bigobj -Mobjfpc
 [ -n "${FAIL_ONCE:-}" ] && echo "corrupted by FAIL_ONCE" >> "$T/okarr.want"
 for m in m3 m4; do N=$((N + 1))
   if [ "$m" = m3 ]; then ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run okarr.pas </dev/null >"$T/o" 2>"$T/e" ); rc=$?
-  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/okarr.s" okarr.pas </dev/null >/dev/null 2>"$T/e" && cc -m64 -no-pie okarr.s -o okarr.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./okarr.m4 </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
+  else ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/okarr.s" okarr.pas </dev/null >/dev/null 2>"$T/e" && cc -m64 -no-pie okarr.s -o okarr.m4 -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s ./okarr.m4 </dev/null >"$T/o" 2>"$T/e" ); rc=$?; fi
   if [ "$rc" = "$frc" ] && cmp -s "$T/okarr.want" "$T/o"; then echo "  okarr $m: rc=$rc, stdout byte-identical to fpc -Miso ($(tr '\n' '|' < "$T/o"))"
   else echo "  ⛔ okarr $m FAILED: rc=$rc (fpc $frc)"; diff "$T/okarr.want" "$T/o" | head -4 | sed 's/^/      /'; echo "      err : $(head -1 "$T/e" | cut -c1-140)"; RC=1; fi; done
 if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: a variable of 2 GiB or more is refused where fpc cannot link it and a smaller array runs, $N of $N arms"

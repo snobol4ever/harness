@@ -53,7 +53,7 @@ printf 'main :- run_tests.\n:- initialization(main).\n' > "$D/wrap.pl"
 ( cd "$D" && timeout -k 5 30 swipl -q -g run_tests -t halt u.pl < /dev/null 2> /dev/null | grep '^W:' > want )
 [ -s "$D/want" ] || refuse "swipl printed no W: line for the witness"
 ( cd "$D" && timeout -k 5 60 "$B/scrip" --run "$PLUNIT" u.pl wrap.pl < /dev/null 2> m3.err | grep '^W:' > m3 )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o u.s "$PLUNIT" u.pl wrap.pl < /dev/null 2> m4.err && gcc -no-pie u.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o u 2>> m4.err && timeout -k 5 60 ./u < /dev/null 2>> m4.err | grep '^W:' > m4 )
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=u.s "$PLUNIT" u.pl wrap.pl < /dev/null 2> m4.err && gcc -no-pie u.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o u 2>> m4.err && timeout -k 5 60 ./u < /dev/null 2>> m4.err | grep '^W:' > m4 )
 n=$(wc -l < "$D/want"); red=0
 for m in m3 m4; do
     if cmp -s "$D/want" "$D/$m"; then echo "  $m GREEN: $n of $n lines as swipl"

@@ -43,7 +43,7 @@ for t in pow2_100 pow2_64 neg_base mul_promote add_promote compare size_of_str f
     if [ "$o" != "$want" ] || [ "$r" != "$wrc" ]; then
         echo "  ⛔ RED m3 $t: rc=$r out=[$(printf '%s' "$o" | tr '\n' '|' | cut -c1-46)] -- iconx rc=$wrc out=[$(printf '%s' "$want" | tr '\n' '|' | cut -c1-46)]"; bad=1
     fi
-    if timeout -k 5 120 ./scrip --compile -o "$d/$t.s" "$d/$t.icn" </dev/null >/dev/null 2>&1 \
+    if timeout -k 5 120 ./scrip --compile --out="$d/$t.s" "$d/$t.icn" </dev/null >/dev/null 2>&1 \
        && gcc -m64 -no-pie "$d/$t.s" -o "$d/$t.m4" -L./out -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread 2>/dev/null; then
         o=$(timeout -k 5 20 "$d/$t.m4" </dev/null 2>/dev/null); r=$?; graded=$((graded+1))
         if [ "$o" != "$want" ] || [ "$r" != "$wrc" ]; then

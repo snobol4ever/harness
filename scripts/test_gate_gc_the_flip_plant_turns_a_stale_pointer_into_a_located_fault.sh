@@ -41,7 +41,7 @@ for b in hb_scan_suspend_bank_across_a_collection hb_table_dump_every_key_ref hb
   fl=$(grep -oE 'flips=[0-9]+' "$T/a3.err" | head -1 | cut -d= -f2); [ "${fl:-0}" -gt 0 ] && flips_seen=$((flips_seen+1))
   R="$WD/$b.ref"; [ "$FO" = 1 ] && { { cat "$WD/$b.ref"; printf 'corrupted\n'; } > "$T/$b.bad"; R="$T/$b.bad"; }
   if [ $r = 0 ] && cmp -s "$T/a3.out" "$R"; then band="$band $b/m3:ok(flips=${fl:-?})"; else band="$band $b/m3:RED(rc=$r)"; bad=$((bad+1)); fi
-  if ( cd "$T" && "$SCRIP" --compile "$f" -o w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
+  if ( cd "$T" && "$SCRIP" --compile "$f" --out=w.s </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
     ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_STRESS=1 timeout -k 5 60s ./w4 </dev/null > a4.out 2>/dev/null ); r=$?
     if [ $r = 0 ] && cmp -s "$T/a4.out" "$R"; then band="$band $b/m4:ok"; else band="$band $b/m4:RED(rc=$r)"; bad=$((bad+1)); fi
   else band="$band $b/m4:NOBUILD"; bad=$((bad+1)); fi

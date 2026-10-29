@@ -60,7 +60,7 @@ Y2      OUTPUT = 'B S [' V ']'
 END
 SNO
 run3() { ( cd "$T" && LD_LIBRARY_PATH="$RT_DIR" timeout -k 5 20s "$SCRIP" --run "$1" </dev/null 2>/dev/null ); }
-run4() { ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/${1%.sno}.s" "$1" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$T/${1%.sno}.s" -o "$T/${1%.sno}.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s "$T/${1%.sno}.m4" </dev/null 2>/dev/null ); }
+run4() { ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/${1%.sno}.s" "$1" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$T/${1%.sno}.s" -o "$T/${1%.sno}.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 && timeout -k 5 20s "$T/${1%.sno}.m4" </dev/null 2>/dev/null ); }
 want="$( cd "$T" && "$SBL" $(sbl_lang_flags) w.sno </dev/null 2>/dev/null )"; [ -n "$want" ] || { echo "⛔ GATE REFUSE(2) [$G]: sbl printed nothing for the witness"; exit 2; }
 [ -n "${FAIL_ONCE:-}" ] && want="$want
 corrupted by FAIL_ONCE"

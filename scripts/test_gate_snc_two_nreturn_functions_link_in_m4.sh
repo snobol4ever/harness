@@ -15,9 +15,9 @@ printf 'function f() { f = 1; nreturn; }\nfunction g() { g = 2; nreturn; }\nOUTP
 printf '        DEFINE("F()")\n        DEFINE("G()")\n        OUTPUT = F() G()   :(END)\nF       F = 1     :(NRETURN)\nG       G = 2     :(NRETURN)\nEND\n' > "$W/t.sno"
 bad=0
 m3=$(cd "$W" && timeout -k 5 30 "$ROOT/scrip" w.sc < /dev/null 2>/dev/null); if [ "$m3" = "12" ]; then echo "  m3 PASS: 12"; else echo "  m3 RED: got '$m3'"; bad=1; fi
-( cd "$W" && timeout -k 5 30 "$ROOT/scrip" --compile -o w.s w.sc < /dev/null 2>/dev/null && gcc w.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w 2> l.err )
+( cd "$W" && timeout -k 5 30 "$ROOT/scrip" --compile --out=w.s w.sc < /dev/null 2>/dev/null && gcc w.s -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o w 2> l.err )
 if [ -x "$W/w" ]; then m4=$(cd "$W" && timeout -k 5 30 ./w < /dev/null 2>/dev/null); if [ "$m4" = "12" ]; then echo "  m4 PASS: links and answers 12 ($(grep -c '^NRETURN_[a-z0-9_]*:' "$W/w.s") suffixed NRETURN landings)"; else echo "  m4 RED: linked but answered '$m4'"; bad=1; fi; else echo "  m4 RED: did not link -- $(grep -m1 'defined' "$W/l.err")"; bad=1; fi
-( cd "$W" && timeout -k 5 30 "$ROOT/scrip" --compile -o t.s t.sno < /dev/null 2>/dev/null ); n=$(grep -c '^NRETURN:' "$W/t.s" 2>/dev/null); ns=$(grep -c '^NRETURN_' "$W/t.s" 2>/dev/null)
+( cd "$W" && timeout -k 5 30 "$ROOT/scrip" --compile --out=t.s t.sno < /dev/null 2>/dev/null ); n=$(grep -c '^NRETURN:' "$W/t.s" 2>/dev/null); ns=$(grep -c '^NRETURN_' "$W/t.s" 2>/dev/null)
 if [ "$n" = "1" ] && [ "$ns" = "0" ]; then echo "  control PASS: the SNOBOL4 twin (one graph) defines exactly one bare NRETURN: and no suffixed one"; else echo "  control RED: SNOBOL4 twin defines $n bare and $ns suffixed NRETURN labels -- the suffix leaked past proc_ graphs or the bare landing is gone"; bad=1; fi
 if [ "$bad" -ne 0 ]; then echo "GATE FAIL(1) [snc_two_nreturn_functions_link_in_m4]"; exit 1; fi
 echo "GATE PASS(0) [snc_two_nreturn_functions_link_in_m4]: two nreturn functions link and answer 12 in both modes, single-graph SNOBOL4 untouched (3 arms, 0 red)"

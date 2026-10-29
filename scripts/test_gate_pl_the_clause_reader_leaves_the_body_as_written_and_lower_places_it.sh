@@ -42,7 +42,7 @@ shape p/1 'TT_FNC ;' 'TT_FNC ->' 'TT_FNC ,'
 shape q/1 'TT_FNC ,'
 shape r/1 'TT_FNC *->' 'TT_FNC ;'
 "$ROOT/scrip" "$W/w.pl" < /dev/null > "$W/m3.out" 2>&1; r3=$?
-"$ROOT/scrip" --compile -o "$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
+"$ROOT/scrip" --compile --out="$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
 gcc -no-pie -o "$W/w.bin" "$W/w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/link.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link ($(head -c 120 "$W/link.err"))"; exit 2; }
 timeout -k 5 8 "$W/w.bin" < /dev/null > "$W/m4.out" 2>&1; r4=$?
 for m in m3 m4; do rc=$([ $m = m3 ] && echo $r3 || echo $r4)

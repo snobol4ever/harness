@@ -17,7 +17,7 @@ TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 total=0; nk=0; per=""
 for p in "$B"/*.pl; do
     k="$(basename "$p" .pl)"; [ -f "$B/$k.ref" ] || continue
-    timeout -k 5 120 "$SCRIP" --compile -o "$TMPD/$k.s" "$p" </dev/null 2>/dev/null || { echo "REFUSED(2): $k.pl did not compile" >&2; exit 2; }
+    timeout -k 5 120 "$SCRIP" --compile --out="$TMPD/$k.s" "$p" </dev/null 2>/dev/null || { echo "REFUSED(2): $k.pl did not compile" >&2; exit 2; }
     c=$(grep -cE "$RE" "$TMPD/$k.s"); total=$((total + c)); nk=$((nk + 1)); [ "$c" = 0 ] || per="$per $k=$c"
 done
 [ "$nk" -gt 0 ] || { echo "REFUSED(2): no kernel with a .ref twin under $B -- a census over zero kernels is no reading" >&2; exit 2; }

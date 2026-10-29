@@ -108,7 +108,7 @@ build_oracle() { rm -f "$T/$1.u1" "$T/$1.u2" "$T/orc_$1"
   "$ICONX" "$T/orc_$1" < /dev/null > "$T/want_$1" 2>&1 || true; }
 run_scrip() { timeout -k 5 60 "$R/scrip" "$T/$1.icn" < /dev/null > "$T/m3_$1" 2>&1
   rm -f "$T/$1.s" "$T/bin_$1"
-  timeout -k 5 60 "$R/scrip" --compile -o "$T/$1.s" "$T/$1.icn" < /dev/null > "$T/cc_$1.log" 2>&1
+  timeout -k 5 60 "$R/scrip" --compile --out="$T/$1.s" "$T/$1.icn" < /dev/null > "$T/cc_$1.log" 2>&1
   [ -s "$T/$1.s" ] && gcc -m64 -no-pie "$T/$1.s" -o "$T/bin_$1" -L"$R/out" -lscrip_rt -Wl,-rpath,"$R/out" -lm -lpthread >> "$T/cc_$1.log" 2>&1
   [ -x "$T/bin_$1" ] || { echo "GATE UNPROVEN(2): mode 4 produced no binary for $1.icn -- measured nothing:"; tail -3 "$T/cc_$1.log" | sed 's/^/    /'; exit 2; }
   timeout -k 5 60 "$T/bin_$1" < /dev/null > "$T/m4_$1" 2>&1; }

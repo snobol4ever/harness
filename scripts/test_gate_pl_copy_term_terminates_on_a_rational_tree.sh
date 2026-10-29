@@ -51,7 +51,7 @@ ground_cyclic: yes
 REF
 [ "${FAIL_ONCE:-0}" = 1 ] && printf 'planted: yes\n' >> "$D/g.ref"
 ( cd "$D" && timeout -k 5 30 "$B/scrip" g.pl < /dev/null > g.m3 2>&1 )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o g.s g.pl < /dev/null > /dev/null 2>&1 && gcc g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl did not compile and link in mode 4"
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=g.s g.pl < /dev/null > /dev/null 2>&1 && gcc g.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o g.bin 2>/dev/null ) || refuse "g.pl did not compile and link in mode 4"
 ( cd "$D" && timeout -k 5 30 ./g.bin < /dev/null > g.m4 2>&1 )
 red=0
 for m in m3 m4; do

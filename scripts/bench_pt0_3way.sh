@@ -65,7 +65,7 @@ for p in $PROGS; do
   [ -f "$IN" ]  || { echo "$p: NO INPUT $IN";  continue; }
   RUN="$SRC"
   if [ "$REPS" != 0 ]; then mktape "$SRC" "$W/$p-rep.sno" "$REPS" || { echo "$p: TAPE FAIL"; continue; }; RUN="$W/$p-rep.sno"; fi
-  "$SCRIP" --compile -o "$W/$p.s" "$RUN" < /dev/null > /dev/null 2>&1
+  "$SCRIP" --compile --out="$W/$p.s" "$RUN" < /dev/null > /dev/null 2>&1
   gcc -no-pie "$W/$p.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/$p.m4" 2>/dev/null || { echo "$p: M4 BUILD FAIL"; continue; }
   so="$(timeout -k 5 600 "$SBL" $(sbl_lang_flags) "$RUN" < "$IN" 2>/dev/null)"
   o3="$(timeout -k 5 600 "$SCRIP" "$RUN" < "$IN" 2>/dev/null)"
@@ -80,6 +80,6 @@ for p in $PROGS; do
   sm=$(med "${s[@]}"); m3m=$(med "${m3[@]}"); m4m=$(med "${m4[@]}")
   r3=$(python3 -c "print(f'{$m3m/$sm:.2f}')" 2>/dev/null); r4=$(python3 -c "print(f'{$m4m/$sm:.2f}')" 2>/dev/null)
   cc=""
-  if [ "$CCOST" = 1 ]; then c=(); for i in $(seq 1 "$N"); do t0=$(date +%s%N); "$SCRIP" --compile -o /dev/null "$RUN" < /dev/null > /dev/null 2>&1; t1=$(date +%s%N); c+=( $(( (t1-t0)/1000000 )) ); done; cc=" compile_only=$(med "${c[@]}")ms"; fi
+  if [ "$CCOST" = 1 ]; then c=(); for i in $(seq 1 "$N"); do t0=$(date +%s%N); "$SCRIP" --compile --out=/dev/null "$RUN" < /dev/null > /dev/null 2>&1; t1=$(date +%s%N); c+=( $(( (t1-t0)/1000000 )) ); done; cc=" compile_only=$(med "${c[@]}")ms"; fi
   echo "$p: sbl=${sm}ms m3=${m3m}ms m4=${m4m}ms  m3/sbl=${r3}x m4/sbl=${r4}x  identity=OK$cc"
 done

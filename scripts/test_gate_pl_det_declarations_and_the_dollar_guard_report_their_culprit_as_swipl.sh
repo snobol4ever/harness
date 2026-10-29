@@ -85,8 +85,8 @@ norm() { grep -E '^\.?[a-z_0-9]+-' | sed 's/^\.//'; }
 want="$( (cd "$D" && timeout -k 5 20 "$SW" -q v1.pl -t halt < /dev/null 2>/dev/null | norm; timeout -k 5 20 "$SW" -q -g run_tests -t halt v2.pl < /dev/null 2>/dev/null | norm) )"
 [ "$(printf '%s\n' "$want" | grep -c .)" = 22 ] || refuse "swipl did not answer the twenty-two lines: [$(printf '%s\n' "$want" | grep -c .)]"
 m4ok=1   # a program SCRIP refuses to compile is this gate's red, never a refusal
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o v1.s v1.pl < /dev/null > /dev/null 2>&1 && [ -s v1.s ] && gcc -m64 -no-pie v1.s -o v1.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 \
-  && timeout -k 5 60 "$B/scrip" --compile -o v2.s "$PLUNIT" v2.pl g.pl < /dev/null > /dev/null 2>&1 && [ -s v2.s ] && gcc -m64 -no-pie v2.s -o v2.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=v1.s v1.pl < /dev/null > /dev/null 2>&1 && [ -s v1.s ] && gcc -m64 -no-pie v1.s -o v1.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 \
+  && timeout -k 5 60 "$B/scrip" --compile --out=v2.s "$PLUNIT" v2.pl g.pl < /dev/null > /dev/null 2>&1 && [ -s v2.s ] && gcc -m64 -no-pie v2.s -o v2.bin -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" > /dev/null 2>&1 ) || m4ok=0
 red=0
 arm() {
     local label="$1" got n; shift

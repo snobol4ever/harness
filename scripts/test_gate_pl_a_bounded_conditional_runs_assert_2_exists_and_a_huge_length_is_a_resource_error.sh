@@ -55,7 +55,7 @@ printf 'main :- run_tests.\n:- initialization(main).\n' > "$TMPD/wrap.pl"
 for mode in m3 m4; do
     if [ "$mode" = m3 ]; then got="$(cd "$TMPD" && timeout -k 5 20 "$SCRIP" w.pl </dev/null 2>"$TMPD/err")"; rc=$?
     else
-        timeout -k 5 60 "$SCRIP" --compile -o "$TMPD/w.s" "$TMPD/w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
+        timeout -k 5 60 "$SCRIP" --compile --out="$TMPD/w.s" "$TMPD/w.pl" </dev/null 2>"$TMPD/err" || { echo "  RED m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); continue; }
         gcc -m64 -no-pie "$TMPD/w.s" -o "$TMPD/w.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err" || refuse "m4 link failed: $(head -c 160 "$TMPD/err")"
         got="$(cd "$TMPD" && timeout -k 5 20 ./w.bin </dev/null 2>"$TMPD/err")"; rc=$?
         rm -f "$TMPD/w.s" "$TMPD/w.bin"
@@ -63,7 +63,7 @@ for mode in m3 m4; do
     if [ "$rc" = 0 ] && [ "$got" = "$want" ]; then echo "  ok  $mode"
     else echo "  RED $mode: rc=$rc out=[$(printf '%s' "$got" | tr '\n' '|' | cut -c1-200)] err=[$(head -c 120 "$TMPD/err" | tr '\n' '|')] want [$(printf '%s' "$want" | tr '\n' '|')]"; red=$((red+1)); fi
 done
-timeout -k 5 180 "$SCRIP" --compile -o "$TMPD/ta.s" "$PLUNIT" "$TARITH" "$TMPD/wrap.pl" </dev/null 2>"$TMPD/err" || { echo "  RED test_arith m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); }
+timeout -k 5 180 "$SCRIP" --compile --out="$TMPD/ta.s" "$PLUNIT" "$TARITH" "$TMPD/wrap.pl" </dev/null 2>"$TMPD/err" || { echo "  RED test_arith m4: the compile refused: $(head -c 160 "$TMPD/err")"; red=$((red+1)); }
 if [ -s "$TMPD/ta.s" ]; then
     if gcc -m64 -no-pie "$TMPD/ta.s" -o "$TMPD/ta.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/err"; then echo "  ok  test_arith m4 assembles and links"
     else echo "  RED test_arith m4: the assembler or linker refused: $(grep -m2 -E 'Error|error' "$TMPD/err" | head -c 260 | tr '\n' '|')"; red=$((red+1)); fi

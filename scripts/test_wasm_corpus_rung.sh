@@ -65,7 +65,7 @@ for sno in "$RUNG_DIR"/*.sno; do
     err="$WORK/${base}.err"
 
     # Step 1: compile to WAT (explicit -o → work dir; never writes alongside corpus source)
-    if ! "$SCRIP_CC" -wasm -o "$wat" "$sno" 2>"$err"; then
+    if ! "$SCRIP_CC" -wasm --out="$wat" "$sno" 2>"$err"; then
         echo -e "  ${RED}FAIL${RESET}  $base  (scrip error)"
         [[ -s "$err" ]] && sed 's/^/        /' "$err"
         (( fail++ )) || true

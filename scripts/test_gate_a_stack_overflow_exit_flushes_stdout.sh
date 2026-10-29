@@ -30,7 +30,7 @@ ICN
 ( cd "$T" && ./so.x </dev/null > want 2>/dev/null ); wrc=$?
 [ "$(wc -l < "$T/want")" -eq 50000 ] && [ "$wrc" -ne 0 ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not print 50,000 lines and fail (rc $wrc)"; exit 2; }
 ( cd "$T" && timeout -k 5 120 "$SCRIP" so.icn </dev/null > m3 2> m3.err ); r3=$?
-( cd "$T" && timeout -k 5 120 "$SCRIP" --compile -o so.s so.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o so.4 so.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+( cd "$T" && timeout -k 5 120 "$SCRIP" --compile --out=so.s so.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o so.4 so.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
   || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 build of the witness failed -- cannot measure"; exit 2; }
 ( cd "$T" && timeout -k 5 120 ./so.4 </dev/null > m4 2> m4.err ); r4=$?
 fail=0

@@ -75,7 +75,7 @@ CONTROLS=" define_redef_two_functions define_single_no_redef "
 
 m4_run() {   # $1 = source .sno (absolute), $2 = basename (no ext), $3 = outfile, $4 = rc varname
     local src="$1" name="$2" outfile="$3" __rcvar="$4" __rc
-    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile -o "$name.s" "$src" </dev/null >/dev/null 2>&1 ) || { echo "M4-COMPILE-FAILED" > "$outfile"; printf -v "$__rcvar" '%d' 1; return; }
+    ( cd "$T" && timeout -k 5 30s "$ROOT/scrip" --compile --out="$name.s" "$src" </dev/null >/dev/null 2>&1 ) || { echo "M4-COMPILE-FAILED" > "$outfile"; printf -v "$__rcvar" '%d' 1; return; }
     ( cd "$T" && gcc -no-pie "$name.s" -o "$name.bin" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) || { echo "M4-LINK-FAILED" > "$outfile"; printf -v "$__rcvar" '%d' 1; return; }
     ( cd "$T" && timeout -k 5 10s "./$name.bin" </dev/null >"$outfile" 2>&1 ); __rc=$?
     printf -v "$__rcvar" '%d' "$__rc"

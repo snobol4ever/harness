@@ -107,7 +107,7 @@ for n in $NAMES; do
     refuse "the committed ref for $n has DRIFTED from the oracle -- committed [$(tr '\n' '|' < "$WIT/$n.ref")] vs live [$(tr '\n' '|' < "$T/$n.live")]; a ref is cut from the oracle, never from our output"
   fi
   cp "$WIT/$n.ref" "$T/$n.ref"
-  ( cd "$T" && timeout -k 5 60s "$OLDPWD/scrip" --compile -o "$n.s" "$n.sno" < /dev/null > /dev/null 2>&1 \
+  ( cd "$T" && timeout -k 5 60s "$OLDPWD/scrip" --compile --out="$n.s" "$n.sno" < /dev/null > /dev/null 2>&1 \
       && gcc -m64 -no-pie -rdynamic "$n.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$n.x4" 2> "$n.ld.log" ) \
       || refuse "mode-4 compile or link failed for $n, so every m4 arm measured nothing ($(head -c 160 "$T/$n.ld.log" 2>/dev/null))"
 done

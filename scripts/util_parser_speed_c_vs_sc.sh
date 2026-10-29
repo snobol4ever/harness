@@ -32,7 +32,7 @@ for L in $LANGS; do
     nf=$(wc -l < "$T/$L.files"); nb=$(xargs -d '\n' cat < "$T/$L.files" | wc -c)
     cat $CHAIN "$B/parser_$L.sc" > "$T/$L.chain.sc"
     SW="$(declared_switches_beside "$B/parser_$L.sc")" && [ -n "$SW" ] || { echo "$L: bootstrap/parser_$L.sc declares no heap or stack (parser_$L.heap, .stack), or the declaration is refused"; continue; }
-    m4=0; "$SCRIP" --compile "$T/$L.chain.sc" -o "$T/$L.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>/dev/null && m4=1
+    m4=0; "$SCRIP" --compile "$T/$L.chain.sc" --out="$T/$L.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "$T/$L.s" -Wl,-rpath,"$LIBDIR" -L"$LIBDIR" -lscrip_rt -lm -lpthread -o "$T/$L.bin" 2>/dev/null && m4=1
     tc=0; t4=0; declare -A K=([cP]=0 [cR]=0 [cT]=0 [4P]=0 [4R]=0 [4T]=0)
     while IFS= read -r f; do
         a=$(now); ( cd "$(dirname "$f")"; SNO_LIB="$CORPUS/include" timeout -k 5 "$TMO" "$exe" - < "$f" > "$T/o" 2>/dev/null ); r=$?; tc=$(add "$tc" "$a" "$(now)"); k=$(tally $r "$T/o"); K[c$k]=$((K[c$k] + 1))

@@ -80,7 +80,7 @@ SNO
 red=0
 ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" brk.sno < /dev/null > "$W/brk.m3" 2>&1 )
 if cmp -s "$W/brk.m3" "$W/brk.ref"; then echo "ok  (1) m3 = oracle over 3900 lines"; else echo "RED (1) m3 differs from the oracle:"; diff "$W/brk.ref" "$W/brk.m3" | head -6; red=1; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/brk.s" brk.sno < /dev/null > /dev/null 2>&1 && gcc "$W/brk.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/brk.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/brk.s" brk.sno < /dev/null > /dev/null 2>&1 && gcc "$W/brk.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/brk.bin" 2>/dev/null ) || { echo "REFUSED(2): the witness did not build in mode 4"; exit 2; }
 ( cd "$W" && timeout -k 5 60 ./brk.bin < /dev/null > "$W/brk.m4" 2>&1 )
 if cmp -s "$W/brk.m4" "$W/brk.ref"; then echo "ok  (1) m4 = oracle"; else echo "RED (1) m4 differs from the oracle:"; diff "$W/brk.ref" "$W/brk.m4" | head -6; red=1; fi
 for N in 2000 22000; do
@@ -94,7 +94,7 @@ loop    line BREAK(nl) . piece
         OUTPUT = n ' ' SIZE(piece)
 END
 SNO
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/slope$N.s" slope$N.sno < /dev/null > /dev/null 2>&1 && gcc "$W/slope$N.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/slope$N.bin" 2>/dev/null ) || { echo "REFUSED(2): the slope twin $N did not build"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/slope$N.s" slope$N.sno < /dev/null > /dev/null 2>&1 && gcc "$W/slope$N.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/slope$N.bin" 2>/dev/null ) || { echo "REFUSED(2): the slope twin $N did not build"; exit 2; }
 ( cd "$W" && ./slope$N.bin < /dev/null > "$W/slope$N.out" 2>&1 ); grep -q "^$N 25\$" "$W/slope$N.out" || { echo "REFUSED(2): the slope twin $N did not print its line: $(head -1 "$W/slope$N.out")"; exit 2; }
 done
 lo=$( cd "$W" && ir_measure ./slope2000.bin ); hi=$( cd "$W" && ir_measure ./slope22000.bin )

@@ -182,7 +182,7 @@ MAPCARV.END
 END
 GATEWIT
 run_m3() { timeout -k 5 60s "$SCRIP" "$T/$1.sno" < /dev/null 2>&1 | tr '\n' '/'; }
-run_m4() { "$SCRIP" --compile -o "$T/$1.s" "$T/$1.sno" < /dev/null >/dev/null 2>&1 || { echo COMPILE-FAILED; return; }
+run_m4() { "$SCRIP" --compile --out="$T/$1.s" "$T/$1.sno" < /dev/null >/dev/null 2>&1 || { echo COMPILE-FAILED; return; }
            gcc -no-pie "$T/$1.s" -o "$T/$1.x" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread >/dev/null 2>&1 || { echo LINK-FAILED; return; }
            timeout -k 5 60s "$T/$1.x" < /dev/null 2>&1 | tr '\n' '/'; }
 graded=0; bad=0

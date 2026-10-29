@@ -90,7 +90,7 @@ for w in w1 w2; do ( cd "$T" && timeout -k 5 10 "$SBL" -bf "$w.sno" < "$w.in" > 
 fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
 run3() { ( cd "$T" && SCRIP_SNO_STMTKW="$2" timeout -k 5 10 "$SCRIP" "$1.sno" < "$1.in" > "$1.m3.$2" 2>/dev/null ); echo $?; }
-run4() { ( cd "$T" && SCRIP_SNO_STMTKW="$2" timeout -k 5 20 "$SCRIP" --compile -o "$1.$2.s" "$1.sno" < /dev/null > /dev/null 2>&1 ) || { echo cc; return; }
+run4() { ( cd "$T" && SCRIP_SNO_STMTKW="$2" timeout -k 5 20 "$SCRIP" --compile --out="$1.$2.s" "$1.sno" < /dev/null > /dev/null 2>&1 ) || { echo cc; return; }
          gcc "$T/$1.$2.s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$T/$1.$2.bin" > /dev/null 2>&1 || { echo link; return; }
          ( cd "$T" && timeout -k 5 10 "./$1.$2.bin" < "$1.in" > "$1.m4.$2" 2>/dev/null ); echo $?; }
 verdict() { [ "$1" = 0 ] || { echo "rc=$1"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "stdout differs from the oracle: [$(head -c 60 "$T/$2" | tr '\n' '|')]"; }

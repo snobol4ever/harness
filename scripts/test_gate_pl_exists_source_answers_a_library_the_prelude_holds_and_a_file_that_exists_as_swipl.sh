@@ -41,7 +41,7 @@ total=$((total+1)); if [ "$got" = "$WANT" ]; then echo "  ok  swipl 9.0.4 prints
 case "$MODES" in *m3*) total=$((total+1)); got="$(cd "$TMPD" && timeout -k 5 60 "$SCRIP" ex.pl </dev/null 2>/dev/null)"; if [ "$got" = "$WANT" ]; then echo "  ok  SCRIP m3"; else echo "  RED SCRIP m3: [$got]"; red=$((red+1)); fi ;; esac
 case "$MODES" in *m4*)
     total=$((total+1))
-    if ( cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile -o ex.s ex.pl </dev/null >/dev/null 2>"$TMPD/cerr" ) && gcc -m64 -no-pie "$TMPD/ex.s" -o "$TMPD/ex.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/lerr"; then
+    if ( cd "$TMPD" && timeout -k 5 120 "$SCRIP" --compile --out=ex.s ex.pl </dev/null >/dev/null 2>"$TMPD/cerr" ) && gcc -m64 -no-pie "$TMPD/ex.s" -o "$TMPD/ex.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>"$TMPD/lerr"; then
         got="$(cd "$TMPD" && timeout -k 5 60 "$TMPD/ex.bin" </dev/null 2>/dev/null)"; if [ "$got" = "$WANT" ]; then echo "  ok  SCRIP m4"; else echo "  RED SCRIP m4: [$got]"; red=$((red+1)); fi
     else echo "  RED SCRIP m4 did not compile or link: $(head -c 200 "$TMPD/cerr" "$TMPD/lerr" 2>/dev/null)"; red=$((red+1)); fi ;;
 esac

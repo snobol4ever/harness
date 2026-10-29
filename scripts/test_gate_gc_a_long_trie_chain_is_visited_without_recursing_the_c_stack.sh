@@ -22,7 +22,7 @@ prog() { printf ':- table f/2.\nf(N, M) :- M is N + 1.\n:- initialization(((betw
 RC=0; checks=0; fails=0
 ck() { checks=$((checks+1)); if [ "$1" = ok ]; then echo "  ok   $2"; else RC=1; fails=$((fails+1)); echo "  FAIL $2"; fi; }
 m3() { ( cd "$T" && env -u SCRIP_HEAP_MB timeout -k 5 300 "$SCRIP" -s4096k "w$1.pl" < /dev/null 2>&1 | tail -1 ); }
-m4() { ( cd "$T" && "$SCRIP" --compile "w$1.pl" -o "w$1.s" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "w$1.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "w$1" 2> /dev/null && env -u SCRIP_HEAP_MB timeout -k 5 300 "./w$1" -s4096k < /dev/null 2>&1 | tail -1 ); }
+m4() { ( cd "$T" && "$SCRIP" --compile "w$1.pl" --out="w$1.s" < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -rdynamic "w$1.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "w$1" 2> /dev/null && env -u SCRIP_HEAP_MB timeout -k 5 300 "./w$1" -s4096k < /dev/null 2>&1 | tail -1 ); }
 prog 80000; prog 500
 c3="$(m3 500)"; c4="$(m4 500)"
 [ "$c3" = done ] && [ "$c4" = done ] && ck ok "(c) CONTROL: 500 goals print done in mode 3 and mode 4" || ck bad "(c) CONTROL: 500 goals print done in both modes -- got m3='$c3' m4='$c4'"

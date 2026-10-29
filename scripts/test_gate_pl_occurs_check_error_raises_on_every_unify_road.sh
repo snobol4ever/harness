@@ -24,7 +24,7 @@ SRC="$HERE/gc_witnesses/hb_pl_occurs_check_error_raises_on_the_asm_unify_road.pl
 W="$(mktemp -d "${TMPDIR:-/tmp}/ploc.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
 cp "$SRC" "$W/w.pl"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then awk '!d && /-raised$/ {d=1; next} {print}' "$REF" > "$W/w.ref"; else cp "$REF" "$W/w.ref"; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/w.s" "$W/w.pl" < /dev/null > "$W/c.err" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/c.err"))"; exit 2; }
 gcc -no-pie -o "$W/w.bin" "$W/w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/link.err" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link ($(head -c 120 "$W/link.err"))"; exit 2; }
 run_arm() {
     local n="$1" mode="$2" stress="$3" rc

@@ -37,7 +37,7 @@ if [ "$KIND" = demo ]; then
   export IR_TMO="${IR_TMO:-1800}"
   MODS=$(sed -n 's/^[[:space:]]*link[[:space:]]*"\([^"]*\)".*$/\1/p' "$D/jtran.icn" | sed 's|.*/||' | sed "s|^|$PKG/|; s|$|.icn|" | tr '\n' ' ')
   ( cd "$T" && "$ICONT" -s -o "$T/jtran.oracle" $MODS ) > "$T/icont.log" 2>&1 || { tail -3 "$T/icont.log"; refuse "icont did not build the jtran oracle"; }
-  ( cd "$D" && "$SCRIP" --compile -o "$T/jtran.s" jtran.icn < /dev/null && gcc -o "$T/jtran.m4" "$T/jtran.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" ) > "$T/m4.log" 2>&1 || { grep -v 'TEXTREL\|read-only section' "$T/m4.log" | tail -3; refuse "jtran did not build in mode 4"; }
+  ( cd "$D" && "$SCRIP" --compile --out="$T/jtran.s" jtran.icn < /dev/null && gcc -o "$T/jtran.m4" "$T/jtran.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" ) > "$T/m4.log" 2>&1 || { grep -v 'TEXTREL\|read-only section' "$T/m4.log" | tail -3; refuse "jtran did not build in mode 4"; }
   cp "$PKG/gen_bc.icn" "$T/gen_bc.icn"
   IX="$( cd "$T" && IR_PROG_OUT="$T/ix.out" IR_PROG_ERR="$T/ix.err" ir_measure "$ICONX" "$T/jtran.oracle" preproc "$T/gen_bc.icn" : stdout < /dev/null )"
   ir_is_number "$IX" || refuse "jtran under iconx: $(ir_cell "$IX") -- $(ir_reason "$IX")"
@@ -64,7 +64,7 @@ T="$(mktemp -d "${TMPDIR:-/tmp}/icnirbar.XXXXXX")" || refuse "mktemp"; trap 'rm 
 export IR_TMO="${IR_TMO:-1200}"
 cp "$K" "$T/$NAME.icn"
 ( cd "$T" && "$ICONT" -s -o w.x "$NAME.icn" ) > "$T/icont.log" 2>&1 || { tail -3 "$T/icont.log"; refuse "$NAME did not build under icont"; }
-( cd "$T" && "$SCRIP" --compile -o w.s "$NAME.icn" < /dev/null && gcc -o w4 w.s -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" ) > "$T/m4.log" 2>&1 || { grep -v 'TEXTREL\|read-only section' "$T/m4.log" | tail -3; refuse "$NAME did not build in mode 4"; }
+( cd "$T" && "$SCRIP" --compile --out=w.s "$NAME.icn" < /dev/null && gcc -o w4 w.s -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" ) > "$T/m4.log" 2>&1 || { grep -v 'TEXTREL\|read-only section' "$T/m4.log" | tail -3; refuse "$NAME did not build in mode 4"; }
 declare -a M4CMD=("$T/w4" ${SWA[@]+"${SWA[@]}"}); [ "${#AV[@]}" -gt 0 ] && { [ "${#SWA[@]}" -gt 0 ] && M4CMD+=(--); M4CMD+=("${AV[@]}"); }
 # one reading per engine, each from a subshell in the kernel's own directory; the status rides in the value (lib_ir_measure.sh), never in a global
 IX="$( cd "$KD" && { [ "${#OENV[@]}" -gt 0 ] && export "${OENV[@]}"; IR_PROG_OUT="$T/ix.out" IR_PROG_ERR="$T/ix.err" ir_measure "$ICONX" "$T/w.x" ${AV[@]+"${AV[@]}"} < "$IN"; } )"

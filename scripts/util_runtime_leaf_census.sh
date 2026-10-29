@@ -83,7 +83,7 @@ EMIT_OB=""
 if [ "$MODE" = m3 ]; then
   CMD=("$SCRIP" --run "${CAA[@]}" "${SWA[@]}" "$PROG")
 else
-  ( cd "$W" && "$SCRIP" --compile "${CAA[@]}" -o "$W/p.s" "$PROG" ) </dev/null >"$W/compile.out" 2>&1 && [ -s "$W/p.s" ] \
+  ( cd "$W" && "$SCRIP" --compile "${CAA[@]}" --out="$W/p.s" "$PROG" ) </dev/null >"$W/compile.out" 2>&1 && [ -s "$W/p.s" ] \
     || { tail -5 "$W/compile.out"; refuse "$(basename "$PROG") does not compile in mode 4"; }
   gcc "$W/p.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$W/p" >"$W/link.out" 2>&1 \
     || { tail -5 "$W/link.out"; refuse "$(basename "$PROG")'s mode-4 assembly does not link"; }

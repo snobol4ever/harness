@@ -43,7 +43,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; ARMS=0
 run_mode() { local m="$1" d="$2" p="$3"
   if [ "$m" = m3 ]; then ( cd "$d" && timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null 2>"$d/$p.$m.err" | head -c 8000 >"$d/$p.$m.out"; exit "${PIPESTATUS[0]}" ); return $?; fi
-  ( cd "$d" && timeout -k 5 20s "$SCRIP" --compile -o "$d/$p.s" "$p.pas" </dev/null >/dev/null 2>"$d/$p.$m.err" ) || { echo "  ⛔ arm $p m4: did not compile"; return 99; }
+  ( cd "$d" && timeout -k 5 20s "$SCRIP" --compile --out="$d/$p.s" "$p.pas" </dev/null >/dev/null 2>"$d/$p.$m.err" ) || { echo "  ⛔ arm $p m4: did not compile"; return 99; }
   ( cd "$d" && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: arm $p compiled but would not link"; exit 2; }
   ( cd "$d" && timeout -k 5 20s "./$p.m4" </dev/null 2>"$d/$p.$m.err" | head -c 8000 >"$d/$p.$m.out"; exit "${PIPESTATUS[0]}" ); return $?; }
 grade() { local arm="$1" p="$2" mode="$3" d="$T/$1"

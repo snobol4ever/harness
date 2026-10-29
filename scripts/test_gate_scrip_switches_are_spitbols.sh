@@ -48,7 +48,7 @@ pair "-f no folding" "-f" "-f" n.sno
 pair "-T=file TERMINAL to a file" "-T=t1.txt" "-T=t2.txt" t.sno
 arms=$((arms+1)); if [ "$(cat t1.txt 2>/dev/null)" = "$(cat t2.txt 2>/dev/null)" ] && [ -s t2.txt ]; then echo "  ok   -T: the TERMINAL files agree ('$(cat t2.txt)')"; else echo "  FAIL -T: TERMINAL files differ (sbl '$(cat t1.txt 2>/dev/null)' scrip '$(cat t2.txt 2>/dev/null)')"; fails=$((fails+1)); fi
 pair "-1=file channel pre-bound" "-1=chan1.txt" "-1=chan1.txt" c.sno
-arms=$((arms+1)); o=$(printf "        OUTPUT = '[' HOST(0) ']'\nEND\n" > m4.sno; "$C" --compile -o m4.s m4.sno < /dev/null 2>/dev/null && gcc -no-pie -o m4bin m4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null && ./m4bin -u fromm4 < /dev/null 2>/dev/null); if [ "$o" = "[fromm4]" ]; then echo "  ok   mode-4 binary: a leading -u string is HOST(0)"; else echo "  FAIL mode-4 binary: HOST(0) read '$o', wanted [fromm4]"; fails=$((fails+1)); fi
+arms=$((arms+1)); o=$(printf "        OUTPUT = '[' HOST(0) ']'\nEND\n" > m4.sno; "$C" --compile --out=m4.s m4.sno < /dev/null 2>/dev/null && gcc -no-pie -o m4bin m4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null && ./m4bin -u fromm4 < /dev/null 2>/dev/null); if [ "$o" = "[fromm4]" ]; then echo "  ok   mode-4 binary: a leading -u string is HOST(0)"; else echo "  FAIL mode-4 binary: HOST(0) read '$o', wanted [fromm4]"; fails=$((fails+1)); fi
 refused() {   # $1 label, $2 switch, $3 word the reason must carry
     arms=$((arms+1))
     "$C" $2 n.sno < /dev/null > /dev/null 2> z.err; zr=$?
@@ -69,7 +69,7 @@ else
     echo "  FAIL -o=file under -LIST (m3): rc=$r3 stdout='$o3' sink=$([ -s list3.lst ] && echo present || echo MISSING-OR-EMPTY)"; fails=$((fails+1))
 fi
 arms=$((arms+1))
-"$C" --compile -o list4.s list.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o list4.bin list4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null
+"$C" --compile --out=list4.s list.sno < /dev/null > /dev/null 2>&1 && gcc -no-pie -o list4.bin list4.s -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2>/dev/null
 o4=$(SCRIP_SNO_LIST_SINK="$d/list4.lst" ./list4.bin < /dev/null 2>/dev/null); r4=$?
 if [ "$r4" = 0 ] && [ "$o4" = "ran" ] && [ -s "$d/list4.lst" ] && grep -q "macro spitbol version" "$d/list4.lst"; then
     echo "  ok   SCRIP_SNO_LIST_SINK under -LIST (m4): listing sunk to file, stdout clean"

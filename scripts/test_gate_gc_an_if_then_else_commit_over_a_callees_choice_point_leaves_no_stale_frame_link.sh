@@ -21,7 +21,7 @@ S1="$HERE/fixtures/hb_pl_an_if_then_else_commit_over_a_callees_choice_point_leav
 W="$(mktemp -d "${TMPDIR:-/tmp}/plstale.XXXXXX")" || { echo "GATE REFUSED(2) [$G]: no workdir"; exit 2; }; trap 'rm -rf "$W"' EXIT
 cp "$S1" "$W/r.pl"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then : > "$W/r.ref"; else cp "${S1%.pl}.ref" "$W/r.ref"; fi
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/r.s" "$W/r.pl" < /dev/null > "$W/r.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: the witness does not compile ($(head -c 120 "$W/r.cerr"))"; exit 2; }
 gcc -o "$W/r.bin" "$W/r.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/r.lerr" 2>&1 || { echo "GATE REFUSED(2) [$G]: the witness does not link"; exit 2; }
 STRESS="SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 SCRIP_GC_CHAIN_CHECK=3"
 run_arm() {

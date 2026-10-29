@@ -71,7 +71,7 @@ red=0
 [ -s "$W/cap.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 for arm in on off; do
     if [ "$arm" = on ]; then unset SCRIP_CAP_GVA; else export SCRIP_CAP_GVA=0; fi
-    ( cd "$W" && "$ROOT/scrip" --compile --stlimit -o "$W/cap_$arm.s" cap.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: cap.sno did not compile (arm $arm)"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --stlimit --out="$W/cap_$arm.s" cap.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: cap.sno did not compile (arm $arm)"; red=1; continue; }
     ng=$(grep -c 'rt_cap_open_gva' "$W/cap_$arm.s"); np=$(grep -c 'rt_cap_open_plain' "$W/cap_$arm.s")
     if [ "$arm" = on ]; then [ "$ng" -eq 10 ] && [ "$np" -eq 1 ] && echo "ok  arm on: 10 gva sites (the function local and the TRACE'd name among them), 1 by-name site (the OUTPUT-associated name)" || { echo "RED arm on: gva=$ng plain=$np (want 10 / 1)"; red=1; }
     else [ "$ng" -eq 0 ] && [ "$np" -eq 11 ] && echo "ok  arm off: 0 gva sites, 11 by-name sites" || { echo "RED arm off: gva=$ng plain=$np (want 0 / 11)"; red=1; }; fi

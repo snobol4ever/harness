@@ -53,13 +53,13 @@ red=0
 ( cd "$W" && timeout -k 5 20 "$SBL" $(sbl_lang_flags) errlimit.sno < /dev/null > "$W/errlimit.ref" 2>&1 ); grep -q '^end$' "$W/errlimit.ref" || { echo "REFUSED(2): the oracle did not run the error-mode witness to its end"; head -4 "$W/errlimit.ref"; exit 2; }
 for arm in on off; do
     if [ "$arm" = on ]; then unset SCRIP_SN4_DIRECT; else export SCRIP_SN4_DIRECT=0; fi
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/leaf_$arm.s" leaf.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: leaf.sno did not compile (arm $arm)"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/leaf_$arm.s" leaf.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: leaf.sno did not compile (arm $arm)"; red=1; continue; }
     nd=$(grep -cE 'call +(qword ptr \[rip \+ )?rt_call_bid_sn4' "$W/leaf_$arm.s"); nb=$(grep -cE 'call +(qword ptr \[rip \+ )?rt_call_arr_bl_sn4' "$W/leaf_$arm.s")
     if [ "$arm" = on ]; then [ "$nd" -ge 30 ] && [ "$nb" -eq 1 ] && echo "ok  arm on: $nd direct leaf sites, $nb by-name site (EVAL stays by name; the predicates and the pattern builtins inside patterns are their own boxes, so 32 of the witness's 33 by-name sites are leaf calls)" || { echo "RED arm on: direct sites=$nd (want >= 30) by-name sites=$nb (want exactly 1: EVAL)"; red=1; }
     else [ "$nd" -eq 0 ] && echo "ok  arm off: 0 direct sites, $nb by-name sites" || { echo "RED arm off: $nd direct sites under SCRIP_SN4_DIRECT=0"; red=1; }; fi
     for w in leaf errlimit; do
         ( cd "$W" && timeout -k 5 20 "$ROOT/scrip" "$w.sno" < /dev/null > "$W/$w.$arm.m3" 2>&1 ); cmp -s "$W/$w.$arm.m3" "$W/$w.ref" && echo "ok  $w m3 arm $arm = oracle" || { echo "RED $w m3 arm $arm differs from the oracle:"; diff "$W/$w.ref" "$W/$w.$arm.m3" | head -6; red=1; }
-        if ( cd "$W" && "$ROOT/scrip" --compile -o "$W/$w.$arm.s" "$w.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/$w.$arm.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/$w.$arm.bin" 2>/dev/null ); then
+        if ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$w.$arm.s" "$w.sno" < /dev/null > /dev/null 2>&1 && gcc "$W/$w.$arm.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/$w.$arm.bin" 2>/dev/null ); then
             ( cd "$W" && timeout -k 5 20 "./$w.$arm.bin" < /dev/null > "$W/$w.$arm.m4" 2>&1 ); cmp -s "$W/$w.$arm.m4" "$W/$w.ref" && echo "ok  $w m4 arm $arm = oracle" || { echo "RED $w m4 arm $arm differs from the oracle:"; diff "$W/$w.ref" "$W/$w.$arm.m4" | head -6; red=1; }
         else echo "RED $w m4 arm $arm did not build"; red=1; fi
     done

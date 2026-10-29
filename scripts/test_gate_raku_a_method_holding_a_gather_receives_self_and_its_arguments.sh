@@ -34,7 +34,7 @@ arm '10' 'class P { has $.x; method m { my $v = $!x; $v + 1 } }; say P.new(x => 
 bad=0
 for i in $(seq 1 $n); do
     o3=$(cd "$W" && timeout -k 5 60 "$ROOT/scrip" "$W/a$i.raku" < /dev/null 2>&1 | head -1)
-    if ( cd "$W" && "$ROOT/scrip" --compile -o "$W/a$i.s" "$W/a$i.raku" < /dev/null > "$W/a$i.cerr" 2>&1 ) \
+    if ( cd "$W" && "$ROOT/scrip" --compile --out="$W/a$i.s" "$W/a$i.raku" < /dev/null > "$W/a$i.cerr" 2>&1 ) \
        && gcc -no-pie -o "$W/a$i.bin" "$W/a$i.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/a$i.lerr" 2>&1; then
         o4=$(cd "$W" && timeout -k 5 60 "$W/a$i.bin" < /dev/null 2>&1 | head -1)
     else o4="(no build: $(head -c 80 "$W/a$i.cerr"))"; fi

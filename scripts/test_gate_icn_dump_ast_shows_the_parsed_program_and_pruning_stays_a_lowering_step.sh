@@ -31,7 +31,7 @@ for W in a1 a2 a3; do
   else echo "  $W FAIL (--dump-ast printed $n TT_PROC_DECL, expected $want -- the parse is not what the dump shows)"; sed -n '1,4p' "$T/$W.out" | sed 's/^/      /'; RC=1; fi
 done
 printf 'procedure unused_one()\n  write("NEVER");\nend\nprocedure main()\n  write("hi");\nend\n' > "$T/p.icn"
-( cd "$T" && timeout -k 5 25 "$SCRIP" --compile -o p.s p.icn </dev/null ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the prune control witness did not compile"; exit 2; }
+( cd "$T" && timeout -k 5 25 "$SCRIP" --compile --out=p.s p.icn </dev/null ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the prune control witness did not compile"; exit 2; }
 if [ "$(grep -c 'unused_one' "$T/p.s" || true)" = 0 ]; then echo "  prune PASS (a procedure unreachable from main is still absent from a single-file compiland's asm)"
 else echo "  prune FAIL (unused_one reached the emitted asm -- the lowering-step prune was lost, not moved)"; RC=1; fi
 PG="$HERE/test_smoke_polyglot.sh"

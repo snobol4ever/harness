@@ -650,7 +650,7 @@ def run_one(plan, db, shim_src, scrip, mode, workroot, srcdir, timeout=10, loade
             else:
                 s_out = os.path.join(d, "case.s")
                 b_out = os.path.join(d, "case.bin")
-                cp = _ltr.run(retry=False, key=key, argv=[scrip, "--compile", "-o", s_out, prog], capture_output=True, text=True, errors="replace",
+                cp = _ltr.run(retry=False, key=key, argv=[scrip, "--compile", f"--out={s_out}", prog], capture_output=True, text=True, errors="replace",
                                     timeout=timeout, stdin=subprocess.DEVNULL, cwd=d)
                 if cp.returncode != 0:
                     return "nobuild", (cp.stderr or cp.stdout).strip()[:160]
@@ -904,7 +904,7 @@ def _run_text(text, scrip, mode, timeout=20):
                                    stdin=subprocess.DEVNULL, cwd=d)
             else:
                 s_out, b_out = os.path.join(d, "probe.s"), os.path.join(d, "probe.bin")
-                cp = _ltr.run([scrip, "--compile", "-o", s_out, prog], capture_output=True, text=True, errors="replace",
+                cp = _ltr.run([scrip, "--compile", f"--out={s_out}", prog], capture_output=True, text=True, errors="replace",
                                     timeout=timeout, stdin=subprocess.DEVNULL, cwd=d)
                 if cp.returncode != 0:
                     return None

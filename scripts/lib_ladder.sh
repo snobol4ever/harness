@@ -25,7 +25,7 @@
 # POPULATION: every origin `ladder__rungNN_<slug>` of corpus/tests/<suite>/ALL.csv with NN <= N, materialized
 # OUT of the rungs by origin through lib_rungs_extract.sh -- keyed on the CSV `origin` column, never on the
 # entry name or a filename glob.
-# EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile -o x.s + as --64 + gcc -no-pie + run
+# EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
 # Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.wantrc,
 # keyed on the entry NAME; default 0, and the file need not exist). A timeout is a FAIL(rc=124), never a hang.
 # ⭐ REFS ARE ORACLE-CUT, NOT HAND-AUTHORED, and this body never re-invokes an oracle at grading time: the
@@ -158,7 +158,7 @@ PY
     if [ "$r3" = "$want" ] && cmp -s "$W/$o.m3.out" "$ref" && { [ ! -f "$err_ref" ] || cmp -s "$W/$o.m3.err" "$err_ref"; }; then v3=PASS; pass=$((pass+1)); rp[$r]=$(( ${rp[$r]:-0} + 1 )); else v3="FAIL(rc=$r3)"; fail=$((fail+1)); rf[$r]=$(( ${rf[$r]:-0} + 1 )); fi
     v4=NOBUILD
     # shellcheck disable=SC2086
-    if (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" --compile $ca -o "$o.s" "$src" </dev/null >/dev/null 2>&1) && [ -s "$W/$o.s" ] \
+    if (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" --compile $ca --out="$o.s" "$src" </dev/null >/dev/null 2>&1) && [ -s "$W/$o.s" ] \
        && as --64 -o "$W/$o.o" "$W/$o.s" 2>/dev/null && gcc -no-pie -o "$W/$o.bin" "$W/$o.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null; then
       # shellcheck disable=SC2086
       r4=$( ( "$TIMEOUT_RETRY" "$T" "$W/$o.bin" $sw ${ra:+-- $ra} <"$stdin_src" >"$W/$o.m4.out" 2>"$W/$o.m4.err"; echo $? ) 2>/dev/null )

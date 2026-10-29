@@ -47,7 +47,7 @@ SNO
 [ -s "$W/bid.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 grep -q 'ERROR' "$W/bid.ref" && { echo "REFUSED(2): the oracle rejected the witness:"; grep 'ERROR' "$W/bid.ref" | head -2; exit 2; }
 red=0
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/bid.s" bid.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: bid.sno did not compile"; exit 1; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/bid.s" bid.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: bid.sno did not compile"; exit 1; }
 nc=$(grep -c 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s"); nv=$(grep -B3 'call .*\[rip + rt_call_bid_sn4@GOTPCREL\]' "$W/bid.s" | grep -c 'g_rtccb')
 [ "$nc" -ge 20 ] && [ "$nv" -eq 0 ] && echo "ok  rt_call_bid_sn4: $nc bare GOT calls, no veneer" || { echo "RED: calls=$nc (want >= 20) veneered=$nv"; red=1; }
 ( cd "$W" && timeout -k 5 60 "$ROOT/scrip" bid.sno < /dev/null > "$W/bid.m3" 2>&1 ); cmp -s "$W/bid.m3" "$W/bid.ref" && echo "ok  m3 = oracle" || { echo "RED m3 differs from the oracle:"; diff "$W/bid.ref" "$W/bid.m3" | head -8; red=1; }

@@ -146,7 +146,7 @@ end.
 PAS
 ( cd "$T" && "$FPC" -Miso -v0 b.pas >/dev/null 2>&1 && ./b ) > "$T/b.ref" 2>&1
 grep -q '^tags compare$' "$T/b.ref" || { echo "GATE REFUSE(2) [$G]: the oracle did not produce the tag-comparison line this gate pins -- the oracle moved: $(tail -1 "$T/b.ref")"; exit 2; }
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o b.s b.pas </dev/null && gcc b.s -o b.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build -- a record wider than the field table still loses its variant tags"; exit 1; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=b.s b.pas </dev/null && gcc b.s -o b.bin -L"$RT_DIR" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "GATE FAIL(1) [$G]: the mode-4 witness did not build -- a record wider than the field table still loses its variant tags"; exit 1; }
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 60 "$SCRIP" --run b.pas </dev/null ) >"$T/$M.out" 2>&1

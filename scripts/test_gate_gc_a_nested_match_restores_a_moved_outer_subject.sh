@@ -39,7 +39,7 @@ printf "\tDEFINE('H(s)')\t:(HE)\nH\tH = REPLACE(s, &LCASE, &UCASE)\t:(RETURN)\nH
 ( cd "$T" && timeout -k 5 30 "$SBL" $(sbl_lang_flags) w.sno < /dev/null > w.ref 2> /dev/null )
 [ -s "$T/w.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for the witness"; exit 2; }
 RC=0; red=""
-( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o w.s w.sno < /dev/null > /dev/null 2>&1 && gcc w.s -o w.bin -L"$LIBDIR" -lscrip_rt -lm -lpthread -Wl,-rpath,"$LIBDIR" 2> /dev/null ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness did not compile or link in mode 4"; exit 2; }
+( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=w.s w.sno < /dev/null > /dev/null 2>&1 && gcc w.s -o w.bin -L"$LIBDIR" -lscrip_rt -lm -lpthread -Wl,-rpath,"$LIBDIR" 2> /dev/null ) || { echo "⛔ GATE REFUSE(2) [$G]: the witness did not compile or link in mode 4"; exit 2; }
 for st in 1 2 5 20 100; do
     ( cd "$T" && SCRIP_GC_STRESS=$st timeout -k 5 60 "$SCRIP" w.sno < /dev/null > m3.$st 2> m3e.$st ); r3=$?
     cmp -s "$T/m3.$st" "$T/w.ref" && [ "$r3" = 0 ] || red="$red m3@$st(rc=$r3 $(head -c 70 "$T/m3e.$st" | tr '\n' ' '))"

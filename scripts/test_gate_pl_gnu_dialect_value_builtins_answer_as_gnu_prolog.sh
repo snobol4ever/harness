@@ -88,7 +88,7 @@ fi
 fail=0
 ( cd "$T" && timeout -k 5 20 "$SCRIP" w.pl < /dev/null > m3.out 2>&1 ); rc3=$?
 if cmp -s "$T/m3.out" "$T/ref"; then echo "  ok   (m3) 18 rows answer as GNU Prolog 1.6.0"; else echo "  FAIL (m3) rc=$rc3, first difference:"; diff "$T/ref" "$T/m3.out" | head -6 | sed 's/^/         /'; fail=1; fi
-if ( cd "$T" && "$SCRIP" --compile -o w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -o w w.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
+if ( cd "$T" && "$SCRIP" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -o w w.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
     ( cd "$T" && timeout -k 5 20 ./w < /dev/null > m4.out 2>&1 ); rc4=$?
     if cmp -s "$T/m4.out" "$T/ref"; then echo "  ok   (m4) the same, from the standalone build"; else echo "  FAIL (m4) rc=$rc4, first difference:"; diff "$T/ref" "$T/m4.out" | head -6 | sed 's/^/         /'; fail=1; fi
 else echo "  FAIL (m4) the witness did not compile or link in mode 4"; fail=1; fi

@@ -33,7 +33,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0
 run() { local m="$1" p="$2"
   if [ "$m" = m3 ]; then ( cd "$T" && timeout -k 5 20s "$SCRIP" --run "$p.pas" </dev/null >"$T/o" 2>"$T/e" ); return $?; fi
-  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ $p m4: did not compile or link"; return 99; }
+  ( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/$p.s" "$p.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$p.s" -o "$p.m4" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ) || { echo "  ⛔ $p m4: did not compile or link"; return 99; }
   ( cd "$T" && timeout -k 5 20s "./$p.m4" </dev/null >"$T/o" 2>"$T/e" ); return $?; }
 fpcrun() { ( cd "$T" && "$FPC" -Miso -v0 -o"$1.fpc" $1.pas >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: fpc -Miso would not compile $1"; exit 2; }; ( cd "$T" && timeout -k 5 20s ./$1.fpc </dev/null >"$T/$1.want" 2>/dev/null ); echo $?; }
 
@@ -188,7 +188,7 @@ begin
 end.
 PAS
 N=0
-( cd "$T" && timeout -k 5 60s "$SCRIP" --compile -o census.s census.pas </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the census kernel did not compile"; exit 2; }
+( cd "$T" && timeout -k 5 60s "$SCRIP" --compile --out=census.s census.pas </dev/null >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the census kernel did not compile"; exit 2; }
 HITS=$(grep -cE 'call[[:space:]]+(rt_jmp_frame_lexprep2|rt_icn_zframe_args_install|rt_arg_stage|rt_proc_drop_frame_h|rt_proc_call_open_det[0-9]*|rt_nret_fix_tiny|rt_proc_call_epilogue_)' "$T/census.s")
 N=$((N + 1))
 if [ "$HITS" = 0 ]; then echo "  census: the kernel's mode-4 text names 0 frame-helper call sites"

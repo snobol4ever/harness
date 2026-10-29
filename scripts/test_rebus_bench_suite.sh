@@ -67,7 +67,7 @@ run1() {
 }
 # build4 <src.reb> <bin> -- the mode-4 binary of one program; returns 0 when it links
 build4() {
-  ( cd "$T" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile "$1" -o "$2.s" </dev/null >"$2.cc" 2>&1 ) \
+  ( cd "$T" && "$TIMEOUT_RETRY" 300s "$SCRIP" --compile "$1" --out="$2.s" </dev/null >"$2.cc" 2>&1 ) \
     && ( cd "$T" && cc -m64 -no-pie "$2.s" -o "$2" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >>"$2.cc" 2>&1 )
 }
 # bench_ok <err-file> <mode> <ref-value> -- the generated wrapper's BENCH line holds: its mode, its iteration count, no mismatch, the ref's value

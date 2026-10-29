@@ -25,7 +25,7 @@ count_s() { awk '
     END { printf "%d %d %d %d %d %d %d\n", t+0, al+0, be+0, ga+0, om+0, ot+0, lr+0 }' "$1"; }
 if [ "${#FILES[@]}" -gt 0 ]; then
     for f in "${FILES[@]}"; do
-        ( cd "$SCRIP" && timeout -k 2 60 ./scrip --compile -o "$W/f.s" "$f" < /dev/null > /dev/null 2>&1 ) || { echo "RSP_RESTORE_FILE file=$f compiled=0"; continue; }
+        ( cd "$SCRIP" && timeout -k 2 60 ./scrip --compile --out="$W/f.s" "$f" < /dev/null > /dev/null 2>&1 ) || { echo "RSP_RESTORE_FILE file=$f compiled=0"; continue; }
         read -r t al be ga om ot lr <<< "$(count_s "$W/f.s")"
         echo "RSP_RESTORE_FILE file=$f loads=$t alpha=$al beta=$be gamma=$ga omega=$om other=$ot lea_rbp=$lr"
     done
@@ -42,7 +42,7 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
         [ "$cls" = "core" ] || continue
         n=$((n+1)); src="$W/$lang.$n.$ext"
         python3 "$HERE/corpus_suite_harness.py" extract "$D/ALL.$ext" "$D/ALL.ref" "$entry" "$src" --out-ref "$W/$lang.$n.ref" > /dev/null 2>&1 || continue
-        ( cd "$SCRIP" && timeout -k 2 60 ./scrip --compile -o "$W/$lang.$n.s" "$src" < /dev/null > /dev/null 2>&1 ) || continue
+        ( cd "$SCRIP" && timeout -k 2 60 ./scrip --compile --out="$W/$lang.$n.s" "$src" < /dev/null > /dev/null 2>&1 ) || continue
         c=$((c+1))
         read -r t al be ga om ot lr <<< "$(count_s "$W/$lang.$n.s")"
         T=$((T+t)); AL=$((AL+al)); BE=$((BE+be)); GA=$((GA+ga)); OM=$((OM+om)); OT=$((OT+ot)); LR=$((LR+lr))

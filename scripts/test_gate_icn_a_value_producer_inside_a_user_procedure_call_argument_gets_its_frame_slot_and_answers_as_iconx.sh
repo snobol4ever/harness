@@ -32,7 +32,7 @@ P="$HERE/../../corpus/packages/icon"
 cd "$HERE/../../SCRIP" 2>/dev/null || { echo "REFUSE(2): no SCRIP beside the harness"; exit 2; }
 out="$(bash "$HERE/test_witness_both_modes.sh" "$T/w.icn" "$T/w.ref" "$P/jcon_tests/checkfpx.icn" "$P/jcon_tests/checkfpx.ref" "$P/arizona_tests/general/checkfpc.icn" "$P/arizona_tests/general/checkfpc.ref" 2>&1)"; rc=$?
 echo "$out" | tail -7
-pc=0; timeout -k 2 60s ./scrip --compile -o /dev/null "$P/ipl/progs/patchu.icn" < /dev/null > /dev/null 2>&1 || pc=1
+pc=0; timeout -k 2 60s ./scrip --compile --out=/dev/null "$P/ipl/progs/patchu.icn" < /dev/null > /dev/null 2>&1 || pc=1
 echo "PATCHU compile rc=$pc"
 [ "$rc" = 2 ] && { echo "REFUSE(2): the witness runner could not measure"; exit 2; }
 [ "$rc" = 0 ] && [ "$pc" = 0 ] && { echo "GATE OK -- a value-producer that is no row of the chain gets its frame slot from the plan, both modes answer as the oracle-cut refs"; exit 0; }

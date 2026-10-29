@@ -51,7 +51,7 @@ echo "arm 1: the six helpers named at no call site in the mode-4 text of the Rak
 sites=0; nk=0
 for k in rakudo-tools-02-10-000-sub-dispatches rakudo-tools-03-10-000-multi-dispatches rakudo-tools-04-10-000-method-dispatches merge-sort insertion-sort point_class_add point_class_add2 parse-json mb-for_param_sigil string-escape; do
     f="$S4E/corpus/benchmarks/raku/$k.raku"; [ -f "$f" ] || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: kernel $f absent"; exit 2; }
-    SCRIP_DIAG=0 timeout -k 5 120 "$ROOT/scrip" --compile -o "$W/$k.s" "$f" < /dev/null > /dev/null 2>&1 || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: kernel $k did not compile"; exit 2; }
+    SCRIP_DIAG=0 timeout -k 5 120 "$ROOT/scrip" --compile --out="$W/$k.s" "$f" < /dev/null > /dev/null 2>&1 || { echo "⛔ REFUSE(rc=2) [$GATE_NAME]: kernel $k did not compile"; exit 2; }
     nk=$((nk + 1)); GATE_EXAMINED=$((GATE_EXAMINED + 1))
     c=$(grep -cE 'call[[:space:]]+(qword ptr \[rip \+ )?(rt_jmp_frame_lexprep2|rt_icn_zframe_args_install|rt_arg_stage|rt_proc_drop_frame_h|rt_proc_call_open_det|rt_nret_fix_tiny)\b' "$W/$k.s")
     sites=$((sites + c))
@@ -216,7 +216,7 @@ ck() {
     else printf '  FAIL %-9s %s: got [%s] want [%s]\n' "$w" "$m" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-110)" "$(tr '\n' ' ' < "$W/$w.ref" | cut -c1-110)"; fails=$((fails + 1)); fi
 }
 for w in calls byname strings gcstress shapes; do
-    if ! timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
+    if ! timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.raku" </dev/null >"$W/$w.cerr" 2>&1 \
        || ! gcc -o "$W/$w.bin" "$W/$w.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/$w.cerr" 2>&1; then
         printf '  FAIL %-9s m4: did not build (%s)\n' "$w" "$(head -1 "$W/$w.cerr" | cut -c1-110)"; fails=$((fails + 1)); continue; fi
     for m in m3 m4; do ck "$w" "$m"; done

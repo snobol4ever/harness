@@ -43,7 +43,7 @@ run3() { local st="$1" fl="$2" tag="$3"; ( cd "$T" && env -u SCRIP_HEAP_MB $fl S
   if [ $r = 0 ] && cmp -s "$T/$tag.out" "$REF" && flipped "$T/$tag.err" "$fl"; then band="$band $tag:ref"; else band="$band $tag:rc=$r"; bad=1; fi; }
 for st in 3 11; do run3 $st "" "m3_s$st"; done
 run3 3 "SCRIP_GC_PLANT_FLIP=1" "m3_f3"
-if ( cd "$T" && "$SCRIP" --compile "$W.icn" -o w.s </dev/null >/dev/null 2>w4.err && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
+if ( cd "$T" && "$SCRIP" --compile "$W.icn" --out=w.s </dev/null >/dev/null 2>w4.err && gcc -m64 -no-pie -rdynamic w.s -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o w4 2>/dev/null ); then
   run4() { local st="$1" fl="$2" tag="$3"; ( cd "$T" && env -u SCRIP_HEAP_MB $fl SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=$st timeout -k 5 60s ./w4 < "$W.in" > "$tag.out" 2> "$tag.err" ); local r=$?
     if [ $r = 0 ] && cmp -s "$T/$tag.out" "$REF" && flipped "$T/$tag.err" "$fl"; then band="$band $tag:ref"; else band="$band $tag:rc=$r"; bad=1; fi; }
   for st in 4 8 16; do run4 $st "" "m4_s$st"; done

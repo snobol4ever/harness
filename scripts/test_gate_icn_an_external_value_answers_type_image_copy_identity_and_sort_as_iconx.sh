@@ -40,7 +40,7 @@ WITNESS
 ( cd "$T" && "$IC" -s -o w.ox w.icn >/dev/null 2>&1 && ./w.ox > oracle.txt 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: the oracle did not run the witness"; exit 2; }
 grep -q '^xreal xreal_[0-9]*(2.5)$' "$T/oracle.txt" || { echo "⛔ GATE REFUSE(2) [$G]: the oracle's external lines are not the ones this gate measures:"; head -3 "$T/oracle.txt"; exit 2; }
 ( cd "$T" && "$S" w.icn < /dev/null > m3.txt 2>&1 )
-( cd "$T" && "$S" --compile -o w.s w.icn < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
+( cd "$T" && "$S" --compile --out=w.s w.icn < /dev/null >/dev/null 2>&1 ) && gcc -no-pie -o "$T/w.x" "$T/w.s" -Wl,-rpath,"$O" -L"$O" -lscrip_rt -lm -lpthread 2>/dev/null \
     || { echo "⛔ GATE REFUSE(2) [$G]: m4 did not build the witness"; exit 2; }
 ( cd "$T" && ./w.x < /dev/null > m4.txt 2>&1 )
 red=0

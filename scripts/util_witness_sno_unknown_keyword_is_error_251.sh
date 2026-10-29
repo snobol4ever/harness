@@ -17,7 +17,7 @@ while IFS= read -r stmt; do
     o=$("$SBL" -bf "$T/o.sno" </dev/null 2>&1 | grep -aoE 'ERROR [0-9]+' | head -1 | tr -d 'ERRO ')
     m3=$(timeout -k 5 8 "$ROOT/scrip" "$T/w.sno" </dev/null 2>&1 | grep -aoE 'error [0-9]+' | head -1 | tr -d 'eror ')
     m4=""
-    if timeout -k 5 8 "$ROOT/scrip" --compile -o "$T/w.s" "$T/w.sno" </dev/null >/dev/null 2>&1 && gcc -m64 "$T/w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/w" 2>/dev/null; then
+    if timeout -k 5 8 "$ROOT/scrip" --compile --out="$T/w.s" "$T/w.sno" </dev/null >/dev/null 2>&1 && gcc -m64 "$T/w.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$T/w" 2>/dev/null; then
         m4=$(timeout -k 5 8 "$T/w" </dev/null 2>&1 | grep -aoE 'error [0-9]+' | head -1 | tr -d 'eror ')
     fi
     if [ "$o" = "$m3" ] && [ "$o" = "$m4" ]; then v="agree"; else v="DIFFER"; bad=$((bad + 1)); fi

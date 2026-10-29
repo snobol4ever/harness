@@ -21,7 +21,7 @@ grep -q 'gen3 returned 3' "$T/g.ref" || { echo "⛔ REFUSE(2): the oracle's own 
 RC=0
 for M in m3 m4; do
   if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" g.icn </dev/null ) >"$T/$M.out" 2>&1
-  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o g.s g.icn </dev/null && gcc g.s -o g.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
+  else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=g.s g.icn </dev/null && gcc g.s -o g.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness did not build"; exit 2; }
        ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./g.bin </dev/null ) >"$T/$M.out" 2>&1
   fi
   if [ -n "${FAIL_ONCE:-}" ]; then sed -i 's/gen3 returned 3/gen3 failed/' "$T/$M.out"; fi

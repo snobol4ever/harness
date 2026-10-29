@@ -88,7 +88,7 @@ for K in "${POP[@]}"; do
     case "$EN" in
       iconx) ( cd "$W/$NM" && "$ICONT" -s -o w.x "$NM.icn" ) >"$W/$NM/icont.log" 2>&1 && CMD=("$W/$NM/w.x" ${AV[@]+"${AV[@]}"});;
       m3)    CMD=("$SCRIP" ${SWA[@]+"${SWA[@]}"} "$W/$NM/$NM.icn"); [ "${#AV[@]}" -gt 0 ] && CMD+=(-- "${AV[@]}");;
-      m4)    ( cd "$W/$NM" && "$SCRIP" --compile -o w.s "$NM.icn" </dev/null && gcc -no-pie -o w4 w.s "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$W/$NM/m4.log" 2>&1 \
+      m4)    ( cd "$W/$NM" && "$SCRIP" --compile --out=w.s "$NM.icn" </dev/null && gcc -no-pie -o w4 w.s "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$W/$NM/m4.log" 2>&1 \
                && { CMD=("$W/$NM/w4" ${SWA[@]+"${SWA[@]}"}); [ "${#AV[@]}" -gt 0 ] && { [ "${#SWA[@]}" -gt 0 ] && CMD+=(--); CMD+=("${AV[@]}"); }; };;
       *) refuse "unknown engine $EN";;
     esac

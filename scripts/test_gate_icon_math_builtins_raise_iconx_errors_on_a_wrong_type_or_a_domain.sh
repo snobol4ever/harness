@@ -37,7 +37,7 @@ oracle="$(cd "$W" && timeout -k 5 30 "$W/$P.x" </dev/null 2>/dev/null; echo "rc=
 for m in m3 m4; do
     GATE_EXAMINED=$((GATE_EXAMINED + 1))
     if [ "$m" = m3 ]; then got="$(cd "$W" && timeout -k 5 60 "$ROOT/scrip" "$P.icn" </dev/null 2>/dev/null; echo "rc=$?")"
-    elif (cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile -o "$W/$P.s" "$P.icn" </dev/null >"$W/cerr" 2>&1) && gcc -o "$W/$P.bin" "$W/$P.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/cerr" 2>&1; then
+    elif (cd "$W" && timeout -k 5 60 "$ROOT/scrip" --compile --out="$W/$P.s" "$P.icn" </dev/null >"$W/cerr" 2>&1) && gcc -o "$W/$P.bin" "$W/$P.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread >>"$W/cerr" 2>&1; then
         got="$(cd "$W" && timeout -k 5 60 "$W/$P.bin" </dev/null 2>/dev/null; echo "rc=$?")"
     else got="COMPILE-FAIL: $(head -1 "$W/cerr" | cut -c1-100)"; fi
     if [ "$got" = "$(cat "$FX/$P.ref")" ]; then printf '  ok   %s %s: %s lines = iconx\n' "$P" "$m" "$(printf '%s\n' "$got" | wc -l)"

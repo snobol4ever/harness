@@ -130,8 +130,8 @@ for f in "${POP[@]}"; do
     if [ "$mode" = m3 ]; then PRI=("$SCRIP" ${SWA[@]+"${SWA[@]}"} "$f"); WRP=("$SCRIP" ${SWA[@]+"${SWA[@]}"} "$K/$NM.icn"); [ "${#AV[@]}" -gt 0 ] && { PRI+=(-- "${AV[@]}"); WRP+=(-- "${AV[@]}"); }
     else
       mkdir -p "$K/p4" "$K/w4"
-      if ( cd "$KD" && "$SCRIP" --compile -o "$K/p4/$NM.s" "$f" </dev/null && gcc -no-pie -o "$K/p4/$NM" "$K/p4/$NM.s" "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$K/m4p.log" 2>&1 \
-         && ( cd "$KD" && "$SCRIP" --compile -o "$K/w4/$NM.s" "$K/$NM.icn" </dev/null && gcc -no-pie -o "$K/w4/$NM" "$K/w4/$NM.s" "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$K/m4w.log" 2>&1; then
+      if ( cd "$KD" && "$SCRIP" --compile --out="$K/p4/$NM.s" "$f" </dev/null && gcc -no-pie -o "$K/p4/$NM" "$K/p4/$NM.s" "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$K/m4p.log" 2>&1 \
+         && ( cd "$KD" && "$SCRIP" --compile --out="$K/w4/$NM.s" "$K/$NM.icn" </dev/null && gcc -no-pie -o "$K/w4/$NM" "$K/w4/$NM.s" "$RT/libscrip_rt.so" -lm -lstdc++ -lpthread -Wl,-rpath,"$RT" ) >"$K/m4w.log" 2>&1; then
         PRI=("$K/p4/$NM" ${SWA[@]+"${SWA[@]}"}); WRP=("$K/w4/$NM" ${SWA[@]+"${SWA[@]}"})
         [ "${#AV[@]}" -gt 0 ] && { [ "${#SWA[@]}" -gt 0 ] && { PRI+=(--); WRP+=(--); }; PRI+=("${AV[@]}"); WRP+=("${AV[@]}"); }
       else o4=FAIL; cells="$cells m4=BUILD"; NOTES="$NOTES\n    $rel m4: did not compile and link -- $(tail -1 "$K"/m4?.log | cut -c1-120)"; continue; fi

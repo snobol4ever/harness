@@ -59,8 +59,8 @@ PL
 ( cd "$D" && timeout -k 5 30 "$GP" --consult-file c.pl --query-goal halt < /dev/null 2> /dev/null | awk '/compiled, [0-9]+ lines read/{f=1;next} f && !/^\| \?-/' > cwant )
 [ -s "$D/cwant" ] || refuse "gprolog printed nothing for the catch witness"
 ( cd "$D" && timeout -k 5 30 "$B/scrip" --run w.pl -- a b < /dev/null > m3 2> m3.err; timeout -k 5 30 "$B/scrip" --run c.pl < /dev/null > cm3 2> cm3.err )
-( cd "$D" && timeout -k 5 60 "$B/scrip" --compile -o w.s w.pl < /dev/null 2> m4.err && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && timeout -k 5 30 ./w -- a b < /dev/null > m4 2>> m4.err
-  timeout -k 5 60 "$B/scrip" --compile -o c.s c.pl < /dev/null 2> cm4.err && gcc -no-pie c.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o c 2>> cm4.err && timeout -k 5 30 ./c < /dev/null > cm4 2>> cm4.err )
+( cd "$D" && timeout -k 5 60 "$B/scrip" --compile --out=w.s w.pl < /dev/null 2> m4.err && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && timeout -k 5 30 ./w -- a b < /dev/null > m4 2>> m4.err
+  timeout -k 5 60 "$B/scrip" --compile --out=c.s c.pl < /dev/null 2> cm4.err && gcc -no-pie c.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o c 2>> cm4.err && timeout -k 5 30 ./c < /dev/null > cm4 2>> cm4.err )
 n=$(wc -l < "$D/want"); cn=$(wc -l < "$D/cwant"); red=0
 for m in m3 m4; do
     if cmp -s "$D/want" "$D/$m"; then echo "  $m swipl arm GREEN: $n of $n lines as swipl"
@@ -74,7 +74,7 @@ for body in 'main :- fail.' 'main :- write(a), nl, fail.' 'main :- throw(oops).'
     printf ':- initialization(main, main).\n%s\n' "$body" > "$D/im.pl"
     ( cd "$D" && timeout -k 5 30 swipl -q im.pl < /dev/null > iw.out 2> /dev/null; echo $? > iw.rc
       timeout -k 5 30 "$B/scrip" --run im.pl < /dev/null > i3.out 2> /dev/null; echo $? > i3.rc
-      timeout -k 5 60 "$B/scrip" --compile -o im.s im.pl < /dev/null 2> /dev/null && gcc -no-pie im.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o im 2> /dev/null && { timeout -k 5 30 ./im < /dev/null > i4.out 2> /dev/null; echo $? > i4.rc; } )
+      timeout -k 5 60 "$B/scrip" --compile --out=im.s im.pl < /dev/null 2> /dev/null && gcc -no-pie im.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o im 2> /dev/null && { timeout -k 5 30 ./im < /dev/null > i4.out 2> /dev/null; echo $? > i4.rc; } )
     for m in 3 4; do
         if cmp -s "$D/iw.rc" "$D/i$m.rc" && cmp -s "$D/iw.out" "$D/i$m.out"; then echo "  m$m initialization(main, main) '$body' GREEN: rc $(cat "$D/iw.rc") as swipl"
         else echo "  m$m initialization(main, main) '$body' RED: swipl rc $(cat "$D/iw.rc") scrip rc $(cat "$D/i$m.rc" 2>/dev/null)"; red=1; fi
@@ -89,7 +89,7 @@ for k in 1 2 3; do
     esac
     ( cd "$D" && timeout -k 5 30 swipl -q im.pl < /dev/null > iw.out 2> /dev/null; echo $? > iw.rc
       timeout -k 5 30 "$B/scrip" --run im.pl < /dev/null > i3.out 2> /dev/null; echo $? > i3.rc
-      timeout -k 5 60 "$B/scrip" --compile -o im.s im.pl < /dev/null 2> /dev/null && gcc -no-pie im.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o im 2> /dev/null && { timeout -k 5 30 ./im < /dev/null > i4.out 2> /dev/null; echo $? > i4.rc; } )
+      timeout -k 5 60 "$B/scrip" --compile --out=im.s im.pl < /dev/null 2> /dev/null && gcc -no-pie im.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o im 2> /dev/null && { timeout -k 5 30 ./im < /dev/null > i4.out 2> /dev/null; echo $? > i4.rc; } )
     for m in 3 4; do
         if cmp -s "$D/iw.rc" "$D/i$m.rc" && cmp -s "$D/iw.out" "$D/i$m.out"; then echo "  m$m initialization order shape $k GREEN: $(paste -sd, "$D/iw.out") rc $(cat "$D/iw.rc") as swipl"
         else echo "  m$m initialization order shape $k RED: swipl [$(paste -sd, "$D/iw.out")] rc $(cat "$D/iw.rc"), scrip [$(paste -sd, "$D/i$m.out" 2>/dev/null)] rc $(cat "$D/i$m.rc" 2>/dev/null)"; red=1; fi

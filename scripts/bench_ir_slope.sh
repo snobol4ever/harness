@@ -87,7 +87,7 @@ ir_m3() { ir_of "$SCRIP_BIN" --run "$1" < /dev/null; }
 ir_sbl(){ ir_of "$SBL" $SBL_FLAGS "$1" < /dev/null; }
 ir_m4() {
   local f="$1" d; d="$(mktemp -d "$W/m4.XXXXXX")"
-  "$SCRIP_BIN" --compile "$f" -o "$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
+  "$SCRIP_BIN" --compile "$f" --out="$d/p.s" < /dev/null >/dev/null 2>&1 || return 0
   gcc -no-pie "$d/p.s" -o "$d/p.bin" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread >/dev/null 2>&1 || return 0
   ir_of "$d/p.bin" < /dev/null
 }

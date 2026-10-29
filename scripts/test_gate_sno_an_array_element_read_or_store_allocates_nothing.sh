@@ -99,7 +99,7 @@ red=0
 [ -s "$W/arr.ref" ] || { echo "REFUSED(2): the oracle printed nothing for the witness"; exit 2; }
 for arm in on off; do
     if [ "$arm" = on ]; then unset SCRIP_SUB_VAL; else export SCRIP_SUB_VAL=0; fi
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/arr_$arm.s" arr.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: arr.sno did not compile (arm $arm)"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/arr_$arm.s" arr.sno < /dev/null > /dev/null 2>&1 ) || { echo "RED: arr.sno did not compile (arm $arm)"; red=1; continue; }
     nv=$(grep -cE 'call +(qword ptr \[rip \+ )?(c_)?rt_subscript_val@|call +rt_subscript_val( |$)' "$W/arr_$arm.s")
     if [ "$arm" = on ]; then [ "$nv" -ge 12 ] && echo "ok  arm on: $nv value-context subscript sites" || { echo "RED arm on: value sites=$nv (want >= 12)"; red=1; }
     else [ "$nv" -eq 0 ] && echo "ok  arm off: 0 value-context sites" || { echo "RED arm off: $nv value sites under SCRIP_SUB_VAL=0"; red=1; }; fi
@@ -107,7 +107,7 @@ for arm in on off; do
     if gcc "$W/arr_$arm.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/arr_$arm.bin" 2>/dev/null; then
         ( cd "$W" && timeout -k 5 20 "./arr_$arm.bin" < /dev/null > "$W/arr.$arm.m4" 2>&1 ); cmp -s "$W/arr.$arm.m4" "$W/arr.ref" && echo "ok  m4 arm $arm = oracle" || { echo "RED m4 arm $arm differs from the oracle:"; diff "$W/arr.ref" "$W/arr.$arm.m4" | head -8; red=1; }
     else echo "RED m4 arm $arm did not link"; red=1; fi
-    ( cd "$W" && "$ROOT/scrip" --compile -o "$W/loop_$arm.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop_$arm.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop_$arm.bin" 2>/dev/null ) || { echo "RED: loop.sno did not build (arm $arm)"; red=1; continue; }
+    ( cd "$W" && "$ROOT/scrip" --compile --out="$W/loop_$arm.s" loop.sno < /dev/null > /dev/null 2>&1 && gcc "$W/loop_$arm.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/loop_$arm.bin" 2>/dev/null ) || { echo "RED: loop.sno did not build (arm $arm)"; red=1; continue; }
     nc=$( cd "$W" && SCRIP_ZETA_TELEM=1 timeout -k 5 60 "./loop_$arm.bin" < /dev/null 2>&1 >/dev/null | grep -c '^\[ZGC\]' )
     if [ "$arm" = on ]; then [ "$nc" -eq 0 ] && echo "ok  arm on: the 40,000-access loop collected 0 times at the shipped arena" || { echo "RED arm on: $nc collections in the element loop -- an element access still allocates"; red=1; }
     else [ "$nc" -ge 1 ] && echo "ok  arm off: the same loop collects ($nc) -- the control arm still mints the cells" || { echo "RED arm off: 0 collections under SCRIP_SUB_VAL=0 -- the control arm is not a control"; red=1; }; fi
@@ -116,6 +116,6 @@ unset SCRIP_SUB_VAL
 "$SBL" $(sbl_lang_flags) "$W/tbl.sno" < /dev/null > "$W/tbl.ref" 2>&1 || true
 [ -s "$W/tbl.ref" ] || { echo "REFUSED(2): the oracle printed nothing for tbl.sno"; exit 2; }
 ( cd "$W" && timeout -k 5 20 "$ROOT/scrip" tbl.sno < /dev/null > "$W/tbl.m3" 2>&1 ); cmp -s "$W/tbl.m3" "$W/tbl.ref" && echo "ok  m3 cure: a name read from a table element is a NAME" || { echo "RED m3 cure: tbl.sno differs from the oracle:"; diff "$W/tbl.ref" "$W/tbl.m3" | head -6; red=1; }
-( cd "$W" && "$ROOT/scrip" --compile -o "$W/tbl.s" tbl.sno < /dev/null > /dev/null 2>&1 && gcc "$W/tbl.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/tbl.bin" 2>/dev/null && timeout -k 5 20 "./tbl.bin" < /dev/null > "$W/tbl.m4" 2>&1 ); cmp -s "$W/tbl.m4" "$W/tbl.ref" && echo "ok  m4 cure: a name read from a table element is a NAME" || { echo "RED m4 cure: tbl.sno differs from the oracle:"; diff "$W/tbl.ref" "$W/tbl.m4" | head -6; red=1; }
+( cd "$W" && "$ROOT/scrip" --compile --out="$W/tbl.s" tbl.sno < /dev/null > /dev/null 2>&1 && gcc "$W/tbl.s" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/tbl.bin" 2>/dev/null && timeout -k 5 20 "./tbl.bin" < /dev/null > "$W/tbl.m4" 2>&1 ); cmp -s "$W/tbl.m4" "$W/tbl.ref" && echo "ok  m4 cure: a name read from a table element is a NAME" || { echo "RED m4 cure: tbl.sno differs from the oracle:"; diff "$W/tbl.ref" "$W/tbl.m4" | head -6; red=1; }
 [ "$red" -eq 0 ] && { echo "GATE OK: element reads and stores allocate nothing, the control arm restores the cell path, and both arms match the oracle in both modes"; exit 0; }
 echo "GATE FAILED: see the RED lines above"; exit 1

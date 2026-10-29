@@ -85,7 +85,7 @@ RC=0
 for M in m3 m4; do
   for W in w e; do
     if [ "$M" = m3 ]; then ( cd "$T" && timeout -k 5 20 "$SCRIP" $W.icn </dev/null ) >"$T/$M.$W.out" 2>&1
-    else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o $W.s $W.icn </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }
+    else ( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=$W.s $W.icn </dev/null && gcc $W.s -o $W.bin -L"$ROOT/out" -lscrip_rt -lm -lpthread ) >/dev/null 2>&1 || { echo "⛔ REFUSE(2): mode-4 witness $W did not build"; exit 2; }
          ( cd "$T" && LD_LIBRARY_PATH="$ROOT/out" timeout -k 5 20 ./$W.bin </dev/null ) >"$T/$M.$W.out" 2>&1
     fi
   done

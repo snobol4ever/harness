@@ -125,7 +125,7 @@ angle2() {                             # fixed RUN count -> runs_per_s runs cpu_
 # ---- OVERHEAD, the marked interim: empty-program subtraction, per engine ----------------------
 printf 'procedure main()\nend\n' > "$W/empty.icn"
 ( cd "$W" && "$ICONT" -o empty.oracle empty.icn ) >/dev/null 2>&1 || refuse "icont could not build the empty-program overhead probe."
-"$SCRIP" --compile -o "$W/empty.s" "$W/empty.icn" </dev/null >/dev/null 2>&1 \
+"$SCRIP" --compile --out="$W/empty.s" "$W/empty.icn" </dev/null >/dev/null 2>&1 \
   && as --64 -o "$W/empty.o" "$W/empty.s" 2>/dev/null \
   && gcc -no-pie -o "$W/empty.m4bin" "$W/empty.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null \
   || refuse "could not build the empty-program overhead probe under SCRIP m4."
@@ -181,7 +181,7 @@ for E in "$D"/*.icn; do
     [ "$ok" = 1 ] && [ -n "$MODS" ] || { RC=1; continue; }
     ( cd "$W" && "$ICONT" -o "$N.oracle" $MODS ) >/dev/null 2>&1 \
         || { echo "⛔ UNPROVEN $N -- icont refused to build the oracle."; RC=1; continue; }
-    ( cd "$D" && "$SCRIP" --compile -o "$W/$N.s" "$E" </dev/null ) >/dev/null 2>&1 \
+    ( cd "$D" && "$SCRIP" --compile --out="$W/$N.s" "$E" </dev/null ) >/dev/null 2>&1 \
         && as --64 -o "$W/$N.o" "$W/$N.s" 2>/dev/null \
         && gcc -no-pie -o "$W/$N.m4bin" "$W/$N.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null || rm -f "$W/$N.m4bin"
     # the oracle picks the answer stream, once, for every arm

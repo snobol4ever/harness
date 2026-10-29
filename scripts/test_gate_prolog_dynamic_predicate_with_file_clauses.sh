@@ -50,7 +50,7 @@ for w in $names; do
   g3=$(timeout -k 5 20 ./scrip "$d/$w.pl" < /dev/null 2>&1); r3=$?
   if [ "$r3" -ge 124 ]; then echo "CRASH m3 $w: rc=$r3"; rc=1
   elif [ "$g3" = "$want" ]; then echo "PASS m3 $w"; else echo "FAIL m3 $w: want [$want] got [$g3]" | cut -c1-300; rc=1; fi
-  if ! timeout -k 5 60 ./scrip --compile -o "$d/$w.s" "$d/$w.pl" < /dev/null > /dev/null 2>&1; then echo "FAIL m4 $w: compile refused"; rc=1; continue; fi
+  if ! timeout -k 5 60 ./scrip --compile --out="$d/$w.s" "$d/$w.pl" < /dev/null > /dev/null 2>&1; then echo "FAIL m4 $w: compile refused"; rc=1; continue; fi
   if ! gcc -no-pie "$d/$w.s" -L out -lscrip_rt -Wl,-rpath,"$here/out" -o "$d/$w.exe" > /dev/null 2>&1; then echo "FAIL m4 $w: link"; rc=1; continue; fi
   g4=$(timeout -k 5 20 "$d/$w.exe" < /dev/null 2>&1); r4=$?
   if [ "$r4" -ge 124 ]; then echo "CRASH m4 $w: rc=$r4"; rc=1

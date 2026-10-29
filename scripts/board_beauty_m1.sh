@@ -86,7 +86,7 @@ rung() {
         if [ "$mode" = m3 ]; then
             "$TIMEOUT_RETRY" 60 "$SCRIP" "$prog" < "$prog" > "$WORK/got.$n" 2>/dev/null; rc=$?
         else
-            ( cd "$BDIR" && "$TIMEOUT_RETRY" 120 "$SCRIP" --compile -o "$WORK/b.s" "$prog" ) >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
+            ( cd "$BDIR" && "$TIMEOUT_RETRY" 120 "$SCRIP" --compile --out="$WORK/b.s" "$prog" ) >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
             gcc -no-pie "$WORK/b.s" -L"$S4E/SCRIP/out" -lscrip_rt -Wl,-rpath,"$S4E/SCRIP/out" -lm -o "$WORK/b.bin" >/dev/null 2>&1 \
                 || { echo "LINK-FAIL"; return; }
             "$TIMEOUT_RETRY" 60 "$WORK/b.bin" < "$prog" > "$WORK/got.$n" 2>/dev/null; rc=$?
@@ -106,7 +106,7 @@ rung() {
     if [ "$mode" = m3 ]; then
         "$TIMEOUT_RETRY" 60 "$SCRIP" "$prog" < "$WORK/in.$n" > "$WORK/got.$n" 2>/dev/null; rc=$?
     else
-        ( cd "$BDIR" && "$TIMEOUT_RETRY" 120 "$SCRIP" --compile -o "$WORK/b.s" "$prog" ) >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
+        ( cd "$BDIR" && "$TIMEOUT_RETRY" 120 "$SCRIP" --compile --out="$WORK/b.s" "$prog" ) >/dev/null 2>&1 || { echo "COMPILE-FAIL"; return; }
         gcc -no-pie "$WORK/b.s" -L"$S4E/SCRIP/out" -lscrip_rt -Wl,-rpath,"$S4E/SCRIP/out" -lm -o "$WORK/b.bin" >/dev/null 2>&1 \
             || { echo "LINK-FAIL"; return; }
         "$TIMEOUT_RETRY" 60 "$WORK/b.bin" < "$WORK/in.$n" > "$WORK/got.$n" 2>/dev/null; rc=$?

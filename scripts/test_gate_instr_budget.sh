@@ -224,8 +224,8 @@ FAIL=0
 measure_ir() {  # name sno input cwd_or_empty  -> sets IR_TOTAL, RUN_OUT on success (rc 0)
     local name="$1" sno="$2" input="$3" cwd="$4"
     local s="$WORK/$name.s" bin="$WORK/$name.bin" cg="$WORK/$name.cg.out"
-    if [ -n "$cwd" ]; then ( cd "$cwd" && timeout -k 5 120 "$SCRIP_BIN" --compile -o "$s" "$sno" ) >"$WORK/$name.cc.err" 2>&1
-    else timeout -k 5 120 "$SCRIP_BIN" --compile -o "$s" "$sno" >"$WORK/$name.cc.err" 2>&1; fi
+    if [ -n "$cwd" ]; then ( cd "$cwd" && timeout -k 5 120 "$SCRIP_BIN" --compile --out="$s" "$sno" ) >"$WORK/$name.cc.err" 2>&1
+    else timeout -k 5 120 "$SCRIP_BIN" --compile --out="$s" "$sno" >"$WORK/$name.cc.err" 2>&1; fi
     if [ ! -s "$s" ]; then echo "GATE FAIL(2): $name mode-4 compile produced nothing"; sed 's/^/    /' "$WORK/$name.cc.err"; return 1; fi
     gcc -no-pie "$s" -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o "$bin" 2>"$WORK/$name.ld.err"
     if [ ! -x "$bin" ]; then echo "GATE FAIL(2): $name mode-4 link failed"; sed 's/^/    /' "$WORK/$name.ld.err"; return 1; fi

@@ -115,7 +115,7 @@ HOT_BYTES="$(secsize "$T/armB/libscrip_rt.so" .text.startup_hot)"
 [ "${HOT_BYTES:-0}" -gt 0 ] 2>/dev/null || refuse "arm B has no .text.startup_hot section (or it is empty) -- the fragment matched nothing, the lever was not applied"
 textsz() { secsize "$1" .text; }
 # ---- m4 arm: compile the witness ONCE (the .s does not depend on the .so), link once per arm ------------------------
-"$T/armA/scrip" --compile -o "$T/w.s" "$W" </dev/null >/dev/null 2>"$T/m4c.err" || { tail -3 "$T/m4c.err" >&2; refuse "mode-4 compile of the witness failed"; }
+"$T/armA/scrip" --compile --out="$T/w.s" "$W" </dev/null >/dev/null 2>"$T/m4c.err" || { tail -3 "$T/m4c.err" >&2; refuse "mode-4 compile of the witness failed"; }
 for arm in armA armB0 armB; do gcc -no-pie "$T/w.s" -o "$T/$arm/w4" -L"$T/$arm" -lscrip_rt -lm -Wl,-rpath,"$T/$arm" 2>"$T/m4l.err" || { tail -3 "$T/m4l.err" >&2; refuse "mode-4 link against $arm failed"; }; done
 # ---- correctness first: a wrong answer is never a fast answer ------------------------------------------------------
 "$T/armA/scrip" "$W" </dev/null >"$T/ref.out" 2>/dev/null || red "arm A itself exits non-zero on the witness"

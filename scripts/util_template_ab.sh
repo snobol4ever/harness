@@ -34,7 +34,7 @@ capture)
     [ -x "$SCRIP_BIN" ] || { echo "REFUSE(2): no binary at $SCRIP_BIN -- make first" >&2; exit 2; }
     one() {
         local f=$1 sha rc
-        sha=$(cd "$(dirname "$f")" && timeout -k 5 "${AB_TIMEOUT:-60}" "$SCRIP_BIN" --compile -o /dev/stdout "$(basename "$f")" < /dev/null 2>/dev/null \
+        sha=$(cd "$(dirname "$f")" && timeout -k 5 "${AB_TIMEOUT:-60}" "$SCRIP_BIN" --compile --out=/dev/stdout "$(basename "$f")" < /dev/null 2>/dev/null \
             | sed -E 's/([A-Za-z0-9_]+\.cpp):[0-9]+/\1:N/g' | sha256sum | cut -c1-16; exit "${PIPESTATUS[0]}")
         rc=$?
         [ "$rc" -eq 124 ] && sha=timeout

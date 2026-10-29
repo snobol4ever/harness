@@ -195,7 +195,7 @@ SNO
 ARMS="conv pow powerr match build trace"
 run_scrip() {  # $1 name $2 mode -> stdout
     if [ "$2" = m3 ]; then (cd "$D" && timeout -k 5 60 "$B/scrip" --stlimit "$1.sno" < /dev/null 2>/dev/null)
-    else "$B/scrip" --stlimit --compile -o "$D/$1.s" "$D/$1.sno" </dev/null >/dev/null 2>&1 \
+    else "$B/scrip" --stlimit --compile --out="$D/$1.s" "$D/$1.sno" </dev/null >/dev/null 2>&1 \
            && gcc -no-pie -o "$D/$1.bin" "$D/$1.s" -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" 2>/dev/null \
            || refuse "could not build the m4 arm of $1 -- a toolchain failure, not a verdict"
          (cd "$D" && timeout -k 5 60 "./$1.bin" < /dev/null 2>/dev/null); fi

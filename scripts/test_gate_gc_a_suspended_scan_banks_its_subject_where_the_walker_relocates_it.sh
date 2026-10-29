@@ -33,7 +33,7 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2)
 W="$ROOT/../harness/scripts/gc_witnesses/hb_scan_suspend_bank_across_a_collection"; [ -s "$W.icn" ] && [ -s "$W.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: witness or its iconx ref missing"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; REF="$W.ref"; if [ "${FAIL_ONCE:-0}" = 1 ]; then { cat "$W.ref"; printf 'corrupted\n'; } > "$T/bad.ref"; REF="$T/bad.ref"; fi
-build4() { ( cd "$T" && env $1 "$SCRIP" --compile "$W.icn" -o "$2.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie "$2.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$2" 2>/dev/null ); }
+build4() { ( cd "$T" && env $1 "$SCRIP" --compile "$W.icn" --out="$2.s" </dev/null >/dev/null 2>&1 && gcc -m64 -no-pie "$2.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$2" 2>/dev/null ); }
 build4 "" w4 || { echo "  FAIL (a) the mode-4 witness did not build"; RC=1; }
 band=""; bad=0
 for st in 1 3 5; do for rl in 0 1; do

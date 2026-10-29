@@ -28,7 +28,7 @@ grade() {  # $1 label  $2 sno file  $3 expected stdout
     local lab="$1" f="$2" want="$3" m3 m4
     m3="$(cd "$W" && timeout -k 5 20 "$SCRIP" --run "$f" </dev/null 2>&1)"
     [ "$m3" = "$want" ] || { echo "  ⛔ $lab m3 RED -- got:"; printf '%s\n' "$m3" | sed 's/^/      /'; echo "     want:"; printf '%s\n' "$want" | sed 's/^/      /'; fail=1; }
-    if (cd "$W" && timeout -k 5 60 "$SCRIP" --compile -o "$W/p.s" "$f" </dev/null >/dev/null 2>&1) \
+    if (cd "$W" && timeout -k 5 60 "$SCRIP" --compile --out="$W/p.s" "$f" </dev/null >/dev/null 2>&1) \
        && gcc -no-pie "$W/p.s" -L"$SD/out" -lscrip_rt -lm -Wl,-rpath,"$SD/out" -o "$W/p.bin" 2>/dev/null; then
         m4="$(cd "$W" && timeout -k 5 20 "$W/p.bin" </dev/null 2>&1)"
         [ "$m4" = "$want" ] || { echo "  ⛔ $lab m4 RED -- got:"; printf '%s\n' "$m4" | sed 's/^/      /'; fail=1; }

@@ -85,8 +85,8 @@ echo "  killswitch SCRIP_SETEXIT=0 moves $n/4 resume faces (NON-VACUOUS)"
 m4build() {
     local n="$1" envk="${2:-}"
     rm -f "$W/$n.s" "$W/$n.bin"
-    if [ -n "$envk" ]; then ( cd "$W" && env "$envk" timeout -k 5 30s "$S" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1 )
-    else ( cd "$W" && timeout -k 5 30s "$S" --compile -o "$n.s" "$n.sno" </dev/null >/dev/null 2>&1 ); fi || return 1
+    if [ -n "$envk" ]; then ( cd "$W" && env "$envk" timeout -k 5 30s "$S" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1 )
+    else ( cd "$W" && timeout -k 5 30s "$S" --compile --out="$n.s" "$n.sno" </dev/null >/dev/null 2>&1 ); fi || return 1
     gcc -m64 -no-pie "$W/$n.s" -Wl,-rpath,"$ROOT/out" -L"$ROOT/out" -lscrip_rt -lm -lpthread -o "$W/$n.bin" 2>/dev/null || return 1
     ( cd "$W" && timeout -k 5 20s "./$n.bin" </dev/null 2>&1 )
 }

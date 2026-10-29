@@ -74,7 +74,7 @@ for org in $ORIGINS; do
     o_code="$( cd "$W" && timeout -k 5 "$T" "$ICONX" ./w.x 2>&1 >/dev/null </dev/null | code_of )"
     m3_out="$( cd "$W" && timeout -k 5 "$T" "$SCRIP" w.icn 2>/dev/null </dev/null )"; m3_rc=$?
     m3_code="$( cd "$W" && timeout -k 5 "$T" "$SCRIP" w.icn 2>&1 >/dev/null </dev/null | code_of )"
-    if ( cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile -o w.s w.icn </dev/null >/dev/null 2>&1 ) && [ -s "$W/w.s" ] \
+    if ( cd "$W" && timeout -k 5 "$T" "$SCRIP" --compile --out=w.s w.icn </dev/null >/dev/null 2>&1 ) && [ -s "$W/w.s" ] \
        && as --64 -o "$W/w.o" "$W/w.s" 2>/dev/null \
        && gcc -no-pie -o "$W/w.bin" "$W/w.o" "$RT/libscrip_rt.so" -lm -lstdc++ -Wl,-rpath,"$RT" 2>/dev/null; then
         m4_out="$( cd "$W" && timeout -k 5 "$T" ./w.bin 2>/dev/null </dev/null )"; m4_rc=$?

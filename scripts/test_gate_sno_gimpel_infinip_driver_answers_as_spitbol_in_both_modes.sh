@@ -22,7 +22,7 @@ RC=0
 ( cd "$PKG" && timeout -k 5 20s "$SCRIP" infinip_driver.sno </dev/null ) > "$T/m3" 2>&1; r3=$?
 if [ "$r3" = 0 ] && cmp -s "$T/m3" "$T/ref"; then echo "  m3 PASS ($(wc -l < "$T/ref") lines equal to sbl -bf)"
 else echo "  m3 FAIL (rc=$r3, $(diff "$T/m3" "$T/ref" | grep -c '^[<>]') differing lines; first: $(diff "$T/m3" "$T/ref" | grep -m1 '^[<>]' | cut -c1-160))"; RC=1; fi
-( cd "$PKG" && "$SCRIP" --compile -o "$T/w.s" infinip_driver.sno </dev/null ) >"$T/c.log" 2>&1 && gcc "$T/w.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$T/w" 2>"$T/ld.log" || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed, so the mode-4 arm measured nothing: $(head -c 200 "$T/c.log" "$T/ld.log" | tr '\n' ' ')"; exit 2; }
+( cd "$PKG" && "$SCRIP" --compile --out="$T/w.s" infinip_driver.sno </dev/null ) >"$T/c.log" 2>&1 && gcc "$T/w.s" -L"$LIBDIR" -lscrip_rt -lm -Wl,-rpath,"$LIBDIR" -o "$T/w" 2>"$T/ld.log" || { echo "⛔ GATE REFUSE(2) [$G]: mode-4 compile or link failed, so the mode-4 arm measured nothing: $(head -c 200 "$T/c.log" "$T/ld.log" | tr '\n' ' ')"; exit 2; }
 ( cd "$PKG" && timeout -k 5 20s "$T/w" </dev/null ) > "$T/m4" 2>"$T/m4.err"; r4=$?
 if [ "$r4" = 0 ] && cmp -s "$T/m4" "$T/ref"; then echo "  m4 PASS ($(wc -l < "$T/ref") lines equal to sbl -bf)"
 else echo "  m4 FAIL (rc=$r4, $(diff "$T/m4" "$T/ref" | grep -c '^[<>]') differing lines; stderr: $(grep -m1 . "$T/m4.err" | cut -c1-200))"; RC=1; fi

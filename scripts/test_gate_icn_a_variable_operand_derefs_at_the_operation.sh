@@ -42,7 +42,7 @@ EXP_identity='22'
 CURED="se_global se_concat se_gt se_static gen_global gen_concat gen_aug gen_to gen_static"
 CONTROLS="se_local gen_local gen_right gen_two gen_ro identity"
 GRADED=0; FAIL=0
-build_m4() { "$SCRIP" --compile -o "$TD/$1.s" "$TD/$1.icn" </dev/null >/dev/null 2>&1 || refuse "$1: mode-4 compile failed -- cannot measure"
+build_m4() { "$SCRIP" --compile --out="$TD/$1.s" "$TD/$1.icn" </dev/null >/dev/null 2>&1 || refuse "$1: mode-4 compile failed -- cannot measure"
   gcc -no-pie "$TD/$1.s" -o "$TD/$1.bin" -L "$ROOT/out" -lscrip_rt -lm -lpthread >/dev/null 2>&1 || refuse "$1: mode-4 link failed -- cannot measure"; }
 for w in $CURED $CONTROLS; do
   for m in 3 4; do

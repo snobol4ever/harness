@@ -42,7 +42,7 @@ for b in iso7185prt1709 iso7185prt1710 iso7185prt1712 iso7185prt1714 iso7185prt1
   o3=$( cd "$T" && timeout -k 5 10s "$SCRIP" "$f" </dev/null 2>&1 ); rc3=$?
   if [ -n "${FAIL_ONCE:-}" ] && [ "$b" = iso7185prt1709 ]; then rc3=0; o3=""; fi
   { [ "$rc3" -ne 0 ] && [ "$rc3" -lt 124 ] && [ -n "$o3" ]; } || bad="m3 (rc=$rc3, ${#o3} bytes of diagnostic)"
-  o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile -o "$T/w.s" "$f" </dev/null 2>&1 ); rc4=$?
+  o4=$( cd "$T" && timeout -k 5 20s "$SCRIP" --compile --out="$T/w.s" "$f" </dev/null 2>&1 ); rc4=$?
   if [ "$rc4" = 0 ]; then
     if ( cd "$T" && cc -m64 -no-pie w.s -o w -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" >/dev/null 2>&1 ); then
       o4=$( cd "$T" && timeout -k 5 20s ./w </dev/null 2>&1 ); rc4=$?

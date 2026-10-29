@@ -100,7 +100,7 @@ walk_arm5() {
     echo "  arm 5 PASS [$lbl]: $c collection(s), i_raw_heap=0, i_ptr=0, i_heap>=1, answer = icont"
 }
 walk_arm5 "m3" env SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 timeout -k 5 300 "$ROOT/scrip" "$NS"
-if "$ROOT/scrip" --compile -o "$W/ns.s" "$NS" < /dev/null 2>"$W/nsc.txt" && gcc "$W/ns.s" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/ns.m4" 2>>"$W/nsc.txt"; then
+if "$ROOT/scrip" --compile --out="$W/ns.s" "$NS" < /dev/null 2>"$W/nsc.txt" && gcc "$W/ns.s" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/ns.m4" 2>>"$W/nsc.txt"; then
     walk_arm5 "m4" env SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 timeout -k 5 300 "$W/ns.m4"
 else echo "  arm 5 RED [m4]: the witness did not compile or link -- $(tail -1 "$W/nsc.txt")"; bad=1; fi
 for w in w.sno g.icn; do
@@ -155,7 +155,7 @@ for dsn in $DSN; do
     DS="$ROOT/../harness/scripts/gc_witnesses/$dsn.sno"; DSREF="$ROOT/../harness/scripts/gc_witnesses/$dsn.ref"
     [ -f "$DS" ] && [ -f "$DSREF" ] || { echo "  arm 7 RED [$dsn]: witness or ref missing -- cannot measure"; bad=1; continue; }
     walk_arm7 "m3 $dsn" env -u SCRIP_HEAP_MB SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=128 timeout -k 5 300 "$ROOT/scrip" "$DS"
-    if "$ROOT/scrip" --compile -o "$W/ds.s" "$DS" < /dev/null 2>"$W/dsc.txt" && gcc "$W/ds.s" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/ds.m4" 2>>"$W/dsc.txt"; then
+    if "$ROOT/scrip" --compile --out="$W/ds.s" "$DS" < /dev/null 2>"$W/dsc.txt" && gcc "$W/ds.s" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/ds.m4" 2>>"$W/dsc.txt"; then
         walk_arm7 "m4 $dsn" env -u SCRIP_HEAP_MB SCRIP_GC_MAPS=1 SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=128 timeout -k 5 300 "$W/ds.m4"
     else echo "  arm 7 RED [m4 $dsn]: the witness did not compile or link -- $(tail -1 "$W/dsc.txt")"; bad=1; fi
 done

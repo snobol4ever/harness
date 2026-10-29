@@ -82,7 +82,7 @@ same_m3() { local src="$T/$1.sno" want="$T/$1.want" in="${2:-/dev/null}"
     timeout -k 5 60 "$SCRIP" -d131072k -s4096k "$src" < "$in" > "$T/$1.m3" 2>&1
     cmp -s "$want" "$T/$1.m3" || { diff "$want" "$T/$1.m3" | head -6 | sed 's/^/      /'; return 1; }; }
 same_m4() { local src="$T/$1.sno" want="$T/$1.want" in="${2:-/dev/null}"
-    timeout -k 5 120 "$SCRIP" --compile -o "$T/$1.s" "$src" < /dev/null > /dev/null 2>&1 \
+    timeout -k 5 120 "$SCRIP" --compile --out="$T/$1.s" "$src" < /dev/null > /dev/null 2>&1 \
         && gcc -no-pie "$T/$1.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$T/$1.bin" 2>/dev/null || { echo "      COMPILE-FAILED"; return 1; }
     timeout -k 5 60 "$T/$1.bin" -d131072k -s4096k -- < "$in" > "$T/$1.m4" 2>&1
     cmp -s "$want" "$T/$1.m4" || { diff "$want" "$T/$1.m4" | head -6 | sed 's/^/      /'; return 1; }; }

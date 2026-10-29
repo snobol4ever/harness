@@ -10,7 +10,7 @@
 # POPULATION: every origin `ladder__rungNN_*` of corpus/tests/prolog/ALL.csv (all rungs, or --to N) and every `probe_plz` origin,
 # materialised out of the rungs by lib_rungs_extract.sh, PLUS every .pl under corpus/demos/prolog and corpus/benchmarks/prolog
 # (recursive: bench/, vanroy/, src/swi-*, the preludes).  Each is compiled to
-# mode-4 TEXT (`scrip --compile -o`).  During the rebuild most corpus programs REFUSE with "not on the ladder yet -- rung N lands
+# mode-4 TEXT (`scrip --compile --out=FILE`).  During the rebuild most corpus programs REFUSE with "not on the ladder yet -- rung N lands
 # it"; those are COUNTED and printed, never graded and never green.  A witness that compiles is graded; zero compiled witnesses
 # is UNPROVEN rc=2.  ⛔ Only mode-4 TEXT is read (MODES MAY DIVERGE: the verdict names its mode and does not bind mode 3).
 # FAIL-ONCE IS BUILT IN, EVERY RUN, BEFORE THE REAL RUN IS TRUSTED (INSTRUMENT LAWS; a guard and its canary must not share a
@@ -74,7 +74,7 @@ quad_slot() { local n="${S4E_RUN_SLOTS:-8}" i; mkdir -p /tmp/s4e-run-slots 2>/de
   exec 9>"/tmp/s4e-run-slots/slot$(( $$ % n ))" && flock 9; }
 compile_one() {
   quad_slot; f="$1"; b=$(printf '%s' "$f" | sed 's#^.*/corpus/##; s#^.*/src/##' | tr '/' '_')
-  if timeout -k 5 "$T" "$SCRIP" --compile -o "$W/s/$b.s" "$f" </dev/null >/dev/null 2>"$W/s/$b.err" && [ -s "$W/s/$b.s" ]; then echo "C"
+  if timeout -k 5 "$T" "$SCRIP" --compile --out="$W/s/$b.s" "$f" </dev/null >/dev/null 2>"$W/s/$b.err" && [ -s "$W/s/$b.s" ]; then echo "C"
   else rm -f "$W/s/$b.s"
     if grep -q 'not on the ladder yet' "$W/s/$b.err" 2>/dev/null; then printf 'R\t%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)"
     else printf 'O\t%s: %s\n' "$b" "$(head -1 "$W/s/$b.err" | cut -c1-110)"; fi

@@ -44,7 +44,7 @@ cp "$K" "$T/deal.icn"
 gcc -O0 -o "$T/ru" "$ROOT/tools/bench_rusage.c" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: bench_rusage does not build"; exit 2; }
 ( cd "$T" && "$ICONT" -s -o deal.x deal.icn ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses deal.icn"; exit 2; }
 ( cd "$T" && ./deal.x -h 1000 </dev/null >want 2>/dev/null ); [ -s "$T/want" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing"; exit 2; }
-( cd "$T" && "$SCRIP" --compile -o d.s deal.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o d4 d.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+( cd "$T" && "$SCRIP" --compile --out=d.s deal.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o d4 d.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
   || { echo "⛔ GATE FAIL [$G]: deal does not build in mode 4"; exit 1; }
 run() { ( cd "$T" && env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB -u SCRIP_GC_STRESS -u SCRIP_GC_PLANT_FLIP \
             SCRIP_HEAP_KB=128 SCRIP_GC_EXERCISE=1 timeout -k 5 120 ./ru ./d4 -h 1000 </dev/null >"out.$1" 2>"err.$1" ); }
@@ -84,7 +84,7 @@ end
 EOF
 ( cd "$T" && "$ICONT" -s -o w.x w.icn ) >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: icont refuses the flip witness"; exit 2; }
 wwant="$( cd "$T" && ./w.x </dev/null 2>/dev/null )"; [ -n "$wwant" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle printed nothing for the flip witness"; exit 2; }
-( cd "$T" && "$SCRIP" --compile -o w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o w4 w.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
+( cd "$T" && "$SCRIP" --compile --out=w.s w.icn </dev/null >/dev/null 2>&1 && gcc -no-pie -o w4 w.s -L"$ROOT/out" -lscrip_rt -lm -lstdc++ -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 ) \
   || { echo "⛔ GATE FAIL [$G]: the flip witness does not build in mode 4"; exit 1; }
 flip() { ( cd "$T" && env -u SCRIP_HEAP_MB -u SCRIP_HEAP_CAP_KB -u SCRIP_HEAP_MAX_MB \
              SCRIP_HEAP_KB=128 SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_STRESS=1 timeout -k 5 120 "$@" </dev/null ); }

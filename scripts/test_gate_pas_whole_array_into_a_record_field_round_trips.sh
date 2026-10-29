@@ -67,7 +67,7 @@ for MODE in m3 m4; do
   if [ "$MODE" = m3 ]; then
     ( cd "$T" && timeout -k 5 60 "$SCRIP" --run w.pas </dev/null ) >"$T/out.$MODE" 2>&1; mrc=$?
   else
-    ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile -o w.s w.pas </dev/null ) >"$T/c.$MODE" 2>&1 || { echo "  $MODE COMPILE-REFUSE"; RC=1; continue; }
+    ( cd "$T" && timeout -k 5 60 "$SCRIP" --compile --out=w.s w.pas </dev/null ) >"$T/c.$MODE" 2>&1 || { echo "  $MODE COMPILE-REFUSE"; RC=1; continue; }
     ( cd "$T" && gcc -o w_m4 w.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" ) >>"$T/c.$MODE" 2>&1 || { echo "  $MODE LINK-REFUSE"; RC=1; continue; }
     ( cd "$T" && timeout -k 5 60 ./w_m4 </dev/null ) >"$T/out.$MODE" 2>&1; mrc=$?
   fi

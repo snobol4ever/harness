@@ -20,7 +20,7 @@ declare -A P4 F4 F3 K3 U4
 while IFS=$'\t' read -r lang f; do
     [ -n "$f" ] || continue
     t=""; [ "$lang" = prolog ] && t="--target=x86"
-    (cd "$(dirname "$f")" && SCRIP_PLANNER_REPORT=1 timeout 300 "$SCRIP" --compile $t -o /dev/null "$(basename "$f")" < /dev/null 2> "$T/e4" >/dev/null)
+    (cd "$(dirname "$f")" && SCRIP_PLANNER_REPORT=1 timeout 300 "$SCRIP" --compile $t --out=/dev/null "$(basename "$f")" < /dev/null 2> "$T/e4" >/dev/null)
     n4=$(grep -c '^\[PLANNER-FALLBACK\]' "$T/e4"); grep -q '^\[PLANNER-PASS\]' "$T/e4" || U4[$lang]=$(( ${U4[$lang]:-0} + 1 ))
     (cd "$(dirname "$f")" && SCRIP_PLANNER_REPORT=1 timeout 20 "$SCRIP" "$(basename "$f")" < /dev/null > /dev/null 2> "$T/e3"); r3=$?
     n3=$(grep -c '^\[PLANNER-FALLBACK\]' "$T/e3")

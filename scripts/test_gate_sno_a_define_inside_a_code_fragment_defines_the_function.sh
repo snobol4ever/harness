@@ -65,7 +65,7 @@ arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "
 same() { [ "$1" = 0 ] || { echo "rc=$1 [$(tr '\n' '|' < "$T/$2" | head -c 110)]"; return; }; cmp -s "$T/$2" "$T/$3" && echo ok || echo "got [$(tr '\n' '|' < "$T/$2" | head -c 110)] want [$(tr '\n' '|' < "$T/$3" | head -c 110)]"; }
 m3() { ( cd "$T" && timeout -k 5 10 "$SCRIP" "$1.sno" < /dev/null > "$1.m3" 2>&1; echo $? ); }
 rc=$(m3 frag); arm "m3: a fragment DEFINEs H at HL; a function re-DEFINEs itself onto a new entry" "$(same "$rc" frag.m3 frag.oracle)"
-rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile -o f.s frag.sno < /dev/null > /dev/null 2>&1 && gcc f.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o f.bin > /dev/null 2>&1 && timeout -k 5 10 ./f.bin < /dev/null > frag.m4 2>&1; echo $? )
+rc=$( cd "$T" && timeout -k 5 20 "$SCRIP" --compile --out=f.s frag.sno < /dev/null > /dev/null 2>&1 && gcc f.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -o f.bin > /dev/null 2>&1 && timeout -k 5 10 ./f.bin < /dev/null > frag.m4 2>&1; echo $? )
 arm "m4: a fragment DEFINEs H at HL; a function re-DEFINEs itself onto a new entry" "$(same "$rc" frag.m4 frag.oracle)"
 rc=$(m3 local); arm "m3: a fragment-defined function's local leaves the caller's variable alone" "$(same "$rc" local.m3 local.oracle)"
 rc=$(m3 ctl); arm "m3: DEFINE of a system function in a fragment raises error 248 after 'before'" "$( { [ "$rc" != 0 ] && head -1 "$T/ctl.m3" | grep -qx before && grep -q 'error 248' "$T/ctl.m3" && ! grep -qx after "$T/ctl.m3"; } && echo ok || echo "rc=$rc [$(tr '\n' '|' < "$T/ctl.m3" | head -c 140)]")"

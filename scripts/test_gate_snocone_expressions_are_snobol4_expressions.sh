@@ -37,7 +37,7 @@ def oracle(e):
 def parse(e, lang):
     p = os.path.join(d, "t." + lang)
     open(p, "w").write(("        X = " + e + "\nEND\n") if lang == "sno" else ("X = " + e + ";\n"))
-    ok = run([scrip, "--compile", "-o", os.devnull, p]).returncode == 0
+    ok = run([scrip, "--compile", f"--out={os.devnull}", p]).returncode == 0
     out = run([scrip, "--dump-ast", p]); t = out.stdout + out.stderr
     if not ok or re.search(r"parse error|syntax error|parse failed|unexpected char", t): return False, ""
     i = t.find(":repl ")
