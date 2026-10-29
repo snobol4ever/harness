@@ -12,7 +12,9 @@
 #   --out DIR    where the .s and logs go (default <root>/.scratch/planner_finish)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure
-# (no ./scrip, no witness, no ref, no census). The finish token runs the eight smokes and the nm gate, which take a minute, and names each.
+# (no ./scrip, no witness, no ref, no census). The finish token runs the census bar, the count of the four names the plan deletes (drive_slots_all,
+# zd_edge_retains, planner_home_dyn, planner_retains_emitter_view, named anywhere in src/; ARCH-THREE-ZETAS-EMISSION 11.7), the eight smokes and the nm gate,
+# which take a minute, and names each.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -100,6 +102,7 @@ for tok in $probe; do
                   readings="$readings zsm_frame_lines=$z/$n"; [ "$z" = "$n" ] || pgreen=0 ;;
         scoped) b="$(cd "$SC" && python3 "$CENSUS" --only A --in "$val" 2>/dev/null | sed -n 's/^SCOPED_BAR=\([0-9]*\).*/\1/p')"; readings="$readings scoped_bar=${b:-?}"; [ "$b" = 0 ] || pgreen=0 ;;
         finish) b="$(cd "$SC" && python3 "$CENSUS" 2>/dev/null | sed -n 's/.*bar=A+B+D=\([0-9]*\).*/\1/p' | head -1)"; readings="$readings bar=${b:-?}"; [ "$b" = 0 ] || pgreen=0
+                dn="$(grep_scope all '\b(drive_slots_all|zd_edge_retains|planner_home_dyn|planner_retains_emitter_view)\b')"; readings="$readings deleted_names=$dn"; [ "$dn" = 0 ] || pgreen=0
                 if [ -x "$NMGATE" ]; then ( cd "$SC" && bash "$NMGATE" > "$OUT/step$step/nm.log" 2>&1 ); nr=$?; readings="$readings nm_gate_rc=$nr"; [ "$nr" = 0 ] || pgreen=0; else readings="$readings nm_gate=missing"; pgreen=0; fi
                 sm=0; for l in snobol4 snocone rebus icon prolog raku pascal polyglot; do ( cd "$SC" && bash "$HERE/test_smoke_$l.sh" > "$OUT/step$step/smoke_$l.log" 2>&1 ) && sm=$((sm + 1)); done
                 readings="$readings smokes=$sm/8"; [ "$sm" = 8 ] || pgreen=0 ;;

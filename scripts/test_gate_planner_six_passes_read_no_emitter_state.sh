@@ -1,21 +1,18 @@
 #!/usr/bin/env bash
-# test_gate_planner_six_passes_read_no_emitter_state.sh -- PLANNER CHUNK 1 (ARCH-THREE-ZETAS-EMISSION 10 (1); ARCH-ZETA-ONE-COORDINATE 3.5; the ceo's
-# CEO-1923: the cto builds chunks 1 to 3). The planner is its own stage: its inputs come from LOWER and the closed registry, none from emission.
-# Six bars, every one a reading of today's tree:
+# test_gate_planner_six_passes_read_no_emitter_state.sh -- THE PLANNER STAGE'S GREEN ARMS (ARCH-THREE-ZETAS-EMISSION 10 (1) and 11.7; the ceo's CEO-1923
+# row planner-chunk-1, RETIRED on the cto's ruling 11.7 of 2026-10-29: its substance is on origin -- the registry, the table, --dump-plan, the stage driver).
+# Re-cut to the arms that read green. The six literal planner_pass_<name> functions and their call order are withdrawn (CTO-352 and 3.5's correction: the six
+# passes are the dependency order of what the stage computes, not six names), the STAGE_LINE bar is the census's D bar and step 11's finish line, and the four
+# deleted names (drive_slots_all, zd_edge_retains, planner_home_dyn, planner_retains_emitter_view) are counted down by test_design_planner_finish_steps.sh
+# --step 11's finish token under the plan whose steps delete them.
 #   CONSTRUCTS  src/ir/IR.h declares the construct registry (IR_construct_t; IR_graph_t's constructs and n_constructs), and --dump-plan counts
 #               constructs > 0 over the witnesses (the lowerers set it because the construct is in the source)
-#   PASSES      src/planner defines the six passes and the stage driver planner_stage, which the driver calls between lower and the emitter,
-#               calls them with definiteness before homes before carves before depths before site_rules, and layout after homes. LAYOUT'S PLACE
-#               IS NOT PINNED HERE (the cto's correction of 3.5, CEO-1888): today's chain plans read what the layout grants every value box (the
-#               vslots, the chain anchors, the release offsets, the finalised cells), the pre-allocations each language's switch deletes, so
-#               layout-after-depths is the switches' consequence, checked by the last switch's finish line, never this chunk's
-#   STAGE_LINE  src/planner names g_emitter, g_emit_cfg and g_emit nowhere and calls no emit_* function (at 642aac59f: 366 + 100 + 21 and 27)
-#   DELETED     drive_slots_all, zd_edge_retains, planner_home_dyn and planner_retains_emitter_view are named nowhere in src/; xop_frame_slot nowhere in
-#               src/planner (the retains column of the table replaces the three views; the planner calls no emitter decider)
-#   TABLE       ./scrip --dump-plan prints, per graph, a PLAN line with its serial and one row per node with the thirteen columns E X K definite
-#               zeta off depth retains_code owner fenced gpop wpop restore, for one witness of every language; SCRIP_PLANNER_REPORT=1 prints no
+#   DRIVER      src/driver/scrip.c calls planner_stage
+#   DELETED     xop_frame_slot is named nowhere in src/planner (the retains column of the table replaces the planner's call of an emitter decider)
+#   TABLE       ./scrip --dump-plan prints, per graph, a PLAN line with its serial and one row per node with the fourteen columns E X K definite
+#               zeta off depth retains_code owner fenced gpop wpop restore act, for one witness of every language; SCRIP_PLANNER_REPORT=1 prints no
 #               [PLANNER-FALLBACK] on any of them
-#   CENSUS      util_placement_predicates_census.py reads at most 27 alive (the chunks move deciders, the switches delete them)
+#   CENSUS      util_placement_predicates_census.py reads 0 alive
 # Byte identity is each landing's own proof (util_population_asm_identity.sh against its parent, in the commit), never this gate's.
 #   test_gate_planner_six_passes_read_no_emitter_state.sh [--root DIR]      (--root: grade another root's SCRIP, for a two-tree reading)
 # rc 0 every bar met · rc 1 a bar unmet (each named, with its count) · rc 2 could not measure (unreadable sources, a stale or missing binary).
@@ -31,19 +28,7 @@ bad=0
 PL=$(ls "$SRC"/planner/*.c "$SRC"/planner/*.cpp "$SRC"/planner/*.h 2>/dev/null)
 red() { echo "RED: $*"; bad=1; }
 grep -q 'IR_construct_t' "$SRC/ir/IR.h" && grep -q 'n_constructs' "$SRC/ir/IR.h" || red "CONSTRUCTS src/ir/IR.h declares no construct registry (IR_construct_t, n_constructs)"
-for p in definiteness homes carves depths layout site_rules; do grep -q "planner_pass_$p(" $PL || red "PASSES src/planner defines no planner_pass_$p"; done
-order=$(awk '/^[a-z].* planner_stage\(/{f=1} f{print} f&&/^}/{exit}' $PL | grep -o 'planner_pass_[a-z_]*(' | tr -d '(' | awk '!s[$0]++' | tr '\n' ' ')
-pos() { echo "$order" | tr ' ' '\n' | grep -n -x "planner_pass_$1" | head -1 | cut -d: -f1; }
-pd=$(pos definiteness); ph=$(pos homes); pc=$(pos carves); pp=$(pos depths); pl=$(pos layout); ps=$(pos site_rules)
-if [ -n "$pd" ] && [ -n "$ph" ] && [ -n "$pc" ] && [ -n "$pp" ] && [ -n "$pl" ] && [ -n "$ps" ] && [ "$pd" -lt "$ph" ] && [ "$ph" -lt "$pc" ] && [ "$pc" -lt "$pp" ] && [ "$pp" -lt "$ps" ] && [ "$ph" -lt "$pl" ]; then :
-else red "PASSES planner_stage calls, in order: '${order:-none}' (want definiteness < homes < carves < depths < site_rules, layout after homes)"; fi
-grep -q 'planner_stage(' "$SRC/driver/scrip.c" || red "PASSES the driver (src/driver/scrip.c) never calls planner_stage"
-ne=$(cat $PL | grep -o '\bg_emitter\b' | wc -l); nc=$(cat $PL | grep -o '\bg_emit_cfg\b' | wc -l); ng=$(cat $PL | grep -o '\bg_emit\b' | wc -l)
-nf=$(cat $PL | grep -oP '\bemit_\w+(?=\s*\()' | wc -l)
-echo "STAGE_LINE g_emitter=$ne g_emit_cfg=$nc g_emit=$ng emit_calls=$nf (bar 0 each; 366 100 21 27 at 642aac59f)"
-[ $((ne + nc + ng + nf)) = 0 ] || red "STAGE_LINE src/planner reads emitter state $((ne + nc + ng)) times and calls emit_* $nf times"
-for s in drive_slots_all zd_edge_retains planner_home_dyn planner_retains_emitter_view; do
-    k=$(grep -rlw "$s" "$SRC" 2>/dev/null | wc -l); [ "$k" = 0 ] || red "DELETED $s is named in $k file(s) of src/"; done
+grep -q 'planner_stage(' "$SRC/driver/scrip.c" || red "DRIVER the driver (src/driver/scrip.c) never calls planner_stage"
 k=$(cat $PL | grep -cw 'xop_frame_slot'); [ "$k" = 0 ] || red "DELETED src/planner names xop_frame_slot $k time(s)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 bash "$HERE/util_spine_population.sh" --corpus "$ROOT/corpus" > "$T/pop" 2>/dev/null || { echo "REFUSE(2): no population"; exit 2; }
@@ -62,7 +47,7 @@ for lang in snobol4 icon prolog pascal raku snocone rebus; do
 done
 [ "$ncons" -gt 0 ] || red "CONSTRUCTS --dump-plan counted 0 constructs over the seven witnesses"
 cen=$(cd "$SC" && python3 "$HERE/util_placement_predicates_census.py" 2>/dev/null | grep '^PLACEMENT_PREDICATES' | grep -o 'alive=[0-9]*' | cut -d= -f2)
-echo "CENSUS placement predicates alive=${cen:-unread} (bar at most 27)"
-[ -n "$cen" ] && [ "$cen" -le 27 ] || red "CENSUS util_placement_predicates_census.py reads alive=${cen:-unread}"
-[ "$bad" = 0 ] && { echo "GATE OK: the planner is its own stage -- six passes in dependency order over the construct registry, its table printed, no emitter state read"; exit 0; }
-echo "GATE RED: planner chunk 1 is not done (row planner-chunk-1-..., CEO-1923)"; exit 1
+echo "CENSUS placement predicates alive=${cen:-unread} (bar 0)"
+[ -n "$cen" ] && [ "$cen" = 0 ] || red "CENSUS util_placement_predicates_census.py reads alive=${cen:-unread}"
+[ "$bad" = 0 ] && { echo "GATE OK: the planner stage is on the construct registry, its table printed for every language, no placement predicate alive"; exit 0; }
+echo "GATE RED: the planner stage regressed (ARCH-THREE-ZETAS-EMISSION 10 (1), 11.7)"; exit 1
