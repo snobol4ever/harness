@@ -802,6 +802,7 @@ test_gate_pl_dict_methods_defined_with_colon_equals_answer_as_swipl.sh	WIRED	-	-
 test_gate_pl_directives_run_in_place_in_source_order_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_directory_files_agc_file_property_and_max_path_length_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_every_choice_leaving_builtin_keeps_its_callers_retaining_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_exists_source_answers_a_library_the_prelude_holds_and_a_file_that_exists_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_findall_4_serves_a_bound_tail_and_an_unbound_one.sh	WIRED	-	-	-
 test_gate_pl_format_column_fill_is_a_character_not_a_byte.sh	WIRED	-	-	-
 test_gate_pl_format_writes_the_text_it_produced_before_an_argument_count_error_as_swipl_and_gprolog.sh	WIRED	-	-	-
