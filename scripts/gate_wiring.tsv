@@ -101,6 +101,7 @@ test_gate_declared_arena_switches_agree_with_the_harness.sh	WIRED	-	-	-
 test_gate_deferred_rows_name_a_ruling_and_the_work_they_wait_on.sh	WIRED	-	-	-
 test_gate_define_alternate_entry.sh	WIRED	-	-	-
 test_gate_delimited_aggregate_census_ratchet.sh	WIRED	-	-	-
+test_gate_nul_dependent_string_reads_ratchet.sh	WIRED	-	-	-
 test_gate_demos_suite_grades_each_demo_in_both_modes.sh	WIRED	-	-	-
 test_gate_dispatch_bus_failure_modes.sh	WIRED	-	-	-
 test_gate_dispatch_claim_single_authority.sh	WIRED	-	-	-
