@@ -6,7 +6,9 @@
 # space (CHR keeps each constraint store in a b_setval cell, one assignment per constraint added or removed: ProRosetta hailstone-sequence-6, CEO-2005).
 # Two halves, both modes. RESTORE: 21 cases (nested choice points, an assignment between two choice points, \+, findall, catch, a mutation of a term older
 # than the choice point and of a term newer than it) printed by SCRIP and by swipl in THIS run, compared byte for byte; the cases print what the next
-# alternative sees, so a skipped entry that was needed reads wrong. LEAK: a b_setval loop and a setarg loop of two million rounds each under -d16384k
+# alternative sees, so a skipped entry that was needed reads wrong. EXACT: 1000 rounds of 300 logged setargs on a term older than the choice point plus one b_setval of the
+# same global per round must grow the trail by exactly 300000 entries (read with $gnu_os(stack_used, trail_stack)): the global is stamped with the choice point it was
+# logged under, so no window of intervening entries (a 256-entry lookback leaked one entry a round here) can make it log again. LEAK: a b_setval loop and a setarg loop of two million rounds each under -d16384k
 # -s4096k must print done. The self-test feeds the comparison a corrupted reference and requires it seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -29,6 +31,8 @@ t6 :- nb_setval(k, a), \+ ( b_setval(k, p), b_setval(k, q), fail ), g(V), writel
 t7 :- nb_setval(k, a), findall(X, ( member(X, [1, 2]), b_setval(k, X), b_setval(k, z) ), L), g(V), writeln(t7(L, V)).
 t8 :- nb_setval(k, a), catch(( b_setval(k, m), b_setval(k, n), throw(oops) ), oops, true), g(V), writeln(t8(V)).
 t9 :- nb_setval(k, a), ( ( b_setval(k, 1), b_setval(k, 2) ; b_setval(k, 3), b_setval(k, 4) ), g(V), writeln(t9(V)), fail ; g(W), writeln(t9_end(W)) ).
+t10 :- nb_setval(k, a), ( member(X, [1, 2, 3]), b_setval(k, x(X)), b_setval(k, y(X)), g(V), writeln(t10(X, V)), X >= 3, ! ; true ), g(W), writeln(t10_end(W)).
+t11 :- nb_setval(k, a), member(X, [1, 2]), b_setval(k, p(X)), ( X == 1 -> fail ; true ), g(V), writeln(t11(X, V)).
 s1 :- T = f(a,b), ( setarg(1, T, x), setarg(2, T, y), fail ; writeln(s1(T)) ).
 s2 :- ( member(_, [1,2]), T = f(a), setarg(1, T, z), writeln(s2(T)), fail ; true ).
 s3 :- T = f(a), ( member(X, [1,2,3]), setarg(1, T, X), writeln(s3(T)), fail ; writeln(s3_end(T)) ).
@@ -41,7 +45,7 @@ s9 :- ( member(X, [1,2]), T = f(X), setarg(1, T, new), writeln(s9(T)), fail ; tr
 s10 :- T = c(0), ( between(1, 50000, I), setarg(1, T, I), I >= 50000 -> writeln(s10(T)) ; true ), ( T = c(V), V > 0, fail ; writeln(s10b(T)) ).
 s11 :- T = d(a, b), ( member(X, [1,2]), setarg(X, T, n(X)), numlist(1, 5000, L), length(L, _), writeln(s11(T)), fail ; writeln(s11_end(T)) ).
 s12 :- T = e(1), ( setarg(1, T, f(2)), T = e(f(A)), setarg(1, T, A), writeln(s12(T)), fail ; writeln(s12_end(T)) ).
-:- t1, t2, t3, t4, t5, t6, t7, t8, t9, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, halt.
+:- t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, halt.
 EOF
 cat > "$W/bloop.pl" <<'EOF'
 :- nb_setval(k, []).
@@ -54,6 +58,14 @@ t(0) :- !.
 t(N) :- T = f(a, b, c), setarg(2, T, x), setarg(1, T, N), N1 is N - 1, t(N1).
 :- t(2000000), writeln(done).
 EOF
+cat > "$W/exact.pl" <<'EOF'
+sets(0, _, _) :- !.
+sets(I, T, V) :- setarg(I, T, V), I1 is I - 1, sets(I1, T, V).
+loop(0, _) :- !.
+loop(R, T) :- nb_getval(k, _), b_setval(k, R), sets(300, T, R), R1 is R - 1, loop(R1, T).
+w :- nb_setval(k, 0), functor(T, t, 300), ( true ; true ), '$gnu_os'(stack_used, trail_stack, U0), loop(1000, T), '$gnu_os'(stack_used, trail_stack, U1), D is U1 - U0 - 1000 * 300 * 32, ( D < 4096 -> writeln(ok) ; writeln(leak(D)) ).
+:- w, halt.
+EOF
 timeout -k 5 60 "$SW" -q -t halt "$W/restore.pl" < /dev/null > "$W/ref" 2> "$W/ref.err"
 [ "$(grep -c . "$W/ref")" -ge 40 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the restore cases ($(head -c 160 "$W/ref.err"))"; exit 2; }
 timeout -k 5 120 "$ROOT/scrip" "$W/restore.pl" < /dev/null > "$W/m3" 2>&1
@@ -63,7 +75,7 @@ sed '1s/.*/corrupted/' "$W/ref" > "$W/bad"
 if cmp -s "$W/m3" "$W/bad"; then echo "GATE REFUSED(2) [$G]: the comparison accepted a corrupted reference -- the gate could not fail"; exit 2; fi
 bad=0
 for m in m3 m4; do
-  if cmp -s "$W/$m" "$W/ref"; then echo "  ok  $m restore: the 21 cases print what swipl prints"; else echo "  RED $m restore: output differs from swipl:"; diff "$W/ref" "$W/$m" | head -6; bad=1; fi
+  if cmp -s "$W/$m" "$W/ref"; then echo "  ok  $m restore: the 23 cases print what swipl prints"; else echo "  RED $m restore: output differs from swipl:"; diff "$W/ref" "$W/$m" | head -6; bad=1; fi
 done
 for p in bloop sloop; do
   timeout -k 5 120 "$ROOT/scrip" -d16384k -s4096k "$W/$p.pl" < /dev/null > "$W/$p.m3" 2>&1
@@ -72,6 +84,12 @@ for p in bloop sloop; do
   for m in m3 m4; do
     if grep -qx done "$W/$p.$m"; then echo "  ok  $m $p: two million rounds in constant space"; else echo "  RED $m $p: did not finish under a 16 MB heap: $(head -c 120 "$W/$p.$m")"; bad=1; fi
   done
+done
+timeout -k 5 120 "$ROOT/scrip" "$W/exact.pl" < /dev/null > "$W/exact.m3" 2>&1
+build exact || { echo "GATE REFUSED(2) [$G]: the exact witness does not build"; exit 2; }
+timeout -k 5 120 "$W/exact.bin" < /dev/null > "$W/exact.m4" 2>&1
+for m in m3 m4; do
+  if grep -qx ok "$W/exact.$m"; then echo "  ok  $m exact: 1000 rounds of 300 logged assignments plus one b_setval add exactly the 300000 entries (no entry per round for the global)"; else echo "  RED $m exact: $(head -c 120 "$W/exact.$m")"; bad=1; fi
 done
 TREE="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)"
 if [ $bad -eq 0 ]; then echo "GATE PASS(0) [$G]: b_setval and setarg restore on backtracking as swipl does and a deterministic loop of two million of either runs under a 16 MB heap, in both modes (self-test: a corrupted reference is seen) (tree SCRIP=$TREE)"; exit 0; fi
