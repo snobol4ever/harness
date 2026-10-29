@@ -780,6 +780,7 @@ test_gate_pl_atom_number_iso_errors.sh	WIRED	-	-	-
 test_gate_pl_backslash_c_layout_escape_agrees_with_the_oracle.sh	WIRED	-	-	-
 test_gate_pl_backtrackable_global_and_setarg_assignments_restore_as_swipl_and_keep_no_trail_in_a_deterministic_loop.sh	WIRED	-	-	-
 test_gate_pl_a_pipe_stream_has_a_position_as_swipl_and_phrase_from_file_reads_standard_input_through_it.sh	WIRED	-	-	-
+test_gate_pl_call_with_depth_limit_answers_as_swipl_for_recursion_control_constructs_and_the_frame_each_builtin_call_costs.sh	WIRED	-	-	-
 test_gate_pl_bagof_setof_grouping.sh	WIRED	-	-	-
 test_gate_pl_between_through_a_variable_link_ttyflush_and_time_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_big_integer_multiplication_is_exact_at_every_size.sh	WIRED	-	-	-
