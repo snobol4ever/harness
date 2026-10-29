@@ -1275,6 +1275,7 @@ test_gate_sno_file_keyword_follows_spitbols_file_name_table.sh	WIRED	-	-	-
 test_gate_sno_flush_runs_the_recorded_conditional_assignments_then_cuts.sh	WIRED	-	-	-
 test_gate_sno_fnclevel_is_mirrored_at_every_level_move_not_only_in_the_gva_shim.sh	WIRED	-	-	-
 test_gate_sno_frameless_thunk_carries_its_head_and_lands_omega_at_depth_zero.sh	WIRED	-	-	-
+test_gate_sno_goto_operand_the_sc_parser_prints_the_c_parsers_tree.sh	WIRED	-	-	-
 test_gate_sno_goto_with_no_preceding_error.sh	WIRED	-	-	-
 test_gate_sno_host_1_runs_the_command_and_returns_its_wait_status.sh	WIRED	-	-	-
 test_gate_sno_host_4_fails_when_the_variable_is_not_in_the_environment.sh	WIRED	-	-	-
