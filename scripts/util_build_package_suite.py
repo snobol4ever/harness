@@ -68,6 +68,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import corpus_suite_harness as h  # noqa: E402
 import util_build_rungs_suite as m  # noqa: E402
+import util_xsb_wfs_entry_is_the_driver as wfs_entry  # noqa: E402
 
 LANG_EXT = {"": ".sno", "snobol4": ".sno", "prolog": ".pl", "raku": ".raku",
             "snocone": ".sc", "rebus": ".reb", "icon": ".icn", "pascal": ".pas"}
@@ -488,6 +489,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             else:
                 _chk = "NO_OLD"
             xsbold.append((name, _chk))
+            if _r["kind"] == "wfs":
+                text = wfs_entry.wfs_entry_text(pkg_dir, name, _r["cmd"].rstrip().rstrip("."))
             e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _L1, stdin=None, want_rc=0)
             entries.append(e)
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
