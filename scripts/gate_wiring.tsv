@@ -956,6 +956,7 @@ test_gate_pl_writef_dcg_basics_and_clpfd_goal_terms_answer_as_swipl.sh	WIRED	-	-
 test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh	WIRED	-	-	-
 test_gate_pl_xfail_marker_consistent.sh	WIRED	-	-	-
 test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh	WIRED	-	-	-
+test_gate_pl_xsb_dialect_auto_table_and_suppl_table_table_the_predicates_xsb_tables.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh	WIRED	-	-	-
 test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
