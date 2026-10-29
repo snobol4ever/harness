@@ -281,6 +281,7 @@ test_gate_icn_a_procedure_entered_or_resumed_from_c_reads_its_statics.sh	WIRED	-
 test_gate_icn_a_procedure_returns_its_variable_when_its_result_is_one.sh	WIRED	-	-	-
 test_gate_icn_a_record_field_under_a_subscript_section_bang_or_random_is_a_variable.sh	WIRED	-	-	-
 test_gate_icn_a_scan_builtin_is_its_box_in_every_icon_graph_and_a_programs_own_procedure_of_that_name_is_called.sh	WIRED	-	-	-
+test_gate_icn_a_spent_limit_releases_the_generator_slots_it_cut_so_the_chain_over_the_maps_walks.sh	WIRED	-	-	-
 test_gate_icn_a_spine_opened_plain_procedure_fails_forward_on_redo.sh	WIRED	-	-	-
 test_gate_icn_a_string_append_in_a_loop_extends_in_place.sh	WIRED	-	-	-
 test_gate_icn_a_string_with_an_embedded_nul_subscripts_by_its_length.sh	WIRED	-	-	-
@@ -956,6 +957,7 @@ test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_
 test_gate_pl_xfail_marker_consistent.sh	WIRED	-	-	-
 test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh	WIRED	-	-	-
+test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh	WIRED	-	-	-
 test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
 test_gate_postoffice_identity.sh	WIRED	-	-	-
 test_gate_pre_commit_refuses_a_conflict_marker.sh	WIRED	-	-	-
