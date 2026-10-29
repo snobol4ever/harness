@@ -14,91 +14,96 @@
 #   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
 #   when          always | call_curmov (a call that moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
 #                 icn_suspend (an Icon suspend in a spine-cells graph) | icn_home (a home-frame graph that is not Prolog-resumable: Icon, and Raku and Pascal where a row names their kinds) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
+#   word_kind     the kind of every 8-byte word of the carve, in ascending address (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16, the cto 2026-10-29, CEO-2011): a string over D (one 16-byte
+#                 DESCR cell, whose FIRST word is the one the collector's spine walk visits) and r (one raw 8-byte word: TO's counter and limit, LIMIT's count and flag, a scan's
+#                 saved cursor, a choice header); [D] or [r] once marks the computed middle (call_args: the argument cells; alt_spine, fence_spine: raw); '-' for a carve of 0.
+#                 A numeric alpha_words and arm_spine (32) and arm_spine_hdr (64) are checked against the string's width by util_gen_box_cell_shapes.py. A node's sticky locals
+#                 (16 bytes each, DT_SNUL at alpha) are D cells right after this part, then the disjunction arm extra (raw until an arm writes it).
 #   gamma_release, omega_release, fenced    the gamma law's columns, '-' until pass (iv) reads them from here
 #   source        why the box carves what it carves
-kind	alpha_words	when	gamma_release	omega_release	fenced	source
-IR_ITERATE	32	icn_home	-	-	-	exp
-IR_SCAN_TAB	32	icn_home	-	-	-	exp
-IR_SCAN_UPTO	32	icn_home	-	-	-	exp
-IR_SCAN_MOVE	32	icn_home	-	-	-	exp
-IR_SCAN_FIND	32	icn_home	-	-	-	exp
-IR_SCAN_ENTER	0	home_state	-	-	-	the scan's saved outer environment read by the scan exit across a generator callee is a frame word (Lon's TEST 1)
-IR_SCAN_ENTER	32	icn_home	-	-	-	exp
-IR_REV_ASSIGN_VAR	32	icn_home	-	-	-	exp
-IR_REV_ASSIGN	32	icn_home	-	-	-	exp
-IR_REV_SWAP	80	icn_home	-	-	-	the result cell, the saved descriptor at +16, the scan registers at +48 and +56 and the global cell pointer at +64 that bb_rev_swap.cpp keeps
-IR_SCAN_BAL	32	icn_home	-	-	-	exp
-IR_SCAN_MATCH	32	icn_home	-	-	-	exp
-IR_CREATE	80	icn_home	-	-	-	the result cell and the seven-register record scrip_coexpr_create copies during the call
-IR_CALL_GEN	call_args	icn_home	-	-	-	the result cell, one cell per argument and the generator's resume word (op_call_genoff = resoff + 16 * (1 + narg))
-IR_KW_ICON_GEN	32	icn_home	-	-	-	the result cell and the generator keyword's counter word (bb_keyword_icon reads the counter at op_off + 16)
-IR_TO_BY	80	icn_home	-	-	-	exp
-IR_SCAN	48	icn_home	-	-	-	exp
-IR_BOUND	48	pl_bound_spine	-	-	-	D3 kind 7 (the cfo's ruling of 2026-10-24 16:15): an if-then-else or negation BOUND (its omega is the GATE, a fence UNMARK commits it) whose CONDITION span carries no excursion, or a BOUND the home pass proves sits in a definite run (planner_bound_spine), carves its record on the spine -- mark +0, saved rsp +8, banked B +16, the choice header to +40 -- read by its UNMARKs through the planner's cross-cell distance or the rbp alias; the arm-failure road reads nothing of it after the fence
-IR_BOUND	0	pl_home	-	-	-	the bound's record (mark +0, rsp at entry +8, banked B +16, boundary +32) outlives the commit's whack-pop and is read by the fence's omega UNMARK and the gate at the construct's base depth: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
-IR_BOUND	0	home_state	-	-	-	exp
-IR_LIMIT_GATE	0	home_state	-	-	-	exp
-IR_LIMIT_GATE	32	icn_home	-	-	-	exp
-IR_BOUND	16	icn_home	-	-	-	exp
-IR_MATCH_ARBNO	16	always	-	-	-	the ARBNO record
-*	32	call_curmov	-	-	-	the result cell beside the moved cursor
-IR_VAR	0	icn_local	-	-	-	the local's own cell is its home; the read carves nothing
-IR_SUSPEND	0	icn_suspend	-	-	-	the suspend passes its value up; its resume is the beta
-IR_TO	80	pl_to_trailed	-	-	-	a trailed range's resumption state is the TO's own spine cell under LIFO (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2): the value +0, the counter +16, the choice header at +24 (its mark +24, the banked B +48, the boundary +56), the limit +64 past it; written at alpha and read at beta, which the continuation enters at the TO's exit depth after every box of it popped its own carve
-IR_TO	64	pl_to_db	-	-	-	a db walk's enumeration state (the slot +16, G +32, its choice header) stays resident in the activation frame -- a retract reads it across its own retaining edge (D3 kind 4) -- and its value is the spine cell's +0
-IR_TO	32	always	-	-	-	the value beside the counter and the limit
-IR_DISJUNCTION	arm_spine_hdr	pl_home_has_operands	-	-	-	the arms' live cells plus the disjunction's choice header (+24..+63: mark, prev B +48, boundary +56) on a home-set Prolog graph (D3)
-IR_DISJUNCTION	arm_spine	has_operands	-	-	-	the arms' live cells (zd_dj_spine)
-IR_MATCH_DEFER	0	patv	-	-	-	a static deferred pattern resolves in place
-IR_DISJUNCTION	0	no_operands	-	-	-	no arms, nothing live
-IR_MATCH_RKRUN	0	always	-	-	-	a raku regex run marker
-IR_MATCH_RKCAPS	0	always	-	-	-	a raku capture start
-IR_MATCH_RKCAPE	0	always	-	-	-	a raku capture end
-IR_MATCH_RKLAND	0	always	-	-	-	a raku regex landing
-IR_ASSIGN	0	always	-	-	-	the assignment writes its target in place
-IR_GOTO	0	always	-	-	-	control only
-IR_GOTO_DEFERRED	0	always	-	-	-	control only
-IR_DEFINE	0	always	-	-	-	a definition, no value
-IR_MATCH_BEGIN	0	always	-	-	-	the match frame is the construct's shape, not a spine cell
-IR_MATCH_END	0	always	-	-	-	the match's discard
-IR_MATCH_REPLACE	0	always	-	-	-	the match's discard
-IR_STATEMENT	0	always	-	-	-	a statement boundary
-IR_STATEMENT_BEGIN	0	always	-	-	-	a statement boundary
-IR_STATEMENT_END	0	always	-	-	-	a statement boundary
-IR_STMT_MARK	0	always	-	-	-	a statement mark
-IR_SETEXIT_TEST	0	always	-	-	-	a test, no value
-IR_LINE_MARK	0	always	-	-	-	a source line record
-IR_MATCH_LIT	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_LEN	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_ANY	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_NOTANY	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_POS	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_RPOS	0	always	-	-	-	a matcher moves the cursor only
-IR_MATCH_ASSIGN_COND	0	always	-	-	-	a capture writes its variable
-IR_MATCH_ASSIGN_IMM	0	always	-	-	-	a capture writes its variable
-IR_MATCH_VALUE	0	always	-	-	-	the value rides the match
-IR_MATCH_ALTERNATE	alt_spine	always	-	-	-	the 32-byte record plus the uniform exit pad to its largest arm (planner_alt_k), 48 when an arm is unbounded (the record plus the beta cell)
-IR_MATCH_FENCE1	fence_spine	always	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; CEO-1938/1942)
-IR_MATCH_FENCE0	0	always	-	-	-	a fence's record is the match frame's
-IR_MATCH_ABORT	0	always	-	-	-	control only
-IR_BOUND	0	home_state	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)
-IR_CALL_PROC_STAGED	32	pl_spine_record	-	-	-	a call whose callee may retain, through the block protocol (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
-IR_CALL_PROC_STAGED	16	pl_home_dyn	-	-	-	a call that may retain its callee's frame: the result cell, with the act word resident in the activation frame (Lon's TEST 2) (D3)
-IR_CALL_PROC_STAGED	32	pl_home	-	-	-	a definite call: the result beside the act word (+16, +24), read back at beta at a fixed rsp distance (D3)
-IR_CALL_VALUE	32	pl_spine_record	-	-	-	call/N on a home-set Prolog graph (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; the goal and its extra arguments are read from their own cells, no staging and no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
-IR_CALL_VALUE	16	pl_home	-	-	-	call/N never knows its callee (PR_UNKNOWN_CALLEE): the result cell, with the argument block and the act word resident (D3)
-IR_GATE	0	pl_home	-	-	-	the live-arm index (+16) is written by GATE_ARM at each arm's depth and read at the gate's beta at the construct's base, across the arms' pops: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
-IR_BOUND	0	always	-	-	-	the bound's record is a frame word today (chunk 2, the switches)
-IR_UNMARK	0	always	-	-	-	a discard
-IR_CONJUNCTION	0	always	-	-	-	its value is its last operand's
-IR_CUT	0	always	-	-	-	a discard
-IR_GATE_ARM	16	pl_gate_arm	-	-	-	the end of an if-then-else arm on a home-set Prolog graph pushes its live-arm index {DT_RAW, arm} as its own spine cell, below the join wall, so the GATE's beta -- entered when the continuation popped back to the construct's exit depth -- reads it at [rsp + 8] and pops it with the arm's pair distance; no gate word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2)
-IR_GATE_ARM	0	always	-	-	-	control only
-IR_CLEANUP	0	pl_home	-	-	-	the setup_call_cleanup record (state, link, banked B at +16..+40) is ACT by construction: its goal is the retaining edge, so on a home-set Prolog graph the record is resident in the activation frame and carves nothing on the spine (D3 kind 3)
-IR_CLEANUP	0	always	-	-	-	control only
-IR_TABLE_HDR	0	always	-	-	-	the table header is resident
-IR_UNIFY_CONST	0	always	-	-	-	a unification binds in place
-IR_UNIFY_FIRST	0	always	-	-	-	a unification binds in place
-IR_UNIFY_VALUE	0	always	-	-	-	a unification binds in place
-IR_RETURN	0	always	-	-	-	the result leaves through the return block
-*	16	always	-	-	-	one DESCR, the value the box produces
+kind	alpha_words	when	word_kind	gamma_release	omega_release	fenced	source
+IR_ITERATE	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_TAB	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_UPTO	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_MOVE	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_FIND	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_ENTER	0	home_state	-	-	-	-	the scan's saved outer environment read by the scan exit across a generator callee is a frame word (Lon's TEST 1)
+IR_SCAN_ENTER	32	icn_home	Drr	-	-	-	exp
+IR_REV_ASSIGN_VAR	32	icn_home	Drr	-	-	-	exp
+IR_REV_ASSIGN	32	icn_home	Drr	-	-	-	exp
+IR_REV_SWAP	80	icn_home	DDrrrrrr	-	-	-	the result cell, the saved descriptor at +16, the scan registers at +48 and +56 and the global cell pointer at +64 that bb_rev_swap.cpp keeps
+IR_SCAN_BAL	32	icn_home	Drr	-	-	-	exp
+IR_SCAN_MATCH	32	icn_home	Drr	-	-	-	exp
+IR_CREATE	80	icn_home	Drrrrrrrr	-	-	-	the result cell and the seven-register record scrip_coexpr_create copies during the call
+IR_CALL_GEN	call_args	icn_home	D[D]rr	-	-	-	the result cell, one cell per argument and the generator's resume word (op_call_genoff = resoff + 16 * (1 + narg))
+IR_KW_ICON_GEN	32	icn_home	Drr	-	-	-	the result cell and the generator keyword's counter word (bb_keyword_icon reads the counter at op_off + 16)
+IR_TO_BY	80	icn_home	DDDDrr	-	-	-	exp
+IR_SCAN	48	icn_home	DDrr	-	-	-	exp
+IR_BOUND	48	pl_bound_spine	rrrrrr	-	-	-	D3 kind 7 (the cfo's ruling of 2026-10-24 16:15): an if-then-else or negation BOUND (its omega is the GATE, a fence UNMARK commits it) whose CONDITION span carries no excursion, or a BOUND the home pass proves sits in a definite run (planner_bound_spine), carves its record on the spine -- mark +0, saved rsp +8, banked B +16, the choice header to +40 -- read by its UNMARKs through the planner's cross-cell distance or the rbp alias; the arm-failure road reads nothing of it after the fence
+IR_BOUND	0	pl_home	-	-	-	-	the bound's record (mark +0, rsp at entry +8, banked B +16, boundary +32) outlives the commit's whack-pop and is read by the fence's omega UNMARK and the gate at the construct's base depth: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
+IR_BOUND	0	home_state	-	-	-	-	exp
+IR_LIMIT_GATE	0	home_state	-	-	-	-	exp
+IR_LIMIT_GATE	32	icn_home	Drr	-	-	-	exp
+IR_BOUND	16	icn_home	rr	-	-	-	exp
+IR_MATCH_ARBNO	16	always	rr	-	-	-	the ARBNO record
+*	32	call_curmov	Drr	-	-	-	the result cell beside the moved cursor
+IR_VAR	0	icn_local	-	-	-	-	the local's own cell is its home; the read carves nothing
+IR_SUSPEND	0	icn_suspend	-	-	-	-	the suspend passes its value up; its resume is the beta
+IR_TO	80	pl_to_trailed	Drrrrrrrr	-	-	-	a trailed range's resumption state is the TO's own spine cell under LIFO (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2): the value +0, the counter +16, the choice header at +24 (its mark +24, the banked B +48, the boundary +56), the limit +64 past it; written at alpha and read at beta, which the continuation enters at the TO's exit depth after every box of it popped its own carve
+IR_TO	64	pl_to_db	Drrrrrr	-	-	-	a db walk's enumeration state (the slot +16, G +32, its choice header) stays resident in the activation frame -- a retract reads it across its own retaining edge (D3 kind 4) -- and its value is the spine cell's +0
+IR_TO	32	always	Drr	-	-	-	the value beside the counter and the limit
+IR_DISJUNCTION	arm_spine_hdr	pl_home_has_operands	Drrrrrr	-	-	-	the arms' live cells plus the disjunction's choice header (+24..+63: mark, prev B +48, boundary +56) on a home-set Prolog graph (D3)
+IR_DISJUNCTION	arm_spine	has_operands	Drr	-	-	-	the arms' live cells (zd_dj_spine)
+IR_MATCH_DEFER	0	patv	-	-	-	-	a static deferred pattern resolves in place
+IR_DISJUNCTION	0	no_operands	-	-	-	-	no arms, nothing live
+IR_MATCH_RKRUN	0	always	-	-	-	-	a raku regex run marker
+IR_MATCH_RKCAPS	0	always	-	-	-	-	a raku capture start
+IR_MATCH_RKCAPE	0	always	-	-	-	-	a raku capture end
+IR_MATCH_RKLAND	0	always	-	-	-	-	a raku regex landing
+IR_ASSIGN	0	always	-	-	-	-	the assignment writes its target in place
+IR_GOTO	0	always	-	-	-	-	control only
+IR_GOTO_DEFERRED	0	always	-	-	-	-	control only
+IR_DEFINE	0	always	-	-	-	-	a definition, no value
+IR_MATCH_BEGIN	0	always	-	-	-	-	the match frame is the construct's shape, not a spine cell
+IR_MATCH_END	0	always	-	-	-	-	the match's discard
+IR_MATCH_REPLACE	0	always	-	-	-	-	the match's discard
+IR_STATEMENT	0	always	-	-	-	-	a statement boundary
+IR_STATEMENT_BEGIN	0	always	-	-	-	-	a statement boundary
+IR_STATEMENT_END	0	always	-	-	-	-	a statement boundary
+IR_STMT_MARK	0	always	-	-	-	-	a statement mark
+IR_SETEXIT_TEST	0	always	-	-	-	-	a test, no value
+IR_LINE_MARK	0	always	-	-	-	-	a source line record
+IR_MATCH_LIT	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_LEN	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_ANY	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_NOTANY	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_POS	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_RPOS	0	always	-	-	-	-	a matcher moves the cursor only
+IR_MATCH_ASSIGN_COND	0	always	-	-	-	-	a capture writes its variable
+IR_MATCH_ASSIGN_IMM	0	always	-	-	-	-	a capture writes its variable
+IR_MATCH_VALUE	0	always	-	-	-	-	the value rides the match
+IR_MATCH_ALTERNATE	alt_spine	always	[r]	-	-	-	the 32-byte record plus the uniform exit pad to its largest arm (planner_alt_k), 48 when an arm is unbounded (the record plus the beta cell)
+IR_MATCH_FENCE1	fence_spine	always	[r]	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; CEO-1938/1942)
+IR_MATCH_FENCE0	0	always	-	-	-	-	a fence's record is the match frame's
+IR_MATCH_ABORT	0	always	-	-	-	-	control only
+IR_BOUND	0	home_state	-	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)
+IR_CALL_PROC_STAGED	32	pl_spine_record	DD	-	-	-	a call whose callee may retain, through the block protocol (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
+IR_CALL_PROC_STAGED	16	pl_home_dyn	D	-	-	-	a call that may retain its callee's frame: the result cell, with the act word resident in the activation frame (Lon's TEST 2) (D3)
+IR_CALL_PROC_STAGED	32	pl_home	Drr	-	-	-	a definite call: the result beside the act word (+16, +24), read back at beta at a fixed rsp distance (D3)
+IR_CALL_VALUE	32	pl_spine_record	DD	-	-	-	call/N on a home-set Prolog graph (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; the goal and its extra arguments are read from their own cells, no staging and no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
+IR_CALL_VALUE	16	pl_home	D	-	-	-	call/N never knows its callee (PR_UNKNOWN_CALLEE): the result cell, with the argument block and the act word resident (D3)
+IR_GATE	0	pl_home	-	-	-	-	the live-arm index (+16) is written by GATE_ARM at each arm's depth and read at the gate's beta at the construct's base, across the arms' pops: no fixed rsp distance reaches it, so it is resident in the activation frame (Lon's TEST 2; D3 batch 2)
+IR_BOUND	0	always	-	-	-	-	the bound's record is a frame word today (chunk 2, the switches)
+IR_UNMARK	0	always	-	-	-	-	a discard
+IR_CONJUNCTION	0	always	-	-	-	-	its value is its last operand's
+IR_CUT	0	always	-	-	-	-	a discard
+IR_GATE_ARM	16	pl_gate_arm	D	-	-	-	the end of an if-then-else arm on a home-set Prolog graph pushes its live-arm index {DT_RAW, arm} as its own spine cell, below the join wall, so the GATE's beta -- entered when the continuation popped back to the construct's exit depth -- reads it at [rsp + 8] and pops it with the arm's pair distance; no gate word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.2)
+IR_GATE_ARM	0	always	-	-	-	-	control only
+IR_CLEANUP	0	pl_home	-	-	-	-	the setup_call_cleanup record (state, link, banked B at +16..+40) is ACT by construction: its goal is the retaining edge, so on a home-set Prolog graph the record is resident in the activation frame and carves nothing on the spine (D3 kind 3)
+IR_CLEANUP	0	always	-	-	-	-	control only
+IR_TABLE_HDR	0	always	-	-	-	-	the table header is resident
+IR_UNIFY_CONST	0	always	-	-	-	-	a unification binds in place
+IR_UNIFY_FIRST	0	always	-	-	-	-	a unification binds in place
+IR_UNIFY_VALUE	0	always	-	-	-	-	a unification binds in place
+IR_RETURN	0	always	-	-	-	-	the result leaves through the return block
+*	16	always	D	-	-	-	one DESCR, the value the box produces

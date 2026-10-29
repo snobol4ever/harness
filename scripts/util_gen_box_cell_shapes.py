@@ -18,12 +18,45 @@ WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': '
         'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME', 'icn_home': 'BCS_ICN_HOME',
         'home_state': 'BCS_HOME_STATE', 'pl_home': 'BCS_PL_HOME', 'pl_home_dyn': 'BCS_PL_HOME_DYN', 'pl_home_range_hdr': 'BCS_PL_HOME_RANGE_HDR',
         'pl_home_has_operands': 'BCS_PL_HOME_HAS_OPERANDS', 'pl_bound_spine': 'BCS_PL_BOUND_SPINE', 'pl_spine_record': 'BCS_PL_SPINE_RECORD', 'pl_gate_arm': 'BCS_PL_GATE_ARM', 'pl_to_trailed': 'BCS_PL_TO_TRAILED', 'pl_to_db': 'BCS_PL_TO_DB'}
+FIXED = {'arm_spine': 32, 'arm_spine_hdr': 64}
 WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2', 'call_args': '-3', 'fence_spine': '-4', 'alt_spine': '-5'}
 
 
 def refuse(msg):
     print('BOX_CELL_SHAPES REFUSE(2): ' + msg)
     sys.exit(2)
+
+
+def wordkind(n, words, spec):
+    pre, fill, suf = spec, '', ''
+    if '[' in spec:
+        a, b = spec.index('['), spec.index(']') if ']' in spec else -1
+        if b != a + 2 or spec[a + 1] not in 'Dr' or spec.count('[') != 1 or spec.count(']') != 1:
+            refuse('%s:%d: word_kind %r has a malformed fill (one [D] or [r] at most)' % (TSV, n, spec))
+        pre, fill, suf = spec[:a], spec[a + 1], spec[b + 1:]
+    if pre == '-':
+        pre = ''
+    if any(c not in 'Dr' for c in pre + suf):
+        refuse('%s:%d: word_kind %r is not a string over D (a 16-byte DESCR cell) and r (a raw 8-byte word)' % (TSV, n, spec))
+    if (words.isdigit() or words in FIXED) and fill:
+        refuse('%s:%d: word_kind %r has a fill but alpha_words %s is a fixed width' % (TSV, n, spec, words))
+    if words in ('call_args', 'fence_spine', 'alt_spine') and not fill:
+        refuse('%s:%d: alpha_words %s is a computed width and needs a [D] or [r] fill in word_kind %r' % (TSV, n, words, spec))
+    nw = lambda t: sum(2 if c == 'D' else 1 for c in t)
+    want = int(words) if words.isdigit() else FIXED.get(words, 0)
+    if want and nw(pre) * 8 != want:
+        refuse('%s:%d: word_kind %r spans %d bytes, alpha_words %s says %d' % (TSV, n, spec, nw(pre) * 8, words, want))
+
+    def mk(t):
+        m, w = 0, 0
+        for c in t:
+            if c == 'D':
+                m |= 1 << w
+            w += 2 if c == 'D' else 1
+        return m, w
+    pm, pn = mk(pre)
+    sm, sn = mk(suf)
+    return (pm, pn, {'': 0, 'D': 1, 'r': 2}[fill], sm, sn)
 
 
 def rows():
@@ -37,28 +70,28 @@ def rows():
             continue
         f = l.split('\t')
         if not head:
-            if f[:3] != ['kind', 'alpha_words', 'when']:
-                refuse('%s:%d: the header must begin kind, alpha_words, when' % (TSV, n))
+            if f[:4] != ['kind', 'alpha_words', 'when', 'word_kind']:
+                refuse('%s:%d: the header must begin kind, alpha_words, when, word_kind' % (TSV, n))
             head = True
             continue
-        if len(f) != 7:
-            refuse('%s:%d: %d columns, want 7' % (TSV, n, len(f)))
-        kind, words, when = f[0], f[1], f[2]
+        if len(f) != 8:
+            refuse('%s:%d: %d columns, want 8' % (TSV, n, len(f)))
+        kind, words, when, spec = f[0], f[1], f[2], f[3]
         if when not in WHEN:
             refuse('%s:%d: unknown condition %r' % (TSV, n, when))
         if words not in WORDS and not words.isdigit():
             refuse('%s:%d: alpha_words %r is neither a number nor one of %s' % (TSV, n, words, ' '.join(sorted(WORDS))))
         if kind != '*' and not kind.startswith('IR_'):
             refuse('%s:%d: kind %r is neither * nor an IR kind' % (TSV, n, kind))
-        out.append((kind, words, when))
+        out.append((kind, words, when, wordkind(n, words, spec)))
     if not out:
         refuse('%s has no rows' % TSV)
     return out
 
 
 def render(rs):
-    body = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, WORDS.get(w, w), WHEN[c]) for k, w, c in rs]
-    lines, cur = [], 'static const struct { int op; int words; int when; } box_cell_shapes[] = {'
+    body = ['{ %s, %s, %s, %d, %d, %d, %d, %d }' % (('-1' if k == '*' else k, WORDS.get(w, w), WHEN[c]) + wk) for k, w, c, wk in rs]
+    lines, cur = [], 'static const struct { int op; int words; int when; unsigned wk_pre; int wk_pre_n; int wk_fill; unsigned wk_suf; int wk_suf_n; } box_cell_shapes[] = {'
     for i, b in enumerate(body):
         item = ' ' + b + (',' if i + 1 < len(body) else ' };')
         if len(cur) + len(item) > 200:
