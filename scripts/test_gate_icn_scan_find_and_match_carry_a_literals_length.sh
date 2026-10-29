@@ -8,11 +8,11 @@
 # emitted an alpha and a bomb but NO beta: `every find("\x00")` aborted m3 at emit time with an unresolved forward
 # reference to its beta label. The same branch took find("") and every literal needle longer than 32 bytes, so any Icon
 # program scanning for either crashed the compiler in m3. The variable-needle path measured the needle with strlen() too,
-# although rt_scan_needle hands the carried length back in rdx.
+# although rt_icn_needle_coerce hands the carried length back in rdx.
 #
 # WHAT IS HERE. The emit case reads the literal's true length from its length operand into op_ival and both templates unroll,
 # compare and emit their data (.string with its length) over it; find takes the literal path only for 1..32 true bytes and
-# otherwise its general path, which now stores rt_scan_needle's rdx instead of calling strlen; both unhandled branches
+# otherwise its general path, which now stores rt_icn_needle_coerce's rdx instead of calling strlen; both unhandled branches
 # define their beta so a refusal can never leave a dangling label.
 #
 # ARM. Fifteen witnesses (eight needles for find under `every`, seven patterns for match) over a subject that carries NULs,

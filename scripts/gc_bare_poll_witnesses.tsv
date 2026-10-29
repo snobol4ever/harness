@@ -76,7 +76,7 @@ src/templates/bb/bb_iterate.cpp:rt_list_bang_at#2	UNWITNESSED
 src/templates/bb/bb_keyword_assign.cpp:rt_keyword_trace_set#1	hb_trace_wildcard_registry_root.icn
 src/templates/bb/bb_keyword_assign_snobol4.cpp:rt_kw_write_idx#1	hb_errtext_keyword.sno
 src/templates/bb/bb_keyword_assign_snobol4.cpp:rt_kw_write_idx#2	UNWITNESSED
-src/templates/bb/bb_keyword_icon.cpp:rt_keyword_var#1	hb_icn_a_keyword_var_form_other_than_the_scan_pair.icn
+src/templates/bb/bb_keyword_icon.cpp:rt_keyword_var#1	hb_icn_assign_the_scan_position_and_subject.icn
 src/templates/bb/bb_keyword_icon.cpp:rt_keyword_read#1	hb_icn_errorvalue_keyword.icn
 src/templates/bb/bb_keyword_icon.cpp:rt_keyword_read#2	UNWITNESSED
 src/templates/bb/bb_keyword_snobol4.cpp:rt_keyword_read_snobol4#1	UNWITNESSED
@@ -111,11 +111,6 @@ src/templates/bb/bb_rev_assign_global.cpp:NV_SET_fn#1	UNWITNESSED
 src/templates/bb/bb_rev_assign_global.cpp:NV_SET_fn#2	UNWITNESSED
 src/templates/bb/bb_rev_assign_var.cpp:rt_deref#1	hb_table_elem_ref_across_collections.icn
 src/templates/bb/bb_rev_assign_var.cpp:rt_assign_var_strict/rt_assign_var#1	hb_table_elem_ref_across_collections.icn
-src/templates/bb/bb_scan_any.cpp:rt_icn_cset_member_n#1	hb_icn_scan_any_and_bal_with_a_cset.icn
-src/templates/bb/bb_scan_any.cpp:rt_icn_cset_member_n#2	hb_icn_scan_any_and_bal_with_a_cset.icn
-src/templates/bb/bb_scan_bal.cpp:rt_icn_cset_member_n#1	hb_icn_scan_any_and_bal_with_a_cset.icn
-src/templates/bb/bb_scan_bal.cpp:rt_icn_cset_member_n#2	hb_icn_scan_any_and_bal_with_a_cset.icn
-src/templates/bb/bb_scan_match.cpp:rt_scan_needle#1	UNWITNESSED
 src/templates/bb/bb_section.cpp:rt_section_var_strict/rt_section_var#1	hb_icn_section_of_a_string_and_a_list.icn
 src/templates/bb/bb_section.cpp:subscript_get2_ext_strict/subscript_get2_ext#1	hb_icn_section_of_a_string_and_a_list.icn
 src/templates/bb/bb_section.cpp:subscript_get2_strict/subscript_get2#1	hb_icn_section_of_a_string_and_a_list.icn

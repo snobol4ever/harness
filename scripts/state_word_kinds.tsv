@@ -27,12 +27,12 @@ IR_PROC_GEN	beta-read	src/templates/bb/bb_call_proc_staged.cpp	x86("mov", "rax",
 IR_REV_SWAP	address-escapes	src/templates/bb/bb_rev_swap.cpp	x86("lea", "r8", FRQ(_.op_off + 16)) \	47	alpha	-	!((lk < 0 || rk < 0)) && !((_.op_off < 0))
 IR_SCAN	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "r13", FRQ(_.op_off + 8))	46	beta	-	_.op_sb != 1 && _.op_off >= 0
 IR_SCAN_ALTERNATE	beta-read	src/templates/bb/bb_scan_alternate.cpp	x86("movsxd", "rcx", FR(_.op_off + 16))	28	reentry	-	!(_.op_off < 0)
-IR_SCAN_BAL	beta-read	src/templates/bb/bb_scan_bal.cpp	x86("mov", "rax", FRQ(_.op_off + 16))	96	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
+IR_SCAN_BAL	beta-read	src/templates/bb/bb_scan_bal.cpp	x86("mov", "rax", FRQ(_.op_off + 16))	104	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
 IR_SCAN_ENTER	beta-read	src/templates/bb/bb_gen_scan.cpp	x86("mov", "r13", FRQ(_.op_off + 8))	46	beta	-	_.op_sb != 1 && _.op_off >= 0
-IR_SCAN_FIND	beta-read	src/templates/bb/bb_scan_find.cpp	x86("inc", FRQ(_.op_off + 16))	67	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
+IR_SCAN_FIND	beta-read	src/templates/bb/bb_scan_find.cpp	x86("inc", FRQ(_.op_off + 16))	76	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
 IR_SCAN_MOVE	beta-read	src/templates/bb/bb_scan_move.cpp	x86("mov", "r14", FRQ(_.op_off + 16))	59	beta	-	!(!(_.op_off >= 0))
 IR_SCAN_TAB	beta-read	src/templates/bb/bb_scan_tab.cpp	x86("mov", "r14", FRQ(_.op_off + 16))	62	beta	-	!((!tab_admit()))
-IR_SCAN_UPTO	beta-read	src/templates/bb/bb_scan_upto.cpp	x86("inc", FRQ(_.op_off + 16))	88	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
+IR_SCAN_UPTO	beta-read	src/templates/bb/bb_scan_upto.cpp	x86("inc", FRQ(_.op_off + 16))	89	beta	-	(_.op_off >= 0 && !_.op_name1 && _.op_sa >= 0)
 IR_TABLE_HDR	address-escapes	src/templates/bb/bb_table_hdr.cpp	x86("lea", "rax", TH_REC(16))	19	alpha	-	_.op_off >= 0
 IR_TO	beta-read	src/templates/bb/bb_to.cpp	x86("mov", "rsi", FRQ(_.op_off + 16)) + xa_to_db_load_store(24) + xa_to_db_slot_addr()	73	beta	-	_.op_db_walk && (x86_resumable_frame() && _.op_off >= 0 && _.op_sa >= 0)
 IR_TO_BY	address-escapes	src/templates/bb/bb_to_by.cpp	x86("lea", "rdi", FRQ(TBZ_CUR))	91	alpha	-	(_.op_zres && !_.op_num_real && _.op_off >= 0 && g_emit_c...

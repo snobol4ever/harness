@@ -5,7 +5,7 @@
 #
 # THE FINDING.  Chunk A's baton names x86_rt_gc_poll_rec_sigma_needle() as the candidate form for the two
 # rt_icn_subject_coerce sites in bb_gen_scan.cpp, on the reasoning that rt_scan_enter returns ScanSubjRegs {ptr,len}
-# in rax:rdx and so mirrors rt_scan_needle, whose site uses exactly that form.  THE RETURN SHAPE MATCHES AND
+# in rax:rdx and so mirrors rt_icn_needle_coerce, whose site uses exactly that form.  THE RETURN SHAPE MATCHES AND
 # THE SITE DOES NOT.  rec_sigma_needle's cell 0 is {DT_S, r15d, r13} -- it roots r13 as a string pointer --
 # and rt_scan_enter IS THE CALL THAT ESTABLISHES r13.  At the OUTERMOST scan of a program r13 has never been
 # written: the emitted prologue zeroes r14d (and esi) and never touches r13 or r15, so r13 holds whatever the
@@ -144,24 +144,24 @@ fi
 # ---------------------------------------------------------------------------------------------------------
 # (e) POSITIVE CONTROL: the SAME detector, aimed at the one site where rooting r13 IS correct, must FIND it.
 # Arm (b) reports an absence, and an absence is worth nothing from a reader that cannot report a presence.
-# rt_scan_needle is the mirror site -- it takes a needle INSIDE an established scan, so its cell 0 {DT_S,
+# rt_icn_needle_coerce is the mirror site -- it takes a needle INSIDE an established scan, so its cell 0 {DT_S,
 # r15d, r13} is right there and wrong at rt_scan_enter, which is the whole distinction this gate holds. The
-# witness reaches it only with a VARIABLE needle; a literal cset is folded and never calls rt_scan_needle,
+# witness reaches it only with a VARIABLE needle; a literal cset is folded and never calls rt_icn_needle_coerce,
 # so `c := 'abc'` in the witness is load-bearing and not decoration.
 arms=$((arms+1))
-nsites=$(grep -c 'call *rt_scan_needle' "$W/g.s")
+nsites=$(grep -c 'call *rt_icn_needle_coerce' "$W/g.s")
 nfound=0
 while IFS=: read -r ln _; do
     win=$(sed -n "$((ln+1)),$((ln+34))p" "$W/g.s")
     printf '%s\n' "$win" | grep -qE 'qword ptr \[rsp \+ [0-9]+\], r13' && nfound=$((nfound+1))
-done < <(grep -n 'call *rt_scan_needle' "$W/g.s")
+done < <(grep -n 'call *rt_icn_needle_coerce' "$W/g.s")
 if [ "${nsites:-0}" -gt 0 ] && [ "$nfound" = "$nsites" ]; then
-    echo "  ok   (e) POSITIVE CONTROL HOLDS: the same detector finds r13 spilled into a poll cell at $nfound of $nsites rt_scan_needle site(s), where that form is CORRECT -- so arm (b)'s zero is a zero from looking, not from a reader that cannot see"
+    echo "  ok   (e) POSITIVE CONTROL HOLDS: the same detector finds r13 spilled into a poll cell at $nfound of $nsites rt_icn_needle_coerce site(s), where that form is CORRECT -- so arm (b)'s zero is a zero from looking, not from a reader that cannot see"
 elif [ "${nsites:-0}" = 0 ]; then
-    echo "  FAIL (e) ⛔ THE WITNESS EMITTED NO rt_scan_needle SITE, so this gate has no positive control and arm (b) is an unchecked absence. A literal cset does not reach rt_scan_needle -- restore the VARIABLE needle (c := 'abc'; many(c)) to the witness"
+    echo "  FAIL (e) ⛔ THE WITNESS EMITTED NO rt_icn_needle_coerce SITE, so this gate has no positive control and arm (b) is an unchecked absence. A literal cset does not reach rt_icn_needle_coerce -- restore the VARIABLE needle (c := 'abc'; many(c)) to the witness"
     fail=$((fail+1))
 else
-    echo "  FAIL (e) ⛔ THE DETECTOR FOUND r13 AT ONLY $nfound OF $nsites rt_scan_needle SITE(S). Either the mirror site stopped rooting the subject base -- which would be a real defect at that site, not here -- or this gate's reader no longer matches the emitted spill shape and arm (b) has been passing blind"
+    echo "  FAIL (e) ⛔ THE DETECTOR FOUND r13 AT ONLY $nfound OF $nsites rt_icn_needle_coerce SITE(S). Either the mirror site stopped rooting the subject base -- which would be a real defect at that site, not here -- or this gate's reader no longer matches the emitted spill shape and arm (b) has been passing blind"
     fail=$((fail+1))
 fi
 echo "population: $arms arm(s) graded, $fail FAIL; $sites rt_icn_subject_coerce site(s) in the emitted witness"
