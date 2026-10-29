@@ -101,7 +101,8 @@ for tok in $probe; do
         census) fl="${val%%:*}"; lim="${val##*:}"; [ "$fl" = ALL ] && fl="$ALLF" || fl="${fl//,/ }"; c="$(census "$fl")"
                 [ "$c" = REFUSED ] && refuse "a benchmark did not compile for the census"; readings="$readings census[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         witcensus) fl="${val%%:*}"; lim="${val##*:}"; fl="${fl//,/ }"; c=0
-                for w in $wits; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile --out="$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
+                # the census is over the step's FIRST witness (its census witness: one write is its only by-name call); the other witnesses of the row are equality guards, and every one of them prints through write
+                for w in ${wits%% *}; do ( cd "$OUT/step$step" && timeout -k 2 120 "$SC/scrip" --compile --out="$OUT/step$step/w.s" "$WD/$w.icn" < /dev/null > /dev/null 2>&1 ) || refuse "witness $w did not compile for the census"
                     t="$(grep -cE "call[[:space:]]+(qword ptr \[rip \+ )?($(printf '%s' "$fl" | sed 's/ /|/g'))\b" "$OUT/step$step/w.s")"; c=$((c + t)); done
                 readings="$readings witcensus[${val%%:*}]=$c(at_most $lim)"; [ "$c" -le "$lim" ] || pgreen=0 ;;
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src/runtime" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
