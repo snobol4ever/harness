@@ -17,7 +17,7 @@ SRC="$HERE/gc_witnesses/pl_cellshape_engine1.pl"; REF="$HERE/gc_witnesses/pl_cel
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 SW="-d131072k -s4096k"
 BIN="$T/engine1.bin"
-( cd "$ROOT" && timeout 60 ./scrip --compile -o "$BIN.s" "$SRC" < /dev/null > /dev/null 2> "$BIN.cerr" ) && gcc "$BIN.s" -o "$BIN" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$BIN.lerr" || { echo "⛔ REFUSE(2) [$G]: the witness did not compile and link in mode 4"; exit 2; }
+( cd "$ROOT" && timeout 60 ./scrip --compile --out="$BIN.s" "$SRC" < /dev/null > /dev/null 2> "$BIN.cerr" ) && gcc "$BIN.s" -o "$BIN" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$BIN.lerr" || { echo "⛔ REFUSE(2) [$G]: the witness did not compile and link in mode 4"; exit 2; }
 run() {
     if [ "$1" = m3 ]; then ( cd "$ROOT" && env $2 SCRIP_GC_STRESS="$3" timeout 60 ./scrip $SW "$SRC" < /dev/null > "$4" 2> "$4.err" ); echo $?
     else ( env $2 SCRIP_GC_STRESS="$3" timeout 60 "$BIN" $SW < /dev/null > "$4" 2> "$4.err" ); echo $?; fi
