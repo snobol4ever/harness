@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_pl_xsb_dialect_single_builtins_answer_as_xsb.sh -- THE XSB DIALECT'S SINGLE BUILTINS ANSWER AS XSB 5.0.0 DOES (hq_packages 2026-10-29, the group 6 programs of the XsbTests non-tabling reds, CEO-2012).
-# One witness per builtin family in corpus/tests/prolog/xsb_builtins (xbiNN_name.P with its xbiNN_name.ref, the ref XSB's own temp file by the gentest protocol); the gate runs every pair it finds, so a landing
+# One witness per builtin family in corpus/tests/prolog/xsb_builtins (xbiNN_name.P with its xbiNN_name.ref and, when it needs files beside it, an xbiNN_name.d directory copied into the run directory, the ref XSB's own temp file by the gentest protocol); the gate runs every pair it finds, so a landing
 # adds a witness and no gate.
 #   xbi01_arithmetic  round, ceiling, floor and truncate pass an integer through (ISO and GNU raise type_error(float, 5)); round is floor(X + 0.5); the xor evaluable is ><; an expression that is not evaluable
 #                     is type_error(evaluable, Term) with the term itself, not Name/Arity (the culprit of a top-level unary function is its argument, XSB's own quirk); a list is never evaluated, [a] included
 #   xbi02_retract_nr_gc_dynamic  retract_nr/1 is retract/1 (the clause goes, a failing or undefined target fails, an unbound one is instantiation_error); gc_dynamic/1 answers an integer for an unbound argument and
 #                     type_error(variable, N) for a bound one (the count itself is XSB's storage timing, never printed: CEO-1934, CEO-2012 (c))
+#   xbi03_qualified_call_loads_the_module_file  the first call M:Goal of a module not yet loaded loads the file M.P beside the program (its ?- directive prints once), a later call loads nothing, a system
+#                     module (basics) has no file beside (the companion module file is the witness's .d directory, copied beside it)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
@@ -38,6 +40,7 @@ FIRST=""
 for w in $WITNESSES; do
     [ -n "$FIRST" ] || FIRST="$w"
     d="$TMPD/$w"; mkdir -p "$d"; cp "$WIT/$w.P" "$d/$w.P"
+    [ -d "$WIT/$w.d" ] && cp -R "$WIT/$w.d/." "$d/"
     { printf '%s\n' "$PRE"; cat "$WIT/$w.P"; printf ':- initialization((test, halt)).\n'; } > "$d/run.pl"
     ( cd "$d" && rm -f temp && printf '[%s].\ntell(temp).\ntest.\ntold.\nhalt.\n' "$w" | timeout -k 5 120 "$XSB" --nobanner --quietload > xsb.log 2>&1 )
     [ -s "$d/temp" ] || refuse "XSB wrote no temp file for $w: $(head -c 300 "$d/xsb.log")"
