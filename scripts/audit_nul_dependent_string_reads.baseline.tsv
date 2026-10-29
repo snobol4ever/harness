@@ -1,36 +1,36 @@
-file	count
-driver/driver_globals.c	1
-driver/driver_label.c	3
-driver/scrip.c	48
-driver/sno_parse_stage.c	1
-driver/stmt_ast.c	1
-emitter/emit.cpp	14
-parsers/icon/icon_driver.c	5
-parsers/icon/icon_lex.c	2
-parsers/icon/icon_lex_test.c	4
-parsers/icon/icon_parse.c	1
-parsers/icon/icon_parse_test.c	2
-parsers/pascal/pascal_driver.c	5
-parsers/prolog/prolog_driver.c	8
-parsers/prolog/prolog_lower.c	144
-parsers/prolog/prolog_lower_test.c	2
-parsers/prolog/prolog_parse.c	131
-parsers/raku/rk_regex.c	5
-parsers/raku/rk_syntax.c	4
-parsers/raku/rk_tree.c	58
-runtime/aggregates.c	1
-runtime/arithmetic.c	1
-runtime/builtins/gen_runtime.c	6
-runtime/by_name_dispatch.c	25
-runtime/core/core.c	3
-runtime/icn_extfn.c	1
-runtime/pattern_match.c	5
-runtime/rt/rt.c	2
-runtime/rtx/rtx_arith_test.c	2
-runtime/rtx/rtx_direct_test.c	3
-runtime/rtx/rtx_str_test.c	4
-runtime/rtx/rtx_varval_test.c	2
-runtime/runtime_eval.c	2
-runtime/rx.c	1
-runtime/unification.c	2
-runtime/values.c	1
+file	truncating	equality
+driver/driver_globals.c	0	1
+driver/driver_label.c	1	2
+driver/scrip.c	4	44
+driver/sno_parse_stage.c	0	1
+driver/stmt_ast.c	0	1
+emitter/emit.cpp	2	12
+parsers/icon/icon_driver.c	0	5
+parsers/icon/icon_lex.c	0	2
+parsers/icon/icon_lex_test.c	0	4
+parsers/icon/icon_parse.c	1	0
+parsers/icon/icon_parse_test.c	0	2
+parsers/pascal/pascal_driver.c	1	4
+parsers/prolog/prolog_driver.c	0	8
+parsers/prolog/prolog_lower.c	10	134
+parsers/prolog/prolog_lower_test.c	0	2
+parsers/prolog/prolog_parse.c	14	117
+parsers/raku/rk_regex.c	0	5
+parsers/raku/rk_syntax.c	2	2
+parsers/raku/rk_tree.c	3	55
+runtime/aggregates.c	0	1
+runtime/arithmetic.c	1	0
+runtime/builtins/gen_runtime.c	6	0
+runtime/by_name_dispatch.c	8	17
+runtime/core/core.c	3	0
+runtime/icn_extfn.c	1	0
+runtime/pattern_match.c	4	1
+runtime/rt/rt.c	2	0
+runtime/rtx/rtx_arith_test.c	2	0
+runtime/rtx/rtx_direct_test.c	1	2
+runtime/rtx/rtx_str_test.c	2	2
+runtime/rtx/rtx_varval_test.c	2	0
+runtime/runtime_eval.c	0	2
+runtime/rx.c	0	1
+runtime/unification.c	0	2
+runtime/values.c	0	1
