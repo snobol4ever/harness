@@ -47,7 +47,7 @@ mkdir -p "$TMPD/x"; cp "$WIT"/xld01_*.P "$TMPD/x/"
 verdict "the stored ref is what live XSB 5.0.0 writes" "$TMPD/x/temp" "$WIT/xld01_loaded_file.ref"
 case "$MODES" in *m3*) ( cd "$d" && timeout -k 5 300 "$SCRIP" run.pl </dev/null > m3.out 2> m3.err ); verdict "SCRIP m3: the consulted file calls XSB's builtins and reads its quoted atom" "$d/m3.out" "$WIT/xld01_loaded_file.ref" ;; esac
 case "$MODES" in *m4*)
-    if ( cd "$d" && timeout -k 5 300 "$SCRIP" --compile -o run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$d/run.s" -o "$d/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$d/m4.lerr"; then
+    if ( cd "$d" && timeout -k 5 300 "$SCRIP" --compile --out=run.s run.pl </dev/null > /dev/null 2> m4.cerr ) && gcc -m64 -no-pie "$d/run.s" -o "$d/run.bin" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2> "$d/m4.lerr"; then
         ( cd "$d" && timeout -k 5 300 "$d/run.bin" </dev/null > m4.out 2> m4.err ); verdict "SCRIP m4: the consulted file calls XSB's builtins and reads its quoted atom" "$d/m4.out" "$WIT/xld01_loaded_file.ref"
     else total=$((total+1)); red=$((red+1)); echo "  RED SCRIP m4 did not compile or link: $(head -c 200 "$d/m4.cerr" "$d/m4.lerr" 2>/dev/null)"; fi ;;
 esac

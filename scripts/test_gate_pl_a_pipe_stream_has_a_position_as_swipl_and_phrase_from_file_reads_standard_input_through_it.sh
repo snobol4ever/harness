@@ -29,7 +29,7 @@ line(Line) --> string_without("\n", Line), "\n".
 PL
 printf 'abc\nde\n' > "$W/pos.in"
 printf 'one\ntwo words\nthree\n' > "$W/rev.in"
-build() { "$ROOT/scrip" --compile -o "$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
+build() { "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
 bad=0
 for p in pos rev; do
   cat "$W/$p.in" | timeout -k 5 30 "$SW" -q -t halt "$W/$p.pl" > "$W/$p.ref" 2> "$W/$p.ref.err"

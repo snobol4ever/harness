@@ -212,7 +212,7 @@ name_tab(19, "(X = a ; Y = b)").
 name_tab(20, "(X = a -> true ; true)").
 :- cases(L), forall(member(G-N, L), ( name_tab(N, C), G1 =.. [G, 1, 2, 3], ( call_with_depth_limit(G1, 1, R) -> format('~s ~w~n', [C, R]) ; format('~s failed~n', [C]) ) )).
 PL
-build() { "$ROOT/scrip" --compile -o "$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
+build() { "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
 bad=0
 for p in shapes rec bi1 bi2; do
   timeout -k 5 60 "$SW" -q -t halt "$W/$p.pl" < /dev/null > "$W/$p.ref" 2> "$W/$p.ref.err"
