@@ -15,6 +15,12 @@
 #
 # scan: prints path:line: text for each hit, then HITS n; rc 1 when n > 0, rc 0 when 0.   apply: rewrites in place, prints REWROTE n.
 # --exclude=BASENAME (repeatable) leaves a file out, for a gate whose own fixtures hold the shapes it hunts.
+#
+# Migration record, 2026-10-29 (step 2 of the row; apply over the parents of SCRIP 62b9f095a, harness d7a8ccd, corpus 8f0a4e8d1, .github 3520dc48e,
+# then four hand edits, three stub compilers and the prose): harness 1,007 files (995 shell, 12 Python; 1,199 --out= tokens), SCRIP 2 (the
+# Makefile and the README), corpus 1 (a README), .github 11 (the instruction pages and 4 probe or wip scripts): 1,021 files in the four repos.
+# The harness commit's own message says 1,019 files, 1,207 tokens and 859 shell files: those are working totals of the sitting and a miscount; the
+# figures here are counted from the commit (git show --stat, 995 .sh and 12 .py in it).
 import ast, collections, os, re, sys
 
 ASSIGN = re.compile(r'^(\$\{?)?[A-Za-z_][A-Za-z_0-9]*(\})?(\[[^\]]*\])?\+?=')
