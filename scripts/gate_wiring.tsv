@@ -930,6 +930,7 @@ test_gate_pl_swi_source_text_raw_newlines_unicode_symbols_bang_compound_and_dcg_
 test_gate_pl_swi_stream_errors_eof_action_alias_and_stream_pair_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_user_display_overrides_the_builtin_difference_list_sinks_and_bagof_of_a_runtime_goal_sorts_its_groups_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_tabling_phase_1_answers_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_telling_inside_a_captured_output_returns_the_capture_stream_and_tell_reselects_it_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_term_inspection_iso_errors.sh	WIRED	-	-	-
 test_gate_pl_text_and_quoted_tokens_read_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_the_activation_frame_is_carved_and_released_by_the_emitted_prologue.sh	WIRED	-	-	-
