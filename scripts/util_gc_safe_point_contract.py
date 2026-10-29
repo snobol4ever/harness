@@ -198,7 +198,6 @@ DECLARED_POINTER_FREE_FN = {
     "rt_cap_open_plain":       ("src/runtime/rtx/rtx_match.s", ".Lcap_fastret:", "a status in eax (0 declines, -1 retreats, 2 opened); the capture itself is parked by the runtime, not returned"),
     "rt_pl_exist_key_raise":   ("src/runtime/rtx/rtx_plunify.s", "RTX_ENDF(rt_pl_exist_key_raise)", "arms the ball and returns the FAIL descriptor {DT_FAIL, 0}: pointer-free by value"),
     "rt_pl_dop_unify_raise":   ("src/runtime/rtx/rtx_plunify.s", "PL_CTX_LEAF_BALL(unify_raise)", "the occurs_check raise leaf (cto 2026-10-09): its C half rt_pl_dop_unify_raise_c unwinds what it bound and returns FAILDESCR, the wrapper returns {DT_FAIL, 0} once it has armed the ball; the ball travels in r15 and the trail header's ball slot, never in the return: pointer-free by value"),
-    "rt_scan_sync_in":         ("src/runtime/builtins/gen_runtime.c", "uint64_t rt_scan_sync_in(void) { return (uint64_t)(int64_t)(scan_pos - 1); }", "the scan cursor as an integer offset (scan_pos - 1), moved into r14; never a pointer"),
 }
 
 

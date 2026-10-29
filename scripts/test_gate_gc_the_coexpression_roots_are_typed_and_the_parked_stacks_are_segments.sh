@@ -110,9 +110,13 @@ while IFS= read -r ln; do
     pre="$(sed -n "$((ln-14)),$((ln-1))p" "$T/sigma.s")"; post="$(sed -n "$((ln+1)),$((ln+10))p" "$T/sigma.s")"
     if echo "$pre" | grep -qE 'call +rt_co_env@PLT' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 0\], r13' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 8\], r14' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 16\], r15' \
         && echo "$post" | grep -qE 'mov +r13, qword ptr \[r(dx|ax) \+ 0\]' && echo "$post" | grep -qE 'mov +r14, qword ptr \[r(dx|ax) \+ 8\]' && echo "$post" | grep -qE 'mov +r15, qword ptr \[r(dx|ax) \+ 16\]' \
-        && ! echo "$post" | grep -qE 'call +rt_scan_live_regs'; then rec_ok=$((rec_ok+1)); else rec_bad=$((rec_bad+1)); fi
+        && ! echo "$post" | grep -qE 'call +rt_scan_live_regs'; then
+        far="$(sed -n "$((ln+1)),$((ln+40))p" "$T/sigma.s")"; ldl=$(echo "$far" | grep -nE 'mov +r15, qword ptr \[r(dx|ax) \+ 16\]' | head -1 | cut -d: -f1); pll=$(echo "$far" | grep -nE '# gc_poll' | head -1 | cut -d: -f1)
+        zer=$(echo "$far" | head -12 | grep -cE 'mov +qword ptr \[r(dx|ax) \+ (0|8|16)\], 0$')
+        if [ -n "$ldl" ] && { [ -z "$pll" ] || [ "$ldl" -lt "$pll" ]; } && [ "$zer" = 3 ]; then rec_ok=$((rec_ok+1)); else rec_bad=$((rec_bad+1)); fi
+    else rec_bad=$((rec_bad+1)); fi
 done < <(grep -nE 'call +(scrip_coexpr_activate|scrip_coret)@PLT' "$T/sigma.s" | cut -d: -f1)
-if [ "$rec_ok" -gt 0 ] && [ "$rec_bad" = 0 ]; then echo "  arm 3 PASS: $rec_ok switch site(s) store r13/r14/r15 into the running context's env record (rt_co_env) before the call and load them from the arrival record after it"
+if [ "$rec_ok" -gt 0 ] && [ "$rec_bad" = 0 ]; then echo "  arm 3 PASS: $rec_ok switch site(s) store r13/r14/r15 into the running context's env record (rt_co_env) before the call, load them from the arrival record ahead of the first poll and zero the record (no collection runs between a store and its load, hq_collector 2026-10-29)"
 else echo "  arm 3 FAIL: sites storing and loading the env record=$rec_ok without=$rec_bad"; RC=1; fi
 WIT="$WD/hb_coexpr_sigma.icn"; ref="$(cat "$WD/hb_coexpr_sigma.ref")"; [ "${FAIL_ONCE:-0}" = 1 ] && ref="$ref corrupted-by-fail-once"
 a4=""; a4bad=0; seen4_3=0; seen4_4=0

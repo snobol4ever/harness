@@ -8,7 +8,7 @@
 # when the creator is any other procedure, the walk followed the body frame's link to a return pc of zero, no site, and
 # STEP B's refusal bombed the collection (rc 134) while the co-expression was parked or after it died.
 #
-# WHAT IS HERE. The trampoline stores the body frame's rbp in the entry package (body_rbp, 64(pkg)); scrip_co_body_base
+# WHAT IS HERE. The trampoline stores the body frame's rbp in the entry package (body_rbp, 56(pkg)); scrip_co_body_base
 # returns it, and gc_sw_run stops after visiting that frame with stop 8, the coroutine start a parked segment admits.
 #
 # ARMS. (1) the witness below (a co-expression created inside a procedure, drained to failure across three calls, then
