@@ -1371,6 +1371,7 @@ test_gate_suite_table_graded_cell_is_a_date_never_an_age.sh	WIRED	-	-	-
 test_gate_suite_table_writers_hold_one_lock.sh	WIRED	-	-	-
 test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh	WIRED	-	-	-
 test_gate_swi_runner_excludes_a_case_named_in_excluded_cases.sh	WIRED	-	-	-
+test_gate_swi_runner_grades_a_library_through_its_driver_as_the_library.sh	WIRED	-	-	-
 test_gate_swi_runner_grades_a_signal_death_crash_never_fail.sh	WIRED	-	-	-
 test_gate_swi_runner_keeps_what_a_killed_mode4_run_printed.sh	WIRED	-	-	-
 test_gate_table_convert_creation_order.sh	WIRED	-	-	-

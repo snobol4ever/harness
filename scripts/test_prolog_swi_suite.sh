@@ -78,14 +78,16 @@ case "$_decl_rcpt" in *REFUSED*) refuse "a declared-memory cell in $SWIT/ALL.csv
 WORK="$(mktemp -d /tmp/swi_board_XXXXXX)"; trap 'rm -rf "$WORK"' EXIT
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$WORK/wrap.pl"
 FILES="$WORK/files.txt"
-grep -rl --include='*.pl' 'begin_tests(' "$SWIT" | sort > "$FILES"
+# ⭐ A LIBRARY IS GRADED BY ITS DRIVER (ceo CEO-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8, option 1, 2026-10-29): NAME_driver.pl with a NAME_driver.ref beside it, no begin_tests, is the grading vehicle of the library
+# NAME.pl -- its stdout against the ref cut from swipl, one case named driver, recorded under the library's name (clp/linprog.pl:driver), as the gimpel and arizona runners grade theirs.
+{ grep -rl --include='*.pl' 'begin_tests(' "$SWIT"; find "$SWIT" -type f -name '*_driver.pl' | while IFS= read -r _d; do grep -q 'begin_tests(' "$_d" || printf '%s\n' "$_d"; done; } | sort > "$FILES"
 if [ -n "$ONLY_FILE" ]; then grep -F -- "/$ONLY_FILE" "$FILES" > "$FILES.one" || refuse "--file $ONLY_FILE matches no shipped test file"; _nf=$(wc -l < "$FILES.one"); [ "$_nf" = 1 ] || refuse "--file $ONLY_FILE matches $_nf shipped test files -- it grades exactly one (CEO-1664)"; mv "$FILES.one" "$FILES"; fi
 # ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1802/1805/1806): under S4E_CHUNK only the part's files (keyed dir/test_x, as ALL.csv and PARTITION.tsv key them) are
 # graded, their cases' rows are appended as a whole run appends them, and no suite row is written (rr_end below). A part grades one file at a time, both
 # modes, and stops between two files when a request waits or its S4E_RR_BUDGET is spent (RR_YIELD; the loop resumes the part at the next file).
 . "$HERE/lib_rr.sh" && rr_load "$SWIT" || exit 2
 if rr_selected; then
-    rr_entries | while IFS= read -r _e; do grep -xF -- "$SWIT/$_e.pl" "$FILES"; done > "$FILES.rr"; mv "$FILES.rr" "$FILES"   # the partition's order, so a resume skips nothing
+    rr_entries | while IFS= read -r _e; do grep -xF -e "$SWIT/$_e.pl" -e "$SWIT/${_e}_driver.pl" "$FILES"; done > "$FILES.rr"; mv "$FILES.rr" "$FILES"   # the partition's order, so a resume skips nothing
 fi
 NFILES=$(wc -l < "$FILES")
 [ "$NFILES" -gt 0 ] || refuse "no plunit files found under $SWIT"
@@ -95,6 +97,7 @@ f="$1"; mode="$2"
 . "$LIB_DECL" || exit 2
 TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(dirname "$LIB_DECL")/util_timeout_retry.sh}"   # the runner exports it; a lifted grade_one finds it beside LIB_DECL (CEO-1335)
 rel="${f#"$SWIT"/}"; ref="${f%.pl}.ref"; od="$WORK/out/${rel%.pl}"; mkdir -p "$od"
+drv=0; key="${rel%.pl}"; case "$f" in *_driver.pl) grep -q 'begin_tests(' "$f" || { drv=1; key="${rel%_driver.pl}"; } ;; esac   # a driver is declared at its library's row of ALL.csv
 export S4E_TIMEOUT_KEY="$rel"   # the unit a retried timeout's stamp names (CEO-1335)
 act="$od/$mode.actual"; : > "$act"
 if [ ! -f "$ref" ]; then echo "NOREF" > "$od/$mode.tsv"; exit 0; fi
@@ -104,7 +107,16 @@ if [ ! -f "$ref" ]; then echo "NOREF" > "$od/$mode.tsv"; exit 0; fi
 # program that never compiled has no run, and keeps rc 0 and its FAIL.
 rc=0
 _t0="${EPOCHREALTIME/,/.}"   # the process's own wall (CEO-1676 (c)): the aggregator divides it over the case rows this process produced
-if [ "$mode" = "m4" ]; then
+if [ "$drv" = 1 ]; then
+    # the driver is the program: no plunit wrapper, the whole stdout is the one case's answer
+    if [ "$mode" = "m4" ]; then
+        if "$TIMEOUT_RETRY" 60 "$SCRIP" --compile "$f" > "$od/m4.s" 2>"$od/m4.err" && [ -s "$od/m4.s" ] && gcc -no-pie "$od/m4.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$od/m4.bin" 2>>"$od/m4.err"; then
+            run_at_declared_arena "$SWIT/ALL.csv" "$key" -- "$TIMEOUT_RETRY" 60 ${STDBUF:+$STDBUF -o0 -e0} "$od/m4.bin" < /dev/null > "$act" 2>"$od/m4.run.err"; rc=$?
+        fi
+    else
+        run_at_declared_arena "$SWIT/ALL.csv" "$key" -- "$TIMEOUT_RETRY" 60 "$SCRIP" --run "$f" < /dev/null > "$act" 2>"$od/m3.err"; rc=$?
+    fi
+elif [ "$mode" = "m4" ]; then
     if "$TIMEOUT_RETRY" 60 "$SCRIP" --compile "$PLUNIT" "$f" "$WORK/wrap.pl" > "$od/m4.s" 2>"$od/m4.err" && [ -s "$od/m4.s" ] \
        && gcc -no-pie "$od/m4.s" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" -o "$od/m4.bin" 2>>"$od/m4.err"; then
         # ⛔ UNBUFFERED, AS THE HARNESS RUNS EVERY MODE-4 BINARY (stdbuf -o0 -e0; the coo 2026-10-04, on hq_prolog's measurement): a mode-4
@@ -121,7 +133,7 @@ fi
 # on 4783ee83e); here each deferred spec runs ALONE in the same program -- m4 the same binary -- from its own directory, whose pj_sto_only.pl
 # names it, under its own 30 s timeout, and util_swi_sto_merge.py puts its verdict where the file's run deferred it: a case that loops or
 # dies reads FAIL with the loop named, and costs that case only. Its seconds join the mode's (the aggregator divides them over the cases).
-if grep -q '\[sto-deferred only(' "$act"; then
+if [ "$drv" = 0 ] && grep -q '\[sto-deferred only(' "$act"; then
     grep -oE '\[sto-deferred only\(.*\)\]$' "$act" | sed -E 's/^\[sto-deferred (.*)\]$/\1/' | awk '!s[$0]++' > "$od/$mode.sto"
     k=0
     while IFS= read -r spec; do
@@ -138,7 +150,14 @@ fi
 # them unconditionally deleted the m4 job's .s mid-compile -- every m4 case of core/test_term read "no verdict" (the coo's control arm)
 [ "$mode" = "m4" ] && rm -f "$od/m4.s" "$od/m4.bin"
 awk -v a="$_t0" -v b="${EPOCHREALTIME/,/.}" 'BEGIN { printf "%.3f\n", b - a }' > "$od/$mode.secs"
-python3 "$MATCH_PY" "$f" "$ref" "$act" "$rc" > "$od/$mode.tsv"
+if [ "$drv" = 1 ]; then
+    if cmp -s "$act" "$ref"; then printf 'driver\tPASS\n' > "$od/$mode.tsv"
+    elif [ "$rc" = 124 ]; then printf 'driver\tHANG\tthe run timed out (rc 124)\n' > "$od/$mode.tsv"
+    elif [ "$rc" -ge 128 ]; then printf 'driver\tCRASH\tthe run died on a signal (rc %s)\n' "$rc" > "$od/$mode.tsv"
+    else printf 'driver\tFAIL\tstdout differs from the swipl ref\n' > "$od/$mode.tsv"; fi
+else
+    python3 "$MATCH_PY" "$f" "$ref" "$act" "$rc" > "$od/$mode.tsv"
+fi
 GEOF
 chmod +x "$WORK/grade_one.sh"
 : > "$WORK/jobs.txt"
@@ -193,11 +212,13 @@ rows = []; reds = []; perfile = []
 for f in open(files).read().split('\n'):
     if not f: continue
     rel = f[len(swit) + 1:]; od = os.path.join(work, 'out', rel[:-3])
+    # a driver is recorded under its library's name (clp/linprog_driver.pl -> clp/linprog.pl, the one case 'driver'), CEO-1269
+    disp = rel[:-len('_driver.pl')] + '.pl' if rel.endswith('_driver.pl') and 'begin_tests(' not in open(f, errors='replace').read() else rel
     per = {}
     for m in modes:
         p = os.path.join(od, m + '.tsv')
         txt = open(p).read() if os.path.exists(p) else ''
-        if txt.startswith('NOREF'): noref.append(rel); per = None; break
+        if txt.startswith('NOREF'): noref.append(disp); per = None; break
         per[m] = [l.split('\t') for l in txt.split('\n') if l and '\t' in l]
     if per is None: continue
     first = per[modes[0]]
@@ -230,7 +251,7 @@ for f in open(files).read().split('\n'):
             _why = row[2].split(' ')[0] if len(row) > 2 else '?'
             ungraded_cases += 1; ungraded_reason[_why] += 1
             continue
-        _cls = excluded_class(rel, label)
+        _cls = excluded_class(disp, label)
         if _cls:
             ungraded_cases += 1; ungraded_reason[_cls + '(EXCLUDED_CASES.tsv)'] += 1
             continue
@@ -244,10 +265,10 @@ for f in open(files).read().split('\n'):
             if r[1] == 'PASS' and 'agreement control' in (r[2] if len(r) > 2 else ''): tot[m]['agree_fail'] += 1
             if r[1] != 'PASS':
                 ok_all = False
-                if name_reds: reds.append('RED %s:%s:%s:%s' % (rel, label, m, (r[2] if len(r) > 2 else '')[:120]))
-            rows.append('package\tswi\tprolog\t%s:%s\t%s\t%s\t%s\tcase of %s%s' % (rel, label, m, v, csecs[m], rel, ('' if v in ('PASS', 'FAIL') else ' -- ' + (r[2] if len(r) > 2 else '')[:40])))
+                if name_reds: reds.append('RED %s:%s:%s:%s' % (disp, label, m, (r[2] if len(r) > 2 else '')[:120]))
+            rows.append('package\tswi\tprolog\t%s:%s\t%s\t%s\t%s\tcase of %s%s' % (disp, label, m, v, csecs[m], disp, ('' if v in ('PASS', 'FAIL') else ' -- ' + (r[2] if len(r) > 2 else '')[:40])))
         if ok_all: both += 1; fpass += 1
-    perfile.append((rel, fpass, fgraded, n_decl - fgraded))
+    perfile.append((disp, fpass, fgraded, n_decl - fgraded))
 for rel, p, g, u in perfile:
     print('  %-48s %4d/%-4d agree (AND per case)%s' % (rel, p, g, ('  ungraded=%d' % u) if u else ''))
 print('SWI_BOARD declared=%d graded=%d %s ungraded=%d' % (declared, graded_cases,
