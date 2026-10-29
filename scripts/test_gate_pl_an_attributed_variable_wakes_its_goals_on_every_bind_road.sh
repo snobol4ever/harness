@@ -14,7 +14,7 @@
 # SCRIP_GC_CHAIN_CHECK=3, equal to the ref and reading bad-link 0, offchain-swept 0, mismatch 0 and missing 0 (the attributed
 # variable's two-DESCR block, its attribute chain and the wake list are typed heap storage the collector moves under every road).
 # (7) THE ZERO-COST ARM: a fixed program that names no attributed-variable predicate (the setup_call_cleanup fixture) emits no
-# flag test (cmp against PL_ATTV_SLEN, 1448367169) and no $wakeup in its .s, while the witness's .s carries both (the control).
+# flag test (cmp edx, 328 = DT_PLVAR | PL_VAR_ATTV after the and with 0x1FF, the attributed bit of a variable's tag word) and no $wakeup in its .s, while the witness's .s carries both (the control).
 # FAIL_ONCE=1 grades against a ref with its first woke line removed, so every arm must red.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=pl_an_attributed_variable_wakes_its_goals_on_every_bind_road
@@ -59,7 +59,7 @@ Z="$HERE/fixtures/hb_pl_setup_call_cleanup_runs_its_cleanup_on_every_road.pl"
 if [ ! -f "$Z" ]; then echo "  RED (7) the unarmed fixture $Z is missing"; bad=1
 elif ! ( cd "$W" && cp "$Z" "$W/z.pl" && "$ROOT/scrip" --compile --out="$W/z.s" "$W/z.pl" < /dev/null > "$W/z.cerr" 2>&1 ); then echo "  RED (7) the unarmed fixture does not compile"; bad=1
 else
-    za=$(grep -c "cmp *edx, *1448367169" "$W/z.s"); zw=$(grep -c "wakeup" "$W/z.s"); ra=$(grep -c "cmp *edx, *1448367169" "$W/r.s"); rw=$(grep -c "wakeup" "$W/r.s")
+    za=$(grep -c "cmp *edx, *328" "$W/z.s"); zw=$(grep -c "wakeup" "$W/z.s"); ra=$(grep -c "cmp *edx, *328" "$W/r.s"); rw=$(grep -c "wakeup" "$W/r.s")
     if [ "$za" -ne 0 ] || [ "$zw" -ne 0 ]; then echo "  RED (7) the unarmed program carries $za flag tests and $zw wakeup references"; bad=1
     elif [ "$ra" -eq 0 ] || [ "$rw" -eq 0 ]; then echo "  RED (7) the control read nothing: the witness carries $ra flag tests and $rw wakeup references"; bad=1
     else echo "  ok  (7) unarmed: 0 flag tests, 0 wakeup references; the armed witness: $ra flag tests, $rw wakeup references"; fi
