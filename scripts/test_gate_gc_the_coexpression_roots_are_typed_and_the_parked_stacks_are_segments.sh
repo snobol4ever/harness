@@ -33,6 +33,14 @@
 # record abc 1). The Icon create package's seeded r13/r15 and their sigma_live visit are DELETED with it: the
 # trampoline loads both from the global at the body's first entry.
 #
+# RE-CUT 2026-10-29 (hq_icon, DESIGN-PLAN icon-scanning-asm step 3, ARCH-ICON-RTX 11.2 R3): the switch carries (r13, r14, r15) in the running
+# context's env record -- the box stores the three before the call (rt_co_env gives the record), the runtime copies them into the destination's
+# record before it posts that thread, and the arriving thread loads them (the trampoline at its entry, bb_activate and bb_coret after their call)
+# -- so rt_scan_state_capture/apply/reset, inherit_scan, sigma_live, the rooted-global reload and the generator-record visitor are DELETED.
+# Arm 3 now pins that emission; arm 7 pins that rt_coexpr.c visits no generator-record word; arms 2, 4, 5, 6 and 8 are the dynamic evidence
+# and are unchanged: the three witnesses under the shift plant at every stress, in both modes. The env record is never a root because it is
+# written by the departing thread and read by the arriving one with no collection between; the live subject is r13 in an Icon graph, which
+# every Icon poll spills as a described cell and reloads.
 # THE ACCIDENT THIS GATE NAMES (measured with gdb and objdump on 2026-09-19): the subject block of hb_coexpr_sigma
 # moved 0x7ffe6d61b200 -> 0x7ffe6d61b1b0 under SCRIP_GC_STRESS=8 and r13 FOLLOWED it, although no frame of ours saves
 # r13 on the switch path (scrip_coswitch, scrip_coexpr_activate, scrip_coret push rbp only). glibc's sem_wait slow
@@ -99,12 +107,13 @@ if [ "$bad" = 0 ]; then echo "  arm 2 PASS: three witnesses match their iconx re
 else echo "  arm 2 FAIL: a witness lost a root under forced motion --$band"; RC=1; fi
 rec_ok=0; rec_bad=0
 while IFS= read -r ln; do
-    pre="$(sed -n "$((ln-8)),$((ln-1))p" "$T/sigma.s")"; post="$(sed -n "$((ln+1)),$((ln+30))p" "$T/sigma.s")"
-    rl=$(echo "$post" | grep -nE 'call +rt_scan_live_regs' | head -1 | cut -d: -f1)
-    if [ -n "$rl" ] && echo "$post" | sed -n "$rl,\$p" | grep -qE 'mov +r13, +rax' && echo "$post" | sed -n "$rl,\$p" | grep -qE 'mov +r15, +rdx' && ! echo "$pre" | grep -q 'mov  *qword ptr \[rsp + 8\], r13'; then rec_ok=$((rec_ok+1)); else rec_bad=$((rec_bad+1)); fi
+    pre="$(sed -n "$((ln-14)),$((ln-1))p" "$T/sigma.s")"; post="$(sed -n "$((ln+1)),$((ln+10))p" "$T/sigma.s")"
+    if echo "$pre" | grep -qE 'call +rt_co_env@PLT' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 0\], r13' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 8\], r14' && echo "$pre" | grep -qE 'mov +qword ptr \[rax \+ 16\], r15' \
+        && echo "$post" | grep -qE 'mov +r13, qword ptr \[r(dx|ax) \+ 0\]' && echo "$post" | grep -qE 'mov +r14, qword ptr \[r(dx|ax) \+ 8\]' && echo "$post" | grep -qE 'mov +r15, qword ptr \[r(dx|ax) \+ 16\]' \
+        && ! echo "$post" | grep -qE 'call +rt_scan_live_regs'; then rec_ok=$((rec_ok+1)); else rec_bad=$((rec_bad+1)); fi
 done < <(grep -nE 'call +(scrip_coexpr_activate|scrip_coret)@PLT' "$T/sigma.s" | cut -d: -f1)
-if [ "$rec_ok" -gt 0 ] && [ "$rec_bad" = 0 ]; then echo "  arm 3 PASS: $rec_ok switch site(s) reload r13/r15 from the rooted global after the call (rt_scan_live_regs) and spill no r13 record before it"
-else echo "  arm 3 FAIL: sites with the global reload=$rec_ok without=$rec_bad"; RC=1; fi
+if [ "$rec_ok" -gt 0 ] && [ "$rec_bad" = 0 ]; then echo "  arm 3 PASS: $rec_ok switch site(s) store r13/r14/r15 into the running context's env record (rt_co_env) before the call and load them from the arrival record after it"
+else echo "  arm 3 FAIL: sites storing and loading the env record=$rec_ok without=$rec_bad"; RC=1; fi
 WIT="$WD/hb_coexpr_sigma.icn"; ref="$(cat "$WD/hb_coexpr_sigma.ref")"; [ "${FAIL_ONCE:-0}" = 1 ] && ref="$ref corrupted-by-fail-once"
 a4=""; a4bad=0; seen4_3=0; seen4_4=0
 for st in 1 3 5 8; do
@@ -129,9 +138,9 @@ rc6=$( ( cd "$T" && SCRIP_GC_MAPS=1 SCRIP_GC_PLANT_FLIP=1 SCRIP_HEAP_KB=512 SCRI
 rs6=$( ( cd "$T" && SCRIP_GC_MAPS=1 SCRIP_GC_PLANT_FLIP=1 SCRIP_HEAP_KB=512 SCRIP_GC_STRESS=3 timeout -k 5 120 "$SCRIP" "$WD/hb_coexpr_sigma.icn" 2>&1 >/dev/null </dev/null ) | grep -E '^\[GC-COEXPR\]|pop=parked' | grep -oE 'sigma=[0-9]+|pop=parked' | sort -u | tr '\n' ' ')
 if [ "$rc6" = "sigma=0 " ] && echo "$rs6" | grep -q 'sigma=0' && ! echo "$rs6" | grep -qE 'sigma=[1-9]' && echo "$rs6" | grep -q 'pop=parked'; then echo "  arm 6 PASS: the reporter counts no Icon package subject word (create: $rc6) and reports the parked population (sigma: $rs6)"
 else echo "  arm 6 FAIL: reporter create=[$rc6] sigma=[$rs6]"; RC=1; fi
-p1=$(grep -c 'offsetof(rt_genp_s, regs) == 8' "$ROOT/src/runtime/rt/rt.c"); p2=$(grep -c 'movq 24(%rdi), %r13' "$ROOT/src/runtime/rt/rt.c"); p3=$(grep -c 'c->entry_arg + 24' "$ROOT/src/runtime/rt/rt_coexpr.c")
-if [ "$p1" -ge 1 ] && [ "$p2" -ge 1 ] && [ "$p3" -ge 1 ]; then echo "  arm 7 PASS: the generator record's r13 word is +24 in rt.c (static assert on regs at +8, the entry asm loads r13 from 24(%rdi)) and rt_coexpr.c visits exactly that word"
-else echo "  arm 7 FAIL: cross-file pin broken (assert=$p1 asm=$p2 visitor=$p3)"; RC=1; fi
+p1=$(grep -c 'offsetof(rt_genp_s, regs) == 8' "$ROOT/src/runtime/rt/rt.c"); p2=$(grep -c 'movq 24(%rdi), %r13' "$ROOT/src/runtime/rt/rt.c"); p3=$(grep -c 'entry_arg + 24' "$ROOT/src/runtime/rt/rt_coexpr.c")
+if [ "$p1" -ge 1 ] && [ "$p2" -ge 1 ] && [ "$p3" = 0 ]; then echo "  arm 7 PASS: the generator record's r13 word is +24 in rt.c (static assert on regs at +8, the entry asm loads r13 from 24(%rdi)) and rt_coexpr.c visits no record word -- the thread loads it once at its entry and nothing reads it again"
+else echo "  arm 7 FAIL: cross-file pin broken (assert=$p1 asm=$p2 visitor=$p3, the visitor count must be 0)"; RC=1; fi
 pl=$( ( cd "$T" && env SCRIP_GC_PLANT_FLIP="$SHIFT" SCRIP_HEAP_KB=512 SCRIP_GC_STRESS=3 timeout -k 5 120 "$SCRIP" "$WD/hb_coexpr_create.icn" 2>&1 >/dev/null </dev/null ) | grep -c "^\[GC-FLIP\] plant:" ); pl=${pl:-0}
 if [ "$pl" -ge 1 ]; then echo "  arm 8 PASS: the forced motion this gate grades under is REAL -- the flip plant announced $pl application(s) at SCRIP_GC_PLANT_FLIP=1 SCRIP_HEAP_KB=512 with nothing asked for, so arms 2-6 moved every block rather than relying on ordinary compaction"
 else echo "⛔ GATE REFUSE(2) [$G]: the flip plant applied ZERO times at SCRIP_GC_PLANT_FLIP=1 SCRIP_HEAP_KB=512 and SCRIP_HEAP_MB=${SCRIP_HEAP_MB:-default} -- the flip declines whenever the live set has no ground disjoint from itself (neither above the old top nor below the first live block), so EVERY arm here graded ordinary compaction while claiming forced movement. Nothing is graded and nothing is red: this is a configuration statement (cto 2026-09-21, held by test_gate_gc_the_plant_says_whether_it_applied)"; exit 2; fi
