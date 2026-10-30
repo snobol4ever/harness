@@ -12,6 +12,9 @@
 #                     file_open/3 returns, every status 0 (io_tests io_basics)
 #   xbi05_storage_concat_atom  concat_atom/2,3 join atomic elements, numbers included, and fail on a compound one; gc_heap/0; lib/storage.P's storage_insert_fact/3, storage_find_fact/2 and
 #                     storage_delete_all/1 (prolog_tests gctest; the m4 binary used to raise type_error(atom, 1) from concat_atom's route through atom_concat)
+#   xbi06_arith_error_context  an arithmetic error carries XSB's message, error(F, context(context(Msg, Goal), Backtrace)): a unary function compiled in a clause body says ' In evaluable function (Goal: F(Arg))'
+#                     with Goal NULL, a binary one ' Wrong type in evaluable function Op/2: (Goal: Op(A,B))' (type_error(integer, _) has XSB's own spacing), negation is 0 - X; an expression XSB evaluates by
+#                     walking the term (calc/2 at run time, a literal inside catch/3) says ' Wrong type in evaluable function Op/2 (Goal: GOAL)' / ' In evaluable function (Goal: F)', the goal slot GOAL (prolog_tests test_arith_errors)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
