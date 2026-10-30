@@ -267,6 +267,7 @@ one_runner_guard() {
   S4E_RUN_T0="$(date +%s)"; export S4E_RUN_T0
   if [ -z "${S4E_BIN_AT_START:-}" ]; then S4E_BIN_AT_START="$(one_runner_bin_fingerprint)" && export S4E_BIN_AT_START; fi
   local board="${1:-${0##*/}}" suite="${2:-}" seat who lang
+  case "$(one_runner_seat)" in cto|cao) if [ -z "${S4E_DONE_WHEN_RUN:-}" ]; then printf '⛔ REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: "Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing."). Put the witness and its expected answer in the step plan and let an executor or the coo (s4e_test_request.sh) run it.\n' "$(one_runner_seat)" >&2; return 2; fi;; esac
   if [ -n "$suite" ] && ! one_runner_suite_is_a_board "$suite"; then return 0; fi
   one_runner_mem_scope
   if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
