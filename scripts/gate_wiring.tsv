@@ -52,6 +52,7 @@ test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh	WIRED	-	-
 test_gate_a_program_with_more_functions_than_the_old_cell_table_held_compiles_and_runs.sh	WIRED	-	-	-
 test_gate_a_rungs_with_xfails_never_reads_done.sh	WIRED	-	-	-
 test_gate_a_stack_overflow_exit_flushes_stdout.sh	WIRED	-	-	-
+test_gate_a_taken_direct_goto_pops_its_whole_statement_carve_whatever_its_gamma_is.sh	WIRED	-	-	-
 test_gate_abandoned_generator_handle_is_dropped_at_alpha.sh	WIRED	-	-	-
 test_gate_absent_line_is_unproven_not_red.sh	WIRED	-	-	-
 test_gate_add_ladder_witness_declares_every_attribute_column.sh	WIRED	-	-	-
