@@ -106,7 +106,7 @@ if [ -n "${DIGEST_GATE_ROOTS:-}" ]; then
 else
     ROOTS=(   # the twenty numbered fleet roots and the nine lettered HQ roots were removed by Lon 2026-09-16 (ceo CEO-767); six language HQ roots replace the nine
            /home/claude_icon/CLAUDE.md /home/claude_prolog/CLAUDE.md /home/claude_raku/CLAUDE.md /home/claude_pascal/CLAUDE.md /home/claude_snocone/CLAUDE.md /home/claude_snobol4/CLAUDE.md /home/claude_templates/CLAUDE.md /home/claude_runtime/CLAUDE.md /home/claude_collector/CLAUDE.md /home/claude_zetas/CLAUDE.md /home/claude_packages/CLAUDE.md \
-           /home/claude_ceo/CLAUDE.md /home/claude_cto/CLAUDE.md /home/claude_coo/CLAUDE.md /home/claude_cfo/CLAUDE.md)
+           /home/claude_ceo/CLAUDE.md /home/claude_cto/CLAUDE.md /home/claude_coo/CLAUDE.md /home/claude_cfo/CLAUDE.md /home/claude_cao/CLAUDE.md /home/claude_cqo/CLAUDE.md)
 fi
 
 VIOLATIONS=0
