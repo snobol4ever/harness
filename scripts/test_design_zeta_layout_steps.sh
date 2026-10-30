@@ -13,7 +13,7 @@
 #                may not contain @ or whitespace) | tsvmin=FILE:N (harness/scripts/FILE holds at least N non-comment rows) | rule5=N (SCRIP_GC_SITES_REPORT=1 --compile over
 #                the gc_witnesses population and this step's witnesses: rule=5 site records at most N; a compile that fails REFUSES) | rspmoves=N (the template rsp-move
 #                census: x86("push" | x86("pop" | x86("sub"/"add", "rsp" in src/templates/bb and xa, at most N) | layoutcheck=N (util_zeta_layout_check.py over the step's
-#                witnesses' mode-4 asm against --dump-plan, mismatches at most N; REFUSED while the checker does not exist) | rows=L|ALL (SUITES.tsv today_pass not below
+#                witnesses' mode-4 asm against --dump-plan, mismatches at most N; RED while the checker does not exist, since the checker is step 1's deliverable) | rows=L|ALL (SUITES.tsv today_pass not below
 #                ROWS0.tsv) | -
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against)
@@ -157,8 +157,9 @@ for tok in $probe; do
         rule5) c="$(rule5_census)"; case "$c" in REFUSED*) refuse "rule5: a program of the population did not compile: $c" ;; esac
             readings="$readings rule5_sites=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;
         rspmoves) c="$(rspmoves_census)"; readings="$readings template_rsp_moves=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;
-        layoutcheck) c="$(layoutcheck)"; [ "$c" = REFUSED ] && refuse "layoutcheck: util_zeta_layout_check.py, a witness binary or its plan dump is missing (step 2 writes the checker)"
-            readings="$readings layout_mismatches=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;
+        layoutcheck) c="$(layoutcheck)"
+            if [ "$c" = REFUSED ]; then readings="$readings layout_checker=missing(step 1 writes util_zeta_layout_check.py; a witness with no mode-4 binary or plan dump also reads here)"; pgreen=0
+            else readings="$readings layout_mismatches=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0; fi ;;
         gate) [ -f "$HERE/$val.sh" ] || { readings="$readings gate[$val]=missing"; pgreen=0; continue; }
             if ( cd "$SC" && timeout -k 10 1800 bash "$HERE/$val.sh" > "$OUT/step$step/$val.log" 2>&1 ); then readings="$readings gate[$val]=green"; else readings="$readings gate[$val]=red"; pgreen=0; fi ;;
         smoke) [ "$val" = ALL ] && ls="$SMOKES" || ls="${val//,/ }"
