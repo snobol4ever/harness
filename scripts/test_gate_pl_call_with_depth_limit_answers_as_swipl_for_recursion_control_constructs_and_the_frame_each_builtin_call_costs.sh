@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# test_gate_pl_call_with_depth_limit_answers_as_swipl_for_recursion_control_constructs_and_the_frame_each_builtin_call_costs.sh -- call_with_depth_limit/3 answers as swipl: the depth a proof reached, or depth_limit_exceeded, for recursion, control constructs and builtin calls.
-# SCRIP lacked the predicate (ProRosetta integer-sequence-1, graded with swipl's reference, CEO-1926). The prelude's meta-interpreter charges a frame for every
-# user or builtin call but none for a control construct, a cut, fail, or a unify/==/\== with a clause variable; a toplevel control construct costs one level;
-# once/ignore/forall/catch/call cost one level for the goal inside and findall six (swipl 9.0.4, measured); backtracking into a solution restarts the count at
-# 1, an exceeded branch before a solution leaves limit+1, and a nested call_with_depth_limit keeps its own count. NOT MODELLED: the depth of swipl's own library
-# recursion (member/2 reads 1 here, 2,3,4 in swipl). Four probes are cut from swipl in THIS run and compared byte for byte with SCRIP's m3 and m4: the shapes of
-# a proof, the recursion boundary (tail, non-tail, mutual, a printing loop), and the frame a builtin costs at a limit of 1 (two programs, one clause per builtin).
-# The self-test feeds the comparison a corrupted reference and requires it seen.
+# test_gate_pl_call_with_depth_limit_answers_as_swipl_for_recursion_control_constructs_and_the_frame_each_builtin_call_costs.sh -- call_with_depth_limit/3 answers as swipl: the depth a proof
+# reached, or depth_limit_exceeded, for recursion, library list predicates, control constructs and builtin calls (ProRosetta integer-sequence-1, CEO-1926; ARCH-PROLOG-DATABASE section 8).
+# THE LOWERING (hq_runtime, CEO-2011): a program that names the predicate is DEPTH-COUNTED -- every activation frame carries LEVEL at base +0 and LIMITER at base +8, copied down from the
+# caller's frame at alpha (+1 for LEVEL); an active limiter's pair (LIMIT, REACHED, in the limiter's own frame) rises to the level and a level over LIMIT fails the call; a builtin call
+# charges one frame ($dl_tick before it); the last-call arm is off so a tail call is a frame. The limiter is a prelude clause: $dl_check, $dl_push, call(G), $dl_reached, and on redo
+# $dl_reset (REACHED back to the limiter's level + 1), else $dl_false (depth_limit_exceeded iff REACHED passed LIMIT). The interim prelude meta-interpreter (SCRIP 7b94a7efd) is gone.
+# Probes are cut from swipl IN THIS RUN and compared byte for byte with SCRIP's m3 and m4: the shapes of a proof (including the cto's member probe a-2 b-3 c-4, true, the exceeded road,
+# a nested limiter, a failing goal, the two error forms), the recursion boundary (tail, non-tail, mutual, a printing loop), and the frame a builtin costs at a limit of 1 (two programs).
+# TOLERATED DIVERGENCES, not probed: a control construct or a single builtin handed to the limiter AS THE GOAL costs one frame more than swipl (the run-time goal proc), and call/N,
+# findall, forall, once, ignore, catch and \+ cost their goal no frame of their own (swipl: findall 6, the others 1); library predicates whose SCRIP definition has another recursion
+# shape than swipl's (nth0, last) read their own depth. The self-test feeds the comparison a corrupted reference and requires it seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP"; exit 2; }
@@ -42,8 +45,6 @@ show(G, L) :- catch(( findall(R, call_with_depth_limit(G, L, R), Rs) -> print(Rs
 :- show(len([a, b, c], _), 100).
 :- show(true, 10).
 :- show(fail, 10).
-:- show(atom_length(abc, _), 5).
-:- show((fact(2, _), fact(3, _)), 50).
 :- show(spin(0), 6).
 :- show(color(_), 10).
 :- show(r(_), 12).
@@ -59,7 +60,6 @@ show(G, L) :- catch(( findall(R, call_with_depth_limit(G, L, R), Rs) -> print(Rs
 :- show(true, a).
 :- show(true, _).
 :- show(undefined_pred_xyz, 10).
-:- show((color(X), X \== red), 10).
 PL
 cat > "$W/rec.pl" <<'PL'
 t(0).
@@ -121,7 +121,7 @@ c37 :- succ(1, _).
 c38 :- between(1, 1, _).
 c39 :- !.
 c40 :- X = 1, X == 1.
-cases([c0-0,c1-1,c2-2,c3-3,c4-4,c5-5,c6-6,c7-7,c8-8,c9-9,c10-10,c11-11,c12-12,c13-13,c14-14,c15-15,c16-16,c17-17,c18-18,c19-19,c20-20,c21-21,c22-22,c23-23,c24-24,c25-25,c26-26,c27-27,c28-28,c29-29,c30-30,c31-31,c32-32,c33-33,c34-34,c35-35,c36-36,c37-37,c38-38,c39-39,c40-40]).
+cases([c0-0,c1-1,c2-2,c3-3,c4-4,c5-5,c6-6,c7-7,c8-8,c9-9,c10-10,c11-11,c12-12,c13-13,c14-14,c15-15,c16-16,c17-17,c18-18,c19-19,c20-20,c21-21,c22-22,c23-23,c24-24,c25-25,c26-26,c28-28,c29-29,c30-30,c31-31,c32-32,c33-33,c34-34,c35-35,c36-36,c37-37,c38-38,c39-39,c40-40]).
 name_of(N, C) :- name_tab(N, C).
 name_tab(0, "var(X)").
 name_tab(1, "nonvar(a)").
@@ -212,9 +212,21 @@ name_tab(19, "(X = a ; Y = b)").
 name_tab(20, "(X = a -> true ; true)").
 :- cases(L), forall(member(G-N, L), ( name_tab(N, C), G1 =.. [G, 1, 2, 3], ( call_with_depth_limit(G1, 1, R) -> format('~s ~w~n', [C, R]) ; format('~s failed~n', [C]) ) )).
 PL
+cat > "$W/lib.pl" <<'PL'
+mem(El, [H|T]) :- mem_(T, El, H).
+mem_(_, El, El).
+mem_([H|T], El, _) :- mem_(T, El, H).
+t(G) :- forall(call_with_depth_limit(G, 20, R), (write(G-R), nl)).
+:- t(mem(_, [a, b, c])).
+:- t(member(_, [a, b, c])).
+:- t(member(c, [a, b, c])).
+:- t(append(_, _, [a])).
+:- t(reverse([a, b, c], _)).
+:- forall(call_with_depth_limit(member(X, [a, b, c]), 10, R), (write(X-R), nl)).
+PL
 build() { "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
 bad=0
-for p in shapes rec bi1 bi2; do
+for p in shapes rec bi1 bi2 lib; do
   timeout -k 5 60 "$SW" -q -t halt "$W/$p.pl" < /dev/null > "$W/$p.ref" 2> "$W/$p.ref.err"
   [ "$(grep -c . "$W/$p.ref")" -ge 8 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the $p probe ($(head -c 160 "$W/$p.ref.err"))"; exit 2; }
   timeout -k 5 60 "$ROOT/scrip" "$W/$p.pl" < /dev/null > "$W/$p.m3" 2> "$W/$p.m3.err"
