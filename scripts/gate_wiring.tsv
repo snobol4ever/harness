@@ -384,6 +384,7 @@ test_gate_icn_tag_single_source.sh	WIRED	-	-	-
 test_gate_icn_the_block_protocol_carries_every_call.sh	WIRED	-	-	-
 test_gate_icn_the_callgen_act_plus_8_word_is_h_or_zero_and_labelled_ptr_frame_h.sh	WIRED	-	-	-
 test_gate_icn_the_cset_registry_is_weak_so_a_dead_computed_cset_leaves_the_collector.sh	WIRED	-	-	-
+test_gate_icn_the_zsm_reads_no_row_downstream_of_a_retained_generator_frame.sh	WIRED	-	-	-
 test_gate_icn_traceback_corpus_pairs_are_oracle_exact.sh	WIRED	-	-	-
 test_gate_icn_traceback_names_the_source_file_not_the_last_argv.sh	WIRED	-	-	-
 test_gate_icn_traced_call_reports_its_own_call_site_line.sh	WIRED	-	-	-
@@ -813,6 +814,7 @@ test_gate_pl_every_choice_leaving_builtin_keeps_its_callers_retaining_as_swipl.s
 test_gate_pl_exists_source_answers_a_library_the_prelude_holds_and_a_file_that_exists_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_findall_4_serves_a_bound_tail_and_an_unbound_one.sh	WIRED	-	-	-
 test_gate_pl_format_column_fill_is_a_character_not_a_byte.sh	WIRED	-	-	-
+test_gate_pl_format_tilde_at_runs_its_goal_inserts_its_output_and_fails_or_throws_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_format_writes_the_text_it_produced_before_an_argument_count_error_as_swipl_and_gprolog.sh	WIRED	-	-	-
 test_gate_pl_gnu_all_solutions_dec10_io_for_and_name_answer_as_gprolog.sh	WIRED	-	-	-
 test_gate_pl_gnu_consult_reconsults_listing_and_load_answer_as_gprolog.sh	WIRED	-	-	-
