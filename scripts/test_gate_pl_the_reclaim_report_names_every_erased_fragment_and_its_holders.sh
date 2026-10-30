@@ -19,6 +19,7 @@
 #       visitor_live 0 and raw_only 1 in both modes, the gap the choice-link walk closes; the arm stays green when it does.
 # FAIL_ONCE=1 requires arm (2) to read visitor_live 0, so it must red.
 # THE FACTS-ONLY DATA PATH (hq_runtime, ARCH-PROLOG-DATABASE section 13): a dynamic predicate of ground facts keeps NO code fragment, so the assert/retract loop of arm (1) asserts a clause with a body (true, true), which keeps its fragment and so keeps what this gate reclaims.
+# ARM (3)'s s/1 ends in a comparison since the last-call arm (a clause whose last goal is a user call releases its frame before the call): s(X) :- member(X, [1, 2, 3]) left no activation of s on the stack in mode 3, so there was no holder to see (raw_live 0 was the truth, not a miss); the comparison keeps member a non-last call and s a live holder.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G=pl_the_reclaim_report_names_every_erased_fragment_and_its_holders
 [ -x "$ROOT/scrip" ] || { echo "GATE REFUSED(2) [$G]: no $ROOT/scrip -- run make"; exit 2; }
@@ -29,7 +30,7 @@ printf '%s\n' ':- initialization(main).' ':- dynamic(pi/3).' 'loop(0) :- !.' 'lo
 printf '200\n' > "$W/w1.ref"
 printf '%s\n' ':- initialization(main).' ':- dynamic(p/1).' 'main :- assertz((p(X) :- retract((p(_) :- _)), Y = done, X = Y)), p(A), write(self(A)), nl, halt.' > "$W/w2.pl"
 printf 'self(done)\n' > "$W/w2.ref"
-printf '%s\n' ':- initialization(main).' ':- dynamic(q/1).' ':- dynamic(s/1).' 'r(X) :- q(X).' 'main :- assertz((s(X) :- member(X, [1, 2, 3]))), assertz((q(X) :- s(Y), X = f(Y))), r(B), B == f(1), retract((s(_) :- _)), write(kept(B)), nl, halt.' > "$W/w3.pl"
+printf '%s\n' ':- initialization(main).' ':- dynamic(q/1).' ':- dynamic(s/1).' 'r(X) :- q(X).' 'main :- assertz((s(X) :- member(X, [1, 2, 3]), X > 0)), assertz((q(X) :- s(Y), X = f(Y))), r(B), B == f(1), retract((s(_) :- _)), write(kept(B)), nl, halt.' > "$W/w3.pl"
 printf 'kept(f(1))\n' > "$W/w3.ref"
 for w in w1 w2 w3; do
     ( cd "$W" && "$ROOT/scrip" --compile --out="$W/$w.s" "$W/$w.pl" < /dev/null > "$W/$w.cerr" 2>&1 ) || { echo "GATE REFUSED(2) [$G]: $w does not compile ($(head -c 120 "$W/$w.cerr"))"; exit 2; }
