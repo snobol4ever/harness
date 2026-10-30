@@ -22,7 +22,7 @@ RCS = ['DESCR', 'OTHER', 'VOID', 'UNKNOWN']
 CLOB = {'r8': 1, 'r9': 2, 'r10': 4, 'r11': 8}
 CLOB_STATED = 16
 DECL = re.compile(r'\bRT_ENTRY_DECL\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(leaf|gen|open)\s*,\s*([01])\s*\)')
-SRC_EXT = ('.c', '.h', '.cpp', '.inc', '.s')
+SRC_EXT = ('.c', '.h', '.cpp', '.inc', '.s', '.S')
 
 
 def load(tsv):

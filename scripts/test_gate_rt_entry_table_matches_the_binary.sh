@@ -12,10 +12,10 @@
 #   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
 #   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
-#   arm 12 STAGE 5b: every row (an asm entry and a libc import excepted) has exactly one RT_ENTRY_DECL(sym, conv, transfers) under SCRIP/src at its definition, saying the table's conv and
+#   arm 12 STAGE 5b (graded always now): every row (an asm entry and a libc import excepted) has exactly one RT_ENTRY_DECL(sym, conv, transfers) under SCRIP/src at its definition, saying the table's conv and
 #          transfers, and no declaration lacks a row (RED until hq_runtime declares them; `util_gen_rt_entry_table.py --sync-decls` then derives the table's two columns from them)
 #   arm 13+ CONTROLS of arm 12 on a scratch tree: agreeing declarations read clean; a missing one, a double one, a wrong conv, a wrong transfers and a stray one are each named
-# usage: test_gate_rt_entry_table_matches_the_binary.sh [--declared]   (arm 12 is graded only with --declared until stage 5b lands)
+# usage: test_gate_rt_entry_table_matches_the_binary.sh [--declared]   (arm 12 is graded always since stage 5b landed; the flag is accepted and does nothing, the 5b and 5c rows' DONE-WHENs pass it)
 # rc 0 every arm holds · rc 1 an arm failed · rc 2 cannot measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -87,6 +87,16 @@ def old_tables():
 
 
 def asm_symbols():
+    """The asm entries: the names the BINARY carries in its rtx_entry_names section (RTX_FUNC and RTX_ENTRY push each entry's name there, token-pasted macro entries included),
+    so a macro-made entry is seen; the text scan of src/runtime/rtx is the fallback when objcopy cannot read the section."""
+    lib = ROOT + '/out/libscrip_rt.so'
+    try:
+        r = subprocess.run(['objcopy', '-O', 'binary', '--only-section=rtx_entry_names', lib, '/dev/stdout'], capture_output=True)
+        names = {x.decode() for x in r.stdout.split(b'\0') if x}
+        if r.returncode == 0 and len(names) > 100:
+            return names
+    except OSError:
+        pass
     out = set()
     for p in glob.glob(ROOT + '/src/runtime/rtx/*'):
         if p.endswith(('.s', '.S', '.inc', '.h')):
@@ -167,10 +177,8 @@ except ValueError:
 decl = G.find_decls(os.path.join(ROOT, 'src'))
 bad = G.decl_disagreements(rows, decl)
 todo = sum(1 for x in rows if x['conv'] != 'asm' and 'import' not in x['src'].split(','))
-if DECLARED == '1':
+if True:
     grade('arm 12: every row has exactly one RT_ENTRY_DECL at its definition, agreeing with the table (%d declared, %d rows to declare)' % (len(decl), todo), not bad, '%d disagree, e.g. %s' % (len(bad), '; '.join(bad[:3])))
-else:
-    print('  skip arm 12: stage 5b has not landed (%d of %d rows declared); the gate reads it only with --declared, the 5b row\'s DONE-WHEN, and the flag becomes the default when 5b closes' % (todo - len([1 for b in bad if 'no RT_ENTRY_DECL' in b]), todo))
 sd = os.path.join(TD, 'declscratch')
 os.makedirs(sd, exist_ok=True)
 fake = [dict(zip(G.COLS, ['aa_leaf', 'leaf', 'VOID', '0', '-', '0', 'call'])), dict(zip(G.COLS, ['bb_open', 'open', 'OTHER', '0', '-', '1', 'call'])),
@@ -188,6 +196,17 @@ grade('arm 14 (control): a missing declaration is named', any('bb_open: no RT_EN
 grade('arm 15 (control): a double declaration is named', any('aa_leaf: declared 2 times' in x for x in tree(good + 'RT_ENTRY_DECL(aa_leaf, leaf, 0)\n')))
 grade('arm 16 (control): a wrong conv and a wrong transfers are each named', any('bb_open: the table says conv open' in x for x in tree(good.replace('open, 1', 'gen, 1'))) and any('aa_leaf: the table says' in x for x in tree(good.replace('leaf, 0)\nint', 'leaf, 1)\nint'))))
 grade('arm 17 (control): a declaration with no row, and one for an asm entry, are each named', any('zz_stray: declared' in x and 'no row' in x for x in tree(good + 'RT_ENTRY_DECL(zz_stray, leaf, 0)\n')) and any('cc_asm: declared' in x for x in tree(good + 'RT_ENTRY_DECL(cc_asm, leaf, 0)\n')))
+open(os.path.join(sd, 'f.c'), 'w', encoding='utf-8').write(good)
+os.makedirs(os.path.join(sd, 'sub'), exist_ok=True)
+open(os.path.join(sd, 'sub', 'h.S'), 'w', encoding='utf-8').write('RT_ENTRY_DECL(zz_stray, leaf, 0)\n')
+grade('arm 18 (control): a statement in a capital .S file is scanned', 'zz_stray' in G.find_decls(sd))
+os.remove(os.path.join(sd, 'sub', 'h.S'))
+asm_real = asm_symbols()
+flip = [dict(x) for x in rows]
+t = next((x for x in flip if x['conv'] == 'asm'), None)
+if t is not None:
+    t['conv'] = 'leaf'
+grade('arm 19 (control): the asm set is the binary\'s rtx_entry_names section (%d names) and an asm row booked leaf reads red against it' % len(asm_real), len(asm_real) > 100 and t is not None and any('conv leaf but rtx declares it' in x for x in disagreements(flip, None, None, asm_real)))
 print('%s: graded=%d fails=%d' % (NAME, graded, fails))
 if fails:
     print('⛔ GATE RED [%s]: %d of %d arm(s) failed' % (NAME, fails, graded))

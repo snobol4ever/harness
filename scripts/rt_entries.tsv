@@ -69,7 +69,7 @@ rt_defer_probe_run	open	OTHER	1	-	1	call,alloc
 rt_define_bind_entry	leaf	VOID	1	-	0	call,alloc
 rt_define_site	leaf	VOID	1	-	0	call,alloc
 rt_define_site_entry	leaf	VOID	1	-	0	call,alloc
-rt_deref	-	DESCR	1	-	-	call,alloc
+rt_deref	leaf	DESCR	1	-	0	call,alloc
 rt_eval_land	leaf	DESCR	1	-	0	call,alloc
 rt_eval_open	open	OTHER	1	-	1	call,alloc
 rt_eval_open_raise	open	OTHER	1	-	1	call,alloc
@@ -120,11 +120,11 @@ rt_pl_db_cand_next	leaf	-	0	-	0	call
 rt_pl_db_decls_install	leaf	VOID	1	-	0	call,alloc
 rt_pl_db_slot_ensure	leaf	OTHER	1	-	0	call,alloc
 rt_pl_dc_prep	leaf	-	0	-	0	call
-rt_pl_dop_tbl_open	-	DESCR	1	r8|r10|r11	-	call,alloc,clob
-rt_pl_dop_unify_raise	-	DESCR	1	r8|r10|r11	-	call,alloc,clob
+rt_pl_dop_tbl_open	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
+rt_pl_dop_unify_raise	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_fresh_var_ref	leaf	DESCR	1	-	0	call,alloc
 rt_pl_goal_resolve	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
-rt_pl_is_cold	-	DESCR	1	r8|r10|r11	-	call,alloc,clob
+rt_pl_is_cold	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_quad_seed	asm	-	0	r8|r10|r11	-	call,clob,asm
 rt_pl_tr_refuse	leaf	-	0	-	0	call
 rt_pl_unify_const_cold	leaf	-	0	-	0	call
@@ -138,9 +138,9 @@ rt_relop_rat	leaf	OTHER	1	-	0	call,alloc
 rt_relop_val_coerce	asm	-	0	none	-	call,clob,asm
 rt_rev_swap_fwd	leaf	-	0	-	0	call
 rt_rev_swap_undo	leaf	-	0	-	0	call
-rt_sg_member	-	-	0	-	-	call
-rt_sg_scan_member	-	-	0	-	-	call
-rt_sg_scan_nonmember	-	-	0	-	-	call
+rt_sg_member	leaf	-	0	-	0	call
+rt_sg_scan_member	leaf	-	0	-	0	call
+rt_sg_scan_nonmember	leaf	-	0	-	0	call
 rt_shim_nv_gamma	leaf	DESCR	1	-	0	call,alloc
 rt_shim_nv_in	leaf	VOID	1	-	0	call,alloc
 rt_shim_nv_omega	leaf	VOID	1	-	0	call,alloc
