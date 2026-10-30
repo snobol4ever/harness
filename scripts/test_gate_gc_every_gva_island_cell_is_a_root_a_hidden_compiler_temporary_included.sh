@@ -28,7 +28,9 @@
 # 1 and 3, mode 3 and mode 4 (on b8a668968 the two DT_X witnesses died rc 139 in both modes at stress 1; on 7043c34e8 the eager call dies, the other two pass); (b) THE PLANT APPLIED: every run
 # of (a) printed the [GC-FLIP] plant line -- a green under a plant that never ran measures nothing; (c) THE WITNESS
 # REACHES A NAMELESS CELL: its mode-4 __gva_names carries a .quad 0 entry and the program resolves a deferred reference
-# through rt_defer_open_cell; (d) the source: gc_collect_ex calls gc_root_gva and the NV walk no longer visits e->cell.
+# through rt_defer_open_cell; (d) the source: gc_collect_ex calls gc_root_gva, which hands the asm drain (gc_wl_drain, the root walk in asm
+# since 16cddcd71, 10-15) the WHOLE island as one range, rng_p = RT_GVA_VA and rng_n = g_sxt_gva_n (re-cut CEO-2051: the C loop this arm read
+# before moved into the drain, so the old grep read red on a correct tree), and the NV walk no longer visits e->cell.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -60,8 +62,8 @@ else echo "  FAIL (b) the plant did not apply in:$noplant -- those runs measured
 if [ "$reach" = " ${WS// / }" ]; then echo "  ok   (c) every witness carries a nameless GVA cell (.quad 0 in __gva_names) and resolves a deferred reference through rt_defer_open_cell"
 else echo "  FAIL (c) a witness no longer reaches a nameless GVA cell (reached:${reach:- none}) -- it cannot grade the root"; RC=1; fi
 GCH_FLAT=$(tr -s ' \t\n' '   ' < "$ROOT/src/runtime/rt/gc_heap.c")
-if printf '%s' "$GCH_FLAT" | grep -qF 'gc_root_cas(); gc_root_gva();' && printf '%s' "$GCH_FLAT" | grep -qF 'for (int k = 0; k < g_sxt_gva_n; k++) rt_gc_visit_descr(&gv[k]);' && ! grep -q 'rt_gc_visit_descr(e->cell)' "$ROOT/src/runtime/core/core.c"; then
-  echo "  ok   (d) gc_collect_ex walks the whole island through gc_root_gva and the NV walk does not visit e->cell a second time"
+if printf '%s' "$GCH_FLAT" | grep -qF 'gc_root_cas(); gc_root_gva();' && printf '%s' "$GCH_FLAT" | grep -qF 'static void gc_root_gva(void) { g_runtime.abi.gc_mk.rng_p = (DESCR_t *)RT_GVA_VA; g_runtime.abi.gc_mk.rng_n = (long)g_sxt_gva_n; g_runtime.abi.gc_mk.draining = 1; gc_wl_drain();' && ! grep -q 'rt_gc_visit_descr(e->cell)' "$ROOT/src/runtime/core/core.c"; then
+  echo "  ok   (d) gc_collect_ex calls gc_root_gva, which hands the asm drain the whole island (RT_GVA_VA, g_sxt_gva_n cells), and the NV walk does not visit e->cell a second time"
 else echo "  FAIL (d) the island root walk is gone or the NV walk visits e->cell again"; RC=1; fi
 echo "population: 4 arm(s) graded, $n run(s)"
 if [ $RC = 0 ]; then echo "✅ GATE PASS(0) [$G]: every GVA island cell is a root, nameless compiler temporaries included"; else echo "⛔ GATE FAIL(1) [$G]: a GVA island cell is not a root (examined 4 arms)"; fi
