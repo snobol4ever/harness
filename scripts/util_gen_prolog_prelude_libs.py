@@ -82,6 +82,11 @@ sub-files are in no autoload index).  Without it a data term selected a sub-file
 functor {}/1 that nf_q exports, and naming rbtrees parsed 14 libraries.  A library loaded as library(X) (lists, ugraphs)
 keeps the ordinary selection by name.
 
+THE EXPORT INDEX (cqo 2026-10-30, CEO-2056): PL_PRELUDE_LIB_EXPORT_INDEX holds every export of every library once per library as
+(name, byte length, arity, library index), sorted by the name's bytes, so the injector's selection binary-searches the program's
+references in it (pl_libs_named) instead of walking every library's export table against them -- the walk grew with every library
+vendored, ARM 2 of test_gate_pl_prelude_libs_cost.sh paying ~1.4M instructions for 78 libraries of which it parses two.
+
 A library in LOCAL is SCRIP's OWN text (gnu_fd.pl, AGPL): no SWI reader, no identity check, no renames (its helpers are
 '$'-named by hand); its exports and operators come from its module directive and its clause heads are keyed by this
 tokenizer, so they are written in canonical form.  A library in SHADOWS names the export keys of OTHER libraries that its
@@ -910,6 +915,11 @@ def generate(pdir):
         o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC, PL_PRELUDE_LIB_%d_METAS, PL_PRELUDE_LIB_%d_LOADS, %d },'
                  % (L["lib"], i, i, i, i, i, i, i, int(L["import_only"])))
     o.append("    { 0, 0, 0, 0, 0, 0, 0, 0, 0 }")
+    o.append("};")
+    o.append("typedef struct { const char *nm; int n; int ar; int lib; } pl_prelude_lib_ex_t;")
+    o.append("static const pl_prelude_lib_ex_t PL_PRELUDE_LIB_EXPORT_INDEX[] = {")
+    for n, a, i in sorted(((n, a, i) for i, L in enumerate(libs) for n, a in L["exports"]), key=lambda r: (r[0].encode("utf-8"), r[1], r[2])):
+        o.append('    { "%s", %d, %d, %d },' % (n.replace("\\", "\\\\").replace('"', '\\"'), len(n.encode("utf-8")), a, i))
     o.append("};")
     return libs, "\n".join(o) + "\n"
 

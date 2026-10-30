@@ -11,7 +11,7 @@
 # THE INSTRUMENT is callgrind (load-immune: instructions, not time) over `scrip --dump-ast`, which runs the parse and the
 # prelude injection and skips emission (90% of a compile).  Two readings per program: the instructions inclusive of
 # pl_libs_append, and the calls it makes to prolog_parse (one per library parsed).
-#   ARM 1 (names nothing): 0 library parses, and pl_libs_append <= 540,000 instructions -- the scan of every vendored
+#   ARM 1 (names nothing): 0 library parses, and pl_libs_append <= 100,000 instructions -- the scan of every vendored
 #          RE-PINNED 400,000 -> 500,000 (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-ceo-1562): the selection pass scans every vendored
 #          library's export table against the program's references, and seven libraries (hashtable, nb_set, solution_sequences, csv, terms, random, backcomp)
 #          and the mctx helpers joined the set; measured 456,274 on c30687d4d (before the module-context helpers) and 478,329 on this landing; the cap keeps ~4% headroom.
@@ -19,6 +19,9 @@
 #          set_stream_eof_action/2, set_stream_buffering/2, stream_position/2, stream_line_column/3, set_stream_line_column/3, seek/4), about 3,700 instructions
 #          each in the scan; measured 504,112 on that landing; ~7% headroom. The scan is linear in the total export count -- a hashed reference set would make
 #          this arm flat (named to hq_prolog, whose selector it is).
+#          RE-PINNED 540,000 -> 100,000 (cqo 2026-10-30, CEO-2056): the scan is gone -- pl_libs_named looks each of the program's references up in
+#          PL_PRELUDE_LIB_EXPORT_INDEX, the generated name-sorted index of every library's exports (util_gen_prolog_prelude_libs.py), so the arm no longer
+#          grows with the vendored set; measured 58,280 on this landing against 386,356 by the walk the morning of the same day (78 libraries).
 #          ARM 2 also read 3 parses once backcomp was vendored: library(error)'s has_type(proper_list, X) is the bare atom of backcomp's proper_list/1 export,
 #          so backcomp joined the generator's QUIET_BARE (dcg_basics, clpfd and gnu_builtins are there for the same reason); measured 13,162,552 with 2 parses.
 #     export against the program's name/arity references, measured 177,915 over 11 libraries (0.02% of hello world's
@@ -44,6 +47,11 @@
 #          last tree before the closure; the arm had drifted over the 15,000,000 pin by then) and 16,427,470 with the closure;
 #          the cap keeps ~5% over the reading. The parse count reads the calls pl_libs_append makes to pl_prelude_parse, the
 #          one road to prolog_parse since ae43ed256 (the count read 0 there, red with the right libraries parsed).
+#          CURED, NOT RE-PINNED (cqo 2026-10-30, CEO-2056): the arm read 17,525,166 on 0179cbcbe and 17,869,398 on f93d2180d (the ceo's reading) because
+#          every closure pass walked every library's export table (78 libraries, ~1.4M instructions for two parsed) and the first pass walked the whole
+#          base prelude for each candidate export; the selection now binary-searches the export index per reference and asks the base prelude's key
+#          set (pl_prelude_keys) before walking. Measured 16,680,411 with the cure, 3.6% under the pin; what remains is the parse of rbtrees and error
+#          (12.2M) and the closure's name index over the base prelude, neither of which grows with the number of vendored libraries.
 #     are parsed -- rbtrees and error (must_be/2), 2 parses, pinned from the measurement and re-pinned with a reason when
 #     the vendored set changes what rbtrees reaches -- and pl_libs_append <= 25,000,000 instructions (measured 20,842,950:
 #     rbtrees is 1152 lines and error 463, parsed at ~40,000 instructions a line as the base prelude is; apply alone was
@@ -127,8 +135,8 @@ read -r p4 f4 <<< "$(reading data)"
 [ "$f3" = True ] || refuse "arm 3: pl_libs_append is not in the profile -- the reader found nothing"
 [ "$f1" = True ] && [ -n "$i1" ] || refuse "arm 1: pl_libs_append is not in the profile -- the reader found nothing"
 [ "$f2" = True ] && [ -n "$i2" ] || refuse "arm 2: pl_libs_append is not in the profile -- the reader found nothing"
-if [ "$p1" = 0 ] && [ "$i1" -le 540000 ]; then echo "  ARM 1 GREEN: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (<= 540,000)"
-else echo "  ARM 1 RED: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (want 0 and <= 540,000)"; red=1; fi
+if [ "$p1" = 0 ] && [ "$i1" -le 100000 ]; then echo "  ARM 1 GREEN: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (<= 100,000)"
+else echo "  ARM 1 RED: a program naming no library parsed $p1 libraries, pl_libs_append $i1 instructions (want 0 and <= 100,000)"; red=1; fi
 b2=17300000
 if [ "$p2" = "$want" ] && [ "$i2" -le "$b2" ]; then echo "  ARM 2 GREEN: naming rbtrees parsed $p2 libraries (rbtrees and error: $want), pl_libs_append $i2 instructions (<= $b2)"
 else echo "  ARM 2 RED: naming rbtrees parsed $p2 libraries (want rbtrees and error, $want), pl_libs_append $i2 instructions (want <= $b2)"; red=1; fi
