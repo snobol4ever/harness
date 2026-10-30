@@ -281,6 +281,17 @@ def builder_flags(lang, sno_lines):
     return {name: pred(text) for name, pred in cols}
 
 
+def builder_order(lang, entries):
+    """THE ORDER THE ORDER GATE GRADES, BY THE GATE'S OWN KEY. test_gate_rungs_order_is_the_builders_order sorts the committed entries
+    with the builder's rungs_file_key over flags derived from each entry's text; this is that sort, so a mint and the gate cannot
+    disagree about where an entry belongs (the key is imported from the builder, never re-typed here)."""
+    b = _builder()
+    if lang not in b.LANG_TABLES:
+        refuse("util_build_rungs_suite.py has no LANG_TABLES entry for %r" % lang)
+    cols = b.LANG_TABLES[lang][0]
+    return sorted(entries, key=lambda e: b.rungs_file_key(e, {c: fn("\n".join(e.sno_lines)) for c, fn in cols}))
+
+
 def builder_entry_name(lang, rows, sno_lines, flags):
     """The entry NAME is the builder's descriptive_name() plus the next free number, exactly as absorption
     would have named it -- so an entry minted here and an entry minted by a rebuild are indistinguishable, and
@@ -488,6 +499,7 @@ def main():
         entries = csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re,
                                         w_path=str(rungs_dir / "ALL.wantrc"))
         reserialize = lambda es, a, b: csh.write_block_suite(es, a, b, cfg["comment_open"], cfg["comment_close"])
+        read_entries = lambda: csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re, w_path=str(rungs_dir / "ALL.wantrc"))
     else:
         # ⛔ THE SNOBOL4 RUNGS IS MIXED: one-line entries (`stmt;END;* name`) and 80-column banner blocks in
         # ONE file, so read_block_suite REFUSES on its first line. read_suite/write_suite are the harness's
@@ -496,6 +508,7 @@ def main():
         entries = csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"),
                                   x_path=str(rungs_dir / "ALL.xfail"))
         reserialize = lambda es, a, b: csh.write_suite(es, a, b, out_in=None, lang=lang)
+        read_entries = lambda: csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"), x_path=str(rungs_dir / "ALL.xfail"))
     # ── ROUND-TRIP PROOF, before this tool is trusted to touch the real files: re-serialize the
     # UNCHANGED entries and diff against what is actually on disk. A mismatch here means this script's
     # understanding of the format is wrong, and it must refuse before writing anything, not after.
@@ -530,6 +543,20 @@ def main():
                "defect in this tool or in the harness, not in the rungs: refusing to trust either with a "
                "real write. Diff the .rtcheck pair to see what moved.")
 
+    # ⛔⭐ A MINT LANDS THE ENTRY IN THE BUILDER'S ORDER, SO THE RUNGS MUST ALREADY BE IN IT (CEO-2019, the SnoRungs order gate red at 880 of 2189
+    # with nine dotnet harvests at the tail). This tool used to APPEND and leave the sort to a --resort nobody ran after a harvest, so every
+    # mint broke `rank <= N` selects the greenest N until someone resorted. It now places the new entry by the builder's key after the
+    # write (below); that moves ONLY the new entry when everything else is already in order, and when it is not the tool refuses here
+    # rather than fold an unrelated reorder into a one-witness commit -- the resort is a deliberate, large, content-invariant commit.
+    _have, _want = [e.name for e in entries], [e.name for e in builder_order(lang, entries)]
+    if _have != _want:
+        _i = next(i for i, (x, y) in enumerate(zip(_have, _want)) if x != y)
+        refuse("the %s rungs is not in the builder's order (%d of %d positions differ; first at index %d: committed %r, builder %r) -- a mint "
+               "places its entry by the builder's key and does not fold a reorder into the same commit.\n"
+               "   CURE, run first by this rung suite's lane owner:  python3 ../harness/scripts/util_build_rungs_suite.py --lang %s --resort "
+               "(it names any loose family it wants acknowledged with --absorb-only), then push, then mint"
+               % (lang, sum(1 for x, y in zip(_have, _want) if x != y), len(_have), _i, _have[_i], _want[_i], lang))
+
     # ⛔⭐ A LADDER WITNESS IS NAMED FOR ITS ORIGIN. Every `family==ladder` row of every block-suite rungs
     # carries entry == origin, and a reader who greps the rungs for a rung finds the row by that name. The
     # builder's descriptive_name() is content-derived (`say (3 <=> 1);` names itself simple_assign_1), which
@@ -556,8 +583,9 @@ def main():
     attrs = ladder_convention(rows, fields, {c: getattr(args, "attr_" + c) for c in ATTR_COLUMNS})
     new_row.update(attrs)
 
-    print("would add: rank=%s entry=%s origin=%s want_rc=%s n_lines=%s"
-          % (rank, entry_name, args.origin, want_rc, len(sno_lines)))
+    _where = [e.name for e in builder_order(lang, entries + [new_entry])].index(entry_name) + 1
+    print("would add: rank=%s entry=%s origin=%s want_rc=%s n_lines=%s (placed by the builder's key)"
+          % (_where, entry_name, args.origin, want_rc, len(sno_lines)))
     if attrs:
         print("  attribute row (clause 8 f):", ", ".join("%s=%r" % (c, attrs[c]) for c in ATTR_COLUMNS if c in attrs),
               "-- read from the rungs' ladder rows unless given on the command line")
@@ -572,6 +600,16 @@ def main():
         print("(dry-run only -- pass --apply to write)")
         return
 
+    _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None) for n in ("ALL.in", "ALL.xfail", "ALL.wantrc")}
+    def _rollback():
+        try:
+            rungs_src.write_text(old_src_text); rungs_ref.write_text(old_ref_text)
+            rungs_csv.write_bytes(old_csv_bytes)
+            for _n, _b in _companions.items():
+                (rungs_dir / _n).unlink(missing_ok=True) if _b is None else (rungs_dir / _n).write_bytes(_b)
+            return "the rung suites and their sidecars were RESTORED to their pre-write contents; the tree is clean"
+        except OSError as exc:
+            return "⛔ ROLLBACK ITSELF FAILED (%s) -- the rung suites are dirty, restore them from git" % exc
     all_entries = entries + [new_entry]
     tmp_src2 = rungs_src.with_suffix(rungs_src.suffix + ".newtmp")
     tmp_ref2 = rungs_ref.with_suffix(".ref.newtmp")
@@ -628,6 +666,18 @@ def main():
         tmp_w.replace(w_path)
         print("  wrote ALL.wantrc: %s\t%d" % (entry_name, want_rc))
 
+    # ── PLACE THE ENTRY BY THE BUILDER'S KEY (CEO-2019). The write above APPENDED (its prefix proofs need that); the builder's own
+    # resort_rungs now moves the new entry to its place -- the one authority for the order, content-invariant by its own proofs, and
+    # it rewrites ALL.csv's ranks and the banner numbers (ALL.<ext>, ALL.ref, ALL.in) positionally as it does for any resort. The base
+    # was proved in order above, so the only entry that can move is the new one; anything else moving is refused and rolled back.
+    _bld = _builder()
+    _rc = _bld.resort_rungs(str(rungs_dir), cfg["ext"], lang, csh, cfg["comment_open"], cfg["comment_close"], _bld.LANG_TABLES[lang][0], set(), set())
+    _placed = [e.name for e in read_entries()] if _rc == 0 else []
+    if _rc != 0 or [n for n in _placed if n != entry_name] != [e.name for e in entries] or _placed != [e.name for e in builder_order(lang, read_entries())]:
+        refuse("placing %s by the builder's key failed (resort rc=%s; the existing entries %s) -- %s"
+               % (entry_name, _rc, "kept their relative order" if _rc == 0 and [n for n in _placed if n != entry_name] == [e.name for e in entries] else "MOVED", _rollback()))
+    with open(rungs_csv, newline="") as fh:
+        rank = next(r["rank"] for r in csv.DictReader(fh) if r["entry"] == entry_name)
     # ── FINAL PROOF: extract the just-written entry back out via the OFFICIAL extractor (not this
     # script's own belief) and confirm it is byte-identical to what the oracle produced.
     check_src, check_ref = Path("/tmp") / (entry_name + cfg["ext"]), Path("/tmp") / (entry_name + ".ref")
@@ -656,14 +706,8 @@ def main():
         # nothing to extract until the write lands. hq_V's measured cost: the tool refused and left the corpus
         # dirty, telling the operator not to trust files it had already written, which is the expensive half.
         # So the pre-write contents are restored before refusing, and the refusal says the tree is clean.
-        try:
-            rungs_src.write_text(old_src_text); rungs_ref.write_text(old_ref_text)
-            rungs_csv.write_bytes(old_csv_bytes)
-            _rolled = "the three rung suites were RESTORED to their pre-write contents; the tree is clean"
-        except OSError as exc:
-            _rolled = "⛔ ROLLBACK ITSELF FAILED (%s) -- the rung suites are dirty, restore them from git" % exc
         refuse("post-write extraction proof failed for %s (stderr: %s) -- %s"
-               % (entry_name, err.stderr, _rolled))
+               % (entry_name, err.stderr, _rollback()))
     print("APPLIED: %s rank=%s -> %s / %s / %s (extraction round-trip verified)"
           % (entry_name, rank, rungs_src, rungs_ref, rungs_csv))
 
