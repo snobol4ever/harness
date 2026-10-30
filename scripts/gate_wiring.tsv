@@ -1093,6 +1093,7 @@ test_gate_rebus_derived_refs_match_their_rival_oracle.sh	WIRED	-	-	-
 test_gate_ref_cutters_refuse_a_dead_oracle.sh	WIRED	-	-	-
 test_gate_right_sealed_defer_beta_no_double_teardown.sh	WIRED	-	-	-
 test_gate_rr_a_part_stops_between_two_tests_when_its_budget_is_spent.sh	WIRED	-	-	-
+test_gate_rt_entry_table_matches_the_binary.sh	WIRED	-	-	-
 test_gate_rtcc_claimed_regs.sh	WIRED	-	-	-
 test_gate_rtcc_no_read_of_r8_r10_r11_after_a_call.sh	WIRED	-	-	-
 test_gate_rtx_calls_carry_no_veneer.sh	WIRED	-	-	-
