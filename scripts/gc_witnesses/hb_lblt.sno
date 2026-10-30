@@ -1,0 +1,9 @@
+*  WITNESS for HB_LBLT -- labels defined at run time by CODE() are held across allocation churn, then branched to by name and read back.
+        CODE('LBLA  R = "lbl-a" :(LBLB)')
+        CODE('LBLB  R2 = "lbl-b" :(LBLC)')
+        CODE('LBLC  OUTPUT = "LBLT-" R "-" R2')
+        I = 0
+CHURN   S = S 'y'
+        I = LT(I,300) I + 1                        :S(CHURN)
+        :($'LBLA')
+END

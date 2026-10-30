@@ -1,0 +1,53 @@
+# gc_wsb_producers.tsv -- THE AUDIT OF THE HB_WSB AND HB_WSC PRODUCERS BY ALLOCATION SITE (hq_runtime, ceo-2030; ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14 second sitting (3)(c)).
+#
+# WHAT THE CLASSES MEAN. HB_WSB and HB_WSC carry bytes: a payload that holds no pointer into the collected heap (a pointer to a slab region, the compile-time arena, a code address, a static
+# table or libc memory is not one). util_wsb_producer_audit.py reads every producer in SCRIP/src (rt_wsb_alloc, rt_wsb_realloc, rt_heap_alloc_c, the RX_ALLOC and RX_REALLOC macros,
+# rt_gcheap_grow_block, gv_push and gv_reserve with a WSB or WSC kind) and calls a site BYTES by itself when its destination is a one-level pointer to char, int, unsigned, size_t, long
+# long or a fixed-width integer. Every other site must have a row here, and every row must still match a site; test_gate_gc_wsb_wsc_producers_are_pointer_free.sh is red on a site with no
+# row and on a row with no site. A payload that does carry a collected-heap pointer is NOT a row here: it has a typed class (HB_NVAR, HB_FNCB, HB_DATB, HB_EVCH, HB_LBLT, HB_IOCH,
+# HB_TRCE, HB_PROC, or the existing HB_DVEC and HB_PVEC) and a validator row in gc_slot_table.c.
+#
+# COLUMNS: file (under SCRIP/src)  |  a substring of the producer's line  |  BYTES or TRANSIENT  |  why.
+# BYTES: no collected-heap pointer in the payload, whatever the destination type looks like.
+# TRANSIENT: the payload is a graph of WSB blocks that point at each other, built and used inside one runtime call that reaches no safe point, so no collection finds it live; it is a
+# DECLARED LIMIT of this audit (the validator cannot see such a block as typed), reported to the cto, and a row here is removed the day the producer is typed or moved to the stack.
+driver/driver_data.c	g_dat_nidx.p = rt_wsb_alloc((size_t)nc * sizeof(int32_t))	BYTES	an int32 index vector
+parsers/prolog/prolog_parse.c	tree_t **args = arity > 0 ?	BYTES	pointers to tree_t nodes of the compile-time arena (ct_zalloc), never the collected heap
+parsers/prolog/prolog_parse.c	tree_t **args = (tree_t **)rt_wsb_alloc	BYTES	pointers to tree_t nodes of the compile-time arena (ct_zalloc), never the collected heap
+parsers/prolog/prolog_parse.c	tree_t **tmp = (tree_t **)rt_wsb_alloc	BYTES	pointers to tree_t nodes of the compile-time arena (ct_zalloc), never the collected heap
+runtime/bignum.c	BIG_t *b = (BIG_t *) rt_wsb_alloc	BYTES	a sign, a count and 32-bit limbs; DT_BIG's block must stay HB_WSB (gc_visit_one and rtx_gc.s test for it)
+runtime/bignum.c	ICNX_BIG_t *x = (ICNX_BIG_t *) rt_wsb_alloc	BYTES	four words, a sign and 32-bit digits
+runtime/by_name_dispatch.c	gm->blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
+runtime/by_name_dispatch.c	g_match.blk = rt_wsb_alloc(ints * sizeof(int) + nb)	BYTES	an int vector followed by a byte buffer
+runtime/by_name_dispatch.c	ln = rt_wsb_alloc(kl + vl + 4)	BYTES	a text line
+runtime/by_name_dispatch.c	ln = rt_wsb_alloc(ql + vl + 5)	BYTES	a text line
+runtime/by_name_dispatch.c	char *self = rt_wsb_alloc(4096), *path = rt_wsb_alloc(4200)	BYTES	path text buffers
+runtime/by_name_dispatch.c	if (!f) return rt_wsb_alloc(1)	BYTES	a one-byte string
+runtime/by_name_dispatch.c	char *b = rt_wsb_alloc(cap), *o = rt_wsb_alloc(cap)	BYTES	byte buffers
+runtime/by_name_dispatch.c	buf=rt_wsb_realloc(buf,cap)	BYTES	the growing char buffer of the tab and column expansion
+runtime/unification.c	pl_ix_t *x = (pl_ix_t *)rt_heap_alloc_c(pl_ix_bytes(cap, hcap))	BYTES	the first-argument index: int64 keys, int heads and int chains
+runtime/pattern_match.c	int *ord = rt_wsb_alloc((size_t)n * sizeof(int)), *tmp = rt_wsb_alloc((size_t)n * sizeof(int))	BYTES	two int vectors
+runtime/icn_extfn.c	icnx_extblk_t *b = (icnx_extblk_t *)rt_wsb_alloc	BYTES	an external value block: words, an id and a pointer to the loaded library's static function table; DT_EXTL's block must stay HB_WSB
+runtime/icn_extfn.c	icnx_realblock_t *b = (icnx_realblock_t *)rt_wsb_alloc	BYTES	a title word and a double
+runtime/icn_extfn.c	EXTFN_t *b = (EXTFN_t *)rt_wsb_alloc	BYTES	a code address and the inline name text
+runtime/arithmetic.c	RK_CPLX_t *c = (RK_CPLX_t *) rt_wsb_alloc	BYTES	two doubles; DT_CPLX's block must stay HB_WSB
+runtime/rt/prolog_atom.c	g_runtime.atoms.ht = rt_wsb_alloc	BYTES	the atom hash table: keys point into the atom name pool, which lives in slab regions (rt_slab_try_region), and ids are ints
+runtime/rt/prolog_atom.c	g_runtime.atoms.atom_names = rt_wsb_alloc	BYTES	the atom name vector: pointers into the slab name pool
+runtime/rt/prolog_atom.c	char **grown = (char **)rt_wsb_alloc	BYTES	the grown atom name vector: pointers into the slab name pool
+runtime/rt/prolog_atom.c	g_runtime.atoms.fht = rt_wsb_alloc	BYTES	the functor hash: ints
+runtime/rt/prolog_atom.c	g_runtime.atoms.functors = rt_wsb_alloc	BYTES	functor entries: a name id and an arity, both ints
+runtime/rt/prolog_atom.c	FEntry *grown = (FEntry *)rt_wsb_alloc	BYTES	functor entries: a name id and an arity, both ints
+runtime/rt/prolog_atom.c	OpCols *grown = (OpCols *)rt_wsb_alloc	BYTES	operator columns: ints
+runtime/rt/rt.c	rt_blob_fb_t *e = (rt_blob_fb_t *)gv_push	BYTES	a code address and a byte count
+lower/lower_common.c	re.s = rt_wsb_alloc(1)	BYTES	a one-byte empty string
+runtime/rx.c	RxNode *n = (RxNode *) RX_ALLOC(sizeof *n)	TRANSIENT	the regex tree node; built by rx_compile and used by rx_exec inside one runtime call with no safe point
+runtime/rx.c	p->ch = (RxNode **) (p->ch ? RX_REALLOC	TRANSIENT	the regex node's child vector, same call
+runtime/rx.c	x->set = (RxSet *) RX_ALLOC(sizeof(RxSet))	TRANSIENT	the regex character set header, same call
+runtime/rx.c	x->set->it = (RxSetItem *) RX_ALLOC(sizeof(RxSetItem))	TRANSIENT	the regex set items, same call
+runtime/rx.c	extra = (RxSetItem *) (extra ? RX_REALLOC	TRANSIENT	the regex set items, same call
+runtime/rx.c	x->set->it = (RxSetItem *) RX_ALLOC(sizeof(RxSetItem) * (size_t) cap)	TRANSIENT	the regex set items, same call
+runtime/rx.c	x->set->it = (RxSetItem *) RX_REALLOC	TRANSIENT	the regex set items, same call
+runtime/rx.c	l->v = (RxCap **) (l->v ? RX_REALLOC	TRANSIENT	the regex capture list vector, same call
+runtime/rx.c	RxCap *c = (RxCap *) RX_ALLOC(sizeof *c)	TRANSIENT	the regex capture, same call
+runtime/rx.c	RxProg *pr = (RxProg *) RX_ALLOC(sizeof *pr)	TRANSIENT	the compiled regex program, same call
+runtime/rx.c	c->ev = (RxEv *) (c->ev ? RX_REALLOC	TRANSIENT	the regex match event vector, same call

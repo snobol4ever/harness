@@ -1,0 +1,9 @@
+*  WITNESS for HB_IOCH -- an output channel associated with a variable by OUTPUT(), held across allocation churn, then written through and read back.
+        OUTPUT(.CH,9,'/dev/null')
+        KEEP = 'io'
+        I = 0
+CHURN   S = S 'y'
+        I = LT(I,300) I + 1                        :S(CHURN)
+        CH = 'to-null'
+        OUTPUT = 'IOCH-' KEEP '-' SIZE(S)
+END
