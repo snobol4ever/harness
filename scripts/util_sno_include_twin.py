@@ -8,7 +8,7 @@ line, so the C parser reads the SAME generated text the .sc parser generates for
 -COPY (any case), blanks, then a quoted name ('...' or "...", at least one character, no newline inside), then anything up to the newline. The name is
 everything between the first and the LAST quote character of that kind on the line, trailing blanks trimmed; it is tried as written, then in each
 directory of SNO_LIB, then in the directory of each file already included. -INCLUDE reads a name once (keyed by the name before trimming), -COPY every
-time. The file's text replaces the line, newline included. rc 0 written; 1 a name cannot be opened (the C parser's error); 2 usage.
+time. The file's text replaces the line, newline included; a file whose last line has no newline gets one (the C front end and SPITBOL end a line at the end of a file). rc 0 written; 1 a name cannot be opened (the C parser's error); 2 usage.
 """
 import os, re, sys
 
@@ -46,6 +46,8 @@ def expand(text, dirs, seen):
             dirs.append(path[:path.rindex("/")])
         with open(path, "rb") as f:
             inc = f.read().decode("latin-1")
+        if inc and not inc.endswith("\n"):
+            inc += "\n"
         out.append(expand(inc, dirs, seen))
     return "".join(out)
 
