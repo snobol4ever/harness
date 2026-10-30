@@ -930,7 +930,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 921	pl	$copy_term	2	2	rt_pl_dop_copy_term	leaf	-	-	0	dop_direct
 922	pl	$copy_term_nat	2	2	rt_pl_dop_copy_term_nat	leaf	-	-	0	dop_direct
 923	pl	$cpu_ms	1	1	rt_pl_dop_cpu_ms	leaf	-	-	0	dop_direct
-924	pl	$create_prolog_flag	2	2	rt_pl_dop_create_prolog_flag	leaf	-	-	0	dop_direct
+924	pl	$create_prolog_flag	4	4	rt_pl_dop_create_prolog_flag	leaf	-	-	0	dop_direct
 925	pl	$crv_adj	1	1	rt_pl_dop_crv_adj	leaf	-	-	0	dop_direct
 926	pl	$crv_collect	2	2	rt_pl_dop_crv_collect	leaf	-	-	0	dop_direct
 927	pl	$crv_enter	1	1	rt_pl_dop_crv_enter	leaf	-	-	0	dop_direct
@@ -1206,3 +1206,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1197	pl	$writeln_s	2	2	rt_pl_dop_writeln_sb	leaf	-	-	0	dop_direct
 1198	pl	$writeq	1	1	dop_pl_writeq	leaf	-	-	0	dop_direct
 1199	pl	$writeq_s	2	2	rt_pl_dop_writeq_sb	leaf	-	-	0	dop_direct
+1200	pl	$flag_meta	3	3	rt_pl_dop_flag_meta	leaf	-	-	0	dop_direct
