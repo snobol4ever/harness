@@ -16,6 +16,12 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # FAIL_ONCE (recorded): arm 3 reads 8,224 on the runtime before the unroll (parent tree, stash rebuilt) and 3,151 here; arm 2 carries its own control
 # (the uninjected run reads 1, every injection must read 2), and an alias written into the slot of a program variable that the loop needs (x's own slot
 # and the loop counter's) is skipped, not counted.
+# 2026-10-30 (hq_snobol4, CEO-2035 speed): THE SCAN STARTS AT g_runtime.abi.sxt_fr.gva_lo, NOT AT SLOT 0. The first SC_GVA_RESERVE (741) slots of every program's
+# table are hidden slots reserved for a linked Snocone parser module: nameless, all zero until a module links, and sc_module_init sets gva_lo to 0 before it
+# writes one. A five-variable program scanned 741 dead cells per append (string_concat 1,987 Ir an append, 0.109x sbl; 0.750x once the scan starts at gva_lo).
+# So arm (2) injects at slots counted FROM gva_lo (every residue of the 8-slot block, as before) and the new arm (2b) PROVES THE REASON the skip is sound: at the
+# 1,501st concat every slot below gva_lo is empty, and the same check run after the instrument plants a word in hidden slot 5 reads one non-empty slot (the arm's own
+# control, planted by gdb in this instrument, never by a seam in SCRIP). Arm (3)'s bound tightens to 2,000 so a gva_lo that stays 0 reads RED.
 # EXIT 0 all arms; 1 a red (named); 2 REFUSED (oracle, gdb, valgrind or the build missing, an Ir reading that is not a number).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -49,6 +55,22 @@ break sno_concat_d
 ignore 1 1500
 run < /dev/null > /dev/null 2>&1
 set $n = g_runtime.abi.sxt_fr.gva_n
+set $lo = g_runtime.abi.sxt_fr.gva_lo
+if $P >= 0
+  set {long}(0x70001000 + 16*$P + 8) = 1
+end
+set $hz = 0
+set $k = 0
+while $k < $lo
+  if *(long*)(0x70001000 + 16*$k) != 0 || *(long*)(0x70001000 + 16*$k + 8) != 0
+    set $hz = $hz + 1
+  end
+  set $k = $k + 1
+end
+printf "GVA_LO=%d HIDDEN_NONZERO=%d\n", $lo, $hz
+if $T >= 0
+  set $T = $lo + $T
+end
 set $xk = -1
 set $k = 0
 while $k < $n
@@ -72,20 +94,25 @@ ignore 2 100000000
 continue
 info breakpoints
 GDB
-hits() { ( cd "$W" && timeout -k 5 300 gdb -q -batch -ex "set \$T=$1" -ex "set \$B=$2" -x "$W/inj.gdb" ./inj3000.bin 2>&1 | grep -E 'already hit|INJECTED' | tr '\n' ' ' ); }
+hits() { ( cd "$W" && timeout -k 5 300 gdb -q -batch -ex "set \$T=$1" -ex "set \$B=$2" -ex "set \$P=${3:--1}" -x "$W/inj.gdb" ./inj3000.bin 2>&1 | grep -E 'already hit|INJECTED|GVA_LO' | tr '\n' ' ' ); }
 ctl=$(hits -1 0 | grep -o 'already hit [0-9]* time' | grep -o '[0-9]*' | head -1); ctl=${ctl:-0}
 [ "$ctl" -ge 1 ] || { echo "REFUSED(2): the control run never reached rt_str_alloc (hits=$ctl) -- the stop at the 1,501st concat did not happen"; exit 2; }
 bad=0; n=0
-for spec in "0 0" "7 0" "8 0" "15 0" "16 0" "100 0" "740 0" "743 0" "-1 1" "-1 2" "-1 7" "-1 8" "-1 9" "-1 16" "-1 17"; do
+for spec in "2 0" "7 0" "8 0" "15 0" "16 0" "100 0" "300 0" "-1 1" "-1 2" "-1 7" "-1 8" "-1 9" "-1 16" "-1 17"; do
   set -- $spec; out=$(hits $1 $2); got=$(printf '%s' "$out" | grep -o 'already hit [0-9]* time' | grep -o '[0-9]*' | head -1); got=${got:-0}
   printf '%s' "$out" | grep -q INJECTED || { echo "REFUSED(2): the injection at spec '$spec' did not happen: $out"; exit 2; }
   n=$((n+1)); [ "$got" -eq $((ctl+1)) ] || { echo "RED (2) an alias injected at spec '$spec' was NOT refused: rt_str_alloc hits=$got, control=$ctl"; bad=1; red=1; }
 done
-[ "$bad" -eq 0 ] && echo "ok  (2) all $n injected aliases (slots 0 7 8 15 16 100 740 743 and the last 1 2 7 8 9 16 17) refuse the in-place extension: rt_str_alloc hits $((ctl+1)) vs control $ctl"
+[ "$bad" -eq 0 ] && echo "ok  (2) all $n injected aliases (slots 2 7 8 15 16 100 300 from gva_lo and the last 1 2 7 8 9 16 17) refuse the in-place extension: rt_str_alloc hits $((ctl+1)) vs control $ctl"
+hid=$(hits -1 0); hlo=$(printf '%s' "$hid" | grep -o 'GVA_LO=[0-9]*' | head -1 | cut -d= -f2); hnz=$(printf '%s' "$hid" | grep -o 'HIDDEN_NONZERO=[0-9]*' | head -1 | cut -d= -f2)
+pln=$(hits -1 0 5); pnz=$(printf '%s' "$pln" | grep -o 'HIDDEN_NONZERO=[0-9]*' | head -1 | cut -d= -f2)
+[ -n "$hlo" ] && [ -n "$hnz" ] && [ -n "$pnz" ] || { echo "REFUSED(2): the hidden-slot reading did not print (control: $hid / plant: $pln)"; exit 2; }
+if [ "$hlo" -ge 100 ] && [ "$hnz" -eq 0 ] && [ "$pnz" -eq 1 ]; then echo "ok  (2b) every one of the $hlo hidden slots below gva_lo is empty at the 1,501st concat, and a word planted in hidden slot 5 reads 1 non-empty slot (the arm sees)"
+else echo "RED (2b) hidden slots below gva_lo=$hlo: $hnz non-empty at the stop (want 0, gva_lo >= 100); with a plant in slot 5 the arm reads $pnz (want 1)"; red=1; fi
 lo=$( cd "$W" && ir_measure ./inj2000.bin ); hi=$( cd "$W" && ir_measure ./inj12000.bin )
 ir_is_number "$lo" && ir_is_number "$hi" || { echo "REFUSED(2): the Ir reading is not a number (lo=$(ir_cell "$lo") hi=$(ir_cell "$hi")): $(ir_reason "$lo") $(ir_reason "$hi")"; exit 2; }
 slope=$(( (hi - lo) / 10000 ))
-if [ "$slope" -le 5000 ]; then echo "ok  (3) an in-place append over 1,143 global slots costs $slope instructions (<= 5000; before the unroll 8224)"
-else echo "RED (3) an in-place append over 1,143 global slots costs $slope instructions (> 5000): the slot scan is the byte-at-a-time loop again"; red=1; fi
-[ "$red" -eq 0 ] && { echo "GATE OK: the in-place extension scan sees an alias in every global slot, answers the oracle, and costs 2.5 instructions a slot"; exit 0; }
+if [ "$slope" -le 2000 ]; then echo "ok  (3) an in-place append over 1,143 global slots (402 of them past the hidden reserve) costs $slope instructions (<= 2000; 3151 scanning the reserve, before the unroll 8224)"
+else echo "RED (3) an in-place append over 1,143 global slots costs $slope instructions (> 2000): the scan reads the hidden reserve again or is the byte-at-a-time loop"; red=1; fi
+[ "$red" -eq 0 ] && { echo "GATE OK: the in-place extension scan sees an alias in every slot from gva_lo, the hidden slots below it are empty, it answers the oracle, and costs 2.5 instructions a slot past the reserve"; exit 0; }
 echo "GATE FAILED: see the RED lines above"; exit 1
