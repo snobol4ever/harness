@@ -720,6 +720,7 @@ s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
 s4e_root() { case "$1" in ceo|hq) if [ -d /home/claude_ceo ]; then echo /home/claude_ceo; else echo /home/claude; fi;; cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
 s4e_hqboxes() { for _h in hq hq_icon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V ceo cto coo cfo cao cqo; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done; }
+s4e_design_seat_refuses() { case "$1" in cto|cao) case "$2" in design-*) return 1;; esac; echo "⛔ REFUSED rc=2: $1 is a DESIGN officer and holds design-* rows only (Lon 2026-10-30, CEO-2029: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"); $2 is not one -- mint or reown it to an executor (an HQ, the cfo or the cqo)." >&2; return 0;; esac; return 1; }
 s4e_is_hq() { case "$1" in hq|hq_icon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_P|hq_B|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|ceo|cto|coo|cfo|cao|cqo) return 0;; *) return 1;; esac; }
 # ⛔⭐⭐ ONE AUTHORITY FOR "IS THIS SEAT STANDING", CALLED TWICE (coo 2026-09-20, ceo CEO-1002, row
 # instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat). This case was INLINE in `next`,
@@ -2222,6 +2223,7 @@ case "$cmd" in
          esac;;
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
          topic="$2"; c="$PO/claims/$topic.claim"; mkdir -p "$PO/claims"
+         s4e_design_seat_refuses "$ME" "$topic" && exit 2
          # ⭐ AN ASSIGNED ROW ITS OWNER CLAIMS BY NAME IS STARTED, THE SAME MARK `next` WRITES WHEN IT SERVES ONE (the coo 2026-09-27, ceo
          # CEO-1306): PASS 1 appends RUNNING as it serves ASSIGNED->RUNNING, but `claim` on the same row said "already yours" and wrote
          # nothing, so an owner who took an assigned row by name left no trace a sweep could read -- util_queue_visibility_census.py's
@@ -2869,6 +2871,7 @@ case "$cmd" in
          [ -n "${2:-}" ] || s4e_need reown "a seat" "s4e_msg.sh reown <seat> <topic>" "Moves a row's owner column; it does not move the claim."
          [ -n "${3:-}" ] || s4e_need reown "a topic" "s4e_msg.sh reown <seat> <topic>" "Moves a row's owner column; it does not move the claim."
          seat="$2"; topic="$3"; q="$PO/QUEUE.tsv"
+         s4e_design_seat_refuses "$seat" "$topic" && exit 2
          case "$seat"  in ""|*/*|*$'\n'*) echo "⛔ REFUSED: seat must be a filename-safe mailbox name (hq_S, cfo, ...)" >&2; exit 2;; esac
          case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED: topic must be a filename-safe slug" >&2; exit 2;; esac
          [ -f "$q" ] || { echo "⛔ REFUSED: no QUEUE.tsv at $q" >&2; exit 2; }
@@ -2904,6 +2907,7 @@ case "$cmd" in
          [ -n "${2:-}" ] || s4e_need assign "a seat" "s4e_msg.sh assign <seat> <topic>" "ASSIGNMENT IS THE LOCK: it writes that seat's claim atomically and rings a doorbell; their next serves it FIRST."
          [ -n "${3:-}" ] || s4e_need assign "a topic" "s4e_msg.sh assign <seat> <topic>" "ASSIGNMENT IS THE LOCK: it writes that seat's claim atomically and rings a doorbell; their next serves it FIRST."
          seat="$2"; topic="$3"; q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
+         s4e_design_seat_refuses "$seat" "$topic" && exit 2
          case "$seat"  in ""|*/*|*$'\n'*) echo "⛔ REFUSED: seat must be a filename-safe mailbox name (seat07, hq_C, ...)" >&2; exit 2;; esac
          case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED: topic must be a filename-safe slug, not the message body" >&2; exit 2;; esac
          # ⛔ LAW 6 IDENTITY IS ASSERTED, NEVER GLOBBED: refuse a seat with no mailbox, and NEVER create one on the fly --
@@ -3026,7 +3030,8 @@ case "$cmd" in
            # ceo, cto, coo and cfo -- `mint --owner ceo` was rejected outright and an Icon row could not be
            # minted to the seat that owns Icon. s4e_is_hq() is the one roster and already counts all thirteen;
            # a second hand-written list beside it is the very defect this row exists to end.
-           if ! s4e_is_hq "$owner"; then echo "⛔ REFUSED: --owner must be a standing seat ($(s4e_hqboxes | tr '\n' ' ')), not '$owner'." >&2; exit 2; fi; fi
+           if ! s4e_is_hq "$owner"; then echo "⛔ REFUSED: --owner must be a standing seat ($(s4e_hqboxes | tr '\n' ' ')), not '$owner'." >&2; exit 2; fi
+           s4e_design_seat_refuses "$owner" "$topic" && exit 2; fi
          if [ "${1:-}" = "--stdin" ] || [ "${1:-}" = "-" ]; then goal="$(cat)"; else goal="$*"; fi
          # ⛔ THE TOPIC BECOMES A FILENAME TWICE OVER (a QUEUE.tsv row AND tasks/<topic>.task.md) — same guard
          # as send (s191), checked before either write, not after.
