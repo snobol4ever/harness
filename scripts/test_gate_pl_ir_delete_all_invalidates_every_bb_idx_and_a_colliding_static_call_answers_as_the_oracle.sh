@@ -11,16 +11,20 @@
 # run-time consult of 40 predicates; SNOBOL4's CODE() and EVAL() leave it at 0. So no reachable call collides, and the witness below (a clause asserted
 # after load calling static predicates, clause/2 and retract/1 on it) reads green before the cure as after. THE RED BEFORE is the table's own state,
 # read by gdb at the return of ir_delete_all in a mode-3 run: on the parent every proc with a graph still holds its index (live_index > 0).
+# So this gate proves the CONDITION the defect depends on is gone (no index outlives its graph); it does not claim a collision occurred
+# (the cto, ARCH-PROLOG-ACTIVATION-LIFETIME 9.17). A collision witness, should the run-time table ever grow past the static count, is a new row.
 #
 # THE READERS THE -1 CHANGES: the three by-name method dispatch tests of Raku (by_name_dispatch.c: invoke_method_proc_rq, rk_method_open_at,
 # rk_redispatch_open) read "bb_idx >= 0" as "this proc has compiled code" at run time, which held only because the index was stale; measured with the
 # invalidation alone, the Raku smoke's class_method fails in mode 3. They ask the registry (rt_proc_has_native_fn) instead. The indexers that took
-# s2->bbp.table[pe->bb_idx] with no check (driver_proc_props, driver_install_proc, planner_road_proc, planner_proc_road, emit_proc_prepare) go
-# through stage2_proc_graph, which refuses rc 2 naming the reader and the proc. Every other reader already guards (bi >= 0 && bi < count).
+# s2->bbp.table[pe->bb_idx] with no check (driver_proc_props, driver_install_proc, planner_road_proc, planner_proc_road, emit_proc_prepare) each
+# read bb_idx themselves and refuse inline by their OWN name, rc 2, naming the proc, so the refusal says which road reached a proc with no graph
+# (9.17: no accessor -- the helper stage2_proc_graph is deleted). Every other reader already guards (bi >= 0 && bi < count).
 #
 # ARMS: (1) STATE: gdb at the return of ir_delete_all in mode 3 counts ProcEntry rows with bb_idx >= 0 -- 0 of a non-empty table; (2) REFUSAL: in the
-# same session, stage2_proc_graph on proc 0 prints its named line and the program exits with code 2; (3) the witness equal to swipl's answer in mode 3
-# and mode 4; (4) the Raku smoke, both modes (class_method is the dispatch reader).
+# same session, driver_proc_props on proc 0 prints its own named line and the program exits with code 2; (3) the witness equal to swipl's answer in
+# mode 3 and mode 4; (4) the Raku smoke, both modes (class_method is the dispatch reader); (5) SOURCE: the deleted helper's name reads 0 under
+# SCRIP/src and each of the five indexers carries its own refusal line.
 #
 # Usage: bash ../harness/scripts/test_gate_pl_ir_delete_all_invalidates_every_bb_idx_and_a_colliding_static_call_answers_as_the_oracle.sh
 #        (rc 0 green, 1 red, 2 could not measure)
@@ -64,7 +68,7 @@ n = int(s2["proc_count"])
 live = sum(1 for i in range(n) if int(s2["proc_table"][i]["bb_idx"]) >= 0)
 print("GATE-STATE procs=%d live_index=%d" % (n, live))
 end
-call (void *) stage2_proc_graph(&g_stage2, 0, "gate_probe")
+call (void) driver_proc_props(&g_stage2, 0)
 EOF
 fail=0
 ( cd "$T" && timeout -k 5 120 gdb -q -batch -x state.gdb --args "$SCRIP" w.pl < /dev/null > gdb.out 2>&1 )
@@ -73,8 +77,13 @@ np=$(sed -n 's/.*procs=\([0-9]*\).*/\1/p' <<< "$st"); nl=$(sed -n 's/.*live_inde
 if [ -z "$st" ]; then echo "⛔ REFUSED(2) [$GATE_NAME]: gdb printed no GATE-STATE line (the break at ir_delete_all never returned); tail:"; tail -5 "$T/gdb.out" | sed 's/^/         /'; exit 2
 elif [ "$np" -gt 0 ] && [ "$nl" = 0 ]; then echo "  ok   (state) after ir_delete_all, 0 of $np procs still hold a graph index"
 else echo "  FAIL (state) after ir_delete_all, $nl of $np procs still hold a graph index the freed table no longer backs"; fail=1; fi
-if grep -q 'scrip: gate_probe: proc .* has no graph (bb_idx -1, ' "$T/gdb.out" && grep -q 'exited with code 02' "$T/gdb.out"; then echo "  ok   (refusal) stage2_proc_graph on an invalidated index names the reader and the proc and exits 2"
-else echo "  FAIL (refusal) stage2_proc_graph did not refuse an invalidated index by name with exit code 2; gdb said:"; grep -E 'gate_probe|exited|No symbol' "$T/gdb.out" | head -3 | sed 's/^/         /'; fail=1; fi
+if grep -q 'scrip: driver_proc_props: proc .* has no graph (bb_idx -1 of ' "$T/gdb.out" && grep -q 'exited with code 02' "$T/gdb.out"; then echo "  ok   (refusal) driver_proc_props on an invalidated index names itself and the proc and exits 2"
+else echo "  FAIL (refusal) driver_proc_props did not refuse an invalidated index by its own name with exit code 2; gdb said:"; grep -E 'driver_proc_props|exited|No symbol' "$T/gdb.out" | head -3 | sed 's/^/         /'; fail=1; fi
+SRC="$HERE/../../SCRIP/src"
+nh=$(grep -rlw 'stage2_proc_graph' "$SRC" | wc -l); miss=""
+for w in driver_proc_props driver_install_proc planner_road_proc planner_proc_road emit_proc_prepare; do grep -rqF "scrip: $w: proc %s has no graph" "$SRC" || miss="$miss $w"; done
+if [ "$nh" = 0 ] && [ -z "$miss" ]; then echo "  ok   (source) no file under SCRIP/src names stage2_proc_graph, and each of the five indexers refuses by its own name"
+else echo "  FAIL (source) files naming stage2_proc_graph: $nh; indexers with no refusal of their own:${miss:- none}"; fail=1; fi
 ( cd "$T" && timeout -k 5 60 "$SCRIP" w.pl < /dev/null > w.m3 2> /dev/null ); rc3=$?
 if [ "$rc3" = 0 ] && cmp -s "$T/w.m3" "$T/w.ref"; then echo "  ok   (m3) a clause asserted after load calls static predicates and answers as swipl"
 else echo "  FAIL (m3) rc=$rc3, first difference:"; diff "$T/w.ref" "$T/w.m3" | head -4 | sed 's/^/         /'; fail=1; fi
