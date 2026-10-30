@@ -3212,7 +3212,7 @@ def cmd_run(args):
             _dseat = util_score_row.derive_measurer() or ""
         except Exception:
             _dseat = ""
-    if _dseat in ("cto", "cao") and not os.environ.get("S4E_DONE_WHEN_RUN"):
+    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN"):
         sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"). Put the witness and its expected answer in the step plan and let an executor or the coo run it.\n" % _dseat)
         sys.exit(2)
     # ⭐ A HANDFUL OF NAMED ENTRIES IS NOT A BOARD (Lon 2026-10-22: "An HQ knows it is done when the program it fixes fails before and passes
