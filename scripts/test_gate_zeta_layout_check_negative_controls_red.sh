@@ -7,6 +7,11 @@
 #   EXCURSION     a push and a pop split by a conditional jump, planted in a lit_integer box
 #   EDGE          the pop removed from a statement_end box's exit jump, so it lands deeper than the next box's entry
 #   SITE          a rule-0 GC site record's depth word raised by 8
+#   SPILL-PAIR    a push and its balancing pop planted on the straight run to a statement_end box's exit jump read SPILL-PAIR (and no EXCURSION); a lone push there (a
+#                 call frame before the transfer) reads neither
+#   RETAINING-EDGE the retaining edges print as lines, equal to the summary's count, and are NOT in mismatches
+#   SITE-UNGRADED every rule the checker does not grade prints a SITE-UNGRADED line with the count the summary holds, and a graded rule prints none; a rule-1 site's depth
+#                 raised by 8 (zl07) reads SITE
 #   TRANSFER-POP  zl02's deferred goto read as it is (it leaks), then the CURE applied (the owed pop added before each jmp rax) reads fewer, then a WRONG pop still reads
 #   ZSM           the instrument's own balanced push/pop around rt_zdp_ev (SCRIP_ZSM=1 SCRIP_ZSM_ALL=1) adds no EXCURSION and is counted as skipped
 #   ALIGN         a plan with its last graph cut off
@@ -23,6 +28,7 @@ refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -r "$CHK" ] || refuse "no checker at $CHK"
 for w in zl01_sno_captures_eval zl02_sno_setexit_code; do [ -r "$WD/$w.sno" ] || refuse "no witness $WD/$w.sno"; done
+[ -r "$WD/zl07_pas_records_lists.pas" ] || refuse "no witness $WD/zl07_pas_records_lists.pas"
 . "$HERE/lib_gate.sh"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 TD="$(mktemp -d)"; trap 'rm -rf "$TD"' EXIT
@@ -31,6 +37,9 @@ for w in zl01_sno_captures_eval zl02_sno_setexit_code; do
     ( cd "$TD/$w" && timeout -k 5 120 "$SCRIP" --compile --out="$TD/$w/run.s" "$WD/$w.sno" < /dev/null > /dev/null 2> compile.err ) || refuse "$w did not compile in mode 4: $(head -c 200 "$TD/$w/compile.err")"
     ( cd "$TD/$w" && timeout -k 5 120 "$SCRIP" --dump-plan "$WD/$w.sno" < /dev/null > "$TD/$w/plan.txt" 2> plan.err ) || refuse "$w --dump-plan failed: $(head -c 200 "$TD/$w/plan.err")"
 done
+mkdir -p "$TD/zl07_pas_records_lists"
+( cd "$TD/zl07_pas_records_lists" && timeout -k 5 120 "$SCRIP" --compile --out="$TD/zl07_pas_records_lists/run.s" "$WD/zl07_pas_records_lists.pas" < /dev/null > /dev/null 2> compile.err \
+    && timeout -k 5 120 "$SCRIP" --dump-plan "$WD/zl07_pas_records_lists.pas" < /dev/null > "$TD/zl07_pas_records_lists/plan.txt" 2> plan.err ) || refuse "zl07 did not compile in mode 4"
 mkdir -p "$TD/zsm"
 ( cd "$TD/zsm" && SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 timeout -k 5 120 "$SCRIP" --compile --out="$TD/zsm/run.s" "$WD/zl01_sno_captures_eval.sno" < /dev/null > /dev/null 2> compile.err \
     && SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 timeout -k 5 120 "$SCRIP" --dump-plan "$WD/zl01_sno_captures_eval.sno" < /dev/null > "$TD/zsm/plan.txt" 2> plan.err ) || refuse "zl01 did not compile under SCRIP_ZSM=1"
@@ -59,7 +68,7 @@ def grade(label, ok, detail=''):
 
 
 def rises(label, clean, got, cls):
-    others = [k for k in ('EXCURSION', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN') if k != cls and got.get(k, 0) < clean.get(k, 0)]
+    others = [k for k in ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN') if k != cls and got.get(k, 0) < clean.get(k, 0)]
     grade(label, got.get(cls, 0) > clean.get(cls, 0), '%s %d -> %d' % (cls, clean.get(cls, 0), got.get(cls, 0)))
     grade(label + ' (no other class fell)', not others, 'fell: %s' % others)
 
@@ -118,31 +127,69 @@ a2[k + 1] = re.sub(r'\d+\s*$', str(w + (8 << 32)), a2[k + 1])
 r, got = run(write('run_s.s', a2), w1 + '/plan.txt')
 rises('SITE: the first rule-0 site record raised by 8 bytes reads SITE', clean, got, 'SITE')
 
+k = next((n for n, l in enumerate(asm) if re.match(r'^n\d+_statement_end_α:\s+add\s+rsp,\s*\d+;\s+jmp\s+n\d+_\w+_α\s*$', l)), None)
+if k is None:
+    print('GATE REFUSE(2) [%s]: no statement_end exit pop in zl01 -- the witness drifted' % NAME)
+    sys.exit(2)
+a2 = asm[:]
+a2[k] = re.sub(r'(α:\s+)(add\s+rsp)', r'\1push rbx; pop rbx; \2', a2[k])
+r, got = run(write('run_p.s', a2), w1 + '/plan.txt')
+rises('SPILL-PAIR: a push and its pop planted on the straight run to an exit jump read SPILL-PAIR', clean, got, 'SPILL-PAIR')
+grade('SPILL-PAIR: exactly one pair, and the two instructions add no EXCURSION (%d vs %d)' % (got.get('EXCURSION', -1), clean.get('EXCURSION', -2)),
+      got.get('SPILL-PAIR', 0) - clean.get('SPILL-PAIR', 0) == 1 and got.get('EXCURSION', -1) == clean.get('EXCURSION', -2))
+grade('SPILL-PAIR: the clean reading holds the exit pops (and a pop alone is not a pair)', clean.get('SPILL-PAIR', -1) == 0)
+a2 = asm[:]
+a2[k] = re.sub(r'(α:\s+)(add\s+rsp)', r'\1push rbx; \2', a2[k])
+r, got = run(write('run_l.s', a2), w1 + '/plan.txt')
+grade('SPILL-PAIR: a lone push on the run to the exit (a call frame before the transfer) is an exit write, not a pair or an excursion',
+      got.get('SPILL-PAIR', 0) == clean.get('SPILL-PAIR', 0) and got.get('EXCURSION', -1) == clean.get('EXCURSION', -2))
+
+r, c1 = run(w1 + '/run.s', w1 + '/plan.txt')
+rl = [l for l in r.stdout.splitlines() if l.startswith('RETAINING-EDGE ')]
+tot = sum(c1.get(x, 0) for x in ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN'))
+grade('RETAINING-EDGE: zl01 prints its retaining edges as lines (%d), equal to the count on the last line (%d)' % (len(rl), c1.get('RETAINING-EDGE', -1)), len(rl) > 0 and len(rl) == c1.get('RETAINING-EDGE', -1))
+grade('RETAINING-EDGE: counted apart, not in mismatches (%d = the seven mismatch classes %d)' % (c1.get('mismatches', -1), tot), c1.get('mismatches', -1) == tot)
+sm = [l for l in r.stdout.splitlines() if l.startswith('summary')]
+by = {int(a): int(b) for a, b in re.findall(r'r(\d+):(\d+)', sm[0])} if sm else {}
+ug = {int(a): int(b) for a, b in re.findall(r'^SITE-UNGRADED rule=(\d+) count=(\d+)$', r.stdout, re.M)}
+want = {k2: v for k2, v in by.items() if k2 not in (0, 1, 3, 5)}
+grade('SITE-UNGRADED: zl01 prints a line for every ungraded rule it holds with the summary\'s count (%s)' % want, bool(want) and ug == want, 'lines %s' % ug)
+
+w7 = TD + '/zl07_pas_records_lists'
+r, c7 = run(w7 + '/run.s', w7 + '/plan.txt')
+a7 = open(w7 + '/run.s', encoding='utf-8').read().split('\n')
+k = next((n for n, l in enumerate(a7) if re.match(r'^\s+\.quad\s+\.Lgcsite_\S+-\.Lgccode_\S+\s*$', l) and n + 1 < len(a7) and ((int(a7[n + 1].split()[1]) >> 16) & 255) == 1), None)
+if k is None:
+    print('GATE REFUSE(2) [%s]: no rule-1 GC site record in zl07 -- the witness drifted' % NAME)
+    sys.exit(2)
+w = int(a7[k + 1].split()[1])
+a7[k + 1] = re.sub(r'\d+\s*$', str(w + (8 << 32)), a7[k + 1])
+r, got = run(write('run_r1.s', a7), w7 + '/plan.txt')
+rises('SITE: a rule-1 site record (the rbp home carries 0) raised by 8 bytes reads SITE', c7, got, 'SITE')
+
 r, c2 = run(w2 + '/run.s', w2 + '/plan.txt')
 tl = [l for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP')]
 grade('TRANSFER-POP: zl02 deferred gotos read as the leak they are (popped=0)', len(tl) >= 2 and all('popped=0' in l for l in tl), '%d lines' % len(tl))
 if tl:
-    m = re.match(r'TRANSFER-POP \S+ (n\d+_goto_deferred_bx) L\d+ popped=0 wanted=(\d+)', tl[0])
+    m = re.match(r'TRANSFER-POP \S+ (n\d+_goto_deferred_bx) L\d+ popped=0 wanted=\d+', tl[0])
     if not m:
         grade('TRANSFER-POP: the first line names a goto_deferred box', False, tl[0])
     else:
-        box, owed = m.group(1), int(m.group(2))
+        box = m.group(1)
+        mine = [(int(x.group(1)), int(x.group(2))) for x in (re.match(r'TRANSFER-POP \S+ %s L(\d+) popped=0 wanted=(\d+)' % box, l) for l in tl) if x]
         a2 = open(w2 + '/run.s', encoding='utf-8').read().split('\n')
-        lo = next(n for n, l in enumerate(a2) if re.match(r'^\s+\.type\s+%s,' % box, l))
-        hi = next(n for n in range(lo, len(a2)) if re.match(r'^\s+\.size\s+%s,' % box, a2[n]))
         cured = a2[:]
-        for n in range(lo, hi):
-            cured[n] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % owed, cured[n])
-        before = sum(1 for l in tl if (' %s ' % box) in l)
+        for ln, owed in mine:
+            cured[ln - 1] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % owed, cured[ln - 1])
         r, c3 = run(write('run_t.s', cured), w2 + '/plan.txt')
         left = sum(1 for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP') and (' %s ' % box) in l)
-        grade('TRANSFER-POP: the owed pop (%d) added before each jmp rax of %s reads fewer (%d -> %d)' % (owed, box, before, left), before >= 1 and left == 0)
+        grade('TRANSFER-POP: the owed pop added before the flagged jmp rax of %s reads fewer (%d -> %d)' % (box, len(mine), left), len(mine) >= 1 and left == 0)
         wrong = a2[:]
-        for n in range(lo, hi):
-            wrong[n] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % (owed + 8), wrong[n])
+        for ln, owed in mine:
+            wrong[ln - 1] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % (owed + 8), wrong[ln - 1])
         r, c4 = run(write('run_w.s', wrong), w2 + '/plan.txt')
-        left = sum(1 for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP') and (' %s ' % box) in l and ('popped=%d ' % (owed + 8)) in l)
-        grade('TRANSFER-POP: a WRONG pop (%d, owed %d) still reads, with the amount it popped' % (owed + 8, owed), left == before, '%d of %d' % (left, before))
+        left = sum(1 for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP') and (' %s ' % box) in l and re.search(r'popped=(\d+) wanted=(\d+)', l) and int(re.search(r'popped=(\d+) wanted=(\d+)', l).group(1)) == int(re.search(r'popped=(\d+) wanted=(\d+)', l).group(2)) + 8)
+        grade('TRANSFER-POP: a WRONG pop (8 more than owed) still reads, with the amount it popped', left == len(mine), '%d of %d' % (left, len(mine)))
 
 zs = TD + '/zsm'
 r, got = run(zs + '/run.s', zs + '/plan.txt')

@@ -18,28 +18,38 @@
 #                                              alpha label), an EXIT write (a straight run to a jmp or ret out of the box with no label, call or conditional jump
 #                                              between: the pop at gamma/omega, a call frame pushed before the transfer), a `mov`/`lea` into rsp in a box whose row
 #                                              declares a `restore` (the discard), and the ZSM instrument's balanced push/pop around rt_zdp_ev (named and skipped).
+#   SPILL-PAIR graph box Lline insn pop=Lline  (R1, the cto's review of step 1) a push whose balancing pop comes on the same straight run to the way out of the box,
+#                                              with no label, call or conditional jump between the push and the exit: the spill of a value around code, the same R1
+#                                              violation as an EXCURSION, counted in mismatches (step 2a declares the cell word and takes them to 0). A pop with
+#                                              nothing between it and the way out and no push of its own on the run is the exit's pop, not a finding.
 #   CARVE graph box Lline carved=N want=K      the alpha carve differs from the row's K (none counts as 0).
 #   EDGE graph box Lline target have=D want=D  a jmp or jcc out of the box lands on another box's port at a depth other than the target's E (an alpha port) or X (a
 #                                              beta port): the edge laws of ARCH-ZETA-ONE-COORDINATE 1.1 read off the code. The depth is SIMULATED from the port:
 #                                              alpha enters at E, beta at X, then every rsp write moves it. A path whose depth cannot be known (an indirect jump,
 #                                              a mov into rsp) is UNCHECKED, counted, never a finding. An edge with a RETAINING row at either end (`retains_code`
-#                                              not 0: a gate that holds, a suspend, a retaining callee) is counted apart and not read: the planner's edge laws for a
-#                                              retaining node are its own (ARCH-ZETA-ONE-COORDINATE section 8) and are not restated here.
+#                                              not 0: a gate that holds, a suspend, a retaining callee) is not read: the planner's edge laws for a retaining node are
+#                                              its own (ARCH-ZETA-ONE-COORDINATE section 8). It prints as a RETAINING-EDGE line `graph box Lline target retains=S/T`
+#                                              (never skipped in silence), counted apart: NOT in mismatches, until step 3 states the check.
 #   TRANSFER-POP graph box Lline popped=P wanted=W   (R9) a box of a transfer kind (IR_GOTO_DEFERRED, IR_INDIRECT_GOTO, IR_SETEXIT_TEST, IR_GOTO) whose claim
 #                                              root (the row named by the `owner` column) is a SNOBOL4 statement entry (IR_STATEMENT_BEGIN or IR_SETEXIT_TEST, the
 #                                              program top) leaves by an indirect jump or a jump to a user label (LBL_*) at a depth other than that root's entry
 #                                              depth E_t: it popped P bytes of the X-E_t it owed. The zl02 leak of 2026-10-29 reads here. A transfer whose root is
 #                                              not a statement entry (IR_INDIRECT_GOTO of an if-type construct: R9 states no E_t for it) is counted UNCHECKED.
-#   SITE graph box Lline rule=R depth=D want=W a GC site record whose pc lies in a box. Rule 0 (rsp-relative) must read depth = X (= E + K, R2); rule 5 (unknown,
-#                                              the chain stops) is always a finding. The other rules are counted in the summary and NOT graded: R2 has not said
-#                                              what the row's expected depth is for rules 1, 2, 3, 4, 6, 7 and 9, and this does not guess.
+#   SITE graph box Lline rule=R depth=D want=W a GC site record whose pc lies in a box (ARCH-GC 13.13 is the reading of each rule). Rule 0 (rsp-relative) must read
+#                                              depth = X (= E + K, R2); rules 1 and 3 (the frame's home is rbp) must carry depth 0; rule 5 (unknown, the chain stops)
+#                                              is always a finding. Every other rule (2, 4, 6, 7, 8, 9) is UNGRADED: its depth is a fact the plan row does not carry
+#                                              (flat_gen_rbp, the owning enter's depth, the link record's offset), and the checker prints `SITE-UNGRADED rule=N count=M`
+#                                              for each so the omission is visible, never a 0 by silence. A rule that no witness exercises has no line (nothing to say).
+#   TRANSFER-UNCHECKED count=M                 printed when a transfer's claim root is not a statement entry (R9 states no E_t for it until step 2a gives the row its tpop).
 #   ALIGN graph chain detail                   the plan and the text do not pair (a graph with no chain, a different box count, a different kind at a row).
 #
 # rc: 0 no finding, 1 findings, 2 an input could not be read (no `mismatches=` line is printed).   The harness (test_design_zeta_layout_steps.sh) reads the line.
 # Run under `python3 -I`; standard library only.
 import argparse, collections, re, sys
 
-CLASSES = ('EXCURSION', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN')
+CLASSES = ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN')
+APART = ('RETAINING-EDGE',)
+SITE_GRADED = {0, 1, 3, 5}
 TRANSFER_KINDS = {'IR_GOTO_DEFERRED', 'IR_INDIRECT_GOTO', 'IR_SETEXIT_TEST', 'IR_GOTO'}
 STATEMENT_ROOTS = {'IR_STATEMENT_BEGIN', 'IR_SETEXIT_TEST'}
 ZSM_PUSH = ['rax', 'rax', 'rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9', 'r10', 'r11']
@@ -341,6 +351,32 @@ def exit_ok(box, k):
     return True
 
 
+def spill_pairs(box):
+    """{push index: pop index}: a push on a straight run to the way out of the box (exit_ok) whose balancing pop, by the stack discipline, comes on that same run."""
+    ins, n = box.ins, len(box.ins)
+    out = {}
+    for k in range(n):
+        if ins[k].zsm or ins[k].op not in ('push', 'pushfq') or not exit_ok(box, k):
+            continue
+        bal = 1
+        for j in range(k + 1, n):
+            J = ins[j]
+            if J.zsm:
+                continue
+            if J.op in ('jmp', 'ret'):
+                break
+            if J.op in ('push', 'pushfq'):
+                bal += 1
+            elif J.op in ('pop', 'popfq'):
+                bal -= 1
+                if bal == 0:
+                    out[k] = j
+                    break
+            elif J.eff[0]:
+                break
+    return out
+
+
 def simulate(box, start, state):
     """Walk the box from instruction `start` at rsp depth `state`: [(kind, target, depth, line)] for every way out; a depth the code does not fix is None."""
     ins, n = box.ins, len(box.ins)
@@ -431,6 +467,8 @@ def check(graphs, chains, tabs, site_box):
                 info['no_alpha_label'] += 1
             if live and a is not None and carved != r['K']:
                 add('CARVE', g['name'], b.name, b.ins[a].ln if a < len(b.ins) else b.start, 'carved=%d want=%d' % (carved, r['K']))
+            spill = spill_pairs(b)
+            spill_pops = set(spill.values())
             for k, I in enumerate(b.ins):
                 if I.zsm:
                     info['zsm_writes'] += 1 if I.eff[0] else 0
@@ -440,6 +478,10 @@ def check(graphs, chains, tabs, site_box):
                 info['rsp_writes'] += 1
                 if k in carve_idx:
                     info['carve_writes'] += 1
+                elif k in spill:
+                    add('SPILL-PAIR', g['name'], b.name, I.ln, '%s pop=L%d' % (I.text, b.ins[spill[k]].ln))
+                elif k in spill_pops:
+                    info['spill_pops'] += 1
                 elif exit_ok(b, k):
                     info['exit_writes'] += 1
                 elif r.get('restore') is not None and I.eff[1] is None and I.op in ('mov', 'lea'):
@@ -476,6 +518,7 @@ def check(graphs, chains, tabs, site_box):
                     want = (ea(trow) if m.group(3) == 'α' else xa(trow)) if armed(trow) else None
                     if r.get('retains_code') or trow.get('retains_code'):
                         info['edge_retaining'] += 1
+                        add('RETAINING-EDGE', g['name'], b.name, ln, '%s retains=%s/%s' % (tgt, r.get('retains_code'), trow.get('retains_code')))
                     elif depth is None or want is None:
                         info['edge_unchecked'] += 1
                     elif depth != want:
@@ -512,7 +555,9 @@ def check(graphs, chains, tabs, site_box):
                 add('SITE', g['name'], b.name, ln, 'rule=5 depth=%d want=a known depth' % depth)
             elif rule == 0 and armed(r) and depth != xa(r):
                 add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, xa(r)))
-            elif rule == 0:
+            elif rule in (1, 3) and depth != 0:
+                add('SITE', g['name'], b.name, ln, 'rule=%d depth=%d want=0' % (rule, depth))
+            elif rule in SITE_GRADED - {5}:
                 info['sites_ok'] += 1
     return found, info, rule_seen
 
@@ -521,14 +566,14 @@ def main(argv):
     p = argparse.ArgumentParser(add_help=True)
     p.add_argument('--asm', required=True)
     p.add_argument('--plan', required=True)
-    p.add_argument('--classes', default=','.join(CLASSES))
+    p.add_argument('--classes', default=','.join(CLASSES + APART))
     p.add_argument('--show', type=int, default=-1)
     p.add_argument('--quiet', action='store_true')
     args = p.parse_args(argv)
     want = [c for c in args.classes.split(',') if c]
     for c in want:
-        if c not in CLASSES:
-            print('unknown class ' + c + ' (the classes are ' + ','.join(CLASSES) + ')', file=sys.stderr)
+        if c not in CLASSES + APART:
+            print('unknown class ' + c + ' (the classes are ' + ','.join(CLASSES + APART) + ')', file=sys.stderr)
             return 2
     try:
         graphs = parse_plan(args.plan)
@@ -538,18 +583,24 @@ def main(argv):
         return 2
     found, info, rule_seen = check(graphs, chains, tabs, site_box)
     total = 0
-    for c in CLASSES:
+    for c in CLASSES + APART:
         if c not in want:
             continue
         lines = found.get(c, [])
-        total += len(lines)
+        total += len(lines) if c in CLASSES else 0
         if not args.quiet:
             for ln in (lines if args.show < 0 else lines[:args.show]):
                 print(ln)
-    counts = ' '.join('%s=%d' % (c, len(found.get(c, []))) for c in CLASSES)
     if not args.quiet:
-        print('summary graphs=%d chains=%d boxes=%d armed=%d no_alpha_label=%d rsp_writes=%d (carve=%d exit=%d restore=%d zsm=%d) edges(ok=%d unchecked=%d retaining=%d) transfers(ok=%d unchecked=%d) sites(rule0_ok=%d outside=%d zsm=%d by_rule=%s)' % (
-            len(graphs), len(chains), info['boxes'], info['armed'], info['no_alpha_label'], info['rsp_writes'], info['carve_writes'], info['exit_writes'], info['declared_restore'], info['zsm_writes'], info['edge_ok'],
+        for rule, n in sorted(rule_seen.items()):
+            if rule not in SITE_GRADED:
+                print('SITE-UNGRADED rule=%d count=%d' % (rule, n))
+        if info['transfer_unchecked']:
+            print('TRANSFER-UNCHECKED count=%d' % info['transfer_unchecked'])
+    counts = ' '.join('%s=%d' % (c, len(found.get(c, []))) for c in CLASSES + APART)
+    if not args.quiet:
+        print('summary graphs=%d chains=%d boxes=%d armed=%d no_alpha_label=%d rsp_writes=%d (carve=%d exit=%d spill_pops=%d restore=%d zsm=%d) edges(ok=%d unchecked=%d retaining=%d) transfers(ok=%d unchecked=%d) sites(graded_ok=%d outside=%d zsm=%d by_rule=%s)' % (
+            len(graphs), len(chains), info['boxes'], info['armed'], info['no_alpha_label'], info['rsp_writes'], info['carve_writes'], info['exit_writes'], info['spill_pops'], info['declared_restore'], info['zsm_writes'], info['edge_ok'],
             info['edge_unchecked'], info['edge_retaining'], info['transfer_ok'], info['transfer_unchecked'], info['sites_ok'], info['sites_outside_boxes'], info['sites_zsm'],
             ','.join('r%d:%d' % (r, n) for r, n in sorted(rule_seen.items())) or 'none'))
     print('layoutcheck %s %s mismatches=%d' % (args.asm.rsplit('/', 1)[-1], counts, total))
