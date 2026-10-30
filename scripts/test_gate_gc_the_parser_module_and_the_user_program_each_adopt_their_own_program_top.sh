@@ -15,6 +15,8 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G="$(basename "${BASH_SOURCE[0]}" .sh)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
+MOD="$ROOT/out/libscrip_parser_snobol4.so"; [ -f "$MOD" ] || { echo "⛔ GATE REFUSE(2) [$G]: no parser module at $MOD -- run make parsers-sc (the default make does not build it, CEO-1877)"; exit 2; }
+[ "$MOD" -nt "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: the parser module $MOD is older than $SCRIP -- a module built by an older compiler carries older frame maps and site tables, so a walk reads nosite (CEO-2051: a false red on 10-30); run make parsers-sc"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2) [$G]: cannot load lib_oracle_flags.sh"; exit 2; }
 SBL="$(sbl_correctness_bin)" || { echo "⛔ GATE REFUSE(2) [$G]: no SPITBOL correctness oracle"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
