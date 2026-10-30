@@ -1207,3 +1207,5 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1198	pl	$writeq	1	1	dop_pl_writeq	leaf	-	-	0	dop_direct
 1199	pl	$writeq_s	2	2	rt_pl_dop_writeq_sb	leaf	-	-	0	dop_direct
 1200	pl	$flag_meta	3	3	rt_pl_dop_flag_meta	leaf	-	-	0	dop_direct
+1201	pl	$mod_get	3	3	rt_pl_dop_mod_get	leaf	-	-	0	dop_direct
+1202	pl	$mod_set	3	3	rt_pl_dop_mod_set	leaf	-	-	0	dop_direct
