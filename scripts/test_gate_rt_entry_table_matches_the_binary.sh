@@ -12,6 +12,10 @@
 #   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
 #   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
+#   arm 12 STAGE 5b: every row (an asm entry and a libc import excepted) has exactly one RT_ENTRY_DECL(sym, conv, transfers) under SCRIP/src at its definition, saying the table's conv and
+#          transfers, and no declaration lacks a row (RED until hq_runtime declares them; `util_gen_rt_entry_table.py --sync-decls` then derives the table's two columns from them)
+#   arm 13+ CONTROLS of arm 12 on a scratch tree: agreeing declarations read clean; a missing one, a double one, a wrong conv, a wrong transfers and a stray one are each named
+# usage: test_gate_rt_entry_table_matches_the_binary.sh [--declared]   (arm 12 is graded only with --declared until stage 5b lands)
 # rc 0 every arm holds · rc 1 an arm failed · rc 2 cannot measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,9 +27,10 @@ for f in "$HERE/rt_entries.tsv" "$HERE/util_gen_rt_entry_table.py" "$ROOT/src/ru
 done
 command -v nm > /dev/null && command -v gcc > /dev/null || refuse "no nm or gcc"
 TD="$(mktemp -d)"; trap 'rm -rf "$TD"' EXIT
-python3 -I - "$HERE" "$ROOT" "$TD" <<'PY'
+DECLARED=0; [ "${1:-}" = "--declared" ] && DECLARED=1
+python3 -I - "$HERE" "$ROOT" "$TD" "$DECLARED" <<'PY'
 import glob, os, re, subprocess, sys
-HERE, ROOT, TD = sys.argv[1:4]
+HERE, ROOT, TD, DECLARED = sys.argv[1:5]
 sys.path.insert(0, HERE)
 import util_gen_rt_entry_table as G
 NAME = 'rt_entry_table_matches_the_binary'
@@ -159,6 +164,30 @@ try:
     grade('arm 11 (control): an invalid conv reads red', False, 'validate accepted it')
 except ValueError:
     grade('arm 11 (control): an invalid conv reads red', True)
+decl = G.find_decls(os.path.join(ROOT, 'src'))
+bad = G.decl_disagreements(rows, decl)
+todo = sum(1 for x in rows if x['conv'] != 'asm' and 'import' not in x['src'].split(','))
+if DECLARED == '1':
+    grade('arm 12: every row has exactly one RT_ENTRY_DECL at its definition, agreeing with the table (%d declared, %d rows to declare)' % (len(decl), todo), not bad, '%d disagree, e.g. %s' % (len(bad), '; '.join(bad[:3])))
+else:
+    print('  skip arm 12: stage 5b has not landed (%d of %d rows declared); the gate reads it only with --declared, the 5b row\'s DONE-WHEN, and the flag becomes the default when 5b closes' % (todo - len([1 for b in bad if 'no RT_ENTRY_DECL' in b]), todo))
+sd = os.path.join(TD, 'declscratch')
+os.makedirs(sd, exist_ok=True)
+fake = [dict(zip(G.COLS, ['aa_leaf', 'leaf', 'VOID', '0', '-', '0', 'call'])), dict(zip(G.COLS, ['bb_open', 'open', 'OTHER', '0', '-', '1', 'call'])),
+        dict(zip(G.COLS, ['cc_asm', 'asm', 'VOID', '0', '-', '-', 'call,asm'])), dict(zip(G.COLS, ['dd_libc', 'leaf', '-', '0', '-', '-', 'call,import']))]
+
+
+def tree(text):
+    open(os.path.join(sd, 'f.c'), 'w', encoding='utf-8').write(text)
+    return G.decl_disagreements(fake, G.find_decls(sd))
+
+
+good = '#define RT_ENTRY_DECL(sym, conv, transfers)\nRT_ENTRY_DECL(aa_leaf, leaf, 0)\nint aa_leaf(void);\nRT_ENTRY_DECL(bb_open, open, 1)\n'
+grade('arm 13 (control): declarations that agree read clean, the macro definition and an asm entry and a libc import need none', tree(good) == [], str(tree(good)))
+grade('arm 14 (control): a missing declaration is named', any('bb_open: no RT_ENTRY_DECL' in x for x in tree(good.replace('RT_ENTRY_DECL(bb_open, open, 1)', ''))))
+grade('arm 15 (control): a double declaration is named', any('aa_leaf: declared 2 times' in x for x in tree(good + 'RT_ENTRY_DECL(aa_leaf, leaf, 0)\n')))
+grade('arm 16 (control): a wrong conv and a wrong transfers are each named', any('bb_open: the table says conv open' in x for x in tree(good.replace('open, 1', 'gen, 1'))) and any('aa_leaf: the table says' in x for x in tree(good.replace('leaf, 0)\nint', 'leaf, 1)\nint'))))
+grade('arm 17 (control): a declaration with no row, and one for an asm entry, are each named', any('zz_stray: declared' in x and 'no row' in x for x in tree(good + 'RT_ENTRY_DECL(zz_stray, leaf, 0)\n')) and any('cc_asm: declared' in x for x in tree(good + 'RT_ENTRY_DECL(cc_asm, leaf, 0)\n')))
 print('%s: graded=%d fails=%d' % (NAME, graded, fails))
 if fails:
     print('⛔ GATE RED [%s]: %d of %d arm(s) failed' % (NAME, fails, graded))
