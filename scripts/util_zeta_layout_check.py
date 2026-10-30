@@ -26,8 +26,7 @@
 #                                              before the `je` that skips a poll: a NAMED EXEMPTION of R1's class until step 6 deletes it (no site, no allocation, no call,
 #                                              label or jump inside; the depth at every site is unchanged by it). Counted apart, NOT in mismatches, and never an EXCURSION;
 #                                              any other push/pop pair stays an EXCURSION or a SPILL-PAIR. Printed as one `GATE-PAIR count=N` line.
-#   CARVE graph box Lline carved=N want=K      the alpha carve differs from the row's K plus its `priv` column, the private low region (flat cell rule step 2a, the cto's shape 1 and A: the
-#                                              lowest bytes of the cell that a template's transient records live in, carved with the cell, dead before any exit; none counts as 0).
+#   CARVE graph box Lline carved=N want=K      the alpha carve differs from the row's K (none counts as 0).
 #   EDGE graph box Lline target have=D want=D  a jmp or jcc out of the box lands on another box's port at a depth other than the target's E (an alpha port) or X (a
 #                                              beta port): the edge laws of ARCH-ZETA-ONE-COORDINATE 1.1 read off the code. The depth is SIMULATED from the port:
 #                                              alpha enters at E, beta at X, then every rsp write moves it. A path whose depth cannot be known (an indirect jump,
@@ -91,9 +90,6 @@ def xa(r):
 def ea(r):
     return r['depth'] - r['K']
 
-
-def pv(r):
-    return r.get('priv') or 0
 
 
 class Ins:
@@ -500,8 +496,8 @@ def check(graphs, chains, tabs, site_box):
                         break
             else:
                 info['no_alpha_label'] += 1
-            if live and a is not None and carved != r['K'] + pv(r):
-                add('CARVE', g['name'], b.name, b.ins[a].ln if a < len(b.ins) else b.start, 'carved=%d want=%d' % (carved, r['K'] + pv(r)))
+            if live and a is not None and carved != r['K']:
+                add('CARVE', g['name'], b.name, b.ins[a].ln if a < len(b.ins) else b.start, 'carved=%d want=%d' % (carved, r['K']))
             spill = spill_pairs(b)
             spill_pops = set(spill.values())
             gate = gate_pairs(b)
@@ -598,8 +594,8 @@ def check(graphs, chains, tabs, site_box):
                 enters.pop()
             if rule == 5:
                 add('RULE5', g['name'], b.name, ln, 'depth=%d' % depth)
-            elif rule == 0 and armed(r) and depth != xa(r) + pv(r):
-                add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, xa(r) + pv(r)))
+            elif rule == 0 and armed(r) and depth != xa(r):
+                add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, xa(r)))
             elif rule in (1, 3) and depth != 0:
                 add('SITE', g['name'], b.name, ln, 'rule=%d depth=%d want=0' % (rule, depth))
             elif rule == 2 and r.get('flat_gen_rbp') is not None:

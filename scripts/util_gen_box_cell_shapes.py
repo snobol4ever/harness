@@ -18,7 +18,8 @@ WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': '
         'has_operands': 'BCS_HAS_OPERANDS', 'no_operands': 'BCS_NO_OPERANDS', 'patv': 'BCS_PATV', 'home_frame': 'BCS_HOME_FRAME', 'icn_home': 'BCS_ICN_HOME',
         'home_state': 'BCS_HOME_STATE', 'pl_home': 'BCS_PL_HOME', 'pl_home_dyn': 'BCS_PL_HOME_DYN', 'pl_home_range_hdr': 'BCS_PL_HOME_RANGE_HDR',
         'pl_home_has_operands': 'BCS_PL_HOME_HAS_OPERANDS', 'pl_bound_spine': 'BCS_PL_BOUND_SPINE', 'pl_spine_record': 'BCS_PL_SPINE_RECORD', 'pl_gate_arm': 'BCS_PL_GATE_ARM', 'pl_to_trailed': 'BCS_PL_TO_TRAILED', 'pl_to_db': 'BCS_PL_TO_DB',
-        'call_argv': 'BCS_CALL_ARGV', 'call_argv_cur': 'BCS_CALL_ARGV_CUR', 'call_argv_rec': 'BCS_CALL_ARGV_REC', 'call_argv_cur_rec': 'BCS_CALL_ARGV_CUR_REC'}
+        'call_argv': 'BCS_CALL_ARGV', 'call_argv_cur': 'BCS_CALL_ARGV_CUR', 'call_argv_rec': 'BCS_CALL_ARGV_REC', 'call_argv_cur_rec': 'BCS_CALL_ARGV_CUR_REC',
+        'call_argv_rsp': 'BCS_CALL_ARGV_RSP'}
 FIXED = {'arm_spine': 32, 'arm_spine_hdr': 64}
 WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2', 'call_args': '-3', 'fence_spine': '-4', 'alt_spine': '-5', 'call_argv': '-6', 'call_argv_cur': '-7', 'call_argv_rec': '-8', 'call_argv_cur_rec': '-9'}
 
