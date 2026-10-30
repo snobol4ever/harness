@@ -111,3 +111,16 @@ IR_UNIFY_FIRST	0	always	-	-	-	-	a unification binds in place
 IR_UNIFY_VALUE	0	always	-	-	-	-	a unification binds in place
 IR_RETURN	0	always	-	-	-	-	the result leaves through the return block
 *	16	always	D	-	-	-	one DESCR, the value the box produces
+# THE LOW-REGION SECTION (flat cell rule, ARCH-ZETA-LAYOUT R1, step 2a, the cto's shape 1 and shape A of 2026-10-30): the PRIVATE LOW REGION of a box is the lowest bytes of its cell, at rsp, that
+# a template's transient records live in -- the GC poll record (its raw words below the floor, its DESCR pair at the floor), the call-edge glue's register record -- so that no template moves rsp
+# inside the box. The region is carved with the cell at alpha (one sub rsp of K plus the region), is dead before any exit, and is popped by the emitter at every gamma and omega jump and re-carved at
+# a beta, so the planner's depth arithmetic (E, X, gpop, wpop, the operand distances, the bases) stays in terms of K and every cell-relative reference in the body is shifted by the region by the one
+# accessor. Records overlay (they are transient): the bytes are the largest record any template of the kind keeps. A kind with no row here carves its records around the call as before (a transitional
+# fact of the row; the last kind to get a row deletes the carve). ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. Columns:
+#   kind          the IR kind (IR_*), or * for any kind
+#   low_bytes     the bytes of the region, a whole number of 16-byte units
+#   when          the same conditions as the cell rows above
+#   low_kind      the kind of every 8-byte word of the region, ascending: D (one 16-byte DESCR cell) or r (one raw 8-byte word), spanning low_bytes
+#   source        why the box keeps what it keeps
+kind	low_bytes	when	low_kind	source
+IR_CALL_DIRECT	32	call_argv	rrD	the _res poll record (x86_rt_gc_poll_res): r13 raw at +0 below the floor, the result pair rax:rdx a DESCR cell at the floor (+16), ARCH-GC 6.5b

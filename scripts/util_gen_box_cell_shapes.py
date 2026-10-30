@@ -65,15 +65,34 @@ def rows():
         lines = open(TSV, encoding='utf-8').read().splitlines()
     except OSError as e:
         refuse('cannot read %s: %s' % (TSV, e))
-    out, head = [], False
+    out, low, head, section = [], [], False, 0
     for n, l in enumerate(lines, 1):
         if not l or l.startswith('#'):
             continue
         f = l.split('\t')
+        if f[:2] == ['kind', 'low_bytes']:
+            if f[:4] != ['kind', 'low_bytes', 'when', 'low_kind'] or section:
+                refuse('%s:%d: the low-region header must be kind, low_bytes, when, low_kind, source and appear once, after the cell rows' % (TSV, n))
+            section = 1
+            continue
         if not head:
             if f[:4] != ['kind', 'alpha_words', 'when', 'word_kind']:
                 refuse('%s:%d: the header must begin kind, alpha_words, when, word_kind' % (TSV, n))
             head = True
+            continue
+        if section:
+            if len(f) != 5:
+                refuse('%s:%d: %d columns, want 5 in the low-region section' % (TSV, n, len(f)))
+            kind, nbytes, when, spec = f[0], f[1], f[2], f[3]
+            if when not in WHEN:
+                refuse('%s:%d: unknown condition %r' % (TSV, n, when))
+            if not nbytes.isdigit() or int(nbytes) % 16:
+                refuse('%s:%d: low_bytes %r is not a whole number of 16-byte units' % (TSV, n, nbytes))
+            if kind != '*' and not kind.startswith('IR_'):
+                refuse('%s:%d: kind %r is neither * nor an IR kind' % (TSV, n, kind))
+            if any(c not in 'Dr' for c in spec) or sum(2 if c == 'D' else 1 for c in spec) * 8 != int(nbytes):
+                refuse('%s:%d: low_kind %r is not a string over D and r spanning %s bytes' % (TSV, n, spec, nbytes))
+            low.append((kind, nbytes, when))
             continue
         if len(f) != 8:
             refuse('%s:%d: %d columns, want 8' % (TSV, n, len(f)))
@@ -87,14 +106,23 @@ def rows():
         out.append((kind, words, when, wordkind(n, words, spec)))
     if not out:
         refuse('%s has no rows' % TSV)
-    return out
+    return out, low
 
 
-def render(rs):
+def render(rs, low):
     body = ['{ %s, %s, %s, %d, %d, %d, %d, %d }' % (('-1' if k == '*' else k, WORDS.get(w, w), WHEN[c]) + wk) for k, w, c, wk in rs]
     lines, cur = [], 'static const struct { int op; int words; int when; unsigned wk_pre; int wk_pre_n; int wk_fill; unsigned wk_suf; int wk_suf_n; } box_cell_shapes[] = {'
     for i, b in enumerate(body):
         item = ' ' + b + (',' if i + 1 < len(body) else ' };')
+        if len(cur) + len(item) > 200:
+            lines.append(cur)
+            cur = '   '
+        cur += item
+    lines.append(cur)
+    lb = ['{ %s, %s, %s }' % ('-1' if k == '*' else k, b, WHEN[c]) for k, b, c in low]
+    cur = 'static const struct { int op; int bytes; int when; } box_low_regions[] = {' + ('' if lb else ' { -1, 0, BCS_ALWAYS } };')
+    for i, b in enumerate(lb):
+        item = ' ' + b + (',' if i + 1 < len(lb) else ' };')
         if len(cur) + len(item) > 200:
             lines.append(cur)
             cur = '   '
@@ -115,11 +143,11 @@ def main():
         refuse('usage: util_gen_box_cell_shapes.py --write | --check')
     if not os.path.isdir(os.path.dirname(INC)):
         refuse('no SCRIP sibling at %s' % os.path.dirname(INC))
-    rs = rows()
-    want = render(rs)
+    rs, low = rows()
+    want = render(rs, low)
     if sys.argv[1] == '--write':
         open(INC, 'w', encoding='utf-8').write(want)
-        print('BOX_CELL_SHAPES wrote %s (%d rows)' % (INC, len(rs)))
+        print('BOX_CELL_SHAPES wrote %s (%d rows, %d low regions)' % (INC, len(rs), len(low)))
         return 0
     have = open(INC, encoding='utf-8').read() if os.path.isfile(INC) else ''
     if have != want:
