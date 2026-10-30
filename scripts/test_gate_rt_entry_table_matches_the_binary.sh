@@ -108,7 +108,7 @@ def disagreements(rows, alloc, clob, asm):
 
 
 def missing_in_binary(rows, d, u):
-    return [r['sym'] for r in rows if r['sym'] not in d and not (r['sym'] in u and r['allocates'] == '-')]
+    return [r['sym'] for r in rows if r['sym'] not in d and not (r['sym'] in u and 'import' in r['src'].split(','))]
 
 
 tsv = os.path.join(HERE, 'rt_entries.tsv')

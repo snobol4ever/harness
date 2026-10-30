@@ -2,7 +2,7 @@
 # sym        the symbol a template names in x86("call"), x86("call_bare") or x86_rtcc_call.
 # conv       leaf | gen | open | asm: "asm" where src/runtime/rtx declares it with RTX_FUNC or RTX_ENTRY; "-" where no source states it (stage 5b declares it at the definition).
 # rc         what rides rax:rdx at return: DESCR | OTHER | VOID | UNKNOWN, as src/templates/x86/gc_allocating_table.inc states it; "-" where that table has no row.
-# allocates  1 when the symbol is a row of gc_allocating_table.inc, 0 when it is defined in libscrip_rt.so and is not, "-" for a libc import (no table speaks for it).
+# allocates  1 when the symbol is a row of gc_allocating_table.inc, 0 when it is not (a symbol defined in libscrip_rt.so, an asm entry, or a libc import: libc allocates nothing on the collected heap).
 # clobbers   which of the four RTCC registers (r8 r9 r10 r11) the entry hands back changed, as rtx_clobber_table.inc states it; "none" is an explicit empty mask; "-" where that table has no row.
 # transfers  may return an address the box jumps to (the rt_call_next_t shape): "-" until stage 5b declares it.
 # src        which sources state the row: call (a template names it), alloc, clob, asm, import.
@@ -23,9 +23,9 @@ core_icn_to_int_check	-	OTHER	1	-	-	call,alloc
 core_icn_toby_ctx	-	-	0	-	-	call
 descr_identical	asm	-	0	r8|r10|r11	-	call,clob,asm
 dtp_fn_of	-	OTHER	1	-	-	call,alloc
-exit	-	-	-	-	-	call,import
+exit	leaf	-	0	-	-	call,import
 icn_field_get	-	DESCR	1	-	-	call,alloc
-memcmp	-	-	-	-	-	call,import
+memcmp	leaf	-	0	-	-	call,import
 rk_box_back	-	-	0	-	-	call
 rk_box_match_build	-	VOID	1	-	-	call,alloc
 rk_box_step	-	-	0	-	-	call
