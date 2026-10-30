@@ -1420,6 +1420,7 @@ test_gate_zd_a_back_edge_leaves_a_blob_run_and_alternation_arms_stay_unplanned.s
 test_gate_zd_a_run_keeps_no_producer_whose_consumer_is_outside_it.sh	WIRED	-	-	-
 test_gate_zd_check_a_read_across_a_retaining_box_goes_through_its_frame.sh	WIRED	-	-	-
 test_gate_zd_check_reads_zero_violations_on_the_cores.sh	WIRED	-	-	-
+test_gate_zeta_layout_check_negative_controls_red.sh	WIRED	-	-	-
 test_gate_baton_donewhen_runnable_live.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
 test_gate_baton_next_blocks.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
 test_gate_baton_one_next_block.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
