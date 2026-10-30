@@ -106,6 +106,25 @@ roast_bucket() {
     *)      echo UNGRADED-OTHER ;;
   esac
 }
+# ⛔⭐ THE STORED FIRST CAUSE OF A RED (hq_raku 2026-10-30, ceo CEO-2030, the cto's ARCH-FLEET-PLAN-TO-100 section 2.5). A FAIL, CRASH or HANG reading carried the program's
+# FIRST stderr line, and for 148 programs that line was the Test epilogue `# You planned N tests, but ran M` -- the symptom of dying, never the death -- so 157 reds had no class
+# a rewrite step could claim. This answers one line, never empty, tab-free: the first test that did not pass (the first `not ok N - desc`, else the first test the plan promised and
+# the run never reached, with the last test that did pass beside it), the program's rc, and the LAST stderr line that is not the Test epilogue (the die message, the signal, the diagnostic a timeout never printed).
+# Contract: roast_first_cause <stdout> <stderr> <rc> -> "first red: test N <what> | rc R | stderr: <line>"
+roast_first_cause() {
+  local so="$1" se="$2" rc="$3" first plan last ran what err
+  first=$(grep -m1 -E '^not ok [0-9]+' "$so" 2>/dev/null)
+  plan=$(grep -m1 -oE '^1\.\.[0-9]+' "$so" 2>/dev/null | cut -c4-)
+  last=$(grep -E '^ok [0-9]+' "$so" 2>/dev/null | tail -1 | awk '{print $2}')
+  ran=$(grep -cE '^(ok|not ok) [0-9]+' "$so" 2>/dev/null)
+  if [ -n "$first" ]; then what="test $(printf '%s' "$first" | awk '{print $3}') not ok$(printf '%s' "$first" | sed -n 's/^not ok [0-9]\+ \+-\? *\(.\{1,60\}\).*/ - \1/p' | sed 's/ - $//')"
+  elif [ -n "$plan" ] && [ "${ran:-0}" -lt "$plan" ]; then
+    what="test $(( ${last:-0} + 1 )) not reached (ran ${ran:-0} of $plan$(grep -E '^ok [0-9]+' "$so" 2>/dev/null | tail -1 | sed -n 's/^ok [0-9]\+ \+-\? *\(.\{1,50\}\).*/, last ok: \1/p' | tr '\t' ' '))"
+  elif [ "${ran:-0}" -eq 0 ]; then what="none, no TAP"
+  else what="none, every test ran ok"; fi
+  err=$(grep -vE '^[[:space:]]*$|^# You (planned|failed) ' "$se" 2>/dev/null | tail -1 | tr '\t' ' ' | cut -c1-160)
+  printf 'first red: %s | rc %s | stderr: %s\n' "$what" "$rc" "${err:-(none)}"
+}
 # THE CONSTRUCT KEY: the source line the parse died on, literals and numbers folded, so a histogram and a
 # ranker name CONSTRUCTS and not line numbers -- and so both name them THE SAME WAY.
 roast_fold_construct() { sed "s/'[^']*'/'STR'/g; s/\"[^\"]*\"/\"STR\"/g; s/[0-9][0-9]*/N/g"; }

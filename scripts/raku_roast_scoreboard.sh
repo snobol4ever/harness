@@ -259,7 +259,10 @@ if [ "$DO_RUN" = 1 ]; then
     incwd "$TIMEOUT_RETRY" 5 "$SCRIP" --run "${RSW[@]}" "$stage" > "$so" 2> "$se" < /dev/null; rc=$?; _s3="$(progress_secs_since "$_t0")"
     v3="$(classify "$so" "$se" "$rc")"
     _e3=""; [ "$v3" = PASS ] || _e3="$(grep -v '^[[:space:]]*$' "$se" 2>/dev/null | head -1 | tr '\t' ' ' | cut -c1-200)"
-    progress_append package roast raku "$pname" m3 "$(roast_outcome "$v3" "$rc")" "$_s3" "$_e3" >/dev/null 2>&1 || true
+    _o3="$(roast_outcome "$v3" "$rc")"
+    # ⛔ A FAIL, CRASH OR HANG STORES ITS FIRST CAUSE, NOT ITS FIRST STDERR LINE (CEO-2030): the first test that did not pass, the rc and the last diagnostic (lib_raku_roast_bucket.sh roast_first_cause)
+    case "$_o3" in FAIL|CRASH|HANG) _e3="$(roast_first_cause "$so" "$se" "$rc")" ;; esac
+    progress_append package roast raku "$pname" m3 "$_o3" "$_s3" "$_e3" >/dev/null 2>&1 || true
     if [ "$v3" = PASS ]; then m3p=$((m3p+1)); else m3f=$((m3f+1)); FAILED_M3="$FAILED_M3 $pname:$v3"; fi
     s4="$TMP/c.s"; o4="$TMP/c.o"; b4="$TMP/c.bin"
     _t0="$(progress_clock)"
@@ -270,7 +273,9 @@ if [ "$DO_RUN" = 1 ]; then
       compiled_ok=$((compiled_ok+1))
       incwd "$TIMEOUT_RETRY" 10 "$b4" "${RSW[@]}" > "$TMP/o4" 2> "$TMP/e4" < /dev/null; rc4=$?; _s4="$(progress_secs_since "$_t0")"
       v4="$(classify "$TMP/o4" "$TMP/e4" "$rc4")"
-      progress_append package roast raku "$pname" m4 "$(roast_outcome "$v4" "$rc4")" "$_s4" >/dev/null 2>&1 || true
+      _o4="$(roast_outcome "$v4" "$rc4")"; _e4=""
+      case "$_o4" in FAIL|CRASH|HANG) _e4="$(roast_first_cause "$TMP/o4" "$TMP/e4" "$rc4")" ;; esac
+      progress_append package roast raku "$pname" m4 "$_o4" "$_s4" "$_e4" >/dev/null 2>&1 || true
       if [ "$v4" = PASS ]; then m4p=$((m4p+1)); else m4f=$((m4f+1)); FAILED_M4="$FAILED_M4 $pname:$v4"; fi
       [ "$v3" = PASS ] && [ "$v4" = PASS ] && bothp=$((bothp+1))
     else
