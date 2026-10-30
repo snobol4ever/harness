@@ -17,6 +17,9 @@
 #                     walking the term (calc/2 at run time, a literal inside catch/3) says ' Wrong type in evaluable function Op/2 (Goal: GOAL)' / ' In evaluable function (Goal: F)', the goal slot GOAL (prolog_tests test_arith_errors)
 #   xbi07_storage_abolish_cond  lib/storage.P keypair and fact tables (insert answers 1, 0 for the same pair, -1 for a key with another value; the _bt forms undo on backtracking); abolish(Head) abolishes that
 #                     functor and arity (abolish(p) is abolish(p/0)); reclaim_space/1; asserti/assertai/assertzi (the index is a hint); the read-time conditions :- if(file_exists(F)) and :- elseif(Cond)
+#   xbi08_utf8_text   XSB under character_set utf_8 (prolog_tests test_utf8_atom, test_utf8_getput, test_utf8_readwrite): writeq and write_canonical quote an atom holding any non-ASCII character, open(atom(A), read, S) is a
+#                     stream over the atom's text, format ~Nc writes the code as one UTF-8 character and ~Ns keeps N characters, a double-quoted string read from a loaded file is its code points, and
+#                     compile(F) then ensure_loaded(F) loads the file once (the .d directory carries the helper file)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
