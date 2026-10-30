@@ -15,6 +15,8 @@
 #   xbi06_arith_error_context  an arithmetic error carries XSB's message, error(F, context(context(Msg, Goal), Backtrace)): a unary function compiled in a clause body says ' In evaluable function (Goal: F(Arg))'
 #                     with Goal NULL, a binary one ' Wrong type in evaluable function Op/2: (Goal: Op(A,B))' (type_error(integer, _) has XSB's own spacing), negation is 0 - X; an expression XSB evaluates by
 #                     walking the term (calc/2 at run time, a literal inside catch/3) says ' Wrong type in evaluable function Op/2 (Goal: GOAL)' / ' In evaluable function (Goal: F)', the goal slot GOAL (prolog_tests test_arith_errors)
+#   xbi07_storage_abolish_cond  lib/storage.P keypair and fact tables (insert answers 1, 0 for the same pair, -1 for a key with another value; the _bt forms undo on backtracking); abolish(Head) abolishes that
+#                     functor and arity (abolish(p) is abolish(p/0)); reclaim_space/1; asserti/assertai/assertzi (the index is a hint); the read-time conditions :- if(file_exists(F)) and :- elseif(Cond)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
