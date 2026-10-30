@@ -16,6 +16,11 @@
 #   bash ../harness/scripts/test_gate_bootstrap_parse_stage_ir_identity.sh --capture [--lang snobol4] [--population sample|corpus]   record the CURRENT build as a parent
 #   bash ../harness/scripts/test_gate_bootstrap_parse_stage_ir_identity.sh [--against DIR|latest] [--lang snobol4] [--population sample|corpus] [--list-diffs FILE] [--only FILE]   compare the CURRENT build to it
 #   bash ../harness/scripts/test_gate_bootstrap_parse_stage_ir_identity.sh --both [--lang snobol4] [--population sample|corpus] [--list-diffs FILE] [--only FILE]   ONE BUILD: every file compiled under SCRIP_PARSE_STAGE=c and again under =sc, the two readings compared (the honest reading; the coo can run it, it sets its own stage)
+#   --strict compares the RAW text of all three halves (only the embedded date is normalised, the one thing the C stage itself needs). WITHOUT it (the default) the
+#   assembly half is compared as the observables the module stage may not change (the cto, ARCH-PARSER-SC-BOOTSTRAP 7.x, CEO-1888): `--dump-ir` and rc exactly, the `.loc`
+#   sequence exactly, and the rest of the assembly through util_ir_identity_normalise_asm.py (node ids and local-label counters alpha-renamed, the GVA slot base made
+#   relative, the module's rtpat frame-map and OPQ$ rodata entries dropped, the printer's wrap collapsed). The row snocone-the-module-stage-leaves-no-residue-... closes
+#   when `--both --strict` reads green: the module stage leaves NO residue in the program's tables.
 #   --list-diffs FILE writes EVERY differing corpus-relative path (the console shows the first five); --only FILE re-runs just the paths listed in FILE.
 #   A file that times out (GATE_TIMEOUT, default 120 s, a loaded machine) is re-run ALONE at GATE_TIMEOUT_ALONE (900 s) before it counts; one that still times out is recorded as rc=124
 #   with empty outputs on both sides, which compare equal -- a timeout is a measurement, never a difference.
@@ -29,11 +34,12 @@ G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; CORPUS="${CORPUS:-$S4E/corpus}"
 refuse() { echo "⛔ GATE REFUSE(2) [$G]: $*"; exit 2; }
-MODE=compare; AGAINST=latest; LANGS=snobol4; POP=sample; ONLY=""; DIFFS_OUT=""
+MODE=compare; AGAINST=latest; LANGS=snobol4; POP=sample; ONLY=""; DIFFS_OUT=""; STRICT=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --capture) MODE=capture ;;
     --both) MODE=both ;;
+    --strict) STRICT=1 ;;
     --against) AGAINST="${2:-}"; shift ;;
     --lang) LANGS="${2:-}"; shift ;;
     --population) POP="${2:-}"; shift ;;
@@ -77,6 +83,16 @@ one() {
     [ -f "$out.s" ] || : > "$out.s"
     sed -E -i "s/[A-Z][a-z]{2} [A-Z][a-z]{2} +[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}/<DATE>/g" "$out.ir" "$out.s" )
 }
+NORM="$HERE/util_ir_identity_normalise_asm.py"; [ -n "$STRICT" ] || [ -f "$NORM" ] || refuse "no normaliser at $NORM"
+locs() { grep -E '^[[:space:]]*\.loc[[:space:]]' "$1"; }
+nrm() { if [ -n "$STRICT" ]; then cat "$1"; else python3 -I "$NORM" < "$1"; fi; }
+s_same() { if [ -n "$STRICT" ]; then cmp -s "$1" "$2"; else cmp -s <(locs "$1") <(locs "$2") && cmp -s <(nrm "$1") <(nrm "$2"); fi; }
+show_diff() {
+  local a="$1" b="$2" h="$3" lab="$4"
+  if [ "$h" = s ] && [ -z "$STRICT" ] && ! cmp -s <(locs "$a.s") <(locs "$b.s"); then echo "  first differing .loc line ($lab):"; diff <(locs "$a.s") <(locs "$b.s") | sed -n '2p;4p' | cut -c1-160 | sed 's/^/    /'; return; fi
+  echo "  first differing $h line ($lab):"
+  if [ "$h" = s ]; then diff <(nrm "$a.s") <(nrm "$b.s") | sed -n '2p;4p' | cut -c1-160 | sed 's/^/    /'; else diff "$a.$h" "$b.$h" | sed -n '2p;4p' | cut -c1-160 | sed 's/^/    /'; fi
+}
 total=0; same=0; diff=0; shown=0
 for lang in $LANGS; do
   [ -n "${EXTS[$lang]:-}" ] || refuse "no extension list for language '$lang'"
@@ -96,11 +112,11 @@ for lang in $LANGS; do
       rel="${f#$CORPUS/}"; total=$((total+1))
       export SCRIP_PARSE_STAGE=c; one "$f" "$T/c/$rel"
       export SCRIP_PARSE_STAGE=sc; one "$f" "$T/sc/$rel"
-      if cmp -s "$T/c/$rel.ir" "$T/sc/$rel.ir" && cmp -s "$T/c/$rel.s" "$T/sc/$rel.s" && cmp -s "$T/c/$rel.rc" "$T/sc/$rel.rc"; then same=$((same+1)); rm -f "$T/c/$rel".* "$T/sc/$rel".*; continue; fi
+      if cmp -s "$T/c/$rel.ir" "$T/sc/$rel.ir" && s_same "$T/c/$rel.s" "$T/sc/$rel.s" && cmp -s "$T/c/$rel.rc" "$T/sc/$rel.rc"; then same=$((same+1)); rm -f "$T/c/$rel".* "$T/sc/$rel".*; continue; fi
       diff=$((diff+1)); [ -n "$DIFFS_OUT" ] && echo "$rel" >> "$DIFFS_OUT"
       if [ "$shown" -lt 5 ]; then
         shown=$((shown+1)); echo "DIFF $rel"
-        for h in ir s rc; do cmp -s "$T/c/$rel.$h" "$T/sc/$rel.$h" || { echo "  first differing $h line (C stage < > module stage):"; diff "$T/c/$rel.$h" "$T/sc/$rel.$h" | sed -n '2p;4p' | cut -c1-160 | sed 's/^/    /'; }; done
+        for h in ir s rc; do if [ "$h" = s ]; then s_same "$T/c/$rel.s" "$T/sc/$rel.s" || show_diff "$T/c/$rel" "$T/sc/$rel" s "C stage < > module stage"; else cmp -s "$T/c/$rel.$h" "$T/sc/$rel.$h" || show_diff "$T/c/$rel" "$T/sc/$rel" "$h" "C stage < > module stage"; fi; done
       fi
       rm -f "$T/c/$rel".* "$T/sc/$rel".*
     done
@@ -114,17 +130,17 @@ for lang in $LANGS; do
     rel="${f#$CORPUS/}"; total=$((total+1))
     [ -f "$D/$rel.ir" ] || refuse "the capture $D does not hold $rel (a capture of another population?)"
     one "$f" "$T/$rel"
-    if cmp -s "$D/$rel.ir" "$T/$rel.ir" && cmp -s "$D/$rel.s" "$T/$rel.s" && cmp -s "$D/$rel.rc" "$T/$rel.rc"; then same=$((same+1)); continue; fi
+    if cmp -s "$D/$rel.ir" "$T/$rel.ir" && s_same "$D/$rel.s" "$T/$rel.s" && cmp -s "$D/$rel.rc" "$T/$rel.rc"; then same=$((same+1)); continue; fi
     diff=$((diff+1)); [ -n "$DIFFS_OUT" ] && echo "$rel" >> "$DIFFS_OUT"
     if [ "$shown" -lt 5 ]; then
       shown=$((shown+1)); echo "DIFF $rel"
-      for h in ir s; do cmp -s "$D/$rel.$h" "$T/$rel.$h" || { echo "  first differing $h line:"; diff "$D/$rel.$h" "$T/$rel.$h" | sed -n '2p;4p' | cut -c1-160 | sed 's/^/    /'; }; done
+      for h in ir s; do if [ "$h" = s ]; then s_same "$D/$rel.s" "$T/$rel.s" || show_diff "$D/$rel" "$T/$rel" s "parent < > changed"; else cmp -s "$D/$rel.$h" "$T/$rel.$h" || show_diff "$D/$rel" "$T/$rel" "$h" "parent < > changed"; fi; done
     fi
     rm -f "$T/$rel".*
   done
 done
 [ "$MODE" = capture ] && exit 0
-echo "IR-IDENTITY [$LANGS $POP] against git $P: $total file(s), $same identical, $diff differ"
+echo "IR-IDENTITY [$LANGS $POP${STRICT:+ strict}] against git $P: $total file(s), $same identical, $diff differ"
 [ "$total" -gt 0 ] || refuse "nothing was measured"
 [ "$diff" -eq 0 ] && { echo "PASS: the parse stage's consumers produce exactly what the parent's produced"; exit 0; }
 echo "FAIL: $diff file(s) lower or emit differently from the parent"; exit 1
