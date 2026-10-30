@@ -13,8 +13,8 @@
 # mark's own table, file or generator (13.14 (4)). The summary line proves the walk's own premises: the heap parses end to end (badhead) and every
 # block start has its START bit (nostart).
 # AN UNROWED TYPE IS A REFUSAL, NEVER A PASS (13.14 (3)): a block whose type has no row is named in the summary (unrowed=<type>:<n>) and arm (1) is RED
-# while any type seen in the arena is unrowed; arm (4) is RED while any HB_* type has no row. So this gate cannot read green until all twenty-one types
-# are rowed, and the landings before that MEASURE.
+# while any type seen in the arena is unrowed; arm (4) is RED while any HB_* type has no row. All the types are rowed as of SCRIP 7a432a57e (the eight
+# private structs live in pattern_blocks.h and prolog_db_blocks.h); the one arm left red is (5), the stack half, and the gate cannot read green until it exists.
 #
 # THE UNTYPED CLASS (13.14, second sitting (3a)): HB_WSB and HB_WSC are rows of a distinct UNTYPED kind, counted untyped=<n> in the summary and never a
 # zero-slot row; THE CLAIM'S LIMIT IS "every live TYPED slot": a workspace payload carries none by definition (its pointers are described by its owner's
