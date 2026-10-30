@@ -739,20 +739,24 @@ _SETPRIV = shutil.which("setpriv")
 # CEO-1894): every seat may now run its own programs, so every child this harness starts takes one of S4E_RUN_SLOTS (default 8) flock slots
 # under /tmp/s4e-run-slots, taken HERE before the child starts -- a wait for a slot is never counted against the child's timeout, so it can
 # never read as a HANG -- and released when the child ends. A child inherits S4E_RUN_SLOT_HELD, so a harness run under another harness's slot
-# takes none of its own (no nested wait, no deadlock).
+# takes none of its own (no nested wait, no deadlock). A full pool is WAITED ON BY RESCANNING EVERY SLOT, never by blocking on one: a harness
+# that queued on slot pid%N sat 17 minutes behind a serial script holding that slot for its whole run while five other slots stood free
+# (coo 2026-10-30 12:4x, the loop's xsb request; test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh). S4E_RUN_SLOT_DIR is
+# the gate fixture's seam.
 def _run_slot():
     if os.environ.get("S4E_RUN_SLOT_HELD"):
         return None
-    import fcntl
+    import fcntl, random, time
     try:
-        n = max(1, int(os.environ.get("S4E_RUN_SLOTS", "8"))); d = "/tmp/s4e-run-slots"; os.makedirs(d, exist_ok=True)
-        for i in range(n):
-            f = open(os.path.join(d, "slot%d" % i), "a")
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); return f
-            except OSError:
-                f.close()
-        f = open(os.path.join(d, "slot%d" % (os.getpid() % n)), "a"); fcntl.flock(f, fcntl.LOCK_EX); return f
+        n = max(1, int(os.environ.get("S4E_RUN_SLOTS", "8"))); d = os.environ.get("S4E_RUN_SLOT_DIR") or "/tmp/s4e-run-slots"; os.makedirs(d, exist_ok=True)
+        while True:
+            for i in range(n):
+                f = open(os.path.join(d, "slot%d" % i), "a")
+                try:
+                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); return f
+                except OSError:
+                    f.close()
+            time.sleep(0.25 + random.random() * 0.25)
     except OSError:
         return None
 def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):

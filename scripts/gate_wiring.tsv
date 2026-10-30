@@ -1410,6 +1410,7 @@ test_gate_test_request_takes_a_port_engine.sh	WIRED	-	-	-
 test_gate_testpgms_grades_a_spitbol_post_mortem_through_the_one_error_voice.sh	WIRED	-	-	-
 test_gate_the_code_pool_refuses_loudly_at_its_cap_never_a_wild_jump.sh	WIRED	-	-	-
 test_gate_the_default_stack_and_heap_are_spitbols.sh	WIRED	-	-	-
+test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh	RULING	a 5 s timing fixture over the harness's run-slot pool (a mktemp pool, never the real one): over make preflight's per-arm budget, and a concurrency property no SCRIP source change can move; the coo runs it by hand after any change to corpus_suite_harness.py:_run_slot or util_run_slot.sh	coo	2026-10-30
 test_gate_the_runtime_binds_its_own_functions_and_keeps_its_data_and_instrument_entries_interposable.sh	WIRED	-	-	-
 test_gate_the_tiny_open_protocol_and_its_glue_record_agree.sh	WIRED	-	-	-
 test_gate_the_wall_column_is_the_minimum_time.sh	WIRED	-	-	-
