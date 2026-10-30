@@ -22,6 +22,8 @@
 #                     compile(F) then ensure_loaded(F) loads the file once (the .d directory carries the helper file)
 #   xbi09_loaded_conditional  XSB's :- if(G) / :- elseif(G) / :- else / :- endif in a file consulted at RUN time (prolog_tests test_cond_comp): a taken branch hides the later ones and a clause under an untaken
 #                     branch is not loaded (the run-time loader knew SWI's elif and not XSB's elseif; the companion file is the witness's .d directory)
+#   xbi10_verify_attribute_handler  XSB's attributed-variable handler API (attv_tests attv_test): install_verify_attribute_handler/4 names the goal run when a variable with an attribute of that module is unified
+#                     (AttrVal and the target are its variables; a failing handler refuses the unification), attv_unify/2 binds an attributed variable without running its handler
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
