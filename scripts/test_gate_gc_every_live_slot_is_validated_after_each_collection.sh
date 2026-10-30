@@ -16,6 +16,11 @@
 # while any type seen in the arena is unrowed; arm (4) is RED while any HB_* type has no row. So this gate cannot read green until all twenty-one types
 # are rowed, and the landings before that MEASURE.
 #
+# THE UNTYPED CLASS (13.14, second sitting (3a)): HB_WSB and HB_WSC are rows of a distinct UNTYPED kind, counted untyped=<n> in the summary and never a
+# zero-slot row; THE CLAIM'S LIMIT IS "every live TYPED slot": a workspace payload carries none by definition (its pointers are described by its owner's
+# root visitor), the producer audit that types the pointer-bearing producers is hq_runtime's own row, and no word of such a block is sniffed.
+# A type with no producer (HB_ZBLK) is a REFUSE row: a block of it seen is a finding (refused=<n>). The run form (13.14): HB_AGGP, HB_AGGB, HB_DINST, HB_DVEC
+# and HB_PVEC are rows with a run of elements (offset, stride, count by size or by a 32-bit field), HB_AGGT, HB_ARR and HB_AGGV rows of header slots.
 # THE LIMIT, VERBATIM FROM 13.14: sound always; complete only against vacated ground, a pointer into ground a survivor now reoccupies reads as live.
 # WHAT ELSE IT DOES NOT CLAIM. (a) Road (a) (test_gate_gc_the_record_check_after_each_collection_names_a_misfixed_slot.sh) still checks only the slots
 # the mark REGISTERED; this walk is the one that sees a slot the mark never registered. (b) ARBLK_t elements reached through an off-heap data pointer
@@ -54,9 +59,24 @@ LOOP      I = I + 1
           OUTPUT = A[1] A[8]
 END
 EOF
-WITS="$W/hb_arr.sno $W/hb_aggv.icn $T/above.sno $W/hb_datblk.sno $W/hb_blob_span_defer.sno $W/hb_pl_two_hundred_choice_points_retained_in_one_gap.pl"
-REACH="hb_arr hb_aggv above"
-printf 'ALPHAOMEGA\n' > "$T/hb_arr.exp"; printf '66\n' > "$T/hb_aggv.exp"; printf 'ALPHAOMEGA\n' > "$T/above.exp"
+cat > "$T/abovet.sno" <<'EOF'
+*  a TABLE allocated above garbage that dies, so the first collection slides its table block, bucket vector and buckets down over dead ground
+          G = DUPL('g',3000)
+          G = DUPL('h',3000)
+          T = TABLE()
+          T['a'] = 'ALPHA'
+          T['b'] = 'OMEGA'
+          G = ''
+          I = 0
+LOOP      I = I + 1
+          S = DUPL('z',100)
+          GT(300,I) :S(LOOP)
+          OUTPUT = T['a'] T['b']
+END
+EOF
+WITS="$W/hb_arr.sno $W/hb_aggv.icn $T/above.sno $T/abovet.sno $W/hb_datblk.sno $W/hb_blob_span_defer.sno $W/hb_pl_two_hundred_choice_points_retained_in_one_gap.pl"
+REACH="hb_arr hb_aggv above abovet"
+printf 'ALPHAOMEGA\n' > "$T/hb_arr.exp"; printf '66\n' > "$T/hb_aggv.exp"; printf 'ALPHAOMEGA\n' > "$T/above.exp"; printf 'ALPHAOMEGA\n' > "$T/abovet.exp"
 for w in $WITS; do
     [ -s "$w" ] || refuse "witness $w is missing"
     b="$(basename "${w%.*}")"
@@ -103,14 +123,17 @@ void rt_gc_fix_run(slot_t *s, long n, char *base, size_t lg, const void *fr, con
 EOF
 gcc -shared -fPIC -o "$T/shim.so" "$T/shim.c" -ldl 2> /dev/null || refuse "the unregister shim did not build"
 mkdir -p "$T/lib" && cp "$ROOT/out/interposable/libscrip_rt.so" "$T/lib/libscrip_rt.so"
-( cd "$T" && env -u SCRIP_HEAP_MB LD_LIBRARY_PATH="$T/lib" LD_PRELOAD="$T/shim.so" SCRIP_HEAP_KB=$K SCRIP_GC_STRESS=1 SCRIP_GC_VALIDATE=1 timeout -k 5 300 "$ROOT/scrip" "$T/above.sno" < /dev/null > "$T/fo" 2> "$T/fe" )
-nshim=$(grep -c '^\[SHIM\]' "$T/fe"); [ "$nshim" -gt 0 ] || refuse "the shim never found a heap-resident slot to leave unregistered ($(grep -c '^\[ZGC-VALIDATE-HEAP\] collection=' "$T/fe") summaries)"
+for fo in above:HB_ARR:HB_DVEC:HB_AGGV abovet:HB_AGGT:HB_AGGP:HB_AGGB; do
+IFS=: read -r fb k1 k2 k3 <<< "$fo"
+( cd "$T" && env -u SCRIP_HEAP_MB LD_LIBRARY_PATH="$T/lib" LD_PRELOAD="$T/shim.so" SCRIP_HEAP_KB=$K SCRIP_GC_STRESS=1 SCRIP_GC_VALIDATE=1 timeout -k 5 300 "$ROOT/scrip" "$T/$fb.sno" < /dev/null > "$T/fo" 2> "$T/fe" ) 2> /dev/null
+nshim=$(grep -c '^\[SHIM\]' "$T/fe"); [ "$nshim" -gt 0 ] || refuse "the shim never found a heap-resident slot to leave unregistered in $fb ($(grep -c '^\[ZGC-VALIDATE-HEAP\] collection=' "$T/fe") summaries)"
 nf=$(grep -c '^\[ZGC-VALIDATE-HEAP\] EXPIRED' "$T/fe"); na=$(grep -c '^\[ZGC-VALIDATE\] \(MISFIXED\|EXPIRED\)' "$T/fe")
 first=$(grep -m1 '^\[ZGC-VALIDATE-HEAP\] EXPIRED' "$T/fe")
 fc=$(echo "$first" | sed -n 's/.* collection=\([0-9]*\) .*/\1/p'); vc=$(echo "$first" | sed -n 's/.* by collection #\([0-9]*\).*/\1/p'); fk=$(echo "$first" | sed -n 's/.* kind=\(HB_[A-Z]*\) .*/\1/p')
-if [ "$nf" -gt 0 ] && [ -n "$fc" ] && [ "$fc" = "$vc" ] && { [ "$fk" = HB_ARR ] || [ "$fk" = HB_DVEC ] || [ "$fk" = HB_AGGV ]; } && [ "$na" = 0 ]; then
-    echo "  ok   (2) a slot left unregistered ($nshim collections) is named AT the collection that moved its pointee (#$fc, holder $fk), road (a) read $na findings on the same run: $(echo "$first" | cut -c1-210)"
-else echo "  RED  (2) shim fired $nshim times; walk findings=$nf, first at collection '$fc' vs vacancy collection '$vc', holder '$fk'; road (a) findings=$na (must be 0)"; bad=1; fi
+if [ "$nf" -gt 0 ] && [ -n "$fc" ] && [ "$fc" = "$vc" ] && { [ "$fk" = $k1 ] || [ "$fk" = $k2 ] || [ "$fk" = $k3 ]; } && [ "$na" = 0 ]; then
+    echo "  ok   (2) $fb: a slot left unregistered ($nshim collections) is named AT the collection that moved its pointee (#$fc, holder $fk), road (a) read $na findings on the same run: $(echo "$first" | cut -c1-210)"
+else echo "  RED  (2) $fb: shim fired $nshim times; walk findings=$nf, first at collection '$fc' vs vacancy collection '$vc', holder '$fk' (want $k1, $k2 or $k3); road (a) findings=$na (must be 0)"; bad=1; fi
+done
 for w in $WITS; do
     b="$(basename "${w%.*}")"
     ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=$K SCRIP_GC_STRESS=1 timeout -k 5 300 "$ROOT/scrip" "$w" < /dev/null > "$T/off" 2> "$T/offe" )
