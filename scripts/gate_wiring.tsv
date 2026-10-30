@@ -849,6 +849,7 @@ test_gate_pl_ieee_float_flags_and_ceil_lgamma_powm_answer_as_swipl.sh	WIRED	-	-	
 test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer.sh	WIRED	-	-	-
 test_gate_pl_include_splices_in_place_and_ensure_loaded_loads_once.sh	WIRED	-	-	-
 test_gate_pl_integer_division_floors_and_int64_overflow_promotes.sh	WIRED	-	-	-
+test_gate_pl_ir_delete_all_invalidates_every_bb_idx_and_a_colliding_static_call_answers_as_the_oracle.sh	WIRED	-	-	-
 test_gate_pl_iso_rung1_database_builtins_and_call_local_cut.sh	WIRED	-	-	-
 test_gate_pl_iso_rung2_runtime_heads_and_meta_call_wrappers.sh	WIRED	-	-	-
 test_gate_pl_iso_rung3_current_predicate_generator_and_halt_type_checks.sh	WIRED	-	-	-
