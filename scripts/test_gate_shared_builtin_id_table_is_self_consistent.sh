@@ -10,6 +10,7 @@
 # taking BOTH fields from the immediate and never consulting fn. A .s artifact baked under one numbering and
 # linked against a libscrip_rt.so built under another dispatches A DIFFERENT BUILTIN with no diagnostic.
 #
+# builtin-table step 1 (CEO-2016): the 190 names now live in the GENERATED src/runtime/builtin_table.h as bt_legacy_tab (the same nm, len, id fields, BT_LEGACY_TABSZ slots), bid_of IS bt_bid_legacy; this gate reads that table.
 # ⛔ WHAT THIS GATE DOES AND DOES NOT COVER, said plainly so nobody reads it as more than it is. It pins the
 # TABLE: every name round-trips through the REAL bid_of to its own id, every stored len equals the real
 # strlen, no two names share an id, and the entry count never falls below the floor. It does NOT validate a
@@ -52,20 +53,20 @@ cat > "$T/bidcheck.c" <<'EOF'
 int main(void) {
     int seen = 0, bad = 0, dup = 0, maxid = 0;
     static char idseen[65536]; static const char *idname[65536];
-    for (int i = 0; i < BID_TABSZ; i++) {
-        const char *n = g_bid_tab[i].nm;
+    for (int i = 0; i < BT_LEGACY_TABSZ; i++) {
+        const char *n = bt_legacy_tab[i].nm;
         if (!n) continue;
         seen++;
         unsigned L = (unsigned)strlen(n);
-        if (L != (unsigned)g_bid_tab[i].len) { printf("  BAD len: %s stored=%u real=%u\n", n, (unsigned)g_bid_tab[i].len, L); bad++; }
-        if (bid_of(n, L) != g_bid_tab[i].id) { printf("  BAD roundtrip: %s id=%d bid_of=%d\n", n, (int)g_bid_tab[i].id, bid_of(n, L)); bad++; }
-        int id = (int)g_bid_tab[i].id;
+        if (L != (unsigned)bt_legacy_tab[i].len) { printf("  BAD len: %s stored=%u real=%u\n", n, (unsigned)bt_legacy_tab[i].len, L); bad++; }
+        if (bid_of(n, L) != bt_legacy_tab[i].id) { printf("  BAD roundtrip: %s id=%d bid_of=%d\n", n, (int)bt_legacy_tab[i].id, bid_of(n, L)); bad++; }
+        int id = (int)bt_legacy_tab[i].id;
         if (id <= 0 || id >= 65536) { printf("  BAD id range: %s id=%d\n", n, id); bad++; continue; }
         if (idseen[id]) { printf("  DUPLICATE id %d: %s and %s\n", id, idname[id], n); dup++; }
         idseen[id] = 1; idname[id] = n;
         if (id > maxid) maxid = id;
     }
-    if (maxid != BID_LAST) { printf("  BAD BID_LAST=%d but the largest id in g_bid_tab is %d -- point BID_LAST at the largest id, or the static assertion that the id space stays below BID_TABSZ checks the wrong id\n", (int)BID_LAST, maxid); bad++; }
+    if (maxid != BID_LAST) { printf("  BAD BID_LAST=%d but the largest id in bt_legacy_tab is %d -- point BID_LAST at the largest id, or the static assertion that the id space stays below BID_TABSZ checks the wrong id\n", (int)BID_LAST, maxid); bad++; }
     printf("entries=%d bad=%d duplicate_ids=%d\n", seen, bad, dup);
     return (bad || dup) ? 1 : 0;
 }

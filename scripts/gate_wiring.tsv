@@ -80,6 +80,7 @@ test_gate_bootstrap_parsers_define_no_functions.sh	WIRED	-	-	-
 test_gate_box_cell_shapes_inc_is_current.sh	WIRED	-	-	-
 test_gate_build_freshness_is_behavioural.sh	WIRED	-	-	-
 test_gate_builder_and_grader_agree_on_stdin_companion_spellings.sh	WIRED	-	-	-
+test_gate_builtin_table_is_current.sh	WIRED	-	-	-
 test_gate_bus_verbs_refuse_with_usage.sh	WIRED	-	-	-
 test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh	WIRED	-	-	-
 test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh	WIRED	-	-	-
