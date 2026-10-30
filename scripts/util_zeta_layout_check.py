@@ -35,11 +35,19 @@
 #                                              program top) leaves by an indirect jump or a jump to a user label (LBL_*) at a depth other than that root's entry
 #                                              depth E_t: it popped P bytes of the X-E_t it owed. The zl02 leak of 2026-10-29 reads here. A transfer whose root is
 #                                              not a statement entry (IR_INDIRECT_GOTO of an if-type construct: R9 states no E_t for it) is counted UNCHECKED.
-#   SITE graph box Lline rule=R depth=D want=W a GC site record whose pc lies in a box (ARCH-GC 13.13 is the reading of each rule). Rule 0 (rsp-relative) must read
-#                                              depth = X (= E + K, R2); rules 1 and 3 (the frame's home is rbp) must carry depth 0; rule 5 (unknown, the chain stops)
-#                                              is always a finding. Every other rule (2, 4, 6, 7, 8, 9) is UNGRADED: its depth is a fact the plan row does not carry
-#                                              (flat_gen_rbp, the owning enter's depth, the link record's offset), and the checker prints `SITE-UNGRADED rule=N count=M`
-#                                              for each so the omission is visible, never a 0 by silence. A rule that no witness exercises has no line (nothing to say).
+#   SITE graph box Lline rule=R depth=D want=W a GC site record whose pc lies in a box, graded per rule by ARCH-GC 13.13 and the cto's item 8 (ARCH-ZETA-LAYOUT 5):
+#                                              rule 0 (rsp-relative) depth = X of the row (= E + K, R2); rules 1 and 3 (the frame's home is rbp) depth 0; rule 2 (a flat
+#                                              generator frame addressed down from rbp) depth = the row's `flat_gen_rbp` column when the plan dump prints it; rule 6 (a site
+#                                              inside a pattern match) depth = the depth of its OWNING ENTER (the nl-th open MATCH_ENTER site, kind bits 8-11 the level,
+#                                              12-15 the enter's kind): the enter's row X when ek is 0, 0 when ek is 1 or 3. The owning enter is read from the site table
+#                                              itself (kind 4 opens, kind 5 closes), never from the site's own box.
+#   RULE5 graph box Lline depth=D              a rule-5 site (the encoder lost the distance, the chain stops with `unknown-depth`): a finding wherever it appears, in mismatches.
+#   SITE-UNGRADED rule=N count=M               printed for each rule whose depth the plan row does not carry: rule 2 until the dump prints the generator frame, rule 4
+#                                              (two assigners with two formulas; its aligned arm needs the live vdj bytes the plan does not carry, and no witness emits it
+#                                              yet), and `ext=nonzero` for a nonzero GC_SITE_EXT byte (the rule field's high byte, not described in 13.13). Not in mismatches.
+#   SITE-HOP rule=N count=M                    rules 7, 8 and 9 describe no frame (a return-road hop, an FN_EXIT hop, the shim-self hop): counted, no depth expectation.
+#   SITE-UNEXERCISED rule=N                    every rule 0 to 9 this program's sites do not emit (rule 5 is unexercised by design); the step harness intersects the lines
+#                                              over its witnesses, so a rule no witness emits is never a 0 by silence.
 #   TRANSFER-UNCHECKED count=M                 printed when a transfer's claim root is not a statement entry (R9 states no E_t for it until step 2a gives the row its tpop).
 #   ALIGN graph chain detail                   the plan and the text do not pair (a graph with no chain, a different box count, a different kind at a row).
 #
@@ -47,9 +55,11 @@
 # Run under `python3 -I`; standard library only.
 import argparse, collections, re, sys
 
-CLASSES = ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN')
+CLASSES = ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'RULE5', 'ALIGN')
 APART = ('RETAINING-EDGE',)
-SITE_GRADED = {0, 1, 3, 5}
+SITE_GRADED = {0, 1, 3, 5, 6}
+SITE_HOP = {7, 8, 9}
+SITE_RULES = range(10)
 TRANSFER_KINDS = {'IR_GOTO_DEFERRED', 'IR_INDIRECT_GOTO', 'IR_SETEXIT_TEST', 'IR_GOTO'}
 STATEMENT_ROOTS = {'IR_STATEMENT_BEGIN', 'IR_SETEXIT_TEST'}
 ZSM_PUSH = ['rax', 'rax', 'rdi', 'rsi', 'rdx', 'rcx', 'r8', 'r9', 'r10', 'r11']
@@ -533,6 +543,7 @@ def check(graphs, chains, tabs, site_box):
             continue
         g, ch = by_code[q[3]]
         n = int(q[0])
+        enters = []
         for k in range(n):
             if 6 + 3 * k >= len(q):
                 break
@@ -540,8 +551,10 @@ def check(graphs, chains, tabs, site_box):
             if not m or not q[5 + 3 * k].isdigit():
                 continue
             w = int(q[5 + 3 * k])
-            rule, depth = (w >> 16) & 255, w >> 32
+            rule, depth, kind, ext = (w >> 16) & 255, w >> 32, w & 0xffff, (w >> 24) & 255
             rule_seen[rule] += 1
+            if ext:
+                info['ext_sites'] += 1
             ln, b = site_box.get(m.group(1), (0, None))
             if b is None:
                 info['sites_outside_boxes'] += 1
@@ -551,14 +564,38 @@ def check(graphs, chains, tabs, site_box):
                 info['sites_zsm'] += 1
                 continue
             r = box_row[id(b)][1]
+            if kind & 0xff == 4:
+                enters.append(r)
+            elif kind & 0xff == 5 and enters:
+                enters.pop()
             if rule == 5:
-                add('SITE', g['name'], b.name, ln, 'rule=5 depth=%d want=a known depth' % depth)
+                add('RULE5', g['name'], b.name, ln, 'depth=%d' % depth)
             elif rule == 0 and armed(r) and depth != xa(r):
                 add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, xa(r)))
             elif rule in (1, 3) and depth != 0:
                 add('SITE', g['name'], b.name, ln, 'rule=%d depth=%d want=0' % (rule, depth))
-            elif rule in SITE_GRADED - {5}:
+            elif rule == 2 and r.get('flat_gen_rbp') is not None:
+                if depth != r['flat_gen_rbp']:
+                    add('SITE', g['name'], b.name, ln, 'rule=2 depth=%d want=%d' % (depth, r['flat_gen_rbp']))
+                else:
+                    info['sites_ok'] += 1
+            elif rule == 6:
+                nl, ek = (kind >> 8) & 15, (kind >> 12) & 15
+                if nl < 1 or nl > len(enters):
+                    add('SITE', g['name'], b.name, ln, 'rule=6 nl=%d but %d match enter(s) are open' % (nl, len(enters)))
+                else:
+                    er = enters[-nl]
+                    want = 0 if ek in (1, 3) else (xa(er) if armed(er) else None)
+                    if want is None:
+                        info['sites_unchecked'] += 1
+                    elif depth != want:
+                        add('SITE', g['name'], b.name, ln, 'rule=6 depth=%d want=%d (the owning enter nl=%d ek=%d)' % (depth, want, nl, ek))
+                    else:
+                        info['sites_ok'] += 1
+            elif rule in SITE_GRADED - {5, 6}:
                 info['sites_ok'] += 1
+            else:
+                info['ungraded_%d' % rule] += 1
     return found, info, rule_seen
 
 
@@ -593,8 +630,15 @@ def main(argv):
                 print(ln)
     if not args.quiet:
         for rule, n in sorted(rule_seen.items()):
-            if rule not in SITE_GRADED:
-                print('SITE-UNGRADED rule=%d count=%d' % (rule, n))
+            if rule in SITE_HOP:
+                print('SITE-HOP rule=%d count=%d' % (rule, n))
+            elif info['ungraded_%d' % rule]:
+                print('SITE-UNGRADED rule=%d count=%d' % (rule, info['ungraded_%d' % rule]))
+        if info['ext_sites']:
+            print('SITE-UNGRADED ext=nonzero count=%d' % info['ext_sites'])
+        for rule in SITE_RULES:
+            if rule not in rule_seen:
+                print('SITE-UNEXERCISED rule=%d' % rule)
         if info['transfer_unchecked']:
             print('TRANSFER-UNCHECKED count=%d' % info['transfer_unchecked'])
     counts = ' '.join('%s=%d' % (c, len(found.get(c, []))) for c in CLASSES + APART)

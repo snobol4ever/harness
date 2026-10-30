@@ -138,10 +138,16 @@ layoutcheck() { # the harness checker over this step's witnesses' mode-4 asm aga
     [ -f "$chk" ] || { echo REFUSED; return; }
     for w in $wits; do b="$OUT/step$step/$w"; [ -f "$b.m4bin/run.s" ] || { echo REFUSED; return; }
         ( cd "$b.m4bin" && timeout -k 5 300 "$SC/scrip" --dump-plan "$WD/$w.$(wext "$w")" < /dev/null > "$b.m4bin/plan.txt" 2> /dev/null ) || { echo REFUSED; return; }
-        t="$(python3 -I "$chk" --asm "$b.m4bin/run.s" --plan "$b.m4bin/plan.txt" 2> "$b.m4bin/check.err" | tail -1 | sed -n 's/.*mismatches=\([0-9]*\).*/\1/p')"
+        t="$(python3 -I "$chk" --asm "$b.m4bin/run.s" --plan "$b.m4bin/plan.txt" 2> "$b.m4bin/check.err" | tee "$b.m4bin/check.out" | tail -1 | sed -n 's/.*mismatches=\([0-9]*\).*/\1/p')"
         [ -n "$t" ] || { echo REFUSED; return; }; c=$((c + t))
     done
     echo "$c"
+}
+layout_unexercised() { # the GC site rules no witness of the step emits: the intersection of each witness's SITE-UNEXERCISED lines (the checker's output kept by layoutcheck); `-` when none or unread
+    local w b n=0 r; local -a fs=()
+    for w in $wits; do b="$OUT/step$step/$w"; [ -f "$b.m4bin/check.out" ] || { echo "-"; return; }; fs+=("$b.m4bin/check.out"); n=$((n + 1)); done
+    r="$(grep -h '^SITE-UNEXERCISED rule=' "${fs[@]}" | sort | uniq -c | awk -v n="$n" '$1 == n { sub(/.*rule=/, ""); printf "%s%s", sep, $0; sep = "," }')"
+    echo "${r:--}"
 }
 readings=""; pgreen=1
 [ "$probe" = "-" ] && probe=""
@@ -159,7 +165,7 @@ for tok in $probe; do
         rspmoves) c="$(rspmoves_census)"; readings="$readings template_rsp_moves=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0 ;;
         layoutcheck) c="$(layoutcheck)"
             if [ "$c" = REFUSED ]; then readings="$readings layout_checker=missing(step 1 writes util_zeta_layout_check.py; a witness with no mode-4 binary or plan dump also reads here)"; pgreen=0
-            else readings="$readings layout_mismatches=$c(at_most $val)"; [ "$c" -le "$val" ] || pgreen=0; fi ;;
+            else readings="$readings layout_mismatches=$c(at_most $val) site_rules_unexercised=$(layout_unexercised)"; [ "$c" -le "$val" ] || pgreen=0; fi ;;
         gate) [ -f "$HERE/$val.sh" ] || { readings="$readings gate[$val]=missing"; pgreen=0; continue; }
             if ( cd "$SC" && timeout -k 10 1800 bash "$HERE/$val.sh" > "$OUT/step$step/$val.log" 2>&1 ); then readings="$readings gate[$val]=green"; else readings="$readings gate[$val]=red"; pgreen=0; fi ;;
         smoke) [ "$val" = ALL ] && ls="$SMOKES" || ls="${val//,/ }"

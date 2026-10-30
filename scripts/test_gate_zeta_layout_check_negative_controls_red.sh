@@ -10,8 +10,10 @@
 #   SPILL-PAIR    a push and its balancing pop planted on the straight run to a statement_end box's exit jump read SPILL-PAIR (and no EXCURSION); a lone push there (a
 #                 call frame before the transfer) reads neither
 #   RETAINING-EDGE the retaining edges print as lines, equal to the summary's count, and are NOT in mismatches
-#   SITE-UNGRADED every rule the checker does not grade prints a SITE-UNGRADED line with the count the summary holds, and a graded rule prints none; a rule-1 site's depth
-#                 raised by 8 (zl07) reads SITE
+#   RULE5         a rule-0 GC site record whose rule byte is made 5 reads RULE5 (the chain stops at it), in mismatches
+#   SITE rule 6   a rule-6 site's depth raised by 8 reads SITE (graded against its owning enter's row); a rule-1 site's depth raised by 8 (zl07) reads SITE
+#   SITE-UNGRADED / SITE-HOP / SITE-UNEXERCISED on zl08: each rule the program emits prints the line its class owns with the summary's count, and every rule it does not emit
+#                 prints UNEXERCISED; a nonzero GC_SITE_EXT byte planted in a record prints SITE-UNGRADED ext=nonzero
 #   TRANSFER-POP  zl02's deferred goto read as it is (it leaks), then the CURE applied (the owed pop added before each jmp rax) reads fewer, then a WRONG pop still reads
 #   ZSM           the instrument's own balanced push/pop around rt_zdp_ev (SCRIP_ZSM=1 SCRIP_ZSM_ALL=1) adds no EXCURSION and is counted as skipped
 #   ALIGN         a plan with its last graph cut off
@@ -29,6 +31,7 @@ refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -r "$CHK" ] || refuse "no checker at $CHK"
 for w in zl01_sno_captures_eval zl02_sno_setexit_code; do [ -r "$WD/$w.sno" ] || refuse "no witness $WD/$w.sno"; done
 [ -r "$WD/zl07_pas_records_lists.pas" ] || refuse "no witness $WD/zl07_pas_records_lists.pas"
+[ -r "$WD/zl08_rk_lists_hashes.raku" ] || refuse "no witness $WD/zl08_rk_lists_hashes.raku"
 . "$HERE/lib_gate.sh"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 TD="$(mktemp -d)"; trap 'rm -rf "$TD"' EXIT
@@ -40,6 +43,9 @@ done
 mkdir -p "$TD/zl07_pas_records_lists"
 ( cd "$TD/zl07_pas_records_lists" && timeout -k 5 120 "$SCRIP" --compile --out="$TD/zl07_pas_records_lists/run.s" "$WD/zl07_pas_records_lists.pas" < /dev/null > /dev/null 2> compile.err \
     && timeout -k 5 120 "$SCRIP" --dump-plan "$WD/zl07_pas_records_lists.pas" < /dev/null > "$TD/zl07_pas_records_lists/plan.txt" 2> plan.err ) || refuse "zl07 did not compile in mode 4"
+mkdir -p "$TD/zl08_rk_lists_hashes"
+( cd "$TD/zl08_rk_lists_hashes" && timeout -k 5 120 "$SCRIP" --compile --out="$TD/zl08_rk_lists_hashes/run.s" "$WD/zl08_rk_lists_hashes.raku" < /dev/null > /dev/null 2> compile.err \
+    && timeout -k 5 120 "$SCRIP" --dump-plan "$WD/zl08_rk_lists_hashes.raku" < /dev/null > "$TD/zl08_rk_lists_hashes/plan.txt" 2> plan.err ) || refuse "zl08 did not compile in mode 4"
 mkdir -p "$TD/zsm"
 ( cd "$TD/zsm" && SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 timeout -k 5 120 "$SCRIP" --compile --out="$TD/zsm/run.s" "$WD/zl01_sno_captures_eval.sno" < /dev/null > /dev/null 2> compile.err \
     && SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 timeout -k 5 120 "$SCRIP" --dump-plan "$WD/zl01_sno_captures_eval.sno" < /dev/null > "$TD/zsm/plan.txt" 2> plan.err ) || refuse "zl01 did not compile under SCRIP_ZSM=1"
@@ -53,7 +59,7 @@ graded, fails = 0, 0
 def run(asm, plan):
     r = subprocess.run([sys.executable, '-I', CHK, '--asm', asm, '--plan', plan], capture_output=True, text=True)
     last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ''
-    c = {k: int(v) for k, v in re.findall(r'([A-Za-z-]+)=(\d+)', last)}
+    c = {k: int(v) for k, v in re.findall(r'([A-Za-z0-9-]+)=(\d+)', last)}
     return r, c
 
 
@@ -67,8 +73,11 @@ def grade(label, ok, detail=''):
         print('  ⛔ FAIL ' + label + (': ' + detail if detail else ''))
 
 
+MISMATCH = ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'RULE5', 'ALIGN')
+
+
 def rises(label, clean, got, cls):
-    others = [k for k in ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN') if k != cls and got.get(k, 0) < clean.get(k, 0)]
+    others = [k for k in MISMATCH if k != cls and got.get(k, 0) < clean.get(k, 0)]
     grade(label, got.get(cls, 0) > clean.get(cls, 0), '%s %d -> %d' % (cls, clean.get(cls, 0), got.get(cls, 0)))
     grade(label + ' (no other class fell)', not others, 'fell: %s' % others)
 
@@ -146,14 +155,41 @@ grade('SPILL-PAIR: a lone push on the run to the exit (a call frame before the t
 
 r, c1 = run(w1 + '/run.s', w1 + '/plan.txt')
 rl = [l for l in r.stdout.splitlines() if l.startswith('RETAINING-EDGE ')]
-tot = sum(c1.get(x, 0) for x in ('EXCURSION', 'SPILL-PAIR', 'CARVE', 'EDGE', 'TRANSFER-POP', 'SITE', 'ALIGN'))
+tot = sum(c1.get(x, 0) for x in MISMATCH)
 grade('RETAINING-EDGE: zl01 prints its retaining edges as lines (%d), equal to the count on the last line (%d)' % (len(rl), c1.get('RETAINING-EDGE', -1)), len(rl) > 0 and len(rl) == c1.get('RETAINING-EDGE', -1))
-grade('RETAINING-EDGE: counted apart, not in mismatches (%d = the seven mismatch classes %d)' % (c1.get('mismatches', -1), tot), c1.get('mismatches', -1) == tot)
+grade('RETAINING-EDGE: counted apart, not in mismatches (%d = the mismatch classes %d)' % (c1.get('mismatches', -1), tot), c1.get('mismatches', -1) == tot)
+k = next((n for n, l in enumerate(asm) if re.match(r'^\s+\.quad\s+\.Lgcsite_\S+-\.Lgccode_\S+\s*$', l)), None)
+w = int(asm[k + 1].split()[1])
+a2 = asm[:]
+a2[k + 1] = re.sub(r'\d+\s*$', str((w & ~(255 << 16)) | (5 << 16)), a2[k + 1])
+r, got = run(write('run_5.s', a2), w1 + '/plan.txt')
+rises('RULE5: a rule-0 site record made rule 5 reads RULE5', clean, got, 'RULE5')
+a2 = asm[:]
+a2[k + 1] = re.sub(r'\d+\s*$', str(w + (1 << 24)), a2[k + 1])
+r, got = run(write('run_x1.s', a2), w1 + '/plan.txt')
+grade('GC_SITE_EXT: a nonzero EXT byte in a record prints SITE-UNGRADED ext=nonzero count=1', 'SITE-UNGRADED ext=nonzero count=1' in r.stdout.splitlines(), 'no such line')
+
+k6 = next((n for n, l in enumerate(asm) if re.match(r'^\s+\.quad\s+\.Lgcsite_\S+-\.Lgccode_\S+\s*$', l) and ((int(asm[n + 1].split()[1]) >> 16) & 255) == 6), None)
+if k6 is None:
+    print('GATE REFUSE(2) [%s]: no rule-6 GC site record in zl01 -- the witness drifted' % NAME)
+    sys.exit(2)
+w = int(asm[k6 + 1].split()[1])
+a2 = asm[:]
+a2[k6 + 1] = re.sub(r'\d+\s*$', str(w + (8 << 32)), a2[k6 + 1])
+r, got = run(write('run_s6.s', a2), w1 + '/plan.txt')
+rises('SITE: a rule-6 site record (its owning enter carries the depth) raised by 8 bytes reads SITE', clean, got, 'SITE')
+grade('SITE rule 6: the clean zl01 grades its rule-6 records and reads no SITE-UNGRADED for rule 6', not any(l.startswith('SITE-UNGRADED rule=6') for l in subprocess.run([sys.executable, '-I', CHK, '--asm', w1 + '/run.s', '--plan', w1 + '/plan.txt'], capture_output=True, text=True).stdout.splitlines()))
+
+w8 = TD + '/zl08_rk_lists_hashes'
+r, c8 = run(w8 + '/run.s', w8 + '/plan.txt')
 sm = [l for l in r.stdout.splitlines() if l.startswith('summary')]
 by = {int(a): int(b) for a, b in re.findall(r'r(\d+):(\d+)', sm[0])} if sm else {}
 ug = {int(a): int(b) for a, b in re.findall(r'^SITE-UNGRADED rule=(\d+) count=(\d+)$', r.stdout, re.M)}
-want = {k2: v for k2, v in by.items() if k2 not in (0, 1, 3, 5)}
-grade('SITE-UNGRADED: zl01 prints a line for every ungraded rule it holds with the summary\'s count (%s)' % want, bool(want) and ug == want, 'lines %s' % ug)
+hop = {int(a): int(b) for a, b in re.findall(r'^SITE-HOP rule=(\d+) count=(\d+)$', r.stdout, re.M)}
+un = sorted(int(a) for a in re.findall(r'^SITE-UNEXERCISED rule=(\d+)$', r.stdout, re.M))
+grade('SITE-UNGRADED: zl08 prints rule 2 (the plan dump carries no generator frame) with the summary\'s count (%s)' % by.get(2), bool(by.get(2)) and ug == {2: by[2]}, 'lines %s' % ug)
+grade('SITE-HOP: zl08 prints rule 7 as a hop with the summary\'s count (%s)' % by.get(7), bool(by.get(7)) and hop == {7: by[7]}, 'lines %s' % hop)
+grade('SITE-UNEXERCISED: zl08 prints every rule 0 to 9 it does not emit (%s)' % un, un == sorted(set(range(10)) - set(by)) and bool(un), 'emits %s' % sorted(by))
 
 w7 = TD + '/zl07_pas_records_lists'
 r, c7 = run(w7 + '/run.s', w7 + '/plan.txt')
