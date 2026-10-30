@@ -22,6 +22,10 @@
 #                                              with no label, call or conditional jump between the push and the exit: the spill of a value around code, the same R1
 #                                              violation as an EXCURSION, counted in mismatches (step 2a declares the cell word and takes them to 0). A pop with
 #                                              nothing between it and the way out and no push of its own on the run is the exit's pop, not a finding.
+#   GATE-PAIR count=N                          (the cto's ruling of 2026-10-30, ARCH-ZETA-LAYOUT 5 item E) x86_gc_gate's `push R; mov R, [g_gc_pending]; mov E, [R]; test E, E; pop R`
+#                                              before the `je` that skips a poll: a NAMED EXEMPTION of R1's class until step 6 deletes it (no site, no allocation, no call,
+#                                              label or jump inside; the depth at every site is unchanged by it). Counted apart, NOT in mismatches, and never an EXCURSION;
+#                                              any other push/pop pair stays an EXCURSION or a SPILL-PAIR. Printed as one `GATE-PAIR count=N` line.
 #   CARVE graph box Lline carved=N want=K      the alpha carve differs from the row's K (none counts as 0).
 #   EDGE graph box Lline target have=D want=D  a jmp or jcc out of the box lands on another box's port at a depth other than the target's E (an alpha port) or X (a
 #                                              beta port): the edge laws of ARCH-ZETA-ONE-COORDINATE 1.1 read off the code. The depth is SIMULATED from the port:
@@ -387,6 +391,22 @@ def spill_pairs(box):
     return out
 
 
+def gate_pairs(box):
+    """The indices of the push and the pop of every x86_gc_gate flag read: push R, mov R [..g_gc_pending..], mov E [R..], test E E, pop R, no label inside."""
+    ins, out = box.ins, set()
+    for k in range(len(ins) - 4):
+        a, b, c, d, e = ins[k:k + 5]
+        if a.op != 'push' or len(a.a) != 1 or e.op != 'pop' or e.a != a.a:
+            continue
+        r = a.a[0]
+        if b.labels or c.labels or d.labels or e.labels:
+            continue
+        if b.op == 'mov' and len(b.a) == 2 and b.a[0] == r and 'g_gc_pending' in b.a[1] and c.op == 'mov' and len(c.a) == 2 and '[' + r in c.a[1].replace(' ', '') and d.op == 'test' and len(d.a) == 2 and d.a[0] == d.a[1]:
+            out.add(k)
+            out.add(k + 4)
+    return out
+
+
 def simulate(box, start, state):
     """Walk the box from instruction `start` at rsp depth `state`: [(kind, target, depth, line)] for every way out; a depth the code does not fix is None."""
     ins, n = box.ins, len(box.ins)
@@ -479,6 +499,7 @@ def check(graphs, chains, tabs, site_box):
                 add('CARVE', g['name'], b.name, b.ins[a].ln if a < len(b.ins) else b.start, 'carved=%d want=%d' % (carved, r['K']))
             spill = spill_pairs(b)
             spill_pops = set(spill.values())
+            gate = gate_pairs(b)
             for k, I in enumerate(b.ins):
                 if I.zsm:
                     info['zsm_writes'] += 1 if I.eff[0] else 0
@@ -488,6 +509,8 @@ def check(graphs, chains, tabs, site_box):
                 info['rsp_writes'] += 1
                 if k in carve_idx:
                     info['carve_writes'] += 1
+                elif k in gate:
+                    info['gate_pairs'] += 1 if I.op == 'push' else 0
                 elif k in spill:
                     add('SPILL-PAIR', g['name'], b.name, I.ln, '%s pop=L%d' % (I.text, b.ins[spill[k]].ln))
                 elif k in spill_pops:
@@ -639,9 +662,11 @@ def main(argv):
         for rule in SITE_RULES:
             if rule not in rule_seen:
                 print('SITE-UNEXERCISED rule=%d' % rule)
+        if info['gate_pairs']:
+            print('GATE-PAIR count=%d' % info['gate_pairs'])
         if info['transfer_unchecked']:
             print('TRANSFER-UNCHECKED count=%d' % info['transfer_unchecked'])
-    counts = ' '.join('%s=%d' % (c, len(found.get(c, []))) for c in CLASSES + APART)
+    counts = ' '.join('%s=%d' % (c, len(found.get(c, []))) for c in CLASSES + APART) + ' GATE-PAIR=%d' % info['gate_pairs']
     if not args.quiet:
         print('summary graphs=%d chains=%d boxes=%d armed=%d no_alpha_label=%d rsp_writes=%d (carve=%d exit=%d spill_pops=%d restore=%d zsm=%d) edges(ok=%d unchecked=%d retaining=%d) transfers(ok=%d unchecked=%d) sites(graded_ok=%d outside=%d zsm=%d by_rule=%s)' % (
             len(graphs), len(chains), info['boxes'], info['armed'], info['no_alpha_label'], info['rsp_writes'], info['carve_writes'], info['exit_writes'], info['spill_pops'], info['declared_restore'], info['zsm_writes'], info['edge_ok'],

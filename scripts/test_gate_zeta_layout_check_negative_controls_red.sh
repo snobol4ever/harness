@@ -10,6 +10,8 @@
 #   SPILL-PAIR    a push and its balancing pop planted on the straight run to a statement_end box's exit jump read SPILL-PAIR (and no EXCURSION); a lone push there (a
 #                 call frame before the transfer) reads neither
 #   RETAINING-EDGE the retaining edges print as lines, equal to the summary's count, and are NOT in mismatches
+#   GATE-PAIR     x86_gc_gate's flag-read pair prints as one GATE-PAIR count=N line, is in no mismatch class, and is not an EXCURSION; the same gate with ONE extra instruction
+#                 between its test and its pop is no longer exempt (GATE-PAIR falls by 1, EXCURSION rises by 2)
 #   RULE5         a rule-0 GC site record whose rule byte is made 5 reads RULE5 (the chain stops at it), in mismatches
 #   SITE rule 6   a rule-6 site's depth raised by 8 reads SITE (graded against its owning enter's row); a rule-1 site's depth raised by 8 (zl07) reads SITE
 #   SITE-UNGRADED / SITE-HOP / SITE-UNEXERCISED on zl08: each rule the program emits prints the line its class owns with the summary's count, and every rule it does not emit
@@ -158,6 +160,17 @@ rl = [l for l in r.stdout.splitlines() if l.startswith('RETAINING-EDGE ')]
 tot = sum(c1.get(x, 0) for x in MISMATCH)
 grade('RETAINING-EDGE: zl01 prints its retaining edges as lines (%d), equal to the count on the last line (%d)' % (len(rl), c1.get('RETAINING-EDGE', -1)), len(rl) > 0 and len(rl) == c1.get('RETAINING-EDGE', -1))
 grade('RETAINING-EDGE: counted apart, not in mismatches (%d = the mismatch classes %d)' % (c1.get('mismatches', -1), tot), c1.get('mismatches', -1) == tot)
+gl = re.search(r'^GATE-PAIR count=(\d+)$', r.stdout, re.M)
+grade('GATE-PAIR: zl01 prints the gate pairs as one line (%s), outside mismatches (the %d mismatches are the mismatch classes) and the line equals the last line\'s GATE-PAIR=%d' % (gl.group(1) if gl else None, c1.get('mismatches', -1), c1.get('GATE-PAIR', -1)), bool(gl) and int(gl.group(1)) > 0 and int(gl.group(1)) == c1.get('GATE-PAIR', -1))
+gates = [n for n, l in enumerate(asm) if l.split() == ['pop', 'rax'] and n >= 3 and asm[n - 1].split() == ['test', 'eax,', 'eax'] and 'g_gc_pending' in asm[n - 3]]
+if len(gates) < 20:
+    print('GATE REFUSE(2) [%s]: fewer than 20 gc gates in zl01 -- the witness drifted' % NAME)
+    sys.exit(2)
+a2 = asm[:]
+a2.insert(gates[len(gates) // 2], '  mov rcx, rax')
+r, got = run(write('run_g.s', a2), w1 + '/plan.txt')
+grade('GATE-PAIR: one extra instruction inside one gate takes it out of the exemption (GATE-PAIR %d -> %d, EXCURSION %d -> %d)' % (c1.get('GATE-PAIR', -1), got.get('GATE-PAIR', -1), c1.get('EXCURSION', -1), got.get('EXCURSION', -1)),
+      got.get('GATE-PAIR', -1) == c1.get('GATE-PAIR', 0) - 1 and got.get('EXCURSION', -1) == c1.get('EXCURSION', 0) + 2)
 k = next((n for n, l in enumerate(asm) if re.match(r'^\s+\.quad\s+\.Lgcsite_\S+-\.Lgccode_\S+\s*$', l)), None)
 w = int(asm[k + 1].split()[1])
 a2 = asm[:]
