@@ -21,6 +21,11 @@
 #          WINDOWS_ONLY (one instance out) and g:x BOUNDED_INTEGERS_ONLY (every instance out); CONTAINERS.tsv names three files, which are no cases.
 #          Population g:a g:b#1 g:b#2 g:w g:o (5), Excl 2. Readings: a, b#1 and w PASS both modes, b#2 PASS m3 / FAIL m4, o OUTSIDE both modes (it
 #          stays in the denominator, as the runner's row), and a stale bare g:b reading from before the #k keys. The row is 3/5 excluded=2.
+#   ARM 8  SWI counts a library graded by its driver as ONE case named driver under the library's name (CEO-1269; ceo CEO-2016): the table entry u/lib has
+#          no u/lib.ref but a u/lib_driver.pl (no begin_tests) and a u/lib_driver.ref, and the runner records u/lib.pl:driver. Declared 1, graded 1, the
+#          reading PASS in both modes: 1/1. ARM 9  an entry with neither a ref nor a driver still REFUSES rc 2, naming it: a reader that cannot see
+#          its population prints no row.
+#   PROVEN TO FAIL for arm 8: on the reader before the driver convention, from-progress REFUSES rc 2, "1 SWI file(s) carry no oracle ref ... u/lib.pl".
 #   PROVEN TO FAIL: on origin c6b9a6953 arms 5 and 6 FAIL (the cases match no table entry: 0/2 excluded=0, 2 unread); on the first cut of the SWI
 #   assembly (local 5d51861a3) arms 5 and 6 FAIL: it reads 2/3 excluded=167, the fixture's SUITES.tsv number read back. On origin b3a834ba4 arm 7
 #   FAILS: 3/4 excluded=4 (the table's names, not the grader's keys: the #k rows are dropped, the stale bare g:b reading stands in for both, and
@@ -81,6 +86,16 @@ row 45 logtalk prolog "g:b#2" m3 PASS; row 46 logtalk prolog "g:b#2" m4 FAIL; ro
 row 49 logtalk prolog g:o m3 OUTSIDE; row 50 logtalk prolog g:o m4 OUTSIDE
 o7="$(S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite logtalk --dry-run 2>&1)"
 ck "7 Logtalk assembles by case: 3/5 excluded=2 (name#k keys, a guard class takes one instance, OUTSIDE stays, containers are no cases)" 'grep -q "would set logtalk -> 3/5 excluded=2 " <<<"$o7"'
+# arms 8 and 9: SWI's library graded by its driver (a scratch swi_tests table: u/lib is a library with u/lib_driver.pl and u/lib_driver.ref, no u/lib.ref)
+D="$T/corpus8/packages/prolog/swi_tests"; mkdir -p "$D/u"
+printf 'rank,entry,origin\n1,u/lib,x\n' > "$D/ALL.csv"
+printf ':- module(lib, [lib/0]).\nlib.\n' > "$D/u/lib.pl"; printf ':- use_module(lib).\n:- initialization(( ( lib -> writeln(lib_ok) ; writeln(lib_failed) ), halt )).\n' > "$D/u/lib_driver.pl"; printf 'lib_ok\n' > "$D/u/lib_driver.ref"
+row 60 swi prolog u/lib.pl:driver m3 PASS; row 61 swi prolog u/lib.pl:driver m4 PASS
+o8="$(S4E_SUITES_TSV="$T/SUITES.tsv" S4E_CORPUS_ROOT="$T/corpus8" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite swi --dry-run 2>&1)"
+ck "8 SWI counts a library graded by its driver as one case: 1/1, declared 1, graded 1" 'grep -q "would set swi -> 1/1 excluded=0 " <<<"$o8" && grep -q "^SUITE_ROW_SWI files=1 declared=1 graded=1 excluded=0 " <<<"$o8"'
+printf 'rank,entry,origin\n1,u/lib,x\n2,u/bare,x\n' > "$D/ALL.csv"; printf ':- module(bare, [bare/0]).\nbare.\n' > "$D/u/bare.pl"
+o9="$(S4E_SUITES_TSV="$T/SUITES.tsv" S4E_CORPUS_ROOT="$T/corpus8" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite swi --dry-run 2>&1)"; rc9=$?
+ck "9 an SWI entry with neither a ref nor a driver still REFUSES rc 2, naming it" '[ "$rc9" = 2 ] && grep -q "carry no oracle ref.*u/bare.pl" <<<"$o9"'
 [ "$fails" = 0 ] || printf '%s\n%s\n%s\n' "$o1" "$o5" "$o7" | grep -E '^SUITE_ROW|would set|REFUSE' | sed 's/^/      /'
 if [ "$fails" = 0 ]; then echo "✅ GATE PASS [from_progress_assembles_a_package_as_shipped_minus_excluded]: $n of $n arms hold"; exit 0; fi
 echo "⛔ GATE FAIL [from_progress_assembles_a_package_as_shipped_minus_excluded]: $fails of $n arm(s) failed"; exit 1

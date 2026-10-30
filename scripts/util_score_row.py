@@ -1671,6 +1671,12 @@ def _swi_case_census(tdir, files):
         rel = f + ".pl"
         ref = os.path.join(tdir, f + ".ref")
         if not os.path.exists(ref):
+            drv = os.path.join(tdir, f + "_driver.pl")
+            if os.path.exists(os.path.join(tdir, f + "_driver.ref")) and os.path.exists(drv) and "begin_tests(" not in open(drv, encoding="utf-8", errors="replace").read():
+                declared += 1   # a library graded by its NAME_driver.pl is ONE case named driver, recorded under the library's name (CEO-1269; the runner's rule)
+                if (rel, "driver") not in excl:
+                    graded.add(rel + ":driver")
+                continue
             noref.append(rel)
             continue
         out = subprocess.run([sys.executable, match_py, os.path.join(tdir, rel), ref, os.devnull, "0"], capture_output=True, text=True)
