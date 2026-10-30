@@ -11,8 +11,8 @@
 # other meaning. A new row for a kind another regime also carves names its regime in its condition or goes below that regime's rows; util_gen_box_cell_shapes.py
 # --check regenerates the .inc and a reviewer reads the kind's rows together. Columns:
 #   kind          the IR kind (IR_*), or * for any kind
-#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
-#   when          always | call_curmov (a call that moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
+#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or call_argv (16 x (1 + the argument count)) or call_argv_cur (16 x (2 + the argument count)), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
+#   when          always | call_curmov (a call that moves the cursor) | call_argv (one of the eleven call kinds of bb_call_fn.cpp: direct, pl_leaf, pas_bi, callee_rec, field_rec, byname, try, method, redisp, apply, eval) | call_argv_cur (call_argv and the call moves the cursor) | icn_local (an Icon local variable read in a spine-cells graph) |
 #                 icn_suspend (an Icon suspend in a spine-cells graph) | icn_home (a home-frame graph that is not Prolog-resumable: Icon, and Raku and Pascal where a row names their kinds) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
 #   word_kind     the kind of every 8-byte word of the carve, in ascending address (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16, the cto 2026-10-29, CEO-2011): a string over D (one 16-byte
 #                 DESCR cell, whose FIRST word is the one the collector's spine walk visits) and r (one raw 8-byte word: TO's counter and limit, LIMIT's count and flag, a scan's
@@ -46,6 +46,8 @@ IR_LIMIT_GATE	0	home_state	-	-	-	-	exp
 IR_LIMIT_GATE	32	icn_home	Drr	-	-	-	exp
 IR_BOUND	16	icn_home	rr	-	-	-	exp
 IR_MATCH_ARBNO	16	always	rr	-	-	-	the ARBNO record
+*	call_argv_cur	call_argv_cur	Drr[D]	-	-	-	a call box that moves the cursor (flat cell rule, ARCH-ZETA-LAYOUT R1, step 2a): the result at +0, the cursor save at +16 and the argument block at +32, one DESCR per operand; the call's own argument copy is a cell word, never a second carve
+*	call_argv	call_argv	D[D]	-	-	-	a call box (flat cell rule, ARCH-ZETA-LAYOUT R1, step 2a): the result at +0 and the argument block at +16, one DESCR per operand; the argument copy the callee reads is a cell word, never a second carve
 *	32	call_curmov	Drr	-	-	-	the result cell beside the moved cursor
 IR_VAR	0	icn_local	-	-	-	-	the local's own cell is its home; the read carves nothing
 IR_SUSPEND	0	icn_suspend	-	-	-	-	the suspend passes its value up; its resume is the beta
