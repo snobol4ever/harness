@@ -942,6 +942,7 @@ test_gate_pl_the_activation_frame_is_carved_and_released_by_the_emitted_prologue
 test_gate_pl_the_c_unifier_binds_the_plain_variable_to_the_attributed_one.sh	WIRED	-	-	-
 test_gate_pl_the_colon_operator_is_600_xfy.sh	WIRED	-	-	-
 test_gate_pl_the_debug_topic_family_answers_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_the_frame_act_result_store_lands_in_the_plans_result_cell.sh	WIRED	-	-	-
 test_gate_pl_the_general_unifier_is_one_asm_leaf_on_the_spine_not_a_c_road.sh	WIRED	-	-	-
 test_gate_pl_the_generator_road_takes_the_emitted_context_from_the_veneer_not_live_registers.sh	WIRED	-	-	-
 test_gate_pl_the_gnu_file_and_os_builtins_answer_as_gnu_prolog.sh	WIRED	-	-	-
