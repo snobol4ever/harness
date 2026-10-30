@@ -1,0 +1,15 @@
+# header_base_set.tsv -- THE BASE SET of ARCH-HEADER-SPLIT.md R4: the headers allowed to reach more than one third of the units, each for the reason stated and for no other.
+# Paths are under SCRIP/src. A header is added here only by a ruling on that page. Several paths name headers the split creates (ir/descr_tags.h, emitter/emit_state.h,
+# emitter/bb_label.h, templates/x86/x86_ops.h); util_header_fanin.py --base prints absent for a path that does not exist yet.
+# path	reason
+ir/descr_tags.h	the value tags every language, template and asm leaf names
+ir/descr.h	the value cell DESCR_t, the one value type of every language
+ir/ct_arena.h	the compile-time allocator of every compile-time object: parsers, lower, optimizer, planner, emitter, driver
+ir/ct_vec.h	the compile-time vector of every compile-time object
+ir/ast.h	the pruned parse tree, every parser's and lowerer's
+runtime/core/name_t.h	the name cell
+runtime/rt/rt_diag.h	the six-line diagnostic switch
+templates/bb/bb_template_common.h	what every template reads
+emitter/emit_state.h	the emitter state every template reads (g_emit and the _ macro); its fan-in is the template count by construction
+emitter/bb_label.h	the labels every template reads
+templates/x86/x86_ops.h	the encoder's API every template calls

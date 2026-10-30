@@ -1,0 +1,10 @@
+# header_inline_allowed.tsv -- THE always_inline LIST of ARCH-HEADER-SPLIT.md R3: headers whose multi-statement inline bodies the hot path has been measured to need.
+# Paths are under SCRIP/src. Seeded 2026-10-30 from the headers that carry the always_inline attribute at the census; a header leaves this list when its bodies move to a .c.
+# path	reason
+ir/descr.h	the DESCR_t predicates and the two source-node accessors (always_inline, the hot path of every language)
+runtime/core/core.h	always_inline accessors of the core runtime (11 at the census)
+runtime/rt/rtx_try.h	always_inline try-frame helpers (8 at the census)
+runtime/core/utf8.h	always_inline UTF-8 step helpers
+runtime/rt/rt_protected.h	always_inline protected-region helper
+runtime/rt/rt_list_view.h	always_inline list view accessor
+runtime/rt/gc_heap.h	always_inline heap accessor
