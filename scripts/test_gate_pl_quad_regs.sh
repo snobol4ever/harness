@@ -69,9 +69,11 @@ compiled=0; refused=0; other=0; : > "$W/refused.txt"; : > "$W/other.txt"
 # each emitting ~15 MB of prelude-heavy asm); one compile at a time and one scanner over all of it took more than 900 s unloaded and never reached its verdict. Each program is compiled by its own
 # worker (QUAD_JOBS, default 6) and each worker prints ONE result line; the counts below are read from those lines, so the verdict is the sequential gate's, only sooner.
 # every worker holds ONE box-wide run slot for its job (CEO-1894: harness children go through S4E_RUN_SLOTS, default 8, slots under /tmp/s4e-run-slots; the kernel frees the lock when the worker exits)
-quad_slot() { local n="${S4E_RUN_SLOTS:-8}" i; mkdir -p /tmp/s4e-run-slots 2>/dev/null || return 0
-  for i in $(seq 0 $((n - 1))); do exec 9>"/tmp/s4e-run-slots/slot$i" || return 0; flock -n 9 && return 0; done
-  exec 9>"/tmp/s4e-run-slots/slot$(( $$ % n ))" && flock 9; }
+quad_slot() { local n="${S4E_RUN_SLOTS:-8}" i d="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; mkdir -p "$d" 2>/dev/null || return 0
+  while :; do
+    for i in $(seq 0 $((n - 1))); do exec 9>"$d/slot$i" || return 0; flock -n 9 && return 0; done
+    sleep 0.5
+  done; }
 compile_one() {
   quad_slot; f="$1"; b=$(printf '%s' "$f" | sed 's#^.*/corpus/##; s#^.*/src/##' | tr '/' '_')
   if timeout -k 5 "$T" "$SCRIP" --compile --out="$W/s/$b.s" "$f" </dev/null >/dev/null 2>"$W/s/$b.err" && [ -s "$W/s/$b.s" ]; then echo "C"

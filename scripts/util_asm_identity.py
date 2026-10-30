@@ -83,19 +83,19 @@ def run_slot():
         return None
     import fcntl
     try:
+        import random, time
         n = max(1, int(os.environ.get('S4E_RUN_SLOTS', '8')))
-        d = '/tmp/s4e-run-slots'
+        d = os.environ.get('S4E_RUN_SLOT_DIR') or '/tmp/s4e-run-slots'
         os.makedirs(d, exist_ok=True)
-        for i in range(n):
-            f = open(os.path.join(d, 'slot%d' % i), 'a')
-            try:
-                fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                return f
-            except OSError:
-                f.close()
-        f = open(os.path.join(d, 'slot%d' % (threading.get_ident() % n)), 'a')
-        fcntl.flock(f, fcntl.LOCK_EX)
-        return f
+        while True:
+            for i in range(n):
+                f = open(os.path.join(d, 'slot%d' % i), 'a')
+                try:
+                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    return f
+                except OSError:
+                    f.close()
+            time.sleep(0.25 + random.random() * 0.25)
     except OSError:
         return None
 
