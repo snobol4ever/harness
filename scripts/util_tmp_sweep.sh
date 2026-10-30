@@ -69,6 +69,7 @@ def tmp_kb():
 used_before = used_pct()
 now = time.time(); cutoff = now - hours * 3600
 KEEP_PREFIX = (".", "systemd-", "snap.", "tmux-", "ssh-", "si_objs", "claude-1000", "pulse-", "dbus-", "Temp-")
+KEEP_NAMES = {"s4e"}
 def newest_in(path, limit=400000):
     best = 0; n = 0
     try: st = os.lstat(path)
@@ -109,7 +110,7 @@ def held(path):
     return any(c == path or c.startswith(pre) for c in live_cwd)
 victims = []
 for name in sorted(os.listdir("/tmp")):
-    if name.startswith(KEEP_PREFIX): continue
+    if name.startswith(KEEP_PREFIX) or name in KEEP_NAMES: continue
     path = "/tmp/" + name
     if held(path): continue
     if SCRATCH.match(name) and scr_h > 0 and os.path.isdir(path) and not held_fd(path) and newest_in(path) < now - scr_h * 3600:
@@ -159,7 +160,7 @@ if est >= press:
     def free_of_procs(p): return not held(p) and not held_fd(p)
     for name in sorted(os.listdir("/tmp")):
         p = "/tmp/" + name
-        if name.startswith(KEEP_PREFIX) or p in gone or not os.path.isdir(p): continue
+        if name.startswith(KEEP_PREFIX) or name in KEEP_NAMES or p in gone or not os.path.isdir(p): continue
         if free_of_procs(p) and idle(p): cand.append(p)
     if os.path.isdir(root):
         for seat in sorted(os.listdir(root)):
