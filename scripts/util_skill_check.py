@@ -8,6 +8,10 @@ RED rc 1 names each missing part. REFUSE rc 2 with no name. The DONE-WHEN of eve
 Compiland shape, Shift and Reduce, immediate and deferred assignment, the memo table, the counter stack, PushVal, tail loops, the token convention,
 keyword lookups, FENCE, FLUSH, ARBNO, cursor pairs, the anchored nested match, the preprocess stage, the driver tail, the module wrapper, the library,
 the no-functions rule, the proving gates) and RED rc 1 names every family a parser carries that the skill does not name.
+--craft <name>... (CEO-2076): the profile of a CRAFT skill, which has no oracle and no manual folder: the same frontmatter and size, and the seven
+sections a craft needs in order -- ## 1. THE RULES, ## 2. THE FILES, ## 3. WORKED EXAMPLES, ## 4. THE PROVING INSTRUMENTS, ## 5. THE FORBIDDEN FORMS,
+## 6. THE ARCH PAGES, ## 7. HOW A LANDING IS PROVED -- naming RULES.md, an ARCH- page, harness/scripts and a CEO- receipt, with at least three
+quoted code blocks (a craft skill quotes real lines from the files it governs). RED rc 1 names each missing part; red on an absent skill.
 """
 import glob, os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -76,7 +80,45 @@ def parser_constructs(name):
         else:
             print("OK   %s (%d parsers)" % (fam, len(where)))
     return rc
+CRAFT_MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "RULES.md", "ARCH-", "harness/scripts", "CEO-", "```"]
+CRAFT_HEADS = ["THE RULES", "THE FILES", "WORKED EXAMPLES", "THE PROVING INSTRUMENTS", "THE FORBIDDEN FORMS", "THE ARCH PAGES", "HOW A LANDING IS PROVED"]
+def check_craft(name):
+    p = os.path.join(ROOT, ".github", "skills", name, "SKILL.md")
+    if not os.path.exists(p):
+        return ["no file %s" % p]
+    t = open(p, encoding="utf-8").read()
+    why = []
+    m = re.match(r"---\n(.*?)\n---\n", t, re.S)
+    if not m:
+        why.append("no frontmatter")
+    else:
+        fm = m.group(1)
+        n = re.search(r"^name:\s*(\S+)\s*$", fm, re.M)
+        d = re.search(r"^description:\s*(.+)$", fm, re.M)
+        if not n or n.group(1) != name: why.append("frontmatter name != %s" % name)
+        if not d or not (40 <= len(d.group(1)) <= 1024): why.append("description missing or not 40..1024 chars")
+    sz = len(t.encode())
+    if not (3072 <= sz <= 40960): why.append("size %d not in 3..40 KB" % sz)
+    for k in CRAFT_MARKS:
+        if k not in t: why.append("missing '%s'" % k)
+    for i, h in enumerate(CRAFT_HEADS):
+        if not re.search(r"^## %d\. %s" % (i + 1, re.escape(h)), t, re.M): why.append("section %d is not '## %d. %s ...'" % (i + 1, i + 1, h))
+    quoted = len(re.findall(r"^```", t, re.M)) // 2
+    if quoted < 3: why.append("fewer than 3 quoted code blocks (%d): a craft skill quotes real lines" % quoted)
+    return why
 def main(names):
+    if names and names[0] == "--craft":
+        if len(names) < 2:
+            print("REFUSE(2): usage: util_skill_check.py --craft <skill-name>..."); return 2
+        rc = 0
+        for n in names[1:]:
+            why = check_craft(n)
+            if why:
+                rc = 1
+                for w in why: print("RED  %s: %s" % (n, w))
+            else:
+                print("OK   %s (craft)" % n)
+        return rc
     if names and names[0] == "--parser-constructs":
         if len(names) != 2:
             print("REFUSE(2): usage: util_skill_check.py --parser-constructs <skill-name>"); return 2
