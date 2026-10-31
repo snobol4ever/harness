@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_dynamic_predicate_of_ground_facts_asserts_without_a_code_fragment_and_answers_as_swipl.sh -- THE FACTS-ONLY DATA PATH (ARCH-PROLOG-DATABASE section 13 items 1 and 3; hq_runtime, row prolog-dynamic-fact-table-scales-long-primes-1): a dynamic predicate whose clauses are
 # ground facts is stored as slots and called through one data proc per predicate (the TO db walk over the first-argument key, unifying the stored cells in place with copy-on-bind),
-# and assertz compiles NO code fragment for such a fact; the first rule or non-ground fact leaves the path for good and compiles the slots.
+# and assertz compiles NO code fragment for such a fact; the first rule (or a fact holding an attributed variable; a fact with plain variables stays on the path since ARCH-PROLOG-DATABASE section 24 (1)) leaves the path for good and compiles the slots.
 #   ARM 1 (answers): a witness over order and duplicates, asserta, an atomic and a compound argument (a compound bound by a call is a COPY: setarg on it changes nothing stored), a
 #     deterministic exit (setup_call_cleanup runs its cleanup at the exit of a one-solution call), the logical update view, a variable-argument fact arriving, a RULE asserted into a facts-only
 #     predicate DURING an iteration over it, retract of every fact followed by a rule, retractall then facts again, attributed variables (freeze, dif) as call arguments, and the aggregates,
 #     meta-calls and cuts over a fact table -- cut from swipl in THIS run and compared with SCRIP's mode 3 and mode 4.
 #   ARM 2 (cost): asserting 300 ground facts costs at most 20 M instructions more than the program that asserts none (a compiled fragment per fact cost 2.6 M each, 780 M for the 300), under callgrind.
-#   FAIL-ONCE (a proper test, never a seam in SCRIP): the same 300 facts after ONE non-ground fact (which leaves the path and compiles every fact) must read over 200 M instructions dearer than the
+#   FAIL-ONCE (a proper test, never a seam in SCRIP): the same 300 facts after ONE rule (which leaves the path and compiles every fact) must read over 200 M instructions dearer than the
 #     data path, else the instrument cannot see a compile and refuses rc 2.
 #   ARM 3 (collection): the witness under SCRIP_GC_STRESS=1 at a 128 KB window, mode 3, answers as swipl.
 # The cost arm is an instruction count (CEO-1785/1786), never a clock.
@@ -118,16 +118,16 @@ if cmp -s "$W/$p.gc.n" "$W/$p.ref.n"; then echo "  ok  arm 3 m3: the witness ans
 mk() { printf ':- dynamic f/2.\nfill(N) :- forall(between(1, N, I), assertz(f(I, I))).\n%s\n:- write(done), nl.\n' "$2" > "$W/$1.pl"; }
 mk none ':- true.'
 mk facts ':- fill(300).'
-mk leave ':- assertz(f(_, any)), fill(300).'
+mk leave ':- assertz((f(x, any) :- fail)), fill(300).'
 for k in none facts leave; do
   v="$(ir_measure "$ROOT/scrip" "$W/$k.pl")"
   ir_is_number "$v" || { echo "GATE REFUSED(2) [$G]: the $k probe gave no instruction reading ($(ir_cell "$v"): $(ir_reason "$v"))"; exit 2; }
   eval "ir_$k=$v"
 done
 cost=$(( ir_facts - ir_none )); compile=$(( ir_leave - ir_facts ))
-if [ "$compile" -le "$COMPILE" ]; then echo "GATE REFUSED(2) [$G]: 300 facts after a non-ground fact cost only $compile more than the data path (need over $COMPILE) -- the instrument cannot see a compile"; exit 2; fi
-if [ "$cost" -le "$BOUND" ]; then echo "  ok  arm 2 cost: asserting 300 ground facts reads $cost instructions over the program that asserts none (bound $BOUND); after a non-ground fact the same 300 read $compile more, so a compile is seen"
+if [ "$compile" -le "$COMPILE" ]; then echo "GATE REFUSED(2) [$G]: 300 facts after a rule cost only $compile more than the data path (need over $COMPILE) -- the instrument cannot see a compile"; exit 2; fi
+if [ "$cost" -le "$BOUND" ]; then echo "  ok  arm 2 cost: asserting 300 ground facts reads $cost instructions over the program that asserts none (bound $BOUND); after a rule the same 300 read $compile more, so a compile is seen"
 else echo "  RED arm 2 cost: asserting 300 ground facts reads $cost instructions over none, over the bound $BOUND -- a fact still compiles code"; bad=1; fi
 TREE="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')$(git -C "$ROOT" diff --quiet 2>/dev/null || echo -DIRTY)"
-if [ $bad -eq 0 ]; then echo "GATE PASS(0) [$G]: a dynamic predicate of ground facts asserts without a code fragment, answers as swipl in both modes and through a collection, and leaves the path when a rule or a non-ground fact arrives (self-test: a corrupted reference is seen, a compile reads dearer) (tree SCRIP=$TREE)"; exit 0; fi
+if [ $bad -eq 0 ]; then echo "GATE PASS(0) [$G]: a dynamic predicate of ground facts asserts without a code fragment, answers as swipl in both modes and through a collection, and leaves the path when a rule arrives (self-test: a corrupted reference is seen, a compile reads dearer) (tree SCRIP=$TREE)"; exit 0; fi
 echo "GATE FAIL(1) [$G]: the facts-only data path differs from swipl or from its cost (tree SCRIP=$TREE)"; exit 1
