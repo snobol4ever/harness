@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE (coo 2026-09-20, ceo CEO-1002 rank 0, row
+# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE (THE ARBITER IS THE cto since the ceo left the ROSTER, Lon 2026-10-31 15:1x CDT: every arm that read the ceo as the arbiter reads the cto, and the fixture ceo plays the standing seat the cto played) (coo 2026-09-20, ceo CEO-1002 rank 0, row
 # instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat).
 #
 # ⛔⭐ THE DEFECT IS IN THE BUS, NOT IN A SEAT. claim and next LOCKED A ROW SILENTLY: the bus had claim, assign, ask
@@ -38,12 +38,12 @@ cleanup(){ chmod -R u+w "$W" 2>/dev/null; rm -rf "$W"; }
 trap cleanup EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"
 # the roster of SEPTET as CEO-1662 redefined it (2026-10-11): hq_snobol4, hq_icon and hq_prolog stand, hq_raku and hq_pascal are stood down
-STANDING="ceo cto cfo coo hq_snobol4 hq_icon hq_prolog"
+STANDING="cto ceo cfo coo hq_snobol4 hq_icon hq_prolog"
 DOWN="hq_raku hq_pascal seat07"
 for s in $STANDING $DOWN; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
-printf 'SEPTET\n# scratch line 2 for a gate fixture: LANES: icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=ceo raku=ceo\n' > "$W/MODE"
+printf 'SEPTET\n# scratch line 2 for a gate fixture: LANES: icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=cto raku=cto\n' > "$W/MODE"
 # three LIVE claims held by other seats: one lane-neutral (cfo), one in the prolog lane, one in the icon lane
-printf '0\tprolog-row-the-coo-takes\tcoo\tFREE\n0\trow-the-coo-takes\tcoo\tFREE\n0\trow-the-cfo-already-holds\tcfo\tCLAIMED:cfo\n0\tprolog-row-hq-prolog-holds\thq_prolog\tCLAIMED:hq_prolog\n0\ticon-row-hq-icon-holds\thq_icon\tCLAIMED:hq_icon\n0\trow-for-the-picker\tcto\tFREE\n' > "$W/QUEUE.tsv"
+printf '0\tprolog-row-the-coo-takes\tcoo\tFREE\n0\trow-the-coo-takes\tcoo\tFREE\n0\trow-the-cfo-already-holds\tcfo\tCLAIMED:cfo\n0\tprolog-row-hq-prolog-holds\thq_prolog\tCLAIMED:hq_prolog\n0\ticon-row-hq-icon-holds\thq_icon\tCLAIMED:hq_icon\n0\trow-for-the-picker\thq_snobol4\tFREE\n' > "$W/QUEUE.tsv"
 for t in prolog-row-the-coo-takes row-the-coo-takes row-the-cfo-already-holds prolog-row-hq-prolog-holds icon-row-hq-icon-holds row-for-the-picker; do
   printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
 printf 'cfo\nRUNNING\n' > "$W/claims/row-the-cfo-already-holds.claim"
@@ -53,11 +53,11 @@ count(){ ls "$W/$1/inbox"/*claim-notice-$2* 2>/dev/null | wc -l; }
 
 echo "--- ARMS 1-3: A PROLOG-LANE CLAIM ANNOUNCES ITSELF TO THE CEO AND THE LIVE HOLDERS OF ITS LANE AND OF NEUTRAL ROWS, AND TO NOBODY ELSE ---"
 out="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim prolog-row-the-coo-takes 2>&1)"; rc=$?
-miss=""; for s in ceo hq_prolog cfo; do n=$(count $s prolog-row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
-[ "$rc" = 0 ] && [ -z "$miss" ]; arm $? "the ceo, the prolog-lane holder and the neutral-row holder each got exactly one notice (rc=$rc)${miss:+ -- missing:$miss}"
-extra=""; for s in cto hq_snobol4 hq_icon coo $DOWN; do n=$(count $s ''); [ "$n" = 0 ] || extra="$extra $s($n)"; done
+miss=""; for s in cto hq_prolog cfo; do n=$(count $s prolog-row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
+[ "$rc" = 0 ] && [ -z "$miss" ]; arm $? "the cto, the prolog-lane holder and the neutral-row holder each got exactly one notice (rc=$rc)${miss:+ -- missing:$miss}"
+extra=""; for s in ceo hq_snobol4 hq_icon coo $DOWN; do n=$(count $s ''); [ "$n" = 0 ] || extra="$extra $s($n)"; done
 [ -z "$extra" ]; arm $? "and NOT the icon-lane holder, NOT a seat holding nothing, NOT a stood-down seat, NOT the claimant${extra:+ -- mailed:$extra}"
-body="$(cat "$W/ceo/inbox"/*claim-notice-prolog-row-the-coo-takes* 2>/dev/null)"
+body="$(cat "$W/cto/inbox"/*claim-notice-prolog-row-the-coo-takes* 2>/dev/null)"
 [[ "$body" == *"WORK STARTED"* && "$body" == *coo* && "$body" == *prolog-row-the-coo-takes* ]]
 arm $? "the notice NAMES THE SEAT AND THE TOPIC in its body, not only in its filename"
 
@@ -69,46 +69,46 @@ arm $? "and says how many seats it told, so a delivery that did not happen canno
 
 echo "--- ARM 6: A LANE-NEUTRAL ROW REACHES EVERY LIVE HOLDER (shared code overlaps every lane) ---"
 out6="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim row-the-coo-takes 2>&1)"; rc6=$?
-miss=""; for s in ceo cfo hq_prolog hq_icon; do n=$(count $s row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
-extra=""; for s in cto hq_snobol4 coo $DOWN; do n=$(count $s row-the-coo-takes); [ "$n" = 0 ] || extra="$extra $s($n)"; done
-[ "$rc6" = 0 ] && [ -z "$miss" ] && [ -z "$extra" ]; arm $? "the ceo and all three holders got it, the two idle seats did not (rc=$rc6)${miss:+ -- missing:$miss}${extra:+ -- mailed:$extra}"
+miss=""; for s in cto cfo hq_prolog hq_icon; do n=$(count $s row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
+extra=""; for s in ceo hq_snobol4 coo $DOWN; do n=$(count $s row-the-coo-takes); [ "$n" = 0 ] || extra="$extra $s($n)"; done
+[ "$rc6" = 0 ] && [ -z "$miss" ] && [ -z "$extra" ]; arm $? "the cto and all three holders got it, the two idle seats did not (rc=$rc6)${miss:+ -- missing:$miss}${extra:+ -- mailed:$extra}"
 
 echo "--- ARM 7: next TAKES ITS LOCK THROUGH claim AND MUST NOT SWALLOW THE ANNOUNCEMENT ---"
-nout="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" next 2>&1)"; nrc=$?
+nout="$(S4E_SEAT=hq_snobol4 S4E_POST="$W" bash "$SUT" next 2>&1)"; nrc=$?
 [[ "$nout" == *"the neighbourhood"* ]] && [[ "$nout" == *"LIVE CLAIM"* ]]
 arm $? "the served seat sees the neighbourhood too (next rc=$nrc) -- the picker is where a seat is LEAST likely to know what its neighbours are on"
-n=$(count ceo row-for-the-picker)
+n=$(count cto row-for-the-picker)
 [ "$n" = 1 ]; arm $? "and next's own take announced itself exactly once, not twice (the inner claim is the only announcer)"
 
 echo "--- ARM 8: EVERY CLAIM LEAVES ONE LINE IN CLAIMS.log, WHOEVER WAS MAILED ---"
 lines=$(grep -c . "$W/CLAIMS.log" 2>/dev/null)
-[ "$lines" = 3 ] && grep -q "coo	prolog-row-the-coo-takes	lane=prolog" "$W/CLAIMS.log" && grep -q "cto	row-for-the-picker	lane=neutral" "$W/CLAIMS.log"
+[ "$lines" = 3 ] && grep -q "coo	prolog-row-the-coo-takes	lane=prolog" "$W/CLAIMS.log" && grep -q "hq_snobol4	row-for-the-picker	lane=neutral" "$W/CLAIMS.log"
 arm $? "three claims, three lines naming the seat, the topic and the lane (got $lines)"
 
 echo "--- ARM 9: AN ANNOUNCEMENT THAT FAILS NAMES ITSELF AND DOES NOT FAIL THE CLAIM ---"
-printf '0\trow-with-a-deaf-neighbour\tcto\tFREE\n' >> "$W/QUEUE.tsv"
+printf '0\trow-with-a-deaf-neighbour\thq_snobol4\tFREE\n' >> "$W/QUEUE.tsv"
 printf '# TASK row-with-a-deaf-neighbour\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' > "$W/tasks/row-with-a-deaf-neighbour.task.md"
 chmod 000 "$W/hq_icon/inbox"
-out2="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim row-with-a-deaf-neighbour 2>&1)"; rc2=$?
+out2="$(S4E_SEAT=hq_snobol4 S4E_POST="$W" bash "$SUT" claim row-with-a-deaf-neighbour 2>&1)"; rc2=$?
 chmod 755 "$W/hq_icon/inbox"
-[ "$rc2" = 0 ] && [ "$(head -1 "$W/claims/row-with-a-deaf-neighbour.claim")" = cto ] && [[ "$out2" == *"COULD NOT ANNOUNCE to hq_icon"* ]]
+[ "$rc2" = 0 ] && [ "$(head -1 "$W/claims/row-with-a-deaf-neighbour.claim")" = hq_snobol4 ] && [[ "$out2" == *"COULD NOT ANNOUNCE to hq_icon"* ]]
 arm $? "an undeliverable notice is NAMED, the claim still stands (rc=$rc2), and the count does not include it"
 [[ "$out2" == *"announced to 4 standing seat(s)"* ]]
-arm $? "and the number printed is what was DELIVERED (ceo cfo hq_prolog coo) -- an instrument that reports success while doing nothing is the recurring failure"
+arm $? "and the number printed is what was DELIVERED (cto cfo hq_prolog coo) -- an instrument that reports success while doing nothing is the recurring failure"
 
 echo "--- ARM 10: A PORT IS A LANE OF ITS OWN: a port holder hears only its port's claims, and a port's claim reaches only the ceo and its port (CEO-2081) ---"
 mkdir -p "$W/hq_dotnet/inbox" "$W/hq_dotnet/archive"
-printf 'ROSTER: ceo cto cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
+printf 'ROSTER: cto ceo cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
 for t in dotnet-row-held gc-neutral-row dotnet-row-taken; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
 printf 'hq_dotnet\nRUNNING\n' > "$W/claims/dotnet-row-held.claim"
 rm -f "$W/claims/row-for-the-picker.claim" "$W/claims/row-with-a-deaf-neighbour.claim"
-o10="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
+o10="$(S4E_SEAT=ceo S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
 n_neutral=$(count hq_dotnet gc-neutral-row)
-o11="$(S4E_SEAT=ceo S4E_POST="$W" bash "$SUT" claim dotnet-row-taken 2>&1)"
+o11="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim dotnet-row-taken 2>&1)"
 n_portcfo=$(count cfo dotnet-row-taken); n_porticon=$(count hq_icon dotnet-row-taken)
 [ "$n_neutral" = 0 ] && [ "$n_portcfo" = 0 ] && [ "$n_porticon" = 0 ]
 arm $? "the port holder was not mailed the neutral gc- claim ($n_neutral), and the port's claim reached no SCRIP holder (cfo $n_portcfo, hq_icon $n_porticon)"
 
 echo "graded $N arm(s)"
-if [ "$FAIL" = 0 ]; then echo "✅ GATE PASS: the bus announces the start of work to the ceo and the live holders of the row's lane, logs every claim, and shows the caller the neighbourhood."; exit 0; fi
+if [ "$FAIL" = 0 ]; then echo "✅ GATE PASS: the bus announces the start of work to the cto and the live holders of the row's lane, logs every claim, and shows the caller the neighbourhood."; exit 0; fi
 echo "⛔ GATE FAIL: $FAIL of $N arm(s) red -- a claim that nobody hears is the collision nobody can prevent; a claim everybody hears is the notice nobody reads."; exit 1

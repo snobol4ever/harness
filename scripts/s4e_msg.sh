@@ -886,8 +886,8 @@ s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every
   # admits a topic string cannot show the overlap. A notice in a mailbox nobody reads is the noise that trains seats to stop reading
   # notices (this file's own words, above). The seats that CAN see a population overlap are the ones working a row in the same LANE
   # (the topic's language prefix) or a lane-neutral row (zeta, spine, gc, headers, instruments: shared code overlaps everyone), plus the
-  # ceo, who arbitrates, plus the row's owner cell. Everyone else reads $PO/CLAIMS.log, one line per claim, whoever was mailed.
-  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _lang _cl _ct _recip=" ceo " _ocell _live=""
+  # cto, who arbitrates since the ceo left the roster (Lon 2026-10-31 15:1x CDT; MODE line 2: asks and rulings go to the cto), plus the row's owner cell. Everyone else reads $PO/CLAIMS.log, one line per claim, whoever was mailed.
+  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _lang _cl _ct _recip=" cto " _ocell _live=""
   _mode="$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')"
   _lang="${_t%%-*}"; case " $(s4e_lane_languages) dotnet jvm " in *" $_lang "*) ;; *) _lang="";; esac
   _ocell="$(qrow "$_t" 2>/dev/null | cut -f3)"; [ -n "$_ocell" ] && _recip="$_recip$_ocell "
