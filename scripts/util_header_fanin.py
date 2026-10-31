@@ -10,6 +10,7 @@
 #   util_header_fanin.py --ceiling         OVER <path> fanin=N users=M per header over the R4 ceiling, UMBRELLA <path> per umbrella, then
 #                                          "summary over=N umbrellas=M"
 #   util_header_fanin.py --unused          per unit the direct includes none of whose declarations the unit names, then "summary unused=N"
+#   util_header_fanin.py --under PATH      with --unused or --bare: only the units under PATH (src/templates), the summary counts those only
 #   util_header_fanin.py --bare            per includer the quoted includes written as a bare name for a header in another directory, then
 #                                          "summary bare=N"
 #   util_header_fanin.py --write-baseline  writes harness/scripts/header_fanin.baseline.tsv; refuses rc 1 when any figure would rise above the
@@ -452,6 +453,7 @@ def main():
     ap.add_argument('--ceiling', action='store_true')
     ap.add_argument('--unused', action='store_true')
     ap.add_argument('--bare', action='store_true')
+    ap.add_argument('--under', metavar='PATH', help='restrict --unused and --bare to the units under PATH (src/templates or templates)')
     ap.add_argument('--write-baseline', action='store_true')
     ap.add_argument('--ratchet', choices=['fanin', 'umbrella', 'inline', 'bare', 'unused', 'all'])
     a = ap.parse_args()
@@ -483,14 +485,18 @@ def main():
             print('UMBRELLA %s' % h)
         print('summary over=%d umbrellas=%d' % (len(ov), len(um)))
         return 0
+    under = a.under and a.under.strip('/')
+    if under and under.startswith('src/'):
+        under = under[4:]
+    keep = (lambda u: not under or u == under or u.startswith(under + '/'))
     if a.unused:
-        un = t.unused()
+        un = {u: b for u, b in t.unused().items() if keep(u)}
         for u, bad in sorted(un.items()):
             print('%s\t%s' % (u, ' '.join(bad)))
         print('summary unused=%d' % sum(len(b) for b in un.values()))
         return 0
     if a.bare:
-        bg = t.bare()
+        bg = {u: b for u, b in t.bare().items() if keep(u)}
         for u, bad in sorted(bg.items()):
             print('%s\t%s' % (u, ' '.join(bad)))
         print('summary bare=%d' % sum(len(b) for b in bg.values()))

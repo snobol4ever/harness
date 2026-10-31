@@ -21,17 +21,17 @@
 set -uo pipefail
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [ -n "$ROOT" ] || { echo "GATE: FAIL — not inside a git worktree; refusing to grade an unknown tree"; exit 1; }
-ASM="$ROOT/src/templates/x86/x86_asm.h"
+ASM="$ROOT/src/templates/x86/x86_rtcc.cpp"
 INIT="$ROOT/src/runtime/rtx/rtcc_init.c"
 RTCC="$ROOT/src/runtime/rtx/rtcc.h"
 for f in "$ASM" "$INIT" "$RTCC"; do [ -r "$f" ] || { echo "GATE: FAIL — missing $f"; exit 1; }; done
 echo "=== RTCC BLOCK COVERAGE GATE ==="
 echo "tree: $ROOT"
 echo
-WBT="$(awk '/^static inline std::string x86_rtcc_wb_text/,/^}/' "$ASM")"
-RLB="$(awk '/^static inline std::string x86_rtcc_rl_bin/,/^}/' "$ASM")"
-RLT="$(awk '/^static inline std::string x86_rtcc_rl_text/,/^}/' "$ASM")"
-WBB="$(awk '/^static inline std::string x86_rtcc_wb_bin/,/^}/' "$ASM")"
+WBT="$(awk '/^(static )?std::string x86_rtcc_wb_text/,/^}/' "$ASM")"
+RLB="$(awk '/^(static )?std::string x86_rtcc_rl_bin/,/^}/' "$ASM")"
+RLT="$(awk '/^(static )?std::string x86_rtcc_rl_text/,/^}/' "$ASM")"
+WBB="$(awk '/^(static )?std::string x86_rtcc_wb_bin/,/^}/' "$ASM")"
 [ -n "$WBT" ] && [ -n "$RLB" ] && [ -n "$RLT" ] && [ -n "$WBB" ] || { echo "GATE: FAIL — POSITIVE CONTROL: veneer encoders not found in $ASM (renamed? moved?); refusing to grade nothing"; exit 1; }
 # Parse the TEXT encoders: they carry REAL assembly strings.  The BINARY encoders emit raw bytes whose
 # register identity survives only in comments -- grading those comments would measure documentation, not

@@ -18,8 +18,8 @@
 set -u
 G="${0##*/}"; R="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"; F=0; N=0
 ck() { N=$((N+1)); if [ "$1" = 0 ]; then printf '  ok    %s\n' "$2"; else F=$((F+1)); printf '  FAIL  %s\n' "$2"; fi; }
-H="$R/src/runtime/rt/gc_heap.c"; X="$R/src/templates/x86/x86_asm.h"
-[ -r "$H" ] && [ -r "$X" ] || { echo "GATE REFUSE(2) [$G]: gc_heap.c or x86_asm.h unreadable"; exit 2; }
+H="$R/src/runtime/rt/gc_heap.c"; X="$R/src/templates/x86/x86_gc.cpp"
+[ -r "$H" ] && [ -r "$X" ] || { echo "GATE REFUSE(2) [$G]: gc_heap.c or x86_gc.cpp unreadable"; exit 2; }
 tr -s ' \t\n' '   ' < "$X" | grep -q 'x86_rt_gc_poll_at(const char \* f, int l) {.*x86("call", "rt_gc_poll_asm"'; ck $? "the emitter's bare poll calls rt_gc_poll_asm, not the C rt_gc_poll (the helper carries its template site as a note since 2026-09-23; x86_rt_gc_poll() is the macro that stamps it)"
 grep -q '".globl rt_gc_poll_asm' "$H";                               ck $? "rt_gc_poll_asm is defined as a file-scope __asm__ leaf in gc_heap.c"
 BODY="$(awk '/"rt_gc_poll_asm:/{f=1} f{print} f&&/size rt_gc_poll_asm/{exit}' "$H")"

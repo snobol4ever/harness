@@ -21,10 +21,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 . "$HERE/lib_oracle_flags.sh"
 SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "REFUSED(2): correctness oracle missing ($SBL)"; exit 2; }
 [ -x "$ROOT/scrip" ] || { echo "REFUSED(2): $ROOT/scrip not built"; exit 2; }
-X="$ROOT/src/templates/x86/x86_asm.h"
+X="$ROOT/src/templates/x86/x86_gc.cpp"
 red=0
-nh=$(grep -o 'x86_gc_gate(' "$X" | wc -l); nhelp=$(grep -c '^inline std::string x86_rt_gc_poll' "$X")
-[ "$nh" -ge 8 ] && [ "$nhelp" -ge 8 ] && echo "ok  x86_asm.h: $nhelp poll helpers, $nh gate uses" || { echo "RED: x86_asm.h has $nhelp poll helpers and $nh x86_gc_gate uses (want >= 8 each)"; red=1; }
+nh=$(grep -o 'x86_gc_gate(' "$X" | wc -l); nhelp=$(grep -c -E '^(static )?std::string x86_rt_gc_poll' "$X")
+[ "$nh" -ge 8 ] && [ "$nhelp" -ge 8 ] && echo "ok  x86_gc.cpp: $nhelp poll helpers, $nh gate uses" || { echo "RED: x86_gc.cpp has $nhelp poll helpers and $nh x86_gc_gate uses (want >= 8 each)"; red=1; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 cat > "$W/churn.sno" <<'SNO'
         T = TABLE()

@@ -221,11 +221,11 @@ def selftest():
         f.write("static const char *agg_key(int v, char *buf) { snprintf(buf, 32, \"\\001i%d\", v); return buf; }\n")
     with open(os.path.join(src, "parsers", "pascal", "pascal.y"), "w") as f:
         f.write("static void init_lit(char *buf, long n) { for (long k = 0; k < n; k++) { if (k) buf[k] = '\\001'; } }\n")
-    with open(os.path.join(src, "templates", "x86", "x86_asm.h"), "w") as f:
+    with open(os.path.join(src, "templates", "x86", "x86_ops.h"), "w") as f:
         f.write("#define X86_IS_PORTMARK(s_, i_) ((s_)[i_] == '\\x01')\nstatic int is_mark(const char *s) { return X86_IS_PORTMARK(s, 0) || s[0] == '\\x01'; }\n")
     with open(os.path.join(src, "parsers", "pascal", "pascal.tab.c"), "w") as f:
         f.write("/* A Bison parser, made by GNU Bison */\nstatic char sep = '\\001';\n")
-    nm = [("templates/x86/x86_asm.h", r"X86_IS_PORTMARK", "the port mark of the TEXT medium: emitter bookkeeping, never a stored value"),
+    nm = [("templates/x86/x86_ops.h", r"X86_IS_PORTMARK", "the port mark of the TEXT medium: emitter bookkeeping, never a stored value"),
           ("runtime/gone.c", r"never", "a declaration whose site is gone")]
     sites, defs, tables, exempt, stale = census(src, nm)
     want = {("by_name_dispatch.c", 3, "__rk_count", "RAKU", "macro", ""), ("by_name_dispatch.c", 7, "__pas_join", "PASCAL", "macro", ""),

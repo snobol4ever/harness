@@ -46,7 +46,7 @@ SPARSE = ["tests", "library", "include", "packages/icon"]
 MASTERS = ("snobol4", "icon", "prolog", "raku", "pascal", "snocone", "rebus")
 LANG = {}
 STALE_S = 24 * 3600
-ASM = os.path.join("src", "templates", "x86", "x86_asm.h")
+ASM = os.path.join("src", "templates", "x86", "x86_zeta.cpp")
 ANCHOR = 'extern "C" int zd_k_own(IR_t * nd);\n'
 HELPER = ("static inline int zopc_ai(const IR_t * nd) { if (!g_emit_cfg || !nd) return -1; for (int k = 0; k < g_emit_cfg->n; k++) if (g_emit_cfg->all[k] == nd) return k;"
           " return -1; }\n")
@@ -105,8 +105,8 @@ def swap_fatal(path):
     if "ZOP_UNBACKED off=%d" in s:
         if "zopc_ai(" not in s and "ai=%d" not in s: pass
         return "already-counting"
-    if len(FATAL.findall(s)) != 1: refuse("x86_asm.h holds %d FATAL x86_zop blocks to swap, not one" % len(FATAL.findall(s)))
-    if s.count(ANCHOR) != 1: refuse("x86_asm.h has no single zd_k_own anchor to hang the helper on")
+    if len(FATAL.findall(s)) != 1: refuse("x86_zeta.cpp holds %d FATAL x86_zop blocks to swap, not one" % len(FATAL.findall(s)))
+    if s.count(ANCHOR) != 1: refuse("x86_zeta.cpp has no single zd_k_own anchor to hang the helper on")
     s = FATAL.sub(lambda m: COUNT, s).replace(ANCHOR, ANCHOR + HELPER)
     open(p, "w", encoding="utf-8").write(s); return "swapped"
 def op_names(path):

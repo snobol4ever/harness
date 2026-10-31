@@ -23,7 +23,7 @@ P = {
  "02-xa_flat-argkt":        [("src/templates/xa/xa_flat.cpp", 's += x86("sub", "rsp", (long)argkt)', 's += std::string()', 1), ("src/templates/xa/xa_flat.cpp", 'x86("add", "rsp", (long)argkt)', 'std::string()', 0)],
  "04-emit-blob_carve":      [("src/emitter/emit.cpp", 'x86("sub", "rsp", (long)(blob_carve_bytes() + blob_carve_pad()))', 'std::string()', 1)],
  "05-emit-sph":             [("src/emitter/emit.cpp", 'bb_emit_x86(x86("sub", "rsp", (long)_sph) +', 'bb_emit_x86(std::string() +', 1)],
- "15-x86_asm-zbgrow-at-beta": [("src/templates/x86/x86_asm.h", 's += x86("sub", "rsp", (long)_.op_zbgrow);', 's += std::string();', 1)],
+ "15-x86_asm-zbgrow-at-beta": [("src/templates/x86/x86_call.cpp", 's += x86("sub", "rsp", (long)_.op_zbgrow);', 's += std::string();', 1)],
 }
 import sys
 if len(sys.argv) < 2 or sys.argv[1] in ("--list", "-l"):

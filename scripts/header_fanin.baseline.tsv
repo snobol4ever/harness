@@ -293,7 +293,6 @@ bare	templates/bb/bb_var_frame.cpp	3	0	0	0
 bare	templates/bb/bb_var_global.cpp	4	0	0	0
 bare	templates/bb/bb_var_ref.cpp	3	0	0	0
 bare	templates/bb/bb_zdp_anchor.cpp	2	0	0	0
-bare	templates/x86/x86_asm.h	5	0	0	0
 bare	templates/xa/xa_bb_macro_library.cpp	2	0	0	0
 bare	templates/xa/xa_bb_ptr_slot.cpp	2	0	0	0
 bare	templates/xa/xa_cap_fixup.cpp	2	0	0	0
@@ -474,7 +473,6 @@ hdr	templates/bb/bb_templates.h	46	129	1	0
 hdr	templates/x86/gc_allocating_table.inc	1	1	0	0
 hdr	templates/x86/rtx_twin_table.inc	1	0	0	0
 hdr	templates/x86/x86_arg_roles.h	150	1	0	1
-hdr	templates/x86/x86_asm.h	149	207	310	1
 hdr	templates/xa/xa_template_common.h	17	0	0	1
 hdr	templates/xa/xa_templates.h	1	14	0	0
 hdr	tools/emit_per_kind_audit.h	1	0	0	0

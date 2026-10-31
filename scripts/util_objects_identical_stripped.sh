@@ -5,7 +5,23 @@
 # A build-id directory suffix (-f65f143e2f, ten hex digits) is dropped from the pairing key, so two roots built from different sources still pair.
 # Prints "objects=N identical=N differing=M", then one line per differing object ("DIFF key"), and per object present in one tree only ("ONLY-A key" /
 # "ONLY-B key"). rc 0 all identical and none missing, rc 1 any difference or any object in one tree only, rc 2 the instrument could not measure.
+# --no-comdat [--moved FILE] (first arguments; R5-PRIME (b) of the cto's ruling CEO-2078, for a step that moves inline bodies into a compiled file): compares every object section by section and leaves
+# out the COMDAT groups, .eh_frame, the debug sections and the symbols named in FILE (the moved functions and their static locals; the "static inline" copies sit in plain .text);
+# every other defined symbol is compared byte for byte with the relocations inside it, the string and constant pools by the
+# entry a relocation reaches. A mismatch names the object and the section; an object only the second tree has is "NEW-B" and no failure (a step that adds files). See lib_elf_noncomdat.py.
 set -u
+if [ "${1:-}" = "--no-comdat" ]; then
+    shift
+    moved=()
+    if [ "${1:-}" = "--moved" ]; then
+        [ -r "${2:-}" ] || { echo "REFUSE(2): --moved needs a readable file of moved function names" >&2; exit 2; }
+        moved=(--moved "$2"); shift 2
+    fi
+    if [ "$#" -ne 2 ] && [ "$#" -ne 4 ]; then echo "usage: $0 --no-comdat [--moved FILE] <objdirA> <objdirB> [outA outB]" >&2; exit 2; fi
+    for d in "$@"; do [ -d "$d" ] || { echo "REFUSE(2): $d is not a directory" >&2; exit 2; }; done
+    command -v c++filt >/dev/null || { echo "REFUSE(2): c++filt is absent" >&2; exit 2; }
+    exec python3 -I "$(dirname "$0")/lib_elf_noncomdat.py" "${moved[@]}" "$@"
+fi
 if [ "$#" -ne 2 ] && [ "$#" -ne 4 ]; then echo "usage: $0 <objdirA> <objdirB> [outA outB]" >&2; exit 2; fi
 command -v objcopy >/dev/null && command -v cmp >/dev/null || { echo "REFUSE(2): objcopy or cmp is absent" >&2; exit 2; }
 for d in "$@"; do [ -d "$d" ] || { echo "REFUSE(2): $d is not a directory" >&2; exit 2; }; done

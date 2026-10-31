@@ -62,9 +62,9 @@ if [ $chit -eq 0 ]; then echo "  ok   (b) FORCED DISPLACEMENT: under SCRIP_GC_PL
 else echo "  FAIL (b) under forced displacement the witness loses at $chit of 8 points ($cband) -- the subject base read after a call inside a scan is stale"; RC=1; fi
 # RE-CUT 2026-10-25 (hq_icon, ARCH-ICON-RTX 10 R6, the cfo's small roll-out): the sync-in helpers and x86_scan_sigma_reload are deleted -- in a scan_regs
 # graph EVERY poll spills {DT_S, r15d, r13} as one described cell and reloads r13 from it, so the source fact is that poll shape, gated on the graph fact.
-n=$(grep -c 'x86_rsp_load64("r13", 8)' "$ROOT/src/templates/x86/x86_asm.h")
-if [ "$n" -ge 2 ] && grep -q 'x86_scan_regs_graph() ? x86_rt_gc_poll_scan_regs()' "$ROOT/src/templates/x86/x86_asm.h" && ! grep -rq 'SCRIP_GC_PLANT_STALE_SIGMA' "$ROOT/src"; then echo "  ok   (c) every poll of a scan_regs graph spills the subject pair as a described cell and reloads r13 from it (x86_rt_gc_poll_scan_regs and the result poll)"
-else echo "  FAIL (c) the scan_regs poll no longer reloads r13 from its described cell in x86_asm.h ($n reloads)"; RC=1; fi
+n=$(grep -c 'x86_rsp_load64("r13", 8)' "$ROOT/src/templates/x86/x86_gc.cpp")
+if [ "$n" -ge 2 ] && grep -q 'x86_scan_regs_graph() ? x86_rt_gc_poll_scan_regs()' "$ROOT/src/templates/x86/x86_gc.cpp" && ! grep -rq 'SCRIP_GC_PLANT_STALE_SIGMA' "$ROOT/src"; then echo "  ok   (c) every poll of a scan_regs graph spills the subject pair as a described cell and reloads r13 from it (x86_rt_gc_poll_scan_regs and the result poll)"
+else echo "  FAIL (c) the scan_regs poll no longer reloads r13 from its described cell in x86_gc.cpp ($n reloads)"; RC=1; fi
 echo "population: 3 arm(s) graded"
 if [ $RC = 0 ]; then echo "✅ GATE PASS(0) [$G]: a call inside a scan body hands the subject base back from the collector's root, and forced displacement cannot make it read the old ground"; else echo "⛔ GATE FAIL(1) [$G]: the scan subject base is stale after a call inside a scan, or forced displacement loses it"; fi
 exit $RC

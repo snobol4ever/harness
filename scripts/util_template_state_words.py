@@ -289,17 +289,17 @@ def local_bindings(items):
 class World(object):
     def __init__(self):
         self.macros, self.funcs, self.files, self.local_macros, self.cfuncs = {}, {}, {}, {}, {}
-        hdrs = sorted(glob.glob(os.path.join(X86_DIR, '*.h'))) + sorted(glob.glob(os.path.join(TPL_DIR, '*.h')))
+        hdrs = sorted(glob.glob(os.path.join(X86_DIR, '*.h'))) + sorted(glob.glob(os.path.join(X86_DIR, 'x86_*.cpp'))) + sorted(glob.glob(os.path.join(TPL_DIR, '*.h')))
         cpps = sorted(glob.glob(os.path.join(TPL_DIR, '*.cpp')))
-        if not cpps or not os.path.isfile(os.path.join(X86_DIR, 'x86_asm.h')) or not os.path.isfile(EMIT):
-            raise Refuse('no templates under %s, or no x86_asm.h or emit.cpp' % TPL_DIR)
+        if not cpps or not os.path.isfile(os.path.join(X86_DIR, 'x86_asm.cpp')) or not os.path.isfile(EMIT):
+            raise Refuse('no templates under %s, or no x86_asm.cpp or emit.cpp' % TPL_DIR)
         for p in hdrs + cpps:
             rel = os.path.relpath(p, SC)
             src = open(p, encoding='utf-8', errors='replace').read()
             self.files[rel] = src.split('\n')
             code, macros = split_preprocessor(src, rel)
             fs = find_functions(tokenize(code, rel))
-            if p.endswith('.cpp'):
+            if p.endswith('.cpp') and os.path.dirname(p) != X86_DIR:
                 self.local_macros[rel] = macros
                 for name, f in fs.items():
                     self.funcs.setdefault(name if name.startswith('bb_') and 'std :: string' in f[2] else rel + '::' + name, f)

@@ -145,9 +145,9 @@ else echo "  arm 6 FAIL: reporter create=[$rc6] sigma=[$rs6]"; RC=1; fi
 p1=$(grep -c 'offsetof(rt_genp_s, regs) == 8' "$ROOT/src/runtime/rt/rt.c"); p2=$(grep -c 'movq 24(%rdi), %r13' "$ROOT/src/runtime/rt/rt.c"); p3=$(grep -c 'entry_arg + 24' "$ROOT/src/runtime/rt/rt_coexpr.c")
 if [ "$p1" -ge 1 ] && [ "$p2" -ge 1 ] && [ "$p3" = 0 ]; then echo "  arm 7 PASS: the generator record's r13 word is +24 in rt.c (static assert on regs at +8, the entry asm loads r13 from 24(%rdi)) and rt_coexpr.c visits no record word -- the thread loads it once at its entry and nothing reads it again"
 else echo "  arm 7 FAIL: cross-file pin broken (assert=$p1 asm=$p2 visitor=$p3, the visitor count must be 0)"; RC=1; fi
-RTC="$ROOT/src/runtime/rt/rt.c"; XA="$ROOT/src/templates/x86/x86_asm.h"
+RTC="$ROOT/src/runtime/rt/rt.c"; XA="$ROOT/src/templates/x86/x86_icn.cpp"
 n9=$(grep -c 'scrip_coexpr_activate(&g->co' "$RTC"); k9=$(grep -A1 'scrip_coexpr_activate(&g->co' "$RTC" | grep -c 'memcpy(rt_co_env(), keep, sizeof keep)'); b9=$(grep -B1 'scrip_coexpr_activate(&g->co' "$RTC" | grep -c 'memcpy(keep, rt_co_env(), sizeof keep)')
-ld9=$(sed -n '/inline std::string x86_scan_env_load_rr/,/^}/p' "$XA"); r149=$(echo "$ld9" | grep -c 'x86("mov", "r14", "\[rax + 8\]")'); rx9=$(echo "$ld9" | grep -cE 'x86\("mov", "r1[35]"')
+ld9=$(sed -n '/std::string x86_scan_env_load_rr/,/^}/p' "$XA"); r149=$(echo "$ld9" | grep -c 'x86("mov", "r14", "\[rax + 8\]")'); rx9=$(echo "$ld9" | grep -cE 'x86\("mov", "r1[35]"')
 if [ "$n9" -ge 2 ] && [ "$k9" = "$n9" ] && [ "$b9" = "$n9" ] && [ "$r149" = 1 ] && [ "$rx9" = 0 ]; then echo "  arm 9 PASS: every generator-road switch in rt.c keeps the caller's three words in the C frame (keep[3]) and writes them back on the very next line (no poll between the write-back and the box's load-and-zero), and the C-road reload x86_scan_env_load_rr loads r14 alone -- the record is never the caller's source of the subject (hq_collector 2026-10-29)"
 else echo "  arm 9 FAIL: activate calls=$n9 restored=$k9 kept=$b9 reload loads r14=$r149 other-subject-loads=$rx9"; RC=1; fi
 pl=$( ( cd "$T" && env SCRIP_GC_PLANT_FLIP="$SHIFT" SCRIP_HEAP_KB=512 SCRIP_GC_STRESS=3 timeout -k 5 120 "$SCRIP" "$WD/hb_coexpr_create.icn" 2>&1 >/dev/null </dev/null ) | grep -c "^\[GC-FLIP\] plant:" ); pl=${pl:-0}

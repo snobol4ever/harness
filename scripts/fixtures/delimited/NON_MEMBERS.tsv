@@ -1,6 +1,6 @@
 # NON-MEMBERS of the delimited-aggregate census (RULES.md NO DELIMITER-JOINED AGGREGATES, CEO-1349): file suffix <TAB> line regex <TAB> reason.
 # Carried for Lon's judgement, counted separately and printed every run; a row whose site is gone reads STALE and reds the gate.
-templates/x86/x86_asm.h	X86_IS_PORTMARK|x86_portname	the \x01 port mark of the emitter's TEXT medium: bookkeeping inside the emitter's own text stream, never a stored value (CEO-1350)
+templates/x86/x86_jump.cpp	X86_IS_PORTMARK|x86_portname	the \x01 port mark of the emitter's TEXT medium: bookkeeping inside the emitter's own text stream, never a stored value (CEO-1350)
 runtime/core/core.c	MON_RS|MON_US	the IPC sync-step monitor's record and unit separators on the pipe between SCRIP and the oracle fork: a wire format read once by the controller, never a value stored or re-parsed by a program
 runtime/rt/rt.c	\\x01<unloaded>	a sentinel prefix on an unregistered procedure's name, compared whole; no element is joined to it or split from it
 runtime/rt/rt.c	ent\[0\] == '\\001'|\\001OPSYN	a private registry key for an OPSYN snapshot (508b26d5a): byte 1, which no SNOBOL4 name holds, then the name, so the alias resolver's rt_proc_find reaches the snapshot while rt_proc_is_registered(NEW) stays false; one name compared whole, never split, and the one test of its first byte only recognises such a key -- not an aggregate (ruled by the cfo, census owner, 2026-10-02 on CEO-1444; a typed cure is FNCBLK holding the snapshot's index)

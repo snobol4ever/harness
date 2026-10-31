@@ -70,16 +70,16 @@ done <<< "$found"
 if [ "$ok" = 1 ] && [ "$n_found" -le 3 ]; then echo "  arm 1 PASS: $n_found rbx spelling(s) in src/templates and src/emitter, every one in the declared set (the glue's save and restore, which the flip converts to a reload, and the box contract set, whose slot a coexpression keeps) -- zero scratch uses, where step 1 found four sites and a fifth that was dead code"
 else echo "  arm 1 FAIL: $n_found spelling(s), declared set is 3"; RC=1; fi
 examined=$((examined + 1))
-H="$ROOT/src/templates/x86/x86_asm.h"; miss=""
+H="$ROOT/src/templates/x86/x86_rtcc.h"; miss=""
 for pr in 'PIN_FRONTIER_REG:rbx' 'PIN_CAS_TOP_REG:r12' 'PIN_SIGMA_REG:r13' 'PIN_CURSOR_REG:r14' 'PIN_SUBJLEN_REG:r15' 'RTCC_GVA_REG:r9'; do
     c=${pr%%:*}; r=${pr#*:}
     grep -q "static_assert(x86_rtcc_streq($c, \"$r\")" "$H" || miss="$miss $c"
 done
-if [ -z "$miss" ]; then echo "  arm 2 PASS: all six pinned registers carry a _Static_assert naming them in x86_asm.h (rbx r12 r13 r14 r15 r9) -- a rename now fails a build instead of a page"
+if [ -z "$miss" ]; then echo "  arm 2 PASS: all six pinned registers carry a _Static_assert naming them in x86_rtcc.h (rbx r12 r13 r14 r15 r9) -- a rename now fails a build instead of a page"
 else echo "  arm 2 FAIL: no assert for:$miss"; RC=1; fi
 examined=$((examined + 1))
 oldform=$(grep -rn 'x86("push", "rbx")' "$ROOT/src/templates" "$ROOT/src/emitter" --include=*.cpp 2>/dev/null | wc -l)
-helpers=$(grep -c 'x86_align_call_enter()\|x86_align_call_leave()' "$H")
+helpers=$(grep -c 'x86_align_call_enter()\|x86_align_call_leave()' "$ROOT/src/templates/x86/x86_frame.cpp")
 users=$(grep -rn 'x86_align_call_enter()' "$ROOT/src/templates" "$ROOT/src/emitter" --include=*.cpp 2>/dev/null | wc -l)
 if [ "$oldform" = 0 ] && [ "$helpers" -ge 2 ] && [ "$users" -ge 4 ]; then echo "  arm 3 PASS: no template spells the push-rbx saver ($oldform), and $users site(s) take the shared helpers that park the caller's rsp on the aligned stack instead"
 else echo "  arm 3 FAIL: push-rbx spellings=$oldform helper definitions=$helpers users=$users"; RC=1; fi

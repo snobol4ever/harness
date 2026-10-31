@@ -40,8 +40,8 @@ n=$(grep -rn 'g_gva_base' src/ 2>/dev/null | grep -cv '\.o:') || true
 if [ "${n:-0}" -ne 0 ]; then echo "GATE FAIL arm3: g_gva_base still referenced ($n):"; grep -rn 'g_gva_base' src/ | grep -v '\.o:'; fail=1; fi
 
 # Arm 4 — template rbx mentions only in the sanctioned files (name tables + thread-contract save).
-n=$(grep -rln '"rbx"' src/templates/ 2>/dev/null | grep -v 'x86_asm.h' | grep -cv 'bb_create.cpp') || true
-if [ "${n:-0}" -ne 0 ]; then echo "GATE FAIL arm4: unsanctioned template file mentions \"rbx\":"; grep -rln '"rbx"' src/templates/ | grep -v 'x86_asm.h' | grep -v 'bb_create.cpp'; fail=1; fi
+n=$(grep -rln '"rbx"' src/templates/ 2>/dev/null | grep -v '/templates/x86/x86_' | grep -cv 'bb_create.cpp') || true
+if [ "${n:-0}" -ne 0 ]; then echo "GATE FAIL arm4: unsanctioned template file mentions \"rbx\":"; grep -rln '"rbx"' src/templates/ | grep -v '/templates/x86/x86_' | grep -v 'bb_create.cpp'; fail=1; fi
 
 if [ "$fail" -eq 0 ]; then echo "GATE PASS: rbx quarantined (4 arms) — no GVA register contract; rbx tenant-free until REG-4"; exit 0; fi
 exit 1

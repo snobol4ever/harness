@@ -13,7 +13,7 @@
 #   arm 5b (STAGE 5c, the allocating half, the generator half: ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH 10 and 10.1) rc and allocates of EVERY row equal what the built libscrip_rt.so derives (lib_rt_alloc_derive.py: the call graph
 #          reaches rt_gcheap_alloc, tail jumps included, and the return class out of the DWARF), graded before the asm refusal so a stale clobber row cannot hide it; controls: an allocating row whose allocates is cleared,
 #          a non-allocating row that claims 1, and a row whose rc is widened from OTHER to DESCR each read red (arms 8b to 8d)
-#   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h
+#   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_rtcc.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
 #   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
 #   arm 12 STAGE 5b (graded always now): every row (an asm entry and a libc import excepted) has exactly one RT_ENTRY_DECL(sym, conv, transfers) under SCRIP/src at its definition, saying the table's conv and
@@ -26,7 +26,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 NAME=rt_entry_table_matches_the_binary
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
-for f in "$HERE/rt_entries.tsv" "$HERE/util_gen_rt_entry_table.py" "$ROOT/src/runtime/rt_entry_table.inc" "$ROOT/src/templates/x86/x86_asm.h" "$ROOT/out/libscrip_rt.so"; do
+for f in "$HERE/rt_entries.tsv" "$HERE/util_gen_rt_entry_table.py" "$ROOT/src/runtime/rt_entry_table.inc" "$ROOT/src/templates/x86/x86_rtcc.h" "$ROOT/out/libscrip_rt.so"; do
     [ -r "$f" ] || refuse "cannot read $f (build first: make)"
 done
 command -v nm > /dev/null && command -v gcc > /dev/null || refuse "no nm or gcc"
@@ -152,9 +152,9 @@ if ca.returncode != 0:
     bad += [x.strip() for x in ca.stdout.splitlines()[:6]]
 skipped = [n for n, t in (('gc_allocating_table.inc', alloc),) if t is None]
 grade('arm 5: rc and allocates agree with the allocating table, the clobbers of every asm row with the objects (--check-asm, %s), and conv=asm is exactly the registered asm entries%s' % (ca.stdout.strip()[:44], (' (allocating table skipped, deleted: %s)' % ', '.join(skipped)) if skipped else ''), not bad, '; '.join(bad[:5]))
-x86 = read('templates/x86/x86_asm.h')
+x86 = read('templates/x86/x86_rtcc.h')
 bits = dict(re.findall(r'#define RTCC_C_(R\d+) (\d+)u', x86))
-grade('arm 6: the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h', {k.lower(): int(v) for k, v in bits.items()} == G.CLOB, 'x86_asm.h has %s, the generator has %s' % (bits, G.CLOB))
+grade('arm 6: the RT_CLOB_ bits are the RTCC_C_ bits of x86_rtcc.h', {k.lower(): int(v) for k, v in bits.items()} == G.CLOB, 'x86_rtcc.h has %s, the generator has %s' % (bits, G.CLOB))
 open(TD + '/e.c', 'w').write('#include "rt_entry_table.inc"\nint main(void) { return RT_ENTRIES != %d || !g_rt_entries[0].sym; }\n' % len(rows))
 cc = subprocess.run(['gcc', '-O0', '-Wno-unused-variable', '-I' + ROOT + '/src/runtime', '-o', TD + '/e', TD + '/e.c'], capture_output=True, text=True)
 grade('arm 7: rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows', cc.returncode == 0 and subprocess.run([TD + '/e']).returncode == 0, cc.stderr[:300])

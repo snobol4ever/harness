@@ -7,7 +7,7 @@
 # (SCRIP_DWARF_LOC=1 to enable). Instrument Law 1 -- a cure behind a flag defaults ON and the flag
 # is the control arm -- so the default now EMITS and SCRIP_DWARF_LOC=0 is the killswitch.
 # Arms, any of which can say NO:
-#   1. the x86("loc",...) encoder exists in x86_asm.h
+#   1. the x86("loc",...) encoder exists in x86_asm.cpp
 #   2. DEFAULT build (no env) emits .file/.loc -- the feature is on without being asked for
 #   3. SCRIP_DWARF_LOC=0 emits NEITHER -- the killswitch works (clause 10 control arm)
 #   4. .file is declared ONCE per file number, not once per .loc
@@ -25,13 +25,13 @@ refuse() { echo "⛔ REFUSED TO GRADE: $*" >&2; exit 2; }
 fail()   { echo "⛔ FAIL: $*" >&2; exit 1; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- build first"
 [ -f "$DEMO" ]  || refuse "demo program not found: $DEMO"
-[ -f "$ROOT/src/templates/x86/x86_asm.h" ] || refuse "x86_asm.h not found -- wrong tree layout"
+[ -f "$ROOT/src/templates/x86/x86_asm.cpp" ] || refuse "x86_asm.cpp not found -- wrong tree layout"
 command -v gcc >/dev/null 2>&1 || refuse "gcc not available"
 command -v readelf >/dev/null 2>&1 || refuse "readelf not available"
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 nloc()  { grep -cE '^[[:space:]]*\.loc'  "$1" 2>/dev/null || true; }
 nfile() { grep -cE '^[[:space:]]*\.file' "$1" 2>/dev/null || true; }
-grep -q '!strcmp(mnem, "loc")' "$ROOT/src/templates/x86/x86_asm.h" || fail "x86(\"loc\",...) encoder not found in x86_asm.h"
+grep -q '!strcmp(mnem, "loc")' "$ROOT/src/templates/x86/x86_asm.cpp" || fail "x86(\"loc\",...) encoder not found in x86_asm.cpp"
 "$SCRIP" --compile --out="$W/def.s" "$DEMO" </dev/null >/dev/null 2>"$W/def.err" || refuse "default compile failed: $(cat "$W/def.err")"
 SCRIP_DWARF_LOC=0 "$SCRIP" --compile --out="$W/off.s" "$DEMO" </dev/null >/dev/null 2>"$W/off.err" || refuse "killswitch compile failed: $(cat "$W/off.err")"
 [ "$(nloc  "$W/def.s")" -gt 0 ] || fail "DEFAULT build emits no .loc -- the feature is not on by default (Instrument Law 1)"
