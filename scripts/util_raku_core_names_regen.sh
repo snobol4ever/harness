@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_raku_core_names_regen.sh -- re-cut src/parsers/raku/rk_core_names.h from the Raku oracle's own CORE setting.
+# util_raku_core_names_regen.sh -- re-cut src/parsers/raku/rk_core_names.inc from the Raku oracle's own CORE setting.
 #   The hand-written syntax checker (src/parsers/raku/rk_syntax.c, row raku-a-new-hand-written-lexer-and-parser-...,
 #   Lon 2026-09-26, CEO-1289) needs Rakudo's is_name / is_type answers to parse the way Rakudo does: `my Foo $x`,
 #   `sub f(Foo $x)`, `Foo[...]` and `is Foo` all turn on whether Foo names a type. Those answers come from the CORE
@@ -18,7 +18,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
 RAKU="${RAKU_BIN:-/usr/bin/raku}"
-OUT="$ROOT/src/parsers/raku/rk_core_names.h"
+OUT="$ROOT/src/parsers/raku/rk_core_names.inc"
 [ -x "$RAKU" ] || { echo "⛔ REFUSE rc=2 [util_raku_core_names_regen] -- no oracle at $RAKU"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 cat > "$T/names.raku" <<'EOF'
@@ -90,4 +90,4 @@ LC_ALL=C awk -F'\t' '
         plain("rk_test_routines", "T")
         print "#endif"
     }' "$T/uni_cp.txt" "$T/pool.tsv" > "$OUT"
-echo "rk_core_names.h: $(wc -l < "$T/names.txt") names, $(wc -l < "$T/routines.txt") routines, $(wc -l < "$T/test.txt") Test routines, $(wc -l < "$T/names_e.txt")+$(wc -l < "$T/routines_e.txt") 6.e additions, $(wc -l < "$T/uninames.txt") character names and aliases, $(wc -l < "$T/uniseqs.txt") named sequences, cut from $("$RAKU" --version | head -1)"
+echo "rk_core_names.inc: $(wc -l < "$T/names.txt") names, $(wc -l < "$T/routines.txt") routines, $(wc -l < "$T/test.txt") Test routines, $(wc -l < "$T/names_e.txt")+$(wc -l < "$T/routines_e.txt") 6.e additions, $(wc -l < "$T/uninames.txt") character names and aliases, $(wc -l < "$T/uniseqs.txt") named sequences, cut from $("$RAKU" --version | head -1)"
