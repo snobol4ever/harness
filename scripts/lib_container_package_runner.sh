@@ -11,6 +11,9 @@
 # util_score_row.py: THE AND PER PROGRAM over the programs the oracle grades, with a program a ruled class excludes named in EXCLUDED.tsv
 # by a ruled class and shown as Excl, so shipped = denominator + Excl; every other ungraded program stays in as debt. rc: the harness's, 2 refused.
 #
+# CPR_DEPTH=2 (default 1): the package ships its programs one directory down (category/NAME.<ext>, the Icon packages' layout); a unit is then keyed
+# category/NAME as the container's ALL.csv keys it (hq_unicon, CEO-2072).
+#
 # container_package_excl <suite-dir> <ext> -- echo "<excl> <containers>": Excl is the EXCLUDED.tsv rows plus every CONTAINERS.tsv fragment
 # shipped as <name>.<ext> beside the container and not already named in EXCLUDED.tsv (CEO-1288: Excl is every shipped unit a row leaves out,
 # so shipped = denominator + Excl as jcon, arizona, gnu and ipl read; the coo 2026-10-10: rosetta-prolog published 220/786 with Excl 0 over
@@ -52,7 +55,8 @@ container_package_run() {
     echo "$(printf '%s' "$key" | tr 'a-z-' 'A-Z_')_CHUNK $S4E_CHUNK graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $key (CEO-1802)"
     return "$rc"
   fi
-  shipped=$(find "$suite" -maxdepth 1 -name "*.$ext" ! -name "ALL.$ext" | wc -l)
+  local cpr_depth="${CPR_DEPTH:-1}"
+  shipped=$(find "$suite" -maxdepth "$cpr_depth" -name "*.$ext" ! -name "ALL.$ext" | wc -l)
   local conts xc ncont
   conts="$(inventory_container_names "$suite")" && xc="$(container_package_excl "$suite" "$ext")" \
     || { echo "⛔ REFUSE(rc=2): $suite/CONTAINERS.tsv or EXCLUDED.tsv is refused (the reader said why above) -- no row over an unread exclusion"; return 2; }
@@ -101,11 +105,11 @@ PYEX
   exnames="$(inventory_excluded_names "$suite")" || { echo "⛔ REFUSE(rc=2): $suite/EXCLUDED.tsv is refused (the reader said why above)"; return 2; }
   ( ung_rows="$(mktemp)"; trap 'rm -f "$ung_rows"' EXIT   # a subshell trap: this library is sourced, so an EXIT trap here must not replace the caller's
   while IFS= read -r f; do
-    n="$(basename "$f" ".$ext")"; grep -qxF "$n" <<<"$graded_list" && continue; grep -qxF -- "$n.$ext" <<<"$conts" && continue
+    n="${f#"$suite"/}"; n="${n%".$ext"}"; grep -qxF "$n" <<<"$graded_list" && continue; grep -qxF -- "$n.$ext" <<<"$conts" && continue
     grep -qxF -- "$n.$ext" <<<"$exnames" && continue
     cls="$(awk -F'\t' -v k="$n.$ext" '$1==k {print $2; exit}' "$suite/UNGRADABLE.tsv" "$suite/UNGRADED.tsv" 2>/dev/null)"
     printf 'package\t%s\t%s\t%s\tm3\tUNGRADED\t0\t%s\t%s\npackage\t%s\t%s\t%s\tm4\tUNGRADED\t0\t%s\t%s\n' "$key" "$lang" "$n" "${cls:-unclassed}" "$cfg" "$key" "$lang" "$n" "${cls:-unclassed}" "$cfg" >> "$ung_rows"
-  done < <(find "$suite" -maxdepth 1 -name "*.$ext" ! -name "ALL.$ext" | sort)
+  done < <(find "$suite" -maxdepth "$cpr_depth" -name "*.$ext" ! -name "ALL.$ext" | sort)
   [ -s "$ung_rows" ] && { progress_append_rows_tsv "$ung_rows" || echo "⚠ the UNGRADED progress rows were not appended (reason above) -- the row write's cross-check reads the graded population only" >&2; } )
   # the denominator is SHIPPED (CEO-1286): a program the container does not grade is named in UNGRADED.tsv and stays in as debt; a program a
   # ruled EXCLUDED.tsv class names (NO_ORACLE_ANSWER for every UNGRADABLE.tsv row since CEO-1696), or a CONTAINERS.tsv fragment, leaves it, shown as Excl

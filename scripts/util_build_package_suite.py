@@ -216,7 +216,8 @@ def read_contract(pkg_dir):
     PACKAGE): `oracle<TAB>xsb-gentest` -- each ref is cut from XSB 5.0.0 (xsb_bin) as XSB's own test scripts run the program, the run each
     entry's row of ORACLE_RUNS.tsv records, in a copy of `upstream<TAB><dir>` (the upstream test tree, an absolute path), its answer the
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
-    harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space."""
+    harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (ceo CEO-2072, hq_unicon): an Icon
+    package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
     out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
@@ -235,13 +236,15 @@ def read_contract(pkg_dir):
             out["dialect"] = "any-fpc-mode"
         elif f[0] == "oracle" and f[1] == "xsb-gentest":
             out["oracle"] = "xsb-gentest"
+        elif f[0] == "oracle" and f[1] == "unicon":
+            out["oracle"] = "unicon"
         elif f[0] == "upstream" and f[1].startswith("/"):
             out["upstream"] = f[1]
         elif f[0] == "compare" and f[1] == "ignore-all-space":
             out["compare"] = "ignore-all-space"
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, dialect=any-fpc-mode, "
-                     f"oracle=xsb-gentest, upstream=<absolute dir> and compare=ignore-all-space only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir> and compare=ignore-all-space only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
     return out
@@ -315,6 +318,13 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                 xsb_owed.add(_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0])
         print(f"contract: oracle xsb-gentest (CONTRACT.tsv) -- {xsb_bin}, each ref as XSB's own test scripts run the program "
               f"({len(xsb_runs)} runs in ORACLE_RUNS.tsv), in a copy of {contract['upstream']}; {len(xsb_owed)} UNGRADED NEEDS_RUNNER_WIRING held", file=sys.stderr)
+    uni_excl = {}
+    if contract["oracle"] == "unicon" and (pkg_dir / "EXCLUDED.tsv").is_file():
+        for _ln in (pkg_dir / "EXCLUDED.tsv").read_text().splitlines():
+            _f = _ln.split("\t")
+            if len(_f) >= 3 and not _ln.startswith("#"):
+                uni_excl[_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0]] = (_f[1], _f[2])
+        print(f"contract: oracle unicon (CONTRACT.tsv) -- {len(uni_excl)} programs held out by EXCLUDED.tsv with their class and reason", file=sys.stderr)
     if ref_beside:
         print("contract: units ref-beside (CONTRACT.tsv) -- a source is a unit only with its <stem>.ref beside it", file=sys.stderr)
     # ⭐ ONE LEVEL OF SUBDIRS, MATCHING THE TASK'S OWN DONE-WHEN EXACTLY (`find "$d" -maxdepth 2 ...`,
@@ -335,6 +345,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         # kind of collision THE RUNGS SUITE's CSV manifest exists to make queryable by name; a name that
         # means two different things defeats that).
         name = f"{src.parent.name}/{src.stem}" if src.parent != pkg_dir else src.stem
+        if name in uni_excl:
+            excluded.append((name, f"EXCLUDED.tsv {uni_excl[name][0]}: {uni_excl[name][1]}"))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({uni_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
+            continue
         if ref_beside and not src.with_suffix(".ref").is_file():
             excluded.append((name, f"no {src.stem}.ref beside it -- the package grades it through another unit (a library through its "
                                    f"driver, an include through its includer) or not at all (CONTRACT.tsv units=ref-beside)"))
@@ -438,7 +452,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                         if _cf.is_file() and not _cf.name.startswith("ALL.") and _cf.name != src.name:
                             (Path(_iso_dir) / _cf.name).write_bytes(_cf.read_bytes())
                 _iso_src.write_bytes(src.read_bytes())
-                if lang == "icon" and merged:
+                if lang == "icon" and merged and contract["oracle"] == "unicon":
+                    return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
+                                                                         prog_args=prog_args, out_files=out_files)
+                elif lang == "icon" and merged:
                     return h.run_icon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                                          prog_args=prog_args, out_files=out_files)
                 else:
