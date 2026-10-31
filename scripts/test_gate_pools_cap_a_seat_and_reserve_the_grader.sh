@@ -32,10 +32,14 @@ held() {   # <dir> <n> -- how many of slot0..n-1 are locked right now
     while [ "$i" -lt "$n" ]; do [ -e "$d/slot$i" ] && ! flock -n "$d/slot$i" true 2>/dev/null && c=$((c + 1)); i=$((i + 1)); done
     echo "$c"
 }
-held_by() {   # <dir> <pid>... -- how many pool slots these processes LOCK right now, read from /proc/locks by inode and pid (kernel truth: a waiter's
-    local d="$1" ino pids=" $* "; shift   # transient open of a slot file is no lock, so it is not counted)
-    ino="|$(stat -c %i "$d"/slot[0-9]* 2>/dev/null | tr '\n' '|')"
-    awk -v ino="$ino" -v pids="$pids" '$2 == "FLOCK" && index(pids, " " $5 " ") { n = split($6, a, ":"); if (index(ino, "|" a[n] "|")) c++ } END { print c + 0 }' /proc/locks
+held_by() {   # <dir> <pid>... -- how many pool slots these processes HOLD: an fd to a slot file whose fdinfo carries a lock line (kernel truth per
+    local d="$1" c=0 p fd; shift   # open file description; a waiter's transient open has the fd and no lock, so it is not counted)
+    for p in "$@"; do
+        for fd in /proc/$p/fd/*; do
+            case "$(readlink "$fd" 2>/dev/null)" in "$d"/slot[0-9]*) grep -q '^lock:' "/proc/$p/fdinfo/${fd##*/}" 2>/dev/null && c=$((c + 1));; esac
+        done
+    done
+    echo "$c"
 }
 red=""
 # arm 1: two seats, sixteen compiles each, pool 8 cap 4
