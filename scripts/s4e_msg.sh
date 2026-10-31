@@ -3800,6 +3800,8 @@ TASKEOF
          if [ -x "$_ih" ]; then
            :
          fi
+         # THE LEDGER LINE (ARCH-SHARED-DEVELOPMENT 2.3, shared-dev step 1, CEO-2041): one line from the newest LOAD.tsv run, never sampling; quiet when absent.
+         python3 "$(dirname "${BASH_SOURCE[0]}")/util_seat_census.py" banner "$ME" 2>/dev/null || true
          # in the banner what you will do. You do not know the future."). Every line below is a measured fact about
          # state as it stands. What a later session does is not knowable here: HQ can re-rank the queue, and THE LOOP
          # reads the inbox before the queue. Two laws still hold: the verdict is COMPUTED, never typed, and it turns

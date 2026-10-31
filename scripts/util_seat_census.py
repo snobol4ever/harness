@@ -1,0 +1,356 @@
+#!/usr/bin/env python3
+"""util_seat_census.py -- THE LEDGER: WHO LOADS THE BOX, FROM THE CGROUP SCOPES (ARCH-SHARED-DEVELOPMENT.md sections 2 and 8 step 1, CEO-2041;
+the cao's row shared-dev-step-1-the-seat-census-reads-the-cgroup-scopes-and-the-ledger-load-tsv-is-written-every-five-minutes-ceo-2041).
+
+The load average says THAT the box is busy, never WHO. Every cgroup under user-1000.slice is a ledger line the kernel keeps exactly: cpu.stat's
+usage_usec counts every descendant, short-lived compilers included, which a ps sampler undercounts. This walks them, samples cpu.stat twice ten seconds
+apart, reads memory.current, memory.peak, memory.events (oom_kill) and pids.current, maps each scope to its seat and class, and appends to
+/home/resources/progress/LOAD.tsv one line per seat and per class, plus one BOX line.
+
+THE CLASSES (2.1): SEAT, a Claude session scope (app-org.gnome.Terminal.slice/vte-spawn-*.scope) whose newest SEATS.tsv line names a seat, with the
+board-run scopes app.slice/s4e-mem-<seat>-*.scope added to that seat; GRADER, s4e.slice/s4e-grader.slice; BATCH, s4e.slice/s4e-batch.slice; LON, Lon's
+own session scope (SEATS.tsv class LON, or an unmapped session scope) and the desktop's app-gnome-*/Chrome scopes; CRON, a session-*.scope directly
+under user-1000.slice; SYSTEM, everything else there, one line, never acted on.
+SLOTS: a compile or run slot is held by the process that keeps /tmp/s4e-cc-slots/slotN or /tmp/s4e-run-slots/slotN open (util_cc_slot.sh holds it on
+fd 9 for the compiler's whole life), so the holders are read from /proc/*/fd and mapped to a seat by the holder's cgroup: kernel truth, never stale.
+SLOT SEATS (the cto's ruling 16:1x): a taker under step 3 also holds /tmp/s4e-{cc,run}-slots/seat/<seat>/<k>; when the holder's cgroup is a
+shared scope (batch, grader), the seat is read from that path.
+TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per seat, cached for fifteen minutes in /home/resources/progress/LOAD_TMP.tsv.
+
+  util_seat_census.py run              sample, append to LOAD.tsv, print nothing (cron, every five minutes, in s4e-batch.slice)
+  util_seat_census.py now              sample and print the table, append nothing
+  util_seat_census.py banner [SEAT]    ONE line from the newest LOAD.tsv run, never sampling (s4e_msg.sh banner)
+  util_seat_census.py --check          step 1's DONE-WHEN: rc 0 when the newest run is under ten minutes old, every seat whose newest SEATS.tsv scope is live
+                                       has a SEAT line, no live session scope is unmapped, and the SEAT and LON lines' cores sum to within ten percent of
+                                       app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
+  --load F --seats F --root DIR        read and write these instead (the gate's fixtures)
+"""
+import os, re, sys, time, glob, subprocess
+CG = "/sys/fs/cgroup/user.slice/user-1000.slice"
+LOAD = "/home/resources/progress/LOAD.tsv"
+SEATS = "/home/resources/progress/SEATS.tsv"
+TMPCACHE = "/home/resources/progress/LOAD_TMP.tsv"
+COLS = ["utc", "kind", "class", "name", "cores", "mem_mb", "mem_peak_mb", "oom_kills", "pids", "cc_slots", "run_slots", "tmp_mb"]
+BOXCOLS = ["cores_busy", "load1", "pressure_some_avg60", "mem_available_mb", "swap_used_mb", "tmp_pct", "cc_held", "run_held", "slice_held", "builds_fetched", "checks_hit", "oracle_hit"]
+TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
+
+
+def arg(flag, default):
+    a = sys.argv
+    return a[a.index(flag) + 1] if flag in a and a.index(flag) + 1 < len(a) else default
+
+
+def rd(path, default=""):
+    try:
+        with open(path) as f:
+            return f.read()
+    except OSError:
+        return default
+
+
+def usage_usec(d):
+    m = re.search(r"^usage_usec (\d+)", rd(os.path.join(d, "cpu.stat")), re.M)
+    return int(m.group(1)) if m else None
+
+
+def num(d, f):
+    t = rd(os.path.join(d, f)).strip()
+    return int(t) if t.isdigit() else 0
+
+
+def oom_kills(d):
+    m = re.search(r"^oom_kill (\d+)", rd(os.path.join(d, "memory.events")), re.M)
+    return int(m.group(1)) if m else 0
+
+
+def seat_map(seats_path):
+    live = {}
+    for line in rd(seats_path).splitlines():
+        f = line.split("\t")
+        if len(f) < 4 or f[0] == "utc" or line.startswith("#"):
+            continue
+        live[f[1]] = (f[2], f[3].replace("/user.slice/user-1000.slice/", ""))
+    return live
+
+
+def scopes(root):
+    """Every leaf-level unit this census accounts: (relative path, class, name). A unit is counted once, at the level its class is defined."""
+    out = []
+    svc = os.path.join(root, "user@1000.service")
+    app = os.path.join(svc, "app.slice")
+    term = os.path.join(app, "app-org.gnome.Terminal.slice")
+    for d in sorted(glob.glob(os.path.join(term, "*.scope"))):
+        out.append((os.path.relpath(d, root), "SESSION", None))
+    for d in sorted(glob.glob(os.path.join(app, "s4e-mem-*.scope"))):
+        m = re.match(r"s4e-mem-(.+?)-[^-]+\.(?:sh|py)-\d+\.scope$", os.path.basename(d)) or re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(d))
+        out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
+    for d in sorted(glob.glob(os.path.join(app, "*.scope")) + glob.glob(os.path.join(app, "*.slice"))):
+        b = os.path.basename(d)
+        if b.startswith("s4e-mem-") or b == "app-org.gnome.Terminal.slice":
+            continue
+        out.append((os.path.relpath(d, root), "LON", "desktop"))
+    for cls, sl in (("GRADER", "s4e-grader.slice"), ("BATCH", "s4e-batch.slice")):
+        d = os.path.join(svc, "s4e.slice", sl)
+        if os.path.isdir(d):
+            out.append((os.path.relpath(d, root), cls, cls.lower()))
+    for d in sorted(glob.glob(os.path.join(root, "session-*.scope"))):
+        out.append((os.path.relpath(d, root), "CRON", "cron"))
+    for d in [os.path.join(svc, "session.slice"), os.path.join(svc, "background.slice"), os.path.join(svc, "init.scope")]:
+        if os.path.isdir(d):
+            out.append((os.path.relpath(d, root), "SYSTEM", "system"))
+    return out
+
+
+def classify(units, live):
+    by_scope = {sc: (seat, cls) for seat, (cls, sc) in live.items()}
+    rows, unmapped = [], []
+    for rel, kind, name in units:
+        if kind == "SESSION":
+            seat, cls = by_scope.get(rel, (None, None))
+            if seat is None:
+                unmapped.append(rel)
+                rows.append((rel, "LON", "unmapped"))
+            else:
+                rows.append((rel, "LON" if cls == "LON" else "SEAT", seat))
+        elif kind == "BOARD":
+            rows.append((rel, "SEAT", name))
+        else:
+            rows.append((rel, kind, name))
+    return rows, unmapped
+
+
+def slot_holders(root):
+    """Who holds each slot: the processes with a slot file open, mapped to their seat by cgroup."""
+    by_scope = {}
+    for seat, (cls, sc) in seat_map(arg("--seats", SEATS)).items():
+        by_scope[sc] = seat
+    held = {"cc": {}, "run": {}}
+    for pd in glob.glob("/proc/[0-9]*"):
+        try:
+            fds = os.listdir(pd + "/fd")
+        except OSError:
+            continue
+        kinds = set()
+        seat_file = None
+        for fd in fds:
+            try:
+                t = os.readlink(pd + "/fd/" + fd)
+            except OSError:
+                continue
+            if t.startswith("/tmp/s4e-cc-slots/slot"):
+                kinds.add("cc")
+            elif t.startswith("/tmp/s4e-run-slots/slot"):
+                kinds.add("run")
+            m = re.match(r"/tmp/s4e-(?:cc|run)-slots/seat/([a-z0-9_]+)/", t)
+            if m:
+                seat_file = m.group(1)
+        if not kinds:
+            continue
+        cg = ""
+        for line in rd(pd + "/cgroup").splitlines():
+            if line.startswith("0::"):
+                cg = line[3:].replace("/user.slice/user-1000.slice/", "")
+        seat = None
+        for sc, s in by_scope.items():
+            if cg == sc or cg.startswith(sc + "/"):
+                seat = s
+        m = re.search(r"s4e-mem-([a-z0-9_]+)-", cg)
+        seat = seat or (m.group(1) if m else seat_file or ("grader" if "s4e-grader" in cg else "batch" if "s4e-batch" in cg else "other"))
+        for k in kinds:
+            held[k][seat] = held[k].get(seat, 0) + 1
+    return held
+
+
+def tmp_sizes(seats):
+    now = time.time()
+    cache = {}
+    for line in rd(TMPCACHE).splitlines():
+        f = line.split("\t")
+        if len(f) == 3:
+            cache[f[0]] = (float(f[1]), int(f[2]))
+    out = {}
+    for s in seats:
+        if s in cache and now - cache[s][0] < 900:
+            out[s] = cache[s][1]
+            continue
+        paths = glob.glob("/tmp/claude-1000/-home-claude-%s*" % s.replace("hq_", "")) + [p for p in ["/tmp/s4e/" + s] if os.path.isdir(p)]
+        kb = 0
+        if paths:
+            r = subprocess.run(["du", "-sk", "--"] + paths, capture_output=True, text=True, timeout=120)
+            kb = sum(int(l.split()[0]) for l in r.stdout.splitlines() if l.split() and l.split()[0].isdigit())
+        out[s] = kb // 1024
+        cache[s] = (now, out[s])
+    try:
+        with open(TMPCACHE + ".tmp", "w") as f:
+            for s, (t, v) in cache.items():
+                f.write("%s\t%.0f\t%d\n" % (s, t, v))
+        os.replace(TMPCACHE + ".tmp", TMPCACHE)
+    except OSError:
+        pass
+    return out
+
+
+def sample(root, seats_path, interval=10.0):
+    live = seat_map(seats_path)
+    units = scopes(root)
+    rows, unmapped = classify(units, live)
+    app = os.path.join(root, "user@1000.service", "app.slice")
+    a = {rel: usage_usec(os.path.join(root, rel)) for rel, _, _ in rows}
+    a_app = usage_usec(app)
+    t0 = time.time()
+    time.sleep(interval)
+    dt = time.time() - t0
+    b = {rel: usage_usec(os.path.join(root, rel)) for rel, _, _ in rows}
+    b_app = usage_usec(app)
+    acc = {}
+    for rel, cls, name in rows:
+        d = os.path.join(root, rel)
+        if a.get(rel) is None or b.get(rel) is None:
+            continue
+        cores = max(0, b[rel] - a[rel]) / 1e6 / dt
+        k = (cls, name)
+        e = acc.setdefault(k, [0.0, 0, 0, 0, 0])
+        e[0] += cores
+        e[1] += num(d, "memory.current") // 1048576
+        e[2] += num(d, "memory.peak") // 1048576
+        e[3] += oom_kills(d)
+        e[4] += num(d, "pids.current")
+    app_cores = (b_app - a_app) / 1e6 / dt if a_app is not None and b_app is not None else 0.0
+    return acc, unmapped, live, app_cores
+
+
+def box_line(held, app_cores):
+    la = rd("/proc/loadavg").split()
+    psi = re.search(r"^some avg10=\S+ avg60=(\S+)", rd("/proc/pressure/cpu"), re.M)
+    mi = dict((l.split(":")[0], int(l.split()[1])) for l in rd("/proc/meminfo").splitlines() if len(l.split()) >= 2 and l.split()[1].isdigit())
+    st = os.statvfs("/tmp")
+    tmp_pct = 100.0 * (1 - st.f_bavail / st.f_blocks) if st.f_blocks else 0.0
+    busy = 0.0
+    try:
+        s1 = rd("/proc/stat").split("\n")[0].split()[1:]
+        time.sleep(0.5)
+        s2 = rd("/proc/stat").split("\n")[0].split()[1:]
+        d = [int(y) - int(x) for x, y in zip(s1, s2)]
+        busy = (sum(d) - d[3] - d[4]) / max(1, sum(d)) * (os.cpu_count() or 1)
+    except Exception:
+        pass
+    slice_held = "1" if os.path.exists("/tmp/s4e-quiet-slice.lock") and subprocess.run(["flock", "-n", "/tmp/s4e-quiet-slice.lock", "true"]).returncode != 0 else "0"
+    v = {"cores_busy": "%.1f" % busy, "load1": la[0] if la else "0", "pressure_some_avg60": psi.group(1) if psi else "0",
+         "mem_available_mb": str(mi.get("MemAvailable", 0) // 1024), "swap_used_mb": str((mi.get("SwapTotal", 0) - mi.get("SwapFree", 0)) // 1024),
+         "tmp_pct": "%.0f" % tmp_pct, "cc_held": str(sum(held["cc"].values())), "run_held": str(sum(held["run"].values())), "slice_held": slice_held,
+         "builds_fetched": "-", "checks_hit": "-", "oracle_hit": "-"}
+    return v
+
+
+def run(do_append, do_print):
+    root = arg("--root", CG)
+    if not os.path.isdir(root):
+        print("REFUSED(2): no cgroup tree at %s" % root)
+        return 2
+    acc, unmapped, live, app_cores = sample(root, arg("--seats", SEATS))
+    held = slot_holders(root)
+    seats = sorted({n for (c, n) in acc if c == "SEAT"})
+    tmp = tmp_sizes(seats)
+    utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    lines = []
+    for (cls, name), e in sorted(acc.items(), key=lambda kv: (kv[0][0] != "SEAT", -kv[1][0])):
+        lines.append([utc, "UNIT", cls, name, "%.2f" % e[0], str(e[1]), str(e[2]), str(e[3]), str(e[4]),
+                      str(held["cc"].get(name, 0)), str(held["run"].get(name, 0)), str(tmp.get(name, 0)) if cls == "SEAT" else "-"])
+    cls_sum = {}
+    for (cls, name), e in acc.items():
+        cls_sum[cls] = cls_sum.get(cls, 0.0) + e[0]
+    for cls in sorted(cls_sum):
+        lines.append([utc, "CLASS", cls, cls.lower(), "%.2f" % cls_sum[cls], "-", "-", "-", "-", "-", "-", "-"])
+    lines.append([utc, "APP", "APP", "app.slice", "%.2f" % app_cores, "-", "-", "-", "-", "-", "-", "-"])
+    for u in unmapped:
+        lines.append([utc, "UNMAPPED", "LON", u.rsplit("/", 1)[-1], "-", "-", "-", "-", "-", "-", "-", "-"])
+    box = box_line(held, app_cores)
+    lines.append([utc, "BOX", "BOX", "box", " ".join("%s=%s" % (k, box[k]) for k in BOXCOLS), "-", "-", "-", "-", "-", "-", "-"])
+    if do_append:
+        path = arg("--load", LOAD)
+        new = not os.path.exists(path) or os.path.getsize(path) == 0
+        with open(path, "a") as f:
+            if new:
+                f.write("\t".join(COLS) + "\n")
+            for l in lines:
+                f.write("\t".join(l) + "\n")
+    if do_print:
+        for l in lines:
+            print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] != "BOX" else "BOX %s" % l[4])
+    return 0
+
+
+def newest_run(path):
+    rows = [l.split("\t") for l in rd(path).splitlines() if l and not l.startswith("utc")]
+    if not rows:
+        return None, []
+    last = rows[-1][0]
+    return last, [r for r in rows if r[0] == last]
+
+
+def banner(seat):
+    last, rows = newest_run(arg("--load", LOAD))
+    if not last:
+        print("LOAD no ledger yet (util_seat_census.py run)")
+        return 0
+    box = dict(kv.split("=", 1) for r in rows if r[1] == "BOX" for kv in r[4].split())
+    units = [r for r in rows if r[1] == "UNIT"]
+    me = next((r for r in units if r[2] == "SEAT" and r[3] == seat), None)
+    gr = next((r for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
+    ba = next((r for r in rows if r[1] == "CLASS" and r[2] == "BATCH"), None)
+    top = max((r for r in units if r[2] == "SEAT"), key=lambda r: float(r[4]), default=None)
+    you = ("you %.1f cores %.1fG tmp %.1fG cc %s run %s" % (float(me[4]), int(me[5]) / 1024, int(me[11]) / 1024 if me[11].isdigit() else 0, me[9], me[10])) if me else "you -"
+    print("BOX busy %s/%d pressure %s | %s | grader %s | batch %s | top %s %s  (%s)" % (box.get("cores_busy", "?"), os.cpu_count() or 16,
+          box.get("pressure_some_avg60", "?"), you, gr[4] if gr else "0", ba[4] if ba else "0", top[3] if top else "-", top[4] if top else "", last))
+    return 0
+
+
+def check():
+    path = arg("--load", LOAD)
+    last, rows = newest_run(path)
+    if not last:
+        print("REFUSED(2): no ledger at %s" % path)
+        return 2
+    gaps = []
+    age = time.time() - __import__("calendar").timegm(time.strptime(last, "%Y-%m-%dT%H:%M:%SZ"))
+    if age > 600:
+        gaps.append("the newest run is %d s old (over ten minutes)" % age)
+    root = arg("--root", CG)
+    live = seat_map(arg("--seats", SEATS))
+    want = sorted(s for s, (cls, sc) in live.items() if cls == "SEAT" and os.path.isdir(os.path.join(root, sc)))
+    have = {r[3] for r in rows if r[1] == "UNIT" and r[2] == "SEAT"}
+    miss = [s for s in want if s not in have]
+    if miss:
+        gaps.append("live seats with no SEAT line: " + " ".join(miss))
+    unm = [r[3] for r in rows if r[1] == "UNMAPPED"]
+    if unm:
+        gaps.append("live session scopes SEATS.tsv does not map: " + " ".join(unm))
+    app = next((float(r[4]) for r in rows if r[1] == "APP"), None)
+    board_and_desk = sum(float(r[4]) for r in rows if r[1] == "UNIT" and r[2] in ("SEAT", "LON"))
+    if app is not None and app > 0.5 and abs(board_and_desk - app) > 0.10 * app:
+        gaps.append("the SEAT and LON lines sum to %.2f cores where app.slice's own delta read %.2f (over ten percent apart)" % (board_and_desk, app))
+    print("SEAT CENSUS run=%s age=%ds seats=%d/%d app=%s seat_and_lon=%.2f" % (last, age, len(want) - len(miss), len(want), "%.2f" % app if app is not None else "-", board_and_desk))
+    if gaps:
+        for g in gaps:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN the ledger is fresh, every live seat has its line, and the lines sum to app.slice's delta within ten percent")
+    return 0
+
+
+def main():
+    av = sys.argv[1:]
+    if "--check" in av:
+        return check()
+    if av and av[0] == "banner":
+        return banner(av[1] if len(av) > 1 and not av[1].startswith("--") else os.environ.get("S4E_SEAT", ""))
+    if av and av[0] == "now":
+        return run(False, True)
+    if av and av[0] == "run":
+        return run(True, False)
+    print(__doc__)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
