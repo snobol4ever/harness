@@ -65,6 +65,9 @@ if [ -x "$W/scrip" ]; then
     [ "$out" = "fetched" ] || red="$red arm1:fetched-scrip-does-not-run(got '$out')"
     ( cd "$W" && bash "$T/wt/harness/scripts/util_require_fresh.sh" --gate "$NAME" > "$T/fresh.log" 2>&1 ) || red="$red arm1:freshness-guard-refuses-the-fetched-binary"
     grep -q '^source FETCHED' "$W/out/buildinfo" 2>/dev/null || red="$red arm1:buildinfo-does-not-say-FETCHED"
+    foreign="$(grep -l '/SCRIP/' "$W"/out/rt_pic-*/*.d 2>/dev/null | xargs -r grep -lE "(^|[[:space:]])/[^[:space:]]*/SCRIP/" 2>/dev/null | xargs -r grep -LE "(^|[[:space:]])$W/" 2>/dev/null | wc -l)"
+    foreign2="$(grep -lE "(^|[[:space:]])/[^[:space:]]*/SCRIP/" "$W"/out/rt_pic-*/*.d 2>/dev/null | xargs -r grep -lE "(^|[[:space:]])/[^[:space:]]*/SCRIP/" | xargs -r awk -v w="$W/" 'BEGIN{n=0} {for(i=1;i<=NF;i++) if ($i ~ /^\/.*\/SCRIP\//) { if (index($i, w)!=1) n++ } } END{print n+0}')"
+    [ "${foreign2:-0}" = 0 ] || red="$red arm1:fetched-.d-files-name-$foreign2-paths-in-another-SCRIP-tree(a-header-edit-here-would-not-rebuild-them)"
     rt="$(ldd "$W/scrip" 2>/dev/null | awk '/libscrip_rt/ {print $3}')"
     case "$rt" in "$W"/out/libscrip_rt.so) ;; *) red="$red arm1:fetched-scrip-loads-another-roots-runtime($rt)";; esac
 fi

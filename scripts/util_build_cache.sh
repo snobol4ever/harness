@@ -38,7 +38,8 @@ done
 root="$(cd "$root" 2>/dev/null && pwd -P)" || { echo "util_build_cache.sh: no root" >&2; exit 2; }
 tree="$(git -C "$root" rev-parse HEAD^{tree} 2>/dev/null)" || tree=""
 tool="$(gcc --version 2>/dev/null | head -1)|$(ccache --version 2>/dev/null | head -1)"
-key="$(printf '%s|%s|%s\n' "$tree" "$tag" "$tool" | sha256sum | cut -c1-40)"
+FORMAT=2   # 2: fetched .d files are re-rooted and the entry carries its producer root (2026-10-31 17:4x); a bump makes every root miss once
+key="$(printf '%s|%s|%s|format%s\n' "$tree" "$tag" "$tool" "$FORMAT" | sha256sum | cut -c1-40)"
 clean() {
     [ -n "$tree" ] || return 1
     [ -z "$(git -C "$root" status --porcelain 2>/dev/null | grep -v '^?? ')" ] || return 1
@@ -60,7 +61,7 @@ manifest() {
 }
 write_buildinfo() {
     mkdir -p "$1/out"
-    printf 'key %s\ntree %s\nrt_tag %s\ntoolchain %s\nsource %s\nutc %s\n' "$key" "$tree" "$tag" "$tool" "$2" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$1/out/buildinfo"
+    printf 'key %s\ntree %s\nrt_tag %s\ntoolchain %s\nsource %s\nroot %s\nutc %s\n' "$key" "$tree" "$tag" "$tool" "$2" "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$1/out/buildinfo"
 }
 case "$verb" in
     key) echo "$key"; exit 0 ;;
@@ -73,10 +74,10 @@ case "$verb" in
         if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: removing the stale out/scrip0 (absolute rpath, fetched before the \$ORIGIN Makefile)"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { echo "build cache OFF (S4E_NO_BUILD_CACHE=1)"; exit 1; }
         [ -d "$CACHE" ] || { echo "build cache: NO-CACHE-DIR $CACHE"; exit 1; }
-        clean || { echo "build cache: DIRTY tree, building locally (key $key)"; exit 1; }
+        clean || { [ -f "$root/out/buildinfo" ] && sed -i 's/^source .*/source DIRTY/' "$root/out/buildinfo"; echo "build cache: DIRTY tree, building locally (key $key)"; exit 1; }
         e="$CACHE/$key"
         [ -f "$e/MANIFEST" ] || { echo "build cache: MISS $key"; exit 1; }
-        if [ -f "$root/out/buildinfo" ] && [ "$(sed -n 's/^key //p' "$root/out/buildinfo")" = "$key" ] && [ -x "$root/scrip" ] && [ -f "$root/out/libscrip_rt.so" ]; then
+        if [ -f "$root/out/buildinfo" ] && [ "$(sed -n 's/^key //p' "$root/out/buildinfo")" = "$key" ] && cmp -s "$e/scrip" "$root/scrip" && cmp -s "$e/out/libscrip_rt.so" "$root/out/libscrip_rt.so" && [ -x "$root/scrip" ] && [ -f "$root/out/libscrip_rt.so" ]; then
             ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" 2>/dev/null )
             touch "$e/.used" 2>/dev/null || true
             echo "FETCHED $key (already in place)"; exit 0
@@ -91,6 +92,7 @@ case "$verb" in
             cp -p "$e/$f" "$root/$f.fetch.$$" && mv -f "$root/$f.fetch.$$" "$root/$f" || { rm -f "$root/$f.fetch.$$"; echo "build cache: copy of $f failed, building locally"; exit 1; }
             n=$((n + 1))
         done < "$e/MANIFEST"
+        grep -l '/SCRIP/' $(sed -n 's/^\(out\/rt_pic-[^/]*\/[^ ]*\.d\)$/\1/p' "$e/MANIFEST" | sed "s|^|$root/|") 2>/dev/null | while IFS= read -r d; do sed -i -E "s#(^|[[:space:]])/[^[:space:]]*/SCRIP/#\1$root/#g" "$d"; done
         ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" )
         write_buildinfo "$root" FETCHED
         touch "$e/.used" 2>/dev/null || true
@@ -114,7 +116,7 @@ case "$verb" in
             mkdir -p "$t/$(dirname "$f")"
             cp -p "$root/$f" "$t/$f" || { rm -rf "$t"; echo "build cache: copy of $f failed, nothing published"; exit 0; }
         done < "$t/MANIFEST"
-        cp -p "$root/out/buildinfo" "$t/out/buildinfo"
+        cp -p "$root/out/buildinfo" "$t/out/buildinfo" && sed -i "s/^key .*/key $key/; s|^root .*|root $root|" "$t/out/buildinfo"
         : > "$t/.used"
         if mv -T "$t" "$e" 2>/dev/null; then
             echo "PUBLISHED $key ($(wc -l < "$e/MANIFEST") files, $(du -sh "$e" | cut -f1))"
