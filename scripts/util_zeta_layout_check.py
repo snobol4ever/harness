@@ -40,7 +40,9 @@
 #                                              depth E_t: it popped P bytes of the X-E_t it owed. The zl02 leak of 2026-10-29 reads here. A transfer whose root is
 #                                              not a statement entry (IR_INDIRECT_GOTO of an if-type construct: R9 states no E_t for it) is counted UNCHECKED.
 #   SITE graph box Lline rule=R depth=D want=W a GC site record whose pc lies in a box, graded per rule by ARCH-GC 13.13 and the cto's item 8 (ARCH-ZETA-LAYOUT 5):
-#                                              rule 0 (rsp-relative) depth = X of the row (= E + K, R2); rules 1 and 3 (the frame's home is rbp) depth 0; rule 2 (a flat
+#                                              rule 0 (rsp-relative) depth = X of the row (= E + K, R2), except the MATCH_LEAVE site (kind 5): it follows
+#                                              the frame whack, so it stands at the depth of the open MATCH_ENTER it closes (the whack discards the
+#                                              match end's row); rules 1 and 3 (the frame's home is rbp) depth 0; rule 2 (a flat
 #                                              generator frame addressed down from rbp) depth = the row's `flat_gen_rbp` column when the plan dump prints it; rule 6 (a site
 #                                              inside a pattern match) depth = the depth of its OWNING ENTER (the nl-th open MATCH_ENTER site, kind bits 8-11 the level,
 #                                              12-15 the enter's kind): the enter's row X when ek is 0, 0 when ek is 1 or 3. The owning enter is read from the site table
@@ -588,14 +590,16 @@ def check(graphs, chains, tabs, site_box):
                 info['sites_zsm'] += 1
                 continue
             r = box_row[id(b)][1]
+            left = None
             if kind & 0xff == 4:
                 enters.append(r)
             elif kind & 0xff == 5 and enters:
-                enters.pop()
+                left = enters.pop()
+            want0 = xa(left) if left is not None and armed(left) else xa(r)
             if rule == 5:
                 add('RULE5', g['name'], b.name, ln, 'depth=%d' % depth)
-            elif rule == 0 and armed(r) and depth != xa(r):
-                add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, xa(r)))
+            elif rule == 0 and armed(r) and depth != want0:
+                add('SITE', g['name'], b.name, ln, 'rule=0 depth=%d want=%d' % (depth, want0))
             elif rule in (1, 3) and depth != 0:
                 add('SITE', g['name'], b.name, ln, 'rule=%d depth=%d want=0' % (rule, depth))
             elif rule == 2 and r.get('flat_gen_rbp') is not None:
