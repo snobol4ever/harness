@@ -3,9 +3,11 @@
 # to get all language test suites to 100%" and "Go now to NONET mode."): every row of .github/SUITES.tsv for <lang> -- rung suites, packages and benches -- reads
 # today_pass == today_total with a reading on file. It reads the leaderboard the suites' own runners write through util_score_row.py and runs no suite itself;
 # a row is only as fresh as its runner's last pass, so a lane closes this row on a pass it just made. rc 0 every suite at 100% / 1 one short / 2 no rows or file.
+# SCRIP-ENGINE ROWS ONLY: a port's row is <suite>@<port> and belongs to its own HQ (CEO-1822/1912), so a key carrying '@' is not this language's debt
+# (hq_snobol4 2026-10-31: the snobol4 reading was red on sno-rungs@dotnet and aisnobol@dotnet while every SCRIP row read 100; ceo CEO-2071).
 L="${1:-}"; [ -n "$L" ] || { echo "REFUSED(2): name a language"; exit 2; }
 . "$(dirname "${BASH_SOURCE[0]}")/lib_suites_tsv.sh"; T="$(suites_tsv "${S4E_HOME:-}")"; [ -r "$T" ] || { echo "REFUSED(2): $T is unreadable"; exit 2; }
-awk -F'\t' -v L="$L" '$0 !~ /^#/ && $1 != "key" && $4 == L {
+awk -F'\t' -v L="$L" '$0 !~ /^#/ && $1 != "key" && $1 !~ /@/ && $4 == L {
     n++; p = $9; t = $10; ok = (p != "" && t != "" && p + 0 == t + 0 && t + 0 > 0); if (!ok) short++
     printf "%s %-10s %s/%s  tree %s\n", (ok ? "ok " : "RED"), $2, (p == "" ? "-" : p), (t == "" ? "-" : t), $11 }
   END { if (!n) { print "REFUSED(2): no SUITES.tsv row for " L; exit 2 }
