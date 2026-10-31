@@ -69,7 +69,8 @@ UNIT_PREFIX = "s4e-mem-"
 #   heap where the 3 GB above was derived under a 4 MB default cap, and the SWI board -- twelve parallel jobs, each a scrip process
 #   beside its swipl oracle -- reached peak=3072 MB and lost a process to the cgroup kill on its first pass at the new default (the
 #   row was refused, as it must be). Twelve jobs x (128 MB of heap + stack and image) + twelve oracles is about 4 GB; the cap is 2x that.
-CAP_MB = {"board": 8192, "blocking-set": 10240}
+# batch: one job of the batch class (util_batch.sh, ARCH-SHARED-DEVELOPMENT 4.2/4.5 (b)), 8 GB per job under s4e-batch.slice.
+CAP_MB = {"board": 8192, "blocking-set": 10240, "batch": 8192}
 
 
 def _cgroup_path():
@@ -188,12 +189,13 @@ def _systemd_run_usable():
 
 def _unit_name(argv):
     who = os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name
-    prog = next((Path(a).name for a in argv[1:] if os.path.isfile(a)), Path(argv[0]).name if argv else "run")[:48]
+    prog = next((Path(a).name for a in argv[1:] if os.path.isfile(a) and Path(a).name != "util_batch.sh"),
+                Path(argv[0]).name if argv else "run")[:48]
     raw = "%s%s-%s-%d" % (UNIT_PREFIX, who, prog, os.getpid())
     return re.sub(r"[^A-Za-z0-9_.-]", "_", raw)[:200]
 
 
-def enter(kind, argv):
+def enter(kind, argv, slice_name=None):
     """Put this run inside ONE memory-bounded scope. Returns normally when no new scope is wanted -- already inside
     one, or S4E_MEM_SCOPE=unbounded, or systemd-run unusable (then it says so loudly, once); otherwise it EXECs
     systemd-run, which re-runs argv under supervise() inside the new scope, and never returns."""
@@ -211,7 +213,8 @@ def enter(kind, argv):
         return
     unit = _unit_name(argv)
     sys.stdout.flush(); sys.stderr.flush()
-    os.execvp("systemd-run", ["systemd-run", "--user", "--scope", "-q", "--unit=" + unit,
+    os.execvp("systemd-run", ["systemd-run", "--user", "--scope", "-q", "--unit=" + unit]
+                             + (["--slice=" + slice_name] if slice_name else []) + [
                               "-p", "MemoryMax=%dM" % cap, "-p", "MemorySwapMax=0", "-p", "OOMPolicy=continue", "--",
                               sys.executable, str(Path(__file__).resolve()), "supervise", "--kind", kind, "--"]
                              + list(argv))
@@ -258,16 +261,24 @@ def main(argv):
     if len(argv) >= 2 and argv[1] in ("enter", "supervise"):
         cmd, rest = argv[1], argv[2:]
         kind = "board"
-        if len(rest) >= 2 and rest[0] == "--kind":
-            kind, rest = rest[1], rest[2:]
+        slice_name = None
+        while len(rest) >= 2 and rest[0] in ("--kind", "--slice"):
+            if rest[0] == "--kind":
+                kind = rest[1]
+            else:
+                slice_name = rest[1]
+            rest = rest[2:]
+        if slice_name is not None and not re.fullmatch(r"[A-Za-z0-9_.-]+\.slice", slice_name):
+            sys.stderr.write("REFUSE(2) [mem_scope]: --slice %r is not a slice unit name\n" % slice_name)
+            return 2
         if rest[:1] == ["--"]:
             rest = rest[1:]
         if kind not in CAP_MB or not rest:
-            sys.stderr.write("usage: util_mem_scope.py %s --kind {%s} -- argv...\n" % (cmd, ",".join(CAP_MB)))
+            sys.stderr.write("usage: util_mem_scope.py %s --kind {%s} [--slice NAME.slice] -- argv...\n" % (cmd, ",".join(CAP_MB)))
             return 2
         if cmd == "supervise":
             return supervise(kind, rest)
-        enter(kind, rest)          # returns only when no new scope is wanted: then run argv here, unchanged
+        enter(kind, rest, slice_name)          # returns only when no new scope is wanted: then run argv here, unchanged
         sys.stdout.flush(); sys.stderr.flush()
         os.execvp(rest[0], rest)
     if len(argv) == 2 and argv[1] == "oom-kills":

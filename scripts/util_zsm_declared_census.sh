@@ -48,6 +48,8 @@
 # CALIBRATION (the cto's order): SNOBOL4 reads 0 first; a switch then reads its language on <switch>^ and on the switch, and an output-equal
 # switch with a nonzero count is not done (corrupted memory grades as FAIL, not segv, CEO-1895). This census is a BOARD: the coo's loop runs it.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), CEO-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 exec python3 - "$HERE" "$@" <<'PY'
 import collections, concurrent.futures, os, re, subprocess, sys, tempfile

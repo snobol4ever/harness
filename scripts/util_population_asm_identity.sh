@@ -12,6 +12,8 @@
 # could not measure (no binary, no population, or a compile that fails or times out on either tree -- refused, never counted identical).
 # This is a BOARD over 274 programs: a seat runs it only as a planner chunk's own proof (the chunk rows' receipts), the coo's loop otherwise.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), CEO-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
 exec python3 - "$HERE" "$@" <<'PY'
 import collections, concurrent.futures, os, subprocess, sys, tempfile
 HERE = sys.argv[1]
