@@ -21,7 +21,7 @@ WHEN = {'always': 'BCS_ALWAYS', 'call_curmov': 'BCS_CALL_CURMOV', 'icn_local': '
         'call_argv': 'BCS_CALL_ARGV', 'call_argv_cur': 'BCS_CALL_ARGV_CUR', 'call_argv_rec': 'BCS_CALL_ARGV_REC', 'call_argv_cur_rec': 'BCS_CALL_ARGV_CUR_REC',
         'call_argv_rsp': 'BCS_CALL_ARGV_RSP', 'rsp_flat': 'BCS_RSP_FLAT'}
 FIXED = {'arm_spine': 32, 'arm_spine_hdr': 64}
-WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2', 'call_args': '-3', 'fence_spine': '-4', 'alt_spine': '-5', 'call_argv': '-6', 'call_argv_cur': '-7', 'call_argv_rec': '-8', 'call_argv_cur_rec': '-9'}
+WORDS = {'arm_spine': '-1', 'arm_spine_hdr': '-2', 'call_args': '-3', 'fence_spine': '-4', 'alt_spine': '-5', 'call_argv': '-6', 'call_argv_cur': '-7', 'call_argv_rec': '-8', 'call_argv_cur_rec': '-9', 'match_frame': '-10'}
 
 
 def refuse(msg):
@@ -42,7 +42,7 @@ def wordkind(n, words, spec):
         refuse('%s:%d: word_kind %r is not a string over D (a 16-byte DESCR cell) and r (a raw 8-byte word)' % (TSV, n, spec))
     if (words.isdigit() or words in FIXED) and fill:
         refuse('%s:%d: word_kind %r has a fill but alpha_words %s is a fixed width' % (TSV, n, spec, words))
-    if words in ('call_args', 'fence_spine', 'alt_spine', 'call_argv', 'call_argv_cur', 'call_argv_rec', 'call_argv_cur_rec') and not fill:
+    if words in ('call_args', 'fence_spine', 'alt_spine', 'call_argv', 'call_argv_cur', 'call_argv_rec', 'call_argv_cur_rec', 'match_frame') and not fill:
         refuse('%s:%d: alpha_words %s is a computed width and needs a [D] or [r] fill in word_kind %r' % (TSV, n, words, spec))
     nw = lambda t: sum(2 if c == 'D' else 1 for c in t)
     want = int(words) if words.isdigit() else FIXED.get(words, 0)

@@ -11,7 +11,7 @@
 # other meaning. A new row for a kind another regime also carves names its regime in its condition or goes below that regime's rows; util_gen_box_cell_shapes.py
 # --check regenerates the .inc and a reviewer reads the kind's rows together. Columns:
 #   kind          the IR kind (IR_*), or * for any kind
-#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or call_argv (16 x (1 + the argument count)) or call_argv_cur (16 x (2 + the argument count)), or call_argv_rec and call_argv_cur_rec (the same plus 112), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded)
+#   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or call_argv (16 x (1 + the argument count)) or call_argv_cur (16 x (2 + the argument count)), or call_argv_rec and call_argv_cur_rec (the same plus 112), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded), or match_frame (planner_act_extra + 56: the four saved registers and the MATCH_CTX cells BELOW the saved rbp, carved right after the box's own push rbp; the saved rbp's 8 is the pair's, not K)
 #   when          always | call_curmov (a call that moves the cursor) | call_argv (one of the eleven call kinds of bb_call_fn.cpp: direct, pl_leaf, pas_bi, callee_rec, field_rec, byname, try, method, redisp, apply, eval) | call_argv_cur (call_argv and the call moves the cursor) | call_argv_rec and call_argv_cur_rec (the same, and the call's template opens the 112-byte pending record: lower_call_node_has_rec) | icn_local (an Icon local variable read in a spine-cells graph) |
 #                 icn_suspend (an Icon suspend in a spine-cells graph) | icn_home (a home-frame graph that is not Prolog-resumable: Icon, and Raku and Pascal where a row names their kinds) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
 #   word_kind     the kind of every 8-byte word of the carve, in ascending address (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16, the cto 2026-10-29, CEO-2011): a string over D (one 16-byte
@@ -68,7 +68,7 @@ IR_ASSIGN	0	always	-	-	-	-	the assignment writes its target in place
 IR_GOTO	0	always	-	-	-	-	control only
 IR_GOTO_DEFERRED	0	always	-	-	-	-	control only
 IR_DEFINE	0	always	-	-	-	-	a definition, no value
-IR_MATCH_BEGIN	0	always	-	-	-	-	the match frame is the construct's shape, not a spine cell
+IR_MATCH_BEGIN	match_frame	always	[r]	-	-	-	the match frame (ARCH-ZETA-LAYOUT 9.1, the cto 2026-10-31): after the box's own push rbp / mov rbp, rsp (the pair's 8, not K) one sub rsp carves the four register-save words r12..r15 at rbp-8..-32 and the activation words and MATCH_CTX cells below them; the box's own whack pair pops it on its omega and the match end's pair pops it with its own row (gpop)
 IR_MATCH_END	0	always	-	-	-	-	the match's discard
 IR_MATCH_REPLACE	0	always	-	-	-	-	the match's discard
 IR_STATEMENT	0	always	-	-	-	-	a statement boundary

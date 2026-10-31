@@ -95,10 +95,11 @@ def ea(r):
 
 
 class Ins:
-    __slots__ = ('ln', 'op', 'a', 'labels', 'eff', 'text', 'target', 'zsm')
+    __slots__ = ('ln', 'op', 'a', 'labels', 'eff', 'text', 'target', 'zsm', 'frame', 'fval', 'note')
 
     def __init__(self, ln, op, a, labels):
         self.ln, self.op, self.a, self.labels, self.zsm = ln, op, a, labels, False
+        self.frame, self.fval, self.note = None, None, ''
         self.text = (op + ' ' + ', '.join(a)).strip()
         self.eff = rsp_effect(op, a)
         self.target = a[0] if (op == 'jmp' or op in JCC) and a else None
@@ -325,6 +326,44 @@ def mark_zsm(box):
             ins[k].zsm = True
 
 
+def match_begin_of_end(rows):
+    """{end row index: the BEGIN row it closes}: a stack over the plan's rows in node order, the pairing the planner's own walks use."""
+    out, stack = {}, []
+    for r in rows:
+        if r['kind'] == 'IR_MATCH_BEGIN':
+            stack.append(r)
+        elif r['kind'] == 'IR_MATCH_END':
+            out[r['i']] = stack.pop() if stack else None
+    return out
+
+
+def mark_frame(box, r, begin):
+    """Price the rbp frame pair from the plan row (ARCH-ZETA-LAYOUT 9 and 9.1). The saved rbp's 8 is the pair's own and is no part of a plan depth.
+    OPEN: a MATCH_BEGIN row that states its K: `push rbp` followed by `mov rbp, rsp` opens the frame (depth unchanged) and the carve is the run of `sub rsp`
+    after it. CLOSE: `mov rsp, rbp` followed by `pop rbp`. In the box that opened the frame it returns to the depth of the open (the K it carved is the K of the
+    row); in a MATCH_END box it pops the row's stated gpop, which must equal X of the END less E of the BEGIN it closes. A pair whose row states no number, or
+    a number that disagrees, is priced by nothing and stays an EXCURSION, with the numbers in its detail. Returns the index just past the open, or None."""
+    ins, opened = box.ins, None
+    for k in range(len(ins) - 1):
+        I, J = ins[k], ins[k + 1]
+        if r['kind'] == 'IR_MATCH_BEGIN' and r['K'] and I.op == 'push' and I.a == ['rbp'] and J.op == 'mov' and J.a == ['rbp', 'rsp'] and not J.labels and opened is None:
+            I.frame, opened = 'open', k + 2
+    for k in range(len(ins) - 1):
+        I, J = ins[k], ins[k + 1]
+        if not (I.op == 'mov' and I.a == ['rsp', 'rbp'] and J.op == 'pop' and J.a == ['rbp'] and not J.labels):
+            continue
+        if opened is not None and r['depth'] is not None:
+            I.frame, I.fval, J.frame = 'close-own', ea(r), 'pop-pair'
+        elif r['kind'] == 'IR_MATCH_END':
+            g = r.get('gpop')
+            want = (xa(r) - ea(begin)) if (begin is not None and armed(r) and armed(begin)) else None
+            if g and want is not None and g == want:
+                I.frame, I.fval, J.frame = 'close-row', g, 'pop-pair'
+            else:
+                I.note = ' (whack: row gpop=%s want=%s)' % (g, want)
+    return opened
+
+
 def internal_labels(box):
     return {l for l in box.lab if l != box.alpha and l != box.beta}
 
@@ -428,7 +467,13 @@ def simulate(box, start, state):
             else:
                 seen[idx] = st
             I = ins[idx]
-            if I.eff[0]:
+            if I.frame == 'close-own':
+                st = I.fval if st is not None else None
+            elif I.frame == 'close-row':
+                st = None if st is None else st - I.fval
+            elif I.frame in ('open', 'pop-pair'):
+                pass
+            elif I.eff[0]:
                 st = None if (st is None or I.eff[1] is None) else st - I.eff[1]
             if I.op == 'ret':
                 exits.append(('ret', None, st, I.ln))
@@ -479,18 +524,20 @@ def check(graphs, chains, tabs, site_box):
                 info['armed'] += 1
     for g, ch in paired:
         rows = g['rows']
+        begin_of = match_begin_of_end(rows)
         for r, b in zip(rows, ch.boxes):
             mark_zsm(b)
             live = armed(r)
             a = b.lab.get(b.alpha)
+            opened = mark_frame(b, r, begin_of.get(r['i']))
             carve_idx, carved = set(), 0
             if a is not None:
-                j = a
+                j = a if opened is None else opened
                 while j < len(b.ins):
                     I = b.ins[j]
                     if I.zsm:
                         j += 1
-                    elif (j == a or not I.labels) and I.op == 'sub' and I.eff[0] and I.eff[1] is not None:
+                    elif (j == a or j == opened or not I.labels) and I.op == 'sub' and I.eff[0] and I.eff[1] is not None:
                         carved -= I.eff[1]
                         carve_idx.add(j)
                         j += 1
@@ -510,7 +557,9 @@ def check(graphs, chains, tabs, site_box):
                 if not I.eff[0]:
                     continue
                 info['rsp_writes'] += 1
-                if k in carve_idx:
+                if I.frame:
+                    info['frame_priced'] += 1
+                elif k in carve_idx:
                     info['carve_writes'] += 1
                 elif k in gate:
                     info['gate_pairs'] += 1 if I.op == 'push' else 0
@@ -523,7 +572,7 @@ def check(graphs, chains, tabs, site_box):
                 elif r.get('restore') is not None and I.eff[1] is None and I.op in ('mov', 'lea'):
                     info['declared_restore'] += 1
                 else:
-                    add('EXCURSION', g['name'], b.name, I.ln, '%s bytes=%s' % (I.text, '?' if I.eff[1] is None else I.eff[1]))
+                    add('EXCURSION', g['name'], b.name, I.ln, '%s bytes=%s%s' % (I.text, '?' if I.eff[1] is None else I.eff[1], I.note))
             if not live:
                 continue
             owner = rows[r['owner']] if (r['owner'] is not None and 0 <= r['owner'] < len(rows)) else None
@@ -595,7 +644,7 @@ def check(graphs, chains, tabs, site_box):
                 enters.append(r)
             elif kind & 0xff == 5 and enters:
                 left = enters.pop()
-            want0 = xa(left) if left is not None and armed(left) else xa(r)
+            want0 = ea(left) if left is not None and armed(left) else (ea(r) if kind & 0xff == 4 and armed(r) else xa(r))
             if rule == 5:
                 add('RULE5', g['name'], b.name, ln, 'depth=%d' % depth)
             elif rule == 0 and armed(r) and depth != want0:
@@ -613,7 +662,7 @@ def check(graphs, chains, tabs, site_box):
                     add('SITE', g['name'], b.name, ln, 'rule=6 nl=%d but %d match enter(s) are open' % (nl, len(enters)))
                 else:
                     er = enters[-nl]
-                    want = 0 if ek in (1, 3) else (xa(er) if armed(er) else None)
+                    want = 0 if ek in (1, 3) else (ea(er) if armed(er) else None)
                     if want is None:
                         info['sites_unchecked'] += 1
                     elif depth != want:

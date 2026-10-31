@@ -9,8 +9,8 @@
 #               constructs > 0 over the witnesses (the lowerers set it because the construct is in the source)
 #   DRIVER      src/driver/scrip.c calls planner_stage
 #   DELETED     xop_frame_slot is named nowhere in src/planner (the retains column of the table replaces the planner's call of an emitter decider)
-#   TABLE       ./scrip --dump-plan prints, per graph, a PLAN line with its serial and one row per node with the fourteen columns E X K definite
-#               zeta off depth retains_code owner fenced gpop wpop restore act, for one witness of every language; SCRIP_PLANNER_REPORT=1 prints no
+#   TABLE       ./scrip --dump-plan prints, per graph, a PLAN line with its serial and one row per node with the fifteen columns E X K definite
+#               zeta off depth retains_code owner fenced gpop wpop restore act vdj, for one witness of every language; SCRIP_PLANNER_REPORT=1 prints no
 #               [PLANNER-FALLBACK] on any of them
 #   CENSUS      util_placement_predicates_census.py reads 0 alive
 # Byte identity is each landing's own proof (util_population_asm_identity.sh against its parent, in the commit), never this gate's.
@@ -41,7 +41,7 @@ for lang in snobol4 icon prolog pascal raku snocone rebus; do
     cols=$(grep -m1 '^PLAN_COLUMNS ' "$T/d" | cut -d' ' -f2-)
     c=$(grep '^PLAN graph=' "$T/d" | grep -o 'constructs=[0-9]*' | cut -d= -f2 | awk '{s+=$1} END {print s+0}'); ncons=$((ncons + c))
     echo "TABLE lang=$lang witness=$(basename "$f") graphs=$np rows=$nr constructs=$c fallbacks=$nfb"
-    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore act" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the fourteen columns (read '${cols:-none}'; act is the ACT word's cause, ARCH-THREE-ZETAS-EMISSION 6.1, CEO-1942/1943, the cto 2026-10-24)"
+    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore act vdj" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the fifteen columns (read '${cols:-none}'; act is the ACT word's cause, ARCH-THREE-ZETAS-EMISSION 6.1, CEO-1942/1943, the cto 2026-10-24)"
     [ "$np" -gt 0 ] && [ "$nr" -gt 0 ] || red "TABLE $lang: --dump-plan printed $np PLAN lines and $nr rows"
     [ "$nfb" = 0 ] || red "TABLE $lang: $nfb [PLANNER-FALLBACK] lines"
 done
