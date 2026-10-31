@@ -2159,9 +2159,14 @@ case "$cmd" in
          d="$PO/$to/inbox/$(date +%s%N)-$ME-$topic.msg"
          if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
   ask)   [ -n "${2:-}" ] || s4e_need ask "a topic" "s4e_msg.sh ask <topic> \"your question\"" "Sends q-<topic> to the HQ named in your postoffice HQ file, and refuses rc=2 when none is set."
-         topic="$2"; shift 2; _hq="$(s4e_hq)"
-         [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Set S4E_HQ=hq_C|hq_P|hq_B, or have your HQ write it: echo hq_C > $PO/$ME/HQ" >&2; exit 2; }
-         exec "$0" send "$_hq" "q-$topic" "$*";;
+         # ⛔ TWO FORMS AND --stdin (ceo CEO-2081). MEASURED: the cqo and the cfo each ran ask <seat> <topic> --stdin within the hour; the verb
+         # took the seat as the topic and mailed the ceo the literal body "<topic> --stdin", the question itself lost. A first argument that
+         # names a mailbox is now the addressee, and --stdin reads the body from standard input as send does; an empty body is refused.
+         if [ -n "${3:-}" ] && [ -d "$PO/$2/inbox" ]; then _hq="$2"; topic="$3"; shift 3; else topic="$2"; shift 2; _hq="$(s4e_hq)"; fi
+         [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Name the seat: s4e_msg.sh ask <seat> <topic> --stdin, or set S4E_HQ." >&2; exit 2; }
+         if [ "${1:-}" = "--stdin" ]; then _body="$(cat)"; else _body="$*"; fi
+         [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED (rc 2): ask carries no question -- give it after the topic in quotes, or with --stdin on standard input. Nothing sent." >&2; exit 2; }
+         exec "$0" send "$_hq" "q-$topic" "$_body";;
   # ⛔ CLEAR DELETES ONLY WHAT CHECK DISPLAYED (hq_C s269). MEASURED, not hypothetical: a message arrived
   # between this seat's `check` and its `clear`, and the old `rm -f *.msg` destroyed it UNREAD and
   # UNRECOVERABLE -- clear does not archive, and no sent-copy is kept anywhere. The banner had even printed
