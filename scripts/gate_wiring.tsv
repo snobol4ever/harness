@@ -164,6 +164,7 @@ test_gate_gc_a_long_trie_chain_is_visited_without_recursing_the_c_stack.sh	WIRED
 test_gate_gc_a_nested_match_restores_a_moved_outer_subject.sh	WIRED	-	-	-
 test_gate_gc_a_no_layout_entry_names_which_of_the_two_populations_it_is_in.sh	WIRED	-	-	-
 test_gate_gc_a_nul_leading_cset_is_interned_once.sh	WIRED	-	-	-
+test_gate_gc_a_pascal_interior_pointer_survives_a_moving_collection.sh	WIRED	-	-	-
 test_gate_gc_a_poll_site_tests_the_pending_flag_before_calling_the_leaf.sh	WIRED	-	-	-
 test_gate_gc_a_procedure_value_held_only_in_a_heap_aggregate_survives.sh	WIRED	-	-	-
 test_gate_gc_a_prolog_box_result_survives_the_cap_raise_tail_under_gc_stress.sh	WIRED	-	-	-
