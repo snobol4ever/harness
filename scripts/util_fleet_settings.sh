@@ -46,7 +46,7 @@ for root in roots:
     try: d = json.loads(old_text) if old_text.strip() else {}
     except Exception as e: print("REFUSE(2): %s is not JSON: %s" % (path, e)); sys.exit(2)
     env = d.setdefault("env", {})
-    env.update({"S4E_SEAT": seat, "S4E_SEAT_JOBS": "4", "MAKEFLAGS": "--jobs=4", "TMPDIR": "/tmp/s4e/" + seat})
+    env.update({"S4E_SEAT": seat, "S4E_SEAT_JOBS": "4", "MAKEFLAGS": "--jobs=4", "TMPDIR": "/tmp/s4e/" + seat, "BASH_DEFAULT_TIMEOUT_MS": "300000", "BASH_MAX_TIMEOUT_MS": "1200000"})
     hooks = d.setdefault("hooks", {})
     for ev in list(hooks):
         groups = []

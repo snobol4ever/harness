@@ -8,11 +8,15 @@
 N="${S4E_CC_SLOTS:-8}"
 D="${S4E_CC_SLOT_DIR:-/tmp/s4e-cc-slots}"
 mkdir -p "$D" 2>/dev/null || exec "$@"
+s4e_slot_note() { local f w; f="${S4E_SLOT_WAITS:-/home/resources/progress/SLOT_WAITS.tsv}"; w=$(awk -v a="$W0" -v b="$(date +%s.%N)" 'BEGIN{printf "%.1f", b-a}'); case "$w" in 0.*) return 0;; esac
+  [ -s "$f" ] || printf '# at_utc\tseat\tkind\twait_s\tcmd  -- one line per slot wait of a second or more (ceo CEO-2078: the pools kept no record, so contention could not be measured)\n' > "$f" 2>/dev/null
+  printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "${S4E_SEAT:-$(basename "${S4E_HOME:-$PWD}")}" "$1" "$w" "$(shift; printf %s "$*" | tr '\t\n' '  ' | cut -c1-80)" >> "$f" 2>/dev/null; return 0; }
+W0=$(date +%s.%N)
 while :; do
   i=0
   while [ "$i" -lt "$N" ]; do
     exec 9>>"$D/slot$i" || exec "$@"
-    if flock -n 9; then exec "$@"; fi
+    if flock -n 9; then s4e_slot_note cc "$@"; exec "$@"; fi
     exec 9>&-
     i=$((i + 1))
   done
