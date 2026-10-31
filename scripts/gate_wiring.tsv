@@ -426,6 +426,7 @@ test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh	WIRED	-	-	-
 test_gate_logtalk_population_is_named_and_sums.sh	WIRED	-	-	-
 test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh	WIRED	-	-	-
 test_gate_m4_a_proc_the_startup_skips_keeps_its_compile_time_slot.sh	WIRED	-	-	-
+test_gate_make_fetches_a_cached_build_on_a_clean_tree.sh	WIRED	-	-	-
 test_gate_make_leaves_out_a_dep_file_whose_source_is_gone.sh	WIRED	-	-	-
 test_gate_make_test_loops_and_reports.sh	WIRED	-	-	-
 test_gate_mint_op_is_one_numbering.sh	WIRED	-	-	-
