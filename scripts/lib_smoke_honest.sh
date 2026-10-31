@@ -26,3 +26,24 @@ smoke_finish() {
   [ "${1:-0}" -eq 0 ] || exit 1
   exit 0
 }
+# THE FILE-BACKED FORM for a runner whose steps run inside $(...) (CEO-2081 rollout to the eight fleet smokes): smoke_t takes timeout's own arguments
+# and runs it; a step it kills (124 or 137) prints TIMEOUT as the step's output, so a case shows "got: TIMEOUT", never an empty wrong answer, and its
+# load1 lands in SMOKE_TO_FILE, which a subshell can write. smoke_refuse_if_loaded, called just before the runner's own verdict, exits 2 when any timeout
+# fell over SMOKE_LOAD_FACTOR x cores and otherwise returns 0 and leaves the verdict to the runner.
+SMOKE_TO_FILE="$(mktemp "${TMPDIR:-/tmp}/smoke_to.XXXXXX")"; trap 'rm -f "$SMOKE_TO_FILE"' EXIT
+smoke_t() {
+  timeout "$@"; local rc=$?
+  case "$rc" in 124|137) cut -d' ' -f1 "${SMOKE_LOADAVG:-/proc/loadavg}" 2>/dev/null >> "$SMOKE_TO_FILE"; echo TIMEOUT;; esac
+  return "$rc"
+}
+smoke_refuse_if_loaded() {
+  local c n k loads; c=${SMOKE_CORES:-$(nproc 2>/dev/null || echo 1)}
+  n=$(grep -c . "$SMOKE_TO_FILE" 2>/dev/null); n=${n:-0}; [ "$n" -gt 0 ] || return 0
+  k=$(awk -v c="$c" -v f="${SMOKE_LOAD_FACTOR:-2}" '$1 + 0 > f * c {k++} END {print k + 0}' "$SMOKE_TO_FILE"); loads=$(paste -sd' ' "$SMOKE_TO_FILE")
+  if [ "$k" -gt 0 ]; then
+    echo "SMOKE REFUSE(2): $k of $n timed-out step(s) ran while load1 was over ${SMOKE_LOAD_FACTOR:-2} x $c cores (load1 at each timeout: $loads) -- the box cannot measure this smoke now; re-run when it is quieter (CEO-1680, CEO-2081)"
+    exit 2
+  fi
+  echo "SMOKE: $n step(s) timed out at load1 $loads, under ${SMOKE_LOAD_FACTOR:-2} x $c cores -- counted as failures"
+  return 0
+}

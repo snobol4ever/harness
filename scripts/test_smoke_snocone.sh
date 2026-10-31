@@ -4,13 +4,14 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-04-14
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 PASS=0; FAIL=0
 
 snocone() {
     local label="$1" expected="$2"
     local tmp; tmp=$(mktemp /tmp/sc_XXXXXX.sc)
     cat > "$tmp"
-    local actual; actual=$(timeout -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null)
+    local actual; actual=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null)
     rm -f "$tmp"
     if [ "$actual" = "$expected" ]; then echo "  PASS $label"; PASS=$((PASS+1))
     else echo "  FAIL $label (got: $(echo "$actual"|head -1))"; FAIL=$((FAIL+1)); fi
@@ -52,4 +53,5 @@ cv() { printf '%s\n' "$CB" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }
 CN3=$(cv m3_n); CP3=$(cv m3_pass); CN4=$(cv m4_n); CP4=$(cv m4_pass); CF3=$((CN3-CP3)); CF4=$((CN4-CP4))
 printf '%s\n' "$COUT" | grep -E '^ +(FAIL|CRASH|HANG|UNPROVEN) m[34] ' | sed 's/^ */  CORE-/'
 echo ""; echo "core arm (Snocone core, $CN4 entries): m3 PASS=$CP3 FAIL=$CF3  m4 PASS=$CP4 FAIL=$CF4   (HARD, both modes)"
+smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 echo "PASS=$PASS FAIL=$FAIL"; [ "$FAIL" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]

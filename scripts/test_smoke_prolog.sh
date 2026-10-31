@@ -10,6 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6 · Claude Sonnet  DATE: 2026-05-31
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 SMX_SIG='\[SMX\]'                       # both refuse banners begin with "[SMX]"
 P2=0; F2=0; P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0
 
@@ -21,14 +22,14 @@ pl() {
     local r2 r3 r4
 
     # mode 2 — --run (HARD GATE)
-    local a2; a2=$(timeout -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null </dev/null)
+    local a2; a2=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null </dev/null)
     if [ "$a2" = "$expected" ]; then r2="m2 PASS"; P2=$((P2+1)); else r2="m2 FAIL"; F2=$((F2+1)); fi
 
     # mode 3 — --run (tracked; REFUSED until regrown). PL-GZ-1b(d): a program the native blob does not
     # cover executes via the mode-2 interpreter and says so on stderr — output is STILL verified
     # (mismatch = FAIL); a verified fallback counts REFUSED, NOT a native PASS.
     local e3; e3=$(mktemp /tmp/pl_m3err_XXXXXX)
-    local o3; o3=$(timeout -k 5 8 "$SCRIP" --run "$tmp" 2>"$e3" </dev/null)
+    local o3; o3=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>"$e3" </dev/null)
     if grep -q "MODE-3 INTERP-FALLBACK" "$e3"; then
         if [ "$o3" = "$expected" ]; then r3="m3 REFUSED"; X3=$((X3+1)); else r3="m3 FAIL"; F3=$((F3+1)); fi
     elif echo "$o3" | grep -qE "$SMX_SIG"; then r3="m3 REFUSED"; X3=$((X3+1))
@@ -37,11 +38,11 @@ pl() {
     rm -f "$e3"
 
     # mode 4 — --compile --target=x86 (tracked; emit→assemble→run when live)
-    local e4; e4=$(timeout -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" 2>&1 </dev/null)
+    local e4; e4=$(smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" 2>&1 </dev/null)
     if echo "$e4" | grep -qE "$SMX_SIG"; then
         r4="m4 REFUSED"; X4=$((X4+1))
     else
-        local o4; o4=$(timeout -k 5 15 bash "$HERE/run_prolog_via_x86_backend.sh" "$tmp" 2>/dev/null </dev/null)
+        local o4; o4=$(smoke_t -k 5 15 bash "$HERE/run_prolog_via_x86_backend.sh" "$tmp" 2>/dev/null </dev/null)
         if [ "$o4" = "$expected" ]; then r4="m4 PASS"; P4=$((P4+1)); else r4="m4 FAIL"; F4=$((F4+1)); fi
     fi
 
@@ -91,4 +92,5 @@ echo ""
 echo "mode-2 (--run):            PASS=$P2 FAIL=$F2                / $N   (HARD GATE)"
 echo "mode-3 (--run):               PASS=$P3 FAIL=$F3 REFUSED=$X3   / $N   (tracked)"
 echo "mode-4 (--compile x86):       PASS=$P4 FAIL=$F4 REFUSED=$X4   / $N   (tracked)"
+smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F2" -eq 0 ]

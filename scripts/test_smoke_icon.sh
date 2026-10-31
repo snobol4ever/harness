@@ -10,6 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude  DATE: 2026-05-30 (de-interp'd to 2-mode 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-1}"
 MODE4_MIN="${MODE4_MIN:-0}"
@@ -21,14 +22,14 @@ icon() {
     cat > "$tmp"
     N=$((N+1))
     local a3 a4 r3 r4
-    a3=$(timeout -k 5 8 "$SCRIP" --run    "$tmp" 2>/dev/null </dev/null)
+    a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>/dev/null </dev/null)
     # mode 4: --compile emits standalone x86-64 asm to stdout; assemble + link libscrip_rt.so + run.
     a4=""
     local s4 bin4
     s4=$(mktemp /tmp/icn_XXXXXX.s); bin4=$(mktemp /tmp/icn_XXXXXX.bin); rm -f "$bin4"
-    if timeout -k 5 8 "$SCRIP" --compile "$tmp" >"$s4" 2>/dev/null </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
+    if smoke_t -k 5 8 "$SCRIP" --compile "$tmp" >"$s4" 2>/dev/null </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
-            a4=$(timeout -k 5 8 "$bin4" 2>/dev/null </dev/null)
+            a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null)
         fi
     fi
     rm -f "$tmp" "$s4" "$bin4"
@@ -176,4 +177,5 @@ EOF
 echo ""
 echo "mode-3 (--run):      PASS=$P3 FAIL=$F3  / $N   (HARD: zero FAIL — primary native mode)"
 echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN)"
+smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F3" -eq 0 ] && [ "$F4" -eq 0 ] && [ "$P3" -ge "$MODE3_MIN" ] && [ "$P4" -ge "$MODE4_MIN" ]

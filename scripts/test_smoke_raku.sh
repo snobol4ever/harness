@@ -10,6 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet · Claude Opus  DATE: 2026-05-31 (3-mode; de-interp'd to 2-mode 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-0}"
 MODE4_MIN="${MODE4_MIN:-0}"
@@ -24,12 +25,12 @@ raku() {
     local e3 e4 s4 bin4
     local rc3=0 rc4=0
     e3=$(mktemp /tmp/rk_XXXXXX.e3); e4=$(mktemp /tmp/rk_XXXXXX.e4)
-    a3=$(timeout -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
+    a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
     a4=""
     s4=$(mktemp /tmp/rk_XXXXXX.s); bin4=$(mktemp /tmp/rk_XXXXXX.bin); rm -f "$bin4"
-    if timeout -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
+    if smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
-            a4=$(timeout -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
+            a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
         fi
     fi
     # [SMX] on stderr => the native mode DELIBERATELY REFUSES this rung (its bb_*.cpp template is not built
@@ -59,14 +60,14 @@ raku_dies() {
     local e3 e4 s4 bin4
     local rc3=0 rc4=0
     e3=$(mktemp /tmp/rk_XXXXXX.e3); e4=$(mktemp /tmp/rk_XXXXXX.e4)
-    a3=$(timeout -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
+    a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
     a4=""
     local crc4=0
     s4=$(mktemp /tmp/rk_XXXXXX.s); bin4=$(mktemp /tmp/rk_XXXXXX.bin); rm -f "$bin4"
-    timeout -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?
+    smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?
     if [ "$crc4" -eq 0 ] && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
-            a4=$(timeout -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
+            a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
         fi
     elif [ "$crc4" -ne 0 ]; then
         rc4="$crc4"
@@ -190,6 +191,7 @@ echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4 REFUSED=$X4  / $N   (done bar: PASS
 # ⛔ NON-FATAL BY DESIGN: a bookkeeping failure must never turn a real measurement into a red board,
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
+smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 python3 "$HERE/util_score_row.py" write --lang raku --column floor --modes m3,m4 \
     --measurer "${S4E_SEAT:-}" --text "smoke m3 $P3/$N · m4 $P4/$N (FAIL $F3/$F4, REFUSED $X3/$X4, \`test_smoke_raku.sh\`)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"

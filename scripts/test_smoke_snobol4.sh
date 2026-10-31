@@ -5,6 +5,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet 4.6  DATE: 2026-06-08 (de-interp'd 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 OUTDIR="${HERE}/../../SCRIP/out"
 P3=0; F3=0; P4=0; F4=0
 
@@ -12,7 +13,7 @@ run_m3() {
     local label="$1" src="$2" expected="$3"
     local tmp; tmp=$(mktemp /tmp/sno_XXXXXX.sno)
     printf '%s\n' "$src" > "$tmp"
-    local actual; actual=$(timeout -k 5 8 "$SCRIP" --run "$tmp" < /dev/null 2>/dev/null)
+    local actual; actual=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" < /dev/null 2>/dev/null)
     rm -f "$tmp"
     if [ "$actual" = "$expected" ]; then
         P3=$((P3+1))
@@ -28,11 +29,11 @@ run_m4() {
     local s o bin
     s=$(mktemp /tmp/sno_XXXXXX.s); o="${s%.s}.o"; bin="${s%.s}.bin"
     local actual
-    if timeout -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" < /dev/null > "$s" 2>/dev/null \
+    if smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" < /dev/null > "$s" 2>/dev/null \
        && as "$s" -o "$o" 2>/dev/null \
        && gcc -no-pie "$o" -L"$OUTDIR" -lscrip_rt -Wl,-rpath,"$OUTDIR" \
               -Wl,--allow-shlib-undefined -lm -o "$bin" 2>/dev/null; then
-        actual=$(timeout -k 5 8 "$bin" < /dev/null 2>/dev/null)
+        actual=$(smoke_t -k 5 8 "$bin" < /dev/null 2>/dev/null)
     else
         actual="<mode4-build-failed>"
     fi
@@ -109,4 +110,5 @@ echo "core arm (SnoRungs core + $(echo $FRAGILE | wc -w) fragile, $CN4 entries):
 echo "PASS=$P4 FAIL=$F4"
 printf "TIME TOTAL=%ds\n" "$TT"
 
+smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F4" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]
