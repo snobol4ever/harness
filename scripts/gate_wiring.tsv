@@ -1128,6 +1128,7 @@ test_gate_runners_refuse_on_a_stale_binary.sh	WIRED	-	-	-
 test_gate_runtime_a_fault_nobody_claims_names_its_class.sh	WIRED	-	-	-
 test_gate_runtime_trampolines_enter_generated_code_16_byte_aligned.sh	WIRED	-	-	-
 test_gate_s4e_assign_refuses_an_unrunnable_done_when.sh	WIRED	-	-	-
+test_gate_s4e_claim_refuses_a_third_live_row.sh	WIRED	-	-	-
 test_gate_s4e_claim_refuses_a_topic_with_no_queue_row.sh	WIRED	-	-	-
 test_gate_s4e_done_rows_carry_a_computed_receipt.sh	WIRED	-	-	-
 test_gate_s4e_done_timeout_is_a_refusal.sh	WIRED	-	-	-
@@ -1165,6 +1166,7 @@ test_gate_scrip_sizes_the_heap_with_d_and_i.sh	WIRED	-	-	-
 test_gate_scrip_switches_are_spitbols.sh	WIRED	-	-	-
 test_gate_scriptix_a_call_into_the_icon_section_returns_with_the_callers_r12.sh	WIRED	-	-	-
 test_gate_scriptix_a_snocone_and_a_pascal_fence_compile_through_their_own_frontends.sh	WIRED	-	-	-
+test_gate_seat_digests_within_budget.sh	WIRED	-	-	-
 test_gate_seat_identity_one_map.sh	WIRED	-	-	-
 test_gate_send_prose_requires_stdin.sh	WIRED	-	-	-
 test_gate_setexit_handler_return_resumes_the_raising_activation.sh	WIRED	-	-	-
