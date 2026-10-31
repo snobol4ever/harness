@@ -28,7 +28,7 @@ def rt_incs(root):
     return [t for t in v.split() if t.startswith('-I')]
 
 
-def derive(root):
+def derive(root, table_text=None):
     incs = rt_incs(root)
     if incs is None: return None, 'could not read RT_INCS out of the Makefile'
     rtx = os.path.join(root, 'src', 'runtime', 'rtx')
@@ -51,7 +51,12 @@ def derive(root):
         ef = os.path.join(work, 'entries.txt')
         open(ef, 'w', encoding='utf-8').write(''.join(e + '\n' for e in entries))
         walker = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'util_rtx_abi_walk.py')
-        rc, out, err = run([sys.executable, walker] + objs + ['--entries', ef, '--clobber-table'])
+        extra = []
+        if table_text:
+            tf = os.path.join(work, 'walker_table.inc')
+            open(tf, 'w', encoding='utf-8').write(table_text)
+            extra = ['--table', tf]
+        rc, out, err = run([sys.executable, walker] + objs + ['--entries', ef, '--clobber-table'] + extra)
         if rc != 0: return None, 'the walker could not derive the table (rc %d): %s' % (rc, (out + err).strip()[-600:])
         table = {}
         for line in out.split('\n'):

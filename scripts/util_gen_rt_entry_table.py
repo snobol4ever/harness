@@ -124,11 +124,11 @@ def alloc_rows(root):
     return {m.group(1): m.group(2) for m in re.finditer(r'\{\s*"([^"]+)",\s*GC_RET_(\w+)\s*\}', open(p, encoding='utf-8').read())}
 
 
-def derive_asm(root):
-    """{entry: clobbers text} for every registered asm-runtime entry, derived from the assembled objects; raises OSError when the objects cannot be read."""
+def derive_asm(root, rows=()):
+    """{entry: clobbers text} for every registered asm-runtime entry, derived from the assembled objects under the table's declared transfer entries; raises OSError when the objects cannot be read."""
     sys.path.insert(0, HERE)
     import lib_rtx_clobber_derive as D
-    table, why = D.derive(root)
+    table, why = D.derive(root, walker_table(rows))
     if table is None:
         raise OSError(why)
     return {n: clob_text(regs) for n, regs in table.items()}
@@ -183,10 +183,18 @@ def asm_disagreements(rows, derived):
 
 
 def walker_table(rows):
-    """The walker's own table text: one { "sym", RTCC_C_R8|... } row per stated clobbers ('0' for none)."""
+    """The walker's own table text: one { "sym", RTCC_C_R8|... } row per stated clobbers ('0' for none), and for a declared transfer entry (an asm row whose transfers is 1) the
+    tokens RTCC_XFER and RTCC_XREC_<REG> for each register that carries the record at entry (ARCH-RT-CALL-PROTOCOL.md section 16)."""
     bit = {'r8': 'RTCC_C_R8', 'r9': 'RTCC_C_R9', 'r10': 'RTCC_C_R10', 'r11': 'RTCC_C_R11'}
-    return ''.join('    { "%s", %s },\n' % (r['sym'], '0' if r['clobbers'] == 'none' else '|'.join(bit[x] for x in r['clobbers'].split('|')))
-                   for r in sorted(rows, key=lambda r: r['sym']) if r['clobbers'] != '-')
+    out = []
+    for r in sorted(rows, key=lambda r: r['sym']):
+        toks = [] if r['clobbers'] == '-' else (['0'] if r['clobbers'] == 'none' else [bit[x] for x in r['clobbers'].split('|')])
+        xf = r['transfers'].split(':')
+        if r['conv'] == 'asm' and xf[0] == '1':
+            toks = [t for t in toks if t != '0'] + ['RTCC_XFER'] + ['RTCC_XREC_' + x.upper() for x in (xf[1].split('|') if len(xf) > 1 else [])]
+        if toks:
+            out.append('    { "%s", %s },\n' % (r['sym'], '|'.join(toks)))
+    return ''.join(out)
 
 
 def validate(raw):
@@ -204,8 +212,10 @@ def validate(raw):
             raise ValueError(w + ': rc %s is not one of %s or -' % (r['rc'], RCS))
         if r['allocates'] not in ('0', '1', '-'):
             raise ValueError(w + ': allocates must be 0, 1 or -')
-        if r['transfers'] not in ('0', '1', '-'):
-            raise ValueError(w + ': transfers must be 0, 1 or -')
+        if not re.fullmatch(r'0|1|-|1:(?:rax|rcx|rdx|rsi|rdi)(?:\|(?:rax|rcx|rdx|rsi|rdi))*', r['transfers']):
+            raise ValueError(w + ': transfers must be 0, 1 or - (an asm row may also name the registers that carry the record at entry: 1:rax|rdx)')
+        if ':' in r['transfers'] and r['conv'] != 'asm':
+            raise ValueError(w + ': only an asm row may name the registers that carry a transfer entry\'s record')
         bits = 0
         if r['clobbers'] == 'none':
             bits = CLOB_STATED
@@ -229,7 +239,7 @@ def gen(rows):
     out.append('static const rt_entry_t g_rt_entries[RT_ENTRIES] = {')
     for r in rows:
         out.append('    { "%s", %s, %s, %s, %d, %s },' % (r['sym'], 'RT_CONV_' + r['conv'].upper() if r['conv'] != '-' else 'RT_CONV_NONE', 'RT_RC_' + r['rc'] if r['rc'] != '-' else 'RT_RC_NONE',
-                                                         '-1' if r['allocates'] == '-' else r['allocates'], r['clobbits'], '-1' if r['transfers'] == '-' else r['transfers']))
+                                                         '-1' if r['allocates'] == '-' else r['allocates'], r['clobbits'], '-1' if r['transfers'] == '-' else r['transfers'].split(':')[0]))
     out.append('};')
     out.append('#endif')
     return '\n'.join(out) + '\n'
@@ -274,7 +284,12 @@ def main(argv):
         return 0
     if '--sync-asm' in argv or '--check-asm' in argv:
         try:
-            derived = derive_asm(scrip)
+            xrows = validate(load(tsv))
+        except ValueError as e:
+            print('GATE RED: the table is invalid: %s' % e)
+            return 1
+        try:
+            derived = derive_asm(scrip, xrows)
         except OSError as e:
             print('REFUSED(2): the objects could not be read, nothing written: %s' % e)
             return 2

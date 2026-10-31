@@ -4,7 +4,9 @@
 # rc         what rides rax:rdx at return: DESCR | OTHER | VOID | UNKNOWN, as src/templates/x86/gc_allocating_table.inc states it; "-" where that table has no row.
 # allocates  1 when the symbol is a row of gc_allocating_table.inc, 0 when it is not (a symbol defined in libscrip_rt.so, an asm entry, or a libc import: libc allocates nothing on the collected heap).
 # clobbers   which of the four RTCC registers (r8 r9 r10 r11) the entry hands back changed; "none" is an explicit empty mask; "-" where no source states it. The asm rows are DERIVED from the assembled objects (util_gen_rt_entry_table.py --sync-asm; --check-asm refuses a stale one) and the emitter reads them (stage 5c).
-# transfers  may return an address the box jumps to (the rt_call_next_t shape): "-" until stage 5b declares it.
+# transfers  conv leaf|gen|open: may return an address the box jumps to (the rt_call_next_t shape): "-" until stage 5b declares it. conv asm: 1 DECLARES A TRANSFER ENTRY (ARCH-RT-CALL-PROTOCOL.md section 16), an entry that switches the stack
+#            and leaves into a parked activation, or tails into one; the declaration is this cell, never inferred, and util_rtx_abi_walk.py reads it through --walker-table. 1:rax|rdx names the registers that carry the record at entry
+#            (rax rcx rdx rsi rdi); a plain 1 takes its record from a call result (mov R, rax right after the call). A transfer entry's clobbers read none: its transfer exit is judged as the parked call's return.
 # src        which sources state the row: call (a template names it), alloc (gc_allocating_table.inc has it), clob (the objects derive its clobbers), asm (src/runtime/rtx registers it), import.
 sym	conv	rc	allocates	clobbers	transfers	src
 NV_GET_fn	leaf	DESCR	1	-	0	call,alloc
@@ -441,8 +443,8 @@ rt_pl_dop_tbh_set	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_dlget	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_dlset	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_open	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
-rt_pl_dop_tbl_park	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
-rt_pl_dop_tbl_resume_all	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_tbl_park	asm	DESCR	1	r8|r10|r11	1	alloc,clob,asm
+rt_pl_dop_tbl_resume_all	asm	DESCR	1	r8|r10|r11	1	alloc,clob,asm
 rt_pl_dop_tbl_sl	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_vt	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tell	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
@@ -490,6 +492,8 @@ rt_pl_fresh_var_ref	leaf	DESCR	1	-	0	call,alloc
 rt_pl_goal_resolve	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_is_cold	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_occurs_a	asm	-	0	none	-	clob,asm
+rt_pl_pseg_ball	asm	VOID	1	-	1	alloc,asm
+rt_pl_pseg_switch	asm	-	0	-	1:rax|rdx	asm
 rt_pl_quad_seed	asm	-	0	r8|r10|r11	-	call,clob,asm
 rt_pl_throw_raise	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_tr_refuse	leaf	-	0	-	0	call
