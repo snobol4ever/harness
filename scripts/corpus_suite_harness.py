@@ -107,6 +107,16 @@ HARNESS_SCRIPTS = Path(__file__).resolve().parent
 # is NEEDS_DISPLAY, never graded.
 for _dv in ("DISPLAY", "WAYLAND_DISPLAY"):
     os.environ.pop(_dv, None)
+# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): every tempfile this harness makes and every child's
+# mktemp land in /tmp/s4e/<seat>, so the census measures a seat's harness debris and util_tmp_sweep.sh names it. Unset S4E_SEAT leaves TMPDIR alone.
+if os.environ.get("S4E_SEAT") and re.fullmatch(r"[a-z0-9_]+", os.environ["S4E_SEAT"]):
+    _st = "/tmp/s4e/" + os.environ["S4E_SEAT"]
+    try:
+        os.makedirs(_st, mode=0o700, exist_ok=True)
+        os.environ["TMPDIR"] = _st
+        tempfile.tempdir = None
+    except OSError:
+        pass
 
 BANNER_WIDTH = 80
 ONE_LINE_CAP = 200

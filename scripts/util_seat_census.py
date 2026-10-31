@@ -4,7 +4,8 @@ the cao's row shared-dev-step-1-the-seat-census-reads-the-cgroup-scopes-and-the-
 
 The load average says THAT the box is busy, never WHO. Every cgroup under user-1000.slice is a ledger line the kernel keeps exactly: cpu.stat's
 usage_usec counts every descendant, short-lived compilers included, which a ps sampler undercounts. This walks them, samples cpu.stat twice ten seconds
-apart, reads memory.current, memory.peak, memory.events (oom_kill) and pids.current, maps each scope to its seat and class, and appends to
+apart, reads memory.current, memory.peak, memory.events (oom_kill) and pids.current, maps each scope to its seat and class (a s4e-mem-<seat>-* scope inside s4e-batch.slice or
+s4e-grader.slice is a BATCH or GRADER line NAMED BY ITS SEAT TOKEN, the cfo's note of 16:5x; the slice's remainder is the line named batch or grader), and appends to
 /home/resources/progress/LOAD.tsv one line per seat and per class, plus one BOX line.
 
 THE CLASSES (2.1): SEAT, a Claude session scope (app-org.gnome.Terminal.slice/vte-spawn-*.scope) whose newest SEATS.tsv line names a seat, with the
@@ -23,6 +24,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   util_seat_census.py --check          step 1's DONE-WHEN: rc 0 when the newest run is under ten minutes old, every seat whose newest SEATS.tsv scope is live
                                        has a SEAT line, no live session scope is unmapped, and the SEAT and LON lines' cores sum to within ten percent of
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
+  --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
+                                       capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   --load F --seats F --root DIR        read and write these instead (the gate's fixtures)
 """
 import os, re, sys, time, glob, subprocess
@@ -82,7 +85,7 @@ def scopes(root):
     for d in sorted(glob.glob(os.path.join(term, "*.scope"))):
         out.append((os.path.relpath(d, root), "SESSION", None))
     for d in sorted(glob.glob(os.path.join(app, "s4e-mem-*.scope"))):
-        m = re.match(r"s4e-mem-(.+?)-[^-]+\.(?:sh|py)-\d+\.scope$", os.path.basename(d)) or re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(d))
+        m = re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(d))
         out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
     for d in sorted(glob.glob(os.path.join(app, "*.scope")) + glob.glob(os.path.join(app, "*.slice"))):
         b = os.path.basename(d)
@@ -93,6 +96,9 @@ def scopes(root):
         d = os.path.join(svc, "s4e.slice", sl)
         if os.path.isdir(d):
             out.append((os.path.relpath(d, root), cls, cls.lower()))
+            for c in sorted(glob.glob(os.path.join(d, "s4e-mem-*.scope"))):
+                m = re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(c))
+                out.append((os.path.relpath(c, root), cls + "_CHILD", m.group(1) if m else "unknown"))
     for d in sorted(glob.glob(os.path.join(root, "session-*.scope"))):
         out.append((os.path.relpath(d, root), "CRON", "cron"))
     for d in [os.path.join(svc, "session.slice"), os.path.join(svc, "background.slice"), os.path.join(svc, "init.scope")]:
@@ -114,6 +120,8 @@ def classify(units, live):
                 rows.append((rel, "LON" if cls == "LON" else "SEAT", seat))
         elif kind == "BOARD":
             rows.append((rel, "SEAT", name))
+        elif kind.endswith("_CHILD"):
+            rows.append((rel, kind[:-6], name))
         else:
             rows.append((rel, kind, name))
     return rows, unmapped
@@ -203,20 +211,41 @@ def sample(root, seats_path, interval=10.0):
     b = {rel: usage_usec(os.path.join(root, rel)) for rel, _, _ in rows}
     b_app = usage_usec(app)
     acc = {}
+    kids = {}
+    for rel, cls, name in rows:
+        if cls in ("BATCH", "GRADER") and name not in ("batch", "grader") and a.get(rel) is not None and b.get(rel) is not None:
+            k = kids.setdefault(rel.rsplit("/", 1)[0], [0, 0, 0, 0])
+            k[0] += max(0, b[rel] - a[rel]); dd = os.path.join(root, rel)
+            k[1] += num(dd, "memory.current") // 1048576; k[2] += num(dd, "memory.peak") // 1048576; k[3] += num(dd, "pids.current")
     for rel, cls, name in rows:
         d = os.path.join(root, rel)
         if a.get(rel) is None or b.get(rel) is None:
             continue
-        cores = max(0, b[rel] - a[rel]) / 1e6 / dt
+        sub = kids.get(rel, [0, 0, 0, 0])
+        cores = max(0, b[rel] - a[rel] - sub[0]) / 1e6 / dt
         k = (cls, name)
         e = acc.setdefault(k, [0.0, 0, 0, 0, 0])
         e[0] += cores
-        e[1] += num(d, "memory.current") // 1048576
-        e[2] += num(d, "memory.peak") // 1048576
+        e[1] += max(0, num(d, "memory.current") // 1048576 - sub[1])
+        e[2] += max(0, num(d, "memory.peak") // 1048576 - sub[2])
         e[3] += oom_kills(d)
-        e[4] += num(d, "pids.current")
+        e[4] += max(0, num(d, "pids.current") - sub[3])
     app_cores = (b_app - a_app) / 1e6 / dt if a_app is not None and b_app is not None else 0.0
     return acc, unmapped, live, app_cores
+
+
+def oracle_hits(window):
+    """hit/total of util_oracle.sh's calls in the last WINDOW seconds, from the tail of its LOG.tsv."""
+    try:
+        with open("/home/resources/progress/oracle/LOG.tsv", "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 262144))
+            tail = f.read().decode("utf-8", "replace").splitlines()[1:]
+    except OSError:
+        return "0/0"
+    cut = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - window))
+    rows = [l.split("\t") for l in tail if l[:20] >= cut]
+    return "%d/%d" % (sum(1 for r in rows if len(r) > 2 and r[2] == "hit"), len(rows))
 
 
 def box_line(held, app_cores):
@@ -238,7 +267,7 @@ def box_line(held, app_cores):
     v = {"cores_busy": "%.1f" % busy, "load1": la[0] if la else "0", "pressure_some_avg60": psi.group(1) if psi else "0",
          "mem_available_mb": str(mi.get("MemAvailable", 0) // 1024), "swap_used_mb": str((mi.get("SwapTotal", 0) - mi.get("SwapFree", 0)) // 1024),
          "tmp_pct": "%.0f" % tmp_pct, "cc_held": str(sum(held["cc"].values())), "run_held": str(sum(held["run"].values())), "slice_held": slice_held,
-         "builds_fetched": "-", "checks_hit": "-", "oracle_hit": "-"}
+         "builds_fetched": "-", "checks_hit": "-", "oracle_hit": oracle_hits(300)}
     return v
 
 
@@ -338,8 +367,78 @@ def check():
     return 0
 
 
+def memory_check():
+    """Step 8's DONE-WHEN (ARCH-SHARED-DEVELOPMENT 6): every live seat scope's memory.max set and below the box, the three slices capped, TMPDIR per seat
+    in force (MEASURED 2026-10-31: Claude Code passes the settings env block's S4E_SEAT and MAKEFLAGS to its shells but drops its TMPDIR, so the per-seat
+    TMPDIR is placed by the runners from S4E_SEAT: each live session carries S4E_SEAT and both runners export it), /tmp under 60 percent, and no UNIT line of the ledger's last 24 hours carrying an oom_kill
+    (memory.events counts over the scope's life, so a kill is named until its scope ends)."""
+    root = arg("--root", CG)
+    if not os.path.isdir(root):
+        print("REFUSED(2): no cgroup tree at %s" % root)
+        return 2
+    box = 0
+    for l in rd("/proc/meminfo").splitlines():
+        if l.startswith("MemTotal:"):
+            box = int(l.split()[1]) * 1024
+    gaps, seen = [], 0
+    for seat, (cls, sc) in sorted(seat_map(arg("--seats", SEATS)).items()):
+        d = os.path.join(root, sc)
+        if cls != "SEAT" or not os.path.isdir(d):
+            continue
+        seen += 1
+        mx = rd(os.path.join(d, "memory.max")).strip()
+        if not mx.isdigit() or int(mx) >= box:
+            gaps.append("seat %s: memory.max %s is not below the box" % (seat, mx or "?"))
+        pids = [p for p in rd(os.path.join(d, "cgroup.procs")).split() if p.isdigit()]
+        want = "S4E_SEAT=" + seat
+        envs = []
+        for p in pids[:4]:
+            try:
+                with open("/proc/%s/environ" % p, "rb") as f:
+                    envs.append(f.read().decode("utf-8", "replace").split("\0"))
+            except OSError:
+                pass
+        if envs and not any(want in e for e in envs):
+            gaps.append("seat %s: its session runs without %s, so its runners cannot place TMPDIR=/tmp/s4e/%s" % (seat, want, seat))
+    svc = os.path.join(root, "user@1000.service")
+    for nm, rel, knob in (("the sessions' slice", "app.slice/app-org.gnome.Terminal.slice", "memory.high"), ("s4e-batch.slice", "s4e.slice/s4e-batch.slice", "memory.max"),
+                          ("s4e-grader.slice", "s4e.slice/s4e-grader.slice", "memory.max")):
+        v = rd(os.path.join(svc, rel, knob)).strip()
+        if not v.isdigit() or int(v) >= box:
+            gaps.append("%s: %s %s is not a cap below the box" % (nm, knob, v or "absent"))
+    here = os.path.dirname(os.path.abspath(__file__))
+    for f, mark in (("lib_one_runner.sh", 'export TMPDIR="/tmp/s4e/$S4E_SEAT"'), ("corpus_suite_harness.py", 'os.environ["TMPDIR"] = _st')):
+        if mark not in rd(os.path.join(here, f)):
+            gaps.append("%s does not place TMPDIR in /tmp/s4e/<seat>" % f)
+    st = os.statvfs("/tmp")
+    used = 100.0 * (st.f_blocks - st.f_bfree) / max(1, st.f_blocks - st.f_bfree + st.f_bavail)
+    if used >= 60:
+        gaps.append("/tmp is %.0f percent used (60 is the bound)" % used)
+    cut = time.time() - 86400
+    ooms = set()
+    for l in rd(arg("--load", LOAD)).splitlines():
+        r = l.split("\t")
+        if len(r) > 7 and r[1] == "UNIT" and r[7].isdigit() and int(r[7]) > 0:
+            try:
+                if __import__("calendar").timegm(time.strptime(r[0], "%Y-%m-%dT%H:%M:%SZ")) >= cut:
+                    ooms.add("%s/%s" % (r[2], r[3]))
+            except ValueError:
+                pass
+    if ooms:
+        gaps.append("oom_kill in the last 24 h: " + " ".join(sorted(ooms)))
+    print("MEMORY CHECK seats=%d box=%d MB tmp=%.0f%% gaps=%d" % (seen, box // 1048576, used, len(gaps)))
+    if gaps:
+        for g in gaps:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN every seat capped below the box, the three slices capped, TMPDIR per seat in force, /tmp under 60 percent, no oom_kill in 24 h")
+    return 0
+
+
 def main():
     av = sys.argv[1:]
+    if "--memory-check" in av:
+        return memory_check()
     if "--check" in av:
         return check()
     if av and av[0] == "banner":

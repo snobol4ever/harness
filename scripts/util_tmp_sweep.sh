@@ -117,6 +117,24 @@ for name in sorted(os.listdir("/tmp")):
         victims.append(("scratch", path, size_kb(path))); continue
     if newest_in(path) >= cutoff: continue
     victims.append(("entry", path, size_kb(path)))
+# (7) THE PER-SEAT DIRECTORY (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): /tmp/s4e/<seat> is the TMPDIR lib_one_runner.sh and
+# corpus_suite_harness.py export, so each entry inside is judged as a top-level entry is (a mktemp name by --scratch-hours, any other by the
+# 48 h cutoff, never one a live process sits in or holds open) and its line carries the seat's ledger name.
+owner = {}
+s4e = "/tmp/s4e"
+if os.path.isdir(s4e):
+    for seat in sorted(os.listdir(s4e)):
+        sd = os.path.join(s4e, seat)
+        if not os.path.isdir(sd) or os.path.islink(sd): continue
+        try: ents = sorted(os.listdir(sd))
+        except OSError: continue
+        for name in ents:
+            path = os.path.join(sd, name)
+            if held(path) or held_fd(path): continue
+            if SCRATCH.match(name) and scr_h > 0 and newest_in(path) < now - scr_h * 3600:
+                victims.append(("scratch", path, size_kb(path))); owner[path] = seat; continue
+            if newest_in(path) >= cutoff: continue
+            victims.append(("entry", path, size_kb(path))); owner[path] = seat
 sessions = []
 root = "/tmp/claude-1000"
 if os.path.isdir(root):
@@ -130,7 +148,7 @@ if os.path.isdir(root):
             if js: cur = max(js, key=lambda f: os.stat(os.path.join(proj, f)).st_mtime)[:-6]
         except OSError: pass
         seat_id = seat.replace("-home-claude-", "")
-        seat_name = {"ceo": "ceo", "cto": "cto", "coo": "coo", "cfo": "cfo"}.get(seat_id, "hq_" + seat_id)
+        seat_name = seat if not seat.startswith("-home-claude-") else seat_id if seat_id in ("ceo", "cto", "coo", "cfo", "cao", "cqo") else "hq_" + seat_id
         down = roster and seat_name not in roster
         for ses in os.listdir(sd):
             p = os.path.join(sd, ses)
@@ -138,11 +156,11 @@ if os.path.isdir(root):
             lim = cutoff
             if down and dead_h > 0: lim = max(lim, now - dead_h * 3600)
             if newest_in(p) >= lim: continue
-            sessions.append(("session", p, size_kb(p)))
+            sessions.append(("session", p, size_kb(p))); owner[p] = seat_name
 freed = 0; sfreed = 0; scr_n = 0; scr_kb = 0
 for kind, path, kb in victims + sessions:
     age_h = (now - newest_in(path)) / 3600
-    print("%-8s %8.1fM %6.1fh %s" % (kind, kb / 1024, age_h, path))
+    print("%-8s %8.1fM %6.1fh %s%s" % (kind, kb / 1024, age_h, path, "  [%s]" % owner[path] if path in owner else ""))
     if apply:
         try:
             if os.path.isdir(path) and not os.path.islink(path): shutil.rmtree(path, ignore_errors=True)
@@ -199,6 +217,10 @@ st = os.statvfs("/tmp"); free_after = st.f_bavail * st.f_frsize / 1048576
 used_after = used_pct() if apply else est
 line = "TMP_SWEEP applied=%d cutoff_hours=%g dead_sessions_hours=%g scratch_hours=%g entries=%d freed_mb=%d scratch=%d scratch_mb=%d sessions=%d session_mb=%d free_after_mb=%d used_before=%d pressure=%g bulk=%d bulk_mb=%d used_after=%d" % (
     1 if apply else 0, hours, dead_h, scr_h, len(victims), freed // 1024, scr_n, scr_kb // 1024, len(sessions), sfreed // 1024, free_after, used_before, press, bulk_n, bulk_kb_freed // 1024, used_after)
+by_seat = {}
+for kind, path, kb in victims + sessions:
+    if path in owner: by_seat[owner[path]] = by_seat.get(owner[path], 0) + kb
+if by_seat: line += " seat_mb=" + ",".join("%s:%d" % (k, v // 1024) for k, v in sorted(by_seat.items(), key=lambda kv: -kv[1]))
 print(line)
 if apply:
     try:

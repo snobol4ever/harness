@@ -666,6 +666,9 @@ cmd_one() {  # <suite> <program-basename-or-path> [N]
 # distinct status from `LIVE` and a caller that mints on rc alone pins an error report as ground truth.  EMPTY is also its own
 # status and is NOT mintable: a 0-byte .ref grades "produced nothing" as correct, which is how 134 vacuous passes were nearly
 # manufactured at s191.  The three non-LIVE statuses are exactly the brief's classes (ii) and (iii).
+# A MINT ASKS THE LIVE ORACLE THROUGH util_oracle.sh (ARCH-SHARED-DEVELOPMENT 3.4, shared-dev step 8, CEO-2041): one run slot taken before the clock starts,
+# timeout -k 5, the call logged; --no-cache because a ref is minted from a live run, never a replay (a SNOBOL4 program reads its -INCLUDEs and files the key
+# does not cover). An SBL override (a fixture's stand-in oracle) keeps the direct road.
 cmd_oracle() {  # <suite> <program> [outfile] -> "STATUS<TAB>rc<TAB>bytes<TAB>outfile"
   set -f
   local want="${1:-}" prog="${2:-}" out="${3:-}" root fargs lib rto norm full in rc st bytes
@@ -676,7 +679,12 @@ cmd_oracle() {  # <suite> <program> [outfile] -> "STATUS<TAB>rc<TAB>bytes<TAB>ou
   [ -n "$out" ] || out="$(mktemp)"
   in="$(stdin_for "$full")"; [ "$want" = beauty_self ] && in="$full"
   lib="$(sc_libpath "$lib" "$(dirname "$full")")"
-  rc="$(sc_oracle_run "$full" "$lib" "$in" "$out")"
+  if [ "$SBL" = /home/resources/x64/bin/sbl ]; then
+    local d ocwd oa; d="$(dirname "$full")"; ocwd="$d"; [ "$lib" = "$CORPUS" ] && ocwd="$CORPUS"
+    oa="$(declared_oracle_args_beside "$full")" || oa=__refuse
+    if [ "$oa" = __refuse ]; then rc=2
+    else (cd "$ocwd" && SETL4PATH=".:$lib" "$TIMEOUT_RETRY" 75 bash "$HERE/util_oracle.sh" sbl --no-cache --timeout 60 --stdin "$in" -- $(sbl_flags) $oa "$full" > "$out" 2>/dev/null); rc=$?; fi
+  else rc="$(sc_oracle_run "$full" "$lib" "$in" "$out")"; fi
   bytes="$(wc -c < "$out" 2>/dev/null || echo 0)"
   if [ "$rc" -eq 124 ]; then st=TIMEOUT
   elif [ "$rc" -ge 128 ]; then st="SIG$((rc-128))"

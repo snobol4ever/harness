@@ -59,6 +59,9 @@ one_runner_seat() {
 # remote: a real checkout carries origin snobol4ever/corpus, a `git init` scratch world carries no remote at all. ⛔ BOTH FACTS, NEVER
 # EITHER: a real board that merely redirected its progress writes is still a board, and a checkout that merely lost its remote is
 # still the shared population. ⛔ UNREADABLE ANSWERS BOARD: a guard that cannot tell must refuse, never wave through.
+# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): a runner that sources this file makes its mktemp debris in
+# /tmp/s4e/<seat>, the directory the census measures and util_tmp_sweep.sh names. Unset S4E_SEAT leaves TMPDIR alone.
+case "${S4E_SEAT:-}" in ''|*[!a-z0-9_]*) ;; *) mkdir -p -m 700 "/tmp/s4e/$S4E_SEAT" 2>/dev/null && export TMPDIR="/tmp/s4e/$S4E_SEAT";; esac
 ONE_RUNNER_SHARED_CORPUS_REMOTE='snobol4ever/corpus'
 ONE_RUNNER_LIVE_PROGRESS_DB='/home/resources/progress/results.tsv'
 one_runner_corpus_is_the_shared_population() {  # rc 0 = a checkout of the shared corpus; git that cannot run at all (127) answers yes
