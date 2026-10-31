@@ -56,7 +56,7 @@ if [ $? -ne 0 ]; then echo "⛔ GATE REFUSE(2) [$G]: could not doctor a copy of 
 python3 -I "$GEN" --check-asm --tsv "$T/doctored.tsv" > "$T/plant.txt" 2>&1; prc=$?
 if [ $prc -eq 1 ] && grep -q 'STALE' "$T/plant.txt"; then echo "  arm 2 PASS: PLANTED -- one doctored mask reads STALE under --check-asm (rc 1), so a wrong mask cannot hide"
 else echo "⛔ arm 2 RED: the planted wrong mask was NOT refused (rc=$prc): $(head -c 200 "$T/plant.txt")"; RC=1; fi
-if grep -q 'rt_entry_table.inc' "$ROOT/src/emitter/emit.cpp" && grep -q 'emit_rtx_clob_mask' "$ROOT/src/emitter/emit.cpp" && grep -q 'g_rt_entries' "$ROOT/src/emitter/emit.cpp" && grep -q 'emit_rtx_clob_mask(sym)' "$ROOT/src/templates/x86/x86_asm.h"; then echo "  arm 3 PASS: emit.cpp includes rt_entry_table.inc and defines emit_rtx_clob_mask over g_rt_entries; x86_asm.h's x86_rtcc_clob_raw calls it"
+if grep -q 'rt_entry_table.inc' "$ROOT/src/emitter/emit.cpp" && grep -q 'emit_rtx_clob_mask' "$ROOT/src/emitter/emit.cpp" && grep -q 'g_rt_entries' "$ROOT/src/emitter/emit.cpp" && grep -q 'emit_rtx_clob_mask(sym)' "$ROOT/src/templates/x86/x86_rtcc.cpp"; then echo "  arm 3 PASS: emit.cpp includes rt_entry_table.inc and defines emit_rtx_clob_mask over g_rt_entries; x86_rtcc.cpp's x86_rtcc_clob_raw calls it"
 else echo "⛔ arm 3 RED: the emitter does not read the entry table (emit.cpp include / emit_rtx_clob_mask / g_rt_entries / x86_rtcc_clob_raw)"; RC=1; fi
 if grep -qE '^\s*$|/\*|//' "$TAB"; then echo "⛔ arm 4 RED: the generated table carries a comment or a blank line"; RC=1
 else echo "  arm 4 PASS: the generated src/ file carries no comment and no blank line"; fi

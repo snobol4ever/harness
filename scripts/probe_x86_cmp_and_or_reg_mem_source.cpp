@@ -7,7 +7,8 @@ extern "C" {
 #include "bb_template_common.h"
 #include "descr.h"
 }
-#include "x86_asm.h"
+#include "templates/x86/x86_ops.h"
+#include "templates/x86/x86_frame.h"
 #include <cstdlib>
 static void dump_hex(const char * label, const std::string & s) {
     printf("%s ", label);
@@ -22,7 +23,7 @@ int main(int argc, char ** argv) {
         dump_hex("cmp_bin", x86("cmp", "rdi", RDQ("r13", 32)));
         dump_hex("and_bin", x86("and", "rdi", RDQ("r13", 32)));
         dump_hex("or_bin ", x86("or",  "rdi", RDQ("r13", 32)));
-        g_medium = BB_MEDIUM_TEXT;
+        emitter_init_text(stderr, 0);
         std::string ct = x86("cmp", "rdi", RDQ("r13", 32)); while (!ct.empty() && ct.back() == '\n') ct.pop_back();
         std::string at = x86("and", "rdi", RDQ("r13", 32)); while (!at.empty() && at.back() == '\n') at.pop_back();
         std::string ot = x86("or",  "rdi", RDQ("r13", 32)); while (!ot.empty() && ot.back() == '\n') ot.pop_back();

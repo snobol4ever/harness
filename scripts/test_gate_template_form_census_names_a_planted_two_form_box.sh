@@ -50,7 +50,7 @@ m0="$(num 's/^  VERDICT: \([0-9]*\) box(es).*/\1/p')"; k0="$(num 's/^  VERDICT: 
 cat > "$R/src/templates/bb/bb_zz_planted_two.cpp" <<'CPP'
 #include <string>
 #include "emit.h"
-#include "x86_asm.h"
+#include "templates/x86/x86_ops.h"
 std::string bb_zz_planted_two() {
     if (_.op_zres)
         return x86_alpha()
@@ -64,7 +64,7 @@ CPP
 cat > "$R/src/templates/bb/bb_zz_planted_one.cpp" <<'CPP'
 #include <string>
 #include "emit.h"
-#include "x86_asm.h"
+#include "templates/x86/x86_ops.h"
 std::string bb_zz_planted_one() {
     return [&](long k) {
         return (k < 0) ? x86_alpha()
