@@ -34,7 +34,7 @@ gate_parse_args "$@"
 command -v gcc >/dev/null || { echo "⛔ REFUSED(2) [$GATE_NAME]: no gcc -- the mode-4 arm cannot be linked"; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 cp "$W" "$T/w.pl"; cp "${W%.pl}.ref" "$T/w.ref"
-FORCE="SCRIP_PL_GATE_CELLS=1 SCRIP_PL_SPREC_OFF=1"
+FORCE="SCRIP_PL_SPREC_OFF=1"
 fail=0
 arm() {
     local tag=$1 extra=$2
@@ -56,7 +56,7 @@ zsm_read() {
     else ( cd "$T" && env $cfg $Z "$SCRIP" --compile --out="$tag.z.s" w.pl < /dev/null > /dev/null 2>&1 && gcc -m64 -no-pie -o "$tag.z.bin" "$tag.z.s" -L"$RT" -lscrip_rt -lm -lpthread -Wl,-rpath,"$RT" 2> /dev/null && env $Z timeout -k 5 240 "./$tag.z.bin" < /dev/null > /dev/null 2> "$tag.$m.zsm" ); fi
 }
 for m in m3 m4; do
-    zsm_read fr "$m" "$FORCE"; zsm_read sp "$m" "SCRIP_PL_GATE_CELLS=1"
+    zsm_read fr "$m" "$FORCE"; zsm_read sp "$m" ""
     d=$(grep -c 'ZSM-DISC' "$T/fr.$m.zsm" 2> /dev/null); sf=$(grep -c 'ZSM-DECL-SITE' "$T/fr.$m.zsm" 2> /dev/null); ss=$(grep -c 'ZSM-DECL-SITE' "$T/sp.$m.zsm" 2> /dev/null)
     if ! grep -q 'ZSM-DECL-TOTAL' "$T/fr.$m.zsm" 2> /dev/null || ! grep -q 'ZSM-DECL-TOTAL' "$T/sp.$m.zsm" 2> /dev/null; then echo "  FAIL (zsm $m) a ZSM run printed no [ZSM-DECL-TOTAL]: the instrument did not run"; fail=1
     elif [ "$d" = 0 ] && [ "$sf" -le "$ss" ]; then echo "  ok   (zsm $m) [ZSM-DISC] 0; [ZSM-DECL-SITE] $sf with the spine record forced off, $ss with it"
