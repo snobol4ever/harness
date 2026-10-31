@@ -8,3 +8,5 @@ runtime/core/utf8.h	always_inline UTF-8 step helpers
 runtime/rt/rt_protected.h	always_inline protected-region helper
 runtime/rt/rt_list_view.h	always_inline list view accessor
 runtime/rt/gc_heap.h	always_inline heap accessor
+runtime/core/core_error.h	the three always_inline error-class predicates that were core.h's at the census, moved with their family by step 1b (the allowance follows the bodies)
+runtime/core/tree_blk.h	the one two-statement TREEBLK_t child accessor that was core.h's at the census, moved with its family by step 1b

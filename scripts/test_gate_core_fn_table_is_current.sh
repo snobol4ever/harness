@@ -57,7 +57,7 @@ INC = ['-I' + ROOT + '/src' + s for s in ('', '/ir', '/lower', '/emitter', '/run
 
 def check(inc_dir, label):
     fns = sorted({x['fn'] for x in rows})
-    c = ['#include <stdio.h>', '#include "core.h"']
+    c = ['#include <stdio.h>', '#include "core.h"', '#include "runtime/core/datatype.h"']
     c += ['DESCR_t %s(DESCR_t * a, int n) { (void) a; (void) n; return NULVCL; }' % f for f in fns]
     c += ['#include "core_fn_table.inc"', 'static unsigned hraw(const char * n) { unsigned h = 5381; while (*n) h = h * 33 ^ (unsigned char) *n++; return h; }',
           'static const FNCBLK_t * find(const char * name) { unsigned hr = hraw(name); for (unsigned sl = hr & (CORE_FN_HASHSZ - 1); g_core_fn_slot[sl]; sl = (sl + 1) & (CORE_FN_HASHSZ - 1)) '

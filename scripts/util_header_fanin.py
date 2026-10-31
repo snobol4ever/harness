@@ -29,7 +29,9 @@
 # expansion is the unit's own code (step 2b; a macro-only header such as bb_pl_cell.h, x86_armed.h or x86_gc.h then needs no family include of its own).
 # A header with two or more includes and no declaration of its own is an UMBRELLA. inline_bodies counts function
 # bodies in the header that run over more than one line or hold more than one statement (R3 allows an accessor, a predicate, a tag test).
-# The ceiling: fanin(H) <= users(H) + 4, and fanin(H) <= one third of the units for a header outside the base set.
+# The ceiling, for every header OUTSIDE THE BASE SET: fanin(H) <= users(H) + 4 and fanin(H) <= one third of the units. A base-set header is wide for the reason
+# header_base_set.tsv states and its fan-in is structural (every header with a DESCR_t prototype reaches ir/descr.h and so ir/descr_tags.h), so neither rule reads it
+# (the cto's ruling of 2026-10-31 on the 1b+5 landing; the page's gate description always said "every non-base header").
 #
 # It runs no build. It needs a built tree's .d files and refuses rc 2 with fewer than --min-units of them (default 200).
 import argparse, collections, os, re, sys
@@ -402,7 +404,9 @@ class Tree:
         res = []
         for h in self.headers:
             r = self.row(h)
-            if r['fanin'] > r['users'] + 4 or (h not in base and r['fanin'] > third):
+            if h in base:
+                continue
+            if r['fanin'] > r['users'] + 4 or r['fanin'] > third:
                 res.append(r)
         return sorted(res, key=lambda r: (-r['fanin'], r['path']))
 

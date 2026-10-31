@@ -102,7 +102,7 @@ BR_RX = re.compile(r'^((?:j[a-z]+|call|jmp)q?\s+)[0-9a-f]+ (<.*>)$')
 CMT_RX = re.compile(r'\s+# [0-9a-f]+ <.*>$')
 
 
-def disasm(path, grouped):
+def disasm(path, grouped, moved=()):
     """{(section, function): [normalised instruction text]} for the code sections that are not COMDAT group members: addresses dropped, a branch or call target kept as its <symbol+offset>."""
     r = subprocess.run(['objdump', '-d', '-r', '--no-show-raw-insn', '-C', path], capture_output=True, text=True)
     if r.returncode != 0:
@@ -131,6 +131,8 @@ def disasm(path, grouped):
                 last = cur[-1]
                 bm = re.match(r'^((?:j[a-z]+|call|jmp)q?) ', last)
                 cur[-1] = (bm.group(1) + ' ' + tgt) if bm else (last + ' @' + tgt)
+                if tgt == '__tls_get_addr':
+                    cur[-1] = re.sub(r'call [0-9a-f]+ <[^>]*>', 'call <tls>', cur[-1])
             continue
         m = INSN_RX.match(line)
         if not m:
@@ -142,6 +144,9 @@ def disasm(path, grouped):
         b = BR_RX.match(t)
         if b:
             t = b.group(1) + b.group(2)
+            mm = re.match(r'^(call\s+)<([A-Za-z_]\w*)>$', t)
+            if mm and mm.group(2) in moved:
+                t = mm.group(1) + mm.group(2)   # R5-PRIME (b): a call into a moved function reads as the symbol, local copy or compiled
         cur.append(t)
     return funcs, starts
 
@@ -149,7 +154,7 @@ def disasm(path, grouped):
 IMM_RX = re.compile(r'\$0x([0-9a-f]+)')
 
 
-LINE_CALLEES = re.compile(r'^call <?(x86_rt_gc_poll_at|drive_guard_refused)\b')
+LINE_CALLEES = re.compile(r'^call <?(x86_rt_gc_poll_at|drive_guard_refused|rt_gc_cb_close)\b')   # rt_gc_cb_close(…, file, line): the runtime's own __LINE__ stamp (the cto, 2026-10-31, the 1b+5 landing)
 
 
 def insn_delta(x, y):
@@ -171,6 +176,50 @@ def insn_delta(x, y):
             return None
         ds.add(dif[0])
     return ds or None
+
+
+RSP_RX = re.compile(r'^(sub|add) \$0x([0-9a-f]+),%rsp$')
+
+
+def rsp_only_by_eight(x, y):
+    """True when x and y differ ONLY in `sub $N,%rsp` / `add $N,%rsp` pairs whose immediates differ by exactly 8."""
+    if len(x) != len(y):
+        return False
+    seen = False
+    for a, b in zip(x, y):
+        if a == b:
+            continue
+        ma, mb = RSP_RX.match(a), RSP_RX.match(b)
+        if not (ma and mb and ma.group(1) == mb.group(1) and int(mb.group(2), 16) - int(ma.group(2), 16) == 8):
+            return False
+        seen = True
+    return seen
+
+
+CALL_RX = re.compile(r'^call <?([A-Za-z_][\w.]*)>?$')
+
+
+def realigned_closure(pending, moved):
+    """pending: {function name: its instruction list in the second object} for the functions that differ only by a frame of +8. A static inline copy was a LOCAL callee, for which
+    GCC at -O0 keeps the caller's stack at 8-byte alignment; the compiled body is an EXTERNAL callee owed 16-byte alignment, so a caller of a moved body grows its frame by 8, and so
+    does a local caller of such a caller (the alignment a local function needs is what its own calls need). Returns the names accepted: those that call a moved symbol, then, to a
+    fixpoint, those that call an accepted local function. An empty moved set accepts nothing."""
+    ok = set()
+    if not moved:
+        return ok
+    changed = True
+    while changed:
+        changed = False
+        for name, insns in pending.items():
+            if name in ok:
+                continue
+            for ins in insns:
+                m = CALL_RX.match(ins)
+                if m and (m.group(1) in moved or m.group(1) in ok):
+                    ok.add(name)
+                    changed = True
+                    break
+    return ok
 
 
 def is_moved(dem, moved):
@@ -214,8 +263,12 @@ def canon(path, moved):
         if t in (1, 2) and 0 < y['shndx'] < len(e.sec) and e.kept(e.sec[y['shndx']]) and not (e.sec[y['shndx']]['flags'] & SHF_MERGE):
             bysec.setdefault(y['shndx'], []).append(y)
     grouped = {x['name'] for x in e.sec if x['flags'] & SHF_GROUP}
-    code, starts = disasm(path, grouped)
+    code, starts = disasm(path, grouped, moved)
     import bisect
+
+    def keep_reloc(r):
+        sym = e.syms[r[1] >> 32] if (r[1] >> 32) < len(e.syms) else None
+        return not (sym and is_moved(sym.get('dem', sym.get('name', '')), moved))
 
     def adj_for(secname):
         st = starts.get(secname)
@@ -232,13 +285,13 @@ def canon(path, moved):
                 continue
             lo, hi = y['value'], y['value'] + y['size']
             if s['flags'] & 4:
-                rl_of[(s['name'], dem)] = tuple(sorted((r[0] - lo,) + reloc_desc(e, *r, adj_for(s['name'])) for r in relocs.get(si, ()) if lo <= r[0] < hi)) if y['size'] else ()
+                rl_of[(s['name'], dem)] = tuple(sorted((r[0] - lo,) + reloc_desc(e, *r, adj_for(s['name'])) for r in relocs.get(si, ()) if lo <= r[0] < hi and keep_reloc(r))) if y['size'] else ()
                 continue
             if s['type'] == SHT_NOBITS:
                 content = ('bss', y['size'])
             else:
                 content = ('bytes', body[lo:hi])
-            rl = tuple(sorted((r[0] - lo,) + reloc_desc(e, *r, adj_for(s['name'])) for r in relocs.get(si, ()) if lo <= r[0] < hi)) if y['size'] else ()
+            rl = tuple(sorted((r[0] - lo,) + reloc_desc(e, *r, adj_for(s['name'])) for r in relocs.get(si, ()) if lo <= r[0] < hi and keep_reloc(r))) if y['size'] else ()
             key = (s['name'], dem, y['info'] >> 4 == 0)
             out[key] = (content, rl)
     for (sec, nm, k), insns in code.items():
@@ -308,7 +361,7 @@ def main(argv):
     if len(argv) == 5:
         collect(argv[3], 'out', A)
         collect(argv[4], 'out', B)
-    n = same = diff = gone = lineonly = 0
+    n = same = diff = gone = lineonly = realigned_objs = 0
     lines = []
     for key in sorted(set(A) | set(B)):
         if key not in A:
@@ -326,6 +379,7 @@ def main(argv):
             return 2
         bad = []
         deltas = set()
+        pending = {}
         for k in sorted(set(ca) | set(cb), key=str):
             if k not in cb:
                 bad.append((k, 'present in the first object only (vanished, not a moved function)'))
@@ -338,7 +392,17 @@ def main(argv):
                     if dl is not None:
                         deltas |= dl
                         continue
+                    if rsp_only_by_eight(xa[1], xb[1]):
+                        pending[k] = xb[1]
+                        continue
                 bad.append((k, describe(ca[k], cb[k])))
+        if pending:
+            ok = realigned_closure({k[1]: v for k, v in pending.items()}, moved)
+            for k in pending:
+                if k[1] not in ok:
+                    bad.append((k, describe(ca[k], cb[k]) + ' (a frame of +8 in a function that calls no moved body and no realigned local caller)'))
+            if ok and not bad:
+                realigned_objs += 1
         if deltas and not bad:
             lineonly += 1
         if bad:
@@ -349,7 +413,7 @@ def main(argv):
             same += 1
     if lines:
         print('\n'.join(lines))
-    print('objects=%d identical=%d differing=%d (of the identical, %d differ only in __LINE__ immediates that moved with an include block)' % (n, same, diff, lineonly))
+    print('objects=%d identical=%d differing=%d (of the identical, %d differ only in __LINE__ immediates that moved with an include block, %d only in a caller frame realigned by 8 for a moved callee)' % (n, same, diff, lineonly, realigned_objs))
     return 1 if diff or gone else 0
 
 
