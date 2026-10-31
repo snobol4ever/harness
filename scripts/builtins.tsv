@@ -1216,3 +1216,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1216	pl	$tbl_park	1	1	rt_pl_dop_tbl_park	leaf	-	-	0	dop_direct
 1217	pl	$tbl_resume_all	1	1	rt_pl_dop_tbl_resume_all	leaf	-	-	0	dop_direct
 1218	pl	$tbl_sl	3	3	rt_pl_dop_tbl_sl	leaf	-	-	0	dop_direct
+1220	pas	__pas_ioflow	1	1	-	inline	-	-	0	pas
+1221	pas	__pas_ioresult	1	1	-	inline	-	-	0	pas
+1222	pas	__pas_ioerrmsg	1	1	-	inline	-	-	0	pas
+1223	pas	__pas_ioexit	1	1	-	inline	-	-	0	pas
