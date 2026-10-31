@@ -861,6 +861,25 @@ s4e_standing_boxes() {   # [<mode>] -> one standing seat per line
 # structural gap into an instruction is obeyed for a week and then not.
 # ⭐ IT CANNOT FAIL THE CLAIM. A lock that succeeded and an announcement that did not are two different facts, and
 # the seat owns the row either way; every delivery failure is COUNTED AND NAMED instead of aborting the take.
+# ⭐ THE SKILLS A ROW CALLS FOR, PRINTED WHERE A SEAT STARTS WORK (ceo CEO-2085). MEASURED 2026-10-31 14:5x CDT over every seat's transcript since the
+# skills landed (09:34-10:29 CDT): 20 Skill loads in about five hours across 10 seats, and 8 active seats never loaded one -- among them hq_prolog
+# (the prolog skill), hq_zetas (scrip-memory-model) and hq_runtime (rtx-asm-leaves), the seats whose lanes those skills were written for. SOP step 5
+# says load them; an instruction is obeyed for a week and then not (CEO-1002), so the bus names them at the claim and in the assign doorbell.
+s4e_skills_for_topic() {   # <topic> -> "/skill /skill ..." (empty when none matches)
+  local t="$1" out=""
+  case "$t" in *prolog*|*xsb*|*swi*|*trealla*|*clp*|*chr*|*tabl*) out="$out /prolog";; esac
+  case "$t" in icon-*|*-icon-*|*unicon*|*-icn-*) out="$out /icon";; esac
+  case "$t" in *pascal*|*pas-*) out="$out /pascal";; esac
+  case "$t" in *raku*|*rak-*) out="$out /raku";; esac
+  case "$t" in *snobol4*|*snocone*|*rebus*|*sno-*) out="$out /snobol4";; esac
+  case "$t" in *bootstrap*parser*|*parser*-sc*|*snocone-parser*) out="$out /snocone-parser-patterns";; esac
+  case "$t" in *zeta*|gc-*|*-gc-*|*frame*|*planner*|*spine*|*lifo*|*placement*) out="$out /scrip-memory-model";; esac
+  case "$t" in *template*|headers-step-2*|headers-step-3*|*-box-*|*bb-*) out="$out /box-templates";; esac
+  case "$t" in *rtx*|*rtcc*|*clobber*|*entry-table*) out="$out /rtx-asm-leaves";; esac
+  case "$t" in *lower*) out="$out /lowering";; esac
+  case "$t" in runtime-*|headers-step-1b*|headers-step-5*|*fixed-cap*|*global*) out="$out /scrip-c-code";; esac
+  case "$t" in *gate*|*witness*|*ladder*|*rung*) out="$out /gates-and-witnesses";; esac
+  printf '%s' "${out# }"; }
 s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every standing seat HOLDING A LIVE ROW IN THIS ROW'S LANE, then print the neighbourhood
   # ⛔⭐ WHO IS TOLD (ceo CEO-2078, 2026-10-31). Measured over seven days: 6,446 bus messages, 3,288 of them claim notices, because every
   # claim was mailed to every standing seat -- 27 to 31 a day in each inbox, three quarters of an HQ's mail, and the notice's own text
@@ -896,6 +915,7 @@ s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every
     else _bad=$((_bad+1)); printf '⛔ COULD NOT ANNOUNCE to %s -- the row is YOURS regardless; the announcement is what failed\n' "$_s"; fi
   done
   printf '%s\t%s\t%s\tlane=%s\tmailed=%s\n' "$(date -u +%FT%TZ)" "$ME" "$_t" "${_lang:-neutral}" "${_list:- none}" >> "$PO/CLAIMS.log" 2>/dev/null
+  _sk="$(s4e_skills_for_topic "$_t")"; [ -n "$_sk" ] && printf '⭐ LOAD BEFORE TOUCHING CODE (SOP step 5, CEO-2085): %s -- the Skill tool, once per session\n' "$_sk"
   printf -- '-- the neighbourhood, read at the moment you took this row (ceo CEO-1002) --\n'
   printf '  announced to %d standing seat(s) under MODE %s:%s\n' "$_n" "${_mode:-ABSENT}" "${_list:- NONE}"
   printf '  (the ceo and every standing seat holding a live row in lane %s; every other seat reads CLAIMS.log; CEO-2078)\n' "${_lang:-neutral}"
@@ -3040,7 +3060,8 @@ case "$cmd" in
          # and found none, and never censused s4e_msg.sh's OWN internal sends. A blast-radius census that stops at
          # the file boundary is the narrow-instrument defect wearing a census's clothes. ✅ The fix is the safe path,
          # not an exemption: an internal caller that needed a bypass would be the first argument for the next one.
-         if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell." | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
+         _sk="$(s4e_skills_for_topic "$topic")"
+         if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
          then echo "assigned $topic -> $seat (claim written, doorbell sent)"
          else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi;;
   # ⭐⭐ ceo RULING 2026-08-29 (row s4e-mint-subcommand, hq_C's find): A SEAT COULD NOT MINT A ROW — next|claim|
