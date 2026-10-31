@@ -44,6 +44,7 @@ test_gate_a_cgroup_kill_is_a_refusal_not_a_red.sh	WIRED	-	-	-
 test_gate_a_childs_output_is_bounded_and_it_dies_with_its_harness.sh	WIRED	-	-	-
 test_gate_a_compile_refusal_grades_through_the_one_voice_in_both_modes.sh	WIRED	-	-	-
 test_gate_a_compiled_program_runs_on_a_stack_it_maps_itself.sh	WIRED	-	-	-
+test_gate_a_declared_heap_above_4_gb_is_graded_as_declared.sh	WIRED	-	-	-
 test_gate_a_descr_is_minted_whole_never_field_by_field.sh	WIRED	-	-	-
 test_gate_a_fail_operand_folds_instead_of_refusing_at_the_binop_guard.sh	WIRED	-	-	-
 test_gate_a_frame_local_written_at_a_join_fix_depth_reaches_its_one_cell.sh	WIRED	-	-	-

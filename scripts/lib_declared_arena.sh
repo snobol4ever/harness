@@ -47,7 +47,9 @@
 # SCRIP_HEAP_CAP_KB or -d<kb>k, never as the initial window -- the window stays SPITBOL's -i1m, or the tiny arena of `make test-arena`.
 DECLARED_ARENA_CAP_KB=131072        # gc_heap.c #define GC_HEAP_CAP_KB (SPITBOL -d128m)
 DECLARED_ARENA_MIN_KB=1024          # gc_heap.c #define GC_HEAP_KB: a maximum below the initial window is refused
-DECLARED_ARENA_MAX_KB=4194304       # 4096*1024, the ceiling SCRIP_HEAP_KB itself refuses past
+DECLARED_BOX_MAX_KB="$(awk '/^MemTotal:/{k=$2; if (k > 33554432) k = 33554432; print k}' /proc/meminfo 2>/dev/null)"   # THIS BOX's memory in KB, at most the 32 GB the collector's page map can address (gc_heap.c): the ceiling of a declaration is the box's, never a copy of an env-var window
+[ -n "$DECLARED_BOX_MAX_KB" ] && [ "$DECLARED_BOX_MAX_KB" -gt 0 ] 2>/dev/null || DECLARED_BOX_MAX_KB=33554432
+DECLARED_ARENA_MAX_KB=$DECLARED_BOX_MAX_KB
 _LDA_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # declared_arena_kb <all_csv> <entry>
@@ -87,8 +89,8 @@ try:
                                  % (path, n, k, cap))
                 sys.exit(2)
             if k > mx:
-                sys.stderr.write("⛔ REFUSE(2) %s:%d heap_kb=%d is above the %d KB ceiling SCRIP_HEAP_KB itself "
-                                 "refuses -- the runtime would abort on this value rather than run at it\n"
+                sys.stderr.write("⛔ REFUSE(2) %s:%d heap_kb=%d is above the %d KB this box can hold (its memory, at most the collector's 32 GB page-map reach) "
+                                 "-- no heap this size can be served here\n"
                                  % (path, n, k, mx))
                 sys.exit(2)
             print(k)
@@ -154,7 +156,7 @@ run_at_declared_arena() {
 # a 100000-deep Icon recursion completes at the default and dies with ERROR 246 at SCRIP_STACK=16384k, while a 200000-deep one dies
 # at the default and completes at 262144k, in m3 and m4 -- and a cell AT the floor changes nothing while reading as a declaration.
 DECLARED_STACK_FLOOR_KB=64          # the least stack a declaration may name; SPITBOL's -s4m is the default (rt_stack_overflow.c RT_STACK_DEFAULT_BYTES)
-DECLARED_STACK_MAX_KB=4194304       # a declared stack past 4 GB is refused as a typo
+DECLARED_STACK_MAX_KB=$DECLARED_BOX_MAX_KB   # a declared stack past this box's memory is refused as a typo
 
 # declared_stack_kb <all_csv> <entry> -- the stack_kb twin of declared_arena_kb: the KB, nothing (absent = the floor), or rc 2.
 declared_stack_kb() {
@@ -181,7 +183,7 @@ try:
                 sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is below the %d KB least stack a declaration may name (ceo CEO-1261)\n" % (path, n, k, flr))
                 sys.exit(2)
             if k > mx:
-                sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is above the %d KB ceiling a stack declaration may name\n" % (path, n, k, mx))
+                sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is above the %d KB this box can hold\n" % (path, n, k, mx))
                 sys.exit(2)
             print(k); sys.exit(0)
     _lg = __import__("os").environ.get("SCRIP_DECL_MISS_LOG")
@@ -273,7 +275,7 @@ try:
         if not v.isdigit():
             return False, "unparseable"
         k = int(v)
-        return (1024 <= k <= mx), ("below the 1024 KB initial window" if k < 1024 else "above the %d KB ceiling" % mx)
+        return (1024 <= k <= mx), ("below the 1024 KB initial window" if k < 1024 else "above the %d KB this box can hold" % mx)
     named, refused = [], []
     for n, v in d:
         if not v:

@@ -4325,10 +4325,19 @@ def cmd_extract(args):
 GC_HEAP_CAP_KB = 131072        # #define GC_HEAP_CAP_KB 131072 (SPITBOL -d128m, ceo CEO-1261)
 GC_HEAP_KB_DEFAULT = 1024      # #define GC_HEAP_KB 1024 (SPITBOL -i1m): a declared maximum below the initial window is refused
 GC_HEAP_KB_FLOOR = 64          # #define GC_HEAP_KB_FLOOR 64
-GC_HEAP_KB_MAX = 4096 * 1024   # the ceiling SCRIP_HEAP_KB itself refuses past
+def box_max_kb():
+    """THIS BOX's memory in KB, at most the 32 GB the collector's page map can address (gc_heap.c): the ceiling of a declared heap or stack."""
+    try:
+        k = int(os.sysconf("SC_PHYS_PAGES")) * int(os.sysconf("SC_PAGE_SIZE")) // 1024
+    except (ValueError, OSError):
+        k = 0
+    return min(k, 33554432) if k > 0 else 33554432
+
+
+GC_HEAP_KB_MAX = box_max_kb()
 GC_STACK_FLOOR_KB = 4 * 1024   # src/runtime/rt/rt_stack_overflow.c RT_STACK_DEFAULT_BYTES: SPITBOL's -s4m, the stack an undeclared program gets
 GC_STACK_KB_MIN = 64           # the least stack a declaration may name
-GC_STACK_KB_MAX = 4096 * 1024  # a declared stack past 4 GB is refused as a typo, never honoured
+GC_STACK_KB_MAX = GC_HEAP_KB_MAX  # a declared stack past this box's memory is refused as a typo, never honoured
 
 
 def heap_sidecar_path(sno_path):
@@ -4379,8 +4388,8 @@ def validate_heap_kb(raw, where):
                f"CEO-1171's refusal of a cell at or below the shipped cap is retired on Lon's word of 2026-09-25 -- every "
                f"program declares its settings, and a declaration equal to the default is a setting (ceo CEO-1261)")
     if v > GC_HEAP_KB_MAX:
-        refuse(f"{where}: heap_kb={v} is above the {GC_HEAP_KB_MAX} KB ceiling SCRIP_HEAP_KB itself "
-               f"refuses -- the runtime would abort on this value rather than run at it")
+        refuse(f"{where}: heap_kb={v} is above the {GC_HEAP_KB_MAX} KB this box can hold (its memory, at most the collector's 32 GB page-map reach) "
+               f"-- no heap this size can be served here")
     return v
 
 
@@ -4454,7 +4463,7 @@ def validate_stack_kb(raw, where):
                f"SPITBOL's -s4m ({GC_STACK_FLOOR_KB} KB) and a declaration equal to it is a setting, not a no-op -- every "
                f"program declares its settings on Lon's word of 2026-09-25 (ceo CEO-1261)")
     if v > GC_STACK_KB_MAX:
-        refuse(f"{where}: stack_kb={v} is above the {GC_STACK_KB_MAX} KB ceiling a stack declaration may name")
+        refuse(f"{where}: stack_kb={v} is above the {GC_STACK_KB_MAX} KB this box can hold")
     return v
 
 

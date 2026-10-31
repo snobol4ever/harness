@@ -27,6 +27,17 @@ CEO-1153 makes `env -u` a condition of the sweep; two-knobs-set-refuses-rc2 is t
 """
 import glob, os, re, subprocess, sys
 
+def _box_max_kb():
+    try:
+        k = int(os.sysconf("SC_PHYS_PAGES")) * int(os.sysconf("SC_PAGE_SIZE")) // 1024
+    except (ValueError, OSError):
+        k = 0
+    return min(k, 33554432) if k > 0 else 33554432
+
+
+BOX_MAX_KB = _box_max_kb()
+
+
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
 
 # Gates whose header seat is the cto: converted by them at SCRIP d58ac175b and EXCLUDED from this sweep by CEO-1153.
@@ -199,8 +210,8 @@ def declarations():
                             verdict = "REFUSED (unparseable)"
                         elif int(v) < 1024:
                             verdict = "REFUSED (below the 1024 KB initial window: a maximum under the window cannot be honoured, CEO-1261)"
-                        elif int(v) > 4096 * 1024:
-                            verdict = "REFUSED (above the ceiling SCRIP_HEAP_KB accepts)"
+                        elif int(v) > BOX_MAX_KB:
+                            verdict = "REFUSED (above the %d KB this box can hold)" % BOX_MAX_KB
                         else:
                             verdict = "in force"
                         out.append((os.path.relpath(f, corpus), row.get("entry"), v, verdict))
