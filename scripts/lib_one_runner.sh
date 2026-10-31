@@ -260,6 +260,10 @@ one_runner_population_of() {
 }
 ONE_RUNNER_SMOKE_MODE_RUNNERS="test_icon_ipl_suite.sh test_snobol4_gimpel_suite.sh"   # runners with an area-smoke mode that writes nothing (see one_runner_guard)
 ONE_RUNNER_SINGLE_FILE_RUNNERS="test_prolog_swi_suite.sh test_prolog_gnu_suite.sh"   # runners whose --file mode grades exactly one file and writes no progress row and no score row (see one_runner_guard)
+# ⭐ THE cto LANDS THE ROWS ASSIGNED TO IT (ceo CEO-2085, on the cto's ask; CEO-2067: while the roster was small the cto took the toughest jobs of
+# any kind, and prolog-lifo-step-3 was assigned to it). CEO-2029's refusal stands for the cto's own design work; a cto that holds a live claim (an
+# assigned row it is landing) runs that landing's proof -- the smokes and the handful the landing recipe requires -- like any lander.
+one_runner_cto_lands() { local c d="${S4E_POST:-/home/resources/postoffice}/claims"; for c in "$d"/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c" 2>/dev/null)" = cto ] && ! grep -qx DONE "$c" && return 0; done; return 1; }
 one_runner_guard() {
   # ⭐ THE RUN'S START, STAMPED BY EVERY RUNNER FOR ITSELF (Lon 2026-10-08, in-chat to the ceo: "List in a grid the total time for each test
   # suite to run."; CEO-1562): util_score_row.py turns it into the row's wall clock (SUITES.tsv today_secs, the grid's Wall). Unconditional,
@@ -267,7 +271,7 @@ one_runner_guard() {
   S4E_RUN_T0="$(date +%s)"; export S4E_RUN_T0
   if [ -z "${S4E_BIN_AT_START:-}" ]; then S4E_BIN_AT_START="$(one_runner_bin_fingerprint)" && export S4E_BIN_AT_START; fi
   local board="${1:-${0##*/}}" suite="${2:-}" seat who lang
-  case "$(one_runner_seat)" in cto) if [ -z "${S4E_DONE_WHEN_RUN:-}" ]; then printf '⛔ REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: "Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing."). Put the witness and its expected answer in the step plan and let an executor or the coo (s4e_test_request.sh) run it.\n' "$(one_runner_seat)" >&2; return 2; fi;; esac
+  case "$(one_runner_seat)" in cto) if [ -z "${S4E_DONE_WHEN_RUN:-}" ] && ! one_runner_cto_lands; then printf '⛔ REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: "Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing."). Put the witness and its expected answer in the step plan and let an executor or the coo (s4e_test_request.sh) run it.\n' "$(one_runner_seat)" >&2; return 2; fi;; esac
   if [ -n "$suite" ] && ! one_runner_suite_is_a_board "$suite"; then return 0; fi
   one_runner_mem_scope
   if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
