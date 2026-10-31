@@ -97,6 +97,7 @@ test_gate_coexpr_stack_of_uncreated_thread.sh	WIRED	-	-	-
 test_gate_collect_reports_free_storage_and_fails_when_short.sh	WIRED	-	-	-
 test_gate_container_package_runner_counts_its_containers_as_excl.sh	WIRED	-	-	-
 test_gate_control_edges_live_on_ports.sh	WIRED	-	-	-
+test_gate_core_fn_table_is_current.sh	WIRED	-	-	-
 test_gate_corpus_coverage_classified.sh	WIRED	-	-	-
 test_gate_cross_suite_ref_agreement.sh	WIRED	-	-	-
 test_gate_ct_grow_grows_in_place_at_the_frontier_or_allocs_copies_and_abandons.sh	WIRED	-	-	-
