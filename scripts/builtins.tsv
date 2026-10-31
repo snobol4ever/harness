@@ -1206,3 +1206,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1206	pas	__pas_addr_var	1	1	pas_addr_var	inline	-	-	0	dop_direct,pas
 1207	pas	__pas_ptr_inc	2	2	pas_ptr_inc	inline	-	-	0	dop_direct,pas
 1208	pas	__pas_ptr_eq	2	2	pas_ptr_eq	inline	-	-	0	dop_direct,pas
+1209	pas	__pas_ptr_diff	2	2	pas_ptr_diff	inline	-	-	0	dop_direct,pas
+1210	pas	__pas_pchar_of	1	1	pas_pchar_of	inline	-	-	0	dop_direct,pas
+1211	pas	__pas_pstrlen	1	1	pas_pstrlen	inline	-	-	0	dop_direct,pas
+1212	pas	__pas_pstr	1	1	pas_pstr	inline	-	-	0	dop_direct,pas
