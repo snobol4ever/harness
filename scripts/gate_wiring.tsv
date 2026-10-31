@@ -259,6 +259,7 @@ test_gate_gc_the_stack_walk_survives_valgrind.sh	WIRED	-	-	-
 test_gate_gc_the_tiny_arena_is_the_default_of_gc_testing.sh	WIRED	-	-	-
 test_gate_gc_the_unmapped_spine_store_witness_answers_its_oracle_at_every_band_point.sh	WIRED	-	-	-
 test_gate_gc_the_visited_set_key_spaces_do_not_collide.sh	WIRED	-	-	-
+test_gate_gc_wsb_wsc_producers_are_pointer_free.sh	WIRED	-	-	-
 test_gate_gimpel_runner_masks_the_engine_clock_lines.sh	WIRED	-	-	-
 test_gate_globals_census_counts_writable_sections_only.sh	WIRED	-	-	-
 test_gate_gprolog_output_filter_is_the_one_filter.sh	WIRED	-	-	-
@@ -921,6 +922,7 @@ test_gate_pl_stream_property_of_a_bound_stream_or_a_named_alias_is_deterministic
 test_gate_pl_stream_property_sees_the_standard_streams_before_any_file_operation.sh	WIRED	-	-	-
 test_gate_pl_sub_atom_with_two_bound_numbers_computes_its_one_slice.sh	WIRED	-	-	-
 test_gate_pl_swi_a_clause_asserted_from_a_runtime_term_inside_a_plunit_unit_lands_in_the_unit_predicate_answers_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_swi_a_meta_argument_qualification_collapses_a_chain_as_swipl_does.sh	WIRED	-	-	-
 test_gate_pl_swi_an_unknown_procedure_called_from_a_plunit_unit_is_module_qualified_in_its_existence_error_answers_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_an_unreachable_engine_is_reclaimed_after_a_collection_and_a_held_one_survives_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_apply_macros_expands_a_loaded_units_phrase_goals_at_lowering_and_a_run_time_phrase_checks_its_lists_as_swipl.sh	WIRED	-	-	-
