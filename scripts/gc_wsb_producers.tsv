@@ -23,6 +23,7 @@ runtime/by_name_dispatch.c	ln = rt_wsb_alloc(kl + vl + 4)	BYTES	a text line
 runtime/by_name_dispatch.c	ln = rt_wsb_alloc(ql + vl + 5)	BYTES	a text line
 runtime/by_name_dispatch.c	char *self = rt_wsb_alloc(4096), *path = rt_wsb_alloc(4200)	BYTES	path text buffers
 runtime/by_name_dispatch.c	if (!f) return rt_wsb_alloc(1)	BYTES	a one-byte string
+runtime/by_name_dispatch.c	IS_INT_fn(args[0]) ? STRVAL(rt_wsb_alloc(1))	BYTES	a one-byte empty string, the text of a non-pointer PChar argument (pascal rung 13, aa2bbb034)
 runtime/by_name_dispatch.c	char *b = rt_wsb_alloc(cap), *o = rt_wsb_alloc(cap)	BYTES	byte buffers
 runtime/by_name_dispatch.c	buf=rt_wsb_realloc(buf,cap)	BYTES	the growing char buffer of the tab and column expansion
 runtime/unification.c	pl_ix_t *x = (pl_ix_t *)rt_heap_alloc_c(pl_ix_bytes(cap, hcap))	BYTES	the first-argument index: int64 keys, int heads and int chains
@@ -40,6 +41,7 @@ runtime/rt/prolog_atom.c	FEntry *grown = (FEntry *)rt_wsb_alloc	BYTES	functor en
 runtime/rt/prolog_atom.c	OpCols *grown = (OpCols *)rt_wsb_alloc	BYTES	operator columns: ints
 runtime/rt/rt.c	rt_blob_fb_t *e = (rt_blob_fb_t *)gv_push	BYTES	a code address and a byte count
 lower/lower_common.c	re.s = rt_wsb_alloc(1)	BYTES	a one-byte empty string
+# THE rx.c ROWS BELOW: rx.c's graph lives inside one rx_compile or rx_exec call and this machine collects only at an emitted poll after an allocating runtime call returns, so no collection finds it live. That is measured, not asserted: arm (4) of test_gate_gc_wsb_wsc_producers_are_pointer_free.sh reads the built runtime's call graph (util_wsb_transient_reach.py) and is red the day an rx.c symbol or the RxEnv callback reaches a collection entry or a dispatcher by any route but the allocator's no-return out-of-memory exit; from that day these rows become typed rows with a validator row.
 runtime/rx.c	RxNode *n = (RxNode *) RX_ALLOC(sizeof *n)	TRANSIENT	the regex tree node; built by rx_compile and used by rx_exec inside one runtime call with no safe point
 runtime/rx.c	p->ch = (RxNode **) (p->ch ? RX_REALLOC	TRANSIENT	the regex node's child vector, same call
 runtime/rx.c	x->set = (RxSet *) RX_ALLOC(sizeof(RxSet))	TRANSIENT	the regex character set header, same call
