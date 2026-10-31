@@ -936,6 +936,7 @@ test_gate_pl_swi_incremental_tabling_a_plain_assert_or_retract_on_an_incremental
 test_gate_pl_swi_libraries_hashtable_nb_set_solution_sequences_csv_terms_random_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_library_modules_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_plunit_shim_runs_a_test_carrying_sto_finite_trees_as_an_ordinary_test_as_the_oracle_does.sh	WIRED	-	-	-
+test_gate_pl_swi_program_space_module_property_and_the_limit_errors_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_calls_a_condition_it_does_not_recognise.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_grades_all_by_each_plunit_comparison.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_grades_an_error_expectation_as_plunit_does.sh	WIRED	-	-	-
