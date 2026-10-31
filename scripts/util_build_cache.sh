@@ -81,6 +81,7 @@ case "$verb" in
             echo "FETCHED $key (already in place)"; exit 0
         fi
         rpath_is_own "$e/scrip" && rpath_is_own "$e/out/scrip-ipp" || { echo "build cache: entry $key carries an absolute rpath (built before the \$ORIGIN Makefile), building locally"; exit 1; }
+        if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: removing the stale out/scrip0 (absolute rpath, fetched before the \$ORIGIN Makefile)"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         n=0
         while IFS= read -r f; do
             [ -n "$f" ] || continue
@@ -103,7 +104,8 @@ case "$verb" in
         e="$CACHE/$key"
         [ -f "$e/MANIFEST" ] && { echo "build cache: $key already published"; exit 0; }
         for f in $required; do [ -f "$root/$f" ] || { echo "build cache: no $f, nothing published"; exit 0; }; done
-        for f in scrip out/scrip-ipp out/scrip0 out/parser_*; do [ -f "$root/$f" ] && ! rpath_is_own "$root/$f" && { echo "build cache: $f carries an absolute rpath (a binary that would load its producer's runtime in another root), nothing published"; exit 0; }; done
+        for f in scrip out/scrip-ipp; do rpath_is_own "$root/$f" || { echo "build cache: $f carries an absolute rpath (a binary that would load its producer's runtime in another root), nothing published"; exit 0; }; done
+        if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: out/scrip0 carries an absolute rpath (fetched before the \$ORIGIN Makefile; the default make never relinks it), removing it so this build can publish"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         [ -n "$(ls "$root/out/rt_pic-$tag"/*.o 2>/dev/null)" ] || { echo "build cache: no runtime objects under out/rt_pic-$tag, nothing published"; exit 0; }
         t="$CACHE/.tmp.$key.$$"
         rm -rf "$t"; mkdir -p "$t" || { echo "build cache: cannot write $CACHE, nothing published"; exit 0; }
