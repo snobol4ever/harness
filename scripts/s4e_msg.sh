@@ -2166,7 +2166,7 @@ case "$cmd" in
          [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Name the seat: s4e_msg.sh ask <seat> <topic> --stdin, or set S4E_HQ." >&2; exit 2; }
          if [ "${1:-}" = "--stdin" ]; then _body="$(cat)"; else _body="$*"; fi
          [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED (rc 2): ask carries no question -- give it after the topic in quotes, or with --stdin on standard input. Nothing sent." >&2; exit 2; }
-         exec "$0" send "$_hq" "q-$topic" "$_body";;
+         printf '%s\n' "$_body" | "$0" send "$_hq" "q-$topic" --stdin; exit $?;;   # send refuses a multi-line ARGUMENT; the body goes by its stdin (cfo, CEO-2081)
   # ⛔ CLEAR DELETES ONLY WHAT CHECK DISPLAYED (hq_C s269). MEASURED, not hypothetical: a message arrived
   # between this seat's `check` and its `clear`, and the old `rm -f *.msg` destroyed it UNREAD and
   # UNRECOVERABLE -- clear does not archive, and no sent-copy is kept anywhere. The banner had even printed
