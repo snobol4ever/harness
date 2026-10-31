@@ -38,7 +38,9 @@ r11 RECORD-RESTORED (RR: last written by a QWORD load from [REC+imm]) UNLESS THE
 re-establishes exactly the recorded set, ADDENDUM 3: the park rows record r8|r10|r11, so a transfer entry saves nothing of the three; the
 clobber derivation reports an unrestored one as clobbered), the pins rbp rbx r12-r15 RR or untouched.  A tail jump into
 a declared transfer entry is allowed from a declared transfer entry only, with the alignment a call would need; a declared
-transfer entry no path of which switches or tails into one is a violation.  None of this is tracked for any other entry.
+transfer entry no path of which switches or tails into one is a violation.  A TAIL INTO A TRANSFER ENTRY RETURNS TO OUR CALLER FROM THE CALLEE'S EXIT, so what this entry hands back
+is what the callee's row records, no more (its own earlier writes of r8 r10 r11 are record-restored or in the callee's mask): the clobber derivation takes the callee's derived mask, and
+a registered entry whose row lacks a register the callee's row records is a violation.  None of this is tracked for any other entry.
 
 Usage: util_rtx_abi_walk.py OBJ... [--entries FILE] [--table TABLE]   (FILE: one name per line, the registry; every
 global function the objects define must be in it; TABLE: rows { "sym", RTCC_C_R8|... } as util_gen_rt_entry_table.py --walker-table writes them from rt_entries.tsv --
@@ -395,7 +397,13 @@ def walk(name, code, funcs, rtx, clob=None):
                 if xs_in is None: errs.append('%s: a tail jump into the transfer entry %s from an entry the table does not declare a transfer entry' % (where, tx))
                 elif xs_in[1]: errs.append('%s: a tail jump into the transfer entry %s after the switch' % (where, tx))
                 elif above % 2: errs.append('%s: the tail jump into the transfer entry %s is made with rsp misaligned (%d slot(s) since the last 16-byte point)' % (where, tx, above))
-                else: xfer_seen = True
+                else:
+                    xfer_seen = True
+                    if clob is not None:
+                        for r in CLOB_TABLE.get(tx, ()): clob.add(r)
+                    else:
+                        left = sorted(set((RECORDED or {}).get(tx, ())) - own)
+                        if left: errs.append('%s: %s written by the tail callee %s and not recorded for this entry' % (where, ', '.join(left), tx))
                 continue
             if local is not None:
                 if mn != 'jmp': push_state(nxt)

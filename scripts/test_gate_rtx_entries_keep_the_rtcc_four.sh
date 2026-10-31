@@ -289,6 +289,13 @@ RTX_FUNC(ok_xfer_resume)
     call    inj_c
     RTX_JMP(ok_xfer_seg)
 RTX_ENDF(ok_xfer_resume)
+RTX_FUNC(ok_xfer_tail_rec)
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 48
+    call    inj_c
+    RTX_JMP(ok_xfer_recorded)
+RTX_ENDF(ok_xfer_tail_rec)
 RTX_FUNC(ok_xfer_recorded)
     mov     rsp, qword ptr [rax + 8]
     XPINS   rax
@@ -447,6 +454,13 @@ RTX_ENDF(lie_xfer_r10)
 RTX_FUNC(lie_xfer_tail)
     RTX_JMP(ok_xfer_seg)
 RTX_ENDF(lie_xfer_tail)
+RTX_FUNC(lie_xfer_tail_unrec)
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 48
+    call    inj_c
+    RTX_JMP(ok_xfer_recorded)
+RTX_ENDF(lie_xfer_tail_unrec)
 RTX_FUNC(lie_xfer_partial)
     mov     rsp, qword ptr [rax + 8]
     XPINS   rax
@@ -495,6 +509,8 @@ cat > "$WORK/inj/table.inc" <<'TBL'
     { "ok_xfer_park", RTCC_XFER },
     { "ok_xfer_resume", RTCC_XFER },
     { "ok_xfer_recorded", RTCC_C_R8|RTCC_C_R10|RTCC_C_R11|RTCC_XFER|RTCC_XREC_RAX },
+    { "ok_xfer_tail_rec", RTCC_C_R8|RTCC_C_R10|RTCC_C_R11|RTCC_XFER },
+    { "lie_xfer_tail_unrec", RTCC_XFER },
     { "lie_xfer_partial", RTCC_C_R8|RTCC_XFER|RTCC_XREC_RAX },
     { "lie_xfer_nonrec", RTCC_XFER|RTCC_XREC_RAX },
     { "lie_xfer_r11rec", RTCC_XFER },
@@ -508,24 +524,31 @@ TBL
 ( python3 "$WALK" "${objs[@]}" --entries "$WORK/real/entries.txt" --table "$TABLE" > "$WORK/real.out" 2>&1; echo $? > "$WORK/real.rc" ) &
 ( python3 "$WALK" "$WORK/inj/inj_ok.o" --entries "$WORK/inj/inj_ok.entries" --table "$WORK/inj/table.inc" > "$WORK/inj_ok.out" 2>&1; echo $? > "$WORK/ok.rc" ) &
 ( python3 "$WALK" "$WORK/inj/inj_lie.o" --entries "$WORK/inj/inj_lie.entries" --table "$WORK/inj/table.inc" > "$WORK/inj_lie.out" 2>&1; echo $? > "$WORK/lie.rc" ) &
+( python3 "$WALK" "$WORK/inj/inj_ok.o" --entries "$WORK/inj/inj_ok.entries" --table "$WORK/inj/table.inc" --clobber-table > "$WORK/inj_clob.out" 2>&1; echo $? > "$WORK/clob.rc" ) &
 wait
 real_rc=$(cat "$WORK/real.rc"); ok_rc=$(cat "$WORK/ok.rc"); lie_rc=$(cat "$WORK/lie.rc")
 cat "$WORK/real.out"
 echo "=== THE INJECTION SELF-TEST ==="
-python3 - "$WORK/inj_ok.out" "$ok_rc" "$WORK/inj/inj_ok.entries" "$WORK/inj_lie.out" "$lie_rc" > "$WORK/inj.verdict" <<'PY'
-import sys
+python3 - "$WORK/inj_ok.out" "$ok_rc" "$WORK/inj/inj_ok.entries" "$WORK/inj_lie.out" "$lie_rc" "$WORK/inj_clob.out" "$(cat "$WORK/clob.rc")" > "$WORK/inj.verdict" <<'PY'
+import re, sys
 ok_out, ok_rc, ok_ent, lie_out, lie_rc = open(sys.argv[1]).read(), int(sys.argv[2]), open(sys.argv[3]).read().split(), open(sys.argv[4]).read(), int(sys.argv[5])
+clob_out, clob_rc = open(sys.argv[6]).read(), int(sys.argv[7])
 bad = []
 if ok_rc != 0: bad.append('the truthful set was NOT proven (rc=%d):\n%s' % (ok_rc, ok_out))
-if len(ok_ent) != 16: bad.append('the truthful set registered %d entries, wanted 16' % len(ok_ent))
-if 'PROVEN: 16 ' not in ok_out: bad.append('the truthful set did not report 16 proven')
+if len(ok_ent) != 17: bad.append('the truthful set registered %d entries, wanted 17' % len(ok_ent))
+if 'PROVEN: 17 ' not in ok_out: bad.append('the truthful set did not report 17 proven')
+dm = dict(re.findall(r'^RTX-CLOBBER (\S+) (\S+)$', clob_out, re.M))
+if clob_rc != 0: bad.append('the clobber derivation over the truthful set did not run clean (rc=%d):\n%s' % (clob_rc, clob_out[-400:]))
+elif dm.get('ok_xfer_recorded', '-') == '-' or dm.get('ok_xfer_tail_rec') != dm.get('ok_xfer_recorded'):
+    bad.append('a tail into a transfer entry must derive the callee\'s mask: ok_xfer_recorded derives %s, ok_xfer_tail_rec derives %s' % (dm.get('ok_xfer_recorded'), dm.get('ok_xfer_tail_rec')))
 want = {'lie_clobber': 'r10 not returned', 'lie_ctail': 'tail exit into C', 'lie_cbare': 'r8 not returned',
         'lie_plt': 'r10 not returned', 'lie_r9': 'came in as an argument', 'lie_stack': 'left above the return address',
         'lie_gate': 'tail exit into C', 'lie_unregistered': 'does not name', 'lie_reload': 'r10 not returned', 'lie_misaligned': 'misaligned',
         'lie_read_after_call': 'reads r10 after a call', 'lie_r9_own': 'reads r9 after a call',
         'lie_xfer_nonrec': 'cannot follow', 'lie_xfer_r11rec': 'may not be one of the four', 'lie_xfer_disp': 'displacement D=16',
         'lie_xfer_pin': 'rbx (a pin) not restored', 'lie_xfer_r9': 'r9 not reloaded', 'lie_xfer_push': 'push after the switch',
-        'lie_xfer_noswitch': 'no path of its body switches', 'lie_xfer_r10': 'r10 not record-restored', 'lie_xfer_tail': 'does not declare a transfer entry', 'lie_xfer_partial': 'r10 not record-restored'}
+        'lie_xfer_noswitch': 'no path of its body switches', 'lie_xfer_r10': 'r10 not record-restored', 'lie_xfer_tail': 'does not declare a transfer entry', 'lie_xfer_partial': 'r10 not record-restored',
+        'lie_xfer_tail_unrec': 'written by the tail callee ok_xfer_recorded and not recorded for this entry'}
 lines = [l for l in lie_out.split('\n') if 'VIOLATION' in l]
 for name, frag in want.items():
     hit = [l for l in lines if (' ' + name + '+') in l or (' ' + name + ':') in l]
@@ -534,7 +557,7 @@ for name, frag in want.items():
 if lie_rc != 1: bad.append('the lying set exited %d, wanted 1' % lie_rc)
 if any(' inj_leaf2+' in l or ' inj_leaf2:' in l for l in lines): bad.append('the honest leaf inside the lying set was convicted')
 for b in bad: print('  SELF-TEST FAIL  ' + b)
-if not bad: print('  SELF-TEST PASS  16 truthful forms proven (5 of them transfers); 22 lies caught by name and for the right reason (10 of them transfers); the honest leaf beside them proven')
+if not bad: print('  SELF-TEST PASS  17 truthful forms proven (6 of them transfers, one tailing into a transfer entry and deriving its mask); 23 lies caught by name and for the right reason (11 of them transfers); the honest leaf beside them proven')
 sys.exit(1 if bad else 0)
 PY
 inj_rc=$?
