@@ -1213,3 +1213,6 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1213	pas	__pas_pdx	4	4	pas_pdx	inline	-	-	0	dop_direct,pas
 1214	pas	__pas_row_get	5	5	pas_row_get	inline	-	-	0	dop_direct,pas
 1215	pas	__pas_row_set	6	6	pas_row_set	inline	-	-	0	dop_direct,pas
+1216	pl	$tbl_park	1	1	rt_pl_dop_tbl_park	leaf	-	-	0	dop_direct
+1217	pl	$tbl_resume_all	1	1	rt_pl_dop_tbl_resume_all	leaf	-	-	0	dop_direct
+1218	pl	$tbl_sl	3	3	rt_pl_dop_tbl_sl	leaf	-	-	0	dop_direct
