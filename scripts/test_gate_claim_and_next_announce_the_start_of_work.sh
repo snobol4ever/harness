@@ -96,6 +96,19 @@ arm $? "an undeliverable notice is NAMED, the claim still stands (rc=$rc2), and 
 [[ "$out2" == *"announced to 4 standing seat(s)"* ]]
 arm $? "and the number printed is what was DELIVERED (ceo cfo hq_prolog coo) -- an instrument that reports success while doing nothing is the recurring failure"
 
+echo "--- ARM 10: A PORT IS A LANE OF ITS OWN: a port holder hears only its port's claims, and a port's claim reaches only the ceo and its port (CEO-2081) ---"
+mkdir -p "$W/hq_dotnet/inbox" "$W/hq_dotnet/archive"
+printf 'ROSTER: ceo cto cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
+for t in dotnet-row-held gc-neutral-row dotnet-row-taken; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
+printf 'hq_dotnet\nRUNNING\n' > "$W/claims/dotnet-row-held.claim"
+rm -f "$W/claims/row-for-the-picker.claim" "$W/claims/row-with-a-deaf-neighbour.claim"
+o10="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
+n_neutral=$(count hq_dotnet gc-neutral-row)
+o11="$(S4E_SEAT=ceo S4E_POST="$W" bash "$SUT" claim dotnet-row-taken 2>&1)"
+n_portcfo=$(count cfo dotnet-row-taken); n_porticon=$(count hq_icon dotnet-row-taken)
+[ "$n_neutral" = 0 ] && [ "$n_portcfo" = 0 ] && [ "$n_porticon" = 0 ]
+arm $? "the port holder was not mailed the neutral gc- claim ($n_neutral), and the port's claim reached no SCRIP holder (cfo $n_portcfo, hq_icon $n_porticon)"
+
 echo "graded $N arm(s)"
 if [ "$FAIL" = 0 ]; then echo "✅ GATE PASS: the bus announces the start of work to the ceo and the live holders of the row's lane, logs every claim, and shows the caller the neighbourhood."; exit 0; fi
 echo "⛔ GATE FAIL: $FAIL of $N arm(s) red -- a claim that nobody hears is the collision nobody can prevent; a claim everybody hears is the notice nobody reads."; exit 1

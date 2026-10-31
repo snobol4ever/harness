@@ -870,13 +870,17 @@ s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every
   # ceo, who arbitrates, plus the row's owner cell. Everyone else reads $PO/CLAIMS.log, one line per claim, whoever was mailed.
   local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _lang _cl _ct _recip=" ceo " _ocell _live=""
   _mode="$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')"
-  _lang="${_t%%-*}"; case " $(s4e_lane_languages) " in *" $_lang "*) ;; *) _lang="";; esac
+  _lang="${_t%%-*}"; case " $(s4e_lane_languages) dotnet jvm " in *" $_lang "*) ;; *) _lang="";; esac
   _ocell="$(qrow "$_t" 2>/dev/null | cut -f3)"; [ -n "$_ocell" ] && _recip="$_recip$_ocell "
   for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue
     _own="$(head -1 "$_c" 2>/dev/null)"; _ct="$(basename "$_c" .claim)"
     [ "$(s4e_claim_verdict "$_ct")" = "HELD" ] || continue
-    _cl="${_ct%%-*}"; case " $(s4e_lane_languages) " in *" $_cl "*) ;; *) _cl="";; esac
-    if [ -z "$_lang" ] || [ -z "$_cl" ] || [ "$_cl" = "$_lang" ]; then _recip="$_recip$_own "; fi
+    _cl="${_ct%%-*}"; case " $(s4e_lane_languages) dotnet jvm " in *" $_cl "*) ;; *) _cl="";; esac
+    # ⛔ A PORT IS A LANE OF ITS OWN (ceo CEO-2081): a dotnet- or jvm- row shares no code with SCRIP, so a lane-neutral SCRIP row (gc, zeta,
+    # headers) is not shared code to a port holder, nor a port's row to a SCRIP holder. Measured the hour the ports joined: hq_dotnet was mailed
+    # the cao's gc- claim and hq_jvm's own claim was mailed to every neutral holder.
+    case "$_lang:$_cl" in dotnet:*|jvm:*|*:dotnet|*:jvm) [ "$_cl" = "$_lang" ] && _recip="$_recip$_own ";;
+      *) if [ -z "$_lang" ] || [ -z "$_cl" ] || [ "$_cl" = "$_lang" ]; then _recip="$_recip$_own "; fi;; esac
     [ "$_own" = "$ME" ] && continue
     _k=$((_k+1)); _live="$_live$(printf '  LIVE CLAIM  %-11s %s\n' "$_own" "$_ct")
 "
