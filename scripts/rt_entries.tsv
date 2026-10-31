@@ -419,6 +419,7 @@ rt_pl_dop_setof_group_at	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_setof_result	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_sha_hash	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_shc	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_db_clause_src	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_skip	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_skip_list	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_sort	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm

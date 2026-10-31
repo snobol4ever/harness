@@ -951,7 +951,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 951	pl	$db_ref_r	3	3	rt_pl_dop_db_ref_r	leaf	-	-	0	dop_direct
 952	pl	$db_retractall	2	2	rt_pl_dop_db_retractall	leaf	-	-	0	dop_direct
 953	pl	$db_retractall_t	1	1	rt_pl_dop_db_retractall_t	leaf	-	-	0	dop_direct
-954	pl	$db_seed_once	3	3	rt_pl_dop_db_seed_once	leaf	-	-	0	dop_direct
+954	pl	$db_seed_once	5	5	rt_pl_dop_db_seed_once	leaf	-	-	0	dop_direct
 955	pl	$db_store_k	1	1	rt_pl_dop_db_store_k	leaf	-	-	0	dop_direct
 956	pl	$db_t_guard	2	2	rt_pl_dop_db_t_guard	leaf	-	-	0	dop_direct
 957	pl	$display	1	1	rt_pl_dop_display	leaf	-	-	0	dop_direct
@@ -1220,3 +1220,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1221	pas	__pas_ioresult	1	1	-	inline	-	-	0	pas
 1222	pas	__pas_ioerrmsg	1	1	-	inline	-	-	0	pas
 1223	pas	__pas_ioexit	1	1	-	inline	-	-	0	pas
+1224	pl	$db_clause_src	3	3	rt_pl_dop_db_clause_src	leaf	-	-	0	dop_direct
