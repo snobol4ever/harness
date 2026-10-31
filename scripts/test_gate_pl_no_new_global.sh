@@ -45,7 +45,7 @@ gate_parse_args "$@"
 for t in python3 nm objdump gcc; do command -v "$t" >/dev/null || { echo "⛔ REFUSED(2) [$GATE_NAME]: $t is not on PATH"; exit 2; }; done
 [ -x "$ROOT/scrip" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: no scrip binary -- run make first"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$ROOT/scrip" "$RT/libscrip_rt.so" || exit 2
-SO="$(readlink -f "$RT/libscrip_rt.so")"; TAG="${SO##*/libscrip_rt-}"; TAG="${TAG%.so}"; OBJ="$RT/rt_pic-$TAG"
+SO="$RT/libscrip_rt.so"; TAG=""; for so in "$RT"/libscrip_rt-*.so; do [ -f "$so" ] && cmp -s "$so" "$RT/libscrip_rt.so" && { TAG="${so##*/libscrip_rt-}"; TAG="${TAG%.so}"; break; }; done; OBJ="$RT/rt_pic-$TAG"   # the shipped runtime is a COPY of libscrip_rt-<tag>.so (the Makefile, no symlink): the tag is the one it is byte-equal to, never a readlink
 [ -d "$OBJ" ] || { echo "⛔ REFUSED(2) [$GATE_NAME]: no object set $OBJ beside $SO -- run make"; exit 2; }
 cd "$ROOT"
 # ---- the Prolog runtime set ----------------------------------------------------------------------------------------
