@@ -216,6 +216,7 @@ test_gate_gc_record_type_table_is_rooted_not_blanket_marked.sh	WIRED	-	-	-
 test_gate_gc_runtime_compiled_code_bakes_no_arena_address.sh	WIRED	-	-	-
 test_gate_gc_scan_subject_saves_are_rooted.sh	WIRED	-	-	-
 test_gate_gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask.sh	WIRED	-	-	-
+test_gate_gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask.sh	WIRED	-	-	-
 test_gate_gc_table_insertion_order_array_is_rooted_not_pinned_alive.sh	WIRED	-	-	-
 test_gate_gc_the_allocating_set_is_a_generated_table_gated_against_the_call_graph.sh	WIRED	-	-	-
 test_gate_gc_the_asm_allocator_carves_reused_ground_after_a_collection.sh	WIRED	-	-	-
