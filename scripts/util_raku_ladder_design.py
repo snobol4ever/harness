@@ -239,7 +239,10 @@ def classify(c, core, meths):
         return None
     return None
 
-def main():
+def placement_data():
+    """The rule's data per red program of the snapshot: red {program: outcome}, prog_cons {program: its feature constructs, the
+    refusal override among them}, override {program: the construct its emitter refusal names}, fam_of {construct: family}, norm.
+    util_raku_ladder_status.py --replace reads the same data, so the generator and the instrument place by one rule."""
     core = load_core()
     meths = set(re.findall(r'"([^"]+)"', open(METH).read()))
     red = {}
@@ -290,6 +293,10 @@ def main():
                 cons.add(ov)
         prog_cons[p] = cons
         for c in cons: files_of[c].add(p)
+    return red, prog_cons, override, fam_of, files_of, norm
+
+def main():
+    red, prog_cons, override, fam_of, files_of, norm = placement_data()
     # rungs: families in order, constructs by red-file count desc then name
     rungs = []
     for fam, _, _ in FAMILIES:
