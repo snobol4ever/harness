@@ -61,8 +61,15 @@ fi
 
 # (b) THE READING against the DECLARED floor
 READ_OUT="$(mktemp -t gc_contract_reading.XXXXXX)"
-trap 'rm -f "$READ_OUT" "$READ_OUT".cmp' EXIT
+. "$(dirname "${BASH_SOURCE[0]}")/lib_smoke_honest.sh" || refuse "lib_smoke_honest.sh unloadable"
+trap 'rm -f "$READ_OUT" "$READ_OUT".cmp "$SMOKE_TO_FILE"' EXIT
 SCRIP_HEAP_KB="${SCRIP_HEAP_KB:-64}" timeout -k 5 900s python3 "$CHK" $POP --name-all > "$READ_OUT" 2>&1; rrc=$?
+# CEO-2081 (the ceo, on hq_prolog's tripwire landing bf7f7b061: the checker prints only at its end and its 900 s timeout killed it at load 30-40): a
+# checker killed by the timeout over 2 x cores REFUSES and names the load (the box cannot measure); killed on a quiet box it is a RED named TIMEOUT
+if smoke_note "$rrc"; then
+  [ "$SMOKE_TIMEOUTS_LOADED" -gt 0 ] && refuse "the checker was killed by its 900 s timeout (rc $rrc) at load1$SMOKE_TIMEOUT_LOADS, over ${SMOKE_LOAD_FACTOR:-2} x $(nproc) cores -- the box cannot measure this gate now; re-read it in a quiet slice (CEO-1680, CEO-2081)"
+  echo "⛔ GATE RED [gc_emitted_safe_point_matches_its_contract]: TIMEOUT -- the checker was killed by its 900 s timeout (rc $rrc) at load1$SMOKE_TIMEOUT_LOADS, under ${SMOKE_LOAD_FACTOR:-2} x $(nproc) cores"; exit 1
+fi
 rd="$(cat "$READ_OUT")"
 [ "$rrc" = 2 ] && refuse "the checker refused over the declared population: $(grep -m1 REFUSED "$READ_OUT")"
 sl="$(grep -m1 '^CONTRACT SITES ' "$READ_OUT")"
