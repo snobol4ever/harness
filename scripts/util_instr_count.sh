@@ -8,7 +8,7 @@
 # runtime's own load, shut-down); WORK is the program's count less OVERHEAD. Each is the median of N runs; the spread (max-min over median) is printed
 # because a JIT's count moves run to run (measured 2026-10-22 on arith_loop: sbl +-1 instruction, snobol4dotnet 0.1 percent, snobol4jvm 1.4 percent).
 # USE: bash harness/scripts/util_instr_count.sh [-n N] [--vs sbl [--allow-diff "why"]] <engine> <program.sno> [< input]
-#        engine: sbl (the clean benchmark oracle, -bf), dotnet, jvm (their port runners), scrip (./scrip mode 3)
+#        engine: sbl (the clean benchmark oracle, -bf), dotnet, jvm (their port runners), scrip (./scrip mode 3), scrip4 (./scrip --compile, linked, mode 4: the IR bar's basis; the compile is not counted)
 #        --vs sbl: also count sbl on the same program and print WORK's multiple, sbl over the engine (lib_perf_fmt.sh perf_mult; 2.000x = half sbl's)
 # SIZES AND THE ANSWER (ceo CEO-2050, hq_dotnet's find: 12 of 23 SnoDemo workhorses had been counted from an sbl that died of ERROR 246 at bare
 # -bf with rc 0): sbl runs the program with its declared <stem>.oracle_args (declared_oracle_args_beside) and scrip with its declared -d/-s
@@ -45,12 +45,19 @@ engine_cmd() {
         dotnet) echo "bash $HERE/run_snobol4dotnet.sh";;
         jvm) echo "bash $HERE/run_snobol4jvm.sh";;
         scrip) echo "$HERE/../../SCRIP/scrip $([ "$2" = "$PROG" ] && echo "$SCRIP_ARGS")";;
+        scrip4) m4_binary "$2" || return 2; echo "$M4BIN $([ "$2" = "$PROG" ] && echo "$SCRIP_ARGS")";;
         *) return 2;;
     esac
 }
+m4_binary() {
+    local key; key="$(printf '%s' "$1" | md5sum | cut -c1-12)"; M4BIN="$W/m4.$key"
+    [ -x "$M4BIN" ] && return 0
+    ( cd "$(dirname "$1")" && "$HERE/../../SCRIP/scrip" --compile --out="$W/m4.$key.s" "$1" < /dev/null 2> "$W/m4.err" && bash "$HERE/util_cc_slot.sh" gcc "$W/m4.$key.s" -L"$HERE/../../SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$HERE/../../SCRIP/out" -o "$M4BIN" 2>> "$W/m4.err" ) || { echo "REFUSE(2): scrip4 did not build $1 in mode 4: $(head -c 200 "$W/m4.err")" >&2; return 2; }
+}
 count_once() {
-    local cmd; cmd="$(engine_cmd "$1" "$2")" || { echo "REFUSE(2): unknown engine $1 (sbl dotnet jvm scrip)" >&2; return 2; }
-    ( cd "$(dirname "$2")" && timeout -k 5 600 "$PERF" stat -x, -e instructions:u -o "$W/stat" $cmd "$2" < "$W/in" > "$W/out" 2> "$W/err" ) || { echo "REFUSE(2): $1 failed on $2 (rc $?): $(head -c 200 "$W/err")" >&2; return 2; }
+    local cmd parg="$2"; cmd="$(engine_cmd "$1" "$2")" || { echo "REFUSE(2): unknown engine $1 (sbl dotnet jvm scrip scrip4)" >&2; return 2; }
+    [ "$1" = scrip4 ] && parg=""
+    ( cd "$(dirname "$2")" && timeout -k 5 600 "$PERF" stat -x, -e instructions:u -o "$W/stat" $cmd $parg < "$W/in" > "$W/out" 2> "$W/err" ) || { echo "REFUSE(2): $1 failed on $2 (rc $?): $(head -c 200 "$W/err")" >&2; return 2; }
     local c; c="$(awk -F, '$3 ~ /^instructions/ {print $1; exit}' "$W/stat")"
     case "$c" in ''|*[!0-9]*) echo "REFUSE(2): no instruction count for $1 on $2" >&2; return 2;; esac
     echo "$c"
