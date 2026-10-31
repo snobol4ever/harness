@@ -36,6 +36,8 @@
 # (4) nil is untouched; (5) a negative index (0xFFFFFFFE) is untouched while the word follows; (6) two pointers into one block keep their offset; (6b) arm 1 gives one answer in five runs;
 # (7) each of three Pascal witnesses equals fpc's output in both modes at four settings (no stress, stress 3, stress 1, forced motion); (8a) the forced-motion run flipped blocks;
 # (8) the heap slid under the live pointers in the interior-pointer witness's stress run.
+# (9) the cfo's edge (ruling on ceo-2073): a base at the end of an EMPTY object, which is the next block's header address, aborts by name (GC-PCELL) in a diag build, because the mark loop has its
+# own class MK_PCELL with an RT_DIAG containment check; before it, gc_blk_of returned the neighbour and the word was relocated by the neighbour's delta, silently. The arm REFUSES rc 2 in a release build.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -77,6 +79,14 @@ static __attribute__((noinline)) void *setup(void)
     garbage = (char *)0;
     return live;
 }
+static __attribute__((noinline)) void *setup_empty(void)
+{
+    char *e = (char *)rt_gcheap_alloc(HB_WSB, 0), *n = (char *)rt_gcheap_alloc(HB_WSB, 160);
+    fill(n, 160);
+    g_live_x = ~(uintptr_t)n;
+    n = (char *)0;
+    return e;
+}
 int main(int argc, char **argv)
 {
     int mode = argc > 1 ? atoi(argv[1]) : 0;
@@ -85,7 +95,8 @@ int main(int argc, char **argv)
     memset(g_root, 0, sizeof g_root);
     *(char **)g_root = g_root + HDR + 32 * 4;
     rt_gc_root_range_add_topword(g_root);
-    live = (char *)setup();
+    live = (char *)(mode == 7 ? setup_empty() : setup());
+    if (mode == 7) root_pptr(0, live, 0);
     if (mode == 1) root_pptr(0, live + 32, 3);
     if (mode == 3) root_pptr(0, g_outside + 8, 5);
     if (mode == 4) root_pptr(0, (void *)0, 0);
@@ -129,6 +140,12 @@ if [ "$(get "$O6A" moved)" = 1 ] && [ "$(get "$O6A" intact)" = 1 ] && [ "$(get "
 else bad "(6) the two pointers diverged: $O6A / $O6B"; fi
 S=$(for i in 1 2 3 4 5; do fx 1; done | sort -u | wc -l)
 if [ "$S" = 1 ]; then ok "(6b) arm 1 gave one answer in five runs"; else bad "(6b) arm 1 gave $S different answers in five runs (a stack-held pointer in the fixture, or a collector that depends on the address layout)"; fi
+R9=""; NMOUT=$(nm "$ROOT/out/libscrip_rt.so" 2> /dev/null)
+if grep -q ' gc_validate_heap$' <<< "$NMOUT"; then
+  ( ulimit -c 0; timeout 60 "$T/fx" 7 > "$T/o7.txt" 2> "$T/e7.txt" ); R7=$?
+  if [ "$R7" = 134 ] && grep -q '^\[GC-PCELL\] ' "$T/e7.txt"; then ok "(9) a pointer whose base is element 0 of an EMPTY object (the next block's header address) aborts by name in a diag build instead of being relocated by the neighbour's delta: $(head -1 "$T/e7.txt" | cut -c1-70)"
+  else bad "(9) a base at the end of an empty object (rc=$R7) was accepted: gc_blk_of took the NEIGHBOUR block, marked it and relocated the word by its delta, silently (cfo ruling, ceo-2073: the mark loop's own class MK_PCELL must check containment under RT_DIAG); stdout: $(head -1 "$T/o7.txt" | cut -c1-60)"; fi
+else R9="this is a release build (no gc_validate_heap in libscrip_rt.so), so arm 9's RT_DIAG containment check does not exist and cannot be measured"; fi
 WITS="hb_pas_interior_pointer hb_pas_pointers_to_globals hb_pas_pointers_in_a_procedure_frame"
 SETS="none:SCRIP_GC_STRESS=0 s3:SCRIP_GC_STRESS=3 s1:SCRIP_GC_STRESS=1 flip:SCRIP_GC_PLANT_FLIP=1,SCRIP_GC_POISON=1,SCRIP_GC_STRESS=1"
 for w in $WITS; do
@@ -158,5 +175,6 @@ SLID=$(awk '/^\[ZGC-WALK\]/ { m = 0; if (match($0, /moved=[0-9]+B/)) m = substr(
 if [ "$SLID" -ge 1 ]; then ok "(8) the heap slid under the live pointers: $SLID collection(s) reclaimed the dying 4096-byte string and moved live bytes, so arm 7 is not vacuous"
 else bad "(8) no collection reclaimed the 4096-byte string and moved live bytes after the pointers were taken: the witness no longer makes the array move, so arm 7 would pass a collector that never relocates the pointer"; fi
 echo "population: $N arm(s) graded"
+[ $RC -eq 0 ] && [ -n "$R9" ] && { echo "GATE REFUSE(2) [$G]: $R9"; exit 2; }
 [ $RC -eq 0 ] && echo "GATE PASS [$G]" || echo "GATE RED(1) [$G]: see the RED arms above (tree SCRIP=$(git -C "$ROOT" rev-parse --short HEAD 2> /dev/null))"
 exit $RC
