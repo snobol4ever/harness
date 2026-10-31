@@ -713,6 +713,7 @@ test_gate_pl_a_cyclic_term_hashes_in_finite_time.sh	WIRED	-	-	-
 test_gate_pl_a_dcg_pushback_is_translated_as_a_body_and_a_bare_brace_atom_is_an_empty_goal.sh	WIRED	-	-	-
 test_gate_pl_a_dict_expression_in_a_plunit_test_body_is_evaluated_inside_the_test_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_dict_expression_inside_a_control_construct_of_a_test_body_answers_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_a_directive_goal_wakes_an_attributed_variable_at_the_binding_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_directive_name_before_an_infix_operator_is_an_atom.sh	WIRED	-	-	-
 test_gate_pl_a_dollar_named_dynamic_predicate_is_dynamic_at_run_time.sh	WIRED	-	-	-
 test_gate_pl_a_double_quoted_text_holding_code_0_keeps_its_length_in_all_four_double_quotes_modes.sh	WIRED	-	-	-
