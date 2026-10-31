@@ -45,6 +45,7 @@ a partial in-place write. --apply is required to write anything; without it this
 
 Usage:
     util_add_ladder_witness.py --lang icon --origin ladder__rungNN_<slug> --source FILE.icn [--apply]
+    util_add_ladder_witness.py --lang pascal --origin ladder__rungNN_<slug> --source FILE.pas [--first-in-rung] [--apply]
 """
 import argparse
 import csv
@@ -64,6 +65,7 @@ ORACLE = {
     "snocone": ["/home/resources/x64/bin/sbl", "-bf"],  # ⛔ NOT RUNNABLE ON THE WITNESS -- see SNOCONE SUPPORT below
     "raku": ["/home/resources/rakudo-local/bin/raku"],  # Rakudo 2026.05, the ONE Raku oracle (rakudo_bin() in lib_oracle_flags.sh
     "prolog": ["/usr/bin/swipl", "-q", "-t", "halt"],  # THE SWI-Prolog oracle, swipl_bin() in lib_oracle_flags.sh; -q -t halt: the witness's own initialization(main) runs once and no toplevel is entered (cto, CEO-1959)
+    "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
 }
 # ⛔⭐ `-bf` IS NOT OPTIONAL AND NOT A PER-PROGRAM WORKAROUND (RULES sec Oracles, s189): SPITBOL case-folds
 # names by default and SCRIP is case-sensitive, so a ref cut without -f grades a different language, and plain
