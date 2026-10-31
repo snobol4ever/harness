@@ -4726,6 +4726,7 @@ def stage_upstream(companion_dir, name, td, ext):
         return None
     parts = mine.split("/")
     pre = "/".join(parts[:3])            # xsb/xsbtests/<top>
+    td = Path(td) / parts[2]            # the top test directory is a level of the run tree, so ../../<top>/<dir>/file reaches a sibling as upstream's does (prolog_tests mod_file_tests, CEO-1926)
     for n, up in src.items():
         if not up.startswith(pre + "/"):
             continue

@@ -26,6 +26,10 @@
 #                     (AttrVal and the target are its variables; a failing handler refuses the unification), attv_unify/2 binds an attributed variable without running its handler
 #   xbi11_import_clpr  :- import {}/1 from clpr. makes the constraint solver available (constraint_tests testlightmeal): inequalities over reals prune a search, an equation is solved for its unknown (floats),
 #                     a unification that violates a constraint fails
+#   xbi15_module_term_bound_at_run_time_loads_its_file  Mod = Name>>File held in a variable (or written in the goal): Mod:Goal loads File as the module Name on its first touch (a bare name beside the program, a relative path, an absolute
+#                     path from expand_filename/2) and calls the goal in it, a second call loads nothing, a module's private predicate does not meet another module's exported one (prolog_tests mod_file_tests test_mod_file)
+#   xbi16_parametrised_module_instances_and_static_import_of_a_module_term  par(A>>FA, B>>FB)>>File: the module par instantiated with the actual modules, the formals of :- module(par(f1,f2), _) or :- module_parameters(f1,f2)
+#                     replaced by the actuals inside the file, one file under two actual tuples is two modules; :- import P/N from Module [as Q/N] makes the predicate callable unqualified (test_mod_file, test_mod_file_im)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
