@@ -334,6 +334,22 @@ xsb_bin() {
     fi
     printf '%s\n' "$c"
 }
+# ⛔⭐⭐⭐ UNICON IS THE ORACLE FOR UNICON-ONLY PROGRAMS (Lon 2026-10-31, in-chat to the ceo, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."; ceo CEO-2072,
+# which supersedes the 2026-09-11 "Do not use Unicon for anything" ruling (CEO-570) for the superset's own surface and for nothing else). The Unicon translator `unicon` (the Unicon git drop d784f58, built in place under
+# /home/resources/unicon by build_unicon_oracle.sh) cuts the refs of the programs that carry the Unicon markers (class, package, import, method); Arizona icont/iconx (icont_bin/iconx_bin above) stay the oracle of plain Icon.
+# ⛔ The 2026-09-11 ruling's SECOND reason stands: Unicon is NEVER a normalizer. `unicon -E` rewrites a source (it inserts the semicolons the Icon reader leaves implicit), and a rewrite applied at grade time means the artifact graded
+# is not the artifact in the repo -- the source in the corpus IS the source (CEO-567). test_gate_no_bare_unicon_outside_the_accessor.sh holds both: the oracle is named one way, and no script runs it with -E. ORACLES.md, UNICON.
+UNICON_ORACLE_BIN="/home/resources/unicon/bin/unicon"
+unicon_bin() {
+    local c="$UNICON_ORACLE_BIN"
+    if [ ! -x "$c" ]; then
+        printf "⛔ THE UNICON ORACLE IS MISSING: %s\n" "$c" >&2
+        printf "   A Unicon ref cut or a column measured with it absent is not slow, it is ABSENT -- and a harness that fills it anyway publishes a false number.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to a bare 'unicon' on PATH (ORACLES.md, UNICON, CEO-2072) -- run build_unicon_oracle.sh, then re-run.\n" >&2
+        return 1
+    fi
+    printf '%s\n' "$c"
+}
 # ⛔⭐ JCON RE-EXECS BY NAME, SO THE ACCESSOR EXPORTS PATH -- CALLING IT BY ABSOLUTE PATH ALONE IS NOT ENOUGH (CEO s272,
 # measured: the launcher scripts resolve their siblings off PATH). Use as: eval "$(jcon_path_export)"; then run jcont/jcon.
 jcont_bin() {
