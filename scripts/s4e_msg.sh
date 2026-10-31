@@ -861,26 +861,42 @@ s4e_standing_boxes() {   # [<mode>] -> one standing seat per line
 # structural gap into an instruction is obeyed for a week and then not.
 # ⭐ IT CANNOT FAIL THE CLAIM. A lock that succeeded and an announcement that did not are two different facts, and
 # the seat owns the row either way; every delivery failure is COUNTED AND NAMED instead of aborting the take.
-s4e_announce_claim() {   # <topic> -- deliver the notice to every standing seat, then print the neighbourhood
-  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0
+s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every standing seat HOLDING A LIVE ROW IN THIS ROW'S LANE, then print the neighbourhood
+  # ⛔⭐ WHO IS TOLD (ceo CEO-2078, 2026-10-31). Measured over seven days: 6,446 bus messages, 3,288 of them claim notices, because every
+  # claim was mailed to every standing seat -- 27 to 31 a day in each inbox, three quarters of an HQ's mail, and the notice's own text
+  # admits a topic string cannot show the overlap. A notice in a mailbox nobody reads is the noise that trains seats to stop reading
+  # notices (this file's own words, above). The seats that CAN see a population overlap are the ones working a row in the same LANE
+  # (the topic's language prefix) or a lane-neutral row (zeta, spine, gc, headers, instruments: shared code overlaps everyone), plus the
+  # ceo, who arbitrates, plus the row's owner cell. Everyone else reads $PO/CLAIMS.log, one line per claim, whoever was mailed.
+  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _lang _cl _ct _recip=" ceo " _ocell _live=""
   _mode="$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')"
+  _lang="${_t%%-*}"; case " $(s4e_lane_languages) " in *" $_lang "*) ;; *) _lang="";; esac
+  _ocell="$(qrow "$_t" 2>/dev/null | cut -f3)"; [ -n "$_ocell" ] && _recip="$_recip$_ocell "
+  for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue
+    _own="$(head -1 "$_c" 2>/dev/null)"; _ct="$(basename "$_c" .claim)"
+    [ "$(s4e_claim_verdict "$_ct")" = "HELD" ] || continue
+    _cl="${_ct%%-*}"; case " $(s4e_lane_languages) " in *" $_cl "*) ;; *) _cl="";; esac
+    if [ -z "$_lang" ] || [ -z "$_cl" ] || [ "$_cl" = "$_lang" ]; then _recip="$_recip$_own "; fi
+    [ "$_own" = "$ME" ] && continue
+    _k=$((_k+1)); _live="$_live$(printf '  LIVE CLAIM  %-11s %s\n' "$_own" "$_ct")
+"
+  done
   for _s in $(s4e_standing_boxes "$_mode"); do
     [ "$_s" = "$ME" ] && continue
+    case "$_recip" in *" $_s "*) ;; *) continue;; esac
     _f="$PO/$_s/inbox/$(date +%s%N)-$ME-claim-notice-$_t.msg"
     if { printf 'FROM %s TO %s RE claim-notice-%s\n' "$ME" "$_s" "$_t"
          printf 'WORK STARTED: %s has taken the row %s at %s. This is the bus announcing a claim, not a request and not a question.\n' "$ME" "$_t" "$(date -u +%FT%TZ)"
-         printf 'If it overlaps what YOU are measuring -- by population, not by name, which is the overlap a topic string cannot see -- say so now rather than after a failed fast-forward (ceo CEO-1002).\n'; } > "$_f" 2>/dev/null; then
+         printf 'You hold a live row in this lane (or a shared-code row), so you are told; if it overlaps what YOU are measuring -- by population, not by name, which is the overlap a topic string cannot see -- say so now rather than after a failed fast-forward (ceo CEO-1002, CEO-2078).\n'; } > "$_f" 2>/dev/null; then
       _n=$((_n+1)); _list="$_list $_s"
     else _bad=$((_bad+1)); printf '⛔ COULD NOT ANNOUNCE to %s -- the row is YOURS regardless; the announcement is what failed\n' "$_s"; fi
   done
+  printf '%s\t%s\t%s\tlane=%s\tmailed=%s\n' "$(date -u +%FT%TZ)" "$ME" "$_t" "${_lang:-neutral}" "${_list:- none}" >> "$PO/CLAIMS.log" 2>/dev/null
   printf -- '-- the neighbourhood, read at the moment you took this row (ceo CEO-1002) --\n'
   printf '  announced to %d standing seat(s) under MODE %s:%s\n' "$_n" "${_mode:-ABSENT}" "${_list:- NONE}"
+  printf '  (the ceo and every standing seat holding a live row in lane %s; every other seat reads CLAIMS.log; CEO-2078)\n' "${_lang:-neutral}"
   [ "$_bad" -gt 0 ] && printf '  ⛔ %d announcement(s) FAILED and are named above -- do not read this line as delivery\n' "$_bad"
-  for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue
-    _own="$(head -1 "$_c" 2>/dev/null)"; [ "$_own" = "$ME" ] && continue
-    [ "$(s4e_claim_verdict "$(basename "$_c" .claim)")" = "HELD" ] || continue
-    _k=$((_k+1)); printf '  LIVE CLAIM  %-11s %s\n' "$_own" "$(basename "$_c" .claim)"
-  done
+  printf '%s' "$_live"
   if [ "$_k" -eq 0 ]; then printf '  (no other seat holds a row right now)\n'
   else printf '  ⛔ %d row(s) are being worked RIGHT NOW by other seats. Read them for a POPULATION you are about to\n     measure, not for a name that matches yours -- the 30-entry collision above matched on neither.\n' "$_k"; fi
   return 0; }
@@ -2252,6 +2268,24 @@ case "$cmd" in
               # hq_templates claimed zzz-nonexistent-row, the bus wrote claims/zzz-nonexistent-row.claim and announced it
               # fleet-wide, and s4e_set_row_state's no-op on a rowless topic was swallowed by its `|| true` below).
               [ -n "$(qrow "$topic")" ] || { echo "⛔ REFUSED (rc 2): no QUEUE.tsv row is named $topic -- a claim locks a row and there is none to lock; nothing written, nothing announced. Claim the row's exact topic, or ask the ceo to mint it."; exit 2; }
+              # ⛔⭐ A SEAT HOLDS AT MOST TWO LIVE ROWS (CLAUDE.md SOP 6; ceo CEO-2078, 2026-10-31). Measured: the coo held four and
+              # hq_templates three, every extra one waiting on another seat and held as a claim instead of parked, so the picker
+              # starved rows under them and the follow-up instrument flagged them stale for 41 hours. The remedy IS the park: a row
+              # in BLOCKED-ON:/PARKED-AWAITING:/PARKED state is not live here. An ASSIGNED-BY claim not yet RUNNING is the ceo's
+              # lock, not the seat's hold, and the "already yours" path above never meets this count: the go is never refused.
+              _cap_n=0; _cap_list=""
+              for _c2 in "$PO"/claims/*.claim; do [ -f "$_c2" ] || continue
+                [ "$(head -1 "$_c2" 2>/dev/null)" = "$ME" ] || continue
+                _c2t="$(basename "$_c2" .claim)"
+                if grep -q '^ASSIGNED-BY ' "$_c2" && ! grep -qx 'RUNNING' "$_c2"; then continue; fi
+                [ "$(s4e_claim_verdict "$_c2t")" = "HELD" ] || continue
+                case "$(s4e_row_state "$_c2t")" in BLOCKED-ON*|PARKED*) continue;; esac
+                _cap_n=$((_cap_n+1)); _cap_list="$_cap_list $_c2t"
+              done
+              if [ "$_cap_n" -ge 2 ]; then
+                echo "⛔ REFUSED (rc 1): $ME already holds $_cap_n live row(s):$_cap_list -- a seat holds at most two (CLAUDE.md SOP 6, ceo CEO-2078). Finish one (done), or park the one that waits on another seat: park <topic> BLOCKED-ON:<the row it waits for> -- then claim again. Nothing written, nothing announced."
+                exit 1
+              fi
               s4e_premise_gate "$topic" claim || exit 1
               t="$(mktemp "$PO/claims/.c.XXXXXX")"; echo "$ME" > "$t"
               if ln "$t" "$c" 2>/dev/null; then rm -f "$t"
