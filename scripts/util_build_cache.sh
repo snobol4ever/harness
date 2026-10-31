@@ -111,6 +111,7 @@ case "$verb" in
         [ -n "$(ls "$root/out/rt_pic-$tag"/*.o 2>/dev/null)" ] || { echo "build cache: no runtime objects under out/rt_pic-$tag, nothing published"; exit 0; }
         t="$CACHE/.tmp.$key.$$"
         rm -rf "$t"; mkdir -p "$t" || { echo "build cache: cannot write $CACHE, nothing published"; exit 0; }
+        grep -lE "(^|[[:space:]])/[^[:space:]]*/SCRIP/" "$root"/out/rt_pic-"$tag"/*.d 2>/dev/null | while IFS= read -r d; do sed -i -E "s#(^|[[:space:]])/[^[:space:]]*/SCRIP/#\1$root/#g" "$d"; done
         manifest > "$t/MANIFEST"
         while IFS= read -r f; do
             mkdir -p "$t/$(dirname "$f")"
