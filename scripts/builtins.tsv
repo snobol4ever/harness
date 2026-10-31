@@ -1202,3 +1202,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1202	pl	$mod_set	3	3	rt_pl_dop_mod_set	leaf	-	-	0	dop_direct
 1203	pl	$db_consult_t	1	1	rt_pl_dop_db_consult_t	leaf	-	-	0	dop_direct
 1204	pl	$db_consult_done	1	1	rt_pl_dop_db_consult_done	leaf	-	-	0	dop_direct
+1205	pas	__pas_addr	2	2	pas_addr	inline	-	-	0	dop_direct,pas
+1206	pas	__pas_addr_var	1	1	pas_addr_var	inline	-	-	0	dop_direct,pas
+1207	pas	__pas_ptr_inc	2	2	pas_ptr_inc	inline	-	-	0	dop_direct,pas
+1208	pas	__pas_ptr_eq	2	2	pas_ptr_eq	inline	-	-	0	dop_direct,pas
