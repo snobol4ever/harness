@@ -14,6 +14,8 @@
 #        the figure, --write-baseline refuses, and against an equal baseline every arm reads 0.
 # ARM 8  (control) util_objects_identical_stripped.sh: identical trees read objects=N identical=N differing=0 rc 0; one object recompiled with a different
 #        constant is named DIFF rc 1; an object in one tree only is named ONLY-A rc 1; a build-id directory suffix still pairs.
+# ARM 9  (control) the macro expansion is read: a unit naming a macro whose #define body names a header's identifier uses that header (step 2b), and a unit that
+#        names nothing of it still reads unused.
 # DECLARED RULING (reporting) at step 1a, BLOCKING at step 7 when every arm reads 0 (the page). It needs a built tree: fewer than 200 .d files is rc 2.
 # rc 0 green · rc 1 red · rc 2 could not measure.
 set -u
@@ -154,6 +156,20 @@ r="$(bash "$OBJ" "$A" "$B" 2>&1)"; rc=$?
 { [ "$rc" = 1 ] && printf '%s\n' "$r" | grep -q '^ONLY-A obj:rt_pic/f.o$'; } || { ok8=0; echo "         a missing object reads rc=$rc: $r"; }
 if [ "$ok8" = 1 ]; then echo "  ok   ARM 8: util_objects_identical_stripped.sh passes identical trees, names a changed object and a missing one, and pairs across a build-id suffix"
 else echo "  RED  ARM 8: the object comparison is not trustworthy"; fail=1; fi
+ok9=1
+mc="$T/mac"; mkdir -p "$mc/src" "$mc/obj"
+printf '#ifndef FN_H\n#define FN_H\nint mfn(int);\n#endif\n' > "$mc/src/fn.h"
+printf '#ifndef MAC_H\n#define MAC_H\n#define MAC_USE(x) (mfn(x) + 1)\n#endif\n' > "$mc/src/mac.h"
+printf '#include "mac.h"\n#include "fn.h"\nint m1(void) { return MAC_USE(1); }\n' > "$mc/src/m1.c"
+printf '#include "fn.h"\nint m2(void) { return 2; }\n' > "$mc/src/m2.c"
+printf 'm1.o: src/m1.c \\\n src/mac.h src/fn.h\n' > "$mc/obj/m1.d"
+printf 'm2.o: src/m2.c \\\n src/fn.h\n' > "$mc/obj/m2.d"
+mfan() { python3 -I "$FAN" --root "$mc" --obj "$mc/obj" --min-units 1 --base-file "$T/empty_base.tsv" --inline-file "$T/empty_inline.tsv" --baseline-file "$mc/baseline.tsv" "$@"; }
+mfan --unused 2>&1 | grep -q '^m1.c' && { ok9=0; echo "         m1.c names mfn only through MAC_USE and reads fn.h as unused"; }
+mfan --unused 2>&1 | grep -q '^m2.c.*fn.h' || { ok9=0; echo "         m2.c names nothing of fn.h and does not read as unused"; }
+mfan 2>&1 | awk -F'\t' '$7 == "fn.h" && $3 == 1 { f = 1 } END { exit !f }' || { ok9=0; echo "         fn.h does not read exactly one user: the macro expansion was not counted"; }
+if [ "$ok9" = 1 ]; then echo "  ok   ARM 9: a unit that names a macro whose expansion names a header's identifier uses that header, and a unit that names nothing of it still reads unused"
+else echo "  RED  ARM 9: the macro expansion is not read"; fail=1; fi
 s="$(printf '%s\n' "$out" | grep '^summary over=')"
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [no_header_reaches_more_units_than_its_users]: 8 arm(s) -- $s"; exit 0; fi
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [no_header_reaches_more_units_than_its_users]: 9 arm(s) -- $s"; exit 0; fi
 echo "GATE FAIL(1) [no_header_reaches_more_units_than_its_users]: $s"; exit 1

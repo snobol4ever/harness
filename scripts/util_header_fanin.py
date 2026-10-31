@@ -24,7 +24,10 @@
 # includes H by a quoted name. users(H) is the number of units whose own text, comments and strings removed, names an identifier H declares: a
 # macro, a typedef name, a struct, union or enum tag that has a body, an enum member, a function (prototype or definition), a variable; and the
 # member path "inst.field" when a header declares "extern T inst" and T has a field of a type H declares (g_runtime.gc names g_runtime_gc.h). The
-# include guard is no declaration. A header with two or more includes and no declaration of its own is an UMBRELLA. inline_bodies counts function
+# include guard is no declaration. A unit also names an identifier through a macro: when it names a macro defined in a header it reaches, the identifiers that
+# macro's expansion names (the #define body, parameters excluded, followed through macros that name macros) count as named by the unit, because the
+# expansion is the unit's own code (step 2b; a macro-only header such as bb_pl_cell.h, x86_armed.h or x86_gc.h then needs no family include of its own).
+# A header with two or more includes and no declaration of its own is an UMBRELLA. inline_bodies counts function
 # bodies in the header that run over more than one line or hold more than one statement (R3 allows an accessor, a predicate, a tag test).
 # The ceiling: fanin(H) <= users(H) + 4, and fanin(H) <= one third of the units for a header outside the base set.
 #
@@ -105,6 +108,25 @@ def preprocess(text):
                 joined.append(ln)
         k += 1
     return '\n'.join(out), macros, guard
+
+
+DEFINE = re.compile(r'^[ \t]*#[ \t]*define[ \t]+(\w+)(\([^)]*\))?[ \t]*(.*)$')
+
+
+def macro_bodies(raw):
+    """name -> the identifiers its expansion names (parameters excluded), from the #define lines with continuations joined, comments and strings removed."""
+    lines = strip_strings(strip_comments(raw)).split('\n')
+    out, k = {}, 0
+    while k < len(lines):
+        full = lines[k]
+        while full.rstrip().endswith('\\') and k + 1 < len(lines):
+            k += 1
+            full = full.rstrip()[:-1] + ' ' + lines[k]
+        k += 1
+        m = DEFINE.match(full)
+        if m:
+            out[m.group(1)] = set(WORD.findall(m.group(3))) - set(WORD.findall(m.group(2) or ''))
+    return out
 
 
 def declarator_names(stmt):
@@ -256,8 +278,13 @@ class Tree:
         self.units = sorted(self.unit_deps)
         self.headers = sorted(set(h for s in self.unit_deps.values() for h in s))
         self.info = {}
+        self.macro_defs = collections.defaultdict(list)
         for h in self.headers:
-            self.info[h] = scan_header(read(os.path.join(self.root, 'src', h)))
+            raw_h = read(os.path.join(self.root, 'src', h))
+            self.info[h] = scan_header(raw_h)
+            for nm, body in macro_bodies(raw_h).items():
+                self.macro_defs[nm].append((h, body))
+        self.eff = {}
         self.unit_text, self.unit_tokens, self.unit_includes = {}, {}, {}
         for u in self.units:
             raw = strip_comments(read(os.path.join(self.root, 'src', u)))
@@ -316,9 +343,27 @@ class Tree:
                         out[h].append(re.compile(r'\b%s\s*\.\s*%s\b' % (re.escape(inst), re.escape(fld))))
         return out
 
+    def tokens(self, u):
+        """The identifiers unit u names: its own, and those the expansion of every macro it names (defined in a header it reaches) names."""
+        t = self.eff.get(u)
+        if t is None:
+            t = set(self.unit_tokens[u])
+            deps = self.unit_deps[u]
+            todo = list(t)
+            while todo:
+                w = todo.pop()
+                for h, body in self.macro_defs.get(w, ()):
+                    if h in deps:
+                        for x in body:
+                            if x not in t:
+                                t.add(x)
+                                todo.append(x)
+            self.eff[u] = t
+        return t
+
     def names(self, u, h):
         ids = self.info[h][0]
-        if ids & self.unit_tokens[u]:
+        if ids & self.tokens(u):
             return True
         return any(rx.search(self.unit_text[u]) for rx in self.paths.get(h, ()))
 
