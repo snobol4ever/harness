@@ -20,7 +20,8 @@
 # touched newer than every source, so make's own rules and the freshness guard (gate_require_fresh, mtime against the newest tracked source)
 # read them as a build of this tree; out/buildinfo records key, tree, toolchain and FETCHED|BUILT. RETENTION: the newest 60 entries by last use
 # (<key>/.used, touched at every fetch), pruned at publish. S4E_NO_BUILD_CACHE=1 turns both directions off (the control arm);
-# S4E_BUILD_CACHE_DIR points a gate at a scratch cache. Never a symlink (CEO-1817).
+# S4E_BUILD_CACHE_DIR points a gate at a scratch cache. Never a symlink (CEO-1817). THE RPATH: a published or fetched binary must name its runtime as $ORIGIN-relative
+# (the Makefile since 2026-10-31 16:5x); an absolute rpath is the producer's root, so such an entry is neither published nor fetched (found on the cqo's root, which ran another seat's runtime).
 set -u
 CACHE="${S4E_BUILD_CACHE_DIR:-/home/resources/builds/scrip}"
 KEEP=60
@@ -43,6 +44,10 @@ clean() {
     [ -z "$(git -C "$root" status --porcelain 2>/dev/null | grep -v '^?? ')" ] || return 1
     [ -z "$(git -C "$root" status --porcelain --untracked-files=all -- src bootstrap Makefile 2>/dev/null | grep '^?? ')" ] || return 1
     return 0
+}
+rpath_is_own() {   # <binary> -- rc 0 when every rpath entry is $ORIGIN-relative (a fetched binary must find ITS root's out/, never its producer's)
+    local r; r="$(readelf -d "$1" 2>/dev/null | sed -n 's/.*(R\(UN\)\?PATH).*\[\(.*\)\].*/\2/p' | tr ':' '\n' | grep -v '^\$ORIGIN' | grep -c .)"
+    [ "${r:-0}" = 0 ]
 }
 required="scrip out/scrip-ipp out/libscrip_rt-$tag.so out/libscrip_rt.so"
 optional="out/scrip0 out/libscrip_rt0.so"
@@ -75,6 +80,7 @@ case "$verb" in
             touch "$e/.used" 2>/dev/null || true
             echo "FETCHED $key (already in place)"; exit 0
         fi
+        rpath_is_own "$e/scrip" && rpath_is_own "$e/out/scrip-ipp" || { echo "build cache: entry $key carries an absolute rpath (built before the \$ORIGIN Makefile), building locally"; exit 1; }
         n=0
         while IFS= read -r f; do
             [ -n "$f" ] || continue
@@ -97,6 +103,7 @@ case "$verb" in
         e="$CACHE/$key"
         [ -f "$e/MANIFEST" ] && { echo "build cache: $key already published"; exit 0; }
         for f in $required; do [ -f "$root/$f" ] || { echo "build cache: no $f, nothing published"; exit 0; }; done
+        for f in scrip out/scrip-ipp out/scrip0 out/parser_*; do [ -f "$root/$f" ] && ! rpath_is_own "$root/$f" && { echo "build cache: $f carries an absolute rpath (a binary that would load its producer's runtime in another root), nothing published"; exit 0; }; done
         [ -n "$(ls "$root/out/rt_pic-$tag"/*.o 2>/dev/null)" ] || { echo "build cache: no runtime objects under out/rt_pic-$tag, nothing published"; exit 0; }
         t="$CACHE/.tmp.$key.$$"
         rm -rf "$t"; mkdir -p "$t" || { echo "build cache: cannot write $CACHE, nothing published"; exit 0; }

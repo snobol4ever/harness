@@ -5,7 +5,8 @@ bash "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "
 # dirty tree build locally and publish nothing? THE FIXTURE: a scratch cache under mktemp (S4E_BUILD_CACHE_DIR), seeded by `publish` from THIS
 # root's own built artifacts (so the root must be clean and fresh: a dirty or stale root REFUSES, it cannot seed a truthful entry); a detached
 # worktree of SCRIP at HEAD with harness and corpus worktrees beside it; a PATH shim in front of gcc and g++ that logs every compiler start.
-#   arm 1  make in the worktree prints FETCHED <key>, the shim log is empty, the fetched scrip runs a program, the freshness guard admits it
+#   arm 1  make in the worktree prints FETCHED <key>, the shim log is empty, the fetched scrip runs a program, the freshness guard admits it, and
+#          the fetched scrip resolves libscrip_rt.so inside the WORKTREE (an $ORIGIN rpath), never in the producer's root
 #   arm 2  a second make reads "already in place" and starts nothing
 #   arm 3  a dirty worktree: fetch refuses DIRTY (rc 1) and publish stores nothing (the entry count is unchanged)
 #   arm 4  a different runtime tag is a different key: fetch reads MISS
@@ -64,6 +65,8 @@ if [ -x "$W/scrip" ]; then
     [ "$out" = "fetched" ] || red="$red arm1:fetched-scrip-does-not-run(got '$out')"
     ( cd "$W" && bash "$T/wt/harness/scripts/util_require_fresh.sh" --gate "$NAME" > "$T/fresh.log" 2>&1 ) || red="$red arm1:freshness-guard-refuses-the-fetched-binary"
     grep -q '^source FETCHED' "$W/out/buildinfo" 2>/dev/null || red="$red arm1:buildinfo-does-not-say-FETCHED"
+    rt="$(ldd "$W/scrip" 2>/dev/null | awk '/libscrip_rt/ {print $3}')"
+    case "$rt" in "$W"/out/libscrip_rt.so) ;; *) red="$red arm1:fetched-scrip-loads-another-roots-runtime($rt)";; esac
 fi
 # arm 2: idempotent
 if [ "$fetched" = 1 ]; then
