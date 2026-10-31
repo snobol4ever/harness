@@ -30,7 +30,6 @@
 *	src/lower/lower_common.c
 *	src/lower/lower_call_forms.c
 *	src/ir/call_forms.h
-*	src/lower/lower.h
 *	src/lower/g_lower.h
 *	src/parsers/g_parser.h
 *	src/lower/lc_vec.h
