@@ -42,6 +42,7 @@ USAGE: util_gen_gc_allocating_table.py [--so PATH] [--out PATH] | --check | --se
 """
 import argparse, collections, importlib.util, os, re, subprocess, sys, tempfile
 import difflib
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
@@ -51,86 +52,11 @@ DEFAULT_OUT = os.path.join(ROOT, "src", "templates", "x86", "gc_allocating_table
 RC_VOID, RC_DESCR, RC_OTHER, RC_UNKNOWN = "VOID", "DESCR", "OTHER", "UNKNOWN"
 RC_ENUM = {RC_VOID: "GC_RET_VOID", RC_DESCR: "GC_RET_DESCR", RC_OTHER: "GC_RET_OTHER", RC_UNKNOWN: "GC_RET_UNKNOWN"}
 
-def load_census():
-    spec = importlib.util.spec_from_file_location("gc_census", os.path.join(HERE, "util_gc_census.py"))
-    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
-    return m
-
-DIE_RX = re.compile(r'^\s*<\d+><([0-9a-f]+)>:\s+Abbrev Number:\s+\d+\s+\((DW_TAG_\w+)\)')
-AT_RX  = re.compile(r'^\s*<[0-9a-f]+>\s+(DW_AT_\w+)\s*:\s*(.*)$')
-REF_RX = re.compile(r'<0x([0-9a-f]+)>')
-TYPE_TAGS = {"DW_TAG_typedef", "DW_TAG_base_type", "DW_TAG_pointer_type", "DW_TAG_structure_type",
-             "DW_TAG_const_type", "DW_TAG_volatile_type", "DW_TAG_enumeration_type", "DW_TAG_union_type",
-             "DW_TAG_array_type", "DW_TAG_subroutine_type", "DW_TAG_unspecified_type", "DW_TAG_restrict_type"}
-
-def dwarf_return_classes(so, out=print):
-    """symbol -> return class, read out of the binary's own DWARF; disagreement between units reads UNKNOWN"""
-    try:
-        p = subprocess.Popen(["objdump", "--dwarf=info", so], stdout=subprocess.PIPE,
-                             stderr=subprocess.DEVNULL, text=True, errors="replace")
-    except OSError as e:
-        out(f"REFUSED(2): objdump --dwarf=info on {so} failed: {e}"); return None
-    types = {}
-    seen_by_name = collections.defaultdict(set)
-    off = tag = None; cur = {}
-    def flush():
-        nonlocal off, tag, cur
-        if off is not None:
-            if tag in TYPE_TAGS:
-                types[off] = (tag, cur.get("name"), cur.get("type"))
-            if tag == "DW_TAG_subprogram" and cur.get("name"):
-                seen_by_name[cur["name"]].add((cur.get("type"), "def" if cur.get("low_pc") else "decl"))
-        off = tag = None; cur = {}
-    for line in p.stdout:
-        m = DIE_RX.match(line)
-        if m:
-            flush(); off, tag, cur = m.group(1), m.group(2), {}; continue
-        if off is None: continue
-        m = AT_RX.match(line)
-        if not m: continue
-        k, v = m.group(1)[6:], m.group(2).strip()
-        if k == "name":
-            cur["name"] = v.split("): ")[-1] if v.startswith("(indirect") else v
-        elif k == "type":
-            r = REF_RX.match(v); cur["type"] = r.group(1) if r else None
-        elif k == "low_pc":
-            cur["low_pc"] = v
-    flush(); p.stdout.close(); p.wait()
-    if not types:
-        out(f"REFUSED(2): {so} carries no DWARF type information -- build it with -g or this table cannot be derived"); return None
-
-    def resolve(t):
-        hops = 0; walked = set()
-        while t is not None and hops < 64:
-            if t in walked: return RC_UNKNOWN
-            walked.add(t)
-            e = types.get(t)
-            if e is None: return RC_UNKNOWN
-            tg, nm, nxt = e
-            if tg == "DW_TAG_pointer_type" or tg == "DW_TAG_array_type" or tg == "DW_TAG_subroutine_type": return RC_OTHER
-            if tg == "DW_TAG_structure_type" or tg == "DW_TAG_union_type": return RC_DESCR if nm == "DESCR_t" else RC_OTHER
-            if tg == "DW_TAG_base_type" or tg == "DW_TAG_enumeration_type": return RC_OTHER
-            if tg == "DW_TAG_unspecified_type": return RC_UNKNOWN
-            t = nxt; hops += 1
-        return RC_UNKNOWN
-
-    cls = {}
-    for name, refs in seen_by_name.items():
-        got = set()
-        for tref, _kind in refs:
-            got.add(RC_VOID if tref is None else resolve(tref))
-        settled = got - {RC_UNKNOWN}
-        cls[name] = settled.pop() if len(settled) == 1 else (RC_UNKNOWN if len(settled) != 1 else RC_UNKNOWN)
-    return cls
+import lib_rt_alloc_derive as _A
 
 def build_rows(so, out=print):
-    census = load_census()
-    alloc = census.allocating_entries_from_binary(so, out=lambda *_a, **_k: None)
-    if alloc is None:
-        out(f"REFUSED(2): the allocating set could not be derived from {so}"); return None
-    cls = dwarf_return_classes(so, out=out)
-    if cls is None: return None
-    return sorted((s, cls.get(s, RC_UNKNOWN)) for s in alloc)
+    got = _A.derive(so, out=out)
+    return None if got is None else sorted(got.items())
 
 BANNER = "gc_allocating_table.inc"
 

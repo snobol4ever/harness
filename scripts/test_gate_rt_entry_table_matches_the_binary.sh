@@ -10,6 +10,9 @@
 #   arm 4  every row's symbol exists in out/libscrip_rt.so (defined and exported, or a libc import the row says is one)
 #   arm 5  rc and allocates agree with gc_allocating_table.inc row by row, the clobbers of every asm row are what the objects derive (util_gen_rt_entry_table.py --check-asm, which the leaf
 #          clobber gate also plants against), and conv=asm is exactly the symbols src/runtime/rtx registers (a table a later stage has deleted is skipped by name, never silently)
+#   arm 5b (STAGE 5c, the allocating half, the generator half: ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH 10 and 10.1) rc and allocates of EVERY row equal what the built libscrip_rt.so derives (lib_rt_alloc_derive.py: the call graph
+#          reaches rt_gcheap_alloc, tail jumps included, and the return class out of the DWARF), graded before the asm refusal so a stale clobber row cannot hide it; controls: an allocating row whose allocates is cleared,
+#          a non-allocating row that claims 1, and a row whose rc is widened from OTHER to DESCR each read red (arms 8b to 8d)
 #   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
 #   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
@@ -131,6 +134,13 @@ grade('arm 3: the union -- every symbol a template calls has a row (%d called)' 
 d, u = binary_symbols()
 nob = missing_in_binary(rows, d, u)
 grade('arm 4: every row\'s symbol exists in libscrip_rt.so (%d defined and exported, %d libc imports)' % (len({x['sym'] for x in rows} & d), len({x['sym'] for x in rows} & u - d)), not nob, 'not in the binary: %s' % nob[:12])
+try:
+    balloc = G.derive_alloc(ROOT)
+except OSError as e:
+    print('GATE REFUSE(2) [%s]: the allocating set could not be derived from the binary: %s' % (NAME, str(e)[:300]))
+    sys.exit(2)
+bad_b = G.alloc_disagreements(rows, balloc)
+grade('arm 5b: rc and allocates of all %d rows equal what the binary derives (%d symbols reach the allocator, %d rows allocate)' % (len(rows), len(balloc), sum(1 for x in rows if x['allocates'] == '1')), not bad_b, '%d disagree, e.g. %s' % (len(bad_b), '; '.join(bad_b[:3])))
 alloc = old_tables()
 asm = asm_symbols()
 bad = disagreements(rows, alloc, asm)
@@ -158,6 +168,18 @@ m = copy_rows()
 k = next(x for x in m if x['rc'] == 'DESCR')
 k['rc'] = 'VOID'
 grade('arm 8 (control): a wrong rc against the allocating table reads red', bool(disagreements(m, alloc, asm)) if alloc is not None else True)
+m = copy_rows()
+k = next(x for x in m if x['allocates'] == '1' and x['conv'] != 'asm' and x['sym'] in balloc)
+k['allocates'] = '0'
+grade('arm 8b (control): an allocating entry (%s) whose allocates is cleared reads red against the binary' % k['sym'], any('%s: allocates 0 but the binary reaches the allocator' % k['sym'] in x for x in G.alloc_disagreements(m, balloc)))
+m = copy_rows()
+k = next(x for x in m if x['allocates'] == '0' and x['sym'] not in balloc)
+k['allocates'] = '1'
+grade('arm 8c (control): a non-allocating entry (%s) that claims allocates 1 reads red against the binary' % k['sym'], any('%s: allocates 1 but the binary does not reach the allocator' % k['sym'] in x for x in G.alloc_disagreements(m, balloc)))
+m = copy_rows()
+k = next(x for x in m if x['rc'] == 'OTHER')
+k['rc'] = 'DESCR'
+grade('arm 8d (control): an entry (%s) whose return class is widened from OTHER to DESCR reads red against the binary -- the mutation that would spill an untagged long as a descriptor cell' % k['sym'], any('%s: rc DESCR but the binary says OTHER' % k['sym'] in x for x in G.alloc_disagreements(m, balloc)))
 m = [x for x in copy_rows() if x['sym'] != 'rt_zdp_ev']
 grade('arm 9 (control): a called symbol dropped from the table (rt_zdp_ev) reads red', 'rt_zdp_ev' in called - {x['sym'] for x in m})
 m = copy_rows()

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-# util_gen_rt_entry_table.py [--check | --write | --sync-decls | --sync-asm | --check-asm | --walker-table FILE] [--tsv FILE] [--out DIR] -- harness/scripts/rt_entries.tsv -> SCRIP/src/runtime/rt_entry_table.inc
+# util_gen_rt_entry_table.py [--check | --write | --sync-decls | --sync-asm | --check-asm | --sync-alloc | --check-alloc | --walker-table FILE] [--tsv FILE] [--out DIR] -- harness/scripts/rt_entries.tsv -> SCRIP/src/runtime/rt_entry_table.inc
 # (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; CEO-2019).
 #
 # rt_entries.tsv is the table of every runtime symbol emitted code calls: what rides rax:rdx at return (rc), whether the call graph reaches the allocator (allocates), which of the
 # four RTCC registers the entry hands back changed (clobbers), its calling convention (conv) and whether it may return an address the box jumps to (transfers). This writes the one
 # # .inc that carries it: the enums, rt_entry_t and g_rt_entries[RT_ENTRIES], laid out by util_reflow_200.py. STAGE 5a (history): nothing included the .inc and the two old derived tables
 # were the readers'. STAGE 5c, the clobber half, has landed: SCRIP/src/emitter/emit.cpp includes the .inc and emit_rtx_clob_mask scans g_rt_entries; rtx_clobber_table.inc and
-# util_gen_rtx_clobber_table.py are deleted. gc_allocating_table.inc stays the unwinder's until hq_collector's 5c row.
+# util_gen_rtx_clobber_table.py are deleted. STAGE 5c, the allocating half, has landed too: gc_allocating_table.inc and util_gen_gc_allocating_table.py are deleted, the unwinder (gc_heap.c) reads
+# g_rt_entries, and the rc and allocates columns are DERIVED from the built libscrip_rt.so (lib_rt_alloc_derive.py: the call graph reaches rt_gcheap_alloc, the return class out of the DWARF).
 # A dash in a column means no source states it (nothing is invented). --check regenerates in memory and compares with the file on disk (rc 0 current, rc 1 stale or the table invalid,
 # rc 2 cannot read); --write replaces it.
 # STAGE 5b (the declarations at the definitions): a runtime entry's conv and transfers are stated where it is DEFINED, as one textual statement
@@ -17,8 +18,9 @@
 # STAGE 5c (the asm entries): the emitter asks emit_rtx_clob_mask about EVERY registered asm-runtime entry (the rtx_entry_names registry RTX_FUNC and RTX_ENTRY append to) and answers 0 for a
 # name the table lacks, so the table carries every one of them (conv asm), not only the ones a template names. Their clobbers are DERIVED from the assembled objects by
 # lib_rtx_clobber_derive.py (util_rtx_abi_walk.py abstract-interprets every path). --sync-asm adds a row for each registered entry the table lacks (src clob,asm; rc and allocates by the
-# 5a rule from gc_allocating_table.inc while it exists) and rewrites the clobbers column of every asm row from the objects; --check-asm re-derives and compares (rc 0 current, 1 stale, 2 cannot
-# derive, nothing written on a refusal); --walker-table FILE writes the table in the walker's own row format ({ "sym", RTCC_C_R8|RTCC_C_R10 }, one row per stated clobbers) for a gate that holds a table to the walker.
+# 5c rule from the binary's derivation) and rewrites the clobbers column of every asm row from the objects; --check-asm re-derives and compares (rc 0 current, 1 stale, 2 cannot
+# derive, nothing written on a refusal); --sync-alloc rewrites the rc and allocates columns of every row from the binary (an entry whose body reaches an allocator gets allocates 1 and its DWARF return class;
+# every other row '-' and 0) and --check-alloc re-derives and compares (rc 0 FRESH, 1 STALE naming each row, 2 cannot derive, nothing written); --walker-table FILE writes the table in the walker's own row format ({ "sym", RTCC_C_R8|RTCC_C_R10 }, one row per stated clobbers) for a gate that holds a table to the walker.
 import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -116,12 +118,52 @@ def clob_text(regs):
     return '|'.join(r for r in ('r8', 'r9', 'r10', 'r11') if r in regs) or 'none'
 
 
-def alloc_rows(root):
-    """{sym: rc} read from gc_allocating_table.inc while it exists (it is hq_collector's until that row deletes it); {} when it is gone."""
-    p = os.path.join(root, 'src', 'templates', 'x86', 'gc_allocating_table.inc')
-    if not os.path.exists(p):
-        return {}
-    return {m.group(1): m.group(2) for m in re.finditer(r'\{\s*"([^"]+)",\s*GC_RET_(\w+)\s*\}', open(p, encoding='utf-8').read())}
+def derive_alloc(root):
+    """{sym: rc} for every function of the binary's allocating set (call graph to rt_gcheap_alloc, tail jumps included; the return class out of the DWARF); raises OSError when the binary cannot be read."""
+    sys.path.insert(0, HERE)
+    import lib_rt_alloc_derive as A
+    so = os.path.join(root, 'out', 'libscrip_rt.so')
+    if not os.path.exists(so):
+        raise OSError('no runtime binary at %s -- build first; a column derived from nothing measures nothing' % so)
+    lines = []
+    got = A.derive(so, out=lines.append)
+    if got is None:
+        raise OSError(' '.join(lines) or 'the allocating set could not be derived from %s' % so)
+    return got
+
+
+def alloc_disagreements(rows, alloc):
+    """The lines naming every row whose rc or allocates differs from the binary's derivation; empty when they agree. An entry whose body reaches an allocator with allocates 0 is the red that matters."""
+    bad = []
+    for r in rows:
+        s = r['sym']
+        if r['rc'] != alloc.get(s, '-'):
+            bad.append('%s: rc %s but the binary says %s' % (s, r['rc'], alloc.get(s, '-')))
+        if r['allocates'] != '-' and r['allocates'] != ('1' if s in alloc else '0'):
+            bad.append('%s: allocates %s but the binary %s' % (s, r['allocates'], 'reaches the allocator' if s in alloc else 'does not reach the allocator'))
+    return bad
+
+
+def sync_alloc(tsv, alloc):
+    """Make the rc and allocates columns of every row of tsv equal the derivation (a symbol in alloc: its class and 1; every other: '-' and 0) and the alloc token of src follow; returns the rows changed."""
+    top, rows, seen_header = [], [], False
+    for raw in open(tsv, encoding='utf-8').read().split('\n'):
+        if not raw:
+            continue
+        if not seen_header:
+            top.append(raw)
+            seen_header = not raw.startswith('#')
+            continue
+        rows.append(raw.split('\t'))
+    changed = 0
+    for f in rows:
+        before = list(f)
+        f[2], f[3] = alloc.get(f[0], '-'), '1' if f[0] in alloc else '0'
+        have = set(f[6].split(','))
+        f[6] = ','.join(t for t in ('call', 'alloc', 'clob', 'asm', 'import') if (t in have and t != 'alloc') or (t == 'alloc' and f[0] in alloc))
+        changed += f != before
+    open(tsv, 'w', encoding='utf-8').write('\n'.join(top + ['\t'.join(f) for f in rows]) + '\n')
+    return changed
 
 
 def derive_asm(root, rows=()):
@@ -282,6 +324,29 @@ def main(argv):
             return 1
         open(argv[argv.index('--walker-table') + 1], 'w', encoding='utf-8').write(text)
         return 0
+    if '--sync-alloc' in argv or '--check-alloc' in argv:
+        try:
+            xrows = validate(load(tsv))
+        except ValueError as e:
+            print('GATE RED: the table is invalid: %s' % e)
+            return 1
+        try:
+            alloc = derive_alloc(scrip)
+        except OSError as e:
+            print('REFUSED(2): the binary could not be read, nothing written: %s' % e)
+            return 2
+        if '--sync-alloc' in argv:
+            changed = sync_alloc(tsv, alloc)
+            print('synced %s from the binary: %d symbols reach the allocator, %d row(s) changed; now run --write' % (tsv, len(alloc), changed))
+            return 0
+        bad = alloc_disagreements(xrows, alloc)
+        if bad:
+            print('RT-ENTRY-ALLOC STALE: %d disagreement(s) between the table and the binary' % len(bad))
+            for b in bad[:8]:
+                print('   %s' % b)
+            return 1
+        print('RT-ENTRY-ALLOC FRESH entries=%d allocating=%d reached=%d' % (len(xrows), sum(1 for r in xrows if r['allocates'] == '1'), len(alloc)))
+        return 0
     if '--sync-asm' in argv or '--check-asm' in argv:
         try:
             xrows = validate(load(tsv))
@@ -294,7 +359,12 @@ def main(argv):
             print('REFUSED(2): the objects could not be read, nothing written: %s' % e)
             return 2
         if '--sync-asm' in argv:
-            added, changed = sync_asm(tsv, derived, alloc_rows(scrip))
+            try:
+                alloc = derive_alloc(scrip)
+            except OSError as e:
+                print('REFUSED(2): the binary could not be read, nothing written: %s' % e)
+                return 2
+            added, changed = sync_asm(tsv, derived, alloc)
             print('synced %s from the objects: %d registered asm entries, %d row(s) added, %d changed; now run --write' % (tsv, len(derived), added, changed))
             return 0
         try:
