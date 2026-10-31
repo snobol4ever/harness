@@ -396,6 +396,7 @@ test_gate_icn_the_zsm_reads_no_row_downstream_of_a_retained_generator_frame.sh	W
 test_gate_icn_traceback_corpus_pairs_are_oracle_exact.sh	WIRED	-	-	-
 test_gate_icn_traceback_names_the_source_file_not_the_last_argv.sh	WIRED	-	-	-
 test_gate_icn_traced_call_reports_its_own_call_site_line.sh	WIRED	-	-	-
+test_gate_icn_unicon_pattern_operators_parse_at_unicons_precedence.sh	WIRED	-	-	-
 test_gate_icn_unreferenced_linked_procedures_are_not_emitted.sh	WIRED	-	-	-
 test_gate_icn_version_keyword_is_the_oracles.sh	WIRED	-	-	-
 test_gate_icn_write_is_byte_exact_through_an_embedded_nul.sh	WIRED	-	-	-
