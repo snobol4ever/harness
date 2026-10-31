@@ -70,6 +70,7 @@ case "$verb" in
         echo "key=$key tree=${tree:0:12} tag=$tag $d $c entries=$(ls -d "$CACHE"/*/ 2>/dev/null | wc -l) cache=$CACHE"
         exit 0 ;;
     fetch)
+        if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: removing the stale out/scrip0 (absolute rpath, fetched before the \$ORIGIN Makefile)"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { echo "build cache OFF (S4E_NO_BUILD_CACHE=1)"; exit 1; }
         [ -d "$CACHE" ] || { echo "build cache: NO-CACHE-DIR $CACHE"; exit 1; }
         clean || { echo "build cache: DIRTY tree, building locally (key $key)"; exit 1; }
@@ -81,7 +82,6 @@ case "$verb" in
             echo "FETCHED $key (already in place)"; exit 0
         fi
         rpath_is_own "$e/scrip" && rpath_is_own "$e/out/scrip-ipp" || { echo "build cache: entry $key carries an absolute rpath (built before the \$ORIGIN Makefile), building locally"; exit 1; }
-        if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: removing the stale out/scrip0 (absolute rpath, fetched before the \$ORIGIN Makefile)"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         n=0
         while IFS= read -r f; do
             [ -n "$f" ] || continue
