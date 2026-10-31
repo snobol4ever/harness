@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # test_gate_rt_entry_table_matches_the_binary.sh -- THE RUNTIME ENTRY TABLE AND THE BINARY AGREE (DESIGN-PLAN zeta-layout step 5; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4;
 # CEO-2019). harness/scripts/rt_entries.tsv has one row per runtime symbol emitted code calls; util_gen_rt_entry_table.py writes SCRIP/src/runtime/rt_entry_table.inc from it.
-# STAGE 5a (this gate's first form): nothing reads the .inc yet, so the gate holds the table to the two things that are true today -- the built libscrip_rt.so and the two old
-# derived tables -- and to the templates that name the symbols:
+# STAGE 5c (the clobber half) has landed: the emitter reads the .inc (emit_rtx_clob_mask scans g_rt_entries), and the table carries every registered asm-runtime entry, not only the
+# ones a template names. The gate holds it to the built libscrip_rt.so, to gc_allocating_table.inc (until hq_collector's 5c row deletes it), to the assembled objects (the clobbers of
+# every asm row) and to the templates that name the symbols:
 #   arm 1  the table is valid and rt_entry_table.inc is what the generator writes
 #   arm 2  the table holds at least 160 rows (the plan's floor)
 #   arm 3  THE UNION: every symbol a template names in x86 call, call_bare or x86_rtcc_call has a row
 #   arm 4  every row's symbol exists in out/libscrip_rt.so (defined and exported, or a libc import the row says is one)
-#   arm 5  rc, allocates and clobbers agree with gc_allocating_table.inc and rtx_clobber_table.inc row by row, and conv=asm is exactly the symbols src/runtime/rtx declares
-#          (a table a later stage has deleted is skipped by name, never silently)
+#   arm 5  rc and allocates agree with gc_allocating_table.inc row by row, the clobbers of every asm row are what the objects derive (util_gen_rt_entry_table.py --check-asm, which the leaf
+#          clobber gate also plants against), and conv=asm is exactly the symbols src/runtime/rtx registers (a table a later stage has deleted is skipped by name, never silently)
 #   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
 #   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
@@ -73,17 +74,8 @@ def binary_symbols():
 
 
 def old_tables():
-    a, c = read('templates/x86/gc_allocating_table.inc'), read('templates/x86/rtx_clobber_table.inc')
-    alloc = None if a is None else {m.group(1): m.group(2) for m in re.finditer(r'\{\s*"([^"]+)",\s*GC_RET_(\w+)\s*\}', a)}
-    bit = {'RTCC_C_R8': 'r8', 'RTCC_C_R9': 'r9', 'RTCC_C_R10': 'r10', 'RTCC_C_R11': 'r11'}
-    clob = None
-    if c is not None:
-        clob = {}
-        for m in re.finditer(r'\{\s*"([^"]+)",\s*([^}]+?)\s*\}', c):
-            v = m.group(2).strip()
-            if m.group(1) != 'sym':
-                clob[m.group(1)] = 'none' if v == '0' else '|'.join(sorted((bit[x.strip()] for x in v.split('|')), key=lambda b: int(b[1:])))
-    return alloc, clob
+    a = read('templates/x86/gc_allocating_table.inc')
+    return None if a is None else {m.group(1): m.group(2) for m in re.finditer(r'\{\s*"([^"]+)",\s*GC_RET_(\w+)\s*\}', a)}
 
 
 def asm_symbols():
@@ -106,7 +98,7 @@ def asm_symbols():
     return out
 
 
-def disagreements(rows, alloc, clob, asm):
+def disagreements(rows, alloc, asm):
     bad = []
     for r in rows:
         s = r['sym']
@@ -115,8 +107,6 @@ def disagreements(rows, alloc, clob, asm):
                 bad.append('%s rc %s but the allocating table says %s' % (s, r['rc'], alloc.get(s, '-')))
             if r['allocates'] != '-' and r['allocates'] != ('1' if s in alloc else '0'):
                 bad.append('%s allocates %s but the allocating table says %s' % (s, r['allocates'], '1' if s in alloc else '0'))
-        if clob is not None and r['clobbers'] != clob.get(s, '-'):
-            bad.append('%s clobbers %s but the clobber table says %s' % (s, r['clobbers'], clob.get(s, '-')))
         if (r['conv'] == 'asm') != (s in asm):
             bad.append('%s conv %s but rtx %s it' % (s, r['conv'], 'declares' if s in asm else 'does not declare'))
     return bad
@@ -141,11 +131,17 @@ grade('arm 3: the union -- every symbol a template calls has a row (%d called)' 
 d, u = binary_symbols()
 nob = missing_in_binary(rows, d, u)
 grade('arm 4: every row\'s symbol exists in libscrip_rt.so (%d defined and exported, %d libc imports)' % (len({x['sym'] for x in rows} & d), len({x['sym'] for x in rows} & u - d)), not nob, 'not in the binary: %s' % nob[:12])
-alloc, clob = old_tables()
+alloc = old_tables()
 asm = asm_symbols()
-bad = disagreements(rows, alloc, clob, asm)
-skipped = [n for n, t in (('gc_allocating_table.inc', alloc), ('rtx_clobber_table.inc', clob)) if t is None]
-grade('arm 5: rc, allocates, clobbers and conv=asm agree with the old tables and rtx%s' % ((' (skipped, deleted: %s)' % ', '.join(skipped)) if skipped else ''), not bad, '; '.join(bad[:5]))
+bad = disagreements(rows, alloc, asm)
+ca = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'util_gen_rt_entry_table.py'), '--check-asm'], capture_output=True, text=True)
+if ca.returncode == 2:
+    print('GATE REFUSE(2) [%s]: the asm clobbers could not be derived from the objects: %s' % (NAME, (ca.stdout + ca.stderr).strip()[:300]))
+    sys.exit(2)
+if ca.returncode != 0:
+    bad += [x.strip() for x in ca.stdout.splitlines()[:6]]
+skipped = [n for n, t in (('gc_allocating_table.inc', alloc),) if t is None]
+grade('arm 5: rc and allocates agree with the allocating table, the clobbers of every asm row with the objects (--check-asm, %s), and conv=asm is exactly the registered asm entries%s' % (ca.stdout.strip()[:44], (' (allocating table skipped, deleted: %s)' % ', '.join(skipped)) if skipped else ''), not bad, '; '.join(bad[:5]))
 x86 = read('templates/x86/x86_asm.h')
 bits = dict(re.findall(r'#define RTCC_C_(R\d+) (\d+)u', x86))
 grade('arm 6: the RT_CLOB_ bits are the RTCC_C_ bits of x86_asm.h', {k.lower(): int(v) for k, v in bits.items()} == G.CLOB, 'x86_asm.h has %s, the generator has %s' % (bits, G.CLOB))
@@ -161,7 +157,7 @@ def copy_rows():
 m = copy_rows()
 k = next(x for x in m if x['rc'] == 'DESCR')
 k['rc'] = 'VOID'
-grade('arm 8 (control): a wrong rc against the allocating table reads red', bool(disagreements(m, alloc, clob, asm)) if alloc is not None else True)
+grade('arm 8 (control): a wrong rc against the allocating table reads red', bool(disagreements(m, alloc, asm)) if alloc is not None else True)
 m = [x for x in copy_rows() if x['sym'] != 'rt_zdp_ev']
 grade('arm 9 (control): a called symbol dropped from the table (rt_zdp_ev) reads red', 'rt_zdp_ev' in called - {x['sym'] for x in m})
 m = copy_rows()
@@ -206,10 +202,10 @@ flip = [dict(x) for x in rows]
 t = next((x for x in flip if x['conv'] == 'asm'), None)
 if t is not None:
     t['conv'] = 'leaf'
-grade('arm 19 (control): the asm set is the binary\'s rtx_entry_names section (%d names) and an asm row booked leaf reads red against it' % len(asm_real), len(asm_real) > 100 and t is not None and any('conv leaf but rtx declares it' in x for x in disagreements(flip, None, None, asm_real)))
+grade('arm 19 (control): the asm set is the binary\'s rtx_entry_names section (%d names) and an asm row booked leaf reads red against it' % len(asm_real), len(asm_real) > 100 and t is not None and any('conv leaf but rtx declares it' in x for x in disagreements(flip, None, asm_real)))
 print('%s: graded=%d fails=%d' % (NAME, graded, fails))
 if fails:
     print('⛔ GATE RED [%s]: %d of %d arm(s) failed' % (NAME, fails, graded))
     sys.exit(1)
-print('GATE PASS(0) [%s]: %d arm(s) -- %d runtime entries, each in the binary, each agreeing with the two old tables, every symbol a template calls named' % (NAME, graded, len(rows)))
+print('GATE PASS(0) [%s]: %d arm(s) -- %d runtime entries, each in the binary, each agreeing with the allocating table and the objects, every symbol a template calls named' % (NAME, graded, len(rows)))
 PY

@@ -13,8 +13,8 @@
 # A PUSH counted is a push of rbx, rbp or r8 to r15. A body is EXEMPT only when BOTH hold, each computed every run:
 #   (a) no emitted code calls it: no witness .s names it -- every committed corpus *.s artifact plus fresh mode-4 compiles of
 #       the first two corpus/benchmarks programs of each of the seven languages (the no-veneer gate's witness set);
-#   (b) no file under src/emitter or src/templates names it outside the generated rtx_clobber_table.inc (mode 3 calls by a
-#       baked address the emitter must name).
+#   (b) no file under src/emitter or src/templates names it (the generated entry table src/runtime/rt_entry_table.inc, which names every registered entry,
+#       lies outside both trees; mode 3 calls by a baked address the emitter must name).
 # NEGATIVE-TESTED IN EVERY RUN, per exempt body: a witness with an emitted GOT call to it, and a template file naming it, read
 # through the same matcher, must each name it (PUSH_PLANT), so it would be COUNTED; a plant that is not seen refuses rc 2.
 #
@@ -85,7 +85,7 @@ wits = sorted(glob.glob(os.path.join(work, 'wit', '*.s'))) + [p for p in open(os
 srcs = []
 for d in ('src/emitter', 'src/templates'):
     for dp, _, fs in os.walk(os.path.join(root, d)):
-        srcs += [os.path.join(dp, f) for f in fs if f != 'rtx_clobber_table.inc']
+        srcs += [os.path.join(dp, f) for f in fs]
 if len(srcs) < 10: print('REFUSED(2): only %d emitter and template files found' % len(srcs)); sys.exit(2)
 def named(paths, names):
     nf = os.path.join(work, 'names.txt')

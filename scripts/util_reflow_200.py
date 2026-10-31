@@ -27,7 +27,7 @@ import os, re, sys, subprocess
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP")
 EXTS = (".c", ".h", ".cpp", ".hpp", ".inc")
-NEVER = re.compile(r"(/parsers/|gc_allocating_table\.inc|rtx_clobber_table|\.reflow_tmp\.)")
+NEVER = re.compile(r"(/parsers/|gc_allocating_table\.inc|\.reflow_tmp\.)")
 SEP_RX = re.compile(r"^\s*/\*([-=])\1{3,}\*/\s*$")
 TOK = re.compile(r"""
     (?P<ws>[ \t\r\f\v]+) | (?P<nl>\n) | (?P<bc>/\*[\s\S]*?\*/) | (?P<lc>//[^\n]*) | (?P<str>L?"(?:\\[\s\S]|[^"\\\n])*") | (?P<chr>L?'(?:\\[\s\S]|[^'\\\n])*')

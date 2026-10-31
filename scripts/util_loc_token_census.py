@@ -4,7 +4,7 @@ SUB-FOLDER (Lon 2026-10-08 16:1x CDT, in-chat to the ceo, verbatim: "It is time 
 number of tokens for hand-written code excluding parsers by SCRIP/src sub-folders."). A MEASUREMENT: it writes nothing.
   The population: every .c .h .cpp .hpp .inc .s .S .y .l file under src/ (default --root src), less every file under an excluded
   sub-folder (default: parsers) and less every GENERATED file -- one whose first twelve lines say generated, DO NOT EDIT, or carry a
-  bison/flex banner, or whose name is a known generated table (gc_allocating_table.inc, rtx_clobber_table*, *.tab.c, *.tab.h, *.lex.c,
+  bison/flex banner, or whose name is a known generated table (gc_allocating_table.inc, *.tab.c, *.tab.h, *.lex.c,
   *.yy.c). Lines are counted three ways: total, non-blank, and code (non-blank and not a bare separator line of the /*----*/ or /*====*/
   form). Tokens are C tokens -- identifiers, numbers, string and character literals (one token each), operators and punctuators, with
   comments and whitespace dropped -- for C, C++ and .inc files; for .s files the assembler's tokens (names, numbers, punctuation) with
@@ -15,7 +15,7 @@ import os, re, sys
 
 ROOT_DEFAULT = os.path.join(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "SCRIP"), "src")
 EXTS = (".c", ".h", ".cpp", ".hpp", ".inc", ".s", ".S", ".y", ".l")
-GEN_NAMES = re.compile(r"(gc_allocating_table\.inc|rtx_clobber_table|\.tab\.[ch]$|\.lex\.c$|\.yy\.c$|lex\.[a-z0-9_]+\.c$)")
+GEN_NAMES = re.compile(r"(gc_allocating_table\.inc|\.tab\.[ch]$|\.lex\.c$|\.yy\.c$|lex\.[a-z0-9_]+\.c$)")
 GEN_WORDS = re.compile(r"generated|DO NOT EDIT|A Bison parser|flex|made by GNU Bison", re.I)
 C_TOKEN = re.compile(r"""
     L?"(?:\\.|[^"\\\n])*"            # string literal

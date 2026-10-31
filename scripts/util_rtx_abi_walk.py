@@ -28,7 +28,7 @@ cannot see through, a local call) is reported UNANALYZABLE and counts as a viola
 refuses to certify a body it could not read.
 
 Usage: util_rtx_abi_walk.py OBJ... [--entries FILE] [--table TABLE]   (FILE: one name per line, the registry; every
-global function the objects define must be in it; TABLE: the generated src/templates/x86/rtx_clobber_table.inc --
+global function the objects define must be in it; TABLE: rows { "sym", RTCC_C_R8|... } as util_gen_rt_entry_table.py --walker-table writes them from rt_entries.tsv --
 under it a register an entry's row records is the contract (ARCH-RT-CALL-PROTOCOL.md section 15: the emitted site
 re-establishes it), a nested call takes on its callee's recorded set, and an unrecorded write stays a violation). Exit 0 = every entry proven, 1 = violations,
 2 = could not measure.

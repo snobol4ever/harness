@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-# util_gen_rt_entry_table.py [--check | --write | --sync-decls] [--tsv FILE] [--out DIR] -- harness/scripts/rt_entries.tsv -> SCRIP/src/runtime/rt_entry_table.inc
+# util_gen_rt_entry_table.py [--check | --write | --sync-decls | --sync-asm | --check-asm | --walker-table FILE] [--tsv FILE] [--out DIR] -- harness/scripts/rt_entries.tsv -> SCRIP/src/runtime/rt_entry_table.inc
 # (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; CEO-2019).
 #
 # rt_entries.tsv is the table of every runtime symbol emitted code calls: what rides rax:rdx at return (rc), whether the call graph reaches the allocator (allocates), which of the
 # four RTCC registers the entry hands back changed (clobbers), its calling convention (conv) and whether it may return an address the box jumps to (transfers). This writes the one
-# .inc that carries it: the enums, rt_entry_t and g_rt_entries[RT_ENTRIES], laid out by util_reflow_200.py. STAGE 5a: nothing includes the .inc yet; the old derived tables
-# (gc_allocating_table.inc, rtx_clobber_table.inc) stay the readers' until stage 5c, and the gate holds the two sides to each other row by row.
+# # .inc that carries it: the enums, rt_entry_t and g_rt_entries[RT_ENTRIES], laid out by util_reflow_200.py. STAGE 5a (history): nothing included the .inc and the two old derived tables
+# were the readers'. STAGE 5c, the clobber half, has landed: SCRIP/src/emitter/emit.cpp includes the .inc and emit_rtx_clob_mask scans g_rt_entries; rtx_clobber_table.inc and
+# util_gen_rtx_clobber_table.py are deleted. gc_allocating_table.inc stays the unwinder's until hq_collector's 5c row.
 # A dash in a column means no source states it (nothing is invented). --check regenerates in memory and compares with the file on disk (rc 0 current, rc 1 stale or the table invalid,
 # rc 2 cannot read); --write replaces it.
 # STAGE 5b (the declarations at the definitions): a runtime entry's conv and transfers are stated where it is DEFINED, as one textual statement
@@ -13,6 +14,11 @@
 # anywhere under SCRIP/src (hq_runtime defines the macro however it likes: it may emit a record into a section the binary carries; the text is what this reads). decl_disagreements()
 # holds the table to the declarations: a row (an asm entry and a libc import excepted) with no declaration, a symbol declared twice, a conv or transfers that differs, a declaration
 # with no row. --sync-decls rewrites the table's conv and transfers columns from the declarations, so the table is derived from them and the gate reads them equal.
+# STAGE 5c (the asm entries): the emitter asks emit_rtx_clob_mask about EVERY registered asm-runtime entry (the rtx_entry_names registry RTX_FUNC and RTX_ENTRY append to) and answers 0 for a
+# name the table lacks, so the table carries every one of them (conv asm), not only the ones a template names. Their clobbers are DERIVED from the assembled objects by
+# lib_rtx_clobber_derive.py (util_rtx_abi_walk.py abstract-interprets every path). --sync-asm adds a row for each registered entry the table lacks (src clob,asm; rc and allocates by the
+# 5a rule from gc_allocating_table.inc while it exists) and rewrites the clobbers column of every asm row from the objects; --check-asm re-derives and compares (rc 0 current, 1 stale, 2 cannot
+# derive, nothing written on a refusal); --walker-table FILE writes the table in the walker's own row format ({ "sym", RTCC_C_R8|RTCC_C_R10 }, one row per stated clobbers) for a gate that holds a table to the walker.
 import os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -106,11 +112,88 @@ def sync_decls(tsv, decls):
     return n
 
 
+def clob_text(regs):
+    return '|'.join(r for r in ('r8', 'r9', 'r10', 'r11') if r in regs) or 'none'
+
+
+def alloc_rows(root):
+    """{sym: rc} read from gc_allocating_table.inc while it exists (it is hq_collector's until that row deletes it); {} when it is gone."""
+    p = os.path.join(root, 'src', 'templates', 'x86', 'gc_allocating_table.inc')
+    if not os.path.exists(p):
+        return {}
+    return {m.group(1): m.group(2) for m in re.finditer(r'\{\s*"([^"]+)",\s*GC_RET_(\w+)\s*\}', open(p, encoding='utf-8').read())}
+
+
+def derive_asm(root):
+    """{entry: clobbers text} for every registered asm-runtime entry, derived from the assembled objects; raises OSError when the objects cannot be read."""
+    sys.path.insert(0, HERE)
+    import lib_rtx_clobber_derive as D
+    table, why = D.derive(root)
+    if table is None:
+        raise OSError(why)
+    return {n: clob_text(regs) for n, regs in table.items()}
+
+
+def sync_asm(tsv, derived, alloc):
+    """Make the asm rows of tsv equal the derivation: a row for every registered entry (a new one is conv asm, src [alloc,]clob,asm, rc and allocates by the 5a rule from alloc), the clobbers
+    column of every one rewritten from the objects, asm and clob added to a row's src; the data rows are written sorted by sym. Returns (rows added, rows changed)."""
+    top, rows, seen_header = [], [], False
+    for raw in open(tsv, encoding='utf-8').read().split('\n'):
+        if not raw:
+            continue
+        if not seen_header:
+            top.append(raw)
+            seen_header = not raw.startswith('#')
+            continue
+        rows.append(raw.split('\t'))
+    by, added, changed = {f[0]: f for f in rows}, 0, 0
+    for name in sorted(derived):
+        f = by.get(name)
+        if f is None:
+            f = [name, 'asm', alloc.get(name, '-'), '1' if name in alloc else '0', derived[name], '-', ','.join((['alloc'] if name in alloc else []) + ['clob', 'asm'])]
+            rows.append(f)
+            by[name] = f
+            added += 1
+            continue
+        before = list(f)
+        f[1], f[4] = 'asm', derived[name]
+        have = set(f[6].split(','))
+        f[6] = ','.join(t for t in ('call', 'alloc', 'clob', 'asm', 'import') if t in have or t in ('clob', 'asm'))
+        changed += f != before
+    rows.sort(key=lambda f: f[0])
+    open(tsv, 'w', encoding='utf-8').write('\n'.join(top + ['\t'.join(f) for f in rows]) + '\n')
+    return added, changed
+
+
+def asm_disagreements(rows, derived):
+    """The lines naming every way the table's asm rows and the objects differ; empty when they agree."""
+    bad, bysym = [], {r['sym']: r for r in rows}
+    for name in sorted(derived):
+        r = bysym.get(name)
+        if r is None:
+            bad.append('%s: a registered asm entry with no row' % name)
+        elif r['conv'] != 'asm':
+            bad.append('%s: registered by rtx but its row says conv %s' % (name, r['conv']))
+        elif r['clobbers'] != derived[name]:
+            bad.append('%s: the table says clobbers %s, the objects say %s' % (name, r['clobbers'], derived[name]))
+    for r in rows:
+        if r['conv'] == 'asm' and r['sym'] not in derived:
+            bad.append('%s: conv asm but no object registers it' % r['sym'])
+    return bad
+
+
+def walker_table(rows):
+    """The walker's own table text: one { "sym", RTCC_C_R8|... } row per stated clobbers ('0' for none)."""
+    bit = {'r8': 'RTCC_C_R8', 'r9': 'RTCC_C_R9', 'r10': 'RTCC_C_R10', 'r11': 'RTCC_C_R11'}
+    return ''.join('    { "%s", %s },\n' % (r['sym'], '0' if r['clobbers'] == 'none' else '|'.join(bit[x] for x in r['clobbers'].split('|')))
+                   for r in sorted(rows, key=lambda r: r['sym']) if r['clobbers'] != '-')
+
+
 def validate(raw):
     rows, seen = [dict(r) for r in raw], {}
     for r in rows:
         w = 'rt_entries.tsv:%d (%s)' % (r['ln'], r['sym'])
-        if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', r['sym']):
+        if not re.match(r'^[^\W\d]\w*$', r['sym']):
             raise ValueError(w + ': sym is not a C identifier')
         if r['sym'] in seen:
             raise ValueError(w + ': the same sym as row %d' % seen[r['sym']])
@@ -179,6 +262,37 @@ def main(argv):
         src = os.path.join(HERE, '..', '..', 'SCRIP', 'src')
         n = sync_decls(tsv, find_decls(src))
         print('synced %d row(s) of %s from the RT_ENTRY_DECL statements under %s; now run --write' % (n, tsv, os.path.abspath(src)))
+        return 0
+    scrip = os.path.abspath(os.path.join(HERE, '..', '..', 'SCRIP'))
+    if '--walker-table' in argv:
+        try:
+            text = walker_table(validate(load(tsv)))
+        except ValueError as e:
+            print('GATE RED: the table is invalid: %s' % e)
+            return 1
+        open(argv[argv.index('--walker-table') + 1], 'w', encoding='utf-8').write(text)
+        return 0
+    if '--sync-asm' in argv or '--check-asm' in argv:
+        try:
+            derived = derive_asm(scrip)
+        except OSError as e:
+            print('REFUSED(2): the objects could not be read, nothing written: %s' % e)
+            return 2
+        if '--sync-asm' in argv:
+            added, changed = sync_asm(tsv, derived, alloc_rows(scrip))
+            print('synced %s from the objects: %d registered asm entries, %d row(s) added, %d changed; now run --write' % (tsv, len(derived), added, changed))
+            return 0
+        try:
+            bad = asm_disagreements(validate(load(tsv)), derived)
+        except ValueError as e:
+            print('GATE RED: the table is invalid: %s' % e)
+            return 1
+        if bad:
+            print('RT-ENTRY-ASM STALE: %d disagreement(s) between the table and the objects' % len(bad))
+            for b in bad[:8]:
+                print('   %s' % b)
+            return 1
+        print('RT-ENTRY-ASM FRESH entries=%d clobbering=%d' % (len(derived), sum(1 for v in derived.values() if v != 'none')))
         return 0
     try:
         rows = validate(load(tsv))

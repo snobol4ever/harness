@@ -329,8 +329,9 @@ registry "$WORK/real/entries.txt" "${objs[@]}"
 n_entries=$(grep -c . "$WORK/real/entries.txt")
 echo "=== THE REAL RUNTIME: ${#objs[@]} objects, $n_entries registered entries ==="
 if [ "$n_entries" -lt "$FLOOR" ]; then echo "REFUSED(2): the registry names $n_entries entries, under the floor of $FLOOR -- nothing would be walked"; exit 2; fi
-TABLE="$ROOT/src/templates/x86/rtx_clobber_table.inc"
-[ -f "$TABLE" ] || { echo "REFUSED(2): the generated clobber table $TABLE is missing"; exit 2; }
+TABLE="$WORK/real/walker_table.inc"
+python3 "$ROOT/../harness/scripts/util_gen_rt_entry_table.py" --walker-table "$TABLE" || { echo "REFUSED(2): the runtime entry table (harness/scripts/rt_entries.tsv) could not be written in the walker's row format"; exit 2; }
+[ -s "$TABLE" ] || { echo "REFUSED(2): the runtime entry table states no clobbers, so there is no contract to hold the objects to ($TABLE is empty)"; exit 2; }
 printf '%s\n' '    { "inj_recorded", RTCC_C_R8|RTCC_C_R10 },' > "$WORK/inj/table.inc"
 ( python3 "$WALK" "${objs[@]}" --entries "$WORK/real/entries.txt" --table "$TABLE" > "$WORK/real.out" 2>&1; echo $? > "$WORK/real.rc" ) &
 ( python3 "$WALK" "$WORK/inj/inj_ok.o" --entries "$WORK/inj/inj_ok.entries" --table "$WORK/inj/table.inc" > "$WORK/inj_ok.out" 2>&1; echo $? > "$WORK/ok.rc" ) &

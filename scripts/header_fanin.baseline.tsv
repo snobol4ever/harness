@@ -472,7 +472,6 @@ hdr	templates/bb/bb_pl_leaf_kinds.h	3	3	0	0
 hdr	templates/bb/bb_template_common.h	135	131	0	0
 hdr	templates/bb/bb_templates.h	46	129	1	0
 hdr	templates/x86/gc_allocating_table.inc	1	1	0	0
-hdr	templates/x86/rtx_clobber_table.inc	1	1	0	0
 hdr	templates/x86/rtx_twin_table.inc	1	0	0	0
 hdr	templates/x86/x86_arg_roles.h	150	1	0	1
 hdr	templates/x86/x86_asm.h	149	207	310	1
