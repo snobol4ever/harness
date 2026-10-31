@@ -1071,6 +1071,7 @@ test_gate_raku_set_bag_mix_are_typed_values_as_rakudo_has_them.sh	WIRED	-	-	-
 test_gate_raku_sprintf_under_use_v6e_agrees_with_rakudos_own_b_d_e_f_o_s_u_x_spec_tables.sh	WIRED	-	-	-
 test_gate_raku_sprintf_without_use_v6e_agrees_with_rakudos_own_6d_b_d_e_f_o_s_u_x_spec_tables.sh	WIRED	-	-	-
 test_gate_raku_string_zero_is_true_and_the_string_function_forms_agree_with_rakudo.sh	WIRED	-	-	-
+test_gate_raku_test_module_is_setting_raku.sh	WIRED	-	-	-
 test_gate_raku_the_activation_frame_is_carved_and_released_by_the_emitted_prologue.sh	WIRED	-	-	-
 test_gate_raku_the_bare_dispatcher_words_samewith_and_the_implicit_at_underscore_of_anonymous_routines_agree_with_rakudo.sh	WIRED	-	-	-
 test_gate_raku_the_bare_dollar_and_the_item_and_hash_contextualizers_agree_with_rakudo.sh	WIRED	-	-	-

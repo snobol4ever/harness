@@ -13,6 +13,11 @@
 # be 0, then under SCRIP_GC_STRESS 1 3 5 in both modes: a plain subtest, a closure body that reads a parameter and writes a local of its sub, nested subtests under a plan, an unnamed
 # subtest, the comma form, a subtest's value, subtests in a loop body reading the loop variable, and a body that loops and sums into its sub's local.
 # FAILED ONCE, measured on SCRIP 8f5f2f7ac before the cure: rc 139 at the first subtest in both modes.
+# RE-CUT 2026-10-31 (cao, CEO-2044/2045, ARCH-RAKU-TO-100 section 6 step 0): Test is Raku source in the setting, so `subtest` is an ordinary Raku sub
+# and its body an ordinary block parameter, invoked from the setting's emitted code by `$code()`. That invocation reaches the block through the generic
+# block-call road, rt_call_open_tail_lex (`lex.open __blk_N`: the C half returns the address and the box jumps, CEO-1576's own pattern), one per body run,
+# exactly as a user program's `sub f($c) { $c() }` does; the box that removes it is F06's bb_rk_block. The count therefore excludes that one line shape and
+# still requires 0 for every other site -- the Test machinery itself (plan, ok, proclaim, _diag) makes no C entry.
 #
 # EXIT: 0 every witness matches in both modes with 0 entries; 1 a mismatch, a crash or an entry; 2 REFUSED (stale binary, no gcc).
 # Usage: bash ../harness/scripts/test_gate_raku_a_subtest_body_is_called_from_emitted_code_and_its_tap_nests_as_rakudos_does.sh   (~10s, no oracle at run time, no network)
@@ -120,8 +125,8 @@ ck() {
         out="$(env ${ST:+SCRIP_GC_STRESS=$ST} SCRIP_C2BB_TRACE="$W/$w.$m.tr" timeout -k 5 120 "$W/$w.bin" 2>/dev/null </dev/null)"; rc=$?
     fi
     if [ "$rc" -ne 0 ]; then printf '  FAIL %-7s %s%s: died rc=%s\n' "$w" "$m" "${ST:+ stress=$ST}" "$rc"; fails=$((fails + 1)); return; fi
-    ent=0; [ -s "$W/$w.$m.tr" ] && ent=$(grep -c . "$W/$w.$m.tr"); rm -f "$W/$w.$m.tr"
-    if [ "$ent" != 0 ]; then printf '  FAIL %-7s %s: %s C-to-BB entries (want 0)\n' "$w" "$m" "$ent"; fails=$((fails + 1)); return; fi
+    ent=0; [ -s "$W/$w.$m.tr" ] && ent=$(grep -vc $'^lex.open\t__blk_' "$W/$w.$m.tr"); rm -f "$W/$w.$m.tr"
+    if [ "$ent" != 0 ]; then printf '  FAIL %-7s %s: %s C-to-BB entries other than the block-invocation open (want 0)\n' "$w" "$m" "$ent"; fails=$((fails + 1)); return; fi
     if [ "$out" = "$(cat "$W/$w.ref")" ]; then printf '  ok   %-7s %s%s\n' "$w" "$m" "${ST:+ stress=$ST}"
     else printf '  FAIL %-7s %s%s: got [%s] want [%s]\n' "$w" "$m" "${ST:+ stress=$ST}" "$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-110)" "$(tr '\n' ' ' < "$W/$w.ref" | cut -c1-110)"; fails=$((fails + 1)); fi
 }

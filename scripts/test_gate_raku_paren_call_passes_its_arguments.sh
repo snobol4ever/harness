@@ -140,15 +140,18 @@ echo "--- ARM 6 — the AST carries no __rk_arr wrapper around a testop argument
 # __rk_arr, so the arm reported the cure present while every other arm reported it absent. A negative assertion
 # over a truncated reading is indistinguishable from the property holding, which is this whole gate's own theme
 # arriving inside the gate.
+# RE-CUT 2026-10-31 (cao, CEO-2044): Test is Raku source in the setting, so the call is an ordinary (TT_FNC is ...) node and the dump also
+# carries the spliced setting (whose own code builds lists); the arm reads the program's own call statement, never the whole dump.
 ast="$(timeout -k 5 10 "$ROOT/scrip" --dump-ast "$W/arity.raku" 2>&1 </dev/null)"
-if ! printf '%s' "$ast" | grep -q '__rk_test_is'; then
-    ck fail "the AST dump carries no __rk_test_is node at all -- this arm proved nothing"
-    printf '%s\n' "$ast" | sed 's/^/       /'
-elif printf '%s' "$ast" | grep -q '__rk_arr'; then
+call="$(printf '%s\n' "$ast" | grep '^(STMT :subj (TT_FNC is (TT_VAR is)')"
+if [ -z "$call" ]; then
+    ck fail "the AST dump carries no (TT_FNC is ...) call statement at all -- this arm proved nothing"
+    printf '%s\n' "$ast" | tail -5 | sed 's/^/       /'
+elif printf '%s' "$call" | grep -q '__rk_arr'; then
     ck fail "the argument list is still wrapped in __rk_arr"
-    printf '%s\n' "$ast" | sed 's/^/       /'
+    printf '%s\n' "$call" | sed 's/^/       /'
 else
-    ck ok "testop node present and no __rk_arr wrapper"
+    ck ok "the is call node is present and carries no __rk_arr wrapper"
 fi
 echo "--- ARM 7 — the roast program this cure flipped stays green in both modes ---"
 # ⛔⭐ THE WITNESS IS RESOLVED, NOT HARDCODED (hq_raku 2026-09-16). This read "$ROOT/refs/roast/..."

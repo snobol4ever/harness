@@ -13,6 +13,8 @@
 # NOT HERE (own rows): method calls on a standard handle ($*OUT.say crashes at lowering -- BOMB "IR_VAR arg names a local with no LOWER-granted varslot", measured on base too), Rat arithmetic (0.1+0.2 prints
 # 0.30000000000000004, 1/3 prints a Num, 1.5.WHAT is Num), Set/Bag/Mix, the Seq flavour of .raku, X and Z returning nested lists, the Range type, IO::Path.
 #
+# RE-CUT 2026-10-31 (cao, CEO-2044): is_run and is-eqv are roast's Test::Util routines, which SCRIP's Raku setting now carries as Raku
+# (src/parsers/raku/setting/Test/Util.rakumod), so the isrun witness says `use Test::Util;` as the roast programs and Rakudo do.
 # THE WITNESSES, each graded in m3 (--run) and m4 (--compile + link) against a ref cut by Rakudo (/usr/bin/raku; the is_run ref is cut with the roast Test::Util module): builtins (exact), isrun (its ok / not ok lines),
 # then builtins under SCRIP_GC_STRESS 1 3 5, both modes.
 # FAILED ONCE, measured on SCRIP 54f0de728 before the cure: 10 of 10 witness-mode pairs red (builtins refused at the compile guard on the file-scope topic in m4 and empty in m3; isrun empty in both).
@@ -86,6 +88,7 @@ True,False
 EOF
 cat > "$W/isrun.raku" <<'EOF'
 use Test;
+use Test::Util;
 is_run 'say "hi"', { out => "hi\n", status => 0 }, "plain output";
 is_run 'say "hi"', { out => "no\n" }, "wrong output";
 is_run 'say "hi"', { out => /^hi/ }, "regex output";

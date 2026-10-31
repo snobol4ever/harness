@@ -579,15 +579,6 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 570	rk	__rk_subst_put	-	-	bt___rk_subst_put	leaf	-	-	0	fn_arms,rk_targets
 571	rk	__rk_substr_replace	-	-	bt___rk_substr_replace	leaf	-	-	0	fn_arms,rt_known
 572	rk	__rk_take_dyn	-	-	bt___rk_take_dyn	leaf	-	-	0	fn_arms,rk_targets,rt_known
-573	rk	__rk_test_dies_ok	-	-	bt___rk_test_dies_ok	leaf	-	-	0	rk_targets
-574	rk	__rk_test_eval_dies_ok	-	-	bt___rk_test_eval_dies_ok	leaf	-	-	0	rk_targets
-575	rk	__rk_test_eval_lives_ok	-	-	bt___rk_test_eval_lives_ok	leaf	-	-	0	rk_targets
-576	rk	__rk_test_fails_like	-	-	bt___rk_test_fails_like	leaf	-	-	0	rk_targets
-577	rk	__rk_test_lives_ok	-	-	bt___rk_test_lives_ok	leaf	-	-	0	rk_targets
-578	rk	__rk_test_subtest	-	-	bt___rk_test_subtest	leaf	-	-	0	rk_targets
-579	rk	__rk_test_subtest_close	-	-	bt___rk_test_subtest_close	leaf	-	-	0	rk_targets
-580	rk	__rk_test_subtest_open	-	-	bt___rk_test_subtest_open	leaf	-	-	0	rk_targets
-581	rk	__rk_test_throws_like	-	-	bt___rk_test_throws_like	leaf	-	-	0	rk_targets
 582	rk	__rk_tl_got	-	-	bt___rk_tl_got	leaf	-	-	0	fn_arms,rk_targets,rt_known
 583	rk	__rk_to_array	-	-	bt___rk_to_array	leaf	-	-	0	fn_arms,rk_targets,rt_known
 584	rk	__rk_to_hash	-	-	bt___rk_to_hash	leaf	-	-	0	fn_arms,rk_targets,rt_known
