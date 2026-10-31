@@ -13,12 +13,15 @@ SCRIP="${HERE}/../../SCRIP/scrip"
 OUTDIR="${HERE}/../../SCRIP/out"
 TESTD="$S4E/corpus/tests/scrip_test"   # re-pointed: SCRIP/test moved to corpus (repo-boundary ruling)
 P3=0; F3=0; P4=0; F4=0
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timeout is a TIMEOUT; under overload the smoke refuses
 EXPECTED=$'TRI: mainline alive\nTRI: DOUBLE(21) = 42'
 
 run_m3() {
     local label="$1"; shift
-    local actual; actual=$(timeout -k 5 8 "$SCRIP" --run "$@" < /dev/null 2>/dev/null)
-    if [ "$actual" = "$EXPECTED" ]; then
+    local actual rc; actual=$(timeout -k 5 8 "$SCRIP" --run "$@" < /dev/null 2>/dev/null); rc=$?
+    if smoke_note "$rc"; then
+        echo "  [m3 TIMEOUT] $label (rc $rc after 8 s)"; F3=$((F3+1))
+    elif [ "$actual" = "$EXPECTED" ]; then
         P3=$((P3+1)); echo "  [m3 PASS] $label"
     else
         echo "  [m3 FAIL] $label (got: $(printf '%s' "$actual" | head -1))"; F3=$((F3+1))
@@ -27,18 +30,22 @@ run_m3() {
 
 run_m4() {
     local label="$1"; shift
-    local s o bin actual
+    local s o bin actual rc to=0
     s=$(mktemp /tmp/poly_XXXXXX.s); o="${s%.s}.o"; bin="${s%.s}.bin"
-    if timeout -k 5 8 "$SCRIP" --compile --target=x86 "$@" < /dev/null > "$s" 2>/dev/null \
-       && as "$s" -o "$o" 2>/dev/null \
+    timeout -k 5 8 "$SCRIP" --compile --target=x86 "$@" < /dev/null > "$s" 2>/dev/null; rc=$?
+    if smoke_note "$rc"; then to=1
+    elif [ "$rc" = 0 ] && as "$s" -o "$o" 2>/dev/null \
        && gcc -no-pie "$o" -L"$OUTDIR" -lscrip_rt -Wl,-rpath,"$OUTDIR" \
               -Wl,--allow-shlib-undefined -lm -o "$bin" 2>/dev/null; then
-        actual=$(timeout -k 5 8 "$bin" < /dev/null 2>/dev/null)
+        actual=$(timeout -k 5 8 "$bin" < /dev/null 2>/dev/null); rc=$?
+        smoke_note "$rc" && to=1
     else
         actual="<mode4-build-failed>"
     fi
     rm -f "$s" "$o" "$bin"
-    if [ "$actual" = "$EXPECTED" ]; then
+    if [ "$to" = 1 ]; then
+        echo "  [m4 TIMEOUT] $label (rc $rc after 8 s)"; F4=$((F4+1))
+    elif [ "$actual" = "$EXPECTED" ]; then
         P4=$((P4+1)); echo "  [m4 PASS] $label"
     else
         echo "  [m4 FAIL] $label (got: $(printf '%s' "$actual" | head -1))"; F4=$((F4+1))
@@ -54,5 +61,4 @@ run_m4 "tri-fence (.md)"        "$TESTD/polyglot_tri.md"
 echo ""
 echo "mode-3 (--run):     PASS=$P3 FAIL=$F3   (HARD GATE)"
 echo "mode-4 (--compile): PASS=$P4 FAIL=$F4   (HARD GATE)"
-[ $((F3+F4)) -eq 0 ] || exit 1
-exit 0
+smoke_finish $((F3+F4))
