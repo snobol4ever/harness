@@ -15,7 +15,7 @@ for T in src/runtime/rtx/rtx_unit_test.c src/runtime/rtx/rtx_alloc_test.c src/ru
   # from the moved directory, which is why the runner still printed one PASS line and looked like it was working.
   # Fixed 2026-09-13 by hq_R (not this runner's owner) while making rtx_unit_test the behavioural arm of
   # test_gate_mint_op_is_one_numbering.sh -- a stale -I is the same decay class as the stale literal that row cures.
-  gcc -O0 -g -w -Isrc -Isrc/ir -Isrc/runtime/rt -Isrc/runtime/core -o "$B" "$T" \
+  gcc -fPIC -O0 -g -w -Isrc -Isrc/ir -Isrc/runtime/rt -Isrc/runtime/core -o "$B" "$T" \
       -Wl,-rpath,"$PWD/out" -L"$PWD/out" -lscrip_rt -lm -lpthread 2>&1 | head -5
   [ -x "$B" ] || { echo "  BUILD FAIL: $T"; RC=1; continue; }
   timeout -k 5 30s "$B" < /dev/null; [ $? -eq 0 ] || RC=1
