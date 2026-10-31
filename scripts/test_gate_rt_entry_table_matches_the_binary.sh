@@ -6,7 +6,11 @@
 # every asm row) and to the templates that name the symbols:
 #   arm 1  the table is valid and rt_entry_table.inc is what the generator writes
 #   arm 2  the table holds at least 160 rows (the plan's floor)
-#   arm 3  THE UNION: every symbol a template names in x86 call, call_bare or x86_rtcc_call has a row
+#   arm 3  THE EMITTED-ASM ARM (step 6 chunk 1, ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH 10.1 (3)): every call or jmp target of the emitted asm that libscrip_rt.so defines has a row. The population is every committed
+#          .s under corpus (scanned with grep, forms sym@PLT, qword ptr [rip + sym@GOTPCREL] and a bare sym) plus a FRESH compile of the programs rt_entries_emitted_programs.tsv names (one to three per language, all seven,
+#          each .s deleted after its scan). The old arm grepped the literal first argument of x86("call", ...) and x86_rtcc_call(...) in the templates and was blind to a callee picked by a ternary (bb_to.cpp) or an
+#          IR field (bb_call_fn.cpp): a planted green, retired. Control arms 9 and 9b plant a dropped row and read the scanner's call forms.
+#   arm 3b the fresh compiles cover all seven languages
 #   arm 4  every row's symbol exists in out/libscrip_rt.so (defined and exported, or a libc import the row says is one)
 #   arm 5  rc and allocates agree with gc_allocating_table.inc row by row, the clobbers of every asm row are what the objects derive (util_gen_rt_entry_table.py --check-asm, which the leaf
 #          clobber gate also plants against), and conv=asm is exactly the symbols src/runtime/rtx registers (a table a later stage has deleted is skipped by name, never silently)
@@ -56,13 +60,59 @@ def read(rel):
     return open(p, encoding='utf-8', errors='replace').read() if os.path.exists(p) else None
 
 
-def called_symbols():
-    out = set()
-    for p in glob.glob(ROOT + '/src/templates/**/*.cpp', recursive=True) + glob.glob(ROOT + '/src/templates/**/*.h', recursive=True):
-        t = open(p, encoding='utf-8', errors='replace').read()
-        out.update(re.findall(r'x86\("call(?:_bare)?",\s*"([A-Za-z_][A-Za-z0-9_]*)"', t))
-        out.update(re.findall(r'x86_rtcc_call\(\s*"([A-Za-z_][A-Za-z0-9_]*)"', t))
+CORPUS = os.path.normpath(os.path.join(ROOT, '..', 'corpus'))
+PROGS = os.path.join(HERE, 'rt_entries_emitted_programs.tsv')
+GREP_REF = r'^[[:space:]]*(call|jmp)[[:space:]]+(qword ptr \[rip \+ [^] ]+@GOTPCREL|[^[:space:]#]+@PLT)'
+GREP_BARE = r'^[[:space:]]*(call|jmp)[[:space:]]+[A-Za-z_][^[:space:]#@]*[[:space:]]*(#.*)?$'
+LANGS = {'snobol4', 'snocone', 'rebus', 'icon', 'prolog', 'raku', 'pascal'}
+
+
+def refuse(msg):
+    print('GATE REFUSE(2) [%s]: %s' % (NAME, msg))
+    sys.exit(2)
+
+
+def emitted_targets(paths):
+    """The targets of the call and jmp instructions in the emitted asm files paths: sym@PLT, qword ptr [rip + sym@GOTPCREL] and a bare sym (the shape of a call the linker resolves at once). The asm is what emitted code
+    names; a census of the templates' source misses a callee a template picks by a ternary or an IR field (CEO-1680's blind census)."""
+    out, env = set(), dict(os.environ, LC_ALL='C')
+    for i in range(0, len(paths), 100):
+        for pat in (GREP_REF, GREP_BARE):
+            r = subprocess.run(['grep', '-hoE', pat, '--'] + paths[i:i + 100], capture_output=True, env=env)
+            if r.returncode > 1:
+                refuse('grep could not read the emitted asm: %s' % r.stderr.decode('utf-8', 'replace')[:200])
+            for ln in r.stdout.decode('utf-8', 'replace').splitlines():
+                out.add(re.sub(r'@(?:GOTPCREL|PLT)$', '', re.sub(r'^\s*(?:call|jmp)\s+(?:qword ptr \[rip \+ )?', '', ln)).split()[0])
     return out
+
+
+def committed_asm():
+    out = []
+    for dp, dn, fs in os.walk(CORPUS):
+        dn[:] = [x for x in dn if x != '.git']
+        out += [os.path.join(dp, f) for f in fs if f.endswith('.s')]
+    return sorted(out)
+
+
+def fresh_targets():
+    """A fresh compile of each program the sidecar names (one to three per language), scanned and deleted at once so no more than one .s is on disk."""
+    got, langs, n = set(), set(), 0
+    for ln in open(PROGS, encoding='utf-8'):
+        if not ln.strip() or ln.startswith('#'):
+            continue
+        lang, rel = ln.rstrip('\n').split('\t')[:2]
+        src = os.path.join(CORPUS, rel)
+        if not os.path.isfile(src):
+            refuse('%s names %s, which is not under %s' % (os.path.basename(PROGS), rel, CORPUS))
+        out = os.path.join(TD, 'fresh.s')
+        r = subprocess.run([os.path.join(ROOT, 'scrip'), '--compile', '--out=' + out, os.path.basename(src)], cwd=os.path.dirname(src), stdin=subprocess.DEVNULL, capture_output=True, timeout=300)
+        if r.returncode != 0 or not os.path.exists(out):
+            refuse('%s does not compile (rc %d): %s' % (rel, r.returncode, (r.stdout + r.stderr).decode('utf-8', 'replace')[:200]))
+        got |= emitted_targets([out])
+        os.remove(out)
+        langs.add(lang)
+        n += 1
+    return got, langs, n
 
 
 def binary_symbols():
@@ -128,10 +178,18 @@ except ValueError as e:
 r = subprocess.run([sys.executable, '-I', os.path.join(HERE, 'util_gen_rt_entry_table.py'), '--check'], capture_output=True, text=True)
 grade('arm 1: the table is valid and rt_entry_table.inc is what the generator writes (%s)' % (r.stdout.strip() or r.stderr.strip())[:60], r.returncode == 0, (r.stdout + r.stderr).strip()[:300])
 grade('arm 2: the table holds %d rows (floor 160)' % len(rows), len(rows) >= 160)
-called = called_symbols()
-miss = sorted(called - {x['sym'] for x in rows})
-grade('arm 3: the union -- every symbol a template calls has a row (%d called)' % len(called), not miss, 'no row for: %s' % miss[:12])
 d, u = binary_symbols()
+if not os.path.isdir(CORPUS) or not os.path.isfile(PROGS) or not os.access(os.path.join(ROOT, 'scrip'), os.X_OK):
+    refuse('the emitted-asm arm needs the corpus at %s, %s and a built %s/scrip' % (CORPUS, PROGS, ROOT))
+com = committed_asm()
+t_com = emitted_targets(com)
+t_fresh, fl, nfp = fresh_targets()
+rowsyms = {x['sym'] for x in rows}
+named = {t for t in (t_com | t_fresh) if t in d}
+miss = sorted(named - rowsyms)
+grade('arm 3 (EMITTED-ASM ARM): every call or jmp target of the emitted asm that libscrip_rt.so defines has a row (%d committed .s, %d fresh compiles, %d callees named)' % (len(com), nfp, len(named)),
+      len(com) >= 100 and not miss, ('%d callee(s) emitted code names have no row: %s' % (len(miss), miss[:40])) if miss else 'only %d committed .s found under %s' % (len(com), CORPUS))
+grade('arm 3b: the fresh compiles cover all seven languages (%s)' % ', '.join(sorted(fl)), fl == LANGS, 'missing %s' % sorted(LANGS - fl))
 nob = missing_in_binary(rows, d, u)
 grade('arm 4: every row\'s symbol exists in libscrip_rt.so (%d defined and exported, %d libc imports)' % (len({x['sym'] for x in rows} & d), len({x['sym'] for x in rows} & u - d)), not nob, 'not in the binary: %s' % nob[:12])
 try:
@@ -180,8 +238,14 @@ m = copy_rows()
 k = next(x for x in m if x['rc'] == 'OTHER')
 k['rc'] = 'DESCR'
 grade('arm 8d (control): an entry (%s) whose return class is widened from OTHER to DESCR reads red against the binary -- the mutation that would spill an untagged long as a descriptor cell' % k['sym'], any('%s: rc DESCR but the binary says OTHER' % k['sym'] in x for x in G.alloc_disagreements(m, balloc)))
-m = [x for x in copy_rows() if x['sym'] != 'rt_zdp_ev']
-grade('arm 9 (control): a called symbol dropped from the table (rt_zdp_ev) reads red', 'rt_zdp_ev' in called - {x['sym'] for x in m})
+probe = next((s for s in sorted(named & rowsyms) if s.startswith('c_rt_')), None)
+m = [x for x in copy_rows() if x['sym'] != probe]
+grade('arm 9 (control): a callee the emitted asm names (%s, a C road a template picks by an IR field or a ternary) dropped from the table reads red' % probe, probe is not None and probe in named - {x['sym'] for x in m})
+open(TD + '/scan.s', 'w', encoding='utf-8').write('\tcall  aa_plt@PLT\n\tjmp bb_plt@PLT\n    call qword ptr [rip + cc_got@GOTPCREL]\n    call dd_bare\n    jmp .L9\n    call gg_bare  # note\n'
+                                                  '    # call ee_comment@PLT\n    mov rax, qword ptr [rip + ff_data@GOTPCREL]\n    call rt_apply_land_γ@PLT\n')
+scan = emitted_targets([TD + '/scan.s'])
+grade('arm 9b (control): the scanner reads the five call forms (@PLT, @GOTPCREL, a bare name, a trailing comment, a Greek name) and drops a comment line, a data load and a local label',
+      {'aa_plt', 'bb_plt', 'cc_got', 'dd_bare', 'gg_bare', 'rt_apply_land_γ'} <= scan and not ({'ee_comment', 'ff_data', '.L9'} & scan), str(sorted(scan)))
 m = copy_rows()
 m.append(dict(m[0], sym='rt_no_such_entry_xyz', ln=99999))
 grade('arm 10 (control): a row whose symbol the binary does not have reads red', 'rt_no_such_entry_xyz' in missing_in_binary(m, d, u))
@@ -229,5 +293,5 @@ print('%s: graded=%d fails=%d' % (NAME, graded, fails))
 if fails:
     print('⛔ GATE RED [%s]: %d of %d arm(s) failed' % (NAME, fails, graded))
     sys.exit(1)
-print('GATE PASS(0) [%s]: %d arm(s) -- %d runtime entries, each in the binary, each agreeing with the allocating table and the objects, every symbol a template calls named' % (NAME, graded, len(rows)))
+print('GATE PASS(0) [%s]: %d arm(s) -- %d runtime entries, each in the binary, each agreeing with the allocating table and the objects, every callee the emitted asm names a row' % (NAME, graded, len(rows)))
 PY
