@@ -110,6 +110,7 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   [ "$rc" = 0 ] || { echo "  [$lbl] (4) claim REFUSED a baton with no PREMISE-WHEN -- that would stop 1100+ live rows"; ok=0; }
   [ -f "$PO/claims/t-absent.claim" ] || { echo "  [$lbl] (4) a baton with no premise did not lock"; ok=0; }
   grep -q 'PREMISE UNVERIFIED' <<<"$out" || { echo "  [$lbl] (4) an unchecked premise was SILENT -- silence reads as verified"; ok=0; }
+  rm -f "$PO/claims/t-live.claim"   # (3) and (4) are proven and the seat holds two; claim refuses a third (CEO-2078), so release one before (5)
   # ---- (5) NOOP-NOT-VERIFIED ---------------------------------------------------------------------------
   out="$(FIX bash "$s" claim t-noop 2>&1)"; rc=$?
   [ "$rc" = 0 ] || { echo "  [$lbl] (5) claim REFUSED a vacuous premise -- it certifies nothing, which is not the same as red"; ok=0; }
@@ -138,11 +139,13 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   [ -f "$PO/claims/t-ovr.claim" ] || { echo "  [$lbl] (8) the override did not lock"; ok=0; }
   grep -q 'OVERRIDDEN' <<<"$out" || { echo "  [$lbl] (8) the override was SILENT"; ok=0; }
   grep -q 'PREMISE OVERRIDDEN' "$PO/tasks/t-ovr.task.md" || { echo "  [$lbl] (8) the override left no receipt in the baton -- an escape hatch with no record is the hole it replaces"; ok=0; }
+  rm -f "$PO/claims/t-live.claim"   # the seat holds two (t-live from next, t-ovr); a cap refusal here would mask the premise refusal arm 9 grades (CEO-2078)
   # ---- (9) WHOLE-FIELD: the truncation class must not be re-imported on the new label -------------------
   out="$(FIX bash "$s" claim t-multi 2>&1)"; rc=$?
   [ "$rc" = 0 ] && { echo "  [$lbl] (9) a MULTI-LINE premise was read one line at a time: the heredoc opener exited 0 having run nothing and the row locked on a premise that never ran"; ok=0; }
   [ -f "$PO/claims/t-multi.claim" ] && { echo "  [$lbl] (9) the truncated premise locked the row"; ok=0; }
   # ---- (10) NOT-SWALLOWED: the DONE-WHEN must stop at the new label ------------------------------------
+  rm -f "$PO/claims/t-live.claim" "$PO/claims/t-ovr.claim"   # the fixture seat holds two live rows by here and claim refuses a third (CEO-2078); release them, they are proven
   FIX bash "$s" claim t-swallow >/dev/null 2>&1 || { echo "  [$lbl] fixture: could not claim t-swallow"; return 2; }
   rm -f "$PO/premise-ran.marker"
   out="$(FIX bash "$s" done t-swallow 2>&1)"; rc=$?
