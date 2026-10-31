@@ -941,6 +941,7 @@ test_gate_pl_swi_shim_grades_all_by_each_plunit_comparison.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_grades_an_error_expectation_as_plunit_does.sh	WIRED	-	-	-
 test_gate_pl_swi_shim_runs_a_forall_test_per_instance.sh	WIRED	-	-	-
 test_gate_pl_swi_source_text_raw_newlines_unicode_symbols_bang_compound_and_dcg_var_body_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_swi_statistics_answers_globalused_localused_trailused_and_stack_shifts_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_stream_errors_eof_action_alias_and_stream_pair_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_swi_user_display_overrides_the_builtin_difference_list_sinks_and_bagof_of_a_runtime_goal_sorts_its_groups_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_tabling_phase_1_answers_as_swipl.sh	WIRED	-	-	-

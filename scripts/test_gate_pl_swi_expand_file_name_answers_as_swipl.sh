@@ -43,7 +43,7 @@ PL
 [ -s "$D/want" ] || refuse "swipl printed nothing for the witness"
 [ "$(wc -l < "$D/want")" -ge 70 ] || refuse "swipl answered fewer than 70 lines -- the witness did not run to its end: $(tail -1 "$D/want")"
 ( cd "$D/tree" && HOME="$D/home" timeout -k 5 60 "$B/scrip" --run "$D/w.pl" < /dev/null > "$D/m3" 2> "$D/m3.err" )
-( cd "$D" && timeout -k 5 120 "$B/scrip" --compile --out=w.s w.pl < /dev/null 2> m4.err && gcc -no-pie w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && cd tree && HOME="$D/home" timeout -k 5 60 ../w < /dev/null > "$D/m4" 2>> "$D/m4.err" )
+( cd "$D" && timeout -k 5 120 "$B/scrip" --compile --out=w.s w.pl < /dev/null 2> m4.err && gcc w.s -L"$B/out" -lscrip_rt -lm -Wl,-rpath,"$B/out" -o w 2>> m4.err && cd tree && HOME="$D/home" timeout -k 5 60 ../w < /dev/null > "$D/m4" 2>> "$D/m4.err" )
 n=$(wc -l < "$D/want"); red=0
 for m in m3 m4; do
     if cmp -s "$D/want" "$D/$m"; then echo "  $m GREEN: $n of $n lines as swipl"
