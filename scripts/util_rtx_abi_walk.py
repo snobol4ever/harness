@@ -27,6 +27,17 @@ Anything the walker cannot model (an unknown stack adjustment, a pop below the f
 cannot see through, a local call) is reported UNANALYZABLE and counts as a violation: the gate
 refuses to certify a body it could not read.
 
+THE TRANSFER FORM (ARCH-RT-CALL-PROTOCOL.md section 16, the cto 2026-10-31): an entry the table DECLARES a transfer entry
+(its row carries RTCC_XFER, optionally RTCC_XREC_<REG> naming the registers that carry the record at entry) may switch the
+stack, and only such an entry: any other `mov rsp, [reg]` stays UNANALYZABLE.  REC is a general register (never rsp, rbp,
+r8-r11) holding the record: a declared argument register at entry, or R after `mov R, rax` directly after a call.  THE SWITCH is
+`mov rsp, QWORD PTR [REC+imm]`; after it the entry's own stack is gone and only a displacement D moved by add/sub rsp, imm is
+tracked (a push, pop, call, lea rsp, and rsp or a load of rsp from anything but REC is UNANALYZABLE).  A TRANSFER EXIT is `ret`
+at D 0 or `jmp REG` at D 8 with REG loaded from the record, and is judged as the PARKED call's return: r9 the GVA base, r8 r10
+r11 RECORD-RESTORED (RR: last written by a QWORD load from [REC+imm]), the pins rbp rbx r12-r15 RR or untouched.  A tail jump into
+a declared transfer entry is allowed from a declared transfer entry only, with the alignment a call would need; a declared
+transfer entry no path of which switches or tails into one is a violation.  None of this is tracked for any other entry.
+
 Usage: util_rtx_abi_walk.py OBJ... [--entries FILE] [--table TABLE]   (FILE: one name per line, the registry; every
 global function the objects define must be in it; TABLE: rows { "sym", RTCC_C_R8|... } as util_gen_rt_entry_table.py --walker-table writes them from rt_entries.tsv --
 under it a register an entry's row records is the contract (ARCH-RT-CALL-PROTOCOL.md section 15: the emitted site
@@ -45,6 +56,17 @@ for base in REGS:
 READ_ONLY = {'cmp', 'test', 'bt', 'push', 'ucomisd', 'comisd', 'ucomiss', 'comiss', 'ptest'}
 PURE_WRITE = {'mov', 'movabs', 'lea', 'movzx', 'movsx', 'movsxd', 'pop', 'movq', 'movd'}
 MAXDEPTH = 96
+XFER = {}
+XBASE = {}
+PINS = ('rbp', 'rbx', 'r12', 'r13', 'r14', 'r15')
+RECREGS = ('rax', 'rcx', 'rdx', 'rsi', 'rdi')
+GPALIAS = {}
+for _f, _s in (('rax', ('eax', 'ax', 'al', 'ah')), ('rbx', ('ebx', 'bx', 'bl', 'bh')), ('rcx', ('ecx', 'cx', 'cl', 'ch')), ('rdx', ('edx', 'dx', 'dl', 'dh')),
+               ('rsi', ('esi', 'si', 'sil')), ('rdi', ('edi', 'di', 'dil')), ('rbp', ('ebp', 'bp', 'bpl')), ('rsp', ('esp', 'sp', 'spl'))):
+    GPALIAS[_f] = _f
+    for _x in _s: GPALIAS[_x] = _f
+for _n in range(8, 16):
+    for _x in ('', 'd', 'w', 'b'): GPALIAS['r%d%s' % (_n, _x)] = 'r%d' % _n
 
 
 def run(cmd):
@@ -123,6 +145,45 @@ def reads(mn, o, reg):
     return False
 
 
+def gpr(op):
+    return GPALIAS.get(op.strip().lower())
+
+
+def mem_base(op):
+    m = re.fullmatch(r'(?:[A-Z]+ PTR )?\[([a-z0-9]+)(?:[+-]0x[0-9a-f]+)?\]', op.strip())
+    return gpr(m.group(1)) if m else None
+
+
+def written_gprs(mn, o):
+    if mn in ('call', 'ret', 'cmp', 'test', 'bt', 'push', 'pushf', 'pushfq', 'endbr64', 'cld', 'ud2', 'hlt') or mn.startswith('j') or mn.startswith('nop'): return set()
+    w = set()
+    if mn.startswith('rep') or mn in ('movs', 'movsb', 'movsq', 'stos', 'stosb', 'stosq', 'cmpsb', 'scasb', 'lodsb'): w |= {'rdi', 'rsi', 'rcx'}
+    if mn in ('mul', 'imul', 'div', 'idiv', 'cqo', 'cdq', 'cdqe', 'cwde', 'cpuid', 'syscall', 'rdtsc'): w |= {'rax', 'rdx', 'rcx', 'r11'}
+    if o and mn not in READ_ONLY:
+        d = gpr(o[0])
+        if d: w.add(d)
+    if mn == 'xchg' and len(o) > 1 and gpr(o[1]): w.add(gpr(o[1]))
+    return w
+
+
+def rec_load(xs, mn, o):
+    if mn == 'mov' and len(o) == 2 and o[1].strip().startswith('QWORD PTR'):
+        d, b = gpr(o[0]), mem_base(o[1])
+        if d and d != 'rsp' and o[0].strip().lower() == d and b is not None and b in xs[0]: return d
+    return None
+
+
+def xs_next(xs, mn, o):
+    recs, sw, D, pins, lds, afc = xs
+    w, rl, new = written_gprs(mn, o), rec_load(xs, mn, o), set()
+    dst, src = (o[0].strip().lower() if len(o) == 2 else ''), (o[1].strip().lower() if len(o) == 2 else '')
+    if mn == 'mov' and dst in RECREGS and ((afc and src == 'rax' and dst != 'rax') or (src in recs and dst != src)): new.add(dst)
+    recs2 = frozenset(() if mn == 'call' else ((recs - w) | new))
+    pins2 = tuple(('RR' if rl == p else 'X') if p in w else v for p, v in zip(PINS, pins))
+    lds2 = frozenset((lds - w) | ({rl} if (rl and rl not in PINS) else set()))
+    return (recs2, sw, D, pins2, lds2, mn == 'call')
+
+
 def slotval(r, v):
     if v == 'E': return 'E' + r[1:]
     if v == 'G' and r == 'r9': return 'G9'
@@ -150,7 +211,9 @@ def walk(name, code, funcs, rtx, clob=None):
     obj, sec, base = funcs[name]
     errs, seen, rets, r9_input = [], set(), [], []
     own = set((RECORDED or {}).get(name, ()))
-    todo = [((obj, sec, base), (('E', 'E', 'E', 'E'), ('RA',), -1, False))]
+    xfer_seen = False
+    xs0 = (frozenset(XFER[name]), False, 0, ('E',) * len(PINS), frozenset(), False) if name in XFER else None
+    todo = [((obj, sec, base), (('E', 'E', 'E', 'E'), ('RA',), -1, False, xs0))]
     while todo:
         key, st = todo.pop()
         if (key, st) in seen: continue
@@ -161,12 +224,14 @@ def walk(name, code, funcs, rtx, clob=None):
             errs.append('%s: flows off the end of its section' % name); continue
         c = code[key]; mn, o = split_ops(c['ins'])
         regs, stack, rbpd, r9w = list(st[0]), list(st[1]), st[2], st[3]
+        xs_in = st[4]
+        xs = xs_next(xs_in, mn, o) if xs_in is not None else None
         where = '%s+0x%x  %s' % (name, key[2] - base, c['ins'])
         nxt = c['next']
         def getr(r): return regs[REGS.index(r)]
         def setr(r, v): regs[REGS.index(r)] = v
         def push_state(k, **kw):
-            todo.append((k, (tuple(kw.get('regs', regs)), tuple(kw.get('stack', stack)), kw.get('rbpd', rbpd), kw.get('r9w', r9w))))
+            todo.append((k, (tuple(kw.get('regs', regs)), tuple(kw.get('stack', stack)), kw.get('rbpd', rbpd), kw.get('r9w', r9w), kw.get('xs', xs))))
         if not r9w and reads(mn, o, 'r9'):
             r9_input.append(where)
         if getr('r9') in ('KX', 'GK', 'RTCCK') and reads(mn, o, 'r9') and not (getr('r9') == 'RTCCK' and re.fullmatch(r'QWORD PTR \[r9\+0x30\]', o[1].strip() if len(o) > 1 else '')):
@@ -178,6 +243,44 @@ def walk(name, code, funcs, rtx, clob=None):
                 if msg not in errs: errs.append(msg)
         if mn == 'ud2' or mn == 'hlt':
             continue
+        if xs_in is not None:
+            recs_i, sw_i, D_i, pins_i, lds_i, afc_i = xs_in
+            def xe(msg):
+                m = '%s: %s' % (where, msg)
+                if m not in errs: errs.append(m)
+            def xexit():
+                bad = []
+                if getr('r9') not in ('G', 'GK'): bad.append('r9 not reloaded (a transfer exit returns the GVA base)')
+                for r in ('r8', 'r10', 'r11'):
+                    if getr(r) != 'RR': bad.append('%s not record-restored' % r)
+                for p, v in zip(PINS, pins_i):
+                    if v not in ('E', 'RR'): bad.append('%s (a pin) not restored' % p)
+                if bad: xe('transfer exit: ' + '; '.join(bad))
+            rl = rec_load(xs_in, mn, o)
+            if rl in ('r8', 'r10', 'r11'):
+                setr(rl, 'RR'); push_state(nxt); continue
+            b_rsp = mem_base(o[1]) if (mn == 'mov' and len(o) == 2 and o[0].strip().lower() == 'rsp') else None
+            if b_rsp is not None and o[1].strip().startswith('QWORD PTR') and b_rsp in recs_i:
+                xfer_seen = True
+                push_state(nxt, stack=(), xs=(xs[0], True, 0, xs[3], xs[4], False)); continue
+            if b_rsp in REGS:
+                xe('UNANALYZABLE rsp loaded from [%s+...]: the record register may not be one of the four (r8 r9 r10 r11), a transfer restores them from the record (ARCH-RT-CALL-PROTOCOL.md section 16)' % b_rsp); continue
+            if sw_i:
+                if mn == 'ret':
+                    if D_i != 0: xe('exit at displacement D=%d: a transfer exit is ret at D 0 or jmp REG at D 8' % D_i)
+                    else: xexit()
+                    continue
+                if mn == 'jmp' and o and gpr(o[0]) is not None and o[0].strip().lower() == gpr(o[0]):
+                    if D_i != 8: xe('exit at displacement D=%d: a transfer exit is ret at D 0 or jmp REG at D 8' % D_i)
+                    elif gpr(o[0]) not in lds_i: xe('jmp %s: the target was not loaded from the record' % gpr(o[0]))
+                    else: xexit()
+                    continue
+                if mn in ('sub', 'add') and o and o[0].strip().lower() == 'rsp':
+                    m = re.fullmatch(r'0x([0-9a-f]+)', o[1]) if len(o) > 1 else None
+                    if not m: xe('UNANALYZABLE rsp adjusted by an unknown amount after the switch'); continue
+                    push_state(nxt, xs=(xs[0], True, D_i + (int(m.group(1), 16) if mn == 'add' else -int(m.group(1), 16)), xs[3], xs[4], False)); continue
+                if mn in ('push', 'pop', 'pushf', 'pushfq', 'popf', 'popfq', 'call', 'syscall') or (o and o[0].strip().lower() == 'rsp'):
+                    xe('UNANALYZABLE %s after the switch: a transfer leaf only restores registers and leaves' % mn); continue
         if mn in ('endbr64', 'cld', 'nop') or mn.startswith('nop') or mn.startswith('rep') or mn in ('movsb', 'cmpsb', 'stosb', 'lodsb', 'scasb'):
             push_state(nxt); continue
         if mn == 'push':
@@ -266,6 +369,8 @@ def walk(name, code, funcs, rtx, clob=None):
                 above = stack[::-1].index('PAD') if 'PAD' in stack else len(stack)
                 if above % 2:
                     errs.append('%s: the call is made with rsp misaligned (%d slot(s) since the last 16-byte point)' % (where, above))
+                if rel is not None and rel[1] in XFER:
+                    errs.append('%s: a call into the transfer entry %s -- it never returns to its call site' % (where, rel[1]))
                 if rel is not None and rel[1] in rtx:
                     setr('r9', 'GK' if getr('r9') in ('X', 'E', 'KX', 'GK', 'RTCCK') else 'G')
                     if not gotrel(rel):
@@ -278,6 +383,16 @@ def walk(name, code, funcs, rtx, clob=None):
                     r9own = getr('r9') in ('X', 'E', 'KX', 'GK', 'RTCCK')
                     for r in REGS: setr(r, 'K' if r != 'r9' else ('KX' if r9own else 'X'))
                 push_state(nxt); continue
+            tx = None
+            if mn == 'jmp' and rel is not None and gotrel(rel) and rel[1] in XFER: tx = rel[1]
+            elif mn == 'jmp' and local is not None and XBASE.get(local, name) != name: tx = XBASE[local]
+            if tx is not None:
+                above = stack[::-1].index('PAD') if 'PAD' in stack else len(stack)
+                if xs_in is None: errs.append('%s: a tail jump into the transfer entry %s from an entry the table does not declare a transfer entry' % (where, tx))
+                elif xs_in[1]: errs.append('%s: a tail jump into the transfer entry %s after the switch' % (where, tx))
+                elif above % 2: errs.append('%s: the tail jump into the transfer entry %s is made with rsp misaligned (%d slot(s) since the last 16-byte point)' % (where, tx, above))
+                else: xfer_seen = True
+                continue
             if local is not None:
                 if mn != 'jmp': push_state(nxt)
                 push_state(local); continue
@@ -329,6 +444,8 @@ def walk(name, code, funcs, rtx, clob=None):
                     r = regof(o[1])
                     stack[-1 - k] = slotval(r, getr(r)) if r else 'X'
         push_state(nxt)
+    if name in XFER and not xfer_seen and not errs:
+        errs.append('%s: the table declares a transfer entry, but no path of its body switches the stack or tails into a transfer entry' % name)
     if r9_input:
         for where, v in rets:
             if v == 'E':
@@ -342,7 +459,10 @@ def load_recorded(path):
     bit = {'RTCC_C_R8': 'r8', 'RTCC_C_R9': 'r9', 'RTCC_C_R10': 'r10', 'RTCC_C_R11': 'r11'}
     t = {}
     for m in re.finditer(r'\{\s*"([^"]+)",\s*([A-Z0-9_|]+)\s*\}', open(path, encoding='utf-8').read()):
-        t[m.group(1)] = tuple(sorted(bit[b] for b in m.group(2).split('|') if b in bit))
+        toks = m.group(2).split('|')
+        t[m.group(1)] = tuple(sorted(bit[b] for b in toks if b in bit))
+        if 'RTCC_XFER' in toks:
+            XFER[m.group(1)] = tuple(sorted(x[len('RTCC_XREC_'):].lower() for x in toks if x.startswith('RTCC_XREC_')))
     return t
 
 
@@ -363,6 +483,9 @@ def main(argv):
     code, funcs = load(objs)
     if not code:
         print('REFUSED: objdump produced no instructions'); return 2
+    XBASE.clear()
+    for n in XFER:
+        if n in funcs: XBASE[funcs[n]] = n
     defined = set()
     for obj in objs:
         for line in run(['nm', '--defined-only', '-g', obj]).split('\n'):

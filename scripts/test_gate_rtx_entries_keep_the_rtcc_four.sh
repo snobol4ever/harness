@@ -222,6 +222,73 @@ RTX_FUNC(inj_spill)
     RTX_GVA_R9
     ret
 RTX_ENDF(inj_spill)
+.macro XPINS rec
+    mov     rbp, qword ptr [\rec + 24]
+    mov     rbx, qword ptr [\rec + 32]
+    mov     r12, qword ptr [\rec + 40]
+    mov     r13, qword ptr [\rec + 48]
+    mov     r14, qword ptr [\rec + 56]
+    mov     r15, qword ptr [\rec + 64]
+.endm
+.macro XREGS rec
+    mov     r8, qword ptr [\rec + 72]
+    mov     r10, qword ptr [\rec + 80]
+    mov     r11, qword ptr [\rec + 88]
+.endm
+RTX_FUNC(ok_xfer_seg)
+    mov     rsp, qword ptr [rax + 8]
+    sub     rsp, 256
+    mov     rdi, qword ptr [rax + 8]
+    mov     rcx, qword ptr [rax + 16]
+    lea     rsi, [rax + 96]
+    cld
+    rep movsb
+    XPINS   rax
+    XREGS   rax
+    mov     rsp, qword ptr [rax + 8]
+    RTX_GVA_R9
+    mov     eax, DT_I
+    mov     edx, 1
+    ret
+RTX_ENDF(ok_xfer_seg)
+RTX_FUNC(ok_xfer_choice)
+    XPINS   rdx
+    XREGS   rdx
+    mov     rcx, qword ptr [rdx + 16]
+    mov     rsp, qword ptr [rdx + 8]
+    add     rsp, 8
+    RTX_GVA_R9
+    mov     eax, DT_I
+    mov     edx, 1
+    jmp     rcx
+RTX_ENDF(ok_xfer_choice)
+RTX_FUNC(ok_xfer_park)
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 48
+    mov     qword ptr [rsp], r8
+    mov     qword ptr [rsp + 8], r10
+    mov     qword ptr [rsp + 16], r11
+    call    inj_c
+    mov     r8, qword ptr [rsp]
+    mov     r10, qword ptr [rsp + 8]
+    mov     r11, qword ptr [rsp + 16]
+    RTX_GVA_R9
+    test    rax, rax
+    jnz     .Lxp_go
+    mov     rsp, rbp
+    pop     rbp
+    ret
+.Lxp_go:
+    jmp     ok_xfer_seg
+RTX_ENDF(ok_xfer_park)
+RTX_FUNC(ok_xfer_resume)
+    push    rbp
+    mov     rbp, rsp
+    sub     rsp, 48
+    call    inj_c
+    RTX_JMP(ok_xfer_seg)
+RTX_ENDF(ok_xfer_resume)
 .section .note.GNU-stack,"",@progbits
 ASM
 cat > "$WORK/inj/inj_lie.s" <<'ASM'
@@ -299,6 +366,80 @@ RTX_FUNC(lie_r9_own)
     add     rsp, 8
     ret
 RTX_ENDF(lie_r9_own)
+.macro XPINS rec
+    mov     rbp, qword ptr [\rec + 24]
+    mov     rbx, qword ptr [\rec + 32]
+    mov     r12, qword ptr [\rec + 40]
+    mov     r13, qword ptr [\rec + 48]
+    mov     r14, qword ptr [\rec + 56]
+    mov     r15, qword ptr [\rec + 64]
+.endm
+.macro XREGS rec
+    mov     r8, qword ptr [\rec + 72]
+    mov     r10, qword ptr [\rec + 80]
+    mov     r11, qword ptr [\rec + 88]
+.endm
+RTX_FUNC(lie_xfer_nonrec)
+    mov     rsp, qword ptr [rdi + 8]
+    ret
+RTX_ENDF(lie_xfer_nonrec)
+RTX_FUNC(lie_xfer_r11rec)
+    sub     rsp, 8
+    call    inj_c
+    mov     r11, rax
+    mov     rsp, qword ptr [r11 + 8]
+    ret
+RTX_ENDF(lie_xfer_r11rec)
+RTX_FUNC(lie_xfer_disp)
+    mov     rsp, qword ptr [rax + 8]
+    add     rsp, 16
+    XPINS   rax
+    XREGS   rax
+    RTX_GVA_R9
+    mov     eax, DT_I
+    ret
+RTX_ENDF(lie_xfer_disp)
+RTX_FUNC(lie_xfer_pin)
+    mov     rsp, qword ptr [rax + 8]
+    XPINS   rax
+    mov     rbx, 1
+    XREGS   rax
+    RTX_GVA_R9
+    mov     eax, DT_I
+    ret
+RTX_ENDF(lie_xfer_pin)
+RTX_FUNC(lie_xfer_r9)
+    mov     rsp, qword ptr [rax + 8]
+    XPINS   rax
+    XREGS   rax
+    mov     eax, DT_I
+    ret
+RTX_ENDF(lie_xfer_r9)
+RTX_FUNC(lie_xfer_push)
+    mov     rsp, qword ptr [rax + 8]
+    push    rbx
+    XPINS   rax
+    XREGS   rax
+    RTX_GVA_R9
+    mov     eax, DT_I
+    ret
+RTX_ENDF(lie_xfer_push)
+RTX_FUNC(lie_xfer_noswitch)
+    mov     rax, rdi
+    ret
+RTX_ENDF(lie_xfer_noswitch)
+RTX_FUNC(lie_xfer_r10)
+    mov     rsp, qword ptr [rax + 8]
+    XPINS   rax
+    mov     r8, qword ptr [rax + 72]
+    mov     r11, qword ptr [rax + 88]
+    RTX_GVA_R9
+    mov     eax, DT_I
+    ret
+RTX_ENDF(lie_xfer_r10)
+RTX_FUNC(lie_xfer_tail)
+    RTX_JMP(ok_xfer_seg)
+RTX_ENDF(lie_xfer_tail)
     .text
     .globl  lie_unregistered
     .type   lie_unregistered,@function
@@ -332,7 +473,21 @@ if [ "$n_entries" -lt "$FLOOR" ]; then echo "REFUSED(2): the registry names $n_e
 TABLE="$WORK/real/walker_table.inc"
 python3 "$ROOT/../harness/scripts/util_gen_rt_entry_table.py" --walker-table "$TABLE" || { echo "REFUSED(2): the runtime entry table (harness/scripts/rt_entries.tsv) could not be written in the walker's row format"; exit 2; }
 [ -s "$TABLE" ] || { echo "REFUSED(2): the runtime entry table states no clobbers, so there is no contract to hold the objects to ($TABLE is empty)"; exit 2; }
-printf '%s\n' '    { "inj_recorded", RTCC_C_R8|RTCC_C_R10 },' > "$WORK/inj/table.inc"
+cat > "$WORK/inj/table.inc" <<'TBL'
+    { "inj_recorded", RTCC_C_R8|RTCC_C_R10 },
+    { "ok_xfer_seg", RTCC_XFER|RTCC_XREC_RAX },
+    { "ok_xfer_choice", RTCC_XFER|RTCC_XREC_RDX },
+    { "ok_xfer_park", RTCC_XFER },
+    { "ok_xfer_resume", RTCC_XFER },
+    { "lie_xfer_nonrec", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_r11rec", RTCC_XFER },
+    { "lie_xfer_disp", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_pin", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_r9", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_push", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_noswitch", RTCC_XFER },
+    { "lie_xfer_r10", RTCC_XFER|RTCC_XREC_RAX },
+TBL
 ( python3 "$WALK" "${objs[@]}" --entries "$WORK/real/entries.txt" --table "$TABLE" > "$WORK/real.out" 2>&1; echo $? > "$WORK/real.rc" ) &
 ( python3 "$WALK" "$WORK/inj/inj_ok.o" --entries "$WORK/inj/inj_ok.entries" --table "$WORK/inj/table.inc" > "$WORK/inj_ok.out" 2>&1; echo $? > "$WORK/ok.rc" ) &
 ( python3 "$WALK" "$WORK/inj/inj_lie.o" --entries "$WORK/inj/inj_lie.entries" --table "$WORK/inj/table.inc" > "$WORK/inj_lie.out" 2>&1; echo $? > "$WORK/lie.rc" ) &
@@ -345,12 +500,15 @@ import sys
 ok_out, ok_rc, ok_ent, lie_out, lie_rc = open(sys.argv[1]).read(), int(sys.argv[2]), open(sys.argv[3]).read().split(), open(sys.argv[4]).read(), int(sys.argv[5])
 bad = []
 if ok_rc != 0: bad.append('the truthful set was NOT proven (rc=%d):\n%s' % (ok_rc, ok_out))
-if len(ok_ent) != 11: bad.append('the truthful set registered %d entries, wanted 11' % len(ok_ent))
-if 'PROVEN: 11 ' not in ok_out: bad.append('the truthful set did not report 11 proven')
+if len(ok_ent) != 15: bad.append('the truthful set registered %d entries, wanted 15' % len(ok_ent))
+if 'PROVEN: 15 ' not in ok_out: bad.append('the truthful set did not report 15 proven')
 want = {'lie_clobber': 'r10 not returned', 'lie_ctail': 'tail exit into C', 'lie_cbare': 'r8 not returned',
         'lie_plt': 'r10 not returned', 'lie_r9': 'came in as an argument', 'lie_stack': 'left above the return address',
         'lie_gate': 'tail exit into C', 'lie_unregistered': 'does not name', 'lie_reload': 'r10 not returned', 'lie_misaligned': 'misaligned',
-        'lie_read_after_call': 'reads r10 after a call', 'lie_r9_own': 'reads r9 after a call'}
+        'lie_read_after_call': 'reads r10 after a call', 'lie_r9_own': 'reads r9 after a call',
+        'lie_xfer_nonrec': 'cannot follow', 'lie_xfer_r11rec': 'may not be one of the four', 'lie_xfer_disp': 'displacement D=16',
+        'lie_xfer_pin': 'rbx (a pin) not restored', 'lie_xfer_r9': 'r9 not reloaded', 'lie_xfer_push': 'push after the switch',
+        'lie_xfer_noswitch': 'no path of its body switches', 'lie_xfer_r10': 'r10 not record-restored', 'lie_xfer_tail': 'does not declare a transfer entry'}
 lines = [l for l in lie_out.split('\n') if 'VIOLATION' in l]
 for name, frag in want.items():
     hit = [l for l in lines if (' ' + name + '+') in l or (' ' + name + ':') in l]
@@ -359,7 +517,7 @@ for name, frag in want.items():
 if lie_rc != 1: bad.append('the lying set exited %d, wanted 1' % lie_rc)
 if any(' inj_leaf2+' in l or ' inj_leaf2:' in l for l in lines): bad.append('the honest leaf inside the lying set was convicted')
 for b in bad: print('  SELF-TEST FAIL  ' + b)
-if not bad: print('  SELF-TEST PASS  11 truthful forms proven; 12 lies caught by name and for the right reason; the honest leaf beside them proven')
+if not bad: print('  SELF-TEST PASS  15 truthful forms proven (4 of them transfers); 21 lies caught by name and for the right reason (9 of them transfers); the honest leaf beside them proven')
 sys.exit(1 if bad else 0)
 PY
 inj_rc=$?
