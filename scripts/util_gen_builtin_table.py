@@ -133,6 +133,9 @@ def gen(rows):
     lslots = probe(lsz, [(r['name'], r['bid']) for r in leg])
     hsz = pow2_over(2 * n)
     hslots = probe(hsz, [((VOCABS.index(r['vocab']), r['name']), i) for i, r in enumerate(rows)])
+    wname = max(len(r['name'].encode('utf-8')) for r in rows) + 1
+    wentry = max(len(r['entry'].encode('utf-8')) if r['entry'] != '-' else 0 for r in rows) + 1
+    wleg = max(len(r['name'].encode('utf-8')) for r in leg) + 1
     h = []
     h.append('#ifndef BUILTIN_TABLE_H')
     h.append('#define BUILTIN_TABLE_H')
@@ -143,15 +146,18 @@ def gen(rows):
     h.append('#define BT_LEGACY_TABSZ %d' % lsz)
     h.append('#define BT_HASHSZ %d' % hsz)
     h.append('#define BT_UNSTATED (%d)' % UNSTATED)
+    h.append('#define BT_NAME_W %d' % wname)
+    h.append('#define BT_ENTRY_W %d' % wentry)
+    h.append('#define BT_LEGACY_W %d' % wleg)
     h.append('enum { ' + ', '.join('BT_VOC_%s = %d' % (v.upper(), i) for i, v in enumerate(VOCABS)) + ' };')
     h.append('enum { ' + ', '.join('BT_CONV_%s = %d' % (c.upper(), i) for i, c in enumerate(CONVS)) + ' };')
     h.append('enum { ' + ', '.join('BT_FLAG_%s = %d' % (f.upper(), b) for f, b in FLAGS.items()) + ' };')
-    h.append('typedef struct { const char * name; const char * entry; unsigned short bid; unsigned char vocab; unsigned char conv; unsigned char flags; unsigned char recv; signed char min; signed char max; short op; } bt_row_t;')
+    h.append('typedef struct { char name[BT_NAME_W]; char entry[BT_ENTRY_W]; unsigned short bid; unsigned char vocab; unsigned char conv; unsigned char flags; unsigned char recv; signed char min; signed char max; short op; } bt_row_t;')
     h.append('extern const bt_row_t g_builtins[BT_ROWS];')
     h.append('int bt_bid_of(int vocab, const char * s, unsigned len);')
-    h.append('static const struct { const char * nm; unsigned short len; unsigned short id; } bt_legacy_tab[BT_LEGACY_TABSZ] = {')
+    h.append('static const struct { char nm[BT_LEGACY_W]; unsigned short len; unsigned short id; } bt_legacy_tab[BT_LEGACY_TABSZ] = {')
     for i in range(0, lsz, 4):
-        h.append('    ' + ' '.join(('{%s,%d,%d},' % (cstr(s[0]), len(s[0].encode('utf-8')), s[1])) if s else '{0,0,0},' for s in lslots[i:i + 4]))
+        h.append('    ' + ' '.join(('{%s,%d,%d},' % (cstr(s[0]), len(s[0].encode('utf-8')), s[1])) if s else '{"",0,0},' for s in lslots[i:i + 4]))
     h.append('};')
     h.append('static inline int bt_bid_legacy(const char * s, unsigned len) {')
     h.append('    unsigned hv = 5381u;')
@@ -159,13 +165,13 @@ def gen(rows):
     h.append('    if (!s || !len) return 0;')
     h.append('    for (i = 0; i < len; i++) hv = hv * 33u + (unsigned char)s[i];')
     h.append('    hv &= (unsigned)(BT_LEGACY_TABSZ - 1);')
-    h.append('    for (;;) { const char * n = bt_legacy_tab[hv].nm; if (!n) return 0; if (bt_legacy_tab[hv].len == len && !memcmp(n, s, len)) return bt_legacy_tab[hv].id; hv = (hv + 1u) & (unsigned)(BT_LEGACY_TABSZ - 1); }')
+    h.append('    for (;;) { const char * n = bt_legacy_tab[hv].nm; if (!n[0]) return 0; if (bt_legacy_tab[hv].len == len && !memcmp(n, s, len)) return bt_legacy_tab[hv].id; hv = (hv + 1u) & (unsigned)(BT_LEGACY_TABSZ - 1); }')
     h.append('}')
     h.append('#endif')
     c = []
     c.append('const bt_row_t g_builtins[BT_ROWS] = {')
     for r in rows:
-        c.append('    { %s, %s, %d, BT_VOC_%s, BT_CONV_%s, %d, %d, %d, %d, %d },' % (cstr(r['name']), cstr(r['entry']) if r['entry'] != '-' else '0', r['bid'], r['vocab'].upper(), r['conv'].upper(),
+        c.append('    { %s, %s, %d, BT_VOC_%s, BT_CONV_%s, %d, %d, %d, %d, %d },' % (cstr(r['name']), cstr(r['entry']) if r['entry'] != '-' else '""', r['bid'], r['vocab'].upper(), r['conv'].upper(),
             r['flagbits'], RECVS.index(r['recv']), r['min'], r['max'], r['op']))
     c.append('};')
     c.append('static const unsigned short bt_hash_tab[BT_HASHSZ] = {')

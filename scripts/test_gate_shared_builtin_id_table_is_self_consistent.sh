@@ -55,7 +55,7 @@ int main(void) {
     static char idseen[65536]; static const char *idname[65536];
     for (int i = 0; i < BT_LEGACY_TABSZ; i++) {
         const char *n = bt_legacy_tab[i].nm;
-        if (!n) continue;
+        if (!n[0]) continue;
         seen++;
         unsigned L = (unsigned)strlen(n);
         if (L != (unsigned)bt_legacy_tab[i].len) { printf("  BAD len: %s stored=%u real=%u\n", n, (unsigned)bt_legacy_tab[i].len, L); bad++; }
