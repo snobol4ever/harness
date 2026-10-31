@@ -46,7 +46,10 @@ references it finds in the parsed library, selects the libraries that one needs,
       :- dynamic, its meaning in a single-threaded runtime.
   (3) HOOK CLAUSES.  A module-qualified head (sandbox:safe_primitive(...), prolog:message(...)) and a term_expansion or
       goal_expansion clause are dropped and named: they extend another module or the loader, and the expansion clause
-      would turn on the program's own expansion machinery.
+      would turn on the program's own expansion machinery.  EXCEPT a LOCAL library in LOAD_HOOK_LIBS, whose expansion
+      hook is what the library is (library(arithmetic)'s goal_expansion of is/2 and the comparisons): its unqualified
+      goal_expansion/term_expansion clauses are kept, and the parser starts the load road of a file at the line of its
+      :- use_module of that library, the point from which swipl's own hook expands the file (cqo 2026-10-31).
   (4) COMMENTS AND BLANK LINES ARE STRIPPED from the embedded text (the vendored file keeps them); the text is otherwise
       the library's own, token for token.  Its "..." literals are strings, as SWI reads them: the injector marks every
       library clause dq_forced, so prolog_lower.c lowers it in double_quotes=string whatever the program's flag.
@@ -149,7 +152,7 @@ RENAME_AS_DATA = {"clpfd": {"selection", "order", "choice", "bare_integer", "cir
                   "clpb": {"ignore_node", "nodevar_put_empty_hash", "var_unbound", "is_visited", "put_visited", "unvisit", "eq_1", "monotonic_variable", "further_branching",
                            "negative_decisive"},
                   "listing": {"portray_blob"}, "simplex": {"clear_parent"}}
-LOCAL = {"gnu_fd", "gnu_builtins", "dicts", "uri", "ansi_term", "settings", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "xsb_dialect", "prolog_source", "engines", "plunit", "chr"}
+LOCAL = {"gnu_fd", "arithmetic", "gnu_builtins", "dicts", "uri", "ansi_term", "settings", "pcre", "mctx", "swi_builtins", "xsb_ordsets", "xsb_tables", "tabling", "xsb_builtins", "xsb_dialect", "prolog_source", "engines", "plunit", "chr"}
 WHY_LISTING_PC = "swipl's library(listing) prints a clause in swipl's layout; the prelude selects listing only in the SWI dialect, so gnu_builtins keeps gprolog's for the GNU dialect (the cto's ruling 4b, ARCH-PROLOG-DATABASE.md sec 4b)"
 SHADOWS = {"gnu_fd": {("fd_dom", 2): "GNU's fd_dom/2 answers the list of the domain's values where SWI's answers the domain term (measured on gprolog 1.6.0 and swipl 9.0.4, 2026-10-10)"},
            "xsb_dialect": {("term_size", 2): "XSB's term_size/2 counts functors and leaves (emu/std_pred_xsb_i.h term_sizew: a float 4, anything else without arguments 1) where library(terms) counts SWI's cells; the library is selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-28)", ("concat_atom", 2): "XSB's concat_atom/2 (syslib/string.P) joins ATOMIC elements, numbers included (concat_atom([x,1],A) gives x1) and FAILS on a compound element; backcomp.pl's routes through atom_concat/3, which XSB, strict, refuses a number (type_error(atom,1)); selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-29)", ("concat_atom", 3): "XSB's concat_atom/3 joins atomic elements with the separator, as concat_atom/2; selected only in the XSB dialect (measured on XSB 5.0.0, 2026-10-29)", ("import", 1): "XSB's renaming import (:- import P from M as Q.) defines Q as a call of P; this library carries xsb_builtins' no-op import/1 as its last clause, so it replaces that one in the XSB dialect"},
@@ -255,6 +258,7 @@ ATTR_HOOKS = {("attr_unify_hook", 2), ("attribute_goals", 3)}
 LIB_FLAGS = {"clpfd": [("clpfd_propagation", "default", "read by the propagation loop and never created by 9.0.4's library: swipl fails on an absent flag where "
                                                            "SCRIP's ISO current_prolog_flag/2 raises domain_error, so the flag is declared at its documented default")]}
 HOOK_HEADS = {("term_expansion", 2), ("goal_expansion", 2), ("term_expansion", 4), ("goal_expansion", 4)}
+LOAD_HOOK_LIBS = {"arithmetic"}
 OMIT = {"aggregate": {("foreach", 2): "SWI's foreach/2 resets its template between solutions with '$unbind_template'/1, SWI C; the base prelude "
                                       "hand-types it as SWI 6 did, copying the goal per solution with its other variables kept shared"},
         "quintus": {("current_stream", 3): "SCRIP lowers current_stream/3 natively (lower_prolog.c, the GNU and ISO stream table); the library's clause, a "
@@ -760,7 +764,7 @@ def process(path):
         if (name, arity) in DICT_METHOD_HEADS:
             drops["dict-method clause (SCRIP has no dicts)"] = drops.get("dict-method clause (SCRIP has no dicts)", 0) + 1
             continue
-        if (name, arity) in HOOK_HEADS:
+        if (name, arity) in HOOK_HEADS and not (lib in LOCAL and lib in LOAD_HOOK_LIBS):
             drops["hook %s/%d" % (name, arity)] = drops.get("hook %s/%d" % (name, arity), 0) + 1
             continue
         if (name, arity) in OMIT.get(lib, {}):
