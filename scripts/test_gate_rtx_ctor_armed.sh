@@ -41,7 +41,8 @@
 # offending arm named — never a silent partial pass.
 set -u
 ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
-RT_OBJDIR="$ROOT/out/rt_pic"
+RT_OBJDIR=""; for so in "$ROOT"/out/libscrip_rt-*.so; do [ -f "$so" ] && cmp -s "$so" "$ROOT/out/libscrip_rt.so" && { tg="${so##*/libscrip_rt-}"; RT_OBJDIR="$ROOT/out/rt_pic-${tg%.so}"; break; }; done   # the object set is the tagged one the shipped runtime (a COPY) is byte-equal to; out/rt_pic untagged has not existed since RT_TAG
+[ -n "$RT_OBJDIR" ] || { echo "FATAL: out/libscrip_rt.so matches no out/libscrip_rt-<tag>.so — build first"; exit 1; }
 SO="$ROOT/out/libscrip_rt.so"
 PROBE_SRC="$ROOT/../harness/scripts/probe_rtx_gate_armed.c"
 [ -f "$SO" ] || { echo "FATAL: $SO missing — run 'make' or 'make libscrip_rt' first"; exit 1; }
