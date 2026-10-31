@@ -441,6 +441,9 @@ rt_pl_dop_tbh_set	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_dlget	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_dlset	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_open	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
+rt_pl_dop_tbl_park	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_tbl_resume_all	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_tbl_sl	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tbl_vt	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tell	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_telling	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
