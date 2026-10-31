@@ -11,21 +11,9 @@
 #   bash ../harness/scripts/util_run_slot.sh ./old.bin -d64m
 [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>..." >&2; exit 2; }
 [ -n "${S4E_RUN_SLOT_HELD:-}" ] && exec "$@"
-N="${S4E_RUN_SLOTS:-8}"
-D="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"
-mkdir -p "$D" 2>/dev/null || exec "$@"
-export S4E_RUN_SLOT_HELD=1
-s4e_slot_note() { local f w; f="${S4E_SLOT_WAITS:-/home/resources/progress/SLOT_WAITS.tsv}"; w=$(awk -v a="$W0" -v b="$(date +%s.%N)" 'BEGIN{printf "%.1f", b-a}'); case "$w" in 0.*) return 0;; esac
-  [ -s "$f" ] || printf '# at_utc\tseat\tkind\twait_s\tcmd  -- one line per slot wait of a second or more (ceo CEO-2078: the pools kept no record, so contention could not be measured)\n' > "$f" 2>/dev/null
-  printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "${S4E_SEAT:-$(basename "${S4E_HOME:-$PWD}")}" "$1" "$w" "$(shift; printf %s "$*" | tr '\t\n' '  ' | cut -c1-80)" >> "$f" 2>/dev/null; return 0; }
-W0=$(date +%s.%N)
-while :; do
-  i=0
-  while [ "$i" -lt "$N" ]; do
-    exec 8>>"$D/slot$i" || exec "$@"
-    if flock -n 8; then s4e_slot_note run "$@"; exec "$@"; fi
-    exec 8>&-
-    i=$((i + 1))
-  done
-  sleep 0.5
-done
+# SINCE 2026-10-31 (the cto, ARCH-SHARED-DEVELOPMENT 4.3, CEO-2041 step 3) THE RULE LIVES IN lib_slots.sh: a seat file first (cap S4E_RUN_SEAT_CAP, default 3), then a pool slot;
+# S4E_CLASS=grader takes no seat file and may take any slot, every other taker leaves the top S4E_RUN_GRADER_RESERVED (2) slots to the grader.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
+s4e_slot_hold run || exec "$@"
+s4e_slot_note run "$S4E_SLOT_T0" "$@"
+exec "$@"

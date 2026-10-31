@@ -1002,6 +1002,7 @@ test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh	WIRED	-	-	-
 test_gate_pl_xsb_dialect_write_term_options_listing_format_and_read_routines_answer_as_xsb.sh	WIRED	-	-	-
 test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh	WIRED	-	-	-
 test_gate_planner_six_passes_read_no_emitter_state.sh	WIRED	-	-	-
+test_gate_pools_cap_a_seat_and_reserve_the_grader.sh	WIRED	-	-	-
 test_gate_postoffice_identity.sh	WIRED	-	-	-
 test_gate_pre_commit_refuses_a_conflict_marker.sh	WIRED	-	-	-
 test_gate_preflight_arms_stay_cheap.sh	WIRED	-	-	-

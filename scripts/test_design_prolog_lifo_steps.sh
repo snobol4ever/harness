@@ -45,12 +45,7 @@ slug="$(col "$step" 2)"; probe="$(col "$step" 4)"; wits="$(col "$step" 5)"
 mkdir -p "$OUT/step$step"
 # one box-wide run slot for the step (CEO-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
-    nslots="${S4E_RUN_SLOTS:-8}"; slotdir_="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; mkdir -p "$slotdir_"; got=""
-    while [ -z "$got" ]; do
-        for i in $(seq 0 $((nslots - 1))); do exec 9>"$slotdir_/slot$i"; flock -n 9 && { got=$i; break; }; done
-        [ -n "$got" ] || sleep 0.5
-    done
-    export S4E_RUN_SLOT_HELD=1
+    . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
 m3p=0; m4p=0; n=0; reds=""
 for w in $wits; do

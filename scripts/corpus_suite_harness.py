@@ -769,20 +769,60 @@ _SETPRIV = shutil.which("setpriv")
 # that queued on slot pid%N sat 17 minutes behind a serial script holding that slot for its whole run while five other slots stood free
 # (coo 2026-10-30 12:4x, the loop's xsb request; test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh). S4E_RUN_SLOT_DIR is
 # the gate fixture's seam.
+def _slot_knobs():
+    """The pools' knobs, read from lib_slots.sh beside this file (the ONE rule; ARCH-SHARED-DEVELOPMENT 4.3, CEO-2041 step 3) so that this
+    taker and the two shell takers can never disagree: pool sizes, per-seat caps and the grader's reserved run slots."""
+    import re
+    k = {"S4E_CC_POOL_DEFAULT": 8, "S4E_RUN_POOL_DEFAULT": 8, "S4E_CC_SEAT_CAP_DEFAULT": 4, "S4E_RUN_SEAT_CAP_DEFAULT": 3, "S4E_RUN_GRADER_RESERVED_DEFAULT": 2}
+    try:
+        for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib_slots.sh")):
+            m = re.match(r"^(S4E_[A-Z_]+_DEFAULT)=(\d+)\s*$", line)
+            if m and m.group(1) in k:
+                k[m.group(1)] = int(m.group(2))
+    except OSError:
+        pass
+    return k
+def _slot_seat():
+    s = os.environ.get("S4E_SEAT")
+    if s:
+        return s
+    m = re.match(r"^/home/([^/]+)", os.path.realpath(os.getcwd()))
+    return m.group(1) if m else "seat"
+class _SlotHold:
+    """The two files a run slot holder keeps open for its life: its seat file, then its pool slot (the grader holds no seat file)."""
+    def __init__(self, seat_f, pool_f):
+        self.seat_f = seat_f; self.pool_f = pool_f
+    def close(self):
+        for f in (self.pool_f, self.seat_f):
+            if f is not None:
+                try:
+                    f.close()
+                except OSError:
+                    pass
 def _run_slot():
     if os.environ.get("S4E_RUN_SLOT_HELD"):
         return None
     import fcntl, random, time
+    k = _slot_knobs()
     try:
-        n = max(1, int(os.environ.get("S4E_RUN_SLOTS", "8"))); d = os.environ.get("S4E_RUN_SLOT_DIR") or "/tmp/s4e-run-slots"; os.makedirs(d, exist_ok=True)
-        while True:
-            for i in range(n):
-                f = open(os.path.join(d, "slot%d" % i), "a")
-                try:
-                    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); return f
-                except OSError:
-                    f.close()
-            time.sleep(0.25 + random.random() * 0.25)
+        n = max(1, int(os.environ.get("S4E_RUN_SLOTS", str(k["S4E_RUN_POOL_DEFAULT"]))))
+        cap = max(1, int(os.environ.get("S4E_RUN_SEAT_CAP", str(k["S4E_RUN_SEAT_CAP_DEFAULT"]))))
+        grader = os.environ.get("S4E_CLASS") == "grader"
+        hi = n - 1 if grader else max(0, n - 1 - int(os.environ.get("S4E_RUN_GRADER_RESERVED", str(k["S4E_RUN_GRADER_RESERVED_DEFAULT"]))))
+        d = os.environ.get("S4E_RUN_SLOT_DIR") or "/tmp/s4e-run-slots"
+        seat = _slot_seat(); sd = os.path.join(d, "seat", seat); os.makedirs(sd, exist_ok=True)
+        def take(paths):
+            while True:
+                for pth in paths:
+                    f = open(pth, "a")
+                    try:
+                        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB); return f
+                    except OSError:
+                        f.close()
+                time.sleep(0.25 + random.random() * 0.25)
+        seat_f = None if grader else take([os.path.join(sd, "%d" % i) for i in range(cap)])
+        pool_f = take([os.path.join(d, "slot%d" % i) for i in range(hi + 1)])
+        return _SlotHold(seat_f, pool_f)
     except OSError:
         return None
 def _bounded_run(argv, timeout, cwd, env, stdin_bytes, merge_stderr):

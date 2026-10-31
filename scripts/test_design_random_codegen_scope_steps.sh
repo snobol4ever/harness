@@ -69,12 +69,7 @@ pins="$(col "$step" 8)"; need="$(col "$step" 9)"; fams="$(col "$step" 10)"
 mkdir -p "$OUT"
 # one box-wide run slot for the whole step (CEO-1894), the shape of corpus_suite_harness._bounded_run
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
-    nslots="${S4E_RUN_SLOTS:-8}"; slotdir_="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; mkdir -p "$slotdir_"; got=""
-    while [ -z "$got" ]; do
-        for i in $(seq 0 $((nslots - 1))); do exec 9>"$slotdir_/slot$i"; flock -n 9 && { got=$i; break; }; done
-        [ -n "$got" ] || sleep 0.5
-    done
-    export S4E_RUN_SLOT_HELD=1
+    . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
 cov=UNGRADED; dn=UNGRADED; jv=UNGRADED
 pin_args=(); if [ -n "$pins" ] && [ "$inst" != enum ]; then IFS=';' read -r -a plist <<< "$pins"; for p in "${plist[@]}"; do pin_args+=(--pin "$p"); done; fi
