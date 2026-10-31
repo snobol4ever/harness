@@ -879,33 +879,42 @@ def generate(pdir):
         L["loads"] = sorted(m for m in set(L["loads_rel"]) | set(L["loads_lib"]) if m in import_only) if L["import_only"] else []
         if L["import_only"]:
             L["drops"]["selected only when the program imports it, or a library it imports loads it (IMPORT_ONLY_FRONTS)"] = 1
-    o = ["typedef struct { const char *nm; int ar; } pl_prelude_lib_pi_t;",
-         "typedef struct { int pri; const char *type; const char *nm; } pl_prelude_lib_op_t;",
-         "typedef struct { const char *nm; int ar; const char *spec; } pl_prelude_lib_meta_t;",
-         "typedef struct { const char *lib; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; "
+    # NO POINTER FIELD IN A NAME TABLE (hq_icon 2026-10-31, row icon-the-startup-rebuilds-..., CEO-1969).  Every `const char *` in these tables is one R_X86_64_RELATIVE relocation that ld.so applies in EVERY
+    # mode-4 program of EVERY language before main (the library is shared), at about 13 user instructions each (measured with perf stat instructions:u on a synthetic library, 12,000 relocs = +155,710 Ir).
+    # The names, operator types and meta specs are therefore fixed-width char arrays sized to the longest one this run generated (never a cap on the input): no relocation, and the rows a program does not
+    # read are never paged in.  A terminator row is { "", 0 }: an array first member would swallow a bare 0 and shift every later field.
+    def _bl(t): return len(t.encode("utf-8"))
+    w_nm = 1 + max([_bl(n) for L in libs for fld in ("exports", "shadows", "quiet") for n, a in L[fld]] + [_bl(n) for L in libs for pri, ty, n in L["ops"]] + [_bl(n) for L in libs for n, a, sp in L.get("metas", [])] + [1])
+    w_ty = 1 + max([_bl(ty) for L in libs for pri, ty, n in L["ops"]] + [1])
+    w_sp = 1 + max([_bl(sp) for L in libs for n, a, sp in L.get("metas", [])] + [1])
+    w_lb = 1 + max([_bl(L["lib"]) for L in libs] + [1])
+    o = ["typedef struct { char nm[%d]; int ar; } pl_prelude_lib_pi_t;" % w_nm,
+         "typedef struct { int pri; char type[%d]; char nm[%d]; } pl_prelude_lib_op_t;" % (w_ty, w_nm),
+         "typedef struct { char nm[%d]; int ar; char spec[%d]; } pl_prelude_lib_meta_t;" % (w_nm, w_sp),
+         "typedef struct { char lib[%d]; const pl_prelude_lib_pi_t *exports; const pl_prelude_lib_op_t *ops; const pl_prelude_lib_pi_t *shadows; const pl_prelude_lib_pi_t *quiet; const char *src; " % w_lb +
          "const pl_prelude_lib_meta_t *metas; const char *const *loads; int import_only; } pl_prelude_lib_t;"]
     for i, L in enumerate(libs):
         o.append("static const pl_prelude_lib_pi_t PL_PRELUDE_LIB_%d_EXPORTS[] = {" % i)
         for n, a in L["exports"]:
             o.append('    { "%s", %d },' % (n.replace("\\", "\\\\").replace('"', '\\"'), a))
-        o.append("    { 0, 0 }")
+        o.append('    { "", 0 }')
         o.append("};")
         for fld in ("shadows", "quiet"):
             o.append("static const pl_prelude_lib_pi_t PL_PRELUDE_LIB_%d_%s[] = {" % (i, fld.upper()))
             for n, a in L[fld]:
                 o.append('    { "%s", %d },' % (n.replace("\\", "\\\\").replace('"', '\\"'), a))
-            o.append("    { 0, 0 }")
+            o.append('    { "", 0 }')
             o.append("};")
         o.append("static const pl_prelude_lib_op_t PL_PRELUDE_LIB_%d_OPS[] = {" % i)
         for pri, ty, n in L["ops"]:
             o.append('    { %d, "%s", "%s" },' % (pri, ty, n.replace("\\", "\\\\").replace('"', '\\"')))
-        o.append("    { 0, 0, 0 }")
+        o.append('    { 0, "", "" }')
         o.append("};")
         o.append("static const char *const PL_PRELUDE_LIB_%d_LOADS[] = { %s0 };" % (i, "".join('"%s", ' % m for m in L["loads"])))
         o.append("static const pl_prelude_lib_meta_t PL_PRELUDE_LIB_%d_METAS[] = {" % i)
         for n, a, sp in L.get("metas", []):
             o.append('    { "%s", %d, "%s" },' % (n.replace("\\", "\\\\").replace('"', '\\"'), a, sp.replace("\\", "\\\\").replace('"', '\\"')))
-        o.append("    { 0, 0, 0 }")
+        o.append('    { "", 0, "" }')
         o.append("};")
         o.append("static const char PL_PRELUDE_LIB_%d_SRC[] =" % i)
         o.extend(c_string_lines(L["text"]))
@@ -914,9 +923,9 @@ def generate(pdir):
     for i, L in enumerate(libs):
         o.append('    { "%s", PL_PRELUDE_LIB_%d_EXPORTS, PL_PRELUDE_LIB_%d_OPS, PL_PRELUDE_LIB_%d_SHADOWS, PL_PRELUDE_LIB_%d_QUIET, PL_PRELUDE_LIB_%d_SRC, PL_PRELUDE_LIB_%d_METAS, PL_PRELUDE_LIB_%d_LOADS, %d },'
                  % (L["lib"], i, i, i, i, i, i, i, int(L["import_only"])))
-    o.append("    { 0, 0, 0, 0, 0, 0, 0, 0, 0 }")
+    o.append('    { "", 0, 0, 0, 0, 0, 0, 0, 0 }')
     o.append("};")
-    o.append("typedef struct { const char *nm; int n; int ar; int lib; } pl_prelude_lib_ex_t;")
+    o.append("typedef struct { char nm[%d]; int n; int ar; int lib; } pl_prelude_lib_ex_t;" % w_nm)
     o.append("static const pl_prelude_lib_ex_t PL_PRELUDE_LIB_EXPORT_INDEX[] = {")
     for n, a, i in sorted(((n, a, i) for i, L in enumerate(libs) for n, a in L["exports"]), key=lambda r: (r[0].encode("utf-8"), r[1], r[2])):
         o.append('    { "%s", %d, %d, %d },' % (n.replace("\\", "\\\\").replace('"', '\\"'), len(n.encode("utf-8")), a, i))
