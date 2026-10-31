@@ -5,7 +5,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../../SCRIP"
 RC=0
-for T in src/runtime/rtx/rtx_unit_test.c src/runtime/rtx/rtx_alloc_test.c src/runtime/rtx/rtx_str_test.c src/runtime/rtx/rtx_varval_test.c src/runtime/rtx/rtx_arith_test.c src/runtime/rtx/rtx_misc_test.c src/runtime/rtx/rtx_sname_test.c src/runtime/rtx/rtx_tins_test.c src/runtime/rtx/rtx_sval_test.c src/runtime/rtx/rtx_relop_test.c src/runtime/rtx/rtx_direct_test.c; do
+for T in src/runtime/rtx/rtx_plunify_test.c src/runtime/rtx/rtx_unit_test.c src/runtime/rtx/rtx_alloc_test.c src/runtime/rtx/rtx_str_test.c src/runtime/rtx/rtx_varval_test.c src/runtime/rtx/rtx_arith_test.c src/runtime/rtx/rtx_misc_test.c src/runtime/rtx/rtx_sname_test.c src/runtime/rtx/rtx_tins_test.c src/runtime/rtx/rtx_sval_test.c src/runtime/rtx/rtx_relop_test.c src/runtime/rtx/rtx_direct_test.c; do
   [ -f "$T" ] || continue
   B="/tmp/$(basename "$T" .c)"
   # ⛔ -Isrc/ir IS WHERE descr.h LIVES. This line said -Isrc/contracts, a directory DELETED in the 2026-08-24

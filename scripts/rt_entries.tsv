@@ -492,8 +492,8 @@ rt_pl_fresh_var_ref	leaf	DESCR	1	-	0	call,alloc
 rt_pl_goal_resolve	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_is_cold	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_occurs_a	asm	-	0	none	-	clob,asm
-rt_pl_pseg_ball	asm	VOID	1	-	1	alloc,asm
-rt_pl_pseg_switch	asm	-	0	-	1:rax|rdx	asm
+rt_pl_pseg_ball	asm	VOID	1	r8|r10|r11	1	alloc,clob,asm
+rt_pl_pseg_switch	asm	-	0	r8|r10|r11	1:rax|rdx	clob,asm
 rt_pl_quad_seed	asm	-	0	r8|r10|r11	-	call,clob,asm
 rt_pl_throw_raise	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_tr_refuse	leaf	-	0	-	0	call
