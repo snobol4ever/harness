@@ -34,7 +34,9 @@ r8-r11) holding the record: a declared argument register at entry, or R after `m
 `mov rsp, QWORD PTR [REC+imm]`; after it the entry's own stack is gone and only a displacement D moved by add/sub rsp, imm is
 tracked (a push, pop, call, lea rsp, and rsp or a load of rsp from anything but REC is UNANALYZABLE).  A TRANSFER EXIT is `ret`
 at D 0 or `jmp REG` at D 8 with REG loaded from the record, and is judged as the PARKED call's return: r9 the GVA base, r8 r10
-r11 RECORD-RESTORED (RR: last written by a QWORD load from [REC+imm]), the pins rbp rbx r12-r15 RR or untouched.  A tail jump into
+r11 RECORD-RESTORED (RR: last written by a QWORD load from [REC+imm]) UNLESS THE ENTRY'S OWN ROW RECORDS THEM (the parked call site then
+re-establishes exactly the recorded set, ADDENDUM 3: the park rows record r8|r10|r11, so a transfer entry saves nothing of the three; the
+clobber derivation reports an unrestored one as clobbered), the pins rbp rbx r12-r15 RR or untouched.  A tail jump into
 a declared transfer entry is allowed from a declared transfer entry only, with the alignment a call would need; a declared
 transfer entry no path of which switches or tails into one is a violation.  None of this is tracked for any other entry.
 
@@ -252,7 +254,9 @@ def walk(name, code, funcs, rtx, clob=None):
                 bad = []
                 if getr('r9') not in ('G', 'GK'): bad.append('r9 not reloaded (a transfer exit returns the GVA base)')
                 for r in ('r8', 'r10', 'r11'):
-                    if getr(r) != 'RR': bad.append('%s not record-restored' % r)
+                    if getr(r) != 'RR':
+                        if clob is not None: clob.add(r)
+                        elif r not in own: bad.append('%s not record-restored' % r)
                 for p, v in zip(PINS, pins_i):
                     if v not in ('E', 'RR'): bad.append('%s (a pin) not restored' % p)
                 if bad: xe('transfer exit: ' + '; '.join(bad))
