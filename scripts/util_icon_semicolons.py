@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # util_icon_semicolons.py -- insert the semicolons SCRIP Icon requires, exactly where the strict parser asks for them
 # (Lon 2026-10-01, CEO-1392: every statement in a procedure body ends in ';'; only the last expression of a { } block is
-# bare). The parser is the only authority: each pass runs out/parser_icon, reads "expected ';' after the token at line L
+# bare). The parser is the only authority (out/parser_icon when it exists, else scrip --dump-ast, whose parse error is the same message): each pass runs out/parser_icon, reads "expected ';' after the token at line L
 # col C", finds that token's end on line L (a string literal to its closing quote, a name or number to the end of its run,
 # any other token one character) and inserts ';' there; it loops until the file parses or the error is not a semicolon.
 #   python3 ../harness/scripts/util_icon_semicolons.py [--check] FILE...     rc 0 every file parses (changed files named), 1 a file
@@ -37,8 +37,10 @@ def code_end(line):
         elif c == '#': return len(line[:i].rstrip())
         i += 1
     return len(line.rstrip())
+SCRIP_BIN = os.path.join(ROOT, 'scrip')
+PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
 def parse_error(path):
-    r = subprocess.run([PARSER, os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=20)
+    r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
     return None if r.returncode == 0 else (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
 def fix(path, check):
     lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = []
@@ -60,7 +62,7 @@ def fix(path, check):
         return added, 'gave up after 500 insertions (a container of many programs is converted with --master)'
     return added, None
 def write_tmp(path, lines):
-    t = path + '.semi.tmp'; open(t, 'w', encoding='utf-8', newline='').write('\n'.join(lines)); return t
+    t = path + '.semi.icn'; open(t, 'w', encoding='utf-8', newline='').write('\n'.join(lines)); return t
 BANNER = re.compile(r'^#-+ \d+ \S+')
 def fix_master(path, check):
     text = open(path, encoding='utf-8', newline='').read(); lines = text.split('\n')
@@ -68,7 +70,7 @@ def fix_master(path, check):
     if not starts: print('REFUSE(2): %s has no entry banners' % path); return 2
     bounds = [(starts[k] + 1, (starts[k + 1] if k + 1 < len(starts) else len(lines))) for k in range(len(starts))]
     blocks = 0; semis = 0; bad = 0; d = os.path.dirname(os.path.abspath(path)); cfg = os.path.join(d, 'config')
-    tmp = os.path.join(cfg if os.path.isdir(cfg) else d, os.path.basename(path) + '.semi.block')
+    tmp = os.path.join(cfg if os.path.isdir(cfg) else d, os.path.basename(path) + '.semi.block.icn')
     for a, b in bounds:
         body = lines[a:b]
         while body and body[-1] == '': body.pop()
@@ -79,7 +81,7 @@ def fix_master(path, check):
             blocks += 1; semis += len(added)
             fixed = open(tmp, encoding='utf-8', newline='').read().rstrip('\n').split('\n')
             lines[a:a + len(body)] = fixed
-    for t in (tmp, tmp + '.semi.tmp'):
+    for t in (tmp, tmp + '.semi.icn'):
         if os.path.exists(t): os.unlink(t)
     if not check and blocks: open(path, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
     print('%s %s: entries=%d changed=%d semicolons=%d still_refused=%d' % ('WOULD CHANGE' if check else 'CHANGED', path, len(bounds), blocks, semis, bad)); return 1 if bad else 0
@@ -88,12 +90,12 @@ def main(argv):
     if '--master' in argv:
         return fix_master(argv[argv.index('--master') + 1], check)
     files = [a for a in argv if a != '--check']
-    if subprocess.run(['bash', '-c', '. "$1/lib_build_currency.sh" && assert_parser_current icon "$2"', '-', HERE, ROOT]).returncode != 0:
+    if PARSER_CMD[0] == PARSER and subprocess.run(['bash', '-c', '. "$1/lib_build_currency.sh" && assert_parser_current icon "$2"', '-', HERE, ROOT]).returncode != 0:
         print('REFUSE(2): out/parser_icon is missing or older than a source it was compiled from (named above) -- make parsers'); return 2
     bad = 0; changed = 0
     for f in files:
         added, err = fix(f, check)
-        t = f + '.semi.tmp'
+        t = f + '.semi.icn'
         if os.path.exists(t): os.unlink(t)
         if added: changed += 1; print('%s %s: %d semicolon(s) at %s' % ('WOULD ADD' if check else 'ADDED', f, len(added), ' '.join('%d:%d' % a for a in added[:12])))
         if err: bad += 1; print('STILL REFUSED %s: %s' % (f, err[:160]))
