@@ -1885,12 +1885,19 @@ def cmd_from_progress(a):
     want = set(pop)
     # (program, mode) -> (outcome, note, tree, ts, secs) at the NEWEST timestamp: the table is compacted (older keys kept ahead of today's
     # appends, 380 backward steps measured 2026-10-11), so file order is not time order; a tie keeps the later line, the later append
+    # ⭐ A READING TAKEN ON A DIRTY TREE IS UNREAD (ceo CEO-2060, on the coo's finding COO-441 (5)): a number's tree is part of its label, and a
+    # <hash>-dirty reading measures no tree on origin -- a seat's dev pass over an uncommitted cure moved ProRosetta, SWI and ProPuzzles on 10-30.
+    # Such a reading never enters the row, even where that lowers it; an older clean reading of the same key, where the table still holds one, stands.
     last = {}
+    dirty_keys = set()
     with open(db, encoding="utf-8", errors="replace") as fh:
         fh.readline()
         for line in fh:
             fl = line.rstrip("\n").split("\t")
             if len(fl) < 10 or fl[5] != dbsuite or fl[8] not in ("m3", "m4"):
+                continue
+            if fl[1].lower().endswith("-dirty"):
+                dirty_keys.add((fl[7], fl[8]))
                 continue
             if key == "swi":   # SWI's rows name a CASE of a table file, file.pl:unit:test#k (its table lists files)
                 _sf = fl[7].split(":", 1)[0]
@@ -2051,6 +2058,10 @@ def cmd_from_progress(a):
                                                                               "%s@%s" % (r[-1][1], r[-1][0]) if r else "-"))
     if unread:
         print("SUITE_ROW_UNREAD %d: %s%s" % (len(unread), " ".join(unread[:30]), " ..." if len(unread) > 30 else ""))
+    _dirty_only = sorted({p for (p, m) in dirty_keys if (p, m) not in last})
+    if _dirty_only:
+        print("SUITE_ROW_DIRTY_UNREAD %d: %s%s (a reading on a -dirty tree measures no tree on origin, CEO-2060)"
+              % (len(_dirty_only), " ".join(_dirty_only[:30]), " ..." if len(_dirty_only) > 30 else ""))
     if getattr(a, "wall_only", False):
         # ⛔⭐ THE WALL IS THE SUM OF EACH MEMBER'S MINIMUM TIME (Lon 2026-10-18, in-chat to the coo, verbatim: "Fix the test-suite display banner to show the sum of
         # minimum times of eac member. NOT the maximum nor the current."): this arm sets the Wall and no other cell, so the loop and every row writer can keep it

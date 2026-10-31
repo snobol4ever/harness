@@ -146,6 +146,7 @@ test_gate_frame_reuse_rung2_det_leaf_argv_share_one_pool.sh	WIRED	-	-	-
 test_gate_frame_reuse_rung3_staged_argv_are_never_addressed_so_never_granted.sh	WIRED	-	-	-
 test_gate_frame_reuse_rung3e_a_single_reader_temp_takes_its_sealed_calls_argv_slot.sh	WIRED	-	-	-
 test_gate_from_progress_assembles_a_package_as_shipped_minus_excluded.sh	WIRED	-	-	-
+test_gate_from_progress_reads_a_dirty_tree_reading_as_unread.sh	WIRED	-	-	-
 test_gate_from_progress_takes_a_bench_or_demo_population_from_its_runner.sh	WIRED	-	-	-
 test_gate_gate_wiring_ratchet.sh	WIRED	-	-	-
 test_gate_gc_a_bare_deferred_expression_name_survives_every_collection_point.sh	WIRED	-	-	-
@@ -1063,6 +1064,7 @@ test_gate_raku_reversed_meta_operator_agrees_with_rakudo.sh	WIRED	-	-	-
 test_gate_raku_roast_a_timeout_reads_hang_not_crash.sh	WIRED	-	-	-
 test_gate_raku_roast_ablation_ranker.sh	WIRED	-	-	-
 test_gate_raku_roast_bucket_names_the_stage_the_file_died_in.sh	WIRED	-	-	-
+test_gate_raku_roast_note_stores_the_first_dying_test_and_the_last_stderr_line.sh	WIRED	-	-	-
 test_gate_raku_roast_runner_excludes_a_file_with_no_oracle_answer.sh	WIRED	-	-	-
 test_gate_raku_roast_runner_leaves_the_checkout_clean.sh	WIRED	-	-	-
 test_gate_raku_set_bag_mix_are_typed_values_as_rakudo_has_them.sh	WIRED	-	-	-
@@ -1410,7 +1412,6 @@ test_gate_test_request_takes_a_port_engine.sh	WIRED	-	-	-
 test_gate_testpgms_grades_a_spitbol_post_mortem_through_the_one_error_voice.sh	WIRED	-	-	-
 test_gate_the_code_pool_refuses_loudly_at_its_cap_never_a_wild_jump.sh	WIRED	-	-	-
 test_gate_the_default_stack_and_heap_are_spitbols.sh	WIRED	-	-	-
-test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh	RULING	a 5 s timing fixture over the harness's run-slot pool (a mktemp pool, never the real one): over make preflight's per-arm budget, and a concurrency property no SCRIP source change can move; the coo runs it by hand after any change to corpus_suite_harness.py:_run_slot or util_run_slot.sh	coo	2026-10-30
 test_gate_the_runtime_binds_its_own_functions_and_keeps_its_data_and_instrument_entries_interposable.sh	WIRED	-	-	-
 test_gate_the_tiny_open_protocol_and_its_glue_record_agree.sh	WIRED	-	-	-
 test_gate_the_wall_column_is_the_minimum_time.sh	WIRED	-	-	-
@@ -1466,6 +1467,7 @@ test_gate_snocone_a_failed_call_entering_an_if_branch_keeps_the_spine.sh	RULING	
 test_gate_snocone_gc_share_named_and_rungs_clean_under_forced_collection.sh	RULING	The DONE-WHEN of row snocone-gc-the-snocone-share-of-the-unmapped-slot-population-censused-by-name-and-the-master-clean-under-forced-collection, WHICH CLOSED GREEN 2026-09-20 on SCRIP 81c00a5be: NO-MAP=0, decidable at every band point, rungs 336/336 both modes at arena_mb=1 across the default band "1 16" and re-swept clean across "1 5 16 25 64 100" with an empty NAME SET at all six. DELIBERATELY STAYS OUT OF `make test`: ~3 min PER BAND POINT is exactly the arm CONDITION 2 says not to add to a serial blocking set that ten seats queue through. It stays a LANE gate run by hq_snocone per landing. Wiring it is the coo's call and this lane is not asking for it -- the cheap 1.03s witness gate beside it is the one worth the blocking set's time.	hq_snocone	2026-09-20T22:1xZ
 test_gate_snocone_oracle_road_cuts_the_committed_refs.sh	RULING	spawns the suite harness twelve times (capture-oracle-refs runs scrip m3 and m4 plus sbl per entry, 37 s), which is not a hermetic preflight arm; it is the fail-once proof of the snocone oracle road, run by hand or by the coo when snocone_oracle_run.sh or resolve_oracle_bin changes	hq_snocone	2026-10-22T11:32Z
 test_gate_snocone_parsers_match_the_c_parsers_tree_for_tree.sh	RULING	the row's DONE-WHEN (CEO-1340): RED by measurement until Lon's canonical forms land in the .sc parsers (the shape classes are in GOAL-SNOCONE-100.md); run per landing on the benchmark samples and at closure on the whole corpus, never as a blocking arm	hq_snocone	2026-09-28T14:14Z
+test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh	RULING	a 5 s timing fixture over the harness's run-slot pool (a mktemp pool, never the real one): over make preflight's per-arm budget, and a concurrency property no SCRIP source change can move; the coo runs it by hand after any change to corpus_suite_harness.py:_run_slot or util_run_slot.sh	coo	2026-10-30
 test_gate_zd_omega_head_acceptance.sh	RULING	CEO-1389 (the ceo 2026-10-01): out of make test because its one red is a src finding, zd_omega_test_kind's per-op filter (emit.cpp), owned by the cto's row; wiring it would red make test for every seat until that lands. Arm 4's five boards were retired: the coo's SUITE TABLE is that verdict (CEO-1342).	coo	2026-10-01T16:57Z
 test_gate_argnote_sweep.sh	TASK	-	-	-
 test_gate_asm_tabs_identity.sh	TASK	-	-	-
