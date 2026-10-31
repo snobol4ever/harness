@@ -32,10 +32,10 @@ held() {   # <dir> <n> -- how many of slot0..n-1 are locked right now
     while [ "$i" -lt "$n" ]; do [ -e "$d/slot$i" ] && ! flock -n "$d/slot$i" true 2>/dev/null && c=$((c + 1)); i=$((i + 1)); done
     echo "$c"
 }
-held_by() {   # <dir> <pid>... -- how many pool slots these processes hold, read from /proc/<pid>/fd (a holder keeps its slot file open: kernel truth)
-    local d="$1" c=0 p; shift
-    for p in "$@"; do c=$((c + $(ls -l /proc/$p/fd 2>/dev/null | grep -c " $d/slot[0-9]*$"))); done
-    echo "$c"
+held_by() {   # <dir> <pid>... -- how many pool slots these processes LOCK right now, read from /proc/locks by inode and pid (kernel truth: a waiter's
+    local d="$1" ino pids=" $* "; shift   # transient open of a slot file is no lock, so it is not counted)
+    ino="|$(stat -c %i "$d"/slot[0-9]* 2>/dev/null | tr '\n' '|')"
+    awk -v ino="$ino" -v pids="$pids" '$2 == "FLOCK" && index(pids, " " $5 " ") { n = split($6, a, ":"); if (index(ino, "|" a[n] "|")) c++ } END { print c + 0 }' /proc/locks
 }
 red=""
 # arm 1: two seats, sixteen compiles each, pool 8 cap 4
