@@ -19,14 +19,21 @@ interpreted here, remember/restore included):
   (3) The model itself: two paths reaching one instruction with different stacks, an rsp write it cannot follow, or a pop
       below the entry, is UNANALYZABLE and counts as a violation -- a body the walker cannot read is never certified.
 
-Usage: util_rtx_cfi_walk.py OBJ...     prints one VIOLATION line per defect (file:line, the instruction, the model and the
+  (4) THE TRANSFER FORM (ARCH-RT-CALL-PROTOCOL.md section 16, ADDENDUM 2): with --table FILE (the generator's --walker-table, whose rows
+      declare a transfer entry with RTCC_XFER) a declared entry may switch the stack.  At `mov rsp, QWORD PTR [reg+imm]` in such an
+      entry the model RESTARTS as at a leaf's entry on a foreign stack (CFA = rsp+8, nothing saved), and the FDE must say so at the next
+      pc (RTX_SWITCH_RSP's .cfi_def_cfa rsp, 8).  After a switch a `ret` must leave the model at rsp+8 and a `jmp REG` at rsp+0 (the
+      return address consumed), and a tail jump from a declared transfer entry into another declared one is accepted from any depth.
+      The base register is the ABI walker's to judge (util_rtx_abi_walk.py, point 2); this checker only needs to know a switch happened.
+
+Usage: util_rtx_cfi_walk.py [--table FILE] OBJ...     prints one VIOLATION line per defect (file:line, the instruction, the model and the
 rule), then `RTX-CFI objects=N fdes=N instructions=N checked=N violations=N`.  Exit 0 = every leaf proven, 1 = violations,
 2 = could not measure.
 """
 import os, re, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from util_rtx_abi_walk import split_ops, rsp_disp
+from util_rtx_abi_walk import split_ops, rsp_disp, mem_base, gpr, load_recorded, XFER
 
 PAD = re.compile(r'^(nop|xchg\s+ax,ax|cs nop|data16|int3)')
 CALLEE = ('rbx', 'rbp', 'r12', 'r13', 'r14', 'r15')
@@ -194,8 +201,10 @@ def matches(st, rule):
 def walk_fde(lo, hi, rows, code, syms, errs):
     entries = sorted(set(a for a in syms.values() if lo <= a < hi) | {lo})
     seen, todo, checked = {}, [], set()
+    names_at = {}
+    for n, v in syms.items(): names_at.setdefault(v, []).append(n)
     for a in entries:
-        todo.append((a, (8, None, None, frozenset(), (), None)))
+        todo.append((a, (8, None, None, frozenset(), (), None, any(n in XFER for n in names_at.get(a, ())), False)))
     while todo:
         a, st = todo.pop()
         if a in seen:
@@ -212,12 +221,12 @@ def walk_fde(lo, hi, rows, code, syms, errs):
         checked.add(a)
         if rule is None or not matches(st, rule):
             errs.append('%s  0x%x %-34s model %s  CFI %s' % (c['src'], a, c['ins'], fmt_model(st), fmt_rule(rule) if rule else 'none'))
-        rsp, rbp, dyn, saves, slots, pend = st
+        rsp, rbp, dyn, saves, slots, pend, xf, sw = st
         mn, o = split_ops(c['ins'])
         nxt = c['next']
         o0 = o[0].strip().lower() if o else ''
-        def go(k, rsp=rsp, rbp=rbp, dyn=dyn, saves=saves, slots=slots, pend=None):
-            if k is not None: todo.append((k, (rsp, rbp, dyn, saves, slots, pend)))
+        def go(k, rsp=rsp, rbp=rbp, dyn=dyn, saves=saves, slots=slots, pend=None, sw=sw):
+            if k is not None: todo.append((k, (rsp, rbp, dyn, saves, slots, pend, xf, sw)))
         def bad(why):
             errs.append('%s  0x%x %s: UNANALYZABLE %s' % (c['src'], a, c['ins'], why))
         def adj(n):
@@ -225,6 +234,8 @@ def walk_fde(lo, hi, rows, code, syms, errs):
         if mn in ('ud2', 'hlt', 'int3'):
             continue
         if mn == 'ret':
+            if sw and (rsp, dyn, saves) != (8, None, frozenset()):
+                bad('transfer exit: ret with the CFA not at the parked call\'s return address (model %s, want rsp+8)' % fmt_model(st))
             continue
         if mn in ('push', 'pushf', 'pushfq'):
             r2, d2 = adj(8)
@@ -273,6 +284,8 @@ def walk_fde(lo, hi, rows, code, syms, errs):
             bad('rsp aligned with no saved copy and no frame pointer'); continue
         if mn == 'mov' and o0 == 'rbp' and len(o) > 1 and o[1].strip().lower() == 'rsp':
             go(nxt, rbp=rsp); continue
+        if mn == 'mov' and o0 == 'rsp' and len(o) > 1 and xf and o[1].strip().startswith('QWORD PTR') and mem_base(o[1]) not in (None, 'rsp'):
+            go(nxt, rsp=8, rbp=None, dyn=None, saves=frozenset(), slots=('ra',), sw=True); continue
         if mn == 'mov' and o0 == 'rsp' and len(o) > 1:
             s1 = o[1].strip().lower()
             if s1 == 'rbp' and rbp is not None:
@@ -300,8 +313,12 @@ def walk_fde(lo, hi, rows, code, syms, errs):
             tgt = o[0] if o else ''
             m = re.fullmatch(r'([0-9a-f]+) <.*>', tgt)
             local = int(m.group(1), 16) if (m and c['rel'] is None) else None
+            if sw and mn == 'jmp' and gpr(tgt) is not None and tgt.strip().lower() == gpr(tgt):
+                if (rsp, dyn, saves) != (0, None, frozenset()):
+                    bad('transfer exit: jmp %s with the CFA not at rsp+0, the return address consumed (model %s)' % (tgt.strip(), fmt_model(st)))
+                continue
             if local is not None and not (lo <= local < hi):
-                if (rsp, dyn, saves) != (8, None, frozenset()):
+                if (rsp, dyn, saves) != (8, None, frozenset()) and not (xf and not sw and any(n in XFER for n in names_at.get(local, ()))):
                     bad('a jump into another body with the stack not at its entry')
                 if mn != 'jmp': go(nxt)
                 continue
@@ -360,6 +377,12 @@ def check(obj, only=None):
 
 
 def main(argv):
+    if '--table' in argv:
+        i = argv.index('--table')
+        if i + 1 >= len(argv) or not os.path.exists(argv[i + 1]):
+            print('REFUSED: --table names no file'); return 2
+        load_recorded(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
     if not argv:
         print('REFUSED: no objects named'); return 2
     tot, nv, ex = [0, 0, 0, 0], 0, []

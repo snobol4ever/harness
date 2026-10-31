@@ -58,6 +58,8 @@ if grep -q 'gc_pc_is_frameless_leaf' "$H"; then fail "gc_heap.c still carries gc
 if grep -q '_Unwind_Backtrace(gc_uw_step' "$H"; then pass "gc_chain_entry_from_c starts with _Unwind_Backtrace"; else fail "gc_chain_entry_from_c does not unwind with _Unwind_Backtrace"; fi
 
 echo "=== THE REAL LEAVES ==="
+TABLE="$WORK/real.tbl"
+python3 "$ROOT/../harness/scripts/util_gen_rt_entry_table.py" --walker-table "$TABLE" || { echo "REFUSED(2): the runtime entry table (harness/scripts/rt_entries.tsv) could not be written in the walker's row format"; exit 2; }
 for diag in 1 0; do
     mkdir -p "$WORK/real$diag"
     objs=()
@@ -70,7 +72,7 @@ for diag in 1 0; do
         gcc -O0 -g -w -fPIC $INCS -c "$H" -o "$WORK/real1/gc_heap.o" 2>"$WORK/gc.err" || { echo "REFUSED(2): could not compile gc_heap.c: $(head -3 "$WORK/gc.err")"; exit 2; }
         objs+=("$WORK/real1/gc_heap.o:rt_gc_poll_asm,rt_gc_poll_slow")
     fi
-    out="$(python3 "$WALK" "${objs[@]}" 2>&1)"; rc=$?
+    out="$(python3 "$WALK" --table "$TABLE" "${objs[@]}" 2>&1)"; rc=$?
     line="$(printf '%s\n' "$out" | grep '^RTX-CFI ' | tail -1)"
     [ -n "$line" ] || { echo "REFUSED(2): the walker printed no summary (rc $rc): $(printf '%s\n' "$out" | tail -3)"; exit 2; }
     [ "$rc" = 2 ] && { echo "REFUSED(2): the walker could not measure: $(printf '%s\n' "$out" | tail -3)"; exit 2; }
@@ -172,17 +174,54 @@ RTX_FUNC(ok_framed_pop)
     mov     eax, 1
 99: ret
 RTX_ENDF(ok_framed_pop)
+RTX_FUNC(ok_xfer_seg)
+    RTX_SWITCH_RSP(rax, 8)
+    RTX_SUB_RSP(256)
+    mov     rdi, qword ptr [rax + 8]
+    mov     rcx, qword ptr [rax + 16]
+    lea     rsi, [rax + 96]
+    cld
+    rep movsb
+    RTX_SWITCH_RSP(rax, 8)
+    mov     eax, 1
+    ret
+RTX_ENDF(ok_xfer_seg)
+RTX_FUNC(ok_xfer_choice)
+    mov     rcx, qword ptr [rdx + 16]
+    RTX_SWITCH_RSP(rdx, 8)
+    RTX_ADD_RSP(8)
+    mov     eax, 1
+    jmp     rcx
+RTX_ENDF(ok_xfer_choice)
+RTX_FUNC(ok_xfer_park)
+    RTX_PUSHS(rbp)
+    mov     rbp, rsp
+    .cfi_def_cfa_register rbp
+    sub     rsp, 48
+    call    ok_c@PLT
+    jmp     ok_xfer_seg
+RTX_ENDF(ok_xfer_park)
 .section .note.GNU-stack,"",@progbits
 ASM
+cat > "$WORK/inj/xtable.inc" <<'TBL'
+    { "ok_xfer_seg", RTCC_XFER|RTCC_XREC_RAX },
+    { "ok_xfer_choice", RTCC_XFER|RTCC_XREC_RDX },
+    { "ok_xfer_park", RTCC_XFER },
+    { "lie_xfer_bare", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_deep", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_jmp0", RTCC_XFER|RTCC_XREC_RDX },
+    { "lie_xfer_saved", RTCC_XFER|RTCC_XREC_RAX },
+    { "lie_xfer_sink", RTCC_XFER|RTCC_XREC_RAX },
+TBL
 lie() {
     local name="$1" want="$2" body="$3"
     printf '#include "rtx_abi.inc"\n%s\n.section .note.GNU-stack,"",@progbits\n' "$body" > "$WORK/inj/$name.s"
     gcc -g -w -fPIC $INCS -I"$ROOT/src/runtime/rtx" -x assembler-with-cpp -c "$WORK/inj/$name.s" -o "$WORK/inj/$name.o" 2>"$WORK/inj/$name.err" || { echo "REFUSED(2): the lie $name does not assemble: $(head -2 "$WORK/inj/$name.err")"; exit 2; }
-    local o; o="$(python3 "$WALK" "$WORK/inj/$name.o" 2>&1)"; local r=$?
+    local o; o="$(python3 "$WALK" --table "$WORK/inj/xtable.inc" "$WORK/inj/$name.o" 2>&1)"; local r=$?
     if [ "$r" = 1 ] && printf '%s\n' "$o" | grep -q "$want"; then pass "lie $name caught ($want)"; else fail "lie $name NOT caught as '$want' (rc $r): $(printf '%s\n' "$o" | head -3)"; fi
 }
 gcc -g -w -fPIC $INCS -I"$ROOT/src/runtime/rtx" -x assembler-with-cpp -c "$WORK/inj/ok.s" -o "$WORK/inj/ok.o" 2>"$WORK/inj/ok.err" || { echo "REFUSED(2): the truthful set does not assemble: $(head -3 "$WORK/inj/ok.err")"; exit 2; }
-o="$(python3 "$WALK" "$WORK/inj/ok.o" 2>&1)"; r=$?
+o="$(python3 "$WALK" --table "$WORK/inj/xtable.inc" "$WORK/inj/ok.o" 2>&1)"; r=$?
 if [ "$r" = 0 ]; then pass "the truthful set is proven: $(printf '%s\n' "$o" | tail -1)"; else fail "the truthful set is NOT proven (rc $r): $(printf '%s\n' "$o" | head -5)"; fi
 lie uncounted_push 'model rsp+24  CFI rsp+16' 'RTX_FUNC(lie_push)
     RTX_PUSH(r8)
@@ -241,6 +280,43 @@ lie_bare:
     add     rsp, 8
     ret
 .size lie_bare, .-lie_bare'
+lie xfer_switch_without_cfi 'model rsp+8  CFI rsp+16' 'RTX_FUNC(lie_xfer_bare)
+    RTX_PUSH(rbx)
+    mov     rsp, qword ptr [rax + 8]
+    mov     eax, 1
+    ret
+RTX_ENDF(lie_xfer_bare)'
+lie xfer_ret_with_the_cfa_deep 'ret with the CFA not at the parked call' 'RTX_FUNC(lie_xfer_deep)
+    RTX_SWITCH_RSP(rax, 8)
+    RTX_SUB_RSP(8)
+    ret
+RTX_ENDF(lie_xfer_deep)'
+lie xfer_jmp_with_the_return_address_still_there 'jmp rcx with the CFA not at rsp+0' 'RTX_FUNC(lie_xfer_jmp0)
+    mov     rcx, qword ptr [rdx + 16]
+    RTX_SWITCH_RSP(rdx, 8)
+    jmp     rcx
+RTX_ENDF(lie_xfer_jmp0)'
+lie xfer_pin_record_left_after_the_switch 'saved{rbx@cfa-16}' 'RTX_FUNC(lie_xfer_saved)
+    RTX_PUSHS(rbx)
+    RTX_SWITCH_RSP(rax, 8)
+    ret
+RTX_ENDF(lie_xfer_saved)'
+lie xfer_undeclared_switch 'rsp loaded from something the walker cannot follow' 'RTX_FUNC(lie_xfer_undeclared)
+    RTX_SWITCH_RSP(rax, 8)
+    ret
+RTX_ENDF(lie_xfer_undeclared)'
+lie xfer_tail_from_an_undeclared_entry 'a jump into another body with the stack not at its entry' 'RTX_FUNC(lie_xfer_sink)
+    RTX_SWITCH_RSP(rax, 8)
+    ret
+RTX_ENDF(lie_xfer_sink)
+RTX_FUNC(lie_xfer_tail)
+    RTX_PUSHS(rbp)
+    mov     rbp, rsp
+    .cfi_def_cfa_register rbp
+    sub     rsp, 48
+    call    lie_c@PLT
+    jmp     lie_xfer_sink
+RTX_ENDF(lie_xfer_tail)'
 
 if [ "$F" = 0 ]; then
     echo "PASS: every asm leaf carries CFI that is true at every reached pc, the poll included, and the walker catches every planted lie."
