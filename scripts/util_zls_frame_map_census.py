@@ -80,7 +80,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-FRAME_LAYOUT_H = (HERE.parent.parent / "SCRIP") / "src" / "ir" / "frame_layout.h"
+FRAME_LAYOUT_H = (HERE.parent.parent / "SCRIP") / "src" / "planner" / "frame_layout.h"
 
 
 def kinds_of_the_enum():
