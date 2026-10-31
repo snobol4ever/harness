@@ -2775,7 +2775,14 @@ case "$cmd" in
                     printf '     The claim and the QUEUE column are UNCHANGED. Build, then re-run `done`.\n' >&2
                     exit 2; fi
                   _dwto="${S4E_DONE_TIMEOUT:-3600}"; _dwt0="$(date +%s)"
-                  ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 timeout -k 5 "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                  # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a DONE-WHEN that names only cacheable test_gate_*.sh runs once per
+                  # tree for the fleet; util_check_cache.sh replays a stored verdict on clean trees at the same hashes and runs live otherwise.
+                  if bash "$S4E/harness/scripts/util_check_cache.sh" --cacheable-text "$dw" 2>/dev/null; then
+                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 timeout -k 5 "$_dwto" bash "$S4E/harness/scripts/util_check_cache.sh" done-when -- bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                    head -1 "$_dwlog" | grep -q '^CACHED ' && printf '  %s\n' "$(head -1 "$_dwlog")"
+                  else
+                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 timeout -k 5 "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                  fi
                   _dwel="$(( $(date +%s) - _dwt0 ))"
                   if [ "$rc" -eq 0 ]; then
                     rm -f "$_dwlog"

@@ -92,6 +92,7 @@ test_gate_cas_island_grows_with_the_declared_stack.sh	WIRED	-	-	-
 test_gate_ceo1316_oracle_only_mask_removes_one_named_oracle_line.sh	WIRED	-	-	-
 test_gate_ceo1351_an_oracle_identity_mask_is_exempt_from_the_majority_rule.sh	WIRED	-	-	-
 test_gate_ceo409_mask_is_read_by_the_bash_runners.sh	WIRED	-	-	-
+test_gate_check_cache_hits_on_an_identical_tree.sh	WIRED	-	-	-
 test_gate_claim_and_next_announce_the_start_of_work.sh	WIRED	-	-	-
 test_gate_claim_computes_the_premise.sh	WIRED	-	-	-
 test_gate_coexpr_stack_of_uncreated_thread.sh	WIRED	-	-	-
