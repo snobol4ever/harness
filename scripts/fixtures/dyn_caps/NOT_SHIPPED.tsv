@@ -21,3 +21,4 @@ src/runtime/rtx/rtx_tins_test.c	a unit test battery compiled into its own binary
 src/runtime/rtx/rtx_sval_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_relop_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_direct_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
+src/runtime/rtx/rtx_plunify_test.c	a unit test with its own main(): harness/scripts/test_rtx_unit.sh compiles it into /tmp and links it against libscrip_rt.so, never into scrip or libscrip_rt (CEO-2079, the transfer battery)
