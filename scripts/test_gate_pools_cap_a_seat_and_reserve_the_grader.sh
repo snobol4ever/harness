@@ -49,7 +49,9 @@ for i in $(seq 1 16); do S4E_SEAT=seatB bash "$TK/util_cc_slot.sh" sleep 1 & PB=
 PIDS="$PA $PB"
 maxA=0; maxB=0; maxP=0; both=0
 for t in $(seq 1 120); do
+    kill -STOP $PA $PB 2>/dev/null   # an atomic sample: a holder that exits and a waiter that takes over DURING a scan would count twice
     a="$(held_by "$T/cc" $PA)"; b="$(held_by "$T/cc" $PB)"; p="$(held "$T/cc" 8)"
+    kill -CONT $PA $PB 2>/dev/null
     [ "$a" -gt "$maxA" ] && maxA=$a; [ "$b" -gt "$maxB" ] && maxB=$b; [ "$p" -gt "$maxP" ] && maxP=$p
     [ "$a" -ge 1 ] && [ "$b" -ge 1 ] && both=1
     [ -z "$(jobs -rp)" ] && break
