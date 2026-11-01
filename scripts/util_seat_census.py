@@ -8,6 +8,9 @@ apart, reads memory.current, memory.peak, memory.events (oom_kill) and pids.curr
 s4e-grader.slice is a BATCH or GRADER line NAMED BY ITS SEAT TOKEN, the cfo's note of 16:5x; the slice's remainder is the line named batch or grader), and appends to
 /home/resources/progress/LOAD.tsv one line per seat and per class, plus one BOX line.
 
+THE SEAT'S RUNS (the fleet test, 2026-11-01): app.slice/app-s4e.slice/app-s4e-<seat>.slice is the seat's run slice (systemd nests by the dashes) (util_mem_scope.py puts every classless run there);
+its cpu.stat keeps the total of every child it ever held, so a graded entry that lived three seconds between two samples still counts for its seat;
+a run placed straight under app.slice by an older harness is counted while it lives and lost when it ends inside the window.
 THE CLASSES (2.1): SEAT, a Claude session scope (app-org.gnome.Terminal.slice/vte-spawn-*.scope) whose newest SEATS.tsv line names a seat, with the
 board-run scopes app.slice/s4e-mem-<seat>-*.scope added to that seat; GRADER, s4e.slice/s4e-grader.slice; BATCH, s4e.slice/s4e-batch.slice; LON, Lon's
 own session scope (SEATS.tsv class LON, or an unmapped session scope) and the desktop's app-gnome-*/Chrome scopes; CRON, a session-*.scope directly
@@ -87,9 +90,12 @@ def scopes(root):
     for d in sorted(glob.glob(os.path.join(app, "s4e-mem-*.scope"))):
         m = re.match(r"s4e-mem-([a-z0-9_]+)-", os.path.basename(d))
         out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
+    for d in sorted(glob.glob(os.path.join(app, "app-s4e.slice", "app-s4e-*.slice"))):
+        m = re.match(r"app-s4e-([a-z0-9_]+)\.slice", os.path.basename(d))
+        out.append((os.path.relpath(d, root), "BOARD", m.group(1) if m else "unknown"))
     for d in sorted(glob.glob(os.path.join(app, "*.scope")) + glob.glob(os.path.join(app, "*.slice"))):
         b = os.path.basename(d)
-        if b.startswith("s4e-mem-") or b == "app-org.gnome.Terminal.slice":
+        if b.startswith("s4e-mem-") or b == "app-s4e.slice" or b == "app-org.gnome.Terminal.slice":
             continue
         out.append((os.path.relpath(d, root), "LON", "desktop"))
     for cls, sl in (("GRADER", "s4e-grader.slice"), ("BATCH", "s4e-batch.slice")):

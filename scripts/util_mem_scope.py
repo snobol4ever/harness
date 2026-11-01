@@ -187,6 +187,15 @@ def _systemd_run_usable():
     return None
 
 
+def seat_slice():
+    """The seat's own run slice, app-s4e-<seat>.slice (under app.slice/app-s4e.slice, systemd nesting by the dashes): a run of this seat that names no class goes there, never straight under
+    app.slice. A scope that ends between the census's two samples takes its CPU with it; a slice keeps the total of every child it ever held, so
+    the ledger attributes the seat's short runs (a graded entry lives seconds) to the seat (the fleet test, 2026-11-01: app.slice read 5.9 cores
+    of which 2.1 had a line)."""
+    who = re.sub(r"[^a-z0-9_]", "_", (os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name).lower())
+    return "app-s4e-%s.slice" % who
+
+
 def _unit_name(argv):
     who = os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name
     prog = next((Path(a).name for a in argv[1:] if os.path.isfile(a) and Path(a).name != "util_batch.sh"),
@@ -212,9 +221,11 @@ def enter(kind, argv, slice_name=None):
         os.environ["S4E_MEM_SCOPE"] = "unbounded"
         return
     unit = _unit_name(argv)
+    if not slice_name:
+        slice_name = seat_slice()
     sys.stdout.flush(); sys.stderr.flush()
     os.execvp("systemd-run", ["systemd-run", "--user", "--scope", "-q", "--unit=" + unit]
-                             + (["--slice=" + slice_name] if slice_name else []) + [
+                             + ["--slice=" + slice_name] + [
                               "-p", "MemoryMax=%dM" % cap, "-p", "MemorySwapMax=0", "-p", "OOMPolicy=continue", "--",
                               sys.executable, str(Path(__file__).resolve()), "supervise", "--kind", kind, "--"]
                              + list(argv))
