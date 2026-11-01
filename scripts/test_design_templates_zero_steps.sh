@@ -10,7 +10,7 @@
 #   --probe N    run step N's probe tokens only (no witness runs; the reading a landing quotes before its smokes)
 #   --out DIR    where the witness runs go (default /tmp/s4e-templates_zero-<uid>)
 #
-# probe tokens (STEPS.tsv column 5): audit=f,g | classes=f:cls=0,cls<=N | nocall=sym,sym:bb|xa|all | nosym=sym,sym:all | sym=sym,sym |
+# probe tokens (STEPS.tsv column 5): audit=f,g | classes=f:cls=0,cls<=N | nocall=sym,sym:bb|xa|all|lower|runtime | nosym=sym,sym:all | sym=sym,sym |
 #   kinds=IR_X,IR_Y | gone=f:entry | order=a,b,c | grand=N | -   (each defined in the table's header comment)
 # VERDICT: STEP N <slug>: probe=<token:reading ...> m3=<pass>/<n> m4=<pass>/<n> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -63,8 +63,8 @@ for tok in $probe; do
                        v="$(audit_class "$f" "$name")"; [ -n "$v" ] || refuse "classes: the audit prints no class $name for $f"
                        if { [ $op = eq ] && [ "$v" -eq "$want" ]; } || { [ $op = le ] && [ "$v" -le "$want" ]; }; then note "$name=$v"; else note "$name=$v!"; red=1; fi; done ;;
         nocall=*) spec="${tok#nocall=}"; syms="${spec%%:*}"; where="${spec#*:}"
-                  case "$where" in bb) dirs="$SC/src/templates/bb";; xa) dirs="$SC/src/templates/xa";; all) dirs="$SC/src/templates";; *) refuse "nocall: where is $where";; esac
-                  for s in $(echo "$syms" | tr ',' ' '); do n=$(grep -rl --include='*.cpp' --include='*.h' "\b$s\b" $dirs 2>/dev/null | grep -v '/bb_templates.h$' | wc -l)
+                  case "$where" in bb) dirs="$SC/src/templates/bb";; xa) dirs="$SC/src/templates/xa";; all) dirs="$SC/src/templates";; lower) dirs="$SC/src/lower";; runtime) dirs="$SC/src/runtime";; *) refuse "nocall: where is $where";; esac
+                  for s in $(echo "$syms" | tr ',' ' '); do n=$(grep -rl --include='*.c' --include='*.cpp' --include='*.h' "\b$s\b" $dirs 2>/dev/null | grep -v '/bb_templates.h$' | wc -l)
                       if [ "$n" = 0 ]; then note "nocall:$s=0"; else note "nocall:$s=$n!"; red=1; fi; done ;;
         nosym=*) spec="${tok#nosym=}"; syms="${spec%%:*}"
                  for s in $(echo "$syms" | tr ',' ' '); do n=$(grep -rl --include='*.c' --include='*.cpp' --include='*.h' "\b$s\b" "$SC/src" 2>/dev/null | wc -l)
@@ -82,9 +82,9 @@ for tok in $probe; do
                 else note "gone:$f=gone"; fi ;;
         order=*) a="$(echo "${tok#order=}" | cut -d, -f1)"; b="$(echo "${tok#order=}" | cut -d, -f2)"; c="$(echo "${tok#order=}" | cut -d, -f3)"
                  drv="$SC/src/driver/scrip.c"; bad=0; nb=0
-                 for ln in $(grep -n "$b(" "$drv" | grep -v extern | cut -d: -f1); do nb=$((nb + 1))
-                     sed -n "$((ln > 8 ? ln - 8 : 1)),$((ln - 1))p" "$drv" | grep -q "$a(" || bad=$((bad + 1))
-                     sed -n "$((ln + 1)),$((ln + 8))p" "$drv" | grep -q "$c(" || bad=$((bad + 1)); done
+                 for ln in $(grep -n "$b(s2" "$drv" | cut -d: -f1); do nb=$((nb + 1))
+                     sed -n "$((ln > 8 ? ln - 8 : 1)),$((ln - 1))p" "$drv" | grep -q "$a(s2" || bad=$((bad + 1))
+                     sed -n "$((ln + 1)),$((ln + 8))p" "$drv" | grep -q "$c(s2" || bad=$((bad + 1)); done
                  [ "$nb" -gt 0 ] || refuse "order: $b is called nowhere in scrip.c"
                  if [ "$bad" = 0 ]; then note "order:$nb-sites-ok"; else note "order:$bad-of-$nb-sites-out-of-order!"; red=1; fi ;;
         grand=*) g=$(cd "$SC" && bash "$HERE/audit_bb_fixup_rank.sh" 2>/dev/null | awk '/GRAND TOTAL/ {print $NF}'); [ -n "$g" ] || refuse "grand: the rank audit printed no GRAND TOTAL"
