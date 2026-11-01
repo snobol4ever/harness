@@ -297,6 +297,7 @@ rt_pat_prim_str_take	leaf	OTHER	1	-	0	call,alloc
 rt_patstk_lazy_init	asm	-	0	none	-	clob,asm
 rt_patv_defer_get_pat_dtp	leaf	OTHER	1	-	0	call,alloc
 rt_patv_defer_open_entry	open	OTHER	1	-	1	call,alloc
+rt_pl_alarm_raise	asm	VOID	1	none	-	call,alloc,clob,asm
 rt_pl_anum_cold	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_atom_table_install	leaf	VOID	1	-	0	call,alloc
 rt_pl_atop_cold	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
