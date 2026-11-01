@@ -29,7 +29,13 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
+  util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
+                                       cores_busy mean read 12 or more; rc 2 when the box was not busy (the rate under no contention measures nothing)
+  util_seat_census.py --acceptance S   step 9's DONE-WHEN (default 86400): over the busy runs (twelve at least) the grader at 2.0 cores or more, no seat's
+                                       ten-minute mean above 4.0 while another seat waited for a slot, pressure some avg300 under 30, builds FETCHED ten
+                                       times the BUILT (BUILDS.tsv, written by util_build_cache.sh), landings on origin/main at 10 an hour or more
   --load F --seats F --root DIR        read and write these instead (the gate's fixtures)
+  --results F --waits F --builds F --repos DIR   the other ledgers and the repo root, for the fixtures
 """
 import os, re, sys, time, glob, subprocess
 CG = "/sys/fs/cgroup/user.slice/user-1000.slice"
@@ -37,7 +43,10 @@ LOAD = "/home/resources/progress/LOAD.tsv"
 SEATS = "/home/resources/progress/SEATS.tsv"
 TMPCACHE = "/home/resources/progress/LOAD_TMP.tsv"
 COLS = ["utc", "kind", "class", "name", "cores", "mem_mb", "mem_peak_mb", "oom_kills", "pids", "cc_slots", "run_slots", "tmp_mb"]
-BOXCOLS = ["cores_busy", "load1", "pressure_some_avg60", "mem_available_mb", "swap_used_mb", "tmp_pct", "cc_held", "run_held", "slice_held", "builds_fetched", "checks_hit", "oracle_hit"]
+BOXCOLS = ["cores_busy", "load1", "pressure_some_avg60", "pressure_some_avg300", "mem_available_mb", "swap_used_mb", "tmp_pct", "cc_held", "run_held", "slice_held", "builds_fetched", "compiles", "checks_hit", "oracle_hit"]
+RESULTS = "/home/resources/progress/results.tsv"
+WAITS = "/home/resources/progress/SLOT_WAITS.tsv"
+BUILDS = "/home/resources/progress/BUILDS.tsv"
 TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
 
 
@@ -256,7 +265,8 @@ def oracle_hits(window):
 
 def box_line(held, app_cores):
     la = rd("/proc/loadavg").split()
-    psi = re.search(r"^some avg10=\S+ avg60=(\S+)", rd("/proc/pressure/cpu"), re.M)
+    psi = re.search(r"^some avg10=\S+ avg60=(\S+) avg300=(\S+)", rd("/proc/pressure/cpu"), re.M)
+    bl = builds_in(arg("--builds", BUILDS), time.time() - 3600)
     mi = dict((l.split(":")[0], int(l.split()[1])) for l in rd("/proc/meminfo").splitlines() if len(l.split()) >= 2 and l.split()[1].isdigit())
     st = os.statvfs("/tmp")
     tmp_pct = 100.0 * (1 - st.f_bavail / st.f_blocks) if st.f_blocks else 0.0
@@ -270,10 +280,10 @@ def box_line(held, app_cores):
     except Exception:
         pass
     slice_held = "1" if os.path.exists("/tmp/s4e-quiet-slice.lock") and subprocess.run(["flock", "-n", "/tmp/s4e-quiet-slice.lock", "true"]).returncode != 0 else "0"
-    v = {"cores_busy": "%.1f" % busy, "load1": la[0] if la else "0", "pressure_some_avg60": psi.group(1) if psi else "0",
+    v = {"cores_busy": "%.1f" % busy, "load1": la[0] if la else "0", "pressure_some_avg60": psi.group(1) if psi else "0", "pressure_some_avg300": psi.group(2) if psi else "0",
          "mem_available_mb": str(mi.get("MemAvailable", 0) // 1024), "swap_used_mb": str((mi.get("SwapTotal", 0) - mi.get("SwapFree", 0)) // 1024),
          "tmp_pct": "%.0f" % tmp_pct, "cc_held": str(sum(held["cc"].values())), "run_held": str(sum(held["run"].values())), "slice_held": slice_held,
-         "builds_fetched": "-", "checks_hit": "-", "oracle_hit": oracle_hits(300)}
+         "builds_fetched": str(bl.get("FETCHED", 0)), "compiles": str(bl.get("BUILT", 0)), "checks_hit": "-", "oracle_hit": oracle_hits(300)}
     return v
 
 
@@ -312,6 +322,144 @@ def run(do_append, do_print):
     if do_print:
         for l in lines:
             print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] != "BOX" else "BOX %s" % l[4])
+    return 0
+
+
+def utc_s(s):
+    """Seconds since the epoch of a ledger stamp, 2026-11-01T11:35:29 with or without the Z."""
+    return __import__("calendar").timegm(time.strptime(s[:19], "%Y-%m-%dT%H:%M:%S"))
+
+
+def runs_in(path, since):
+    """The LOAD.tsv runs (each a list of rows sharing one stamp) at or after `since`, oldest first."""
+    by = {}
+    for l in rd(path).splitlines():
+        if not l or l.startswith("utc"):
+            continue
+        r = l.split("\t")
+        try:
+            if utc_s(r[0]) >= since:
+                by.setdefault(r[0], []).append(r)
+        except ValueError:
+            continue
+    return [by[k] for k in sorted(by)]
+
+
+def box_of(run):
+    return dict(kv.split("=", 1) for r in run if r[1] == "BOX" for kv in r[4].split() if "=" in kv)
+
+
+def builds_in(path, since):
+    """BUILDS.tsv events at or after `since`: {event: count} (FETCHED, BUILT, PUBLISHED, MISS, DIRTY, INPLACE, OFF, NO-CACHE-DIR)."""
+    n = {}
+    for l in rd(path).splitlines():
+        r = l.split("\t")
+        if len(r) >= 3 and not l.startswith("#"):
+            try:
+                if utc_s(r[0]) >= since:
+                    n[r[2]] = n.get(r[2], 0) + 1
+            except ValueError:
+                continue
+    return n
+
+
+def grader_rate(window):
+    """Step 5's DONE-WHEN: the grader read 200 programs per hour or more (distinct suite and program among results.tsv's rr=1 rows) over the
+    window while the box was busy (the ledger's BOX cores_busy mean at 12 or more); rc 2 when the box was not busy, because the rate under no
+    contention measures nothing."""
+    now = time.time(); since = now - window
+    progs = set()
+    for l in rd(arg("--results", RESULTS)).splitlines():
+        r = l.split("\t")
+        if len(r) >= 14 and "rr=1" in r[13] and not l.startswith("ts_utc"):
+            try:
+                if utc_s(r[0]) >= since:
+                    progs.add((r[5], r[7]))
+            except ValueError:
+                continue
+    runs = runs_in(arg("--load", LOAD), since)
+    if not runs:
+        print("REFUSED(2): no ledger run in the last %d s (%s)" % (window, arg("--load", LOAD)))
+        return 2
+    busy = [float(box_of(r).get("cores_busy", 0)) for r in runs]; bm = sum(busy) / len(busy)
+    gr = [float(x[4]) for r in runs for x in r if x[1] == "CLASS" and x[2] == "GRADER"]; gm = sum(gr) / len(gr) if gr else 0.0
+    rate = len(progs) / (window / 3600.0)
+    print("GRADER RATE window=%ds programs=%d per_hour=%.0f busy_mean=%.1f grader_cores_mean=%.2f runs=%d" % (window, len(progs), rate, bm, gm, len(runs)))
+    if bm < 12:
+        print("REFUSED(2): the box was not busy (cores_busy mean %.1f of %d, under 12): the grader's rate under contention cannot be read" % (bm, os.cpu_count() or 16))
+        return 2
+    if rate < 200:
+        print("  RED  the grader read %d programs in %.1f h (%.0f per hour, under 200) while the box was busy at %.1f cores" % (len(progs), window / 3600.0, rate, bm))
+        return 1
+    print("  GREEN the grader read %.0f programs per hour while the box was busy at %.1f cores (grader %.2f cores)" % (rate, bm, gm))
+    return 0
+
+
+def acceptance(window):
+    """Step 9's DONE-WHEN over the window (a working day): the runs with cores_busy at 12 or more are the busy runs (fewer than twelve of them,
+    an hour, is REFUSED); over them the grader's mean is 2.0 cores or more; no seat's ten-minute mean is above 4.0 while another seat waited for
+    a slot in that ten minutes (SLOT_WAITS.tsv); cpu pressure some avg300 mean under 30; builds FETCHED at least ten times the BUILT; landings
+    (commits on origin/main of SCRIP, harness, corpus and .github beside this harness) at 10 per hour or more."""
+    now = time.time(); since = now - window
+    runs = runs_in(arg("--load", LOAD), since)
+    busy_runs = [r for r in runs if float(box_of(r).get("cores_busy", 0)) >= 12]
+    print("ACCEPTANCE window=%ds runs=%d busy_runs=%d" % (window, len(runs), len(busy_runs)))
+    if len(busy_runs) < 12:
+        print("REFUSED(2): %d busy run(s) of %d (cores_busy at 12 or more; twelve, an hour, are the least): the fleet was not working for long enough to read" % (len(busy_runs), len(runs)))
+        return 2
+    gaps = []
+    gr = [float(x[4]) for r in busy_runs for x in r if x[1] == "CLASS" and x[2] == "GRADER"]; gm = sum(gr) / len(gr) if gr else 0.0
+    (gaps if gm < 2.0 else []).append("the grader's mean over the busy runs is %.2f cores (under 2.0)" % gm)
+    ps = [float(box_of(r).get("pressure_some_avg300", box_of(r).get("pressure_some_avg60", 0))) for r in busy_runs]; pm = sum(ps) / len(ps)
+    (gaps if pm >= 30 else []).append("cpu pressure some avg300 mean over the busy runs is %.1f (30 or more)" % pm)
+    waits = {}
+    for l in rd(arg("--waits", WAITS)).splitlines():
+        r = l.split("\t")
+        if len(r) >= 4 and not l.startswith("#"):
+            try:
+                ts = utc_s(r[0])
+            except ValueError:
+                continue
+            if ts >= since:
+                waits.setdefault(int(ts // 600), []).append((r[1], r[3]))
+    buckets = {}
+    for r in busy_runs:
+        b = int(utc_s(r[0][0]) // 600)
+        for x in r:
+            if x[1] == "UNIT" and x[2] == "SEAT":
+                buckets.setdefault(b, {}).setdefault(x[3], []).append(float(x[4]))
+    hogs = []
+    for b, seats in sorted(buckets.items()):
+        for s, v in seats.items():
+            mean = sum(v) / len(v)
+            others = [(w, sec) for (w, sec) in waits.get(b, []) if w != s]
+            if mean > 4.0 and others:
+                hogs.append("%s held %.1f cores over the ten minutes from %s while %s waited %s s for a slot" % (s, mean, time.strftime("%H:%MZ", time.gmtime(b * 600)), others[0][0], others[0][1]))
+    gaps += hogs[:3]
+    bl = builds_in(arg("--builds", BUILDS), since); fetched, built = bl.get("FETCHED", 0), bl.get("BUILT", 0)
+    if fetched + built == 0:
+        gaps.append("no build in the window (BUILDS.tsv has no FETCHED or BUILT)")
+    elif fetched < 10 * built:
+        gaps.append("builds FETCHED %d against BUILT %d (under ten to one)" % (fetched, built))
+    repos = arg("--repos", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    landings = 0; seen = 0
+    for name in ("SCRIP", "harness", "corpus", ".github"):
+        d = os.path.join(repos, name)
+        if os.path.isdir(os.path.join(d, ".git")) or os.path.isfile(os.path.join(d, ".git")):
+            seen += 1
+            r = subprocess.run(["git", "-C", d, "log", "--since=%d" % int(since), "--format=%H", "origin/main"], capture_output=True, text=True)
+            landings += len([l for l in r.stdout.splitlines() if l])
+    lph = landings / (window / 3600.0)
+    if seen == 0:
+        gaps.append("no repo beside this harness to count landings in (%s)" % repos)
+    elif lph < 10:
+        gaps.append("landings on origin/main: %d in %.1f h (%.1f per hour, under 10)" % (landings, window / 3600.0, lph))
+    print("  grader_mean=%.2f pressure_mean=%.1f hogs=%d fetched=%d built=%d landings=%d (%.1f/h)" % (gm, pm, len(hogs), fetched, built, landings, lph))
+    for g in gaps:
+        print("  RED  " + g)
+    if gaps:
+        return 1
+    print("  GREEN over %d busy runs the grader held %.2f cores, no seat hogged while another waited, pressure %.1f, builds fetched %d to built %d, %.1f landings an hour" % (len(busy_runs), gm, pm, fetched, built, lph))
     return 0
 
 
@@ -443,6 +591,10 @@ def memory_check():
 
 def main():
     av = sys.argv[1:]
+    if "--grader-rate" in av:
+        return grader_rate(int(arg("--grader-rate", "7200")))
+    if "--acceptance" in av:
+        return acceptance(int(arg("--acceptance", "86400")))
     if "--memory-check" in av:
         return memory_check()
     if "--check" in av:

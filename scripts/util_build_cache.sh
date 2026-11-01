@@ -63,6 +63,7 @@ write_buildinfo() {
     mkdir -p "$1/out"
     printf 'key %s\ntree %s\nrt_tag %s\ntoolchain %s\nsource %s\nroot %s\nutc %s\n' "$key" "$tree" "$tag" "$tool" "$2" "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$1/out/buildinfo"
 }
+ledger() { printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${S4E_SEAT:-$(basename "$(dirname "$root")")}" "$1" "$key" "$root" >> /home/resources/progress/BUILDS.tsv 2>/dev/null || true; }   # the builds ledger (ARCH-SHARED-DEVELOPMENT 11.5): FETCHED and BUILT are the two the acceptance counts
 case "$verb" in
     key) echo "$key"; exit 0 ;;
     status)
@@ -72,15 +73,15 @@ case "$verb" in
         exit 0 ;;
     fetch)
         if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: removing the stale out/scrip0 (absolute rpath, fetched before the \$ORIGIN Makefile)"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
-        [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { echo "build cache OFF (S4E_NO_BUILD_CACHE=1)"; exit 1; }
-        [ -d "$CACHE" ] || { echo "build cache: NO-CACHE-DIR $CACHE"; exit 1; }
-        clean || { [ -f "$root/out/buildinfo" ] && sed -i 's/^source .*/source DIRTY/' "$root/out/buildinfo"; echo "build cache: DIRTY tree, building locally (key $key)"; exit 1; }
+        [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { ledger OFF; echo "build cache OFF (S4E_NO_BUILD_CACHE=1)"; exit 1; }
+        [ -d "$CACHE" ] || { ledger NO-CACHE-DIR; echo "build cache: NO-CACHE-DIR $CACHE"; exit 1; }
+        clean || { [ -f "$root/out/buildinfo" ] && sed -i 's/^source .*/source DIRTY/' "$root/out/buildinfo"; ledger DIRTY; echo "build cache: DIRTY tree, building locally (key $key)"; exit 1; }
         e="$CACHE/$key"
-        [ -f "$e/MANIFEST" ] || { echo "build cache: MISS $key"; exit 1; }
+        [ -f "$e/MANIFEST" ] || { ledger MISS; echo "build cache: MISS $key"; exit 1; }
         if [ -f "$root/out/buildinfo" ] && [ "$(sed -n 's/^key //p' "$root/out/buildinfo")" = "$key" ] && cmp -s "$e/scrip" "$root/scrip" && cmp -s "$e/out/libscrip_rt.so" "$root/out/libscrip_rt.so" && [ -x "$root/scrip" ] && [ -f "$root/out/libscrip_rt.so" ]; then
             ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" 2>/dev/null )
             touch "$e/.used" 2>/dev/null || true
-            echo "FETCHED $key (already in place)"; exit 0
+            ledger INPLACE; echo "FETCHED $key (already in place)"; exit 0
         fi
         rpath_is_own "$e/scrip" && rpath_is_own "$e/out/scrip-ipp" || { echo "build cache: entry $key carries an absolute rpath (built before the \$ORIGIN Makefile), building locally"; exit 1; }
         n=0
@@ -96,11 +97,11 @@ case "$verb" in
         ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" )
         write_buildinfo "$root" FETCHED
         touch "$e/.used" 2>/dev/null || true
-        echo "FETCHED $key ($n files from $e)"
+        ledger FETCHED; echo "FETCHED $key ($n files from $e)"
         exit 0 ;;
     publish)
         [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { echo "build cache OFF (S4E_NO_BUILD_CACHE=1), nothing published"; exit 0; }
-        write_buildinfo "$root" BUILT
+        ledger BUILT; write_buildinfo "$root" BUILT
         [ -d "$CACHE" ] || mkdir -p "$CACHE" 2>/dev/null || { echo "build cache: NO-CACHE-DIR $CACHE, nothing published"; exit 0; }
         clean || { echo "build cache: DIRTY tree, nothing published"; exit 0; }
         e="$CACHE/$key"
@@ -120,7 +121,7 @@ case "$verb" in
         cp -p "$root/out/buildinfo" "$t/out/buildinfo" && sed -i "s/^key .*/key $key/; s|^root .*|root $root|" "$t/out/buildinfo"
         : > "$t/.used"
         if mv -T "$t" "$e" 2>/dev/null; then
-            echo "PUBLISHED $key ($(wc -l < "$e/MANIFEST") files, $(du -sh "$e" | cut -f1))"
+            ledger PUBLISHED; echo "PUBLISHED $key ($(wc -l < "$e/MANIFEST") files, $(du -sh "$e" | cut -f1))"
         else
             rm -rf "$t"; echo "build cache: $key published by another root meanwhile"
         fi
