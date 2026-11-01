@@ -38,6 +38,7 @@ src/templates/bb/bb_call_proc_staged.cpp:rt_proc_call_open_det#2	UNWITNESSED
 src/templates/bb/bb_call_proc_staged.cpp:rt_proc_call_open#2	UNWITNESSED
 src/templates/bb/bb_call_proc_staged.cpp:rt_proc_call_open_det#3	UNWITNESSED
 src/templates/bb/bb_call_proc_staged.cpp:rt_proc_call_open#3	UNWITNESSED
+src/templates/bb/bb_call_proc_staged.cpp:rt_gcheap_alloc#1	hb_pl_a_last_call_that_globalizes_a_fresh_variable_keeps_the_terms_of_its_call_block.pl
 src/templates/bb/bb_coerce_integer.cpp:rt_coerce_int_d#1	hb_sno_every_deferred_expression_shape_under_the_flip_plant.sno
 src/templates/bb/bb_coerce_integer.cpp:rt_coerce_int_d#2	UNWITNESSED
 src/templates/bb/bb_coerce_real.cpp:rt_coerce_real_d#1	UNWITNESSED
