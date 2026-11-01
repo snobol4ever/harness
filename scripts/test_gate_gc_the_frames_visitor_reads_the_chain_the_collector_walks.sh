@@ -20,8 +20,12 @@
 # handed back as a shorter list (when the fragment class lands and frameless reads 0 the arm says there was nothing to
 # refuse); (3) the visitor and its callback type are declared once, in gc_heap.h; (4) THE COROUTINE START (the ceo's
 # order of 2026-10-09: rt_genp_spine_enter_n2 is the sanctioned coroutine start of a generator's co-expression thread, so
-# the collector names it): on hb_coexpr_genp_scan every suspended body's chain that links to the stub's gamma or omega
+# the collector names it): on hb_coexpr_parked every suspended body's chain that links to the stub's gamma or omega
 # label (published in rt_genp_n2_conts, a read-only record, so no text symbol splits the stub) ends there as the segment's start, so nosite reads 0, coroutine-start > 0 and the visitor refuses nothing.
+# (4) WAS GRADED ON hb_coexpr_genp_scan until 2026-11-01 (hq_collector): eaa97e0c8 (hq_icon, 2026-10-14) made a region-frame generator called through a procedure value run on the SPINE, not on a pthread
+# of its own, so that witness never enters rt_genp_spine_enter_n2 (a breakpoint on the stubs and on scrip_coexpr_create has 0 hits) and its chains end at root: coroutine-start 0 in both modes on every build since, the
+# arm red on 648c5c1d1. The deletion's re-expression is here: (4) grades hb_coexpr_parked, whose co-expression threads still start through the stub (353 chains end at the named start, both modes, nosite 0 refused 0 differ 0),
+# and (4n) keeps hb_coexpr_genp_scan as the NEGATIVE CONTROL that pins the spine road and shows the (4) predicate says no where no coroutine starts.
 # (5) THE BALL IN CATCH (the cto's controls, 2026-10-09): a goal meta-called by catch through bb_call_value.cpp's
 # pl_proto arm whose is/2 or unify cold road raises a ball polls inside the goal; the arm's gamma landing was no site, so
 # the chain stopped there (nosite 6 of 53 and 30 of 221, both modes, predating the occurs-check landing). The landing is
@@ -75,7 +79,7 @@ for m in 3 4; do
   elif [ "${rf:-0}" -ge "$fl" ] && [ "$di" = 0 ]; then ck ok "(2) $REF mode $m: $fl frameless running chain(s), the visitor refused $rf collection(s) and handed back no partial list (differ=0)"
   else ck no "(2) $REF mode $m: frameless=$fl refused=${rf:-?} differ=${di:-?} -- a chain that stops short was handed to the caller as a list"; fi
 done
-GEN="hb_coexpr_genp_scan.icn"
+GEN="hb_coexpr_parked.icn"
 [ -f "$WD/$GEN" ] || refuse "witness $WD/$GEN is missing"
 run_both "$GEN"
 for m in 3 4; do
@@ -84,6 +88,16 @@ for m in 3 4; do
   ns="$(num "$s" nosite)"; cs="$(num "$s" coroutine-start)"; rf="$(num "$s" refused)"; di="$(num "$s" differ)"
   if [ "$ns" = 0 ] && [ "${cs:-0}" -gt 0 ] && [ "$rf" = 0 ] && [ "$di" = 0 ]; then ck ok "(4) $GEN mode $m: $cs suspended-generator chain(s) end at the named coroutine start (the gamma and omega words of rt_genp_n2_conts), nosite=0, the visitor refused 0"
   else ck no "(4) $GEN mode $m: nosite=${ns:-?} coroutine-start=${cs:-?} refused=${rf:-?} differ=${di:-?} -- a generator segment's chain no longer ends at its coroutine start"; fi
+done
+NEG="hb_coexpr_genp_scan.icn"
+[ -f "$WD/$NEG" ] || refuse "witness $WD/$NEG is missing"
+run_both "$NEG"
+for m in 3 4; do
+  s="$(grep -a '^\[CHAIN-WALK\] SUMMARY ' "$W/${NEG%.*}.e$m" | tail -1)"
+  [ -n "$s" ] || { ck no "(4n) $NEG mode $m: no [CHAIN-WALK] SUMMARY line"; continue; }
+  ns="$(num "$s" nosite)"; cs="$(num "$s" coroutine-start)"; rf="$(num "$s" refused)"; di="$(num "$s" differ)"
+  if [ "$ns" = 0 ] && [ "${cs:-x}" = 0 ] && [ "$rf" = 0 ] && [ "$di" = 0 ]; then ck ok "(4n) $NEG mode $m: its by-value generator runs on the spine (eaa97e0c8), so coroutine-start reads 0 with nosite=0 refused=0 differ=0 -- the (4) predicate says no where no coroutine starts"
+  else ck no "(4n) $NEG mode $m: nosite=${ns:-?} coroutine-start=${cs:-?} refused=${rf:-?} differ=${di:-?} -- the by-value generator no longer runs on the spine (a coroutine start appeared, or its chain stopped short)"; fi
 done
 printf '%s\n' ':- initialization(main).' 't(N, G) :- ( catch(G, error(_, _), (write(N-raised), nl, fail)) -> write(N-yes) ; write(N-no) ), nl.' \
   'loop(0) :- !.' 'loop(K) :- t(1, _ is 1 / 0), t(2, _ is foo + 1), t(3, _ is 2 + 3), K1 is K - 1, loop(K1).' 'main :- loop(3), halt.' > "$W/ballcatch.pl"
