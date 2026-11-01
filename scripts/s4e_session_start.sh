@@ -4,13 +4,13 @@
 # scope, appends one line to /home/resources/progress/SEATS.tsv (utc, seat, class, scope, pid, start; the newest line per seat is the live
 # one, the older lines are history) and applies the class's properties to the scope with systemctl --user set-property --runtime:
 #   SEAT  CPUWeight=100 CPUQuota=400% MemoryHigh=4G MemoryMax=8G MemorySwapMax=1G TasksMax=2048 (the quota: CEO-2105, the session scope is the door)
-#   LON   CPUWeight=200 (a Claude session whose root is not a seat's; no memory cap on Lon's class)
-# ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (300 since CEO-2105, under the grader's 600), because the first weight below
+#   LON   CPUWeight=1000 (a Claude session whose root is not a seat's; no memory cap on Lon's class; CEO-2105 (d): ten to one over a seat)
+# ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (100 since CEO-2105 (d), under the grader's 300), because the first weight below
 # app.slice enables the cpu controller there; until Lon's script has set the slices, the hook registers and weights nothing.
 # It also makes the seat's TMPDIR (/tmp/s4e/<seat>). It is idempotent, takes well under a second, and NEVER fails the session (rc 0 always).
 #   s4e_session_start.sh             the hook: this session (its parent Claude process)
 #   s4e_session_start.sh --pid P     place the live session whose process is P (util_fleet_settings.sh --apply uses it)
-#   s4e_session_start.sh --check     step 2's DONE-WHEN: rc 0 every live seat session registered and weighted, the sessions' slice at 300 (CEO-2105) and
+#   s4e_session_start.sh --check     step 2's DONE-WHEN: rc 0 every live seat session registered and weighted, the sessions' slice at 100 (CEO-2105 (d)) and
 #                                    the grader and batch slices configured; rc 1 RED with the first gaps named; rc 2 nothing registered yet
 exec python3 - "$@" <<'PY'
 import os, re, subprocess, sys, time, fcntl
@@ -18,8 +18,8 @@ LEDGER = "/home/resources/progress/SEATS.tsv"
 OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo"}
 TERM = "app-org.gnome.Terminal.slice"
 SEAT_PROPS = ["CPUWeight=100", "CPUQuota=400%", "MemoryHigh=4G", "MemoryMax=8G", "MemorySwapMax=1G", "TasksMax=2048"]   # CPUQuota (CEO-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap
-LON_PROPS = ["CPUWeight=200"]
-TERM_WEIGHT = "300"   # CEO-2105: the sessions' slice under the grader slice (600); a seat scope is weighted only once the sessions' slice reads it
+LON_PROPS = ["CPUWeight=1000"]   # CEO-2105 (d): inside the sessions' slice Lon's terminal outranks every seat (100) ten to one
+TERM_WEIGHT = "100"   # CEO-2105 (d): the sessions' slice at the default 100, equal to any desktop app, under the grader slice (300); a seat scope is weighted only once the sessions' slice reads it
 def seat_of_root(path):
     m = re.match(r"/home/claude_([a-z0-9_]+)(/|$)", path or "")
     if not m: return None
@@ -100,7 +100,7 @@ def check():
     if not newest: print("REFUSE(2): %s holds no SEAT line" % LEDGER); return 2
     gaps = []
     if show(TERM, "CPUWeight") != TERM_WEIGHT: gaps.append("%s CPUWeight=%s, not %s" % (TERM, show(TERM, "CPUWeight") or "?", TERM_WEIGHT))
-    for sl, w in (("s4e-grader.slice", "600"), ("s4e-batch.slice", "100")):
+    for sl, w in (("s4e-grader.slice", "300"), ("s4e-batch.slice", "50")):
         if show(sl, "CPUWeight") != w: gaps.append("%s CPUWeight=%s, not %s" % (sl, show(sl, "CPUWeight") or "?", w))
     live = live_sessions()
     for seat, pids in sorted(live.items()):
@@ -118,7 +118,7 @@ def check():
     print("SEATS live=%d registered=%d gaps=%d" % (len(live), len(newest), len(gaps)))
     for g in gaps[:12]: print("  RED " + g)
     if gaps: return 1
-    print("GREEN: every live seat session is registered with cpu.weight 100 and its memory and task caps; %s at 300 under the grader slice's 600 (CEO-2105), every seat scope at the four-core quota, the batch slice configured" % TERM)
+    print("GREEN: every live seat session is registered with cpu.weight 100 and its memory and task caps; %s at 100 under the grader slice's 300 (CEO-2105 (d)), every seat scope at the four-core quota, the batch slice at 50" % TERM)
     return 0
 a = sys.argv[1:]
 if a[:1] == ["--check"]: sys.exit(check())

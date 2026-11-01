@@ -4,9 +4,9 @@
 # WITHOUT --apply it changes nothing: it prints, root by root, the unified diff it would write, then the slice and tmpfiles commands.
 # WITH --apply, in this order:
 #   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10):
-#         app-org.gnome.Terminal.slice CPUWeight=300 MemoryHigh=20G MemoryMax=24G   (the sessions; 300 under the grader since CEO-2105)
-#         s4e-grader.slice CPUWeight=600 MemoryMax=10G                               (the grader outranks the sessions, CEO-2105)
-#         s4e-batch.slice  CPUWeight=100 MemoryMax=12G                               (batch, step 4 moves the boards and censuses in)
+#         app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G   (the sessions; the default 100, equal to any desktop app, CEO-2105 (d))
+#         s4e-grader.slice CPUWeight=300 MemoryMax=10G                               (the grader outranks the sessions, CEO-2105 (d))
+#         s4e-batch.slice  CPUWeight=50 MemoryMax=12G                                (batch, step 4 moves the boards and censuses in)
 #   (2) /tmp/s4e/<seat> for every seat, made at every login by ~/.config/user-tmpfiles.d/s4e.conf (a reboot empties /tmp; TMPDIR points there)
 #   (3) every seat root's settings.local.json, a dated .bak beside it: the env block (S4E_SEAT, S4E_SEAT_JOBS=4, MAKEFLAGS=--jobs=4,
 #       TMPDIR=/tmp/s4e/<seat>), a SessionStart hook running that root's harness/scripts/s4e_session_start.sh, a PreToolUse hook running that
@@ -23,7 +23,7 @@ command -v systemctl >/dev/null || { echo "REFUSE(2): no systemctl" >&2; exit 2;
 ROOTS=$(ls -d /home/claude_* 2>/dev/null)
 [ -n "$ROOTS" ] || { echo "REFUSE(2): no /home/claude_* roots" >&2; exit 2; }
 STAMP=$(date +%Y%m%dT%H%M%S)
-SLICES=("app-org.gnome.Terminal.slice CPUWeight=300 MemoryHigh=20G MemoryMax=24G" "s4e-grader.slice CPUWeight=600 MemoryMax=10G" "s4e-batch.slice CPUWeight=100 MemoryMax=12G")
+SLICES=("app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G" "s4e-grader.slice CPUWeight=300 MemoryMax=10G" "s4e-batch.slice CPUWeight=50 MemoryMax=12G")
 TF="$HOME/.config/user-tmpfiles.d/s4e.conf"
 SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " ceo cto cfo coo cao cqo " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
 fail=0
