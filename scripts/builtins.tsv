@@ -1246,3 +1246,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1247	pl	$fx_readlink	2	2	rt_pl_dop_fx_readlink	leaf	-	-	0	dop_direct
 1248	pl	$seek_list	4	4	rt_pl_dop_seek_list	leaf	-	-	0	dop_direct
 1249	rkm	isNaN	-	-	bt_isNaN	leaf	-	-	0	meth_arms
+1250	rk	__rk_unbase	-	-	bt___rk_unbase	leaf	-	-	0	fn_arms,rt_known
