@@ -262,10 +262,31 @@ def supervise(kind, argv):
         sys.stderr.write("[mem_scope] elapsed=%.0fs peak=%s of cap=%s%s (memory.swap.max=%s, OOMPolicy=continue) "
                          "oom_kill=%d  %s\n" % (el, _mb(_read(d, "memory.peak")), _mb(_read(d, "memory.max")), note,
                                                 _read(d, "memory.swap.max"), kills, d.name))
+    peaks_line(d, kind, el, kills, rc)
     if kills:
         sys.stderr.write("⛔ REFUSE(2) [mem_scope]: %s\n" % kill_detail(kills, d))
         return 2
     return rc if rc >= 0 else 128 - rc
+
+
+PEAKS = "/home/resources/progress/PEAKS.tsv"
+
+
+def peaks_line(d, kind, el, kills, rc):
+    """THE MEASURED-PEAK LEDGER (the fleet test, 2026-11-01, CTO-446): one line per scoped run, utc seat kind unit peak_mb cap_mb oom_kill
+    elapsed_s rc, appended at exit. A program's declared heap_kb plus stack_kb does not cover a mode-4 assembly (X64T math_div: 135 MB declared,
+    3.4 GB in the assembler), so a budget built on declared sizes under-counts; the loop reads the measured peak here when it widths a lane."""
+    if d is None:
+        return
+    try:
+        who = re.sub(r"[^a-z0-9_]", "_", (os.environ.get("S4E_SEAT", "").strip() or HERE.parent.parent.name).lower())
+        line = "%s\t%s\t%s\t%s\t%s\t%s\t%d\t%.0f\t%d\n" % (time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), who, kind, d.name,
+                                                         _mb(_read(d, "memory.peak")).replace(" MB", ""), _mb(_read(d, "memory.max")).replace(" MB", ""),
+                                                         kills, el, rc if rc >= 0 else 128 - rc)
+        with open(PEAKS, "a") as f:
+            f.write(line)
+    except OSError:
+        pass
 
 
 def main(argv):

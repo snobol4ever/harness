@@ -546,14 +546,14 @@ def memory_check():
         pids = [p for p in rd(os.path.join(d, "cgroup.procs")).split() if p.isdigit()]
         want = "S4E_SEAT=" + seat
         envs = []
-        for p in pids[:4]:
+        for p in pids:
             try:
                 with open("/proc/%s/environ" % p, "rb") as f:
                     envs.append(f.read().decode("utf-8", "replace").split("\0"))
             except OSError:
                 pass
-        if envs and not any(want in e for e in envs):
-            gaps.append("seat %s: its session runs without %s, so its runners cannot place TMPDIR=/tmp/s4e/%s" % (seat, want, seat))
+        if len(envs) >= 2 and not any(want in e for e in envs):   # the session process never carries the settings env; only a shell child does, so one pid is no reading (the fleet test, 2026-11-01)
+            gaps.append("seat %s: its session's shells run without %s, so its runners cannot place TMPDIR=/tmp/s4e/%s" % (seat, want, seat))
     svc = os.path.join(root, "user@1000.service")
     for nm, rel, knob in (("the sessions' slice", "app.slice/app-org.gnome.Terminal.slice", "memory.high"), ("s4e-batch.slice", "s4e.slice/s4e-batch.slice", "memory.max"),
                           ("s4e-grader.slice", "s4e.slice/s4e-grader.slice", "memory.max")):
