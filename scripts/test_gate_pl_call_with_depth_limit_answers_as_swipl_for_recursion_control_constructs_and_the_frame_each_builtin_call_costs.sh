@@ -10,9 +10,12 @@
 # THE GOALS PROBE (hq_runtime, CEO-2020, a COMPILED clause body: the other probes run as directives): the shapes the gate used to tolerate now answer as swipl -- a single builtin handed to the limiter AS THE GOAL (is, atom,
 # sort, msort, atom_codes, assertz, nl, between, call/N, maplist, exclude), \+ fail, findall in a goal and in a clause body (swipl puts the goal 5 frames under findall/3 and a $add_findall_bag frame at the 6th: a forwarding chain
 # '$dl_findall'..'$dl_f5' in swi_builtins.pl, the 5th link ticking the floor), and nth0/nth1/last in swipl's shape ('$seek_list'/4 is the foreign skip, nth0 reads 2 at any index). The lowering: a builtin's own stub is its frame
-# (no $dl_tick inside atom/1, is/2 ... or a $mc: wrapper), and a leaf true/fail of a $cc shape is free. NOT REPRODUCED, measured against swipl 9.0.4 and left as debt: a control construct handed as the goal other than \+ (conj,
-# disjunction, if-then-else, soft-cut and \+ \+ read 1 to 2 more: swipl's temp clause is a frame that counts nothing, SCRIP runs ,/2 ;/2 ->/2 as prelude predicates with counted frames, the follow-up is a latent-frame fact in
-# zf_pro_depth), and the library predicates length, memberchk, select, retract, bagof and setof (another recursion shape than swipl's foreign or Prolog definition).
+# (no $dl_tick inside atom/1, is/2 ... or a $mc: wrapper), and a leaf true/fail of a $cc shape is free. NOT REPRODUCED, measured against swipl 9.0.4 and left as debt: the library predicates length, memberchk, select,
+# retract, bagof and setof (another recursion shape than swipl's foreign or Prolog definition).
+# THE CTL PROBE (hq_templates, a COMPILED clause body): a control construct handed to the limiter as the goal, bare and under a user frame, answers as swipl -- conjunction, disjunction, if-then-else, soft-cut and \+ \+ read 1,
+# a user goal inside one reads its own frame plus one level, a cut inside one costs nothing, and a limit of 0 to 3 is checked against the frames that count. swipl's temp clause holds a level, counts nothing and checks no limit; SCRIP runs ,/2 ;/2 ->/2 *->/2,
+# $fc/3, $conj_nocut/1 and the $cc and $mc: control wrappers as LATENT frames (the IR graph fact dl_latent, set by the lowerer, read by zf_pro_depth in xa_flat.cpp): LEVEL is the caller's plus 1 minus the caller's latent tag,
+# the tag being bit 0 of the LIMITER word, REACHED and LIMIT untouched, a variable leaf true/fail inside one costs no frame, and the answer R is at least 1 as swipl's.
 # The self-test feeds the comparison a corrupted reference and requires it seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -246,9 +249,25 @@ main :-
     w(call_atom, call(atom, a)), w(call_eq, call(=, _, a)), w(maplist, maplist(atom, [a, b])), w(exclude, exclude(atom, [a], _)), w(dyn, dyn(_)), w(member, member(_, [a, b, c])), w(append, append([a], [b], _)),
     halt.
 PL
+cat > "$W/ctl.pl" <<'PL'
+:- initialization(main).
+p(0) :- !.
+p(N) :- N1 is N - 1, p(N1).
+r(G) :- call(G).
+w(T, G) :- w(T, G, 20).
+w(T, G, L) :- ( call_with_depth_limit(G, L, R) -> true ; R = failed ), write(T/L-R), nl.
+main :-
+    w(conj, (true, true)), w(conj3, (true, true, true)), w(disj, (fail ; true)), w(disj_t, (true ; true)), w(ite, (true -> true ; true)), w(ite_nc, (true -> true)), w(soft, (true *-> true ; true)), w(notnot, \+ \+ true),
+    w(conj_p0, (true, p(0))), w(conj_p1, (p(1), true)), w(conj_p1b, (true, p(1))), w(disj_p1, (fail ; p(1))), w(ite_p1, (p(1) -> true ; true)), w(notnot_p1, \+ \+ p(1)), w(conj_atom, (true, atom(a))),
+    w(conj_cut, (true, !)), w(cut_conj, (!, true)), w(ite_cut, (true -> ! ; true)), w(disj_cut, (fail ; !)), w(conj_cut_mid, (true, !, true)), w(cut_only, !),
+    w(nested, ((true, true) ; true)), w(nested2, ((true ; fail), (true -> true ; true))), w(nested_p0, ((true, true), p(0))), w(nested_p1, ((true ; fail), (true, p(1)))),
+    w(r_conj, r((true, true))), w(r_disj, r((fail ; true))), w(r_ite, r((true -> true ; fail))), w(r_soft, r((true *-> true ; fail))), w(r_notnot, r(\+ \+ true)), w(r_conj_p0, r((true, p(0)))), w(r_conj_atom, r((true, atom(a)))),
+    forall(member(L, [0, 1, 2, 3]), (w(true, true, L), w(conj, (true, true), L), w(conj_atom, (true, atom(a)), L), w(r_conj, r((true, true)), L), w(r_conj_atom, r((true, atom(a))), L), w(notnot, \+ \+ true, L), w(ite, (true -> true ; fail), L), w(conj_fail, (true, fail), L))),
+    halt.
+PL
 build() { "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
 bad=0
-for p in shapes rec bi1 bi2 lib goals; do
+for p in shapes rec bi1 bi2 lib goals ctl; do
   timeout -k 5 60 "$SW" -q -t halt "$W/$p.pl" < /dev/null > "$W/$p.ref" 2> "$W/$p.ref.err"
   [ "$(grep -c . "$W/$p.ref")" -ge 8 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the $p probe ($(head -c 160 "$W/$p.ref.err"))"; exit 2; }
   timeout -k 5 60 "$ROOT/scrip" "$W/$p.pl" < /dev/null > "$W/$p.m3" 2> "$W/$p.m3.err"
