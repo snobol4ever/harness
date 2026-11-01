@@ -807,6 +807,7 @@ test_gate_pl_asserting_a_conjunction_of_sixty_thousand_goals_does_not_overflow_t
 test_gate_pl_atom_concat_modes.sh	WIRED	-	-	-
 test_gate_pl_atom_name_survives_a_collect_mid_operation.sh	WIRED	-	-	-
 test_gate_pl_atom_number_iso_errors.sh	WIRED	-	-	-
+test_gate_pl_autoload_2_and_an_explicit_import_into_a_module_reach_the_library_over_a_user_definition_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_backslash_c_layout_escape_agrees_with_the_oracle.sh	WIRED	-	-	-
 test_gate_pl_backtrackable_global_and_setarg_assignments_restore_as_swipl_and_keep_no_trail_in_a_deterministic_loop.sh	WIRED	-	-	-
 test_gate_pl_bagof_setof_grouping.sh	WIRED	-	-	-
