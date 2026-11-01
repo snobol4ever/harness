@@ -35,6 +35,8 @@
 #                     one (nested), #ifdef/#ifndef/#if defined(M)/#elif/#else/#endif select lines, #undef ends a macro; the headers are the witness's .d directory
 #   xbi18_dynamic_load_ordering_a_prepends_each_clause  :- compiler_options([dynamic([canonical(yes), ordering(a)])]). at the top of a module file loads it as load_dyn(File, a) does: every clause is added by asserta, so the
 #                     file reads back in reverse order (the rules and the facts of every predicate); ordering z and an empty dynamic list keep file order (prolog_tests mod_dyn_tests test_dynmod, test_dynmod_im; the module files are the .d directory)
+#   xbi19_import_as_from_a_module_file_renames_and_loads_it_on_first_touch  :- import p/2 from m as q/2. where m is a plain module name whose file m.P sits beside the program: q/2 is the module's p/2 under the new name, the file loads on the first call of q
+#                     (ordering(a) shows it: the clauses read back in reverse), and a second import of the same module under another name loads nothing again (prolog_tests mod_dyn_tests test_dynmod_im; the module files are the .d directory)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
