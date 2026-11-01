@@ -22,11 +22,15 @@ for f in "$L" "$H" "$RA" "$XC"; do gate_require "$f" "$(basename "$f")" || exit 
 CORPUS="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus"
 gate_require "$CORPUS/tests/rebus/ALL.reb" "the rebus rungs (a real board path for the guard to judge)" || exit 2
 W=$(mktemp -d) || exit 2; trap 'git -C "$ROOT" worktree remove --force "$W/home/SCRIP" >/dev/null 2>&1; rm -rf "$W"' EXIT INT TERM
+# ⭐ THE OFFICER IS AN OFFICER NO REBUS LANE NAMES (the coo 2026-11-01): the cto was that seat until the dual bosses (CEO-2095) put it on every
+# lane (rebus=coo,cto), and an owner is admitted before the done refusal is reached; so arms 1a, 2 and 5 take the first of cfo, cao, cqo the lane omits.
+OFF=""; _rb=",$(bash -c "source \"$L\"; one_runner_who rebus" 2>/dev/null),"; for _c in cfo cao cqo; do case "$_rb" in *",$_c,"*) ;; *) OFF=$_c; break;; esac; done
+[ -n "$OFF" ] || { echo "REFUSE(2): every officer owns rebus -- the officer arms cannot be built"; exit 2; }
 fails=0; n=0
 ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1)); echo "  FAIL $1"; fi; }
 
 echo "--- ARM 1: the bash guard refuses the bus computed done on a board, for an officer seat, naming the rule ---"
-o1=$(S4E_SEAT=cto S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r1=$?
+o1=$(S4E_SEAT=$OFF S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r1=$?
 ck "1a rc 2, DONE RUNS NO BOARD FOR ANY SEAT named, util_suite_row_at_or_after.sh named" '[ "$r1" = 2 ] && grep -q "DONE RUNS NO BOARD FOR ANY SEAT" <<<"$o1" && grep -q "util_suite_row_at_or_after.sh" <<<"$o1"'
 o1b=$(S4E_SEAT=hq_icon S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r1b=$?
 ck "1b and a language HQ under the same variable is refused as before (ONE SEAT, ONE LANGUAGE)" '[ "$r1b" = 2 ]'
@@ -34,7 +38,7 @@ o1c=$(S4E_SEAT=coo S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard 
 ck "1c the lane owner the LANES line names (coo, CEO-1342) passes under its own done: the loop's rows are written through done too" '[ "$r1c" = 0 ]'
 
 echo "--- ARM 2: the harness guard refuses the same way ---"
-o2=$(cd "$ROOT" && S4E_SEAT=cto S4E_DONE_WHEN_RUN=1 python3 -c "import sys; sys.path.insert(0, '../harness/scripts'); import corpus_suite_harness as h; h._one_runner_guard('$CORPUS/tests/rebus/ALL.reb', '$CORPUS', 'rebus')" 2>&1); r2=$?
+o2=$(cd "$ROOT" && S4E_SEAT=$OFF S4E_DONE_WHEN_RUN=1 python3 -c "import sys; sys.path.insert(0, '../harness/scripts'); import corpus_suite_harness as h; h._one_runner_guard('$CORPUS/tests/rebus/ALL.reb', '$CORPUS', 'rebus')" 2>&1); r2=$?
 ck "2 rc 2, the same sentence, the same helper named" '[ "$r2" = 2 ] && grep -q "DONE RUNS NO BOARD FOR ANY SEAT" <<<"$o2" && grep -q "util_suite_row_at_or_after.sh" <<<"$o2"'
 
 echo "--- ARM 3: util_suite_row_at_or_after.sh reads the row a DONE-WHEN cites instead of running a board ---"
@@ -62,7 +66,7 @@ ck "4b the row-reading baton is not named" '! grep -q "t-clean-row" <<<"$o4"'
 echo "--- ARM 5: FAIL-ONCE -- the old exemption planted back into a copy of the guard admits the run ---"
 sed 's/printf .⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT[^;]*; return 2; fi/printf "ONE-RUNNER: exempt (planted)\\n"; return 0; fi/' "$L" > "$W/lib_planted.sh"
 grep -q 'exempt (planted)' "$W/lib_planted.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the plant found no anchor in lib_one_runner.sh -- the refusal line moved; re-anchor the plant"; gate_stamp; exit 2; }
-o5=$(S4E_SEAT=cto S4E_DONE_WHEN_RUN=1 bash -c "source \"$W/lib_planted.sh\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r5=$?
+o5=$(S4E_SEAT=$OFF S4E_DONE_WHEN_RUN=1 bash -c "source \"$W/lib_planted.sh\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r5=$?
 ck "5 with the exemption planted back the run is admitted rc 0 -- the defect this gate exists to see" '[ "$r5" = 0 ] && grep -q "exempt (planted)" <<<"$o5"'
 
 echo "------------------------------------------------------------"

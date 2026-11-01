@@ -81,12 +81,14 @@ before="$(sum_of "$B1")"; out="$(run_write "$B1" hq_I)"; rc=$?
 out="$(run_write "$B1" coo)"; rc=$?
 [ "$rc" = 0 ] && [ "$(sum_of "$B1")" != "$before" ]; arm $? "THE ONE RUNNER WRITES: the row lands for the seat MODE names (rc=$rc)"
 [[ "$out" == *"rewritten in place"* ]]; arm $? "and the write says so in the runner's own words"
-echo "--- ARM 3: THE ROSTER IS READ, NOT SPELLED -- name a runner who is not the coo and the coo is refused ---"
+echo "--- ARM 3: THE ROSTER IS READ, NOT SPELLED -- name a runner who is not the coo and a seat it does not name is refused ---"
+# re-cut by the coo 2026-11-01: CEO-1976 (10-25) rules that the coo is never refused on a SCRIP board whatever LANES names, so the coo is a
+# ruled exception at the write path too (util_score_row.py's measurer test); the arm proves the roster is read with a seat that is no exception.
 B3="$WORK/b3"; mkboard "$B3" yes || refuse "could not build the second fixture board"
 mode_with 'cfo SNOBOL4, and THE ONE RUNNER for every rung suite and package board; coo PASCAL'
-before="$(sum_of "$B3")"; out="$(run_write "$B3" coo)"
+before="$(sum_of "$B3")"; out="$(run_write "$B3" cqo)"
 [ "$(sum_of "$B3")" = "$before" ] && [[ "$out" == *"NOT UPDATED"* && "$out" == *cfo* ]]
-arm $? "the coo is REFUSED where the scratch MODE names the cfo -- an implementation spelling a seat name fails here"
+arm $? "the cqo is REFUSED where the scratch MODE names the cfo -- an implementation spelling a seat name fails here (the coo is CEO-1976's ruled exception)"
 out="$(run_write "$B3" cfo)"
 [ "$(sum_of "$B3")" != "$before" ]; arm $? "and the cfo writes, for no reason other than line 2 saying so"
 echo "--- ARMS 4-5: CANNOT-DETERMINE IS NOT A REFUSAL -- an unreadable roster falls back to the older FACT RULE, loudly ---"

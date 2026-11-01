@@ -38,16 +38,21 @@ arm() { examined=$((examined+1)); if eval "$2"; then echo "  ok   $1"; else echo
 # ruling named -- and it now survives every future lane cut without an edit.
 _who() { bash -c "source \"$L\"; one_runner_who \"$1\"" 2>/dev/null; }
 OWN_ICON="$(_who icon)"; OWN_REBUS="$(_who rebus)"
+# ⭐ A LANE MAY NAME SEVERAL OWNERS (the coo 2026-11-01: MODE's LANES line reads icon=coo,cto under the dual bosses, CEO-2095; one_runner_seat_admitted
+# splits the list on commas). The owner-passes arms take the FIRST owner as their seat; the refusal arms take a seat named NOWHERE in the list.
+OWN_ICON_ALL="$OWN_ICON"; OWN_REBUS_ALL="$OWN_REBUS"; OWN_ICON="${OWN_ICON%%,*}"; OWN_REBUS="${OWN_REBUS%%,*}"
 [ -n "$OWN_ICON" ]  || { echo "REFUSE(2) [$G]: MODE LANES: names no owner for icon, so the owner-passes arms cannot be built. That is a finding about the LANES line, not a broken fixture -- report it rather than lowering the bar."; exit 2; }
 [ -n "$OWN_REBUS" ] || { echo "REFUSE(2) [$G]: MODE LANES: names no owner for rebus, so the second-language arm cannot be built. That is a finding about the LANES line, not a broken fixture."; exit 2; }
 # A refusal arm needs a seat the lane does NOT name. Derive one instead of trusting that any particular name
 # is still a non-owner: under a one-owner table most names are, but WHICH ones depends on the live line.
-_not_owner_of() { local _own="$1" _c; for _c in hq_pascal hq_prolog hq_icon hq_B cto cfo; do [ "$_c" = "$_own" ] || { printf '%s' "$_c"; return 0; }; done; return 1; }
-NOT_ICON="$(_not_owner_of "$OWN_ICON")"   || { echo "REFUSE(2) [$G]: every candidate seat owns icon -- no refusal arm can be built"; exit 2; }
-NOT_REBUS="$(_not_owner_of "$OWN_REBUS")" || { echo "REFUSE(2) [$G]: every candidate seat owns rebus -- no refusal arm can be built"; exit 2; }
+_not_owner_of() { local _own=",$1," _c; shift; for _c in "${@:-hq_pascal hq_prolog hq_icon hq_B cto cfo}"; do for _c in $_c; do case "$_own" in *",$_c,"*) ;; *) printf '%s' "$_c"; return 0;; esac; done; done; return 1; }
+NOT_ICON="$(_not_owner_of "$OWN_ICON_ALL")"   || { echo "REFUSE(2) [$G]: every candidate seat owns icon -- no refusal arm can be built"; exit 2; }
+NOT_REBUS="$(_not_owner_of "$OWN_REBUS_ALL")" || { echo "REFUSE(2) [$G]: every candidate seat owns rebus -- no refusal arm can be built"; exit 2; }
+# an OFFICER no icon lane names (arms 3 and 4 need an officer that is not the owner; the cto was that seat until the dual bosses made it one)
+OFFICER="$(_not_owner_of "$OWN_ICON_ALL" "cfo cao cqo")" || { echo "REFUSE(2) [$G]: every officer owns icon -- arms 3 and 4 cannot be built"; exit 2; }
 # arm 5 drives two refused seats and the owner; both refused seats must really not own icon.
 REF_A=hq_B; [ "$REF_A" = "$OWN_ICON" ] && REF_A="$NOT_ICON"
-REF_B=cfo;  [ "$REF_B" = "$OWN_ICON" ] && REF_B=cto
+REF_B="$OFFICER"
 echo "    lanes (read from MODE LANES: via one_runner_who): icon -> $OWN_ICON, rebus -> $OWN_REBUS; refusal seats: $NOT_ICON (icon), $NOT_REBUS (rebus), $REF_A + $REF_B (--check)"
 arm "1a detector: legacy seat hq_B refused rc=2 on an icon board, naming the ruling" 'out=$(S4E_SEAT=hq_B bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); rc=$?; [ $rc -eq 2 ] && grep -q "ONE RUNNER, ONE BOARD" <<<"$out" && grep -q "test_icon_x_suite.sh" <<<"$out"'
 arm "1b detector: a seat the LANES line does not name for icon ($NOT_ICON) is refused rc=2 on an icon board -- the runner is whoever LANES names, the coo for every language since CEO-1342" 'out=$(S4E_SEAT=$NOT_ICON bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 2 ] && grep -q "ONE RUNNER PER LANGUAGE" <<<"$out"'
@@ -57,8 +62,8 @@ arm "2b the owner is read from the LANES line, not baked in: the rebus owner $OW
 arm "2c control: $NOT_REBUS is refused rc=2 on that same rebus rungs path" 'out=$(S4E_SEAT=$NOT_REBUS bash -c "source $L; one_runner_guard test_x_suite.sh $CORPUS/tests/rebus/ALL.reb" 2>&1); [ $? -eq 2 ]'
 arm "2d a BARE language directory is a suite path: the rebus owner $OWN_REBUS passes on $CORPUS/benchmarks/rebus with nothing below it (it printed the whole path as the language and refused the owner too, coo 2026-09-23)" 'out=$(S4E_SEAT=$OWN_REBUS bash -c "source $L; one_runner_guard test_x_suite.sh $CORPUS/benchmarks/rebus" 2>&1); [ $? -eq 0 ] && [ -z "$out" ]'
 arm "2e control: $NOT_REBUS is refused rc=2 on that bare directory, naming the rebus owner, and no sed error reaches the reader" 'out=$(S4E_SEAT=$NOT_REBUS bash -c "source $L; one_runner_guard test_x_suite.sh $CORPUS/benchmarks/rebus" 2>&1); [ $? -eq 2 ] && printf "%s" "$out" | grep -q "is not $OWN_REBUS" && ! printf "%s" "$out" | grep -q "unknown option"'
-arm "3 the bus computed done is REFUSED rc=2 for an officer seat too, naming the rule and the row to read instead (ceo CEO-1342 clause 5: done runs no board for any seat)" 'out=$(S4E_SEAT=cto S4E_DONE_WHEN_RUN=1 bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 2 ] && grep -q "DONE RUNS NO BOARD FOR ANY SEAT" <<<"$out" && grep -q "util_suite_row_at_or_after.sh" <<<"$out"'
-arm "4 a loud override passes and prints its reason" 'out=$(S4E_SEAT=cto S4E_ONE_RUNNER_OVERRIDE="ceo audit CEO-999" bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 0 ] && grep -q "OVERRIDE by cto" <<<"$out" && grep -q "CEO-999" <<<"$out"'
+arm "3 the bus computed done is REFUSED rc=2 for an officer seat too ($OFFICER), naming the rule and the row to read instead (ceo CEO-1342 clause 5: done runs no board for any seat)" 'out=$(S4E_SEAT=$OFFICER S4E_DONE_WHEN_RUN=1 bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 2 ] && grep -q "DONE RUNS NO BOARD FOR ANY SEAT" <<<"$out" && grep -q "util_suite_row_at_or_after.sh" <<<"$out"'
+arm "4 a loud override passes and prints its reason ($OFFICER)" 'out=$(S4E_SEAT=$OFFICER S4E_ONE_RUNNER_OVERRIDE="ceo audit CEO-999" bash -c "source $L; one_runner_guard test_icon_x_suite.sh" 2>&1); [ $? -eq 0 ] && grep -q "OVERRIDE by $OFFICER" <<<"$out" && grep -q "CEO-999" <<<"$out"'
 arm "5 --check <board>: 2 for $REF_A and for $REF_B on an icon board, 0 for the lane owner $OWN_ICON" 'S4E_SEAT=$REF_A bash "$L" --check test_icon_x_suite.sh; a=$?; S4E_SEAT=$REF_B bash "$L" --check test_icon_x_suite.sh; c=$?; S4E_SEAT=$OWN_ICON bash "$L" --check test_icon_x_suite.sh; b=$?; [ $a -eq 2 ] && [ $c -eq 2 ] && [ $b -eq 0 ]'
 arm "6a census: every listed board runner sources the guard on line 2 and calls it (raku_roast_scoreboard calls it after argument parsing, hq_T 09-14)" 'miss=""; while read -r b; do [ -n "$b" ] || continue; { sed -n 2p "$H/$b" | grep -q "lib_one_runner.sh" && grep -q "one_runner_guard" "$H/$b"; } || miss="$miss $b"; done < "$H/one_runner_boards.txt"; [ -z "$miss" ] || { echo "     missing:$miss"; false; }'
 # ⛔ 6d, THE INVERSE CENSUS (coo 2026-09-25, row instruments-the-snobol4-runners-carry-the-switch-export-on-line-2-..., ceo CEO-1272):
@@ -71,16 +76,29 @@ arm "6d census, the inverse: every runner that calls the guard and writes a scor
 # way nothing can grade before the guard, and the exemption cannot widen (a larger cap, a part other than entry:) without this arm going red.
 # ⭐ RE-CUT by the ceo 2026-10-24 (CEO-1952): the smoke core arm of test_smoke_snobol4.sh and test_smoke_snocone.sh is the second exemption, pinned to
 # S4E_SMOKE_CORE_ARM with progress off and exactly one core part plus entry: parts; any other widening still reads red here.
-cmd_run_head() { awk '/^def cmd_run\(args\):/ {f = 1; next} f && /^def / {exit} f && $0 !~ /^[ \t]*#/ && NF {print; if (++n == 7) exit}' "$1"; }
+# ⭐ RE-CUT by the coo 2026-11-01: the design officer's refusal (CEO-2029, Lon 2026-10-30) now stands between resolve_paths and the partition parse --
+# ten lines that derive the seat and EXIT for the cto, so nothing grades before them either. They are pinned line for line below (lines 2-11), and the
+# six lines the arm always pinned follow them (12-17); any other line in that head, or any widening of the two exemptions, still reads red.
+cmd_run_head() { awk '/^def cmd_run\(args\):/ {f = 1; next} f && /^def / {exit} f && $0 !~ /^[ \t]*#/ && NF {print; if (++n == 17) exit}' "$1"; }
 guard_heads_cmd_run() {
   local h; h=$(cmd_run_head "$1")
   sed -n 1p <<<"$h" | grep -qF 'paths = resolve_paths()' &&
-  sed -n 2p <<<"$h" | grep -qF '_parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]' &&
-  sed -n 3p <<<"$h" | grep -qF '_smoke = bool(os.environ.get("S4E_SMOKE_CORE_ARM")) and os.environ.get("S4E_PROGRESS_OFF") == "1" and _parts.count("core") == 1 and all(p == "core" or p.startswith("entry:") for p in _parts)' &&
-  sed -n 4p <<<"$h" | grep -qF 'if _smoke:' &&
-  sed -n 5p <<<"$h" | grep -qF 'print("ONE-RUNNER SMOKE CORE ARM by %s' &&
-  sed -n 6p <<<"$h" | grep -qF 'elif not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):' &&
-  sed -n 7p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
+  sed -n 2p <<<"$h" | grep -qxF '    _dseat = os.environ.get("S4E_SEAT") or ""' &&
+  sed -n 3p <<<"$h" | grep -qxF '    if not _dseat:' &&
+  sed -n 4p <<<"$h" | grep -qxF '        try:' &&
+  sed -n 5p <<<"$h" | grep -qxF '            import util_score_row' &&
+  sed -n 6p <<<"$h" | grep -qxF '            _dseat = util_score_row.derive_measurer() or ""' &&
+  sed -n 7p <<<"$h" | grep -qxF '        except Exception:' &&
+  sed -n 8p <<<"$h" | grep -qxF '            _dseat = ""' &&
+  sed -n 9p <<<"$h" | grep -qxF '    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN"):' &&
+  sed -n 10p <<<"$h" | grep -qF '        sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS:' &&
+  sed -n 11p <<<"$h" | grep -qxF '        sys.exit(2)' &&
+  sed -n 12p <<<"$h" | grep -qF '_parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]' &&
+  sed -n 13p <<<"$h" | grep -qF '_smoke = bool(os.environ.get("S4E_SMOKE_CORE_ARM")) and os.environ.get("S4E_PROGRESS_OFF") == "1" and _parts.count("core") == 1 and all(p == "core" or p.startswith("entry:") for p in _parts)' &&
+  sed -n 14p <<<"$h" | grep -qF 'if _smoke:' &&
+  sed -n 15p <<<"$h" | grep -qF 'print("ONE-RUNNER SMOKE CORE ARM by %s' &&
+  sed -n 16p <<<"$h" | grep -qF 'elif not (_parts and len(_parts) <= 8 and all(p.startswith("entry:") for p in _parts)):' &&
+  sed -n 17p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
 }
 arm "6b census: the rungs harness guards cmd_run before it grades, with the suite it holds, a handful of at most eight named entries excepted (CEO-1893)" 'guard_heads_cmd_run "$H/corpus_suite_harness.py"'
 arm "6c the bus done run exports S4E_DONE_WHEN_RUN=1" 'grep -q "S4E_DONE_WHEN_RUN=1 timeout" "$H/s4e_msg.sh"'
