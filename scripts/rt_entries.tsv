@@ -386,6 +386,7 @@ rt_pl_dop_db_clause_src	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_alarm_push	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_alarm_pop	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_os_sleep	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_seek_list	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_sk_socket	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_sk_close	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_sk_bind	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm

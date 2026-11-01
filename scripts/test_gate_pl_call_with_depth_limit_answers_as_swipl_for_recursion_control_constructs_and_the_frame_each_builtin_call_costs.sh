@@ -7,9 +7,13 @@
 # $dl_reset (REACHED back to the limiter's level + 1), else $dl_false (depth_limit_exceeded iff REACHED passed LIMIT). The interim prelude meta-interpreter (SCRIP 7b94a7efd) is gone.
 # Probes are cut from swipl IN THIS RUN and compared byte for byte with SCRIP's m3 and m4: the shapes of a proof (including the cto's member probe a-2 b-3 c-4, true, the exceeded road,
 # a nested limiter, a failing goal, the two error forms), the recursion boundary (tail, non-tail, mutual, a printing loop), and the frame a builtin costs at a limit of 1 (two programs).
-# TOLERATED DIVERGENCES, not probed: a control construct or a single builtin handed to the limiter AS THE GOAL costs one frame more than swipl (the run-time goal proc), and call/N,
-# findall, forall, once, ignore, catch and \+ cost their goal no frame of their own (swipl: findall 6, the others 1); library predicates whose SCRIP definition has another recursion
-# shape than swipl's (nth0, last) read their own depth. The self-test feeds the comparison a corrupted reference and requires it seen.
+# THE GOALS PROBE (hq_runtime, CEO-2020, a COMPILED clause body: the other probes run as directives): the shapes the gate used to tolerate now answer as swipl -- a single builtin handed to the limiter AS THE GOAL (is, atom,
+# sort, msort, atom_codes, assertz, nl, between, call/N, maplist, exclude), \+ fail, findall in a goal and in a clause body (swipl puts the goal 5 frames under findall/3 and a $add_findall_bag frame at the 6th: a forwarding chain
+# '$dl_findall'..'$dl_f5' in swi_builtins.pl, the 5th link ticking the floor), and nth0/nth1/last in swipl's shape ('$seek_list'/4 is the foreign skip, nth0 reads 2 at any index). The lowering: a builtin's own stub is its frame
+# (no $dl_tick inside atom/1, is/2 ... or a $mc: wrapper), and a leaf true/fail of a $cc shape is free. NOT REPRODUCED, measured against swipl 9.0.4 and left as debt: a control construct handed as the goal other than \+ (conj,
+# disjunction, if-then-else, soft-cut and \+ \+ read 1 to 2 more: swipl's temp clause is a frame that counts nothing, SCRIP runs ,/2 ;/2 ->/2 as prelude predicates with counted frames, the follow-up is a latent-frame fact in
+# zf_pro_depth), and the library predicates length, memberchk, select, retract, bagof and setof (another recursion shape than swipl's foreign or Prolog definition).
+# The self-test feeds the comparison a corrupted reference and requires it seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP"; exit 2; }
@@ -224,9 +228,27 @@ t(G) :- forall(call_with_depth_limit(G, 20, R), (write(G-R), nl)).
 :- t(reverse([a, b, c], _)).
 :- forall(call_with_depth_limit(member(X, [a, b, c]), 10, R), (write(X-R), nl)).
 PL
+cat > "$W/goals.pl" <<'PL'
+:- initialization(main).
+:- dynamic dyn/1.
+dyn(1).
+fact(1).
+fa :- findall(X, member(X, [a, b]), _).
+fb :- findall(X, fact(X), _).
+fc :- findall(x, true, _).
+w(T, G) :- ( call_with_depth_limit(G, 30, R) -> write(T-R) ; write(T-failed) ), nl.
+main :-
+    w(true, true), w(fail, fail), w(findall_member, findall(X, member(X, [a, b]), _)), w(findall_true, findall(x, true, _)), w(findall_fact, findall(X, fact(X), _)), w(findall_empty, findall(X, member(X, []), _)),
+    w(findall_in_clause, fa), w(findall_fact_in_clause, fb), w(findall_true_in_clause, fc), w(once, once(member(_, [a, b]))), w(not, \+ fail), w(catch, catch(true, _, true)), w(forall, forall(member(_, [a]), true)),
+    w(nth0_0, nth0(0, [a, b, c], _)), w(nth0_1, nth0(1, [a, b, c], _)), w(nth0_long, (numlist(1, 50, L), nth0(40, L, _))), w(nth1_3, nth1(3, [a, b, c, d], _)), w(nth0_var, nth0(_, [a, b, c], c)), w(nth0_none, nth0(5, [a], _)),
+    w(last_1, last([a], _)), w(last_3, last([a, b, c], _)), w(last_partial, last([a|_], _)),
+    w(is, _ is 1 + 1), w(atom, atom(a)), w(eq, _ = a), w(sort, sort([b, a], _)), w(msort, msort([b, a], _)), w(atom_codes, atom_codes(abc, _)), w(assertz, assertz(zz(1))), w(nl, nl), w(between, between(1, 3, _)),
+    w(call_atom, call(atom, a)), w(call_eq, call(=, _, a)), w(maplist, maplist(atom, [a, b])), w(exclude, exclude(atom, [a], _)), w(dyn, dyn(_)), w(member, member(_, [a, b, c])), w(append, append([a], [b], _)),
+    halt.
+PL
 build() { "$ROOT/scrip" --compile --out="$W/$1.s" "$W/$1.pl" < /dev/null > "$W/$1.c.err" 2>&1 && gcc -no-pie -o "$W/$1.bin" "$W/$1.s" -L"$ROOT/out" -lscrip_rt -Wl,-rpath,"$ROOT/out" -lm -lpthread > "$W/$1.l.err" 2>&1; }
 bad=0
-for p in shapes rec bi1 bi2 lib; do
+for p in shapes rec bi1 bi2 lib goals; do
   timeout -k 5 60 "$SW" -q -t halt "$W/$p.pl" < /dev/null > "$W/$p.ref" 2> "$W/$p.ref.err"
   [ "$(grep -c . "$W/$p.ref")" -ge 8 ] || { echo "GATE REFUSED(2) [$G]: swipl did not answer the $p probe ($(head -c 160 "$W/$p.ref.err"))"; exit 2; }
   timeout -k 5 60 "$ROOT/scrip" "$W/$p.pl" < /dev/null > "$W/$p.m3" 2> "$W/$p.m3.err"
