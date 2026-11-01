@@ -12,12 +12,15 @@
 # Prolog run-time define dropped the NULL without asking. THE CURE: pl_runtime_define_pred_x calls rt_code_pool_check on a NULL
 # emission, so a full pool is the same error 204, and the message names the knob and the asserted clause beside the EVAL chains.
 # bb_alloc keeps answering NULL: the EVAL roads turn that NULL into error 204 themselves. The cap itself (2 GB, about 524,288
-# one-page run-time compiles) is the pool-reuse row's subject; this gate holds only that reaching it is loud.
+# one-page run-time compiles) is what the pool's hole list stretches for a reclaimed fragment; this gate holds only that reaching it is loud.
 #
 # THE ARMS:
-#   1  m3: the 4000-cycle loop at a 16 MB pool stops nonzero with error 204 naming the compiled-code pool, never rc 139, no answer
+#   1  m3: a program that keeps 6000 live rule clauses (6000 fragments, each at least one page) at a 16 MB pool stops nonzero with error 204 naming the compiled-code pool, never rc 139, no answer
 #   2  m4: the same program compiled stops the same way (the run-time compiles of a compiled program draw on the same pool)
-#   3  CONTROL m3: at a 64 MB pool the loop answers 4000 rc 0, so the refusal is the cap and not the program
+#   3  CONTROL m3: at a 64 MB pool the program answers done rc 0, so the refusal is the cap and not the program
+# RE-ANCHORED 2026-11-01 (hq_runtime): the first anchor was an assert/retract loop, which a reclaimed fragment's pages no longer exhaust (facts take the
+# data road since 9ff999a6b and compile no code; a rule loop reuses its pages through the hole list of src/ir/bb_pool.c, gate test_gate_pl_a_rule_clause_assert_retract_loop_reuses_...);
+# only LIVE fragments fill the pool now, so the exhauster keeps them all.
 # EXIT: 0 all arms pass · 1 an arm failed · 2 REFUSED (no binary, no runtime library, no gcc).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u
@@ -32,16 +35,16 @@ refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 command -v gcc > /dev/null || refuse "no gcc -- the m4 arm cannot measure"
 T="$(mktemp -d)" || refuse "no tmpdir"
 trap 'rm -rf "$T"' EXIT
-printf ':- initialization(main).\n:- dynamic(pi/3).\nloop(0) :- !.\nloop(N) :- ( retract(pi(a, 1, M)) -> true ; M = 0 ), M1 is M + 1, assertz(pi(a, 1, M1)), N1 is N - 1, loop(N1).\nmain :- loop(4000), pi(a, 1, V), write(V), nl, halt.\n' > "$T/l.pl"
+printf ':- initialization(main).\n:- dynamic(pi/3).\nloop(N) :- N > 6000, !.\nloop(N) :- assertz((pi(a, 1, N) :- N >= 0)), N1 is N + 1, loop(N1).\nmain :- loop(1), pi(a, 1, 1), write(done), nl, halt.\n' > "$T/l.pl"
 fail=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   arm $n  $1"; else echo "  FAIL arm $n  $1 -- $2"; fail=1; fi; }
 loud() { [ "$1" != 0 ] && [ "$1" -lt 128 ] && grep -q 'error 204' "$2" && grep -q 'compiled-code pool is full' "$2" && [ ! -s "$3" ] && { echo ok; return; }; echo "rc=$1 stderr=[$(head -c 160 "$2" | tr '\n' '|')]"; }
 ( cd "$T" && SCRIP_CODE_POOL_MB=16 timeout -k 5 120 "$SCRIP" l.pl < /dev/null > m3.out 2> m3.err ); rc=$?
-arm "m3: a 16 MB pool stops the loop with error 204 naming the pool" "$(loud "$rc" "$T/m3.err" "$T/m3.out")"
+arm "m3: 6000 live rule clauses stop at a 16 MB pool with error 204 naming the pool" "$(loud "$rc" "$T/m3.err" "$T/m3.out")"
 ( cd "$T" && timeout -k 5 120 "$SCRIP" --compile --out=l.s l.pl < /dev/null > /dev/null 2>&1 && gcc l.s -L"$RT_DIR" -lscrip_rt -Wl,-rpath,"$RT_DIR" -lm -lpthread -o l.bin > /dev/null 2>&1 ) || refuse "the witness did not compile and link in mode 4"
 ( cd "$T" && SCRIP_CODE_POOL_MB=16 timeout -k 5 120 ./l.bin < /dev/null > m4.out 2> m4.err ); rc=$?
 arm "m4: a 16 MB pool stops the compiled loop with error 204 naming the pool" "$(loud "$rc" "$T/m4.err" "$T/m4.out")"
 ( cd "$T" && SCRIP_CODE_POOL_MB=64 timeout -k 5 120 "$SCRIP" l.pl < /dev/null > c.out 2> c.err ); rc=$?
-arm "CONTROL m3: a 64 MB pool answers 4000" "$([ "$rc" = 0 ] && [ "$(cat "$T/c.out")" = 4000 ] && echo ok || echo "rc=$rc out=[$(head -c 40 "$T/c.out")]")"
+arm "CONTROL m3: a 64 MB pool answers done" "$([ "$rc" = 0 ] && [ "$(cat "$T/c.out")" = done ] && echo ok || echo "rc=$rc out=[$(head -c 40 "$T/c.out")]")"
 [ "$fail" = 0 ] && { echo "PASS [$NAME]: $n arms"; exit 0; }
 echo "FAIL [$NAME]"; exit 1
