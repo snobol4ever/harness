@@ -249,6 +249,7 @@ def reg_of(op):
 JCC = re.compile(r'^j(mp|e|ne|z|nz|g|ge|l|le|a|ae|b|be|s|ns|o|no|p|np|c|nc)$')
 TWO_OP_RMW = {"add", "sub", "and", "or", "xor", "imul", "sar", "shl", "shr", "adc", "sbb", "lea", "movsxd", "movsx", "movzx", "mov", "cvtsi2sd", "cvtsi2ss", "movq", "movd", "movabs", "cmovne", "cmove", "cmovg", "cmovl"}
 READ_ONLY = {"cmp", "test", "cmp64", "push", "ucomisd", "comisd"}
+VEC_MEM_MOVE = {"movups"}
 NO_GPR = {"addsd", "subsd", "mulsd", "divsd", "sqrtsd", "xorps", "xorpd", "pxor", "cvttsd2si", "cvtsd2ss", "cvtss2sd", "ret", "leave", "ud2", "nop", "cqo", "cdq", "cld", "std", "sete", "setne", "setg", "setl", "setge", "setle", "seta", "setb", "int3", "hlt", "syscall", "pause", "endbr64"}
 
 def use_def(ins):
@@ -272,7 +273,7 @@ def use_def(ins):
         return uses, defs, True
     if mn.startswith("rep"):
         return set(CS), set(), True
-    known = mn in TWO_OP_RMW or mn in READ_ONLY or mn in ("inc", "dec", "neg", "not", "idiv", "div", "mul")
+    known = mn in TWO_OP_RMW or mn in READ_ONLY or mn in VEC_MEM_MOVE or mn in ("inc", "dec", "neg", "not", "idiv", "div", "mul")
     for i, o in enumerate(ops):
         r = reg_of(o)
         uses |= regs_in_mem(o)
@@ -363,10 +364,29 @@ def _choice_word_def(insns, i, reg):
                             and re.fullmatch(r'\[\s*(rsp|rbp)\s*[+-]\s*\d+\s*\]', rcx_writer.ops[1].strip()) is not None)
     return False
 
+TRAIL_SYNC_MASK = "-536870912"
+def _trail_top_def(insns, i, reg):
+    """⛔ THE TRAIL TOP'S OWN REDEFINITION (hq_collector 2026-11-01, row gc-the-callee-saved-copy-residual-...; x86_pl_tr_tidy in
+    x86_call.cpp compacts the trail and ends `mov r12, rdi` then x86_pl_tr_top_sync): r12 is the Prolog trail top, the r12 island, an
+    address in the trail arena and never the collected heap, and the emission says so itself by what it does with the value on the very next
+    three instructions -- it masks it with the arena mask and stores it into the arena header (`mov rax, r12; and rax, -536870912;
+    mov qword ptr [rax + 0], r12`). This reader takes the declaration ONLY in that exact shape: a `mov r12, rdi` without the three
+    instructions, or with another mask, or a register other than r12, stays UNCLASSIFIED (selftest arms plant each)."""
+    if reg != "r12": return False
+    ins = insns[i]
+    if ins.mnem != "mov" or len(ins.ops) != 2 or reg_of(ins.ops[0]) != "r12" or ins.ops[1].strip() != "rdi": return False
+    if i + 3 >= len(insns): return False
+    a, b, c = insns[i + 1], insns[i + 2], insns[i + 3]
+    return (a.mnem == "mov" and [o.strip() for o in a.ops] == ["rax", "r12"] and not a.labels
+            and b.mnem == "and" and [o.strip() for o in b.ops] == ["rax", TRAIL_SYNC_MASK] and not b.labels
+            and c.mnem == "mov" and len(c.ops) == 2 and re.fullmatch(r'qword ptr \[\s*rax\s*\+\s*0\s*\]', c.ops[0].strip()) is not None
+            and c.ops[1].strip() == "r12" and not c.labels)
+
 def classify_def(insns, i, reg, depth=0):
     """the form of the instruction at i that defines reg, as a class name"""
     ins = insns[i]; mn = ins.mnem; ops = ins.ops
     if _choice_word_def(insns, i, reg): return "CHOICE"
+    if _trail_top_def(insns, i, reg): return "TRAILTOP"
     if mn == "pop": return "POP"
     if mn == "mov" and len(ops) == 2:
         dst, src = ops[0], ops[1]
@@ -501,7 +521,7 @@ def graph_of(insns, i):
     ga = CTX["graph_at"]
     return ga[i] if i < len(ga) else None
 
-PROVABLY_RAW = {"RSP", "IMM", "D32", "RIP", "LENGTH", "CHOICE"}
+PROVABLY_RAW = {"RSP", "IMM", "D32", "RIP", "LENGTH", "CHOICE", "TRAILTOP"}
 COPY = {"CELL", "POP", "REG", "ARITH", "LEA", "CALLERS"}
 CELL_PREFIX = "CELL:"
 HEAP = {"SUBJECT"}
@@ -1032,6 +1052,44 @@ def selftest():
     ck(_tal2["unclassified"] == len(unc) and _tal2["copy"] == len(cop) and _tal2["heap"] == len(heaps),
        f"PLANTED: all THREE lists reconcile with the tally on a population that DIVERGED under the one-prefix peel, "
        f"got tally={dict(_tal2)} unclassified={len(unc)} copies={len(cop)} heap={len(heaps)}")
+    open(p, "w").write(
+        " .text\n"
+        "v_\u03b1:\n"
+        " push r12\n"
+        " mov r12, qword ptr [rsp + 8]\n"
+        " call rt_alloc_thing\n"
+        " movups xmmword ptr [r12 + 0], xmm0\n"
+        " pop r12\n"
+        " ret\n")
+    tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = census([p], alloc)
+    ck(not unk, f"movups is understood: a 16-byte store through a callee-saved base defines no register, got {dict(unk)}")
+    ck(owned.get("r12", 0) == 1, f"the movups base keeps r12 LIVE across the allocating call before it (a use), got owned r12={owned.get('r12',0)}")
+    open(p, "w").write(
+        " .text\n"
+        "v_\u03b1:\n"
+        " push r12\n"
+        " mov r12, qword ptr [rsp + 8]\n"
+        " call rt_alloc_thing\n"
+        " movdqu xmmword ptr [r12 + 0], xmm0\n"
+        " pop r12\n"
+        " ret\n")
+    tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = census([p], alloc)
+    ck(dict(unk) == {"movdqu": 1}, f"PLANTED: a vector move the model does not name stays refused, got {dict(unk)}")
+    def _tt(body):
+        open(p, "w").write(" .text\nt_\u03b1:\n push r12\n mov rsi, qword ptr [rsp + 8]\n mov rdi, rsi\n" + body
+                           + " call rt_alloc_thing\n mov rdx, r12\n pop r12\n ret\n")
+        return census([p], alloc)
+    sync = " mov rax, r12\n and rax, -536870912\n mov qword ptr [rax + 0], r12\n"
+    tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = _tt(" mov r12, rdi\n" + sync)
+    ck(classes.get("r12", {}).get("TRAILTOP", 0) == 1 and bucket("TRAILTOP") == "raw" and not unc,
+       f"the trail top redefined from the compaction cursor and synced into the arena header at once reads TRAILTOP, raw, got {dict(classes.get('r12',{}))} unc={unc}")
+    for what, body in (("no sync triple", " mov r12, rdi\n"),
+                       ("another mask", " mov r12, rdi\n mov rax, r12\n and rax, -4096\n mov qword ptr [rax + 0], r12\n"),
+                       ("another header slot", " mov r12, rdi\n mov rax, r12\n and rax, -536870912\n mov qword ptr [rax + 8], r12\n"),
+                       ("another source", " mov r12, rsi\n" + sync)):
+        tot, la, owned, passed, classes, unc, cop, heaps, pg, unk, unattr = _tt(body)
+        ck(any(u[3] == "r12" and u[4] == "UNCLASSIFIED" for u in unc) and not classes.get("r12", {}).get("TRAILTOP", 0),
+           f"PLANTED: a mov r12 from a scratch register with {what} is not the trail top's redefinition and reads UNCLASSIFIED, got {dict(classes.get('r12',{}))}")
     print(f"SELFTEST {ok[0]}/{ok[1]} arms green")
     return 0 if ok[0] == ok[1] else 1
 
