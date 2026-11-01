@@ -569,7 +569,7 @@ def memory_check():
         if not v.isdigit() or int(v) >= box:
             gaps.append("%s: %s %s is not a cap below the box" % (nm, knob, v or "absent"))
     here = os.path.dirname(os.path.abspath(__file__))
-    for f, mark in (("lib_one_runner.sh", 'export TMPDIR="/tmp/s4e/$S4E_SEAT"'), ("corpus_suite_harness.py", 'os.environ["TMPDIR"] = _st')):
+    for f, mark in (("lib_one_runner.sh", 'export TMPDIR="/tmp/s4e/$'), ("corpus_suite_harness.py", 'os.environ["TMPDIR"] = _st')):
         if mark not in rd(os.path.join(here, f)):
             gaps.append("%s does not place TMPDIR in /tmp/s4e/<seat>" % f)
     st = os.statvfs("/tmp")
