@@ -7,7 +7,7 @@
 # --step 11's finish token under the plan whose steps delete them.
 #   CONSTRUCTS  src/ir/ir_construct.h and src/ir/ir_graph.h declare the construct registry (IR_construct_t; IR_graph_t's constructs and n_constructs), and --dump-plan counts
 #               constructs > 0 over the witnesses (the lowerers set it because the construct is in the source)
-#   DRIVER      src/driver/scrip.c calls planner_stage
+#   DRIVER      src/driver/scrip.c calls planner_tiers and planner_cells (planner_stage split at templates-zero step 4, 2026-11-01)
 #   DELETED     xop_frame_slot is named nowhere in src/planner (the retains column of the table replaces the planner's call of an emitter decider)
 #   TABLE       ./scrip --dump-plan prints, per graph, a PLAN line with its serial and one row per node with the fifteen columns E X K definite
 #               zeta off depth retains_code owner fenced gpop wpop restore act vdj, for one witness of every language; SCRIP_PLANNER_REPORT=1 prints no
@@ -28,7 +28,7 @@ bad=0
 PL=$(ls "$SRC"/planner/*.c "$SRC"/planner/*.cpp "$SRC"/planner/*.h 2>/dev/null)
 red() { echo "RED: $*"; bad=1; }
 grep -q 'IR_construct_t' "$SRC/ir/ir_construct.h" && grep -q 'n_constructs' "$SRC/ir/ir_graph.h" || red "CONSTRUCTS src/ir/ir_construct.h and src/ir/ir_graph.h declare no construct registry (IR_construct_t, n_constructs; headers step 4 split IR.h)"
-grep -q 'planner_stage(' "$SRC/driver/scrip.c" || red "DRIVER the driver (src/driver/scrip.c) never calls planner_stage"
+{ grep -q 'planner_tiers(s2' "$SRC/driver/scrip.c" && grep -q 'planner_cells(s2' "$SRC/driver/scrip.c"; } || red "DRIVER the driver (src/driver/scrip.c) never calls planner_tiers and planner_cells (templates-zero step 4: the planner stage is the two passes around the last traversal)"
 k=$(cat $PL | grep -cw 'xop_frame_slot'); [ "$k" = 0 ] || red "DELETED src/planner names xop_frame_slot $k time(s)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 bash "$HERE/util_spine_population.sh" --corpus "$ROOT/corpus" > "$T/pop" 2>/dev/null || { echo "REFUSE(2): no population"; exit 2; }
