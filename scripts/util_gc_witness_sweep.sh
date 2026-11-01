@@ -30,6 +30,7 @@
 set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 2
 ROOT="$PWD"; SCRIP="$ROOT/scrip"; WITDIR="$ROOT/../harness/scripts/gc_witnesses"
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$ROOT/../harness/scripts/util_batch.sh" bash "$ROOT/../harness/scripts/util_gc_witness_sweep.sh" "$@"
 BAND="${GC_SWEEP_BAND:-0 5}"; ARENA_KB="${GC_SWEEP_ARENA_KB:-128}"; MODES="${GC_SWEEP_MODES:-m3}"; LIST_ALL=0
 while [ $# -gt 0 ]; do case "$1" in
   --stress)   BAND="$2"; shift 2;;

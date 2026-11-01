@@ -89,10 +89,8 @@ def main():
         refuse("population must be sample or corpus")
     if not os.access(INSTR, os.X_OK):
         refuse("no instrument at %s (make out/parser_snobol4)" % INSTR)
-    try:
-        os.nice(19)
-    except OSError:
-        pass
+    if not os.environ.get("S4E_BATCH_HELD"):
+        os.execvp("bash", ["bash", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_batch.sh"), sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     probe = tempfile.NamedTemporaryFile("w", suffix=".sno", delete=False)
     probe.write("        X = 1\nEND\n")
     probe.close()

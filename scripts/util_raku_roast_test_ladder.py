@@ -39,8 +39,8 @@ THREE VERBS.
 CONSTRUCTS are read off the test's code -- the code run since the previous test's statement (when the file flows
 straight on to this test) plus the test's own statement, from its #TL line to its end -- by a Raku-aware tokenizer: keywords, operators (longest match), method names, sub calls, variable sigils and twigils, literal and quote
 kinds, regexes, blocks, pointies, colonpairs, meta-operators. REFUSES rc=2 when it cannot measure.
-ECONOMY (ceo CEO-1333): --jobs defaults to max(2, min(4, 16 - load)) read from /proc/loadavg, and every Rakudo and scrip
-child runs under nice -n 19.
+ECONOMY (ceo CEO-1333): --jobs defaults to max(2, min(4, 16 - load)) read from /proc/loadavg; the run enters the batch
+class at its top (util_batch.sh, shared-dev step 4), so no child is niced.
 """
 import argparse, collections, hashlib, os, re, subprocess, sys, tempfile, shutil
 from concurrent.futures import ThreadPoolExecutor
@@ -90,7 +90,6 @@ def fanout_width():
     return max(2, min(4, int(16 - load)))
 
 
-NICE = ["nice", "-n", "19"]
 NAMEKINDS = ("call", "word", "type", "meth")
 MINFILES = 5
 
@@ -351,7 +350,7 @@ def cmd_cut(a):
         def one_(rel):
             dst = stage(roast, m, rel)
             try:
-                p = subprocess.run(NICE + [RAKU, f"-I{tl}", "-MTestLine", str(dst.relative_to(m))], cwd=str(m), stdin=subprocess.DEVNULL,
+                p = subprocess.run([RAKU, f"-I{tl}", "-MTestLine", str(dst.relative_to(m))], cwd=str(m), stdin=subprocess.DEVNULL,
                                    capture_output=True, timeout=a.oracle_timeout)
                 out, done = p.stdout.decode(errors="replace"), True
             except subprocess.TimeoutExpired as e:
@@ -482,7 +481,7 @@ def cmd_grade(a):
 
         def runout(cmd, cwd):
             try:
-                return subprocess.run(NICE + cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True, timeout=a.timeout).stdout.decode(errors="replace")
+                return subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True, timeout=a.timeout).stdout.decode(errors="replace")
             except subprocess.TimeoutExpired as e:
                 return (e.stdout or b"").decode(errors="replace")
 
@@ -495,7 +494,7 @@ def cmd_grade(a):
             if a.m4:
                 base = Path(td) / f"{rel.replace('/', '_')}{tag}"
                 s_, o_, b_ = str(base) + ".s", str(base) + ".o", str(base) + ".bin"
-                ok = subprocess.run(NICE + [a.scrip, "--compile", ur, f"--out={s_}"], cwd=str(m), stdin=subprocess.DEVNULL, capture_output=True).returncode == 0
+                ok = subprocess.run([a.scrip, "--compile", ur, f"--out={s_}"], cwd=str(m), stdin=subprocess.DEVNULL, capture_output=True).returncode == 0
                 ok = ok and subprocess.run(["gcc", "-c", s_, "-o", o_], capture_output=True).returncode == 0
                 ok = ok and subprocess.run(["gcc", o_, "-o", b_, f"-L{rt}", "-lscrip_rt", "-lm", f"-Wl,-rpath,{rt}"], capture_output=True).returncode == 0
                 got["m4"] = tapset(runout([b_], str(m))) if ok else set()
@@ -565,6 +564,8 @@ def cmd_grade(a):
 
 
 def main():
+    if not os.environ.get("S4E_BATCH_HELD"):
+        os.execvp("bash", ["bash", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_batch.sh"), sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="verb", required=True)
     c = sp.add_parser("cut")

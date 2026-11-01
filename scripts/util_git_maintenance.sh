@@ -7,17 +7,18 @@
 # fetch in each one starts the same full repack at a random hour, nineteen roots times four repos: a hidden, recurring tax nobody scheduled.
 # THE CURE has two halves. Lon sets `git config --global gc.auto 0` once, so no fetch starts a repack. This script is the replacement: a
 # GEOMETRIC repack (git repack -d -l --geometric=2) rolls the small packs a fetch leaves into larger ones and leaves the big base pack alone,
-# so its cost is the size of the recent packs, not the size of the corpus; loose objects are packed by the same call. It runs at nice 19
-# and idle I/O, one repo at a time, in s4e-batch.slice when systemd-run can place it (ARCH-SHARED-DEVELOPMENT section 5: batch work runs
+# so its cost is the size of the recent packs, not the size of the corpus; loose objects are packed by the same call. It runs at idle
+# I/O, one repo at a time, in s4e-batch.slice when systemd-run can place it (ARCH-SHARED-DEVELOPMENT section 5: batch work runs
 # in the batch class). Without --apply it prints each repo's pack count and size and what it would do; it never touches a work tree.
-# Install (Lon): crontab line  17 3 * * *  bash /home/claude_ceo/harness/scripts/util_git_maintenance.sh --apply >> /home/resources/progress/GIT_MAINT.log 2>&1
+# Install (Lon): crontab line  17 3 * * *  XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q bash /home/claude_coo/harness/scripts/util_git_maintenance.sh --apply >> /home/resources/progress/GIT_MAINT.log 2>&1
+# (ARCH-SHARED-DEVELOPMENT 5: a cron job is a batch scope; the cto, shared-dev step 1, 2026-10-31)
 set -u
 APPLY=0; ROOTS=()
 for a in "$@"; do case "$a" in --apply) APPLY=1;; --root=*) ROOTS+=("${a#--root=}");; -h|--help) sed -n '2,15p' "$0"; exit 0;; *) echo "usage: util_git_maintenance.sh [--apply] [--root=<dir>]..." >&2; exit 2;; esac; done
 [ "${#ROOTS[@]}" -gt 0 ] || ROOTS=(/home/claude_*)
 run() { if command -v systemd-run >/dev/null 2>&1 && systemctl --user is-active s4e-batch.slice >/dev/null 2>&1; then
-          systemd-run --user --quiet --wait --collect --slice=s4e-batch.slice -p Nice=19 -p IOSchedulingClass=idle "$@"
-        else nice -n 19 ionice -c3 "$@"; fi; }
+          systemd-run --user --quiet --wait --collect --slice=s4e-batch.slice -p IOSchedulingClass=idle "$@"
+        else ionice -c3 "$@"; fi; }
 n=0; done_n=0; stamp() { date '+%F %T %Z'; }
 echo "GIT_MAINT $(stamp) apply=$APPLY gc.auto(global)=$(git config --global --get gc.auto || echo unset)"
 for root in "${ROOTS[@]}"; do

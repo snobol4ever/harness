@@ -15,6 +15,9 @@
 #     DONE-WHEN sweep running a gate that runs a census) runs in the job's own scope, as a nested runner finds its mem scope.
 #   - INSIDE A QUIET SLICE IT REFUSES rc 2: a clock measurement must not share the box with a batch job (S4E_IN_SLICE).
 #   - UNDER A HELD RUN SLOT IT TAKES NO SECOND ONE (4.6): util_run_slot.sh passes straight through on S4E_RUN_SLOT_HELD.
+#   - UNDER THE GRADER IT ENTERS NOTHING (the cto, chunk 2, 2026-10-31): a gate the coo's loop runs (S4E_CLASS=grader) that calls a batch
+#     script (the dyn-caps census, a sweep) runs it in the grader's own scope; the grader is its own class (4.5 (a)), and its four
+#     tests at once would otherwise collide on the one-per-seat lock.
 #   - S4E_BATCH_REPORT=FILE: once inside the scope the wrapper appends "BATCH_CGROUP <cgroup path>" to FILE before it runs the
 #     command; test_gate_batch_scripts_run_in_the_batch_slice.sh reads it.
 # usage: bash util_batch.sh CMD [ARG]...      (rc: the command's, or 2 when refused)
@@ -28,6 +31,7 @@ fi
 [ $# -ge 1 ] || { echo "usage: util_batch.sh CMD [ARG]..." >&2; exit 2; }
 [ -z "${S4E_IN_SLICE:-}" ] || { echo "⛔ REFUSE(2) util_batch.sh: inside a quiet slice -- a batch job must not share a clock measurement's box (ARCH-SHARED-DEVELOPMENT 5)" >&2; exit 2; }
 [ -z "${S4E_BATCH_HELD:-}" ] || exec "$@"
+[ "${S4E_CLASS:-}" != grader ] || exec "$@"
 . "$HERE/lib_slots.sh" || { echo "⛔ REFUSE(2) util_batch.sh: lib_slots.sh unloadable" >&2; exit 2; }
 seat="$(s4e_slot_seat)"
 lockdir="${S4E_BATCH_LOCK_DIR:-/tmp/s4e-batch}"

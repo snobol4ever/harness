@@ -12,10 +12,10 @@
 set -u
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
 HERE=$(cd "$(dirname "$0")" && pwd); cd "$HERE/../../SCRIP" || exit 2
-. "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- a census runs serially under nice 19 (CEO-1333) and has no instrument"; exit 2; }
+[ -n "${S4E_BATCH_HELD:-}" ] || [ ! -f "$HERE/util_batch.sh" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_dyn_caps_witness.sh" "$@"
 mode=${1:-}; [ -n "$mode" ] || { echo "REFUSE(2): usage: util_dyn_caps_witness.sh compile|runtime|census|witness"; exit 2; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
-$(fanout_nice) python3 ../harness/scripts/audit_fixed_caps_census.py --tsv "$T/c.tsv" --no-report > "$T/census.txt" 2>&1 || { echo "REFUSE(2): the census refused -- $(tail -2 "$T/census.txt" | tr '\n' ' ')"; exit 2; }
+python3 ../harness/scripts/audit_fixed_caps_census.py --tsv "$T/c.tsv" --no-report > "$T/census.txt" 2>&1 || { echo "REFUSE(2): the census refused -- $(tail -2 "$T/census.txt" | tr '\n' ' ')"; exit 2; }
 red=0
 # ⭐ NOT SHIPPED (ceo CEO-1235 (3)): ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv names the compilation units no program's run reaches (unit
 # tests, tools, demos); their rows leave $T/c.tsv before any line below reads it. THE LINK IS THE EVIDENCE: each row is checked against

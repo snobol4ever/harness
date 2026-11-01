@@ -36,6 +36,7 @@ set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
 SC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$(dirname "${BASH_SOURCE[0]}")/util_batch.sh" bash "${BASH_SOURCE[0]}" "$@"
 CORPUS="${CORPUS:-$S4E/corpus}"; SBL="${SBL:-$S4A/x64/bin/sbl}"; SCRIP="${SCRIP:-$SC/scrip}"
 DEMO="$CORPUS/demos"
 # ⛔ s191: SPITBOL's ABNORMAL-TERMINATION report carries ENVIRONMENT-DEPENDENT lines, and without stripping them this

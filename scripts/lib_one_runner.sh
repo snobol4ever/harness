@@ -42,7 +42,8 @@ one_runner_mem_scope() {
   [ -f "$_ONE_RUNNER_HERE/util_mem_scope.py" ] || return 0
   local _s4e_mem_argv
   mapfile -d '' _s4e_mem_argv < /proc/$$/cmdline
-  exec python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" enter --kind board -- "${_s4e_mem_argv[@]}"
+  local _s4e_slice=s4e-batch.slice; [ "${S4E_CLASS:-}" != grader ] || _s4e_slice=s4e-grader.slice   # a board is batch, the grader's is the grader's (ARCH-SHARED-DEVELOPMENT 2 and 5; the cto, shared-dev step 4 chunk 2)
+  exec python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" enter --kind board --slice "$_s4e_slice" -- "${_s4e_mem_argv[@]}"
 }
 one_runner_seat() {
   if [ -n "${S4E_SEAT:-}" ]; then printf '%s\n' "$S4E_SEAT"; return 0; fi

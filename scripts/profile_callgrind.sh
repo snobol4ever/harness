@@ -4,6 +4,7 @@
 # Runtime-emitted pattern blobs live in anonymous pages — --smc-check=all-non-file is what counts them.
 # Prints: total Ir, top functions, and the blob share (Ir attributed to addresses outside any file-backed object).
 set -u
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$(dirname "${BASH_SOURCE[0]}")/util_batch.sh" bash "${BASH_SOURCE[0]}" "$@"
 PROG=$1; INP=$2; OUT=${3:-/tmp/cg-$$}; mkdir -p "$OUT"
 ulimit -s unlimited
 # ⛔⭐ THE READING GOES THROUGH lib_ir_measure.sh.  This profiler used to run callgrind and print TOTAL_Ir

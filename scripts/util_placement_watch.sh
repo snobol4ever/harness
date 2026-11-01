@@ -123,9 +123,9 @@ do_run() {
         if [ -e "$W/$r/.git" ]; then git -C "$W/$r" checkout -q --detach origin/main 2>>"$LOG" || { echo "REFUSE(2): checkout in $W/$r" >>"$LOG"; return 2; }
         else git -C "$ROOT/$r" worktree prune; git -C "$ROOT/$r" worktree add -q --detach "$W/$r" origin/main 2>>"$LOG" || { echo "REFUSE(2): worktree $r" >>"$LOG"; return 2; }; fi
     done
-    ( cd "$W/SCRIP" && nice -n 19 make -j2 ) >>"$LOG" 2>&1 || { echo "REFUSE(2): build at $s" >>"$LOG"; return 2; }
+    ( cd "$W/SCRIP" && make -j2 ) >>"$LOG" 2>&1 || { echo "REFUSE(2): build at $s" >>"$LOG"; return 2; }
     local out="$W/census.out"
-    ( cd "$W/SCRIP" && env -u S4E_HOME nice -n 10 python3 "$W/harness/scripts/util_bb_placement_census.py" --files $(bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" | cut -f2) ) >"$out" 2>>"$LOG" || { echo "REFUSE(2): census at $s" >>"$LOG"; return 2; }
+    ( cd "$W/SCRIP" && env -u S4E_HOME python3 "$W/harness/scripts/util_bb_placement_census.py" --files $(bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" | cut -f2) ) >"$out" 2>>"$LOG" || { echo "REFUSE(2): census at $s" >>"$LOG"; return 2; }
     grep -q '^BB_HOSTS ' "$out" || { echo "REFUSE(2): census printed no BB_HOSTS at $s" >>"$LOG"; return 2; }
     [ -s "$REC" ] || printf '%s\n' "$HDR" > "$REC"
     local now; now="$(date '+%Y-%m-%dT%H:%M:%S')"
@@ -153,16 +153,16 @@ PY
     bash "$W/harness/scripts/util_spine_population.sh" --corpus "$W/corpus" > "$A/list"
     while IFS=$'\t' read -r lang f; do
         i=$((i+1)); mkdir -p "$A/$lang"
-        ( cd "$(dirname "$f")" && timeout -k 5 300 nice -n 10 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) --out="$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
+        ( cd "$(dirname "$f")" && timeout -k 5 300 "$W/SCRIP/scrip" --compile $( [ "$lang" = prolog ] && echo --target=x86 ) --out="$A/$lang/$i.s" "$(basename "$f")" < /dev/null >/dev/null 2>&1 ) || rm -f "$A/$lang/$i.s"
     done < "$A/list"
     [ -s "$BREC" ] || printf 'when\tscrip\tcorpus\tharness\tlang\tbeta_resets\tfunctions\tprograms\tbeta_allocs\n' > "$BREC"
     local BTMP="$W/beta_rows.tmp"; : > "$BTMP"
     for lang in $(ls "$A" | grep -v '^list$'); do
         local n; n="$(ls "$A/$lang"/*.s 2>/dev/null | wc -l)"; [ "$n" -gt 0 ] || continue
-        local line; line="$(nice -n 10 python3 "$W/harness/scripts/util_rsp_reset_by_port_census.py" "$A/$lang"/*.s 2>>"$LOG" | grep '^RSP_RESET functions=')"
+        local line; line="$(python3 "$W/harness/scripts/util_rsp_reset_by_port_census.py" "$A/$lang"/*.s 2>>"$LOG" | grep '^RSP_RESET functions=')"
         [ -n "$line" ] || { echo "REFUSE(2): rsp reset census measured nothing for $lang at $s" >>"$LOG"; continue; }
         local b fn; b="$(echo "$line" | grep -o 'beta=[0-9]*' | cut -d= -f2)"; fn="$(echo "$line" | grep -o 'functions=[0-9]*' | cut -d= -f2)"
-        local ba; ba="$(nice -n 10 python3 "$W/harness/scripts/util_alloc_by_port_census.py" "$A/$lang.alloc.tsv" "$A/$lang"/*.s 2>>"$LOG" | grep '^NET_PORT port=beta ' | grep -o 'allocating=[0-9]*' | cut -d= -f2)"
+        local ba; ba="$(python3 "$W/harness/scripts/util_alloc_by_port_census.py" "$A/$lang.alloc.tsv" "$A/$lang"/*.s 2>>"$LOG" | grep '^NET_PORT port=beta ' | grep -o 'allocating=[0-9]*' | cut -d= -f2)"
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$now" "$s" "$c" "$h" "$lang" "${b:-0}" "${fn:-0}" "$n" "${ba:--1}" >> "$BTMP"
     done
     cat "$BTMP" >> "$BREC"; rm -f "$BTMP"
@@ -178,11 +178,11 @@ case "${1:-show}" in
         # program compiles, and it held all 8 box-wide compile slots. So a kick measures at most once an hour, and only while the
         # five-minute load is under three quarters of the cores (ceo CEO-1921: at half, a busy fleet's steady load of 8 to 9 on 16 cores held
         # the table from 15:27 past the Pascal switch's last landing and the Raku switch -- the very readings Lon asked to see move; the build
-        # is make -j2 at nice 19 and the compiles nice 10, so the hourly cap and the priority are the throttle); `show` prints every turn.
+        # runs in the batch class (util_batch.sh: CPUWeight 100 beside the sessions, shared-dev step 4), so the hourly cap and the class are the throttle); `show` prints every turn.
         last="$(stat -c %Y "$REC" 2>/dev/null || echo 0)"; now="$(date +%s)"
         load5="$(cut -d' ' -f2 /proc/loadavg)"; bar="$(( $(nproc) * 3 / 4 ))"
         if [ $((now - last)) -lt 3600 ] || awk -v l="$load5" -v h="$bar" 'BEGIN{exit !(l >= h)}'; then exit 0; fi
-        ( setsid nohup nice -n 19 bash "$HERE/util_placement_watch.sh" run >/dev/null 2>&1 & ) ; exit 0 ;;
-    run)  do_run; exit $? ;;
+        ( setsid nohup bash "$HERE/util_placement_watch.sh" run >/dev/null 2>&1 & ) ; exit 0 ;;
+    run)  [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_placement_watch.sh" run; do_run; exit $? ;;
     *) echo "usage: util_placement_watch.sh show|kick|run" >&2; exit 2 ;;
 esac

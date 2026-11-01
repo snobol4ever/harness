@@ -27,11 +27,12 @@
 # EMBEDDED DATES: a program with a listing header prints the compile wall-clock time into its output (x86-64  Thu Oct  8 21:13:33 2026); both halves are normalised to <DATE> before they are stored or compared, or those files differ from themselves.
 # CONTROL ARM: run it against a capture taken from a build of the SAME sources (or a behaviour-neutral change, e.g. a whitespace re-flow); it must read green, or
 # it proves nothing. rc 0 = every measured file identical; rc 1 = a difference (the first five are printed with their first differing line); rc 2 = could not
-# measure (no scrip, no capture, empty population, a capture taken from another population). Serial, under nice 19 (lib_fanout.sh, CEO-1333). Not wired into
+# measure (no scrip, no capture, empty population, a capture taken from another population). Serial, in the batch class (util_batch.sh, shared-dev step 4). Not wired into
 # make test or make preflight: it needs a capture, and its full-corpus pass is minutes, not seconds (preflight's arm ceiling is 5 s); the stage-1 row's DONE-WHEN
 # calls it by name once it exists.
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/$G.sh" "$@"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; CORPUS="${CORPUS:-$S4E/corpus}"
 refuse() { echo "⛔ GATE REFUSE(2) [$G]: $*"; exit 2; }
 MODE=compare; AGAINST=latest; LANGS=snobol4; POP=sample; ONLY=""; DIFFS_OUT=""; STRICT=""
@@ -72,12 +73,12 @@ one() {
   d="$(dirname "$f")"; b="$(basename "$f")"
   mkdir -p "$(dirname "$out")"
   ( cd "$d" && export SNO_LIB="$CORPUS/include"
-    r=0; timeout -k 5 "$TMO" nice -n 19 "$SCRIP" --dump-ir "$b" < /dev/null > "$out.ir" 2>/dev/null || r=$?
-    [ "$r" = 124 ] && { r=0; timeout -k 5 "$TMO_ALONE" nice -n 19 "$SCRIP" --dump-ir "$b" < /dev/null > "$out.ir" 2>/dev/null || r=$?; }
+    r=0; timeout -k 5 "$TMO" "$SCRIP" --dump-ir "$b" < /dev/null > "$out.ir" 2>/dev/null || r=$?
+    [ "$r" = 124 ] && { r=0; timeout -k 5 "$TMO_ALONE" "$SCRIP" --dump-ir "$b" < /dev/null > "$out.ir" 2>/dev/null || r=$?; }
     [ "$r" = 124 ] && : > "$out.ir"
     echo "rc=$r" >> "$out.ir"
-    r=0; timeout -k 5 "$TMO" nice -n 19 "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?
-    [ "$r" = 124 ] && { r=0; rm -f "$out.s"; timeout -k 5 "$TMO_ALONE" nice -n 19 "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?; }
+    r=0; timeout -k 5 "$TMO" "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?
+    [ "$r" = 124 ] && { r=0; rm -f "$out.s"; timeout -k 5 "$TMO_ALONE" "$SCRIP" --compile --out="$out.s" "$b" < /dev/null > /dev/null 2>&1 || r=$?; }
     [ "$r" = 124 ] && rm -f "$out.s"
     echo "rc=$r" > "$out.rc"
     [ -f "$out.s" ] || : > "$out.s"

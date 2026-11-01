@@ -39,6 +39,7 @@
 #       2 = REFUSE, could not sweep (no compiler, no programs).  Never silently reports an empty corpus.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$SD/.." && pwd)"
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_blob_spine_slot_sweep.sh" "$@"
 SCRIP="${SCRIP:-$SD/scrip}"
 say() { printf '%s\n' "$*" >&2; }
 [ -x "$SCRIP" ] || { say "⛔ REFUSE(rc=2): no compiler at $SCRIP"; exit 2; }

@@ -4,6 +4,7 @@
 # Usage: bash ../harness/scripts/sweep_rsp_only.sh OUT.tsv DIR [DIR...]
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$(dirname "${BASH_SOURCE[0]}")/util_batch.sh" bash "${BASH_SOURCE[0]}" "$@"
 SC="${SC:-$S4E/SCRIP}"
 OUT="$1"; shift
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT

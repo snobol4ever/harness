@@ -116,7 +116,6 @@
 # and the corrected one 355, the difference exactly the 8 phantoms by name; the 355 are the same tables by name.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$HERE/lib_fanout.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- a census runs serially under nice 19 (CEO-1333)"; exit 2; }
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }
 GATE_NAME=dyn_caps_ratchet
@@ -135,7 +134,7 @@ WORK=$(mktemp -d "$SCRATCH/gate_dyn_caps_XXXXXX") || exit 2
 trap '[ -n "${WORK:-}" ] && rm -rf "$WORK"' EXIT INT TERM
 fails=0
 ck() { if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1)); echo "  FAIL $1"; fi; }
-st=$($(fanout_nice) python3 "$C" --selftest 2>&1); st_rc=$?
+st=$(python3 "$C" --selftest 2>&1); st_rc=$?
 ck "1 the census selftest: every declared form counted once, a typedef, an extern and a comparison refused, each guard shape read as its class ($(grep -c '^SELFTEST: ' <<<"$st") checks)" '[ "$st_rc" = 0 ] && grep -q "^SELFTEST PASS" <<<"$st"'
 [ "$st_rc" = 0 ] || printf '%s\n' "$st" | grep FAIL | sed 's/^/      /'
 out=$(cd "$ROOT" && bash "$WIT" census 2>&1); line=$(grep -m1 '^fixed-bound declarations' <<<"$out")
@@ -154,7 +153,7 @@ fn=$(sed -n 's/^function-scope arrays a program fills: \([0-9]*\) (baseline \([0
 fu=$(sed -n 's/^function-scope arrays a program fills, unguarded: \([0-9]*\)$/\1/p' <<<"$out")
 [ -n "$fn" ] && [ -n "$fb" ] && [ -n "$fu" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the witness printed no function-scope lines -- $(printf '%s\n' "$out" | tail -3 | tr '\n' ' ')"; gate_stamp; exit 2; }
 echo "  function-scope population: $fn locals a program fills, baseline $fb; $fu of them unguarded (CEO-1231; printed, not graded here)"
-mkdir -p "$WORK/harness/scripts/fixtures/dyn_caps" "$WORK/SCRIP" && cp -rL "$ROOT/src" "$WORK/SCRIP/src" && cp "$C" "$WIT" "$HERE/lib_fanout.sh" "$WORK/harness/scripts/" \
+mkdir -p "$WORK/harness/scripts/fixtures/dyn_caps" "$WORK/SCRIP" && cp -rL "$ROOT/src" "$WORK/SCRIP/src" && cp "$C" "$WIT" "$WORK/harness/scripts/" \
   && printf '%s\n' "$n" > "$WORK/harness/scripts/fixtures/dyn_caps/BASELINE" && printf '%s\n' "$fn" > "$WORK/harness/scripts/fixtures/dyn_caps/BASELINE_FUNCTION_SCOPE" \
   && cp "$HERE/fixtures/dyn_caps/CLASS_AB.tsv" "$WORK/harness/scripts/fixtures/dyn_caps/CLASS_AB.tsv" \
   && cp "$NSF" "$WORK/harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv" && cp "$ROOT/Makefile" "$WORK/SCRIP/Makefile" \

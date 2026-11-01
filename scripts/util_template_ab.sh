@@ -16,8 +16,8 @@
 # A program killed by the timeout (AB_TIMEOUT, default 60 s; rc 124) wrote a partial .s, so its sha reads "timeout",
 # and diff counts a timeout on EITHER side as UNPROVEN, printed apart, never as a difference: under load a 90 MB .s
 # (jcon jtran.icn) finishes on one side and times out on the other with the same binary.
-# FAN-OUT (ceo CEO-1333): the workers are lib_fanout.sh's fanout_width, max(2, min(4, cores minus load)), under its
-# fanout_nice; AB_JOBS overrides. At width 2 a side takes about ten minutes.
+# FAN-OUT (ceo CEO-1333): the workers are lib_fanout.sh's fanout_width, max(2, min(4, cores minus load)), and a capture
+# runs in the batch class (util_batch.sh, shared-dev step 4); AB_JOBS overrides. At width 2 a side takes about ten minutes.
 # The binary is ./scrip of the tree this script lives in, as built: build before each side.
 set -uo pipefail
 here=$(cd "$(dirname "$0")/../../SCRIP" && pwd)
@@ -27,6 +27,7 @@ case "$verb" in
 capture)
     label=${2:?usage: util_template_ab.sh capture LABEL [DIR]}
     dir=${3:-${TMPDIR:-/tmp}/template_ab}
+    [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$root/harness/scripts/util_batch.sh" bash "$root/harness/scripts/util_template_ab.sh" "$@"
     mkdir -p "$dir"
     out="$dir/$label.tsv"
     : > "$out.part"
@@ -43,10 +44,10 @@ capture)
     export -f one
     . "$here/../harness/scripts/lib_fanout.sh"
     jobs=${AB_JOBS:-$(fanout_width)}
-    echo "capture $label: $jobs worker(s) under $(fanout_nice) -- $(fanout_report)" >&2
+    echo "capture $label: $jobs worker(s) in the batch class -- $(fanout_report)" >&2
     cd "$root" || exit 2
     find corpus -type f \( -name '*.sno' -o -name '*.icn' -o -name '*.raku' -o -name '*.pl' -o -name '*.sc' -o -name '*.pas' -o -name '*.reb' \) \
-        | sort | $(fanout_nice) xargs -P "$jobs" -I{} bash -c 'one "$1"' _ {}
+        | sort | xargs -P "$jobs" -I{} bash -c 'one "$1"' _ {}
     sort -o "$out" "$out.part" && rm -f "$out.part"
     echo "$out: $(wc -l < "$out") programs, $(du -h "$out" | cut -f1)"
     ;;

@@ -47,6 +47,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SC="$(cd "$HERE/../../SCRIP" && pwd)"
+[ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$HERE/util_out_sweep.sh" "$@"
 SCRIP="${SCRIP:-$SC/scrip}"; CORPUS="${CORPUS:-$S4E/corpus}"; TMO="${TMO:-25}"
 REPS="${REPS:-3}"; [ "$REPS" -ge 1 ] 2>/dev/null || REPS=3
 PIN="${SWEEP_PIN:-$HERE/util_out_sweep.pins}"

@@ -94,7 +94,7 @@ def cmd_record(out, strace, upstream):
         for d, sh in scripts:
             env["XR_SCRIPT"] = f"{d.name}/{sh}"
             with open(out / "log" / f"{d.name}.{sh}.log", "w") as lf:
-                p = subprocess.run(["timeout", "-k", "10", "3600", "nice", "-n", "19", "sh", f"./{sh}", str(rec), OPTIONS], cwd=d, env=env,
+                p = subprocess.run(["timeout", "-k", "10", "3600", "sh", f"./{sh}", str(rec), OPTIONS], cwd=d, env=env,
                                    stdin=subprocess.DEVNULL, stdout=lf, stderr=subprocess.STDOUT)
             rcf.write(f"{d.name}/{sh}\t{p.returncode}\n")
             print(f"{d.name}/{sh} rc={p.returncode}", file=sys.stderr)
@@ -211,6 +211,8 @@ def cmd_loaders(run, pkg):
 
 
 def main():
+    if not os.environ.get("S4E_BATCH_HELD"):
+        os.execvp("bash", ["bash", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_batch.sh"), sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     a = sys.argv[1:]
     if a[:1] == ["record"] and len(a) in (2, 3):
         pkg = HERE.parent.parent / "corpus" / "packages" / "prolog" / "xsb_tests"

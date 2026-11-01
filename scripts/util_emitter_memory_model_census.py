@@ -51,6 +51,8 @@ def defined(paths):
 
 
 def main(argv):
+    if not os.environ.get("S4E_BATCH_HELD"):
+        os.execvp("bash", ["bash", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_batch.sh"), sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
     at_most = None
     lst = '--list' in argv
     only = argv[argv.index('--only') + 1] if '--only' in argv else ''
