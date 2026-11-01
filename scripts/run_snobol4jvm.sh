@@ -51,4 +51,8 @@ cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
 # code that runs once. At scaling 4 an empty program is 6.5 G (11.1 before), a 20k-iteration pattern loop 23.1 G (28.0), a 300k-iteration one 136.4 G (144.7), and the wall
 # clock is the same (0.58 s, 1.61 s, 10.1 s). Scaling 8 and above begins to cost wall time (10.9 s, then 12.9 s at 16 on the long loop); C1 only (TieredStopAtLevel=1) takes
 # an empty program to 3.7 G but a long loop 2.7 times longer, so it is not used. It is a launcher option like the archive above: java -jar without it still works.
-exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 ${stack_kb:+-Dsnobol4jvm.stack.kb=$stack_kb} -jar "$J" "${u[@]}" "$prog" "$@"
+# HUGE METHODS ARE COMPILED (-XX:-DontCompileHugeMethods; hq_jvm, CEO-2091). HotSpot never compiles a method over 8,000 bytecodes, and operators/INVOKE (a case of every builtin) is
+# one, so the hottest function of the engine ran in the bytecode interpreter: perf record -g showed 19 percent of all CPU in the Interpreter frame, called from INVOKE.doInvoke (6.9 percent
+# with the flag). Same jar and flags, flag the only difference: a 700k-iteration arithmetic loop 73.8 G -> 62.7 G instructions and 9.85 s -> 6.59 s, a 300k-iteration pattern loop 135.8 G ->
+# 115.4 G and 17.3 s -> 12.0 s, the empty program 6.4 G -> 6.2 G, a 20k pattern loop 23.3 G -> 22.6 G. Output identical.
+exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 -XX:-DontCompileHugeMethods ${stack_kb:+-Dsnobol4jvm.stack.kb=$stack_kb} -jar "$J" "${u[@]}" "$prog" "$@"
