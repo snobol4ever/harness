@@ -39,29 +39,41 @@
 #   */5 * * * * XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q flock -n /home/resources/progress/.tmp-sweep.lock bash /home/claude_coo/harness/scripts/util_tmp_sweep.sh
 #               --apply --if-over 70 --dead-sessions-hours 6 >> /home/resources/progress/TMP-SWEEP.cron.log 2>&1
 # The receipt adds used_before=<pct> pressure=<pct> bulk=<n> bulk_mb=<mb> used_after=<pct>; a bulk deletion prints as class "bulk".
+#
+# (8) THE PER-SEAT BUDGET (the cto, 2026-11-01 14:5x CST, after the second live-session flood: CEO-1902 was 43 GB of the cto's planner dumps,
+# today 19.5 GB of the cto's identity sweeps, 2.7 GB a sweep, under 30 minutes idle when /tmp passed 85 percent, so the pressure arm could not
+# take them and the coo's health check named the seat; CEO-2105's sibling lesson: a door, not discipline): a seat's scratch is the sum of its
+# session scratchpads under /tmp/claude-1000/<root> (the live session's included) and /tmp/s4e/<seat>; over --budget-mb MB (default 4096;
+# 0 turns the arm off) the sweep takes that seat's top-level scratchpad and /tmp/s4e/<seat> entries of at least 64 MB with nothing inside
+# newer than --budget-idle-min minutes (default 10) and no live process with its cwd or an open file inside, LARGEST FIRST, until the seat is
+# under budget, WHATEVER /tmp's use is; a budget deletion prints as class "budget" with the seat and its overrun. Under --if-over the budget
+# arm still runs (the age arms and the pressure arm stay behind the guard), so the cron's five-minute tick enforces the budget at every tick.
+# A git checkout (an entry holding .git, or whose child holds one: a seat's scratch worktree) is never budget material and is not counted in
+# the seat's scratch; its objdir, dumps and .s trees beside it are. A design harness's output tree (/tmp/s4e-design-<name>, /tmp/s4e-<design>-<uid>) is re-creatable by one run and falls under the
+# --scratch-hours rule, not the 48 h named rule.
 # USE: bash harness/scripts/util_tmp_sweep.sh            # dry run: what would go, by class, with bytes
 #      bash harness/scripts/util_tmp_sweep.sh --apply    # delete it, print the receipt line, append it to the ledger
 # RECEIPT: TMP_SWEEP applied=<0|1> cutoff_hours=<h> entries=<n> freed_mb=<mb> sessions=<n> session_mb=<mb> free_after=<...>
 # LEDGER: /home/resources/progress/TMP-SWEEP.tsv (one row per --apply), folded into GOAL-CFO.md by the ceo per sitting.
 # EXIT: 0 swept or nothing to sweep; 2 refused (not on this box's layout, or /tmp unreadable).
 set -u
-HOURS=48; DEAD_H=0; SCR_H=3; APPLY=0; PRESS=80; BULK_MB=256; IDLE_MIN=30; IF_OVER=0
+HOURS=48; DEAD_H=0; SCR_H=3; APPLY=0; PRESS=80; BULK_MB=256; IDLE_MIN=30; IF_OVER=0; BUDGET_MB=4096; BUDGET_IDLE_MIN=10; BUDGET_ONLY=0
 while [ $# -gt 0 ]; do case "$1" in --apply) APPLY=1;; --hours) HOURS="$2"; shift;; --dead-sessions-hours) DEAD_H="$2"; shift;; --scratch-hours) SCR_H="$2"; shift;;
-  --pressure) PRESS="$2"; shift;; --bulk-mb) BULK_MB="$2"; shift;; --idle-min) IDLE_MIN="$2"; shift;; --if-over) IF_OVER="$2"; shift;;
+  --pressure) PRESS="$2"; shift;; --bulk-mb) BULK_MB="$2"; shift;; --idle-min) IDLE_MIN="$2"; shift;; --if-over) IF_OVER="$2"; shift;; --budget-mb) BUDGET_MB="$2"; shift;; --budget-idle-min) BUDGET_IDLE_MIN="$2"; shift;;
   -h|--help) sed -n '2,46p' "$0"; exit 0;; *) echo "REFUSE(2): unknown argument $1" >&2; exit 2;; esac; shift; done
 [ -d /tmp ] && [ -r /tmp ] || { echo "REFUSE(2): /tmp unreadable"; exit 2; }
 if [ "$IF_OVER" != 0 ]; then
   USED=$(python3 -c 'import os; s=os.statvfs("/tmp"); u=s.f_blocks-s.f_bfree; print(int(100*u/(u+s.f_bavail)))')
-  [ "$USED" -lt "$IF_OVER" ] && exit 0
-  echo "$(date '+%F %T %Z') /tmp at ${USED} percent, at or over ${IF_OVER}: sweeping"
+  if [ "$USED" -lt "$IF_OVER" ]; then [ "$BUDGET_MB" != 0 ] || exit 0; BUDGET_ONLY=1; else echo "$(date '+%F %T %Z') /tmp at ${USED} percent, at or over ${IF_OVER}: sweeping"; fi
 fi
 LEDGER=/home/resources/progress/TMP-SWEEP.tsv
 PO=/home/resources/postoffice
 ROSTER="$(grep -m1 '^ROSTER:' "$PO/MODE" 2>/dev/null | sed 's/^ROSTER://')"
-python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" "$SCR_H" "$PRESS" "$BULK_MB" "$IDLE_MIN" <<'PYEOF'
+python3 - "$HOURS" "$DEAD_H" "$APPLY" "$LEDGER" "$ROSTER" "$SCR_H" "$PRESS" "$BULK_MB" "$IDLE_MIN" "$BUDGET_MB" "$BUDGET_IDLE_MIN" "$BUDGET_ONLY" <<'PYEOF'
 import os, sys, time, shutil, subprocess, datetime
 hours = float(sys.argv[1]); dead_h = float(sys.argv[2]); apply = sys.argv[3] == "1"; ledger = sys.argv[4]; roster = set(sys.argv[5].split()); scr_h = float(sys.argv[6])
 press = float(sys.argv[7]); bulk_kb = float(sys.argv[8]) * 1024; idle_s = float(sys.argv[9]) * 60
+budget_kb = float(sys.argv[10]) * 1024; bidle_s = float(sys.argv[11]) * 60; budget_only = sys.argv[12] == "1"
 def used_pct():
     s = os.statvfs("/tmp"); u = s.f_blocks - s.f_bfree
     return 100.0 * u / (u + s.f_bavail) if u + s.f_bavail else 0.0
@@ -103,6 +115,7 @@ for p in os.listdir("/proc"):
     except OSError: pass
 import re
 SCRATCH = re.compile(r"^(tmp\.[A-Za-z0-9]{6,}|tmp[a-z0-9_]{6,}|[A-Za-z0-9_-]+\.[A-Za-z0-9]{6})$")
+DESIGN_OUT = re.compile(r"^s4e-(design-[A-Za-z0-9_-]+|[a-z0-9_]+-[0-9]+)$")
 def held_fd(path):
     pre = path.rstrip("/") + "/"
     return any(c == path or c.startswith(pre) for c in live_fd)
@@ -114,7 +127,8 @@ for name in sorted(os.listdir("/tmp")):
     if name.startswith(KEEP_PREFIX) or name in KEEP_NAMES: continue
     path = "/tmp/" + name
     if held(path): continue
-    if SCRATCH.match(name) and scr_h > 0 and os.path.isdir(path) and not held_fd(path) and newest_in(path) < now - scr_h * 3600:
+    if budget_only: continue
+    if (SCRATCH.match(name) or DESIGN_OUT.match(name)) and scr_h > 0 and os.path.isdir(path) and not held_fd(path) and newest_in(path) < now - scr_h * 3600:
         victims.append(("scratch", path, size_kb(path))); continue
     if newest_in(path) >= cutoff: continue
     victims.append(("entry", path, size_kb(path)))
@@ -123,7 +137,7 @@ for name in sorted(os.listdir("/tmp")):
 # 48 h cutoff, never one a live process sits in or holds open) and its line carries the seat's ledger name.
 owner = {}
 s4e = "/tmp/s4e"
-if os.path.isdir(s4e):
+if os.path.isdir(s4e) and not budget_only:
     for seat in sorted(os.listdir(s4e)):
         sd = os.path.join(s4e, seat)
         if not os.path.isdir(sd) or os.path.islink(sd): continue
@@ -138,7 +152,7 @@ if os.path.isdir(s4e):
             victims.append(("entry", path, size_kb(path))); owner[path] = seat
 sessions = []
 root = "/tmp/claude-1000"
-if os.path.isdir(root):
+if os.path.isdir(root) and not budget_only:
     for seat in sorted(os.listdir(root)):
         sd = os.path.join(root, seat)
         if not os.path.isdir(sd): continue
@@ -173,7 +187,7 @@ for kind, path, kb in victims + sessions:
 gone = set(p for _, p, _ in victims + sessions)
 bulk_n = 0; bulk_kb_freed = 0
 est = used_pct() if apply else used_before - 100.0 * (freed + sfreed) / max(tmp_kb(), 1)
-if est >= press:
+if est >= press and not budget_only:
     low = press - 15; cand = []
     def idle(p): return newest_in(p) < now - idle_s
     def free_of_procs(p): return not held(p) and not held_fd(p)
@@ -214,10 +228,54 @@ if est >= press:
             est = used_pct()
         else: est -= 100.0 * kb / max(tmp_kb(), 1)
         bulk_n += 1; bulk_kb_freed += kb
+budget_n = 0; budget_kb_freed = 0
+if budget_kb > 0:
+    def seat_name_of(seat):
+        sid = seat.replace("-home-claude-", "")
+        return seat if not seat.startswith("-home-claude-") else sid if sid in ("ceo", "cto", "coo", "cfo", "cao", "cqo") else "hq_" + sid
+    def unheld(p): return not held(p) and not held_fd(p)
+    def is_checkout(p):
+        if not os.path.isdir(p) or os.path.islink(p): return False
+        if os.path.exists(os.path.join(p, ".git")): return True
+        try: kids = os.listdir(p)
+        except OSError: return False
+        return any(os.path.exists(os.path.join(p, k, ".git")) for k in kids)
+    trees = {}
+    if os.path.isdir(root):
+        for seat in os.listdir(root):
+            sd = os.path.join(root, seat)
+            if os.path.isdir(sd): trees.setdefault(seat_name_of(seat), []).append(sd)
+    if os.path.isdir(s4e):
+        for seat in os.listdir(s4e):
+            sd = os.path.join(s4e, seat)
+            if os.path.isdir(sd) and not os.path.islink(sd): trees.setdefault(seat, []).append(sd)
+    for seat, dirs in sorted(trees.items()):
+        ents = []
+        for d in dirs:
+            if d.startswith(root + "/"):
+                for ses in os.listdir(d):
+                    sp = os.path.join(d, ses, "scratchpad")
+                    if os.path.isdir(sp): ents += [os.path.join(sp, e) for e in os.listdir(sp)]
+            else:
+                ents += [os.path.join(d, e) for e in os.listdir(d)]
+        ents = [q for q in ents if q not in gone and not is_checkout(q)]
+        sized = sorted([(size_kb(q), q) for q in ents], reverse=True)
+        total = sum(kb for kb, _ in sized)
+        if total <= budget_kb: continue
+        cand = [(kb, q) for kb, q in sized if unheld(q) and newest_in(q) < now - bidle_s]
+        for kb, q in cand:
+            if total <= budget_kb or kb < 65536: break
+            print("%-8s %8.1fM %6.1fh %s  [%s over budget by %dM]" % ("budget", kb / 1024, (now - newest_in(q)) / 3600, q, seat, (total - budget_kb) / 1024))
+            if apply:
+                try:
+                    if os.path.isdir(q) and not os.path.islink(q): shutil.rmtree(q, ignore_errors=True)
+                    else: os.unlink(q)
+                except OSError as e: print("   not removed: %s" % e); continue
+            total -= kb; budget_n += 1; budget_kb_freed += kb
 st = os.statvfs("/tmp"); free_after = st.f_bavail * st.f_frsize / 1048576
 used_after = used_pct() if apply else est
-line = "TMP_SWEEP applied=%d cutoff_hours=%g dead_sessions_hours=%g scratch_hours=%g entries=%d freed_mb=%d scratch=%d scratch_mb=%d sessions=%d session_mb=%d free_after_mb=%d used_before=%d pressure=%g bulk=%d bulk_mb=%d used_after=%d" % (
-    1 if apply else 0, hours, dead_h, scr_h, len(victims), freed // 1024, scr_n, scr_kb // 1024, len(sessions), sfreed // 1024, free_after, used_before, press, bulk_n, bulk_kb_freed // 1024, used_after)
+line = "TMP_SWEEP applied=%d cutoff_hours=%g dead_sessions_hours=%g scratch_hours=%g entries=%d freed_mb=%d scratch=%d scratch_mb=%d sessions=%d session_mb=%d free_after_mb=%d used_before=%d pressure=%g bulk=%d bulk_mb=%d budget=%d budget_mb=%d used_after=%d" % (
+    1 if apply else 0, hours, dead_h, scr_h, len(victims), freed // 1024, scr_n, scr_kb // 1024, len(sessions), sfreed // 1024, free_after, used_before, press, bulk_n, bulk_kb_freed // 1024, budget_n, budget_kb_freed // 1024, used_after)
 by_seat = {}
 for kind, path, kb in victims + sessions:
     if path in owner: by_seat[owner[path]] = by_seat.get(owner[path], 0) + kb
