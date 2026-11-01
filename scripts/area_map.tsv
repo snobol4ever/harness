@@ -45,6 +45,8 @@
 *	src/templates/bb/bb_call_bool.cpp
 *	src/templates/bb/bb_call_fn.cpp
 *	src/templates/bb/bb_call_proc_staged.cpp
+*	src/templates/bb/bb_call_pl_block.cpp
+*	src/templates/xa/xa_call_tail.cpp
 *	src/templates/bb/bb_call_value.cpp
 *	src/templates/bb/bb_assign_frame.cpp
 *	src/templates/bb/bb_assign_global.cpp
