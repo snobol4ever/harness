@@ -10,7 +10,7 @@
 #   --probe N    run step N's probe tokens only (no witness runs; the reading a landing quotes before its smokes)
 #   --out DIR    where the witness runs go (default /tmp/s4e-templates_zero-<uid>)
 #
-# probe tokens (STEPS.tsv column 5): audit=f,g | classes=f:cls=0,cls<=N | nocall=sym,sym:bb|xa|all|lower|runtime | nosym=sym,sym:all | sym=sym,sym |
+# probe tokens (STEPS.tsv column 5): audit=f,g | classes=f:cls=0,cls<=N | nocall=sym,sym:bb|xa|all|lower|runtime | after=A:B (every call of B* under src has A within the 8 lines above) | nosym=sym,sym:all | sym=sym,sym |
 #   kinds=IR_X,IR_Y | gone=f:entry | order=a,b,c | grand=N | -   (each defined in the table's header comment)
 # VERDICT: STEP N <slug>: probe=<token:reading ...> m3=<pass>/<n> m4=<pass>/<n> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -87,6 +87,11 @@ for tok in $probe; do
                      sed -n "$((ln + 1)),$((ln + 8))p" "$drv" | grep -q "$c(s2" || bad=$((bad + 1)); done
                  [ "$nb" -gt 0 ] || refuse "order: $b is called nowhere in scrip.c"
                  if [ "$bad" = 0 ]; then note "order:$nb-sites-ok"; else note "order:$bad-of-$nb-sites-out-of-order!"; red=1; fi ;;
+        after=*) a="${tok#after=}"; a="${a%%:*}"; b="${tok#*:}"; nb=0; bad=0
+                 for hit in $(grep -rnP --include='*.c' --include='*.cpp' "\b$b[_a-z]*\((?!(IR_graph_t|stage2_t|const|void|struct))" "$SC/src" | grep -v '^[^:]*:[0-9]*:\(void\|int\|static\) \|^[^:]*/src/planner/' | cut -d: -f1,2); do nb=$((nb + 1)); f="${hit%%:*}"; ln="${hit##*:}"
+                     sed -n "$((ln > 8 ? ln - 8 : 1)),$((ln - 1))p" "$f" | grep -q "$a" || { bad=$((bad + 1)); note "after:$(basename "$f"):$ln!"; }; done
+                 [ "$nb" -gt 0 ] || { note "after:$b=0-sites!"; bad=$((bad + 1)); }
+                 if [ "$bad" = 0 ]; then note "after:$nb-sites-ok"; else red=1; fi ;;
         grand=*) g=$(cd "$SC" && bash "$HERE/audit_bb_fixup_rank.sh" 2>/dev/null | awk '/GRAND TOTAL/ {print $NF}'); [ -n "$g" ] || refuse "grand: the rank audit printed no GRAND TOTAL"
                  if [ "$g" -le "${tok#grand=}" ]; then note "grand=$g"; else note "grand=$g!"; red=1; fi ;;
         *) refuse "unknown probe token $tok in step $step" ;;
