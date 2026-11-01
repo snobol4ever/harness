@@ -172,7 +172,11 @@ goto_fail	src/templates/bb/bb_goto.cpp
 goto_fail	src/templates/bb/bb_goto_deferred.cpp
 goto_success	src/templates/bb/bb_goto.cpp
 goto_success	src/templates/bb/bb_goto_deferred.cpp
-DEFINE	src/templates/bb/bb_define.cpp
+DEFINE	src/templates/bb/bb_define_bind.cpp
+DEFINE	src/templates/bb/bb_define_shim.cpp
+DEFINE	src/templates/bb/bb_define_floater.cpp
+DEFINE	src/templates/bb/bb_define_adopt.cpp
+DEFINE	src/templates/bb/bb_define_call.cpp
 REPLACE	src/templates/bb/bb_match_replace.cpp
 OPSYN	src/lower/lower_snobol4.c
 TABLE	src/runtime/rtx/rtx_table.s
