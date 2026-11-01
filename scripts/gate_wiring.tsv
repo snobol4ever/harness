@@ -711,6 +711,7 @@ test_gate_pl_a_clause_with_a_cut_then_a_disjunction_retries_when_the_program_lin
 test_gate_pl_a_closed_stream_is_not_a_current_stream_argument.sh	WIRED	-	-	-
 test_gate_pl_a_closure_called_inside_a_module_costs_instructions_linear_in_the_list_not_quadratic.sh	WIRED	-	-	-
 test_gate_pl_a_clpfd_program_compiles_in_seconds_not_minutes_the_bound_spine_decision_is_not_quadratic.sh	WIRED	-	-	-
+test_gate_pl_a_consulted_file_loads_at_its_directive_so_its_goals_run_before_the_includers_later_ones_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_cut_inside_a_control_goal_held_in_a_variable_cuts_to_the_call.sh	WIRED	-	-	-
 test_gate_pl_a_cut_local_to_a_shifted_goal_resumes_its_continuation_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_a_cut_redo_reaches_its_own_barrier.sh	WIRED	-	-	-
