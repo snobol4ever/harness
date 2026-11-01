@@ -63,6 +63,8 @@ src/templates/bb/bb_scan_find.cpp
 src/templates/bb/bb_scan_bal.cpp
 src/templates/bb/bb_lit_integer.cpp
 src/templates/bb/bb_lit_string.cpp
+src/templates/bb/bb_lit_dstar.cpp
+src/templates/bb/bb_lit_thunk.cpp
 src/templates/bb/bb_lit_atom.cpp
 src/templates/bb/bb_lit_name.cpp
 src/templates/bb/bb_lit_charset.cpp
