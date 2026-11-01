@@ -783,6 +783,7 @@ test_gate_pl_a_write_to_a_binary_current_output_raises_permission_error.sh	WIRED
 test_gate_pl_a_zero_arity_term_is_the_atom_in_both_modes.sh	WIRED	-	-	-
 test_gate_pl_abolishing_a_table_abolishes_the_tables_whose_conditional_answers_depend_on_it_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_allsol_goal_is_validated.sh	WIRED	-	-	-
+test_gate_pl_an_arithmetic_function_directive_expands_the_later_clauses_with_no_use_module_line_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_an_asserted_atom_survives_a_collection.sh	WIRED	-	-	-
 test_gate_pl_an_attributed_variable_wakes_inside_a_multi_goal_branch.sh	WIRED	-	-	-
 test_gate_pl_an_attributed_variable_wakes_its_goals_on_every_bind_road.sh	WIRED	-	-	-
