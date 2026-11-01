@@ -1245,3 +1245,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1246	pl	$fx_chmod	3	3	rt_pl_dop_fx_chmod	leaf	-	-	0	dop_direct
 1247	pl	$fx_readlink	2	2	rt_pl_dop_fx_readlink	leaf	-	-	0	dop_direct
 1248	pl	$seek_list	4	4	rt_pl_dop_seek_list	leaf	-	-	0	dop_direct
+1249	rkm	isNaN	-	-	bt_isNaN	leaf	-	-	0	meth_arms
