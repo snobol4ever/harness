@@ -73,9 +73,16 @@ for tok in $probe; do
                    if grep -rq --include='*.c' --include='*.cpp' "^[A-Za-z_][A-Za-z0-9_ *\"]*[ *]$s(" "$SC/src" 2>/dev/null; then note "sym:$s=defined"; else note "sym:$s=undefined!"; red=1; fi; done ;;
         kinds=*) for k in $(echo "${tok#kinds=}" | tr ',' ' '); do
                      nm=$(grep -c "\[$k\] = \"$k\"" "$SC/src/ir/scrip_ir.c" 2>/dev/null)
-                     boxes=$(grep -E "case $k:" "$SC/src/emitter/emit.cpp" 2>/dev/null | grep -o 'bb_emit_x86(bb_[a-z0-9_]*' | sort -u | wc -l)
+                     own="bb_$(echo "$k" | sed 's/^IR_//' | tr 'A-Z' 'a-z')"
+                     span=$(awk -v k="case $k:" '$0 ~ k {p=1; print; next} p && /^    case / {p=0} p' "$SC/src/emitter/emit.cpp" 2>/dev/null)
+                     first=$(echo "$span" | grep -o 'bb_emit_x86(bb_[a-z0-9_]*' | head -1 | sed 's/bb_emit_x86(//')
+                     boxes=$(echo "$span" | grep -o 'bb_emit_x86(bb_[a-z0-9_]*' | sort -u | wc -l)
+                     twins=$(echo "$probe" | tr ' ' '\n' | grep -c "^twin=$k:")
                      cases=$(grep -c -E "case $k:" "$SC/src/emitter/emit.cpp" 2>/dev/null)
-                     if [ "$nm" = 1 ] && [ "$boxes" = 1 ] && [ "$cases" -ge 1 ]; then note "kind:$k=1box"; else note "kind:$k=named$nm/boxes$boxes!"; red=1; fi; done ;;
+                     if [ "$nm" = 1 ] && [ "$first" = "$own" ] && [ "$boxes" = $((1 + twins)) ] && [ "$cases" -ge 1 ]; then note "kind:$k=$own${twins:++$twins}"; else note "kind:$k=named$nm/first${first:-none}/boxes$boxes!"; red=1; fi; done ;;
+        twin=*) spec="${tok#twin=}"; k="${spec%%:*}"; b="${spec#*:}"
+                n=$(awk -v k="case $k:" '$0 ~ k {p=1; print; next} p && /^    case / {p=0} p' "$SC/src/emitter/emit.cpp" 2>/dev/null | grep -c "bb_emit_x86($b(")
+                if [ "$n" -ge 1 ]; then note "twin:$k=$b"; else note "twin:$k=$b-missing!"; red=1; fi ;;
         gone=*) spec="${tok#gone=}"; f="${spec%%:*}"; e="${spec#*:}"
                 if [ -f "$SC/src/templates/$f" ]; then note "gone:$f=present!"; red=1
                 elif grep -q "$e()" "$SC/src/emitter/emit.cpp" "$SC/src/templates/bb/bb_templates.h" 2>/dev/null; then note "gone:$f=named!"; red=1
