@@ -9,7 +9,8 @@
 #         s4e-batch.slice  CPUWeight=100 MemoryMax=12G                               (batch, step 4 moves the boards and censuses in)
 #   (2) /tmp/s4e/<seat> for every seat, made at every login by ~/.config/user-tmpfiles.d/s4e.conf (a reboot empties /tmp; TMPDIR points there)
 #   (3) every seat root's settings.local.json, a dated .bak beside it: the env block (S4E_SEAT, S4E_SEAT_JOBS=4, MAKEFLAGS=--jobs=4,
-#       TMPDIR=/tmp/s4e/<seat>), a SessionStart hook running that root's harness/scripts/s4e_session_start.sh, and every dead hook removed
+#       TMPDIR=/tmp/s4e/<seat>), a SessionStart hook running that root's harness/scripts/s4e_session_start.sh, a PreToolUse hook running that
+#       root's harness/scripts/s4e_skill_gate.py on Edit|Write|MultiEdit|NotebookEdit|Bash (THE SKILL GATE, the cto 2026-11-01), and every dead hook removed
 #       (a hook that cds into SCRIP and runs scripts/s4e_msg.sh, which has not existed since CEO-1819); everything else left as it is
 #   (4) every live Claude session placed now through s4e_session_start.sh --pid (the env block reaches a session at its next start)
 #   (5) s4e_session_start.sh --check, printed
@@ -59,6 +60,10 @@ for root in roots:
     ss = hooks.setdefault("SessionStart", [])
     if not any(h.get("command") == cmd for g in ss for h in g.get("hooks", [])):
         ss.append({"hooks": [{"type": "command", "command": cmd, "timeout": 10}]})
+    gcmd = "python3 -I %s/harness/scripts/s4e_skill_gate.py" % root   # THE SKILL GATE (the cto, 2026-11-01): refuses an edit of a layer whose skill the session has not loaded
+    pt = hooks.setdefault("PreToolUse", [])
+    if not any(h.get("command") == gcmd for g in pt for h in g.get("hooks", [])):
+        pt.append({"matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash", "hooks": [{"type": "command", "command": gcmd, "timeout": 10}]})
     new_text = json.dumps(d, indent=2) + "\n"
     if new_text == old_text: print("UNCHANGED %s" % path); continue
     changed += 1

@@ -1185,6 +1185,7 @@ test_gate_seat_identity_one_map.sh	WIRED	-	-	-
 test_gate_send_prose_requires_stdin.sh	WIRED	-	-	-
 test_gate_setexit_handler_return_resumes_the_raising_activation.sh	WIRED	-	-	-
 test_gate_shared_builtin_id_table_is_self_consistent.sh	WIRED	-	-	-
+test_gate_skill_gate_refuses_an_edit_under_src_without_its_skill.sh	WIRED	-	-	-
 test_gate_sm_dead.sh	WIRED	-	-	-
 test_gate_sn4_call_scope_rides_the_strict_field_not_an_opcode_flip.sh	WIRED	-	-	-
 test_gate_sn4_replacement_releases_its_post_match_spine.sh	WIRED	-	-	-
