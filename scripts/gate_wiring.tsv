@@ -1128,6 +1128,7 @@ test_gate_rr_a_part_stops_between_two_tests_when_its_budget_is_spent.sh	WIRED	-	
 test_gate_rt_entry_table_matches_the_binary.sh	WIRED	-	-	-
 test_gate_rtcc_claimed_regs.sh	WIRED	-	-	-
 test_gate_rtcc_no_read_of_r8_r10_r11_after_a_call.sh	WIRED	-	-	-
+test_gate_rtx_an_asm_define_equals_the_c_define_of_the_same_name.sh	WIRED	-	-	-
 test_gate_rtx_calls_carry_no_veneer.sh	WIRED	-	-	-
 test_gate_rtx_declining_leaves_are_exactly_the_twin_table.sh	WIRED	-	-	-
 test_gate_rtx_entries_keep_the_rtcc_four.sh	WIRED	-	-	-
