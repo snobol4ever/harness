@@ -26,12 +26,18 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 RT="src/runtime/rt/rt.c"; GLUE="src/templates/bb/bb_glue_flat.cpp"; ASM="src/runtime/rt/rt_asm_helpers.S"
 [ -f "$RT" ] && [ -f "$GLUE" ] && [ -f "$ASM" ] || { echo "REFUSE(2): a source file this gate grades is missing"; exit 2; }
 
-glue_body="$(sed -n '/^std::string bb_glue_enter_c2bb/,/^}/p' "$GLUE")"
-[ -n "$glue_body" ] || { echo "REFUSE(2): bb_glue_enter_c2bb not found in $GLUE -- the gate cannot grade what it cannot read"; exit 2; }
+# ⭐ RE-CUT by the coo 2026-11-01 on the cto's ruling (11:0x): bb_glue_enter_c2bb is now a declaration (line 36) and a one-line wrapper that returns
+# bb_glue_c2bb_body(...); the old range began at the declaration and never read the body that names rt_tiny_glue_enter, so arm 1 read NO and the gate
+# red on a tree whose three sites agree. Arm 1 reads the static body, and the wrapper must delegate to it (else the road moved: REFUSE, never a guess).
+glue_body="$(sed -n '/^static std::string bb_glue_c2bb_body(/,/^}/p' "$GLUE")"
+[ -n "$glue_body" ] || { echo "REFUSE(2): bb_glue_c2bb_body not found in $GLUE -- the gate cannot grade what it cannot read"; exit 2; }
+glue_wrap="$(sed -n '/^std::string bb_glue_enter_c2bb(.*{ *$/,/^}/p' "$GLUE")"
+printf '%s\n' "$glue_wrap" | grep -q 'bb_glue_c2bb_body(' || { echo "REFUSE(2): bb_glue_enter_c2bb no longer delegates to bb_glue_c2bb_body in $GLUE -- re-read where the c2bb road's body lives"; exit 2; }
 tramp="$(sed -n '/^rt_tiny_glue_enter:/,/^ *\.size *rt_tiny_glue_enter/p' "$ASM")"
 
 rc=0
 reaches=0; printf '%s\n' "$glue_body" | grep -q 'rt_tiny_glue_enter' && reaches=1
+if [ "${FAIL_ONCE_ARM1:-0}" = "1" ]; then reaches=0; echo "FAIL_ONCE_ARM1: pretending the glue's how==2 arm no longer reaches rt_tiny_glue_enter -- with no guard in the open the gate must red"; fi
 sizes=0; [ -n "$tramp" ] && printf '%s\n' "$tramp" | grep -q 'shrq *\$8, *%rsi' && sizes=1
 copies=0; [ -n "$tramp" ] && printf '%s\n' "$tramp" | grep -q 'g_call_args' && copies=1
 carries_args=0; [ $reaches = 1 ] && [ $sizes = 1 ] && [ $copies = 1 ] && carries_args=1

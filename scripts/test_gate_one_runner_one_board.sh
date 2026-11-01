@@ -90,7 +90,7 @@ guard_heads_cmd_run() {
   sed -n 6p <<<"$h" | grep -qxF '            _dseat = util_score_row.derive_measurer() or ""' &&
   sed -n 7p <<<"$h" | grep -qxF '        except Exception:' &&
   sed -n 8p <<<"$h" | grep -qxF '            _dseat = ""' &&
-  sed -n 9p <<<"$h" | grep -qxF '    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN"):' &&
+  sed -n 9p <<<"$h" | grep -qxF '    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN") and not _cto_lands():' &&
   sed -n 10p <<<"$h" | grep -qF '        sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS:' &&
   sed -n 11p <<<"$h" | grep -qxF '        sys.exit(2)' &&
   sed -n 12p <<<"$h" | grep -qF '_parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]' &&
@@ -101,6 +101,9 @@ guard_heads_cmd_run() {
   sed -n 17p <<<"$h" | grep -qF '        _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))'
 }
 arm "6b census: the rungs harness guards cmd_run before it grades, with the suite it holds, a handful of at most eight named entries excepted (CEO-1893)" 'guard_heads_cmd_run "$H/corpus_suite_harness.py"'
+# ⭐ 6e THE HARNESS ADMITS A cto WITH A LIVE CLAIM AS THE BASH GUARD DOES (CEO-2085; the coo 2026-11-01 on the cto's ask): _cto_lands() over a fixture claims dir
+_cl() { local d; d=$(mktemp -d); mkdir -p "$d/claims"; printf '%b' "$1" > "$d/claims/x.claim"; S4E_POST="$d" python3 -c "import sys; sys.path.insert(0, '$H'); import corpus_suite_harness as h; print(h._cto_lands())" 2>/dev/null; rm -rf "$d"; }
+arm "6e the harness admits a cto that holds a live claim (cto, no DONE) and not one whose claim is DONE or another seat's, as one_runner_cto_lands does" '[ "$(_cl "cto\nRUNNING\n")" = True ] && [ "$(_cl "cto\nRUNNING\nDONE\n")" = False ] && [ "$(_cl "cfo\nRUNNING\n")" = False ]'
 arm "6c the bus done run exports S4E_DONE_WHEN_RUN=1" 'grep -q "S4E_DONE_WHEN_RUN=1 timeout" "$H/s4e_msg.sh"'
 arm "7 harness detector: a wrong-language run of a CORPUS suite is refused rc=2 before any grading" 'out=$(cd "$H/../../SCRIP" && S4E_SEAT=hq_pascal python3 ../harness/scripts/corpus_suite_harness.py run "$CORPUS/tests/icon/ALL.icn" "$CORPUS/tests/icon/ALL.ref" --lang icon 2>&1); rc=$?; [ $rc -eq 2 ] && grep -q "ONE RUNNER, ONE BOARD" <<<"$out"'
 

@@ -107,6 +107,16 @@ print(hits[0][0] if hits else -1)
         *GRANT:*) echo "SELFTEST OK: case 3 -- GRANT: marker is present on the reported declaration line, gate layer can exclude it" ;;
         *) echo "SELFTEST FAIL case 3: GRANT: marker not found on reported line $line_no: $src_line"; ok=0 ;;
     esac
+    # --- CASE 4: a macro that closes a function hides its '}' (by_name_dispatch.c's PL_CX_LEAF_TAIL; the cto's ruling 2026-11-01 11:1x, landed by the coo):
+    # the next column-0 `static ... ) {` is a function definition, never a static declaration, and the scan resyncs there -- exactly the two real statics count
+    printf 'static int f(void) { return 1; }\n#define TAIL }\nstatic int g(int a) { static int hit = 0; hit += a;\nTAIL\nstatic int h(void) { int e = 1; return e; }\nstatic int k(void) {\n    static int real = 0; return ++real; }\n' > "$SBX/src/emitter/emit.cpp"
+    out="$(python3 "$CENSUS" --root "$SBX/src" 2>&1)"
+    mutable_n="$(echo "$out" | sed -n 's/^  MUTABLE (in scope):  *//p')"
+    if [ "$mutable_n" = "2" ]; then
+        echo "SELFTEST OK: case 4 (a macro-closed function, then two static function headers) -- census reports the 2 real statics, no header read as one"
+    else
+        echo "SELFTEST FAIL case 4: expected exactly 2 mutable statics (hit, real) past a macro-closed function, census says $mutable_n"; ok=0
+    fi
     [ "$ok" = "1" ] && { echo "SELFTEST: ALL PASS"; exit 0; }
     echo "SELFTEST: FAILED"; exit 1
 fi

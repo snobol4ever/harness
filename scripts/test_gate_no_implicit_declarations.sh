@@ -22,7 +22,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 WFLAGS="-Wimplicit-function-declaration -Wint-conversion -Wincompatible-pointer-types"
 TU_FLOOR=80
-if ! timeout -k 5 180 make -n -B > "$W/cmds.raw" 2>"$W/make.err"; then echo "REFUSES rc=2: make -n -B failed -- cannot obtain the real compile commands ($(tail -1 "$W/make.err"))"; exit 2; fi
+# ⭐ THE CACHE IS PINNED OFF HERE (the cto's ruling 2026-11-01 11:1x, on the cao's step-1 fact; landed by the coo): with the build cache on, make -n -B
+# lists a cache FETCH instead of the per-file compiles, so on a clean tree the census found no translation unit and refused. An instrument never
+# depends on the cache's state: this run of make -n is always the compile listing.
+if ! S4E_NO_BUILD_CACHE=1 timeout -k 5 180 make -n -B > "$W/cmds.raw" 2>"$W/make.err"; then echo "REFUSES rc=2: make -n -B failed -- cannot obtain the real compile commands ($(tail -1 "$W/make.err"))"; exit 2; fi
 grep -E '^[[:space:]]*gcc ' "$W/cmds.raw" > "$W/cmds.txt" || true
 : > "$W/diag.txt"; tus=0
 while IFS= read -r line; do

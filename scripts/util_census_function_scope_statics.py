@@ -170,6 +170,18 @@ def scan_file(path, rel):
         if m:
             word = m.group(0)
             if word == 'static' and top_is_func():
+                # ⭐ A STATIC FUNCTION'S HEADER IS NOT A STATIC DECLARATION, AND IT RESYNCS THE SCAN (the cto's ruling 2026-11-01 11:1x, on the cao's
+                # step-1 fact; landed by the coo): a macro that closes a function inside its expansion (by_name_dispatch.c's PL_CX_LEAF_TAIL) hides
+                # that '}' from this scanner, so every later line read as inside a function body -- 716 hits in that one file over a ceiling of 19,
+                # pl_fx_err's local `e` the first. C never nests a function definition in a function body, so a `static` at column 0 whose OWN LINE
+                # carries `) {` is a function definition: it is not reported, the non-TRANSPARENT frames are dropped (an extern "C" wrapper stays),
+                # and the `{` that follows is classified fresh, exactly as at file scope.
+                ls = raw.rfind('\n', 0, m.start()) + 1
+                le = raw.find('\n', m.start()); le = n if le < 0 else le
+                if m.start() == ls and re.search(r'\)\s*(?:__attribute__\s*\(\(.*?\)\)\s*)?\{', raw[m.start():le]):
+                    stack[:] = [fr for fr in stack if fr == 'TRANSPARENT']
+                    boundary_start = m.start()
+                    i = m.end(); continue
                 # Reconstruct the declarator run: from here to the next ';' AT THE SAME NESTING
                 # DEPTH the declaration started at. A plain scan for the next ';' breaks on the
                 # `static const struct { const char * n; int code; } table[] = {...};` idiom --

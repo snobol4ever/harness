@@ -3207,6 +3207,28 @@ def _one_runner_lang(suite_path=None, lang=None):
                 return parts[i + 2]
     return lang or "unknown"
 
+def _cto_lands():
+    """THE cto LANDS THE ROWS ASSIGNED TO IT (CEO-2085, mirrored word for word in its rule from lib_one_runner.sh:one_runner_cto_lands;
+    the coo 2026-11-01 on the cto's ask): a cto that holds a live claim -- a claims/*.claim under S4E_POST whose first line is cto and that
+    carries no line DONE -- runs that landing's proof like any lander. CEO-2029's refusal stands for the cto's own design work."""
+    d = os.path.join(os.environ.get("S4E_POST", "/home/resources/postoffice"), "claims")
+    try:
+        names = sorted(os.listdir(d))
+    except Exception:
+        return False
+    for n in names:
+        if not n.endswith(".claim"):
+            continue
+        try:
+            with open(os.path.join(d, n), encoding="utf-8", errors="replace") as fh:
+                lines = fh.read().split("\n")
+        except Exception:
+            continue
+        if lines and lines[0] == "cto" and "DONE" not in lines:
+            return True
+    return False
+
+
 def _one_runner_who(lang=None):
     """WHO may run a board comes from the LAW, never from a name baked in here (ceo CEO-756, CEO-775).
     NO CENTRAL RUNNER (Lon 2026-09-16 10:5x, verbatim: "So do not have a centralized runner at all. Let's each HQ run its
@@ -3292,7 +3314,7 @@ def cmd_run(args):
             _dseat = util_score_row.derive_measurer() or ""
         except Exception:
             _dseat = ""
-    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN"):
+    if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN") and not _cto_lands():
         sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"). Put the witness and its expected answer in the step plan and let an executor or the coo run it.\n" % _dseat)
         sys.exit(2)
     # ⭐ A HANDFUL OF NAMED ENTRIES IS NOT A BOARD (Lon 2026-10-22: "An HQ knows it is done when the program it fixes fails before and passes
