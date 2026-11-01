@@ -195,9 +195,9 @@ ensure_prolog_archive() {
   fi
   echo -e "${YELLOW}  [cache] Building libsno4rt_pl.a...${RESET}"
   mkdir -p "$RT_CACHE" /tmp/rtbuild_pl_$$
-  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_atom.c"    -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/atom.o    || return 1
-  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_unify.c"   -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/unify.o   || return 1
-  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_builtin.c" -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/builtin.o || return 1
+  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_atom.c"    -I"$ROOT/src" -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/atom.o    || return 1
+  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_unify.c"   -I"$ROOT/src" -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/unify.o   || return 1
+  gcc -O2 -c "$ROOT/src/parsers/prolog/prolog_builtin.c" -I"$ROOT/src" -I"$ROOT/src/parsers/prolog" -w -o /tmp/rtbuild_pl_$$/builtin.o || return 1
   ar rcs "$out" /tmp/rtbuild_pl_$$/*.o
   echo "$cur_stamp" > "$stamp_file"
   rm -rf /tmp/rtbuild_pl_$$

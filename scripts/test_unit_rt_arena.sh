@@ -45,7 +45,7 @@ int main(void) {
     return 0;
 }
 EOF
-gcc -I"$REPO/src/runtime/rt" -o "$T/t" "$T/t.c" \
+gcc -I"$REPO/src" -I"$REPO/src/runtime/rt" -o "$T/t" "$T/t.c" \
     "$REPO/src/runtime/rt/rt_slab.c" "$REPO/src/runtime/rt/rt_arena.c" -lpthread
 "$T/t"
 rm -rf "$T"

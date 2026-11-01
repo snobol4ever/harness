@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 }
 EOF
 printf '#include "g_lower.h"\ng_lower_t g_lower = G_LOWER_INIT;\n' > "$T/g.c"
-gcc -O0 -I"$ROOT/src/ir" -I"$ROOT/src/lower" "$T/h.c" "$T/g.c" "$ROOT/src/ir/ct_arena.c" -o "$T/h" 2> "$T/cc.err" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the harness did not compile against src/ir/ct_arena.c"; head -5 "$T/cc.err"; exit 2; }
+gcc -O0 -I"$ROOT/src" -I"$ROOT/src/ir" -I"$ROOT/src/lower" "$T/h.c" "$T/g.c" "$ROOT/src/ir/ct_arena.c" -o "$T/h" 2> "$T/cc.err" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the harness did not compile against src/ir/ct_arena.c"; head -5 "$T/cc.err"; exit 2; }
 echo "ARM 1 -- the primitive (src/ir/ct_arena.c)"
 "$T/h" shape || red=1
 SCRIP_CT_POISON=1 SCRIP_CT_NORECYCLE=1 "$T/h" poison > "$T/p.out" 2> "$T/p.err"; prc=$?

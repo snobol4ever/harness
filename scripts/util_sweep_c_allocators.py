@@ -26,7 +26,7 @@ def rewrite_bison_block(text):
         n += k
     return text, n
 def has_include(text):
-    return re.search(r'#\s*include\s+"ct_arena\.h"', text) is not None
+    return re.search(r'#\s*include\s+"(?:ir/)?ct_arena\.h"', text) is not None   # the path form since headers step 6C (R2); the bare form is read, never written
 def add_include(path, text):
     if has_include(text):
         return text
@@ -34,15 +34,15 @@ def add_include(path, text):
         i = text.find("%{")
         if i >= 0:
             j = text.index("\n", i) + 1
-            return text[:j] + '#include "ct_arena.h"\n' + text[j:]
-        return '%{\n#include "ct_arena.h"\n%}\n' + text
+            return text[:j] + '#include "ir/ct_arena.h"\n' + text[j:]
+        return '%{\n#include "ir/ct_arena.h"\n%}\n' + text
     m = re.search(r"^#\s*include[^\n]*\n", text, re.M)
     if m:
-        return text[: m.end()] + '#include "ct_arena.h"\n' + text[m.end() :]
+        return text[: m.end()] + '#include "ir/ct_arena.h"\n' + text[m.end() :]
     m = re.search(r"^#\s*define\s+\w+_H\b[^\n]*\n", text, re.M)
     if m:
-        return text[: m.end()] + '#include "ct_arena.h"\n' + text[m.end() :]
-    return '#include "ct_arena.h"\n' + text
+        return text[: m.end()] + '#include "ir/ct_arena.h"\n' + text[m.end() :]
+    return '#include "ir/ct_arena.h"\n' + text
 def walk_targets(paths):
     for root in paths:
         if os.path.isfile(root):

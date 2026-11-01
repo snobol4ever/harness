@@ -71,7 +71,7 @@ int main(void) {
     return (bad || dup) ? 1 : 0;
 }
 EOF
-gcc -I"$ROOT/src/runtime" -o "$T/bidcheck" "$T/bidcheck.c" 2>"$T/cc.err" || { sed 's/^/       /' "$T/cc.err" | head -5; refuse "the checker did not compile against the real header -- cannot measure"; }
+gcc -I"$ROOT/src" -I"$ROOT/src/runtime" -o "$T/bidcheck" "$T/bidcheck.c" 2>"$T/cc.err" || { sed 's/^/       /' "$T/cc.err" | head -5; refuse "the checker did not compile against the real header -- cannot measure"; }
 OUT="$("$T/bidcheck")"; RC=$?
 printf '%s\n' "$OUT" | sed 's/^/  /'
 ENTRIES="$(printf '%s\n' "$OUT" | sed -n 's/^entries=\([0-9]*\).*/\1/p')"
