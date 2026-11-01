@@ -1214,6 +1214,7 @@ test_gate_sno_a_data_field_access_takes_one_lookup_and_a_field_store_allocates_n
 test_gate_sno_a_deferred_any_or_notany_asks_the_runtime_for_membership_and_holds_no_stack_slot.sh	WIRED	-	-	-
 test_gate_sno_a_deferred_breakx_take_never_writes_the_r9_global_area_base.sh	WIRED	-	-	-
 test_gate_sno_a_deferred_call_capture_finds_its_procedure_once.sh	WIRED	-	-	-
+test_gate_sno_a_deferred_call_opens_its_thunk_by_the_registry_word_not_the_prologue.sh	WIRED	-	-	-
 test_gate_sno_a_deferred_cset_argument_that_evaluates_to_null_or_a_pattern_raises_spitbols_error.sh	WIRED	-	-	-
 test_gate_sno_a_deferred_name_call_in_a_wide_alternation_survives_the_switch.sh	WIRED	-	-	-
 test_gate_sno_a_define_call_on_a_default_build_never_enters_the_trace_layer.sh	WIRED	-	-	-
