@@ -90,6 +90,7 @@ IR_MATCH_ALTERNATE	alt_spine	always	[r]	-	-	-	the 32-byte record plus the unifor
 IR_MATCH_FENCE1	fence_spine	always	[r]	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; CEO-1938/1942)
 IR_MATCH_FENCE0	0	always	-	-	-	-	a fence's record is the match frame's
 IR_MATCH_ABORT	0	always	-	-	-	-	control only
+IR_MATCH_CASMARK	0	always	-	-	-	-	the CAS marker push and pop on the r12 island: moves no spine cell (Icon scan commit bracket, ARCH-UNICON 2.1)
 IR_BOUND	0	home_state	-	-	-	-	the bound read across a retaining edge keeps its record in the activation frame (Lon's TEST 2)
 IR_CALL_PROC_STAGED	32	pl_spine_record	DD	-	-	-	a call whose callee may retain, through the block protocol (planner_call_spine_record): the result, then the resume record at +16 -- {DT_RAW | the callee's beta << 8, the callee's rbp}, null at alpha, written over by the landing that pushes a fresh 32-byte cell below a retained frame -- read back at beta at a fixed rsp distance; no act word in the activation frame (ARCH-PROLOG-ACTIVATION-LIFETIME 8.1)
 IR_CALL_PROC_STAGED	16	pl_home_dyn	D	-	-	-	a call that may retain its callee's frame: the result cell, with the act word resident in the activation frame (Lon's TEST 2) (D3)
