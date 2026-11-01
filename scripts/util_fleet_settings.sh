@@ -60,8 +60,15 @@ for root in roots:
     ss = hooks.setdefault("SessionStart", [])
     if not any(h.get("command") == cmd for g in ss for h in g.get("hooks", [])):
         ss.append({"hooks": [{"type": "command", "command": cmd, "timeout": 10}]})
-    gcmd = "python3 -I %s/harness/scripts/s4e_skill_gate.py" % root   # THE SKILL GATE (the cto, 2026-11-01): refuses an edit of a layer whose skill the session has not loaded
+    gpy = "%s/harness/scripts/s4e_skill_gate.py" % root
+    gcmd = "test -f %s && python3 -I %s" % (gpy, gpy)   # THE SKILL GATE (the cto, 2026-11-01): refuses an edit of a layer whose skill the session has not loaded.
+    # test -f FIRST: a hook arrives in a session the moment the settings file changes, before a root behind origin has pulled the script, and a
+    # python that cannot open its file exits 2, which BLOCKS every tool call including the pull (the cfo's alarm, 2026-11-01 08:47, the fleet test);
+    # a missing script now reads rc 1, a non-blocking note, and the tool runs.
     pt = hooks.setdefault("PreToolUse", [])
+    for g in pt:
+        for h in g.get("hooks", []):
+            if h.get("command") == "python3 -I " + gpy: h["command"] = gcmd
     if not any(h.get("command") == gcmd for g in pt for h in g.get("hooks", [])):
         pt.append({"matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash", "hooks": [{"type": "command", "command": gcmd, "timeout": 10}]})
     new_text = json.dumps(d, indent=2) + "\n"
