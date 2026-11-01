@@ -267,6 +267,15 @@ ONE_RUNNER_SINGLE_FILE_RUNNERS="test_prolog_swi_suite.sh test_prolog_gnu_suite.s
 # ⭐ THE cto LANDS THE ROWS ASSIGNED TO IT (ceo CEO-2085, on the cto's ask; CEO-2067: while the roster was small the cto took the toughest jobs of
 # any kind, and prolog-lifo-step-3 was assigned to it). CEO-2029's refusal stands for the cto's own design work; a cto that holds a live claim (an
 # assigned row it is landing) runs that landing's proof -- the smokes and the handful the landing recipe requires -- like any lander.
+one_runner_single_entry() {  # rc 0 when S4E_CHUNK names exactly ONE entry: entry:<name>, no comma, no glob, no @resume, no space (the cto's ruling 2026-11-01)
+  case "${S4E_CHUNK:-}" in entry:?*) ;; *) return 1;; esac
+  case "${S4E_CHUNK#entry:}" in *,*|*'*'*|*'?'*|*'['*|*@*|*' '*) return 1;; esac
+  return 0
+}
+one_runner_on_roster() {  # seat: rc 0 when MODE's ROSTER: line names it (a drained grep, never grep -q, so pipefail cannot read a SIGPIPE as absent)
+  [ -n "${1:-}" ] || return 1
+  grep -m1 '^ROSTER:' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | sed 's/^ROSTER://' | tr ' ' '\n' | grep -xF -- "$1" > /dev/null
+}
 one_runner_cto_lands() { local c d="${S4E_POST:-/home/resources/postoffice}/claims"; for c in "$d"/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c" 2>/dev/null)" = cto ] && ! grep -qx DONE "$c" && return 0; done; return 1; }
 one_runner_guard() {
   # ⭐ THE RUN'S START, STAMPED BY EVERY RUNNER FOR ITSELF (Lon 2026-10-08, in-chat to the ceo: "List in a grid the total time for each test
@@ -281,6 +290,19 @@ one_runner_guard() {
   if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
   seat="$(one_runner_seat)"; lang="$(one_runner_lang "$board" "$suite")"; who="$(one_runner_who "$lang")"
   if [ -n "$seat" ] && one_runner_seat_admitted "$seat" "$who"; then return 0; fi
+  # ⭐ ONE ENTRY IS A LANDER'S RE-GRADE, NOT A BOARD (the cto's ruling to the coo, 2026-11-01 09:5x CST, on hq_icon's fault: S4E_CHUNK=entry:progs/
+  # adlfirst bash test_icon_ipl_suite.sh refused rc 2 here, so a language HQ could not re-grade the one program its row names when that program
+  # lives only in a package container; CEO-1342 as amended by CEO-1893/1926: "a lander fixes ONE program and re-grades THAT program in both modes
+  # before the push"): a run whose S4E_CHUNK names exactly ONE entry (entry:<name>; no comma, no glob, no @resume) is admitted for every seat on
+  # MODE's ROSTER: line, says so, and writes NO live progress line (its table is a scratch file under TMPDIR, the FIXTURE's arm) and NO score row
+  # (S4E_SCORE_NO_WRITE). Two entries, a tier, a chunk or no chunk stay a board and keep the refusal below. The lane owner never reaches this line
+  # (admitted above), so the coo's own one-entry grading keeps writing the record; the design officer's refusal (CEO-2029) stands above it.
+  if one_runner_single_entry && one_runner_on_roster "$seat"; then
+    local _sp; _sp="$(mktemp "${TMPDIR:-/tmp}/s4e-single-entry.XXXXXX")" || { printf '⛔ REFUSE(2) ONE-RUNNER SINGLE ENTRY: no scratch progress table under %s\n' "${TMPDIR:-/tmp}" >&2; return 2; }
+    S4E_PROGRESS_DB="$_sp"; S4E_SCORE_NO_WRITE="a single entry is a lander's re-grade, not a board (the cto's ruling 2026-11-01)"; export S4E_PROGRESS_DB S4E_SCORE_NO_WRITE
+    printf 'ONE-RUNNER: SINGLE ENTRY, not a board -- seat %s re-grades %s on %s; no live progress line (scratch table %s) and no score row\n' "$seat" "${S4E_CHUNK#entry:}" "$board" "$_sp"
+    return 0
+  fi
   # ⛔⭐ ONE SEAT, ONE LANGUAGE: A LANGUAGE HQ NEVER RUNS ANOTHER LANGUAGE'S BOARD -- NEITHER EXEMPTION BELOW ADMITS IT (Lon 2026-09-24,
   # in-chat to hq_prolog, verbatim: "Just have each seat run only their own test suites." / "We can not have all 5 HQ's deciding to
   # run all seven test suites simultaneously. Fix that."). An hq_* seat the LANES: line names falls through to the refusal; a

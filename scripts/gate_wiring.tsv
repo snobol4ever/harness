@@ -478,6 +478,7 @@ test_gate_nul_dependent_string_reads_ratchet.sh	WIRED	-	-	-
 test_gate_one_function_installs_a_compiled_proc_for_the_mode_3_loop_and_raku_eval.sh	WIRED	-	-	-
 test_gate_one_retains_table.sh	WIRED	-	-	-
 test_gate_one_runner_admits_a_port_engine_by_lang_at_engine_and_keys_its_rows.sh	WIRED	-	-	-
+test_gate_one_runner_admits_a_single_entry_regrade_to_every_roster_seat.sh	WIRED	-	-	-
 test_gate_one_runner_fixture_is_admitted_only_outside_the_shared_corpus.sh	WIRED	-	-	-
 test_gate_one_runner_one_board.sh	WIRED	-	-	-
 test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle.sh	WIRED	-	-	-
