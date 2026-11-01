@@ -33,7 +33,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 PASS=0; FAIL=0; N=0
 D=$(mktemp -d) || { echo "⛔ REFUSE(2) [$GATE]: no tmpdir"; exit 2; }
 trap 'rm -rf "$D"' EXIT
-for f in src/ir/descr.h src/ir/descr_tags.inc src/ir/ir_node.h src/templates/bb/bb_lit_scalar.cpp; do
+for f in src/ir/descr.h src/ir/descr_tags.inc src/ir/ir_node.h src/emitter/emit.cpp src/templates/bb/bb_lit_integer.cpp src/templates/bb/bb_lit_string.cpp src/templates/bb/bb_lit_atom.cpp src/templates/bb/bb_lit_name.cpp src/templates/bb/bb_lit_charset.cpp src/templates/bb/bb_lit_real.cpp; do
     [ -f "$f" ] || { echo "⛔ REFUSE(2) [$GATE]: $f is missing -- this gate cannot measure a tree it cannot read"; exit 2; }
 done
 
@@ -89,8 +89,8 @@ N=$((N+1))
 if grep -qE '^\s*IR_ACTIVATE = 1,' src/ir/ir_node.h; then PASS=$((PASS+1))
 else echo "  RED  ARM 4: the IR enum's first enumerator is not '= 1'. mint_op 0 MEANS UNSTAMPED, so an op numbered 0 would be indistinguishable from 'nothing touched this'."; FAIL=$((FAIL+1)); fi
 N=$((N+1))
-if grep -qE 'node->op \+ 1' src/templates/bb/bb_lit_scalar.cpp; then
-    echo "  RED  ARM 4b: bb_lit_scalar.cpp still stamps node->op + 1. The +1 existed only to clear a zero that now means UNSTAMPED by construction, and an offset between the op and its stamp is one more thing that can drift."; FAIL=$((FAIL+1))
+if grep -qE 'node->op \+ 1' src/emitter/emit.cpp src/templates/bb/bb_lit_integer.cpp src/templates/bb/bb_lit_string.cpp src/templates/bb/bb_lit_atom.cpp src/templates/bb/bb_lit_name.cpp src/templates/bb/bb_lit_charset.cpp src/templates/bb/bb_lit_real.cpp; then
+    echo "  RED  ARM 4b: the literal stamp (emit.cpp lit_prepare or a bb_lit box) still stamps node->op + 1. The +1 existed only to clear a zero that now means UNSTAMPED by construction, and an offset between the op and its stamp is one more thing that can drift."; FAIL=$((FAIL+1))
 else PASS=$((PASS+1)); fi
 
 # ---- ARM 5 — THE HAND-WRITTEN ASM MINTS ARE UNSTAMPED, ASSERTED IN THE SOURCE OF THE MINT ITSELF. 49 sites

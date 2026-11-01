@@ -61,7 +61,12 @@ src/templates/bb/bb_scan_move.cpp
 src/templates/bb/bb_scan_upto.cpp
 src/templates/bb/bb_scan_find.cpp
 src/templates/bb/bb_scan_bal.cpp
-src/templates/bb/bb_lit_scalar.cpp
+src/templates/bb/bb_lit_integer.cpp
+src/templates/bb/bb_lit_string.cpp
+src/templates/bb/bb_lit_atom.cpp
+src/templates/bb/bb_lit_name.cpp
+src/templates/bb/bb_lit_charset.cpp
+src/templates/bb/bb_lit_real.cpp
 src/templates/bb/bb_var.cpp
 src/templates/bb/bb_var_global.cpp
 src/templates/bb/bb_var_frame.cpp

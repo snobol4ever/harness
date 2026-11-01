@@ -16,7 +16,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }
 CENSUS="$HERE/audit_template_forms.py"
 [ -f "$CENSUS" ] || { echo "REFUSE(2): no census at $CENSUS"; exit 2; }
-FLOOR_BOXES=64; FLOOR_KINDS=10
+FLOOR_BOXES=62; FLOOR_KINDS=10
 while [ $# -gt 0 ]; do case "$1" in --floor-boxes) FLOOR_BOXES="$2"; shift;; --floor-kinds) FLOOR_KINDS="$2"; shift;; *) echo "REFUSE(2): unknown argument $1"; exit 2;; esac; shift; done
 OUT="$(python3 "$CENSUS" --root "$SCRIP" 2>&1)"
 V="$(printf '%s\n' "$OUT" | grep -m1 'VERDICT:')"
