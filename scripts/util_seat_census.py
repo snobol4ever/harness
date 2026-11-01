@@ -27,6 +27,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   util_seat_census.py --check          step 1's DONE-WHEN: rc 0 when the newest run is under ten minutes old, every seat whose newest SEATS.tsv scope is live
                                        has a SEAT line, no live session scope is unmapped, and the SEAT and LON lines' cores sum to within ten percent of
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
+  --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores
+  --health                             --check, --memory-check and --cpu-check together; rc the worst of the three
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
@@ -594,12 +596,69 @@ def memory_check():
     return 0
 
 
+def cpu_check():
+    """THE CPU ARM OF THE HEALTH CHECK (the coo 2026-11-01, Lon: "why did you not catch this when I asked you to do a health check? fix that health
+    check"): the --check arm read GREEN (the ledger fresh) while the box ran 16 of 16 cores at cpu pressure 41 with the pools nearly empty, because no arm
+    turned those numbers into a verdict. From the newest run: RED when cpu pressure some avg300 is 30 or more; when the box is busy (85 percent of its cores)
+    while the run and cc pools together hold half their slots or fewer (the load runs outside the doors); for every SEAT line over 2 cores holding no run
+    slot and no cc slot (named: the seat to throttle); and when the grader reads under 2 cores on a busy box (75 percent). Each RED names what to act on."""
+    last, rows = newest_run(arg("--load", LOAD))
+    if not last:
+        print("REFUSED(2): no ledger at %s" % arg("--load", LOAD))
+        return 2
+    n = os.cpu_count() or 16
+    box = next((dict(kv.split("=", 1) for kv in r[4].split() if "=" in kv) for r in rows if r[1] == "BOX"), {})
+    def f(k):
+        try:
+            return float(box.get(k, "0"))
+        except ValueError:
+            return 0.0
+    busy, p300, held = f("cores_busy"), f("pressure_some_avg300"), f("run_held") + f("cc_held")
+    pools = int(os.environ.get("S4E_RUN_SLOTS", "8")) + int(os.environ.get("S4E_CC_SLOTS", "8"))
+    gaps = []
+    if p300 >= 30:
+        gaps.append("cpu pressure some avg300 %.1f (30 is the bar): tasks waited for a CPU %.0f percent of the last five minutes" % (p300, p300))
+    if busy >= 0.85 * n and held <= pools / 2:
+        gaps.append("the box is busy (%.1f of %d cores) while the pools hold %d of %d slots: the load runs OUTSIDE the doors" % (busy, n, held, pools))
+    for r in rows:
+        if r[1] == "UNIT" and r[2] == "SEAT" and len(r) > 10:
+            try:
+                c, cc, rn = float(r[4]), int(r[9] or 0), int(r[10] or 0)
+            except ValueError:
+                continue
+            if c > 2.0 and cc == 0 and rn == 0:
+                gaps.append("seat %s runs %.2f cores holding no run slot and no cc slot: throttle it (nice, -j2, the pools) or cap its scope" % (r[3], c))
+    gr = next((float(r[4]) for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
+    if gr is not None and busy >= 0.75 * n and gr < 2.0:
+        gaps.append("the grader reads %.2f cores on a busy box (2.0 is the floor): the suites starve behind the seats" % gr)
+    print("CPU CHECK run=%s busy=%.1f/%d pressure_avg300=%.1f slots_held=%d/%d grader=%s gaps=%d" % (last, busy, n, p300, held, pools, "%.2f" % gr if gr is not None else "-", len(gaps)))
+    if gaps:
+        for g in gaps:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN cpu pressure under 30, the busy box's load inside the pools, no seat over 2 cores outside them, the grader at its floor")
+    return 0
+
+
+def health():
+    """--health: the ledger (--check), memory and /tmp (--memory-check) and CPU (--cpu-check) in one call; rc is the worst of the three, so a GREEN arm
+    can never stand in for a RED one (the 2026-11-01 lesson: --check alone read GREEN on a saturated box)."""
+    rcs = []
+    for fn in (check, memory_check, cpu_check):
+        rcs.append(fn())
+    return 2 if 2 in rcs else (1 if 1 in rcs else 0)
+
+
 def main():
     av = sys.argv[1:]
     if "--grader-rate" in av:
         return grader_rate(int(arg("--grader-rate", "7200")))
     if "--acceptance" in av:
         return acceptance(int(arg("--acceptance", "86400")))
+    if "--health" in av:
+        return health()
+    if "--cpu-check" in av:
+        return cpu_check()
     if "--memory-check" in av:
         return memory_check()
     if "--check" in av:
