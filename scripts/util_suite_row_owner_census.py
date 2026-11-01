@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT HOLDS.
+"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--mode F] [--holder KEY] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
+HOLDS, AND EVERY ROSTER SEAT HAS A ROW QUEUED BEHIND ITS CURRENT ONE (the seat arm, SEAT_QUEUE_BOARD, below the suite arm; either RED is rc 1).
 
 Lon 2026-11-01 15:5x CST, in the coo's window, verbatim: "The goal is to get to 100% test suites, duh!" / "Well of course the bug fixes need
 an owner and a row. WTF! How did you miss that." / "how will you not miss that next time. have you automated that process. you know you can
@@ -76,5 +77,21 @@ for r in rows:
 if n == 0: refuse("%s holds no SCRIP row" % SUITES)
 print("SUITE_OWNER_BOARD suites=%d below_100=%d owned=%d held_by_lon=%d unowned=%d ports_skipped=%d" % (n, below, owned, held, len(reds), ports))
 for x in reds: print(x)
-if reds: print("RED: %d suite(s) below 100 percent with no seat holding a row" % len(reds)); sys.exit(1)
-print("GREEN: every suite below 100 percent has a row a seat holds, or Lon's hold"); sys.exit(0)
+# THE SEAT ARM (Lon 2026-11-01 16:0x CST, in the coo's window, verbatim: "ensure you have work queued for all seats."): every seat MODE's ROSTER:
+# line names, the coo excepted, holds at least QUEUE_MIN live rows CLAIMED or ASSIGNED to it -- the row it works and the next one behind it, so a
+# seat that finishes is never idle for want of a row (CEO-2107: the coo assigns the next row AHEAD). PARKED and BLOCKED-ON rows do not count.
+MODE = arg("--mode", "/home/resources/postoffice/MODE"); QUEUE_MIN = 2
+try: roster = next((l.split(":", 1)[1].split() for l in open(MODE, encoding="utf-8") if l.startswith("ROSTER:")), None)
+except OSError as e: refuse("%s unreadable: %s" % (MODE, e))
+if not roster: refuse("%s has no ROSTER: line" % MODE)
+held_by = {}
+for f in queue:
+    if len(f) >= 4 and f[0].isdigit() and f[3].startswith(("CLAIMED:", "ASSIGNED:")): held_by.setdefault(f[3].split(":", 1)[1], []).append(f[1])
+seats = [s for s in roster if s != "coo"]; short = []
+for s in seats:
+    h = held_by.get(s, [])
+    if len(h) < QUEUE_MIN: short.append("  RED  seat %s holds %d live row(s)%s: nothing queued behind it -- assign its best FREE row ahead (s4e_msg.sh assign %s <topic>)" % (s, len(h), (" (" + h[0] + ")") if h else "", s))
+print("SEAT_QUEUE_BOARD seats=%d queued=%d short=%d min=%d" % (len(seats), len(seats) - len(short), len(short), QUEUE_MIN))
+for x in short: print(x)
+if reds or short: print("RED: %d suite(s) below 100 percent with no seat holding a row; %d seat(s) with nothing queued" % (len(reds), len(short))); sys.exit(1)
+print("GREEN: every suite below 100 percent has a row a seat holds, or Lon's hold; every roster seat has a row queued behind its current one"); sys.exit(0)
