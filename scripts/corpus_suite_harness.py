@@ -4693,7 +4693,10 @@ def oracle_args_declarations(src_path):
 # A runtime switch (-d -i -s -m -u) placed at the compile step would reach mode 3 and never a mode-4 binary.
 # --dialect=gnu joins 2026-10-17 (cfo, row prolog-gnu-semantics-leak-...-ceo-1810): scrip --run --dialect=gnu and a binary from scrip --compile
 # --dialect=gnu both read current_prolog_flag('$dialect', gnu) -- the lowerer bakes the directive into the program -- and the GNU tables declare it.
-COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu")
+# -S joins 2026-11-01 (cao, CEO-2110, row prolog-xsb-wfs-step-10): XSB's oracle switch carried as the entry's compile_args; scrip --run -S and a
+# binary from scrip --compile -S both read the source as if it began with ':- use_subsumptive_tabling.' (an open call then a subsumed one: 1 table,
+# as XSB -S; 2 without), and the 39 xsb_tests runs ORACLE_RUNS.tsv records with -S declare it (test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh).
+COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "-S")
 
 
 def validate_out_files_cell(raw, where):
