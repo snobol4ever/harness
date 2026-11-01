@@ -70,5 +70,14 @@ arm "FAIL-ONCE: pressure 40 reads RED naming the pressure"                      
 arm "FAIL-ONCE: builds fetched 5 against built 1 reads RED"                      "$T/built"  1 "FETCHED 5 against BUILT 1" -- --acceptance 7200
 arm "FAIL-ONCE: three landings in two hours reads RED"                           "$T/land"   1 "landings on origin/main" -- --acceptance 7200
 arm "six busy runs of twenty-four REFUSES: not for long enough"                  "$T/short"  2 "busy run(s)" -- --acceptance 7200
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy"; exit 0
+# the per-seat /tmp budget in the banner (ARCH-SHARED-DEVELOPMENT 2.3 /tmp move (2); the coo 2026-11-01, CEO-2095's admin backlog item 2): one LOAD run, seat a at 5000 MB, seat b at 10 MB
+mkdir -p "$T/tmpb"; u=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf 'utc\tkind\tclass\tname\tcores\tmem_mb\tmem_peak_mb\toom_kills\tpids\tcc_slots\trun_slots\ttmp_mb\n%s\tUNIT\tSEAT\ta\t1.00\t500\t600\t0\t10\t0\t1\t5000\n%s\tUNIT\tSEAT\tb\t1.00\t500\t600\t0\t10\t0\t1\t10\n%s\tBOX\tBOX\tbox\tcores_busy=3.0 pressure_some_avg60=1.0\t-\t-\t-\t-\t-\t-\t-\n' "$u" "$u" "$u" > "$T/tmpb/LOAD.tsv"
+barm() {   # barm <name> <seat> <want_text>: the banner line for one seat of the planted run
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" banner "$2" --load "$T/tmpb/LOAD.tsv" 2>&1)"
+  if printf '%s' "$out" | grep -q -- "$3"; then echo "  ok   ARM $n: $1"; else echo "  RED  ARM $n: $1 -- looking for '$3' in: $out"; fail=1; fi
+}
+barm "the banner shows a seat its /tmp against the 4 GB per-seat budget"        b "tmp 0.0G/4G cc"
+barm "FAIL-ONCE: a seat at 5000 MB of /tmp reads OVER its budget in the banner" a "tmp 4.9G/4G OVER cc"
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget"; exit 0
 else echo "GATE FAIL(1) [$G]: see the RED arms"; exit 1; fi

@@ -472,6 +472,9 @@ def newest_run(path):
     return last, [r for r in rows if r[0] == last]
 
 
+TMP_SEAT_MB = 4096   # ARCH-SHARED-DEVELOPMENT 2.3, /tmp move (2): a seat over 4 GB of /tmp is named; the banner shows each seat its own figure against it (the coo 2026-11-01, CEO-2095)
+
+
 def banner(seat):
     last, rows = newest_run(arg("--load", LOAD))
     if not last:
@@ -483,7 +486,8 @@ def banner(seat):
     gr = next((r for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
     ba = next((r for r in rows if r[1] == "CLASS" and r[2] == "BATCH"), None)
     top = max((r for r in units if r[2] == "SEAT"), key=lambda r: float(r[4]), default=None)
-    you = ("you %.1f cores %.1fG tmp %.1fG cc %s run %s" % (float(me[4]), int(me[5]) / 1024, int(me[11]) / 1024 if me[11].isdigit() else 0, me[9], me[10])) if me else "you -"
+    tmb = int(me[11]) if me and me[11].isdigit() else 0
+    you = ("you %.1f cores %.1fG tmp %.1fG/%dG%s cc %s run %s" % (float(me[4]), int(me[5]) / 1024, tmb / 1024, TMP_SEAT_MB // 1024, " OVER" if tmb > TMP_SEAT_MB else "", me[9], me[10])) if me else "you -"
     print("BOX busy %s/%d pressure %s | %s | grader %s | batch %s | top %s %s  (%s)" % (box.get("cores_busy", "?"), os.cpu_count() or 16,
           box.get("pressure_some_avg60", "?"), you, gr[4] if gr else "0", ba[4] if ba else "0", top[3] if top else "-", top[4] if top else "", last))
     return 0
