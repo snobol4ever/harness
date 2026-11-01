@@ -5,6 +5,9 @@
 # one, the older lines are history) and applies the class's properties to the scope with systemctl --user set-property --runtime:
 #   SEAT  CPUWeight=100 CPUQuota=400% MemoryHigh=4G MemoryMax=8G MemorySwapMax=1G TasksMax=2048 (the quota: CEO-2105, the session scope is the door)
 #   LON   CPUWeight=1000 (a Claude session whose root is not a seat's; no memory cap on Lon's class; CEO-2105 (d): ten to one over a seat)
+# HELPERS (CEO-2108, ARCH-SHARED-DEVELOPMENT 13): a claude whose argv[1] is daemon, whose argv carries --bg-pty-host or --bg-spare, or whose parent
+# is a claude (or a Claude version binary) is a helper: it writes no ledger line and gets no set-property (--pid on one prints SKIPPED helper), and the
+# hook's walk up passes it to the session that spawned it. A scope the ledger's newest SEAT line names is never weighted LON (weighted=refused).
 # ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (100 since CEO-2105 (d), under the grader's 300), because the first weight below
 # app.slice enables the cpu controller there; until Lon's script has set the slices, the hook registers and weights nothing.
 # It also makes the seat's TMPDIR (/tmp/s4e/<seat>). It is idempotent, takes well under a second, and NEVER fails the session (rc 0 always).
@@ -49,15 +52,37 @@ def comm_of(pid):
 def show(unit, prop):
     try: return subprocess.run(["systemctl", "--user", "show", unit, "-p", prop, "--value"], capture_output=True, text=True, timeout=3).stdout.strip()
     except Exception: return ""
+def ppid_of(pid):
+    try: return int(open("/proc/%d/stat" % pid).read().rsplit(")", 1)[1].split()[1])
+    except Exception: return 0
+def argv_of(pid):
+    try: return open("/proc/%d/cmdline" % pid, "rb").read().decode("utf-8", "replace").split("\0")
+    except Exception: return []
+def claude_comm(c):
+    return c == "claude" or re.fullmatch(r"\d+\.\d+\.\d+", c or "") is not None
+def is_helper(pid):
+    # CEO-2108 (a): a SESSION is a claude process with no subcommand whose parent is not a claude process; Claude Code's own daemon
+    # (claude daemon run), its background pty hosts and spares, and any claude spawned by a claude are HELPERS -- never a session
+    a = argv_of(pid)
+    return a[1:2] == ["daemon"] or "--bg-pty-host" in a or "--bg-spare" in a or claude_comm(comm_of(ppid_of(pid)))
 def session_pid():
     p = os.getppid()
-    for _ in range(8):
-        if comm_of(p) == "claude": return p
-        try: p = int(open("/proc/%d/stat" % p).read().rsplit(")", 1)[1].split()[1])
-        except Exception: break
+    for _ in range(12):
+        if comm_of(p) == "claude" and not is_helper(p): return p
+        p = ppid_of(p)
         if p <= 1: break
     return os.getppid()
+def seat_scopes():
+    # CEO-2108 (b): the scopes the ledger's newest SEAT line per seat names; a scope in this set is never weighted LON
+    newest = {}
+    try:
+        for l in open(LEDGER):
+            f = l.rstrip("\n").split("\t")
+            if len(f) >= 7 and f[0] != "utc" and f[2] == "SEAT": newest[f[1]] = f[3]
+    except Exception: pass
+    return set(newest.values())
 def place(pid):
+    if is_helper(pid): return None
     env = proc_env(pid)
     seat = env.get("S4E_SEAT") or seat_of_root(cwd_of(pid))
     klass = "SEAT" if seat else "LON"
@@ -68,7 +93,8 @@ def place(pid):
         try: os.makedirs("/tmp/s4e/" + seat, mode=0o700, exist_ok=True)
         except Exception: pass
     weighted = "no"
-    if unit.endswith(".scope") and ("/" + TERM + "/") in cg and show(TERM, "CPUWeight") == TERM_WEIGHT:
+    if klass == "LON" and cg in seat_scopes(): weighted = "refused"
+    elif unit.endswith(".scope") and ("/" + TERM + "/") in cg and show(TERM, "CPUWeight") == TERM_WEIGHT:
         props = SEAT_PROPS if klass == "SEAT" else LON_PROPS
         try:
             r = subprocess.run(["systemctl", "--user", "set-property", "--runtime", unit] + props, capture_output=True, text=True, timeout=5)
@@ -87,7 +113,7 @@ def live_sessions():
     for d in os.listdir("/proc"):
         if not d.isdigit(): continue
         pid = int(d)
-        if comm_of(pid) != "claude": continue
+        if comm_of(pid) != "claude" or is_helper(pid): continue
         seat = proc_env(pid).get("S4E_SEAT") or seat_of_root(cwd_of(pid))
         if seat: out.setdefault(seat, []).append(pid)
     return out
@@ -125,7 +151,9 @@ if a[:1] == ["--check"]: sys.exit(check())
 if a[:1] == ["--pid"]:
     try: pid = int(a[1])
     except Exception: print("usage: s4e_session_start.sh [--pid P | --check]"); sys.exit(2)
-    print("PLACED seat=%s class=%s scope=%s weighted=%s" % place(pid)); sys.exit(0)
+    r = place(pid)
+    if r is None: print("SKIPPED helper pid=%d parent=%d (%s): a helper is never a session, no ledger line, no set-property (CEO-2108)" % (pid, ppid_of(pid), " ".join(argv_of(pid)[:3]).strip())); sys.exit(0)
+    print("PLACED seat=%s class=%s scope=%s weighted=%s" % r); sys.exit(0)
 try: place(session_pid())
 except Exception: pass
 sys.exit(0)
