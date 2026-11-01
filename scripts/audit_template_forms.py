@@ -27,6 +27,8 @@ whose entry no site names is counted as undispatched (a helper or an xa emission
 
 Usage: python3 ../harness/scripts/audit_template_forms.py [--root DIR] [--tsv] [--top N]
   rc 0  no box carries more than one live form and no kind case picks among boxes
+        (a DECLARED TWIN, template_twins.tsv beside this script, is a second box a case emits BESIDE the kind's own box,
+        never instead of it: the kind's own box must be the first named and every further box a declared twin of it)
   rc 1  some box or kind case does (the census's debt, like the rank audit's rc 1 while a file is dirty)
   rc 2  the emitter's switch or the population cannot be read (never a pass)
 --tsv prints one row per box (box, file, kinds, sites, forms, live, refusals), then one row per IR kind of the switch
@@ -304,10 +306,22 @@ def functions(text):
         yield m.group(1), text[b + 1:e]
 
 
+def twins():
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "template_twins.tsv")
+    out = {}
+    if os.path.isfile(p):
+        for line in open(p, encoding="utf-8"):
+            f = line.rstrip("\n").split("\t")
+            if len(f) < 3 or f[0] in ("kind", "") or f[0].startswith("#"):
+                continue
+            out.setdefault((f[0], f[1]), set()).add(f[2])
+    return out
+
+
 def dispatch(root):
     p = os.path.join(root, "src/emitter/emit.cpp")
     if not os.path.isfile(p):
-        return None, None, None
+        return None, None, None, None
     t = strip(open(p, encoding="utf-8", errors="replace").read())
     sites = {}
     for m in re.finditer(r"bb_emit_x86\s*\(", t):
@@ -316,11 +330,11 @@ def dispatch(root):
             sites[b] = sites.get(b, 0) + 1
     m = re.search(r"static\s+int\s+walk_bb_node_inner\s*\([^)]*\)\s*\{", t)
     if not m:
-        return sites, None, None
+        return sites, None, None, None
     body = t[m.end():close_of(t, m.end() - 1)]
     sw = re.search(r"switch\s*\(\s*nd->op\s*\)\s*\{", body)
     if not sw:
-        return sites, None, None
+        return sites, None, None, None
     inner = body[sw.end():close_of(body, sw.end() - 1)]
     groups, cur = [], []
     level, depth_at = 0, []
@@ -336,7 +350,8 @@ def dispatch(root):
         if seg_body.strip():
             groups.append((cur, seg_body))
             cur = []
-    kinds_of, box_of_kind = {}, {}
+    kinds_of, box_of_kind, twin_of = {}, {}, {}
+    declared = twins()
     for ks, sb in groups:
         boxes = []
         for mm in re.finditer(r"bb_emit_x86\s*\(", sb):
@@ -344,11 +359,16 @@ def dispatch(root):
             for b in re.findall(r"\b(bb_\w+)\s*\(\s*\)", sb[mm.end():e if e > 0 else len(sb)]):
                 if b not in boxes:
                     boxes.append(b)
+        own = boxes
+        if len(ks) == 1 and len(boxes) > 1 and kind_for(ks[0], boxes[0]) == ks[0] \
+                and all(b in declared.get((ks[0], boxes[0]), ()) for b in boxes[1:]):
+            own = boxes[:1]
+            twin_of[ks[0]] = boxes[1:]
         for k in ks:
-            box_of_kind[k] = boxes
+            box_of_kind[k] = own
             for b in boxes:
                 kinds_of.setdefault(b, []).append(k)
-    return sites, kinds_of, box_of_kind
+    return sites, kinds_of, box_of_kind, twin_of
 
 
 def main():
@@ -360,7 +380,7 @@ def main():
     root = a.root
     files = sorted(glob.glob(os.path.join(root, "src/templates/bb/bb_*.cpp"))) + \
         sorted(glob.glob(os.path.join(root, "src/templates/xa/xa_*.cpp")))
-    sites, kinds_of, box_of_kind = dispatch(root)
+    sites, kinds_of, box_of_kind, twin_of = dispatch(root)
     if sites is None or kinds_of is None:
         print("GATE UNPROVEN(2) [audit_template_forms]: cannot read walk_bb_node_inner's switch (nd->op) in %s/src/emitter/emit.cpp" % root)
         return 2
@@ -427,6 +447,8 @@ def main():
     print("--- 2. THE EMITTER CHOOSES: kind cases that pick among boxes (add one IR kind per box in lower) ---")
     for k, bs in multi_box:
         print("  %s -> %s   BREAK-OUT: %s" % (k, " | ".join(bs), ", ".join(kind_for(k, b) for b in bs)))
+    for k, bs in sorted(twin_of.items()):
+        print("  declared twin (template_twins.tsv): %s -> %s beside %s" % (k, " ".join(bs), " | ".join(box_of_kind[k])))
     print("--- 3. BOXES SERVING SEVERAL KINDS (healthy at one form) ---")
     for r in multi_kind:
         print("  kinds=%d live=%d  %s: %s" % (len(r["kinds"]), r["live"], r["box"], " ".join(r["kinds"])))
