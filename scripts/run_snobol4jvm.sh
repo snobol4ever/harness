@@ -5,8 +5,8 @@
 # under snobol4jvm, the engine sibling at <root>/snobol4jvm, in the calling shape every port runner shares (hq_dotnet's proposal,
 # CEO-1822): the harness's SPITBOL-shaped switches, the bare file name in the entry's own folder, stdin from the input sidecar, and the
 # program's own argv after a bare --. The runner execs the engine; stdout, stderr and the exit code are the program's.
-# THE SWITCHES ARE ACCEPTED AND NOT MAPPED, and each is a measured gap rather than a silent one: snobol4jvm has no heap cap (-d), its
-# recursion depth is the JVM thread stack rather than a SPITBOL stack (-s). -u STR reaches the engine before the file, as sbl -u takes it:
+# THE SWITCHES: -d is accepted and not mapped (snobol4jvm has no heap cap, a measured gap). -sNk is MAPPED (hq_jvm, CEO-2091, row jvm-a-recursion-deeper-than-about-ninety-
+# calls...): it reaches the engine as -Dsnobol4jvm.stack.kb=N, and main.clj runs the program on a thread whose stack is 256 times that, the declared stack being the hard cap. -u STR reaches the engine before the file, as sbl -u takes it:
 # HOST(0) answers it (snobol4jvm e9ebbb4; CEO-1907), and the program's argv after -- reaches it too, which HOST(0) joins when there is no
 # -u. The JVM's own defaults stand until a measurement asks for more.
 # stdout carries the program's OUTPUT and nothing else: the JVM's log goes to stderr at error level, so a stale class archive (a
@@ -28,10 +28,14 @@ if [ "${1:-}" = "--binaries" ]; then
   [ -z "$newer" ] || { echo "⛔ REFUSE(rc=2): the snobol4jvm jar $J is older than $newer -- rebuild: bash $HERE/build_snobol4jvm.sh" >&2; exit 2; }
   printf '%s\n' "$J"; exit 0
 fi
-u=()
+u=(); stack_kb=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    -d*|-s*) shift ;;
+    -d*) shift ;;
+    -s*) sw="${1#-s}"; n="${sw%%[!0-9]*}"; sfx="${sw#"$n"}"
+         case "$sfx" in k|K) stack_kb="$n" ;; m|M) stack_kb=$(( n * 1024 )) ;; g|G) stack_kb=$(( n * 1048576 )) ;; "") stack_kb=$(( (n + 1023) / 1024 )) ;; *) stack_kb="" ;; esac
+         [ -n "$n" ] || stack_kb=""
+         shift ;;
     -u) [ $# -ge 2 ] || { echo "⛔ REFUSE(rc=2): -u takes a string" >&2; exit 2; }; u=(-u "$2"); shift 2 ;;
     --) echo "⛔ REFUSE(rc=2): no program file before --" >&2; exit 2 ;;
     *) break ;;
@@ -47,4 +51,4 @@ cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
 # code that runs once. At scaling 4 an empty program is 6.5 G (11.1 before), a 20k-iteration pattern loop 23.1 G (28.0), a 300k-iteration one 136.4 G (144.7), and the wall
 # clock is the same (0.58 s, 1.61 s, 10.1 s). Scaling 8 and above begins to cost wall time (10.9 s, then 12.9 s at 16 on the long loop); C1 only (TieredStopAtLevel=1) takes
 # an empty program to 3.7 G but a long loop 2.7 times longer, so it is not used. It is a launcher option like the archive above: java -jar without it still works.
-exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 -jar "$J" "${u[@]}" "$prog" "$@"
+exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 ${stack_kb:+-Dsnobol4jvm.stack.kb=$stack_kb} -jar "$J" "${u[@]}" "$prog" "$@"
