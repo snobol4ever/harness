@@ -33,6 +33,8 @@
 #   xbi17_xpp_on_runs_the_file_through_the_preprocessor  :- compiler_options([xpp_on]). runs the file through XSB's gpp (-P -m -nostdinc -curdirinclast -DXSB_PROLOG; basic_tests gpp_test, prolog_tests varcond): a #-directive line is
 #                     never Prolog (it leaves a blank line), #define NAME text expands whole words recursively (not inside a % or block comment, a quoted atom or a longer word), #include "f" inlines the file beside the including
 #                     one (nested), #ifdef/#ifndef/#if defined(M)/#elif/#else/#endif select lines, #undef ends a macro; the headers are the witness's .d directory
+#   xbi18_dynamic_load_ordering_a_prepends_each_clause  :- compiler_options([dynamic([canonical(yes), ordering(a)])]). at the top of a module file loads it as load_dyn(File, a) does: every clause is added by asserta, so the
+#                     file reads back in reverse order (the rules and the facts of every predicate); ordering z and an empty dynamic list keep file order (prolog_tests mod_dyn_tests test_dynmod, test_dynmod_im; the module files are the .d directory)
 # ARMS per witness: (1) ORACLE: the stored ref is exactly what live XSB 5.0.0 writes (an XSB that cannot run REFUSES rc 2; one that disagrees reds the gate: the ref is stale)
 #       (2) m3 and (3) m4: SCRIP's stdout under the xsb package prelude equals the ref byte for byte (the first differing line is named); (4) once: CAN FAIL, a ref with one changed line reads RED
 # rc 0 all arms; rc 1 an arm red; rc 2 could not measure (no binary, stale binary, no XSB, no witness).
