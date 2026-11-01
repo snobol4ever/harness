@@ -950,10 +950,10 @@ def kind_predicate(name, srcs, order, seen=None):
 def value_producers():
     paths = sorted(glob.glob(os.path.join(IR_DIR, '*.[ch]')))
     srcs = [open(p, encoding='utf-8', errors='replace').read() for p in paths]
-    hdr = open(os.path.join(IR_DIR, 'IR.h'), encoding='utf-8', errors='replace').read()
+    hdr = open(os.path.join(IR_DIR, 'ir_node.h'), encoding='utf-8', errors='replace').read()
     m = re.search(r'typedef enum\s*\{(.*?)\}\s*IR_e\s*;', hdr, re.S)
     if not m:
-        raise Refuse('no IR_e enum in src/ir/IR.h')
+        raise Refuse('no IR_e enum in src/ir/ir_node.h')
     order = re.findall(r'\b(IR_\w+)\b', m.group(1))
     return kind_predicate('ir_node_produces_value', srcs, order)
 

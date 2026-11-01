@@ -73,7 +73,7 @@ DIRS="${EARN2_DIRS:-crosscheck/patterns library/probe_reference/bb tests/snobol4
 
 if [ ! -x "$SCRIP" ]; then echo "SKIP  scrip not built: $SCRIP"; exit 0; fi
 
-IRH="$ROOT/src/ir/IR.h"; [ -f "$IRH" ] || { echo "REFUSE(2): $IRH is missing -- the IR header moved again; repoint this census (until 2026-09-28 it read a retired directory, failed to open it and blamed the enum)"; exit 2; }
+IRH="$ROOT/src/ir/ir_node.h"; [ -f "$IRH" ] || { echo "REFUSE(2): $IRH is missing -- the IR header moved again; repoint this census (until 2026-09-28 it read a retired directory, failed to open it and blamed the enum)"; exit 2; }
 OPTAB=$(mktemp)
 awk '
 /^typedef enum \{/ {inenum=1; n=0; next}
@@ -90,7 +90,7 @@ SAVE_OP=$(awk '$2=="IR_MATCH_ASSIGN_SAVE"{print $1}' "$OPTAB")
 rm -f "$OPTAB"
 for v in ARBNO_OP FENCE1_OP IMM_OP COND_OP SAVE_OP; do
   eval "val=\$$v"
-  [ -n "$val" ] || { echo "FATAL  could not derive $v from IR.h -- enum shape changed, fix this script's awk pass"; exit 2; }
+  [ -n "$val" ] || { echo "FATAL  could not derive $v from ir_node.h -- enum shape changed, fix this script's awk pass"; exit 2; }
 done
 echo "opcode table (derived this run): ARBNO=$ARBNO_OP FENCE1=$FENCE1_OP ASSIGN_IMM=$IMM_OP ASSIGN_COND=$COND_OP ASSIGN_SAVE=$SAVE_OP"
 

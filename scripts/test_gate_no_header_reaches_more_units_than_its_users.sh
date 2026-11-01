@@ -14,7 +14,8 @@
 #        the figure, --write-baseline refuses, and against an equal baseline every arm reads 0.
 # ARM 8  (control) util_objects_identical_stripped.sh: identical trees read objects=N identical=N differing=0 rc 0; one object recompiled with a different
 #        constant is named DIFF rc 1; an object in one tree only is named ONLY-A rc 1; a build-id directory suffix still pairs.
-# ARM 9  (control) the macro expansion is read: a unit naming a macro whose #define body names a header's identifier uses that header (step 2b), and a unit that
+# ARM 9  (control) the macro expansion and the member path are read: a unit naming a macro whose #define body names a header's identifier uses that header (step 2b),
+#        a unit reading inst->field through an extern pointer to a record uses the header that holds the record's body (step 4), and a unit that
 #        names nothing of it still reads unused.
 # DECLARED RULING (reporting) at step 1a, BLOCKING at step 7 when every arm reads 0 (the page). It needs a built tree: fewer than 200 .d files is rc 2.
 # rc 0 green · rc 1 red · rc 2 could not measure.
@@ -164,11 +165,20 @@ printf '#include "mac.h"\n#include "fn.h"\nint m1(void) { return MAC_USE(1); }\n
 printf '#include "fn.h"\nint m2(void) { return 2; }\n' > "$mc/src/m2.c"
 printf 'm1.o: src/m1.c \\\n src/mac.h src/fn.h\n' > "$mc/obj/m1.d"
 printf 'm2.o: src/m2.c \\\n src/fn.h\n' > "$mc/obj/m2.d"
+printf '#ifndef REC_H\n#define REC_H\nstruct rec_t { int v; int w; };\n#endif\n' > "$mc/src/rec.h"
+printf '#ifndef INST_H\n#define INST_H\nstruct rec_t;\nextern struct rec_t * g_rec;\n#endif\n' > "$mc/src/inst.h"
+printf '#include "inst.h"\n#include "rec.h"\nint m3(void) { return g_rec->v; }\n' > "$mc/src/m3.c"
+printf '#include "rec.h"\nint m4(void) { return 4; }\n' > "$mc/src/m4.c"
+printf 'm3.o: src/m3.c \\\n src/inst.h src/rec.h\n' > "$mc/obj/m3.d"
+printf 'm4.o: src/m4.c \\\n src/rec.h\n' > "$mc/obj/m4.d"
 mfan() { python3 -I "$FAN" --root "$mc" --obj "$mc/obj" --min-units 1 --base-file "$T/empty_base.tsv" --inline-file "$T/empty_inline.tsv" --baseline-file "$mc/baseline.tsv" "$@"; }
 mfan --unused 2>&1 | grep -q '^m1.c' && { ok9=0; echo "         m1.c names mfn only through MAC_USE and reads fn.h as unused"; }
 mfan --unused 2>&1 | grep -q '^m2.c.*fn.h' || { ok9=0; echo "         m2.c names nothing of fn.h and does not read as unused"; }
 mfan 2>&1 | awk -F'\t' '$7 == "fn.h" && $3 == 1 { f = 1 } END { exit !f }' || { ok9=0; echo "         fn.h does not read exactly one user: the macro expansion was not counted"; }
-if [ "$ok9" = 1 ]; then echo "  ok   ARM 9: a unit that names a macro whose expansion names a header's identifier uses that header, and a unit that names nothing of it still reads unused"
+mfan --unused 2>&1 | grep -q '^m3.c' && { ok9=0; echo "         m3.c reads a field of the record g_rec points at and reads rec.h as unused"; }
+mfan --unused 2>&1 | grep -q '^m4.c.*rec.h' || { ok9=0; echo "         m4.c names nothing of rec.h and does not read as unused"; }
+mfan 2>&1 | awk -F'\t' '$7 == "rec.h" && $3 == 1 { f = 1 } END { exit !f }' || { ok9=0; echo "         rec.h does not read exactly one user: the member path through the extern pointer was not counted"; }
+if [ "$ok9" = 1 ]; then echo "  ok   ARM 9: a unit that names a macro whose expansion names a header's identifier uses that header, a unit that reads a record's field through the extern pointer to it uses the record's header, and a unit that names nothing of either still reads unused"
 else echo "  RED  ARM 9: the macro expansion is not read"; fail=1; fi
 s="$(printf '%s\n' "$out" | grep '^summary over=')"
 if [ "$fail" = 0 ]; then echo "GATE PASS(0) [no_header_reaches_more_units_than_its_users]: 9 arm(s) -- $s"; exit 0; fi

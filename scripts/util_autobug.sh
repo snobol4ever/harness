@@ -42,11 +42,11 @@ fi
 # ---------------------------------------------------------------- (2) the bounded trace, ending AT the divergence
 echo; echo "--- (2) THE BUG WINDOW: last $RING four-port events before the kill (oldest first) ---"
 if [ -s "$ART/scr.err" ] && grep -q '^\[ZSM\]   ' "$ART/scr.err"; then
-    # op=N -> IR_* here, NOT in the runtime: bb_op_name lives in ir/IR.h and the runtime may not
+    # op=N -> IR_* here, NOT in the runtime: bb_op_name lives in ir/ir_node.h and the runtime may not
     # know IR (RULES: no SM/BB knowledge at runtime).  The enum is parsed at read time, so it cannot rot.
     grep '^\[ZSM\]' "$ART/scr.err" | tail -n "$((RING+1))" | python3 -c '
 import re,sys,os
-hdr=os.path.join(os.environ.get("S4E_SRC","'"$S4E"'/SCRIP"),"src/ir/IR.h")
+hdr=os.path.join(os.environ.get("S4E_SRC","'"$S4E"'/SCRIP"),"src/ir/ir_node.h")
 names={}
 try:
     txt=open(hdr).read()

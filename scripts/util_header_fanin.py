@@ -23,7 +23,9 @@
 # union of its headers. fanin(H) is the number of units whose .d names H, directly or through another header. direct(H) is the number whose own text
 # includes H by a quoted name. users(H) is the number of units whose own text, comments and strings removed, names an identifier H declares: a
 # macro, a typedef name, a struct, union or enum tag that has a body, an enum member, a function (prototype or definition), a variable; and the
-# member path "inst.field" when a header declares "extern T inst" and T has a field of a type H declares (g_runtime.gc names g_runtime_gc.h). The
+# member path "inst.field" when a header declares "extern T inst" and T has a field of a type H declares (g_runtime.gc names g_runtime_gc.h), and the
+# member path "inst->field" or "inst.field" when a header declares "extern T inst" or "extern T * inst" and H holds T's body with that field
+# (g_emit_cfg->pf names ir_graph.h; headers step 4, the cto 2026-10-31: a unit that reads a record's field through the one extern pointer to it is its user). The
 # include guard is no declaration. A unit also names an identifier through a macro: when it names a macro defined in a header it reaches, the identifiers that
 # macro's expansion names (the #define body, parameters excluded, followed through macros that name macros) count as named by the unit, because the
 # expansion is the unit's own code (step 2b; a macro-only header such as bb_pl_cell.h, x86_armed.h or x86_gc.h then needs no family include of its own).
@@ -244,10 +246,34 @@ def classify(stmt, ids):
         ids.add(nm)
 
 
+FIELD_KEYWORDS = {'int', 'char', 'long', 'short', 'unsigned', 'signed', 'void', 'float', 'double', 'const', 'volatile', 'struct', 'union', 'enum', 'static', 'extern', 'register', 'bool', '_Bool'}
+
+
+def body_field_names(inner):
+    """The field names of one record body: nested bodies are one placeholder each, arrays lose their bounds, a function pointer is its name."""
+    s, out = inner, set()
+    while True:
+        m = re.search(r'\{[^{}]*\}', s)
+        if not m:
+            break
+        s = s[:m.start()] + ' ' + s[m.end():]
+    for decl in s.split(';'):
+        decl = re.sub(r'\[[^\]]*\]', '', decl).strip()
+        if not decl:
+            continue
+        for part in decl.split(','):
+            m = re.search(r'\(\s*\*\s*(\w+)\s*\)', part)
+            toks = [m.group(1)] if m else re.findall(r'\w+', part)
+            if toks and toks[-1] not in FIELD_KEYWORDS:
+                out.add(toks[-1])
+    return out
+
+
 def struct_fields(raw):
-    """typedef name -> {field type name: [field names]} for the typedef structs of a header, and the extern instances: (type, inst)."""
+    """typedef name -> {field type name: [field names]} for the typedef structs of a header, the extern instances (type, inst) including
+    pointers, and record name -> its field names for every record whose BODY the header holds (a typedef struct or a bare struct tag)."""
     text = strip_strings(strip_comments(raw))
-    fields, inst = {}, []
+    fields, inst, bodies = {}, [], {}
     for m in re.finditer(r'typedef\s+struct\s*\w*\s*\{', text):
         j = match_brace(text, m.end() - 1)
         tail = re.match(r'\s*(\w+)\s*;', text[j + 1:])
@@ -257,9 +283,13 @@ def struct_fields(raw):
         for f in re.finditer(r'(?:^|[;{])\s*(?:struct\s+)?(\w+)\s+(\w+)\s*;', text[m.end():j]):
             d[f.group(1)].append(f.group(2))
         fields[tail.group(1)] = d
-    for m in re.finditer(r'\bextern\s+(\w+)\s+(\w+)\s*;', text):
+        bodies[tail.group(1)] = body_field_names(text[m.end():j])
+    for m in re.finditer(r'(?<!typedef )\bstruct\s+(\w+)\s*\{', text):
+        j = match_brace(text, m.end() - 1)
+        bodies.setdefault(m.group(1), body_field_names(text[m.end():j]))
+    for m in re.finditer(r'\bextern\s+(?:const\s+)?(?:struct\s+)?(\w+)\s*\**\s*(\w+)\s*;', text):
         inst.append((m.group(1), m.group(2)))
-    return fields, inst
+    return fields, inst, bodies
 
 
 class Tree:
@@ -327,12 +357,15 @@ class Tree:
         return p[4:] if p.startswith('src' + os.sep) else None
 
     def member_paths(self):
-        """header -> list of compiled regexes for 'inst.field' paths that name the header."""
-        fields, insts = {}, []
+        """header -> list of compiled regexes for the member paths that name the header: 'inst.field' when the field's type is the header's,
+        and 'inst->field' or 'inst.field' when the header holds the body of the record inst is (or points at) and field is one of its fields."""
+        fields, insts, bodies = {}, [], {}
         for h in self.headers:
-            f, i = struct_fields(read(os.path.join(self.root, 'src', h)))
+            f, i, b = struct_fields(read(os.path.join(self.root, 'src', h)))
             fields.update(f)
             insts += i
+            for nm, fl in b.items():
+                bodies.setdefault(nm, (h, fl))
         declares = {}
         for h in self.headers:
             for nm in self.info[h][0]:
@@ -343,6 +376,9 @@ class Tree:
                 for h in declares.get(fty, ()):
                     for fld in names:
                         out[h].append(re.compile(r'\b%s\s*\.\s*%s\b' % (re.escape(inst), re.escape(fld))))
+            if ty in bodies and bodies[ty][1]:
+                h, fl = bodies[ty]
+                out[h].append(re.compile(r'\b%s\s*(?:->|\.)\s*(?:%s)\b' % (re.escape(inst), '|'.join(sorted(re.escape(x) for x in fl)))))
         return out
 
     def tokens(self, u):

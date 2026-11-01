@@ -12,10 +12,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 [ "${1:-}" = "--root" ] && ROOT="$2"
 SRC="$ROOT/SCRIP/src"
-for f in planner/zeta_plan.cpp planner/planner.h planner/frame_layout.c emitter/emit.cpp; do [ -r "$SRC/$f" ] || { echo "REFUSE(2): cannot read $SRC/$f"; exit 2; }; done
+for f in planner/zeta_plan.cpp planner/zeta_plan.h planner/planner.h planner/frame_layout.c emitter/emit.cpp; do [ -r "$SRC/$f" ] || { echo "REFUSE(2): cannot read $SRC/$f"; exit 2; }; done
 bad=0
 grep -q '^int planner_retains(const IR_t \* nd) {' "$SRC/planner/zeta_plan.cpp" || { echo "RED: src/planner/zeta_plan.cpp defines no planner_retains"; bad=1; }
-grep -q 'int planner_retains(const IR_t \* nd);' "$SRC/planner/planner.h" || { echo "RED: planner.h declares no planner_retains"; bad=1; }
+grep -q 'int planner_retains(const IR_t \* nd);' "$SRC/planner/zeta_plan.h" || { echo "RED: zeta_plan.h (planner.h until headers step 4) declares no planner_retains"; bad=1; }
 # the layout's home pass: its dynamic-box test must be the planner's view, not a switch over kinds
 if awk '/^static int zls_home_dyn\(/{f=1} f&&/case IR_/{print; exit} f&&/^}/{exit}' "$SRC/planner/frame_layout.c" | grep -q 'case IR_'; then echo "RED: frame_layout.c zls_home_dyn switches over IR kinds (a second retains table)"; bad=1; fi
 grep -q 'planner_home_dyn' "$SRC/planner/frame_layout.c" || { echo "RED: frame_layout.c does not read planner_home_dyn"; bad=1; }

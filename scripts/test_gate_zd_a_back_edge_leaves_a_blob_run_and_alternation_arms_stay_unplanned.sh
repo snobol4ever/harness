@@ -50,7 +50,7 @@
 # MODES, and CEO-1680 allows no seam in SCRIP for a test); SCRIP_ZD_5B had already been read and never used since the flip's
 # ZD-5b went on, so its arm measured nothing. Their fail-once readings stand as history, like w6's and w7's below. w6 (D) and w7 (E) have NO per-run control since 2026-10-14 (hq_zetas, row spine-zd-omega-test-kind-
 # ...-ceo-1389, the cto's road (a)): their fail-once needed SCRIP_ZD_TESTFAM=0, which selected the test family's members per op at
-# run time and is deleted -- the family is ir_decides_own_failure_kind in src/ir/IR.h, a definition, not a switch, and CEO-1680
+# run time and is deleted -- the family is ir_decides_own_failure_kind, declared in src/ir/ir_node.h, a definition, not a switch, and CEO-1680
 # allows no seam in SCRIP for a test. PROVEN ONCE, at that landing, on a local uncommitted build whose family lacked IR_CALL and
 # IR_BINOP_TEST (exactly what the switch selected): w6 m3 under SCRIP_ZD_JOIN_CUT=0 printed only [ab ] against the oracle's four
 # lines (green with the family alone, as before), and w7's plan claimed 50 nodes against 53 shipped. Both stay graded against the

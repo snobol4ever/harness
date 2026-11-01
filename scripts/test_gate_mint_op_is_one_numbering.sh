@@ -33,7 +33,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 PASS=0; FAIL=0; N=0
 D=$(mktemp -d) || { echo "⛔ REFUSE(2) [$GATE]: no tmpdir"; exit 2; }
 trap 'rm -rf "$D"' EXIT
-for f in src/ir/descr.h src/ir/descr_tags.inc src/ir/IR.h src/templates/bb/bb_lit_scalar.cpp; do
+for f in src/ir/descr.h src/ir/descr_tags.inc src/ir/ir_node.h src/templates/bb/bb_lit_scalar.cpp; do
     [ -f "$f" ] || { echo "⛔ REFUSE(2) [$GATE]: $f is missing -- this gate cannot measure a tree it cannot read"; exit 2; }
 done
 
@@ -65,8 +65,8 @@ else echo "  RED  ARM 2: the field is named mod_op again somewhere under src/ --
 # than no attribution at all.
 N=$((N+1))
 a3=""
-grep -qE 'DESCR_SASSERT\(IR_OP_COUNT > 0' src/ir/IR.h \
-  || a3="IR.h no longer records the retirement where the op-in-a-byte guard stood -- a DESCR_SASSERT(IR_OP_COUNT > 0, ...) must keep that place and carry WHY the width guard went, or the next reader re-adds a byte constraint that has not applied since 2026-09-18"
+grep -qE 'DESCR_SASSERT\(IR_OP_COUNT > 0' src/ir/ir_node.h \
+  || a3="ir_node.h (IR.h until headers step 4) no longer records the retirement where the op-in-a-byte guard stood -- a DESCR_SASSERT(IR_OP_COUNT > 0, ...) must keep that place and carry WHY the width guard went, or the next reader re-adds a byte constraint that has not applied since 2026-09-18"
 grep -qE 'DESCR_SASSERT\(DESCR_SRC_NODE_OVERFLOW == 0xFFFFFFu && DESCR_SRC_NODE_UNSTAMPED == 0u' src/ir/descr.h \
   || a3="${a3:+$a3; }descr.h does not assert the 24-bit src_node sentinels (DESCR_SRC_NODE_OVERFLOW == 0xFFFFFFu && DESCR_SRC_NODE_UNSTAMPED == 0u) -- src_node INHERITED the retired byte and its width is the only one here left to get wrong"
 if [ -z "$a3" ]; then PASS=$((PASS+1))
@@ -86,7 +86,7 @@ else PASS=$((PASS+1)); fi
 
 # ---- ARM 4 — mint_op == opcode, WITH NO ARITHMETIC TO GET WRONG: the enum starts at 1 and the stamp adds no 1.
 N=$((N+1))
-if grep -qE '^\s*IR_ACTIVATE = 1,' src/ir/IR.h; then PASS=$((PASS+1))
+if grep -qE '^\s*IR_ACTIVATE = 1,' src/ir/ir_node.h; then PASS=$((PASS+1))
 else echo "  RED  ARM 4: the IR enum's first enumerator is not '= 1'. mint_op 0 MEANS UNSTAMPED, so an op numbered 0 would be indistinguishable from 'nothing touched this'."; FAIL=$((FAIL+1)); fi
 N=$((N+1))
 if grep -qE 'node->op \+ 1' src/templates/bb/bb_lit_scalar.cpp; then
@@ -116,5 +116,5 @@ else
 fi
 [ "$N" -gt 0 ] || { echo "⛔ REFUSE(2) [$GATE]: graded nothing"; exit 2; }
 echo "[$GATE] arms=$N pass=$PASS fail=$FAIL"
-[ "$FAIL" -eq 0 ] && { echo "GATE PASS [$GATE]: the provenance stamp is ONE numbering, the old mod_op name is gone, the op-in-a-byte width guard is RETIRED ON THE RECORD in IR.h (mint_op removed by Lon 2026-09-18, SCRIP 0a6f75394) with the 24-bit src_node sentinels asserted in its place by an assert proven to bite, the stamp needs no arithmetic, and the hand-written asm mints leave it unstamped in source AND in the binary"; exit 0; }
+[ "$FAIL" -eq 0 ] && { echo "GATE PASS [$GATE]: the provenance stamp is ONE numbering, the old mod_op name is gone, the op-in-a-byte width guard is RETIRED ON THE RECORD in ir_node.h (mint_op removed by Lon 2026-09-18, SCRIP 0a6f75394) with the 24-bit src_node sentinels asserted in its place by an assert proven to bite, the stamp needs no arithmetic, and the hand-written asm mints leave it unstamped in source AND in the binary"; exit 0; }
 echo "verdict=RED"; exit 1

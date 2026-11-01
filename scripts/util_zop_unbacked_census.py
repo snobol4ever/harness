@@ -110,7 +110,7 @@ def swap_fatal(path):
     s = FATAL.sub(lambda m: COUNT, s).replace(ANCHOR, ANCHOR + HELPER)
     open(p, "w", encoding="utf-8").write(s); return "swapped"
 def op_names(path):
-    src = open(os.path.join(path, "src", "ir", "IR.h"), encoding="utf-8").read()
+    src = open(os.path.join(path, "src", "ir", "ir_node.h"), encoding="utf-8").read()
     m = re.search(r"typedef enum \{(.*?)\}", src, re.S); names, val = {}, 0
     for tok in m.group(1).split(","):
         tok = tok.strip()

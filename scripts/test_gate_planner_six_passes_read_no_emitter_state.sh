@@ -5,7 +5,7 @@
 # passes are the dependency order of what the stage computes, not six names), the STAGE_LINE bar is the census's D bar and step 11's finish line, and the four
 # deleted names (drive_slots_all, zd_edge_retains, planner_home_dyn, planner_retains_emitter_view) are counted down by test_design_planner_finish_steps.sh
 # --step 11's finish token under the plan whose steps delete them.
-#   CONSTRUCTS  src/ir/IR.h declares the construct registry (IR_construct_t; IR_graph_t's constructs and n_constructs), and --dump-plan counts
+#   CONSTRUCTS  src/ir/ir_construct.h and src/ir/ir_graph.h declare the construct registry (IR_construct_t; IR_graph_t's constructs and n_constructs), and --dump-plan counts
 #               constructs > 0 over the witnesses (the lowerers set it because the construct is in the source)
 #   DRIVER      src/driver/scrip.c calls planner_stage
 #   DELETED     xop_frame_slot is named nowhere in src/planner (the retains column of the table replaces the planner's call of an emitter decider)
@@ -21,13 +21,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 [ "${1:-}" = "--root" ] && ROOT="$2"
 SC="$ROOT/SCRIP"; SRC="$SC/src"
-for f in ir/IR.h planner/zeta_plan.cpp planner/planner.h driver/scrip.c; do [ -r "$SRC/$f" ] || { echo "REFUSE(2): cannot read $SRC/$f"; exit 2; }; done
+for f in ir/ir_construct.h ir/ir_graph.h planner/zeta_plan.cpp planner/zeta_plan.h planner/planner.h driver/scrip.c; do [ -r "$SRC/$f" ] || { echo "REFUSE(2): cannot read $SRC/$f"; exit 2; }; done
 [ "$ROOT" = "$(cd "$HERE/../.." && pwd)" ] && { "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?; }
 [ -x "$SC/scrip" ] || { echo "REFUSE(2): no binary at $SC/scrip"; exit 2; }
 bad=0
 PL=$(ls "$SRC"/planner/*.c "$SRC"/planner/*.cpp "$SRC"/planner/*.h 2>/dev/null)
 red() { echo "RED: $*"; bad=1; }
-grep -q 'IR_construct_t' "$SRC/ir/IR.h" && grep -q 'n_constructs' "$SRC/ir/IR.h" || red "CONSTRUCTS src/ir/IR.h declares no construct registry (IR_construct_t, n_constructs)"
+grep -q 'IR_construct_t' "$SRC/ir/ir_construct.h" && grep -q 'n_constructs' "$SRC/ir/ir_graph.h" || red "CONSTRUCTS src/ir/ir_construct.h and src/ir/ir_graph.h declare no construct registry (IR_construct_t, n_constructs; headers step 4 split IR.h)"
 grep -q 'planner_stage(' "$SRC/driver/scrip.c" || red "DRIVER the driver (src/driver/scrip.c) never calls planner_stage"
 k=$(cat $PL | grep -cw 'xop_frame_slot'); [ "$k" = 0 ] || red "DELETED src/planner names xop_frame_slot $k time(s)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT

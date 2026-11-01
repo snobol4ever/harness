@@ -28,7 +28,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # byte-for-byte the plain lowering from STATEMENT_BEGIN on, in both media. SCRIP_ZD_HOOK_RELEASE=0 restores the
 # pre-cure planner and is this gate's fail-once control. Since 2026-10-02 (cto, gimpel infinip) a call's omega target heads its
 # own zd run, which also carries a1's call past the residue; the control turned that off too with SCRIP_ZD_TESTFAM=0 until
-# 2026-10-14, when that switch was deleted (the call family is ir_decides_own_failure_kind in src/ir/IR.h, a definition, and
+# 2026-10-14, when that switch was deleted (the call family is ir_decides_own_failure_kind, declared in src/ir/ir_node.h, a definition, and
 # CEO-1680 allows no seam in SCRIP for a test; hq_zetas, row spine-zd-omega-test-kind-...-ceo-1389). SEE k1 for what replaced it.
 #
 # ARMS (each graded against the live sbl -bf oracle, in BOTH modes):

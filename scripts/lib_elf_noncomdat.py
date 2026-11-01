@@ -5,6 +5,7 @@
 # For every object present in both trees this compares, without debug info, the CODE AND DATA OF EVERY DEFINED SYMBOL that is not a member of a COMDAT group and not one of the moved functions
 # (or a static local of one): the bytes of its slice of the section and the relocations inside it. Left out:
 #   - a COMDAT group member (SHF_GROUP), the group sections, .eh_frame and its relocations (they unwind the vanished copies), the symbol tables and every .debug_*;
+#   - the padding between two functions (a nop or several before an aligned symbol): a function's code is its st_size bytes, so a landing that shifts the parity of the addresses after an inserted body does not read as a change to the function before the next 2-aligned C++ symbol (the cto, headers step 4, 2026-10-31);
 #   - a symbol named in --moved FILE (one name per line): a function, with its static locals and guard variables, or a plain variable named exactly (a header's unused static data
 #     leaves a unit that no longer includes the header);
 #   - a SHF_MERGE section (the string and constant pools): never compared by its bytes; a relocation into one is compared by the ENTRY it reaches (the NUL-terminated string, or the
@@ -109,7 +110,7 @@ def disasm(path, grouped, moved=(), localfn=None):
     r = subprocess.run(['objdump', '-d', '-r', '--no-show-raw-insn', '-C', path], capture_output=True, text=True)
     if r.returncode != 0:
         raise ValueError('objdump failed on ' + path)
-    funcs, sec, cur, seen, starts = {}, None, None, {}, {}
+    funcs, sec, cur, seen, starts, addrs, cura = {}, None, None, {}, {}, {}, None
     for line in r.stdout.split('\n'):
         m = re.match(r'^Disassembly of section (\S+):', line)
         if m:
@@ -124,6 +125,7 @@ def disasm(path, grouped, moved=(), localfn=None):
             k = (sec, nm0)
             seen[k] = seen.get(k, 0) + 1
             cur = funcs.setdefault((sec, nm0, seen[k]), [])
+            cura = addrs.setdefault((sec, nm0, seen[k]), [])
             continue
         if cur is None:
             continue
@@ -142,6 +144,7 @@ def disasm(path, grouped, moved=(), localfn=None):
             continue
         if sec is not None:
             starts.setdefault(sec, []).append(int(line.split(':', 1)[0], 16))
+        cura.append(int(line.split(':', 1)[0], 16))
         t = CMT_RX.sub('', m.group(1).rstrip())
         t = re.sub(r'\s+', ' ', t)
         b = BR_RX.match(t)
@@ -154,7 +157,7 @@ def disasm(path, grouped, moved=(), localfn=None):
             if mm and mm.group(2) in moved:
                 t = mm.group(1) + mm.group(2)   # R5-PRIME (b): a call into a moved function reads as the symbol, local copy or compiled
         cur.append(t)
-    return funcs, starts
+    return funcs, starts, addrs
 
 
 IMM_RX = re.compile(r'\$0x([0-9a-f]+)')
@@ -280,7 +283,16 @@ def canon(path, moved):
     for y in e.syms:
         if (y['info'] & 0xf) == 2 and (y['info'] >> 4) == 0 and '(' in y['dem']:
             localfn[y['dem']] = y['dem'].split('(', 1)[0]
-    code, starts = disasm(path, grouped, moved, localfn)
+    code, starts, addrs = disasm(path, grouped, moved, localfn)
+    extent = {}
+    for y in e.syms:
+        if (y['info'] & 0xf) == 2 and 0 < y['shndx'] < len(e.sec) and y['size']:
+            extent.setdefault((e.sec[y['shndx']]['name'], localfn.get(y['dem'], y['dem'])), []).append((y['value'], y['value'] + y['size']))
+    for (sec, nm, k), insns in list(code.items()):
+        ext = sorted(extent.get((sec, nm), ()))
+        if k - 1 < len(ext):
+            lo, hi = ext[k - 1]
+            code[(sec, nm, k)] = [t for a, t in zip(addrs[(sec, nm, k)], insns) if lo <= a < hi]   # the symbol's st_size bytes: the padding nop before the next (aligned) symbol is nobody's code
     import bisect
 
     def keep_reloc(r):
