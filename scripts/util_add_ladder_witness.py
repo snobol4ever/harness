@@ -476,7 +476,7 @@ def main():
             sno_lines = [note] + sno_lines
             sno_text = "\n".join(sno_lines) + "\n"
     ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path)
-    ref_lines = ref_text.splitlines()
+    ref_lines = csh._lf_lines(ref_text)
     # ⛔⭐ A NONZERO want_rc IS DECLARED IN ALL.wantrc, NEVER ONLY IN ALL.csv (hq_I 2026-09-13, extending the
     # refusal that stood here). lib_ladder.sh's own wantrc() reads the sidecar and nothing else, so a witness
     # minted without that line is graded against the default rc=0 forever -- which is why the old refusal was
@@ -516,7 +516,7 @@ def main():
     # understanding of the format is wrong, and it must refuse before writing anything, not after.
     tmp_src, tmp_ref = rungs_src.with_suffix(rungs_src.suffix + ".rtcheck"), rungs_ref.with_suffix(".ref.rtcheck")
     reserialize(entries, str(tmp_src), str(tmp_ref))
-    same = tmp_src.read_text() == rungs_src.read_text() and tmp_ref.read_text() == rungs_ref.read_text()
+    same = tmp_src.read_text() == rungs_src.read_text() and tmp_ref.read_bytes() == rungs_ref.read_bytes()
     tmp_src.unlink(missing_ok=True); tmp_ref.unlink(missing_ok=True)
     if not same:
         # ⛔⭐ THE REFUSAL IS CORRECT; ITS EXPLANATION WAS FALSE, AND THAT COST FOUR LANES A DIAGNOSIS EACH
@@ -605,7 +605,7 @@ def main():
     _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None) for n in ("ALL.in", "ALL.xfail", "ALL.wantrc")}
     def _rollback():
         try:
-            rungs_src.write_text(old_src_text); rungs_ref.write_text(old_ref_text)
+            rungs_src.write_text(old_src_text); rungs_ref.write_bytes(old_ref_bytes)
             rungs_csv.write_bytes(old_csv_bytes)
             for _n, _b in _companions.items():
                 (rungs_dir / _n).unlink(missing_ok=True) if _b is None else (rungs_dir / _n).write_bytes(_b)
@@ -619,7 +619,7 @@ def main():
     # Verify the OLD entries still round-trip identically inside the new file (prefix-equality check)
     # before replacing anything -- appending must never perturb what already existed.
     old_src_text = rungs_src.read_text()
-    old_ref_text = rungs_ref.read_text()
+    old_ref_bytes = rungs_ref.read_bytes()
     if not tmp_src2.read_text().startswith(old_src_text[:-1] if old_src_text.endswith("\n") else old_src_text):
         tmp_src2.unlink(missing_ok=True); tmp_ref2.unlink(missing_ok=True)
         refuse("post-append check failed: the existing entries were perturbed by the append -- nothing written")
@@ -697,10 +697,10 @@ def main():
     # exists to make, and for Icon it is not a corner case at all: writing a null value prints an empty line,
     # which is exactly what a rung distinguishing null from integer 0 must show.
     def _as_stored(text):
-        lines = text.splitlines()
+        lines = csh._lf_lines(text)
         return "\n".join(lines) + "\n" if lines else ""
     ok = (err.returncode == 0 and check_src.read_text() == _as_stored(sno_text)
-          and check_ref.read_text() == _as_stored(ref_text))
+          and check_ref.read_bytes().decode("utf-8") == _as_stored(ref_text))
     check_src.unlink(missing_ok=True); check_ref.unlink(missing_ok=True)
     if not ok:
         # ⛔ A REFUSAL LEAVES THE TREE AS IT FOUND IT. The proof necessarily runs AFTER the three rung suites are
