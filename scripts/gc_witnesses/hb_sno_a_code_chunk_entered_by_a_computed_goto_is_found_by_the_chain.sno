@@ -1,0 +1,10 @@
+ C = CODE(" DEFINE('F(X,Y)A') :(FE)" ';'
++ "F A = X Y ;"
++ " F = A A :(RETURN) ;"
++ "FE :(BACK)")                            :F(BAD)
+ :<C>
+BACK
+ OUTPUT = F('abc', 'def')
+ OUTPUT = 'after'                  :(END)
+BAD OUTPUT = 'CODE failed'
+END
