@@ -39,6 +39,7 @@
 # path never had one. Fix: (1) anchor the signal check to the MATCHED LINE ONLY, never a window -- every
 # real corrected example measured (both rules, all fleet roots) puts the correction in the SAME
 # sentence/line as the retired text, so this loses no real recall; (2) drop both catch-alls --
+# (the ceo root left the required list 2026-11-01: the seat was removed from the roster 2026-10-31 15:17 and its root is gone, so the gate read UNPROVEN rc 2 for a day)
 # `corrected|correction` (no optional group) and `csnobol4[ -]?oracle` (adjacency required). Re-verified
 # against real data after the fix: O2 rule's 3 self-aware hits still correctly exempted (0 violations,
 # unchanged); SEGV rule's live violations still correctly caught. Negative-tested the exemption path
@@ -106,7 +107,7 @@ if [ -n "${DIGEST_GATE_ROOTS:-}" ]; then
 else
     ROOTS=(   # the twenty numbered fleet roots and the nine lettered HQ roots were removed by Lon 2026-09-16 (ceo CEO-767); six language HQ roots replace the nine
            /home/claude_icon/CLAUDE.md /home/claude_prolog/CLAUDE.md /home/claude_raku/CLAUDE.md /home/claude_pascal/CLAUDE.md /home/claude_snocone/CLAUDE.md /home/claude_snobol4/CLAUDE.md /home/claude_templates/CLAUDE.md /home/claude_runtime/CLAUDE.md /home/claude_collector/CLAUDE.md /home/claude_zetas/CLAUDE.md /home/claude_packages/CLAUDE.md \
-           /home/claude_ceo/CLAUDE.md /home/claude_cto/CLAUDE.md /home/claude_coo/CLAUDE.md /home/claude_cfo/CLAUDE.md /home/claude_cao/CLAUDE.md /home/claude_cqo/CLAUDE.md)
+           /home/claude_cto/CLAUDE.md /home/claude_coo/CLAUDE.md /home/claude_cfo/CLAUDE.md /home/claude_cao/CLAUDE.md /home/claude_cqo/CLAUDE.md)
 fi
 
 VIOLATIONS=0

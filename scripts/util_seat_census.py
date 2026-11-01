@@ -154,6 +154,7 @@ def slot_holders(root):
         except OSError:
             continue
         kinds = set()
+        slots = set()
         seat_file = None
         for fd in fds:
             try:
@@ -161,9 +162,9 @@ def slot_holders(root):
             except OSError:
                 continue
             if t.startswith("/tmp/s4e-cc-slots/slot"):
-                kinds.add("cc")
+                kinds.add("cc"); slots.add(("cc", t))
             elif t.startswith("/tmp/s4e-run-slots/slot"):
-                kinds.add("run")
+                kinds.add("run"); slots.add(("run", t))
             m = re.match(r"/tmp/s4e-(?:cc|run)-slots/seat/([a-z0-9_]+)/", t)
             if m:
                 seat_file = m.group(1)
@@ -179,9 +180,9 @@ def slot_holders(root):
                 seat = s
         m = re.search(r"s4e-mem-([a-z0-9_]+)-", cg)
         seat = seat or (m.group(1) if m else seat_file or ("grader" if "s4e-grader" in cg else "batch" if "s4e-batch" in cg else "other"))
-        for k in kinds:
-            held[k][seat] = held[k].get(seat, 0) + 1
-    return held
+        for k, slot in slots:   # a slot is held once however many processes share its fd (gcc, cc1, as: the fleet test read cc_held=19 of 8, 2026-11-01)
+            held[k].setdefault(seat, set()).add(slot)
+    return {k: {s: len(v) for s, v in d.items()} for k, d in held.items()}
 
 
 def tmp_sizes(seats):
