@@ -28,7 +28,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        has a SEAT line, no live session scope is unmapped, and the SEAT and LON lines' cores sum to within ten percent of
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
   --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores
-  --health                             --check, --memory-check and --cpu-check together; rc the worst of the three
+  --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
+  --health                             --check, --memory-check, --cpu-check and --tmp-check together; rc the worst
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
@@ -640,11 +641,38 @@ def cpu_check():
     return 0
 
 
+def tmp_check():
+    """THE /tmp ARM OF THE HEALTH CHECK (the coo 2026-11-01, Lon: "how big is /tmp folder? why would it fill up?"): --memory-check reds /tmp past 60
+    percent but names nobody, so the coo had to du the tree by hand to find the cto's live scratchpad at 19.5 GB. From the newest LOAD run (the tmp_mb
+    column, one du per seat of its Claude session scratchpads and /tmp/s4e/<seat>): RED by name, largest first, for every seat over TMP_SEAT_MB -- the
+    seat to ask to delete its finished outputs, since the sweeper cannot take a live session's files."""
+    last, rows = newest_run(arg("--load", LOAD))
+    if not last:
+        print("REFUSED(2): no ledger at %s" % arg("--load", LOAD))
+        return 2
+    seats = []
+    for r in rows:
+        if r[1] == "UNIT" and r[2] == "SEAT" and len(r) > 11:
+            try:
+                seats.append((int(float(r[11] or 0)), r[3]))
+            except ValueError:
+                pass
+    over = sorted((mb, s) for mb, s in seats if mb > TMP_SEAT_MB)[::-1]
+    tot = sum(mb for mb, _ in seats)
+    print("TMP CHECK run=%s seats=%d seat_tmp_total=%.1fG budget=%dG each over=%d" % (last, len(seats), tot / 1024.0, TMP_SEAT_MB // 1024, len(over)))
+    if over:
+        for mb, s in over:
+            print("  RED  seat %s holds %.1fG of /tmp (its budget is %dG): ask it to delete its finished outputs; a live session's files are its own" % (s, mb / 1024.0, TMP_SEAT_MB // 1024))
+        return 1
+    print("  GREEN every seat's /tmp (session scratchpads and /tmp/s4e/<seat>) is within its %dG budget" % (TMP_SEAT_MB // 1024))
+    return 0
+
+
 def health():
-    """--health: the ledger (--check), memory and /tmp (--memory-check) and CPU (--cpu-check) in one call; rc is the worst of the three, so a GREEN arm
+    """--health: the ledger (--check), memory and /tmp (--memory-check), CPU (--cpu-check) and each seat's /tmp (--tmp-check) in one call; rc is the worst of the three, so a GREEN arm
     can never stand in for a RED one (the 2026-11-01 lesson: --check alone read GREEN on a saturated box)."""
     rcs = []
-    for fn in (check, memory_check, cpu_check):
+    for fn in (check, memory_check, cpu_check, tmp_check):
         rcs.append(fn())
     return 2 if 2 in rcs else (1 if 1 in rcs else 0)
 
@@ -657,6 +685,8 @@ def main():
         return acceptance(int(arg("--acceptance", "86400")))
     if "--health" in av:
         return health()
+    if "--tmp-check" in av:
+        return tmp_check()
     if "--cpu-check" in av:
         return cpu_check()
     if "--memory-check" in av:

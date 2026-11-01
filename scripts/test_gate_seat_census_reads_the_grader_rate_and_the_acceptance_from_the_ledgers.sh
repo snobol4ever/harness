@@ -106,6 +106,23 @@ carm "FAIL-ONCE: a seat over 2 cores holding no slot is red BY NAME"            
 carm "FAIL-ONCE: the grader under 2 cores on a busy box reds"                                 "$T/cpu_sat"  1 "the grader reads 0.50 cores"
 carm "control: a busy box whose load is in the pools, the grader at 2.5, reads GREEN"         "$T/cpu_ok"   0 "GREEN cpu pressure under 30" "RED"
 carm "control: a seat over 2 cores THROUGH the pools (2 run slots) is not named"              "$T/cpu_pool" 0 "GREEN" "seat a runs"
-n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check)' "$CENSUS" && grep -q '"--health"' "$CENSUS"; then echo "  ok   ARM $n: --health runs --check, --memory-check and --cpu-check and returns the worst"; else echo "  RED  ARM $n: --health does not run all three arms"; fail=1; fi
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all three"; exit 0
+n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check' "$CENSUS" && grep -q '"--health"' "$CENSUS"; then echo "  ok   ARM $n: --health runs --check, --memory-check and --cpu-check and returns the worst"; else echo "  RED  ARM $n: --health does not run all three arms"; fail=1; fi
+tmpplant() {   # tmpplant <dir> <seat_a_tmp_mb> <seat_b_tmp_mb>
+  mkdir -p "$1"; local u; u=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  { printf 'utc\tkind\tclass\tname\tcores\tmem_mb\tmem_peak_mb\toom_kills\tpids\tcc_slots\trun_slots\ttmp_mb\n'
+    printf '%s\tUNIT\tSEAT\ta\t0.50\t500\t600\t0\t10\t0\t0\t%s\n' "$u" "$2"
+    printf '%s\tUNIT\tSEAT\tb\t0.50\t500\t600\t0\t10\t0\t0\t%s\n' "$u" "$3"; } > "$1/LOAD.tsv"
+}
+tarm() {   # tarm <name> <dir> <want_rc> <must_match> [must_not_match]
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --tmp-check --load "$2/LOAD.tsv" 2>&1)"; local rc=$?
+  if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
+  else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
+}
+tmpplant "$T/tmp_over" 19968 5000
+tmpplant "$T/tmp_ok"   3000  100
+tarm "FAIL-ONCE: a seat over its /tmp budget is red BY NAME with its size"          "$T/tmp_over" 1 "seat a holds 19.5G of /tmp"
+tarm "FAIL-ONCE: the largest holder is named first"                                  "$T/tmp_over" 1 "RED  seat a holds"
+tarm "control: seats within budget read GREEN and nobody is named"                   "$T/tmp_ok"   0 "GREEN every seat" "RED"
+n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the /tmp arm too"; else echo "  RED  ARM $n: --health does not run --tmp-check"; fail=1; fi
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all four; the /tmp arm names each seat over its budget"; exit 0
 else echo "GATE FAIL(1) [$G]: see the RED arms"; exit 1; fi
