@@ -42,4 +42,9 @@ prog="$1"; shift
 [ "${1:-}" = "--" ] && shift
 A="${J%.jar}.jsa"
 cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
-exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -jar "$J" "${u[@]}" "$prog" "$@"
+# THE JIT WAITS FOUR TIMES AS LONG (-XX:CompileThresholdScaling=4; hq_jvm, row jvm-speed-the-fixed-start-up-of-the-jar-..., CEO-2091). Measured 2026-10-31 on the
+# idle box (perf stat -e instructions:u, the archive in use): the HotSpot compiler threads cost about 7 G of the 11 G an empty program takes, spent compiling start-up
+# code that runs once. At scaling 4 an empty program is 6.5 G (11.1 before), a 20k-iteration pattern loop 23.1 G (28.0), a 300k-iteration one 136.4 G (144.7), and the wall
+# clock is the same (0.58 s, 1.61 s, 10.1 s). Scaling 8 and above begins to cost wall time (10.9 s, then 12.9 s at 16 on the long loop); C1 only (TieredStopAtLevel=1) takes
+# an empty program to 3.7 G but a long loop 2.7 times longer, so it is not used. It is a launcher option like the archive above: java -jar without it still works.
+exec java -Xlog:disable -Xlog:all=error:stderr "${cds[@]}" -XX:+UseSerialGC -XX:CompileThresholdScaling=4 -jar "$J" "${u[@]}" "$prog" "$@"
