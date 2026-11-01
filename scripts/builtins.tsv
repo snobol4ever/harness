@@ -938,7 +938,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 938	pl	$db_asserta_t	1	1	rt_pl_dop_db_asserta_t	leaf	-	-	0	dop_direct
 939	pl	$db_assertz	2	2	rt_pl_dop_db_assertz	leaf	-	-	0	dop_direct
 940	pl	$db_assertz_r	2	2	rt_pl_dop_db_assertz_r	leaf	-	-	0	dop_direct
-941	pl	$db_assertz_t	1	1	rt_pl_dop_db_assertz_t	leaf	-	-	0	dop_direct
+941	pl	$db_assertz_t	3	3	rt_pl_dop_db_assertz_t	leaf	-	-	0	dop_direct
 942	pl	$db_at_r	3	3	rt_pl_dop_db_at_r	leaf	-	-	0	dop_direct
 943	pl	$db_copy	2	2	rt_pl_dop_db_copy	leaf	-	-	0	dop_direct
 944	pl	$db_data_unify	3	3	rt_pl_dop_db_data_unify	leaf	-	-	0	dop_direct
