@@ -27,7 +27,7 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   util_seat_census.py --check          step 1's DONE-WHEN: rc 0 when the newest run is under ten minutes old, every seat whose newest SEATS.tsv scope is live
                                        has a SEAT line, no live session scope is unmapped, and the SEAT and LON lines' cores sum to within ten percent of
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
-  --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores
+  --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores while it waits, Lon's terminal waiting
   --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
   --health                             --check, --memory-check, --cpu-check and --tmp-check together; rc the worst
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
@@ -602,7 +602,7 @@ def cpu_check():
     check"): the --check arm read GREEN (the ledger fresh) while the box ran 16 of 16 cores at cpu pressure 41 with the pools nearly empty, because no arm
     turned those numbers into a verdict. From the newest run: RED when cpu pressure some avg300 is 30 or more; when the box is busy (85 percent of its cores)
     while the run and cc pools together hold half their slots or fewer (the load runs outside the doors); for every SEAT line over 2 cores holding no run
-    slot and no cc slot (named: the seat to throttle); and when the grader reads under 2 cores on a busy box (75 percent). Each RED names what to act on."""
+    slot and no cc slot (named: the seat to throttle); when the grader reads under 2 cores on a busy box (75 percent) AND its own slice waited 10 percent or more for a CPU (under 2 cores with no wait is its own small demand); and when Lon's terminal scope waited 10 percent or more. Each RED names what to act on."""
     last, rows = newest_run(arg("--load", LOAD))
     if not last:
         print("REFUSED(2): no ledger at %s" % arg("--load", LOAD))
@@ -630,9 +630,25 @@ def cpu_check():
             if c > 2.0 and cc == 0 and rn == 0:
                 gaps.append("seat %s runs %.2f cores holding no run slot and no cc slot: throttle it (nice, -j2, the pools) or cap its scope" % (r[3], c))
     gr = next((float(r[4]) for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
-    if gr is not None and busy >= 0.75 * n and gr < 2.0:
-        gaps.append("the grader reads %.2f cores on a busy box (2.0 is the floor): the suites starve behind the seats" % gr)
-    print("CPU CHECK run=%s busy=%.1f/%d pressure_avg300=%.1f slots_held=%d/%d grader=%s gaps=%d" % (last, busy, n, p300, held, pools, "%.2f" % gr if gr is not None else "-", len(gaps)))
+    root = arg("--root", CG)
+    def wait300(path):
+        for l in rd(path).splitlines():
+            if l.startswith("some "):
+                for kv in l.split()[1:]:
+                    if kv.startswith("avg300="):
+                        try:
+                            return float(kv[7:])
+                        except ValueError:
+                            return None
+        return None
+    gw = wait300(os.path.join(root, "user@1000.service", "s4e.slice", "s4e-grader.slice", "cpu.pressure"))   # MEASURED 2026-11-01 14:2x: the grader slice waited 0.2 percent while the sessions' slice waited 8.5 -- under 2 cores was the grader's own small demand, not starvation, so cores alone are no verdict
+    if gr is not None and busy >= 0.75 * n and gr < 2.0 and gw is not None and gw >= 10:
+        gaps.append("the grader reads %.2f cores and waited for a CPU %.1f percent of the last five minutes (10 is the bar): the suites starve behind the seats" % (gr, gw))
+    for who, (cls, sc) in sorted(seat_map(arg("--seats", SEATS)).items()):
+        lw = wait300(os.path.join(root, sc, "cpu.pressure")) if cls == "LON" else None
+        if lw is not None and lw >= 10:
+            gaps.append("Lon's terminal (%s) waited for a CPU %.1f percent of the last five minutes (10 is the bar): the seats crowd Lon's own session" % (who, lw))
+    print("CPU CHECK run=%s busy=%.1f/%d pressure_avg300=%.1f slots_held=%d/%d grader=%s grader_wait=%s gaps=%d" % (last, busy, n, p300, held, pools, "%.2f" % gr if gr is not None else "-", "%.1f" % gw if gw is not None else "-", len(gaps)))
     if gaps:
         for g in gaps:
             print("  RED  " + g)

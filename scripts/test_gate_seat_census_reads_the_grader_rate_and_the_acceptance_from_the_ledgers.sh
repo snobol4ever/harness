@@ -91,7 +91,7 @@ cpuplant() {   # cpuplant <dir> <busy> <p300> <run_held> <cc_held> <seat_a_cores
     printf '%s\tBOX\tBOX\tbox\tcores_busy=%s load1=20 pressure_some_avg60=%s pressure_some_avg300=%s run_held=%s cc_held=%s\t-\t-\t-\t-\t-\t-\t-\n' "$u" "$2" "$3" "$3" "$4" "$5"; } > "$1/LOAD.tsv"
 }
 carm() {   # carm <name> <dir> <want_rc> <must_match> [must_not_match]
-  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --cpu-check --load "$2/LOAD.tsv" 2>&1)"; local rc=$?
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --cpu-check --load "$2/LOAD.tsv" --root "$2/cg" --seats "$2/SEATS.tsv" 2>&1)"; local rc=$?
   if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
   else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
 }
@@ -100,10 +100,20 @@ cpuplant "$T/cpu_sat"  "$NC" 41 2 0 3.90 0 0.50
 cpuplant "$T/cpu_ok"   "$NC" 10 8 4 1.80 0 2.50
 cpuplant "$T/cpu_seat" 4     10 1 0 3.90 0 2.50
 cpuplant "$T/cpu_pool" 4     10 1 0 3.90 2 2.50
+cgwait() {   # cgwait <dir> <grader_avg300> [lon_avg300]: the grader slice's (and a LON scope's) cpu.pressure under <dir>/cg, and a SEATS fixture mapping lon
+  mkdir -p "$1/cg/user@1000.service/s4e.slice/s4e-grader.slice" "$1/cg/lonscope"
+  printf 'some avg10=%s avg60=%s avg300=%s total=1\nfull avg10=0 avg60=0 avg300=0 total=0\n' "$2" "$2" "$2" > "$1/cg/user@1000.service/s4e.slice/s4e-grader.slice/cpu.pressure"
+  printf 'utc\tseat\tclass\tscope\tpid\tstart\tweighted\n' > "$1/SEATS.tsv"
+  if [ -n "${3:-}" ]; then printf 'some avg10=%s avg60=%s avg300=%s total=1\n' "$3" "$3" "$3" > "$1/cg/lonscope/cpu.pressure"; printf 'x\tlon\tLON\t/user.slice/user-1000.slice/lonscope\t1\tx\tyes\n' >> "$1/SEATS.tsv"; fi
+}
+cpuplant "$T/cpu_lowdem" "$NC" 41 2 0 1.00 0 0.50
+cgwait "$T/cpu_sat" 40.00 25.00; cgwait "$T/cpu_lowdem" 0.20; cgwait "$T/cpu_ok" 0.10 1.00; cgwait "$T/cpu_seat" 0.10; cgwait "$T/cpu_pool" 0.10
 carm "FAIL-ONCE: a saturated box reds on cpu pressure"                                        "$T/cpu_sat"  1 "cpu pressure some avg300 41.0"
 carm "FAIL-ONCE: a busy box with idle pools reds as load OUTSIDE the doors"                   "$T/cpu_sat"  1 "the load runs OUTSIDE the doors"
 carm "FAIL-ONCE: a seat over 2 cores holding no slot is red BY NAME"                          "$T/cpu_seat" 1 "seat a runs 3.90 cores holding no run slot"
 carm "FAIL-ONCE: the grader under 2 cores on a busy box reds"                                 "$T/cpu_sat"  1 "the grader reads 0.50 cores"
+carm "FAIL-ONCE: Lon's terminal waiting 25 percent for a CPU reds by name"                  "$T/cpu_sat"  1 "Lon's terminal (lon) waited for a CPU 25.0 percent"
+carm "control: the grader under 2 cores that waited 0.2 percent is its own demand, not red" "$T/cpu_lowdem" 1 "cpu pressure some avg300" "the grader reads"
 carm "control: a busy box whose load is in the pools, the grader at 2.5, reads GREEN"         "$T/cpu_ok"   0 "GREEN cpu pressure under 30" "RED"
 carm "control: a seat over 2 cores THROUGH the pools (2 run slots) is not named"              "$T/cpu_pool" 0 "GREEN" "seat a runs"
 n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check' "$CENSUS" && grep -q '"--health"' "$CENSUS"; then echo "  ok   ARM $n: --health runs --check, --memory-check and --cpu-check and returns the worst"; else echo "  RED  ARM $n: --health does not run all three arms"; fail=1; fi
