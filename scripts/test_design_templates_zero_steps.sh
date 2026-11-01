@@ -50,7 +50,7 @@ slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 readings=""; red=0
 note() { readings="$readings $1"; }
 audit_file() { ( cd "$SC" && bash "$AUDIT" "src/templates/$1" > /dev/null 2>&1 ); }
-audit_class() { ( cd "$SC" && bash "$AUDIT" "src/templates/$1" 2>/dev/null ) | awk -v c="$2" '$1 == c {for (i = 2; i <= NF; i++) if ($i ~ /^[0-9]+$/) {print $i; exit}}'; }
+audit_class() { ( cd "$SC" && bash "$AUDIT" "src/templates/$1" 2>/dev/null ) | awk -v c="$2" '$1 == c {for (i = NF; i >= 2; i--) if ($i ~ /^[0-9]+$/) {print $i; exit}}'; }
 [ "$probe" = "-" ] && probe=""
 for tok in $probe; do
     case "$tok" in
