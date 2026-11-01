@@ -134,7 +134,17 @@ export SNO_LIB="${SNO_LIB:-$S4E/corpus/include}"
 #   in BOTH directions and a move is not a verdict on the chop until its graphs are read; the ceiling is re-cut to the
 #   measurement, never held against a landing that added a sanctioned reload. By file at 284: defer.sno 166, sno 43, pas 26,
 #   pl 22, icn 18, raku 5, sc 2, reb 2.
-COPY_CEILING=${COPY_CEILING:-284}
+#   284 -> 533 AND THE CEILING BECOMES PER FILE (hq_collector 2026-11-01, the cto's ruling A plus B on the per-commit account: .github/findings/2026-11-01-hq_collector-callee-saved-copy-residual-per-commit-account.md,
+#   ARCH-GC 6.5e). THE ACCOUNT, from a build of every point of the history and ONE census (today's) over this gate's own eight witnesses: 79b7aa13d (CTO-143) reads 294 on today's census, so the instrument agrees with the
+#   284 within 10; the residual FELL to 162 by 10-09 (-78 -45 -23, the ceiling never followed) and then ROSE through landings that each added allocating call sites reading the SAME copy classes (r12 ARITH, r12 to r15 and rbx CELL),
+#   with arm 3 at 0 until e3373e9fe: 4030b0d03 +156 (the VALUE trace's pending record: rt_trace_pend_close/run, rt_apply_open, rt_dcap_resume, rt_apply_land_gamma), d85792e46 +24 (rt_match_enter declines to its C twin),
+#   the Prolog prelude and library landings (eec30c90d +5, 3791c84ae +5, 10ca40892 +55, 30c9c080d +43, 48bd63328 +12, 5d15b5ca2 +5, 48b7cb4c3 +26) and the Prolog spine (0bb392122 +21, e53f5dcd6 +54).  RULED SANCTIONED: more allocating
+#   sites reading the same classes, with arms 3 and 4 at 0.  THE CRITERION CHANGE (a count is not comparable across one): arm 5 holds a ceiling PER FILE beside the aggregate, so a fall in one file can no longer hide a rise in
+#   another (the old single number let pascal's -17 and icon's -8 pay for prolog's +152), each file's ceiling can only fall, a fall is re-cut in the SAME landing as its cure, and a Prolog prelude landing that grows pl re-cuts pl
+#   in its own commit with the delta named (the prelude's sites are real allocating sites the spill record of 6.5 must tag, so they stay in the population).  A file the census reads that has no declared ceiling is RED: a new
+#   frontend witness declares its own.  THE CURE is not this gate's: the spill record on the polls row (cto design).  By file at 533: defer.sno 271, pl 174, sno 64, icn 10, pas 9, sc 3, reb 2, raku 0.
+COPY_CEILING=${COPY_CEILING:-533}
+COPY_FILE_CEILINGS=${COPY_FILE_CEILINGS:-"defer.sno=271 pl=174 sno=64 icn=10 pas=9 sc=3 reb=2 raku=0"}
 
 echo "  HOLDS: what sits in a callee-saved register at an allocating return is NAMED from the emitted code, not assumed from a paragraph -- and it is a property of the SITE, not of the graph, so it does not go in the per-graph map. gc_frame_map_t.reserved stays zero with no reader; the registers get a tag at the poll (section 6.5's spill record), which is the polls row's build."
 
@@ -239,8 +249,18 @@ if [ "${unc:-1}" = 0 ]; then echo "  arm 3 PASS: 0 unclassified -- every owned r
 else echo "  arm 3 RED: $unc register reading(s) live across an allocating return whose content the census cannot name:"; grep 'UNCLASSIFIED' "$T/c.txt" | head -6 | sed 's/^/    /'; RC=1; fi
 if [ "${unk:-1}" = 0 ]; then echo "  arm 4 PASS: 0 mnemonics outside the census's def/use model"
 else echo "  arm 4 RED: $unk instruction(s) the census does not model -- it would silently assume they leave the six callee-saved registers alone, which is the same shape as the hole this row is about:"; grep 'UNDERSTOOD=NO' "$T/c.txt" | sed 's/^/    /'; RC=1; fi
-if [ -n "$cop" ] && [ "$cop" -le "$COPY_CEILING" ]; then echo "  arm 5 PASS: $cop owned reading(s) are a copy of something else, at or under the measured ceiling $COPY_CEILING -- the NAMED residual the spill record of section 6.5 must carry, held so it cannot grow in silence"
-else echo "  arm 5 RED: the copy residual is ${cop:-?} against a ceiling of $COPY_CEILING -- a register holding an untagged copy across a collection is a root the collector cannot fix up"; RC=1; fi
+fbad=""; fall=""
+declare -A FCEIL FHAVE
+for kv in $COPY_FILE_CEILINGS; do FCEIL["${kv%%=*}"]="${kv#*=}"; done
+while read -r fnm fn; do [ -n "$fnm" ] && FHAVE["$fnm"]="$fn"; done < <(grep -a -E '^ *COPY .*total=' "$T/c.txt" | sed -E 's/^ *COPY w\.(.*)\.s total=([0-9]+).*/\1 \2/')
+for fnm in "${!FHAVE[@]}"; do [ -n "${FCEIL[$fnm]+x}" ] || fbad="$fbad $fnm=${FHAVE[$fnm]}(no declared ceiling)"; done
+for fnm in "${!FCEIL[@]}"; do have="${FHAVE[$fnm]:-0}"; fall="$fall $fnm=$have/${FCEIL[$fnm]}"; [ "$have" -le "${FCEIL[$fnm]}" ] || fbad="$fbad $fnm=$have>${FCEIL[$fnm]}"; done
+if [ -n "$cop" ] && [ "$cop" -le "$COPY_CEILING" ] && [ -z "$fbad" ]; then echo "  arm 5 PASS: $cop owned reading(s) are a copy of something else, at or under the measured ceiling $COPY_CEILING and every file at or under its own ceiling (${fall# }) -- the NAMED residual the spill record of section 6.5 must carry, held so it cannot grow in silence"
+else
+  { [ -n "$cop" ] && [ "$cop" -le "$COPY_CEILING" ]; } || echo "  arm 5 RED: the copy residual is ${cop:-?} against a ceiling of $COPY_CEILING -- a register holding an untagged copy across a collection is a root the collector cannot fix up"
+  [ -z "$fbad" ] || echo "  arm 5 RED: a file is over its own ceiling or has none:${fbad} -- a fall in one file does not pay for a rise in another; re-cut the file's ceiling with the landing that raised it, the delta named (ARCH-GC 6.5e)"
+  RC=1
+fi
 
 badq=0; qpop=""
 for w in w.icn w.sno w.pl w.sc w.raku w.pas w.reb w.defer.sno; do
