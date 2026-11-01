@@ -29,7 +29,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
   --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores while it waits, Lon's terminal waiting
   --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
-  --health                             --check, --memory-check, --cpu-check and --tmp-check together; rc the worst
+  --proc-check                         RED by name: a fleet process orphaned to the user manager 10 min or more, box memory pressure avg60 >= 10, a seat scope at 90%% of memory.high
+  --health                             --check, --memory-check, --cpu-check, --tmp-check and --proc-check together; rc the worst
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
@@ -684,11 +685,68 @@ def tmp_check():
     return 0
 
 
+def proc_check():
+    """THE PROCESS AND MEMORY ARM OF THE HEALTH CHECK (the coo 2026-11-01, Lon: "So does you periodic check look for orphans and such so it can find this
+    problem sooner rather than later?" -- it did not: at 14:4x CST three XSB smoke trees orphaned by timed-out assign probes ran on reparented to the user
+    manager, one `as` at 1.5 GB, the coo's scope sat at 3.3 of its 4 GB memory.high, and box memory pressure read 37 percent with no arm red). RED by name:
+    every fleet process (a harness script, a scrip, as, gcc, make, a runner) whose parent is the user manager and that is ten minutes old or more, not one of
+    the standing daemons (the loop, tier1, the seat watch, a swap, the cron census, sweep and git maintenance) -- its seat read from the cgroup it kept;
+    box memory pressure some avg60 of 10 or more; and every seat scope at 90 percent or more of its memory.high (the scope the kernel is throttling)."""
+    root = arg("--root", CG)
+    live = seat_map(arg("--seats", SEATS))
+    by_scope = {os.path.basename(sc): who for who, (cls, sc) in live.items()}
+    gaps = []
+    psf = arg("--ps", "")
+    if psf:
+        txt = rd(psf)
+    else:
+        txt = subprocess.run(["ps", "-eo", "pid=,ppid=,etimes=,rss=,cgroup:400=,args="], capture_output=True, text=True).stdout
+    rows = []
+    for l in txt.splitlines():
+        f = l.split(None, 5)
+        if len(f) == 6 and f[0].isdigit():
+            rows.append(f)
+    mgr = {r[0] for r in rows if r[5].startswith("/usr/lib/systemd/systemd --user")}
+    work = re.compile(r"(/harness/scripts/|/SCRIP/scrip\b|/scrip --|\bas --64\b|^(\S*/)?gcc\b|^(\S*/)?make\b|corpus_suite_harness|^timeout )")
+    keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh)")
+    orphans = []
+    for pid, ppid, et, rss, cg, a in rows:
+        if ppid in mgr and int(et) >= 600 and work.search(a) and not keep.search(a):
+            sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
+            who = by_scope.get(sc) or ("grader" if "s4e-grader" in cg or "s4e-mem-" in cg else "batch" if "s4e-batch" in cg else "?")
+            orphans.append((int(rss), pid, who, int(et), a))
+    for rss, pid, who, et, a in sorted(orphans, reverse=True):
+        gaps.append("orphan pid %s of seat %s, %d min old, %d MB, parent gone (reparented to the user manager): %s -- its seat kills it by pid" % (pid, who, et // 60, rss // 1024, a[:110]))
+    mp = None
+    for l in rd(arg("--pressure-memory", "/proc/pressure/memory")).splitlines():
+        if l.startswith("some "):
+            for kv in l.split()[1:]:
+                if kv.startswith("avg60="):
+                    try:
+                        mp = float(kv[6:])
+                    except ValueError:
+                        pass
+    if mp is not None and mp >= 10:
+        gaps.append("box memory pressure some avg60 %.1f (10 is the bar): tasks stalled on memory %.0f percent of the last minute" % (mp, mp))
+    term = os.path.join(root, "user@1000.service", "app.slice", "app-org.gnome.Terminal.slice")
+    for d in sorted(glob.glob(os.path.join(term, "*.scope"))):
+        cur, high = rd(os.path.join(d, "memory.current")).strip(), rd(os.path.join(d, "memory.high")).strip()
+        if cur.isdigit() and high.isdigit() and int(high) > 0 and int(cur) >= 0.9 * int(high):
+            gaps.append("seat %s's scope holds %d of its %d MB memory.high (90 percent is the bar): the kernel throttles it -- find what it is running" % (by_scope.get(os.path.basename(d), "?"), int(cur) // 1048576, int(high) // 1048576))
+    print("PROC CHECK orphans=%d mem_pressure_avg60=%s gaps=%d" % (len(orphans), "%.1f" % mp if mp is not None else "-", len(gaps)))
+    if gaps:
+        for g in gaps:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN no orphaned fleet process, box memory pressure under 10, every seat scope under 90 percent of its memory.high")
+    return 0
+
+
 def health():
     """--health: the ledger (--check), memory and /tmp (--memory-check), CPU (--cpu-check) and each seat's /tmp (--tmp-check) in one call; rc is the worst of the three, so a GREEN arm
     can never stand in for a RED one (the 2026-11-01 lesson: --check alone read GREEN on a saturated box)."""
     rcs = []
-    for fn in (check, memory_check, cpu_check, tmp_check):
+    for fn in (check, memory_check, cpu_check, tmp_check, proc_check):
         rcs.append(fn())
     return 2 if 2 in rcs else (1 if 1 in rcs else 0)
 
@@ -701,6 +759,8 @@ def main():
         return acceptance(int(arg("--acceptance", "86400")))
     if "--health" in av:
         return health()
+    if "--proc-check" in av:
+        return proc_check()
     if "--tmp-check" in av:
         return tmp_check()
     if "--cpu-check" in av:

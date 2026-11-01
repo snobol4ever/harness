@@ -133,6 +133,39 @@ tmpplant "$T/tmp_ok"   3000  100
 tarm "FAIL-ONCE: a seat over its /tmp budget is red BY NAME with its size"          "$T/tmp_over" 1 "seat a holds 19.5G of /tmp"
 tarm "FAIL-ONCE: the largest holder is named first"                                  "$T/tmp_over" 1 "RED  seat a holds"
 tarm "control: seats within budget read GREEN and nobody is named"                   "$T/tmp_ok"   0 "GREEN every seat" "RED"
-n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the /tmp arm too"; else echo "  RED  ARM $n: --health does not run --tmp-check"; fail=1; fi
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all four; the /tmp arm names each seat over its budget"; exit 0
+n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check' "$CENSUS"; then echo "  ok   ARM $n: --health runs the /tmp arm too"; else echo "  RED  ARM $n: --health does not run --tmp-check"; fail=1; fi
+# THE PROCESS AND MEMORY ARMS (the coo 2026-11-01, Lon: "So does you periodic check look for orphans and such so it can find this problem sooner rather than
+# later?"): planted ps lists, cgroup trees and pressure files prove --proc-check names an orphaned fleet run by seat, a stalled box and a throttled scope,
+# and leaves a young orphan, a standing daemon and a child with a live parent alone.
+procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60>
+  local cg="$1/cg/user@1000.service/app.slice/app-org.gnome.Terminal.slice" sl="0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice"
+  mkdir -p "$cg/vte-a.scope" "$cg/vte-b.scope"
+  echo $(( $3 * 1048576 )) > "$cg/vte-a.scope/memory.current"; echo $(( 4096 * 1048576 )) > "$cg/vte-a.scope/memory.high"
+  echo $(( 1000 * 1048576 )) > "$cg/vte-b.scope/memory.current"; echo $(( 4096 * 1048576 )) > "$cg/vte-b.scope/memory.high"
+  printf 'some avg10=%s avg60=%s avg300=%s total=1\nfull avg10=0 avg60=0 avg300=0 total=0\n' "$4" "$4" "$4" > "$1/pmem"
+  { printf 'utc\tseat\tclass\tscope\tpid\tstart\tweighted\n'
+    printf 'x\ta\tSEAT\t/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-a.scope\t1\tx\tyes\n'
+    printf 'x\tb\tSEAT\t/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-b.scope\t1\tx\tyes\n'; } > "$1/SEATS.tsv"
+  { echo "2575 1 99999 9000 0::/user.slice/user-1000.slice/user@1000.service/init.scope /usr/lib/systemd/systemd --user"
+    echo "500 2575 $2 1572864 $sl/vte-a.scope timeout -k 10 1500 python3 /home/claude_a/harness/scripts/corpus_suite_harness.py smoke nl write"
+    echo "510 2575 60 2000 $sl/vte-b.scope /home/claude_b/SCRIP/scrip --run young.pl"
+    echo "520 2575 99999 4000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-grader.slice/run-x.scope bash loop8.sh"
+    echo "530 500 $2 9000 $sl/vte-a.scope /home/claude_a/SCRIP/scrip --run child.pl"; } > "$1/ps.txt"
+}
+parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --proc-check --ps "$2/ps.txt" --root "$2/cg" --seats "$2/SEATS.tsv" --pressure-memory "$2/pmem" 2>&1)"; local rc=$?
+  if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
+  else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
+}
+procplant "$T/proc_bad" 1500 3900 37.50
+procplant "$T/proc_ok"  1500 1000 0.50; sed -i '/^500 /d' "$T/proc_ok/ps.txt"
+procplant "$T/proc_young" 300 1000 0.50
+parm "FAIL-ONCE: a fleet run orphaned to the user manager 25 min is red BY SEAT"           "$T/proc_bad"   1 "orphan pid 500 of seat a, 25 min old, 1536 MB"
+parm "FAIL-ONCE: box memory pressure 37.5 over a minute is red"                             "$T/proc_bad"   1 "box memory pressure some avg60 37.5"
+parm "FAIL-ONCE: a seat scope at 3900 of 4096 MB memory.high is red BY SEAT"                "$T/proc_bad"   1 "seat a's scope holds 3900 of its 4096 MB"
+parm "control: a child whose parent lives, a standing daemon and a young orphan are not named" "$T/proc_bad" 1 "orphans=1 " "pid 5[123]0"
+parm "control: an orphan under ten minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
+parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"
+n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check, proc_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all five; the /tmp arm names each seat over its budget; the process arm names an orphaned run, a stalled box and a throttled scope"; exit 0
 else echo "GATE FAIL(1) [$G]: see the RED arms"; exit 1; fi
