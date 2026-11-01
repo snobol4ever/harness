@@ -166,6 +166,23 @@ parm "FAIL-ONCE: a seat scope at 3900 of 4096 MB memory.high is red BY SEAT"    
 parm "control: a child whose parent lives, a standing daemon and a young orphan are not named" "$T/proc_bad" 1 "orphans=1 " "pid 5[123]0"
 parm "control: an orphan under ten minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"
-n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check, proc_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all five; the /tmp arm names each seat over its budget; the process arm names an orphaned run, a stalled box and a throttled scope"; exit 0
+n=$((n + 1)); if grep -q 'tmp_check, proc_check' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
+# THE HEALTH CHECK OF THE HEALTH CHECK (Lon 2026-11-01: "add a health check to the healt check script"): --watch-check reds when a watcher is gone or stale.
+watchplant() {   # watchplant <dir> <fleet_last_age_s> <with_tier1:1|0> [STOPfile]
+  mkdir -p "$1/v"; echo $(( $(date +%s) - $2 )) > "$1/v/fleet.last"; [ -n "${4:-}" ] && touch "$1/v/$4"
+  { echo "2575 1 99999 9000 0::/x /usr/lib/systemd/systemd --user"; echo "600 2575 99999 4000 0::/x bash loop8.sh"; echo "601 2575 99999 4000 0::/x /usr/bin/bash seatwatch.sh"
+    [ "$3" = 1 ] && echo "602 2575 99999 4000 0::/x /usr/bin/bash tier1.sh"; } > "$1/ps.txt"
+}
+warm() {   # warm <name> <dir> <want_rc> <must_match> [must_not_match]
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --watch-check --ps "$2/ps.txt" --verifier-dir "$2/v" 2>&1)"; local rc=$?
+  if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
+  else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
+}
+watchplant "$T/w_dead"  60 0; watchplant "$T/w_stale" 1800 1; watchplant "$T/w_ok" 60 1; watchplant "$T/w_stop" 60 0 STOP1
+warm "FAIL-ONCE: tier1 (the fleet watch) with no process and no STOP1 is red by name" "$T/w_dead"  1 "tier1 and its fleet watch is NOT RUNNING"
+warm "FAIL-ONCE: a fleet watch whose last pass is 30 min old is red"                "$T/w_stale" 1 "last pass is 30 min old"
+warm "control: every watcher running and a fresh pass read GREEN"                    "$T/w_ok"    0 "GREEN the loop" "RED"
+warm "control: a watcher stopped on purpose (its STOP file) is not red"              "$T/w_stop"  0 "GREEN the loop" "RED"
+n=$((n + 1)); if grep -q 'proc_check, watch_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the watch arm too"; else echo "  RED  ARM $n: --health does not run --watch-check"; fail=1; fi
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all six (the watchers themselves checked); the /tmp arm names each seat over its budget; the process arm names an orphaned run, a stalled box and a throttled scope"; exit 0
 else echo "GATE FAIL(1) [$G]: see the RED arms"; exit 1; fi

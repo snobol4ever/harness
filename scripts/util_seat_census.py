@@ -30,7 +30,8 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores while it waits, Lon's terminal waiting
   --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
   --proc-check                         RED by name: a fleet process orphaned to the user manager 10 min or more, box memory pressure avg60 >= 10, a seat scope at 90%% of memory.high
-  --health                             --check, --memory-check, --cpu-check, --tmp-check and --proc-check together; rc the worst
+  --watch-check                        RED when the coo's loop, tier1 (the fleet watch) or the seat watch is not running, or the fleet watch has not passed in 15 min
+  --health                             --check, --memory-check, --cpu-check, --tmp-check, --proc-check and --watch-check together; rc the worst
   --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
@@ -742,11 +743,39 @@ def proc_check():
     return 0
 
 
+def watch_check():
+    """THE HEALTH CHECK OF THE HEALTH CHECK (Lon 2026-11-01: "I have a novel idea, add a health check to the healt check script."): the watchers that run
+    the checks between the coo's turns can die silently (a reboot killed the loop for 11 h on 10-17). RED by name when the coo's loop (bash loop8.sh), tier1
+    (bash tier1.sh, which carries the fleet watch) or the seat watch (bash seatwatch.sh) has no process and no STOP file in the verifier directory, and when
+    the fleet watch's last pass (fleet.last) is over fifteen minutes old."""
+    vd = arg("--verifier-dir", "/home/claude_coo/.scratch/verifier")
+    psf = arg("--ps", "")
+    txt = rd(psf) if psf else subprocess.run(["ps", "-eo", "pid=,ppid=,etimes=,rss=,cgroup:400=,args="], capture_output=True, text=True).stdout
+    args = [l.split(None, 5)[5] for l in txt.splitlines() if len(l.split(None, 5)) == 6]
+    gaps = []
+    for name, script, stop in (("the loop", "loop8.sh", "STOP"), ("tier1 and its fleet watch", "tier1.sh", "STOP1"), ("the seat watch", "seatwatch.sh", "STOPSW")):
+        alive = any(re.match(r"^(\S*/)?bash %s$" % re.escape(script), a.strip()) for a in args)
+        if not alive and not os.path.exists(os.path.join(vd, stop)):
+            gaps.append("%s is NOT RUNNING (no bash %s, no %s file in %s): restart it" % (name, script, stop, vd))
+    fl = rd(os.path.join(vd, "fleet.last")).strip()
+    if not fl.isdigit():
+        gaps.append("the fleet watch has never recorded a pass (no %s/fleet.last)" % vd)
+    elif time.time() - int(fl) > 900:
+        gaps.append("the fleet watch's last pass is %d min old (15 is the bar): tier1's watch loop is stuck or dead" % ((time.time() - int(fl)) // 60))
+    print("WATCH CHECK verifier=%s gaps=%d" % (vd, len(gaps)))
+    if gaps:
+        for g in gaps:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN the loop, tier1 with its fleet watch and the seat watch are running, and the fleet watch passed within fifteen minutes")
+    return 0
+
+
 def health():
     """--health: the ledger (--check), memory and /tmp (--memory-check), CPU (--cpu-check) and each seat's /tmp (--tmp-check) in one call; rc is the worst of the three, so a GREEN arm
     can never stand in for a RED one (the 2026-11-01 lesson: --check alone read GREEN on a saturated box)."""
     rcs = []
-    for fn in (check, memory_check, cpu_check, tmp_check, proc_check):
+    for fn in (check, memory_check, cpu_check, tmp_check, proc_check, watch_check):
         rcs.append(fn())
     return 2 if 2 in rcs else (1 if 1 in rcs else 0)
 
@@ -759,6 +788,8 @@ def main():
         return acceptance(int(arg("--acceptance", "86400")))
     if "--health" in av:
         return health()
+    if "--watch-check" in av:
+        return watch_check()
     if "--proc-check" in av:
         return proc_check()
     if "--tmp-check" in av:
