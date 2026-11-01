@@ -45,6 +45,7 @@ cd "$ROOT"
 fail=0
 PL_BOX_FILES="
 src/templates/bb/bb_cut.cpp
+src/templates/bb/bb_call_pl_block.cpp
 src/templates/bb/bb_fail.cpp
 "
 PL_HELPER_FILES="
