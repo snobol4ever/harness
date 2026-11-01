@@ -14,6 +14,7 @@
 # A relocation against a named symbol is compared by symbol name and addend. A defined symbol in one object only is a difference unless it is a moved one ("vanished") or the
 # object itself is new. Prints "DIFF key symbol detail", "NEW-B key" (an object only the second tree has: not a failure), "ONLY-A key" (an object that vanished: a failure), then
 # "objects=N identical=N differing=M". rc 0 all kept symbols identical, rc 1 any difference or vanished object, rc 2 the instrument could not measure.
+import collections
 import os, re, struct, subprocess, sys
 
 SHF_GROUP, SHF_MERGE, SHF_STRINGS = 0x200, 0x10, 0x20
@@ -102,7 +103,8 @@ BR_RX = re.compile(r'^((?:j[a-z]+|call|jmp)q?\s+)[0-9a-f]+ (<.*>)$')
 CMT_RX = re.compile(r'\s+# [0-9a-f]+ <.*>$')
 
 
-def disasm(path, grouped, moved=()):
+def disasm(path, grouped, moved=(), localfn=None):
+    localfn = localfn or {}
     """{(section, function): [normalised instruction text]} for the code sections that are not COMDAT group members: addresses dropped, a branch or call target kept as its <symbol+offset>."""
     r = subprocess.run(['objdump', '-d', '-r', '--no-show-raw-insn', '-C', path], capture_output=True, text=True)
     if r.returncode != 0:
@@ -118,9 +120,10 @@ def disasm(path, grouped, moved=()):
             if sec in grouped:
                 cur = None
                 continue
-            k = (sec, m.group(1))
+            nm0 = localfn.get(m.group(1), m.group(1))
+            k = (sec, nm0)
             seen[k] = seen.get(k, 0) + 1
-            cur = funcs.setdefault((sec, m.group(1), seen[k]), [])
+            cur = funcs.setdefault((sec, nm0, seen[k]), [])
             continue
         if cur is None:
             continue
@@ -144,6 +147,9 @@ def disasm(path, grouped, moved=()):
         b = BR_RX.match(t)
         if b:
             t = b.group(1) + b.group(2)
+            tl = re.match(r'^(\S+\s+)<(.+?)(\+0x[0-9a-f]+)?>$', t)
+            if tl and tl.group(2) in localfn:
+                t = tl.group(1) + '<' + localfn[tl.group(2)] + (tl.group(3) or '') + '>'
             mm = re.match(r'^(call\s+)<([A-Za-z_]\w*)>$', t)
             if mm and mm.group(2) in moved:
                 t = mm.group(1) + mm.group(2)   # R5-PRIME (b): a call into a moved function reads as the symbol, local copy or compiled
@@ -253,17 +259,28 @@ def canon(path, moved):
     e = Elf(path)
     out = {}
     relocs = {}
+    refs = collections.Counter()
+    unref = set()
     for s in e.sec:
         if s['type'] == SHT_RELA and e.kept(e.sec[s['info']]):
             b = e.data(s)
-            relocs.setdefault(s['info'], []).extend(struct.unpack_from('<QQq', b, k * 24) for k in range(len(b) // 24))
+            rs = [struct.unpack_from('<QQq', b, k * 24) for k in range(len(b) // 24)]
+            relocs.setdefault(s['info'], []).extend(rs)
+            for r in rs:
+                refs[r[1] >> 32] += 1
     bysec = {}
-    for y in e.syms:
+    for idx, y in enumerate(e.syms):
         t = y['info'] & 0xf
         if t in (1, 2) and 0 < y['shndx'] < len(e.sec) and e.kept(e.sec[y['shndx']]) and not (e.sec[y['shndx']]['flags'] & SHF_MERGE):
             bysec.setdefault(y['shndx'], []).append(y)
+            if t == 1 and (y['info'] >> 4) in (0, 2) and refs[idx] == 0 and not (e.sec[y['shndx']]['flags'] & 4):
+                unref.add((e.sec[y['shndx']]['name'], y['dem'], (y['info'] >> 4) == 0))
     grouped = {x['name'] for x in e.sec if x['flags'] & SHF_GROUP}
-    code, starts = disasm(path, grouped, moved)
+    localfn = {}
+    for y in e.syms:
+        if (y['info'] & 0xf) == 2 and (y['info'] >> 4) == 0 and '(' in y['dem']:
+            localfn[y['dem']] = y['dem'].split('(', 1)[0]
+    code, starts = disasm(path, grouped, moved, localfn)
     import bisect
 
     def keep_reloc(r):
@@ -280,7 +297,7 @@ def canon(path, moved):
         s = e.sec[si]
         body = e.data(s)
         for y in ys:
-            dem = y['dem']
+            dem = localfn.get(y['dem'], y['dem'])
             if is_moved(dem, moved):
                 continue
             lo, hi = y['value'], y['value'] + y['size']
@@ -298,6 +315,8 @@ def canon(path, moved):
         if is_moved(nm, moved):
             continue
         out[(sec, nm, k)] = (('insns', tuple(insns)), rl_of.get((sec, nm), ()))
+    canon.unref = getattr(canon, 'unref', {})
+    canon.unref[path] = unref
     return out
 
 
@@ -362,6 +381,7 @@ def main(argv):
         collect(argv[3], 'out', A)
         collect(argv[4], 'out', B)
     n = same = diff = gone = lineonly = realigned_objs = 0
+    unref_gone = collections.Counter()
     lines = []
     for key in sorted(set(A) | set(B)):
         if key not in A:
@@ -380,10 +400,17 @@ def main(argv):
         bad = []
         deltas = set()
         pending = {}
+        ua, ub = canon.unref.get(A[key], set()), canon.unref.get(B[key], set())
         for k in sorted(set(ca) | set(cb), key=str):
             if k not in cb:
+                if k in ua:
+                    unref_gone[k[1]] += 1
+                    continue
                 bad.append((k, 'present in the first object only (vanished, not a moved function)'))
             elif k not in ca:
+                if k in ub:
+                    unref_gone[k[1]] += 1
+                    continue
                 bad.append((k, 'present in the second object only (appeared)'))
             elif ca[k] != cb[k]:
                 (xa, ra), (xb, rb) = ca[k], cb[k]
@@ -413,7 +440,7 @@ def main(argv):
             same += 1
     if lines:
         print('\n'.join(lines))
-    print('objects=%d identical=%d differing=%d (of the identical, %d differ only in __LINE__ immediates that moved with an include block, %d only in a caller frame realigned by 8 for a moved callee)' % (n, same, diff, lineonly, realigned_objs))
+    print('objects=%d identical=%d differing=%d (of the identical, %d differ only in __LINE__ immediates that moved with an include block, %d only in a caller frame realigned by 8 for a moved callee%s)' % (n, same, diff, lineonly, realigned_objs, (', unreferenced static constants that an include no longer brings: ' + ' '.join('%s x%d' % kv for kv in sorted(unref_gone.items()))) if unref_gone else ''))
     return 1 if diff or gone else 0
 
 

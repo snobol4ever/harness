@@ -74,9 +74,9 @@ WANT='[[1,2],[3],[4],[5]]'
 fail=0
 # ⛔ The absence of the cure is a RED, never a refusal. An earlier draft refused (rc=2) here, which
 # would have reported a REVERTED emitter as "cannot measure" -- the one case this gate exists to catch.
-if ! grep -q 'bb_label_name_set' "$ROOT/src/emitter/emit.h"; then
-    echo "  ✗ LOCK 0: bb_label_name_set() is absent from emit.h -- the cure has been reverted or removed"; fail=1
-else echo "  ✅ LOCK 0: the cure (bb_label_name_set) is present in emit.h"; fi
+if ! grep -q 'bb_label_name_set' "$ROOT/src/emitter/emit.cpp" "$ROOT/src/emitter/emit.h" "$ROOT/src/emitter/bb_label.h" 2>/dev/null; then
+    echo "  ✗ LOCK 0: bb_label_name_set() is absent from the emitter -- the cure has been reverted or removed"; fail=1
+else echo "  ✅ LOCK 0: the cure (bb_label_name_set) is present in the emitter (emit.cpp since headers step 3; emit.h before)"; fi
 # ---- LOCK 1: no raw truncating write into a label name field -------------------------------------
 raw=$(grep -nE 'vsnprintf[[:space:]]*\([[:space:]]*lbl->name|strncpy[[:space:]]*\([[:space:]]*lbl\.name' \
         "$ROOT/src/emitter/emit.cpp" "$ROOT/src/emitter/emit.h" 2>/dev/null)

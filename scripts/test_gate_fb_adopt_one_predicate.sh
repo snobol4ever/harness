@@ -25,7 +25,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT" || exit 1
-DEF_FILE="src/emitter/emit.h"
+DEF_FILE="src/emitter/emit_regime.h"; [ -f "$DEF_FILE" ] || DEF_FILE="src/emitter/emit.h"
 DEF_FN="emit_heap_fb_adopt"
 echo "=== ζ adopt-condition single-predicate gate (ZETA-FB-3) ==="
 if ! grep -q "int $DEF_FN(void)" "$DEF_FILE" 2>/dev/null; then

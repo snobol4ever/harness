@@ -9,7 +9,7 @@ ir/ct_vec.h	the compile-time vector of every compile-time object
 ir/ast.h	the pruned parse tree, every parser's and lowerer's
 runtime/core/name_t.h	the name cell
 runtime/rt/rt_diag.h	the six-line diagnostic switch
-templates/bb/bb_template_common.h	what every template reads
 emitter/emit_state.h	the emitter state every template reads (g_emit and the _ macro); its fan-in is the template count by construction
 emitter/bb_label.h	the labels every template reads
 templates/x86/x86_ops.h	the encoder's API every template calls
+emitter/emit_str.h	the text-composition forms every template is written in (IF, IF_M3, IF_M4, FOR, emit_for, emit_seq and the emit_str.cpp byte helpers); its fan-in is the template count by construction (headers step 3, the cto, 2026-10-31; the preamble bb_template_common.h it replaces in this set is deleted)
