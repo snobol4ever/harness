@@ -9,7 +9,7 @@
 # macro did not, so a leaf that bounded its index by FH_N before touching g_fh (pl_sp_count, pl_sp_nth,
 # pl_sp_check) read a length of 0 and the enumeration had no streams at all. The first
 # stream_property(S, alias(user_input)) failed; every later one, after some write had initialized the
-# table, answered. FH_N now initializes exactly as g_fh does (driver_private.h).
+# table, answered. FH_N now initializes exactly as g_fh does (driver_globals.h, the file-handle table's home since headers step 6 B1).
 #
 # ⛔ The witness asks its first stream_property BEFORE writing anything: a write first would initialize the
 # table and the gate would read green on the broken binary. The lines are the ones swipl 9 and gprolog 1.4.5
