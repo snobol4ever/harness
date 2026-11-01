@@ -65,6 +65,7 @@ test_gate_area_smoke_grades_gimpel_drivers_the_boards_way.sh	WIRED	-	-	-
 test_gate_area_smoke_grades_ipl_entries_the_boards_way.sh	WIRED	-	-	-
 test_gate_area_smoke_reads_the_attribute_rows.sh	WIRED	-	-	-
 test_gate_banner_prints_a_verdict_word_and_a_ruled_grid.sh	WIRED	-	-	-
+test_gate_batch_scripts_run_in_the_batch_slice.sh	WIRED	-	-	-
 test_gate_baton_donewhen_reads_its_runner_rc.sh	WIRED	-	-	-
 test_gate_baton_donewhen_runnable.sh	WIRED	-	-	-
 test_gate_bb_block_label_prefix.sh	WIRED	-	-	-
@@ -79,6 +80,7 @@ test_gate_blocking_set_records_the_build_behaviour_ledger_before_the_fan_out.sh	
 test_gate_blocking_set_shards_agree_with_sequential.sh	WIRED	-	-	-
 test_gate_board_population_floor.sh	WIRED	-	-	-
 test_gate_boards_refuse_when_the_binary_moves.sh	WIRED	-	-	-
+test_gate_bootstrap_parse_stage_ir_identity.sh	WIRED	-	-	-
 test_gate_bootstrap_parsers_define_no_functions.sh	WIRED	-	-	-
 test_gate_box_cell_shapes_inc_is_current.sh	WIRED	-	-	-
 test_gate_build_freshness_is_behavioural.sh	WIRED	-	-	-
@@ -452,6 +454,7 @@ test_gate_no_bench_kernel_qualifies_for_gva_demotion.sh	WIRED	-	-	-
 test_gate_no_c_to_bb.sh	WIRED	-	-	-
 test_gate_no_c_to_bb_ratchet.sh	WIRED	-	-	-
 test_gate_no_handencoded_bytes.sh	WIRED	-	-	-
+test_gate_no_header_reaches_more_units_than_its_users.sh	WIRED	-	-	-
 test_gate_no_implicit_declarations.sh	WIRED	-	-	-
 test_gate_no_language_discriminator_in_the_runtime.sh	WIRED	-	-	-
 test_gate_no_library_is_ungradable_and_every_container_names_its_measurement.sh	WIRED	-	-	-
@@ -1456,7 +1459,6 @@ test_gate_baton_donewhen_runnable_live.sh	RULING	reads the LIVE postoffice: grad
 test_gate_baton_next_blocks.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
 test_gate_baton_one_next_block.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
 test_gate_baton_state_header_single_record.sh	RULING	reads the LIVE postoffice: grades rows sixteen seats are editing right now, so it reds on a dirty fleet BY DESIGN (ceo ruling 2026-09-03, stated verbatim in the Makefile test-postoffice header)	ceo	2026-09-03
-test_gate_bootstrap_parse_stage_ir_identity.sh	RULING	a landing gate, not a standing one: it compares a changed build to a parent build's outputs CAPTURED under the untracked out/ir_identity before the change, so it refuses rc=2 with no capture and its full-corpus pass is minutes, past preflight's 5 s arm ceiling; the stage-1 row's DONE-WHEN calls it by name once it exists (ceo CEO-1571)	hq_snocone	2026-10-09T01:29Z
 test_gate_coo_loop_runs_tests_side_by_side.sh	RULING	the CEO-2068 row's DONE-WHEN, not a code property: it reads the coo loop's LIVE rr=1 readings in progress/results.tsv over the last 6 h, so its verdict depends on the loop and the box load (above PAR_LOAD the pool rightly narrows to width 1 and no overlap exists); it reds with no code at fault and belongs out of make test (coo 2026-10-31, on the ceo's ratchet note)	coo	2026-10-31T18:41Z
 test_gate_every_runner_passes_the_declared_heap_and_stack.sh	RULING	CEO-1501 (2) (ceo, 2026-10-04): a 22-minute single shard in the blocking set raises every seat's floor for an instrument that moves only when a runner moves; moved to make test-boards, the coo loop's recipe. Half (a), test_gate_no_runner_types_a_size_or_sets_the_window.sh, stays WIRED in test-sequential. A seat that changes a runner runs it standalone as a touched gate.	coo	2026-10-04T18:16Z
 test_gate_frame_homes_agree_with_lons_tests.sh	RULING	CEO-1865: the DONE-WHEN of zetas-every-rbp-home-is-one-lons-tests-force-ceo-1865; red by design until the census path test is calibrated and the compiler's homes agree	ceo	2026-10-21T22:04Z
@@ -1467,7 +1469,6 @@ test_gate_gc_the_spine_walk_is_told_its_cells.sh	RULING	step 4b gate, red by des
 test_gate_icon_gc_share_named_and_rungs_clean_under_forced_collection.sh	RULING	The DONE-WHEN of row icon-gc-the-icon-share-of-the-unmapped-slot-population-censused-by-name-and-the-master-clean-at-one-megabyte, and a multi-minute LANE gate hq_icon runs per landing: it materializes 826 entries, collect-censuses them at EVERY band point, then grades the rungs in both modes at each point. MODE line 2 CONDITION 2 -- the blocking set is 367 essentially serial arms and is the shared resource that does not scale with seats, so adding a multi-minute arm to it is the coo's call and not this lane's. Same shape and same reason as the snocone twin already declared here.	hq_icon	2026-09-20T22:16Z
 test_gate_icon_rungs_per_entry_identity.sh	RULING	CEO-547 (ceo, 2026-09-11, on the cfo ECONOMY finding), EXECUTED by hq_V 2026-09-12: it runs the corpus Icon rungs, so ONE RUNNER, ONE BOARD (CEO-523) correctly refuses it rc=2 to every seat but the coo -- wired, it asserted nothing for two days and made make test unrunnable for twelve of thirteen seats. Moved to the coo pass (make test-boards). The comparison is UNWEAKENED and proven on the coo own recorded board of this tree: examined=1669 regressions=0, and FAIL_ONCE rc=1.	hq_V	2026-09-12T13:39Z
 test_gate_inf_census_spread_takes_statements_from_scope_11.sh	RULING	the infinite_snobol4 generator's coverage census arm (CEO-2007, hq_dotnet c28656b): builds nothing, grades only util_inf_snobol4_coverage_census.py, runs when the census changes from the port HQs' roots, which hold no SCRIP	ceo	2026-10-29T16:26Z
-test_gate_no_header_reaches_more_units_than_its_users.sh	RULING	reporting at step 1a of the header split (ARCH-HEADER-SPLIT.md section 2, CEO-2032): it ratchets from header_fanin.baseline.tsv and reads the .d files of a built tree, so it is not in make test until step 7, when every arm reads 0	hq_templates	2026-10-30T16:09Z
 test_gate_no_spine_preallocation.sh	RULING	CEO-1855: red until frame_layout grants a slot only to an RBP home, a local that fails a test, or a frame word; the DONE-WHEN of the cto's row	ceo	2026-10-21T15:14Z
 test_gate_pas_whole_array_into_a_record_field_round_trips.sh	RULING	Proven RED before any cure exists (rc=1: localrec and ptrrec read 09899 where fpc -Miso reads bcdefghi, both modes, shipped arena, no stress) and therefore held OUT of the blocking set while red: wiring it would redden the landing verdict for all ten TENET seats over a defect none of them caused and only hq_pascal can cure, which is a fleet-wide cost this seat will not impose unilaterally. It is a reproducer, not an xfail -- the defect is rowed rank 0 as pascal-a-whole-array-assigned-into-a-record-field-reads-back-wrong-collapse-pack-and-the-dense-field-interior-to-one-authority, and the cure is a three-layer representation ruling handed to the ceo under CEO-1021. WHO WIRES IT: hq_pascal, in the same landing as the cure, at which point this RULING is deleted rather than amended; or the ceo sooner if they want the blocking set to carry the red now. NOTE it is named test_gate_pas_* so the make test-arena test_gate_gc_*.sh glob does NOT sweep it -- it genuinely runs nowhere until then, and that is the declared state rather than an accident.	hq_pascal	2026-09-20T20:54Z
 test_gate_pl_first_argument_indexing_survives_the_wake_up_lowering_as_swipl.sh	RULING	the witness of a minted row, RED until its row lands; the landing wires it into the Makefile and adopts it as WIRED (hq_prolog 2026-10-29)	hq_prolog	2026-10-29T16:13Z

@@ -46,12 +46,12 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; N=0
 ok() { N=$((N + 1)); echo "  ok   $*"; }
 bad() { N=$((N + 1)); echo "  RED  $*"; RC=1; }
-HDR=$(awk '$1 == "#define" && $2 == "PL_TR_HEADER_BYTES" {print $3}' "$ROOT/src/runtime/rt/rt_pl_trail.h")
-[ -n "$HDR" ] || { echo "GATE REFUSE(2) [$G]: no PL_TR_HEADER_BYTES in rt_pl_trail.h -- the fixture lays its root range out as the trail arena header does"; exit 2; }
+HDR=$(awk '$1 == "#define" && $2 == "PL_TR_HEADER_BYTES" {print $3}' "$ROOT/src/runtime/rt/pl_trail_layout.h")
+[ -n "$HDR" ] || { echo "GATE REFUSE(2) [$G]: no PL_TR_HEADER_BYTES in pl_trail_layout.h -- the fixture lays its root range out as the trail arena header does"; exit 2; }
 DTP=$(awk '$1 == "#define" && $2 == "DT_PCELL" {print $3}' "$ROOT/src/ir/descr_tags.inc")
-DTH=$(grep -oE 'DT_PCELL *= *0x[0-9A-Fa-f]+' "$ROOT/src/ir/descr.h" | grep -oE '0x[0-9A-Fa-f]+' | head -1)
-if [ "$DTP" = 0xC0 ] && [ "$DTH" = 0xC0 ]; then ok "(0) DT_PCELL is 0xC0 in descr_tags.inc and in descr.h"
-else bad "(0) the tag is not registered: descr_tags.inc says '${DTP:-absent}', descr.h says '${DTH:-absent}' (want 0xC0 in both)"; fi
+DTH=$(grep -oE 'DT_PCELL *= *0x[0-9A-Fa-f]+' "$ROOT/src/ir/descr_tags.h" | grep -oE '0x[0-9A-Fa-f]+' | head -1)
+if [ "$DTP" = 0xC0 ] && [ "$DTH" = 0xC0 ]; then ok "(0) DT_PCELL is 0xC0 in descr_tags.inc and in descr_tags.h"
+else bad "(0) the tag is not registered: descr_tags.inc says '${DTP:-absent}', descr_tags.h says '${DTH:-absent}' (want 0xC0 in both)"; fi
 cat > "$T/fx.c" <<'FXC'
 #include <stdio.h>
 #include <stdlib.h>

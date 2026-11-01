@@ -27,6 +27,7 @@ cat > "$W/h.c" <<'CEOF'
 #include <unistd.h>
 #include <sys/wait.h>
 #include "descr.h"
+#include "rt/pl_trail_layout.h"
 #include "rt/rt_pl_trail.h"
 extern DESCR_t rt_pl_dop_unify_c(DESCR_t *args, int nargs, pl_tr_ctx_t *cx);
 extern void *rt_ws_alloc_descr(size_t n);

@@ -57,8 +57,8 @@ int main(int argc, char **argv)
     return 0;
 }
 FXC
-HDR=$(awk '$1 == "#define" && $2 == "PL_TR_HEADER_BYTES" {print $3}' "$ROOT/src/runtime/rt/rt_pl_trail.h")
-[ -n "$HDR" ] || { echo "⛔ GATE REFUSE(2) [$G]: no PL_TR_HEADER_BYTES in rt_pl_trail.h -- the fixture lays its root range out as the trail arena header does"; exit 2; }
+HDR=$(awk '$1 == "#define" && $2 == "PL_TR_HEADER_BYTES" {print $3}' "$ROOT/src/runtime/rt/pl_trail_layout.h")
+[ -n "$HDR" ] || { echo "⛔ GATE REFUSE(2) [$G]: no PL_TR_HEADER_BYTES in pl_trail_layout.h -- the fixture lays its root range out as the trail arena header does"; exit 2; }
 gcc -O0 -g -DHDR="$HDR" -o "$T/fx" "$T/fx.c" -L "$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" 2> "$T/cc.err" || { sed -n 1,5p "$T/cc.err"; echo "⛔ GATE REFUSE(2) [$G]: the fixture did not build"; exit 2; }
 run() { env -u SCRIP_GC_ASSERT_FATAL "$@" > "$T/o.txt" 2> "$T/e.txt"; echo $?; }
 r=$(run "$T/fx" 1); n=$(grep -c '^\[ZGC-ASSERT\] DEAD-ASSERTED block kind=205/' "$T/e.txt")

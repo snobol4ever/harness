@@ -10,6 +10,7 @@
 #   util_header_fanin.py --ceiling         OVER <path> fanin=N users=M per header over the R4 ceiling, UMBRELLA <path> per umbrella, then
 #                                          "summary over=N umbrellas=M"
 #   util_header_fanin.py --unused          per unit the direct includes none of whose declarations the unit names, then "summary unused=N"
+#                                          (a data .inc -- an initializer, a table, a setting's source, renamed .inc at step 6A -- is spliced text, never counted)
 #   util_header_fanin.py --under PATH      with --unused or --bare: only the units under PATH (src/templates), the summary counts those only
 #   util_header_fanin.py --bare            per includer the quoted includes written as a bare name for a header in another directory, then
 #                                          "summary bare=N"
@@ -273,8 +274,8 @@ def struct_fields(raw):
     """typedef name -> {field type name: [field names]} for the typedef structs of a header, the extern instances (type, inst) including
     pointers, and record name -> its field names for every record whose BODY the header holds (a typedef struct or a bare struct tag)."""
     text = strip_strings(strip_comments(raw))
-    fields, inst, bodies = {}, [], {}
-    for m in re.finditer(r'typedef\s+struct\s*\w*\s*\{', text):
+    fields, inst, bodies, ptrs = {}, [], {}, []
+    for m in re.finditer(r'typedef\s+struct\s*(\w*)\s*\{', text):
         j = match_brace(text, m.end() - 1)
         tail = re.match(r'\s*(\w+)\s*;', text[j + 1:])
         if not tail:
@@ -284,12 +285,16 @@ def struct_fields(raw):
             d[f.group(1)].append(f.group(2))
         fields[tail.group(1)] = d
         bodies[tail.group(1)] = body_field_names(text[m.end():j])
+        if m.group(1):
+            bodies.setdefault(m.group(1), bodies[tail.group(1)])
     for m in re.finditer(r'(?<!typedef )\bstruct\s+(\w+)\s*\{', text):
         j = match_brace(text, m.end() - 1)
         bodies.setdefault(m.group(1), body_field_names(text[m.end():j]))
     for m in re.finditer(r'\bextern\s+(?:const\s+)?(?:struct\s+)?(\w+)\s*\**\s*(\w+)\s*;', text):
         inst.append((m.group(1), m.group(2)))
-    return fields, inst, bodies
+    for m in re.finditer(r'(?<=[;{])\s*(?:const\s+)?(?:struct\s+)?(\w+)\s*\*+\s*(\w+)\s*;', text):
+        ptrs.append((m.group(2), m.group(1)))
+    return fields, inst, bodies, ptrs
 
 
 class Tree:
@@ -358,12 +363,15 @@ class Tree:
 
     def member_paths(self):
         """header -> list of compiled regexes for the member paths that name the header: 'inst.field' when the field's type is the header's,
-        and 'inst->field' or 'inst.field' when the header holds the body of the record inst is (or points at) and field is one of its fields."""
-        fields, insts, bodies = {}, [], {}
+        and 'inst->field' or 'inst.field' when the header holds the body of the record inst is (or points at) and field is one of its fields;
+        and '->member->field' or '.member->field' when some record's member is a pointer at a record whose body the header holds and field is
+        one of its fields (the member path through a record's pointer member, step 7: aggregates.c reads k->u->type with u a DATINST_t pointer)."""
+        fields, insts, bodies, ptrs = {}, [], {}, set()
         for h in self.headers:
-            f, i, b = struct_fields(read(os.path.join(self.root, 'src', h)))
+            f, i, b, p = struct_fields(read(os.path.join(self.root, 'src', h)))
             fields.update(f)
             insts += i
+            ptrs.update(p)
             for nm, fl in b.items():
                 bodies.setdefault(nm, (h, fl))
         declares = {}
@@ -379,6 +387,10 @@ class Tree:
             if ty in bodies and bodies[ty][1]:
                 h, fl = bodies[ty]
                 out[h].append(re.compile(r'\b%s\s*(?:->|\.)\s*(?:%s)\b' % (re.escape(inst), '|'.join(sorted(re.escape(x) for x in fl)))))
+        for fld, ty in sorted(ptrs):
+            if ty in bodies and bodies[ty][1]:
+                h, fl = bodies[ty]
+                out[h].append(re.compile(r'(?:->|\.)\s*%s\s*->\s*(?:%s)\b' % (re.escape(fld), '|'.join(sorted(re.escape(x) for x in fl)))))
         return out
 
     def tokens(self, u):
@@ -451,6 +463,8 @@ class Tree:
         for u in self.units:
             bad = []
             for nm in self.unit_includes[u]:
+                if nm.endswith('.inc'):
+                    continue   # a data .inc is spliced text (step 6A renamed them to say so), not an interface a unit names (step 7)
                 for h in self.resolve(nm, self.unit_deps[u], u):
                     if not self.names(u, h) and not (os.path.splitext(h)[0] == os.path.splitext(u)[0]):
                         bad.append(h)
