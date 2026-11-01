@@ -9,10 +9,13 @@
 # a landing is graded against it.  Rewriting it from a post-sweep tree destroys the only
 # evidence that separates a cure from an evasion, and reads GREEN forever after.
 # CUT FROM: SCRIP 9208703c6-DIRTY  (forbidden_total=1182)
+# AMENDED 2026-11-01 (hq_collector, row gc-core-c-six-class-1-evasions-go-back-to-the-collected-heap-with-roots-...): the ROOTED-HEAP destinations gained rt_gcheap_alloc, the collected heap's own typed allocator
+# (a site converted rt_wsb_alloc -> rt_gcheap_alloc(HB_x, n) stays on the collected heap and was read as a rooted site vanishing: six false class-1 sites in core.c). THIS IS NOT A RE-CUT FROM A POST-SWEEP TREE: the rooted_heap
+# column below gains, per file, the rt_gcheap_alloc calls the CLEAN PRE-SWEEP commit 9208703c6 held (census run on git archive 9208703c6 src, new list minus old list): driver_data.c +1, aggregates.c +4, by_name_dispatch.c +4, core.c +5, pattern_match.c +2, gc_heap.c +5.
 # file	forbidden	rooted_heap	arena	mmap
 src/driver/csnobol4_shim.c	9	0	0	0
 src/driver/driver_call.c	0	2	0	0
-src/driver/driver_data.c	0	3	0	0
+src/driver/driver_data.c	0	4	0	0
 src/driver/polyglot.c	8	0	0	0
 src/driver/scrip.c	46	0	0	0
 src/driver/stmt_ast.c	14	0	0	0
@@ -71,17 +74,17 @@ src/parsers/snobol4/snobol4.tab.c	23	0	0	0
 src/parsers/snobol4/snobol4.y	23	0	0	0
 src/parsers/snocone/snocone_parse.tab.c	70	0	0	0
 src/parsers/snocone/snocone_parse.y	70	0	0	0
-src/runtime/aggregates.c	0	3	0	0
+src/runtime/aggregates.c	0	7	0	0
 src/runtime/bignum.c	0	3	0	0
 src/runtime/builtins/gen_runtime.c	1	0	0	0
-src/runtime/by_name_dispatch.c	43	192	0	0
-src/runtime/core/core.c	11	26	0	0
+src/runtime/by_name_dispatch.c	43	196	0	0
+src/runtime/core/core.c	11	31	0	0
 src/runtime/core/runtime_shim.h	1	0	0	0
 src/runtime/icn_extfn.c	0	2	0	0
 src/runtime/keywords.c	5	7	0	0
-src/runtime/pattern_match.c	1	15	0	0
+src/runtime/pattern_match.c	1	17	0	0
 src/runtime/rt/bbprof.c	3	0	0	0
-src/runtime/rt/gc_heap.c	12	2	0	1
+src/runtime/rt/gc_heap.c	12	7	0	1
 src/runtime/rt/pat_pool.c	0	0	0	1
 src/runtime/rt/portcount.c	5	0	0	0
 src/runtime/rt/porttrace.cpp	2	0	0	0

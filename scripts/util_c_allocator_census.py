@@ -10,8 +10,13 @@ generated flex/bison output included, because a generated file that is committed
 only counts the four names would read green on a tree where half the runtime quietly lives outside the
 collector."  The rule names THREE destinations and only one of them is right for a given site:
 
-  ROOTED-HEAP   rt_wsb_alloc / rt_ws_alloc_descr / rt_wsb_realloc / rt_pvec_alloc / rt_pvec_realloc / rt_pl_struct_alloc / rt_pm_struct_alloc -- anything the RUNNING PROGRAM can reach, walked like everything
+  ROOTED-HEAP   rt_gcheap_alloc / rt_wsb_alloc / rt_ws_alloc_descr / rt_wsb_realloc / rt_pvec_alloc / rt_pvec_realloc / rt_pl_struct_alloc / rt_pm_struct_alloc -- anything the RUNNING PROGRAM can reach, walked like everything
                 else, with a root.  If you are unsure, this is the answer (CEO-842).
+                rt_gcheap_alloc(HB_x, n) IS THE COLLECTED HEAP ITSELF, named by its typed class: a site that moves from
+                rt_wsb_alloc to rt_gcheap_alloc(HB_NVAR|HB_FNCB|HB_DATB|..., n) (ARCH-GC 13.14, ae5420a68, 249a84550) stays on
+                the collected heap and gains a typed visitor.  Until it was listed here the census read such a conversion as a
+                rooted site VANISHING while the file's libc sites became arena debt, and called min(vanished, debt) an
+                EVASION: six false class-1 sites in core.c and one in keywords.c, 2026-11-01.
                 rt_wsb_alloc is ON THIS LIST AND IS NOT AN EVASION, which this gate correctly demanded be settled:
                 it is rt_gcheap_alloc of kind HB_WSB, the SAME collected heap, and the block is marked, forwarded
                 and RELOCATED exactly like HB_WS.  The only thing that differs is that its interior is never
@@ -49,7 +54,7 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
 
 FORBIDDEN = ("malloc", "calloc", "realloc", "free")
 DESTINATIONS = {
-    "ROOTED-HEAP": ("rt_wsb_alloc", "rt_ws_alloc_descr", "rt_wsb_realloc", "rt_pvec_alloc", "rt_pvec_realloc", "rt_pl_struct_alloc", "rt_pm_struct_alloc"),
+    "ROOTED-HEAP": ("rt_gcheap_alloc", "rt_wsb_alloc", "rt_ws_alloc_descr", "rt_wsb_realloc", "rt_pvec_alloc", "rt_pvec_realloc", "rt_pl_struct_alloc", "rt_pm_struct_alloc"),
     "ARENA":       ("ct_alloc", "ct_try_alloc", "ct_zalloc", "ct_grow", "ct_strdup", "ct_strndup", "ct_drop", "ct_calloc", "ct_realloc"),
     "MMAP":        ("mmap",),
 }
@@ -1218,6 +1223,24 @@ def selftest():
     ev2, _d2, unk2 = provenance({"src/runtime/z.c": {"forbidden": 0, "rooted_heap": 0, "arena": 2, "mmap": 0}}, B)
     ck(sum(x[1] for x in unk2) == 2,
        "a runtime arena site in a file the provenance baseline does not name is UNATTRIBUTABLE and is counted WITH the evasion -- a history this instrument cannot read gets no benefit of the doubt")
+
+    w2 = tempfile.mkdtemp(prefix="c_alloc_census_typed."); __import__("atexit").register(__import__("shutil").rmtree, w2, True)
+    os.makedirs(os.path.join(w2, "src", "runtime"))
+    typed = ("void *rt_gcheap_alloc(uint16_t type, uint64_t payload_bytes);\n"
+             "void f(void) { a = rt_gcheap_alloc(HB_NVAR, 8); b = rt_gcheap_alloc(HB_FNCB, 8); c = rt_gcheap_alloc(HB_DATB, 8); d = ct_alloc(8); e = ct_alloc(8); g = ct_alloc(8); h = ct_alloc(8); }\n")
+    open(os.path.join(w2, "src", "runtime", "d.c"), "w").write(typed)
+    buf2 = []; census(w2, out=buf2.append); j2 = "\n".join(buf2)
+    ck("ROOTED-HEAP=3 " in j2 and "ARENA=4 " in j2,
+       "rt_gcheap_alloc(HB_x, n) IS A ROOTED-HEAP DESTINATION, the collected heap itself by its typed class, and its prototype is not a call: three typed calls and four ct_alloc read ROOTED-HEAP=3 ARENA=4")
+    Bd = {"src/runtime/d.c": {"forbidden": 4, "rooted_heap": 3, "arena": 0, "mmap": 0}}
+    evd, debtd, unkd = provenance(COUNTS["__per_file__"], Bd)
+    ck(not evd and not unkd and sum(x[1] for x in debtd) == 4,
+       "THE SHAPE OF 2026-11-01: three rt_wsb_alloc sites converted to typed rt_gcheap_alloc beside four libc sites that became ct_alloc are NOT an evasion -- the three stayed on the collected heap -- and the four are class-2 debt")
+    open(os.path.join(w2, "src", "runtime", "d.c"), "w").write(typed.replace("rt_gcheap_alloc(HB_", "ct_alloc(HB_"))
+    buf2.clear(); census(w2, out=buf2.append)
+    evd2, debtd2, unkd2 = provenance(COUNTS["__per_file__"], Bd)
+    ck(sum(x[1] for x in evd2) == 3 and sum(x[1] for x in debtd2) == 4,
+       "AND THE WIDER LIST DID NOT BLIND THE EVASION: the same three sites moved to ct_alloc instead read CLASS 1 x3 (and the four libc sites stay class-2 debt) -- a conversion to the arena is still named")
 
     # ⛔⭐ CEO-846 / CFO-96-97: the container arm, tested on the shape that fooled every census before it.
     def cc(body_src):
