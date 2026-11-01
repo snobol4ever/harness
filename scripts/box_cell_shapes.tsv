@@ -67,7 +67,13 @@ IR_MATCH_RKLAND	0	always	-	-	-	-	a raku regex landing
 IR_ASSIGN	0	always	-	-	-	-	the assignment writes its target in place
 IR_GOTO	0	always	-	-	-	-	control only
 IR_GOTO_DEFERRED	0	always	-	-	-	-	control only
-IR_DEFINE	0	always	-	-	-	-	a definition, no value
+IR_DEFINE_BIND	0	always	-	-	-	-	a function bound to its entry, no value
+IR_DEFINE_ADOPT	0	always	-	-	-	-	the adopted entry of an expression graph, no value
+IR_DEFINE_SHIM	0	always	-	-	-	-	the static call shim, no value
+IR_DEFINE_RT_SHIM	0	always	-	-	-	-	the run-time call shim, no value
+IR_DEFINE_RETURN	0	always	-	-	-	-	the RETURN floater, no value
+IR_DEFINE_FRETURN	0	always	-	-	-	-	the FRETURN floater, no value
+IR_DEFINE_CALL	0	always	-	-	-	-	the call-named citizen of the CALL2BB road, no value
 IR_MATCH_BEGIN	match_frame	always	[r]	-	-	-	the match frame (ARCH-ZETA-LAYOUT 9.1, the cto 2026-10-31): after the box's own push rbp / mov rbp, rsp (the pair's 8, not K) one sub rsp carves the four register-save words r12..r15 at rbp-8..-32 and the activation words and MATCH_CTX cells below them; the box's own whack pair pops it on its omega and the match end's pair pops it with its own row (gpop)
 IR_MATCH_END	0	always	-	-	-	-	the match's discard
 IR_MATCH_REPLACE	0	always	-	-	-	-	the match's discard
