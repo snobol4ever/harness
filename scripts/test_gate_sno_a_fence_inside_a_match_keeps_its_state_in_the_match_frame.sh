@@ -13,6 +13,12 @@
 # lives in the match frame (rbp-relative, frame_slot_off) and the match frame is carved for it (emit_match_begin_frame_extra
 # and frame_slot_scan read the same predicate).
 #
+# THE SECOND DEFECT (hq_zetas 2026-11-01, row snobol4-a-flush-after-a-capture-taken-outside-a-deferred-reference-reads-an-uninitialised-
+# capture-list-corrupt-capture-entry, first bad 8eb445d88): ARBNO(FENCE(LEN(1) . X) FENCE) -- the ARBNO's tail operand is the capture box
+# that closes the FENCE's argument, and the arm builder (zeta_plan.cpp) walked the ARBNO's tail before the nested FENCE claimed its body,
+# so the capture sat in the ARBNO's arm and the FENCE's 16-byte discard landed one box early: the capture read its saved cursor from a
+# popped cell (rt_dcap_pump: CORRUPT CAPTURE ENTRY, garbage per run). The ar.sno arm runs the stored and the inline form (SCRIP_ZD_CHECK
+# read OMEGA-BETA arrives=0 expects=16 on both; only the stored form's cell was clobbered before it was read).
 # Each arm grades one line of the evaluator against sbl -bf cut AT RUN TIME, both modes; the last program loops 300 times
 # through both forms. rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.
 set -u
@@ -59,12 +65,22 @@ loop    i = LT(i, 300) i + 1                        :F(done)
 done    OUTPUT = 'n=' n
 END
 SNO
+cat > "$D/ar.sno" <<'SNO'
+        S = 'abcd'
+        P = POS(0) ARBNO(FENCE(LEN(1) . X) FENCE) RPOS(0)
+        S ? P                                       :F(NO)
+        OUTPUT = X
+        S ? POS(0) ARBNO(FENCE(LEN(1) . Y) FENCE) RPOS(0)   :F(NO)
+        OUTPUT = Y                                  :(END)
+NO      OUTPUT = 'nomatch'
+END
+SNO
 N=$(wc -l < "$D/lines.txt")
-( cd "$D" && timeout -k 5 30 "$SBL" -bf ev.sno < lines.txt > want 2>/dev/null; timeout -k 5 30 "$SBL" -bf st.sno < /dev/null > st.want 2>/dev/null )
-[ "$(wc -l < "$D/want")" = "$N" ] && [ -s "$D/st.want" ] || refuse "sbl -bf gave no expectation to grade against"
-( cd "$D" && timeout -k 5 30 "$B/scrip" ev.sno < lines.txt > m3 2>/dev/null; timeout -k 5 60 "$B/scrip" st.sno < /dev/null > st.m3 2>/dev/null )
-( cd "$D" && for p in ev st; do timeout -k 5 120 "$B/scrip" --compile $p.sno < /dev/null > $p.s 2>/dev/null && gcc -no-pie $p.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $p.bin 2>/dev/null || exit 2; done ) || refuse "mode 4 did not build"
-( cd "$D" && timeout -k 5 30 ./ev.bin < lines.txt > m4 2>/dev/null; timeout -k 5 60 ./st.bin < /dev/null > st.m4 2>/dev/null )
+( cd "$D" && timeout -k 5 30 "$SBL" -bf ev.sno < lines.txt > want 2>/dev/null; timeout -k 5 30 "$SBL" -bf st.sno < /dev/null > st.want 2>/dev/null; timeout -k 5 30 "$SBL" -bf ar.sno < /dev/null > ar.want 2>/dev/null )
+[ "$(wc -l < "$D/want")" = "$N" ] && [ -s "$D/st.want" ] && [ -s "$D/ar.want" ] || refuse "sbl -bf gave no expectation to grade against"
+( cd "$D" && timeout -k 5 30 "$B/scrip" ev.sno < lines.txt > m3 2>/dev/null; timeout -k 5 60 "$B/scrip" st.sno < /dev/null > st.m3 2>/dev/null; timeout -k 5 30 "$B/scrip" ar.sno < /dev/null > ar.m3 2>/dev/null )
+( cd "$D" && for p in ev st ar; do timeout -k 5 120 "$B/scrip" --compile $p.sno < /dev/null > $p.s 2>/dev/null && gcc -no-pie $p.s -L"$B/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$B/out" -o $p.bin 2>/dev/null || exit 2; done ) || refuse "mode 4 did not build"
+( cd "$D" && timeout -k 5 30 ./ev.bin < lines.txt > m4 2>/dev/null; timeout -k 5 60 ./st.bin < /dev/null > st.m4 2>/dev/null; timeout -k 5 30 ./ar.bin < /dev/null > ar.m4 2>/dev/null )
 red=0; i=0
 while IFS= read -r t; do
     i=$((i + 1)); w=$(sed -n "${i}p" "$D/want")
@@ -75,6 +91,9 @@ done < "$D/lines.txt"
 for m in m3 m4; do
     if cmp -s "$D/st.want" "$D/st.$m"; then echo "  ok   $m  st.sno (300 iterations, EVAL'd and static FENCE alternations)"; else echo "  FAIL $m  st.sno: got [$(tr '\n' ' ' < "$D/st.$m")] want [$(tr '\n' ' ' < "$D/st.want")]"; red=$((red + 1)); fi
 done
-T=$(( (N + 1) * 2 ))
+for m in m3 m4; do
+    if cmp -s "$D/ar.want" "$D/ar.$m"; then echo "  ok   $m  ar.sno (an ARBNO whose body ends in FENCE(arg), stored and inline)"; else echo "  FAIL $m  ar.sno: got [$(tr '\n' ' ' < "$D/ar.$m")] want [$(tr '\n' ' ' < "$D/ar.want")]"; red=$((red + 1)); fi
+done
+T=$(( (N + 2) * 2 ))
 if [ $red -eq 0 ]; then echo "GATE PASS(0): a FENCE inside a match keeps its state in the match frame, $T arm(s)"; exit 0; fi
 echo "GATE FAIL(1): $red of $T arm(s) diverge from sbl -bf"; exit 1
