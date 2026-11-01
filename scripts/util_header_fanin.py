@@ -10,6 +10,8 @@
 #   util_header_fanin.py --ceiling         OVER <path> fanin=N users=M per header over the R4 ceiling, UMBRELLA <path> per umbrella, then
 #                                          "summary over=N umbrellas=M"
 #   util_header_fanin.py --unused          per unit the direct includes none of whose declarations the unit names, then "summary unused=N"
+#   util_header_fanin.py --from-d          read the .d files under the objdir and out/ instead of asking the compiler (the fixtures pass --obj, which implies it); the
+#                                          default runs make -B -n build-all and gcc -MM per unit: a cache-using root's .d files are the producer's and stale (step 7)
 #                                          (a data .inc -- an initializer, a table, a setting's source, renamed .inc at step 6A -- is spliced text, never counted)
 #   util_header_fanin.py --under PATH      with --unused or --bare: only the units under PATH (src/templates), the summary counts those only
 #   util_header_fanin.py --bare            per includer the quoted includes written as a bare name for a header in another directory, then
@@ -37,7 +39,7 @@
 # (the cto's ruling of 2026-10-31 on the 1b+5 landing; the page's gate description always said "every non-base header").
 #
 # It runs no build. It needs a built tree's .d files and refuses rc 2 with fewer than --min-units of them (default 200).
-import argparse, collections, os, re, sys
+import argparse, collections, concurrent.futures, os, re, shlex, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HDR_EXT = ('.h', '.hpp', '.inc')
@@ -298,20 +300,23 @@ def struct_fields(raw):
 
 
 class Tree:
-    def __init__(self, root, obj, min_units):
+    def __init__(self, root, obj, min_units, from_d=False):
         self.root, self.obj = os.path.abspath(root), obj
-        dfiles = []
-        for base in (obj, os.path.join(self.root, 'out')):
-            for dp, dn, fn in os.walk(base):
-                dfiles += [os.path.join(dp, f) for f in fn if f.endswith('.d')]
-        if len(dfiles) < min_units:
-            print('REFUSE(2): %d .d files under %s and %s/out, fewer than %d: build the tree first' % (len(dfiles), obj, self.root, min_units), file=sys.stderr)
-            sys.exit(2)
         self.unit_deps = collections.defaultdict(set)
-        for d in dfiles:
-            src, deps = self.read_d(d)
-            if src:
-                self.unit_deps[src].update(deps)
+        if from_d:
+            dfiles = []
+            for base in (obj, os.path.join(self.root, 'out')):
+                for dp, dn, fn in os.walk(base):
+                    dfiles += [os.path.join(dp, f) for f in fn if f.endswith('.d')]
+            if len(dfiles) < min_units:
+                print('REFUSE(2): %d .d files under %s and %s/out, fewer than %d: build the tree first' % (len(dfiles), obj, self.root, min_units), file=sys.stderr)
+                sys.exit(2)
+            for d in dfiles:
+                src, deps = self.read_d(d)
+                if src:
+                    self.unit_deps[src].update(deps)
+        else:
+            self.deps_from_compiler(min_units)
         self.units = sorted(self.unit_deps)
         self.headers = sorted(set(h for s in self.unit_deps.values() for h in s))
         self.info = {}
@@ -338,8 +343,61 @@ class Tree:
             for h in self.resolve_all(u, self.unit_includes[u]):
                 self.direct_of[h] += 1
 
+    def compile_lines(self):
+        """[(compiler, flags, source)] from `make -B -n build-all` in the root: every line with a -c, its -I/-D/-std/-finput-charset/-include flags."""
+        r = subprocess.run(['make', '-B', '-n', 'build-all'], cwd=self.root, capture_output=True, text=True)
+        if r.returncode != 0:
+            print('REFUSE(2): make -B -n build-all failed in %s: %s' % (self.root, (r.stderr or r.stdout).strip().splitlines()[-1:] or ''), file=sys.stderr)
+            sys.exit(2)
+        units = []
+        for line in r.stdout.splitlines():
+            if ' -c ' not in line:
+                continue
+            toks = shlex.split(line)
+            if toks and toks[0] == 'ccache':
+                toks = toks[1:]
+            if '-c' not in toks:
+                continue
+            src = toks[toks.index('-c') + 1]
+            flags, i = [], 1
+            while i < len(toks):
+                x = toks[i]
+                if x in ('-I', '-D', '-U', '-include', '-isystem', '-iquote', '-x') and i + 1 < len(toks):
+                    flags += [x, toks[i + 1]]; i += 2; continue
+                if x.startswith(('-I', '-D', '-U', '-std=', '-finput-charset', '-include', '-isystem', '-iquote')):
+                    flags.append(x)
+                i += 1
+            units.append((toks[0], flags, src))
+        return units
+
+    def deps_from_compiler(self, min_units):
+        """The tree as the compiler sees it: gcc -MM per compile line (eight at a time). The .d files are not read: the build cache carries the producer
+        root's .d files into every root that fetches, and a .d is rewritten only by a local compile of its unit, so on a cache-using root it names the
+        headers of that root's last local compile (step 7, 2026-10-31: 45 of 308 named headers deleted weeks ago)."""
+        units = self.compile_lines()
+        if len(units) < min_units:
+            print('REFUSE(2): make -B -n build-all lists %d compile lines in %s, fewer than %d: not a SCRIP root, or the Makefile is broken' % (len(units), self.root, min_units), file=sys.stderr)
+            sys.exit(2)
+        def one(u):
+            cc, flags, src = u
+            r = subprocess.run([cc, '-MM'] + flags + [src], cwd=self.root, capture_output=True, text=True)
+            return src, r.returncode, r.stdout, r.stderr
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+            results = list(ex.map(one, units))
+        failed = [(s, e.strip().splitlines()[:1]) for s, rc, o, e in results if rc != 0]
+        if failed:
+            print('REFUSE(2): %d of %d units do not preprocess (gcc -MM): %s' % (len(failed), len(results), '; '.join('%s: %s' % (self.rel(s) or s, (e or [''])[0][:120]) for s, e in failed[:3])), file=sys.stderr)
+            sys.exit(2)
+        for src, rc, o, e in results:
+            s, deps = self.parse_d(o)
+            if s:
+                self.unit_deps[s].update(deps)
+
     def read_d(self, path):
-        text = read(path).replace('\\\n', ' ')
+        return self.parse_d(read(path))
+
+    def parse_d(self, text):
+        text = text.replace('\\\n', ' ')
         m = re.match(r'\s*[^:\s]+:\s*(.*)', text, re.S)
         if not m:
             return None, set()
@@ -542,7 +600,8 @@ def violations(t, base, old, arm):
 def main():
     ap = argparse.ArgumentParser(description=__doc__ and 'per-header fan-in of the built tree (ARCH-HEADER-SPLIT.md)')
     ap.add_argument('--root', default=os.environ.get('S4E_HOME') and os.path.join(os.environ['S4E_HOME'], 'SCRIP') or os.path.join(HERE, '..', '..', 'SCRIP'))
-    ap.add_argument('--obj')
+    ap.add_argument('--obj', help='read the .d files under this directory and out/ instead of asking the compiler (the fixtures); implies --from-d')
+    ap.add_argument('--from-d', action='store_true', help='read the .d files under the objdir and out/ (the old reader); the default asks make -B -n build-all and gcc -MM')
     ap.add_argument('--min-units', type=int, default=200)
     ap.add_argument('--base-file', default=os.path.join(HERE, 'header_base_set.tsv'))
     ap.add_argument('--inline-file', default=os.path.join(HERE, 'header_inline_allowed.tsv'))
@@ -557,7 +616,7 @@ def main():
     ap.add_argument('--ratchet', choices=['fanin', 'umbrella', 'inline', 'bare', 'unused', 'all'])
     a = ap.parse_args()
     root = os.path.abspath(a.root)
-    t = Tree(root, a.obj or default_obj(root), a.min_units)
+    t = Tree(root, a.obj or default_obj(root), a.min_units, from_d=a.from_d or a.obj is not None)
     base = t.base_set(a.base_file)
     if a.recompiles:
         hits = [h for h in t.headers if h == a.recompiles or h.endswith('/' + a.recompiles) or ('src/' + h) == a.recompiles]

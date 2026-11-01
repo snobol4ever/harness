@@ -17,7 +17,7 @@
 # ARM 9  (control) the macro expansion and the member path are read: a unit naming a macro whose #define body names a header's identifier uses that header (step 2b),
 #        a unit reading inst->field through an extern pointer to a record uses the header that holds the record's body (step 4), and a unit that
 #        names nothing of it still reads unused.
-# DECLARED RULING (reporting) at step 1a; BLOCKING since step 7 (2026-10-31, the cto: every arm read 0 and the baseline was lowered to that tree). It needs a built tree: fewer than 200 .d files is rc 2.
+# DECLARED RULING (reporting) at step 1a; BLOCKING since step 7 (2026-10-31, the cto: every arm read 0 and the baseline was lowered to that tree). THE DEPENDENCY LISTS COME FROM THE COMPILER (ARM 10, the same night): make -B -n build-all names the units and their flags, gcc -MM answers each unit's includes; the .d files are not read, because the build cache carries the producer root's .d files and a cache-using root's are as old as its last local compile of each unit (45 of 308 named deleted headers). It needs a built tree: fewer than 200 .d files is rc 2.
 # rc 0 green · rc 1 red · rc 2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -185,8 +185,23 @@ mfan --unused 2>&1 | grep -q '^m4.c.*rec.h' || { ok9=0; echo "         m4.c name
 mfan --unused 2>&1 | grep -q '^m5.c' && { ok9=0; echo "         m5.c reads a field of the record g_hold->p points at and reads rec.h as unused (the member hop through a record's pointer member)"; }
 mfan --unused 2>&1 | grep -q '^m6.c.*rec.h' || { ok9=0; echo "         m6.c reads g_hold->p and nothing of rec.h and does not read rec.h as unused"; }
 mfan 2>&1 | awk -F'\t' '$7 == "rec.h" && $3 == 2 { f = 1 } END { exit !f }' || { ok9=0; echo "         rec.h does not read exactly two users (m3 through the extern pointer, m5 through the pointer member)"; }
+ok10=1
+cm="$T/cm"; mkdir -p "$cm/src" "$cm/out"
+printf '#ifndef A_H\n#define A_H\nint a_fn(int);\n#endif\n' > "$cm/src/a.h"
+printf '#ifndef DEAD_H\n#define DEAD_H\nint dead_fn(int);\n#endif\n' > "$cm/src/dead.h"
+printf '#include "a.h"\nint a(void) { return a_fn(1); }\n' > "$cm/src/a.c"
+printf '#include "a.h"\nint b(void) { return a_fn(2); }\n' > "$cm/src/b.c"
+printf 'build-all: a.o b.o\na.o: src/a.c\n\tgcc -I src -c src/a.c -o a.o\nb.o: src/b.c\n\tgcc -I src -c src/b.c -o b.o\n' > "$cm/Makefile"
+printf 'a.o: src/a.c src/a.h src/dead.h\n' > "$cm/out/a.d"
+printf 'b.o: src/b.c src/a.h src/dead.h\n' > "$cm/out/b.d"
+cfan() { python3 -I "$FAN" --root "$cm" --min-units 1 --base-file "$T/empty_base.tsv" --inline-file "$T/empty_inline.tsv" --baseline-file "$cm/baseline.tsv" "$@"; }
+cfan 2>&1 | awk -F'\t' '$7 == "dead.h" { f = 1 } END { exit f }' || { ok10=0; echo "         the stale .d files under out/ were read: dead.h has a fan-in though no unit includes it"; }
+cfan 2>&1 | awk -F'\t' '$7 == "a.h" && $1 == 2 { f = 1 } END { exit !f }' || { ok10=0; echo "         a.h does not read fan-in 2 from the compiler's own dependency lists (make -B -n build-all, gcc -MM)"; }
+cfan --from-d --obj "$cm/out" 2>&1 | awk -F'\t' '$7 == "dead.h" && $1 == 2 { f = 1 } END { exit !f }' || { ok10=0; echo "         the .d reader does not read the planted stale .d: the control is no control"; }
+if [ "$ok10" = 1 ]; then echo "  ok   ARM 10: the dependency lists come from the compiler (make -B -n build-all, gcc -MM per unit), and a stale .d under out/ naming a dead header is not read; the .d reader (--from-d) still reads it"
+else echo "  RED  ARM 10: the instrument reads the .d files, which the build cache carries from the producer's root"; fail=1; fi
 if [ "$ok9" = 1 ]; then echo "  ok   ARM 9: a unit that names a macro whose expansion names a header's identifier uses that header, a unit that reads a record's field through the extern pointer to it or through another record's pointer member uses the record's header, and a unit that names nothing of either still reads unused"
 else echo "  RED  ARM 9: the macro expansion is not read"; fail=1; fi
 s="$(printf '%s\n' "$out" | grep '^summary over=')"
-if [ "$fail" = 0 ]; then echo "GATE PASS(0) [no_header_reaches_more_units_than_its_users]: 9 arm(s) -- $s"; exit 0; fi
+if [ "$fail" = 0 ]; then echo "GATE PASS(0) [no_header_reaches_more_units_than_its_users]: 10 arm(s) -- $s"; exit 0; fi
 echo "GATE FAIL(1) [no_header_reaches_more_units_than_its_users]: $s"; exit 1
