@@ -1511,6 +1511,19 @@ s4e_strip_donewhen_comment() {
 # on spec. A criterion too slow to probe is NOT a failure of the row -- it times out, which is rc=2, which
 # serves the row with a warning. The safe direction is always SERVE.
 s4e_dispatch_timeout() { printf '%s' "${S4E_DISPATCH_PROBE_TIMEOUT:-120}"; }
+# ⛔ A PROBE'S BUDGET KILLS ITS WHOLE TREE (coo 2026-11-01, CEO-2107 as amended: "a probe that outlives its budget is killed by its timeout and reported";
+# Lon: "how do all the orphans get created? fix that."). GNU timeout signals only its own process group, and every runner wraps its programs in its OWN
+# `timeout -k 10 1500`, a second group: when the probe's timeout fired, the runner's group survived, was reparented to systemd, and ran on for up to 25
+# minutes (2026-11-01 14:2x: three XSB smoke trees from three timed-out assign probes, one `as` at 1.5 GB, the coo's scope pinned at its 4 GB memory.high).
+# s4e_bounded runs the command as its own SESSION (setsid: nested timeouts make new process groups, never new sessions); at the budget the watchdog
+# TERMs then KILLs every process in that session, and on any exit whatever is left in the session is killed too. rc 124 when the budget fired.
+s4e_bounded() { local _to="$1" _sid _w _rc _f; shift; _f="$(mktemp)"
+    setsid "$@" & _sid=$!
+    ( sleep "$_to" & _z=$!; trap 'kill $_z 2>/dev/null; exit 0' TERM; wait "$_z"; echo fired > "$_f"; pkill -TERM -s "$_sid" 2>/dev/null; sleep 5 & _z=$!; wait "$_z"; pkill -KILL -s "$_sid" 2>/dev/null ) >/dev/null 2>&1 & _w=$!
+    wait "$_sid"; _rc=$?
+    kill "$_w" 2>/dev/null; wait "$_w" 2>/dev/null
+    pkill -KILL -s "$_sid" 2>/dev/null
+    [ -s "$_f" ] && _rc=124; rm -f "$_f"; return "$_rc"; }
 # ⛔ MIRRORS `done`'s vacuity blocklist and is NOT the authority for it -- `done` is (:898 and :916-922). Used
 # only by `assign`, which cannot delegate to `done` (that verb requires the claim to be the RUNNER's, and assign
 # writes ANOTHER seat's). `next` never calls this: it probes by invoking `done` itself, so its judgement is the
@@ -1712,7 +1725,7 @@ s4e_dispatch_probe() {
     # ⛔ S4E_HOME EXPORTED, exactly as `done` does it: 11 live rows write `cd "$S4E_HOME/SCRIP" && ...` and
     # without the export that expands to the empty string and runs `cd /SCRIP`. A probe whose verdict depended
     # on the caller's environment would be worse than no probe -- it would close rows on some seats and not others.
-    _dp_out="$(S4E_HOME="$S4E" timeout -k 5 "$to" bash -c "$dw" 2>&1)"; rc=$?
+    _dp_out="$(S4E_HOME="$S4E" s4e_bounded "$to" bash -c "$dw" 2>&1)"; rc=$?
     case "$rc" in 124|137) _dp_why="did not finish within ${to}s (probe budget, not the row's fault)"; return 2;; esac
     [ "$rc" = 0 ] && { _dp_why="exited 0"; return 0; }
     _dp_why="exited $rc"; return 1; }
@@ -1818,7 +1831,7 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     # exported, so a premise written as `cd "$S4E_HOME/SCRIP" && ...` -- the idiom the batons already use --
     # resolves against the LOCKING SEAT'S OWN ROOT rather than expanding to the empty string on some seats and
     # not others. A verdict that depends on the grader's environment is not a verdict.
-    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_PREMISE_WHEN_RUN=1 timeout -k 5 "$to" bash -c "$pw" ) >"$log" 2>&1; rc=$?
+    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_PREMISE_WHEN_RUN=1 s4e_bounded "$to" bash -c "$pw" ) >"$log" 2>&1; rc=$?
     el="$(( $(date +%s) - t0 ))"
     case "$rc" in
       0) printf '  ✅ PREMISE-WHEN exited 0 in %ss — the row'"'"'s premise still holds on this tree.\n' "$el" >&2
@@ -2693,7 +2706,7 @@ case "$cmd" in
                 case "$dw" in
                   */*|*'$'*) : ;;                       # names a path or expands a variable — probe would be meaningless
                   *) _vac="$(mktemp -d)"
-                     ( cd "$_vac" && timeout -k 5 20 bash -c "$dw" ) >/dev/null 2>&1; _vrc=$?
+                     ( cd "$_vac" && s4e_bounded 20 bash -c "$dw" ) >/dev/null 2>&1; _vrc=$?
                      rm -rf "$_vac"
                      # ⛔⭐ A TIMEOUT IS NOT AN ANSWER (hq_P 2026-08-27, source-read; hole was real and unreached).
                      # The probe used to branch on the COMMAND SUCCEEDING, so EVERY non-zero exit counted as proof the
@@ -2776,10 +2789,10 @@ case "$cmd" in
                   # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a DONE-WHEN that names only cacheable test_gate_*.sh runs once per
                   # tree for the fleet; util_check_cache.sh replays a stored verdict on clean trees at the same hashes and runs live otherwise.
                   if bash "$S4E/harness/scripts/util_check_cache.sh" --cacheable-text "$dw" 2>/dev/null; then
-                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 timeout -k 5 "$_dwto" bash "$S4E/harness/scripts/util_check_cache.sh" done-when -- bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash "$S4E/harness/scripts/util_check_cache.sh" done-when -- bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
                     head -1 "$_dwlog" | grep -q '^CACHED ' && printf '  %s\n' "$(head -1 "$_dwlog")"
                   else
-                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 timeout -k 5 "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
+                    ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
                   fi
                   _dwel="$(( $(date +%s) - _dwt0 ))"
                   if [ "$rc" -eq 0 ]; then
@@ -3002,15 +3015,20 @@ case "$cmd" in
          # ⛔ AN UNRUNNABLE DONE-WHEN IS REFUSED AT ASSIGN, LIKE THE PLACEHOLDER (CEO-786; coo 2026-09-16): the criterion is run once with the
          # dispatch budget; exit 126/127 (not executable / command not found) or 2 (the criterion refused) is a REFUSAL naming the exit and
          # the first line the criterion said -- never a red, which is rc=1 with a line beginning RED. rc 0 and rc 1 dispatch as before.
+         # ⛔ THE PROBES RUN HOLDING NO BUS IDENTITY (CEO-2107 as amended, ARCH-SHARED-DEVELOPMENT 12 item 7; the coo 2026-11-01: three assigns whose
+         # probes ran past 240 s held the coo identity the whole time, so every coo send -- telegrams, tier1's alarms, the seat watch -- was REFUSED).
+         # The identity is released here and taken again below, before the claim is written; nothing on the bus is touched in between.
+         s4e_pid_release
          if [ "${S4E_NO_DISPATCH_PROBE:-0}" != "1" ]; then
            _adw="$(s4e_donewhen_text "$PO/tasks/$topic.task.md")"; _alog="$(mktemp)"
-           ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$seat" S4E_DONE_WHEN_RUN=1 timeout "$(s4e_dispatch_timeout)" bash -c "$_adw" ) >"$_alog" 2>&1; _arc=$?
+           ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$seat" S4E_DONE_WHEN_RUN=1 s4e_bounded "$(s4e_dispatch_timeout)" bash -c "$_adw" ) >"$_alog" 2>&1; _arc=$?
            if [ "$_arc" -eq 126 ] || [ "$_arc" -eq 127 ] || [ "$_arc" -eq 2 ]; then
              printf '\n⛔ REFUSED(2): %s HAS AN UNRUNNABLE DONE-WHEN -- it exited %s (%s) in a probe run; a criterion that cannot run is a refusal, not a red (CEO-786).\n' \
                "$topic" "$_arc" "$([ "$_arc" -eq 127 ] && echo 'command not found' || { [ "$_arc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
              printf '   first line it said: %s\n   Fix the DONE-WHEN (cd "$S4E_HOME/SCRIP", name a script that exists), then assign again. No claim written.\n' "$(grep -m1 . "$_alog" | cut -c1-160)" >&2
              rm -f "$_alog"; exit 2
            fi
+           [ "$_arc" -eq 124 ] && printf '⚠ the DONE-WHEN probe of %s did not finish within %ss (the probe budget; its whole tree was killed) -- assigning, unverified\n' "$topic" "$(s4e_dispatch_timeout)" >&2
            rm -f "$_alog"
          fi
          # ⛔⭐ DISPATCH PROBE, ASSIGN SIDE (same ruling as next's; see s4e_dispatch_probe above). An HQ dispatching
@@ -3043,6 +3061,7 @@ case "$cmd" in
              printf '⚠ DISPATCH PROBE COULD NOT MEASURE %s -- assigning anyway, unverified: %s\n' "$topic" "${_dp_why:-?}" >&2
            fi
          fi
+         unset S4E_PID_LOCK; s4e_pid_acquire   # the identity again, for the write only (released above for the probes)
          t="$(mktemp "$PO/claims/.c.XXXXXX")"; { echo "$seat"; echo "ASSIGNED-BY $ME $(date -u +%FT%TZ)"; } > "$t"
          if ln "$t" "$c" 2>/dev/null; then rm -f "$t"; else rm -f "$t"; echo "⛔ RACE LOST: $(head -1 "$c" 2>/dev/null) owns '$topic'" >&2; exit 1; fi
          # ⭐ picker-dependency-and-boomerang-blindness CURE 2: an HQ assignment is the loudest possible "another
