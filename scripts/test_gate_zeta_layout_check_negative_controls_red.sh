@@ -16,7 +16,8 @@
 #   SITE rule 6   a rule-6 site's depth raised by 8 reads SITE (graded against its owning enter's row); a rule-1 site's depth raised by 8 (zl07) reads SITE
 #   SITE-UNGRADED / SITE-HOP / SITE-UNEXERCISED on zl08: each rule the program emits prints the line its class owns with the summary's count, and every rule it does not emit
 #                 prints UNEXERCISED; a nonzero GC_SITE_EXT byte planted in a record prints SITE-UNGRADED ext=nonzero
-#   TRANSFER-POP  zl02's deferred goto read as it is (it leaks), then the CURE applied (the owed pop added before each jmp rax) reads fewer, then a WRONG pop still reads
+#   TRANSFER-POP  zl02 clean reads no leak (the cure 34561c005 pops before each deferred jmp rax); with those pops removed from today's text (the
+#                 SYNTHETIC leak, CEO-576: the found leak is cured, the control re-creates it) it reads popped=0; the pop added back reads fewer; a WRONG pop still reads
 #   ZSM           the instrument's own balanced push/pop around rt_zdp_ev (SCRIP_ZSM=1 SCRIP_ZSM_ALL=1) adds no EXCURSION and is counted as skipped
 #   ALIGN         a plan with its last graph cut off
 #   rc 2          an unreadable input prints no mismatches= line
@@ -217,8 +218,18 @@ r, got = run(write('run_r1.s', a7), w7 + '/plan.txt')
 rises('SITE: a rule-1 site record (the rbp home carries 0) raised by 8 bytes reads SITE', c7, got, 'SITE')
 
 r, c2 = run(w2 + '/run.s', w2 + '/plan.txt')
+a2 = open(w2 + '/run.s', encoding='utf-8').read().split('\n')
+leak = a2[:]
+nleak = 0
+for n, l in enumerate(leak):
+    if n > 0 and 'goto_deferred' in leak[n - 1] and re.search(r'\badd\s+rsp,\s*\d+;\s*jmp\s+rax', l):
+        leak[n] = re.sub(r'\badd\s+rsp,\s*\d+;\s*(jmp\s+rax)', r'\1', l)
+        nleak += 1
+grade('TRANSFER-POP: the clean zl02 reads no leak and pops before each deferred jmp rax (the cure 34561c005; %d pops)' % nleak,
+      not [l for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP')] and nleak >= 2, '%d pops' % nleak)
+r, cl = run(write('run_leak.s', leak), w2 + '/plan.txt')
 tl = [l for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP')]
-grade('TRANSFER-POP: zl02 deferred gotos read as the leak they are (popped=0)', len(tl) >= 2 and all('popped=0' in l for l in tl), '%d lines' % len(tl))
+grade('TRANSFER-POP: zl02 with those pops removed (the synthetic leak, CEO-576) reads popped=0 for its deferred gotos', len(tl) >= 2 and all('popped=0' in l for l in tl), '%d lines' % len(tl))
 if tl:
     m = re.match(r'TRANSFER-POP \S+ (n\d+_goto_deferred_bx) L\d+ popped=0 wanted=\d+', tl[0])
     if not m:
@@ -226,14 +237,13 @@ if tl:
     else:
         box = m.group(1)
         mine = [(int(x.group(1)), int(x.group(2))) for x in (re.match(r'TRANSFER-POP \S+ %s L(\d+) popped=0 wanted=(\d+)' % box, l) for l in tl) if x]
-        a2 = open(w2 + '/run.s', encoding='utf-8').read().split('\n')
-        cured = a2[:]
+        cured = leak[:]
         for ln, owed in mine:
             cured[ln - 1] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % owed, cured[ln - 1])
         r, c3 = run(write('run_t.s', cured), w2 + '/plan.txt')
         left = sum(1 for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP') and (' %s ' % box) in l)
-        grade('TRANSFER-POP: the owed pop added before the flagged jmp rax of %s reads fewer (%d -> %d)' % (box, len(mine), left), len(mine) >= 1 and left == 0)
-        wrong = a2[:]
+        grade('TRANSFER-POP: the owed pop added back before the flagged jmp rax of %s reads fewer (%d -> %d)' % (box, len(mine), left), len(mine) >= 1 and left == 0)
+        wrong = leak[:]
         for ln, owed in mine:
             wrong[ln - 1] = re.sub(r'jmp\s+rax', 'add rsp, %d; jmp rax' % (owed + 8), wrong[ln - 1])
         r, c4 = run(write('run_w.s', wrong), w2 + '/plan.txt')
