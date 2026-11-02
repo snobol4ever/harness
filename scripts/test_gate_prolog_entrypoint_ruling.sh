@@ -30,14 +30,14 @@ GATE_STRICT=1
 . "$HERE/lib_gate.sh"
 gate_parse_args "$@"
 
-ARCH="$ROOT/../.github/ARCH-LANGUAGES.md"
+ARCH="$ROOT/../.github/skills/prolog/reference.md"
 QUEUE="/home/resources/postoffice/QUEUE.tsv"
 SWIPL="/usr/bin/swipl"
 SCRIP="$ROOT/scrip"
 CORPUS="$ROOT/../corpus"
 D2_CEILING="${GATE_D2_CEILING:-36}"
 
-gate_require     "$ARCH"   "ARCH-LANGUAGES.md (where the ruling is written)"
+gate_require     "$ARCH"   "the prolog skill reference (where the ruling is written since the ARCH pages retired, CEO-2115)"
 gate_require     "$QUEUE"  "postoffice QUEUE.tsv (where the cure rows live)"
 gate_require_exec "$SWIPL" "the SWI-Prolog oracle"
 gate_require_exec "$SCRIP" "the scrip binary"
@@ -56,8 +56,8 @@ printf ':- write(fromdir), nl.\nmain :- write(frommain), nl.\n'  > "$W/both.pl"
 printf ':- write(direct), nl.\n'                                 > "$W/nomain.pl"
 
 echo "== A. the ruling is recorded where Prolog behaviour is specified"
-if grep -q 'ENTRY-POINT CONVENTION' "$ARCH"; then good "ARCH-LANGUAGES.md carries the entry-point ruling"
-else bad "ARCH-LANGUAGES.md has no ENTRY-POINT CONVENTION ruling — the consequence was never written down"; fi
+if grep -q 'ENTRY-POINT CONVENTION' "$ARCH"; then good "the prolog skill carries the entry-point ruling"
+else bad "the prolog skill has no ENTRY-POINT CONVENTION ruling — the consequence was never written down"; fi
 
 echo "== B. both cure rows exist (the ruling said 'defect', so a cure must be minted)"
 for row in prolog-load-directives-dropped-when-main-exists prolog-directive-only-file-fatals-no-main-bb-graph; do

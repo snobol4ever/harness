@@ -23,6 +23,9 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/src/lower/", ["lowering"]),
     (r"/SCRIP/src/(planner|emitter)/|/SCRIP/src/runtime/rt/gc_", ["scrip-memory-model"]),
     (r"/SCRIP/bootstrap/[^/]*\.sc$", ["snocone-parser-patterns"]),
+    (r"/SCRIP/src/runtime/rt/gc_|/SCRIP/src/runtime/rtx/rtx_(gc|alloc)\.s$", ["gc-collector"]),
+    (r"/SCRIP/src/runtime/rt/rt\.c$|/SCRIP/src/lower/lower_call_forms\.c$|/harness/scripts/builtins\.tsv$", ["runtime-calls"]),
+    (r"/SCRIP/Makefile$", ["scrip-build"]),
     (r"/harness/scripts/test_[^/]*\.sh$|/corpus/(tests|packages|demos|benchmarks)/.*(\.ref|/ALL\.csv|/STEPS\.tsv|/LADDER\.tsv)$|/corpus/tests/.*\.(sno|icn|pl|pas|raku|sc|reb)$", ["gates-and-witnesses"]),
 ]
 WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+(?P<path>[\w./~-]+)")
@@ -134,6 +137,9 @@ def self_test():
         ("Edit of a corpus ref wants gates-and-witnesses and the language", "Edit", {"file_path": R + "/corpus/tests/pascal/ALL.ref"}, none, 2, ["/gates-and-witnesses", "/pascal"]),
         ("no transcript at all: the edit passes with a note", "Edit", {"file_path": R + "/SCRIP/src/lower/lower_raku.c"}, os.path.join(d, "absent.jsonl"), 0, []),
         ("Bash cp onto a bootstrap parser wants snocone-parser-patterns", "Bash", {"command": "cp /tmp/x.sc " + R + "/SCRIP/bootstrap/parser_raku.sc"}, none, 2, ["/snocone-parser-patterns"]),
+        ("Edit of the collector wants gc-collector beside scrip-memory-model", "Edit", {"file_path": R + "/SCRIP/src/runtime/rt/gc_heap.c"}, none, 2, ["/gc-collector", "/scrip-memory-model"]),
+        ("Edit of the call protocol wants runtime-calls", "Edit", {"file_path": R + "/SCRIP/src/runtime/rt/rt.c"}, none, 2, ["/runtime-calls"]),
+        ("Edit of the Makefile wants scrip-build", "Edit", {"file_path": R + "/SCRIP/Makefile"}, none, 2, ["/scrip-build"]),
     ]
     bad = 0
     for i, (name, tool, inp, tr, want, words) in enumerate(cases, 1):
