@@ -122,6 +122,9 @@ EXCLUDED_CLASSES = {
     # ceo CEO-1524 (2026-10-05): read of a dotless float (1e33) expecting syntax_error. SCRIP's default reads it as SWI does, which
     # 11 SWI suite programs depend on; the strict ISO reading is built under set_prolog_flag(iso, true) (the cfo's).
     "DOTLESS_FLOAT_READ": "reads a dotless float such as 1e33 expecting syntax_error; SCRIP's default reads it as SWI does (the strict ISO reading is set_prolog_flag(iso, true))",
+    # Lon 2026-11-01 (GOAL-COO COO-455, verbatim: "For the sort, pick the ProRungs, not the LogTalk one." / "Do exclude that LogTalk failure since it contends."):
+    # a markerless program compares a float and an integer by value (swipl's default), so a case expecting ISO 1995's all-floats-first order contends.
+    "STANDARD_ORDER_BY_VALUE": "expects ISO 1995's all-floats-first standard order; SCRIP's markerless order compares a float and an integer by value (Lon, COO-455)",
     # ceo CEO-1540 (2026-10-07): max_arity is an integer (ISO, GNU); at SCRIP's 2147483647 a case written for a small max_arity asks for a
     # structure no declared heap holds, and expects a representation_error where an engine raises resource_error (the cfo, 4f612be5d).
     "BOUNDED_MAX_ARITY_ONLY": "a condition(...) that holds only where max_arity is not unbounded, written for a system whose max_arity is small",
@@ -1068,6 +1071,13 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
                     continue
                 excl_hits.append((xk, xr[0], xr[1]))
                 continue
+            if xr is not None and xr[0] == "STANDARD_ORDER_BY_VALUE":
+                g = c.goal or ""
+                if not (re.search(r"\b(msort|sort|keysort|predsort|compare)\(|@[<>]", g) and re.search(r"\d\.\d", g)):
+                    exerr.append((xk, "is excluded STANDARD_ORDER_BY_VALUE and its goal %r neither orders terms nor carries a float -- the row is stale or names the wrong case" % (g[:80],)))
+                    continue
+                excl_hits.append((xk, xr[0], xr[1]))
+                continue
             if xr is not None and xr[0] == "DOTLESS_FLOAT_READ":
                 if not _dotless_float_read(c):
                     exerr.append((xk, "is excluded DOTLESS_FLOAT_READ and its goal %r does not read a dotless float expecting "
@@ -1126,6 +1136,7 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
             exerr.append((k, "is excluded %s and the suite has no such case %s -- the row is stale or names the wrong case"
                              % (cls, {"WINDOWS_ONLY": "behind a Windows guard", "EXCLUSIVE_BRANCH": "behind a ruled guard",
                                       "DOTLESS_FLOAT_READ": "reading a dotless float",
+                                      "STANDARD_ORDER_BY_VALUE": "ordering a float against an integer",
                                       "BOUNDED_MAX_ARITY_ONLY": "carrying a bounded-max_arity condition"}.get(cls, "carrying a bounded-integers condition"))))
     if exerr:
         return None, [(k, why) for k, why in exerr]
