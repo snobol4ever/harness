@@ -1630,6 +1630,7 @@ class Entry:
         self.compare_ws = False   # True when ALL.csv's compare column reads ignore-all-space: each line graded with its white space removed (CEO-1927)
         self.stage_upstream = False   # True when ALL.csv's stage column reads upstream: the run directory is the entry's upstream test directory (CEO-1927)
         self.answer_file = None       # "temp" when ALL.csv's answer column reads temp-sorted: the graded output is that file's lines, sorted (CEO-1927)
+        self.mode_gap_s = 0
         self.stack_kb = None      # int KB of STACK this entry declares (CEO-1225), or None = the runtime's 64 MB floor.
         self.heap_kb = None       # int KB this entry DECLARES it needs, or None = the shipped default.
                                    # Lon 2026-09-23 / CEO-1167. DECLARED in ALL.csv's heap_kb column (or a
@@ -1749,7 +1750,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, CEO-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1766,6 +1767,9 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
+        if "m3" in modes and mode_gap_s:
+            print(f"MODE GAP {where or Path(sno_path).stem}: {mode_gap_s}s between m3 and m4, declared in ALL.csv's mode_gap_s", file=sys.stderr)
+            time.sleep(mode_gap_s)
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
@@ -2636,7 +2640,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None),
                              compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
                              merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
-                             answer_file=getattr(entry, 'answer_file', None))
+                             answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
 
 
 # ================================================================== CLI ===
@@ -4905,7 +4909,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -4940,6 +4944,11 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.stage_upstream = True
         if validate_answer_cell(row.get("answer"), where):
             e.answer_file = "temp"
+        _gap = (row.get("mode_gap_s") or "").strip()
+        if _gap:
+            if not _gap.isdigit():
+                refuse(f"{where}: mode_gap_s {_gap!r} is not a whole number of seconds")
+            e.mode_gap_s = int(_gap)
 
 
 def cmd_extract_family(args):
