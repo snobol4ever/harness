@@ -19,6 +19,7 @@ set -uo pipefail
 FIFO=/home/resources/progress/jobserver.fifo
 TSV=/home/resources/progress/JOBSERVER.tsv
 UNIT=s4e-jobserver
+PIDFILE=/home/resources/progress/jobserver.pid
 FD=7
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 refuse() { echo "REFUSE(2) [util_jobserver]: $*" >&2; exit 2; }
@@ -35,7 +36,7 @@ PY
 }
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 unit_active() { systemctl --user is-active --quiet "$UNIT"; }
-holder_pid() { [ -s "$TSV" ] && awk -F'\t' '!/^#/ && $1=="tokens" && $4 ~ /^[0-9]+$/ {print $4; exit}' "$TSV"; }
+holder_pid() { [ -s "$PIDFILE" ] && tr -dc 0-9 < "$PIDFILE"; }
 holder_alive() { local h; h="$(holder_pid)"; [ -n "$h" ] && [ "$(readlink /proc/"$h"/fd/$FD 2>/dev/null)" = "$FIFO" ]; }
 holders() { local n=0 l; for l in /proc/[0-9]*/fd/$FD; do [ "$(readlink "$l" 2>/dev/null)" = "$FIFO" ] || continue; case "$l" in /proc/$$/*|/proc/$(holder_pid)/*) ;; *) n=$((n+1));; esac; done; echo "$n"; }
 drain() { python3 - "$FIFO" <<'PY'
@@ -60,6 +61,7 @@ case "$verb" in
     exec 7<>"$FIFO"
     drain >/dev/null
     printf '%*s' "$n" '' | tr ' ' '+' >&7
+    echo "$$" > "$PIDFILE"
     record "$n" "$$" "start"
     trap 'exit 0' TERM INT
     while :; do sleep 60; done ;;
