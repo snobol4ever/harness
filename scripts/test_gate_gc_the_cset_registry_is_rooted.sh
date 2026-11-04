@@ -14,6 +14,10 @@
 # ⛔ THE FACT-RULE ARM IS WHY THIS GATE CANNOT BE GREENED THE WRONG WAY (the shape of the cfo's own reverted f62a33aed): it REQUIRES
 # kw_cset_intern to still allocate from the COLLECTED HEAP. Moving the interned bytes to the arena or to libc would make the band green
 # while taking the object out of the collector's sight, which is the same evasion as pinning it, one name further out.
+# ⛔ 2026-11-04 (hq_icon, row icon-keywords-c-one-class-1-evasion-...): the registry's own three tables (names, hash index, content index) were ct_ arena blocks, and the allocator census read
+# that as a class-1 evasion in keywords.c. They are collected-heap blocks now (rt_wsb_realloc, rt_wsb_alloc), each pointer a visited root beside the entries. The 'tables' arm requires all three
+# visits and no ct_ allocator in keywords.c; the 'growth' arm moves the tables under stress with the flip plant. The growth arm is GREEN on the commit before (the arena tables never moved), so the
+# structural arms are the red before the cure; the growth arm is the red when a table's root is removed (rc 139 at stress 1, measured).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2
 bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 || { echo "REFUSES rc=2: stale or missing ./scrip -- run make"; exit 2; }
@@ -47,5 +51,25 @@ done
 if [ "$ran" -lt 14 ]; then echo "REFUSES rc=2: only $ran of 14 band points ran"; exit 2; fi
 if [ "$red" -eq 0 ]; then echo "  behavioural PASS: the cset union is byte-correct at all $ran stress points (origin is RED at 1,2,3,4,5,8,10)"
 else echo "  behavioural RED: $red of $ran band points wrong -- the interned cset bytes are not surviving collection"; bad=1; fi
+roots=$(awk '/^void kw_cset_gc_roots\(void\)/{f=1} f&&/rt_gc_visit_raw\(\(const char \*\*\)&g_runtime\.kw\.kw_cset_(names|hidx|cidx)\)/{c++} f&&/^}/{exit} END{print c+0}' src/runtime/keywords.c)
+if [ "$roots" -eq 3 ]; then echo "  tables PASS: kw_cset_gc_roots visits the names table and both index tables, the three collected-heap blocks the registry is made of"
+else echo "  tables RED: kw_cset_gc_roots visits $roots of the 3 registry tables (kw_cset_names, kw_cset_hidx, kw_cset_cidx) -- a table that is not visited is reclaimed or left at its old address"; bad=1; fi
+if grep -qE '\bct_(alloc|zalloc|grow|strdup|drop)\b' src/runtime/keywords.c; then echo "  tables RED: keywords.c holds a compile-time-arena allocator call again -- the registry tables were moved BACK to the collected heap with a root, and the cure for an unrooted holder is a root, never a different allocator"; bad=1; fi
+WIT="$HERE/gc_witnesses/hb_kw_cset_registry_tables_grow_across_a_collection.icn"; REF="${WIT%.icn}.ref"
+for f in "$WIT" "$REF"; do [ -f "$f" ] || { echo "REFUSES rc=2: missing $f"; exit 2; }; done
+"$ROOT/scrip" --compile --out="$W/g.s" "$WIT" >/dev/null 2>&1 && gcc "$W/g.s" -o "$W/g4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 || { echo "REFUSES rc=2: the growth witness does not build in mode 4"; exit 2; }
+want="$(cat "$REF")"; gred=0; gran=0
+for st in 1 3 7; do
+    for md in m3 m4; do
+        if [ "$md" = m3 ]; then out="$(cd "$W" && env SCRIP_GC_STRESS=$st SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_EXERCISE=1 timeout -k 5 300 "$ROOT/scrip" "$WIT" 2>"$W/ge.txt" </dev/null)"; rc=$?
+        else out="$(cd "$W" && env SCRIP_GC_STRESS=$st SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_EXERCISE=1 timeout -k 5 300 "$W/g4" 2>"$W/ge.txt" </dev/null)"; rc=$?; fi
+        n=$(grep -m1 -oE 'collections=[0-9]+' "$W/ge.txt" | head -1 | cut -d= -f2)
+        gran=$((gran + 1))
+        if [ "$rc" -ne 0 ] || [ "$out" != "$want" ] || [ "${n:-0}" -le 0 ]; then echo "      growth stress=$st $md rc=$rc collections=${n:-0} -- want rc 0, the icont answer, and a collection that ran"; gred=$((gred + 1)); fi
+    done
+done
+if [ "$gran" -lt 6 ]; then echo "REFUSES rc=2: only $gran of 6 growth points ran"; exit 2; fi
+if [ "$gred" -eq 0 ]; then echo "  growth PASS: 300 distinct csets double the names table and rebuild both index tables across collections and every block moving, as icont answers, both media at stress 1,3,7 ($gran points)"
+else echo "  growth RED: $gred of $gran points wrong -- a registry table is not surviving a collection that moves it"; bad=1; fi
 if [ "$bad" -ne 0 ]; then echo "GATE FAIL(1) [gc_the_cset_registry_is_rooted]: the cset registry is not a root"; exit 1; fi
-echo "GATE PASS(0) [gc_the_cset_registry_is_rooted]: the interned cset bytes survive collection and the registry is walked (3 arms + a 14-point band, 0 red)"
+echo "GATE PASS(0) [gc_the_cset_registry_is_rooted]: the interned cset bytes survive collection, the registry and its three tables are walked (5 arms + a 14-point band + 6 growth points, 0 red)"

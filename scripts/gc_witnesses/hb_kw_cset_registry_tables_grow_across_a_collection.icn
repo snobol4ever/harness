@@ -1,0 +1,38 @@
+# WITNESS for THE CSET REGISTRY'S THREE TABLES GROWING WHILE THE COLLECTOR RUNS: the names table doubles 16 -> 512 entries and both index tables are rebuilt as 300 distinct csets are interned, with
+# allocation between every step. The tables are collected-heap blocks held by g_runtime.kw.kw_cset_names, kw_cset_hidx and kw_cset_cidx; each pointer is a visited root, so a block that moves is
+# re-pointed and one that is not visited is reclaimed (SIGSEGV or a stale read under SCRIP_GC_PLANT_FLIP). Uses are scanning (many, upto, any) and union, which read the bits through the registry.
+procedure mk(i);
+    return string(i * 7919) || char(32 + i % 90) || char(33 + (i * 3) % 90);
+end
+
+procedure main()
+    local t, i, c, n, s, junk, u, m;
+    t := [];
+    every i := 1 to 300 do {
+        put(t, cset(mk(i)));
+        junk := repl(string(i), 40);
+        junk := junk || junk;
+    };
+    n := 0;
+    every i := 1 to *t do {
+        s := mk(i);
+        junk := repl(s, 50);
+        if (s ? (many(t[i]) = (*s + 1))) then n +:= 1;
+        n +:= *t[i];
+    };
+    write(n);
+    u := cset("");
+    every i := 1 to *t by 3 do {
+        u := u ++ t[i];
+        junk := repl(mk(i), 30);
+    };
+    write(*u);
+    m := 0;
+    every i := 1 to 300 do {
+        s := mk(i);
+        if (s ? (upto(t[i]) = 1)) then m +:= 1;
+        if (s ? (any(t[i]) = 2)) then m +:= 1;
+    };
+    write(m);
+    every i := 1 to *t by 37 do write(i, " ", image(t[i]));
+end
