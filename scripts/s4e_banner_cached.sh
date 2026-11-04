@@ -7,6 +7,9 @@
 # first call with no cache runs the verb inline under the old budget. A cached banner older than 60 s says its age and the load.
 #   s4e_banner_cached.sh <root> <seat>            the hook's call: prints the JSON {systemMessage} line
 #   s4e_banner_cached.sh --refresh <root> <seat>  the background arm: rewrites the cache from the verb
+# THE WAKE BY HOOK (box-scheduler step 10, CTO-496): the Stop hook's JSON on stdin goes to s4e_stop_gate.sh; while the seat holds unread mail or a row
+# ASSIGNED or CLAIMED to it the gate answers {"decision":"block","reason":...}, merged here with the banner, and the session continues on its own work.
+# The seat is S4E_SEAT when the session sets it (every root's settings.local.json does), else the hook's argument.
 set -u
 if [ "${1:-}" = "--refresh" ]; then
     root="$2"; seat="$3"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"
@@ -14,7 +17,8 @@ if [ "${1:-}" = "--refresh" ]; then
     [ -s "$c.tmp" ] && mv -f "$c.tmp" "$c"
     rm -f "$c.lock" "$c.tmp"; exit 0
 fi
-root="${1:?root}"; seat="${2:?seat}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
+root="${1:?root}"; seat="${S4E_SEAT:-${2:?seat}}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
+hookin=""; [ -t 0 ] || hookin="$(timeout 2 cat 2>/dev/null)"
 now=$(date +%s); load=$(cut -d' ' -f1 /proc/loadavg)
 [ -f "$c.lock" ] && [ $(( now - $(stat -c %Y "$c.lock") )) -gt 900 ] && rm -f "$c.lock"
 spawn() { setsid bash "$root/harness/scripts/s4e_banner_cached.sh" --refresh "$root" "$seat" < /dev/null > /dev/null 2>&1 & }
@@ -28,4 +32,12 @@ else
     if [ -n "$out" ]; then printf '%s' "$out" > "$c"; else out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
 fi
 if [ -f "$root/.claude/banner_compact.py" ]; then cmp="$(printf '%s' "$out" | python3 -I "$root/.claude/banner_compact.py" 2>/dev/null)" && [ -n "$cmp" ] && out="$cmp"; fi
-printf '%s' "$out" | python3 -c 'import json,sys; print(json.dumps(dict(systemMessage=sys.stdin.read())))'
+gate="{}"; g="$root/harness/scripts/s4e_stop_gate.sh"
+[ -f "$g" ] && gate="$(printf '%s' "$hookin" | timeout 20 bash "$g" "$root" "$seat" --json 2>/dev/null)"
+printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
+m=sys.stdin.read()
+try: g=json.loads(os.environ.get("G") or "{}")
+except Exception: g={}
+if g.get("decision")=="block":
+    m=m+"\n⛔ THE STOP IS BLOCKED BY THE WAKE HOOK (box-scheduler step 10): "+g["reason"]
+g["systemMessage"]=m; print(json.dumps(g))'

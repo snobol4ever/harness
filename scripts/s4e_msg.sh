@@ -779,8 +779,11 @@ s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
 # same fact still agree -- the same class as the per-root digests drifting from RULES.md.
 s4e_root() { case "$1" in ceo|hq) if [ -d /home/claude_ceo ]; then echo /home/claude_ceo; else echo /home/claude; fi;; cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_unicon) echo /home/claude_unicon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
-s4e_hqboxes() { for _h in hq hq_icon hq_unicon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V ceo cto coo cfo cao cqo; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done; }
-s4e_is_hq() { case "$1" in hq|hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_P|hq_B|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|ceo|cto|coo|cfo|cao|cqo) return 0;; *) return 1;; esac; }
+s4e_roster() { sed -n 's/^ROSTER:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1; }
+s4e_legacy_seats="hq hq_icon hq_unicon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm"
+s4e_legacy_seats="$s4e_legacy_seats hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V ceo cto coo cfo cao cqo"
+s4e_hqboxes() { for _h in $(s4e_roster) $s4e_legacy_seats; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done | awk '!seen[$0]++'; }
+s4e_is_hq() { case " $(s4e_roster) $s4e_legacy_seats " in *" $1 "*) return 0;; *) return 1;; esac; }
 # ⛔⭐⭐ ONE AUTHORITY FOR "IS THIS SEAT STANDING", CALLED TWICE (coo 2026-09-20, ceo CEO-1002, row
 # instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat). This case was INLINE in `next`,
 # where it could only ever answer the question about $ME -- and the announcing cure has to ask it about EVERY OTHER
