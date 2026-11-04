@@ -1272,3 +1272,5 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1273	pas	__pas_xr_un	-	-	-	inline	-	-	0	pas
 1274	pas	__pas_xr_str	-	-	-	inline	-	-	0	pas
 1275	pas	__pas_xr_ev	1	-1	pas_xr_ev_d	inline	-	-	0	dop_direct,pas
+1276	icn	ICN$UIDENT	1	1	bt_ICNx24UIDENT	leaf	-	-	0	fn_arms
+1277	icn	ICN$UMUTEX	0	1	bt_ICNx24UMUTEX	leaf	-	-	0	fn_arms
