@@ -9,7 +9,7 @@
 #                probe tokens: sym=a,b (out/libscrip_rt.so exports each name), kind=NAME (gc_heap.h defines NAME and HB_KIND_NAME names it),
 #                irgrep=REGEX@W:N (scrip --dump-ir of witness W prints at least N lines matching REGEX), irzero=REGEX@W (none), entries=a,b (the
 #                named rosetta-pascal entries through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight,
-#                R-1677). Red before the step lands, green after.
+#                R-1677), hdrfield=NAME (gc_heap.h's rt_hblk_t declares a field uint32_t NAME). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --out DIR    where the runs go (default <root>/.scratch/pascal_packed_arrays)
 #
@@ -106,6 +106,8 @@ for tok in $probe; do
                  printf '%s\n' "$sm" > "$OUT/step$step/smoke.log"
                  ok=0; for e in $es; do printf '%s\n' "$sm" | grep -E "^AREA_SMOKE_ENTRY .*entry=$e .*m3=PASS.*m4=PASS" > /dev/null && ok=$((ok + 1)); done
                  readings="$readings entries=$ok/$cnt"; [ "$ok" = "$cnt" ] || pgreen=0 ;;
+        hdrfield) [ -f "$HEAP_H" ] || refuse "no $HEAP_H"; ok=0; grep -q "^typedef struct rt_hblk_t {.* uint32_t $val;" "$HEAP_H" && ok=1
+                  readings="$readings hdrfield_$val=$ok"; [ "$ok" = 1 ] || pgreen=0 ;;
         *) refuse "unknown probe token $tok in step $step" ;;
     esac
 done
