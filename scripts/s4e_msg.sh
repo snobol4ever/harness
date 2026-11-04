@@ -1138,18 +1138,22 @@ s4e_lane_owner_of_language() {
       # ⛔⭐ MODE TENET WITH THE THREE LANGUAGE HQs (CEO-1866, 2026-10-21 17:2x CDT, Lon in-chat to the ceo, verbatim: "I suspect we would benefit from having HQ-SNOBOL4, HQ-ICON, and
       # HQ-PROLOG working for the fleet." · "I started HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG."): ICON to hq_icon, PROLOG to hq_prolog, SNOBOL4 to hq_snobol4 (NONET's arms, CEO-1813);
       # the other four stay the ceo's, who assigns. The QUARTET arms (icon, prolog and snobol4 to the ceo) are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       icon)     printf 'hq_icon';;
-       prolog)   printf 'hq_prolog';;
+      # ⛔⭐ MODE TRIO, THE THREE OFFICERS OVERNIGHT (Lon 2026-11-03 23:5x CST, in the cto's window, verbatim: "You CTO are seated as Fable 5.1 high. Both COO and CFO are
+      # seated as Opus 5.5 high. Go to TRIO mode. It is just you three overnight." and "Have COO find the test suite programs that need fixing and fix those immediately
+      # between you and CFO and COO"; cto CEO-2116): every language's FREE rows route to the coo, the admin who finds and assigns (CEO-2095/2107; LANES: already names
+      # the coo for every language); rebus leaves the removed ceo seat. The hq seats and their rows stay in place (CEO-755c). The TENET table is the one above this note.
+       icon)     printf 'coo';;
+       prolog)   printf 'coo';;
       # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (CEO-1827, 2026-10-18, Lon in-chat to the ceo: "we should run a reduced fleet until things settle"; roster ceo coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the ceo, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (CEO-1046).
-       snobol4)  printf 'hq_snobol4';;
+       snobol4)  printf 'coo';;
       # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (CEO-1870, 2026-10-21 17:3x CDT, Lon in-chat to the ceo, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
       # hq_pascal, RAKU to hq_raku; snocone and rebus stay the ceo's, who assigns. The two arms ceo for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       pascal)   printf 'hq_pascal';;
+       pascal)   printf 'coo';;
       # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (CEO-1871, 2026-10-21 17:4x CDT, Lon in-chat to the ceo, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
       # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the ceo's. The arm ceo for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       snocone)  printf 'hq_snocone';;
-       rebus)    printf 'ceo';;
-       raku)     printf 'hq_raku';;
+       snocone)  printf 'coo';;
+       rebus)    printf 'coo';;
+       raku)     printf 'coo';;
     esac
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
