@@ -961,282 +961,76 @@ s4e_skills_for_topic() {   # <topic> -> "/skill /skill ..." (empty when none mat
   case "$t" in runtime-*|headers-step-1b*|headers-step-5*|*fixed-cap*|*global*) out="$out /scrip-c-code";; esac
   case "$t" in *gate*|*witness*|*ladder*|*rung*) out="$out /gates-and-witnesses";; esac
   printf '%s' "${out# }"; }
-s4e_announce_claim() {   # <topic> -- deliver the notice to the ceo and to every standing seat HOLDING A LIVE ROW IN THIS ROW'S LANE, then print the neighbourhood
-  # ⛔⭐ WHO IS TOLD (ceo CEO-2078, 2026-10-31). Measured over seven days: 6,446 bus messages, 3,288 of them claim notices, because every
-  # claim was mailed to every standing seat -- 27 to 31 a day in each inbox, three quarters of an HQ's mail, and the notice's own text
-  # admits a topic string cannot show the overlap. A notice in a mailbox nobody reads is the noise that trains seats to stop reading
-  # notices (this file's own words, above). The seats that CAN see a population overlap are the ones working a row in the same LANE
-  # (the topic's language prefix) or a lane-neutral row (zeta, spine, gc, headers, instruments: shared code overlaps everyone), plus the
-  # cto, who arbitrates since the ceo left the roster (Lon 2026-10-31 15:1x CDT; MODE line 2: asks and rulings go to the cto), plus the row's owner cell. Everyone else reads $PO/CLAIMS.log, one line per claim, whoever was mailed.
-  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _lang _cl _ct _recip=" cto " _ocell _live=""
+s4e_touches() {   # <topic> -> the row's declared paths, one per line: the baton's TOUCHES: line, else the slash-bearing words after "Landing files:" in its text
+    local _b="$PO/tasks/$1.task.md"; [ -f "$_b" ] || return 0
+    if grep -q '^TOUCHES:' "$_b"; then sed -n 's/^TOUCHES:[[:space:]]*//p' "$_b" | tr ' ,' '\n\n'
+    else grep -o -i 'landing files:[^;]*' "$_b" | head -1 | sed 's/^[^:]*://' | tr ' ,' '\n\n' | grep '/'; fi | sed 's#^\./##; s#/*$##' | grep -v '^$' | sort -u; }
+s4e_paths_overlap() {   # <file a> <file b> -> prints the overlapping paths (a prefix of the other, by path component); rc 0 when any
+    awk 'NR==FNR {a[$0]=1; next} { for (x in a) { if (x==$0 || index($0, x "/")==1 || index(x, $0 "/")==1) print (length(x)<length($0)?x:$0) } }' "$1" "$2" | sort -u | grep . ; }
+s4e_announce_claim() {   # <topic> -- box-scheduler step 21 (CTO-496): a claim notice goes ONLY to a seat whose live row touches a path this row touches
+  local _t="$1" _s _n=0 _bad=0 _f _mode _list="" _c _own _k=0 _ct _recip="" _ocell _live="" _sup=0 _mine _theirs _ov _why _no=0
   _mode="$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')"
-  _lang="${_t%%-*}"; case " $(s4e_lane_languages) dotnet jvm " in *" $_lang "*) ;; *) _lang="";; esac
-  _ocell="$(qrow "$_t" 2>/dev/null | cut -f3)"; [ -n "$_ocell" ] && _recip="$_recip$_ocell "
+  _mine="$(mktemp)"; _theirs="$(mktemp)"; s4e_touches "$_t" > "$_mine"
+  _ocell="$(qrow "$_t" 2>/dev/null | cut -f3)"
   for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue
     _own="$(head -1 "$_c" 2>/dev/null)"; _ct="$(basename "$_c" .claim)"
-    [ "$(s4e_claim_verdict "$_ct")" = "HELD" ] || continue
-    _cl="${_ct%%-*}"; case " $(s4e_lane_languages) dotnet jvm " in *" $_cl "*) ;; *) _cl="";; esac
-    # ⛔ A PORT IS A LANE OF ITS OWN (ceo CEO-2081): a dotnet- or jvm- row shares no code with SCRIP, so a lane-neutral SCRIP row (gc, zeta,
-    # headers) is not shared code to a port holder, nor a port's row to a SCRIP holder. Measured the hour the ports joined: hq_dotnet was mailed
-    # the cao's gc- claim and hq_jvm's own claim was mailed to every neutral holder.
-    case "$_lang:$_cl" in dotnet:*|jvm:*|*:dotnet|*:jvm) [ "$_cl" = "$_lang" ] && _recip="$_recip$_own ";;
-      *) if [ -z "$_lang" ] || [ -z "$_cl" ] || [ "$_cl" = "$_lang" ]; then _recip="$_recip$_own "; fi;; esac
+    [ "$_ct" = "$_t" ] && continue; [ "$(s4e_claim_verdict "$_ct")" = "HELD" ] || continue
     [ "$_own" = "$ME" ] && continue
     _k=$((_k+1)); _live="$_live$(printf '  LIVE CLAIM  %-11s %s\n' "$_own" "$_ct")
 "
+    s4e_touches "$_ct" > "$_theirs"
+    if [ -s "$_mine" ] && _ov="$(s4e_paths_overlap "$_mine" "$_theirs")"; then
+      _f="$PO/$_own/inbox/$(date +%s%N)-$ME-claim-notice-$_t.msg"
+      if [ -d "$PO/$_own/inbox" ] && { printf 'FROM %s TO %s RE claim-notice-%s\n' "$ME" "$_own" "$_t"
+           printf 'OVERLAP BY PATH: %s has taken row %s at %s; it touches %s, and your live row %s touches the same. Say so now if it moves what you are measuring; otherwise no reply is owed (box-scheduler step 21).\n' \
+             "$ME" "$_t" "$(date -u +%FT%TZ)" "$(printf '%s' "$_ov" | tr '\n' ' ')" "$_ct"; } > "$_f"; then _n=$((_n+1)); _list="$_list $_own"
+      else _bad=$((_bad+1)); printf '⛔ COULD NOT ANNOUNCE to %s -- the row is YOURS regardless; the announcement is what failed\n' "$_own"; fi
+    else _sup=$((_sup+1)); fi
   done
-  for _s in $(s4e_standing_boxes "$_mode"); do
-    [ "$_s" = "$ME" ] && continue
-    case "$_recip" in *" $_s "*) ;; *) continue;; esac
-    _f="$PO/$_s/inbox/$(date +%s%N)-$ME-claim-notice-$_t.msg"
-    if { printf 'FROM %s TO %s RE claim-notice-%s\n' "$ME" "$_s" "$_t"
-         printf 'WORK STARTED: %s has taken the row %s at %s. This is the bus announcing a claim, not a request and not a question.\n' "$ME" "$_t" "$(date -u +%FT%TZ)"
-         printf 'You hold a live row in this lane (or a shared-code row), so you are told; if it overlaps what YOU are measuring -- by population, not by name, which is the overlap a topic string cannot see -- say so now rather than after a failed fast-forward (ceo CEO-1002, CEO-2078).\n'; } > "$_f" 2>/dev/null; then
-      _n=$((_n+1)); _list="$_list $_s"
-    else _bad=$((_bad+1)); printf '⛔ COULD NOT ANNOUNCE to %s -- the row is YOURS regardless; the announcement is what failed\n' "$_s"; fi
-  done
-  printf '%s\t%s\t%s\tlane=%s\tmailed=%s\n' "$(date -u +%FT%TZ)" "$ME" "$_t" "${_lang:-neutral}" "${_list:- none}" >> "$PO/CLAIMS.log" 2>/dev/null
+  if [ -n "$_ocell" ] && [ "$_ocell" != "$ME" ] && [ -d "$PO/$_ocell/inbox" ] && ! grep -qF " $_ocell" <<< "$_list"; then
+    _f="$PO/$_ocell/inbox/$(date +%s%N)-$ME-claim-notice-$_t.msg"
+    { printf 'FROM %s TO %s RE claim-notice-%s\n' "$ME" "$_ocell" "$_t"; printf 'YOUR ROW IS TAKEN: %s has taken row %s (owner cell %s) at %s. No reply is owed.\n' "$ME" "$_t" "$_ocell" "$(date -u +%FT%TZ)"; } > "$_f" && { _n=$((_n+1)); _list="$_list $_ocell"; }
+  fi
+  [ -s "$_mine" ] || _no=1
+  printf '%s\t%s\t%s\ttouches=%s\tmailed=%s\tsuppressed=%s\n' "$(date -u +%FT%TZ)" "$ME" "$_t" "$(tr '\n' ' ' < "$_mine" | sed 's/ $//')" "${_list:- none}" "$_sup" >> "$PO/CLAIMS.log" 2>/dev/null
+  rm -f "$_mine" "$_theirs"
   _sk="$(s4e_skills_for_topic "$_t")"; [ -n "$_sk" ] && printf '⭐ LOAD BEFORE TOUCHING CODE (SOP step 5, CEO-2085): %s -- the Skill tool, once per session\n' "$_sk"
-  printf -- '-- the neighbourhood, read at the moment you took this row (ceo CEO-1002) --\n'
-  printf '  announced to %d standing seat(s) under MODE %s:%s\n' "$_n" "${_mode:-ABSENT}" "${_list:- NONE}"
-  printf '  (the ceo and every standing seat holding a live row in lane %s; every other seat reads CLAIMS.log; CEO-2078)\n' "${_lang:-neutral}"
+  printf -- '-- the neighbourhood, read at the moment you took this row --\n'
+  printf '  OVERLAP by=paths notices_sent=%d notices_suppressed=%d to:%s\n' "$_n" "$_sup" "${_list:- NONE}"
+  [ "$_no" = 1 ] && printf '  ⛔ NO TOUCHES ON THE BATON: no overlap can be computed, so NO claim notice went out. Add a TOUCHES: line (path prefixes under the root, space-separated) to %s/tasks/%s.task.md so the seats that touch the same files hear of this claim.\n' "$PO" "$_t"
   [ "$_bad" -gt 0 ] && printf '  ⛔ %d announcement(s) FAILED and are named above -- do not read this line as delivery\n' "$_bad"
   printf '%s' "$_live"
   if [ "$_k" -eq 0 ]; then printf '  (no other seat holds a row right now)\n'
-  else printf '  ⛔ %d row(s) are being worked RIGHT NOW by other seats. Read them for a POPULATION you are about to\n     measure, not for a name that matches yours -- the 30-entry collision above matched on neither.\n' "$_k"; fi
-  return 0; }
-# ⭐⭐ THE LANE — topic->seat and identity->seat, so `next` can restrict dispatch. Topic lane: the owner cell
-# (QUEUE.tsv field 3) wins when it already names a standing seat — an explicit, already-made decision beats a
-# guess; otherwise derived from the topic's LANGUAGE prefix. A topic naming no language (a postoffice/tooling/
-# meta row) returns empty: UNDETERMINED, never defaulted, because guessing wrong here would starve or misroute
-# a lane the mapping cannot see. Callers must treat empty as lane-neutral (servable from any lane).
-#
-# ⛔⭐⭐ THE FALLBACK IS A SECOND COPY OF MODE LINE 2, AND A SECOND COPY OF A LAW IS A LAW THAT ROTS (ceo
-# CEO-672, verbatim). It did rot: measured 2026-09-13 by the ceo and re-measured independently here, SIX OF
-# SEVEN language fallbacks named a seat that does not own that language under NONET — icon->hq_B where Icon is
-# the ceo, snobol4->hq_P where it is the cfo, snocone->hq_P where it is hq_I, pascal->hq_P where it is the coo,
-# rebus->hq_T where it is hq_S, prolog->hq_C where the cto owns completeness. Exactly one, raku->hq_T, survived.
-# ⛔ AND IT FAILED SILENTLY IN BOTH DIRECTIONS AT ONCE, which is why nobody caught it: `next` served rows to
-# seats that do not own them AND skipped them for the seats that do. hq_S watched it skip thirty rows before
-# locking a SNOBOL4 row it then released unworked.
-# ⭐ THE IRONY IS TWELVE LINES UP, AND IT IS THE WHOLE LESSON: s4e_root's comment already records this exact
-# class — "nothing checks that two hand-written tables of the same fact still agree" — written when hq_T was
-# missing from one of two identity maps. The lane table was the next instance, sitting directly beneath the
-# warning. A lesson filed as a fact about one table does not generalise on its own; only an instrument does.
-# ⛔ SO THE TABLE IS WRITTEN ONCE, HERE, AND EVERY OTHER READER DERIVES FROM IT. It used to be written twice in
-# this one file — the case arms below and the `mint` help text — and by 2026-09-13 the two were stale in
-# DIFFERENT directions (the help text still read "hq_I Icon suites", where hq_I is SNOCONE). A third copy is
-# what `mint` printed while refusing the very row that cures this.
-# ⛔ IT IS STILL A COPY, AND test_gate_picker_lane_table_agrees_with_mode.sh is what keeps it honest. Deriving
-# it from MODE line 2 at call time was the other option the ceo offered and it was MEASURED AND REJECTED: the
-# only parseable ownership shape ("THE SEATS: RAKU -- hq_T; ...") appears in ONE of the last TEN MODE versions,
-# because line 2's phrasing is reinvented at every mode cut. A parser over it would have silently fallen back
-# to this table for nine of ten modes — today's bug, with machinery on top and a false claim of freshness.
-s4e_lane_languages() { printf 'icon prolog snobol4 snocone pascal raku rebus'; }
-s4e_lane_owner_of_language() {
-    case "$1" in
-      # ⛔ MODE DECTET (CEO-767, 2026-09-16, Lon: one HQ per language, four officers for the shared nodes): each
-      # language's completeness AND speed owner is its HQ, named for the language; Rebus is closed and folded
-      # into the cfo as keep-green; the officers own no language (cto the spine, cfo the collector and the
-      # SNOBOL4 runtime crash classes, coo the one runner, ceo the loop). Written out per language because the
-      # gate beside it compares this table to MODE line 2 LANGUAGE BY LANGUAGE, and a table that collapsed to a
-      # default would agree with a line 2 that had drifted on six of them without anything noticing.
-      # ⛔ MODE CEO (CEO-903, 2026-09-18, Lon in-chat: "I'm thinking we go to CEO mode"): ONE SEAT HOLDS EVERY
-      # LANGUAGE. Written out per language rather than collapsed to a default for the same reason the DECTET
-      # table above was: the gate compares this table to MODE line 2 LANGUAGE BY LANGUAGE, and a default would
-      # agree with a line 2 that had drifted on six of them without anything noticing. The DECTET mapping is
-      # kept in the comment above so the flip back is a seven-line edit and not a reconstruction.
-      # ⛔ MODE CEO (CEO-1103, 2026-09-22, Lon in-chat to the ceo: "The fleet is quiet. It is just you, CEO. We will get GC 100%, you and me. Go to CEO mode only."): ONE SEAT HOLDS EVERY LANGUAGE again. Written out per language rather than collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE, and a default agrees with a line 2 that has drifted on six of them without anything noticing.
-      # ⛔ MODE SEPTET (CEO-979, 2026-09-20, Lon: "Go to mode SEPTET, with the four current officers and 3 more HQ's as Opus"): THREE language HQs stand and they were chosen by GC DEBT, not by
-      # language coverage -- hq_raku 31 of the 72 no_layout plus the 8,000,486-hit method road, hq_snobol4 31 no_layout plus SnoRungs' two tiny-arena reds, hq_prolog 10 no_layout plus the findall
-      # enumeration defect. The four languages whose HQ is NOT standing stay with the ceo, and rebus stays the cfo's keep-green as under DECTET. Written out per language, never collapsed to a
-      # default, for the reason the two tables above give: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE, and a default agrees with a line 2 that has drifted on four of them.
-      # ⛔ MODE TENET (CEO-1010, 2026-09-20, Lon: 4 officers and 6 HQs): EVERY language goes to its own HQ and the three the ceo was holding -- icon, pascal, snocone -- are handed over. Rebus stays the cfo's keep-green at 43/43. The officers own NO language, which is CEO-802 unchanged: they supervise and take the rows an HQ fails at.
-      # ⛔ A GC DEFECT IN AN HQ'S OWN LANGUAGE IS THAT HQ'S ROW AND OUTRANKS ITS COMPLETENESS WORK (CEO-1010 condition 1). This is not a preference: class 2 of the unmapped-slot population -- a graph with no frame layout has no map at all -- is PER-LANGUAGE by construction, and the cto assigned it to the HQs in writing before cutting. Without the rank, a live collector defect sits behind 1,455 roast entries.
-      # ⛔ MODE EXECUTIVE (CEO-1038, 2026-09-21, Lon in-chat: "We are currently running with only 4 officers, CEO, CTO, CFO,
-      # and COO. Just so you are clear."): the six language HQs are stood down and the REVIEWERS of CEO-802 become the
-      # owners -- the cto reviewed hq_prolog and hq_raku, the cfo reviewed the other four and already held rebus. This is
-      # the CURE owner; the BOARD RUNNER is the coo for all seven on the MODE LANES line, because the coo holds the measure
-      # and by CEO-723 holds no cure lane. Written out per language rather than collapsed to a default for the reason every
-      # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE TENET RESTORED (CEO-1040, 2026-09-21, Lon: "Go to TENET mode now."): six language HQs at Sonnet 5
-      # effort max plus four officers at Opus 5 effort max. Each language's owner is its HQ again; rebus stays the
-      # cfo's keep-green. THE HQs OWN ITEM 4 OF THE GC COMMITMENT -- zero gradings lost to the collector -- which is
-      # six-way parallel; the officers own items 1-3, which are single-site landings and are not. Written out per
-      # language rather than collapsed to a default: the gate beside this compares it to MODE line 2 LANGUAGE BY
-      # LANGUAGE, and a default would agree with a line 2 that had drifted on six of them without anything noticing.
-      # ⛔ MODE EXECUTIVE RESTORED (CEO-1051, 2026-09-21 13:0x, Lon in-chat to the ceo, verbatim: "I do not think we
-      # can afford running the 6 HQ's today. Let's bring those back down. We'll have to get GC complete without them."):
-      # the six language HQs stand down again after one afternoon and the CEO-802 REVIEWERS become the cure owners --
-      # the cto reviewed hq_prolog and hq_raku, the cfo reviewed the other four and already held rebus. ⛔ THIS TABLE IS
-      # MOVED BEFORE THE MODE FILE, NOT AFTER, which is CEO-1046 landed forty minutes earlier and b36a7f709's procedure:
-      # two flips on 2026-09-21 left this table stale and make preflight RED FOR EVERY SEAT in BOTH directions inside
-      # twenty minutes, the second red produced by the correct cure of the first. The coo's deeper cure -- the gate reads
-      # a COMMITTED declaration so a flip that forgets its table is caught AT THE FLIP -- is rowed to them and not yet
-      # landed, so until it is, the ORDER of these two edits is the whole guard. Written out per language rather than
-      # collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE line 2
-      # LANGUAGE BY LANGUAGE, and a default would agree with a line 2 that had drifted on six of them unnoticed.
-      # ⛔ MODE TENET RESTORED AGAIN (CEO-1055, 2026-09-21 13:3x, Lon in-chat to the ceo, verbatim: "Well then, I
-      # changed my mind once again. Go to TENET mode."): the six language HQs stand back up, each owning its own
-      # language; rebus stays the cfo's keep-green. ⛔ THIS IS THE FOURTH MODE FLIP OF 2026-09-21 -- TENET at 12:08,
-      # EXECUTIVE at 12:34, TENET again now, after SEPTET/EXECUTIVE earlier -- AND THE FLIP RATE IS THE ARGUMENT, NOT
-      # THE FLIPS. Two of the four left this table stale and turned make preflight RED FOR EVERY SEAT; two did not,
-      # because the table moved in its own commit BEFORE the MODE file (CEO-1046, b36a7f709). That is a procedure
-      # followed twice and forgotten twice IN ONE DAY, which is the measured failure rate of a guard made of a seat
-      # remembering to do two edits in the right order. The coo's row -- the gate reads a COMMITTED declaration, so a
-      # flip that forgets its table is caught AT THE FLIP by the flipper's own preflight instead of by whoever lands
-      # next -- is ranked up on this evidence (CEO-1055). Written out per language rather than collapsed to a default
-      # for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE CEO (CEO-1069, 2026-09-21 14:0x, Lon in-chat to the ceo, verbatim: "And now you are in CEO mode.
-      # The fleet is going quiet now."): ONE SEAT HOLDS EVERY LANGUAGE. The six language HQs AND the three other
-      # officers are stood down; rebus comes back to the ceo with the rest. Written out per language rather than
-      # collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE
-      # line 2 LANGUAGE BY LANGUAGE, and a default would agree with a line 2 that had drifted on six of them.
-      # ⛔ THIS TABLE MOVED BEFORE THE MODE FILE, through ../harness/scripts/mode_flip.sh --preview, which is the
-      # mechanism landed at c641a38f one hour earlier after the table-before-the-file procedure was FOLLOWED TWICE
-      # AND FORGOTTEN TWICE in a single day. This is its first real use.
-      # ⛔ MODE DUO-STUPID (CEO-1087, 2026-09-21 15:5x, Lon in-chat to the ceo, verbatim: "Let's get double stupid
-      # going, so go to DUO-STUPID mode, i.e. CEO and CTO."): TWO WORKING SEATS, the ceo and the cto. The split is
-      # BY THE WORK IN FRONT OF BOTH SEATS -- the C->BB->C->BB eradication of CEO-1086 -- and the language cells are
-      # assigned so that each seat owns the languages whose runtime carries its half of that population: the ceo
-      # holds SNOBOL4 and SNOCONE because rt_call_proc_descr and core.c's APPLY road are the ceo's half (1044 of the
-      # 1062 live transitions measured on the SnoRungs pass at f177904f6), plus ICON and REBUS; the cto holds PROLOG,
-      # RAKU and PASCAL and the by_name_dispatch.c / runtime_eval.c / rt_call_named_proc / rt_proc_call_gen_h half.
-      # ⛔ THE NAME IS LON'S AND IT IS SPELLED OUT IN EVERY GUARD RATHER THAN ALIASED TO DUO: an alias would make
-      # two modes share one reason, and a mode name that no `case` arm lists is admitted by FALLING OUT, which
-      # returns success (CEO-755b). Written out per language rather than collapsed to a default for the reason every
-      # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE QUARTET (CEO-1089, 2026-09-21 16:1x, Lon in-chat to the ceo, verbatim: "Let's get four times the
-      # stupid going. Go to QUARTET mode, CEO, CTO, CFO, and COO. Have COO do the before and after -O0 old versus new
-      # GC and -O2 speed test for all languages."): FOUR WORKING SEATS, the four officers, the six language HQs stood
-      # down. ⛔ THE coo OWNS NO LANGUAGE CELL AND THAT IS THE RULE, NOT AN OVERSIGHT (CEO-723, Lon 2026-09-13:
-      # "It is not possible for COO to do two jobs. He failed at Pascal."): the coo holds THE MEASURE -- the before/after
-      # speed and collector study Lon just ordered, across all seven languages -- and a seat holding the measure holds no
-      # cure lane, so pascal moves to the cto rather than to the coo. The cfo takes ICON because its live rank-0 row is
-      # the icon builtin root class, and keeps REBUS as keep-green. The ceo keeps SNOBOL4 and SNOCONE, where its half of
-      # the C->BB population lives. Written out per language rather than collapsed to a default for the reason every
-      # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE DUO (CEO-1108, 2026-09-22, Lon in-chat to the ceo, verbatim: "Go to DUO mode. CEO and CTO as Opus 5
-      # effort max."): TWO WORKING SEATS, the ceo and the cto; the cfo and the coo stay stood down and no HQ stands.
-      # ⛔ THE SPLIT IS BY LAYER, NOT BY SITE COUNT, and the language cells follow the layer rather than driving it
-      # (the ceo's recommendation Lon acted on): the cto takes THE ENFORCEMENT HALF -- the per-safe-point slot-kind
-      # table, the planner giving every call result live across a poll a mapped slot, and the emitter REFUSING a safe
-      # point that stores outside the map (their four already-claimed rows, of which
-      # gc-frame-maps-are-keyed-by-graph-not-by-safe-point-44-polls-2-maps is the keystone) -- while the ceo takes THE
-      # SITE CONVERSIONS behind that refusal. ⛔ THE REASON THE ENFORCEMENT COMES FIRST IS MEASURED, NOT ARGUED
-      # (CEO-1107): with maps keyed by GRAPH and not by SAFE POINT, "what is live at this poll" is not a question the
-      # compiler can answer, so every one of the 120 open sites is a hand liveness judgment audited after the fact by
-      # a five-minute rungs run -- 77 insertions by callee return class broke three languages in m3, and the 26 that
-      # survived all eight smokes still cost 57 Icon programs against a clean-tree control arm.
-      # ⛔ THE LANGUAGE CELLS ARE THE DUO-STUPID SPLIT OF CEO-1087 UNCHANGED, deliberately: the work is layer-split, so
-      # re-cutting the language cells would be churn that costs both seats their bearings for no measured reason. The
-      # ceo keeps ICON because it is the sharpest detector in the tree (826/826 clean, and it is what caught the 57)
-      # and the conversions are the ceo's half; SNOBOL4 and SNOCONE stay with the ceo where its half of the C->BB
-      # population lives; REBUS stays the ceo's keep-green with the cfo stood down. The cto holds PROLOG, RAKU and
-      # PASCAL. ⛔ A SHARED-NODE LANDING STILL TRAVELS WITH ITS CONTROL ARM whoever lands it (CEO-801/757): the lane
-      # names the default picker and the reviewer-after-the-fact, never who may land.
-      # ⛔ AND THE TWO SEATS DO NOT RUN RUNG_SUITES AT THE SAME TIME ON THIS BOX: a board taken while the other seat is
-      # building or grading is void (the cfo's flakiness finding plus CEO-1107's own rebuild-under-a-board), which is
-      # the second reason the layer split is the right one -- the cto's half is compile-and-gate work and needs almost
-      # no rungs passes, and the ceo's half is what needs them.
-       # ⛔ MODE CEO (CEO-1247, 2026-09-24 18:4x CDT, Lon in-chat to the ceo, verbatim: "The fleet is in CEO only mode." and "You, CEO, are
-       # seated as Fable 5.1 with max effort."): ONE SEAT HOLDS EVERY LANGUAGE for the SNOBOL4 speed campaign (CEO-1246). Written out per
-       # language, never collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE line 2
-       # LANGUAGE BY LANGUAGE. The DECTET mapping it replaces (icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=hq_pascal
-       # snocone=hq_snocone raku=hq_raku rebus=ceo, the last since CEO-1178) is the flip-back template; this table moves BEFORE the MODE
-       # file (CEO-1051's order: a flip that forgets its table reds make preflight for every seat).
-       # ⛔ MODE TENET (CEO-1266, 2026-09-25, minutes after NONET, Lon in-chat to the ceo: "I also included HQ-RAKU. So go to TENET mode, 4 officers + 6 HQ's."): every
-       # language goes to its own HQ and RAKU returns to hq_raku; REBUS stays the ceo's keep-green. The NONET block below is the record of the half hour between.
-       # ⛔ MODE NONET (CEO-1266, 2026-09-25, Lon in-chat to the ceo: "Go now to NONET mode."; the five HQs by his answer "SNO, PL, PAS, SNOCONE, and ICON"): the four
-       # officers and five language HQs; the two languages with no HQ go to an officer -- RAKU to the cto (its reviewer under DECTET, and its seat under QUARTET), REBUS to
-       # the ceo (its keep-green seat since CEO-1178). The CEO table above is the flip-back template. Written out per language, never collapsed to a default, for the
-       # reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-       # ⛔ MODE CEO (CEO-1275, 2026-09-26 08:5x, Lon in-chat to the ceo, verbatim: "Just so you are clear, we are in CEO mode only. The fleet is quiet."): ONE SEAT HOLDS EVERY
-       # LANGUAGE for the benchmark order of work (every language's kernels and demos against its oracle at -O0 into the README, SNOBOL4 first). The TENET mapping this replaces --
-       # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku -- is kept here so the flip back is a seven-line edit.
-       # Written out per language rather than collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-       # ⭐ MODE TENET AGAIN (CEO-1285, 2026-09-26 13:5x, Lon in-chat to the ceo, verbatim: "Switch to TENET mode."): the seven-line edit the CEO block above promised -- every
-       # language HQ takes its language back, rebus stays the ceo's (Lon: "There is no HQ-REBUS.").
-       # ⛔⭐ MODE QUINTET (CEO-1356, 2026-09-28 17:2x, Lon in-chat to the ceo: "Bring the fleet into QUARTET mode: CEO, CTO, CFO, and COO. Leave HQ-SNOCONE alone. So QUNTET mode."): SNOCONE
-       # stays hq_snocone's; the other languages take the QUARTET map of CEO-1123 -- ICON, SNOBOL4 and REBUS to the ceo, PROLOG, RAKU and PASCAL to the cto. The TENET mapping
-       # this replaces -- icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku -- is the flip-back template.
-       # ⛔⭐ MODE CEO (CEO-1357, 2026-09-28 18:1x, Lon in-chat to the ceo, verbatim: "Go to CEO mode. For go all work but what we focus on together here. I want to focus on the 6 Snocone parsers (excluding Raku)."): ONE SEAT
-       # HOLDS EVERY LANGUAGE, and the one thing it works is the six self-hosted Snocone parsers with Lon. The QUINTET mapping this replaces -- icon ceo, prolog cto, snobol4 ceo, pascal cto,
-       # snocone hq_snocone, rebus ceo, raku cto -- is the flip-back template, and the TENET mapping stays in the QUINTET comment above.
-       # ⛔⭐ MODE DUO (CEO-1362, 2026-09-29 16:3x, Lon in-chat to the ceo: "Would it help to get CTO involved and to go to DUO mode? We have the bandwidth and the usage credits." then "Let me know
-       # when CTO can start. He is seated as Opus 5.5 with max effort."): TWO WORKING SEATS, split by layer -- the cto bakes every call and deferred-pattern address (no by-name lookup at run
-       # time, compile-time site tables, patch on a second DEFINE or assignment; its row is assigned, not picked), the ceo keeps the six parsers, the runtime diagnostics switch and the boards.
-       # Every language stays the ceo's, so this table is the MODE CEO table unchanged; the DUO guard arms above already admit the cto.
-       # ⛔⭐ MODE QUARTET (CEO-1364, 2026-09-29 18:3x, Lon in-chat to the ceo: "WIll we not benefit from having CFO and COO at work?" then "The goal is parser.sc same as C and 2x faster than SPITBOL."): the four officers,
-       # split by layer as DUO was -- the cto bakes the calls, the coo is the testing officer again (LANES: names the coo), the cfo takes the collector and allocation under the parsers, the ceo keeps the
-       # parsers and the stored-pattern thunks. Rows are assigned, not picked by language, so this table stays the MODE CEO table unchanged; the QUARTET guard arms above already admit cto, cfo and coo.
-      # ⛔ MODE TENET (CEO-1383, 2026-10-01 09:0x CDT, Lon in-chat to the ceo, verbatim: "Let's get all test suites for all
-      # languages to 100%. Go to TENET mode, 4 officers, and 7 HQ's."): every language goes back to its own HQ, the eleventh seat
-      # hq_templates owns no language, rebus stays the ceo's keep-green as under the 2026-09-25 TENET (CEO-1266). Written out per
-      # language, never collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE
-      # line 2 LANGUAGE BY LANGUAGE. THIS TABLE IS MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔ MODE CEO (SOLO) (CEO-1396, 2026-10-02 09:1x CDT, Lon in-chat to the ceo, verbatim: "The fleet is idle. Go to CEO solo
-      # mode."): one working seat, the ceo, every language the ceo's; the officers and the seven HQs stood down with their claims
-      # parked in place (no re-lane, the CEO-1357/1372 precedent). The TENET table above is the flip-back template. THIS TABLE IS
-      # MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔ MODE TENET (CEO-1435) was a misreading, reverted to SEXTET the same sitting (CEO-1436, Lon: "Only HQ-ICON and HQ-SNOBOL4 and 4 officers are running.").
-      # ⛔⭐ MODE SEXTET (CEO-1433, 2026-10-02 19:2x, Lon in-chat to the ceo: "I'll fire up HQ-ICON and HQ-SNOBOL4 to help."): ICON to hq_icon, SNOBOL4 to hq_snobol4, the other five to the ceo; rows with an owner cell keep their owner.
-      # ⛔⭐ MODE TENET (CEO-1530, 2026-10-07 08:5x CDT, Lon in-chat to the ceo, verbatim: "Go to TENET mode with 4 officers and 7 HQ's."): the CEO-1383 TENET
-      # table again -- every language to its own HQ, hq_templates owning none, rebus the ceo's keep-green. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1587, 2026-10-09 18:2x CDT, Lon in-chat to the ceo, verbatim: "Bring the fleet to QUARTET mode, only four officers."): the ten HQs stand
-      # down (Lon had brought them idle at 17:4x); EVERY LANGUAGE TO THE ceo, who assigns, as the QUARTET of CEO-1521 (2026-10-05) and the DUO before it kept it; no
-      # re-lane (the CEO-1357/1372/1396 precedent: HQ rows and claims wait in place for the HQs' return). The TENET table above is the flip-back template:
-      # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE SEXTET (CEO-1591, 2026-10-10 09:0x CDT, Lon in-chat to the ceo, verbatim: "Let's continue getting Prolog and Raku at 100% like SNOBOL4 and Icon." then
-      # "Let's also have HQ-PROLOG and HQ-RAKU join us."): PROLOG to hq_prolog, RAKU to hq_raku, the other five to the ceo, who assigns; rows with an owner cell keep their
-      # owner. The QUARTET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1659, 2026-10-11 09:3x CDT, Lon in-chat to the ceo, verbatim: "Go to QUARTET mode with all four officers being seated as Opus 5.5 with
-      # xhigh effort."): the SEPTET of CEO-1595 ends -- hq_prolog, hq_raku and hq_pascal stand down with their claims and rows in place, nothing re-laned (the
-      # CEO-1357/1372/1396/1587 precedent); EVERY LANGUAGE TO THE ceo, who assigns, the table of CEO-1587. The SEXTET table above is the flip-back template:
-      # prolog hq_prolog, raku hq_raku, the other five the ceo. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE SEPTET (CEO-1662, 2026-10-11 10:3x CDT, Lon in-chat to the ceo, verbatim: "I suppose we should start HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG to help."):
-      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; rows with an owner cell keep their owner. The QUARTET
-      # table of CEO-1659 is the flip-back template (every language the ceo). MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE TENET (CEO-1665, 2026-10-11 11:3x CDT, Lon in-chat to the ceo, verbatim: "I suppose we can get the remaining 7 HQ's up and running all seated as Sonnet 5.5
-      # with xhigh effort. Lift the ban on Pascal and Raku."): the four officers and all ten HQs; the CEO-1383/1530 TENET table again -- every language to its own HQ, rebus
-      # the ceo's keep-green. The SEPTET table of CEO-1662 is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1773, 2026-10-15 10:2x CDT, Lon in-chat to the ceo, verbatim: "The fleet has yet to start. We'll start officers only for a while."): the
-      # TENET of CEO-1665 ends before the fleet starts -- the ten HQs stay down with their claims and rows in place, nothing re-laned (the CEO-1357/1372/1396/1587/1659
-      # precedent); EVERY LANGUAGE TO THE ceo, who assigns, the table of CEO-1659; CEO-1765's focus (ORDER-OF-WORK icon prolog snobol4) stands. The TENET table of
-      # CEO-1665 is the flip-back template: every language to its own HQ, rebus the ceo's. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE SEPTET (CEO-1777, 2026-10-15 10:5x CDT, Lon in-chat to the ceo, verbatim: "Would we benefit from having HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG join us? I'd
-      # start them as Sonnet 5.5 xhigh." then "We can have HQ-ICON work calgrind and optimize based on instruction count."): the SEPTET of CEO-1662 again -- the four
-      # officers, hq_snobol4, hq_icon and hq_prolog; ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; rows with an
-      # owner cell keep their owner. The QUARTET table of CEO-1773 is the flip-back template (every language the ceo). MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔ MODE QUARTET AGAIN (CEO-1809, 2026-10-15 18:5x CDT, Lon in-chat to the ceo, verbatim: "Let bring the fleet to idle and go to QUARTET mode."): the four officers
-      # only; every language to the ceo, who assigns, as CEO-1773's table; the SEPTET/OCTET/NONET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE NONET AGAIN (CEO-1813, 2026-10-17 14:3x CDT, Lon in-chat to the ceo, verbatim: "We should get HQ-SNOBOL4, HQ-ICON, HQ-PROLOG, and HQ=ZETAS also working in
-      # the fleet."): QUINTET's five plus those four -- CEO-1793's NONET roster, whose guard arm already admits exactly hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime.
-      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; hq_zetas and hq_runtime own no language. The QUINTET table
-      # (every language the ceo) is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔ MODE QUARTET (CEO-1852, 2026-10-21 09:0x CDT, Lon in-chat to the ceo, verbatim: "Go to QUARTET mode, four officers seated as Opus 5.5 xhigh."): hq_icon and hq_prolog
-      # stand down with the rest of the reduced fleet, so ICON and PROLOG route to the ceo, who assigns, as CEO-1773's table; the two lines below this comment were hq_icon and hq_prolog
-      # under CEO-1827 and are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE TENET WITH THE THREE LANGUAGE HQs (CEO-1866, 2026-10-21 17:2x CDT, Lon in-chat to the ceo, verbatim: "I suspect we would benefit from having HQ-SNOBOL4, HQ-ICON, and
-      # HQ-PROLOG working for the fleet." · "I started HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG."): ICON to hq_icon, PROLOG to hq_prolog, SNOBOL4 to hq_snobol4 (NONET's arms, CEO-1813);
-      # the other four stay the ceo's, who assigns. The QUARTET arms (icon, prolog and snobol4 to the ceo) are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE TRIO, THE THREE OFFICERS OVERNIGHT (Lon 2026-11-03 23:5x CST, in the cto's window, verbatim: "You CTO are seated as Fable 5.1 high. Both COO and CFO are
-      # seated as Opus 5.5 high. Go to TRIO mode. It is just you three overnight." and "Have COO find the test suite programs that need fixing and fix those immediately
-      # between you and CFO and COO"; cto CEO-2116): every language's FREE rows route to the coo, the admin who finds and assigns (CEO-2095/2107; LANES: already names
-      # the coo for every language); rebus leaves the removed ceo seat. The hq seats and their rows stay in place (CEO-755c). The TENET table is the one above this note.
-       icon)     printf 'coo';;
-       prolog)   printf 'coo';;
-      # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (CEO-1827, 2026-10-18, Lon in-chat to the ceo: "we should run a reduced fleet until things settle"; roster ceo coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the ceo, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (CEO-1046).
-       snobol4)  printf 'coo';;
-      # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (CEO-1870, 2026-10-21 17:3x CDT, Lon in-chat to the ceo, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
-      # hq_pascal, RAKU to hq_raku; snocone and rebus stay the ceo's, who assigns. The two arms ceo for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       pascal)   printf 'coo';;
-      # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (CEO-1871, 2026-10-21 17:4x CDT, Lon in-chat to the ceo, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
-      # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the ceo's. The arm ceo for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-       snocone)  printf 'coo';;
-       rebus)    printf 'coo';;
-       raku)     printf 'coo';;
-    esac
+  else printf '  %d live row(s) by other seats; a notice went only where the paths meet (CLAIMS.log is the record for every other seat)\n' "$_k"; fi
+}
+s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notice only where paths meet; none when the claimed row declares none
+    local _w _o _why="" _now; _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_overlap_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; for _s in probe_b probe_c probe_d probe_e; do mkdir -p "$_w/$_s/inbox"; done; _now="$(date -u +%FT%TZ)"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$_w/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$_w/PROTOCOL-VERSION"
+    printf '# plant queue (box-scheduler step 21)\n2\tov-plant-p\t%s\tFREE\n2\tov-plant-q\t%s\tFREE\n2\tov-plant-b\tprobe_b\tCLAIMED:probe_b\n2\tov-plant-c\tprobe_c\tCLAIMED:probe_c\n2\tov-plant-d\tprobe_d\tCLAIMED:probe_d\n2\tov-plant-e\tprobe_e\tCLAIMED:probe_e\n' "$ME" "$ME" > "$_w/QUEUE.tsv"
+    mk() { printf '# TASK %s\nGOAL: plant%s\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\n%s## NEXT\nplant\n## QA\n## LEDGER\n' "$1" "$3" "$2" > "$_w/tasks/$1.task.md"; }
+    mk ov-plant-p 'TOUCHES: SCRIP/src/planner harness/scripts/s4e_msg.sh
+' ''
+    mk ov-plant-q '' ''
+    mk ov-plant-b 'TOUCHES: SCRIP/src/planner/zd_layout.c
+' ''; mk ov-plant-c 'TOUCHES: SCRIP/src/parsers/icon
+' ''; mk ov-plant-d '' ''; mk ov-plant-e '' '; Landing files: harness/scripts/s4e_msg.sh, corpus/tests/x.ref; more'
+    for _s in b c d e; do printf 'probe_%s\nRUNNING\n' "$_s" > "$_w/claims/ov-plant-$_s.claim"; done
+    _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" claim ov-plant-p 2>&1)"
+    cnt() { ls "$_w/$1/inbox" 2>/dev/null | wc -l; }
+    [ "$(cnt probe_b)" = 1 ] || _why="$_why probe_b (planner prefix) got $(cnt probe_b) notices;"
+    grep -q 'OVERLAP BY PATH.*SCRIP/src/planner' "$_w/probe_b/inbox"/*.msg 2>/dev/null || _why="$_why probe_b notice does not name the path;"
+    [ "$(cnt probe_e)" = 1 ] || _why="$_why probe_e (Landing files) got $(cnt probe_e) notices;"
+    [ "$(cnt probe_c)" = 0 ] || _why="$_why probe_c (another lane) got a notice;"
+    [ "$(cnt probe_d)" = 0 ] || _why="$_why probe_d (no touches) got a notice;"
+    printf '%s\n' "$_o" | grep -q 'OVERLAP by=paths notices_sent=2 notices_suppressed=2' || _why="$_why the claim did not report sent=2 suppressed=2 [$(printf '%s' "$_o" | grep OVERLAP | head -1)];"
+    _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" claim ov-plant-q 2>&1)"
+    [ "$(( $(cnt probe_b) + $(cnt probe_c) + $(cnt probe_d) + $(cnt probe_e) ))" = 2 ] || _why="$_why a row with no TOUCHES sent a notice;"
+    printf '%s\n' "$_o" | grep -q 'NO TOUCHES ON THE BATON' || _why="$_why the no-TOUCHES warning did not print;"
+    rm -rf "$_w"
+    [ -z "$_why" ] && { echo "OVERLAP by=paths notices_suppressed=2 notices_sent=2 (probe: a planner prefix and a Landing-files path were told, another lane and an undeclared row were not; a claim with no TOUCHES told nobody and said so)"; return 0; }
+    echo "OVERLAP PROBE RED:$_why"; return 1
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
 # ⭐ A SEAT THAT OWNS NO LANGUAGE CURES NOTHING IN A LANGUAGE LANE (CEO-779; Lon 2026-09-16 11:22 CDT, verbatim to the ceo:
@@ -2368,6 +2162,7 @@ case "$cmd" in
               printf '%s\n' "$pw"; exit 0;;
          esac;;
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
+         [ "$2" = --probe-overlap ] && { s4e_claim_probe_overlap; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"; mkdir -p "$PO/claims"
          # ⭐ AN ASSIGNED ROW ITS OWNER CLAIMS BY NAME IS STARTED, THE SAME MARK `next` WRITES WHEN IT SERVES ONE (the coo 2026-09-27, ceo
          # CEO-1306): PASS 1 appends RUNNING as it serves ASSIGNED->RUNNING, but `claim` on the same row said "already yours" and wrote
