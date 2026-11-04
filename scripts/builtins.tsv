@@ -1250,3 +1250,6 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1251	pas	__pas_writestr	-	-	-	inline	-	-	0	pas
 1252	pas	__pas_pview	-	-	-	inline	-	-	0	pas
 1253	pas	__pas_pstrview	-	-	-	inline	-	-	0	pas
+1254	pl	$ssu_check	1	1	rt_pl_dop_ssu_check	leaf	-	-	0	dop_direct
+1255	pl	$ssu_begin	1	1	rt_pl_dop_ssu_begin	leaf	-	-	0	dop_direct
+1256	pl	$mkground	-	-	-	inline	-	-	0	pl_leaf
