@@ -7,7 +7,9 @@
 # ends; sub-makes inherit the fd and the flags. Nineteen roots then never run more than N+makes compiles at once, by mechanism, not by
 # discipline. MEASURED 2026-11-04 15:0x CST (/tmp/s4e/cto/jstest4.sh): with 2 tokens one make of six 1 s jobs ran 3 wide (2.00 s), two
 # independent makes on the same pipe ran 4 wide together (3.01 s), a $(MAKE) child inherited it, and FIONREAD read the 2 tokens back.
-# A pipe's bytes live only while a process holds it open, so a HOLDER unit keeps it open (systemd --user, s4e.slice).
+# A pipe's bytes live only while a process holds it open, so a HOLDER unit keeps it open (systemd --user, s4e.slice). With GNU make 4.4.1 in
+# /home/resources/x64/bin (Lon built it 2026-11-04 15:5x) a build joins by path, --jobserver-auth=fifo:PIPE, so a sub-make reached from a plain
+# recipe line still finds the pipe; the fd form is the fallback for make 4.3.
 #   start [N]   start the holder unit s4e-jobserver with N tokens (default: the tokens column of JOBSERVER.tsv, else 8)
 #   stop        stop the holder (every joined make falls back to its one implicit job until a holder returns)
 #   hold N      the holder's own body (run by start under systemd; never by hand)
@@ -21,6 +23,7 @@ TSV=/home/resources/progress/JOBSERVER.tsv
 UNIT=s4e-jobserver
 PIDFILE=/home/resources/progress/jobserver.pid
 FD=7
+MAKE44=/home/resources/x64/bin/make
 SELF="$(readlink -f "${BASH_SOURCE[0]}")"
 refuse() { echo "REFUSE(2) [util_jobserver]: $*" >&2; exit 2; }
 declared() { [ -s "$TSV" ] && awk -F'\t' '!/^#/ && $1=="tokens"{print $2; exit}' "$TSV"; }
@@ -99,6 +102,7 @@ PY
   make)
     args=(); for a in "$@"; do case "$a" in -j|-j[0-9]*|--jobs|--jobs=*) ;; *) args+=("$a") ;; esac; done
     if [ -p "$FIFO" ] && holder_alive; then
+      if [ -x "$MAKE44" ]; then MAKEFLAGS="-j --jobserver-auth=fifo:$FIFO" exec "$MAKE44" "${args[@]}"; fi
       exec 7<>"$FIFO"
       MAKEFLAGS="-j --jobserver-auth=$FD,$FD" exec make "${args[@]}"
     fi
