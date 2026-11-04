@@ -2,7 +2,7 @@
 # test_gate_icn_rundir_contract.sh -- A WITNESS THAT READS ITS ENVIRONMENT IS GRADED WITH THAT ENVIRONMENT
 # PRESENT, AND THE GATE PROVES THE ENVIRONMENT IS WHAT MADE THE DIFFERENCE.
 #
-# ⛔⛔ THE DEFECT THIS GATE STANDS OVER (hq_I, FINDING-2026-09-10; hq_P, CEO-532). rung36_jcon_recent lists
+# ⛔⛔ THE DEFECT THIS GATE STANDS OVER (hq_I, FINDING-2026-09-10; hq_P, R-532). rung36_jcon_recent lists
 # its own working directory, reads recent.dat from it, and prints getenv("JCONT"). Graded with none of that
 # present it printed 313 orderly lines ending in `can't open recent.dat` -- and the ORACLE, starved the same
 # way, printed the same 313 lines. The two agreed, so the witness read PASS. ⭐ AGREEING ABOUT WHERE YOU BOTH
@@ -43,7 +43,7 @@
 #   remove recogn.dat from rung36_jcon_recent.fixtures/  -> ARM1 rc=1 (oracle 442 < floor 443)
 #   remove io.std from rung36_jcon_io.fixtures/          -> ARM1 rc=1 (oracle 133 < floor 135) ⭐ the
 #       REF-DISPUTED row, where ARM4 is muted -- so this is the case that proves ARM1 is not redundant
-#       (2026-09-23, CEO-1222: that fixture is now RETIRED -- no .std may remain, and it served only as a NAME
+#       (2026-09-23, R-1222: that fixture is now RETIRED -- no .std may remain, and it served only as a NAME
 #       io.icn lists -- so its ref was re-cut and its floor re-pinned 133 in the landing that retired it)
 #   set JCONT=WRONG in rung36_jcon_recent.env            -> ARM4 rc=1. ⛔ ARM2 stayed GREEN, correctly:
 #       both arms read the same wrong environment and agreed about it. That is the whole thesis of this
@@ -77,11 +77,11 @@ ICONT="$(icont_bin)"
 # but the ref now MATCHES the Arizona oracle" -- which is what removed the row. ⛔ A tolerated red recorded
 # as a MUTE would have gone on being tolerated after the thing it tolerated was fixed, silently, forever;
 # every entry here must keep that property.
-# ⚠️ THE COUNT WAS 10 HERE UNTIL 2026-09-10 AND IT IS 9 (hq_P, measured; the ceo's CEO-534 carried the 10 too,
-# and corrected it in CEO-536). It came from ARM 4's own REPORTED line, which counted diff's `<` AND `>` and
+# ⚠️ THE COUNT WAS 10 HERE UNTIL 2026-09-10 AND IT IS 9 (hq_P, measured; R-534 carried the 10 too,
+# and corrected it in R-536). It came from ARM 4's own REPORTED line, which counted diff's `<` AND `>` and
 # called the total "lines" -- on two files of equal length that is exactly twice the truth. ⭐ A GATE THAT
 # MISREPORTS ITS OWN NUMBER TEACHES THAT NUMBER TO EVERY READER DOWNSTREAM: the 10 reached a gate header, a
-# FINDING and a ceo ruling before anyone re-derived it. The label now says "ref line(s) disagree" and counts
+# FINDING and a ruling before anyone re-derived it. The label now says "ref line(s) disagree" and counts
 # `<` alone. Kept here after the row itself is gone, because the lesson outlives the dispute.
 REF_DISPUTED=""
 
@@ -242,7 +242,7 @@ sweep=0; suspects=0; undecided=0
 for icn in "$CORPUS"/*.icn; do
     b="$(basename "$icn" .icn)"
     [ -f "$CORPUS/$b.ref" ] || continue                           # ungraded: no verdict depends on its stdin
-    # ⛔ THE SAME POPULATION AS BEFORE CEO-1222, STATED INSTEAD OF IMPLIED BY AN EXTENSION: a .expected here meant a
+    # ⛔ THE SAME POPULATION AS BEFORE R-1222, STATED INSTEAD OF IMPLIED BY AN EXTENSION: a .expected here meant a
     # loose rung witness graded by the rung runners, and now that every expected output is a .ref the extension alone
     # would also sweep the containers (fed their NAME.in by the suite harness) and the loose non-rung pairs.
     case "$b" in rung[0-9][0-9]_*) ;; *) continue ;; esac

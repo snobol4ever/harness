@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_find_takes_negative_positions.sh -- find(s1, s2, i, j) normalizes negative and zero positions like its siblings (ceo CEO-644).
+# test_gate_icn_find_takes_negative_positions.sh -- find(s1, s2, i, j) normalizes negative and zero positions like its siblings (R-644).
 #
 # MEASURED 2026-09-12 on 3de7f285d (the adversarial batch): find("a", "banana", -3) FAILED in both modes where icont answers 4;
 # upto/many/match/any/bal with negative positions all agreed with icont. The by-name find branch carried its own position

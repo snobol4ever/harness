@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_xfail_marker_consistent.sh -- AN XFAIL MARKER LIVES IN THREE PLACES AND MUST AGREE IN ALL THREE.
-# Row prolog-master-seven-stale-xfail-markers-xpass-on-the-rung-3-tree (hq_C mint, ceo assign).
+# Row prolog-master-seven-stale-xfail-markers-xpass-on-the-rung-3-tree (hq_C mint, the officer assign).
 #
 # The INTERIM PROMOTION PROTOCOL (lib_rungs_extract.sh) requires a promotion to move together:
 #   (1) the ` XFAIL` suffix on the ALL.pl banner,

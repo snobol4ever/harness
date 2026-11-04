@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_readme_grid_cell_is_a_multiple_not_the_ratio.sh -- A PUBLISHED GRID CELL IS THE MULTIPLE ITS CITED TSV GIVES, NEVER
 # THE TSV's SELF-AGREEMENT RATIO (coo 2026-09-16; cfo's mint from hq_pascal's measurement; row perf-a-published-grid-cell-must-
 # come-from-the-grid-printer-a-gate-reads-each-cited-tsv-and-refuses-a-cell-equal-to-the-ratio-field-not-the-multiple).
 #
 # THE DEFECT: all eight Pascal cells published in README.md at a44783caf equalled the RATIO column (angle2/angle1, near 1.0 by
 # construction) of the run they cited, corpus/benchmarks/pascal/triangulation-20260904T021323Z.tsv, while that run's true
-# multiples against fpc were 0.000675x to 0.03x; retracted by the ceo (CEO-798). Every instrument was honest; the COPYING step
+# multiples against fpc were 0.000675x to 0.03x; retracted by the (R-798). Every instrument was honest; the COPYING step
 # -- a seat pasting a column instead of a printed grid -- had no instrument asserting about it. This gate is that instrument.
 #
 # WHAT IT READS: every markdown grid row `| <kernel> | **N.NNx** | **N.NNx** |` (m3, m4) in README.md whose section (the text

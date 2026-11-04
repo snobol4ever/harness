@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_clause_reader_leaves_the_body_as_written_and_lower_places_it.sh -- THE PROLOG CLAUSE READER HANDS LOWER THE BODY AS THE SOURCE WROTE IT AND LOWER PLACES IT (hq_prolog 2026-10-29,
-# row prolog-the-clause-body-placing-moves-from-the-parser-into-lower; CEO-1532 "a parser moves nothing, the lowerer places it"; ARCH-PROLOG-CLPR-CHR section 8, cto CTO-397).
+# row prolog-the-clause-body-placing-moves-from-the-parser-into-lower; R-1532 "a parser moves nothing, the lowerer places it"; ARCH-PROLOG-CLPR-CHR section 8, cto CTO-397).
 #
 # Today the clause reader (src/parsers/prolog/prolog_parse.c) turns ( C -> T ; E ) into a TT_IF node and flattens conjunctions before lower sees the clause, so --dump-ast prints the PLACED form. The
 # rule is one placing function in src/lower/, called by the clause road and the CHR road alike; the parser keeps the source shape: the disjunction as TT_FNC ;, the if-then as TT_FNC ->, the soft cut

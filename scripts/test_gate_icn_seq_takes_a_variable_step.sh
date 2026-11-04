@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_seq_takes_a_variable_step.sh -- seq(i, j) with a VARIABLE step is the generator icont makes of it (ceo CEO-631).
+# test_gate_icn_seq_takes_a_variable_step.sh -- seq(i, j) with a VARIABLE step is the generator icont makes of it (R-631).
 #
 # MEASURED 2026-09-12 on b35ed8e2a: `every write(seq(1, x) \ 2)` raised "scrip: error 22: Undefined function called" in both
 # modes while `seq(x, 1)` and `seq(1, 1)` answered 1 2 -- lower_seq required a CONSTANT step (icn_const_step) and returned

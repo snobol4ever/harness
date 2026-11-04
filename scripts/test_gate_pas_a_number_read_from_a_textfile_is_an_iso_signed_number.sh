@@ -2,7 +2,7 @@
 # test_gate_pas_a_number_read_from_a_textfile_is_an_iso_signed_number.sh -- ISO 7185 6.9.1: read skips spaces and end-of-lines, then an
 # integer variable takes a signed-integer and a real variable a signed-number; anything else, and end-of-file, is an error
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. __pas_read_i and __pas_read_i_f read
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. __pas_read_i and __pas_read_i_f read
 # with fscanf(" %lld"): 'five' and end-of-file silently gave 0 (PAT iso7185prt1754 ran to rc 0), and there was NO real read at all --
 # pascal.y sent a real variable through the integer arm, so 1.5 read as 1 and '10e' raised nothing (PAT 1756). NO BRACKET: an absent
 # error sends no event, and the real-read defect is a missing routine. The cure: pas_read_number, one reader in by_name_dispatch.c for
@@ -12,7 +12,7 @@
 #
 # ARMS, both modes: (1) a program reading every valid form from stdin (integers over blank lines and signs, reals as 1.5, -2e3,
 # +0.25E+02 and 7, an integer stopping at a letter, readln) cut LIVE from fpc -Miso and required byte-identical; (2) five faults --
-# integer 'five', integer '+', integer at end-of-file, real '10e', real '10e+' ('10.' and '.5' left this list 2026-10-07: fpc -Miso reads them, CEO-1302, landing 39) -- each must print fpc's stdout
+# integer 'five', integer '+', integer at end-of-file, real '10e', real '10e+' ('10.' and '.5' left this list 2026-10-07: fpc -Miso reads them, R-1302, landing 39) -- each must print fpc's stdout
 # up to the fault, exit non-zero and name 6.9.1. It FAILS on the parent. FAIL_ONCE=1 corrupts arm 1's ref to prove it can fail.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

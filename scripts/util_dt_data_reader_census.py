@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """DT_DATA READER CENSUS -- every site that tests the DT_DATA tag and then dereferences the union.
 
-⛔ THE DISEASE THIS COUNTS (cfo 2026-09-18, CEO-887/888).  DT_DATA carried two unrelated pointed-at shapes
+⛔ THE DISEASE THIS COUNTS (cfo 2026-09-18, R-887/888).  DT_DATA carried two unrelated pointed-at shapes
 under one tag: the .u arm is a DATINST_t (a record instance) and the .ptr arm is a raw DESCR_t element vector
 (an Icon list's frame_elems backing store).  Both were minted with slen 0, so NOTHING IN THE DESCRIPTOR SAID
 WHICH, every reader guessed from context, and the collector had to strcmp an owner's field name to tell them
@@ -9,7 +9,7 @@ apart.  A reader that guessed wrong read a DATBLK_t* out of the first element of
 WRONG ANSWER, not a crash, which is the worst failure shape we have.
 
 ⭐ THE CURE IS DT_N's OWN SCHEME: slen arbitrates (DATA_INST_SLEN 0, DATA_ELEMS_SLEN 1), pinned by a
-_Static_assert in descr.h beside PROCVAL's.  THIS CENSUS IS THE OTHER HALF -- the ceo's condition (2), THE
+_Static_assert in descr.h beside PROCVAL's.  THIS CENSUS IS THE OTHER HALF -- the officer's condition (2), THE
 READERS ARE THE WHOLE JOB.  After the cure a tag-only reader is still a silent wrong answer, so the population
 that must read ZERO is: a site that tests DT_DATA and dereferences .u or .ptr with no slen arbitration in the
 same expression.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_sno_rtntype_is_set_by_an_asm_leaf.sh -- &RTNTYPE IS WRITTEN BY AN RTX LEAF AT EVERY FUNCTION RETURN (ceo 2026-09-25,
-# CEO-1253). The define box called the C rt_kw_set_rtntype_role through the g_rtccb veneer, which called rt_kw_set_rtntype, which
+# test_gate_sno_rtntype_is_set_by_an_asm_leaf.sh -- &RTNTYPE IS WRITTEN BY AN RTX LEAF AT EVERY FUNCTION RETURN (2026-09-25,
+# R-1253). The define box called the C rt_kw_set_rtntype_role through the g_rtccb veneer, which called rt_kw_set_rtntype, which
 # ran strlen + memcpy into g_kw_rtntype: 3% of the calculator's cycles for a 7-byte keyword. rt_kw_set_rtntype_role is an
 # RTX_FUNC now (rtx_misc.s): role 2 stores FRETURN, else rt_g_ret_by_name selects NRETURN over RETURN, one 8-byte store of the
 # little-endian word into g_kw_rtntype[16]; the C rt_kw_set_rtntype keeps the same word store for its other callers.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_design_pascal_front_end_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-front-end (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_pascal_front_end_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-front-end (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PASCAL-REDESIGN.md section 8). The plan is corpus/tests/pascal/front_end/STEPS.tsv; the witnesses are the .pas programs
 # beside it, each with a .ref cut from fpc 3.2.2 (fpc -v0 in the program's own mode, the binary's stdout).
 #
@@ -7,7 +7,7 @@
 #   --step N     grade step N: every witness in mode 3 and mode 4 (the declared -d131072k -s4096k, stdout compared exactly with the ref), then
 #                the step's probe tokens: shadow=0 (scrip --dump-pas-types over the witnesses prints PTY-STATS lines with answered = agreed),
 #                tables=N (the pas_*[N] arrays of src/lower/lower_pascal_tree.h at most N), entries=... (the named rosetta-pascal entries
-#                through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight: the handful of CEO-1677),
+#                through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight: the handful of R-1677),
 #                latest=... (results.tsv's latest reading per entry PASS in both modes, READ), row=N (SUITES.tsv's rosetta-pascal
 #                today_pass at least N, READ). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
@@ -59,7 +59,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
@@ -95,7 +95,7 @@ for tok in $probe; do
                     [ "$dis" = 0 ] || bad=$((bad + 1)); done
                 readings="$readings shadow_bad=$bad/$n(census_lines_on=$seen)"; [ "$bad" = 0 ] && [ "$seen" = "$n" ] || pgreen=0 ;;
         tables) [ -f "$TABLES_H" ] || refuse "no $TABLES_H"; cnt="$(grep -o 'pas_[a-z_]*\[[0-9A-Z_]*\]' "$TABLES_H" | sort -u | wc -l)"; readings="$readings tables=$cnt(at_most $val)"; [ "$cnt" -le "$val" ] || pgreen=0 ;;
-        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (CEO-1677)"
+        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (R-1677)"
                  sm="$(cd "$ROOT" && S4E_HOME="$ROOT" timeout -k 10 1500 python3 "$HERE/corpus_suite_harness.py" smoke writeln --tables packages/pascal/rosetta-pascal --entries "$es" --modes m3,m4 2>&1)"
                  printf '%s\n' "$sm" > "$OUT/step$step/smoke.log"
                  ok=0; for e in $es; do printf '%s\n' "$sm" | grep -E "^AREA_SMOKE_ENTRY .*entry=$e .*m3=PASS.*m4=PASS" > /dev/null && ok=$((ok + 1)); done

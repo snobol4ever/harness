@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# test_gate_from_progress_reads_a_dirty_tree_reading_as_unread.sh -- A READING ON A DIRTY TREE IS UNREAD FOR ROW ASSEMBLY (ceo CEO-2060, 2026-10-31,
+# test_gate_from_progress_reads_a_dirty_tree_reading_as_unread.sh -- A READING ON A DIRTY TREE IS UNREAD FOR ROW ASSEMBLY (R-2060, 2026-10-31,
 # ruling YES on the coo's finding COO-441 (5): "A reading taken on a dirty tree measures no tree on origin (a number's tree is part of its label), so
 # util_score_row.py from-progress reads it as UNREAD for row assembly, even where that lowers a row"). Seats' dev passes write progress rows stamped
 # <hash>-dirty; on 10-30 such readings moved ProRosetta to 481/481, SWI and ProPuzzles on cures not on origin.
 # THE FIXTURE (a scratch corpus and progress DB; the real table and DB are never read or written): rebus master reb-rungs, entries r1 r2 r3.
 #   ARM 1  r1 PASS both modes on a clean tree; r2 PASS m3 clean and PASS m4 ONLY on abc1234-dirty; r3 PASS both modes ONLY on dirty trees:
 #          SUITE_ROW prints read=2 unread=1 half_read=1 (r2's m4 and all of r3 unread), never read=3 unread=0 half_read=0, so the row cannot be
-#          written until a clean re-grade (from-progress refuses a row with an unread or half-read entry, CEO-1676).
+#          written until a clean re-grade (from-progress refuses a row with an unread or half-read entry, R-1676).
 #   ARM 2  SUITE_ROW_DIRTY_UNREAD names r2 and r3.
 #   ARM 3  an older CLEAN reading under a newer dirty one stands: r2 m4 FAIL on the clean tree before its dirty PASS -> r2 reads FAIL, 1/3, half_read=0.
 #   ARM 4  a clean re-grade after the dirty one counts: r2 m4 PASS on a clean tree, later -> 2/3.

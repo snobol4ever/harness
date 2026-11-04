@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_angle_bracket_subscript_is_refused_and_the_direct_goto_stays_in_both_modes.sh
 #
-# THE RULING (Lon 2026-10-02, in-chat to the ceo, CEO-1447, RULES.md FACT RULE -- SQUARE BRACKETS ARE THE ONE SUBSCRIPT): "remove SCRIP's support for these [< and >] as array indices. We do NOT [want]
+# THE RULING (Lon 2026-10-02, in-chat to the R-1447, RULES.md FACT RULE -- SQUARE BRACKETS ARE THE ONE SUBSCRIPT): "remove SCRIP's support for these [< and >] as array indices. We do NOT [want]
 # TWO ways to do the same thing. We might NEED the angle brackets to implement LAMBDA code syntax." SCRIP's SNOBOL4 grammar no longer has the A<I> subscript: a program that spells one is a compile error
 # (main compile, both modes), EVAL and CODE of text that spells one raise a trappable error (222, the left-bracket syntax error); A[I] and the DIRECT GOTO :<C> :S<C> :F<C> (the goto field's angle
 # brackets, which are not subscripts) keep working. sbl -bf still accepts A<I>: that divergence is the ruling's, not a defect, so this gate cuts nothing from the oracle for the refusal arms and

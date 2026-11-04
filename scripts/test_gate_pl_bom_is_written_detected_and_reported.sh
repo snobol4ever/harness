@@ -21,7 +21,7 @@
 #
 # ⛔ ARM 6 IS THE ONE THAT STOPS THE CHEAP CURE. Reporting bom(false) unconditionally passes every positive
 # arm above it and reds the four binary cases that assert the property is ABSENT -- and a cure that trades
-# one case for another never lands (CEO-589).
+# one case for another never lands (R-589).
 #
 # ⛔ THE BOM IS NOT CONTENT (ARM 5). A detected BOM must be consumed, not delivered: if it reaches the
 # program as a character, every read of a BOM'd file is off by one and the file's first term is corrupt.

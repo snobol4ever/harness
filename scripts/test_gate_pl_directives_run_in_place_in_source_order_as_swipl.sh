@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_directives_run_in_place_in_source_order_as_swipl.sh -- A DIRECTIVE RUNS WHERE THE CONSULT REACHES IT, AND
 # begin_tests/1,2 OPEN plunit_<Unit> AS THE SOURCE MODULE prolog_load_context(module, M) ANSWERS (cfo 2026-10-14, row
-# prolog-swi-library-test-record-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1700).
+# prolog-swi-library-test-record-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1700).
 #
 # swipl and gprolog run a directive when the consult reaches it; only initialization/1 defers its goal to after the load.
 # prolog_lower.c turned a bare :- begin_tests(U), :- begin_tests(U, O), :- end_tests(U) and :- nb_setval(K, V) into a helper

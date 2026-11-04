@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test_gate_swi_runner_grades_a_library_through_its_driver_as_the_library.sh -- THE SWI RUNNER GRADES A LIBRARY BY ITS NAME_driver.pl (ceo CEO-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8,
+# test_gate_swi_runner_grades_a_library_through_its_driver_as_the_library.sh -- THE SWI RUNNER GRADES A LIBRARY BY ITS NAME_driver.pl (R-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8,
 # option 1, 2026-10-29; hq_packages). A library module with no unit tests (clp/linprog.pl) was OWED a driver (UNGRADED NEEDS_DRIVER); the runner graded only files that declare begin_tests( and so
 # could not grade the driver either, and deleting the owed row would have shrunk the denominator by one. Now NAME_driver.pl with a NAME_driver.ref beside it (cut from swipl) and no begin_tests( is
 # a grading vehicle: mode 3 and mode 4 run it plain, its whole stdout against the ref is one case named driver, and the case is recorded under the LIBRARY's name (clp/linprog.pl:driver).
-# FIXTURE: a mktemp corpus (outside corpus/, CEO-547) with sub/lib.pl (a module answering 42) and sub/lib_driver.pl; the ref is cut from live swipl 9.0.4 each run. --file grades one file, writes no row.
+# FIXTURE: a mktemp corpus (outside corpus/, R-547) with sub/lib.pl (a module answering 42) and sub/lib_driver.pl; the ref is cut from live swipl 9.0.4 each run. --file grades one file, writes no row.
 # ARMS: (1) the driver is the library's grade: the board line reads sub/lib.pl 1/1, identity graded 1 + ungraded 0 == declared 1, rc 0, m3 and m4
 #       (2) CAN FAIL: the same with the ref changed reads 0/1, rc 0 (a disagreement is a red, not a refusal), and RED names sub/lib.pl:driver in both modes
 #       (3) the real driver clp/linprog_driver.pl of corpus/packages/prolog/swi_tests grades 1/1 under clp/linprog.pl, m3 and m4
@@ -27,7 +27,7 @@ printf ':- use_module(lib).\n:- initialization(( ans(X), writeln(X), halt )).\n'
 run() { # $1 corpus root, $2 file
     S4E_CORPUS="$1" S4E_PROGRESS_OFF=1 timeout -k 5 600 bash "$HERE/test_prolog_swi_suite.sh" --file "$2" --modes m3,m4 --name-reds > "$T/out" 2>&1; echo $?; }
 fails=0; ck() { if [ "$1" = ok ]; then echo "  ok    $2"; else echo "  FAIL  $2"; fails=$((fails+1)); fi; }
-echo "=== gate: the SWI runner grades a library through its NAME_driver.pl (CEO-1269) ==="
+echo "=== gate: the SWI runner grades a library through its NAME_driver.pl (R-1269) ==="
 rc=$(run "$T" sub/lib_driver.pl)
 if [ "$rc" = 0 ] && grep -q '^  sub/lib.pl  *1/1  *agree' "$T/out" && grep -q 'identity: graded 1 + ungraded 0 == declared 1 ✓' "$T/out"; then ck ok "(1) sub/lib_driver.pl is the grade of sub/lib.pl: 1/1 in m3 and m4, identity holds, rc 0"
 else ck no "(1) rc=$rc: $(grep -E 'sub/lib|identity|REFUSED' "$T/out" | head -3 | tr '\n' ' ')"; fi

@@ -3,7 +3,7 @@
 # k..k+n-1 (its length unchanged), and fillchar(a[k], bytes, v) fills an array's elements from k, as many as bytes / element size when
 # the element size is known (a static array's size over its count, a dynamic array of a predeclared type) and to the end otherwise.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): setlength(s, n); fillchar(s[1], n, ' ') and
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): setlength(s, n); fillchar(s[1], n, ' ') and
 # fillchar(Chkprimes[0], length(Chkprimes), #1) fell through to a by-name call and died "error 22: undefined function called". THE
 # CURE (lower_pascal_tree.c): a string target lowers to s := __pas_strfill(s, k, n, c); an array target to __pas_fill_from(a, k, bytes,
 # v, element-size-or-0); by_name_dispatch.c's pas_fill_from fills cells with pas_fill's rules (nested aggregates included).

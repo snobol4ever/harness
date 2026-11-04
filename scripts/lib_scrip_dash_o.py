@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # lib_scrip_dash_o.py <scan|apply> PATH... -- finds (and rewrites) every place a script hands the assembly output to scrip as -o FILE.
 #
-# SPITBOL's -o=file names the compilation LISTING, so SCRIP's --compile assembly output is --out=FILE (CEO-1224, the dash-o move of
+# SPITBOL's -o=file names the compilation LISTING, so SCRIP's --compile assembly output is --out=FILE (R-1224, the dash-o move of
 # the row spine-scrip-assembly-output-moves-from-o-file-to-out-file...). A bare -o FILE is refused by the driver; this finds the callers.
 #
 # What counts as a scrip command, in shell text (a .sh, .mk or Makefile, and the bodies of heredocs, scanned line by line):

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_write_to_a_binary_current_output_raises_permission_error.sh -- EVERY TERM WRITER ON A BINARY CURRENT OUTPUT RAISES
-# permission_error(output, binary_stream, S) (ISO 8.14.2.3, 8.14.3.3; hq_prolog 2026-09-25, CEO-1266/1270; the cure is lower_prolog.c's
+# permission_error(output, binary_stream, S) (ISO 8.14.2.3, 8.14.3.3; hq_prolog 2026-09-25, R-1266/1270; the cure is lower_prolog.c's
 # pl_curout_writer/pl_curout_text_guard: write/1, writeq/1, print/1, write_canonical/1, write_term/2, writeln/1, format/1 and format/2 run the
 # $pl_ioarg text-stream pre-check nl/0 and the put_* forms already ran).
 # THE DEFECT. The stream-argument forms raised; the current-output forms wrote their text into the binary stream and succeeded -- a plausible

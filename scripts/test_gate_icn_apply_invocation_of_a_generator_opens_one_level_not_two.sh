@@ -6,7 +6,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 # activation levels for ONE activation: rt_proc_call_gen_h raised g_rt_k_level around scrip_coexpr_activate
 # AND the coroutine body's own rt_proc_call_open -> rt_proc_call_prologue_lex raised it again through
 # rt_lvl_open(own=0), which is the arm a generator always takes. A DIRECT call of the same generator opens
-# exactly one, which is why only the apply route was wrong (row: jcon tracing, cfo, under CEO-545).
+# exactly one, which is why only the apply route was wrong (row: jcon tracing, cfo, under R-545).
 #
 # ⭐ THE VISIBLE FACE WAS THE TRACE INDENT, THE DEFECT WAS &level. The extra level printed one extra "| "
 # on the call and on the first suspend, and -- because rt_trace_resume_hook walks g_icn_act DOWNWARD from

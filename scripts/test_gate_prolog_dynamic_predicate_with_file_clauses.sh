@@ -3,7 +3,7 @@
 # clauses to is a DYNAMIC procedure whose file clauses are its initial clauses (ISO 7.4.2.1): retract, assertz,
 # clause/2 and abolish see them, and a call after modification runs the modified set, in BOTH modes.
 # Row prolog-dynamic-declared-predicate-with-file-clauses-is-treated-as-static-by-retract-both-modes (coo, 2026-09-06,
-# on ceo CEO-377): before the cure every database verb on such a predicate threw
+# on R-377): before the cure every database verb on such a predicate threw
 # permission_error(modify, static_procedure, Name/Arity) in both modes, because the lowering's ownership test made
 # any file clause "static" regardless of the directive.  Expectations are CUT FROM THE ORACLE (swipl) at run time,
 # never hand-typed; a signal exit is a CRASH, never a FAIL.  Refuses rc=2 when it cannot grade.

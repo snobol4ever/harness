@@ -96,7 +96,7 @@ for p in $PROGS; do
     fi
 done
 gate_floor "$examined" 7 "witness/control programs"
-# ⛔ THE VERDICT LINE NAMES THE ENTRIES (ceo ruling 2026-09-05, wiring this gate into `make test` as a blocking
+# ⛔ THE VERDICT LINE NAMES THE ENTRIES (ruling 2026-09-05, wiring this gate into `make test` as a blocking
 # arm): a blocking red that reports only a COUNT makes the reader open the script to learn what broke, and the
 # whole reason this gate is wired red is that an unread gate reads as coverage while exercising nothing.
 echo "GRADED[$examined]:$GRADED_NAMES"

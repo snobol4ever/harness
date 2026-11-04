@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_benchmarks_run_with_every_diagnostic_off.sh -- LON'S WORDS OF 2026-09-25, HELD BY MECHANISM (ceo CEO-1262), verbatim, in-chat to
-# the ceo: "Why must there be a heap check at every collection? That seems to be diagnostic. Can the be turned off by a switch?" and
+# test_gate_benchmarks_run_with_every_diagnostic_off.sh -- LON'S WORDS OF 2026-09-25, HELD BY MECHANISM (R-1262), verbatim, in-chat to
+# the officer: "Why must there be a heap check at every collection? That seems to be diagnostic. Can the be turned off by a switch?" and
 # "For benchmarks turn off all diagnostic code."
 # ONE SWITCH, SCRIP_DIAG=0, turns off every diagnostic the default run carries: the heap check at every collection (rt_gcheap_verify),
 # the 0xDB poison of vacated ground and the stale-read quarantine. Each keeps its own switch (SCRIP_GC_VERIFY, SCRIP_GC_POISON, SCRIP_GC_TRAP),
 # which wins when set. UNSET, EVERY COLLECTOR DIAGNOSTIC STAYS ON: every test and every board runs with them. ⛔ THE COMPILED NODE-ID STORES
-# (`mov r11, <id>` at every alpha and beta port) ARE DIAGNOSTIC ONLY AND OFF BY DEFAULT (Lon 2026-09-29, in-chat to the ceo, verbatim: "Also the
+# (`mov r11, <id>` at every alpha and beta port) ARE DIAGNOSTIC ONLY AND OFF BY DEFAULT (Lon 2026-09-29, in-chat, verbatim: "Also the
 # R11, tracking node-ids, should be DIAGNOSTIC only."): only SCRIP_DIAG_REGS=1 at the compile emits them; every benchmark driver exports SCRIP_DIAG=0 on its second line, or on
-# its third when its second is the one-runner guard (coo 2026-09-25, ceo CEO-1272: test_gate_one_runner_one_board.sh arm 6a holds the guard
+# its third when its second is the one-runner guard (coo 2026-09-25, R-1272: test_gate_one_runner_one_board.sh arm 6a holds the guard
 # to line 2, and the guard runs nothing SCRIP_DIAG reads -- one named line of window, never a free search of the header).
 # ARMS: (1) every benchmark driver in ../harness/scripts/ (bench_*.sh, test_bench_*.sh, test_<lang>_bench_suite.sh, test_icon_bench_{corpus,rung36}.sh)
 # exports SCRIP_DIAG=0; (2) a churning witness compiled by default carries no node-id store, nor one compiled with SCRIP_DIAG=0, and one

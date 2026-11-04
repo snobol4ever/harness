@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_shared_concat_slot_capture_survives_a_collection.sh -- cfo, 2026-09-22, MODE DECTET;
-# CEO-1131 ("RULED, OPTION ONE, LAND IT NOW"), on hq_snocone's FINDING-2026-09-22-hq_snocone-c6009782-...
+# R-1131 ("RULED, OPTION ONE, LAND IT NOW"), on hq_snocone's FINDING-2026-09-22-hq_snocone-c6009782-...
 #
 # WHAT WAS THERE. c60097828 put a BARE POLL (x86_rt_gc_poll) after the shared DESCR store at four templates.
 # At bb_binop_concat_slot.cpp:69 that poll made a SILENT WRONG ANSWER: pattern captures assigned through the
@@ -12,12 +12,12 @@
 # WHY THE LINE CAME OUT RATHER THAN CHANGING FORM. The site takes NO poll form at all: measured one bit per suspect,
 # a rebuild between each -- poll_res DIFFs, poll_res plus a re-store into ZRES(0)/ZRES(8) DIFFs, and the poll moved
 # after rtcc_rl DIFFs. A site that refuses every poll form is a DIAGNOSTIC SIGNAL, not a stubborn site: it says the
-# value there is held by something the collector never visits (CEO-1131). The holder hunt is its own row; this gate
+# value there is held by something the collector never visits (R-1131). The holder hunt is its own row; this gate
 # only holds the ground that the revert won back, so the poll cannot return without a red.
 #
 # ARMS. (1) BAND: the witness matches its oracle-cut ref at stress 0, 1, 3 and 5 at the mandatory tiny arena,
 # and every arm prints the run's OWN collections count -- a tiny arena states a configuration, only a count states
-# an exercise (CEO-934). (2) EXERCISE: at least one stress point must report collections>0, so the band cannot go
+# an exercise (R-934). (2) EXERCISE: at least one stress point must report collections>0, so the band cannot go
 # green by never collecting. (3) POSITIVE: the emitted code for the witness must still contain the concat-slot
 # runtime call, so a green cannot be bought by deleting the road or by a witness that stopped reaching it --
 # an absence criterion is paired with a positive arm proving the emitter still exists.

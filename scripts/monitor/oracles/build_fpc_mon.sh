@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # build_fpc_mon.sh <prefix> -- build the SCRIP fork of Free Pascal that is INSTRUMENTED IN ITS OWN SOURCE with the IPC sync-step
 # monitor's comm calls (coo 2026-09-23, on Lon's word to the coo at 06:32 CDT: "Build the Free Pascal Compiler (FPC) IPC sync-step
-# monitor inside FPC just like CEO did for Icon and Prolog"; the standard is MONITOR-BINARY-DESIGN.md section THE ORACLES ARE
-# INSTRUMENTED IN THEIR OWN SOURCE, CEO-1189; the precedents SCRIP d85e6186d (Icon) and 4a9d5a698 (GNU Prolog)).
+# monitor inside FPC just like officer did for Icon and Prolog"; the standard is MONITOR-BINARY-DESIGN.md section THE ORACLES ARE
+# INSTRUMENTED IN THEIR OWN SOURCE, R-1189; the precedents SCRIP d85e6186d (Icon) and 4a9d5a698 (GNU Prolog)).
 #
 # From the pristine /home/resources/FPCSource drop (main, 3.3.1; the recorded oracle /usr/bin/fpc is 3.2.2, which is also the
 # starting compiler) plus fpc-mon.patch and three new files (monitor_fpx_nmonipc.pas -> compiler/nmonipc.pas, the injector;

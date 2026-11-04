@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_icn_bounded_expression_releases_suspended_frame.sh — CEO-456 R5, the omega release, as a gate (R6).
+# test_gate_icn_bounded_expression_releases_suspended_frame.sh — R-456 R5, the omega release, as a gate (R6).
 #
 # A bounded expression that leaves a callee generator SUSPENDED must release that frame at its omega (iconx
 # Op_Unmark resets rsp below the ef_marker, dropping every suspended frame above it). If SCRIP retained the
@@ -58,5 +58,5 @@ if "$SCRIP" --compile "$T/r6.icn" > "$T/r6.s" 2>/dev/null && gcc -c "$T/r6.s" -o
   timeout -k 5 120 "$T/r6.bin" </dev/null > "$T/m4r6" 2>&1; rc4=$?
   if [ $rc4 -ne 0 ] || ! cmp -s "$T/m4r6" "$T/want6"; then echo "⛔ FAIL r6 m4 rc=$rc4: $(head -c 160 "$T/m4r6" | tr '\n' ' ')"; fail=1; fi
 else echo "⛔ REFUSE(2): mode-4 build of the r6 witness failed -- cannot measure"; exit 2; fi
-[ $fail = 0 ] && echo "✅ PASS: a bounded expression releases its suspended callee frame at omega -- every do (1,200,000 laps) and repeat/while/until bodies, conditions, next and a resumed repeat-suspend generator (7 x 200,000 laps), both modes, no ERROR 246 (CEO-456 R5)"
+[ $fail = 0 ] && echo "✅ PASS: a bounded expression releases its suspended callee frame at omega -- every do (1,200,000 laps) and repeat/while/until bodies, conditions, next and a resumed repeat-suspend generator (7 x 200,000 laps), both modes, no ERROR 246 (R-456 R5)"
 exit $fail

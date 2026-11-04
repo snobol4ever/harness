@@ -24,7 +24,7 @@
 # the list is the defect this gate exists to prevent, so adding a spelling to STDIN_COMPANION_SUFFIXES must
 # automatically widen the gate. A gate that carried its own fourth copy would drift exactly as the other
 # three did, and would read GREEN while doing it.
-# ⛔ IT GRADES ON ITS OWN FIXTURES, NEVER ON THE CORPUS RUNGS (CEO-547 part 2): a synthetic corpus per
+# ⛔ IT GRADES ON ITS OWN FIXTURES, NEVER ON THE CORPUS RUNGS (R-547 part 2): a synthetic corpus per
 # spelling, built and torn down here, so the gate is runnable by any seat under ONE RUNNER, ONE BOARD.
 #
 # EXIT: 0 every spelling in both locations is CARRIED into ALL.in by the builder and found by the grader

@@ -3,7 +3,7 @@
 # Currency expression prints the exact four-decimal value as fpc does: a sign or space, one digit, a point, EIGHTEEN decimals and
 # E+NN / E-NN (two exponent digits) -- not the 17-significant-digit double with a three-digit lowercase exponent.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. FPC webtbs_tw38717 prints C := 1234.56 * 4 / 2
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. FPC webtbs_tw38717 prints C := 1234.56 * 4 / 2
 # as ` 2.469120000000000000E+03`; SCRIP printed ` 2.4691199999999999e+003`, the double 2469.12 in the real format.
 #
 # CURE: pascal.y asks the declaration VISIBLE at the use (the uid-scoped scalar-var-type table, which value/var formals now join when

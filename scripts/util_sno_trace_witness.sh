@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # util_sno_trace_witness.sh <witness.sno> "<a line the oracle must print>"   |   util_sno_trace_witness.sh <witness.sno> --expect-error NNN
-# ceo 2026-09-05 (GOAL-CEO CEO-282, Lon: "Add items to implement all the SNOBOL4 tracing"): grade ONE SNOBOL4 TRACE witness in BOTH
+# 2026-09-05 (the archived ruling record R-282, Lon: "Add items to implement all the SNOBOL4 tracing"): grade ONE SNOBOL4 TRACE witness in BOTH
 # modes against SPITBOL -bf. Byte-exact (stdout+stderr merged) in the first form; in the second form the oracle and both SCRIP modes
 # must each print the SAME ERROR NUMBER (fatal listings carry a pathname and a time, so an error witness is never byte-compared).
 # ⛔ THE NUMBER IS MATCHED, NOT THE CASING (cfo 2026-09-13): SPITBOL says "ERROR 199 -- ..." and SCRIP says "error 199: ..." since the
-# ONE ERROR VOICE landing (146d027e7, CEO-624), so the original `grep -q "ERROR $errno"` graded EVERY --expect-error arm FAIL on a
+# ONE ERROR VOICE landing (146d027e7, R-624), so the original `grep -q "ERROR $errno"` graded EVERY --expect-error arm FAIL on a
 # capital letter while both implementations agreed on the number -- measured on trace_bogus_type.sno (199) and trace_undefined_function.sno
 # (198), both of which pass under the case-insensitive number match. The arm still refuses rc=2 when the ORACLE does not raise it.
 # rc 0 = both modes match · rc 1 = a mode differs or fails to build · rc 2 = could not measure (no witness, no build, oracle silent).
 # ORACLE: sbl_correctness_bin first; if it refuses the witness with SPITBOL's ERROR 199 ("trace second argument is not trace type" --
-# the fork's trace-dispatch defect, hq_B 2026-09-05, CEO-280/282) the ref is cut from sbl_clean_bin instead and this is PRINTED. The
+# the fork's trace-dispatch defect, hq_B 2026-09-05, R-280/282) the ref is cut from sbl_clean_bin instead and this is PRINTED. The
 # fallback is moot since Lon swapped the oracle 2026-09-05T15:34:17Z and it NEVER applies under --expect-error: a witness that asks
 # for ERROR 199 makes the fixed oracle print the very string the fallback greps for, so the heuristic cannot tell "the fork refuses
 # every type" (the defect) from "this witness asked for a refusal" (the answer) -- it fired on trace_bogus_type.sno AFTER the swap and

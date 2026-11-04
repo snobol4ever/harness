@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ../harness/scripts/test_gate_emit_fields_read_by_a_template_have_a_writer.sh — cfo, on hq_B's finding under CEO-534.
+# ../harness/scripts/test_gate_emit_fields_read_by_a_template_have_a_writer.sh — cfo, on hq_B's finding under R-534.
 #
 # WHAT IT GATES.  A FIELD WITH A READER AND NO WRITER IS INVISIBLE.  `g_emit` (emit.h) is the one
 # channel from the emitter's per-node prepare into the x86 templates: the drive in emit.cpp WRITES
@@ -27,7 +27,7 @@
 #   op_parts_lbl   — read by bb_idx_get (a template bb_templates.h declares and emit.cpp never calls)
 #                    and by three gvar-arith arms whose IF therefore never fires
 #
-# ⭐ FLOOR 3 -> 0 (cto 2026-09-23, CEO-1169, THE DELETION OF THE DEAD TEMPLATES): all three readers above
+# ⭐ FLOOR 3 -> 0 (cto 2026-09-23, R-1169, THE DELETION OF THE DEAD TEMPLATES): all three readers above
 #   lived in templates with NO CALLER anywhere in src/ -- bb_idx_get.cpp, bb_binop_gvar_arith.cpp and
 #   bb_binop_gvar_arith_slot.cpp -- and they went with the other fifteen dead definition files and the
 #   fifteen header-only prototypes in that landing (a caller census over every bb_* name declared in

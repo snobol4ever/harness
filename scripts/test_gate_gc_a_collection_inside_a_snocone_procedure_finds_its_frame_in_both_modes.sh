@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_collection_inside_a_snocone_procedure_finds_its_frame_in_both_modes.sh -- a collection inside a Snocone procedure finds
-# the procedure's frame and its caller's in both modes (row snobol4-tixdemo-infinite-snobol4-runs-without-a-crash-in-mode-4-ceo-1812:
+# the procedure's frame and its caller's in both modes (row snobol4-tixdemo-infinite-snobol4-runs-without-a-crash-in-mode-4-r-1812:
 # TixDemo infinite_snobol4.md CRASH in mode 4 on 371ce73cc, "[GC-CHAIN] REFUSED: the chain over the maps stops short (frameless) after
 # 0 frame(s)"). A Snocone procedure is a class-C chain frame with no map: its prologue parks the caller's rcx at kt-24, and on a direct
 # call that is the call site's static record {count, gamma landing, omega landing}; the chain's class-C hop reads the gamma landing

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_debug_0_and_the_swi_debug_flag_answer_as_swipl.sh -- debug/0 AND nodebug/0 SET THE debug FLAG, AND IN THE SWI DIALECT THE
-# FLAG IS THE BOOLEAN swipl 9.0.4 KEEPS (cfo 2026-10-14, row prolog-swi-...-ceo-1664, CEO-1698: core/test_call's five setup_call_cleanup
+# FLAG IS THE BOOLEAN swipl 9.0.4 KEEPS (cfo 2026-10-14, row prolog-swi-...-r-1664, R-1698: core/test_call's five setup_call_cleanup
 # *_debug cases name setup(debug) and read red once the plunit shim ran case setups, corpus 02761e4cf; test_pio's abc_debug sets it true).
 #
 # debug/0 was absent and nodebug/0 a no-op; the debug flag took on/off only, the ISO values, so set_prolog_flag(debug, true) raised

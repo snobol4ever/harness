@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_event_coverage_reports_and_ratchets.sh -- row gc-event-coverage-is-the-criterion-not-collection-count
-# (coo, 2026-09-21, MODE TENET, CEO-1029; RULES.md THE INSTRUMENT LAWS; CEO-997 batch 30 clause 2 -- a census NAMES
+# (coo, 2026-09-21, MODE TENET, R-1029; RULES.md THE INSTRUMENT LAWS; R-997 batch 30 clause 2 -- a census NAMES
 # and never only counts).
 #
 # WHY THE AXIS CHANGED. A stress setting only tests the gc-points where a collection ACTUALLY OCCURS, and that subset
@@ -41,7 +41,7 @@
 # ARMS. (1) the instrument runs, reports the whole space, and the RATCHET HOLDS -- no floor event has stopped being
 # exercised. (2) the ABSENT assertion still holds (no arena-shrink path appeared). (3) the report is DENOMINATOR-HONEST:
 # it names OWED and ABSENT explicitly and prints the identity. (4) FAIL-ONCE PROOF: a floor carrying an event nothing
-# exercises must RED -- a ratchet that cannot fail is not a ratchet. ⛔ This seat holds no cure lane (CEO-723): every
+# exercises must RED -- a ratchet that cannot fail is not a ratchet. ⛔ This seat holds no cure lane (R-723): every
 # observable event is read from telemetry already in the tree and every OWED event is an ask, not an edit.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

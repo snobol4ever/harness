@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_array_assigned_or_passed_by_value_is_a_copy.sh -- an array variable assigned whole, or given to a value formal,
 # is a copy: writing the copy leaves the original as it was, for arrays of integers, two-dimensional arrays, arrays of char arrays
-# and arrays of records, as fpc -Miso has it (ISO 7185 6.8.2.2, 6.6.3.2; row pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# and arrays of records, as fpc -Miso has it (ISO 7185 6.8.2.2, 6.6.3.2; row pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. A real (arr_make) array was held by reference: b := a; b[1] := 50 changed a[1], and a
 # value formal wrote through to its actual -- which is also what kept arrays of records string-held (one SOH-separated string, so

@@ -9,7 +9,7 @@
 # '$term_to_goal', BipsPl/utils.pl), and under '*->' and '\+' as well in the SWI dialect, where swipl wraps those too; findall's goal is never wrapped.
 # close/2 with force(V) raises instantiation_error (both oracles; SCRIP said domain_error(close_option, force(_))). open/4 with alias(V) raises
 # instantiation_error in every dialect, as ISO 8.11.5.3 and swipl do: gprolog's domain_error(stream_option, alias(V)) is an ISO conflict, excluded by ruling
-# (CEO-391/1772, the CEO-1789 precedent; gnu_prolog EXCLUDED_LINES.tsv), so g.pl's reference carries ISO's line there. consult/1 checks an atom or
+# (R-391/1772, the R-1789 precedent; gnu_prolog EXCLUDED_LINES.tsv), so g.pl's reference carries ISO's line there. consult/1 checks an atom or
 # a list of atoms first ('$check_atom_or_atom_list': instantiation_error, type_error(list, T), type_error(atom, X)) and consults each file of a list.
 #
 # THE ARMS: two programs, each in mode 3 and mode 4 -- g.pl (no SWI marker, the reference cut from gprolog 1.4.5, nine lines) and s.pl (an SWI marker, the

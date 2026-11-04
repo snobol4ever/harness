@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# ⛔⭐⭐ THE GATE THAT HOLDS THE CEO-1146 ARENA SWEEP, and it exists because the sweep's own census had neither a
+# ⛔⭐⭐ THE GATE THAT HOLDS THE R-1146 ARENA SWEEP, and it exists because the sweep's own census had neither a
 # selftest nor a recipe that ran it -- the identical pair of holes COO-150 had just cured in util_gc_acceptance.py,
 # one instrument later.
 #
-# WHAT THE SWEEP WAS.  Since CEO-1095 took the shipped arena to 128 KB (GC_HEAP_KB, compiled in, on Lon's word), the
+# WHAT THE SWEEP WAS.  Since R-1095 took the shipped arena to 128 KB (GC_HEAP_KB, compiled in, on Lon's word), the
 # spelling `SCRIP_HEAP_MB=1` names a 1024 KB window -- EIGHT TIMES the window we ship.  Eighteen gates pinned it
 # believing it tightened the arena.  MEASURED HERE over six witnesses at four arenas: MB=1 runs the collector ZERO
 # times on four of them and once or twice on the other two, so those gates were grading their stress-0 arms with the
@@ -16,7 +16,7 @@
 # THE WINDOW GREW, so the run was not the size its own label claims.  A pin the runtime overrides is a false label,
 # which is the exact defect class this row exists to close; I printed grew=16 in my own output and read past it, and
 # the cfo's message is what sent me back to it.  The deciding law is the THIRTY-THIRD BATCH'S FIRST CLAUSE: the
-# exasperation knob is STRESS, NEVER THE ARENA.  So the arena's job is to be the window we ship (CEO-939: a landing
+# exasperation knob is STRESS, NEVER THE ARENA.  So the arena's job is to be the window we ship (R-939: a landing
 # gate must grade what we ship; SCRIP_HEAP_KB_TINY is already 128; grew is 0 there on all six) and SCRIP_GC_STRESS
 # does the exasperating.
 #
@@ -27,7 +27,7 @@
 # not, and sweeping onto a knob the record cannot see would have traded a wrong arena for an invisible one.
 # (e) THE KNOB IS A REQUEST AND COLLECTIONS ARE THE EVIDENCE (33rd batch clause 5), measured live on this binary.
 # (f) the window the pin asks for is the window the runtime delivers -- grew=0, the disqualifier that chose 128.
-# ⛔⭐ SINCE CEO-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") THE
+# ⛔⭐ SINCE R-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") THE
 # SHIPPED WINDOW IS SPITBOL'S -i1m, which is the 1024 KB an MB pin of 1 names, so the swept pins now name the GC-TESTING arena
 # (the Makefile's SCRIP_HEAP_KB_TINY, 128 KB -- the literal 24 swept gates pin) rather than the shipped window: arms (e) and (f) read that
 # arena out of the Makefile and grade it, and the shipped window is printed beside it, never repeated here.

@@ -10,7 +10,7 @@
 # peek_code/2, get_byte/2, peek_byte/2, close/1 and stream_property/2 FAILED -- observationally identical to a
 # plain `fail`, rc=1, no ball, no message, invisible to catch/3. A missing error that FAILS stops a program; a
 # failure indistinguishable from a legitimate one lets the caller's own if-then-else take the wrong branch and
-# carry on. That is CEO-556's class, and it is why the row ordered the dying guard cured FIRST and alone.
+# carry on. That is R-556's class, and it is why the row ordered the dying guard cured FIRST and alone.
 #
 # ⛔⭐ THE CAUSE WAS IN THE ASM THUNK, NOT IN THE C. Each C leaf already called pl_stream_idx_ball and produced a
 # perfectly correct ball. rtx_plunify.s has two thunk macros over one calling convention: PL_CTX_LEAF_BALL zeroes
@@ -63,7 +63,7 @@ verbose = os.environ.get("GATE_VERBOSE", "") not in ("", "0")
 # D = domain_error(stream_or_alias,_). S:<name> = domain_error(stream,<name>), the ISO core's answer where it and swipl
 # conflict: stream_property/2 on an atom that is no stream (ISO conformance case sics_stream_property_2_03,
 # corpus packages/prolog/logtalk_iso/predicates/stream_property_2/tests.lgt, and gprolog; swipl says existence_error;
-# the superset's ISO core wins a conflict, CEO-391/CEO-1305). R = must NOT raise AND must succeed (the control population: a live alias
+# the superset's ISO core wins a conflict, R-391/R-1305). R = must NOT raise AND must succeed (the control population: a live alias
 # or handle). N = must NOT raise but MAY legitimately fail -- for a TEST predicate whose failure is an answer,
 # not an error. at_end_of_stream/1 on a non-empty stream is the only one here: it correctly fails, in SCRIP and
 # in swipl alike, and grading it R reported the compiler wrong when the control row was wrong. The row is kept

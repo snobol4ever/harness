@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_m4_run_ends_the_runtime_switches_before_the_programs_argv.sh -- THE IPL RUNNER PUTS -- BEFORE A PROGRAM'S ARGV
-# IN MODE 4 (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). Lon's CEO-1261 convention makes well-formed
+# IN MODE 4 (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). Lon's R-1261 convention makes well-formed
 # -d -i -s -m -u the compiled binary's own runtime switches and a double dash ends them; the rungs harness writes the double dash
 # before a program's argv in m4, and test_icon_ipl_suite.sh did not, so gprogs/cquilts' own "-i 5000" was read as a 4 KB heap
 # window and the binary refused (rc=134) where iconx and m3 run it.

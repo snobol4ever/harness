@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# util_precarve_whack_patches.py -- THE PRE-CARVE WHACK TABLE (ceo CEO-1940/1941; Lon 2026-10-24: "WHACK each pre-carve one at a time and see what breaks").
+# util_precarve_whack_patches.py -- THE PRE-CARVE WHACK TABLE (R-1940/1941; Lon 2026-10-24: "WHACK each pre-carve one at a time and see what breaks").
 # One entry per site of .github/PRECARVE-WHACK-LIST.md: the exact source text of the carve (and its release where one exists) and what it becomes
 # when whacked. Run from the SCRIP root: `python3 ../harness/scripts/util_precarve_whack_patches.py <site>` applies one whack in place (rc 0,
 # prints FILES <touched>), `--list` names the sites and runs nothing. rc 3 NOPATCH when a required string is not in the tree (the site moved).

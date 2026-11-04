@@ -6,7 +6,7 @@
 # Generalizes test_demo_full_3way.sh (which covered only claws5 + treebank-list) to every .sno in the
 # CLAWS5 / TREEBANK / JSON / CALCULATOR families: base programs, *-match, and *-match-fence.
 # Encodes the s107 recipes verbatim: oracle temp-prepend (-CASE 0 control card + tab &TRIM = 0 — NEVER
-# patch the corpus source). ⛔ NO SIZE IS TYPED HERE (ceo CEO-1353, RULES.md clause 8 (g)(3)-(4)): each demo's own <stem>.heap/.stack
+# patch the corpus source). ⛔ NO SIZE IS TYPED HERE (R-1353, RULES.md clause 8 (g)(3)-(4)): each demo's own <stem>.heap/.stack
 # reach SCRIP in both modes and its <stem>.oracle_args reaches sbl, through lib_declared_arena.sh -- the s107 recipe this replaced
 # (-d512m -i64m, a per-family -s256m, ulimit -s unlimited) is measured unneeded on the full inputs (test_demo_full_3way.sh's header).
 # Reports IDENT/DIVERGE PER MODE, because a program failing in exactly one mode is a MODE34 violation.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_frame_map_anchor_is_the_frame_base_even_when_the_poll_floor_is_above_it.sh -- cto, 2026-09-23,
 # MODE DECTET; row gc-a-site-that-refuses-every-poll-form-names-an-unrooted-holder-starting-with-the-concat-slot-capture
-# (row 867, the ceo's kill-map lead) and hq_icon's mindfa/ilib mode-4 witnesses; CEO-1181/1183.
+# (row 867, the officer's kill-map lead) and hq_icon's mindfa/ilib mode-4 witnesses; R-1181/1183.
 #
 # WHAT WAS THERE. gc_walk_range found a frame's DT_MAP cell, computed the frame's base as cell - map_off, and then
 # CLAMPED that base up to the poll's floor whenever the floor sat above it -- which is every poll taken while the

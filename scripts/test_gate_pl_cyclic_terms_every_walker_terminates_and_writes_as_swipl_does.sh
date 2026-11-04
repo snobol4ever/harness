@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_cyclic_terms_every_walker_terminates_and_writes_as_swipl_does.sh -- RATIONAL TREES, THE ROLL-OUT (cto 2026-10-05, CEO-1521, row
+# test_gate_pl_cyclic_terms_every_walker_terminates_and_writes_as_swipl_does.sh -- RATIONAL TREES, THE ROLL-OUT (cto 2026-10-05, R-1521, row
 # prolog-rational-trees-cyclic-term-unification-comparison-copy-and-write-so-the-logtalk-coinduction-branch-is-graded-as-supported). The core
 # (test_gate_pl_cyclic_terms_unify_compare_copy_and_survive_a_collection_as_swipl_does.sh) made unify, ==, compare and copy_term cycle-safe;
 # this gate holds every other walker over a term or a list spine to the same standard on ONE 23-line witness vs swipl in m3, m4 and under

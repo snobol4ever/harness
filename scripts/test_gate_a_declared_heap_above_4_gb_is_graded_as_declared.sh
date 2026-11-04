@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_a_declared_heap_above_4_gb_is_graded_as_declared.sh -- a heap_kb above 4 GB is a declaration like any other (ceo CEO-2083; NO FIXED LIMITS). ProPuzzles' euler10 and euler24 declare 10 GB
+# test_gate_a_declared_heap_above_4_gb_is_graded_as_declared.sh -- a heap_kb above 4 GB is a declaration like any other (R-2083; NO FIXED LIMITS). ProPuzzles' euler10 and euler24 declare 10 GB
 # (9765625 KB), and ./scrip -d9765625k runs: the runtime's hard cap (-d) has NO 4 GB window, its only bound is the collector's page map, which holds each block's offset in 8-byte units in 32 bits, so the
 # reservation stops at 32 GB (gc_heap.c names it). The 4194304 KB ceiling the harness refused with ("the ceiling SCRIP_HEAP_KB itself refuses") was copied from the env-var windows of the INITIAL heap
 # window (SCRIP_HEAP_KB 64..4096*1024 KB, SCRIP_HEAP_MB 1..4096, -i), which bound the window and never the cap, and the stack ceiling was the same number copied again. Now every window is the box's own

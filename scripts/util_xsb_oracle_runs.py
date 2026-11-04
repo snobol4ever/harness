@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""util_xsb_oracle_runs.py -- THE RUNS XSB'S OWN TEST SCRIPTS MAKE, RECORDED (the coo, 2026-10-23, on ceo CEO-1927).
+"""util_xsb_oracle_runs.py -- THE RUNS XSB'S OWN TEST SCRIPTS MAKE, RECORDED (the coo, 2026-10-23, on R-1927).
 
 Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin to use XSB system as the third oracle."
 RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE: each XsbTests program runs as XSB's own gentest.sh runs it, GOAL
 from its directory's test.sh. This instrument does not parse those scripts; it RUNS them, each directory's own test.sh in a fresh copy of the
-upstream tree (and incremental_tests/stest.sh, the one stest.sh XSB's testall.sh runs by default, ceo CEO-1927 (B)), with a recording XEMU in
+upstream tree (and incremental_tests/stest.sh, the one stest.sh XSB's testall.sh runs by default, R-1927 (B)), with a recording XEMU in
 front of xsb_bin(): every invocation's directory, argv and stdin are logged, its temp file kept. So a program's run -- its directory, options,
 FILE and CMD, the cd's and loops of its script included -- is the one XSB's own scripts made, never one typed here.
 
@@ -163,7 +163,7 @@ def cmd_runs(p1, p2, pkg):
         rows[name] = dict(rel=v["rel"], kind=v["kind"], file=v["file"], cmd=v["cmd"].replace("\t", " ").replace("\n", " "), argv=v["argv"], script=script,
                           note=f"{twice} {old} {len(a1) if a1 is not None else '-'} lines")
     print("# ORACLE_RUNS.tsv -- xsb_tests: one row per vendored program XSB's own test scripts run, recorded by running them (harness")
-    print("# util_xsb_oracle_runs.py record, twice; runs) with a recording XEMU in front of xsb_bin(), ceo CEO-1927. The builder (CONTRACT.tsv")
+    print("# util_xsb_oracle_runs.py record, twice; runs) with a recording XEMU in front of xsb_bin(), R-1927. The builder (CONTRACT.tsv")
     print("# oracle=xsb-gentest) cuts each ref from this run: name, dir (below CONTRACT.tsv's upstream), kind (gentest: [FILE]. tell(temp). CMD.")
     print("# told.; wfs: [wfs_test]. CMD told.), file, cmd, emu_args (shell-quoted, as the script passed them), script.")
     for name in sorted(rows):
@@ -202,7 +202,7 @@ def cmd_loaders(run, pkg):
             if name and name != me:
                 loaders[name].add(who)
     print("# ORACLE_LOADS.tsv -- xsb_tests: every vendored file XSB 5.0.0 OPENED while its own test scripts ran a program other than the file itself")
-    print("# (harness util_xsb_oracle_runs.py record --strace; loaders, 2026-10-23, ceo CEO-1927): name<TAB>count<TAB>loaders (NAME.pl, or a")
+    print("# (harness util_xsb_oracle_runs.py record --strace; loaders, 2026-10-23, R-1927): name<TAB>count<TAB>loaders (NAME.pl, or a")
     print("# script's own run). A CONTAINERS.tsv LOADED_BY row's first word re-derives from here (util_container_or_library.py verify).")
     for name in sorted(loaders):
         L = sorted(loaders[name], key=lambda s: ("(its own run" in s, s))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# util_flounder_census.py -- WHICH ROWS ARE BEING PASSED AROUND, AND WHICH CLAIMS SIT IDLE IN A HAND (ceo, 2026-09-04, on
+# util_flounder_census.py -- WHICH ROWS ARE BEING PASSED AROUND, AND WHICH CLAIMS SIT IDLE IN A HAND (2026-09-04, on
 # Lon's order: "Check if any task is being passed around and floundering. If you find then those must be delegated to HQ
-# since they are Opus not Sonnet. And if any HQ is floundering CEO ... must take the actual task item and work it themselves.")
+# since they are Opus not Sonnet. And if any HQ is floundering the officer ... must take the actual task item and work it themselves.")
 # Reads QUEUE.tsv, every tasks/*.task.md LEDGER and claims/*.claim; never writes. Per open row: releases (a holder took it
 # and gave it back unworked), reopens, parks, distinct holders, age, hours since the baton was last touched, the live claim.
 # rc=0 nothing floundering by the thresholds below / rc=1 floundering rows or idle claims NAMED / rc=2 postoffice unreadable.
@@ -32,8 +32,8 @@ for t,r in rows.items():
     releases=len(re.findall(r'\*\*RELEASED\*\*',led))
     reopens=len(re.findall(r'REOPEN',led,re.I))
     parks=len(re.findall(r'STATE -> (PARKED|BLOCKED|GRANT)',led))
-    authors=set(re.findall(r'\[(seat\d\d|hq_[A-Z]|ceo)·',led))|set(re.findall(r'RELEASED\*\* by (seat\d\d|hq_[A-Z]|ceo)',led))|set(re.findall(r'(?:ASSIGNED|CLAIMED):(seat\d\d|hq_[A-Z])',st))
-    authors.discard('ceo')
+    authors=set(re.findall(r'\[(seat\d\d|hq_[A-Z]|cto)·',led))|set(re.findall(r'RELEASED\*\* by (seat\d\d|hq_[A-Z]|cto)',led))|set(re.findall(r'(?:ASSIGNED|CLAIMED):(seat\d\d|hq_[A-Z])',st))
+    authors.discard('cto')
     dates=sorted(set(date_re.findall(s)))
     first=dates[0] if dates else None
     age=(now-datetime.datetime.strptime(first,'%Y-%m-%d').timestamp())/86400 if first else 0
@@ -56,7 +56,7 @@ for score,t,r,rel,reo,pk,au,age,lh,cl in out:
     if cl and cl['holder'].startswith('seat') and cl['taken_h']>3 and lh>2: print(f"  {cl['holder']} {t[:70]} taken {cl['taken_h']:.1f}h ago, baton {lh:.1f}h, state {r['state'][:24]}")
 
 for score,t,r,rel,reo,pk,au,age,lh,cl in out:
-    if rel>=A.releases and not (cl and cl['holder'].startswith(('hq_','ceo'))): FLOUNDER.append(t)
-print('\nFLOUNDER_CENSUS rows_open=%d floundering(releases>=%d, no HQ/ceo working it)=%d idle_hq_claims(>%gh)=%d' % (len(out), A.releases, len(FLOUNDER), A.idle_hq, len(IDLE)))
+    if rel>=A.releases and not (cl and cl['holder'].startswith(('hq_','cto'))): FLOUNDER.append(t)
+print('\nFLOUNDER_CENSUS rows_open=%d floundering(releases>=%d, no HQ/cto working it)=%d idle_hq_claims(>%gh)=%d' % (len(out), A.releases, len(FLOUNDER), A.idle_hq, len(IDLE)))
 for t in FLOUNDER: print('  FLOUNDERING ' + t)
 sys.exit(1 if (FLOUNDER or IDLE) else 0)

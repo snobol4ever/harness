@@ -4,7 +4,7 @@
 # ==============================================================================================
 # GATE: capture-oracle-refs feeds the stdin companion, and a RED summary never exits 0.
 #
-# Row capture-feed-stdin-and-red-exit (hq_B, 2026-08-30) -- the "one edge" ceo kept when the stdin
+# Row capture-feed-stdin-and-red-exit (hq_B, 2026-08-30) -- the "one edge" the officer kept when the stdin
 # freeze was lifted. Two invariants, and each one is a defect this project has already paid for:
 #
 #   (1) A stdin-bearing stem mints a ref from oracle-WITH-stdin, never from oracle-with-/dev/null.
@@ -120,7 +120,7 @@ esac
 mv "$C/ALL.in.hidden" "$C/ALL.in"
 
 # ------------------------------------------------------- (5) the no-oracle refusal is a REFUSAL, and it is rc=2
-# ⛔ RE-POINTED FROM 3 TO 2 on 2026-09-04 (hq_T, row harness-refusal-exit-code-unified-on-rc-2, ceo CEO-233): the
+# ⛔ RE-POINTED FROM 3 TO 2 on 2026-09-04 (hq_T, row harness-refusal-exit-code-unified-on-rc-2, R-233): the
 # harness carried its own local refusal code while lib_gate.sh and every bash gate use 2, and once the stale-binary
 # preflight landed inside that same harness -- correctly refusing with 2 -- one tool spoke two refusal codes and no
 # caller could ask "did it refuse?" without knowing which refusal it hit. ⭐ THE PROPERTY THIS ARM DEFENDS DID NOT

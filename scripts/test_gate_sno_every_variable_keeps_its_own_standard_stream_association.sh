@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_every_variable_keeps_its_own_standard_stream_association.sh -- every variable INPUT() or OUTPUT() associates
-# with a standard stream keeps ITS OWN association, as under sbl -bf (ceo CEO-1401, 2026-10-02).
+# with a standard stream keeps ITS OWN association, as under sbl -bf (R-1401, 2026-10-02).
 #
 # ⛔⭐ FOUND BY MODERNIZING spitbol_testpgms/test8.spt ON LON'S WORD ("fix the I/O associations to be modern"): its three
 # OUTPUT('TITLE',6,'(14H1...)') associations became OUTPUT(.TITLE), OUTPUT(.DEALER), OUTPUT(.SKIP), and SCRIP printed only

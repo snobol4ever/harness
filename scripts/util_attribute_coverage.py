@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_attribute_coverage.py [--lang L] [--table T] [--min PCT] -- HOW MUCH OF EACH SUITE THE FEATURE ATTRIBUTES DESCRIBE (Lon 2026-10-22, in-chat to
-the ceo, verbatim: "Is the system using the attribute files with each program listed with which feature that program uses. Go check the coverage for
-each language."; ceo CEO-1892).
+the officer, verbatim: "Is the system using the attribute files with each program listed with which feature that program uses. Go check the coverage for
+each language."; R-1892).
 
 Reads every suite table (corpus/tests/<lang>/ALL.csv and corpus/packages/<lang>/<pkg>/ALL.csv). A FEATURE COLUMN is a column outside
 util_suite_partition.py's FIXED set whose every value is a non-negative integer, minus the bookkeeping columns package, want_rc, stdin, section,

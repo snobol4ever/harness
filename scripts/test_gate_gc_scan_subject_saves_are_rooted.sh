@@ -4,8 +4,8 @@
 # nested scan and every suspended coexpression's ScanState (rt_scan_state_capture, held on ctx->scan_state) carried a collected-heap
 # subject pointer that NO root walk visited -- unmarked and unregistered for forwarding; an EMITTED rooted holder aliased the same
 # block, an alibi, not a root.
-# ⛔ RE-CUT 2026-10-14 (hq_collector, row gc-blocking-gate-scan-subject-saves-are-rooted-refuses-heap-0-everywhere-ceo-1697): the
-# population moved. The per-scan saves of the outer subject no longer live on a scan_saved[] stack (NO GLOBAL HOLDS A STACK, CEO-1542):
+# ⛔ RE-CUT 2026-10-14 (hq_collector, row gc-blocking-gate-scan-subject-saves-are-rooted-refuses-heap-0-everywhere-r-1697): the
+# population moved. The per-scan saves of the outer subject no longer live on a scan_saved[] stack (NO GLOBAL HOLDS A STACK, R-1542):
 # they are cells of the scanning frame (outer_Σ in the match/scan prologue), typed in the frame's static layout and visited by the
 # chain over the maps (ARCH-GC 13); the only saves the SCRIP_GC_AUDIT_SLOTS audit still walks are the ScanStates a co-expression
 # SWITCH captures (g_root_ctx.scan_state and each parked context's). The old arm asked the audit about a witness with no
@@ -20,7 +20,7 @@
 #       hands (r13, r14, r15) through the context's env record, which no root walk visits because it is written by the departing thread
 #       and read by the arriving one with no collection between, so the audit population is gone and the oracle's answer under moving
 #       collections is the whole evidence: a subject word read stale from the record after a move would change the answer.
-# Both refs are cut LIVE from icont; FAIL_ONCE=1 corrupts both refs (CEO-1680: a proper fail-once is a witness red against a
+# Both refs are cut LIVE from icont; FAIL_ONCE=1 corrupts both refs (R-1680: a proper fail-once is a witness red against a
 # corrupted ref or the oracle's different answer). A stale binary or a missing icont REFUSES rc=2; a refusal is not a red.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; cd "$ROOT" || exit 2

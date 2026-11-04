@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ../harness/scripts/test_gate_deferred_rows_name_a_ruling_and_the_work_they_wait_on.sh
-# hq_T 2026-09-12, ceo CEO-593, on Lon's CEO-579 (*"Do not count the FD as failures for us."*).
+# hq_T 2026-09-12, R-593, on Lon's R-579 (*"Do not count the FD as failures for us."*).
 #
 # ⛔⭐ WHAT THIS GRADES AND WHY IT IS NOT A DOCUMENTATION CHECK. `DEFERRED` is the one verdict on this project
 # that MOVES PROGRAMS OUT OF THE BUCKET THAT CAN BE RED without anybody fixing them. OUTSIDE-BASELINE at least
@@ -11,7 +11,7 @@
 # red (hq_V, standing practice since 2026-09-10). This gate is that sentence made executable for DEFERRED.
 #
 # THE THREE CONDITIONS ARE ARCH-PROGRAM-LEDGER.md § DEFERRED's, and they are graded here one arm each:
-#   ARM 3/4  A RULING NAMES IT -- CEO number, ISO date, and LON'S OWN WORDS IN QUOTES. No seat defers anything
+#   ARM 3/4  A RULING NAMES IT -- officer number, ISO date, and LON'S OWN WORDS IN QUOTES. No seat defers anything
 #            on its own judgement, so a row whose verbatim does not name Lon is not a deferral at all.
 #   ARM 7/8  IT IS PRINTED, NEVER SUBTRACTED IN SILENCE -- `deferred=N` is the sixth PACKAGE_INVENTORY term,
 #            the names print beside it, and the identity closes WITH it and REFUSES WITHOUT it.
@@ -87,8 +87,8 @@ while IFS= read -r row; do
         fail 2 "line $ln defers suite '$suite', which is not a key in SUITES.tsv -- a deferral must lift a number the board actually prints"
     fi
     ok
-    # ARM 3 -- a CEO ruling number, and a real date.
-    printf '%s' "$by" | grep -qE '^CEO-[0-9]+(,CEO-[0-9]+)*$' || fail 3 "line $ln ruled_by='$by' is not one or more CEO-<n> numbers -- a deferral with no ruling to look up is a seat's own judgement wearing a citation"
+    # ARM 3 -- a ruling number, and a real date.
+    printf '%s' "$by" | grep -qE '^[A-Z]{1,3}-[0-9]+(,[A-Z]{1,3}-[0-9]+)*$' || fail 3 "line $ln ruled_by='$by' is not one or more R-<n> numbers -- a deferral with no ruling to look up is a seat's own judgement wearing a citation"
     printf '%s' "$on" | grep -qE '^20[0-9][0-9]-[01][0-9]-[0-3][0-9]$' || fail 3 "line $ln ruled_on='$on' is not an ISO date -- an undated ruling cannot be aged, and ageing is how a deferral is caught turning into an abandonment"
     ok
     # ARM 4 -- LON'S OWN WORDS, quoted, and long enough to be words. ⛔ The name check is the load-bearing
@@ -118,7 +118,7 @@ rm -f /tmp/.def_rows.$$
 # ---------------------------------------------------------------------------------------------------------
 # ARM 7/8 THE IDENTITY, BOTH WAYS, HERMETIC. A scratch package of five programs, one of them deferred by a
 # scratch record: with the row the six buckets sum and `deferred=1` prints; with the record redirected away
-# the SAME tree REFUSES rc=2. ⛔ And per RULES.md § THE INSTRUMENT LAWS (23rd batch, CEO-594) the negative
+# the SAME tree REFUSES rc=2. ⛔ And per RULES.md § THE INSTRUMENT LAWS (23rd batch, R-594) the negative
 # half asserts WHAT THE REFUSAL SAYS, not merely that something failed -- an rc=2 for a missing library would
 # satisfy a bare exit-code check and prove nothing about the arithmetic.
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
@@ -139,7 +139,7 @@ case "$got" in
     *) fail 7 "with a deferred row the inventory did not print deferred=1 in the sixth position (rc=$rc): $(printf '%s' "$got" | head -2 | tr '\n' '|')" ;;
 esac
 [ "$rc" -eq 0 ] || fail 7 "the identity did not close with the deferred row counted (rc=$rc)"
-printf '%s\n' "$got" | grep -q '^PACKAGE_INVENTORY_DEFERRED package=scratchpkg deferred=1 names=c.pl ruled_by=CEO-579$' \
+printf '%s\n' "$got" | grep -q '^PACKAGE_INVENTORY_DEFERRED package=scratchpkg deferred=1 names=c.pl ruled_by=R-579$' \
     || fail 7 "the names did not print beside the count -- condition 2 is PRINTED, NEVER SUBTRACTED IN SILENCE, and a count with no names is where a wrong exclusion hides. Got: $(printf '%s' "$got" | grep DEFERRED | head -1)"
 ok
 got2="$(inv_run "$W/absent.tsv")"; rc2=$?
@@ -158,7 +158,7 @@ for k in $(awk -F'\t' -v seen=0 '!/^#/ && NF { if (!seen) { seen=1; next } print
     printf '%s\n' "$md" | grep -q "^| $nick |" || { fail 9 "suite '$k' ($nick) is deferred but does not appear in the markdown suite table at all"; continue; }
     # ⛔ THE MARKER, NOT THE WORD. Grading on the word DEFERRED alone passes VACUOUSLY here and I measured it
     # doing so: gnu_fd's own `criterion_changed` cell in SUITES.tsv contains the string
-    # "DEFERRED-by-lon-ceo-572", which the no-runner branch prints as its reason -- so a banner with the
+    # "DEFERRED-by-lon-r-572", which the no-runner branch prints as its reason -- so a banner with the
     # deferred rendering ripped out entirely still satisfied a `grep DEFERRED` on that row. ⭐ The check must
     # be on a token only the cure can emit (`⏸`) plus the ruling's own number, which is the general form of
     # every vacuous assertion in this project: an arm passing on text that was already there before the cure.
@@ -172,7 +172,7 @@ ok
 
 # ---------------------------------------------------------------------------------------------------------
 if [ "$bad" -eq 0 ]; then
-    echo "✅ GATE PASS [$GATE_NAME]: $ROWS deferred population(s), $n arm group(s) graded -- every row names Lon's ruling verbatim with its CEO number and date, names the work it waits on with a measured size, re-measures its population against the disk, sums as the sixth PACKAGE_INVENTORY bucket (and refuses without it), and reads DEFERRED on the board."
+    echo "✅ GATE PASS [$GATE_NAME]: $ROWS deferred population(s), $n arm group(s) graded -- every row names Lon's ruling verbatim with its officer number and date, names the work it waits on with a measured size, re-measures its population against the disk, sums as the sixth PACKAGE_INVENTORY bucket (and refuses without it), and reads DEFERRED on the board."
     exit 0
 fi
 echo "⛔ GATE FAIL [$GATE_NAME]: $bad violation(s) over $ROWS deferred population row(s). ⛔ A DEFERRED row that fails any of the three conditions is a FAIL, not a weaker deferral (ARCH-PROGRAM-LEDGER § DEFERRED) -- fix the row or withdraw the deferral; never relax this gate."

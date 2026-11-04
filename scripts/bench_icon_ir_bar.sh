@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, ceo CEO-1262)
-# bench_icon_ir_bar.sh -- THE ICON IR BAR (ceo CEO-1777; Lon 2026-10-15 10:5x, in-chat to the ceo, verbatim: "We can have HQ-ICON work calgrind and
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, R-1262)
+# bench_icon_ir_bar.sh -- THE ICON IR BAR (R-1777; Lon 2026-10-15 10:5x, in-chat, verbatim: "We can have HQ-ICON work calgrind and
 # optimize based on instruction count."): the load-invariant twin of bench_icon_bar.sh. ONE kernel under corpus/benchmarks/icon is run ONCE under
 # callgrind in Arizona iconx 9.5.25a and ONCE in SCRIP mode 4, each Ir total read through lib_ir_measure.sh, and the bare multiple is printed
 # through lib_perf_fmt.sh: iconx Ir / SCRIP Ir (the FACT RULE's unit, reference over ours -- 2.00x is half the instructions, 0.50x is twice them).

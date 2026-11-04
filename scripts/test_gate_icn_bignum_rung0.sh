@@ -1,7 +1,7 @@
 #!/bin/bash
 # Icon large-integer arithmetic, RUNG 0: a fixed integer that OVERFLOWS must promote to a large
 # integer rather than wrap in silence. Row icon-bignum-large-integer-arithmetic-ported-from-iconx-rlrgint
-# (CEO-318, Lon: "the bignum is just a port of iconx"), ladder rung 39, arizona bignum class.
+# (R-318, Lon: "the bignum is just a port of iconx"), ladder rung 39, arizona bignum class.
 #
 # Measured 2026-09-06 against iconx: `write(2^100)` prints 1267650600228229401496703205376 and SCRIP
 # printed 0 -- a WRAP, not a refusal, so every downstream number was quietly wrong. `3^40 * 3^40` printed

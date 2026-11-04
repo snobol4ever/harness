@@ -3,7 +3,7 @@
 #
 # ONE QUESTION, ASKED OF EVERY GATE: given NOTHING to examine, does it refuse -- or does it say green?
 # A gate handed an empty tree has proven nothing.  If it exits 0 anyway, every DONE-WHEN that cites it is
-# closing rows on a lie (ARCH-FLEET-CEO.md LAW 1).  seat16's audit found 31 such gates by hand-injection;
+# closing rows on a lie (the retired fleet architecture page LAW 1).  seat16's audit found 31 such gates by hand-injection;
 # this runs the same injection mechanically, every time, so gate #32 cannot reintroduce the hole.
 #
 # THE INJECTION is deliberately the crudest possible one: a scratch sibling root holding the gate script and

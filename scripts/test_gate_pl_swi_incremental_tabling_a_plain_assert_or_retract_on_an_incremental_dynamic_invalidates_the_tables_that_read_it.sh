@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_swi_incremental_tabling_a_plain_assert_or_retract_on_an_incremental_dynamic_invalidates_the_tables_that_read_it.sh -- SWI INCREMENTAL TABLING, THE
-# GLUE (ceo CEO-1959; row prolog-swi-incremental-tabling-plain-assert-retract-invalidates-the-tables-ceo-1959). A predicate declared `:- dynamic d/1 as incremental`
+# GLUE (R-1959; row prolog-swi-incremental-tabling-plain-assert-retract-invalidates-the-tables-r-1959). A predicate declared `:- dynamic d/1 as incremental`
 # (alone or in an option list) is read by tables declared `as incremental`; a PLAIN assert/asserta/assertz/retract/retractall on it must invalidate those tables, and
 # predicate_property(P, incremental) is true for the dynamic and for the tabled predicate. The program is the witness and the expected output was cut from swipl 9
 # (a run of the same program): p/q/r over d/e, six changes (assertz, asserta, retract, retractall, assert), the option-list declaration, the property.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_function_forms_list_item_append_prepend_gist_head_tail_pick_unique_repeated_reduce_rotate_agree_with_rakudo.sh -- THE FUNCTION FORMS list / item / append / prepend / gist / head / tail / pick / unique / repeated / reduce / rotate
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by a function-form battery over Rakudo's core subs used by 3 or more Roast files, then confirmed with realistic arguments).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by a function-form battery over Rakudo's core subs used by 3 or more Roast files, then confirmed with realistic arguments).
 #
 # THE DEFECT, each measured against Rakudo: list(1,2,3) printed the word "list" (the name fell to Icon's list builtin), item(5), gist(5), append(@a, 3, 4) and prepend(@a, 0) died "error 22: undefined function called", and head(2, (1,2,3)),
 # tail(2, @a) and pick(1, (5,)) took the first argument as the list. 193 Roast files use list, 157 item, 25 append, 22 gist, 15 prepend, 12 head / tail / pick.

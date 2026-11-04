@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# lib_outside_shape.sh -- THE CEO-749 SHAPE FOR A PACKAGE ROW, ONE AUTHORITY FOR EVERY RUNNER THAT PUBLISHES ONE (row
-# snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749, hq_snobol4 2026-09-23).
+# lib_outside_shape.sh -- THE R-749 SHAPE FOR A PACKAGE ROW, ONE AUTHORITY FOR EVERY RUNNER THAT PUBLISHES ONE (row
+# snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-r-749, hq_snobol4 2026-09-23).
 #
-# CEO-749 and Lon's word of 2026-09-16 ("Get those fixed"): a program outside the SPITBOL baseline -- one the oracle itself
+# R-749 and Lon's word of 2026-09-16 ("Get those fixed"): a program outside the SPITBOL baseline -- one the oracle itself
 # cannot answer, listed in the package's OUTSIDE_SPITBOL_BASELINE.tsv -- STAYS IN ITS ROW'S DENOMINATOR, named, as debt to cure.
 # The shape is PASS over SHIPPED with OUTSIDE=k named in the same row. Before this file, five package runners published
 # PASS over GRADED: Gimpel 127/132 with 12 listed, Budne 71/71 with 49 listed, Flake 110/124 with 56 listed and Dotnet 5/5
@@ -28,19 +28,19 @@ outside_shape_stamp() {
     last="$(printf '%s\n' "$cc" | grep -oE 'OUTSIDE=[0-9]+' | tail -1 | cut -d= -f2)"
     [ "$prev" = "$total" ] && [ "$last" = "$out" ] && return 0
   fi
-  printf '%s:CEO-749-shape-pass-over-shipped-%s-with-OUTSIDE=%s-named-in-OUTSIDE_SPITBOL_BASELINE.tsv-they-stay-in-the-denominator-as-debt-to-cure' "$(date +%F)" "$total" "$out"
+  printf '%s:R-749-shape-pass-over-shipped-%s-with-OUTSIDE=%s-named-in-OUTSIDE_SPITBOL_BASELINE.tsv-they-stay-in-the-denominator-as-debt-to-cure' "$(date +%F)" "$total" "$out"
 }
 
-# ⛔⭐ THE CEO-1286 SHAPE (Lon 2026-09-26): a program NOT IN THE SPITBOL DIALECT -- rejected by SPITBOL, and rejected for a CSNOBOL4
+# ⛔⭐ THE R-1286 SHAPE (Lon 2026-09-26): a program NOT IN THE SPITBOL DIALECT -- rejected by SPITBOL, and rejected for a CSNOBOL4
 # feature SPITBOL does not support, both measured, named in the package's EXCLUDED.tsv -- LEAVES THE DENOMINATOR, and the row shows
-# EXCLUDED=k. A program the oracle refuses for any other cause stays (the CEO-749 shape above, unchanged for it). The published row
+# EXCLUDED=k. A program the oracle refuses for any other cause stays (the R-749 shape above, unchanged for it). The published row
 # is PASS over (shipped - EXCLUDED) with EXCLUDED=k in SUITES.tsv column today_excluded (util_score_row.py --excluded) and OUTSIDE=j
 # still named in the stamp. A stamp is owed when the denominator moves, or the excluded count differs from the last EXCLUDED=k
-# recorded (none recorded counts as different, so the first CEO-1286 write of every row stamps once), or the outside count differs.
+# recorded (none recorded counts as different, so the first R-1286 write of every row stamps once), or the outside count differs.
 # USAGE: stamp="$(excluded_shape_stamp <suites-key> <denominator> <outside-count> <excluded-count> [<containers>])"
-# ⭐ GENERALIZED (Lon 2026-09-26, "use the Excl column to properly classify the exclusions for good reasons only"; CEO-1288): Excl is
+# ⭐ GENERALIZED (Lon 2026-09-26, "use the Excl column to properly classify the exclusions for good reasons only"; R-1288): Excl is
 # EVERY shipped unit the denominator leaves out, any language. With <containers> given, <excluded-count> is the row's whole Excl --
-# its include fragments (CONTAINERS.tsv, CEO-1272) plus its programs not in the SPITBOL dialect (EXCLUDED.tsv) -- and the stamp
+# its include fragments (CONTAINERS.tsv, R-1272) plus its programs not in the SPITBOL dialect (EXCLUDED.tsv) -- and the stamp
 # names both classes. An <outside-count> of - is a language with no SPITBOL baseline (Icon, Prolog): no OUTSIDE token is written,
 # because the grid prints the last OUTSIDE=N of a row's stamps and OUTSIDE=0 on an Icon row would be a label for nothing.
 excluded_shape_stamp() {
@@ -59,9 +59,9 @@ excluded_shape_stamp() {
     [ "$prev" = "$total" ] && [ "$lasto" = "$oc" ] && [ "$laste" = "$exc" ] && return 0
   fi
   if [ -z "$con" ]; then
-    printf '%s:CEO-1286-shape-pass-over-shipped-minus-EXCLUDED=%s-not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv-denominator-%s-with-OUTSIDE=%s-spitbol-programs-the-oracle-refuses-kept-as-debt' "$(date +%F)" "$exc" "$total" "$out"
+    printf '%s:R-1286-shape-pass-over-shipped-minus-EXCLUDED=%s-not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv-denominator-%s-with-OUTSIDE=%s-spitbol-programs-the-oracle-refuses-kept-as-debt' "$(date +%F)" "$exc" "$total" "$out"
   else
-    printf '%s:CEO-1288-Excl-classified-EXCLUDED=%s-every-shipped-unit-the-denominator-%s-leaves-out-%s-include-fragments-named-in-CONTAINERS.tsv-and-%s-not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv%s' "$(date +%F)" "$exc" "$total" "$con" "$((exc - con))" "${oc:+-with-OUTSIDE=$oc-spitbol-programs-the-oracle-refuses-kept-as-debt}"
+    printf '%s:R-1288-Excl-classified-EXCLUDED=%s-every-shipped-unit-the-denominator-%s-leaves-out-%s-include-fragments-named-in-CONTAINERS.tsv-and-%s-not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv%s' "$(date +%F)" "$exc" "$total" "$con" "$((exc - con))" "${oc:+-with-OUTSIDE=$oc-spitbol-programs-the-oracle-refuses-kept-as-debt}"
   fi
 }
 # excluded_in_outside <pkgdir> "<names of THIS run's outside set, one per line or space, with or without extension or _driver>"

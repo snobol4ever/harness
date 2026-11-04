@@ -11,7 +11,7 @@
 # statement 14; a two-dimensional array was sorted as a flat list of its rows' first cells; RSORT reversed the ascending order, so
 # its ties came out reversed. The one oracle's sort is sorta/sortc/sorth in sbl.min (read in the spitbol-pristine drop).
 # NO MONITOR BRACKET: the divergence is inside one builtin call; the program stops at it.
-# RE-CUT (CEO-1663): corpus a9f30db68 spelled tab.sno's CONVERT(words,"array") as "ARRAY" (Lon, CEO-1456); under -bf the lower-case
+# RE-CUT (R-1663): corpus a9f30db68 spelled tab.sno's CONVERT(words,"array") as "ARRAY" (Lon, R-1456); under -bf the lower-case
 # name failed the CONVERT and RSORT met a null, which was the 256. sbl -bf now runs tab.sno whole (rc 0, 277 lines), so arms 3-4 grade
 # its whole stdout: RSORT of the CONVERTed table's rows by column 2 with ties in input order, then SORT of the table by column 1.
 #

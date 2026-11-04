@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_sno_any_notany_span_break_breakx_of_the_null_string_or_a_pattern_raise_spitbols_error.sh
 #
-# THE DEFECT (the ceo's row snobol4-any-notany-span-break-breakx-of-the-null-string-are-errors-in-spitbol-where-scrip-builds-a-pattern,
-# CEO-1419; about 19,000 of infinite_snobol4's exhaustive differences): ANY, NOTANY, SPAN, BREAK and BREAKX of the null string
+# THE DEFECT (the officer's row snobol4-any-notany-span-break-breakx-of-the-null-string-are-errors-in-spitbol-where-scrip-builds-a-pattern,
+# R-1419; about 19,000 of infinite_snobol4's exhaustive differences): ANY, NOTANY, SPAN, BREAK and BREAKX of the null string
 # or of a pattern are errors in sbl -- 59, 151, 188, 69, 70, "<fn> argument is not a string or expression" -- at compile time
 # when the argument is a constant, at run time otherwise; SCRIP built a pattern from '' and matched with it.
 # THE CURE, three roads of one check (pat_cset_arg_ok in src/runtime/pattern_match.c, which coerces through rt_coerce_str_d

@@ -17,7 +17,7 @@
 #   w6 'x' ? (ARBNO('a' FENCE) 'z' | 'x')              no iteration commits, so nothing aborts and arm 2 matches: MATCH
 #   w7 P = ARBNO('a' FENCE) 'z'; 'a' ? (P | 'a')       the same through a stored pattern: FAIL
 #   w8 'ab' ? ((ARBNO('a' FENCE) 'z' | 'a') | 'ab')    a second alternation level above: the abort skips it too: FAIL
-# arm 0 (CEO-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
+# arm 0 (R-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
 # arm 1: m3 = sbl.  arm 2: m4 = sbl.  arm 3: the set REACHES the ARBNO frame arm (SCRIP_ARBNO_DIAG), or the gate refuses.
 set -u
 G=test_gate_sno_a_bare_fence_last_in_an_arbno_body_aborts_the_match_as_sbl_does

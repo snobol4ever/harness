@@ -15,8 +15,8 @@
 # them -- because you must start the ablation somewhere and the histogram is a free ordering of where files are.
 #
 # ⛔ IT WRITES NOTHING: no SCORE row, no RAKU-COVERAGE.md, no board. ONE RUNNER ONE BOARD is untouched
-# (CEO-744) -- this publishes nothing and grades no published population, so it is admitted to any seat on
-# the CEO-547 rule that a board is what it GRADES AND PUBLISHES.
+# (R-744) -- this publishes nothing and grades no published population, so it is admitted to any seat on
+# the R-547 rule that a board is what it GRADES AND PUBLISHES.
 # ⛔ IT REFUSES rc=2 RATHER THAN PRINTING THE SUCCESS SHAPE over a population it could not measure, and it
 # PRINTS ITS DENOMINATOR on every line (CLAUDE.md § Testing).
 #
@@ -188,7 +188,7 @@ done < "$TMP/cands"
 # ⛔⭐ THE LOAD IS STAMPED BECAUSE ONE OF THE BUCKETS IS A CLOCK. UNGRADABLE-TIMEOUT is `timeout 10`
 # firing, and a 10-second bound on a box other seats are building on does not measure the same thing it
 # measures on a quiet one -- a file that needs 8s is UNGRADABLE under load and GRADED without it. Measured
-# live while adding this: load 11.5 on 16 cores, from the coo's and the ceo's builds, on a box this
+# live while adding this: load 11.5 on 16 cores, from the coo's and the officer's builds, on a box this
 # instrument shares. ⭐ Every other bucket is deterministic; this is the one that can move without the
 # compiler moving, so the run says what it ran under instead of leaving the next reader to assume a quiet box.
 echo "ROAST_ABLATION_MACHINE load=$(cut -d' ' -f1-3 /proc/loadavg) cores=$(nproc) per_file_timeout=10s -- UNGRADABLE-TIMEOUT is LOAD-SENSITIVE; the other buckets are not"

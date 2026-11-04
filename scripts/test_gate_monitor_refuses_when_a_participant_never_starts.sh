@@ -2,7 +2,7 @@
 # test_gate_monitor_refuses_when_a_participant_never_starts.sh — the sync-step monitor must REFUSE (rc=2)
 # with a NAMED reason when a participant never opens its FIFO pair, and must never hang to a timeout.
 #
-# ⛔ THE DEFECT THIS GRADES (hq_T 2026-09-09, ceo brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-
+# ⛔ THE DEFECT THIS GRADES (hq_T 2026-09-09 brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-
 # counting-on-it`, red proof below). monitor_sync_bin.py's open_pair() was two BLOCKING os.open() calls on
 # FIFOs. A FIFO opened O_RDONLY blocks until a writer appears and O_WRONLY until a reader appears -- with no
 # timeout of their own -- so when a participant died during startup the controller blocked forever, printed
@@ -10,7 +10,7 @@
 # `timeout` eventually killed the process group, whose EXIT trap then deleted the scratch dir holding the
 # only copy of the answer.
 #
-# ⭐ THE MEASURED RED, on the ceo's own witness (snoflake string-pad.sno): rc=124 after 180s, ctrl.out zero
+# ⭐ THE MEASURED RED, on the officer's own witness (snoflake string-pad.sno): rc=124 after 180s, ctrl.out zero
 # bytes, and `cat: .scratch/monitor_auto_XXX/ctrl.out: No such file or directory`. BOTH participants had
 # exited INSIDE THE FIRST SECOND, each having written its reason to its .err file, while the controller went
 # on waiting 141s+ for writers that no longer existed. The instrument could not tell "measured and clean"

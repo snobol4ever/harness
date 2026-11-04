@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_rebus.sh -- Rebus benchmark board (row readme-perf-grids-three-angles-all-seven,
 # I26). ⛔ WHY THIS DIFFERS FROM THE OTHER TRIANGULATORS: Rebus has NO independent rival implementation
 # to compare against (README § Rebus: "no independent implementation to borrow a suite from") -- unlike
@@ -37,7 +37,7 @@ if [ ! -d "$KDIR" ]; then echo "⛔ REFUSED (rc=2): no kernel dir at $KDIR"; exi
 # whether the work happened.  The lib is the ONE place that rule lives, for every Ir cell in the tree.
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_ir_measure.sh -- this board will not read Ir by hand"; exit 2; }
 # each kernel runs at the heap and stack its .heap and .stack sidecars declare, -d<kb>k -s<kb>k after --run in mode 3 and leading the
-# binary's arguments in mode 4 (ceo CEO-1353, RULES.md clause 8 (g); the coo 2026-10-03: both arms ran every kernel at the shipped size)
+# binary's arguments in mode 4 (R-1353, RULES.md clause 8 (g); the coo 2026-10-03: both arms ran every kernel at the shipped size)
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 
 echo "REBUS_TRIANGULATE -- callgrind Ir, RT_OPT=-O0, tree $(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"

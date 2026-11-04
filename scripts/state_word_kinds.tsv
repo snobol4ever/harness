@@ -1,4 +1,4 @@
-# state_word_kinds.tsv -- THE DECLARED STATE WORDS (ARCH-ZETA-ONE-COORDINATE section 3.1; the cto under CEO-1885/1888, 2026-10-22).
+# state_word_kinds.tsv -- THE DECLARED STATE WORDS (ARCH-ZETA-ONE-COORDINATE section 3.1; the cto under R-1885/1888, 2026-10-22).
 # GENERATED: `python3 harness/scripts/util_template_state_words.py --write` writes this file from the templates; --check refuses it when it drifts.
 # One row per box kind whose template keeps a frame word beyond its operand cell: key<TAB>class<TAB>template<TAB>pattern<TAB>line<TAB>port<TAB>via<TAB>when
 #   key       the IR kind as --dump-homes prints it

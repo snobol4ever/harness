@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_baton_one_next_block.sh -- every LIVE postoffice baton (a task file whose QUEUE.tsv row is
 # not in a terminal state) carries exactly one `## NEXT` heading -- the ONE block `next`'s own printout
-# tells every seat to read. Row: baton-one-next-block-gate. Ruling: ceo 2026-08-29, PROTOCOL.md step 4.
+# tells every seat to read. Row: baton-one-next-block-gate. Ruling: the officer 2026-08-29, PROTOCOL.md step 4.
 # Evidence: FINDING-2026-08-29-hq_B-baton-next-blocks-carry-two-opposite-conventions-and-icons-five-were-
 # scrambled-so-the-top-block-was-false.md (9 of 417 files multi-NEXT, incl. tests-consolidate-icon
 # scrambled 3-1-2-5-4 on a LIVE rank-1 row).
@@ -13,11 +13,11 @@
 # tests-consolidate-icon.task.md, has a CURRENT heading reading `## NEXT (CURRENT -- 2026-08-29T...
 # seat02, sixth renumbering)`. The anchored pattern does not match that line at all, so building the LAW
 # against it would fail the blessed example on its own gate. Built against hq_B's actual (unanchored)
-# pattern instead; the SCOPE text's trailing `$` reads as a transcription slip in ceo's brief, not a
+# pattern instead; the SCOPE text's trailing `$` reads as a transcription slip in the officer's brief, not a
 # considered stricter spec -- corrected here rather than silently reconciled, per this project's own
 # "provenance dies at the moment of transcription" caution.
 #
-# ⭐ RATCHET, NOT A HARD ==1 (ceo's own scope note, ledger 2026-08-29b): a live corpus this large has
+# ⭐ RATCHET, NOT A HARD ==1 (the officer's own scope note, ledger 2026-08-29b): a live corpus this large has
 # legacy non-conformance not caused by whoever runs this gate next; a hard bar on day one blocks every
 # seat on somebody else's debt. The ceiling may only fall, driven down by the sweep (this row's scope
 # item 3), never raised to accommodate a new offender.

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_pascal_bench_suite.sh — THE PASCAL BENCHMARKS GRADED AS TESTS (row pascal-benchmarks-double-as-tests-ref-in-out-through-the-
-# three-angle-harness-with-a-row-in-the-suite-grid; RULES.md § THE KERNEL CONVENTION, 2026-09-23 addendum, CEO-1221).
+# three-angle-harness-with-a-row-in-the-suite-grid; RULES.md § THE KERNEL CONVENTION, 2026-09-23 addendum, R-1221).
 # Lon, verbatim: "The reason to force a benchmark to also be a test is to guarantee it is not vacuous." -- "The source of the benchmark
 # is the apple-core of the test, the wrapper code can be added to do both the test and the measurements."
 #
@@ -20,8 +20,8 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # redoes the same work from the same start. That is what makes one REF serve all three angles; a kernel whose answer drifted with
 # reps would fail angle 2 or 3 here, loudly, which is the non-vacuity check doing its job.
 # ⛔ TIMING IS RECORDED, NOT PUBLISHED: each run's elapsed time goes into the per-run OUT directory, but no rate enters the grid until
-# the quiet-box re-run (CEO-1219); this board's verdict is correctness only.
-# OUT IS REF (Lon, in-chat to the ceo: "Oh. Yeah. OUT is really REF. My bad."; CEO-1222): a benchmark carries a .ref and a .in where
+# the quiet-box re-run (R-1219); this board's verdict is correctness only.
+# OUT IS REF (Lon, in-chat: "Oh. Yeah. OUT is really REF. My bad."; R-1222): a benchmark carries a .ref and a .in where
 # it reads input, and no third file -- no .out, .std or .expected anywhere in the corpus. What this runner keeps of each run is scratch
 # evidence, not a corpus file: <kernel>.<mode>.<angle>[.<n>].stdout plus its rusage line, in the run directory printed on the board.
 set -u
@@ -29,7 +29,7 @@ GATE_NAME=test_pascal_bench_suite
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 B="$ROOT/corpus/benchmarks/pascal"
-NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 SCRIP="$HERE/../../SCRIP/scrip"
 RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
@@ -39,7 +39,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT_DIR/libscrip_rt.so" || exit 2
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE reader of a program's declared -d/-s sidecars (CEO-1281)"
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE reader of a program's declared -d/-s sidecars (R-1281)"
 declare -a DECL_SW=()
 WRAP="$HERE/../../SCRIP/tools/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
@@ -49,7 +49,7 @@ OUTDIR="${BENCH_OUT_DIR:-$(mktemp -d -t pascal_bench_runs.XXXXXX)}"; mkdir -p "$
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
 mapfile -t KERNELS < <(find "$B" -maxdepth 1 -type f -name '*.pas' -printf '%f\n' | sed 's/\.pas$//' | sort)
-# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the officer's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
 # S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
 # population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
 . "$HERE/lib_rr.sh" && rr_load "$B" || exit 2
@@ -60,7 +60,7 @@ now() { date +%s.%N; }
 # run_kernel <mode> <kernel> <stdin-file> <out-file> [wrap] -- one run; prints nothing, returns the run's rc. m4 runs the prebuilt binary.
 run_kernel() {
   local m="$1" k="$2" in="$3" out="$4" w="${5:-}"
-  # the kernel's declared heap and stack ride its command line as -d/-s switches in both modes (its .heap/.stack sidecars; CEO-1281)
+  # the kernel's declared heap and stack ride its command line as -d/-s switches in both modes (its .heap/.stack sidecars; R-1281)
   if [ "$m" = m3 ]; then ( cd "$TMP" && "$TIMEOUT_RETRY" 300s $w "$SCRIP" --run "${DECL_SW[@]}" "$B/$k.pas" <"$in" >"$out" 2>"$out.err" )
   else ( cd "$TMP" && "$TIMEOUT_RETRY" 300s $w "$TMP/$k.m4" "${DECL_SW[@]}" <"$in" >"$out" 2>"$out.err" ); fi
 }
@@ -110,7 +110,7 @@ for k in "${KERNELS[@]}"; do
     fi
     if [ "$a1$a2$a3" = PASSPASSPASS ]; then v=PASS; PASSN[$m]=$((PASSN[$m]+1)); note="ref-under-three-angles"
     else v=FAIL; okboth=0; note="$(echo "$why" | sed 's/^[; ]*//' | tr '\t' ' ')"; NAMED="$NAMED $k.$m"; fi
-    # the row's secs: this mode's three angles, and for m4 the compile and link before them (CEO-1676 (c))
+    # the row's secs: this mode's three angles, and for m4 the compile and link before them (R-1676 (c))
     s="$(progress_secs_since "$tm")"; [ "$m" = m4 ] && s="$(progress_secs_sum "$s" "$cs")"
     printf 'benchmark\tpascal-bench-ref\tpascal\t%s\t%s\t%s\t%s\t%s\n' "$k" "$m" "$v" "$s" "$note" >>"$PROG_ROWS"
     printf '%-10s %-4s %-7s %-7s %-7s %s\n' "$k" "$m" "$a1" "$a2" "$a3" "$v${why:+ -- $why}"
@@ -120,13 +120,13 @@ done
 echo
 echo "PASCAL_BENCH_BOARD total=$TOTAL both_pass=$BOTH m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} (three angles each: process wrapper, fixed iterations N=$ITER_N, fixed time limit ${TIME_LIMIT}s; every run diffed against its .ref)"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
-echo "  evidence: every run's stdout and rusage line kept under $OUTDIR (scratch, not a corpus file -- OUT is REF, CEO-1222)"
+echo "  evidence: every run's stdout and rusage line kept under $OUTDIR (scratch, not a corpus file -- OUT is REF, R-1222)"
 echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$ROOT/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
 # ⭐ PUBLISHING: the suite-table row is PasBench, key pascal-bench-ref -- the SAME name as this runner's progress suite, on purpose
 # (coo 2026-09-23: every key-to-DB map falls back to the key itself, so the bench rows need no map entry anywhere). The rows are
-# appended FIRST because util_score_row.py's CEO-750 cross-check reads the pascal-bench-ref rows on the tree the write stamps; the
+# appended FIRST because util_score_row.py's R-750 cross-check reads the pascal-bench-ref rows on the tree the write stamps; the
 # write then lands the SUITES.tsv row and its SCORE.md line and no grid cell (the grid's B cell is the timing cell, which waits for
-# the quiet box). The writer reads all_pass/all_n from the board line BY NAME (CEO-827). Bookkeeping never turns a real
+# the quiet box). The writer reads all_pass/all_n from the board line BY NAME (R-827). Bookkeeping never turns a real
 # measurement into a red board, and never fails quietly: both steps say so when they do not land.
 if [ -s "$PROG_ROWS" ]; then
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2

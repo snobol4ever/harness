@@ -55,8 +55,8 @@ echo "== test_gate_suite_set_does_not_move_another_suites_row =="
 echo "   victim=$VICTIM (local TSV deliberately staled to 1/999) · subject=$SUBJECT · hermetic scratch under mktemp"
 
 # ⛔ THE SUBJECT'S NUMBERS ARE READ FROM ITS OWN ROW, NEVER TYPED (coo 2026-09-23): this arm set snoflake to a hardcoded 107/124, and
-# when hq_snobol4 re-graded snoflake over 180 the --set became a DENOMINATOR MOVE (180 -> 124) that the CEO-785 rule refuses without a
-# stamp -- so arm 2 read "scoped away entirely" for every seat's make test, a gate anchored on a live value (the CEO-554 class). The
+# when hq_snobol4 re-graded snoflake over 180 the --set became a DENOMINATOR MOVE (180 -> 124) that the R-785 rule refuses without a
+# stamp -- so arm 2 read "scoped away entirely" for every seat's make test, a gate anchored on a live value (the R-554 class). The
 # write now keeps the subject's own total and moves only its pass count, so it is never a denominator move whatever the row reads.
 reset_fixture
 SUB_T="$(awk -F'\t' -v k="$SUBJECT" '!/^#/ && $1 == k {print $10; exit}' "$W/SUITES.tsv")"; SUB_P0="$(awk -F'\t' -v k="$SUBJECT" '!/^#/ && $1 == k {print $9; exit}' "$W/SUITES.tsv")"

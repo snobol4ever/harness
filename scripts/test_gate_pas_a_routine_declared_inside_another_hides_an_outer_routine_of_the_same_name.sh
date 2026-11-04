@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_routine_declared_inside_another_hides_an_outer_routine_of_the_same_name.sh -- ISO 7185 6.2.2: a procedure or function declared inside
 # another hides an enclosing routine of the same name for the rest of its region, whatever its parameter list (Pascal-S has an outer enter with five
-# parameters and an inner enter with two). MEASURED 2026-10-09 by hq_pascal on the Pascal-S demo (ceo CEO-1579): the run died after six listing lines with
+# parameters and an inner enter with two). MEASURED 2026-10-09 by hq_pascal on the Pascal-S demo (R-1579): the run died after six listing lines with
 # "libscrip_rt: BOMB -- bb_call_proc_staged: a block-protocol callee is called with the wrong argument count"; reduced to a nine-line program.
 # CAUSE: the call resolves its callee by NAME in the procedure table, which finds the outer routine first (a same-arity shadow would have called the wrong
 # routine silently). CURE (lower_pascal_tree.c): a routine declared at a deeper scope level than a visible routine of its name gets a unique name (name$N) in the

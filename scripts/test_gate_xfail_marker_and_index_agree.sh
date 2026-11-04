@@ -59,7 +59,7 @@ for lang in sorted(EXT):
     if not (os.path.isfile(rungs) and os.path.isfile(index)):
         continue
     ban = names(rungs)
-    # ⛔⭐ THE FOURTH REPRESENTATION, ADDED 2026-09-14 (hq_T, CEO-740's xpass promotion). This gate shipped
+    # ⛔⭐ THE FOURTH REPRESENTATION, ADDED 2026-09-14 (hq_T, R-740's xpass promotion). This gate shipped
     # naming THREE places an XFAIL lives -- the banner, the index, the reason file -- and its own remediation
     # text already said to strip the marker "in the rungs AND its ref". It advised about a representation it
     # never graded. The promotion of raku's 17 both-mode XPASSes proved the gap the expensive way: rungs and

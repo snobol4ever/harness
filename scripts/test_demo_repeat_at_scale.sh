@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_demo_repeat_at_scale.sh <demo> [N] -- one SNOBOL4 demo (a DEMO-SCALE.tsv family) run N times (default 30) in mode 3 and mode 4 at its
 # DEMO-SCALE.tsv scale and its declared sizes, every run's stdout held to SPITBOL's answer on the same input (cut once, in a directory holding
-# corpus/include/*.inc, where SPITBOL resolves -INCLUDE). A defect that shows on a fraction of runs (ceo CEO-1987, 2026-10-26: treebank-match-fence
+# corpus/include/*.inc, where SPITBOL resolves -INCLUDE). A defect that shows on a fraction of runs (R-1987, 2026-10-26: treebank-match-fence
 # at x1024 SIGSEGVs at a jump into unmapped memory on 7-9 of 30 m3 runs and 3-4 of 30 m4 runs; its x1 test input passes 30 of 30) is RED here.
 # EXIT 0 every run of both modes printed SPITBOL's answer; 1 at least one did not; 2 REFUSED (no demo, no scrip, no oracle answer).
 set -u

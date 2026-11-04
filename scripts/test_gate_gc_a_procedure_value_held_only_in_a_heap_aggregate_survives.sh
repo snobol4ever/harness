@@ -2,7 +2,7 @@
 # test_gate_gc_a_procedure_value_held_only_in_a_heap_aggregate_survives.sh -- THE DT_E ARM OF gc_visit_one, THE STRESS BAND, BOTH MODES.
 # ⛔ THE MEASURED DEFECT (cfo 2026-09-22, CFO-146; routed in by hq_icon as FINDING-2026-09-22-hq_icon-proc-of-an-operator-symbol-string...):
 # gc_visit_one's switch had no DT_E case, so a PROCEDURE VALUE fell to `default: return;` and the heap string its .s field names was
-# never marked and its holder slot never registered for relocation.  This is the same shape as the DT_BIG hole CEO-952 closed one tag
+# never marked and its holder slot never registered for relocation.  This is the same shape as the DT_BIG hole R-952 closed one tag
 # over: the axis nothing tested is the HOLDER TAG, and a value whose only holder is a heap aggregate element is reachable ONLY through
 # gc_visit_arblk/gc_visit_tbblk -> gc_visit_one.  DT_E is OVERLOADED and the arm must NOT key on the tag alone: slen RT_CONVE_CHAIN_MARK
 # carries a FUNCTION POINTER in .ptr and a staged proc carries an INTEGER entry_pc in .i, neither of which is a heap reference.  Only the
@@ -10,7 +10,7 @@
 # MEASURED ON ORIGIN d698d3bce: stress 0 green both modes; stress 1, 3, 5, 8 RED both modes (error 106 with the corrupted .s printed as
 # the offending image).  With the arm: 10 of 10 green.  Three independent witnesses agreed -- Icon rungs procedure_write_253, jcon
 # args.icn at the SHIPPED arena (collections=3, no stress needed), and this one.
-# ⛔ COLLECTIONS ARE THE EVIDENCE (ceo, INSTRUMENT LAWS 33rd batch): a run that collected ZERO times has not exercised the collector, so
+# ⛔ COLLECTIONS ARE THE EVIDENCE (INSTRUMENT LAWS 33rd batch): a run that collected ZERO times has not exercised the collector, so
 # this gate reads rt_gc_runs_count out of its own run report and REFUSES rc=2 rather than grading a silence green.
 # The .ref is cut from the Arizona oracle (icont -s), never from ./scrip.  A stale binary or a missing witness REFUSES rc=2.
 set -uo pipefail

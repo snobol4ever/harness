@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_every_allocating_runtime_entry_returns_to_a_safe_point.sh -- THE ALLOCATOR NEVER COLLECTS (frozen design
-# .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F4, F6 step 1; Lon 2026-09-17 CEO-812 "the collector guesses
+# .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F4, F6 step 1; Lon 2026-09-17 R-812 "the collector guesses
 # nothing"; cfo's row gc-safe-points-the-allocator-never-collects-...).
 #
 # WHAT STEP 1 ESTABLISHES, AND WHAT IT DOES NOT. c_rt_gcheap_alloc collected at three unshielded sites (gc_heap.c :192
@@ -26,12 +26,12 @@
 # file left in place) all three blocking arms read red -- census 3 collect calls, reserve 0 soft-end advances, cap
 # rc=0 with no cap-named exhaustion -- and all three read green on the cure. FAIL_ONCE=1 additionally plants the
 # pre-cure census count for a cheap re-check that arm 1 still discriminates without a rebuild.
-# ⛔ ARMS 2 AND 3 CHANGED THEIR WITNESS 2026-09-17 (cto, CEO-821 F6 step 1b), AND THE REASON IS THE POINT OF THIS ROW:
+# ⛔ ARMS 2 AND 3 CHANGED THEIR WITNESS 2026-09-17 (cto, R-821 F6 step 1b), AND THE REASON IS THE POINT OF THIS ROW:
 # they grew the arena with FOUR HUNDRED THOUSAND DEAD LISTS, which grew only because an Icon allocation loop reached no
 # safe point. With the Icon allocating-box polls landed that loop COLLECTS instead of growing (soft-end advances 0), so
 # the arms read red on a tree that is strictly better. The witness is now 400000 LIVE lists held by one list: growth is
 # unavoidable there whatever the collector does, which is what these two arms actually grade -- 30 soft-end advances at
-# (RE-READ 2026-09-23 cto: the telemetry the two arms grep moved under CEO-1101 -- a grow prints `[ZHP] lazy commit -> N KB of a M KB
+# (RE-READ 2026-09-23 cto: the telemetry the two arms grep moved under R-1101 -- a grow prints `[ZHP] lazy commit -> N KB of a M KB
 # hard cap` and the cap abort says `heap exhausted AT THE HARD CAP`; the arms grepped the retired `soft end ->` and `reserve cap`
 # wordings and read red on every tree since, which no landing was allowed to see through the count arm. The greps follow the
 # telemetry; the properties they grade are unchanged.)

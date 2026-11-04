@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_rungs_banner_seq_is_position.sh — the invariant gate for `banner number == entry position`
 # in a language rungs, and for the two instruments that depend on it (hq_T 2026-09-13, on the cfo's
 # routed brief "the-sanctioned-add-a-witness-path-is-refusing-on-five-of-seven-masters").
@@ -13,7 +13,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # rung suites without renumbering and took the mint path down for FIVE LANGUAGES AT ONCE.
 #
 # ⛔⭐ THIS GATE GRADES THE INSTRUMENTS, NOT THE LIVE RUNG_SUITES, AND THAT IS DELIBERATE. Six of seven
-# rung suites carry drift today and every one of them belongs to another lane (icon→ceo, prolog→cto/hq_C/hq_R,
+# rung suites carry drift today and every one of them belongs to another lane (icon→officer, prolog→cto/hq_C/hq_R,
 # pascal→coo, rebus→hq_S, snobol4→cfo, snocone→hq_I). A blocking gate over another seat's data turns one
 # lane's unlanded cure into thirteen seats' red board, which is how a correct invariant gets a gate
 # switched off. The live census is printed as REPORTED at the end — visible every run, blocking nobody —

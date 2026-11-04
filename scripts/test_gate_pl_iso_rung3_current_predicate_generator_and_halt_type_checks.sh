@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung3_current_predicate_generator_and_halt_type_checks.sh -- PROLOG ISO LADDER, RUNG 3 (cto, CEO-617, 2026-09-12).
+# test_gate_pl_iso_rung3_current_predicate_generator_and_halt_type_checks.sh -- PROLOG ISO LADDER, RUNG 3 (cto, R-617, 2026-09-12).
 # THE RUNG: current_predicate/1 (ISO 8.8.2) is a RUN-TIME GENERATOR over the Prolog predicate registry -- every file-defined
 # static predicate and every multifile/discontiguous/dynamic declaration is registered at program start by the $db_decl/0
 # graph, a predicate created by assert at run time joins the registry when its store is made, an abolished one leaves it,

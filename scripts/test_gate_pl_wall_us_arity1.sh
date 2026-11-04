@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_wall_us_arity1.sh -- CEO-567's precondition: a Prolog kernel must be able to SELF-TIME.
+# test_gate_pl_wall_us_arity1.sh -- R-567's precondition: a Prolog kernel must be able to SELF-TIME.
 # by_name_dispatch.c registers wall_us/wall_ms at nargs==0 only (function style, the SNOBOL4/Icon
 # calling convention). Prolog calls wall_us(T) at ARITY 1 -- a predicate unifying an output argument --
 # so every call raises existence_error(procedure,wall_us/1). prelude_swipl.pl's own header states the

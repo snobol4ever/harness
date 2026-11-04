@@ -20,7 +20,7 @@
 # seconds; and this witness is the one whose store the census NAMES at off=-24 on graph=main, so a red here is
 # attributable to a site rather than to a language.
 #
-# ⛔ THE BAND IS NOT A STRAIGHT LINE THROUGH THE POINTS SOMEBODY ALREADY KNEW ABOUT (CEO-1024; hq_prolog, hq_raku
+# ⛔ THE BAND IS NOT A STRAIGHT LINE THROUGH THE POINTS SOMEBODY ALREADY KNEW ABOUT (R-1024; hq_prolog, hq_raku
 # and hq_snobol4 each measured a piece of this the same evening).  The witness's historical BASE band was
 # `. X X . X . . X . . . .` over stress 0..20, so the X at 8 sits outside the old [0..4] band a cure could have
 # closed while leaving the witness wrong; hq_raku's map family lives at stress 1..6 and is INVISIBLE at 8 and
@@ -56,7 +56,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_the_unmapped_spine_store_witness_answer
 SBL="$(sbl_correctness_bin)" || refuse "the GRADING oracle is not reachable by its accessor; a missing oracle prints a full, plausible, entirely false table"
 FLAGS="$(sbl_lang_flags)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
 echo "    oracle $SBL $FLAGS (ref re-cut live, this run) · band: $PTS · modes m3 m4"
 
 # (a) THE EXPECTATION IS THE ORACLE'S, RE-CHECKED LIVE.  A committed ref is a SNAPSHOT of the oracle, and a gate
@@ -119,7 +119,7 @@ fi
 if grep -q 'test_gate_gc_the_unmapped_spine_store_witness_answers_its_oracle_at_every_band_point.sh' "$ROOT/Makefile" 2>/dev/null; then
   ck ok "(e) this gate is named in the Makefile as a BLOCKING arm -- which is the promotion arm (g) of the row's gate promised in writing, honoured for the PROPERTY and refused for the CENSUS that costs minutes"
 else
-  ck no "(e) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS), and a gate landed unwired is the CEO-381 class"
+  ck no "(e) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS), and a gate landed unwired is the R-381 class"
 fi
 
 echo "population: $checks arm(s) graded, $fails FAIL; $np band point(s) x 2 modes"

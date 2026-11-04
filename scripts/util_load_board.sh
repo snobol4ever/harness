@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_load_board.sh -- THE LEDGER FOR LON: WHO LOADED THE BOX (ARCH-SHARED-DEVELOPMENT.md 2.3, shared-dev step 1, CEO-2041). It reads
+# util_load_board.sh -- THE LEDGER FOR LON: WHO LOADED THE BOX (ARCH-SHARED-DEVELOPMENT.md 2.3, shared-dev step 1, R-2041). It reads
 # /home/resources/progress/LOAD.tsv (written every five minutes by util_seat_census.py run) and never samples.
 #   util_load_board.sh              the newest run: the BOX line, then every seat and class by cores, highest first
 #   util_load_board.sh --hours N    the history over the last N hours: per seat its mean and peak cores, mean memory and the runs it was seen in,

@@ -3,7 +3,7 @@
 # class"; measured, they are FOUR distinct classes (trail-arena refusal, timeout, stack overflow, and an
 # unbound variable printed as the answer). Refuses rc=2 when it cannot measure -- never skip-as-success.
 #
-# ⛔⭐ THE KERNELS ARE GENERATED, NOT READ OUT OF GIT (hq_P 2026-09-13, CEO-567). This gate used to enumerate
+# ⛔⭐ THE KERNELS ARE GENERATED, NOT READ OUT OF GIT (hq_P 2026-09-13, R-567). This gate used to enumerate
 #   corpus/benchmarks/prolog/vanroy/*.pl -- 21 checked-in files, each bench/<k>.pl with `main :- l__(N).`
 #   frozen in, i.e. the iteration count living inside the artifact under measurement. That directory is
 #   RETIRED. The same 21 kernels at the same 21 counts are now built on demand by gen_counted_set() from
@@ -20,7 +20,7 @@ d=$(mktemp -d "${TMPDIR:-/tmp}/vanroy_m3.XXXXXX") || { echo "REFUSE: cannot crea
 trap 'rm -rf "$d"' EXIT
 n=$(gen_counted_set "$d" scrip) || exit 2
 [ "$n" -gt 0 ] || { echo "REFUSE: zero .pl kernels generated -- a census that cannot see its population must not print 0"; exit 2; }
-# ⛔⭐ THIS GATE GRADES OUTPUT, NOT EXIT STATUS (hq_P 2026-09-13, CEO-676).  It used to score a kernel
+# ⛔⭐ THIS GATE GRADES OUTPUT, NOT EXIT STATUS (hq_P 2026-09-13, R-676).  It used to score a kernel
 #   PASS on `rc == 0` alone.  Measured: TEN of the 21 exited 0 having printed NOTHING AT ALL -- they were
 #   generated from pre-conversion sources, raised existence_error at their first goal, and never reached the
 #   computation.  All ten scored as passes for months.  `nrev` and `qsort` exit 0 having printed 1438 and

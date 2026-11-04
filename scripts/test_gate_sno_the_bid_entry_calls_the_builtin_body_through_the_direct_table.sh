@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_the_bid_entry_calls_the_builtin_body_through_the_direct_table.sh -- A LEAF BUILTIN CALL WITH A BAKED BID REACHES
-# ITS BODY THROUGH ONE TABLE LOAD (ceo 2026-09-25, CEO-1255). rt_call_bid_sn4 is an RTX_FUNC (rtx_misc.s): with no error
+# ITS BODY THROUGH ONE TABLE LOAD (2026-09-25, R-1255). rt_call_bid_sn4 is an RTX_FUNC (rtx_misc.s): with no error
 # pending, no &ERRLIMIT, a leaf bid and no DATA instance as the single argument, it loads g_bn_direct[bid] (by_name_dispatch.c:
 # a const table of the fourteen separately compiled bodies -- SIZE SUBSTR REPLACE TRIM DUPL LPAD RPAD REVERSE INTEGER REMDR DATE
 # TIME IDENT DIFFER -- with their op word) and calls the body with the staged args and an out cell; a 1 return hands the cell back,

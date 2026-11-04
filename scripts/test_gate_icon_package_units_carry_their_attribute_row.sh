@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over scratch packages outside corpus, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over scratch packages outside corpus, not a board (R-547)"
 # test_gate_icon_package_units_carry_their_attribute_row.sh -- EVERY UNIT THE THREE ICON PACKAGE RUNNERS LOOK UP HAS ITS ROW, A DRIVER'S
-# UNDER ITS LIBRARY'S KEY, AND A UNIT WITH NONE IS NAMED BY THE RUNNER. RULES.md hard-cap rule clause 8 (f) (ceo CEO-1281): "A
+# UNDER ITS LIBRARY'S KEY, AND A UNIT WITH NONE IS NAMED BY THE RUNNER. RULES.md hard-cap rule clause 8 (f) (R-1281): "A
 # declaration that is missing is a gap the runner names, never a default silently taken."
 #
 # ⛔⭐ WHY (coo 2026-09-27, on hq_icon's ask of where IPL iftrace's --stlimit lives): corpus 4d805e1bc (2026-09-25) gave every unit the
-# runners looked up a row, read off SCRIP_DECL_MISS_LOG over one full pass. The drivers of CEO-1269/1272 came after it, and nothing
+# runners looked up a row, read off SCRIP_DECL_MISS_LOG over one full pass. The drivers of R-1269/1272 came after it, and nothing
 # re-read: 382 graded units had no row (IPL 356 -- all 340 driver-graded libraries and 16 progs graded through argv, dat or fixtures
 # sidecars -- Arizona 23, Jcon 3) and 275 more IPL files the compile tier looks up. SCRIP 286483382 (compile_args landing 3) then
 # stopped the runners typing --stlimit for every program, proven on the compile tier alone, which walks no driver; from 2026-09-26
@@ -135,7 +135,7 @@ runner_arm() {  # <arm> <db> <progress name of lib> <undeclared key of bare> <en
 J="$W/jcon"; mkw "$J" lib; printf '%s\n1,lib,jcon_tests__lib,jcon_tests,3,0,0,131072,4096,--stlimit,\n' "$HDR" > "$J/ALL.csv"
 runner_arm J "$W/j.tsv" lib bare -- "$HERE/test_icon_jcon_suite.sh" --corpus "$J"
 A="$W/az/corpus/packages/icon/arizona_tests"; mkw "$A/general" driver; mkdir -p "$A/special"; printf '%s\n1,general/lib,arizona_tests__general/lib,arizona_tests,3,0,0,131072,4096,--stlimit,\n' "$HDR" > "$A/ALL.csv"
-runner_arm A "$W/a.tsv" general/lib general/bare S4E_HOME="$W/az" -- "$HERE/test_icon_arizona_suite.sh"   # the board keys <subdir>/<stem> (b4f66ce42, CEO-1366 (b))
+runner_arm A "$W/a.tsv" general/lib general/bare S4E_HOME="$W/az" -- "$HERE/test_icon_arizona_suite.sh"   # the board keys <subdir>/<stem> (b4f66ce42, R-1366 (b))
 P="$W/ipl/corpus/packages/icon/ipl"; mkw "$P/procs" driver; for d in progs gprogs gprocs incl gincl; do mkdir -p "$P/$d"; done
 mv "$P/procs/bare.icn" "$P/procs/bare.ref" "$P/progs/"
 printf '%s\n1,procs/lib,ipl__procs/lib,ipl,3,0,0,131072,4096,--stlimit,\n' "$HDR" > "$P/ALL.csv"

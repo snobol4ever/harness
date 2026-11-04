@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_planner_pass_census.sh -- THE PLANNER PASS COVERS EVERY CHAIN (ARCH-ZETA-ONE-COORDINATE 3.2, the planner stage; the cto, CEO-1895).
+# util_planner_pass_census.sh -- THE PLANNER PASS COVERS EVERY CHAIN (ARCH-ZETA-ONE-COORDINATE 3.2, the planner stage; the cto, R-1895).
 # Compiles every program of util_spine_population.sh with SCRIP_PLANNER_REPORT=1 in mode 4 (--compile) and runs it in mode 3 (--run, stdin
 # closed, 20 s), counting the [PLANNER-FALLBACK] lines the emitter prints when a chain reaches emission with no record from the planner's pass.
 #   util_planner_pass_census.sh [--lang L] [--scrip PATH]      (--scrip: grade another built tree's binary, for a two-tree proof)

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_area_smoke_reads_the_attribute_rows.sh -- THE AREA SMOKE'S GATE (coo 2026-09-28, row instruments-the-area-smoke-a-seat-
-# runs-per-landing-...-ceo-1342; RULES.md section ONE TESTING OFFICER, ONE SCORE BOARD, THE AREA SMOKE clause 4).
+# runs-per-landing-...-r-1342; RULES.md section ONE TESTING OFFICER, ONE SCORE BOARD, THE AREA SMOKE clause 4).
 # WHAT IT PROVES, each arm on a scratch copy of the rebus rungs (43 entries; the smallest table with the SNOBOL4 feature columns):
 #   1  the selector picks EXACTLY the one row doctored to carry FENCE (and nothing else in the table);
 #   2  FAIL-ONCE: with the mark dropped the smoke REFUSES rc=2 on a zero selection, running nothing;
 #   3  a feature no table knows REFUSES rc=2 naming it;
 #   4  the run grades that one entry in both modes through run_suite_entry with the row's attributes, prints AREA_SMOKE_TOTAL
-#      entries=1, and APPENDS NO PROGRESS ROW (a scratch S4E_PROGRESS_DB stays absent) -- a smoke is not a board (CEO-547);
+#      entries=1, and APPENDS NO PROGRESS ROW (a scratch S4E_PROGRESS_DB stays absent) -- a smoke is not a board (R-547);
 #   5  the smoke body sources no one-runner guard and no progress writer (static, the harness's own source);
 #   6  test_area_smoke.sh with NO argument maps a touched bb_match_fence0.cpp through area_map.tsv to FENCE (Lon's sixth question:
 #      the seat does not have to know) and selects the same one row; a touched src/ file with NO map row refuses rc=2 naming it;

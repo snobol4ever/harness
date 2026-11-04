@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_tmp_sweep.sh -- THE /tmp SWEEPER (ceo CEO-1831, Lon 2026-10-18 11:2x CDT, in-chat to the ceo, verbatim: "Fix the /tmp
+# util_tmp_sweep.sh -- THE /tmp SWEEPER (R-1831, Lon 2026-10-18 11:2x CDT, in-chat, verbatim: "Fix the /tmp
 # problem. Find out why does it it keep filling; seems like a LEAK.").
 #
 # WHY /tmp FILLS (measured 2026-10-18 11:21 CDT, /tmp 63G at 100 percent, 418M free): every scratch maker in the harness
@@ -9,7 +9,7 @@
 # a session that ended keeps its multi-GB .s and .bin outputs forever (28G across ten seats; hq_runtime alone 9.6G in
 # four dead sessions). A trap is not a cure for a kill; a sweep by age is.
 #
-# THE POLICY, under the grant of CEO-754 (/tmp scratch may be deleted on AGE ALONE, over 48 hours, freed bytes recorded in
+# THE POLICY, under the grant of R-754 (/tmp scratch may be deleted on AGE ALONE, over 48 hours, freed bytes recorded in
 # GOAL-CFO.md): (1) a top-level /tmp entry is dead when no file in its tree is newer than the cutoff and no live process
 # has its cwd inside it; the AGE IS THE NEWEST FILE INSIDE, never the directory's own mtime (a directory written into
 # every minute keeps an old mtime). (2) a seat's session scratchpad is dead when its session is not the seat's newest
@@ -17,24 +17,24 @@
 # snap, tmux and ssh agents, the build objdirs /tmp/si_objs* (a stale one costs a rebuild, and the freshness guard owns
 # that), and any entry a live process sits in. (4) --hours N moves the cutoff (default 48); --dead-sessions-hours N applies
 # a shorter cutoff to session scratchpads of a seat MODE's ROSTER line does not name (a stood-down seat runs nothing) --
-# the ceo's reading of Lon's order this day, default 0 (off) so the grant's 48 h is the rule unless the caller says so.
+# the officer's reading of Lon's order this day, default 0 (off) so the grant's 48 h is the rule unless the caller says so.
 #
-# (5) ANONYMOUS SCRATCH (ceo CEO-1842, 2026-10-18 17:0x CDT, measured: 15 GB of mktemp debris under 48 h -- a1.A.bin bench trees,
+# (5) ANONYMOUS SCRATCH (R-1842, 2026-10-18 17:0x CDT, measured: 15 GB of mktemp debris under 48 h -- a1.A.bin bench trees,
 # verify_s_owed.XXXXXX, tmp.XXXXXXXXXX from gates killed on their timeout -- while /tmp read 22G): an entry whose NAME is a mktemp
 # pattern (tmp.XXXXXXXXXX, tmpXXXXXXXX, <word>.XXXXXX) has no owner but the run that made it, so it is dead when that run is: no live
 # process has its cwd or an OPEN FILE inside it and nothing in it is newer than --scratch-hours N (default 3; 0 turns the arm off).
 # A named entry keeps the 48 h rule. The receipt counts these as scratch=<n> scratch_mb=<mb>.
 #
-# (6) PRESSURE (ceo CEO-1902, Lon 2026-10-22 12:0x CDT, in-chat to the ceo, verbatim: "Fix the /tmp folder problem."; measured 11:55-12:00:
+# (6) PRESSURE (R-1902, Lon 2026-10-22 12:0x CDT, in-chat, verbatim: "Fix the /tmp folder problem."; measured 11:55-12:00:
 # /tmp 91 then 99 percent, 903 MB free, 43 GB of it in ONE LIVE session's scratchpad -- the cto's, sixteen 2.4 GB population asm dumps of
 # planner steps already on origin; rules (1)-(5) never look inside a seat's newest session, so a live session was the blind spot, and
-# nothing ran the sweeper unless a seat typed it while the coo's tier 1 only telegrammed the ceo): when /tmp use reaches --pressure PCT
+# nothing ran the sweeper unless a seat typed it while the coo's tier 1 only telegrammed the officer): when /tmp use reaches --pressure PCT
 # (default 80), the sweep then reclaims IDLE BULK -- every top-level entry of a session's scratchpad (the live session's included), every
 # whole session that is not its seat's newest, and every top-level /tmp entry outside rule (3)'s keep list -- of at least --bulk-mb MB
 # (default 256) with nothing inside newer than --idle-min minutes (default 30) and no live process with its cwd or an open file inside,
 # LARGEST FIRST, until use falls under PCT minus 15. Below PCT the arm does nothing, so a seat's working baseline is safe until the box is
 # in danger. --if-over PCT exits 0 at once, printing nothing, while use is under PCT: the cheap guard the cron line runs every 5 minutes
-# (crontab of satirical, written by the ceo at CEO-1902, re-homed into the batch slice by the cto at shared-dev step 1 (ARCH-SHARED-DEVELOPMENT 5);
+# (crontab of satirical, written by the officer at R-1902, re-homed into the batch slice by the cto at shared-dev step 1 (ARCH-SHARED-DEVELOPMENT 5);
 # flock on /home/resources/progress/.tmp-sweep.lock so two runs never overlap):
 #   */5 * * * * XDG_RUNTIME_DIR=/run/user/1000 systemd-run --user --scope --slice=s4e-batch.slice -q flock -n /home/resources/progress/.tmp-sweep.lock bash /home/claude_coo/harness/scripts/util_tmp_sweep.sh
 #               --apply --if-over 70 --dead-sessions-hours 6 >> /home/resources/progress/TMP-SWEEP.cron.log 2>&1
@@ -42,7 +42,7 @@
 # USE: bash harness/scripts/util_tmp_sweep.sh            # dry run: what would go, by class, with bytes
 #      bash harness/scripts/util_tmp_sweep.sh --apply    # delete it, print the receipt line, append it to the ledger
 # RECEIPT: TMP_SWEEP applied=<0|1> cutoff_hours=<h> entries=<n> freed_mb=<mb> sessions=<n> session_mb=<mb> free_after=<...>
-# LEDGER: /home/resources/progress/TMP-SWEEP.tsv (one row per --apply), folded into GOAL-CFO.md by the ceo per sitting.
+# LEDGER: /home/resources/progress/TMP-SWEEP.tsv (one row per --apply), folded into GOAL-CFO.md by the officer per sitting.
 # EXIT: 0 swept or nothing to sweep; 2 refused (not on this box's layout, or /tmp unreadable).
 set -u
 HOURS=48; DEAD_H=0; SCR_H=3; APPLY=0; PRESS=80; BULK_MB=256; IDLE_MIN=30; IF_OVER=0
@@ -118,7 +118,7 @@ for name in sorted(os.listdir("/tmp")):
         victims.append(("scratch", path, size_kb(path))); continue
     if newest_in(path) >= cutoff: continue
     victims.append(("entry", path, size_kb(path)))
-# (7) THE PER-SEAT DIRECTORY (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): /tmp/s4e/<seat> is the TMPDIR lib_one_runner.sh and
+# (7) THE PER-SEAT DIRECTORY (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, R-2041): /tmp/s4e/<seat> is the TMPDIR lib_one_runner.sh and
 # corpus_suite_harness.py export, so each entry inside is judged as a top-level entry is (a mktemp name by --scratch-hours, any other by the
 # 48 h cutoff, never one a live process sits in or holds open) and its line carries the seat's ledger name.
 owner = {}
@@ -149,7 +149,7 @@ if os.path.isdir(root):
             if js: cur = max(js, key=lambda f: os.stat(os.path.join(proj, f)).st_mtime)[:-6]
         except OSError: pass
         seat_id = seat.replace("-home-claude-", "")
-        seat_name = seat if not seat.startswith("-home-claude-") else seat_id if seat_id in ("ceo", "cto", "coo", "cfo", "cao", "cqo") else "hq_" + seat_id
+        seat_name = seat if not seat.startswith("-home-claude-") else seat_id if seat_id in ("cto", "coo", "cfo", "cao", "cqo") else "hq_" + seat_id
         down = roster and seat_name not in roster
         for ses in os.listdir(sd):
             p = os.path.join(sd, ses)

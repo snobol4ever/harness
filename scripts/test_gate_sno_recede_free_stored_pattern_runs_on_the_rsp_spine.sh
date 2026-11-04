@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_recede_free_stored_pattern_runs_on_the_rsp_spine.sh -- A PRE-COMPILED PATTERN CARRIES NO RBP ACTIVATION FRAME WHEN
-# THE RSP SPINE SUFFICES (Lon 2026-09-30 07:2x CDT, in-chat to the ceo, verbatim: "Ensure that pre-compiled patterns do no carry the
-# extra weight of an RBP activation frame when just the RSP spine will suffice."; GOAL-CEO.md CEO-1366; the BB FRAME-PLACEMENT
+# THE RSP SPINE SUFFICES (Lon 2026-09-30 07:2x CDT, in-chat, verbatim: "Ensure that pre-compiled patterns do no carry the
+# extra weight of an RBP activation frame when just the RSP spine will suffice."; the archived ruling record R-1366; the BB FRAME-PLACEMENT
 # CRITERION, RULES.md, Lon 2026-08-27: RESULT/LOCALS stay on the RSP spine iff every consumer reaches them at a fixed compile-time
 # offset on every path, and move to an RBP frame the moment a gamma->beta window with unbounded activity between can intervene).
 #

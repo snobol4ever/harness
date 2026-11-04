@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # test_gate_raku_delegation_fallback_maybe_augment_and_a_user_gist_or_str_open_from_the_box_agree_with_rakudo.sh -- THE METHOD ROADS C USED TO WALK ARE OPEN ROADS
-# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-ceo-1600, ARCH-RAKU-BOXES section 4 step 1; CEO-1576).
+# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-r-1600, ARCH-RAKU-BOXES section 4 step 1; R-1576).
 #
-# THE DEFECT: five method roads reached user code from C and so died on CEO-1576's named bomb (rt_call_proc_descr: <Class>__<method> reached a C road into a box, DELETED; rc 139):
+# THE DEFECT: five method roads reached user code from C and so died on R-1576's named bomb (rt_call_proc_descr: <Class>__<method> reached a C road into a box, DELETED; rc 139):
 # a `handles` delegation (meth_call's C arm re-dispatched to the delegate and invoked its method), FALLBACK, `.?method`, a method added to a built-in type by `augment`, and
 # a user gist / Str reached from say, put, print, ~ and interpolation (rk_obj_stringify invoked it). RakRungs class_method_say_replace_21 22 23 24 25 26 53 54.
-# THE CURE: rk_method_open (by_name_dispatch.c rk_method_open_d / rk_method_open_at, the CEO-1552 open road the meth_call box already takes) resolves all of them and RETURNS
+# THE CURE: rk_method_open (by_name_dispatch.c rk_method_open_d / rk_method_open_at, the R-1552 open road the meth_call box already takes) resolves all of them and RETURNS
 # THE ADDRESS: a user method, `.?` (the name without its `?`), a delegation chain (the delegate replaces self in the grant's argv), FALLBACK when no method and no Mu method
 # answers (argv kept whole: self, the name, the arguments), and an augmented built-in type (the value's type, then Cool, Any, Mu; never a name Rakudo's core defines).
 # A user gist or Str is opened through the request channel: __rk_str (the ~ and interpolation coercion), and __rk_gist_pre / __rk_str_pre, which the lowerer wraps around
-# say's and put/print's arguments only in a program that declares such a method. The SCRIP_C2BB_TRACE marks of shape `<road>.open` are the box entering (CEO-1576) and are
+# say's and put/print's arguments only in a program that declares such a method. The SCRIP_C2BB_TRACE marks of shape `<road>.open` are the box entering (R-1576) and are
 # not counted.
 # THE WITNESS, graded in m3 (--run) and m4 (--compile + link) against a ref cut by Rakudo (/usr/bin/raku), every non-open C-to-BB trace entry required to be 0, then under
 # SCRIP_GC_STRESS 1 3 5 in both modes, with 200 iterations of a delegation and a Str coercion so the collector runs on the open roads.

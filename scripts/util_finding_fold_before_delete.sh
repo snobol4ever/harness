@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # util_finding_fold_before_delete.sh -- THE SWEEP: fold a FINDING's measured claims into its live citers, then delete.
 # (RULES.md line 31; Lon 2026-09-18 "I'll just delete them periodically. We should probably do a summarization when I
-# delete."; ceo CEO-859/861.  Row: finding-summarization-gate-refuses-to-delete-an-unfolded-cited-finding.)
+# delete."; R-859/861.  Row: finding-summarization-gate-refuses-to-delete-an-unfolded-cited-finding.)
 #
 # This is a THIN WRAPPER over util_finding_fold_before_delete.py and it is deliberately thin: the work is character-offset
 # marker parsing and verbatim-subset matching over files that write ONE PARAGRAPH PER LINE (a GOAL cursor entry is a single
-# 19 KB line), which bash's line tools cannot do without the generous window CEO-860 proved exempts live violations.
+# 19 KB line), which bash's line tools cannot do without the generous window R-860 proved exempts live violations.
 # The .sh exists because the row's DONE-WHEN names it and because every other sweep in ../harness/scripts/ is invoked as one.
 #
 #   util_finding_fold_before_delete.sh                      # REPORT: index every tracked FINDING and its citers

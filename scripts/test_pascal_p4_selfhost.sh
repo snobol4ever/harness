@@ -6,7 +6,7 @@
 # The classic self-host: SCRIP compiles the Pascal-P4 compiler (corpus/packages/pascal/p4/comp.pas, vendored with the
 # documented patches in PATCHES.md); that compiler compiles its own (detabbed) source into P-code (generation 1);
 # SCRIP compiles the P4 interpreter (int.pas), which runs the generation-1 P-code -- the P4 compiler as a P-code
-# program -- on the same source (generation 2); generation 2's P-code must equal generation 1's AS A TOKEN SEQUENCE (ceo CEO-1323,
+# program -- on the same source (generation 2); generation 2's P-code must equal generation 1's AS A TOKEN SEQUENCE (R-1323,
 # 2026-09-27): the same line count, and on every line the same whitespace-separated tokens in the same order -- what P4's
 # whitespace-insensitive P-code reader sees. Not byte identity: comp.p writes integers with the DEFAULT field width, which ISO 7185
 # 6.10.3.1 leaves to the implementation (fpc -Miso 11 columns, P4's own 10), so generation 1 and generation 2 differ by one column

@@ -15,7 +15,7 @@
 # Anything in both is an ASM -> C -> ASM road.
 # PRINTS one line per road (its shortest path to an asm entry), then BY_ENTRY entry=E roads=N witness=F per asm entry a
 # shortest road ends at, largest class first (the cto 2026-10-09: each class is rowed with its witness), then COUNT=N.
-# --roads-by-entry (the ceo 2026-10-09, for the C-to-BB removal): instead, for EVERY asm entry, every emitted callee that
+# --roads-by-entry (2026-10-09, for the C-to-BB removal): instead, for EVERY asm entry, every emitted callee that
 # reaches THAT entry (a road reaching two entries is listed under both), as ROAD entry=E from=F path=F -> ... -> E, then
 # CALLER entry=E caller=C roads=N per C function that calls E directly on those paths (the caller a removal converts or
 # leaves as a bomb), then ENTRY entry=E roads=N; the selftest and COUNT are the same as the default mode's.
@@ -33,8 +33,8 @@
 import re, sys, glob, os, collections, tempfile
 BOGUS = {"DESCR_t","fn","code","if","for","while","switch","return","sizeof","do","else","static","extern","inline",
          "void","int","long","char","unsigned","struct","union","typedef","const","goto","case","default","break","continue"}
-# ⛔ THE SELFTEST IS A PLANTED ROAD, NOT A FOUND ONE (CEO-554, CEO-1576).  It was a MEASURED road (beauty's s194 M1
-# path, then the Raku APPLY of an indirect name ending at rt_proc_enter on SCRIP 7016f6e25); CEO-1576 landing 3 deleted
+# ⛔ THE SELFTEST IS A PLANTED ROAD, NOT A FOUND ONE (R-554, R-1576).  It was a MEASURED road (beauty's s194 M1
+# path, then the Raku APPLY of an indirect name ending at rt_proc_enter on SCRIP 7016f6e25); R-1576 landing 3 deleted
 # rt_proc_enter and every sibling C could reach, the road ceased to exist, and an instrument anchored on its witness died
 # the day the witness was cured.  The fixture below is the shape the census exists to see, written down once: an asm
 # entry that jumps through a register, a one-line C body that calls it, a multi-line C body the emitter calls by name,
@@ -62,11 +62,11 @@ CALL = re.compile(r'\b([A-Za-z_][A-Za-z_0-9]*)\s*\(')
 PROTO = re.compile(r'^(?:extern\s+)?[A-Za-z_][A-Za-z_0-9 \*]*\**[A-Za-z_][A-Za-z_0-9]*\s*\([^;{]*\)\s*;\s*$')
 STRLIT = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
 # ⛔ A BLOCK-SCOPE DECLARATION IS NOT A CALL.  `{ extern void rt_setexit_continue_tramp(void); return (void *)rt_setexit_continue_tramp; }`
-# names the trampoline to take its address; read as a call it manufactured 112 roads through rt_goto_resolve_x (CEO-1576).
+# names the trampoline to take its address; read as a call it manufactured 112 roads through rt_goto_resolve_x (R-1576).
 LOCALDECL = re.compile(r'\bextern\s+[A-Za-z_][A-Za-z_0-9 \*]*?\**\s*[A-Za-z_][A-Za-z_0-9]*\s*\([^;{}()]*\)\s*;')
 INDIRECT = re.compile(r'\b(?:jmp|call)q?\s+\*')
 def asm_entries(root, plants=()):
-    """⛔ THE ASM ACTIVATION ENTRIES ARE COMPUTED, NOT TYPED (CEO-1573).  The typed set had fallen behind the code:
+    """⛔ THE ASM ACTIVATION ENTRIES ARE COMPUTED, NOT TYPED (R-1573).  The typed set had fallen behind the code:
     rt_proc_enter_named, rt_proc_enter_frag, rt_genp_spine_enter_n2 and rt_tiny_glue_enter all enter emitted code and
     none was in it.  An entry is a global symbol DEFINED IN ASM -- a .globl inside an __asm__ block of a C file under
     src/runtime or src/driver, or a .globl / RTX_FUNC / RTX_ENTRY region of a .s/.S file under src/runtime -- whose own

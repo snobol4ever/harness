@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_io_path_and_handle_are_typed_values_as_rakudo_has_them.sh -- IO::Path IS A TYPED VALUE AND AN OPEN FILE IS AN IO::Handle: .IO, the path and file tests, slurp / spurt / lines / words, open and the handle methods, dir, copy, rename, unlink, mkdir
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; measured: a 48-expression IO probe against Rakudo differed on 45, and 12 Roast files abort in `open`, 46 + 23 more sit in S32-io / S16-io).
+# (row raku-every-suite-to-100-under-nonet-r-1266; measured: a 48-expression IO probe against Rakudo differed on 45, and 12 Roast files abort in `open`, 46 + 23 more sit in S32-io / S16-io).
 #
 # THE DEFECT: `"x".IO` returned nothing, `open` was the SNOBOL4/Icon builtin of the same name ("procedure 'open' has no stackless slab"), a method call on `$*OUT` / `$*ERR` / `$*IN` hit "IR_VAR arg names a local with no LOWER-granted varslot" (the lowerer had no
 # case for TT_FH_CAPTURE: the receiver was a valueless SUCCEED wire), and the colon-adverbs of a call (`:append`, `:w`, `:!chomp`) reached the callee as unnamed booleans, so spurt could not tell append from overwrite.

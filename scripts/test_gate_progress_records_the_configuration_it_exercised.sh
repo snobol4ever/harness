@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_progress_records_the_configuration_it_exercised.sh -- THE PROGRESS DATABASE RECORDS WHAT THE BOARD
-# EXERCISED, AND ITS HEADER NAMES EVERY COLUMN IT WRITES (coo 2026-09-21; ceo rank 0 at CEO-1047 and CEO-1050:
+# EXERCISED, AND ITS HEADER NAMES EVERY COLUMN IT WRITES (coo 2026-09-21 rank 0 at R-1047 and R-1050:
 # "every clause of the batch I just landed requires a board to say what it EXERCISED, and the database is where
 # that is supposed to survive the sitting ... the DB has no column for ARENA or STRESS, so three runs of one
 # suite on one tree are distinguishable only by timestamp").
@@ -30,14 +30,14 @@
 #   5  the reader NAMES a same-tree same-configuration contradiction instead of resolving it by arrival order
 #   7  THE RUNNER DECLARES: corpus_suite_harness.py states the axis it ran under, at BOTH ends of the axis
 #   6  SEAM/CONTROL: with no axis set and nothing declared the append is ACCEPTED and reads `undeclared` --
-#      the writer guesses `shipped` for nobody (CEO-812's principle applied to the record instead of the heap)
+#      the writer guesses `shipped` for nobody (R-812's principle applied to the record instead of the heap)
 #
 # Hermetic: S4E_PROGRESS_DB points every arm at a scratch table under mktemp and the live table is never touched.
 # No binary is run and no corpus is read, so this gate is cheap; it is wired BLOCKING in `make test` and NOT in
-# `make preflight` (CEO-1046: a hermetic gate that reads a live external tree is not hermetic).
+# `make preflight` (R-1046: a hermetic gate that reads a live external tree is not hermetic).
 # Cost: ~4 s (arm 7 runs a real one-entry suite, so this gate needs the built binary and refuses rc=2 without it).
 #
-# PROVEN RED BEFORE THE CURE (CEO-1049), on 27630286a, 2026-09-21: arms 1,2,3,4,5 RED, arm 6 red on the value
+# PROVEN RED BEFORE THE CURE (R-1049), on 27630286a, 2026-09-21: arms 1,2,3,4,5 RED, arm 6 red on the value
 # (`` rather than `undeclared`). Receipt in the row's baton and in GOAL-COO.md COO-130.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -180,7 +180,7 @@ got=$(awk -F'\t' '$8=="gate_alive"{print $14}' "$S4E_PROGRESS_DB" | tail -1)
 seed_old_table
 env -u SCRIP_HEAP_MB SCRIP_GC_STRESS=3 SCRIP_HEAP_KB=128 python3 "$HERE/corpus_suite_harness.py" run "$C/ALL.sno" "$C/ALL.ref" --modes m3 >/dev/null 2>&1
 got=$(awk -F'\t' '$8=="gate_alive"{print $14}' "$S4E_PROGRESS_DB" | tail -1)
-[ "$got" = "SCRIP_GC_STRESS=3,SCRIP_HEAP_KB=128" ] && ck ok "axis set: the harness declares it verbatim ($got) -- AND THIS ARM NOW HOLDS THE ARENA HALF OF THE AXIS: SCRIP_HEAP_KB was in NEITHER GC_AXIS_EXACT nor the SCRIP_GC prefix until the CEO-1146 sweep put it there, so a KB-pinned run declared NO ARENA AT ALL while the sweep was moving 18 gates onto exactly that spelling" \
+[ "$got" = "SCRIP_GC_STRESS=3,SCRIP_HEAP_KB=128" ] && ck ok "axis set: the harness declares it verbatim ($got) -- AND THIS ARM NOW HOLDS THE ARENA HALF OF THE AXIS: SCRIP_HEAP_KB was in NEITHER GC_AXIS_EXACT nor the SCRIP_GC prefix until the R-1146 sweep put it there, so a KB-pinned run declared NO ARENA AT ALL while the sweep was moving 18 gates onto exactly that spelling" \
   || ck no "axis set: the harness declared '$got' -- a board under a forced collection recording itself as anything else is the whole defect"
 
 echo

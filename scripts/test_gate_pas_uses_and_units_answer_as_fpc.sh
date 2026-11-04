@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_pas_uses_and_units_answer_as_fpc.sh -- a program's uses clause names units SCRIP compiles WITH it, whole-program, and
-# every arm answers byte-identical to fpc (Lon 2026-10-10 to the ceo, CEO-1611: "Certainly we should allow the "uses" feature for
+# every arm answers byte-identical to fpc (Lon 2026-10-10 to the R-1611: "Certainly we should allow the "uses" feature for
 # Pascal since SNOBOL4 has INCLUDE, and Snocone will have import."; row pascal-uses-and-units-compile-time-whole-program-...).
 #
-# THE DESIGN (the ceo's, CEO-1611): uses is COMPILE-TIME. The grammar takes a unit (interface, implementation, initialization or a
+# THE DESIGN (the officer's, R-1611): uses is COMPILE-TIME. The grammar takes a unit (interface, implementation, initialization or a
 # begin part, finalization) and a uses clause in a program, a unit's interface and its implementation; uses, unit, interface,
 # implementation, initialization and finalization are CONTEXTUAL keywords, so an ISO program keeps them as identifiers (arm kw).
 # The driver (pascal_driver.c) resolves each named unit once, transitively, as a file beside the program matched case-insensitively
@@ -13,7 +13,7 @@
 # declare become U.name in the unit's scope; a bare name in a scope resolves to its own declaration, else to the LAST unit of that
 # scope's uses clauses exporting it (fpc's rule, arm clash's two orders); U.name qualified resolves directly; interface headings
 # become forward declarations; initialization parts run in dependency order before the body. FINALIZATION, A MEASURED FACT OF THE
-# ORACLE fpc 3.2.2 AND NOT A PASCAL RULE (ceo CEO-1617: a later oracle swap re-measures it, ARCH-PASCAL-DIALECTS.md section 2): fpc runs a unit's
+# ORACLE fpc 3.2.2 AND NOT A PASCAL RULE (R-1617: a later oracle swap re-measures it, ARCH-PASCAL-DIALECTS.md section 2): fpc runs a unit's
 # finalization part AFTER it has closed the standard files, so its writes never appear (measured: a finalization that writes a file
 # and then writeln -- the file is written, the line is not); SCRIP runs the finalization parts in reverse order after the body behind
 # __pas_std_mute, which flushes stdout and points fd 1 at /dev/null.
@@ -25,7 +25,7 @@
 #             Value shadowing the unit's; the qualified statement shapes.bump; the qualified enum constant Shapes.Green.
 #   clash  -- ua/ub with f in both: uses ua, ub and uses ub, ua answer differently, as fpc does.
 #   kw     -- unit, interface, implementation, initialization, finalization and uses as variables of an ISO program.
-#   mode   -- {$mode objfpc} sets the dialect switch before the parse (ARCH-PASCAL-DIALECTS.md § 2, CEO-1614): the six words are
+#   mode   -- {$mode objfpc} sets the dialect switch before the parse (ARCH-PASCAL-DIALECTS.md § 2, R-1614): the six words are
 #             reserved, uses needs no flip, and integers print bare as in every non-ISO dialect.
 # THE SWITCH: one dialect per program, the parser state's dialect field (ISO by default, ISO, FPC, ObjFPC, Delphi), set by the lexer
 # on {$mode} and flipped from the ISO default to FPC by the first uses or unit; the decision reaches the lowerer only through the

@@ -1,4 +1,4 @@
-# header_fanin.baseline.tsv -- written by util_header_fanin.py --write-baseline (ARCH-HEADER-SPLIT.md section 2, CEO-2032). LOWERED, NEVER RAISED.
+# header_fanin.baseline.tsv -- written by util_header_fanin.py --write-baseline (ARCH-HEADER-SPLIT.md section 2, R-2032). LOWERED, NEVER RAISED.
 # kind	key	v1	v2	v3	v4   hdr: fanin users inline_bodies over | umbrella: 1 | bare: includes written bare | unused: includes unused
 # units=297
 hdr	driver/driver.h	9	16	0	0

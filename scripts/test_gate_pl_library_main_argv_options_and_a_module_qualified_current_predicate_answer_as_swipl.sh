@@ -2,7 +2,7 @@
 # test_gate_pl_library_main_argv_options_and_a_module_qualified_current_predicate_answer_as_swipl.sh -- library(main) AND
 # library(optparse) ARE VENDORED, argv_options/3,4 TAKE THEIR ARGV MODULE-QUALIFIED AS swipl's DO, AND
 # current_predicate(M:Name/Arity) ANSWERS FOR A MODULE (cfo 2026-10-14, row
-# prolog-swi-library-test-main-every-case-agrees-with-swipl-in-both-modes-ceo-1664).
+# prolog-swi-library-test-main-every-case-agrees-with-swipl-in-both-modes-r-1664).
 #
 # SWI's library/test_main.pl read 5/48: library(main) and library(optparse) were not vendored, so the file's
 # :- use_module(library(main)) fell to a run-time use_module SCRIP refuses and no case ran. Now (src/parsers/prolog/prelude/

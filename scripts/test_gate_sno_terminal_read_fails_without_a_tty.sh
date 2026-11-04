@@ -54,7 +54,7 @@ for p in palin temp; do grade "$p" /dev/null; done
 # code.sno: the CLASS arm only (no hang). Its stream is one byte short of the oracle's for a SIBLING defect this
 # row does not own: `OUTPUT('BINOUT', .BINOUT, '[-f2 -r1]')` associates a raw-record channel on unit 2 (stderr)
 # and `BINOUT = '?'` prints the prompt without a newline; SCRIP does not honour the association (named to the
-# ceo for a row 2026-09-07). Graded here as: exits within the timeout in both modes, never rc=124.
+# the officer for a row 2026-09-07). Graded here as: exits within the timeout in both modes, never rc=124.
 for m in m3 m4; do GRADED=$((GRADED+1)); done
 ( cd "$W" && SNO_LIB="$DOT" timeout -k 5 5s "$ROOT/scrip" --run code.sno < /dev/null > code.m3 2>&1 ); c3=$?
 if ( cd "$W" && SNO_LIB="$DOT" timeout -k 5 5s "$ROOT/scrip" --compile code.sno < /dev/null > code.s 2> code.cerr ) && gcc -c "$W/code.s" -o "$W/code.o" 2>/dev/null && gcc "$W/code.o" -L"$ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$ROOT/out" -o "$W/code.bin" 2>/dev/null; then

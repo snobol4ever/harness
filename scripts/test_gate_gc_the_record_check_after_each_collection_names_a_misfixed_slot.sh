@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_record_check_after_each_collection_names_a_misfixed_slot.sh -- THE RECORD CHECK, ROAD (a) OF THE VALIDATOR ROW
-# (cto 2026-10-17; ceo's ruling on row icon-gc-the-per-collection-heap-validator-...: "(a) now ... (c) is the row's finish line ... (b) is dropped").
+# (cto 2026-10-17; ruling on row icon-gc-the-per-collection-heap-validator-...: "(a) now ... (c) is the row's finish line ... (b) is dropped").
 #
 # WHAT IT CLAIMS, AND WHAT IT DOES NOT. Under SCRIP_GC_VALIDATE=1, after every collection's fix and slide (gc_heap.c gc_validate_record, run
 # before the LIVE bitmap is cleared), every slot the mark registered -- its location translated to where its holder now lives when the holder
@@ -12,7 +12,7 @@
 #
 # ARMS. (1) THE PROPERTY: three gc witnesses, mode 3 and mode 4, at SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=1 with the check on: every collection
 # prints its [ZGC-VALIDATE] summary, every summary reads expired=0 misfixed=0, and stdout equals the witness's ref. (2) THE FAIL-ONCE, by a
-# seam inside THIS instrument (CEO-1680 allows a seam only in an instrument, never in SCRIP): an LD_PRELOAD shim over
+# seam inside THIS instrument (R-1680 allows a seam only in an instrument, never in SCRIP): an LD_PRELOAD shim over
 # out/interposable/libscrip_rt.so calls the real rt_gc_fix_run and then puts one root's registered (pre-fix) value back; the check must name it.
 # (3) INERT WHEN OFF: without the knob no [ZGC-VALIDATE] line is printed and stdout equals the knob-on run's.
 # rc=0 every arm holds; rc=1 an arm failed; rc=2 could not measure.

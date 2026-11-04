@@ -18,7 +18,7 @@
 #   4    MONITOR: the witness agrees with the SPITBOL fork event for event to its end (DIVERGE=0); a monitor refusal is this arm's
 #        FAIL when an earlier arm already failed (the pre-cure error cascade is itself what makes the witness not monitor-safe)
 #   5    CONTROL: a CODE-built function calling a DEFINEd function through the zd arm, as before
-# ⛔ ARM 4 SKIPS VALUE EVENTS ON THE THREE RESERVED CONSTANTS (cto 2026-10-02, ceo CEO-1409): RULES.md FACT RULE (Lon 2026-09-29)
+# ⛔ ARM 4 SKIPS VALUE EVENTS ON THE THREE RESERVED CONSTANTS (cto 2026-10-02, R-1409): RULES.md FACT RULE (Lon 2026-09-29)
 # makes epsilon, NULL and null reserved constants, and SPITCORE's NULL predicate, built as NULL NULL = ?(...) through CODE, keeps its
 # right side as a bare statement and stores nothing -- the rule names this program. SPITBOL stores and reports VALUE NULL = '';
 # SCRIP by law does not, so without the skip the bracket stopped at step 2561 on a difference the law requires. The skip

@@ -1,4 +1,4 @@
-# NOT_SHIPPED.tsv -- the census's third declaration (ceo CEO-1235 (3), 2026-09-24, on the coo's ask (C) of COO-182; named on
+# NOT_SHIPPED.tsv -- the census's third declaration (R-1235 (3), 2026-09-24, on the coo's ask (C) of COO-182; named on
 # .github/ARCH-DYNAMIC-STORAGE.md section 2 beside CLASS_AB.tsv and WITNESSES.tsv). A compilation unit named here is a unit test, a tool
 # or a demo that no program's run reaches, so its fixed tables and the locals it fills leave EVERY line of util_dyn_caps_witness.sh:
 # the two ratchet counts, the no-guard and drop lines, and the LOUD guards that owe a witness.
@@ -21,4 +21,4 @@ src/runtime/rtx/rtx_tins_test.c	a unit test battery compiled into its own binary
 src/runtime/rtx/rtx_sval_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_relop_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
 src/runtime/rtx/rtx_direct_test.c	a unit test battery compiled into its own binary by ../harness/scripts/test_rtx_unit.sh
-src/runtime/rtx/rtx_plunify_test.c	a unit test with its own main(): harness/scripts/test_rtx_unit.sh compiles it into /tmp and links it against libscrip_rt.so, never into scrip or libscrip_rt (CEO-2079, the transfer battery)
+src/runtime/rtx/rtx_plunify_test.c	a unit test with its own main(): harness/scripts/test_rtx_unit.sh compiles it into /tmp and links it against libscrip_rt.so, never into scrip or libscrip_rt (R-2079, the transfer battery)

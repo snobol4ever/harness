@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_c_unifier_binds_the_plain_variable_to_the_attributed_one.sh -- EVERY UNIFICATION ROAD BINDS THE PLAIN
-# VARIABLE TO THE ATTRIBUTED ONE, AS SWIPL DOES, IN BOTH MODES (cfo 2026-10-10, row prolog-clpfd-the-gnu-fd-spelling-...-ceo-1596;
+# VARIABLE TO THE ATTRIBUTED ONE, AS SWIPL DOES, IN BOTH MODES (cfo 2026-10-10, row prolog-clpfd-the-gnu-fd-spelling-...-r-1596;
 # the cto's attributed-variable design, ARCH-PROLOG-CLPFD.md sections 2-3, reviewed by the cto on the bus).
 #
 # THE DEFECT.  plw_unify_oc_leaf, the C leaf behind unify_with_occurs_check/2, JOINED two unbound variables at a fresh cell

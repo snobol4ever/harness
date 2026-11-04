@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""util_rbp_placement_census.py -- CEO-1682: is every RBP placement one the BB FRAME-PLACEMENT CRITERION admits?
+"""util_rbp_placement_census.py -- R-1682: is every RBP placement one the BB FRAME-PLACEMENT CRITERION admits?
 
-THE QUESTION (Lon 2026-10-11, via the ceo): "Are you absolutely sure ALL the ZETAS are on the RSP SPINE and not wrongly
+THE QUESTION (Lon 2026-10-11): "Are you absolutely sure ALL the ZETAS are on the RSP SPINE and not wrongly
 allocated on the RBP ACTIVATION?"  The criterion (RULES.md, Lon 2026-08-27): an operand or local stays on the RSP spine iff
 every consumer reaches it at a fixed compile-time offset on every path; it moves to an RBP activation frame only where
 unbounded stack growth can intervene between its write and its read.  This census COMPUTES, for every site, which base the

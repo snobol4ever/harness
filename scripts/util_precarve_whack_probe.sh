@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_precarve_whack_probe.sh -- PROBE A PRE-CARVE BY WHACKING IT (ceo CEO-1940/1941; Lon 2026-10-24, verbatim: "The strategy to do so is to WHACK each
+# util_precarve_whack_probe.sh -- PROBE A PRE-CARVE BY WHACKING IT (R-1940/1941; Lon 2026-10-24, verbatim: "The strategy to do so is to WHACK each
 # pre-carve one at a time and see what breaks. Most will work since BB allocate their own memory." · "whacking the pre-alloc will SCREAM what's wrong." ·
 # "Take a list of those spots in the code that do a carve, and one by one mark them off by whacking it and doing a little testing.").
 #
@@ -13,7 +13,7 @@
 # Per site: refuse unless the files it touches are clean in git; apply the whack; make -j8; run the test; append one record; `git checkout` the files.
 # After the last site: make -j8 on the restored tree. Sequential, one probe at a time, every child under an 8 GB address space (a 2 GB cap aborts
 # bb_pool_init's mmap; the 09:42 oomd kill of 2026-10-24 is why there is a bound at all). It never commits: a whack that reads green on the right test
-# becomes a LANDING by the seat's own hand, with the smokes and the handful before the push (CEO-1928) and its row marked in PRECARVE-WHACK-LIST.md.
+# becomes a LANDING by the seat's own hand, with the smokes and the handful before the push (R-1928) and its row marked in PRECARVE-WHACK-LIST.md.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SCRIP="$HERE/../../SCRIP"; PAT="$HERE/util_precarve_whack_patches.py"
 LOG="${PROBE_LOG:-/home/resources/progress/PRECARVE-PROBE.tsv}"; TEST="${PROBE_TEST:-bash ../harness/scripts/test_fleet_smoke.sh}"

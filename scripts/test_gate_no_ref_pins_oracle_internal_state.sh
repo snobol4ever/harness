@@ -8,7 +8,7 @@
 # (measured across the 22: 11408, 11416, 15824, 15904, 52208, ... all different) and that no other
 # implementation produces by being right. A program graded against one of these is not a bug we can win.
 #
-# ⛔ THE FRAME THIS CORRECTS WAS THE CEO'S OWN, AND ELEVEN SEATS READ IT AS THE NIGHT'S PREMISE (ceo
+# ⛔ THE FRAME THIS CORRECTS WAS THE OFFICER'S OWN, AND ELEVEN SEATS READ IT AS THE NIGHT'S PREMISE (the officer
 # 2026-09-08, correcting itself): "85 package reds, EVERY ONE a program SPITBOL runs clean and we do not."
 # For this class the premise is INVERTED -- it is a program SPITBOL *fails*, and we are graded against a
 # transcript of the failure. hq_R proved the cost rather than asserting it: it took `rewind1`, which was a
@@ -27,10 +27,10 @@
 # it is a laundry.
 # ✅ THE RIGHT CURE IS RECLASSIFICATION, NOT NORMALISATION: what the oracle refuses, or only its own
 # implementation can produce, is OUTSIDE THE BASELINE -- named per program, out of the denominator, with
-# the oracle's own text, in the suite's OUTSIDE_SPITBOL_BASELINE.tsv (ceo CEO-390/391). That is hq_B's
+# the oracle's own text, in the suite's OUTSIDE_SPITBOL_BASELINE.tsv (R-390/391). That is hq_B's
 # re-cut. This gate's job is only to make the population visible and stop it growing.
 #
-# ⛔⭐⭐ THE FLOOR IS 23, NOT 22, AND THE 23rd IS THE FINDING. The ceo, hq_B and my own first census all read
+# ⛔⭐⭐ THE FLOOR IS 23, NOT 22, AND THE 23rd IS THE FINDING. The officer, hq_B and my own first census all read
 # 22 -- all of them in csnobol4_suite. This gate found a 23rd ON ITS FIRST RUN, inside
 # corpus/tests/snobol4/ALL.ref: THE SNOBOL4 RUNGS, the board that answers Lon's 100% question. Three of its
 # entries carry SPITBOL's allocator counters in their refs -- 1900 simple_output_64, 1902 simple_output_62,
@@ -88,7 +88,7 @@ if [ "$n" -gt "$PIN" ]; then
   echo "   ⛔ DO NOT normalise these lines away -- SCRIP prints nothing here, so the strip empties both sides"
   echo "      and flips them all GREEN while the compiler still emits no report (the laundry rule)."
   echo "   ✅ Reclassify: name it in the suite's OUTSIDE_SPITBOL_BASELINE.tsv, out of the denominator, with"
-  echo "      the oracle's own text (ceo CEO-390/391)."
+  echo "      the oracle's own text (R-390/391)."
   bad=1
 fi
 [ "$n" -lt "$PIN" ] && echo "⭐ FELL — re-pin in this commit: PIN_ORACLE_INTERNAL_REFS=$n (floors only fall)"

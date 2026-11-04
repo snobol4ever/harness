@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_oracle.sh -- THE ONE LIVE-ORACLE CALLER (ARCH-SHARED-DEVELOPMENT.md 3.4 and 6, shared-dev step 8, CEO-2041). Every oracle answer is a pure
+# util_oracle.sh -- THE ONE LIVE-ORACLE CALLER (ARCH-SHARED-DEVELOPMENT.md 3.4 and 6, shared-dev step 8, R-2041). Every oracle answer is a pure
 # function of four things: the oracle binary, the program, the argv and the stdin. So a run takes ONE run slot (util_run_slot.sh, the box's pool),
 # runs under timeout -k 5, and stores rc, stdout and stderr under /home/resources/progress/oracle/<ORACLE>/<KEY>, KEY the SHA-256 of the binary's own
 # SHA, the argv (every argument naming a regular file also contributes that file's bytes, so a changed program is a new key and the seat's path is
@@ -7,7 +7,7 @@
 #   util_oracle.sh ORACLE [--stdin FILE] [--timeout S] [--key-file F]... [--no-cache] -- ARGS...
 #   ORACLE: sbl (the correctness SPITBOL, -bf added by the caller as always), icont, iconx, swipl, gprolog, gplc, xsb, unicon, rakudo, fpc
 # It prints the oracle's stdout to stdout and its stderr to stderr and exits with the oracle's rc. NEVER CACHED: a timeout (rc 124 or 137) or a
-# signal death (rc 129 to 159) under a loaded box is not the oracle's answer (CEO-1696: NO_ORACLE_ANSWER is re-measured, never pinned); --no-cache
+# signal death (rc 129 to 159) under a loaded box is not the oracle's answer (R-1696: NO_ORACLE_ANSWER is re-measured, never pinned); --no-cache
 # for a program whose output is a FILE it writes (a replay writes no file) or that reads a file not named in its argv and not given as --key-file.
 # Every call appends one line to /home/resources/progress/oracle/LOG.tsv (utc, oracle, hit|miss|nocache, rc, seat): the census's oracle_hit count.
 # rc: the oracle's own; 2 when the oracle binary is missing (lib_oracle_flags.sh's refusal, never a plausible all-FAIL) or the usage is wrong.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_dict_expression_inside_a_control_construct_of_a_test_body_answers_as_swipl.sh -- A Dict.key INSIDE A CONTROL CONSTRUCT
 # OR A bagof/setof GOAL OF A plunit TEST BODY ANSWERS AS swipl (cfo 2026-10-14, row
-# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-ceo-1709: test_dict expand_functions:bagof#1).
+# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-r-1709: test_dict expand_functions:bagof#1).
 #
 # 7ea7b91fe expands the shim's pj_test/4 Body as a goal (pl_dot_goal), and pl_dot_goal expanded A = M.a to
 # '$dict_eval'(M, a, V), A = V. Held as data in a test body, a bagof/setof goal runs at run time, where that fresh V is a FREE

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_gc_emitted_safe_point_matches_its_contract.sh -- THE EMITTED BYTES READ AGAINST WHAT ARCH-GC SECTION 3
-# DECLARES (cto 2026-09-21; row gc-the-emitted-safe-point-sequence-is-checked-against-its-declared-contract, ceo
-# CEO-1029; from Hawblitzel and Petrank, AUTOMATED VERIFICATION OF PRACTICAL GARBAGE COLLECTORS, POPL 2009).
+# DECLARES (cto 2026-09-21; row gc-the-emitted-safe-point-sequence-is-checked-against-its-declared-contract, the officer
+# R-1029; from Hawblitzel and Petrank, AUTOMATED VERIFICATION OF PRACTICAL GARBAGE COLLECTORS, POPL 2009).
 #
 # WHY THIS GATE EXISTS, IN ONE SENTENCE.  ARCH-GC section 3 has read, since the page was written, that a safe point
 # is "the return point of an emitted call into a runtime entry that can allocate, placed AFTER the call's result has
-# been stored to its mapped slot", and section 3b (CEO-996) is the finding that NOTHING HAS EVER CHECKED THE EMITTED
+# been stored to its mapped slot", and section 3b (R-996) is the finding that NOTHING HAS EVER CHECKED THE EMITTED
 # BYTES AGAINST IT.  A design sentence stating a property the emitter is never checked against is indistinguishable,
 # to every reader and every instrument, from a property the emitter has.  This gate is that check.
 #
@@ -45,7 +45,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_emitted_safe_point_matches_its_contract
 [ -f "$CHK" ]   || refuse "the checker $CHK is missing -- nothing to grade"
 [ -f "$FLOOR" ] || refuse "the declared floor $FLOOR is missing; a gate with no floor either reds the fleet over a known class or passes over everything, and both are worse than refusing"
 [ -f "$PLANT_WIT" ] || refuse "the plant's witness $PLANT_WIT is missing -- arm (c) could not run, and an unplanted instrument is not graded"
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
 echo "POPULATION (declared): $(grep -vc '^#' "$FLOOR") witness(es) NAMED in $(basename "$FLOOR"); $(printf '%s\n' $POP | wc -w) file(s) present on disk."
 echo "CONTRACT_POP= narrows the run; CONTRACT_PLANT= names the plant's witness."
 
@@ -64,10 +64,10 @@ READ_OUT="$(mktemp -t gc_contract_reading.XXXXXX)"
 . "$(dirname "${BASH_SOURCE[0]}")/lib_smoke_honest.sh" || refuse "lib_smoke_honest.sh unloadable"
 trap 'rm -f "$READ_OUT" "$READ_OUT".cmp "$SMOKE_TO_FILE"' EXIT
 SCRIP_HEAP_KB="${SCRIP_HEAP_KB:-64}" timeout -k 5 900s python3 "$CHK" $POP --name-all > "$READ_OUT" 2>&1; rrc=$?
-# CEO-2081 (the ceo, on hq_prolog's tripwire landing bf7f7b061: the checker prints only at its end and its 900 s timeout killed it at load 30-40): a
+# R-2081 (on hq_prolog's tripwire landing bf7f7b061: the checker prints only at its end and its 900 s timeout killed it at load 30-40): a
 # checker killed by the timeout over 2 x cores REFUSES and names the load (the box cannot measure); killed on a quiet box it is a RED named TIMEOUT
 if smoke_note "$rrc"; then
-  [ "$SMOKE_TIMEOUTS_LOADED" -gt 0 ] && refuse "the checker was killed by its 900 s timeout (rc $rrc) at load1$SMOKE_TIMEOUT_LOADS, over ${SMOKE_LOAD_FACTOR:-2} x $(nproc) cores -- the box cannot measure this gate now; re-read it in a quiet slice (CEO-1680, CEO-2081)"
+  [ "$SMOKE_TIMEOUTS_LOADED" -gt 0 ] && refuse "the checker was killed by its 900 s timeout (rc $rrc) at load1$SMOKE_TIMEOUT_LOADS, over ${SMOKE_LOAD_FACTOR:-2} x $(nproc) cores -- the box cannot measure this gate now; re-read it in a quiet slice (R-1680, R-2081)"
   echo "⛔ GATE RED [gc_emitted_safe_point_matches_its_contract]: TIMEOUT -- the checker was killed by its 900 s timeout (rc $rrc) at load1$SMOKE_TIMEOUT_LOADS, under ${SMOKE_LOAD_FACTOR:-2} x $(nproc) cores"; exit 1
 fi
 rd="$(cat "$READ_OUT")"
@@ -83,7 +83,7 @@ sl="$(grep -m1 '^CONTRACT SITES ' "$READ_OUT")"
 cmp_out="$(timeout -k 5 120s python3 "$ROOT/../harness/scripts/util_gc_safe_point_contract.py" --compare "$READ_OUT" "$FLOOR" 2>&1)"
 worse="$(printf '%s\n' "$cmp_out" | sed -n 's/^WORSE \([0-9]*\).*/\1/p')"
 # SPINE is a MECHANISM CENSUS and not a defect floor: a cure that turns a bare poll into a tagged-cell poll
-# RAISES it, so grading it with the defect polarity reported the ceo's e42cc0909/c60097828 as a regression.
+# RAISES it, so grading it with the defect polarity reported the officer's e42cc0909/c60097828 as a regression.
 # It is REPORTED here in both directions and never blocks -- the rationale is in util_gc_safe_point_contract.py.
 spinemoved="$(printf '%s\n' "$cmp_out" | sed -n 's/^SPINEMOVED \([0-9]*\).*/\1/p')"
 if [ -n "$spinemoved" ] && [ "$spinemoved" != 0 ]; then

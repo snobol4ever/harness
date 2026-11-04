@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_fpc_dialect_case_with_no_matching_constant_does_nothing.sh -- in the FPC dialects a case-statement whose index
 # matches no constant and that has no else runs no arm and goes on, as fpc does; the ISO 7185 6.8.3.5 runtime error binds the ISO
-# dialect only (CEO-1657), where test_gate_pas_a_case_statement_with_no_matching_constant_is_an_error.sh keeps it.
+# dialect only (R-1657), where test_gate_pas_a_case_statement_with_no_matching_constant_is_an_error.sh keeps it.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): box-the-compass
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): box-the-compass
 # (ALL.dialect fpc-default: its string array flips it) stopped at its first unmatched case with "pascal runtime error: ISO 7185
 # 6.8.3.5" where fpc goes on. The case chain's tail was __pas_rterr in every dialect. THE CURE (lower_pascal_tree.c): the tail is a
 # TT_SUCCEED when pas_dialect_fpc holds (the whole program's dialect) and the 6.8.3.5 call otherwise.

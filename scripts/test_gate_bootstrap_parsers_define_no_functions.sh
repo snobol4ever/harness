@@ -2,7 +2,7 @@
 # test_gate_bootstrap_parsers_define_no_functions.sh -- THE FUNCTION FLOOR OF THE SEVEN SELF-HOSTED PARSERS: a bootstrap/parser_<lang>.sc defines NO
 # functions (RULES.md FACT RULE -- THE TREE IS THE PRUNED PARSE TREE: the tree is built from Shift, Reduce and the Counter stack primitives ONLY, in
 # source order, no tree-building or scanning helper the grammar calls). The rule does not hold today (the floors below are the measured counts), so this
-# gate is the INSTRUMENT of the cto's ruling of 2026-10-28 (to hq_snocone, copy to the ceo; ruling (a) with (b) as the direction): one floor per file at
+# gate is the INSTRUMENT of the cto's ruling of 2026-10-28 (to hq_snocone, copy to the officer; ruling (a) with (b) as the direction): one floor per file at
 # the count measured that day, RED when a count rises, RED when it falls with the floor still standing (a fall lowers the floor IN THE SAME LANDING that
 # re-cuts a function as a pattern, so the ratchet keeps it), finish 0 per file. A function the grammar needs is a pattern that has not been written
 # yet, never an exception. hq_snocone owns the floors.

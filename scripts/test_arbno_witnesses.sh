@@ -17,7 +17,7 @@ W=/tmp/arbw.$TAG; mkdir -p "$W"
 # tests/snobol4/probe/bb_probes.{sno,ref} -- the last from probe-consolidate-bb, concurrent this same
 # day; tests/snobol4/probe/arb1.{sno,ref} converted 2026-08-29, seat12) -- this tool needs each as a
 # standalone file to feed sbl/scrip directly, so extract() materializes one per run into $W.
-extract() { rungs_extract_origin "$1__$2" "$W/$2.sno"; }   # re-pointed to THE RUNGS by origin (zero-subfolders cutover, ceo s283h)
+extract() { rungs_extract_origin "$1__$2" "$W/$2.sno"; }   # re-pointed to THE RUNGS by origin (zero-subfolders cutover, s283h)
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"
 extract crosscheck_patterns 181_pat_arbno_defer_tail_stressors
 extract probe_earn0 earn0_disc_arbno_star_fence_positive

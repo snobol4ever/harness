@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_progress_flips_a_program_that_stops_being_graded_went_dark.sh -- a PASS that becomes DEFERRED or UNGRADABLE is a program
 # that WENT DARK, printed on its own line and named. It is never "lost" (it is not red) and never "reclassified, not a loss" (the
-# measurement is gone). PASS -> OUTSIDE stays the one reclassification (ceo CEO-806).
+# measurement is gone). PASS -> OUTSIDE stays the one reclassification (R-806).
 #
-# THE MEASUREMENT THAT PUT THIS HERE (coo 2026-09-25, ceo CEO-1270): X64T's math_diff, math_div, math_prod and math_sum were m4 PASS
+# THE MEASUREMENT THAT PUT THIS HERE (coo 2026-09-25, R-1270): X64T's math_diff, math_div, math_prod and math_sum were m4 PASS
 # on 55f6339b9 (09-24) and m4 DEFERRED on 04549eb5c (09-25), when the statement switch took their asm from 101.5 MB to 169.6 MB, past
 # the runner's 128 MB budget. util_progress_flips.py read "lost since the base: package 0" and "reclassified (PASS -> OUTSIDE/UNGRADABLE/
-# UNGRADED/DEFERRED, not a loss): package 4" -- four correct programs the runner stopped grading, reported as nothing lost. CEO-806
+# UNGRADED/DEFERRED, not a loss): package 4" -- four correct programs the runner stopped grading, reported as nothing lost. R-806
 # ruled only PASS -> OUTSIDE a reclassification; the wider set had no ruling behind it.
 #
 # ARMS on a planted table read through --db (HERMETIC: never the live database):

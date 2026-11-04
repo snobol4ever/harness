@@ -22,9 +22,9 @@ case " ${ENGINES:-sbl m3 m4} " in *" sbl "*) [ -x "$SBL" ] || { echo "⛔ ORACLE
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"
 REPS="${REPS:-3}"; T="${TIMEOUT:-60}"; ENGINES="${ENGINES:-sbl m3 m4}"
 NOHUGE="${NOHUGE:-1}"
-# ⛔ SUPERSEDED 2026-09-28 (Lon, ceo CEO-1353, RULES.md hard-cap clause 8 (g)(4)): no typed SCRIP_HEAP_MB window. Each unit runs at the
+# ⛔ SUPERSEDED 2026-09-28 (Lon, R-1353, RULES.md hard-cap clause 8 (g)(4)): no typed SCRIP_HEAP_MB window. Each unit runs at the
 # heap and stack declared beside it (<stem>.heap/.stack, lib_declared_arena.sh), the same switches to m3, the m4 binary and sbl.
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (CEO-1353)" >&2; exit 3; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)" >&2; exit 3; }
 OUT="${OUT:-$B/NOISE-FLOOR.tsv}"
 # hq_P 2026-09-05: this baker APPENDS its -fixed rows to a file the timed baker headed, so it must stamp its OWN
 # oracle identity -- the two blocks are independently provenanced and can be baked days apart against different
@@ -60,7 +60,7 @@ for sno in "$B"/*.sno; do
   # iteration-based measurement reachable for the whole corpus, which is what callgrind needs.
   bash "$HERE/bench_wrap.sh" "$sno" -o "$W/$s.bench.sno" --mode=iter --n="$n" >/dev/null || { echo "  ⛔ $s: not wrappable, skipped" >&2; continue; }
   SW="$(declared_switches_beside "$sno")" || { echo "  ⛔ $s: its .heap/.stack is refused (the reader said why above), skipped" >&2; continue; }
-  [ -n "$SW" ] || { echo "  ⛔ $s: no .heap/.stack declared beside it (CEO-1353), skipped" >&2; continue; }
+  [ -n "$SW" ] || { echo "  ⛔ $s: no .heap/.stack declared beside it (R-1353), skipped" >&2; continue; }
   sno="$W/$s.bench.sno"
   : > "$W/$s.stdin"
   case " $ENGINES " in *" sbl "*) sbl_clean_refuse_if_load "$sno" || exit 3;; esac

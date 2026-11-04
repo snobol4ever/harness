@@ -3,7 +3,7 @@
 # longword / cardinal / uint32 / dword scalar (a variable, a function result, a value or var parameter, through inc / dec / += and a type
 # alias) is reduced modulo 2^8 / 2^16 / 2^32, as fpc does with range checking off.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562; empty-output class, CEO-1709): SCRIP kept every integer as a 64-bit value, so
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562; empty-output class, R-1709): SCRIP kept every integer as a 64-bit value, so
 # b := 250; b := b + 10 read 260, c := 0; c := c - 1 read -1, a multiplicative hash grew past 2^63, and pernicious-numbers' popcnt32
 # (n := (n * K) shr 24 on a Uint32) returned a huge "population count" that indexed a 65-element table out of range (6.5.3.2).
 # THE CURE (lower_pascal_tree.c): pas_wrap_mask_of_type names the mask of the unsigned small types through type aliases; mk_assign

@@ -2,23 +2,23 @@
 # test_gate_s4e_unclaim_keeps_park.sh -- `unclaim` drives QUEUE.tsv's state column to FREE ONLY over a CLAIM-SHAPED column
 # (CLAIMED:<seat>, ASSIGNED, ASSIGNED:<seat>, FREE, empty); a park written AROUND the claim (SUPERSEDED*, BLOCKED-ON:*,
 # PARKED-AWAITING:*, PARKED*, RETIRED, GRANT-NEEDED*, RESTRICTED:*) survives the release, the receipt names it, and `next`
-# does not serve the row. Row unclaim-clobbers-a-park-written-around-the-claim-so-next-serves-a-superseded-row (ceo MEASURED
-# 2026-09-02 ~14:55: hq_B's unclaim of the superseded rung-2.0 row erased ceo's forced park, ceo's own `next` locked the
+# does not serve the row. Row unclaim-clobbers-a-park-written-around-the-claim-so-next-serves-a-superseded-row (MEASURED
+# 2026-09-02 ~14:55: hq_B's unclaim of the superseded rung-2.0 row erased the officer's forced park, the officer's own `next` locked the
 # resurrected rank-0 row, and a second unclaim lost the park again). Cure: s4e_msg.sh unclaim, hq_B 2026-09-02.
 # TWO ARMS against a THROWAWAY postoffice under mktemp -- never the live one -- each run against the live s4e_msg.sh and
 # against a mutated copy with the cure removed (FAIL-ONCE, INSTRUMENT LAWS fifth batch):
 #   (A) claim -> unclaim over CLAIMED:<seat>  -> column FREE (the 2026-08-28 dispatch ruling, untouched)
-#   (B) claim as hq_B -> ceo force-parks around it (SUPERSEDED:..., BLOCKED-ON:<row>, PARKED, GRANT-NEEDED:...) -> hq_B unclaims
+#   (B) claim as hq_B -> the officer force-parks around it (SUPERSEDED:..., BLOCKED-ON:<row>, PARKED, GRANT-NEEDED:...) -> hq_B unclaims
 #       -> column UNCHANGED, claim file gone, receipt names the kept state, and `next` as a third seat never locks the row.
 # EXIT 0 both arms hold on the live script AND arm (B) goes red on the mutated copy; 1 otherwise; 2 REFUSED (fixture cannot be built).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; PARKER=ceo; THIRD=hq_P
+PO="$W/po"; ME=hq_B; PARKER=cto; THIRD=hq_P
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote `TRIO` into the scratch MODE. TRIO stands
-# EVERY HQ down (CEO-910, 2026-09-19), and both seats this gate drives -- hq_B and hq_P -- are HQs, so every
+# EVERY HQ down (R-910, 2026-09-19), and both seats this gate drives -- hq_B and hq_P -- are HQs, so every
 # `next` in it became a dispatch refusal. ⛔ THAT DID NOT SHOW UP AS A HONEST RED: arm (A) asks that `next`
 # did NOT lock the released row, and a REFUSAL satisfies that by doing nothing at all, so the arm was passing
 # over an empty measurement while the gate as a whole failed for a reason that had nothing to do with parks.
@@ -61,7 +61,7 @@ arm() {   # arm <label> <script> -> 0 iff the contract holds on <script>
   [ "$c" = FREE ] || { echo "  [$lbl] (A) unclaim over CLAIMED: column=$c (want FREE -- the 2026-08-28 ruling)"; ok=0; }
   for st in $PARKS; do i=$((i+1))
     run $ME 0 "$s" claim "t-parked-$i" || { echo "  [$lbl] claim t-parked-$i failed: $(tail -1 "$W/out")"; return 2; }
-    run $PARKER 1 "$s" park "t-parked-$i" "$st" || { echo "  [$lbl] fixture: ceo force-park $st refused: $(grep -m1 REFUSED "$W/out" | cut -c1-120)"; return 2; }
+    run $PARKER 1 "$s" park "t-parked-$i" "$st" || { echo "  [$lbl] fixture: cto force-park $st refused: $(grep -m1 REFUSED "$W/out" | cut -c1-120)"; return 2; }
     c="$(col "t-parked-$i")"; [ "$c" = "$st" ] || { echo "  [$lbl] fixture: after park-around column=$c (want $st)"; return 2; }
     [ -f "$PO/claims/t-parked-$i.claim" ] || { echo "  [$lbl] fixture: park-around removed the claim"; return 2; }
     run $ME 0 "$s" unclaim "t-parked-$i" gate; c="$(col "t-parked-$i")"

@@ -11,7 +11,7 @@ the declared return type, so the macro converts exactly as the function did; an 
 --check prints the candidates and the helper_count each file would read after, and exits 1 if any candidate exists; without it the files are rewritten in place.
 A helper whose body holds an asm call or a gc poll, or whose name is inside the target argument of an x86("call", ...), stays a function: the safe-point and bare-poll censuses read the call's source line and a computed call target, and a macro body
 reports the line of its invocation. Only as many are converted as the file's static count exceeds two, the shortest bodies first, so a one-box file keeps its box body a function.
-HQ-TEMPLATES (CEO-1321), after a rebase conflict or a landing that adds a static to a template: run it over the file, rebuild, A/B."""
+HQ-TEMPLATES (R-1321), after a rebase conflict or a landing that adds a static to a template: run it over the file, rebuild, A/B."""
 import re, sys, glob, os
 
 CAST = {'unsigned', 'unsigned int', 'unsigned long', 'uint64_t', 'uint32_t', 'int64_t', 'size_t', 'bool', 'double', 'char', 'uint8_t', 'uint16_t', 'int32_t', 'short'}

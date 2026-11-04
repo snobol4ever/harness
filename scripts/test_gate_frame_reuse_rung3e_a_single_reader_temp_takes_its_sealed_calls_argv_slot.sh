@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 3, STEP (e), OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): DIRECT MARSHAL.  A straight temp (VAR_REF / VAR / LIT / a sealed call's own result) whose
+# (cto, R-684 slice 2): DIRECT MARSHAL.  A straight temp (VAR_REF / VAR / LIT / a sealed call's own result) whose
 # ONLY reader is a sealed det leaf's marshal at operand j is granted the argv block's slot j as its result slot; the
 # marshal then finds producer == destination and copies nothing (bb_call.cpp marshal_call_arg).  The temp's live
 # range [w, r] carries the same guard as the pool (no beta-capable box between write and read), so the reuse is

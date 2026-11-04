@@ -5,7 +5,7 @@
 # INTEGER sbl answers -- the raw wait status (exit 3 -> 768, exit 300 -> 11264, killed by signal 9 -> 9, a missing command ->
 # 32512), 0 for an empty or absent command -- in both modes.
 #
-# ⛔ THE DEFECT: HOST(1) answered the process id as a STRING and ran nothing -- a wrong value with no error, the CEO-556 silent
+# ⛔ THE DEFECT: HOST(1) answered the process id as a STRING and ran nothing -- a wrong value with no error, the R-556 silent
 # class (cfo, reviewing the find). Found in passing while reading X32T's host.spt; no graded program calls it today
 # (dotnet code.sno and csnobol4_suite host.sno do, both outside the graded set).
 # NO MONITOR BRACKET: one builtin call, no divergence in control flow to bracket.

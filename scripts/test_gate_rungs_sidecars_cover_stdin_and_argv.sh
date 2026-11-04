@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # ../harness/scripts/test_gate_rungs_sidecars_cover_stdin_and_argv.sh -- EVERY RUNGS ENTRY THAT READS STDIN OR TAKES
 # ARGUMENTS DECLARES THEM IN A SIDECAR, AND THE NUMBER THAT DO NOT ONLY EVER GOES DOWN.
 # AUTHORS: Lon Jones Cherryholmes · Claude Opus 5   DATE: 2026-09-08
@@ -76,12 +76,12 @@ gate_parse_args "$@"
 #     `sub MAIN(...)` whose parameters are ALL DEFAULTED. They run correctly bare, so they are arguably
 #     inert by the same reasoning as Icon's never-named parameter; but unlike that case they CAN observe
 #     an argument if given one, so this seat did NOT widen inert_argv_match() to cover them. Left flagged
-#     deliberately and routed to the ceo: extending the inert rule to all-defaulted signatures is a
+#     deliberately and routed to the officer: extending the inert rule to all-defaulted signatures is a
 #     criterion change, and a seat does not quietly make one to lower its own floor.
 # campaign progress and would otherwise bank four entries of work nobody performed.
-# ⛔⭐ 6 -> 3 at SCRIP <this commit> (coo 2026-09-20, ceo CEO-962 answering the ask the paragraph above
+# ⛔⭐ 6 -> 3 at SCRIP <this commit> (coo 2026-09-20, R-962 answering the ask the paragraph above
 # routed): A THIRD KIND OF FLOOR MOVE, and the receipt must say which one it is, so: this is NOT a feed
-# (61 -> 53) and NOT a heuristic-accuracy move (53 -> 50, 34 -> 6). IT IS A DECLARATION. The ceo REFUSED
+# (61 -> 53) and NOT a heuristic-accuracy move (53 -> 50, 34 -> 6). IT IS A DECLARATION. The officer REFUSED
 # the widening, verbatim -- "DO NOT WIDEN inert_argv_match. THE FLOOR STAYS 6. ... A matcher widened to
 # cover them silently absolves an unbounded future class of the same shape, and a criterion a widening
 # satisfies while the debt stands is FALSE rather than lenient. THE CURE IS A DECLARATION BESIDE THE DATA
@@ -92,7 +92,7 @@ gate_parse_args "$@"
 # grading is byte-for-byte unchanged and a declaration ABOUT the measurement cannot change it.
 # ⛔ THE DEBT IS NOT DENIED BY THE DROP: every reason says the entry can observe an argument if given one
 # and that what to pass is a corpus question for the raku corpus owner. What is left at 3 is the three
-# icon entries that genuinely read `args[1]`/`*args > 0`, and the ceo has taken them as corpus debt.
+# icon entries that genuinely read `args[1]`/`*args > 0`, and the officer has taken them as corpus debt.
 # ⛔ THE DECLARATION FILE REFUSES rc=2 rather than quietly excusing: a row with no reason, a row naming no
 # entry in the rungs, and a name declared in BOTH ALL.argv and ALL.argv.bare are each a refusal, all
 # three measured on a scratch tests-dir before this floor moved.
@@ -125,7 +125,7 @@ case "$examined" in ''|*[!0-9]*) echo "GATE UNPROVEN(2) [$GATE_NAME]: census pri
 GATE_EXAMINED="$examined rungs entries"
 
 # ⛔⭐ THE PROBE FLOORS EXIST SO THE NAMING BELOW CAN BE FAIL-ONCE PROVEN WITHOUT TOUCHING THE CORPUS (hq_T 2026-09-09,
-# ceo CEO-468 item 3). They can only ever make the gate STRICTER: a probe value is used only when it is LOWER than the
+# R-468 item 3). They can only ever make the gate STRICTER: a probe value is used only when it is LOWER than the
 # pinned floor, so no operator can smuggle debt past this gate with an environment variable. Same shape and same reason
 # as SCRIP_STALE_PROBE_SRC in gate_require_fresh -- a proof that has to edit the thing it grades is how a green gate and
 # a dirty tree come to coexist.
@@ -133,7 +133,7 @@ if [ -n "${SIDECAR_PROBE_FLOOR_STDIN:-}" ] && [ "$SIDECAR_PROBE_FLOOR_STDIN" -lt
 if [ -n "${SIDECAR_PROBE_FLOOR_ARGV:-}" ] && [ "$SIDECAR_PROBE_FLOOR_ARGV" -lt "$PIN_ARGV" ] 2>/dev/null; then PIN_ARGV="$SIDECAR_PROBE_FLOOR_ARGV"; _probed=1; fi
 [ -n "${_probed:-}" ] && echo "⚠ PROBE FLOORS IN EFFECT (stdin=$PIN_STDIN argv=$PIN_ARGV) -- this run is STRICTER than the pinned gate and is not the tree's verdict"
 echo "SIDECAR DEBT: stdin=$n_stdin (floor $PIN_STDIN) · argv=$n_argv (floor $PIN_ARGV) · examined $examined entries in 7 rung suites"
-# ⛔⭐ A COUNT WITHOUT NAMES CANNOT BE TRIAGED (ceo CEO-468 item 3, after this gate red every seat's make test with two
+# ⛔⭐ A COUNT WITHOUT NAMES CANNOT BE TRIAGED (R-468 item 3, after this gate red every seat's make test with two
 # numbers and no way to act on them). The census already carries the per-entry rows; it was simply summing them and
 # throwing the names away, so every seat that hit this had to re-run a separate census tool to learn WHAT to fix -- and
 # most did not, they just landed past it. ⭐ The general form: a gate that names nothing converts a work item into a

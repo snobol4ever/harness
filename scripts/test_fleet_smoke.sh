@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_fleet_smoke.sh -- THE FLEET SMOKE, tier 1 of the verifier loop (Lon 2026-10-11 12:4x CDT, in-chat to the ceo, verbatim: "The COO should run a set of
-# super-fast test, a so-called smoke test, often. Then full regressions much less often. And in general run test subsets as features are changed."; ceo CEO-1673;
+# test_fleet_smoke.sh -- THE FLEET SMOKE, tier 1 of the verifier loop (Lon 2026-10-11 12:4x CDT, in-chat, verbatim: "The COO should run a set of
+# super-fast test, a so-called smoke test, often. Then full regressions much less often. And in general run test subsets as features are changed."; R-1673;
 # RULES.md section ONE TESTING OFFICER clause (8)). It runs the eight per-language smokes, one after another, and prints one labelled line per language and
-# one FLEET_SMOKE total line. MEASURED by the ceo at SCRIP 19f33b101, load 12: snobol4 1.0 s, icon 2.3 s, prolog 10.6 s, snocone 0.2 s, rebus 0.3 s, raku
+# one FLEET_SMOKE total line. MEASURED by the officer at SCRIP 19f33b101, load 12: snobol4 1.0 s, icon 2.3 s, prolog 10.6 s, snocone 0.2 s, rebus 0.3 s, raku
 # 2.0 s, pascal 1.9 s, polyglot 1.7 s -- about 20 s in all, so the coo runs it after EVERY origin landing, before anything else, and a red reaches the lane
-# within minutes of the landing. ZERO OR ONE TEST PER SEAT (CEO-1671): this runner is the coo's; every other seat is refused rc 2 unless the ceo's audit-window
+# within minutes of the landing. ZERO OR ONE TEST PER SEAT (R-1671): this runner is the coo's; every other seat is refused rc 2 unless the officer's audit-window
 # override S4E_ONE_TEST_ADMIT="why" is set, and only the coo's run appends a line to the record. THE RECORD: /home/resources/progress/SMOKE.tsv, one line per
 # coo run -- at_utc, scrip tree, corpus tree, green langs, red langs, pass, fail, secs, the red languages by name -- which the coo's rank-0 row reads.
 # rc 0 = every language smoke green; 1 = a red, named; 2 = could not measure (a smoke refused, or a runner is missing).
@@ -15,7 +15,7 @@ LANGS="snobol4 icon prolog snocone rebus raku pascal polyglot"
 RECORD="${S4E_SMOKE_RECORD:-/home/resources/progress/SMOKE.tsv}"
 if [ "${1:-}" = --list ]; then for l in $LANGS; do echo "../harness/scripts/test_smoke_$l.sh"; done; exit 0; fi
 seat="$(bash "$HERE/lib_one_runner.sh" --seat 2>/dev/null)"
-# CEO-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the CEO-1671 coo-only refusal is released.
+# R-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the R-1671 coo-only refusal is released.
 [ -x ./scrip ] || { echo "FLEET_SMOKE REFUSE(2): ./scrip is not built"; exit 2; }
 for l in $LANGS; do [ -f "../harness/scripts/test_smoke_$l.sh" ] || { echo "FLEET_SMOKE REFUSE(2): ../harness/scripts/test_smoke_$l.sh is missing"; exit 2; }; done
 tree="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"; ctree="$(git -C "$ROOT/../corpus" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"
@@ -32,7 +32,7 @@ done
 secs="$(echo "$(date +%s.%N) - $T0" | bc | sed 's/^\./0./')"
 printf 'FLEET_SMOKE total: langs=8 green=%s red=%s refused=%s pass=%s fail=%s wall=%ss tree=%s corpus=%s%s\n' "$green" "$red" "$refused" "$pass" "$fail" "$secs" "$tree" "$ctree" "${reds:+ reds:$reds}"
 if [ "$seat" = coo ]; then
-  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (ceo CEO-1673): one line per coo run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"
+  [ -f "$RECORD" ] || printf '# THE FLEET SMOKE RECORD (R-1673): one line per coo run of ../harness/scripts/test_fleet_smoke.sh -- tier 1 of the verifier loop, run after every origin landing.\nat_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$RECORD"
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$tree" "$ctree" "$green" "$red" "$refused" "$pass" "$fail" "$secs" "${reds# }" >> "$RECORD"
 fi
 [ "$refused" = 0 ] || exit 2

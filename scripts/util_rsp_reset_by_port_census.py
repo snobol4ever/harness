@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_rsp_reset_by_port_census.py -- every RESET of rsp in the emitted .s (a write of rsp that is not a relative add, sub, push or pop: mov rsp, X;
 lea rsp, [base other than rsp]; leave; xchg/and/pop rsp), by the box and port whose code holds it (Lon 2026-10-21: "Ensure that we NEVER
-reset RSP at BETA."; CEO-1814, CEO-1841). Owners as in util_alloc_by_port_census.py; each distinct function body counted once.
+reset RSP at BETA."; R-1814, R-1841). Owners as in util_alloc_by_port_census.py; each distinct function body counted once.
 Usage: util_rsp_reset_by_port_census.py file.s..."""
 import collections, hashlib, re, sys
 

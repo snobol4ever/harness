@@ -1,6 +1,6 @@
 #!/bin/bash
-# test_gate_pl_swi_an_unreachable_engine_is_reclaimed_after_a_collection_and_a_held_one_survives_as_swipl.sh -- THE ENGINE HANDLE IS A COLLECTOR-VISIBLE VALUE (ceo CEO-1960/1964/1966; row
-# prolog-swi-engines-designed-by-the-cto-and-built-ceo-1960, stage B; the cto's ruling (a), the cfo's four conditions of 2026-10-25).
+# test_gate_pl_swi_an_unreachable_engine_is_reclaimed_after_a_collection_and_a_held_one_survives_as_swipl.sh -- THE ENGINE HANDLE IS A COLLECTOR-VISIBLE VALUE (R-1960/1964/1966; row
+# prolog-swi-engines-designed-by-the-cto-and-built-r-1960, stage B; the cto's ruling (a), the cfo's four conditions of 2026-10-25).
 # The handle of an engine is an HB_DINST instance of the hidden datatype engine (rt_pl_engine.c): immutable, shared by copy_term/assert/findall/nb_setval as a rational is, atomic to unify, compare,
 # write and atomic/1, printed <engine>(Id,0xADDR). The context, the trail arena and the slab ride in it as integers OUTSIDE the collected heap (RT_DIAG asserts gc_blk_of reads null for each). The registry is
 # a g_runtime member (g_misc_t.pl_eng) cleared through rt_gc_weak_keep in a post-mark hook beside kw_cset_gc_weak; an unmarked anonymous engine goes on a list of plain integers and is destroyed AFTER the

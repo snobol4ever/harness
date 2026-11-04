@@ -12,7 +12,7 @@
 #       now answers a live field and otherwise raises 22.
 #   (C) the error-22 text was 'Undefined function called'; SPITBOL's is 'undefined function called' and &ERRTEXT is program-visible (diag1 dumps it).
 #
-#   CEO-1507 (Lon's CEO-1293 word stands): VALUE is restored as a function and no longer undefined; UCASE and LCASE stay deleted. VALUE's own gate is test_gate_sno_value_is_restored_and_diag1_test1_grade_under_ceo1293_rows.sh.
+#   R-1507 (Lon's R-1293 word stands): VALUE is restored as a function and no longer undefined; UCASE and LCASE stay deleted. VALUE's own gate is test_gate_sno_value_is_restored_and_diag1_test1_grade_under_their_mask_rows.sh.
 #
 # THE ARMS (expectations cut from sbl -bf AT RUN TIME):
 #   1-2  m3 / m4 TRIM: direct, through APPLY(.TRIM,...) and through a name; a tab, two tabs, blank-tab-blank dropped; a leading tab, CR, LF, VT, FF and an
@@ -91,7 +91,7 @@ m4() { : > "$T/$1.m4"
        then timeout -k 5 30 "$T/$1.bin" < /dev/null > "$T/$1.m4" 2>/dev/null; else echo COMPILE-FAILED > "$T/$1.m4"; fi; }
 m3 tr; arm 1 "m3 TRIM strips trailing blanks and tabs, nothing else" "$T/tr.m3" "$T/tr.want"
 m4 tr; arm 2 "m4 TRIM: the same" "$T/tr.m4" "$T/tr.want"
-m3 un; arm 3 "m3 UCASE/LCASE and the lower-case value are undefined functions (error 22, lower-case text; VALUE is restored, CEO-1507)" "$T/un.m3" "$T/un.want"
+m3 un; arm 3 "m3 UCASE/LCASE and the lower-case value are undefined functions (error 22, lower-case text; VALUE is restored, R-1507)" "$T/un.m3" "$T/un.want"
 m4 un; arm 4 "m4 undefined functions: the same" "$T/un.m4" "$T/un.want"
 m3 ct; arm 5 "CONTROL m3: a DATA field VALUE, LPAD/RPAD/REVERSE/REPLACE/DUPL, &UCASE/&LCASE" "$T/ct.m3" "$T/ct.want"
 m4 ct; arm 6 "CONTROL m4: the same" "$T/ct.m4" "$T/ct.want"

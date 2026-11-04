@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_programs_dialect_follows_its_own_markers.sh
 #
-# THE ROW: prolog-a-swi-dialect-program-reads-a-double-quoted-text-as-a-string-object-as-swipl-does-the-gnu-dialect-as-codes-ceo-1599
-# (hq_prolog), on the ceo's ruling CEO-1632 and CEO-1605; the design is .github/ARCH-PROLOG-DIALECTS.md.
+# THE ROW: prolog-a-swi-dialect-program-reads-a-double-quoted-text-as-a-string-object-as-swipl-does-the-gnu-dialect-as-codes-r-1599
+# (hq_prolog), on the ruling R-1632 and R-1605; the design is .github/ARCH-PROLOG-DIALECTS.md.
 # THE RULE: a program is SWI when its own tree carries a construct the GNU oracle refuses or does not read -- a :- module/2 or
 # :- use_module/1,2 directive, an SSU rule -- else GNU/ISO, the default. prolog_lower.c's pl_dq_lower_program finds the marker in a
 # file's own clauses (the prelude never decides), records g_stage2.pl_dialect_swi, and places :- set_prolog_flag(double_quotes,

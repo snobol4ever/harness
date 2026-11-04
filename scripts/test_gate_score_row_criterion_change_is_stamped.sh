@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (util_score_row.py db_crosscheck, hq_raku 2026-09-16)"
 # test_gate_score_row_criterion_change_is_stamped.sh -- A CRITERION CHANGE IS STAMPED BY THE WRITER, AND A DENOMINATOR MOVE
-# WITHOUT ITS STAMP REFUSES BEFORE ANY WRITE (coo 2026-09-16, ceo CEO-785; row instruments-util-score-row-cannot-stamp-a-
+# WITHOUT ITS STAMP REFUSES BEFORE ANY WRITE (coo 2026-09-16, R-785; row instruments-util-score-row-cannot-stamp-a-
 # criterion-change-so-every-denominator-move-is-hand-edited-or-unstamped).
 #
-# THE DEFECT: util_score_row.py write had no flag that writes SUITES.tsv column 12 (criterion_changed), so the CEO-749 shape
+# THE DEFECT: util_score_row.py write had no flag that writes SUITES.tsv column 12 (criterion_changed), so the R-749 shape
 # -- a denominator move NAMES why, in the row -- was unenforceable by the instrument that owns the row: the coo's Budne stamp
 # of 09-13 was a hand edit (.github 11de13f9) and hq_pascal's PAT INSTRUMENT CHANGE of 2026-09-16 (SCRIP fe37edc72, the m4
 # rejection arm compile-link-run, 284 -> 296) rewrote its row with NO stamp. Two HQs were hand-appending stamps.
@@ -40,13 +40,13 @@ mkdir -p "$W/.github/scripts"; cp "$SUITES_TSV_REAL" "$W/.github/SUITES.tsv"; cp
 TSV="$W/.github/SUITES.tsv"; cp "$TSV" "$W/orig.tsv"
 KEY="$(awk -F'\t' '!/^#/ && $1!="key" && $10 ~ /^[0-9]+$/ {print $1; exit}' "$TSV")"; [ -n "$KEY" ] || refuse "no SUITES.tsv row with a numeric today_total to plant on"
 OLDT="$(awk -F'\t' -v k="$KEY" '$1==k{print $10}' "$TSV")"; OLDP="$(awk -F'\t' -v k="$KEY" '$1==k{print $9}' "$TSV")"; NEWT=$((OLDT+7))
-# ⛔ THE ARIZONA MOVE IS DERIVED FROM THE LIVE TOTAL TOO (ceo CEO-808): arms (e2)/(e3)/(f)/(g) hardcoded 46/124, and when Zona moved to 88/124
-# (.github 1d7c89d2) that became a same-total write, lawful rc=0 -- a gate anchored on a live value (the CEO-554 class) went red fleet-wide.
+# ⛔ THE ARIZONA MOVE IS DERIVED FROM THE LIVE TOTAL TOO (R-808): arms (e2)/(e3)/(f)/(g) hardcoded 46/124, and when Zona moved to 88/124
+# (.github 1d7c89d2) that became a same-total write, lawful rc=0 -- a gate anchored on a live value (the R-554 class) went red fleet-wide.
 AZT="$(awk -F'\t' '!/^#/ && $1=="arizona"{print $10; exit}' "$SUITES_TSV_REAL")"; [ -n "$AZT" ] || refuse "no arizona row in SUITES.tsv"; AZN=$((AZT+7)); AZP=46
 echo "    fixture: row $KEY reads $OLDP/$OLDT; the planted move is to $NEWT; the Arizona dry-run moves $AZT -> $AZN"
 set_(){ S4E_SUITES_TSV="$TSV" S4E_SCORE_MD="$W/.github/SCORE.md" python3 "$BANNER" --set "$@" 2>&1; }
 fails=0; checks=0; ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
-echo "=== gate: a criterion change is stamped by the writer; a stampless denominator move refuses (CEO-785) ==="
+echo "=== gate: a criterion change is stamped by the writer; a stampless denominator move refuses (R-785) ==="
 # (a)
 out="$(set_ "$KEY" "$OLDP" "$NEWT" 2026-09-16 feedbeef1)"; rc=$?
 if [ "$rc" = 2 ] && cmp -s "$TSV" "$W/orig.tsv" && grep -q 'criterion-changed' <<<"$out"; then ck ok "(a) stampless denominator move $OLDT -> $NEWT REFUSED rc=2, TSV byte-identical, the refusal names the flag"

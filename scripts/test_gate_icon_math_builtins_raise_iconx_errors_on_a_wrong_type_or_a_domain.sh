@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icon_math_builtins_raise_iconx_errors_on_a_wrong_type_or_a_domain.sh -- ICON'S MATH BUILTINS CONVERT AND CHECK AS ICONX DOES: sqrt sin cos tan asin acos exp log dtor rtod abs
-# (row gate-raku-rat-an-icon-record-is-now-taken-as-numeric-error-102-in-icn-05-ceo-1807, cfo 2026-10-17).
+# (row gate-raku-rat-an-icon-record-is-now-taken-as-numeric-error-102-in-icn-05-r-1807, cfo 2026-10-17).
 #
 # THE DEFECT: on the Icon road sqrt, sin, cos, tan, asin, acos, exp, log, dtor and rtod read their argument through TONUM, which answers 0 for a record, a list, a table, &null, "" and "abc" and strtod's
 # prefix for "36rZZ" (36) and "0x10" (16), and 0 for a large integer; and they returned nan or inf where iconx raises 205 (sqrt and log of a negative, asin and acos outside [-1,1], a log base of 1 or

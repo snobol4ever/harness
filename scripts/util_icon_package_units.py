@@ -6,17 +6,17 @@
    python3 ../harness/scripts/util_icon_package_units.py rows    PKGDIR [--apply]   # the settings row each missing key is owed; --apply appends them
 
 PKGDIR is corpus/packages/icon/{ipl,arizona_tests,jcon_tests} or a scratch package of the same shape; the package is read off its
-basename. THE KEYS ARE THE RUNNERS' OWN (RULES.md 8 (f), CEO-1281: the runner reads each unit's command line from its row):
+basename. THE KEYS ARE THE RUNNERS' OWN (RULES.md 8 (f), R-1281: the runner reads each unit's command line from its row):
   ipl            test_icon_ipl_suite.sh: the compile tier looks up EVERY shipped .icn as parentdir/stem (drivers, ALL.icn and
-                 *.fixtures/ out), and the run tier every .ref beside its .icn, a driver's under its library's key (CEO-1269).
+                 *.fixtures/ out), and the run tier every .ref beside its .icn, a driver's under its library's key (R-1269).
   arizona_tests  test_icon_arizona_suite.sh: every .ref beside its .icn in general/ and special/ as sub/stem, a driver's under its
                  library's key; the staleness arm re-runs an outside-baseline unit by the same key.
   jcon_tests     test_icon_jcon_suite.sh: every .ref beside its .icn, flat, as the bare stem, a driver's under its library's name.
 A key with no row is the gap: the runner would grade that unit at the runtime's defaults, which 8 (f) calls a false reading, and it
 names it (declared_row_in_table, lib_declared_arena.sh). WHY THIS EXISTS: corpus 4d805e1bc (2026-09-25) gave every unit the runners
-looked up a row, read off SCRIP_DECL_MISS_LOG over one full pass; the drivers of CEO-1269/1272 arrived after it and 382 graded units
+looked up a row, read off SCRIP_DECL_MISS_LOG over one full pass; the drivers of R-1269/1272 arrived after it and 382 graded units
 (IPL 356, Arizona 23, Jcon 3) plus 275 IPL compile-tier files went rowless, unread until hq_icon asked where IPL iftrace's instrumentation switch
-lives (2026-09-27). A settings row for an excluded unit is CEO-1261's shape: the identity check counts no row ALL.excluded.txt names.
+lives (2026-09-27). A settings row for an excluded unit is R-1261's shape: the identity check counts no row ALL.excluded.txt names.
 The row a missing key is owed carries THE PACKAGE'S OWN DECLARATION, read off its table: the one (heap_kb, stack_kb, compile_args,
 run_args) every row carries -- on 2026-09-27 SPITBOL's -d/-s written out (131072, 4096; corpus 4d805e1bc) and the instrumentation
 switch the runners typed for every unit until SCRIP 286483382. A table whose rows disagree, or that has none, is refused: the owed

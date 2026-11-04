@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_declared_arena_switches_agree_with_the_harness.sh -- A DECLARED HEAP AND STACK BECOME THE SAME SWITCHES ON EVERY ROAD (row
-# instruments-ninety-two-scripts-and-the-makefile-size-the-arena-through-the-env-not-the-d-switch, the coo; CEO-1225/1226: SCRIP sizes the
+# instruments-ninety-two-scripts-and-the-makefile-size-the-arena-through-the-env-not-the-d-switch, the coo; R-1225/1226: SCRIP sizes the
 # heap with -d and -i and the stack with -s, and a switch is recorded with the run where an environment knob is invisible).
 #
 # THE TWO SPELLINGS: corpus_suite_harness.py's _size_switches(heap_kb, stack_kb) for the rung suites, and lib_declared_arena.sh's
@@ -10,7 +10,7 @@
 #   1 for heap only, stack only, both and neither, the lib's words equal the harness's list joined by spaces -- in both lib functions
 #   2 a declared heap of 8192 KB run with the lib's switches and with the SCRIP_HEAP_CAP_KB=8192 export reports the SAME window and the SAME
 #     cap on the runtime's own arena line (SCRIP_GC_EXERCISE=1): the conversion moves the arena into the transcript and nothing else.
-#     ⛔ SINCE CEO-1261 (Lon 2026-09-25) heap_kb is the program's MAXIMUM heap, SPITBOL's -d, and never the window: the window stays
+#     ⛔ SINCE R-1261 (Lon 2026-09-25) heap_kb is the program's MAXIMUM heap, SPITBOL's -d, and never the window: the window stays
 #     SPITBOL's -i1m (or the tiny arena of make test-arena), so the arm reads the shipped window beside the declared cap
 #   3 a cell the lib refuses (heap_kb below the runtime's floor) refuses rc 2 through the switch function too, never reads as nothing
 # FAIL_ONCE=1 drops the -d word from the lib's heap spelling before arm 1 compares, to prove the arm trips.

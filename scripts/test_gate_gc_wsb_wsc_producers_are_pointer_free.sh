@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_gc_wsb_wsc_producers_are_pointer_free.sh -- THE CENSUS THAT KEEPS HB_WSB AND HB_WSC A BYTE CLASS (hq_runtime, ceo-2030; ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14 second sitting (3)(c)).
+# test_gate_gc_wsb_wsc_producers_are_pointer_free.sh -- THE CENSUS THAT KEEPS HB_WSB AND HB_WSC A BYTE CLASS (hq_runtime, R-2030; ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14 second sitting (3)(c)).
 #
 # WHAT IT CLAIMS. The heap validator (gc_validate_heap, SCRIP_GC_VALIDATE=1) checks the typed slots of every row in gc_slot_table.c, and HB_WSB and HB_WSC are rows of zero slots, so a
 # collected-heap pointer stored in one of them is invisible to it. That is safe only while no producer of either class puts such a pointer there. util_wsb_producer_audit.py reads every
@@ -8,10 +8,10 @@
 # TRANSIENT, the regex tree that lives inside one runtime call). A payload that does carry a collected-heap pointer has a typed class instead (HB_NVAR, HB_FNCB, HB_DATB, HB_EVCH,
 # HB_LBLT, HB_IOCH, HB_TRCE, HB_PROC, HB_DVEC, HB_PVEC) and a row with offsetof slots.
 # ARMS. (1) THE CENSUS: every producer site is BYTES or has a row, and every row still matches a site (a stale row is red, so the table cannot outlive its audit). (2) FAIL-ONCE, proper
-# tests on a scratch source tree (CEO-1680: nothing planted in SCRIP): a producer whose destination is a pointer-bearing struct reads UNAUDITED and rc 1; a char buffer reads BYTES and
+# tests on a scratch source tree (R-1680: nothing planted in SCRIP): a producer whose destination is a pointer-bearing struct reads UNAUDITED and rc 1; a char buffer reads BYTES and
 # rc 0; a table row that matches no site reads STALE and rc 1. (3) THE MEASURE: the DONE-WHEN witness of the row, zl01_sno_captures_eval at stress 1 and a 128 KB window under
 # SCRIP_GC_VALIDATE=1, ends with a summary that reads untyped=0 and findings=0, and the two rows are zero-slot typed rows (not the UNTYPED kind).
-# (4) THE TRANSIENT ROWS' CLAIM (ceo-2079): the eleven TRANSIENT rows say the regex graph lives inside one rx_compile or rx_exec call and the machine collects only at an emitted poll after an
+# (4) THE TRANSIENT ROWS' CLAIM (R-2079): the eleven TRANSIENT rows say the regex graph lives inside one rx_compile or rx_exec call and the machine collects only at an emitted poll after an
 # allocating runtime call returns, so no collection finds it live. util_wsb_transient_reach.py reads that off the built libscrip_rt.so with util_gc_census's reverse-reach derivation: no
 # function the symbol table places in rx.c and no RxEnv callback the source assigns (rk_rx_rule) may reach a collection entry (gc_point_arr_run, the poll, gc_collect_ex, rt_gc_collect) or a
 # dispatcher (try_call_builtin_by_name, rt_call_arr_impl), across any edge but the allocator's out-of-memory exit rt_heap_out_of_memory, the one declared no-return cut (its call site is
@@ -21,7 +21,7 @@
 # then a collection can find the regex graph mid-build with no root, and the TRANSIENT rows must become typed rows with a validator row (the rows are removed in the same landing).
 # WHAT IT DOES NOT CLAIM. The census reads the destination type a producer names; it cannot see a pointer a program stores into a char buffer by a cast. The measure of arm (3) and the
 # validator's typed rows are what catch a typed block; a byte block that holds a heap word is the case the audit rules out by reading the producers, and a one-off probe over the 152
-# gc witnesses at stress 3 found no WSB or WSC block holding an arena word at the last collection (ceo-2030 ledger). The TRANSIENT rows are a declared limit. Arm (4) has its own: a call graph
+# gc witnesses at stress 3 found no WSB or WSC block holding an arena word at the last collection (R-2030 ledger). The TRANSIENT rows are a declared limit. Arm (4) has its own: a call graph
 # sees direct calls, tail jumps and GOT slots, so an indirect call is followed only through the roots it names (every rx.c symbol, the one RxEnv callback); a function pointer stored into an
 # RxEnv by a form the scan does not read is REFUSED (an initializer), and one stored anywhere else and called from outside rx.c is invisible. The arm reads the built runtime, so it is only as
 # current as out/libscrip_rt.so (util_require_fresh below).

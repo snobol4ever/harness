@@ -24,7 +24,7 @@ set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-# The oracle cuts each ref at the size the kernel declares for it, <stem>.oracle_args (ceo CEO-1353, RULES.md clause 8 (g)(3)), never a size
+# The oracle cuts each ref at the size the kernel declares for it, <stem>.oracle_args (R-1353, RULES.md clause 8 (g)(3)), never a size
 # typed here: MEASURED 2026-10-03 (the coo, sbl fd9b552b) every corpus/benchmarks/snobol4 kernel answers its ref at sbl's own defaults, two readings.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200)." >&2; exit 3; }
@@ -59,7 +59,7 @@ for d in $DIRS; do
     # SIGSEGVs: this arm correctly REFUSED to mint all 23 refs, and printed `ORACLE-FAIL rc=0` for every one of
     # them -- a refusal whose own diagnostic said the oracle had succeeded. ⭐ The REFUSAL was never wrong; only
     # the sentence explaining it was, which is the shape that survives review indefinitely because the behaviour
-    # under it is correct (row every-ref-cutting-path-refuses-when-the-oracle-dies-mid-cut, ceo -> hq_T, on
+    # under it is correct (row every-ref-cutting-path-refuses-when-the-oracle-dies-mid-cut, the officer -> hq_T, on
     # seat07's finding that `sbl -bf` SIGSEGVs on ~half its ERROR 212 runs while still printing a diagnostic).
     oa="$(declared_oracle_args_beside "$sno")" || { printf '%-26s ⛔ ORACLE-FAIL %s\n' "$b" "its .oracle_args is refused"; orfail=$((orfail+1)); ORF="$ORF $b"; continue; }
     timeout -k 5 "$T" "$SBL" $(sbl_lang_flags) $oa "$sno" >"$orc" 2>"$W/$b.orcerr" <"$in"; orc_rc=$?

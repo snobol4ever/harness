@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_gen_pl_meta_specs.py -- THE META-PREDICATE SPECS OF THE BUILTINS, ONE TABLE PER DIALECT, CUT FROM THE ORACLES
-(the cto's ARCH-PROLOG-DATABASE.md section 4c, ruled 2026-10-24 under CEO-1964/1971; row
-prolog-predicate-property-meta-predicate-is-one-record-column-read-in-both-dialects-sec-4c-ceo-1964).
+(the cto's ARCH-PROLOG-DATABASE.md section 4c, ruled 2026-10-24 under R-1964/1971; row
+prolog-predicate-property-meta-predicate-is-one-record-column-read-in-both-dialects-sec-4c-r-1964).
 
 predicate_property(H, meta_predicate(Spec)) answers from ONE column of the predicate's record. A predicate with Prolog source
 gets the column from its :- meta_predicate directive at lowering; a builtin with no Prolog source (the C and asm builtins and

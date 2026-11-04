@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_spine_opened_plain_procedure_fails_forward_on_redo.sh -- A CALL THROUGH A PROCEDURE VALUE THAT THE SPINE OPENED AND THAT CANNOT SUSPEND
 # MUST FAIL FORWARD WHEN THE CALLER BACKTRACKS INTO IT, IN BOTH MODES, AT EVERY ARENA AND STRESS LEVEL.
-# ⛔ THE MEASURED DEFECT THIS PINS (ceo 2026-09-19, row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero, CEO-929's design behind the open/land pair):
+# ⛔ THE MEASURED DEFECT THIS PINS (2026-09-19, row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero, R-929's design behind the open/land pair):
 # rt_call_value_spine_prep used to refuse every callee that was not a generator, which sent 26 of the 40 procedure-value calls reaching
 # by_name_dispatch.c 1129 over the Icon rungs down rt_call_value_gen_h -- a C frame entering a Byrd box, which is the thing Lon's 13:5x order
 # ('ZERO instances of C code calling into a BB') removes. The refusal was not a policy: it was the box's ONLY guard. bb_call_value's beta

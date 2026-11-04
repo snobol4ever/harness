@@ -3,8 +3,8 @@
 # block protocol: the caller builds the argument DESCR cells on its own spine, the callee reads parameter i at [rsp+kt+16i] and its
 # exit releases frame and block together; no C helper carves, fills or releases the frame.
 #
-# ROW pascal-the-block-protocol-reaches-its-own-call-regime-the-six-frame-helpers-leave-every-pascal-graph-ceo-1488 (rank 0, CEO-1491;
-# Lon 2026-10-03 17:3x CDT, in-chat to the ceo, verbatim: "Oh you want all languages to use the ZETA technique and ASM not C. Yes that one
+# ROW pascal-the-block-protocol-reaches-its-own-call-regime-the-six-frame-helpers-leave-every-pascal-graph-r-1488 (rank 0, R-1491;
+# Lon 2026-10-03 17:3x CDT, in-chat, verbatim: "Oh you want all languages to use the ZETA technique and ASM not C. Yes that one
 # send as high priority since it is huge speed increase."). Layout agreed with hq_prolog by telegram (it answered AGREED): hq_prolog's
 # e95282e39, with the landing cell dropped and the wires left where Pascal already keeps them (the caller's two pushed cells, consumed
 # by the callee's exit).

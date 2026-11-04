@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# lib_fixture_root.sh -- A GATE'S SCRATCH ROOT IS A COPY OF THE REAL LAYOUT, NEVER A LINK FARM (Lon 2026-10-17, in-chat to the ceo,
+# lib_fixture_root.sh -- A GATE'S SCRATCH ROOT IS A COPY OF THE REAL LAYOUT, NEVER A LINK FARM (Lon 2026-10-17, in-chat,
 # verbatim: "Do not EVER use symlinks." · "Use proper absolute and relative paths for things." · "You guarantee the all repos are
-# siblings at the same level in their root folder. done and done."; ceo CEO-1820). A gate that doctors one harness script and runs it
+# siblings at the same level in their root folder. done and done."; R-1820). A gate that doctors one harness script and runs it
 # used to stage <dir>/scripts as symlinks beside <dir>/scrip; a moved script finds its siblings by fixed relative paths from its own
 # folder (<dir>/harness/scripts/../../SCRIP), so the stage must be the real shape and real files. Source this beside lib_gate.sh.
 #

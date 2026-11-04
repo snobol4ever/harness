@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_prolog_ix_ab.sh — PL-SPEED-5 first-arg indexing A/B (same-lib twin binaries, interleaved medians).
 # Twin discipline (GOAL-PROLOG-BB "RAIL METHOD TRAP"): ONE compiler + ONE libscrip_rt.so build; the baseline
 # twin is EMITTED with SCRIP_NO_IX=1 (guards not lowered), the post twin with the default (guards on); both

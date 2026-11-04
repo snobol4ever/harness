@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "$(one_runner_population_of "$@")" || exit 2
-# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION: gimpel's ALL.csv declares it on all 120 rows, and scorecard_snobol4.sh, which this wrapper grades through, reads it per program (clause 8 (f), CEO-1281, landing 4). This wrapper exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
+# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION: gimpel's ALL.csv declares it on all 120 rows, and scorecard_snobol4.sh, which this wrapper grades through, reads it per program (clause 8 (f), R-1281, landing 4). This wrapper exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
 # test_snobol4_gimpel_suite.sh -- dedicated gate for corpus/packages/snobol4/gimpel (144 *_driver.sno
 # programs; 145 further NAME.sno library modules exist alongside them but are structurally unscoreable
 # by design -- see gimpel/README.md), minted for row
@@ -19,7 +19,7 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; ROOT="$(cd "$HERE/../.." && pwd)"   # the root holds its repos as siblings, SCRIP or not
 . "$HERE/lib_fixture_root.sh" || { echo "⛔ REFUSE(rc=2): cannot load lib_fixture_root.sh -- the one way a scratch corpus is staged"; exit 2; }
 SCRIP="$SD/scrip"
-# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): scorecard_snobol4.sh takes the port's face as its SCRIP under the
 # same engine, the port runner's --binaries is the one check, each driver is graded in m3 alone (its m4 column reads "-"), the AND is that one
 # mode, the rows are keyed gimpel@<engine> by the one writer, and no SCRIP score row is written -- the port's row is from-progress.
@@ -28,8 +28,8 @@ ROWKEY=gimpel; [ "$PORT" = 1 ] && ROWKEY="gimpel@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, the officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. the officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
@@ -37,7 +37,7 @@ if [ "$PORT" = 1 ]; then one_runner_port_ready snobol4 || exit 2; else
 fi
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # ⛔⭐ THE VENDORED FIXTURES ARE READ-ONLY, SO THE RUN HAPPENS ON A COPY (row snobol4-gimpel-runner-writes-
-# asmtemp-into-the-vendored-dir-and-blocks-its-own-score-write, ceo -> hq_T on hq_C's opening gimpel
+# asmtemp-into-the-vendored-dir-and-blocks-its-own-score-write, the officer -> hq_T on hq_C's opening gimpel
 # measurement; the Icon Arizona precedent is c96cb087d, same class, same day).
 # ⛔ THE SIDE EFFECT DISABLED THE VERY WRITE THIS RUN EXISTS TO PRODUCE: ASM_driver.sno opens its own work file
 # ASMTEMP, the scorecard runs each program in the program's OWN directory (deliberately -- argv is the bare
@@ -66,13 +66,13 @@ cp -a "$CORPUS_REAL/packages/snobol4/gimpel" "$W/corpus/packages/snobol4/gimpel"
     echo "⛔ REFUSE(rc=2): could not copy the gimpel package to a scratch overlay -- refusing to grade in the vendored dir"; exit 2; }
 fixture_corpus_light "$CORPUS_REAL" "$W/corpus" tests || { echo "⛔ REFUSE(rc=2): could not stage the light corpus (include library reference editor_configs tests, copied) beside the gimpel overlay"; exit 2; }
 # ⭐ AREA SMOKE MODE (the coo 2026-10-03, on hq_snobol4's report: gimpel's area smoke selected 79 of 145 and ran 0, exiting 0, because the
-# harness graded the package's ALL.sno container, which still holds the 120 entries cut before CEO-1269 while ALL.csv names the 145
+# harness graded the package's ALL.sno container, which still holds the 120 entries cut before R-1269 while ALL.csv names the 145
 # drivers this board grades): S4E_AREA_SMOKE_ENTRIES="agt_driver ai_driver ..." -- ALL.csv entry keys -- grades those drivers exactly as
 # the board does (scorecard_snobol4.sh, the overlay, the pins, ALL.mask) and nothing else: no census, no progress row, no score row; one
 # line per key, GIMPEL_SMOKE_ENTRY <key> m3=<V> m4=<V>, then exit 0. --force because a smoke is a correctness read, never a timing one.
 SMOKE_KEYS="${S4E_AREA_SMOKE_ENTRIES:-}"
 SMOKE_FORCE=""; [ -n "$SMOKE_KEYS" ] && SMOKE_FORCE="--force"
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1802/1805/1806): under S4E_CHUNK the scorecard grades only the part's drivers (its SC_ONLY_PROGRAMS filter, the smoke's
+# ⭐ THE ROUND ROBIN'S SEAM (R-1802/1805/1806): under S4E_CHUNK the scorecard grades only the part's drivers (its SC_ONLY_PROGRAMS filter, the smoke's
 # own road), appends their rows under their libraries' names as it always does, and this runner writes no suite row (rr_end below)
 . "$HERE/lib_rr.sh" && rr_load "$CORPUS_REAL/packages/snobol4/gimpel" || exit 2
 rr_selected && [ -z "$SMOKE_KEYS" ] && SMOKE_KEYS="" && export SC_RR_ONLY="$(printf '%s ' ${RR_SEL:-})"
@@ -99,7 +99,7 @@ if [ "$TOTAL" -eq 0 ]; then
 fi
 if rr_selected && [ -z "$SMOKE_KEYS" ]; then
     [ "$VEND_BEFORE" = "$(_vend_fingerprint)" ] || { echo "⛔ REFUSE(rc=2): the part's run changed the vendored gimpel directory"; exit 2; }
-    rr_end "$ROWKEY"; exit 0   # the scorecard appended the part's rows under their libraries' names (progress_append_results_tsv); no suite row (CEO-1802)
+    rr_end "$ROWKEY"; exit 0   # the scorecard appended the part's rows under their libraries' names (progress_append_results_tsv); no suite row (R-1802)
 fi
 if [ -n "$SMOKE_KEYS" ]; then
     [ "$VEND_BEFORE" = "$(_vend_fingerprint)" ] || { echo "⛔ REFUSE(rc=2): the smoke run changed the vendored gimpel directory"; exit 2; }
@@ -164,7 +164,7 @@ fi
 # SUPERSET, not a mirror: it holds 163 rows -- the 146 vendored library sources that are not programs plus these
 # 17 drivers -- and shipped 290 = graded 127 + ungradable 163 already balances. Demanding a row-for-row mirror
 # here would demand double-counting. The record and the bucket are not the same set in every package.
-# ⛔⭐ THE PROGRAM IS THE LIBRARY; THE DRIVER IS HOW IT IS GRADED (ceo CEO-1269, CEO-700 applied; coo 2026-09-25, row
+# ⛔⭐ THE PROGRAM IS THE LIBRARY; THE DRIVER IS HOW IT IS GRADED (R-1269, R-700 applied; coo 2026-09-25, row
 # instruments-the-arizona-jcon-and-gimpel-runners-grade-a-library-through-its-driver-...; hq_snobol4's re-derivation of this
 # package's shipped population moved into it). The scorecard grades the 144 *_driver.sno and each verdict is its library's:
 # SHIPPED_LIBS counts every NAME.sno the package ships except ALL.* and the drivers (lib_inventory.sh's census, the same
@@ -173,7 +173,7 @@ fi
 # library's name (util_progress_append.py results-tsv). Measured at the ruling: 148 libraries, 144 drivers, four without one.
 GPKG="$CORPUS_REAL/packages/snobol4/gimpel"
 # ⛔ A LIBRARY SHIPS AS name.inc, A PROGRAM AS name.spt (Lon 2026-09-27, "Use the *.inc names exclusively" -- Catspaw's SPITBOL form under
-# lower-case names, CEO-1319; the .sno/.INC spellings of the day before, CEO-1315, still read), and its driver is name_driver.sno. The two
+# lower-case names, R-1319; the .sno/.INC spellings of the day before, R-1315, still read), and its driver is name_driver.sno. The two
 # stems the form ships twice, as a program and the library it includes (infinip, rseason), keep the _lib convention: x_driver drives x.spt
 # and x_lib_driver drives x.inc. _lib_of names the file a driver carries; a library no driver carries is NO DRIVER.
 _lib_of() { local s="$CORPUS_REAL/${1%_driver.sno}" e
@@ -188,8 +188,8 @@ while IFS= read -r _f; do
 done < <(find "$GPKG" -type f \( -name '*.inc' -o -name '*.spt' -o -name '*.sno' -o -name '*.INC' \) ! -path '*.fixtures/*' 2>/dev/null | LC_ALL=C sort)
 ORPHAN_DRV="$(awk -F'\t' '{print $2}' "$TSV" | while IFS= read -r _p; do _lib_of "$_p" > /dev/null || printf ' %s' "${_p##*/}"; done)"
 LIBMAP="$(awk -F'\t' '{print $2}' "$TSV" | while IFS= read -r _p; do _l="$(_lib_of "$_p")" && printf '%s\t%s\n' "$_p" "$_l"; done)"
-[ -z "$ORPHAN_DRV" ] || { echo "⛔ REFUSE(rc=2): graded driver(s) whose library the package does not ship:$ORPHAN_DRV -- a vehicle with nothing to carry (CEO-1269)"; exit 2; }
-[ "$SHIPPED_LIBS" -ge "$TOTAL" ] || { echo "⛔ REFUSE(rc=2): $TOTAL graded drivers against $SHIPPED_LIBS shipped libraries -- more vehicles than programs, so the census and the board disagree (CEO-1269)"; exit 2; }
+[ -z "$ORPHAN_DRV" ] || { echo "⛔ REFUSE(rc=2): graded driver(s) whose library the package does not ship:$ORPHAN_DRV -- a vehicle with nothing to carry (R-1269)"; exit 2; }
+[ "$SHIPPED_LIBS" -ge "$TOTAL" ] || { echo "⛔ REFUSE(rc=2): $TOTAL graded drivers against $SHIPPED_LIBS shipped libraries -- more vehicles than programs, so the census and the board disagree (R-1269)"; exit 2; }
 OUTSIDE_TSV="$CORPUS_REAL/packages/snobol4/gimpel/OUTSIDE_SPITBOL_BASELINE.tsv"
 BOTH=$(awk -F'\t' -v port="$PORT" '$3!="ORACLE_FAIL" && $3=="PASS" && ($4=="PASS" || port==1)' "$TSV" | wc -l)   # a port's AND is its one mode
 if [ "$UNSCR" -gt 0 ]; then
@@ -205,7 +205,7 @@ if [ -f "$OUTSIDE_TSV" ]; then
     [ -n "$unrec" ] && echo "⚠ OUTSIDE_SPITBOL_BASELINE.tsv UNRECORDED -- the oracle answers none of these and the record does not name them; record each with its error and a source check: $unrec"
     [ -z "$stale$unrec" ] && echo "OUTSIDE_SPITBOL_BASELINE.tsv agrees with the measured outside set ($UNSCR)"
 else echo "⚠ no OUTSIDE_SPITBOL_BASELINE.tsv beside the suite -- the outside-baseline set above is measured, not yet recorded"; fi
-echo "GIMPEL_LIBRARIES shipped=$SHIPPED_LIBS graded_through_a_driver=$TOTAL no_driver=$(printf '%s' "$NODRV_NAMES" | wc -w) (CEO-1269: the program is the library, its verdict is its driver's)"
+echo "GIMPEL_LIBRARIES shipped=$SHIPPED_LIBS graded_through_a_driver=$TOTAL no_driver=$(printf '%s' "$NODRV_NAMES" | wc -w) (R-1269: the program is the library, its verdict is its driver's)"
 [ -n "$NODRV_NAMES" ] && echo "NO DRIVER (owed, UNGRADED.tsv NEEDS_DRIVER -- in the denominator, a non-pass):$NODRV_NAMES"
 echo "GIMPEL_BOARD total=$TOTAL scored=$SCORED unscr=$UNSCR m3_pass=$M3P m3_fail=$M3F m4_pass=$M4P m4_fail=$M4F -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf (via scorecard_snobol4.sh --suites gimpel)"
 awk -F'\t' 'NR==FNR{lib[$1]=$2; next} $3=="ORACLE_FAIL"{printf "  UNSCR  %s (driver %s)  %s\n", lib[$2], $2, $7}' <(printf '%s\n' "$LIBMAP") "$TSV"
@@ -238,7 +238,7 @@ awk -F'\t' -v port="$PORT" 'NR==FNR{lib[$1]=$2; next} $3!="ORACLE_FAIL" && ($3!=
 # The sidecars are row snobol4-gimpel-inventory-sidecars-name-the-oracles-own-reason-for-all-163 (seat02).
 . "$HERE/lib_inventory.sh"
 INV_PACKAGE=gimpel; INV_DIR="$CORPUS_REAL/packages/snobol4/gimpel"; INV_EXT=".inc .spt .sno .INC"
-# graded_narrow=0, and CONFIRMED rather than assumed (ceo CEO-307 (3) asked for exactly this): this runner
+# graded_narrow=0, and CONFIRMED rather than assumed (R-307 (3) asked for exactly this): this runner
 # grades through scorecard_snobol4.sh's grade(), which is `cmp -s` against the .ref pin and then against the
 # live oracle -- full stream equality, no error-number arm anywhere in the path. ⛔ THE ERROR-NUMBER ARM IS
 # THE SNOFLAKE RUNNER'S, NOT THIS ONE'S (test_snoflake_suite.sh:133 oracle_equal, deliberate and documented);
@@ -264,32 +264,32 @@ if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (
 # ⭐ THE ROW, NAMING ITS OWN FRACTION (the shape test_snoflake_suite.sh uses). ⛔ BEFORE THIS THIS RUNNER WROTE
 # NO ROW AT ALL -- not a suite row and not a SCORE.md cell -- so gimpel's reading on the board had only ever been
 # set BY HAND, by the coo, from this runner's printed line. A number nobody's runner writes is a number nothing
-# re-measures. The table's reading is the ceo-372 AND per program over the SPITBOL baseline.
-# ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749): the
+# re-measures. The table's reading is the officer-372 AND per program over the SPITBOL baseline.
+# ⛔ R-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-r-749): the
 # row reads PASS over SHIPPED ($TOTAL = the graded drivers plus the $UNSCR the oracle refuses), OUTSIDE=$UNSCR named and
 # stamped through lib_outside_shape.sh -- the outside drivers stay in the denominator as debt to cure. Before this the
 # row published $BOTH/$SCORED, the graded set only, and nothing in the verdict instrument could see the difference.
-if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (R-1822), graded in m3 alone"
     if [ -z "${GIMPEL_SUITE:-}" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $GIMPEL_SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SCORED" -gt 0 ] && [ -z "${GIMPEL_SUITE:-}" ]; then
 . "$HERE/lib_outside_shape.sh" || exit 2
-# ⛔⭐ CEO-1286 (Lon 2026-09-26): the libraries NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv, named by library; the live outside set names
+# ⛔⭐ R-1286 (Lon 2026-09-26): the libraries NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv, named by library; the live outside set names
 # their drivers) leave the denominator of shipped libraries; the drivers the oracle refuses for any other cause stay as debt.
 SUITE="$CORPUS_REAL/packages/snobol4/gimpel"
 EXCL_D_N="$(excluded_in_outside "$SUITE" "$(awk -F'\t' '$3=="ORACLE_FAIL"{sub(/.*\//,"",$2); print $2}' "$TSV")")" || exit 2; DENOM=$((SHIPPED_LIBS - EXCL_D_N))
-echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, CEO-1286): pass over $DENOM"
+echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
 _cc="${S4E_CRITERION_CHANGED:-}"
 if [ -z "$_cc" ]; then
-    # the denominator moved from the 144 drivers to the libraries they grade: stamped as CEO-1269's criterion change, not CEO-749's
+    # the denominator moved from the 144 drivers to the libraries they grade: stamped as R-1269's criterion change, not R-749's
     _prevt="$(awk -F'\t' '$1=="gimpel" {print $10; exit}' "$(. "$HERE/lib_suites_tsv.sh"; suites_tsv "${S4E_HOME:-$ROOT}")" 2>/dev/null)"
     if [ -n "$_prevt" ] && [ "$_prevt" != "$SHIPPED_LIBS" ] && [ "$_prevt" = "$TOTAL" ]; then
-        _cc="$(date +%F):CEO-1269-the-program-is-the-library-graded-through-its-driver-shipped-counts-the-${SHIPPED_LIBS}-libraries-not-the-${TOTAL}-drivers-OUTSIDE=${UNSCR}-named-no-driver=$(printf '%s' "$NODRV_NAMES" | wc -w)-owed"
+        _cc="$(date +%F):R-1269-the-program-is-the-library-graded-through-its-driver-shipped-counts-the-${SHIPPED_LIBS}-libraries-not-the-${TOTAL}-drivers-OUTSIDE=${UNSCR}-named-no-driver=$(printf '%s' "$NODRV_NAMES" | wc -w)-owed"
     else _cc="$(excluded_shape_stamp gimpel "$DENOM" "$UNSCR" "$EXCL_D_N")" || exit 2; fi
 fi
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite gimpel --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
-    --text "gimpel both_modes_pass=$BOTH/$DENOM ($SHIPPED_LIBS shipped libraries minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, EXCLUDED.tsv, CEO-1286), each graded through its driver (CEO-1269) · OUTSIDE=$UNSCR whose driver SPITBOL does not answer, named with the oracle's own error in OUTSIDE_SPITBOL_BASELINE.tsv, in the denominator (CEO-749) · no driver $(printf '%s' "$NODRV_NAMES" | wc -w), owed (NEEDS_DRIVER) · graded $BOTH/$SCORED · m3 $M3P/$SCORED · m4 $M4P/$SCORED (sbl -bf the one oracle)${INV_LINE:+ · $INV_LINE} (\`test_snobol4_gimpel_suite.sh\`)" \
+    --text "gimpel both_modes_pass=$BOTH/$DENOM ($SHIPPED_LIBS shipped libraries minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, EXCLUDED.tsv, R-1286), each graded through its driver (R-1269) · OUTSIDE=$UNSCR whose driver SPITBOL does not answer, named with the oracle's own error in OUTSIDE_SPITBOL_BASELINE.tsv, in the denominator (R-749) · no driver $(printf '%s' "$NODRV_NAMES" | wc -w), owed (NEEDS_DRIVER) · graded $BOTH/$SCORED · m3 $M3P/$SCORED · m4 $M4P/$SCORED (sbl -bf the one oracle)${INV_LINE:+ · $INV_LINE} (\`test_snobol4_gimpel_suite.sh\`)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
 fi
 [ "$M3F" = 0 ] && [ "$M4F" = 0 ]

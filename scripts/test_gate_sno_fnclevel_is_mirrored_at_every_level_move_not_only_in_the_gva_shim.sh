@@ -107,7 +107,7 @@ fi
 # ++/-- line carries its mirror, and the count is printed so a future reader sees the population, not a boolean.
 src="$ROOT/src/runtime/rt/rt.c"
 [ -f "$src" ] || { echo "⛔ REFUSE(2): no $src"; exit 2; }
-# ⛔ READ AS STATEMENTS, NOT LINES (the 200-column re-flow, CEO-1565, lays every child statement on its own line, so the mirror is the NEXT statement and no longer shares the move's physical line):
+# ⛔ READ AS STATEMENTS, NOT LINES (the 200-column re-flow, R-1565, lays every child statement on its own line, so the mirror is the NEXT statement and no longer shares the move's physical line):
 # a move is a  g_rt_k_level++;  or  g_rt_k_level--;  statement and it is mirrored when the statement that follows it, whitespace and newlines skipped, is  rt_k_level_mirror();
 read -r mv bare < <(python3 - "$src" <<'PYEOF'
 import re, sys

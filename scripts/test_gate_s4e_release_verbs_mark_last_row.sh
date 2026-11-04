@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s4e_release_verbs_mark_last_row.sh -- THE .last-row CONTRACT OF THE DISPATCHER'S CLOSING VERBS (row
-# park-marks-last-row-only-when-clearing-own-claim, MASTER-PLAN ladder I rung I7; seat14 + seat07 measured, ceo minted rank 0,
+# park-marks-last-row-only-when-clearing-own-claim, MASTER-PLAN ladder I rung I7; seat14 + seat07 measured, the officer minted rank 0,
 # hq_B cured and gated 2026-09-01).
 #
 # THE CONTRACT: every verb that CLOSES a row this seat holds -- unclaim, done, park-of-my-own-claim -- writes $PO/$ME/.last-row as

@@ -20,7 +20,7 @@
 # base, as the ! and ? sites already did; the substring assignment reads a cset value through its registry length and a
 # large integer through its digits, and returns a string right-hand side itself instead of a copy.
 #
-# ARMS. Arm 1's counts read statements with whitespace folded (stmts), so a re-flow of the source lines cannot blind them (CEO-1565).
+# ARMS. Arm 1's counts read statements with whitespace folded (stmts), so a re-flow of the source lines cannot blind them (R-1565).
 # (1) STRUCTURE: the cset operators route before big_str_operand; the operand reader carries a string's length; the
 # subscript and section trap sites exclude a cset; the substring assignment has a cset arm. (2) BEHAVIOUR, both media, graded
 # against the LIVE oracle (icont/iconx 9.5.25a) on five witnesses: stdout byte-identical, the same exit status, and the same

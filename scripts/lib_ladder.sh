@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# (the blanket `export SCRIP_SNO_STMTKW=1` that stood here typed the SNOBOL4 statement instrumentation for EVERY language's ladder; since 2026-09-28 each witness carries its own declared --stlimit in its <stem>.cmdline compile_args, read below -- CEO-1353, the coo)
+# (the blanket `export SCRIP_SNO_STMTKW=1` that stood here typed the SNOBOL4 statement instrumentation for EVERY language's ladder; since 2026-09-28 each witness carries its own declared --stlimit in its <stem>.cmdline compile_args, read below -- R-1353, the coo)
 # lib_ladder.sh -- THE ONE CONSTRUCT-LADDER RUNNER BODY, shared by every language's test_<lang>_ladder.sh
 # (GOAL-TEST-SUITE-CONSISTENCY.md standard point 1; row test-suite-consistency-seven-languages-one-standard,
 # hq_T 2026-09-03). Extracted from test_prolog_ladder.sh (hq_P/hq_C) and test_raku_ladder.sh (seat11), whose
@@ -45,7 +45,7 @@ ladder_main() {
   local S4E HERE ROOT TO ONLY LIST SEL
   S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
   HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-  export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once
+  export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once
   SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"; T="${TIMEOUT:-20}"
   refuse() { echo "REFUSE (rc=2): $*"; exit 2; }
   [ -n "${LADDER_LANG:-}" ] && [ -n "${LADDER_SUITE:-}" ] && [ -n "${LADDER_EXT:-}" ] \
@@ -73,7 +73,7 @@ ladder_main() {
   . "$HERE/lib_rungs_extract.sh" || refuse "cannot source lib_rungs_extract.sh"
   . "$HERE/lib_declared_arena.sh" || refuse "cannot source lib_declared_arena.sh -- the one reader of a witness's declared heap and stack"
   # ladder_cmdline_words <program> -- two lines: the compile_args and the run_args its <stem>.cmdline declares (empty lines when none),
-  # through corpus_suite_harness.cmdline_declarations(), the one reader of a test unit's command line (clause 8 (f), CEO-1281).
+  # through corpus_suite_harness.cmdline_declarations(), the one reader of a test unit's command line (clause 8 (f), R-1281).
   ladder_cmdline_words() { python3 - "$1" "$HERE" <<'PY'
 import os, sys
 sys.path.insert(0, sys.argv[2])
@@ -94,8 +94,8 @@ PY
   [ "${#origins[@]}" -gt 0 ] || refuse "zero ladder__rungNN_* origins selected by $SEL in $RUNGS_DIR/ALL.csv (family present, rung filter empty) -- a rung with no witness is UNMEASURED, never a pass"
   if [ "$LIST" = 1 ]; then printf '%s\n' "${origins[@]}" | sort -n | awk '{printf "rung %2d  %s\n", $1, $2}'; echo "witnesses=${#origins[@]} ($SEL)"; exit 0; fi
   # ⛔⭐ STALE-BINARY PREFLIGHT -- placed HERE, after --list's early exit, on purpose (row harness-and-
-  # ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-does, ceo -> hq_T 2026-09-04).
-  # ⛔ THE WITNESS IS THE CEO'S OWN TWO FALSE-RED AUDITS ON 2026-09-04: a 10:57 binary read RED at 14:03
+  # ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-does, the officer -> hq_T 2026-09-04).
+  # ⛔ THE WITNESS IS THE OFFICER'S OWN TWO FALSE-RED AUDITS ON 2026-09-04: a 10:57 binary read RED at 14:03
   # and GREEN after an incremental make -- so the ladder's verdict was a statement about a program nobody
   # was shipping, and NOTHING in the printed board contradicted it. The board even stamps `tree: SCRIP=<sha>`,
   # which makes it WORSE than unlabelled: the SHA is read from git and is not evidence about the binary that
@@ -124,7 +124,7 @@ PY
     # for byte the prior behavior.
     local stdin_src="$W/$o.in"; [ -f "$stdin_src" ] || stdin_src=/dev/null
     # ⛔⭐ STDERR IS CAPTURED, AND COMPARED ONLY WHERE THE RUNGS DECLARES IT (hq_T 2026-09-09; hq_B .github 367b083e
-    # and hq_V's FINDING measured the same gap from both ends, ceo ordered the cure CEO-457 item 3).
+    # and hq_V's FINDING measured the same gap from both ends, the officer ordered the cure R-457 item 3).
     # THE DEFECT: these two graded runs sent stderr to /dev/null, and Icon's &trace writes EXCLUSIVELY there
     # (core.c trace_print_icon) -- so every trace rung in the Icon ladder was graded on stdout alone and COULD NOT FAIL
     # for the reason it was minted. procedure_write_264 holds the one-line ref `A:end` and PASSES while the oracle
@@ -141,7 +141,7 @@ PY
     # changes ZERO verdicts by construction, and every later change is a deliberate one -- which is the whole reason it
     # is safe to land two days before the announcement.
     local err_ref="$W/$o.err"
-    # ⛔⭐ THE WITNESS'S OWN COMMAND LINE (Lon 2026-09-28, ceo CEO-1353; the coo's row instruments-every-runner-passes-each-units-declared-
+    # ⛔⭐ THE WITNESS'S OWN COMMAND LINE (Lon 2026-09-28, R-1353; the coo's row instruments-every-runner-passes-each-units-declared-
     # heap-and-stack-...): extract writes the entry's declared heap and stack (<stem>.heap / <stem>.stack) and compile and run args
     # (<stem>.cmdline) beside the witness, and the ladder READS them -- through lib_declared_arena.sh and the harness's own reader, never a
     # copy -- exactly as the harness runs the same entry: m3 scrip --run <compile_args> <sizes> src -- <run_args>; m4 compiles with
@@ -168,7 +168,7 @@ PY
     printf 'rung %2d  %-44s m3=%-12s m4=%-12s (%s, want rc=%s)\n' "$r" "$o" "$v3" "$v4" "$name" "$want"
   done
   for r in $(printf '%s\n' "${!rp[@]}" "${!rf[@]}" | sort -nu); do printf 'rung %2d summary: PASS=%d FAIL=%d (witness x mode)\n' "$r" "${rp[$r]:-0}" "${rf[$r]:-0}"; done
-  [ -n "$undeclared" ] && printf 'LADDER %s: UNDECLARED heap/stack on %d of %d witness(es) -- run at the runtime default, named (CEO-1353: every unit declares its sizes in its ALL.csv row):%s\n' "$SEL" "$(set -- $undeclared; echo $#)" "$n" "$(printf '%s' "$undeclared" | tr ' ' '\n' | head -12 | tr '\n' ' ')"
+  [ -n "$undeclared" ] && printf 'LADDER %s: UNDECLARED heap/stack on %d of %d witness(es) -- run at the runtime default, named (R-1353: every unit declares its sizes in its ALL.csv row):%s\n' "$SEL" "$(set -- $undeclared; echo $#)" "$n" "$(printf '%s' "$undeclared" | tr ' ' '\n' | head -12 | tr '\n' ' ')"
   [ "$unasserted" -gt 0 ] && printf 'LADDER %s: stderr UNASSERTED on %d of %d witness(es) -- captured, not compared (no ALL.err block):%s\n' "$SEL" "$unasserted" "$n" "$(printf '%s' "$unasserted_names" | tr ' ' '\n' | head -8 | tr '\n' ' ')"
   # ⛔⭐ `git status --short | grep -q .` WAS A PROVENANCE LIE WAITING FOR LOAD, and it is the same defect this session
   # proved in gate_file_has_fresh_guard: `grep -q .` exits on the FIRST line, the kernel tears down the read end, and a

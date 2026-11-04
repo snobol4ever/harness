@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # test_gate_sno_eval_of_text_that_does_not_compile_raises_spitbols_syntax_error.sh
 #
-# SPITBOL'S RULE (sbl.min scane scn07-scn51 and expan exp02-exp24, read by the cfo 2026-10-02 for ceo CEO-1419's ticket
+# SPITBOL'S RULE (sbl.min scane scn07-scn51 and expan exp02-exp24, read by the cfo 2026-10-02 for R-1419's ticket
 # snobol4-eval-of-text-that-does-not-compile-raises-spitbols-syntax-error-where-scrip-fails-the-eval): EVAL of text that
 # does not compile RAISES the scanner's or the expression parser's syntax error, numbered 220-233, with its own &ERRTEXT.
 # Under SETEXIT it is trapped; at &ERRLIMIT > 0 it is counted; at &ERRLIMIT 0 the EVAL simply fails and the run goes on.
-# That is the stage rule (CEO-1322): the compile of EVAL's text runs under stage stgee. SCRIP used to FAIL the EVAL
+# That is the stage rule (R-1322): the compile of EVAL's text runs under stage stgee. SCRIP used to FAIL the EVAL
 # silently with &ERRTEXT 'parse error: syntax error'. Found by Lon's infinite_snobol4 demo: 11,285 of 20,000 random
 # expressions read this way.
 # THE CURE (runtime_eval.c rt_eval_syntax_raise): when SCRIP's own parser has REJECTED the text, eval_sb_syntax runs
 # SPITBOL's element rules and three-state expression machine over it and names the first error SPITBOL would raise.
 # Text SCRIP accepts is never classified, so no EVAL that works today changes. A position the port does not model (a
 # ';' or ':' outside an open paren) is declined, and the EVAL fails as before. A BINARY '=' IS MODELED since the cfo's row
-# snobol4-a-syntax-error-inside-an-eval-assignment-reads-fail-where-spitbol-raises-233 (CEO-1448): it needs a left operand
+# snobol4-a-syntax-error-inside-an-eval-assignment-reads-fail-where-spitbol-raises-233 (R-1448): it needs a left operand
 # (221) and its right side is classified like any expression, except that it may be EMPTY -- (X =) is the null string in sbl.
 # Its sixteen arms run as a second evaluator pass (lines2.txt), so each pass stays under the 32-trap ceiling below.
 # FAIL-ONCE, MEASURED with this gate on the parent (runtime_eval.c stashed, SCRIP c07aa9bd2): the eleven raising lines read FAIL

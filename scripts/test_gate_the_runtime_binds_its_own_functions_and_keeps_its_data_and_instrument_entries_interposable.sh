@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_the_runtime_binds_its_own_functions_and_keeps_its_data_and_instrument_entries_interposable.sh
 #
-# THE ROW (startup-the-runtime-binds-its-own-symbols-once-the-compiler-carries-no-copy-relocation-hello-under-1-6m-ir-ceo-1795, cto 2026-10-15): a one-process
+# THE ROW (startup-the-runtime-binds-its-own-symbols-once-the-compiler-carries-no-copy-relocation-hello-under-1-6m-ir-r-1795, cto 2026-10-15): a one-process
 # program spent most of its startup in ld.so resolving the runtime's references to its OWN symbols (3,721 JUMP_SLOT, 656 GLOB_DAT, 600 R_X86_64_64; a mode-4 Icon hello
 # 2,535,562 Ir). RT_BIND in the Makefile links the runtime with --dynamic-list-data --dynamic-list=src/runtime/rt_interposable.list -z pack-relative-relocs: every
 # FUNCTION binds inside the library except the ones an instrument interposes by name, every DATUM stays interposable, the relative relocations are packed (hello
-# 1,710,925 Ir). The three hazards CEO-1501 kept the flag off for are held here, each by its own arm:
+# 1,710,925 Ir). The three hazards R-1501 kept the flag off for are held here, each by its own arm:
 #   1. the functions bind inside: the runtime's JUMP_SLOT relocations are under 400 (3,721 before);
 #   2. the data do not: g_rtccb and g_gc_pending, which every mode-4 program reads rip-relatively and so COPIES, keep a dynamic relocation in the runtime, so the library
 #      reads the executable's copy (bound locally the library reads its own and the program the other: split state, full -Bsymbolic's defect);

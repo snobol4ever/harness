@@ -2,7 +2,7 @@
 # test_gate_pas_an_array_field_of_a_record_component_is_indexed_as_its_type.sh -- an array field of a record that is itself a
 # component (a record field of a record, or an element of an array of records) is indexed as the array it is declared: through a
 # record variable, through a pointer, and through an array element, the values stored read back (ISO 7185 6.4.3.3, 6.5.3.2)
-# (row pascal-an-array-field-inside-a-nested-record-stores-and-reads-through-different-paths; ceo CEO-1343 from the coo's COO-213)
+# (row pascal-an-array-field-inside-a-nested-record-stores-and-reads-through-different-paths; R-1343 from the coo's COO-213)
 #
 # MEASURED 2026-09-28 by hq_pascal on SCRIP fcae697bb, both modes, against fpc -Miso: nest (o.in1.a[i], the coo's p1) and arrrec
 # (v[j].a[i], the coo's p3) stop with a FALSE ISO 7185 6.5.3.2 index error where fpc prints the values; nestptr (the same record

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_raku_an_infix_multi_on_objects_is_entered_from_the_binop_box_in_an_armed_program_agree_with_rakudo.sh -- AN INFIX MULTI ON OBJECTS IS AN OPEN ROAD FROM THE BINOP BOX
-# (row raku-an-infix-multi-on-objects-is-entered-from-the-binop-box-in-an-armed-program-not-from-c-ceo-1600; ARCH-RAKU-BOXES section 4 step 1, the last of the 21 sites; CEO-1576).
+# (row raku-an-infix-multi-on-objects-is-entered-from-the-binop-box-in-an-armed-program-not-from-c-r-1600; ARCH-RAKU-BOXES section 4 step 1, the last of the 21 sites; R-1576).
 #
 # THE DEFECT: `$p + $q` on objects with a user `multi sub infix:<+>(Vec, Vec)` (and the relops) reached the candidate from C: the arith box's C arithmetic (rt_add_big and kin) and the
-# relop boxes called rt_binop_overload, which called __multi_call by name, which entered the user's sub -- the C road into a box CEO-1576 deleted (rc 139). RakRungs
+# relop boxes called rt_binop_overload, which called __multi_call by name, which entered the user's sub -- the C road into a box R-1576 deleted (rc 139). RakRungs
 # class_multi_sub_replace_2 4 5 6 7.
 # THE CURE, the cto's design (re-ask-raku-infix-multi-open-road-in-the-binop-boxes): arithmetic.c rt_binop_overload_open selects the winning Rinfix_ candidate (by_name_dispatch.c
 # rt_multi_winner, the one selection __multi_call also uses), loads CALL_ARGS and RETURNS ITS ADDRESS, or 0; the boxes enter it through bb_glue_binop_open (bb_glue_flat.cpp; the relop

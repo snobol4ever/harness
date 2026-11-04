@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_swi_red_census.py -- THE SWI SUITE'S REDS, CLASSED BY TEST FILE AND FIRST BUILTIN, EACH CLASS ROWED OR EXCLUDED
-(ceo CEO-1562, on Lon's 2026-10-08 question whether the fleet has a proper incremental plan to 100%; row
-instruments-the-swi-suites-reds-are-classed-by-test-file-and-every-class-has-a-row-or-an-excluded-line-ceo-1562).
+(R-1562, on Lon's 2026-10-08 question whether the fleet has a proper incremental plan to 100%; row
+instruments-the-swi-suites-reds-are-classed-by-test-file-and-every-class-has-a-row-or-an-excluded-line-r-1562).
 
 It runs nothing. It READS: the oracle's enumeration (the .ref beside every plunit file of swi_tests, cut from swipl by
 util_swi_cut_refs.sh: PASS|FAIL cases are the graded population, BLOCKED/EMPTY/UNGRADABLE are the oracle's own and leave it),

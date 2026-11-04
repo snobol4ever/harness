@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh -- XSB'S OWN BUILTINS, AS XSB ANSWERS THEM (hq_icon 2026-10-28, row prolog-xsbtests-to-100-the-58-failing-programs-ceo-1926; ARCH-PROLOG-DIALECTS.md sec 5, THE CONFLICTING BUILTINS live in xsb_builtins.pl).
+# test_gate_pl_xsb_builtins_term_size_number_digits_is_acyclic_do_all_answer_as_xsb.sh -- XSB'S OWN BUILTINS, AS XSB ANSWERS THEM (hq_icon 2026-10-28, row prolog-xsbtests-to-100-the-58-failing-programs-r-1926; ARCH-PROLOG-DIALECTS.md sec 5, THE CONFLICTING BUILTINS live in xsb_builtins.pl).
 #
 # term_to_atom/2,3 and term_to_codes/2,3 (XSB's string.P: write-only, canonical, variables _h0.._hN, the quoted, ignore_ops and numbervars options and their four error forms) join the
 # witness, with the renaming import (:- import append/3 from basics as myappend/3.), replacing SWI's parsing term_to_atom/2 in the XSB dialect (lower_prolog.c pl_xsb_library_replaces).

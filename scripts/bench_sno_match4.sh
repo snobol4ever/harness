@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_sno_match4.sh — the 4-way SNOBOL4 match/eval benchmark protocol (s143).
 # claws5/treebank/json (match-only, tape rep52) + calculator-1 (evaluator, tape rep10)
 # vs official SPITBOL, interleaved A/B x7 medians.  RT_OPT is whatever libscrip_rt

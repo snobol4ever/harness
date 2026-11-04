@@ -8,7 +8,7 @@
 # a single fact spelled in two layers -- runtime and parser -- with no build-time relationship at all.
 #
 # ⛔ WHY IT EXISTS (cfo 2026-09-08, row icon-feature-list-and-preprocessor-symbol-table-must-agree-and-
-# nothing-enforces-it, ceo approved).  Curing the dialect row meant editing feats[] -- dropping "Java",
+# nothing-enforces-it, the officer approved).  Curing the dialect row meant editing feats[] -- dropping "Java",
 # adding "keyboard functions".  pre[] was NOT edited, because nothing said it had to be, and SCRIP then
 # CONTRADICTED ITSELF OUT LOUD: "error: unexpected predefined symbol for Java" and "error: no predefined
 # symbol for keyboard functions".  The ONLY thing that caught it was procedure_record_limit_replace_1, one
@@ -29,7 +29,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_gate.sh"
 GATE_NAME=icon_features_and_preprocessor_symbols_agree
 FEATS_SRC="${ICON_FEATS_SRC:-$HERE/../../SCRIP/src/runtime/keywords.c}"
-PRE_SRC="${ICON_PRE_SRC:-$HERE/../../SCRIP/src/tools/ipp.icn}"   # the IPP pre-step, JCON's preprocessor in Icon (Lon 2026-09-30, CEO-1366); icon_lex.c carries a twin list until its pass is deleted
+PRE_SRC="${ICON_PRE_SRC:-$HERE/../../SCRIP/src/tools/ipp.icn}"   # the IPP pre-step, JCON's preprocessor in Icon (Lon 2026-09-30, R-1366); icon_lex.c carries a twin list until its pass is deleted
 PRE_SRC2="${ICON_PRE_SRC2:-$HERE/../../SCRIP/src/parsers/icon/icon_lex.c}"
 [ -f "$FEATS_SRC" ] || { echo "GATE REFUSE(2) [$GATE_NAME]: no feature source at $FEATS_SRC -- cannot measure"; exit 2; }
 [ -f "$PRE_SRC" ]   || { echo "GATE REFUSE(2) [$GATE_NAME]: no preprocessor source at $PRE_SRC -- cannot measure"; exit 2; }

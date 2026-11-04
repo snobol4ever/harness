@@ -10,7 +10,7 @@
 # statement-sequences (TT_PROGRAM, TT_SEQ_EXPR, a label's own TT_LABEL_DEF) add no step. The label's path must be a prefix of the
 # goto's. A goto whose label is not in its own block searches the enclosing blocks (children precede parents in the procedure list),
 # where the label must sit in the outermost sequence. The goto node now carries its source line, so the diagnostic names it.
-# ⛔⭐ NO LENIENCY, BY RULING (ceo CEO-1228, 2026-09-23, on hq_pascal's question): this check once accepted one non-ISO shape by
+# ⛔⭐ NO LENIENCY, BY RULING (R-1228, 2026-09-23, on hq_pascal's question): this check once accepted one non-ISO shape by
 # name -- a goto from one branch of a structured statement into a statement that is directly another branch (then -> else) --
 # because Pascal-P4's insymbol does exactly that (goto 3). A by-name exception is the per-program accommodation the one-oracle law
 # forbids, so it is gone: P4's vendored comp.pas carries a documented source patch instead (corpus/packages/pascal/p4/PATCHES.md,

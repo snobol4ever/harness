@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_zd_check_entry.sh -- THE ZD-CHECK ON ONE PROGRAM, NAMING THE EDGES (ceo CEO-1830 verifier, ARCH-ZETA-ONE-COORDINATE.md section 4; hq_runtime 2026-10-30).
+# util_zd_check_entry.sh -- THE ZD-CHECK ON ONE PROGRAM, NAMING THE EDGES (R-1830 verifier, ARCH-ZETA-ONE-COORDINATE.md section 4; hq_runtime 2026-10-30).
 # test_gate_zd_check_reads_zero_violations_on_the_cores.sh sums every core entry and prints only the worst entry per language; a seat whose witness
 # enters the master red then needs the three sites, and this prints them: it compiles ONE program with SCRIP_ZD_CHECK=1 (mode 4, asm to scratch,
 # nothing linked or run) and counts the verifier's violations by the gate's own rule -- the absolute-coordinate graphs' `violations=N` plus every

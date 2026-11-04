@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
 # bench_prolog_ab_pregut.sh — PL-REGAIN-0 A/B parity rail (GOAL-PROLOG-BB.md, 2026-07-19).
 # Three engines on IDENTICAL era-neutral wrappers: the PRE-GUTTING GZ engine (worktree pinned at
@@ -17,7 +17,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # Env: PREGUT_REF (default 7ec7305a) PREGUT_DIR (default <root>/SCRIP-pregut)
 #      BENCH_K (default <root>/corpus/benchmarks/prolog/bench -- the PRISTINE kernels)
 #
-# ⛔⭐ IT READS THE PRISTINE KERNELS NOW, NOT THE RETIRED vanroy/ (hq_P 2026-09-13, CEO-567). This rail never wanted the
+# ⛔⭐ IT READS THE PRISTINE KERNELS NOW, NOT THE RETIRED vanroy/ (hq_P 2026-09-13, R-567). This rail never wanted the
 #   checked-in wrapped form: mkwrap() below opened corpus/benchmarks/prolog/vanroy/<k>.pl only to STRIP the three generated
 #   loop lines back off it (`main :- l__(N).`, `l__(N__) :- between...`, `l__(_).`) and recover the bare kernel, then wrapped
 #   it in this rail's OWN era-neutral fact-table loop. So it was reading a derived artifact to undo the derivation. vanroy/ is
@@ -44,7 +44,7 @@ conj(){ case $1 in 8)echo "a(_), ";;64)echo "b(_), ";;512)echo "a(_), b(_), ";;4
 mkwrap(){ p=$1; n=$2; f="$W/${p}_${n}.pl"
   # ⛔ REFUSE rather than wrap a kernel that does not carry the contract -- a silently unwrapped source would compile,
   # run its own main/0 once, and be reported as a fast iteration rate (the loop-never-looped class, lib_prolog_bench.sh).
-  grep -q '^bench_work(' "$K/$p.pl" || { echo "⛔ REFUSED-TO-GRADE: $K/$p.pl carries no bench_work/1 -- not a pristine kernel (CEO-567)" >&2; exit 2; }
+  grep -q '^bench_work(' "$K/$p.pl" || { echo "⛔ REFUSED-TO-GRADE: $K/$p.pl carries no bench_work/1 -- not a pristine kernel (R-567)" >&2; exit 2; }
   grep -vE '^main :- ' "$K/$p.pl" > "$f"
   for i in $(seq 1 8); do echo "a($i)."; done >> "$f"
   for i in $(seq 1 64); do echo "b($i)."; done >> "$f"

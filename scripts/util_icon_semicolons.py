@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_icon_semicolons.py -- insert the semicolons SCRIP Icon requires, exactly where the strict parser asks for them
-# (Lon 2026-10-01, CEO-1392: every statement in a procedure body ends in ';'; only the last expression of a { } block is
+# (Lon 2026-10-01, R-1392: every statement in a procedure body ends in ';'; only the last expression of a { } block is
 # bare). The parser is the only authority (out/parser_icon when it exists, else scrip --dump-ast, whose parse error is the same message): each pass runs out/parser_icon, reads "expected ';' after the token at line L
 # col C", finds that token's end on line L (a string literal to its closing quote, a name or number to the end of its run,
 # any other token one character) and inserts ';' there; it loops until the file parses or the error is not a semicolon.

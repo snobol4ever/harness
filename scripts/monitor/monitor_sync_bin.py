@@ -36,7 +36,7 @@ Exit codes:
     3   protocol error (bad header, short read, etc.)
 
 ⛔ THE VERDICT LINE (row monitor-the-controller-reads-an-untyped-value-as-agree-…,
-the coo on the ceo's dispatch, 2026-09-23): every lock-step the controller
+the coo on the officer's dispatch, 2026-09-23): every lock-step the controller
 compares is graded AGREE, DIVERGE or UNGRADED, and every exit path prints
     [ctrl] VERDICT AGREE=a DIVERGE=d UNGRADED=u of n compared step(s) ...
 with a + d + u == n.  An UNGRADED step is one where kind and name agree but a
@@ -80,7 +80,7 @@ MWK_PM_EXIT   = 8
 MWK_PM_REDO   = 9
 MWK_PM_FAIL   = 10
 # ⛔⭐ THE OUTPUT EVENT (coo 2026-09-25, row instruments-the-monitor-grades-no-output-event-so-a-wrong-value-written-without-an-
-# assignment-reads-agree; ceo CEO-1272 on hq_icon's measurement): a wrong value written straight to standard output -- write(f(x)),
+# assignment-reads-agree; R-1272 on hq_icon's measurement): a wrong value written straight to standard output -- write(f(x)),
 # OUTPUT = f(X), writeln(g) -- was never an event, so both sides agreed event for event over a wrong answer. A participant now sends
 # the bytes it writes to standard output as MWK_OUTPUT records (name_id NONE, type STRING), and announces once, before its first
 # statement, that it speaks OUTPUT: an MWK_OUTPUT record with name_id OUTPUT_HELLO and no bytes. OUTPUT records are NOT paired step for
@@ -665,7 +665,7 @@ def open_pair(ready_path, go_path, name='?', deadline_s=None):
     """Open ready FIFO for read, go FIFO for write, REFUSING rather than hanging.
 
     ⛔⭐ THIS FUNCTION USED TO BE TWO BLOCKING os.open() CALLS AND IT COULD NOT FAIL
-    (hq_T 2026-09-09, ceo brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-
+    (hq_T 2026-09-09 brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-
     counting-on-it`).  A FIFO opened O_RDONLY blocks until a WRITER appears, and
     O_WRONLY blocks until a READER appears -- forever, with no timeout of their own.
     So when a participant died during startup, the controller blocked here for the
@@ -673,7 +673,7 @@ def open_pair(ready_path, go_path, name='?', deadline_s=None):
     and the harness sat in `wait` until an external `timeout` killed the process
     group -- whose EXIT trap then deleted the scratch dir holding the answer.
 
-    MEASURED on the ceo's own witness (snoflake `string-pad.sno`): BOTH participants
+    MEASURED on the officer's own witness (snoflake `string-pad.sno`): BOTH participants
     had already exited within a second, each having written its reason to its .err
     file, while the controller went on waiting 141s+ for writers that no longer
     existed.  The instrument could not tell "measured and clean" from "never ran" --

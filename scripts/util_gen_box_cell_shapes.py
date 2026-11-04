@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_gen_box_cell_shapes.py -- writes SCRIP/src/planner/box_cell_shapes.inc from harness/scripts/box_cell_shapes.tsv, the cell-shape table
-(ARCH-ZETA-ONE-COORDINATE 3.5 (iii); ARCH-THREE-ZETAS-EMISSION 10 (3); the cto, CEO-1923). The planner's zd_k_own walks the generated rows top to
+(ARCH-ZETA-ONE-COORDINATE 3.5 (iii); ARCH-THREE-ZETAS-EMISSION 10 (3); the cto, R-1923). The planner's zd_k_own walks the generated rows top to
 bottom and takes the first that matches the node's kind and condition.
   util_gen_box_cell_shapes.py --write     rewrite the .inc
   util_gen_box_cell_shapes.py --check     rc 1 when the committed .inc differs from what the table generates (it names the file), rc 0 when current

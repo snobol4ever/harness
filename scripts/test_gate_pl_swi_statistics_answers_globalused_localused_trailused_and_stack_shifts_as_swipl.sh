@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_statistics_answers_globalused_localused_trailused_and_stack_shifts_as_swipl.sh -- statistics/2 KEYS SWI'S GC TESTS READ (hq_icon 2026-10-31, row prolog-swi-to-100-the-failing-cases-ceo-1930, SWI core/test_gc gc_leak).
+# test_gate_pl_swi_statistics_answers_globalused_localused_trailused_and_stack_shifts_as_swipl.sh -- statistics/2 KEYS SWI'S GC TESTS READ (hq_icon 2026-10-31, row prolog-swi-to-100-the-failing-cases-r-1930, SWI core/test_gc gc_leak).
 # THE FEATURE: statistics(globalused|localused|trailused, Bytes) -- the used element of SCRIP's global_stack, local_stack and trail_stack, the figure swipl's own keys report -- and statistics(stack_shifts, [0,0,0]), which is
 # TRUE of SCRIP, whose stacks are mmap'd regions that never shift (src/parsers/prolog/prolog_parse.c, the statistics/2 prelude beside global_shifts); under the GNU dialect the keys stay a domain_error as gprolog answers them.
 # THE WITNESS: 13 labelled lines -- each key is an integer (or a list of three), an unbound key is an instantiation_error, an unknown key a domain_error(statistics_key), and the two SHAPES of SWI's core/test_gc that

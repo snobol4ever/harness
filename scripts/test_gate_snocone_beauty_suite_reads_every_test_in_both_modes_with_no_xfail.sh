@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_snocone_beauty_suite_reads_every_test_in_both_modes_with_no_xfail.sh -- THE SNOCONE BEAUTY SUITE, GRADED EVERY BUILD
 #
-# LON 2026-09-23 15:4x CDT, in-chat to the ceo, verbatim: "Get snocone beauty test suite working first." (row snocone-the-beauty-
-# test-suite-reads-twenty-of-twenty-in-both-modes-with-no-xfail-marker-lons-first, CEO-1212). THE SUITE is the banner-block container
+# LON 2026-09-23 15:4x CDT, in-chat, verbatim: "Get snocone beauty test suite working first." (row snocone-the-beauty-
+# test-suite-reads-twenty-of-twenty-in-both-modes-with-no-xfail-marker-lons-first, R-1212). THE SUITE is the banner-block container
 # corpus/tests/snocone/beauty_modules.sc + .ref: the Snocone beauty subsystem tests of SC-19..SC-22 (test_Gen .. test_tree), each a
 # driver over the bootstrap runtime it names. This gate runs it through the harness in BOTH modes and is GREEN only when every test
 # passes in m3 AND m4 and neither file carries an XFAIL banner (an xfail counts as a fail, RULES.md FACT RULE; the Snocone lane bans it).
@@ -20,7 +20,7 @@
 # wrong answer in both modes. RE-MEASURED 2026-10-09 by hq_snocone (SCRIP ddd1d8bd7, the old container and the rungs view alike):
 # OBACK=0 and MATCHDIAMOND=0 no longer red any test; REPL_FREE=0 still reds test_Qize and test_case (m3 18/20, m4 18/20), so
 # `SCRIP_ZD_REPL_FREE=0 bash $0` must print RED. It grades output against the refs, never rc alone.
-# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680
+# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and R-1680
 # allows no seam in SCRIP for a test): every killswitch named here is gone and the
 # fail-once readings above stand as history.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -35,8 +35,8 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 # ⛔ THE SUITE IS A VIEW OVER THE RUNGS (row snocone-the-beauty-suite-folds-into-sncm-..., hq_snocone 2026-10-09): the twenty tests were
 # absorbed into corpus/tests/snocone/ALL.* with origin beauty_modules__test_<name> and the loose container deleted, so the gate extracts
 # the family from the rungs (corpus_suite_harness.py extract-family, the one authority) and grades that. It grades OUTSIDE the shared
-# corpus (coo 2026-09-27, ceo CEO-1306): the rungs are a Snocone board the one-runner guard admits for hq_snocone alone, and a gate is an
-# invariant check any seat runs, never a lane's board (CEO-1232). The tests inline their code (no -INCLUDE), so the extract stands alone.
+# corpus (coo 2026-09-27, R-1306): the rungs are a Snocone board the one-runner guard admits for hq_snocone alone, and a gate is an
+# invariant check any seat runs, never a lane's board (R-1232). The tests inline their code (no -INCLUDE), so the extract stands alone.
 S="$T/beauty_modules.sc"; R="$T/beauty_modules.ref"
 python3 "$HERE/corpus_suite_harness.py" extract-family "$M/ALL.sc" "$M/ALL.ref" "$M/ALL.csv" beauty_modules "$S" "$R" >/dev/null 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: could not extract family beauty_modules from the rungs"; exit 2; }
 out=$(cd "$ROOT" && S4E_PROGRESS_DB="$T/progress.tsv" timeout -k 5 1200 python3 "$HERE/corpus_suite_harness.py" run "$T/$(basename "$S")" "$T/$(basename "$R")" --lang snocone --modes m3,m4 2>&1); rc=$?

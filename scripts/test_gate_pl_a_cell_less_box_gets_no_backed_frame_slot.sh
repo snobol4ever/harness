@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_cell_less_box_gets_no_backed_frame_slot.sh -- IN A HOME-FRAME PROLOG GRAPH A BOX WHOSE CELL-SHAPE ROW IS UNCONDITIONALLY ZERO (UNMARK, UNIFY_CONST, UNIFY_FIRST, UNIFY_VALUE) AND
 # WHICH IS NOT FRAME-RESIDENT IS GRANTED NO BACKED FRAME SLOT (hq_snobol4, D3 kind 6 -- the cell-less half, 2026-10-24; the cfo's ARCH-PROLOG-ACTIVATION-LIFETIME section 7 and his note of 15:51;
-# CEO-1945/1946/1951). THE DEFECT: zls_overlay (the multi-clause graphs' clause overlay) granted a 16-byte result slot inside the BACKED region to every box of the alternatives, residents or not,
+# R-1945/1946/1951). THE DEFECT: zls_overlay (the multi-clause graphs' clause overlay) granted a 16-byte result slot inside the BACKED region to every box of the alternatives, residents or not,
 # and the reuse plan's direct-slot order took the cell-less UNIFY_* boxes too: 329 boxes of the empty program (UNMARK 134, UNIFY_CONST 129, UNIFY_FIRST 50, UNIFY_VALUE 16) printed off>=0 in
 # `scrip --dump-homes`, the census's ops_prealloc 1404. THE MEASUREMENT: every cell is compiled with --dump-homes and the [HOMES] rows of the four kinds are counted with a backed offset (the dump
 # prints -1 for a key past the resident region); the count must read 0. THE BEHAVIOUR CELLS: the same programs run in m3 and agree with swipl (expectations CUT FROM THE ORACLE at run time), so

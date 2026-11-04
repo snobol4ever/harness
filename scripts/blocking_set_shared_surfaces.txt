@@ -1,4 +1,4 @@
-# blocking_set_shared_surfaces.txt -- THE WATCHED SURFACE OF THE RACE DETECTOR, DECLARED (coo 2026-09-20, ceo
+# blocking_set_shared_surfaces.txt -- THE WATCHED SURFACE OF THE RACE DETECTOR, DECLARED (coo 2026-09-20, the officer
 # row instruments-the-blocking-set-is-367-serial-arms-and-it-caps-every-seat-in-the-fleet).
 #
 # run_blocking_set.sh --shards N snapshots the directories named below -- TOP LEVEL ONLY -- before and after

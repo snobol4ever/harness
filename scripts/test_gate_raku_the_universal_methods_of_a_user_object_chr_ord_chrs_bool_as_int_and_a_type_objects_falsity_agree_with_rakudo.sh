@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_universal_methods_of_a_user_object_chr_ord_chrs_bool_as_int_and_a_type_objects_falsity_agree_with_rakudo.sh -- THE MU / ANY METHODS OF A USER OBJECT, chr / ord / chrs IN UTF-8, A Bool AS AN INTEGER, A TYPE OBJECT IS FALSE, AND A ZERO-ITEM push
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by a 120-file mode-3 Roast sample: 10 of 120 died "GZ-10 rt_call_proc_descr: procedure 'Foo__defined' has no stackless slab", then a probe of 50 universal methods on a plain class).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by a 120-file mode-3 Roast sample: 10 of 120 died "GZ-10 rt_call_proc_descr: procedure 'Foo__defined' has no stackless slab", then a probe of 50 universal methods on a plain class).
 #
 # THE DEFECTS, each measured against Rakudo: (1) a method the class does not define fell through to a procedure that does not exist, so $obj.defined, .Bool, .so, .not, .gist, .Str, .raku, .item, .self, .list, .elems, .head ... all died on EVERY user class
 # (only .isa and .WHAT worked); and say $obj printed "Foo" where Rakudo prints Foo.new(x => 1, y => "a") (public attributes in declaration order); (2) .chr truncated to one byte (8364.chr printed a byte, chr(8364) too), .ord read one byte ("é".ord was 195,

@@ -2,8 +2,8 @@
 # lib_declared_arena.sh -- THE ONE READER OF A TEST'S DECLARED ARENA, for every runner that is not the
 # Python harness. Source it; never copy a line of it (RULES.md, lib_* are SOURCED AUTHORITIES).
 #
-# ⛔⭐⭐ WHY THIS EXISTS AT ALL. Lon, 2026-09-23, in-chat to the ceo, verbatim: "Well, each test should have
-# the needed amount of memory in the attribute TSV/CSV files." (routed CEO-1167). Before that word, a
+# ⛔⭐⭐ WHY THIS EXISTS AT ALL. Lon, 2026-09-23, in-chat, verbatim: "Well, each test should have
+# the needed amount of memory in the attribute TSV/CSV files." (routed R-1167). Before that word, a
 # program whose live set did not fit the shipped window was a capacity red and an argument for raising the
 # default for EVERYBODY. After it, the program DECLARES what it needs, in KB, in its suite's ALL.csv, and
 # the runner exports SCRIP_HEAP_KB FOR THAT PROGRAM ONLY. corpus_suite_harness.py reads the same column
@@ -11,7 +11,7 @@
 # exactly how one question gets nine written answers. It gets one here.
 #
 # ⛔ A DECLARATION IS NOT A PIN. A pin is a runner or a gate deciding an arena for a program from the
-# outside; util_arena_pin_census.py hunts those and has since CEO-1146. A declaration is the TEST saying
+# outside; util_arena_pin_census.py hunts those and has since R-1146. A declaration is the TEST saying
 # what it needs, carried in the test's own attribute row, reviewable in a diff, and carried forward across
 # every rebuild by both suite builders. The census learns the column so the two are told apart by evidence
 # rather than by which file the number happens to sit in.
@@ -31,18 +31,18 @@
 # the pin-the-runtime-silently-overrides class COO-151 caught one instrument ago, and the baton's own
 # guardrail (matched at that arena, NOT matched one step below) is UNPROVABLE for such a cell: one step
 # below carries the same cap, so both arms read the same and the evidence is vacuous. Refused, loudly, rc=2.
-# ââ­â­ THE RULE, IN THE READER'S OWN HEADER ON THE ceo'S INSTRUCTION:
-#     A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (ceo CEO-1171, 2026-09-23, ruling on the coo's ask).
+# ââ­â­ THE RULE, IN THE READER'S OWN HEADER ON THE OFFICER'S INSTRUCTION:
+#     A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (R-1171, 2026-09-23, ruling on the coo's ask).
 # Verbatim from the ruling: "A heap_kb cell at or below 4096 moves the initial window and not the cap,
 # so it declares nothing about capacity while reading to every consumer as if it did -- the pin-that-
 # the-runtime-overrides class, and your own guardrail (matched at that arena, not matched one step
 # below) is vacuous for it by construction. Refusing rc=2 with that sentence is the loud direction;
-# warn-and-pass would mint the false label CEO-1101 exists against."
+# warn-and-pass would mint the false label R-1101 exists against."
 # â SO THE FLOOR BELOW IS NOT A LOCAL CHOICE AND MAY NOT BE SOFTENED TO A WARNING. It was asked
 # for as a ruling rather than taken as one, because refusing is criterion-shaped and criterion-writing
 # is not the instruments seat's verb; the answer came back as law and is cited here at the constant it
 # governs, so a reader who reaches for the number reaches the rule in the same glance.
-# ⛔⭐⭐ CEO-1171's "above the compiled cap or not a declaration" rule is RETIRED (Lon 2026-09-25, in-chat to the ceo, verbatim: "Ensure that all the test suite programs have the stack size and heap size setting placed into the per-program attribute files."; ceo CEO-1261): every program declares its settings, a
+# ⛔⭐⭐ R-1171's "above the compiled cap or not a declaration" rule is RETIRED (Lon 2026-09-25, in-chat, verbatim: "Ensure that all the test suite programs have the stack size and heap size setting placed into the per-program attribute files."; R-1261): every program declares its settings, a
 # declaration equal to the default is a setting, not a no-op, and heap_kb is the program's MAXIMUM heap (SPITBOL -d), applied as
 # SCRIP_HEAP_CAP_KB or -d<kb>k, never as the initial window -- the window stays SPITBOL's -i1m, or the tiny arena of `make test-arena`.
 DECLARED_ARENA_CAP_KB=131072        # gc_heap.c #define GC_HEAP_CAP_KB (SPITBOL -d128m)
@@ -85,7 +85,7 @@ try:
             k = int(v)
             if k < cap:
                 sys.stderr.write("⛔ REFUSE(2) %s:%d heap_kb=%d is below the %d KB initial window: heap_kb is the program's "
-                                 "MAXIMUM heap (SPITBOL -d) and a maximum under the window cannot be honoured (ceo CEO-1261)\n"
+                                 "MAXIMUM heap (SPITBOL -d) and a maximum under the window cannot be honoured (R-1261)\n"
                                  % (path, n, k, cap))
                 sys.exit(2)
             if k > mx:
@@ -109,7 +109,7 @@ PY
 #   ALL.csv, and demo/json.sc needs 16384 KB (two ARRAY(262144) abort at the 4096 KB cap). The harness already
 #   defines this sidecar (heap_sidecar_path, written by extract-family: one line NAME<TAB>KB), so the benchmark
 #   runners read THAT file through THAT code -- corpus_suite_harness.heap_declarations() is CALLED, never copied,
-#   and its validator carries CEO-1171's floor. ⛔ A .heap FILE THAT DECLARES NOTHING FOR THE PROGRAM BESIDE IT IS
+#   and its validator carries R-1171's floor. ⛔ A .heap FILE THAT DECLARES NOTHING FOR THE PROGRAM BESIDE IT IS
 #   REFUSED rc=2, never read as "no declaration": a bare `16384` line splits on TAB into a name and an EMPTY kb,
 #   which the harness reads as absent, so the declaration would vanish while the file sat there claiming it.
 #   rc 2 with nothing echoed on any unusable sidecar, so a caller testing the exit code gets the refusal.
@@ -148,10 +148,10 @@ run_at_declared_arena() {
   ( [ -n "$kb" ] && export SCRIP_HEAP_CAP_KB="$kb"; [ -n "$st" ] && export SCRIP_STACK="${st}k"; "$@" )
 }
 
-# ⭐ THE STACK, THE HEAP'S TWIN (Lon 2026-09-23 18:3x, in-chat to the ceo: "an attribute of stack and heap sizes be added to the TSV
-# admin files for the test suites"; CEO-1225; the coo). The runtime raises RLIMIT_STACK at init to SCRIP_STACK when it is set and to
+# ⭐ THE STACK, THE HEAP'S TWIN (Lon 2026-09-23 18:3x, in-chat: "an attribute of stack and heap sizes be added to the TSV
+# admin files for the test suites"; R-1225; the coo). The runtime raises RLIMIT_STACK at init to SCRIP_STACK when it is set and to
 # its 64 MB floor when it is not (src/runtime/core/core.c), in BOTH modes -- the one variable sizes the m3 process and the m4 binary
-# alike until the cto's switch row makes it -s. ⛔ THE FLOOR IS CEO-1171's RULE, AND FOR THE STACK IT CUTS BOTH WAYS: the variable
+# alike until the cto's switch row makes it -s. ⛔ THE FLOOR IS R-1171's RULE, AND FOR THE STACK IT CUTS BOTH WAYS: the variable
 # REPLACES the floor, so a cell below 65536 SHRINKS the stack under every undeclared neighbour's -- MEASURED 2026-09-23 on one binary:
 # a 100000-deep Icon recursion completes at the default and dies with ERROR 246 at SCRIP_STACK=16384k, while a 200000-deep one dies
 # at the default and completes at 262144k, in m3 and m4 -- and a cell AT the floor changes nothing while reading as a declaration.
@@ -180,7 +180,7 @@ try:
                 sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%r is not a plain integer count of KB\n" % (path, n, v)); sys.exit(2)
             k = int(v)
             if k < flr:
-                sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is below the %d KB least stack a declaration may name (ceo CEO-1261)\n" % (path, n, k, flr))
+                sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is below the %d KB least stack a declaration may name (R-1261)\n" % (path, n, k, flr))
                 sys.exit(2)
             if k > mx:
                 sys.stderr.write("⛔ REFUSE(2) %s:%d stack_kb=%d is above the %d KB this box can hold\n" % (path, n, k, mx))
@@ -215,7 +215,7 @@ print(decl[stem])
 PY
 }
 
-# declared_oracle_env_beside <program> -- the ORACLE's declared environment for a standalone unit (ceo CEO-1353, clause 8 (g)(3)), from
+# declared_oracle_env_beside <program> -- the ORACLE's declared environment for a standalone unit (R-1353, clause 8 (g)(3)), from
 #   its <stem>.oracle_env sidecar (one line NAME<TAB>VAR=VALUE[ VAR=VALUE]), read by corpus_suite_harness.oracle_env_declarations --
 #   CALLED, never copied. Echoes the VAR=VALUE words for `env WORDS oracle ...`, nothing when there is no sidecar; rc 2 with nothing
 #   echoed on another unit's name, a knob outside ORACLE_ENV_ADMITTED, or a value that is not a positive integer.
@@ -231,7 +231,7 @@ print(" ".join(h.oracle_env_declarations(prog)))
 PY
 }
 
-# declared_oracle_args_beside <program> -- the ORACLE's declared command-line sizes for a standalone unit (ceo CEO-1353, clause 8 (g)(3)),
+# declared_oracle_args_beside <program> -- the ORACLE's declared command-line sizes for a standalone unit (R-1353, clause 8 (g)(3)),
 #   from its <stem>.oracle_args sidecar (one line NAME<TAB>SWITCH[ SWITCH]), read by corpus_suite_harness.oracle_args_declarations --
 #   CALLED, never copied. Echoes the switches for `oracle SWITCHES program`, nothing when there is no sidecar (the oracle's own defaults);
 #   rc 2 with nothing echoed on another unit's name, a switch outside ORACLE_ARGS_ADMITTED, a malformed size or a switch named twice.
@@ -283,16 +283,16 @@ try:
         ok, why = usable(v)
         (named if ok else refused).append((n, v, why))
     if named:
-        print("    DECLARED ARENA (CEO-1167): %d of %d entr(y/ies) graded at a declared arena, the rest at the "
+        print("    DECLARED ARENA (R-1167): %d of %d entr(y/ies) graded at a declared arena, the rest at the "
               "shipped default -- %s" % (len(named), len(d), ", ".join("%s=%sKB" % (n, v) for n, v, _ in named)))
     else:
-        print("    DECLARED ARENA (CEO-1167): 0 of %d entr(y/ies) declare one -- every entry graded at the "
+        print("    DECLARED ARENA (R-1167): 0 of %d entr(y/ies) declare one -- every entry graded at the "
               "shipped default" % len(d))
     if refused:
         print("    ⛔ DECLARED ARENA REFUSED (%d): these cells are present and are NOT honoured by the runner, "
               "so they are named here rather than counted above -- %s"
               % (len(refused), ", ".join("%s=%s (%s)" % r for r in refused)))
-    # ⭐ THE STACK, SAME SHAPE (CEO-1225): the same file's stack_kb cells, the reader's own floor applied, so the receipt
+    # ⭐ THE STACK, SAME SHAPE (R-1225): the same file's stack_kb cells, the reader's own floor applied, so the receipt
     # never counts a cell the runner refuses.
     with open(sys.argv[1], newline="") as f:
         rdr = csv.DictReader(f)
@@ -301,7 +301,7 @@ try:
             flr, smx = int(sys.argv[4]), int(sys.argv[5])
             ok_s = [(n, v) for n, v in st if v.isdigit() and flr <= int(v) <= smx]
             bad_s = [(n, v) for n, v in st if v and (n, v) not in ok_s]
-            print("    DECLARED STACK (CEO-1225): %d of %d entr(y/ies) graded at a declared stack, the rest at the runtime's "
+            print("    DECLARED STACK (R-1225): %d of %d entr(y/ies) graded at a declared stack, the rest at the runtime's "
                   "%d KB floor%s" % (len(ok_s), len(st), flr, (" -- " + ", ".join("%s=%sKB" % x for x in ok_s)) if ok_s else ""))
             if bad_s:
                 print("    ⛔ DECLARED STACK REFUSED (%d): present and NOT honoured -- %s" % (len(bad_s), ", ".join("%s=%s" % x for x in bad_s)))
@@ -310,7 +310,7 @@ except OSError:
 PY
 }
 
-# ⭐ THE TABLE, FOR A RUNNER THAT GRADES HUNDREDS OF PROGRAMS (CEO-1229, the ceo to the coo 2026-09-23: "wire the ten remaining package
+# ⭐ THE TABLE, FOR A RUNNER THAT GRADES HUNDREDS OF PROGRAMS (R-1229, the officer to the coo 2026-09-23: "wire the ten remaining package
 # runners yourself on the SWI pattern, each proven on a fixture"). run_at_declared_arena starts python twice per run, about 80 ms, which
 # is over a minute of a 427-program board graded in two modes. declared_memory_table reads the attribute file ONCE and validates every
 # cell through corpus_suite_harness.validate_heap_kb() and validate_stack_kb() -- the harness's own validators, CALLED, never copied --
@@ -320,7 +320,7 @@ PY
 # exits rc=2 naming the cell, and the runner refuses its board; it never grades around a cell it cannot honour. A declaring entry
 # named twice is refused too: the awk below would honour the first, the harness the last.
 
-# ⭐ AND THE UNIT'S COMPILE SWITCHES, IN THE SAME READ (clause 8 (f), CEO-1281, landing 3 of 5): a row declaring compile_args gets them as
+# ⭐ AND THE UNIT'S COMPILE SWITCHES, IN THE SAME READ (clause 8 (f), R-1281, landing 3 of 5): a row declaring compile_args gets them as
 # a 4th column, validated by corpus_suite_harness.validate_args_cell() -- CALLED, never copied -- so a runner that puts them on its own
 # scrip command line reads exactly the words the harness applies, and a row declaring none prints the three columns it always did.
 # ⛔ A run_args CELL IS REFUSED HERE: these runners pass argv from their own sidecars, and a declaration no reader honours grades green
@@ -390,7 +390,7 @@ declared_memory_begin() {
 #   collapse and hand the stack's KB to the heap.
 # _decl_miss <file> <entry> -- a program looked up with no row in its suite's attribute file is logged to SCRIP_DECL_MISS_LOG when set,
 # so a board run names every program the attribute file does not yet list (Lon 2026-09-25: every test program carries its settings;
-# ceo CEO-1261). Silent and free when the variable is unset.
+# R-1261). Silent and free when the variable is unset.
 _decl_miss() { [ -n "${SCRIP_DECL_MISS_LOG:-}" ] && printf '%s\t%s\n' "$1" "$2" >> "$SCRIP_DECL_MISS_LOG"; return 0; }
 run_at_declared_table() {
   local tbl="$1" entry="$2" rec kb st; shift 2
@@ -403,10 +403,10 @@ run_at_declared_table() {
 }
 
 # ⭐ THE DECLARATION AS SWITCHES (row instruments-ninety-two-scripts-and-the-makefile-size-the-arena-through-the-env-not-the-d-switch;
-# CEO-1225/1226: SCRIP sizes the heap with -d and -i and the stack with -s, as SPITBOL does, and a switch is recorded with the run where
+# R-1225/1226: SCRIP sizes the heap with -d and -i and the stack with -s, as SPITBOL does, and a switch is recorded with the run where
 # an environment knob is invisible in a transcript). These print the words a runner puts on its OWN scrip command line -- after --run
 # for mode 3, leading the compiled binary's arguments for mode 4 -- spelled exactly as corpus_suite_harness.py's _size_switches spells
-# them: a declared heap is the program's maximum heap (-d<kb>k; ceo CEO-1261 -- never -i, which would override the tiny arena of GC
+# them: a declared heap is the program's maximum heap (-d<kb>k; R-1261 -- never -i, which would override the tiny arena of GC
 # testing), a declared stack is -s<kb>k, nothing declared prints
 # nothing. test_gate_declared_arena_switches_agree_with_the_harness.sh holds the two spellings together. MEASURED 2026-09-24: every
 # heap_kb declared in the corpus is 8192 KB or more, where -d/-i and the old SCRIP_HEAP_KB export read the same window AND the same cap.
@@ -517,11 +517,11 @@ declared_row_in_table() {
 
 # declared_switches_beside <program> -- the program's declared heap and stack as SPITBOL's switches (-d<kb>k -s<kb>k), read from its
 # <stem>.heap and <stem>.stack sidecars exactly as test_prolog_bench_suite.sh reads them, for a runner that puts them on the scrip
-# command line (after --run, before the source) or at the head of a compiled binary's own command line -- the form CEO-1225 chose over
+# command line (after --run, before the source) or at the head of a compiled binary's own command line -- the form R-1225 chose over
 # an environment knob because a switch is recorded with the run. Echoes nothing when neither sidecar exists (the shipped defaults, the
 # honest answer) and rc 2 on a sidecar the reader refuses. ⛔ NEVER SCRIP_HEAP_KB: gc_heap.c:218 reads that variable as the INITIAL
 # WINDOW, so a declaration equal to the 131072 KB default cap exported through it would hand a benchmark a 128 MB window and a collector
-# that never runs. ⛔ WHY (ceo CEO-1281, 2026-09-26): the Prolog benchmark angles ran scrip --run <k>.pl with no declaration at all while
+# that never runs. ⛔ WHY (R-1281, 2026-09-26): the Prolog benchmark angles ran scrip --run <k>.pl with no declaration at all while
 # the suite runner honoured the sidecars, so tak overflowed the shipped 4 MB stack inside angle 1's own correctness gate and was SKIPped
 # on every engine -- an instrument gap printed in a kernel finding's words. MEASURED the same sitting: tak(18,12,6) completes at
 # -s65536k and overflows at -s32768k in both modes; swipl needs 16 MB of its own (--stack-limit=8m overflows too), so the need is the
@@ -536,7 +536,7 @@ declared_switches_beside() {
 # undeclared_beside_named <program> -- a STANDALONE unit (a benchmark kernel, a demo) that carries neither a .heap nor a .stack sidecar
 #   is NAMED on stdout, in the run's own output, and rc 1; a unit declaring either is silent, rc 0. The standalone counterpart of
 #   declared_row_in_table's naming (RULES.md 8 (f): "A declaration that is missing is a gap the runner names, never a default silently
-#   taken"; ceo CEO-1353, the coo's ask to hq_raku 2026-09-28: "an undeclared unit is NAMED in the run's own output").
+#   taken"; R-1353, the coo's ask to hq_raku 2026-09-28: "an undeclared unit is NAMED in the run's own output").
 undeclared_beside_named() {
   local prog="$1"
   [ -f "${prog%.*}.heap" ] || [ -f "${prog%.*}.stack" ] && return 0
@@ -548,7 +548,7 @@ undeclared_beside_named() {
 #   entry: no ALL.csv row to read), from its <stem>.cmdline sidecar, one line NAME<TAB>compile_args<TAB>run_args, read through
 #   corpus_suite_harness.cmdline_declarations() -- CALLED, never copied, as the .heap and .stack sidecars are read above. Echoes one line of
 #   words for the runner to place right after --run and --compile, before the source, in both modes (the cto's order, as
-#   declared_compile_args_from_table); nothing when there is no sidecar (clause 8 (f), CEO-1281, landing 4 of 5: the runner types none of
+#   declared_compile_args_from_table); nothing when there is no sidecar (clause 8 (f), R-1281, landing 4 of 5: the runner types none of
 #   its own). ⛔ rc 2 on a sidecar that declares nothing for the program beside it (the name is the program's stem, as for .heap), on a
 #   word outside COMPILE_ARGS_ADMITTED, and on a run_args cell: no standalone runner passes a declared argv yet, and a declaration no
 #   reader honours grades green while it is ignored (declared_memory_table's rule).
@@ -609,8 +609,8 @@ declared_chain_beside() {
   [ "$n" -gt 0 ] || { echo "⛔ REFUSE(2) declared_chain_beside: $side names no unit -- delete the sidecar or list the units" >&2; return 2; }
 }
 
-# declared_workhorse_beside <program> -- THE BENCHMARK ROLE OF A DEMO (Lon 2026-09-27, in-chat to the ceo, verbatim: "All demos are
-# benchmarks since they can be run at wall clock and perf values extracted. They are not run in loops."; ceo CEO-1313; coo COO-206): the
+# declared_workhorse_beside <program> -- THE BENCHMARK ROLE OF A DEMO (Lon 2026-09-27, in-chat, verbatim: "All demos are
+# benchmarks since they can be run at wall clock and perf values extracted. They are not run in loops."; R-1313; coo COO-206): the
 # <stem>.workhorse sidecar names the FULL input a demo is timed on, once, at wall clock -- its sample input and .ref are the TEST role.
 # The format is one KEY<TAB>VALUE per line, '#' comments: stdin (a file beside the program holding the full input, or - for none),
 # scale (the stdin file replicated N times, the DEMO-SCALE.tsv precedent), argv (the full run's arguments), why (a note). stdin is
@@ -639,7 +639,7 @@ declared_workhorse_beside() {
 }
 
 # declared_clib_beside <program> <package_root> -- THE C LIBRARY A PROGRAM LOADS (hq_icon 2026-09-27, Arizona general/cfuncs under
-# CEO-1336): the <stem>.clib sidecar is one line, "<libname>.so <dir>", <dir> relative to <package_root>, a vendored C-source
+# R-1336): the <stem>.clib sidecar is one line, "<libname>.so <dir>", <dir> relative to <package_root>, a vendored C-source
 # directory (every *.c in it, the headers beside them). The library is built once per content hash -- gcc -shared -fPIC, the
 # distribution's own mklib.sh line -- into a per-user cache, its undefined symbols left to the loading process (libscrip_rt.so
 # exports the iconx internals the C interface binds). Echoes the directory holding <libname>.so, which the runner puts on FPATH

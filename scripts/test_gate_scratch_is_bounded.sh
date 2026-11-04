@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_scratch_is_bounded.sh — the regrow-gate for the 2026-08-23 s267 root-filesystem outage.
 #
 # WHAT HAPPENED: honest_icon_correctness.sh did `mktemp -d /tmp/icn_corr_XXXXXX` with no cleanup trap and no

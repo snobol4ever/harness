@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # util_parser_grid.sh [lang ...] -- THE PARSER GRID: THE STAND-ALONE C PARSER, SCRIP AND SPITBOL ON THE PARSE CLOCK, ONE FILE LIST
-# FOR ALL THREE (Lon 2026-09-29, in-chat to the ceo, verbatim: "The goal is parser.sc same as C and 2x faster than SPITBOL." and "We
-# want focus on accuracy and speed of parser.sc as prep for replacing all SCRIP parsers."; MODE QUARTET, CEO-1364; the coo's row
-# parser-sc-speed-grid-c-scrip-spitbol-on-the-parse-clock-lon-2026-09-29-ceo-1364, committed from the ceo's scratch pcmp.sh, which
+# FOR ALL THREE (Lon 2026-09-29, in-chat, verbatim: "The goal is parser.sc same as C and 2x faster than SPITBOL." and "We
+# want focus on accuracy and speed of parser.sc as prep for replacing all SCRIP parsers."; MODE QUARTET, R-1364; the coo's row
+# parser-sc-speed-grid-c-scrip-spitbol-on-the-parse-clock-lon-2026-09-29-r-1364, committed from the officer's scratch pcmp.sh, which
 # is .github/wip-patches/pcmp-parsers-vs-clean-sbl-2026-09-29.sh). A MEASUREMENT: it writes no row, no score cell, no progress append.
 #
 # THE BAR (the row's): SCRIP's parse clock equal to C's (C/SCRIP >= 1.00) and SPITBOL/SCRIP >= 2.00 on every parser.
@@ -27,14 +27,14 @@
 #   SBL    sbl_clean_bin -bf (the clean benchmark oracle, never the monitor-hooked x64 fork: GOAL-SNOCONE-100 cursor 29k) running
 #          scrip --transpile of the same chain; the same driver, the same clock. TIME() reads nanoseconds in both, measured.
 #   SCRIP runs at the chain's declared heap and stack (bootstrap/parser_<lang>.heap, .stack) and SBL at its declared switches
-#   (bootstrap/parser_<lang>.oracle_args), each over its own shipped defaults, read by lib_declared_arena.sh (ceo CEO-1485, RULES.md
+#   (bootstrap/parser_<lang>.oracle_args), each over its own shipped defaults, read by lib_declared_arena.sh (R-1485, RULES.md
 #   clause 8 (g)(4): the window is never typed). CRITERION CHANGED 2026-10-03: every reading before ran BOTH at -s2000m -d8000m -i64m,
 #   one equal arena with a 64 MB initial window; the header line says so beside every reading from here on. SCRIP_DIAG=0 for the
 #   compile and every run. The median of GRID_RUNS (3) runs.
 #   VIA TRANSPILE: a language named in GRID_VIA_TRANSPILE (default: raku) has its SCRIP binary compiled from the same transpiled
-#   chain SPITBOL runs, through the SNOBOL4 frontend, and its row says "via transpile" -- the ceo's order of 2026-09-29 19:4x
+#   chain SPITBOL runs, through the SNOBOL4 frontend, and its row says "via transpile" -- the order of 2026-09-29 19:4x
 #   (da1b3a85a's rewritten parser_raku.sc hangs on a second statement when the chain is compiled directly as .sc, a Snocone-frontend
-#   defect; the default drops raku the day the ceo telegrams the cure). Raku's C clock is rk_parse_tree: parse and tree, as the .sc's.
+#   defect; the default drops raku the day the officer telegrams the cure). Raku's C clock is rk_parse_tree: parse and tree, as the .sc's.
 # COLUMNS: files, bytes, C ms, SCRIP ms, SBL ms, SBL/SCRIP, C/SCRIP, trees -- every run is made under PARSER_TREE_HASH=1, so each
 # engine prints ONE NUMBER per file in place of its tree (125bb54e6, the cfo's: the dump's bytes folded in memory, h = (h * 256 +
 # byte) mod (2^55 - 55), outside every parse clock), and each file's number from SCRIP is compared with the same file's from
@@ -42,7 +42,7 @@
 # not match, not in what ay do they not match."; the details come from the full dump of a mismatching file). THE CANARY: the first
 # file that printed a number is dumped in full by SCRIP and by SPITBOL, and each number must be an independent fold of its own
 # dump, so a hash that stopped folding REFUSES rc=2 instead of reading SCRIP==SBL (the tree gate's canary, the same fold).
-# THE HASH-OFF CONTROL (the ceo's ruling of 2026-09-29 20:4x CDT, on its measurement at 20:38: PARSER_TREE_HASH=1 read SCRIP's
+# THE HASH-OFF CONTROL (the ruling of 2026-09-29 20:4x CDT, on its measurement at 20:38: PARSER_TREE_HASH=1 read SCRIP's
 # Snocone parse_us 58 -> 83 ms on the 2536a296c runtime although the fold runs outside the clock; 59 -> 60 at 8c610af38; C and
 # SPITBOL not inflated): after the timed runs SCRIP runs the list once more with PARSER_TREE_HASH=0, printing its trees in full, and
 # that clock is printed beside the hash-on median; a hash-on clock more than ten percent off it either way is named on the
@@ -53,9 +53,9 @@
 # it differs, against the tag of the RT_OPT this run was handed in its environment; neither agreeing REFUSES rc=2, because a number
 # without its RT_OPT is unlabelled (RULES.md INSTRUMENT LAWS). THE SPEED RUNTIME (-O2 -DRT_DIAG=0, Lon 2026-09-29) IS BUILT BY HAND
 # IN A SCRATCH WORKTREE and read here beside the -O0 default: GRID_ROOT=<worktree> RT_OPT='<its RT_OPT>' util_parser_grid.sh.
-# No -O2 arm lives in this file (RULES.md NO -O2 BUILDS, CEO-1246: the -O2 build is a by-hand instrument; the grid only reads it).
+# No -O2 arm lives in this file (RULES.md NO -O2 BUILDS, R-1246: the -O2 build is a by-hand instrument; the grid only reads it).
 # rc 0 = every language measured; rc 2 = something could not be measured (named on its line). Never two heavy runs in flight
-# (CEO-1342): the whole grid is one heavy run and prints the load at its start and end.
+# (R-1342): the whole grid is one heavy run and prints the load at its start and end.
 set -uo pipefail
 G=util_parser_grid
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SELF="$(cd "$HERE/../../SCRIP" && pwd)"
@@ -84,7 +84,7 @@ declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [p
 LANGS="$*"; if [ -z "$LANGS" ]; then for L in snobol4 snocone icon prolog rebus pascal raku; do grep -q "PARSER_FILES" "$B/parser_$L.sc" 2>/dev/null && LANGS="$LANGS $L"; done; fi
 [ -n "$LANGS" ] || refuse "no bootstrap/parser_<lang>.sc reads PARSER_FILES"
 tree="$(git -C "$W" rev-parse --short HEAD 2>/dev/null)$(git -C "$W" diff --quiet 2>/dev/null || echo -dirty)"
-echo "PARSER GRID [$G]: tree $tree corpus $(git -C "$CORPUS" rev-parse --short HEAD 2>/dev/null) RT_OPT=$OPT runtime libscrip_rt-$lt.so sbl $(sbl_oracle_fingerprint "$SBL" | cut -d' ' -f1-2) sizes: each chain's declaration (CRITERION CHANGED 2026-10-03, CEO-1485 -- earlier grids ran both engines at -s2000m -d8000m -i64m) SCRIP_DIAG=0 median of $RUNS load $(cut -d' ' -f1-3 /proc/loadavg)"
+echo "PARSER GRID [$G]: tree $tree corpus $(git -C "$CORPUS" rev-parse --short HEAD 2>/dev/null) RT_OPT=$OPT runtime libscrip_rt-$lt.so sbl $(sbl_oracle_fingerprint "$SBL" | cut -d' ' -f1-2) sizes: each chain's declaration (CRITERION CHANGED 2026-10-03, R-1485 -- earlier grids ran both engines at -s2000m -d8000m -i64m) SCRIP_DIAG=0 median of $RUNS load $(cut -d' ' -f1-3 /proc/loadavg)"
 printf '%-8s %5s %9s | %9s | %9s | %9s | %9s | %7s | %s\n' lang files bytes "C ms" "SCRIP ms" "SBL ms" "SBL/SCRIP" "C/SCRIP" trees
 RC=0; NL=0; NC=0; N2=0
 run() {   # $1 engine, $2 list, $3 output stem: one run of that engine over the list

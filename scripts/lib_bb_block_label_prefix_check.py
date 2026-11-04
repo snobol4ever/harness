@@ -12,7 +12,7 @@ bb_define.cpp) as PRESERVING the enclosing box's identity rather than opening a 
 original bracketing here treated any "<word>_<greek>" as a new owner and false-flagged 7 labels on the
 pattern_bt.sno witness (measured, hq_P: "NO n<digits>_<kind>_<greek> box port opens between n47_define_*
 and n48_statement_end_α -- the whole span is one box's output"). seat11's classifier, unmodified, does
-NOT enforce a Greek letter on the _as/_af/_ry/_rt/_s<N> port-target families at all (ceo-endorsed
+NOT enforce a Greek letter on the _as/_af/_ry/_rt/_s<N> port-target families at all (officer-endorsed
 2026-08-29c: these ARE real box-owned gamma/omega jump targets -- emit.cpp node_γ/node_ω assignment at
 ~3074/3090/1398/3095 -- not siblings of the exempt _bx range-marker), so that requirement is added below
 as its OWN independent check, per hq_P's explicit "add seat05's greek requirement ... as a clearly
@@ -39,25 +39,25 @@ BOXFAM = re.compile(r'^n\d+_')                                   # this box's OW
 BAREWORD_GREEK = re.compile(r'^[A-Za-z_][A-Za-z0-9_$]*_([' + GREEK + r'])$')
 FAMILY_SUFFIX = re.compile(r'_(as|af|ry|rt|s\d+)$')               # the port-target families needing Greek
 
-# Ruled exempt (ceo 2026-08-29b/c, hq_P 2026-08-29 -- mechanism test: "a greek infix names a PORT OF A
+# Ruled exempt (2026-08-29b/c, hq_P 2026-08-29 -- mechanism test: "a greek infix names a PORT OF A
 # BOX; a label with no owning box has no port, so the infix would not be redundant, it would be FALSE").
 # Carried over unchanged from the pre-merge gate's allowlist, same citations -- an allowlist entry is a
 # claim, not a convenience; don't add one here without a citation and a task-LEDGER entry.
 EXEMPT = [
     (re.compile(r'^n\d+_[A-Za-z0-9_]+_bx$'),
      "box-span ELF .type@function/.size debug marker (emit.cpp bxs[], ~line 2977) -- spans the box's "
-     "entire range, never a jump target; ceo-ruled exempt 2026-08-29b"),
+     "entire range, never a jump target; ruled exempt 2026-08-29b"),
     (re.compile(r'^\.S\d+$'),
      "module-level string dedup table (emit.cpp strtab_label) -- shared across boxes, no single owner; "
-     "ceo-ruled exempt 2026-08-29b"),
+     "ruled exempt 2026-08-29b"),
     (re.compile(r'^\.C\d+$'),
-     "module-level cset dedup table (emit.cpp csettab_label) -- same as .S<N>; ceo-ruled exempt"),
+     "module-level cset dedup table (emit.cpp csettab_label) -- same as .S<N>; ruled exempt"),
     (re.compile(r'^(RETURN|FRETURN|NRETURN)$'),
      "per-function shared exit label (emit.cpp emit_floater_label) -- one level above any single box; "
-     "ceo-ruled exempt 2026-08-29b"),
+     "ruled exempt 2026-08-29b"),
     (re.compile(r'^FN__'),
      "function/graph entry point, called from outside the graph -- same class as RETURN-family; "
-     "ceo-ruled exempt 2026-08-29b"),
+     "ruled exempt 2026-08-29b"),
     (re.compile(r'^[A-Za-z_][A-Za-z0-9_$]*_res$'),
      "per-function result-cell label -- same function-level class as RETURN/FN__"),
     (re.compile(r'^(main|module_init|__gva_names)$'),
@@ -67,17 +67,17 @@ EXEMPT = [
      "level above any box"),
     (re.compile(r'^\.Lgvan\d+$'),
      "driver-level GVA name table (src/driver/scrip.c, not any bb_*/xa_*/emit.cpp box loop) -- no owning "
-     "box, no port to name; hq_P 2026-08-29, ceo-endorsed"),
+     "box, no port to name; hq_P 2026-08-29, officer-endorsed"),
     (re.compile(r'^\.Lstartup_(pname|prec|pnames)\d+$'),
      "driver-level per-procedure startup/reflection table (src/driver/scrip.c) -- same ruling as .Lgvan"),
     (re.compile(r'^\.Lseala\d+$'),
      "driver-level rt_proc_seal_alpha startup table (src/driver/scrip.c) -- same ruling as .Lgvan"),
     (re.compile(r'^\.Lgcmap_'),
      "the collector's frame map for a graph or thunk (emit.cpp emit_label_initf \".Lgcmap_%s\", ~line 3292), .quad data emitted "
-     "after the graph's omega in the text section -- a MODULE DATUM with no owning box; ceo 2026-09-30, CEO-1380"),
+     "after the graph's omega in the text section -- a MODULE DATUM with no owning box; the officer 2026-09-30, R-1380"),
     (re.compile(r'^\.Lgcsites_'),
      "the collector's per-graph site table (emit.cpp emit_gc_sites_data, \".Lgcsites_<fam>_<n>\", ARCH-GC section 13.3), .quad data "
-     "emitted after the graph's omega in the text section beside .Lgcmap_ -- a MODULE DATUM with no owning box, CEO-1380's class; cto 2026-10-07"),
+     "emitted after the graph's omega in the text section beside .Lgcmap_ -- a MODULE DATUM with no owning box, R-1380's class; cto 2026-10-07"),
     (re.compile(r'^\.Lgcsite_'),
      "a poll site's return-PC marker (x86_asm.h x86_gc_site_adj/x86_gc_site_raw, emit.cpp emit_gc_site_label), a recording label the "
      "site table reads as data and nothing jumps to -- the _bx class (a marker, never a jump target); the unmapped-store census "
@@ -170,8 +170,8 @@ def check(path):
         # A label defined in a non-text section is a MODULE DATUM (the thunk record .Lthk_<pat> and the frame map
         # .Lgcmap_<pat> in .data.rel.ro, the label-name table .Llbln<N>, the Icon startup tables .Lstartup_*): it has no
         # owning box, so the Greek infix would be false, not redundant -- the header's own mechanism test. The emitter
-        # returns to .text and continues the block it was in, so the owner is kept across the interlude (ceo 2026-09-30,
-        # CEO-1380: 59 such labels read as violations after the stored-pattern landings moved the data emission).
+        # returns to .text and continues the block it was in, so the owner is kept across the interlude (2026-09-30,
+        # R-1380: 59 such labels read as violations after the stored-pattern landings moved the data emission).
         nonlocal in_text
         if sm.group(1):
             pushed.append(in_text)
@@ -240,7 +240,7 @@ def main(argv):
             print(f"    ... and {len(violations) - 40} more", file=sys.stderr)
     if greek_missing:
         ok = False
-        print(f"⛔ {len(greek_missing)} port-target label(s) missing a Greek letter (_as/_af/_ry/_rt/_s<N> family, ceo-endorsed 2026-08-29c), in {argv[0]}:", file=sys.stderr)
+        print(f"⛔ {len(greek_missing)} port-target label(s) missing a Greek letter (_as/_af/_ry/_rt/_s<N> family, officer-endorsed 2026-08-29c), in {argv[0]}:", file=sys.stderr)
         for lineno, name in greek_missing[:40]:
             print(f"    line {lineno}: {name}", file=sys.stderr)
         if len(greek_missing) > 40:

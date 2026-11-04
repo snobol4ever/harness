@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_raku_bar.sh -- THE RAKU SPEED ROW'S CRITERION (ceo CEO-1283, 2026-09-26; the Raku twin of bench_prolog_bar.sh): ONE kernel under
-# corpus/benchmarks/raku, the bare multiple Rakudo time / SCRIP mode-4 time (RULES.md FACT RULE, CEO-1242) against a bar, read from the three-angle
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_raku_bar.sh -- THE RAKU SPEED ROW'S CRITERION (R-1283, 2026-09-26; the Raku twin of bench_prolog_bar.sh): ONE kernel under
+# corpus/benchmarks/raku, the bare multiple Rakudo time / SCRIP mode-4 time (RULES.md FACT RULE, R-1242) against a bar, read from the three-angle
 # harness bench_triangulate_raku.sh (angle 3's self-measured WORK inside the kernel's bracket, best of REPS, the two timed angles' cross-proof
 # required to AGREE on both arms; every rep byte-verified against the .ref; the kernel under its declared -d/-s sidecars) for the one kernel, in
 # ONE run -- no board, no row written. The bar is the reference implementation, Rakudo: Raku has no native compiler on the box (RULES.md x-factor

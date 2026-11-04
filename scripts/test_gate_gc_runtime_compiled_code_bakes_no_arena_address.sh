@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_runtime_compiled_code_bakes_no_arena_address.sh -- CODE COMPILED AT RUN TIME OUTLIVES EVERY COLLECTION, SO
 # NOTHING IT BAKES AS AN IMMEDIATE MAY LIVE IN THE COLLECTED HEAP (cto 2026-09-23, CTO-152; law RULES.md FACT RULE THE
-# COLLECTOR GUESSES NOTHING, CEO-812: a word the collector never visits is not a root, and an imm64 inside emitted code is
+# COLLECTOR GUESSES NOTHING, R-812: a word the collector never visits is not a root, and an imm64 inside emitted code is
 # exactly such a word).
 #
 # MEASURED 2026-09-23 on arbno_fence_span_branch_1 (the SNOBOL4 rungs, extracted standalone): with the deferred-pattern
@@ -22,15 +22,15 @@
 # ARMS: (a) every compile of the witness reads heapimm=0 (mode 3, where the scan lives); (c) THE PROPERTY: the witness
 # answers its oracle-cut ref at SCRIP_GC_STRESS=1,3,5 at the compiled default arena in mode 3 and mode 4, with the entry
 # polled; (d) the poll after dtp_fn_of is in the template.
-# ⛔ ARM (b) RETIRED UNDER CEO-1680 (hq_snobol4 2026-10-17; Lon: "Do not add broken code just to enable a test to determine a bug
+# ⛔ ARM (b) RETIRED UNDER R-1680 (hq_snobol4 2026-10-17; Lon: "Do not add broken code just to enable a test to determine a bug
 # in PATTERN matching is fixed. Just create a proper test instead."): it read SCRIP_RTPAT_PLANT_HEAPIMM, a switch in
 # pattern_match.c that put the ARB$n name back in the heap so the scan could be seen to fire; SCRIP deletes the switch in the
 # same sitting. Its fail-once of record is the defect itself, measured before the cure (cto 2026-09-23, above): gdb found ONE imm64
 # inside [g_hp_arena, g_hp_top) in the code dtp_fn_of returned, and the witness printed FAIL for MATCH at stress 1/3/5.
 # FAIL_ONCE=1 grades arm (c) against a corrupted copy of the oracle-cut ref and requires it, and so the gate, to read red.
-# ⛔ THE WITNESS IS BUILT AT RUN TIME BY CONSTRUCTION (ceo 2026-09-28, SCRIP 0d9ae641f): it used to reach the run-time compiler
+# ⛔ THE WITNESS IS BUILT AT RUN TIME BY CONSTRUCTION (2026-09-28, SCRIP 0d9ae641f): it used to reach the run-time compiler
 # only because $'W' was outside the pattern pre-compile; once $'name' lowered as the variable, the whole match compiled ahead of
-# time and arms (a) and (b) read 0 compiles (CEO-554: a gate anchored on a found witness dies the day the witness is cured). The
+# time and arms (a) and (b) read 0 compiles (R-554: a gate anchored on a found witness dies the day the witness is cured). The
 # ARBNO now goes through a TABLE element -- the value road, with $'W' a variant reference -- so it is built and compiled at run time.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

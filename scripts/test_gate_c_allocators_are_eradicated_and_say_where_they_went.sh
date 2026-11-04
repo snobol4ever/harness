@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh -- THE GATE ON LON'S ERADICATION ORDER
-# (coo, CEO-842/843; RULES.md FACT RULE line 29).
+# (coo, R-842/843; RULES.md FACT RULE line 29).
 #
 # LON'S ACCEPTANCE TEST IS TEXTUAL AND IT IS HIS: "Eradicate ALL usage of malloc, calloc, free, and realloc.
 # At the end ensure 0 instances found in the SCRIP source base."  So the count must fall to 0 over the WHOLE
 # tree -- src/parsers and the checked-in generated flex/bison output included.
 #
-# ⛔⭐ BUT THE COUNT ALONE IS NOT THE VERDICT, and that is the ceo's own warning (CEO-843, verbatim): "a census
+# ⛔⭐ BUT THE COUNT ALONE IS NOT THE VERDICT, and that is the officer's own warning (R-843, verbatim): "a census
 # that only counts the four names would read green on a tree where half the runtime quietly lives outside the
 # collector."  The rule names three destinations -- the collected heap WITH A ROOT for anything the running
 # program can reach, the compile-time arena for what only the compiler touches, mmap for the collector's own
 # bookkeeping -- and THE ARENA MAY NOT HOLD ANYTHING THE RUNTIME CAN REACH.  An arena allocation under
 # src/runtime is the same evasion as malloc or a pin, one name further out -- ⛔ BUT ONLY WHEN THE SITE CAME OFF
-# THE COLLECTED HEAP, which is the split CEO-846 ordered and which arm (c) now makes.
+# THE COLLECTED HEAP, which is the split R-846 ordered and which arm (c) now makes.
 #
 # ⛔ THE RULE IS AUTHORITATIVE WHILE THE CURE DOES NOT EXIST (RULES.md line 29), exactly as it is for xfail, so
 # THIS GATE IS RED TODAY BY DESIGN -- 1182 sites at the order.  What it enforces meanwhile is the RATCHET: the
@@ -23,16 +23,16 @@
 # ARMS: (a) the census's own selftest -- planted violations trip, a clean fixture passes, a vacuous zero refuses
 #       (b) the census runs on this tree and prints its population (a REFUSAL here is rc=2, never green)
 #       (c) ARENA-IN-RUNTIME is 0 -- the anti-evasion clause, the population a four-name grep cannot see
-#       (c) THE ARENA CLASS SPLIT (CEO-846): class 1, a site that was on the COLLECTED HEAP and is now in the
+#       (c) THE ARENA CLASS SPLIT (R-846): class 1, a site that was on the COLLECTED HEAP and is now in the
 #           arena, is the evasion and a HARD red; class 2, a site that was a libc malloc and is now in the
 #           arena, is transitional DEBT with the lifetime it already had and is ratcheted to zero instead.
 #           Without ../harness/scripts/c_allocator_sites_baseline.tsv the split is not computable and this REFUSES rc=2.
 #       (d) the ratchet holds against ../harness/scripts/c_allocator_baseline.tsv
 #       (f) MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (CFO-96/97) is graded and printed, with its limit
-#       (g) WHO OWNS THE BLOCK (CEO-850): a block libc owns handed to the arena's free or to a collector root.
+#       (g) WHO OWNS THE BLOCK (R-850): a block libc owns handed to the arena's free or to a collector root.
 #           Six today, every one named. NOT the twelve-name census, which RULES.md line 29 says lands with its
 #           cure -- this names an open door rather than printing a zero over one.
-#       (e) the census still ANSWERS both halves of CEO-844: it resolves alias CHAINS and counts the calls made
+#       (e) the census still ANSWERS both halves of R-844: it resolves alias CHAINS and counts the calls made
 #           through them, and it reports licence prose APART from the count.  An instrument that goes quiet on
 #           either clause reads green while the thing it was built to see walks past it -- the alias chain
 #           `#define YYSTACK_ALLOC YYMALLOC` over `#define YYMALLOC malloc` is invisible to a four-name grep AND
@@ -90,7 +90,7 @@ printf '%s\n' "$out" | grep -m1 '^CENSUS c-allocators ARENA-SPLIT' | sed 's/^/  
 printf '%s\n' "$out" | grep -m1 '^CENSUS c-allocators CONTAINER-UNMARKED' | sed 's/^/    /'
 printf '%s\n' "$out" | grep -m1 '^CENSUS c-allocators LIBC-OWNED-MISUSE' | sed 's/^/    /'
 
-# ⛔⭐ (c) THE CLASS SPLIT (CEO-846).  The clause was written as one rule over two different acts and only one
+# ⛔⭐ (c) THE CLASS SPLIT (R-846).  The clause was written as one rule over two different acts and only one
 # of them is the evasion, so the TOTAL is not the verdict: what a site WAS decides.  Class 1 -- collected heap
 # -> arena -- is the cfo's f62a33aed shape under a new name and is a HARD RED here, named, never ratcheted.
 # Class 2 -- libc malloc -> arena -- has the lifetime it already had, removes a forbidden call, and is DEBT
@@ -104,19 +104,19 @@ ev="$(printf '%s\n' "$out" | sed -n 's/^CENSUS c-allocators ARENA-SPLIT CLASS-1-
 dbt="$(printf '%s\n' "$out" | sed -n 's/^CENSUS c-allocators ARENA-SPLIT .*CLASS-2-DEBT=\([0-9]*\) .*/\1/p' | head -1)"
 av="$(printf '%s\n' "$out" | sed -n 's/^CENSUS c-allocators ARENA-IN-RUNTIME=\([0-9]*\) .*/\1/p' | head -1)"
 if [ -z "$ev" ]; then
-  ck no "(c) the arena class split did not print -- the instrument cannot tell an evasion from transitional debt, which is the whole question CEO-846 asked it"
+  ck no "(c) the arena class split did not print -- the instrument cannot tell an evasion from transitional debt, which is the whole question R-846 asked it"
 elif [ "$ev" = 0 ]; then
   ck ok "(c) CLASS-1-EVASION=0 -- nothing that was on the collected heap has been moved into the arena (ARENA-IN-RUNTIME=${av:-?} of which CLASS-2-DEBT=${dbt:-?} is transitional, ratcheted by arm (d))"
 else
   ck no "(c) CLASS-1-EVASION=$ev -- a site that was ON THE COLLECTED HEAP is now in the compile-time arena. THE CURE FOR AN UNROOTED HOLDER IS A ROOT, NEVER A DIFFERENT ALLOCATOR: $(printf '%s\n' "$out" | grep -m3 'CLASS-1-EVASION ' | tr '\n' ';' | cut -c1-300)"
 fi
 
-# ⛔ (f) MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (CEO-846, the cfo's CFO-96/97).  A root walk that
+# ⛔ (f) MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (R-846, the cfo's CFO-96/97).  A root walk that
 # visits a container's contents and never the container reads as ROOTED to every census ever written -- this
 # gate's own destination column included, which only asks where an allocation went.  Ratcheted by arm (d);
 # graded here so the reading is printed rather than buried, WITH the limit stated: it is a syntactic read of
 # the *_gc_roots functions and a LIVE=0 from it is not a proof.
-# ⛔ (g) WHO OWNS THE BLOCK (CEO-850, RULES.md line 29 as amended).  A block libc owns handed to our arena or
+# ⛔ (g) WHO OWNS THE BLOCK (R-850, RULES.md line 29 as amended).  A block libc owns handed to our arena or
 # our collector.  Graded and PRINTED rather than folded into a count, and ratcheted by arm (d) -- it read 6 when
 # this arm landed and 0 on origin since a35750d9b, every one named, because naming an open door is the opposite of
 # printing a zero over one.  ⛔ AND THE DOORS THEMSELVES ARE COUNTED (coo 2026-09-23, row instruments-the-c-allocator-
@@ -131,8 +131,8 @@ else
   ck ok "(g) ownership is GRADED and every mismatch named: LIBC-OWNED-MISUSE=$lom and LIBC-DOORS=$doors (both ratcheted by arm (d); ct_drop on a libc pointer reads 32 bytes it does not own -- it can segfault under ASLR and otherwise leaks, CFO-153)"
 fi
 
-# ⛔ (h) CLASS 3, RULED-PERMANENT (CEO-856, the cfo's shape).  Class 2 DEBT means "holder not yet rooted" and its
-# meaning is that it ratchets to ZERO; CEO-854 ruled five sites permanently and correctly arena, so carrying them as
+# ⛔ (h) CLASS 3, RULED-PERMANENT (R-856, the cfo's shape).  Class 2 DEBT means "holder not yet rooted" and its
+# meaning is that it ratchets to ZERO; R-854 ruled five sites permanently and correctly arena, so carrying them as
 # debt makes that target unreachable BY CONSTRUCTION -- and a ratchet with an unreachable target teaches the fleet to
 # raise baselines instead of curing.  Class 3 is counted, PRINTED, and not driven to zero.  ⛔ THE CITATION IS THE
 # WHOLE SAFETY: an entry whose cited ruling does not resolve is a class-1 evasion in disguise, and the census REDS on
@@ -156,7 +156,7 @@ else
   ck ok "(f) the container property is GRADED and its reading printed: $(printf '%s\n' "$out" | grep -m1 '^CENSUS c-allocators CONTAINER-UNMARKED' | cut -c1-120) (a syntactic read of *_gc_roots; LIVE=0 would not be a proof, and the gate says so rather than certifying)"
 fi
 
-# ⛔ (e) THE TWO CLAUSES OF CEO-844 ARE THEMSELVES A POPULATION, because the failure mode of this instrument is
+# ⛔ (e) THE TWO CLAUSES OF R-844 ARE THEMSELVES A POPULATION, because the failure mode of this instrument is
 # not a wrong number, it is SILENCE: drop the chain resolver and the census reads the same 1182 while 15 calls
 # through YYSTACK_ALLOC walk past it; fold the licence prose in and the count never reaches 0, which teaches the
 # next reader to edit a copyright header.  Both lines must be present, and the prose must be OUT of the count.
@@ -165,9 +165,9 @@ pr="$(printf '%s\n' "$out" | sed -n 's/^CENSUS c-allocators PROSE-RESIDUE=\([0-9
 ft="$(printf '%s\n' "$out" | sed -n 's/^CENSUS c-allocators FORBIDDEN total=\([0-9]*\) .*/\1/p' | head -1)"
 chain="$(printf '%s\n' "$out" | grep -c ' via .* -> .* -> ' || true)"
 if [ -n "$al" ] && [ -n "$pr" ] && [ -n "$ft" ]; then
-  ck ok "(e) both halves of CEO-844 are answered: ALIASES/ALIAS-CALLS=$al with $chain resolved multi-level chain(s) named by route, and PROSE-RESIDUE=$pr held APART from the count of $ft -- a licence header is never edited to make a grep read zero"
+  ck ok "(e) both halves of R-844 are answered: ALIASES/ALIAS-CALLS=$al with $chain resolved multi-level chain(s) named by route, and PROSE-RESIDUE=$pr held APART from the count of $ft -- a licence header is never edited to make a grep read zero"
 else
-  ck no "(e) the census went QUIET on a CEO-844 clause -- aliases='${al:-missing}' prose='${pr:-missing}' forbidden='${ft:-missing}'; an instrument that stops reporting a population reads green while that population walks past it"
+  ck no "(e) the census went QUIET on a R-844 clause -- aliases='${al:-missing}' prose='${pr:-missing}' forbidden='${ft:-missing}'; an instrument that stops reporting a population reads green while that population walks past it"
 fi
 
 if printf '%s\n' "$rout" | grep -q '^RATCHET GREEN'; then

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners invoked on scratch packages as instrument fixtures, not boards (CEO-1272, CEO-523)"
-# test_gate_no_library_is_ungradable_and_every_container_names_its_measurement.sh -- THE CONTAINER_OR_LIBRARY SPLIT, HELD (ceo CEO-1272,
-# 2026-09-25, on the coo's 886-row ask; CEO-700, CEO-1245, CEO-1269; coo, row instruments-container-or-library-splits-into-a-library-
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners invoked on scratch packages as instrument fixtures, not boards (R-1272, R-523)"
+# test_gate_no_library_is_ungradable_and_every_container_names_its_measurement.sh -- THE CONTAINER_OR_LIBRARY SPLIT, HELD (R-1272,
+# 2026-09-25, on the coo's 886-row ask; R-700, R-1245, R-1269; coo, row instruments-container-or-library-splits-into-a-library-
 # owed-its-driver-and-a-container-that-is-not-a-program-and-ipl-publishes-its-shipped-population). The retired UNGRADABLE class
 # conflated two facts. A LIBRARY (callable code, no entry point) is a program owed its driver: UNGRADED NEEDS_DRIVER, in the
 # denominator. A CONTAINER (not a compilation unit on its own) leaves shipped, named in CONTAINERS.tsv with the measurement that
@@ -12,15 +12,15 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners i
 # shipped with containers=1 and the includer named; (3) a class-less row refuses; (4) a measurement that does not re-derive
 # refuses; (5) a container also declared UNGRADABLE refuses (two answers); (6) a library written as a container refuses; (7) the
 # retired class itself refuses. MEASUREMENT ARMS: (8) Prolog -- a loading tester is SCAFFOLDING, a fact file a test names is
-# OPENED_BY, a module of rules is a LIBRARY; (8b) Prolog LOADED_BY (ceo CEO-1621) -- a module a program's use_module loads is
+# OPENED_BY, a module of rules is a LIBRARY; (8b) Prolog LOADED_BY (R-1621) -- a module a program's use_module loads is
 # LOADED_BY that program while an include stays INCLUDED_BY, a CONTAINERS row naming the loader verifies green, and one naming a
 # file that does not load it verifies RED (the kind fails once and passes once); (9) SNOBOL4 -- an -INCLUDEd file is INCLUDED_BY, two top-level ENDs are MULTI_PROGRAM,
 # DEFINEs with no END are a LIBRARY. RUNNER ARMS: (10) Jcon and (11) Arizona on a scratch package holding one program and the
 # fragment it $includes -- shipped=1, graded=1, both modes pass, containers=1 on the inventory line. CORPUS ARMS: (12) no sidecar
 # under corpus/ carries CONTAINER_OR_LIBRARY in its class column; (13) every corpus CONTAINERS.tsv re-derives; (14) IPL publishes
-# the inventory's shipped count, never the graded subset (CEO-1245).
+# the inventory's shipped count, never the graded subset (R-1245).
 # ⛔ FAILED ONCE (measured at the landing, recorded in its commit): on bbfc21362's parent lib_inventory.sh, arms 2-7 read red.
-# ⛔ (8b) FAILED ONCE (hq_pascal 2026-10-10, CEO-1621): on the parent instrument the use_module-loaded module measured LIBRARY
+# ⛔ (8b) FAILED ONCE (hq_pascal 2026-10-10, R-1621): on the parent instrument the use_module-loaded module measured LIBRARY
 # NEEDS_DRIVER and a LOADED_BY row was refused as an unknown KIND.
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED (an oracle, the fixture or the corpus could not be read -- nothing measured).
 set -u
@@ -38,7 +38,7 @@ fails=0; checks=0
 ck() { checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 inv() { ( . "$HERE/lib_inventory.sh"; INV_PACKAGE=fx; INV_DIR="$1"; INV_EXT="$2"; inventory_line "$3" 0 ) 2>&1; }
 # bf <file> <BOARD> field=value... -- every field on the first <BOARD> line, each matched on its own: a board line read by
-# identity, never by position (util_board_field_matcher_census.py, CEO-839), so a field a runner inserts cannot red this gate.
+# identity, never by position (util_board_field_matcher_census.py, R-839), so a field a runner inserts cannot red this gate.
 bf() { local f="$1" b="$2" l kv; shift 2; l="$(grep -m1 "^$b " "$f")" || return 1; for kv in "$@"; do grep -qE "(^| )$kv( |\$)" <<<"$l" || return 1; done; }
 hdr='# fixture\n# name<TAB>CLASS<TAB>reason\n'
 
@@ -134,7 +134,7 @@ done < <(find "$CORPUS_REAL/packages" -name CONTAINERS.tsv | sort)
 [ -z "$bad" ] && ck ok "(13) every corpus CONTAINERS.tsv re-derives its measurement ($nr rows over $nc packages)" || ck no "(13) a corpus container does not re-derive:$bad"
 grep -qF -- '--suite-total "$IPL_SHIPPED"' "$HERE/test_icon_ipl_suite.sh" && ! grep -qF -- '--suite-total "$RUN_GRADED"' "$HERE/test_icon_ipl_suite.sh" \
   && grep -qE '^IPL_SHIPPED=.*INV_LINE.* shipped=' "$HERE/test_icon_ipl_suite.sh" \
-  && ck ok "(14) IPL publishes the inventory's shipped count as its total, never the graded subset (CEO-1245)" || ck no "(14) test_icon_ipl_suite.sh does not publish the inventory's shipped population"
+  && ck ok "(14) IPL publishes the inventory's shipped count as its total, never the graded subset (R-1245)" || ck no "(14) test_icon_ipl_suite.sh does not publish the inventory's shipped population"
 
 echo "population: $checks arm(s) -- 7 on a scratch Icon package, 2 measurement fixtures (Prolog, SNOBOL4), 2 runner fixtures (Jcon, Arizona), 3 over the real corpus ($nr container rows in $nc packages)"
 if [ "$fails" = 0 ]; then echo "GATE PASS(0) [no_library_is_ungradable_and_every_container_names_its_measurement]: $checks of $checks arms hold"; exit 0; fi

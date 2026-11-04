@@ -23,7 +23,7 @@
 #   (h) A VARIABLE FILE NAME: `F = t_foo, [F]` in a clause body. This arm once pinned a limit (no run-time
 #       loading, so the call had to RAISE consult/1); SCRIP 3eb9e62e0 made a list goal consult its files at run
 #       time, directly and through call/1, so the limit is gone and the arm is RE-CUT to the oracle (cfo
-#       2026-10-17, row prolog-gnu-semantics-leak-...-ceo-1810): swipl and gprolog 1.4.5 both print 2, and so
+#       2026-10-17, row prolog-gnu-semantics-leak-...-r-1810): swipl and gprolog 1.4.5 both print 2, and so
 #       must SCRIP. This is the INRIA driver's spelling (inriasuite.pl:623-624, `[ProgFile]`).
 #   (d) ⛔ CONTROL, AND THE ONE THAT KEEPS THE CURE HONEST: a list in a DATA position is NOT a consult.
 #       `X = [a,b]` must still bind a list. A cure that scans every term for a list of atoms passes (a)-(c)

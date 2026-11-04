@@ -7,16 +7,16 @@
 # NESTED (rt_goto_transfer_checked -> rt_chain_enter) on top of the erroring call, the EVAL frames and
 # core_runtime_error itself. Every trap whose handler left by a plain goto nested the program one level deeper:
 # ERROR 246 after ~480 traps, and inside EVAL's guard each trap held two of g_core_errjmp_stk's 64 entries, so
-# raising stopped after 32 (ceo CEO-1419 ticket snobol4-setexit-trapped-errors-leak-stack-to-error-246-and-stop-
-# raising-after-32; the ceo's ruling CEO-1422 chose shape B).
+# raising stopped after 32 (R-1419 ticket snobol4-setexit-trapped-errors-leak-stack-to-error-246-and-stop-
+# raising-after-32; the ruling R-1422 chose shape B).
 # SHAPE B, AS LANDED: core_runtime_error records the handler's resolved code address in g_rtccb[25] and returns, so the
 # operation fails and its statement fails. The statement's failure path carries an IR_SETEXIT_TEST box: if g_rtccb[25]
-# is set, its inline take sequence (bb_setexit_take; out of line in runtime_eval.c from CEO-1428 until CEO-1468 put it back,
+# is set, its inline take sequence (bb_setexit_take; out of line in runtime_eval.c from R-1428 until R-1468 put it back,
 # because a runtime asm entered from a box counts as C-to-BB) clears it, keeps the path (a resume label in the box), rsp, rbp
 # and r12 in g_rtccb[26..29], and jumps to the handler.
 # :(CONTINUE)/:(SCONTINUE) resolve to rt_setexit_continue_tramp, which restores them and resumes that failure path,
 # and :(ABORT) makes the original error fatal. Inside a match a pending trap takes the deferred element's ABORT exit,
-# so no alternative runs after the error (the ceo's condition 1). A computed goto's unresolved exit tests the same
+# so no alternative runs after the error (the officer's condition 1). A computed goto's unresolved exit tests the same
 # slot. A site that cannot return after an error (heap exhaustion) still enters the handler at once.
 # Expectations are cut from sbl -bf AT RUN TIME, both modes; each arm grades the whole stdout. rc=0 clean · rc=1 a
 # divergence · rc=2 REFUSAL.

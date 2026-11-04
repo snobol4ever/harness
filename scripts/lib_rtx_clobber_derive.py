@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """lib_rtx_clobber_derive.py -- THE CLOBBER SET OF EVERY REGISTERED ASM-RUNTIME ENTRY, DERIVED FROM THE ASSEMBLED OBJECTS
-(DESIGN-PLAN zeta-layout step 5, stage 5c; CEO-2019).  This is the derivation that util_gen_rtx_clobber_table.py carried (cto
-2026-09-30, row rtx-leaves-carry-no-register-veneer-an-asm-runtime-call-is-not-a-c-function; Lon 2026-09-30, in-chat to the ceo,
+(DESIGN-PLAN zeta-layout step 5, stage 5c; R-2019).  This is the derivation that util_gen_rtx_clobber_table.py carried (cto
+2026-09-30, row rtx-leaves-carry-no-register-veneer-an-asm-runtime-call-is-not-a-c-function; Lon 2026-09-30, in-chat,
 verbatim: "Ensure the veneer to save and restore registers has been removed from ALL x86 asm runtime calls since they are not C
 functions and do not require the extra."; ARCH-RT-CALL-PROTOCOL.md section 15 THE LEAF CONTRACT), moved here when that generator
 and rtx_clobber_table.inc were deleted: the runtime entry table (rt_entries.tsv, rt_entry_table.inc) is now the one source the

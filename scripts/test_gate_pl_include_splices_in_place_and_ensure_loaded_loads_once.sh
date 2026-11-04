@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_include_splices_in_place_and_ensure_loaded_loads_once.sh -- :- include(F) IS TEXTUAL INCLUSION AT THE DIRECTIVE'S PLACE (ISO 7.4.2.7) AND
-# :- ensure_loaded(F) LOADS F ONCE (ISO 7.4.2.8); an initialization goal inside an included file runs in load order (hq_prolog 2026-09-25, CEO-1270).
+# :- ensure_loaded(F) LOADS F ONCE (ISO 7.4.2.8); an initialization goal inside an included file runs in load order (hq_prolog 2026-09-25, R-1270).
 # THE DEFECT. SCRIP dropped both directives: the lowering lists ensure_loaded among ignored declarations and include had no handling at all, so a
 # file's clauses never arrived (Logtalk directives include_1, ensure_loaded_1: existence_error(procedure, a/1)). THE CURE: prolog_parse.c parses an
 # include's file in place, before clauses are grouped by predicate, so a(1) a(2) from two included files and the including file's own a(3) are one

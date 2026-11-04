@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask.sh -- THE SPINE WALK IS TOLD ITS CELLS (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16 step (2), the
-# cto 2026-10-29, CEO-2011; the fourth quad and the base-relative coordinate, CTO-504 and CTO-509, zeta-layout step 4a-3). Every site entry of the GC site table is {pc_off, w, mask,
+# cto 2026-10-29, R-2011; the fourth quad and the base-relative coordinate, CTO-504 and CTO-509, zeta-layout step 4a-3). Every site entry of the GC site table is {pc_off, w, mask,
 # anchor}: w = kind | rule << 16 | depth << 32, anchor the run base's distance from R in words (A), and mask the word-kind bits of a rule 0 or rule 4 site -- bit w the word at
 # R + 8A - 8(w + 1), w = 0 the oldest word of the run, set on the first word of a DESCR cell -- inline in the third quad when depth is at most 512 bytes, else a BYTE OFFSET from
 # the table's first quad into a pool of mask words after the last entry (never a pointer). A rule 0 or rule 4 site that declares cells carries anchor = depth / 8, else 0. The

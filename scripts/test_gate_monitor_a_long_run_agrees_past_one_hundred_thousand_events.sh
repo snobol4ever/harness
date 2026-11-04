@@ -36,7 +36,7 @@ done
 S="$T/home"; . "$HERE/lib_fixture_root.sh" || exit 2; fixture_root "$S" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot stage a copied root at $S"; exit 2; }
 printf '#!/usr/bin/env bash\necho "[ctrl] PROTOCOL ERR step 100000 on scr: insane value_len 858993459 (>16777216) -- torn/garbage header"\necho "[ctrl] VERDICT AGREE=99999 DIVERGE=0 UNGRADED=0 of 99999 compared step(s) -- PROTOCOL ERR at step 100000"\nexit 3\n' > "$S/harness/scripts/test_monitor_3way_sync_step_auto.sh"
 printf '        OUTPUT = 1\nEND\n' > "$T/one.sno"
-# the stub enters through MONITOR_HARNESS: monitor_run.sh runs its own repository's binary and harness since CEO-1496 (the coo 2026-10-04),
+# the stub enters through MONITOR_HARNESS: monitor_run.sh runs its own repository's binary and harness since R-1496 (the coo 2026-10-04),
 # so a scratch S4E_HOME no longer reaches it
 MONITOR_HARNESS="$S/harness/scripts/test_monitor_3way_sync_step_auto.sh" SCRIP_SNO_STMTKW=1 timeout -k 5 300 bash "$HERE/monitor_run.sh" "$T/one.sno" --oracle > "$T/stub.out" 2>&1; rc=$?
 [ "$rc" = 2 ] && grep -q 'REFUSE(2): THE WIRE BROKE, NOT THE PROGRAM' "$T/stub.out" && grep -q 'AGREE=99999' "$T/stub.out" && ! grep -q 'DIVERGE (rc' "$T/stub.out" \

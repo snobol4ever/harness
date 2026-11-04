@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_suite_partitions_are_current.sh -- EVERY SUITE TABLE CARRIES A STORED PARTITION THAT A REBUILD REPRODUCES (Lon 2026-10-11 13:0x CDT:
 # "subsets need to be identified independent of a query against the attribute file for the long running test suites. So to partition them as major
-# cores, and shells around that core with each major feature broken out."; ceo CEO-1676; RULES.md section ONE TESTING OFFICER clause (9);
+# cores, and shells around that core with each major feature broken out."; R-1676; RULES.md section ONE TESTING OFFICER clause (9);
 # ARCH-SUITE-PARTITIONS.md). For every ALL.csv under corpus/tests/<lang>/ and corpus/packages/<lang>/<pkg>/, util_suite_partition.py check must read
 # CURRENT: a table edited without `util_suite_partition.py build <ALL.csv>` in the same landing is a RED, named; a missing PARTITION.tsv is a RED too.
 # rc 0 every partition current; 1 a stale or missing one, named; 2 no table found (a census that cannot look reports nothing, never zero).

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_ident_and_the_fused_table_store_take_the_asm_entries.sh -- IDENT / DIFFER AND THE FUSED SUBSCRIPTED STORE CALL
-# RTX ENTRIES (ceo 2026-09-25, CEO-1252). descr_identical is an RTX_FUNC in rtx_misc.s: FAIL on either side is 0; the null test
+# RTX ENTRIES (2026-09-25, R-1252). descr_identical is an RTX_FUNC in rtx_misc.s: FAIL on either side is 0; the null test
 # (DT_SNUL, a null pointer, a stamped length of 0, an unstamped empty string) answers both-null = 1 and one-null = 0 without a
 # call; two integers compare their words; two stamped strings compare lengths then bytes; everything else (unstamped strings,
 # reals, names, tables, records, csets, procedure values) is the C body c_descr_identical through RTX_CTAIL_SAVED.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_emitter_language_flags_only_fall.sh -- LANGUAGE IDENTITY STOPS AT LOWER, AS THREE RATCHETS (ceo CEO-1836/1838/1840;
-# Lon 2026-10-18, in-chat to the ceo, verbatim: "How much of the emitter is language specific? Did you know that is not allowed past
+# test_gate_emitter_language_flags_only_fall.sh -- LANGUAGE IDENTITY STOPS AT LOWER, AS THREE RATCHETS (R-1836/1838/1840;
+# Lon 2026-10-18, in-chat, verbatim: "How much of the emitter is language specific? Did you know that is not allowed past
 # the lower stage. Will you fix that?" -- "which global specifies lanuage? which global struct specifies language. DELETE those
 # OUTRIGHT!" -- "there needs to be proper design of the IR/IR_t graph such that after the lower is finished ALL language specific
 # things are indicated by the internal representation which manifests in varying EMITTER patterns, and sometime different runtime
@@ -18,17 +18,17 @@
 #    prefix, against its floor: the honest count of "how much of the emitter is language specific". May only fall; zero is the goal.
 # Live CODE only: comments and string literals are stripped before counting.
 # rc 0 green, rc 1 a deleted name returned or a count above its floor, rc 2 cannot measure (no SCRIP beside harness, or fewer than
-# 100 emitter/template files). Fail-once: a floor set one below today's count reads RED (ceo, 2026-10-18 15:2x CDT, in the ledger).
+# 100 emitter/template files). Fail-once: a floor set one below today's count reads RED (2026-10-18 15:2x CDT, in the ledger).
 # FLOORS measured 2026-10-18 16:2x CDT on the restore merged with hq_prolog's 8a5973d0b/f049ef7a8 (its restore reads emit_resumable_frame()
 # at three more sites and zls_g_resumable_frame() at four more than the pre-deletion tree did; zframe_graph one more through x86_resumable_frame).
-# RE-FLOORED 2026-10-22 15:4x CDT by the cto on the coo's red of 15:3x (CEO-1895): zls_g_resumable_frame 10 -> 12, the one retains table's
+# RE-FLOORED 2026-10-22 15:4x CDT by the cto on the coo's red of 15:3x (R-1895): zls_g_resumable_frame 10 -> 12, the one retains table's
 # unresolved-callee-in-a-resumable-frame rule (planner_retains and its home view, SCRIP e351e13d4/dace004b6) MOVED out of src/planner/frame_layout.c's
 # deleted zls_home_dyn, which this gate does not count, into src/planner, where ARCH-ZETA-ONE-COORDINATE 3.5 (i.b) puts the decision -- it goes
 # with the Prolog switch's per-predicate retains fact; home_frame 0 -> 2, zst_plan admitting the Pascal switch's home-frame graphs and giving them a
 # second hosting pass (SCRIP 2eb1aadd9, 6e1dd9a8b) -- both go when zst_plan's regime returns are deleted (3.5 WHAT THIS REPLACES). The other five
 # reads above the floor were CURED, not floored: x86_zop's ZSM call reads the branch it sits in (zframe_graph, frame_retained and icn_frame_rbp
 # were re-derived beside it, from bcd2ef252), planner.h's duplicate zls_g_resumable_frame prototype, and the uplevel skip reads the declared reason.
-# RE-FLOORED 2026-10-25 00:xx CDT by the cfo, in its name, on the cto's read of 7affeda58 (CEO-1954/1971; the planner half 0d3a92f14 and the emitter half 7affeda58 both
+# RE-FLOORED 2026-10-25 00:xx CDT by the cfo, in its name, on the cto's read of 7affeda58 (R-1954/1971; the planner half 0d3a92f14 and the emitter half 7affeda58 both
 # read graph_fact_reads 218 over 177): THE PLACEMENT RECORD moved the emitter's placement reads into src/planner (planner_home_icn, planner_home_pl, zd_place) --
 # spine_cells 26 -> 37 (zeta_plan.cpp 24), emit_resumable_frame 19 -> 21 (zeta_plan.cpp 15), zls_g_resumable_frame 12 -> 16 (zeta_plan.cpp 4), body_root 21 -> 24
 # (act_words.cpp 3), home_frame 2 -> 9 (zeta_plan.cpp 8), zls_g_home_frame 2 -> 16 (zeta_plan.cpp 6, emit.cpp 7, x86_asm.h 2), root_graph 21 -> 22 (emit.cpp 13,

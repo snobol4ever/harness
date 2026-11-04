@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_raku_roast_runner_excludes_a_file_with_no_oracle_answer.sh -- A ROAST FILE RAKUDO ITSELF REFUSES LEAVES THE DENOMINATOR
-# (CEO-1696; hq_raku's parse-only census, CEO-1713): raku_roast_scoreboard.sh --run reads the package's EXCLUDED.tsv beside its ALL.csv
+# (R-1696; hq_raku's parse-only census, R-1713): raku_roast_scoreboard.sh --run reads the package's EXCLUDED.tsv beside its ALL.csv
 # through the ONE reader (lib_inventory.sh inventory_excluded_names); a named file is never graded, writes no progress row, and is
 # counted as excluded= on the board line and --excluded on the row. A malformed row refuses rc 2.
-# FIXTURE (mktemp, outside corpus/, CEO-547; the shape of test_gate_raku_roast_runner_leaves_the_checkout_clean.sh): three one-line TAP
+# FIXTURE (mktemp, outside corpus/, R-547; the shape of test_gate_raku_roast_runner_leaves_the_checkout_clean.sh): three one-line TAP
 # files, run with --run --limit (non-publishing: no score row), the progress rows into a scratch table.
 # ARMS: (1) with S99-fixture/refused named: the board reads total=2 excluded=1 and the scratch progress table holds no row for it
 #       (2) CONTROL without EXCLUDED.tsv: total=3 excluded=0 and refused has its rows -- the exclusion is what moved it
@@ -26,7 +26,7 @@ run() { : > "$W/progress.tsv"; (cd "$ROOT" && RAKU_ROAST_TREE="$W/roast" RAKU_RO
         timeout -k 5 300 bash "$BOARD" --run --limit 3 > "$W/out" 2>&1); echo $?; }
 board() { grep -m1 '^ROAST_SUITE_BOARD ' "$W/out"; }
 rows_for() { grep -c "S99-fixture/$1" "$W/progress.tsv" 2>/dev/null; }
-echo "=== gate: the Roast runner excludes a file with no oracle answer (CEO-1696) ==="
+echo "=== gate: the Roast runner excludes a file with no oracle answer (R-1696) ==="
 printf 'S99-fixture/refused\tNO_ORACLE_ANSWER\t%s\n' "$EV" > "$W/pkg/EXCLUDED.tsv"
 rc=$(run); b="$(board)"
 [ "$rc" -le 1 ] && grep -q ' total=2 ' <<<"$b" && grep -q ' excluded=1 ' <<<"$b" && [ "$(rows_for refused)" = 0 ] && [ "$(rows_for plain1)" -gt 0 ] \

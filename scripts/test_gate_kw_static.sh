@@ -12,7 +12,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 set -uo pipefail
 SCRIP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
-# ⭐ RE-POINTED (ceo s283h, probe total-conversion): corpus/probe/kw is GONE. The 13 non-stdin witnesses
+# ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/kw is GONE. The 13 non-stdin witnesses
 # live in the kw SUITE (tests/snobol4/probe/kw.{sno,ref}) and are materialized here via the harness's
 # `extract` verb (test_arbno_witnesses.sh's established idiom); the 2 stdin-bearing witnesses
 # (kw_trim_effect, kw_trim_lazy_seed -- .dat companions) stay LOOSE in tests/snobol4/probe_loose/kw

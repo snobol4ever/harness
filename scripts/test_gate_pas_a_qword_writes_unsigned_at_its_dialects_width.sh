@@ -2,7 +2,7 @@
 # test_gate_pas_a_qword_writes_unsigned_at_its_dialects_width.sh -- a uint64 / qword variable writes as an unsigned decimal at the
 # width its dialect gives an integer: natural in the FPC dialects, fpc -Miso's eleven columns in ISO, and an explicit :w right-aligned.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, CEO-1709): triangular-numbers (fpc-default) wrote "Roots of        7140:"
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, R-1709): triangular-numbers (fpc-default) wrote "Roots of        7140:"
 # where fpc writes "Roots of 7140:": the write of a qword variable took width code -7 (unsigned) before the FPC dialect's natural
 # width -4 could apply, and -7 always padded to eleven; and q:22 of 18446744073709551615 wrote -1, the signed reading. THE CURE: width
 # code -8 is unsigned at natural width, chosen when the program is in an FPC dialect (lower_pascal_tree.c), read beside -7 by the

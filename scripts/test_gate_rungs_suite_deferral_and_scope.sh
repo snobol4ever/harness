@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_rungs_suite_deferral_and_scope.sh -- the executable DONE-WHEN for row
 # `master-suite-builder-honours-deferral-contract-and-scopes-absorption` (hq_P mint 2026-09-02,
-# CEO-137 addendum, ladder I rank 1).
+# R-137 addendum, ladder I rank 1).
 #
 # WHAT IT PROVES, one arm per requirement named in the task file (all four watched FAIL before this row,
 # on hq_P's own measured witnesses -- see the task file for the receipts this gate turns into assertions):
@@ -186,7 +186,7 @@ else bad "⛔ the committed rungs changed despite the forced post-write validati
 if ! find "$W/g/corpus/tests/snobol4" -name '*.tmp-*' | grep -q .; then good "no stray .tmp-* files left behind"
 else bad "⛔ stray temp file(s) left on disk after the forced failure"; fi
 
-echo "== H. ALL.excluded.txt IS GENERATED: a hand edit REFUSES rc=2 instead of being silently absorbed (CEO-545) =="
+echo "== H. ALL.excluded.txt IS GENERATED: a hand edit REFUSES rc=2 instead of being silently absorbed (R-545) =="
 # ⛔ THE TWO ARMS ARE THE TWO MEASURED DEFECTS, and they used to fail in OPPOSITE directions on the same file
 # (hq_V 2026-09-10, scratch-tree measurement): a hand DELETION of a line the builder still computes was
 # SILENTLY REVERTED by the next full build, and a hand-ADDED line the builder never computes SURVIVED FOREVER

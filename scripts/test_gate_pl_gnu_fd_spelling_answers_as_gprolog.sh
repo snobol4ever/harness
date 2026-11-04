@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_gnu_fd_spelling_answers_as_gprolog.sh -- GNU PROLOG'S FD SPELLING ANSWERS AS GPROLOG, IN MODE 3 (cfo 2026-10-10,
 # row prolog-clpfd-the-gnu-fd-spelling-fd-domain-fd-labeling-fd-all-different-and-the-hash-hash-operators-over-the-same-solver-
-# equal-to-gprolog-ceo-1596; ARCH-PROLOG-CLPFD.md section 5 point 3; one oracle per dialect).
+# equal-to-gprolog-r-1596; ARCH-PROLOG-CLPFD.md section 5 point 3; one oracle per dialect).
 #
 # THE LAYER.  src/parsers/prolog/prelude/gnu_fd.pl is SCRIP's own text over the vendored clpfd, embedded by the generator's LOCAL
 # mode; gprolog's 22 FD operators and the prefix #\ live in the parser's BASE operator table at gprolog's priorities
@@ -18,10 +18,10 @@
 # backtracks(B); (3) GNU's expressions INSIDE the operators SWI's clpfd also exports -- X ** 2 #= 49, dist/2, exact division (Z / 3
 # #= 4 admits only 12), quot_rem/3, min/max, // and rem, (A #<=> B) #/\ (C #<=> E), ## and #==> under #\/, #\ over a #>=#, a
 # reified ** -- answered through gnu_fd's wrappers over the '$clpfd_wrapped_<op>' copies the generator's WRAPS emits; the arm
-# declares -s8192k (re-measured on the cto's CEO-1632 chunk 1, 45e63ef51: 4 MB stops it, 8 MB runs it whole; before chunk 1 it
+# declares -s8192k (re-measured on the cto's R-1632 chunk 1, 45e63ef51: 4 MB stops it, 8 MB runs it whole; before chunk 1 it
 # needed 16 MB).  FAIL-ONCE of arm 3, measured on 84ed661f8 (before WRAPS): domain_error(clpfd_expression,
 # _ ** 2) on the first line, 12 of 12 lines differ.  ARM 2 declared -s16384k from 18e3120f5 (the wake-up cure's frame cost) until
-# CEO-1632 chunk 1 (45e63ef51) released an if-then-else branch's last call; re-measured there, its 23-line witness runs whole at the
+# R-1632 chunk 1 (45e63ef51) released an if-then-else branch's last call; re-measured there, its 23-line witness runs whole at the
 # 4 MB default again, so it declares nothing.  FAIL-ONCE, measured on 70f3505ed: arm 1 (no base table) 11 of 11 lines differ, arm 2 (existence_error fd_domain/3)
 # 23 of 23; on the cure 0 of 34.  rc=0 agrees with gprolog · rc=1 a divergence · rc=2 REFUSAL (no gplc, no build).  ~8 s.
 set -u

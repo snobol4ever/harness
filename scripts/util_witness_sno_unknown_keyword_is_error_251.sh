@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_witness_sno_unknown_keyword_is_error_251.sh -- THE WITNESS of the unknown-keyword voice on the oracle's road (the ceo, CEO-1652): SPITBOL reads or writes an
+# util_witness_sno_unknown_keyword_is_error_251.sh -- THE WITNESS of the unknown-keyword voice on the oracle's road (the R-1652): SPITBOL reads or writes an
 # unknown keyword (&FOO, &ANCHOR., &ANCHOR_1, &anchor under -f) as its run-time ERROR 251, on the read and on the write alike. SCRIP carries Lon's user-declared
 # & constants (ARCH-LANGUAGES.md section "SNOBOL4 -- user-declared & constants", Eurekas 1-3, 2026-08-19): with &USER_DECLARED_CONSTANTS at its default 1 every
 # other &name is a one-time constant (read before its definition is error 342, the write is the definition) -- a SCRIP feature by Lon's word, outside the SPITBOL

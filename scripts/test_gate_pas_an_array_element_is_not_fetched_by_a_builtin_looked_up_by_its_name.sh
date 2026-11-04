@@ -2,7 +2,7 @@
 # test_gate_pas_an_array_element_is_not_fetched_by_a_builtin_looked_up_by_its_name.sh -- the Pascal lowerer emits a[i] as the call arr_get and a[i] := v as the call arr_set_pure.
 #
 # MEASURED 2026-10-09 by hq_pascal on the eight Pascal benchmark kernels (bubble intmm perm queens quick sieve towers whet), mode 4 asm: 130 call sites (84 arr_get, 46 arr_set_pure) carried the
-# builtin's NAME as a string operand to rt_call_arr_bl, which resolved it by strcmp against the builtin table on every element access (callgrind, CEO-1282: __strcmp_avx2 46-52 percent of the
+# builtin's NAME as a string operand to rt_call_arr_bl, which resolved it by strcmp against the builtin table on every element access (callgrind, R-1282: __strcmp_avx2 46-52 percent of the
 # instructions of queens, bubble, sieve and whet). CURE: dop_direct_fp (bb_call.cpp) answers arr_get with rt_pas_arr_get and arr_set_pure with rt_pas_arr_set, the two C functions the by-name arms
 # now call, so bb_call_fn's direct-leaf arm calls the function itself and the asm carries no name.
 #

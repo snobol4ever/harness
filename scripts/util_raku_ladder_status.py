@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """util_raku_ladder_status.py -- THE RAKU LADDER INSTRUMENT (.github/ARCH-RAKU-TO-100.md section 9; row
-raku-ladder-step-0-the-ladder-instrument-util-raku-ladder-status-reads-the-rungs-and-replaces-the-map-ceo-2044). A READ: it runs no program.
+raku-ladder-step-0-the-ladder-instrument-util-raku-ladder-status-reads-the-rungs-and-replaces-the-map-r-2044). A READ: it runs no program.
 
 READS  corpus/tests/raku/config/LADDER.tsv (every declared rung, its construct and family), corpus/tests/raku/ALL.csv (the RakRungs master:
        a rung's FORMS are its ladder__rungNNN_* entries), corpus/tests/raku/config/ROAST-RUNG-MAP.tsv (every red Roast program's first-block
        and unblock rung) and /home/resources/progress/results.tsv (the latest reading per program and mode). A reading stamped on a -dirty
-       SCRIP tree measures no tree on origin and is UNREAD here (CEO-2060).
+       SCRIP tree measures no tree on origin and is UNREAD here (R-2060).
 A RUNG is GREEN when it has at least one form and every form reads PASS in m3 AND m4 at its latest reading; a rung with no form yet is RED
        by definition (the work list). A program STANDS PASS when its latest Roast reading is PASS in both modes.
 

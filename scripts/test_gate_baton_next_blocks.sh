@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_baton_next_blocks.sh — THE ONE-NEXT-BLOCK INVARIANT over LIVE batons (ceo 2026-08-29, row baton-one-next-block-gate).
+# test_gate_baton_next_blocks.sh — THE ONE-NEXT-BLOCK INVARIANT over LIVE batons (2026-08-29, row baton-one-next-block-gate).
 #
-# LAW (PROTOCOL.md step 4, ceo ruling 2026-08-29 on hq_B's measured finding): a baton carries exactly ONE `^## NEXT`
+# LAW (PROTOCOL.md step 4, ruling 2026-08-29 on hq_B's measured finding): a baton carries exactly ONE `^## NEXT`
 # heading — newest FIRST; replaced blocks are demoted to `## SUPERSEDED-NEXT`. hq_B measured why this is a gate and not
 # a style note: 45 of 420 batons had NO block (a seat told to "read the ONE ## NEXT block" found a void and floundered —
 # measured empty sessions), 8 had several under two OPPOSITE conventions, and one live rank-1 baton's five blocks were

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_linked_procedure_reports_its_own_file.sh -- A PROCEDURE FROM A LINKED FILE NAMES THAT FILE, IN BOTH MODES, AS ICONX DOES
-# (hq_icon 2026-09-27, crawl work under CEO-1270: IPL iftrace, whose &trace lines name iftrace.icn for the linked set_trace).
+# (hq_icon 2026-09-27, crawl work under R-1270: IPL iftrace, whose &trace lines name iftrace.icn for the linked set_trace).
 #
 # icon_driver.c appended a linked file's declarations to the program with no file identity, and the lowerer stamped every
 # statement mark and &file with the main source, so everything that names a file named the wrong one for a linked procedure:

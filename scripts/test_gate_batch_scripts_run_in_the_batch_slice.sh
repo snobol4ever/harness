@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_batch_scripts_run_in_the_batch_slice.sh -- THE BATCH CLASS HOLDS (the cto, ARCH-SHARED-DEVELOPMENT 4.5 (b) and 5, CEO-2041 step 4;
+# test_gate_batch_scripts_run_in_the_batch_slice.sh -- THE BATCH CLASS HOLDS (the cto, ARCH-SHARED-DEVELOPMENT 4.5 (b) and 5, R-2041 step 4;
 # built by the cfo 2026-10-31). The DONE-WHEN of row shared-dev-step-4-the-batch-class-util-batch-sh-and-the-batch-slice-every-census-identity-
-# run-sweep-and-callgrind-runs-in-it-ceo-2041.
+# run-sweep-and-callgrind-runs-in-it-r-2041.
 # THE ARMS:
 #   wrapper   util_batch.sh runs a trivial job in its own scope under s4e-batch.slice (the BATCH_CGROUP line it writes inside the scope).
 #   one-seat  a second top-level batch job of the same seat, while the first runs, REFUSES rc 2 and names the holder.

@@ -3,7 +3,7 @@
 # executed.
 #
 # THE DEFECT THIS EXISTS TO KILL (task test-icon-arizona-suite-silently-accepts-undefined-flags, GOAL
-# hq_P 2026-09-03 routed by ceo CEO-175, instrument lane hq_T): test_icon_arizona_suite.sh accepted
+# hq_P 2026-09-03 routed by R-175, instrument lane hq_T): test_icon_arizona_suite.sh accepted
 # --strict, and any other unrecognized flag, silently -- a harness that accepts a flag it does not
 # implement will one day print a board for an arm nobody ran (the false-board class, RULES.md THE
 # INSTRUMENT LAWS). Auditing the sibling runners on the same pattern found three shapes of the same

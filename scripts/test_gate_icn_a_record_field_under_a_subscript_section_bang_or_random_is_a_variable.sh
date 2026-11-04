@@ -13,7 +13,7 @@
 # was already correct.
 #
 # ARMS. (1) STRUCTURE: the four sites name TT_FIELD (the ? site read as statements, whitespace folded, so a re-flow of its lines
-# cannot blind it, CEO-1565). (2) BEHAVIOUR, both media, against the LIVE oracle (icont/iconx
+# cannot blind it, R-1565). (2) BEHAVIOUR, both media, against the LIVE oracle (icont/iconx
 # 9.5.25a): a ten-line witness of subscript, section, swap, !, ? and nested-list assignments through record fields and
 # list elements -- stdout byte-identical and exit status 0. A witness the oracle does not run refuses the gate.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?

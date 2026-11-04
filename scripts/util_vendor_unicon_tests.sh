@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_vendor_unicon_tests.sh -- VENDOR UNICON'S OWN TESTS INTO corpus/packages/icon/unicon_tests (hq_unicon, ceo CEO-2072; row icon-unitests-...).
+# util_vendor_unicon_tests.sh -- VENDOR UNICON'S OWN TESTS INTO corpus/packages/icon/unicon_tests (hq_unicon, R-2072; row icon-unitests-...).
 # Source: /home/resources/unicon/tests (the git drop d784f58).  Layout (provenance kept, as arizona_tests keeps upstream's): <category>/NAME.icn beside its
 # NAME.dat (upstream's data/NAME.dat is the program's stdin, copied BESIDE the source as the Icon packages' convention reads it), the category's other
 # regular files beside, upstream's data/ and stand/ kept verbatim as subdirectories (depth 2: never a unit; stand/NAME.std is upstream's own expected output,

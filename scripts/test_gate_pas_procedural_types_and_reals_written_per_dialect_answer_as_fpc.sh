@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_procedural_types_and_reals_written_per_dialect_answer_as_fpc.sh -- procedural types as parameter types, @routine as a
-# procedural actual, and reals written as each fpc mode writes them (the dialects row pascal-dialects-...-ceo-1614, chunk 7).
+# procedural actual, and reals written as each fpc mode writes them (the dialects row pascal-dialects-...-r-1614, chunk 7).
 #
 # MEASURED 2026-10-11 by hq_pascal on SCRIP a3e771ee1: 13 PasRosetta programs stopped at a parse error on a procedural type
 # (TNewtonCooling = FUNCTION (t: REAL): REAL), whose usual use is as a parameter type (procedure Euler(F: TNewtonCooling; ...)).

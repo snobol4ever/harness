@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """util_reflow_200.py [--check | --apply | --proof | --objproof | --print] [--width 200] PATH... -- THE 200-COLUMN RE-FLOW (Lon 2026-10-08 16:5x
-CDT, in-chat to the ceo, verbatim: "Read the rules of formatting found in MD files referencing the 200 max columns. No comments just comment line
+CDT, in-chat, verbatim: "Read the rules of formatting found in MD files referencing the 200 max columns. No comments just comment line
 breaks. No blank lines. Put code on 200 character lines. If does not fit, begin wrapping at that level and keep those lines long. No line shall
 EXCEED 200 characters, all must fit." -- "when you begin wrapping, it must be at hierarchical C structures." -- "if at one level it over flows a
 line, then you break at the hiearchical level and start the rule over again at the indention. But each child at the level gets its own line." --
 "Regarding the template CPP files, those should be more line oriented and not spead across 200 characters, but it can use 200 chars no problem.
-But since it is ASM, the lines of C++ code should match closely the lines of ASM being emitted."; RULES.md section C code style; CEO-1565).
+But since it is ASM, the lines of C++ code should match closely the lines of ASM being emitted."; RULES.md section C code style; R-1565).
 For every C, C++ and .inc file named (a directory names every such file under it; src/parsers and the two generated tables are never touched):
 every comment goes (a separator line is kept and re-cut to exactly --width characters), every blank line goes, preprocessor directives keep their
 own lines (a continued directive is re-joined and re-wrapped with backslashes). C and .inc files take LON'S RULE: an item (a statement, or a
@@ -128,7 +128,7 @@ def _paren_is_cast(st):
 
 
 def macro_brace_deltas(items):
-    """The net brace count each macro of this file carries (ceo CEO-1570, 2026-10-08): a function written `PL_CX_LEAF_HEAD(nm, ar) ... PL_CX_LEAF_TAIL`
+    """The net brace count each macro of this file carries (R-1570, 2026-10-08): a function written `PL_CX_LEAF_HEAD(nm, ar) ... PL_CX_LEAF_TAIL`
     or `DESCR_t f(...) { ... PL_CX_LEAF_TAIL` is balanced only once the macros are expanded, so the splitter opens a block at a macro whose body
     nets +1 and closes one at a macro whose body nets -1; a macro that names another macro carries that one's delta too. Read from the file's
     own `#define` lines; braces inside string and character literals do not count."""
@@ -346,7 +346,7 @@ EXTERN_C_RX = re.compile(r'^(?:extern\s+"C(?:\+\+)?"|namespace(?:\s+[A-Za-z_]\w*
 
 
 def transparent(blk):
-    """An `extern "C" {` guard or a `namespace X {` (ceo CEO-1570): its children are file-scope items and lay out at the guard's own depth,
+    """An `extern "C" {` guard or a `namespace X {` (R-1570): its children are file-scope items and lay out at the guard's own depth,
     so a column-zero census still sees every definition; the guard itself never flattens onto one line."""
     return isinstance(blk, Blk) and blk.next is None and EXTERN_C_RX.match(blk.opener) is not None
 

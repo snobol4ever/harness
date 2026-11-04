@@ -62,7 +62,7 @@ icn_rundir_stdin() {
 # .icn path and derive the sidecar beside it, which is where this contract puts them too.
 icn_rundir_argv() { ipl_argv_read "$1" "$2"; }
 
-# NAME.heap and NAME.stack -- the witness's declared heap and stack (ceo CEO-1353, RULES.md clause 8 (g)(1)), one line NAME<TAB>KB each,
+# NAME.heap and NAME.stack -- the witness's declared heap and stack (R-1353, RULES.md clause 8 (g)(1)), one line NAME<TAB>KB each,
 # read by lib_declared_arena.sh's declared_switches_beside (the harness's own reader, never a copy). Fills the array with SPITBOL's
 # switch words (-d<kb>k -s<kb>k) for the runner to place after scrip --run in m3 and at the head of the binary's argv, before a --,
 # in m4 -- never SCRIP_HEAP_KB, the collector's window. rc 0 declared, 1 none (the runner NAMES it and runs at the shipped default),
@@ -122,7 +122,7 @@ icn_rundir_env() {
 # icn_sidecar_path, and this predicate must ask THE SAME QUESTION `icn_rundir_stdin` answers -- or the bus
 # feeds a file the contract says is not declared, which is the two-instruments-one-question defect again.
 # ⛔⭐ A SUITE CONTAINER IS NOT A WITNESS, AND ITS SIDECARS ARE A DIFFERENT CONTRACT WITH THE SAME EXTENSION
-# (hq_V 2026-09-12, CEO-604, on hq_T's census: test_gate_icn_rundir_contract REFUSED rc=2 fleet-wide).
+# (hq_V 2026-09-12, R-604, on hq_T's census: test_gate_icn_rundir_contract REFUSED rc=2 fleet-wide).
 # TWO readers share `.argv` and they disagree by design. `NAME.argv` beside a WITNESS `NAME.icn` is ONE
 # program's argv and must name NAME -- ipl_argv_read refuses anything else as a copied sidecar arming the
 # wrong program, which is a refusal worth having. `ALL.argv` beside the RUNGS `ALL.icn` is the PER-ENTRY

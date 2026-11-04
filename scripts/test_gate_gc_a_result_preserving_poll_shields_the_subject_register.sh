@@ -17,7 +17,7 @@
 #     poll_res, and it LOSES at 4 or more of the 6 points -- so (b) is a measurement and not a pass by construction.
 # FAIL_ONCE=1 runs (b) against the planted text.
 #
-# THE RECORD FORM (hq_icon 2026-10-11, row icon-a-trapped-substring-...-ceo-1660): x86_rt_gc_poll_rec_res, the record poll of 23 box sites
+# THE RECORD FORM (hq_icon 2026-10-11, row icon-a-trapped-substring-...-r-1660): x86_rt_gc_poll_rec_res, the record poll of 23 box sites
 # (field get, subscript, assign_var_sub, assign_global, call_fn, to_by, rev_assign_var, glue_flat), called rt_gc_point_arr_c with r0 = NULL,
 # so a collection at a field store inside an Icon scan left r13 stale: Jcon tgrlink read 0xdb poison under every SCRIP_GC_STRESS setting on
 # SCRIP 60b7e1572, and rc 139 at the default window once one more trapped variable moved collection #1 into crack()'s scan. It now keeps its

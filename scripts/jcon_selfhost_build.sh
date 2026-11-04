@@ -21,7 +21,7 @@ JCOMPILER="$CORPUS/packages/icon/jcon-compiler"
 SEMI="$SCRIP/tools/semicolonize_icon.py"
 RTOPT='-O0 -g -fno-strict-aliasing -fwrapv -fno-omit-frame-pointer'
 
-echo "== [1/7] the sibling layout: SCRIP, corpus and the /home/resources drops read in place (no link, no refs/: CEO-765, CEO-1820) =="
+echo "== [1/7] the sibling layout: SCRIP, corpus and the /home/resources drops read in place (no link, no refs/: R-765, R-1820) =="
 for d in "$SCRIP" "$CORPUS" "$JCONREPO" "$ICONREPO"; do [ -d "$d" ] || { echo "FAIL: $d is not a directory"; exit 2; }; done
 
 echo "== [2/7] system packages (build tools + JDK for jcon.zip) =="

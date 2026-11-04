@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# util_gc_witness_sweep.sh -- THE SECONDS-SCALE DETECTOR for a safe-point conversion batch (ceo CEO-1109,
+# util_gc_witness_sweep.sh -- THE SECONDS-SCALE DETECTOR for a safe-point conversion batch (R-1109,
 # row gc-a-fast-witness-detector-grades-a-safe-point-conversion-batch-in-seconds-proven-against-the-known-bad-insertion).
 #
-# ⛔ WHY THIS EXISTS, AND THE NUMBER IS THE REASON.  On 2026-09-22 the ceo inserted 77 safe-point polls chosen by
+# ⛔ WHY THIS EXISTS, AND THE NUMBER IS THE REASON.  On 2026-09-22 the officer inserted 77 safe-point polls chosen by
 # the callee's DECLARED RETURN CLASS -- VOID or a narrow scalar means nothing wide enough to be a pointer comes
 # back in rax -- and the census read 133 -> 210 of 253.  ALL EIGHT PER-LANGUAGE SMOKES PASSED on 26 of them, and
 # those 26 still cost 57 Icon programs when the Icon rungs ran: 823/826 m3 on a clean tree against 766/826 with
@@ -19,12 +19,12 @@
 #                     often prints a plausible answer -- stale in principle and, five times in six, valid in fact.
 #   SCRIP_GC_TRAP     (default ON) PROT_NONEs the vacated ground, so reading a stale pointer FAULTS instead of
 #                     quietly returning whatever the arena re-issued.
-#   a tiny arena      SCRIP_HEAP_KB=128, the shipped default since CEO-1095 and the peak of exasperation.
+#   a tiny arena      SCRIP_HEAP_KB=128, the shipped default since R-1095 and the peak of exasperation.
 #   SCRIP_GC_STRESS   a band, because one point is a configuration and not an exercise.
 #
 # ⛔ THIS SWEEP IS NOT A BOARD AND NEVER REWRITES A SCORE ROW.  It grades the GC witness set, not a denominator
 # anyone ships.  A green here licenses the NEXT step of a conversion, never a landing: the landing verdict is
-# still the row's DONE-WHEN plus the cure's own language RUNGS with a clean-tree control arm (CEO-1107).
+# still the row's DONE-WHEN plus the cure's own language RUNGS with a clean-tree control arm (R-1107).
 #
 # Usage: util_gc_witness_sweep.sh [--stress "0 3 16"] [--arena-kb 128] [--modes m3|m3,m4] [--list-all]
 set -u

@@ -11,7 +11,7 @@
 # formal; pas_is_strval counts a concatenation as a string so a comparison of two uses __pas_strcmp. The set check runs first, so a set union is never a join.
 # NOT COVERED, written in the baton: copy, concat, upcase, str, pos on a variable pattern, string indexing writes, and '' (refused by the 6.1.7 ruling).
 #
-# SCOPE (cfo 2026-10-17, row gate-pascal-string-plus-the-tctl-witness-exits-1-in-both-modes-where-fpc-exits-0-ceo-1807): tctl's f(a: string) shadows its global `a: array[1..2] of r`, and the array-of-string
+# SCOPE (cfo 2026-10-17, row gate-pascal-string-plus-the-tctl-witness-exits-1-in-both-modes-where-fpc-exits-0-r-1807): tctl's f(a: string) shadows its global `a: array[1..2] of r`, and the array-of-string
 # test (pas_is_strelem_arr, 9924a117a) and the static-array high lookup (pas_array_high_get) found arrays by name alone: length(a) folded to the global's 2 and a + '!' added a char code, so tctl died rc 1 at f.
 # Array entries now carry the scope uid of their declaration: the array-of-string test counts only the array the name resolves to in scope, and the high lookup prefers it. tshadow is the second
 # control (a global array of string, a local array of string shadowing it, a string formal shadowing it), also cut LIVE from fpc.

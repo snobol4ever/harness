@@ -3,7 +3,7 @@
 every corpus/tests/<lang>/ALL.csv already carries (GOAL-TEST-SUITE-CONSISTENCY.md sec THE STANDARD,
 point 8; Lon 2026-09-04, verbatim: "Will all languages get a full test suite with 100's of test cases
 exercising each feature and several combination of features?"). Task
-feature-coverage-census-hundreds-per-feature-and-combinations-all-seven (ceo, minted 2026-09-04) --
+feature-coverage-census-hundreds-per-feature-and-combinations-all-seven (minted 2026-09-04) --
 "this row owns the instrument and the floor table, not the witnesses": it prints, per language,
 entries-per-feature and entries-per-feature-PAIR, names every feature below its floor and every
 feature with no pair at all, and rewrites its row on the leaderboard. It does NOT write test cases --
@@ -51,14 +51,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP", ".."))
 CORPUS = os.path.join(S4E, "corpus")
 LANGS = ["snobol4", "icon", "prolog", "raku", "pascal", "snocone", "rebus"]
-# ⛔⭐ heap_kb JOINED THIS PREFIX 2026-09-23 (Lon / CEO-1167) AND THAT IS NOT A COSMETIC ENTRY. read_rungs()
+# ⛔⭐ heap_kb JOINED THIS PREFIX 2026-09-23 (Lon / R-1167) AND THAT IS NOT A COSMETIC ENTRY. read_rungs()
 # locates these columns BY NAME, in order, and treats everything after the last of them as a feature column by
 # construction -- so the instant the column landed in ALL.csv without this line moving, all seven
 # languages REFUSED with "1/40 feature column(s) declared but NEVER FILLED: heap_kb". That refusal is
 # the design working: an attribute column silently counted as an unfilled feature would have dragged
 # every language's coverage denominator without one number changing its name. Measured, in that order.
 PREFIX = ["rank", "entry", "origin", "family", "kind", "xfail", "n_lines", "heap_kb", "stack_kb"]
-# the unit's command line (clause 8 (f), CEO-1281): attribute columns, never features, and optional while the tables gain them --
+# the unit's command line (clause 8 (f), R-1281): attribute columns, never features, and optional while the tables gain them --
 # a compile_args cell reads --stlimit, which would refuse here as a non-integer feature, and an absent column is no mismatch
 COMMAND_LINE = ("compile_args", "run_args")
 DEFAULT_FLOOR = 10   # the GOAL text's own worked example: SNOBOL4, the model shape, flags "below 10".

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_bare_dollar_and_the_item_and_hash_contextualizers_agree_with_rakudo.sh -- THE BARE ANONYMOUS $, $(...) AND %(...), .item, List/Pair .hash, AND POSTFIX ++/-- ON AN UNDEFINED SCALAR
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by the Roast compile census: 33 of the 564 files that did not compile hit one of these first).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by the Roast compile census: 33 of the 564 files that did not compile hit one of these first).
 #
 # THE DEFECTS, each measured against Rakudo: a bare `$` (the anonymous state scalar: `$++` counts 0 1 2 across calls, `($ = 10) + ($ = 20)` is 30) was a syntax error; `$(...)` and `%(...)` (the item and hash contextualizers beside `@(...)`)
 # were a syntax error; `.item` had no identity method; `.hash` on a List or a Pair had no method; and `$c++` on an undefined scalar stored Nil, so `my $c; say $c++` printed nothing where Rakudo prints 0 and leaves 1.

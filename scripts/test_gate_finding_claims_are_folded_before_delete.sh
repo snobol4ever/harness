@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_finding_claims_are_folded_before_delete.sh -- A FINDING'S MEASURED CLAIMS SURVIVE ITS DELETION
 # (RULES.md line 31; Lon 2026-09-18 in-chat to the cto, verbatim: "You can use as many FINDING files as you want. I'll
-# just delete them periodically. We should probably do a summarization when I delete."; ceo CEO-859/861.
+# just delete them periodically. We should probably do a summarization when I delete."; R-859/861.
 # Row: finding-summarization-gate-refuses-to-delete-an-unfolded-cited-finding.)
 #
 # ⛔ WHAT THIS GATE DOES NOT DO, STATED FIRST BECAUSE IT IS A DESIGN DECISION AND NOT AN OMISSION: it does NOT red on the
@@ -21,7 +21,7 @@
 # FAIL_ONCE=1 points the real-tree arm at a scratch clone holding a deleted-unfolded FINDING, proving THIS GATE reds.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"
-# ⛔ .github IS S4E_HOME's, ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, CEO-1573): from a worktree under a scratch directory,
+# ⛔ .github IS S4E_HOME's, ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, R-1573): from a worktree under a scratch directory,
 # ROOT/.github named a directory that is not there and arm 9 refused (origin/main not resolvable); the seat's own clone resolves it.
 SWEEP="$HERE/util_finding_fold_before_delete.sh"; GH="${S4E_HOME:-$ROOT}/.github"
 [ -x "$SWEEP" ] || { echo "⛔ REFUSED-TO-GRADE(2): the sweep is missing or not executable: $SWEEP"; exit 2; }
@@ -116,7 +116,7 @@ else
   bad 5 "a paraphrase was accepted as a fold; rc=$rc. Output: $out"
 fi
 
-# ---- ARM 6: THE UNTERMINATED BLOCK IS NEVER A GENEROUS WINDOW (CEO-860) -------------------------------------------
+# ---- ARM 6: THE UNTERMINATED BLOCK IS NEVER A GENEROUS WINDOW (R-860) -------------------------------------------
 mk_tree "$W/d"
 { printf '\n<!-- FOLDED-FROM: %s -->\n' "$NAME"
   echo "The witness dies at core.c:1987 with rc=139 after 4 collections."
@@ -124,7 +124,7 @@ mk_tree "$W/d"
   echo "The control arm reads 71/72 with OUTSIDE-BASELINE=1 on the named clean tree."; } >> "$W/d/tasks/planted-row.task.md"
 out="$(run d --delete "$NAME")"; rc=$?
 if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q 'UNTERMINATED'; then
-  ok 6 "an UNTERMINATED fold block is RED even though all three claims sit under it -- no line-count window (CEO-860)"
+  ok 6 "an UNTERMINATED fold block is RED even though all three claims sit under it -- no line-count window (R-860)"
 else
   bad 6 "an unterminated block was accepted or misdiagnosed; rc=$rc. Output: $out"
 fi

@@ -10,7 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet · Claude Opus  DATE: 2026-05-31 (3-mode; de-interp'd to 2-mode 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-0}"
 MODE4_MIN="${MODE4_MIN:-0}"
@@ -191,7 +191,7 @@ echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4 REFUSED=$X4  / $N   (done bar: PASS
 # ⛔ NON-FATAL BY DESIGN: a bookkeeping failure must never turn a real measurement into a red board,
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 python3 "$HERE/util_score_row.py" write --lang raku --column floor --modes m3,m4 \
     --measurer "${S4E_SEAT:-}" --text "smoke m3 $P3/$N · m4 $P4/$N (FAIL $F3/$F4, REFUSED $X3/$X4, \`test_smoke_raku.sh\`)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"

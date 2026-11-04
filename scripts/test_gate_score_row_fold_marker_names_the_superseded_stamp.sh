@@ -4,7 +4,7 @@ export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (u
 # (coo 2026-09-16; hq_prolog's third observation the same day, row util-score-row-board-write-folds-the-replaced-cells-tail-forward-
 # as-provenance-without-a-machine-marker).
 #
-# THE DEFECT: util_score_row.py write folds the tail of the cell it replaces forward as provenance (CEO-475's one-archived-reading
+# THE DEFECT: util_score_row.py write folds the tail of the cell it replaces forward as provenance (R-475's one-archived-reading
 # bound) under a fixed marker that says the tail is not asserted -- but not WHEN it was true or on WHICH tree.  hq_prolog's fresh
 # rungs 542/563 shipped glued to prose reading '334 is DOWN from 340' from 2026-09-05, which a reader meets as current, and they
 # hand-labelled the retained tail 'RETAINED PROVENANCE FROM THE SUPERSEDED 2026-09-05 READING (b812fb6d1)'.  A seat remembering to

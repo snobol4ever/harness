@@ -5,7 +5,7 @@
 # stdout, stderr less the PARSER-METRICS line, and the exit status must agree file for file.  Every differing file is named.
 # CLOCK: both binaries then time the list of files neither one crashed on, hash on, median of RUNS (3), with the driver's lexer
 # clock on (PARSER_LEX_CLOCK=1); the line prints parse and lex microseconds for each and the bare multiple OLD/NEW on both, with
-# the load stamped (CEO-743).  rc 0 every file identical, 1 a file differs, 2 could not measure.
+# the load stamped (R-743).  rc 0 every file identical, 1 a file differs, 2 could not measure.
 set -u
 L="${1:-}"; OLD="${2:-}"; NEW="${3:-}"; RUNS="${4:-3}"
 here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); CORPUS=$(cd "$W/../corpus" 2>/dev/null && pwd)

@@ -58,8 +58,8 @@ lgt_h(G) :- ( catch(G, E, throw('$lgt_harness'(error(G, E)))) -> true ; throw('$
 % NOT MEASURED -- when nothing about SCRIP was in question. The suite asks it two ways and ONE clause
 % answers both honestly: current_logtalk_flag(prolog_dialect, swi) must FAIL because we are not swi, and
 % current_logtalk_flag(prolog_dialect, D), D \== b, D \== cx, ... must SUCCEED because we are none of
-% them. coinduction answers supported, the value util_logtalk_extract.py decides its guards by (Lon via the ceo, CEO-1518: "We
-% expect to have ALL features."; it answered unsupported under CEO-1235 (3) option (a), withdrawn, and the cto found it still did at
+% them. coinduction answers supported, the value util_logtalk_extract.py decides its guards by (Lon via the R-1518: "We
+% expect to have ALL features."; it answered unsupported under R-1235 (3) option (a), withdrawn, and the cto found it still did at
 % run time beside the extractor's supported); every other flag FAILS cleanly rather than raising.
 current_logtalk_flag(prolog_dialect, scrip).
 current_logtalk_flag(coinduction, supported).
@@ -73,7 +73,7 @@ lgt_load_term((:- D)) :- !, call(D).
 lgt_load_term(T) :- assertz(T).
 lgt_member(X, [X| _]).
 lgt_member(X, [_| T]) :- lgt_member(X, T).
-% More library objects, each clause as upstream writes it for the GNU Prolog backend (cfo 2026-10-11, CEO-1689, the coo's terms:
+% More library objects, each clause as upstream writes it for the GNU Prolog backend (cfo 2026-10-11, R-1689, the coo's terms:
 % upstream only, never a stand-in for a SCRIP builtin). GNU is the ISO-strict backend whose builtins SCRIP answers as gprolog
 % does -- environ/2, shell/1,2, file_exists/1, file_property/2, call_det/2, between/3 -- so a red these reach is SCRIP's, not
 % this shim's. library/os/os.lgt: operating_system_type/1, shell/1,2, file_exists/1, ensure_file/1 (its directory step,
@@ -178,7 +178,7 @@ lgt_clean_binary_input :- lgt_close_in, catch(lgt_delete('lgt_capture_in.bin'), 
 % lgtunit's set_text_input/3 and set_binary_input/3 begin with clean_file(Alias, File, Path) (upstream tools/lgtunit/lgtunit.lgt):
 % close the stream holding Alias ("the alias may be associated with a stream opened for a different file"), then every stream
 % open on the file. So a case may set the same alias twice: sics_at_end_of_stream_1_10 does, and its second open raised
-% permission_error(open, source_sink, alias(st_i)) here before (cfo 2026-10-11, CEO-1689). The file itself is rewritten next.
+% permission_error(open, source_sink, alias(st_i)) here before (cfo 2026-10-11, R-1689). The file itself is rewritten next.
 lgt_clean_alias(Alias, File) :-
     ( catch(stream_property(S, alias(Alias)), _, fail) -> close(S) ; true ),
     absolute_file_name(File, Path),

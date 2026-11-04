@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_between_through_a_variable_link_ttyflush_and_time_answer_as_swipl.sh -- THREE BUILTIN GAPS THE CLPFD ROLL-OUT'S SMOKE
-# FOUND, ANSWERED AS SWIPL IN BOTH MODES (cfo 2026-10-11; the roll-out of library(clpfd), CEO-1596, over a systematic sample of the
+# FOUND, ANSWERED AS SWIPL IN BOTH MODES (cfo 2026-10-11; the roll-out of library(clpfd), R-1596, over a systematic sample of the
 # puzzles package's OUTSIDE_CLPFD programs; the cfo's lane, the Prolog runtime breadth).
 #
 # (1) between/3 (and for/3) with a bound that reached its value through a variable link -- X = Y, Y = 2, between(X, 5, Z) -- died

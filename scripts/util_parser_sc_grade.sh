@@ -7,7 +7,7 @@
 # PARSER-SC lang=L files=N match=M diff=D fail=F (fail = Parse Error or no section), then the differing files smallest
 # first with the two dumps side by side (SC left, C right), capped by SHOW (default 6).  rc 0 all match, 1 otherwise, 2 refused.
 set -u
-L="${1:-}"; LIST="${2:-}"; CDUMP="${3:-}"; OUT="${4:-/tmp/claude-1000/-home-claude-ceo/fb236173-6673-43de-8e6c-9c0a8fad13e9/scratchpad/scgrade}"
+L="${1:-}"; LIST="${2:-}"; CDUMP="${3:-}"; OUT="${4:-/tmp/s4e/${S4E_SEAT:-$USER}/scgrade}"
 SHOW="${SHOW:-6}"
 here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); CORPUS=$(cd "$W/../corpus" 2>/dev/null && pwd); B="$W/bootstrap"
 [ -n "$L" ] && [ -f "$B/parser_$L.sc" ] || { echo "PARSER-SC ⛔ REFUSE(2): no bootstrap/parser_$L.sc"; exit 2; }
@@ -21,7 +21,7 @@ if [ ! -x "$BIN" ] || [ "$B/parser_$L.sc" -nt "$BIN" ] || [ "$W/scrip" -nt "$BIN
     "$W/scrip" --compile "$OUT/$L.sno" --out="$OUT/$L.s" < /dev/null > "$OUT/$L.cc.err" 2>&1 || { echo "PARSER-SC ⛔ REFUSE(2): compile failed: $(grep -m3 -i 'error' "$OUT/$L.cc.err" | cut -c1-300)"; exit 2; }
     gcc -m64 -no-pie -rdynamic "$OUT/$L.s" -Wl,-rpath,"$W/out" -L"$W/out" -lscrip_rt -lm -lpthread -o "$BIN" 2>> "$OUT/$L.cc.err" || { echo "PARSER-SC ⛔ REFUSE(2): link failed: $(tail -3 "$OUT/$L.cc.err" | cut -c1-300)"; exit 2; }
 fi
-# The binary runs at the CHAIN's declared heap and stack (ceo CEO-1353, RULES.md clause 8 (g)(4)), never typed here:
+# The binary runs at the CHAIN's declared heap and stack (R-1353, RULES.md clause 8 (g)(4)), never typed here:
 # bootstrap/parser_<lang>.heap and .stack, read by lib_declared_arena.sh and leading the binary's own command line.
 . "$here/lib_declared_arena.sh" || { echo "PARSER-SC ⛔ REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 SW="$(declared_switches_beside "$B/parser_$L.sc")" || { echo "PARSER-SC ⛔ REFUSE(2): bootstrap/parser_$L's declaration is refused"; exit 2; }

@@ -2,13 +2,13 @@
 # test_gate_baton_donewhen_reads_its_runner_rc.sh -- hq_B 2026-09-13.
 # GATE: no live baton DONE-WHEN may (A) capture a runner's output without being able to tell that runner's
 # REFUSAL from its RED, or (B) pin a SEAT ROOT in the text the bus actually runs -- as an ${S4E_HOME:-...}
-# fallback OR BARE (`cd /home/claude_ceo/SCRIP && ...`), which grades whichever tree that seat happens to
-# hold instead of origin HEAD. Class B's bare half is coo 2026-09-23 (CEO-1163, RULES.md THE INSTRUMENT
+# fallback OR BARE (`cd /home/claude_cto/SCRIP && ...`), which grades whichever tree that seat happens to
+# hold instead of origin HEAD. Class B's bare half is coo 2026-09-23 (R-1163, RULES.md THE INSTRUMENT
 # LAWS thirty-fourth batch clause 3: a criterion that names a seat root names a tree). MEASURED AT THAT
-# LANDING: 46 defective, and 28 of them pin a root that HAS NOT EXISTED SINCE CEO-767 -- so they grade no
+# LANDING: 46 defective, and 28 of them pin a root that HAS NOT EXISTED SINCE R-767 -- so they grade no
 # tree at all, and `rung-gate-false-green-audit` is a PROVEN FALSE GREEN because its `! grep -qi ... 
 # /home/claude10/.github/FINDING-...md` inverts grep's rc=2-on-a-missing-file into rc=0 DONE.
-# Both classes come from the ceo's own audit: FINDING-2026-09-11-ceo-a-done-when-that-captures-a-board-turns-
+# Both classes come from the officer's own audit: FINDING-2026-09-11-officer-a-done-when-that-captures-a-board-turns-
 # could-not-measure-into-failed.md. Under ONE RUNNER, ONE BOARD a runner answers any seat but the coo with
 # rc=2; a criterion that greps the captured TEXT and never looks at the rc turns that refusal into rc=1
 # FAILED -- so precisely the rows that most need auditing cannot be audited by hand by anyone but the coo.
@@ -52,7 +52,7 @@ if [ "${1:-}" = "--self-test" ]; then
     mk selftest_classb     'R="${S4E_HOME:-/home/claude_cfo}"; [ -x "$R/SCRIP/scrip" ] || exit 2'
     # ---- the BARE half and, more importantly, its NEGATIVE CONTROLS. Each of the four below was a real
     # false positive the whole-block reader produced on the live tree on 2026-09-23, not an invented case.
-    mk selftest_bare       'cd /home/claude_ceo/SCRIP && test -f scrip'
+    mk selftest_bare       'cd /home/claude_cto/SCRIP && test -f scrip'
     mk selftest_bare_dead  'bash /home/claude16/harness/scripts/test_gate_x.sh'
     mk selftest_bare_cmt   'test -f scrip   # audited by hand from /home/claude_coo on 2026-09-01'
     mk selftest_bare_subj  'for r in /home/claude03 /home/claude04; do [ -r "$r/CLAUDE.md" ] || continue; grep -q X "$r/CLAUDE.md" || exit 1; done'
@@ -105,7 +105,7 @@ if [ "${1:-}" = "--self-test" ]; then
     for keep in selftest_bare_cmt selftest_bare_annot selftest_bare_regex selftest_bare_subj; do
         cmp -s "$T/tasks/$keep.task.md" "$T/tasks_cure/$keep.task.md" \
             || { echo "⛔ arm 2d: --cure REWROTE $keep, which is not a defect"; fail=1; d2fail=1; }; done
-    # ⛔ THE SUBSTITUTION IS LOCAL AND KEEPS THE AUTHOR'S QUOTING: `cd /home/claude_ceo/SCRIP` becomes
+    # ⛔ THE SUBSTITUTION IS LOCAL AND KEEPS THE AUTHOR'S QUOTING: `cd /home/claude_cto/SCRIP` becomes
     # `cd ${S4E_HOME:-$PWD}/SCRIP`, unquoted exactly as it was found. A cure that also re-quotes is editing
     # shell it was not asked to edit, and the diff stops being reviewable.
     grep -qF 'cd ${S4E_HOME:-$PWD}/SCRIP && test -f scrip' "$T/tasks_cure/selftest_bare.task.md" \

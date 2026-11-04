@@ -10,7 +10,7 @@
 # unwind (emit.cpp pl_step_reseed_locals) still zeroed [rbp+176..384) -- the frame OFFSETS the vslot table holds for those locals -- 26 stores
 # past the frame and the argument block into the caller's live region, which under last-call optimisation is insert/5's frame, where TreeI's
 # home cell [rbp+32] sits.  A trivial failing clause (no locals) emits no stores and reads green, which is the control that named the site.
-# THE RULE (CEO-1895): the reseed reads the SAME decider the var_ref boxes read -- a local the planner placed on the spine has no frame cell,
+# THE RULE (R-1895): the reseed reads the SAME decider the var_ref boxes read -- a local the planner placed on the spine has no frame cell,
 # so there is nothing to reseed; only a frame-homed local's cell is written to the null DESCR.
 # RED BEFORE (origin 5c435f745): m3 and m4 both print the matching_rule warning and no t2 line.
 set -u

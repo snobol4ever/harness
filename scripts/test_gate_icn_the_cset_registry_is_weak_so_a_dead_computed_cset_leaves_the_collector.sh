@@ -12,7 +12,7 @@
 # entry whose block is marked (or is not in the heap) through rt_gc_weak_keep and tombstones the rest (ptr NULL, so no
 # forwarding, index rebuild or content probe ever reads it); the registry compacts and re-indexes on its next lookup.
 # A cset is a value: an unnamed interned result no root reaches is unobservable, and the next intern of the same content
-# makes a fresh block holding the same value (the cto's ruling on the ASK, CEO-812 permits it: no conservative visit).
+# makes a fresh block holding the same value (the cto's ruling on the ASK, R-812 permits it: no conservative visit).
 #
 # ARMS. (1) deal -h 1000 answers byte-identical to iconx in both media at the shipped window. (2) RETENTION DOES NOT GROW
 # WITH WORK: under SCRIP_GC_STRESS=1 (a collection at every opportunity, so the live set at exit is exact and no pacing enters it)
@@ -24,7 +24,7 @@
 # disjoint ground and all old ground PROT_NONE, so a dangling registry entry read by forwarding, the index rebuild or a content
 # probe FAULTS where it is used. Its answers must equal iconx's, the flip plant's proof line must print, and no [ZGC-STALE]
 # report may appear (the cto's condition). Measured at landing: 11765 collections, 529 compactions that removed tombstones.
-# THE PLANT IS GONE (CEO-1680, Lon 2026-10-11: no switch in SCRIP's src/ exists only so a test can fail). Until 2026-10-18
+# THE PLANT IS GONE (R-1680, Lon 2026-10-11: no switch in SCRIP's src/ exists only so a test can fail). Until 2026-10-18
 # SCRIP_GC_PLANT_CSET_STRONG in keywords.c restored the strong rooting on demand, and three more arms compared the weak run
 # against it (the plant applied, its live bytes higher, its CPU at least 1.5x); those arms went with the seam. The fail-once
 # proof is a PROPER test: this gate run against a worktree of 29dffa546^ -- the parent of the landing that made the registry

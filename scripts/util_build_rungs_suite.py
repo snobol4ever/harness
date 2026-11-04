@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_build_rungs_suite.py -- THE ONE FLAT SUITE + THE FEATURE DATABASE (Lon 2026-08-29, in-chat to CEO, verbatim in substance:
+"""util_build_rungs_suite.py -- THE ONE FLAT SUITE + THE FEATURE DATABASE (Lon 2026-08-29, in-chat, verbatim in substance:
 "I think we have organized the tests completely wrong. We should have ONE set of tests, and a database file, CSV file, which has
 all the attributes you need to help isolate feature usage. So one flat list with attributes of each feature used in the program.
 You could create as many as 30 attributes, for instance the one word primitive functions used like FENCE, POS, ARBNO, then
@@ -20,7 +20,7 @@ Builds corpus/tests/snobol4/master/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite 
 Stdlib only. Uses corpus_suite_harness's own read_suite/write_suite -- ONE authority for the suite grammar, never a second parser.
 
 ⛔⛔ CUT-OVER LANGUAGES RE-VERIFY IN A SCRATCH TREE AND DIFF -- NEVER BY DELETING IN PLACE.
-(Law 2 AMENDED, ceo 2026-08-30, on hq_P + seat14 reproducing it independently; both reverted, origin intact.)
+(Law 2 AMENDED, the officer 2026-08-30, on hq_P + seat14 reproducing it independently; both reverted, origin intact.)
 Law 2 says a GUARD CHANGE REQUIRES A CLEAN REBUILD. That is correct for a language with live sources -- it
 cured icon's 14 false failures the same night -- and CATASTROPHIC for a CUT-OVER one, because "clean" means
 deleting ALL.* and on a cut-over language THE RUNGS IS THE ONLY COPY. Measured on snobol4: rm ALL.* then
@@ -71,13 +71,13 @@ import pathlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import corpus_suite_harness as h  # noqa: E402
-# ⛔⭐ EVERY ENTRY CARRIES ITS SETTINGS (Lon 2026-09-25, in-chat to the ceo, verbatim: "Ensure that all the test suite programs have the
-# stack size and heap size setting placed into the per-program attribute files."; ceo CEO-1261): a row the builder writes with no heap_kb
+# ⛔⭐ EVERY ENTRY CARRIES ITS SETTINGS (Lon 2026-09-25, in-chat, verbatim: "Ensure that all the test suite programs have the
+# stack size and heap size setting placed into the per-program attribute files."; R-1261): a row the builder writes with no heap_kb
 # or stack_kb of its own gets SPITBOL's defaults, read from the harness constants test_gate_suite_runners_honour_the_tests_declared_memory.sh
 # holds to the runtime (-d128m and -s4m) -- a declaration an author measured is carried forward unchanged, never replaced by these.
 DEFAULT_HEAP_KB = str(h.GC_HEAP_CAP_KB)
 DEFAULT_STACK_KB = str(h.GC_STACK_FLOOR_KB)
-# the unit's command line (RULES.md hard-cap rule clause 8 (f), ceo CEO-1281): carried forward like heap_kb, never re-derived --
+# the unit's command line (RULES.md hard-cap rule clause 8 (f), R-1281): carried forward like heap_kb, never re-derived --
 # nothing in an entry's text says what switches its compile needs or what arguments its run takes
 CMD_COLS = ("compile_args", "run_args")
 
@@ -132,7 +132,7 @@ def _stdin_text_for_absorption(src_path):
 S4E = os.environ.get("S4E_HOME", os.path.dirname(os.path.dirname(HERE)))
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice")   # the fleet queue, for PENDING.md row-state
 
-# -- ⭐ LANGUAGE PARAMETERISATION (hq_B 2026-08-29, ceo/Lon: rung suites for the other six languages).
+# -- ⭐ LANGUAGE PARAMETERISATION (hq_B 2026-08-29, officer/Lon: rung suites for the other six languages).
 # ROOT/ext/columns were hardcoded to snobol4. They are now selected by --lang; `snobol4` keeps its EXACT
 # previous column set and naming table, so its rungs rebuilds BYTE-IDENTICAL -- that identity is the control
 # arm for this change and is verified, not assumed.
@@ -335,7 +335,7 @@ PASCAL_NAME_FEATURES = [
     ("mod", "mod"), ("writeln", "writeln"), ("readln", "readln"), ("new", "new"), ("dispose", "dispose"),
     ("sqrt", "sqrt"), ("trunc", "trunc"), ("round", "round"), ("eof", "eof"), ("odd", "odd"),
 ]
-# -- the snobol4 master alone gains an arithmetic column (CEO-1683: a binop template cure had no named handful). A binary + - * / ** is a SNOBOL4
+# -- the snobol4 master alone gains an arithmetic column (R-1683: a binop template cure had no named handful). A binary + - * / ** is a SNOBOL4
 # operator only between blanks (no blank is concatenation, and *X is a deferred reference), so the scan reads code lines only (a column-1 * is a
 # comment), takes the quoted literals out first, and wants blank or tab on both sides of the operator. snocone and rebus keep COLS: their
 # operators do not need the blanks, so this scan would read them wrong.
@@ -646,8 +646,8 @@ def discover_pairs(ROOT, OUTDIR, EXT):
 def split_write(OUTDIR, EXT, lang, _CO, _CC, do_write):
     """⭐ --split-write: emit Lon's END STATE -- a ONE-LINERS file and a MULTI-LINERS file side by side.
 
-    Lon 2026-08-29/30 (routed by ceo): per language, one-liners and multi-liners live in SEPARATE files in
-    one flat dir. ceo ruled (2026-08-30) that the write half belongs HERE rather than in the verify-first
+    Lon 2026-08-29/30 (routed by the officer): per language, one-liners and multi-liners live in SEPARATE files in
+    one flat dir. the officer ruled (2026-08-30) that the write half belongs HERE rather than in the verify-first
     splitter, because this file already owns rungs writing; reading THE rungs as input is a
     RUNGS-TO-RUNGS verb, distinct from the source rebuild whose zero-pairs refusal stays untouched.
 
@@ -660,7 +660,7 @@ def split_write(OUTDIR, EXT, lang, _CO, _CC, do_write):
     rule stops being something a writer must remember and becomes a property of the layout.
 
     ⛔ IT DOES NOT ADOPT THE SPLIT. ALL.* is left exactly as it is; nothing re-points; no source is
-    deleted. ceo adopted the ordering law as stated: the split files land in one commit, ADOPTION is its
+    deleted. the officer adopted the ordering law as stated: the split files land in one commit, ADOPTION is its
     own commit gated on the per-entry named-set equality proof, never both together -- otherwise a moved
     floor cannot be attributed to a converter defect or a real regression.
 
@@ -883,7 +883,7 @@ def rungs_file_key(entry, flags):
 def resort_rungs(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, acknowledged):
     """Re-sort the rungs already on disk into the builder's own order and rewrite ALL.<ext>/ALL.ref/ALL.csv.
 
-    WHY (ceo ruling 2026-09-03 on hq_B's routed question): Lon's level law says a level is a PREFIX of the
+    WHY (ruling 2026-09-03 on hq_B's routed question): Lon's level law says a level is a PREFIX of the
     rungs, so `rank <= N` must select the greenest N. A PROMOTION CHANGES AN ENTRY'S SORT KEY -- flipping
     xfail moves it out of the xfail block -- so a promotion that rewrites only the three marker locations
     leaves the file sorted under the old key and the law quietly stops being true. Nothing looks wrong: the
@@ -926,13 +926,13 @@ def resort_rungs(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, acknowled
         sys.stderr.write("REFUSED: the sort changed the ENTRY SET (%d -> %d unique) -- that is not a reorder.\n"
                          % (len(set(before)), len(set(after)))); return 2
     csv_origin = {}
-    # ⛔⭐ heap_kb IS CARRIED FORWARD, NEVER RE-DERIVED (Lon 2026-09-23 / CEO-1167). A declaration is a
+    # ⛔⭐ heap_kb IS CARRIED FORWARD, NEVER RE-DERIVED (Lon 2026-09-23 / R-1167). A declaration is a
     # MEASUREMENT a seat paid for with two readings; nothing in an entry's text can regenerate it, so a
     # rebuild or a resort that dropped the cell would silently return a 16384 KB program to the shipped
     # 128 and turn a cured row back into a capacity red with no diff naming the cause.
     csv_heap = {}
-    csv_stack = {}    # stack_kb, carried forward on the same contract (CEO-1225)
-    csv_cmd = {}      # compile_args and run_args, carried forward on the same contract (clause 8 (f), CEO-1281)
+    csv_stack = {}    # stack_kb, carried forward on the same contract (R-1225)
+    csv_cmd = {}      # compile_args and run_args, carried forward on the same contract (clause 8 (f), R-1281)
     cmd_cols = carried_cmd_cols(out_csv)
     if os.path.isfile(out_csv):
         for row in csv.DictReader(open(out_csv)):
@@ -1037,13 +1037,13 @@ def reindex_csv_only(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, ackno
         sys.stderr.write("REFUSED: --reindex read 0 entries from %s -- refusing to write an empty index over a real one.\n" % rungs_sno)
         return 2
     csv_origin = {}
-    # ⛔⭐ heap_kb IS CARRIED FORWARD, NEVER RE-DERIVED (Lon 2026-09-23 / CEO-1167). A declaration is a
+    # ⛔⭐ heap_kb IS CARRIED FORWARD, NEVER RE-DERIVED (Lon 2026-09-23 / R-1167). A declaration is a
     # MEASUREMENT a seat paid for with two readings; nothing in an entry's text can regenerate it, so a
     # rebuild or a resort that dropped the cell would silently return a 16384 KB program to the shipped
     # 128 and turn a cured row back into a capacity red with no diff naming the cause.
     csv_heap = {}
-    csv_stack = {}    # stack_kb, carried forward on the same contract (CEO-1225)
-    csv_cmd = {}      # compile_args and run_args, carried forward on the same contract (clause 8 (f), CEO-1281)
+    csv_stack = {}    # stack_kb, carried forward on the same contract (R-1225)
+    csv_cmd = {}      # compile_args and run_args, carried forward on the same contract (clause 8 (f), R-1281)
     cmd_cols = carried_cmd_cols(out_csv)
     if os.path.isfile(out_csv):
         for row in csv.DictReader(open(out_csv)):
@@ -1228,7 +1228,7 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     if ora_kind != "RAN":
         return ("exclude", name, "oracle itself %s" % ora_kind)
     if not ora_text.strip():
-        # ⛔⭐ NAME WHAT THE ORACLE SAID, NEVER A THEORY ABOUT IT (hq_S 2026-09-12, CEO-604). This reason used to
+        # ⛔⭐ NAME WHAT THE ORACLE SAID, NEVER A THEORY ABOUT IT (hq_S 2026-09-12, R-604). This reason used to
         # end at "a vacuous ref is worse than none", which is true and tells the next reader nothing about WHY
         # the oracle printed nothing -- so the reader supplies a cause, and a cause supplied once is then
         # generalized over every program the guard caught. It was: 13 raku fixtures carried one hand-written
@@ -1262,7 +1262,7 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     agree3 = v3.kind == "PASS" and v3.returncode == ora_rc
     agree4 = v4.kind == "PASS" and v4.returncode == ora_rc
     # ⛔⭐⭐ TWO DIFFERENT QUESTIONS WERE BEING ANSWERED BY ONE GATE, AND THE WRONG ANSWER WAS UNFALSIFIABLE
-    # (hq_S 2026-09-12, row raku-absorb-every-owed-source, on the ceo's CEO-591 re-cut and hq_V's standing
+    # (hq_S 2026-09-12, row raku-absorb-every-owed-source, on R-591 re-cut and hq_V's standing
     # practice "a wrong exclusion costs more than a wrong cure, because a red stays visible and an excluded
     # name cannot be red"). Three-way agreement exists to keep us from PINNING A REF WE CANNOT TRUST when we
     # are minting one from scratch -- there, m3/m4 are the only second opinion available and the guard is
@@ -1327,15 +1327,15 @@ def _excl_digest(existing):
 
 
 def _excl_guard(path, existing):
-    """⛔⭐ REFUSE rc=2 IF ALL.excluded.txt HAS BEEN EDITED BY ANYTHING BUT THIS BUILDER (ceo CEO-545, on
+    """⛔⭐ REFUSE rc=2 IF ALL.excluded.txt HAS BEEN EDITED BY ANYTHING BUT THIS BUILDER (R-545, on
     hq_V's 2026-09-10 measurement). THE DEFECT IT CLOSES, both arms measured in a scratch tree before this
     existed: (1) a hand DELETION of a line the builder still computes is SILENTLY REVERTED by the next full
-    build -- `rung36_jcon_io` removed by hand came back with no word said, which is the ceo's phrase exactly,
+    build -- `rung36_jcon_io` removed by hand came back with no word said, which is the officer's phrase exactly,
     a generated artifact that can be edited but not honoured; (2) a hand-ADDED line the builder never
     computes SURVIVES FOREVER -- an invented `zzz_invented_family` was still there after two full builds,
     never challenged. The second is the worse half: it is how a WRONG EXCLUSION becomes permanent, and an
     excluded name cannot be red, so nobody looks (the jcon `kwds` shape, four cycles).
-    ⛔ THE RULE IS THE CEO'S: a retraction is made where the exclusion is DECLARED -- KEEP.md, PENDING.md --
+    ⛔ THE RULE IS THE OFFICER'S: a retraction is made where the exclusion is DECLARED -- KEEP.md, PENDING.md --
     and the generated file is then REBUILT. This function makes the file say so instead of absorbing the
     edit. A legacy file with no digest line is MIGRATED, not refused: refusing every tree on the first run
     after this lands would be a gate that fires on its own introduction."""
@@ -1355,7 +1355,7 @@ def _excl_guard(path, existing):
         "⛔ REFUSED rc=2: %s has been edited since this builder last wrote it (recorded %s..., actual %s...).\n"
         "   It is a GENERATED artifact and a hand edit to it is not honoured: a deletion is silently\n"
         "   reverted by the next full build, and an invention survives forever unchallenged.\n"
-        "   CEO-545: retract or add the exclusion WHERE IT IS DECLARED -- the language's KEEP.md or\n"
+        "   R-545: retract or add the exclusion WHERE IT IS DECLARED -- the language's KEEP.md or\n"
         "   PENDING.md -- then re-run this builder so the generated file is rebuilt from the declaration.\n"
         "   To adopt the current file as the new baseline (only if you know the edit is right), delete the\n"
         "   %s line and re-run.\n" % (path, recorded[:16], actual[:16], EXCL_DIGEST_TAG))
@@ -1369,16 +1369,16 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
     ⛔⭐ THE HEADER IS DATA TOO. This used to drop every line without a TAB, which is every comment line,
     so each --additive run silently deleted the sidecar's own governing text, and nothing in it said that
     anything had been removed. Comments are preserved verbatim, in place.
-    ⛔⭐⭐ `fresh_wins` AND `retract` EXIST BECAUSE CEO-545 CHANGED WHAT THE NEVER-OVERWRITE RULE PROTECTS, AND
+    ⛔⭐⭐ `fresh_wins` AND `retract` EXIST BECAUSE R-545 CHANGED WHAT THE NEVER-OVERWRITE RULE PROTECTS, AND
     NOBODY MOVED THE RULE (hq_S 2026-09-12, measured on raku scrip_test). The `if k not in existing` below was
-    written to protect A HAND-WRITTEN DECLARATION AND ITS EVIDENCE. But CEO-545 made ALL.excluded.txt GENERATED and _excl_guard now REFUSES a hand edit to it,
+    written to protect A HAND-WRITTEN DECLARATION AND ITS EVIDENCE. But R-545 made ALL.excluded.txt GENERATED and _excl_guard now REFUSES a hand edit to it,
     so in that file there is no hand-written line left to protect: the only thing never-overwrite preserves
     there is THIS TOOL'S OWN STALE TEXT. Both arms measured on the same 15 rows: (1) eight programs absorbed
     into the rungs stayed NAMED AS EXCLUDED FROM IT -- the exact contradiction the non-additive writer's own
     retraction arm exists to stop ("the two readings cannot both be true, and the file that contradicts the
     rungs is the one every census reads"), which that path has and this one did not; (2) the five still
     unabsorbable rows kept a reason that had become FALSE -- it said appending one `main();` line would make
-    them gradeable and that the question was open with the ceo, when the line had been appended, the ceo had
+    them gradeable and that the question was open with the officer, when the line had been appended, the officer had
     ruled, and the real cause was five different constructs rakudo refuses. A stale reason is worse than a
     blunt one: it names the wrong cause with the authority of a measurement. So for the generated sidecar the
     current run's measurement REPLACES the old one (`fresh_wins`) and a key now in the graded denominator is
@@ -1414,7 +1414,7 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
 def _additive_write_excluded(outdir, absorbed, excluded_rows):
     """Write ALL.excluded.txt for an --additive run: this run's reasons REPLACE their predecessors, and a
     program that reached the rungs is RETRACTED rather than named as excluded from it (see
-    _additive_write_sidecar_merge's own docstring for the two measured arms and why CEO-545 requires it).
+    _additive_write_sidecar_merge's own docstring for the two measured arms and why R-545 requires it).
     ⛔ A PROGRAM ALREADY IN THE RUNGS IS IN `absorbed` AND IN `excluded_rows` AT THE SAME TIME, by design --
     the absorb loop pushes an "already in the rungs (origin ...) -- not re-appended" row so the run's printed
     accounting still balances. That bookkeeping note is NOT an exclusion, so the retraction wins over it: the
@@ -1436,7 +1436,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
     if lang not in LANG_TABLES:
         h.refuse("--additive --lang %r has no attribute table -- see LANG_TABLES" % lang)
     if lang in h.NO_RIVAL_LANGS:
-        # ⛔⭐ THIS ARM RUNS BEFORE THE "not wired yet" ONE ON PURPOSE (CEO-607, 2026-09-12). This check sits
+        # ⛔⭐ THIS ARM RUNS BEFORE THE "not wired yet" ONE ON PURPOSE (R-607, 2026-09-12). This check sits
         # ahead of resolve_oracle_bin and would otherwise hand a no-rival language the backlog-shaped refusal
         # below, which the caller can only read as "someone will wire it later" -- and hq_C measured exactly
         # that reading costing a row a full sitting before the ruling. resolve_oracle_bin carries the same
@@ -1444,7 +1444,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         # the one NO_RIVAL_LANGS set in corpus_suite_harness rather than spelling the membership twice.
         h.refuse("--additive --lang %r: no rival: refs are derived, see KEEP.md -- %s has no independent rival "
                  "implementation, so ABSORPTION WITH AN ORACLE-CUT REF IS NOT PENDING, IT IS IMPOSSIBLE. Its "
-                 "kernels stay in corpus/benchmarks/%s (CEO-609: a kernel tree never enters a rung suite) carrying a "
+                 "kernels stay in corpus/benchmarks/%s (R-609: a kernel tree never enters a rung suite) carrying a "
                  "ref DERIVED from a rival program in another language under THAT language's oracle, the "
                  "derivation recorded in a .derivation beside the ref and re-performed on every run by "
                  "test_gate_rebus_derived_refs_match_their_rival_oracle.sh" % (lang, lang, lang))
@@ -1746,7 +1746,7 @@ def main():
     # off would be used once in a hurry and never removed.
     allow_drop = {x for x in args.allow_drop_origin.split(",") if x} if args.allow_drop_origin else set()
     # ⭐ --family <prefix> / --only fam,fam SCOPE --delete-absorbed TO A SUBSET (row
-    # master-builder-delete-absorbed-family-selector, ceo mint 2026-08-30, on hq_P's measurement:
+    # master-builder-delete-absorbed-family-selector, mint 2026-08-30, on hq_P's measurement:
     # --delete-absorbed is all-or-nothing per LANGUAGE while FLEET-16 splits one language's
     # consolidation across seats -- icon has 208 verified-deletable families of which 153 are
     # parser_* under a live seat lock, so the one authorized delete command would wipe another
@@ -1844,7 +1844,7 @@ def main():
     if os.path.isfile(rungs_csv_path):
         csv_origins = _origins_from_csv_text(open(rungs_csv_path).read())
     else:
-        # ⛔⭐⭐ THE THIRD RECORD, AND IT IS THE ONLY ONE THE DESTRUCTIVE COMMAND CANNOT REACH (ceo's routing
+        # ⛔⭐⭐ THE THIRD RECORD, AND IT IS THE ONLY ONE THE DESTRUCTIVE COMMAND CANNOT REACH (the officer's routing
         # on hq_P's report, 2026-08-30). The two records above -- the suite pair and ALL.csv -- both live INSIDE
         # the tree being rebuilt, so `rm ALL.*` destroys BOTH IN ONE GESTURE and leaves nothing to compare
         # against: measured, a full wipe rebuilt icon at 437 entries over a committed 534 and exited 0. Reading
@@ -1871,8 +1871,8 @@ def main():
                           "as the collapse-check baseline." % len(csv_origins), file=sys.stderr)
         except Exception:
             pass
-    _csv_stack = {}   # per-entry `stack_kb` carried forward on the same contract (CEO-1225)
-    _csv_cmd = {}     # per-entry compile_args and run_args, carried forward on the same contract (clause 8 (f), CEO-1281)
+    _csv_stack = {}   # per-entry `stack_kb` carried forward on the same contract (R-1225)
+    _csv_cmd = {}     # per-entry compile_args and run_args, carried forward on the same contract (clause 8 (f), R-1281)
     _csv_heap = {}    # per-entry `heap_kb` carried forward, same contract and for the sharper reason: see
                       # the carried-forward note above -- a dropped declaration is a silent capacity red
     if os.path.isfile(rungs_sno_path) and os.path.isfile(os.path.join(OUTDIR, "ALL.ref")):
@@ -2005,7 +2005,7 @@ def main():
                 excluded.append((fam, "dialect read refused: %s" % str(e)[:140]))
                 continue
             if not any(_bre.match(_l) for _l in _slines):
-                # ⛔⭐ STDIN GUARD, GENERALISED (ceo amendment on seat04's finding, 2026-08-30). This check
+                # ⛔⭐ STDIN GUARD, GENERALISED (amendment on seat04's finding, 2026-08-30). This check
                 # existed ONLY on the snobol4 path, so every dialect absorbed a stdin-reading program with NO
                 # sidecar -- seat04 measured pascal read1-4 absorbed and grading against /dev/null. An entry
                 # that silently reads nothing where it should read its input does not fail loudly; it produces
@@ -2019,8 +2019,8 @@ def main():
                     excluded.append((fam, "stdin companion cannot be carried faithfully (%s): %s" % (_stdin_sidecar_names(sno), _stdin_why)))
                     continue
                 mode = "plain"
-                # ⛔ NO AUTO-XFAIL ON THE DIALECT PATH (CEO-753: there is no xfail, and a builder that mints one is the defect;
-                # CEO-1230: the modes sweep must not WIDEN the probing). The probe here used to run only for a family declared
+                # ⛔ NO AUTO-XFAIL ON THE DIALECT PATH (R-753: there is no xfail, and a builder that mints one is the defect;
+                # R-1230: the modes sweep must not WIDEN the probing). The probe here used to run only for a family declared
                 # in MODES.tsv; with the declaration gone, the undeclared path it always took is the one left: xfail stays False,
                 # and a pair that does not reproduce its ref reads red on the board, which is where a defect belongs.
                 entries = [h.Entry("block", 1, os.path.basename(sno)[:-len(EXT)], _slines, _rlines, stdin=_stdin_txt, xfail=False)]
@@ -2178,7 +2178,7 @@ def main():
         h.refuse("rungs merge name collision(s): %s" % sorted(dup)[:5])
     # -- BYTE-EQUAL-OR-NO-DELETE (the house law, applied to absorption): every absorbed source pair is re-read FRESH
     # from disk and compared entry-by-entry against the written rungs. A family that does not verify is NEVER deleted.
-    # ⭐ GENERALISED PAST SNOBOL4 (seat05, 2026-08-30, on the ceo all-hands consolidation directive): this used to gate
+    # ⭐ GENERALISED PAST SNOBOL4 (seat05, 2026-08-30, on the officer all-hands consolidation directive): this used to gate
     # on `ok = lang == "snobol4"`, so EVERY non-snobol4 family landed in `unverified` unconditionally, regardless of
     # whether it actually matched -- --delete-absorbed could never delete a single prolog/raku/snocone/rebus file, not
     # because anything failed to verify, but because verification was never attempted for them at all. That silent
@@ -2339,7 +2339,7 @@ def main():
             reread = h.read_suite(tmp_sno, tmp_ref,
                                   in_path=(tmp_in if wrote_in else None), x_path=(tmp_x if wrote_x else None))
         else:
-            # ⛔⭐ THE SIDECAR WRITERS WERE SNOBOL4-ONLY TOO (ceo amendment). A dialect rungs got no ALL.in and no
+            # ⛔⭐ THE SIDECAR WRITERS WERE SNOBOL4-ONLY TOO (amendment). A dialect rungs got no ALL.in and no
             # ALL.xfail, so any absorbed stdin-carrying entry lost its input and any xfail lost its marker -- both
             # silently. The writers are already parameterised by comment leader; the dialect branch simply never
             # called them. Re-read WITH the sidecars, or the round-trip check verifies a file the grader will not
@@ -2388,7 +2388,7 @@ def main():
                 _line = _line.rstrip("\n")
                 if _line and "\t" in _line:
                     _k, _v = _line.split("\t", 1); _excl_existing[_k] = _v
-        # ⛔ CEO-545: this file is GENERATED and a hand edit to it is not honoured -- see _excl_guard's own
+        # ⛔ R-545: this file is GENERATED and a hand edit to it is not honoured -- see _excl_guard's own
         # docstring for the two measured arms. Refuse here rather than absorb the edit silently.
         _excl_guard(out_excl, _excl_existing)
         _excl_existing.update({fam: why for fam, why in excluded})
@@ -2398,9 +2398,9 @@ def main():
         # moment a family is released and absorbed, its old row survives and the same program is BOTH in the
         # graded denominator AND named as "never absorbed (deferral contract)". The two readings cannot both
         # be true, and the file that contradicts the rungs is the one every census reads.
-        # ⛔ IT IS NOT A HAND EDIT AND MUST NOT BE ONE: CEO-545 makes this file GENERATED and _excl_guard
+        # ⛔ IT IS NOT A HAND EDIT AND MUST NOT BE ONE: R-545 makes this file GENERATED and _excl_guard
         # REFUSES rc=2 on an edit, correctly -- which leaves the builder itself as the only thing that can
-        # retract a row. The retraction is still DECLARED where the ceo's rule says (KEEP.md/PENDING.md); this
+        # retract a row. The retraction is still DECLARED where the officer's rule says (KEEP.md/PENDING.md); this
         # only stops the generated file from outliving the declaration it was generated from.
         # ⛔⭐⭐ TWO CONDITIONS, AND THE SECOND ONE IS THE WHOLE CURE -- MY FIRST VERSION HAD ONLY THE FIRST AND
         # WOULD HAVE DELETED 191 ROWS INSTEAD OF 1, WHICH I FOUND BY READING WHAT IT PROPOSED TO DELETE RATHER
@@ -2444,7 +2444,7 @@ def main():
     # raised a banner-mismatch ValueError that reads exactly like a corrupt rungs pair. A cycle went on
     # suspecting the corpus. ⭐ THE GENERAL FORM: a tool's LAST LINE is read as its verdict on the run, whatever
     # earlier lines said — so a true statement about one step, placed last, is a false statement about the whole.
-    # ⛔ And the exposure is not one seat's afternoon: CEO-452 gives the Icon rungs exactly ONE writer because
+    # ⛔ And the exposure is not one seat's afternoon: R-452 gives the Icon rungs exactly ONE writer because
     # it is a built artifact two seats cannot merge, so an INSPECTION-SHAPED invocation that rewrites all four
     # files can leave an uncommitted, unmeasured rungs under any seat that ran it to ask a question.
     _committed = []
@@ -2460,7 +2460,7 @@ def main():
         os.remove(out_x); _committed.append(out_x + " (removed)")
     os.replace(tmp_csv, out_csv); _committed.append(out_csv)
     os.replace(tmp_excl, out_excl); _committed.append(out_excl)
-    # ⭐⭐ COMPANIONS GO IN config/, NOT THE FLAT DIR (hq_P 2026-08-30, ceo routed the cure to the finder).
+    # ⭐⭐ COMPANIONS GO IN config/, NOT THE FLAT DIR (hq_P 2026-08-30 routed the cure to the finder).
     # Lon's end state is tests/<lang>/ FLAT with ALL.* plus ONE config/ folder holding runtime companions.
     # The harness READ side already implements it -- _copy_companions searches <dir> AND <dir>/config
     # (corpus_suite_harness.py:1105) -- but this WRITER still dropped them in OUTDIR, so the law was
@@ -2476,7 +2476,7 @@ def main():
             os.remove(_stale)
     # ⛔⭐⭐ AND THEN THE CLOSURE THE ENTRIES THEMSELVES NAME, WHICH THE LOOP ABOVE STRUCTURALLY CANNOT SEE
     # (hq_T 2026-09-05; FINDING-2026-09-05-hq_T-companions-live-outside-the-master-directory-so-26-of-31-entries-
-    # cannot-resolve-them.md, ceo routed the instrument half here). The copy above rides along with an ABSORPTION:
+    # cannot-resolve-them.md, the officer routed the instrument half here). The copy above rides along with an ABSORPTION:
     # it takes the files sitting in the absorbed family's OWN directory at the moment it is absorbed. Two whole
     # classes escape that, and both were live in the snobol4 rungs:
     #   · an entry whose companion never lived beside it -- `-INCLUDE 'global.inc'` naming corpus/include/global.inc,

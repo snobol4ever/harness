@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_goto_leaves_its_routine_for_an_enclosing_label.sh -- ISO 7185 6.8.2.4: a goto to a label of an enclosing block terminates every activation between
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. lower_pascal.c found only the labels of
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. lower_pascal.c found only the labels of
 # the routine being lowered, so a goto naming an enclosing block's label lowered to a no-op and the routine ran on: FPC webtbs_tw37823 printed
 # "not jumped!" and test_tmacnonlocalgoto printed "Failed". Bracket (monitor_run.sh --oracle, tw37823): the last agree is step 6, LABEL stno=14
 # (the goto); the first diverge is step 7, where fpx ENDs and scr RETURNs from jump. The cure rides normal returns, no stack surgery: the

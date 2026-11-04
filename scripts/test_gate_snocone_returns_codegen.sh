@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_snocone_returns_codegen.sh -- computed DONE-WHEN for the snocone-returns-codegen row.
@@ -57,12 +57,12 @@ if [ -f /tmp/sb6_scr.err ]; then
   grep -qE "unresolved forward reference|undefined reference to \`RETURN'" /tmp/sb6_scr.err && fail "beauty ladder: trace.sc's old nreturn blocker is back: $(cat /tmp/sb6_scr.err)"
 fi
 
-# --- SNOBOL4 corpus gate: FAIL=0 SKIP=0 both modes, read fresh (CEO-s272 law: the shape, not a cached number) ---
+# --- SNOBOL4 corpus gate: FAIL=0 SKIP=0 both modes, read fresh (R-s272 law: the shape, not a cached number) ---
 # ⛔ An absent/killed run of this sub-gate (rc=2, e.g. programs KILLED at its per-program timeout under
 # fleet load) is UNPROVEN, not a failed DONE-WHEN for THIS row -- fail() would read a busy box as a
 # Snocone regression (row a-refusal-reported-in-the-vocabulary-of-a-red-absent-line-read-as-unparseable,
 # seat15/hq_T 2026-09-05).
-# ⛔ A SCRATCH RUNGS, NEVER THE REAL ONE (ceo CEO-1302 (c), coo 2026-09-27): this arm ran test_corpus_snobol4.sh over the whole
+# ⛔ A SCRATCH RUNGS, NEVER THE REAL ONE (R-1302 (c), coo 2026-09-27): this arm ran test_corpus_snobol4.sh over the whole
 # 1991-entry rungs under the one-runner fixture exemption, so every seat that ran this gate ran a SnoRungs board -- the coo's control
 # arm of 2026-09-26 made two passes and appended 7964 rows. It grades the rungs entries this row is about (every one whose source
 # uses NRETURN or FRETURN, XFAIL and outside-baseline entries left out) and the runner's 23 demos, in a git world with no remote,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_max_arity_is_the_functor_tables_int_bound.sh -- the max_arity flag reads 2147483647, the functor table's own
 # int bound, and every term-building builtin builds up to it: no fixed cap of 1024 (cfo 2026-10-08, row prolog-max-arity-
-# is-a-fixed-cap-of-1024-where-swipl-reads-unbounded-and-builds-an-arity-2000-term; the ceo's ruling CEO-1540, reading B).
+# is-a-fixed-cap-of-1024-where-swipl-reads-unbounded-and-builds-an-arity-2000-term; the ruling R-1540, reading B).
 #
 # WHAT THIS PINS, m3 and m4. The flag and its enumeration read 2147483647 (PROLOG_MAX_ARITY = INT_MAX, rt/prolog_atom.h);
 # functor/3 builds arity 2000 and 5000, =../2 builds and takes apart arity 3000 and 5000, copy_term/2 copies arity 4000;
@@ -11,7 +11,7 @@
 #
 # THE REF IS THE RULING'S, NOT AN ORACLE'S. swipl 9 builds the same terms but reads the flag as the atom unbounded (so its
 # A + 1 is a type_error), names its bignum error size_t, and refuses abolish(foo/2000) with its own max_procedure_arity;
-# CEO-1540 chose the integer bound so the INRIA goals stay green, and ISO states the representation and permission errors
+# R-1540 chose the integer bound so the INRIA goals stay green, and ISO states the representation and permission errors
 # this ref carries.
 #
 # RED BEFORE (SCRIP 82db2d5aa, the parent): the flag reads 1024 and functor/3 at 2000, =../2 at 3000 and 5000 and
@@ -61,7 +61,7 @@ abolish2000: ok
 REF
 fail=0
 ( cd "$T" && timeout -k 5 30 "$SCRIP" w.pl < /dev/null > m3.out 2>&1 ); rc3=$?
-if cmp -s "$T/m3.out" "$T/ref"; then echo "  ok   (m3) $(wc -l < "$T/ref") rows answer as CEO-1540 rules"; else echo "  FAIL (m3) rc=$rc3, first difference:"; diff "$T/ref" "$T/m3.out" | head -6 | sed 's/^/         /'; fail=1; fi
+if cmp -s "$T/m3.out" "$T/ref"; then echo "  ok   (m3) $(wc -l < "$T/ref") rows answer as R-1540 rules"; else echo "  FAIL (m3) rc=$rc3, first difference:"; diff "$T/ref" "$T/m3.out" | head -6 | sed 's/^/         /'; fail=1; fi
 if ( cd "$T" && "$SCRIP" --compile --out=w.s w.pl < /dev/null > /dev/null 2>&1 && gcc -o w w.s -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm 2>/dev/null ); then
     ( cd "$T" && timeout -k 5 30 ./w < /dev/null > m4.out 2>&1 ); rc4=$?
     if cmp -s "$T/m4.out" "$T/ref"; then echo "  ok   (m4) the same, from the standalone build"; else echo "  FAIL (m4) rc=$rc4, first difference:"; diff "$T/ref" "$T/m4.out" | head -6 | sed 's/^/         /'; fail=1; fi

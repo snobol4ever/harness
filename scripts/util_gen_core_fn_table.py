@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_gen_core_fn_table.py [--check | --write] [--tsv FILE] [--out DIR] -- harness/scripts/core_fns.tsv -> SCRIP/src/runtime/core/core_fn_table.inc
-# (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-ceo-1969).
+# (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-r-1969).
 #
 # core_fns.tsv is the table of the C functions the runtime knows BY NAME from its first instruction: one row per name (name, the C function, min and max argument counts). core_lib_init used
 # to register each row at every start-up with one core_fn_register_lit call (a heap node, a hash, a bucket walk: about 356 user instructions each on the hardware counter, 45,900 for the

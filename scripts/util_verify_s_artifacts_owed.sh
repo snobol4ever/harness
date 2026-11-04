@@ -5,10 +5,10 @@
 # (never the real tree), diffs, reports, discards the clone. NEVER writes to the real
 # corpus or SCRIP checkouts and NEVER commits anywhere real — a "verifier" that
 # silently commits regenerated artifacts is a different, more dangerous tool.
-# (row six-owed-verifier, minted hq_C 2026-08-24 s272, approved CEO-21)
+# (row six-owed-verifier, minted hq_C 2026-08-24 s272, approved R-21)
 #
 # SCOPE, DELIBERATE (RULES.md handoff step 4, CURRENT text, post-s269 ARTIFACT POLICY
-# ruling by Lon in-chat to CEO, verbatim in substance: "We will abandon the idea of
+# ruling by Lon in-chat, verbatim in substance: "We will abandon the idea of
 # having artifacts for tests ... But we want artifacts for benchmarks and demos."):
 #   CHECKED:      util_regen_benchmark_s_artifacts.sh    (SNOBOL4 benchmarks)
 #                 util_regen_demo_s_artifacts.sh          (demo corpus)
@@ -59,7 +59,7 @@
 #                     ⭐ NO LONGER THE DEFAULT (hq_T 2026-09-06, on hq_U's report): it cited HQ-27, which Lon
 #                     VOIDED as a per-landing requirement on 2026-09-03 ("It's time to loosen this pristine
 #                     build ... causes 20 minute wait times"), and a .s-currency check needs a CURRENT
-#                     compiler, not a from-scratch one. Use it for a ceo audit or a release point.
+#                     compiler, not a from-scratch one. Use it for an officer audit or a release point.
 #   --skip-pristine   reuse the already-built ./scrip as-is (fast iteration ONLY —
 #                      NEVER use for a real handoff/gate verdict; HQ-27 requires pristine).
 #   SCRIP=<path>      override the scrip binary (default $ROOT/scrip)
@@ -140,7 +140,7 @@ owed_total=0
 trouble_total=0
 report=()
 
-# ⛔⭐ POSITION-ONLY DRIFT IS NOT DRIFT (coo 2026-09-08, ceo's TWENTIETH INSTRUMENT-LAW BATCH).
+# ⛔⭐ POSITION-ONLY DRIFT IS NOT DRIFT (coo 2026-09-08, the officer's TWENTIETH INSTRUMENT-LAW BATCH).
 # THE DEFECT THIS CURES, and it blocked EVERY seat's handoff from 2026-08-30 until it was measured:
 # this script checks for drift by rebuilding the artifacts IN A DISPOSABLE CLONE and asking whether
 # the regen committed anything there. But an emitted .s carries its own SOURCE PATHNAME in the

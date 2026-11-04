@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_core_fn_table_is_current.sh -- THE RUNTIME'S BUILT-IN FUNCTIONS ARE STATIC DATA, NOT 129 REGISTRATIONS AT EVERY START-UP (row icon-the-startup-rebuilds-compile-time-tables-procedures-
-# csets-globals-registered-by-c-calls-at-run-time-ceo-1969). harness/scripts/core_fns.tsv is the one statement of the C functions the runtime knows by name; util_gen_core_fn_table.py writes
+# csets-globals-registered-by-c-calls-at-run-time-r-1969). harness/scripts/core_fns.tsv is the one statement of the C functions the runtime knows by name; util_gen_core_fn_table.py writes
 # SCRIP/src/runtime/core/core_fn_table.inc from it, and core.c consults that table after its dynamic chain.
 #   arm 1  the table is valid and core_fn_table.inc is exactly what the generator writes (a table edited without regenerating, or the .inc edited by hand, is stale)
 #   arm 2  core_lib_init spells no register_fn_lit: the rows are not registered at run time any more (a call that came back would pay a heap node, a hash and a walk per row at every start-up again)
 #   arm 3  a C program built against the REAL core.h and the REAL .inc: every row is found by the slot probe from the runtime's own hash (h = 5381; h = h * 33 ^ byte) and holds exactly the fields
 #          core_fn_register_impl filled (name = spec = entry_label, fn, min_args clamped at 0, max_args, max_set = max_args >= 0, no params, no locals, no next); every stored hash equals the
 #          hash of its name; a name that is not a row (each row's name with a suffix and with a prefix) is not found
-#   arm 4+ NEGATIVE CONTROLS on corrupted copies, never a seam in src (CEO-1680): a table with a row dropped, built into a scratch .inc and graded by the same C check, reads red; a table with a
+#   arm 4+ NEGATIVE CONTROLS on corrupted copies, never a seam in src (R-1680): a table with a row dropped, built into a scratch .inc and graded by the same C check, reads red; a table with a
 #          repeated name is refused by validate
 # rc 0 every arm holds · rc 1 an arm failed · rc 2 cannot measure.
 set -u

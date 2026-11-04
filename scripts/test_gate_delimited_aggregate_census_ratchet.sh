@@ -3,7 +3,7 @@
 # sites in src/ may only fall, and a fall lowers the baseline in the same landing (RULES.md FACT RULE NO DELIMITER-JOINED
 # AGGREGATES; Lon 2026-09-28 08:5x CDT, in-chat to hq_pascal, verbatim: "What are seperator bytes? Are you storing data as tag
 # delimited strings? Where are you doing that crazy thing?" · "Do not store records like that." · "Get rid of ALL delimited based
-# processing like the one I just discovered."; ceo CEO-1349; row instruments-the-delimited-aggregate-census-ratchets-to-zero-..., the cfo).
+# processing like the one I just discovered."; R-1349; row instruments-the-delimited-aggregate-census-ratchets-to-zero-..., the cfo).
 #
 # THE POPULATION is audit_delimited_aggregates_census.py's member sites -- every line where a value is joined by, split on or
 # tagged with a separator byte (a control-byte literal or a macro the tree defines as one: SOH, RK_A1, RK_RX, RK_TY, STX, MON_RS,
@@ -13,7 +13,7 @@
 # reasons (x86_asm.h's TEXT-medium port mark, the monitor's wire separators, rt.c's unloaded-procedure sentinel), printed every
 # run and counted separately -- never silently exempt, Lon may overrule any of them; whole-byte tables (eight or more distinct
 # byte escapes on one line) are set aside by rule and printed. src/runtime/aggregates.c's \001-tagged registry keys are MEMBERS
-# (CEO-1350, the cfo's view adopted): a value serialised into a string with a control byte is the class.
+# (R-1350, the cfo's view adopted): a value serialised into a string with a control byte is the class.
 # ⛔ NO BINARY IS READ: this gate is a census of source text and needs no build, so it does not go through util_require_fresh.sh.
 #
 # ARMS:

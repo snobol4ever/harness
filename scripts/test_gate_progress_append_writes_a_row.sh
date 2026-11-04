@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_progress_append_writes_a_row.sh -- THE PROGRESS DATABASE IS WRITTEN BY EVERY CANONICAL SUITE RUN, AND
 # NEVER BY A SCRATCH ONE (Lon 2026-09-06: "enhance your database to allow for time based queries. Get it fixed.";
-# GOAL-CEO CEO-331; the rule is /home/resources/progress/README.md, CEO-319). Hermetic: S4E_PROGRESS_DB points every
+# the archived ruling record R-331; the rule is /home/resources/progress/README.md, R-319). Hermetic: S4E_PROGRESS_DB points every
 # arm at a scratch table under mktemp; the live table is never touched. Arms 5-7 grade a real one-entry suite, so
 # they need this tree's built binary (util_require_fresh refuses rc=2 on a stale or absent one).
 #   1  the writer appends a 14-field row whose ts_utc is the run's own clock (within 300 s of now, UTC)
@@ -11,7 +11,7 @@
 #   5  the harness on a canonical rungs path (corpus/tests/<lang>/ALL.<ext>) records one row per entry per mode, class=rungs
 #   6  the harness on a canonical package path (corpus/packages/<lang>/<pkg>/ALL.<ext>) records class=package with the SUITES.tsv key
 #   7  the query tool sees the flip: a FAIL reading then a PASS reading of the same program is one newly-passing program
-# Fail-once proof (2026-09-06, ceo): with util_progress_append.py's append_rows body replaced by `return 0`, arms 1, 5, 6, 7 red.
+# Fail-once proof (2026-09-06): with util_progress_append.py's append_rows body replaced by `return 0`, arms 1, 5, 6, 7 red.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -34,7 +34,7 @@ now=$(date -u +%s)
 python3 "$PY" append --class rungs --suite snobol4-rungs --lang snobol4 --program gate_probe --mode m3 --outcome FAIL >/dev/null 2>&1; rc=$?
 [ "$rc" = 0 ] && ck ok "append rc=0" || ck no "append rc=$rc"
 row=$(tail -1 "$W/db.tsv"); nf=$(printf '%s\n' "$row" | awk -F'\t' '{print NF}')
-[ "$nf" = 14 ] && ck ok "row has 14 fields" || ck no "row has $nf fields: $row"   # 12 -> 13 on 2026-09-06 (hq_T, CEO-338): the `fingerprint` column. ⭐ THIS ARM CAUGHT THE SCHEMA CHANGE THE MOMENT IT LANDED, which is the arm doing its job -- the count is updated in the SAME commit as the column, never after, because a field-count assertion that lags its schema is a red on origin that every seat learns to step over. 13 -> 14 on 2026-09-21 (coo, ceo rank 0 CEO-1047/CEO-1050): the `config` column. ⛔ AND THE THING THIS ARM COULD NOT SEE, WHICH IS A PROPERTY OF THIS GATE'''S SHAPE RATHER THAN OF THIS ARM: it counts fields in a table it CREATES FRESH under mktemp, where the header is written complete on first touch. It was green for fifteen days while the LIVE table -- created 2026-09-06, header never migrated -- carried the original TWELVE names against thirteen-field rows, so `fingerprint` went into csv'''s unnamed restkey in every DictReader in the fleet. A hermetic gate that constructs its subject fresh cannot see a defect that exists only in the long-lived artefact. That case is now covered by test_gate_progress_records_the_configuration_it_exercised.sh arm 1, which appends onto a PRE-EXISTING table carrying an older header.
+[ "$nf" = 14 ] && ck ok "row has 14 fields" || ck no "row has $nf fields: $row"   # 12 -> 13 on 2026-09-06 (hq_T, R-338): the `fingerprint` column. ⭐ THIS ARM CAUGHT THE SCHEMA CHANGE THE MOMENT IT LANDED, which is the arm doing its job -- the count is updated in the SAME commit as the column, never after, because a field-count assertion that lags its schema is a red on origin that every seat learns to step over. 13 -> 14 on 2026-09-21 (coo, rank 0 R-1047/R-1050): the `config` column. ⛔ AND THE THING THIS ARM COULD NOT SEE, WHICH IS A PROPERTY OF THIS GATE'''S SHAPE RATHER THAN OF THIS ARM: it counts fields in a table it CREATES FRESH under mktemp, where the header is written complete on first touch. It was green for fifteen days while the LIVE table -- created 2026-09-06, header never migrated -- carried the original TWELVE names against thirteen-field rows, so `fingerprint` went into csv'''s unnamed restkey in every DictReader in the fleet. A hermetic gate that constructs its subject fresh cannot see a defect that exists only in the long-lived artefact. That case is now covered by test_gate_progress_records_the_configuration_it_exercised.sh arm 1, which appends onto a PRE-EXISTING table carrying an older header.
 ts=$(printf '%s' "$row" | cut -f1); tse=$(date -u -d "${ts}Z" +%s 2>/dev/null || echo 0); d=$(( tse - now ))
 [ "$d" -ge -300 ] && [ "$d" -le 300 ] && ck ok "ts_utc $ts is the run's own clock (delta ${d}s)" || ck no "ts_utc $ts is not now (delta ${d}s)"
 [ "$(printf '%s' "$row" | cut -f4)" != "" ] && [ "$(printf '%s' "$row" | cut -f4)" != "unknown-seat" ] && ck ok "measurer is $(printf '%s' "$row" | cut -f4)" || ck no "measurer empty or placeholder"

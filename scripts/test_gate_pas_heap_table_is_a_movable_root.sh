@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_pas_heap_table_is_a_movable_root.sh -- Pascal new/dispose records are ORDINARY MOVABLE BLOCKS reached through the heap table, which the collector walks as a root
 #
-# RULED CEO-648 on the coo's finding of 2026-09-12 19:02 CDT and Lon's word ("We do not allow pinning in our heap since we
+# RULED R-648 on the coo's finding of 2026-09-12 19:02 CDT and Lon's word ("We do not allow pinning in our heap since we
 # slide"): since ac044419d four block types were marked live unconditionally and never moved, and Pascal new() records were
 # among them -- Pascal pointer stability was a side effect of that exemption, not a design. Pascal pointers are integer
 # handles into a heap table, so the table is the right place for the invariant: the table itself now lives OUTSIDE the
-# collector arena (ct_arena, a never-collected bump allocator -- NOT malloc, which CEO-832 forbids anywhere in SCRIP, so it never competes for the 512 MB slab), every live cell is visited by pas_gc_roots,
+# collector arena (ct_arena, a never-collected bump allocator -- NOT malloc, which R-832 forbids anywhere in SCRIP, so it never competes for the 512 MB slab), every live cell is visited by pas_gc_roots,
 # which the collector calls beside core_gc_roots and gen_gc_roots, every record payload and every set is allocated through
 # rt_str_alloc as an ordinary movable block, and dispose returns the handle to a free list so the table is reused.
 #
@@ -115,7 +115,7 @@ RUNS=$(grep -c 'regeneration #' "$T/telem.out"); RUNS=${RUNS:-0}
 RECL=$(grep -o 'reclaimed [0-9]*' "$T/telem.out" | awk '{s+=$2} END {print s+0}')
 PINMAX=$(grep -o 'pinned [0-9]*' "$T/telem.out" | awk '{if ($2+0>m) m=$2+0} END {print m+0}')
 if [ "$RUNS" -lt 5 ]; then echo "  reclaim FAIL (only $RUNS regenerations ran under SCRIP_GC_STRESS=2000 -- the Pascal record path is not reaching the collector at all)"; RC=1
-elif [ "$RECL" -le 0 ]; then echo "  reclaim FAIL ($RUNS regenerations reclaimed $RECL bytes -- Pascal records are still immortal blocks, which is exactly what CEO-648 retired)"; RC=1
+elif [ "$RECL" -le 0 ]; then echo "  reclaim FAIL ($RUNS regenerations reclaimed $RECL bytes -- Pascal records are still immortal blocks, which is exactly what R-648 retired)"; RC=1
 elif [ "$PINMAX" -gt 5000 ]; then echo "  reclaim FAIL ($RUNS regenerations, high-water pinned $PINMAX blocks -- the Pascal record path is still minting pinned blocks)"; RC=1
 else echo "  reclaim PASS ($RUNS regenerations reclaimed $RECL bytes, high-water pinned $PINMAX blocks, records moved and the table was fixed up)"
 fi

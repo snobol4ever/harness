@@ -3,7 +3,7 @@
 # BOTH HALVES THE CTO NAMED (cto 2026-10-03, q-raku-list-array-marker-on-arblk-proto: "A gate holds the collector half you measured -- a static address in
 # ARBLK.proto survives a forced collection untouched and unvisited ... a Raku list and an array side by side, both printed after the collection -- plus your
 # List-versus-Array oracle probes, both modes"; and "a polyglot hands a Raku list to SNOBOL4 code and PROTOTYPE() must not print your marker").
-# Row raku-arrays-lists-and-hashes-are-typed-storage-no-delimiter-joined-strings-lon-2026-09-28 (ceo CEO-1349, CEO-1479).
+# Row raku-arrays-lists-and-hashes-are-typed-storage-no-delimiter-joined-strings-lon-2026-09-28 (R-1349, R-1479).
 #
 # THE DESIGN THIS HOLDS. A Raku aggregate is a typed DT_A whose ARBLK.proto is NULL (an Array) or the ADDRESS of one of six static const char arrays in
 # by_name_dispatch.c (List, Slip, Pair, and the four junction flavours), compared by address and never by text. rt_gc_visit_raw returns at once when

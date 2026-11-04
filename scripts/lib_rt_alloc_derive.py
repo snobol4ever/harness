@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """lib_rt_alloc_derive.py -- THE ALLOCATING FACT OF EVERY RUNTIME ENTRY, DERIVED FROM THE BINARY (DESIGN-PLAN zeta-layout step 5, stage 5c, the allocating half; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 10;
-CEO-2019).  The road util_gen_gc_allocating_table.py used to walk to write a 3,000-row file, reduced to a library that util_gen_rt_entry_table.py writes into TWO COLUMNS of rt_entries.tsv (rc and allocates) and that
+R-2019).  The road util_gen_gc_allocating_table.py used to walk to write a 3,000-row file, reduced to a library that util_gen_rt_entry_table.py writes into TWO COLUMNS of rt_entries.tsv (rc and allocates) and that
 the gates read.  The 3,000 C functions are not rows and not a set at run time: they are this derivation's input and nothing else's.
 
 ⛔ THE COLUMNS ARE NOT A HAND LIST AND MUST NEVER BECOME ONE.  Both are DERIVED:

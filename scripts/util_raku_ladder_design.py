@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_raku_ladder_design.py -- THE RAKU-TO-100 LADDER AND ROAST MAP, GENERATED FROM THE DATA (the cto, 2026-10-30, CEO-2044/2045/2046;
+"""util_raku_ladder_design.py -- THE RAKU-TO-100 LADDER AND ROAST MAP, GENERATED FROM THE DATA (the cto, 2026-10-30, R-2044/2045/2046;
 .github/ARCH-RAKU-TO-100.md section 3 is the rule this script applies, and the script is the rule's one executable form).
 
 READS  the design row's frozen snapshot (every Roast program not PASS), results.tsv (the latest mode-3 note per program: the emitter's
@@ -18,7 +18,7 @@ THE RULE: a construct is a LANGUAGE FEATURE when its family is kw, op, lit, quot
 """
 import collections, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SN = '/home/resources/postoffice/tasks/design-raku-to-100-every-roast-feature-on-a-complexity-ordered-rung-ladder-built-incrementally-ceo-2044.snapshot.tsv'
+SN = '/home/resources/postoffice/tasks/design-raku-to-100-every-roast-feature-on-a-complexity-ordered-rung-ladder-built-incrementally-r-2044.snapshot.tsv'
 RESULTS = '/home/resources/progress/results.tsv'
 TESTS = os.path.join(ROOT, 'corpus/packages/raku/roast/TESTS.tsv')
 LADDER = os.path.join(ROOT, 'corpus/tests/raku/config/LADDER.tsv')
@@ -335,7 +335,7 @@ def main():
     # outputs
     if not DRY:
         with open(MAP, 'w') as f:
-            f.write('# ROAST-RUNG-MAP.tsv -- every Roast program of the CEO-2044 snapshot (not PASS at the 11:41 reading) on the rung that FIRST blocks it (column 2) and the rung that UNBLOCKS it (column 3: the highest rung among the features its tests exercise), with its outcome, the basis of the placement (tests: TESTS.tsv constructs; refusal:<construct>: the emitter refusal named it; chapter:<dir>: no feature row, placed at the chapter family first rung) and the first-blocking construct; written by harness/scripts/util_raku_ladder_design.py (ARCH-RAKU-TO-100 section 3). A program moves up the map as rungs go green; a program still red with every rung green gains a FORM on its unblock rung.\n')
+            f.write('# ROAST-RUNG-MAP.tsv -- every Roast program of the R-2044 snapshot (not PASS at the 11:41 reading) on the rung that FIRST blocks it (column 2) and the rung that UNBLOCKS it (column 3: the highest rung among the features its tests exercise), with its outcome, the basis of the placement (tests: TESTS.tsv constructs; refusal:<construct>: the emitter refusal named it; chapter:<dir>: no feature row, placed at the chapter family first rung) and the first-blocking construct; written by harness/scripts/util_raku_ladder_design.py (ARCH-RAKU-TO-100 section 3). A program moves up the map as rungs go green; a program still red with every rung green gains a FORM on its unblock rung.\n')
             f.write('# program\tfirst_rung\tunblock_rung\toutcome\tbasis\tconstruct\n')
             for p, a, b, o, bs, c in placed: f.write(f'{p}\trung{a:03d}\trung{b:03d}\t{o}\t{bs}\t{c}\n')
         lad = open(LADDER).read().rstrip('\n').split('\n')
@@ -343,7 +343,7 @@ def main():
         for c in rungs:
             n = rung_no[c]; fam = fam_of[c]; s = slug(c)
             status = 'HELD' if fam == 'F20' else 'DECLARED'
-            lad.append(f'rung{n:03d}\t{s}\troast construct {c} ({len(files_of[c])} red programs exercise it; family {fam} {dict((x[0], x[1]) for x in FAMILIES)[fam]}; ARCH-RAKU-TO-100 section 3)\t{s}\t\tladder__rung{n:03d}_{s}\t{status}\tthe cto 2026-10-30 (CEO-2044..2046): declared by util_raku_ladder_design.py; first block of {first_ct[n]} programs, unblock rung of {unblock_ct[n]}; the forms are cut from the failing Roast tests by the builder, one program at a time, each at most 20 lines, its ref from rakudo 2026.05')
+            lad.append(f'rung{n:03d}\t{s}\troast construct {c} ({len(files_of[c])} red programs exercise it; family {fam} {dict((x[0], x[1]) for x in FAMILIES)[fam]}; ARCH-RAKU-TO-100 section 3)\t{s}\t\tladder__rung{n:03d}_{s}\t{status}\tthe cto 2026-10-30 (R-2044..2046): declared by util_raku_ladder_design.py; first block of {first_ct[n]} programs, unblock rung of {unblock_ct[n]}; the forms are cut from the failing Roast tests by the builder, one program at a time, each at most 20 lines, its ref from rakudo 2026.05')
         open(LADDER, 'w').write('\n'.join(lad) + '\n')
     FB = {f[0]: f[2] for f in FAMILIES}
     print(f'RUNGS {len(rungs)} families ' + ' '.join(f'{k}={v}' for k, v in sorted(fam_rows.items())))

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_donewhen_rc_census.py -- THE ONE AUTHORITY for "can this DONE-WHEN tell a refusal from a red".
-# hq_B 2026-09-13, on the ceo audit FINDING-2026-09-11-ceo-a-done-when-that-captures-a-board-turns-could-not-
+# hq_B 2026-09-13, on the officer audit FINDING-2026-09-11-officer-a-done-when-that-captures-a-board-turns-could-not-
 # measure-into-failed.md. Two classes, both found by that audit, both cured in place by this script's --cure.
 # CLASS A -- a DONE-WHEN captures a runner's output and never consults that runner's rc. Under ONE RUNNER, ONE
 #   BOARD a runner answers any seat but the coo with rc=2 REFUSE; the criterion captures that TEXT, the marker
@@ -10,10 +10,10 @@
 #   (i) the S4E_HOME FALLBACK (${S4E_HOME:-/home/claude_cfo}) -- `s4e_msg.sh done` exports S4E_HOME so the
 #       fallback never fires there; it fires exactly when a seat runs the criterion BY HAND to audit it, and
 #       then it silently grades ANOTHER SEAT'S TREE and can print PASS.
-#   (ii) the BARE form (`cd /home/claude_ceo/SCRIP && ...`, `bash /home/claude_T/harness/scripts/x.sh`) -- coo
-#       2026-09-23 on CEO-1163, RULES.md THE INSTRUMENT LAWS thirty-fourth batch clause 3: a criterion that
+#   (ii) the BARE form (`cd /home/claude_cto/SCRIP && ...`, `bash /home/claude_T/harness/scripts/x.sh`) -- coo
+#       2026-09-23 on R-1163, RULES.md THE INSTRUMENT LAWS thirty-fourth batch clause 3: a criterion that
 #       names a seat root names a tree. It has NO fallback at all, so it does not even degrade.
-#   ⛔ 28 of the 46 found at that landing pin a root that HAS NOT EXISTED SINCE CEO-767 (the lettered
+#   ⛔ 28 of the 46 found at that landing pin a root that HAS NOT EXISTED SINCE R-767 (the lettered
 #   /home/claude_{B,C,I,P,R,S,T,U} and the numbered /home/claude01..20). Those grade no tree whatever, and the
 #   direction they fail in is NOT always visible: `rung-gate-false-green-audit`'s criterion is
 #   `! grep -qi ... /home/claude10/.github/FINDING-...md`, and grep's rc=2 on a missing file INVERTS to rc=0 --
@@ -231,7 +231,7 @@ def main():
             A.append({'baton': base, 'piped': var_e[3], 'at': seg[var_e[0]:var_e[0]+70].strip()})
         if ap_cure:
             # ⛔ CLASS B FIRST, THEN RE-SCAN. The B substitution SHORTENS the criterion (${S4E_HOME:-/home/
-            # claude_ceo} -> ${S4E_HOME:-$PWD} loses 12 bytes), so class-A offsets computed against the
+            # claude_cto} -> ${S4E_HOME:-$PWD} loses 12 bytes), so class-A offsets computed against the
             # pre-substitution text land 12 bytes late and splice a guard into the middle of a token --
             # measured: it produced `g=$(cd "$R/S{ _dwraw=$(...`, two criteria that no longer parse. An
             # offset is only valid against the exact string it was computed from.

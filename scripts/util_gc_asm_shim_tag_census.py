@@ -3,7 +3,7 @@
 One row per shim, NAMED, never a bare count (INSTRUMENT LAWS batch 30 clause 2).
 
 ⛔ WHY THIS EXISTS (cto 2026-09-21, row prolog-every-asm-entry-shim-pushes-callee-saved-registers-as-tagged-cells-
-not-raw-words, ceo CEO-1099; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812; ARCH-GC 6.2i).
+not-raw-words, R-1099; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812; ARCH-GC 6.2i).
 bb_glue_enter_c2bb stores the registers it saves as TAGGED CELLS so the walker reads them as data.  The hand-
 written asm entry shims did a plain pushq of the same registers: RAW WORDS in a region no compile-time frame map
 describes.  A raw word holding a heap pointer is not merely unread -- under a MOVING collector it is never
@@ -14,7 +14,7 @@ JUMPS INDIRECTLY (jmp *%reg) -- that instruction IS the entry into the box.  A b
 symbol is a trampoline and is not a member (eval_chain_enter_only is the live example).  A hard-coded roster of
 seven would be a criterion keyed on a list, and the list would drift the first time a shim was added.
 ⛔ AN INDIRECT JUMP THAT SAVES NOTHING IS A TRAMPOLINE TOO (cfo 2026-10-02, on the coo's red at 408a3f0c0): the
-SETEXIT continuation (rt_setexit_continue_tramp) and, until CEO-1468 put it back inline, the trap stub (rt_setexit_take) jump indirectly into emitted
+SETEXIT continuation (rt_setexit_continue_tramp) and, until R-1468 put it back inline, the trap stub (rt_setexit_take) jump indirectly into emitted
 code from state recorded in g_rtccb, but push no register and carve no stack, so they leave no word for the walker
 to read, tagged or raw.  A block with an indirect jmp and no pushq, no rsp adjustment and no store of a callee-saved
 register through rsp or rbp (the cto's review: a mov of r13 into an existing frame slot is a save too) is printed as a

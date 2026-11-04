@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""util_gen_prolog_prelude_libs.py -- SWI-PROLOG'S PURE-PROLOG LIBRARIES AS PRELUDE SOURCES (CEO-1473; cfo 2026-10-10,
+"""util_gen_prolog_prelude_libs.py -- SWI-PROLOG'S PURE-PROLOG LIBRARIES AS PRELUDE SOURCES (R-1473; cfo 2026-10-10,
 row prolog-swi-library-modules-rbtrees-assoc-ordsets-apply-error-pairs-aggregate-option-strings-516-swi-cases).
 
-THE RULING (CEO-1473, approved inside CEO-1352 (5)): swipl's pure-Prolog libraries are vendored under
+THE RULING (R-1473, approved inside R-1352 (5)): swipl's pure-Prolog libraries are vendored under
 src/parsers/prolog/prelude/<lib>.pl with their BSD headers, embedded by a generator at build like the parsers, pulled only
 by the prelude's existing name-reference closure (a program naming none pays nothing); no run-time file loading.  A
 library whose closure names a C-side builtin SCRIP lacks gets that builtin as a row first or the predicate hand-typed,
@@ -62,7 +62,7 @@ A library in QUIET_BARE is never selected by a BARE atom of an export's name (th
 maplist(foo, L) needs): dcg/basics exports integer//1, atom//1, number//1, string//1 and kin, and library(error)'s type names
 are those atoms, so every program reaching error would select dcg_basics.  Its exports are quiet at arity 0 (the injector's
 bare-match test reads that entry); a DCG body or phrase/2,3 names a nonterminal at its full arity, which still selects it.
-clpfd is quiet the same way (cfo 2026-10-11, row ...-logtalk-reads-100-percent-...-ceo-1689): its exports are named like common
+clpfd is quiet the same way (cfo 2026-10-11, row ...-logtalk-reads-100-percent-...-r-1689): its exports are named like common
 data atoms -- in, ins, sum, chain, element, label, transpose -- so open(F, read, S, [alias(in)]) or a bare `sum` in a term
 selected all of clpfd and cost ~9 s of compile (measured: f(in) 9.36 s, f(sum) 9.05 s, f(element) 8.03 s; three Logtalk
 stream_property/2 cases timed out at 10 s on alias(in)).  swipl never autoloads clpfd, and every corpus program naming a clpfd
@@ -85,7 +85,7 @@ sub-files are in no autoload index).  Without it a data term selected a sub-file
 functor {}/1 that nf_q exports, and naming rbtrees parsed 14 libraries.  A library loaded as library(X) (lists, ugraphs)
 keeps the ordinary selection by name.
 
-THE EXPORT INDEX (cqo 2026-10-30, CEO-2056): PL_PRELUDE_LIB_EXPORT_INDEX holds every export of every library once per library as
+THE EXPORT INDEX (cqo 2026-10-30, R-2056): PL_PRELUDE_LIB_EXPORT_INDEX holds every export of every library once per library as
 (name, byte length, arity, library index), sorted by the name's bytes, so the injector's selection binary-searches the program's
 references in it (pl_libs_named) instead of walking every library's export table against them -- the walk grew with every library
 vendored, ARM 2 of test_gate_pl_prelude_libs_cost.sh paying ~1.4M instructions for 78 libraries of which it parses two.
@@ -169,7 +169,7 @@ INIT_DROPS = {"clpb": {"warn_if_bounded_arithmetic": "only prints a warning when
                               "chr_debug_init": "it only sets chr_leash, which the library's own exception/3 hook sets at its first read"}}
 # An initialization directive whose only effect, with no foreign library, is to ASSERT clauses: the directive's text is replaced by those
 # clauses, verbatim from the library's own fallback branch, before the file is read and keyed, so they are keyed, renamed and exported
-# like any other clause (cfo 2026-10-14, row prolog-swi-library-test-pio-...-ceo-1664): readutil's link_foreign/0 tries
+# like any other clause (cfo 2026-10-14, row prolog-swi-library-test-pio-...-r-1664): readutil's link_foreign/0 tries
 # use_foreign_library(foreign(readutil)) and otherwise assertz's read_line_to_codes/2,3 and read_stream_to_codes/2,3 over the Prolog
 # pl_read_* predicates; SCRIP has no foreign readutil, so those four clauses are what the library means here.
 INIT_AS_CLAUSES = {"readutil": {"link_foreign": ("with no foreign readutil, link_foreign/0's second clause asserts these four clauses over the Prolog pl_read_* predicates", [
@@ -179,7 +179,7 @@ INIT_AS_CLAUSES = {"readutil": {"link_foreign": ("with no foreign readutil, link
     "read_stream_to_codes(Stream, Content, Tail) :- pl_read_stream_to_codes(Stream, Content, Tail)."])}}
 # A literal EDIT of a library's source, applied before the file is read and keyed exactly as INIT_AS_CLAUSES is (the identity
 # check stays on the vendored file); each old text must occur exactly once or the generator REFUSES rc=2 (cfo 2026-10-14, row
-# prolog-swi-library-test-record-...-ceo-1664).  library(record) defines its accessors through system:term_expansion/2 on
+# prolog-swi-library-test-record-...-r-1664).  library(record) defines its accessors through system:term_expansion/2 on
 # (:- record(R)), and SCRIP runs no term_expansion for a vendored library (rule (3) drops the hook), so the directive is CALLED;
 # its second clause, which raises context_error(nodirective, ...) for a call SWI never makes, asserts the clauses
 # compile_records/2 writes instead -- the clauses the expansion would have put in the file.  The (record):current_record/5 fact it
@@ -883,7 +883,7 @@ def generate(pdir):
         L["loads"] = sorted(m for m in set(L["loads_rel"]) | set(L["loads_lib"]) if m in import_only) if L["import_only"] else []
         if L["import_only"]:
             L["drops"]["selected only when the program imports it, or a library it imports loads it (IMPORT_ONLY_FRONTS)"] = 1
-    # NO POINTER FIELD IN A NAME TABLE (hq_icon 2026-10-31, row icon-the-startup-rebuilds-..., CEO-1969).  Every `const char *` in these tables is one R_X86_64_RELATIVE relocation that ld.so applies in EVERY
+    # NO POINTER FIELD IN A NAME TABLE (hq_icon 2026-10-31, row icon-the-startup-rebuilds-..., R-1969).  Every `const char *` in these tables is one R_X86_64_RELATIVE relocation that ld.so applies in EVERY
     # mode-4 program of EVERY language before main (the library is shared), at about 13 user instructions each (measured with perf stat instructions:u on a synthetic library, 12,000 relocs = +155,710 Ir).
     # The names, operator types and meta specs are therefore fixed-width char arrays sized to the longest one this run generated (never a cap on the input): no relocation, and the rows a program does not
     # read are never paged in.  A terminator row is { "", 0 }: an array first member would swallow a bare 0 and shift every later field.

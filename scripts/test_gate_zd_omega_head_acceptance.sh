@@ -29,7 +29,7 @@
 #                      sufficient behavioural evidence without re-deriving seat12/seat02's instruction trace.
 #   4. RETIRED 2026-10-01 (the coo): the shared-node control battery ran five boards as a fixture -- the
 #                      SNOBOL4 master, the Icon rungs (floor 232), the Raku smoke, the Prolog crosscheck (a
-#                      fail-set pinned 09-02) and the polyglot demos. Under ONE TESTING OFFICER (CEO-1342)
+#                      fail-set pinned 09-02) and the polyglot demos. Under ONE TESTING OFFICER (R-1342)
 #                      the coo's SUITE TABLE is that verdict and a fixture may not grade the shared corpus,
 #                      so the arm could only refuse once arm 2 read again.
 #
@@ -82,10 +82,10 @@ report_unproven() { echo "🟡 UNPROVEN $1 -- $2"; UNPROVEN=$((UNPROVEN+1)); }
 # four ops in it -- a false green that survived six sessions and let seat05 re-derive the whole mechanism from
 # SNOBOL4. A structural clause that names the KNOWN-BAD form passes the moment anyone writes a DIFFERENT bad
 # form. Assert the SHAPE OF THE CURE instead: no op-identity branch anywhere in the predicate.
-# RE-CUT 2026-10-14 by hq_zetas on the cto's ruling of road (a) for row spine-zd-omega-test-kind-...-ceo-1389: the shape of the cure is
+# RE-CUT 2026-10-14 by hq_zetas on the cto's ruling of road (a) for row spine-zd-omega-test-kind-...-r-1389: the shape of the cure is
 # the IR family query -- ir_decides_own_failure_kind, declared once in src/ir/ir_node.h with every member of the call family -- read
 # together with the ω port; SCRIP_ZD_TESTFAM and SCRIP_ZD_MATCHDIAMOND, which selected members per op at run time, are deleted.
-# REPOINTED 2026-10-31 by the cto (headers step 4, CEO-2032): the predicate is int zd_omega_test_kind in src/planner/zeta_plan.cpp since the planner split, and the family is declared in src/ir/ir_node.h.
+# REPOINTED 2026-10-31 by the cto (headers step 4, R-2032): the predicate is int zd_omega_test_kind in src/planner/zeta_plan.cpp since the planner split, and the family is declared in src/ir/ir_node.h.
 predline=$(grep -h '^int zd_omega_test_kind' src/planner/zeta_plan.cpp)
 if [ -z "$predline" ]; then
     report structural-zd-omega-head 1 "zd_omega_test_kind not found at all -- this clause can no longer grade the predicate; repoint the gate rather than reading its silence as a pass"

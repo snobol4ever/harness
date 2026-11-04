@@ -25,7 +25,7 @@
 # a number makes a falsifiable claim, and a row that names only the certificate makes none.
 #
 # ⛔⭐⭐ AN rc=124 IS NOT A REFUSAL AND IS NEVER STALE -- THE THIRD NARROWING OF ARM 2, found by hq_P 2026-09-12 by
-# landing CEO-591 against this gate. ARM 2 decided a ruling was stale by asking whether the oracle's output holds
+# landing R-591 against this gate. ARM 2 decided a ruling was stale by asking whether the oracle's output holds
 # an ERROR NNN or the no-END certificate. A program the oracle NEVER FINISHES prints NEITHER, so the arm rendered
 # rc=0-with-no-diagnostic and rc=124-with-no-diagnostic IN THE SAME SENTENCE -- 'refuses this program with no
 # diagnostic today; it belongs back in the denominator' -- when they are opposite facts. It told hq_P to readmit
@@ -146,7 +146,7 @@ done
 [ "$ROWS" -gt 0 ] || { echo "⛔ REFUSES(2): zero recorded rows over $PKGS package(s) -- this gate cannot grade a vacuous population"; exit 2; }
 BAD=$((BAD_EMPTY+BAD_STALE+BAD_CAUSE+NT_BAD)); RPT=$((BAD_STALE+BAD_CAUSE+NT_BAD))
 echo "OUTSIDE_BASELINE_REASONS packages=$PKGS rows=$ROWS good=$GOOD vacuous=$BAD_EMPTY stale=$BAD_STALE wrong_cause=$BAD_CAUSE nonterm_confirmed=$NT_OK nonterm_wrong_reason=$NT_BAD strict=$STRICT budget=${TMO}s -- oracle $SBL $FLAGS"
-# ⛔⭐ THE CLASSES MUST CLOSE OVER THE POPULATION, and this is the CEO-582 lesson arriving one level down: a loop of
+# ⛔⭐ THE CLASSES MUST CLOSE OVER THE POPULATION, and this is the R-582 lesson arriving one level down: a loop of
 # `continue` arms has one silent failure mode -- a path that classifies nothing -- and it reads GREEN, because every
 # counter it did not touch is still zero. Six classes summing to rows is the only statement that catches it, and an
 # instrument that cannot account for its own denominator REFUSES rather than reporting a total it did not build.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_dyn_caps_a_long_label_or_procedure_name_passes_every_old_name_buffer.sh -- landing 0 of the fixed-tables row (cfo 2026-10-03,
-# no-more-whack-a-mole-every-fixed-table-a-program-can-fill-is-converted-in-one-pass-..., CEO-1496 (3); ARCH-DYNAMIC-STORAGE.md section 5 (4):
+# no-more-whack-a-mole-every-fixed-table-a-program-can-fill-is-converted-in-one-pass-..., R-1496 (3); ARCH-DYNAMIC-STORAGE.md section 5 (4):
 # every conversion lands with a witness that exceeds the OLD cap and reads the ORACLE's answer).
 #
 # MEASURED 2026-10-03 on SCRIP d50a3e1f0: an indirect goto :($N) to a label of 251 characters or more answered "error 38: goto undefined label"

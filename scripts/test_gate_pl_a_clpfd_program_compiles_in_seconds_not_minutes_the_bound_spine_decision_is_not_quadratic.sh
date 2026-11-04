@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_clpfd_program_compiles_in_seconds_not_minutes_the_bound_spine_decision_is_not_quadratic.sh
-# -- THE PLANNER'S BOUND-SPINE DECISION COSTS ONE WALK PER BOUND, NOT ONE PER QUESTION (ceo CEO-1960 regression request; cfo, SCRIP 275416cf5; hq_packages). planner_bound_spine (zeta_plan.cpp) decides whether an
+# -- THE PLANNER'S BOUND-SPINE DECISION COSTS ONE WALK PER BOUND, NOT ONE PER QUESTION (R-1960 regression request; cfo, SCRIP 275416cf5; hq_packages). planner_bound_spine (zeta_plan.cpp) decides whether an
 # if-then-else or negation BOUND's record lives on the spine, so that its committing UNMARK -- a DISCARD-LAW edge, restore = E_cont -- can pop it (ARCH-THREE-ZETAS-EMISSION.md, D3 kind 7). It was asked
 # #BOUND x #UNMARK times by zst_plan's nested loop and once per node-edge by zd_k_own through zd_bcs_when, each ask a fence scan over every node plus a walk over every node's edges; on the 9,661-node clause
 # proc_$clpfd_run_propagator$2F2 that is minutes, and every program that loads library(clpfd) pays it (Pl2Wam/all.pl 35.8 s before, past 130 s after; 88 of 191 Prolog programs timed out at 90 s). The fence's

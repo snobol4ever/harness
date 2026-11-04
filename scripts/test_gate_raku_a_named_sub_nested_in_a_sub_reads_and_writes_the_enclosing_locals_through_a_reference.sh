@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_named_sub_nested_in_a_sub_reads_and_writes_the_enclosing_locals_through_a_reference.sh -- `my sub` INSIDE A SUB CAPTURES THE ENCLOSING SUB'S LOCALS
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, M3 second half; cto q-raku-closure-capture non-escaping road; ceo CEO-1479).
+# (row raku-every-suite-to-100-under-nonet-r-1266, M3 second half; cto q-raku-closure-capture non-escaping road; R-1479).
 # THE DESIGN. A nested named sub that is only ever CALLED (its name appears nowhere but the callee position of a call) takes the enclosing locals it uses as hidden
 # leading by-reference parameters, exactly the road a block handed to a synchronous builtin takes (lower_raku.c rk_cap_nested_find): every call site, in the enclosing
 # sub and in the nested sub's own recursion, passes the variables ahead of its arguments (IR_VAR_REF from the enclosing sub, the cell itself from inside), and the body

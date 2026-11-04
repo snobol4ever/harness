@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_icon_semicolon_class_classifier.py — THE MEASURED SEMICOLON-CLASS CLASSIFIER (CEO-489, hq_V 2026-09-10).
+"""util_icon_semicolon_class_classifier.py — THE MEASURED SEMICOLON-CLASS CLASSIFIER (R-489, hq_V 2026-09-10).
 
 Reads shipped-.icn paths (corpus-relative, one per line) on stdin and prints one line per file:
 
@@ -9,7 +9,7 @@ Reads shipped-.icn paths (corpus-relative, one per line) on stdin and prints one
 
 ⛔⛔ WHAT "SEMICOLON CLASS" MEANS HERE, AND WHY IT IS DEMONSTRATED RATHER THAN PATTERN-MATCHED.
 A file is SEMICOLON class only when this tool has RE-RUN THE ORACLE and shown that deleting `;` BYTES AND
-NOTHING ELSE makes `icont -s -c` accept it. That is exactly the assertion CEO-488's DONE-WHEN makes per file
+NOTHING ELSE makes `icont -s -c` accept it. That is exactly the assertion R-488's DONE-WHEN makes per file
 (bytes removed == semicolons removed), so the classifier and the row's success criterion are the same
 statement — a file this tool calls SEMICOLON is a file hq_B can repair by deletion alone, proven, not guessed.
 
@@ -66,7 +66,7 @@ def candidate_positions(lines, err, name):
     ⛔ THE `File` FIELD IS CHECKED, NOT ASSUMED. A `$line` directive REMAPS what icont reports — packages/icon/
     jcon_tests/tpp.icn compiles as `File a.b.c` and arizona_tests/general/tpp.icn as `File xyzzy`, with line
     numbers in the remapped space. Editing 'line 56' of the real file on the strength of a remapped report
-    would delete a byte the oracle never complained about, which is the CEO-483 shape exactly: an instrument
+    would delete a byte the oracle never complained about, which is the R-483 shape exactly: an instrument
     measuring something other than what it names. A remapped report yields NO candidates and the file falls to
     OTHER, which is where both tpp files belong anyway.
 
@@ -87,7 +87,7 @@ def candidate_positions(lines, err, name):
         return []
     out = []
     # ⛔⭐ EVERY `;` ON THE FLAGGED LINE, WHATEVER TOKEN ICONT NAMED -- and the generality is load-bearing, not
-    # tidiness. Keying on `tok == ";"` misses the `;` BEFORE ELSE, which is one of the four shapes CEO-477's
+    # tidiness. Keying on `tok == ";"` misses the `;` BEFORE ELSE, which is one of the four shapes R-477's
     # joiner produced: `if a then b; else c` is reported as `"else": invalid expression`, because by the time
     # icont objects it has already consumed the semicolon and moved on. The same is true of `; then`. There is
     # no false-positive cost to being general here: a candidate is only ACCEPTED if deleting it MOVES THE

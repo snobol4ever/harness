@@ -16,7 +16,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=cto; HQ=ceo; OTHER=cfo
+PO="$W/po"; ME=cto; HQ=cto; OTHER=cfo
 FIX() { env -u S4E_PID_LOCK -u S4E_NO_DISPATCH_PROBE -u S4E_PREMISE_OVERRIDE -u S4E_NO_PREMISE_CHECK \
         S4E_HOME="$W" S4E_POST="$PO" S4E_SEAT="$ME" S4E_NO_BANNER=1 S4E_NO_DISPATCH_PROBE=1 "$@"; }
 mk_po() {

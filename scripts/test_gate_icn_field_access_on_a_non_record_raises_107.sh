@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_field_access_on_a_non_record_raises_107.sh -- x.f on a non-record raises 107, a bad field 207, as under icont (ceo CEO-644).
+# test_gate_icn_field_access_on_a_non_record_raises_107.sh -- x.f on a non-record raises 107, a bad field 207, as under icont (R-644).
 #
 # MEASURED 2026-09-12 on 83ace92b0 (the adversarial batch): `&error := 1; x := &null.f` read &errornumber 114 in one shape and
 # in another the access FAILED SILENTLY (no error at all, &errornumber unset) where icont raises 107 "record expected"; a

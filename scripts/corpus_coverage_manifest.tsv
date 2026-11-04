@@ -19,7 +19,7 @@ EXCLUDE	probe	EXCLUDED	witness ladders, not primary corpus -- hq_C RULING s272 ย
 EXCLUDE	packages/icon/ipl	EXCLUDED	third-party Icon reference archive; hq_C s272 ยง2 GATE-IT-THEN-MINE-IT -- excluded permanently, never preprocessed (that would rewrite third-party provenance)
 EXCLUDE	packages/icon/jcon-ref	EXCLUDED	JCON BB-gen reference; ruled by hq_P 2026-08-27 via git log --diff-filter=A (never existed as jcon-compiler/ref)
 EXCLUDE	programs	EXCLUDED	Lon 2026-08-27 RULES.md:55 -- "all the corpus/programs need work and cannot be converted to tests currently"; parser grading unrestricted, runtime and scored boards NO. Enforced structurally in scorecard_snobol4.sh:59-62
-# 2026-10-01 (the coo, round 3): four ROWD subtrees named rows the CEO-1386 zero-base sweep retired (no QUEUE.tsv row, so no seat could
+# 2026-10-01 (the coo, round 3): four ROWD subtrees named rows the R-1386 zero-base sweep retired (no QUEUE.tsv row, so no seat could
 # pick them and the gate read UNDISPATCHABLE). Each is graded today by a board row of THE SUITE TABLE, so each is GATED by that runner:
 # packages/prolog by test_prolog_swi_suite.sh (SWI; INRIA, GNU and Logtalk by their own), benchmarks/raku by test_raku_bench_suite.sh
 # (RakBench), demos/scriptix by test_demos_suite.sh (TixDemo), benchmarks/rebus by test_rebus_bench_suite.sh (RebBench).
@@ -34,7 +34,7 @@ SUBTREE	tests/snobol4	GATED	test_corpus_snobol4.sh
 # test_gate_corpus_coverage_classified.sh correctly refused on it. The converted pairs are gated by
 # test_snocone_crosscheck_suites.sh under the tests/snocone SUBTREE line below.
 SUBTREE	tests/pascal	GATED	test_gate_pascal_m3.sh
-# cfo 2026-09-16 (CEO-763): test_snocone_parser_fixtures.sh, test_raku_parser_fixtures.sh and test_rebus_parser_fixtures.sh RETIRED --
+# cfo 2026-09-16 (R-763): test_snocone_parser_fixtures.sh, test_raku_parser_fixtures.sh and test_rebus_parser_fixtures.sh RETIRED --
 # each graded ONLY the ast `parser` family, which Lon retired 2026-09-13 (corpus a6646f04c), so each refused rc=2 forever and was
 # wired nowhere. The two SUBTREE lines below now name the rungs runners that actually grade tests/snocone and tests/raku.
 SUBTREE	tests/snocone	GATED	test_snocone_corpus_suite.sh
@@ -64,7 +64,7 @@ SUBTREE	demos/pascal	GATED	test_demos_suite.sh
 SUBTREE	benchmarks/snocone	GATED	test_snocone_bench_suite.sh
 SUBTREE	benchmarks/rebus	GATED	test_rebus_bench_suite.sh
 # tests/scrip_test is TRANSIENT STAGING, not a stable corpus location: SCRIP/test was moved here wholesale
-# (2026-08-29, "11a36c87", repo-boundary ruling, 594 files) and the ceo all-hands-consolidation broadcast the
+# (2026-08-29, "11a36c87", repo-boundary ruling, 594 files) and the officer all-hands-consolidation broadcast the
 # same day split its per-language drain across seats (seat03=icon, hq_B+seat05=prolog, seat06=raku,
 # seat07=snocone+rebus, seat04+hq_P=pascal, seat09+seat10=snobol4). Every real destination is already its own
 # GATED SUBTREE above (tests/snobol4, tests/icon, tests/prolog, tests/pascal, tests/snocone, tests/raku,

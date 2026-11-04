@@ -19,7 +19,7 @@
 #
 # ⛔ CONTRACT HISTORY.
 #   1. hq_P s282: BOTH host kinds ANSWER (the original, unconditional shape, before the region-resident redesign).
-#   2. ceo s283, 2026-08-29: 06d4852f's flat_gen-arm stack reserve is superseded by the region-resident alpha (a
+#   2. the officer s283, 2026-08-29: 06d4852f's flat_gen-arm stack reserve is superseded by the region-resident alpha (a
 #      flat_gen host carves nothing on the stack under that design, so answering would hand out a base into storage
 #      that does not exist) -- contract NARROWED to flat_lcl_proc-only-answers, flat_gen REFUSES, until the
 #      transitive reserve lands.

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""util_arena_pin_census.py -- THE CENSUS OF RECORD for the CEO-1146 arena sweep: which gates PIN the arena,
+"""util_arena_pin_census.py -- THE CENSUS OF RECORD for the R-1146 arena sweep: which gates PIN the arena,
 BY NAME, in what FORM, and whether the pin is reachable from the blocking set.
 
-CEO-1153 (2026-09-22, ruling the coo/ceo overlap option 1): "the arena sweep stays yours under CEO-1146 and its
+R-1153 (2026-09-22, ruling the coo/officer overlap option 1): "the arena sweep stays yours under R-1146 and its
 population is your pinned census BY NAME ... my line-stripped grep reads 27 gates with a literal or brace-default
 MB=1, 26 of them in the blocking set; yours is the census of record, the difference is comment stripping."
 
@@ -23,7 +23,7 @@ defect this row exists to close.
 KB is last, so an exported SCRIP_HEAP_KB silently defeats an explicit MB pin -- measured: collector_visits arm 5
 read gc2 0 of 5 under an outer KB=64 while passing at its own default.  A pin that does not unset the other knob is
 therefore NOT A PIN, and this census grades that per gate (PIN-UNSAFE) instead of treating every pin as equal.
-CEO-1153 makes `env -u` a condition of the sweep; two-knobs-set-refuses-rc2 is the ceo's 33rd batch.
+R-1153 makes `env -u` a condition of the sweep; two-knobs-set-refuses-rc2 is the officer's 33rd batch.
 """
 import glob, os, re, subprocess, sys
 
@@ -40,7 +40,7 @@ BOX_MAX_KB = _box_max_kb()
 
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP")
 
-# Gates whose header seat is the cto: converted by them at SCRIP d58ac175b and EXCLUDED from this sweep by CEO-1153.
+# Gates whose header seat is the cto: converted by them at SCRIP d58ac175b and EXCLUDED from this sweep by R-1153.
 CTO_NINE = [
     "test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh",
     "test_gate_gc_a_safe_point_stores_into_a_mapped_slot.sh",
@@ -67,7 +67,7 @@ CTO_NINE = [
 # unset).  A form nobody uses today costs nothing and every match is PRINTED BY NAME AND LINE, so a false positive
 # is visible to the reader rather than buried in a total -- and --selftest plants one witness per spelling so this
 # line can never again be narrower than the grammar without an arm going red.
-# ⛔⭐ SPLIT OUT AND NAMED, NEVER FORCED (MODE line 2's standing warning; CEO-1146's population is a sweep, not a
+# ⛔⭐ SPLIT OUT AND NAMED, NEVER FORCED (MODE line 2's standing warning; R-1146's population is a sweep, not a
 # mandate).  A gate lands here ONLY with a reason printed beside it, so the arithmetic stays checkable by a reader:
 # the swept remainder is pinned MINUS the cto's MINUS these, each one readable.  A silent exemption would be the
 # census lying about its own population, which is the defect this file exists to stop.
@@ -79,9 +79,9 @@ SPLIT_OUT = {
         "cannot pass. Converting those to KB would delete the gate's subject. It already states this sweep's own "
         "finding in arm 3's own words ('a 4 MB small arena run exercises the collector ZERO times and only this field "
         "can say so'), so it is the one gate in the population that was never confused about the arena. WHAT IT DID "
-        "GET in this landing: the CEO-1153 pin-safety cure, because every one of its five arms was defeatable by an "
+        "GET in this landing: the R-1153 pin-safety cure, because every one of its five arms was defeatable by an "
         "outer SCRIP_HEAP_KB (gc_heap.c:192 wins) -- the exact trap the cto measured on collector_visits arm 5. Its "
-        "arm 4 is RED on this tree for a reason that is NOT the sweep's and is reported to the ceo: reserve_mb reads 4 "
+        "arm 4 is RED on this tree for a reason that is NOT the sweep's and is reported to the officer: reserve_mb reads 4 "
         "at a 1 MB window and 512 at a 512 MB window and the arm asserts they are EQUAL, but the reserve is "
         "max(cap, window) and cannot be smaller than a 512 MB window it must hold. The sweep's own control arm for "
         "that concern is measured and clean: reserve_mb is 4 MB with capped=0 at MB=1, KB=128 and KB=64 alike, so "
@@ -176,7 +176,7 @@ def declarations():
     """Every heap_kb DECLARATION shipped in a corpus attribute file, as (path, entry, value, verdict).
 
     ⛔⭐⭐ A DECLARATION IS NOT A PIN, AND THIS FUNCTION EXISTS SO THE TWO ARE TOLD APART BY EVIDENCE RATHER
-    THAN BY WHICH FILE THE NUMBER HAPPENS TO SIT IN (Lon 2026-09-23 / CEO-1167).  A PIN is a gate or a runner
+    THAN BY WHICH FILE THE NUMBER HAPPENS TO SIT IN (Lon 2026-09-23 / R-1167).  A PIN is a gate or a runner
     deciding an arena for a program FROM THE OUTSIDE -- that is the population everything above this line
     hunts, and it is a defect because the program never asked and the number is invisible to anyone reading
     the test.  A DECLARATION is the TEST ITSELF saying what live set it has, in its own attribute row, in a
@@ -209,7 +209,7 @@ def declarations():
                         if not v.isdigit():
                             verdict = "REFUSED (unparseable)"
                         elif int(v) < 1024:
-                            verdict = "REFUSED (below the 1024 KB initial window: a maximum under the window cannot be honoured, CEO-1261)"
+                            verdict = "REFUSED (below the 1024 KB initial window: a maximum under the window cannot be honoured, R-1261)"
                         elif int(v) > BOX_MAX_KB:
                             verdict = "REFUSED (above the %d KB this box can hold)" % BOX_MAX_KB
                         else:
@@ -233,14 +233,14 @@ def main():
     mine   = [r for r in rows if r[0] not in CTO_NINE and r[0] not in SPLIT_OUT]
 
     print("=" * 118)
-    print("ARENA PIN CENSUS -- the CEO-1146 sweep population BY NAME (CEO-1153: this is the census of record)")
+    print("ARENA PIN CENSUS -- the R-1146 sweep population BY NAME (R-1153: this is the census of record)")
     print("=" * 118)
     print("  %d gate script(s) on disk . %d reachable from the Makefile . stripping rule stated in the docstring"
           % (len(gates), len(blocking)))
     print()
     print("  PINNED AT MB=1 ON A CODE LINE (%d) -- the population.  '*' = in the blocking set." % len(rows))
     for g, code, ambig, _c, kb, unset in rows:
-        who = "cto (CEO-1153 excludes)" if g in CTO_NINE else "coo"
+        who = "cto (R-1153 excludes)" if g in CTO_NINE else "coo"
         mark = "*" if g in blocking else " "
         pin = "PIN-UNSAFE: names no SCRIP_HEAP_KB and does not unset it" if not (kb or unset) else \
               ("pin-safe: unsets the other knob" if unset else "PIN-UNSAFE: names SCRIP_HEAP_KB but never unsets it")
@@ -255,7 +255,7 @@ def main():
     print("  DECLARED IN A SUITE'S ATTRIBUTE FILE (%d) -- ⛔ NOT PINS, AND THE DISTINCTION IS THE POINT." % len(decls))
     print("    A pin above is a gate deciding an arena for a program from the OUTSIDE, invisible to anyone reading")
     print("    the test.  A declaration is the TEST saying what it needs, in its own row, in a reviewable diff,")
-    print("    carried forward by both suite builders (Lon 2026-09-23, CEO-1167).  Same variable, opposite authority.")
+    print("    carried forward by both suite builders (Lon 2026-09-23, R-1167).  Same variable, opposite authority.")
     if decls:
         for path, entry, val, verdict in decls:
             print("      %-46s %-40s %8s KB  %s" % (path, (entry or "")[:40], val, verdict))
@@ -287,7 +287,7 @@ def main():
                 line += word + " "
             if line.strip(): print(line)
         print()
-    print("  THE SWEEP'S OWN POPULATION: %d pinned, MINUS the cto's %d by header seat (CEO-1153), MINUS %d split out"
+    print("  THE SWEEP'S OWN POPULATION: %d pinned, MINUS the cto's %d by header seat (R-1153), MINUS %d split out"
           " and named above == %d MINE TO SWEEP" % (len(rows), len(theirs), len(split), len(mine)))
     print("  of mine, %d are in the blocking set and %d are not."
           % (sum(1 for r in mine if r[0] in blocking), sum(1 for r in mine if r[0] not in blocking)))
@@ -308,7 +308,7 @@ def main():
 # controls that make a green mean something (a 512 pin and a 10 pin are NOT this population; a comment mention is
 # not a pin; a heredoc interior is AMBIGUOUS and counted in neither half).  Every arm names what it expected and
 # what it read.  FAIL_ONCE=1 corrupts the classifier in memory and requires the arms to GO RED -- a selftest that
-# cannot fail is not a selftest (the fail-once proof this root's gates have carried since CEO-513).
+# cannot fail is not a selftest (the fail-once proof this root's gates have carried since R-513).
 SELFTEST_WITNESSES = [
     ("test_gate_zz_plain_assignment.sh",       'SCRIP_HEAP_MB=1 ./scrip w.sno\n',                      "pinned"),
     ("test_gate_zz_assign_if_unset.sh",        ': "${SCRIP_HEAP_MB:=1}"; export SCRIP_HEAP_MB\n',      "pinned"),

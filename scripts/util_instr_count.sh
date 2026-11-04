@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_instr_count.sh -- A BENCHMARK IS AN INSTRUCTION COUNT, NEVER A WALL CLOCK (ceo CEO-1912; Lon 2026-10-22 15:0x CDT, in-chat to the ceo, verbatim:
+# util_instr_count.sh -- A BENCHMARK IS AN INSTRUCTION COUNT, NEVER A WALL CLOCK (R-1912; Lon 2026-10-22 15:0x CDT, in-chat, verbatim:
 # "Let HQ-JVM and HQ-DOTNET run their own tests. Forget about benchmarking based on wall clock; instead use instruction counts from calgrind and other
 # techniques."). callgrind cannot follow a JIT runtime at a usable speed, so the counter here is the CPU's own: perf stat -e instructions:u, user-space
 # instructions retired by the process and every thread it starts (the JIT compiler and the collector included), the SAME counter for every engine so a
@@ -10,7 +10,7 @@
 # USE: bash harness/scripts/util_instr_count.sh [-n N] [--vs sbl [--allow-diff "why"]] <engine> <program.sno> [< input]
 #        engine: sbl (the clean benchmark oracle, -bf), dotnet, jvm (their port runners), scrip (./scrip mode 3), scrip4 (./scrip --compile, linked, mode 4: the IR bar's basis; the compile is not counted)
 #        --vs sbl: also count sbl on the same program and print WORK's multiple, sbl over the engine (lib_perf_fmt.sh perf_mult; 2.000x = half sbl's)
-# SIZES AND THE ANSWER (ceo CEO-2050, hq_dotnet's find: 12 of 23 SnoDemo workhorses had been counted from an sbl that died of ERROR 246 at bare
+# SIZES AND THE ANSWER (R-2050, hq_dotnet's find: 12 of 23 SnoDemo workhorses had been counted from an sbl that died of ERROR 246 at bare
 # -bf with rc 0): sbl runs the program with its declared <stem>.oracle_args (declared_oracle_args_beside) and scrip with its declared -d/-s
 # (declared_switches_beside), as the boards run them; under --vs sbl a count is REFUSED when the two engines' outputs differ, since a run
 # that died is not a measurement; --allow-diff "why" admits a difference ruled by design (printed on the line as allow_diff=).

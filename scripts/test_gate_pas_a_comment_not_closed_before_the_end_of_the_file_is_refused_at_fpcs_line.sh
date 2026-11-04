@@ -2,7 +2,7 @@
 # test_gate_pas_a_comment_not_closed_before_the_end_of_the_file_is_refused_at_fpcs_line.sh -- a Pascal source whose { or (* comment is still open at the end of the file
 # is refused with a lexical diagnostic naming ISO 7185 6.1.8 and the line where the file ends, the line fpc reports for the same program; closed comments run as before.
 #
-# WHY (PAT iso7185prt1620, "Unterminated comment"; the ceo's pat-five-reds-after-the-coo-measurement-fix, 2026-10-21): the lexer had no end-of-file rule in its two comment
+# WHY (PAT iso7185prt1620, "Unterminated comment"; the officer's pat-five-reds-after-the-coo-measurement-fix, 2026-10-21): the lexer had no end-of-file rule in its two comment
 # states, swallowed the rest of the file silently, and the refusal came from the parser as 'syntax error' with no word about the comment. THE CURE (pascal.l, regenerated into
 # pascal.lex.c): <COMMENT,BRACE><<EOF>> prints 'ISO 7185 6.1.8 violation line N: a comment is not closed before the end of the file' and counts an ISO error.
 #

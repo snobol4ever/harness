@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_readutil_and_the_file_name_builtins_answer_as_swipl.sh -- library(readutil) EXISTS, AS swipl 9.0.4 SHIPS IT, AND THE SWI
 # BUILTINS IT STANDS ON ANSWER AS swipl DOES (cfo 2026-10-14, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-in-both-modes-
-# ceo-1664, CEO-1698; the corpus names read_line_to_codes in 16 Prolog files, read_line_to_string in 15, read_file_to_string in 12).
+# R-1664, R-1698; the corpus names read_line_to_codes in 16 Prolog files, read_line_to_string in 15, read_file_to_string in 12).
 #
 # (1) library(readutil) is vendored verbatim from swipl 9.0.4 (src/parsers/prolog/prelude/readutil.pl). Its :- initialization(link_foreign,
 # now) tries a foreign readutil and otherwise ASSERTS read_line_to_codes/2,3 and read_stream_to_codes/2,3 over its Prolog pl_read_*

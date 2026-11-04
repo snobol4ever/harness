@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_var_aggregates_defaults_directives_labels_and_power_answer_as_fpc.sh -- the second FPC parse tail (the dialects row
-# pascal-dialects-...-ceo-1614, chunk 9), each construct as fpc in its own mode answers, and the ISO label rule kept.
+# pascal-dialects-...-r-1614, chunk 9), each construct as fpc in its own mode answers, and the ISO label rule kept.
 #
 # MEASURED 2026-10-11 by hq_pascal on SCRIP 41d9afcd3: among PasRosetta's parse stops were aggregate var initializers (about 15), empty
 # () in routine headings, default parameter values, routine directives (inline), identifier labels, and **.
@@ -10,7 +10,7 @@
 #   - fpc -Miso refuses the inline directive, so routine directives flip to fpc.
 #   - ** exists only through the math unit's overloads (fpc), and is left-associative: 2 ** 3 ** 2 = 64.
 #   - Identifier labels: fpc -Miso accepts them, but ISO 7185 6.1.6 says a label is a digit-sequence, and PAT's rejection tests
-#     iso7185prt0015 and prt1760 require the refusal (CEO-1225, ISO as oracle). So an identifier label is refused with 6.1.6 in an ISO
+#     iso7185prt0015 and prt1760 require the refusal (R-1225, ISO as oracle). So an identifier label is refused with 6.1.6 in an ISO
 #     program and accepted once the dialect is fpc or objfpc.
 # THE LOWERING:
 #   - A var aggregate initializer expands through chunk 4's pas_agg_assign.

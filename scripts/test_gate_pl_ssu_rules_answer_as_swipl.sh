@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_ssu_rules_answer_as_swipl.sh -- SWI-PROLOG 9'S SINGLE-SIDED-UNIFICATION RULES (Head, Guard => Body) ANSWER AS
-# SWIPL, IN BOTH MODES (cfo 2026-10-10, row prolog-swi-class-ssu-arrow-rules, re-owned to the cfo by CEO-1592; the ceo's
+# SWIPL, IN BOTH MODES (cfo 2026-10-10, row prolog-swi-class-ssu-arrow-rules, re-owned to the cfo by R-1592; the officer's
 # ruling: "the parser recognizes the neck and the guard into the pruned parse tree as the grammar produces it, and the
 # lowerer places the semantics").
 #

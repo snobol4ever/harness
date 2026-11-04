@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_switch_census.sh -- CERTIFY the SET-today env-var switch list by real measurement.
 #
-# WHY THIS EXISTS (hq_C s269, brief CEO-11c "empirical-switch-rule"):
+# WHY THIS EXISTS (hq_C s269, brief R-11c "empirical-switch-rule"):
 #   Lon's rule is THE KEEP-LIST IS EXACTLY THE SWITCHES SET TODAY, everything else dies.
 #   That makes "is this switch set?" a load-bearing question, and the first census answered it
 #   at SUBSTRING level and reported ~8.  The real number is 48.  A 6x error in the direction of

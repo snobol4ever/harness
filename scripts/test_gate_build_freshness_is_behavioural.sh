@@ -16,7 +16,7 @@
 # `git status src/` is EMPTY, the binary answers `type=integer image=0` where the tree says `null / &null`, and
 # util_require_fresh's mtime half returns rc=0. The probe returns rc=2.
 #
-# ⭐ WHAT THE PROBE PROVES, STATED HONESTLY: it is a SELF-PIN in exactly the sense CEO-395 draws for rungs refs -- the
+# ⭐ WHAT THE PROBE PROVES, STATED HONESTLY: it is a SELF-PIN in exactly the sense R-395 draws for rungs refs -- the
 # emitted code HAS NOT MOVED under a tree that HAS NOT MOVED. It says nothing about whether that code is RIGHT; the
 # oracle diffs do that. That narrow claim is the one the FINDING needed and could not get.
 #
@@ -35,7 +35,7 @@ chk(){ if [ "$2" = "$3" ]; then ok "$1 ($2)"; else no "$1: expected $3, got $2";
 
 X="$(mktemp -d)"; trap 'rm -rf "$X"' EXIT
 . "$HERE/lib_fixture_root.sh" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: cannot load lib_fixture_root.sh"; gate_stamp; exit 2; }
-fixture_root "$X" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: could not stage the scratch root (harness/scripts copied beside a scratch SCRIP, never linked -- CEO-1820)"; gate_stamp; exit 2; }
+fixture_root "$X" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: ⛔ REFUSES rc=2: could not stage the scratch root (harness/scripts copied beside a scratch SCRIP, never linked -- R-1820)"; gate_stamp; exit 2; }
 W="$X/SCRIP"; rm -rf "$W/out"; mkdir -p "$W/src" "$W/out"
 printf 'int a(void){return 1;}\n' > "$W/src/a.c"
 printf 'all:\n\t@true\n'          > "$W/Makefile"
@@ -92,7 +92,7 @@ chk "12 an unreadable ledger RECORDS, it never refuses" "$rc" "0"
 
 echo "== a ledger belongs to the checkout it describes =="
 # ⛔ ARM 12b WAS THE RACED-ARMS CAUSE (the coo 2026-10-15): a scratch root whose out/ was a SYMLINK to another checkout's out/ appended its own tree line to that
-# checkout's ledger. No link exists any more (CEO-1820): a scratch root's out/ is its own COPY, so its line lands in its own ledger and the other checkout's is untouched.
+# checkout's ledger. No link exists any more (R-1820): a scratch root's out/ is its own COPY, so its line lands in its own ledger and the other checkout's is untouched.
 REALOUT="$W/realout"; mkdir -p "$REALOUT"; printf 'cafebabecafebabecafebabecafebabe deadbeefdeadbeefdeadbeefdeadbeef none 2026-01-01T00:00:00Z fixture\n' > "$REALOUT/build_behaviour.sig"
 L="$X/copyroot"; mkdir -p "$L/src"; printf 'int c(void){return 3;}\n' > "$L/src/c.c"; printf 'all:\n\t@true\n' > "$L/Makefile"
 cp -a "$REALOUT" "$L/out"

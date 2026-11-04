@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_no_script_passes_dash_o_to_scrip.sh -- THE ASSEMBLY OUTPUT IS --out=FILE, AND NO SCRIPT HANDS IT TO SCRIP AS -o FILE (Lon, "Do make our
-# SCRIP command-line switches just like SPITBOL." CEO-1224: SPITBOL's -o=file names the compilation LISTING, so SCRIP's --compile output moved to
+# SCRIP command-line switches just like SPITBOL." R-1224: SPITBOL's -o=file names the compilation LISTING, so SCRIP's --compile output moved to
 # --out=FILE; the cto's row spine-scrip-assembly-output-moves-from-o-file-to-out-file-and-every-script-that-passes-o-migrates-in-the-same-landing,
-# reowned to hq_templates by CEO-2005).
+# reowned to hq_templates by R-2005).
 #
 # ARM 1 (blocking, ceiling 0): lib_scrip_dash_o.py reads zero scrip commands that pass -o FILE or -oFILE across harness, SCRIP (Makefile, tools),
 #        corpus and .github scripts -- shell by a tokenizer (segments, wrappers, $( ), heredocs), Python by ast, python-in-shell by pattern.

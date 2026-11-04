@@ -22,7 +22,7 @@
 #
 # ⛔ ARM 2 IS THE ARM THAT STOPS THE OVER-BROAD CURE. Deleting the encoding property outright passes ARM 1
 # perfectly and silently un-grades the 15 cases 94fde5d43 unblocked. A cure that trades one case for another
-# never lands (CEO-589), so the text-stream arm is graded beside the binary one, always.
+# never lands (R-589), so the text-stream arm is graded beside the binary one, always.
 # rc 0 green · 1 red · 2 could not measure.
 set -uo pipefail
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"

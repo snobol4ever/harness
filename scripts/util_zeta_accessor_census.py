@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 # util_zeta_accessor_census.py -- THE ADDRESS-FORM CENSUS: EVERY SITE OF THE TEMPLATES AND THE EMITTER THAT ADDRESSES A CELL BY A FORM OF ITS OWN, COUNTED
-# DOWN TO THE ONE ACCESSOR, ZCELL, THAT READS THE PLAN'S ZETA COLUMN (ceo CEO-1943/1944; Lon 2026-10-24 11:0x CDT, in-chat to the ceo, verbatim: "You must
+# DOWN TO THE ONE ACCESSOR, ZCELL, THAT READS THE PLAN'S ZETA COLUMN (R-1943/1944; Lon 2026-10-24 11:0x CDT, in-chat, verbatim: "You must
 # find a way to in the code templates, emitter and planner, to switch easily between the THREE ZETAS."). A cell's home is ONE fact, the plan row's zeta
 # column (SPINE on RSP by default, ACTIVATION-FRAME on RBP when the planner's unbounded test forces it, STANDING through the RBP chain), and every site
 # reaches a cell through ZCELL(owner, word, width) or ZCELL_ADDR(owner, word), which read the owner's plan row and emit the SPINE, ACT or STANDING form
 # (ARCH-THREE-ZETAS-EMISSION.md section 2 and section 10 chunk 3b-2, the cto). Each counted form reaches a cell by an offset or a predicate of its own, a
 # second decider beside the plan; the re-pointing of the templates at ZCELL makes the total fall, and nothing may make it rise.
-# THE FORMS are the ceo's list of 2026-10-24 11:2x: x86_zop, x86_zref, ZRES, ZRES_SPINE, ZOPQ, ZOPD, ZOPQS, FR, FRQ, the rbp and rsp RDQ and RDD forms,
-# x86_rsp_load64, x86_rsp_store64, x86_frame_*, xop_frame_slot, zls_frame_off, gen_frame_top, and (the ceo's ruling of 11:3x, one sentence: a helper that
+# THE FORMS are the officer's list of 2026-10-24 11:2x: x86_zop, x86_zref, ZRES, ZRES_SPINE, ZOPQ, ZOPD, ZOPQS, FR, FRQ, the rbp and rsp RDQ and RDD forms,
+# x86_rsp_load64, x86_rsp_store64, x86_frame_*, xop_frame_slot, zls_frame_off, gen_frame_top, and (the ruling of 11:3x, one sentence: a helper that
 # hands a template a cell operand and picks its own zeta -- rsp, rbp, the frame, the chain -- is a direct form, and only ZCELL and ZCELL_ADDR are not)
 # ZRESD (RDD rbp or x86_zref), XSAQ (RDQ rbp or FRQ), ZLOC (x86_zref), ZTOS and ZTOSD (x86_ztos) and x86_ztos itself. A SITE is a line under SCRIP/src/templates or
 # SCRIP/src/emitter where the form's name starts a word; a line holding it twice is one site, a line holding two forms is a site of each, and the total is
-# the sum over the forms (the ceo's `grep -rF FORM src/templates src/emitter | wc -l` reading, word-bounded so that FR( is not read inside another name).
+# the sum over the forms (the officer's `grep -rF FORM src/templates src/emitter | wc -l` reading, word-bounded so that FR( is not read inside another name).
 # The definitions count too. THE ALLOWED FORM is ZCELL and ZCELL_ADDR: their sites print as the RISING line beside the falling total, and the lines of
 # their own definitions (from the head to the brace that closes it) are not counted, being the one place the direct forms may remain.
 # THE CEILING is the first reading of these twenty-five forms, 1899 at SCRIP 65c05d8d0 and at the D0 parent e840d8e39 (the cuts before it: 10-24 11:1x
-# harness f226390, the ceo's first fourteen forms, 480; 11:2x 3707cd2, nineteen forms down to ZCELL, 1871; each rise a RE-CUT of the census, never a
+# harness f226390, the officer's first fourteen forms, 480; 11:2x 3707cd2, nineteen forms down to ZCELL, 1871; each rise a RE-CUT of the census, never a
 # regression): x86_zop 10, x86_zref 36, ZRES 112, ZRES_SPINE 4, ZOPQ 153, ZOPD 22, ZOPQS 7, FR 51, FRQ 1053, RDQ("rbp" 67, RDD("rbp" 23, RDQ("rsp" 112,
 # RDD("rsp" 17, x86_rsp_load64 59, x86_rsp_store64 65, x86_frame_ 60, xop_frame_slot 14, zls_frame_off 3, gen_frame_top 3, ZRESD 9, XSAQ 13, ZLOC 1,
 # ZTOS 1, ZTOSD 1, x86_ztos 3; ZCELL 0. A landing that lowers the total lowers CEILING here in the same landing (the census prints FALLEN and the number).

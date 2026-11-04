@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_float_with_no_fraction_is_a_syntax_error_only_under_the_iso_flag.sh -- 1e33 READS AS swipl READS IT BY DEFAULT, AND IS A
-# SYNTAX ERROR UNDER set_prolog_flag(iso, true), AS ISO 6.4.5 AND gprolog HAVE IT (ceo CEO-1524, 2026-10-05, on the cfo's ask: the SWI
+# SYNTAX ERROR UNDER set_prolog_flag(iso, true), AS ISO 6.4.5 AND gprolog HAVE IT (R-1524, 2026-10-05, on the cfo's ask: the SWI
 # suite's own sources carry dotless floats -- test_format.pl 1e100, test_real.pl 1e18 -- so the default is swipl's; the strict reading is a
 # feature of the flag). cfo, row prolog-logtalk-numbers-read-accepts-1e33-with-no-fraction-where-iso-wants-a-syntax-error.
 # THE CURE: prolog_lex.c S_INT takes the dotless-exponent branch only when the lexer's iso bit is clear (prolog_parse_ex copies the flag into

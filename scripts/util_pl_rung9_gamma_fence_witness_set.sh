@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_pl_rung9_gamma_fence_witness_set.sh
 #
-# PROLOG ISO LADDER, RUNG 9 -- THE MEASUREMENT HALF, ordered by CEO-690 after Lon ruled the frame question:
+# PROLOG ISO LADDER, RUNG 9 -- THE MEASUREMENT HALF, ordered by R-690 after Lon ruled the frame question:
 #   Lon 2026-09-13, verbatim: "do a whack-free on GAMMA for a FENCE d (i.e. cut !) or otherwise FENCE d
 #   operation."
 # The frame STAYS on the machine stack and is torn down sooner: succeed through GAMMA with the operation
@@ -12,7 +12,7 @@
 # this script exists so that hq_U can re-run the same population after a teardown lands and read which
 # constructs moved. Run it before and after; a construct that does not move is a construct the cure missed.
 #
-# ⭐ THE QUESTION CEO-690 ASKED, and nobody had enumerated: WHICH PROLOG CONSTRUCTS ARE PROVABLY COMMITTED AT
+# ⭐ THE QUESTION R-690 ASKED, and nobody had enumerated: WHICH PROLOG CONSTRUCTS ARE PROVABLY COMMITTED AT
 # GAMMA BUT CARRY NO LEXICAL `!`? Each of those is a cut in effect with no cut in the text -- a frame that
 # could be whacked today and is not. This script answers it by measurement rather than by reading the
 # lowerer, because the lowerer can only say what was intended.
@@ -35,7 +35,7 @@
 # reclaimed and is reported as such, because a witness set that lists only the red ones cannot show that the
 # mechanism exists in the tree already.
 #
-# ⛔⭐ THE SAFETY CONTROL IS NOT A FOOTNOTE, IT IS THE GRADING CRITERION (CEO-690, CEO-550). GAMMA IS THE
+# ⛔⭐ THE SAFETY CONTROL IS NOT A FOOTNOTE, IT IS THE GRADING CRITERION (R-690, R-550). GAMMA IS THE
 # SHARED YIELD PORT FOR SUSPEND AND RETURN, so a generator that suspends through gamma expects to be resumed
 # INTO THAT VERY FRAME. An unconditional whack tears down a frame a redo is about to re-enter. This script
 # therefore runs a pair whose ANSWERS separate the two cases, and any cure must keep both:
@@ -44,14 +44,14 @@
 # Both are swipl-confirmed. If a teardown lands and cp(8) becomes anything else, the cure is wrong and the
 # depth table is irrelevant.
 #
-# ⛔ AND THE CLASSIFICATION THAT DECIDES HOW A CURE MAY BE KEYED, which is the other half of CEO-690:
+# ⛔ AND THE CLASSIFICATION THAT DECIDES HOW A CURE MAY BE KEYED, which is the other half of R-690:
 #   PER CALL SITE   -- once/1, \+/1, forall/2, the condition of (->)/2, catch/3 over a committed goal. These
 #                      are OPAQUE-GOAL BARRIERS: the text of the call site alone proves beta is unreachable,
 #                      whatever the argument goal does. A call-site-keyed cure is sound for these.
 #   PER ACTIVATION  -- clause selection. Whether a later clause can still match depends on the ARGUMENTS AT
 #                      THIS CALL, not on the call site: `d(1,_)` is deterministic and `d(X,_)` with X unbound
 #                      is not, at the same site. A call-site-keyed answer here is right in testing and wrong
-#                      in the tree, which is exactly the hazard CEO-690 named.
+#                      in the tree, which is exactly the hazard R-690 named.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
 SCRIP="$ROOT/scrip"

@@ -1,4 +1,4 @@
-# rt_entries.tsv -- THE RUNTIME ENTRY TABLE (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; CEO-2019): one row per runtime symbol emitted code calls.
+# rt_entries.tsv -- THE RUNTIME ENTRY TABLE (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; R-2019): one row per runtime symbol emitted code calls.
 # sym        the symbol a template names in x86("call"), x86("call_bare") or x86_rtcc_call, or that src/runtime/rtx registers as an asm-runtime entry (RTX_FUNC, RTX_ENTRY): the emitter asks the table about both.
 # conv       leaf | gen | open | asm: "asm" where src/runtime/rtx declares it with RTX_FUNC or RTX_ENTRY; "-" where no source states it (stage 5b declares it at the definition).
 # rc         what rides rax:rdx at return: DESCR | OTHER | VOID | UNKNOWN, DERIVED from the built libscrip_rt.so (the DWARF return type of an allocating symbol; util_gen_rt_entry_table.py --sync-alloc, lib_rt_alloc_derive.py); "-" where the symbol does not reach the allocator.

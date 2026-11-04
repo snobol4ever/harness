@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_suite_population_diff.py -- A SKIP THAT MOVES IS A RED, IN EITHER DIRECTION (coo, CEO-824, 2026-09-17;
+"""util_suite_population_diff.py -- A SKIP THAT MOVES IS A RED, IN EITHER DIRECTION (coo, R-824, 2026-09-17;
 row instruments-a-skip-count-change-between-batches-is-a-red-not-a-silent-population-change; the cfo's escalation).
 
 THE DEFECT THIS EXISTS FOR, MEASURED.  A suite entry that SKIPs leaves the GRADED population with no red anywhere:
@@ -29,7 +29,7 @@ implying a set it never saw.
 
   util_suite_population_diff.py BEFORE AFTER      two files, each a SUITE_BOARD line or a full runner output
   util_suite_population_diff.py --archive .github/board-lines/DATE-WHO.tsv --suite sno-rungs --from TREE --to TREE
-                                                  two VERBATIM archived lines (ceo CEO-827), the runner's own output
+                                                  two VERBATIM archived lines (R-827), the runner's own output
   util_suite_population_diff.py --selftest        planted arms, plus the real archived pair when it is on disk
 """
 import os
@@ -80,7 +80,7 @@ def read_board(path, out):
 
 
 def read_archive(path, suite, tree, out):
-    """one reading out of a board-lines TSV (tree<TAB>suite<TAB>measurer<TAB>verbatim line; ceo CEO-827).
+    """one reading out of a board-lines TSV (tree<TAB>suite<TAB>measurer<TAB>verbatim line; R-827).
 
     THIS IS WHY THE ARCHIVE EXISTS.  The pair this instrument was built for -- the SNOBOL4 rungs' m4_skip 0 -> 3 at
     b12714737 and 3 -> 0 at a861648ab -- could not be diffed at all on the morning it was ruled, because every receipt
@@ -255,7 +255,7 @@ def selftest():
     r = diff(read_board(a, buf.append), read_board(b, buf.append), buf.append)
     ck(r == 1 and any("ENTRIES NOT NAMED" in l for l in buf),
        "board lines alone: the instrument says the entries are NOT NAMED and why, rather than implying a set it never saw")
-    # THE ARCHIVE READER (ceo CEO-827): a verbatim line kept by a receipt, and every way it can refuse.
+    # THE ARCHIVE READER (R-827): a verbatim line kept by a receipt, and every way it can refuse.
     arc = put("arc.tsv",
               "# header\n"
               "b12714737\tsnobol4-rungs\tceo\t" + skipped.strip() + "\n"
@@ -265,7 +265,7 @@ def selftest():
     ck(diff(read_archive(arc, "snobol4-rungs", "b12714737", buf.append),
             read_archive(arc, "snobol4-rungs", "a861648ab", buf.append), buf.append) == 1
        and any("SKIP MOVED m4_skip: 3 -> 0" in l for l in buf),
-       "the ARCHIVED pair (the runner's own lines, CEO-827) reds on m4_skip 3 -> 0 -- a reading, not a reconstruction")
+       "the ARCHIVED pair (the runner's own lines, R-827) reds on m4_skip 3 -> 0 -- a reading, not a reconstruction")
     buf.clear()
     ck(read_archive(arc, "raku-rungs", "b12714737", buf.append) is None
        and any("holds no verbatim line for suite" in l and "Suites archived here" in l for l in buf),

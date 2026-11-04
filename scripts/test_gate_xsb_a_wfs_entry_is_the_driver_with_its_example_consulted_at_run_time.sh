@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_xsb_a_wfs_entry_is_the_driver_with_its_example_consulted_at_run_time.sh -- A wfs_tests ENTRY IS THE PROGRAM XSB RUNS (hq_packages 2026-10-28, ceo CEO-2005, DESIGN-PLAN xsb-tabling-wfs step 2,
+# test_gate_xsb_a_wfs_entry_is_the_driver_with_its_example_consulted_at_run_time.sh -- A wfs_tests ENTRY IS THE PROGRAM XSB RUNS (hq_packages 2026-10-28, R-2005, DESIGN-PLAN xsb-tabling-wfs step 2,
 # ARCH-PROLOG-WFS-TABLING.md section 8 R2). XSB's wfs_tests/test.sh runs ./gentest.sh wfs_test pNN "test(pNN)." = [wfs_test]. test(pNN). told.: the driver is the program and test/1 consults pNN.P itself.
-# The vendoring (CEO-700) compiled the example's clauses into the entry as well, so test/1's consult asserted them a second time (permission_error(modify, static_procedure, query/5)) and the
+# The vendoring (R-700) compiled the example's clauses into the entry as well, so test/1's consult asserted them a second time (permission_error(modify, static_procedure, query/5)) and the
 # driver printed nothing: 72 entries read FAIL. The entry is now the driver's text and `:- initialization((test(pNN), told)).`, the example staged beside (STAGED.tsv).
 # ARMS: (1) every ALL.pl entry whose ORACLE_RUNS.tsv kind is wfs is in the driver form (util_xsb_wfs_entry_is_the_driver.py --check, rc 0, the population printed: 72 of 72)
 #       (2) the tool can see its plant: a mktemp copy of the package's tables with one wfs entry put back in the old form (the example's clauses, then the consult trailer) reads rc 1 and names it;

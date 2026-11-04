@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_clause_of_a_variable_head_in_a_plunit_unit_returns_its_body_goals_unqualified_as_swipl.sh -- clause/2 OF A RUN-TIME HEAD IN A UNIT HANDS BACK THE BODY AS WRITTEN (ceo CEO-1959, hq_packages; SWI core/test_moved_ubody.pl).
+# test_gate_pl_clause_of_a_variable_head_in_a_plunit_unit_returns_its_body_goals_unqualified_as_swipl.sh -- clause/2 OF A RUN-TIME HEAD IN A UNIT HANDS BACK THE BODY AS WRITTEN (R-1959, hq_packages; SWI core/test_moved_ubody.pl).
 # SCRIP renames a predicate a module or a plunit unit defines to M:name (pl_module_flatten). A clause/2 goal with a LITERAL head is wrapped by the lowerer in $clause_unmangle, which gives the body back with every
 # goal of the clause's own module unqualified; a clause/2 goal whose head is a VARIABLE bound at run time (Head = s3(_,_,_), clause(Head, Body)) is rewritten to $mctx_clause, whose body step only stripped a
 # whole-body Module:Body wrapper -- so a unit predicate that called another unit predicate came back as 'plunit_moved_decompile:q'(A,B,C,D) where swipl answers q(A,B,C,D), and decom1-4, decomp7 of

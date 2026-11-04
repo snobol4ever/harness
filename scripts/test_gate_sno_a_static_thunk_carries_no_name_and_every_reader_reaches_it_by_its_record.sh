@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_static_thunk_carries_no_name_and_every_reader_reaches_it_by_its_record.sh -- A COMPILED UNEVALUATED EXPRESSION
 # HAS NO NAME STRING AT RUN TIME (hq_zetas 2026-10-09, row spine-bake-every-call-and-deferred-pattern-address-no-by-name-lookup-at-
-# run-time-ceo-1362, chunk 2b-ii; Lon 2026-09-29, in-chat to the ceo, verbatim: "You should have no by-name lookup for FUNCTION
+# run-time-r-1362, chunk 2b-ii; Lon 2026-09-29, in-chat, verbatim: "You should have no by-name lookup for FUNCTION
 # CALLS. Nor by-name lookup for *DEFERRED_PATTERN references.").
 #
 # THE LAW: a static thunk (*expr, the compiler's EXPR$n) is identified by its star record and its registry slot, never by a name.
@@ -15,7 +15,7 @@
 # THE ARMS: a1 every primitive with a deferred argument plus a run-time built pattern; a2 stage variables, EVAL and DUMP's *X;
 # a3 immediate and conditional captures into *G() and *$T; a4 cursor captures @*$('CUR' N) and @*G() in a statement, a stored
 # pattern and a pattern built at run time (SNO$PCUR hands the record as a DSTAR-REF literal; rt_at_cursor opens it; this arm is graded on its asm only, because rt_at_cursor enters the thunk from C and that road is a
-# named bomb under CEO-1576 until the ceo's C-to-BB row re-roads it); a5 captures
+# named bomb under R-1576 until the officer's C-to-BB row re-roads it); a5 captures
 # into *G() and *$('X' N) inside patterns built at run time (SNO$PBC hands the record the same way; the run-time compiler takes the
 # record as its capture target and bb_dstar_rec_addr returns it as itself). Each runs in m3 and m4 against sbl -bf AT RUN TIME (a2 compares the
 # dump up to its keyword section), and each program's mode-4 asm must name no thunk (EXPR$ or EXPRNM$).
@@ -136,7 +136,7 @@ bad=0
 for a in a4; do
     "$SCRIP" --compile --out="$T/$a.s" "$T/$a.sno" < /dev/null > /dev/null 2>&1 || { echo "  RED  $a -- does not compile"; bad=1; continue; }
     n=$(grep -cE 'EXPR(NM)?\$' "$T/$a.s")
-    if [ "$n" -ne 0 ]; then echo "  RED  $a m4 -- the asm names a thunk on $n line(s): $(grep -m1 -E 'EXPR(NM)?\$' "$T/$a.s")"; bad=1; else echo "  ok   $a m4 -- the asm names no thunk (asm only: its runs reach rt_at_cursor's C road, a named bomb under CEO-1576)"; fi
+    if [ "$n" -ne 0 ]; then echo "  RED  $a m4 -- the asm names a thunk on $n line(s): $(grep -m1 -E 'EXPR(NM)?\$' "$T/$a.s")"; bad=1; else echo "  ok   $a m4 -- the asm names no thunk (asm only: its runs reach rt_at_cursor's C road, a named bomb under R-1576)"; fi
 done
 for a in a1 a2 a3 a5; do
     want="$("$ORACLE" -bf "$T/$a.sno" < /dev/null 2>&1 | sed '/dump of keyword values/,$d' | tr '\n' '/')"

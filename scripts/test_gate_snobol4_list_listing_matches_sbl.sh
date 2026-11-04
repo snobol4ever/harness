@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_snobol4_list_listing_matches_sbl.sh -- THE -LIST LISTING IS SPITBOL'S LISTING, BYTE FOR BYTE, IN BOTH MODES (row
-# snobol4-the-list-control-line-prints-spitbols-listing-comments-pages-and-banner-included; Lon 2026-10-03 to the ceo, CEO-1459: "We need to
+# snobol4-the-list-control-line-prints-spitbols-listing-comments-pages-and-banner-included; Lon 2026-10-03 to the R-1459: "We need to
 # implement the -LIST feature, since statement numbers are unknown. The DEBUG.sno program depends on a listing."; the cut at the END line is
-# CEO-1739: the run-time error report after it is the one error voice's, not this gate's). Every witness is run by the correctness oracle
+# R-1739: the run-time error report after it is the one error voice's, not this gate's). Every witness is run by the correctness oracle
 # (sbl -bf) and by SCRIP's mode 3 and mode 4; each output drops the 'x86-64 ' banner lines and stops at the END statement line of the listing.
 # WITNESSES: SourceLines001 (dotnet), hide (csnobol4_suite), debug.sno with -LIST in place of its -NOLIST, and generated probes: -TITLE -STITL
 # -SPACE -EJECT -DOUBLE -SINGLE, -PRINT/-NOPRINT/-NOLIST, a comma chain, a tab-indented line, and programs of 119 and 1199 statements that cross

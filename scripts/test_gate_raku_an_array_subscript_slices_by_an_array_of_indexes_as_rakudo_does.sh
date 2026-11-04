@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_an_array_subscript_slices_by_an_array_of_indexes_as_rakudo_does.sh -- `@a[@idx]`, `@a[@idx.list]`, `@a[(1,2).list]` (rc-forest-fire-stringify: 400 where Rakudo prints 52100)
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479). __rk_arr_at took only an integer index, so a subscript whose index is an array answered the first element; it
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479). __rk_arr_at took only an integer index, so a subscript whose index is an array answered the first element; it
 # now answers the List of the elements at each index (an out-of-range index is Nil/Any). NOT CLAIMED, named so the claim is exact: Rakudo reads an ITEMIZED array index (an Array held in
 # an array or a scalar, `@show[@grid[$r]]`, `@a[$list]`) as ONE integer index (its element count); this runtime slices it, as it answered the first element before. The witness always uses
 # .list, the form that is a slice in Rakudo. Refs cut by Rakudo (/usr/bin/raku) at generation; both modes.

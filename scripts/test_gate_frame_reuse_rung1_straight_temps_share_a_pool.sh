@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 1 OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): THE CHEAPEST REAL CASE.  A straight box (LIT/VAR/VAR_REF/BINOP/CMP_TEST) whose every reader
+# (cto, R-684 slice 2): THE CHEAPEST REAL CASE.  A straight box (LIT/VAR/VAR_REF/BINOP/CMP_TEST) whose every reader
 # sits on the gamma spine with NO beta-capable box and NO back-edge span between the write and the last read, and
 # whose reader's template reads operand slots on alpha only (verified for the straight ops, IR_CALL and
 # IR_CALL_PROC_STAGED: bb_call_fn/bb_call/bb_call_proc_staged marshal on alpha, beta falls to omega), takes a slot

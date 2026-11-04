@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" || exit 2; case "${1:-report}" in run|report) one_runner_guard "${0##*/} ${1:-report}" "$(one_runner_population_of "$@")" || exit 2;; esac  # PER VERB, CEO-547 part 1: run and report ARE boards; `one` and `oracle` grade ONE named program, write no results.tsv and publish no board, so they are development aids and the guard must not judge them by the entry point (hq_B measurement, .github 92335e4b)
-# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program by sc_decl_build below from the ALL.csv row beside it or its <stem>.cmdline sidecar (clause 8 (f), CEO-1281, landing 4): this grader exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
+source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" || exit 2; case "${1:-report}" in run|report) one_runner_guard "${0##*/} ${1:-report}" "$(one_runner_population_of "$@")" || exit 2;; esac  # PER VERB, R-547 part 1: run and report ARE boards; `one` and `oracle` grade ONE named program, write no results.tsv and publish no board, so they are development aids and the guard must not judge them by the entry point (hq_B measurement, .github 92335e4b)
+# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program by sc_decl_build below from the ALL.csv row beside it or its <stem>.cmdline sidecar (clause 8 (f), R-1281, landing 4): this grader exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
 # scorecard_snobol4.sh — THE SNOBOL4 SCORECARD + META SCORE (Lon directive 2026-08-15 s91, Fable seat).
 #
 #   bash ../harness/scripts/scorecard_snobol4.sh run    [--suites a,b,..] [--jobs N] [--out DIR] [--force]   # measure (long)
@@ -29,11 +29,11 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 S4A="${S4E_ASSETS:-$([ -d "$S4E/x64" ] && echo "$S4E" || echo /home/resources)}"   # D-17b: ASSET root -- oracles/vendor trees live at the HQ root on this machine (Lon: seats carry ONLY .github/SCRIP/corpus); a root owning its own x64 (HQ, or a full standalone clone-set) is self-contained.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 SC="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)"
 CORPUS="${CORPUS:-$S4E/corpus}"
 SBL="${SBL:-$S4A/x64/bin/sbl}"
-# ⭐ UNDER A PORT ENGINE THE SCORECARD GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# ⭐ UNDER A PORT ENGINE THE SCORECARD GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face) unless the caller
 # names one, each program runs in m3 alone with its declared heap and stack as switches (run_at_declared_table exports SCRIP's env, which a port
 # never reads), m4 is not compiled, and results-tsv reads the m3 column alone under a port. Under scrip every line reads as it did.
@@ -65,7 +65,7 @@ misc            3 MISC                                                -name *.sn
 EOF
 )
 # ⛔ lon_cherryholmes IS EXCLUDED STRUCTURALLY, NOT SKIPPED AT RUN TIME -- ⚠️ BUT THE REASON BELOW IS HISTORY, NOT LAW.  READ THE 2026-08-27 RULING FIRST.
-# ⭐ WHAT LON ACTUALLY RULED, 2026-08-27, in-chat to CEO, verbatim in substance: "Do not use the lon_cherryholmes folder as runtime tests.  Use them for parser tests
+# ⭐ WHAT LON ACTUALLY RULED, 2026-08-27, in-chat, verbatim in substance: "Do not use the lon_cherryholmes folder as runtime tests.  Use them for parser tests
 # all day long.  And in fact, all the corpus/programs need work and cannot be converted to tests currently."  Mechanically: PARSER TESTS unrestricted; RUNTIME AND
 # SCORED BOARDS no; the whole corpus/programs/ tree (EBNF, lon_cherryholmes, TZ) is not convertible to tests currently.  Reading, compiling, running BY HAND, citing
 # and measuring all stay free -- the restriction is solely about installing these programs AS TESTS.  Authority: RULES.md ABSOLUTE RULES, the lon_cherryholmes block.
@@ -139,12 +139,12 @@ sc_libpath() {  # $1 = lib spec  $2 = program dir -> colon list of real dirs
 # labels walk into -- a genuine duplicate label SIGSEGVs under `-bf` too (measured s189).
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200). A private fallback would time a DIFFERENT LANGUAGE (s189: -bf is the only correct arm). Fix the checkout; do not work around this." >&2; exit 3; }
 sbl_flags() { echo "$(sbl_lang_flags)"; }   # ⭐ LANGUAGE ARM from the ONE authority (lib_oracle_flags.sh); the SIZE is the program's own <stem>.oracle_args, which sc_oracle_run passes
-# ⛔ NO SIZE IS TYPED FOR THE ORACLE (ceo CEO-1353, RULES.md clause 8 (g)(3)-(4)): a program whose oracle needs more than sbl's defaults declares
+# ⛔ NO SIZE IS TYPED FOR THE ORACLE (R-1353, RULES.md clause 8 (g)(3)-(4)): a program whose oracle needs more than sbl's defaults declares
 # <stem>.oracle_args beside itself and sc_oracle_run passes it through lib_declared_arena.sh's declared_oracle_args_beside. MEASURED 2026-10-03
 # (the coo, sbl fd9b552b): every program of every suite below, 324, through this file's own `oracle` verb at the -d512m -i64m it typed under
 # ulimit -s unlimited and at sbl's defaults: 287 byte-identical; the other 36 differ only in sbl's timing lines and the "memory left"
 # figure of its own fatal report, which grading masks -- no program's answer moved.
-# ⭐ THE DECLARED HEAP AND STACK, PER PROGRAM (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229 -- the
+# ⭐ THE DECLARED HEAP AND STACK, PER PROGRAM (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229 -- the
 # gimpel runner grades through run_one below, and so do csnobol4_suite and the dotnet and aisnobol programs under misc). A program
 # runs in BOTH modes at what it declares -- its row in the ALL.csv beside it (heap_kb, stack_kb), else its NAME.heap / NAME.stack
 # sidecar -- and at the shipped default when it declares nothing. sc_decl_build reads every declaration ONCE, before grading,
@@ -152,7 +152,7 @@ sbl_flags() { echo "$(sbl_lang_flags)"; }   # ⭐ LANGUAGE ARM from the ONE auth
 # with one awk; a refused cell refuses the whole run before one program is graded.
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 sc_decl_build() {  # $1 = table out  $2.. = program paths (or - to read them from stdin) -> "path<TAB>heap_kb<TAB>stack_kb<TAB>compile_args" per declaring program; rc 2 on a refused cell
-  # ⭐ THE 4th COLUMN IS THE PROGRAM'S compile_args (clause 8 (f), CEO-1281, landing 4 of 5): the ALL.csv row's, or its <stem>.cmdline
+  # ⭐ THE 4th COLUMN IS THE PROGRAM'S compile_args (clause 8 (f), R-1281, landing 4 of 5): the ALL.csv row's, or its <stem>.cmdline
   # sidecar's for a program with no table (declared_compile_args_beside), which run_one puts after --run and --compile.
   local out="$1" p d n kb st ca rc=0; shift; : > "$out" || return 2
   local -a progs=(); if [ "${1:-}" = - ]; then mapfile -t progs; else progs=("$@"); fi
@@ -297,18 +297,18 @@ sc_sampler() {  # $1 = out dir  $2 = owner pid -- appends `epoch load1 runnable 
 }
 # ---------------------------------------------------------------- one program, one line
 # ⛔⭐ THE PACKAGE'S ALL.mask IS READ BEFORE ANY COMPARE (the coo 2026-10-02, row instruments-the-gimpel-runner-reads-all-mask-so-timer-and-
-# timegc-grade-their-pinned-lines, ceo CEO-1412): grade() was a plain cmp, so a CEO-409 mask row declared beside the suite -- gimpel's
+# timegc-grade-their-pinned-lines, R-1412): grade() was a plain cmp, so a R-409 mask row declared beside the suite -- gimpel's
 # timer_driver and timegc_driver engine-clock and storage-unit lines since corpus f2ae706da -- was never applied and those two read
-# DIFF forever.  The same masker the dotnet runner calls (util_apply_ceo409_mask.py, the harness's own reader): the ref and the
+# DIFF forever.  The same masker the dotnet runner calls (util_apply_line_mask.py, the harness's own reader): the ref and the
 # oracle's live answer with --side=oracle, each SCRIP mode with --side=scrip, keyed by the program's own name; the masked line
 # counts travel in the note column.  A suite with no ALL.mask beside its program is compared exactly as before.
 sc_mask() {  # $1 = ALL.mask, $2 = entry name, $3 = oracle|scrip, $4 = file masked in place -> prints the masked line count; rc 2 = the masker refused
-  python3 "$_LDA_HERE/util_apply_ceo409_mask.py" "$1" "$2" "$4.maskn" "--side=$3" < "$4" > "$4.masked" 2>"$4.maskerr" || return 2
+  python3 "$_LDA_HERE/util_apply_line_mask.py" "$1" "$2" "$4.maskn" "--side=$3" < "$4" > "$4.masked" 2>"$4.maskerr" || return 2
   mv "$4.masked" "$4"; cat "$4.maskn" 2>/dev/null || echo 0
 }
 run_one() {  # suite lib prog norm run_to
   local suite="$1" lib="$2" prog="$3" norm="$4" rto="$5"
-  export S4E_TIMEOUT_KEY="$prog"   # the unit a retried timeout's stamp names (CEO-1335)
+  export S4E_TIMEOUT_KEY="$prog"   # the unit a retried timeout's stamp names (R-1335)
   local d n in ref_pin ref_live have_pin=0 have_live=0 W st3 st4 t0 t3 t4 rc out note=""
   # ⛔ SUITE-FILE GUARD (row probe-suite-grading-path, 2026-08-27). A corpus-suites-consolidation suite .sno file
   # (format A one-liners or format B banner-blocks) is a CONTAINER of independently-complete programs, never one
@@ -330,7 +330,7 @@ run_one() {  # suite lib prog norm run_to
   fi
   d="$(dirname "$prog")"; n="$(basename "$prog" .sno)"; in="$(stdin_for "$prog")"
   lib="$(sc_libpath "$lib" "$d")"
-  # ⛔⭐ THE PER-PROGRAM DIALECT SIDECAR (hq_P 2026-09-06, extending ceo RULING R1's --compat=csnobol4 from a whole-suite
+  # ⛔⭐ THE PER-PROGRAM DIALECT SIDECAR (hq_P 2026-09-06, extending the officer RULING R1's --compat=csnobol4 from a whole-suite
   # switch to a per-FIXTURE one).  A `.ref` records what an ORACLE answered, so the dialect that minted it is a property
   # of the FIXTURE, not of the suite: gimpel ships 13 drivers whose headers say outright "This .ref comes from CSNOBOL4,
   # not from x64/bin/sbl", because SPITBOL REFUSES the module (DEFINE/DATA/OPSYN over a system function name is ERROR 248
@@ -355,7 +355,7 @@ run_one() {  # suite lib prog norm run_to
   if [ -f "$d/ALL.mask" ]; then mfile="$d/ALL.mask"
     for mk in pin live; do
       [ -f "$W/$mk" ] || continue
-      mn="$(sc_mask "$mfile" "$n" oracle "$W/$mk")" || { echo -e "$suite\t${prog#$CORPUS/}\tMASK_REFUSED\tMASK_REFUSED\t0\t0\tthe CEO-409 masker refused on $n ($mk): $(head -1 "$W/$mk.maskerr")"; rm -rf "$W"; return; }
+      mn="$(sc_mask "$mfile" "$n" oracle "$W/$mk")" || { echo -e "$suite\t${prog#$CORPUS/}\tMASK_REFUSED\tMASK_REFUSED\t0\t0\tthe R-409 masker refused on $n ($mk): $(head -1 "$W/$mk.maskerr")"; rm -rf "$W"; return; }
       [ "${mn:-0}" -gt 0 ] && mnote="$mnote masked:$mk=$mn"
     done
   fi
@@ -371,7 +371,7 @@ run_one() {  # suite lib prog norm run_to
     echo DIFF
   }
   # ---- m3
-  # t3/t4: each mode's own wall in decimal seconds ($EPOCHREALTIME, CEO-1676 (c)); $SECONDS read 0 for every program under a second,
+  # t3/t4: each mode's own wall in decimal seconds ($EPOCHREALTIME, R-1676 (c)); $SECONDS read 0 for every program under a second,
   # so 213 of gimpel's 290 progress rows of 2026-10-11 carried 0 and no chunk could be sized by them
   t0="${EPOCHREALTIME/,/.}"
   (cd "$d" && run_at_declared_table "$SC_DECL" "$prog" -- env SNO_LIB="$lib" "$TIMEOUT_RETRY" "$rto" "$SCRIP" $cflag --run $ca $sz "$prog" < "$in" > "$W/m3" 2>"$W/m3e"); rc=$?
@@ -521,7 +521,7 @@ cmd_run() {
   sc_prov "$prov" load_peak "${1:-0}"; sc_prov "$prov" load_mean "${2:-0}"; sc_prov "$prov" runnable_peak "${3:-0}"
   sc_prov "$prov" peers_max "${4:-0}"; sc_prov "$prov" samples "${5:-0}"; sc_prov "$prov" peers_seen "${6:--}"
   echo "DONE $(date +%H:%M:%S)"
-  . "$HERE/lib_progress.sh"; progress_append_results_tsv auto snobol4 "$out/results.tsv" || { echo "⛔ scorecard_snobol4: the progress database did not take this run's rows (see above) -- a run that leaves the table untouched is a defect of the run (progress/README.md, CEO-331)"; exit 2; }
+  . "$HERE/lib_progress.sh"; progress_append_results_tsv auto snobol4 "$out/results.tsv" || { echo "⛔ scorecard_snobol4: the progress database did not take this run's rows (see above) -- a run that leaves the table untouched is a defect of the run (progress/README.md, R-331)"; exit 2; }
   cmd_report "$out"
 }
 # ---------------------------------------------------------------- report
@@ -666,7 +666,7 @@ cmd_one() {  # <suite> <program-basename-or-path> [N]
 # distinct status from `LIVE` and a caller that mints on rc alone pins an error report as ground truth.  EMPTY is also its own
 # status and is NOT mintable: a 0-byte .ref grades "produced nothing" as correct, which is how 134 vacuous passes were nearly
 # manufactured at s191.  The three non-LIVE statuses are exactly the brief's classes (ii) and (iii).
-# A MINT ASKS THE LIVE ORACLE THROUGH util_oracle.sh (ARCH-SHARED-DEVELOPMENT 3.4, shared-dev step 8, CEO-2041): one run slot taken before the clock starts,
+# A MINT ASKS THE LIVE ORACLE THROUGH util_oracle.sh (ARCH-SHARED-DEVELOPMENT 3.4, shared-dev step 8, R-2041): one run slot taken before the clock starts,
 # timeout -k 5, the call logged; --no-cache because a ref is minted from a live run, never a replay (a SNOBOL4 program reads its -INCLUDEs and files the key
 # does not cover). An SBL override (a fixture's stand-in oracle) keeps the direct road.
 cmd_oracle() {  # <suite> <program> [outfile] -> "STATUS<TAB>rc<TAB>bytes<TAB>outfile"

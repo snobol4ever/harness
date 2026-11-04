@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 bash "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_make_fetches_a_cached_build_on_a_clean_tree.sh -- ONE BUILD PER TREE (the cto, ARCH-SHARED-DEVELOPMENT.md section 3.2, CEO-2041 step 6).
+# test_gate_make_fetches_a_cached_build_on_a_clean_tree.sh -- ONE BUILD PER TREE (the cto, ARCH-SHARED-DEVELOPMENT.md section 3.2, R-2041 step 6).
 # THE QUESTION: does `make` in a clean worktree whose tree is already in the build cache fetch the artifacts and start no compiler, and does a
 # dirty tree build locally and publish nothing? THE FIXTURE: a scratch cache under mktemp (S4E_BUILD_CACHE_DIR), seeded by `publish` from THIS
 # root's own built artifacts (so the root must be clean and fresh: a dirty or stale root REFUSES, it cannot seed a truthful entry); a detached

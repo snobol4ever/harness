@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_fpc_dialect_strings_case_else_and_builtins_answer_as_fpc.sh -- the FPC dialect's strings, case ... else and otherwise,
 # and the System routines its programs call, every arm byte-identical to fpc in the mode the program's own constructs select (rows
-# pascal-fpc-dialect-conditional-compilation-directives-case-else-... (CEO-1612) and pascal-dialects-one-switch-... (CEO-1614)).
+# pascal-fpc-dialect-conditional-compilation-directives-case-else-... (R-1612) and pascal-dialects-one-switch-... (R-1614)).
 #
 # THE FLIP POINTS ARE THE CONSTRUCTS fpc -Miso REFUSES, measured: the identifier string ("Identifier not found"), otherwise, and
 # (landed earlier) uses and unit. A program using one is in the FPC dialect and is graded against fpc's default mode (bare integers,

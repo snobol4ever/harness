@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # LADDER C rung 10b: THE DYNAMIC DATABASE -- assert, retract, clause AND abolish, in BOTH modes.
-# ⛔ WIDENED 2026-09-04 (hq_C, ceo condition 3 on the rung-10b landing). The previous version of this
+# ⛔ WIDENED 2026-09-04 (hq_C, the officer condition 3 on the rung-10b landing). The previous version of this
 # file exercised assertz plus a call and NOTHING ELSE, and it read GREEN on a tree where retract/1 and
 # clause/2 had never been lowered at all and abolish/1 answered WRONG at rc=0. A gate NAMED for the
 # dynamic database, passing while three of its four builtins are broken, is the false-green class: the

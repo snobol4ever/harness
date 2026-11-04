@@ -17,7 +17,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 set -uo pipefail
 SCRIP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
 SCRIP_BIN="${SCRIP_BIN:-$SCRIP_DIR/scrip}"
-# ⭐ RE-POINTED (ceo s283h, probe total-conversion): corpus/probe/kw is GONE -- kw_direct_read lives in
+# ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/kw is GONE -- kw_direct_read lives in
 # the kw SUITE and is materialized via the harness `extract` verb (test_arbno_witnesses.sh's idiom).
 RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"   # zero-subfolders cutover: extract by ORIGIN from the rungs
 [[ -x "$SCRIP_BIN" ]] || { echo "GATE BLOCKED: no scrip at $SCRIP_BIN"; exit 2; }

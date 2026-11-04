@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_write_term_variable_names_take_unicode_uppercase_names.sh -- write_term/2,3's variable_names(['Γβα'=V]) WRITES Γβα, AS
 # swipl DOES; ONLY A NAME THAT IS NOT A VARIABLE NAME IS domain_error(variable_name, N) (cfo 2026-10-14, row prolog-logtalk-reads-100-
-# percent-...-ceo-1689: Logtalk case_variables lgt_unicode_non_ground_compound_term_writing, red since aa994261c).
+# percent-...-r-1689: Logtalk case_variables lgt_unicode_non_ground_compound_term_writing, red since aa994261c).
 #
 # aa994261c (write_term takes partial/max_text/...) checks each variable_names name with pl_var_name_ok, which read the name with ASCII
 # isupper/isalnum, so a name whose first character is a Unicode capital (Γβα, Ölçü) raised domain_error(variable_name, 'Γβα') where

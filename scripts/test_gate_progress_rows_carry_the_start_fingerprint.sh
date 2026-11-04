@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_progress_rows_carry_the_start_fingerprint.sh -- A PROGRESS ROW NAMES THE TREE AND BINARY IT ACTUALLY
-# GRADED, AND A RUN WHOSE GROUND MOVED APPENDS NOTHING (ceo CEO-338 -> hq_T, row progress-rows-carry-the-tree-and-
+# GRADED, AND A RUN WHOSE GROUND MOVED APPENDS NOTHING (R-338 -> hq_T, row progress-rows-carry-the-tree-and-
 # binary-fingerprint-read-at-start-and-a-board-that-refuses-appends-nothing).
 #
 # THE WITNESS THIS EXISTS AGAINST: seat10 started test_corpus_snobol4.sh at 13:04 CDT; the tree pulled at 13:09 and

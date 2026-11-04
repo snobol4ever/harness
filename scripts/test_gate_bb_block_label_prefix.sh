@@ -1,5 +1,5 @@
 #!/bin/bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_bb_block_label_prefix.sh -- GATE for row bb-label-prefix-uniform (Lon 2026-08-28, widened
@@ -8,19 +8,19 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 #
 # Walks emitted TEXT-mode .s witnesses, brackets each block by its own port-label DEFINITION (the
 # "<prefix>_<greek>:" line that opens it -- alpha/beta always, gamma/omega on the graphs that emit an
-# extra transition-out-of-the-box label per Lon's spec addendum, ceo 2026-08-27 ledger), and REFUSES
+# extra transition-out-of-the-box label per Lon's spec addendum, the officer 2026-08-27 ledger), and REFUSES
 # (rc=1) on any OTHER label definition inside that span whose name does not start with that same
 # "<prefix>_<greek>" -- unless it matches the documented ALLOWLIST below.
 #
 # ⛔ THE ALLOWLIST IS NOT A CONVENIENCE, IT IS A CLAIM -- every entry cites the code that proves the
-# family is not "a point inside a block" by construction, per hq_P's framing (adopted by ceo 2026-08-29b,
+# family is not "a point inside a block" by construction, per hq_P's framing (adopted by the officer 2026-08-29b,
 # task bb-label-prefix-uniform LEDGER): a RANGE, a MODULE DATUM, or a FUNCTION is a different kind of
 # thing than a block-scoped point label, unreachable by "ALL labels in each block" no matter how the
 # scan is written. An allowlist entry with no citation is exactly the "invisible allowlist" this row's
 # own history warned the next seat about -- don't add one without updating this header AND the task
 # file's LEDGER.
 #
-# RULED (hq_P 2026-08-29, ceo-endorsed, full text in task LEDGER): the mechanism test is "a greek infix
+# RULED (hq_P 2026-08-29, officer-endorsed, full text in task LEDGER): the mechanism test is "a greek infix
 # names a PORT OF A BOX; a label with no owning box has no port, so the infix would not be redundant, it
 # would be FALSE" -- NOT a location test ("driver-level is exempt"), because that fails the next
 # borderline case. Under that test: .S/.C, .Lgvan/.Lstartup_*/.Lseala (allowlisted below) have no owning
@@ -50,7 +50,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # ⭐ THE CHAIN'S SITE LABELS AND A BOX'S CLOSE (cto 2026-10-07): the chain over the maps (6ec5871c8, ARCH-GC section 13) put a
 # recording label .Lgcsite_<fam>_<n> at every poll's return PC and a .Lgcsites_<fam>_<n> table after each graph, and this gate
 # read red on origin from then on (183 markers and 6 tables over the three witnesses). A site marker is the _bx class -- a
-# marker nothing jumps to, read as data by the site table -- and the table is a module datum beside .Lgcmap_ (CEO-1380), so
+# marker nothing jumps to, read as data by the site table -- and the table is a module datum beside .Lgcmap_ (R-1380), so
 # both are allowlisted with their citations. The checker also opened a box at its _bx marker but never closed it, so the
 # graph-level code after a box's .size (main_γ, <fam>_res, restoring g_line/g_file under .L<fam>_α_<uid>_<n> labels named
 # for the procedure) was charged to the box that closed (14 more); a box now closes at its .size. All 203 violations on

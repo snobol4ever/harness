@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_mark_walk_is_a_worklist_not_recursion_per_cell.sh -- A COLLECTOR MUST WALK A LONG DATA CHAIN ON A
 # BOUNDED C STACK (row gc-descriptor-walk-recurses-once-per-list-cell-and-overflows-the-c-stack-on-a-long-data-chain;
-# ceo ruling CEO-822, which put this row AHEAD of the F6 step-3 reporter because a divergence census that cannot run at
+# ruling R-822, which put this row AHEAD of the F6 step-3 reporter because a divergence census that cannot run at
 # all on the class that stresses the collector hardest would hand back a zero meaning NEVER MEASURED, and DARK is worse
 # than RED).
 #
@@ -56,20 +56,20 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; examined=0
 # THE ARENA AND ITS CEILINGS, PRINTED: a number is not labelled until it carries the arena it was measured at.
 # ⛔ THIS GATE PINS ITS ARENA, AND THE PIN IS DECLARED in test_gate_gc_the_tiny_arena_is_the_default_of_gc_testing.sh
-# (cto 2026-09-23, CEO-1161 routing). Its subject is the DEPTH of the mark walk over a chain that must SURVIVE, and the
+# (cto 2026-09-23, R-1161 routing). Its subject is the DEPTH of the mark walk over a chain that must SURVIVE, and the
 # chain is 600000 cells of 48 bytes (28.8 MB live by construction; the scaling arm's 1.5M cells are 72 MB). Since
-# CEO-1101 the declared size is a HARD CAP: the unset default is a 4096 KB cap and make's SCRIP_HEAP_MB=1 is 1024 KB,
+# R-1101 the declared size is a HARD CAP: the unset default is a 4096 KB cap and make's SCRIP_HEAP_MB=1 is 1024 KB,
 # and under either the chain arm dies rc=134 'heap exhausted AT THE HARD CAP' after 5962 collections with 87011 blocks
-# live -- measured 2026-09-23 on 89956530b, which is how this gate read red at CEO-1161. A mark-walk depth is not an
+# live -- measured 2026-09-23 on 89956530b, which is how this gate read red at R-1161. A mark-walk depth is not an
 # arena-dependent quantity, so the pin below names a window the witness fits and the ceilings stay the ones this gate
 # was calibrated against at the old shipped reserve. The outer KB knob is unset because gc_heap.c reads it LAST and
-# it would silently defeat the pin (CEO-1153, 33rd batch clause 6).
+# it would silently defeat the pin (R-1153, 33rd batch clause 6).
 unset SCRIP_HEAP_KB
 export SCRIP_HEAP_MB=256
 ARENA_MB="$SCRIP_HEAP_MB"
 CEIL_CHAIN=180; CEIL_SCALE=300; CEIL_WHY="PINNED arena SCRIP_HEAP_MB=$ARENA_MB (a 28.8 MB / 72 MB live chain cannot fit the 4096 KB default cap or make's 1024 KB; the pin is declared) -- the ceilings this gate was calibrated against"
 echo "ARENA SCRIP_HEAP_MB=$ARENA_MB (PINNED, declared: the witness is a 28.8 MB live chain by construction and dies rc=134 at the hard cap under the 4096 KB default and the 1024 KB make default; a mark-walk depth is not an arena-dependent quantity)"
-# ⭐ THE SANCTIONED SEAM (ceo CEO-560): a guard whose only proof of firing is doing the forbidden thing is tested
+# ⭐ THE SANCTIONED SEAM (R-560): a guard whose only proof of firing is doing the forbidden thing is tested
 # that way OR NOT AT ALL. The refusal below cannot be reached in a tick without burning 651 seconds at a 1 MB arena,
 # so the CEILING -- an instrument's clock, never the collector's behaviour -- is overridable and LOUD when it is.
 # It is also the recipe the cfo asked for: the same arm, the same program, a bigger ceiling.

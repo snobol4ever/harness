@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_index_outside_its_type_is_a_diagnosed_error.sh -- an array index outside the index-type stops the program WITH A DIAGNOSTIC
 #
-# MEASURED 2026-09-25 by hq_pascal on SCRIP f65f143e2f-runtime tree, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. PAT
+# MEASURED 2026-09-25 by hq_pascal on SCRIP f65f143e2f-runtime tree, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. PAT
 # iso7185prt1701 and iso7185prt1828 read "rejected-silently-no-diagnostic": a[11] on array [1..10] exited rc=1 and printed NOTHING, in
 # both modes. arr_get / arr_set_pure answer FAILDESCR for an index outside the block, the failure ran up every statement's omega to the
 # program's own, and main's omega is the shared emitter's bare exit(1) -- so ISO 7185 6.5.3.2's error was detected and never reported.

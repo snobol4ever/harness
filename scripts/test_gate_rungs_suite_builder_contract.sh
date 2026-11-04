@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_gate_rungs_suite_builder_contract.sh -- the DONE-WHEN of row master-suite-builder-honours-deferral-contract-and-scopes-absorption (ladder I, rank 1).
 #
-# ⭐ WHY THIS EXISTS (ceo RULING 2026-09-02 on hq_P's FINDING ff4b0aa2). util_build_rungs_suite.py is the ONLY tool that converts loose corpus files into a graded rungs, and it disagrees
+# ⭐ WHY THIS EXISTS (RULING 2026-09-02 on hq_P's FINDING ff4b0aa2). util_build_rungs_suite.py is the ONLY tool that converts loose corpus files into a graded rungs, and it disagrees
 # BY CONSTRUCTION with test_gate_suite_conversion_complete.sh, the gate that polices it: the gate ENFORCES the PENDING.md/KEEP.md deferral contract, and the builder contains ZERO references
 # to either filename. ⛔ THE GATE POLICES WHAT THE BUILDER CANNOT SEE -- so there is no supported way to convert the files the gate demands without also absorbing files deliberately deferred
 # to other seats' LIVE rows. This gate grades the four requirements the ruling named, one named FAIL line each, so a partial cure reads as a partial cure rather than as a red blob.
@@ -62,7 +62,7 @@ s="$(snap)"; S4E_HOME="$T" python3 "$B" --lang icon --zzz-not-a-flag >/dev/null 
 reset_icon; s="$(snap)"; S4E_HOME="$T" python3 "$B" --lang icon --only rung36_jcon_cxprimes --delete-absorbed >/dev/null 2>&1; rc=$?
 [ "$s" = "$(snap)" ] || { echo "FAIL C (req3): the rc=$rc refusal WROTE the rungs first -- a refusal that has already mutated shared state is not a refusal"; F=1; }
 # --- D (req 2) -- --absorb-only scopes ABSORPTION, exactly. Today --only/--family scope only what --delete-absorbed DELETES (the script says so when it refuses), so nothing narrows what is absorbed.
-# ⛔⭐⭐ THE WITNESS IS DISCOVERED AT RUNTIME, NEVER HARDCODED -- and that is the whole point of this rewrite (hq_T 2026-09-03, row reopened by ceo audit CEO-172).
+# ⛔⭐⭐ THE WITNESS IS DISCOVERED AT RUNTIME, NEVER HARDCODED -- and that is the whole point of this rewrite (hq_T 2026-09-03, row reopened by the officer audit R-172).
 # THIS ARM WENT STALE AND READ AS A BUILDER REGRESSION. It named rung36_jcon_scan,rung36_jcon_scan2 literally; corpus 2bb735c7 (2026-09-02 09:25) converted
 # both into rung36_all entries 41/42, so they stopped being loose absorbable pairs, so the builder's rc=2 became the CORRECT answer -- and an arm asserting
 # rc=0 then accused a correct tool of being broken. The reopen even named two builder commits to bisect; neither was implicated, and a bisect would have

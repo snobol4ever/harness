@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""util_container_or_library.py -- CONTAINER_OR_LIBRARY SPLIT BY MEASUREMENT, FILE BY FILE (ceo CEO-1272; CEO-700, CEO-1245, CEO-1269).
+"""util_container_or_library.py -- CONTAINER_OR_LIBRARY SPLIT BY MEASUREMENT, FILE BY FILE (R-1272; R-700, R-1245, R-1269).
 
 The UNGRADABLE class CONTAINER_OR_LIBRARY conflated two facts. This instrument measures which one a file is, from the file and
 the package around it, never from a row's prose:
 
   LIBRARY    it defines callable code (Icon procedures, SNOBOL4 DEFINEd functions, Prolog clauses) and has no entry point of its
-             own. It is a PROGRAM owed its driver: UNGRADED, class NEEDS_DRIVER, in the denominator as a named non-pass (CEO-1269).
+             own. It is a PROGRAM owed its driver: UNGRADED, class NEEDS_DRIVER, in the denominator as a named non-pass (R-1269).
   CONTAINER  it is not a compilation unit on its own. It leaves the shipped population, named in CONTAINERS.tsv with the
              measurement that makes it one -- one of six KINDs:
                INCLUDED_BY <rel>   <rel> splices it: an Icon $include, a SNOBOL4 -INCLUDE, a Prolog/Logtalk include/1, or a
@@ -15,7 +15,7 @@ the package around it, never from a row's prose:
                                    file a test opens and reads (a file of rules a test loads at run time is a library)
                LOADED_BY <rel>     <rel>'s load directive names it -- a Prolog consult, ensure_loaded, use_module, load_files or
                                    reexport (include stays INCLUDED_BY): a module of rules a program loads and is graded through,
-                                   not a program on its own (ceo CEO-1621, 2026-10-10; the harness stages it, coo cd52d401e)
+                                   not a program on its own (R-1621, 2026-10-10; the harness stages it, coo cd52d401e)
                SCAFFOLDING         every term is a directive and at least one loads or includes something: the suite's own loader; or a Prolog
                                    file of ONE clause whose body is bare '$use_<module>' goals, each a bare fact in a sibling file (a link list)
                NO_DEFINITION       it defines nothing callable and loads nothing -- declarations or data alone
@@ -298,7 +298,7 @@ def pl_scaffold_loads(mm):
 def pl_marker_list(pkg, rel, mm):
     """(n, None) when the file is ONE clause whose body is a conjunction of bare '$use_<module>' goals and every marker is a bare
     fact in a sibling file of its package -- GNU Prolog's link-time reference list (BipsPl/all_pl_bips.pl), which computes nothing and
-    names the modules a link must pull in (ceo CEO-1526); else (0, why)."""
+    names the modules a link must pull in (R-1526); else (0, why)."""
     if len(mm['terms']) != 1 or len(mm['defs']) != 1:
         return 0, 'not a single clause'
     m = re.match(r"^'(\$use_[A-Za-z0-9_]+)'\s*:-\s*(.+)$", mm['defs'][0], re.S)
@@ -347,7 +347,7 @@ def classify(pkg, rel):
             return 'CONTAINER', 'SCAFFOLDING', ('an initialization directive loads and runs the suite' if pl_scaffold_loads(mm) else 'directives alone, and they load the suite') + (' (%d helper clause(s) beside it)' % len(mm['defs']) if mm['defs'] else '')
         nmark, _why = pl_marker_list(pkg, rel, mm) if lang == 'prolog' else (0, None)
         if nmark:
-            return 'CONTAINER', 'SCAFFOLDING', 'one clause of %d bare $use_ marker goals, each a bare fact in a sibling file: a link-time reference list that computes nothing (ceo CEO-1526)' % nmark
+            return 'CONTAINER', 'SCAFFOLDING', 'one clause of %d bare $use_ marker goals, each a bare fact in a sibling file: a link-time reference list that computes nothing (R-1526)' % nmark
         ld = pkg.pl_loaders(rel) if lang == 'prolog' else []
         if (mm['defs'] or idefs) and ld:
             return 'CONTAINER', 'LOADED_BY', sorted(ld)[0]
@@ -383,7 +383,7 @@ def tsv_rows(path):
     return rows
 
 
-SPLIT_TAG = 'util_container_or_library.py, CEO-1272'
+SPLIT_TAG = 'util_container_or_library.py, R-1272'
 PROSE = {
     'INCLUDED_BY': '%s -- its include directive splices this file, which is graded through it and is not a program on its own (%s)',
     'OPENED_BY': '%s -- facts alone, named by that test outside any load directive: a data file it opens and reads (%s)',
@@ -393,12 +393,12 @@ PROSE = {
     'MULTI_PROGRAM': '%s -- several programs concatenated in one file, so it is not one compilation unit; sbl -bf stops at the first END (%s)',
 }
 HDR_CONTAINERS = """# CONTAINERS.tsv -- files this package ships that are NOT PROGRAMS: they leave the shipped population, each named with the
-# measurement that makes it one (ceo CEO-1272, 2026-09-25; split out of the retired UNGRADABLE class CONTAINER_OR_LIBRARY by
+# measurement that makes it one (R-1272, 2026-09-25; split out of the retired UNGRADABLE class CONTAINER_OR_LIBRARY by
 # SCRIP ../harness/scripts/util_container_or_library.py, which lib_inventory.sh re-runs as `verify` on every inventory -- a row whose
 # measurement no longer re-derives refuses the inventory). Columns: name<TAB>KIND<TAB>measurement. KIND is one of INCLUDED_BY,
 # OPENED_BY, LOADED_BY (the measurement's first word is the file that splices, opens or loads it), SCAFFOLDING, NO_DEFINITION,
 # MULTI_PROGRAM.
-# A LIBRARY (callable code, no entry point) is NOT a container: it is UNGRADED NEEDS_DRIVER in UNGRADED.tsv (CEO-1269).
+# A LIBRARY (callable code, no entry point) is NOT a container: it is UNGRADED NEEDS_DRIVER in UNGRADED.tsv (R-1269).
 """
 HDR_UNGRADED = """# UNGRADED.tsv -- programs this package ships that are OWED work (name<TAB>CLASS<TAB>reason; lib_inventory.sh's closed vocabulary).
 """
@@ -415,7 +415,7 @@ def split(root, apply):
         if line.strip() and not line.startswith('#') and len(c) > 1 and c[1] == 'CONTAINER_OR_LIBRARY':
             v, k, meas = classify(pkg, c[0])
             if v == 'LIBRARY':
-                libs.append('%s\tNEEDS_DRIVER\ta LIBRARY by measurement (%s): %s -- owed its driver, NAME_driver beside it (CEO-1269); was UNGRADABLE CONTAINER_OR_LIBRARY' % (c[0], SPLIT_TAG, meas))
+                libs.append('%s\tNEEDS_DRIVER\ta LIBRARY by measurement (%s): %s -- owed its driver, NAME_driver beside it (R-1269); was UNGRADABLE CONTAINER_OR_LIBRARY' % (c[0], SPLIT_TAG, meas))
             elif v == 'CONTAINER':
                 cons.append('%s\t%s\t%s' % (c[0], k, PROSE[k] % (meas, SPLIT_TAG)))
             else:
@@ -487,7 +487,7 @@ def main(argv):
         print('REFUSED(2): %s is missing' % ct, file=sys.stderr)
         return 2
     red, n = [], 0
-    # ⭐ A LIBRARY XSB's OWN RUN OPENED (ceo CEO-1927, 2026-10-23): a package whose CONTRACT.tsv names oracle=xsb-gentest records, in
+    # ⭐ A LIBRARY XSB's OWN RUN OPENED (R-1927, 2026-10-23): a package whose CONTRACT.tsv names oracle=xsb-gentest records, in
     # ORACLE_LOADS.tsv, every vendored file XSB opened while its own test scripts ran ANOTHER program (strace, util_xsb_oracle_runs.py
     # loaders). XSB loads by upstream name and by load_dyn, load_dync, `import ... from`, or a script's own run -- forms no static reading of
     # the flat package names -- so a LOADED_BY row there re-derives from that recorded measurement: its first word is one of the loaders.

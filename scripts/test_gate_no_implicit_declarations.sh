@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_no_implicit_declarations.sh -- THE TREE BUILDS WITH ALL WARNINGS OFF, SO THE COMPILER CANNOT TELL US A POINTER WAS TRUNCATED.
-# ⛔ THE MEASURED DEFECT (ceo 2026-09-18, found while sweeping the four C allocator names): src/parsers/prolog/prolog_driver.c called
+# ⛔ THE MEASURED DEFECT (2026-09-18, found while sweeping the four C allocator names): src/parsers/prolog/prolog_driver.c called
 # lp_s_expr with NO PROTOTYPE IN SCOPE, so an implicit int-returning declaration TRUNCATED THE RETURNED tree_t* TO 32 BITS. It was
 # invisible for as long as it has existed because libc's brk heap sits below 4 GiB -- and it became FATAL on the first Prolog compile
 # the moment the compile-time arena moved to mmap at 0x7ffff. Makefile line 46 is WARN := -w, and it flows into CBASE, CXXRT and all

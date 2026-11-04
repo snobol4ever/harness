@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh -- XSB's -S REACHES SCRIP AS THE ENTRY'S compile_args (the cto, CEO-2110,
+# test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh -- XSB's -S REACHES SCRIP AS THE ENTRY'S compile_args (the cto, R-2110,
 # 2026-11-01 16:3x CST, on the cao's ask in prolog-xsb-wfs-step-10): "An oracle switch is an ENTRY FACT, never a SCRIP switch: ORACLE_RUNS.tsv's
 # -S is the entry's oracle_args ... and the XSB runner hands the same fact to SCRIP's side as the entry's compile_args, so the two sides are
 # graded on the same program." XSB's sub_tests/test.sh runs 39 programs under -S (call-subsumption the tabling default); before this gate
 # only the oracle side read ORACLE_RUNS.tsv and SCRIP graded all 39 under variant tabling. scrip's driver maps -S to the program fact
-# ':- use_subsumptive_tabling.' prepended to line one (src/driver/scrip.c), so no language flag passes the driver (CEO-1838).
+# ':- use_subsumptive_tabling.' prepended to line one (src/driver/scrip.c), so no language flag passes the driver (R-1838).
 # THE POPULATION: corpus/packages/prolog/xsb_tests/ORACLE_RUNS.tsv (name, dir, kind, file, cmd, options, script) and the package's ALL.csv.
 # THE INVARIANT: an entry's compile_args carry -S exactly when its ORACLE_RUNS options carry -S; a graded entry whose oracle ran with -S and
 # whose compile_args lack it is RED by name, and so is an entry that carries -S its oracle never ran with.
@@ -42,6 +42,6 @@ for e in lack:
 for e in extra:
     print("  EXTRA -S  %s" % e)
 if lack or extra:
-    print("GATE FAIL [xsb_an_oracle_switch_is_the_entrys_compile_args]: %d entr(y/ies) graded on a program their oracle did not run (CEO-2110)" % (len(lack) + len(extra))); sys.exit(1)
+    print("GATE FAIL [xsb_an_oracle_switch_is_the_entrys_compile_args]: %d entr(y/ies) graded on a program their oracle did not run (R-2110)" % (len(lack) + len(extra))); sys.exit(1)
 print("GATE OK [xsb_an_oracle_switch_is_the_entrys_compile_args]: every one of the %d runs XSB makes with -S carries -S as its compile_args" % len(want))
 PYEOF

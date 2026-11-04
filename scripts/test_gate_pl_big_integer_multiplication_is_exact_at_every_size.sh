@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_big_integer_multiplication_is_exact_at_every_size.sh -- BIG-INTEGER MULTIPLICATION IS EXACT AT EVERY SIZE AND KARATSUBA-FAST PAST 32 LIMBS (bignum.c lmul).
-# hq_prolog 2026-09-25, CEO-1270; the cure is bignum.c big_umul: schoolbook O(n^2) at -O0 took 5.5-9 s for 7^823543 (Logtalk unbounded's four
+# hq_prolog 2026-09-25, R-1270; the cure is bignum.c big_umul: schoolbook O(n^2) at -O0 took 5.5-9 s for 7^823543 (Logtalk unbounded's four
 # 7^7^7 cases timed out at the grader's 10 s), now Karatsuba past 32 limbs with ONE scratch buffer of 4(an+bn)+256 limbs handed down the recursion
 # (a first cut allocated per node and, since the collector never runs inside a runtime call, exhausted the 128 MB heap at 2.2 M bits). 0.7 s.
 # THE ARM: 12 exact products and negated squares across the 32-limb threshold (3^E, E = 31..2500) printed in full, then two algebraic identities

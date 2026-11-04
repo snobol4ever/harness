@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_pin_sidecar_fixes_the_clock_and_entropy_for_both_participants.sh -- NAME.pin PINS THE CLOCK AND THE ENTROPY
-# FOR THE ORACLE AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315: "the clock and urandom
+# FOR THE ORACLE AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315: "the clock and urandom
 # pin wrapping the oracle in the cutter too"). About twenty IPL programs seed randomize() -- which reads /dev/urandom before the
 # clock -- or print &dateline, &clock or &time, so no two runs agree and the cutter refuses them. NAME.pin puts one LD_PRELOAD shim
 # (../harness/scripts/ipl_pin_shim.c: wall clock 1000000000, CPU time 0, /dev/urandom a fixed stream) under iconx in run_isolated and under

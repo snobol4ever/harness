@@ -3,7 +3,7 @@
 # 6.4.3.3 and fpc do: the j-th field of every later arm lives in the slot of the j-th field of the first arm, so a value stored through
 # one arm's field is the value read through another's.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. test_tprec4 and test_tprec12 (FPC; one GPC
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. test_tprec4 and test_tprec12 (FPC; one GPC
 # program, sam9) overlay an enumeration field and a subrange field in a packed variant record and store through the subrange
 # (v.f2 := 128), then read the enumeration (v.f1 = enum128): every arm's fields had a slot of their own, so the read answered the
 # value stored before.

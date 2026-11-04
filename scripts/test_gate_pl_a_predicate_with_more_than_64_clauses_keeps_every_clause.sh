@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_a_predicate_with_more_than_64_clauses_keeps_every_clause.sh -- NO FIXED LIMIT A PROGRAM CAN REACH (Lon 2026-09-23, CEO-1210).
+# test_gate_pl_a_predicate_with_more_than_64_clauses_keeps_every_clause.sh -- NO FIXED LIMIT A PROGRAM CAN REACH (Lon 2026-09-23, R-1210).
 # cto 2026-09-27, row prolog-assertz-of-500-distinct-facts-answers-64-and-takes-75-s-a-reachable-cap-and-a-whole-predicate-recompile-per-assert.
 # THE DEFECT: emit_chain (src/emitter/emit.cpp) kept the alternation trampolines of a predicate in two fixed tables of 64 labels and CLAMPED
 # n_alt to 64, so a predicate of more than 64 clauses -- static in the file, or dynamic through the whole-predicate recompile every assertz

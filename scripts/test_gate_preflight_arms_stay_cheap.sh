@@ -6,10 +6,10 @@
 # ⛔ MEMBERSHIP IS PINNED BY MEASURED DURATION, NEVER BY A PATTERN OVER THE TEXT. A static grep cannot see one
 # level of indirection: test_gate_pl_quad_regs.sh (~45s) and test_gate_capture_stdin_and_red_exit.sh (~15s) reach
 # the compiler through lib_ helpers without naming it, and a comment-stripped grep clears both.
-# ⛔⭐ A LOADED BOX IS NOT A SLOW ARM (the cfo's measurement 2026-09-24 09:2x; ceo CEO-1234; row instruments-the-cheap-preflight-
+# ⛔⭐ A LOADED BOX IS NOT A SLOW ARM (the cfo's measurement 2026-09-24 09:2x; R-1234; row instruments-the-cheap-preflight-
 # gate-reds-on-its-40-s-total-at-load-above-25-with-no-single-arm-slow-so-a-loaded-box-reads-a-false-red): at load 26-32 the 59
 # arms took 50.5 s of WALL time against the 40 s total with no arm over 5 s, so this BLOCKING arm redded for every seat on the
-# box's load, not on a slow arm -- the class CEO-1197(2) named for the death gate. Each arm is now timed for WALL and CPU (user +
+# box's load, not on a slow arm -- the class R-1197(2) named for the death gate. Each arm is now timed for WALL and CPU (user +
 # sys, which load does not inflate): CPU over its budget is RED at any load; WALL over its budget is RED only at or under the
 # declared load ceiling (PREFLIGHT_LOAD_CEILING, default the core count; the load is the highest 1-minute average read before,
 # during and after the run), and above it a WALL-only excess REFUSES rc=2 naming the load -- could not measure, never green,

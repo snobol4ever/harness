@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (CEO-547)"
-# test_gate_ceo1316_oracle_only_mask_removes_one_named_oracle_line.sh -- ceo CEO-1316 (2) (2026-09-27, on Lon's "I want to see TPgm go
-# to 8/8"): a CEO-409 mask row of the kind ORACLE-ONLY:<exact line> removes ONE line, matched by exact text, from the ORACLE's stream only,
-# counted and printed like every mask. It exists for CEO-1293's class -- an enhancement we keep that the oracle lacks (Lon: "Keep the
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (R-547)"
+# test_gate_an_oracle_only_mask_removes_one_named_oracle_line.sh -- R-1316 (2) (2026-09-27, on Lon's "I want to see TPgm go
+# to 8/8"): a R-409 mask row of the kind ORACLE-ONLY:<exact line> removes ONE line, matched by exact text, from the ORACLE's stream only,
+# counted and printed like every mask. It exists for R-1293's class -- an enhancement we keep that the oracle lacks (Lon: "Keep the
 # VALUE function we like new features"), where the oracle prints a line we never do (testpgms test1's statement-137 trap, error 22).
-# CEO-409's replace-never-delete cannot reach a line one side lacks; this kind can, and only that far: our side is never touched, so a
-# missing or extra line of ours still reds, and a row whose reason does not cite CEO-1293 is refused.
+# R-409's replace-never-delete cannot reach a line one side lacks; this kind can, and only that far: our side is never touched, so a
+# missing or extra line of ours still reds, and a row whose reason does not cite R-1293 is refused.
 #
 #   S1  shim, --side=oracle: the named line is removed, count 1          S2  --side=scrip: the stream is byte-identical, count 0
 #   S3  no side: byte-identical, count 0 (a caller that cannot say whose stream it holds can never delete)
 #   S4  a near miss (one trailing blank) is not removed                  S5  of two identical lines, exactly one is removed
-#   S6  a reason that does not cite CEO-1293 refuses rc 2
+#   S6  a reason that does not cite R-1293 refuses rc 2
 #   C1  the harness's own classify(): oracle "a b c" (b oracle-only) against ours "a c" is PASS, one line masked
 #   C2  ours "a b c" (we print the oracle-only line too) is FAIL        C3  ours "a" (a line of ours missing) is FAIL
 #   R1  the testpgms runner on a one-program fixture whose SETEXIT handler prints "TRAP 22" only under sbl (it has no VALUE), with the
 #       ORACLE-ONLY row beside it: PASS both modes, masked_lines=1
 #   R2  the same fixture with no ALL.mask: RED both modes              R3  the row naming "TRAP 23": RED both modes
-#   R4  CEO-409's majority guardrail binds this kind too: on a two-line fixture the one removed line is half, and it reds
-# FAIL_ONCE (recorded, hq_snobol4 2026-09-27): with corpus_suite_harness.py, util_apply_ceo409_mask.py and the testpgms runner as they
+#   R4  R-409's majority guardrail binds this kind too: on a two-line fixture the one removed line is half, and it reds
+# FAIL_ONCE (recorded, hq_snobol4 2026-09-27): with corpus_suite_harness.py, util_apply_line_mask.py and the testpgms runner as they
 #   stood on SCRIP 8c433e64d (this change stashed), 8 of 13 red -- S1 S2 S4 S5 (the old shim refuses --side), C1 C2 (the old
 #   classify never removes the line, so ours "a b c" passed and "a c" failed), R1 R4 (the old runner reads no mask); the cure greens all 13.
 # EXIT: 0 every arm passes . 1 an arm is red . 2 REFUSED (no oracle, stale binary, the fixture's premise moved)
@@ -31,11 +31,11 @@ gate_require_exec "$ROOT/scrip" "the scrip binary"
 gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 T="$(mktemp -d)" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: mktemp failed"; exit 2; }
 trap 'rm -rf "$T"' EXIT
-SHIM="$HERE/util_apply_ceo409_mask.py"; RUNNER="$HERE/test_snobol4_spitbol_testpgms_suite.sh"
+SHIM="$HERE/util_apply_line_mask.py"; RUNNER="$HERE/test_snobol4_spitbol_testpgms_suite.sh"
 refuse() { echo "GATE UNPROVEN(2) [$GATE_NAME]: $*"; exit 2; }
 red=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   $1"; else echo "  RED  $1 -- $3"; red=$((red+1)); fi; }
-ROW='ORACLE-ONLY:TRAP 22	CEO-1293 kept enhancement: this gate'"'"'s witness, VALUE, which sbl -bf lacks'
+ROW='ORACLE-ONLY:TRAP 22	R-1293 kept enhancement: this gate'"'"'s witness, VALUE, which sbl -bf lacks'
 
 mkdir -p "$T/s"; printf 'e\t%s\n' "$ROW" > "$T/s/ALL.mask"
 shim() { local side="$1"; shift; printf "$1" | python3 "$SHIM" "$T/s/ALL.ref" e "$T/s/n" $side; }
@@ -50,7 +50,7 @@ printf 'TRAP 22\n' | python3 "$SHIM" "$T/u/ALL.ref" e "$T/u/n" --side=oracle >/d
 cv="$(cd "$HERE" && python3 - <<'PY' 2>&1
 import importlib.util, sys
 spec = importlib.util.spec_from_file_location("h", "corpus_suite_harness.py"); h = importlib.util.module_from_spec(spec); spec.loader.exec_module(h)
-m = [(("oracle_only", "b"), "CEO-1293 kept enhancement: gate")]
+m = [(("oracle_only", "b"), "R-1293 kept enhancement: gate")]
 for tag, ours in (("C1", "a\\nc\\n"), ("C2", "a\\nb\\nc\\n"), ("C3", "a\\n")):
     v = h.classify(["printf", ours], 10, "a\nb\nc\n", mask=m)
     print(tag, v.kind, v.masked_lines)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_scan_enter_poll_never_roots_an_unestablished_subject_base.sh -- THE ONE POLL FORM THE SCAN
 # SPINE MUST NOT USE, AND THE PREMISE THAT MAKES IT WRONG, BOTH MEASURED OFF THE EMISSION (cto 2026-09-22,
-# MODE DECTET, chunk A sub-batch 4 of the standing chop; CEO-1133 ruling ONE keeps chunk A on rec_sigma).
+# MODE DECTET, chunk A sub-batch 4 of the standing chop; R-1133 ruling ONE keeps chunk A on rec_sigma).
 #
 # THE FINDING.  Chunk A's baton names x86_rt_gc_poll_rec_sigma_needle() as the candidate form for the two
 # rt_icn_subject_coerce sites in bb_gen_scan.cpp, on the reasoning that rt_scan_enter returns ScanSubjRegs {ptr,len}
@@ -66,7 +66,7 @@ fail=0; arms=0
 # (a) THE PREMISE, RE-DERIVED AT SCRIP d76ca4ead (2026-10-15): the emitted entry ESTABLISHES the scan registers before any scan runs -- exactly one
 # write to r13, lea r13, [rip + .Lscan_nil] (the empty subject, one rodata byte), and xor r15d, r15d -- so at the outermost scan r13 is a valid string
 # pointer and the length is 0, no longer the C caller's residue. The control is in the arm: the SAME reader aimed at the emission with that lea deleted
-# must report the premise gone, so a pass is a reading and not a reader that cannot fail (CEO-1680: the trip is in the instrument, never in src/).
+# must report the premise gone, so a pass is a reading and not a reader that cannot fail (R-1680: the trip is in the instrument, never in src/).
 arms=$((arms+1))
 first_enter=$(grep -n 'call *rt_icn_subject_coerce' "$W/g.s" | head -1 | cut -d: -f1)
 est_nil() {
@@ -133,9 +133,9 @@ if [ -x "$ORACLE" ]; then
     t=$(SCRIP_HEAP_KB=64 SCRIP_GC_STRESS=3 timeout -k 5 60 ./scrip "$W/g.icn" 2>/dev/null)
     r=$(cat "$W/ref.txt")
     if [ "$z" = "$r" ] && [ "$t" = "$r" ]; then
-        echo "  ok   (d) the witness answers its icont oracle identically at a 512 MB arena (the zero-collection arm, CEO-1137) and at a 64 KB arena under stress 3 with forced relocation"
+        echo "  ok   (d) the witness answers its icont oracle identically at a 512 MB arena (the zero-collection arm, R-1137) and at a 64 KB arena under stress 3 with forced relocation"
     else
-        echo "  FAIL (d) ⛔ the witness DIFFERS from its icont oracle -- zero-collection arm $([ "$z" = "$r" ] && echo agrees || echo DIFFERS), stress arm $([ "$t" = "$r" ] && echo agrees || echo DIFFERS). CEO-1137: an arm that differs where collections are ZERO is an EMISSION defect and the collector is innocent"
+        echo "  FAIL (d) ⛔ the witness DIFFERS from its icont oracle -- zero-collection arm $([ "$z" = "$r" ] && echo agrees || echo DIFFERS), stress arm $([ "$t" = "$r" ] && echo agrees || echo DIFFERS). R-1137: an arm that differs where collections are ZERO is an EMISSION defect and the collector is innocent"
         fail=$((fail+1))
     fi
 else

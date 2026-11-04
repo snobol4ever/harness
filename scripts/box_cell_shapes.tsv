@@ -1,10 +1,10 @@
 # box_cell_shapes.tsv -- THE CELL-SHAPE TABLE: the words each box kind carves on the spine at its alpha (ARCH-ZETA-ONE-COORDINATE 3.5 (iii);
-# ARCH-THREE-ZETAS-EMISSION 2 (ZALPHA) and 10 (3); the cto, CEO-1923). The planner's carve K_i is this row's alpha_words plus 16 x the spine
+# ARCH-THREE-ZETAS-EMISSION 2 (ZALPHA) and 10 (3); the cto, R-1923). The planner's carve K_i is this row's alpha_words plus 16 x the spine
 # locals first used at the box plus a disjunction's arm extra. util_gen_box_cell_shapes.py writes SCRIP/src/planner/box_cell_shapes.inc from this
 # file (--write) and refuses a stale one (--check); the planner's zd_k_own reads the generated rows. Started from zd_k_own (zeta_plan.cpp) as it
 # stood at SCRIP c22b86a9b, row for row, so the first landing is byte-identical; a switch moves a kind's state into its own carve by editing its row.
 # ROWS ARE EVALUATED TOP TO BOTTOM AND THE FIRST MATCH WINS. THE CONDITIONS OF ONE KIND'S ROWS ARE DISJOINT ACROSS REGIMES (the cfo, 2026-10-24, on the
-# ceo's 7ed02df91 finding: the Icon switch's IR_BOUND 16 home_frame row sat ahead of D3's IR_BOUND 0 pl_home and stole 23 Prolog core entries, because home_frame
+# the officer's 7ed02df91 finding: the Icon switch's IR_BOUND 16 home_frame row sat ahead of D3's IR_BOUND 0 pl_home and stole 23 Prolog core entries, because home_frame
 # and home_state were true of a Prolog home-frame graph too): a condition that names a regime (icn_*, pl_*) is true of that regime's graphs ONLY -- BCS_ICN_HOME is
 # false for a Prolog resumable callable (08efb562e, 8e3edbe62), BCS_PL_HOME false for an Icon graph -- so no row of one regime can match another regime's node
 # whatever the order; a generic condition (home_frame, home_state, has_operands, always) comes AFTER every regime row of the same kind, and row order carries no
@@ -14,7 +14,7 @@
 #   alpha_words   the bytes the box carves at its alpha, or arm_spine (the disjunction's computed arm extent, zd_dj_spine), or call_args (16 x (2 + the call's argument count), or call_argv (16 x (1 + the argument count)) or call_argv_cur (16 x (2 + the argument count)), or call_argv_rec and call_argv_cur_rec (the same plus 112), or fence_spine (planner_fence_k: 16 for a bounded body, 0 for a frame-homed record), or alt_spine (planner_alt_k: 32 plus the largest arm's live cells, 48 when an arm is unbounded), or match_frame (planner_act_extra + 56: the four saved registers and the MATCH_CTX cells BELOW the saved rbp, carved right after the box's own push rbp; the saved rbp's 8 is the pair's, not K)
 #   when          always | call_curmov (a call that moves the cursor) | call_argv (one of the eleven call kinds of bb_call_fn.cpp: direct, pl_leaf, pas_bi, callee_rec, field_rec, byname, try, method, redisp, apply, eval) | call_argv_cur (call_argv and the call moves the cursor) | call_argv_rec and call_argv_cur_rec (the same, and the call's template opens the 112-byte pending record: lower_call_node_has_rec) | icn_local (an Icon local variable read in a spine-cells graph) |
 #                 icn_suspend (an Icon suspend in a spine-cells graph) | icn_home (a home-frame graph that is not Prolog-resumable: Icon, and Raku and Pascal where a row names their kinds) | has_operands | no_operands | patv (a static PATV$ deferred pattern)
-#   word_kind     the kind of every 8-byte word of the carve, in ascending address (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16, the cto 2026-10-29, CEO-2011): a string over D (one 16-byte
+#   word_kind     the kind of every 8-byte word of the carve, in ascending address (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16, the cto 2026-10-29, R-2011): a string over D (one 16-byte
 #                 DESCR cell, whose FIRST word is the one the collector's spine walk visits) and r (one raw 8-byte word: TO's counter and limit, LIMIT's count and flag, a scan's
 #                 saved cursor, a choice header); [D] or [r] once marks the computed middle (call_args: the argument cells; alt_spine, fence_spine: raw); '-' for a carve of 0.
 #                 A numeric alpha_words and arm_spine (32) and arm_spine_hdr (64) are checked against the string's width by util_gen_box_cell_shapes.py. A node's sticky locals
@@ -46,8 +46,8 @@ IR_LIMIT_GATE	0	home_state	-	-	-	-	exp
 IR_LIMIT_GATE	32	icn_home	Drr	-	-	-	exp
 IR_BOUND	16	icn_home	rr	-	-	-	exp
 IR_MATCH_ARBNO	16	always	rr	-	-	-	the ARBNO record
-*	call_argv_cur_rec	call_argv_cur_rec	Drr[D]rrrrrrrrrrrrrr	-	-	-	a call box that moves the cursor and whose template opens a pending-trace or eval record (tweak, eval, trace pend: 112 bytes the runtime fills, lower_call_node_has_rec): the result, the cursor save, the arguments, then the record as 14 raw words (flat cell rule step 2a, CEO-2019)
-*	call_argv_rec	call_argv_rec	D[D]rrrrrrrrrrrrrr	-	-	-	a call box whose template opens a pending-trace or eval record (tweak, eval, trace pend: 112 bytes the runtime fills, lower_call_node_has_rec): the result, the arguments, then the record as 14 raw words (flat cell rule step 2a, CEO-2019)
+*	call_argv_cur_rec	call_argv_cur_rec	Drr[D]rrrrrrrrrrrrrr	-	-	-	a call box that moves the cursor and whose template opens a pending-trace or eval record (tweak, eval, trace pend: 112 bytes the runtime fills, lower_call_node_has_rec): the result, the cursor save, the arguments, then the record as 14 raw words (flat cell rule step 2a, R-2019)
+*	call_argv_rec	call_argv_rec	D[D]rrrrrrrrrrrrrr	-	-	-	a call box whose template opens a pending-trace or eval record (tweak, eval, trace pend: 112 bytes the runtime fills, lower_call_node_has_rec): the result, the arguments, then the record as 14 raw words (flat cell rule step 2a, R-2019)
 *	call_argv_cur	call_argv_cur	Drr[D]	-	-	-	a call box that moves the cursor (flat cell rule, ARCH-ZETA-LAYOUT R1, step 2a): the result at +0, the cursor save at +16 and the argument block at +32, one DESCR per operand; the call's own argument copy is a cell word, never a second carve
 *	call_argv	call_argv	D[D]	-	-	-	a call box (flat cell rule, ARCH-ZETA-LAYOUT R1, step 2a): the result at +0 and the argument block at +16, one DESCR per operand; the argument copy the callee reads is a cell word, never a second carve
 *	32	call_curmov	Drr	-	-	-	the result cell beside the moved cursor
@@ -93,7 +93,7 @@ IR_MATCH_ASSIGN_COND	0	always	-	-	-	-	a capture writes its variable
 IR_MATCH_ASSIGN_IMM	0	always	-	-	-	-	a capture writes its variable
 IR_MATCH_VALUE	0	always	-	-	-	-	the value rides the match
 IR_MATCH_ALTERNATE	alt_spine	always	[r]	-	-	-	the 32-byte record plus the uniform exit pad to its largest arm (planner_alt_k), 48 when an arm is unbounded (the record plus the beta cell)
-IR_MATCH_FENCE1	fence_spine	always	[r]	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; CEO-1938/1942)
+IR_MATCH_FENCE1	fence_spine	always	[r]	-	-	-	the fence's own 16-byte record when its body is bounded, 0 when the planner homes the record in the match frame (planner_fence_k; R-1938/1942)
 IR_MATCH_FENCE0	0	always	-	-	-	-	a fence's record is the match frame's
 IR_MATCH_ABORT	0	always	-	-	-	-	control only
 IR_MATCH_TRAP	0	always	-	-	-	-	control only

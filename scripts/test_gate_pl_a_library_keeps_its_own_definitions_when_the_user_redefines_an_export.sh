@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_library_keeps_its_own_definitions_when_the_user_redefines_an_export.sh -- A VENDORED LIBRARY RESOLVES ITS OWN CALLS IN ITS OWN MODULE (hq_snobol4, 2026-10-24; the cto's
-# ruling (a) under CEO-1964, ARCH-PROLOG-DATABASE.md section 2): every export a spliced library defines also gets a private key, its module-qualified name (dcg_basics:digit/3), every call inside
+# ruling (a) under R-1964, ARCH-PROLOG-DATABASE.md section 2): every export a spliced library defines also gets a private key, its module-qualified name (dcg_basics:digit/3), every call inside
 # a spliced library's clauses to an export of a spliced library is renamed to the defining library's private key, the exported key is a LIBRARY-kind decls entry (kind 7), and the first
 # load-time assert of a LIBRARY key takes it as the program's own, dynamic, re-pointing that key alone. So a user definition, at compile time or at load time (term_expansion), is reached by
 # every user call and by no library call, as swipl resolves a library body in its module and the user's definition in user. CELLS: the own-export arm (dcg/basics digits//1 calling its

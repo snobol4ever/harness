@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_dump_matches_spitbol.sh -- &DUMP IS SPITBOL'S DUMP, BYTE FOR BYTE, IN BOTH MODES (cfo 2026-09-08/09,
-# on the ceo's 22:2x ruling "your SNOBOL4 bug is &DUMP completeness", measured by hq_S on spitbol_testpgms test1).
+# on the officer's 22:2x ruling "your SNOBOL4 bug is &DUMP completeness", measured by hq_S on spitbol_testpgms test1).
 #
 # Before the cure SCRIP's end-of-run dump omitted every ARRAY, TABLE, DATA, PATTERN, EXPRESSION, NAME and CODE
 # value, printed null-valued variables and its own EXPR$n temps, did not wrap at 120 bytes, dumped OUTPUT under
 # its internal name, and had no &DUMP = 2 contents section at all. NOTHING GRADED EXERCISED IT (the SNOBOL4 rungs
-# never sets &DUMP), which is the regression-protection shape the ceo's 22:1x audit named -- so this gate is the
+# never sets &DUMP), which is the regression-protection shape the officer's 22:1x audit named -- so this gate is the
 # instrument: five witnesses, every expectation cut from the LIVE sbl -bf oracle at run time, never a stored ref,
 # compared byte for byte (cmp, not a line diff: the 120-byte wrap and the trailing blank lines are the point).
 #
@@ -17,9 +17,9 @@
 #   5 hash           the string hash itself: XOR of little-endian 8-byte words XOR length; ints by magnitude;
 #                    reals by bit pattern -- proved against a 1000-bucket table with integers marking every bucket
 #
-# ⛔ THE WITNESSES DECLARE THE STATEMENT INSTRUMENTATION, --stlimit, ON BOTH SCRIP COMMAND LINES (coo 2026-09-27, ceo CEO-1306, swept
+# ⛔ THE WITNESSES DECLARE THE STATEMENT INSTRUMENTATION, --stlimit, ON BOTH SCRIP COMMAND LINES (coo 2026-09-27, R-1306, swept
 # from hq_snobol4; RULES.md 8 (f)): a dump prints &LASTFILE, &LASTLINE, &LASTNO and &LINE, SPITBOL always tracks them, and SCRIP
-# tracks them only under the switch since statement tracking went opt-in (CEO-1243). Typed nowhere, the four dumped blank or zero
+# tracks them only under the switch since statement tracking went opt-in (R-1243). Typed nowhere, the four dumped blank or zero
 # and the gate read red on origin 81aa23aff, a false red: hq_snobol4 measured all four byte-identical to sbl -bf once the switch is
 # on, in both modes. This is a gate's own witness, so the gate declares it (arm R of the compile_args ratchet exempts gates). And the
 # oracle comes from lib_oracle_flags.sh's sbl_correctness_bin, never a hand-assembled path.

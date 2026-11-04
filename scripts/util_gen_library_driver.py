@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_gen_library_driver.py -- THE DRIVER GENERATOR (ceo CEO-706 -> hq_B, rank 0, 2026-09-13).
+"""util_gen_library_driver.py -- THE DRIVER GENERATOR (R-706 -> hq_B, rank 0, 2026-09-13).
 
 WHY THIS EXISTS. 1,223 rows fleet-wide were filed as "cannot be graded" and only ~130 genuinely are.
 The largest class is CONTAINER_OR_LIBRARY -- a library module with no entry point, which no runner can
@@ -211,8 +211,8 @@ def enumerate_prolog(path, own=True, seen=None):
             procs.append(Proc(m.group(1), [f"A{i+1}" for i in range(len(args))], [], path.name, own))
     return procs
 
-# A SNOBOL4 include library ships as NAME.inc or NAME.INC (Lon 2026-09-14, "Change the *.sno to *.inc", CEO-1274/1315): gimpel's
-# 120 libraries and include/'s four; since 2026-09-27 gimpel is Catspaw's SPITBOL form, name.inc libraries and name.spt programs (CEO-1319).
+# A SNOBOL4 include library ships as NAME.inc or NAME.INC (Lon 2026-09-14, "Change the *.sno to *.inc", R-1274/1315): gimpel's
+# 120 libraries and include/'s four; since 2026-09-27 gimpel is Catspaw's SPITBOL form, name.inc libraries and name.spt programs (R-1319).
 # lang_of lowers the suffix, so one key reads both spellings; the driver is still NAME_driver.sno.
 LANGS = {".sno": ("snobol4", enumerate_snobol4), ".inc": ("snobol4", enumerate_snobol4), ".spt": ("snobol4", enumerate_snobol4), ".icn": ("icon", enumerate_icon),
          ".pl": ("prolog", enumerate_prolog), ".sc": ("snocone", enumerate_snobol4)}
@@ -265,7 +265,7 @@ def guess_args(lang, proc):
 def skeleton_snobol4(module, procs, max_procs):
     own = [p for p in procs if p.own]
     chosen = own[:max_procs] if max_procs else own
-    L = [f"*  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, CEO-706).",
+    L = [f"*  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, R-706).",
          f"*  ⛔ THIS IS A FIRST DRAFT A HUMAN FINISHES. Every argument value below is GUESSED from the",
          f"*  formal parameter NAME, not from the module's contract. Read {module.name}'s own header,",
          f"*  fix the values, and widen the coverage line before this driver is called a witness.",
@@ -284,7 +284,7 @@ def skeleton_snobol4(module, procs, max_procs):
 def skeleton_icon(module, procs, max_procs):
     own = [p for p in procs if p.own]
     chosen = own[:max_procs] if max_procs else own
-    L = [f"#  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, CEO-706).",
+    L = [f"#  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, R-706).",
          f"#  ⛔ A FIRST DRAFT A HUMAN FINISHES -- argument values are guessed from formal names.",
          f"#  COVERAGE: {len(chosen)} of {len(own)} procedure(s) defined in {module.name} are exercised."]
     for p in chosen:
@@ -301,7 +301,7 @@ def skeleton_icon(module, procs, max_procs):
 def skeleton_prolog(module, procs, max_procs):
     own = [p for p in procs if p.own]
     chosen = own[:max_procs] if max_procs else own
-    L = [f"%  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, CEO-706).",
+    L = [f"%  {module.stem}_driver -- GENERATED SKELETON (util_gen_library_driver.py, R-706).",
          f"%  ⛔ A FIRST DRAFT A HUMAN FINISHES -- every argument below is an UNBOUND VARIABLE, which is",
          f"%  the honest guess for a predicate whose modes this tool cannot read. Bind them per the",
          f"%  module's own documentation before calling this a witness.",
@@ -330,9 +330,9 @@ def oracle_once(suite, driver, outfile):
     ✅ THE DOOR IS OPEN AND THE OVERRIDE IS GONE (the coo, SCRIP 26b19872b, 2026-09-13). scorecard_snobol4.sh
     guards PER VERB now: `run` and `report` are boards and keep the refusal, while `one` and `oracle` grade ONE
     named program, write no results.tsv, publish no board and write no SCORE row -- so they pass. That is the
-    guard's own criterion finally applied to itself (CEO-547 part 1, quoted in lib_one_runner.sh: WHAT MAKES A
+    guard's own criterion finally applied to itself (R-547 part 1, quoted in lib_one_runner.sh: WHAT MAKES A
     RUN A BOARD IS THE POPULATION IT GRADES, NOT THE ENTRY POINT).
-    ⛔ WHY TAKING THE OVERRIDE OFF MATTERS MORE THAN THE TWO LINES IT DELETES: at CEO-706 scale this call runs
+    ⛔ WHY TAKING THE OVERRIDE OFF MATTERS MORE THAN THE TWO LINES IT DELETES: at R-706 scale this call runs
     hundreds of times, and A LOUD CHANNEL USED 900 TIMES IS A QUIET CHANNEL -- the next seat who genuinely
     overrides a BOARD would have been one indistinguishable line in the same stream. It also put a line on
     stdout AHEAD of the status TSV and so invented a parsing contract: every caller had to read the LAST
@@ -724,7 +724,7 @@ def cmd_inventory(a):
     ⛔ A row whose file is GONE is reported, never skipped: a ruling about a file nobody can find is a row
     that can never close, and it is invisible to every count that silently drops it."""
     root = Path(a.package).resolve()
-    # ⛔ THE LIBRARIES LIVE IN UNGRADED.tsv NOW (ceo CEO-1272, coo 2026-09-25): CONTAINER_OR_LIBRARY is retired, every row of it
+    # ⛔ THE LIBRARIES LIVE IN UNGRADED.tsv NOW (R-1272, coo 2026-09-25): CONTAINER_OR_LIBRARY is retired, every row of it
     # split by measurement -- a library to UNGRADED.tsv as NEEDS_DRIVER, the population this generator exists to drive, and a
     # non-program to CONTAINERS.tsv. So the default cause is NEEDS_DRIVER, and the rows are read from both sidecars.
     invs = [p for p in (root / "UNGRADED.tsv", root / "UNGRADABLE.tsv") if p.is_file()]

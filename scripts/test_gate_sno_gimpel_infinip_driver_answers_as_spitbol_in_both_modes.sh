@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_gate_sno_gimpel_infinip_driver_answers_as_spitbol_in_both_modes.sh -- the witness of the Gimpel regression the ceo
-# rowed at CEO-1776: corpus packages/snobol4/gimpel/infinip_driver.sno (the grading vehicle of infinip.spt, CEO-1269) printed
+# test_gate_sno_gimpel_infinip_driver_answers_as_spitbol_in_both_modes.sh -- the witness of the Gimpel regression the officer
+# rowed at R-1776: corpus packages/snobol4/gimpel/infinip_driver.sno (the grading vehicle of infinip.spt, R-1269) printed
 # the oracle's answer in both modes at SCRIP 2781bf6e4 (Gimpel 145/145) and at 6b9c1519f mode 4 aborts rc 134 in the
 # collector: "[GC-CHAIN] REFUSED: the chain over the maps stops short (top-above-segment) after 1 frame(s)". The ref is CUT
 # FROM THE ORACLE at run time (sbl -bf in the package directory, as the board runs it), never typed; mode 3 is the control
-# arm, mode 4 is linked the way the harness grades (PIE, CEO-1536). rc 0 both arms equal the oracle / 1 an arm diverged /
+# arm, mode 4 is linked the way the harness grades (PIE, R-1536). rc 0 both arms equal the oracle / 1 an arm diverged /
 # 2 could not measure (no scrip, no runtime, no oracle, no corpus, or the oracle refused its own witness).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

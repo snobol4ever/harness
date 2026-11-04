@@ -10,7 +10,7 @@
 # taking BOTH fields from the immediate and never consulting fn. A .s artifact baked under one numbering and
 # linked against a libscrip_rt.so built under another dispatches A DIFFERENT BUILTIN with no diagnostic.
 #
-# builtin-table step 1 (CEO-2016): the 190 names now live in the GENERATED src/runtime/builtin_table.h as bt_legacy_tab (the same nm, len, id fields, BT_LEGACY_TABSZ slots), bid_of IS bt_bid_legacy; this gate reads that table.
+# builtin-table step 1 (R-2016): the 190 names now live in the GENERATED src/runtime/builtin_table.h as bt_legacy_tab (the same nm, len, id fields, BT_LEGACY_TABSZ slots), bid_of IS bt_bid_legacy; this gate reads that table.
 # ⛔ WHAT THIS GATE DOES AND DOES NOT COVER, said plainly so nobody reads it as more than it is. It pins the
 # TABLE: every name round-trips through the REAL bid_of to its own id, every stored len equals the real
 # strlen, no two names share an id, and the entry count never falls below the floor. It does NOT validate a
@@ -28,7 +28,7 @@
 # floor below is what turns that from a silent 95% deletion into a red arm.
 #
 # ⭐ AND BID_LAST IS THE LARGEST ID (coo 2026-09-25, row snobol4-g-bn-direct-is-indexed-by-a-baked-builtin-id-...,
-# ceo CEO-1270): builtin_ids.h asserts at compile time that BID_LAST < BID_TABSZ, because rtx_misc.s indexes the
+# R-1270): builtin_ids.h asserts at compile time that BID_LAST < BID_TABSZ, because rtx_misc.s indexes the
 # BID_TABSZ-row g_bn_direct (0f560a28e) by the baked id masked 0x3FFF, so an id past 1023 would read outside it
 # instead of failing to build. The assertion is only as good as BID_LAST, and this checker holds BID_LAST to the
 # largest id the table actually carries -- a hand-added builtin that forgets to move it reds here.

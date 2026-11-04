@@ -22,7 +22,7 @@ go stale in the flattering direction the first time a case moved directories.
 
 ⭐⭐ --strict IS ARMED AGAINST THE CLAIM AND NOT AGAINST THE WORK (cto ruling to hq_C, 2026-09-13). A big-bang
 --strict over the grading path would have stopped 40 live rows across two lanes in order to remove a false
-confidence nobody was acting on -- a cure that trades one thing for another, which CEO-589 forbids in the
+confidence nobody was acting on -- a cure that trades one thing for another, which R-589 forbids in the
 suite and which is no better as process. So an unwitnessed group stays WORKABLE and stays able to read
 GREEN; what it loses is the right to be DECLARED DONE. A seat may cure every case in compare_3 and read
 30 of 30; it may not record compare_3 as a family closed, because nothing in that population could have

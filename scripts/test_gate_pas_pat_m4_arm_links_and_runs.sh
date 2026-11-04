@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_pat_m4_arm_links_and_runs.sh -- the PAT rejection arm's m4 column may never go back to compile-only
 #
-# WHY THIS GATE EXISTS (hq_pascal 2026-09-16, cfo ruling with the ceo copied, row pascal-pat-suite-427-to-100-percent-by-class).
+# WHY THIS GATE EXISTS (hq_pascal 2026-09-16, cfo ruling with the officer copied, row pascal-pat-suite-427-to-100-percent-by-class).
 # test_pascal_pat_suite.sh graded its REJECTION arm's m4 column with `--compile --out=/dev/null`, which only COMPILES. A
 # rejection test whose ISO condition fires at RUN time therefore could never fail that arm, so the m4 column did not mean
 # "refused in m4", it meant "refused AT COMPILE TIME in m4", and both_pass was floored by the instrument rather than by
@@ -9,7 +9,7 @@
 # both_pass=296 m4_pass=296 m4_fail=131. TWELVE entries changed class, ZERO went the other way.
 #
 # ⛔ THIS GATE IS NOT A BOARD AND MUST NEVER BECOME ONE. It grades its OWN minted fixture in a mktemp dir, never the
-# vendored PAT population, so it carries no one-runner guard and any seat may run it (CEO-547: the population decides).
+# vendored PAT population, so it carries no one-runner guard and any seat may run it (R-547: the population decides).
 #
 # THE TWO ARMS:
 #  (1) STRUCTURAL -- the runner's m4 rejection arm must link and run, and must not grade with `--compile --out=/dev/null`.

@@ -2,7 +2,7 @@
 # test_gate_pl_a_directive_name_before_an_infix_operator_is_an_atom.sh -- the twelve directive names the Prolog parser reads as
 # prefix declarations (dynamic discontiguous multifile module_transparent meta_predicate use_module ensure_loaded table
 # thread_local public record mode) are ATOMS when an infix operator follows them, and declarations everywhere else, both modes
-# (row prolog-a-directive-name-before-an-infix-operator-is-an-atom-so-use-module-slash-1-parses, minted by the ceo 2026-10-02 from
+# (row prolog-a-directive-name-before-an-infix-operator-is-an-atom-so-use-module-slash-1-parses, minted by the officer 2026-10-02 from
 # the Logtalk 3.103.0-b01 run: nine lines of Logtalk's core.pl died on X = f(use_module/1) with "expected ) to close argument list").
 #
 # THE CURE (src/parsers/prolog/prolog_parse.c, the TK_ATOM case's directive-name block): the block's own token-kind list is replaced

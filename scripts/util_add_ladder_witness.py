@@ -64,7 +64,7 @@ ORACLE = {
     "snobol4": ["/home/resources/x64/bin/sbl", "-bf"],  # THE one SNOBOL4 oracle (Lon 2026-09-07/08, RULES sec
     "snocone": ["/home/resources/x64/bin/sbl", "-bf"],  # ⛔ NOT RUNNABLE ON THE WITNESS -- see SNOCONE SUPPORT below
     "raku": ["/home/resources/rakudo-local/bin/raku"],  # Rakudo 2026.05, the ONE Raku oracle (rakudo_bin() in lib_oracle_flags.sh
-    "prolog": ["/usr/bin/swipl", "-q", "-t", "halt"],  # THE SWI-Prolog oracle, swipl_bin() in lib_oracle_flags.sh; -q -t halt: the witness's own initialization(main) runs once and no toplevel is entered (cto, CEO-1959)
+    "prolog": ["/usr/bin/swipl", "-q", "-t", "halt"],  # THE SWI-Prolog oracle, swipl_bin() in lib_oracle_flags.sh; -q -t halt: the witness's own initialization(main) runs once and no toplevel is entered (cto, R-1959)
     "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],
     "unicon": [str(HERE / "unicon_oracle_run.sh")],  # the coo 2026-11-04 (Lon: "do the RUNGS for Unicon"): a Unicon rung's ref is cut by the Unicon translator through unicon_bin() (icon skill R2); selected by --oracle unicon on an icon witness  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
 }
@@ -73,7 +73,7 @@ ORACLE = {
 # -b manufactures phantom duplicate labels that walk into a crashing error path. sbl_correctness_bin() +
 # sbl_lang_flags() in lib_oracle_flags.sh are the shell-side authority for the same two facts.
 #
-# ⛔⭐ SNOCONE SUPPORT IS A TWIN, NOT A BINARY (hq_I 2026-09-13, granted CEO-672). Snocone is the one language
+# ⛔⭐ SNOCONE SUPPORT IS A TWIN, NOT A BINARY (hq_I 2026-09-13, granted R-672). Snocone is the one language
 # here with NO oracle that can read its own source: SPITBOL cannot parse a .sc file at all -- measured, a
 # one-line witness gives ERROR 221 syntax error missing operand and then "No END statement found in source
 # file(s)", because Snocone uses semicolon terminators, slash-slash and slash-star comments, struct, and
@@ -88,14 +88,14 @@ ORACLE = {
 # through the twin reproduced the ALREADY-GREEN stored refs of ladder__rung00_hello and
 # ladder__rung02_arithmetic BYTE-FOR-BYTE. A ref-cutting method that cannot reproduce a known-good ref has
 # no business cutting a new one.
-# ⛔⛔ CEO-672'S CONDITION IS ENFORCED HERE, NOT LEFT TO CARE: a twin is a TRANSLITERATION, or the
+# ⛔⛔ R-672'S CONDITION IS ENFORCED HERE, NOT LEFT TO CARE: a twin is a TRANSLITERATION, or the
 # equivalence is NAMED IN THE WITNESS, one line, at the site. An equivalence twin passed off as a
-# transliteration is a ref we cut ourselves wearing the oracle's name, which CEO-548 forbids. The check is
+# transliteration is a ref we cut ourselves wearing the oracle's name, which R-548 forbids. The check is
 # structural (significant-line counts must match) and it REFUSES rather than warns; --twin-equivalence
 # declares the difference and writes it into the witness as a comment, so the next reader sees it at the
 # code rather than in a commit message. The known instance is chained_multi_assign: SPITBOL has no chained
 # assignment, so its twin is three separate assignments with identical output.
-# ⭐ SNOBOL4 SUPPORT (ceo 2026-09-08, walking snobol4-ladder-every-feature-in-isolation-with-variations, whose
+# ⭐ SNOBOL4 SUPPORT (2026-09-08, walking snobol4-ladder-every-feature-in-isolation-with-variations, whose
 # forms check reported 131 declared slots with no witness across rungs 14-33): every language-specific fact
 # below is TAKEN FROM AN EXISTING AUTHORITY rather than re-derived here -- the feature columns and the entry
 # name come from util_build_rungs_suite.py's own COLS/NAME_FEATURES tables (the builder writes ALL.csv, so
@@ -114,9 +114,9 @@ SPECIAL_ORDER = ["scan", "alternation", "element_gen", "limitation", "to_by", "a
 FLAG_ORDER = SIMPLE_WORDS + SPECIAL_ORDER
 assert len(FLAG_ORDER) == 62, len(FLAG_ORDER)
 FIXED = ["rank", "entry", "origin", "family", "kind", "xfail", "n_lines"]
-# ⛔⭐ THE ATTRIBUTE ROW CARRIES THE TEST UNIT'S COMMAND LINE (Lon 2026-09-26, RULES.md hard-cap rule clause 8 (f), CEO-1281):
+# ⛔⭐ THE ATTRIBUTE ROW CARRIES THE TEST UNIT'S COMMAND LINE (Lon 2026-09-26, RULES.md hard-cap rule clause 8 (f), R-1281):
 # heap_kb, stack_kb, compile_args and run_args are declared on EVERY rungs row, and a witness this tool mints is a test unit
-# like any other. It left all four BLANK (ceo CEO-1323, on hq_snocone's entry 1994 filled by hand), so the runner graded the
+# like any other. It left all four BLANK (R-1323, on hq_snocone's entry 1994 filled by hand), so the runner graded the
 # new witness under a default it never declared. The values are never baked here: they are READ from the rungs' own ladder
 # rows (the convention every ladder row carries, 131072 / 4096 / --stlimit / empty run_args on the SNOBOL4-family rung suites),
 # an explicit --heap-kb/--stack-kb/--compile-args/--run-args overrides, and a column the ladder rows disagree on REFUSES.
@@ -252,7 +252,7 @@ def lang_schema(lang, rows):
     its compiled-in assertion (its 61 columns are this script's own contract); every other language takes the
     builder's own flag columns as the header names them, because the builder owns that header and a second copy
     of it here would drift. The four attribute columns (heap_kb, stack_kb, compile_args, run_args) are filled by
-    ladder_convention() from the rungs' own ladder rows (CEO-1323); any other column this tool does not derive
+    ladder_convention() from the rungs' own ladder rows (R-1323); any other column this tool does not derive
     is left BLANK on the new row and the dry-run names it."""
     if not rows:
         refuse("%s rungs ALL.csv has no rows -- nothing to derive a schema from" % lang)
@@ -366,7 +366,7 @@ def main():
                     help="one line naming WHY the twin is not a transliteration (e.g. 'SPITBOL has no "
                          "chained assignment; the twin is three assignments with identical output'). "
                          "Written into the witness as a comment. Required when the twin's significant-line "
-                         "count differs from the witness's -- CEO-672.")
+                         "count differs from the witness's -- R-672.")
     ap.add_argument("--first-in-rung", action="store_true",
                     help="this witness is deliberately the FIRST for its rung (rungs 24-33 are all brand new); "
                          "everything is derived from --source, so no sibling is needed -- the flag exists so a "
@@ -452,7 +452,7 @@ def main():
             twin_lines = twin_path.read_text(encoding="utf-8").splitlines()
         except UnicodeDecodeError as e:
             refuse("--oracle-twin is not valid UTF-8: %s" % e)
-        # ⛔ CEO-672: TRANSLITERATION OR DECLARED EQUIVALENCE, no third option. `significant` drops blanks,
+        # ⛔ R-672: TRANSLITERATION OR DECLARED EQUIVALENCE, no third option. `significant` drops blanks,
         # comments and SNOBOL4's END, so the comparison is between the two programs' actual statements.
         def _sig(lines, is_twin):
             out = []
@@ -465,11 +465,11 @@ def main():
             return out
         n_w, n_t = len(_sig(sno_lines, False)), len(_sig(twin_lines, True))
         if n_w != n_t and not args.twin_equivalence:
-            refuse("TWIN IS NOT A TRANSLITERATION and no --twin-equivalence was given (CEO-672): the witness "
+            refuse("TWIN IS NOT A TRANSLITERATION and no --twin-equivalence was given (R-672): the witness "
                    "has %d significant line(s) and the twin has %d. Either make the twin a line-for-line "
                    "transliteration, or pass --twin-equivalence naming why it cannot be -- an equivalence "
                    "twin passed off as a transliteration is a ref we cut ourselves wearing the oracle's "
-                   "name (CEO-548)." % (n_w, n_t))
+                   "name (R-548)." % (n_w, n_t))
         if args.twin_equivalence:
             # ⭐ NAMED AT THE SITE, not in a commit message: the note goes into the witness itself, so the
             # next reader meets it beside the code rather than in history they have no reason to open.
@@ -547,7 +547,7 @@ def main():
                "defect in this tool or in the harness, not in the rungs: refusing to trust either with a "
                "real write. Diff the .rtcheck pair to see what moved.")
 
-    # ⛔⭐ A MINT LANDS THE ENTRY IN THE BUILDER'S ORDER, SO THE RUNGS MUST ALREADY BE IN IT (CEO-2019, the SnoRungs order gate red at 880 of 2189
+    # ⛔⭐ A MINT LANDS THE ENTRY IN THE BUILDER'S ORDER, SO THE RUNGS MUST ALREADY BE IN IT (R-2019, the SnoRungs order gate red at 880 of 2189
     # with nine dotnet harvests at the tail). This tool used to APPEND and leave the sort to a --resort nobody ran after a harvest, so every
     # mint broke `rank <= N` selects the greenest N until someone resorted. It now places the new entry by the builder's key after the
     # write (below); that moves ONLY the new entry when everything else is already in order, and when it is not the tool refuses here
@@ -670,7 +670,7 @@ def main():
         tmp_w.replace(w_path)
         print("  wrote ALL.wantrc: %s\t%d" % (entry_name, want_rc))
 
-    # ── PLACE THE ENTRY BY THE BUILDER'S KEY (CEO-2019). The write above APPENDED (its prefix proofs need that); the builder's own
+    # ── PLACE THE ENTRY BY THE BUILDER'S KEY (R-2019). The write above APPENDED (its prefix proofs need that); the builder's own
     # resort_rungs now moves the new entry to its place -- the one authority for the order, content-invariant by its own proofs, and
     # it rewrites ALL.csv's ranks and the banner numbers (ALL.<ext>, ALL.ref, ALL.in) positionally as it does for any resort. The base
     # was proved in order above, so the only entry that can move is the new one; anything else moving is refused and rolled back.
@@ -689,7 +689,7 @@ def main():
                           str(rungs_src), str(rungs_ref), entry_name, str(check_src),
                           "--out-ref", str(check_ref)], capture_output=True, text=True)
     # ⛔⭐ THE EXPECTATION IS RECONSTRUCTED FROM THE LINES THE RUNGS STORES, NEVER FROM rstrip (hq_V,
-    # 2026-09-09, on the FIRST rung minted for CEO-445). It was `ref_text.rstrip("\n") + "\n"`, which
+    # 2026-09-09, on the FIRST rung minted for R-445). It was `ref_text.rstrip("\n") + "\n"`, which
     # collapses ANY run of trailing newlines to exactly one -- so a witness whose ORACLE OUTPUT LEGITIMATELY
     # ENDS IN A BLANK LINE could never pass its own proof: the rungs stores lines (`ref_text.splitlines()`),
     # the extractor faithfully returns the blank one, and the comparison had just stripped it. ⭐ NOTHING WAS

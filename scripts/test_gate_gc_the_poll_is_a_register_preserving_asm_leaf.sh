@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_poll_is_a_register_preserving_asm_leaf.sh -- THE SAFE-POINT POLL IS AN ASM LEAF, AND IT PRESERVES EVERY REGISTER IT TOUCHES.
 #
-# THE RULE (Lon 2026-09-22, in-chat to the ceo, verbatim: "Why not make the poll an ASM call instead of a C call? It is big?"; ceo CEO-1105).
+# THE RULE (Lon 2026-09-22, in-chat, verbatim: "Why not make the poll an ASM call instead of a C call? It is big?"; R-1105).
 # The C rt_gc_poll is 43 instructions at -O0 and pays for a frame, an %fs:0x28 stack-protector canary load AND verify, and a GOT hop, all to
 # test two flags. Worse than its size: it is a C function, so by the SysV ABI it may clobber rax rcx rdx rsi rdi r8-r11 -- which is WHY the site
 # helper family spills and reloads around it (x86_rt_gc_poll_res is 7 instructions AT THE SITE, _rec_sigma ~14, _rec_sigma_pair ~20, against
@@ -66,7 +66,7 @@ NPUSH=$(printf '%s\n' "$SBODY" | grep -o 'pushq' | wc -l); FLOOR=$(printf '%s\n'
 [ "$FLOOR" = "$(( NPUSH * 8 + SPILL ))" ]
 ck $? "the slow path hands the collector the ENTRY rsp as its walk floor -- COMPUTED, not a literal: leaq $FLOOR(%rsp) == 8 x $NPUSH pushes + $SPILL bytes of own spill, so the caller's spilled cells stay INSIDE the swept range and everything this leaf saved for itself stays OUTSIDE it. ⛔ THE LITERAL 72 WAS THE WRONG KEY and it red on a correct landing: the cfo's subject probe added a 16-byte slot below the floor, the floor moved to 88 and the property never changed"
 printf '%s\n' "$SBODY" | grep -qE 'movq +%r13, *\(%rsp\)'; ck $? "THE SUBJECT REGISTER IS HANDED TO THE COLLECTOR, NOT MERELY PRESERVED (cfo 2026-09-22): the slow path spills r13 into its own slot below the floor"
-printf '%s\n' "$SBODY" | grep -qE 'movq +%rsp, *%rdx'; ck $? "and passes that slot's ADDRESS as r0, the saved-subject word (CEO-972's road, the one rt_gc_point_arr in rt_asm_helpers.S has always used)"
+printf '%s\n' "$SBODY" | grep -qE 'movq +%rsp, *%rdx'; ck $? "and passes that slot's ADDRESS as r0, the saved-subject word (R-972's road, the one rt_gc_point_arr in rt_asm_helpers.S has always used)"
 printf '%s\n' "$SBODY" | grep -qE 'movl +\$1, *%r8d'; ck $? "with is_probe=1, so gc_point_arr_body visits the word ONLY if it aliases the subject or scan_subj and IGNORES it silently otherwise -- an exact alias test, never a guess, which is why this is safe at all 105 bare-poll sites where spraying x86_rt_gc_poll_rec_sigma would have tagged a frame display register as DT_S"
 printf '%s\n' "$SBODY" | grep -qE 'movq +\(%rsp\), *%r13'; ck $? "AND IT RELOADS r13 FROM THE SLOT after the call rather than popping a saved copy -- the difference between a relocation picked up and a pre-move address restored (ARCH-GC 6.2j's standing rule: a register the collector rewrites is fixed in place or reloaded from its authority, never restored raw)"
 printf '%s\n' "$SBODY" | grep -qE 'call +gc_point_arr_body'; ck $? "the slow path calls the collector body DIRECTLY, not through rt_gc_point_arr_c's -O0 argument spill-and-reload shim"

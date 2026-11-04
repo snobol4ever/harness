@@ -2,7 +2,7 @@
 # test_gate_pas_a_nil_or_undefined_pointer_is_never_dereferenced.sh -- ISO 7185 6.5.4: it is an error if the pointer-variable of an
 # identified-variable denotes nil or is undefined
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. Every Pascal dereference arm in
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. Every Pascal dereference arm in
 # by_name_dispatch.c (__pas_deref, __pas_deref_set, __pas_field_set, __pas_nrec_pfield_set, __pas_field_idx_set, __pas_nrec_deref_set)
 # answered a nil, never-assigned or disposed pointer by silently reading 0 or dropping the store, so PAT iso7185prt1703 (nil) and 1704
 # (undefined) ran to rc 0. NO BRACKET: fpx has no event for a dereference that should not happen -- the defect is an absent error. The

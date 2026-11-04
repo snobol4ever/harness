@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_fanout_width_reads_cpu_pressure_not_load1.sh -- THE FAN-OUT WIDTH READS THE MACHINE'S CPU DEMAND, NEVER load1 (ceo CEO-1394 on
+# test_gate_fanout_width_reads_cpu_pressure_not_load1.sh -- THE FAN-OUT WIDTH READS THE MACHINE'S CPU DEMAND, NEVER load1 (R-1394 on
 # the coo's COO-241 measurement; row instruments-the-fan-out-width-reads-cpu-pressure-or-procs-running-never-load1-which-coexpression-thread-
 # bursts-inflated-to-1219-at-3-percent-cpu). MEASURED CAUSE: at 2026-10-01 15:00 CDT load1 read 1219 while PSI cpu read 3 percent (three SCRIP
 # Icon programs each held 8k to 16k co-expression pthreads), and lib_fanout.sh's max(2, min(4, cores - load1)) put every fan-out on the box at

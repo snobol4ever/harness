@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_augmented_scan_over_an_alternation.sh -- `every (a | b) ?:= e` evaluates its lvalue ONCE per variable (ceo CEO-633).
+# test_gate_icn_augmented_scan_over_an_alternation.sh -- `every (a | b) ?:= e` evaluates its lvalue ONCE per variable (R-633).
 #
 # MEASURED 2026-09-12 on 4faf4ed6b: `every text | comments ?:= { move(1); tab(0) }` (IPL procs/adlutils.icn nextadd, the
 # idiom that strips a leading newline from two variables) left text "" and comments "" in BOTH modes where icont leaves "abc"

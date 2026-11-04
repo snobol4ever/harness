@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_instrument_censuses_are_wired_and_trip.sh -- THE COLLECTOR GUESSES NOTHING: THE INSTRUMENTS ARE WIRED,
 # THEY TRIP, AND THE COUNTS ONLY FALL (coo 2026-09-17; row gc-instruments-the-safe-point-census-the-maps-census-and-
-# scrip-gc-coverage-words-scanned-zero-are-wired-gates; CEO-812 the law, CEO-818/819 section 7 F6 step 6).
+# scrip-gc-coverage-words-scanned-zero-are-wired-gates; R-812 the law, R-818/819 section 7 F6 step 6).
 #
 # WHAT THIS GATE IS FOR.  The five censuses are RED today and stay red until the design lands -- that is the point of
 # them, and it is exactly why they cannot grade themselves.  A census that reports success while counting nothing is

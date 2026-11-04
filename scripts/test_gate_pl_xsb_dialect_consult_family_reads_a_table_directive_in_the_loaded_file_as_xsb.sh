@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh -- THE RUN-TIME LOADER OF THE XSB DIALECT READS :- table IN THE FILE IT LOADS (ceo CEO-2005, DESIGN-PLAN
+# test_gate_pl_xsb_dialect_consult_family_reads_a_table_directive_in_the_loaded_file_as_xsb.sh -- THE RUN-TIME LOADER OF THE XSB DIALECT READS :- table IN THE FILE IT LOADS (R-2005, DESIGN-PLAN
 # xsb-tabling-wfs step 1, ARCH-PROLOG-WFS-TABLING.md section 8 R1). XSB's consult/1, [File], load_dync/1, ensure_dync_loaded/1 and ensure_loaded/1 read a consulted file's directives as the compiler does: a
 # ':- table path/2, unreach/1.' makes those predicates tabled, so the left-recursive path/2 of the sibling terminates and tnot(path(X,X)) answers. SCRIP's plain consult/1 ran the directive as a goal
 # (existence_error(procedure, table/1)) and the untabled left recursion overflowed the stack; the XSB dialect now sends consult/1 down the load_files(_, [dialect(xsb)]) road ensure_loaded already took,

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_negation_zip_and_cross_metaoperators_destructuring_loops_and_the_right_shift_agree_with_rakudo.sh -- THE NEGATION METAOPERATOR (!<, !eq, !==), Z AND X WITH AN OPERATOR (Z+, Z~, X*, Z=>, Zcmp) AND THEIR NESTED SHAPE, `-> ($a, $b)` DESTRUCTURING IN for, AND +>
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; the third family of operators the expression levels silently dropped, found by comparing the metaoperators with Rakudo after the hyper and reduce landings; 103 Roast files use Z or X).
+# (row raku-every-suite-to-100-under-nonet-r-1266; the third family of operators the expression levels silently dropped, found by comparing the metaoperators with Rakudo after the hyper and reduce landings; 103 Roast files use Z or X).
 #
 # THE DEFECTS, each measured against Rakudo: `3 !< 2` printed 3 and `"a" !eq "b"` printed a (the negated operator and its right operand were swallowed by x_elem, the same loop that dropped the hyper operators); `(1,2) Z+ (10,20)` printed (1 2), `<a b> Z~ <c d>` printed (a b),
 # `(1,2) X* (3,4)` printed (1 2), `Z=>` and `Zcmp` likewise; plain `(1,2) Z (3,4)` answered the FLAT list (1 3 2 4) where Rakudo answers a list of lists ((1 3) (2 4)) (so `for (1,2) Z (3,4) { say $_ }` printed four lines and `my @r = ...; @r.elems` was 4);

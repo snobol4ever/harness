@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_gen_rt_entry_table.py [--check | --write | --sync-decls | --sync-asm | --check-asm | --sync-alloc | --check-alloc | --walker-table FILE] [--tsv FILE] [--out DIR] -- harness/scripts/rt_entries.tsv -> SCRIP/src/runtime/rt_entry_table.inc
-# (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; CEO-2019).
+# (DESIGN-PLAN zeta-layout step 5, stage 5a; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4; R-2019).
 #
 # rt_entries.tsv is the table of every runtime symbol emitted code calls: what rides rax:rdx at return (rc), whether the call graph reaches the allocator (allocates), which of the
 # four RTCC registers the entry hands back changed (clobbers), its calling convention (conv) and whether it may return an address the box jumps to (transfers). This writes the one
@@ -11,7 +11,7 @@
 # A dash in a column means no source states it (nothing is invented). --check regenerates in memory and compares with the file on disk (rc 0 current, rc 1 stale or the table invalid,
 # rc 2 cannot read); --write replaces it.
 # STAGE 5b (the declarations at the definitions): a runtime entry's conv and transfers are stated where it is DEFINED, as one textual statement
-#   RT_ENTRY_DECL(sym, conv, transfers)      conv leaf | gen | open, transfers 0 | 1 (1 when the entry may return an address the box jumps to: CEO-1576's rt_call_next_t shape)
+#   RT_ENTRY_DECL(sym, conv, transfers)      conv leaf | gen | open, transfers 0 | 1 (1 when the entry may return an address the box jumps to: R-1576's rt_call_next_t shape)
 # anywhere under SCRIP/src (hq_runtime defines the macro however it likes: it may emit a record into a section the binary carries; the text is what this reads). decl_disagreements()
 # holds the table to the declarations: a row (an asm entry and a libc import excepted) with no declaration, a symbol declared twice, a conv or transfers that differs, a declaration
 # with no row. --sync-decls rewrites the table's conv and transfers columns from the declarations, so the table is derived from them and the gate reads them equal.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_regex_engine_is_rx_and_agrees_with_rakudo_on_quantifiers_alternation_captures_aliases_and_classes.sh -- THE RAKU REGEX ENGINE IS rx.c, A BACKTRACKING MATCHER OVER RAKU'S OWN SYNTAX
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; the biggest measured class of the Roast refusals: 5 percent of a 120-file sample died on `re: compile error`, S05 is 98 files).
+# (row raku-every-suite-to-100-under-nonet-r-1266; the biggest measured class of the Roast refusals: 5 percent of a 120-file sample died on `re: compile error`, S05 is 98 files).
 #
 # THE DEFECT: re.c was a byte-wise Pike NFA behind a text translator (regex_to_engine) and a textual grammar inliner (gram_expand, depth 16). It had no ** n..m, no lazy + or *, no lookaround, no <{ }>, no
 # aliases, no nested captures, no UTF-8, no rule recursion; `"foo123" ~~ /(\w+?)(\d+)/` died with `re: compile error: unexpected meta`, `$<x>=(\d+)` with `bad named capture`, and `token word { \w+ }`

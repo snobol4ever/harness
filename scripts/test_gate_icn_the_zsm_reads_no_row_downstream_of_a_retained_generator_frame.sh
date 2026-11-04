@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_the_zsm_reads_no_row_downstream_of_a_retained_generator_frame.sh -- THE ZSM EXPECTATION IS THE PLAN'S COLUMN (cto ARCH-ICON-RTX.md section 11.9, 2026-10-29; ceo CEO-1888; row
+# test_gate_icn_the_zsm_reads_no_row_downstream_of_a_retained_generator_frame.sh -- THE ZSM EXPECTATION IS THE PLAN'S COLUMN (cto ARCH-ICON-RTX.md section 11.9, 2026-10-29; R-1888; row
 # icon-the-zsm-reads-a-constant-delta-aexp-run-through-a-scan-bodys-write-argument-chain-with-the-output-right-the-plans-declared-depth-and-the-machine-disagree, found by the cfo 2026-10-25).
 # THE WITNESS: procedure g(); suspend 1 | 2; end, procedure main(); every g() do write("x"); end. Its output is right, and under SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 it printed 14 [ZSM-AEXP]/[ZSM-DISC] rows, every one
 # with delta 240 = g's frame RETAINED on the spine (a generator's gamma leaves rsp where the callee left it): the Icon regime reads its operands through rbp cells, so the plan places no rsp-relative
@@ -9,7 +9,7 @@
 # ARMS: (1) mode 3, SCRIP_ZSM=1 SCRIP_ZSM_ALL=1: no [ZSM-AEXP] or [ZSM-DISC] row and the output equals the ref; (2) mode 4 (--compile with the same switches, assembled, linked, run): the same;
 # (3) the same two arms on a second program, a scan whose body runs the generator call and whose loop is followed by plain statements, so the column does not leak into the rest of the procedure's output.
 # RED BEFORE (measured 2026-10-29 on SCRIP 74f759a07, the commit before the cure): arm 1 reads 14 rows on the witness, arm 2 the same rows from the compiled binary, arm 3 reads rows too.
-# The instrument is not blinded: the cure's negative control (a wrong depth planted in a scratch worktree, never in src, CEO-1680) printed SNOBOL4 rows for c1.sno 0 -> 6 and c2.sno 0 -> 16, and in Icon
+# The instrument is not blinded: the cure's negative control (a wrong depth planted in a scratch worktree, never in src, R-1680) printed SNOBOL4 rows for c1.sno 0 -> 6 and c2.sno 0 -> 16, and in Icon
 # only at the nodes upstream of the call. rc 0 every arm holds; 1 an arm failed; 2 could not measure (no ./scrip, no libscrip_rt.so, no gcc).
 set -u
 GATE_NAME=test_gate_icn_the_zsm_reads_no_row_downstream_of_a_retained_generator_frame

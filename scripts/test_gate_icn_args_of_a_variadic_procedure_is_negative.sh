@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_args_of_a_variadic_procedure_is_negative.sh -- args(p) of a procedure declared p(a[]) is negative, as under icont (ceo CEO-643).
+# test_gate_icn_args_of_a_variadic_procedure_is_negative.sh -- args(p) of a procedure declared p(a[]) is negative, as under icont (R-643).
 #
 # MEASURED 2026-09-12 on 3de7f285d (the adversarial batch): args(va) for `procedure va(a[])` answered 1 in both modes where
 # icont answers -1 (the negative count marks a variadic procedure; args(main) 0 and args(write) -1 agreed). Cure: the args

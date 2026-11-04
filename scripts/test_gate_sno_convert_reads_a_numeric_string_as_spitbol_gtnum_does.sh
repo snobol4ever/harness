@@ -3,7 +3,7 @@
 # CONVERT(S,'NUMERIC') read a string the way SPITBOL's gtnum reads it, through every door a SNOBOL4 program can call CONVERT by,
 # and a pattern built with a CONVERT of the null string is built.
 #
-# ⛔ THE DEFECT (cfo 2026-09-26, row snobol4-parser-icon-on-bench-icnint-loop-dies-error-246-..., hq_snocone's find; ruled CEO-1292).
+# ⛔ THE DEFECT (cfo 2026-09-26, row snobol4-parser-icon-on-bench-icnint-loop-dies-error-246-..., hq_snocone's find; ruled R-1292).
 # The self-hosted parser_icon died ERROR 246 on EVERY Icon source holding an expression statement (bench_icnint_loop.icn was the
 # witness; `procedure main() 1 end` is enough) in m3 and m4 at -s4096m, where sbl parses it at -s64m. The stack scan at the fault
 # showed one 60 KB cycle repeating to the guard page -- an unbounded recursion, not a deep one. The chain, each link measured:

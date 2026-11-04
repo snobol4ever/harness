@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_loose_logical_operators_and_or_xor_andthen_orelse_notandthen_agree_with_rakudo.sh -- THE LOOSE LOGICAL OPERATORS and / or / xor / andthen / orelse / notandthen, AND A CONTROL STATEMENT AS THE RIGHT OPERAND OF and / or / && / ||
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found while measuring why S03-operators/andthen.t, orelse.t and notandthen.t do not compile, then widened to the whole family).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found while measuring why S03-operators/andthen.t, orelse.t and notandthen.t do not compile, then widened to the whole family).
 #
 # THE DEFECT, measured against Rakudo: every one of these operators was DROPPED by x_elem in rk_syntax.c (the loop that consumes an infix operator the expression levels do not know, parses its right operand and discards both): `say (1 and 5)` printed 1 (Rakudo 5), `0 or 5` printed 0 (5),
 # `1 and 2 and 3` printed 1 (3), `0 or 0 or 9` printed 0 (9), `5 andthen 6` printed 5 (6), `Nil orelse 6` printed Nil (6), `1 xor 1` printed False (Nil); worst, `$x > 0 or return "neg"`, `... or die` and `foo() or next` NEVER RAN THEIR RIGHT SIDE, so an `or die`

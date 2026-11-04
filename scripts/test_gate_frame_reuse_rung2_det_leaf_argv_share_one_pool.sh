@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 2 OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): THE DET-LEAF ARGV NON-GRANT.  A call the lowerer SEALED as a det leaf (IR_SEAL_CALL_DET_LEAF,
+# (cto, R-684 slice 2): THE DET-LEAF ARGV NON-GRANT.  A call the lowerer SEALED as a det leaf (IR_SEAL_CALL_DET_LEAF,
 # rung 2 step 1: the emitter's registry knows the callee, bb_call_fn marshals the argv on alpha and calls a C function
 # that returns once, beta falls to omega) has argv that are live ONLY between that call's alpha and its gamma -- the
 # marshal is straight copies and NV_GET, no box of this activation runs between the marshal and the call -- so every

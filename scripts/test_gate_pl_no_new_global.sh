@@ -7,8 +7,8 @@
 # no DESIGN section-10 structure (choice-point, environment, value, mark or exception stack, meta-rail) returns as a
 # global -- its state lives in a FRAME CELL or the TRAIL.
 #
-# THE RULING (ceo CEO-1573, 2026-10-08, row prolog-test-gate-pl-no-new-global-reads-the-runtimes-own-definitions-not-
-# the-lowerers-extern-references-or-the-preludes-string-literals-ceo-1573): the gate reads DEFINITIONS in the Prolog
+# THE RULING (R-1573, 2026-10-08, row prolog-test-gate-pl-no-new-global-reads-the-runtimes-own-definitions-not-
+# the-lowerers-extern-references-or-the-preludes-string-literals-r-1573): the gate reads DEFINITIONS in the Prolog
 # RUNTIME set and the library's exported names -- never a reference the lowerer makes to another stage's global (an
 # extern inside a function is not a definition) and never a token inside a string literal (PL_PRELUDE_SRC names GNU's
 # g_assign/g_read/g_array predicates as atoms). A compile-time global of the lowerer or the parser is policed by
@@ -16,7 +16,7 @@
 # referenced in the lowerer, the parser and the templates and read red on 31 such names with no row carrying it.
 #
 # THE ARMS. (1) SOURCE: in the Prolog-only runtime files every C statement head that defines an object -- the first
-# statement of a column-zero line (file scope under the 200-column layout, CEO-1565) and every static statement anywhere
+# statement of a column-zero line (file scope under the 200-column layout, R-1565) and every static statement anywhere
 # on a line (a one-line body keeps its function-local static after the brace) -- with string and character literals
 # blanked and const objects skipped; in every other src/runtime file (by_name_dispatch.c among them, which every
 # language shares) only the Prolog prefixes.

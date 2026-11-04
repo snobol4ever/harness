@@ -1,5 +1,5 @@
 # func_scope_static_baseline.tsv -- per-file CEILING for function-scope mutable static count under src/runtime/.
-# ⛔ SCOPE RE-CUT 2026-09-02 (ceo, routed hq_B, on Lon in-chat: "g_emit values were never part of the no
+# ⛔ SCOPE RE-CUT 2026-09-02 (routed hq_B, on Lon in-chat: "g_emit values were never part of the no
 # global rule"): this row covers ONLY src/runtime/ -- the emitted PROGRAM's state model. Compile-time
 # emitter/lower/ir/driver/optimizer/templates/parsers state is explicitly OUT OF SCOPE and is not
 # censused or gated here. Paths below are relative to src/runtime/, NOT src/.

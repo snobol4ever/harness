@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_pascal_interior_pointer_survives_a_moving_collection.sh -- A PASCAL POINTER (DT_PCELL: THE ADDRESS OF A BLOCK'S ELEMENT 0, THE ELEMENT INDEX)
-# IS RELOCATED WITH ITS BLOCK WHEN THE COLLECTOR MOVES IT (row gc-a-pascal-pointer-descr-base-cell-plus-element-index-is-relocated-when-its-block-moves-the-visitor-and-its-gate-ceo-2073;
+# IS RELOCATED WITH ITS BLOCK WHEN THE COLLECTOR MOVES IT (row gc-a-pascal-pointer-descr-base-cell-plus-element-index-is-relocated-when-its-block-moves-the-visitor-and-its-gate-r-2073;
 # ARCH-PASCAL-REDESIGN.md R5 AMENDED (1) to (4); hq_collector 2026-10-31).
 #
 # THE KIND. DT_PCELL = 0xC0 (src/ir/descr.h, src/ir/descr_tags.inc). A cell is {tag, slen = the element index (a signed 32-bit count, never relocated), word at +8 = the address of
@@ -36,7 +36,7 @@
 # (4) nil is untouched; (5) a negative index (0xFFFFFFFE) is untouched while the word follows; (6) two pointers into one block keep their offset; (6b) arm 1 gives one answer in five runs;
 # (7) each of three Pascal witnesses equals fpc's output in both modes at four settings (no stress, stress 3, stress 1, forced motion); (8a) the forced-motion run flipped blocks;
 # (8) the heap slid under the live pointers in the interior-pointer witness's stress run.
-# (9) the cfo's edge (ruling on ceo-2073): a base at the end of an EMPTY object, which is the next block's header address, aborts by name (GC-PCELL) in a diag build, because the mark loop has its
+# (9) the cfo's edge (ruling on R-2073): a base at the end of an EMPTY object, which is the next block's header address, aborts by name (GC-PCELL) in a diag build, because the mark loop has its
 # own class MK_PCELL with an RT_DIAG containment check; before it, gc_blk_of returned the neighbour and the word was relocated by the neighbour's delta, silently. The arm REFUSES rc 2 in a release build.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -144,7 +144,7 @@ R9=""; NMOUT=$(nm "$ROOT/out/libscrip_rt.so" 2> /dev/null)
 if grep -q ' gc_validate_heap$' <<< "$NMOUT"; then
   ( ulimit -c 0; timeout 60 "$T/fx" 7 > "$T/o7.txt" 2> "$T/e7.txt" ); R7=$?
   if [ "$R7" = 134 ] && grep -q '^\[GC-PCELL\] ' "$T/e7.txt"; then ok "(9) a pointer whose base is element 0 of an EMPTY object (the next block's header address) aborts by name in a diag build instead of being relocated by the neighbour's delta: $(head -1 "$T/e7.txt" | cut -c1-70)"
-  else bad "(9) a base at the end of an empty object (rc=$R7) was accepted: gc_blk_of took the NEIGHBOUR block, marked it and relocated the word by its delta, silently (cfo ruling, ceo-2073: the mark loop's own class MK_PCELL must check containment under RT_DIAG); stdout: $(head -1 "$T/o7.txt" | cut -c1-60)"; fi
+  else bad "(9) a base at the end of an empty object (rc=$R7) was accepted: gc_blk_of took the NEIGHBOUR block, marked it and relocated the word by its delta, silently (cfo ruling, R-2073: the mark loop's own class MK_PCELL must check containment under RT_DIAG); stdout: $(head -1 "$T/o7.txt" | cut -c1-60)"; fi
 else R9="this is a release build (no gc_validate_heap in libscrip_rt.so), so arm 9's RT_DIAG containment check does not exist and cannot be measured"; fi
 WITS="hb_pas_interior_pointer hb_pas_pointers_to_globals hb_pas_pointers_in_a_procedure_frame"
 SETS="none:SCRIP_GC_STRESS=0 s3:SCRIP_GC_STRESS=3 s1:SCRIP_GC_STRESS=1 flip:SCRIP_GC_PLANT_FLIP=1,SCRIP_GC_POISON=1,SCRIP_GC_STRESS=1"

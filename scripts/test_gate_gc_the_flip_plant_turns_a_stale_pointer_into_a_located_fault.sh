@@ -19,8 +19,8 @@
 # (SCRIP_GC_PLANT_SCAN_BANK=1) faults under the flip plant and the report says the block was MOVED; (c) LOCATED, POISON: the
 # key-collision plant of CTO-153 faults and the report names a register holding the poison; (d) THE CONTRAST: without the
 # flip plant the scan-bank plant is a SILENT wrong answer (rc 0, stdout differs) -- the flip plant is what turns it loud.
-# FAIL_ONCE=1 grades arm (a) against corrupted copies of the four refs and requires it to red (CEO-1680 form (a)).
-# ⛔⭐ ARMS (b) AND (d) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
+# FAIL_ONCE=1 grades arm (a) against corrupted copies of the four refs and requires it to red (R-1680 form (a)).
+# ⛔⭐ ARMS (b) AND (d) RETIRED UNDER R-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
 # SCRIP_GC_PLANT_SCAN_BANK seam they planted left emit.cpp (row emit-the-three-emitter-plants-...). Their recorded readings stand as their
 # fail-once: under the flip plant the scan-bank plant faulted with [ZGC-STALE] SIGSEGV touching GC heap ground ... it was MOVED to ...
 # (rc != 0), and without the flip plant the same defect was a silent wrong answer (rc 0, stdout differs). The flip plant itself is the
@@ -48,7 +48,7 @@ for b in hb_scan_suspend_bank_across_a_collection hb_table_dump_every_key_ref hb
 done
 if [ "$bad" = 0 ] && [ "$flips_seen" = 4 ] && grep -q "^\[GC-FLIP\] plant:" "$T/a3.err"; then echo "  ok   (a) NO FALSE POSITIVE: four witnesses answer their refs under the flip plant at stress 1, both modes, and the plant applied in every run --$band"
 else echo "  FAIL (a) a correct witness faulted or differed under the flip plant, or the plant did not apply (flips seen in $flips_seen of 4) --$band"; RC=1; fi
-echo "  --   (b) and (d) RETIRED under CEO-1680: the scan-bank seam they planted left emit.cpp; their recorded readings are the fail-once (header)"
+echo "  --   (b) and (d) RETIRED under R-1680: the scan-bank seam they planted left emit.cpp; their recorded readings are the fail-once (header)"
 echo "population: 1 arm graded, (b) and (d) retired"
 if [ $RC = 0 ]; then echo "✅ GATE PASS(0) [$G]: the flip plant turns a stale pointer into a located fault and leaves correct programs correct"; else echo "⛔ GATE FAIL(1) [$G]: the flip plant misses a stale pointer or faults a correct program (examined 4 arms)"; fi
 exit $RC

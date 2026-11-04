@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test_gate_gc_the_decidable_test.sh -- F6 STEP 6, THE DECIDABLE TEST (coo; ceo CEO-869/876, hq_snocone's ask).
+# test_gate_gc_the_decidable_test.sh -- F6 STEP 6, THE DECIDABLE TEST (coo; R-869/876, hq_snocone's ask).
 #
 # ⛔⭐ THE QUESTION IS NOT "DOES THE COLLECTOR FIND THE ROOTS".  IT IS: CAN A SUITE BE GREEN WHILE IT DOES NOT?
-# THE MEASUREMENT THAT MAKES THIS THE CRITICAL PATH (the cto, 2026-09-18; reproduced by the ceo on an Icon rungs
+# THE MEASUREMENT THAT MAKES THIS THE CRITICAL PATH (the cto, 2026-09-18; reproduced by the officer on an Icon rungs
 # entry): 320 rungs entries across four frontends run with ZERO COLLECTIONS at default settings.  So every
 # rungs board we own today is green over a collector that never ran once.  When three seats land F6 step 4's
 # 208 poll sites, NOTHING WE OWN CAN TELL US WHETHER THEY ARE RIGHT -- not a board, not a smoke, not a rung suite.
@@ -15,10 +15,10 @@
 #   (3) the heap actually MOVED under it         -- moved=NB > 0, else nothing was asked of the root fixups
 #   (4) the value read back is still correct     -- with SCRIP_GC_POISON on, a lost root reads 0xDB, not stale data
 #
-# ⛔ THE STRESS BAND IS PART OF THE TEST AND ITS LOW END IS THE PART THAT MATTERS (ceo CEO-876, on the cfo's cset
+# ⛔ THE STRESS BAND IS PART OF THE TEST AND ITS LOW END IS THE PART THAT MATTERS (R-876, on the cfo's cset
 # defect): that defect was RED at 1, 2, 3, 4, 5, 8, 10 and GREEN at 0, 15, 20, 30, 50, 100.  HIGH-AND-HIGHER
 # LOOKS more punishing and is the opposite -- a low stress count puts the collection at a different point
-# relative to the allocation, and a two-point check at 30 and 200 reads clean and banks the defect (CEO-807).
+# relative to the allocation, and a two-point check at 30 and 200 reads clean and banks the defect (R-807).
 # The band is PRINTED per kind, never collapsed into a verdict.
 #
 # ⛔ THE DENOMINATOR IS THE DECLARATION.  Every `#define HB_*` in gc_heap.h must have a row in

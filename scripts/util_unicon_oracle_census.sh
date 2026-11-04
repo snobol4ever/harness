@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# util_unicon_oracle_census.sh -- HOW MANY OF UNICON'S OWN TEST PROGRAMS DOES THE UNICON ORACLE ITSELF ANSWER (ceo CEO-2072; the NO_ORACLE_ANSWER census of CEO-1696; hq_icon 2026-10-31).
+# util_unicon_oracle_census.sh -- HOW MANY OF UNICON'S OWN TEST PROGRAMS DOES THE UNICON ORACLE ITSELF ANSWER (R-2072; the NO_ORACLE_ANSWER census of R-1696; hq_icon 2026-10-31).
 # A program the oracle gives NO OUTPUT for (it refuses, crashes, aborts, hangs past its time) or whose answer no two runs reproduce leaves a suite's denominator as an EXCLUDED row of class NO_ORACLE_ANSWER;
 # every program the oracle DOES answer stays as debt.  This census runs each .icn directly under /home/resources/unicon/tests/<category>/ the way Unicon's own tests/Makefile.test runs it -- compile with the
 # oracle, run with data/NAME.dat on stdin when it exists (else /dev/null), stdout and stderr together, in the category's own directory -- in a SCRATCH COPY (the shared drop is not written), TWICE, and
 # diffs the first run against stand/NAME.std when Unicon ships one (informational: a diff is the oracle disagreeing with its own ref, which is a finding, not a grading).
 # CLASSES: ANSWERED (compiled, ran, not killed, output present and the two runs equal) - COMPILE_REFUSED - HANG (run past the timeout) - CRASH (killed by a signal) - NO_OUTPUT (nothing written, rc != 0) -
-#          NONDETERMINISTIC (the two runs differ) - EXCLUDED_CEO1315 (graphics: counted, not run).  STD column: MATCH, DIFF or NONE.
+#          NONDETERMINISTIC (the two runs differ) - EXCLUDED_GRAPHICS (graphics: counted, not run).  STD column: MATCH, DIFF or NONE.
 # COVERS every .icn at every depth of the drop's tests (267 files).  RUNTIME_ERROR = the program ended in a Run-time error its .std does not carry (a capability the oracle build lacks, or a library module with no main);
 # NO_EXECUTABLE = the oracle compiled it (rc 0) and left no executable (a library module, no main); UNICON_MAKEFILE_SKIP = the suite's own Makefile skips it on this build (database always; crypto when the oracle lacks OpenSSL); HELPER_INPUT = unicon/data/* are inputs of other tests, not tests; tester.u is prebuilt as unicon/Makefile does.
 # MEASURED 2026-10-31 (oracle bin/unicon 13.3 d784f58, timeout 20): see .github/findings/FINDING-2026-10-31-hq_unicon-unicon-oracle-census.tsv and the row's baton.
@@ -34,7 +34,7 @@ for c in "${CATS[@]}"; do
     if [ "$c" = crypto ] && [ "$n" = tlsutil ]; then printf '%s\t%s\tHELPER_INPUT\t-\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
     if [ "$c" = unicon ] && [ "${rel%%/*}" = data ] && [ "$n" != tester ]; then printf '%s\t%s\tHELPER_INPUT\t-\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
     if [ "$c" = database ] || { [ "$c" = crypto ] && [ "$n" != tlsutil ] && ! printf '%s' "$FEAT" | grep -q 'secure sockets layer encryption'; }; then printf '%s\t%s\tUNICON_MAKEFILE_SKIP\t-\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
-    if [ "$c" = graphics ]; then printf '%s\t%s\tEXCLUDED_CEO1315\t-\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
+    if [ "$c" = graphics ]; then printf '%s\t%s\tEXCLUDED_GRAPHICS\t-\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
     ( cd "$dd" && timeout -k 5 120 "$UC" -s -o "$exe" "$n.icn" > "$W/comp.out" 2>&1 ); crc=$?
     if [ "$crc" -ne 0 ]; then printf '%s\t%s\tCOMPILE_REFUSED\t%s\t-\t-\n' "$c" "$pn" "$crc" >> "$OUT"; continue; fi
     if [ ! -x "$exe" ]; then [ -n "${CENSUS_DEBUG:-}" ] && { echo "--- $c/$pn crc=$crc"; cat "$W/comp.out"; ls "$W/bin" | tail -3; } >&2; printf '%s\t%s\tNO_EXECUTABLE\t0\t-\t-\n' "$c" "$pn" >> "$OUT"; continue; fi
@@ -55,7 +55,7 @@ for c in "${CATS[@]}"; do
   done < <(find "$d" -name '*.icn' | sort)
 done
 echo "CENSUS_FILE $OUT"
-awk -F'\t' 'BEGIN { n = split("ANSWERED COMPILE_REFUSED HANG CRASH NO_OUTPUT NONDETERMINISTIC RUNTIME_ERROR NO_EXECUTABLE HELPER_INPUT UNICON_MAKEFILE_SKIP EXCLUDED_CEO1315", cs, " ") }
+awk -F'\t' 'BEGIN { n = split("ANSWERED COMPILE_REFUSED HANG CRASH NO_OUTPUT NONDETERMINISTIC RUNTIME_ERROR NO_EXECUTABLE HELPER_INPUT UNICON_MAKEFILE_SKIP EXCLUDED_GRAPHICS", cs, " ") }
   NR > 1 { if (!($1 in t)) order[++m] = $1; t[$1]++; k[$1 " " $3]++; C[$3]++; T++ }
   END { printf "%-10s %5s", "category", "progs"; for (i = 1; i <= n; i++) printf " %s", cs[i]; print "";
         for (j = 1; j <= m; j++) { printf "%-10s %5d", order[j], t[order[j]]; for (i = 1; i <= n; i++) printf " %d", k[order[j] " " cs[i]] + 0; print "" }

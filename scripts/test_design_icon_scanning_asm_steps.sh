@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_design_icon_scanning_asm_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: icon-scanning-asm (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_icon_scanning_asm_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: icon-scanning-asm (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-ICON-RTX.md section 11). The plan is corpus/tests/icon/scanning_asm/STEPS.tsv; the witnesses are the .icn programs beside
 # it, each with a .ref cut from Arizona Icon (icont -s, the binary's stdout).
 #
@@ -60,7 +60,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi

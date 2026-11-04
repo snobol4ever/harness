@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_prelude_units_in_sync.sh -- SCRIP'S PASCAL PRELUDE UNITS AND THE TABLE SCRIP EMBEDS AGREE (hq_pascal 2026-10-10, row
-# pascal-uses-and-units-compile-time-whole-program-...; CEO-1611).
+# pascal-uses-and-units-compile-time-whole-program-...; R-1611).
 #
 # The units a uses clause names and no file beside the program supplies -- sysutils, math, strings, strutils -- are SCRIP's own
 # Pascal under src/parsers/pascal/prelude/<unit>.pas, embedded by ../harness/scripts/util_gen_pascal_prelude_units.py into the committed

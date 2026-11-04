@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_ir_identity_normalise_asm.py < prog.s > prog.norm.s -- THE ONE NORMALISATION THE IR-IDENTITY GATE APPLIES TO ASSEMBLY WHEN IT IS NOT --strict
-# (the cto, ARCH-PARSER-SC-BOOTSTRAP 7.x, 2026-10-30 10:3x CDT, CEO-1888: "the gate compares the observables: --dump-ir exactly, the .loc sequence exactly, the asm
+# (the cto, ARCH-PARSER-SC-BOOTSTRAP 7.x, 2026-10-30 10:3x CDT, R-1888: "the gate compares the observables: --dump-ir exactly, the .loc sequence exactly, the asm
 # after a normalisation of ids, the slot base, the two leak tables and the wrap"). Under SCRIP_PARSE_STAGE=sc the parser module's run leaks into the compile
 # process, so the same program's assembly differs from the C stage's in exactly five ways, none of them a statement, a line or a source text:
 #   (1) ids   -- node ids (n0_ -> n6_) and the emitter's local-label counters (.Lcall_direct_a_39_999 -> _45_999) start later: each digit run of a label is

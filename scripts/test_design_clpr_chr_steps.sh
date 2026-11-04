@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# test_design_clpr_chr_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: clpr-chr (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_clpr_chr_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: clpr-chr (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PROLOG-CLPR-CHR.md). The plan is corpus/tests/prolog/clpr_chr/STEPS.tsv; the witnesses are the .pl programs beside it, each
 # with a .ref cut from swipl 9.0.4 (`swipl -q -t halt w.pl < /dev/null`, stdout only).
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness in mode 3 and mode 4 (the declared -d131072k -s4096k, stdout compared exactly with the ref), then
 #                the step's probe tokens: entries=... (the named rosetta-prolog entries through corpus_suite_harness.py smoke under the feature directive, which every entry carries; no progress
-#                row, at most eight: the handful of CEO-1677), latest=... (results.tsv's latest reading per entry PASS in both modes, READ),
+#                row, at most eight: the handful of R-1677), latest=... (results.tsv's latest reading per entry PASS in both modes, READ),
 #                row=N (SUITES.tsv's rosetta-prolog today_pass at least N, READ), nolib=path (swi_tests UNGRADED.tsv does not list the path,
 #                READ). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from swipl (the design seat's road; an HQ that changes a witness re-cuts it the same way)
@@ -57,7 +57,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
@@ -85,7 +85,7 @@ readings=""; pgreen=1
 for tok in $probe; do
     key="${tok%%=*}"; val="${tok#*=}"
     case "$key" in
-        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (CEO-1677)"
+        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (R-1677)"
                  sm="$(cd "$ROOT" && S4E_HOME="$ROOT" timeout -k 10 1500 python3 "$HERE/corpus_suite_harness.py" smoke directive --tables packages/prolog/rosetta-prolog --entries "$es" --modes m3,m4 2>&1)"
                  printf '%s\n' "$sm" > "$OUT/step$step/smoke.log"
                  ok=0; for e in $es; do printf '%s\n' "$sm" | grep -E "^AREA_SMOKE_ENTRY .*entry=$e .*m3=PASS.*m4=PASS" > /dev/null && ok=$((ok + 1)); done

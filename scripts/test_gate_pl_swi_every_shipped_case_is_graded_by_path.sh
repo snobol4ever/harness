@@ -31,7 +31,7 @@ while IFS= read -r f; do ref="${f%.pl}.ref"; [ -f "$ref" ] || continue
 done < <(grep -rl --include='*.pl' 'begin_tests(' "$SWIT" | sort)
 [ -z "$silent" ]; arm $? "every declared unit is named in its ref${silent:+ -- SILENT:$silent}"
 tsv="$SWIT/UNGRADABLE.tsv"; unnamed=""; wrongly=""
-# ⛔ A NON-PLUNIT FILE IS NAMED IN ONE OF THE THREE SIDECARS (ceo CEO-1272, coo 2026-09-25): the retired class CONTAINER_OR_LIBRARY
+# ⛔ A NON-PLUNIT FILE IS NAMED IN ONE OF THE THREE SIDECARS (R-1272, coo 2026-09-25): the retired class CONTAINER_OR_LIBRARY
 # split by measurement -- a vendor module with clauses is a LIBRARY owed its driver (UNGRADED.tsv NEEDS_DRIVER), a data file is a
 # CONTAINER (CONTAINERS.tsv), and an oracle ruling stays in UNGRADABLE.tsv. Named in none is still UNNAMED; a plunit file in any is still wrong.
 while IFS= read -r f; do rel="${f#"$SWIT"/}"; if grep -q 'begin_tests(' "$f"; then cat "$tsv" "$SWIT/UNGRADED.tsv" "$SWIT/CONTAINERS.tsv" 2>/dev/null | grep -qP "^\Q$rel\E\t" && wrongly="$wrongly $rel"; else cat "$tsv" "$SWIT/UNGRADED.tsv" "$SWIT/CONTAINERS.tsv" 2>/dev/null | grep -qP "^\Q$rel\E\t" || unnamed="$unnamed $rel"; fi; done < <(find "$SWIT" -name '*.pl' | sort)

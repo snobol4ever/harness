@@ -2,7 +2,7 @@
 # test_gate_snocone_parsers_match_the_c_parsers_tree_for_tree.sh -- THE SELF-HOSTED PARSERS PRINT THE SAME TREE AS SCRIP'S OWN
 # PARSERS, FILE BY FILE (Lon 2026-09-27, in-chat to hq_snocone, verbatim: "Write a C function to dump the AST. Write an
 # equivalent Snocone function to dump the tree. ... Get the trees to match 100%."; and 2026-09-28: "So change from concat one big
-# file to run each parser seperatly."; ceo CEO-1340, the row's DONE-WHEN).
+# file to run each parser seperatly."; R-1340, the row's DONE-WHEN).
 #
 # THE INSTRUMENT: out/parser_<lang> (src/tools/parser_main.c, one frontend per build, printing through ir_dump_tree in
 # src/ir/ast_print.c) and the .sc chain + bootstrap/parser_<lang>.sc printing through TreeDump in bootstrap/tdump.sc -- ONE
@@ -13,13 +13,13 @@
 #
 # POPULATION, EACH FILE ALONE: per landing the files of corpus/benchmarks/<lang>; with GATE_POPULATION=corpus or under the bus's
 # closure run (S4E_DONE_WHEN_RUN=1) every corpus program of the language (every *.<ext> outside .git and corpus/library, not
-# ALL.*) -- the whole-corpus run is a closure run, one at a time (CEO-1341). Each file goes to the C parser and to the .sc parser
+# ALL.*) -- the whole-corpus run is a closure run, one at a time (R-1341). Each file goes to the C parser and to the .sc parser
 # compiled ONCE per language to a mode-4 binary (Lon 2026-09-28: "forget mode 3 runs."), run at the largest arena on the file's own
-# stdin; the two dumps are compared for THAT file. Raku is graded like the six (2026-10-21, Lon to the ceo, verbatim: "I want it to
+# stdin; the two dumps are compared for THAT file. Raku is graded like the six (2026-10-21, Lon to the officer, verbatim: "I want it to
 # work on parser.sc programs completeness and speed performance versus the SCRIP C parsers."): the 2026-09-29 hang that kept its
 # direct .sc compile out is gone (the chain compiles to a mode-4 binary in seconds), and a Raku file the .sc does not print the C
 # parser's tree for is a red of the row like any other language's.
-# THE TREE HASH (Lon 2026-09-29 18:5x CDT, in-chat to the ceo, verbatim: "You might consider creating a hash calculated of the
+# THE TREE HASH (Lon 2026-09-29 18:5x CDT, in-chat, verbatim: "You might consider creating a hash calculated of the
 # trees to compare quickly success and delay the details." and "hashing the output tree is what I meant. In memory. Then output
 # the one number per-test for comparison. It shows only how many do not match, not in what ay do they not match."): each side runs
 # under PARSER_TREE_HASH=1 and prints ONE NUMBER per file instead of its tree -- h = (h * 256 + byte) mod (2^55 - 55) over every
@@ -29,7 +29,7 @@
 # GATE_DETAIL=1 dumps the first DIFF file of each language in full and prints its first differing line pair. GATE_REDS=<file> appends one
 # line per file that is not a MATCH or a both-refused (language, kind, path under the corpus) -- the list a whole-corpus run owes the lane that cures it. GATE_LANGS="snobol4 icon"
 # grades those languages alone (a landing's own arm; the closure run grades all seven).
-# THE C SIDE DUMPS WHAT ITS PARSER BUILT (the ceo's row, CEO-1364: "the C side dumps the parse tree the .sc reproduces"): Icon
+# THE C SIDE DUMPS WHAT ITS PARSER BUILT (the officer's row, R-1364: "the C side dumps the parse tree the .sc reproduces"): Icon
 # before link resolution, Pascal before its semantic check, Rebus before lower_rebus.c, Prolog each clause's tree before
 # prolog_lower (a clause list with a parse error is refused), Snocone code_to_ast of the statements its parser builds, SNOBOL4
 # its parse -- never a FINISH step.
@@ -64,9 +64,9 @@ tree_canary() {
     refused "$T/k.cdump" || [ "$(tree_fold "$T/k.cdump")" = "$(cat "$T/c.hash")" ] || { echo "C hash $(cat "$T/c.hash") is not the fold of its dump (${1#$CORPUS/})"; return; }
     refused "$T/k.sdump" || [ "$(tree_fold "$T/k.sdump")" = "$(cat "$T/s.hash")" ] || { echo ".sc hash $(cat "$T/s.hash") is not the fold of its dump (${1#$CORPUS/})"; return; }
     echo LIVE; }
-# CEO-1483: the .sc parser carries its own Preprocess pattern (text to text) ahead of its Compiland pattern, so it reads the RAW file; only the C parser reads the pre-step's twin. LPATH names the $include directories for both.
+# R-1483: the .sc parser carries its own Preprocess pattern (text to text) ahead of its Compiland pattern, so it reads the RAW file; only the C parser reads the pre-step's twin. LPATH names the $include directories for both.
 export LPATH="$CORPUS/packages/icon/ipl/procs"
-# CEO-1366: macro processing is a pre-step; Icon sources go through out/scrip-ipp and BOTH parsers read the same preprocessed twin (prints the twin's path; rc 1 = the pre-step refused)
+# R-1366: macro processing is a pre-step; Icon sources go through out/scrip-ipp and BOTH parsers read the same preprocessed twin (prints the twin's path; rc 1 = the pre-step refused)
 # SNOBOL4's pre-step is util_sno_include_twin.py (the include lines of snobol4.l as text); the .sc reads the RAW file from the file's own directory, as the C parser does, with the same SNO_LIB
 export SNO_LIB="$CORPUS/include:$CORPUS/library:$CORPUS/packages/snobol4/gimpel:$CORPUS/packages/snobol4/snoflake_suite/gimpel"
 pp_twin() { case "$1" in

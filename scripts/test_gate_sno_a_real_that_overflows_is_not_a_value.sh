@@ -2,7 +2,7 @@
 # test_gate_sno_a_real_that_overflows_is_not_a_value.sh -- a decimal that will not fit a double FAILS to
 # convert; it does not become the IEEE infinity and travel on as an ordinary value.
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, x64 math_limits2/3). SNOBOL4 HAS NO INFINITY. Every arithmetic overflow path
+# ⛔ THE DEFECT (2026-09-14, x64 math_limits2/3). SNOBOL4 HAS NO INFINITY. Every arithmetic overflow path
 # already raises through rt_real_overflow -- 261/262/263/264 -- but the CONVERSION path had no such check:
 # "string to real" was spelled at eight strtod sites across keywords.c, core.c, by_name_dispatch.c,
 # icn_extfn.c and arithmetic.c, and not one asked whether a finite decimal had produced a non-finite double.
@@ -19,7 +19,7 @@
 #
 # ⛔ NOT A ROUNDING GATE, AND THE DISTINCTION IS LOAD-BEARING: the boundary VALUES here are the ones CPython's
 # correctly-rounded strtod agrees with, and at the denormal edge our boundary and the ORACLE's differ because
-# SPITBOL's own converter is imprecise there (FINDING-2026-09-14-ceo-the-math-limits-family...). This gate
+# SPITBOL's own converter is imprecise there (FINDING-2026-09-14-officer-the-math-limits-family...). This gate
 # asserts only what is not in dispute: a decimal beyond the double range does not become a value.
 #
 # rc=0 clean · rc=1 an infinity leaked into the value space · rc=2 REFUSAL (cannot measure).

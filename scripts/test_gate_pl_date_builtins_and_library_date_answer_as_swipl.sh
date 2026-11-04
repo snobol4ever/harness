@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_date_builtins_and_library_date_answer_as_swipl.sh -- stamp_date_time/3, date_time_stamp/2 AND format_time/3,4 EXIST AND
 # ANSWER AS swipl, AND library(date)'s parse_time/2,3, day_of_the_week/2, day_of_the_year/2 AND date_time_value/3 RUN OVER THEM (cfo
-# 2026-10-14, row prolog-swi-library-test-date-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# 2026-10-14, row prolog-swi-library-test-date-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's library/test_date.pl read 2/15 in both modes: none of the three builtins existed. They are run-time leaves now
 # (src/runtime/by_name_dispatch.c, $stamp_date_time/$date_time_stamp/$format_time_text, wired as nb_linkarg is): a stamp converts by

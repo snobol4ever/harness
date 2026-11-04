@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_rep_loop_demos_snobol4.sh -- LON'S TWO-ASPECT PRESENTATION LAW for the tier-1 -match demos.
 # Row: bench-rep-loop-demo-harness (hq_P, 2026-08-28). Authority: ARCH-BENCH-CAMPAIGN-README-TABLES.md.
 #
@@ -26,7 +26,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # rep count would be a number nobody could tell had gone stale -- the same class as a scale column
 # nobody can justify from a measurement.
 #
-# ⭐ THE BRACKET GOES TO STDERR (ceo ruling): the correctness anchor and the perf instrument never share
+# ⭐ THE BRACKET GOES TO STDERR (ruling): the correctness anchor and the perf instrument never share
 # a channel, so stdout stays byte-identical and every committed .ref and the cross-engine agreement gate
 # are untouched. ⛔ It was a temp file until 2026-08-28 only because SCRIP silently discarded every write
 # to an OUTPUT association on a file descriptor; hq_C cured that (69178c73) and the defect was WIDER than
@@ -46,7 +46,7 @@ STATIC="${STATIC:-0}"    # row m4-static-link-arm: opt-in m4 link arm, out/libsc
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority. A private fallback would time a DIFFERENT LANGUAGE (s189: -bf is the only correct arm)." >&2; exit 3; }
 . "$HERE/lib_static_link_snobol4.sh" 2>/dev/null || { echo "⛔ REFUSING: cannot load lib_static_link_snobol4.sh -- the ONE static-link-arm authority." >&2; exit 3; }
 SBL="${SBL:-$(sbl_clean_bin)}"
-# ⛔ NO SIZE IS TYPED HERE (ceo CEO-1485, ruling RULES.md clause 8 (g)(4) over the equal-arena arm): each engine runs at its own shipped
+# ⛔ NO SIZE IS TYPED HERE (R-1485, ruling RULES.md clause 8 (g)(4) over the equal-arena arm): each engine runs at its own shipped
 # defaults plus the PROGRAM's declaration -- SCRIP its .heap/.stack as -d/-s switches, sbl its .oracle_args -- read by lib_declared_arena.sh,
 # and the window is never typed. CRITERION CHANGED 2026-10-03: every reading before ran sbl -d512m -i64m -s256m and SCRIP under
 # SCRIP_HEAP_MB=4096, a 4 GB WINDOW (the collector never ran); the header line says so beside every reading from here on.
@@ -159,7 +159,7 @@ if [ "${1:-}" = "--selftest" ]; then
 fi
 printf '%s\n' "=== TWO-ASPECT tier-1 demo board (Lon's presentation law) ===" \
   "  ASPECT 1 = whole process, external elapsed, COMPILE INCLUDED   |  ASPECT 2 = in-program bracket, MATCH ONLY" \
-  "  oracle=$(basename "$(dirname "$SBL")")/$(basename "$SBL") -bf | RT_OPT=-O0 | NOHUGE=$NOHUGE | sizes: each program's own .heap/.stack (scrip) and .oracle_args (sbl) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (CEO-1485), earlier readings ran one typed equal arena and a 4 GB SCRIP window (this file's header) | reps RAMPED to convergence (tol ${TOL}%) | m4 link=$([ "$STATIC" = 1 ] && echo STATIC || echo shared)" \
+  "  oracle=$(basename "$(dirname "$SBL")")/$(basename "$SBL") -bf | RT_OPT=-O0 | NOHUGE=$NOHUGE | sizes: each program's own .heap/.stack (scrip) and .oracle_args (sbl) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (R-1485), earlier readings ran one typed equal arena and a 4 GB SCRIP window (this file's header) | reps RAMPED to convergence (tol ${TOL}%) | m4 link=$([ "$STATIC" = 1 ] && echo STATIC || echo shared)" \
   "  ⛔ aspect 1 is a TOTAL and aspect 2 is a SLOPE -- per the FACT RULE they may never share a column."
 printf '%-26s %-4s %12s %14s %8s %10s\n' demo eng "A1_total_ms" "A2_TIME_ns" "reps" "A2_mult"
 while IFS=$'\t' read -r fam prog inp; do

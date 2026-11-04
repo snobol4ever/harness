@@ -2,7 +2,7 @@
 # test_gate_pl_the_integer_flags_answer_from_the_dialects_row_xsb_and_gnu_bounded_swi_unbounded.sh -- ARCH-PROLOG-DIALECTS.md sec 6 step 4, THE FLAG TABLE IS PER DIALECT:
 # current_prolog_flag/2 answers max_integer, min_integer and bounded from the dialect's row -- XSB 9223372036854775807 / -9223372036854775807
 # / true, GNU 1152921504606846975 / -1152921504606846976 / true (measured: GNU's min is NOT the negative of its max), SWI bounded false and no
-# max_integer or min_integer (the query fails). Integer ARITHMETIC stays SCRIP's bignums in every dialect (CEO-1710).
+# max_integer or min_integer (the query fails). Integer ARITHMETIC stays SCRIP's bignums in every dialect (R-1710).
 #
 # THE REFS ARE THE ORACLES' OUTPUT, cut when the gate was written: XSB 5.0.0 (xsb_bin), GNU Prolog 1.6.0 through gplc (gplc_bin), swipl 9;
 # each is re-cut when its oracle is on the box and the gate refuses rc=2 on disagreement. Each flag is named as a constant: with the name

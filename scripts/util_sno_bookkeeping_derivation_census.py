@@ -19,7 +19,7 @@ the four rules a linked parser's exporter would apply, each statement against th
 One process per file, because the loop harness (PARSER_FILES) hands a file's leading null statement the previous file's last line number.
 It tests files WITHOUT -INCLUDE/-COPY (the include line map is G1b and is not derivable from one source text) and reports how many it skipped.
 rc 0 = every rule holds on every statement of every measured file; rc 1 = a mismatch (the first five are printed); rc 2 = could not measure
-(no instrument, an instrument that does not know PARSER_ATTRS, an empty population). Runs serially under nice 19 (lib_fanout.sh, CEO-1333).
+(no instrument, an instrument that does not know PARSER_ATTRS, an empty population). Runs serially under nice 19 (lib_fanout.sh, R-1333).
 POPULATION sample (default) = corpus/benchmarks/snobol4; corpus = every .sno/.spt/.sbl under corpus/ outside .git, library/ and the ALL.* containers.
 """
 import os, re, subprocess, sys, tempfile, collections

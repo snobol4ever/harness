@@ -3,7 +3,7 @@
 # behaves the same traced and untraced, because --trace no longer switches every SNOBOL4 call onto the non-slim C road.
 #
 # THE DEFECT (row runtime-the-traced-run-honours-the-same-declared-stack-limit-as-the-untraced-run-..., the coo's finding
-# 2026-10-03, ceo CEO-1501/1502): bb_scc_probe turned the slim (direct) call road off whenever g_trace_budget was set, because
+# 2026-10-03, R-1501/1502): bb_scc_probe turned the slim (direct) call road off whenever g_trace_budget was set, because
 # only the non-slim road (rt_proc_call_open, rt.c) fired sno_trace_call / sno_trace_return under the trace budget -- the slim
 # road's DEFINE prologue and RETURN hooks were gated on &TRACE and &FTRACE alone. So a traced SNOBOL4 program was a different
 # program: DEFINE('R(N)') recursing 30000 deep at -s4096k was ERROR 246 untraced and depth=30000 under --trace (the untraced

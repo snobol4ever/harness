@@ -12,7 +12,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # WHAT THIS IS: a SNOBOL4 program that mentions &STCOUNT, &STNO, &LASTNO (or the other statement keywords named by
 # lower_snobol4.c) is lowered in STATEMENT-MARK MODE: every statement is preceded by a SNO$STMT dispatch -- two
 # literal operands and a CALL, 48 bytes of zeta pushes -- that maintains the keyword's value at run time. A
-# program that mentions none of them carries no dispatch. THE DEFECT THIS PINS (cfo, CEO-773 row, 2026-09-16):
+# program that mentions none of them carries no dispatch. THE DEFECT THIS PINS (cfo, R-773 row, 2026-09-16):
 # zd_plan (src/emitter/emit.cpp) let those 48 bytes SURVIVE INTO THE STATEMENT, so every statement in mark mode
 # ran with rsp 48 bytes below the base a plain program runs at. The planned boxes were told about the residue and
 # popped it at the statement's exits; the boxes the planner does NOT arm (an omega target that is not a test kind
@@ -29,7 +29,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # pre-cure planner and is this gate's fail-once control. Since 2026-10-02 (cto, gimpel infinip) a call's omega target heads its
 # own zd run, which also carries a1's call past the residue; the control turned that off too with SCRIP_ZD_TESTFAM=0 until
 # 2026-10-14, when that switch was deleted (the call family is ir_decides_own_failure_kind, declared in src/ir/ir_node.h, a definition, and
-# CEO-1680 allows no seam in SCRIP for a test; hq_zetas, row spine-zd-omega-test-kind-...-ceo-1389). SEE k1 for what replaced it.
+# R-1680 allows no seam in SCRIP for a test; hq_zetas, row spine-zd-omega-test-kind-...-r-1389). SEE k1 for what replaced it.
 #
 # ARMS (each graded against the live sbl -bf oracle, in BOTH modes):
 #   a1  the row's shape: a function statement `(~ATOM(L) ATOM(CDR(L))) :F(FRETURN)` under &STCOUNT
@@ -39,7 +39,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #   w1  the live witness: aisnobol TEST reduced to 89 self-contained lines (SPITCORE's DEXP, LISTARG, POP/UNCONS, MAPCAR,
 #       LREVERSE and READ/UNREAD inlined, LOADEX's spitlib reads cut) -- `|ARGUMENT.LIST`, the SNOLISP list print
 #       k1  DELETED 2026-10-17 with SCRIP_ZD_HOOK_RELEASE (hq_zetas, the spine flip, under the cto's review: ZETA HAS NO MODES,
-#           and CEO-1680 allows no seam in SCRIP for a test); its readings below stand as history. It was STRUCTURAL since 2026-10-14: w1's mode-4 .s under SCRIP_ZD_HOOK_RELEASE=0 must DIFFER from the shipped .s
+#           and R-1680 allows no seam in SCRIP for a test); its readings below stand as history. It was STRUCTURAL since 2026-10-14: w1's mode-4 .s under SCRIP_ZD_HOOK_RELEASE=0 must DIFFER from the shipped .s
 #           (67 lines at the re-cut) -- the release is live in emission; identical .s is UNPROVEN, not green. Its behavioural
 #           form was proven ONCE at the re-cut on a local uncommitted build whose own-failure family lacked IR_CALL and
 #           IR_BINOP_TEST (what SCRIP_ZD_TESTFAM=0 selected): w1 m3 under SCRIP_ZD_HOOK_RELEASE=0 died ZGC-STALE SIGSEGV.
@@ -47,7 +47,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #       runs at c0b017520 and f6a0ea418; clean with either switch alone); if it does, the switches are inert or the
 #       pre-cure planner has changed underneath this gate: UNPROVEN, not green. Until 2026-10-11 k1 was a1, whose pre-cure
 #       paths became self-consistent (its .s still differs under the switch -- the residue moves from STATEMENT_BEGIN's
-#       release to beta/STATEMENT_END -- but it reads right either way), so the gate read UNPROVEN on a live cure (CEO-1663).
+#       release to beta/STATEMENT_END -- but it reads right either way), so the gate read UNPROVEN on a live cure (R-1663).
 #       a3 is NOT a control arm on purpose: its pre-cure over-pop lands on a corrupted-but-often-survivable spine and read
 #       correct 3 runs in 6 -- a coin is not a control.
 #

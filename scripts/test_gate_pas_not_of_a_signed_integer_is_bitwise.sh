@@ -2,7 +2,7 @@
 # test_gate_pas_not_of_a_signed_integer_is_bitwise.sh -- not applied to a signed integer expression is the bitwise complement (not 10
 # = -11), as fpc reads it in -Miso and in its own modes; not of a Boolean stays logical.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): E_expression lowered
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): E_expression lowered
 # every not as a logical negation, so writeln(not a) with a: integer = 10 printed false (FALSE in an FPC dialect) where fpc prints
 # -11. THE CURE (lower_pascal_tree.c): pas_is_signed_intexpr answers yes for an integer literal, a scalar of type integer, longint,
 # int64, smallint or shortint, and +, -, *, mod, and / or / xor (iand / ior / ixor) over such operands; not of one lowers to -1 - x.

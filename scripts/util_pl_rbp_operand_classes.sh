@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# util_pl_rbp_operand_classes.sh -- THE PROLOG RBP OPERANDS BY CLASS, OVER THE WATCH'S POPULATION (ceo CEO-1980; Lon 2026-10-25 19:0x CDT, in-chat
-# to the ceo, verbatim: "I suspect that the 13_000+ operands on RBP for Prolog are bogus, so go fix that and get those down to zero. there is no
+# util_pl_rbp_operand_classes.sh -- THE PROLOG RBP OPERANDS BY CLASS, OVER THE WATCH'S POPULATION (R-1980; Lon 2026-10-25 19:0x CDT, in-chat
+# to the officer, verbatim: "I suspect that the 13_000+ operands on RBP for Prolog are bogus, so go fix that and get those down to zero. there is no
 # reason that the LIFO can not be enforced."). Runs util_bb_placement_census.py over util_spine_population.sh --lang prolog with this root's
 # ./scrip (the population and the count the PLACEMENT watch reads) and prints its BB_HOSTS_RBP_CLASS lines and one board line:
 #   PL_RBP_BOARD total=<ops_rbp> call-act-word=.. construct-record=.. record-across-excursion=.. operand-across-retaining-edge=.. address-escapes=.. other=.. (tree <scrip>)

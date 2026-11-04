@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_writef_dcg_basics_and_clpfd_goal_terms_answer_as_swipl.sh -- TWO SWI LIBRARIES AND ONE CLPFD ROAD THE CLPFD ROLL-OUT'S
-# SMOKE FOUND, ANSWERED AS SWIPL IN BOTH MODES (cfo 2026-10-11; the roll-out of library(clpfd), CEO-1596, over samples of the
+# SMOKE FOUND, ANSWERED AS SWIPL IN BOTH MODES (cfo 2026-10-11; the roll-out of library(clpfd), R-1596, over samples of the
 # Rosetta and puzzles packages and Triska's clpfd examples; the cfo's lane, the SWI library modules).
 #
 # (1) library(writef) -- writef/1,2 with %w %p %s %d, the %Nr and %Nl columns, \l -- was absent (157 writef calls in the Prolog
@@ -22,7 +22,7 @@
 # NOT HERE: writef's %p prints through print/1, which quotes in swipl and not in SCRIP -- not graded here. NOT HERE: writef's %Nc centres with floor/1 of an integer, which SWI answers and ISO, gprolog and SCRIP refuse (type_error(float,
 # 1)) -- a dialect split for the dialect switch (ARCH-PROLOG-DIALECTS.md), named to hq_prolog.
 #
-# (7) AN IMPORTED LIBRARY IS NOT QUIET FOR A BARE NAME (cfo 2026-10-14, row prolog-swi-library-test-dcg-high-order-...-ceo-1664):
+# (7) AN IMPORTED LIBRARY IS NOT QUIET FOR A BARE NAME (cfo 2026-10-14, row prolog-swi-library-test-dcg-high-order-...-r-1664):
 # QUIET_BARE keeps a data atom from selecting a library the program never asked for, and so also refused the one bare name that IS a
 # reference -- a nonterminal passed as a closure, sequence(string, sep, L) in SWI's test_dcg_high_order (existence_error(string/3),
 # 30/32). A library the program imports (use_module(library(dcg/basics)) or use_module(library(dcg/basics), [string//1])) is now

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_icn_ipl_head_sidecar_cuts_an_endless_output.sh -- the NAME.head sidecar (hq_icon 2026-10-04; Lon CEO-1474; one gate per sidecar,
-# CEO-1315): a unit that writes without end (progs/noise) is graded on its first N bytes, the cut ending the run, for the oracle and both SCRIP
+# test_gate_icn_ipl_head_sidecar_cuts_an_endless_output.sh -- the NAME.head sidecar (hq_icon 2026-10-04; Lon R-1474; one gate per sidecar,
+# R-1315): a unit that writes without end (progs/noise) is graded on its first N bytes, the cut ending the run, for the oracle and both SCRIP
 # modes alike. The planted unit writes 300000 bytes. GREEN: with NAME.head 100 the ref is 100 bytes and m3 and m4 pass. RED: with the cap ignored
 # the ref is the whole output. A cap that is not one integer 1..67108864 refuses (rc 2).
 set -uo pipefail

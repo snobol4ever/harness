@@ -11,7 +11,7 @@
 # as p_10, WHICH IS ANOTHER ATOM'S NAME. A stale pointer that still reads plausibly is exactly what a single
 # eyeball comparison cannot catch, which is why this grades against the oracle and grades REPEATEDLY.
 #
-# ⛔ THE REF IS CUT FROM swipl AT RUN TIME, NEVER FROM OUR OWN OUTPUT (CEO-753, and hq_U's standing ask on this
+# ⛔ THE REF IS CUT FROM swipl AT RUN TIME, NEVER FROM OUR OWN OUTPUT (R-753, and hq_U's standing ask on this
 # class). If swipl cannot run, this REFUSES rc=2 -- it never falls back to a ref we minted ourselves.
 #
 # ⛔ THREE INGREDIENTS ARE ALL REQUIRED and ablating any one of them makes the witness pass, so do not "simplify"

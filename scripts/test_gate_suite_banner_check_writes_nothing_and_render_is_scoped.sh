@@ -15,7 +15,7 @@
 #   (a) SCORE.md's row for one suite hand-staled: --check exits 1 naming that key, both files byte-identical after
 #   (b) --render with no scope: rc=2, both files byte-identical
 #   (c) --render --only <key>: exactly that display row changes, every other line of SCORE.md byte-identical; --check then agrees on it
-#   (d) a TSV row whose criterion stamp ends 'OUTSIDE=7' renders its result cell as 'pass/total OUTSIDE=7' (with EXCLUDED=k between them when the row carries today_excluded, CEO-1286, and WALL=<n>s after it when the row carries today_secs, CEO-1562)
+#   (d) a TSV row whose criterion stamp ends 'OUTSIDE=7' renders its result cell as 'pass/total OUTSIDE=7' (with EXCLUDED=k between them when the row carries today_excluded, R-1286, and WALL=<n>s after it when the row carries today_secs, R-1562)
 # FAIL_ONCE=1 runs arm (a)'s check on an AGREEING pair so the expected disagreement never comes, proving the arm trips.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; GH="$HERE/../../.github"; B="$GH/scripts/util_suite_banner.py"

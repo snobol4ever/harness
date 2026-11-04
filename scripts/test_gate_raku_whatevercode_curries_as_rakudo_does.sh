@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_whatevercode_curries_as_rakudo_does.sh -- THE BARE TERM `*` AS AN OPERAND BECOMES A CODE VALUE, EAGERLY AT EACH OPERATOR, PARAMETERS MERGING
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, M1; Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; ceo CEO-1479).
+# (row raku-every-suite-to-100-under-nonet-r-1266, M1; Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; R-1479).
 #
 # THE DEFECT, measured over Roast with scrip --compile and nothing executed: 92 files die at the driver guard graph_native_emittable_mode ("variable '*' is read
 # but never assigned") because the lowerer saw the term `*` as an unresolved variable. THE CURE is Rakudo's own rule, applied where the parser builds the tree

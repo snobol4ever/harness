@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_callback_wraps_are_counted_live.sh -- THE CALLBACK WRAPS ARE COUNTED BY REACH, NOT BY SPELLING (row
-# gc-the-forty-nine-callback-wrap-sites-carry-rt-gc-callback-and-the-count-is-live-not-static, the cfo, 2026-09-28; ceo CEO-1040:
-# util_gc_acceptance.py's static wrap count cannot tell "every site wrapped" from "no site ever run", the defect retracted at CEO-1041).
+# gc-the-forty-nine-callback-wrap-sites-carry-rt-gc-callback-and-the-count-is-live-not-static, the cfo, 2026-09-28; R-1040:
+# util_gc_acceptance.py's static wrap count cannot tell "every site wrapped" from "no site ever run", the defect retracted at R-1041).
 #
 # THE INSTRUMENT is ../harness/scripts/util_gc_callback_reach.py: it runs programs under gdb with a silent breakpoint on rt_gc_cb_close and
 # reads the file and line every RT_GC_CALLBACK close passes, so a site is REACHED only when a real callback through it returned --

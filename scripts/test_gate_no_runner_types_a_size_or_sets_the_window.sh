@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# test_gate_no_runner_types_a_size_or_sets_the_window.sh -- NO RUNNER TYPES A SIZE OR SETS THE WINDOW (Lon 2026-09-28 15:4x CDT; ceo CEO-1353;
+# test_gate_no_runner_types_a_size_or_sets_the_window.sh -- NO RUNNER TYPES A SIZE OR SETS THE WINDOW (Lon 2026-09-28 15:4x CDT; R-1353;
 # RULES.md hard-cap rule clause 8 (g)(4); the coo's row instruments-every-runner-passes-each-units-declared-heap-and-stack-in-both-modes-...).
 # Half (a) of that row's DONE-WHEN, a static census: util_size_setters_census.py names every code line of a script outside test_gate_* that
 # sets SCRIP_HEAP_KB/SCRIP_HEAP_MB (the collector's initial WINDOW, never a declared heap) or types a size (a literal -d/-s/-i switch, a
 # literal SCRIP size, ulimit -s, an oracle's own size), except a file in THE ONE ALLOWLIST (scripts/fixtures/arena_env_setters_allowlist.txt,
 # path<TAB>reason). THE ARMS:
 #   1  THE REAL TREE: outside the allowlist 0 and stale rows 0 (red until every runner reads its units' declarations -- the population is
-#      printed by file:line, the work list the HQs cure under CEO-801 and the coo reviews);
+#      printed by file:line, the work list the HQs cure under R-801 and the coo reviews);
 #   2  the census is selective: a scratch scripts/ with one planted window setter, one typed -s256m, a Python argv "-d512m" and a docstring
 #      and a report line that only MENTION sizes names exactly the three setters;
 #   3  an allowlisted planted setter is not named, and an allowlist row naming a file that sets nothing reads STALE;

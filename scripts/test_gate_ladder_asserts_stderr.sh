@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_ladder_asserts_stderr.sh -- THE LADDER CAN SEE STDERR, AND SAYS HOW MUCH OF IT NOBODY ASSERTS.
 #
-# ⛔⭐ THE CLASS (hq_B .github 367b083e; hq_V FINDING-2026-09-09-hq_V-the-ladder-cannot-see-stderr...; ceo CEO-457 item 3):
+# ⛔⭐ THE CLASS (hq_B .github 367b083e; hq_V FINDING-2026-09-09-hq_V-the-ladder-cannot-see-stderr...; R-457 item 3):
 # lib_ladder.sh graded BOTH modes with `2>/dev/null`, and Icon's &trace writes EXCLUSIVELY to stderr (core.c
 # trace_print_icon) -- so every trace rung in the Icon ladder was graded on stdout alone and COULD NOT FAIL FOR THE
 # REASON IT WAS MINTED. procedure_write_264 holds the one-line ref `A:end` and PASSES while the oracle prints seven.
@@ -11,7 +11,7 @@
 #
 # ⭐ WHAT THIS GATE PINS, AND WHAT IT DELIBERATELY DOES NOT. It pins that the graded runs CAPTURE stderr and that the
 # runner PRINTS THE DEBT. It does NOT pin the ASSERTION MECHANISM -- merged `2>&1` (hq_B: one ref per entry, the
-# seven-point standard) versus per-entry ALL.err blocks (hq_V: additive, all 886 refs untouched) is an open ceo
+# seven-point standard) versus per-entry ALL.err blocks (hq_V: additive, all 886 refs untouched) is an open the officer
 # decision, and a gate that pinned one would decide it by default. ⛔ A gate must not settle an argument its author
 # has referred upward; that is how a ruling gets made by whoever wrote the test first.
 #

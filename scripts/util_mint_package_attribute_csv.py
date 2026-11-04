@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """util_mint_package_attribute_csv.py -- write a package suite's ALL.csv attribute file from the enumeration its runner grades.
 
-Lon 2026-09-23 00:1x CDT, in-chat to the ceo, verbatim: "Well, each test should have the needed amount of memory in the
-attribute TSV/CSV files." and 00:2x: "get the attribute files created for all test suites." (CEO-1167/1168.)  Every graded
+Lon 2026-09-23 00:1x CDT, in-chat, verbatim: "Well, each test should have the needed amount of memory in the
+attribute TSV/CSV files." and 00:2x: "get the attribute files created for all test suites." (R-1167/1168.)  Every graded
 suite carries an ALL.csv; a suite that is a bare directory of programs gets one from THIS script, in the shape the eight
 existing package files already use (rank,entry,origin,package,n_lines,stdin,want_rc) plus the heap_kb column that
 carries a program's DECLARED arena in KB (empty = the shipped default).  Feature columns are not minted here (row
@@ -20,7 +20,7 @@ prints: ATTRIBUTE-CSV package=P entries=N stdin=S wantrc=W preserved_heap=H writ
 import argparse, csv, glob, io, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import corpus_suite_harness as _h
-DEFAULT_HEAP_KB, DEFAULT_STACK_KB = str(_h.GC_HEAP_CAP_KB), str(_h.GC_STACK_FLOOR_KB)  # every program carries SPITBOL's -d128m -s4m unless it declared its own (Lon 2026-09-25, ceo CEO-1261)
+DEFAULT_HEAP_KB, DEFAULT_STACK_KB = str(_h.GC_HEAP_CAP_KB), str(_h.GC_STACK_FLOOR_KB)  # every program carries SPITBOL's -d128m -s4m unless it declared its own (Lon 2026-09-25, R-1261)
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--package', required=True); ap.add_argument('--dir', required=True)
@@ -42,8 +42,8 @@ def main():
         files = [f for f in files if rx.search(open(f, encoding='utf-8', errors='replace').read())]
     if not files: print(f"REFUSE(2): the enumeration matched no file under {d} -- a suite with zero programs is not a suite"); return 2
     preserved = {}
-    preserved_stack = {}   # stack_kb, preserved the same way (CEO-1225)
-    preserved_cmd = {}     # compile_args and run_args, the unit's command line, preserved the same way (clause 8 (f), CEO-1281)
+    preserved_stack = {}   # stack_kb, preserved the same way (R-1225)
+    preserved_cmd = {}     # compile_args and run_args, the unit's command line, preserved the same way (clause 8 (f), R-1281)
     cmd_cols = ['compile_args', 'run_args']   # a new table gets both; --refresh keeps the ones the table has, never imposes one
     if os.path.exists(out):
         if not a.refresh: print(f"REFUSE(2): {out} exists; --refresh rewrites it preserving heap_kb"); return 2

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_body_term_is_built_by_the_emitted_allocation_sequence.sh -- A PROLOG BODY TERM IS BUILT BY THE BOX, NOT BY rt_pl_dop_mkc.
 # hq_prolog 2026-10-03, row prolog-bb-a-body-term-is-built-by-the-emitted-allocation-sequence-not-rt-pl-dop-mkc-924-call-sites
-# (CEO-1477; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 3). ARM 1: zebra.pl and crypt.pl compiled to mode-4 text name no rt_pl_dop_mkc -- the
+# (R-1477; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 3). ARM 1: zebra.pl and crypt.pl compiled to mode-4 text name no rt_pl_dop_mkc -- the
 # $mkc box allocates its argument block with one rt_gcheap_alloc, stores the result cell before the poll, and writes the functor and the kids
 # itself (an unbound kid: a fresh self-reference in the block, the variable's cell bound to it under the trail test). ARMS 2-7: six witnesses
 # against swipl in m3 AND m4: bound kids and a nested list tail, unbound kids bound later and read back, the trail (a structure binding undone
@@ -9,7 +9,7 @@
 # the box), a 16-argument compound with a late-bound kid read back through =.., and sharing (findall, one variable in two terms, nested terms,
 # copy_term). The expected text is the oracle's, cut with /usr/bin/swipl -q -t halt at gate-writing time.
 # ARM 8, w_order (row prolog-bb-a-term-built-over-an-unbound-heap-variable-links-to-it-never-rebinds-it-so-the-standard-order-of-variables-holds, re-minted per
-# CEO-1511): an unbound kid already on the heap is LINKED from the new block, never rebound, so two variables keep their standard order however many
+# R-1511): an unbound kid already on the heap is LINKED from the new block, never rebound, so two variables keep their standard order however many
 # terms are built over them (r(f(M,N),R1), r(f(N,M),R2) gives R1 \== R2; msort of the same two variables in either order is one list). RED on origin
 # a6b90f22e in both modes: two of its checks read no.
 # RED BEFORE on origin 35ed4e649: arm 1 names rt_pl_dop_mkc (zebra 38 sites, crypt 37); the witnesses pass there (they are the behaviour the

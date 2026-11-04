@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_error_inside_eval_of_a_string_fails_the_eval_and_counts_against_errlimit.sh
 #
-# SPITBOL'S RULE FOR AN ERROR WHILE EVAL(string) RUNS (sbl.min's stage stgee, the rule CEO-1322 copied; measured
+# SPITBOL'S RULE FOR AN ERROR WHILE EVAL(string) RUNS (sbl.min's stage stgee, the rule R-1322 copied; measured
 # here with sbl -bf at run time): EVAL compiles the string and evaluates it under stage stgee, and err04 pops the
 # error to the nearer of the innermost program-defined function call and the evaluation. At &ERRLIMIT 0 the EVAL
 # FAILS and &ERRLIMIT is untouched; at &ERRLIMIT > 0 it is the ordinary err07 path, so the EVAL fails AND THE ERROR

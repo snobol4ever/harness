@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 # test_gate_oracle_args_sidecar_is_declared_and_reaches_the_oracle.sh -- THE ORACLE'S COMMAND-LINE SIZE IS DECLARED BESIDE THE UNIT AND
-# EVERY TOOL THAT RUNS THE UNIT PASSES IT (ceo CEO-1353, RULES.md clause 8 (g)(3): "oracle_args for sbl -d/-s ... the one reader passes it
+# EVERY TOOL THAT RUNS THE UNIT PASSES IT (R-1353, RULES.md clause 8 (g)(3): "oracle_args for sbl -d/-s ... the one reader passes it
 # whenever the oracle runs live or a ref is cut"; (g)(4): a runner types no size of its own). oracle_env's twin for an oracle sized on its
 # command line: <stem>.oracle_args, one line NAME<TAB>SWITCH[ SWITCH], read by lib_declared_arena.sh's declared_oracle_args_beside through
 # corpus_suite_harness.oracle_args_declarations -- the one reader.
 #   R1-R7  the reader: a declared line echoes its switches; an unadmitted switch (-i), another unit's name, a malformed size, a switch
 #          named twice and an empty line each REFUSE rc 2; no sidecar echoes nothing, rc 0.
-#   R8-R10 the ruled oracle FLAGS (ORACLE_FLAGS_ADMITTED; CEO-1540, the cto 2026-10-07: prolog_recognizer is graded against swipl
+#   R8-R10 the ruled oracle FLAGS (ORACLE_FLAGS_ADMITTED; R-1540, the cto 2026-10-07: prolog_recognizer is graded against swipl
 #          --traditional): the flag echoes whole; another spelling of it and a flag named twice REFUSE rc 2.
 #   B      the declaration is the oracle's NEED, read behaviourally: a 100000-deep SNOBOL4 recursion dies ERROR 246 under sbl -bf at its
 #          default stack and prints its depth under the switches the reader echoes for its sidecar.
 #   C      the bootstrap parser chain declares: every bootstrap/parser_<lang>.sc carries .heap and .stack the one reader turns into scrip's
 #          -d/-s switches and an .oracle_args it accepts (the coo 2026-10-03: the chain dies ERROR 246 under sbl at its default stack on
 #          the snocone, icon and pascal workhorse inputs).
-#   W      the ten tools that run the chain (the parse grid and its phase profile since CEO-1485) read the chain's declaration -- each calls the reader on the chain -- and a doctored copy
+#   W      the ten tools that run the chain (the parse grid and its phase profile since R-1485) read the chain's declaration -- each calls the reader on the chain -- and a doctored copy
 #          of util_parser_furthest_cursor.sh that types sbl's size again instead of passing it reads RED here (fail once). That no tool
 #          types a size is test_gate_no_runner_types_a_size_or_sets_the_window.sh's census.
 #   W2     the eight SNOBOL4 tools that run sbl on a unit -- the scorecard (the Gimpel, Budne, AIS and Dotnet engine), the bench-ref
-#          minter, the two demo identity boards and, since CEO-1485, the four timing benches (rep loop, bar, campaign probe, demo
+#          minter, the two demo identity boards and, since R-1485, the four timing benches (rep loop, bar, campaign probe, demo
 #          triangulation) -- pass that unit's declared switches to sbl, and SCRIP's declared sizes where they run
 #          it (the coo 2026-10-03: treebank's full input dies ERROR 246 at sbl's default stack; demos/snobol4/treebank/treebank.oracle_args).
 # EXIT: 0 every arm holds; 1 an arm is red; 2 could not measure.
@@ -51,7 +51,7 @@ printf 'u\t\n' > "$W/u.oracle_args"
 rm -f "$W/u.oracle_args"
 [ "$(rd "$W/u.sno")" = "0|" ] && ok "R7 no sidecar echoes nothing, rc 0" || bad "R7 no sidecar read '$(rd "$W/u.sno")'"
 printf 'u\t--traditional\n' > "$W/u.oracle_args"
-[ "$(rd "$W/u.sno")" = "0|--traditional" ] && ok "R8 the ruled oracle flag --traditional (CEO-1540) echoes whole" || bad "R8 the ruled flag read '$(rd "$W/u.sno")'"
+[ "$(rd "$W/u.sno")" = "0|--traditional" ] && ok "R8 the ruled oracle flag --traditional (R-1540) echoes whole" || bad "R8 the ruled flag read '$(rd "$W/u.sno")'"
 printf 'u\t--traditional=true\n' > "$W/u.oracle_args"
 [ "$(rd "$W/u.sno")" = "2|" ] && ok "R9 a flag spelled other than its ruling (--traditional=true) REFUSES rc 2" || bad "R9 a misspelled flag read '$(rd "$W/u.sno")'"
 printf 'u\t--traditional --traditional\n' > "$W/u.oracle_args"

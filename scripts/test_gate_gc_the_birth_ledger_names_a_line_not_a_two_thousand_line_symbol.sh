@@ -12,7 +12,7 @@
 # ⛔⛔ WHAT THAT COST, MEASURED, NOT HYPOTHESISED.  hq_icon reported two Icon rungs entries crashing
 # deterministically at SCRIP_HEAP_MB=1 with "the IDENTICAL birth signature both times: kind=215, allocated by
 # rt_wsb_alloc, called from try_call_builtin_by_name_bl_s", and read that as ONE unrooted allocation class with
-# two independent reproducers; the ceo routed it on that basis.  With the offset printed and resolved:
+# two independent reproducers; the officer routed it on that basis.  With the offset printed and resolved:
 #   procedure_coexpr_suspend_replace_3 -> libscrip_rt.so+0x53d86a -> by_name_dispatch.c:6895, Icon repl(s,n), 64 KB
 #   procedure_every_scan_replace_16    -> libscrip_rt.so+0x54344a -> by_name_dispatch.c:7350, the line reader, 64 B
 # TWO DIFFERENT SITES, 455 LINES AND TWO BUILTINS APART.  The signatures were never identical; the SYMBOL was.
@@ -52,12 +52,12 @@ else echo "  arm 1 FAIL: $total kind(s) declared, these carry no name:${missing:
 # ARM 2 -- THE LEDGER NAMES A RESOLVABLE OFFSET, AND IT RESOLVES TO THE RIGHT FILE.  A symbol alone cannot
 # discriminate 26 call sites in one function; module+offset can, and addr2line is the reader.
 examined=$((examined + 1))
-# THE BIRTH LINE IS MADE BY THIS GATE'S OWN FIXTURE, NEVER BY A SEAM IN SCRIP (hq_collector 2026-10-14, CEO-1680; row
-# gc-blocking-gate-birth-ledger-names-a-line-red-no-resolvable-site-ceo-1697).  This arm used to drive an Icon witness under two
+# THE BIRTH LINE IS MADE BY THIS GATE'S OWN FIXTURE, NEVER BY A SEAM IN SCRIP (hq_collector 2026-10-14, R-1680; row
+# gc-blocking-gate-birth-ledger-names-a-line-red-no-resolvable-site-r-1697).  This arm used to drive an Icon witness under two
 # runtime plants (SCRIP_GC_PLANT_STALE_SIGMA=1 left the scan subject unreloaded after a call, SCRIP_GC_PLANT_FLIP=1 poisoned the
 # old ground) so a stale read would fault and the ledger would print.  STEP B (SCRIP d51164383) made the subject a typed cell the
 # chain over the maps visits and forwards, the planted read no longer reached poisoned ground, no line printed, and the arm read
-# red on a CURED collector.  Lon 2026-10-11 (CEO-1680): no broken code planted so a test can trip; a seam stays allowed only inside
+# red on a CURED collector.  Lon 2026-10-11 (R-1680): no broken code planted so a test can trip; a seam stays allowed only inside
 # an INSTRUMENT.  So the fault is made by the test's own code: the fixture calls rt_pl_fresh_var_ref (by_name_dispatch.c, a direct
 # rt_ws_alloc_descr caller whose name the ledger's allocator walk does not skip; a C road, since the rtx asm leaf rt_str_alloc carves
 # no frame and the ledger then names the leaf's caller's caller) 3000 times, keeps the 1500th cell, collects, and reads it -- the

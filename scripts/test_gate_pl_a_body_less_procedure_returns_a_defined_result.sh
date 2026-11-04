@@ -2,7 +2,7 @@
 # stale-binary preflight -- util_require_fresh.sh is the ONE authority; no second copy of the staleness rule here.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_pl_a_body_less_procedure_returns_a_defined_result.sh -- A PROCEDURE WHOSE BODY IS `true` MUST NOT
-# HAND ITS CALLER THE FRAME-MAP ADDRESS AS ITS RESULT (hq_prolog 2026-09-23, CEO-1215; cto-approved cure).
+# HAND ITS CALLER THE FRAME-MAP ADDRESS AS ITS RESULT (hq_prolog 2026-09-23, R-1215; cto-approved cure).
 # ⛔⭐ THE DEFECT, MEASURED WITH GDB: emit_gc_map_cell (emit.cpp) loads the activation frame's map with
 # `lea rax, [rip + .Lgcmap_<fam>]` and used to leave rax holding it. A body of IR_SUCCEED alone never writes the
 # result register, so gamma forwarded that address as the call's result, and the Prolog det call site tests its low
@@ -14,11 +14,11 @@
 # THREE ARMS, BOTH MODES. (A) a generated witness: 256 body-less procedures, each called through catch/3 from a det
 # site, printing bad(K) for any that reads as failure -- measured before the cure, m4 linked -no-pie: bad(80)
 # bad(111) bad(210). (B) the Logtalk clause_2 case program itself (iso_clause_2_01, built by util_logtalk_grade's
-# own planner so it tracks the grader), the witness the ceo's row named. (C) STRUCTURAL, LAYOUT-FREE: in every
+# own planner so it tracks the grader), the witness the officer's row named. (C) STRUCTURAL, LAYOUT-FREE: in every
 # witness's mode-4 .s, each frame-map load is followed by `mov eax, 0` before the next instruction that could read
 # rax. A behavioural witness is only red when a map address happens to end in 0x68; (C) is red on ANY layout when the
 # cure is missing, and its canary proves it can say no.
-# ⛔ REFS ARE CUT FROM swipl AT RUN TIME, never from our output (CEO-753); no swipl -> REFUSE rc=2.
+# ⛔ REFS ARE CUT FROM swipl AT RUN TIME, never from our output (R-753); no swipl -> REFUSE rc=2.
 # ⛔ mode 4 is linked -no-pie, as every suite grader links it; a PIE link hides the behavioural half.
 # EXIT: 0 clean · 1 a violation · 2 UNPROVEN (no binary, no oracle, no witness compiled, a canary not red).
 set -u

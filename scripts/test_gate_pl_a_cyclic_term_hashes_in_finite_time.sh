@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_cyclic_term_hashes_in_finite_time.sh -- A CYCLIC TERM HASHES IN FINITE TIME, IN BOTH MODES.
-# hq_prolog 2026-10-03, the coo's red on swi_tests (CEO-1342 pass 33: core/test_acyclic.pl HANG in mode 4, every case): term_hash/2 (e161ff3b2) walked
+# hq_prolog 2026-10-03, the coo's red on swi_tests (R-1342 pass 33: core/test_acyclic.pl HANG in mode 4, every case): term_hash/2 (e161ff3b2) walked
 # X = f(X) for ever in BOTH modes -- the mode-3 run showed its cases printed before the kill, the mode-4 binary's stdout was block-buffered and showed
 # nothing, so the red read as mode 4 only. The walker now marks every compound on its path (pl_acyclic_walk's own mark) and a kid reaching a marked
 # ancestor hashes one constant. Witness: X = f(X), term_hash(X, T), integer(T) answers in both modes within 10 s with swipl's text; an acyclic term's

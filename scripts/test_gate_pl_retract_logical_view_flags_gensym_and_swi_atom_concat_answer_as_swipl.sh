@@ -2,7 +2,7 @@
 # test_gate_pl_retract_logical_view_flags_gensym_and_swi_atom_concat_answer_as_swipl.sh -- retract/1 MATCHES A CLAUSE TERM (H :- B) AND A
 # MODULE-QUALIFIED HEAD ON THE RUN-TIME ROAD, KEEPS THE LOGICAL UPDATE VIEW, flag/3 get_flag/2 set_flag/2 with_mutex/2 AND library(gensym)
 # EXIST, AND IN THE SWI DIALECT atom_concat/3 TAKES A NUMBER, AS swipl ANSWERS (cfo 2026-10-14, row
-# prolog-swi-db-test-db-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# prolog-swi-db-test-db-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's db/test_db.pl read 6/20 graded in both modes. The cures: (1) a retract/1 whose argument is not a literal clause (a variable,
 # or anything called through call/1 -- every plunit case body) built the target (A :- true) at compile time, so retract((foo(X) :- true))

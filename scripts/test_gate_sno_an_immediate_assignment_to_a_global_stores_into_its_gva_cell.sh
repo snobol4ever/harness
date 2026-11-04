@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_an_immediate_assignment_to_a_global_stores_into_its_gva_cell.sh -- AN IMMEDIATE ASSIGNMENT ($ name) WHOSE TARGET IS A
 # GVA GLOBAL is emitted as rt_cap_open_gva(cell, saved, cur, name): the emitted code hands the runtime the variable's own GVA cell
 # (the same cell NV_CELL_IF_FASTSET_fn would find by name -- a function's local of that name lives in the same cell through the
 # name-save, so dynamic scoping is untouched), and the entry allocates the substring, copies it and stores the DESCR without a
-# hash lookup, a memo strcmp or the comm_var_active call (ceo 2026-09-24, CEO-1250: porter x4 at the 512 MB arena read
+# hash lookup, a memo strcmp or the comm_var_active call (2026-09-24, R-1250: porter x4 at the 512 MB arena read
 # NV_CELL_IF_FASTSET_fn 7.7% + strcmp 6.7% of cycles under the by-name form; 4.43 G -> 3.76 G instructions on the cure). The entry
 # falls back to rt_cap_open_plain (the by-name store, unchanged) whenever an I/O association exists (g_call_fastpath_off), the
 # monitor is attached, a TRACE is set or the debug trace is on -- so every observable side effect is the plain path's (a

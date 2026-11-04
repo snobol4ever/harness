@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_xsb_dialect_a_module_file_declaring_immutable_is_never_reloaded_as_xsb.sh -- A MODULE FILE THAT DECLARES :- immutable. IS NEVER RELOADED, AND AN IMMUTABLE FILE NEVER REPLACES A LOADED MODULE (hq_packages 2026-10-29, CEO-1927: XSB 5.0.0 is the oracle of
+# test_gate_pl_xsb_dialect_a_module_file_declaring_immutable_is_never_reloaded_as_xsb.sh -- A MODULE FILE THAT DECLARES :- immutable. IS NEVER RELOADED, AND AN IMMUTABLE FILE NEVER REPLACES A LOADED MODULE (hq_packages 2026-10-29, R-1927: XSB 5.0.0 is the oracle of
 # packages/prolog/xsb_tests; the prolog_tests programs test_immutable and test_immutable2). XSB names a module by its file: [xld02_m] loaded again after the file changed replaces a regular module, but a module
 # loaded from a file with :- immutable. stays, a later load of the same module name is ignored whatever the new file holds, and an immutable file loaded over a regular module is ignored. SCRIP's XSB loader
 # ('$lf_install') re-installed every load and raised existence_error(procedure, immutable/0) for the directive; it records the module name (the file's base name) with its immutability now and skips the install.

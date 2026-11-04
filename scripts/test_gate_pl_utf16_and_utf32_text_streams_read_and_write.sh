@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_utf16_and_utf32_text_streams_read_and_write.sh -- A PROLOG TEXT STREAM READS AND WRITES UTF-16BE/LE AND UTF-32BE/LE
-# (cfo 2026-10-11, row prolog-logtalk-reads-100-percent-...-ceo-1689: Logtalk unicode/encodings lgt_unicode_open_4_read_03..09).
+# (cfo 2026-10-11, row prolog-logtalk-reads-100-percent-...-r-1689: Logtalk unicode/encodings lgt_unicode_open_4_read_03..09).
 #
 # Before this landing SCRIP's streams knew one encoding: open/4 detected only the UTF-8 BOM, its encoding(E) option refused every
 # name but UTF-8, and set_prolog_flag(encoding, 'UTF-16LE') raised domain_error -- so the seven read_0x cases, each guarded by
@@ -12,7 +12,7 @@
 # UTF-32LE). bom(false) skips detection, so the BOM is read as the code 0xFEFF.
 #
 # ARM 1 (the suite's own expectations): util_logtalk_grade.py --group encodings in m3 and m4 -- each case is graded against the
-# expectation ISO/IEC 13211-1 and Logtalk state in the case -- floor 29 per mode (RE-PINNED 9 -> 29, cfo 2026-10-11, CEO-1695/1696:
+# expectation ISO/IEC 13211-1 and Logtalk state in the case -- floor 29 per mode (RE-PINNED 9 -> 29, cfo 2026-10-11, R-1695/1696:
 # the 20 _03/_04 fixture cases are graded with _02 replayed first through the backend adapter, lib_logtalk_sequenced.tsv; the 20
 # _01/_02 logtalk_compile/logtalk_load cases are EXCLUDED NO_ORACLE_ANSWER; measured 29/29 here and 6/29 on 1c320b13e, before the
 # streams). ARM 2 (the bytes): a term written to a stream opened with encoding(E) and bom(true), in each of

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_bus_probe_kills_its_whole_tree_and_holds_no_identity.sh -- THE BUS PROBES LEAVE NO ORPHAN AND FREEZE NO IDENTITY (the coo 2026-11-01, CEO-2107 as
+# test_gate_bus_probe_kills_its_whole_tree_and_holds_no_identity.sh -- THE BUS PROBES LEAVE NO ORPHAN AND FREEZE NO IDENTITY (the coo 2026-11-01, R-2107 as
 # amended, ARCH-SHARED-DEVELOPMENT 12 item 7; Lon: "how do all the orphans get created? fix that."). At 14:2x three assign probes timed out: GNU timeout
 # signals only its own process group, the runner's own inner `timeout -k 10 1500` was a second group, so three XSB smoke trees ran on reparented to the
 # user manager for 25 minutes and pinned the coo's scope at its memory.high; and the assigns held the coo identity for their whole probe run, so every

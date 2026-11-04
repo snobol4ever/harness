@@ -10,7 +10,7 @@
 # term_expansion hook produced), w3 a unit whose tests call predicates its hook produced (the test body ran in user and raised existence_error). NOT MATCHED, the
 # known difference: a Var = Var goal before the annotated one (c10(X, Y) :- X = Y, Y = f(_)).
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: each table is cut from /usr/bin/swipl on every run and the gate REFUSES rc=2 when swipl is absent or its answer is empty.
-# FAIL-ONCE (CEO-1680): on origin 127bfb1c4 w1 reads FAIL in m3 and m4 (the unmoved source form), w2 FAIL, w3 FAIL (existence_error on the unqualified call).
+# FAIL-ONCE (R-1680): on origin 127bfb1c4 w1 reads FAIL in m3 and m4 (the unmoved source form), w2 FAIL, w3 FAIL (existence_error on the unqualified call).
 # Usage: bash ../harness/scripts/test_gate_pl_clause_2_returns_a_static_clause_with_its_leading_unifications_moved_to_the_head_and_a_loaded_unit_test_body_runs_in_its_unit_as_swipl.sh
 set -uo pipefail
 GATE_NAME=test_gate_pl_clause_2_returns_a_static_clause_with_its_leading_unifications_moved_to_the_head_and_a_loaded_unit_test_body_runs_in_its_unit_as_swipl

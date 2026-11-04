@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_template_ab.sh — THE TEMPLATE A/B WITNESS, BOUNDED ON DISK (hq_templates, row
-# templates-economy-the-watch-loop-wrote-19-gb-into-its-session-scratchpad-in-80-minutes-..., ceo CEO-1332).
+# templates-economy-the-watch-loop-wrote-19-gb-into-its-session-scratchpad-in-80-minutes-..., R-1332).
 #
 # The loop's law 1 (behavior-neutral always) is proven by the mode-4 .s of every corpus program before and after a
 # template edit. The ad-hoc capture it replaces kept every .s on disk -- 3253 files, 4.7 GB per side, four sides in
@@ -16,7 +16,7 @@
 # A program killed by the timeout (AB_TIMEOUT, default 60 s; rc 124) wrote a partial .s, so its sha reads "timeout",
 # and diff counts a timeout on EITHER side as UNPROVEN, printed apart, never as a difference: under load a 90 MB .s
 # (jcon jtran.icn) finishes on one side and times out on the other with the same binary.
-# FAN-OUT (ceo CEO-1333): the workers are lib_fanout.sh's fanout_width, max(2, min(4, cores minus load)), and a capture
+# FAN-OUT (R-1333): the workers are lib_fanout.sh's fanout_width, max(2, min(4, cores minus load)), and a capture
 # runs in the batch class (util_batch.sh, shared-dev step 4); AB_JOBS overrides. At width 2 a side takes about ten minutes.
 # The binary is ./scrip of the tree this script lives in, as built: build before each side.
 set -uo pipefail

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners invoked on scratch packages as instrument fixtures, not boards (CEO-1272, CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona and Jcon runners invoked on scratch packages as instrument fixtures, not boards (R-1272, R-523)"
 # test_gate_icon_runners_grade_the_preprocess_only_contract.sh -- THE tpp CONTRACT, HELD BY BOTH ICON RUNNERS (hq_icon, SCRIP 999a62f58:
 # icont's ipp.c ported whole, scrip -E prints what icont -E prints; coo 2026-09-25, the naming hq_icon accepted 21:0x). Upstream grades
 # tpp by preprocessing, never by running it: `icont -E tpp.icn tpp9.icn`, stderr then stdout, byte for byte, exit 1 by design.
 # PREPROCESS.tsv names each contract (program<TAB>argv<TAB>rc) and STEM.E.ref beside the program holds icont -E's stderr then stdout.
-# Every argv file is a program graded by the one run; the fragment it $includes is a CONTAINER (CONTAINERS.tsv, CEO-1272).
+# Every argv file is a program graded by the one run; the fragment it $includes is a CONTAINER (CONTAINERS.tsv, R-1272).
 # ARMS, on a scratch package whose ref is cut live from icont -E (pp.icn $includes frag.icn and raises a deliberate $error, rc 1;
 # pp2.icn is the contract's second argv): (1) arizona grades both argv programs PASS in both modes, the fragment out of shipped;
 # (2) jcon does the same for a one-file contract; (3) one byte changed in the ref reads FAIL in both runners, never PASS; (4) a

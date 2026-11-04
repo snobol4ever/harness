@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_xsb_dialect_a_run_time_consulted_file_reaches_the_xsb_builtins_and_reads_a_raw_newline_in_a_quoted_atom.sh -- A FILE THE PROGRAM CONSULTS AT RUN TIME CALLS XSB'S BUILTINS AND READS XSB'S
-# QUOTED ATOMS (hq_packages 2026-10-29, ceo + cfo: sub_tests_decker, DESIGN-PLAN xsb-tabling-wfs step 10; CEO-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests). Two defects, one witness.
+# QUOTED ATOMS (hq_packages 2026-10-29 + cfo: sub_tests_decker, DESIGN-PLAN xsb-tabling-wfs step 10; R-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests). Two defects, one witness.
 # (1) The compiler links a library predicate when the program text names it; a clause of the file the program consults at run time (sub_tests_Driver.pl's decker :- ..., load_dync(Data/decker_facts))
 #     is not program text, so load_dync/1, term_depth/2, term_size/2, import/1 and the rest of xsb_builtins, xsb_dialect and xsb_ordsets were pruned and the call raised existence_error(procedure,
 #     load_dync/1). A program of the XSB dialect that names a consult-family goal now keeps every export of those three libraries, as it already kept lists, apply and ordsets.

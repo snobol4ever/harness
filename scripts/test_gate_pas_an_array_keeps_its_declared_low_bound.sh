@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_array_keeps_its_declared_low_bound.sh -- an array is indexed over its declared index-type, not over 0..high
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266 (landing 2). mk_array_init emitted
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266 (landing 2). mk_array_init emitted
 # arr_make(high), a block over 0..high, whatever the declared low: array [-2..2] failed on every in-range negative index, an index below
 # a positive low (a[4] on [5..9]) was accepted, low(a) of an array folded to 0, a named-subrange or builtin-ordinal index type
 # (array [smallint]) never registered as an array at all, and the array's recorded low was read AFTER its element type, so an element

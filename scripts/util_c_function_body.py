@@ -2,7 +2,7 @@
 """util_c_function_body.py FILE NAME [NAME...] [--raw] -- print the file-scope DEFINITION of each named C function, one statement per line.
 
 A structural gate that read a function by physical line (an awk range from the line `static void f(...)` to the next `^}`) went
-blind when the 200-column re-flow (CEO-1565) packed a block onto one line or put its opening brace beside the signature. This
+blind when the 200-column re-flow (R-1565) packed a block onto one line or put its opening brace beside the signature. This
 tool finds the definition by its name and its braces instead: the name followed by a parameter list and a `{` (a prototype,
 ending in `;`, and a call, followed by anything else, are skipped, so an extern "C" guard is transparent), then the body to
 its matching `}`, counting braces outside strings, character literals and comments. The text is printed with a line break after every `{`, `}` and `;` that sits outside parentheses, so a

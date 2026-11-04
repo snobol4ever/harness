@@ -41,7 +41,7 @@ trap 'rm -rf "$DIR"' EXIT
 FILTER="${1:-}"
 ICONT="${ICONT:-}"
 # ⛔ THIS PROBE USED TO NAME TWO DEAD PATHS -- $S4A/workspace/refs-src/... (never existed) and $ROOT/refs/...
-# (SCRIP/refs deleted org-wide, CEO-765) -- and it did NOT refuse when both missed: it left ICONT empty, skipped
+# (SCRIP/refs deleted org-wide, R-765) -- and it did NOT refuse when both missed: it left ICONT empty, skipped
 # the oracle block entirely, printed "-" in the ORACLE column and silently graded every probe against the
 # checked-in .ref files instead of ground truth. The oracle was reachable the whole time at
 # /home/resources/icon-master/bin/icont. icont_bin() is the ONE authority for that path.

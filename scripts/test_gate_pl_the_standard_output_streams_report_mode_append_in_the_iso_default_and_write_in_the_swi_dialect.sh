@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_standard_output_streams_report_mode_append_in_the_iso_default_and_write_in_the_swi_dialect.sh -- stream_property(S, mode(M)) of user_output,
 # user_error and current_output answers append in SCRIP's ISO default and write under the SWI dialect marker, in both modes (row
-# prolog-logtalk-clause-2-and-stream-property-2-three-cases-fail-in-both-modes-ceo-1887, hq_prolog 2026-10-22: Logtalk stream_property_2 cases
+# prolog-logtalk-clause-2-and-stream-property-2-three-cases-fail-in-both-modes-r-1887, hq_prolog 2026-10-22: Logtalk stream_property_2 cases
 # sics_stream_property_2_06d, lgt_stream_property_2_09c and lgt_stream_property_2_10c expect append and read write).
 # THE TWO ARMS AND THEIR PROVENANCE. ISO arm: ISO/IEC 13211-1 opens the standard output streams in append mode; the expectation is the suite's own, lifted from
 # corpus/packages/prolog/logtalk_iso/predicates/stream_property_2/tests.lgt (the three cases above), and NO oracle answers it (swipl 10 and gprolog 1.6 both

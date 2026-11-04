@@ -38,7 +38,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import util_logtalk_extract as ex   # noqa: E402
-import lib_timeout_retry as _ltr   # noqa: E402 -- a graded run's timeout under load is retried once (CEO-1335)
+import lib_timeout_retry as _ltr   # noqa: E402 -- a graded run's timeout under load is retried once (R-1335)
 
 # ⛔ Helpers the shim implements. A helper NOT in this set makes its case UNGRADED and names the helper, so
 # the work owed reads off the board instead of hiding inside a red count. Keep it in sync with
@@ -55,7 +55,7 @@ DROP_DIRECTIVES = ("if", "elif", "else", "endif", "import", "use_module", "ensur
 # clauses before `:- object(` and the helper clauses inside it travel with EVERY case of that file, so a
 # single helper written in Logtalk's own message-sending syntax (`^^Goal`, `Obj::Goal`) makes every one of
 # that file's generated programs a parse error -- and the case then reports `nooutput`, which reads as the
-# construct under test failing. Measured 2026-09-12 against the ceo's independent emulation: 40 files and
+# construct under test failing. Measured 2026-09-12 against the officer's independent emulation: 40 files and
 # 1486 of 3617 cases were graded this way, is_2 and numbers among them, and every one was a verdict on
 # `cleanup :- ^^clean_text_input.` rather than on arithmetic. ⭐ THE SHAPE OF THE DEFECT IS THE POINT: the
 # harness was wrong in a way that could only ever produce reds, so it never looked like a harness bug --
@@ -86,7 +86,7 @@ SEQ_TABLE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib_logtal
 
 def load_sequenced(path=SEQ_TABLE, setups=None):
     """{(group, case): reason} read from the declaration table. A malformed line is NAMED, never skipped. A line may carry a fourth
-    column, a SETUP goal (ceo CEO-1695): the case is then graded with that goal run inside it ahead of its own goal, instead of its
+    column, a SETUP goal (R-1695): the case is then graded with that goal run inside it ahead of its own goal, instead of its
     file's prefix -- encodings' _03/_04 cases query facts their fixture defines, loaded through the adapter's '$lgt_load_prolog_file'/1
     as lgtunit's run would have loaded it at _02. `setups`, when given, is filled {(group, case): goal}."""
     out, bad = {}, []
@@ -106,44 +106,44 @@ def load_sequenced(path=SEQ_TABLE, setups=None):
     return out, bad
 
 
-# ⛔⭐ THE EXCLUDED CASES ARE NAMED BESIDE THE SUITE, ONE ROW EACH WITH THE CASE'S OWN CONDITION (Lon 2026-10-05, in-chat to the ceo,
-# verbatim: "Mark the Windows dependent tests as Excluded." and "Mark the bounded-integer tests as Excluded."; ceo CEO-1519, CEO-1520),
+# ⛔⭐ THE EXCLUDED CASES ARE NAMED BESIDE THE SUITE, ONE ROW EACH WITH THE CASE'S OWN CONDITION (Lon 2026-10-05, in-chat,
+# verbatim: "Mark the Windows dependent tests as Excluded." and "Mark the bounded-integer tests as Excluded."; R-1519, R-1520),
 # the shape of a SNOBOL4 package's EXCLUDED=k. An excluded case is never run and never counted as pass or fail; every other case is
-# in the denominator (Lon, CEO-1518: "We have NO expected failures."). The file is EXCLUDED_CASES.tsv, not EXCLUDED.tsv, because the
+# in the denominator (Lon, R-1518: "We have NO expected failures."). The file is EXCLUDED_CASES.tsv, not EXCLUDED.tsv, because the
 # package inventory reads EXCLUDED.tsv as excluded FILES and these are cases inside the files. Each class names the evidence the
 # grader checks on the case itself, so a row cannot outlive the condition that justified it.
 EXCLUDED_TABLE = "EXCLUDED_CASES.tsv"
 EXCLUDED_CLASSES = {
     "WINDOWS_ONLY": "the :- if(...) branch this suite compiles only on Windows (its unix else-branch is graded)",
     "BOUNDED_INTEGERS_ONLY": "a condition(...) that holds only where integers are bounded (SCRIP is unbounded, like SWI)",
-    # ceo CEO-1524 (2026-10-05): an if/else whose branches expect opposite outcomes of one goal, so no engine passes both; the ceo
+    # R-1524 (2026-10-05): an if/else whose branches expect opposite outcomes of one goal, so no engine passes both; the officer
     # decided FEATURE PRESENT (util_logtalk_extract.RULED) and the sibling branch is this row.
     "EXCLUSIVE_BRANCH": "the sibling branch of a ruled :- if(...)/else pair whose two branches expect opposite outcomes (the feature-present branch is graded)",
-    # ceo CEO-1524 (2026-10-05): read of a dotless float (1e33) expecting syntax_error. SCRIP's default reads it as SWI does, which
+    # R-1524 (2026-10-05): read of a dotless float (1e33) expecting syntax_error. SCRIP's default reads it as SWI does, which
     # 11 SWI suite programs depend on; the strict ISO reading is built under set_prolog_flag(iso, true) (the cfo's).
     "DOTLESS_FLOAT_READ": "reads a dotless float such as 1e33 expecting syntax_error; SCRIP's default reads it as SWI does (the strict ISO reading is set_prolog_flag(iso, true))",
     # Lon 2026-11-01 (GOAL-COO COO-455, verbatim: "For the sort, pick the ProRungs, not the LogTalk one." / "Do exclude that LogTalk failure since it contends."):
     # a markerless program compares a float and an integer by value (swipl's default), so a case expecting ISO 1995's all-floats-first order contends.
     "STANDARD_ORDER_BY_VALUE": "expects ISO 1995's all-floats-first standard order; SCRIP's markerless order compares a float and an integer by value (Lon, COO-455)",
-    # ceo CEO-1540 (2026-10-07): max_arity is an integer (ISO, GNU); at SCRIP's 2147483647 a case written for a small max_arity asks for a
+    # R-1540 (2026-10-07): max_arity is an integer (ISO, GNU); at SCRIP's 2147483647 a case written for a small max_arity asks for a
     # structure no declared heap holds, and expects a representation_error where an engine raises resource_error (the cfo, 4f612be5d).
     "BOUNDED_MAX_ARITY_ONLY": "a condition(...) that holds only where max_arity is not unbounded, written for a system whose max_arity is small",
-    # Lon via the ceo, CEO-1696 (2026-10-11, RULES.md section Oracles): "Exclude any program in which we have no way to get output from an
+    # Lon via the R-1696 (2026-10-11, RULES.md section Oracles): "Exclude any program in which we have no way to get output from an
     # oracle, or in which we do not know the answer." The evidence checked on the case, either form: its goal calls a Logtalk SYSTEM
-    # predicate (LOGTALK_SYSTEM below), which the oracle answers with existence_error; or (ceo CEO-1697) it builds a term by functor/3
+    # predicate (LOGTALK_SYSTEM below), which the oracle answers with existence_error; or (R-1697) it builds a term by functor/3
     # with an arity literal of 20 or more digits (beyond 2^64) -- unbounded's functor_01/02 and arg_02/03 assert that a term of arity
     # ~1.8e45 is built, and swipl, whose max_arity is unbounded, raises representation_error(size_t): no run reproduces the answer.
-    # ceo CEO-1977 (2026-10-25), the third evidence form: a format/2,3 column-stop case (a ~t fill point and a ~N+ column stop) whose asserted
+    # R-1977 (2026-10-25), the third evidence form: a format/2,3 column-stop case (a ~t fill point and a ~N+ column stop) whose asserted
     # text is not the text the pinned oracle swipl 9.0.4 prints -- the assertion is a ref that is not the oracle's, so the answer is not known.
     # test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh runs swipl on every such row and reds the row the day swipl agrees with it.
-    # ceo CEO-2002 and cto (2026-10-28), the fourth evidence form: the case's UNIT carries `condition :- G.` and every Prolog oracle answers G false, so lgtunit skips the
+    # R-2002 and cto (2026-10-28), the fourth evidence form: the case's UNIT carries `condition :- G.` and every Prolog oracle answers G false, so lgtunit skips the
     # whole unit under every oracle (control/if_3: G is predicate_property(if(_,_,_), built_in), false on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle).
     # test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh runs each oracle on every such row's condition and reds the row the day one of them answers true.
-    # cto CEO-2127 (2026-11-04), the same form at CASE level: the case's own condition({G}) option, G a goal every Prolog oracle answers false, so lgtunit skips the case under
+    # cto R-2127 (2026-11-04), the same form at CASE level: the case's own condition({G}) option, G a goal every Prolog oracle answers false, so lgtunit skips the case under
     # every oracle (predicate_property_2 lgt_predicate_property_2_23: G is predicate_property(if(_,_,_), built_in)); the same gate probes those conditions.
-    # cto CEO-2117 (2026-11-04), the fifth evidence form: a write_term max_depth case over a LIST whose asserted text is GNU Prolog's ([1,2,3|...] at 3) where the pinned
+    # cto R-2117 (2026-11-04), the fifth evidence form: a write_term max_depth case over a LIST whose asserted text is GNU Prolog's ([1,2,3|...] at 3) where the pinned
     # oracle swipl 9.0.4 prints [1,2|...]; the generated program carries no dialect marker, so it is the default dialect, which takes SWI where GNU and SWI conflict
-    # (CEO-1536; Lon on the contending Logtalk sort case, COO-455: "Do exclude that LogTalk failure since it contends."). The assertion is a ref that is not the oracle's.
+    # (R-1536; Lon on the contending Logtalk sort case, COO-455: "Do exclude that LogTalk failure since it contends."). The assertion is a ref that is not the oracle's.
     # test_gate_logtalk_max_depth_rows_disagree_with_swipl.sh runs swipl on every such row and reds the row the day swipl prints the asserted text.
     "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, asserts a column-stop format/2 text that swipl 9.0.4 does not print, asserts a write_term max_depth list text that swipl 9.0.4 does not print, or sits in a unit whose own condition/0 every oracle answers false, or carries a condition(...) option every oracle answers false",
 }
@@ -176,7 +176,7 @@ def _dotless_float_read(case):
 
 
 def _column_stop_format(g):
-    """The goal calls format/2,3 on a control string with a ~t fill point and a ~N+ column stop (the third NO_ORACLE_ANSWER evidence form, CEO-1977)."""
+    """The goal calls format/2,3 on a control string with a ~t fill point and a ~N+ column stop (the third NO_ORACLE_ANSWER evidence form, R-1977)."""
     m = re.search(r'(?<![A-Za-z0-9_])format\s*\((?:[^"()]*,)?\s*"([^"]*)"', g)
     return bool(m) and "~t" in m.group(1) and bool(re.search(r"~\d+\+", m.group(1)))
 
@@ -185,7 +185,7 @@ ORACLE_FALSE_UNIT_CONDITIONS = ("predicate_property(if(_,_,_),built_in)",)
 
 
 def _unit_condition_false_on_oracle(db):
-    """The file's object carries `condition :- G.` with G a goal every Prolog oracle answers false (the fourth NO_ORACLE_ANSWER evidence form, CEO-2002)."""
+    """The file's object carries `condition :- G.` with G a goal every Prolog oracle answers false (the fourth NO_ORACLE_ANSWER evidence form, R-2002)."""
     for cl in db:
         m = re.match(r"condition\s*:-\s*(.*?)\.?\s*$", cl.strip(), re.S)
         if m and "".join(m.group(1).split()) in ORACLE_FALSE_UNIT_CONDITIONS:
@@ -194,14 +194,14 @@ def _unit_condition_false_on_oracle(db):
 
 
 def _case_condition_false_on_oracle(case):
-    """The case's own condition(...) option, braces stripped, is a goal every Prolog oracle answers false (the fourth NO_ORACLE_ANSWER evidence form at case level, CEO-2127)."""
+    """The case's own condition(...) option, braces stripped, is a goal every Prolog oracle answers false (the fourth NO_ORACLE_ANSWER evidence form at case level, R-2127)."""
     o = "".join((case.options or "").split())
     m = re.search(r"condition\(\{(.*?)\}\)", o) or re.search(r"condition\((.*?)\)(?:,|$)", o)
     return bool(m) and m.group(1) in ORACLE_FALSE_UNIT_CONDITIONS
 
 
 def _max_depth_list_write(g):
-    """The goal calls write_term/2,3 on a list literal with a max_depth(N) option (the fifth NO_ORACLE_ANSWER evidence form, CEO-2117): GNU and SWI count a list's depth differently."""
+    """The goal calls write_term/2,3 on a list literal with a max_depth(N) option (the fifth NO_ORACLE_ANSWER evidence form, R-2117): GNU and SWI count a list's depth differently."""
     return bool(re.search(r"(?<![A-Za-z0-9_])write_term\s*\((?:[^,()\[\]]*,)?\s*\[[^\]]*\]\s*,\s*\[[^\]]*max_depth\(\d+\)", g))
 
 
@@ -229,7 +229,7 @@ def _clause_head_name(clause):
 def express_helper_clause(cl, supported):
     """A helper clause in Logtalk syntax as plain Prolog, or None. The SAME three rewrites a case's goal takes (action_goal):
     ^^helper -> the shim's lgt_helper, {Goal} -> (Goal), a LIB_MESSAGES message -> its shim predicate; anything left over (an
-    unsupported ^^helper, any other Obj::Goal) keeps the clause unexpressible. cfo 2026-10-11 (CEO-1689): open_4's condition
+    unsupported ^^helper, any other Obj::Goal) keeps the clause unexpressible. cfo 2026-10-11 (R-1689): open_4's condition
     helpers create_no_read_permission_file and kin are written with os::operating_system_type, os::shell and ^^file_path, and
     were dropped whole, so lgt_open_4_27..30 read UNGRADED logtalk-only-helper-clause."""
     goal, bad = _rewrite_helpers(cl, supported)
@@ -245,7 +245,7 @@ def split_db(db, supported=None):
     """(plain-Prolog clauses, names dropped). A helper clause in Logtalk-only syntax that the case-goal rewrites cannot express
     (express_helper_clause; never tried when `supported` is None) is DROPPED rather than emitted -- and its name is returned,
     because a case that calls it must become UNGRADED-and-named rather than a silent existence_error red. The file's setup/0 and
-    cleanup/0 hooks are expressed the same way (cfo 2026-10-14, the coo's ruling on CEO-1689: running them is upstream lgtunit
+    cleanup/0 hooks are expressed the same way (cfo 2026-10-14, the coo's ruling on R-1689: running them is upstream lgtunit
     behaviour): fifteen files define cleanup/0 with ^^clean_text_input and kin, and until this landing every one was dropped, so
     lgtunit's cleanup never ran after their cases."""
     keep, dropped = [], set()
@@ -343,7 +343,7 @@ def _braces_to_parens(s):
 # shim predicate each becomes. Anything else of the form Obj::Goal cannot be expressed here, so the case is
 # UNGRADED-and-named -- the alternative, emitting `list::member(...)` into a Prolog file, is a parse error that
 # reads as the builtin under test failing (the harness-made-red class this runner's header is about).
-# cfo 2026-10-11 (CEO-1689, the coo's terms: upstream only): os::, lgtunit::deterministic/2 and integer::between/3, each answered
+# cfo 2026-10-11 (R-1689, the coo's terms: upstream only): os::, lgtunit::deterministic/2 and integer::between/3, each answered
 # in lib_logtalk_lgtunit.pl by the clause upstream writes for the GNU Prolog backend (the shim names the files).
 LIB_MESSAGES = (("list::member", "lgt_member"), ("os::operating_system_type", "lgt_os_operating_system_type"), ("os::shell", "lgt_os_shell"),
                 ("os::file_exists", "lgt_os_file_exists"), ("os::ensure_file", "lgt_os_ensure_file"),
@@ -437,7 +437,7 @@ class Plan(object):
         self.condition = None
         self.prefix = []          # earlier cases' goals, run before this one (see SEQ_TABLE above)
         self.sequenced = None     # the declared reason it needs them
-        self.setup = None         # a declared SETUP goal run ahead of the case's own goal (CEO-1695), instead of the prefix
+        self.setup = None         # a declared SETUP goal run ahead of the case's own goal (R-1695), instead of the prefix
 
 
 def action_goal(c, supported):
@@ -554,7 +554,7 @@ def _finish(c, want, goal, balls, weaker, opts, supported=frozenset()):
     if opts.get("cleanup"):
         goal = "%s, lgt_h((%s))" % (goal, opts["cleanup"])
     p = Plan(c, want=want, goal=goal, balls=balls, weaker=weaker)
-    # A condition takes the goal's own rewrites, ^^helpers and LIB_MESSAGES (cfo 2026-10-11, CEO-1689): lgt_open_4_31's
+    # A condition takes the goal's own rewrites, ^^helpers and LIB_MESSAGES (cfo 2026-10-11, R-1689): lgt_open_4_31's
     # condition(os::operating_system_type(unix)) reached the program verbatim and read "condition false" on every system.
     cond = opts.get("condition")
     if cond:
@@ -570,7 +570,7 @@ def _finish(c, want, goal, balls, weaker, opts, supported=frozenset()):
 def program_text(plan, db, shim_src, loaded=()):
     c = plan.case
     parts = [shim_src]
-    # ⭐ THE SUITE RUNS UNDER ISO'S OWN SWITCH (ceo CEO-1272, CEO-391: conflicts between ISO and the superset go through ISO's prolog flags, set by
+    # ⭐ THE SUITE RUNS UNDER ISO'S OWN SWITCH (R-1272, R-391: conflicts between ISO and the superset go through ISO's prolog flags, set by
     # the program or the suite runner). Placed after the shim, so the shim reads as before, and ahead of the file's database and the case, so both
     # read and run strictly: an argument over 999 is a syntax error (wg17_term_09/10) and 4 / 2 is 2.0 (float_division_2 13/14).
     parts.append(":- set_prolog_flag(iso, true).")
@@ -598,7 +598,7 @@ def program_text(plan, db, shim_src, loaded=()):
     # are local to it, and case 03's X spliced beside case 04's X is ONE variable and a different program.
     for k, g in enumerate(plan.prefix or (), 1):
         parts.append("'$lgt_pre%d' :- %s." % (k, g))
-    # ⛔ THE UNIT'S OWN condition/0 IS A CONDITION OF EVERY CASE IN IT (cto CEO-1888/1996, hq_packages 2026-10-28): lgtunit skips a whole unit whose
+    # ⛔ THE UNIT'S OWN condition/0 IS A CONDITION OF EVERY CASE IN IT (cto R-1888/1996, hq_packages 2026-10-28): lgtunit skips a whole unit whose
     # `condition :- G.` fails, and swipl skips control/if_3 (if/3 is no builtin in either oracle). The object body's clause already travels in db;
     # calling it from '$lgt_cond' makes a skipped unit read UNGRADED, named, where it read FAIL (if_3: 12 FAIL once SCRIP stopped defining if/3).
     unit_cond = any(re.match(r"condition\s*(:-|$)", cl) for cl in db)
@@ -620,7 +620,7 @@ def program_text(plan, db, shim_src, loaded=()):
     return "\n".join(parts) + "\n"
 
 
-# ⭐ THE DECLARED HEAP AND STACK, per case (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's
+# ⭐ THE DECLARED HEAP AND STACK, per case (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's
 # pattern). test_prolog_logtalk_suite.sh reads ALL.csv's heap_kb and stack_kb ONCE through lib_declared_arena.sh -- the one reader, its
 # floors and refusals -- and hands the validated table here with --decl; a case runs in both modes at its own declaration, keyed
 # <group>:<case name> exactly as util_prolog_iso_attributes.py writes the entry, and at the shipped default when it declares nothing.
@@ -634,7 +634,7 @@ def load_decl(path):
 
 
 def decl_switches(decl, fc, plan):
-    """The case's declared heap and stack as SPITBOL's switches, -d<kb>k and -s<kb>k (ceo CEO-1353, RULES.md clause 8 (g); the harness's
+    """The case's declared heap and stack as SPITBOL's switches, -d<kb>k and -s<kb>k (R-1353, RULES.md clause 8 (g); the harness's
     _size_switches): after --run in m3 and leading the compiled binary's command line in m4. ⛔ NEVER SCRIP_HEAP_KB -- gc_heap.c reads it
     as the collector's initial WINDOW, so the declared maximum used to be handed over as a window and the cap stayed the default -- and
     never SCRIP_STACK, an environment knob a transcript cannot show. [] when the case declares nothing: its command line is unchanged."""
@@ -751,7 +751,7 @@ def _sweep(work, results, where, builders, dbs, shim_src, scrip, modes, workroot
 
 
 # ⛔⭐ THE PER-CASE OUTSIDE ASSIGNER (cto ruling 2026-09-13, on hq_C's encodings census; RULES.md FACT RULE
-# CEO-542: OUTSIDE-THE-BASELINE IS ABOUT THE ORACLE, NEVER ABOUT US). A program the oracle cannot run is
+# R-542: OUTSIDE-THE-BASELINE IS ABOUT THE ORACLE, NEVER ABOUT US). A program the oracle cannot run is
 # outside the baseline; a program it CAN run is ours and any gap in it is ours. This assigns that per CASE.
 #
 # WHY PER CASE AND NOT PER FILE. UNGRADABLE.tsv already declares 208 tester.lgt files CONTAINER_OR_LIBRARY
@@ -857,7 +857,7 @@ def assign_outside(work, dbs, supported, root):
     swipl = oracle_binary()
     if not swipl:
         return 0, [], ("no oracle on this machine, so NOTHING is outside -- every case stays IN and in the "
-                       "denominator, because outside-the-baseline is a measurement of the oracle (CEO-542)")
+                       "denominator, because outside-the-baseline is a measurement of the oracle (R-542)")
     cache = {}
     fixtures = {}
     assigned = 0
@@ -985,8 +985,8 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
         return None, [(scrip, "no executable compiler at this path -- a missing binary prints a full, "
                               "plausible, entirely false board rather than nothing")]
     shim_src = open(SHIM, encoding="utf-8").read()
-    # ⛔ NO GUARD IS PROBED (Lon 2026-10-05, CEO-1518: "We do want ALL test programs to run."): the four engine guards probe_guards()
-    # decided took one branch of each pair out of the population; both branches are graded now, as before CEO-1266.
+    # ⛔ NO GUARD IS PROBED (Lon 2026-10-05, R-1518: "We do want ALL test programs to run."): the four engine guards probe_guards()
+    # decided took one branch of each pair out of the population; both branches are graded now, as before R-1266.
     files, bad = ex.parse_suite(root)
     if bad:
         return None, bad
@@ -1128,9 +1128,9 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
     # deleted case would otherwise leave its heap or stack declared for nothing while the receipt counted it as honoured.
     _keys = {"%s:%s" % (fc.group, p.case.name) for fc, p in work}
     # ⭐ A CASE A :- if(...) GUARD DECIDES FALSE IS STILL A VENDORED CASE, SO ITS DECLARATION IS NOT AN ORPHAN -- and it is NAMED here,
-    # per guard, on the board. ⛔⭐ AND IT IS EXCLUDED BY NAME OR THE BOARD REFUSES (Lon 2026-10-05, CEO-1518: "We have NO expected
+    # per guard, on the board. ⛔⭐ AND IT IS EXCLUDED BY NAME OR THE BOARD REFUSES (Lon 2026-10-05, R-1518: "We have NO expected
     # failures."): the only guards that may take a case out are the Windows branch, each one a WINDOWS_ONLY row of EXCLUDED_CASES.tsv,
-    # and the sibling branch of a guard the ceo RULED (util_logtalk_extract.RULED, CEO-1524), each one an EXCLUSIVE_BRANCH row.
+    # and the sibling branch of a guard the officer RULED (util_logtalk_extract.RULED, R-1524), each one an EXCLUSIVE_BRANCH row.
     _dead = {}
     for fc in files:
         if fc.group in graded_groups:
@@ -1164,7 +1164,7 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
         return None, [(k, "ALL.csv declares a heap or stack for this case and no case of that name is graded in its group -- "
                           "the declaration would apply to nothing") for k in _orphan]
     # ⭐ EVERY CASE'S PROGRESS KEY IS group:case, with #n in occurrence order when the population holds the name more than once -- counted over
-    # the WHOLE population before --only narrows it, so a round-robin part writes the key a whole run writes (CEO-1802). The ordinal is per-key
+    # the WHOLE population before --only narrows it, so a round-robin part writes the key a whole run writes (R-1802). The ordinal is per-key
     # occurrence order, not the global index, so adding or removing an unrelated case cannot renumber a survivor.
     _kc = {}
     for fc, p in work:
@@ -1179,7 +1179,7 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
         else:
             progkey[i] = _k
     if only is not None:
-        # ⭐ --only (the round robin's seam, CEO-1802/1806): grade the cases whose group:case the list names, every instance of a repeated name
+        # ⭐ --only (the round robin's seam, R-1802/1806): grade the cases whose group:case the list names, every instance of a repeated name
         _keep = [i for i, (fc, p) in enumerate(work) if "%s:%s" % (fc.group, p.case.name) in only]
         _re = {o: n for n, o in enumerate(_keep)}
         work = [work[i] for i in _keep]
@@ -1193,7 +1193,7 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
     workroot = tempfile.mkdtemp(prefix="lgtsuite.")
     results = {}
     probe_results = {}
-    case_secs = {}   # (work index, mode) -> the case's own wall seconds in that mode, for its progress row (CEO-1676 (c))
+    case_secs = {}   # (work index, mode) -> the case's own wall seconds in that mode, for its progress row (R-1676 (c))
     retried = {}     # mode -> (cases that timed out, the first limit, the long limit, how many timed out again)
     try:
         for mode in modes:
@@ -1271,7 +1271,7 @@ def main(argv):
     ap.add_argument("--modes", default="m3")
     ap.add_argument("--jobs", type=int, default=12)
     ap.add_argument("--group", default=None, help="grade one directory only (a development aid, never a board)")
-    ap.add_argument("--only", default=None, help="a file of group:case names, one per line: grade those cases only (a round-robin part, CEO-1802; "
+    ap.add_argument("--only", default=None, help="a file of group:case names, one per line: grade those cases only (a round-robin part, R-1802; "
                                                  "its rows carry the whole population's keys, and the runner writes no suite row from it)")
     ap.add_argument("--name-reds", action="store_true")
     ap.add_argument("--decl", default=None,
@@ -1310,7 +1310,7 @@ def main(argv):
     # printed a complete board reading population=0, identity 0 == 0 ✓, AND per case 0/0 -- the success
     # shape over an empty measurement, which is the one thing every gate in this tree is forbidden to do.
     if args.group and not work and seqinfo.get("excluded"):
-        # the group matched its file and EVERY case in it is excluded by name (control/if_3, CEO-2002): the measurement is the exclusion list, printed whole
+        # the group matched its file and EVERY case in it is excluded by name (control/if_3, R-2002): the measurement is the exclusion list, printed whole
         print("GROUP %s: none of its %d case(s) is in the graded population -- each is excluded by name (EXCLUDED_CASES.tsv), with its own condition:" % (args.group, len(seqinfo["excluded"])))
         for k, cls, why in seqinfo["excluded"]:
             print("  EXCLUDED %s [%s] %s" % (k, cls, why))
@@ -1409,7 +1409,7 @@ def main(argv):
                     key=lambda t: (-t[1], t[0]))
         if rs:
             print("  OUTSIDE %s, by the PREDICATE that put the case there -- out of the graded denominator, "
-                  "never hidden (CEO-542: the oracle cannot run these):" % m)
+                  "never hidden (R-542: the oracle cannot run these):" % m)
             for r, n in rs:
                 print("    %4d  %s" % (n, r))
     if outside_unresolved:
@@ -1461,7 +1461,7 @@ def main(argv):
     if args.name_reds:
         for x in named[:400]:
             print("    RED " + x)
-    # ⛔⭐ THE AND PER CASE, AND IT IS NOT min(m3, m4) (CEO-372; coo 2026-09-12 on this very board). m3 and
+    # ⛔⭐ THE AND PER CASE, AND IT IS NOT min(m3, m4) (R-372; coo 2026-09-12 on this very board). m3 and
     # m4 both read 1218 PASS and the SETS ARE NOT THE SAME -- m4 carries one more UNGRADED and one fewer
     # FAIL, so they differ by at least one case. Two equal counts over different sets are not a number a
     # suite row can state, and the only honest answer is computed PER CASE: a case passes this suite when
@@ -1476,13 +1476,13 @@ def main(argv):
     if len(modes) > 1 and any(board[m]["PASS"] != both for m in modes):
         print("    ⛔ and it is NOT either per-mode count: %s -- equal counts over different sets"
               % ", ".join("%s=%d" % (m, board[m]["PASS"]) for m in modes))
-    # ⛔⭐ ONE ROW PER CASE PER MODE INTO THE PROGRESS DATABASE (CEO-331). This runner grades with its own
+    # ⛔⭐ ONE ROW PER CASE PER MODE INTO THE PROGRESS DATABASE (R-331). This runner grades with its own
     # loop, so nothing records it automatically and the coverage reader sees the suite as MISSING -- a flip
     # the progress table cannot see is not paid. ⛔ THE PROGRAM KEY IS group:name, never the goal text:
     # case names repeat across directories (iso_cut_0_01 style names are unique per file, not globally),
     # and a colliding key silently shrinks the denominator. UNGRADED is a real outcome in this table's own
     # vocabulary and is recorded as itself -- never dropped, and never collapsed into FAIL.
-    # ⛔⭐ THE KEY MUST BE MEASURED UNIQUE, NOT ASSERTED UNIQUE (coo COO-84 / CEO-779, 2026-09-16). The banner
+    # ⛔⭐ THE KEY MUST BE MEASURED UNIQUE, NOT ASSERTED UNIQUE (coo COO-84 / R-779, 2026-09-16). The banner
     # below this line used to say group:name was the fix for name collisions, and it was READ as a guarantee for
     # weeks while SEVEN pairs collided WITHIN one group -- setof_3:iso_setof_3_11, bagof_3:iso_bagof_3_09,
     # discontiguous_1:discontiguous_1_01/_02/_03, op_3:iso_op_3_10, op_3:iso_op_3_21. The progress DB keys on

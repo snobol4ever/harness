@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${SPITBOL_X32_SUITE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/packages/snobol4/spitbol_x32_tests}" || exit 2
-# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), CEO-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program, as its sibling spitbol_x64 runner did, until 2026-09-26
+# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), R-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program, as its sibling spitbol_x64 runner did, until 2026-09-26
 # test_snobol4_spitbol_x32_suite.sh -- the runner for corpus/packages/snobol4/spitbol_x32_tests, row
 # snobol4-the-21-spitbol-x32-tests-join-the-corpus-as-a-vendored-package-with-a-runner-and-a-suite-row-x32t-lon-2026-09-26
-# (ceo CEO-1287; Lon 2026-09-26: "Place the 21 SPITBOL x32 tests in our corpus repo and make test suite entry for those."
+# (R-1287; Lon 2026-09-26: "Place the 21 SPITBOL x32 tests in our corpus repo and make test suite entry for those."
 # and "where is the X32T test suite? put that in the official list of test suites.").  Suite key x32tests, nick X32T.
 #
 # THE BODY IS test_snobol4_spitbol_x64_suite.sh's, BY DESIGN AND BY PARAMETER ONLY: package spitbol_x32_tests, extension
 # .spt, 21 shipped, progress suite spitbol_x32, score row x32tests.  Every instrument decision that body carries -- the oracle
 # decides whether and how each program is graded (self-check arm vs stream arm, read off the oracle's own output), HANG/CRASH
 # checked before the stream, the mode-4 asm budget and per-step timeout, DEFERRED vs COMPILE_FAIL, the UNGRADED/NARROW/DEFERRED
-# declarations re-asked both ways every run, the population pin, the inventory lockdown, the CEO-1286 denominator -- is
+# declarations re-asked both ways every run, the population pin, the inventory lockdown, the R-1286 denominator -- is
 # documented in that file's header and is not restated here, so the two cannot drift apart in prose.
 #
-# THE ORACLE is sbl -bf and only sbl -bf: the x32 spitbol binary segfaults on hello world on this box (ceo CEO-1287).
-# THE POPULATION is 21 .spt, converted once in the repo under CEO-571 and proven oracle-equivalent file by file
+# THE ORACLE is sbl -bf and only sbl -bf: the x32 spitbol binary segfaults on hello world on this box (R-1287).
+# THE POPULATION is 21 .spt, converted once in the repo under R-571 and proven oracle-equivalent file by file
 # (test_gate_spitbol_x32_case_conversion_is_oracle_equivalent.sh; the package's _PROVENANCE.md).
 # Most are SPITBOL's own build-time filters and read INPUT: each reads its own <stem>.in (the stdin_of block below), and an empty
-# oracle stdout grades nothing unless EMPTY_ANSWER.tsv declares it (ceo to the coo 2026-10-18).
+# oracle stdout grades nothing unless EMPTY_ANSWER.tsv declares it (to the coo 2026-10-18).
 #
 # Exit: 0 iff FAIL=0 in both modes over the graded population; rc=2 when it cannot measure.
 set -u
@@ -26,7 +26,7 @@ SUITE="${SPITBOL_X32_SUITE:-$ROOT/corpus/packages/snobol4/spitbol_x32_tests}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 TIMEOUT="${TIMEOUT:-600}"; M4_ASM_MB="${SPITBOL_X32_M4_ASM_MB:-256}"; SHIPPED_EXPECT="${SPITBOL_X32_SHIPPED:-21}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
-# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_jvm,
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_jvm,
 # verbatim: "Get all SNOBOL4 test suite package runners working with snobol4jvm."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed <suite>@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
@@ -64,11 +64,11 @@ fi
 # includes), so a run in place would both dirty the corpus checkout and let one program's output become
 # the next one's input.  The copy is made once and both engines run inside it.
 RUN="$W/run"; mkdir -p "$RUN"; cp -R "$SUITE"/. "$RUN"/ 2>/dev/null
-# ⛔⭐ EACH PROGRAM'S OWN STDIN (ceo to the coo 2026-10-18, rank 1, from hq_jvm's measurement: "DARK is worse than RED"): most of these
+# ⛔⭐ EACH PROGRAM'S OWN STDIN (to the coo 2026-10-18, rank 1, from hq_jvm's measurement: "DARK is worse than RED"): most of these
 # programs are SPITBOL's own build-time filters that read INPUT, and run on /dev/null they print nothing and exit 0, so the stream arm
 # passed ANY engine that printed nothing (a stub passed X32T 14 and X64T 7). Each filter carries <stem>.in beside it, cut from the
 # program's purpose (def, enum and equ: the data their author bundled after END), and the oracle and both modes read it; a program with
-# no .in reads /dev/null as before (the testpgms runner's stdin_of shape, CEO-1410). The witness is
+# no .in reads /dev/null as before (the testpgms runner's stdin_of shape, R-1410). The witness is
 # test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh.
 stdin_of() { if [ -f "$RUN/$1.in" ]; then printf '%s' "$RUN/$1.in"; else printf '%s' /dev/null; fi; }
 # ⛔⭐ AN EMPTY ORACLE ANSWER IS NO GRADE UNLESS IT IS DECLARED: a stream PASS over an oracle stdout of zero bytes proves only that the
@@ -77,7 +77,7 @@ stdin_of() { if [ -f "$RUN/$1.in" ]; then printf '%s' "$RUN/$1.in"; else printf 
 # EMPTY_ANSWER.tsv beside the suite declares that nothing IS the answer (name<TAB>reason; e and en are a bare END). Re-asked both ways below.
 EMPTY_TSV="$SUITE/EMPTY_ANSWER.tsv"; EMPTY_LIVE=""
 empty_declared() { [ -f "$EMPTY_TSV" ] && awk -F'\t' -v n="$1" '$1 !~ /^#/ && $1 == n && NF > 1 && $2 != "" {f=1} END{exit !f}' "$EMPTY_TSV"; }
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSE(rc=2): lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
@@ -85,26 +85,26 @@ DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 GRADED=0; UNGRADED_N=0; P3=0; F3=0; P4=0; F4=0; D4=0; BOTH=0; SELF=0; STREAM=0; XG_N=0; XG_LIST=""; XG_NAMES=""
 FL3=""; FL4=""; UNG_LIST=""; DEFER_LIST=""; SELF_LIST=""; MASKED_TOTAL=0; MASKED_FIX=0; MASK_LINES=""
-# ⭐ CEO-409 MASKS FROM THE ALL.mask BESIDE THE SUITE, through the one shim (util_apply_ceo409_mask.py, the harness's own body; CEO-432),
-# wired here by ceo CEO-1351 for host's HOST() line -- the oracle's own identity, "x86-64:unix :Macro SPITBOL 15.01", which SCRIP does not
-# impersonate (CEO-1344). Applied to both streams of the STREAM arm only, counted and printed; guardrail 4 is the harness's mask_majority()
+# ⭐ R-409 MASKS FROM THE ALL.mask BESIDE THE SUITE, through the one shim (util_apply_line_mask.py, the harness's own body; R-432),
+# wired here by R-1351 for host's HOST() line -- the oracle's own identity, "x86-64:unix :Macro SPITBOL 15.01", which SCRIP does not
+# impersonate (R-1344). Applied to both streams of the STREAM arm only, counted and printed; guardrail 4 is the harness's mask_majority()
 # read back from the shim's .major, never restated here. No ALL.mask is the byte-identical stream (the shim's default-off arm).
 stream_match() {  # stream_match <m3|m4> <rc>
     [ "$mask_major" = 1 ] && return 1
-    python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/ALL.ref" "$name" "$W/$1.mn" --side=scrip < "$W/$1.out" > "$W/$1.cmp" || return 1
+    python3 "$HERE/util_apply_line_mask.py" "$SUITE/ALL.ref" "$name" "$W/$1.mn" --side=scrip < "$W/$1.out" > "$W/$1.cmp" || return 1
     gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2" && return 0
-    # ⭐ A PORT MAY ANSWER IN sbl's OWN VOICE (ceo CEO-1858 (2), CEO-1864 (3)): the error report on stdout and sbl's exit status, as
+    # ⭐ A PORT MAY ANSWER IN sbl's OWN VOICE (R-1858 (2), R-1864 (3)): the error report on stdout and sbl's exit status, as
     # snobol4dotnet does; the one comparison is lib_gate.sh's gate_port_answer_matches, offered under a port engine only (SCRIP's rows unmoved)
     [ "$PORT" = 1 ] && gate_port_answer_matches "$W/o.cmp" "$W/$1.cmp" "$rcO" "$2"
 }
 stream_note() {  # stream_note <PASS|FAIL> <rc>
     if [ "$1" = PASS ] && [ "$mask_n" -gt 0 ]; then echo "stream: byte-equal stdout vs live sbl -bf, $mask_n line(s) masked by ALL.mask, rc=$2 (oracle rc=$rcO)"
     elif [ "$1" = PASS ]; then echo "stream: byte-equal stdout vs live sbl -bf, rc=$2 (oracle rc=$rcO)"
-    elif [ "$mask_major" = 1 ]; then echo "the mask covers $mask_n of $(grep -c '' "$W/o.out") oracle lines -- a majority-masked fixture is UNGRADABLE and belongs outside the baseline, named, not masked (CEO-409 guardrail 4)"
+    elif [ "$mask_major" = 1 ]; then echo "the mask covers $mask_n of $(grep -c '' "$W/o.out") oracle lines -- a majority-masked fixture is UNGRADABLE and belongs outside the baseline, named, not masked (R-409 guardrail 4)"
     else echo "stream: differs from live sbl -bf, rc=$2 (oracle rc=$rcO)"; fi
 }
 verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then echo CRASH; else echo FAIL; fi; }
-# ⭐ THE PROGRESS DATABASE (CEO-319/331, CEO-383 ruling 2): one row per program per mode, written once at
+# ⭐ THE PROGRESS DATABASE (R-319/331, R-383 ruling 2): one row per program per mode, written once at
 # the end through lib_progress.sh, said aloud either way, never a red board.  Recorded only for the
 # canonical suite path or when S4E_PROGRESS_DB names a scratch table.
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
@@ -135,15 +135,15 @@ compile_m4() {  # compile_m4 <src> <out> [<compile_args>]; on failure echoes "<O
     rm -f "$W/p.s" "$W/p.o"
     return 0
 }
-. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one chunk or a request's entries, rows as each test ends
+. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one chunk or a request's entries, rows as each test ends
 for sno in "$SUITE"/*.spt; do
     _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue; rr_yield "$_rrn" && break; [ "$PROG_RECORD" = 1 ] && rr_flush "$PROG_ROWS"
-    name="$(basename "$sno" .spt)"; base="$(basename "$sno")"; ROW_S3=0; ROW_S4=0   # each mode's own wall for its row (CEO-1676 (c))
-    export S4E_TIMEOUT_KEY="$name"   # the unit a retried timeout's stamp names (CEO-1335)
+    name="$(basename "$sno" .spt)"; base="$(basename "$sno")"; ROW_S3=0; ROW_S4=0   # each mode's own wall for its row (R-1676 (c))
+    export S4E_TIMEOUT_KEY="$name"   # the unit a retried timeout's stamp names (R-1335)
     # ⛔ THE ORACLE FIRST, AND IT DECIDES BOTH WHETHER AND HOW.  Whether: a program our mandated -bf arm
     # cannot get an answer for is UNGRADED (work owed, declared in UNGRADED.tsv).  How: whether its own
     # run carried verdict lines picks the instrument.  Nothing here is read off a name.
-    SE="$(declared_stderr_from_table "$DECL" "$name")" || exit 2   # a unit declaring stderr=merged has both streams captured as ONE pipe, 2>&1, exactly as the harness runs it (CEO-1866)
+    SE="$(declared_stderr_from_table "$DECL" "$name")" || exit 2   # a unit declaring stderr=merged has both streams captured as ONE pipe, 2>&1, exactly as the harness runs it (R-1866)
     declared_answer_clear "$DECL" "$name" "$RUN" || exit 2   # a unit whose answer includes files it writes (arcget: ALL.csv out_files/stderr) starts each engine's run without the last one's files
     "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$5"; if [ "$8" = merged ]; then : > "$6"; exec 2>&1; else exec 2> "$6"; fi; exec "$2" $3 "$4" < "$7"' _ "$RUN" "$SBL" "$SBL_FLAGS" "$base" "$W/o.out" "$W/o.err" "$(stdin_of "$name")" "$SE" 2>/dev/null; rcO=$?
     declared_answer_compose "$DECL" "$name" "$RUN" "$W/o.out" "$W/o.err" || exit 2   # the oracle's answer, composed exactly as both modes' will be (a no-op for a unit declaring neither cell)
@@ -157,7 +157,7 @@ for sno in "$SUITE"/*.spt; do
         prog_row "$name" m3 UNGRADED "the oracle raises ERROR 022 under sbl -bf: the name lives inside an EVAL'd string literal"
         prog_row "$name" m4 UNGRADED "the oracle raises ERROR 022 under sbl -bf: the name lives inside an EVAL'd string literal"; continue
     fi
-    if [ ! -s "$W/o.out" ] && ! inventory_is_excluded "$SUITE" "$base"; then   # an EXCLUDED program is out of pass, fail and the denominator already (CEO-1345)
+    if [ ! -s "$W/o.out" ] && ! inventory_is_excluded "$SUITE" "$base"; then   # an EXCLUDED program is out of pass, fail and the denominator already (R-1345)
         if empty_declared "$base"; then EMPTY_LIVE="$EMPTY_LIVE $base"
         else
             UNGRADED_N=$((UNGRADED_N+1)); _ecls=NEEDS_STDIN_FIXTURE; [ -f "$RUN/$name.in" ] && _ecls=NEEDS_RUNNER_WIRING
@@ -167,7 +167,7 @@ for sno in "$SUITE"/*.spt; do
         fi
     fi
     GRADED=$((GRADED+1))
-    # ⛔ AN EXCLUDED PROGRAM THE ORACLE RUNS (EXCLUDED.tsv class DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, ceo CEO-1345: EXIT(3,file)'s
+    # ⛔ AN EXCLUDED PROGRAM THE ORACLE RUNS (EXCLUDED.tsv class DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27, R-1345: EXIT(3,file)'s
     # resumable load module, Lon: "will be done but after the announcement") is still graded and its verdicts named below, but it
     # leaves pass, fail, rc and the denominator; it returns to them the day its row lands and its EXCLUDED.tsv row is deleted.
     isx=0; inventory_is_excluded "$SUITE" "$base" && isx=1
@@ -175,10 +175,10 @@ for sno in "$SUITE"/*.spt; do
     if [ "$oracle_v" -gt 0 ]; then ARM=self; SELF=$((SELF+1)); SELF_LIST="${SELF_LIST}${base}\n"; else ARM=stream; STREAM=$((STREAM+1)); fi
     mask_major=0; mask_n=0
     if [ "$ARM" = stream ]; then
-        python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/ALL.ref" "$name" "$W/o.mn" --side=oracle < "$W/o.out" > "$W/o.cmp" \
-            || { echo "⛔ REFUSE(rc=2): $base -- the CEO-409 mask sidecar beside $SUITE is refused (the reason above); a mask nobody can audit grades nothing"; exit 2; }
+        python3 "$HERE/util_apply_line_mask.py" "$SUITE/ALL.ref" "$name" "$W/o.mn" --side=oracle < "$W/o.out" > "$W/o.cmp" \
+            || { echo "⛔ REFUSE(rc=2): $base -- the R-409 mask sidecar beside $SUITE is refused (the reason above); a mask nobody can audit grades nothing"; exit 2; }
         mask_n="$(cat "$W/o.mn")"; mask_major="$(cat "$W/o.mn.major")"
-        [ "$mask_n" -gt 0 ] && { MASKED_TOTAL=$((MASKED_TOTAL+mask_n)); MASKED_FIX=$((MASKED_FIX+1)); MASK_LINES="${MASK_LINES}  MASKED  $base  $mask_n line(s) of $(grep -c '' "$W/o.out"), declared in ALL.mask beside the suite (CEO-409; an ORACLE-IDENTITY row is CEO-1344/CEO-1351)\n"; }
+        [ "$mask_n" -gt 0 ] && { MASKED_TOTAL=$((MASKED_TOTAL+mask_n)); MASKED_FIX=$((MASKED_FIX+1)); MASK_LINES="${MASK_LINES}  MASKED  $base  $mask_n line(s) of $(grep -c '' "$W/o.out"), declared in ALL.mask beside the suite (R-409; an ORACLE-IDENTITY row is R-1344/R-1351)\n"; }
     fi
     # --- mode 3
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
@@ -225,13 +225,13 @@ for sno in "$SUITE"/*.spt; do
 done
 GC=$((GRADED - XG_N))
 echo "SPITBOL_X32_BOARD shipped=$SHIPPED graded=$GRADED excluded_graded=$XG_N ungraded=$UNGRADED_N m3_pass=$P3 m3_fail=$F3 m4_pass=$P4 m4_fail=$F4 m4_deferred=$D4 self_check_arm=$SELF stream_arm=$STREAM -- $TREE_LABEL corpus $CORP_HASH RT_OPT=-O0 oracle=sbl-bf timeout=${TIMEOUT}s m4_asm_budget=${M4_ASM_MB}MB"
-echo "SPITBOL_X32_AND both_modes_pass=$BOTH/$GC -- the suite table states this reading (ceo-372: the AND per program; a timed-out or crashed run is HANG/CRASH, never PASS, whatever its stream; a mode 4 we DEFERRED on a declared threshold is never PASS either, and one OUR OWN toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, never in a bucket beside it -- hq_T 2026-09-12)"
+echo "SPITBOL_X32_AND both_modes_pass=$BOTH/$GC -- the suite table states this reading (R-372: the AND per program; a timed-out or crashed run is HANG/CRASH, never PASS, whatever its stream; a mode 4 we DEFERRED on a declared threshold is never PASS either, and one OUR OWN toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, never in a bucket beside it -- hq_T 2026-09-12)"
 # ⛔ THE ROW'S OWN CLAUSE: the population, said in one line, with the remainder NAMED rather than counted.
 echo "SPITBOL_X32_POPULATION graded $GRADED of $SHIPPED shipped -- the ungraded remainder ($UNGRADED_N), each with the oracle's own words:"
 if [ "$UNGRADED_N" -gt 0 ]; then printf '%b' "$UNG_LIST" | sed 's/^/UNGRADED\t/'; else printf 'UNGRADED\t(none -- every shipped program is graded)\n'; fi
 [ -n "$DEFER_LIST" ] && echo "M4-DEFERRED (WE chose not to measure, each carrying its threshold -- asm over ${M4_ASM_MB}MB or the ${TIMEOUT}s compile timeout; never a pass, and never our failure either):$DEFER_LIST"
-[ "$XG_N" -gt 0 ] && echo "EXCLUDED-GRADED (named in EXCLUDED.tsv and run anyway, out of pass, fail, rc and the denominator -- ceo CEO-1345):$XG_LIST"
-echo "SPITBOL_X32_MASKS masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) -- CEO-409 masks declared in ALL.mask beside the suite, counted, the fixture staying in the denominator"
+[ "$XG_N" -gt 0 ] && echo "EXCLUDED-GRADED (named in EXCLUDED.tsv and run anyway, out of pass, fail, rc and the denominator -- R-1345):$XG_LIST"
+echo "SPITBOL_X32_MASKS masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) -- R-409 masks declared in ALL.mask beside the suite, counted, the fixture staying in the denominator"
 printf '%b' "$MASK_LINES"
 [ -n "$FL3" ] && echo "FAIL-M3:$FL3"
 [ -n "$FL4" ] && echo "FAIL-M4:$FL4"
@@ -281,14 +281,14 @@ elif [ "$SELF" -gt 0 ]; then echo "⚠ no NARROW.tsv beside the suite -- $SELF p
 # program is in no bucket at all and appears in no number.  lib_inventory.sh recomputes every bucket
 # itself from the sidecars rather than trusting this runner's counters.
 INV_PACKAGE=spitbol_x32; INV_DIR="$SUITE"; INV_EXT=".spt"
-if ! rr_selected; then   # a chunk grades a part of the package, and the inventory sums the whole shipped package (CEO-1802)
+if ! rr_selected; then   # a chunk grades a part of the package, and the inventory sums the whole shipped package (R-1802)
 INV_LINE="$(inventory_line "$STREAM" "$SELF")"
 if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
 fi
 if [ "$PROG_RECORD" = 1 ]; then
     progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS ROWS NOT RECORDED (writer rc=$? above) -- a run that leaves the table untouched is a defect of that run (progress/README.md), not a red board" >&2
 else echo "progress: scratch suite $SUITE -- $(grep -c . "$PROG_ROWS") row(s) NOT recorded (only the canonical suite, or S4E_PROGRESS_DB, records)"; fi
-rr_selected && { rr_end x32tests; exit 0; }   # a chunk or a request writes its rows and no suite row (CEO-1802)
+rr_selected && { rr_end x32tests; exit 0; }   # a chunk or a request writes its rows and no suite row (R-1802)
 # ⛔⭐ AN EXCLUSION NOBODY SIGNED IS NOT AN EXCLUSION -- THE DEFERRAL DECLARATION, RE-ASKED BOTH WAYS.  The
 # split above stopped a DEFERRED program from redding the board, which is right (WE chose not to measure it)
 # and is ALSO a loosening: without this block, a deferral is a silent exclusion that keeps a green rc, the
@@ -296,7 +296,7 @@ rr_selected && { rr_end x32tests; exit 0; }   # a chunk or a request writes its 
 # threshold, the same contract UNGRADED.tsv carries above -- an UNDECLARED deferral blocks (it is a new fact,
 # not a standing decision), and a declaration the run did not reproduce is said aloud so the list cannot
 # outlive the fact.  ⛔ The FORMAT here is this suite's own; the lane-wide DEFERRED.tsv standard and its
-# re-ask cadence are hq_T's row (CEO-597) and this does not anticipate them.
+# re-ask cadence are hq_T's row (R-597) and this does not anticipate them.
 DEF_TSV="$SUITE/DEFERRED.tsv"; DEF_UNDECLARED=""
 dlive="$(printf '%s\n' $DEFER_LIST | grep . | sort)"
 if [ -f "$DEF_TSV" ]; then
@@ -313,19 +313,19 @@ fi
 # ⛔⭐ POPULATION FLOOR: F3/F4/D4 all read 0 over zero graded entries too (the oracle refusing every
 # program would do it), so refuse before the vacuous-clean verdict below can be reached.
 "$HERE/util_require_population.sh" --gate test_snobol4_spitbol_x32_suite "$GRADED" 1 "graded programs (shipped=$SHIPPED ungraded=$UNGRADED_N deferred_m4=$D4)" || exit 2
-if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (R-1822), graded in m3 alone"
     if [ "$SUITE" = "$CANON_SUITE" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SUITE" = "$CANON_SUITE" ]; then
-# ⛔⭐ CEO-1286 (Lon 2026-09-26): the denominator is SHIPPED minus the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv) -- none here, the
+# ⛔⭐ R-1286 (Lon 2026-09-26): the denominator is SHIPPED minus the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv) -- none here, the
 # 36 are our oracle's own upstream tests -- so the row publishes over shipped, the unreadable ones named in UNGRADED.tsv as debt.
 . "$HERE/lib_outside_shape.sh" || exit 2
 EXCL_D_N="$(excluded_in_outside "$SUITE" "$(printf '%b' "${UNG_LIST:-}" | cut -f1) $XG_NAMES")" || exit 2; DENOM=$((SHIPPED - EXCL_D_N))
-echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set and its $XG_N excluded-graded program(s) (CEO-1345) leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, CEO-1286): pass over $DENOM"
-_cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || { _cc="$(excluded_shape_stamp x32tests "$DENOM" "$UNGRADED_N" "$EXCL_D_N")" || exit 2; [ "$XG_N" -gt 0 ] && _cc="${_cc/not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv/named-in-EXCLUDED.tsv-$((EXCL_D_N - XG_N))-not-in-the-SPITBOL-dialect-CEO-1286-and-$XG_N-deferred-after-the-announcement-by-Lons-word-CEO-1345}"; }
+echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set and its $XG_N excluded-graded program(s) (R-1345) leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
+_cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || { _cc="$(excluded_shape_stamp x32tests "$DENOM" "$UNGRADED_N" "$EXCL_D_N")" || exit 2; [ "$XG_N" -gt 0 ] && _cc="${_cc/not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv/named-in-EXCLUDED.tsv-$((EXCL_D_N - XG_N))-not-in-the-SPITBOL-dialect-R-1286-and-$XG_N-deferred-after-the-announcement-by-Lons-word-R-1345}"; }
 python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite x32tests --suite-key x32tests --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
-    --text "spitbol_x32 both_modes_pass=$BOTH/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N named in EXCLUDED.tsv: not in the SPITBOL dialect, CEO-1286, or $XG_N deferred after the announcement by Lon's word, graded and named, CEO-1345; $GRADED graded) (the table's reading: the ceo-372 AND per program · $SELF graded by the programs' OWN \" pass:\"/\"*FAIL:\" verdict lines, $STREAM by live oracle stdout diff · $UNGRADED_N of $SHIPPED shipped still unreadable by our mandated sbl -bf, named in UNGRADED.tsv and owed to the case-conversion row) · m3 $P3/$GC · m4 $P4/$GC ($D4 m4 DEFERRED on the declared ${M4_ASM_MB}MB asm budget; a program our own toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, hq_T 2026-09-12) · masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) (CEO-409 ALL.mask; host's HOST() line is the oracle's own identity, CEO-1344/CEO-1351) · sbl -bf the one oracle${INV_LINE:+ · $INV_LINE} (\`test_snobol4_spitbol_x32_suite.sh\`)" \
+    --text "spitbol_x32 both_modes_pass=$BOTH/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N named in EXCLUDED.tsv: not in the SPITBOL dialect, R-1286, or $XG_N deferred after the announcement by Lon's word, graded and named, R-1345; $GRADED graded) (the table's reading: the officer-372 AND per program · $SELF graded by the programs' OWN \" pass:\"/\"*FAIL:\" verdict lines, $STREAM by live oracle stdout diff · $UNGRADED_N of $SHIPPED shipped still unreadable by our mandated sbl -bf, named in UNGRADED.tsv and owed to the case-conversion row) · m3 $P3/$GC · m4 $P4/$GC ($D4 m4 DEFERRED on the declared ${M4_ASM_MB}MB asm budget; a program our own toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, hq_T 2026-09-12) · masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) (R-409 ALL.mask; host's HOST() line is the oracle's own identity, R-1344/R-1351) · sbl -bf the one oracle${INV_LINE:+ · $INV_LINE} (\`test_snobol4_spitbol_x32_suite.sh\`)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
 else echo "SCORE.md: scratch suite $SUITE -- not written (only the canonical suite records the leaderboard)"; fi
 [ "$F3" = 0 ] && [ "$F4" = 0 ] && [ -z "$DEF_UNDECLARED" ]

@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_dcg_pushback_is_translated_as_a_body_and_a_bare_brace_atom_is_an_empty_goal.sh
-# -- THE DCG PUSHBACK (ceo CEO-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664 and the umbrella prolog-swi-to-100-the-failing-cases-ceo-1930, SWI
+# -- THE DCG PUSHBACK (R-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664 and the umbrella prolog-swi-to-100-the-failing-cases-r-1930, SWI
 # core/test_dcg.pl context:generalcontext and context:epsilonness). A rule `Head, Pushback --> Body` is translated Head(S0, S) :- Body from S0 to S1, Pushback from S to S1 -- the pushback is
 # an ordinary DCG body run from the final state to the middle state, so it may be terminals, a non-terminal (b, d --> [].), the empty goal {} or a mix. SCRIP's consulted-rule translator
 # handled a terminal list only: a non-terminal pushback unified S with the wrong term, and a bare {} body was called as the non-terminal {}/2. expand_term/2's translator already did the

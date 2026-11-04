@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_outfiles_sidecar_grades_the_files_a_program_writes.sh -- NAME.outfiles APPENDS THE FILES A PROGRAM WRITES TO
-# ITS GRADED OUTPUT, FOR THE REF AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). IPL's
+# ITS GRADED OUTPUT, FOR THE REF AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). IPL's
 # RESULT_NOT_ON_STDOUT programs (ipsplit, lcn, nocr, yescr, idxtext, ...) and painterc/dd2wif put their whole result in files, so a
 # stdout-only grade is empty. ipl_outfiles_append in lib_icon_ipl_isolation.sh appends "=== OUTFILE name ===" and each file's
 # bytes (or "(absent)") after the run, called by the cutter's run_isolated and by ipl_isolation_run alike.

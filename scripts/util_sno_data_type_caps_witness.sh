@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="witness ${0##*/}: a row's criterion run as an instrument, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="witness ${0##*/}: a row's criterion run as an instrument, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# util_sno_data_type_caps_witness.sh -- A DATA TYPE HAS NO FIXED CAP ON ITS FIELD COUNT OR ITS NAME (ceo CEO-1269, 2026-09-25, on the
+# util_sno_data_type_caps_witness.sh -- A DATA TYPE HAS NO FIXED CAP ON ITS FIELD COUNT OR ITS NAME (R-1269, 2026-09-25, on the
 # coo's COO-185 finding, .github findings/FINDING-2026-09-25-coo-the-fixed-caps-ratchet-is-red-on-origin-since-the-speed-landings-and-
 # a-data-type-of-64-fields-or-a-64-character-name-raises-error-22.md). DatType's name[64] and fields[64][64] (rt_runtime.c) and the
 # speed landings' _fv[64] clamps (by_name_dispatch.c, SCRIP 82b4a61a8) refuse legal programs: the coo measured error 22 for a 64-field

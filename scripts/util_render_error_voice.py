@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_render_error_voice.py <oracle> -- THE EQUIVALENCE LIST, applied.  stdin -> stdout.
 
-⛔⭐ ONE ERROR VOICE (Lon 2026-09-12, RULES.md § ONE ERROR VOICE, ceo CEO-623/625): the runtime prints ONE
+⛔⭐ ONE ERROR VOICE (Lon 2026-09-12, RULES.md § ONE ERROR VOICE, R-623/625): the runtime prints ONE
 SCRIP-shaped error for every language and never an oracle's shape.  A ref that pins an oracle's error text is
 graded THROUGH THIS RENDERER: it rewrites every SCRIP error block in a captured stream into the named oracle's
 shape, and the grader diffs the rendered stream against the oracle's ref.  Nothing is hidden and nothing is
@@ -113,7 +113,7 @@ def _fatal_fields(block, oracle):
 
 
 def render_fatal_block(block, oracle):
-    """THE FATAL BLOCK AS THE ORACLE PRINTS IT ON STDOUT (ceo CEO-1344, on hq_snobol4's measurement, the cfo seconding; the coo's
+    """THE FATAL BLOCK AS THE ORACLE PRINTS IT ON STDOUT (R-1344, on hq_snobol4's measurement, the cfo seconding; the coo's
     row instruments-a-spitbol-fatal-is-gradable-...). `block` is ONE SCRIP error block (the `scrip: error` line and its indented
     lines); the result is the list of stdout lines the oracle prints for the same fatal, so a grader can append it to SCRIP's
     stdout before comparing with a ref cut from the oracle. MEASURED 2026-09-28 09:00 CDT on x64 sbl -bf, r.sno (OUTPUT then a
@@ -149,7 +149,7 @@ def _fatal_lines_unwrapped(block, oracle):
     # (a runner hands both engines the same argument: bare in the harness's scratch directory, a full path in the Dotnet runner),
     # so it is never shortened here; a basename would match the one shape and red the other. Lines longer than 120 columns are
     # wrapped by the caller exactly as the oracle wraps them (_wrap_spitbol).
-    # THE FIVE RUN-SUMMARY LINES ARE PRINTED WITH A DASH, NEVER A NUMBER: the CEO-409 mask replaces a matching line with a
+    # THE FIVE RUN-SUMMARY LINES ARE PRINTED WITH A DASH, NEVER A NUMBER: the R-409 mask replaces a matching line with a
     # placeholder ON BOTH SIDES (apply_line_mask keeps the line count), so the line must exist here to be masked -- its value
     # is the field SCRIP does not carry, and `-` says so where a number would be an invention. The mask rows admit the dash.
     return ['', '', '',
@@ -202,11 +202,11 @@ def replace_fatal_in_text(lines, oracle, merged):
 
 
 FATAL_SUMMARY_MASKS = (   # each admits the oracle's number and the renderer's dash, so the placeholder lands on both sides
-    (r'^stmts executed       ([0-9]+|-)$', "SPITBOL's own statement counter printed in its fatal block: oracle-internal until SCRIP reports its own count (CEO-1344); SCRIP's rendered block carries a dash"),
-    (r'^execution time msec  ([0-9]+|-)$', "SPITBOL's own clock reading in its fatal block: a duration, never a program's answer (CEO-1344); SCRIP's rendered block carries a dash"),
-    (r'^REGENERATIONS        ([0-9]+|-)$', "SPITBOL's own collector count in its fatal block: engine bookkeeping, not the program's data (CEO-1344); SCRIP's rendered block carries a dash"),
-    (r'^memory used \(bytes\)  ([0-9]+|-)$', "SPITBOL's own allocator arithmetic (CEO-420 clause (b), csnobol4 ALL.mask 2026-09-08), printed in every fatal block (CEO-1344); SCRIP's rendered block carries a dash"),
-    (r'^memory left \(bytes\)  ([0-9]+|-)$', "the same allocator arithmetic from the other side, masked with its twin or not at all (CEO-1344); SCRIP's rendered block carries a dash"),
+    (r'^stmts executed       ([0-9]+|-)$', "SPITBOL's own statement counter printed in its fatal block: oracle-internal until SCRIP reports its own count (R-1344); SCRIP's rendered block carries a dash"),
+    (r'^execution time msec  ([0-9]+|-)$', "SPITBOL's own clock reading in its fatal block: a duration, never a program's answer (R-1344); SCRIP's rendered block carries a dash"),
+    (r'^REGENERATIONS        ([0-9]+|-)$', "SPITBOL's own collector count in its fatal block: engine bookkeeping, not the program's data (R-1344); SCRIP's rendered block carries a dash"),
+    (r'^memory used \(bytes\)  ([0-9]+|-)$', "SPITBOL's own allocator arithmetic (R-420 clause (b), csnobol4 ALL.mask 2026-09-08), printed in every fatal block (R-1344); SCRIP's rendered block carries a dash"),
+    (r'^memory left \(bytes\)  ([0-9]+|-)$', "the same allocator arithmetic from the other side, masked with its twin or not at all (R-1344); SCRIP's rendered block carries a dash"),
 )
 
 
@@ -224,7 +224,7 @@ if __name__ == '__main__':
     lines = data.split('\n')
     if trailing_nl: lines = lines[:-1]
     if fatal:
-        # THE FATAL BLOCK (CEO-1344): a bash runner pipes SCRIP's captured text through here; the SCRIP error block inside it is
+        # THE FATAL BLOCK (R-1344): a bash runner pipes SCRIP's captured text through here; the SCRIP error block inside it is
         # replaced by the oracle's fatal block as that runner's capture would read it (merged 2>&1, or stdout alone).
         res = replace_fatal_in_text(lines, args[0], fatal == 'merged')
     else:

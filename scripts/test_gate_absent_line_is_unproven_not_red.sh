@@ -1,5 +1,5 @@
 #!/bin/bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # test_gate_absent_line_is_unproven_not_red.sh -- DONE-WHEN for row
 # a-refusal-reported-in-the-vocabulary-of-a-red-absent-line-read-as-unparseable (seat15, dispatched by
 # hq_T, 2026-09-05).
@@ -85,7 +85,7 @@ echo "--- PART B: structural census of real consumers ---"
 # THE CENSUS: the call-sites this row actually landed a cure for (six; three since 2026-10-01, when the zd gate's arm 4 was retired). A reverted or weakened cure must
 # red HERE, not be silently missing from every other board.
 # (test_gate_zd_omega_head_acceptance.sh's three consumers left with its arm 4, retired 2026-10-01 by the coo: the five boards that
-# arm ran as a fixture are the coo's SUITE TABLE's under CEO-1342, so no reader of a sub-runner's summary line is left there.)
+# arm ran as a fixture are the coo's SUITE TABLE's under R-1342, so no reader of a sub-runner's summary line is left there.)
 declare -a CENSUS_FILE=(
     test_gate_nreturn_by_name_value_broken.sh
     test_gate_snocone_returns_codegen.sh

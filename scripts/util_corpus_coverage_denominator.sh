@@ -30,7 +30,7 @@ report_exclusion() {
     fi
 }
 MISSING_EXCL=0
-# ⭐⭐ ONE AUTHORITY (ceo ruling 2026-08-27, ASK2). The exclusion set is NOT restated here. It is READ from
+# ⭐⭐ ONE AUTHORITY (ruling 2026-08-27, ASK2). The exclusion set is NOT restated here. It is READ from
 # corpus_coverage_manifest.tsv, which test_gate_corpus_coverage_classified.sh enforces against the live tree.
 # ⛔ WHY THIS SCRIPT NO LONGER CARRIES ITS OWN LIST: it used to, and it drifted -- it predated Lon's 2026-08-27
 # corpus/programs ruling (RULES.md:55) and kept counting that tree, so this script printed 3105 while the manifest
@@ -55,6 +55,6 @@ if [ "$MISSING_EXCL" -ne 0 ]; then
 fi
 echo
 echo "DENOMINATOR = $TOTAL - $EXCLUDED = $((TOTAL - EXCLUDED))"
-# ⭐ The label is part of the number (ceo ASK2): an unlabelled second denominator may not print anywhere.
+# ⭐ The label is part of the number (ASK2): an unlabelled second denominator may not print anywhere.
 echo "exclusion set: $NEXCL prefix(es), read from $(basename "$MANIFEST") -- the single denominator authority."
 echo "authority gate: ../harness/scripts/test_gate_corpus_coverage_classified.sh"

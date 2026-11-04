@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # util_unload_of_a_running_procedure_answers_like_spitbol.sh -- the DONE-WHEN of row snobol4-unload-of-a-running-procedure-loses-its-return-
-# value-and-never-restores-its-formals (ceo 2026-09-25): a function that UNLOADs itself returns its value and restores its formal on return,
+# value-and-never-restores-its-formals (2026-09-25): a function that UNLOADs itself returns its value and restores its formal on return,
 # as sbl -bf does, in m3 and m4; a redefinition inside the body and an APPLY are the controls. rc 0 / 1 red / 2 could not run.
-R="${S4E_HOME:-/home/claude_ceo}/SCRIP"; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT; cd "$W" || exit 2
+R="${S4E_HOME:-$(cd "$(dirname "$0")/../.." && pwd)}/SCRIP"; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT; cd "$W" || exit 2
 cat > u.sno <<'SNO'
         X = 'global'
         DEFINE('F(X)')                                  :(FEND)

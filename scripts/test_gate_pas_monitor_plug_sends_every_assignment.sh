@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_monitor_plug_sends_every_assignment.sh -- the Pascal monitor plug sends a VALUE for every assignment, typed as fpx types it
 #
-# MEASURED 2026-09-25 by hq_pascal (CEO-1270; Lon, in-chat to hq_pascal: "Fix all trace gaps when you find them the instant you find
+# MEASURED 2026-09-25 by hq_pascal (R-1270; Lon, in-chat to hq_pascal: "Fix all trace gaps when you find them the instant you find
 # them."). A census of the IPC sync-step monitor over the FPC suite's runtime reds (monitor_run.sh --oracle, participants fpx scr)
 # found four divergences that were the PLUG, not the program, each blocking a bracket: (G1) an assignment of a string to a whole char
 # array sent no VALUE (test_tparray10, webtbs_tw22669); (G2) an assignment to a file's buffer-variable sent none (test_tisobuf3);

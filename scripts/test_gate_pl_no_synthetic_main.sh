@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_pl_no_synthetic_main.sh -- SCRIP RUNS WHAT THE ORACLE RUNS, AND SYNTHESIZES NOTHING.
-# Row prolog-directive-less-entries-run-main-but-the-oracle-does-not (ceo ruling 2026-09-02 19:55, CEO-152).
+# Row prolog-directive-less-entries-run-main-but-the-oracle-does-not (ruling 2026-09-02 19:55, R-152).
 #
 # THE DEFECT THIS PINS: lower_pl_stage2 carried an `ninit == 0 && main/0 exists -> run main` fallback, so a
 # directive-less program that merely DEFINED main/0 was executed by SCRIP while `swipl -q -g halt` consults the

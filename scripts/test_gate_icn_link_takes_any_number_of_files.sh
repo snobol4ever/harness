@@ -12,7 +12,7 @@
 # ARM. ARCH-DYNAMIC-STORAGE section 3 item 4: a witness that EXCEEDS THE OLD CAP and reads the ORACLE's answer. A main
 # program links 70 one-procedure files (l1 .. l70, each `return i`) and writes the sum; icont/iconx 9.5.25a must run it
 # (a witness the oracle cannot run refuses the gate), and SCRIP must print iconx's answer with iconx's exit status in both
-# media. RUN FIRST THEN WIRED (CEO-381): RED on 24dc6f75a -- "more than 64 linked files (at l64)", rc 1, both media.
+# media. RUN FIRST THEN WIRED (R-381): RED on 24dc6f75a -- "more than 64 linked files (at l64)", rc 1, both media.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

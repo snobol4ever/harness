@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_atom_number_iso_errors.sh — the atom/number conversion builtins must RAISE the ISO error, not fail
 # and not succeed (row prolog-atom-number-conversion-builtins-do-not-validate-arguments-so-iso-errors-never-fire,
-# hq_R 2026-09-05, approved by the ceo as HQ-RESOLVE's first cure row).
+# hq_R 2026-09-05, approved by the officer as HQ-RESOLVE's first cure row).
 #
 # WHAT THIS PINS. ISO/IEC 13211-1 § 8.16 (atom_length, atom_concat, sub_atom, atom_chars, atom_codes, char_code,
 # number_chars, number_codes) says each of these raises on an unbound or wrongly-typed argument. SCRIP validated
@@ -46,7 +46,7 @@ scrip = os.environ["PLA_SCRIP"]
 # goal <TAB> expected ISO error functor, or the literal `success` where the ORACLE raises nothing.
 #
 # ⛔⭐ TWO WITNESSES CARRY THE ORACLE'S ANSWER, NOT THE VENDOR SUITE'S, AND THEY ARE NAMED HERE RATHER THAN
-# DROPPED (CEO-391: what only another implementation provides is OUTSIDE THE BASELINE -- named beside the
+# DROPPED (R-391: what only another implementation provides is OUTSIDE THE BASELINE -- named beside the
 # suite with the oracle's own error and a source check, out of nobody's denominator, never hidden).
 # The vendored INRIA entries are
 #     [atom_codes(A,[ 0'i, 0's, 1000]),   representation_error(character_code)].  % 1000 not a code
@@ -54,7 +54,7 @@ scrip = os.environ["PLA_SCRIP"]
 # and that comment is the suite author's own premise: a processor whose character set is 0..255. ISO
 # 13211-1 leaves the character set IMPLEMENTATION-DEFINED, and this engine's is Unicode -- which the
 # Logtalk conformance suite's whole unicode/ group tests and which atom_length('<3 Greek letters>') =:= 3
-# now depends on. Measured against the oracle (swipl, the ISO superset, CEO-391 Oracles), 2026-09-13:
+# now depends on. Measured against the oracle (swipl, the ISO superset, R-391 Oracles), 2026-09-13:
 #     atom_codes(A,[0'i,0's,1000])    -> A = is<U+03E8>          (succeeds; NO error)
 #     number_codes(A,[0'1,0'2,1000])  -> error(syntax_error(illegal_number), ...)
 #     atom_codes(A,[0'i,-1])          -> error(type_error(character_code,-1), ...)   (still an error)

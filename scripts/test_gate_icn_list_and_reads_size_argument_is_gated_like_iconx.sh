@@ -27,7 +27,7 @@
 # size at all reads one character. These read the primer's own 102 back out, which is the same instrument the
 # raising arms use, pointed the other way: here 102 PROVES no error was raised.
 #
-# ⭐ WATCHED GO BOTH WAYS (CEO-381), MEASURED not assumed: with ONLY src/runtime/by_name_dispatch.c restored to
+# ⭐ WATCHED GO BOTH WAYS (R-381), MEASURED not assumed: with ONLY src/runtime/by_name_dispatch.c restored to
 # its 118fe2e4a^ content and the runtime rebuilt, this gate reads rc=1 with 12 of the 22 arms diverging, and it
 # is worth reading WHICH 12. The five raising arms x 2 modes all answer the primer's `n=102 v="q" t="numeric
 # expected"` -- the corpse, not a wrong answer of their own, which is the whole reason the primer is there. The

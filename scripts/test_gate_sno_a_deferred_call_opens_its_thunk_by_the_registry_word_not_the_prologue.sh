@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_deferred_call_opens_its_thunk_by_the_registry_word_not_the_prologue.sh -- NINTH SPEED CLASS
-# (hq_snobol4 2026-11-01, row snobol4-speed-by-instruction-count-the-ir-bar-...-ceo-1785; the beauty self-host, the largest real SNOBOL4
+# (hq_snobol4 2026-11-01, row snobol4-speed-by-instruction-count-the-ir-bar-...-r-1785; the beauty self-host, the largest real SNOBOL4
 # program of the lane). A pattern's deferred call (*f(x)) opens its THUNK record through rt_call_open_staged_rec -> rt_call_open_by_name_p
 # -> rt_proc_call_open_pn -> rt_proc_call_open_p -> rt_proc_call_prologue -> rt_wn_park_on and back through rt_c2bb_word: about 460
 # instructions an open, 190,773 opens and 14 percent of beauty. For a thunk that road computes a frame size nobody reads, parks and restores

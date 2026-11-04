@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_hyper_operators_binary_and_prefix_agree_with_rakudo.sh -- THE BINARY AND PREFIX HYPER OPERATORS: @a >>+<< @b, @a <<+>> @b, @a >>*>> 2, 10 <<-<< @a, @a »+« @a, -<< @a, !<< @a, with Rakudo's dwim arrows, nesting and result type
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by a 120-file mode-3 Roast sample: integration/advent2009-day05 and day06 fail 8 of 15 assertions each on hyper operators; 46 Roast files use one).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by a 120-file mode-3 Roast sample: integration/advent2009-day05 and day06 fail 8 of 15 assertions each on hyper operators; 46 Roast files use one).
 #
 # THE DEFECT, measured against Rakudo: the recognizer accepted the hyper forms and the tree builder THREW THEM AWAY: x_elem in rk_syntax.c consumed any infix operator the expression levels did not know, parsed its right operand and discarded both, so
 # `@a >>+<< @b` was the tree of `@a` alone (say printed [1 2 3 4], not [4 3 6 5]); `10 <<-<< @a` printed 10; `-<< @a` printed @a. Only the method form `>>.meth` existed.

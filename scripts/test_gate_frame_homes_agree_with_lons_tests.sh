@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_frame_homes_agree_with_lons_tests.sh -- EVERY RBP HOME IS ONE LON'S TEST FORCES, AND EVERY OPERAND IT FORCES HAS ONE (Lon 2026-10-21,
-# in-chat to the ceo, verbatim: "Will we get all the proper allocations on the RSP spine?" -- and 2026-10-14: "if a BB operand can not be reached
-# by fixed RSP offset ... ONLY these two cases go to an RBP ACTIVATION FRAME. ALL the rest/remaining must be RSP SPINE CELLS."; ceo CEO-1865).
+# in-chat, verbatim: "Will we get all the proper allocations on the RSP spine?" -- and 2026-10-14: "if a BB operand can not be reached
+# by fixed RSP offset ... ONLY these two cases go to an RBP ACTIVATION FRAME. ALL the rest/remaining must be RSP SPINE CELLS."; R-1865).
 # Runs util_bb_placement_census.py over every program of util_spine_population.sh with this root's ./scrip and sums its BB_PLACEMENT_FRAMEHOME
 # lines: home_without_test (the compiler homes an operand on RBP where the census's operand path test passes -- an improper RBP allocation, or
 # the test's gap) + test_without_home (the path test fails and the compiler homes nothing -- a fixed-offset read the census cannot see, or a
-# defect). Until the census's path test is calibrated class by class (CEO-1865), a disagreement is the ceo's to adjudicate, never a verdict.
+# defect). Until the census's path test is calibrated class by class (R-1865), a disagreement is the officer's to adjudicate, never a verdict.
 #   test_gate_frame_homes_agree_with_lons_tests.sh [--lang L]
 # Board line per language and in total: FRAME_HOME_AGREE_BOARD lang=<l>|total disagree=<n> homes=<h> agree=<a> home_without_test=<x> test_without_home=<y>
 # rc 0 disagree=0 · rc 1 a disagreement remains · rc 2 could not measure (the census refused, or printed no BB_PLACEMENT_FRAMEHOME).
@@ -35,5 +35,5 @@ print('FRAME_HOME_AGREE_BOARD total disagree=%d homes=%d agree=%d ruled=%d home_
 open(sys.argv[1] + '.total', 'w').write(str(tot[2] + tot[3]))
 PY
 n="$(cat "$T/out.total")"
-[ "$n" = 0 ] && { echo "GATE OK [test_gate_frame_homes_agree_with_lons_tests]: every RBP home is one the path test forces or one the ceo ruled right by the planner's own fact (CEO-1949), and every forced operand has one"; exit 0; }
+[ "$n" = 0 ] && { echo "GATE OK [test_gate_frame_homes_agree_with_lons_tests]: every RBP home is one the path test forces or one the officer ruled right by the planner's own fact (R-1949), and every forced operand has one"; exit 0; }
 echo "GATE FAIL [test_gate_frame_homes_agree_with_lons_tests]: $n disagreement(s) between the compiler's RBP homes and the path test"; exit 1

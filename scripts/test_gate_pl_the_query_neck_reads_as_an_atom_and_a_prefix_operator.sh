@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_query_neck_reads_as_an_atom_and_a_prefix_operator.sh -- THE TOKEN ?- READS AS THE ATOM (?-) AND AS THE PREFIX OPERATOR 1200 fx (ISO 6.3.4.4, table 7).
-# hq_prolog 2026-09-25, CEO-1270; the cure is prolog_parse.c: the lexer made a TK_QUERY token and the primary-term parser had no case for it
+# hq_prolog 2026-09-25, R-1270; the cure is prolog_parse.c: the lexer made a TK_QUERY token and the primary-term parser had no case for it
 # (TK_NECK, the :- token, had one), so [(?-)] and X = (?- G) were syntax errors. Logtalk operators lgt_operators_19 died on it: its whole case program
 # failed to parse. Clause-level "?- G." is left as it reads now: gprolog ignores such a line and swipl runs it, so no oracle rules it.
 # THE EXPECTATIONS ARE gprolog's and swipl's (2026-09-25). RED BEFORE on origin: a parse error, no output, m3 AND m4.

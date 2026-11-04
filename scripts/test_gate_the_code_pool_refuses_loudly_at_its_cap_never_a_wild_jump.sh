@@ -7,7 +7,7 @@
 # bb_alloc answered NULL at the cap, emit_chain returned NULL, pl_runtime_define_pred_x returned NULL, and the assertz road wired
 # that into the packet chain, so the next walk of the predicate jumped through it: an assert/retract loop of 4000 cycles at
 # SCRIP_CODE_POOL_MB=16 died rc 139 with "fatal signal 11 ... no loaded module holds it: emitted code" and no word about the pool.
-# NO FIXED LIMIT A PROGRAM CAN REACH (CEO-1210) allows exactly one refusal, loud exhaustion naming the table, and the EVAL roads already
+# NO FIXED LIMIT A PROGRAM CAN REACH (R-1210) allows exactly one refusal, loud exhaustion naming the table, and the EVAL roads already
 # give it (rt_code_pool_check: error 204 naming the compiled-code pool, test_gate_sno_eval_chains_..._a_full_code_pool_is_loud.sh); the
 # Prolog run-time define dropped the NULL without asking. THE CURE: pl_runtime_define_pred_x calls rt_code_pool_check on a NULL
 # emission, so a full pool is the same error 204, and the message names the knob and the asserted clause beside the EVAL chains.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_sno_deferred_pattern_primitive_arg.sh -- THE DEFERRED-CALL-IN-A-PRIMITIVE CLASS (ceo CEO-441
+# test_gate_sno_deferred_pattern_primitive_arg.sh -- THE DEFERRED-CALL-IN-A-PRIMITIVE CLASS (R-441
 # item 2, 2026-09-09, authored by hq_I). A pattern primitive's deferred argument -- LEN(*F(0)),
 # TAB(*(SIZE(X)-1)), ANY(*F()) -- must be EVALUATED at match time, through the same expression-thunk path
 # `*DIFFER(X)` already uses, and never read as the name of a variable.

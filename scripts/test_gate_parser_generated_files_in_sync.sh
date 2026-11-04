@@ -2,9 +2,9 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_parser_generated_files_in_sync.sh -- every committed bison/flex output matches a fresh regeneration from its .y/.l source.
-# hq_T 2026-09-04, row parser-sources-and-generated-files-in-sync-gate-in-make-test (minted by ceo).
+# hq_T 2026-09-04, row parser-sources-and-generated-files-in-sync-gate-in-make-test (minted by the officer).
 #
-# ⛔⭐ THE TRAP THIS EXISTS FOR, MEASURED TWICE IN ONE DAY BY TWO DIFFERENT SESSIONS (ceo 16:25 on raku.y; hq_C 18:1x on snobol4.l):
+# ⛔⭐ THE TRAP THIS EXISTS FOR, MEASURED TWICE IN ONE DAY BY TWO DIFFERENT SESSIONS (16:25 on raku.y; hq_C 18:1x on snobol4.l):
 # the generated parsers are TRACKED FILES and the Makefile compiles them as-is with NO bison/flex rule. So editing a .y or .l changes
 # NOTHING -- `make` succeeds, the binary is rebuilt, every board stays green, and the edit is simply not in the program. The build
 # does not fail, does not warn, and cannot: from make's point of view nothing that it knows about changed. Both sessions lost a build
@@ -74,7 +74,7 @@ while IFS=$'\t' read -r dir src out cmd; do
     # artifacts from the generator is what keeps this gate honest when a flag changes what gets written.
     produced="$(cd "$w" && ls -1 | grep -v -x -F -e "$src" -e .genlog | sort)"
     if [ -z "$produced" ]; then echo "RED  $dir/$src: the generator exited 0 and produced nothing"; bad=$((bad + 1)); continue; fi
-    # ⛔ THE POST-PROCESS IS PART OF GENERATION AND THIS GATE MUST APPLY IT TOO (ceo CEO-851).  bison and flex emit a skeleton calling
+    # ⛔ THE POST-PROCESS IS PART OF GENERATION AND THIS GATE MUST APPLY IT TOO (R-851).  bison and flex emit a skeleton calling
     # malloc and free; RULES.md line 29 forbids them in generated output as much as anywhere, so the committed twin is swept.  A gate
     # that diffed raw generator output against the swept twin would be RED FOREVER on exactly the difference the post-process exists to
     # create -- which is what it did on all nine files at 36f0edab5 until this line.  gen_postprocess lives in lib_gen_parsers.sh beside

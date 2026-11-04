@@ -4,7 +4,7 @@
 # crossing out of one of these types through an explicit byte()/word()/longint()/int64() cast or a := into a plain boolean or
 # another bool-family variable must land on the oracle's own number, not SCRIP's prior accidental 1.
 #
-# MEASURED 2026-10-01 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. monitor_run.sh --oracle on
+# MEASURED 2026-10-01 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. monitor_run.sh --oracle on
 # corpus/packages/pascal/fpc_tests/test_cg_tcnvint1.pas bracketed the first divergence at its step 41 (stno 71): bb1 := TRUE then
 # tobyte := byte(bb1) read INT=1 on scr against fpx's INT=255. Root cause, two sites in src/parsers/pascal/pascal.y: (1) mk_assign
 # stored a boolean-valued RHS into a bytebool/wordbool/longbool/qwordbool-typed variable as the bare 0/1 the literal TRUE/FALSE or a

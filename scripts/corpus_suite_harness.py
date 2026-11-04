@@ -100,15 +100,15 @@ import tempfile
 import threading
 from pathlib import Path
 HARNESS_SCRIPTS = Path(__file__).resolve().parent
-# ⛔ EVERY CHILD RUNS HEADLESS (the ceo 2026-10-23, after the coo's oracle re-measure opened "Hello, world" and "Click me !" windows on
+# ⛔ EVERY CHILD RUNS HEADLESS (2026-10-23, after the coo's oracle re-measure opened "Hello, world" and "Click me !" windows on
 # Lon's desktop at 11:09: rosetta-pascal's hello-world-graphical and simple-windowed-application inherited the session's display). A graded
 # program, an oracle and every helper this harness or util_build_package_suite.py starts inherit this process's environment, so the two
 # display variables leave it here, once: an X or Wayland client finds no display and fails, never opens a window. A unit that needs one
 # is NEEDS_DISPLAY, never graded.
 for _dv in ("DISPLAY", "WAYLAND_DISPLAY"):
     os.environ.pop(_dv, None)
-# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): every tempfile this harness makes and every child's
-# mktemp land in /tmp/s4e/<seat>, so the census measures a seat's harness debris. THE SEAT IS THE ROOT'S (the cto, CEO-2106, 2026-11-01): it
+# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, R-2041): every tempfile this harness makes and every child's
+# mktemp land in /tmp/s4e/<seat>, so the census measures a seat's harness debris. THE SEAT IS THE ROOT'S (the cto, R-2106, 2026-11-01): it
 # derives from this harness's root path by util_score_row.derive_measurer, and S4E_SEAT only overrides it.
 def _s4e_seat_of_root():
     if os.environ.get("S4E_SEAT"):
@@ -158,16 +158,16 @@ LANG_CONFIGS = {
 }
 
 # ⛔⭐ A SUITE IS GRADED IN m3 AND m4 AND NOTHING ELSE, AND ANY OTHER --modes REFUSES BEFORE A ROW IS WRITTEN (coo 2026-09-25,
-# row instruments-the-harness-defaults-rebus-raku-prolog-and-snocone-to-the-dead-ast-mode-..., ceo CEO-1269). raku, rebus,
+# row instruments-the-harness-defaults-rebus-raku-prolog-and-snocone-to-the-dead-ast-mode-..., R-1269). raku, rebus,
 # prolog and snocone defaulted to "ast" here after the ast entries left the rung suites (corpus a6646f04c), so `run --lang rebus`
 # with no --modes graded --dump-ast against run refs: SUITE_BOARD ast_n=43 ast_pass=0, exit 1, and 43 FAIL rows in the
-# progress record -- three times in five days (coo 09-21, ceo 09-24 and 09-25) -- while --modes m3,m4 read 43/43 FAIL 0.
-# A plausible, entirely false 0 of N. Every entry is graded in both media (CEO-1218), so the defaults are m3,m4 and a mode
+# progress record -- three times in five days (coo 09-21, the officer 09-24 and 09-25) -- while --modes m3,m4 read 43/43 FAIL 0.
+# A plausible, entirely false 0 of N. Every entry is graded in both media (R-1218), so the defaults are m3,m4 and a mode
 # outside them is a could-not-measure, never a grade. run_ast stays: util_build_rungs_suite.py's classifier calls it.
 GRADED_MODES = ("m3", "m4")
 def rr_request_waits(queue):
-    """A request a round-robin run yields to (CEO-1806): a SCRIP request file in the loop's queue, one carrying no engine= line. A port request
-    (engine=dotnet|jvm, CEO-1872) waits its turn -- the loop serves at most one a turn, after every SCRIP request -- so it never stops a rotation part:
+    """A request a round-robin run yields to (R-1806): a SCRIP request file in the loop's queue, one carrying no engine= line. A port request
+    (engine=dotnet|jvm, R-1872) waits its turn -- the loop serves at most one a turn, after every SCRIP request -- so it never stops a rotation part:
     with thirty port requests queued, every part yielded at its first test (10-21 20:34, testpgms core). Mirrored by lib_rr.sh rr_yield."""
     for p in Path(queue).glob("*.req"):
         try:
@@ -183,11 +183,11 @@ def parse_modes(spec, where):
     bad = [m for m in modes if m not in GRADED_MODES]
     if not modes or bad:
         refuse(f"{where}: --modes {spec!r} names {', '.join(bad) if bad else 'no mode'} -- a suite is graded in m3 and m4 only "
-               f"(CEO-1218: every entry in both media). Mode ast (--dump-ast) grades a parse against a run ref and recorded "
+               f"(R-1218: every entry in both media). Mode ast (--dump-ast) grades a parse against a run ref and recorded "
                f"0 of 43 FAIL rows for the Rebus rungs three times; nothing was graded and no progress row was written.")
     if _engine() != "scrip" and "m4" in modes:
         refuse(f"{where}: --modes {spec!r} names m4 under S4E_ENGINE={_engine()} -- m4 is SCRIP's compiled binary and the port has "
-               f"none (CEO-1822); grade --modes m3, the port's one run")
+               f"none (R-1822); grade --modes m3, the port's one run")
     return modes
 
 
@@ -202,11 +202,11 @@ LANG_CHOICES = [""] + sorted(LANG_CONFIGS) + ["snobol4"]
 
 
 # ============================================================ paths / env ===
-# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, ceo CEO-1822): S4E_ENGINE names the program a board grades -- scrip, the
-# default and every board before CEO-1822, or dotnet, snobol4dotnet's executable (hq_dotnet's own board, Lon: "hq_dotnet runs
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, R-1822): S4E_ENGINE names the program a board grades -- scrip, the
+# default and every board before R-1822, or dotnet, snobol4dotnet's executable (hq_dotnet's own board, Lon: "hq_dotnet runs
 # them"). An unknown name refuses: a board graded on a guessed engine would print a plausible table about the wrong program.
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # the one engine map lives beside this file; python3 -I prepends no script folder
-from util_progress_append import ENGINE_RUNNERS, engine_binaries  # noqa: E402 -- (CEO-1822)
+from util_progress_append import ENGINE_RUNNERS, engine_binaries  # noqa: E402 -- (R-1822)
 ENGINES = ("scrip",) + tuple(ENGINE_RUNNERS)
 def _engine():
     e = os.environ.get("S4E_ENGINE", "").strip() or "scrip"
@@ -240,7 +240,7 @@ def _which(name):
 
 
 def refuse(msg):
-    """⛔ ONE REFUSAL CODE, AND IT IS rc=2 (ceo CEO-233, row harness-refusal-exit-code-unified-on-rc-2, 2026-09-04).
+    """⛔ ONE REFUSAL CODE, AND IT IS rc=2 (R-233, row harness-refusal-exit-code-unified-on-rc-2, 2026-09-04).
 
     ⛔ THIS EXITED 3 FOR MONTHS, by this file's own local convention, while every bash gate and lib_gate.sh's
     three-code ladder said a refusal is rc=2 -- 0 measured-and-clean · 1 measured-and-red · 2 COULD NOT MEASURE.
@@ -307,18 +307,18 @@ def require_fresh(paths):
     ⭐ THIS FUNCTION DELIBERATELY CONTAINS NO STALENESS LOGIC. It shells out to
     ../harness/scripts/util_require_fresh.sh, which sources gate_require_fresh() from lib_gate.sh -- the SAME
     function every bash runner calls (hq_B, SCRIP 4c7253e99). Row harness-and-ladder-runner-refuse-on-
-    a-stale-binary-like-the-artifact-regen-does (ceo -> hq_T 2026-09-04).
+    a-stale-binary-like-the-artifact-regen-does (-> hq_T 2026-09-04).
 
     ⛔ WHY IT IS NOT A PYTHON REIMPLEMENTATION, WHICH WOULD HAVE BEEN SHORTER AND IS THE WHOLE POINT OF
     THE ROW: this exact idea already existed TWICE in bash (gate_require_fresh and lib_build_currency's
-    assert_binary_current). ceo cured a wrong staleness basis in one of them (3d12ca54 -- "IT IS NOT A
+    assert_binary_current). the officer cured a wrong staleness basis in one of them (3d12ca54 -- "IT IS NOT A
     SUPERSET, IT IS WRONG"); the cure never reached the other, so the identical defect regenerated and
     was cured a second time nine days later. A third copy -- in a second LANGUAGE, where no grep for the
     bash symbol would ever find it -- is how that class survives its own cure a third time. The cost of a
     copy is never the duplicated lines; it is that fixing one copy makes everybody believe the class is
     dead.
 
-    THE WITNESS (ceo, 2026-09-04): two false-red audits in one day -- a fetched-not-merged clone at 12:23,
+    THE WITNESS (2026-09-04): two false-red audits in one day -- a fetched-not-merged clone at 12:23,
     and a 10:57 binary at 14:03 that read RED and then GREEN after an incremental make. Nothing the board
     printed could distinguish "the tree is broken" from "you are grading last morning's binary".
 
@@ -344,11 +344,11 @@ def require_fresh(paths):
         sys.exit(2)
 
 
-# ⛔⭐ LANGUAGES WITH NO INDEPENDENT RIVAL IMPLEMENTATION (CEO-607, 2026-09-12). Membership here is a MEASURED
+# ⛔⭐ LANGUAGES WITH NO INDEPENDENT RIVAL IMPLEMENTATION (R-607, 2026-09-12). Membership here is a MEASURED
 # property of the language, never a convenience: a language is in this set only when no second implementation of
 # it exists to be an oracle at all, so "cannot cut a ref" is permanent rather than pending. ⛔ It is NOT a way to
 # opt out of an oracle cut -- adding a language that HAS a rival would silently downgrade every one of its refs
-# from measured to authored, which is the exact circularity CEO-607 closes. Rebus is the only member measured so
+# from measured to authored, which is the exact circularity R-607 closes. Rebus is the only member measured so
 # far; Snocone is NOT one (SPITBOL grades it, lib_oracle_flags.sh sbl_correctness_bin).
 NO_RIVAL_LANGS = {"rebus"}
 
@@ -464,10 +464,10 @@ def resolve_oracle_bin(paths, lang=""):
             refuse(f"raku_oracle_run.sh missing at {wrapper} -- the prelude-staging rakudo driver")
         return str(wrapper), ""   # no flags: `raku <file>` is the whole invocation
     if lang in NO_RIVAL_LANGS:
-        # ⛔⭐ NOT "NOT WIRED YET" -- NOT WIREABLE, EVER, AND THE TWO REFUSALS MUST NOT READ ALIKE (CEO-607,
+        # ⛔⭐ NOT "NOT WIRED YET" -- NOT WIREABLE, EVER, AND THE TWO REFUSALS MUST NOT READ ALIKE (R-607,
         # 2026-09-12, on hq_C's ASK; option (a)). The bare refusal below says "no oracle wired ... yet", which
         # every reader correctly parses as a backlog item someone will close by widening this function. For a
-        # language with NO INDEPENDENT RIVAL IMPLEMENTATION there is nothing to widen it TO: CEO-391's one
+        # language with NO INDEPENDENT RIVAL IMPLEMENTATION there is nothing to widen it TO: R-391's one
         # oracle per language has no binary to name, and the honest remedy is a different one -- the runtime
         # ref is DERIVED and the derivation is RECORDED beside it, the strongest derivation being a CROSS-
         # LANGUAGE computation of the same kernel under a real oracle (the rival program and its oracle
@@ -479,7 +479,7 @@ def resolve_oracle_bin(paths, lang=""):
         # believed, because a static record of a measurement is a claim and rots like any other prose here.
         refuse(f"--lang {lang!r}: no rival: refs are derived, see KEEP.md -- {lang} has no independent rival "
                f"implementation, so there is no oracle to cut a ref FROM and nothing for resolve_oracle_bin to be "
-               f"widened TO (CEO-607). Its kernels carry a ref DERIVED from a rival program in another language "
+               f"widened TO (R-607). Its kernels carry a ref DERIVED from a rival program in another language "
                f"run under THAT language's oracle, with the derivation recorded in a .derivation file beside the "
                f"ref and re-performed by test_gate_rebus_derived_refs_match_their_rival_oracle.sh. ⛔ Do NOT cut a "
                f"ref from SCRIP's own output: a ref cut from the implementation it grades proves only that the "
@@ -489,10 +489,10 @@ def resolve_oracle_bin(paths, lang=""):
 
 def _size_switches(heap_kb, stack_kb):
     """A program's DECLARED heap and stack reach the run as SPITBOL's switches, not as environment variables (Lon
-    2026-09-23, CEO-1225: SCRIP sizes the heap with -d and -i and the stack with -s, as SPITBOL does; an environment knob
+    2026-09-23, R-1225: SCRIP sizes the heap with -d and -i and the stack with -s, as SPITBOL does; an environment knob
     is invisible in a transcript, a switch is recorded with the run). heap_kb is the program's MAXIMUM heap, SPITBOL's -d,
     and nothing else: the initial window stays SPITBOL's -i1m or the tiny arena of `make test-arena`, which a -i here would
-    silently override for every declared program (ceo CEO-1261; every program declares since Lon's word of 2026-09-25); stack_kb
+    silently override for every declared program (R-1261; every program declares since Lon's word of 2026-09-25); stack_kb
     is -s. They go before the source for scrip --run and lead the compiled binary's own command line, which reads them at its
     first allocation. None = the shipped default, so an undeclared program's command line is byte-identical to before."""
     sw = []
@@ -510,7 +510,7 @@ def _compile_switches(paths, compile_args):
 
 
 def _host_u_switch(sno_path, prog_args):
-    """SPITBOL's HOST(0) is the -u string and nothing else (sbl -h; Lon 2026-09-23, CEO-1224), so a SNOBOL4 entry's
+    """SPITBOL's HOST(0) is the -u string and nothing else (sbl -h; Lon 2026-09-23, R-1224), so a SNOBOL4 entry's
     DECLARED argv reaches HOST(0) the way CSNOBOL4-targeted programs read it (aisnobol HSORT, ATN) by being passed as
     `-u "<argv joined by spaces>"` before the source -- to sbl, to scrip --run, and to the mode-4 binary alike -- while
     the same tokens still follow the file for HOST(2,n). Other languages, and entries with no argv, get nothing."""
@@ -526,7 +526,7 @@ def oracle_diagnostic(oracle_bin, flags, sno_path, timeout, stdin_text=None, pro
     has many callers across the runners, and widening it to carry stderr would touch every one of them for the
     benefit of one path. This is additive -- nothing that grades anything calls it, and it is invoked only on
     an exclusion path, where one more sub-second oracle run costs nothing.
-    ⛔⭐⭐ THE DEFECT IT CLOSES, MEASURED (hq_S 2026-09-12, raku scrip_test, CEO-604): an exclusion reason is the
+    ⛔⭐⭐ THE DEFECT IT CLOSES, MEASURED (hq_S 2026-09-12, raku scrip_test, R-604): an exclusion reason is the
     ONLY record of why a program left the denominator, and an excluded name cannot be red, so nobody re-reads
     it. Thirteen raku fixtures were excluded as "rakudo prints NOTHING: the file defines `sub main()` and never
     calls it" -- true of four of them, GENERALIZED FROM ONE WITNESS onto the other nine, of which five are not
@@ -565,7 +565,7 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
     kind, out, _err, rc = _run_raw(argv, timeout, cwd=str(sno_path.parent), stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, sno_path.parent, out_files) if out_files else out
     # ⛔⭐ AN ORACLE KILLED BY A SIGNAL IS A CRASH, NOT A RUN -- and until 2026-09-04 this returned "RAN" for one
-    # (row every-ref-cutting-path-refuses-when-the-oracle-dies-mid-cut, ceo -> hq_T, on seat07's finding that
+    # (row every-ref-cutting-path-refuses-when-the-oracle-dies-mid-cut, the officer -> hq_T, on seat07's finding that
     # `sbl -bf` SIGSEGVs on about half its ERROR 212 runs WHILE PRINTING the diagnostic). _run_raw's "RAN" means
     # only "the process was launched and did not time out"; the signal shows up as a NEGATIVE returncode, which
     # cmd_capture_oracle_refs -- whose whole guard is `if ora_kind != "RAN"` -- never looked at. So the one
@@ -586,7 +586,7 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
 
 
 def xsb_oracle_bin():
-    """THE XSB ORACLE (ceo CEO-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE), reached
+    """THE XSB ORACLE (R-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE), reached
     through lib_oracle_flags.sh's xsb_bin() alone -- a missing launcher refuses rc=2 with the accessor's own words."""
     lib = HARNESS_SCRIPTS / "lib_oracle_flags.sh"
     r = subprocess.run(["bash", "-c", f". '{lib}' && xsb_bin"], capture_output=True, text=True)
@@ -602,7 +602,7 @@ def xsb_answer_lines(raw):
 
 
 def run_xsb_gentest(xsb_bin, upstream, run, timeout):
-    """ONE XSB RUN AS XSB'S OWN TEST SCRIPTS MAKE IT (ceo CEO-1927, 2026-10-23). `run` is a row of the package's ORACLE_RUNS.tsv, recorded from
+    """ONE XSB RUN AS XSB'S OWN TEST SCRIPTS MAKE IT (R-1927, 2026-10-23). `run` is a row of the package's ORACLE_RUNS.tsv, recorded from
     XSB's own test.sh (util_xsb_oracle_runs.py): dir (the upstream directory the script runs in, below `upstream`), kind, file, cmd, emu_args.
     A fresh copy of the run's TOP-LEVEL test directory (its stale *.xwam, *_new and temp left out, so every source compiles here), cwd the
     run's dir inside it; stdin as the script writes it -- kind gentest (gentest.sh, the stest.sh testall.sh runs): `[FILE].\\ntell(temp).\\nCMD\\ntold.`,
@@ -658,7 +658,7 @@ def run_icon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=N
 
 
 def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args=None, out_files=None):
-    """THE UNICON ORACLE AS UNICON'S OWN tests/Makefile.test RUNS IT (hq_unicon, CEO-2072): the translator with -s -o <stem> <name> in the file's own
+    """THE UNICON ORACLE AS UNICON'S OWN tests/Makefile.test RUNS IT (hq_unicon, R-2072): the translator with -s -o <stem> <name> in the file's own
     directory through unicon_bin() (never a bare name, never -E), then `./<stem> args < in > out 2>&1`. Returns (text, rc, kind) as
     run_icon_built_oracle does; a translation that fails returns kind "TRANSLATE" and the translator's first line as text. A compile that
     returns rc 0 and leaves no executable (a library module linking sibling .u files) is also "TRANSLATE"."""
@@ -684,7 +684,7 @@ def run_unicon_built_oracle(paths, src_path, timeout, stdin_text=None, prog_args
 
 
 # ==================================================================== exec ===
-# ⭐⭐ OOM IS ITS OWN OUTCOME (ceo CEO-1229 (2), 2026-09-23 20:2x, on the coo's row
+# ⭐⭐ OOM IS ITS OWN OUTCOME (R-1229 (2), 2026-09-23 20:2x, on the coo's row
 # instruments-suite-attribute-files-declare-stack-and-heap-per-program-and-every-runner-honours-both, verbatim: "THE PROGRESS WORD IS
 # OOM: a run that ends in a properly reported out-of-memory at the heap it ran under, recorded with that heap. It is not PASS and it is
 # not FAIL or CRASH (Lon: a properly reported out of memory is not a failure); the suite table counts it outside the numerator, and the
@@ -731,8 +731,8 @@ class Verdict:
         self.returncode = returncode
         self.detail = detail
         self.masked_lines = 0
-        self.retry = ""   # "retried=1 load1=<first>/<second> nproc=<n>" when a timeout under load was re-run (CEO-1335)
-        self.secs = 0.0   # the program's own wall seconds in this mode (m4: compile, link and run), set by run_all_modes (CEO-1676 row (c))
+        self.retry = ""   # "retried=1 load1=<first>/<second> nproc=<n>" when a timeout under load was re-run (R-1335)
+        self.secs = 0.0   # the program's own wall seconds in this mode (m4: compile, link and run), set by run_all_modes (R-1676 row (c))
 
     def text(self):
         return self.stdout.decode("utf-8", "replace")
@@ -754,7 +754,7 @@ class Verdict:
 
 _MEM_SCOPE_MOD = None
 def _mem_scope_wanted(args, paths):
-    # True when cmd_run grades a corpus population -- a board by the one-runner guard's own test (CEO-547).
+    # True when cmd_run grades a corpus population -- a board by the one-runner guard's own test (R-547).
     return args.sno is None or _suite_is_a_board(args.sno, paths["corpus"])
 class _NoMemScope:
     # A copy of this harness with no util_mem_scope.py beside it (a gate's scratch tree): no scope, no reclassification.
@@ -772,18 +772,18 @@ def _mem_scope():
             _m = _NoMemScope
         _MEM_SCOPE_MOD = _m
     return _MEM_SCOPE_MOD
-# ⛔⭐ A CHILD'S OUTPUT IS BOUNDED, AND A CHILD DIES WITH ITS HARNESS (the coo 2026-10-22, COO-394; the ceo's ask at CEO-1883): a port
+# ⛔⭐ A CHILD'S OUTPUT IS BOUNDED, AND A CHILD DIES WITH ITS HARNESS (the coo 2026-10-22, COO-394; the officer's ask at R-1883): a port
 # entry printing in a loop through its 600 s timeout retry grew this harness to 8.15 GB anon RSS inside its 8192 MB mem scope; the kernel
 # killed the HARNESS (oom-kill 03:36:05, pid 1099808 python3, request 20261022T004850-hq_jvm-sno-rungs-jvm read 59 of 100 and REFUSED rc 2),
-# and the java it ran lost its reader and spun 3 h 55 min at 100% CPU with no parent until the ceo killed it. Each stream now keeps at most
+# and the java it ran lost its reader and spun 3 h 55 min at 100% CPU with no parent until the officer killed it. Each stream now keeps at most
 # S4E_OUTPUT_CAP_MB (256, ninety times the corpus's largest ref, packages/prolog/puzzles/ALL.ref at 2.8 MB) and the child is killed the
 # moment one passes it: kind OVERFLOW, a FAIL for a graded program (never retried, since no ref can match it) and no answer for an oracle,
 # whose callers take every kind but RAN as none. Every child runs under setpriv --pdeathsig KILL, which execs, so the program keeps its pid
 # and dies with the harness however the harness dies; setpriv's own exec failure (rc 127) is the FileNotFoundError arm it always was.
 _OUTPUT_CAP = int(float(os.environ.get("S4E_OUTPUT_CAP_MB", "256")) * 1048576)
 _SETPRIV = shutil.which("setpriv")
-# ⭐ ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (Lon 2026-10-22: "You are meant to fix the load not hurt it" · "don't flag things, fix things."; ceo
-# CEO-1894): every seat may now run its own programs, so every child this harness starts takes one of S4E_RUN_SLOTS (default 8) flock slots
+# ⭐ ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (Lon 2026-10-22: "You are meant to fix the load not hurt it" · "don't flag things, fix things."; the officer
+# R-1894): every seat may now run its own programs, so every child this harness starts takes one of S4E_RUN_SLOTS (default 8) flock slots
 # under /tmp/s4e-run-slots, taken HERE before the child starts -- a wait for a slot is never counted against the child's timeout, so it can
 # never read as a HANG -- and released when the child ends. A child inherits S4E_RUN_SLOT_HELD, so a harness run under another harness's slot
 # takes none of its own (no nested wait, no deadlock). A full pool is WAITED ON BY RESCANNING EVERY SLOT, never by blocking on one: a harness
@@ -791,7 +791,7 @@ _SETPRIV = shutil.which("setpriv")
 # (coo 2026-10-30 12:4x, the loop's xsb request; test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh). S4E_RUN_SLOT_DIR is
 # the gate fixture's seam.
 def _slot_knobs():
-    """The pools' knobs, read from lib_slots.sh beside this file (the ONE rule; ARCH-SHARED-DEVELOPMENT 4.3, CEO-2041 step 3) so that this
+    """The pools' knobs, read from lib_slots.sh beside this file (the ONE rule; ARCH-SHARED-DEVELOPMENT 4.3, R-2041 step 3) so that this
     taker and the two shell takers can never disagree: pool sizes, per-seat caps and the grader's reserved run slots."""
     import re
     k = {"S4E_CC_POOL_DEFAULT": 8, "S4E_RUN_POOL_DEFAULT": 8, "S4E_CC_SEAT_CAP_DEFAULT": 4, "S4E_RUN_SEAT_CAP_DEFAULT": 3, "S4E_RUN_GRADER_RESERVED_DEFAULT": 2}
@@ -903,7 +903,7 @@ def _bounded_run_in_slot(argv, timeout, cwd, env, stdin_bytes, merge_stderr):
     hung = hung or any(t.is_alive() for t in drains)
     return rc, b"".join(outs), b"".join(errs), ("OVERFLOW" if over.is_set() else "HANG" if hung else None)
 def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=False):
-    # ⛔ A PROGRAM THE CGROUP MEMORY CAP KILLED IS UNPROVEN, NEVER A CRASH (row instrument-698-runners-..., the ceo's clause): a
+    # ⛔ A PROGRAM THE CGROUP MEMORY CAP KILLED IS UNPROVEN, NEVER A CRASH (row instrument-698-runners-..., the officer's clause): a
     # SIGKILL alone cannot say who sent it, so the enclosing scope's own oom_kill count is read on both sides of the run and only
     # a rise converts the kill. Outside any s4e-mem scope the count is None and nothing changes.
     _ms = _mem_scope()
@@ -927,8 +927,8 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
     return "RAN", out, err, rc
 
 
-# ============================================================ CEO-409 line masks ===
-# ⛔⭐ AN IMPLEMENTATION-DEFINED LINE IS MASKED AT THE LINE, NEVER AT THE PROGRAM (ceo CEO-409, 2026-09-08;
+# ============================================================ R-409 line masks ===
+# ⛔⭐ AN IMPLEMENTATION-DEFINED LINE IS MASKED AT THE LINE, NEVER AT THE PROGRAM (R-409, 2026-09-08;
 # RULES.md, on the coo and hq_V reaching the same fixture from opposite directions and both refusing to move a
 # denominator alone). A fixture whose ONLY divergence is a value belonging to the IMPLEMENTATION -- a clock
 # reading, an allocator's free-space count -- is neither outside the baseline (the oracle runs it perfectly)
@@ -949,9 +949,9 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
 # the fixture that prints nothing would match the fixture that prints a clock. Line count and position are
 # preserved by rewriting the matched line to a canonical marker in BOTH streams.
 def read_mask_sidecar(ref_path):
-    """<stem>.mask beside the ref: `entry<TAB>python-regex<TAB>reason[<TAB>engine=NAME[,NAME]]` (the qualifier, CEO-1864 (1), keeps a
+    """<stem>.mask beside the ref: `entry<TAB>python-regex<TAB>reason[<TAB>engine=NAME[,NAME]]` (the qualifier, R-1864 (1), keeps a
     row from every engine it does not name), or `entry<TAB>L<n><TAB>reason` for a
-    fixed OUTPUT line number (1-indexed), when content alone cannot reach the value (CEO-1167 ruling on
+    fixed OUTPUT line number (1-indexed), when content alone cannot reach the value (R-1167 ruling on
     gc2.icn): apply_line_mask sees one line at a time, with no neighbor and no position, so a value sharing
     its digit alphabet with legitimate surrounding output cannot be isolated by a content regex without also
     matching most of the file, which guardrail 4 correctly refuses. Missing file -> no masks, and that is
@@ -971,63 +971,67 @@ def read_mask_sidecar(ref_path):
             # every caller that reads the status instead of the text -- and the status is what a gate reads.
             # ⭐ THE GENERAL FORM: a diagnostic that NAMES its own exit code is not evidence it uses that code, and
             # it is the most convincing possible evidence to a reader, because the number is right there. This file's
-            # refuse() is the one authority (CEO-233, one refusal code and it is 2); the local raise bypassed it.
+            # refuse() is the one authority (R-233, one refusal code and it is 2); the local raise bypassed it.
             refuse("%s: every mask row needs entry<TAB>regex-or-L<n><TAB>reason, and a reason that "
                    "is empty is a mask nobody can audit -- got %r" % (mp, ln))
-        # ⭐ THE ENGINE QUALIFIER (ceo CEO-1864 (1), 2026-10-21, to hq_dotnet; landed by the coo on CEO-1872): an optional fourth column
+        # ⭐ THE ENGINE QUALIFIER (R-1864 (1), 2026-10-21, to hq_dotnet; landed by the coo on R-1872): an optional fourth column
         # engine=NAME[,NAME] offers the row only to the engines it names (S4E_ENGINE, scrip by default); a row without one is every engine's.
-        # testpgms test1's six CEO-1293 rows are SCRIP's (SCRIP keeps VALUE, sbl and snobol4dotnet raise error 22, CEO-1858 (3)), so they carry
+        # testpgms test1's six R-1293 rows are SCRIP's (SCRIP keeps VALUE, sbl and snobol4dotnet raise error 22, R-1858 (3)), so they carry
         # engine=scrip and a port that answers as sbl does is graded on the oracle's whole stream. A name no engine has, or any other fourth
         # column, is refused: a typo would silently offer a mask to nobody, or to everybody.
         if len(parts) > 3 and parts[3].strip():
             em = re.match(r"^engine=([a-z0-9]+(?:,[a-z0-9]+)*)$", parts[3].strip())
             if not em or any(n not in ENGINES for n in em.group(1).split(",")):
-                refuse("%s: a mask row's fourth column is engine=NAME[,NAME] with each NAME one of %s (ceo CEO-1864 (1)) -- got %r"
+                refuse("%s: a mask row's fourth column is engine=NAME[,NAME] with each NAME one of %s (R-1864 (1)) -- got %r"
                        % (mp, ", ".join(ENGINES), ln))
             if _engine() not in em.group(1).split(","):
                 continue
         pat = parts[1].strip()
         m = re.match(r"^L(\d+)$", pat)
-        # ⭐ ORACLE-ONLY:<exact line> (ceo CEO-1316 (2), 2026-09-27, on Lon's "I want to see TPgm go to 8/8"): the one mask kind that
+        # ⭐ ORACLE-ONLY:<exact line> (R-1316 (2), 2026-09-27, on Lon's "I want to see TPgm go to 8/8"): the one mask kind that
         # REMOVES a line, and only from the ORACLE's stream -- a line the oracle prints and we never do, because we keep an enhancement
-        # the oracle lacks (CEO-1293: Lon's "Keep the VALUE function we like new features"; testpgms test1's statement-137 trap).
+        # the oracle lacks (R-1293: Lon's "Keep the VALUE function we like new features"; testpgms test1's statement-137 trap).
         # Replace-never-delete cannot reach a line one side lacks. Matched by EXACT text (never a regex), ONE occurrence, counted like
-        # every mask; our side is never touched, so a missing or extra line of ours still reds. Scoped to the CEO-1293 class: a row
-        # whose reason does not cite CEO-1293 is refused, and the never-delete guardrail binds every other kind.
-        # ⭐ ORACLE-IDENTITY (ceo CEO-1344/CEO-1351, 2026-09-28): a row whose reason cites CEO-1344 masks a line naming the ORACLE ITSELF
+        # every mask; our side is never touched, so a missing or extra line of ours still reds. Scoped to the R-1293 class: a row
+        # whose reason does not cite R-1293 is refused, and the never-delete guardrail binds every other kind.
+        # ⭐ ORACLE-IDENTITY (R-1344/R-1351, 2026-09-28): a row whose reason cites R-1344 masks a line naming the ORACLE ITSELF
         # (HOST()'s "x86-64:unix :Macro SPITBOL 15.01"), the same class as the memory lines -- no program computes it and SCRIP does not
         # impersonate it. Its lines do not count toward guardrail 4's half (mask_majority), so it must be a content regex: a positional
         # L<n> or an ORACLE-ONLY deletion could reach a line of the program's own output, which is what the half exists to protect.
-        if ORACLE_IDENTITY_RULING in parts[2] and (pat.startswith("ORACLE-ONLY:") or re.match(r"^L\d+$", pat)):
+        if cites_ruling(parts[2], ORACLE_IDENTITY_RULING) and (pat.startswith("ORACLE-ONLY:") or re.match(r"^L\d+$", pat)):
             refuse("%s: a row citing %s is an ORACLE-IDENTITY mask, exempt from guardrail 4, and is admitted only as a content regex "
-                   "over the identity line -- never L<n> or ORACLE-ONLY (ceo CEO-1351); got %r" % (mp, ORACLE_IDENTITY_RULING, ln))
+                   "over the identity line -- never L<n> or ORACLE-ONLY (R-1351); got %r" % (mp, ORACLE_IDENTITY_RULING, ln))
         if pat.startswith("ORACLE-ONLY:"):
-            if "CEO-1293" not in parts[2]:
+            if not cites_ruling(parts[2], "R-1293"):
                 refuse("%s: an ORACLE-ONLY row removes a line from the oracle's stream and is admitted only for a kept "
-                       "enhancement the oracle lacks (ceo CEO-1293, CEO-1316 (2)) -- its reason must cite CEO-1293; got %r" % (mp, ln))
+                       "enhancement the oracle lacks (R-1293, R-1316 (2)) -- its reason must cite R-1293; got %r" % (mp, ln))
             key = ("oracle_only", parts[1][len("ORACLE-ONLY:"):].rstrip("\r"))
         else:
             key = ("line", int(m.group(1))) if m else ("regex", re.compile(pat))
         out.setdefault(parts[0].strip(), []).append((key, parts[2].strip()))
     return out
-ORACLE_IDENTITY_RULING = "CEO-1344"
+ORACLE_IDENTITY_RULING = "R-1344"
+def cites_ruling(reason, ruling):
+    """A reason cites a ruling by its number under any office prefix: R-1344 and the older citation forms of the same number are one ruling,
+    so a mask row reads the same whether the corpus carries the old citation or the new one (the citation purge rewrites the corpus and the harness in separate landings)."""
+    return re.search(r"(?<![A-Za-z0-9-])[A-Z]{1,4}-" + re.escape(ruling.split("-", 1)[1]) + r"(?![0-9])", reason) is not None
 def mask_guard_patterns(patterns):
-    """The rows guardrail 4 counts: every row but an ORACLE-IDENTITY one (reason cites CEO-1344, ceo CEO-1351)."""
-    return [p for p in (patterns or []) if ORACLE_IDENTITY_RULING not in p[1]]
+    """The rows guardrail 4 counts: every row but an ORACLE-IDENTITY one (reason cites R-1344, R-1351)."""
+    return [p for p in (patterns or []) if not cites_ruling(p[1], ORACLE_IDENTITY_RULING)]
 def mask_majority(lines, masked_n, guard_n):
-    """⛔ CEO-409 GUARDRAIL 4, THE ONE RULE (classify here, and the bash runners through util_apply_ceo409_mask.py's .major): a fixture is
+    """⛔ R-409 GUARDRAIL 4, THE ONE RULE (classify here, and the bash runners through util_apply_line_mask.py's .major): a fixture is
     UNGRADABLE when the rows guardrail 4 counts mask half its lines or more, or when every line is masked by any row. With no
-    ORACLE-IDENTITY row guard_n == masked_n and this is exactly the old `masked_n * 2 >= lines`. ⭐ CEO-1351: an ORACLE-IDENTITY line
+    ORACLE-IDENTITY row guard_n == masked_n and this is exactly the old `masked_n * 2 >= lines`. ⭐ R-1351: an ORACLE-IDENTITY line
     is the oracle's own state, so it does not count toward the half -- host.spt's two lines grade on host(0) with the HOST() line
     masked -- but at least one line must stay unmasked, or nothing is graded at all."""
     return bool(lines) and (guard_n * 2 >= lines or masked_n >= lines)
 def masks_for(masks, name):
     """⛔⭐ THE ONE PLACE THE ENTRY COLUMN IS RESOLVED, so the python harness and the bash runners (through
-    util_apply_ceo409_mask.py) cannot disagree about which rows apply to an entry.  `*` in the entry column means
+    util_apply_line_mask.py) cannot disagree about which rows apply to an entry.  `*` in the entry column means
     EVERY entry of the suite, which is what a suite-wide sidecar needs: the csnobol4 ALL.mask masks SPITBOL's own
     allocator bookkeeping, a quantity no program in the suite can compute, so naming 93 programs one per row would
     be a census that goes stale on the next program added -- and a mask that has silently stopped covering a new
-    entry is the same unauditable shape CEO-409 exists against.
+    entry is the same unauditable shape R-409 exists against.
     ⛔ THE WILDCARD DOES NOT WEAKEN A GUARDRAIL. Every masked line is still counted per entry, the majority rule
     still fails a fixture that would be mostly masked, and the reason column is still mandatory -- `*` widens WHICH
     entries a row is offered to, never WHAT a row is allowed to hide."""
@@ -1049,7 +1053,7 @@ def apply_line_mask(text, patterns, side="both"):
             if kind == "oracle_only":
                 continue
             if val.search(ln) if kind == "regex" else (val == i + 1):
-                lines[i] = "<<CEO-409 MASKED IMPLEMENTATION-DEFINED LINE>>"
+                lines[i] = "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>"
                 n += 1
                 break
     if side == "oracle":
@@ -1059,7 +1063,7 @@ def apply_line_mask(text, patterns, side="both"):
                 del lines[lines.index(val)]
                 n += 1
     return "\n".join(lines), n
-# ⛔⭐ A SPITBOL FATAL IS GRADABLE (hq_snobol4's measurement 2026-09-27, the cfo seconding, ceo CEO-1344, the coo's row
+# ⛔⭐ A SPITBOL FATAL IS GRADABLE (hq_snobol4's measurement 2026-09-27, the cfo seconding, R-1344, the coo's row
 # instruments-a-spitbol-fatal-is-gradable-...): x64 sbl -bf prints its FATAL BLOCK ON STDOUT as well as stderr, so a ref cut from
 # the oracle for a program that ends in a fatal carries the block, and SCRIP -- whose ONE error voice goes to stderr -- could never
 # match it: every such program (Budne tab.sno, rewind1.sno; Dotnet 1brc.sno, asgn1.sno; SnoRungs simple_output_62,
@@ -1140,7 +1144,7 @@ def _timeout_load():
 
 
 def classify(argv, timeout, expected_text, cwd=None, env=None, stdin_text=None, want_rc=0, mask=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
-    # ⛔ A TIMEOUT UNDER LOAD MEASURED THE SCHEDULER, NOT THE PROGRAM (ceo CEO-1335; the coo 2026-10-09): at load 39 two Prolog rung
+    # ⛔ A TIMEOUT UNDER LOAD MEASURED THE SCHEDULER, NOT THE PROGRAM (R-1335; the coo 2026-10-09): at load 39 two Prolog rung
     # entries that run in 0.1 to 0.6 s read m4 TIMEOUT, and at load ~25 pass 42's RakBench lost point_class_add's iter angle the same
     # way. When a program times out while the 1-minute load exceeds the cores, the reading is COULD NOT MEASURE: the program is run
     # ONCE more (this harness runs one child at a time, so the retry is serial within it), and only a second timeout grades HANG.
@@ -1175,7 +1179,7 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
     kind, out, err, rc = _run_raw(argv, timeout, cwd=cwd, env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
     out = _out_files_append(out, cwd, out_files) if out_files else out
     if answer_file:
-        # ⭐ THE ANSWER IS A FILE THE PROGRAM WRITES, SORTED (ceo CEO-1927; XSB's gentest.sh: `[FILE]. tell(temp). CMD. told.`, then `sort temp`):
+        # ⭐ THE ANSWER IS A FILE THE PROGRAM WRITES, SORTED (R-1927; XSB's gentest.sh: `[FILE]. tell(temp). CMD. told.`, then `sort temp`):
         # ALL.csv's answer column reads temp-sorted for an entry whose own harness grades the file it writes (wfs_tests' test/1 opens temp
         # itself). The file is deleted before every run (m3, m4) and its non-empty lines, sorted, are the graded output; stdout is not.
         _af = Path(cwd) / answer_file
@@ -1221,7 +1225,7 @@ def _mask_error_context(ln):
         out.append(ln[i:comma + 1] + "_CTX)"); i = k
 def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
-    its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (CEO-1354), so the two cannot disagree."""
+    its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (R-1354), so the two cannot disagree."""
     got = out.decode("utf-8", "replace").rstrip("\n")
     if merge_stderr:
         got = _render_merged_stream(got)
@@ -1246,7 +1250,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
         masked_n = max(mg, me)
         if mask_majority(exp_lines, masked_n, guard_n):
             return Verdict("FAIL", out, err, rc, detail="mask covers %d of %d ref lines -- a majority-masked fixture is "
-                           "UNGRADABLE and belongs outside the baseline, named, not masked (CEO-409 guardrail 4)"
+                           "UNGRADABLE and belongs outside the baseline, named, not masked (R-409 guardrail 4)"
                            % (masked_n, exp_lines))
     # ⛔⭐ A POSITIVE NONZERO rc IS NOT A PASS UNLESS IT WAS DECLARED (hq_C ruling 2026-08-30, on seat15's
     # find; corpus-suites-consolidation.task.md § VACUOUS PASS ON POSITIVE rc). Until now only a NEGATIVE rc
@@ -1261,7 +1265,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # snobol4 1 (the defect), prolog 4 (declared below), and ZERO in icon/raku/rebus/snocone/pascal (seat15).
     # ⭐ Declared-not-derived, same principle as the `modes` column: "rc!=0 plus an empty ref" is a heuristic
     # that is right on today's two languages and silently wrong on the next one.
-    # ⭐ A PACKAGE WHOSE OWN HARNESS COMPARES IGNORING WHITESPACE IS GRADED THAT WAY (ceo CEO-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD
+    # ⭐ A PACKAGE WHOSE OWN HARNESS COMPARES IGNORING WHITESPACE IS GRADED THAT WAY (R-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD
     # PROLOG ORACLE): XSB's gentest.sh diffs its sorted answer with `diff -w`, all white space within a line ignored (XSB writes `p06 : p` where
     # SCRIP writes `p06:p`). ALL.csv's compare column reads ignore-all-space for such an entry (read_command_line_columns); lines still count.
     # ⭐ A FRESH VARIABLE'S PRINTED NAME IS THE IMPLEMENTATION'S (ISO/IEC 13211-1 7.10.5: `_` followed by an implementation-dependent name):
@@ -1291,7 +1295,7 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
         v = Verdict("PASS", out, err, rc)
         v.masked_lines = masked_n
         return v
-    # ⭐ OOM BEFORE FAIL (CEO-1229 (2)): a run that did not answer and ended in the runtime's own out-of-memory report is that report.
+    # ⭐ OOM BEFORE FAIL (R-1229 (2)): a run that did not answer and ended in the runtime's own out-of-memory report is that report.
     oom = _oom_verdict(out, err, rc, masked_n)
     if oom is not None:
         return oom
@@ -1329,12 +1333,12 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
         argv = argv + ["--"] + [str(a) for a in prog_argv]
     env = dict(os.environ, SNO_LIB=str(paths["inc"]))
     # ⛔⭐ THE DECLARED ARENA IS EXPORTED HERE, FOR THIS PROGRAM ONLY (Lon 2026-09-23, "each test
-    # should have the needed amount of memory in the attribute TSV/CSV files"; CEO-1167). heap_kb
+    # should have the needed amount of memory in the attribute TSV/CSV files"; R-1167). heap_kb
     # None means the cell was empty, and an empty cell is the SHIPPED DEFAULT -- so the env of an
     # undeclared program is byte-identical to what it was before this parameter existed, which is
     # what keeps this from being a fleet-wide re-grade wearing a reader's name.
     # ⭐ THE DECLARED HEAP AND STACK ARE ON THE COMMAND LINE (-d -i -s, _size_switches above), no longer in env: the cto's switch
-    # row (CEO-1225) made SCRIP read them as SPITBOL does, and a switch is recorded with the run where an env knob is not.
+    # row (R-1225) made SCRIP read them as SPITBOL does, and a switch is recorded with the run where an env knob is not.
     # ⛔⭐ cwd IS THE SOURCE FILE'S OWN DIRECTORY, NOT THE HARNESS'S. A corpus program's relative
     # opens (Icon `open("X")`, and any read of a data companion) resolve against the RUNNING file's
     # directory -- that is how a loose file is run by hand and by test_corpus_snobol4.sh. Without
@@ -1349,7 +1353,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
-    """THE PORT ARM OF run_m3 (CEO-1822): a port engine's program runs through its own runner script beside this file, called the way scrip
+    """THE PORT ARM OF run_m3 (R-1822): a port engine's program runs through its own runner script beside this file, called the way scrip
     --run is: bash run_<engine>.sh [-dNk] [-sNk] [-u STR] <name> [-- argv]. The runner maps the SPITBOL-shaped switches onto its engine and
     adds the language flags the refs were cut under; the unit's compile_args are SCRIP's own switches (--stlimit, clause 8 (f)) and are not
     passed, since SPITBOL and the ports always count statements. cwd, stdin, masks, want_rc and the refs are run_m3's, shared with SCRIP."""
@@ -1402,7 +1406,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
-    # ⛔⭐ THE m4 BINARY IS NAMED AFTER ITS OWN SOURCE AND INVOKED BY BARE NAME (ceo CEO-569, on the
+    # ⛔⭐ THE m4 BINARY IS NAMED AFTER ITS OWN SOURCE AND INVOKED BY BARE NAME (R-569, on the
     # coo's COO-56 ask; the same cure hq_B landed for the arizona runner, one level up). It was "t.bin"
     # for every entry of every rung suite suite in seven languages, so &progname / &pgname answered a name
     # NO .ref was ever cut from and every entry answered the SAME one -- the mode-4 half of hq_B's finding
@@ -1420,7 +1424,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # into ITS OWN tempdir and then calls run_all_modes, which opens A SECOND, NESTED tempdir and passes THAT
     # as tmp_dir. So out_bin.parent was never run_dir for a suite entry, _same was always False, and every
     # rungs entry in seven languages was still invoked BY ITS ABSOLUTE MKTEMP PATH -- the exact ungradability
-    # CEO-569 named, surviving a cure that had been checked by reading the source and by grepping for the
+    # R-569 named, surviving a cure that had been checked by reading the source and by grepping for the
     # spelling. ⛔ A SOURCE-LEVEL ASSERTION IS NOT A MEASUREMENT OF BEHAVIOUR: the gate's own clause 1 greps
     # this file for the pinned form and went green throughout, because the form is right here and the caller
     # defeats it one frame up. bin_dir is how the caller that KNOWS it owns the run directory says so.
@@ -1435,7 +1439,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     out_bin = (Path(bin_dir) if bin_dir else tmp_dir) / (Path(sno_path).stem or "t")
     skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args)
     if skip is not None:
-        # ⛔⭐ A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (ceo CEO-1354, the coo's ask of 2026-09-28 on hq_snobol4's witness; hq_raku
+        # ⛔⭐ A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (R-1354, the coo's ask of 2026-09-28 on hq_snobol4's witness; hq_raku
         # 2026-10-11 on RakRungs class_method_range_replace_6 and class_method_say_replace_49): a program whose correct behaviour IS a
         # compile-time refusal -- the oracle refuses it, its ref is the refusal, its want_rc the refusal's -- read PASS in mode 3 and SKIP
         # in mode 4 forever, because every m4 compile failure was a SKIP. A refusal that ended (rc > 0, no signal) is graded exactly as
@@ -1612,28 +1616,28 @@ class Entry:
                                    # all (identical to pre-sidecar behaviour). DECLARED in <family>.argv,
                                    # never inferred -- an entry's own text cannot say what it should be RUN
                                    # with. See sidecar_argv_path() for why discovery beats a flag.
-        self.mask = None          # list[(compiled regex, reason)] from <family>.mask, or None. CEO-409: a line
+        self.mask = None          # list[(compiled regex, reason)] from <family>.mask, or None. R-409: a line
                                    # whose value belongs to the IMPLEMENTATION (a clock reading, an allocator's
                                    # free-space count) is masked AT THE LINE so the rest of the fixture keeps
                                    # grading. DECLARED beside the data, never inferred, never in a runner.
         self.want_rc = want_rc    # int: the exit code a CORRECT run of this entry produces. 0 unless the
                                    # family declares otherwise in <family>.wantrc. DECLARED, never inferred.
         self.compile_args = None  # list[str] of scrip switches this entry DECLARES for its compile step, both modes, or None =
-                                   # none (clause 8 (f), CEO-1281): ALL.csv's compile_args column, read by read_command_line_columns.
+                                   # none (clause 8 (f), R-1281): ALL.csv's compile_args column, read by read_command_line_columns.
         self.out_files = None     # list[str] of files this entry WRITES whose bytes are its answer, or None (Lon 2026-09-27, in-chat to
                                    # hq_snobol4, picking "Out-file attribute" for aisnobol BUILDLIB.sno, which prints nothing and writes
                                    # spitlib.idx): ALL.csv's out_files column. Each is deleted before every run (oracle, m3, m4) and its
                                    # bytes appended to the graded output after it, so a staged copy can never answer for the program.
         self.merge_stderr = False # True when the entry's answer is stdout and stderr as ONE stream (ALL.csv's stderr column reads
                                    # "merged"): the contract of a package whose own harness cut its refs as `prog < in > out 2>&1`
-                                   # (the Icon packages, CEO-445), applied alike to the oracle's ref cut and to m3 and m4.
-        self.compare_ws = False   # True when ALL.csv's compare column reads ignore-all-space: each line graded with its white space removed (CEO-1927)
-        self.stage_upstream = False   # True when ALL.csv's stage column reads upstream: the run directory is the entry's upstream test directory (CEO-1927)
-        self.answer_file = None       # "temp" when ALL.csv's answer column reads temp-sorted: the graded output is that file's lines, sorted (CEO-1927)
+                                   # (the Icon packages, R-445), applied alike to the oracle's ref cut and to m3 and m4.
+        self.compare_ws = False   # True when ALL.csv's compare column reads ignore-all-space: each line graded with its white space removed (R-1927)
+        self.stage_upstream = False   # True when ALL.csv's stage column reads upstream: the run directory is the entry's upstream test directory (R-1927)
+        self.answer_file = None       # "temp" when ALL.csv's answer column reads temp-sorted: the graded output is that file's lines, sorted (R-1927)
         self.mode_gap_s = 0
-        self.stack_kb = None      # int KB of STACK this entry declares (CEO-1225), or None = the runtime's 64 MB floor.
+        self.stack_kb = None      # int KB of STACK this entry declares (R-1225), or None = the runtime's 64 MB floor.
         self.heap_kb = None       # int KB this entry DECLARES it needs, or None = the shipped default.
-                                   # Lon 2026-09-23 / CEO-1167. DECLARED in ALL.csv's heap_kb column (or a
+                                   # Lon 2026-09-23 / R-1167. DECLARED in ALL.csv's heap_kb column (or a
                                    # travelling <stem>.heap sidecar), never inferred -- a program's own text
                                    # cannot say how much live set it has, and a runner that guessed would be
                                    # pinning an arena, which is the one thing this column exists to replace.
@@ -1751,7 +1755,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
 
 
 def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0):
-    """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, CEO-1218/1230)."""
+    """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, R-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
     # C-entered box to the ONE path SCRIP_C2BB_TRACE names, so a suite run under one path loses which entry fired. With
@@ -2470,7 +2474,7 @@ _INCLUDE_PATTERNS = [
     # spans lines) and non-greedy `*?` stops at the FIRST quote pair instead of backtracking past it.
     re.compile(r'\b(?:INPUT|OUTPUT)\s*\([^)\n]*?["\']([^"\'\n]+)["\']'),
     # ⭐ PROLOG'S LOAD DIRECTIVES NAME A COMPANION BY AN UNQUOTED ATOM, USUALLY WITHOUT .pl (the coo 2026-10-10, row
-    # instruments-the-harness-stages-a-prolog-companion-...-ceo-1603; hq_prolog's report through the ceo: puzzles' farmer loads bplan.pl
+    # instruments-the-harness-stages-a-prolog-companion-...-r-1603; hq_prolog's report through the officer: puzzles' farmer loads bplan.pl
     # by use_module(bplan) and ran without it). use_module/ensure_loaded/consult/include/reexport/load_files take the name as their first
     # argument; library(...) never matches (the name must be followed by , or ), not by a parenthesis). The quoted forms with an
     # extension were already caught by the first pattern. An extension-less name resolves to NAME.pl in _copy_companions.
@@ -2562,13 +2566,13 @@ def _copy_companions(text, companion_dir, dest_dir):
         # (witness: rung37_all after the icon suite conversion, false FAIL on the icon board)
         if Path(name).is_absolute():
             continue
-        # ⛔⭐ SEARCH <dir>/config TOO, FOR THE FLAT END STATE (Lon via ceo, 2026-08-29): tests/<lang>/ becomes
+        # ⛔⭐ SEARCH <dir>/config TOO, FOR THE FLAT END STATE (Lon via the officer, 2026-08-29): tests/<lang>/ becomes
         # FLAT -- ALL.{ext,ref,in,csv} side by side, with ZERO subdirectories except ONE `config/` folder
         # holding runtime companions (.inc/.dat/.in/.conf) and docs. Once a family's own directory is gone,
         # its companions live there and NOWHERE ELSE, so a copier that only looks beside the suite file finds
         # nothing and the entry fails as an ordinary missing-dependency error -- indistinguishable from a real
         # defect. Additive and beside-first (the loop breaks on the first hit), so a tree that has NOT
-        # flattened yet behaves exactly as before. (merged: hq's config search + ceo's ..-guard/mkdir/loop)
+        # flattened yet behaves exactly as before. (merged: hq's config search + the officer's ..-guard/mkdir/loop)
         if ".." in Path(name).parts:
             continue  # a scratch-escaping relative reference (e.g. ../../benchmarks/x.inc) cannot be a companion of an isolated entry; the entry's own run surfaces the miss
         for _cd in companion_dirs:
@@ -2610,7 +2614,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         # already-existing Path(td) is a safe no-op), so nothing already grading through this function
         # can regress.
         cand.parent.mkdir(parents=True, exist_ok=True)
-        # ⭐ A PACKAGE'S PRELUDE (hq_prolog's ask on CEO-1632, the coo 2026-10-11): ALL.prelude beside the container holds the text every
+        # ⭐ A PACKAGE'S PRELUDE (hq_prolog's ask on R-1632, the coo 2026-10-11): ALL.prelude beside the container holds the text every
         # entry runs after -- the package's contract with the oracle that cut its refs (rosetta-prolog: swipl read a double-quoted text
         # as a string, so `:- set_prolog_flag(double_quotes, string).`), as util_logtalk_grade.py prepends the iso flag. Its non-blank
         # lines that are not `#` notes are joined and PREFIXED TO THE ENTRY'S FIRST LINE, never a line of their own, so a message that
@@ -2664,14 +2668,14 @@ def cmd_capture_oracle_refs(args):
     paths = resolve_paths()
     check_scrip(paths)
     lang = args.lang or "snobol4"
-    # ⛔ A LOOSE-FILE BOOTSTRAP HAS NO ATTRIBUTE ROW TO READ, SO ITS CALLER DECLARES (clause 8 (f), CEO-1281): scrip's compile switches
+    # ⛔ A LOOSE-FILE BOOTSTRAP HAS NO ATTRIBUTE ROW TO READ, SO ITS CALLER DECLARES (clause 8 (f), R-1281): scrip's compile switches
     # come from --compile-args and from nothing else. It typed --stlimit for snobol4, snocone, rebus and icon until 2026-09-26.
     paths["scrip_extra"] = validate_args_cell(args.compile_args, "compile_args", "capture-oracle-refs --compile-args") or []
     ext = LANG_CONFIGS[lang]["ext"] if lang != "snobol4" else ".sno"
     oracle_bin, flags = resolve_oracle_bin(paths, lang)
     print(f"oracle: {oracle_bin} {flags}", file=sys.stderr)
     modes = parse_modes(args.modes, "capture-oracle-refs")
-    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (ceo s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
+    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
     srcs = sorted(family_dir.glob(f"*{ext}"))
     if not srcs:
         refuse(f"no {ext} files found under {family_dir}")
@@ -2701,7 +2705,7 @@ def cmd_capture_oracle_refs(args):
             print(f"[{i}/{len(srcs)}] {src.stem}: SKIP (already has a .ref)", file=sys.stderr)
             continue
         # ⛔⭐⭐ THE STDIN COMPANION IS FED TO ALL THREE ARMS -- IT USED TO BE A FLAT REFUSAL, AND THE REASON
-        # THE REFUSAL EXISTED IS THE REASON THE FEED HAS TO BE PROVEN (ceo freeze 2026-08-30 on hq_P's catch;
+        # THE REFUSAL EXISTED IS THE REASON THE FEED HAS TO BE PROVEN (freeze 2026-08-30 on hq_P's catch;
         # freeze lifted with this one edge, cured here). This gate's whole safety argument is THREE-WAY
         # AGREEMENT -- m3, m4 and the oracle producing the same bytes. That argument COLLAPSES when the
         # disagreement-producing input is missing from all three arms at once: rung36_jcon_recogn ran with no
@@ -2798,14 +2802,14 @@ def cmd_capture_oracle_refs(args):
     for name, reason in red:
         print(f"   RED {name}: {reason}", file=sys.stderr)
     # ⛔⭐⭐ ANY RED EXITS NON-ZERO. This printed a full RED summary and exited 0 until 2026-08-30 (measured by
-    # ceo on a scratch family; hq_B's row capture-feed-stdin-and-red-exit) -- which is format Law 3's exact
+    # the officer on a scratch family; hq_B's row capture-feed-stdin-and-red-exit) -- which is format Law 3's exact
     # two-audiences shape, "could not measure" and "measured fine" sharing one exit code, sitting on the very
     # tool that carries Law 4. ⭐ A HUMAN reading the terminal sees the ⛔ lines and is fine; a SCRIPT sees
     # rc=0 and marches on, and `capture-oracle-refs D && convert D ...` then converts a family whose refusals
     # it never learned about. The two audiences do not read the same channel, so the channel BOTH read -- the
     # exit code -- is the one that has to carry the verdict.
     # rc=1 -- ran fine, some stems are RED and were left untouched. rc=2 (refuse()) is could-not-measure-AT-ALL,
-    # ⛔ UNIFIED FROM rc=3 on 2026-09-04 (ceo CEO-233, row harness-refusal-exit-code-unified-on-rc-2) onto the
+    # ⛔ UNIFIED FROM rc=3 on 2026-09-04 (R-233, row harness-refusal-exit-code-unified-on-rc-2) onto the
     # fleet's one refusal code -- see refuse()'s own docstring. The distinction this comment was defending is
     # intact: rc=1 still means "measured, some stems red", rc=2 now means "could not measure", and they are still
     # different codes. Only the NUMBER moved, onto the one every bash caller and lib_gate.sh already test for.
@@ -2816,7 +2820,7 @@ def cmd_convert(args):
     paths = resolve_paths()
     check_scrip(paths)
     modes = parse_modes(args.modes, "convert")
-    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (ceo s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
+    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
     pairs = discover_pairs(family_dir)
     if not pairs:
         refuse(f"no .sno/.ref pairs discovered under {family_dir}")
@@ -2947,7 +2951,7 @@ def cmd_convert_blocks(args):
     cfg = LANG_CONFIGS[args.lang]
     ext, comment_open, comment_close = cfg["ext"], cfg["comment_open"], cfg["comment_close"]
     modes = parse_modes(args.modes or cfg["modes"], "convert-blocks")
-    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (ceo s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
+    family_dir = Path(args.family_dir).resolve()   # ⛔ ABSOLUTE, ALWAYS (s283h): run_m3/run_ast set subprocess cwd to the FILE'S OWN PARENT while argv carries this path -- a caller-relative path then resolves against the wrong dir, scrip cannot open it (rc=1), and every 'original' baseline is silently garbage: convert then REFUSES green families ('NEITHER form reproduced') or, worse, validates a candidate against the broken baseline. Measured on probe/kw (15/15 false FAIL) and probe/define (false-validated) 2026-08-29.
     pairs = discover_pairs(family_dir, ext=ext)
     if not pairs:
         refuse(f"no {ext}/.ref pairs discovered under {family_dir}")
@@ -3140,13 +3144,13 @@ SHARED_CORPUS_REMOTE = "snobol4ever/corpus"
 
 def _corpus_is_the_shared_population(corpus_root):
     """⛔⭐ WHOSE corpus IS IT? (coo 2026-09-18, row instruments-the-progress-fingerprint-gate-appends-no-rows-arms-1-
-    and-2-red-and-arm-4-vacuous). CEO-547 part 1 says a gate's own mktemp fixture is not a board because it grades no
+    and-2-red-and-arm-4-vacuous). R-547 part 1 says a gate's own mktemp fixture is not a board because it grades no
     corpus population -- but the test written for it asked a PATH question, "is the suite under the corpus root", and
     the corpus root is whatever S4E_HOME/corpus resolves to. A hermetic fixture that builds its own two-repo world and
     points S4E_HOME at it therefore lands INSIDE its own corpus tree and is judged a board, which is how
     test_gate_progress_rows_carry_the_start_fingerprint.sh came to be DARK on origin for a day: its eight-entry scratch
     rungs was refused rc=2, the harness appended nothing, and arms 1 and 2 read FAIL for a reason that was never about
-    fingerprints. ⭐ THE FACT ASKED HERE IS THE ONE CEO-547 ACTUALLY NAMES -- is this the population every seat has? --
+    fingerprints. ⭐ THE FACT ASKED HERE IS THE ONE R-547 ACTUALLY NAMES -- is this the population every seat has? --
     and it is asked of the remote: a real checkout carries origin snobol4ever/corpus, a `git init` scratch world carries
     no remote at all. ⛔ UNREADABLE ANSWERS TRUE: a guard that cannot tell must refuse, never wave through."""
     try:
@@ -3160,7 +3164,7 @@ def _corpus_is_the_shared_population(corpus_root):
 
 
 def _writes_the_live_progress_table():
-    """Does this run append to the shared record, or to a scratch table of its own? The second half of CEO-547's
+    """Does this run append to the shared record, or to a scratch table of its own? The second half of R-547's
     definition ("publishes no row, writes no score"), asked of the file that would actually be written. Unreadable
     answers TRUE, for the same reason as above."""
     try:
@@ -3186,10 +3190,10 @@ def _in_a_shared_checkout(sp):
 
 
 def _suite_is_a_board(suite_path, corpus_root):
-    """⛔⭐ WHAT MAKES A RUN A BOARD IS THE POPULATION IT GRADES, NOT THE ENTRY POINT (ceo CEO-547 part 1, on the cfo's
+    """⛔⭐ WHAT MAKES A RUN A BOARD IS THE POPULATION IT GRADES, NOT THE ENTRY POINT (R-547 part 1, on the cfo's
     measurement). A suite living under the corpus tree is a board: it grades a shared population, publishes rows and writes a
     score. A gate's own two-entry mktemp fixture publishes no row, writes no score, grades no corpus population and costs about
-    a second -- it is not a board by the definition CEO-523 itself uses. The guard used to fire before it knew which of the two
+    a second -- it is not a board by the definition R-523 itself uses. The guard used to fire before it knew which of the two
     it was holding, so make test -- THE blocking set -- was red on a clean origin tree for twelve of thirteen seats. An
     unreadable or unresolvable path answers TRUE: a guard that cannot tell must refuse, never wave through.
     ⛔ AMENDED 2026-09-18 (coo): PATH CONTAINMENT ALONE CANNOT SEE A FIXTURE THAT BUILT ITS OWN corpus/ AND POINTED
@@ -3210,7 +3214,7 @@ def _suite_is_a_board(suite_path, corpus_root):
         return _in_a_shared_checkout(sp)
     if not _corpus_is_the_shared_population(cr) and not _writes_the_live_progress_table():
         print("ONE-RUNNER: FIXTURE, not a board -- %s is under %s, which is not a checkout of %s, and this run appends "
-              "to a scratch progress table. No row reaches the shared record (CEO-547 part 1)." % (sp, cr, SHARED_CORPUS_REMOTE),
+              "to a scratch progress table. No row reaches the shared record (R-547 part 1)." % (sp, cr, SHARED_CORPUS_REMOTE),
               flush=True)
         return False
     return True
@@ -3226,9 +3230,9 @@ def _one_runner_lang(suite_path=None, lang=None):
     return lang or "unknown"
 
 def _cto_lands():
-    """THE cto LANDS THE ROWS ASSIGNED TO IT (CEO-2085, mirrored word for word in its rule from lib_one_runner.sh:one_runner_cto_lands;
+    """THE cto LANDS THE ROWS ASSIGNED TO IT (R-2085, mirrored word for word in its rule from lib_one_runner.sh:one_runner_cto_lands;
     the coo 2026-11-01 on the cto's ask): a cto that holds a live claim -- a claims/*.claim under S4E_POST whose first line is cto and that
-    carries no line DONE -- runs that landing's proof like any lander. CEO-2029's refusal stands for the cto's own design work."""
+    carries no line DONE -- runs that landing's proof like any lander. R-2029's refusal stands for the cto's own design work."""
     d = os.path.join(os.environ.get("S4E_POST", "/home/resources/postoffice"), "claims")
     try:
         names = sorted(os.listdir(d))
@@ -3248,10 +3252,10 @@ def _cto_lands():
 
 
 def _one_runner_who(lang=None):
-    """WHO may run a board comes from the LAW, never from a name baked in here (ceo CEO-756, CEO-775).
+    """WHO may run a board comes from the LAW, never from a name baked in here (R-756, R-775).
     NO CENTRAL RUNNER (Lon 2026-09-16 10:5x, verbatim: "So do not have a centralized runner at all. Let's each HQ run its
     language test and benchmark suites."): the seat is the one MODE's LANES: line names for the board's language; a
-    MODE with no LANES line falls back to the pre-DECTET single runner (ceo under CEO, coo otherwise). Mirrors
+    MODE with no LANES line falls back to the pre-DECTET single runner, the coo. Mirrors
     lib_one_runner.sh:one_runner_who word for word in its rule."""
     post = os.environ.get("S4E_POST", "/home/resources/postoffice")
     mode, lanes = "", ""
@@ -3265,21 +3269,21 @@ def _one_runner_who(lang=None):
     except Exception:
         pass
     if not lanes:
-        return ["ceo" if mode == "CEO" else "coo"]
+        return ["coo"]
     table = dict(kv.split("=", 1) for kv in lanes.split() if "=" in kv)
-    # ⛔⭐ THE ENGINE IS A RUNNER SETTING (CEO-1822), word for word lib_one_runner.sh:one_runner_who: under a port engine the lane is
+    # ⛔⭐ THE ENGINE IS A RUNNER SETTING (R-1822), word for word lib_one_runner.sh:one_runner_who: under a port engine the lane is
     # <lang>@<engine> and the bare key does not admit it; "all" is the bare keys only, so a port HQ is never a runner of every board.
-    # A lane may name several seats, comma-separated (CEO-1893: the language's HQs beside the coo); each is admitted.
+    # A lane may name several seats, comma-separated (R-1893: the language's HQs beside the coo); each is admitted.
     if lang == "all":
         return sorted(set(s for k, v in table.items() if "@" not in k for s in v.split(",") if s))
     key = lang if _engine() == "scrip" else f"{lang}@{_engine()}"
     return [s for s in table[key].split(",") if s] if key in table else []
 
 def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
-    """ONE RUNNER PER LANGUAGE (Lon 2026-09-10 CEO-523 partitioned by Lon 2026-09-16 CEO-775): a run of a suite UNDER THE CORPUS
+    """ONE RUNNER PER LANGUAGE (Lon 2026-09-10 R-523 partitioned by Lon 2026-09-16 R-775): a run of a suite UNDER THE CORPUS
     TREE is a board; refused rc=2 to any seat but the one the LANES line names for that language, unless the bus computed done
     (S4E_DONE_WHEN_RUN=1) or a loud S4E_ONE_RUNNER_OVERRIDE is set. A suite outside the corpus tree -- a gate's own mktemp
-    fixture -- is not a board and is never refused (CEO-547 part 1). Called with no path it judges the run a board, so a new
+    fixture -- is not a board and is never refused (R-547 part 1). Called with no path it judges the run a board, so a new
     caller that forgets to say what it is graded is refused, not waved through. Mirrors ../harness/scripts/lib_one_runner.sh exactly."""
     if suite_path is not None and corpus_root is not None and not _suite_is_a_board(suite_path, corpus_root):
         return
@@ -3294,33 +3298,33 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     who = _one_runner_who(blang)
     if seat and seat in who:
         return
-    # THE ceo AND THE coo ARE NEVER REFUSED (Lon 2026-10-25, CEO-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words): the
-    # ceo on every board, the coo on every SCRIP board, whatever LANES: names.
-    if seat == "ceo" or (seat == "coo" and _engine() == "scrip"):
+    # THE coo IS NEVER REFUSED A SCRIP BOARD (Lon 2026-10-25, R-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words),
+    # whatever LANES: names.
+    if seat == "coo" and _engine() == "scrip":
         return
     # ⛔⭐ ONE SEAT, ONE LANGUAGE (Lon 2026-09-24, verbatim: "Just have each seat run only their own test suites." / "We can not have
     # all 5 HQ's deciding to run all seven test suites simultaneously. Fix that."): an hq_* seat the LANES: line names gets neither
     # exemption below and falls through to the refusal. Mirrors lib_one_runner.sh:one_runner_seat_is_language_hq.
-    # ⛔⭐ THE FIXTURE EXEMPTION HOLDS ONLY FOR A POPULATION OUTSIDE THE SHARED CORPUS (ceo CEO-1302 (c), 2026-09-27; lib_one_runner.sh
+    # ⛔⭐ THE FIXTURE EXEMPTION HOLDS ONLY FOR A POPULATION OUTSIDE THE SHARED CORPUS (R-1302 (c), 2026-09-27; lib_one_runner.sh
     # carries the why): a suite reaching this line is a board -- a scratch one returned at the top -- so the exemption, which admitted
     # exactly this case, now names it and falls through to the checks below, which end in the refusal.
     if os.environ.get("S4E_ONE_RUNNER_FIXTURE"):
         sys.stderr.write("\u26d4 ONE-RUNNER FIXTURE NOT ADMITTED: %s is the shared corpus or a population a board reads -- the exemption "
-                         "admits a scratch population only (ceo CEO-1302 (c)); point the fixture at one with a scratch "
+                         "admits a scratch population only (R-1302 (c)); point the fixture at one with a scratch "
                          "S4E_PROGRESS_DB\n" % (suite_path or "a run naming no suite"))
     if seat.startswith("hq_"):
         sys.stderr.write("\u26d4 ONE SEAT, ONE LANGUAGE: %s is a language HQ -- no S4E_ONE_RUNNER_OVERRIDE and no DONE-WHEN admits it to "
                          "a %s board (Lon 2026-09-24: \"Just have each seat run only their own test suites.\")\n" % (seat, blang))
     else:
         if os.environ.get("S4E_DONE_WHEN_RUN") == "1":
-            # DONE RUNS NO BOARD FOR ANY SEAT (ceo CEO-1342 clause 5, the coo 2026-09-28): the exemption is retired; mirrors lib_one_runner.sh
-            sys.stderr.write("⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (ceo CEO-1342 clause 5): a %s board under the bus computed done for seat %s "
+            # DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5, the coo 2026-09-28): the exemption is retired; mirrors lib_one_runner.sh
+            sys.stderr.write("⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5): a %s board under the bus computed done for seat %s "
                              "is refused -- a DONE-WHEN that needs a suite's verdict reads the coo's SUITE TABLE row at a tree at or after the "
                              "landing: ../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>\n" % (blang, seat or "?"))
             sys.exit(2)
         if os.environ.get("S4E_ONE_RUNNER_OVERRIDE"):
             print("\u26a0 ONE-RUNNER OVERRIDE by %s: %s" % (seat or "?", os.environ["S4E_ONE_RUNNER_OVERRIDE"])); return
-    sys.stderr.write("\u26d4 REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: a %s rungs/package run is a board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, RULES.md § ONE RUNNER PER LANGUAGE, CEO-775); another language board is an ASK to that language HQ.\n" % (blang, seat or "?", " or ".join(who) if who else "<no seat -- the LANES line names none>", blang))
+    sys.stderr.write("\u26d4 REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: a %s rungs/package run is a board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, RULES.md § ONE RUNNER PER LANGUAGE, R-775); another language board is an ASK to that language HQ.\n" % (blang, seat or "?", " or ".join(who) if who else "<no seat -- the LANES line names none>", blang))
     sys.exit(2)
 
 def cmd_run(args):
@@ -3333,15 +3337,15 @@ def cmd_run(args):
         except Exception:
             _dseat = ""
     if _dseat == "cto" and not os.environ.get("S4E_DONE_WHEN_RUN") and not _cto_lands():
-        sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"). Put the witness and its expected answer in the step plan and let an executor or the coo run it.\n" % _dseat)
+        sys.stderr.write("\u26d4 REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, R-2029, verbatim: \"Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing.\"). Put the witness and its expected answer in the step plan and let an executor or the coo run it.\n" % _dseat)
         sys.exit(2)
     # ⭐ A HANDFUL OF NAMED ENTRIES IS NOT A BOARD (Lon 2026-10-22: "An HQ knows it is done when the program it fixes fails before and passes
-    # after a fix. And it can run a handful of related programs based on attributes to check for breakage."; ceo CEO-1893): a run whose
+    # after a fix. And it can run a handful of related programs based on attributes to check for breakage."; R-1893): a run whose
     # --partition names only entry:<name> parts, at most eight, is any seat's own test of its program and is admitted for every seat.
     _parts = [p.strip() for p in (getattr(args, "partition", None) or "").split(",") if p.strip()]
-    # ⭐ A SMOKE'S CORE ARM IS NOT A BOARD (ceo CEO-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."):
+    # ⭐ A SMOKE'S CORE ARM IS NOT A BOARD (R-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."):
     # test_smoke_snobol4.sh and test_smoke_snocone.sh grade their language's PARTITION core plus named entries under S4E_SMOKE_CORE_ARM with
-    # progress off. A smoke is open to every seat (CEO-1893) and a fix smokes every language its diff touches before the push (CEO-1928), so
+    # progress off. A smoke is open to every seat (R-1893) and a fix smokes every language its diff touches before the push (R-1928), so
     # the arm is admitted for every seat; it writes no progress row and no score row, and it names nothing but core and entry: parts.
     _smoke = bool(os.environ.get("S4E_SMOKE_CORE_ARM")) and os.environ.get("S4E_PROGRESS_OFF") == "1" and _parts.count("core") == 1 and all(p == "core" or p.startswith("entry:") for p in _parts)
     if _smoke:
@@ -3350,7 +3354,7 @@ def cmd_run(args):
         _one_runner_guard(args.sno, paths["corpus"], getattr(args, "lang", None))
     # ⛔⭐ ONE MEMORY SCOPE AT THE OUTERMOST RUN (row instrument-698-runners-..., the coo 2026-09-23; util_mem_scope.py): an
     # ADMITTED run over a corpus population -- the guard's own test, just above -- re-runs itself once inside ONE cgroup scope at
-    # the board cap unless it is already inside one; a gate's mktemp fixture is not a board and is left alone (CEO-547). After the
+    # the board cap unless it is already inside one; a gate's mktemp fixture is not a board and is left alone (R-547). After the
     # guard, not before, so a refused seat spends no scope and the guard stays the first thing cmd_run does.
     if _mem_scope_wanted(args, paths):
         _mem_scope().enter("board", sys.orig_argv)
@@ -3360,7 +3364,7 @@ def cmd_run(args):
     _pl = _one_runner_lang(args.sno, None)   # the board's language: --lang, else its corpus path, else this harness's default, snobol4
     paths["lang"] = getattr(args, "lang", None) or (_pl if _pl != "unknown" else "snobol4")
     check_scrip(paths)
-    # ⛔⭐ THE STATEMENT INSTRUMENTATION IS EACH UNIT'S OWN DECLARATION (clause 8 (f), CEO-1281): every snobol4, snocone and rebus rungs
+    # ⛔⭐ THE STATEMENT INSTRUMENTATION IS EACH UNIT'S OWN DECLARATION (clause 8 (f), R-1281): every snobol4, snocone and rebus rungs
     # row declares --stlimit in its compile_args (corpus d57d1ae81), which read_command_line_columns attaches and _compile_switches
     # applies. This harness typed it here for those three languages from 2026-09-25 (hq_snocone: SncRungs graded 335/338 without it,
     # SPITBOL always counts) until 2026-09-26, when the rows took it over; a row without the cell compiles without the switch.
@@ -3373,7 +3377,7 @@ def cmd_run(args):
     # the baseline is STATED, like the tree stamp: a reader (and the gate's mid-run arm) can see what this run will be held to
     _bin_names = ", ".join(os.path.basename(f) for f in engine_binaries(paths["engine"])) if paths["engine"] != "scrip" else "scrip, libscrip_rt.so"
     print(f"BINARY_AT_START {os.environ['S4E_BIN_AT_START']} (md5/12 of {_bin_names}; engine {paths['engine']}; a rebuild under this run refuses the board)", flush=True)
-    # ⛔⭐ A BOARD NAMES THE ARENA IT RAN UNDER (Lon 2026-09-19, ceo CEO-931/934/938; RULES.md batch 28 CLAUSE 2).  The
+    # ⛔⭐ A BOARD NAMES THE ARENA IT RAN UNDER (Lon 2026-09-19, R-931/934/938; RULES.md batch 28 CLAUSE 2).  The
     # tiny arena is the default of all GC testing, so the SAME suite legitimately reads two different populations on one
     # binary -- SnoRungs 1963/1974 at the shipped 512 MB window and 1959/1974 at 1 MB -- and a reader who cannot see which
     # one a board is has no measurement.  Reported, never defaulted here: the knob comes from the environment (the
@@ -3385,10 +3389,10 @@ def cmd_run(args):
     if not _arena_mb: _arena_mb = "0"
     _arena_cap = os.environ.get("SCRIP_HEAP_MAX_MB", "").strip()
     print("ARENA SCRIP_HEAP_KB=%s%s%s" % (_arena_kb, (" SCRIP_HEAP_MAX_MB=" + _arena_cap) if _arena_cap else "",
-          " (THE INITIAL WINDOW in KB, SPITBOL's -i; unset means the shipped %d KB, SPITBOL's -i1m (ceo CEO-1261). THE HARD CAP is each"
+          " (THE INITIAL WINDOW in KB, SPITBOL's -i; unset means the shipped %d KB, SPITBOL's -i1m (R-1261). THE HARD CAP is each"
           " program's declared heap_kb, passed as -d<kb>k on its own command line, else the shipped %d KB, SPITBOL's -d128m; SCRIP_HEAP_CAP_KB"
-          " or SCRIP_HEAP_MAX_MB in the environment names it for an undeclared program. Since ceo CEO-1101 the heap does not extend past its cap"
-          " -- memory inside it is committed page-granular as the heap grows and nothing above it is mapped -- and since CEO-1264 a window is"
+          " or SCRIP_HEAP_MAX_MB in the environment names it for an undeclared program. Since R-1101 the heap does not extend past its cap"
+          " -- memory inside it is committed page-granular as the heap grows and nothing above it is mapped -- and since R-1264 a window is"
           " spent before it is collected and a collection that leaves it under 15 percent free grows it, as SPITBOL does. A SMALL CAP CAN"
           " REFUSE A LIVE SET, and that refusal is a row, never a reason to raise the default; the run's own report carries capped= grew="
           " cap_kb=, and grew>0 disqualifies a point as arena evidence)" % (GC_HEAP_KB_DEFAULT, GC_HEAP_CAP_KB)), flush=True)
@@ -3407,7 +3411,7 @@ def cmd_run(args):
     # them apart. That is the exact shape this row was minted to remove, one layer below where it was looking.
     # ⛔ CHECKED HERE, BEFORE ANY READER: read_suite/read_block_suite each open BOTH files at different depths,
     # so a guard inside either one would have to be written twice and would still miss the sidecars' own reads.
-    # ⛔⭐ A BOARD NAMES THE RUNTIME IT ACTUALLY LOADED, NOT THE ONE ITS TREE IMPLIES (coo, ceo CEO-1097).
+    # ⛔⭐ A BOARD NAMES THE RUNTIME IT ACTUALLY LOADED, NOT THE ONE ITS TREE IMPLIES (coo, R-1097).
     # out/libscrip_rt.so is a SINGLE MUTABLE SYMLINK whose target name is keyed on the TREE PATH, not on the build
     # configuration, and scrip's RUNPATH is that absolute out directory.  So two builds of one tree at different
     # RT_OPT overwrite each other silently, and a board that spans a rebuild grades two different runtimes under one
@@ -3422,7 +3426,7 @@ def cmd_run(args):
             _rt_so = (engine_binaries(paths["engine"]) + ["", ""])[1]
         with open(os.path.realpath(_rt_so), "rb") as _f: _rt_md5 = hashlib.md5(_f.read()).hexdigest()[:12]
     except Exception: _rt_md5 = "unreadable"
-    print(("RUNTIME " + os.path.basename(_rt_so) if paths["engine"] != "scrip" else "RUNTIME libscrip_rt.so") + " md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (CEO-1097)" % _rt_md5)
+    print(("RUNTIME " + os.path.basename(_rt_so) if paths["engine"] != "scrip" else "RUNTIME libscrip_rt.so") + " md5=%s -- the runtime this pass ACTUALLY loaded; out/libscrip_rt.so is one mutable symlink per TREE, not per CONFIGURATION (R-1097)" % _rt_md5)
     for _label, _p in (("suite", args.sno), ("ref", args.ref)):
         if not Path(_p).is_file():
             refuse(f"{_label} file does not exist: {_p} -- nothing was graded, and a run that graded nothing is "
@@ -3457,9 +3461,9 @@ def cmd_run(args):
         _unknown = sorted(set(_masks) - _seen - {"*"})
         if _unknown:
             refuse("the .mask sidecar names entries this suite does not contain: %s -- a mask that matches nothing "
-                   "is a mask nobody notices has stopped applying, and CEO-409 is auditable or it is not a mask"
+                   "is a mask nobody notices has stopped applying, and R-409 is auditable or it is not a mask"
                    % ", ".join(_unknown))
-        print("CEO-409 MASKS ACTIVE: %d of %d entries carry a declared implementation-defined line mask (%s)"
+        print("R-409 MASKS ACTIVE: %d of %d entries carry a declared implementation-defined line mask (%s)"
               % (len(_seen), len(entries), ", ".join(sorted(_seen))))
     require_population(paths, len(entries), 1, f"entries read from {args.sno} (a suite pair that names zero entries cannot be graded)")
     # ⛔ THE SUITE'S NAMES ARE TAKEN BEFORE THE SHARD CUTS THEM: the outside list's presence check below asks whether a name is in
@@ -3482,7 +3486,7 @@ def cmd_run(args):
     if getattr(args, "partition", ""):
         if shard_tag:
             refuse("--partition and --shard together: a partition is already a bounded subset; grade one or the other")
-        # ⭐ <part>@<entry> RESUMES a part at that entry (CEO-1806): the round robin yields to a waiting request between two tests and picks the
+        # ⭐ <part>@<entry> RESUMES a part at that entry (R-1806): the round robin yields to a waiting request between two tests and picks the
         # chunk up again where it stopped, by name, so a request waits at most one test.
         _ppart, _, _pfrom = args.partition.partition("@")
         _pname, _psel, _pn, _ppath = select_partition(args.sno, _ppart)
@@ -3502,7 +3506,7 @@ def cmd_run(args):
         print(f"PARTITION {_pname}: {len(entries)} of {_pn} entries ({_ppath}) -- a subset, never the suite's row")
     # ⛔⭐⭐ HONOUR THE heap_kb COLUMN -- UNCONDITIONALLY, AND THAT IS THE WHOLE DESIGN (Lon 2026-09-23,
     # verbatim: "Well, each test should have the needed amount of memory in the attribute TSV/CSV files.";
-    # CEO-1167). There is deliberately NO --by-heap-column flag: `heap_kb` says what the entry NEEDS IN ORDER TO RUN AT ALL: a
+    # R-1167). There is deliberately NO --by-heap-column flag: `heap_kb` says what the entry NEEDS IN ORDER TO RUN AT ALL: a
     # declared need is an attribute of the test, so it IS the shipped configuration for that test, and a
     # board that could be asked to ignore it would be a board that can be asked to grade a program at an
     # arena its own suite says is too small. That is not a second opinion, it is a known-false reading.
@@ -3517,7 +3521,7 @@ def cmd_run(args):
         print(f"DECLARED ARENA: {_named} of {len(entries)} entr(y/ies) carry a heap_kb declaration from "
               f"{_heap_src} and run at it; the rest run at the shipped default. "
               + ", ".join(f"{_e.name}={_e.heap_kb}KB" for _e in entries if _e.heap_kb), file=sys.stderr)
-    # ⭐ AND THE stack_kb COLUMN, the same way and for the same reason (CEO-1225): what the entry needs in order to run at all.
+    # ⭐ AND THE stack_kb COLUMN, the same way and for the same reason (R-1225): what the entry needs in order to run at all.
     _stack_decl, _stack_src = stack_declarations(args.sno)
     if _stack_decl:
         for _e in entries:
@@ -3527,7 +3531,7 @@ def cmd_run(args):
         print(f"DECLARED STACK: {_nst} of {len(entries)} entr(y/ies) carry a stack_kb declaration from "
               f"{_stack_src} and run at it; the rest run at the runtime's {GC_STACK_FLOOR_KB} KB floor. "
               + ", ".join(f"{_e.name}={_e.stack_kb}KB" for _e in entries if _e.stack_kb), file=sys.stderr)
-    # ⛔ A MISSING DECLARATION IS NAMED ON THIS RUN'S OWN OUTPUT (Lon 2026-09-28, ceo CEO-1353 gap 5: "a missing declaration runs silently
+    # ⛔ A MISSING DECLARATION IS NAMED ON THIS RUN'S OWN OUTPUT (Lon 2026-09-28, R-1353 gap 5: "a missing declaration runs silently
     # at the default"): the counts above went to stderr and said nothing at all when the column or the table was absent. Every entry that
     # declares no heap_kb or no stack_kb is NAMED on stdout, with where the declaration was looked for, so a board's transcript shows it.
     _no_heap = [_e.name for _e in entries if not _e.heap_kb]
@@ -3535,10 +3539,10 @@ def cmd_run(args):
     if _no_heap or _no_stack:
         _where = str(Path(args.sno).parent / "ALL.csv") + (" (present)" if (Path(args.sno).parent / "ALL.csv").is_file() else " (ABSENT)")
         _nm = lambda xs: " ".join(xs[:20]) + (" ... and %d more" % (len(xs) - 20) if len(xs) > 20 else "")
-        print("UNDECLARED heap_kb on %d of %d entr(y/ies), stack_kb on %d -- run at the shipped default, named (CEO-1353; the declaration "
+        print("UNDECLARED heap_kb on %d of %d entr(y/ies), stack_kb on %d -- run at the shipped default, named (R-1353; the declaration "
               "is looked for in %s and a travelling <stem>.heap / <stem>.stack): heap: %s%s" % (len(_no_heap), len(entries), len(_no_stack), _where,
               _nm(_no_heap) or "none", ("; stack: " + _nm(_no_stack)) if _no_stack else ""))
-    # ⭐ AND THE COMMAND LINE (clause 8 (f), CEO-1281): compile_args and run_args were attached by the suite reader itself
+    # ⭐ AND THE COMMAND LINE (clause 8 (f), R-1281): compile_args and run_args were attached by the suite reader itself
     # (read_command_line_columns), so every caller of it sees them; the count is printed here so a transcript records them.
     _nca = [_e for _e in entries if _e.compile_args]
     if _nca:
@@ -3552,7 +3556,7 @@ def cmd_run(args):
     # and m4 specific columns. We do not do that here." and "mode 3 and 4 are the same with only different MEDIA, binary versus
     # text"). Every entry is graded in every mode the caller asked for; nothing in a suite can narrow that.
     run_entries = entries
-    # ⛔⭐ OUTSIDE THE BASELINE (ceo ruling 2026-09-08 on the cfo's find; the rungs half of the rule
+    # ⛔⭐ OUTSIDE THE BASELINE (ruling 2026-09-08 on the cfo's find; the rungs half of the rule
     # OUTSIDE_SPITBOL_BASELINE.tsv already carries for a package). A RUNGS entry the language's ORACLE
     # CANNOT RUN is outside the rungs' baseline exactly as a package program is: it leaves the graded
     # denominator, it is NEVER masked per line, and the reason is recorded beside the suite with the
@@ -3618,12 +3622,12 @@ def cmd_run(args):
             refuse(f"{_flag} {_outside_path}: declares entries that are not in this suite: {_absent} -- a stale outside list silently shrinks nothing and hides that it is stale")
         print(f"OUTSIDE_BASELINE_LIST {_outside_path} ({'DERIVED from the suite directory -- --outside was not given' if _outside_derived else 'passed with --outside'}), "
               f"{len(outside)} entr(ies) declared")
-        # ⛔⭐ THE OUTSIDE ENTRIES LEAVE THE GRADED DENOMINATOR AND STAY IN THE SHIPPED ONE (CEO-749; Lon 2026-09-16 "Get those
+        # ⛔⭐ THE OUTSIDE ENTRIES LEAVE THE GRADED DENOMINATOR AND STAY IN THE SHIPPED ONE (R-749; Lon 2026-09-16 "Get those
         # fixed" -- OUTSIDE is debt; coo 2026-09-16, row snobol4-master-runner-publishes-over-the-graded-population-1972-not-
         # the-shipped-1980-with-outside-named). Counted HERE, per shard, as the entries this run actually removed -- never
         # len(outside) -- so board_combine's field sum across shards reads the true count once, and the SUITE_BOARD prints
         # total= (graded) shipped= (graded + outside) outside= (removed) side by side. Each removed entry is also recorded in
-        # the progress DB as OUTSIDE with the oracle's own class and reason, so the CEO-749 identity is checkable from the DB.
+        # the progress DB as OUTSIDE with the oracle's own class and reason, so the R-749 identity is checkable from the DB.
         _out_run = [e.name for e in run_entries if e.name in outside]
         run_entries = [e for e in run_entries if e.name not in outside]
         for _n in sorted(_out_run):
@@ -3636,7 +3640,7 @@ def cmd_run(args):
     _ext_rows = {}
     if Path(args.sno).name.startswith("ALL."):
         _ext_rows = report_extension_refs(args.sno, _all_entries, set(outside))
-    # ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06): a suite row's single number states the entries green in
+    # ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06): a suite row's single number states the entries green in
     # EVERY mode they were graded in -- never one mode alone, and never min(m3_pass, m4_pass), which is not a count
     # of anything: two entries, one red only in m3 and one red only in m4, give min()=1 while the AND is 0, so the
     # min hides a program that is red somewhere. It is computed HERE, where one entry's verdicts are all in hand,
@@ -3644,19 +3648,19 @@ def cmd_run(args):
     # the callers could not do it themselves. `all_n` is its denominator: entries graded in at least one mode.
     all_pass = 0
     all_n = 0
-    # ⛔⭐ THE XFAIL BUCKET IS SPLIT BY OUTCOME (ceo CEO-432 item 2, on hq_U's census: an xfail marker is a CHECK
+    # ⛔⭐ THE XFAIL BUCKET IS SPLIT BY OUTCOME (R-432 item 2, on hq_U's census: an xfail marker is a CHECK
     # THAT CANNOT FAIL -- a SIGSEGV reads xfail, a hang reads xfail, a silently wrong answer reads xfail, and a
     # mode-4 that produces no binary at all reads xfail). Four different repairs behind one identical count, and
     # hq_U measured three SNOBOL4 entries that CRASH in m3 and merely answer WRONG in m4 -- so the single number
     # hides a PER-MODE split as well as a per-debt one. XFAIL stays as the total, so every existing reader is
     # untouched; the split rides beside it and costs one dict key per kind.
     _XK = ("PASS", "FAIL", "CRASH", "HANG", "UNPROVEN", "SKIP")
-    # ⭐⭐ OOM ON THE BOARD LINE (CEO-1229 (2); the verdict is _oom_verdict's). The PROGRESS ROW says OOM. The SUITE_BOARD line keeps
+    # ⭐⭐ OOM ON THE BOARD LINE (R-1229 (2); the verdict is _oom_verdict's). The PROGRESS ROW says OOM. The SUITE_BOARD line keeps
     # an OOM inside <m>_fail and prints how many of them were OOM beside it as <m>_fail_oom, the way the xfail split rides beside
-    # xfail (CEO-432 item 2) -- because 89 files under ../harness/scripts/ name this line on 2026-09-24, the boards among them read fail (+crash)
+    # xfail (R-432 item 2) -- because 89 files under ../harness/scripts/ name this line on 2026-09-24, the boards among them read fail (+crash)
     # as their red (test_corpus_snobol4.sh FAIL = m3_fail + m3_crash, board_icon_rungs.sh, the Pascal gates' bad sums), and none of
     # them knows the new word: folding OOM OUT of fail would turn each such board green on a program that did not answer, silently. Since dc739c38a an OOM already read as fail here (rc 1, output mismatch), so no reader's verdict moves by a unit.
-    # Whether a landing gate should stop counting an OOM as red is a ruling, asked of the ceo, not taken here.
+    # Whether a landing gate should stop counting an OOM as red is a ruling, asked of the officer, not taken here.
     _OOMK = "OOM"
     def _fresh():
         d = {k: 0 for k in _XK}; d["XFAIL"] = 0; d["XPASS"] = 0
@@ -3665,7 +3669,7 @@ def cmd_run(args):
         return d
     oom_named = []
     counts = {m: _fresh() for m in modes}
-    # ⭐ AN EXPECTED REFUSAL (CEO-1228, CEO-1657): ISO_EXPECTED_REFUSALS.tsv beside the container names each entry the oracle's mode runs while
+    # ⭐ AN EXPECTED REFUSAL (R-1228, R-1657): ISO_EXPECTED_REFUSALS.tsv beside the container names each entry the oracle's mode runs while
     # the language's standard refuses it (Pascal: fpc -Miso runs it, ISO 7185 refuses it). Such an entry PASSes in a mode when that mode
     # refuses it with the language's standard diagnostic (LANG_CONFIGS expected_refusal_re) and is red otherwise; its ref is never compared
     # and the denominator is unchanged. A listed name the suite does not carry refuses rc 2, as a stale outside row does.
@@ -3680,7 +3684,7 @@ def cmd_run(args):
         _stale = sorted(expected_refusals - _suite_names)
         if _stale:
             refuse(f"{_xr_path} names {len(_stale)} entr(ies) this suite does not carry: {', '.join(_stale[:10])}")
-        print(f"EXPECTED_REFUSALS n={len(expected_refusals)} from {_xr_path} -- each PASSes in a mode only when refused with /{_xr_re}/ (CEO-1228)")
+        print(f"EXPECTED_REFUSALS n={len(expected_refusals)} from {_xr_path} -- each PASSes in a mode only when refused with /{_xr_re}/ (R-1228)")
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     fails = []
@@ -3688,7 +3692,7 @@ def cmd_run(args):
     for _n in _out_run:
         for _m in modes:
             _progress_rows.append((_n, _m, "OUTSIDE", 0, f"{outside[_n][0]}: {outside[_n][1][:160]}"))
-    # ⛔⭐ ONE TEST AT A TIME, EACH ROW WRITTEN AS ITS TEST FINISHES (ceo CEO-1805; Lon 2026-10-15, verbatim: "Basically the COO should run one test at
+    # ⛔⭐ ONE TEST AT A TIME, EACH ROW WRITTEN AS ITS TEST FINISHES (R-1805; Lon 2026-10-15, verbatim: "Basically the COO should run one test at
     # a time and update the test-suite database. Round robin, done and done."): under S4E_RR=1 (the coo's round-robin loop) the rows graded so far are
     # appended before the next entry starts, so results.tsv holds every finished test while the chunk still runs; the rest go at the end as before.
     _rr_stream = os.environ.get("S4E_RR") == "1"
@@ -3696,10 +3700,10 @@ def cmd_run(args):
     try:
         _rr_yield = Path(os.environ["S4E_RR_YIELD_DIR"]) if _rr_stream and os.environ.get("S4E_RR_YIELD_DIR") and not os.environ.get("S4E_REQ") else None
         for _ei, e in enumerate(run_entries):
-            # ⭐ A WAITING REQUEST GOES FIRST (CEO-1806): before each next test of a round-robin run, a request file in the loop's queue stops the run here;
+            # ⭐ A WAITING REQUEST GOES FIRST (R-1806): before each next test of a round-robin run, a request file in the loop's queue stops the run here;
             # the tests already graded are recorded, and the loop serves the request and resumes the part at this entry (RR_YIELD names it).
             if _rr_yield is not None and _ei > 0 and rr_request_waits(_rr_yield):
-                print(f"RR_YIELD next={e.name} graded={_ei} of {len(run_entries)} -- a test request waits (CEO-1806); resume with --partition {PARTITION_RUN['name'] or '?'}@{e.name}")
+                print(f"RR_YIELD next={e.name} graded={_ei} of {len(run_entries)} -- a test request waits (R-1806); resume with --partition {PARTITION_RUN['name'] or '?'}@{e.name}")
                 break
             if _rr_stream and len(_progress_rows) > _rr_done[0]:
                 _rr_done[1] += _progress_record(args.sno, paths, _progress_rows[_rr_done[0]:], quiet=True) or 0
@@ -3714,7 +3718,7 @@ def cmd_run(args):
                     verdicts[m].secs = _v.secs
             for m in modes:
                 kind = verdicts[m].kind
-                # ⭐ secs: the program's own wall in this mode (CEO-1676 row (c)) -- util_suite_partition.py build --secs sizes chunks by it
+                # ⭐ secs: the program's own wall in this mode (R-1676 row (c)) -- util_suite_partition.py build --secs sizes chunks by it
                 _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, _entry_note(e.xfail, verdicts[m], shard_tag)))
                 if kind == _OOMK:
                     oom_named.append((e.name, m, verdicts[m], e.xfail))
@@ -3763,20 +3767,20 @@ def cmd_run(args):
                        f"{m}_xfail_wrong={c['XFAIL_FAIL']} {m}_xfail_crash={c['XFAIL_CRASH']} "
                        f"{m}_xfail_hang={c['XFAIL_HANG']} {m}_xfail_unproven={c['XFAIL_UNPROVEN']} "
                        f"{m}_xfail_skip={c['XFAIL_SKIP']}")
-    # ⛔⭐ all_pass IS THE FIELD A SUITE ROW QUOTES (ceo-372). It sits beside the per-mode counts, never
+    # ⛔⭐ all_pass IS THE FIELD A SUITE ROW QUOTES (R-372). It sits beside the per-mode counts, never
     # instead of them: the cell carries both so the split stays readable, and a reader who wants one mode still
     # has it. Shards partition the entries, so these two sum across shards exactly as every other field does.
     fields.append(f"all_pass={all_pass} all_n={all_n}")
     fields.append(f"rt_md5={_rt_md5} arena_kb={_arena_kb} arena_mb={_arena_mb}" + (f" arena_cap_mb={_arena_cap}" if _arena_cap else ""))
-    # ⭐ <m>_fail_oom: how many of <m>_fail were a properly reported out-of-memory (CEO-1229 (2)) -- INSIDE fail, never beside it
+    # ⭐ <m>_fail_oom: how many of <m>_fail were a properly reported out-of-memory (R-1229 (2)) -- INSIDE fail, never beside it
     # (see _OOMK), and at the end of the line, after every field a reader already knows, so none meets a new one between two it knows.
     fields.append(" ".join(f"{m}_fail_oom={counts[m][_OOMK]}" for m in modes))
-    # ⭐ extension= (CEO-1416): the graded entries of THIS run whose ref an extension oracle cut, not the suite's -- counted over the
+    # ⭐ extension= (R-1416): the graded entries of THIS run whose ref an extension oracle cut, not the suite's -- counted over the
     # run's own entries so shards sum to the ledger's count, last on the line so no reader meets it between two fields it knows.
     fields.append(f"extension={sum(1 for e in run_entries if e.name in _ext_rows)}")
     _bin_unmoved_or_refuse()
     print("SUITE_BOARD " + " ".join(fields))
-    # ⭐⭐ THE HARNESS LISTS EVERY OOM PROGRAM BY NAME (CEO-1229 (2): "so each one gets its heap declaration, or a leak cure if its
+    # ⭐⭐ THE HARNESS LISTS EVERY OOM PROGRAM BY NAME (R-1229 (2): "so each one gets its heap declaration, or a leak cure if its
     # live set is garbage"), each with the hard cap the runtime ITSELF named in its report -- the heap the run had, never re-derived
     # from the attribute file, because the report is the measurement and the file is only the request. Printed on EVERY board, with
     # n=0 stated, so a reader can tell "no program ran out" from "this harness predates the word".
@@ -3795,7 +3799,7 @@ def cmd_run(args):
     for name, m, v in (fails if _os.environ.get('SUITE_LIST_ALL') else fails[:40]):
         tag = "XPASS(marker stale, promote it)" if v.kind == "PASS" else v.kind
         # the fingerprint of OUR stdout beside every red (see _entry_note): a red that moved is a diff, not a silence
-        # SUITE_STDERR_HEAD=1 (opt-in, the coo 2026-10-14 for the ceo's empty-output census, CEO-1709): the run's first non-empty stderr
+        # SUITE_STDERR_HEAD=1 (opt-in, the coo 2026-10-14 for the officer's empty-output census, R-1709): the run's first non-empty stderr
         # line rides beside each red, so a class of FAIL that prints nothing names what it said instead; the default output is unchanged
         _e1 = ""
         if _os.environ.get('SUITE_STDERR_HEAD'):
@@ -3808,7 +3812,7 @@ def cmd_run(args):
     sys.exit(0 if not fails else 1)
 
 
-PARTITION_RUN = {"name": ""}   # the --partition this run grades, read by _progress_record into each row's config (CEO-1676 row (d))
+PARTITION_RUN = {"name": ""}   # the --partition this run grades, read by _progress_record into each row's config (R-1676 row (d))
 
 
 def _entry_note(xfail, v, shard_tag=""):
@@ -3827,13 +3831,13 @@ def _entry_note(xfail, v, shard_tag=""):
         toks.append("fp=%s" % hashlib.md5(v.stdout or b"").hexdigest()[:8])
         toks.append("rc=%s" % ("-" if v.returncode is None else v.returncode))
     if v is not None and v.kind == "OOM":
-        # ⭐ "recorded with that heap" (CEO-1229 (2)): the hard cap the runtime named in its own report, and the error it raised.
+        # ⭐ "recorded with that heap" (R-1229 (2)): the hard cap the runtime named in its own report, and the error it raised.
         _r = oom_report(v.stderr)
         if _r:
             toks.append("heap_cap_kb=%d" % _r[1])
             toks.append("oom_error=%d" % _r[0])
     if v is not None and getattr(v, "retry", ""):
-        toks.extend(v.retry.split())   # retried=1 load1=<first>/<second> nproc=<n> (CEO-1335)
+        toks.extend(v.retry.split())   # retried=1 load1=<first>/<second> nproc=<n> (R-1335)
     if shard_tag:
         toks.append(shard_tag)
     return " ".join(toks)
@@ -3859,7 +3863,7 @@ def progress_suite_for(sno_path, paths):
         return None
     if p.stem != "ALL":
         return None
-    # ⛔ A PORT ENGINE'S ROWS ARE KEYED <suite>@<engine> AND NEVER LAND IN SCRIP'S (CEO-1822): snobol4-rungs is SCRIP's series,
+    # ⛔ A PORT ENGINE'S ROWS ARE KEYED <suite>@<engine> AND NEVER LAND IN SCRIP'S (R-1822): snobol4-rungs is SCRIP's series,
     # snobol4-rungs@dotnet is snobol4dotnet's, so a dotnet board can neither move nor be mistaken for a SCRIP reading.
     at = "" if paths["engine"] == "scrip" else "@" + paths["engine"]
     if len(parts) >= 3 and parts[-3] == "tests":
@@ -3873,12 +3877,12 @@ def _progress_pin(paths):
     """Read the tree hashes and the scrip+libscrip_rt.so digest BEFORE the first program is graded, so the rows this
     run appends name the ground it ACTUALLY graded. ⛔ util_progress_append.context() used to run rev-parse at APPEND
     time: seat10's board pulled twice and rebuilt once under a 79-minute run and its 3736 rows were stamped with the
-    tree that existed when the run ENDED (CEO-338). The runner's own binary-moved refusal fired at 14:23 -- after the
+    tree that existed when the run ENDED (R-338). The runner's own binary-moved refusal fired at 14:23 -- after the
     harness had already written them."""
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         import util_progress_append as _pa
-        # under a port engine the graded binary is the driver its runner names (CEO-1822): its own checkout's git toplevel is the port's
+        # under a port engine the graded binary is the driver its runner names (R-1822): its own checkout's git toplevel is the port's
         # (snobol4dotnet), so the rows' tree column names the port commit that graded them, never a SCRIP one
         _bins = engine_binaries(paths["engine"]) if paths["engine"] != "scrip" else []
         if _bins:
@@ -3892,7 +3896,7 @@ def _progress_pin(paths):
 
 def _progress_record(sno_path, paths, rows, quiet=False, already=0):
     """Append one row per (entry, mode) graded to THE PROGRESS DATABASE through the ONE writer (util_progress_append.py).
-    Loud on refusal: a board that could not be recorded is printed AND exits 2 -- progress/README.md, CEO-319."""
+    Loud on refusal: a board that could not be recorded is printed AND exits 2 -- progress/README.md, R-319."""
     where = progress_suite_for(sno_path, paths)
     if where is None or (not rows and not already):
         return 0
@@ -3904,18 +3908,18 @@ def _progress_record(sno_path, paths, rows, quiet=False, already=0):
     import util_progress_append as _pa
     try:
         # ⛔⭐ THE RUNNER DECLARES WHAT IT EXERCISED, BECAUSE IT IS THE ONLY PARTY THAT KNOWS (coo 2026-09-21,
-        # ceo rank 0 at CEO-1047/CEO-1050). The progress database refuses a row that declares no configuration
+        # the officer rank 0 at R-1047/R-1050). The progress database refuses a row that declares no configuration
         # while a GC axis is set, and the harness is the site that actually ran the programs -- so it states the
         # axis instead of letting a board discover the refusal. `shipped` is a POSITIVE STATEMENT that this run
         # used the shipped configuration, which the harness can make and the writer cannot: the writer sees only
         # its own environment and a runner may set the axis per-child.
         _axis = _pa.gc_axis_env()
         _config = ",".join(f"{k}={v}" for k, v in _axis.items()) if _axis else "shipped"
-        # ⭐ a partition run says so in its config (CEO-1676 row (d): "every chunk run stamps its progress rows' config with partition=chunk:NN")
+        # ⭐ a partition run says so in its config (R-1676 row (d): "every chunk run stamps its progress rows' config with partition=chunk:NN")
         # -- the shape of the run, never a configuration of the program: util_progress_flips.py drops the token from its series key.
         if PARTITION_RUN["name"]:
             _config += f",partition={PARTITION_RUN['name']}"
-        # ⛔ THE KEY IS THE BOARD'S (the coo 2026-10-09, CEO-1366 (b) under CEO-1269): an Icon package entry graded through its driver
+        # ⛔ THE KEY IS THE BOARD'S (the coo 2026-10-09, R-1366 (b) under R-1269): an Icon package entry graded through its driver
         # is recorded under the LIBRARY, the key the package's board writes, through the one rule both sides import.
         from lib_package_keys import board_key as _bk
         _pkg = Path(sno_path).resolve().parent
@@ -4384,7 +4388,7 @@ def cmd_extract(args):
         # the witness the suite graded -- it is a DIFFERENT program that happens to share source text. A
         # stdin-starved SNOBOL4 program typically still exits rc=0 (INPUT read failure is not fatal by
         # default), so the caller gets a clean-looking run of the wrong thing, not a loud error.
-        # The refusal comes BEFORE any write (the coo 2026-10-03, on the ceo's report that SncM's
+        # The refusal comes BEFORE any write (the coo 2026-10-03, on the officer's report that SncM's
         # trim_size_keyword_replace_1 would not extract): it wrote the program and its .ref first, so an rc=2
         # left exactly that stdin-starved witness on disk for a caller that read the files and not the rc.
         if e.stdin is not None and not args.out_in:
@@ -4412,7 +4416,7 @@ def cmd_extract(args):
 # window the runtime will accept, and GC_HEAP_KB_MAX the highest. A copy of a runtime constant that
 # nothing checks is the false-label class this whole column exists to close, so
 # test_gate_suite_runners_honour_the_tests_declared_memory.sh re-reads the #defines and reds on drift.
-GC_HEAP_CAP_KB = 131072        # #define GC_HEAP_CAP_KB 131072 (SPITBOL -d128m, ceo CEO-1261)
+GC_HEAP_CAP_KB = 131072        # #define GC_HEAP_CAP_KB 131072 (SPITBOL -d128m, R-1261)
 GC_HEAP_KB_DEFAULT = 1024      # #define GC_HEAP_KB 1024 (SPITBOL -i1m): a declared maximum below the initial window is refused
 GC_HEAP_KB_FLOOR = 64          # #define GC_HEAP_KB_FLOOR 64
 def box_max_kb():
@@ -4432,7 +4436,7 @@ GC_STACK_KB_MAX = GC_HEAP_KB_MAX  # a declared stack past this box's memory is r
 
 def heap_sidecar_path(sno_path):
     """The WRITE target for an extracted suite's arena declaration: <stem>.heap beside the pair, named the
-    same way .in/.xfail are. ⛔⭐ THE SIDECAR IS NOT OPTIONAL POLISH. CEO-1127's evidence bar has every
+    same way .in/.xfail are. ⛔⭐ THE SIDECAR IS NOT OPTIONAL POLISH. R-1127's evidence bar has every
     seat grading ENTRIES EXTRACTED STANDALONE, and an extracted entry has no sibling ALL.csv -- so a
     declaration that lived only in the csv would be silently dropped by exactly the workflow the fleet uses
     to cure, and a program that needs 16384 KB would abort in its own cure loop while passing on the board.
@@ -4444,10 +4448,10 @@ def validate_heap_kb(raw, where):
     """Parse ONE heap_kb cell into an int, or refuse rc=2 naming the cell. Returns None for the empty
     cell, which is the documented "absent means the shipped default" and is never an error.
 
-    ⛔⭐⭐ A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (ceo CEO-1171, 2026-09-23, ruling on the coo's ask).
+    ⛔⭐⭐ A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (R-1171, 2026-09-23, ruling on the coo's ask).
     Asked as a ruling rather than taken as one, because refusing is criterion-shaped and criterion-writing is
     not this seat's verb; it came back as law, so the floor below is not a local choice and may not be
-    softened to a warning. The ruling's own words: warn-and-pass "would mint the false label CEO-1101 exists
+    softened to a warning. The ruling's own words: warn-and-pass "would mint the false label R-1101 exists
     against."
 
     ⛔⭐⭐ A DECLARATION AT OR BELOW THE SHIPPED CAP IS REFUSED, AND THE REASON IS MEASURED, NOT REASONED.
@@ -4461,7 +4465,7 @@ def validate_heap_kb(raw, where):
     guardrail (matched at that arena, NOT matched one step below) is unprovable for such a cell: one step
     below has the same cap, so both arms read the same and the "evidence" is vacuous. The cell is refused
     with this sentence rather than accepted as a silent no-op. A run that wants a SMALLER window than the
-    default is asking for collection pressure, and CEO-1158's first clause already names the knob for
+    default is asking for collection pressure, and R-1158's first clause already names the knob for
     that: STRESS, never the arena."""
     if raw is None:
         return None
@@ -4475,8 +4479,8 @@ def validate_heap_kb(raw, where):
     if v < GC_HEAP_KB_DEFAULT:
         refuse(f"{where}: heap_kb={v} is below the {GC_HEAP_KB_DEFAULT} KB initial window and is REFUSED: heap_kb is the "
                f"program's MAXIMUM heap (SPITBOL -d, passed as -d{v}k) and a maximum under the window cannot be honoured. "
-               f"CEO-1171's refusal of a cell at or below the shipped cap is retired on Lon's word of 2026-09-25 -- every "
-               f"program declares its settings, and a declaration equal to the default is a setting (ceo CEO-1261)")
+               f"R-1171's refusal of a cell at or below the shipped cap is retired on Lon's word of 2026-09-25 -- every "
+               f"program declares its settings, and a declaration equal to the default is a setting (R-1261)")
     if v > GC_HEAP_KB_MAX:
         refuse(f"{where}: heap_kb={v} is above the {GC_HEAP_KB_MAX} KB this box can hold (its memory, at most the collector's 32 GB page-map reach) "
                f"-- no heap this size can be served here")
@@ -4527,7 +4531,7 @@ def heap_declarations(sno_path):
 
 
 def stack_sidecar_path(sno_path):
-    """<stem>.stack beside an extracted pair, the stack's twin of heap_sidecar_path (CEO-1225): the declaration travels with the
+    """<stem>.stack beside an extracted pair, the stack's twin of heap_sidecar_path (R-1225): the declaration travels with the
     entry, one line NAME<TAB>KB, or it is not a declaration."""
     return str(Path(sno_path).with_suffix(".stack"))
 
@@ -4535,7 +4539,7 @@ def stack_sidecar_path(sno_path):
 def validate_stack_kb(raw, where):
     """Parse ONE stack_kb cell into an int, or refuse rc=2 naming the cell; None for the empty cell (the shipped floor).
 
-    ⛔⭐ THE FLOOR IS CEO-1171's RULE APPLIED TO THE STACK, AND HERE IT IS SHARPER THAN FOR THE HEAP. core.c raises RLIMIT_STACK at
+    ⛔⭐ THE FLOOR IS R-1171's RULE APPLIED TO THE STACK, AND HERE IT IS SHARPER THAN FOR THE HEAP. core.c raises RLIMIT_STACK at
     init to SCRIP_STACK when it is set and to 64 MB when it is not -- the variable REPLACES the floor -- so a cell at 16384 would
     run the program on a SMALLER stack than an undeclared neighbour, and a cell at 65536 changes nothing while reading as a
     declaration. Either way the label is false, so a declaration is a number above the runtime's floor or it is refused."""
@@ -4551,7 +4555,7 @@ def validate_stack_kb(raw, where):
     if v < GC_STACK_KB_MIN:
         refuse(f"{where}: stack_kb={v} is below the {GC_STACK_KB_MIN} KB least stack a declaration may name. The default is "
                f"SPITBOL's -s4m ({GC_STACK_FLOOR_KB} KB) and a declaration equal to it is a setting, not a no-op -- every "
-               f"program declares its settings on Lon's word of 2026-09-25 (ceo CEO-1261)")
+               f"program declares its settings on Lon's word of 2026-09-25 (R-1261)")
     if v > GC_STACK_KB_MAX:
         refuse(f"{where}: stack_kb={v} is above the {GC_STACK_KB_MAX} KB this box can hold")
     return v
@@ -4559,7 +4563,7 @@ def validate_stack_kb(raw, where):
 
 def stack_declarations(sno_path):
     """{entry: declared stack in KB} for the suite at `sno_path`, and the name of the evidence -- heap_declarations' twin
-    (CEO-1225), in the same order for the same reason: a travelling <stem>.stack sidecar first, then the sibling ALL.csv's
+    (R-1225), in the same order for the same reason: a travelling <stem>.stack sidecar first, then the sibling ALL.csv's
     stack_kb column. ({}, None) when neither declares anything: every entry runs at the runtime's floor, as before."""
     _p = Path(stack_sidecar_path(sno_path))
     if _p.is_file():
@@ -4593,7 +4597,7 @@ def stack_declarations(sno_path):
     return {}, None
 
 
-# ⛔ A CLOSED ENUMERATION: the ORACLE's own size knobs a unit may declare beside itself (ceo CEO-1353, RULES.md clause 8 (g)(3): where the
+# ⛔ A CLOSED ENUMERATION: the ORACLE's own size knobs a unit may declare beside itself (R-1353, RULES.md clause 8 (g)(3): where the
 # oracle needs more than its own default to answer a unit, the unit declares the oracle's knob verbatim, because the engines' needs and
 # units differ). iconx reads MSTKSIZE BLKSIZE STRSIZE COEXPSIZE, gprolog GLOBALSZ LOCALSZ TRAILSZ CSTRSZ; a knob joins when an oracle
 # is measured needing it. MEASURED 2026-09-28 (hq_icon): the Arizona-built JCON jtran dies run-time error 302 / rc 139 on 18 of the
@@ -4637,16 +4641,16 @@ def oracle_env_declarations(src_path):
 
 
 # ⛔ A CLOSED ENUMERATION: the ORACLE's own size SWITCHES a unit may declare beside itself -- oracle_env's twin for an oracle sized on its
-# command line (ceo CEO-1353, RULES.md clause 8 (g)(3): "oracle_args for sbl -d/-s, swipl --stack-limit, fpc -Cs/-Ch"). A switch joins
+# command line (R-1353, RULES.md clause 8 (g)(3): "oracle_args for sbl -d/-s, swipl --stack-limit, fpc -Cs/-Ch"). A switch joins
 # when an oracle is measured needing it, as a knob joins ORACLE_ENV_ADMITTED. MEASURED 2026-10-03 (the coo, sbl md5 fd9b552b): the
 # transpiled bootstrap parser chain dies ERROR 246 under sbl -bf at its default stack on the snocone, icon and pascal workhorse
 # inputs and answers at -s8m, -s12m and -s12m; and sbl refuses -s128m and above alone ("Stack memory unavailable") and runs it beside a
 # larger -d, so -d is the stack's room as well as the heap. sbl reads a size as digits with an optional k or m.
 ORACLE_ARGS_ADMITTED = (("-s", "sbl stack"), ("-d", "sbl heap"))
-# ...and the ORACLE's semantic FLAGS a unit may declare, matched whole with no size: an oracle MODE the ceo rules a unit is graded under
-# (CEO-1540, 2026-10-07: the Prolog demo prolog_recognizer is graded against swipl --traditional, because SWI-7's distinct '[]' is the one
+# ...and the ORACLE's semantic FLAGS a unit may declare, matched whole with no size: an oracle MODE the officer rules a unit is graded under
+# (R-1540, 2026-10-07: the Prolog demo prolog_recognizer is graded against swipl --traditional, because SWI-7's distinct '[]' is the one
 # difference and SCRIP keeps ISO and GNU's '[]' == []; its ref is cut from that run). A flag joins only on such a ruling, named here.
-ORACLE_FLAGS_ADMITTED = (("--traditional", "swipl SWI-7 extensions off, CEO-1540"),)
+ORACLE_FLAGS_ADMITTED = (("--traditional", "swipl SWI-7 extensions off, R-1540"),)
 
 
 def oracle_args_sidecar_path(src_path):
@@ -4682,7 +4686,7 @@ def oracle_args_declarations(src_path):
             if sw is None:
                 refuse(f"{_p}:{ln}: {w!r} is not one of the oracle switches a unit may declare "
                        f"({' '.join(p for p, _ in ORACLE_ARGS_ADMITTED)} with a size, or the flag(s) {' '.join(f for f, _ in ORACLE_FLAGS_ADMITTED)}) "
-                       f"-- a size switch joins the list when an oracle is measured needing it, a flag on a ceo ruling")
+                       f"-- a size switch joins the list when an oracle is measured needing it, a flag on a ruling")
             if not re.fullmatch(r"[1-9][0-9]*[km]?", w[len(sw):]):
                 refuse(f"{_p}:{ln}: {w!r} -- the size must be a positive integer with an optional k or m, as the oracle reads it")
             if sw in named:
@@ -4698,9 +4702,9 @@ def oracle_args_declarations(src_path):
 # proven honoured at the COMPILE step in both modes (hq_snobol4 2026-09-26 on 6974ab821: scrip --compile --stlimit and
 # SCRIP_SNO_STMTKW=1 scrip --compile emit byte-identical .s, and neither turns counting on at a mode-4 binary's run).
 # A runtime switch (-d -i -s -m -u) placed at the compile step would reach mode 3 and never a mode-4 binary.
-# --dialect=gnu joins 2026-10-17 (cfo, row prolog-gnu-semantics-leak-...-ceo-1810): scrip --run --dialect=gnu and a binary from scrip --compile
+# --dialect=gnu joins 2026-10-17 (cfo, row prolog-gnu-semantics-leak-...-r-1810): scrip --run --dialect=gnu and a binary from scrip --compile
 # --dialect=gnu both read current_prolog_flag('$dialect', gnu) -- the lowerer bakes the directive into the program -- and the GNU tables declare it.
-# -S joins 2026-11-01 (cao, CEO-2110, row prolog-xsb-wfs-step-10): XSB's oracle switch carried as the entry's compile_args; scrip --run -S and a
+# -S joins 2026-11-01 (cao, R-2110, row prolog-xsb-wfs-step-10): XSB's oracle switch carried as the entry's compile_args; scrip --run -S and a
 # binary from scrip --compile -S both read the source as if it began with ':- use_subsumptive_tabling.' (an open call then a subsumed one: 1 table,
 # as XSB -S; 2 without), and the 39 xsb_tests runs ORACLE_RUNS.tsv records with -S declare it (test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh).
 # --dialect=unicon joins 2026-11-04 (cto, CTO-473): a markerless UniTests program is a Unicon program because the package says so; the driver turns the switch into the per-program Unicon state a class, package or import marker sets.
@@ -4720,7 +4724,7 @@ def validate_out_files_cell(raw, where):
 
 def validate_compare_cell(raw, where):
     """ONE compare cell: empty = byte for byte (every table before the column existed); "ignore-all-space" = each line compared with its white
-    space removed, as `diff -w` compares (XSB's gentest.sh, CEO-1927). Anything else refuses rc=2 naming the cell."""
+    space removed, as `diff -w` compares (XSB's gentest.sh, R-1927). Anything else refuses rc=2 naming the cell."""
     v = (raw or "").strip()
     if v == "":
         return False
@@ -4733,7 +4737,7 @@ def validate_compare_cell(raw, where):
 
 def validate_stage_cell(raw, where):
     """ONE stage cell: empty = the entry runs alone in a fresh directory with its named companions (every table before the column existed);
-    "upstream" = the run directory is staged as the entry's upstream test directory (stage_upstream, CEO-1927). Anything else refuses rc=2."""
+    "upstream" = the run directory is staged as the entry's upstream test directory (stage_upstream, R-1927). Anything else refuses rc=2."""
     v = (raw or "").strip()
     if v == "":
         return False
@@ -4744,7 +4748,7 @@ def validate_stage_cell(raw, where):
 
 def validate_answer_cell(raw, where):
     """ONE answer cell: empty = stdout is the answer; "temp-sorted" = the file temp the program writes, its non-empty lines sorted, as XSB's
-    gentest.sh grades it (CEO-1927). Anything else refuses rc=2."""
+    gentest.sh grades it (R-1927). Anything else refuses rc=2."""
     v = (raw or "").strip()
     if v == "":
         return False
@@ -4754,7 +4758,7 @@ def validate_answer_cell(raw, where):
 
 
 def stage_upstream(companion_dir, name, td, ext):
-    """THE RUN DIRECTORY AS THE PROGRAM'S UPSTREAM TEST DIRECTORY (the coo 2026-10-23, ceo CEO-1927): a flat package vendors each upstream file under a
+    """THE RUN DIRECTORY AS THE PROGRAM'S UPSTREAM TEST DIRECTORY (the coo 2026-10-23, R-1927): a flat package vendors each upstream file under a
     prefixed name (xsb_tests: <dir>_<path>_<stem>.pl), so a program that loads a sibling by its UPSTREAM name -- `:- [fd].`, wfs_test.P's consult(P),
     load_dyn('type0_testdir/initialization_file.P') -- finds nothing beside it. SOURCES.tsv maps each vendored name to its upstream path; every vendored
     file of the entry's top-level test directory is written under td at its path below that directory, as <stem>.pl (SCRIP's consult finds a .pl,
@@ -4770,7 +4774,7 @@ def stage_upstream(companion_dir, name, td, ext):
         return None
     parts = mine.split("/")
     pre = "/".join(parts[:3])            # xsb/xsbtests/<top>
-    td = Path(td) / parts[2]            # the top test directory is a level of the run tree, so ../../<top>/<dir>/file reaches a sibling as upstream's does (prolog_tests mod_file_tests, CEO-1926)
+    td = Path(td) / parts[2]            # the top test directory is a level of the run tree, so ../../<top>/<dir>/file reaches a sibling as upstream's does (prolog_tests mod_file_tests, R-1926)
     for n, up in src.items():
         if not up.startswith(pre + "/"):
             continue
@@ -4785,7 +4789,7 @@ def stage_upstream(companion_dir, name, td, ext):
         for dst in {Path(td) / rel, (Path(td) / rel).with_suffix(".pl")}:
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_text(t, encoding="utf-8")
-    # ⭐ THE DATA A PROGRAM READS BY ITS UPSTREAM PATH (the coo 2026-10-23, CEO-1926): a file that is no Prolog source -- json_tests' data/*.json,
+    # ⭐ THE DATA A PROGRAM READS BY ITS UPSTREAM PATH (the coo 2026-10-23, R-1926): a file that is no Prolog source -- json_tests' data/*.json,
     # prolog_tests' format_tests/format.tst and utf8.txt -- is vendored under the package's upstream/<top>/ at its path below the test directory
     # and written there byte for byte (a CR-LF fixture keeps its CRs), so parse_json('data/test1.json') opens it as XSB's own run does.
     dd = Path(companion_dir) / "upstream" / parts[2]
@@ -4823,8 +4827,8 @@ def _out_files_append(out, cwd, names):
 
 def validate_args_cell(raw, col, where):
     """Parse ONE compile_args or run_args cell into its words, or refuse rc=2 naming the cell; None for the empty cell
-    (nothing declared: byte-identical to the run before the column existed). RULES.md hard-cap rule clause 8 (f), ceo
-    CEO-1281: the command line a test unit needs is stored with it, and the runner types none of its own.
+    (nothing declared: byte-identical to the run before the column existed). RULES.md hard-cap rule clause 8 (f), the officer
+    R-1281: the command line a test unit needs is stored with it, and the runner types none of its own.
     ⛔ SPACE-SEPARATED WORDS, NO QUOTING LANGUAGE: a comma, a quote or a tab is refused, because the positional readers
     (lib_rungs_extract.sh, board_denominators.sh) split rows on commas. Censused 2026-09-26 over the 68 argv declarations
     in 63 sidecars: no argument holds a space, a comma or a quote, so the rule loses nothing today, and an argument that
@@ -4851,10 +4855,10 @@ def validate_args_cell(raw, col, where):
 
 def cmdline_sidecar_path(sno_path):
     """<stem>.cmdline beside an extracted pair or a standalone program: the command line's twin of heap_sidecar_path (clause 8 (f),
-    CEO-1281, landing 4 of 5). One line per unit, NAME<TAB>compile_args<TAB>run_args, either cell empty, each cell in
+    R-1281, landing 4 of 5). One line per unit, NAME<TAB>compile_args<TAB>run_args, either cell empty, each cell in
     validate_args_cell's grammar. A unit with no ALL.csv row -- a demo, a benchmark kernel, an extracted entry -- carries its
     command line here or it declares none. ⛔ NOT .args, WHICH WAS TAKEN: Icon's <name>.args is already a program's argv (the jcon
-    runner, bench_triangulate_demos_icon.sh, util_icon_ref_provenance.sh; CEO-609 moves argv to .argv), and a second format under
+    runner, bench_triangulate_demos_icon.sh, util_icon_ref_provenance.sh; R-609 moves argv to .argv), and a second format under
     one name would hand an argv reader a declaration and this reader an argv (coo 2026-09-26, found by landing 5's corpus census:
     jcon_tests/link1.args holds `a b c`)."""
     return str(Path(sno_path).with_suffix(".cmdline"))
@@ -4885,7 +4889,7 @@ def cmdline_declarations(sno_path):
 
 def read_command_line_columns(src_path, entries, modes=None):
     """Attach the compile_args and run_args columns of the ALL.csv beside a suite to its entries BY NAME: the ONE reader of
-    a test unit's command line for the rung suites and the package tables (clause 8 (f), CEO-1281). compile_args are applied at
+    a test unit's command line for the rung suites and the package tables (clause 8 (f), R-1281). compile_args are applied at
     the compile step in both modes (scrip --run in m3, scrip --compile in m4); run_args are the program's own argv after
     `--`, both modes, carried in entry.argv exactly as a <family>.argv declaration is.
     ⛔ AN ENTRY DECLARED IN BOTH PLACES IS REFUSED: the column is the declaration and the argv sidecars fold into it, so two
@@ -4893,7 +4897,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     for the reason read_argv_sidecar gives: --dump-ast never runs the program. An ALL.csv with neither column, or empty
     cells, changes nothing.
     ⭐ AN EXTRACTED PAIR HAS NO ALL.csv, SO ITS COMMAND LINE TRAVELS IN <stem>.cmdline (extract-family writes it, heap_declarations'
-    order for heap_kb's reason, CEO-1127): read first, by name; a unit it names that ALL.csv also declares is refused."""
+    order for heap_kb's reason, R-1127): read first, by name; a unit it names that ALL.csv also declares is refused."""
     by_name = {e.name: e for e in entries}
     side, side_name = cmdline_declarations(src_path)
     for name, (ca, ra) in side.items():
@@ -5016,7 +5020,7 @@ def cmd_extract_family(args):
         os.remove(out_in)
     if not write_xfail_sidecar(sel, out_x, _copen, _cclose) and os.path.exists(out_x):
         os.remove(out_x)
-    # ⛔⭐⭐ AND SO DOES heap_kb. CEO-1127's evidence bar has every one of the
+    # ⛔⭐⭐ AND SO DOES heap_kb. R-1127's evidence bar has every one of the
     # ten seats grading ENTRIES EXTRACTED STANDALONE -- that is the whole reason a seat can clear its lane
     # without taking the box from the other nine. An extracted pair has no sibling ALL.csv, so a declaration
     # left behind here would mean a program that needs 16384 KB runs at the shipped 128 in EXACTLY the
@@ -5039,7 +5043,7 @@ def cmd_extract_family(args):
                 _hf.write("%s\t%s\n" % (_n, _v))
     elif os.path.exists(heap_sidecar_path(args.out_sno)):
         os.remove(heap_sidecar_path(args.out_sno))
-    # ⭐ AND stack_kb TRAVELS THE SAME WAY (CEO-1225): an extracted pair carries its stack declaration in <stem>.stack.
+    # ⭐ AND stack_kb TRAVELS THE SAME WAY (R-1225): an extracted pair carries its stack declaration in <stem>.stack.
     _stack_sel = {}
     with open(args.csv, newline="") as _cf:
         for _r in _csv.DictReader(_cf):
@@ -5055,7 +5059,7 @@ def cmd_extract_family(args):
                 _sf.write("%s\t%s\n" % (_n, _v))
     elif os.path.exists(stack_sidecar_path(args.out_sno)):
         os.remove(stack_sidecar_path(args.out_sno))
-    # ⭐ AND THE COMMAND LINE (clause 8 (f), CEO-1281): compile_args and run_args travel in <stem>.cmdline, NAME<TAB>compile_args<TAB>
+    # ⭐ AND THE COMMAND LINE (clause 8 (f), R-1281): compile_args and run_args travel in <stem>.cmdline, NAME<TAB>compile_args<TAB>
     # run_args, which read_command_line_columns reads first for a pair with no ALL.csv.
     _cmd_sel = {}
     with open(args.csv, newline="") as _cf:
@@ -5079,7 +5083,7 @@ def _write_extracted_unit_sidecars(suite_sno, entry_name, out_sno):
     """The four attributes of ONE extracted unit, written beside it under the name the standalone readers look up -- the
     output's own stem, since lib_declared_arena.sh's *_beside readers key a sidecar by the program beside it: <stem>.heap and
     <stem>.stack (NAME<TAB>KB) and <stem>.cmdline (NAME<TAB>compile_args<TAB>run_args), each only when the unit's ALL.csv row
-    declares it. ⛔⭐ CEO-1127: an entry extracted standalone is how every seat cures, and a declaration left behind grades a
+    declares it. ⛔⭐ R-1127: an entry extracted standalone is how every seat cures, and a declaration left behind grades a
     different program -- rungs entry 1991 declares --stlimit, 131072 KB and 4096 KB, and extract carried none of the three
     (coo 2026-09-26, measured). A stale sidecar is removed only when an extract wrote it (its first line says so)."""
     import csv as _csvm
@@ -5107,9 +5111,9 @@ def _write_extracted_unit_sidecars(suite_sno, entry_name, out_sno):
 
 
 # ====================================================== stored partitions ===
-# ⛔⭐⭐ A SUBSET IS LOOKED UP BY NAME, NEVER QUERIED (Lon 2026-10-11 13:0x CDT, in-chat to the ceo, verbatim: "subsets need to be identified
+# ⛔⭐⭐ A SUBSET IS LOOKED UP BY NAME, NEVER QUERIED (Lon 2026-10-11 13:0x CDT, in-chat, verbatim: "subsets need to be identified
 # independent of a query against the attribute file for the long running test suites. So to partition them as major cores, and shells around
-# that core with each major feature broken out."; ceo CEO-1676; RULES.md ONE TESTING OFFICER clause 9; ARCH-SUITE-PARTITIONS.md). Every suite
+# that core with each major feature broken out."; R-1676; RULES.md ONE TESTING OFFICER clause 9; ARCH-SUITE-PARTITIONS.md). Every suite
 # table carries PARTITION.tsv beside it (util_suite_partition.py build, gated current): entry, part (core | chunk:NN), cluster, shells (the
 # distinctive features the entry marks). These read it and nothing else: `run --partition NAME` grades exactly that subset, and the
 # `partition` verb prints the selection and runs nothing. A partition is never the suite: its SUITE_BOARD carries partition=NAME, which the
@@ -5125,7 +5129,7 @@ def read_partition(suite_path):
     p = partition_path_for(suite_path)
     if not p.is_file():
         refuse(f"no stored partition beside {suite_path}: {p} is missing -- build it with ../harness/scripts/util_suite_partition.py build <ALL.csv> "
-               f"(CEO-1676)")
+               f"(R-1676)")
     hdr, rows = None, []
     for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
         if not line.strip() or line.startswith("#"):
@@ -5178,7 +5182,7 @@ def select_one_partition(suite_path, name):
             refuse(f"--partition {nm}: {p} has {len(chunks)} chunk(s): {', '.join(chunks)}")
         canon, sel = hit[0], [r[0] for r in rows if r[1] == hit[0]]
     elif nm.startswith("entry:"):
-        # ⭐ ONE NAMED TEST (ceo CEO-1806, Lon 2026-10-15: "The COO will have two work inputs, the round-robin and the recently requested from other
+        # ⭐ ONE NAMED TEST (R-1806, Lon 2026-10-15: "The COO will have two work inputs, the round-robin and the recently requested from other
         # officers and HQ's."): a seat's request names its tests, and each is one entry of the stored partition (so a stale name refuses here).
         ent = nm[len("entry:"):]
         if ent not in {r[0] for r in rows}:
@@ -5199,7 +5203,7 @@ def select_one_partition(suite_path, name):
 
 
 def cmd_partition(args):
-    """THE SELECTION VERB (CEO-1676 row (a)): print PARTITION <name>: <k> of <n> entries for a suite's stored partition, and with --list
+    """THE SELECTION VERB (R-1676 row (a)): print PARTITION <name>: <k> of <n> entries for a suite's stored partition, and with --list
     the names one per line; runs nothing, appends nothing, writes nothing. Without --name it prints every part: the core, each chunk, and
     the shells' sizes. The entry set is checked against the suite's own ALL.csv when one sits beside it, so a stale partition refuses here
     as the gate (test_gate_suite_partitions_are_current.sh) refuses it."""
@@ -5214,7 +5218,7 @@ def cmd_partition(args):
         if a != b:
             refuse(f"{p} is STALE against {csvp}: {len(a - b)} entr(y/ies) of the table are in no part ({', '.join(sorted(a - b)[:5])}), "
                    f"{len(b - a)} in the partition are not in the table ({', '.join(sorted(b - a)[:5])}) -- run ../harness/scripts/util_suite_partition.py "
-                   f"build {csvp} (CEO-1676: a landing that changes a suite table rebuilds its partition)")
+                   f"build {csvp} (R-1676: a landing that changes a suite table rebuilds its partition)")
     if not args.name:
         parts = collections.Counter(r[1] for r in rows)
         for part in sorted(parts, key=lambda c: (c != "core", int(c[len("chunk:"):]) if c.startswith("chunk:") else 0)):
@@ -5231,13 +5235,13 @@ def cmd_partition(args):
 
 # ================================================================ area smoke ===
 # THE AREA SMOKE (Lon 2026-09-27, verbatim: "So if you change the SPAN function, then run every program that has SPAN as a
-# reference. That is one of the columns in the attribute file."; ceo CEO-1342; RULES.md section ONE TESTING OFFICER, ONE SCORE
-# BOARD, THE AREA SMOKE clause 4; the coo's row instruments-the-area-smoke-...-ceo-1342). The per-landing arm every seat runs
+# reference. That is one of the columns in the attribute file."; R-1342; RULES.md section ONE TESTING OFFICER, ONE SCORE
+# BOARD, THE AREA SMOKE clause 4; the coo's row instruments-the-area-smoke-...-r-1342). The per-landing arm every seat runs
 # INSTEAD of a suite: the rungs and package entries whose ATTRIBUTE ROW marks a named feature, read through THIS one reader,
 # run in both modes with each entry's declared heap_kb / stack_kb / compile_args / run_args / out_files, the population
 # printed by name beside the verdict.
 # ⛔ IT IS NOT A BOARD AND IT NEVER BECOMES ONE: it calls no one-runner guard because it needs none -- it appends NO progress
-# row and writes NO score cell (CEO-547's definition of a run that publishes nothing), and the code below has no path to
+# row and writes NO score cell (R-547's definition of a run that publishes nothing), and the code below has no path to
 # _progress_record. A seat that wants a suite number reads the coo's SUITE TABLE row (clause 2).
 # ⛔ THE VOCABULARY IS THE TABLES' OWN COLUMN NAMES, no taxonomy of this file's: a feature column is a 0/1 column of ALL.csv
 # past the attribute columns (a text column such as inriasuite's section/kind/err is an attribute, not a feature). A named
@@ -5347,7 +5351,7 @@ def _smoke_outside_names(suite):
 # nine false reds (webimage based cwd declchck farb hebcalen parens puzz xtable) against board PASS readings. The runner's smoke mode
 # (S4E_AREA_SMOKE_ENTRIES) grades the named entries by the board's own loop and writes no progress row and no score row.
 # a table whose board grades shipped programs the generated container does not hold: gimpel's ALL.sno is the 120-entry cut from before
-# CEO-1269, its ALL.csv the 145 drivers the board grades, and the smoke selected 79 and ran 0 (hq_snobol4 to the coo, 2026-10-03)
+# R-1269, its ALL.csv the 145 drivers the board grades, and the smoke selected 79 and ran 0 (hq_snobol4 to the coo, 2026-10-03)
 SMOKE_DELEGATES = {"packages/icon/ipl": "test_icon_ipl_suite.sh", "packages/snobol4/gimpel": "test_snobol4_gimpel_suite.sh"}
 _SMOKE_DELEGATE_KIND = {"PASS": "PASS", "FAIL": "FAIL", "CRASH": "CRASH", "HANG": "HANG", "REFUSE": "UNPROVEN", "NONE": "SKIP"}
 
@@ -5569,7 +5573,7 @@ def cmd_smoke(args):
               "their lanes, not this landing's: %s" % (len(stand), _smoke_names(["%s:%s" % (k, n) for k, n, _kk, _w in stand], cap)))
     print(f"AREA_SMOKE_TOTAL features={' '.join(features)} modes={','.join(modes)} tables={len(per_table)} entries={graded} "
           f"all_pass={all_pass} red={len(reds)} standing={len(stand)} skipped_modes={len(skipped)} -- no progress row appended, no score cell written: an area smoke is not a board "
-          f"(CEO-547, CEO-1342 clause 4); the suite number is the coo's SUITE TABLE row")
+          f"(R-547, R-1342 clause 4); the suite number is the coo's SUITE TABLE row")
     if graded == 0:
         # the selection found runnable entries and the run graded none (gimpel's 79 of 145 against a stale container, exit 0)
         refuse("smoke: %d entr(y/ies) selected and NONE graded -- a smoke that grades nothing is not a verdict; the lines above name "
@@ -5693,10 +5697,10 @@ def main():
                         "ride with. Prints OUTSIDE_BASELINE_LIST NONE loudly, naming the list it skipped, because such a run's "
                         "pass count is not comparable to a board graded against the baseline. Incompatible with --outside.")
     r.add_argument("--shard", default="", help="k/N: grade only every N-th entry starting at the k-th (1-based, interleaved), so the N shards partition the suite exactly once and their boards SUM to the monolithic board; the SUITE_BOARD line carries shard=k/N and total=<this shard's entries> (row corpus-runner-master-suite-exceeds-single-call-cap, hq_B 2026-09-02)")
-    r.add_argument("--partition", default="", help="core | shell:<feature> | chunk:NN, or a comma-separated union of them: grade exactly that subset of the suite's stored PARTITION.tsv (CEO-1676), both modes, progress rows per program carrying partition=NAME in their note and config; the SUITE_BOARD carries partition=NAME, which util_score_row.py refuses as a suite row (a partition is never the suite). Incompatible with --shard")
+    r.add_argument("--partition", default="", help="core | shell:<feature> | chunk:NN, or a comma-separated union of them: grade exactly that subset of the suite's stored PARTITION.tsv (R-1676), both modes, progress rows per program carrying partition=NAME in their note and config; the SUITE_BOARD carries partition=NAME, which util_score_row.py refuses as a suite row (a partition is never the suite). Incompatible with --shard")
     r.set_defaults(func=cmd_run)
 
-    pt = sub.add_parser("partition", help="THE SELECTION VERB (CEO-1676): print PARTITION <name>: <k> of <n> entries from the suite's stored PARTITION.tsv (core | shell:<feature> | chunk:NN; every part without --name); runs nothing, records nothing")
+    pt = sub.add_parser("partition", help="THE SELECTION VERB (R-1676): print PARTITION <name>: <k> of <n> entries from the suite's stored PARTITION.tsv (core | shell:<feature> | chunk:NN; every part without --name); runs nothing, records nothing")
     pt.add_argument("suite", help="the suite file (ALL.<ext> or ALL.csv); its PARTITION.tsv sits beside it")
     pt.add_argument("--name", default="", help="core | shell:<feature> | chunk:NN, or a comma-separated union of them")
     pt.add_argument("--list", action="store_true", help="also print the selected entry names, one per line, in partition order")
@@ -5754,7 +5758,7 @@ def main():
     l.add_argument("--lang", default="", choices=LANG_CHOICES, help="read as a LANG_CONFIGS dialect instead of the default SNOBOL4 suite format (a non-.sno suffix without this REFUSES rather than misreading)")
     l.set_defaults(func=cmd_list)
 
-    sm = sub.add_parser("smoke", help="THE AREA SMOKE (CEO-1342 clause 4): run, in both modes, every rung suite and package entry whose ALL.csv attribute row marks any named feature column; population printed by name; appends no progress row and writes no score cell -- not a board")
+    sm = sub.add_parser("smoke", help="THE AREA SMOKE (R-1342 clause 4): run, in both modes, every rung suite and package entry whose ALL.csv attribute row marks any named feature column; population printed by name; appends no progress row and writes no score cell -- not a board")
     sm.add_argument("features", nargs="*", help="feature column names as the tables spell them (FENCE SPAN scan suspend cut ...); a name no table knows REFUSES rc=2")
     sm.add_argument("--modes", default="", help="default m3,m4")
     sm.add_argument("--entries", default="", help="narrow the feature selection to these entry names (a gate's witness set); a name it does not reach refuses")

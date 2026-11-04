@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """audit_template_forms.py -- THE FORM CENSUS: every box that serves more than one IR form, and the split each needs.
 
-Lon 2026-09-27, in-chat to the ceo, verbatim: "This template code health reaches beyond fixing any BB for the many
+Lon 2026-09-27, in-chat, verbatim: "This template code health reaches beyond fixing any BB for the many
 IR's it handles, but to consider having other IR/BB broken out properly by form/pattern." (hq_templates, row
-templates-a-form-census-names-every-box-that-serves-more-than-one-ir-form-and-the-split-each-needs, CEO-1321.)
+templates-a-form-census-names-every-box-that-serves-more-than-one-ir-form-and-the-split-each-needs, R-1321.)
 
 A file at audit rc 0 is not yet healthy if ONE box emits MANY patterns. The health target is ONE FORM PER BOX
 (GOAL-BB-FIXUP.md ONE-IR-ONE-LOGIC, TIER S): lower chooses the form, each template emits one pattern straight through.

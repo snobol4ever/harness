@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_ir_slope.sh -- THE TWO-NUMBER BASIS FOR **SLOPE** KERNELS, MEASURED AS AN Ir REGRESSION.
-# Row readme-perf-grids-three-angles-all-seven (I26), hq_P 2026-09-03, ceo audit CEO-192.
+# Row readme-perf-grids-three-angles-all-seven (I26), hq_P 2026-09-03 audit R-192.
 #
 # ⛔⭐ WHY THIS EXISTS AND WHY bench_two_number_ir.sh IS NOT ENOUGH -- MEASURED, NOT THEORISED.
 # A benchmarks/snobol4 kernel is not a whole program you run once: it exposes a `*BENCH kernel=NAME`
@@ -9,7 +9,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # away. Running such a kernel once (which is what a whole-program Ir board does) answers a DIFFERENT,
 # NARROWER QUESTION -- "what does one default-sized run cost, startup included" -- and nothing in the
 # output says so. hq_P measured the consequence on this row: a whole-program Ir board over the 21
-# SNOBOL4 kernels put 12 of them into the CEO-173 >=50%-startup refusal and printed multiples as low
+# SNOBOL4 kernels put 12 of them into the R-173 >=50%-startup refusal and printed multiples as low
 # as 0.140x, because SCRIP's 2.79M-Ir process startup swamped kernels doing ~80K Ir of actual work.
 # Those numbers were all correctly measured and all answering the wrong question (RULES.md § THE
 # INSTRUMENT LAWS, batch 15 §1 -- the instrument that answers a narrower question never says so).
@@ -22,7 +22,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   OVERHEAD = the INTERCEPT = Ir(N) - N*WORK -- process startup + one-time setup, its own number.
 # ⭐ This is strictly better than the law's "marked interim" (empty-program subtraction): the interim
 # approximates startup with a DIFFERENT program's startup, while the intercept measures THIS program's
-# own. It is the same two numbers the law asks for, obtained without the subtraction that CEO-173 had
+# own. It is the same two numbers the law asks for, obtained without the subtraction that R-173 had
 # to add a refusal for.
 #
 # THE ADEQUACY CHECK IS BUILT IN, AND IT IS THE Ir ANALOGUE OF THE ANGLE-1-vs-ANGLE-2 CROSS-PROOF.
@@ -52,7 +52,7 @@ refuse() { echo "⛔ Ir SLOPE BOARD REFUSED (rc=2): $*" >&2; exit 2; }
 command -v valgrind >/dev/null 2>&1 || refuse "valgrind not on PATH."
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || refuse "cannot load lib_ir_measure.sh -- this board will not read Ir by hand."
 . "$HERE/lib_perf_fmt.sh"     2>/dev/null || refuse "lib_perf_fmt.sh unloadable (the ONE multiple-printing authority)."
-# CEO-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
+# R-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
 # from captured multiples, so the stamp must not land INSIDE a cell -- it is emitted once, above, with the
 # shared axes, which is where the FACT RULE says a grid names anything it shares.
 PERF_STAMP_OFF=1
@@ -98,7 +98,7 @@ echo "  basis: Ir(n) = OVERHEAD + n*WORK fitted at n = $BASE_N / $((BASE_N*2)) /
 echo "         (Ir per iteration, startup cancelled exactly), OVERHEAD is the INTERCEPT (its own number)."
 echo "         Linearity cross-check: slope(N,2N) vs slope(2N,4N) must agree within ${LIN_TOL}% or the row reads NONLINEAR."
 echo "         Multiple = SPITBOL WORK / SCRIP WORK (FASTER axis: above 1.00x SCRIP does less work per iteration)."
-echo "  instrument = callgrind Ir regression, LOAD-IMMUNE: no load stamp is required on this board (CEO-743 binds"
+echo "  instrument = callgrind Ir regression, LOAD-IMMUNE: no load stamp is required on this board (R-743 binds"
 echo "         wall-clock numbers). For the record the box was at $(perf_load_stamp)."
 printf '%-20s %9s %13s %13s %13s %13s %13s %11s  %s\n' kernel "N" "m3 WORK/it" "m4 WORK/it" "sbl WORK/it" "m4 OVERHEAD" "sbl OVERHEAD" "linearity" "x vs SPITBOL (m4)"
 N=0; RC=0

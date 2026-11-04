@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_call_and_return_trace_handler_is_entered_by_the_define_shim_box_and_its_chain_reads_clean.sh
 #
-# THE ROW (the remainder of ceo CEO-1533, minted 2026-10-09): the CALL, RETURN and FRETURN trace handlers of a DEFINEd function were entered from the DEFINE shim's three hook
+# THE ROW (the remainder of R-1533, minted 2026-10-09): the CALL, RETURN and FRETURN trace handlers of a DEFINEd function were entered from the DEFINE shim's three hook
 # blocks through rt_trace_{call,return,fail}_hook_i -> rt_trace_event_args_ip -> rt_trace_apply_island -> APPLY_fn, with the C frames live for the handler's whole life (the
 # C2BB trace read descr.tiny TF once per event). THE CURE, the pattern of the VALUE and ACCESS taps: each hook block carves a trace_pend_t (112 bytes, zeroed) on the spine, calls
 # rt_trace_{call,return,fail}_hook_p, which FILLS the pend instead of calling the handler, and bb_glue_trace_pend_run enters the handler through rt_apply_open / the c2bb glue /
@@ -12,7 +12,7 @@
 # ARMS, each both modes, expectations cut from sbl -bf AT RUN TIME: (A) the C2BB trace of the CALL/RETURN/ACCESS witness holds an apply.open per event and NO C-entered line --
 # REFUSED when SCRIP_C2BB_TRACE writes nothing; (B) output equals sbl on the witness, on nested traced calls, on a failing return (the FRETURN block) and on traced functions of 12, 39 and 41 formals (the three hook
 # blocks take compact blocks of internal label ids after the omega chain; a block that overlapped a per-formal chain defined a label twice at 10 or more formals -- found by hq_snocone's
-# test_gate_sno_tracing_does_not_change_a_match_result on the bootstrap parsers; past BB_SHIM_TRACE_NF_MAX = 39 the one-byte id space is full, so a TRACED call of such a function dies with a named bomb (the C-entered hook it would otherwise take is deleted, CEO-1576) while the same function untraced still agrees with sbl -- arms m41 and m41u); (C) a handler that
+# test_gate_sno_tracing_does_not_change_a_match_result on the bootstrap parsers; past BB_SHIM_TRACE_NF_MAX = 39 the one-byte id space is full, so a TRACED call of such a function dies with a named bomb (the C-entered hook it would otherwise take is deleted, R-1576) while the same function untraced still agrees with sbl -- arms m41 and m41u); (C) a handler that
 # allocates under SCRIP_GC_STRESS=1 with SCRIP_GC_CHAIN_CHECK=1: output equals sbl and the chain check reads frameless=0 mismatch=0 nosite=0, with ok>0 and roadhops>0 as the
 # positive control (REFUSED when the summary line is absent).
 # NOT COVERED, NAMED: the LABEL, KEYWORD and FUNCTION kinds, and the two NV_GET_fn reads of bb_rev_assign_global.cpp (the ACCESS pattern applies unchanged).
@@ -139,7 +139,7 @@ arm m39 ""
 arm m41u ""
 for mode in m3 m4; do
   got="$( { $mode m41 ""; } 2>/dev/null )"; err="$(cat "$D/m41.$mode.err" 2>/dev/null)"
-  if printf '%s' "$err" | grep -q "more than 39 formals" && ! printf '%s' "$got" | grep -q 'again'; then ok "m41 $mode: a traced call of a 41-formal DEFINE dies with the named bomb (the C-entered hook is deleted, CEO-1576)"; else red "m41 $mode: no named bomb: out [$(printf '%s' "$got" | tr '\n' '|' | cut -c1-70)] err [$(printf '%s' "$err" | tr '\n' '|' | cut -c1-110)]"; fi
+  if printf '%s' "$err" | grep -q "more than 39 formals" && ! printf '%s' "$got" | grep -q 'again'; then ok "m41 $mode: a traced call of a 41-formal DEFINE dies with the named bomb (the C-entered hook is deleted, R-1576)"; else red "m41 $mode: no named bomb: out [$(printf '%s' "$got" | tr '\n' '|' | cut -c1-70)] err [$(printf '%s' "$err" | tr '\n' '|' | cut -c1-110)]"; fi
 done
 want="$(want_of w)"
 for mode in m3 m4; do

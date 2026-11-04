@@ -16,7 +16,7 @@
 # ⛔ THE REF IS A SELF-CONSISTENCY PIN, NOT AN ORACLE DIFF: --cut writes it from SCRIP's own traces, so a PASS
 # proves the port sequence has not MOVED, never that it is RIGHT. Prolog's trace/0 emits goal events in its own
 # format, not a Byrd four-port sequence over our box graph, so no line-for-line oracle diff exists to take.
-# Say "pinned" in any receipt quoting this gate (ceo CEO-172).
+# Say "pinned" in any receipt quoting this gate (R-172).
 # EXIT: 0 every witness matches in both modes; 1 a mismatch, a killswitch or perturbation failure; 2 REFUSED.
 set -u
 PORTTRACE_LANG=Prolog; PORTTRACE_SUITE=prolog; PORTTRACE_EXT=.pl; PORTTRACE_FAMILIES="probe_plz ladder"

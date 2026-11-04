@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_s4e_picker_v2.sh — V2-1 GATE (ARCH-FLEET-CEO.md LAW 2 "ASSIGNMENT IS THE LOCK", LAW 1 "NO HAND-TYPED VERDICTS").
+# test_gate_s4e_picker_v2.sh — V2-1 GATE (the retired fleet architecture page LAW 2 "ASSIGNMENT IS THE LOCK", LAW 1 "NO HAND-TYPED VERDICTS").
 # Proves the three properties the wave-1 control plane did NOT have, against a SANDBOX postoffice (never the live one):
 #   P1 rank-sorted picker : `next` serves the LOWEST-RANK free row, not the topmost row in file order.
 #   P2 assign-wins        : a row an HQ assigned to me is served AHEAD of a lower-ranked free row I would otherwise take.
@@ -29,7 +29,7 @@ sandbox() { # $1 = dir ; builds a postoffice whose FILE ORDER DISAGREES WITH RAN
   # s265 landed (LAW 0 species 3, a blind instrument caught by trying to actually rely on its verdict).
   # ⛔ FOUND STALE A SECOND TIME (postoffice-gates-red-on-origin, 2026-09-03) — SAME SANDBOX, NEXT COLUMN ALONG.
   # The note above cured the 4th column when V2-2 repointed it to state. The 3rd column is read as `brief` and
-  # USED as the owner, and `THE OWNER COLUMN CONSTRAINS THE PICK` (ceo 2026-09-03) made it load-bearing too:
+  # USED as the owner, and `THE OWNER COLUMN CONSTRAINS THE PICK` (2026-09-03) made it load-bearing too:
   # anything that is not '', `unassigned` or the running seat is now skipped as another seat's row. "brief-N"
   # is none of those, so every row here read as owned-by-someone-else and NOTHING was ever locked.
   # ⭐ THE REASON THIS SURVIVED A RED RUN: the skip banner names the topmost skipped row and its owner, so

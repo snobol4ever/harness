@@ -33,7 +33,7 @@ if ! donewhen_selftest > /tmp/.dw_selftest.$$ 2>&1; then
 fi
 echo "first-word extractor: $(tail -1 /tmp/.dw_selftest.$$)"; rm -f /tmp/.dw_selftest.$$
 
-# ⛔⭐ THE PLACEHOLDER RULE IS THE SHIPPED ONE, EXTRACTED, NEVER A SECOND SPELLING (coo 2026-09-17, ceo CEO-829;
+# ⛔⭐ THE PLACEHOLDER RULE IS THE SHIPPED ONE, EXTRACTED, NEVER A SECOND SPELLING (coo 2026-09-17, R-829;
 # the same extraction test_gate_baton_hidden_criterion.sh already uses).  A gate carrying its own idea of what a
 # placeholder looks like is how two readers of one file come to disagree.
 _MSG_SH="$HERE/s4e_msg.sh"
@@ -42,7 +42,7 @@ if [ -f "$_MSG_SH" ]; then
     [ -n "$_PH" ] && eval "$_PH"
 fi
 type s4e_donewhen_is_placeholder >/dev/null 2>&1 || {
-    echo "⛔ GATE REFUSES(2): could not load s4e_donewhen_is_placeholder out of $_MSG_SH -- this gate will not re-derive the placeholder rule, and counting placeholders as ordinary rows would hide the population CEO-829 exists to keep visible" >&2; exit 2; }
+    echo "⛔ GATE REFUSES(2): could not load s4e_donewhen_is_placeholder out of $_MSG_SH -- this gate will not re-derive the placeholder rule, and counting placeholders as ordinary rows would hide the population R-829 exists to keep visible" >&2; exit 2; }
 
 # ⛔ DECORATED NO-OP EVASION (row `donewhen-decorated-noop-evasion`; proven live by seat10 2026-08-23, see
 # FINDING-2026-08-23-seat10-rung-gate-false-green-audit-continued.md and
@@ -87,14 +87,14 @@ strip_donewhen_comment() {
         print out
     }'
 }
-# ⛔⭐⭐ THE POPULATION IS THE LIVE ROWS, AND THAT IS A RULING, NOT AN OPTIMISATION (ceo CEO-546, on hq_S's
+# ⛔⭐⭐ THE POPULATION IS THE LIVE ROWS, AND THAT IS A RULING, NOT AN OPTIMISATION (R-546, on hq_S's
 # census 2026-09-11: FINDING-2026-09-11-hq_S-ninety-eight-live-rows-carry-a-done-when-that-can-never-exit-
 # zero-and-the-gate-that-says-so-is-unwired.md). Over ALL batons this gate counted 154 uncloseable criteria
 # and was therefore unwireable: most belong to rows long since closed, where a dead DONE-WHEN costs nobody
 # anything, and reding `make test` for nine seats over that backlog is how a true gate gets disabled rather
 # than satisfied. Cross-referenced against QUEUE.tsv for rows a picker can actually SERVE -- state FREE or
 # CLAIMED: -- the number that bites is 98, with 55 at rank 0 or 1.
-# ⛔ THE CEO'S DISTINCTION, WHICH IS SHARPER THAN THE ASK IT ANSWERS: done-row batons are EXCLUDED BY
+# ⛔ THE OFFICER'S DISTINCTION, WHICH IS SHARPER THAN THE ASK IT ANSWERS: done-row batons are EXCLUDED BY
 # POPULATION, never EXEMPTED BY STATE. An exemption says "this row may carry a dead criterion" -- a
 # permanent hole that grows every time a row closes. A population says "the set at risk is the rows that
 # can still be served", so a row leaves it BY BEING CLOSED rather than by being forgiven.
@@ -118,9 +118,9 @@ for f in "$TASKS"/*.task.md; do
     t=$(basename "$f" .task.md); N=$((N+1))
     dw=$(sed -n 's/^DONE-WHEN:[[:space:]]*//p' "$f" | head -1)
     if [ -z "$dw" ]; then echo "  ⛔ $t: NO DONE-WHEN line"; BAD=$((BAD+1)); continue; fi
-    # ⭐ THE PLACEHOLDER IS ITS OWN CLASS, NEITHER UNCLOSEABLE NOR CLEAN (CEO-829).  Since 2026-09-17 mint writes a
+    # ⭐ THE PLACEHOLDER IS ITS OWN CLASS, NEITHER UNCLOSEABLE NOR CLEAN (R-829).  Since 2026-09-17 mint writes a
     # RUNNABLE always-red placeholder, so such a row is honestly RED -- `done` can never close it -- and counting it
-    # as UNCLOSEABLE punished the sanctioned act of minting (twice in one hour that day, both on rows the ceo asked
+    # as UNCLOSEABLE punished the sanctioned act of minting (twice in one hour that day, both on rows the officer asked
     # for, both redding make test for every seat).  But it must not vanish into "runnable" either: a row nobody has
     # written a criterion for is real debt, so it is counted, named and ratcheted SEPARATELY below.
     if s4e_donewhen_is_placeholder "$dw"; then
@@ -194,10 +194,10 @@ done
 echo ""
 echo "examined $N live row(s) of $NLIVE in the queue: runnable=$((N-BAD-PLACE))  UNCLOSEABLE=$BAD  PLACEHOLDER=$PLACE  WARN=$WARN"
 # ⭐⭐ THE PLACEHOLDER FLOOR, REPORTED AND NOT BLOCKING, AND THE MARKING IS IN THIS GATE'S OWN TEXT RATHER THAN IN A
-# recipe comment (ceo CEO-822: the REPORTED marking travels with the instrument, because a gate that is copied, moved
+# recipe comment (R-822: the REPORTED marking travels with the instrument, because a gate that is copied, moved
 # between recipes or run by hand keeps only what it says itself).
 # ⛔ WHY IT DOES NOT BLOCK: minting a row is the sanctioned way to add work, and a class that reds on GROWTH would red
-# make test for every seat the moment the ceo mints anything -- the exact defect CEO-829 was raised to cure.  What it
+# make test for every seat the moment the officer mints anything -- the exact defect R-829 was raised to cure.  What it
 # must not do is HIDE: this count is named on its own line every run, and a FALL is announced so it gets banked.
 # ⭐ THE LIFT, stated so nobody has to ask: when PLACEHOLDER reaches 0 this class goes BLOCKING at 0, and the ceiling
 # below joins it -- a row minted from that day carries a real criterion or it is not minted.
@@ -210,7 +210,7 @@ else
     echo "  PLACEHOLDER $PLACE, exactly at its floor $PLACE_FLOOR (REPORTED, NOT BLOCKING; blocking at 0 when it gets there)."
 fi
 gate_floor "$N" 10 "live rows with batons (a postoffice with no live batons proves nothing)"
-# ⭐ CEILING 93 (hq_S 2026-09-11, ceo CEO-546 landing; measured 98 in the finding two hours earlier).
+# ⭐ CEILING 93 (hq_S 2026-09-11, R-546 landing; measured 98 in the finding two hours earlier).
 # ⛔⭐ A FALL PASSES HERE, AND THAT IS A DELIBERATE DEPARTURE FROM THE HOUSE RATCHET SHAPE -- read this
 # before "fixing" it back. test_gate_orphaned_witnesses_do_not_grow.sh reds on a FALL as well as a rise, so
 # that paying debt down forces the floor lower in the same commit, and that is right THERE because its
@@ -231,7 +231,7 @@ gate_floor "$N" 10 "live rows with batons (a postoffice with no live batons prov
 # the same edit. That is the volatility this gate's header argues about, visible in its own first ratchet
 # move: the number is a property of the queue as much as of the debt, which is exactly why a fall here
 # passes loudly instead of reding the build.
-# ⭐⭐ CEILING 89 -> 3 (coo 2026-09-17, ceo CEO-829). NOT a cure of 86 rows: a MEASUREMENT that 86 of the 89 were
+# ⭐⭐ CEILING 89 -> 3 (coo 2026-09-17, R-829). NOT a cure of 86 rows: a MEASUREMENT that 86 of the 89 were
 # never broken criteria at all. They were the MINT PLACEHOLDER, which was prose until this sitting and is now a
 # runnable always-red command, so they moved to the PLACEHOLDER class above and what is left -- THREE -- is the real
 # population this ceiling was always about: DONE-WHEN text that cannot parse or whose first word is not a command.

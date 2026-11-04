@@ -2,7 +2,7 @@
 # test_gate_aggregate_registry_keys_are_descrs.sh -- THE AGGREGATE REGISTRY IS KEYED BY THE DESCR ITSELF, NEVER BY A
 # \001-TAGGED STRING (RULES.md FACT RULE NO DELIMITER-JOINED AGGREGATES; Lon 2026-09-28 to hq_pascal: "Are you storing data as
 # tag delimited strings? ... Get rid of ALL delimited based processing like the one I just discovered."; the cfo's officer view
-# adopted by the ceo at CEO-1350; row runtime-the-aggregate-registry-is-keyed-by-the-descr-itself-..., the cfo).
+# adopted by the officer at R-1350; row runtime-the-aggregate-registry-is-keyed-by-the-descr-itself-..., the cfo).
 #
 # WHAT WAS WRONG. src/runtime/aggregates.c already hashed and compared table keys by type and payload (_tbl_hkey, _tbl_eq_d),
 # but the \001-tagged string form (tbl_key_str: "\001i123", "\001l<id>", "\001n" for the null key) survived in four places: a

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_no_spine_preallocation.sh -- NO SPINE CELL IS ALLOCATED BEFORE ITS BOX (Lon 2026-10-21, in-chat to the ceo, verbatim: "I should see a
+# test_gate_no_spine_preallocation.sh -- NO SPINE CELL IS ALLOCATED BEFORE ITS BOX (Lon 2026-10-21, in-chat, verbatim: "I should see a
 # count of pre-allocations and see it go to ZERO. SPINE allocations MUST ONLY be allocated PER BOX and at ALPHA at EACH BOX." · "And sometimes at BETA
-# in a BB BOX."; ceo CEO-1855).
+# in a BB BOX."; R-1855).
 # Runs util_bb_placement_census.py over every program of util_spine_population.sh with this root's ./scrip and sums its BB_HOSTS pre-allocations:
 # a box granted a frame slot at entry that is not its RBP home (ops_prealloc) + an operand carved at entry (ops_precarved) + a local carved at entry
 # that passes both of Lon's tests (loc_rbp_misplaced). The RBP homes, the locals that fail a test and the frame words stay in the frame.

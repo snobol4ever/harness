@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # test_gate_score_row_denominator_includes_xfails.sh -- ROW-LEVEL GATE: EVERY SUITES.tsv ROW'S PUBLISHED DENOMINATOR IS
-# THE CEO-749 IDENTITY  PASS + FAIL + OUTSIDE-BASELINE + UNGRADABLE + UNGRADED + DEFERRED == population,
-# re-derived from the progress DB on the row's OWN tree plus the suite's OUTSIDE sidecar (coo, CEO-780b, 2026-09-16;
-# row test-gate-score-row-denominator-includes-xfails-refuses-on-every-tree-under-ceo-753-rewrite-it-to-police-the-ceo-749-identity).
+# THE R-749 IDENTITY  PASS + FAIL + OUTSIDE-BASELINE + UNGRADABLE + UNGRADED + DEFERRED == population,
+# re-derived from the progress DB on the row's OWN tree plus the suite's OUTSIDE sidecar (coo, R-780b, 2026-09-16;
+# row test-gate-score-row-denominator-includes-xfails-refuses-on-every-tree-under-r-753-rewrite-it-to-police-the-r-749-identity).
 #
-# ⛔ WHAT THIS FILE USED TO ASSERT, AND WHY IT IS GONE: hq_T's 2026-09-08 gate (on the coo's ask; CEO-416 "an xfail counts as a
+# ⛔ WHAT THIS FILE USED TO ASSERT, AND WHY IT IS GONE: hq_T's 2026-09-08 gate (on the coo's ask; R-416 "an xfail counts as a
 # FAIL, so it sits in the denominator") read a RUNNER-PUBLISHED `xfail=` count out of SCORE.md's Rungs board cell and checked
-# total >= pass + xfail. Under CEO-753 (2026-09-14) THERE IS NO XFAIL -- the builder that mints one is the defect and no rungs
+# total >= pass + xfail. Under R-753 (2026-09-14) THERE IS NO XFAIL -- the builder that mints one is the defect and no rungs
 # cell publishes an xfail= count -- so from that day the gate REFUSED rc=2 on every tree (measured 2026-09-16 11:1x on 61315eaa9
 # and 11:21 on 0a3f38904): a standing rc=2 in `make test` for ten seats, asking for a number the law forbids. The property it
-# protected (a known red stays in the denominator) is now the wider CEO-749 identity, and the evidence is the DB, not a cell.
+# protected (a known red stays in the denominator) is now the wider R-749 identity, and the evidence is the DB, not a cell.
 #
 # HOW A ROW IS GRADED: on the row's tree (SUITES.tsv column `tree`) every progress row of the suite in m3/m4 gives each program
 # its LAST outcome per mode; a program is PASS when every mode it declares reads PASS, OUTSIDE when any mode reads OUTSIDE or
 # the suite's sidecar names it, DEFERRED when any mode reads DEFERRED, UNGRADABLE when every mode reads UNGRADABLE, UNGRADED when
 # every mode reads UNGRADED/SKIP/MISSING/UNPROVEN, else FAIL (FAIL, CRASH, HANG, REJECT, REFUSE, XFAIL, or a mixed pair);
 # sidecar entries with no DB row are OUTSIDE too. The population is the union, and the row AGREES when its published total
-# equals it. A row whose tree has NO DB rows is UNPROVEN and NAMED (CEO-750: a row without per-program evidence is DARK wearing
-# a number); a row with no tree and a DEFERRED criterion (gnu_fd, CEO-579) is DEFERRED by ruling and agrees when its total is
+# equals it. A row whose tree has NO DB rows is UNPROVEN and NAMED (R-750: a row without per-program evidence is DARK wearing
+# a number); a row with no tree and a DEFERRED criterion (gnu_fd, R-579) is DEFERRED by ruling and agrees when its total is
 # the deferred count it states. THE NUMERATOR is not this gate's question: util_suite_rows_vs_progress.py (the batch audit,
-# CEO-780a) reads pass vs DB PASS, with the xpass discriminator (the DB folds XPASS into PASS, a board does not -- hq_snocone).
+# R-780a) reads pass vs DB PASS, with the xpass discriminator (the DB folds XPASS into PASS, a board does not -- hq_snocone).
 #
 # VERDICT: rc=0 when every graded row agrees (population printed: graded, agree, disagree named, unproven named); rc=1 under
 # --strict when a graded row DISAGREES (each named with its total, the DB population and the difference by class); without
@@ -40,7 +40,7 @@ if [ "$SELFTEST" = 1 ]; then
   printf '# fixture\nkey\tnick\temoji\tlang\tfirst_date\tfirst_pass\tfirst_total\ttoday_date\ttoday_pass\ttoday_total\ttree\tcriterion_changed\n' > "$W/SUITES.tsv"
   printf 'sno-rungs\tSnoM\tx\tsnobol4\t2026-09-06\t1\t3\t2026-09-16\t2\t4\tfeedbeef1\tfixture\n' >> "$W/SUITES.tsv"      # 2 PASS + 1 FAIL + 1 sidecar OUTSIDE = 4: AGREE
   printf 'gimpel\tGimpel\tx\tsnobol4\t2026-09-04\t1\t2\t2026-09-16\t1\t2\tfeedbeef1\tfixture\n' >> "$W/SUITES.tsv"          # 1 PASS + 1 FAIL + 1 UNGRADED = 3, row says 2: PLANTED DISAGREE
-  printf 'gnu_fd\tGnuFD\tx\tprolog\t\t\t\t\t\t30\t\tDEFERRED by ruling CEO-579: 30 FD programs\n' >> "$W/SUITES.tsv"       # DEFERRED by ruling: AGREE
+  printf 'gnu_fd\tGnuFD\tx\tprolog\t\t\t\t\t\t30\t\tDEFERRED by ruling R-579: 30 FD programs\n' >> "$W/SUITES.tsv"       # DEFERRED by ruling: AGREE
   printf 'roast\tRoast\tx\traku\t2026-09-03\t4\t986\t2026-09-13\t6\t986\tdeadbeef2\tfixture\n' >> "$W/SUITES.tsv"           # no DB rows on its tree: UNPROVEN, named
   printf 'p_out\tORACLE_REFUSES\tfixture\n' > "$W/corpus/tests/snobol4/ALL.outside.tsv"
   DB="$W/results.tsv"; printf 'ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\n' > "$DB"
@@ -115,7 +115,7 @@ for (s, t, p, m), o in last.items(): progs[(s, t)][p][m] = o
 UNG = {"UNGRADED", "SKIP", "MISSING", "UNPROVEN"}
 def classify(mm, outside_named):
     v = set(mm.values())
-    # the runner's recorded class outranks the sidecar (ceo CEO-799): a sidecar-named entry WITH a DB row keeps the DB's class;
+    # the runner's recorded class outranks the sidecar (R-799): a sidecar-named entry WITH a DB row keeps the DB's class;
     # the sidecar classes only an entry the DB has no row for (Budne: 49 declared, 22 measured today, 27 UNGRADABLE debt)
     if "OUTSIDE" in v: return "OUTSIDE"
     if outside_named and not v: return "OUTSIDE"
@@ -142,7 +142,7 @@ for c in rows:
             side.add(stem(l.split("\t")[0].strip()))
     # read whether or not the OUTSIDE file exists: a package whose last OUTSIDE row was graded deletes it, and its UNGRADED rows stand
     if sc:
-        # ⛔ THE PACKAGE INVENTORY IS THE POPULATION AUTHORITY (ceo CEO-798, 2026-09-16): the runner's PACKAGE_INVENTORY line counts
+        # ⛔ THE PACKAGE INVENTORY IS THE POPULATION AUTHORITY (R-798, 2026-09-16): the runner's PACKAGE_INVENTORY line counts
         # shipped = graded + ungraded + ungradable, and the package keeps UNGRADABLE.tsv / UNGRADED.tsv beside its OUTSIDE file
         # (csnobol4: 61 UNGRADABLE of which the 49 OUTSIDE are a subset, 12 containers/libraries; 71 graded; 132 shipped). Read
         # both, OUTSIDE taking precedence, so the population this gate prints is the inventory's, never DB-plus-OUTSIDE alone.
@@ -155,7 +155,7 @@ for c in rows:
         ungradable -= side; ungraded -= side | ungradable
     d = progs.get((DBNAME.get(key, key), tree), {})
     if not d:
-        unproven.append(key); print(f"{tag} {'-':>5} {'-':>5} {len(side):>8} {'-':>10} {'-':>8} {'-':>8} = {'-':>10}   UNPROVEN: no progress rows for this suite on {tree} (CEO-750)"); continue
+        unproven.append(key); print(f"{tag} {'-':>5} {'-':>5} {len(side):>8} {'-':>10} {'-':>8} {'-':>8} = {'-':>10}   UNPROVEN: no progress rows for this suite on {tree} (R-750)"); continue
     cnt = collections.Counter()
     seen = set()
     for p, mm in d.items():
@@ -176,9 +176,9 @@ print(f"population: {len(rows)} row(s): {graded} graded, {agree} agree, {len(dis
 if graded == 0:
     print("⛔ GATE REFUSES (rc=2): zero rows gradable -- no SUITES.tsv row has progress rows on its own tree; this gate measured nothing."); sys.exit(2)
 if disagree:
-    print(f"{'⛔ GATE RED' if strict else '⚠ REPORT'} [score_row_denominator_identity]: {len(disagree)} of {graded} graded row(s) DISAGREE with the CEO-749 identity:")
+    print(f"{'⛔ GATE RED' if strict else '⚠ REPORT'} [score_row_denominator_identity]: {len(disagree)} of {graded} graded row(s) DISAGREE with the R-749 identity:")
     for x in disagree: print("    " + x)
-    print("    cure: the row's writer publishes the population the identity gives (OUTSIDE stays in the denominator, CEO-749; an UNGRADED or UNGRADABLE entry is in the population, never dropped), or the runner's append is fixed so the DB carries what the board counts (CEO-750).")
+    print("    cure: the row's writer publishes the population the identity gives (OUTSIDE stays in the denominator, R-749; an UNGRADED or UNGRADABLE entry is in the population, never dropped), or the runner's append is fixed so the DB carries what the board counts (R-750).")
     if strict: sys.exit(1)
     print("    (report-only: pass --strict to make this rc=1; the Makefile arm flips to --strict when the SNOBOL4 runner rows close)")
     sys.exit(0)

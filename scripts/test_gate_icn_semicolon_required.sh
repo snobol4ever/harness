@@ -95,7 +95,7 @@ else
   rm -rf "$tmpd"
 fi
 
-echo "  LOCK 4 (Lon 2026-10-01, CEO-1392): EVERY STATEMENT IN A PROCEDURE BODY ENDS IN ';' -- the last one before end included; only the last expression of a { } block is bare (a ';' there nulls the block's value under iconx too)"
+echo "  LOCK 4 (Lon 2026-10-01, R-1392): EVERY STATEMENT IN A PROCEDURE BODY ENDS IN ';' -- the last one before end included; only the last expression of a { } block is bare (a ';' there nulls the block's value under iconx too)"
 L4T=$(mktemp -d); trap 'rm -rf "$L4T"' EXIT; trap 'rm -rf "$L4T"; exit 143' TERM; trap 'rm -rf "$L4T"; exit 130' INT
 l4() { # l4 <want ACCEPT|REFUSE> <source>
   printf '%b' "$2" > "$L4T/p.icn"

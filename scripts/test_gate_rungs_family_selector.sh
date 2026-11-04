@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_rungs_family_selector.sh — the executable DONE-WHEN for row
-# `master-builder-delete-absorbed-family-selector` (ceo mint 2026-08-30).
+# `master-builder-delete-absorbed-family-selector` (mint 2026-08-30).
 #
 # WHAT IT PROVES, and why each arm exists (hq_P's measurement at mint time): --delete-absorbed is
 # all-or-nothing per LANGUAGE while FLEET-16 splits one language's consolidation across seats --

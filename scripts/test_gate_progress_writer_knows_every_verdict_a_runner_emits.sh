@@ -3,9 +3,9 @@
 # verdict the boards actually produce, or a whole suite's per-program evidence is dropped while the suite's
 # SCORE row is published anyway.
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, found running the x64 board; the class the coo filed on 2026-09-13 and
-# CEO-750 ruled on that morning). util_progress_append.py's OUTCOMES tuple knew twelve verdicts. The LAW had
-# since grown three more -- DEFERRED (hq_T's declared m4 asm budget), OUTSIDE (CEO-542's outside-baseline) and
+# ⛔ THE DEFECT (2026-09-14, found running the x64 board; the class the coo filed on 2026-09-13 and
+# R-750 ruled on that morning). util_progress_append.py's OUTCOMES tuple knew twelve verdicts. The LAW had
+# since grown three more -- DEFERRED (hq_T's declared m4 asm budget), OUTSIDE (R-542's outside-baseline) and
 # UNGRADABLE (THE PACKAGE LOCKDOWN's third bucket) -- and the writer learned none of them. Measured: the x64
 # suite emits DEFERRED for four programs, the writer REFUSES rc=2 on the first one, and ALL 72 rows (36
 # programs x 2 modes) are dropped. The board still printed, and the SCORE row was still written.

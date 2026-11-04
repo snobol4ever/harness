@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_an_integer_descriptor_never_enters_the_mark_worklist.sh -- THE MARK WORKLIST USED TO CARRY EVERY DESCRIPTOR IT WAS
 # HANDED: an integer or real or null cell was pushed, popped and switched on (~100 Ir at -O0) to find there was nothing to mark.
 # On table_access at the shipped 128 KB arena that was 766 pushes per collection for a table of integers, 92 K of the 851 K Ir a
-# collection cost (ceo 2026-09-25, CEO-1256). Since this landing gc_wl_push and rt_gc_visit_descr test the tag first
+# collection cost (2026-09-25, R-1256). Since this landing gc_wl_push and rt_gc_visit_descr test the tag first
 # (gc_tag_bears_ptr: the thirteen tags that can hold a heap pointer) and a descriptor of any other tag never enters the worklist.
 # THE OBSERVABLE is the collector's own telemetry: [ZGC] regeneration lines carry wl_depth_max, the deepest the worklist ever got.
 # The witness keeps a 6,000-element integer ARRAY (created with an integer initial value, so no element is ever the null

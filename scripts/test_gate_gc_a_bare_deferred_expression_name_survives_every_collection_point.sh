@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_gc_a_bare_deferred_expression_name_survives_every_collection_point.sh
 #   hq_snobol4 2026-09-20, row `snobol4-the-pattern-replacement-class-prints-a-wrong-answer-under-collection-
-#   and-changes-its-fingerprint-per-poll-set` (ceo CEO-979 GC-only, MODE TENET condition 1).
+#   and-changes-its-fingerprint-per-poll-set` (R-979 GC-only, MODE TENET condition 1).
 #
 # WHAT IT GATES.  A SNOBOL4 pattern variable whose whole value is a BARE DEFERRED EXPRESSION (`lvl2 = *lvl1`)
 # makes `SNO$MKEXPR` mint a `DT_X` name string with `rt_heap_strdup_c` IN THE COLLECTED HEAP, and the defer road
@@ -42,7 +42,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # whole file exactly once.  Adding it to `gc_cell_visit`'s first arm took the 340-arm band from 6 red to 0 red with
 # nothing traded.  ⛔ DO NOT ALSO ADD `DT_SNUL`: it is `0x00` with NO heap payload, `gc_cell_visit` is applied
 # SPECULATIVELY at every 8-byte step of the spine walk, and admitting a zero tag would make any zero word pair
-# whose second word lands in the arena look like a cell -- the collector GUESSING, which CEO-812 froze out.  That
+# whose second word lands in the arena look like a cell -- the collector GUESSING, which R-812 froze out.  That
 # half is an ARGUMENT from the tag layout and NOT a measurement, and it is labelled as one wherever it appears.
 #
 # ⭐ IT IS ALREADY RUN, AND SAYING SO IS THE POINT -- `make test-arena` SWEEPS EVERY `../harness/scripts/test_gate_gc_*.sh`
@@ -60,14 +60,14 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # four spellings) and NOT ON THE ARGUMENT THAT IT WOULD NOW BE GREEN -- it was RE-WALKED ON THAT TREE FIRST, at
 # `GC_BAND_FULL=1`: 340 arms, 6 red -> 0 red, and the 334 that were already green STAYED GREEN, nothing traded.
 # ⛔ THE HOLD-OUT IS THE REUSABLE PART, NOT THE WIRING: a gate held out of the blocking set must say so in its own
-# header, name the cure it waits on, and carry the one line that wires it -- otherwise it is the CEO-381 class, a
+# header, name the cure it waits on, and carry the one line that wires it -- otherwise it is the R-381 class, a
 # gate that exists and grades nothing, and no reader can tell that from an oversight.  This block is what that
 # declaration looks like after it is discharged; the wiring line now lives in `test-sequential` beside the other
 # `test_gate_gc_*` arms, with its measured duration and this same history in its provenance comment.
 #
 # BAND: default 0 1 2 3 4 5 6 8 16 25.  `GC_BAND_FULL=1` walks the full 17 points to 50, for a base-vs-head
 # reading rather than a per-landing arm.
-# ⛔⭐ WHY 16 AND 25 ARE IN THE DEFAULT THOUGH NO RED ON THIS POPULATION HAS EVER BEEN ABOVE 8 (ceo CEO-1024,
+# ⛔⭐ WHY 16 AND 25 ARE IN THE DEFAULT THOUGH NO RED ON THIS POPULATION HAS EVER BEEN ABOVE 8 (R-1024,
 # measured by hq_raku and paid for by reversing their own green): the fleet graded GC health at stress 1, 3 and
 # 5; hq_raku went to 16 on the raku rungs at the tiny arena and lost 65 gradings over 36 DISTINCT PROGRAMS,
 # every one exit 0 with a plausible wrong answer.  A BAND THAT ENDS WHERE THE KNOWN DEFECTS START MEASURES THE

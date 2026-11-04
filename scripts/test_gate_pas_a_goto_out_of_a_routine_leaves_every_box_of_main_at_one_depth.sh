@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_goto_out_of_a_routine_leaves_every_box_of_main_at_one_depth.sh -- in a program whose routines goto a label of the
 # main block, every box of main is entered at ONE stack depth, however many times the loop around a call brings it back
-# (row pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# (row pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, mode 4. After every call to a routine the lowerer tests the non-local-goto flag, and it tested
 # __pas_nlg <> 0 with the label dispatcher on the test's GAMMA. The dispatcher sits in a later run of the zd depth plan, so the plan

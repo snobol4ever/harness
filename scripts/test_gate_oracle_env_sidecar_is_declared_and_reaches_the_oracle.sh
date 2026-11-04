@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_oracle_env_sidecar_is_declared_and_reaches_the_oracle.sh -- THE ORACLE'S SIZE IS DECLARED BESIDE THE UNIT AND THE RUNNER PASSES IT
-# (ceo CEO-1353, RULES.md clause 8 (g)(3); the coo's approval 2026-09-28 17:1x: "a runner that drops the env reds, and an unadmitted knob
+# (R-1353, RULES.md clause 8 (g)(3); the coo's approval 2026-09-28 17:1x: "a runner that drops the env reds, and an unadmitted knob
 # refuses rc 2"). A unit whose oracle needs more than its own default declares the knob in <stem>.oracle_env, one line
 # NAME<TAB>VAR=VALUE[ VAR=VALUE], read by lib_declared_arena.sh's declared_oracle_env_beside through
 # corpus_suite_harness.oracle_env_declarations -- the one reader.

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_sno_host_minus_one_answers_the_memory_statistics.sh -- HOST(-1,n), n = 0..7, answers SPITBOL's eight memory
-# statistics with SCRIP's OWN numbers, and a refused selector raises ERROR 254 as it does under the oracle (ceo CEO-1397; Lon 2026-10-02, in-chat
-# to the ceo: "fix all the real gaps and ignore the expected differences").
+# statistics with SCRIP's OWN numbers, and a refused selector raises ERROR 254 as it does under the oracle (R-1397; Lon 2026-10-02, in-chat
+# to the officer: "fix all the real gaps and ignore the expected differences").
 #
 # ⛔⭐ FOUND ON spitbol_x64_tests/gcbuster.sbl, THE ONE X64T RED: SCRIP's HOST had no arm for a negative selector and answered
 # null, so MEMINCB, DATABTS, BASEMEM, TOPMEM, STACKSIZ, STACKCUR, WORDSIZE and STACKMAX stayed null and the program's &DUMP
 # omitted eight variables -- a SHAPE difference. The VALUES are the implementation's own (memory increment, heap cap, base and
 # top addresses, stack size, stack in use, word size, stack high-water mark) and differ by allocator and address space, so they
-# are ORACLE IDENTITY (CEO-1344) and masked in the package's ALL.mask; what this gate pins is that every selector ANSWERS and
+# are ORACLE IDENTITY (R-1344) and masked in the package's ALL.mask; what this gate pins is that every selector ANSWERS and
 # the answers stand in the relations SPITBOL's own stand in. SPITBOL's dispatcher is osint/syshs.c case -1 (0 memincb, 1 databts,
 # 2 basemem, 3 topmem, 4 stacksiz - 400, 5 stack in use, 6 sizeof(long), 7 stack high-water mark, any other selector or a
 # non-integer one EXIT_1, which sbl reports as ERROR 254 'erroneous argument for host'; a missing or null selector reads 0 and a
@@ -70,7 +70,7 @@ graded=$((graded+1))
 arm "m3-prints-the-oracles-lines" "$(tr '\n' '|' < "$T/ora.out")" "$(tr '\n' '|' < "$T/m3.out")"
 arm "m4-prints-the-oracles-lines" "$(tr '\n' '|' < "$T/ora.out")" "$(tr '\n' '|' < "$T/m4.out")"
 arm "detector-refused-selectors-raise-254-in-both-modes" "m3=3/0 m4=3/0" "m3=$(grep -c '^selector .* fails 254$' "$T/m3.out")/$(grep -c 'a bad selector answered' "$T/m3.out") m4=$(grep -c '^selector .* fails 254$' "$T/m4.out")/$(grep -c 'a bad selector answered' "$T/m4.out")"
-echo "graded=$graded FAIL=$fail  (expectation cut from $SBL -bf at run time; the values themselves are oracle identity, CEO-1344, and are never compared here)"
+echo "graded=$graded FAIL=$fail  (expectation cut from $SBL -bf at run time; the values themselves are oracle identity, R-1344, and are never compared here)"
 [ "$graded" = 4 ] || refuse "expected 4 arms, graded $graded"
 if [ "$fail" -ne 0 ]; then echo "GATE FAIL(1) [$NAME]: $fail/$graded"; exit 1; fi
 echo "GATE PASS(0) [$NAME]: $graded/$graded"

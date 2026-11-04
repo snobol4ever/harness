@@ -12,7 +12,7 @@
 #     walks every slot, must read dearer than the keyed ask by more than 100,000,000 instructions -- an instrument that cannot see a full walk is refused rc 2.
 #   ARM 3 (collection): a 600-fact table asserted, asked, half retracted and asked again, then extended, under SCRIP_GC_STRESS=1 at a 128 KB window (a collection at every
 #     safe point; the index block is reached only through the db record, which the collector moves), answers as swipl in both modes.
-# The answers arm is the swipl comparison; the cost arm is an instruction count (CEO-1785/1786), never a clock.
+# The answers arm is the swipl comparison; the cost arm is an instruction count (R-1785/1786), never a clock.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP"; exit 2; }

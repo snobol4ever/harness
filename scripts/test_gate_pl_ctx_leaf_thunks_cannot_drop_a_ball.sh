@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_pl_ctx_leaf_thunks_cannot_drop_a_ball.sh -- A PROLOG LEAF WHOSE C HELPER CAN SET A BALL MUST BE
 # REGISTERED WITH THE THUNK THAT READS ONE. rtx_plunify.s has two thunk macros over the same C calling
 # convention: PL_CTX_LEAF(nm) and PL_CTX_LEAF_BALL(nm, modop). Only the second stores 0 to CTX_BALL before the

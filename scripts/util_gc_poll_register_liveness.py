@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_gc_poll_register_liveness.py -- AT EVERY EMITTED SAFE POINT, IS A REGISTER READ AS A POINTER BEFORE IT IS
-NEXT WRITTEN?  (ceo, row gc-a-fast-witness-detector-grades-a-safe-point-conversion-batch-in-seconds-proven-against-
+NEXT WRITTEN?  (row gc-a-fast-witness-detector-grades-a-safe-point-conversion-batch-in-seconds-proven-against-
 the-known-bad-insertion; design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md; law RULES.md FACT RULE THE COLLECTOR
 GUESSES NOTHING.)
 
@@ -9,13 +9,13 @@ reference.sh arm (i) measured the standing population and then wrote down its ow
 after this one is to ask, per member, whether the reloaded register is read as a pointer before it is next
 written."  That gate proved 806 heap references sit in g_rtccb across collections and that 161 of them name a block
 THE COLLECTOR MOVED AND ARE LEFT UNREPAIRED, because nothing visits that block and nothing can (32 untagged words;
-visiting them is a conservative scan and CEO-812 froze that out).  A wrong word is only SPENT when the reload's
+visiting them is a conservative scan and R-812 froze that out).  A wrong word is only SPENT when the reload's
 register is then used as a pointer -- so the unrepaired count is an upper bound and this reader is what turns it
 into a defect list or closes the class.
 
-⛔ AND IT IS THE DISCRIMINATOR THE SITE CONVERSIONS NEED, WHICH IS THE MORE EXPENSIVE HALF.  CEO-1107: choosing
+⛔ AND IT IS THE DISCRIMINATOR THE SITE CONVERSIONS NEED, WHICH IS THE MORE EXPENSIVE HALF.  R-1107: choosing
 polls by the callee's DECLARED RETURN CLASS put 77 in and cost 57 Icon programs, because the return class says what
-the callee RETURNS and nothing about what is ALREADY LIVE in a register across the site.  CEO-1110: a 54-witness
+the callee RETURNS and nothing about what is ALREADY LIVE in a register across the site.  R-1110: a 54-witness
 6.8-second sweep cleared 14 sites that still cost 7 programs, so THE SWEEP IS NOT SUFFICIENT EITHER.  Both
 instruments ask about the program's OUTPUT.  This one asks about the emitted instruction stream, which is where the
 defect is, and it is static: no arena, no stress, no load, no rungs -- so it never competes for the board channel
@@ -54,8 +54,8 @@ where it points, and the POINTER total is printed BOTH ways so a reader cannot l
 reload (x86_asm.h 395-398) is the FIRST instruction after the poll call and it is itself a WRITE of r8.  A walk that
 starts at the call's next instruction therefore stops at once and calls r8 DEAD -- and the first reading over 54
 witnesses said exactly that, r8 DEAD at all 2889 safe points, which would have retired a standing 161-unrepaired
-finding on an artifact.  A DETECTOR ARM FAILS OPEN: it reads as "there was never a bug here" (CLAUDE.md, ceo
-CEO-480/481).  So for a register the reload DEFINES, the walk begins AFTER the reload block, because the gate's
+finding on an artifact.  A DETECTOR ARM FAILS OPEN: it reads as "there was never a bug here" (CLAUDE.md, the officer
+R-480/481).  So for a register the reload DEFINES, the walk begins AFTER the reload block, because the gate's
 question is about the RELOADED value.  Arm (g) of --selftest is that fail-once and it is the arm that matters.
 
 USAGE

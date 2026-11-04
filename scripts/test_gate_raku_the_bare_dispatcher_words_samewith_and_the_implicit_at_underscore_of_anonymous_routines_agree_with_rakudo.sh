@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_bare_dispatcher_words_samewith_and_the_implicit_at_underscore_of_anonymous_routines_agree_with_rakudo.sh -- callsame / nextsame / nextwith / samewith WITHOUT PARENTHESES, AND `@_` / `%_` IN AN ANONYMOUS SUB OR BLOCK (and `%_` in a named sub)
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; first refusals of the Roast files that do not compile: nextsame 9, callsame 5 (26 files use the family), @_ 10, %_ 4).
+# (row raku-every-suite-to-100-under-nonet-r-1266; first refusals of the Roast files that do not compile: nextsame 9, callsame 5 (26 files use the family), @_ 10, %_ 4).
 #
 # THE DEFECTS, each measured against Rakudo: the bare words callsame, nextsame (no parentheses) were read as VARIABLES ("variable 'callsame' is read but never assigned"), though callsame() and callwith(...) worked; `nextsame` did not return from the method (Rakudo: it
 # calls the next candidate and never comes back), so the statements after it ran; `nextwith(args)` was undefined; `samewith(args)` (call the enclosing routine again) was undefined ("error 22: undefined function called"); `@_` was bound in a NAMED sub without a signature but not in an anonymous sub or

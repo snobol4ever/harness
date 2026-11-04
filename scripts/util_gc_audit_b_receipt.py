@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""util_gc_audit_b_receipt.py -- THE ONE READER OF A PASS-B LOG AGAINST THE HOLDER LEDGER (cfo 2026-09-27, CEO-1307).
+"""util_gc_audit_b_receipt.py -- THE ONE READER OF A PASS-B LOG AGAINST THE HOLDER LEDGER (cfo 2026-09-27, R-1307).
 
     util_gc_audit_b_receipt.py holders ERRFILE SO DECL      the auditor gate's listing: HOLDER <name> <count> <ledger status>,
                                                              then OPENROWS and TOTALHOLDERS (the gate greps these lines)
     util_gc_audit_b_receipt.py receipt LOG SO [DECL]        an HQ's receipt: candidates=N findings=M audited=A, one UNCLOSED
                                                              line per holder that counts, rc 0 when findings=0, rc 1 otherwise
 
-WHY ONE FILE.  CEO-1307 ruled that a receipt of the auditor-retirement row counts FINDINGS, the candidates whose holder the
+WHY ONE FILE.  R-1307 ruled that a receipt of the auditor-retirement row counts FINDINGS, the candidates whose holder the
 ledger does not close, beside the raw CANDIDATE count kept visible -- ARCH-GC section 9's grant counts only findings that
 survived the lane owner's reading.  The auditor gate already resolved holders this way inline; a second copy for the receipts
 would be the drift this fleet keeps paying for, so the gate calls this file and so does every HQ.
@@ -18,7 +18,7 @@ serial (lnv.3) is dropped, because it moves whenever its file gains or loses a s
 
 WHAT CLOSES A HOLDER.  holders mode reports the ledger status as the gate has always read it.  receipt mode counts a candidate
 as a FINDING unless its holder is DECLARED: an UNDECLARED holder, an OPEN row, and a CURED holder named again (REGRESSED -- a
-receipt certifies that the cure still holds) all count.  Statics and heap interiors are never declared by population (CEO-1307
+receipt certifies that the cure still holds) all count.  Statics and heap interiors are never declared by population (R-1307
 (iii)); the stack populations are, with their measured classes in the ledger's reasons.
 
 Deleted with the auditor: it is on the retirement row's deletion list.

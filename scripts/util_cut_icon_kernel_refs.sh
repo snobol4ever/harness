@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # util_cut_icon_kernel_refs.sh -- CUT A RUN REF FROM THE ARIZONA ORACLE FOR EVERY ICON KERNEL AND DEMO,
-# per THE KERNEL CONVENTION (RULES.md § FACT RULE, Lon 2026-09-11 16:3x CDT, CEO-567) and the ceo's
-# CEO-609 ruling that a kernel or demo WITHOUT a ref is owed A REF -- cut from iconx and recorded --
-# never absorption into the rungs (CEO-565 forbids a second copy; benchmarks/ and demos/ are the only
+# per THE KERNEL CONVENTION (RULES.md § FACT RULE, Lon 2026-09-11 16:3x CDT, R-567) and the officer's
+# R-609 ruling that a kernel or demo WITHOUT a ref is owed A REF -- cut from iconx and recorded --
+# never absorption into the rungs (R-565 forbids a second copy; benchmarks/ and demos/ are the only
 # trees carrying .s artifacts and the SPEED axis, and a rung suite file is a CONTAINER).
 #
 #   bash ../harness/scripts/util_cut_icon_kernel_refs.sh                 # CENSUS ONLY: classify, write nothing
@@ -44,13 +44,13 @@
 # exactly ONE NAMED outcome and never a silent skip:
 #   MODULE         -- no `procedure main` and no `link` that could supply one. A library module is not a
 #                     kernel, is never run alone, and is NEVER owed a ref (options/post/shuffle).
-#   HAS_REF        -- a NAME.ref already sits beside it. Owes nothing (CEO-609).
-#   WRAPPER_IN_KERNEL / TIMING_IN_KERNEL -- CEO-567 CLAUSE 1 UNMET, in its two shapes. WRAPPER_IN_KERNEL:
+#   HAS_REF        -- a NAME.ref already sits beside it. Owes nothing (R-609).
+#   WRAPPER_IN_KERNEL / TIMING_IN_KERNEL -- R-567 CLAUSE 1 UNMET, in its two shapes. WRAPPER_IN_KERNEL:
 #                     the source links `post` or calls Init__/Term__ -- the 1993 Icon benchmarking
 #                     wrapper is LINKED INTO the kernel and prints the oracle's version string, the
 #                     HOSTNAME, &features, elapsed time and storage/collection counts TO STDOUT, mixed
 #                     with the program's own output -- and reassigns `write`/`writes` to suppress that
-#                     output entirely unless $OUTPUT is set. That is exactly the defect CEO-567 outlawed
+#                     output entirely unless $OUTPUT is set. That is exactly the defect R-567 outlawed
 #                     (clauses 1 and 2), and while it stands clause 3 is UNREACHABLE: a ref cut from
 #                     that stream pins implementation identity no other engine can reproduce. Named as
 #                     OWED with its cause, never minted. TIMING_IN_KERNEL: the source calls a timing
@@ -98,7 +98,7 @@
 # whose first tab-separated column is the root-relative path of a kernel a ref is the wrong instrument
 # for; those rows are reported RULED_UNGRADABLE and skipped at mint time whatever the run says.
 #
-# ⛔ THE SHOOTOUT FIVE ARE SKIPPED BY DEFAULT AND THE SKIP IS PRINTED, NEVER SILENT (CEO-609: "The
+# ⛔ THE SHOOTOUT FIVE ARE SKIPPED BY DEFAULT AND THE SKIP IS PRINTED, NEVER SILENT (R-609: "The
 # shootout five stay the cfo's row and become kernel-with-ref when it lands; the census counts them until
 # then and that is honest"). --no-skip-shootout walks them anyway for whoever holds that row.
 #
@@ -227,7 +227,7 @@ row() { # <root> <rel> <outcome> <bytes> <reason>
 }
 echo "ICON KERNEL REF CENSUS -- oracle: $ORACLE_ID"
 echo "roots: ${ROOTS[*]}   mode: $([ "$APPLY" -eq 1 ] && echo APPLY || echo 'CENSUS (writes nothing)')   timeout=${TIMEOUT}s max=${MAX_BYTES}B"
-[ "$SKIP_SHOOTOUT" -eq 1 ] && echo "⛔ SKIPPING shootout/ -- the shootout five are the cfo's row (CEO-609); --no-skip-shootout to walk them."
+[ "$SKIP_SHOOTOUT" -eq 1 ] && echo "⛔ SKIPPING shootout/ -- the shootout five are the cfo's row (R-609); --no-skip-shootout to walk them."
 printf '%-14s %-44s %-21s %8s  %s\n' tree program outcome bytes reason
 for root in "${ROOTS[@]}"; do
   UNG="$C/$root/UNGRADABLE.tsv"
@@ -243,7 +243,7 @@ for root in "${ROOTS[@]}"; do
       row "$root" "$rel" RULED_UNGRADABLE - "ruled in $root/UNGRADABLE.tsv -- a ref is the wrong instrument for it"; continue
     fi
     if [ -f "${icn%.icn}.ref" ]; then
-      row "$root" "$rel" HAS_REF "$(wc -c <"${icn%.icn}.ref" | tr -d ' ')" "owes nothing (CEO-609)"; continue
+      row "$root" "$rel" HAS_REF "$(wc -c <"${icn%.icn}.ref" | tr -d ' ')" "owes nothing (R-609)"; continue
     fi
     has_main=0; grep -qE '^[[:space:]]*procedure[[:space:]]+main[[:space:]]*\(' "$icn" && has_main=1
     has_link=0; grep -qE '^[[:space:]]*link[[:space:]]' "$icn" && has_link=1
@@ -253,7 +253,7 @@ for root in "${ROOTS[@]}"; do
     # ⛔ KEYED ON THE DECLARATION: the source links the 1993 wrapper, or calls its entry points. Structural,
     # so a kernel made pristine leaves this class by being cured and not by a byte pattern changing.
     if grep -qE '^[[:space:]]*link[[:space:]].*\bpost\b' "$icn" || grep -qE '\b(Init__|Term__)[[:space:]]*\(' "$icn"; then
-      why="links post / calls Init__-Term__: the 1993 benchmark wrapper is IN the kernel and writes the oracle version, hostname, &features, elapsed time and storage counts to STDOUT (CEO-567 clauses 1-2 unmet, so clause 3 is unreachable)"
+      why="links post / calls Init__-Term__: the 1993 benchmark wrapper is IN the kernel and writes the oracle version, hostname, &features, elapsed time and storage counts to STDOUT (R-567 clauses 1-2 unmet, so clause 3 is unreachable)"
       sd=""; [ -f "${icn%.icn}.std" ] && sd=" -- the NAME.std beside it is upstream's own Icon 8.10 self-benchmark dump, not this program's output"
       row "$root" "$rel" WRAPPER_IN_KERNEL - "$why$sd"; continue
     fi
@@ -276,7 +276,7 @@ for root in "${ROOTS[@]}"; do
     # ⛔ ON CODE, NEVER ON COMMENTS (hq_icon 2026-09-23): a kernel whose header EXPLAINS that its timing moved to the
     # generated wrapper names &time in prose and was refused as TIMING_IN_KERNEL. Icon comments run from # to end of line.
     if sed 's/#.*//' "$icn" | grep -qE '&time|&clock|&now'; then
-      row "$root" "$rel" TIMING_IN_KERNEL - "the kernel calls a timing builtin (&time/&clock/&now) and writes the reading to stdout -- CEO-567 clause 1 unmet (RULES.md: 'no source in it calls a timing or iteration builtin'), so clause 3 is unreachable until the wrapping is generated around a pristine kernel instead"; continue
+      row "$root" "$rel" TIMING_IN_KERNEL - "the kernel calls a timing builtin (&time/&clock/&now) and writes the reading to stdout -- R-567 clause 1 unmet (RULES.md: 'no source in it calls a timing or iteration builtin'), so clause 3 is unreachable until the wrapping is generated around a pristine kernel instead"; continue
     fi
     o1="$W/$b.1"; o2="$W/$b.2"
     run_once "$rel" "$root" "$o1"; rc1=$?

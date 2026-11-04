@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_apply_macros_expands_a_loaded_units_phrase_goals_at_lowering_and_a_run_time_phrase_checks_its_lists_as_swipl.sh -- library(apply_macros) EXPANDS phrase GOALS WHEN A UNIT IS LOADED, AND THE RUN-TIME phrase CHECKS ITS LISTS (ceo CEO-1930, hq_icon on the SWI umbrella; the cto's ruling ARCH-PROLOG-DATABASE.md
+# test_gate_pl_swi_apply_macros_expands_a_loaded_units_phrase_goals_at_lowering_and_a_run_time_phrase_checks_its_lists_as_swipl.sh -- library(apply_macros) EXPANDS phrase GOALS WHEN A UNIT IS LOADED, AND THE RUN-TIME phrase CHECKS ITS LISTS (R-1930, hq_icon on the SWI umbrella; the cto's ruling ARCH-PROLOG-DATABASE.md
 # section 14; swipl 9.0.4). With the directive use_module(library(apply_macros)) in a unit, swipl rewrites a phrase/2,3 (and call_dcg/3) goal in a CLAUSE BODY when it is loaded: a terminal (the empty list,
 # a proper list, a string) becomes a unification, a plain nonterminal the direct call with the two extra arguments and NO list check, a control construct (comma, semicolon, arrow, soft cut, braces,
 # cut) or a partial list is left for the real phrase/3, which raises type_error(list, X) on an argument that is not a variable, a cons or []; expand_goal/2 and expand_term/2 give the same rewrites; a

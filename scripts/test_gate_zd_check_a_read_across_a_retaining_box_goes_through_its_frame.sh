@@ -2,7 +2,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_zd_check_a_read_across_a_retaining_box_goes_through_its_frame.sh -- A GREEN READING THAT CAN FAIL AND IS SHOWN TO HAVE BEEN EXERCISED
 # (the coo's 14:4x audit of the closed row zsm-match-defer-gamma-depth-..., the cto's row zd-check-a-read-across-a-retaining-box-reaches-its-cell-
-# through-a-frame-home-counted-and-able-to-fail-ceo-1925). The law: a box after a box the planner grades as retaining (a nonzero retains code, 1 to 11,
+# through-a-frame-home-counted-and-able-to-fail-r-1925). The law: a box after a box the planner grades as retaining (a nonzero retains code, 1 to 11,
 # the DEFERRED PATTERN among them) reads a cell produced before it through a frame home, never by a fixed rsp distance, because the retaining box's
 # live depth is not a compile-time constant. ZD-CHECK's READ arm holds the law but prints nothing when a read goes through the frame, so a green reading
 # never showed that a single read had been tested. THE INSTRUMENT is the verifier's per-graph line (SCRIP_ZD_CHECK=1, planner zeta_plan.cpp zd_place):
@@ -27,7 +27,7 @@
 # THE LAW (via_rsp 0 for the zero set and the PENDING set) is held at floor 0 for every language and code: CODE_FLOOR below is the table of exceptions, empty, and a
 # floor may only fall. --floors-zero grades with every floor 0 (today the same), --inject-rsp-read adds one synthetic rsp read to the SNOBOL4 board and must read RED
 # (the script's own negative control of the floor logic, not a seam in SCRIP).
-# THE RUNTIME ARMS (CEO-1680, a proper test, no seam in SCRIP): two witnesses whose retained extent takes two or more sizes across one read -- a SNOBOL4 variable
+# THE RUNTIME ARMS (R-1680, a proper test, no seam in SCRIP): two witnesses whose retained extent takes two or more sizes across one read -- a SNOBOL4 variable
 # holding a one-node pattern then alternations of ARBNOs, the capture read after the DEFER inside the open match (gdb: the depth at the capture takes 152, 520, 424
 # and 712 across the calls); an Icon suspending procedure whose call to a generator holds a frame for one argument, fails for another and returns plain for a third,
 # a literal read across it -- run in mode 3 and mode 4 against text cut from SPITBOL (-bf) and iconx, and must show crossing reads, none at an rsp distance.

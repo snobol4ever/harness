@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_prolog.sh -- THE CROSS-PROOF for Prolog (row bench-rivals-prolog), mirroring
 # bench_triangulate_snobol4.sh's architecture per ARCH-BENCH-CAMPAIGN-README-TABLES.md § THREE-ANGLE
 # TRIANGULATION. Runs angle 1 (test_bench_prolog_timed.sh -- fixed TIME, live-searched iters) and angle 2
@@ -13,8 +13,8 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # DECLARED (a named line in EXCLUDED.tsv); an UNPROVEN row satisfies neither, by design, so a kernel stuck
 # at UNPROVEN must get its own EXCLUDED.tsv line naming why -- this script never writes that file itself.
 #
-# ⛔⛔ THIS WARNING WAS RETIRED BY ceo ON 2026-08-30 AND IS HEREBY REINSTATED — THE RETIREMENT WAS MADE
-# ON A MEASUREMENT OF MINE THAT WAS WRONG, AND I AM THE ONE WHO SUPPLIED IT (hq_B). ceo's note read
+# ⛔⛔ THIS WARNING WAS RETIRED BY the officer ON 2026-08-30 AND IS HEREBY REINSTATED — THE RETIREMENT WAS MADE
+# ON A MEASUREMENT OF MINE THAT WAS WRONG, AND I AM THE ONE WHO SUPPLIED IT (hq_B). the officer's note read
 # "STALE WARNING RETIRED ... the fixed-iteration angles are AVAILABLE". They are NOT. I had reported that
 # 50 repeated entries run clean in both modes; that is true and it is IRRELEVANT, because the repro I ran
 # was tail-recursive and the kernels are not. Running the real instrument afterwards, m3 CRASHES ON ALL 21
@@ -66,7 +66,7 @@ B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
 PDIR="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
 TOL="${TOL_PCT:-10}"
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple (s266)." >&2; exit 2; }
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1281)." >&2; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)." >&2; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP)." >&2; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED: bench corpus missing ($B)." >&2; exit 2; }
 WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build." >&2; exit 2; }
@@ -89,9 +89,9 @@ A1_OUT="$(KERNELS="${KERNELS:-}" bash "$HERE/test_bench_prolog_timed.sh" 2>/dev/
 # ⛔ SAME FIRST-BLOCK-ONLY RULE AS parse() BELOW, AND FOR THE SAME REASON.  NF>=6 happens to exclude
 #   angle 1's 5-field basis grids TODAY, but that is the same column-count coincidence documented at
 #   parse(): one column either way and the live-kernel list silently grows duplicates from the N grid.
-measured_kernels=$(printf '%s\n' "$A1_OUT" | awk 'done{next} /^-{5,}/{if(!seen){started=1;seen=1} next} started&&NF==0{started=0;done=1;next} started&&NF>=7{print $1}')   # 7 since the gplc column (CEO-1281): kernel + five rates + check
+measured_kernels=$(printf '%s\n' "$A1_OUT" | awk 'done{next} /^-{5,}/{if(!seen){started=1;seen=1} next} started&&NF==0{started=0;done=1;next} started&&NF>=7{print $1}')   # 7 since the gplc column (R-1281): kernel + five rates + check
 # ⛔ A TRUNCATED KERNEL POPULATION REFUSES, BEFORE ANGLE 2 SPENDS A SECOND ON IT (row prolog-bench-triangulation-silently-dropped-14-
-# kernels-and-every-verdict, ceo CEO-1309, the coo 2026-09-27): this script took its kernel set from whatever angle 1 printed, so an
+# kernels-and-every-verdict, R-1309, the coo 2026-09-27): this script took its kernel set from whatever angle 1 printed, so an
 # angle 1 killed, timed out or crashed part-way wrote a shorter table and the triangulation silently graded the survivors -- 14 kernels
 # and every verdict dropped once. Angle 1 prints one row per kernel it examines, a rate row or a SKIP row, over every $B/*.pl with a
 # .ref beside it narrowed by KERNELS (test_bench_prolog_timed.sh's own loop), so that set is the population and a table naming fewer
@@ -146,7 +146,7 @@ while read -r k n g gp s m3 m4 rest; do
   [ -z "$k" ] && continue
   A2["$k:gnu"]="$g"; A2["$k:gplc"]="$gp"; A2["$k:swi"]="$s"; A2["$k:m3"]="$m3"; A2["$k:m4"]="$m4"; KSEEN["$k"]=1; A2N["$k"]="$n"
 done < <(printf '%s\n' "$A2_OUT" | parse 7)
-# ⭐ THE WORK BASIS (ceo CEO-1281, 2026-09-26; RULES.md § THE TWO-NUMBER BENCHMARK BASIS: multiples are computed on WORK). The CPU-rate
+# ⭐ THE WORK BASIS (R-1281, 2026-09-26; RULES.md § THE TWO-NUMBER BENCHMARK BASIS: multiples are computed on WORK). The CPU-rate
 #   cross-proof above compares N / process CPU at two different N, so a fixed cost inside the process -- mode 3's in-process compile,
 #   ~130 ms on deriv -- reads as a per-iteration cost that shrinks with N, and the two angles DISAGREEd on mode 3 for 14 of 23 kernels
 #   at 10% while agreeing on mode 4 (the same code with the compile outside the process). The self-measured bracket excludes it.
@@ -164,7 +164,7 @@ while read -r k g gp s m3 m4 rest; do
 done < <(printf '%s\n' "$A2_OUT" | parseblk 2 6)
 
 {
-  echo -e "# triangulation TSV -- $TS -- TOL_PCT=$TOL (flat, UNBAKED) -- never hand-edit, regenerate via bench_triangulate_prolog.sh -- ratio/verdict are the CITATION cross-proof: angle 2 over angle 1 on the self-measured WORK per iteration (us/it, the two-number basis) when both brackets report, else on the CPU rates (basis says which); angle1_rate/angle2_rate are the CPU rates (iterations/s) and cpu_ratio/cpu_verdict their own cross-proof; the declared sidecars ride the SCRIP command lines as -d/-s switches (CEO-1281)"
+  echo -e "# triangulation TSV -- $TS -- TOL_PCT=$TOL (flat, UNBAKED) -- never hand-edit, regenerate via bench_triangulate_prolog.sh -- ratio/verdict are the CITATION cross-proof: angle 2 over angle 1 on the self-measured WORK per iteration (us/it, the two-number basis) when both brackets report, else on the CPU rates (basis says which); angle1_rate/angle2_rate are the CPU rates (iterations/s) and cpu_ratio/cpu_verdict their own cross-proof; the declared sidecars ride the SCRIP command lines as -d/-s switches (R-1281)"
   echo -e "kernel\tengine\tangle1_rate\tangle2_rate\tratio\tverdict\tdisk_inblock\tdisk_oublock\tbasis\tangle1_work_us_it\tangle2_work_us_it\twork_ratio\tcpu_ratio\tcpu_verdict"
 } > "$OUT_TSV"
 
@@ -182,7 +182,7 @@ for k in $kernels; do
   row_bits=""
   for eng in gnu gplc swi m3 m4; do
     r1=$(dehuman "${A1["$k:$eng"]:-}"); r2=$(dehuman "${A2["$k:$eng"]:-}")
-    w1=$(dehuman "${A1W["$k:$eng"]:-}"); w2=$(dehuman "${A2W["$k:$eng"]:-}")   # both angles print WORK PER ITERATION since CEO-1281 (each over its own count)
+    w1=$(dehuman "${A1W["$k:$eng"]:-}"); w2=$(dehuman "${A2W["$k:$eng"]:-}")   # both angles print WORK PER ITERATION since R-1281 (each over its own count)
     cpu_ratio=""; cpu_verdict=""; work_ratio=""; work_verdict=""
     if [ -n "$r1" ] && [ -n "$r2" ] && [ "$r1" != "0" ]; then
       cpu_verdict=$(awk -v a="$r1" -v b="$r2" -v t="$TOL" 'BEGIN{ ratio=b/a; lo=(100-t)/100; hi=(100+t)/100; print (ratio>=lo && ratio<=hi) ? "AGREE" : "DISAGREE" }')
@@ -206,7 +206,7 @@ echo
 grid_incomplete=0
 perf_grid_begin "FACT-RULE grid: m3 and m4 vs gnu ("$(gprolog_bin)" --consult-file, the byte-code WAM), vs gplc (GNU Prolog compiled native) and vs swi (angle 1's self-measured WORK per iteration, us/it -- the two-number basis, a COST: rival us / SCRIP us, axis named once here; RT_OPT=-O0)"
 # ⛔ perf_row_or_refuse takes (LABEL, REF, OURS) as COSTS (lower is faster; multiple = ref / ours): the rival's us/it first, SCRIP's second.
-#   The rate form this grid carried until CEO-1281 passed (ours, ref) RATES, which yields the same multiple for a rate and the inverse
+#   The rate form this grid carried until R-1281 passed (ours, ref) RATES, which yields the same multiple for a rate and the inverse
 #   for a cost -- so the order below is not cosmetic.
 for k in $kernels; do
   wg=$(dehuman "${A1W["$k:gnu"]:-}"); wp=$(dehuman "${A1W["$k:gplc"]:-}"); ws=$(dehuman "${A1W["$k:swi"]:-}"); w3=$(dehuman "${A1W["$k:m3"]:-}"); w4=$(dehuman "${A1W["$k:m4"]:-}")
@@ -222,13 +222,13 @@ perf_grid_end || grid_incomplete=1
 
 echo
 echo "TSV: $OUT_TSV"
-if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation prolog "$OUT_TSV" || { echo "⛔ bench_triangulate_prolog: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, CEO-331)"; exit 2; }; fi
+if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation prolog "$OUT_TSV" || { echo "⛔ bench_triangulate_prolog: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, R-331)"; exit 2; }; fi
 if [ "$any_disagree" -eq 1 ]; then
   echo "⛔ DISAGREE present -- VOID: do not publish or cite those kernel/engine cells until re-measured."
   exit 1
 fi
 if [ "$grid_incomplete" -eq 1 ]; then
-  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (CEO-676), so do not publish or cite this grid until every cell measures."
+  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (R-676), so do not publish or cite this grid until every cell measures."
   exit 1
 fi
 echo "no DISAGREE (measured cells, if any, all AGREE; UNPROVEN cells need an EXCLUDED.tsv line, not a citation)."

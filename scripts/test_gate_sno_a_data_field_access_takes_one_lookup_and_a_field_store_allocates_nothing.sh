@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_data_field_access_takes_one_lookup_and_a_field_store_allocates_nothing.sh -- THREE DATA PATHS TREEBANK PAID FOR
-# (ceo 2026-09-25, CEO-1258; notebook section 18; 487,460 field reads, 83,988 field stores and 12,290 constructor calls per x256 run):
+# (2026-09-25, R-1258; notebook section 18; 487,460 field reads, 83,988 field stores and 12,290 constructor calls per x256 run):
 # (1) a field accessor call `n(x)` walked the type's field list with strcmp in rt_call_name_sn4 and then AGAIN byte by byte in
 # dat_field_get -- since this landing a direct-mapped inline cache keyed by the call site's name pointer and the instance's type
 # pointer, confirmed by one strcmp, returns the instance's cell (~50 Ir against ~190); (2) a field used as a VARIABLE (`n(x) = v`,

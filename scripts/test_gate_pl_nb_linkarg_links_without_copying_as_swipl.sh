@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_nb_linkarg_links_without_copying_as_swipl.sh -- nb_linkarg/3 STORES ITS VALUE WITHOUT COPYING AND WITHOUT TRAILING, AS
-# swipl 9.0.4 DOES (cfo 2026-10-14, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# swipl 9.0.4 DOES (cfo 2026-10-14, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # a78d3f64e answered nb_linkarg/3 with nb_setarg/3, which COPIES the value. library(pure_input) caches its freshly read list with
 # nb_linkarg(4, State, NewList) so the list's tail stays the attributed lazy variable; the copy's tail was a fresh plain variable, so on

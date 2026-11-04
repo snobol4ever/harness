@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_raku_callsame_callwith_nextsame_nextwith_open_the_next_candidate_from_the_box_agree_with_rakudo.sh -- THE REDISPATCH WORDS ARE AN OPEN ROAD, NOT A C ROAD INTO A BOX
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; CEO-1576, Lon 2026-10-09 verbatim: "It is easy to fix; instead of in C jumping to a BB, just return the address and have the BB that called
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1576, Lon 2026-10-09 verbatim: "It is easy to fix; instead of in C jumping to a BB, just return the address and have the BB that called
 # the C function do the jump instead.").
 #
 # THE DEFECT: callsame / nextsame / callwith / nextwith inside a method were by-name builtins whose C arm built a redispatch record in its own C frame, found the next candidate in the MRO and
-# entered it through invoke_method_proc -> rt_call_proc_descr. CEO-1576 deleted that C road into a box, so every redispatch died (rt_call_proc_descr: A__g reached a C road into a box, DELETED;
+# entered it through invoke_method_proc -> rt_call_proc_descr. R-1576 deleted that C road into a box, so every redispatch died (rt_call_proc_descr: A__g reached a C road into a box, DELETED;
 # rc 139): RakRungs class_method_say_replace_11 12 13 14 16 36.
-# THE CURE, the meth_call open road of CEO-1552 widened to the four words: frame_layout.c grants a redispatch call site the argv plus RK_REDISP_REC_SLOTS (the record meth_call carries);
+# THE CURE, the meth_call open road of R-1552 widened to the four words: frame_layout.c grants a redispatch call site the argv plus RK_REDISP_REC_SLOTS (the record meth_call carries);
 # bb_call_fn.cpp's open arm (bcfn_method_open_enter, now given its open function) calls by_name_dispatch.c rk_callsame_open / rk_callwith_open, which find the next candidate after the
 # enclosing record's found_idx, fill the frame record (callwith keeps self in the record and its own arguments in the grant: skip_mname 2), chain it from g_redisp_cur and RETURN THE ADDRESS
 # of the candidate's entry; the box enters it and lands through rk_method_land_gamma / _omega, which unchain the record. No candidate: the open declines and the C arm answers Nil (it answered

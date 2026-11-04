@@ -18,7 +18,7 @@
 # visitor refuses only where the collector's chain itself stopped short; (2) THE REFUSAL: on the SIG-shim witness, whose
 # run-time fragment polls are frameless today, every collection with a frameless running chain is refused, never
 # handed back as a shorter list (when the fragment class lands and frameless reads 0 the arm says there was nothing to
-# refuse); (3) the visitor and its callback type are declared once, in gc_heap.h; (4) THE COROUTINE START (the ceo's
+# refuse); (3) the visitor and its callback type are declared once, in gc_heap.h; (4) THE COROUTINE START (the officer's
 # order of 2026-10-09: rt_genp_spine_enter_n2 is the sanctioned coroutine start of a generator's co-expression thread, so
 # the collector names it): on hb_coexpr_parked every suspended body's chain that links to the stub's gamma or omega
 # label (published in rt_genp_n2_conts, a read-only record, so no text symbol splits the stub) ends there as the segment's start, so nosite reads 0, coroutine-start > 0 and the visitor refuses nothing.

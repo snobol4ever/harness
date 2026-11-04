@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# util_collection_asm_share.sh -- THE COLLECTION RUNS IN ASM (Lon 2026-10-15 13:3x CDT, in-chat to the ceo, verbatim: "Have the GC collection code
-# written in ASM versus C."; ceo CEO-1793). Books every instruction executed INSIDE a collection by layer, on three fixed witnesses that collect,
+# util_collection_asm_share.sh -- THE COLLECTION RUNS IN ASM (Lon 2026-10-15 13:3x CDT, in-chat, verbatim: "Have the GC collection code
+# written in ASM versus C."; R-1793). Books every instruction executed INSIDE a collection by layer, on three fixed witnesses that collect,
 # one per focus language, in both modes, and passes only when the C runtime's share of those instructions is at or under the bar.
 #
 # THE MEASUREMENT: ../harness/scripts/util_runtime_leaf_census.sh under callgrind with --collect-atstart=no --toggle-collect=gc_collect_ex, so the profile holds
@@ -14,14 +14,14 @@
 #
 # THE WITNESSES (each collects; counted with SCRIP_ZETA_TELEM=1 at SCRIP a2fbe4342): SNOBOL4 table_access.sno 21 collections and Prolog browse.pl
 # 166 at a 64 KB collector window (SCRIP_HEAP_KB, the WINDOW, as make test-arena uses it -- the program's own -d/-s come from its sidecars);
-# Icon geddump.icn 14 collections at its declared sizes (CEO-1792), graded in MODE 4 ONLY: valgrind 3.22 itself dies ("the 'impossible' happened",
+# Icon geddump.icn 14 collections at its declared sizes (R-1792), graded in MODE 4 ONLY: valgrind 3.22 itself dies ("the 'impossible' happened",
 # killed by a fatal signal) on Icon mode-3 runs under callgrind -- geddump and bench_icnstr_concat_table both, 2026-10-15, SCRIP 19e10ef38 -- while
 # both run clean outside valgrind. The collection is libscrip_rt code, the same in both modes, and SNOBOL4 and Prolog carry its mode-3 cells.
 #
 # OUTPUT: one COLLECTION_ASM line per cell, then
 #   COLLECTION_ASM_BOARD green=G red=R refused=U cells=N bar_c_runtime=B tree=<hash>
 # rc 0 every cell at or under the bar; rc 1 a cell above it; rc 2 a cell could not be measured (G+R+U=N asserted).
-# READ RED at SCRIP 19e10ef38 (2026-10-15, the ceo): table_access m3 87.15 / m4 88.71 percent C; browse m3 91.44 / m4 92.88; geddump m4 86.00.
+# READ RED at SCRIP 19e10ef38 (2026-10-15, the officer): table_access m3 87.15 / m4 88.71 percent C; browse m3 91.44 / m4 92.88; geddump m4 86.00.
 # COLLECTION_ASM_BAR overrides the bar (default 1.00 percent).
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
 refuse() { echo "⛔ REFUSED (rc=2): util_collection_asm_share: $*"; exit 2; }

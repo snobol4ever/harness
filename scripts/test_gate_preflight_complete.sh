@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_preflight_complete.sh -- ⭐ IS PHASE-0 PRE-FLIGHT ACTUALLY DONE?  Computed, never declared.
-# Every item of GOAL-CEO.md Phase 0 plus all three FIRING GATE conditions, each checked mechanically.
+# Every item of the archived ruling record Phase 0 plus all three FIRING GATE conditions, each checked mechanically.
 # ⛔ THE FIRING-GATE QUESTION CHECK WAS VOID UNTIL s264 AND IS THE REASON THIS HEADER EXISTS.  It read
 # `s4e_msg.sh fleet | grep -cE 'Q=[1-9]'` and compared the count to 0 -- but `fleet` prints a Q COLUMN in a
 # table and has never emitted the string "Q=<n>" anywhere, so the grep matched nothing on every possible

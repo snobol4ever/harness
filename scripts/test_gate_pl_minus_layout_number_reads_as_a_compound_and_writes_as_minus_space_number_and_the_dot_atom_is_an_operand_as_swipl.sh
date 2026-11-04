@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_minus_layout_number_reads_as_a_compound_and_writes_as_minus_space_number_and_the_dot_atom_is_an_operand_as_swipl.sh -- THE SWI DIALECT'S PREFIX MINUS BEFORE A NUMBER, READ AND WRITTEN, AND THE
-# DOT ATOM AS AN OPERAND (hq_packages, ceo CEO-1959; Trealla's issues_old_test0368 writeq(-(1)) and issues_old_test0252 writeq(-'A'+(.)+'B'), refs cut by swipl, and SWI core/test_write.pl write_misc:q_1,
+# DOT ATOM AS AN OPERAND (hq_packages, R-1959; Trealla's issues_old_test0368 writeq(-(1)) and issues_old_test0252 writeq(-'A'+(.)+'B'), refs cut by swipl, and SWI core/test_write.pl write_misc:q_1,
 # whose term_to_atom round trip of -(0) the writer change alone would have broken).
 # In the SWI dialect (swipl 9.0.4 and 10.1.5 alike): (1) the READER takes a minus as the sign of a number only when the number follows it DIRECTLY -- "-1" is the integer, "- 1", "-  1" and "-\n1" are the
 # compound -(1) (integer(- 1) is false, - 1 =:= -1, - 1 == -1 is false); the default (GNU/ISO) dialect keeps folding across layout, as GNU Prolog does. (2) The WRITER writes a numeric operand of the prefix

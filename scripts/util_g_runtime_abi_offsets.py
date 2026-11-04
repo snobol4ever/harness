@@ -2,7 +2,7 @@
 """util_g_runtime_abi_offsets.py [--check]
 
 g_runtime.abi is the block of the runtime's globals that asm leaves, the emitter's templates and the inline asm of the runtime address by
-byte offset from g_runtime (CEO-1561, the struct row; ceo ruling struct-plan-approved-bar-is-13: the offset-and-static-assert design).
+byte offset from g_runtime (R-1561, the struct row; ruling struct-plan-approved-bar-is-13: the offset-and-static-assert design).
 The block is the first member of g_runtime_t, so an offset is stable while the block's own members keep their order. This script reads
 the block's members from src/runtime/core/g_runtime_abi.h, asks the C compiler for each member's offsetof, and writes
 src/runtime/core/g_runtime_abi.inc: one `#define G_RT_OFF_<MEMBER> <n>` per member, usable from C, C++ and the cpp-processed asm. With

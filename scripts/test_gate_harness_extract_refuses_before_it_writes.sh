@@ -2,7 +2,7 @@
 # test_gate_harness_extract_refuses_before_it_writes.sh -- `corpus_suite_harness.py extract` of an entry that carries stdin, asked
 # without --out-in, refuses rc 2 AND WRITES NOTHING; with --out-in it writes the program, its .ref and its stdin.
 #
-# WHY (the coo 2026-10-03, on the ceo's report that SncM's trim_size_keyword_replace_1 and trim_dupl_size_replace_1 would not
+# WHY (the coo 2026-10-03, on the officer's report that SncM's trim_size_keyword_replace_1 and trim_dupl_size_replace_1 would not
 # extract by name): extract found both and refused, as it should, because each carries stdin -- but it wrote the program and its .ref
 # BEFORE the refusal, so an rc 2 left exactly the stdin-starved witness the refusal exists to prevent on disk, for any caller that read
 # the files and not the rc. The population is a scratch container of two entries, one with stdin and one without.

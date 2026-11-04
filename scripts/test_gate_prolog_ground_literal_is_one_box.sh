@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_prolog_ground_literal_is_one_box.sh -- A GROUND LITERAL TERM IS ONE BOX AND A CELL TABLE, NOT A BOX PER CELL (the cto, 2026-11-04, CEO-2121; TRIO row 5,
+# test_gate_prolog_ground_literal_is_one_box.sh -- A GROUND LITERAL TERM IS ONE BOX AND A CELL TABLE, NOT A BOX PER CELL (the cto, 2026-11-04, R-2121; TRIO row 5,
 # hakank_swi_stable_marriage). Before it a ground compound literal in a clause lowered to two LIT_INTEGER boxes and a $mkc leaf call per cell, about 180 lines of asm
 # and 90 KB of compiler memory per list element (MEASURED on 0150f42f3: a 40x40 pair of literal matrices made 1,007,187 lines against the empty clause's 414,640, and
 # the two 100x100 matrices of hakank_swi_stable_marriage never finished compiling in 429 s at 3.9 GB). Now lower_prolog.c serializes a ground compound that has a

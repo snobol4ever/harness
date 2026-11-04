@@ -46,7 +46,7 @@ refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -f "$RT_DIR/libscrip_rt.so" ] || refuse "no $RT_DIR/libscrip_rt.so -- cannot measure mode 4"
 { [ -f "$PKG/arc_driver.sno" ] && [ -f "$PKG/arc.inc" ]; } || { [ -f "$PKG/ARC_driver.sno" ] && [ -f "$PKG/ARC.sno" ]; } || refuse "no Gimpel ARC under $PKG -- pull corpus"
-ARC_D=arc_driver; [ -f "$PKG/$ARC_D.sno" ] || ARC_D=ARC_driver   # lower-case since Catspaw's SPITBOL form (CEO-1319)
+ARC_D=arc_driver; [ -f "$PKG/$ARC_D.sno" ] || ARC_D=ARC_driver   # lower-case since Catspaw's SPITBOL form (R-1319)
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 SBL="$(sbl_correctness_bin 2>/dev/null || true)"; [ -n "${SBL:-}" ] && [ -x "$SBL" ] || SBL=/home/resources/x64/bin/sbl
 [ -x "$SBL" ] || refuse "no sbl oracle -- cannot measure (a missing oracle prints a full false table)"

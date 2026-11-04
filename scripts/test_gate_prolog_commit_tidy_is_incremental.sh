@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_prolog_commit_tidy_is_incremental.sh -- A COMMIT'S TRAIL TIDY JUDGES EACH ENTRY ONCE PER SURVIVING CHOICE, NOT ONCE PER COMMIT (the cto, 2026-11-04, CEO-2122;
+# test_gate_prolog_commit_tidy_is_incremental.sh -- A COMMIT'S TRAIL TIDY JUDGES EACH ENTRY ONCE PER SURVIVING CHOICE, NOT ONCE PER COMMIT (the cto, 2026-11-04, R-2122;
 # TRIO row 5, hakank_swi_stable_marriage, the second class). x86_pl_tr_tidy (x86_call.cpp), run at every if-then-else commit and cut (bb_bound.cpp's UNMARK arm), walks the
-# trail from the surviving choice's mark to the top and drops every entry the trail test would not record under that choice. Before CEO-2122 every commit walked the whole
+# trail from the surviving choice's mark to the top and drops every entry the trail test would not record under that choice. Before R-2122 every commit walked the whole
 # segment again, so a run of commits under one choice (CLP(FD) propagation under a labeling choice point: trigger_prop/1, put_attr/3, do_queue/0) cost the trail's length
 # per commit: callgrind on problem 1 of the program read 85 percent of 196 G instructions inside unmark boxes, 34 percent in trigger_prop/1's alone. Now every choice carries its own
 # watermark, the trail top after the last walk under it, in the old-value words of its sentinel entry (the entry below its mark: {0, HB, DT_I, watermark}); a walk under r13 whose

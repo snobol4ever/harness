@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_one_runner_fixture_is_admitted_only_outside_the_shared_corpus.sh -- S4E_ONE_RUNNER_FIXTURE ADMITS A GATE'S SCRATCH
-# POPULATION AND NEVER THE SHARED CORPUS, IN BOTH COPIES OF THE ONE-RUNNER GUARD (ceo CEO-1302 (c), 2026-09-27, on the coo's COO-198
+# POPULATION AND NEVER THE SHARED CORPUS, IN BOTH COPIES OF THE ONE-RUNNER GUARD (R-1302 (c), 2026-09-27, on the coo's COO-198
 # report; row instruments-the-one-runner-fixture-exemption-is-admitted-only-for-a-population-outside-the-shared-corpus-...).
 #
 # ⛔⭐ WHY: lib_one_runner.sh returned 0 on the variable alone, and corpus_suite_harness.py's mirror admitted exactly the case it should

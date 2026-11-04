@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_sno_an_error_inside_eval_fails_that_eval.sh -- AN ERROR RAISED DIRECTLY IN AN EVALED EXPRESSION FAILS THAT EVAL (cfo 2026-10-23, CEO-1926;
+# test_gate_sno_an_error_inside_eval_fails_that_eval.sh -- AN ERROR RAISED DIRECTLY IN AN EVALED EXPRESSION FAILS THAT EVAL (cfo 2026-10-23, R-1926;
 # the cto's ruling (b): the innermost EVAL's &FNCLEVEL rides in the G_ERROR_EVAL_STAGE range, an errored EVAL a second range rt_eval_land turns into FAIL).
 # Every expectation is CUT FROM THE ORACLE, sbl -bf, at run time. BLOCKING: SCRIP m3 and m4 print what sbl prints for an error inside EVAL of a string
 # under a negation and an alternation (fails, &ERRTYPE 14), for EVAL of an unevaluated expression (the DT_X road, its own landing), at &ERRLIMIT 0 (fails, does not terminate), for a nested EVAL (only the innermost fails)

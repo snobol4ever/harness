@@ -26,8 +26,8 @@ G=sno_mode4_code_call_inherits_the_scc_taint
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "GATE UNPROVEN(2) [$G]: lib_oracle_flags.sh unloadable"; exit 2; }
 SBL="$(sbl_correctness_bin)"; [ -x "$SBL" ] || { echo "GATE UNPROVEN(2) [$G]: sbl -bf oracle absent"; exit 2; }
 GIM="$S4E/corpus/packages/snobol4/gimpel"
-# gimpel's COUNT and SEQ ship as count.inc and seq.inc (Catspaw's SPITBOL form under lower-case names, CEO-1319; NAME.INC the day before,
-# CEO-1315); the witness includes whichever the package ships, and grades the frequency-sort driver under its own spelling.
+# gimpel's COUNT and SEQ ship as count.inc and seq.inc (Catspaw's SPITBOL form under lower-case names, R-1319; NAME.INC the day before,
+# R-1315); the witness includes whichever the package ships, and grades the frequency-sort driver under its own spelling.
 inc_of() { local n e; for n in "$(printf '%s' "$1" | tr 'A-Z' 'a-z')" "$1"; do for e in inc INC sno; do [ -f "$GIM/$n.$e" ] && { printf '%s' "$n.$e"; return 0; }; done; done; return 1; }
 COUNT_F="$(inc_of COUNT)"; SEQ_F="$(inc_of SEQ)"; FRS_D=frsort_driver.sno; [ -f "$GIM/$FRS_D" ] || FRS_D=FRSORT_driver.sno
 [ -f "$GIM/$FRS_D" ] && [ -n "$COUNT_F" ] && [ -n "$SEQ_F" ] || { echo "GATE UNPROVEN(2) [$G]: gimpel package (frsort_driver, count, seq) missing at $GIM"; exit 2; }

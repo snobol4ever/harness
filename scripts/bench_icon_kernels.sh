@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_icon_kernels.sh -- THE TEN ICON KERNELS, re-measured on the TWO-NUMBER BASIS against BOTH
 # rivals: Arizona iconx (the reference implementation) and JCON jcont (Proebsting & Townsend's
-# Icon-to-JVM compiler).  Written hq_P 2026-09-10 for ceo CEO-490, on Lon's question of 2026-09-10
+# Icon-to-JVM compiler).  Written hq_P 2026-09-10 for R-490, on Lon's question of 2026-09-10
 # 09:1x, verbatim: "How does the speed of SCRIP compare to Arizona and JCON?"
 #
 # ⛔⭐⭐ WHAT THIS REPLACES, AND WHY THE OLD GRID COULD NOT SIMPLY BE RE-RUN.  README.md § Icon
@@ -30,7 +30,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #       ⭐ Set that 0.00009% beside the JVM's 35% and the choice of instrument makes itself.
 #       This is the instrument the README itself queued this re-measurement for.
 #   [B] WALL and CPU ms -- for ALL FOUR engines, because it is the ONLY instrument the JVM arm can be
-#       graded on at all.  ⛔ callgrind Ir REFUSES for jcont (ceo CEO-494): the same kernel measured
+#       graded on at all.  ⛔ callgrind Ir REFUSES for jcont (R-494): the same kernel measured
 #       1,069,787,424 then 1,443,104,013 Ir, a 35% spread from JIT decisions alone.
 #   ⛔ So `m4 x vs iconx` is an Ir multiple, `m4 x vs jcont` is a WALL multiple, each column says which,
 #   and the two are never combined into a ranking.
@@ -47,7 +47,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #
 # ⭐ THE TWO-NUMBER BASIS: OVERHEAD is the EMPTY ICON PROGRAM measured per engine on the SAME
 # instrument; WORK = total - OVERHEAD.  ⛔ THE JVM's WARM-UP IS OVERHEAD AND IS NEVER COUNTED AS WORK
-# (CEO-490).  ⛔ CEO-173: where OVERHEAD reaches 50% of an arm's reading the WORK multiple is REFUSED
+# (R-490).  ⛔ R-173: where OVERHEAD reaches 50% of an arm's reading the WORK multiple is REFUSED
 # and the labelled TOTAL-basis multiple prints in its place -- never both, never a quiet asterisk.
 # Measured here: empty-program wall is iconx 1 ms, m4 2 ms, m3 4 ms, jcont ~70 ms, so the refusal is
 # not hypothetical on this set -- it fires on the JVM arm of every short kernel.
@@ -74,7 +74,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # MEASURED: iconx 316,437 == 316,437 and one line; m4 2,932,358 == 2,932,358 and one line; jcont prints
 # TWO refs lines (298,665 and 366,447).  ⛔ An engine that fails this probe has its Ir arm REFUSED
 # outright -- never silently corrected by adding --trace-children, because for a JVM the traced number
-# is not a fixed reading, it is a different wrong reading (the JIT spread of CEO-494 is still there).
+# is not a fixed reading, it is a different wrong reading (the JIT spread of R-494 is still there).
 #
 # CORRECTNESS GATES THE NUMBER: every kernel's stdout is byte-compared against an iconx cut taken AT
 # RUN TIME.  An engine that answers differently gets NO multiple.  A wrong answer is never a fast one.
@@ -99,7 +99,7 @@ TSV_OUT="${TSV_OUT:-}"
 refuse() { echo "⛔ ICON KERNEL BOARD REFUSED (rc=2): $*" >&2; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "lib_oracle_flags.sh unloadable -- the ONE oracle-path authority (s200)."
 . "$HERE/lib_perf_fmt.sh"     2>/dev/null || refuse "lib_perf_fmt.sh unloadable -- the ONE authority for printing a multiple (s266)."
-# CEO-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
+# R-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
 # from captured multiples, so the stamp must not land INSIDE a cell -- it is emitted once, above, with the
 # shared axes, which is where the FACT RULE says a grid names anything it shares.
 PERF_STAMP_OFF=1
@@ -250,14 +250,14 @@ echo "  ⚠ SHARED BOX: 1/5/15-min load average at start = $LOADAVG. Instrument 
 echo "    depend on the neighbours, and these readings reproduce byte-identically across runs); instrument [B] wall is NOT -- read"
 echo "    every ms column and every 'x vs jcont' cell against the spread beside it, and prefer the Ir column where the two disagree."
 echo "  ⛔ SHARED AXES (RULES.md § FACT RULES, APPLES TO APPLES) -- every row below shares ALL of these:"
-echo "     load at start = $(perf_load_stamp)  (CEO-743: a wall-clock row shares a basis only with rows at a like load)"
+echo "     load at start = $(perf_load_stamp)  (R-743: a wall-clock row shares a basis only with rows at a like load)"
 echo "     basis = two-number; OVERHEAD is the EMPTY ICON PROGRAM per engine on the SAME instrument; WORK = total - OVERHEAD"
 echo "     RT_OPT=-O0 · mode m3=--run (compiles every run) m4=--compile+gcc · oracle = $ICONX · rival = ${JCONT:-<absent>} · corpus $CTREE · one box, one sitting"
 echo "     [A] Ir  = callgrind instruction reads, ONE rep, DETERMINISTIC (byte-identical for fixed argv+env; ~0.0001% otherwise) -- iconx, m3, m4"
 echo "     [B] ms  = WALL and CPU (user+sys) from /usr/bin/time, MEDIAN of $REPS after $WARMUP warm-ups -- all four engines"
 echo "     ⛔ NO MULTIPLE CROSSES INSTRUMENTS: 'x vs iconx' is Ir, 'x vs jcont' is WALL, and neither is a ranking of the other."
-echo "     ⛔ callgrind Ir REFUSES on the jcont arm (ceo CEO-494): JIT makes a JVM's Ir vary ~35% run to run."
-echo "     ⛔ THE JVM's WARM-UP IS OVERHEAD, NEVER WORK (CEO-490); CEO-173: OVERHEAD >= 50% of an arm => that multiple is TOTAL-basis."
+echo "     ⛔ callgrind Ir REFUSES on the jcont arm (R-494): JIT makes a JVM's Ir vary ~35% run to run."
+echo "     ⛔ THE JVM's WARM-UP IS OVERHEAD, NEVER WORK (R-490); R-173: OVERHEAD >= 50% of an arm => that multiple is TOTAL-basis."
 echo "     ⭐ THREE ANGLES on [B]: A1 fixed ${BUDGET_A1}s budget -> runs/s · A2 fixed $REPS_A2 runs -> runs/s · A3 wrapper median ms."
 echo "        A1 and A2 aggregate many runs, dividing the 10 ms tick away; they must agree within ${TOL_PCT}% or the cell prints VOID."
 echo "  OVERHEAD empty program: wall/cpu ms  iconx ${OVW[iconx]:-NA}/${OVC[iconx]:-NA} · jcont ${OVW[jcont]:-NA}/${OVC[jcont]:-NA} · m3 ${OVW[m3]:-NA}/${OVC[m3]:-NA} · m4 ${OVW[m4]:-NA}/${OVC[m4]:-NA}"
@@ -312,10 +312,10 @@ for k in $KERNELS; do
     esac
   done
   ixir="$(work "${IR[iconx]}" "${OVIR[iconx]:-}")"; m4ir="$(work "${IR[m4]}" "${OVIR[m4]:-}")"
-  # ⛔⭐ CEO-173 IS A FALLBACK, NOT A FILTER -- AND THE FIRST CUT OF THIS WROTE IT AS A FILTER.
+  # ⛔⭐ R-173 IS A FALLBACK, NOT A FILTER -- AND THE FIRST CUT OF THIS WROTE IT AS A FILTER.
   # It required WORK > 0 on both arms BEFORE choosing a basis, so an arm whose OVERHEAD had eaten the
   # entire reading (WORK <= 0, which is precisely the >= 50% case, only worse) fell through every branch
-  # and printed a bare "-".  ⭐ That is the CEO-173 case reading as NO MEASUREMENT AT ALL, when the rule
+  # and printed a bare "-".  ⭐ That is the R-173 case reading as NO MEASUREMENT AT ALL, when the rule
   # exists exactly to say what to print there: the labelled TOTAL.  The overhead test now comes FIRST and
   # a non-positive WORK routes into it rather than past it.
   bir="-"; mxir=" - "
@@ -359,9 +359,9 @@ if [ -n "$TSV_OUT" ]; then
   {
     printf '# ICON KERNEL SET -- tree=SCRIP %s corpus %s RT_OPT=-O0 date=%s kernels=%s reps=%s warmup=%s loadavg_at_start=%s\n' "$TREE" "$CTREE" "$(date -u +%Y-%m-%d)" "$N" "$REPS" "$WARMUP" "$LOADAVG"
     printf '# SHARED BOX: instrument A (Ir) is immune to load and reproduced byte-identically across three runs; instrument B (wall/cpu) is NOT. Read every ms column against its spread.\n'
-    printf '# instrument A: callgrind Ir, ONE rep, deterministic -- byte-identical for a FIXED argv+environment (measured 3/3), ~0.0001%% residue when path or env length changes. iconx, m3, m4. Ir REFUSES for jcont (JIT, ~35%% spread, CEO-494).\n'
+    printf '# instrument A: callgrind Ir, ONE rep, deterministic -- byte-identical for a FIXED argv+environment (measured 3/3), ~0.0001%% residue when path or env length changes. iconx, m3, m4. Ir REFUSES for jcont (JIT, ~35%% spread, R-494).\n'
     printf '# instrument B: WALL/CPU ms from /usr/bin/time, median of %s after %s warm-ups -- all four engines. Spread%%=(max-min)/min on wall.\n' "$REPS" "$WARMUP"
-    printf '# basis: two-number. OVERHEAD = empty Icon program per engine PER INSTRUMENT. WORK = total - OVERHEAD. CEO-173: OVERHEAD >= 50%% of an arm => basis=TOTAL.\n'
+    printf '# basis: two-number. OVERHEAD = empty Icon program per engine PER INSTRUMENT. WORK = total - OVERHEAD. R-173: OVERHEAD >= 50%% of an arm => basis=TOTAL.\n'
     printf '# OVERHEAD wall/cpu ms: iconx %s/%s jcont %s/%s m3 %s/%s m4 %s/%s   OVERHEAD Ir: iconx %s m3 %s m4 %s (jcont REFUSED)\n' "${OVW[iconx]:-NA}" "${OVC[iconx]:-NA}" "${OVW[jcont]:-NA}" "${OVC[jcont]:-NA}" "${OVW[m3]:-NA}" "${OVC[m3]:-NA}" "${OVW[m4]:-NA}" "${OVC[m4]:-NA}" "${OVIR[iconx]:-NA}" "${OVIR[m3]:-NA}" "${OVIR[m4]:-NA}"
     printf '# multiple = rival WORK / SCRIP m4 WORK on the SAME instrument (FASTER axis, >1 = SCRIP ahead). x_vs_iconx is Ir; x_vs_jcont is WALL. NO multiple crosses instruments.\n'
     printf '# three angles on B: A1 fixed %ss budget -> runs/s; A2 fixed %s runs -> runs/s; A3 wrapper median (the ms columns). crossprove OK = A1 and A2 within %s%%; VOID = refused.\n' "$BUDGET_A1" "$REPS_A2" "$TOL_PCT"

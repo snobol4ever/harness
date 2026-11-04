@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_error_while_an_unevaluated_expression_is_evaluated_fails_the_innermost_statement.sh
 #
-# SPITBOL'S STAGE RULE (sbl.min, read by the cfo 2026-09-27 for CEO-1322): evalx (line 20940) sets stage=stgee
+# SPITBOL'S STAGE RULE (sbl.min, read by the cfo 2026-09-27 for R-1322): evalx (line 20940) sets stage=stgee
 # whenever an unevaluated expression is evaluated at execution time -- a deferred capture target (. *X, $ *X), a
 # deferred pattern element (*X), a deferred argument of a pattern primitive (LEN(*X)), EVAL of an expression.
 # The error section sends every stgee error to err04 (line 29354), which pops to the NEARER of the innermost

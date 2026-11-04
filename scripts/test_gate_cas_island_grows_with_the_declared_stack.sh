@@ -2,7 +2,7 @@
 # test_gate_cas_island_grows_with_the_declared_stack.sh -- the conditional-assignment stack (the r12 CAS island) is sized by the
 # program's declared -s stack budget, never a fixed 64 MB, and an overrun is a named ERROR 246, never a core dump.
 # Row snobol4-the-deferred-capture-cells-are-a-fixed-4096-word-table-and-a-fixed-island-that-emitted-code-indexes (cfo mint,
-# CEO-1507 (4)); cure 2026-10-11, hq_snobol4.
+# R-1507 (4)); cure 2026-10-11, hq_snobol4.
 #
 # THE DEFECT: rt_dcap_lazy_init took a fixed RT_DCAP_ISLAND_BYTES (64 MB) region with no guard after it. Each pending conditional
 # capture is a 24-byte entry, so a match holding more than 2,796,202 of them ran off the end: SIGSEGV, core dumped, at any -s,

@@ -4,7 +4,7 @@
 # pascal-m4-site1-forloop-backedge-64byte-excess: the criterion's compile step reads
 #     timeout -k 5 300s SCRIP/scrip --compile ... || { echo "compile failed"; exit 1; }
 # so a MISSING binary reported rc=1 -- "real work here", served SILENTLY by the dispatch probe -- instead of rc=2
-# -- "could not measure", served WITH a warning. The ceo root's scrip was built 21 minutes AFTER the assign.
+# -- "could not measure", served WITH a warning. The officer root's scrip was built 21 minutes AFTER the assign.
 # V2-5's three exit codes apply to criteria, not only to gates; and the cure is ONE guard in s4e_msg.sh
 # (s4e_donewhen_needs_compiler, at both runner sites) rather than a sweep of the 88 batons that carry the shape.
 # THREE ARMS against a THROWAWAY postoffice under mktemp -- never the live one:
@@ -20,11 +20,11 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; HQ=ceo; BUDGET=4
+PO="$W/po"; ME=hq_B; HQ=cto; BUDGET=4
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote a literal mode into the scratch MODE, and
 # that string was kept in step with the live fleet -- it read QUARTET. QUARTET stands EVERY HQ down
-# (CEO-911), and this gate's seat is hq_B, so every serve in it became a dispatch refusal and six arms went
+# (R-911), and this gate's seat is hq_B, so every serve in it became a dispatch refusal and six arms went
 # red over a mechanism -- a missing compiler must REFUSE rather than grade -- that was never exercised at
 # all. The mode is incidental to that subject; keeping a literal in step with the fleet is exactly the
 # maintenance that fails silently. The rule is a sourced authority in lib_gate.sh: candidates are probed with

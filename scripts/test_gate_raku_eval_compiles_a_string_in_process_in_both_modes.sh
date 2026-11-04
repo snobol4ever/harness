@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_eval_compiles_a_string_in_process_in_both_modes.sh -- EVAL OF A RAKU STRING: PARSE, LOWER, EMIT AND RUN IN THE PROCESS, MODE 3 AND MODE 4 ALIKE, AND THE TEST FORMS THAT READ IT
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; the cto's answer to ask-raku-eval-runtime-compile, 2026-10-07: libscrip_rt.so already carries the Raku frontend, so EVAL is the road SNOBOL4 EVAL and Prolog assertz take, in BOTH modes).
+# (row raku-every-suite-to-100-under-nonet-r-1266; the cto's answer to ask-raku-eval-runtime-compile, 2026-10-07: libscrip_rt.so already carries the Raku frontend, so EVAL is the road SNOBOL4 EVAL and Prolog assertz take, in BOTH modes).
 #
 # THE DEFECT, measured over the 880 Roast files that compile: 169 use EVAL or eval-lives-ok / eval-dies-ok, 131 more reach it through throws-like on a string; none passed and 135 aborted at the first one. A Raku
 # EVAL string was handed to the SNOBOL4 EVAL by name, so only a string that is also a SNOBOL4 expression ("1 + 2") worked; "my $x = 5; $x * 2" printed nothing.

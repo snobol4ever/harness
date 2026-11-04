@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_read_term_from_atom_of_the_atom_nil_reads_the_text_brackets_not_end_of_file.sh
-# -- THE ATOM [] AS READER TEXT (ceo CEO-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664). term_string/3 and read_term_from_atom/3 given the atom [] as
+# -- THE ATOM [] AS READER TEXT (R-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664). term_string/3 and read_term_from_atom/3 given the atom [] as
 # their text read the empty code list -- the empty text -- and answered end_of_file where swipl reads the two characters "[]" as the term []; term_string/2, term_to_atom/2 and atom_to_term/3
 # already did. The program is the witness (nine reads: five entry points, a spaced nil, f([]), the brace atom and [](a)) and its ref was cut from swipl 10.1.5
 # (/home/resources/swipl-mon/bin/swipl); swipl 9.0.4 prints the same nine lines.

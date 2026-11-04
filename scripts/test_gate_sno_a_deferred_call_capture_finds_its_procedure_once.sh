@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_deferred_call_capture_finds_its_procedure_once.sh -- A `pattern . *f` CAPTURE USED TO LOOK ITS PROCEDURE UP TWICE:
 # rt_proc_is_registered(f) in the pump and then rt_call_open_by_name(f) inside rt_dcap_call_prepare, each an rt_proc_find (a
 # pointer-keyed cache confirmed by strcmp, ~105 Ir at -O0) -- and the slim and dynamic call prologues strcmp'd every parameter name
 # against the result name on EVERY call to learn whether the result is shadowed. The calculator demo makes 107,868 such captures
-# (ceo 2026-09-25, CEO-1257; notebook section 17). Since this landing rt_dcap_call_prepare finds once and reports registration,
+# (2026-09-25, R-1257; notebook section 17). Since this landing rt_dcap_call_prepare finds once and reports registration,
 # rt_call_open_by_name_p takes the procedure it was handed, and the shadow fact is computed once per procedure in
 # rt_proc_resolve_cells (bit 1 of cells_done -- the record is pinned at 128 bytes so the fact rides in a bit).
 # ARMS: (1) the witness (a shadowed result name, a plain function, name-returning deferred calls `. *h()` and `. *m()`, an

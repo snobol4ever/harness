@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_make_leaves_out_a_dep_file_whose_source_is_gone.sh -- AN INCREMENTAL MAKE SURVIVES A MOVED SOURCE (ceo CEO-1352; the coo's row
+# test_gate_make_leaves_out_a_dep_file_whose_source_is_gone.sh -- AN INCREMENTAL MAKE SURVIVES A MOVED SOURCE (R-1352; the coo's row
 # build-an-incremental-make-survives-a-moved-source-a-dep-file-whose-source-is-gone-is-left-out-by-rule-not-by-name).
-# MEASURED by the ceo 2026-09-28 15:2x CDT: the first incremental make after 481a8cd96 moved prolog_atom.c died "No rule to make target
+# MEASURED by the officer 2026-09-28 15:2x CDT: the first incremental make after 481a8cd96 moved prolog_atom.c died "No rule to make target
 # .../src/parsers/prolog/prolog_atom.c" in every objdir that compiled it before the move; the Makefile's -include cured ONE instance by
 # name (re.c). THE CURE: ../harness/scripts/live_dep_files.awk keeps a .d only while its object's first prerequisite exists.
 #   1  the filter keeps a two-line .d (gcc -MMD's shape) and a one-line .d whose sources exist, and leaves out the .d naming a gone source;

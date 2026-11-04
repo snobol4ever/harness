@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_icon_bench_corpus.sh — build (if needed) + run corpus/benchmarks/icon/*.icn through
 # the iconx oracle and both SCRIP execution modes; report per-program PASS/FAIL + timing.
 #
@@ -53,7 +53,7 @@ trap 'rm -rf "$WORK"' EXIT
 # ⛔ NO AUTO-BUILDING THE ICON ORACLE HERE (dropped under row icon-oracle-accessors-shared): the
 # oracle is a SHARED asset every seat grades against, and rebuilding it from an arbitrary board
 # script mid-fleet is exactly the unannounced-swap hazard the ORACLE-SWAP procedure (ARCH-FLEET-
-# CEO.md) exists to forbid. A missing shared oracle is now a loud refusal (icont_bin/iconx_bin),
+# the officer.md) exists to forbid. A missing shared oracle is now a loud refusal (icont_bin/iconx_bin),
 # never a silent from-source rebuild.
 if [ "$SKIP_BUILD" != "1" ]; then
   if [ ! -x "$SCRIP" ]; then
@@ -70,7 +70,7 @@ ICONX="${ICONX:-$(iconx_bin)}" || exit 2
 # invoke via `bash`; and it writes ../$name.zip relative paths — ALWAYS run from the source dir with
 # bare filenames. jcont needs Arizona icont on PATH for its own operation.
 # ⛔⭐ BOTH RIVAL PATHS COME FROM lib_oracle_flags.sh ACCESSORS, NEVER FROM A HAND-ASSEMBLED ENV VAR
-# (ceo CEO-490b, cured hq_P 2026-09-10). This block carried two defects with OPPOSITE volumes, and the
+# (R-490b, cured hq_P 2026-09-10). This block carried two defects with OPPOSITE volumes, and the
 # quiet one is the dangerous one:
 #   (1) LOUD -- `export PATH="$ICONM/bin:$PATH"` referenced ICONM, which nothing in this script ever set.
 #       Under `set -u` (line 40) that is "ICONM: unbound variable" and the script died at line 75 having

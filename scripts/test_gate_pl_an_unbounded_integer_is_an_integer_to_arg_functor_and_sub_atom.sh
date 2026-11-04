@@ -8,10 +8,10 @@
 # representation_error(size_t), and one between 2^63 and 2^64 (a bignum to SCRIP, a size_t to swipl) simply fails, as swipl.
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: the table below was cut 2026-10-17 from /usr/bin/swipl, and every run re-cuts it from the
 # live swipl and REFUSES rc=2 when oracle and table disagree or swipl is absent. The program has no dialect marker: the ISO default, graded
-# by swipl (CEO-1536). gprolog cannot read these literals at all ("integer overflow (exceeds max_integer)"), so it grades nothing here.
+# by swipl (R-1536). gprolog cannot read these literals at all ("integer overflow (exceeds max_integer)"), so it grades nothing here.
 # NOT GRADED: functor(_, f, PositiveBig) -- ISO and the Logtalk unbounded suite (lgt_unbounded_functor_03) want representation_error(max_arity),
 # which SCRIP gives; swipl gives representation_error(size_t). The ISO answer stands; the case is left out rather than graded against either.
-# FAIL-ONCE (CEO-1680, a witness red on the commit before the cure): with the sub_atom/5 guard reverted on the same tree, m3 and m4 both read
+# FAIL-ONCE (R-1680, a witness red on the commit before the cure): with the sub_atom/5 guard reverted on the same tree, m3 and m4 both read
 # FAIL -- err(type_error(integer,18446744073709551616000)) or err(type_error(integer,-18446744073709551616000)) on all five sub_atom lines, the
 # 2^63 + 5 Before included -- and PASS=2 again once it was restored (measured 2026-10-17).
 # Usage: bash ../harness/scripts/test_gate_pl_an_unbounded_integer_is_an_integer_to_arg_functor_and_sub_atom.sh

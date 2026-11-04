@@ -13,7 +13,7 @@
 # (-z pack-relative-relocs, -Bsymbolic-functions, strip --strip-debug), all three measured DEAD (<1.3%
 # each, do NOT respend effort there). The one lever that worked: static linking -- do-nothing floor
 # -51% faults, treebank-match -29%, answers byte-identical. NOT a default: ~27-30MB per binary vs
-# ~16-32KB dynamic, and that price is Lon/ceo's call, not this file's.
+# ~16-32KB dynamic, and that price is Lon/the officer's call, not this file's.
 #
 # MECHANISM: `ar rcs` the SAME $(RT_PIC_OBJS) already compiled for libscrip_rt.so (Makefile target
 # `libscrip_rt_static` -> out/libscrip_rt.a) and `gcc -static` the caller's .o against that archive.

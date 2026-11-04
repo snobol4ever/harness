@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_empty_output_stderr_census.py --suite KEY=PKGDIR:LANG [--suite ...] [--out DIR] -- THE EMPTY-OUTPUT CLASS, CENSUSED BY WHAT IT SAID
-(the ceo, CEO-1709, 2026-10-14: about 480 programs across ProRosetta, ProPuzzles, Trealla and PasRosetta FAIL with an EMPTY stdout,
+(the R-1709, 2026-10-14: about 480 programs across ProRosetta, ProPuzzles, Trealla and PasRosetta FAIL with an EMPTY stdout,
 fp=d41d8cd9, the md5 of nothing -- "a first-stderr-line census of those programs is the most valuable board you can run").
 
 For each suite: the progress table's NEWEST mode-3 row per program of that suite key (the table is compacted, not time-ordered, so the

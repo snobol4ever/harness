@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# util_header_fanin.py -- THE FAN-IN INSTRUMENT OF THE HEADER SPLIT (ARCH-HEADER-SPLIT.md sections 1 and 2, CEO-2032, step 1a; hq_templates).
+# util_header_fanin.py -- THE FAN-IN INSTRUMENT OF THE HEADER SPLIT (ARCH-HEADER-SPLIT.md sections 1 and 2, R-2032, step 1a; hq_templates).
 #
-# Lon, 2026-10-30, in-chat to the ceo: "I want the header files designed properly NOT to cause total re-builds." The cause is umbrella headers, so the
+# Lon, 2026-10-30, in-chat: "I want the header files designed properly NOT to cause total re-builds." The cause is umbrella headers, so the
 # thing measured is, per header, how many translation units reach it (fanin) against how many of them name anything it declares (users).
 #
 #   util_header_fanin.py                   one line per header: fanin direct users includes inline_bodies lines path (widest first)
@@ -690,7 +690,7 @@ def main():
             return 1
         new = baseline_figures(t, base)
         with open(a.baseline_file, 'w', encoding='utf-8') as f:
-            f.write('# header_fanin.baseline.tsv -- written by util_header_fanin.py --write-baseline (ARCH-HEADER-SPLIT.md section 2, CEO-2032). LOWERED, NEVER RAISED.\n')
+            f.write('# header_fanin.baseline.tsv -- written by util_header_fanin.py --write-baseline (ARCH-HEADER-SPLIT.md section 2, R-2032). LOWERED, NEVER RAISED.\n')
             f.write('# kind\tkey\tv1\tv2\tv3\tv4   hdr: fanin users inline_bodies over | umbrella: 1 | bare: includes written bare | unused: includes unused\n')
             f.write('# units=%d\n' % len(t.units))
             for (kind, key), v in sorted(new.items()):

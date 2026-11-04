@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_fakeable_rung_entries.py -- A RUNG ENTRY A DO-NOTHING ENGINE PASSES (Lon 2026-10-21 16:5x CDT, in-chat to the coo, verbatim: "I suspect
 you know not what you are doing and are measuring failure not success." · "You better fix your flawed measurement system for the test suites.";
-the coo's COO-388 census; ceo CEO-1868).
+the coo's COO-388 census; R-1868).
 An entry is FAKEABLE when its ref is empty and its declared exit code is 0: an engine that compiles, prints nothing and exits 0 passes it, so its
 PASS proves only compile-and-terminate. The cure is an authoring landing (the entry OUTPUTs what it computed and its ref is re-cut from the oracle);
 until then it leaves the denominator by Lon's ruling. Reads each master through corpus_suite_harness's own readers (the one authority), names in

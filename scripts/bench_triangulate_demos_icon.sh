@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_demos_icon.sh -- THREE-ANGLE TRIANGULATION FOR THE **ICON DEMO** PROGRAMS.
 # Minted 2026-09-03 by hq_B for row `jcon-compiler-is-a-major-demo-with-benchmark-numbers-in-the-readme`
-# (Lon, in-chat to ceo ~15:32: "getting the JCON's compiler written in Icon as one of the major demos
+# (Lon, in-chat ~15:32: "getting the JCON's compiler written in Icon as one of the major demos
 # with benchmark numbers for SCRIP's README"). Law: RULES.md § THE TWO-NUMBER BENCHMARK BASIS (three
 # angles) and ARCH-BENCH-CAMPAIGN-README-TABLES.md § THREE-ANGLE TRIANGULATION.
 # Modelled line-for-line on bench_triangulate_demos_snobol4.sh -- the WHOLE-PROGRAM sibling. Read that
@@ -37,7 +37,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #
 # ⛔ RT_OPT IS -O0 AND THERE IS NO -O2 ARM (Lon s262 FACT RULE; Makefile:34). Its sibling
 # bench_icon_rate_3way.sh carried the VOID instruction "build SCRIP with -O2 before running" until
-# 2026-09-03 (ceo CEO-173); that header is now retired and this cross-reference is kept only so the
+# 2026-09-03 (R-173); that header is now retired and this cross-reference is kept only so the
 # next reader knows the sibling was fixed, not that it still needs fixing.
 #
 # EXIT: 0 = every measured row AGREE. 1 = at least one DISAGREE/VOID/UNPROVEN (grid still printed).
@@ -169,7 +169,7 @@ for E in "$D"/*.icn; do
     N="$(basename "$E" .icn)"
     [ -n "${ARGS_LEFT// /}" ] && ! grep -qw "$N" <<<"$ARGS_LEFT" && continue
     # ⭐ ARGV FROM THE ONE READER (ipl_argv_read, NAME.argv): this read NAME.args, a spelling the corpus retired for jtran.argv on 09-12
-    # (CEO-609), so jtran ran with no argv on every engine. SIZES: NAME.heap and NAME.stack as switches on the SCRIP engines (CEO-1353).
+    # (R-609), so jtran ran with no argv on every engine. SIZES: NAME.heap and NAME.stack as switches on the SCRIP engines (R-1353).
     declare -a AV=(); ipl_argv_read "$E" AV; [ $? -eq 2 ] && { echo "⛔ UNPROVEN $N -- $N.argv is malformed (the reader said why above)"; RC=1; continue; }
     A="${AV[*]}"
     SWN="$(declared_switches_beside "$E")" || { echo "⛔ UNPROVEN $N -- $N.heap or $N.stack is malformed (the reader said why above)"; RC=1; continue; }

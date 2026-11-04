@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_access_trace_callback_is_entered_by_the_variable_read_box_and_not_by_c.sh
 #
-# THE ROW (the remainder of ceo CEO-1533, minted 2026-10-09): an ACCESS trace handler -- TRACE(name,'ACCESS',tag,fn) -- was entered from NV_GET_fn: the variable read box
+# THE ROW (the remainder of R-1533, minted 2026-10-09): an ACCESS trace handler -- TRACE(name,'ACCESS',tag,fn) -- was entered from NV_GET_fn: the variable read box
 # called the C reader, which raised rt_trace_event(TRK_ACCESS) and ran the handler through APPLY_fn with the C frames live for the handler's whole life (the C2BB trace
 # read descr.tiny TF rt_call_proc_descr, once per read). THE CURE, the pattern of the VALUE tap (SCRIP e18f52cbb): in a trace build the generic path of bb_var_global
 # carves a trace_pend_t on the spine and calls NV_GET_open, which reads the variable exactly as NV_GET_fn does and, where a handler is due, FILLS the pend (and keeps

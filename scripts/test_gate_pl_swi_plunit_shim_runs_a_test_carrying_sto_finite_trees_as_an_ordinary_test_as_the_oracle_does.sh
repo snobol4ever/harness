@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_swi_plunit_shim_runs_a_test_carrying_sto_finite_trees_as_an_ordinary_test_as_the_oracle_does.sh -- THE SHIM RUNS WHAT THE ORACLE RUNS (ceo CEO-1959, hq_packages; SWI core/test_occurs_check.pl and test_dcg uwn4).
+# test_gate_pl_swi_plunit_shim_runs_a_test_carrying_sto_finite_trees_as_an_ordinary_test_as_the_oracle_does.sh -- THE SHIM RUNS WHAT THE ORACLE RUNS (R-1959, hq_packages; SWI core/test_occurs_check.pl and test_dcg uwn4).
 # swipl 9.0.4's plunit runs a test whose own options carry sto(Type) as an ORDINARY test unless the global option sto(true) is given (run_test_once/5: option(sto(false), GlobalOptions, false) selects
 # run_test_6 with no unification mode), so [sto(finite_trees),fail] with a goal that succeeds reads "must fail but succeeded" in the oracle's ref. The corpus's plunit shim SKIPPED every sto(Type) but
 # rational_trees ("skip [sto]"), so three cases of core/test_occurs_check.pl (unify#1, unify#2, unifiable#1) and test_dcg uwn4 read oracle FAIL / scrip skip. It now strips sto(_) and runs the test as the oracle does:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_dict_expression_in_a_plunit_test_body_is_evaluated_inside_the_test_as_swipl.sh -- SWI'S FUNCTIONAL NOTATION
 # IN A plunit TEST BODY IS EVALUATED WHEN THE TEST RUNS, INSIDE IT, AS swipl EXPANDS IT (cfo 2026-10-14, row
-# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-ceo-1709).
+# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-r-1709).
 #
 # SWI's core/test_dict.pl read 0/93: no case ran. The SWI runner grades a file through the plunit shim, which keeps each
 # test as a pj_test(Unit, Name, Options, Body) fact whose Body is the test's goal held as data. lower_prolog.c's dict rewrite

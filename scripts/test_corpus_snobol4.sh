@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" || exit 2
-# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION (clause 8 (f), CEO-1281, landing 4): the rungs' entries declare it in tests/snobol4/ALL.csv, which the harness applies; a demo row declares it in its <stem>.cmdline sidecar, which run_test reads. This board exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source); measured that day, all 23 demos run byte-identical in both modes without it
+# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION (clause 8 (f), R-1281, landing 4): the rungs' entries declare it in tests/snobol4/ALL.csv, which the harness applies; a demo row declares it in its <stem>.cmdline sidecar, which run_test reads. This board exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source); measured that day, all 23 demos run byte-identical in both modes without it
 # ../harness/scripts/test_corpus_snobol4.sh — SNOBOL4 broad corpus, modes 2+3+4
 # Mode-4 gate (hard). Modes 2+3 informational. Reinstated 2026-06-08.
 # Compares output against .ref files. Reports PASS/FAIL/SKIP per mode.
@@ -10,9 +10,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 # ⛔⭐ RECORD THE TREE THIS RUN GRADES, AT ITS START (hq_T 2026-09-08). A board takes ten to forty minutes and its
-# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the CEO-174 dirty-tree guard
+# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the R-174 dirty-tree guard
 # actively pushes you toward, since a dirty tree skips the write entirely -- moves HEAD under a measurement that
 # already happened, and the row then names a tree carrying commits it never ran. Measured three times in one
 # sitting, twice while doing the disciplined thing. util_score_row.py stamps this instead of HEAD, and says so
@@ -20,7 +20,7 @@ export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a grade
 # ⛔ THE HAND-SPELLED export S4E_TREE_AT_START THAT STOOD HERE IS RETIRED ONTO gate_tree_watch (coo
 # 2026-09-10, COO-54). It was written out in THREE runners and ABSENT from the three Icon package
 # boards the one runner runs every hour, so three of four boards stamped HEAD AT WRITE TIME -- which is
-# CEO-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
+# R-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
 # the baseline: a board cannot now acquire the stamp without also acquiring the refusal.
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
@@ -40,7 +40,7 @@ CORPUS="$S4E/corpus"
 # BOTH ARMS OFF ONE BUILD, env-only. That removes the hazard rather than detecting it. This guard is for the
 # case a killswitch cannot cover -- a board that takes minutes while somebody else, or your own next command,
 # rebuilds the tree underneath it.
-# ⛔⭐ THE PRIVATE COPY THAT LIVED HERE IS RETIRED ONTO lib_gate.sh (coo 2026-09-10, ceo CEO-524 (1)). This
+# ⛔⭐ THE PRIVATE COPY THAT LIVED HERE IS RETIRED ONTO lib_gate.sh (coo 2026-09-10, R-524 (1)). This
 # board is where the guard was INVENTED, and hq_S hoisted it into gate_bin_watch/gate_bin_unmoved on
 # 2026-09-06 so seven boards would not each spell it -- but the donor kept its own copy, so the fleet had the
 # authority AND the original side by side, which is the exact shape util_require_fresh.sh's header warns about
@@ -139,7 +139,7 @@ INC="${INC:-$CORPUS/include}"
 BEAUTY="${BEAUTY:-$CORPUS/tests/snobol4/beauty_suite}"
 DEMO="${DEMO:-$CORPUS/demos/snobol4}"
 
-# ⛔⛔⛔ s272 hq_C (CEO audit correction 2) — A MISSING PREREQUISITE IS A REFUSAL (rc=2), NEVER A GREEN EXIT.
+# ⛔⛔⛔ s272 hq_C (officer audit correction 2) — A MISSING PREREQUISITE IS A REFUSAL (rc=2), NEVER A GREEN EXIT.
 # These two arms printed SKIP and exited 0, so a box with no compiler built, or no corpus cloned, reported
 # SUCCESS to every caller that reads $? — which is every gate, every board, and handoff_status.sh. That is the
 # ABSENT-ORACLE FALSE-GREEN class, and it is the exact twin of the `make test` no-recipe trap: a check that
@@ -169,14 +169,14 @@ done
 
 PASS3=0; FAIL3=0; FAILURES3=""
 PASS4=0; FAIL4=0; SKIP4=0; FAILURES4=""
-# ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06): the number this suite's leaderboard row states is the count of
+# ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06): the number this suite's leaderboard row states is the count of
 # programs green in EVERY mode they were graded in -- not m3 alone (what this row published until now), not m4
 # alone, and never min(PASS3,PASS4), which counts nothing real: one program red only in m3 and another red only
 # in m4 give min()=N-1 while the AND is N-2, so the min silently forgives a program that is red somewhere.
 # It is accumulated in run_test(), where one program's two verdicts are both in hand; it cannot be recovered
 # from PASS3/PASS4 afterwards, which is exactly why the row had to pick a mode before this.
 BOTH=0
-# ⛔⭐ XFAILS ARE COUNTED, NOT DROPPED (Lon's FACT RULE via ceo CEO-416: an xfail counts as a FAIL, so it belongs
+# ⛔⭐ XFAILS ARE COUNTED, NOT DROPPED (Lon's FACT RULE via R-416: an xfail counts as a FAIL, so it belongs
 # in the DENOMINATOR and out of the numerator). Before these two accumulators existed, m3x/m4x were read from the
 # board and then given to nothing, so TOTAL summed pass+fail+skip only and every known red vanished from BOTH
 # sides at once -- the runner published N/N and re-flipped the ruled announcement row on every run, by any seat.
@@ -219,14 +219,14 @@ run_test() {
     local slug; slug=$(echo "$label" | tr '/: ' '_')
     local inp_arg; [ -n "$input" ] && [ -f "$input" ] && inp_arg="$input" || inp_arg=""
     # ⛔⭐ THE DECLARED ARENA, FOR THIS LOOP PROGRAM ONLY (mirrors corpus_suite_harness.py's heap_kb column,
-    # CEO-1167): a hardcoded loop-program row has no ALL.csv cell to read, so its declared need is a 6th
+    # R-1167): a hardcoded loop-program row has no ALL.csv cell to read, so its declared need is a 6th
     # argv here instead. Empty means the shipped default, so every existing call above (5 args) is
     # byte-identical to before this parameter existed.
-    # ⛔ SINCE CEO-1261 (Lon 2026-09-25) a declared heap is the program's MAXIMUM, SPITBOL's -d, exported as the cap and never as the window.
+    # ⛔ SINCE R-1261 (Lon 2026-09-25) a declared heap is the program's MAXIMUM, SPITBOL's -d, exported as the cap and never as the window.
     local heap_env=(); [ -n "$heap_kb" ] && heap_env=("SCRIP_HEAP_CAP_KB=$heap_kb")
-    # ⭐ AND THE DECLARED STACK AS AN OPTIONAL 7th argv, the same way (CEO-1225): SCRIP_STACK sizes the m3 process and the m4 binary.
+    # ⭐ AND THE DECLARED STACK AS AN OPTIONAL 7th argv, the same way (R-1225): SCRIP_STACK sizes the m3 process and the m4 binary.
     [ -n "$stack_kb" ] && heap_env+=("SCRIP_STACK=${stack_kb}k")
-    # ⭐ AND THE PROGRAM'S OWN COMPILE SWITCHES, from its <stem>.cmdline sidecar (clause 8 (f), CEO-1281, landing 4): placed after --run and
+    # ⭐ AND THE PROGRAM'S OWN COMPILE SWITCHES, from its <stem>.cmdline sidecar (clause 8 (f), R-1281, landing 4): placed after --run and
     # --compile, both modes; a sidecar the reader refuses refuses the board, which never grades around a declaration it cannot honour.
     local ca; ca="$(declared_compile_args_beside "$sno")" || { echo "⛔ REFUSED TO GRADE rc=2: $label's command-line sidecar is refused (named above)" >&2; exit 2; }
 
@@ -331,7 +331,7 @@ RUNGS_SNO="$CORPUS/tests/snobol4/ALL.sno"
 RUNGS_REF="$CORPUS/tests/snobol4/ALL.ref"
 RUNGS_OUTSIDE="$CORPUS/tests/snobol4/ALL.outside.tsv"
 # ⛔⭐ THE OUTSIDE LIST IS PASSED WHEN IT EXISTS, AND THAT WIRING IS THE WHOLE POINT OF THE FILE (hq_P 2026-09-08,
-# ceo CEO-423/428). Under ONE ORACLE a program the oracle REFUSES TO RUN has no ground truth and is outside the
+# R-423/428). Under ONE ORACLE a program the oracle REFUSES TO RUN has no ground truth and is outside the
 # baseline by definition; the harness drops each named entry from the graded denominator and PRINTS it with the
 # oracle's own reason. ⛔ A declared outside list that no runner passes is INERT -- the exact shape the csnobol4
 # package ALL.mask documents at length ("a mask file that silently does nothing is exactly the false-green shape
@@ -339,9 +339,9 @@ RUNGS_OUTSIDE="$CORPUS/tests/snobol4/ALL.outside.tsv"
 # REFUSES a list naming an entry that is not in the suite, so a stale row cannot quietly shrink the board.
 _outside_arg=""
 [ -f "$RUNGS_OUTSIDE" ] && _outside_arg="--outside $RUNGS_OUTSIDE"
-# ⛔⭐ THE RUNGS' EXCLUDED.tsv (ceo CEO-1408; Lon 2026-10-02, in-chat to the ceo, verbatim: "Let's move the identifier which
+# ⛔⭐ THE RUNGS' EXCLUDED.tsv (R-1408; Lon 2026-10-02, in-chat, verbatim: "Let's move the identifier which
 # starts with a nul-character into the exclude column; we'll solve that later."): entries Lon takes OUT of the published
-# denominator, the shape every SNOBOL4 package's EXCLUDED.tsv already has (CEO-1286). Its rows ride into the harness WITH the
+# denominator, the shape every SNOBOL4 package's EXCLUDED.tsv already has (R-1286). Its rows ride into the harness WITH the
 # outside list (one --outside file, merged here), so they are not graded; the row then publishes pass / (shipped - EXCLUDED) and
 # util_score_row.py --excluded fills the SUITE TABLE's Excl column. A row of it naming no entry REFUSES in the harness, as
 # ALL.outside.tsv's do, so a stale exclusion cannot quietly shrink the board.
@@ -382,7 +382,7 @@ fi
 # no alarm, no atexit. Its only kill is subprocess.run(timeout=) on a CHILD, which yields a HANG verdict and still
 # boards. A missing board therefore means the harness PROCESS died: an external event.
 _hout="$(mktemp)"; _herr="$(mktemp)"
-# Every entry is graded in both modes: there is no modes column (Lon 2026-09-23, CEO-1218/1230).
+# Every entry is graded in both modes: there is no modes column (Lon 2026-09-23, R-1218/1230).
 if [ -n "$COMBINE" ]; then
     _combined=$(board_combine "$COMBINE") || { rm -f "$_hout" "$_herr"; exit 2; }; harness_rc=0
     board=$(printf '%s\n' "$_combined" | grep '^SUITE_BOARD ')
@@ -430,7 +430,7 @@ field() { echo "$board" | grep -oE "$1=[0-9]+" | cut -d= -f2; }
 mt=$(field total)
 m3p=$(field m3_pass); m3f=$(field m3_fail); m3c=$(field m3_crash); m3h=$(field m3_hang); m3u=$(field m3_unproven); m3x=$(field m3_xfail); m3xp=$(field m3_xpass)
 m4p=$(field m4_pass); m4f=$(field m4_fail); m4c=$(field m4_crash); m4h=$(field m4_hang); m4u=$(field m4_unproven); m4s=$(field m4_skip); m4x=$(field m4_xfail); m4xp=$(field m4_xpass)
-# ⛔⭐ THE XFAIL OUTCOME SPLIT (ceo CEO-432 item 2, on hq_U's census of these 26 markers): xfail says EXPECTED RED
+# ⛔⭐ THE XFAIL OUTCOME SPLIT (R-432 item 2, on hq_U's census of these 26 markers): xfail says EXPECTED RED
 # and says nothing about WHICH red, so a SIGSEGV, a hang, a silently wrong answer and a mode-4 that never produced
 # a binary all read identically -- four different repairs behind one number. hq_U measured three entries here that
 # CRASH in m3 and merely answer WRONG in m4, so the single count hides a PER-MODE split as well as a per-debt one,
@@ -439,7 +439,7 @@ xfsplit() { # $1=mode prefix -> "wrong=A crash=B hang=C unproven=D skip=E", refu
     local m="$1" k v out=""
     for k in wrong crash hang unproven skip; do
         v="$(field "${m}_xfail_${k}")"
-        [ -n "$v" ] || { echo "⛔ GATE REFUSES: the SUITE_BOARD carries no ${m}_xfail_${k}= field -- the outcome split cannot be assembled and an absent bucket is not a zero (CEO-432 item 2)." >&2; exit 2; }
+        [ -n "$v" ] || { echo "⛔ GATE REFUSES: the SUITE_BOARD carries no ${m}_xfail_${k}= field -- the outcome split cannot be assembled and an absent bucket is not a zero (R-432 item 2)." >&2; exit 2; }
         out="${out}${out:+ }${k}=${v}"
     done
     printf '%s' "$out"
@@ -466,7 +466,7 @@ done
 PASS3=$((PASS3+m3p)); FAIL3=$((FAIL3+m3f+m3c)); TMOUT3=$((TMOUT3+m3h+m3u))
 PASS4=$((PASS4+m4p)); FAIL4=$((FAIL4+m4f+m4c)); TMOUT4=$((TMOUT4+m4h+m4u)); SKIP4=$((SKIP4+m4s))
 XFAIL3=$((XFAIL3+${m3x:-0})); XFAIL4=$((XFAIL4+${m4x:-0}))
-# ⛔⭐ THE RUNGS'S AND, FOLDED FROM THE HARNESS AND NEVER RE-DERIVED (ceo-372). m3p and m4p cannot produce it:
+# ⛔⭐ THE RUNGS'S AND, FOLDED FROM THE HARNESS AND NEVER RE-DERIVED (R-372). m3p and m4p cannot produce it:
 # the AND is a fact about each ENTRY, and by the time a board line exists the entries are gone. corpus_suite_harness.py
 # emits all_pass for exactly this fold.
 # ⛔ REFUSE RATHER THAN FOLD A ZERO. An older harness -- or a shard checkpoint cut before this field existed --
@@ -474,7 +474,7 @@ XFAIL3=$((XFAIL3+${m3x:-0})); XFAIL4=$((XFAIL4+${m4x:-0}))
 # publish the loop population alone and read as a catastrophic regression that never happened. A runner that
 # cannot measure REFUSES; it does not print the success shape over a number it failed to read.
 m_all=$(field all_pass)
-[ -n "$m_all" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no all_pass= field -- this runner's row is the AND per program (ceo-372) and cannot be assembled without it. The harness beside this script emits it; a stale shard checkpoint does not (re-run the shards)."; exit 2; }
+[ -n "$m_all" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no all_pass= field -- this runner's row is the AND per program (R-372) and cannot be assembled without it. The harness beside this script emits it; a stale shard checkpoint does not (re-run the shards)."; exit 2; }
 BOTH=$((BOTH+m_all))
 [ "$((m3f+m3c))" -gt 0 ] && FAILURES3="${FAILURES3}  FAIL-M3 suite:rungs (rerun: python3 $HARNESS run $RUNGS_SNO $RUNGS_REF --modes m3; per-entry attributes: ALL.csv)\n"
 [ "$((m4f+m4c))" -gt 0 ] && FAILURES4="${FAILURES4}  FAIL suite:rungs (rerun: python3 $HARNESS run $RUNGS_SNO $RUNGS_REF --modes m4; per-entry attributes: ALL.csv)\n"
@@ -513,7 +513,7 @@ run_test "demo_treebank_alloc"      "$DEMO/treebank/treebank-alloc.sno"      "$D
 run_test "demo_porter"              "$DEMO/porter/porter.sno"              "$DEMO/porter/porter.ref"              "$DEMO/porter/porter.input"     ""
 # calculator-1/-2 (full evaluators) print a trailing nondeterministic "match_ms=" timing
 # line -- same class as demo_roman's "^ms:" filter above, just a different literal marker.
-# ⭐ THE CALCULATOR ROWS DECLARE THEIR STACK (ceo CEO-1261, measured 2026-09-25 by SCRIP_STACK bisection on this tree): SPITBOL's 4 MB default
+# ⭐ THE CALCULATOR ROWS DECLARE THEIR STACK (R-1261, measured 2026-09-25 by SCRIP_STACK bisection on this tree): SPITBOL's 4 MB default
 # holds calculator-1-match-fence only; calculator-2-match-fence needs 8 MB and the other four 16 MB, because every deferred call in the
 # whole-file match keeps its frame on the spine until the match ends (row snobol4-a-deferred-function-call-inside-a-pattern-keeps-its-
 # frame-on-the-spine-until-the-match-ends). SPITBOL itself overflows five of the six at its own default (ERROR 246).
@@ -531,11 +531,11 @@ run_test "demo_calculator_2"        "$DEMO/calculator/calculator-2.sno"        "
 # gate. A red instrument cannot also be a regression guard, so k41 guards what works and k40 keeps
 # measuring the distance left. ⛔ SELF-PINNED, never sbl-graded: SPITBOL cannot even LEX the file --
 # sbl -bf dies at the Greek line with ERROR 230 "illegal character" -- so no oracle arm exists.
-# k41_lambda_immediate: retired hardcoded row (ceo s283h, probe total-conversion) -- the witness now lives in the conformance2 SUITE (tests/snobol4/probe/conformance2.sno, entry k41_lambda_immediate_landed) and is graded by the suite loop below; keeping the loose-path row too would double-grade it against a path that no longer exists.
-# ⭐ hq_B, independently and after the fact: ceo's retirement above is CORRECT and the verification is
+# k41_lambda_immediate: retired hardcoded row (s283h, probe total-conversion) -- the witness now lives in the conformance2 SUITE (tests/snobol4/probe/conformance2.sno, entry k41_lambda_immediate_landed) and is graded by the suite loop below; keeping the loose-path row too would double-grade it against a path that no longer exists.
+# ⭐ hq_B, independently and after the fact: the officer's retirement above is CORRECT and the verification is
 # recorded here so nobody re-derives it. corpus/probe was deleted wholesale by corpus c06960a1 (seat16, on
 # Lon's order, closing corpus-crosscheck-probe-total-conversion), which left this hardcoded path dangling and
-# the FLOOR REFUSING rc=2 for every seat until ceo landed the fix. ⛔ This script warns in its own words that
+# the FLOOR REFUSING rc=2 for every seat until the officer landed the fix. ⛔ This script warns in its own words that
 # retiring an entry PERMANENTLY SHRINKS THE BOARD and must not be the reflex for an unresolvable path -- the
 # usual cause is a cross-repo window whose right action is `git pull` in corpus. VERIFIED that this was NOT
 # that case: the witness survives as `k41_lambda_immediate_landed`, entry 2 of
@@ -544,7 +544,7 @@ run_test "demo_calculator_2"        "$DEMO/calculator/calculator-2.sno"        "
 # ⭐ Corpus paths have moved four times in three days. When a hardcoded path breaks the question is never
 # "does the file exist" but "is the COVERAGE still graded somewhere": deleting on the first answer shrinks
 # the board, deleting on the second is bookkeeping. Two seats reached the same retirement independently
-# (ceo/hq_B above, seat15 concurrently below -- same diagnosis, same fix, converged without coordination).
+# (officer/hq_B above, seat15 concurrently below -- same diagnosis, same fix, converged without coordination).
 run_test "demo_calculator_1_match"       "$DEMO/calculator/calculator-1-match.sno"       "$DEMO/calculator/calculator-1-match.ref"       "$DEMO/calculator/calculator.input" "" "" 16384
 run_test "demo_calculator_1_match_fence" "$DEMO/calculator/calculator-1-match-fence.sno" "$DEMO/calculator/calculator-1-match-fence.ref" "$DEMO/calculator/calculator.input" ""
 run_test "demo_calculator_2_match"       "$DEMO/calculator/calculator-2-match.sno"       "$DEMO/calculator/calculator-2-match.ref"       "$DEMO/calculator/calculator.input" "" "" 16384
@@ -676,7 +676,7 @@ if [ "$MISSING" -gt 0 ]; then
 fi
 # ⛔⭐⭐ THE ONE LEADERBOARD, AND THIS IS THE HIGHEST-TRAFFIC BOARD WE HAVE -- it sits inside `make test`,
 # so every seat runs it constantly, which makes its SCORE.md row both the most worth keeping live and the
-# only one whose write could disturb twenty other roots. RULED by ceo CEO-174 (2026-09-03) on hq_T's ask:
+# only one whose write could disturb twenty other roots. RULED by R-174 (2026-09-03) on hq_T's ask:
 # wire it, with this line naming itself out loud so the resulting .github change is never a haunting, AND
 # write the row ONLY when the measured tree is clean and committed. That condition lives in the helper, is
 # COMPUTED from the tree and cannot be chosen -- a dirty-tree number is a scouting datum, printed here and
@@ -715,14 +715,14 @@ _sn4_killed=""
 # was the rungs' own $m_all/$mt. So the human reading the cell and the grid reading the declared pair took two
 # different numbers out of one row: the two-readers-of-one-cell shape, in the row that ruling was written about.
 # The wider figure is not dropped -- it is moved to the end and labelled as not being this row.
-# ⛔⭐ THE ROW IS PASS OVER THE SHIPPED POPULATION WITH OUTSIDE NAMED (CEO-749; Lon 2026-09-16: OUTSIDE is debt; coo, row
+# ⛔⭐ THE ROW IS PASS OVER THE SHIPPED POPULATION WITH OUTSIDE NAMED (R-749; Lon 2026-09-16: OUTSIDE is debt; coo, row
 # snobol4-master-runner-publishes-over-the-graded-population-1972-not-the-shipped-1980-with-outside-named). The harness prints
 # shipped= and outside= beside total= (graded); this runner quotes all_pass/shipped and REFUSES rather than publish the graded
 # population as the row's denominator -- 1961/1972 was seven outside passes leaving the numerator and eight entries leaving
 # the denominator, read once as engine movement (COO-82). A denominator move needs its stamp: S4E_CRITERION_CHANGED is forwarded.
 _sn4_shipped=$(field shipped); _sn4_outside=$(field outside); _sn4_extension=$(field extension)
-[ -n "$_sn4_extension" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no extension= field -- an entry graded against a ref the SPITBOL oracle did not cut would publish unnamed (CEO-1416)" >&2; exit 2; }
-[ -n "$_sn4_shipped" ] && [ -n "$_sn4_outside" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no shipped=/outside= fields -- the row would publish the graded population and drop OUTSIDE silently (CEO-749); the harness beside this runner must print them." >&2; exit 2; }
+[ -n "$_sn4_extension" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no extension= field -- an entry graded against a ref the SPITBOL oracle did not cut would publish unnamed (R-1416)" >&2; exit 2; }
+[ -n "$_sn4_shipped" ] && [ -n "$_sn4_outside" ] || { echo "⛔ GATE REFUSES: the rungs SUITE_BOARD carries no shipped=/outside= fields -- the row would publish the graded population and drop OUTSIDE silently (R-749); the harness beside this runner must print them." >&2; exit 2; }
 _sn4_outside=$((_sn4_outside - _sn4_excluded)); _sn4_shipped=$((_sn4_shipped - _sn4_excluded))
 _sn4_board="rungs both-modes $m_all/$_sn4_shipped EXCLUDED=$_sn4_excluded OUTSIDE=$_sn4_outside EXTENSION=$_sn4_extension (graded $mt) · m3 $m3p/$mt FAIL=$((m3f+m3c)) xfail=$m3x ($m3xs) xpass=$m3xp · m4 $m4p/$mt FAIL=$((m4f+m4c)) SKIP=$m4s xfail=$m4x ($m4xs) xpass=$m4xp MISSING=0$_sn4_killed · runner-wide (rungs + loop programs, NOT this row) both-modes $BOTH/$TOTAL (\`test_corpus_snobol4.sh\`)"
 # ⛔⭐ THE CELL IS NAMED sno-rungs AND MUST RECEIVE THE RUNGS'S OWN PAIR ($m_all/$mt), NOT THE RUNNER'S WIDER ONE.
@@ -732,11 +732,11 @@ _sn4_board="rungs both-modes $m_all/$_sn4_shipped EXCLUDED=$_sn4_excluded OUTSID
 echo "sno-rungs ROW PUBLISHED: $m_all/$_sn4_shipped EXCLUDED=$_sn4_excluded OUTSIDE=$_sn4_outside EXTENSION=$_sn4_extension (graded $mt)  (rungs only; m3 xfail=$m3x xpass=$m3xp · m4 xfail=$m4x xpass=$m4xp — xfails counted in the denominator, not the numerator; a nonzero XPASS is a stale marker and is as actionable as a failure, in the opposite direction)"
 echo "runner-wide population (rungs + loop, NOT the published row): $BOTH/$TOTAL"
 echo "ONE LEADERBOARD: recording this board into .github/SCORE.md (test_corpus_snobol4.sh; skipped with a notice if the tree is dirty)"
-# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED OUT OF THE LINE ABOVE (hq_T 2026-09-06, ceo CEO-363).
+# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED OUT OF THE LINE ABOVE (hq_T 2026-09-06, R-363).
 # This board line carries FOUR fractions -- the AND, m3, m4 and the ast fixtures -- over TWO different
 # populations, so any rule that reads a pair out of it is choosing between them silently, and the ast pair
 # (28/28) would publish as the rungs suite's score. The runner names its own headline pair instead.
-# ⛔⭐ AND THE HEADLINE PAIR IS THE AND PER PROGRAM (ceo-372, 2026-09-06, RULING on this runner's ask):
+# ⛔⭐ AND THE HEADLINE PAIR IS THE AND PER PROGRAM (R-372, 2026-09-06, RULING on this runner's ask):
 # "a suite row states the programs that pass in EVERY graded mode -- a program red in m3 and another red in
 # m4 both count against the row; never m3 alone, never m4 alone, never the min of two counts (which hides a
 # program red in each)". This row published $PASS3 -- the m3 arm -- until now; it publishes $BOTH from here.

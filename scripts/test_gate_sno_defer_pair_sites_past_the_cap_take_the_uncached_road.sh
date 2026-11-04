@@ -4,7 +4,7 @@
 # hands a *X site an index only while its never-reset counter is under 1024, and a site past the cap takes site -1, the uncached
 # road (rt_defer_probe_run resolves the name every time). This gate proves that road answers as sbl does.
 # Row snobol4-the-deferred-capture-cells-are-a-fixed-4096-word-table-and-a-fixed-island-that-emitted-code-indexes (cfo mint,
-# CEO-1507 (4)); the cfo's answer of 2026-10-11 (ask cells-census-spill): delete the unreached cell half, keep the pair half with
+# R-1507 (4)); the cfo's answer of 2026-10-11 (ask cells-census-spill): delete the unreached cell half, keep the pair half with
 # its at-cap road, and hold the road with this witness; the census reads the table as SPILL by naming this gate.
 #
 # THE WITNESS: 1500 EVAL units, each compiling one *W<i> site under a name the source never spells, so the compile-time counter
@@ -13,7 +13,7 @@
 # under SCRIP_GC_STRESS=1, so the cache's root walk is exercised at every poll.
 # arm 1: both modes print sbl's answer.  arm 2: gdb at rt_defer_probe_run counts the calls by their site argument: 3072 cached
 # (1024 sites x 3) and 1428 past the cap (476 x 3) -- the witness REACHES both roads, or the gate refuses.  arm 3: the stress run.
-# arm 0 (CEO-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
+# arm 0 (R-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
 set -u
 G=test_gate_sno_defer_pair_sites_past_the_cap_take_the_uncached_road
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; SCRIP="$SD/scrip"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_sno_byname_goto_call_args_after_failure.sh -- A BY-NAME GOTO CALL KEEPS ITS WANT-NAME ACROSS THE SLIM FAST PATH.
 #
 # WHAT THIS IS: a SNOBOL4 goto whose target is a FUNCTION CALL is invoked BY NAME -- the callee returns a NAME

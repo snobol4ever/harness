@@ -21,7 +21,7 @@
 # gate goes RED -- so the bookkeeping cannot be skipped in either direction, and an exclusion cannot quietly
 # become a parking space.
 #
-# ⛔ RED BY DESIGN ON THE DAY IT LANDS AND DECLARED AS SUCH (CEO-513): nine divergences carry no reason at all --
+# ⛔ RED BY DESIGN ON THE DAY IT LANDS AND DECLARED AS SUCH (R-513): nine divergences carry no reason at all --
 # gc_sniff_would_take is short of its authority by SIX kinds and gc_type_says_ref by FIVE.  Those two are
 # INSTRUMENT halves: a kind missing there does not lose a value, it makes the census that would have FOUND the
 # loss read agreement.  That is an instrument reporting success while it is not looking, which is the recurring
@@ -125,7 +125,7 @@ fi
 
 # (f) an instrument nobody runs is not an instrument
 if grep -q 'test_gate_gc_the_descriptor_kind_sets_are_a_declared_subset.sh' "$ROOT/Makefile" 2>/dev/null; then
-  ck ok "(f) this gate is named in the Makefile, as a REPORTED arm -- red by design while arm (e) names the STANDING DECLARED divergences (seven today, nine when the gate landed; the cfo's DT_X landing cured two) (CEO-513 declare-when-you-hold-one-out, CEO-463 a known-red blocking arm makes every seat pay for one open row). It moves to blocking the day arm (e) goes green"
+  ck ok "(f) this gate is named in the Makefile, as a REPORTED arm -- red by design while arm (e) names the STANDING DECLARED divergences (seven today, nine when the gate landed; the cfo's DT_X landing cured two) (R-513 declare-when-you-hold-one-out, R-463 a known-red blocking arm makes every seat pay for one open row). It moves to blocking the day arm (e) goes green"
 else
   ck no "(f) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS)"
 fi

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_safe_point_stores_into_a_mapped_slot.sh -- ARCH-GC SECTION 3's "INTO A MAPPED SLOT" CLAUSE, MADE
 # CHECKABLE (cto 2026-09-20; row gc-the-planner-gives-a-call-result-live-across-a-safe-point-a-mapped-slot-...;
-# CEO-996 the finding, CEO-1006 the re-lane, CEO-997 the grading rule; law RULES.md FACT RULE THE COLLECTOR
-# GUESSES NOTHING, CEO-812).
+# R-996 the finding, R-1006 the re-lane, R-997 the grading rule; law RULES.md FACT RULE THE COLLECTOR
+# GUESSES NOTHING, R-812).
 #
 # WHAT THIS GATE IS FOR, AND WHY IT IS RED THE DAY IT LANDS.  ARCH-GC section 3 has read, since the page was
 # written, that a safe point is "placed AFTER the call's result has been stored to its mapped slot".  Section 3b is
@@ -11,7 +11,7 @@
 # has.  This gate is the thing that makes it distinguishable.  The property is FALSE on this tree, so arm (f) is
 # RED and the gate is RED; that is the measurement, not a defect in the gate.  It goes green when the CURE lands.
 #
-# ⛔ WHY NOT AN rc-SHAPED ARM (CEO-997 on this exact road, CEO-556).  The failure this class produces exits 0 with
+# ⛔ WHY NOT AN rc-SHAPED ARM (R-997 on this exact road, R-556).  The failure this class produces exits 0 with
 # a plausible wrong answer: the collector sweeps a live block, the arena re-issues it IN PLACE, the defer road
 # resolves a garbage name and the program prints something.  No rc can tell a cure from a silencing, so the
 # property is graded by ORACLE DIFF against a ref cut from BOTH SNOBOL4 oracles, and the POPULATION is graded off
@@ -52,7 +52,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_a_safe_point_stores_into_a_mapped_slot]
 [ -f "$CENSUS" ] || refuse "the census $CENSUS is missing -- nothing to grade"
 [ -f "$WIT" ] || refuse "the row's witness $WIT is missing"
 [ -f "$REF" ] || refuse "the witness has no oracle-cut ref at $REF -- a ref is cut from the oracle, never from our output"
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
 
 # (a) the instrument grades itself before it grades the tree
 st="$(timeout -k 5 120s python3 "$CENSUS" --selftest 2>&1)"; src=$?
@@ -164,7 +164,7 @@ fi
 reach="$(printf '%s\n' "$pop" | grep -m1 '^CENSUS unmapped-store REACH ')"
 rst="$(printf '%s\n' "$reach" | sed -n 's/.* static_shielded=\([0-9]*\) .*/\1/p')"
 rfr="$(printf '%s\n' "$reach" | sed -n 's/.* frame_shielded=\([0-9]*\) .*/\1/p')"
-# ⛔⭐ STRENGTHENED 2026-09-21 ON CEO-1042's CONDITION, AND THE OLD FORM OF THIS ARM IS WHY IT NEEDED IT.  It
+# ⛔⭐ STRENGTHENED 2026-09-21 ON R-1042's CONDITION, AND THE OLD FORM OF THIS ARM IS WHY IT NEEDED IT.  It
 # grepped for `symbol=g_rtccb ` and passed on the presence of ONE line naming ONE SYMBOL over 6825 stores.  A symbol
 # is a SIZE, not a name: it cannot say WHICH WORD a collector would have to visit, so this arm certified that the
 # road was named while the naming could not adjudicate anything.  Keyed by WORD the whole road is THREE -- g_rtccb+40,
@@ -239,9 +239,9 @@ else
   fi
 fi
 
-# (f) THE PROPERTY ITSELF, graded by ORACLE DIFF and not by rc (CEO-997), over a band that goes WELL ABOVE 5.
+# (f) THE PROPERTY ITSELF, graded by ORACLE DIFF and not by rc (R-997), over a band that goes WELL ABOVE 5.
 # ⛔ THE BAND WAS [0 1 2 3 4] UNTIL 2026-09-20 21:3x AND THAT WAS A DEFECT IN THIS GATE, not a conservative choice
-# (CEO-1024, hq_raku's measurement: the raku rungs at the tiny arena loses 65 gradings over 36 DISTINCT PROGRAMS
+# (R-1024, hq_raku's measurement: the raku rungs at the tiny arena loses 65 gradings over 36 DISTINCT PROGRAMS
 # at SCRIP_GC_STRESS=16 that a 1-3-5 band calls green -- every one exit 0, no diagnostic, plausible wrong answer).
 # A band that ends where the defects start does not measure the tree, it measures the band. The cto's own A/B/A at
 # CTO-101 had already read this witness at twelve points and its BASE band is `. X X . X . . X . . . .` -- the X at
@@ -273,9 +273,9 @@ fi
 
 # (g) an instrument nobody runs is not an instrument
 if grep -q 'test_gate_gc_a_safe_point_stores_into_a_mapped_slot.sh' "$ROOT/Makefile" 2>/dev/null; then
-  ck ok "(g) this gate is named in the Makefile, as a REPORTED arm -- run and classified by every seat, blocking none of them while arm (h) is red BY DESIGN (CEO-513 declare-when-you-hold-one-out, CEO-463 a known-red blocking arm makes every seat pay for one open row). ⛔ THE PROMOTION THIS ARM ONCE PROMISED HAS BEEN PAID, AND NOT THE WAY IT WAS WORDED: arm (f) went green 2026-09-20 on the cfo DT_X landing, and what went BLOCKING is the PROPERTY ALONE -- test_gate_gc_the_unmapped_spine_store_witness_answers_its_oracle_at_every_band_point.sh, ~0.8s, both modes, the ref re-cut from the oracle every run and a vacuous comparator planted against. THE CENSUS DID NOT GO WITH IT: it costs minutes over 49 witnesses and MODE TENET condition 2 charges that to ten seats through an essentially serial set, and arm (h) is red by design so this gate cannot be blocking at all. A gate that declares a promotion it should not perform is the same defect as a design page stating a property nothing enforces (CTO-99)"
+  ck ok "(g) this gate is named in the Makefile, as a REPORTED arm -- run and classified by every seat, blocking none of them while arm (h) is red BY DESIGN (R-513 declare-when-you-hold-one-out, R-463 a known-red blocking arm makes every seat pay for one open row). ⛔ THE PROMOTION THIS ARM ONCE PROMISED HAS BEEN PAID, AND NOT THE WAY IT WAS WORDED: arm (f) went green 2026-09-20 on the cfo DT_X landing, and what went BLOCKING is the PROPERTY ALONE -- test_gate_gc_the_unmapped_spine_store_witness_answers_its_oracle_at_every_band_point.sh, ~0.8s, both modes, the ref re-cut from the oracle every run and a vacuous comparator planted against. THE CENSUS DID NOT GO WITH IT: it costs minutes over 49 witnesses and MODE TENET condition 2 charges that to ten seats through an essentially serial set, and arm (h) is red by design so this gate cannot be blocking at all. A gate that declares a promotion it should not perform is the same defect as a design page stating a property nothing enforces (CTO-99)"
 else
-  ck no "(g) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS), and a gate landed unwired is the CEO-381 class (CEO-513)"
+  ck no "(g) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS), and a gate landed unwired is the R-381 class (R-513)"
 fi
 
 echo "population: $checks arm(s) graded, $fails FAIL; census over the shared witness set rc=$prc, witness rc=$wrc"

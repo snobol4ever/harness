@@ -13,7 +13,7 @@
 #      of those bytes (both sets derived here, from every ALL.ref with its ALL.<ext> beside it) -- nothing else moved;
 #   4  _lf_lines keeps splitlines()'s one-trailing-newline convention: "a\n\nb\n" -> a,"",b; "" -> none; "x" -> x.
 # EXIT 0 all hold; 1 an arm failed; 2 could not measure.
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the harness over a scratch container outside the corpus, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the harness over a scratch container outside the corpus, not a board (R-547)"
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_gate.sh" || { echo "REFUSING(2): cannot load lib_gate.sh"; exit 2; }

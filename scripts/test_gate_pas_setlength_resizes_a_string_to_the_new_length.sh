@@ -4,7 +4,7 @@
 # REASSIGNING the variable to a freshly built string rather than mutating in place, since SCRIP strings are plain
 # value-copied DESCR strings with no in-place resize.
 #
-# MEASURED 2026-10-01 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. monitor_run.sh --oracle on
+# MEASURED 2026-10-01 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. monitor_run.sh --oracle on
 # corpus/packages/pascal/fpc_tests/webtbs_tw4763.pas bracketed the divergence at step 5 (stno 15, the SetLength call):
 # fpx continues to stno 16, scr ENDs there (error 22: Undefined function called) -- SetLength was not implemented at
 # all (zero occurrences anywhere in src/parsers/pascal/pascal.y or src/runtime before this landing).

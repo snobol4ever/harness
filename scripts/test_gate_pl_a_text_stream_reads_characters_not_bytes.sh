@@ -14,7 +14,7 @@
 #
 # ⛔ ARM 3 IS THE ARM THAT STOPS THE OVER-BROAD CURE. Decoding unconditionally -- on type(binary) streams too
 # -- passes ARMS 1 and 2 perfectly and silently corrupts get_byte/peek_byte, whose whole contract is that a
-# byte is a byte. A cure that trades one case for another never lands (CEO-589), so the binary arm is graded
+# byte is a byte. A cure that trades one case for another never lands (R-589), so the binary arm is graded
 # beside the text ones, always.
 #
 # ⛔ THE BOM IS A STREAM ANNOTATION, NOT DATA, AND bom(false) IS THE WAY TO ASK FOR THE BYTES. swipl consumes

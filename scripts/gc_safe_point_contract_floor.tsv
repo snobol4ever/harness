@@ -9,7 +9,7 @@
 # x86_rt_gc_poll_res at the two by-name call sites; the four reached at two depths are now PLACED as SPINE-CELL at
 # every depth (owner_ks), and the six in the co-expression body plus one call_value beta site reach NO ANCHOR and
 # are NAMED POLL-RES-ENVELOPE.  A poll ARRIVING at a site this reader cannot place is a site that was UNPOLLED before,
-# not the tree getting worse; the RSP-parity screen (CEO-1151) grades those seven in the bare-poll row.
+# not the tree getting worse; the RSP-parity screen (R-1151) grades those seven in the bare-poll row.
 # 2026-09-25 cto: five Prolog witnesses re-declared, UNDECIDABLE only, every added row K3 NO-ANCHOR-REACHES-SITE in a Prolog
 # call box (the class this reader already could not place at 958 of these rows): findall 234 -> 294, root_cells 214 -> 274,
 # pldb 152 -> 210, batch_b 210 -> 274, atom_dup 148 -> 154.  1186 of them were on origin 496b24635, identical on a control and
@@ -30,7 +30,7 @@
 # pre-change tree (0dd682acd) built in a worktree reads the old floor exactly (7 of 7 arms) on the same machine in the same hour. Not a
 # regression of the emitted sequence: the result stores still precede the poll at every site (K2 0) and the parity clause holds at every
 # poll (misaligned 0); the reader's anchor walk does not cross the loop's back-edge, which is the reader's limit, named here and not cured.
-# k5 is the RSP-PARITY clause (CEO-1151, cto 2026-09-22): a poll call at rsp 8 mod 16 on any path from its function's
+# k5 is the RSP-PARITY clause (R-1151, cto 2026-09-22): a poll call at rsp 8 mod 16 on any path from its function's
 # own entry (a box entry ASSUMED on the grid, a called function at 8), which misaligns every C callee on that path.
 # UNGRADEABLE: hb_aggt.icn hb_aggv.icn hb_arr.sno hb_dinst.icn hb_dvec_list.icn hb_errtext_eval_capture.sno hb_pldb.pl hb_ws.icn hb_wsb.icn
 # COLUMNS: witness  sites  k1  k2  k3  k4  k5  undecidable  spine_cell

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icon_package_container_keys_equal_board_keys.sh -- EVERY ICON PACKAGE CONTAINER KEY IS A KEY ITS BOARD WRITES, AND THE
-# PROGRESS TABLE HOLDS NO GHOST OF THE THREE SUITES (ceo CEO-1366 (b); row icon-package-containers-regenerated-from-the-shipped-files-
-# and-every-container-key-equals-its-boards-progress-key-ceo-1366; the coo 2026-10-09).
+# PROGRESS TABLE HOLDS NO GHOST OF THE THREE SUITES (R-1366 (b); row icon-package-containers-regenerated-from-the-shipped-files-
+# and-every-container-key-equals-its-boards-progress-key-r-1366; the coo 2026-10-09).
 # One program had two keys in the progress table: the container keyed arizona_tests general/args, its board the bare stem args
 # (until SCRIP b4f66ce42), IPL's board once wrote bare stems where it now writes progs/when, and a 09-05 replay wrote
 # icon/arizona_tests/general/args.icn. A reader of the table counted one program as two and a stale reading as live.

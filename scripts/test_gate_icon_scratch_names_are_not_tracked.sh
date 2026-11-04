@@ -21,7 +21,7 @@
 #
 # ⛔ THE ARM THAT MATTERS MOST IS (2), TRACKEDNESS. handoff_status.sh says "commit them" about untracked
 # output, and the obvious reading of that sentence is to COMMIT a 400KB generated artifact -- tmp3 was
-# committed by accident once already and the ceo deleted it. A wrong instruction plus a plausible file is
+# committed by accident once already and the officer deleted it. A wrong instruction plus a plausible file is
 # how generated output gets into a source repo, and it only has to succeed once.
 #
 # THE THREE EXIT CODES: 0 clean · 1 violation · 2 could-not-measure. Never skip-as-success.
@@ -71,7 +71,7 @@ TN=$(printf '%s' "$TRACKED" | wc -w)
 # `testio("tmp3","t",read,write,create textgen())` CREATES them, and their content is textgen()'s own
 # `0\n1\n2\n...`. ⛔ Deleting vendored files under packages/icon belongs to the seat that owns the Icon
 # packages, not to whoever happened to write this gate, so it is NAMED and ratcheted instead of cured here
-# (CEO-669: a change to a node another concern owns is an ASK with the measurement, never a landing).
+# (R-669: a change to a node another concern owns is an ASK with the measurement, never a landing).
 # ⭐ THE RATCHET IS THE HONEST MIDDLE: the count may only fall, so the defect cannot grow while the ruling is
 # outstanding, and a green gate never has to mean "there is nothing here".
 TCEIL="${ICON_SCRATCH_TRACKED_CEILING:-0}"

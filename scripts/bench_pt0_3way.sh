@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_pt0_3way.sh — PT-0: the 3-way (sbl / m3 / m4) same-moment interleaved baseline.
 # Extends the bench_sno_match4.sh 2-way (sbl/m4) protocol with the m3 --run arm, because the PT
 # front's question is where match wall-clock goes in BOTH shipped modes, not just the compiled one.

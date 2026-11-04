@@ -4,7 +4,7 @@
 usage: util_inf_snobol4_reduce.py BATCH.diff --line L --engine dotnet|jvm|scrip [--scope N] [--seed0 S] [--class TEXT] [--out W.sno] [--apply]
        util_inf_snobol4_reduce.py --selftest
 
-Step 2 of DESIGN-PLAN: random-codegen-scope (the cto, 2026-10-28, CEO-1999; .github ARCH-RANDOM-SNOBOL4-GENERATOR.md section 5 and R4),
+Step 2 of DESIGN-PLAN: random-codegen-scope (the cto, 2026-10-28, R-1999; .github ARCH-RANDOM-SNOBOL4-GENERATOR.md section 5 and R4),
 landed by hq_dotnet. BATCH.diff and BATCH.txt are what util_inf_snobol4_differential.py writes for batch N: L is the differing line's number
 in the batch (its "line L" block in the diff), counted as the driver counts, over the batch's non-blank lines with the preset lines first.
 

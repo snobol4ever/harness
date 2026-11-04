@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_alternation_beyond_32_arms.sh -- an alternation with more than 32 arms delivers every arm's own value (ceo CEO-632).
+# test_gate_icn_alternation_beyond_32_arms.sh -- an alternation with more than 32 arms delivers every arm's own value (R-632).
 #
 # MEASURED 2026-09-12 on 26bbc4c6f: `every write("s1" | ... | "s34")` printed s32 for arms 33 and 34 in BOTH modes -- a silently
 # wrong value -- and inside a co-expression the same arms came out &null (IPL's fileprnt: a 33-way `create "NUL" | ... | " SP"`

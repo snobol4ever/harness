@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# s4e_session_start.sh -- A SESSION PLACES ITSELF (ARCH-SHARED-DEVELOPMENT.md 2.2 and 4.2; the cto's design CEO-2041, step 2 built by the ceo).
+# s4e_session_start.sh -- A SESSION PLACES ITSELF (ARCH-SHARED-DEVELOPMENT.md 2.2 and 4.2; the cto's design R-2041, step 2 built by the officer).
 # Every seat's SessionStart hook runs it (util_fleet_settings.sh installs the hook; Lon runs that script). It reads the session's own cgroup
 # scope, appends one line to /home/resources/progress/SEATS.tsv (utc, seat, class, scope, pid, start; the newest line per seat is the live
 # one, the older lines are history) and applies the class's properties to the scope with systemctl --user set-property --runtime, READ FROM THE ONE
 # DECLARED BUDGET TABLE /home/resources/postoffice/BUDGET.tsv (box-budget step 2, CTO-478; util_seat_census.py budget_rows), its @SEAT and @LON rows:
-#   SEAT  on 2026-11-04 CPUWeight=100 CPUQuota=400% MemoryHigh=4G MemoryMax=8G MemorySwapMax=1G TasksMax=2048 (the quota: CEO-2105, the session scope is the door)
-#   LON   on 2026-11-04 CPUWeight=1000 (a Claude session whose root is not a seat's; no memory cap on Lon's class; CEO-2105 (d): ten to one over a seat)
+#   SEAT  on 2026-11-04 CPUWeight=100 CPUQuota=400% MemoryHigh=4G MemoryMax=8G MemorySwapMax=1G TasksMax=2048 (the quota: R-2105, the session scope is the door)
+#   LON   on 2026-11-04 CPUWeight=1000 (a Claude session whose root is not a seat's; no memory cap on Lon's class; R-2105 (d): ten to one over a seat)
 # No table (or no row) weights nothing (weighted=no-budget) and --check reads RED: the table is the one copy of the numbers.
-# HELPERS (CEO-2108, ARCH-SHARED-DEVELOPMENT 13): a claude whose argv[1] is daemon, whose argv carries --bg-pty-host or --bg-spare, or whose parent
+# HELPERS (R-2108, ARCH-SHARED-DEVELOPMENT 13): a claude whose argv[1] is daemon, whose argv carries --bg-pty-host or --bg-spare, or whose parent
 # is a claude (or a Claude version binary) is a helper: it writes no ledger line and gets no set-property (--pid on one prints SKIPPED helper), and the
 # hook's walk up passes it to the session that spawned it. A scope the ledger's newest SEAT line names is never weighted LON (weighted=refused).
-# ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (100 since CEO-2105 (d), under the grader's 300), because the first weight below
+# ORDER (section 10): a scope is weighted ONLY when app-org.gnome.Terminal.slice already reads its CPUWeight (100 since R-2105 (d), under the grader's 300), because the first weight below
 # app.slice enables the cpu controller there; until Lon's script has set the slices, the hook registers and weights nothing.
 # It also makes the seat's TMPDIR (/tmp/s4e/<seat>). It is idempotent, takes well under a second, and NEVER fails the session (rc 0 always).
 #   s4e_session_start.sh             the hook: this session (its parent Claude process)
 #   s4e_session_start.sh --pid P     place the live session whose process is P (util_fleet_settings.sh --apply uses it)
 #   s4e_session_start.sh --props     print the SEAT and LON properties and the sessions' slice weight it reads from the table (S4E_BUDGET names another); rc 2 none
-#   s4e_session_start.sh --check     step 2's DONE-WHEN: rc 0 every live seat session registered and weighted, the sessions' slice at 100 (CEO-2105 (d)) and
+#   s4e_session_start.sh --check     step 2's DONE-WHEN: rc 0 every live seat session registered and weighted, the sessions' slice at 100 (R-2105 (d)) and
 #                                    the grader and batch slices configured; rc 1 RED with the first gaps named; rc 2 nothing registered yet
 S4E_SESSION_START_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" exec python3 - "$@" <<'PY'
 import os, re, subprocess, sys, time, fcntl
@@ -33,9 +33,9 @@ try:
 except Exception:
     OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"}
 TERM = "app-org.gnome.Terminal.slice"
-SEAT_PROPS = census.budget_props(BROWS.get("@SEAT")) if census else []   # CPUQuota (CEO-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap
-LON_PROPS = census.budget_props(BROWS.get("@LON")) if census else []   # CEO-2105 (d): inside the sessions' slice Lon's terminal outranks every seat (100) ten to one
-TERM_WEIGHT = BROWS.get(TERM, {}).get("CPUWeight", "")   # CEO-2105 (d): the sessions' slice at the default 100, equal to any desktop app, under the grader slice (300); a seat scope is weighted only once the sessions' slice reads it
+SEAT_PROPS = census.budget_props(BROWS.get("@SEAT")) if census else []   # CPUQuota (R-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap
+LON_PROPS = census.budget_props(BROWS.get("@LON")) if census else []   # R-2105 (d): inside the sessions' slice Lon's terminal outranks every seat (100) ten to one
+TERM_WEIGHT = BROWS.get(TERM, {}).get("CPUWeight", "")   # R-2105 (d): the sessions' slice at the default 100, equal to any desktop app, under the grader slice (300); a seat scope is weighted only once the sessions' slice reads it
 def seat_of_root(path):
     m = re.match(r"/home/claude_([a-z0-9_]+)(/|$)", path or "")
     if not m: return None
@@ -74,7 +74,7 @@ def argv_of(pid):
 def claude_comm(c):
     return c == "claude" or re.fullmatch(r"\d+\.\d+\.\d+", c or "") is not None
 def is_helper(pid):
-    # CEO-2108 (a): a SESSION is a claude process with no subcommand whose parent is not a claude process; Claude Code's own daemon
+    # R-2108 (a): a SESSION is a claude process with no subcommand whose parent is not a claude process; Claude Code's own daemon
     # (claude daemon run), its background pty hosts and spares, and any claude spawned by a claude are HELPERS -- never a session
     a = argv_of(pid)
     return a[1:2] == ["daemon"] or "--bg-pty-host" in a or "--bg-spare" in a or claude_comm(comm_of(ppid_of(pid)))
@@ -86,7 +86,7 @@ def session_pid():
         if p <= 1: break
     return os.getppid()
 def seat_scopes():
-    # CEO-2108 (b): the scopes the ledger's newest SEAT line per seat names; a scope in this set is never weighted LON
+    # R-2108 (b): the scopes the ledger's newest SEAT line per seat names; a scope in this set is never weighted LON
     newest = {}
     try:
         for l in open(LEDGER):
@@ -174,7 +174,7 @@ if a[:1] == ["--pid"]:
     try: pid = int(a[1])
     except Exception: print("usage: s4e_session_start.sh [--pid P | --check]"); sys.exit(2)
     r = place(pid)
-    if r is None: print("SKIPPED helper pid=%d parent=%d (%s): a helper is never a session, no ledger line, no set-property (CEO-2108)" % (pid, ppid_of(pid), " ".join(argv_of(pid)[:3]).strip())); sys.exit(0)
+    if r is None: print("SKIPPED helper pid=%d parent=%d (%s): a helper is never a session, no ledger line, no set-property (R-2108)" % (pid, ppid_of(pid), " ".join(argv_of(pid)[:3]).strip())); sys.exit(0)
     print("PLACED seat=%s class=%s scope=%s weighted=%s" % r); sys.exit(0)
 try: place(session_pid())
 except Exception: pass

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_design_zeta_layout_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: zeta-layout, ONE SOURCE OF TRUTH FOR THE THREE ZETAS' LAYOUTS (the cto, 2026-10-29;
-# CEO-1996; Lon in-chat to the cto, verbatim: "Yes, let's fix the system have ONE SOURCE of TRUTH for the THREE ZETAS memory layouts."; .github/ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md).
+# R-1996; Lon in-chat to the cto, verbatim: "Yes, let's fix the system have ONE SOURCE of TRUTH for the THREE ZETAS memory layouts."; .github/ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md).
 # The plan is corpus/tests/shared/zeta_layout/STEPS.tsv; the witnesses are the .sno, .icn, .pl, .pas and .raku programs beside it, each with a .ref cut from its
 # oracle (SPITBOL sbl -bf; Arizona Icon icont -s then the binary; swipl -q -t halt; fpc -Miso then the binary; Rakudo), stdout compared exactly.
 # EVERY WITNESS RUNS FOUR WAYS: mode 3 and mode 4 (-d131072k -s4096k), each plain and under the collector's stress (SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=128

@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_witness_both_modes.sh -- ONE PROGRAM, BOTH MODES, AGAINST ITS REF (ceo CEO-1948): a DONE-WHEN for a red the language board cannot hand a seat.
+# test_witness_both_modes.sh -- ONE PROGRAM, BOTH MODES, AGAINST ITS REF (R-1948): a DONE-WHEN for a red the language board cannot hand a seat.
 # Usage, from SCRIP: bash ../harness/scripts/test_witness_both_modes.sh <src> <ref> [<src> <ref> ...]
 # Each source is run in mode 3 (./scrip <src>) and in mode 4 (./scrip --compile -o, linked the harness's way, run) from its own directory, stdin
 # /dev/null, and its stdout compared byte for byte with <ref>. Prints WITNESS <mode> <PASS|FAIL rc=N> <src> per run and WITNESS_TOTAL pass= fail=.

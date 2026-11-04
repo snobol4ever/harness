@@ -1,4 +1,4 @@
-* ARBNO whose body begins with a literal, followed by FENCE(P) that is backtracked into: SPITBOL answers, SCRIP loops (ceo 2026-09-30)
+* ARBNO whose body begins with a literal, followed by FENCE(P) that is backtracked into: SPITBOL answers, SCRIP loops (2026-09-30)
 	S = 'a b'
 	S ? POS(0) 'a' ARBNO(' b') FENCE(' ' | '') RPOS(0)	:S(Y1)F(N1)
 Y1	OUTPUT = 'F1 yes'					:(T3)

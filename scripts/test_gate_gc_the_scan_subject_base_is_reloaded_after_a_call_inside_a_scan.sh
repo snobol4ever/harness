@@ -2,7 +2,7 @@
 # test_gate_gc_the_scan_subject_base_is_reloaded_after_a_call_inside_a_scan.sh -- A CALL MADE INSIDE A SCAN BODY HANDS
 # THE SUBJECT BASE BACK FROM THE COLLECTOR'S OWN ROOT, NOT FROM THE REGISTER THE CALLEE LEFT ALONE (cto 2026-09-24,
 # CTO-165; row icon-gc-procedure-record-scan-replace-2-goes-crash-to-diff-across-fa1dc84a5-...; law RULES.md FACT RULE
-# THE COLLECTOR GUESSES NOTHING, CEO-812; hq_icon's 15-line witness, FINDING-2026-09-24-hq_icon-htprep-stale-scan-subject).
+# THE COLLECTOR GUESSES NOTHING, R-812; hq_icon's 15-line witness, FINDING-2026-09-24-hq_icon-htprep-stale-scan-subject).
 #
 # MEASURED 2026-09-24 on SCRIP 8b6cb3607: the Icon rungs entry procedure_record_scan_replace_2 (htprep) reads its ref at
 # stress 0 and prints NUL-filled garbage where scanned text belongs at stress 5 under forced relocation, differently on
@@ -16,7 +16,7 @@
 # THE CURE (x86_asm.h, x86_scan_sigma_reload, emitted by both scan sync-in helpers when the scan registers are live):
 # after the position, r13 is reloaded from rt_scan_live_subj, the runtime's scan_subj, which gen_gc_roots roots and the
 # collector relocates -- the same road the position already travelled.  The emitter carries NO switch that leaves the reload
-# out: SCRIP_GC_PLANT_STALE_SIGMA was deleted under CEO-1680 (Lon: "Do not add broken code just to enable a test ... Just
+# out: SCRIP_GC_PLANT_STALE_SIGMA was deleted under R-1680 (Lon: "Do not add broken code just to enable a test ... Just
 # create a proper test instead."; hq_templates 2026-10-15, row templates-the-stale-sigma-plant-seam-leaves-the-emitter-...).
 #
 # ARMS: (a) THE PROPERTY: the witness answers its iconx-cut ref at the shipped 128 KB window in mode 3 at stress 3 and 11
@@ -25,7 +25,7 @@
 # collector's own instrument, which moves every survivor by construction) the witness answers its ref at mode-3 stress 1..8,
 # so the subject the callee's collection moved is read from where it went; (c) the source carries the reload in both sync-in
 # helpers and the emitter reads no SCRIP_GC_PLANT_STALE_SIGMA. FAIL_ONCE=1 grades arms (a) and (b) against a CORRUPTED copy of
-# the iconx-cut ref and requires both to red -- the proper test CEO-1680 names: the comparison that carries the claim is seen
+# the iconx-cut ref and requires both to red -- the proper test R-1680 names: the comparison that carries the claim is seen
 # to say no.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_planner_six_passes_read_no_emitter_state.sh -- THE PLANNER STAGE'S GREEN ARMS (ARCH-THREE-ZETAS-EMISSION 10 (1) and 11.7; the ceo's CEO-1923
+# test_gate_planner_six_passes_read_no_emitter_state.sh -- THE PLANNER STAGE'S GREEN ARMS (ARCH-THREE-ZETAS-EMISSION 10 (1) and 11.7; R-1923
 # row planner-chunk-1, RETIRED on the cto's ruling 11.7 of 2026-10-29: its substance is on origin -- the registry, the table, --dump-plan, the stage driver).
 # Re-cut to the arms that read green. The six literal planner_pass_<name> functions and their call order are withdrawn (CTO-352 and 3.5's correction: the six
 # passes are the dependency order of what the stage computes, not six names), the STAGE_LINE bar is the census's D bar and step 11's finish line, and the four
@@ -41,7 +41,7 @@ for lang in snobol4 icon prolog pascal raku snocone rebus; do
     cols=$(grep -m1 '^PLAN_COLUMNS ' "$T/d" | cut -d' ' -f2-)
     c=$(grep '^PLAN graph=' "$T/d" | grep -o 'constructs=[0-9]*' | cut -d= -f2 | awk '{s+=$1} END {print s+0}'); ncons=$((ncons + c))
     echo "TABLE lang=$lang witness=$(basename "$f") graphs=$np rows=$nr constructs=$c fallbacks=$nfb"
-    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore act vdj" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the fifteen columns (read '${cols:-none}'; act is the ACT word's cause, ARCH-THREE-ZETAS-EMISSION 6.1, CEO-1942/1943, the cto 2026-10-24)"
+    [ "$cols" = "E X K definite zeta off depth retains_code owner fenced gpop wpop restore act vdj" ] || red "TABLE $lang: --dump-plan prints no PLAN_COLUMNS line with the fifteen columns (read '${cols:-none}'; act is the ACT word's cause, ARCH-THREE-ZETAS-EMISSION 6.1, R-1942/1943, the cto 2026-10-24)"
     [ "$np" -gt 0 ] && [ "$nr" -gt 0 ] || red "TABLE $lang: --dump-plan printed $np PLAN lines and $nr rows"
     [ "$nfb" = 0 ] || red "TABLE $lang: $nfb [PLANNER-FALLBACK] lines"
 done

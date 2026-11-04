@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_ord_reads_the_first_character_and_fails_only_on_null.sh -- ORD(S) is the character code of S's FIRST character, S taken
 # as a string (an integer or a real converts first), and it FAILS only when S is null -- CSNOBOL4's ORD, the reference for the feature,
-# and the ORD the ceo compiled into our SPITBOL fork (ceo CEO-1415; Lon 2026-10-02, in-chat to the ceo: "Add the ORD function." and
+# and the ORD the officer compiled into our SPITBOL fork (R-1415; Lon 2026-10-02, in-chat: "Add the ORD function." and
 # "Finish ORD and test6.").
 #
 # ⛔⭐ FOUND MEASURING ORD FOR THE ORACLE: SCRIP's ORD failed unless S was exactly one character, so ORD('AB') and ORD(65) FAILED where

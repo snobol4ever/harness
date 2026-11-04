@@ -53,7 +53,7 @@ ipl_isolation_init() {
 
 ipl_isolation_cleanup() { [ -n "${IPL_ISO_TEMPLATE:-}" ] && rm -rf "$IPL_ISO_TEMPLATE"; [ -n "${IPL_ISO_BASELINE:-}" ] && rm -f "$IPL_ISO_BASELINE"; return 0; }
 
-# ⛔⭐ THE CWD SUBDIRECTORY IS A PARAMETER, defaulting to progs/ (hq_I 2026-09-06, CEO-316). ipl refs
+# ⛔⭐ THE CWD SUBDIRECTORY IS A PARAMETER, defaulting to progs/ (hq_I 2026-09-06, R-316). ipl refs
 # are no longer progs-only: gprogs/ now carries .ref files too, and this helper hardcoded BOTH the cwd
 # and an ICONPATH with no gprogs entry. Left alone it would have run every gprogs entry from the wrong
 # directory, with its own package subdirectory missing from the link path -- and, because the caller
@@ -139,7 +139,7 @@ ipl_isolation_env() {
     echo "⛔ ipl_isolation_env: NO ICON ORACLE BIN -- the PATH handed to every isolated run omits it, so a program that shells out to \`icont\` (progs/qei) answers \`icont: not found\` INSIDE its graded output and reads as a wrong answer, not as a missing tool. Refs cut elsewhere with the oracle on PATH will false-FAIL against this run." >&2
   fi
   eval "$arr=()"
-  # ⛔ LIBRARIES BEFORE PROGRAMS (ceo ruling 2026-10-01 on hq_icon's ask): icont links the distribution's library ucode, where
+  # ⛔ LIBRARIES BEFORE PROGRAMS (ruling 2026-10-01 on hq_icon's ask): icont links the distribution's library ucode, where
   # only procs/gprocs live, so a `link gener` in a library means procs/gener.icn, never the progs/gener.icn program of the same
   # name. SCRIP's link search is flat (icn_link_open: IPATH, ICONPATH, ...), so the order of this path IS the answer; with
   # progs: first, procs/codeobj.icn's `link gener` reached progs/gener.icn and huffstuf died with error 106 through &null.
@@ -173,7 +173,7 @@ ipl_isolation_run() {
     cap="$(ipl_head_declared "$IPL_ISO_FIXTURES")" || { rm -rf "$work"; return 125; }
   fi
   local -a _isoenv=(); ipl_isolation_env "$work" _isoenv
-  # ⛔ A DRIVER RUN LINKS THE LIBRARY SHIPPED BESIDE IT (CEO-1269; coo 2026-09-25, hq_icon's ask): ICONPATH above names progs/ first,
+  # ⛔ A DRIVER RUN LINKS THE LIBRARY SHIPPED BESIDE IT (R-1269; coo 2026-09-25, hq_icon's ask): ICONPATH above names progs/ first,
   # and IPL ships four basenames twice over, so a procs/ driver's `link NAME` could reach a progs/ namesake. IPL_ISO_DRIVER=1 puts
   # the driver's own isolated directory first on IPATH, which SCRIP and icont read before ICONPATH -- as the Arizona and Jcon runners
   # give a NAME_driver run (09ee9fb91). Any other program runs exactly as before.
@@ -193,7 +193,7 @@ ipl_isolation_run() {
 
 # ⛔⭐⭐ THIS ANSWERS "DID THE TREE CHANGE DURING THIS RUN", AND IT USED TO ANSWER "DOES THE TREE DIFFER
 # FROM HEAD" -- two different questions, and the second one cries BREACH at work the package asked for
-# (hq_I 2026-09-06, measured while authoring the CEO-328 argv fixtures). Ten new NAME.argv/NAME.in files
+# (hq_I 2026-09-06, measured while authoring the R-328 argv fixtures). Ten new NAME.argv/NAME.in files
 # sat untracked in progs/ before the cutter ever started; every run then ended with the triple-⛔ banner
 # saying isolation was breached, over a run in which nothing was breached at all. ⭐ THE COST IS NOT THE
 # FALSE LINE, IT IS WHAT A FALSE LINE TEACHES: this banner exists because a first cut of the ref-cutter
@@ -234,7 +234,7 @@ ipl_isolation_verify_clean() {
 }
 
 # ⛔⭐⭐ THE ARGV SIDECAR, AND IT LIVES HERE FOR THE SAME REASON THE CWD RULE DOES (hq_I 2026-09-06,
-# CEO-328 ruling: "one path-aware cutter that reads both sidecars ... never a fork of the cutter or the
+# R-328 ruling: "one path-aware cutter that reads both sidecars ... never a fork of the cutter or the
 # grader"). ipl already honours a NAME.dat stdin sidecar, looked up INDEPENDENTLY by the ref-cutter and
 # by the suite -- two copies of one convention, which is exactly how test_prolog_ladder.sh and its Raku
 # twin silently diverged until they were diffed. This reader is the single authority for the second
@@ -269,7 +269,7 @@ ipl_argv_read() {
   local IFS=$'\t'; local -a f=($line); unset IFS
   if [ "${f[0]}" != "$base" ]; then
     # ⛔ SAY WHICH OF THE TWO CONTRACTS THIS IS, because the same extension carries both and the refusal
-    # above is unreadable when the file is fine and the READER is wrong (hq_V 2026-09-12, CEO-604).
+    # above is unreadable when the file is fine and the READER is wrong (hq_V 2026-09-12, R-604).
     if [ -f "${icn%.icn}.csv" ]; then
       echo "⛔ ARGV SIDECAR REFUSES(2): $side is a SUITE CONTAINER's per-entry argv table (a $base.csv sits beside it), read by corpus_suite_harness.read_argv_sidecar and keyed on ENTRY names -- it names '$base' nowhere and never could. This reader is for ONE witness's argv. The file is not malformed; the caller pointed a witness reader at a container." >&2; return 2
     fi
@@ -308,20 +308,20 @@ ipl_fixtures_stage() {
   if [ ! -d "$dir" ] || [ -L "$dir" ]; then
     echo "⛔ FIXTURE SIDECAR REFUSES(2): $dir exists but is not a plain directory" >&2; return 2
   fi
-  # ⭐ SUBDIRECTORIES AND DOTFILES ARE STAGED (hq_icon 2026-09-27, ceo CEO-1315, Lon's "Get IPL to 843."): progs/iplweb and
+  # ⭐ SUBDIRECTORIES AND DOTFILES ARE STAGED (hq_icon 2026-09-27, R-1315, Lon's "Get IPL to 843."): progs/iplweb and
   # progs/mszip take a directory TREE as their argument and progs/newsrc opens the fixed name .newsrc, and the old '*' glob copied
   # neither -- it skipped dotfiles and refused every subdirectory. The tree is copied as it stands; a symlink or a special file
   # anywhere in it still refuses, since either could escape the scratch tree. ⛔ A staged file is visible to every program that
   # lists its directory. progs/duplfile (ls -R) and progs/gcomp (echo *) therefore run ALONE over their own fixture trees (NAME.alone;
-  # duplfile since ceo CEO-1516, when the 10-04 fixtures turned its ref stale), and any new unit that lists its cwd takes the same sidecar.
+  # duplfile since R-1516, when the 10-04 fixtures turned its ref stale), and any new unit that lists its cwd takes the same sidecar.
   f="$(find "$dir" -mindepth 1 \( -type l -o \( ! -type f ! -type d \) \) -print -quit)"
   [ -z "$f" ] || { echo "⛔ FIXTURE SIDECAR REFUSES(2): $f is not a plain regular file or directory" >&2; return 2; }
   cp -R "$dir"/. "$dest"/ || return 2
   return 0
 }
 
-# ⭐⭐ THE PER-UNIT RUN SIDECARS (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315: "The seven runner sidecars are
-# YOURS ... Each is a per-test-unit attribute read by the one IPL reader (CEO-1281), with one gate per sidecar"). Each is a file
+# ⭐⭐ THE PER-UNIT RUN SIDECARS (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315: "The seven runner sidecars are
+# YOURS ... Each is a per-test-unit attribute read by the one IPL reader (R-1281), with one gate per sidecar"). Each is a file
 # beside NAME.icn, read here and applied by BOTH callers at the same point -- util_cut_icon_ipl_refs.sh's run_isolated (the ref)
 # and ipl_isolation_run (m3 and m4) -- so a ref and its grading can never run in two different worlds. Absent means today's
 # behaviour exactly; a malformed sidecar refuses (rc 2), never guesses.
@@ -418,30 +418,30 @@ ipl_pty_cmd() {
   for a in "$@"; do q="$q $(printf '%q' "$a")"; done
   eval "$arr=(script -qefc \"\${q# }\" /dev/null)"
 }
-# ⭐⭐ THE RUN- AND ENVIRONMENT-DEPENDENT UNITS RUN AND ARE GRADED (Lon CEO-1474, in-chat to hq_icon 2026-10-04, verbatim: "The answer is the test
+# ⭐⭐ THE RUN- AND ENVIRONMENT-DEPENDENT UNITS RUN AND ARE GRADED (Lon R-1474, in-chat to hq_icon 2026-10-04, verbatim: "The answer is the test
 # harness needs a mechanism for masking to allow these tests which are run-dependent, or environment dependent so that these tests can actually
 # run and be graded."). Four more per-unit sidecars beside NAME.icn, read here and applied by the cutter and both modes alike:
-#   NAME.mask     what varies with the run or the box: the CEO-409 rows (entry<TAB>python-regex-or-L<n><TAB>measured reason, ceo CEO-1504), read
-#                 through util_apply_ceo409_mask.py on BOTH sides of every comparison; the ref on disk stays the oracle's raw output.
+#   NAME.mask     what varies with the run or the box: the R-409 rows (entry<TAB>python-regex-or-L<n><TAB>measured reason, R-1504), read
+#                 through util_apply_line_mask.py on BOTH sides of every comparison; the ref on disk stays the oracle's raw output.
 #   NAME.shims/   stand-in host commands (an MS-DOS dir, an ULTRIX ls, a fixed nm), put first on PATH for the unit's run alone.
 #   NAME.alone    one line of reason: the unit runs in a directory of its own holding only its NAME.fixtures/ (a program that lists its cwd).
 #   NAME.head     one integer: the run's output is cut at that many bytes and the cut ends the run (a program that never stops writing).
-# ipl_mask_check <icn> -- 0 when there is no NAME.mask or the harness's own reader accepts it, 2 when it refuses (CEO-1504: the IPL mask IS the
-# CEO-409 mask -- rows entry<TAB>python-regex-or-L<n><TAB>measured reason, read through util_apply_ceo409_mask.py, never a second masker).
+# ipl_mask_check <icn> -- 0 when there is no NAME.mask or the harness's own reader accepts it, 2 when it refuses (R-1504: the IPL mask IS the
+# R-409 mask -- rows entry<TAB>python-regex-or-L<n><TAB>measured reason, read through util_apply_line_mask.py, never a second masker).
 ipl_mask_check() {
   local side="${1%.icn}.mask" c rc
   [ -f "$side" ] || return 0
   c="$(mktemp "${TMPDIR:-/tmp}/ipl_mask_n.XXXXXX")" || return 2
-  python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_apply_ceo409_mask.py" "${1%.icn}.ref" "$(basename "${1%.icn}")" "$c" < /dev/null > /dev/null; rc=$?
+  python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_apply_line_mask.py" "${1%.icn}.ref" "$(basename "${1%.icn}")" "$c" < /dev/null > /dev/null; rc=$?
   rm -f "$c" "$c.major"; [ "$rc" -eq 0 ] || return 2
 }
-# ipl_graded_cmp <icn> <got> <ref> [scrip|oracle] -- 0 when the two streams agree after the unit's CEO-409 rows mask both (a plain cmp without a
+# ipl_graded_cmp <icn> <got> <ref> [scrip|oracle] -- 0 when the two streams agree after the unit's R-409 rows mask both (a plain cmp without a
 # NAME.mask). <got> is SCRIP's rendered output (the default) or a second oracle run (the cutter's determinism arms); <ref> is always the oracle's.
-# A mask guardrail 4 rules a majority of either stream refuses (rc 2): a fixture mostly masked is ungradable, never graded (CEO-409, CEO-1504).
+# A mask guardrail 4 rules a majority of either stream refuses (rc 2): a fixture mostly masked is ungradable, never graded (R-409, R-1504).
 ipl_graded_cmp() {
   local side="${1%.icn}.mask" m e a b c rc
   [ -f "$side" ] || { cmp -s "$2" "$3"; return; }
-  m="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_apply_ceo409_mask.py"; e="$(basename "${1%.icn}")"
+  m="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_apply_line_mask.py"; e="$(basename "${1%.icn}")"
   a="$(mktemp "${TMPDIR:-/tmp}/ipl_mask_a.XXXXXX")" && b="$(mktemp "${TMPDIR:-/tmp}/ipl_mask_b.XXXXXX")" && c="$(mktemp "${TMPDIR:-/tmp}/ipl_mask_n.XXXXXX")" || return 2
   rc=0
   python3 "$m" "${1%.icn}.ref" "$e" "$c" "--side=${4:-scrip}" < "$2" > "$a" || rc=2

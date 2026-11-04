@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_set_bag_mix_are_typed_values_as_rakudo_has_them.sh -- Set, SetHash, Bag, BagHash, Mix and MixHash ARE TYPED VALUES (DATA records of elements, weights and an index), the set operators and the subset / membership relations act on them, and set() / bag() / mix() / Set.new / .Set / .Bag / .Mix build them
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by probing 57 expressions of S02-types/set.t, bag.t, mix.t and S03-operators/set.t against Rakudo -- 54 differed).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by probing 57 expressions of S02-types/set.t, bag.t, mix.t and S03-operators/set.t against Rakudo -- 54 differed).
 #
 # THE DEFECTS, each measured against Rakudo: `set <a b>` printed but its .elems was 0 (a list of keys behind a name, nothing counted); bag / mix did not exist; __rk_set_uni / int / dif / sym / sum / mul were named by the parser and had no runtime arm; the infixes
 # (elem) (cont) (<) (<=) (>) (>=) (==) and the Unicode set operators and relations were not in the operator tables, so `$a ∈ $b` was silently dropped to `$a`; Set.new / Bag.new built an empty record; a Set subscript, truthiness and gist did not exist.

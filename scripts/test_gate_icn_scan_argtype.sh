@@ -36,7 +36,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
 RT="$ROOT/out"
-# ⭐ FAIL-ONCE HOOK (instrument law batch 1, ceo audit 2026-09-04): the ONLY override this gate honours. Point it at a
+# ⭐ FAIL-ONCE HOOK (instrument law batch 1, the officer audit 2026-09-04): the ONLY override this gate honours. Point it at a
 # deliberately wrong-coded stub and the gate must go RED (DIVERGENT>0, rc=1) -- proven and recorded in the FINDING.
 SCRIP="${SCAN_ARGTYPE_SCRIP:-$ROOT/scrip}"
 T="${TIMEOUT:-20}"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_mem_scope.py -- ONE CGROUP SCOPE BOUNDS RESIDENT MEMORY AT THE OUTERMOST RUNNER, AND A CGROUP KILL IS A
 REFUSAL, NEVER A RED (row instrument-698-runners-bound-the-clock-and-zero-bound-memory-one-cgroup-scope-bounds-
-resident-pages-and-a-cgroup-kill-is-a-refusal-not-a-red, the ceo's ruling on the cfo's measurement; the coo 2026-09-23).
+resident-pages-and-a-cgroup-kill-is-a-refusal-not-a-red, the ruling on the cfo's measurement; the coo 2026-09-23).
 
 THE ASYMMETRY IT CLOSES: 698 files under ../harness/scripts/ bounded the WALL CLOCK and zero bounded MEMORY, on one box shared by
 ten seats. The cfo measured one process at 23,343 MB RSS eighteen seconds in, with 1 GB left on a 30 GB box, and three
@@ -27,7 +27,7 @@ scope already and enters nothing.
   - After the scope ends, systemd 255 forgets it (show -p Result reads "success", MemoryPeak "[not set]"), so the peak
     and the kill count are read INSIDE the scope, by supervise(), before it exits.
 
-⛔ A CGROUP KILL IS COULD-NOT-MEASURE, THE rc=2 FAMILY, NEVER A RED (the ceo's clause): the supervisor exits 2 naming
+⛔ A CGROUP KILL IS COULD-NOT-MEASURE, THE rc=2 FAMILY, NEVER A RED (the officer's clause): the supervisor exits 2 naming
 the cap and the peak; corpus_suite_harness._run_raw grades a program the cgroup killed UNPROVEN, not CRASH; the blocking
 set refuses an arm whose window saw a kill; util_score_row.py writes no row over a run a kill cut.
 
@@ -46,7 +46,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 UNIT_PREFIX = "s4e-mem-"
 # ⭐ THE DEFAULT CAPS, DERIVED (the coo 2026-09-23, clean origin bda7691cc, load 10-24 on 16 cores). Each is a measured
-# tree-wide high-water -- the cgroup's own memory.peak, the object the cap bounds, never one process's maxrss (CEO-1136) --
+# tree-wide high-water -- the cgroup's own memory.peak, the object the cap bounds, never one process's maxrss (R-1136) --
 # times a stated headroom, rounded up to a whole GB. Both measured numbers are declared here, as the row requires.
 #   blocking-set: `make test` (411 arms, six shards) inside one uncapped scope peaked at 6322 MB (anon high-water 5927 MB,
 #     page cache 1574 MB), and THAT PEAK WAS A SCHEDULING ACCIDENT: each arm alone in its own scope showed one arm at 4556 MB
@@ -55,17 +55,17 @@ UNIT_PREFIX = "s4e-mem-"
 #     other arm under 215 MB, and the serial phase's GC and timing arms under 296 MB together. The 4556 MB arm is therefore
 #     DECLARED SERIAL in blocking_set_serial_arms.txt, so the worst case is max(4556 alone, six banner arms at once = 4296)
 #     = 4.6 GB, and the cap is 2x that: 10 GB.
-#   board: no lane's board peak is on record but the Pascal rungs' 81,572 KB (hq_pascal, CEO-1136); the heaviest step a
+#   board: no lane's board peak is on record but the Pascal rungs' 81,572 KB (hq_pascal, R-1136); the heaviest step a
 #     board takes that this seat can measure is its row write's banner load, 716 MB, and the heaviest SCRIP workloads in the
 #     tree (the serial GC arms) stay under 296 MB. With less known, the headroom is larger -- 4x 716 MB -- so 3 GB.
 # ⛔ BOTH GROW WITH THE PROGRESS TABLE (about 4 percent a day), so at that rate the blocking-set worst case reaches its cap in
 #   about three weeks: the cure is those two readers streaming the table, and the caps are re-derived from the peaks every
 #   scoped run now prints (the supervisor's line) the day either reader changes or a lane's board reports a heavier peak.
-# ⭐ LATER THE SAME DAY THE TWO READERS STREAMED (the coo, CEO-1212): 4556 MB -> 14 MB and 716 MB -> 146 MB, answers identical
+# ⭐ LATER THE SAME DAY THE TWO READERS STREAMED (the coo, R-1212): 4556 MB -> 14 MB and 716 MB -> 146 MB, answers identical
 #   (test_gate_progress_readers_stream_and_answer_the_same.sh), and the 4556 MB arm left the serial list. Both caps are therefore
 #   LOOSE now, never tight: they stand until the next scoped make test prints its peak ([mem_scope] ... peak=), and the re-derivation
 #   uses that number, not these.
-# ⛔⭐ THE BOARD CAP IS RE-DERIVED FOR SPITBOL'S DEFAULTS (ceo CEO-1261, 2026-09-25): every program may now reach SPITBOL's -d128m
+# ⛔⭐ THE BOARD CAP IS RE-DERIVED FOR SPITBOL'S DEFAULTS (R-1261, 2026-09-25): every program may now reach SPITBOL's -d128m
 #   heap where the 3 GB above was derived under a 4 MB default cap, and the SWI board -- twelve parallel jobs, each a scrip process
 #   beside its swipl oracle -- reached peak=3072 MB and lost a process to the cgroup kill on its first pass at the new default (the
 #   row was refused, as it must be). Twelve jobs x (128 MB of heap + stack and image) + twelve oracles is about 4 GB; the cap is 2x that.

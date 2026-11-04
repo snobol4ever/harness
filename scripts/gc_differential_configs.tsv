@@ -19,7 +19,7 @@
 # can produce -- but on a program that never allocates a megabyte it collects zero times and joins the
 # UNDISTINGUISHED group by measurement. Keeping it named makes that visible instead of absent.
 #
-# ⛔⭐ THE arena1 ROWS NAME THE GC-TESTING ARENA, SCRIP_HEAP_KB=128 (ceo CEO-1261, 2026-09-25): they spelled SCRIP_HEAP_MB=1, which
+# ⛔⭐ THE arena1 ROWS NAME THE GC-TESTING ARENA, SCRIP_HEAP_KB=128 (R-1261, 2026-09-25): they spelled SCRIP_HEAP_MB=1, which
 # is 1024 KB -- and since Lon's word of 2026-09-25 ("Let's set our default stack size and heap size for SCRIP to be the same as
 # SPITBOL.") the shipped window IS SPITBOL's -i1m, so shipped and arena1 became ONE configuration under two names and hb_bignum_length
 # fell from 7 distinct fingerprints to 6. At 128 KB (the Makefile's SCRIP_HEAP_KB_TINY) hb_arr.sno reads 7 distinct where it read 2 and
@@ -27,7 +27,7 @@
 # ⛔ THE FIRST ROW IS THE REFERENCE CONFIGURATION: it is the one run TWICE for the determinism pre-pass, so it
 # must be a configuration that COLLECTS on nearly everything. arena1 is that row.
 #
-# ⛔⭐ RE-CUT 2026-10-15 (hq_runtime, ceo CEO-1794, ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 15): SCRIP_GC_RELOC and SCRIP_GC_PLANT_SHIFT
+# ⛔⭐ RE-CUT 2026-10-15 (hq_runtime, R-1794, ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 15): SCRIP_GC_RELOC and SCRIP_GC_PLANT_SHIFT
 # are RETIRED with the old collector road. The exact compactor moves every live block whose rank differs from its address, so "forced
 # relocation" is no longer a separate road through the collector, and the one forced-movement plant left is SCRIP_GC_PLANT_FLIP=1: the
 # slide's BASE word, which copies every live block to ground disjoint from its old address -- above the old top when the live set fits
@@ -40,7 +40,7 @@
 # own boundary and no second flip row is an axis. The two plant points of the masking boundary (4096 below it, 65536 above) have no FLIP
 # counterpart: FLIP has no size, and its poison-and-quarantine of the whole old ground is the cure for the masking the register's
 # hb_file_name_unrooted row describes, not a sample on either side of it.
-arena1	SCRIP_HEAP_KB=128	the tiny arena, Lon's mandatory pass (CEO-938/939): collects wherever a program allocates a megabyte. The reference row -- run twice per program to separate a program's own nondeterminism from a collector divergence.
+arena1	SCRIP_HEAP_KB=128	the tiny arena, Lon's mandatory pass (R-938/939): collects wherever a program allocates a megabyte. The reference row -- run twice per program to separate a program's own nondeterminism from a collector divergence.
 arena1_nopoison	SCRIP_HEAP_KB=128 SCRIP_GC_POISON=0	vacated ground is NOT overwritten with 0xDB. Distinguished by the ABSENCE of the [ZGC-POISON] line, which is why the fingerprint is taken over every tag and not over the move columns -- those are identical to arena1.
 arena1_stress3	SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3	collects at every third opportunity rather than on demand: 3062 collections on hb_bignum_length where arena1 takes 10. Not "more of the same axis" -- it reaches collection points that heap pressure alone never reaches.
 arena1_stress3_flip	SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=3 SCRIP_GC_PLANT_FLIP=1	the forced-movement axis: the same 3062 collection points as arena1_stress3, every live block copied to ground disjoint from its old address at each of them (the [GC-FLIP] plant: banner once per collection), the old ground poisoned and quarantined, so a stale pointer faults and cannot accidentally still work. Composed with stress 3 because an on-demand collection at a full window has no disjoint ground and the plant DECLINES there (10 of 10 on hb_bignum_length at 128 KB).

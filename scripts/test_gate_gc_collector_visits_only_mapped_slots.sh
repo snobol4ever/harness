@@ -2,7 +2,7 @@
 # test_gate_gc_collector_visits_only_mapped_slots.sh -- THE E SWITCH: row
 # gc-the-collector-walks-the-rbp-chain-keyed-by-return-pc-visits-only-mapped-slots-and-coexpression-stacks-are-mapped-frames
 # (cto, 2026-09-19, MODE QUARTET, CTO-90; ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 0 items 1, 2 and 7, section 2b;
-# law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812; Lon 2026-09-19 in-chat: "Get those 10 down to zero in
+# law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812; Lon 2026-09-19 in-chat: "Get those 10 down to zero in
 # two turns").
 #
 # WHAT WAS THERE. gc_collect_ex swept every stack segment word by word with gc_zeta_frame: a raw arm that rewrote any
@@ -67,7 +67,7 @@ base_w() { local src="$1" n="$2" in=/dev/null; [ -f "$WD/$n.in" ] && in="$WD/$n.
 # ⛔ A DECLARATION IS NOT AN EXEMPTION AND THIS ONE CANNOT ROT: a declared witness is STILL RUN, is COUNTED INSIDE the denominator, prints its every arm with its row, and ⭐ IF IT EVER READS ok ON EVERY GRADED ARM THE GATE
 # REDS -- because that means the cure landed and the declaration is stale, and a stale declaration is how an exemption list quietly becomes the new floor. Each entry is signed by the seat whose witness it is; declaring
 # ANOTHER seat's witness signs their reason for them (hq_prolog's phrase) and is not done here. Format: <witness> <owning seat> <row the cure lands under>.
-# ⭐ RETIRED BY ITS OWN CURE, 2026-09-21, cfo (ICON is the cfo's cell under QUARTET, CEO-1089, and hq_icon is stood down).  The single entry was
+# ⭐ RETIRED BY ITS OWN CURE, 2026-09-21, cfo (ICON is the cfo's cell under QUARTET, R-1089, and hq_icon is stood down).  The single entry was
 # hb_file_name_unrooted, hq_icon's, and THIS GATE REDDED THE MOMENT THE CURE LANDED -- arm 3/4 fired "now reads ok on EVERY graded arm", which is
 # exactly what the paragraph above promised it would do.  The cure is drv_gc_roots() in src/driver/driver_globals.c, which visits .name .alias .enc
 # of all 64 FH slots through rt_gc_visit_raw; the witness matches its .ref at SCRIP_HEAP_MB=1 at stress 0, 1, 3 and 5.  A/B ON ONE TREE: this gate

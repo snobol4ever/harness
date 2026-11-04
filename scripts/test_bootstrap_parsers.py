@@ -4,7 +4,7 @@ source of their language, in any of five arms, and print the denominator with ev
 
 Lon 2026-09-23 15:2x CDT, in-chat to hq_snocone, verbatim: "Get each parser_*.sc working starting with the easiest.
 First get parser_*.sno working. Then use those working SNO to get the SC ones working. Test the parsers using all the
-corpus sources." -- and, relayed by the ceo (CEO-1212): "All of the parser_*.sno programs worked at 100% in the past."
+corpus sources." -- and, relayed by the (R-1212): "All of the parser_*.sno programs worked at 100% in the past."
 The parser_<lang>.sno is the `scrip --transpile` of the 14-file bootstrap runtime chain plus parser_<lang>.sc
 (GOAL-PARSER-SC-TRANSPILE.md), so SPITBOL -- a SNOBOL4 we did not write -- can run a parser we did.
 
@@ -53,7 +53,7 @@ SPITBOL_ERR = re.compile(r"\bERROR \d+ --")
 # SPITBOL's default stack (-s4m) is too small for a recursive grammar on a 1000-line source (ERROR 246 on beauty.sc and
 # beauty_modules.sc, both clean at -s16m). HUGE HEAP AND HUGE STACK, ALWAYS (Lon 2026-09-26, in-chat to hq_snocone, verbatim: "You
 # should run with huge heap and huge stack always to avoid limits."). Both engines' sizes are the CHAIN's declaration, never typed
-# here (ceo CEO-1353, RULES.md clause 8 (g)(3)-(4)): bootstrap/parser_<lang>.heap and .stack for scrip, bootstrap/parser_<lang>.oracle_args
+# here (R-1353, RULES.md clause 8 (g)(3)-(4)): bootstrap/parser_<lang>.heap and .stack for scrip, bootstrap/parser_<lang>.oracle_args
 # for sbl, read through corpus_suite_harness -- the one reader -- and printed on the board line.
 sys.path.insert(0, str(HERE))
 import corpus_suite_harness as _harness

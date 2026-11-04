@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_lazy_monotonic_tabling_queues_the_deltas_forces_its_sources_and_hard_invalidates_a_retract_as_swipl.sh -- LAZY MONOTONIC TABLING,
-# ARCH-PROLOG-TABLING-IDG.md section 5 (the cto, CEO-1960; hq_zetas row prolog-tabling-lazy-monotonic-queues-and-forcing-sec-5-so-test-monotonic-lazy-agrees-with-swipl-ceo-1960).
+# ARCH-PROLOG-TABLING-IDG.md section 5 (the cto, R-1960; hq_zetas row prolog-tabling-lazy-monotonic-queues-and-forcing-sec-5-so-test-monotonic-lazy-agrees-with-swipl-r-1960).
 # A table declared `as (monotonic, lazy)` queues the deltas of its sources and is invalidated softly (its dependents with it); a call of an invalid lazy table forces its
 # invalid lazy sources first and then steps each queued delta; a retract or incr_invalidate_calls is a hard invalidation (forced, a full re-evaluation). The witness reads
 # a lazy table over a dynamic, an intermediate lazy table, a lazy table over a dynamic and an eager-monotonic one over a lazy one, the retract that marks both tables forced,

@@ -12,7 +12,7 @@ PL="${1:?Usage: run_prolog_via_x86_backend.sh <file.pl>}"
 [ -f "$LIBRT" ] || { echo "FAIL libscrip_rt.so not built: $LIBRT (run 'make libscrip_rt' first)"; exit 1; }
 [ -f "$PL"    ] || { echo "FAIL no such file: $PL"; exit 1; }
 # The compiled binary runs at the heap and stack the program declares beside itself (<stem>.heap / <stem>.stack), leading its own argv
-# as -d<kb>k -s<kb>k (ceo CEO-1353, RULES.md clause 8 (g)); an undeclared program runs at the shipped default and a sidecar the reader
+# as -d<kb>k -s<kb>k (R-1353, RULES.md clause 8 (g)); an undeclared program runs at the shipped default and a sidecar the reader
 # refuses is could-not-measure, rc 2 -- so every caller (the rung runner, the crosscheck, the parity gate, the SWI probes) carries it.
 . "$HERE/lib_declared_arena.sh" || { echo "FAIL cannot load lib_declared_arena.sh"; exit 2; }
 SW="$(declared_switches_beside "$PL")" || exit 2

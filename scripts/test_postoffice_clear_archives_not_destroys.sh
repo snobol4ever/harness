@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test_postoffice_clear_archives_not_destroys.sh -- THE MESSAGE-DESTRUCTION invariant (hq_P 2026-08-28, ceo-granted).
+# test_postoffice_clear_archives_not_destroys.sh -- THE MESSAGE-DESTRUCTION invariant (hq_P 2026-08-28, officer-granted).
 #
 # THE DEFECT THIS PINS, and it is measured, not hypothetical -- it destroyed a message from hq_P to seat06 and one of
-# ceo's the same morning.  `check` writes every basename into .last-check from its ITERATION LOOP, unconditionally, so
+# the officer's the same morning.  `check` writes every basename into .last-check from its ITERATION LOOP, unconditionally, so
 # .last-check records what check ITERATED and never what the reader actually SAW.  `clear` then acted on that list with
 # `rm -f`, and there was no archive anywhere.  So ANY truncation between check's `cat` and the reader -- a pipe through
 # head/tail, a pager, a context clip -- destroyed the body permanently while the seat believed it had read its mail.
@@ -29,15 +29,15 @@ tmp=$(mktemp -d) || exit 2; trap 'rm -rf "$tmp"' EXIT
 export S4E_POST="$tmp/po" S4E_SEAT=seat01
 mkdir -p "$S4E_POST/seat01/inbox" || { echo "⛔ REFUSE: could not build a sandbox postoffice"; exit 2; }
 CANARY='CANARY-BODY-b7f3e91a-this-line-must-survive-a-truncated-read'
-printf 'FROM ceo TO seat01 RE canary\nheader line that head -1 will show\n%s\n' "$CANARY" > "$S4E_POST/seat01/inbox/1787900000000000000-ceo-canary.msg"
-[ -s "$S4E_POST/seat01/inbox/1787900000000000000-ceo-canary.msg" ] || { echo "⛔ REFUSE: could not seed a message"; exit 2; }
+printf 'FROM cto TO seat01 RE canary\nheader line that head -1 will show\n%s\n' "$CANARY" > "$S4E_POST/seat01/inbox/1787900000000000000-cto-canary.msg"
+[ -s "$S4E_POST/seat01/inbox/1787900000000000000-cto-canary.msg" ] || { echo "⛔ REFUSE: could not seed a message"; exit 2; }
 # ⛔ THE NEGATIVE ARM: read it TRUNCATED.  head -1 closes the pipe after one line -- the reader never sees the body,
 # but .last-check is already fully written, which is precisely the hazard.
 bash "$msg" check 2>/dev/null | head -1 >/dev/null
 [ -f "$S4E_POST/seat01/.last-check" ] || { echo "⛔ REFUSE: check wrote no .last-check -- the hazard's precondition did not reproduce, so this run proves nothing"; exit 2; }
-grep -qxF '1787900000000000000-ceo-canary.msg' "$S4E_POST/seat01/.last-check" || { echo "⛔ REFUSE: the truncated read did not list the message -- precondition absent, nothing measured"; exit 2; }
+grep -qxF '1787900000000000000-cto-canary.msg' "$S4E_POST/seat01/.last-check" || { echo "⛔ REFUSE: the truncated read did not list the message -- precondition absent, nothing measured"; exit 2; }
 bash "$msg" clear >/dev/null 2>&1
-if [ -f "$S4E_POST/seat01/inbox/1787900000000000000-ceo-canary.msg" ]; then echo "⛔ REFUSE: clear did not clear the inbox -- this test measures survival AFTER a clear, and no clear happened"; exit 2; fi
+if [ -f "$S4E_POST/seat01/inbox/1787900000000000000-cto-canary.msg" ]; then echo "⛔ REFUSE: clear did not clear the inbox -- this test measures survival AFTER a clear, and no clear happened"; exit 2; fi
 found=$(grep -rlF "$CANARY" "$S4E_POST/seat01/archive" 2>/dev/null | head -1)
 if [ -z "$found" ]; then
     echo "⛔ FAIL: the message body was DESTROYED by a truncated read + clear -- nothing in seat01/archive/ carries the canary."
@@ -52,20 +52,20 @@ export S4E_SEAT=seat02
 mkdir -p "$S4E_POST/seat02/inbox" || { echo "⛔ REFUSE: could not build seat02 sandbox"; exit 2; }
 OLD_CANARY='CANARY-OLD-4b1e02a7-present-before-check-must-be-archived'
 NEW_CANARY='CANARY-RACED-9c6f5d3a-arrived-after-check-must-survive-untouched'
-printf 'FROM ceo TO seat02 RE old\n%s\n' "$OLD_CANARY" > "$S4E_POST/seat02/inbox/1787900000100000000-ceo-old.msg"
+printf 'FROM cto TO seat02 RE old\n%s\n' "$OLD_CANARY" > "$S4E_POST/seat02/inbox/1787900000100000000-cto-old.msg"
 bash "$msg" check >/dev/null 2>&1
-grep -qxF '1787900000100000000-ceo-old.msg' "$S4E_POST/seat02/.last-check" 2>/dev/null || { echo "⛔ REFUSE: check did not record the pre-existing message -- precondition absent, nothing measured"; exit 2; }
+grep -qxF '1787900000100000000-cto-old.msg' "$S4E_POST/seat02/.last-check" 2>/dev/null || { echo "⛔ REFUSE: check did not record the pre-existing message -- precondition absent, nothing measured"; exit 2; }
 # The race itself: a NEW message lands in the inbox directory after check already ran and wrote .last-check.
-printf 'FROM ceo TO seat02 RE raced\n%s\n' "$NEW_CANARY" > "$S4E_POST/seat02/inbox/1787900000200000000-ceo-raced.msg"
+printf 'FROM cto TO seat02 RE raced\n%s\n' "$NEW_CANARY" > "$S4E_POST/seat02/inbox/1787900000200000000-cto-raced.msg"
 out2="$(bash "$msg" clear 2>&1)"; rc2=$?
 if [ "$rc2" -eq 0 ]; then echo "⛔ FAIL: clear exited 0 with a raced, unread message still pending -- success must not be reportable while mail is hidden"; echo "$out2"; exit 1; fi
 echo "$out2" | grep -q 'KEPT UNREAD' || { echo "⛔ FAIL: clear did not loudly name the raced message as kept-unread. Output was:"; echo "$out2"; exit 1; }
-if [ ! -f "$S4E_POST/seat02/inbox/1787900000200000000-ceo-raced.msg" ]; then
+if [ ! -f "$S4E_POST/seat02/inbox/1787900000200000000-cto-raced.msg" ]; then
     echo "⛔ FAIL: the raced message was DESTROYED -- this is the exact defect task postoffice-clear-destroys-unread-messages was minted for"
     exit 1
 fi
-grep -qF "$NEW_CANARY" "$S4E_POST/seat02/inbox/1787900000200000000-ceo-raced.msg" || { echo "⛔ FAIL: the raced message survived but its body is mangled"; exit 1; }
-if [ -f "$S4E_POST/seat02/inbox/1787900000100000000-ceo-old.msg" ]; then echo "⛔ FAIL: the old, checked message was never archived -- it should have left the inbox"; exit 1; fi
+grep -qF "$NEW_CANARY" "$S4E_POST/seat02/inbox/1787900000200000000-cto-raced.msg" || { echo "⛔ FAIL: the raced message survived but its body is mangled"; exit 1; }
+if [ -f "$S4E_POST/seat02/inbox/1787900000100000000-cto-old.msg" ]; then echo "⛔ FAIL: the old, checked message was never archived -- it should have left the inbox"; exit 1; fi
 found2=$(grep -rlF "$OLD_CANARY" "$S4E_POST/seat02/archive" 2>/dev/null | head -1)
 [ -n "$found2" ] || { echo "⛔ FAIL: the old, checked message was not archived"; exit 1; }
 echo "=== SCENARIO 2 (arrival race): raced message survived untouched in inbox, old message archived, clear exited non-zero and named the hold ==="

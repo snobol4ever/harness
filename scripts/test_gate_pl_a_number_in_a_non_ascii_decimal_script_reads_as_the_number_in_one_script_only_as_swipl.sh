@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_a_number_in_a_non_ascii_decimal_script_reads_as_the_number_in_one_script_only_as_swipl.sh -- THE READER'S UNICODE DECIMAL DIGITS (ceo CEO-1959; SWI core/test_unicode.pl numbers:read#1 and #2).
+# test_gate_pl_a_number_in_a_non_ascii_decimal_script_reads_as_the_number_in_one_script_only_as_swipl.sh -- THE READER'S UNICODE DECIMAL DIGITS (R-1959; SWI core/test_unicode.pl numbers:read#1 and #2).
 # swipl reads a number written in any Unicode decimal script (Nd: Arabic-Indic, Devanagari, ...) as the number: 0123456789 as ٠١٢٣٤٥٦٧٨٩, the rational 123456789r23, the float ١٢.٣٤٥e٢, digit groups with _ or a space -- under one rule: ALL
 # the digits of one number (integer, fraction, exponent, rational denominator, separators) come from ONE script, so 12٣, ٣12, 3e٤, ٣r4 and 1_٠٠٠ are not one number (syntax error), and a minus folds into the next token only when it
 # starts with an ASCII digit (-٣ is -(3), -3 is the integer -3). The lexer's number states looked at ASCII bytes only, so SCRIP read every such literal as an atom. The witness reads each form from the source and through term_string/2;

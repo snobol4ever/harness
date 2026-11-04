@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ⛔⭐ A USED MODULE KEEPS THE FILE-SCOPE VALUE ITS SUBS READ (row raku-every-suite-to-100-under-nonet-ceo-1266; hq_raku 2026-10-22 against SCRIP 218731c54 + the splice cure).
+# ⛔⭐ A USED MODULE KEEPS THE FILE-SCOPE VALUE ITS SUBS READ (row raku-every-suite-to-100-under-nonet-r-1266; hq_raku 2026-10-22 against SCRIP 218731c54 + the splice cure).
 # THE DEFECT: `use XM` spliced only the module's DECLARATIONS (subs, classes, roles, grammars) into the program and dropped its top-level statements, so a module sub that read a
 # file-scope `my $k = 5;` of its own file read a variable nobody assigned and the native emitter refused the whole program ("variable 'k' is read but never assigned and is not a
 # parameter"): every Roast file that calls a Test::Util routine reading $VM-time-scale-multiplier (doesn't-hang) was a REJECT.

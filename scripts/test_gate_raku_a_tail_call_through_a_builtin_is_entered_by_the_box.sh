@@ -2,7 +2,7 @@
 # test_gate_raku_a_tail_call_through_a_builtin_is_entered_by_the_box.sh
 #
 # THE ROW: gc-rt-c-c-to-bb-entries-leave-no-emitted-code-is-entered-from-c-in-rt-c-except-the-original-invocation (cfo), the
-# tail protocol of CEO-1533/1536 option 2 rolled out to Raku. A Raku call that the lowerer routes through a by-name builtin
+# tail protocol of R-1533/1536 option 2 rolled out to Raku. A Raku call that the lowerer routes through a by-name builtin
 # (__blk_invoke for a code variable or a pointy block, __multi_call for a multi sub, obj_new for a user `new`,
 # __rk_named_call for named arguments, meth_call for a multi method) ended in rt_call_proc_descr entering the procedure
 # from C through the rt.c trampoline rt_proc_enter (trace site descr.enter.lex). Now the box calls rt_call_arr_bl_try

@@ -3,7 +3,7 @@
 # tp, macpas, delphiunicode) makes a Pascal source with no {$mode} line read as that dialect, exactly as if the source began with
 # {$mode NAME}; an unknown name is refused rc 2; a {$mode} line in the source still wins over the switch, as fpc's own -M does.
 #
-# WHY (the cfo's ruling pascal-dialect-route, CEO-1281, 2026-10-21): 50 of the 111 PasRosetta programs that read FAIL rc=1 carry NO mode
+# WHY (the cfo's ruling pascal-dialect-route, R-1281, 2026-10-21): 50 of the 111 PasRosetta programs that read FAIL rc=1 carry NO mode
 # directive and have a ref cut from fpc-default or objfpc (corpus rosetta-pascal ALL.dialect), so SCRIP read the raw text as ISO and refused
 # it. Source-side inference would break ISO_EXPECTED_REFUSALS (fpc -Miso accepts declaration-order violations that SCRIP must keep refusing),
 # so the test unit's own compile_args carries the dialect and the runner types none. THE CURE: pascal_dialect_directive in pascal_driver.c

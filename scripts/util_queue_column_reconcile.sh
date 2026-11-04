@@ -19,7 +19,7 @@
 # ⛔⭐ AND B IS NOT ONE POPULATION — hq_P's correction, 2026-08-29, reported against their own row. The first
 # version of this script called every B row unservable, which reads as a defect. For one of the two populations
 # it is the FEATURE:
-#   B-RESERVED: an HQ-ONLY row (e.g. defect-c-zop-flat-regime-depth-compensate, CEO-19). The picker does NOT
+#   B-RESERVED: an HQ-ONLY row (e.g. defect-c-zop-flat-regime-depth-compensate, R-19). The picker does NOT
 #      filter on the owner column and only the STATE column is load-bearing (s265), so a row left FREE would be
 #      served to whichever seat called `next` — and that seat's own baton tells it not to attempt the work.
 #      ASSIGNED-with-no-claim IS THE DOCUMENTED MECHANISM for reserving a row to an HQ. Nothing is wrong.
@@ -47,7 +47,7 @@ while IFS=$'\t' read -r rank topic owner state rest; do
   elif [ ! -f "$c" ]; then
     case "${state:-}" in
       RESTRICTED:*)
-        # ⭐ THE DURABLE RESERVATION (hq_P, SCRIP d1deda52, on ceo's ruling). A RESTRICTED:<x> row has no claim
+        # ⭐ THE DURABLE RESERVATION (hq_P, SCRIP d1deda52, on ruling). A RESTRICTED:<x> row has no claim
         # file BY DESIGN and that is not a defect: the picker serves it to <x> and skips it for everyone else,
         # and unlike the ASSIGNED-as-reservation spelling it SURVIVES `unclaim` by construction -- restoring the
         # restriction instead of freeing the row. So it is reported, never counted as a problem.
@@ -73,7 +73,7 @@ if [ "$b_n" -gt 0 ]; then
   printf '     load-bearing), so "unservable by a seat" is the POINT. Do not park these to FREE to tidy them.\n'
   # ⛔⭐ B-RESERVED IS NOT A STABLE STATE, AND THIS CENSUS IS A SNAPSHOT OF ONE (hq_P, 2026-08-29, reporting
   # a reservation they destroyed themselves an hour after explaining the mechanism to me in writing).
-  # `unclaim` drives the state column to FREE UNCONDITIONALLY, even over ASSIGNED:<hq> -- ceo's 2026-08-28
+  # `unclaim` drives the state column to FREE UNCONDITIONALLY, even over ASSIGNED:<hq> -- the officer's 2026-08-28
   # ruling, and right for the DISPATCH meaning of ASSIGNED, which really is spent when a lock is released.
   # But ASSIGNED:<hq> also carries a RESTRICTION meaning that belongs to the ROW and is not spent by letting
   # go of a lock. So a correct `unclaim` silently converts B-RESERVED into A, the picker serves the row
@@ -83,7 +83,7 @@ if [ "$b_n" -gt 0 ]; then
   # CONFORMING ROW HAS NOT FOUND A SAFE ONE. That row was conforming at every instant -- ASSIGNED, then
   # legitimately FREE, then ASSIGNED again. No instrument reading STATES would flag the hour in between,
   # because the defect lived in a TRANSITION. (The durable cure -- a distinct RESTRICTED:<x> spelling rather
-  # than special-casing ASSIGNED:<hq> inside unclaim -- is hq_P's recommendation and ceo's ruling to make.)
+  # than special-casing ASSIGNED:<hq> inside unclaim -- is hq_P's recommendation and ruling to make.)
   printf '     ⚠ B-RESERVED IS FRAGILE: `unclaim` drives the column to FREE even over ASSIGNED:<hq>, so a\n'
   printf '       reservation in that spelling is destroyed by any correct release and is preserved only by\n'
   printf '       `park`. This census is a SNAPSHOT — such a row can be FREE and under way within minutes.\n'

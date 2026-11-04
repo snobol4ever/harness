@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-# util_suite_table_freshness.py -- IS THE SUITE TABLE A READING OF TODAY'S TREE? (ceo CEO-1920; Lon 2026-10-22 16:1x CDT, in-chat to the ceo, verbatim:
+# util_suite_table_freshness.py -- IS THE SUITE TABLE A READING OF TODAY'S TREE? (R-1920; Lon 2026-10-22 16:1x CDT, in-chat, verbatim:
 # "Do not wait for HQs to re-start to get test suite banner up-to-date."). A SUITE TABLE row's `tree` is the OLDEST reading it was assembled from
 # (util_score_row.py from-progress stamps "the oldest reading's tree"), so a row written today can still carry a reading of a week-old compiler. This
 # reads every SCRIP row of progress/SUITES.tsv (a port engine's <key>@<engine> row is its HQ's and is skipped), resolves its tree in SCRIP, and names
 # the rows whose oldest reading is older than --hours (default 24) by that tree's commit time; an unresolvable tree (a -dirty stamp, a hash SCRIP
 # does not hold) is stale. Measured 2026-10-22 16:1x: 43 of 44 rows held a reading from before that day; the Pascal rows read 10-14's compiler
 # although the Pascal frame switch had landed that afternoon.
-# THE TWO-TIER BAR (ceo CEO-2078, 2026-10-31, on the coo's numbers: four rows hold 65 percent of the engine time and one full cycle four wide cannot
+# THE TWO-TIER BAR (R-2078, 2026-10-31, on the coo's numbers: four rows hold 65 percent of the engine time and one full cycle four wide cannot
 # carry them inside 24 hours): --long KEY,KEY... --long-hours H gives the named rows the bar H instead of --hours. A named key the table does not
 # hold REFUSES rc 2, so a renamed or deleted row cannot pass by leaving the long arm; the summary line prints both bars and each arm's count.
 # USE: python3 harness/scripts/util_suite_table_freshness.py [--hours H] [--long KEY,KEY... --long-hours H2]
-#      the CEO-1920 row's bar: --hours 24 --long logtalk,swi,roast,xsb --long-hours 72
+#      the R-1920 row's bar: --hours 24 --long logtalk,swi,roast,xsb --long-hours 72
 # EXIT: 0 every row's oldest reading is within its bar; 1 a row is staler (listed, oldest first); 2 could not measure.
 import os, sys, subprocess, time
 HERE = os.path.dirname(os.path.abspath(__file__))

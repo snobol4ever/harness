@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_keyword_variable_argument_dereferences_at_the_call.sh -- a keyword VARIABLE (&pos, &subject) passed as an argument is dereferenced AT THE CALL, and a scan whose body ends in one yields it AFTER the scan environment is restored, as under icont (ceo CEO-653).
+# test_gate_icn_keyword_variable_argument_dereferences_at_the_call.sh -- a keyword VARIABLE (&pos, &subject) passed as an argument is dereferenced AT THE CALL, and a scan whose body ends in one yields it AFTER the scan environment is restored, as under icont (R-653).
 #
 # MEASURED 2026-09-12 on e44f7d715 (the adversarial batch a01/a13, IcnRungs entries procedure_every_scan_replace_17 and _18):
 # `s ? { tab(7); write("back ", &pos, " ", tab(0)) }` printed 7 where icont prints 27 (the argument was read when

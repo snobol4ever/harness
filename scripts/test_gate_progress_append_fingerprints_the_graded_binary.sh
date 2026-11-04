@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_progress_append_fingerprints_the_graded_binary.sh -- THE PROGRESS APPENDER'S GROUND IS THE GRADED BINARY'S, NOT THE SEAT ROOT'S
 # (the coo 2026-09-28, row instruments-util-progress-append-fingerprints-the-seat-roots-binary-not-the-one-the-harness-graded-so-a-worktree-
-# run-ends-the-ground-moved-after-a-green-board; ceo CEO-1352 ruled it rank 1).
+# run-ends-the-ground-moved-after-a-green-board; R-1352 ruled it rank 1).
 # THE DEFECT, measured three times the same day: corpus_suite_harness.py pins the digest of the binary it GRADES (paths['scrip_bin'], a
 # worktree's or SCRIP=), and util_progress_append.py re-read S4E_HOME/SCRIP/scrip at append time -- so every harness run in a worktree
 # ended "THE GROUND MOVED UNDER THIS RUN" rc 2 after a green board, and a row's scrip stamp named the seat root's commit.

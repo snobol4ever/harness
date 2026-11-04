@@ -4,7 +4,7 @@
 # quiet match failure that only sets &ERRTYPE.
 #
 # THE DEFECT (row snobol4-an-error-raised-while-a-match-evaluates-a-deferred-expression-or-a-capture-target-is-a-match-failure-in-scrip-where-sbl-raises-it-239-21-46,
-#   ceo CEO-1486, found by the infinite_snobol4 closed world): with &ERRLIMIT above zero the match path's error entry (kwb_error) counted the
+#   R-1486, found by the infinite_snobol4 closed world): with &ERRLIMIT above zero the match path's error entry (kwb_error) counted the
 #   limit down, published &ERRTYPE and returned without ever consulting the SETEXIT exit, so the trap sbl runs (and prints 'TRAP 239') never ran
 #   and the match failed silently.
 # THE CURE (src/runtime/keywords.c kwb_error): when a SETEXIT exit is armed the error goes through core_runtime_error, the one place the exit

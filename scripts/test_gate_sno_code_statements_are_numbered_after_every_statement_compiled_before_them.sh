@@ -7,7 +7,7 @@
 # scr "LABEL 1", at the first call of a DEXP/CODE-built function). code_at based every block on max(the program count, &STNO) and
 # never advanced, so a second block reused the first block's numbers; and the lowerer read the parser's :stno for the statement
 # anchors, IR_STATEMENT_BEGIN/END and the statement hook without the fragment's base, so a CODE-built function reported statement 1.
-# THE CURE (CEO-1271, Lon's grant, .github 8bf3d53a): g_sno_stmt_compiled (long, runtime_eval.c, read and advanced only by code_at,
+# THE CURE (R-1271, Lon's grant, .github 8bf3d53a): g_sno_stmt_compiled (long, runtime_eval.c, read and advanced only by code_at,
 # seeded from the program statement count the lowerer passes); every :stno reader in sno_build_graph adds stno_base (scx_t carries it);
 # a runtime fragment no longer raises g_mon_max_stno, so the END label stays the program's.
 #

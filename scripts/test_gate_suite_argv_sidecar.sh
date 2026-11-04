@@ -31,7 +31,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 cd "$ROOT"
 . "$HERE/lib_gate.sh"
-. "$HERE/lib_board_line.sh"      # board_is: a board field is read BY NAME, never by adjacency (CEO-839)
+. "$HERE/lib_board_line.sh"      # board_is: a board field is read BY NAME, never by adjacency (R-839)
 gate_parse_args "$@"
 
 H="$HERE/corpus_suite_harness.py"
@@ -81,7 +81,7 @@ board() { python3 "$H" run "$TD/F.icn" "$TD/F.ref" --lang icon --modes "$1" 2>&1
 for m in m3 m4; do
     examined=$((examined + 1))
     out="$(board "$m")"; rc=$?
-    # BY NAME, not by adjacency (CEO-839): a board that gains a field between _pass and _fail is still this board
+    # BY NAME, not by adjacency (R-839): a board that gains a field between _pass and _fail is still this board
     _ab="$(grep -m1 '^SUITE_BOARD ' <<<"$out")"
     if [ "$rc" -ne 0 ] || ! { board_is "$_ab" "${m}_pass" 2 && board_is "$_ab" "${m}_fail" 0; }; then
         echo "GATE FAIL: with F.argv present, $m did not grade the suite clean (rc=$rc)"
@@ -116,7 +116,7 @@ end
 EOF
 printf '#------------------------------------------------------------ 1 plain\ncontrol\n' > "$TD/C.ref"
 out="$(python3 "$H" run "$TD/C.icn" "$TD/C.ref" --lang icon --modes m3,m4 2>&1)"; rc=$?
-_cb="$(grep -m1 '^SUITE_BOARD ' <<<"$out")"   # BY NAME, not by adjacency (CEO-839)
+_cb="$(grep -m1 '^SUITE_BOARD ' <<<"$out")"   # BY NAME, not by adjacency (R-839)
 if [ "$rc" -ne 0 ] || ! { board_is "$_cb" m3_pass 1 && board_is "$_cb" m3_fail 0 && board_is "$_cb" m4_pass 1 && board_is "$_cb" m4_fail 0; }; then
     echo "GATE FAIL: a family with NO .argv sidecar no longer grades clean (rc=$rc) — the new parameter"
     echo "    changed behaviour for callers that never asked for it."

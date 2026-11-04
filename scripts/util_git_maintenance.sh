@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # util_git_maintenance.sh [--apply] [--root=<dir>]... -- ONE CHEAP, SCHEDULED REPACK FOR EVERY SEAT ROOT'S REPOS, IN PLACE OF GIT'S AUTO-GC
-# (ceo CEO-2082, 2026-10-31; Lon in-chat to the ceo, verbatim: "We have contention on resources that maybe many can be shared.").
+# (R-2082, 2026-10-31; Lon in-chat, verbatim: "We have contention on resources that maybe many can be shared.").
 # MEASURED 12:5x CDT at load 48 to 62: two `git gc --auto` runs, started by an ordinary fetch, had each burned 1.3 to 1.6 cores for 17 and
-# 20 minutes (pack-objects --all over a 1.5 to 2.1 GB corpus, in /home/claude_ceo/corpus and /home/claude_packages/corpus). git's
+# 20 minutes (pack-objects --all over a 1.5 to 2.1 GB corpus, in two seat roots' corpus, one of them /home/claude_packages/corpus). git's
 # gc.autoPackLimit is 50 and the fleet's repos sat at 35 to 51 packs (cqo, cao and dotnet corpus at 50, snobol4 SCRIP at 50), so the next
 # fetch in each one starts the same full repack at a random hour, nineteen roots times four repos: a hidden, recurring tax nobody scheduled.
 # THE CURE has two halves. Lon sets `git config --global gc.auto 0` once, so no fetch starts a repack. This script is the replacement: a

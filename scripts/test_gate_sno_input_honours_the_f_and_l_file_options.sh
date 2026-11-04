@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_input_honours_the_f_and_l_file_options.sh
 #
-# SPITBOL'S RULE (measured with sbl -bf; ceo CEO-1419 ticket snobol4-the-f0-file-option-is-ignored-so-a-read-of-
+# SPITBOL'S RULE (measured with sbl -bf; R-1419 ticket snobol4-the-f0-file-option-is-ignored-so-a-read-of-
 # standard-input-never-fails, found by Lon's infinite_snobol4, whose first run filled 839 MB in four minutes):
 # INPUT(.v, 5, '[-f0 ...]') associates v with channel 5 on file descriptor 0, so v reads standard input's lines and
 # FAILS at end of file; '-l<n>' caps each line at n characters, keeping line boundaries. SCRIP ignored the

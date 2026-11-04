@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # audit_template_watch.sh — THE WATCH LOOP'S INSTRUMENT (hq_templates, row
 # templates-the-watch-loop-a-census-diff-names-every-template-violation-a-landing-adds-by-file-commit-and-seat,
-# ceo CEO-1321). Lon 2026-09-27, verbatim: "But it will just run in a loop always looking for seats creating bad
+# R-1321). Lon 2026-09-27, verbatim: "But it will just run in a loop always looking for seats creating bad
 # code so it can scoop it up and fix it."
 #
 # Given the commit the last tick read (BASE) and the commit this tick reads (HEAD, default HEAD), it censuses the
@@ -27,13 +27,13 @@
 # claim ($S4E_POST/claims/<topic>.claim, first line) is the landing seat, and wins; next, a subject that opens
 # with a language ("prolog R1.2:", "lower_snobol4:") names that language's lane owner from s4e_msg.sh's own
 # table (TODAY's table: a mode flip since the landing re-points it); every mailbox name the message mentions is
-# printed beside it as "named", which may include a relaying ceo or a finding cfo.
+# printed beside it as "named", which may include a relaying officer or a finding cfo.
 #
 # Usage: bash ../harness/scripts/audit_template_watch.sh [--repo DIR] BASE [HEAD]
 #   rc 0  no rule class rose on any template file in BASE..HEAD
 #   rc 1  some class rose: each such file is printed with its raising commit(s)
 #   rc 2  BASE or HEAD is not a readable commit, or the population is under the floor
-# Env: TEMPLATE_WATCH_JOBS (parallel audits; the default is the fan-out ceiling of ../harness/scripts/lib_fanout.sh, max(2, min(4, cores - demand)), CEO-1333); TEMPLATE_WATCH_CACHE (a directory to keep per-blob
+# Env: TEMPLATE_WATCH_JOBS (parallel audits; the default is the fan-out ceiling of ../harness/scripts/lib_fanout.sh, max(2, min(4, cores - demand)), R-1333); TEMPLATE_WATCH_CACHE (a directory to keep per-blob
 # counts across runs, keyed by the audit's own blob so an edited audit never reads a stale count, and per-commit
 # form censuses keyed by the census script's blob and the commit).
 # ⭐ AND THE FORMS (Lon, same sitting: "...to consider having other IR/BB broken out properly by form/pattern"):
@@ -44,7 +44,7 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
-. "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling (CEO-1333) has no instrument"; exit 2; }
+. "$HERE/lib_fanout.sh" || { echo "REFUSE(2): ../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling (R-1333) has no instrument"; exit 2; }
 AUDIT="$HERE/audit_bb_fixup_file.sh"
 PO="${S4E_POST:-/home/resources/postoffice}"
 REPO="$ROOT"
@@ -133,7 +133,7 @@ seat_of() {
             return
         fi
     done
-    for t in $(grep -oE '\b(ceo|cfo|coo|cto|hq_[A-Za-z0-9]+|seat[0-9]{2})\b' <<< "$msg" | awk '!seen[$0]++'); do
+    for t in $(grep -oE '\b(cfo|coo|cto|hq_[A-Za-z0-9]+|seat[0-9]{2})\b' <<< "$msg" | awk '!seen[$0]++'); do
         [ -d "$PO/$t/inbox" ] && seats="$seats $t"
     done
     lang="$(head -1 <<< "$msg" | sed -E 's/^(lower_|emit_)?([a-z0-9]+).*/\2/')"

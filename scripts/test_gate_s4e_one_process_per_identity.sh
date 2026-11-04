@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s4e_one_process_per_identity.sh -- ONE PROCESS PER IDENTITY on the postoffice bus. Row
-# bus-refuses-a-second-live-process-under-one-seat-identity (ceo ruling 2026-09-03, on hq_B's routing of seat11's
+# bus-refuses-a-second-live-process-under-one-seat-identity (ruling 2026-09-03, on hq_B's routing of seat11's
 # measurement 16:40: /home/claude11 held TWO live claude processes at once -- an interactive session and a scheduled
 # routine `claude --name Fleet #11 --model claude-sonnet-5 --effort max`, per .claude/scheduled_tasks.lock). LAW 6
 # derives identity from the ROOT PATH, so both were seat11 to the bus: one $ME, one claim namespace, one inbox. The
@@ -40,7 +40,7 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # $BASHPID is the real pid of the process evaluating it. Same lesson as the cure this gate grades: the cheap
 # name is not the identity, and the wrong one fails in the direction of looking correct.
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; HQ=ceo
+PO="$W/po"; ME=hq_B; HQ=cto
 pstart() { local s; s="$(cat "/proc/$1/stat" 2>/dev/null)" || return 1; printf '%s' "${s##*') '}" | awk '{print $20}'; }
 mk_po() {
   rm -rf "$PO"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" "$PO/$HQ/inbox" || return 2

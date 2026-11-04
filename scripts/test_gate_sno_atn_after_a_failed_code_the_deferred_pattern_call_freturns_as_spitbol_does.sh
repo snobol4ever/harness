@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_sno_atn_after_a_failed_code_the_deferred_pattern_call_freturns_as_spitbol_does.sh
 #
-# THE WITNESS (ceo 2026-10-17, CEO-1811; found through the coo's AIS ATN red of 2026-10-15, bisected by hq_runtime to 1a36cb772): aisnobol's ATN compiles each FUNCTION of its network source with
+# THE WITNESS (2026-10-17, R-1811; found through the coo's AIS ATN red of 2026-10-15, bisected by hq_runtime to 1a36cb772): aisnobol's ATN compiles each FUNCTION of its network source with
 # CODE() from inside a pattern match -- S_ is the deferred target of NULL $ *S_('F') in a pattern built by EVAL, S_ reaches S_F by the computed goto :($('S_' NA)), and when CODE fails S_F
 # calls ERROR and leaves by FRETURN. This gate feeds ATN its own ATN.IN with one FUNCTION body made a syntax error that sbl -bf also rejects (LEXICAL_FEATURES[X) for LEXICAL_FEATURES[X]):
 # sbl -bf prints Compilation error, Compilation failed and FATAL ERROR and exits 0; SCRIP stops after Compilation error with SIGSEGV, a jump to an address inside the live GC heap (ZGC-STALE).
 # The answer is cut from sbl -bf at run time; the two wall-clock lines ATN prints are masked as ALL.mask masks them. rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.
-# THE REGRESSION (cfo 2026-10-23, row snobol4-atn-segfaults-again-...-ceo-1926): ATN read red again from e53f5dcd6 (THE SPINE FLIP; bisected from e71e5253b), and two smaller witnesses carry the two
+# THE REGRESSION (cfo 2026-10-23, row snobol4-atn-segfaults-again-...-r-1926): ATN read red again from e53f5dcd6 (THE SPINE FLIP; bisected from e71e5253b), and two smaller witnesses carry the two
 # defects it exposed. sto: a FENCE'd capture stored as its own pattern, A = (LEN(1) $ V) FENCE, then 'xyz' A 'q' -- the outer 'q' fails, re-enters the stored blob at its beta, and that entry jumped
 # to the on-spine MATCH_ABORT without popping the capture's save cell its gamma had kept, so the abort's exit read the blob frame's DT_P word as its continuation. two: P = (LEN(1) $ V) FENCE
 # (LEN(1) $ W) 'q' -- the second capture's inner beta was folded through its save's beta (the ZPOP fold) with the save's own cell but not its fence whack-pop (zd_wp), 16 bytes short; red on

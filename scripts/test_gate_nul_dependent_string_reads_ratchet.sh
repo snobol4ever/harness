@@ -2,7 +2,7 @@
 # test_gate_nul_dependent_string_reads_ratchet.sh -- THE NUL-DEPENDENT-READ RATCHET: the population of C reads that stop at the first NUL of a descriptor's string
 # (strlen, strcmp, strncmp, strchr, strstr, strcpy, strdup, ct_strdup, atoi and the strto family, puts and fputs, a printf-family %s) in src/runtime, src/driver,
 # src/emitter and src/parsers may only fall, and a fall lowers the baseline in the same landing (the brief line "No strlen on a descriptor's .s"; CTO-397 relayed by
-# the ceo 2026-10-29; row runtime-audit-nul-dependent-string-reads-..., hq_runtime). A descriptor string carries its length and may hold a NUL byte (a SNOBOL4 string,
+# the officer 2026-10-29; row runtime-audit-nul-dependent-string-reads-..., hq_runtime). A descriptor string carries its length and may hold a NUL byte (a SNOBOL4 string,
 # a Prolog atom, an Icon string); such a read silently truncates it.
 # THE POPULATION is audit_nul_dependent_string_reads.py's sites per file against audit_nul_dependent_string_reads.baseline.tsv, in TWO ratcheted columns (the cto,
 # ARCH-PROLOG-DATABASE section 13 (5)): TRUNCATING reads (strlen, strdup, ct_strdup, strcpy, atoi and strto, sscanf, puts, fputs, %s) and EQUALITY reads (strcmp, strncmp,

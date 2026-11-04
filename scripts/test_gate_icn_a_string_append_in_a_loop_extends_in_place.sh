@@ -6,7 +6,7 @@ SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ REFUSE(2): no 
 command -v gcc >/dev/null || { echo "⛔ REFUSE(2): no gcc for mode 4"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 # test_gate_icn_a_string_append_in_a_loop_extends_in_place.sh -- s ||:= x in a loop appends in place, as iconx does (row
-# icon-a-string-append-in-a-loop-copies-the-whole-string-each-time-quadratic-ipl-noise-hangs; IPL progs/noise, graded under Lon CEO-1474).
+# icon-a-string-append-in-a-loop-copies-the-whole-string-each-time-quadratic-ipl-noise-hangs; IPL progs/noise, graded under Lon R-1474).
 # Two causes, both cured: every Icon prologue set the string-extension latch (off = 1), so no append in a procedure ever extended in place;
 # and ?x on a variable built an assignable cell even where its value is read at once, an allocation that ends extension at the heap top.
 # ARM 1 (speed, generous): a million ||:= appends of ?s must finish in 20 s in m3 and m4 (iconx 0.1 s; quadratic, minutes).

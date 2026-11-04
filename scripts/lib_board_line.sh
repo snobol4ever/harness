@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# lib_board_line.sh -- THE ONE WAY TO READ A FIELD OUT OF A SUITE_BOARD LINE (coo, CEO-839).
+# lib_board_line.sh -- THE ONE WAY TO READ A FIELD OUT OF A SUITE_BOARD LINE (coo, R-839).
 #
 # ⛔ EXTRACTION ANCHORS ON IDENTITY, NEVER POSITION (RULES.md INSTRUMENT LAWS).  A check that greps
 # 'total=2 m3_n=2' asserts that nothing sits BETWEEN those two fields, which is a claim about the board's
-# layout and not about its numbers.  SCRIP 3ade619f2 inserted `shipped=` and `outside=` there (CEO-749/772)
+# layout and not about its numbers.  SCRIP 3ade619f2 inserted `shipped=` and `outside=` there (R-749/772)
 # and test_gate_harness_refusal_is_rc2.sh arm 9 went red against a CORRECT board and stayed red for a day,
 # reporting it as "no board over the 2 entries" -- the failure mode reads like the run graded nothing rather
 # than like the pattern is stale.  util_board_field_matcher_census.py counts what is left; this is what they

@@ -7,7 +7,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_timeout_retry.sh}"   # every graded timeout is retried once, longer (Lon 2026-10-15, in-chat to the coo: "do a retry with longer timeouts")
 set -u
 SCRIP_DIR="${SCRIP_DIR:-$S4E/SCRIP}"
-# ⭐ RE-POINTED (ceo s283h, probe total-conversion): corpus/probe/earn0 is GONE -- the witnesses live in
+# ⭐ RE-POINTED (s283h, probe total-conversion): corpus/probe/earn0 is GONE -- the witnesses live in
 # the earn0 + earn02 SUITES (tests/snobol4/probe/) and are materialized here via the harness `extract`
 # verb into an assembled dir, so the board's per-witness loop below is unchanged. EARN0= still overrides.
 if [ -z "${EARN0:-}" ]; then

@@ -5,7 +5,7 @@
 #   bash harness/scripts/install_jvm_dotnet_perf_tools.sh --check      # no changes: report what is present and what is missing
 #
 # WHAT IT INSTALLS (Ubuntu 24.04, x86-64), and what each is for:
-#   perf (linux-tools)            the CPU's own counters: `perf stat -e instructions:u` is how CEO-2035 counts WORK for the ports (callgrind
+#   perf (linux-tools)            the CPU's own counters: `perf stat -e instructions:u` is how R-2035 counts WORK for the ports (callgrind
 #                                 cannot follow a JIT at a usable speed); `perf record -g` is the call-graph statistical profiler for both runtimes
 #                                 once the JIT publishes its symbol map (JVM: jcmd <pid> Compiler.perfmap, or -XX:+UnlockDiagnosticVMOptions
 #                                 -XX:+DumpPerfMapAtExit; .NET: DOTNET_PerfMapEnabled=1). hotspot (GUI) and FlameGraph read perf's output.
@@ -95,7 +95,7 @@ status
 cat <<'CARD'
 
 == THE USAGE CARD (open a new shell first, so PATH picks up /opt/async-profiler/bin, /opt/FlameGraph and ~/.dotnet/tools)
-JVM, instruction count of one run (CEO-2035's measure):   perf stat -e instructions:u -- java -jar app.jar args
+JVM, instruction count of one run (R-2035's measure):   perf stat -e instructions:u -- java -jar app.jar args
 JVM, statistical call graph, live pid, flame graph:        asprof -d 30 -e cpu -f /tmp/cpu.html <pid>        (-e instructions | wall | alloc | lock)
 JVM, the same as collapsed stacks for gprof2dot/FlameGraph: asprof -d 30 -o collapsed -f /tmp/st.txt <pid>; flamegraph.pl /tmp/st.txt > /tmp/st.svg
 JVM, from the start, as an agent:                          java -agentpath:/opt/async-profiler/lib/libasyncProfiler.so=start,event=cpu,file=/tmp/p.html -jar app.jar

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_harness_children_run_headless.sh -- EVERY CHILD THE HARNESS STARTS RUNS HEADLESS (the ceo 2026-10-23, after the coo's oracle
+# test_gate_harness_children_run_headless.sh -- EVERY CHILD THE HARNESS STARTS RUNS HEADLESS (2026-10-23, after the coo's oracle
 # re-measure opened "Hello, world" and "Click me !" windows on Lon's desktop at 11:09: rosetta-pascal's hello-world-graphical.pas and
 # simple-windowed-application.pas, run by fpc_oracle_run.sh through corpus_suite_harness._run_raw, inherited the session's DISPLAY).
 # corpus_suite_harness.py drops DISPLAY and WAYLAND_DISPLAY from its own environment at import, so every child it, or

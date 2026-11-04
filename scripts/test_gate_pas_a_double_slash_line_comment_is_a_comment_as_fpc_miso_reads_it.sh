@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_double_slash_line_comment_is_a_comment_as_fpc_miso_reads_it.sh -- the oracle, fpc -Miso, reads // to the end of the line as a comment (its
-# scanner does so in every mode). MEASURED 2026-10-09 by the ceo grading the ISO-dialect Pascal downloads (CEO-1589): ten Rosetta solutions that fpc -Miso
+# scanner does so in every mode). MEASURED 2026-10-09 by the officer grading the ISO-dialect Pascal downloads (R-1589): ten Rosetta solutions that fpc -Miso
 # builds stopped at "pascal parse error ... syntax error" on a // comment (largest-proper-divisor-of-n-1, lucas-lehmer-test-1, arithmetic-numbers,
 # roots-of-unity, both comb sorts, square-but-not-cube, strange-numbers, sum-multiples-of-3-and-5-2, strong-and-weak-primes). CAUSE: pascal.l had no rule
 # for it, so // lexed as two RDIV tokens. CURE: pascal.l reads "//"[^\n]* as a comment (longer than "/", so flex prefers it; a string literal and the two

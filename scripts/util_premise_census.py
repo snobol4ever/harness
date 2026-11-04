@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_premise_census.py (coo, 2026-09-20 -- row instruments-claim-computes-the-rows-premise-the-way-done-
-# computes-its-done-when; ceo CEO-1002).  THE BACKLOG IS NAMED RATHER THAN SILENTLY EXEMPT.
+# computes-its-done-when; R-1002).  THE BACKLOG IS NAMED RATHER THAN SILENTLY EXEMPT.
 #
 # `claim` and `next` now RUN a baton's PREMISE-WHEN and refuse the lock when it comes back red (the one
 # cheap command proving the row's central claim is still true on today's tree).  Almost every live baton

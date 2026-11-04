@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gate_wiring_ratchet.sh — the invariant gate over ../harness/scripts/util_gate_wiring.py, THE RATCHET that
 # keeps a gate from landing on disk and being run by nothing (row requested by hq_S 2026-09-06, routed by the
-# ceo as CEO-326; built by hq_T).
+# the officer as R-326; built by hq_T).
 #
 # WHAT IT PROTECTS. hq_S's measured case: test_gate_sno_fence_body_dynamic_operand.sh landed IN THE SAME PUSH
 # as the cure it grades and was never added to the recipe, so for a day the one instrument that could grade
@@ -96,7 +96,7 @@ echo "--- ARM 6 — every RULING carries a reason AND a declarer (hq_S's constra
 bad="$(awk -F'\t' '$2=="RULING" && ($3=="-" || $3=="" || $4=="-" || $4=="") {print $1}' "$HERE/gate_wiring.tsv")"
 [ -z "$bad" ] && ck ok "all RULING rows signed and reasoned" || { ck fail "RULING without reason/declarer:"; printf '%s\n' "$bad" | sed 's/^/       /'; }
 
-echo "--- ARM 7 — ONE LINE PER SCRIPT, graded on the LIVE Makefile (hq_U 2026-09-10, ceo CEO-516) ---"
+echo "--- ARM 7 — ONE LINE PER SCRIPT, graded on the LIVE Makefile (hq_U 2026-09-10, R-516) ---"
 # ⛔⭐ THIS IS THE ONE ARM HERE THAT GRADES THE LIVE TREE, AND ARM 4 ABOVE ARGUES AT LENGTH THAT IT MUST NOT.
 # The argument is right and this arm is not the exception to it — it is the case the argument does not reach,
 # and the difference is the SIZE OF THE POPULATION, not the strength of anyone's opinion. Coverage has ~190
@@ -104,7 +104,7 @@ echo "--- ARM 7 — ONE LINE PER SCRIPT, graded on the LIVE Makefile (hq_U 2026-
 # out inside a week, and the muted check is worse than none. The wired-twice population is a MEASURED ZERO
 # (2026-09-10, hq_T, over `test` + `test-postoffice`), so a red here is never a backlog — it is a defect that
 # landed since the last green, it costs ONE LINE to cure, and its author is still in the room. ⭐ THE GENERAL
-# FORM, adopted as the criterion by the ceo as CEO-520 and sharpened by hq_U: whether a check belongs in the
+# FORM, adopted as the criterion by the officer as R-520 and sharpened by hq_U: whether a check belongs in the
 # recipe or at handoff is decided by whether its refusal is a TASK somebody must schedule or a TYPO somebody
 # must delete -- equivalently, A LIVE-TREE ARM IS LEGITIMATE EXACTLY WHEN ITS RED POPULATION IS SMALL ENOUGH
 # THAT EVERY RED HAS A NAMED AUTHOR STILL IN THE ROOM. The honest way to know is to measure the backlog

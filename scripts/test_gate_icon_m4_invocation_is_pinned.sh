@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # ../harness/scripts/test_gate_icon_m4_invocation_is_pinned.sh -- THE PROGRAM NAME IS THE SAME IN BOTH MODES: THE BARE STEM.
-# DONE-WHEN for row icon-progname-class-one-ref-cannot-be-right-for-both-modes-master-and-jcon (CEO-569), rewritten
-# under ceo CEO-624 (2026-09-12) on Lon's word, verbatim: "Why is mode 3 different from mode 4? they were intended to
+# DONE-WHEN for row icon-progname-class-one-ref-cannot-be-right-for-both-modes-master-and-jcon (R-569), rewritten
+# under R-624 (2026-09-12) on Lon's word, verbatim: "Why is mode 3 different from mode 4? they were intended to
 # be identical."  AUTHORS: Lon Jones Cherryholmes · Claude Fable 5.1   DATE: 2026-09-12 (first version Opus 5, 09-11)
 #
 # ⭐⭐ THE MEASUREMENT THIS GATE RESTS ON, taken on the ORACLE (Arizona icont/iconx 9.5.25a) and re-taken every run:
 #     iconx pn                  -> &progname: pn          (the program invoked by its bare name)
 #     ./pn                      -> &progname: ./pn
 #     /abs/path/to/pn           -> &progname: /abs/path/to/pn
-# &progname is the name the program was INVOKED BY.  CEO-581 let the two modes answer differently because the
+# &progname is the name the program was INVOKED BY.  R-581 let the two modes answer differently because the
 # runners invoked them differently (m3 was handed `<stem>.icn`, m4 was run as `./<stem>`) and covered the gap with a
-# PER-MODE REF.  CEO-624 closes the gap at its cause instead: THE PROGRAM NAME IS THE SAME STRING IN BOTH MODES.
+# PER-MODE REF.  R-624 closes the gap at its cause instead: THE PROGRAM NAME IS THE SAME STRING IN BOTH MODES.
 #   * mode 3: `scrip --run path/<stem>.icn` names the program `path/<stem>` -- the source path with its extension
 #     stripped, which is exactly the name icont gives the program it builds from that source;
 #   * mode 4: every runner invokes the binary by that same string -- the bare `<stem>`, resolved through PATH (the
 #     rungs harness, the jcon runner and the arizona runner all put the binary's directory first on PATH and invoke
 #     `<stem>`), so argv[0] is `<stem>` and the oracle under the same invocation (`iconx <stem>`) answers the same;
 #   * therefore ONE ref line is right for both modes, cut from the oracle under `iconx <stem>`, and NO per-mode
-#     declaration exists at all -- the .moderef mechanism is gone (CEO-1218/1230: one machine in two media, one ref).
+#     declaration exists at all -- the .moderef mechanism is gone (R-1218/1230: one machine in two media, one ref).
 #
-# ⛔ IT GRADES ON ITS OWN FIXTURES, NEVER ON A BOARD (CEO-547 part 2, ONE RUNNER ONE BOARD): a source-level assertion
+# ⛔ IT GRADES ON ITS OWN FIXTURES, NEVER ON A BOARD (R-547 part 2, ONE RUNNER ONE BOARD): a source-level assertion
 # over the three graders, a live round trip on a witness it compiles itself, the one-entry rungs graded THROUGH the
 # harness, and the two shipped programs that print &progname extracted and run directly.  No board, no row written.
 # With icont unreachable this gate REFUSES rc=2: an instrument that cannot measure refuses.
@@ -31,7 +31,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 HARNESS="$HERE/corpus_suite_harness.py"; JCON="$HERE/test_icon_jcon_suite.sh"; ARIZ="$HERE/test_icon_arizona_suite.sh"
 . "$HERE/lib_oracle_flags.sh"
-. "$HERE/lib_board_line.sh"      # board_is: a board field is read BY NAME, never by adjacency (CEO-839)
+. "$HERE/lib_board_line.sh"      # board_is: a board field is read BY NAME, never by adjacency (R-839)
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"
 for f in "$HARNESS" "$JCON" "$ARIZ"; do [ -f "$f" ] || { echo "REFUSED rc=2: $f is missing -- cannot measure"; exit 2; }; done
 [ -x "$SCRIP" ] || { echo "REFUSED rc=2: no $SCRIP -- run make, then re-run"; exit 2; }
@@ -82,8 +82,8 @@ printf '#%s 1 pinwitness\nprocedure main()\n   write("&progname: ",&progname);\n
 printf '#%s 1 pinwitness\n&progname: pinwitness\n' "-----------------" > "$PW/ALL.ref"
 LIVE="$(timeout -k 5 120s python3 "$HARNESS" run --lang icon --modes m3,m4 "$PW/ALL.icn" "$PW/ALL.ref" 2>&1)"
 # fields read BY NAME, never by adjacency: 'm3_n=1 m3_pass=1' asserted the board's LAYOUT, and the board
-# gained shipped=/outside= once already (CEO-749/772; the same pattern shape left arm 9 of
-# test_gate_harness_refusal_is_rc2.sh red for a day over a correct board -- CEO-839).
+# gained shipped=/outside= once already (R-749/772; the same pattern shape left arm 9 of
+# test_gate_harness_refusal_is_rc2.sh red for a day over a correct board -- R-839).
 _lb="$(grep -m1 '^SUITE_BOARD ' <<<"$LIVE")"
 if board_is "$_lb" m3_n 1 && board_is "$_lb" m3_pass 1 && board_is "$_lb" m4_n 1 && board_is "$_lb" m4_pass 1; then
   say_ok "LIVE: the harness grades the entry green in m3 AND m4 against ONE ref line -- the rule holds where entries are actually graded"

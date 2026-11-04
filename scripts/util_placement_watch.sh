@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# util_placement_watch.sh -- THE RSP/RBP HOST COUNT, KEPT CURRENT PER ORIGIN TREE (Lon 2026-10-21, in-chat to the ceo, verbatim: "I want to see a
+# util_placement_watch.sh -- THE RSP/RBP HOST COUNT, KEPT CURRENT PER ORIGIN TREE (Lon 2026-10-21, in-chat, verbatim: "I want to see a
 # COUNT of RSP hosted locals and operands, and a COUNT of RBP hosted locals and operands. I should see that at every turn. As you fix the
-# programs I should see the numbers changing." · "I should also see a count of RSP resets at BETA and see the count go to ZERO."; ceo CEO-1855).
+# programs I should see the numbers changing." · "I should also see a count of RSP resets at BETA and see the count go to ZERO."; R-1855).
 #
 # The count is util_bb_placement_census.py's BB_HOSTS line per language over util_spine_population.sh's programs (the committed-artifact
 # SNOBOL4, Icon and Prolog programs and every Pascal, Raku, Snocone and Rebus demo and benchmark source), compiled by SCRIP at origin/main --
@@ -26,9 +26,9 @@
 # source, compiled at the same origin (Lon: a beta never resets rsp; the count goes to zero).
 # FRAME HOMES: /home/resources/progress/FRAMEHOME.tsv, one row per (reading, language): when, scrip, corpus, harness, lang, homes, agree,
 # home_without_test, test_without_home -- the same census's BB_PLACEMENT_FRAMEHOME, the compiler's RBP operand homes against Lon's operand test
-# (Lon 2026-10-21: "Will we get all the proper allocations on the RSP spine?"; ceo CEO-1865; test_gate_frame_homes_agree_with_lons_tests.sh),
+# (Lon 2026-10-21: "Will we get all the proper allocations on the RSP spine?"; R-1865; test_gate_frame_homes_agree_with_lons_tests.sh),
 # then ruled, then ops_rbp_misplaced (BB_PLACEMENT rbp_misplaced less BB_HOSTS loc_rbp_misplaced: an operand record BEHIND rbp -- a GATE, BOUND or CLEANUP
-# record -- that no test forces; the frame-home comparison judges only the mirrored spine cells, so the "RBP wrong?" column adds this, ceo CEO-2004).
+# record -- that no test forces; the frame-home comparison judges only the mirrored spine cells, so the "RBP wrong?" column adds this, R-2004).
 # rc 0 shown/measured/nothing to do · rc 2 could not measure (named: fetch, worktree, build or census failed).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -95,7 +95,7 @@ for l in langs:
 line(['TOTAL'] + [f(c) for c in tot])
 line(['goal', 'all', 'forced', '0', 'all', 'forced', '0', '0', '0', 'allowed'])
 forced_ops = sum(v['ops_rbp'] for v in per.values()) - tot[2]
-print("  RBP is right only where your two tests force it. Operands: %s RBP homes, %s disputed by the test (%s homed without it, %s it forces that have no home, %s records behind rbp that no test forces; the test is still being calibrated, CEO-1865). Locals: %s on RBP, %s forced, %s wrong." % (f(sum(v['ops_rbp'] for v in per.values())), f(tot[2]), f(sum(h[2] for h in fper.values())), f(sum(h[3] for h in fper.values())), f(sum(h[4] for h in fper.values())),f(tot[4]), f(sum(v['loc_rbp_forced'] for v in per.values())), f(tot[5])))
+print("  RBP is right only where your two tests force it. Operands: %s RBP homes, %s disputed by the test (%s homed without it, %s it forces that have no home, %s records behind rbp that no test forces; the test is still being calibrated, R-1865). Locals: %s on RBP, %s forced, %s wrong." % (f(sum(v['ops_rbp'] for v in per.values())), f(tot[2]), f(sum(h[2] for h in fper.values())), f(sum(h[3] for h in fper.values())), f(sum(h[4] for h in fper.values())),f(tot[4]), f(sum(v['loc_rbp_forced'] for v in per.values())), f(tot[5])))
 if len(keys) > 1:
     p = agg(keys[-2])
     if sorted(p) == sorted(per):
@@ -173,10 +173,10 @@ PY
 case "${1:-show}" in
     show) do_show ;;
     kick)
-        # ⛔ THE WATCH MUST NOT LOAD THE BOX IT WATCHES (Lon 2026-10-22: "You are meant to fix the load not hurt it"; ceo CEO-1894). Measured
+        # ⛔ THE WATCH MUST NOT LOAD THE BOX IT WATCHES (Lon 2026-10-22: "You are meant to fix the load not hurt it"; R-1894). Measured
         # 10:01: every origin landing started a full SCRIP rebuild in /tmp (outside ccache's /home base, so every compile missed) plus 274
         # program compiles, and it held all 8 box-wide compile slots. So a kick measures at most once an hour, and only while the
-        # five-minute load is under three quarters of the cores (ceo CEO-1921: at half, a busy fleet's steady load of 8 to 9 on 16 cores held
+        # five-minute load is under three quarters of the cores (R-1921: at half, a busy fleet's steady load of 8 to 9 on 16 cores held
         # the table from 15:27 past the Pascal switch's last landing and the Raku switch -- the very readings Lon asked to see move; the build
         # runs in the batch class (util_batch.sh: CPUWeight 100 beside the sessions, shared-dev step 4), so the hourly cap and the class are the throttle); `show` prints every turn.
         last="$(stat -c %Y "$REC" 2>/dev/null || echo 0)"; now="$(date +%s)"

@@ -3,7 +3,7 @@
 
 usage: util_inf_snobol4_coverage_census.py [--scope N] [--seeds K] [--size M] [--family F] [--step S --need H] [--tsv OUT] [--out DIR]
 
-THE VOCABULARY is corpus/demos/scriptix/infinite_snobol4/COVERAGE.tsv (the cto, CEO-1999; one row per construct of the SPITBOL manual v3.7,
+THE VOCABULARY is corpus/demos/scriptix/infinite_snobol4/COVERAGE.tsv (the cto, R-1999; one row per construct of the SPITBOL manual v3.7,
 with the regex that recognises it on a generated test line, the instrument that is to reach it and the DESIGN-PLAN step that adds it).
 THE MEASUREMENT: the generator (the Icon section of infinite_snobol4.md, built through util_inf_snobol4_differential.build_generator) writes a
 spread of batches at --scope N -- every walk, kind and preset the driver draws from, and from scope 11 the statement walk (kind=stmt),
@@ -38,7 +38,7 @@ SPREAD = [  # the walks, kinds and presets the driver's options() draws from, on
     dict(preset='1', kind='both', walk='every', elimit='2', plimit='2', climit='1'),
     dict(preset='3', kind='match', walk='every', elimit='1', plimit='2', climit='1'),
 ]
-# THE CODE ROAD (DESIGN-PLAN random-codegen-scope step 11; ceo 2026-10-29, Q3 of its row): from scope 11 the spread gains the closed world's
+# THE CODE ROAD (DESIGN-PLAN random-codegen-scope step 11; the officer 2026-10-29, Q3 of its row): from scope 11 the spread gains the closed world's
 # statement walk, last, so every configuration before it keeps its index and its seeds; below 11 the spread is the six above, and every
 # lower scope's census reads the batches it read (test_gate_inf_census_spread_takes_statements_from_scope_11.sh)
 STMT = dict(preset='3', kind='stmt', walk='random', limit='12')

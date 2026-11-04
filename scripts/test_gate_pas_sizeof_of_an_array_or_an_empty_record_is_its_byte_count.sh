@@ -2,7 +2,7 @@
 # test_gate_pas_sizeof_of_an_array_or_an_empty_record_is_its_byte_count.sh -- sizeof(x) of an array variable or type, of an
 # empty record type or variable, and of a record or array whose component is one of those, answers as fpc does.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. Every sizeof of an array variable, an
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. Every sizeof of an array variable, an
 # array type, an empty record or a variable of one died at run time with `scrip: error 22: Undefined function called`: pascal.y's
 # sizeof arm folded only scalars and records with fields, and the array table never held an element size. FPC test_tprec11
 # (sizeof of an array of an empty packed record, and of the empty record) was red on it.

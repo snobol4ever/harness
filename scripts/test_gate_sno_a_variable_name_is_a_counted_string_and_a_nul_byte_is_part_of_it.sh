@@ -2,7 +2,7 @@
 # test_gate_sno_a_variable_name_is_a_counted_string_and_a_nul_byte_is_part_of_it.sh -- A NAME IS ITS BYTES AND ITS LENGTH
 #
 # MEASURED 2026-10-02 by the cto (row snobol4-a-variable-name-may-begin-with-a-nul-byte-the-namespace-must-key-counted-strings-not-c-strings,
-# ceo CEO-1407): sbl -bf accepts a variable whose name holds a NUL byte -- $&ALPHABET, $(CHAR(0) 'X'), $('X' CHAR(0) 'Y') -- and
+# R-1407): sbl -bf accepts a variable whose name holds a NUL byte -- $&ALPHABET, $(CHAR(0) 'X'), $('X' CHAR(0) 'Y') -- and
 # SCRIP's namespace keyed C strings: bn_sno_name (the $ operator) asked NV_intern_name_n, which refused any name holding a NUL,
 # then spelled the name as a C string, so a name BEGINNING with NUL read as the null name and failed the statement, and a NUL
 # INSIDE a name was silently truncated -- $('X' CHAR(0) 'Y') read and wrote the variable X. SnoRungs' last red
@@ -10,7 +10,7 @@
 # THE CURE (src/runtime/core/core.c, src/runtime/by_name_dispatch.c): every namespace entry carries its length and whether it holds
 # a NUL; a C-string lookup matches only a NUL-free entry, a counted lookup compares length and bytes, the rehash reads the stored
 # length, and NV_PTR_n finds or creates a counted name, which $ hands on as the cell itself so the name is never spelled again.
-# 2026-10-02 later (row snobol4-a-pattern-capture-into-a-nul-named-variable-aborts-..., ceo CEO-1412): a CAPTURE into such a
+# 2026-10-02 later (row snobol4-a-pattern-capture-into-a-nul-named-variable-aborts-..., R-1412): a CAPTURE into such a
 # name ('abc' 'b' . $Z with Z = CHAR(0) 'Q') aborted rc=134 in the runtime pattern compiler, because SNO$PBC/PCUR/PDEF spelled the
 # target as a C string. A name holding a NUL, or beginning with byte 1, now has ONE key everywhere: byte 1 followed by the hex of
 # its bytes (NV_nul_key), which no source identifier can spell and which escapes its own lead byte, so $, the namespace and the

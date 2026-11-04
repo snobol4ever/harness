@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_container_package_runner_counts_its_containers_as_excl.sh -- A CONTAINER PACKAGE'S Excl COUNTS ITS CONTAINERS.tsv FRAGMENTS
-# (CEO-1288: Excl is every shipped unit a package row's denominator leaves out, a CONTAINERS.tsv include fragment among them, so
+# (R-1288: Excl is every shipped unit a package row's denominator leaves out, a CONTAINERS.tsv include fragment among them, so
 # shipped = denominator + Excl reads off the row). Found by the coo 2026-10-10: lib_container_package_runner.sh published rosetta-prolog
 # 220/786 with Excl 0 over its 9 containers, where jcon, arizona, gnu and ipl count theirs; the runner now asks container_package_excl.
 # Hermetic, no build, no corpus: a mktemp package of six shipped .pl files and its ALL.pl, through container_package_excl, the function
@@ -47,4 +47,4 @@ printf 'e.pl\tINCLUDED_BY\t \n' >> "$P/CONTAINERS.tsv"
 arm "arm 4 a row with no measurement" rc2
 echo "population: $ARMS arms over a mktemp package of 6 shipped .pl files (container_package_excl, lib_container_package_runner.sh)"
 if [ "$RED" = 0 ]; then echo "GATE PASS [$G]: Excl = EXCLUDED.tsv rows + shipped CONTAINERS.tsv fragments, each unit once; a refused sidecar is rc 2"; exit 0; fi
-echo "GATE FAIL [$G]: the container runner's Excl does not count its containers as CEO-1288 rules"; exit 1
+echo "GATE FAIL [$G]: the container runner's Excl does not count its containers as R-1288 rules"; exit 1

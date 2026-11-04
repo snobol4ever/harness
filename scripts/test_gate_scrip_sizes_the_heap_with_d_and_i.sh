@@ -3,16 +3,16 @@
 # test_gate_scrip_sizes_the_heap_with_d_and_i.sh -- SCRIP SIZES THE GC HEAP WITH -d (THE HARD CAP) AND -i (THE INITIAL WINDOW AND
 # ENLARGE AMOUNT) AND THE STACK WITH -s, AS SPITBOL DOES, IN BOTH MODES; THE ENVIRONMENT KNOBS ARE A NAMED TEST SEAM THAT A SWITCH
 # OVERRIDES (cto 2026-09-23, row spine-scrip-sizes-the-heap-with-d-and-i-and-the-stack-with-s-exactly-like-spitbol; Lon in-chat
-# to the ceo, verbatim: "Do we set the stack and heap memory with the -s and the -m command line switches, just like SPITBOL. If
-# not, do you not think we should?"; CEO-1225).
+# to the officer, verbatim: "Do we set the stack and heap memory with the -s and the -m command line switches, just like SPITBOL. If
+# not, do you not think we should?"; R-1225).
 #
 # WHY A SWITCH AND NOT AN ENV KNOB: an environment variable is invisible in a transcript -- it is how the 1 MB tiny arm read as a
-# measurement while inert (CEO-1146) -- and a switch on the command line is recorded with the run.
+# measurement while inert (R-1146) -- and a switch on the command line is recorded with the run.
 #
 # ARMS (every reading comes from the runtime's own GC-EXERCISE report, collections= and cap_kb=, never from the knob):
 #   (1) a witness with a ~20 MB live set dies at -d4m and prints its answer under -d64m and at the default cap, in mode 3;
 #   (2) the same witness compiled once and run as a binary takes -d4m and -d64m on ITS command line (mode 4);
-#   ⛔ SINCE CEO-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") the
+#   ⛔ SINCE R-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") the
 #   default cap is SPITBOL's -d128m and the default stack its -s4m, so the arms name a small cap explicitly instead of leaning on the
 #   default -- the old 4 MB default is what the witness used to overflow, and a 128 MB live set is no witness for a gate.
 #   (3) -i is the window: the same allocating witness collects many times at -i128k and never at -i64m, both under -d64m;

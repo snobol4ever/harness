@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_the_spine_walk_is_told_its_cells.sh -- STEP 4b OF THE ZETA-LAYOUT PLAN (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16 step (3); STEPS.tsv row 4b; the cto's R3), the finish line of
-# the row zeta-layout-step-4b-the-walk-reads-the-mask-the-search-deleted-ceo-2019: THE SPINE GAP WALK VISITS EXACTLY THE CELLS THE SITE'S MASK NAMES, AND THE SEARCH IS GONE.
+# the row zeta-layout-step-4b-the-walk-reads-the-mask-the-search-deleted-r-2019: THE SPINE GAP WALK VISITS EXACTLY THE CELLS THE SITE'S MASK NAMES, AND THE SEARCH IS GONE.
 #
 # WHAT IT MEASURES. Under SCRIP_GC_CHAIN_CHECK=3 the C spine walk (gc_sw_frame, the slow path) runs a dry copy of the old search over each frame's gap window [s->p, slo) beside the
 # site's third-quad mask and prints one [GC-TOLD] SUMMARY per walk: frames; masked (a rule 0 or 4 site, the only rules that carry a mask); agree (a cell both name); search_only (a cell the

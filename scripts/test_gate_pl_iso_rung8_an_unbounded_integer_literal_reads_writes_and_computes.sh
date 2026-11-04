@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung8_an_unbounded_integer_literal_reads_writes_and_computes.sh -- PROLOG ISO LADDER, RUNG 8 (cto, CEO-617/650, 2026-09-13).
+# test_gate_pl_iso_rung8_an_unbounded_integer_literal_reads_writes_and_computes.sh -- PROLOG ISO LADDER, RUNG 8 (cto, R-617/650, 2026-09-13).
 # THE RUNG: a Prolog integer literal wider than 64 bits is READ as an unbounded integer, not silently wrapped.
 # It writes back as its own digits, answers integer/1, unifies and compares as an integer, and carries through
 # + - * // and unary minus; current_prolog_flag(bounded, B) answers false, as ISO 7.11.1.1 requires of an

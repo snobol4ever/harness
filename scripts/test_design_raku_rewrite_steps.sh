@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# test_design_raku_rewrite_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-rewrite (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_raku_rewrite_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-rewrite (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-RAKU-REWRITE.md). The plan is corpus/tests/raku/rewrite/STEPS.tsv; the witnesses are the .raku programs beside it, each
 # with a .ref cut from Rakudo (rakudo_bin of lib_oracle_flags.sh: rakudo-local 2026.05).
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness in mode 3 and mode 4 (the declared -d131072k -s4096k, stdout compared exactly with the ref), then
-#                the step's probe tokens, every one a READ of a stored measurement (the coo's loop measures; a seat runs no board, CEO-1671):
+#                the step's probe tokens, every one a READ of a stored measurement (the coo's loop measures; a seat runs no board, R-1671):
 #                  chapter=PREFIX:N   the roast files whose path starts with PREFIX (a comma list is a union) that read PASS in BOTH modes in
 #                                     the latest results.tsv readings, at least N
 #                  reject=smx:N       the roast files whose latest mode-3 note is the emitter's [SMX] refusal, at most N

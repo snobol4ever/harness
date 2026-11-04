@@ -55,7 +55,7 @@ CEREM_RE = re.compile(
 # VALUE is not a frame reference (class D scratch; the `mov rcx, rbp` wire-adopt marshal) --
 # counting either makes zero unreachable, the exact failure mode FLATDISP-9 was written to fix.
 DATA_RE = re.compile(r'\[\s*rbp\s*[+\-]')
-# ⭐ CLASS E (the FIFTH CLASS -- Lon's grant 2026-08-29, ceo landing): ζ-ACTIVATION refs inside a
+# ⭐ CLASS E (the FIFTH CLASS -- Lon's grant 2026-08-29 landing): ζ-ACTIVATION refs inside a
 # REGION-RESIDENT generator activation frame.  The N-2 alpha establishes rbp by pointing it INTO the
 # host-carved region -- `lea rbp, [rax + ft]` -- not by seeding it from rsp, so without this class
 # every generator ζ ref would read as class-C-without-a-seed, i.e. DRIFT, and the zero-assert would

@@ -82,13 +82,13 @@ out="$(run_write "$B1" coo)"; rc=$?
 [ "$rc" = 0 ] && [ "$(sum_of "$B1")" != "$before" ]; arm $? "THE ONE RUNNER WRITES: the row lands for the seat MODE names (rc=$rc)"
 [[ "$out" == *"rewritten in place"* ]]; arm $? "and the write says so in the runner's own words"
 echo "--- ARM 3: THE ROSTER IS READ, NOT SPELLED -- name a runner who is not the coo and a seat it does not name is refused ---"
-# re-cut by the coo 2026-11-01: CEO-1976 (10-25) rules that the coo is never refused on a SCRIP board whatever LANES names, so the coo is a
+# re-cut by the coo 2026-11-01: R-1976 (10-25) rules that the coo is never refused on a SCRIP board whatever LANES names, so the coo is a
 # ruled exception at the write path too (util_score_row.py's measurer test); the arm proves the roster is read with a seat that is no exception.
 B3="$WORK/b3"; mkboard "$B3" yes || refuse "could not build the second fixture board"
 mode_with 'cfo SNOBOL4, and THE ONE RUNNER for every rung suite and package board; coo PASCAL'
 before="$(sum_of "$B3")"; out="$(run_write "$B3" cqo)"
 [ "$(sum_of "$B3")" = "$before" ] && [[ "$out" == *"NOT UPDATED"* && "$out" == *cfo* ]]
-arm $? "the cqo is REFUSED where the scratch MODE names the cfo -- an implementation spelling a seat name fails here (the coo is CEO-1976's ruled exception)"
+arm $? "the cqo is REFUSED where the scratch MODE names the cfo -- an implementation spelling a seat name fails here (the coo is R-1976's ruled exception)"
 out="$(run_write "$B3" cfo)"
 [ "$(sum_of "$B3")" != "$before" ]; arm $? "and the cfo writes, for no reason other than line 2 saying so"
 echo "--- ARMS 4-5: CANNOT-DETERMINE IS NOT A REFUSAL -- an unreadable roster falls back to the older FACT RULE, loudly ---"
@@ -101,11 +101,11 @@ mode_with 'hq_I SNOCONE; hq_T RAKU; the lanes are cut by concern and this mode n
 before="$(sum_of "$B5")"; out="$(run_write "$B5" hq_I)"
 [ "$(sum_of "$B5")" != "$before" ] && [[ "$out" == *"NOT DETERMINED"* ]]
 arm $? "A MODE THAT CUTS NO ONE RUNNER refuses nobody -- the guard follows the roster instead of outliving it"
-echo "--- ARMS 6-7b: THE SANCTIONED DOORS, LOUD AND RECORDED -- and NEITHER the RUN door NOR the bus's own computed done is one of them (CEO-961, CEO-997) ---"
-# ⛔⭐ ARM 6 INVERTED 2026-09-20 BY CEO-997 (the coo's QA-2 on row one-runner-override-gates-the-run-and-the-leaderboard-
+echo "--- ARMS 6-7b: THE SANCTIONED DOORS, LOUD AND RECORDED -- and NEITHER the RUN door NOR the bus's own computed done is one of them (R-961, R-997) ---"
+# ⛔⭐ ARM 6 INVERTED 2026-09-20 BY R-997 (the coo's QA-2 on row one-runner-override-gates-the-run-and-the-leaderboard-
 # write-needs-its-own-consent), and this NARROWS hq_B's own standing arm 6 rather than deleting it. hq_B wired it in
 # 2026-09-13 to keep ONE run per closure usable: the bus runs every DONE-WHEN with S4E_DONE_WHEN_RUN=1, and a row whose
-# criterion IS a board had to be closeable. ⛔ THE DEFECT IS CEO-961'S WORD FOR WORD WITH A DIFFERENT VARIABLE: a
+# criterion IS a board had to be closeable. ⛔ THE DEFECT IS R-961'S WORD FOR WORD WITH A DIFFERENT VARIABLE: a
 # DONE-WHEN that runs a board the seat does not own PUBLISHES A LEADERBOARD ROW AS A SIDE EFFECT OF BEING USED AS A
 # MEASUREMENT -- and the door is wider than the bus, because util_queue_visibility_census.py:105 runs EVERY baton's
 # DONE-WHEN body with S4E_DONE_WHEN_RUN=1, so the coo's own hygiene census was a fleet-wide publish button.
@@ -115,11 +115,11 @@ B6="$WORK/b6"; mkboard "$B6" yes || refuse "could not build the fifth fixture bo
 mode_with 'coo PASCAL, and THE ONE RUNNER for every rung suite and package board'
 before="$(sum_of "$B6")"; out="$(DW=1 run_write "$B6" hq_I)"
 [ "$(sum_of "$B6")" = "$before" ] && [[ "$out" == *"NOT UPDATED"* ]]
-arm $? "the bus's computed \`done\` run of a DONE-WHEN by a seat that is NOT the lane owner writes NOTHING and says so (CEO-997 ONE)"
+arm $? "the bus's computed \`done\` run of a DONE-WHEN by a seat that is NOT the lane owner writes NOTHING and says so (R-997 ONE)"
 B6B="$WORK/b6b"; mkboard "$B6B" yes || refuse "could not build the fifth-b fixture board"
 before="$(sum_of "$B6B")"; out="$(DW=1 run_write "$B6B" coo)"
 [ "$(sum_of "$B6B")" != "$before" ]; arm $? "and THE LANE OWNER's own computed \`done\` still writes -- closing that door costs the legitimate case nothing"
-# ⛔⭐ ARM 7 INVERTED 2026-09-20 BY CEO-961 (row one-runner-override-gates-the-run-and-the-leaderboard-write-needs-its-own-
+# ⛔⭐ ARM 7 INVERTED 2026-09-20 BY R-961 (row one-runner-override-gates-the-run-and-the-leaderboard-write-needs-its-own-
 # consent), and the inversion is the finding, not a relaxation. Until today S4E_ONE_RUNNER_OVERRIDE opened the RUN door in
 # lib_one_runner.sh AND this write door, together, so there was NO WAY TO SAY "run the arm and publish nothing" -- and a
 # control arm on another seat's frontend, which RULES.md § SHARED-NODE VERDICT SCOPE requires of every shared-node landing,
@@ -129,12 +129,12 @@ before="$(sum_of "$B6B")"; out="$(DW=1 run_write "$B6B" coo)"
 B7="$WORK/b7"; mkboard "$B7" yes || refuse "could not build the sixth fixture board"
 before="$(sum_of "$B7")"; out="$(OV='control arm for a landing, publishes nothing' run_write "$B7" hq_I)"
 [ "$(sum_of "$B7")" = "$before" ] && [[ "$out" == *"NOT UPDATED"* && "$out" == *"admitted THE RUN, not the WRITE"* && "$out" == *S4E_SCORE_WRITE* ]]
-arm $? "S4E_ONE_RUNNER_OVERRIDE alone writes NOTHING and says WHY, naming the consent it is not (CEO-961: the run and the write are two consents)"
+arm $? "S4E_ONE_RUNNER_OVERRIDE alone writes NOTHING and says WHY, naming the consent it is not (R-961: the run and the write are two consents)"
 B7B="$WORK/b7b"; mkboard "$B7B" yes || refuse "could not build the seventh fixture board"
 before="$(sum_of "$B7B")"; out="$(SW='proving the seam' run_write "$B7B" hq_I)"
 [ "$(sum_of "$B7B")" != "$before" ] && [[ "$out" == *"LEADERBOARD WRITE CONSENT"* && "$out" == *"proving the seam"* ]]
 arm $? "a NAMED S4E_SCORE_WRITE writes the row and prints the reason -- the channel stays usable and stays loud"
-echo "--- ARMS 7c-7d: A GATE NEVER PUBLISHES A LEADERBOARD ROW -- the caller's own door, above lane ownership (CEO-997 TWO) ---"
+echo "--- ARMS 7c-7d: A GATE NEVER PUBLISHES A LEADERBOARD ROW -- the caller's own door, above lane ownership (R-997 TWO) ---"
 # ⛔⭐ THE DIRECTION THAT MATTERS IS THE LANE OWNER'S. Every other door here answers "may this seat publish?", and a gate
 # run BY the lane owner answers yes -- which is how three gates that invoke test_smoke_raku.sh published raku/floor every
 # time hq_raku ran them, invisibly, because the reading did not change. A gate is an INVARIANT CHECK and the leaderboard is

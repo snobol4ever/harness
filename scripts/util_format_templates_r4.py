@@ -6,7 +6,7 @@
   3. a one-line function whose body begins with a declaration on the signature line is expanded to one statement per line.
 Every token is kept, in order; the only change to a token is a string literal split into two adjacent literals.
 --check prints the three counts per file and exits 1 if any is non-zero; without it the files are rewritten in place.
-HQ-TEMPLATES (CEO-1321), the R4 hygiene mechanism landed whole over the population (LARGE CHUNKS, CEO-1479): run it over a template you changed and the audit's over_col, multi_x86 and sig_decls
+HQ-TEMPLATES (R-1321), the R4 hygiene mechanism landed whole over the population (LARGE CHUNKS, R-1479): run it over a template you changed and the audit's over_col, multi_x86 and sig_decls
 classes stay at 0; after a rebase conflict in a template file, take your side of the file and re-run it."""
 import re, sys
 

@@ -2,7 +2,7 @@
 """util_logtalk_coinduction_cases.py -- the Logtalk ISO cases that exist only because coinduction is supported.
 
 Row prolog-rational-trees-cyclic-term-unification-comparison-copy-and-write-so-the-logtalk-coinduction-branch-is-graded-as-supported
-(cto, 2026-10-07). util_logtalk_extract.py decides `current_logtalk_flag(coinduction, supported)` TRUE (CEO-1518), so the
+(cto, 2026-10-07). util_logtalk_extract.py decides `current_logtalk_flag(coinduction, supported)` TRUE (R-1518), so the
 supported branch of every `:- if(...)` that names it is graded and its else branch is lgtunit-skipped. THE POPULATION is
 DERIVED, never listed: parse the suite twice, once as shipped and once with that one conjunct answered FALSE; the cases the
 second parse loses are the coinduction cases (68 at .github 179f31397 / corpus 044bbe6b9). A hand list would go stale the

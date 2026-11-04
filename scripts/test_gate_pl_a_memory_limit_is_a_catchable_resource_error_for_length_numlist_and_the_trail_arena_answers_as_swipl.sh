@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_memory_limit_is_a_catchable_resource_error_for_length_numlist_and_the_trail_arena_answers_as_swipl.sh -- A MEMORY LIMIT IS A CATCHABLE resource_error(stack) FOR THE BULK LEAVES, AND THE TRAIL ARENA HOLDS 5 MILLION BINDINGS, IN BOTH MODES
-# (hq_prolog 2026-10-15, row prolog-exhausting-the-heap-cap-or-the-trail-arena-ends-the-run-where-swipl-raises-a-catchable-resource-error; the ceo's CEO-1791
+# (hq_prolog 2026-10-15, row prolog-exhausting-the-heap-cap-or-the-trail-arena-ends-the-run-where-swipl-raises-a-catchable-resource-error; R-1791
 # ruling, road B: the bulk leaves check the cap and raise before they allocate; no codegen).
 # THE CURE: length(L, N) and numlist(Low, High, L) ask '$heap_guard'/2 (by_name_dispatch.c, rt_gcheap_cap_bytes) before they build N list cells of 48 bytes: when
 # N * 48 exceeds the smaller of the heap cap and the stack_limit flag the call raises error(resource_error(stack), _) -- catchable, where it ran 3 seconds into the

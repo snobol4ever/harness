@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_no_pinned_lifetime_class.sh -- THE PINNING MECHANISM IS DELETED AND CANNOT COME BACK UNDER ITS OLD
-# SPELLINGS (cfo 2026-09-16, THE COLLECTOR, CEO-799; Lon in-chat to ceo 14:5x CDT, verbatim: "Just so we are clear.
+# SPELLINGS (cfo 2026-09-16, THE COLLECTOR, R-799; Lon in-chat 14:5x CDT, verbatim: "Just so we are clear.
 # Delete the mechanism of the pinning FIRST. THen go figure how to fix it.").
 #
 # WHAT WAS DELETED, measured at 14:58 CDT on origin f587b10e5: 458 spellings in 27 files under src/ -- rt_pinned_alloc /
@@ -13,9 +13,9 @@
 # rt_heap_strdup_c (HB_WSC, a leaf C string), or rt_gcheap_alloc(HB_ARR|HB_DINST, n) for the aggregates that have a
 # precise visitor. No block type is exempt from the slide; the forward pass has ONE marked-block branch.
 #
-# ARMS: (1) CENSUS -- the spellings above under src/ read 0 (the arm the ceo asked for: the mechanism cannot return by
+# ARMS: (1) CENSUS -- the spellings above under src/ read 0 (the arm the officer asked for: the mechanism cannot return by
 # name); (2) STRUCTURAL -- gc_heap.c contains no self-forward of a title (fwd = h) so no type is exempt from the slide;
-# ⛔⭐ (5) PROPERTY and (6) PLANTED, added by the cfo 2026-09-17 under CEO-831 on LON's ORDER ("Get rid of any code that
+# ⛔⭐ (5) PROPERTY and (6) PLANTED, added by the cfo 2026-09-17 under R-831 on LON's ORDER ("Get rid of any code that
 # pins blocks in the GC"), because ARMS 1 AND 2 CATCH THE MECHANISM AS IT WAS WRITTEN AND NOT THE PROPERTY THEY EXIST TO
 # PROTECT. A block can be pinned WITHOUT ever self-forwarding and WITHOUT any known spelling: leave it marked and simply
 # SKIP it in the forwarding pass. It keeps its address, the self-forward grep never matches, and the name census cannot
@@ -32,7 +32,7 @@
 # both modes rc=0 identical to the oracle across 4 collections on the deletion tree.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-# ⛔⭐ THIS GATE NAMES ITS OWN ARENA, AND THAT IS THE RULE, NOT AN EXEMPTION (Lon 2026-09-19, ceo CEO-938; RULES.md § THE
+# ⛔⭐ THIS GATE NAMES ITS OWN ARENA, AND THAT IS THE RULE, NOT AN EXEMPTION (Lon 2026-09-19, R-938; RULES.md § THE
 # INSTRUMENT LAWS, TWENTY-EIGHTH BATCH CLAUSE 2; declared in test_gate_gc_the_tiny_arena_is_the_default_of_gc_testing.sh).
 # The witness below keeps 30000 table entries LIVE by design (the property is that a live aggregate survives the slide), and
 # measured on 2026-09-23 (cto, CTO-149) that live set is 27509 blocks at the moment the 4096 KB HARD CAP refuses it under the
@@ -52,7 +52,7 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
 PAT='hb_pinned|rt_pinned_alloc|rt_pinned_alloc_tag|rt_pinned_alloc_core|rt_pinned_strdup|rt_pinned_realloc|c_rt_pinned_alloc|hb_no_move|hb_root_blanket|gc_unpin_wss|HB_WSS|SCRIP_GC_UNPIN_WSS|SCRIP_GC_PIN_AGGREGATES|gc_pinned_exact'
 hits=$(grep -rnE "$PAT" "$ROOT/src" 2>/dev/null || true); n=$(printf '%s' "$hits" | grep -c . || true)
-if [ "$n" -eq 0 ]; then echo "  census PASS (0 pinned-lifetime spellings under src/; 458 in 27 files before CEO-799)"
+if [ "$n" -eq 0 ]; then echo "  census PASS (0 pinned-lifetime spellings under src/; 458 in 27 files before R-799)"
 else echo "  census FAIL ($n spelling(s) of the deleted pinning mechanism are back under src/):"; printf '%s\n' "$hits" | head -20 | sed 's/^/      /'; RC=1; fi
 sf=$(grep -cE 'h->fwd = \(uint64_t\)\(uintptr_t\)h;' "$ROOT/src/runtime/rt/gc_heap.c" || true)
 if [ "$sf" -eq 0 ]; then echo "  structural PASS (gc_heap.c forwards no title to itself: no block type is exempt from the slide)"

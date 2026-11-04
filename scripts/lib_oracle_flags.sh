@@ -22,8 +22,8 @@
 # language.  (Same shape as row `suite-table-one-authority`, where the refusal is the load-bearing half.)
 sbl_lang_flags() { echo "-bf"; }
 
-# ⭐⭐ THE ONE AUTHORITY for DIVERTING SPITBOL'S LISTING OUT OF THE COMPARED STREAM (hq_B 2026-09-04, ceo
-# CEO-251 on the snoflake grading ruling).  MEASURED on snoflake: `sbl -bf` printed `macro spitbol version
+# ⭐⭐ THE ONE AUTHORITY for DIVERTING SPITBOL'S LISTING OUT OF THE COMPARED STREAM (hq_B 2026-09-04, the officer
+# R-251 on the snoflake grading ruling).  MEASURED on snoflake: `sbl -bf` printed `macro spitbol version
 # 4.0f`, an `x86-64 <date>` line, page headers and a full statement listing on 56 of 180 fixtures.  NOT from
 # our flags -- `-b` already suppresses the signon -- but from `-LIST` control lines INSIDE the fixtures, which
 # no command-line flag can pre-empt.  Any harness that compares SCRIP's output against the oracle's byte-for-
@@ -198,7 +198,7 @@ sbl_clean_refuse_if_load() {
   echo "⛔ REFUSING: $1 calls LOAD() -- the clean benchmark oracle's LOAD/external-fn support is stock upstream and UNVERIFIED against x64/bin/sbl (see sbl_clean_bin() above). Benchmarking this program against it would silently report a number of unknown validity, not a loud refusal. This is a preserved gap, not a bug for this row to fix. Time it against x64/bin/sbl directly (correctness oracle, sbl_lang_flags) if you must measure a LOAD()-calling program." >&2
   return 1
 }
-# ⛔⭐ THE ONE FILTER OVER gprolog's STANDARD OUTPUT (the coo 2026-10-10, ceo CEO-1599 on the swap CEO-1598): what a consult run prints
+# ⛔⭐ THE ONE FILTER OVER gprolog's STANDARD OUTPUT (the coo 2026-10-10, R-1599 on the swap R-1598): what a consult run prints
 # that is gprolog's and not the program's. gprolog_output_filter [--compile-diagnostics] < raw > program output. MEASURED, the two
 # banners: 1.4.5 printed "GNU Prolog 1.4.5 (64 bits)", "Compiled ...", "By Daniel Diaz", "Copyright ...", then "compiling ... for byte
 # code..." and "... compiled, N lines read"; 1.6.0 prints "GNU Prolog 1.6.0 (64 bits)", "Compiled ...", "Copyright ..." and then ONE EMPTY
@@ -234,7 +234,7 @@ gprolog_output_filter() {
 # must be LOUD on stderr with a non-zero return, never a silent empty string a caller can string-
 # concat into a broken command line.
 # Canonical shared build (verified executable this session): /home/resources/icon-master/bin/{icont,iconx}.
-# ⭐ ONE PATH, NO ALIAS (ceo CEO-1853, 2026-10-21; Lon in-chat to the ceo, verbatim: "We use proper absolute and relative paths."
+# ⭐ ONE PATH, NO ALIAS (R-1853, 2026-10-21; Lon in-chat, verbatim: "We use proper absolute and relative paths."
 # · "I am concerned only with ones we create."): /home/resources/icon-build was a symlink to icon-master that hq_C made in s266
 # so callers defaulting to it would land on the one tree. Every caller now names /home/resources/icon-master and the link is
 # removed; test_gate_no_symlinks.sh ARM 5 keeps the top level of /home/resources free of links we make.
@@ -275,7 +275,7 @@ iconx_bin() {
     printf '%s\n' "$c"
 }
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# ⭐ THE PROLOG AND JVM-ICON RIVALS (hq_P s272, at CEO's instruction; Lon installed swipl+gprolog, CEO built jcon).
+# ⭐ THE PROLOG AND JVM-ICON RIVALS (hq_P s272, at OFFICER's instruction; Lon installed swipl+gprolog, the officer built jcon).
 # Same loud-refusal contract as icont_bin/iconx_bin above and for the same reason: another root or container may not
 # have these, and a benchmark harness that silently falls back to a missing rival prints a plausible, entirely FALSE
 # column rather than refusing. ⛔ Never hand-assemble these paths and never fall back to a bare name on PATH.
@@ -290,8 +290,8 @@ swipl_bin() {
     fi
     printf '%s\n' "$c"
 }
-# ⛔⭐ THE GNU PROLOG ORACLE IS THE PRISTINE 1.6.0 UNDER /home/resources, NOT /usr/bin (Lon 2026-10-10 10:2x CDT, in-chat to the ceo, verbatim: "Get the new oracle 1.6.0 and
-# begin using it instead of the older one."; ceo CEO-1598, the ORACLE-SWAP PROCEDURE of RULES.md). The vendored GNU Prolog source (corpus/packages/prolog/gnu_prolog) IS 1.6.0 and
+# ⛔⭐ THE GNU PROLOG ORACLE IS THE PRISTINE 1.6.0 UNDER /home/resources, NOT /usr/bin (Lon 2026-10-10 10:2x CDT, in-chat, verbatim: "Get the new oracle 1.6.0 and
+# begin using it instead of the older one."; R-1598, the ORACLE-SWAP PROCEDURE of RULES.md). The vendored GNU Prolog source (corpus/packages/prolog/gnu_prolog) IS 1.6.0 and
 # /usr/bin/gprolog is 1.4.5, which dies on a 1.6.0 format directive in pl2wam's all.pl; the monitor fork gprolog-mon/gprolog-1.6.0 is 1.6.0 too, so the graded oracle and the
 # monitor now agree. The pristine build (configure --prefix under gprolog-mon/pristine, 2026-09-23, zero Pl_Mon references -- the fork carries 2) is the ONE grading binary; gplc
 # beside it is the ONE compiler. Nothing under ../harness/scripts/ names gprolog or gplc any other way (test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh).
@@ -304,7 +304,7 @@ gprolog_bin() {
     if [ ! -x "$c" ] || [ ! -x "$w" ]; then
         printf "⛔ THE GNU-PROLOG ORACLE IS MISSING: %s (wrapper %s)\n" "$c" "$w" >&2
         printf "   A Prolog column measured with it absent is not slow, it is ABSENT -- and a harness that fills it anyway publishes a false number.\n" >&2
-        printf "   Do not hand-assemble a path or fall back to bare 'gprolog' on PATH (that is 1.4.5, retired as the oracle 2026-10-10, CEO-1598) -- rebuild the pristine drop, then re-run.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to bare 'gprolog' on PATH (that is 1.4.5, retired as the oracle 2026-10-10, R-1598) -- rebuild the pristine drop, then re-run.\n" >&2
         return 1
     fi
     printf '%s\n' "$w"
@@ -313,13 +313,13 @@ gplc_bin() {
     local c="$GPROLOG_ORACLE_DIR/gplc" w="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/oracle_gplc.sh"
     if [ ! -x "$c" ] || [ ! -x "$w" ]; then
         printf "⛔ THE GNU-PROLOG COMPILER gplc IS MISSING: %s (wrapper %s)\n" "$c" "$w" >&2
-        printf "   Do not hand-assemble a path or fall back to bare 'gplc' on PATH (that is 1.4.5, retired as the oracle 2026-10-10, CEO-1598) -- rebuild the pristine drop, then re-run.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to bare 'gplc' on PATH (that is 1.4.5, retired as the oracle 2026-10-10, R-1598) -- rebuild the pristine drop, then re-run.\n" >&2
         return 1
     fi
     printf '%s\n' "$w"
 }
 # ⛔⭐⭐⭐ XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE (Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin
-# to use XSB system as the third oracle."; ceo CEO-1927, RULES.md § Oracles FACT RULE of the same name). XSB 5.0.0 (Green Tea, built 2026-09-13) under /home/resources/prologs/xsb
+# to use XSB system as the third oracle."; R-1927, RULES.md § Oracles FACT RULE of the same name). XSB 5.0.0 (Green Tea, built 2026-09-13) under /home/resources/prologs/xsb
 # grades packages/prolog/xsb_tests alone, each program run as XSB's own gentest.sh runs it ([NAME]. tell(temp). GOAL. told. on stdin of "xsb -e segfault_handler(warn).",
 # testall.sh's options); swi_tests/xsb and every other Prolog package keep their oracle. XSB_ORACLE_BIN is the launcher XSB ships (bin/xsb, a script that finds its own
 # install); nothing under ../harness/scripts/ names it any other way (test_gate_no_bare_xsb_outside_the_accessor.sh).
@@ -329,28 +329,28 @@ xsb_bin() {
     if [ ! -x "$c" ]; then
         printf "⛔ THE XSB ORACLE IS MISSING: %s\n" "$c" >&2
         printf "   An XsbTests ref cut or a column measured with it absent is not slow, it is ABSENT -- and a harness that fills it anyway publishes a false number.\n" >&2
-        printf "   Do not hand-assemble a path or fall back to a bare 'xsb' on PATH (ORACLES.md, XSB, CEO-1927) -- rebuild the shared drop, then re-run.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to a bare 'xsb' on PATH (ORACLES.md, XSB, R-1927) -- rebuild the shared drop, then re-run.\n" >&2
         return 1
     fi
     printf '%s\n' "$c"
 }
-# ⛔⭐⭐⭐ UNICON IS THE ORACLE FOR UNICON-ONLY PROGRAMS (Lon 2026-10-31, in-chat to the ceo, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."; ceo CEO-2072,
-# which supersedes the 2026-09-11 "Do not use Unicon for anything" ruling (CEO-570) for the superset's own surface and for nothing else). The Unicon translator `unicon` (the Unicon git drop d784f58, built in place under
+# ⛔⭐⭐⭐ UNICON IS THE ORACLE FOR UNICON-ONLY PROGRAMS (Lon 2026-10-31, in-chat, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."; R-2072,
+# which supersedes the 2026-09-11 "Do not use Unicon for anything" ruling (R-570) for the superset's own surface and for nothing else). The Unicon translator `unicon` (the Unicon git drop d784f58, built in place under
 # /home/resources/unicon by build_unicon_oracle.sh) cuts the refs of the programs that carry the Unicon markers (class, package, import, method); Arizona icont/iconx (icont_bin/iconx_bin above) stay the oracle of plain Icon.
 # ⛔ The 2026-09-11 ruling's SECOND reason stands: Unicon is NEVER a normalizer. `unicon -E` rewrites a source (it inserts the semicolons the Icon reader leaves implicit), and a rewrite applied at grade time means the artifact graded
-# is not the artifact in the repo -- the source in the corpus IS the source (CEO-567). test_gate_no_bare_unicon_outside_the_accessor.sh holds both: the oracle is named one way, and no script runs it with -E. ORACLES.md, UNICON.
+# is not the artifact in the repo -- the source in the corpus IS the source (R-567). test_gate_no_bare_unicon_outside_the_accessor.sh holds both: the oracle is named one way, and no script runs it with -E. ORACLES.md, UNICON.
 UNICON_ORACLE_BIN="/home/resources/unicon/bin/unicon"
 unicon_bin() {
     local c="$UNICON_ORACLE_BIN"
     if [ ! -x "$c" ]; then
         printf "⛔ THE UNICON ORACLE IS MISSING: %s\n" "$c" >&2
         printf "   A Unicon ref cut or a column measured with it absent is not slow, it is ABSENT -- and a harness that fills it anyway publishes a false number.\n" >&2
-        printf "   Do not hand-assemble a path or fall back to a bare 'unicon' on PATH (ORACLES.md, UNICON, CEO-2072) -- run build_unicon_oracle.sh, then re-run.\n" >&2
+        printf "   Do not hand-assemble a path or fall back to a bare 'unicon' on PATH (ORACLES.md, UNICON, R-2072) -- run build_unicon_oracle.sh, then re-run.\n" >&2
         return 1
     fi
     printf '%s\n' "$c"
 }
-# ⛔⭐ JCON RE-EXECS BY NAME, SO THE ACCESSOR EXPORTS PATH -- CALLING IT BY ABSOLUTE PATH ALONE IS NOT ENOUGH (CEO s272,
+# ⛔⭐ JCON RE-EXECS BY NAME, SO THE ACCESSOR EXPORTS PATH -- CALLING IT BY ABSOLUTE PATH ALONE IS NOT ENOUGH (the officer s272,
 # measured: the launcher scripts resolve their siblings off PATH). Use as: eval "$(jcon_path_export)"; then run jcont/jcon.
 jcont_bin() {
     local c="/home/resources/jcon-master/bin/jcont"

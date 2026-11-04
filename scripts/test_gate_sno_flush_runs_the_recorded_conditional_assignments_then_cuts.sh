@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_flush_runs_the_recorded_conditional_assignments_then_cuts.sh -- FLUSH, THE FIRST SCRIP-ONLY EXTENSION OF THE
-# SNOBOL4 PATTERN LANGUAGE (ceo CEO-1340). LON 2026-09-27, in-chat to hq_snocone, verbatim: "There is ONE HUGE feature which we
+# SNOBOL4 PATTERN LANGUAGE (R-1340). LON 2026-09-27, in-chat to hq_snocone, verbatim: "There is ONE HUGE feature which we
 # will need now. The feaure is a FLUSH just like FENCE. But FLUSH runs all the conditional assignments up to that point INSTEAD
 # of waiting until the end of pattern matching. This is how we will use ONE PATTERN to compile the entire source which is read
 # into memory." and "For the oracle set FLUSH = FENCE pattern and all will work the same." His design, verbatim: "It seems you

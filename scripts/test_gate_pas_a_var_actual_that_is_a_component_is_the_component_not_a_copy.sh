@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_var_actual_that_is_a_component_is_the_component_not_a_copy.sh -- ISO 7185 6.6.3.3: a variable parameter denotes its actual variable for the whole activation.
 #
-# MEASURED 2026-10-09 by the ceo (CEO-1575, SCRIP fcfc11f2a) and reproduced by hq_pascal: f(var v) doing x.a := 7; v := v + 1 after x.a := 1 and f(x.a) printed 2 in both modes where fpc -Miso prints 8; the array twin
+# MEASURED 2026-10-09 by the (R-1575, SCRIP fcfc11f2a) and reproduced by hq_pascal: f(var v) doing x.a := 7; v := v + 1 after x.a := 1 and f(x.a) printed 2 in both modes where fpc -Miso prints 8; the array twin
 # g(var v) with y[1] printed 11 where fpc prints 71. The lowerer passed a record-field or array-element actual copy-in copy-out (a temporary, then an assignment back), so a write to the containing record or array
 # inside the callee was lost. CURE: such an actual is a reference to the component's own cell. __pas_elem_ref(base, idx, tmp) answers a name-reference {DT_N, slen 1, &base.data[idx]} when the base is an array or record
 # block (bounds as arr_get: outside the index type it fails to the 6.5.3.2 stop) and, for a character array held as a byte string, which has no cell to point at, copies the element into the caller's temporary and
 # references that; the statement after the call stores the reference's current value back into the component (__pas_ref_val), a no-op store of the cell's own value when it was a reference, the old copy-out for the
 # string. The collector already follows a DT_N cell reference into a heap block (gc_cell_visit), so a reference held across compacting collections moves with its block.
 #
-# ARMS, both modes, every expectation cut LIVE from fpc -Miso: (1) the ceo's witness, field and element; (2) a broad control of integer, real, char and Boolean components, nested records and arrays of records, a 2-D element,
+# ARMS, both modes, every expectation cut LIVE from fpc -Miso: (1) the officer's witness, field and element; (2) a broad control of integer, real, char and Boolean components, nested records and arrays of records, a 2-D element,
 # a character-array element, two components of one array swapped, a function with a var element, recursion, a callee that writes the containing array, and an index that is itself an element; (3) a reference held across
 # 3000 allocations under SCRIP_GC_STRESS=1 with relocation (SCRIP_GC_RELOC=1 SCRIP_GC_VERIFY=1); (4) an element actual outside its index type still stops with 6.5.3.2 after the output that precedes it.
 # FAIL_ONCE=1 corrupts arm 1's ref.

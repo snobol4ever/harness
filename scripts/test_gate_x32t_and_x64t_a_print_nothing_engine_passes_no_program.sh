@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh -- THE FALSE-GREEN WITNESS of X32T and X64T (ceo to the coo
+# test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh -- THE FALSE-GREEN WITNESS of X32T and X64T (to the coo
 # 2026-10-18, rank 1, "DARK is worse than RED", from hq_jvm's measurement while it ports the package runners): test_snobol4_spitbol_x32_suite.sh
 # and test_snobol4_spitbol_x64_suite.sh run every program with stdin from /dev/null, many are SPITBOL's own build-time filters that read
 # INPUT, so under sbl -bf they print nothing and exit 0, and the stream arm (gate_oracle_stdout_match: rc 0 plus a cmp of the two stdouts)
@@ -9,7 +9,7 @@
 # of each package as a scratch suite, so each runner grades with its own body against the live oracle and, by its own rule, writes no
 # progress row and no score row. GREEN iff the stub passes NO program of either package in mode 3 except one whose package's
 # EMPTY_ANSWER.tsv declares that nothing is its answer (named; mode 4 cannot link a stub's output, so mode 3 reads the false green). The passers are named. THE CURE it waits for: each filter carries a .in sidecar cut
-# from the program's purpose (the testpgms runner's stdin_of shape, CEO-1410), and the stream arm refuses a PASS over an empty oracle
+# from the program's purpose (the testpgms runner's stdin_of shape, R-1410), and the stream arm refuses a PASS over an empty oracle
 # stdout unless the unit declares an empty answer. RED on harness e29b7ef and corpus a5735c4a9, measured by the coo 2026-10-18 11:00 CDT in
 # 11 s: X32T 14 stub passers (arcget arcput c cc d def e en enum equ lower op rev tbl), X64T 7 (arcget arcput cfreq def lower map-x64 trim).
 # GREEN on the cure (corpus 1934ffa50 and the runners' stdin_of and empty-answer rule beside this gate), 11 s, 4 checks: the stub passes

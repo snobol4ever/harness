@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_gc_dt_data_names_one_pointed_at_shape.sh -- F6 STEP 5, THE HEAP HALF (cfo; ceo CEO-887/888).
+# test_gate_gc_dt_data_names_one_pointed_at_shape.sh -- F6 STEP 5, THE HEAP HALF (cfo; R-887/888).
 #
 # ⛔ THE DEFECT.  DT_DATA carried TWO unrelated pointed-at shapes under ONE tag: the .u arm is a DATINST_t (a
 # record instance) and the .ptr arm is a raw DESCR_t element vector (an Icon list's frame_elems backing store).
@@ -12,7 +12,7 @@
 # PROCVAL_*_SLEN; DT_S's 0xFFFFFFFF CSET): slen arbitrates DT_DATA too -- DATA_INST_SLEN 0, DATA_ELEMS_SLEN 1,
 # pinned by a _Static_assert beside PROCVAL's so a future third meaning cannot quietly reuse one.
 #
-# ⛔ THE ceo's TWO CONDITIONS ARE ARMS 1 AND 3 HERE, AND CONDITION (2) IS THE WHOLE JOB: "the readers are the
+# ⛔ THE OFFICER'S TWO CONDITIONS ARE ARMS 1 AND 3 HERE, AND CONDITION (2) IS THE WHOLE JOB: "the readers are the
 # whole job, not the writers -- a reader that checks only the tag after this lands is a silent wrong answer
 # rather than a crash".  Arm 1 is that population and it must read ZERO.
 #
@@ -20,7 +20,7 @@
 # a green suite is evidence about the collector ONLY if something FORCES it to run, FORCES the heap to slide
 # under a live value, and then READS THAT VALUE BACK.  It WALKS the band rather than sampling it, because the
 # failure band is ragged -- the cfo's cset defect was RED at 1,2,3,4,5,8,10 and GREEN at 0,15,20,30,50,100, so
-# a two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (CEO-807/876).
+# a two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (R-807/876).
 #
 # ⛛ WHAT THIS ROW DID NOT LAND, AND WHY THE REMAINDER IS PRINTED RATHER THAN GRADED TO ZERO.  The natural next
 # move is retyping the list element vectors from rt_ws_alloc (HB_WS) to rt_ws_alloc_descr (HB_DVEC), so the
@@ -52,7 +52,7 @@ ck() { checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; 
 [ -f "$WIT" ] || { echo "GATE UNPROVEN(2) [$G]: witness $WIT missing"; exit 2; }
 [ -f "$HERE/util_dt_data_reader_census.py" ] || { echo "GATE UNPROVEN(2) [$G]: reader census missing"; exit 2; }
 
-# ---- ARM 1: the ceo's condition (2) -- the readers are the whole job ----------------------------------------
+# ---- ARM 1: the officer's condition (2) -- the readers are the whole job ----------------------------------------
 cen="$(python3 "$HERE/util_dt_data_reader_census.py" 2>&1)"; crc=$?
 tot="$(printf '%s\n' "$cen" | sed -n 's/.*TOTAL=\([0-9]*\).*/\1/p' | tail -1)"
 if [ "$crc" = 0 ] && [ "${tot:-x}" = 0 ]; then
@@ -70,7 +70,7 @@ else
     ck no "arm2 gc_heap.c mentions frame_elems $fe time(s) -- the collector is back to identifying a payload by an owner's field NAME, which is the guess this row removed"
 fi
 
-# ---- ARM 3: the ceo's condition (1) -- the discriminators are PINNED, not merely used -------------------------
+# ---- ARM 3: the officer's condition (1) -- the discriminators are PINNED, not merely used -------------------------
 if grep -q 'DESCR_SASSERT(DATA_INST_SLEN != DATA_ELEMS_SLEN' src/ir/descr.h \
    && grep -q '#define DATA_INST_SLEN' src/ir/descr.h && grep -q '#define DATA_ELEMS_SLEN' src/ir/descr.h; then
     ck ok "arm3 descr.h pins both DT_DATA discriminators in a _Static_assert beside PROCVAL's"

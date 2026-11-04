@@ -39,7 +39,7 @@
 # path never had one. Fix: (1) anchor the signal check to the MATCHED LINE ONLY, never a window -- every
 # real corrected example measured (both rules, all fleet roots) puts the correction in the SAME
 # sentence/line as the retired text, so this loses no real recall; (2) drop both catch-alls --
-# (the ceo root left the required list 2026-11-01: the seat was removed from the roster 2026-10-31 15:17 and its root is gone, so the gate read UNPROVEN rc 2 for a day)
+# (root left the required list 2026-11-01: the seat was removed from the roster 2026-10-31 15:17 and its root is gone, so the gate read UNPROVEN rc 2 for a day)
 # `corrected|correction` (no optional group) and `csnobol4[ -]?oracle` (adjacency required). Re-verified
 # against real data after the fix: O2 rule's 3 self-aware hits still correctly exempted (0 violations,
 # unchanged); SEGV rule's live violations still correctly caught. Negative-tested the exemption path
@@ -86,9 +86,9 @@
 # array held 32, which is the same hard-coded-population defect the array itself keeps re-committing.
 # The one-line census that catches a new root nobody added:
 #   for r in /home/claude*/CLAUDE.md; do grep -q "$r" ../harness/scripts/test_gate_digest_matches_rules.sh || echo "UNWATCHED $r"; done
-# /home/claude_cfo/CLAUDE.md was ABSENT until 2026-09-08 (hq_B, ceo RULED-DO-IT on ask-the-cfo-digest-
+# /home/claude_cfo/CLAUDE.md was ABSENT until 2026-09-08 (hq_B, the officer RULED-DO-IT on ask-the-cfo-digest-
 # is-unwatched-one-line-in-the-gates-roots-array): the cfo seat went live 2026-09-07 08:06 and the gate
-# stayed green about the other 32 roots the whole time. claude_B and claude_T were ABSENT until 2026-09-04 (hq_B, ceo ruling ruling-digest-gate-roots):
+# stayed green about the other 32 roots the whole time. claude_B and claude_T were ABSENT until 2026-09-04 (hq_B, ruling ruling-digest-gate-roots):
 # both roots were opened after this list was written, so the two HQs whose lanes are HYGIENE and TESTS
 # were the two whose digests no gate read, and the gate was green about the other nineteen the whole
 # time -- the same narrow-instrument shape those digests document for `command -v` and for `$?` after a
@@ -105,7 +105,7 @@ gate_parse_args "$@"
 if [ -n "${DIGEST_GATE_ROOTS:-}" ]; then
     read -r -a ROOTS <<< "$DIGEST_GATE_ROOTS"
 else
-    ROOTS=(   # the twenty numbered fleet roots and the nine lettered HQ roots were removed by Lon 2026-09-16 (ceo CEO-767); six language HQ roots replace the nine
+    ROOTS=(   # the twenty numbered fleet roots and the nine lettered HQ roots were removed by Lon 2026-09-16 (R-767); six language HQ roots replace the nine
            /home/claude_icon/CLAUDE.md /home/claude_prolog/CLAUDE.md /home/claude_raku/CLAUDE.md /home/claude_pascal/CLAUDE.md /home/claude_snocone/CLAUDE.md /home/claude_snobol4/CLAUDE.md /home/claude_templates/CLAUDE.md /home/claude_runtime/CLAUDE.md /home/claude_collector/CLAUDE.md /home/claude_zetas/CLAUDE.md /home/claude_packages/CLAUDE.md \
            /home/claude_cto/CLAUDE.md /home/claude_coo/CLAUDE.md /home/claude_cfo/CLAUDE.md /home/claude_cao/CLAUDE.md /home/claude_cqo/CLAUDE.md)
 fi
@@ -154,7 +154,7 @@ check_rule() {
         fi
         while IFS=: read -r lineno rest; do
             [ -n "${lineno:-}" ] || continue
-            # ⛔ PROXIMITY, NOT SAME-LINE (ceo CEO-859, 2026-09-18). The 2026-08-24 addendum narrowed this
+            # ⛔ PROXIMITY, NOT SAME-LINE (R-859, 2026-09-18). The 2026-08-24 addendum narrowed this
             # from a multi-line window to SAME LINE because an unrelated word in a different sentence was
             # exempting real violations -- and that fix is incomplete, because a root digest writes one
             # PARAGRAPH PER LINE. /home/claude_cto/CLAUDE.md line 9 is 19 KB of one line, so "same line"
@@ -192,53 +192,53 @@ check_rule "SEGV-HANDLER-ATTRIBUTION" \
 
 # ⛔ WIDENED 2026-09-26 BY THE coo, ON LON'S /init: `fails loudly` REQUIRED THE ADVERB THE CANARY HAPPENS TO CARRY.
 # /home/claude_coo/CLAUDE.md said "make test ... fails on the first red -- and every arm after a red is DARK" from
-# its 2026-09-16 audit, five days after CEO-582 made make test loop and report, and this gate read PASS(0) over it
+# its 2026-09-16 audit, five days after R-582 made make test loop and report, and this gate read PASS(0) over it
 # on every run for ten days (measured: that line alone, rc 0 on the old pattern, rc 1 on this one). `( loudly)?`
 # keeps the canary matched and catches the plain verb; the corrected digests that say "NO LONGER ABORTS/DIES ON
 # THE FIRST RED" stay exempt through `no longer`, and none of the ten roots is newly flagged.
 check_rule "MAKE-TEST-LOOPS-AND-REPORTS" \
     'cheapest-first list|(dies|stops|aborts|fails( loudly)?) on the first red|thirteen (arms|gates|cheap)' \
-    'no longer|NOT (a |the )?(cheapest|list)|legacy|retire|supersed|previous digest|used to|history|test-sequential|loops and reports|LOOPS every|CEO-582|until CEO|before CEO' \
-    '.github/RULES.md and GOAL-CEO.md CEO-582 (2026-09-11): make test is ../harness/scripts/run_blocking_set.sh, which LOOPS every arm and REPORTS green/red/refused with the denominator; the abort-on-first-red twin is make test-sequential; make preflight is the cheap hermetic set (hq_prolog finding, ceo CEO-768, 2026-09-16)' \
+    'no longer|NOT (a |the )?(cheapest|list)|legacy|retire|supersed|previous digest|used to|history|test-sequential|loops and reports|LOOPS every|R-582|until [A-Z]{1,3}-[0-9]|before [A-Z]{1,3}-[0-9]' \
+    '.github/RULES.md and the archived ruling record R-582 (2026-09-11): make test is ../harness/scripts/run_blocking_set.sh, which LOOPS every arm and REPORTS green/red/refused with the denominator; the abort-on-first-red twin is make test-sequential; make preflight is the cheap hermetic set (hq_prolog finding, R-768, 2026-09-16)' \
     'make test runs a cheapest-first list of about thirteen arms and fails loudly on the first red'
 
 # ⛔⭐ WIDENED 2026-09-21 BY THE coo, PAID FOR IN A WRONG RUN: EVERY ALTERNATIVE ABOVE THIS LINE NAMES THE
 # SEAT IN THE THIRD PERSON, AND A ROOT DIGEST IS WRITTEN IN THE SECOND. /home/claude_coo/CLAUDE.md carried
-# "YOU ARE THE ONE RUNNER ... only the coo runs a rung suite or package board" for the five days after CEO-775
+# "YOU ARE THE ONE RUNNER ... only the coo runs a rung suite or package board" for the five days after R-775
 # retired it, and this gate read PASS(0) over that root on every run -- the pattern could not match a
 # sentence addressed to the reader. MEASURED COST, 2026-09-21 18:5x CDT: on the strength of that line this
 # seat ran test_snobol4_gimpel_suite.sh (SNOBOL4 is another lane's board under QUARTET), was refused rc=2
-# naming CEO-775 by lib_one_runner.sh -- the RUNTIME guard caught what the DIGEST guard had missed -- and
+# naming R-775 by lib_one_runner.sh -- the RUNTIME guard caught what the DIGEST guard had missed -- and
 # then re-ran it under an S4E_ONE_RUNNER_OVERRIDE the rule does not grant for another lane's board.
 # ⭐ THE LESSON IS THE RULE'S, NOT THIS ROW'S: a digest speaks to "you", so a retired-text pattern that only
 # knows "the coo" is checking a voice nobody writes in. Both voices are matched now, and the second-person
 # alternatives are proven by exit code against the uncorrected root, not by reading.
 check_rule "NO-CENTRAL-RUNNER" \
     'coo (is |-- )?THE ONE RUNNER|THE ONE RUNNER IS THE coo|one runner \(the coo\)|the coo.s (next )?pass grades|the coo runs every board|admits the coo|you are the one runner \(|you are the one runner\)|only the coo runs a (rungs|board)|the coo runs EVERY rungs and package board|the parked languages are run by nobody but you|the one runner.s alone' \
-    'no central|per language|PER LANGUAGE|CEO-775|supersed|retire|history|until|used to|was the|before 09-16|runs NO board|no longer' \
-    '.github/RULES.md FACT RULE -- NO CENTRAL RUNNER: ONE RUNNER PER LANGUAGE (Lon 2026-09-16 10:5x, CEO-775): every language HQ runs its own language suites; the coo runs no board' \
+    'no central|per language|PER LANGUAGE|R-775|supersed|retire|history|until|used to|was the|before 09-16|runs NO board|no longer' \
+    '.github/RULES.md FACT RULE -- NO CENTRAL RUNNER: ONE RUNNER PER LANGUAGE (Lon 2026-09-16 10:5x, R-775): every language HQ runs its own language suites; the coo runs no board' \
     'THE ONE RUNNER IS THE coo under EXECUTIVE: every rung suite or package board runs once per landing batch by the coo'
 
 check_rule "FINDING-FILES-ARE-PERMITTED-AGAIN" \
-    'FINDING FILES ARE GONE|never (create |be |write )?a .?FINDING|gone on Lon.s word 2026-09-16|FINDING files? (are|is) GONE|ZERO .?FINDING-\*\.md|no FINDING files? (exist|remain)|FINDING-\*\.md.{0,30}(is|are) (forbidden|retired|gone|ZERO)|FINDING-\*\.md.{0,12}\(gone|CEO-(760|796)|no .?FINDING-\*\.md.? (exists|may be)|FINDING-\*\.md.? IS ZERO|all 874 were removed' \
-    'CEO-859|permitted again|may write a .?FINDING|deletes? them periodically|summariz|retired 2026-09-18|no longer forbidden|used to|was the rule|history' \
-    '.github/RULES.md FACT RULE -- FINDING FILES ARE PERMITTED AGAIN (Lon 2026-09-18, in-chat to the cto, verbatim: "You can use as many FINDING files as you want. I will just delete them periodically. We should probably do a summarization when I delete."; CEO-859): the CEO-760/796 prohibition is RETIRED. Any seat may write one. The measured claims go into the citing baton or GOAL cursor IN THE SAME LANDING, because Lon deletes them periodically and a measurement living only in a FINDING has a deletion date.' \
-    "FINDING FILES ARE GONE on Lon word 2026-09-16 (.github a2a311d0, CEO-760/796): never create a FINDING-*.md"
+    'FINDING FILES ARE GONE|never (create |be |write )?a .?FINDING|gone on Lon.s word 2026-09-16|FINDING files? (are|is) GONE|ZERO .?FINDING-\*\.md|no FINDING files? (exist|remain)|FINDING-\*\.md.{0,30}(is|are) (forbidden|retired|gone|ZERO)|FINDING-\*\.md.{0,12}\(gone|[A-Z]{1,3}-(760|796)|no .?FINDING-\*\.md.? (exists|may be)|FINDING-\*\.md.? IS ZERO|all 874 were removed' \
+    'R-859|permitted again|may write a .?FINDING|deletes? them periodically|summariz|retired 2026-09-18|no longer forbidden|used to|was the rule|history' \
+    '.github/RULES.md FACT RULE -- FINDING FILES ARE PERMITTED AGAIN (Lon 2026-09-18, in-chat to the cto, verbatim: "You can use as many FINDING files as you want. I will just delete them periodically. We should probably do a summarization when I delete."; R-859): the R-760/796 prohibition is RETIRED. Any seat may write one. The measured claims go into the citing baton or GOAL cursor IN THE SAME LANDING, because Lon deletes them periodically and a measurement living only in a FINDING has a deletion date.' \
+    "FINDING FILES ARE GONE on Lon word 2026-09-16 (.github a2a311d0, R-760/796): never create a FINDING-*.md"
 
 check_rule "GC-HEAP-HARD-CAP" \
     'refuses no (program|live set)|reserve grows to 8|reserve is the larger of 8x|grows to 8. (it|the window)|so a small (arena|window) refuses no|the window grows and collections FALL|PEAK of (collector )?exasperation|SMALLER IS NOT MONOTONICALLY MORE EXASPERATING|small window collects often and refuses no' \
-    'CEO-1101|hard cap|HARD CAP|does not extend past|lazy instantiat|cap_kb=' \
-    '.github/RULES.md FACT RULE -- THE GC HEAP HAS A HARD CAP AND DOES NOT EXTEND PAST IT (Lon 2026-09-21, in-chat to the ceo, verbatim: "Place a hard cap on the GC HEAP. Do not extend it." and "Do however use the lazy instantiation of memory as the heap grows."; CEO-1101): the DECLARED size is the CAP, memory inside it is committed page-granular as the heap grows, nothing above it is mapped, SCRIP_HEAP_MAX_MB names the cap itself, and A SMALL CAP CAN REFUSE A LIVE SET -- which is a row, never a reason to raise the default. The arena turn-over of CEO-1095 was an artifact of the retired 2 MB growth step.' \
+    'R-1101|hard cap|HARD CAP|does not extend past|lazy instantiat|cap_kb=' \
+    '.github/RULES.md FACT RULE -- THE GC HEAP HAS A HARD CAP AND DOES NOT EXTEND PAST IT (Lon 2026-09-21, in-chat, verbatim: "Place a hard cap on the GC HEAP. Do not extend it." and "Do however use the lazy instantiation of memory as the heap grows."; R-1101): the DECLARED size is the CAP, memory inside it is committed page-granular as the heap grows, nothing above it is mapped, SCRIP_HEAP_MAX_MB names the cap itself, and A SMALL CAP CAN REFUSE A LIVE SET -- which is a row, never a reason to raise the default. The arena turn-over of R-1095 was an artifact of the retired 2 MB growth step.' \
     'the reserve grows to 8x it or SCRIP_HEAP_MAX_MB, so a small arena refuses no program'
 
-# ⭐ ADDED 2026-10-07 BY THE ceo (CEO-1532), ON THE cto'S MEASUREMENT: RULES.md FACT RULE -- THE TREE IS THE PRUNED PARSE TREE
-# (Lon 2026-10-03) closed CEO-1369/1377/1378 four days earlier, and the ceo, coo and cfo roots still carried CEO-1369's
-# "THE C TREE IS THE CANONICAL FORM" block -- the ceo had just told the cfo to copy it -- while this gate read PASS over 66
+# ⭐ ADDED 2026-10-07 BY THE (R-1532), ON THE cto'S MEASUREMENT: RULES.md FACT RULE -- THE TREE IS THE PRUNED PARSE TREE
+# (Lon 2026-10-03) closed R-1369/1377/1378 four days earlier, and the officer, coo and cfo roots still carried R-1369's
+# "THE C TREE IS THE CANONICAL FORM" block -- the officer had just told the cfo to copy it -- while this gate read PASS over 66
 # checks: no rule named the withdrawn text, so nothing could see it. Proved RED on the uncorrected roots before the cure.
 check_rule "TREE-IS-THE-PRUNED-PARSE-TREE" \
     'C TREE IS (THE )?CANONICAL|C (parser.s )?tree is the canonical (form|shape)' \
     'WITHDRAWN|PRUNED PARSE TREE|supersed|retire|history|used to|was the' \
-    '.github/RULES.md FACT RULE -- THE TREE IS THE PRUNED PARSE TREE (Lon 2026-10-03, in-chat to hq_snocone; restates and closes CEO-1369/1377/1378; ceo CEO-1532): the shape is the one the rule produces, never the C tree' \
+    '.github/RULES.md FACT RULE -- THE TREE IS THE PRUNED PARSE TREE (Lon 2026-10-03, in-chat to hq_snocone; restates and closes R-1369/1377/1378; R-1532): the shape is the one the rule produces, never the C tree' \
     '**THE TREE IS BUILT ONCE, DIRECTLY, IN RECOGNITION ORDER; THE C TREE IS THE CANONICAL FORM; NO POST-PROCESSING (Lon 2026-09-30 morning, in-chat to the cfo)'
 
 gate_floor "$EXAMINED" 2 "root-digest checks (roots × rules)"

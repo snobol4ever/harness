@@ -23,7 +23,7 @@ Prints one TSV row per case:
 then one summary line:
   MATCH declared=N graded=N hit=N hit_pass=N hit_fail_agree=N miss=N ungraded=N crash=N hang=N
 
-RC (the coo 2026-09-27, ceo CEO-1309) is the run's own exit status, which test_prolog_swi_suite.sh's grade_one did not capture:
+RC (the coo 2026-09-27, R-1309) is the run's own exit status, which test_prolog_swi_suite.sh's grade_one did not capture:
 a run killed by a signal left its unreported cases reading FAIL, a crash graded as a wrong answer. A case the run DID report
 before it died keeps its own verdict; only the silence after the death is CRASH (or HANG). Absent, RC reads 0 as before.
 """

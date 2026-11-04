@@ -4,7 +4,7 @@
 # ⛔⭐ WHY THIS INSTRUMENT IS THE INVERSE OF EVERY OTHER LANE CHECK WE OWN, WHICH IS THE WHOLE POINT.
 # Every lane instrument we had compares TWO readers -- the picker's table vs MODE line 2, a preflight parser
 # vs MODE line 2, a seat's HQ file vs MODE line 2. All of them are blind BY CONSTRUCTION to line 2 being
-# wrong about itself, because line 2 is the thing they all measure against. When CEO-723 rewrote the hq_S
+# wrong about itself, because line 2 is the thing they all measure against. When R-723 rewrote the hq_S
 # lane paragraph and missed two cross-references, line 2 said three things about Rebus at once:
 #     "REBUS IS CLOSED ... so this seat carries Pascal and nothing else"   (the hq_S clause: DISCLAIMED)
 #     "Rebus moves to hq_S."                                              (tail of the hq_T clause: ASSIGNED)
@@ -18,9 +18,9 @@
 # ⛔ AND THE DAMAGE IS NOT PROPORTIONAL TO THE ERROR (cto -> hq_B, 2026-09-13). This is a census that names
 # WORK ITEMS -- seats and languages -- not one that names numbers. A wrongly named owner is not ignored, it
 # is ACTED ON: hq_I routed a Snocone co-sign to "hq_S (Rebus)" off exactly these words, and had hq_S signed,
-# the Rebus arm of CEO-727 would carry a name and no owner, which reads as complete and is worse than blank.
+# the Rebus arm of R-727 would carry a name and no owner, which reads as complete and is worse than blank.
 # So this gate's cost is set by its WORST false positive, never by its rate, and every RED it prints names
-# the exact substring and its byte offset in line 2 so the ceo can cure the LAW without re-deriving anything.
+# the exact substring and its byte offset in line 2 so the officer can cure the LAW without re-deriving anything.
 #
 # WHAT IT CANNOT DO, STATED SO NOBODY READS MORE INTO A GREEN: it grades line 2 against line 2. A line that
 # is uniformly, consistently WRONG about who owns a language is GREEN here, and correctly so -- that is what
@@ -52,7 +52,7 @@ scan_line2() {  # $1 = path to a MODE-shaped file. prints a report; rc 0 clean �
 import os, re, sys
 
 LANGS = ["snobol4", "icon", "prolog", "snocone", "rebus", "raku", "pascal"]
-SEAT = r"(?:the )?(ceo|cto|coo|cfo|hq_[A-Za-z0-9]+)"
+SEAT = r"(?:the )?(cto|coo|cfo|hq_[A-Za-z0-9]+)"
 MIN = int(os.environ.get("MODE_L2_MIN_LANGS", "7"))
 
 path = sys.argv[1]
@@ -80,7 +80,7 @@ L2 = lines[1]
 # says "this seat works on this language", which is not a claim to own it. Only THE SEATS list, an IS-CLOSED
 # declaration and a MOVES-TO fragment claim the single completeness/ladder owner, so only those three can
 # contradict each other. ⛔ Reddening on roster mentions would have made this gate loudest on the mode line's
-# most deliberate feature -- a naming census whose worst false positive is "the ceo rewrites a correct lane
+# most deliberate feature -- a naming census whose worst false positive is "the officer rewrites a correct lane
 # cut to quiet an instrument", which is precisely the damage class that makes naming censuses expensive.
 AUTHORITATIVE = ("SEATS-LIST", "IS-CLOSED", "MOVES-TO")
 claims = []
@@ -90,11 +90,11 @@ def add(lang, owner, shape, m):
 
 for lang in LANGS:
     U = lang.upper()
-    # (1) THE SEATS list:  "RAKU -- hq_T"  ·  "ICON -- the ceo"  ·  "REBUS -- CLOSED, NO OWNER"   [AUTHORITATIVE]
+    # (1) THE SEATS list:  "RAKU -- hq_T"  ·  "ICON -- the officer"  ·  "REBUS -- CLOSED, NO OWNER"   [AUTHORITATIVE]
     for m in re.finditer(r"\b%s -- %s\b" % (U, SEAT), L2):      add(lang, m.group(1), "SEATS-LIST", m)
     for m in re.finditer(r"\b%s -- CLOSED\b" % U, L2):          add(lang, "CLOSED", "SEATS-LIST", m)
-    # (2) the CONCERN-1 roster clause:  "ceo ICON" · "cfo SNOBOL4" · "hq_I SNOCONE"                [MENTION ONLY]
-    for m in re.finditer(r"\b(ceo|cto|coo|cfo|hq_[A-Za-z0-9]+) %s\b" % U, L2): add(lang, m.group(1), "ROSTER-CLAUSE", m)
+    # (2) the CONCERN-1 roster clause:  "the officer ICON" · "cfo SNOBOL4" · "hq_I SNOCONE"                [MENTION ONLY]
+    for m in re.finditer(r"\b(cto|coo|cfo|hq_[A-Za-z0-9]+) %s\b" % U, L2): add(lang, m.group(1), "ROSTER-CLAUSE", m)
     # (3) a reassignment fragment:  "PASCAL moves to hq_S" · "Rebus moves to hq_S"                 [AUTHORITATIVE]
     for m in re.finditer(r"\b%s moves to %s\b" % (U, SEAT), L2, re.I): add(lang, m.group(1), "MOVES-TO", m)
     # (4) a closure declaration:  "REBUS IS CLOSED"                                                [AUTHORITATIVE]
@@ -167,8 +167,8 @@ for lang in seen_langs:
 
 if bad:
     print("⛔ GATE FAILED: %d of %d language(s) are claimed inconsistently by MODE line 2 ALONE." % (bad, len(seen_langs)))
-    print("   THE LINE IS THE CEO'S TO EDIT AND THIS GATE DOES NOT RESOLVE IT BY PREFERRING A READING.")
-    print("   Route it as an ASK to ceo/inbox quoting the byte offsets above; the other lane gates are")
+    print("   THE LINE IS THE OFFICER'S TO EDIT AND THIS GATE DOES NOT RESOLVE IT BY PREFERRING A READING.")
+    print("   Route it as an ASK to the officer/inbox quoting the byte offsets above; the other lane gates are")
     print("   comparing their tables against this contradiction and printing agreement.")
     sys.exit(1)
 print("✅ GATE OK -- all %d language(s) carry one consistent owner across every claim shape in line 2" % len(seen_langs))
@@ -188,8 +188,8 @@ if [ "${1:-}" = "--selftest" ]; then
   # them, trimmed to the clauses that matter. It is embedded rather than read from the backup because
   # /home/resources/postoffice is not version-controlled: a fixture that can vanish is a selftest that can
   # go quiet, which is the failure this whole gate exists to refuse.
-  _hdr='# 2026-09-13 ceo: MODE cut.'
-  _clean_tail='cfo SNOBOL4, the rungs; hq_C PROLOG BREADTH; hq_I SNOCONE, A PER-LANGUAGE LADDER SEAT; hq_T RAKU, A PER-LANGUAGE LADDER SEAT; ceo ICON (and the CEO loop); cto PROLOG, the ISO ladder. THE SEATS: RAKU -- hq_T; PROLOG -- the cto; SNOCONE -- hq_I; SNOBOL4 -- the cfo; PASCAL -- hq_S; ICON -- the ceo'
+  _hdr='# 2026-09-13: MODE cut.'
+  _clean_tail='cfo SNOBOL4, the rungs; hq_C PROLOG BREADTH; hq_I SNOCONE, A PER-LANGUAGE LADDER SEAT; hq_T RAKU, A PER-LANGUAGE LADDER SEAT; hq_icon ICON (and the officer loop); cto PROLOG, the ISO ladder. THE SEATS: RAKU -- hq_T; PROLOG -- the cto; SNOCONE -- hq_I; SNOBOL4 -- the cfo; PASCAL -- hq_S; ICON -- the officer'
   _hq_s_clause='hq_S PASCAL, A PER-LANGUAGE LADDER SEAT AND THE PASCAL COMPLETENESS OWNER; the oracle is fpc -Miso. REBUS IS CLOSED (RebRungs 43 of 43 both modes with zero xpass, coo 2026-09-13) and the SNOBOL4 runtime moves to the cfo, so this seat carries Pascal and nothing else'
 
   printf '%s\n%s; %s; DT_BOOL rides with it. Rebus moves to hq_S. %s; REBUS -- hq_S\n' \
@@ -197,11 +197,11 @@ if [ "${1:-}" = "--selftest" ]; then
   printf '%s\n%s; %s; REBUS -- CLOSED, NO OWNER\n' \
       "$_hdr" "$_hq_s_clause" "$_clean_tail" > "$sandbox/MODE.clean"
   # a line 2 that mentions two languages and nothing else -- the empty-grep case
-  printf '%s\nTHE SEATS: RAKU -- hq_T; ICON -- the ceo\n' "$_hdr" > "$sandbox/MODE.vacuous"
+  printf '%s\nTHE SEATS: RAKU -- hq_T; ICON -- the cto\n' "$_hdr" > "$sandbox/MODE.vacuous"
   printf '%s\n' "$_hdr" > "$sandbox/MODE.noline2"
   # ⛔ THE CONCERN-LANE FIXTURE. Three seats named beside PROLOG, as NONET actually cuts it. This is the
   # fixture the first draft of this gate failed, and it is here to keep the AUTHORITATIVE/MENTION split
-  # honest: a lane cut by concern must stay GREEN, or the gate teaches the ceo to flatten the cut.
+  # honest: a lane cut by concern must stay GREEN, or the gate teaches the officer to flatten the cut.
   printf '%s\ncto PROLOG, the ISO ladder; hq_C PROLOG BREADTH, its nine Logtalk ISO families; hq_R PROLOG BUILTINS AND STREAMS; %s; REBUS -- CLOSED, NO OWNER\n' \
       "$_hdr" "$_clean_tail" > "$sandbox/MODE.concernlanes"
   # ⭐ THE DISCLAIMER CRITERION, PROVED ALONE. Here rebus has exactly ONE owner -- hq_S -- so the rival-owner
@@ -218,11 +218,11 @@ if [ "${1:-}" = "--selftest" ]; then
   out_t="$(scan_line2 "$sandbox/MODE.concernlanes" 2>&1)"; rc_t=$?
   out_x="$(scan_line2 "$sandbox/MODE.disclaimonly" 2>&1)"; rc_x=$?
 
-  check "REDS rc=1 on the real CEO-723 rebus contradiction"          "$rc_d" "1"
+  check "REDS rc=1 on the real R-723 rebus contradiction"          "$rc_d" "1"
   check "  names rebus as the contradicting language"               "$(printf '%s\n' "$out_d" | grep -c '^  rebus .*CONTRADICTION')" "1"
   check "  sees CLOSED and the hq_S assignment as rival OWNERS"     "$(printf '%s\n' "$out_d" | grep -c '^  rebus .*CLOSED/hq_S')" "1"
   check "  cites all three rebus claims, not just the first two"    "$(printf '%s\n' "$out_d" | grep -cE '^      byte .*(IS-CLOSED|SEATS-LIST|MOVES-TO)')" "3"
-  check "  prints a byte offset per claim + the disclaimer, so the ceo can cure the law" \
+  check "  prints a byte offset per claim + the disclaimer, so the officer can cure the law" \
         "$(printf '%s\n' "$out_d" | grep -cE '^      byte [0-9]+')" "4"
   check "  attributes the disclaimer to hq_S, the clause owner, not to a seat named inside it" \
         "$(printf '%s\n' "$out_d" | grep -c '^      byte .*DISCLAIMER *hq_S')" "1"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_nreturn_fix_up_is_emitted_by_the_box_and_agrees_with_sbl_in_a_value_and_a_name_context.sh
 #
-# THE ROW (ceo CEO-1488, ruled CEO-1574): the six frame helpers leave every SNOBOL4 graph; the last was rt_nret_fix_tiny, which every call to a non-Prolog callee
+# THE ROW (R-1488, ruled R-1574): the six frame helpers leave every SNOBOL4 graph; the last was rt_nret_fix_tiny, which every call to a non-Prolog callee
 # consulted after the call (131 sites over 38 kernels). THE CURE: the consult keeps its four instructions (load rt_g_ret_by_name, test, branch) and the work behind
 # it is emitted in the box -- wn = rt_g_want_name; with no want-name request the by-name mark is cleared and a NAME result is dereferenced through rt_deref, the call
 # every deref box already makes; rt_g_want_name is consumed; rt_cap_name_strict is a compile-time knob (SCRIP_CAP_NAME_STRICT, read at emission) and no run-time call.

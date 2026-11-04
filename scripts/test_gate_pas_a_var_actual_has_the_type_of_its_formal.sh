@@ -2,7 +2,7 @@
 # test_gate_pas_a_var_actual_has_the_type_of_its_formal.sh -- ISO 7185 6.6.3.3: the actual-parameter of a variable formal-parameter shall
 # possess the same type as the formal; a variable of a subrange type is not of its host type
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. PAT iso7185prt1823 passes c: 1..10 to
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. PAT iso7185prt1823 passes c: 1..10 to
 # procedure a(var b: integer) and scrip ran it to rc 0; fpc -Miso refuses it at compile time ("Call by var for arg no. 1 has to match
 # exactly"). NO BRACKET: a static refusal sends no event. The cure: pas_value_actuals_check gains a var arm -- an actual that is a plain
 # variable registered as a subrange variable (a set variable excluded: its base range rides the same table) given to a var formal whose

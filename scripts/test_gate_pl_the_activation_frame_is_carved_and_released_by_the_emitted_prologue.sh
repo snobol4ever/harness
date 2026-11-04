@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_activation_frame_is_carved_and_released_by_the_emitted_prologue.sh -- THE BLOCK PROTOCOL: A PROLOG CALL CROSSES NO C HELPER TO CARVE, FILL OR RELEASE ITS FRAME.
 # hq_prolog 2026-10-03, row prolog-bb-the-activation-frame-is-carved-and-released-by-the-emitted-prologue-not-six-c-helpers-per-call-9881-call-sites
-# (CEO-1477/1478/1481; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 1). ARM 1: nrev.pl compiled to mode-4 text names none of the six helpers
+# (R-1477/1478/1481; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 1). ARM 1: nrev.pl compiled to mode-4 text names none of the six helpers
 # (rt_jmp_frame_lexprep2, rt_icn_zframe_args_install, rt_arg_stage, rt_proc_call_open_det, rt_proc_drop_frame_h, rt_nret_fix_tiny) -- the
 # caller builds the argument block on its spine, the callee carves kt below it and reads F.A[i] at [rbp+kt+16i], the prologue zeroes inline,
 # the exits release frame and block. ARMS 2-6: five witnesses against swipl-cut refs in m3 AND m4: a deterministic call chain (nrev, app on

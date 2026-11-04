@@ -2,7 +2,7 @@
 # test_gate_pl_a_pipe_stream_has_a_position_as_swipl_and_phrase_from_file_reads_standard_input_through_it.sh -- swipl answers stream_property(S, position(P))
 # for a stream on a pipe with '$stream_position'(CharCount, LineNo, LinePos, ByteCount), counted from what the program consumed, and library(pure_input)
 # (phrase_from_file/2) needs it to read a pipe: /dev/stdin opened as a file. SCRIP answered the property only for a seekable stream (ftell), so a pipe-fed
-# phrase_from_file failed (ProRosetta reverse-the-order-of-lines-in-a-text-file-while-preserving-the-contents-of-each-line, graded with stdin a pipe, CEO-1926).
+# phrase_from_file failed (ProRosetta reverse-the-order-of-lines-in-a-text-file-while-preserving-the-contents-of-each-line, graded with stdin a pipe, R-1926).
 # Two probes, each cut from swipl in THIS run with stdin a pipe and compared byte for byte with SCRIP's m3 and m4: (1) the position before any read, after one
 # character and after one line (swipl: 0,1,0,0 then 1,1,1,1 then 4,2,0,4 for "abc\nde\n"); (2) a phrase_from_file that reads the three lines of stdin
 # and writes them back reversed. The self-test feeds the comparison a corrupted reference and requires it seen.

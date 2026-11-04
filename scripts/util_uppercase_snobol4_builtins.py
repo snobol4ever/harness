@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """util_uppercase_snobol4_builtins.py -- uppercase SPITBOL builtin names in a case-folded source.
 
-Lon 2026-09-11, in-chat to ceo (CEO-571): "So for case insensitive sources, the solution is to modify
+Lon 2026-09-11, in-chat to (R-571): "So for case insensitive sources, the solution is to modify
 the test source to use uppercase reserved/key-words."
 
 WHY: SPITBOL folds case by default; our one mandated invocation is `sbl -bf`, and -f is case-SENSITIVE
 because that is what SCRIP's SNOBOL4 is. A third-party source written in SPITBOL's default idiom (lower
 case `end`, `output`) is refused by -bf with "No END statement found in source file(s)". The cure is to
 convert the SOURCE, once, in the repo -- never to fold at grade time, because a transform applied inside
-a harness run means the artifact we grade is not the artifact in the repo (CEO-567, CEO-570).
+a harness run means the artifact we grade is not the artifact in the repo (R-567, R-570).
 
 WHAT IT TOUCHES: only bare identifiers that match the SPITBOL builtin list below, at word boundaries,
 and only OUTSIDE string literals and comments. User identifiers keep their case -- they are consistent

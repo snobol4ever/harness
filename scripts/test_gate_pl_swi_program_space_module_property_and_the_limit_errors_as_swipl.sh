@@ -5,7 +5,7 @@
 # returning the size, 100 rounds of assert and retractall leaving it) plus the database roads that must take M:G as data in the SWI dialect: dynamic, assertz,
 # asserta, retract, retractall and abolish with a literal module, a nested module (the innermost wins), user:, a clause with a qualified head, and every one of
 # them called through call/1 (the run-time leaves). Before this the lowering stripped a literal M: and the run-time leaves read the functor (:)/2, so the
-# counter charged user and assertz(mm:foo) raised permission_error(modify, static_procedure, (:)/2) (CEO-2030, rule 2 of ARCH-PROLOG-DATABASE section 6).
+# counter charged user and assertz(mm:foo) raised permission_error(modify, static_procedure, (:)/2) (R-2030, rule 2 of ARCH-PROLOG-DATABASE section 6).
 # The probe is cut from swipl in THIS run (swipl_bin); SCRIP's m3 and m4 are compared byte for byte; the self-test feeds the comparison a corrupted reference.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

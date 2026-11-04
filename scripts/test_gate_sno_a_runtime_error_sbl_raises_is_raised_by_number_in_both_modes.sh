@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_runtime_error_sbl_raises_is_raised_by_number_in_both_modes.sh -- row snobol4-runtime-errors-sbl-raises-are-
-# silent-statement-failures-in-scrip-binary-arithmetic-array-and-replace-and-negation-carries-the-wrong-error-number-ceo-1304
-# (found by the ceo's audit, CEO-1304; routed to the cfo, CEO-1306; cured by the cfo 2026-09-27).
+# silent-statement-failures-in-scrip-binary-arithmetic-array-and-replace-and-negation-carries-the-wrong-error-number-r-1304
+# (found by the officer's audit, R-1304; routed to the cfo, R-1306; cured by the cfo 2026-09-27).
 #
 # THE DEFECT: under &ERRLIMIT 0 (the default of both) sbl -bf raises a FATAL runtime error and terminates on x + 1, x - 1,
 # x * 2, x / 2 and x ** 2 with x = 'abc', on ARRAY(0 - 1) and on REPLACE with unequally long 2nd and 3rd arguments; SCRIP
 # failed the statement silently, took :F, ran on and exited 0, in both modes. -x was raised but numbered 1 where sbl says 010.
 # NO SUITE SAW IT: corpus/tests/snobol4/ALL.ref carries no ERROR line, so these programs sit outside every rung suite's
-# denominator -- which is why a cure proven on them owes this gate (the ceo's rule of 2026-09-27: a cure proven on a program
+# denominator -- which is why a cure proven on them owes this gate (the officer's rule of 2026-09-27: a cure proven on a program
 # that leaves the denominator owes a gate that keeps it under test).
 # THE CURE: the SNOBOL4 lowerer marks its arithmetic nodes strict=2 and bb_binop_arith calls a SNOBOL4-voiced entry family
 # (rt_add_sno and its siblings: the same asm fast paths, a slow path that raises SPITBOL's number for the operand that is not

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_every_frame_reference_lands_in_a_granted_cell.sh -- EVERY rbp-relative REFERENCE OF A RESUMABLE PROLOG FRAME LANDS INSIDE A CELL THE LAYOUT GRANTS (the cto, ARCH-PROLOG-ACTIVATION-LIFETIME 9.13
-# (2) and (3), CEO-2018; the instrument of ARCH-GC-COMPILE-TIME-FRAME-MAPS 17, the one-source-of-truth design: the plan is the collector's map, so a quad the emitter addresses and the plan does not grant is a
+# (2) and (3), R-2018; the instrument of ARCH-GC-COMPILE-TIME-FRAME-MAPS 17, the one-source-of-truth design: the plan is the collector's map, so a quad the emitter addresses and the plan does not grant is a
 # quad the collector cannot see). THE INSTRUMENT is util_frame_refs_land_in_grants.py: it reads the --dump-zeta grant table of a program (the dump's field lines, its vslot lines -- the parameter and goal-variable
 # cells -- and the 64-byte entry header below the carve) and measures every literal [rbp+N] in each graph's own FN__ body against it, printing one machine-readable line per ungranted reference:
 #   UNGRANTED graph=<g> box=<nNN_kind> off=<N> region_end=<R>
 # and the summary `; grants TOTAL graphs=<n> graded=<g> refs=<r> findings=<f>`. This gate runs it over the r/1 prelude+witness program (fixtures/frame_r1_witness.pl, 253 graphs of the Prolog prelude) and six
 # Prolog core entries, and PRINTS `FRAME_REFS programs=<p> graphs_graded=<g> refs=<r> ungranted=<u>`. READING, 2026-10-29 at SCRIP 32cd28a02: the seven programs grade 2076 graphs over 83822 references and 0 are ungranted (the fixture alone grades 252 of 253 graphs over 8620 references -- main is the
 # root graph, whose carve is not the flat activation frame this instrument reads); before the instrument was taught the vslot lines and the entry header the fixture read 2452. A reference the checker still names is a REAL HOLE and a row of its own with the graph and the offset as its DONE-WHEN, never a reason to weaken this gate. No byte bar anywhere.
-# THE NEGATIVE CONTROL (CEO-1680: a proper test, no seam in SCRIP): the same program's dump is read again with every `vslot +192` line removed (the script's own filter) and the checker MUST name ungranted references
+# THE NEGATIVE CONTROL (R-1680: a proper test, no seam in SCRIP): the same program's dump is read again with every `vslot +192` line removed (the script's own filter) and the checker MUST name ungranted references
 # there (133 on the fixture); if it reads 0 it is blind and this gate reads RED. --corrupt skips that damage so the control arm itself reads RED.
 # rc 0 held · rc 1 an ungranted reference, or the control did not trip · rc 2 cannot measure (no scrip, no fixture, a program that does not extract or compile, nothing graded)
 set -u

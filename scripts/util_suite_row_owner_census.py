@@ -5,7 +5,7 @@ HOLDS, AND EVERY ROSTER SEAT HAS A ROW QUEUED BEHIND ITS CURRENT ONE (the seat a
 Lon 2026-11-01 15:5x CST, in the coo's window, verbatim: "The goal is to get to 100% test suites, duh!" / "Well of course the bug fixes need
 an owner and a row. WTF! How did you miss that." / "how will you not miss that next time. have you automated that process. you know you can
 not trust your lying self." -- the coo found FPC, PasRungs, ProRungs and RakRungs below 100 with no live row, Jcon and ProRosetta with only a
-FREE one, and util_red_coverage.py (CEO-1887) on file but run by nothing. This census is run by tier 1's fleet watch every five minutes and
+FREE one, and util_red_coverage.py (R-1887) on file but run by nothing. This census is run by tier 1's fleet watch every five minutes and
 telegrams the coo while it reads RED; it is not a memory.
 
 Reads /home/resources/progress/SUITES.tsv (SCRIP rows: a key with no @) and, for every row not at 100 percent (today_pass < today_total,
@@ -22,8 +22,8 @@ not read the table or the queue, or the table holds no SCRIP row.
 """
 import os, re, sys
 RULED = {
-    "roast": "CEO-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
-    "raku-demos": "CEO-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
+    "roast": "R-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
+    "raku-demos": "R-2070: Raku climbs the cto's rung ladder, not the suites, until half the rungs are green",
 }
 CLOSED = ("DONE", "RETIRED", "SUPERSEDED")
 def arg(name, default):
@@ -79,7 +79,7 @@ print("SUITE_OWNER_BOARD suites=%d below_100=%d owned=%d held_by_lon=%d unowned=
 for x in reds: print(x)
 # THE SEAT ARM (Lon 2026-11-01 16:0x CST, in the coo's window, verbatim: "ensure you have work queued for all seats."): every seat MODE's ROSTER:
 # line names, the coo excepted, holds at least QUEUE_MIN live rows CLAIMED or ASSIGNED to it -- the row it works and the next one behind it, so a
-# seat that finishes is never idle for want of a row (CEO-2107: the coo assigns the next row AHEAD). PARKED and BLOCKED-ON rows do not count.
+# seat that finishes is never idle for want of a row (R-2107: the coo assigns the next row AHEAD). PARKED and BLOCKED-ON rows do not count.
 MODE = arg("--mode", "/home/resources/postoffice/MODE"); QUEUE_MIN = 2
 try: roster = next((l.split(":", 1)[1].split() for l in open(MODE, encoding="utf-8") if l.startswith("ROSTER:")), None)
 except OSError as e: refuse("%s unreadable: %s" % (MODE, e))

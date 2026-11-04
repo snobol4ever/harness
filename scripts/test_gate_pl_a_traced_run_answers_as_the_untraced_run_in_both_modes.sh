@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_traced_run_answers_as_the_untraced_run_in_both_modes.sh -- THE PORT TRACE IS AN OBSERVER: A TRACED RUN ANSWERS AS THE UNTRACED RUN.
 # hq_prolog 2026-10-04, row prolog-bb-the-mode-4-port-trace-instrument-emits-from-the-block-protocol-call-road-not-the-staged-road-the-compiler-no-longer-takes
-# (CEO-1502). MEASURED on origin 351fa1dc9: the choice-words landing (35ed4e649) gave x86_pl_disj_open the internal labels 240/241 in the
+# (R-1502). MEASURED on origin 351fa1dc9: the choice-words landing (35ed4e649) gave x86_pl_disj_open the internal labels 240/241 in the
 # disjunction, to and bound boxes, and the trace road defines a 240 of its own in the same box when SCRIP_PL_TRACE=1 -- mode 4's assembler
 # refused the duplicate (`symbol .Ldisjunction_α_23_240 is already defined`, so the oracle-diff gate read ZERO call_proc_staged lines and
 # refused rc=2), and MODE 3 SILENTLY WIRED THE WRONG LANDING: the traced canary printed red green blue red green blue blue blue ... until

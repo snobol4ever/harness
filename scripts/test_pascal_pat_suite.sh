@@ -26,8 +26,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$SUITE" ] || refuse "no vendored suite at $SUITE -- a suite that is absent is not a suite that is failing"
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first; a missing binary prints a full, plausible, entirely false all-FAIL board"
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, the officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. the officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
@@ -35,7 +35,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || refuse "lib_inventory.sh unloadable"
 . "$HERE/lib_progress.sh" 2>/dev/null || refuse "lib_progress.sh unloadable"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing (the acceptance programs carry no row today); a refused cell
 # refuses the board. The oracle (fpc -Miso) runs as before.
@@ -46,7 +46,7 @@ declare -A P F C
 for m in m3 m4; do P[$m]=0; F[$m]=0; C[$m]=0; done
 TOTAL=0; NAMED=""; UNGRADABLE=0
 PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
-# ⛔⭐ THE CEO-749 SHAPE FOR A REJECTION TEST THAT CARRIES NO ISO VIOLATION (ceo CEO-1231, 2026-09-24, on hq_pascal's ask
+# ⛔⭐ THE R-749 SHAPE FOR A REJECTION TEST THAT CARRIES NO ISO VIOLATION (R-1231, 2026-09-24, on hq_pascal's ask
 # q-pascal-pat-1834-and-1850-carry-no-iso-violation). OUTSIDE_ISO_BASELINE.tsv beside the package names each iso7185prt program whose
 # supposed violation ISO 7185 does not make an error (CLASS not-an-iso-error; Pascal-P5's own transcript reads "Errors in program: 0"),
 # with that measurement. A listed program STAYS IN THE DENOMINATOR (PASS over SHIPPED, OUTSIDE=k named and stamped through
@@ -57,7 +57,7 @@ OUTSIDE_TSV="$SUITE/OUTSIDE_ISO_BASELINE.tsv"; declare -A OUTSIDE_SET=(); OUTSID
 if [ -f "$OUTSIDE_TSV" ]; then
     while IFS=$'\t' read -r _on _orest; do case "$_on" in ''|'#'*) continue;; esac; OUTSIDE_SET[${_on%.pas}]=1; done < "$OUTSIDE_TSV"
 fi
-# ⛔⭐ A REJECTION TEST THE ORACLE ACCEPTS IS GRADED AS AN ACCEPTANCE TEST (ceo CEO-1269, 2026-09-25, superseding CEO-1231's
+# ⛔⭐ A REJECTION TEST THE ORACLE ACCEPTS IS GRADED AS AN ACCEPTANCE TEST (R-1269, 2026-09-25, superseding R-1231's
 # OUTSIDE ruling for iso7185prt1834/1850 on hq_pascal's ask). fpc -Miso accepts both and runs them rc 0, so each has an oracle
 # output and is graded exactly like the acceptance population below -- PASS when SCRIP prints the oracle's output in both modes,
 # FAIL otherwise, in the denominator. ISO_ACCEPTS.tsv beside the package names them; this loop skips them and the acceptance
@@ -69,7 +69,7 @@ if [ -f "$ACCEPT_TSV" ]; then
 fi
 # ⛔⭐⭐ A PASS A BROKEN ENGINE CAN EARN IS NOT A PASS (Lon 2026-10-21 16:5x CDT, in-chat to the coo, verbatim: "I suspect you know not what you are
 # doing and are measuring failure not success." · "You better fix your flawed measurement system for the test suites."; his ruling on the coo's
-# question, "Tighten, else exclude"; ceo CEO-1865). MEASURED by util_false_green_census.sh on harness 54425c7: an engine whose every program prints
+# question, "Tighten, else exclude"; R-1865). MEASURED by util_false_green_census.sh on harness 54425c7: an engine whose every program prints
 # an error and exits 1 earned 417 rejection tests here (834 PASS rows, every refused-with-a-diagnostic PASS of the real table), because a refusal
 # passed on ANY non-zero exit with ANY output; an engine that prints nothing earned iso7185prt1702c and prt1850, whose oracle answer is no output.
 # THE TIGHTENED VERDICT: a rejection test passes only when SCRIP's refusal NAMES ITS REASON -- the source line Pascal-P5's reference transcript marks
@@ -78,7 +78,7 @@ fi
 # RUN-TIME test's header cites: measured on 77fe69586, the headers' numbers are not reliable (prt1733's ln(x) cites 6.6.5.2, the clause is 6.6.6.2,
 # which SCRIP names). Neither stub engine names a line or a clause, and neither does a generic "error 262: division caused real overflow". A test
 # with no marked line and no clause in its header, and a test whose oracle answer is empty, cannot tell SCRIP from a broken engine: it is EXCLUDED
-# as CEO-1696 rules, its answer not known in any form a refusal can be checked against (EXCLUDED.tsv class NO_ORACLE_ANSWER, an iso7185prt* row,
+# as R-1696 rules, its answer not known in any form a refusal can be checked against (EXCLUDED.tsv class NO_ORACLE_ANSWER, an iso7185prt* row,
 # with what it lacks), never debt and never a pass.
 declare -A FAKE_SET=()
 [ -f "$SUITE/EXCLUDED.tsv" ] && while IFS=$'\t' read -r _fn _fc _frest; do case "$_fn" in iso7185prt*) [ "$_fc" = NO_ORACLE_ANSWER ] && FAKE_SET[${_fn%.pas}]=1;; esac; done < "$SUITE/EXCLUDED.tsv"
@@ -101,12 +101,12 @@ prt_refusal_names_it() {  # want output-file: prints what the refusal named (a m
     [ -n "$_c" ] && { echo "clause-$_c"; return 0; }
     return 1
 }
-# ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06), accumulated across BOTH populations below -- the rejection
+# ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06), accumulated across BOTH populations below -- the rejection
 # tests and the acceptance tests -- because both feed the one TOTAL this row is stated over. A per-program
 # accumulator is the only shape that survives two loops; a post-hoc min() of P[m3] and P[m4] would not even be
 # wrong in a detectable way, since it is not a count of any set of programs.
 BOTH=0
-. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one part or a request's entries, rows as each test ends
+. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries, rows as each test ends
 # ---- rejection population -------------------------------------------------------------------------------------------
 for f in "$SUITE"/iso7185prt*.pas; do
     [ -e "$f" ] || continue
@@ -114,7 +114,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
     [ -n "${ACCEPT_SET[$b]:-}" ] && continue; [ -n "${FAKE_SET[$b]:-}" ] && continue; TOTAL=$((TOTAL+1)); okboth=1
     WANT="$(prt_want "$f")"
     [ -n "$WANT" ] || refuse "$b carries no marked line in its .ecp and no ISO 7185 reference in its header, and EXCLUDED.tsv does not name it NO_ORACLE_ANSWER -- a refusal of it cannot be checked (Lon 2026-10-21, tighten else exclude)"
-    export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (CEO-1335)
+    export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (R-1335)
     if [ -n "${OUTSIDE_SET[$b]:-}" ]; then
         _oerr="$(cd "$TMP" && "$TIMEOUT_RETRY" 8s "$SCRIP" --dump-ast "$f" </dev/null 2>&1 >/dev/null)"; _orc=$?
         if [ "$_orc" -eq 0 ] && ! printf '%s' "$_oerr" | grep -q 'ISO 7185'; then
@@ -137,7 +137,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # so the suite's own debris silently blocked the FACT RULE the suite exists to satisfy. ⭐ The general
         # form: a runner that executes its subjects in the repo root has made the repo part of the experiment.
         # ⛔⭐⭐ THE m4 ARM COMPILES, LINKS AND RUNS -- IT USED TO ONLY COMPILE, AND THAT WAS A FALSE READING, NOT A
-        # CHEAP ONE (hq_pascal 2026-09-16, cfo ruling, ceo copied; INSTRUMENT CHANGE in the CEO-749 shape, never a cure).
+        # CHEAP ONE (hq_pascal 2026-09-16, cfo ruling, the officer copied; INSTRUMENT CHANGE in the R-749 shape, never a cure).
         # `--compile --out=/dev/null` answers "was it refused AT COMPILE TIME", so a witness whose ISO condition fires at
         # RUN time could never fail this arm -- and most of a REJECTION suite is runtime conditions. MEASURED: eleven
         # witnesses cured on 2026-09-16 (1826/1827/1842 statically, 1709/1710/1712/1714/1715/1716/1740/1757 at run time)
@@ -147,7 +147,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # get louder as the cure lands -- it gets quieter, because the cure it cannot see keeps arriving.
         # ⛔ A LINK FAILURE IS NOT A REFUSAL: the compiler accepted the program, so the witness FAILS (it was not
         # refused) rather than passing on a toolchain accident. test_gate_pas_pat_m4_arm_links_and_runs.sh pins this.
-        _t0="$(progress_clock)"   # the mode's own wall for its row (CEO-1676 (c)): m4's takes its compile and link
+        _t0="$(progress_clock)"   # the mode's own wall for its row (R-1676 (c)): m4's takes its compile and link
         if [ "$m" = m3 ]; then ( cd "$TMP" && run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 2s "$SCRIP" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
         else ( cd "$TMP" && exec "$TIMEOUT_RETRY" 8s "$SCRIP" --compile --out="$TMP/rj.s" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
              if [ "$rc" = 0 ]; then
@@ -156,7 +156,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
                  else : ; fi
              fi; fi
         SM="$(progress_secs_since "$_t0")"
-        # ⛔⭐ THE VERDICT IS STABLE; ONLY THE DIAGNOSIS VARIES (ceo ruling 2026-09-03, after their audit read
+        # ⛔⭐ THE VERDICT IS STABLE; ONLY THE DIAGNOSIS VARIES (ruling 2026-09-03, after their audit read
         # m3 296/129 where mine read 303/123 on the same tree). THE VERDICT is binary and load-independent:
         # a rejection test PASSES only when scrip REFUSES it with a diagnostic, and everything else -- ran to
         # completion, ran until the bound, crashed -- is the same FAIL, because none of them is a refusal.
@@ -202,7 +202,7 @@ for f in "$SUITE"/iso7185pat*.pas "${ACCEPT_FILES[@]}"; do
     [ -e "$f" ] || continue
     b="$(basename "$f" .pas)"; rr_admits "$b" || continue; rr_yield "$b" && break; rr_flush "$PROG_ROWS"
     [ -n "${FAKE_SET[$b]:-}" ] && continue
-    export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (CEO-1335)
+    export S4E_TIMEOUT_KEY="$b"   # the unit a retried timeout's stamp names (R-1335)
     [ -n "$FPC" ] || { echo "note: fpc absent -- acceptance test $b not graded (its oracle is fpc -Miso); rejection population unaffected"; break; }
     in="$SUITE/$b.inp"; [ -f "$in" ] || in=/dev/null
     # ⛔⭐ THE ORACLE GETS A TIMEOUT TOO, AND THAT IS NOT DEFENSIVE PADDING -- MEASURED: `fpc -Miso` does not
@@ -234,7 +234,7 @@ for f in "$SUITE"/iso7185pat*.pas "${ACCEPT_FILES[@]}"; do
     fi
     "$TIMEOUT_RETRY" 20s "$TMP/oracle" <"$in" >"$TMP/want" 2>&1 || true
     TOTAL=$((TOTAL+1))
-    # ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06): this suite's row states the programs green in EVERY graded
+    # ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06): this suite's row states the programs green in EVERY graded
     # mode. `okboth` starts at 1 and only ever falls to 0 -- a CRASH and a MISMATCH both clear it -- so the AND is
     # taken from the verdicts themselves rather than reconstructed from two counts afterwards, which cannot be done.
     okboth=1
@@ -270,7 +270,7 @@ if [ "${#STALE_NAMES[@]}" -gt 0 ]; then echo "⚠ OUTSIDE_ISO_BASELINE.tsv STALE
 # UNGRADED.tsv beside $SUITE (the two acceptance-population fixtures fpc -Miso cannot build this run)
 # rather than trusting this script's own $UNGRADABLE counter.
 INV_PACKAGE=pat; INV_DIR="$SUITE"; INV_EXT=".pas"   # the same stanza as above the acceptance loop, restated so the inventory reads beside its call
-if ! rr_selected; then   # a part of the package; the inventory sums the whole shipped package (CEO-1802)
+if ! rr_selected; then   # a part of the package; the inventory sums the whole shipped package (R-1802)
 INV_LINE="$(inventory_line "$TOTAL" 0)"
 if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
 fi
@@ -286,13 +286,13 @@ if [ -n "${PAT_NAME_REDS:-}" ]; then
 fi
 if . "$HERE/lib_gate.sh" 2>/dev/null && command -v gate_stamp >/dev/null 2>&1; then gate_stamp; fi
 # ⛔⭐ THE PROGRESS APPEND COMES FIRST (hq_pascal 2026-09-23, the twin of the FPC runner's own cure). util_score_row.py write
-# REFUSES unless this suite's per-program rows are ALREADY on the progress DB for this exact tree (CEO-750), and this runner
+# REFUSES unless this suite's per-program rows are ALREADY on the progress DB for this exact tree (R-750), and this runner
 # appended them AFTER the write, so the write refused on every clean run and the PAT row was set by hand. Measured on SCRIP
 # 42665301c: "no progress rows for suite 'pat' on tree 42665301c", then 854 rows appended one line later.
 # ⛔ THE PROGRESS LINE IS DELETED (Lon 2026-09-13, verbatim: "All bogus. Delete that. Do not show
 # that ever again."). The call that stood here printed it; util_score_row.py progress is now a silent
 # no-op and this call is removed so the intent is visible rather than inferred from an empty output.
-# ⛔⭐ THE FACT RULE'S OTHER HALF (CEO-319, /home/resources/progress/README.md): every suite run APPENDS its
+# ⛔⭐ THE FACT RULE'S OTHER HALF (R-319, /home/resources/progress/README.md): every suite run APPENDS its
 # per-program rows in the same sitting it rewrites its cell. MEASURED by hq_V at its opening, 2026-09-06:
 # 497 pascal rows stood in that table and every one was pascal-rungs -- ZERO from pat or fpc, so no Pascal
 # PACKAGE flip had ever been visible to the measure OCTET is actually run on. One bulk call, not 854.
@@ -302,25 +302,25 @@ if [ -s "$PROG_ROWS" ]; then
         echo "⚠ PROGRESS DB NOT UPDATED -- the score write below cannot cross-check and will refuse (reason above)" >&2
     fi
 fi
-rr_selected && { rr_end pat; exit 0; }   # a part or a request writes its rows and no suite row (CEO-1802)
-# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED (hq_T 2026-09-06, ceo CEO-363; the coo had to set
+rr_selected && { rr_end pat; exit 0; }   # a part or a request writes its rows and no suite row (R-1802)
+# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED (hq_T 2026-09-06, R-363; the coo had to set
 # this row BY HAND after a clean run because util_score_row correctly REFUSED to guess). The --text below
 # carries several fractions over the same denominator -- so there is no fact of the matter about which one a
 # text parse should take, and the writer refuses rather than picking while the runner declares its pair.
-# ⛔⭐ THE RULING CAME, AND IT IS NEITHER ARM: ceo-372, 2026-09-06, on hq_T's ask. This row was wired to m4
+# ⛔⭐ THE RULING CAME, AND IT IS NEITHER ARM: R-372, 2026-09-06, on hq_T's ask. This row was wired to m4
 # (because SUITES.tsv carried m4), then to m3 by hq_V at 20:5x when the coo hand-set the published row to the
 # m3 numbers -- each rewiring correctly avoiding the phantom regression the other would have published, and
-# hq_V closed with "The ceo is asked to rule; either way it stays one line." This is that line. The pair is
+# hq_V closed with "The officer is asked to rule; either way it stays one line." This is that line. The pair is
 # THE AND PER PROGRAM -- the programs green in EVERY graded mode: "a program red in m3 and another red in m4
 # both count against the row; never m3 alone, never m4 alone, never the min of two counts (which hides a
 # program red in each)."
 # ⭐ hq_V's SECOND, STANDING REASON IS ANSWERED RATHER THAN OVERRULED. m4 here has a NAMED non-determinism row
 # against it (pascal-m4-intermittent-segv-layout-sensitive: five runs, one tree, five pass counts -- ✅ LIVE,
-# reopened by the ceo at 21:05, CEO-379, rank 0, hq_V, after this runner's landing measured it filed DONE while
+# reopened by the officer at 21:05, R-379, rank 0, hq_V, after this runner's landing measured it filed DONE while
 # its defect was in that night's board; its old DONE-WHEN was met on the GATE's population while the class lives
 # on the suite's, so one member was cured and the class stayed red), and a row
 # wired to a number that moves without the code moving really does manufacture phantom movement in the table
-# Lon reads, ETA column included. ceo-372 puts that where it belongs: "a mode whose count varies run to run is
+# Lon reads, ETA column included. R-372 puts that where it belongs: "a mode whose count varies run to run is
 # a DEFECT ROW in that lane -- a nondeterministic compile is the xfail shape with a runner's excuse in front
 # of it -- never a reason to publish the steadier mode."
 # ⛔ THE NUMBER DROPS FROM ${P[m3]} (m3, as published) TO $BOTH -- 300 to 286 of 427, measured this sitting --
@@ -340,7 +340,7 @@ rr_selected && { rr_end pat; exit 0; }   # a part or a request writes its rows a
 . "$HERE/lib_outside_shape.sh" || exit 2
 _cc="${S4E_CRITERION_CHANGED:-}"
 if [ -z "$_cc" ]; then _cc="$(outside_shape_stamp pat "$TOTAL" "$OUTSIDE")" || exit 2; _cc="${_cc//OUTSIDE_SPITBOL_BASELINE/OUTSIDE_ISO_BASELINE}"; fi
-# ⭐ Excl IS THE EXCLUDED.tsv ROWS (ceo CEO-1696, Lon: "Exclude any program in which we have no way to get output from an oracle"): the two
+# ⭐ Excl IS THE EXCLUDED.tsv ROWS (R-1696, Lon: "Exclude any program in which we have no way to get output from an oracle"): the two
 # acceptance tests fpc -Miso never builds (UNGRADABLE.tsv's ORACLE_REFUSES, re-probed above) were already outside TOTAL; their NO_ORACLE_ANSWER rows
 # now name them on the row, so shipped = denominator + Excl reads as every other package's does. Counted through lib_inventory.sh's one reader.
 _pat_excl="$(inventory_excluded_names "$SUITE" | grep -c . || true)"

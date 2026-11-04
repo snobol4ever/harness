@@ -12,7 +12,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SCRIP="${SCRIP:-$HERE/../.
 # conversion): library/probe_reference/bb no longer holds loose .sno files, so the two witnesses this gate hardcodes by
 # exact path are materialized here via the harness's `extract` (ONE AUTHORITY for the suite grammar,
 # same as every other suite consumer) into a scratch dir, then used exactly as the old standalone files were.
-RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"   # re-pointed to THE RUNGS by origin (zero-subfolders cutover, ceo s283h)
+RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"   # re-pointed to THE RUNGS by origin (zero-subfolders cutover, s283h)
 if [ ! -x "$SCRIP" ]; then echo "SKIP scrip not built"; exit 0; fi
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT; fail=0
 S1="$W/test_sno_call2bb_1.sno"; S2="$W/test_sno_call2bb_2.sno"

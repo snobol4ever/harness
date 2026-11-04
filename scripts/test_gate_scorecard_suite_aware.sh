@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # ../harness/scripts/test_gate_scorecard_suite_aware.sh -- row scorecard-probes-misc-suite-awareness.
 # scorecard_snobol4.sh's probes_misc row globs `$CORPUS/probe -name *.sno -not -path */bb/*` -- a converted
 # probe family (probe/<family> loose files -> tests/snobol4/probe/<family>.{sno,ref}, corpus-suites-consolidation's

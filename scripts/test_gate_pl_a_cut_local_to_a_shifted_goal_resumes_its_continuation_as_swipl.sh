@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_a_cut_local_to_a_shifted_goal_resumes_its_continuation_as_swipl.sh -- A RESUMED CONTINUATION'S CUT TIDIES ONLY ITS OWN TRAIL SEGMENT (ceo CEO-1959, hq_packages; the cfo's ruling on the finding
+# test_gate_pl_a_cut_local_to_a_shifted_goal_resumes_its_continuation_as_swipl.sh -- A RESUMED CONTINUATION'S CUT TIDIES ONLY ITS OWN TRAIL SEGMENT (R-1959, hq_packages; the cfo's ruling on the finding
 # .github/findings/FINDING-2026-10-25-hq_packages-a-cut-inside-a-resumed-continuation-tidies-the-trail-across-the-park-gap.md; SWI core/test_continuation.pl continuation:ifthen#1).
 # A shift parks the coroutine; the main side grows the shared trail while it is parked; on the resume the coroutine's cut (once/1, the condition of ->, a disjunction's cut, *->) ran x86_pl_tr_tidy from the mark
 # of the barrier it returned to -- BELOW the park gap -- and compacted the main side's entries judged against the coroutine's HB; the park fence (pl_floor) then refused the SUCCESSFUL continuation with

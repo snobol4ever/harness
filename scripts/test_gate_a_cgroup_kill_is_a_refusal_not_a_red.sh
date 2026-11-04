@@ -3,7 +3,7 @@
 # CGROUP KILL IS A REFUSAL (the rc=2 family) THAT NAMES THE CAP AND THE PEAK, NEVER A RED.
 #
 # ⛔ THE DEFECT THIS GRADES (row instrument-698-runners-bound-the-clock-and-zero-bound-memory-one-cgroup-scope-bounds-resident-
-# pages-and-a-cgroup-kill-is-a-refusal-not-a-red, the ceo's ruling on the cfo's measurement; the coo 2026-09-23). 698 files under
+# pages-and-a-cgroup-kill-is-a-refusal-not-a-red, the ruling on the cfo's measurement; the coo 2026-09-23). 698 files under
 # ../harness/scripts/ bounded the wall clock and ZERO bounded memory; one process reached 23,343 MB RSS in 18 s on the 30 GB box ten seats
 # share, and three of the cfo's jobs were reaped for it. The mechanism and every clause's evidence: ../harness/scripts/util_mem_scope.py.
 #

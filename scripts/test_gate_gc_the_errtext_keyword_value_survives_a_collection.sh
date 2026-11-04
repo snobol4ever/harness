@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_errtext_keyword_value_survives_a_collection.sh
 #   hq_snobol4 2026-09-20, row `snobol4-errtext-keyword-value-is-an-unrooted-collected-heap-string-so-reading-it-
-#   after-a-collection-prints-heap-garbage` (CEO-1019, Lon: "make sure that all language specific constructs at
+#   after-a-collection-prints-heap-garbage` (R-1019, Lon: "make sure that all language specific constructs at
 #   runtime have ROOTED GC allocations"; granted to this seat by the `cfo` as CFO-156).
 #
 # WHAT IT GATES.  `&ERRTEXT` holds its value in `g_sno_errtext` (keywords.c:34), which takes an
@@ -11,7 +11,7 @@
 # SIX KILOBYTES OF HEAP GARBAGE -- rc=0, no diagnostic, a plausible wrong answer.  Two lines of SNOBOL4 show it.
 #
 # ⛔ WHY THE SWEEP THAT WAS LOOKING FOR THIS EXACT CLASS COULD NOT SEE IT, WHICH IS THE TRANSFERABLE PART.  The
-# CEO-1019 candidate list was built by grepping NON-SCALAR STATICS under src/runtime.  `g_sno_errtext` is NEITHER
+# R-1019 candidate list was built by grepping NON-SCALAR STATICS under src/runtime.  `g_sno_errtext` is NEITHER
 # `static` NOR non-scalar -- it fails that filter TWICE -- while sitting in the SAME FILE as two candidates the
 # filter does name.  The `cfo`'s `g_sno_defer_cells[4096]` fails it from the opposite direction, being a heap
 # address wearing `uint64_t`, and `hq_icon`'s `g_fh` is a C global holding a heap string that no root walk names.
@@ -59,11 +59,11 @@
 # write, so whatever wrote the pointer, the root walk visits the same `g_sno_errtext` -- one slot, one root.
 #
 # BAND: default 0 1 2 3 4 5 6 8 16 25.  `GC_BAND_FULL=1` walks the full 17 points to 50.
-# ⛔⭐ 16 AND 25 ARE IN THE DEFAULT BAND PER CEO-1024 (measured by `hq_raku`, who paid for it by reversing their
+# ⛔⭐ 16 AND 25 ARE IN THE DEFAULT BAND PER R-1024 (measured by `hq_raku`, who paid for it by reversing their
 # own green: the raku rungs at the tiny arena lost 65 gradings over 36 DISTINCT programs at stress 16, every one
 # exit 0 with a plausible wrong answer).  THIS WITNESS ARGUES IT FROM THE OTHER SIDE AND THE SHAPE IS WHY THE BAND
 # IS WALKED RATHER THAN SAMPLED: base is RED at m4 25 and GREEN at 10, 12, 16, 20, 30, 35, 40 and 50.  NOT
-# MONOTONE, NOT AN INTERVAL.  A two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (CEO-807).
+# MONOTONE, NOT AN INTERVAL.  A two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (R-807).
 #
 # FAIL-ONCE, PROVEN IN BOTH DIRECTIONS ON A COPY BEFORE THIS LANDED, NEVER ASSERTED:
 #   arm (b) rc=1  -- backing the cure out of keywords.c reds 5 of 34 oracle arms at exactly m3 {1,5} m4 {1,5,25}

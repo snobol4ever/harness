@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_real_value_parameter_is_assignable_inside_its_procedure.sh -- a procedure or function may assign to its own value parameter of
 # type real (ISO 7185 6.6.3.2: the formal is a local variable initialised from the actual), and the caller's variable is unchanged.
-# MEASURED 2026-10-09 by hq_pascal on the Star Trek demo (CEO-1579): the traced run died after "Warp factor" with
+# MEASURED 2026-10-09 by hq_pascal on the Star Trek demo (R-1579): the traced run died after "Warp factor" with
 # "[IDX] BOMB rt_assign_var: lvalue is not a variable (dtype=5)", the last statement `warp := warp - 0.125` in a nested procedure whose value
 # parameter is real. Minimised: procedure inner(w: real); begin w := w - 0.125 end -- integer value parameters were fine.
 # CAUSE: mk_proc built the procedure's by-reference mask from every parameter node that carries a child, and the elaborator marks a REAL value

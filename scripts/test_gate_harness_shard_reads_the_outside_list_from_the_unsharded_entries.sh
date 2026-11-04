@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_harness_shard_reads_the_outside_list_from_the_unsharded_entries.sh -- A SHARD GRADES ITS SLICE, BUT THE OUTSIDE LIST IS
-# CHECKED AGAINST THE WHOLE SUITE (hq_snobol4 2026-09-24 08:2x; ceo CEO-1233 (d); row instruments-the-harness-shard-filter-cuts-the-
+# CHECKED AGAINST THE WHOLE SUITE (hq_snobol4 2026-09-24 08:2x; R-1233 (d); row instruments-the-harness-shard-filter-cuts-the-
 # entry-list-before-the-outside-list-presence-check-so-every-sharded-run-of-a-suite-with-an-outside-list-refuses).
 #
 # THE DEFECT, MEASURED: on SCRIP 83d50401d / corpus fdc8455da, --shard 1/6 .. 6/6 of the SNOBOL4 rungs REFUSED rc=2 in 6 of 6
@@ -14,7 +14,7 @@
 #
 # ARMS (hermetic: a four-entry suite cut from the live rungs under mktemp in a tests/snobol4/ALL.sno layout, entries 2 and 3
 # declared outside in the SIBLING list, so the list spans both shards of --shard k/2 -- k=1 takes entries 1 and 3, k=2 takes 2 and 4;
-# the progress DB redirected by S4E_PROGRESS_DB to a scratch table; a fixture outside the corpus is not a board, CEO-547):
+# the progress DB redirected by S4E_PROGRESS_DB to a scratch table; a fixture outside the corpus is not a board, R-547):
 #   (a) --shard 1/2 GRADES (rc <= 1, no refusal): SUITE_BOARD shard=1/2 total=1 shipped=2 outside=1, entry 3 named OUTSIDE
 #   (b) --shard 2/2 GRADES the same way: shard=2/2 total=1 shipped=2 outside=1, entry 2 named OUTSIDE
 #   (c) the two shards SUM to the monolithic run: total 1+1=2, shipped 2+2=4, outside 1+1=2

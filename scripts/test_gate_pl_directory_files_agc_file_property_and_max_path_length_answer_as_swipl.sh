@@ -3,7 +3,7 @@
 # MISSING DIRECTORY IS existence_error(file, D) AND ON A FILE existence_error(directory, D); statistics(agc, N) COUNTS
 # garbage_collect_atoms/0; predicate_property(M:P, file(F)) NAMES THE SOURCE FILE, CALLED DIRECTLY AND THROUGH call/1; AND A PATH
 # OR PATH PART OF 4096 BYTES OR MORE IS representation_error(max_path_length), AS swipl ANSWERS (cfo 2026-10-14, row
-# prolog-swi-files-test-files-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# prolog-swi-files-test-files-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's files/test_files.pl read 10/16 in both modes. The cures: the directory_files/2 leaf (src/runtime/by_name_dispatch.c) answers
 # ENOENT/ENOTDIR with swipl's existence errors in the SWI dialect (the GNU dialect keeps gprolog's system_error); statistics(agc, N)

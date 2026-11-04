@@ -2,7 +2,7 @@
 # test_gate_pas_a_method_call_may_carry_an_empty_argument_list.sh -- obj.Method() and TClass.Create() with an empty parenthesis pair parse and run
 # as obj.Method and TClass.Create do, as statements and inside expressions, as fpc reads them.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): priority-queue-1 stopped at "pascal parse error line 62:
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): priority-queue-1 stopped at "pascal parse error line 62:
 # syntax error" on Queue:= TPriorityQueue.Create(); -- pascal.y's call_with_args had IDENT ( ) and selector . IDENT ( argument_list ) but no
 # selector . IDENT ( ). THE CURE: that rule, building the tree the paren-less obj.Method statement already builds (TT_FNC over a TT_FIELD);
 # pascal.tab.c regenerated with the pinned bison 3.8.2 (the one shift/reduce conflict unchanged).

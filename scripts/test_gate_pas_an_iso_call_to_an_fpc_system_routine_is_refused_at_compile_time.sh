@@ -4,7 +4,7 @@
 # the program declares no routine of that name; a program that declares its own random runs as fpc -Miso runs it; the FPC dialects
 # keep the routines.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's ISO-dialect programs (ceo CEO-1709; ISO_EXPECTED_REFUSALS, CEO-1228 and CEO-1657):
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's ISO-dialect programs (R-1709; ISO_EXPECTED_REFUSALS, R-1228 and R-1657):
 # the bare identifier random was refused with 6.2.2.1 (test_units_system_trandom is listed for it) but a CALL -- random(5), randomize; --
 # only died at run time as "error 22: undefined function called", so guess-the-number, penneys-game, random-latin-squares and
 # sorting-algorithms-comb-sort-1 / -2 (dialect iso, fpc -Miso compiles each rc=0) were neither refused nor run. The older gap

@@ -14,7 +14,7 @@
 #            in strict mode: parser tab.c/lex.c compiler-phase allocs are ledgered
 #            separately — they matter at runtime only via EVAL/CODE = TR-3c/A-TRANS)
 #   MMAP   : private data mmaps outside src/machine/.  ⛔ THE pat_pool.c EXCLUSION IS GONE WITH THE FILE
-#            (ceo CEO-892, 2026-09-18): it was sanctioned here as "a CODE pool — RWX, program-image
+#            (R-892, 2026-09-18): it was sanctioned here as "a CODE pool — RWX, program-image
 #            column", and it was DEAD — pat_pool_emit and g_pat_pool_cur had ZERO callers outside their
 #            own file, pat_pool_reset was never called, yet pat_pool_init ran on every scrip invocation
 #            and mapped 4 MB of READ-WRITE-EXECUTE with no MAP_NORESERVE.  The sealed slab that actually

@@ -34,7 +34,7 @@ parser="$SCRIP_ROOT/bootstrap/parser_$lang.sc"
 [ -x "$SCRIP_ROOT/scrip" ] || { echo "REFUSE no ./scrip (make first)" >&2; exit 2; }
 SBL="${SBL:-$(type -t sbl_correctness_bin >/dev/null 2>&1 && sbl_correctness_bin || echo /home/resources/x64/bin/sbl)}"
 if [ "$engine" = sbl ]; then [ -x "$SBL" ] || { echo "REFUSE no SPITBOL oracle at $SBL" >&2; exit 2; }; fi
-# Both engines run the twin at the CHAIN's declared sizes (ceo CEO-1353, RULES.md clause 8 (g)(3)-(4)), never typed here: scrip at
+# Both engines run the twin at the CHAIN's declared sizes (R-1353, RULES.md clause 8 (g)(3)-(4)), never typed here: scrip at
 # bootstrap/parser_<lang>.heap and .stack, sbl at bootstrap/parser_<lang>.oracle_args, read by lib_declared_arena.sh.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE cannot load lib_declared_arena.sh" >&2; exit 2; }
 SW="$(declared_switches_beside "$parser")" || exit 2

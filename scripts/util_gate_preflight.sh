@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# util_gate_preflight.sh -- THE PRE-LANDING PREFLIGHT FOR ONE GATE FILE (ceo CEO-432 item 3, ordered again in
-# CEO-441 item 7 as hq_T's first instrument).  Run it on the gate you are about to push.
+# util_gate_preflight.sh -- THE PRE-LANDING PREFLIGHT FOR ONE GATE FILE (R-432 item 3, ordered again in
+# R-441 item 7 as hq_T's first instrument).  Run it on the gate you are about to push.
 #
 #     bash ../harness/scripts/util_gate_preflight.sh test_gate_sno_dump_matches_spitbol.sh
 #     bash ../harness/scripts/util_gate_preflight.sh --all          # the same checks over every gate on disk
@@ -10,7 +10,7 @@
 # util_gate_wiring.py names any gate that landed in no recipe.  Both of them fire INSIDE `make test`, which
 # means they fire in EVERYBODY ELSE'S sitting, about a file one seat pushed.  That is the wrong moment and the
 # wrong person: hq_S measured it when test_gate_sno_fence_body_dynamic_operand.sh landed unwired and the gate
-# that could have graded its cure was run by nothing for a day, and the ceo measured it again the night
+# that could have graded its cure was run by nothing for a day, and the officer measured it again the night
 # test_gate_define_alternate_entry.sh landed unwired AND with the S4E_HOME root defect -- reds that arrived in
 # other seats' `make test`, hours after the author had moved on.  ⭐ THE POINT IS NOT A NEW CHECK.  It is the
 # SAME checks, addressable by one file name, cheap enough to run before the push, so the debt is paid by the

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_first_takes_the_end_k_kv_p_v_adverbs_and_a_non_block_matcher_and_later_bare_adverbs_are_named_agree_with_rakudo.sh -- `first` WITH :end / :k / :kv / :p / :v, A NON-BLOCK MATCHER (type object, regex, value), THE FUNCTION FORM `first MATCHER, LIST, :adverbs`, AND A BARE ADVERB AFTER ANOTHER ONE IS A NAMED ARGUMENT
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by naming the functions behind the "procedure 'first' has no stackless slab" aborts of S32-list/first-{end-,}{k,kv,p,v}.t and first-end.t).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by naming the functions behind the "procedure 'first' has no stackless slab" aborts of S32-list/first-{end-,}{k,kv,p,v}.t and first-end.t).
 #
 # THE DEFECTS, measured against Rakudo: (1) the function form `first { ... }, @list, :end, :kv` was routed to a user routine named first (none exists), so nine S32-list/first*.t files aborted "procedure 'first' has no stackless slab"; (2) `@list.first(BLOCK, :k)` ignored the adverb:
 # the method form passed `:k` as a bare Bool whose name was dropped; (3) a matcher that is not code (a type object, a regex, a value) was never smartmatched; (4) in a call `f(x, :a, :b)` the SECOND bare adverb was taken as a positional argument (named_form's `first` flag), so

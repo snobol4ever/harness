@@ -2,7 +2,7 @@
 """util_finding_fold_before_delete.py -- FOLD A FINDING'S MEASURED CLAIMS INTO ITS LIVE CITERS BEFORE IT IS DELETED.
 
 WHY THIS EXISTS (RULES.md line 31, Lon 2026-09-18 in-chat to the cto, verbatim: "You can use as many FINDING files as
-you want. I'll just delete them periodically. We should probably do a summarization when I delete."; ceo CEO-859/861).
+you want. I'll just delete them periodically. We should probably do a summarization when I delete."; R-859/861).
 A measurement that lives only in a FINDING is a measurement with a deletion date: 2231 FINDING paths have already been
 deleted from .github and two live rows were blocked on them this week.
 
@@ -19,7 +19,7 @@ THE CLAIM-LINE RULE, PRINTED RATHER THAN IMPLIED (a reader must be able to predi
 A FINDING with ZERO claim lines cannot be folded automatically and --apply REFUSES rc=2 rather than writing an empty
 fold block, because an empty fold that satisfies a marker check is this instrument's own vacuous-green disease.
 
-THE MARKER IS TERMINATED AND THE WINDOW IS NEVER GENEROUS -- this is CEO-860's lesson applied before it bites again:
+THE MARKER IS TERMINATED AND THE WINDOW IS NEVER GENEROUS -- this is R-860's lesson applied before it bites again:
 a root digest and a GOAL cursor write ONE PARAGRAPH PER LINE, so any line-count window degrades into a five-thousand
 character window that exempts whatever happens to be nearby.  The fold block is delimited by an explicit END marker
 and is located by CHARACTER OFFSET, not by lines; an UNTERMINATED block is RED, never "close enough".
@@ -169,7 +169,7 @@ def main():
     a = ap.parse_args()
 
     here = os.path.dirname(os.path.abspath(__file__))
-    # ⛔ THE SCRIP TREE IS THIS SCRIPT'S OWN REPO, .github S4E_HOME's ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, CEO-1573):
+    # ⛔ THE SCRIP TREE IS THIS SCRIPT'S OWN REPO, .github S4E_HOME's ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, R-1573):
     # root/SCRIP and root/.github named the directories BESIDE a worktree, so from a worktree under a scratch directory the sweep
     # refused "no such tree" and the gate's arm 9 read that refusal as a deleted, still-cited FINDING.
     root = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(here, "..", "..", "SCRIP", ".."))

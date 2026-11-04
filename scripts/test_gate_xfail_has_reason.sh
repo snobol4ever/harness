@@ -62,7 +62,7 @@ def reasons_in(path):
     if cur is not None: out[cur]='\n'.join(buf)
     return out
 langs=sorted(d for d in os.listdir(root) if os.path.isdir(os.path.join(root,d)))
-# ⛔⭐⭐ A LANE LON HAS PARKED CANNOT HOLD THIS GATE RED, AND ITS GAPS STILL GET COUNTED AND NAMED (ceo ->
+# ⛔⭐⭐ A LANE LON HAS PARKED CANNOT HOLD THIS GATE RED, AND ITS GAPS STILL GET COUNTED AND NAMED (->
 # hq_T 2026-09-05, OCTET: "THE ORDER OF WORK IS SNOBOL4, ICON AND PROLOG; Pascal, Raku, Rebus and Snocone
 # rows stay PARKED-LON-HOLD"). Blocking on a parked lane teaches the reader to ignore a red gate, which is
 # strictly worse than the gap it is reporting -- and dropping those entries would be the trophy-cabinet

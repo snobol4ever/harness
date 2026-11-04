@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_substitution_block_a_smartmatch_block_a_when_block_and_a_code_variable_are_called_from_emitted_code_agree_with_rakudo.sh -- THE BLOCK ROADS C USED TO WALK ARE EMITTED
-# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-ceo-1600, ARCH-RAKU-BOXES section 4 step 1; CEO-1576).
+# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-r-1600, ARCH-RAKU-BOXES section 4 step 1; R-1576).
 #
-# THE DEFECT: four block roads called user code from C and died on CEO-1576's named bomb (rt_call_proc_descr: __blk_N reached a C road into a box, DELETED; rc 139): s/// with a code
+# THE DEFECT: four block roads called user code from C and died on R-1576's named bomb (rt_call_proc_descr: __blk_N reached a C road into a box, DELETED; rc 139): s/// with a code
 # replacement or any interpolated replacement (rk_rx_subst_run called the block per match), smartmatch against a block or a code variable (__rk_smartmatch called it), a `when`
 # whose condition is a block, and map / grep / first / reduce over a code VARIABLE (`my &f`; the C list loops called it).
 # THE CURE (lower_raku.c): rk_subst_code_walk lowers a substitution whose replacement is a block into open / while next { put(block()) } / close over four C leaves that hold the

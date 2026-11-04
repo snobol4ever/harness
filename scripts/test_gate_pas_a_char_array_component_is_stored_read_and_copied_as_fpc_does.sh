@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_char_array_component_is_stored_read_and_copied_as_fpc_does.sh -- a character array inside a record or an array element, and a structured formal, behave as fpc -Miso's.
 #
-# MEASURED 2026-10-10 by hq_pascal on the Pascal-S and BASIC demos (row pascal-demos-...-ceo-1579), each defect a red against fpc -Miso in both modes on SCRIP 70f3505ed:
+# MEASURED 2026-10-10 by hq_pascal on the Pascal-S and BASIC demos (row pascal-demos-...-r-1579), each defect a red against fpc -Miso in both modes on SCRIP 70f3505ed:
 # (1) a record declared in a variable declaration (an anonymous record, Pascal-S's tab: array [0..tmax] of packed record name: alfa ...) had no record type, so its character-array fields lost their facts:
 #     tab[0].name := id stored the array object and printed ARRAY('1:4'), tab[j].name <> id compared identities, and Pascal-S walked past its sentinel to tab[-1] (6.5.3.2); an inline packed array of char field printed
 #     empty. CURE: the variable declaration registers such a record as a record type of its own ($anonrec<n>, the name the nested records already use) without binding a variant tag to it; the with-statement over an

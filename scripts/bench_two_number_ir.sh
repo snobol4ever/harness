@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_two_number_ir.sh -- THE TWO-NUMBER (WORK / OVERHEAD) BOARD, MEASURED IN CALLGRIND Ir.
-# Row readme-perf-grids-three-angles-all-seven (I26), hq_P 2026-09-03, after ceo's CEO-192 audit
+# Row readme-perf-grids-three-angles-all-seven (I26), hq_P 2026-09-03, after R-192 audit
 # reopened the row: every README grid must be RE-MEASURED on the two-number basis, tree-labelled.
 #
 # WHY Ir AND NOT WALL CLOCK -- THIS IS THE WHOLE POINT OF THE SCRIPT, NOT AN OPTIMISATION.
-# RULES.md § THE TWO-NUMBER BENCHMARK BASIS wants WORK and OVERHEAD as separate numbers, and CEO-173
+# RULES.md § THE TWO-NUMBER BENCHMARK BASIS wants WORK and OVERHEAD as separate numbers, and R-173
 # added the refusal that follows from measuring them badly: on a short program the subtraction
 # total-minus-overhead is a difference of two similar noisy numbers, so it is dominated by its own
 # error bars and can INVERT the verdict. That failure mode is a property of the INSTRUMENT (wall
@@ -23,7 +23,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # THE OVERHEAD NUMBER: the marked interim of the law -- EMPTY-PROGRAM SUBTRACTION, per engine.
 # A do-nothing program in the same language on the same engine is measured once; that Ir is process
 # startup (dynamic link, runtime init, teardown) and is the OVERHEAD. WORK = total - overhead.
-# ⛔ THE CEO-173 REFUSAL IS IMPLEMENTED HERE AND FIRES ON DATA, NOT ON OPINION: if OVERHEAD is >= 50%
+# ⛔ THE R-173 REFUSAL IS IMPLEMENTED HERE AND FIRES ON DATA, NOT ON OPINION: if OVERHEAD is >= 50%
 # of the reading on EITHER arm, the WORK multiple is REFUSED for that kernel and the labelled
 # TOTAL-basis multiple is printed in its place -- never both, never a work number with a quiet
 # asterisk.
@@ -45,7 +45,7 @@ command -v valgrind >/dev/null 2>&1 || refuse "valgrind not on PATH."
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || refuse "cannot load lib_ir_measure.sh -- this board will not read Ir by hand."
 command -v callgrind_annotate >/dev/null 2>&1 || refuse "callgrind_annotate not on PATH."
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || refuse "lib_perf_fmt.sh unloadable -- it is the ONE authority for printing a multiple (s266)."
-# CEO-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
+# R-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
 # from captured multiples, so the stamp must not land INSIDE a cell -- it is emitted once, above, with the
 # shared axes, which is where the FACT RULE says a grid names anything it shares.
 PERF_STAMP_OFF=1
@@ -146,7 +146,7 @@ echo "TWO_NUMBER_IR lang=$LANG_ARG tree=SCRIP $TREE corpus $CORPUS_TREE RT_OPT=-
 echo "  basis: WORK = total Ir - OVERHEAD; OVERHEAD = empty-program subtraction (the marked interim of"
 echo "         RULES.md § THE TWO-NUMBER BENCHMARK BASIS). Multiple = rival WORK / SCRIP WORK (FASTER axis)."
 echo "  instrument = callgrind Ir at fixed work, which is LOAD-IMMUNE: this board carries no load stamp deliberately,"
-echo "         not by omission (CEO-743 requires the stamp on WALL-CLOCK numbers; stamping an Ir board would imply a"
+echo "         not by omission (R-743 requires the stamp on WALL-CLOCK numbers; stamping an Ir board would imply a"
 echo "         dependence it does not have). Measured here anyway for the record: $(perf_load_stamp)."
 echo "  OVERHEAD (empty program, Ir): m3=${OVH_M3:-n/a}  m4=${OVH_M4:-n/a}  rival=${OVH_RV:-n/a}${RIVAL_NAME:+  [$RIVAL_NAME]}"
 printf '%-22s %14s %14s %14s %14s %14s %10s %s\n' kernel m3_total m4_total m4_WORK rival_total rival_WORK basis "x vs ${RIVAL_NAME:-none}"
@@ -163,7 +163,7 @@ for f in "$KDIR"/*."$EXT"; do
   if [ -n "$m4" ] && [ -n "${OVH_M4:-}" ]; then m4w=$((m4 - OVH_M4)); fi
   if [ -n "$rv" ] && [ -n "${OVH_RV:-}" ]; then rvw=$((rv - OVH_RV)); fi
   if [ -n "$m4w" ] && [ -n "$rvw" ] && [ "$m4w" -gt 0 ] && [ "$rvw" -gt 0 ]; then
-    # ⛔ CEO-173: refuse the WORK multiple when startup is >= 50% of EITHER arm's reading.
+    # ⛔ R-173: refuse the WORK multiple when startup is >= 50% of EITHER arm's reading.
     fm4=$(awk -v o="$OVH_M4" -v t="$m4" 'BEGIN{printf "%d", (t>0? o*100/t : 100)}')
     frv=$(awk -v o="$OVH_RV" -v t="$rv" 'BEGIN{printf "%d", (t>0? o*100/t : 100)}')
     if [ "$fm4" -ge 50 ] || [ "$frv" -ge 50 ]; then

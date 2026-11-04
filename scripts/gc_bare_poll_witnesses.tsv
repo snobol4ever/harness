@@ -1,5 +1,5 @@
 # gc_bare_poll_witnesses.tsv -- THE DECLARED WITNESS OF EVERY CREDITED BARE-POLL SITE (cto, row gc-the-116-bare-poll-
-# sites-already-counted-as-done-are-re-screened-by-the-zero-collection-arm; ceo CEO-1137/1144).  Written by
+# sites-already-counted-as-done-are-re-screened-by-the-zero-collection-arm; R-1137/1144).  Written by
 # `util_gc_safe_point_contract.py <witnesses> --write-bare-poll-table`, read by `--bare-poll`.  ONE ROW PER SITE the
 # census credits with the bare form (util_gc_census.py safe-points --list-polled, form=x86_rt_gc_poll).  A row is named
 # <template>:<callees>#<n>: the template, the callee names the census prints for the site, and the ordinal n among the

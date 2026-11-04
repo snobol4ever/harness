@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_area_smoke.sh -- THE AREA SMOKE a seat runs per landing (Lon 2026-09-27, verbatim: "So if you change the SPAN function,
-# then run every program that has SPAN as a reference. That is one of the columns in the attribute file."; ceo CEO-1342;
+# then run every program that has SPAN as a reference. That is one of the columns in the attribute file."; R-1342;
 # RULES.md section ONE TESTING OFFICER, ONE SCORE BOARD, THE AREA SMOKE clause 4; the coo's row instruments-the-area-smoke-...).
 #
 #   test_area_smoke.sh                     the landing: reads the tree's diff against origin/main (tracked changes and untracked
@@ -16,7 +16,7 @@
 # map REFUSES rc=2 naming it -- the lander adds the row with the landing. A tree equal to the base prints NO-DIFF and exits 0.
 # A landing that touches only carriers mapped to `-` (no area) prints NO-AREA and exits 0. Files outside src/ (scripts, corpus,
 # docs) carry no area and are printed as such: the gates a diff touched are the other half of the per-landing verdict.
-# ⛔ NOT A BOARD: corpus_suite_harness.py smoke appends no progress row and writes no score cell (CEO-547); no one-runner guard
+# ⛔ NOT A BOARD: corpus_suite_harness.py smoke appends no progress row and writes no score cell (R-547); no one-runner guard
 # is sourced here because none applies. EXIT: 0 every selected entry PASS in both modes (or nothing to smoke, said loudly);
 # 1 a red entry; 2 could not measure (unmapped carrier, unknown feature, zero population, stale binary).
 set -u
@@ -30,11 +30,11 @@ BASE="${AREA_SMOKE_BASE:-origin/main}"
 [ -f "$H" ] || { echo "AREA_SMOKE REFUSE(2): corpus_suite_harness.py is missing beside this script"; exit 2; }
 LIST=""; FEATS=(); for a in "$@"; do case "$a" in --list-only) LIST=--list-only;; -*) echo "AREA_SMOKE REFUSE(2): unknown switch $a"; exit 2;; *) FEATS+=("$a");; esac; done
 # ⛔⭐⭐⭐⭐ ZERO OR ONE TEST PER SEAT (Lon 2026-10-11 11:5x CDT, verbatim: "I'm thinking each seat can run ZERO test, oh ONE test, instead. Then let COO
-# prioritize testing on a per feature basis and still cycle through everything eventually."; ceo CEO-1671): the smoke is the coo's per-landing
+# prioritize testing on a per feature basis and still cycle through everything eventually."; R-1671): the smoke is the coo's per-landing
 # selector -- for each origin landing the coo runs the feature the diff marks FIRST, through this map and the attribute rows -- and no other
 # seat runs it (a shared node selects hundreds of programs in both modes; fourteen seats ran it per landing and the load read 29 on 16 cores).
 # --list-only stays open to every seat: the selection costs nothing and tells a lander which feature its diff marks.
-# CEO-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the CEO-1671 coo-only refusal is released.
+# R-1893 (Lon 2026-10-22: "whatever bottleneck we put in place to save CPU, release it"): every seat may run this; the R-1671 coo-only refusal is released.
 
 # expand_features: `*` -> every feature column of every table; `lang:<x>` -> the columns of x's tables; else itself.
 expand_features() {
@@ -111,13 +111,13 @@ if [ ${#FEATS[@]} -eq 0 ]; then
     exit 2
   fi
   # ⛔ A SHARED NODE IS THE OFFICER'S, NOT A SMOKE'S (Lon 2026-09-27, verbatim: "Should catch all SPAN problems, but not all system
-  # level problems as side-effects to others. Those will be caught by the officer in charge."; CEO-1342 clause 1). A touched carrier
+  # level problems as side-effects to others. Those will be caught by the officer in charge."; R-1342 clause 1). A touched carrier
   # mapped to `*` reaches every feature of every table: that union IS the whole population, the loop's own pass, and running it here
   # would make every seat's preflight an hour long on a core.c landing. The smoke says so, names the files, runs the OTHER touched
   # carriers' features if any, and exits 0 on the shared node alone -- the loop's next pass on origin is that landing's verdict.
   if grep -qx '\*' <<<"$(printf '%s\n' $raw)"; then
     shared="$(printf '%s\n' "$files" | while IFS= read -r f; do case "$f" in src/*) ;; *) continue;; esac; awk -F'\t' -v f="$f" '$1=="*" && ($2==f || (substr($2,length($2),1)=="/" && index(f,$2)==1)) {print f; exit}' "$MAP"; done | tr '\n' ' ')"
-    echo "AREA_SMOKE SHARED-NODE:$([ -n "$shared" ] && echo " $shared" || echo " (a touched carrier maps to *)") -- every feature of every table is reached, and that population is the testing officer's loop (CEO-1342), not a per-landing smoke; the loop's next pass on origin is this landing's verdict"
+    echo "AREA_SMOKE SHARED-NODE:$([ -n "$shared" ] && echo " $shared" || echo " (a touched carrier maps to *)") -- every feature of every table is reached, and that population is the testing officer's loop (R-1342), not a per-landing smoke; the loop's next pass on origin is this landing's verdict"
     raw="$(printf '%s\n' $raw | grep -vx '\*' | tr '\n' ' ')"
   fi
   FEATS=($(expand_features $raw))

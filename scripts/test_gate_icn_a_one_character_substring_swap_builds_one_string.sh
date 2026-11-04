@@ -15,7 +15,7 @@
 # subject with the two bytes exchanged and storing it once; every other shape takes the two-assignment path, whose
 # same-variable test now reads the base cell through either form too.
 #
-# ARMS. Arm 1 reads statements with whitespace folded (stmts), so a re-flow of the source lines cannot blind it (CEO-1565).
+# ARMS. Arm 1 reads statements with whitespace folded (stmts), so a re-flow of the source lines cannot blind it (R-1565).
 # (1) STRUCTURE: the one-character read, the same-cell fast path and the widened same-variable test are present.
 # (2) BEHAVIOUR, both media, against the LIVE oracle (icont/iconx 9.5.25a): a witness of 30 swaps over locals, a global, list
 # elements, a table element, sections of unequal length, a NUL-carrying subject, equal positions, swaps between two

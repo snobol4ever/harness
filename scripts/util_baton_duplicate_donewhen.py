@@ -2,7 +2,7 @@
 """Census (and with --fix, repair) batons that carry BOTH a real DONE-WHEN and the mint placeholder.
 
 WHY THIS EXISTS. `s4e_msg.sh mint` wrote the placeholder DONE-WHEN line UNCONDITIONALLY, right under
-`GOAL: $goal` -- so every mint that supplied a real criterion inline, which is what the ceo asks
+`GOAL: $goal` -- so every mint that supplied a real criterion inline, which is what the officer asks
 minters to do, produced a baton with TWO DONE-WHEN lines. The two readers of that file then disagree:
 the extractor takes the FIRST (the real one, so closes worked), while a human reading down the file
 takes the LAST and is told the row can never be closed. hq_I hit exactly that on a row hq_B minted for

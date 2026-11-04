@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_mint_op_is_one_numbering.sh -- THE DESCRIPTOR'S PROVENANCE BYTE IS ONE NUMBERING, IT IS CALLED
 # mint_op, AND THE ONLY THING THAT CAN OVERFLOW IT IS ASSERTED AT COMPILE TIME
 # (row mint-op-is-one-numbering-from-1-the-123-rt-ids-go-and-the-field-is-renamed, hq_R 2026-09-13,
-# CEO-719 as twice corrected on Lon's word; the cto is HQ).
+# R-719 as twice corrected on Lon's word; the cto is HQ).
 #
 # WHAT WENT WRONG, BECAUSE EVERY ARM HERE IS ONE CLAUSE OF IT. `mod_op` is a uint8_t recording WHICH BB MINTED
 # a descriptor. Its name reads as MODIFIED, so a numbering that answers WHO MINTED looked like it needed a

@@ -3,7 +3,7 @@
 # a disjunction, the else arm of a soft cut, or the then arm of a soft cut whose condition has no redo, in a clause body's last goal,
 # is a last call even though the construct made this frame the youngest choice: that choice is dead there (every earlier arm is
 # exhausted, the condition cannot be resumed), so the tail arm takes r13 back to the caller's choice and releases the frame, as swipl
-# runs these shapes in constant stack. THE RED (CEO-1632, after chunk 1 at SCRIP 45e63ef51): count(1000000) under -s512k died ERROR 246
+# runs these shapes in constant stack. THE RED (R-1632, after chunk 1 at SCRIP 45e63ef51): count(1000000) under -s512k died ERROR 246
 # for the disjunction and soft-cut shapes because x86_pl_disj_open sets r13 to this frame's header and nothing returned it before the
 # last arm, so the tail arm's r13 test declined. THE CURE: the lowering seals such a call IR_SEAL_TAIL_POP only when every enclosing
 # construct is proven dead at the call and the clause body holds no other choice-opening node (IR_DISJUNCTION, IR_TO, IR_TO_BY or a

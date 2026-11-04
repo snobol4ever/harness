@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 2 STEP 1 of frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): THE DET-LEAF FACT TRAVELS ON THE IR NODE.  A CALL is beta-capable until proven otherwise;
+# (cto, R-684 slice 2): THE DET-LEAF FACT TRAVELS ON THE IR NODE.  A CALL is beta-capable until proven otherwise;
 # the proof for a $-leaf is per callee: the emitter's registry (dop_direct_fp, bb_call.cpp) names the C functions a
 # call reaches directly, every such box returns once and its beta is a jump to omega (bb_call_fn.cpp, both arms),
 # and its argv block is read only by that one call.  The LOWERER asks the registry at graph finish (pl_graph_stamp)

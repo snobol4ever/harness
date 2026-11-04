@@ -5,7 +5,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude Sonnet 4.6  DATE: 2026-06-08 (de-interp'd 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 OUTDIR="${HERE}/../../SCRIP/out"
 P3=0; F3=0; P4=0; F4=0
 
@@ -89,14 +89,14 @@ END" "42"
 run_all "arith_sm" "        OUTPUT = 2 + 3
 END" "5"
 
-# CORE ARM (ceo CEO-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."): the hand cases above missed 8 SnoRungs
+# CORE ARM (R-1952; Lon 2026-10-24: "Let's get better smoke tests for SNOBOL4, it keeps missing a lot."): the hand cases above missed 8 SnoRungs
 # core crashes and 105 pattern-shell reds on main that day (521c5afcd, 8eb445d88). The arm grades the SnoRungs PARTITION core -- every distinctive
 # feature three times -- plus the FENCE/ARBNO/BAL witnesses that crashed then, through the one extraction authority in BOTH modes, HARD in both, with
 # the declared heap, stack, stdin and argv; progress off, so it writes no results row.
 FRAGILE="arbno_fence_bal_branch_1 arbno_fence_bal_replace_branch_2 arbno_fence_pos_branch_18 arbno_fence_pos_branch_28 arbno_arb_rpos_replace_branch_1 fence_tab_pos_branch_2 user_function_fence_tab_branch_1 user_function_eval_arbno_replace_branch_2"
 CORE_PARTS="core$(for e in $FRAGILE; do printf ',entry:%s' "$e"; done)"
 CT="${HERE}/../../corpus/tests/snobol4"
-COUT="$(cd "${HERE}/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_SMOKE_CORE_ARM="test_smoke_snobol4.sh (CEO-1952)" timeout -k 5 300 python3 "${HERE}/corpus_suite_harness.py" run "$CT/ALL.sno" "$CT/ALL.ref" --lang snobol4 --modes m3,m4 --partition "$CORE_PARTS" 2>&1)"
+COUT="$(cd "${HERE}/../../SCRIP" && S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 S4E_SMOKE_CORE_ARM="test_smoke_snobol4.sh (R-1952)" timeout -k 5 300 python3 "${HERE}/corpus_suite_harness.py" run "$CT/ALL.sno" "$CT/ALL.ref" --lang snobol4 --modes m3,m4 --partition "$CORE_PARTS" 2>&1)"
 CB="$(printf '%s\n' "$COUT" | grep -m1 '^SUITE_BOARD')"
 [ -n "$CB" ] || { printf '%s\n' "$COUT" | tail -3 | sed 's/^/  /'; echo "core arm REFUSE(2): the harness printed no SUITE_BOARD line"; exit 2; }
 cv() { printf '%s\n' "$CB" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }
@@ -110,5 +110,5 @@ echo "core arm (SnoRungs core + $(echo $FRAGILE | wc -w) fragile, $CN4 entries):
 echo "PASS=$P4 FAIL=$F4"
 printf "TIME TOTAL=%ds\n" "$TT"
 
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F4" -eq 0 ] && [ "$CF3" -eq 0 ] && [ "$CF4" -eq 0 ]

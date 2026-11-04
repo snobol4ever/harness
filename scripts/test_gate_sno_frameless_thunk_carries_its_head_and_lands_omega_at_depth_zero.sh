@@ -2,7 +2,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_frameless_thunk_carries_its_head_and_lands_omega_at_depth_zero.sh -- STEP 2 OF THE ROW
 # stored-pattern-thunks-run-on-the-rsp-spine-when-recede-free-no-rbp-frame-no-map-cell-no-zero-fill (Lon 2026-09-30, in-chat to the
-# ceo: "Ensure that pre-compiled patterns do no carry the extra weight of an RBP activation frame when just the RSP spine will
+# the officer: "Ensure that pre-compiled patterns do no carry the extra weight of an RBP activation frame when just the RSP spine will
 # suffice."; Lon 2026-10-01, in-chat to the cto, ordering this step first). A stored-pattern thunk that runs on the RSP spine alone
 # (the default and only road since the SCRIP_BLOB_SPINE switch was deleted) still needs three things its RBP frame used to give it:
 #   (1) THE HEAD. The pattern's DTP (rdx at entry) and, under casmark, r12 lived at [rbp-24] and [rbp-32]. A var box reading a
@@ -17,7 +17,7 @@
 # Measured on 270cfc43b over the 757-entry pattern-feature slice of the SNOBOL4 master, both modes: 48 entries red under the flag
 # that pass on defaults (33 SIGSEGV, 15 rc 1) before; after, the flag arm reads the defaults' 1484 of 1514 entry for entry.
 # ONE ROAD. The flag arm (SCRIP_BLOB_SPINE=1 SCRIP_LEAF_FRAME=0) was the whole spine road until both switches were deleted: the
-# leaf default went back to the spine at 6b33e24d5 (CEO-1391 (a)), and the frameless thunk became the default when
+# leaf default went back to the spine at 6b33e24d5 (R-1391 (a)), and the frameless thunk became the default when
 # test_gate_no_zeta_frame_switches read the two switches red (no env chooses a frame placement); the flip changed the asm of 243
 # of 5246 extracted master entries (241 SNOBOL4, 2 Snocone), all of which run as before in both modes.
 # THE WITNESS has one statement per class; the oracle is sbl (lib_oracle_flags.sh). The gate grades both modes under the flag and

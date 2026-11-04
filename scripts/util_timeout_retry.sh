@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_timeout_retry.sh -- `timeout` FOR A GRADED RUN: A TIMEOUT WHILE THE 1-MINUTE LOAD EXCEEDS THE CORES IS COULD NOT MEASURE,
-# SO THE COMMAND IS RUN ONCE MORE AND ONLY A SECOND TIMEOUT STANDS (ceo CEO-1335; row instruments-a-per-program-timeout-while-
-# load1-exceeds-the-cores-is-could-not-measure-retried-once-serially-before-fail-and-the-retry-stamped-on-the-progress-row-ceo-1335;
+# SO THE COMMAND IS RUN ONCE MORE AND ONLY A SECOND TIMEOUT STANDS (R-1335; row instruments-a-per-program-timeout-while-
+# load1-exceeds-the-cores-is-could-not-measure-retried-once-serially-before-fail-and-the-retry-stamped-on-the-progress-row-r-1335;
 # the coo 2026-10-09). The package runners' half of the row; corpus_suite_harness.classify is the harness's half (SCRIP 42bce05d2).
 # MEASURED: pass 44's make test-boards (SCRIP cffeedb19, load ~20 on 16 cores) read fpc 180/181 -- webtbs_tw15203, 33 s unloaded and
 # 74 s at load 19, was killed at its declared 120 s and test_pascal_fpc_suite.sh graded the rc 124 FAIL output-differs-from-ref, an
@@ -18,7 +18,7 @@
 #   * the exit status is the standing attempt's, timeout's own (124 on a timeout, 125-127 and 128+n as timeout returns them)
 #   ⛔⭐ EVERY TIMEOUT IS RETRIED ONCE, LONGER, WHATEVER THE LOAD (Lon 2026-10-15 15:3x CDT, in-chat to the coo, verbatim: "So timeout
 #     SHOULD NOT count as valid." and "The strategy should be to accumulate a list of timeouts, and do a retry with longer timeouts.";
-#     superseding CEO-1335's "a timeout at or under the cores is graded at once" and its same-length retry). Measured: the logtalk_iso
+#     superseding R-1335's "a timeout at or under the cores is graded at once" and its same-length retry). Measured: the logtalk_iso
 #     pass on 52f822b69 ran 9318 s at load 19-21 on 16 cores and 344 of its 361 m4 reds were timeouts. The retry's limit is
 #     S4E_TIMEOUT_RETRY_FACTOR (default 6) times the first, capped at S4E_TIMEOUT_RETRY_CAP seconds (default 600) unless the first is
 #     longer already; only a timeout at that longer limit stands, and the stamp lists every retried unit (the accumulated list)
@@ -46,7 +46,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ $# -ge 2 ] || { echo "util_timeout_retry.sh: usage: util_timeout_retry.sh [timeout options] DURATION COMMAND [ARG]..." >&2; exit 125; }
-# ⛔ A TIMEOUT CARRIES A KILL (ceo CEO-1796): SIGTERM alone left three swipl runs burning a core each for two hours; a caller that names no -k gets -k 5.
+# ⛔ A TIMEOUT CARRIES A KILL (R-1796): SIGTERM alone left three swipl runs burning a core each for two hours; a caller that names no -k gets -k 5.
 case " ${opts[*]-} " in *" -k "*|*" --kill-after "*|*" --kill-after="*) ;; *) opts+=(-k 5) ;; esac
 [ "${S4E_TIMEOUT_RETRY:-1}" = 0 ] && exec timeout ${opts[@]+"${opts[@]}"} "$@"
 dur="$1"; shift
@@ -76,7 +76,7 @@ if [ "$rc" = 124 ]; then
         role=m4; isscrip=0; isoracle=0; compile=0
         for a in "$@"; do
             case "$(basename -- "$a" 2>/dev/null)" in
-                scrip|run_port_as_scrip.sh) isscrip=1 ;;   # a port engine's face takes SCRIP's m3 call (CEO-1822)
+                scrip|run_port_as_scrip.sh) isscrip=1 ;;   # a port engine's face takes SCRIP's m3 call (R-1822)
                 sbl|spitbol|fpc|gprolog|swipl|icont|iconx|raku|rakudo|csnobol4|snobol4|jcont|jconx) isoracle=1 ;;
             esac
             case "$a" in *--compile*) compile=1 ;; esac

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_design_exceptions_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: exceptions, ONE ERROR PROTOCOL FOR EVERY LANGUAGE: A RAISE RETURNS, THE BOX UNWINDS (the cto, 2026-10-29;
-# CEO-1996; Lon in-chat to the cto, verbatim: "Do address the second flaw, i.e. skipping omega and standardizing the exception processes."; .github/ARCH-EXCEPTIONS-ONE-PROTOCOL.md).
+# R-1996; Lon in-chat to the cto, verbatim: "Do address the second flaw, i.e. skipping omega and standardizing the exception processes."; .github/ARCH-EXCEPTIONS-ONE-PROTOCOL.md).
 # The plan is corpus/tests/shared/exceptions/STEPS.tsv; the witnesses are the .sno, .icn, .pl, .pas and .raku programs beside it, each with a .ref cut from its
 # oracle (SPITBOL sbl -bf with its listing sent to a file, so a fatal's report never lands in the ref; Arizona Icon icont -s then the binary; swipl -q -t halt; fpc -Miso then the binary; Rakudo), stdout compared exactly AND THE EXIT CODE
 # compared with the oracle's (a .rc file beside the .ref when the oracle exited nonzero; absent means 0): an error witness proves what was written before the error is

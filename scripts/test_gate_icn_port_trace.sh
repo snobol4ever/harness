@@ -3,7 +3,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icn_port_trace.sh -- THE ICON PORT-TRACE INSTRUMENT (GOAL-TEST-SUITE-CONSISTENCY.md item 6;
-# row icon-port-trace-gate-against-ampersand-trace, ceo mint 2026-09-03T21:09:11Z). Shape copied from
+# row icon-port-trace-gate-against-ampersand-trace, mint 2026-09-03T21:09:11Z). Shape copied from
 # test_gate_pl_port_trace.sh per the task brief; two things differ on purpose, both explained below.
 #
 # THE INSTRUMENT SCRIP already has: SCRIP_PL_TRACE=1 (x86_port_hook -> rt_pl_port_trace) is wired into
@@ -179,7 +179,7 @@ for o in $origins; do
     meta=$(refmeta "$o"); rt=${meta%% *}; rp=${meta##* }
     for m in m3 m4; do
       total=$(wc -l < "$W/$o.$m.norm")
-      # ⛔⭐⭐ NOREF IS A CANNOT-MEASURE, NOT A FAILED CHECK (hq_T 2026-09-11, on the ceo's finding that these
+      # ⛔⭐⭐ NOREF IS A CANNOT-MEASURE, NOT A FAILED CHECK (hq_T 2026-09-11, on the officer's finding that these
       # gates are wired into no recipe and that icn reads "22 failed checks of 24"). A witness with NO REF BLOCK
       # has never been pinned; the gate learned nothing about it. Counting it into `bad` publishes a backlog that
       # looks like defects and is not one -- MEASURED across all six self-pin gates plus icn: 218 of the failed

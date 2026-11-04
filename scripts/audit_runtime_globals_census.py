@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""audit_runtime_globals_census.py -- THE RUNTIME GLOBALS CENSUS (Lon 2026-10-08, in-chat to the ceo, verbatim: "Take an inventory of all
+"""audit_runtime_globals_census.py -- THE RUNTIME GLOBALS CENSUS (Lon 2026-10-08, in-chat, verbatim: "Take an inventory of all
 global variables use at runtime. Ask the question, can that global live on one of the 3 ZETAS? If so make a task to move it and remove the
 global variable." -- "Regarding the global variable census, do not consider the parser code, nor the lower nor the emitter for now. Just
-the runtime." -- "Do all the global variables start with prefix "g_", if not, make it so."; CEO-1561). THE POPULATION is measured, never
+the runtime." -- "Do all the global variables start with prefix "g_", if not, make it so."; R-1561). THE POPULATION is measured, never
 typed: every writable data symbol (nm classes B D b d) the built runtime library defines in a translation unit under src/runtime/, read
 with its defining file and line from the -g debug information of out/libscrip_rt.so. A symbol spelled name.NN is a function-scope static
 (a cached-getenv seam, a once flag, a local buffer); a file-scope global is any other.
-THE SECTIONS (ceo CEO-1575, 2026-10-09: "a table never written is not state"): nm's d and D also cover .data.rel.ro, so each symbol's
+THE SECTIONS (R-1575, 2026-10-09: "a table never written is not state"): nm's d and D also cover .data.rel.ro, so each symbol's
 section is read from objdump -t by its address and name, and only a WRITABLE section counts -- .data, .bss, their TLS twins .tdata and
 .tbss, COMMON -- never .rodata or .data.rel.ro, as test_gate_pl_no_new_global.sh reads them since 9e50691a0. A table const-qualified to
 the pointer (static const char *const t[]) leaves the count; one with a writable slot (static const char *t[]) stays, because it is state.
@@ -73,7 +73,7 @@ def population(tree, root=ROOT):
     if not rows and not const:
         print("REFUSED (rc=2): nm found no data symbol with a src/%s file name in %s (no -g debug information?)" % ("|".join(TREES[tree]), lib)); sys.exit(2)
     rows.sort(key=lambda r: (r["file"], r["line"], r["name"]))
-    print("(%d constant data symbol(s) in .rodata/.data.rel.ro not counted, CEO-1575)" % const)
+    print("(%d constant data symbol(s) in .rodata/.data.rel.ro not counted, R-1575)" % const)
     return rows
 
 

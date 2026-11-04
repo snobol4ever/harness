@@ -4,7 +4,7 @@ export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (u
 # ⛔⭐ THE HAZARD, MEASURED THREE TIMES IN ONE SITTING AND TWICE WHILE DOING THE DISCIPLINED THING. A board takes
 # ten to forty minutes; its SCORE.md write happens at the END. A seat who commits and pushes mid-run moves HEAD
 # under a measurement that already happened, and the row then names a tree carrying commits it never ran.
-# ⭐ AND THE GUARD PUSHES YOU INTO IT. CEO-174 skips the write on a dirty tree, so the way to make your row land is
+# ⭐ AND THE GUARD PUSHES YOU INTO IT. R-174 skips the write on a dirty tree, so the way to make your row land is
 # to commit before the board finishes -- which is exactly the act that moves HEAD. The safeguard and the hazard
 # are the same gesture, which is why care does not protect against this one and a mechanism has to.
 # ⛔ IT ASSERTS BEHAVIOUR, NOT WIRING: unset, the stamp must be byte-identical to what it always was, because

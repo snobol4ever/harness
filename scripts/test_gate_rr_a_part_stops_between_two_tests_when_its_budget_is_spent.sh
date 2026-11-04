@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_rr_a_part_stops_between_two_tests_when_its_budget_is_spent.sh -- A ROUND-ROBIN PART IS A BOUNDED UNIT IN TIME AS WELL AS IN ENTRIES (ceo
-# CEO-1802/1805/1806; Lon 2026-10-15 via the ceo: every unit small and bounded, one chunk of at most 100 entries). A part of long tests (SWI's chunk:01 is
+# test_gate_rr_a_part_stops_between_two_tests_when_its_budget_is_spent.sh -- A ROUND-ROBIN PART IS A BOUNDED UNIT IN TIME AS WELL AS IN ENTRIES (the officer
+# R-1802/1805/1806; Lon 2026-10-15 via the officer: every unit small and bounded, one chunk of at most 100 entries). A part of long tests (SWI's chunk:01 is
 # 100 files and about 1,900 cases, an hour and more at one worker) stops between two tests once S4E_RR_BUDGET seconds are spent, prints RR_YIELD with the
 # next test, and the loop resumes it there on the member's next turn; a request is never split.
 # THE FIXTURE (a scratch suite dir; nothing real is read or written): PARTITION.tsv names e1 e3 e2 in chunk:01; lib_rr.sh is sourced (it is a library).
@@ -11,10 +11,10 @@
 #   ARM 4  a request (S4E_REQ set) at budget 0: rc 1 (a request is graded whole).
 #   ARM 5  the resume chunk:01@e3 admits e3 and e2 and not e1, and rr_entries lists them in the partition's order (e3 e2), which is not sorted order:
 #          a runner grading its own list in sorted order would yield at one name and resume past the others (10-17: SWI's GC/ files sort after files/).
-#   ARM 6  a table with no PARTITION.tsv (the benchmarks and the demos, CEO-1812) takes a request's entry: names, each a file of the suite dir by stem or
+#   ARM 6  a table with no PARTITION.tsv (the benchmarks and the demos, R-1812) takes a request's entry: names, each a file of the suite dir by stem or
 #          path: entry:k1,entry:sub/d1.md admits k1 and sub/d1.md; an unknown name and a core selection refuse rc 2.
 #   ARM 7  a SCRIP request (a .req with no engine= line) in S4E_RR_YIELD_DIR under S4E_RR=1: rr_yield e2 is rc 0 and prints RR_YIELD next=e2.
-#   ARM 8  only port requests (engine=dotnet, engine=jvm; CEO-1872) in the queue: rr_yield is rc 1 and prints nothing -- a port request waits its turn
+#   ARM 8  only port requests (engine=dotnet, engine=jvm; R-1872) in the queue: rr_yield is rc 1 and prints nothing -- a port request waits its turn
 #          (one a turn, after every SCRIP request) and never stops a rotation part (10-21 20:34: thirty queued port requests yielded testpgms core at
 #          its first test). ARM 9  corpus_suite_harness.rr_request_waits reads the two queues the same way (True, False) and an empty queue False.
 #          Arms 8 and 9 FAIL on origin 226db4d (any .req stopped a part; rr_request_waits is not defined).

@@ -1,5 +1,5 @@
 # WITNESSES.tsv -- one row per LOUD guard of the fixed-caps census: the program that reaches its cap+1 and the refusal it must read
-# (ceo CEO-1231: "a witness verb that reads the refusal at cap+1"; row instruments-the-fixed-caps-ratchet-...; the coo).
+# (R-1231: "a witness verb that reads the refusal at cap+1"; row instruments-the-fixed-caps-ratchet-...; the coo).
 # FORMAT: file<TAB>name<TAB>program<TAB>switches<TAB>rc<TAB>refusal -- file and name as the census names the guard (a table, an arena
 # by its size macro, a local); program relative to the SCRIP root (./scrip --run <switches> <program>, stdin /dev/null); rc the exit
 # the refusal must end with; refusal a fixed string the run's stderr must contain, naming the table or the cap. The program is LEGAL:

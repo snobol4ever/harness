@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_sno_by_name_paths_find_once_dollar_apply_eval.sh -- THREE RUNTIME PATHS REACHED BY NAME STOP LOOKING THINGS UP TWICE (ceo
-# 2026-09-25, CEO-1263; Lon, in-chat to the ceo: "Find where our true compiler is slower than an threaded-code interpreter?"; notebook
+# test_gate_sno_by_name_paths_find_once_dollar_apply_eval.sh -- THREE RUNTIME PATHS REACHED BY NAME STOP LOOKING THINGS UP TWICE (the officer
+# 2026-09-25, R-1263; Lon, in-chat: "Find where our true compiler is slower than an threaded-code interpreter?"; notebook
 # section 21: SCRIP reads 2-4x SPITBOL where the compiler resolves an operation and loses only in paths reached by name).
 #   $name: SNO$NAME takes its row in the direct builtin table (it carried the leaf bit, so the asm bid entry looked it up and missed
 #   into the C dispatcher); a string operand is looked up by its own bytes and length, hashed a word at a time, with no C string built;
@@ -21,8 +21,8 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # (5) strtod over 1,000 EVAL('X + 1') at most 20.
 # FAIL_ONCE (recorded): the pre-cure runtime at ddfa57a55 read arm 3 rt_sno_indirect_name 2,000 and c_rt_call_bid_sn4 2,000, arm 4
 # 6,005 (three lookups per APPLY), arm 5 2,000 (two per EVAL), and arm 1 lost the EVAL line at EVAL('INF'); this tree reads 0, 0, 2,005, 0.
-# ⛔ ARM 1 RUNS UNDER --stlimit (cto 2026-10-02, ceo CEO-1409): its witness TRACEs X, and a trace is the instrumentation
-# switch's (Lon 2026-09-24, CEO-1243: "The &STLIMIT feature with trace instrumentation should be controlled by a command-line
+# ⛔ ARM 1 RUNS UNDER --stlimit (cto 2026-10-02, R-1409): its witness TRACEs X, and a trace is the instrumentation
+# switch's (Lon 2026-09-24, R-1243: "The &STLIMIT feature with trace instrumentation should be controlled by a command-line
 # switch."; the correctness graders turn it on because the oracle always has it). Without it a default build carries no
 # statement number, so the by-name write's trace banner read ****0 where sbl reads ****28; the same rule Lon applied to
 # &LASTNO on 2026-10-02 ("Grade under --stlimit"). The gc and counting witnesses stay default builds, so arms 2-5 measure

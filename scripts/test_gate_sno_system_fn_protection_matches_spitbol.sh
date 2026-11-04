@@ -6,7 +6,7 @@
 # measurement FREED (so removing a name from the list is tested, never assumed),
 # three witnesses are cut LIVE from the oracle -- DEFINE('NAME(X)'), OPSYN('NAME','SIZE') and DATA('NAME(X)') -- and SCRIP (mode 3) must give
 # the same verdict: ERROR 248 or a clean run. The set is never hard-coded: the oracle is the authority each run.
-# Measured 2026-09-04 (ceo, row snobol4-gimpel-class-rc1-compilefail): SPITBOL protects 77 of SCRIP's 95 names; the 18 it
+# Measured 2026-09-04 (row snobol4-gimpel-class-rc1-compilefail): SPITBOL protects 77 of SCRIP's 95 names; the 18 it
 # leaves free (ABORT ALT ARB BAL CONCAT FAIL FUNCTION LABEL LCASE NAME NUMERIC PLS REAL REM SUCCEED UCASE VALUE VDIFFER)
 # are what gimpel's BAL/LABEL-defining programs need.
 # EXIT 0 every name agrees in both witnesses · 1 any disagreement (named) · 2 REFUSED (no oracle, no scrip, no list).

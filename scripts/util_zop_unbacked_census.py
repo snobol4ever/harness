@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """util_zop_unbacked_census.py -- THE UNBACKED-KEY CENSUS: every cell read that x86_zop resolves through the frame for a KEY WITH NO FRAME BYTES
 BEHIND IT (zls_key_unbacked: a keys-only graph, or a key past a home-frame graph's resident region), counted by box kind over a set of programs
-(cfo 2026-10-24, D3 -- the Prolog home-frame switch, row 233, CEO-1945; the ceo's MODE line of 12:2x: hq_prolog and hq_icon tally the unbacked
+(cfo 2026-10-24, D3 -- the Prolog home-frame switch, row 233, R-1945; the officer's MODE line of 12:2x: hq_prolog and hq_icon tally the unbacked
 reads by kind and give each screaming kind its own carve).
 
-THE INSTRUMENT IS A SCRIPT'S OWN SWITCH, NEVER A SEAM IN SCRIP (RULES.md, CEO-1680): the tree under test keeps its FATAL abort -- the first
+THE INSTRUMENT IS A SCRIPT'S OWN SWITCH, NEVER A SEAM IN SCRIP (RULES.md, R-1680): the tree under test keeps its FATAL abort -- the first
 unbacked read kills the compile, which is the scream Lon wants -- and this script builds a SCRATCH WORKTREE of this root's SCRIP (a git
-worktree beside a harness worktree under <root>/.scratch/zop-census/, never a symlink: CEO-1820), carries the seat's UNCOMMITTED src diff
+worktree beside a harness worktree under <root>/.scratch/zop-census/, never a symlink: R-1820), carries the seat's UNCOMMITTED src diff
 onto it, swaps that one FATAL block for a stderr count line, builds it, compiles every program with it and counts the lines. The seat's own
 tree is never touched. The worktree persists between runs (an incremental rebuild), --prune removes it.
 
@@ -16,12 +16,12 @@ PLAN_ROW ... all=<ai>), so a seat can read every scream beside its plan row; --l
 
 USE:  python3 harness/scripts/util_zop_unbacked_census.py [--op IR_KIND]... [--lines] [--empty-prolog] [--timeout S] [--prune] PROGRAM...
       --op IR_KIND      the kinds this run grades (repeatable); rc 0 iff their lines read 0 -- without it, rc 0 iff every line reads 0
-      --core LANG       adds every CORE entry of corpus/tests/LANG/PARTITION.tsv (CEO-1676), each materialized once through corpus_suite_harness.py extract
+      --core LANG       adds every CORE entry of corpus/tests/LANG/PARTITION.tsv (R-1676), each materialized once through corpus_suite_harness.py extract
                         under <root>/.scratch/zop-census/core-LANG/ (re-extracted when the suite container is newer); repeatable
       --master LANG     adds EVERY entry of corpus/tests/LANG/ALL.csv (the whole master, stdin sidecar and companions beside each), repeatable; "all" is the seven
       --ref REF         measures that SCRIP ref (a bare branch name tries origin/<name>, a sha works) in a scratch root keyed by its sha,
                         <root>/.scratch/zop-census/ref-<sha12>/{SCRIP,harness,corpus}, the corpus sparse; the seat's diff is not carried; a ref root unused for 24 h is removed
-      --workers N       compiles N programs at a time (default 8, the most; every compile also takes a run slot of the box-wide pool, CEO-1894)
+      --workers N       compiles N programs at a time (default 8, the most; every compile also takes a run slot of the box-wide pool, R-1894)
       --board           prints per-language board lines and no per-program lines: UNBACKED_BOARD lang=<l> programs=<n> screaming=<s> reads=<r>, UNBACKED_KIND lang=<l> op=<op>
                         reads=<r> programs=<p>, UNBACKED_BASE/UNBACKED_OWN (what an EMPTY source of the language reads -- Prolog's prelude, once per program -- and the reads
                         past it), UNBACKED_NOTE (compiles that failed for any reason are counted, never read as clean; --board does not refuse on them)

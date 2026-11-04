@@ -42,7 +42,7 @@
 # not on, reading exactly like a clean result. Before grading anything this gate asserts, from [ZGC-WALK] and
 # [ZGC-POISON] under SCRIP_ZETA_TELEM=1, that blocks really moved AND that vacated space really was filled.
 #
-# ⛔ THE REF IS CUT FROM swipl AT RUN TIME, NEVER FROM OUR OWN OUTPUT (CEO-753). No swipl, no grade: rc=2.
+# ⛔ THE REF IS CUT FROM swipl AT RUN TIME, NEVER FROM OUR OWN OUTPUT (R-753). No swipl, no grade: rc=2.
 #
 # ⛔ WHAT THE POISON DOES NOT COVER, so the next seat does not over-trust a green: it fills the vacated TAIL only.
 # A block that slid DOWN leaves its old address inside the still-live region, where other slid data now sits, so a
@@ -79,7 +79,7 @@ ITERS="${ITERS:-$([ "$QUICK" = 1 ] && echo 2 || echo 20)}"; STRESS="${SCRIP_GC_S
 # ⛔ A STRESSED RUN THAT DOES NOT FINISH IS NOT A DIVERGENCE (hq_prolog 2026-09-24, row prolog-an-atom-name-does-not-survive-a-
 # collection-mid-operation-...): the per-run bound was 60 s and scored a kill as a wrong answer. At load 23 one correct m3 run
 # measured 38.6/58.8/54.6 s wall and 39.0 s of CPU over 6040 collections (it was ~19.4 s wall on 09-20), so the bound sat ON
-# the measurement and the ceo's pass at load 10-45 read RED on a tree where the gate passes 4/4. The bound is now an order of
+# the measurement and the officer's pass at load 10-45 read RED on a tree where the gate passes 4/4. The bound is now an order of
 # magnitude above the measurement, and a run that still hits it REFUSES rc=2 with the load stamped -- never a FAIL.
 RUN_TIMEOUT="${RUN_TIMEOUT:-600}"
 refuse(){ echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
@@ -105,7 +105,7 @@ NAMEVAR="$(grep -oE 'g_runtime\.atoms\.atom_names\[[A-Za-z_][A-Za-z0-9_]*\][[:sp
 NAMEALLOC="$(grep -oE "\\b$NAMEVAR[[:space:]]*=[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(" "$ATOMC" | head -1 | sed -E 's/.*=[[:space:]]*//; s/[[:space:]]*\($//')"
 NAMEPATH=""
 if [ -z "$NAMEALLOC" ]; then
-    # ⛔⭐ THE NAME MAY ARRIVE AS A PARAMETER (hq_prolog 2026-10-28, CEO-1995): since 2385766c3 (cto ruling B2/A, 2026-10-22) the store is `static int atom_add(char *copy, ...)`
+    # ⛔⭐ THE NAME MAY ARRIVE AS A PARAMETER (hq_prolog 2026-10-28, R-1995): since 2385766c3 (cto ruling B2/A, 2026-10-22) the store is `static int atom_add(char *copy, ...)`
     # and the two callers carve the name, so `copy = alloc(` never appears and this clause REFUSED on a tree whose names are off the collected heap. Resolve through the
     # storing function's callers in this file: each argument must be assigned from a named allocator here, or arrive from outside the file -- and then the only public
     # source of such a pointer, prolog_atom_carve(), must return pool_carve(). A caller this reading cannot resolve still REFUSES; CLAUSE 2 grades the runtime half.

@@ -44,9 +44,9 @@ case " ${ENGINES:-sbl m3 m4} " in *" sbl "*) [ -x "$SBL" ] || { echo "⛔ ORACLE
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"  # BM-ONE (s153): promoted, see test_bench_snobol4_timed.sh
 REPS="${REPS:-5}"; T="${TIMEOUT:-60}"; ENGINES="${ENGINES:-sbl m3 m4}"
 APPEND="${APPEND:-0}"; NOHUGE="${NOHUGE:-1}"
-# ⛔ SUPERSEDED 2026-09-28 (Lon, ceo CEO-1353, RULES.md hard-cap clause 8 (g)(4)): no typed SCRIP_HEAP_MB window. Each unit runs at the
+# ⛔ SUPERSEDED 2026-09-28 (Lon, R-1353, RULES.md hard-cap clause 8 (g)(4)): no typed SCRIP_HEAP_MB window. Each unit runs at the
 # heap and stack declared beside it (<stem>.heap/.stack, lib_declared_arena.sh), the same switches to m3, the m4 binary and sbl.
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (CEO-1353)" >&2; exit 3; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)" >&2; exit 3; }
 OUT="${OUT:-$B/NOISE-FLOOR.tsv}"
 WRAP="$ROOT/tools/bench_rusage"   # row bench-external-cpu-and-elapsed-clock: the external stopwatch, built on demand (not tracked -- see .gitignore)
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "FAIL build $WRAP" >&2; exit 1; }
@@ -65,7 +65,7 @@ echo "#   while EIGHT fleet seats shared this box and its min_detectable reached
 echo "#   cannot see a 1.4x regression.  A solo re-bake of the SAME binaries moved sbl +20.9% and m3 +13.0%,"
 echo "#   i.e. the shift was LOAD, not the engine and not the oracle flag: -b vs -bf measured back-to-back on a"
 echo "#   quiet box is -0.3% (+/-2.6%), ZERO.  ⛔ NEVER compare a floor baked under load with one baked solo."
-  echo "# SCRIP_NOHUGE=$NOHUGE  heap/stack: each unit's declared .heap/.stack (CEO-1353)  (no typed window; a collection"
+  echo "# SCRIP_NOHUGE=$NOHUGE  heap/stack: each unit's declared .heap/.stack (R-1353)  (no typed window; a collection"
   echo "#   collection fires inside it -- a GC row measures an ~835ms stall, not dispersion)"
   echo "# ⛔ THE ALLOCATING ROWS' DISPERSION WAS THE GC STALL LOTTERY, NOT THP (BM-3 correction):"
   echo "#   whether an ~835ms regeneration lands inside the window is a coin flip, and it was being"
@@ -93,7 +93,7 @@ for sno in "$B"/*.sno; do
   # named on stderr rather than silently skipped (the old gate's failure mode).
   bash "$HERE/bench_wrap.sh" "$sno" -o "$W/$s.bench.sno" >/dev/null || { echo "  ⛔ $s: not wrappable, skipped" >&2; continue; }
   SW="$(declared_switches_beside "$sno")" || { echo "  ⛔ $s: its .heap/.stack is refused (the reader said why above), skipped" >&2; continue; }
-  [ -n "$SW" ] || { echo "  ⛔ $s: no .heap/.stack declared beside it (CEO-1353), skipped" >&2; continue; }
+  [ -n "$SW" ] || { echo "  ⛔ $s: no .heap/.stack declared beside it (R-1353), skipped" >&2; continue; }
   sno="$W/$s.bench.sno"
   case " $ENGINES " in *" sbl "*) sbl_clean_refuse_if_load "$sno" || exit 3;; esac
   # build the mode-4 program ONCE, not once per rep

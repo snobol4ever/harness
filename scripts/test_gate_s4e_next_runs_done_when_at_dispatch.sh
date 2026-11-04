@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s4e_next_runs_done_when_at_dispatch.sh -- the picker RUNS a row's DONE-WHEN before serving it.
-# Row next-and-assign-re-run-a-rows-done-when-before-serving-it (ceo ruling 2026-09-03 adopting seat09's
+# Row next-and-assign-re-run-a-rows-done-when-before-serving-it (ruling 2026-09-03 adopting seat09's
 # suggestion). MEASURED by seat09 (FINDING-2026-09-03-seat09-pascal-relop-array-field-row-was-already-cured-
 # five-days-before-dispatch.md): pascal-relop-into-array-and-field-lvalues-loses-value sat FREE for FIVE DAYS
 # describing a bug a sibling row had already cured (ff1df778), and its DONE-WHEN grepped an exact "N pass /
@@ -38,7 +38,7 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # shell's pid in a subshell, so the obvious guard compares equal and deletes the fixture mid-run (measured
 # while building test_gate_s4e_one_process_per_identity.sh).
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; HQ=ceo; SEAT=seat01; BUDGET=4
+PO="$W/po"; ME=hq_B; HQ=cto; SEAT=seat01; BUDGET=4
 # ⛔⭐ env -u S4E_PID_LOCK AND S4E_NO_DISPATCH_PROBE: this gate is itself a DONE-WHEN, so it runs INSIDE a
 # `done` that `next` may have invoked as its own probe. Both variables leak in from that parent and would
 # silently change what the fixture measures -- the identity lock would take every fixture process for a

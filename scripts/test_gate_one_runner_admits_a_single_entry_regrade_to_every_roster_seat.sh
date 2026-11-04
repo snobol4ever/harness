@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_one_runner_admits_a_single_entry_regrade_to_every_roster_seat.sh -- ONE ENTRY IS A LANDER'S RE-GRADE, NOT A BOARD (the cto's ruling
 # to the coo, 2026-11-01 09:5x CST, on hq_icon's fault: S4E_CHUNK=entry:progs/adlfirst bash test_icon_ipl_suite.sh refused rc 2 under ONE RUNNER,
-# ONE BOARD, so a language HQ could not re-grade the one program its row names when it lives only in a package container; CEO-1342 as amended
-# by CEO-1893/1926). Hermetic, ~1 s: a fixture MODE under S4E_POST (ROSTER and LANES lines), the guard called from bash -c (no mem scope, no
+# ONE BOARD, so a language HQ could not re-grade the one program its row names when it lives only in a package container; R-1342 as amended
+# by R-1893/1926). Hermetic, ~1 s: a fixture MODE under S4E_POST (ROSTER and LANES lines), the guard called from bash -c (no mem scope, no
 # binary fingerprint, no corpus). DETECTOR arms: an HQ the lane does not name, and an HQ of another language, are admitted with S4E_CHUNK naming
 # ONE entry -- rc 0, the SINGLE ENTRY line naming the seat and the entry, the progress table a scratch file in the seat's own /tmp/s4e/<seat>
 # (lib_one_runner places TMPDIR from S4E_SEAT; never the live table; the gate removes each one it causes)
@@ -36,7 +36,7 @@ arm "CONTROL: no chunk at all stays a board and is refused"                   hq
 arm "CONTROL: a glob is not one entry and is refused"                         hq_icon "entry:progs/*" 2 "ONE RUNNER, ONE BOARD" "SINGLE ENTRY"
 arm "CONTROL: an @resume cell is not one entry and is refused"                hq_icon "entry:a@b" 2 "ONE RUNNER, ONE BOARD" "SINGLE ENTRY"
 arm "CONTROL: a seat off the ROSTER is refused one entry"                     ghost entry:progs/adlfirst 2 "ONE RUNNER, ONE BOARD" "SINGLE ENTRY"
-arm "CONTROL: the design officer is still refused (CEO-2029 stands above the arm)" cto entry:progs/adlfirst 2 "A DESIGN OFFICER RUNS NO TESTS" "SINGLE ENTRY"
+arm "CONTROL: the design officer is still refused (R-2029 stands above the arm)" cto entry:progs/adlfirst 2 "A DESIGN OFFICER RUNS NO TESTS" "SINGLE ENTRY"
 arm "CONTROL: the lane owner is admitted by its lane, nothing redirected (its grading keeps writing the record)" coo entry:progs/adlfirst 0 "rc=0 db= nw=$" "SINGLE ENTRY"
 [ "$n" -gt 0 ] || { echo "⛔ GATE REFUSE(2) [$G]: no arm ran"; exit 2; }
 echo "SINGLE_ENTRY_ADMISSION_BOARD arms=$n red=$fail (harness $(git -C "$H/.." rev-parse --short HEAD 2>/dev/null || echo ?))"

@@ -2,7 +2,7 @@
 # test_gate_gc_a_board_can_say_whether_the_collector_ran.sh -- ARENA_MB STATES A CONFIGURATION; THIS MEASURES THE EXERCISE.
 #
 # ⛔⭐ THE GAP THIS CLOSES (cfo 2026-09-21, MODE TENET, GC commitment items 1-2 INSTRUMENTED and VISIBILITY).  Lon's rule
-# is that ALL GC testing runs at a tiny arena to exasperate the collector (2026-09-19 16:1x, CEO-931/934/938, RULES.md
+# is that ALL GC testing runs at a tiny arena to exasperate the collector (2026-09-19 16:1x, R-931/934/938, RULES.md
 # § THE INSTRUMENT LAWS BATCH 28 CLAUSE 2), and the fleet holds it by mechanism: the Makefile exports SCRIP_HEAP_MB ?= 1,
 # the harness prints an ARENA line and an arena_mb= board field, and a gate polices the pins.  ⛔ EVERY ONE OF THOSE
 # REPORTS THE CONFIGURATION AND NONE OF THEM REPORTS THE EXERCISE.  A board that prints arena_mb=1 is saying what it
@@ -41,8 +41,8 @@ T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; examined=0
 # receipt <file> <arena> <stress> <program> -- one run, stdout discarded, the receipt kept.  ⛔ Each run gets its OWN
 # scratch file: a shared one between two configurations reports false flips (cfo, measured).
-# ⛔ env -u IS LOAD-BEARING, NOT TIDINESS (CEO-1153, 33rd batch clause 6; coo 2026-09-22 under the
-# CEO-1146 sweep, which SPLIT THIS GATE OUT rather than converting it -- the three MB windows below are this
+# ⛔ env -u IS LOAD-BEARING, NOT TIDINESS (R-1153, 33rd batch clause 6; coo 2026-09-22 under the
+# R-1146 sweep, which SPLIT THIS GATE OUT rather than converting it -- the three MB windows below are this
 # instrument's own test vector and converting them would delete its subject).  rt_gcheap_init reads SCRIP_HEAP_MB
 # at gc_heap.c:191 and SCRIP_HEAP_KB at :192 and LAST WRITER WINS, so an outer KB export silently defeated EVERY
 # window named here: arm 2 would have read one arena three times and called the field broken, arm 3 would have
@@ -73,7 +73,7 @@ else echo "  arm 2 FAIL: arena_mb does not track the window -- read [${g1:-none}
 # witness collects hundreds of times at 1 MB and a handful at the shipped arena; the THIN one collects once and then
 # ⭐ ZERO AT 4 MB, the trap this gate exists to make visible -- "small" is not a synonym for "exercised".
 examined=$((examined + 1))
-# ⛔ THE THIN POINT IS 512 KB SINCE CEO-1264 (ceo 2026-09-25): the thin witness allocates ~565 KB in all, and the collector now
+# ⛔ THE THIN POINT IS 512 KB SINCE R-1264 (2026-09-25): the thin witness allocates ~565 KB in all, and the collector now
 # spends a window before collecting it, as SPITBOL spends its -i (the line leaves 1/16 of the free window, not half), so at
 # 1 MB it collects zero times where it collected once at the old half-window line (measured: 0 at 768, 1024 and 4096 KB; 1 at
 # 512 and 256 KB; 2 at 128 KB). The claim is unchanged -- a small window exercises the collector and 4 MB does not -- and it
@@ -84,7 +84,7 @@ if [ -n "${nb:-}" ] && [ -n "${ns:-}" ] && [ "${nb:-0}" -gt 50 ] && [ "${ns:-0}"
   echo "  arm 3 PASS: collections separates exercise from configuration -- churning witness ${nb} at 1 MB against ${ns} at 512; thin witness ${nt1} at 512 KB and ${nt4} at 4 MB, so a 4 MB 'small arena' run exercises the collector ZERO times and only this field can say so"
 else echo "  arm 3 FAIL: collections cannot distinguish an exercised run from an unexercised one -- churning [${nb:-none}]@1MB [${ns:-none}]@512MB, thin [${nt1:-none}]@512KB [${nt4:-none}]@4MB. A constant or absent field reads exactly like this."; RC=1; fi
 # ARM 4 -- THE CAP DOES NOT SHRINK WITH THE WINDOW, which is NOT the same claim as "the reserve is equal at two windows".
-# ⛔ REWRITTEN (cfo 2026-09-22) ON THE ceo's CEO-1161 RULING, WHICH ANSWERED THE coo's ASK: THE OLD CRITERION LOSES, AND IT
+# ⛔ REWRITTEN (cfo 2026-09-22) ON R-1161 RULING, WHICH ANSWERED THE coo's ASK: THE OLD CRITERION LOSES, AND IT
 # WAS A BLOCKING RED ON origin/main WHILE IT STOOD.  It asserted reserve_mb EQUAL at a 1 MB and a 512 MB window.  But
 # gc_heap.c:195 is `cap_kb = (long)GC_HEAP_CAP_KB; if (cap_kb < kb) cap_kb = kb;` -- THE RESERVE IS RAISED TO HOLD ITS OWN
 # WINDOW AND CAN NEVER BE BELOW IT, so reserve_mb=512 at a 512 MB window is the cap tracking the window UPWARD, which is

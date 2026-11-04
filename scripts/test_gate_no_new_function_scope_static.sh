@@ -5,10 +5,10 @@
 # The existing enforcement ("diffs checked for new file-scope definitions", GOAL-*.md's ENFORCEMENT lines,
 # test_gate_pl_no_new_global.sh) names only FILE-SCOPE declarations and the Prolog g_* naming convention.
 # Neither catches `static int x = -1;` sitting inside a function body -- and static storage duration, not the
-# scope keyword, is the property the law guards (ceo ruling 2026-09-01, RULES.md line 169, receipt: hq_P's
+# scope keyword, is the property the law guards (ruling 2026-09-01, RULES.md line 169, receipt: hq_P's
 # self-raised question on two getenv killswitch statics in emit.cpp's zd_plan). This gate is the missing half.
 #
-# ⛔⛔ SCOPE RE-CUT 2026-09-02 (ceo, routed hq_B, on Lon in-chat verbatim: "You can always add as many g_emit
+# ⛔⛔ SCOPE RE-CUT 2026-09-02 (routed hq_B, on Lon in-chat verbatim: "You can always add as many g_emit
 # values as you want. Those were never part of the no global rule."): the clarification that minted this row
 # was itself an overshoot -- COMPILE-TIME working state (emitter/lower/ir/driver/optimizer/templates/parsers,
 # which runs once per COMPILATION, not once per program execution) was NEVER the target; ordinary long-

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_reduce_operators_every_infix_chaining_and_right_associative_agree_with_rakudo.sh -- THE REDUCE METAOPERATOR [op] FOR EVERY INFIX OPERATOR: [/] [**] [%] [x] [<] [==] [eq] [&&] [//] [gcd] [lcm] [div] [mod] [=>] [,] [R-] [~~] [===], AND A TYPE OBJECT IS UNDEFINED FOR // AND defined
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found while measuring the hyper operators: rkb_reduce_name answered `__rk_reduce_max` for EVERY operator other than + - * ~ min max; 130 Roast files use a reduce).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found while measuring the hyper operators: rkb_reduce_name answered `__rk_reduce_max` for EVERY operator other than + - * ~ min max; 130 Roast files use a reduce).
 #
 # THE DEFECT, measured against Rakudo: [/] 8,2,2 printed 8 (Rakudo 2), [**] 2,3,2 printed 3 (512), [%] 10,4,3 printed 10 (2), [x] "a",3 printed a (aaa), [<] 1,2,3 printed 3 (True), [==] 1,1,1 printed 1 (True), [eq] <a a b> printed b (False), [gcd] 12,18 printed 18 (6),
 # [lcm] 4,6 printed 6 (12), [,] 1,2,3 printed 3 ((1 2 3)), [=>] 1,2,3 printed 3 (1 => 2 => 3), [R-] 1,2,3 printed 2 (0): the "default" arm of the name table was max. And `Any // 3` and `[//] Any,3,4` answered the type object (a type object is undefined: 3).

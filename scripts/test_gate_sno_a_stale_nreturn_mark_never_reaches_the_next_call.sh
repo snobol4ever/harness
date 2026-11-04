@@ -5,7 +5,7 @@
 #
 # MEASURED 2026-10-03 on SCRIP 28a05e6fb, both modes: `'x' ? LEN(1) . h(gi(1)) . h(6)` with h NRETURNing .V and gi an ordinary function ABORTED the
 # process in the run-time pattern compile -- bb_emit_end: 4 unresolved forward references on n1_match_assign_save_beta / n3_match_assign_cond_beta
-# -- where sbl -bf assigns V; the infinite_snobol4 closed world found it through inf_eval.sno (CEO-1489). CAUSE: a by-name call whose callee
+# -- where sbl -bf assigns V; the infinite_snobol4 closed world found it through inf_eval.sno (R-1489). CAUSE: a by-name call whose callee
 # NRETURNs leaves the mark SET for the capture code to read (rt_nret_fix keeps it under SCRIP_CAP_NAME_STRICT), and only the capture consumer
 # ever cleared it. h(6) left it set, so the call-site consult after the ARGUMENT call gi(1) misread gi's plain return as an NRETURN, consumed the
 # pending by-name request, and h(gi(1)) then ran by value: its NAME was dereferenced to V's value, SNO$PBC built a capture into a nameless

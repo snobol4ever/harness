@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_icon.sh -- THE THREE-ANGLE HARNESS FOR THE ICON BENCHMARK KERNELS (corpus/benchmarks/icon).
 #
-# LON 2026-09-23 (CEO-1221): "all language benchmarks need to be run through the three-angle harness: (1) wrapper process,
+# LON 2026-09-23 (R-1221): "all language benchmarks need to be run through the three-angle harness: (1) wrapper process,
 # (2) iterations, and (3) time limit." -- "The reason to force a benchmark to also be a test is to guarantee it is not
 # vacuous." -- "The source of the benchmark is the apple-core of the test, the wrapper code can be added to do both the test
-# and the measurements." Law: RULES.md THE KERNEL CONVENTION (CEO-567) and THE TWO-NUMBER BENCHMARK BASIS;
+# and the measurements." Law: RULES.md THE KERNEL CONVENTION (R-567) and THE TWO-NUMBER BENCHMARK BASIS;
 # ARCH-BENCH-CAMPAIGN-README-TABLES.md THREE-ANGLE TRIANGULATION. The Icon DEMO harness (bench_triangulate_demos_icon.sh)
 # iterates whole processes because a JCON demo has no inner entry point; a KERNEL does, so this one loops IN the process.
 #
@@ -22,7 +22,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # NAME.argv; the SCRIP engines run at the heap and stack NAME.heap and NAME.stack declare (declared_switches_beside), iconx at its own default or in the environment NAME.oracle_env declares.
 # THE NUMBERS: WORK = the wrapper's own work_ms (compile phase and startup outside it), per iteration in microseconds; angle 1
 # and angle 2 AGREE when within TOL_PCT, else the row is NOT CITABLE -- reported, never a correctness failure. ⛔ Timing grids
-# wait for the quiet box (CEO-1219): --quick (200 ms budget, N=2) proves the machinery and the refs under all three angles now.
+# wait for the quiet box (R-1219): --quick (200 ms budget, N=2) proves the machinery and the refs under all three angles now.
 # ⛔ RT_OPT is -O0; no -O2 arm exists.
 #
 # EXIT 0 every (kernel, engine) row passes its ref under all three angles; 1 any row does not; 2 REFUSED.
@@ -71,11 +71,11 @@ printf '%s\n' "-----------------------------------------------------------------
 for K in "${POP[@]}"; do
   KD="$(dirname "$K")"; NM="$(basename "$K" .icn)"; B="${K%.icn}"; REF="$B.ref"
   IN=/dev/null; for X in in stdin dat; do [ -f "$B.$X" ] && { IN="$B.$X"; break; }; done   # the suite's order (test_icon_bench_suite.sh)
-  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SWITCHES (ceo CEO-1353): -d<kb>k -s<kb>k from NAME.heap and NAME.stack after scrip in m3
+  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SWITCHES (R-1353): -d<kb>k -s<kb>k from NAME.heap and NAME.stack after scrip in m3
   # and leading the binary's arguments in m4 (a -- before the kernel's argv), never SCRIP_HEAP_KB, the collector's WINDOW; iconx gets none of them, only NAME.oracle_env.
   SW="$(declared_switches_beside "$K")" || { echo "⛔ $NM: a malformed $NM.heap or $NM.stack (the reader said why above)"; BAD=1; continue; }
   declare -a SWA=(); [ -n "$SW" ] && read -r -a SWA <<<"$SW"
-  # iconx runs in the environment NAME.oracle_env declares (ceo CEO-1353 clause 8 (g)(3)) and the SCRIP engines never see it.
+  # iconx runs in the environment NAME.oracle_env declares (R-1353 clause 8 (g)(3)) and the SCRIP engines never see it.
   OE="$(declared_oracle_env_beside "$K")" || { echo "⛔ $NM: a malformed $NM.oracle_env (the reader said why above)"; BAD=1; continue; }
   declare -a OENV=(); [ -n "$OE" ] && read -r -a OENV <<<"$OE"
   declare -a AV=(); if [ -f "$B.argv" ] && ! ipl_argv_read "$K" AV; then echo "⛔ $NM: malformed $NM.argv"; BAD=1; continue; fi

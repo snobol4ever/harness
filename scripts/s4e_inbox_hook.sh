@@ -21,7 +21,7 @@
 # FROM/RE line of each, which is a signal that cannot be misread, and names the command for the bodies.  HQ
 # context is the scarcest resource; a reminder that bankrupts it is not a reminder.
 #
-# ⭐ SEAT-DERIVED, NOT HARDCODED -- the same D-17 PORTABLE-HOME derivation s4e_msg.sh uses, so hq_P, ceo and
+# ⭐ SEAT-DERIVED, NOT HARDCODED -- the same D-17 PORTABLE-HOME derivation s4e_msg.sh uses, so hq_P, the officer and
 # every seat wire the IDENTICAL hook with no per-seat edit.  A hook that hardcodes /home/claude_C would grade
 # another seat against this inbox, which is exactly the layer-2 false-GREEN hq_P found in the batons.
 set -u
@@ -29,8 +29,6 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
 if [ -z "$ME" ]; then case "$S4E" in
-    /home/claude)           ME=ceo;;
-    /home/claude_ceo)       ME=ceo;;
     /home/claude_cto)       ME=cto;;
     /home/claude_coo)       ME=coo;;
     /home/claude_cfo)       ME=cfo;;
@@ -50,12 +48,12 @@ if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_packages)         ME=hq_packages;;
     /home/claude_dotnet)           ME=hq_dotnet;;
     /home/claude_jvm)              ME=hq_jvm;;
-    # the nine lettered HQ roots were renamed by language on 2026-09-16 (ceo CEO-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
+    # the nine lettered HQ roots were renamed by language on 2026-09-16 (R-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
     /home/claude[0-9][0-9]) ME="seat${S4E#/home/claude}";;
     /home/claude[1-9])      ME="seat0${S4E#/home/claude}";;
     *)                      ME="$(basename "$S4E")";; esac; fi
 m="$(head -1 "$PO/MODE" 2>/dev/null)"
-if [ -n "$m" ]; then printf 'MODE: %s (computed from %s/MODE -- never assume a mode from prose)\n' "$m" "$PO"; else printf '⛔ MODE FILE ABSENT (%s/MODE) -- do not assume a mode; ask ceo.\n' "$PO"; fi
+if [ -n "$m" ]; then printf 'MODE: %s (computed from %s/MODE -- never assume a mode from prose)\n' "$m" "$PO"; else printf '⛔ MODE FILE ABSENT (%s/MODE) -- do not assume a mode; ask the officer.\n' "$PO"; fi
 d="$PO/$ME/inbox"
 n=$(ls "$d"/*.msg 2>/dev/null | wc -l)
 if [ "$n" -gt 0 ]; then

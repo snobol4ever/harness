@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_the_neck_atom_before_an_adjacent_paren_is_functional_notation.sh -- ':-(H, B)' IS A TERM (ISO 6.3.3; ceo CEO-1522).
+# test_gate_pl_the_neck_atom_before_an_adjacent_paren_is_functional_notation.sh -- ':-(H, B)' IS A TERM (ISO 6.3.3; R-1522).
 # An atom immediately followed by '(' is functional notation whatever the atom, but the parser read ':-(' as the prefix directive operator
 # applied to a parenthesised comma term: in source 'X = :-(a, b)' was a priority clash, read_term gave ':-'/1 for ':-(p(1), true)', and a top-level
 # ':-(head(1), true).' ran as a directive -- so a consult of Logtalk's generated code executed its clauses as goals. The neck and query tokens now

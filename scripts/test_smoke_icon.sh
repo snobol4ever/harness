@@ -10,7 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude  DATE: 2026-05-30 (de-interp'd to 2-mode 2026-06-15)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-1}"
 MODE4_MIN="${MODE4_MIN:-0}"
@@ -83,12 +83,12 @@ procedure main()
 end
 EOF
 
-# ⛔ NO SEMICOLON BEFORE `else` -- THIS FIXTURE WAS NOT VALID ICON AND THE ORACLE SAYS SO (hq_C 2026-09-10, CEO-484).
+# ⛔ NO SEMICOLON BEFORE `else` -- THIS FIXTURE WAS NOT VALID ICON AND THE ORACLE SAYS SO (hq_C 2026-09-10, R-484).
 # `if C then E; else F` is refused by Arizona icont with `"else": invalid expression`: the `;` TERMINATES the
 # if-expression, so `else` starts a statement of its own and there is nothing for it to attach to. SCRIP accepted it
 # until 38470889b taught the parser the four semicolons icont refuses -- so the smoke went 15/15 -> 13/15 on a
 # CORRECTION, and the red was this file's own hand-written fixture, never the compiler. A smoke fixture is ours, not
-# upstream, which is exactly why nothing was checking it against the oracle; under the one-oracle rule (CEO-391) a
+# upstream, which is exactly why nothing was checking it against the oracle; under the one-oracle rule (R-391) a
 # fixture icont refuses is not ground truth. Both cured forms were run through icont/iconx: "big" and "120", the
 # expectations already written here, unchanged.
 icon "if_expr" "big" << 'EOF'
@@ -177,5 +177,5 @@ EOF
 echo ""
 echo "mode-3 (--run):      PASS=$P3 FAIL=$F3  / $N   (HARD: zero FAIL — primary native mode)"
 echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN)"
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F3" -eq 0 ] && [ "$F4" -eq 0 ] && [ "$P3" -ge "$MODE3_MIN" ] && [ "$P4" -ge "$MODE4_MIN" ]

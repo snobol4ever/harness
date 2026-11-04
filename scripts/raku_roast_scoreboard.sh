@@ -9,7 +9,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" || exit 2
 # worst row on the board by a factor of thirty -- and the seat that OWNS roast could not run the instrument
 # to find out why. A guard that cannot be satisfied by the person responsible for the thing it guards does
 # not prevent bad measurement; it prevents measurement, and dark is worse than red.
-# ⭐ THE RULE IT NOW FOLLOWS IS THE GUARD'S OWN (CEO-547 part 1): what makes a run a board is the population
+# ⭐ THE RULE IT NOW FOLLOWS IS THE GUARD'S OWN (R-547 part 1): what makes a run a board is the population
 # it grades AND the row it publishes. A mode that writes no SCORE row and no RAKU-COVERAGE.md publishes
 # nothing, cannot churn a leaderboard and cannot collide with the coo's pass, so it is admitted BY NAME
 # below. Every publishing mode is still refused to every seat but the coo, unchanged, by the same call to
@@ -37,7 +37,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 2
 ROOT=$(pwd)
 SCRIP="$ROOT/scrip"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$ROOT/../harness/scripts/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$ROOT/../harness/scripts/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once
 . "$(dirname "$0")/lib_raku_roast_bucket.sh"   # the ONE bucket rule AND the ONE population resolver
 roast_resolve_population "$ROOT" || exit 2
 OUT="$ROOT/../.github/RAKU-COVERAGE.md"
@@ -91,18 +91,18 @@ TMP=$(mktemp -d)
 # handed is absolute, and no case sees the files an earlier case wrote.
 incwd() { rm -rf "$TMP/cwd" && mkdir -p "$TMP/cwd" && ( cd "$TMP/cwd" && "$@" ); }
 . "$(dirname "$0")/lib_raku_roast_stage.sh" || { echo "⛔ REFUSING (rc=2): cannot load lib_raku_roast_stage.sh -- the ONE way a roast test is staged" >&2; exit 2; }
-# ⛔ EACH TEST'S DECLARED HEAP AND STACK RIDE ITS OWN COMMAND LINE (ceo CEO-1353; RULES.md 8 (f)): the attribute table keyed by pname,
+# ⛔ EACH TEST'S DECLARED HEAP AND STACK RIDE ITS OWN COMMAND LINE (R-1353; RULES.md 8 (f)): the attribute table keyed by pname,
 # read through lib_declared_arena.sh, as -d<kb>k -s<kb>k after --run in mode 3 and at the head of the binary's arguments in mode 4 --
 # never SCRIP_HEAP_KB (the collector's window), never a ulimit. A test with no row is NAMED (ROAST_UNDECLARED), never run silently at a default.
 . "$(dirname "$0")/lib_declared_arena.sh" || { echo "⛔ REFUSING (rc=2): cannot load lib_declared_arena.sh -- the ONE reader of a test's declared heap and stack" >&2; exit 2; }
 # RAKU_ROAST_DCSV names the attribute table of a scratch population, beside RAKU_ROAST_TREE and RAKU_ROAST_MANIFEST (the coo 2026-10-03,
 # gate (b)): the tree and the manifest could be pointed at a fixture and the sizes could not, so no fixture could grade the declaration.
 DCSV="${RAKU_ROAST_DCSV:-$ROOT/../corpus/packages/raku/roast/ALL.csv}"; DTBL="$TMP/declared.tsv"
-[ -f "$DCSV" ] || { echo "⛔ REFUSING (rc=2): no roast attribute table at $DCSV -- every test's heap and stack are read from it (CEO-1353)" >&2; exit 2; }
+[ -f "$DCSV" ] || { echo "⛔ REFUSING (rc=2): no roast attribute table at $DCSV -- every test's heap and stack are read from it (R-1353)" >&2; exit 2; }
 declared_memory_begin "$DCSV" "$DTBL" >/dev/null || { echo "⛔ REFUSING (rc=2): $DCSV carries a cell the reader refuses (it said why above)" >&2; exit 2; }
 ROAST_UNDECL=""; RSW=()
-# ⛔⭐ THE ROAST FILES WITH NO ORACLE ANSWER LEAVE THE DENOMINATOR (CEO-1696; hq_raku's census, corpus tests/raku/config/ROAST-PARSE-CLASSES.tsv,
-# CEO-1713): a file Rakudo itself refuses (raku -c on the unfudged file) has no oracle answer, so it is an EXCLUDED row of the package's
+# ⛔⭐ THE ROAST FILES WITH NO ORACLE ANSWER LEAVE THE DENOMINATOR (R-1696; hq_raku's census, corpus tests/raku/config/ROAST-PARSE-CLASSES.tsv,
+# R-1713): a file Rakudo itself refuses (raku -c on the unfudged file) has no oracle answer, so it is an EXCLUDED row of the package's
 # EXCLUDED.tsv beside its ALL.csv, read through the ONE reader (lib_excluded.sh inventory_excluded_names), graded never, shown in Excl.
 ROAST_PKG="$(dirname "$DCSV")"
 . "$ROOT/../harness/scripts/lib_excluded.sh" 2>/dev/null || { echo "⛔ REFUSING (rc=2): lib_excluded.sh unloadable -- the one EXCLUDED reader" >&2; exit 2; }
@@ -127,17 +127,17 @@ n_pass4=0
 # measurement is a DIFFERENCE between two classifications, and a difference taken across two copies
 # of a classifier measures the copies as much as it measures the cure.
 # ⭐⭐ --inventory: SHIPPED / GRADED / UNGRADED / UNGRADABLE, THE WAY EVERY OTHER PACKAGE RUNNER IS REQUIRED
-# TO PRINT IT (ceo CEO-744, on Lon's "get the package runner working"). This answers a question the two
+# TO PRINT IT (R-744, on Lon's "get the package runner working"). This answers a question the two
 # scoring arms below CANNOT answer and never could: they report how many files PASS, and a suite where
 # almost nothing passes needs to say WHY NOT before its fraction means anything.
 # ⛔ THE REASON THIS MODE HAD TO EXIST. Roast read 4 of 986, then 6 of 986 ten days later. Read as a score
 # that says Raku is 0.6% correct. It does not. The classification below is what the number actually is, and
 # the two readings have opposite consequences: a compiler 0.6% correct is years of language work, while a
 # suite that cannot be PARSED is a front-end gap in front of a corpus nobody has ever graded. DARK IS WORSE
-# THAN RED (cfo, CEO-582) -- a red file has been measured and found wrong; a file that never reached the
+# THAN RED (cfo, R-582) -- a red file has been measured and found wrong; a file that never reached the
 # compiler has not been measured at all, and it sits in the denominator looking exactly like a red.
 # ⛔ IT MOVES NO DENOMINATOR AND EXCLUDES NOTHING. Every shipped file is counted and classified; nothing is
-# quietly dropped to make a fraction look better (ceo CEO-744: "a wrong exclusion costs more than a wrong
+# quietly dropped to make a fraction look better (R-744: "a wrong exclusion costs more than a wrong
 # cure, because a red stays visible and an excluded name cannot be red").
 # ⛔ IT WRITES NOTHING -- no SCORE row, no RAKU-COVERAGE.md -- which is exactly why the guard admits it.
 if [ "$DO_INV" = 1 ]; then
@@ -222,7 +222,7 @@ fi
 # (row m4-pie-vs-no-pie-changes-behaviour-not-just-signal, ARCH-ENGINE.md "Mode-4 Link Mode": -no-pie
 # SIGSEGVs two programs PIE runs clean 20/20, RSP==0x0 at fault, gdb-confirmed).
 if [ "$DO_RUN" = 1 ]; then
-  . "$ROOT/../harness/scripts/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable -- a run that leaves the progress table untouched is the same defect as one that leaves its SCORE row untouched (ceo CEO-330/331)"; exit 2; }
+  . "$ROOT/../harness/scripts/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable -- a run that leaves the progress table untouched is the same defect as one that leaves its SCORE row untouched (R-330/331)"; exit 2; }
   ROAST_COMMIT="unversioned-tree"
   [ -d "$ROAST/.git" ] && ROAST_COMMIT="$(cd "$ROAST" && git rev-parse --short=9 HEAD 2>/dev/null || echo unversioned-tree)"
   RT_DIR="$ROOT/out"
@@ -245,7 +245,7 @@ if [ "$DO_RUN" = 1 ]; then
   # 22.8 s alone on 26e79fe3e, 2.0 s on 2f03e45cf) read CRASH m3 and were telegrammed as crashes. The ladder's HANG is the timeout's verdict:
   # the second argument is the run's rc, and 124 (the retried timeout fired) is HANG whatever TAP came out.
   roast_outcome() { [ "${2:-}" = 124 ] && { echo HANG; return; }; case "$1" in PASS) echo PASS ;; FAIL) echo FAIL ;; PARSE-FAIL) echo REJECT ;; CRASH) echo CRASH ;; NO-TAP) echo UNPROVEN ;; *) echo UNPROVEN ;; esac; }
-  . "$ROOT/../harness/scripts/lib_rr.sh" && rr_load "$ROAST_PKG" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one part or a request's entries
+  . "$ROOT/../harness/scripts/lib_rr.sh" && rr_load "$ROAST_PKG" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries
   while IFS= read -r -d '' src; do
     _xn="${src#$ROAST/}"; _xn="${_xn%.t}"
     rr_admits "$_xn" || continue; rr_yield "$_xn" && break
@@ -254,13 +254,13 @@ if [ "$DO_RUN" = 1 ]; then
     stage=$(roast_stage "$ROAST" "$TMP" "$src") || { echo "⛔ REFUSING (rc=2): could not stage $src" >&2; exit 2; }
     so="$TMP/o"; se="$TMP/e"
     pname="${src#$ROAST/}"; pname="${pname%.t}"; roast_sw "$pname"
-    export S4E_TIMEOUT_KEY="$pname"   # the unit a retried timeout's stamp names (CEO-1335)
-    _t0="$(progress_clock)"   # each mode's own wall for its row (CEO-1676 (c)); m4's takes its compile and link
+    export S4E_TIMEOUT_KEY="$pname"   # the unit a retried timeout's stamp names (R-1335)
+    _t0="$(progress_clock)"   # each mode's own wall for its row (R-1676 (c)); m4's takes its compile and link
     incwd "$TIMEOUT_RETRY" 5 "$SCRIP" --run "${RSW[@]}" "$stage" > "$so" 2> "$se" < /dev/null; rc=$?; _s3="$(progress_secs_since "$_t0")"
     v3="$(classify "$so" "$se" "$rc")"
     _e3=""; [ "$v3" = PASS ] || _e3="$(grep -v '^[[:space:]]*$' "$se" 2>/dev/null | head -1 | tr '\t' ' ' | cut -c1-200)"
     _o3="$(roast_outcome "$v3" "$rc")"
-    # ⛔ A FAIL, CRASH OR HANG STORES ITS FIRST CAUSE, NOT ITS FIRST STDERR LINE (CEO-2030): the first test that did not pass, the rc and the last diagnostic (lib_raku_roast_bucket.sh roast_first_cause)
+    # ⛔ A FAIL, CRASH OR HANG STORES ITS FIRST CAUSE, NOT ITS FIRST STDERR LINE (R-2030): the first test that did not pass, the rc and the last diagnostic (lib_raku_roast_bucket.sh roast_first_cause)
     case "$_o3" in FAIL|CRASH|HANG) _e3="$(roast_first_cause "$so" "$se" "$rc")" ;; esac
     progress_append package roast raku "$pname" m3 "$_o3" "$_s3" "$_e3" >/dev/null 2>&1 || true
     if [ "$v3" = PASS ]; then m3p=$((m3p+1)); else m3f=$((m3f+1)); FAILED_M3="$FAILED_M3 $pname:$v3"; fi
@@ -291,9 +291,9 @@ if [ "$DO_RUN" = 1 ]; then
   roast_undecl_report
   compile_only=$((compiled_ok - m4p))
   _stale=""; for _x in $ROAST_EXCL; do [ -n "${EXCL_SEEN[$_x]:-}" ] || _stale="$_stale $_x"; done
-  printf 'ROAST_EXCLUDED %d file(s) out of the denominator, NO_ORACLE_ANSWER (CEO-1696) from %s/EXCLUDED.tsv%s\n' "$n_excl" "$ROAST_PKG" "$( [ -n "$_stale" ] && [ "$LIMIT" -eq 0 ] && printf ' -- STALE (no such file in the tree):%s' "$_stale")"
+  printf 'ROAST_EXCLUDED %d file(s) out of the denominator, NO_ORACLE_ANSWER (R-1696) from %s/EXCLUDED.tsv%s\n' "$n_excl" "$ROAST_PKG" "$( [ -n "$_stale" ] && [ "$LIMIT" -eq 0 ] && printf ' -- STALE (no such file in the tree):%s' "$_stale")"
   elapsed=$(( $(date +%s) - t0 ))
-  # ⛔ THE AND PER PROGRAM, NEVER THE SMALLER COUNT (ceo-372; the coo 2026-10-10): this line read min(m3p, m4p), which counts a program
+  # ⛔ THE AND PER PROGRAM, NEVER THE SMALLER COUNT (R-372; the coo 2026-10-10): this line read min(m3p, m4p), which counts a program
   # green in one mode beside a different program green in the other. Measured: pass 45 on fcff46d90 read 164 here against the progress
   # DB's 162, pass 46 on 8f5f2f7ac 144 against 141 (seven S15-normalization files pass in one mode only), and util_score_row refused both
   # writes -- the published row stayed at pass 44's reading. bothp counts a program only when its m3 and m4 verdicts are both PASS.
@@ -336,9 +336,9 @@ if [ "$DO_RUN" = 1 ]; then
   # the operator was sent to reproduce a refusal that had already happened. A refusal only works if someone can
   # read it, which is the same rule this board already applies to its own arms.
   PC_ERR="$TMP/parse_census.err"
-  # ⛔ A PART RUN (S4E_CHUNK set: one entry, a shell or a chunk) TAKES NO CENSUS (ceo 2026-10-25, Lon: "the fleet is idle. figure out why
+  # ⛔ A PART RUN (S4E_CHUNK set: one entry, a shell or a chunk) TAKES NO CENSUS (2026-10-25, Lon: "the fleet is idle. figure out why
   # the machine is busy."): the census parses the WHOLE roast population with scrip --dump-ast, about 25 s, and the coo's loop grades roast
-  # one entry at a time, up to eight at once, so every one-entry grade re-parsed all of roast; a part is never the suite's row (CEO-1802),
+  # one entry at a time, up to eight at once, so every one-entry grade re-parsed all of roast; a part is never the suite's row (R-1802),
   # so its board line names the census as not taken, and a whole run still takes it.
   if [ -n "${S4E_CHUNK:-}" ]; then
     PC_LINE="RAKU_PARSE_COVERAGE NOT-TAKEN -- a part run (S4E_CHUNK=$S4E_CHUNK) is never the suite's row; the census runs on a whole board"
@@ -352,12 +352,12 @@ if [ "$DO_RUN" = 1 ]; then
     printf '%s\n' "$PC_LINE"
   fi
   # ⛔ THE BOARD LINE IS NAMED LIKE EVERY OTHER RUNNER'S AND RIDES IN THE CELL (coo 2026-09-28): util_score_row archives the
-  # verbatim <NAME>_SUITE_BOARD line it is handed into .github/board-lines/ so two readings of one suite stay diffable (CEO-827).
+  # verbatim <NAME>_SUITE_BOARD line it is handed into .github/board-lines/ so two readings of one suite stay diffable (R-827).
   # This line was ROAST_BOARD and never reached --text, so the 170/1464 publish of 2026-09-28 wrote its row and archived nothing.
   BOARD_LINE=$(printf 'ROAST_SUITE_BOARD total=%d m3_run_pass=%d m3_run_fail=%d m4_run_pass=%d m4_run_fail=%d both_modes_pass=%d compile_only=%d excluded=%d roast_commit=%s elapsed=%ds' \
     "$n" "$m3p" "$m3f" "$m4p" "$m4f" "$both" "$compile_only" "$n_excl" "$ROAST_COMMIT" "$elapsed")
   printf '%s\n' "$BOARD_LINE"
-  rr_selected && { rr_end roast; exit 0; }   # a part or a request wrote each file's rows as it went, and writes no suite row (CEO-1802)
+  rr_selected && { rr_end roast; exit 0; }   # a part or a request wrote each file's rows as it went, and writes no suite row (R-1802)
   [ "$LIMIT" -gt 0 ] && { printf 'ROAST_PARTIAL: --limit %d was in force, so this is a SMOKE OF THE INSTRUMENT and NOT a board; no SCORE row is written.\n' "$LIMIT"; exit 0; }
   # ⛔ --suite/--suite-key ARE NOT OPTIONAL HERE AND THEIR ABSENCE WAS A SILENT NO-OP FOR THIS BOARD (hq_raku
   # 2026-09-16): --column vendor writes ONE measurement inside a SHARED cell, so util_score_row cannot infer
@@ -373,7 +373,7 @@ if [ "$DO_RUN" = 1 ]; then
       --suite roast --suite-key roast \
       --suite-pass "$both" --suite-total "$n" --excluded "$n_excl" \
       --measurer "${S4E_SEAT:-}" \
-      --text "roast run-graded both-modes $both/$n · PARSE COVERAGE: $PC_TEXT (measured by ../harness/scripts/util_raku_parse_census.sh, --dump-ast rc=0 per file over this same population -- NEVER derived by subtracting buckets) · m3 $m3p/$n · m4 $m4p/$n · compile_only=$compile_only · roast=$ROAST_COMMIT · ⛔ THE DENOMINATOR IS THE POPULATION THIS RUNNER WALKS, every .t file under the vendored tree — ruled by the ceo as THE published roast basis (CEO-784, 2026-09-16, on hq_raku's ask: every shipped .t, CEO-749 shape, the manifest demoted to an inventory column). The 6.c manifest in-tier subset ($MAN_TIER of $MAN_ALL manifest lines, $MAN_MISSING named-but-absent) is a DIFFERENT POPULATION over the same suite, not a disagreement, and it is reported beside this board rather than instead of it. ⛔ THIS NOTE USED TO SAY THE SUBSET WAS ONE NO RUNNER MEASURED. That was FALSE and is corrected here on the ceo's order: the default mode of THIS script measures it and writes RAKU-COVERAGE.md, most recently by hq_raku on 2026-09-16. A runner asserting that nobody measured a number IT ITSELF computes is the worst kind of standing note — it reads as provenance and is self-refuting. · $BOARD_LINE" \
+      --text "roast run-graded both-modes $both/$n · PARSE COVERAGE: $PC_TEXT (measured by ../harness/scripts/util_raku_parse_census.sh, --dump-ast rc=0 per file over this same population -- NEVER derived by subtracting buckets) · m3 $m3p/$n · m4 $m4p/$n · compile_only=$compile_only · roast=$ROAST_COMMIT · ⛔ THE DENOMINATOR IS THE POPULATION THIS RUNNER WALKS, every .t file under the vendored tree — ruled by the officer as THE published roast basis (R-784, 2026-09-16, on hq_raku's ask: every shipped .t, R-749 shape, the manifest demoted to an inventory column). The 6.c manifest in-tier subset ($MAN_TIER of $MAN_ALL manifest lines, $MAN_MISSING named-but-absent) is a DIFFERENT POPULATION over the same suite, not a disagreement, and it is reported beside this board rather than instead of it. ⛔ THIS NOTE USED TO SAY THE SUBSET WAS ONE NO RUNNER MEASURED. That was FALSE and is corrected here on the order: the default mode of THIS script measures it and writes RAKU-COVERAGE.md, most recently by hq_raku on 2026-09-16. A runner asserting that nobody measured a number IT ITSELF computes is the worst kind of standing note — it reads as provenance and is self-refuting. · $BOARD_LINE" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
   exit 0
 fi

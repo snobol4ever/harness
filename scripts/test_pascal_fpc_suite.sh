@@ -54,8 +54,8 @@ if [ -f "$TIMEOUT_TSV" ]; then
         case "$_ts" in ''|*[!0-9]*) echo "⛔ REFUSED-TO-GRADE: ALL.timeout.tsv gives $_tn the non-numeric timeout '$_ts'"; exit 2;; esac
         TMO_OF[$_tn]="$_ts"; echo "-- declared run timeout: $_tn ${_ts}s ($_tr)"; done < "$TIMEOUT_TSV"
 fi
-# ⛔⭐ ISO IS THE ORACLE, SO A PROGRAM ISO REFUSES IS GRADED AS AN EXPECTED REFUSAL (Lon 2026-09-23, in-chat to the ceo, verbatim:
-# "use ISO as oracle", CEO-1225; the grading ruled by the ceo as CEO-1228). This suite's refs were cut from fpc -Miso, and where fpc -Miso
+# ⛔⭐ ISO IS THE ORACLE, SO A PROGRAM ISO REFUSES IS GRADED AS AN EXPECTED REFUSAL (Lon 2026-09-23, in-chat, verbatim:
+# "use ISO as oracle", R-1225; the grading ruled by the officer as R-1228). This suite's refs were cut from fpc -Miso, and where fpc -Miso
 # and ISO 7185 disagree ISO wins. ISO_EXPECTED_REFUSALS.tsv beside the package names each program fpc -Miso runs but ISO 7185 refuses,
 # with its ISO clause and the measurement; such a program is graded exactly as a PAT rejection test is: PASS in a mode when that mode
 # refuses it WITH an ISO 7185 diagnostic, and an acceptance, or a refusal without the ISO diagnostic, is red. The denominator stays the
@@ -69,8 +69,8 @@ NREF=0
 [ -d "$SUITE" ]  || { echo "⛔ REFUSED-TO-GRADE: $SUITE missing"; exit 2; }
 [ -x "$SCRIP" ]  || { echo "⛔ REFUSED-TO-GRADE: scrip not built"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, the officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. the officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
@@ -79,7 +79,7 @@ NREF=0
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/fpc_suite_XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED-TO-GRADE: lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
@@ -94,7 +94,7 @@ TOTAL=${#PAIRS[@]}
 [ "$TOTAL" -gt 0 ] || { echo "⛔ REFUSED-TO-GRADE: zero .pas/.ref pairs in $SUITE"; exit 2; }
 
 M3_PASS=0; M3_FAIL=0; M4_PASS=0; M4_FAIL=0; REJECT=0
-# ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06): this suite's leaderboard row states the programs green in
+# ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06): this suite's leaderboard row states the programs green in
 # EVERY graded mode -- never m4 alone (what it published until now), never m3 alone, and never
 # min(M3_PASS,M4_PASS), which is not a count of any set of programs: one program red only in m3 and another
 # red only in m4 leave min() a program too high. Accumulated per program below, where both verdicts are in hand.
@@ -104,7 +104,7 @@ PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
 
 echo "=== FPC vendored-suite grade ($TOTAL pairs, $SUITE) ==="
 
-. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one part or a request's entries, rows as each test ends
+. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries, rows as each test ends
 for name in "${PAIRS[@]}"; do
     rr_admits "$name" || continue; rr_yield "$name" && break; rr_flush "$PROG_ROWS"
     export S4E_TIMEOUT_KEY="$name"
@@ -114,7 +114,7 @@ for name in "${PAIRS[@]}"; do
         NREF=$((NREF+1)); m3ok=0
         _t0="$(progress_clock)"
         _e3="$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --run "$pas" <"$inp" 2>&1 >/dev/null)"; _r3=$?
-        S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"   # each mode's own wall for its row (CEO-1676 (c))
+        S3="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"   # each mode's own wall for its row (R-1676 (c))
         if [ "$_r3" -ne 0 ] && [ "$_r3" -lt 124 ] && printf '%s' "$_e3" | grep -q 'ISO 7185'; then
             M3_PASS=$((M3_PASS+1)); m3ok=1; printf 'package\tfpc\tpascal\t%s\tm3\tPASS\t%s\texpected-refusal-iso-7185\n' "$name" "$S3" >>"$PROG_ROWS"
         else
@@ -149,7 +149,7 @@ for name in "${PAIRS[@]}"; do
 
     m3ok=0
     # ⛔⭐⭐ THE OUTPUT ALONE IS NOT THE VERDICT -- rc IS GRADED BESIDE IT (hq_pascal 2026-09-16, INSTRUMENT
-    # CHANGE in the CEO-749 shape, the cure shape handed over by hq_icon). 106 of this suite's 181 refs are
+    # CHANGE in the R-749 shape, the cure shape handed over by hq_icon). 106 of this suite's 181 refs are
     # EMPTY, and this arm compared stdout only, so a program that DIED before printing anything answered the
     # question "did stdout stay empty" CORRECTLY and scored PASS. MEASURED: 44 entries passed while exiting
     # non-zero; fpc compiles all 44 and runs 37 of them to completion with rc=0. The pass was real and the
@@ -209,7 +209,7 @@ if [ "$VERBOSE" -ne 1 ] && [ "$M4_FAIL" -gt 0 ]; then
     echo "-- m4 FAIL ($M4_FAIL): ${M4_FAIL_NAMES[*]:0:10}$([ "$M4_FAIL" -gt 10 ] && echo ' ...')"
 fi
 
-[ "$NREF" -gt 0 ] && echo "-- $NREF program(s) graded as EXPECTED REFUSALS (ISO_EXPECTED_REFUSALS.tsv: fpc -Miso runs them, ISO 7185 refuses them; CEO-1228)"
+[ "$NREF" -gt 0 ] && echo "-- $NREF program(s) graded as EXPECTED REFUSALS (ISO_EXPECTED_REFUSALS.tsv: fpc -Miso runs them, ISO 7185 refuses them; R-1228)"
 echo ""
 echo "FPC_SUITE_BOARD total=$TOTAL both_pass=$BOTH_PASS m3_pass=$M3_PASS m3_fail=$M3_FAIL m4_pass=$M4_PASS m4_fail=$M4_FAIL reject=$REJECT expected_refusals=$NREF"
 # ⭐ THE PACKAGE LOCKDOWN inventory line, via the shared body (lib_inventory.sh) -- never a second copy
@@ -218,7 +218,7 @@ echo "FPC_SUITE_BOARD total=$TOTAL both_pass=$BOTH_PASS m3_pass=$M3_PASS m3_fail
 # rather than being silently folded into ungradable the way the old ad hoc line did.
 FPC_GRADED=$((TOTAL - REJECT))
 INV_PACKAGE=fpc; INV_DIR="$SUITE"; INV_EXT=".pas"
-if ! rr_selected; then   # a part of the package; the inventory sums the whole shipped package (CEO-1802)
+if ! rr_selected; then   # a part of the package; the inventory sums the whole shipped package (R-1802)
 INV_LINE="$(inventory_line "$FPC_GRADED" 0)"
 if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
 fi
@@ -228,28 +228,28 @@ fi
 # ⛔ NON-FATAL BY DESIGN: a bookkeeping failure must never turn a real measurement into a red board,
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
-# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED (hq_T 2026-09-06, ceo CEO-363; the coo had to set
+# ⛔⭐ THE SUITE ROW'S PAIR IS DECLARED, NEVER PARSED (hq_T 2026-09-06, R-363; the coo had to set
 # this row BY HAND after a clean run because util_score_row correctly REFUSED to guess). The --text below
 # carries THREE fractions over the same denominator (the AND, m3 and m4), and there is no fact of the matter
 # about which one a text parse should take -- so the writer refuses rather than picking, and the runner
 # declares its headline pair.
-# ⛔⭐ THE RULING CAME, AND IT IS NEITHER ARM: ceo-372, 2026-09-06, on hq_T's ask. This row was wired to m4
+# ⛔⭐ THE RULING CAME, AND IT IS NEITHER ARM: R-372, 2026-09-06, on hq_T's ask. This row was wired to m4
 # (because SUITES.tsv carried m4), then to m3 by hq_V at 20:5x when the coo hand-set the published row to the
 # m3 numbers -- each rewiring correctly avoiding the phantom regression the other would have published, and
-# hq_V closed with "The ceo is asked to rule; either way it stays one line." This is that line. The pair is
+# hq_V closed with "The officer is asked to rule; either way it stays one line." This is that line. The pair is
 # THE AND PER PROGRAM: "a program red in m3 and another red in m4 both count against the row; never m3 alone,
 # never m4 alone, never the min of two counts (which hides a program red in each)."
 # ⭐ hq_V's SECOND, STANDING REASON IS ANSWERED RATHER THAN OVERRULED. m4 here really is run-to-run
 # non-deterministic (this file's header: five runs, one tree, five pass counts), and a row wired to a number
 # that moves without the code moving really does manufacture phantom movement in the table Lon reads. The
-# ceo's ruling puts that where it belongs: "a mode whose count varies run to run is a DEFECT ROW in that lane
+# ruling puts that where it belongs: "a mode whose count varies run to run is a DEFECT ROW in that lane
 # -- a nondeterministic compile is the xfail shape with a runner's excuse in front of it -- never a reason to
 # publish the steadier mode." The wobble is now the Pascal lane's row (pascal-m4-intermittent-segv-layout-
 # sensitive), not a thing the leaderboard steers around by choosing an arm.
-# ✅ AND THE ROW IS LIVE -- REOPENED BY THE ceo AT 21:05 (CEO-379, .github 3879c3d3): rank 0, assignee hq_V,
+# ✅ AND THE ROW IS LIVE -- REOPENED BY THE OFFICER AT 21:05 (R-379, .github 3879c3d3): rank 0, assignee hq_V,
 # FREE. It had been filed in QUEUE.done.tsv, unassigned, absent from QUEUE.tsv, while the defect it names was in
 # that night's board (m3 130 vs m4 116) and in this file's own header (5 runs, 5 counts, one tree) -- measured
-# 2026-09-06 22:5x and asked up rather than reopened from this lane. ⭐ THE ceo's REASON IS THE REUSABLE PART:
+# 2026-09-06 22:5x and asked up rather than reopened from this lane. ⭐ THE OFFICER'S REASON IS THE REUSABLE PART:
 # the row's DONE-WHEN graded the GATE's population and was honestly met there, while the CLASS lives on this
 # suite's population -- one member cured, the class red. A DONE-WHEN met on a narrower population than the class
 # it names closes a row that nothing has fixed (shape 2 of HOW A CRITERION LIES, from the closing side).
@@ -259,12 +259,12 @@ fi
 # ⛔ THE NUMBER DROPS FROM $M3_PASS (m3, as published) TO $BOTH_PASS -- 130 to 116 of 181, measured this
 # sitting -- AND THAT IS A CRITERION CHANGE, NOT A REGRESSION. The commit landing it says so in those words.
 #
-# ⛔⭐ THE FACT RULE'S OTHER HALF (CEO-319, /home/resources/progress/README.md): every suite run APPENDS its
+# ⛔⭐ THE FACT RULE'S OTHER HALF (R-319, /home/resources/progress/README.md): every suite run APPENDS its
 # per-program rows in the same sitting it rewrites its cell. MEASURED by hq_V at its opening, 2026-09-06:
 # of 497 pascal rows in that table every one was pascal-rungs -- ZERO from fpc or pat, so a Pascal PACKAGE
 # flip was invisible to the measure OCTET is run on. One bulk call, not 362. Non-fatal, never silent.
 #
-# ⛔ APPEND BEFORE WRITE, NOT AFTER (hq_pascal 2026-09-23): the write below's own db_crosscheck (CEO-750)
+# ⛔ APPEND BEFORE WRITE, NOT AFTER (hq_pascal 2026-09-23): the write below's own db_crosscheck (R-750)
 # REFUSES unless this suite's per-program rows are ALREADY on the progress DB for this exact tree -- so
 # appending them after the write can never satisfy the write it is meant to unblock. Measured live: on
 # SCRIP d7a3c06fc this order refused every single time ("no progress rows for suite 'fpc' on tree
@@ -274,13 +274,13 @@ if [ -s "$PROG_ROWS" ]; then
         echo "⚠ PROGRESS DB NOT UPDATED -- the score write below cannot cross-check and will refuse (reason above)" >&2
     fi
 fi
-rr_selected && { rr_end fpc; exit 0; }   # a part or a request writes its rows and no suite row (CEO-1802)
+rr_selected && { rr_end fpc; exit 0; }   # a part or a request writes its rows and no suite row (R-1802)
 # ⭐ THE ROW'S CRITERION IS STAMPED WHEN IT MOVES: the banner renders the LAST OUTSIDE=N token of SUITES.tsv column 12, and this row
-# carried OUTSIDE=15 for one run under the CEO-749 reading, so the first run under CEO-1228 records OUTSIDE=0 with its reason.
+# carried OUTSIDE=15 for one run under the R-749 reading, so the first run under R-1228 records OUTSIDE=0 with its reason.
 _cc="${S4E_CRITERION_CHANGED:-}"
 _lastout="$(awk -F'\t' '$1=="fpc"{print $12; exit}' "$(. "$HERE/lib_suites_tsv.sh"; suites_tsv "$S4E")" 2>/dev/null | grep -oE 'OUTSIDE=[0-9]+' | tail -1 | cut -d= -f2)"
 if [ -z "$_cc" ] && [ -n "$_lastout" ] && [ "$_lastout" != 0 ]; then
-    _cc="$(date +%F):CEO-1228-programs-iso-7185-refuses-and-fpc-Miso-runs-are-graded-as-expected-refusals-$NREF-named-in-ISO_EXPECTED_REFUSALS.tsv-denominator-$TOTAL-OUTSIDE=0"
+    _cc="$(date +%F):R-1228-programs-iso-7185-refuses-and-fpc-Miso-runs-are-graded-as-expected-refusals-$NREF-named-in-ISO_EXPECTED_REFUSALS.tsv-denominator-$TOTAL-OUTSIDE=0"
 fi
 python3 "$HERE/util_score_row.py" write --lang pascal --column vendor --suite fpc --modes m3,m4 \
     ${_cc:+--criterion-changed "$_cc"} \

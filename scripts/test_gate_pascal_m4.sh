@@ -64,10 +64,10 @@ done
 
 RUNGS_PASS=0; RUNGS_FAIL=0; RUNGS_EXAMINED=0
 if [ -f "$RUNGS_SRC" ] && [ -f "$RUNGS_REF" ]; then
-    # Every rung suite entry is graded in this gate's mode: there is no modes column (Lon 2026-09-23, CEO-1218/1230).
+    # Every rung suite entry is graded in this gate's mode: there is no modes column (Lon 2026-09-23, R-1218/1230).
     # ⛔⭐ CAPTURE THE HARNESS rc AND ITS stderr -- A REFUSAL IS NOT A RED AND IS NOT A CORPUS DEFECT (hq_B 2026-09-13,
     # row pascal-gates-report-a-one-runner-refusal-as-an-unpopulated-master). `2>/dev/null` here threw away the ONE sentence
-    # that said what had happened. Under ONE RUNNER, ONE BOARD (CEO-523) a run of the rungs IS a board, so the harness
+    # that said what had happened. Under ONE RUNNER, ONE BOARD (R-523) a run of the rungs IS a board, so the harness
     # refuses it rc=2 to every seat but the coo; `board` came back empty, `p` was unset, RUNGS_EXAMINED fell to 0, and the
     # arm at the bottom then accused $RUNGS_SRC of being "a path defect or unpopulated rungs" -- while it sits on disk,
     # populated, 5239 lines. hq_S measured that message, went and checked the corpus, and found it fine (relayed by the coo

@@ -1,4 +1,4 @@
-# builtins.tsv -- ONE BUILTIN TABLE (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; CEO-2016): one row per builtin per vocabulary.
+# builtins.tsv -- ONE BUILTIN TABLE (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; R-2016): one row per builtin per vocabulary.
 # bid     the row id, assigned once and NEVER renumbered or reused: the 186 ids of src/runtime/builtin_ids.h keep their numbers (one row per legacy name, the first vocabulary of sno icn pas rk rkm pl that spells it); a new row takes the next free id.
 # vocab   sno (SNOBOL4; Snocone and Rebus lower through it) icn pas rk (a Raku sub or runtime helper) rkm (a Raku METHOD) pl. The harvest sorts a name by its spelling (SNO$ and ALL-CAPS and operators sno, $ pl, __pas_ pas, __rk_ rk, a lowercase name an Icon source spells icn, other lowercase rk); a name with two meanings becomes two rows when its language step finds them.
 # min max arity bounds; max -1 is variadic; "-" means NO SOURCE STATES IT (nothing is invented; the language steps fill it as they write the leaves).

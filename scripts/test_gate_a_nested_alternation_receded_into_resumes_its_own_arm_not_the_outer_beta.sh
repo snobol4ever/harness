@@ -4,7 +4,7 @@
 # test_gate_a_nested_alternation_receded_into_resumes_its_own_arm_not_the_outer_beta.sh -- A NESTED ALTERNATION
 # RECEDED INTO AFTER ITS INNER ARM SUCCEEDED MUST RESUME THAT ARM, NOT PING-PONG WITH THE OUTER BETA.
 # Row snobol4-a-nested-alternation-receded-into-after-its-inner-arm-succeeded-ping-pongs-between-the-two-beta-ports-forever
-# (cto, 2026-09-12; CEO-564's third mechanism, fuzz name arbno_fence_span_replace_branch_2 -- no ARBNO, no FENCE in it).
+# (cto, 2026-09-12; R-564's third mechanism, fuzz name arbno_fence_span_replace_branch_2 -- no ARBNO, no FENCE in it).
 # bb_match_alternate's ALT-FLAT arm kept its record as a 32B rsp-carved cell addressed as [rsp+k] from every port; when
 # alternative k is itself an alternation its record is still on the stack at the outer's gamma, so the outer's sigma
 # stub wrote its beta target into the INNER's record and outer beta / inner beta read one cell and jumped to each other

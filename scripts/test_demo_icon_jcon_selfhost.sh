@@ -10,7 +10,7 @@
 # and the two output directories are compared file by file, byte for byte. ⛔ NO JVM IS INSTALLED OR RUN, EVER (s121,
 # and Lon 2026-09-23: "Worry not about actually running Java Virtual Machine"): a class file is compared as DATA.
 #
-# ⭐ THE SCRIP-BUILT jtran RUNS AT jtran's DECLARED HEAP AND STACK (ceo CEO-1353, RULES.md clause 8 (g)(4); the coo's census): the words
+# ⭐ THE SCRIP-BUILT jtran RUNS AT jtran's DECLARED HEAP AND STACK (R-1353, RULES.md clause 8 (g)(4); the coo's census): the words
 # declared_switches_beside reads from corpus/demos/icon/jcon/jtran.heap and jtran.stack lead the binary's argv before a --. ⛔ THE
 # --heap=window ARM IS RETIRED: it exported SCRIP_HEAP_MB=2048, the collector's WINDOW, so no collection ran over the package and a
 # difference could only be an Icon-semantics one (553 of 553 at SCRIP 27650ec66, 2026-09-23). A runner types no size of its own, so
@@ -32,7 +32,7 @@ D="${JCON_DEMO_DIR:-$S4E/corpus/demos/icon/jcon}"
 PKG="${JCON_PKG_DIR:-$S4E/corpus/packages/icon/jcon-compiler}"
 TMO="${JCON_TIMEOUT:-900}"
 WANT=""
-for a in "$@"; do case "$a" in --heap=*) echo "⛔ REFUSE(2): $a is retired -- jtran runs at its declared heap and stack (jtran.heap, jtran.stack; CEO-1353)"; exit 2;; *) WANT="$WANT $a";; esac; done
+for a in "$@"; do case "$a" in --heap=*) echo "⛔ REFUSE(2): $a is retired -- jtran runs at its declared heap and stack (jtran.heap, jtran.stack; R-1353)"; exit 2;; *) WANT="$WANT $a";; esac; done
 refuse() { echo "⛔ JCON SELF-HOST GATE UNPROVEN(2): $*"; echo "    This is NOT a pass -- the gate could not measure, so it certifies nothing."; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh -- the ONE oracle-path authority."
 ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing (lib_oracle_flags.sh names the path)."

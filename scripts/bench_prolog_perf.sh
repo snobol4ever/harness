@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
 # bench_prolog_perf.sh — ANGLE 3 of the Prolog three-angle triangulation: THE PROCESS WRAPPER.
 #
@@ -12,7 +12,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #       compile+link).  Single-shot, so small entries are startup-dominated — stated up front, and that
 #       IS this angle's subject: m4c exists on no other angle.
 #
-#   (B) ⭐ THE TWO-NUMBER WORK/OVERHEAD BASIS, over the GENERATED WRAPPED FORM — the CEO-567 DONE-WHEN
+#   (B) ⭐ THE TWO-NUMBER WORK/OVERHEAD BASIS, over the GENERATED WRAPPED FORM — the R-567 DONE-WHEN
 #       clause "the three angles run over the wrapped form with the process wrapper's numbers printed
 #       beside the self-measured ones".  Angle 1 (test_bench_prolog_timed.sh) and angle 2
 #       (bench_prolog_fixed_iter.sh) have carried these two grids since 2026-09-13; this angle was the
@@ -37,7 +37,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   OVERHEAD uses elapsed_ns and never the CPU pair — subtracting across the two instruments publishes
 #   the difference of two clocks as an overhead, and goes NEGATIVE on a loaded box, which is the tell.
 #
-# ⛔⭐ THE CLOCK FLOOR IS A REFUSAL, NOT A FOOTNOTE (hq_P's ruling to the ceo, row CEO-567 conversion).
+# ⛔⭐ THE CLOCK FLOOR IS A REFUSAL, NOT A FOOTNOTE (hq_P's ruling to the officer, row R-567 conversion).
 #   gprolog's wall_us is real_time/1 × 1000 — a UNIT CONVERSION of a 1 ms tick, which prelude_gplc.pl
 #   says in its own header.  On this angle the work is ONE iteration, so most kernels' true work is far
 #   under one gnu tick: MEASURED here, gnu reports work_us=0 for query.  A zero silently moves the whole
@@ -61,20 +61,20 @@ PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
 GEN="${GEN:-$HERE/bench_prolog_wrap.sh}"
 FLOOR_TICKS="${FLOOR_TICKS:-10}"
 # THE SCRIP ARMS RUN AT EACH KERNEL'S DECLARED HEAP AND STACK (lib_declared_arena.sh's -d<kb>k -s<kb>k, after --run and at the head of
-#   the mode-4 binary's argv; RULES.md clause 8 (g), CEO-1353). Until 2026-10-01 this line was ulimit -s unlimited and SCRIP got
+#   the mode-4 binary's argv; RULES.md clause 8 (g), R-1353). Until 2026-10-01 this line was ulimit -s unlimited and SCRIP got
 #   nothing, so tak (declared 65536 KB) failed the pre-flight at the 4 MB default and its row read SKIP. MEASURED 2026-10-01 at
 #   c1c899df3: all 23 kernels read the same on gprolog, swipl, m3 and m4 at the shell's soft 8 MB stack and at unlimited.
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1281)"; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
 declare -a DECL_SW=()
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
 [ -f "$RT/libscrip_rt.so" ] || { echo "⛔ REFUSED-TO-GRADE libscrip_rt.so not built"; exit 2; }
 [ -d "$B" ] || { echo "⛔ REFUSED-TO-GRADE bench corpus missing: $B"; exit 2; }
 gprolog_bin >/dev/null || exit 2
 command -v swipl   >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE swipl absent"; exit 2; }
-[ -x "$GEN" ] || { echo "⛔ REFUSED-TO-GRADE wrapper generator missing: $GEN -- the wrapped form is generated, never checked in (CEO-567)"; exit 2; }
+[ -x "$GEN" ] || { echo "⛔ REFUSED-TO-GRADE wrapper generator missing: $GEN -- the wrapped form is generated, never checked in (R-567)"; exit 2; }
 # ⛔ A rival that cannot load its clock is not a rival that disagreed: REFUSE, never a plausible SKIP.
 [ -f "$PRO/prelude_gplc.pl" ] && [ -f "$PRO/prelude_swipl.pl" ] || { echo "⛔ REFUSED-TO-GRADE rival preludes missing under $PRO (prelude_gplc.pl / prelude_swipl.pl) -- the generator inlines them into the wrapped form"; exit 2; }
-# ⛔ THE ONE AUTHORITY FOR THE LOAD STAMP AND THE GRID VERDICT (s266, CEO-697): a harness that cannot
+# ⛔ THE ONE AUTHORITY FOR THE LOAD STAMP AND THE GRID VERDICT (s266, R-697): a harness that cannot
 #   load it REFUSES rather than inventing its own format or its own load line.
 . "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_perf_fmt.sh -- the ONE authority for the load stamp and the whole-grid refusal"; exit 2; }
 # ⛔ THE ONE loop_check, shared with angles 1 and 2: a rule with two copies proves the copies agree, never that either is right.
@@ -132,7 +132,7 @@ basis_median() {
   done
   printf '%s\n' "${lines[@]}" | sort -n -k1,1 | awk -v n="$N" 'NR==int((n+1)/2){print; exit}'
 }
-# ⛔ CEO-697: A COST WITHOUT THE LOAD IT RAN UNDER IS NOT A COST, and perf_grid_begin welds the load to
+# ⛔ R-697: A COST WITHOUT THE LOAD IT RAN UNDER IS NOT A COST, and perf_grid_begin welds the load to
 #   the shared-axes line so this harness CANNOT print a duration without it.
 perf_grid_begin "Prolog kernels, angle 3 process wrapper · (A) totals = wall ms median of $N over the PRISTINE kernel · (B) work/overhead = us over the GENERATED wrapped form · RT_OPT=-O0"
 echo
@@ -195,7 +195,7 @@ for pl in "$B"/*.pl; do
       perf_dark_cell "$s/$eng: $why"; continue
     fi
     BEL["$s:$eng"]="$el"
-    # ⛔ A MISSING work_us IS PRINTED AS DARK, NEVER BLANK AND NEVER ZERO (CEO-676, dark-is-worse-than-red).
+    # ⛔ A MISSING work_us IS PRINTED AS DARK, NEVER BLANK AND NEVER ZERO (R-676, dark-is-worse-than-red).
     case "$wk" in
       ''|-|*[!0-9]*) BWORK["$s:$eng"]="DARK"; BOVH["$s:$eng"]="DARK"
                      perf_dark_cell "$s/$eng: ran and graded, but its bracket reported no work_us" ;;
@@ -248,7 +248,7 @@ echo "  which the kernel never did. On this single-shot angle it is most of the 
 echo "  what angle 3 exists to measure: angles 1 and 2 divide it away, this one prints it."
 echo "  ⛔ wall minus wall, never CPU minus wall -- the two are different instruments and their difference"
 echo "  is not an overhead; on a loaded box it goes negative, which is the tell."
-echo "  DARK = the engine ran but its bracket reported no work_us; it is named, never left blank (CEO-676)."
+echo "  DARK = the engine ran but its bracket reported no work_us; it is named, never left blank (R-676)."
 printf "%-20s %14s %14s %14s %14s\n" BENCHMARK gnu swi m3 m4r
 printf "%-20s %14s %14s %14s %14s\n" "--------------------" "--------------" "--------------" "--------------" "--------------"
 for k in "${basis_rows[@]}"; do

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""audit_second_stacks_census.py -- the census of per-construct global stacks (RULES.md FACT RULE -- NO GLOBAL HOLDS A STACK, CEO-1542;
-the plan is .github/ARCH-GLOBAL-STACKS-TO-THE-ZETAS.md, CEO-1543). A second stack is a global, static or growable structure holding one
+"""audit_second_stacks_census.py -- the census of per-construct global stacks (RULES.md FACT RULE -- NO GLOBAL HOLDS A STACK, R-1542;
+the plan is .github/ARCH-GLOBAL-STACKS-TO-THE-ZETAS.md, R-1543). A second stack is a global, static or growable structure holding one
 entry per live call, activation, match, scan, generator or nested construct; the machine stack is the stack.
 
     python3 ../harness/scripts/audit_second_stacks_census.py             the table: every named stack, its lane, and how many source references remain
@@ -21,7 +21,7 @@ TABLE = [
     ("g_icn_act",        "hq_icon",    "icon",    "test_smoke_icon.sh",    "the frame (ARCH-ICON-RTX.md section 9); deleted ca33ff82a, bombs remain"),
     ("rt_stno_stack",    "hq_zetas",   "snobol4", "test_smoke_snobol4.sh", "activation frame + the code map"),
     ("g_name_save",      "hq_zetas",   "snobol4", "test_smoke_snobol4.sh", "spine, DESCR cells pushed by the callee prologue"),
-    ("g_rk_cb_hold",     "hq_raku",    "raku",    "test_smoke_raku.sh",    "LANDED (ceo, CEO-1560): the Raku block-callback holds (sort, reduce, map/grep, first) are a C-local record on each builtin's own frame, rk_cbh_t, chained from one head cell g_rk_cbh_cur and root-visited through the chain in bnd_gc_roots, the rk_redisp_t shape; the two errjmp catch sites restore the head; the holder, its three leaves and rt_gc_ws_roots are gone"),
+    ("g_rk_cb_hold",     "hq_raku",    "raku",    "test_smoke_raku.sh",    "LANDED (R-1560): the Raku block-callback holds (sort, reduce, map/grep, first) are a C-local record on each builtin's own frame, rk_cbh_t, chained from one head cell g_rk_cbh_cur and root-visited through the chain in bnd_gc_roots, the rk_redisp_t shape; the two errjmp catch sites restore the head; the holder, its three leaves and rt_gc_ws_roots are gone"),
     ("g_lvl_own",        "hq_zetas",   "snobol4", "test_smoke_snobol4.sh", "activation frame, one RAW word"),
     ("g_core_errjmp_stk", "cfo",       "snobol4", "test_smoke_snobol4.sh", "already a chain through C frames; the head cell to zeta-STANDING"),
     ("g_eval_frames",    "cfo",        "snobol4", "test_smoke_snobol4.sh", "the EVAL chain's activation frame or rt_eval's C local"),
@@ -29,7 +29,7 @@ TABLE = [
     ("g_dcf",            "hq_snobol4", "snobol4", "test_smoke_snobol4.sh", "the match frame: the CAS mark at entry"),
     ("g_dfx",            "hq_snobol4", "snobol4", "test_smoke_snobol4.sh", "the defer frame bb_match_defer pins"),
     ("call_stack_v",     "cfo",        "snobol4", "test_smoke_snobol4.sh", "the callee's activation frame, or deleted with the c2bb road"),
-    ("_nstack",          "hq_snocone", "snocone", "test_smoke_snocone.sh", "DELETED OUTRIGHT with the five builtins nPush/nInc/nDec/nTop/nPop (Lon 2026-10-08 15:3x CDT, verbatim: Delete the built-in nPush, etc. We do not want them.; CEO-1559): no graded program reached them, the parsers and every corpus speller define their own over counter.sc; an undefined call is error 22 as in SPITBOL"),
+    ("_nstack",          "hq_snocone", "snocone", "test_smoke_snocone.sh", "DELETED OUTRIGHT with the five builtins nPush/nInc/nDec/nTop/nPop (Lon 2026-10-08 15:3x CDT, verbatim: Delete the built-in nPush, etc. We do not want them.; R-1559): no graded program reached them, the parsers and every corpus speller define their own over counter.sc; an undefined call is error 22 as in SPITBOL"),
     ("g_scan_stack",     "hq_icon",    "icon",    "test_smoke_icon.sh",    "two cells per scan in the enclosing procedure's frame"),
     ("g_icn_bi_top",     "hq_icon",    "icon",    "test_smoke_icon.sh",    "already a chain through C frames; the head cell to zeta-STANDING"),
     ("g_icn_gen_ret",    "hq_icon",    "icon",    "test_smoke_icon.sh",    "the generator header: the retained frame is the entry"),
@@ -96,7 +96,7 @@ def main(argv):
             return 1
         print("GREEN: no reference to %s remains under src/ (%d files censused)" % (name, len(files)))
         return 0
-    print("SECOND STACKS CENSUS (%d source files under src/{%s}) -- RULES.md FACT RULE NO GLOBAL HOLDS A STACK, CEO-1542/1543" % (len(files), ",".join(DIRS)))
+    print("SECOND STACKS CENSUS (%d source files under src/{%s}) -- RULES.md FACT RULE NO GLOBAL HOLDS A STACK, R-1542/1543" % (len(files), ",".join(DIRS)))
     print("%-20s %-11s %-8s %6s  %s" % ("name", "lane", "lang", "refs", "placement"))
     for name, lane, lang, smoke, place in TABLE:
         total = sum(n for _, n in count_refs(name, files))

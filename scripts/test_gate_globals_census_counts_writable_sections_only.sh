@@ -2,8 +2,8 @@
 # ../harness/scripts/test_gate_globals_census_counts_writable_sections_only.sh -- the globals census counts STATE, never a constant:
 # a data symbol in .rodata or .data.rel.ro leaves the count, and one in .data, .bss or their TLS twins stays.
 #
-# THE RULING (ceo CEO-1575, 2026-10-09, row compiler-globals-collect-into-g-parser-g-lower-g-emitter-g-template-structs-
-# lons-housekeeping-ceo-1561): "a table never written is not state" -- it is const-qualified to the pointer in its stage's
+# THE RULING (R-1575, 2026-10-09, row compiler-globals-collect-into-g-parser-g-lower-g-emitter-g-template-structs-
+# lons-housekeeping-r-1561): "a table never written is not state" -- it is const-qualified to the pointer in its stage's
 # landing so the compiler proves it, never exempted by name, and the census reads SECTIONS (.rodata and .data.rel.ro are
 # constants, not globals) as test_gate_pl_no_new_global.sh does since 9e50691a0; the bar of 4 then counts mutable state
 # only; "the census re-cut lands first, proven once red on a planted mutable and once green".
@@ -52,5 +52,5 @@ if [ "$rc" != 1 ] || ! grep -q 'g_planted_mutable' "$T/census.out" || ! grep -q 
     echo "  FAIL  (2) planted: census rc=$rc (want 1), it must name g_planted_mutable and g_planted_table and no constant:"; sed 's/^/        /' "$T/census.out"; exit 1
 fi
 echo "  ok    (2) planted mutable and writable-slot table: census RED rc=1 naming both, no constant counted"
-echo "PASS [$GATE_NAME]: the census counts .data/.bss state and leaves .rodata/.data.rel.ro constants out (CEO-1575)"
+echo "PASS [$GATE_NAME]: the census counts .data/.bss state and leaves .rodata/.data.rel.ro constants out (R-1575)"
 exit 0

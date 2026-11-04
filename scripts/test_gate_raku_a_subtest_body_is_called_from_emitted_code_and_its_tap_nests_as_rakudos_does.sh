@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_subtest_body_is_called_from_emitted_code_and_its_tap_nests_as_rakudos_does.sh -- A SUBTEST BODY IS A BOX CALL, NOT A C ROAD INTO A BOX
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; CEO-1576, Lon 2026-10-09 verbatim: "Go fix everywhere a C function calls into a BB. That is forbidden, not allowed.").
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1576, Lon 2026-10-09 verbatim: "Go fix everywhere a C function calls into a BB. That is forbidden, not allowed.").
 #
 # THE DEFECT: `subtest "x" => { ... }` ran the Test op __rk_test_subtest, a C function that saved the TAP counters, sent stdout to a temporary file, called the body block through
-# rk_call_block -> rt_call_proc_descr, then printed the captured lines indented. CEO-1576 deleted that C road into a box, so EVERY subtest -- a closure body or a plain one -- died
+# rk_call_block -> rt_call_proc_descr, then printed the captured lines indented. R-1576 deleted that C road into a box, so EVERY subtest -- a closure body or a plain one -- died
 # (rt_call_proc_descr: __blk_1 reached a C road into a box, DELETED; SIGSEGV), and with it every Roast file that uses one.
 # THE CURE (lower_raku.c rk_subtest_walk, after the anonymous blocks are hoisted and closures are formed): a subtest whose body is a literal block or a capturing block (__blk_close)
 # becomes __rk_test_subtest_open(name), a DIRECT call of the block's proc by name (its captured refs prepended, the shape the emitted map / grep / first / reduce / sort loops use),
@@ -13,9 +13,9 @@
 # be 0, then under SCRIP_GC_STRESS 1 3 5 in both modes: a plain subtest, a closure body that reads a parameter and writes a local of its sub, nested subtests under a plan, an unnamed
 # subtest, the comma form, a subtest's value, subtests in a loop body reading the loop variable, and a body that loops and sums into its sub's local.
 # FAILED ONCE, measured on SCRIP 8f5f2f7ac before the cure: rc 139 at the first subtest in both modes.
-# RE-CUT 2026-10-31 (cao, CEO-2044/2045, ARCH-RAKU-TO-100 section 6 step 0): Test is Raku source in the setting, so `subtest` is an ordinary Raku sub
+# RE-CUT 2026-10-31 (cao, R-2044/2045, ARCH-RAKU-TO-100 section 6 step 0): Test is Raku source in the setting, so `subtest` is an ordinary Raku sub
 # and its body an ordinary block parameter, invoked from the setting's emitted code by `$code()`. That invocation reaches the block through the generic
-# block-call road, rt_call_open_tail_lex (`lex.open __blk_N`: the C half returns the address and the box jumps, CEO-1576's own pattern), one per body run,
+# block-call road, rt_call_open_tail_lex (`lex.open __blk_N`: the C half returns the address and the box jumps, R-1576's own pattern), one per body run,
 # exactly as a user program's `sub f($c) { $c() }` does; the box that removes it is F06's bb_rk_block. The count therefore excludes that one line shape and
 # still requires 0 for every other site -- the Test machinery itself (plan, ok, proclaim, _diag) makes no C entry.
 #

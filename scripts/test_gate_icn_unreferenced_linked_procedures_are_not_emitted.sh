@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_unreferenced_linked_procedures_are_not_emitted.sh -- a procedure nothing reaches is not compiled (ceo CEO-635).
+# test_gate_icn_unreferenced_linked_procedures_are_not_emitted.sh -- a procedure nothing reaches is not compiled (R-635).
 #
 # MEASURED 2026-09-12 on 5eeeb3a47: IPL gprogs/dlgvu.icn (1900 lines, links cartog/clipping/ddfread and through them the
 # graphics library) compiled in 8-10 s to a 97 MB .s, penelope 82 MB -- every procedure of every linked library was lowered

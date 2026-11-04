@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_bootstrap_parse_stage_ir_identity.sh -- A CHANGE TO THE PARSE STAGE LEAVES WHAT THE LOWERER AND THE EMITTER MAKE OF EVERY CORPUS PROGRAM EXACTLY AS IT WAS.
-# (Lon 2026-10-08 18:4x CDT, CEO-1566: the parse stage of scrip becomes the linked parser_<lang>.sc object; ceo CEO-1571 named this gate, ARCH-PARSER-SC-BOOTSTRAP.md
+# (Lon 2026-10-08 18:4x CDT, R-1566: the parse stage of scrip becomes the linked parser_<lang>.sc object; R-1571 named this gate, ARCH-PARSER-SC-BOOTSTRAP.md
 # section 3.11 defines it, the cfo's review fixed its cost rule.) The tree-for-tree gate omits :line :lline :file :stno :src, which the C parsers attach and the
 # lowerers read, so a tree that MATCHes can still lower differently. THIS gate compares what the parse stage's consumers PRODUCE, per corpus file, between a
 # PARENT build and the changed build:
@@ -17,7 +17,7 @@
 #   bash ../harness/scripts/test_gate_bootstrap_parse_stage_ir_identity.sh [--against DIR|latest] [--lang snobol4] [--population sample|corpus] [--list-diffs FILE] [--only FILE]   compare the CURRENT build to it
 #   bash ../harness/scripts/test_gate_bootstrap_parse_stage_ir_identity.sh --both [--lang snobol4] [--population sample|corpus] [--list-diffs FILE] [--only FILE]   ONE BUILD: every file compiled under SCRIP_PARSE_STAGE=c and again under =sc, the two readings compared (the honest reading; the coo can run it, it sets its own stage)
 #   --strict compares the RAW text of all three halves (only the embedded date is normalised, the one thing the C stage itself needs). WITHOUT it (the default) the
-#   assembly half is compared as the observables the module stage may not change (the cto, ARCH-PARSER-SC-BOOTSTRAP 7.x, CEO-1888): `--dump-ir` and rc exactly, the `.loc`
+#   assembly half is compared as the observables the module stage may not change (the cto, ARCH-PARSER-SC-BOOTSTRAP 7.x, R-1888): `--dump-ir` and rc exactly, the `.loc`
 #   sequence exactly, and the rest of the assembly through util_ir_identity_normalise_asm.py (node ids and local-label counters alpha-renamed, the GVA slot base made
 #   relative, the module's rtpat frame-map and OPQ$ rodata entries dropped, the printer's wrap collapsed). The row snocone-the-module-stage-leaves-no-residue-... closes
 #   when `--both --strict` reads green: the module stage leaves NO residue in the program's tables.

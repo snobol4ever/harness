@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_witness_sc_collection_inside_a_match.sh -- THE WITNESS of a collection in the middle of a pattern match with pending conditional assignments (the ceo, CEO-1650).
+# util_witness_sc_collection_inside_a_match.sh -- THE WITNESS of a collection in the middle of a pattern match with pending conditional assignments (the R-1650).
 # bootstrap/parser_snobol4.sc notes each statement's start position from inside its Compiland match (an immediate cursor assignment and a deferred predicate); when the
 # note went into a TABLE, the table's growth allocated during the match, a collection ran while the match held hundreds of pending conditional assignments, and the
 # tree the pends built afterwards carried a child that was not a node: TreeDumpAt died with error 41 (field function argument is wrong datatype) on

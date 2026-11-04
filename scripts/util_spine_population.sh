@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_spine_population.sh -- THE ONE POPULATION the spine counts are taken over (ceo CEO-1855/1856): every benchmark and demo program that carries
+# util_spine_population.sh -- THE ONE POPULATION the spine counts are taken over (R-1855/1856): every benchmark and demo program that carries
 # a committed .s artifact (SNOBOL4, Icon, Prolog) plus every Pascal, Raku, Snocone and Rebus demo and benchmark source. One line per program:
 #   <lang> <TAB> <absolute source path>
 # Read by util_placement_watch.sh, test_gate_no_rsp_reset_at_beta.sh and test_gate_no_spine_preallocation.sh, so the watch's line and the gates

@@ -38,11 +38,11 @@
 # appears in BOTH media's tables like every other frame graph and this gate's read-back covers it; the layout itself
 # is graded by test_gate_gc_the_blob_frame_interior_is_a_static_layout.sh.
 #
-# ⛔ THE SEVEN-FRONTEND WIDENING (2026-09-18, cto, on the ceo's word CEO-845). The gate shipped with THREE
+# ⛔ THE SEVEN-FRONTEND WIDENING (2026-09-18, cto, on the officer's word R-845). The gate shipped with THREE
 # witnesses -- Icon, SNOBOL4, Prolog -- and three witnesses cannot see a divergence in the other four frontends.
 # That is a blindfold, not a scope: the two divergences this gate FOUND were both properties of the DRIVER and the
 # EMITTER, which every frontend passes through, so a fourth one could land in Snocone, Raku, Pascal or Rebus and
-# read green here forever. Under ONE RUNNER (CEO-523) a seat may not reach for a board to cover that gap, so the
+# read green here forever. Under ONE RUNNER (R-523) a seat may not reach for a board to cover that gap, so the
 # gap is covered where it belongs -- in the hermetic gate, with one witness per frontend, all seven read back
 # through the same runtime symbol in both media. Measured at the widening: Raku and Pascal carry TWO graphs each
 # (main plus a called function), and SNOBOL4, Snocone and Rebus carry exactly ONE, because a DEFINE'd SNOBOL4
@@ -56,10 +56,10 @@
 # named "main" in both media and no entry carries the assembler mangling tell ($2F), which is the
 # regression guard for the two divergences above; (4) PLANTED -- SCRIP_GC_MAPTAB_PLANT=1 on the mode-4
 # compile alone must make the two readings DISAGREE: a guard never seen to fire is not known to hold
-# (CEO-554), and if this comes back green the read-back has stopped reading. Arm 4 plants in ALL SEVEN
+# (R-554), and if this comes back green the read-back has stopped reading. Arm 4 plants in ALL SEVEN
 # frontends, not just the first: a fail-once demonstrated in Icon says nothing about whether the Rebus or
 # Pascal read-back discriminates, and an arm that never fired for a frontend has not measured it.
-# ⛔⭐ ARM (4) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
+# ⛔⭐ ARM (4) RETIRED UNDER R-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip): the
 # SCRIP_GC_MAPTAB_PLANT seam left emit.cpp (row emit-the-three-emitter-plants-...). Its recorded reading is its fail-once: a mode-4
 # compile with frame_bytes perturbed by 16 moved the installed table in every one of the seven frontends. FAIL_ONCE=1 now corrupts the
 # mode-4 READING of each witness (its first entry's frame_bytes) and requires arm (2) to red -- the comparison can say no.
@@ -168,7 +168,7 @@ for w in a.icn b.sno c.pl d.sc e.raku f.pas g.reb; do
 done
 [ "$RC" = 0 ] && echo "  present/agree/identity PASS (population graded --$pop -- read back through rt_gc_frame_maps() in both media, identical entry for entry, entry graph named main, no mangling in any name)"
 
-echo "  planted RETIRED under CEO-1680: the SCRIP_GC_MAPTAB_PLANT seam left emit.cpp; its recorded reading is the fail-once (header)"
+echo "  planted RETIRED under R-1680: the SCRIP_GC_MAPTAB_PLANT seam left emit.cpp; its recorded reading is the fail-once (header)"
 
 if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the map table is present and installed in both media and the two readings agree entry for entry (examined 3 arms, the planted arm retired)"
 else echo "GATE FAIL(1) [$G]: the compile-time map table diverges between the media, is empty, or the read-back stopped discriminating (examined 3 arms)"; fi

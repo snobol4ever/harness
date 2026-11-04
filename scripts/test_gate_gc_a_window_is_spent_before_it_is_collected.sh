@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_gc_a_window_is_spent_before_it_is_collected.sh -- THE COLLECTOR SPENDS ITS WINDOW AS SPITBOL SPENDS ITS -i (ceo 2026-09-25,
-# CEO-1264; Lon 2026-09-25 10:06, in-chat to the ceo: "continue getting all demos and benchmarks running faster than SPITBOL").
+# test_gate_gc_a_window_is_spent_before_it_is_collected.sh -- THE COLLECTOR SPENDS ITS WINDOW AS SPITBOL SPENDS ITS -i (2026-09-25,
+# R-1264; Lon 2026-09-25 10:06, in-chat: "continue getting all demos and benchmarks running faster than SPITBOL").
 # SPITBOL's alloc (sbl.min aloc1..aloc4) collects only when an allocation does not fit its dynamic area, and grows the area by -i when
 # a collection leaves less than e_fsp = 15 percent free. SCRIP collected at HALF its free window and grew only when an allocation
 # overran it, so under the demo grid's -d512m -i64m treebank collected once (110 ms) where SPITBOL collected zero times, and a program

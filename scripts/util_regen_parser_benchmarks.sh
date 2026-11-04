@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_regen_parser_benchmarks.sh [--cut-refs] -- THE SEVEN BOOTSTRAP PARSERS AS SNOCONE BENCHMARKS (Lon 2026-09-30, in-chat to the
-# ceo, verbatim: "Add the seven parser_lang.sc programs as DEMOS and benchmarks for Snocone."; the demo half landed in
+# the officer, verbatim: "Add the seven parser_lang.sc programs as DEMOS and benchmarks for Snocone."; the demo half landed in
 # util_regen_parser_demos.sh -- this is the benchmark half, Lon re-asked 2026-10-01: "Ensure the seven parser.sc programs become
 # official DEMOS and BENCHMARKS. They need REF files for a good sample input. They need to be included in the Snocone demos.").
 # For each language L, corpus/benchmarks/snocone/parsers/parser_L.sc is REGENERATED from the already-regenerated demo copy

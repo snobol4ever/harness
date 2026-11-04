@@ -3,8 +3,8 @@
 # test_gate_heap_exhaustion_at_the_cap_is_a_reported_error_not_an_abort.sh -- A LIVE SET THAT OUTGROWS THE HEAP'S HARD CAP ENDS IN A
 # PROPERLY REPORTED OUT-OF-MEMORY RUNTIME ERROR IN THE FRONTEND'S OWN VOICE, WITH A DEFINED EXIT STATUS BELOW 128 AND NO CORE, IN BOTH
 # MODES; THE COLLECTOR'S DIAGNOSTIC CLASSIFICATION STAYS ON STDERR BESIDE IT (cto 2026-09-23, row
-# spine-heap-exhaustion-at-the-hard-cap-is-a-properly-reported-out-of-memory-error-never-an-abort; Lon in-chat to the ceo, verbatim:
-# "(2) a properly reported out of memory if not a failure so fix that if you consider that so."; CEO-1225).
+# spine-heap-exhaustion-at-the-hard-cap-is-a-properly-reported-out-of-memory-error-never-an-abort; Lon in-chat, verbatim:
+# "(2) a properly reported out of memory if not a failure so fix that if you consider that so."; R-1225).
 #
 # BEFORE: rc=134, SIGABRT, a core, after the [ZHP] HARD CAP REACHED banner. THE ORACLES' OWN TEXTS, measured: sbl -bf -d8m on the
 # 20,000-entry table witness prints "ERROR 204 -- memory overflow"; Icon's out-of-memory errors are 306 "inadequate space in string
@@ -19,7 +19,7 @@
 # error -- sbl -bf -d8m prints trapped 204 on the same witness; (6) NEGATIVE: the arm
 # that reads the exit status can red (a planted 134 expectation fails).
 #
-# ⛔ SINCE CEO-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") the default
+# ⛔ SINCE R-1261 (Lon 2026-09-25: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL.") the default
 # cap is SPITBOL's -d128m, which this ~20 MB witness fits, so every exhaustion arm names -d8m -- the cap the oracles were measured at
 # above -- instead of leaning on the default (the old 4 MB default is what the witness used to overflow).
 # Usage: bash ../harness/scripts/test_gate_heap_exhaustion_at_the_cap_is_a_reported_error_not_an_abort.sh    (0 green, 1 red, 2 could not measure)

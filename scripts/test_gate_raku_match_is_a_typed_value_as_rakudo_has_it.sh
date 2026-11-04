@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_match_is_a_typed_value_as_rakudo_has_it.sh -- A MATCH IS A VALUE: ~~ AND m// RETURN IT, $/ HOLDS IT, AND ITS PARTS ARE READ THE WAY RAKUDO READS THEM
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; first-refusal census of the 630 Roast files that still refuse: $/ 41).
+# (row raku-every-suite-to-100-under-nonet-r-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; first-refusal census of the 630 Roast files that still refuse: $/ 41).
 #
 # THE DEFECT: there was no Match value. `my $m = "abcb" ~~ /(b)(c)/; say $m` printed 1; `$/` was refused by the compile guard ("variable '/' is read but never assigned"); $m.from, .to, .orig,
 # $m[0], $m<x>, m:g lists of Match, "$0 and $/" interpolation, .match(/re/) and eq/~ on a Match were all absent. Only the runtime's single g_match fed $0 and $<x> (re_capture, re_named_capture).

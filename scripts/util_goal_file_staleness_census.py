@@ -41,7 +41,7 @@ livepaths={str(p.relative_to(ROOT)) for p in ROOT.rglob('*') if 'ial' not in '' 
 sys.stderr.write(f"live identifiers indexed: {len(live)}\n")
 
 # ---- 2. per GOAL file: which cited code symbols are GONE? ------------------
-EXCL={'GOAL-CEO.md','GOAL-HQ-BEAUTIFY.md','GOAL-HQ-COMPLETE.md','GOAL-HQ-PERFORM.md','GOAL-SCRIP-HQ.md'}
+EXCL={'the archived ruling record','GOAL-HQ-BEAUTIFY.md','GOAL-HQ-COMPLETE.md','GOAL-HQ-PERFORM.md','GOAL-SCRIP-HQ.md'}
 code=re.compile(r'`([A-Za-z_][A-Za-z0-9_]{3,})(?:\(\))?`')      # backticked identifier
 rung=re.compile(r'^\s*(?:RUNG|STEP|R\d+|S\d+)\b', re.M|re.I)
 rows=[]

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_rt_diag_cost.sh -- WHAT THE SHIPPED LIBRARY PAYS FOR ITS DIAGNOSTICS WHILE THEY ARE OFF (ceo CEO-1390, 2026-10-01; the cfo's
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_rt_diag_cost.sh -- WHAT THE SHIPPED LIBRARY PAYS FOR ITS DIAGNOSTICS WHILE THEY ARE OFF (R-1390, 2026-10-01; the cfo's
 # row runtime-the-shipped-library-pays-for-its-diagnostics-while-they-are-off-...). The DONE-WHEN of that row.
 #
 # THE QUESTION. SCRIP_DIAG=0 turns the runtime's diagnostic switches off, but the code RT_DIAG=1 compiles in still runs: the
-# collector's stack-walk census counters (gc_walk_words, gc_walk_interior), gc_nospine_cell, gc_assert_check. Lon's CEO-1262 word,
-# "turn off all diagnostic code for benchmarks", is read by CEO-1390 as: the shipped library carries no diagnostic code that costs
+# collector's stack-walk census counters (gc_walk_words, gc_walk_interior), gc_nospine_cell, gc_assert_check. Lon's R-1262 word,
+# "turn off all diagnostic code for benchmarks", is read by R-1390 as: the shipped library carries no diagnostic code that costs
 # instructions while the diagnostic is off. The bars keep grading the shipped library, which is the point of this arm.
 #
 # THE ARM. treebank x1024 in mode 4 (the sizes the unit declares in fixtures/rt_diag_cost/treebank_x1024.heap and .stack: 131072 KB heap, 8192 KB stack -- the x1024 input overflows treebank's own 4096 KB stack, measured twice at 4096 and 8192), ONE binary run twice: once against

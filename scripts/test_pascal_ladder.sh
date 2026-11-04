@@ -14,7 +14,7 @@
 # keyed on the entry NAME; default 0, and the file need not exist -- every rung 0-9 witness here exits 0).
 # A timeout is a FAIL(rc=124), never a hang.
 # ⭐ REFS ARE ORACLE-CUT, NOT HAND-AUTHORED: every .ref line for a ladder witness is the literal captured
-# stdout of the real `fpc -Miso` oracle (FPC 3.2.2, ISO 7185 mode -- GOAL-CEO CEO-33) on that exact source.
+# stdout of the real `fpc -Miso` oracle (FPC 3.2.2, ISO 7185 mode -- the archived ruling record R-33) on that exact source.
 # rung09_strings uses `packed array[1..N] of char` (ISO 7185's actual string mechanism), never Delphi's
 # `string` type, which -Miso itself rejects -- confirmed directly (`Error: Identifier not found "string"`)
 # before writing the witness, not assumed. This runner does not re-invoke fpc at grading time (same reason

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_library_record_and_dcg_data_terms_answer_as_swipl.sh -- library(record) DEFINES ITS ACCESSORS AS swipl's DOES, A
 # DCG RULE KEEPS AN =/2 TERM THAT IS DATA, AND strip_module/3 AND prolog_load_context(module, M) ANSWER AS swipl (cfo 2026-10-14,
-# row prolog-swi-library-test-record-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# row prolog-swi-library-test-record-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's library/test_record.pl read 0/18 in both modes: library(record) was not vendored. It is now (src/parsers/prolog/prelude/
 # record.pl, byte-identical to swipl 9.0.4's), with two generator tables (../harness/scripts/util_gen_prolog_prelude_libs.py): SOURCE_EDITS

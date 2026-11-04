@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_s4e_next_tiebreak_by_mint_time.sh -- proves next()'s PASS 3 tie-breaks equal-rank FREE rows
 # by MINT TIME (newest first), not QUEUE.tsv file order, AND that rank still dominates the tiebreak
-# (row next-tiebreak-by-mint-time-not-file-order, hq_C finding, ceo mint 2026-09-01T22:59:57Z).
+# (row next-tiebreak-by-mint-time-not-file-order, hq_C finding, mint 2026-09-01T22:59:57Z).
 # Runs entirely against a throwaway sandbox postoffice (S4E_POST override) -- never touches the live one.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,7 @@ fail() { echo "GATE FAIL [s4e_next_tiebreak]: $1"; exit 1; }
 mk_seat() { mkdir -p "$SBX/$1/inbox" "$SBX/$1/archive"; }
 mk_task() { # $1=topic $2=mint-iso-ts (empty for none)
     if [ -n "$2" ]; then
-        printf 'LINKS: minted via `mint` by ceo, %s\n' "$2" > "$SBX/tasks/$1.task.md"
+        printf 'LINKS: minted via `mint` by the officer, %s\n' "$2" > "$SBX/tasks/$1.task.md"
     else
         printf 'no mint line at all\n' > "$SBX/tasks/$1.task.md"
     fi

@@ -1,7 +1,7 @@
 # gc_differential_divergences.tsv -- THE DIVERGENCE REGISTER of the differential GC oracle
 # (coo, 2026-09-21, MODE TENET, row gc-the-differential-oracle-same-program-under-two-gc-configurations-must-agree)
 #
-# ⛔ THIS IS NOT AN XFAIL FILE AND THE GATE ENFORCES THAT (CEO-753: there is no such thing as XFAIL; a witness
+# ⛔ THIS IS NOT AN XFAIL FILE AND THE GATE ENFORCES THAT (R-753: there is no such thing as XFAIL; a witness
 # exposing a defect enters the RED and is rowed on its rung). An entry here does NOT excuse a divergence and
 # does NOT make it pass -- it OBLIGATES one. Every row must name an OWNER seat and a ROW, and
 # test_gate_gc_differential_configs_agree.sh REDS on any row whose owner or row is empty, so a divergence

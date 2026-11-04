@@ -12,7 +12,7 @@
 # table that doubles at half load (SCRIP_AB_HASH=0 keeps the linear scan).
 #
 # ARM 1: 1100 DEFINEs, each called once, print what sbl -bf prints in mode 3 and in mode 4 (compile, link, run).
-# ARM 2 (RETIRED 2026-09-26 with SCRIP_AB_HASH, CEO-1274 (2)): the same program under the linear-scan lookup printed the same in mode 3.
+# ARM 2 (RETIRED 2026-09-26 with SCRIP_AB_HASH, R-1274 (2)): the same program under the linear-scan lookup printed the same in mode 3.
 # FAIL-ONCE: SCRIP_BIN may name another tree's scrip (its out/ is used for mode 4). On the parent of the cure (origin 2c9e07a9d) arm 1
 # reads RED in both modes: m3 rc=134 "cell table full (1024) at 'entry$F512'", m4 compile rc=134 at 'entry$F1024'.
 # rc 0 GREEN · 1 RED (named) · 2 REFUSE (cannot measure).
@@ -43,7 +43,7 @@ if [ "$rc4" = 0 ] && ( cd "$T" && gcc w.s -o w.bin -L"$LIBDIR" -lscrip_rt -lm -l
 else red="$red m4-compile(rc=$rc4 $(head -c 90 "$T/c4.err" | tr '\n' ' '))"; fi
 if [ -z "$red" ]; then echo "  arm 1 PASS: 1100 DEFINEs print '$(cat "$T/w.ref")' like sbl -bf in mode 3 and mode 4 -- the call cells grow past the old 1024-cell table"
 else echo "  arm 1 RED:$red -- a program with more functions than a fixed cell table holds did not compile or run"; RC=1; fi
-echo "  arm 2 RETIRED with SCRIP_AB_HASH (cto 2026-09-26, CEO-1274 (2)): the linear-scan lookup it exercised is deleted; the hashed lookup is the only lookup and arm 1 grades it"
+echo "  arm 2 RETIRED with SCRIP_AB_HASH (cto 2026-09-26, R-1274 (2)): the linear-scan lookup it exercised is deleted; the hashed lookup is the only lookup and arm 1 grades it"
 if [ "$RC" = 0 ]; then echo "GATE PASS(0) [$G]: the function-cell store grows with the program (2 arms)"
 else echo "GATE FAIL(1) [$G]: a program with more functions than the old cell table held fails (2 arms)"; fi
 echo "    tree: SCRIP=$(git -C "$TREE" rev-parse --short HEAD 2>/dev/null)$(git -C "$TREE" diff --quiet 2>/dev/null || echo -DIRTY)  measured $(date -u +%Y-%m-%dT%H:%MZ)"

@@ -23,7 +23,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # Globbing loose files directly would silently lose that family the moment its loose originals are
 # removed (empty-glob false-green -- the same class test_prolog_rung_suite.sh fixed for Prolog).
 # collect_files() also gathers converted families into SUITE_FILES (discriminator: a .ref sibling AND
-# section banners in the source -- since CEO-1222 a loose file's expected output is a .ref too); run_corpus() delegates those to
+# section banners in the source -- since R-1222 a loose file's expected output is a .ref too); run_corpus() delegates those to
 # `corpus_suite_harness.py run` for EVERY mode, unlike the Prolog twin which withholds compile --
 # Icon's m4 is proven live (tests-consolidate-icon ledger, seat01 2026-08-28: verified round-trip
 # before adding the LANG_CONFIGS entry), so there is no untested-grading caveat to withhold it for.
@@ -39,7 +39,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
 . "$HERE/lib_icn_rundir.sh" || { echo "⛔ REFUSES rc=2: cannot load lib_icn_rundir.sh" >&2; exit 2; }
 SCRIP="${SCRIP:-$ROOT/scrip}"
@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ⛔⛔⛔ s272 hq_C (CEO audit correction 2) — A MISSING PREREQUISITE IS A REFUSAL (rc=2), NEVER A GREEN EXIT.
+# ⛔⛔⛔ s272 hq_C (officer audit correction 2) — A MISSING PREREQUISITE IS A REFUSAL (rc=2), NEVER A GREEN EXIT.
 # These two arms printed SKIP and exited 0, so a box with no compiler built, or no corpus cloned, reported
 # SUCCESS to every caller that reads $? — which is every gate, every board, and handoff_status.sh. That is the
 # ABSENT-ORACLE FALSE-GREEN class, and it is the exact twin of the `make test` no-recipe trap: a check that
@@ -70,7 +70,7 @@ if [ ! -x "$SCRIP" ]; then
     exit 2
 fi
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
+# does, the officer -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
 # whose SHA the board stamps on the verdict. NO LOGIC HERE -- util_require_fresh.sh sources gate_require_fresh
 # from lib_gate.sh, the ONE authority (hq_B 4c7253e99), never a second copy.
 "$HERE/util_require_fresh.sh" --gate test_icon_rung_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
@@ -95,10 +95,10 @@ declare -a RP_ARGV=() RP_ENV=() RP_SW=(); RP_TDIR=""
 run_contract() {
     local icn="$1" name rd_rc; name=$(basename "$icn" .icn)
     RP_ARGV=(); RP_ENV=(); RP_TDIR="$WORK/cwd"; mkdir -p "$RP_TDIR"
-    # ⭐ THE DECLARED HEAP AND STACK (CEO-1353): icn_rundir_sizes fills RP_SW with -d<kb>k -s<kb>k for both SCRIP command lines.
+    # ⭐ THE DECLARED HEAP AND STACK (R-1353): icn_rundir_sizes fills RP_SW with -d<kb>k -s<kb>k for both SCRIP command lines.
     RP_SW=(); rd_rc=0; if icn_rundir_sizes "$icn" RP_SW; then :; else rd_rc=$?; fi
     if [ "$rd_rc" -eq 2 ]; then echo "⛔ REFUSE(2) $name: malformed NAME.heap or NAME.stack declaration (the reader said why above)" >&2; exit 2; fi
-    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (CEO-1353)" >&2; fi
+    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (R-1353)" >&2; fi
     icn_rundir_declares "$icn" || return 0
     rd_rc=0; icn_rundir_argv "$icn" RP_ARGV || rd_rc=$?
     if [ "$rd_rc" -eq 2 ]; then echo "⛔ REFUSE(2) $name: malformed argv declaration" >&2; exit 2; fi
@@ -133,7 +133,7 @@ declare -a FILES
 declare -a SUITE_FILES
 # converted-family discriminator (see header note): a .ref sibling AND corpus_suite_harness.py's section banners
 # (`#---- <seq> <name>`) in the source. The sibling alone decided while loose programs carried a .expected; since
-# CEO-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
+# R-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
 is_suite_file() { [ -f "${1%.icn}.ref" ] && grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$1"; }
 collect_files() {
     FILES=()

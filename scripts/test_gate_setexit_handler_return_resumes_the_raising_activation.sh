@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_setexit_handler_return_resumes_the_raising_activation.sh -- row snobol4-a-setexit-handler-runs-at-top-level-so-
-# freturn-from-it-is-error-242 (hq_snobol4 2026-09-23, CEO-1215/1218; the X64T math CRASH class of CEO-1214).
+# freturn-from-it-is-error-242 (hq_snobol4 2026-09-23, R-1215/1218; the X64T math CRASH class of R-1214).
 #
 # MECHANISM, measured with the IPC monitor (spl vs scr: 9 steps agree, step 10 spl emits RETURN probe and scr dies) and gdb:
 # core_runtime_error enters a SETEXIT handler NESTED, through rt_goto_transfer_checked -> rt_chain_enter, and rt_chain_enter
@@ -14,7 +14,7 @@
 # CURE: every activation entry that pushes a wire pair records its base, r12, the guard floor and the gamma wire in
 # rt_stno_stack[level]; rt_kw_return_level_zero, reached from a nested handler at level >= 1 with a record that validates,
 # unwinds g_core_errjmp_stk top-down (each guard runs its own cleanup, test_gate_setexit_unwind_every_errjmp_guard_continues
-# _the_unwind.sh) and jumped through the activation's real wire (rt_unwind_to_activation, deleted by CEO-1468 once SETEXIT's
+# _the_unwind.sh) and jumped through the activation's real wire (rt_unwind_to_activation, deleted by R-1468 once SETEXIT's
 # shape B left no path to it; the handler now runs on the statement's failure path). And the const-fold trial is
 # speculative (g_error = -2): an armed SETEXIT no longer steals it, and a failed trial is not folded, so EVAL('1 / 0')
 # raises its error when the EVAL'd code runs -- the trap used to fire from INSIDE the optimizer, which is what made

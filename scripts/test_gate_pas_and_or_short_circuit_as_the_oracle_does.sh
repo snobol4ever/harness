@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_pas_and_or_short_circuit_as_the_oracle_does.sh -- ISO 7185 6.7.2.1 leaves the evaluation of the second operand of a
-# Boolean and/or implementation-dependent; the one oracle (fpc -Miso) short-circuits, and so does SCRIP (ceo CEO-1274)
+# Boolean and/or implementation-dependent; the one oracle (fpc -Miso) short-circuits, and so does SCRIP (R-1274)
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. The parser lowered a Boolean and/or
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. The parser lowered a Boolean and/or
 # to TT_MUL/TT_ADD of two 0/1 values, so both operands always ran: FPC webtbs_tw37780 ('(v = 10) or ((v = 5) and (next^.v = 5))' with
 # next = nil) stopped with the 6.5.4 nil dereference where fpc prints nothing, and a function operand's side effects ran where fpc skips
 # them. NO BRACKET: the divergence is an event fpc never sends. The cure: a Boolean and/or is TT_CONJ/TT_ALT, and the Pascal lowerer's

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""util_progress_append.py -- THE ONE WRITER OF THE PROGRESS DATABASE (Lon 2026-09-06 12:1x, in-chat to ceo, verbatim:
+"""util_progress_append.py -- THE ONE WRITER OF THE PROGRESS DATABASE (Lon 2026-09-06 12:1x, in-chat, verbatim:
 "So are you going to get your act together and enhance your database to allow for time based queries? Get it fixed.";
-GOAL-CEO CEO-331; the RULE is /home/resources/progress/README.md, CEO-319: every suite run by any session APPENDS its
+the archived ruling record R-331; the RULE is /home/resources/progress/README.md, R-319: every suite run by any session APPENDS its
 per-program rows in the same sitting it rewrites its SCORE.md cell -- a run that leaves the table untouched is a defect
 of that run).
 
@@ -35,7 +35,7 @@ rc 0 = rows written (count printed) or S4E_PROGRESS_OFF · rc 2 = refused (unwri
 import os, sys, csv, io, time, fcntl, subprocess, re, collections
 COLUMNS = ["ts_utc", "scrip", "corpus", "measurer", "class", "suite", "lang", "program", "mode", "outcome", "secs", "note", "fingerprint", "config"]
 # ⛔⭐ THE CONFIGURATION IS A COLUMN, NOT A TOKEN IN THE NOTE, AND THE COMMENT IN context() THAT ARGUED THE OTHER
-# WAY IS RETRACTED IN PLACE BELOW (coo 2026-09-21, ceo rank 0 at CEO-1047/CEO-1050). That comment refused a
+# WAY IS RETRACTED IN PLACE BELOW (coo 2026-09-21 rank 0 at R-1047/R-1050). That comment refused a
 # fourteenth column because "readers all over the fleet split on a fixed column count" -- a reasonable fear that
 # I MEASURED instead of inheriting, over all 32 fleet readers of this table: every positional reader reads `$10`
 # (outcome) or asserts `NF>=10`, so a column APPENDED AT THE END moves nothing any of them reads. The hazard was
@@ -45,7 +45,7 @@ COLUMNS = ["ts_utc", "scrip", "corpus", "measurer", "class", "suite", "lang", "p
 # A column the header does not name is a column no reader can read. See migrate_header() below.
 # ⛔ THE AXIS PREDICATE HAS ONE HOME AND THIS IS IT (util_gc_differential.py sources it rather than keeping the
 # second copy it used to carry): SOURCE THE AUTHORITY, NEVER COPY IT.
-# ⛔⭐ RT_OPT IS AN AXIS BECAUSE LON'S TWO-PASS ORDER MAKES IT ONE (CEO-1061/CEO-1063, 2026-09-21: the new
+# ⛔⭐ RT_OPT IS AN AXIS BECAUSE LON'S TWO-PASS ORDER MAKES IT ONE (R-1061/R-1063, 2026-09-21: the new
 # collector at -O0, then the same collector at -O2, seven languages, README.md the deliverable). Those two passes
 # run the SAME programs on the SAME trees against the SAME corpus, so without this the second pass lands on the
 # first pass's key and the table resolves the pair BY ARRIVAL ORDER -- the exact loss the `config` column was cut
@@ -53,8 +53,8 @@ COLUMNS = ["ts_utc", "scrip", "corpus", "measurer", "class", "suite", "lang", "p
 # the writer still declares nothing on its own, because RT_OPT in a runner's environment says what that shell was
 # going to build, NOT what the loaded out/libscrip_rt.so was actually built with -- and those differ the moment a
 # caller exports the flag without rebuilding. The binary's own identity is the `fingerprint` column; this is the
-# runner's STATEMENT about it, and a statement nobody made must not be invented (CEO-812 applied to the record).
-# ⛔⭐⭐ SCRIP_HEAP_KB IS AN AXIS BECAUSE IT IS THE ARENA KNOB THAT WINS (coo 2026-09-22, the CEO-1146 arena sweep).
+# runner's STATEMENT about it, and a statement nobody made must not be invented (R-812 applied to the record).
+# ⛔⭐⭐ SCRIP_HEAP_KB IS AN AXIS BECAUSE IT IS THE ARENA KNOB THAT WINS (coo 2026-09-22, the R-1146 arena sweep).
 # rt_gcheap_init reads SCRIP_HEAP_MB at gc_heap.c:191 and SCRIP_HEAP_KB at :192, LAST WRITER WINS, so KB is the knob
 # that decides the window -- and it was in NEITHER half of this predicate: it is not in this tuple, and GC_AXIS_PREFIX
 # is "SCRIP_GC", which "SCRIP_HEAP_KB" does not start with.  MEASURED before the line was written:
@@ -71,7 +71,7 @@ CONFIG_UNDECLARED = "undeclared"
 # this prefix; a row without it is a board pass and IS expected to have a published suite row behind it.
 DEVPASS_TOKEN = "dev-pass="
 CLASSES = ("rungs", "package", "benchmark")
-# ⭐ OOM (ceo CEO-1229 (2), 2026-09-23, verbatim: "THE PROGRESS WORD IS OOM: a run that ends in a properly reported out-of-memory at
+# ⭐ OOM (R-1229 (2), 2026-09-23, verbatim: "THE PROGRESS WORD IS OOM: a run that ends in a properly reported out-of-memory at
 # the heap it ran under, recorded with that heap. It is not PASS and it is not FAIL or CRASH"): the runtime's own report since SCRIP
 # dc739c38a, classified by corpus_suite_harness._oom_verdict, the note carrying heap_cap_kb= (the cap the runtime named) and
 # oom_error= (its error number). Not green: a PASS that becomes OOM is a loss to every reader of this table.
@@ -235,7 +235,7 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
     h = hashlib.md5()
     ok = 0
     files = (sb, os.path.join(rd, "libscrip_rt.so"))
-    if engine() != "scrip":  # a port engine's driver and runtime are the files its runner names (CEO-1822)
+    if engine() != "scrip":  # a port engine's driver and runtime are the files its runner names (R-1822)
         files = tuple(engine_binaries())
     for f in files:
         try:
@@ -249,7 +249,7 @@ def _bin_digest(scrip_bin=None, rt_dir=None):
 
 def _tree_default():
     """The checkout a row's tree column names when no graded binary is pinned: S4E_HOME/SCRIP -- or, under a port engine, the checkout of
-    the driver its runner names first (CEO-1822). A port root holds no SCRIP, so every bash package runner's row read "unknown" there
+    the driver its runner names first (R-1822). A port root holds no SCRIP, so every bash package runner's row read "unknown" there
     (measured 2026-10-18: test_snobol4_dotnet_suite.sh under S4E_ENGINE=dotnet, 13 rows), where the harness's own pin names the port commit."""
     if engine() != "scrip":
         b = engine_binaries()
@@ -289,7 +289,7 @@ _PINNED_BIN = {}
 def pin_context(scrip_bin=None, rt_dir=None):
     """Read the tree hashes and the binary digest BEFORE the first program is graded, and make context() serve
     THOSE. ⛔ Without this, _git_short runs at APPEND time -- after a mid-run pull -- so rows name a tree the
-    programs were never graded against (seat10, 3736 rows stamped 3377cf43e, CEO-338). The binary it names is remembered, so the
+    programs were never graded against (seat10, 3736 rows stamped 3377cf43e, R-338). The binary it names is remembered, so the
     append-time check re-reads THAT binary and THAT tree (assert_ground_unmoved)."""
     g = _ground(scrip_bin, rt_dir)
     _PINNED_BIN.clear()
@@ -335,7 +335,7 @@ def normalize_row(r):
         out[f] = _clean(r.get(f, ""), f)
         if not out[f]:
             raise ValueError(f"{f} is empty")
-    # ⛔ A PORT ENGINE'S ROW IS KEYED <suite>@<engine> HERE, BY THE ONE WRITER (CEO-1822): corpus_suite_harness.py keys its own, and a
+    # ⛔ A PORT ENGINE'S ROW IS KEYED <suite>@<engine> HERE, BY THE ONE WRITER (R-1822): corpus_suite_harness.py keys its own, and a
     # bash package runner names its suite bare (testpgms, spitbol_x64); under a port engine that bare name is SCRIP's series, so it is never written
     if engine() != "scrip" and "@" not in out["suite"]:
         out["suite"] += "@" + engine()
@@ -350,7 +350,7 @@ def normalize_row(r):
         raise ValueError(f"secs is not a number: {secs!r} (program {out['program']})")
     out["secs"] = ("%.3f" % secs).rstrip("0").rstrip(".") if secs else "0"
     out["note"] = _clean(r.get("note", ""), "note")
-    # ⛔⭐ THE WRITER GUESSES NOTHING -- CEO-812'S PRINCIPLE APPLIED TO THE RECORD INSTEAD OF THE HEAP.
+    # ⛔⭐ THE WRITER GUESSES NOTHING -- R-812'S PRINCIPLE APPLIED TO THE RECORD INSTEAD OF THE HEAP.
     # Three values and no fourth: what the runner DECLARED; `undeclared` when nobody said and nothing in this
     # process's environment contradicts it; and a REFUSAL in the one case where the writer holds positive
     # evidence that the run was NOT the shipped configuration and is being asked to record it as unknown.
@@ -370,10 +370,10 @@ def normalize_row(r):
                   "(library: config= in the row dict). If the axis in this environment is stale and the run really was "
                   "shipped-configuration, unset it or say so with --config shipped.")
         cfg = CONFIG_UNDECLARED
-    # ⭐ rr=1: A READING OF THE coo's ROUND ROBIN (ceo CEO-1805, Lon 2026-10-15: "Basically the COO should run one test at a time and update the
+    # ⭐ rr=1: A READING OF THE coo's ROUND ROBIN (R-1805, Lon 2026-10-15: "Basically the COO should run one test at a time and update the
     # test-suite database. Round robin, done and done."): under S4E_RR=1 every row carries rr=1 in its config, the token the loop row's DONE-WHEN
     # counts; like partition=, it is the shape of the run and never a configuration of the program (util_progress_flips.py drops both from its key).
-    # and req=<seat>: a test a seat REQUESTED through ../harness/scripts/s4e_test_request.sh (ceo CEO-1806), served by the loop ahead of the round robin
+    # and req=<seat>: a test a seat REQUESTED through ../harness/scripts/s4e_test_request.sh (R-1806), served by the loop ahead of the round robin
     _req = re.sub(r"[^A-Za-z0-9_.-]", "", os.environ.get("S4E_REQ", ""))
     if _req and ("req=" + _req) not in cfg.split(","):
         cfg = canonical_config(cfg + ",req=" + _req)
@@ -383,7 +383,7 @@ def normalize_row(r):
     return out
 
 
-# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17 to hq_dotnet, ceo CEO-1822): S4E_ENGINE names the program a board grades, scrip by
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17 to hq_dotnet, R-1822): S4E_ENGINE names the program a board grades, scrip by
 # default. A PORT engine is run through its own runner script beside this file, and that script is the ONE list of its graded files
 # (--binaries, driver first): the fingerprints, the progress digest and the tree pin read it here, so no second list of an engine's files
 # lives anywhere. corpus_suite_harness.py and lib_one_runner.sh take this map from here.
@@ -420,7 +420,7 @@ def bin_fingerprint():
     tree = os.path.abspath(os.path.join(HERE, "..", "..", "SCRIP"))
     b = os.environ.get("SCRIP") or os.path.join(tree, "scrip")
     r = os.path.join(os.environ.get("RT_DIR") or os.path.join(tree, "out"), "libscrip_rt.so")
-    # ⛔ under a port engine the graded files are the ones its runner names (CEO-1822): without this a port root has no ./scrip, this read
+    # ⛔ under a port engine the graded files are the ones its runner names (R-1822): without this a port root has no ./scrip, this read
     # '' and the moved-binary refusal could never fire on a port board
     files = (b, r)
     if engine() != "scrip":
@@ -448,7 +448,7 @@ def binary_moved_since_start():
 
 
 def _attach_timeout_stamps(rows):
-    """CEO-1335: util_timeout_retry.sh appends one line per retried timeout to $S4E_TIMEOUT_STAMP -- key TAB m3|m4|oracle TAB
+    """R-1335: util_timeout_retry.sh appends one line per retried timeout to $S4E_TIMEOUT_STAMP -- key TAB m3|m4|oracle TAB
     retried=1 load1=<first>/<second> nproc=<n> [timeout-twice]. Each stamp joins the note of the row it names (the key is the
     program, a prefix of it before ':' or '#' -- SWI's rows are <file>:<unit>:<case>, Logtalk's <group>:<name>#<n> -- or a file stem
     equal to the program's, from S4E_TIMEOUT_KEY or the argv; m3 to m3, m4 to m4, an oracle's to every mode), the file is
@@ -482,7 +482,7 @@ def _attach_timeout_stamps(rows):
             print("progress: a timeout retry stamp matched no row (key %s, %s): %s" % (s[0], s[1], s[2]), file=sys.stderr)
 
 
-# ⛔⭐ THE MINIMUM-SECONDS LEDGER (the coo 2026-10-18, Lon in-chat: "The Wall column ... is meant to represent the MINIMUM amount of time to run the test."; CEO-1577's
+# ⛔⭐ THE MINIMUM-SECONDS LEDGER (the coo 2026-10-18, Lon in-chat: "The Wall column ... is meant to represent the MINIMUM amount of time to run the test."; R-1577's
 # idle-box seconds are the final home, this is the bridge that exists before the downtime pass): the CURRENT TABLE keeps one row per key, the LATEST reading, so a
 # load-inflated or timed-out run overwrites the fast one and no history says how fast a test can run. This sidecar, <db>.min, keeps per (class, suite, lang, program,
 # mode) the SMALLEST secs of any PASS reading (secs > 0; 0 means the runner did not know), written under the same flock as the append and only ever lowered.
@@ -643,7 +643,7 @@ def append_rows(rows, db=None):
                 print(f"progress: the minimum-seconds ledger {min_path(path)} was NOT updated ({e}); the rows above are recorded", file=sys.stderr)
             fcntl.flock(lk.fileno(), fcntl.LOCK_UN)
     except (OSError, ProgressUnwritable) as e:
-        msg = f"⛔ PROGRESS DATABASE UNWRITABLE ({path}): {e} -- {len(rows)} row(s) NOT recorded. A run that leaves the table untouched is a defect of that run (progress/README.md, CEO-319); fix the table or the permission, never the caller."
+        msg = f"⛔ PROGRESS DATABASE UNWRITABLE ({path}): {e} -- {len(rows)} row(s) NOT recorded. A run that leaves the table untouched is a defect of that run (progress/README.md, R-319); fix the table or the permission, never the caller."
         print(msg, file=sys.stderr)
         raise ProgressUnwritable(msg)
     return len(rows)
@@ -654,9 +654,9 @@ SCORECARD_SUITE_KEYS = {"gimpel": "gimpel", "csnobol4": "csnobol4", "csnobol4_su
 
 
 def _driven_library(prog):
-    """NAME_driver<ext> -> the library file it drives, as the package ships it (CEO-1269). The nominal NAME<ext> when that file ships;
+    """NAME_driver<ext> -> the library file it drives, as the package ships it (R-1269). The nominal NAME<ext> when that file ships;
     else the one shipped NAME.spt / NAME.inc / NAME.INC, and NAME_lib_driver drives NAME.inc when NAME ships twice -- gimpel is Catspaw's
-    SPITBOL form under lower-case names since 2026-09-27 (Lon: "Use the *.inc names exclusively", CEO-1319, which keys every row by the
+    SPITBOL form under lower-case names since 2026-09-27 (Lon: "Use the *.inc names exclusively", R-1319, which keys every row by the
     library's own file and never by NAME.sno). A program that is not a driver is itself."""
     m = re.match(r"(.*)_driver(\.[A-Za-z0-9]+)$", prog)
     if not m:
@@ -687,7 +687,7 @@ def rows_from_results_tsv(path, suite, lang):
         f = raw.split("\t")
         if len(f) < 4:
             continue
-        # ⛔⭐ A DRIVER'S ROW IS ITS LIBRARY'S ROW (ceo CEO-1269; coo 2026-09-25): NAME_driver<ext> is the grading vehicle of the
+        # ⛔⭐ A DRIVER'S ROW IS ITS LIBRARY'S ROW (R-1269; coo 2026-09-25): NAME_driver<ext> is the grading vehicle of the
         # library NAME<ext>, which is the program, so the verdict is recorded under the library's name. gimpel's 144 drivers were
         # recorded as packages/snobol4/gimpel/NAME_driver.sno, and the 148 libraries they grade appeared nowhere in this table.
         prog = _driven_library(f[1])
@@ -697,7 +697,7 @@ def rows_from_results_tsv(path, suite, lang):
             if not row_suite:
                 skipped[f[0]] += 1
                 continue
-        # a port engine has no mode 4 (CEO-1822): under S4E_ENGINE=<port> the scorecard writes "-" there, and its m3 column is the reading
+        # a port engine has no mode 4 (R-1822): under S4E_ENGINE=<port> the scorecard writes "-" there, and its m3 column is the reading
         for mode, oi, ti in ((("m3", 2, 4),) if engine() != "scrip" else (("m3", 2, 4), ("m4", 3, 5))):
             o = f[oi].strip().upper()
             if o not in OUTCOMES:

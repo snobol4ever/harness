@@ -2,7 +2,7 @@
 # test_gate_sno_an_error_inside_eval_publishes_its_own_text.sh -- an error raised INSIDE an EVAL'd expression
 # publishes the same &ERRTEXT and &ERRTYPE it publishes outside one.
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, the x64 math family). rt_real_overflow raised the SNOBOL4 error only when
+# ⛔ THE DEFECT (2026-09-14, the x64 math family). rt_real_overflow raised the SNOBOL4 error only when
 # `g_error == 0`, and eval_chain_run_guarded sets `g_error = -1` for the duration of an EVAL -- so inside an
 # EVAL the overflow took the OTHER arm, core_icn_error(204), and returned failure with nothing published.
 # Measured on one witness: `1.0e300 * 1.0e300` direct gives errtext="multiplication caused real overflow"

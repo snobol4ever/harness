@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_design_unicon_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: unicon (the cto, 2026-10-31, CEO-2072; .github/ARCH-UNICON.md). The plan is
+# test_design_unicon_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: unicon (the cto, 2026-10-31, R-2072; .github/ARCH-UNICON.md). The plan is
 # corpus/tests/icon/unicon/STEPS.tsv; the witnesses are the uni_*.icn beside it, each with a .ref cut from unicon 13.3 (/home/resources/unicon/bin/unicon,
 # the Unicon oracle through unicon_bin()), except the plain-Icon fallback witness whose ref Arizona icont/iconx cut because unicon refuses that program;
 # uni_pkg_shapes.icn is the package file the import witness loads from the folder, not a witness of its own.
@@ -8,11 +8,11 @@
 #   --step N       grade step N: every witness of the step in mode 3 (./scrip w.icn) and mode 4 (--compile, gcc, run), from the witness folder,
 #                  byte-equal to its .ref with rc 0; probe 'witnesses' is green when every witness passes both modes; probe 'markers' adds
 #                  --dump-ast rc 0 on every class witness of the folder (the eight words lex and the class, package and import headers parse)
-#   --with-smoke   on the finish step (probe 'finish') also run test_smoke_icon.sh, the lander smoke of CEO-1928
+#   --with-smoke   on the finish step (probe 'finish') also run test_smoke_icon.sh, the lander smoke of R-1928
 #   --out DIR      where the .s, binaries and logs go (default /tmp/s4e-design-unicon: never under the root, Lon 2026-10-29/31)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<reading> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure (no ./scrip,
-# no witness, no ref). It grades no corpus population: a witness folder is not a suite (CEO-1342); UniTests is the package suite hq_icon's row grades.
+# no witness, no ref). It grades no corpus population: a witness folder is not a suite (R-1342); UniTests is the package suite hq_icon's row grades.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -74,7 +74,7 @@ if [ "$probe" = markers ]; then
     pv="$pv marker-parses=$pa/$na"; [ "$pa" = "$na" ] || pr=RED
 fi
 if [ "$probe" = finish ] && [ "$smoke" = 1 ]; then
-    if S4E_ONE_RUNNER_OVERRIDE="CEO-1928 lander smoke, design unicon step $step" bash "$HERE/test_smoke_icon.sh" > "$OUT/step$step/smoke_icon.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED"; pr=RED; fi
+    if S4E_ONE_RUNNER_OVERRIDE="R-1928 lander smoke, design unicon step $step" bash "$HERE/test_smoke_icon.sh" > "$OUT/step$step/smoke_icon.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED"; pr=RED; fi
 fi
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$pv -> $pr${reds:+ (reds:$reds)}"
 [ "$pr" = GREEN ]

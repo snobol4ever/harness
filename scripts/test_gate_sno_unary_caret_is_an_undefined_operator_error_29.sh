@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_unary_caret_is_an_undefined_operator_error_29.sh
 #
-# THE DEFECT (the cto 2026-10-02, ceo CEO-1419 row snobol4-unary-caret-is-an-undefined-operator-error-29-where-scrip-passes-the-
+# THE DEFECT (the cto 2026-10-02, R-1419 row snobol4-unary-caret-is-an-undefined-operator-error-29-where-scrip-passes-the-
 # operand-or-exits, found by Lon's infinite_snobol4: about 34,000 differences): unary ^ is an undefined operator in SPITBOL,
 # error 29 -- and it cannot be OPSYN'd (sbl: error 156). SCRIP ran it as a binary power with a null right operand: ^1 was 1,
 # REM ^1 a PATTERN, 1.1 ^&INPUT the string 1.11, and 0 ^0 raised error 204, which the program died of.

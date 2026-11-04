@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_a_fact_table_that_gains_a_rule_compiles_no_slot_at_the_flip.sh -- THE FLIP COMPILES NO SLOT (ARCH-PROLOG-DATABASE section 5 narrowed to the flip and section 13 item 3; hq_runtime, row prolog-a-fact-table-that-gains-a-rule-compiles-no-slot-at-the-flip-only-the-slots-calls-reach, CEO-2018):
+# test_gate_pl_a_fact_table_that_gains_a_rule_compiles_no_slot_at_the_flip.sh -- THE FLIP COMPILES NO SLOT (ARCH-PROLOG-DATABASE section 5 narrowed to the flip and section 13 item 3; hq_runtime, row prolog-a-fact-table-that-gains-a-rule-compiles-no-slot-at-the-flip-only-the-slots-calls-reach, R-2018):
 # a predicate of ground facts that gains its first rule or non-ground fact leaves the data path and, since f03f48c89, compiled EVERY live slot at that assert (a 100,000-fact table paid
 # 100,000 compiles). Now it compiles the new clause and the one slot the entry names, and any other slot when a call's walk first reaches it (the chain-omega calls rt_pl_db_slot_ensure
 # on a slot with no fragment and walks on).

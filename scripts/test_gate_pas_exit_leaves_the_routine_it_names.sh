@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_exit_leaves_the_routine_it_names.sh -- exit returns from the routine it is in, or from the enclosing routine it names (FPC, MacPas)
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. The Pascal lowerer had no exit: a
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. The Pascal lowerer had no exit: a
 # call named exit fell through to the SNOBOL4/Icon builtin exit and ENDED THE PROGRAM wherever it stood. Bracket (monitor_run.sh --oracle,
 # FPC test_tmacnonlocalexit1): last agree step 7 (LABEL stno=11, the Exit(Global) inside Local), first diverge step 8 (fpx RETURN global,
 # scr END). The cure (lower_pascal.c): a routine that some exit leaves gets an exit node, wired just before the parser's __trace_return

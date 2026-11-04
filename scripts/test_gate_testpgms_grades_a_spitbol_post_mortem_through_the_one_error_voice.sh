@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (CEO-547)"
-# test_gate_testpgms_grades_a_spitbol_post_mortem_through_the_one_error_voice.sh -- ceo CEO-1316 (2026-09-27), on Lon's word "I want to
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (R-547)"
+# test_gate_testpgms_grades_a_spitbol_post_mortem_through_the_one_error_voice.sh -- R-1316 (2026-09-27), on Lon's word "I want to
 # see TPgm go to 8/8. I'm tired of seeing that 1/8.": a spitbol_testpgms program whose sbl answer is a fatal post-mortem at rc 0 is GRADED,
 # never marked OUTSIDE. util_spitbol_post_mortem.py removes SPITBOL's post-mortem block ONLY when it has exactly the measured shape and
 # refuses rc 2 on any other; test_snobol4_spitbol_testpgms_suite.sh compares the rest of stdout byte for byte and the banner's line and
-# statement with SCRIP's stderr through util_render_error_voice.py spitbol; the accounting is never graded (CEO-420 (b)).
+# statement with SCRIP's stderr through util_render_error_voice.py spitbol; the accounting is never graded (R-420 (b)).
 #
 # THE FIXTURE: OUTPUT = 'before', then INPUT(.INPUT,,72), which sbl -bf stops with ERROR 116 at statement 2 -- the shape of testpgms
 # test4/test5 -- so the arms see a line printed before the raise survive the strip.
@@ -59,7 +59,7 @@ python3 "$H" "$T/h5" "$T/h5.body" >/dev/null 2>&1; r=$?; { [ "$r" = 0 ] && [ "$(
 python3 "$H" "$T/fx/testpm.spt" /dev/null >/dev/null 2>&1; r=$?; [ "$r" = 3 ] && arm H6 ok || arm H6 red "rc=$r, want 3"
 
 board() { printf '%s\n' "$1" | grep -E '^SPITBOL_TESTPGMS_BOARD '; }
-# a board field is read by its NAME, never by its neighbours (util_board_field_matcher_census.py, CEO-839): fld <board> <name>
+# a board field is read by its NAME, never by its neighbours (util_board_field_matcher_census.py, R-839): fld <board> <name>
 fld() { printf '%s\n' "$1" | tr ' ' '\n' | awk -F= -v k="$2" '$1==k {print $2; exit}'; }
 want() { local b="$1"; shift; local kv; for kv in "$@"; do [ "$(fld "$b" "${kv%%=*}")" = "${kv#*=}" ] || return 1; done; }
 out="$(cd "$ROOT" && SPITBOL_TESTPGMS_SUITE="$T/fx" timeout -k 5 300 bash "$RUNNER" 2>&1)"; rc=$?

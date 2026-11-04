@@ -3,7 +3,7 @@
 # static or dynamic) reads, stores, compares and measures its elements as strings, as fpc does; and a string compared with a char
 # compares as strings.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): no master entry
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): no master entry
 # declares an array of string, and every use was wrong. The declaration registers the element type as the variable's scalar type
 # (pas_scalarvartype), so pas_var_string_kind answered yes for the ARRAY: s[2] lowered as a char of a string (writeln printed nothing),
 # s[0] as a shortstring's length byte (the first element of a 0-based typed constant was stored into a __pas_chrlit pseudo-target and

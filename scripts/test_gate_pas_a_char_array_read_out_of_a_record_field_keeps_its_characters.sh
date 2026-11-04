@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_char_array_read_out_of_a_record_field_keeps_its_characters.sh -- a packed array of char read out of a record
 # field and given to a char-array variable, a char-array value formal, another record's field or a row of an array of such arrays
-# keeps its characters, as fpc -Miso does (row pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# keeps its characters, as fpc -Miso does (row pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. Since SCRIP 53011510a a char-array record field holds its characters densely and
 # __pas_ca_unpack is the identity, but a char-array VARIABLE holds the ordinal-per-slot encoding: gn := p^.name stored the dense

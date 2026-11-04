@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_bench_snobol4_timed.sh -- run the TIME-BASED SNOBOL4 benchmark family and
 # report THROUGHPUT (iterations per second) for sbl / scrip m3 / scrip m4.
 #
@@ -44,8 +44,8 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/snobol4}"  # BM-ONE (s153): timed family PROMOTED -- one copy, legacy retired, harness.inc is the driver
 T="${TIMEOUT:-60}"; REPS="${REPS:-1}"; NOHUGE="${NOHUGE:-1}"
-# ⛔ THE TWIN IS bench_wrap_snobol4.py's (ceo CEO-1984, Lon 2026-10-25: "Fix the S4 triangulation script since it is broken, duh!"): the kernels are
-# PRISTINE since the kernel convention (CEO-1221/1267) and carry no `*BENCH kernel=... check=...` line, so bench_wrap.sh refused all 23 and this
+# ⛔ THE TWIN IS bench_wrap_snobol4.py's (R-1984, Lon 2026-10-25: "Fix the S4 triangulation script since it is broken, duh!"): the kernels are
+# PRISTINE since the kernel convention (R-1221/1267) and carry no `*BENCH kernel=... check=...` line, so bench_wrap.sh refused all 23 and this
 # angle measured nothing. The one generator test_snobol4_bench_suite.sh uses writes the fixed-time twin (--mode time --bud-ms BUD_MS), whose
 # stdout is the kernel's own output (the .ref) and whose TERMINAL line `BENCH mode=time ... iters=N ... mismatched=M value=V` carries the count
 # and the check. BENCH_BUD_MS is the suite runner's own knob, 500 ms by default.
@@ -60,7 +60,7 @@ BUD_MS="${BENCH_BUD_MS:-500}"
 # allocation and the regeneration count is COUNTED AND PRINTED per row: gc>0 marks the row untrusted
 # rather than silently averaging a stall into it.  The oracle needs no equivalent (measured: sbl is
 # insensitive to -d1024m on both allocating rows), so this equalises the condition, it does not favour.
-# ⛔ SUPERSEDED 2026-09-28 (Lon, ceo CEO-1353, RULES.md hard-cap clause 8 (g)(4)): the 1 GB SCRIP_HEAP_MB window above is GONE -- a runner
+# ⛔ SUPERSEDED 2026-09-28 (Lon, R-1353, RULES.md hard-cap clause 8 (g)(4)): the 1 GB SCRIP_HEAP_MB window above is GONE -- a runner
 # types no size of its own and never sets the collector's WINDOW. Each unit runs at the heap and stack declared beside it (<stem>.heap,
 # <stem>.stack, read by lib_declared_arena.sh), in m3, in the m4 binary and on sbl alike; a collection inside the window is COUNTED
 # (the gc column), never engineered away. An undeclared unit is named SIZE-UNDECLARED, not run at a default it did not ask for.
@@ -69,7 +69,7 @@ BUD_MS="${BENCH_BUD_MS:-500}"
 # throughput knob.  Larger values are refused by this container ("Stack memory unavailable").
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200). A private fallback would time a DIFFERENT LANGUAGE (s189: -bf is the only correct arm). Fix the checkout; do not work around this." >&2; exit 3; }
 SBL="${SBL:-$(sbl_clean_bin)}"   # BENCHMARK oracle (s255): x64/bin/sbl carries a monitor-IPC bridge that costs ~2.2-3.5x instructions -- timing must never use it
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (CEO-1353)"; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)"; exit 2; }
 FLOORTSV="${FLOORTSV:-$B/NOISE-FLOOR.tsv}"
 ENGINES="${ENGINES:-sbl m3 m4}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
@@ -135,7 +135,7 @@ best() {
 }
 echo "TIME-BASED SNOBOL4 BENCHMARKS -- fixed time budget, iterations counted"
 echo "engines: $ENGINES   reps: $REPS   corpus: $B"
-echo "measurement condition: SCRIP_NOHUGE=$NOHUGE  heap and stack: each unit's declared .heap/.stack, the same switches to m3, m4 and sbl (CEO-1353)"
+echo "measurement condition: SCRIP_NOHUGE=$NOHUGE  heap and stack: each unit's declared .heap/.stack, the same switches to m3, m4 and sbl (R-1353)"
 if [ -f "$FLOORTSV" ]; then echo "noise floor: $FLOORTSV (per-row; min-det = 3*cv; cpu = external authority, elap = external alongside)"
 else echo "noise floor: NOT BAKED -- run ../harness/scripts/bake_noise_floor_snobol4_timed.sh"; fi
 echo
@@ -223,14 +223,14 @@ fi
 [ -n "$XPASSED" ] && echo "⛔ XPASS:$XPASSED -- passes WITH a sibling .xfail present. Re-measure, then RETIRE the marker."
 if [ -n "$UNGRADED" ]; then
   echo "⛔ UNGRADED (in $B, not harness-driven, absent from the table above):$UNGRADED"
-  echo "   Every benchmark here is wrapped by ../harness/scripts/bench_wrap_snobol4.py (CEO-1984); a kernel it refuses is named here and"
+  echo "   Every benchmark here is wrapped by ../harness/scripts/bench_wrap_snobol4.py (R-1984); a kernel it refuses is named here and"
   echo "   can build its timed twin -- convert it or delete it (BM-2, s265 shape). This is a FAILURE."
 else
   echo "ungraded: none -- every .sno in $B is a standalone program with a *BENCH marker and was wrapped and graded (BM-2, s265)."
 fi
 if [ "$tot_gc" -gt 0 ]; then
   echo "⛔ $tot_gc row(s) COLLECTED inside the measurement window -- those rates are stall figures, not"
-  echo "   throughput.  The heap is the unit's declared need (CEO-1353), never a window typed here: a gc>0 row is quoted as untrusted."
+  echo "   throughput.  The heap is the unit's declared need (R-1353), never a window typed here: a gc>0 row is quoted as untrusted."
 else
   echo "gc: 0 rows collected inside the window at the declared heaps -- every rate above is stall-free."
 fi

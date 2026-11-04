@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (CEO-547)"
-# test_gate_sno_a_misplaced_continuation_line_is_error_214_and_testpgms_grades_a_compile_refusal.sh -- ceo CEO-1323 (2026-09-27, on
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on a scratch fixture, not a board (R-547)"
+# test_gate_sno_a_misplaced_continuation_line_is_error_214_and_testpgms_grades_a_compile_refusal.sh -- R-1323 (2026-09-27, on
 # Lon's "I want to see TPgm go to 8/8. I'm tired of seeing that 1/8."), both halves:
 #  (a) SCRIP REFUSES WHAT THE ONE ORACLE REFUSES: a continuation line ('+' or '.' in column 1) where no statement is open to continue
 #      -- after a ';'-terminated statement, after a comment line, at the start of the file -- is ERROR 214 "bad label or misplaced
@@ -15,7 +15,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the testpgms runner invoked on
 #      to INITIAL, anything else is pushed back unchanged); a blank line enters AFTER_BLANK (today's behaviour kept: sbl's 221 class);
 #      BODY_START and GT take a continuation as whitespace (the statement is open); <INITIAL>[+.] raises 214 through
 #      core_error_voice_at, the one voice's single formatter, factored out of core_error_voice.
-#  (b) THE TESTPGMS RUNNER GRADES A COMPILE REFUSAL the way CEO-1316 grades a post-mortem: util_spitbol_compile_refusal.py reads sbl's
+#  (b) THE TESTPGMS RUNNER GRADES A COMPILE REFUSAL the way R-1316 grades a post-mortem: util_spitbol_compile_refusal.py reads sbl's
 #      diagnostics as (line, code) pairs; SCRIP's stderr rendered through util_render_error_voice.py spitbol must read the same set,
 #      SCRIP exiting nonzero with nothing on stdout (m3) and no assembly (m4). The rc alone never grades (the cfo's condition).
 #
@@ -97,7 +97,7 @@ python3 "$H" oracle "$T/L/c.sbl" 0 >/dev/null 2>&1; r=$?; [ "$r" = 2 ] && arm H3
 python3 "$H" oracle "$T/L/c.sbl" 124 >/dev/null 2>&1; r=$?; [ "$r" = 3 ] && arm H5 ok || arm H5 red "rc=$r, want 3 (a timeout is not a refusal)"
 
 board() { printf '%s\n' "$1" | grep -E '^SPITBOL_TESTPGMS_BOARD '; }
-# a board field is read by its NAME, never by its neighbours (util_board_field_matcher_census.py, CEO-839): fld <board> <name>
+# a board field is read by its NAME, never by its neighbours (util_board_field_matcher_census.py, R-839): fld <board> <name>
 fld() { printf '%s\n' "$1" | tr ' ' '\n' | awk -F= -v k="$2" '$1==k {print $2; exit}'; }
 want() { local b="$1"; shift; local kv; for kv in "$@"; do [ "$(fld "$b" "${kv%%=*}")" = "${kv#*=}" ] || return 1; done; }
 fixture() { rm -rf "$T/fx"; mkdir -p "$T/fx"; cp "$T/L/$1.sno" "$T/fx/testcr.spt"; : > "$T/fx/testpgms.in"; printf 'entry,heap_kb,stack_kb,compile_args,run_args\ntestcr,131072,4096,,\n' > "$T/fx/ALL.csv"; }

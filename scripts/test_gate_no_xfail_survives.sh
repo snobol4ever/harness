@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_no_xfail_survives.sh — THERE IS NO SUCH THING AS XFAIL (Lon 2026-09-03 21:30, in-chat to ceo, verbatim:
+# test_gate_no_xfail_survives.sh — THERE IS NO SUCH THING AS XFAIL (Lon 2026-09-03 21:30, in-chat, verbatim:
 # "Also keep in mind there is no such thing now as XFAIL. We are shooting for 100%. So if an XFAIL is a faulty test
 # than lets fix all those tests."). An xfail counts as FAIL for the score. This is THE ONE instrument for all seven
 # languages -- one gate, not seven copies -- and it is RED while any suite still carries one.
@@ -10,7 +10,7 @@
 # ⭐ That is the whole reason this is one script rather than a grep: a single-source census reads pascal/rebus 0
 # correctly and icon wrongly, and both look equally like an answer.
 #
-# ⛔⭐⭐ TWO DEFECTS CURED 2026-09-08 (hq_T, on the ceo's measurement; it was MY gate and MY error both times).
+# ⛔⭐⭐ TWO DEFECTS CURED 2026-09-08 (hq_T, on the officer's measurement; it was MY gate and MY error both times).
 # (1) IT SUMMED THE THREE SPELLINGS INSTEAD OF UNIONING THEM, so one xfail was counted up to three times. MEASURED:
 #     snobol4 read csv=27 + allxfail=54 + files=1 = 82 -- but ALL.xfail's 54 non-blank lines are 27 BANNERS AND 27
 #     REASON LINES, one pair per entry, and those 27 are THE SAME 27 the csv column marks (overlap 27 of 27,
@@ -24,7 +24,7 @@
 #     suite runner that prints FAIL=30 and returns success: a reader believes the words, a script believes the code,
 #     and they are looking at different gates. REPORTED-not-blocking is a legitimate ramp -- what is not legitimate
 #     is CLAIMING RED while returning success. It now says REPORTED and names why, and says RED only when it exits 1.
-# ⛔ THE DEFAULT STAYS NON-BLOCKING, AND THAT IS NOT MINE TO CHANGE (ceo 2026-09-08, explicit): putting ~223 reds
+# ⛔ THE DEFAULT STAYS NON-BLOCKING, AND THAT IS NOT MINE TO CHANGE (2026-09-08, explicit): putting ~223 reds
 #     into twelve seats' `make test` 33 hours before the announcement is LON'S call, not a script author's. Flip
 #     with XFAIL_GATE_BLOCKING=1. The ramp exists so the gate cannot block the very landings that reduce the count.
 set -u
@@ -85,7 +85,7 @@ for p in d.rglob("*.xfail"):
         continue
     fx_names.add(p.stem)
 union = csv_names | ax_names | fx_names
-# overlap is REPORTED PER LANGUAGE and never assumed from another language's (ceo 2026-09-08, and the same clause
+# overlap is REPORTED PER LANGUAGE and never assumed from another language's (2026-09-08, and the same clause
 # hq_P earned by retracting a fleet number generalised from one suite).
 pair = len(csv_names & ax_names)
 print("%d %d %d %d %d" % (len(csv_names), len(ax_names), len(fx_names), len(union), pair))
@@ -116,6 +116,6 @@ fi
 # ⛔ SAYS REPORTED BECAUSE IT RETURNS 0. Claiming RED while exiting success was defect (2) -- the verdict a human
 # reads and the verdict a script reads must be the same verdict.
 echo "⚠ GATE REPORTED(0) [$GATE_NAME]: $GRAND distinct xfail(s) survive, and this gate is deliberately NOT blocking"
-echo "   (ceo 2026-09-08: whether ~$GRAND reds enter twelve seats' make test before the announcement is Lon's call)."
+echo "   (2026-09-08: whether ~$GRAND reds enter twelve seats' make test before the announcement is Lon's call)."
 echo "   Set XFAIL_GATE_BLOCKING=1 to make it exit 1. It is REPORTING a real red, not passing."
 exit 0

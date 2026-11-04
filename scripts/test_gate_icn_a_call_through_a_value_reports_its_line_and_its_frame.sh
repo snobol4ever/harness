@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_call_through_a_value_reports_its_line_and_its_frame.sh -- A CALL THROUGH A VALUE THAT IS NOT INVOCABLE RAISES 106 AT
-# THE LINE ICONX NAMES, AND ITS TRACEBACK ENDS WITH THE ATTEMPTED CALL, IN BOTH MODES (hq_icon 2026-09-27, crawl work under CEO-1270:
+# THE LINE ICONX NAMES, AND ITS TRACEBACK ENDS WITH THE ATTEMPTED CALL, IN BOTH MODES (hq_icon 2026-09-27, crawl work under R-1270:
 # IPL progs/strpsgml, whose every run ends in error 106 from a local that shadows a linked procedure).
 #
 # Two defects, one report. (1) THE LINE: icont stamps a location on every operation just before it runs it (tcode.c setloc), and iconx

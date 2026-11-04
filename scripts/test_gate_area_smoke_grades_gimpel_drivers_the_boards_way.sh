@@ -2,11 +2,11 @@
 # test_gate_area_smoke_grades_gimpel_drivers_the_boards_way.sh -- THE AREA SMOKE GRADES A GIMPEL DRIVER THE WAY THE GIMPEL BOARD DOES (the
 # coo 2026-10-03, on hq_snobol4's report area-smoke-gimpel-selects-79-runs-0). MEASURED CAUSE: test_area_smoke.sh for SCRIP 9411ee7d2
 # read packages/snobol4/gimpel selected=79 of 145, run=0, and exited 0, with AREA_SMOKE_TABLE_SUITE_DISAGREEMENT: the package's ALL.sno
-# container still holds the 120 entries cut before CEO-1269, while ALL.csv names the 145 drivers the board grades, so every landing whose
+# container still holds the 120 entries cut before R-1269, while ALL.csv names the 145 drivers the board grades, so every landing whose
 # map reached lang:snobol4 smoked zero Gimpel programs. THE CURE: the smoke delegates the gimpel table to test_snobol4_gimpel_suite.sh's
 # smoke mode (S4E_AREA_SMOKE_ENTRIES), which grades the named drivers through scorecard_snobol4.sh exactly as the board does and writes no
 # progress row and no score row; the one-runner guard admits that mode; and a smoke that selects entries and grades none now REFUSES.
-# WHAT THIS GATE HOLDS, over the shared corpus read-only (a smoke is not a board, CEO-1342), four driver witnesses, modes m3 m4:
+# WHAT THIS GATE HOLDS, over the shared corpus read-only (a smoke is not a board, R-1342), four driver witnesses, modes m3 m4:
 # (1) the smoke says it delegated, and every witness reads m3=PASS m4=PASS;
 # (2) the smoke wrote no score row: SUITES.tsv and SCORE.md byte-identical before and after;
 # (3) FAIL-ONCE, the pre-cure smoke (the harness with SMOKE_DELEGATES emptied, grading the container) names the table/suite disagreement
@@ -45,7 +45,7 @@ rm -f "$T/pre/harness/scripts/corpus_suite_harness.py"; sed 's/^SMOKE_DELEGATES 
 if cmp -s "$H" "$T/pre/harness/scripts/corpus_suite_harness.py"; then arm "fail-once: the delegation is plantable" "no SMOKE_DELEGATES line" "a table emptied"
 else
     # ⛔ THE STALE CONTAINER IS PLANTED, NOT ASSUMED (the coo 2026-10-09): this arm read the real package's container, which held the
-    # 120 entries cut before CEO-1269 -- until corpus 0b8fac0c4 (10-03 17:44) re-cut Gimpel's container to its drivers, after which the
+    # 120 entries cut before R-1269 -- until corpus 0b8fac0c4 (10-03 17:44) re-cut Gimpel's container to its drivers, after which the
     # pre-cure smoke graded fine, exited 0, and this arm read red ('0 0 0') for six days with nothing wrong. A copy of the package whose
     # container holds one entry the table does not name is the disagreement this arm exists to see, on any corpus.
     P="$T/prehome"; mkdir -p "$P/corpus/packages/snobol4"; cp -r "$CORPUS/packages/snobol4/gimpel" "$P/corpus/packages/snobol4/"; mkdir -p "$P/.github"; tar -C "$GH" --exclude=.git -cf - . | tar -C "$P/.github" -xf -

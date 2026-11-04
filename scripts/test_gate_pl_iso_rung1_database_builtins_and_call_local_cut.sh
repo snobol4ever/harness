@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung1_database_builtins_and_call_local_cut.sh -- PROLOG ISO LADDER, RUNG 1 (cto, CEO-617, 2026-09-12).
+# test_gate_pl_iso_rung1_database_builtins_and_call_local_cut.sh -- PROLOG ISO LADDER, RUNG 1 (cto, R-617, 2026-09-12).
 # THE RUNG: the database builtins raise the ISO error terms for literal arguments (type_error(callable, T) for a
 # number in head or body, permission_error(modify, static_procedure, PI) for a control construct or builtin head,
 # permission_error(access, private_procedure, PI) for clause/2 on one, type_error(predicate_indicator, S) and
@@ -25,8 +25,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 MODES="${PL_RUNG_MODES:-m3,m4}"
 red=0; total=0
-# ⭐ THE FLOOR IS THE FAMILY'S POPULATION, READ FROM THE BOARD, NEVER A LITERAL (ceo CEO-1305, 2026-09-27): the literal floors
-# stood above populations the CEO-1266 crawl shrank at 97ade7cf7 (coinduction declared unsupported, engine guards probed), so
+# ⭐ THE FLOOR IS THE FAMILY'S POPULATION, READ FROM THE BOARD, NEVER A LITERAL (R-1305, 2026-09-27): the literal floors
+# stood above populations the R-1266 crawl shrank at 97ade7cf7 (coinduction declared unsupported, engine guards probed), so
 # functor_3 read 19 of 19 under a floor of 21. A case the grader names GUARDED OUT has already left the population; a case it
 # names OUTSIDE, UNGRADABLE or DEFERRED leaves the floor here, per mode, from its identity line. Every other case must PASS:
 # the gate still reds on a lost pass, and a newly admitted case enters the floor the run it enters the population.

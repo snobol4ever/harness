@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_char_code_literal_is_a_char.sh -- #n and #$h are character literals of ordinal n, #0 included (FPC)
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. pascal.l lexed #n into a one-byte C
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. pascal.l lexed #n into a one-byte C
 # string returned as STRINGCONST, and every grammar site decides "char, not string" by strlen == 1, so #0 -- a NUL, strlen 0 -- became
 # the empty string: c := #0 was refused as a string assigned to a char (6.4.6), and x <> #0 compared a char with ''. FPC
 # test_tparray10 halted at its unone[3] <> #0 check with every element right (0 0 65 66 67 68 0 0 0); with #0 spelled chr(0) it matched

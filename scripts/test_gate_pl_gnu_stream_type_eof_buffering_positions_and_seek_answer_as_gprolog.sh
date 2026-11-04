@@ -11,7 +11,7 @@
 # setter re-reading from the start as gprolog does and failing past a line's end; seek/4 takes gprolog's order (Whence, Offset) on a binary stream and
 # swipl's (Offset, Method) in the SWI dialect or for a call shaped that way. at_end_of_stream/0,1 no longer leaves the end-of-file flag its probe set,
 # so stream_property end_of_stream reads at, not past (both oracles). Lines where swipl and gprolog differ on a predicate both define (line_count's
-# base, character_count's type check, stream_property's alias argument, eof_action(reset) at the end) are not in this witness: CEO-1536 takes SWI.
+# base, character_count's type check, stream_property's alias argument, eof_action(reset) at the end) are not in this witness: R-1536 takes SWI.
 #
 # THE ARM: one program (no SWI marker), 52 lines, the reference cut from gprolog 1.6.0 through gprolog_output_filter (2026-10-15), mode 3 and mode 4.
 # FAIL-ONCE, measured on the parent (SCRIP c4b036bd9 rebuilt): 52 of 52 lines differ in both modes.

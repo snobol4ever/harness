@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# util_fleet_monitor.py (ceo, 2026-08-28) — the per-turn FLEET monitor's computed half (Lon: "at each turn
+# util_fleet_monitor.py (2026-08-28) — the per-turn FLEET monitor's computed half (Lon: "at each turn
 # you tell me what all Fleet workers are doing" + "fold the spy sweep into the monitor").  Emits, per active
 # seat: live claim(s) · board verdict+time · working-tree spy (dirty files, unpushed commits, last activity).
-# The plain-English what-it-is sentence stays the CEO's to write per turn (Lon: slugs are unintelligible).
+# The plain-English what-it-is sentence stays the officer's to write per turn (Lon: slugs are unintelligible).
 # Reads MODE for the active band; refuses rc=2 if the postoffice is unreadable.
 import os, re, subprocess, sys
 PO = os.environ.get("S4E_PO", "/home/resources/postoffice")

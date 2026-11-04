@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_template_form_choices_outside_lower_only_fall.sh -- A BOX SERVES ONE FORM; THE FORM IS CHOSEN IN LOWER (ceo CEO-1840;
-# Lon 2026-10-18, in-chat to the ceo, verbatim: "Will you be able to properly design IR, BB, such that the templates are perfectly
+# test_gate_template_form_choices_outside_lower_only_fall.sh -- A BOX SERVES ONE FORM; THE FORM IS CHOSEN IN LOWER (R-1840;
+# Lon 2026-10-18, in-chat, verbatim: "Will you be able to properly design IR, BB, such that the templates are perfectly
 # granular and which has all language specific variances encoded within?" -- "Did those last several template violations ever get
 # fixed? That seems part of this mess."). THE ANSWER WAS NO: hq_templates's form census (audit_template_forms.py) read 64 boxes carrying
 # more than one live form and 10 IR kinds choosing among boxes inside the emitter -- 74 form choices made outside lower over 132 boxes
@@ -9,7 +9,7 @@
 # chooses its form from a graph flag is exactly where language identity hid past lower (ARCH-IR-CARRIES-EVERY-LANGUAGE-VARIANCE.md
 # section 3). THIS GATE is the ratchet: the census's two totals against FLOOR_BOXES and FLOOR_KINDS below; RED above either; a floor
 # may only FALL, lowered in the landing that splits a box (one box per form, the form a node kind or attribute the lowerer sets).
-# --floor-boxes N / --floor-kinds M override the floors for the fail-once proof (an instrument's own switch, CEO-1680).
+# --floor-boxes N / --floor-kinds M override the floors for the fail-once proof (an instrument's own switch, R-1680).
 # rc 0 at or below both floors, rc 1 above, rc 2 the census cannot run or prints no VERDICT line.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

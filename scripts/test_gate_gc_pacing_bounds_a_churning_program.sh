@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# test_gate_gc_pacing_bounds_a_churning_program.sh -- storage regeneration is PACED, not exhaustion-only (GC-7, ceo CEO-639).
+# test_gate_gc_pacing_bounds_a_churning_program.sh -- storage regeneration is PACED, not exhaustion-only (GC-7, R-639).
 #
 # MEASURED 2026-09-12 on f8421f4bd: `every 1 to 3000000 do image("ab\tcd")` reached 564 MB RSS in both modes -- the first
 # regeneration fired only when the 512 MB arena was exhausted (the seam-side line sat at half the arena and the assembly
 # fast path carved inline against the arena END, never seeing any line), so a program with a few KB of live data touched
-# every page of the arena and CEO-605's micro.icn aborted on the pinned-allocation ceiling. Cure: the collection line sits
+# every page of the arena and R-605's micro.icn aborted on the pinned-allocation ceiling. Cure: the collection line sits
 # min(128 MB, half of what remains) past the top (SCRIP_GC_LINE_MB, default 128 -- 64 cost ~60% wall on the churniest Icon
-# benchmark, 128 reads at parity with the old policy; 0 = the old half-of-arena seam policy; since CEO-1264 the room is fifteen
+# benchmark, 128 reads at parity with the old policy; 0 = the old half-of-arena seam policy; since R-1264 the room is fifteen
 # sixteenths of what remains, SPITBOL's spend-the-window rule, so 0 now puts the line at 15/16 of the window and the 128 MB bound is
 # what arm 1 still grades at this 512 MB window), the
 # fast region carries that line at offset 48 and rtx_alloc.s carves inline only up to it, and c_rt_gcheap_alloc collects
@@ -16,7 +16,7 @@
 # FAIL_ONCE=1 plants the control arm's RSS into arm 1 to prove the bound trips.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-# ⛔⭐ THIS GATE NAMES ITS OWN ARENA, AND THAT IS THE RULE, NOT AN EXEMPTION (Lon 2026-09-19, ceo CEO-938; RULES.md
+# ⛔⭐ THIS GATE NAMES ITS OWN ARENA, AND THAT IS THE RULE, NOT AN EXEMPTION (Lon 2026-09-19, R-938; RULES.md
 # § THE INSTRUMENT LAWS, TWENTY-EIGHTH BATCH CLAUSE 2).  The tiny arena is the default of all GC testing and the Makefile
 # exports SCRIP_HEAP_MB=1 to every gate run through make -- but THIS gate measures an arena-dependent quantity: the
 # pacing line is min(SCRIP_GC_LINE_MB, half of what remains) past the top and both arms grade RSS against a 256 MB bound
@@ -45,11 +45,11 @@ for M in m3 m4; do
   else echo "  $M FAIL (out=[$out] RSS=[${v:-?}] KB, bound 262144)"; RC=1; fi
 done
 examined=$((examined+1))
-# ⛔ THE CONTROL ARM ASSERTS A RATIO, NOT AN ABSOLUTE RSS (ceo CEO-885, 2026-09-18). It read -gt 409600 -- above 400 MB -- and went RED ON ORIGIN FOR EVERY SEAT the day the
+# ⛔ THE CONTROL ARM ASSERTS A RATIO, NOT AN ABSOLUTE RSS (R-885, 2026-09-18). It read -gt 409600 -- above 400 MB -- and went RED ON ORIGIN FOR EVERY SEAT the day the
 # collector got BETTER: the cfo took HB_ARR and HB_DINST out of the conservative sniff (F6 step 5, SCRIP 48d5a1a5e), a precise visit frees what a conservative sniff retained,
 # and the exhaustion-only control fell from above 400 MB to 290 MB. THE SEAM IS INTACT AND THAT WAS MEASURED, NOT ASSUMED: gc_line_paced() is false at LINE_MB=0 so the line
 # goes to g_hp_end, and the witness still collects 3 times by exhaustion against 7 when paced. What died was the THRESHOLD, which was a property of how much the sniff LEAKED.
-# An absolute number anchored on a measured artifact dies the day someone cures the artifact (CEO-554), and this one took every seat down with it.
+# An absolute number anchored on a measured artifact dies the day someone cures the artifact (R-554), and this one took every seat down with it.
 # The property the arm exists to prove is PACING IS WHAT BOUNDS THE RSS, and that is a RATIO. Measured at this landing: paced 150936 KB, control 289712 KB = 192%.
 # Bar: 150% of the paced arm AND above 200 MB -- so a collector that improves BOTH arms still discriminates, and a control that collapses onto the paced arm still reds.
 # Both numbers and the ratio are PRINTED, never collapsed to a verdict.

@@ -3,7 +3,7 @@
 # keyword), and the cursor capture @T and the conditional/immediate captures take a deferred target (@*V, @*$('CUR' N)) and a keyword target
 # ($ &STLIMIT, . &STLIMIT), in both modes, as SPITBOL answers them.
 #
-# THE DEFECT (rows snobol4-the-name-operator-over-an-indirect-variable-is-refused-by-the-lowerer, ceo CEO-1486, Lon: "So 'a' . $x must work so that
+# THE DEFECT (rows snobol4-the-name-operator-over-an-indirect-variable-is-refused-by-the-lowerer, R-1486, Lon: "So 'a' . $x must work so that
 #   is a bug"; and Flake indirect-integer-and-keyword + pattern-assignment-targets): the lowerer refused .$x and .&KW with FATAL "name operator
 #   over this form is outside the landed subset", and @ with a target that was not a plain variable ("@ cursor-position capture target is not a
 #   simple variable"); a keyword capture target was refused too. A NAME of a keyword stored into a variable named "&ANCHOR" and never reached

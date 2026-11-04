@@ -3,7 +3,7 @@
 # an array in its result: SetLength, an element's INC, Length and High of the function name (or Result) inside its body act on the
 # array, and the caller receives it, as fpc does.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): entropy's frequencies(str, ustr): FArray did
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): entropy's frequencies(str, ustr): FArray did
 # SetLength(frequencies, n) -- the name was registered only as a scalar of type FArray, so SetLength took the string road (n spaces)
 # and INC(frequencies[u]) bumped character codes; entropy printed -24.66549 for 1.84644. THE CURE (lower_pascal_tree.c): at both
 # function headings, a return type that pas_arrtype_isdyn names registers the function name as a dynamic array (pas_array_add,

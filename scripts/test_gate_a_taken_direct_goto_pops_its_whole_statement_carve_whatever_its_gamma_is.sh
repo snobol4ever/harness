@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_a_taken_direct_goto_pops_its_whole_statement_carve_whatever_its_gamma_is.sh -- CEO-2020, cto R9 THE TRANSFER LAW (ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3): a
+# test_gate_a_taken_direct_goto_pops_its_whole_statement_carve_whatever_its_gamma_is.sh -- R-2020, cto R9 THE TRANSFER LAW (ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3): a
 # transfer pops the statement's whole carve, the distance from rsp in the box to the statement base (op_zdepth), and never gamma's pop (op_zgpop).
 #
 # THE SHAPE: SCRIP e0b38b501 (an error in a direct goto is trappable error 24) wired the direct goto's gamma at the retake copy of the failure exit, a deeper node, so
@@ -7,7 +7,7 @@
 # (the leak is 16 bytes a goto), so every arm runs at -s128k with a loop that takes the goto 20,000 to 200,000 times: three witnesses, the unconditional :<C> into a CODE chunk that
 # loops back, the :S<X>F<Y> shape, and a direct goto taken from inside a CODE chunk.
 #
-# THE EXPECTATIONS are cut from sbl -bf (the correctness oracle) at run time, never typed. THE NEGATIVE CONTROL (CEO-1680: a proper test, no seam in src/): the runtime built from SCRIP
+# THE EXPECTATIONS are cut from sbl -bf (the correctness oracle) at run time, never typed. THE NEGATIVE CONTROL (R-1680: a proper test, no seam in src/): the runtime built from SCRIP
 # 076ff808a, one commit before the cure, run under SCRIP_ALLOW_STALE=1 with RT_DIR and LD_LIBRARY_PATH at it, reads ERROR 246 stack overflow in FIVE of the six arms (leak and sf in both
 # modes, chunk in mode 3); the chunk witness's mode-4 arm reads the oracle's answer there too (measured twice, also with the loop head on its own statement), so it is correctness
 # coverage of an in-chunk direct goto in mode 4 and not a trip. The cured tree reads the oracle's answer in all six arms.

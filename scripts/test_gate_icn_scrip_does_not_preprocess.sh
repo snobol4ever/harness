@@ -2,12 +2,12 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icn_scrip_does_not_preprocess.sh -- ICON'S PREPROCESSOR RUNS ON THE FLY, ONE STAGE, AS ARIZONA'S DOES (Lon 2026-10-14, in-chat to
 # hq_icon, verbatim: "Keep the Arizona Icon's pre-processing behavior if that is done on-the-fly and not done in two stages. Which is it?";
-# ceo CEO-1702 amends RULES.md FACT RULE SCRIP DOES NOT PREPROCESS for Icon; this file's name is kept so the blocking set and the row
-# icon-gate-scrip-does-not-preprocess-...-ceo-1663 keep their handle). Arizona's lexer pulls every character through the preprocessor
+# R-1702 amends RULES.md FACT RULE SCRIP DOES NOT PREPROCESS for Icon; this file's name is kept so the blocking set and the row
+# icon-gate-scrip-does-not-preprocess-...-r-1663 keep their handle). Arizona's lexer pulls every character through the preprocessor
 # (icont common/yylex.h nextchar() -> common/ipp.c ppch(), one line at a time): no expanded copy of the program exists, and a directive
 # is acted on when the lexer reaches it, so diagnostics come out in SOURCE ORDER. A two-stage front end expands the whole source first
 # and reports every directive error before the lexer has read line 1 -- that is the observable this gate grades, against the live oracle.
-# The CEO-1366 arms this file carried (no ipp in icon_lex.c, scrip -E refuses, a $define is a parse error) are WITHDRAWN by CEO-1702.
+# The R-1366 arms this file carried (no ipp in icon_lex.c, scrip -E refuses, a $define is a parse error) are WITHDRAWN by R-1702.
 #
 # FOUR ARMS, every expectation read from icont/iconx at run time, none typed here:
 #   1 SOURCE ORDER: a syntax error on line 2 before a $error on line 4. icont's first diagnostic names line 2; SCRIP's first must name

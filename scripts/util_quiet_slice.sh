@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# util_quiet_slice.sh [--max S] <command> <args>... -- A RESERVED SLICE OF THE BOX FOR A CLOCK MEASUREMENT (Lon 2026-10-30, in-chat to the ceo,
+# util_quiet_slice.sh [--max S] <command> <args>... -- A RESERVED SLICE OF THE BOX FOR A CLOCK MEASUREMENT (Lon 2026-10-30, in-chat,
 # verbatim: "Yes, let's move on to performance for SNOBOL4 and Icon. But you'll have to work around the load problem. Maybe get reserved slices of
 # the machine for short periods of time or just count INSTRUCTIONS and use system performance process information to help get around a fully loaded
-# system."; ceo CEO-2035). THE FIRST TOOL IS THE COUNT: util_instr_count.sh (perf stat -e instructions:u, WORK and OVERHEAD, x against sbl) does not
+# system."; R-2035). THE FIRST TOOL IS THE COUNT: util_instr_count.sh (perf stat -e instructions:u, WORK and OVERHEAD, x against sbl) does not
 # move with the load and runs at any time. A CLOCK is admissible only inside a slice: this script takes the box-wide slice lock (/tmp/s4e-slice.lock,
 # so two slicers never split the pools between them and deadlock), then EVERY run slot (/tmp/s4e-run-slots, S4E_RUN_SLOTS) and EVERY compile slot
 # (/tmp/s4e-cc-slots, S4E_CC_SLOTS) one by one, waiting for each holder to finish, so no harness child and no slotted compile starts while the
 # command runs. It runs the command for at most --max seconds (default 300, ceiling 600), releases everything, and appends one line to
 # /home/resources/progress/SLICES.tsv: start, seat, seconds waited, seconds held, the load average and busy cores at the start, rc, the command.
-# BUILD BEFORE THE SLICE: a compile inside it would wait on a compile slot the slice itself holds. What it cannot drain: the Claude sessions themselves and any run started outside the pools (util_run_slot.sh is the road for those, CEO-2033).
+# BUILD BEFORE THE SLICE: a compile inside it would wait on a compile slot the slice itself holds. What it cannot drain: the Claude sessions themselves and any run started outside the pools (util_run_slot.sh is the road for those, R-2033).
 # The load at the start is printed and recorded beside the clock so a reader can judge the slice; a clock taken at a load over half the cores is
 # reported as such, never as a quiet measurement.
 #   bash ../harness/scripts/util_quiet_slice.sh --max 120 bash ../harness/scripts/bench_triangulate_snobol4.sh ...

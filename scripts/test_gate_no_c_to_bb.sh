@@ -12,7 +12,7 @@
 #                                                        the one MAIN dispatch — one transfer per run either way.]
 #   src/runtime/rt/rt_coexpr.c scrip_coexpr_trampoline_entry — sanctioned per-thread MAIN (jmp not call,
 #   src/runtime/rt/rt_coexpr.c rt_genp_spine_enter / rt_genp_spine_enter_n2 — the two coroutine spines, the
-#     first frame on a fresh coroutine stack with no emitted code beneath them (CEO-970, moved out of rt.c
+#     first frame on a fresh coroutine stack with no emitted code beneath them (R-970, moved out of rt.c
 #     2026-09-20 by the cto so the sanction and the code agree).
 #                                                        fresh pthread stack, never returns).
 #   src/driver/scrip.c        icn_zf_main_call         — THIRD mutually-exclusive MAIN branch (row
@@ -82,7 +82,7 @@ grep -rna --include='*.c' -E -e 'call \*%r?ax|call \*%%r?ax|jmp \*%%?rax' $SCAN_
 # (d) bare MAIN-shape entries
 grep -rna --include='*.c' -E -e 'fn\(rt_frame\(\), 0\)|m3_enter_with_rbx\(' $SCAN_DIRS 2>/dev/null | grep -av 'static void m3_enter_with_rbx' | cut -d: -f1,2 | sed 's/$/:main-shape/' >> "$RAW"
 # (e) riders: C callers of the V4/V5 trampoline API outside rt.c (exclude decls) -- counted ONLY WHILE THE API STILL TRANSFERS.
-# ⛔ ceo 2026-10-09 (CEO-1576, Lon: "List how many places call into BB's from C. Then stop the show and remove all of them."):
+# ⛔ the officer 2026-10-09 (R-1576, Lon: "List how many places call into BB's from C. Then stop the show and remove all of them."):
 # a rider is a C function that reaches a shim THROUGH rt_proc_call_gen_h or rt_proc_resume_frame_h. Once the body of that API
 # function carries no shim call (rt_proc_enter / rt_proc_enter_named / rt_tiny_record_enter / rt_chain_enter), what it does is
 # start or resume a coroutine (the sanctioned arm test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh
@@ -112,7 +112,7 @@ while IFS=: read -r f l shape; do
         # (r14 = 0), which replaces rt_outer_call_delta0 -- the same one original invocation, a second spelling of it.
         src/driver/scrip.c:rt_outer_call|src/driver/scrip.c:rt_outer_call_root|src/driver/scrip.c:rt_outer_call_icn_root) continue ;;
         src/runtime/rt/rt_coexpr.c:scrip_coexpr_trampoline_entry) continue ;;
-        # ⭐ THE TWO COROUTINE SPINES, SANCTIONED PER CEO-970 AND MOVED HERE BESIDE THEIR TWIN (cto 2026-09-20):
+        # ⭐ THE TWO COROUTINE SPINES, SANCTIONED PER R-970 AND MOVED HERE BESIDE THEIR TWIN (cto 2026-09-20):
         # rt_genp_spine_enter and rt_genp_spine_enter_n2 are reached ONLY from rt_genp_entry_c, which
         # rt_genp_thread_entry jumps to, which scrip_co_ctx_init installs as the entry on a FRESH COROUTINE
         # STACK -- the first frame on that stack, with no emitted code beneath it.  That is structurally
@@ -143,14 +143,14 @@ ledger_of() { # enclosing function -> ledger group
         rt_proc_resume_frame|rt_proc_resume_frame_h)            echo "V5" ;;
         rt_eval_run|__asm__|rt_eval_enter_shim)   echo "V6" ;;
         rt_call_value_gen_h|rt_call_value_resume_h|plc_next|rt_pl_goal_gen_h_c)    echo "V7" ;;
-        # ⛔⭐ rt_pl_goal_gen_h_c JOINED V7 2026-09-19 (ceo CEO-943), AND IT IS A LEDGER FIX, NOT A NEW TRANSFER: the
+        # ⛔⭐ rt_pl_goal_gen_h_c JOINED V7 2026-09-19 (R-943), AND IT IS A LEDGER FIX, NOT A NEW TRANSFER: the
         # function has been in the tree since `b4736aa3d` (2026-09-06 11:23, prolog: a meta-call miss raises a REAL ball),
         # so for THIRTEEN DAYS this gate printed it under UNLEDGERED and told every seat "a NEW violation of the one-entry
         # convention -- read it before anything else", which is the loudest line it has.  A ledger that lags the tree spends
         # the gate's credibility: a seat that learns the alarm is stale stops reading the alarm.  It belongs in V7 with the
         # other two RIDERS of by_name_dispatch.c (rt_call_value_gen_h, rt_call_value_resume_h): same file, same shape -- a C
         # rider that stages arguments and tail-returns rt_proc_call_gen_h, entering the box from C -- and the same owner, the
-        # ceo's row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero.  Its own frame passes the property test of ARCH-GC
+        # the officer's row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero.  Its own frame passes the property test of ARCH-GC
         # section 9 (iii): `key` is a local char buffer, the stage happens before the entry and it tail-returns, so nothing
         # stale is read afterwards.  ⛔ UNLEDGERED STAYS THE LOUD CLASS: this line moves ONE known site into its group and
         # weakens nothing -- the gate still counts it, still names it, and STRICT still fails while it exists.

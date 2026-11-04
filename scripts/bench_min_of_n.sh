@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # ../harness/scripts/bench_min_of_n.sh -- MIN-OF-N benchmark rail for the SNOBOL4 RTX ladder.
 #
 # WHY THIS EXISTS. bench_rtx_3arm.sh reports a MEDIAN and refuses on intra-arm spread. s220

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_string_extension_refuses_an_alias_held_in_any_global_slot.sh -- THE IN-PLACE EXTENSION SCAN IS UNROLLED AND STILL SEES EVERY SLOT
 # (hq_snobol4 2026-10-15; row snobol4-speed-beauty-self-host-reads-0-22x-spitbol-in-mode-4-and-0-06x-in-mode-3). str_concat_d (rtx_str.s) extends the
@@ -16,7 +16,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # FAIL_ONCE (recorded): arm 3 reads 8,224 on the runtime before the unroll (parent tree, stash rebuilt) and 3,151 here; arm 2 carries its own control
 # (the uninjected run reads 1, every injection must read 2), and an alias written into the slot of a program variable that the loop needs (x's own slot
 # and the loop counter's) is skipped, not counted.
-# 2026-10-30 (hq_snobol4, CEO-2035 speed): THE SCAN STARTS AT g_runtime.abi.sxt_fr.gva_lo, NOT AT SLOT 0. The first SC_GVA_RESERVE (741) slots of every program's
+# 2026-10-30 (hq_snobol4, R-2035 speed): THE SCAN STARTS AT g_runtime.abi.sxt_fr.gva_lo, NOT AT SLOT 0. The first SC_GVA_RESERVE (741) slots of every program's
 # table are hidden slots reserved for a linked Snocone parser module: nameless, all zero until a module links, and sc_module_init sets gva_lo to 0 before it
 # writes one. A five-variable program scanned 741 dead cells per append (string_concat 1,987 Ir an append, 0.109x sbl; 0.750x once the scan starts at gva_lo).
 # So arm (2) injects at slots counted FROM gva_lo (every residue of the 8-slot block, as before) and the new arm (2b) PROVES THE REASON the skip is sound: at the

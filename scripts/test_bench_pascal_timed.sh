@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_bench_pascal_timed.sh -- ANGLE 1 of the Pascal three-angle triangulation (row bench-rivals-raku-pascal,
 # mirroring test_bench_prolog_timed.sh / ARCH-BENCH-CAMPAIGN-README-TABLES.md THREE-ANGLE TRIANGULATION).
 #
@@ -59,7 +59,7 @@ B="${BENCH_DIR:-$S4E/corpus/benchmarks/pascal}"
 # the same x1/x4/x16 triple's top point runs ~150ms*16=2.4s, calculated and then confirmed short enough
 # to avoid the effect on this box. Every engine's anchor shrinks proportionally, not just the slow ones.
 T="${TIMEOUT:-60}"; BUDGET_MS="${TIME_BUDGET_MS:-150}"; NMAX="${NMAX:-200000}"; LIN_TOL="${LIN_TOL:-10}"
-# whet joined 2026-09-26 (ceo CEO-1281, the quiet box CEO-1219 waited for): kernel form with a .ref since 2026-09-23, II read from stdin like every
+# whet joined 2026-09-26 (R-1281, the quiet box R-1219 waited for): kernel form with a .ref since 2026-09-23, II read from stdin like every
 #   other kernel's reps; measured this sitting 310 ms/rep on m3 and about 2 ms/rep on fpc -O2, both printing whet.ref at reps 1, 4 and 16.
 KERNELS="${KERNELS:-bubble intmm perm queens quick sieve towers whet}"   # reps-capable set, measured not guessed (see header)
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
@@ -67,8 +67,8 @@ KERNELS="${KERNELS:-bubble intmm perm queens quick sieve towers whet}"   # reps-
 [ -d "$B" ] || { echo "⛔ REFUSED-TO-GRADE pascal corpus missing: $B"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh"; exit 2; }
 FPC="$(fpc_bin)" || exit 2
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1281)"; exit 2; }
-# ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (ceo CEO-1281, 2026-09-26; RULES.md hard-cap rule clause 8 (f)): DECL_SW carries the
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
+# ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (R-1281, 2026-09-26; RULES.md hard-cap rule clause 8 (f)): DECL_SW carries the
 #   <k>.heap / <k>.stack sidecars as SPITBOL's -d<kb>k -s<kb>k switches on every m3 and m4 command line, the reps=1 correctness gate included.
 declare -a DECL_SW=(); declare -A DECLW=()
 WRAP="$ROOT/tools/bench_rusage"
@@ -120,7 +120,7 @@ run1() {
 # fpc/quick as a direct, reproducible result (not noise -- it repeated in the same direction both times,
 # unlike the genuine load-contention DISAGREEs elsewhere in this campaign, which flip direction run to
 # run). The cap now applies only to the engines that actually crash.
-# ⭐ THE CLIFF IS GONE (ceo CEO-1987, 2026-10-26): quick prints fpc's output at reps 12, 13, 100, 1000 and 5000 in m3 and m4 on SCRIP
+# ⭐ THE CLIFF IS GONE (R-1987, 2026-10-26): quick prints fpc's output at reps 12, 13, 100, 1000 and 5000 in m3 and m4 on SCRIP
 # 9bd097fa9 (-O2) and 60ec01b8a (-O0), 0.3 s at 5000 -- the cap of 12 left both SCRIP arms too few reps to fit a slope, so both read
 # UNPROVEN; no kernel carries a crash cap now, and a new one is named here with its row and its measurement.
 kernel_reps_cap() { echo "$NMAX"; }
@@ -233,7 +233,7 @@ for k in $KERNELS; do
   unset R C
 done
 echo
-echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh; CEO-1281): ${#DECLW[@]} kernel(s)"
+echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh; R-1281): ${#DECLW[@]} kernel(s)"
 for k in "${!DECLW[@]}"; do echo "  $k: ${DECLW[$k]}"; done
 echo
 echo "CHECK RESULT: measured=$tot_ok correctness-skip=$tot_skip"

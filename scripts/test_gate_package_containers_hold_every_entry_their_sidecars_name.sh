@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_package_containers_hold_every_entry_their_sidecars_name.sh -- A PACKAGE CONTAINER AND ITS SIDECARS NAME ONE POPULATION (ceo to
+# test_gate_package_containers_hold_every_entry_their_sidecars_name.sh -- A PACKAGE CONTAINER AND ITS SIDECARS NAME ONE POPULATION (to
 # the coo 2026-10-18, rank 2, from hq_dotnet's measurement grading containers through corpus_suite_harness.py under a port engine): the
 # container builder drops excluded and no-oracle entries from ALL.<ext>, but ALL.csv, PARTITION.tsv and ALL.mask keep naming them, and
 # nothing on SCRIP's path reads the containers, so the two drift unseen until a reader of the container refuses (csnobol4_suite's diag1,
@@ -7,7 +7,7 @@
 # an ALL.ref, the entries read by THE ONE READER (corpus_suite_harness.py read_suite for SNOBOL4, read_block_suite with the dialect's
 # banner for the others) must include every entry named by the package's ALL.csv entry column, its PARTITION.tsv entry column and its
 # ALL.mask entry column (the * wildcard excepted), UNLESS the package's exclusion files declare it -- ALL.excluded.txt (name: reason),
-# EXCLUDED.tsv, EXCLUDED_CASES.tsv, CONTAINERS.tsv -- the ceo's cure (b) of 2026-10-18 (one attribute table per package stays). A package with no container is counted and named, never a pass. GREEN iff no package
+# EXCLUDED.tsv, EXCLUDED_CASES.tsv, CONTAINERS.tsv -- the officer's cure (b) of 2026-10-18 (one attribute table per package stays). A package with no container is counted and named, never a pass. GREEN iff no package
 # container misses a name. RED on corpus a5735c4a9, measured by the coo 2026-10-18 11:0x CDT: 6 of 11 containers drift, 861 names
 # (icon/ipl 773, prolog/rosetta-prolog 30, icon/arizona_tests 28, snobol4/csnobol4_suite 22, icon/jcon_tests 7, snobol4/gimpel 1). Classified
 # in full (the first cut's 'every sampled one a declared exclusion' sampled rosetta-prolog alone, RETRACTED): 849 are declared exclusions and 12 are

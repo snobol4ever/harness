@@ -14,7 +14,7 @@
 # ARM. Five witnesses graded against the LIVE oracle (icont/iconx 9.5.25a) on stdout AND exit status in both media: the
 # assignment, a swap whose right operand shrinks the subject, a swap with a list element, a swap with a literal (111, a
 # control that was already right), and the &error witness where the assignment converts and the swap does not. A mutual
-# evaluation yielding its last operand's variable is the green control. RUN FIRST THEN WIRED (CEO-381): on SCRIP
+# evaluation yielding its last operand's variable is the green control. RUN FIRST THEN WIRED (R-381): on SCRIP
 # 8b6cb3607 the four 205 witnesses read RED in both media (stdout "failed", rc 0 where iconx exits 1).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

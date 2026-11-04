@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_gate_no_bare_unicon_outside_the_accessor.sh -- THE UNICON ORACLE IS NAMED ONE WAY AND IS NEVER A NORMALIZER (ceo CEO-2072, 2026-10-31).
+# test_gate_no_bare_unicon_outside_the_accessor.sh -- THE UNICON ORACLE IS NAMED ONE WAY AND IS NEVER A NORMALIZER (R-2072, 2026-10-31).
 #
-# Lon 2026-10-31, in-chat to the ceo, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."  The Unicon translator is reached
+# Lon 2026-10-31, in-chat, verbatim: "Let's extend Icon to Unicon with a command-line switch, or if it is a super set then a switch is not needed."  The Unicon translator is reached
 # only through unicon_bin() in lib_oracle_flags.sh, never a bare path (the silent-absence false-number class of ORACLES.md), and it is NEVER run with -E: the 2026-09-11 ruling (Lon: "We do not want
-# you ... using it to add semi-colons on the fly versus adding the files to the corpus repo", CEO-570) is superseded only for the superset itself, and its second reason stands -- a source rewritten at
-# grade time is not the artifact in the repo (CEO-567).
+# you ... using it to add semi-colons on the fly versus adding the files to the corpus repo", R-570) is superseded only for the superset itself, and its second reason stands -- a source rewritten at
+# grade time is not the artifact in the repo (R-567).
 #
 # ARM 1  no script under ../harness/scripts/ names the oracle any way but unicon_bin: a SITE is `/unicon/bin/`, `command -v unicon`, `which unicon`, or a bare `unicon -x` / `unicon f.icn` not preceded by a
 #        word character, `/`, `$`, `"`, `'` or `-`.  NOT a site: a comment line; an echo/printf/refuse line; lib_oracle_flags.sh itself; this gate.
@@ -40,6 +40,6 @@ out="$( . "$HERE/lib_oracle_flags.sh"; UNICON_ORACLE_BIN=/nonexistent/unicon_zz;
 err="$( . "$HERE/lib_oracle_flags.sh"; UNICON_ORACLE_BIN=/nonexistent/unicon_zz; unicon_bin 2>&1 >/dev/null )"
 if [ -z "$out" ] && [ "$mrc" -ne 0 ] && printf '%s' "$err" | grep -q 'UNICON ORACLE IS MISSING'; then echo "ARM 3 unicon_bin refuses loudly when the binary is absent (rc $mrc, nothing on stdout)"
 else echo "ARM 3 RED: unicon_bin did not refuse loudly for an absent binary (rc $mrc, stdout '$out')"; red=1; fi
-if [ "$red" -ne 0 ]; then echo "⛔ GATE FAIL [$GATE_NAME] (RULES.md § Oracles, CEO-2072)"; exit 1; fi
+if [ "$red" -ne 0 ]; then echo "⛔ GATE FAIL [$GATE_NAME] (RULES.md § Oracles, R-2072)"; exit 1; fi
 echo "✅ GATE PASS [$GATE_NAME]: every Unicon invocation under ../harness/scripts/ goes through unicon_bin, none passes -E, and the accessor refuses loudly when absent"
 exit 0

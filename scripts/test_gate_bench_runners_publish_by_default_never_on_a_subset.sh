@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_bench_runners_publish_by_default_never_on_a_subset.sh -- EVERY BENCH RUNNER PUBLISHES ITS ROW BY DEFAULT ON A WHOLE-POPULATION
-# PASS, AND A FILTERED, SUBSET OR SCRATCH PASS NEVER WRITES (ceo CEO-1302 (a), 2026-09-27: "all seven bench runners publish their row by
+# PASS, AND A FILTERED, SUBSET OR SCRATCH PASS NEVER WRITES (R-1302 (a), 2026-09-27: "all seven bench runners publish their row by
 # default on a whole-population pass by the admitted LANES runner ... A filtered or subset pass never writes. One convention; you land
 # it."). Six runners wrote only under --write and Pascal's always wrote, so whether a pass published depended on the runner.
 #
@@ -12,7 +12,7 @@
 #       directory and reaches no leaderboard write
 # FAIL-ONCE, MEASURED 2026-09-27 (coo) against origin 32aab0723's seven runners in a scratch copy of ../harness/scripts/ (this landing's lib kept so
 # the gate reaches its arms): S red on all seven. R is an invariant, not a fail-once arm: the runners' own older guard (IS_BOARD,
-# CEO-547) already kept a population outside the corpus from writing, and this landing keeps it so.
+# R-547) already kept a population outside the corpus from writing, and this landing keeps it so.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 G=bench_runners_publish_by_default_never_on_a_subset
@@ -43,7 +43,7 @@ K="$(cd "$ROOT/.." && pwd)/corpus/benchmarks/rebus/string_concat"
 if [ -f "$K.reb" ] && [ -f "$K.ref" ]; then
     mkdir -p "$W/rb"; cp "$K".* "$W/rb/"
     o="$(cd "$ROOT" && env S4E_SCORE_NO_WRITE="gate $G" S4E_PROGRESS_DB="$W/p.tsv" BENCH_REBUS_DIR="$W/rb" BENCH_BUD_MS=50 timeout -k 5 600 bash "$HERE/test_rebus_bench_suite.sh" 2>&1)"
-    # the runner's own older guard (IS_BOARD, CEO-547) stops a population outside the corpus before the rule is even asked; either
+    # the runner's own older guard (IS_BOARD, R-547) stops a population outside the corpus before the rule is even asked; either
     # word is the right answer -- the pass names the scratch directory and writes nothing -- and neither may reach the writer
     if grep -qE "row write: no -- this pass graded $W/rb|population $W/rb is OUTSIDE the corpus tree .* no suite row written" <<<"$o" \
        && ! grep -q 'LEADERBOARD WRITE\|lane owner: \|SCORE.md NOT UPDATED' <<<"$o"; then

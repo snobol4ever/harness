@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_getmem_freemem_and_high_of_a_dereferenced_array_pointer.sh -- getmem / freemem and low / high of a dereferenced pointer to a static array answer as fpc -Mobjfpc does.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, CEO-1612 piece 4; row pascal-every-suite-to-100-under-nonet-ceo-1266):
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, R-1612 piece 4; row pascal-every-suite-to-100-under-nonet-r-1266):
 # hofstadter-conway-_10-000-sequence died "error 22: undefined function called" twice over -- getmem / freemem were no routines, and
 # high(a^) (a is a pointer to a static array type) passed through to a function named high. THE CURE: getmem(p, n) lowers as p :=
 # __pas_alloc_rec(init) -- the pointee's own initial block for a typed pointer, an arr_make(lo, lo + n - 1) of n slots for an untyped Pointer or

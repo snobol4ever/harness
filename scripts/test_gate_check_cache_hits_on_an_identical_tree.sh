@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_check_cache_hits_on_an_identical_tree.sh -- THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT section 3.3; row shared-dev-step-7-the-check-
-# cache-a-deterministic-gate-runs-once-per-tree-for-done-and-the-sweep-ceo-2041; the cto's design, built by the cqo 2026-10-31).
+# cache-a-deterministic-gate-runs-once-per-tree-for-done-and-the-sweep-r-2041; the cto's design, built by the cqo 2026-10-31).
 # The seam: a scratch root of four tiny git repos (SCRIP corpus harness .github, SCRIP carrying out/buildinfo for its own tree) holding a COPY of
 # util_check_cache.sh and of checks_nocache.tsv, and S4E_CHECK_CACHE_DIR pointed at a scratch store, so the gate never reads or writes the fleet's
 # store or any real root. The probe command counts its own runs in a file outside the trees, so "the command did not run" is measured.

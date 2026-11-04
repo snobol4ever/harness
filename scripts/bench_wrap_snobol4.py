@@ -2,7 +2,7 @@
 """bench_wrap_snobol4.py <kernel.sno> --mode iter|time|once [--n N] [--bud-ms MS] [-o OUT.sno]
 
 THE GENERATED WRAPPER FOR ONE PRISTINE SNOBOL4 BENCHMARK -- the test and the measurement in one program (RULES.md FACT RULE THE
-KERNEL CONVENTION and its 2026-09-23 addendum, CEO-1221; Lon 2026-09-24 14:2x, in-chat to the ceo: create the SnoBench runner).
+KERNEL CONVENTION and its 2026-09-23 addendum, R-1221; Lon 2026-09-24 14:2x, in-chat: create the SnoBench runner).
 The kernel file is never edited: this writes a NEW program, to OUT or stdout, that test_snobol4_bench_suite.sh deletes after the
 run. The shape mirrors bench_wrap_rebus.py so one reader parses every language's BENCH line.
 
@@ -30,7 +30,7 @@ spelled ZBENCH_...; a `*BENCH` line naming a kernel function the SETUP does not 
 a whole `OUTPUT = E` statement (an OUTPUT in the goto field, a multi-target assignment). A goto to END inside MAIN is redirected
 to the wrapper's own continuation label, so the loop still runs.
 
---mode once (ceo CEO-1987, Lon 2026-10-26, in-chat to the ceo: "The precise time-stamp for the first line and last line of the
+--mode once (R-1987, Lon 2026-10-26, in-chat: "The precise time-stamp for the first line and last line of the
 program should be gathered." and "To report compile-time from SCRIP would be total process exec_time - (END_TIME - START_TIME)"):
 the program VERBATIM, one pass, with `ZBENCH_T0 = TIME()` as its first line and, just before END, a closing line every way out
 reaches -- each goto to END is redirected to it and the last statement falls into it -- that writes ONE line on TERMINAL:

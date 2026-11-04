@@ -41,7 +41,7 @@ refuse() { echo "⛔ JCON DEMO GATE UNPROVEN(2): $*"; echo "    This is NOT a pa
 
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "cannot load lib_oracle_flags.sh -- the ONE oracle-path authority."
 # ⛔ ARGV COMES FROM THE ONE SHARED READER (lib_icon_ipl_isolation.sh:ipl_argv_read, the NAME.argv sidecar). This gate read a
-# NAME.args file until 2026-09-23; hq_V converted jtran.args to jtran.argv on 09-12 (CEO-609) and this reader was not moved,
+# NAME.args file until 2026-09-23; hq_V converted jtran.args to jtran.argv on 09-12 (R-609) and this reader was not moved,
 # so jtran was graded with NO arguments for eleven days -- oracle and SCRIP both printed a usage failure and the row said DIFF.
 . "$HERE/lib_icon_ipl_isolation.sh" 2>/dev/null || refuse "cannot load lib_icon_ipl_isolation.sh -- the ONE argv-sidecar reader."
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "cannot load lib_declared_arena.sh -- the ONE declared-size reader."
@@ -73,7 +73,7 @@ for E in "$D"/*.icn; do
     declare -a ARGV=(); ipl_argv_read "$E" ARGV; arc=$?
     [ "$arc" -eq 2 ] && { echo "⛔ $N: $N.argv is malformed (the reader said why, above) -- FAIL, never run on a guessed argv."; BAD=1; continue; }
     IN=/dev/null; [ -f "$D/$N.stdin" ] && IN="$D/$N.stdin"
-    # ⭐ THE DEMO'S DECLARED HEAP AND STACK RIDE BOTH SCRIP COMMAND LINES (ceo CEO-1353, clause 8 (g)(4)): -d<kb>k -s<kb>k from NAME.heap
+    # ⭐ THE DEMO'S DECLARED HEAP AND STACK RIDE BOTH SCRIP COMMAND LINES (R-1353, clause 8 (g)(4)): -d<kb>k -s<kb>k from NAME.heap
     # and NAME.stack, after scrip in m3 and leading the binary's argv (before its --) in m4; a demo with none is NAMED, never silent.
     SW="$(declared_switches_beside "$E")" || { echo "⛔ $N: $N.heap or $N.stack is malformed (the reader said why, above) -- FAIL, never run at a guessed size."; BAD=1; continue; }
     declare -a SWA=(); if [ -n "$SW" ]; then read -r -a SWA <<<"$SW"; else echo "    $N: declares no heap and stack beside it -- runs at the shipped default, NAMED (clause 8 (g)(1))"; fi

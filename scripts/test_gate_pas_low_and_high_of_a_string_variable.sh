@@ -3,7 +3,7 @@
 # fpc does: low(s) is 1 and high(s) is Length(s) for an ansistring/string/widestring/unicodestring; low(s) is 0 and high(s) is 255
 # for a shortstring or an OpenString formal; a variable's own declared type wins over a same-named variable in an enclosing scope.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. webtbs_tw14941a (FPC) printed its
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. webtbs_tw14941a (FPC) printed its
 # first line and halted rc=1: its procedure P(s: OpenString) tests high(s)<>255, and pascal.y's low/high folding knew only
 # arrays and ordinal types, so high(s) fell through to an undefined-routine call (webtbs_tw22936, which also tests
 # high(ansistring), additionally needs {$ZEROBASEDSTRINGS ON} and stays red -- a flag a new global would carry).

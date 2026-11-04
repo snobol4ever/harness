@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_tabling_phase_1_answers_as_swipl.sh
 #
-# THE ROW: prolog-swi-tabling-the-table-directive-and-tabled-resolution-453-swi-cases (hq_prolog; phase 1 on the ceo's YES).
+# THE ROW: prolog-swi-tabling-the-table-directive-and-tabled-resolution-453-swi-cases (hq_prolog; phase 1 on the officer's YES).
 # PHASE 1 is VARIANT tabling of DEFINITE programs. `:- table p/n` is placed by the LOWERER (lower_prolog.c
 # pl_table_rewrite): p/n's clauses lower as '$tbl p'/n and one wrapper clause p(A..) :- '$tbl_call'(p(A..), '$tbl p'(A..))
 # is added. '$tbl_call'/2 lives in the Prolog prelude: a table per call variant, kept since phase 2 (a) in a trie (one typed heap

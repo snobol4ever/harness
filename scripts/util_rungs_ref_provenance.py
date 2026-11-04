@@ -18,7 +18,7 @@ harness's capture-oracle-refs runs it (run_oracle: bare basename, cwd = the file
 own stdin and argv sidecars fed), and asks whether the oracle reproduces the ref the entry is graded against.
 
 CLASSES (every entry lands in exactly one; the summary REFUSES rc=2 if they do not sum to examined):
-  ORACLE_REPRODUCES   the oracle prints the ref (after the CEO-409 mask and, for one mode, the CEO-581 per-mode
+  ORACLE_REPRODUCES   the oracle prints the ref (after the R-409 mask and, for one mode, the R-581 per-mode
                       ref -- both applied exactly as the harness applies them).  A red here is ours.
   RULED_PIN           the ref disagrees with the oracle ON A STATED RULING recorded in ALL.refpins.tsv (pin-ref
                       --ruling).  Not a self-pin: a decision with a ledger.

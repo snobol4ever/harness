@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_ieee754_float_flags_special_values_and_number_order_answer_as_swipl.sh -- IN THE SWI DIALECT THE FLOAT FLAGS, C11 ANNEX F
 # SPECIAL VALUES, roundtoward/2, float_class/2, bounded_number/3 AND THE STANDARD ORDER OF NUMBERS ANSWER AS swipl (cfo 2026-10-14, row
-# prolog-swi-rational-test-ieee754-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# prolog-swi-rational-test-ieee754-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's rational/test_ieee754.pl read 24/45 in both modes. The cures, each in src/runtime unless named: (1) the flags float_underflow
 # (error|ignore) and float_rounding (to_nearest|to_positive|to_negative|to_zero, set through fesetround), the read-only

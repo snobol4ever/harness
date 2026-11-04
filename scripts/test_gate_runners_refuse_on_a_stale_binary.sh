@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # test_gate_runners_refuse_on_a_stale_binary.sh -- THE ACCEPTANCE GATE for row harness-and-ladder-runner-
-# refuse-on-a-stale-binary-like-the-artifact-regen-does (ceo -> hq_T 2026-09-04).
+# refuse-on-a-stale-binary-like-the-artifact-regen-does (-> hq_T 2026-09-04).
 #
-# THE DEFECT (ceo's witness, twice in one day, 2026-09-04): a fetched-not-merged clone at 12:23 and a 10:57
+# THE DEFECT (the officer's witness, twice in one day, 2026-09-04): a fetched-not-merged clone at 12:23 and a 10:57
 # binary graded at 14:03 both produced FALSE REDS -- the second read RED and then GREEN after nothing but an
 # incremental make. Only test_corpus_snobol4.sh had a staleness preflight (gate_require_fresh, hq_B 4c7253e99);
 # the ladder runners, the Python suite harness and every vendor-suite runner had none, so each of them would
@@ -13,7 +13,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 #
 # ⛔⭐ WHAT THIS GATE IS REALLY DEFENDING IS THE ABSENCE OF A SECOND COPY. The staleness idea existed twice in
 # bash before this row (gate_require_fresh in lib_gate.sh, assert_binary_current in lib_build_currency.sh);
-# ceo cured a wrong basis in one (3d12ca54 -- "IT IS NOT A SUPERSET, IT IS WRONG") and the cure never reached
+# the officer cured a wrong basis in one (3d12ca54 -- "IT IS NOT A SUPERSET, IT IS WRONG") and the cure never reached
 # the other, so the identical defect regenerated and was cured a SECOND time nine days later. ARM 10 exists so
 # that copy number three -- especially a Python one, invisible to any grep for the bash symbol -- cannot land
 # quietly. ⭐ The cost of a copy is never the duplicated lines; it is that curing one copy makes everybody
@@ -22,10 +22,10 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # ARMS 1-4 the shim itself · 5-6 the ladder body (all seven languages inherit it) · 7 the Python harness ·
 # 8 a vendor runner · 9 the CENSUS with a printed denominator, so a NEW grader added without the preflight is
 # caught by this gate rather than by the next false board · 10 the one-copy invariant · 11 no skip-as-success ·
-# 12 the PROBE contract (SCRIP_STALE_PROBE_SRC, the ceo's DONE-WHEN shape) · 13 the deliberate stale run is LOUD
+# 12 the PROBE contract (SCRIP_STALE_PROBE_SRC, the officer's DONE-WHEN shape) · 13 the deliberate stale run is LOUD
 # (SCRIP_ALLOW_STALE=1, banner on both streams, never for a MISSING artifact) · 14 and RECORDED (no SCORE.md write)
 # · 15 a SECOND census, widened past ARM 9's suite runners to every test_gate_* THAT ITSELF EXECUTES ./scrip
-# (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_P -> ceo -> hq_T
+# (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_P -> the officer -> hq_T
 # 2026-09-05): hq_P's SETEXIT/ERRLIMIT resume gate was written the same day gate_require_fresh landed and did
 # not inherit it, graded whatever binary lay in the tree, and produced a plausible FULL-RED board -- ARM 9
 # would not have caught it, because a test_gate_* script is not a test_*_suite.sh runner and was never in that
@@ -105,7 +105,7 @@ out="$(SCRIP="$OLD" timeout -k 5 120 bash "$HERE/test_snobol4_ladder.sh" --list 
               || ck no "--list must not demand a rebuild; got rc=$rc -- $out"
 
 echo "--- ARM 7: the PYTHON harness refuses rc=2 on a stale binary (same bash function, not a copy) ---"
-# ⛔ A SCRATCH FAMILY, NEVER THE RUNGS (ceo CEO-1302 (c), coo 2026-09-27): the fixture exemption no longer admits the shared corpus,
+# ⛔ A SCRATCH FAMILY, NEVER THE RUNGS (R-1302 (c), coo 2026-09-27): the fixture exemption no longer admits the shared corpus,
 # so over "$RUNGS/ALL.sno" the one-runner guard refused first and this arm read ITS rc 2 -- arm 12's rc check passed on it vacuously.
 SFAM="$W/stale_fam"; mkdir -p "$SFAM"; printf " OUTPUT = 'x';END\n" > "$SFAM/ALL.sno"; printf 'x\n' > "$SFAM/ALL.ref"
 out="$(SCRIP="$OLD" timeout -k 5 120 python3 "$HERE/corpus_suite_harness.py" run "$SFAM/ALL.sno" "$SFAM/ALL.ref" --modes m3 2>&1)"; rc=$?
@@ -176,7 +176,7 @@ done
               || ck no "skip-as-success still live in:$_ss"
 
 echo "--- ARM 12: the PROBE contract -- SCRIP_STALE_PROBE_SRC names a newer source; the shim refuses on a CURRENT binary ---"
-# ⭐ This is the ceo's DONE-WHEN shape: a fail-once proof against a SCRATCH file, never a touched src/ file in the real tree.
+# ⭐ This is the officer's DONE-WHEN shape: a fail-once proof against a SCRATCH file, never a touched src/ file in the real tree.
 touch -d "+1 minute" "$W/newer.c"
 out="$(SCRIP_STALE_PROBE_SRC="$W/newer.c" "$SHIM" --gate arm12 2>&1)"; rc=$?
 [ "$rc" = 2 ] && ck ok "probe newer than a current binary -> rc=2" || ck no "must REFUSE rc=2 on the probe; got rc=$rc -- $out"
@@ -213,7 +213,7 @@ echo "--- ARM 15 (census #2, PRINTED DENOMINATOR): every test_gate_* that ITSELF
 # INVOKED as a command (not merely assigned, or tested with -x/-e/-f, or echoed into a message), OR an inline
 # $ROOT/scrip / $HERE/scrip invocation with no intermediate variable at all. Excludes this file itself and
 # util_require_fresh.sh -- neither one grades a program through a direct call, they orchestrate other graders.
-# ⛔⭐ THE POPULATION RULE MOVED TO lib_gate.sh AND THIS ARM NOW CALLS IT (hq_T 2026-09-09, ceo CEO-441 item 7).
+# ⛔⭐ THE POPULATION RULE MOVED TO lib_gate.sh AND THIS ARM NOW CALLS IT (hq_T 2026-09-09, R-441 item 7).
 # It is unchanged -- the comment above still describes it exactly -- but it is no longer spelled HERE, because
 # util_gate_preflight.sh asks the SAME question about ONE file before the push and a second spelling is how the
 # two instruments come to disagree about the same gate. That is this gate's own ARM 10 argument (a cure applied

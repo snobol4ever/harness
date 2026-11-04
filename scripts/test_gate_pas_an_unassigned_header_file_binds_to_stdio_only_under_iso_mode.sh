@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_unassigned_header_file_binds_to_stdio_only_under_iso_mode.sh -- an extra (non-input/output) program-parameter
 # text file that is never assign()'d binds to real stdout on rewrite / stdin on reset, exactly as fpc -Miso does, ISO 7185 6.10
-# being implementation-defined on this point (row pascal-every-suite-to-100-under-nonet-ceo-1266, landing 2026-10-01).
+# being implementation-defined on this point (row pascal-every-suite-to-100-under-nonet-r-1266, landing 2026-10-01).
 #
 # MEASURED 2026-10-01 by hq_pascal, both modes. test_tisobuf2.pas ({$mode iso}, program test(input,output,testfile)) rewrites
 # testfile unassigned, writes 'Hello world', closes, assigns it to a DIFFERENT name ('TESTFILE.txt') that was never created, and
@@ -9,10 +9,10 @@
 # Parent SCRIP instead bound the unassigned rewrite to a DISK FILE LITERALLY NAMED AFTER THE IDENTIFIER ('testfile' in cwd),
 # so 'Hello world' never reached stdout (rc=1 silent, from a FAILDESCR dead end on reset, no diagnostic).
 #
-# ⛔⭐ THE WHOLE RULE, RULED ON THE ORACLE (ceo CEO-1621, 2026-10-10; it supersedes this gate's 2026-10-01 arm (b), which guarded a
-# classic Pascal-P4 disk-file default that fpc never had). The ceo measured fpc 3.2.2 -Miso: the program-heading files beyond input
+# ⛔⭐ THE WHOLE RULE, RULED ON THE ORACLE (R-1621, 2026-10-10; it supersedes this gate's 2026-10-01 arm (b), which guarded a
+# classic Pascal-P4 disk-file default that fpc never had). The officer measured fpc 3.2.2 -Miso: the program-heading files beyond input
 # and output bind to the command-line arguments IN HEADING ORDER -- the k-th to ParamStr(k) -- and to the console when that argument
-# is absent. CEO-1589 (5e9926af2) built the console half for a program with no {$mode} too, since such a program is in ISO mode,
+# is absent. R-1589 (5e9926af2) built the console half for a program with no {$mode} too, since such a program is in ISO mode,
 # and this landing builds the argument half. The lowerer passes 2k+console to __pas_rewrite/__pas_reset, so the old 0/1 codes keep
 # their meaning. pas_main_arg(k) answers ParamStr(k) from the arguments the driver (m3) or the emitted main (m4) staged. The P4 and
 # P5 self-host harnesses now name their files as program arguments after the double dash (comp.pas: prr; int.pas, pcom.pas and

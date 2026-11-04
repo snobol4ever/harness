@@ -2,12 +2,12 @@
 # test_gate_pas_a_required_procedure_is_activated_with_its_parameters.sh -- get, put, reset, rewrite, new, dispose, pack, unpack, read and
 # write take actual-parameters; a bare activation of one is an ISO 7185 violation, not a call of an undefined routine
 #
-# MEASURED 2026-09-25 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. FPC webtbs_tw37949 ({$MODE ISO}: "get; put") was
+# MEASURED 2026-09-25 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. FPC webtbs_tw37949 ({$MODE ISO}: "get; put") was
 # accepted and died at run time with "error 108: list expected": the parser's call rule sent a bare identifier that is no user routine to
 # mk_call with no arguments, and nothing asked whether it named a required procedure whose activation takes parameters. ISO 7185 gives
 # get(f)/put(f)/reset(f)/rewrite(f) (6.6.5.2), new(p)/dispose(p) (6.6.5.3), pack/unpack (6.6.5.4), read (6.9.1) and write (6.9.3) no
 # parameterless form -- unlike readln, writeln and page, which default to input/output. fpc -Miso compiles tw37949 (defaulting get/put to
-# input/output), so it joins ISO_EXPECTED_REFUSALS.tsv under the ISO-as-oracle ruling (CEO-1225, CEO-1228). NO BRACKET: the program is
+# input/output), so it joins ISO_EXPECTED_REFUSALS.tsv under the ISO-as-oracle ruling (R-1225, R-1228). NO BRACKET: the program is
 # refused at compile, before any event. The cure: pas_required_needs_params in the call rule's non-user branch names the clause.
 #
 # ARMS: (1) each of the ten, alone as a statement, must be REFUSED in both modes with its own clause named; (2) a control cut LIVE from

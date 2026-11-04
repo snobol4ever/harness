@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # bench_snobol4_jvm_demos.sh [demo-stem ...] -- the WORK-HORSE DEMOS of corpus/demos/snobol4 on snobol4jvm, pristine SPITBOL and CSNOBOL4, start-up reported apart (hq_jvm;
-# Lon 2026-11-01: "You must break out the startup time away from the other numbers and report those seperately."; demos are work-horse benchmarks, Lon 2026-09-27, CEO-1313).
+# Lon 2026-11-01: "You must break out the startup time away from the other numbers and report those seperately."; demos are work-horse benchmarks, Lon 2026-09-27, R-1313).
 # Each demo runs ONCE on the input its <stem>.workhorse sidecar declares (the stdin file repeated `scale` times, DEMO-SCALE.tsv), in a scratch copy of its directory with
 # corpus/include copied beside it (the oracles resolve -INCLUDE from their working directory): SPITBOL (the benchmark build, spitbol-bench-oracle/sbl: minimal patches, no monitor hooks; -bf and the demo's declared oracle_args), CSNOBOL4,
-# and the jar through run_snobol4jvm.sh with the demo's declared -d/-s. The measure is user instructions (perf stat -e instructions:u, CEO-2035) and the wall clock of that run.
+# and the jar through run_snobol4jvm.sh with the demo's declared -d/-s. The measure is user instructions (perf stat -e instructions:u, R-2035) and the wall clock of that run.
 # START-UP is measured first, on an empty program (bare, without the timeout guard the demo runs carry), five runs per engine, median instructions and fastest wall; every figure printed after it is the engine's TOTAL LESS ITS OWN START-UP.
 # A jar figure under 1 G is inside the spread of its start-up (about 0.3 G) and prints as "start-up only"; SPITBOL's counts resolve to about 1 M. An engine whose output differs from SPITBOL's
 # prints n/a, never a number. A total is a total, not a slope: a demo has no iteration loop (DEMO-SCALE.tsv).

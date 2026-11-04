@@ -3,7 +3,7 @@
 # 2-D array through a var parameter, a record with integer, real, char, Boolean and array fields, a Boolean array, a char array) sets
 # every scalar inside it to v, as fpc's byte fill reads for the values programs use (0, #0, true, a char).
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709: 22 of its 141 empty-output programs call
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709: 22 of its 141 empty-output programs call
 # fillchar): the lowering handled only a 1-D array of known bounds; fillchar(S, Sizeof(S), #0) over a 2-D array type fell through
 # to a by-name call and died "error 22: undefined function called" (triangular-numbers), and a record took the 1-D branch as an array
 # of its fields and stopped at 6.5.3.2. THE CURE: when the count is SizeOf of the same variable (as a call, or the literal it folds

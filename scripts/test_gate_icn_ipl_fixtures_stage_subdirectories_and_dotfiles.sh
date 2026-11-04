@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_fixtures_stage_subdirectories_and_dotfiles.sh -- NAME.fixtures/ STAGES A DIRECTORY TREE AND ITS DOTFILES FOR THE
-# REF AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). progs/iplweb and progs/mszip take
+# REF AND BOTH SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). progs/iplweb and progs/mszip take
 # a directory tree as their argument and progs/newsrc opens the fixed name .newsrc; ipl_fixtures_stage used to copy top-level
 # regular files only, skipping every dotfile and refusing every subdirectory. It now copies the tree as it stands and still
 # refuses a symlink anywhere in it.

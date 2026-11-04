@@ -68,7 +68,7 @@ D_EMIT=0; D_LINK=0; D_CRASH=0; D_TIMEOUT=0; D_OUTPUT=0; D_DIRTYPASS=0
 declare -a SUITE_FILES=()
 # converted-family discriminator (see header note): a .ref sibling AND corpus_suite_harness.py's section banners
 # (`#---- <seq> <name>`) in the source. The sibling alone decided while loose programs carried a .expected; since
-# CEO-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
+# R-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
 is_suite_file() { [ -f "${1%.icn}.ref" ] && grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$1"; }
 
 WORK="$(mktemp -d /tmp/icon_m4_rungs.XXXXXX)"
@@ -134,10 +134,10 @@ run_one() {
     # binary -- and it ran from the corpus directory, so what a program wrote landed in the source tree.
     local stdin_file; stdin_file="$(icn_rundir_stdin "$icn")"
     local -a rd_argv=() rd_env=(); local rd_rc
-    # ⭐ THE DECLARED HEAP AND STACK (CEO-1353): icn_rundir_sizes fills rd_sw with -d<kb>k -s<kb>k for the binary's head, before a --.
+    # ⭐ THE DECLARED HEAP AND STACK (R-1353): icn_rundir_sizes fills rd_sw with -d<kb>k -s<kb>k for the binary's head, before a --.
     local -a rd_sw=(); rd_rc=0; if icn_rundir_sizes "$icn" rd_sw; then :; else rd_rc=$?; fi
     if [ "$rd_rc" -eq 2 ]; then echo "⛔ REFUSE(2) $name: malformed NAME.heap or NAME.stack declaration (the reader said why above)" >&2; exit 2; fi
-    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (CEO-1353)" >&2; fi
+    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (R-1353)" >&2; fi
     local sdir tdir="$WORK/cwd"; sdir=$(dirname "$icn"); mkdir -p "$tdir"
     if icn_rundir_declares "$icn"; then
         rd_rc=0; icn_rundir_argv "$icn" rd_argv || rd_rc=$?
@@ -154,7 +154,7 @@ run_one() {
         D_LINK=$((D_LINK+1)); fail_one "$name" "link"; return 0
     fi
     local got rc
-    # the binary runs under its BARE STEM found on PATH (CEO-624: &progname is the stem in both modes), argv after it
+    # the binary runs under its BARE STEM found on PATH (R-624: &progname is the stem in both modes), argv after it
     got=$( (cd "$tdir" && PATH="$WORK/bin:$PATH" timeout -k 5 "$tmo" env ${rd_env[@]+"${rd_env[@]}"} "$name" ${rd_sw[@]+"${rd_sw[@]}"} ${rd_sw[@]+--} ${rd_argv[@]+"${rd_argv[@]}"}) < "$stdin_file" 2>/dev/null); rc=$?
     local want
     want=$(cat "$exp")

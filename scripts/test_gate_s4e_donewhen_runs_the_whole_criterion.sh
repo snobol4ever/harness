@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_s4e_donewhen_runs_the_whole_criterion.sh -- `done` RUNS THE WHOLE DONE-WHEN, NOT ITS FIRST PHYSICAL LINE.
 # AUTHORS: Lon Jones Cherryholmes · Claude Opus 5   DATE: 2026-09-05
-# Row s4e-msg-donewhen-truncation-false-closes-multiline-heredoc-batons (seat04 reproduced it end to end; ceo ranked
+# Row s4e-msg-donewhen-truncation-false-closes-multiline-heredoc-batons (seat04 reproduced it end to end; ranked
 # the cure 0 in hq_T's lane 2026-09-05 14:38).
 #
 # ⛔⭐⭐ THE DEFECT, AND ITS DIRECTION IS WHAT MAKES IT LETHAL. The ONE extraction point was
@@ -15,7 +15,7 @@
 #
 # FOUR ARMS against a THROWAWAY postoffice under mktemp -- never the live one:
 #   (A) TWO-LINE CRITERION, SECOND LINE RED: line 1 passes, line 2 exits 1 -> rc=1 NOT DONE, row NOT closed.
-#       This is the ceo's named fail-once shape and the minimal statement of the whole defect.
+#       This is the officer's named fail-once shape and the minimal statement of the whole defect.
 #   (B) HEREDOC WITNESS: writes a file, then greps it, then exits 1 -> rc=1, AND the file is non-empty, which is
 #       what proves the BODY ran rather than the opener alone. ⛔ Arm A alone cannot prove that: a fix that read
 #       two lines and stopped would pass A and still truncate every heredoc.
@@ -31,7 +31,7 @@
 #       continuation happens ONLY while bash says the text is UNFINISHED.
 #   (F) A SECOND column-0 `DONE-WHEN:` whose text is a REAL COMMAND -> REFUSED rc=2, row NOT closed. Only the
 #       first line has ever run, so such a baton closes on HALF its own contract while the other half sits in the
-#       file where every reader counts it as part of the bar. ⭐ MEASURED on the ceo's seed: 39 live batons carry
+#       file where every reader counts it as part of the bar. ⭐ MEASURED on the officer's seed: 39 live batons carry
 #       more than one, 10 extras are real commands, 6 of those rows are DONE, and one of those six -- snobol4-
 #       xfail-class-setexit-errlimit-composition-2-entries -- has a RED second half ("cross-ref=0 (want 2)").
 #   (G) THE SAME SHAPE WITH A LEFTOVER MINT PLACEHOLDER beneath a real criterion -> still closes green. Untidy is

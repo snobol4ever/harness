@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# lib_fanout.sh -- THE FAN-OUT CEILING (ceo CEO-1333, 2026-09-27 17:2x CDT, on the cfo's CFO-173 economy ask; Lon's ECONOMY word of
+# lib_fanout.sh -- THE FAN-OUT CEILING (R-1333, 2026-09-27 17:2x CDT, on the cfo's CFO-173 economy ask; Lon's ECONOMY word of
 # 2026-09-07 binds every seat). MEASURED CAUSE: load 52.6 on 16 cores at 17:05 -- hq_templates 14 parallel compiles, hq_snocone's parser
 # census at 12-13 scrip processes, hq_prolog's callgrind beside a census -- and every other seat's proofs ran five times slower (a cold
 # build 166 s against 33 s, preflight 68 s against 13 s). THE RULE: a seat that fans out reads the machine's CPU demand FIRST and caps its
 # concurrent children at max(2, min(4, cores - demand)); a census or sweep over hundreds of programs runs SERIALLY in the batch class (util_batch.sh, shared-dev step 4: a nice is relative inside one cgroup, none is left); a long
 # single job (callgrind, a monitor run, a cold build) is one child.
-# ⛔ THE DEMAND IS NEVER load1 (ceo CEO-1394, the coo's COO-241 measurement): at 2026-10-01 15:00 CDT load1 read 1219 while PSI cpu read
+# ⛔ THE DEMAND IS NEVER load1 (R-1394, the coo's COO-241 measurement): at 2026-10-01 15:00 CDT load1 read 1219 while PSI cpu read
 # 3 percent -- three SCRIP Icon programs held 8k to 16k co-expression pthreads each -- and every fan-out on the box collapsed to width 2 on
 # an idle machine. load1 counts threads, not demand. The demand is CPUs' worth of waiting: /proc/pressure/cpu "some avg10" (the percent of
 # the last 10 s in which a runnable task waited for a CPU) times cores / 100, or, on a kernel without PSI, /proc/stat procs_running less
@@ -41,7 +41,7 @@ fanout_demand() {
 }
 fanout_load1() { local p="${FANOUT_PROC:-/proc}"; if [ -r "$p/loadavg" ]; then cut -d' ' -f1 "$p/loadavg"; else echo 0; fi; }
 fanout_width() { awk -v d="$(fanout_demand)" -v c="$(fanout_cores)" 'BEGIN { w = int(c - d); if (w > 4) w = 4; if (w < 2) w = 2; print w }'; }
-fanout_report() { printf 'FANOUT demand=%s (%s) cores=%s width=%s load1=%s (reported, never read) (CEO-1333/1394: max(2, min(4, cores - demand)); a census runs serially in the batch class)\n' "$(fanout_demand)" "$(fanout_source)" "$(fanout_cores)" "$(fanout_width)" "$(fanout_load1)"; }
+fanout_report() { printf 'FANOUT demand=%s (%s) cores=%s width=%s load1=%s (reported, never read) (R-1333/1394: max(2, min(4, cores - demand)); a census runs serially in the batch class)\n' "$(fanout_demand)" "$(fanout_source)" "$(fanout_cores)" "$(fanout_width)" "$(fanout_load1)"; }
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
     case "${1:-}" in
         width) fanout_width ;; demand) fanout_demand ;; source) fanout_source ;; load) fanout_load1 ;; cores) fanout_cores ;; report) fanout_report ;;

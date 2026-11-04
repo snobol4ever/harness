@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# s4e_push_rejected.sh -- REPORT A REJECTED PUSH, ONE LINE, NO MESSAGE (ceo CEO-1711).
-# Lon 2026-10-14 13:4x CDT, in-chat to the ceo, verbatim: "So maybe seats just report REJECTED pushes?"
+# s4e_push_rejected.sh -- REPORT A REJECTED PUSH, ONE LINE, NO MESSAGE (R-1711).
+# Lon 2026-10-14 13:4x CDT, in-chat, verbatim: "So maybe seats just report REJECTED pushes?"
 # Run it ONCE each time a `git push` of yours is REJECTED (non-fast-forward: origin moved while you rebased, built and proved),
 # from the repository whose push was refused:   bash /path/to/harness/scripts/s4e_push_rejected.sh [repo-dir]
 # It appends one tab-separated line to $S4E_POSTOFFICE/PUSH_REJECTED.tsv (default /home/resources/postoffice):
 #   utc-time  seat  repo  your-HEAD  origin-main-head
-# The ceo's .github/scripts/util_relay_trigger.py counts these per seat per hour; a seat losing races is what starts the relay
-# (CEO-1709: one seat at a time holds the push baton). Your reflog already counts your rebases; this counts the races you lost.
+# The officer's .github/scripts/util_relay_trigger.py counts these per seat per hour; a seat losing races is what starts the relay
+# (R-1709: one seat at a time holds the push baton). Your reflog already counts your rebases; this counts the races you lost.
 set -u
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
 repo="${1:-$PWD}"

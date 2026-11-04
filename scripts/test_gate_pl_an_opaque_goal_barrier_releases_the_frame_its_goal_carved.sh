@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_an_opaque_goal_barrier_releases_the_frame_its_goal_carved.sh
 #
-# PROLOG, RUNG 9, THE GAMMA FENCE (CEO-690; Lon 2026-09-13, verbatim: "do a whack-free on GAMMA for a FENCE d
+# PROLOG, RUNG 9, THE GAMMA FENCE (R-690; Lon 2026-09-13, verbatim: "do a whack-free on GAMMA for a FENCE d
 # (i.e. cut !) or otherwise FENCE d operation."). An OPAQUE-GOAL BARRIER -- once/1, the condition of an
 # if-then-else, forall/2, (\+)/1 -- can never be re-entered by backtracking whatever its argument goal does,
 # so the text of the call site alone proves beta is unreachable and every frame the goal carved is DEAD at
@@ -42,7 +42,7 @@
 # IS THAT GATE, BY NAME, and it is already wired and blocking; do not re-derive it here and do not copy its
 # fixture.
 #
-# ⛔⭐ THE SAFETY CONTROL IS THE GRADING CRITERION AND NOT A FOOTNOTE (CEO-690, CEO-550). GAMMA IS THE SHARED
+# ⛔⭐ THE SAFETY CONTROL IS THE GRADING CRITERION AND NOT A FOOTNOTE (R-690, R-550). GAMMA IS THE SHARED
 # YIELD PORT FOR SUSPEND AND RETURN, so a generator that suspends through gamma expects to be resumed INTO
 # THAT VERY FRAME, and an unconditional whack tears down a frame a redo is about to re-enter. The control is a
 # PAIR whose ANSWERS separate the two cases: q(X) un-fenced under a 3-deep recursion has 2^3 solutions and its

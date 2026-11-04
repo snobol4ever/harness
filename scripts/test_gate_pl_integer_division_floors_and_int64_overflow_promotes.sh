@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_pl_integer_division_floors_and_int64_overflow_promotes.sh -- ISO 9.1.3 integer arithmetic (cto, 2026-09-12,
-# row prolog-integer-division-floors-and-int64-overflow-raises-instead-of-trapping, ceo re CTO-33). RED BEFORE:
+# row prolog-integer-division-floors-and-int64-overflow-raises-instead-of-trapping, the officer re CTO-33). RED BEFORE:
 # -10 div 3 gave -3 (truncated like //, ISO floors to -4) and -9223372036854775808 // -1 executed idiv on INT64_MIN / -1,
 # a CPU trap (SIGFPE, rc=136) that killed the program -- core/test_arith.pl lost every case after it (0/220 on the SWI board).
 # FLOOR RAISED 2026-10-04 (hq_prolog, the coo's pass-36 red: 175 -> 74 of 220 since 9f6049d47 read GREEN against the old floor of 55): the per-mode

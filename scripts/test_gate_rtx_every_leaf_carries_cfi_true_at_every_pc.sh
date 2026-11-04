@@ -2,7 +2,7 @@
 # test_gate_rtx_every_leaf_carries_cfi_true_at_every_pc.sh -- EVERY ASM LEAF DECLARES ITS FRAME TO THE UNWINDER, TRUTHFULLY AT
 # EVERY INSTRUCTION, AND THE C ROAD TO THE FIRST EMITTED FRAME IS THE SYSTEM UNWINDER'S, NOT A PROBE (hq_runtime 2026-10-08, row
 # rtx-every-leaf-carries-cfi-so-the-icon-frame-walk-crosses-a-frameless-leaf-by-the-unwinder-and-the-fourteen-word-probe-goes-
-# ceo-1548; ceo CEO-1546/1548; ARCH-ICON-RTX.md section 9.8 fact (a); ARCH-RT-CALL-PROTOCOL.md).
+# R-1548; R-1546/1548; ARCH-ICON-RTX.md section 9.8 fact (a); ARCH-RT-CALL-PROTOCOL.md).
 #
 # WHY.  rt_icn_frames (gc_heap.c) -- the Icon traceback, display(), variable(), the error voice's guard, rt_heap_out_of_memory --
 # finds the first emitted frame above a C function with _Unwind_Backtrace.  When the C function was called from an asm leaf

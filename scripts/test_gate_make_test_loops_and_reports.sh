@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_make_test_loops_and_reports.sh -- `make test` RUNS EVERY ARM AND REPORTS, ruled CEO-582.
+# test_gate_make_test_loops_and_reports.sh -- `make test` RUNS EVERY ARM AND REPORTS, ruled R-582.
 #
 # THE DEFECT, MEASURED BY THE cfo BEFORE THE CURE: `make test` was ONE target of ~150 recipe lines and make
 # ABORTS ON THE FIRST FAILING LINE, so a red at arm 15 killed the set 24s in and 131 ARMS NEVER EXECUTED --

@@ -7,7 +7,7 @@
 # existence_error('$create_prolog_flag'/2) and left '$cur_locale' set to the half-made locale.
 # THE REF IS CUT FROM THE ORACLE, NEVER FROM SCRIP: the table below was cut 2026-11-04 from /usr/bin/swipl, and every run re-cuts it and REFUSES
 # rc=2 when the oracle and the table disagree or the oracle is absent. Each answer is printed as its code list, so no output encoding is in play.
-# FAIL-ONCE (CEO-1680): on the tree before the cure (origin dbff12a1d) m3 and m4 both read FAIL, every locale line an existence_error.
+# FAIL-ONCE (R-1680): on the tree before the cure (origin dbff12a1d) m3 and m4 both read FAIL, every locale line an existence_error.
 # Usage: bash ../harness/scripts/test_gate_pl_set_locale_publishes_its_properties_and_the_colon_directives_of_format_group_by_them_as_swipl.sh
 set -uo pipefail
 GATE_NAME=test_gate_pl_set_locale_publishes_its_properties_and_the_colon_directives_of_format_group_by_them_as_swipl

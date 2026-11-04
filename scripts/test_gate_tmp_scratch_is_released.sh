@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_tmp_scratch_is_released.sh -- every scratch a script makes under /tmp is released by that script (ceo 2026-10-01,
+# test_gate_tmp_scratch_is_released.sh -- every scratch a script makes under /tmp is released by that script (2026-10-01,
 # Lon: "find out why /tmp keeps filling and fix the root problem"). Measured that morning on a 63 GB /tmp at 90%: 6957
 # top-level entries, 4466 of them older than 48 h, from Python censuses that mkdtemp'd and never rmtree'd (gc_cov 754,
 # c_alloc_* 2740, suite_pop_diff 481, ...) and shell bodies whose work dir outlived a signal. Two static arms, NO BUILD:

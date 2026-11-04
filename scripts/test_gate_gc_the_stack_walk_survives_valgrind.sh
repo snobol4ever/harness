@@ -2,7 +2,7 @@
 # test_gate_gc_the_stack_walk_survives_valgrind.sh -- THE MAIN STACK'S TOP IS THE MAPPING HOLDING __libc_stack_end, NOT
 # THE MAPPING LABELLED [stack], SO A COLLECTING RUN SURVIVES VALGRIND (cto 2026-09-24; row gc-the-main-stack-top-is-the-
 # mapping-holding-libc-stack-end-not-the-stack-label-so-a-collecting-run-survives-valgrind; hq_icon's finding on origin
-# e9066fb8d and hq_prolog's on a mode-4 Prolog hello world; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812).
+# e9066fb8d and hq_prolog's on a mode-4 Prolog hello world; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812).
 #
 # MEASURED 2026-09-24 on SCRIP 47fe713dd: a six-line Icon witness that puts 20000 copies of repl("x", 10) on a list and
 # writes its size runs clean natively at the shipped 128 KB window and dies rc=139 under valgrind --tool=none in BOTH
@@ -38,7 +38,7 @@
 # witness.  FAIL_ONCE switches the ceiling off too, since arm (a) is the plain witness.  The masking itself is REPORTED, never
 # graded here: test_gate_gc_the_stack_walk_stops_at_the_outermost_emitted_frame.sh grades the ceiling.  In mode 4 the plant never
 # applies (no banner: a compiled program runs on a stack it maps itself and adopts its top), so every plant arm is mode 3.
-# RE-CUT AGAIN (hq_collector 2026-10-14, CEO-1680, the seams row): the plant SCRIP_GC_PLANT_STACK_LABEL is DELETED from the runtime -- it restored the label-only read so arm (c) could
+# RE-CUT AGAIN (hq_collector 2026-10-14, R-1680, the seams row): the plant SCRIP_GC_PLANT_STACK_LABEL is DELETED from the runtime -- it restored the label-only read so arm (c) could
 # watch the loss return, a seam in SCRIP that existed only so a test could trip. Arm (c) and its note are retired; FAIL_ONCE=1 now grades arm (a) against a corrupted ref. The property's own
 # commit-before reading stands in the header above: on 47fe713dd both modes died rc=139 under valgrind. Arms (a), (b) and (d) stand.
 # RE-CUT at ARCH-GC section 13 STEP B (hq_collector 2026-10-11): the ceiling (rt_gc_emit_ceiling_adopt, SCRIP_GC_CEILING) is gone with the marker scan; the main segment is

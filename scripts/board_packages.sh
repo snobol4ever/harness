@@ -78,7 +78,7 @@ runner_for() {  # $1 = "<lang>/<name>" -> echoes the grading script's basename, 
     snobol4/gimpel)          echo test_snobol4_gimpel_suite.sh ;;
     snobol4/spitbol_testpgms) echo test_snobol4_spitbol_testpgms_suite.sh ;;
     snobol4/snoflake_suite)  echo test_snoflake_suite.sh ;;
-    snobol4/spitbol_x64_tests) echo test_snobol4_spitbol_x64_suite.sh ;;   # hq_snobol4's X64T deck (the coo 2026-09-28, CEO-1353 gap 7: it was UNPROVEN "no gate wired" beside a runner that exists)
+    snobol4/spitbol_x64_tests) echo test_snobol4_spitbol_x64_suite.sh ;;   # hq_snobol4's X64T deck (the coo 2026-09-28, R-1353 gap 7: it was UNPROVEN "no gate wired" beside a runner that exists)
     snobol4/spitbol_x32_tests) echo test_snobol4_spitbol_x32_suite.sh ;;   # hq_snobol4's X32T deck, the same
     *) : ;;
   esac

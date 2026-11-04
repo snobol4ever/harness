@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_character_string_is_never_empty.sh -- '' is not an ISO 7185 character-string (6.1.7), and a program that writes one is refused
 #
-# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. PAT iso7185prt1841 (writeln(''))
+# MEASURED 2026-09-25 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. PAT iso7185prt1841 (writeln(''))
 # read "accepted": the lexer's string rule took '' as an empty STRINGCONST. ISO 7185 6.1.7 builds a character-string from ONE OR MORE
 # string-elements, so '' is not one. The cure is the lexer's own rule: a quoted literal with no string-element reports 6.1.7 and counts
 # an ISO error, and the parse goes on so every such literal is named. Four FPC-suite programs fpc -Miso accepts write '' and are graded
-# as ISO expected refusals under CEO-1228 (corpus/packages/pascal/fpc_tests/ISO_EXPECTED_REFUSALS.tsv).
+# as ISO expected refusals under R-1228 (corpus/packages/pascal/fpc_tests/ISO_EXPECTED_REFUSALS.tsv).
 #
 # ARMS: the vendored PAT witness refused with a 6.1.7 diagnostic in BOTH modes (m4: --compile refuses); and a legal control cut LIVE
 # from fpc -Miso and byte-identical in both modes -- '''' (one apostrophe), 'it''s', a one-char string and a string beside a char, so a

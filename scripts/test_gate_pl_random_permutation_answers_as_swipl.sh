@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_random_permutation_answers_as_swipl.sh -- random_permutation/2 ANSWERS AS swipl's library(random) DOES (cfo 2026-10-14,
-# row prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-ceo-1709: test_dict's create#1 builds dicts from a
+# row prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-r-1709: test_dict's create#1 builds dicts from a
 # random_permutation/2 of its keys and raised existence_error).
 #
 # The base prelude (prolog_parse.c) types swipl 9.0.4's own definition: a list in either argument is keyed with random/1, keysorted and

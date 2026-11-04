@@ -4,8 +4,8 @@
 # int8..int32, nativeint, nativeuint, sizeint, sizeuint, ptrint, ptruint) are predeclared, and Length of a static array is its element
 # count -- each as fpc reads it, -Miso included.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562; hq_snocone's ask on first-perfect-square-in-base-n-with-n-unique-digits-2;
-# the ceo's CEO-1709 empty-output class): pascal.y's b_factor and lo_term took only a scalar constant or a parenthesised bound, so
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562; hq_snocone's ask on first-perfect-square-in-base-n-with-n-unique-digits-2;
+# R-1709 empty-output class): pascal.y's b_factor and lo_term took only a scalar constant or a parenthesised bound, so
 # tRegion1 = 0..63 - 2 * SizeOf(byte) was a syntax error; pas_fold_const folded no call; pas_is_int_typename knew no uint64, so
 # High(Uint64) in triangular-numbers stopped at ISO 7185 6.2.2.1 (fpc -Miso itself accepts every name above, measured one by one); and
 # Length of array [3..12] read 13. THE CURE: b_factor and lo_term take IDENT ( b_expr ), a TT_FNC as an ordinary call builds it;

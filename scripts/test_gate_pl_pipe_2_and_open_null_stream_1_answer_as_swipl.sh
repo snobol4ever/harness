@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_pipe_2_and_open_null_stream_1_answer_as_swipl.sh -- pipe/2 and open_null_stream/1 answer as swipl 10 does, in both modes
-# (rows prolog-swi-builtin-pipe-2-... and prolog-swi-builtin-open-null-stream-1-... agrees-with-swipl-in-both-modes-ceo-1753, minted
-# by hq_prolog 2026-10-14 on the ceo's CEO-1753 ruling: both are thread-free builtins of the SWI superset, SWI core/test_answer.pl
+# (rows prolog-swi-builtin-pipe-2-... and prolog-swi-builtin-open-null-stream-1-... agrees-with-swipl-in-both-modes-r-1753, minted
+# by hq_prolog 2026-10-14 on R-1753 ruling: both are thread-free builtins of the SWI superset, SWI core/test_answer.pl
 # died on existence_error(procedure, pipe/2) in nine of its fourteen cases).
 # WHAT IS GRADED: pipe/2 yields a read stream and a write stream joined by the kernel (bytes written and flushed or closed read back
 # in order, end_of_file after the writer closes, is_stream/1, stream_property mode(read) and mode(write), existence_error(stream, _)

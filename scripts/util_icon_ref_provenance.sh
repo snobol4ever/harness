@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # util_icon_ref_provenance.sh -- WHERE DID THIS PACKAGE'S REFS COME FROM?  Asked of the declared oracle, per
-# program, with a printed denominator.  (hq_T, CEO-395 rule 3 + CEO-445 item 1, 2026-09-09.)
+# program, with a printed denominator.  (hq_T, R-395 rule 3 + R-445 item 1, 2026-09-09.)
 #
 #     bash ../harness/scripts/util_icon_ref_provenance.sh jcon_tests
 #     bash ../harness/scripts/util_icon_ref_provenance.sh arizona_tests --names
 #
-# ⛔ THE QUESTION IS NOT "DOES SCRIP PASS".  It is the one CEO-395 rule 3 asks one level above the board: a ref
+# ⛔ THE QUESTION IS NOT "DOES SCRIP PASS".  It is the one R-395 rule 3 asks one level above the board: a ref
 # proves the answer has not MOVED; only its PROVENANCE says it agreed with anything else.  Icon's oracle is
-# Arizona icont/iconx and nothing else (CEO-391 rule 1: one oracle per language, no compatibility switch).  So
+# Arizona icont/iconx and nothing else (R-391 rule 1: one oracle per language, no compatibility switch).  So
 # for every program with a ref, this runs the Arizona oracle the way the suite runner runs SCRIP -- same .dat /
 # .args sidecars, same `link` modules, stdout only -- and asks whether the oracle reproduces the ref it is
 # being graded against.  Three answers, and each is actionable by a different person:
@@ -16,7 +16,7 @@
 #   ORACLE_DIFFERS     the ref is NOT the declared oracle's output. Every verdict against it -- red OR GREEN --
 #                      is a statement about a different implementation. ⭐ THE GREENS ARE THE WORSE HALF: a red
 #                      gets looked at, a green against a foreign ref is a defect nobody will ever open.
-#   ORACLE_REFUSES     the oracle will not compile it: OUTSIDE THE BASELINE (CEO-391 rule 2), never hidden,
+#   ORACLE_REFUSES     the oracle will not compile it: OUTSIDE THE BASELINE (R-391 rule 2), never hidden,
 #                      never silently passed, and out of the graded denominator with the oracle's own words.
 #
 # ⛔⭐ THE NONDETERMINISM ARM IS NOT OPTIONAL, AND A CONTROL RUN IS WHAT PROVED IT.  The first version of this

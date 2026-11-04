@@ -8,7 +8,7 @@
 # test_gate_pl_quad_regs.sh, test_prolog_ladder.sh), not a fragile nested-quoting one-liner.
 # THREE PARTS, ALL REQUIRED:
 #   (1) bash ../harness/scripts/test_prolog_ladder.sh --only 11   -- PASS 2/2 (m3 + m4) on the ladder's own rung-11 witness.
-#   (2) bash ../harness/scripts/test_gate_pl_port_trace.sh --only 11 -- the port-trace instrument (refs owed at landing, ceo 2026-09-03).
+#   (2) bash ../harness/scripts/test_gate_pl_port_trace.sh --only 11 -- the port-trace instrument (refs owed at landing, the officer 2026-09-03).
 #   (3) THE DEPTH CRITERION, IN BOTH MODES -- count(N) to 10^6 under `ulimit -s 512` (vs the default 8MB, so the ceiling
 #       this proves is tighter than the ladder witness's own 100000 by construction), and RSS must be FLAT across N, not
 #       merely non-crashing: measured at N=1000 and N=1000000 (a 1000x range), the high-N run's max RSS must stay under
@@ -24,7 +24,7 @@
 #       false-green trap wearing a passing suite -- parts 1 and 2 said "m3 + m4" in this very header, and part 3 said
 #       nothing, so the header read as if all three covered both. State each part's population IN the part.
 # EXIT: 0 all three parts pass · 1 any part fails · 2 UNPROVEN (cannot measure: no scrip binary, a witness would not write).
-# AUTHORSHIP: drafted by seat05 while it held this row, saved outside the root and never pushed when the ceo released
+# AUTHORSHIP: drafted by seat05 while it held this row, saved outside the root and never pushed when the officer released
 # the row (a fleet seat never touches a rung); adopted here unchanged in substance by hq_P, which owns the row, after
 # proving it FAILS ONCE -- part 3's RSS bound was checked to reject an O(N) stack by running the high-N witness with a
 # deliberately un-flat control. A DONE-WHEN nobody has seen fail is not an acceptance test.

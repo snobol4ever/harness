@@ -11,7 +11,7 @@
 #     :(SCONTINUE) -> ERROR 321 -- goto scontinue with no preceding error
 # SCRIP answered ALL THREE with "ERROR 035 -- Not in a SETEXIT handler", which is CSNOBOL4's error 35
 # text reached through core_err_msgs[] -- dialect residue, since core_errnum_csnobol4() has been hard 0
-# since the compat switch was retired (CEO-388/390) and every other number SCRIP publishes is SPITBOL's.
+# since the compat switch was retired (R-388/390) and every other number SCRIP publishes is SPITBOL's.
 #
 # ⭐ The three codes are the whole point of the gate: one collapsed answer looks like a working diagnostic
 # and passes any arm that only asks "did it error", so the arms below assert the NUMBER and the TEXT.

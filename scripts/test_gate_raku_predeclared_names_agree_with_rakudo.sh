@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_predeclared_names_agree_with_rakudo.sh -- A NAME THE RUNTIME PROVIDES IS RESOLVED BY THE LOWERER, AND A USER'S OWN DEFINITION STILL WINS
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; ceo CEO-1479).
+# (row raku-every-suite-to-100-under-nonet-r-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; R-1479).
 #
 # THE DEFECT, measured over Roast (1381 files that parse) with scrip --compile and nothing executed: only 629 compile, and 680 of the 746 refusals are
 # ONE guard, graph_native_emittable_mode in src/driver/scrip.c ("variable X is read but never assigned and is not a parameter"). A large family of its names

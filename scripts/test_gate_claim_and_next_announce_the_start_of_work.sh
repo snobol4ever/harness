@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE (THE ARBITER IS THE cto since the ceo left the ROSTER, Lon 2026-10-31 15:1x CDT: every arm that read the ceo as the arbiter reads the cto, and the fixture ceo plays the standing seat the cto played) (coo 2026-09-20, ceo CEO-1002 rank 0, row
+# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE (THE ARBITER IS THE cto since the officer left the ROSTER, Lon 2026-10-31 15:1x CDT: every arm that read the officer as the arbiter reads the cto, and the fixture the cao plays the standing seat the cto played) (coo 2026-09-20, R-1002 rank 0, row
 # instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat).
 #
 # ⛔⭐ THE DEFECT IS IN THE BUS, NOT IN A SEAT. claim and next LOCKED A ROW SILENTLY: the bus had claim, assign, ask
@@ -8,12 +8,12 @@
 # the no_layout census for an hour, the cto spent their own hour on the same 30 entries and the same cause and landed
 # first at SCRIP 83fb80ee7, and hq_snobol4 found out on a failed pull. BOTH SEATS HELD ROWS. The rows did not overlap
 # BY NAME and did overlap BY POPULATION -- which a claim on a topic string can never catch.
-# ⛔ LON, IN-CHAT TO THE ceo, VERBATIM: "Them not telegramming before starting is YOUR FAULT! You set up the system."
-# The ceo's own first draft of the law read TELEGRAM THE LANE WHEN YOU START and they retracted it in the same
+# ⛔ LON, in-chat, VERBATIM: "Them not telegramming before starting is YOUR FAULT! You set up the system."
+# The officer's own first draft of the law read TELEGRAM THE LANE WHEN YOU START and they retracted it in the same
 # ruling: a rule that converts a structural gap into an instruction is obeyed for a week and then not. So what is
 # graded here is MECHANISM -- what the bus does when a seat takes a row -- and never a discipline.
 #
-# ⛔⭐ WHO IS TOLD, SINCE CEO-2078 (ceo 2026-10-31): THE CEO AND EVERY STANDING SEAT HOLDING A LIVE ROW IN THE ROW'S LANE (its
+# ⛔⭐ WHO IS TOLD, SINCE R-2078 (2026-10-31): THE OFFICER AND EVERY STANDING SEAT HOLDING A LIVE ROW IN THE ROW'S LANE (its
 # language prefix), or a lane-neutral row (shared code overlaps everyone); every other seat reads $PO/CLAIMS.log. MEASURED before
 # the change: 6,446 bus messages in seven days, 3,288 of them claim notices mailed to all seventeen seats -- three quarters of an
 # HQ's mail, every one saying in its own text that a name cannot show the overlap. Arms 1, 2, 6 and 8 grade the narrowing: a seat
@@ -37,8 +37,8 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/gate_announce.XXXXXX")" || refuse "mktemp failed
 cleanup(){ chmod -R u+w "$W" 2>/dev/null; rm -rf "$W"; }
 trap cleanup EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"
-# the roster of SEPTET as CEO-1662 redefined it (2026-10-11): hq_snobol4, hq_icon and hq_prolog stand, hq_raku and hq_pascal are stood down
-STANDING="cto ceo cfo coo hq_snobol4 hq_icon hq_prolog"
+# the roster of SEPTET as R-1662 redefined it (2026-10-11): hq_snobol4, hq_icon and hq_prolog stand, hq_raku and hq_pascal are stood down
+STANDING="cto cao cfo coo hq_snobol4 hq_icon hq_prolog"
 DOWN="hq_raku hq_pascal seat07"
 for s in $STANDING $DOWN; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 printf 'SEPTET\n# scratch line 2 for a gate fixture: LANES: icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=cto raku=cto\n' > "$W/MODE"
@@ -51,11 +51,11 @@ printf 'hq_prolog\nRUNNING\n' > "$W/claims/prolog-row-hq-prolog-holds.claim"
 printf 'hq_icon\nRUNNING\n' > "$W/claims/icon-row-hq-icon-holds.claim"
 count(){ ls "$W/$1/inbox"/*claim-notice-$2* 2>/dev/null | wc -l; }
 
-echo "--- ARMS 1-3: A PROLOG-LANE CLAIM ANNOUNCES ITSELF TO THE CEO AND THE LIVE HOLDERS OF ITS LANE AND OF NEUTRAL ROWS, AND TO NOBODY ELSE ---"
+echo "--- ARMS 1-3: A PROLOG-LANE CLAIM ANNOUNCES ITSELF TO THE OFFICER AND THE LIVE HOLDERS OF ITS LANE AND OF NEUTRAL ROWS, AND TO NOBODY ELSE ---"
 out="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim prolog-row-the-coo-takes 2>&1)"; rc=$?
 miss=""; for s in cto hq_prolog cfo; do n=$(count $s prolog-row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
 [ "$rc" = 0 ] && [ -z "$miss" ]; arm $? "the cto, the prolog-lane holder and the neutral-row holder each got exactly one notice (rc=$rc)${miss:+ -- missing:$miss}"
-extra=""; for s in ceo hq_snobol4 hq_icon coo $DOWN; do n=$(count $s ''); [ "$n" = 0 ] || extra="$extra $s($n)"; done
+extra=""; for s in cao hq_snobol4 hq_icon coo $DOWN; do n=$(count $s ''); [ "$n" = 0 ] || extra="$extra $s($n)"; done
 [ -z "$extra" ]; arm $? "and NOT the icon-lane holder, NOT a seat holding nothing, NOT a stood-down seat, NOT the claimant${extra:+ -- mailed:$extra}"
 body="$(cat "$W/cto/inbox"/*claim-notice-prolog-row-the-coo-takes* 2>/dev/null)"
 [[ "$body" == *"WORK STARTED"* && "$body" == *coo* && "$body" == *prolog-row-the-coo-takes* ]]
@@ -70,7 +70,7 @@ arm $? "and says how many seats it told, so a delivery that did not happen canno
 echo "--- ARM 6: A LANE-NEUTRAL ROW REACHES EVERY LIVE HOLDER (shared code overlaps every lane) ---"
 out6="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim row-the-coo-takes 2>&1)"; rc6=$?
 miss=""; for s in cto cfo hq_prolog hq_icon; do n=$(count $s row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
-extra=""; for s in ceo hq_snobol4 coo $DOWN; do n=$(count $s row-the-coo-takes); [ "$n" = 0 ] || extra="$extra $s($n)"; done
+extra=""; for s in cao hq_snobol4 coo $DOWN; do n=$(count $s row-the-coo-takes); [ "$n" = 0 ] || extra="$extra $s($n)"; done
 [ "$rc6" = 0 ] && [ -z "$miss" ] && [ -z "$extra" ]; arm $? "the cto and all three holders got it, the two idle seats did not (rc=$rc6)${miss:+ -- missing:$miss}${extra:+ -- mailed:$extra}"
 
 echo "--- ARM 7: next TAKES ITS LOCK THROUGH claim AND MUST NOT SWALLOW THE ANNOUNCEMENT ---"
@@ -96,13 +96,13 @@ arm $? "an undeliverable notice is NAMED, the claim still stands (rc=$rc2), and 
 [[ "$out2" == *"announced to 4 standing seat(s)"* ]]
 arm $? "and the number printed is what was DELIVERED (cto cfo hq_prolog coo) -- an instrument that reports success while doing nothing is the recurring failure"
 
-echo "--- ARM 10: A PORT IS A LANE OF ITS OWN: a port holder hears only its port's claims, and a port's claim reaches only the ceo and its port (CEO-2081) ---"
+echo "--- ARM 10: A PORT IS A LANE OF ITS OWN: a port holder hears only its port's claims, and a port's claim reaches only the officer and its port (R-2081) ---"
 mkdir -p "$W/hq_dotnet/inbox" "$W/hq_dotnet/archive"
-printf 'ROSTER: cto ceo cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
+printf 'ROSTER: cto cao cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
 for t in dotnet-row-held gc-neutral-row dotnet-row-taken; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
 printf 'hq_dotnet\nRUNNING\n' > "$W/claims/dotnet-row-held.claim"
 rm -f "$W/claims/row-for-the-picker.claim" "$W/claims/row-with-a-deaf-neighbour.claim"
-o10="$(S4E_SEAT=ceo S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
+o10="$(S4E_SEAT=cao S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
 n_neutral=$(count hq_dotnet gc-neutral-row)
 o11="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim dotnet-row-taken 2>&1)"
 n_portcfo=$(count cfo dotnet-row-taken); n_porticon=$(count hq_icon dotnet-row-taken)

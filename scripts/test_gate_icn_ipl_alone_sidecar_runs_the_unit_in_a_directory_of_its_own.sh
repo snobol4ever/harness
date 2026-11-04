@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_icn_ipl_alone_sidecar_runs_the_unit_in_a_directory_of_its_own.sh -- the NAME.alone sidecar (hq_icon 2026-10-04; Lon CEO-1474; one gate per
-# sidecar, CEO-1315): a unit that lists its current directory (progs/gcomp) runs in a directory holding only its NAME.fixtures/, for the oracle and
+# test_gate_icn_ipl_alone_sidecar_runs_the_unit_in_a_directory_of_its_own.sh -- the NAME.alone sidecar (hq_icon 2026-10-04; Lon R-1474; one gate per
+# sidecar, R-1315): a unit that lists its current directory (progs/gcomp) runs in a directory holding only its NAME.fixtures/, for the oracle and
 # both SCRIP modes alike. The planted unit lists its cwd. GREEN: the ref is exactly the two fixture names and m3 and m4 pass. RED: with NAME.alone
 # ignored the unit runs in the package subdirectory and its listing carries the package's own files. A reason under 20 characters refuses (rc 2).
 set -uo pipefail

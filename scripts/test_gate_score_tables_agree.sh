@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (util_score_row.py db_crosscheck, hq_raku 2026-09-16)"
-# test_gate_score_tables_agree.sh — SCORE.md's two tables must agree BY VALUE (ceo approval 2026-09-03).
+# test_gate_score_tables_agree.sh — SCORE.md's two tables must agree BY VALUE (approval 2026-09-03).
 # The September-10 grid and the standardized display describe the same measurements; `util_score_row.py write`
 # updates only the display, so a grid cell goes stale the moment a runner records a row and NOTHING SAYS SO.
 #

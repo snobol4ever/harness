@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ../harness/scripts/test_gate_orphaned_witnesses_do_not_grow.sh — ceo CEO-414 (minted hq_P 2026-09-08).
+# ../harness/scripts/test_gate_orphaned_witnesses_do_not_grow.sh — R-414 (minted hq_P 2026-09-08).
 #
 # WHAT IT GATES.  An ORPHANED WITNESS is a committed `<name><ext>` + `<name>.ref` pair under
 # corpus/tests/<lang>/ whose name appears in NO `ALL.csv`, `ALL.xfail` or `ALL.excluded.txt`.
@@ -35,7 +35,7 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 [ -d "$CORPUS/tests" ] || { echo "⛔ GATE REFUSES(2): no corpus tests tree at $CORPUS/tests"; exit 2; }
 [ -f ../harness/scripts/util_orphaned_witness_census.py ] || { echo "⛔ GATE REFUSES(2): census generator missing"; exit 2; }
 # ---- the floor, per language.  Lower a number ONLY in the commit that absorbs the witnesses.
-# ⭐ FLOOR_icon 19 -> 20 (hq_V 2026-09-10, ceo CEO-516 landing). NET +1 FROM TWO MOVES IN OPPOSITE DIRECTIONS, named
+# ⭐ FLOOR_icon 19 -> 20 (hq_V 2026-09-10, R-516 landing). NET +1 FROM TWO MOVES IN OPPOSITE DIRECTIONS, named
 # apart so neither hides the other: the cfo's EIGHTH pair (cset_membership_is_a_bit_test_not_a_name_lookup) was
 # ABSORBED into the Icon rungs and its loose pair deleted, which REMOVED an orphan; and the cfo's SEVENTH pair
 # (trace_call_line_prints_every_parameter_and_images_a_list) became a PERMANENT loose keeper, which ADDED one.
@@ -43,7 +43,7 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # trace lines, so the rungs builder's rename would make it red by construction (86 differing lines, measured,
 # with a control green under its own name) -- tests/icon/KEEP.md carries the measurement. It can never be absorbed,
 # so its orphan is permanent and the floor is where that fact belongs.
-# ⭐⛔ FLOOR_icon 20 -> 5 (hq_V 2026-09-10, ceo CEO-541 landing), AND FIFTEEN OF THE EIGHTEEN WERE ALREADY PAID FOR --
+# ⭐⛔ FLOOR_icon 20 -> 5 (hq_V 2026-09-10, R-541 landing), AND FIFTEEN OF THE EIGHTEEN WERE ALREADY PAID FOR --
 # THE CENSUS FILE JUST NEVER SAID SO. This landing absorbs eleven rung36_jcon keepers, which removes 0 orphans (they
 # pair a .icn with a .expected, and the census only counts a .ref sibling). The fall is HQV-26's: that landing
 # absorbed 18 long-loose witnesses and DID NOT REGENERATE corpus/tests/ORPHANED-WITNESSES.tsv, so the checked-in
@@ -101,9 +101,9 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # one mechanism the tree offers for "loose on purpose, attached to a row" is invisible to the one gate that counts loose
 # files. Teaching the census the two files it already has would make this raise unnecessary and would lower icon's argument
 # from prose to code.
-# ⭐ FLOOR_icon 0 -> 2 (the coo 2026-09-27, ceo CEO-1306, row instruments-five-corpus-and-suite-gates-red-or-refused-on-origin-
+# ⭐ FLOOR_icon 0 -> 2 (the coo 2026-09-27, R-1306, row instruments-five-corpus-and-suite-gates-red-or-refused-on-origin-
 # 81aa23aff-...). The two are config/audit_return_forms/w_return_forms and w_control_structures, the coo's COO-183 audit witnesses the
-# ceo homed there (CEO-1245, corpus 6b145b60a) as the DONE-WHEN witnesses of hq_icon's two parked return-variable rows. They are RED in
+# the officer homed there (R-1245, corpus 6b145b60a) as the DONE-WHEN witnesses of hq_icon's two parked return-variable rows. They are RED in
 # both modes (error 111 where iconx assigns through the returned variable), so the builder cannot carry them into the rungs honestly
 # today (the auto-XFAIL note above), and moving them would break the DONE-WHENs that name their path. tests/icon/PENDING.md declares
 # them under the reopened row; they are absorbed when those rows cure and this floor falls in that commit. Named debt, not a leak.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_differential_configs_agree.sh -- row gc-the-differential-oracle-same-program-under-two-gc-
-# configurations-must-agree (coo, 2026-09-21, MODE TENET; RULES.md THE INSTRUMENT LAWS; CEO-997 batch 30
+# configurations-must-agree (coo, 2026-09-21, MODE TENET; RULES.md THE INSTRUMENT LAWS; R-997 batch 30
 # clause 2 -- a census NAMES and never only counts).
 #
 # THE PRINCIPLE. GC is SEMANTICALLY INVISIBLE, so one program on one input must print the same bytes under
@@ -34,7 +34,7 @@
 # a board whichever configuration it happened to run. The DEFECT is reported by NAME in the text and by this
 # gate's ratchet; the rc reports measurability. THIS GATE reds on a NEW divergence -- see arm 1.
 #
-# ⛔ NO XFAIL AND NO SILENT FLOOR (CEO-753). The floor file records what was measured, and a program in it
+# ⛔ NO XFAIL AND NO SILENT FLOOR (R-753). The floor file records what was measured, and a program in it
 # that DIVERGES is a RED here with its name, not a tolerated entry. The floor exists only so that a program
 # which has been GRADED cannot quietly stop being graded -- a fall from AGREE to UNDISTINGUISHED or
 # NO-COLLECTION is a knob that stopped taking, which is precisely this row's hazard, and it reds.
@@ -53,7 +53,7 @@
 # across repeated runs of ONE configuration -- else every distinctness verdict is noise. (6) an empty or
 # ungradable population REFUSES instead of reading as agreement. (7) telemetry does not change the answer, so
 # holding it on across the matrix is not itself a variable.
-# ⛔ This seat holds no cure lane (CEO-723): every divergence this instrument finds is a telegram to the
+# ⛔ This seat holds no cure lane (R-723): every divergence this instrument finds is a telegram to the
 # owning seat and a row, never an edit here.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -99,7 +99,7 @@ dv="$(printf '%s\n' "$line" | sed -n 's/.*diverge=\([0-9]*\).*/\1/p')"
 if [ "${dv:-0}" != 0 ]; then
   echo "  RED  ARM 1: $dv program(s) DIVERGE across GC configurations -- GC is not semantically invisible here,"
   echo "       and each of these is a collector defect owed a row (this gate does not tolerate a named divergence:"
-  echo "       there is no such thing as XFAIL, CEO-753):"
+  echo "       there is no such thing as XFAIL, R-753):"
   printf '%s\n' "$out" | grep -A1 'DIVERGE ' | sed 's/^/           /'
   RC=1
 else
@@ -129,7 +129,7 @@ else
 fi
 
 # ---- arm 1b: THE DIVERGENCE REGISTER IS AN OBLIGATION, NOT AN EXCUSE -------------------------------------
-# ⛔ CEO-753: there is no such thing as XFAIL. The broad sweep (--pool, a board pass and NOT this gate) finds
+# ⛔ R-753: there is no such thing as XFAIL. The broad sweep (--pool, a board pass and NOT this gate) finds
 # divergences that this gate's small population does not contain; they are recorded so a seat who did not run
 # the sweep can still name them a week later. An entry may therefore never make a divergence pass: every row
 # must name an OWNER SEAT and a ROW, and a row missing either is RED here -- that is a defect found with
@@ -197,7 +197,7 @@ fi
 # the two are one configuration in effect. It must be caught by the collector's own events, not by comparing
 # the env. This is the fixture the whole row exists for.
 examined=$((examined + 1))
-# ⛔ THE PAIR IS PINNED TO A WINDOW NOTHING FILLS (cto 2026-09-24, the seventeen-red row): since CEO-1101 the shipped
+# ⛔ THE PAIR IS PINNED TO A WINDOW NOTHING FILLS (cto 2026-09-24, the seventeen-red row): since R-1101 the shipped
 # window is 128 KB and hb_arr.sno COLLECTS there, so "shipped" and RELOC=1 are two configurations in effect and the
 # tool graded them (rc=0) -- the arm read that truthful reading as a regression.  The collapse this arm exists to
 # catch needs zero collections on both sides, which a 512 MB window gives and the shipped one no longer does.

@@ -5,7 +5,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #
 # Row: defined-proc-own-name-blank-via-byname-lookup-mid-return (hq_U). Witness minted and oracle-verified by
 # seat11 2026-09-05; this gate is the runnable criterion for it (the row carried the placeholder DONE-WHEN and
-# was therefore UNPICKABLE -- ceo census 19:02).
+# was therefore UNPICKABLE -- the officer census 19:02).
 #
 # ⛔ WHAT THIS IS NOT (seat11 ruled these out; do not re-derive them):
 #   - NOT the retval threaded through rt_trace_return_hook: rt_trace_event's registered-callback branch never
@@ -49,7 +49,7 @@ V="$T/retval.sno"
 # The first witness grades the TARGET (the by-name mid-return read). It is satisfiable by a cure that
 # moves the return-value staging earlier and clobbers the ordinary return path on the way -- which is
 # exactly what d067ceae4 did: this gate read PASS while every DEFINE'd function returned blank, and the
-# landing was reverted fleet-wide (CEO-333). A DONE-WHEN that names one output line cannot notice what
+# landing was reverted fleet-wide (R-333). A DONE-WHEN that names one output line cannot notice what
 # the cure spent to get it. So the plain return value is graded here too, in both modes, against the
 # same oracle: a cure that buys the tagR line by breaking ordinary returns now reds its own gate.
 { printf '        DEFINE("G(X)")                          :(GEND)\n'

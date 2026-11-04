@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_snobol4_fixed_iter.sh -- ANGLE 2 of the three-angle triangulation (Lon 2026-08-24, row
 # bench-triangulation-3angle): run EXACTLY N iterations per kernel (N fixed per kernel, never a
 # wall-clock deadline) and report throughput (iterations per second) for sbl / scrip m3 / scrip m4.
@@ -43,10 +43,10 @@ STATIC="${STATIC:-0}"    # row m4-static-link-arm: opt-in m4 link arm, out/libsc
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200). A private fallback would time a DIFFERENT LANGUAGE (s189: -bf is the only correct arm). Fix the checkout; do not work around this." >&2; exit 3; }
 . "$HERE/lib_static_link_snobol4.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_static_link_snobol4.sh -- the ONE static-link-arm authority." >&2; exit 3; }
 SBL="${SBL:-$(sbl_clean_bin)}"   # BENCHMARK oracle (s255): never x64/bin/sbl (monitor-IPC overhead)
-# ⛔ SUPERSEDED 2026-09-28 (Lon, ceo CEO-1353, RULES.md hard-cap clause 8 (g)(4)): the typed 4096 MB SCRIP_HEAP_MB window and sbl -s16m
+# ⛔ SUPERSEDED 2026-09-28 (Lon, R-1353, RULES.md hard-cap clause 8 (g)(4)): the typed 4096 MB SCRIP_HEAP_MB window and sbl -s16m
 # above are GONE. Each unit runs at the heap and stack declared beside it (<stem>.heap/.stack, lib_declared_arena.sh), the same switches
 # to m3, the m4 binary and sbl; a collection inside the window is COUNTED (gc), never engineered away; an undeclared unit is UNGRADED.
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (CEO-1353)" >&2; exit 3; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: lib_declared_arena.sh unloadable -- the one reader of a unit's declared heap and stack (R-1353)" >&2; exit 3; }
 SW=""
 ENGINES="${ENGINES:-sbl m3 m4}"
 [ -x "$SCRIP" ] || { echo "SKIP scrip not built"; exit 0; }
@@ -113,7 +113,7 @@ best() {
 }
 echo "FIXED-ITERATION SNOBOL4 BENCHMARKS -- N fixed per kernel (SCALE.tsv), elapsed cpu time measured"
 echo "engines: $ENGINES   reps: $REPS   corpus: $B   scale: $SCALETSV"
-echo "measurement condition: SCRIP_NOHUGE=$NOHUGE  heap and stack: each unit's declared .heap/.stack, the same switches to m3, m4 and sbl (CEO-1353)  m4 link=$([ "$STATIC" = 1 ] && echo STATIC || echo shared)"
+echo "measurement condition: SCRIP_NOHUGE=$NOHUGE  heap and stack: each unit's declared .heap/.stack, the same switches to m3, m4 and sbl (R-1353)  m4 link=$([ "$STATIC" = 1 ] && echo STATIC || echo shared)"
 echo
 printf "%-20s %10s %12s %12s %12s   %8s %8s %5s %7s  %s\n" BENCHMARK "N" "sbl/s" "m3/s" "m4/s" "m3:sbl" "m4:m3" "gc" "nivcsw" "check"
 printf "%-20s %10s %12s %12s %12s   %8s %8s %5s %7s  %s\n" "--------------------" "----------" "------------" "------------" "------------" "--------" "--------" "-----" "-------" "-----"
@@ -124,12 +124,12 @@ for sno in "$B"/*.sno; do
   N=$(scale_n "$s")
   if [ -z "$N" ]; then UNSCALED="$UNSCALED $s"; continue; fi
   SW="$(declared_switches_beside "$sno")" || { UNGRADED="$UNGRADED $s(size-refused)"; continue; }
-  [ -n "$SW" ] || { UNGRADED="$UNGRADED $s(size-undeclared)"; echo "  ⛔ $s: no .heap/.stack declared beside it (CEO-1353) -- not run at a default it did not ask for" >&2; continue; }
+  [ -n "$SW" ] || { UNGRADED="$UNGRADED $s(size-undeclared)"; echo "  ⛔ $s: no .heap/.stack declared beside it (R-1353) -- not run at a default it did not ask for" >&2; continue; }
   # ⛔ stderr stays OUT of the capture: bench_wrap stamps `stamp: CONTEXT ...` to stderr by design
   # (sysperf attribution), and a 2>&1 here folded that stamp INTO the twin path -- every engine then
   # ran a nonexistent file, and the sbl/m3 arms rated N against the ~2ms error exit (42G iters/s
-  # "SPITBOL"). Only m4's BUILD-ERR made the run visibly wrong (2026-08-31, ceo).
-  # ⛔ THE TWIN IS bench_wrap_snobol4.py's (ceo CEO-1984): the pristine kernels carry no `*BENCH` line and bench_wrap.sh refused all of them.
+  # "SPITBOL"). Only m4's BUILD-ERR made the run visibly wrong (2026-08-31).
+  # ⛔ THE TWIN IS bench_wrap_snobol4.py's (R-1984): the pristine kernels carry no `*BENCH` line and bench_wrap.sh refused all of them.
   if python3 "$HERE/bench_wrap_snobol4.py" "$sno" --mode iter --n "$N" -o "$W/$s.bench.sno" 2>"$W/wrap.err"; then TWIN="$W/$s.bench.sno"; else
     TWIN="$(cat "$W/wrap.err")"
     UNGRADED="$UNGRADED $s"; echo "  ⛔ $s: $TWIN" >&2; continue; fi
@@ -179,7 +179,7 @@ if [ -n "$UNGRADED" ]; then
 fi
 [ -z "$UNSCALED" ] && [ -z "$UNGRADED" ] && echo "coverage: every SCALE.tsv-listed kernel measured."
 if [ "$tot_gc" -gt 0 ]; then
-  echo "⛔ $tot_gc row(s) COLLECTED inside the measurement window at the declared heaps (CEO-1353) -- those rates are untrusted."
+  echo "⛔ $tot_gc row(s) COLLECTED inside the measurement window at the declared heaps (R-1353) -- those rates are untrusted."
 else
   echo "gc: 0 rows collected inside the window at the declared heaps -- every rate above is stall-free."
 fi

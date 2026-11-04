@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_swi_sto_merge.py ACTUAL SPECS RUNDIR_PREFIX TIMEOUT -- put each sto(rational_trees) case's ALONE verdict where the file's own run deferred it
-(ceo CEO-1684, 2026-10-11; hq_prolog's third shim finding).
+(R-1684, 2026-10-11; hq_prolog's third shim finding).
 
 plunit runs a sto(rational_trees) test with occurs_check=false, both engines' default, so it is an ordinary test; but one that builds a cyclic
 term can loop or exhaust the stack and end its whole file (measured on 4783ee83e: core/test_arith 221 cases -> 61, core/test_term 52 -> 9).

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_no_stored_code_address_in_the_prolog_gate.sh -- LON ORDERED IR_MOVE_LABEL DELETED AND THIS IS
-# WHAT HOLDS IT DELETED. Lon 2026-09-13, in-chat to ceo, verbatim: "The IR_MOVE_LABEL is invalid. There are
-# no labels. That is a carry over from JCON. Delete that IR." (CEO-693).
+# WHAT HOLDS IT DELETED. Lon 2026-09-13, in-chat, verbatim: "The IR_MOVE_LABEL is invalid. There are
+# no labels. That is a carry over from JCON. Delete that IR." (R-693).
 #
 # WHAT THE OP WAS: IR_MOVE_LABEL stored a CODE ADDRESS into a frame slot (bb_move_label.cpp: lea rax,<target>
 # then mov [gate+16],rax) and IR_INDIRECT_GOTO jumped through it on its beta port (bb_indirect_goto.cpp: jmp
@@ -10,7 +10,7 @@
 # are lowered by Prolog if-then-else (lower_prolog.c pl_lower_ite) and soft cut (pl_lower_softcut) and by
 # nothing else in any frontend, which is why this is a Prolog-lane row and not an engine-wide one.
 #
-# ⛔ WHY A GATE AND NOT A GREP-ONCE: the ceo's second hazard (CEO-693) is the quiet one. IR_MOVE_LABEL is
+# ⛔ WHY A GATE AND NOT A GREP-ONCE: the officer's second hazard (R-693) is the quiet one. IR_MOVE_LABEL is
 # CLASSIFIED IN FOUR PLACES IN frame_layout.c -- the gate.stored-resume-target field at :173, zls_is_wiring
 # at :207, and two shape lists at :228 and :279. An op deleted from the enum but left in one of those lists
 # is A SILENT SLOT-GRANTING CHANGE, NOT A COMPILE ERROR: the enum value is reused by whatever op follows it,
@@ -26,26 +26,26 @@
 # the construct, which is the only shape that reads the gate's beta port at all. A cure that deletes the op
 # and quietly makes if-then-else deterministic passes arm 1 and fails arm 2 -- that is the point of arm 2.
 # ⛔ ARM 2 IS NOT A BOARD: it grades ONE mktemp witness written by this script, no corpus population, so
-# every seat may run it (ONE RUNNER, ONE BOARD, CEO-523).
-# ARM 3 (the scoping arm, ruled by CEO-694 on Lon 2026-09-13, verbatim: "We use static wiring only, unless
+# every seat may run it (ONE RUNNER, ONE BOARD, R-523).
+# ARM 3 (the scoping arm, ruled by R-694 on Lon 2026-09-13, verbatim: "We use static wiring only, unless
 # it is an if-type construct. So fix that."): the gate ops may be BUILT only inside the two if-type lowerings
-# in lower_prolog.c. ⛔ THIS IS THE HALF THAT MATTERS MORE THAN THE RENAME, and the ceo named the reason: the
+# in lower_prolog.c. ⛔ THIS IS THE HALF THAT MATTERS MORE THAN THE RENAME, and the officer named the reason: the
 # deleted op's real damage was that it MADE A SELECTED CONTINUATION AVAILABLE AS A GENERAL FACILITY that any
 # construct could reach for, so an exception to static wiring quietly became the ordinary case with nobody
 # ruling that it should. A FACILITY REACHABLE BY EVERYTHING IS USED BY EVERYTHING. Scoping it to the
 # construct permitted to have it is what makes the exception ENFORCEABLE rather than advisory, and a census
 # is what makes the scope a fact rather than a convention a future seat has to know about.
-# ⛔ THE CEO'S OWN SPLIT OF THESE SITES IS CORRECTED HERE ON THE SOURCE, not disputed in prose (cto, CEO-694):
-# CEO-693/694 read lower_prolog.c:542-544 and :564 as "the catch/3 error-catcher-try triple" and ruled them
+# ⛔ THE OFFICER'S OWN SPLIT OF THESE SITES IS CORRECTED HERE ON THE SOURCE, not disputed in prose (cto, R-694):
+# R-693/694 read lower_prolog.c:542-544 and :564 as "the catch/3 error-catcher-try triple" and ruled them
 # NOT if-type, so three sites move and one stays. THEY ARE NOT catch/3. They are pl_lower_softcut -- the ISO
 # soft cut (C *-> T ; E) -- and pl_lower_catch, which begins below them, builds NO gate at all and never did.
 # A soft cut is an if-then-else whose condition does not commit, so under Lon's rule as written ALL FIVE
 # sites are if-type constructs and the exception covers all five. That is why this arm names TWO functions
 # rather than one, and it is a census a reader can re-run instead of a claim about who was right.
-# ⭐ AND catch/3 IS THE THIRD, BY NAME (ceo CEO-1270, 2026-09-25, on hq_prolog's ask after the cfo found this arm red since cf11735cb):
+# ⭐ AND catch/3 IS THE THIRD, BY NAME (R-1270, 2026-09-25, on hq_prolog's ask after the cfo found this arm red since cf11735cb):
 # catch/3 selects one of two arms at run time -- the goal, or the recovery when a ball unifies with the catcher -- and must re-enter the
 # SELECTED arm on backtracking (ISO 7.8.9), the same reason if-then-else and soft cut carry the gate; static wiring could do it only by
-# compiling the continuation once per arm. The ceo's 09-13 sentence calling catch/3 not if-type was written about sites that proved to be
+# compiling the continuation once per arm. The officer's 09-13 sentence calling catch/3 not if-type was written about sites that proved to be
 # soft cut and is superseded for catch/3. The census stays a list of NAMED lowerings, so the exception stays enforceable.
 # EXIT 0 all arms green; 1 an arm red (named); 2 REFUSED -- could not measure, never a quiet pass.
 set -uo pipefail

@@ -2,7 +2,7 @@
 # test_gate_sno_an_argument_evaluated_before_a_match_in_a_later_argument_reads_its_own_slot.sh
 #
 # THE DEFECT (row snobol4-an-argument-evaluated-before-a-match-in-a-later-argument-is-read-from-the-wrong-stack-slot; the
-# ceo's CEO-1461 seed-1205 GP fault, hq_icon's FINDING-2026-10-03-hq_icon-eval-chain-reads-an-unwritten-stack-slot-as-an-
+# R-1461 seed-1205 GP fault, hq_icon's FINDING-2026-10-03-hq_icon-eval-chain-reads-an-unwritten-stack-slot-as-an-
 # alternation-operand, reduced by the cfo): an argument evaluated BEFORE a pattern match that sits in a later argument of the
 # same call was read from the wrong stack slot, both modes and inside EVAL -- P = 'k' | ('xyz' ? 'y') lost its left operand,
 # DUPL('ab', SIZE('xyz' ? 'y')) and REPLACE('abc', ('xyz' ? 'y'), 'Y') read garbage; stale bytes that were pointer-shaped

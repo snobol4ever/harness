@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_leaf_builtins_dispatch_directly.sh -- A SNOBOL4 LEAF SYSTEM FUNCTION IS CALLED THROUGH rt_call_bid_sn4, NOT THE BY-NAME
-# WRAPPER LAYERS (ceo 2026-09-24, CEO-1249, the speed campaign). The emitter bakes BID_BAKE_LEAF into the bid word of a call site whose
+# WRAPPER LAYERS (2026-09-24, R-1249, the speed campaign). The emitter bakes BID_BAKE_LEAF into the bid word of a call site whose
 # name is in g_sn4_leaf_fns (snobol4_system_fns.h: the system functions that never run emitted code -- no EVAL/APPLY/CODE/SORT/DEFINE
 # and no I/O -- so no RETURN can unwind through them and no per-call error frame is needed) and calls rt_call_bid_sn4, which goes
 # straight to the dispatcher and falls back to the full by-name path whenever &ERROR or &ERRLIMIT is armed (the only modes in which

@@ -3,7 +3,7 @@
 # FILE ALONE (Lon 2026-09-27: "Compare the speed of PARSING the entire set of programs for each language in the corpus repo ... with
 # Snocone running parser.sc program in SCRIP versus stand-alone SCRIP parser ... I want to claim that the Snocone parsers are
 # FASTER than the C and Bison/flex parsers."; 2026-09-28: "So change from concat one big file to run each parser seperatly.").
-# A MEASUREMENT, not the claim: published only on the ceo's word (CEO-1340), RT_OPT named.
+# A MEASUREMENT, not the claim: published only on the officer's word (R-1340), RT_OPT named.
 # Two columns per language (Lon 2026-09-28: "forget mode 3 runs."), the SUM of wall clock over every file of the population, each
 # file run alone on its own stdin: C = out/parser_<lang>; sc-m4 = the .sc chain compiled ONCE to a native binary (scrip --compile +
 # gcc against out/libscrip_rt.so), each file's run timed.
@@ -16,7 +16,7 @@ POP="${1:-sample}"; shift || true; LANGS="${*:-snobol4 snocone icon prolog rebus
 B="$ROOT/bootstrap"; CHAIN="$B/global.sc $B/case.sc $B/assign.sc $B/match.sc $B/counter.sc $B/stack.sc $B/tree.sc $B/ShiftReduce.sc $B/tdump.sc $B/gen.sc $B/qize.sc $B/semantic.sc $B/omega.sc $B/trace.sc"
 declare -A EXT=([snobol4]=sno [snocone]=sc [icon]=icn [prolog]=pl [rebus]=reb [raku]=raku [pascal]=pas)
 TMO="${SPEED_TIMEOUT:-300}"
-# The sc-m4 binary runs at the CHAIN's declared heap and stack (ceo CEO-1353, RULES.md clause 8 (g)(4)), never typed here:
+# The sc-m4 binary runs at the CHAIN's declared heap and stack (R-1353, RULES.md clause 8 (g)(4)), never typed here:
 # bootstrap/parser_<lang>.heap and .stack, read by lib_declared_arena.sh, leading the binary's own command line.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT

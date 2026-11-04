@@ -30,13 +30,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=ceo
+PO="$W/po"; ME=cto
 FIX() { env -u S4E_PID_LOCK -u S4E_NO_DISPATCH_PROBE S4E_HOME="$W" S4E_POST="$PO" S4E_SEAT="$ME" \
         S4E_NO_BANNER=1 "$@"; }
 mk_po() {
   rm -rf "$PO"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" || return 2
   : > "$PO/BOARD.md"; : > "$PO/QUEUE.done.tsv"; printf 'SEPTET\n' > "$PO/MODE"; printf '5\n' > "$PO/PROTOCOL-VERSION"
-  printf '%s\n' ceo > "$PO/$ME/HQ"; printf '# gate fixture queue\n0\tt-row\tceo\tFREE\n' > "$PO/QUEUE.tsv"
+  printf '%s\n' cto > "$PO/$ME/HQ"; printf '# gate fixture queue\n0\tt-row\tceo\tFREE\n' > "$PO/QUEUE.tsv"
   printf '# TASK t-row\nGOAL: fixture.\nDONE-WHEN: true\nLINKS: none\n## NEXT\ngo\n## LEDGER\n' > "$PO/tasks/t-row.task.md"; }
 # ⛔ THE FINGERPRINT INCLUDES NAMES AND CONTENTS BOTH: a refusal that DELETED a file and one that added one
 # would cancel in a count, and a checksum of contents alone cannot see a rename.

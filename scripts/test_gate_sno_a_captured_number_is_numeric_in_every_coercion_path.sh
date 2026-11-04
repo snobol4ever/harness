@@ -2,7 +2,7 @@
 # test_gate_sno_a_captured_number_is_numeric_in_every_coercion_path.sh -- a value that came out of a pattern
 # capture is the SAME value as a literal one, in every path that asks "is this a number?".
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, gimpel ASM_driver, row snobol4-gimpel-suite-126-to-100-percent-by-class).
+# ⛔ THE DEFECT (2026-09-14, gimpel ASM_driver, row snobol4-gimpel-suite-126-to-100-percent-by-class).
 # A capture is a VIEW: its descriptor's .s points INTO the subject and the length is CARRIED in .slen, so the
 # bytes do not end at a NUL. Three numeric paths read .s raw and demanded the number end at '\0':
 # bn_integer's scan, and the _OPCOERCE / _SNOCOERCE macros every numeric builtin in the dispatcher goes through.

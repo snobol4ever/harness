@@ -5,8 +5,8 @@
 # "merged", and corpus_suite_harness.py grades that entry the same way in m3 and m4. A table without the column grades stdout
 # alone, as before it existed. AND a rebuild keeps the settings row of every unit that is still shipped but not absorbed.
 #
-# WHY (the coo 2026-10-01, row icon-package-containers-regenerated-from-the-shipped-files-..., ceo CEO-1366/1392): the three
-# Icon boards grade `> out 2>&1` (upstream's own harness, CEO-445) while the containers were cut from stdout alone, so a program
+# WHY (the coo 2026-10-01, row icon-package-containers-regenerated-from-the-shipped-files-..., R-1366/1392): the three
+# Icon boards grade `> out 2>&1` (upstream's own harness, R-445) while the containers were cut from stdout alone, so a program
 # whose answer is on stderr (jcon cxtrace, traceback, tracing) was excluded as "empty oracle output" and the area smoke graded
 # the rest against a different contract than the board. And the containers' ALL.csv is ALSO the table each board reads a unit's
 # heap_kb/stack_kb/compile_args from (RULES.md 8 (f), f8282e09c): a plain rebuild of jcon_tests wrote only the absorbed entries

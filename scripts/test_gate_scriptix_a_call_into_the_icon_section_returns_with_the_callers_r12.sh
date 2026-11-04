@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_scriptix_a_call_into_the_icon_section_returns_with_the_callers_r12.sh
 #
-# THE DEFECT (the cto 2026-10-02, ceo CEO-1425 row snobol4-a-pattern-match-compiled-after-a-call-into-the-icon-section-of-
+# THE DEFECT (the cto 2026-10-02, R-1425 row snobol4-a-pattern-match-compiled-after-a-call-into-the-icon-section-of-
 # one-scriptix-file-crashes, found by Lon's infinite_snobol4 SCRIPtix demo): in one SCRIPtix .md whose SNOBOL4 section is the
 # entry, a call into the Icon section followed by any statically compiled pattern match died of SIGSEGV, both modes -- a
 # store into the sealed code slab. The SNOBOL4 side keeps its capture-stack pointer in r12 (home cell [0x70000000]) and the

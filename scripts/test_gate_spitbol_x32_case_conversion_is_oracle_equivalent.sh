@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_spitbol_x32_case_conversion_is_oracle_equivalent.sh
-# ⭐ THE PROOF BEHIND THE CEO-571 UPPERCASE CONVERSION OF corpus/packages/snobol4/spitbol_x32_tests (ceo CEO-1287,
+# ⭐ THE PROOF BEHIND THE R-571 UPPERCASE CONVERSION OF corpus/packages/snobol4/spitbol_x32_tests (R-1287,
 # Lon 2026-09-26).  test_gate_spitbol_x64_case_conversion_is_oracle_equivalent.sh's method, whose header carries the why:
 #
 #   for every *.spt in the package:   sbl ORIGINAL (folding, upstream's own invocation, the commit that ADDED the package)

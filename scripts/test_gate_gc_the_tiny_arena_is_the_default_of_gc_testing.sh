@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the rebus shard below is a runner invoked as an INSTRUMENT FIXTURE and never a board -- it exists only to make corpus_suite_harness.py print its ARENA line, its result is discarded, and without this the one-runner guard makes the gate grade green for the ceo and FAIL(1) for every other seat (the cfo reproduced it as seat cfo; CEO-956, CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the rebus shard below is a runner invoked as an INSTRUMENT FIXTURE and never a board -- it exists only to make corpus_suite_harness.py print its ARENA line, its result is discarded, and without this the one-runner guard makes the gate grade green for the officer and FAIL(1) for every other seat (the cfo reproduced it as seat cfo; R-956, R-523)"
 # test_gate_gc_the_tiny_arena_is_the_default_of_gc_testing.sh -- LON'S RULE HELD BY ITS MECHANISM, NOT BY DISCIPLINE.
-# ⛔⭐ SINCE 2026-09-25 THE SHIPPED DEFAULT IS SPITBOL'S -i1m -d128m (Lon, in-chat to the ceo: "Let's set our default stack size and
-# heap size for SCRIP to be the same as SPITBOL."; ceo CEO-1261), so the 128 KB window is again ONLY the GC-testing arena: `make
+# ⛔⭐ SINCE 2026-09-25 THE SHIPPED DEFAULT IS SPITBOL'S -i1m -d128m (Lon, in-chat: "Let's set our default stack size and
+# heap size for SCRIP to be the same as SPITBOL."; R-1261), so the 128 KB window is again ONLY the GC-testing arena: `make
 # test-arena` exports it, and arms 2 and 4 read the shipped default out of gc_heap.c (#define GC_HEAP_KB) rather than repeating a number.
 #
-# ⛔⭐ THE RULE (Lon 2026-09-19 16:1x CDT, in-chat to the ceo, verbatim: "Actually, for all GC testing all seats should
-# use a tiny arena to exasperate all the problems all the time. Do you not agree?"; ceo CEO-931/934/938, RULES.md
-# ⛔⭐ THE DEFAULT IS 128 KB SINCE 2026-09-21 17:3x (Lon, in-chat to the ceo: "So let's take the default GC arena down to 128 KB."; ceo CEO-1095). It is COMPILED IN as GC_HEAP_KB, so it travels with the
+# ⛔⭐ THE RULE (Lon 2026-09-19 16:1x CDT, in-chat, verbatim: "Actually, for all GC testing all seats should
+# use a tiny arena to exasperate all the problems all the time. Do you not agree?"; R-931/934/938, RULES.md
+# ⛔⭐ THE DEFAULT IS 128 KB SINCE 2026-09-21 17:3x (Lon, in-chat: "So let's take the default GC arena down to 128 KB."; R-1095). It is COMPILED IN as GC_HEAP_KB, so it travels with the
 # binary and the blanket `export SCRIP_HEAP_MB ?= 1` arm 1 refuses is RETIRED rather than re-argued. MEASURED on two allocating witnesses: 128 KB is the PEAK of exasperation, NOT the floor -- icon concat reads
 # 1613 collections at 1 MB, 7533 at 256 KB, 21362 at 128 KB, then DOWN to 5429 at 64 KB because the live set stops fitting and the window GROWS. Below the peak, smaller is LESS exasperating. stdout byte-identical
 # at every point. SCRIP_HEAP_KB is the knob and it REFUSES below 64 KB rather than clamping, because a run that grades at a size it was not asked for is a false reading.
@@ -37,7 +37,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the rebus shard below is a run
 # the default, and unset) and require the reported value to TRACK.  A hardcoded "1" -- the failure this gate exists to
 # catch, an instrument that reports the rule instead of measuring it -- passes a single-arena arm and fails these.
 # FAIL_ONCE=1 additionally plants a phantom name into arm 3's declared set and requires arm 3 to red.
-# ⭐ EVERY ARM WAS PROVEN BOTH WAYS BEFORE THIS GATE LANDED (ceo, 2026-09-19, plants reverted from backups and the tree
+# ⭐ EVERY ARM WAS PROVEN BOTH WAYS BEFORE THIS GATE LANDED (2026-09-19, plants reverted from backups and the tree
 # rebuilt after each): `:=` in place of `?=` on SCRIP_HEAP_MB_TINY reads TINY=3 as 1 and reds arm 1; re-landing the blanket
 # `export SCRIP_HEAP_MB ?= 1` reds arm 1 on its own clause; a hardcoded `_arena_mb = "1"` in the harness reds arms 2 AND 4;
 # FAIL_ONCE=1 reds arm 3.  Pass-once on the landed tree: 4 of 4 arms, 5 seconds at load ~1.
@@ -49,14 +49,14 @@ S4E="$(cd "$ROOT/.." && pwd)"
 [ -f "$S4E/corpus/tests/rebus/ALL.reb" ] && [ -f "$S4E/corpus/tests/rebus/ALL.ref" ] || { echo "⛔ REFUSE(2) [$G]: no rebus rungs at $S4E/corpus/tests/rebus/ALL.reb -- this gate needs one graded entry to make the harness print a board"; exit 2; }
 command -v make >/dev/null || { echo "⛔ REFUSE(2) [$G]: make is arm 1's instrument and it is absent"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-# ⛔ A SCRATCH COPY OF THE REBUS RUNGS, NEVER THE RUNGS ITSELF (ceo CEO-1302 (c), coo 2026-09-27): the fixture exemption no longer
+# ⛔ A SCRATCH COPY OF THE REBUS RUNGS, NEVER THE RUNGS ITSELF (R-1302 (c), coo 2026-09-27): the fixture exemption no longer
 # admits the shared corpus, so the harness refused a shard of corpus/tests/rebus/ALL.reb and printed no ARENA line. The copy, beside
 # its ALL.csv and sidecars, sits outside every checkout: the same entries, the same shard, and no board.
 cp -a "$S4E/corpus/tests/rebus" "$T/rebus" || { echo "⛔ REFUSE(2) [$G]: could not copy the rebus rungs to a scratch directory"; exit 2; }
 SUITE="$T/rebus/ALL.reb"; SREF="$T/rebus/ALL.ref"
 RC=0; examined=0
 # ARM 1 -- the tiny arena is A PASS OF ITS OWN (make test-arena), it announces its arena, the arena TRACKS its knob,
-# and the blanket export that was tried first is NOT back.  ⛔ WHY THE SHAPE CHANGED, MEASURED (ceo CEO-939): the first
+# and the blanket export that was tried first is NOT back.  ⛔ WHY THE SHAPE CHANGED, MEASURED (R-939): the first
 # cut of this rule put `export SCRIP_HEAP_MB ?= 1` in the Makefile, so every arm of `make test` inherited a 1 MB window.
 # The full 360-arm set then read 326 green / 32 red / 2 refused, and classifying the reds says the shape was wrong, not
 # the rule: gates that grade the SHIPPED configuration's behaviour flipped red for an arena nobody ships (gc2's Arizona
@@ -95,7 +95,7 @@ done
 if [ "$a2bad" = 0 ]; then echo "  arm 2 PASS: every board names the arena it ran under and the line tracks the knob (ARENA read$a2; unset reports the shipped $SHIPPED)"
 else echo "  arm 2 FAIL: the harness's ARENA line is missing or does not track the knob (read$a2, wanted 256->256 512->512 unset->$SHIPPED)"; RC=1; fi
 # ARM 3 -- the DECLARED set of gates that PIN an arena, so a pin cannot spread and turn the rule off gate by gate.
-# ⛔ A PIN IS NOT A DEFAULT, and conflating them made this arm red for a landing that OBEYED the rule (ceo CEO-956):
+# ⛔ A PIN IS NOT A DEFAULT, and conflating them made this arm red for a landing that OBEYED the rule (R-956):
 # `export SCRIP_HEAP_MB=512` overrides its caller and turns the tiny-arena rule OFF for that gate, which is the thing
 # that must be declared; `export SCRIP_HEAP_MB="${SCRIP_HEAP_MB:-1}"` YIELDS to any outer value and merely applies the
 # rule when the gate is run directly rather than through make. Only the first spelling is a pin and only it is counted.

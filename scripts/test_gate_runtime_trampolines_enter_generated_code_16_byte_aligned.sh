@@ -4,7 +4,7 @@
 # below that jump is C: the generated code calls the runtime, the runtime calls glibc, and glibc is entitled to use
 # aligned SSE against its own frame.
 #
-# ⛔ THE DEFECT THIS WAS WRITTEN FOR (ceo 2026-09-14, row snobol4-generated-code-enters-the-c-runtime-with-the-stack-
+# ⛔ THE DEFECT THIS WAS WRITTEN FOR (2026-09-14, row snobol4-generated-code-enters-the-c-runtime-with-the-stack-
 # misaligned-by-eight). `rt_proc_enter_named` pushes SIX registers (rsi plus the five callee-saved) where its sibling
 # `rt_proc_enter` pushes five, and nothing compensated for the parity flip -- so every procedure entered through it
 # ran 8 bytes off, and so did every C frame it went on to call. `rt_proc_enter_frag` does the SAME six pushes and
@@ -57,7 +57,7 @@ for path in sys.argv[1:]:
         n_push, sub, seen_jmp, dynamic, ld = 0, 0, False, False, None
         for ln in lines:
             s = ln.strip()
-            # ⛔ A JUMP INTO rt_chain_enter's SEED TAIL IS AN ENTRY TOO -- kept for the shape, its one member deleted by CEO-1468 (row snobol4-the-setexit-landing-2b89a5ef2-added-a-third-asm-
+            # ⛔ A JUMP INTO rt_chain_enter's SEED TAIL IS AN ENTRY TOO -- kept for the shape, its one member deleted by R-1468 (row snobol4-the-setexit-landing-2b89a5ef2-added-a-third-asm-
             # transfer-...): rt_unwind_to_activation loads RSP from its recorded base and then shares rt_chain_enter's one
             # `jmp *%rax` through .Lrt_chain_seed instead of carrying a third. Without this arm its block would read as
             # 'not an entry trampoline' and the RSP-LOADED class below would stop holding its displacement, in silence.
@@ -129,14 +129,14 @@ if refused:
         print("   %s: %s" % (name, why))
     sys.exit(2)
 if not found and not dyn:
-    print("✅ no runtime trampoline jumps into generated code from C any more (ceo 2026-10-09, CEO-1576, the C-to-BB removal): the family rt_proc_enter, rt_proc_enter_named, rt_tiny_record_enter, rt_chain_enter, rt_chain_enter_v is deleted and nothing statically-decidable or dynamic remains to measure; the %d RSP-loading trampoline(s) above (the SETEXIT continue, entered from the box) stay held to their 16-byte displacement; a trampoline put back re-arms this gate by itself" % len(loaded))
+    print("✅ no runtime trampoline jumps into generated code from C any more (2026-10-09, R-1576, the C-to-BB removal): the family rt_proc_enter, rt_proc_enter_named, rt_tiny_record_enter, rt_chain_enter, rt_chain_enter_v is deleted and nothing statically-decidable or dynamic remains to measure; the %d RSP-loading trampoline(s) above (the SETEXIT continue, entered from the box) stay held to their 16-byte displacement; a trampoline put back re-arms this gate by itself" % len(loaded))
     sys.exit(0)
 if not found:
     print("⛔ REFUSES rc=2: no trampoline matched -- the asm blocks moved and this gate is blind, which is not a pass.")
     sys.exit(2)
 if len(found) < 3:
     print("⛔ REFUSES rc=2: only %d trampoline(s) found; this gate expects the family (rt_chain_enter, rt_chain_enter_v," % len(found))
-    print("   rt_proc_enter_named; rt_proc_enter_frag DELETED under CEO-1576 2026-10-09, the C-to-BB removal). A shrinking population is a")
+    print("   rt_proc_enter_named; rt_proc_enter_frag DELETED under R-1576 2026-10-09, the C-to-BB removal). A shrinking population is a")
     print("   blind gate, not a clean one: this floor follows the tree DOWN one deletion at a time, re-cut in the landing that deletes, never ahead of it.")
     sys.exit(2)
 if bad:

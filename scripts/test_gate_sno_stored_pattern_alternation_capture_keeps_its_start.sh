@@ -3,9 +3,9 @@
 # (round 2 of the testing officer's loop at 934c76f9f, bisected to 093e95d68, the stored-pattern leaf cells on the RSP
 # spine): a BREAK, SPAN or REM leaf inside an alternation arm of a stored pattern captured with . lost the capture's start
 # cursor on the spine road -- 'ABS x' ? PAT read [BS] for sbl's [ABS], and the SPAN arm refused as a CORRUPT CAPTURE
-# ENTRY. It took AIS 8/8 to 6/8 and snoflake's wang-theorem-prover red; the masters did not see it. Ruled CEO-1389: the
+# ENTRY. It took AIS 8/8 to 6/8 and snoflake's wang-theorem-prover red; the masters did not see it. Ruled R-1389: the
 # shipped default went back to the leaf-FRAME road until the spine road passed this witness. The cto cured the capture class
-# at fe59fc42b (an arm leaf keeps the frame on every road) and, on the ceo's ruling CEO-1391 (a), the coo ran the SNOBOL4
+# at fe59fc42b (an arm leaf keeps the frame on every road) and, on the ruling R-1391 (a), the coo ran the SNOBOL4
 # family under SCRIP_LEAF_FRAME=0 at a53a601fd: 5766 program-mode readings, 0 outcome differences from the default. The
 # default is the spine road again, and the SCRIP_LEAF_FRAME switch is deleted (no env chooses a frame placement, RULES.md
 # ZETA TIER IS DERIVED; test_gate_no_zeta_frame_switches read it red). ARMS 1-2 grade the one road in both modes against

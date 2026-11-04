@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# lib_rr.sh -- THE ROUND ROBIN'S SEAM IN A BESPOKE RUNNER (ceo CEO-1802/1805/1806; Lon 2026-10-15, verbatim: "Basically the COO should run one test at a
+# lib_rr.sh -- THE ROUND ROBIN'S SEAM IN A BESPOKE RUNNER (R-1802/1805/1806; Lon 2026-10-15, verbatim: "Basically the COO should run one test at a
 # time and update the test-suite database. Round robin, done and done." and "The COO will have two work inputs, the round-robin and the recently requested
 # from other officers and HQ's."). Sourced by a package runner that grades its own programs (not through corpus_suite_harness.py run). Five calls:
 #   rr_load <suite-dir>    once, before the population loop: under S4E_CHUNK (core, chunk:NN, either @<entry>, or entry:<a>[,entry:<b>...]) read that selection
 #                          from <suite-dir>/PARTITION.tsv; rc 2 (the runner refuses) when the partition is missing or names no such part or entry.
 #                          A table with no partition (the benchmarks and the demos: each at most 100 programs, one chunk by rule) takes entry:
-#                          selections only, each name a file of the suite dir (a path, or a stem three levels deep at most; CEO-1812)
+#                          selections only, each name a file of the suite dir (a path, or a stem three levels deep at most; R-1812)
 #   rr_entries             the selection, one name per line, in the PARTITION's order (after a resume, from its entry on): a runner that grades its own
 #                          list grades in this order, so the next test an RR_YIELD names is the one the resume starts at and nothing is skipped or repeated
 #   rr_admits <name>       in the population loop: rc 0 when no selection is set, or <name> (its stem: directory and extension dropped) is selected
@@ -13,14 +13,14 @@
 #                          empty the file, so results.tsv holds every finished test (the row the runner would append at its end is then already there)
 #   rr_yield <name>        before grading the next program: rc 0 when a test request waits in S4E_RR_YIELD_DIR during a round-robin run (never during a
 #                          request); the runner then prints the RR_YIELD line this prints and stops, and the loop resumes the chunk at <name>. A port
-#                          request (a file carrying engine=, CEO-1872) waits its turn and never stops a part (corpus_suite_harness.rr_request_waits)
+#                          request (a file carrying engine=, R-1872) waits its turn and never stops a part (corpus_suite_harness.rr_request_waits)
 #   rr_over_budget <name>  before grading the next program: rc 0 when the part has run S4E_RR_BUDGET seconds or more since rr_load (never during a request,
 #                          which is never split); the runner prints the RR_YIELD line this prints and stops, and the loop resumes the part at <name> on the
 #                          member's next turn, so a part of long tests stays a bounded unit (10-17: SWI's chunk:01 is 100 files and about 1,900 cases)
 #   rr_selected            rc 0 when a selection is set: the runner writes NO suite row and prints its <KEY>_CHUNK line (rr_end) -- the row is assembled
-#                          from the per-program readings by util_score_row.py from-progress (CEO-1802)
+#                          from the per-program readings by util_score_row.py from-progress (R-1802)
 #   rr_end <key>           the <KEY>_CHUNK line
-#   rr_list <key>...       THE POPULATION FROM THE RUNNER ITSELF (the coo 2026-10-23, on the ceo's CEO-1926/1927 word "teach it the bench and demo keys"):
+#   rr_list <key>...       THE POPULATION FROM THE RUNNER ITSELF (the coo 2026-10-23, on R-1926/1927 word "teach it the bench and demo keys"):
 #                          under S4E_LIST=1, after the runner has enumerated its population and read its exclusions, print each member it grades as
 #                          `RR_POP <key>` -- the program key its progress rows carry -- and exit 0, grading nothing; util_score_row.py from-progress reads
 #                          a bench or demo row's population this way, so the runner's enumeration stays the one rule. rr_list_excl <key>... first
@@ -57,7 +57,7 @@ $e"; done;;
     RR_SEL="$(printf '%s\n' "$RR_SEL" | sed -n "/^$(printf '%s' "$RR_FROM" | sed 's/[][\.*^$/]/\\&/g')\$/,\$p")"
   fi
   RR_SET=" $(printf '%s ' $RR_SEL)"
-  echo "PARTITION $S4E_CHUNK: $(printf '%s\n' $RR_SEL | grep -c .) entr(ies) of $p (CEO-1802: one chunk, never the suite's row)"
+  echo "PARTITION $S4E_CHUNK: $(printf '%s\n' $RR_SEL | grep -c .) entr(ies) of $p (R-1802: one chunk, never the suite's row)"
 }
 rr_selected() { [ -n "${S4E_CHUNK:-}" ]; }
 rr_entries() { [ -n "${S4E_CHUNK:-}" ] && printf '%s\n' $RR_SEL; }
@@ -77,7 +77,7 @@ rr_yield() {
   [ "${S4E_RR:-}" = 1 ] && [ -z "${S4E_REQ:-}" ] && [ -n "${S4E_RR_YIELD_DIR:-}" ] || return 1
   local _q
   for _q in "$S4E_RR_YIELD_DIR"/*.req; do
-    [ -f "$_q" ] && ! grep -q '^engine=' "$_q" 2> /dev/null && { echo "RR_YIELD next=$1 -- a test request waits (CEO-1806); resume with S4E_CHUNK=${S4E_CHUNK%%@*}@$1"; return 0; }
+    [ -f "$_q" ] && ! grep -q '^engine=' "$_q" 2> /dev/null && { echo "RR_YIELD next=$1 -- a test request waits (R-1806); resume with S4E_CHUNK=${S4E_CHUNK%%@*}@$1"; return 0; }
   done
   return 1
 }
@@ -88,4 +88,4 @@ rr_over_budget() {
 }
 rr_list_excl() { [ "${S4E_LIST:-}" = 1 ] && [ $# -gt 0 ] && printf 'RR_EXCL %s\n' "$@"; return 0; }
 rr_list() { [ "${S4E_LIST:-}" = 1 ] || return 0; [ $# -gt 0 ] && printf 'RR_POP %s\n' "$@"; exit 0; }
-rr_end() { echo "$(printf '%s' "${1:?rr_end <key>}" | tr 'a-z-' 'A-Z_')_CHUNK ${S4E_CHUNK:-} graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $1 (CEO-1802)"; }
+rr_end() { echo "$(printf '%s' "${1:?rr_end <key>}" | tr 'a-z-' 'A-Z_')_CHUNK ${S4E_CHUNK:-} graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $1 (R-1802)"; }

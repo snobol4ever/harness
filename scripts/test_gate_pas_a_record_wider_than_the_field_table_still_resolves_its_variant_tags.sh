@@ -3,7 +3,7 @@
 #
 # MEASURED 2026-09-13 by the coo on origin 6d384fd08, taking the P5 self-host row. Pascal-P5's compiler pcom.pas aborted
 # the whole compiler with "FATAL emit_drive: IR op=5 ... REFUSED AT A GUARD -- emit.cpp:1600", the binop operand-slot
-# guard. The ceo ruled (CEO-675) that a refusal sink is never the site of a cure and the guard names the WITNESS, not the
+# guard. The officer ruled (R-675) that a refusal sink is never the site of a cure and the guard names the WITNESS, not the
 # bug; that ruling is what found this. Upstream: the Pascal lowerer's DEFAULT case turns any tree node it does not handle
 # into a VALUELESS JUMP, silently, and a comparison built over one of those reaches the emitter with an operand that has
 # no slot. The unhandled nodes were 38 raw field selections, and they were raw because of two frontend faults together:
@@ -16,7 +16,7 @@
 # Cure: the cap is 128 and an overflow now SAYS SO on stderr instead of dropping a field in silence. That is the whole
 # cure and it is deliberately the smaller one. ⛔ MOVING THE TAG TO ITS OWN POSITION, which is where ISO 7185 6.4.3.3
 # puts it, WAS TRIED AND REVERTED: it shifted every field after a tag by one and made the SCRIP-built Pascal-P4 compiler
-# reject its own source with 105 errors where it had none, and CEO-589 forbids a cure that trades one program for
+# reject its own source with 105 errors where it had none, and R-589 forbids a cure that trades one program for
 # another. The cap raise alone fixes P5's pcom and leaves P4 clean. The ordering is a separate row with the downstream
 # assumption to find first. pascal.y keeps its 5 shift/reduce conflicts.
 #

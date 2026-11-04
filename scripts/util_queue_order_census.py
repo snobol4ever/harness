@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_queue_order_census.py [census] | classify [--apply] [--out FILE] -- THE WORK LIST IS THE BOARD IN LON'S ORDER (Lon 2026-10-22,
-in-chat to the ceo: "put RBP/RSP priority lower than getting all language to 100% (1) completness, (2) correctness, and this task will be
-part of the (3) speed improvements."; ceo CEO-1886/1887 line 1).
+in-chat: "put RBP/RSP priority lower than getting all language to 100% (1) completness, (2) correctness, and this task will be
+part of the (3) speed improvements."; R-1886/1887 line 1).
 
 Every live QUEUE row carries a CLASS, derived from its topic and its baton's DONE-WHEN, and its RANK is its class, so the rank-sorted
 picker (`s4e_msg.sh next`) serves Lon's order with no new column and no bus change:
@@ -9,11 +9,11 @@ picker (`s4e_msg.sh next`) serves Lon's order with no new column and no bus chan
   correctness   rank 1   a suite entry, a gate, a ladder rung or an oracle diff that reads red  (rank 0 stays 0: a blocking-gate red)
   instrument    rank 2   the harness, the bus, a census, a runner's own defect
   law           rank 2   a ruling, a digest, a GOAL/ARCH page
-  speed         rank 3   a bench bar, a multiple, callgrind (the RSP/RBP placement programme is CORRECTNESS since CEO-1895)
-  bootstrap     rank 3   the Snocone bootstrap parsers replacing the C parsers (after speed, CEO-1562)
+  speed         rank 3   a bench bar, a multiple, callgrind (the RSP/RBP placement programme is CORRECTNESS since R-1895)
+  bootstrap     rank 3   the Snocone bootstrap parsers replacing the C parsers (after speed, R-1562)
 `classify` prints the proposal (class, old rank, new rank per row) and with --apply writes `CLASS: <class>` into each baton (after its
 LINKS line, replacing an older CLASS line) and the new rank into QUEUE.tsv in binary under the bus's .mint.lock, touching only the rank
-byte of the rows it classes; owner and state cells are never written (CEO-755c). `census` (the default) reads: every live row's baton
+byte of the rows it classes; owner and state cells are never written (R-755c). `census` (the default) reads: every live row's baton
 carries a CLASS line that agrees with its rank; no claim sits on a seat whose newest transcript is older than 48 h; and prints the
 counts. rc 0 clean · rc 1 a violation named · rc 2 could not read.
 """
@@ -23,7 +23,7 @@ Q = PO + "/QUEUE.tsv"
 TASKS = PO + "/tasks"
 LIVE = ("FREE", "CLAIMED", "ASSIGNED", "PARKED-AWAITING", "BLOCKED-ON", "PARKED-UMBRELLA", "PARKED-LON-HOLD", "GRANT-NEEDED", "PARKED", "RESTRICTED")
 RANK = {"completeness": 1, "correctness": 1, "instrument": 2, "law": 2, "speed": 3, "bootstrap": 3}
-SEAT_ROOT = {"ceo": "ceo", "cto": "cto", "coo": "coo", "cfo": "cfo"}
+SEAT_ROOT = {"cto": "cto", "coo": "coo", "cfo": "cfo"}
 STALE_H = 48
 def rows():
     out = []
@@ -80,7 +80,7 @@ def census():
     for x in unclassed[:40]: print("  UNCLASSED %s" % x)
     for x in mismatch[:40]: print("  RANK %s is %s but class %s" % (x[0], x[2], x[1]))
     for x in stale: print("  STALE CLAIM %s on %s (transcript %d h old)" % x)
-    for x in ahead: print("  SPEED AHEAD %s held by %s while its lane has %d FREE rank-0/1 rows (Lon's order, CEO-1886)" % x)
+    for x in ahead: print("  SPEED AHEAD %s held by %s while its lane has %d FREE rank-0/1 rows (Lon's order, R-1886)" % x)
     return 1 if (unclassed or mismatch or stale or ahead) else 0
 def do_classify(apply, out):
     plan = []
@@ -105,7 +105,7 @@ def do_classify(apply, out):
     stamp = time.strftime("%Y-%m-%d %H:%M")
     for topic, c, old, new, st, owner in plan:
         p = "%s/%s.task.md" % (TASKS, topic); t = open(p, encoding="utf-8", errors="replace").read()
-        line = "CLASS: %s (util_queue_order_census.py classify, %s, CEO-1887 line 1: rank %d is the class)" % (c, stamp, new)
+        line = "CLASS: %s (util_queue_order_census.py classify, %s, R-1887 line 1: rank %d is the class)" % (c, stamp, new)
         if re.search(r"^CLASS:.*$", t, re.M): nt = re.sub(r"^CLASS:.*$", line, t, count=1, flags=re.M)
         elif re.search(r"^LINKS:.*$", t, re.M): nt = re.sub(r"^(LINKS:.*)$", lambda m: m.group(1) + "\n" + line, t, count=1, flags=re.M)
         else: nt = t.rstrip("\n") + "\n" + line + "\n"
@@ -123,7 +123,7 @@ def do_classify(apply, out):
             if len(f) >= 4 and f[0].isdigit() and f[1].decode("utf-8", "replace") in want:
                 nr = str(want[f[1].decode("utf-8", "replace")]).encode()
                 if f[0] != nr: f[0] = nr; lines[i] = b"\t".join(f); n += 1
-        bak = Q + ".bak." + time.strftime("%Y%m%d-%H%M%S") + "-ceo-1887-classify"
+        bak = Q + ".bak." + time.strftime("%Y%m%d-%H%M%S") + "-r-1887-classify"
         open(bak, "wb").write(data); open(Q, "wb").write(b"\n".join(lines))
     finally:
         os.rmdir(LK)

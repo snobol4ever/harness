@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_a_compile_refusal_grades_through_the_one_voice_in_both_modes.sh -- A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (ceo CEO-1354, the
+# test_gate_a_compile_refusal_grades_through_the_one_voice_in_both_modes.sh -- A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (R-1354, the
 # coo's ask of 2026-09-28 on hq_snobol4's witness packages/snobol4/dotnet/Test2.sno; hq_raku 2026-10-11 on RakRungs class_method_range_replace_6
 # and class_method_say_replace_49: "every m4 compile failure is Verdict SKIP, so a program whose correct behaviour IS a compile-time refusal
 # can never read PASS in mode 4").
@@ -8,7 +8,7 @@
 # their want_rc 1, and scrip --compile exits 1 exactly as Rakudo refuses them -- two of RakRungs' standing non-PASS cells no Raku cure could
 # close. compile_m4 returned SKIP for every failed --compile, whatever it meant.
 #
-# ARMS (a two-entry Raku block suite in mktemp, outside corpus/ (CEO-547), the ALL.wantrc sidecar declaring each entry's rc; nothing recorded):
+# ARMS (a two-entry Raku block suite in mktemp, outside corpus/ (R-547), the ALL.wantrc sidecar declaring each entry's rc; nothing recorded):
 #   (a) SHARED: hq_raku's witness text (a role's stub method a class leaves unimplemented), ref empty, want_rc 1: PASS in m3 AND in m4
 #   (b) UNSHARED: the same refusing text with a ref the oracle "ran" (ok, want_rc 0): FAIL in both modes -- a refusal the oracle does not
 #       share is a red, never a skip
@@ -29,7 +29,7 @@ class C does R { }
 { banner 1 refusal_shared; banner 2 refusal_unshared; echo ok; } > "$W/ALL.ref"
 printf 'refusal_shared\t1\n' > "$W/ALL.wantrc"
 fails=0; checks=0; ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
-echo "=== gate: a compile refusal grades through the one voice in both modes, never a SKIP (CEO-1354) ==="
+echo "=== gate: a compile refusal grades through the one voice in both modes, never a SKIP (R-1354) ==="
 pre=""; [ -n "${FAIL_ONCE:-}" ] && pre="S4E_M4_COMPILE_REFUSAL_SKIP=1"
 out="$(env $pre S4E_PROGRESS_OFF=1 SUITE_LIST_ALL=1 timeout -k 5 300 python3 "$H" run "$W/ALL.raku" "$W/ALL.ref" --lang raku --modes m3,m4 2>&1)"; rc=$?
 [ "$rc" -le 1 ] || refuse "the harness could not grade the fixture (rc=$rc): $(tail -3 <<<"$out")"

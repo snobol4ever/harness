@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_coexpression_image_counts_activations_like_icont.sh -- the number in image(co-expression) and *C is the count of RESULTS the co-expression has produced for its activator, as under icont: it moves at the return seam, never on an explicit transfer (ceo CEO-655).
+# test_gate_icn_coexpression_image_counts_activations_like_icont.sh -- the number in image(co-expression) and *C is the count of RESULTS the co-expression has produced for its activator, as under icont: it moves at the return seam, never on an explicit transfer (R-655).
 #
 # MEASURED 2026-09-12 on 7bac62499 (the adversarial batch a03; the row's baton): after `7 @ f` with f := create |(v := @&source)
 # icont reads f (0) and SCRIP (1); after the second @g with g := create (1 @ &main) icont &main (1), SCRIP (3). SCRIP

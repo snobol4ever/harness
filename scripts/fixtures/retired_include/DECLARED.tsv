@@ -3,7 +3,7 @@
 # Every row is a script NO RECIPE REACHES (grep of Makefile, ../harness/scripts/ and .claude/ on SCRIP 17e19edb8: referenced by nothing, or only
 # by a declaration file or another unwired script), last touched 2026-05-31..2026-08-29, compiling against a runtime layout the
 # srcreorg retired.  Repointing their paths would expose extinct APIs, as it did for test_sno_pat_bb_probe.sh; retiring them is
-# a sweep ruling, asked of the ceo.  A row whose (script, directory) no longer reads dead is STALE and reds the gate: remove it
+# a sweep ruling, asked of the officer.  A row whose (script, directory) no longer reads dead is STALE and reds the gate: remove it
 # in the landing that cured or deleted the script, so this list only shrinks.
 # script<TAB>dead directory<TAB>reason
 build_and_run_test_template_byte_identity.sh	src/runtime/x86	DEAD HARNESS: named only by ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv; last touched 2026-07-17

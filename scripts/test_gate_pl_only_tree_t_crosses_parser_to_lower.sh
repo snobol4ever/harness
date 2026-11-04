@@ -2,7 +2,7 @@
 # test_gate_pl_only_tree_t_crosses_parser_to_lower.sh -- ONLY tree_t CROSSES FROM THE PROLOG PARSER TO THE LOWER STAGE (Lon 2026-09-27
 # ~12:3x CDT, in-chat to hq_snocone, verbatim as relayed: "Ensure that only the tree_t gets sent/used by parser stage to the lower stage.
 # All global structures needed at runtime, are built in the lower stage."; RULES.md FACT RULE ONLY tree_t CROSSES FROM A PARSER TO THE
-# LOWER STAGE; ceo CEO-1322; row prolog-only-tree-t-crosses-from-the-prolog-parser-to-lower-...-lon-2026-09-27).
+# LOWER STAGE; R-1322; row prolog-only-tree-t-crosses-from-the-prolog-parser-to-lower-...-lon-2026-09-27).
 # ⭐ A LINK-LEVEL RATCHET, NOT A GREP: hq_snocone's audit (findings/FINDING-2026-09-27-hq_snocone-only-tree-t-crosses-parser-to-lower-
 # audit-of-the-seven-frontends.md) read the crossings off `nm` over the objects the build links, and so does this gate -- a crossing
 # is a symbol one side defines and the other side references, whatever the source spells it. The objects are RT_PIC_SRCS in

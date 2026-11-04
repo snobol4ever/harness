@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_set_held_in_a_record_field_combines_as_a_set.sh -- a set-typed field of a record (an element of an array of
 # records, named or anonymous, a record variable, a record through a pointer) is a set to + * - = <> <= >= and in, as fpc -Miso
-# has it (ISO 7185 6.7.2.4, 6.7.2.5; row pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# has it (ISO 7185 6.7.2.4, 6.7.2.5; row pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. pas_is_setexpr knew set variables and set constructors but no field, so with neither
 # operand a plain set variable store[sp].vs + store[sp + 1].vs parsed as numeric addition: the program stopped silently rc 1, or,

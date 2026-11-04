@@ -1,13 +1,13 @@
 #!/bin/bash
 # run_snobol4jvm.sh [-dNk] [-sNk] [-u STR] name.sno [-- arg ...]   |   --binaries [--lang LANG]   |   --paths
-# THE jvm ENGINE ARM (CEO-1822; Lon 2026-10-17, in-chat to hq_jvm, verbatim: "The suite banner should represent the snobol4jvm program,
+# THE jvm ENGINE ARM (R-1822; Lon 2026-10-17, in-chat to hq_jvm, verbatim: "The suite banner should represent the snobol4jvm program,
 # not SCRIP." · "I suspect getting the test harness and benchmarks to run is the first order of business."): run one SNOBOL4 program
 # under snobol4jvm, the engine sibling at <root>/snobol4jvm, in the calling shape every port runner shares (hq_dotnet's proposal,
-# CEO-1822): the harness's SPITBOL-shaped switches, the bare file name in the entry's own folder, stdin from the input sidecar, and the
+# R-1822): the harness's SPITBOL-shaped switches, the bare file name in the entry's own folder, stdin from the input sidecar, and the
 # program's own argv after a bare --. The runner execs the engine; stdout, stderr and the exit code are the program's.
-# THE SWITCHES: -d is accepted and not mapped (snobol4jvm has no heap cap, a measured gap). -sNk is MAPPED (hq_jvm, CEO-2091, row jvm-a-recursion-deeper-than-about-ninety-
+# THE SWITCHES: -d is accepted and not mapped (snobol4jvm has no heap cap, a measured gap). -sNk is MAPPED (hq_jvm, R-2091, row jvm-a-recursion-deeper-than-about-ninety-
 # calls...): it reaches the engine as -Dsnobol4jvm.stack.kb=N, and main.clj runs the program on a thread whose stack is 256 times that, the declared stack being the hard cap. -u STR reaches the engine before the file, as sbl -u takes it:
-# HOST(0) answers it (snobol4jvm e9ebbb4; CEO-1907), and the program's argv after -- reaches it too, which HOST(0) joins when there is no
+# HOST(0) answers it (snobol4jvm e9ebbb4; R-1907), and the program's argv after -- reaches it too, which HOST(0) joins when there is no
 # -u. The JVM's own defaults stand until a measurement asks for more.
 # stdout carries the program's OUTPUT and nothing else: the JVM's log goes to stderr at error level, so a stale class archive (a
 # warning) never lands in a graded stream. build_snobol4jvm.sh records the archive; it is used only while it is at least as new as the jar.
@@ -46,12 +46,12 @@ prog="$1"; shift
 [ "${1:-}" = "--" ] && shift
 A="${J%.jar}.jsa"
 cds=(); [ -f "$A" ] && ! [ "$J" -nt "$A" ] && cds=("-XX:SharedArchiveFile=$A")
-# THE JIT WAITS FOUR TIMES AS LONG (-XX:CompileThresholdScaling=4; hq_jvm, row jvm-speed-the-fixed-start-up-of-the-jar-..., CEO-2091). Measured 2026-10-31 on the
+# THE JIT WAITS FOUR TIMES AS LONG (-XX:CompileThresholdScaling=4; hq_jvm, row jvm-speed-the-fixed-start-up-of-the-jar-..., R-2091). Measured 2026-10-31 on the
 # idle box (perf stat -e instructions:u, the archive in use): the HotSpot compiler threads cost about 7 G of the 11 G an empty program takes, spent compiling start-up
 # code that runs once. At scaling 4 an empty program is 6.5 G (11.1 before), a 20k-iteration pattern loop 23.1 G (28.0), a 300k-iteration one 136.4 G (144.7), and the wall
 # clock is the same (0.58 s, 1.61 s, 10.1 s). Scaling 8 and above begins to cost wall time (10.9 s, then 12.9 s at 16 on the long loop); C1 only (TieredStopAtLevel=1) takes
 # an empty program to 3.7 G but a long loop 2.7 times longer, so it is not used. It is a launcher option like the archive above: java -jar without it still works.
-# HUGE METHODS ARE COMPILED (-XX:-DontCompileHugeMethods; hq_jvm, CEO-2091). HotSpot never compiles a method over 8,000 bytecodes, and operators/INVOKE (a case of every builtin) is
+# HUGE METHODS ARE COMPILED (-XX:-DontCompileHugeMethods; hq_jvm, R-2091). HotSpot never compiles a method over 8,000 bytecodes, and operators/INVOKE (a case of every builtin) is
 # one, so the hottest function of the engine ran in the bytecode interpreter: perf record -g showed 19 percent of all CPU in the Interpreter frame, called from INVOKE.doInvoke (6.9 percent
 # with the flag). Same jar and flags, flag the only difference: a 700k-iteration arithmetic loop 73.8 G -> 62.7 G instructions and 9.85 s -> 6.59 s, a 300k-iteration pattern loop 135.8 G ->
 # 115.4 G and 17.3 s -> 12.0 s, the empty program 6.4 G -> 6.2 G, a 20k pattern loop 23.3 G -> 22.6 G. Output identical.

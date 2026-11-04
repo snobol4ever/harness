@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_seat_census_reads_the_grader_rate_and_the_acceptance_from_the_ledgers.sh -- ARCH-SHARED-DEVELOPMENT steps 5 and 9 (the cto, the fleet
-# test, 2026-11-01; CEO-2041/2094). util_seat_census.py --grader-rate and --acceptance are DONE-WHENs read from the ledgers, so each arm plants
+# test, 2026-11-01; R-2041/2094). util_seat_census.py --grader-rate and --acceptance are DONE-WHENs read from the ledgers, so each arm plants
 # ledgers under a scratch directory (--load --results --waits --builds --repos) and reads the verdict: GREEN on the planted good day, RED naming
 # the one planted defect (the grader slow, a seat hogging while another waited, pressure high, builds compiled not fetched, landings too few), and
 # REFUSE(2) when the box was not busy or not for long enough -- a rate under no contention measures nothing. Hermetic: no cgroup, no real ledger.
@@ -70,7 +70,7 @@ arm "FAIL-ONCE: pressure 40 reads RED naming the pressure"                      
 arm "FAIL-ONCE: builds fetched 5 against built 1 reads RED"                      "$T/built"  1 "FETCHED 5 against BUILT 1" -- --acceptance 7200
 arm "FAIL-ONCE: three landings in two hours reads RED"                           "$T/land"   1 "landings on origin/main" -- --acceptance 7200
 arm "six busy runs of twenty-four REFUSES: not for long enough"                  "$T/short"  2 "busy run(s)" -- --acceptance 7200
-# the per-seat /tmp budget in the banner (ARCH-SHARED-DEVELOPMENT 2.3 /tmp move (2); the coo 2026-11-01, CEO-2095's admin backlog item 2): one LOAD run, seat a at 5000 MB, seat b at 10 MB
+# the per-seat /tmp budget in the banner (ARCH-SHARED-DEVELOPMENT 2.3 /tmp move (2); the coo 2026-11-01, R-2095's admin backlog item 2): one LOAD run, seat a at 5000 MB, seat b at 10 MB
 mkdir -p "$T/tmpb"; u=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 printf 'utc\tkind\tclass\tname\tcores\tmem_mb\tmem_peak_mb\toom_kills\tpids\tcc_slots\trun_slots\ttmp_mb\n%s\tUNIT\tSEAT\ta\t1.00\t500\t600\t0\t10\t0\t1\t5000\n%s\tUNIT\tSEAT\tb\t1.00\t500\t600\t0\t10\t0\t1\t10\n%s\tBOX\tBOX\tbox\tcores_busy=3.0 pressure_some_avg60=1.0\t-\t-\t-\t-\t-\t-\t-\n' "$u" "$u" "$u" > "$T/tmpb/LOAD.tsv"
 barm() {   # barm <name> <seat> <want_text>: the banner line for one seat of the planted run

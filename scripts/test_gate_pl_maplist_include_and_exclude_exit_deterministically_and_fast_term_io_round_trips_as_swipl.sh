@@ -12,7 +12,7 @@
 #     of term_factorized's skeleton and substitution), as the row allows.
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: the table below was cut 2026-10-17 from /usr/bin/swipl, and every run re-cuts it from the
 # live swipl and REFUSES rc=2 when oracle and table disagree or swipl is absent.
-# FAIL-ONCE (CEO-1680, a witness red on the commit before the cure): with the prolog_parse.c prelude reverted on the same tree, m3 and m4 both read
+# FAIL-ONCE (R-1680, a witness red on the commit before the cure): with the prolog_parse.c prelude reverted on the same tree, m3 and m4 both read
 # FAIL on the six det lines, each reading nondet, and PASS=2 again once it was restored (measured 2026-10-17). The string arm of (2) was red too
 # before the serializer carried each string beside the canonical text: under the ISO default (double_quotes=codes) a string read back as codes.
 # Usage: bash ../harness/scripts/test_gate_pl_maplist_include_and_exclude_exit_deterministically_and_fast_term_io_round_trips_as_swipl.sh

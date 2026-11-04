@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_last_call_in_an_if_then_else_branch_releases_its_frame.sh -- a staged call that ends a branch of an if-then-else
 # which is itself the clause body's last goal is a last call: it takes the tail arm and releases the clause frame, so a recursion
-# through the branch runs in constant stack as swipl's does. THE RED (the cfo 2026-10-10, measured by the ceo at CEO-1632, row
+# through the branch runs in constant stack as swipl's does. THE RED (the cfo 2026-10-10, measured by the officer at R-1632, row
 # prolog-a-last-call-inside-a-branch-of-a-control-construct-keeps-its-frame-...): count(1000000) under -s512k printed done for a plain
 # clause body's last call but died ERROR 246 for every branch shape. THE CAUSE: lower_prolog.c sealed PL_SEAL_TAIL only on the clause
 # body's own tail node; when the last goal is an if-then-else the tail node is its IR_GATE, so the call ending a branch was never

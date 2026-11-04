@@ -4,7 +4,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6  DATE: 2026-04-14
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 PASS=0; FAIL=0
 
 rebus() {
@@ -51,7 +51,7 @@ echo ""; echo "PASS=$PASS FAIL=$FAIL"
 # ⛔ NON-FATAL BY DESIGN: a bookkeeping failure must never turn a real measurement into a red board,
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 python3 "$HERE/util_score_row.py" write --lang rebus --column floor --modes m3 \
     --measurer "${S4E_SEAT:-}" --text "smoke PASS=$PASS FAIL=$FAIL (\`test_smoke_rebus.sh\`)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"

@@ -37,7 +37,7 @@ SCRIP="$ROOT/scrip"
 CORPUS="$ROOT/../corpus"
 D2_CEILING="${GATE_D2_CEILING:-36}"
 
-gate_require     "$ARCH"   "the prolog skill reference (where the ruling is written since the ARCH pages retired, CEO-2115)"
+gate_require     "$ARCH"   "the prolog skill reference (where the ruling is written since the ARCH pages retired, R-2115)"
 gate_require     "$QUEUE"  "postoffice QUEUE.tsv (where the cure rows live)"
 gate_require_exec "$SWIPL" "the SWI-Prolog oracle"
 gate_require_exec "$SCRIP" "the scrip binary"

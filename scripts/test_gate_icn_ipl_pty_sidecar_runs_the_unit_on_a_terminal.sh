@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_pty_sidecar_runs_the_unit_on_a_terminal.sh -- NAME.pty RUNS THE UNIT ON A PSEUDO-TERMINAL FOR THE REF AND BOTH
-# SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). IPL's bj and snake run stty on their standard
+# SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). IPL's bj and snake run stty on their standard
 # input and exit 4 when it is not a terminal; getchlib and iprofile read a terminal. ipl_pty_declared/ipl_pty_cmd in
 # lib_icon_ipl_isolation.sh wrap the run in script(1) -- iconx in the cutter's run_isolated, SCRIP in ipl_isolation_run.
 # GREEN: a planted unit asking whether its standard input is a terminal cuts a ref that says so (CRLF line ends from the terminal)

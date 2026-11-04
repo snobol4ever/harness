@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lib_fanout.py -- the python mirror of ../harness/scripts/lib_fanout.sh (ceo CEO-1333, CEO-1394): fanout_width() is
+"""lib_fanout.py -- the python mirror of ../harness/scripts/lib_fanout.sh (R-1333, R-1394): fanout_width() is
 max(2, min(4, cores - demand)), where the demand is the machine's CPU demand in CPUs -- /proc/pressure/cpu "some avg10" times
 cores / 100, or /proc/stat procs_running less the reader on a kernel without PSI -- and NEVER load1 (load1 read 1219 at 3 percent
 PSI on 2026-10-01 when co-expression pthreads filled the run queue's count). FANOUT_TEST_LOAD plants the demand and FANOUT_PROC

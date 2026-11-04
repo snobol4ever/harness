@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_an_unbounded_integer_is_an_integer_to_arg_functor_and_format.sh -- AN UNBOUNDED INTEGER IS AN INTEGER TO arg/3, functor/3 AND format ~d / ~Nd / ~D (Logtalk unbounded functor_03, arg_01, arg_04, format_01, format_02).
-# hq_prolog 2026-09-25, CEO-1270; the cure is by_name_dispatch.c pl_anum_check (arg/3 and functor/3 took DT_I alone as an integer, so a big
+# hq_prolog 2026-09-25, R-1270; the cure is by_name_dispatch.c pl_anum_check (arg/3 and functor/3 took DT_I alone as an integer, so a big
 # integer raised type_error(integer, N) before its sign or size was looked at; its sign now comes from rt_big_cmp) and unification.c's format
 # (~d went through plc_fmt_int, DT_I only; a big integer is now written from rt_big_str through the same digit core, plc_fmt_digits, that the
 # machine-integer path now also uses). NO MONITOR BRACKET: error and output expectations, compared line for line. THE ORACLE IS swipl ALONE:

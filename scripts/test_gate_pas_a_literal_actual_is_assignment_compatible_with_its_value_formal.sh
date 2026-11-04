@@ -2,7 +2,7 @@
 # test_gate_pas_a_literal_actual_is_assignment_compatible_with_its_value_formal.sh -- ISO 7185 6.6.3.2: an actual value parameter shall be
 # assignment-compatible with the type of its formal-parameter
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. Nothing compared an actual with the type
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. Nothing compared an actual with the type
 # of its value formal: PAT iso7185prt1707a (b('c') with b(c: integer)) and 1831 (a(1, 2) with a(b: integer; c: char)) compiled and ran to
 # rc 0. NO BRACKET: the program is refused at compile, before any event. The cure: pas_value_actuals_check, at the one call-site hook every
 # user-routine call passes (pas_pf_actuals), reads each value formal's type from the routine's signature and refuses an actual whose type

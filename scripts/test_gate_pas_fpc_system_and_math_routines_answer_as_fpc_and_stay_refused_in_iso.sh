@@ -2,12 +2,12 @@
 # test_gate_pas_fpc_system_and_math_routines_answer_as_fpc_and_stay_refused_in_iso.sh -- FPC's System routines str, stringofchar, random
 # and randomize, and the math unit's tan, arcsin, arccos, arctan2, log2, logn, hypot, sinh/cosh/tanh, degtorad, radtodeg and IntPower,
 # each as fpc answers under its own mode -- and the System routines still refused in an ISO program (the dialects row
-# pascal-dialects-...-ceo-1614, chunk 8).
+# pascal-dialects-...-r-1614, chunk 8).
 #
 # MEASURED 2026-10-11 by hq_pascal on SCRIP c88a51f9d: 17 graded PasRosetta programs died with "undefined function called". Their
 # names were random/randomize (6), trimleft/trimright, format, formatfloat, max/min, stringofchar, str, power/IntPower, tan,
 # arcsin, arccos, and the file routines.
-# THE DIALECT: under CEO-1225 (ISO as oracle) an ISO program that names random is refused with 6.2.2.1. FPC's ISO_EXPECTED_REFUSALS.tsv
+# THE DIALECT: under R-1225 (ISO as oracle) an ISO program that names random is refused with 6.2.2.1. FPC's ISO_EXPECTED_REFUSALS.tsv
 # lists test_units_system_trandom for exactly that. So the System routines exist only once the program is fpc or objfpc (a directive or a
 # flip point). The math names are reachable only through uses math, which already flips.
 # THE LOWERING: the math names map to __pas_mathf (libm: tan, asin, acos, atan2, log2, hypot, sinh, cosh, tanh, ...), unless the program
@@ -20,7 +20,7 @@
 # ARMS, both modes, expectations cut LIVE from fpc -Mfpc: sysrt and mathfns. Two ISO controls, each refused with no output:
 #   - iso_random: a bare random, refused at compile time with 6.2.2.1, as ISO_EXPECTED_REFUSALS.tsv records for
 #     test_units_system_trandom;
-#   - iso_stringofchar: a call, refused at compile time with 6.2.2.1 since 2026-10-14 (hq_pascal, PasRosetta, ceo CEO-1709): mk_call reports the
+#   - iso_stringofchar: a call, refused at compile time with 6.2.2.1 since 2026-10-14 (hq_pascal, PasRosetta, R-1709): mk_call reports the
 #     identifier of random, randomize and stringofchar when the whole program is ISO and no routine of that name is declared -- until then it
 #     was refused at run time as an undefined function ("an older gap this gate does not widen"). FAIL_ONCE=1 corrupts arm sysrt.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?

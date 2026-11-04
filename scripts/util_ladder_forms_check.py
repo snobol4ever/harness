@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """util_ladder_forms_check.py -- every DECLARED form and pair has a WITNESS.
 
-Lon 2026-09-04, in-chat to ceo, verbatim: "Make tasks to ensure a complete test ladder covering every feature in
+Lon 2026-09-04, in-chat, verbatim: "Make tasks to ensure a complete test ladder covering every feature in
 isolation with variations and then combinations of features." A rung stopped being one witness and became a
 FAMILY: one tiny witness per FORM the reference lists for that construct, then PAIRS combining it with the rungs
 below. This is the instrument that says whether a language's ladder actually has them, and it is the blocking
 row -- every per-language ladder DONE-WHEN refuses rc=2 until it can call this.
 
-THE CENSUS SCHEMA (ceo, this row): RUNG CONSTRUCT REFERENCE FORMS PAIRS WITNESS_ORIGIN STATUS NOTE, in
+THE CENSUS SCHEMA (this row): RUNG CONSTRUCT REFERENCE FORMS PAIRS WITNESS_ORIGIN STATUS NOTE, in
 corpus/tests/<lang>/config/LADDER.tsv. FORMS and PAIRS are slugs separated by '|', ';' or ',' -- the live
 censuses use '|' and the ratified schema line names only the columns. A form's witness is any origin
 in that language's ALL.csv matching ladder__<rung>_*_<form>; a pair's is ladder__<rung>_*_with_<lower>.
@@ -129,7 +129,7 @@ def slugs(cell):
     # (`collect_all|empty_result|template_is_compound|...`), so this returned ONE form whose name was the whole
     # joined string, reported it as missing, and printed "36 declared slot(s) have no witness" -- a number that
     # is wrong in BOTH directions at once (36 rungs' worth of forms collapsed to 36 slots) while looking
-    # exactly like a real measurement. ⭐ The schema line ceo ratified names the COLUMNS, not the separator;
+    # exactly like a real measurement. ⭐ The schema line the officer ratified names the COLUMNS, not the separator;
     # accepting all three is the only reading that cannot be wrong about a census someone else writes.
     return [s.strip() for s in re.split(r"[;,|]", cell or "") if s.strip()]
 
@@ -176,7 +176,7 @@ def check_lang(lang, phase, path=None, verbose=True):
         return "NOT-IN-SCHEMA", 0, 0, []
     declared = witnessed = 0
     missing = []
-    # ⛔⭐⭐ A CENSUS ENUMERATED FROM THE IMPLEMENTATION CANNOT NAME A GAP (ceo ruling on Lon's "Is Icon really
+    # ⛔⭐⭐ A CENSUS ENUMERATED FROM THE IMPLEMENTATION CANNOT NAME A GAP (ruling on Lon's "Is Icon really
     # at 90%? I do not believe it", 2026-09-04; the class hq_C first named for Prolog). If the FORMS were read
     # off what the compiler already does, every form has a witness BY CONSTRUCTION and the row reads 199/199
     # while proving nothing about the language standard. Measured on the live tree the hour this landed: icon

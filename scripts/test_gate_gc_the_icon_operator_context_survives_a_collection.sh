@@ -2,7 +2,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_the_icon_operator_context_survives_a_collection.sh
 #   cfo 2026-09-26, row gc-core-gc-roots-visits-g-icn-op-s-two-descrs-at-core-c-397-the-last-open-holder-of-the-
-#   conservative-auditor (ceo CEO-1289/1291). The conservative auditor's last OPEN holder, measured NOT latent.
+#   conservative-auditor (R-1289/1291). The conservative auditor's last OPEN holder, measured NOT latent.
 #
 # WHAT IT GATES.  g_icn_op (core.c) is the Icon operator context a traceback prints: core_icn_op_ctx stores the
 # operator and its two operand DESCRs, core_icn_traceback prints them.  No root walk visited them.  icn_field_get and
@@ -14,7 +14,7 @@
 # the CTO-173 errorvalue precedent: two rt_gc_visit_descr calls in core_gc_roots, beside g_icn_errvalue.  A root
 # visit, never a pin (ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7).
 #
-# THE PLANT IS GONE (CEO-1680, Lon 2026-10-11: no switch in SCRIP's src/ exists only so a test can fail).  Until
+# THE PLANT IS GONE (R-1680, Lon 2026-10-11: no switch in SCRIP's src/ exists only so a test can fail).  Until
 # 2026-10-18 SCRIP_GC_PLANT_ICN_OP held the context past its operation (level 1) and also skipped the two visits
 # (level 2), and two arms graded it: (b) the held operand read correctly under HOLD, (c) HOLD+UNROOT failed under the
 # flip plant.  Both went with the seam.  THE CARRIER IS ALSO GONE: hq_icon's row cured the converted error's leak, so

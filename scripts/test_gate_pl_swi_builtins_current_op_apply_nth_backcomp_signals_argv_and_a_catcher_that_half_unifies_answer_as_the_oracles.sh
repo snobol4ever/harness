@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_builtins_current_op_apply_nth_backcomp_signals_argv_and_a_catcher_that_half_unifies_answer_as_the_oracles.sh -- SWI BUILTINS THE ProRosetta AND SWI SUITES CALLED AND SCRIP GOT WRONG OR LACKED, IN BOTH MODES (hq_prolog 2026-10-15,
-# row prolog-every-suite-to-100-under-tenet-ceo-1562; SWI core/test_op current_op 3 cases, core/test_call apply:error, ProRosetta main/0 programs).
+# row prolog-every-suite-to-100-under-tenet-r-1562; SWI core/test_op current_op 3 cases, core/test_call apply:error, ProRosetta main/0 programs).
 # THE CURE, each line of the swipl witness: current_op/3 raises swipl's type_error(integer, P) for a non-integer priority and type_error(atom, T) for a non-atom
 # specifier in the SWI dialect (ISO source keeps domain_error); apply/2 on a number raises type_error(callable, G); nth0/3 and nth1/3 with a bound index are
 # DETERMINISTIC (the chains of ProRosetta maximum-triangle-path-sum, which needed a 1 GB stack because every nth0 kept a choice point) and raise type_error(integer, I)

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_icon_classic_set.sh -- THE CLASSIC ICON BENCHMARK SET: concord deal ipxref queens rsg geddump,
 # graded for CORRECTNESS against an iconx cut taken AT RUN TIME, then TIMED against Arizona iconx and
-# JCON jcont on the two-number basis.  Lon 2026-09-10, verbatim via ceo CEO-493: "Get the classic Icon
-# benchmark set working. Duh!!!"  Basis ruled by ceo CEO-494; written hq_P 2026-09-10.
+# JCON jcont on the two-number basis.  Lon 2026-09-10, verbatim via R-493: "Get the classic Icon
+# benchmark set working. Duh!!!"  Basis ruled by R-494; written hq_P 2026-09-10.
 #
-# ⛔⭐⭐ WHY THIS IS NOT A callgrind Ir BOARD, AND THE RULING IS NOT A PREFERENCE (ceo CEO-494).
+# ⛔⭐⭐ WHY THIS IS NOT A callgrind Ir BOARD, AND THE RULING IS NOT A PREFERENCE (R-494).
 # Every other benchmark in this tree measures Ir, because Ir is DETERMINISTIC: bench_two_number_ir.sh's
 # own header cites three consecutive runs returning byte-identical counts, and that property is what
 # buys the economy of a single rep.  ⛔ IT DOES NOT HOLD FOR A JVM.  Measured here 2026-09-10 on the
@@ -22,11 +22,11 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # an empty Icon program is 367,008 Ir where the truth is 291,132,178.  ⭐ The number it returns is not
 # malformed, missing or suspicious -- it is a small, plausible, correctly measured count OF THE WRONG
 # PROCESS, and on a board whose whole question is "who does less work" it reads as the rival winning by
-# three orders of magnitude.  Every guard on that board -- the client exit-status check, the CEO-173
+# three orders of magnitude.  Every guard on that board -- the client exit-status check, the R-173
 # overhead refusal -- passes it.
 #
 # THE TWO-NUMBER BASIS: OVERHEAD is the empty-program constant per engine, measured by this same
-# protocol; WORK = median_total - median_overhead.  ⛔ CEO-173: when OVERHEAD is >= 50% of an arm's
+# protocol; WORK = median_total - median_overhead.  ⛔ R-173: when OVERHEAD is >= 50% of an arm's
 # reading, the WORK multiple is REFUSED for that program and the labelled TOTAL-basis multiple is
 # printed in its place -- never both, never a work number with a quiet asterisk.
 #
@@ -42,8 +42,8 @@ ROOT="$HERE/../../SCRIP"
 SCRIP_BIN="${SCRIP:-$ROOT/scrip}"
 RTDIR="$ROOT/out"
 CORPUS_SRC="${CORPUS_SRC:-$S4E/corpus/benchmarks/icon}"
-REPS="${REPS:-5}"          # CEO-494: at least five timed runs, median reported
-WARMUP="${WARMUP:-2}"      # CEO-494: warm-up runs discarded (the JVM needs them; everyone else pays nothing)
+REPS="${REPS:-5}"          # R-494: at least five timed runs, median reported
+WARMUP="${WARMUP:-2}"      # R-494: warm-up runs discarded (the JVM needs them; everyone else pays nothing)
 RUN_TMO="${RUN_TMO:-120}"
 TSV_OUT="${TSV_OUT:-}"
 TICK_MS="${TICK_MS:-10}"   # /usr/bin/time %e resolution on this box: 10 ms. Measured, not assumed -- every
@@ -53,8 +53,8 @@ refuse() { echo "⛔ CLASSIC-SET BOARD REFUSED (rc=2): $*" >&2; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || refuse "lib_oracle_flags.sh unloadable -- the ONE oracle-path authority (s200)."
 . "$HERE/lib_perf_fmt.sh"     2>/dev/null || refuse "lib_perf_fmt.sh unloadable -- the ONE authority for printing a multiple (s266)."
 . "$HERE/lib_icon_ipl_isolation.sh" 2>/dev/null || refuse "lib_icon_ipl_isolation.sh unloadable -- the ONE argv-sidecar reader."
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE declared-arena reader (CEO-1353)."
-# CEO-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the ONE declared-arena reader (R-1353)."
+# R-743 welded a load stamp onto every standalone perf_mult/perf_pct. THIS SCRIPT COMPOSES ITS OWN CELLS
 # from captured multiples, so the stamp must not land INSIDE a cell -- it is emitted once, above, with the
 # shared axes, which is where the FACT RULE says a grid names anything it shares.
 PERF_STAMP_OFF=1
@@ -76,7 +76,7 @@ export PATH="$(dirname "$ICONT"):$PATH"   # jcont shells out to icont; without t
 # typed here. This file staged that harness until 2026-10-07 and so graded every program RED (m3 rc=1, m4 BUILDFAIL: scrip was handed
 # an options.icn that no longer exists) -- an instrument that types a population's settings goes stale the day the population moves.
 # Each kernel carries its own stdin (NAME.in, NAME.stdin, else NAME.dat, else /dev/null), argv (NAME.argv), memory (NAME.heap and
-# NAME.stack, as switches) and oracle knobs (NAME.oracle_env), read through the ONE readers the IcnBench runner reads (CEO-1281, CEO-1353).
+# NAME.stack, as switches) and oracle knobs (NAME.oracle_env), read through the ONE readers the IcnBench runner reads (R-1281, R-1353).
 PROGS="${PROGS:-concord deal ipxref queens rsg geddump}"
 C="$WORK/corpus"; mkdir -p "$C"
 cp "$CORPUS_SRC"/*.icn "$C/" 2>/dev/null
@@ -106,7 +106,7 @@ time_one() {  # $1 = stdin file or empty; $2.. = argv
 # Echoes "<median_wall> <median_cpu> <spread_pct> <rc>" over WARMUP+REPS runs, warm-up discarded.
 # ⛔ THE SPREAD IS NOT DECORATION AND IS NEVER AVERAGED AWAY: it is the only thing on this board that
 # tells a reader whether the median in front of them is a measurement or a coin flip, and on the JVM arm
-# it is routinely tens of percent (CEO-494).  A board that hid it would read exactly like a deterministic one.
+# it is routinely tens of percent (R-494).  A board that hid it would read exactly like a deterministic one.
 time_median() {  # $1 = stdin, $2.. = argv
   local sin="$1"; shift
   local i r w c rc lastrc=0
@@ -168,15 +168,15 @@ echo "  ⛔ SHARED AXES (RULES.md § FACT RULES, APPLES TO APPLES) -- every row 
 echo "     instrument = WALL ms and CPU ms (user+sys) from /usr/bin/time, MEDIAN of $REPS runs after $WARMUP discarded warm-ups"
 echo "     basis = two-number; OVERHEAD is the empty-program constant per engine; WORK = median - OVERHEAD"
 echo "     RT_OPT=-O0 · oracle = $ICONX · rival = ${JCONT:-<absent>} · corpus $CTREE · one box, one sitting"
-echo "     load at start = $(perf_load_stamp)  ⛔ CEO-743: a wall-clock multiple is NOT comparable across loads --"
+echo "     load at start = $(perf_load_stamp)  ⛔ R-743: a wall-clock multiple is NOT comparable across loads --"
 echo "        one unchanged binary read 0.549x at load 6.96 and 0.384x at load 29.84, so load does not cancel out of a ratio."
 echo "     ⛔ CORRECTNESS is the program's whole stdout against an iconx run taken AT RUN TIME, and that run against the kernel's"
-echo "        own .ref (REF DRIFT refuses the row); stdin, argv, heap and stack are the kernel's own sidecars (CEO-1281, CEO-1353)."
+echo "        own .ref (REF DRIFT refuses the row); stdin, argv, heap and stack are the kernel's own sidecars (R-1281, R-1353)."
 echo "     ⛔ TIMING runs with stdout to a file, never a terminal, so it measures computation not terminal I/O."
 echo "     ⛔ RESOLUTION: /usr/bin/time reports wall to ${TICK_MS} ms. A multiple whose arms are under $QUANT_TICKS ticks"
 echo "        (${qf:-$((TICK_MS*QUANT_TICKS))} ms) is printed with a QNT: prefix -- the figure is real, the precision it"
 echo "        LOOKS like is not. Off this floor by a bigger input or a self-timed hook, never by a tighter format."
-echo "     ⛔ callgrind Ir REFUSES on the jcont arm (ceo CEO-494): JIT makes a JVM's Ir vary ~35% run to run,"
+echo "     ⛔ callgrind Ir REFUSES on the jcont arm (R-494): JIT makes a JVM's Ir vary ~35% run to run,"
 echo "        so Ir is the SCRIP-vs-iconx instrument only and NO multiple here crosses instruments."
 echo "  OVERHEAD (empty Icon program): iconx ${OVW[iconx]:-NA}ms/${OVC[iconx]:-NA}ms · jcont ${OVW[jcont]:-NA}ms/${OVC[jcont]:-NA}ms · m3 ${OVW[m3]:-NA}ms/${OVC[m3]:-NA}ms · m4 ${OVW[m4]:-NA}ms/${OVC[m4]:-NA}ms  (wall/cpu)"
 if [ "$HAVE_JCON" != "1" ]; then
@@ -190,8 +190,8 @@ if [ -n "$TSV_OUT" ]; then
     printf '# ICON CLASSIC SET -- tree=SCRIP %s corpus %s RT_OPT=-O0 date=%s reps=%s warmup=%s\n' "$TREE" "$CTREE" "$(date -u +%Y-%m-%d)" "$REPS" "$WARMUP"
     printf '# instrument: WALL ms and CPU ms (user+sys), MEDIAN of %s runs after %s discarded warm-ups. Spread%%=(max-min)/min on wall.\n' "$REPS" "$WARMUP"
     printf '# basis: two-number. OVERHEAD = empty Icon program per engine (wall/cpu ms): iconx %s/%s jcont %s/%s m3 %s/%s m4 %s/%s. WORK = median - OVERHEAD.\n' "${OVW[iconx]:-NA}" "${OVC[iconx]:-NA}" "${OVW[jcont]:-NA}" "${OVC[jcont]:-NA}" "${OVW[m3]:-NA}" "${OVC[m3]:-NA}" "${OVW[m4]:-NA}" "${OVC[m4]:-NA}"
-    printf '# multiple = rival WORK / SCRIP m4 WORK on the SAME instrument (FASTER axis, >1 = SCRIP ahead). CEO-173: OVERHEAD >= 50%% of an arm => basis=TOTAL.\n'
-    printf '# ⛔ callgrind Ir REFUSES for the jcont arm (ceo CEO-494): a JVM Ir varies ~35%% run to run. No multiple crosses instruments.\n'
+    printf '# multiple = rival WORK / SCRIP m4 WORK on the SAME instrument (FASTER axis, >1 = SCRIP ahead). R-173: OVERHEAD >= 50%% of an arm => basis=TOTAL.\n'
+    printf '# ⛔ callgrind Ir REFUSES for the jcont arm (R-494): a JVM Ir varies ~35%% run to run. No multiple crosses instruments.\n'
     printf '# verdict: output byte-compared against an iconx cut taken AT RUN TIME. A wrong answer gets no multiple.\n'
     printf 'program\tverdict\ticonx_wall_ms\ticonx_cpu_ms\ticonx_spread_pct\tjcont_wall_ms\tjcont_cpu_ms\tjcont_spread_pct\tm3_wall_ms\tm3_cpu_ms\tm3_spread_pct\tm4_wall_ms\tm4_cpu_ms\tm4_spread_pct\ticonx_WORK_wall\tjcont_WORK_wall\tm4_WORK_wall\tbasis\tm4_x_vs_iconx\tm4_x_vs_jcont\n'
   } > "$TSV_OUT"
@@ -200,7 +200,7 @@ fi
 RC=0; N=0
 for p in $PROGS; do
   sin="${STDIN[$p]}"; av_args="${ARGS[$p]}"
-  # ⛔ m4's declared switches lead the binary's arguments, so a -- ends them before the kernel's own argv (Lon's CEO-1261 convention);
+  # ⛔ m4's declared switches lead the binary's arguments, so a -- ends them before the kernel's own argv (Lon's R-1261 convention);
   # m3 takes the kernel's argv after -- always.  The oracle gets NAME.oracle_env and none of SCRIP's switches.
   m4_args="$av_args"; [ -n "${SWS[$p]}" ] && [ -n "$av_args" ] && m4_args="-- $av_args"
   # ---- the oracle, AT RUN TIME, checked against the kernel's own .ref ----
@@ -237,7 +237,7 @@ for p in $PROGS; do
   jc_w=NA; jc_c=NA; jc_s="-"; if [ "${OUTOK[jcont]}" = PASS ]; then r="$(time_median "$sin" $jc_av $av_args)"; jc_w="$(echo "$r"|awk '{print $1}')"; jc_c="$(echo "$r"|awk '{print $2}')"; jc_s="$(echo "$r"|awk '{print $3}')"; fi
   m3_w=NA; m3_c=NA; m3_s="-"; if [ "${OUTOK[m3]}"    = PASS ]; then r="$(time_median "$sin" $m3_av -- $av_args)"; m3_w="$(echo "$r"|awk '{print $1}')"; m3_c="$(echo "$r"|awk '{print $2}')"; m3_s="$(echo "$r"|awk '{print $3}')"; fi
   m4_w=NA; m4_c=NA; m4_s="-"; if [ "${OUTOK[m4]}"    = PASS ]; then r="$(time_median "$sin" $m4_av $m4_args)"; m4_w="$(echo "$r"|awk '{print $1}')"; m4_c="$(echo "$r"|awk '{print $2}')"; m4_s="$(echo "$r"|awk '{print $3}')"; fi
-  # ---- the two-number basis and the CEO-173 refusal, per arm, on WALL ----
+  # ---- the two-number basis and the R-173 refusal, per arm, on WALL ----
   work() { local t="$1" o="$2"; case "$t" in NA|''|*[!0-9]*) echo ""; return;; esac; case "$o" in ''|*[!0-9]*) echo ""; return;; esac; echo $((t - o)); }
   ixw="$(work "$ix_w" "${OVW[iconx]:-}")"; jcw="$(work "$jc_w" "${OVW[jcont]:-}")"; m4w="$(work "$m4_w" "${OVW[m4]:-}")"
   frac() { awk -v o="$1" -v t="$2" 'BEGIN{printf "%d", (t>0? o*100/t : 100)}'; }
@@ -247,7 +247,7 @@ for p in $PROGS; do
   # four, plus or minus a tick either way" -- which spans 1.5x to 3x. ⭐ The number is not wrong; the
   # PRECISION a bare multiple implies is, and a reader has no way to see it from the multiple alone.
   # So any row where either arm is under QUANT_TICKS ticks is labelled QNT: the figure still prints (the
-  # number is the number, ceo CEO-494) and it prints wearing its own error bar. ⛔ The way off this floor
+  # number is the number, R-494) and it prints wearing its own error bar. ⛔ The way off this floor
   # is a BIGGER INPUT or a self-timed hook in the program -- never a tighter-looking format.
   quant=""; qfloor=$((TICK_MS * QUANT_TICKS))
   case "$ix_w" in ''|*[!0-9]*) ;; *) [ "$ix_w" -lt "$qfloor" ] && quant="QNT:";; esac

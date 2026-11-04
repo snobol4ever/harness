@@ -3,9 +3,9 @@
 #
 # test_rebus_bench_suite.sh grades each benchmark under three angles in both modes (the process wrapper on the pristine kernel, then
 # the program bench_wrap_rebus.py generates: fixed iterations and fixed time), the REF checked on every run and, in the generated
-# angles, every repetition's VALUE held to the first and to the REF (row rebus-benchmarks-double-as-tests-..., the coo, CEO-1227).
+# angles, every repetition's VALUE held to the first and to the REF (row rebus-benchmarks-double-as-tests-..., the coo, R-1227).
 # Lon, verbatim: "The reason to force a benchmark to also be a test is to guarantee it is not vacuous." This gate plants a fixture
-# OUTSIDE the corpus tree (not a board, CEO-547: graded, nothing appended, nothing written) and requires the verdicts to be exactly:
+# OUTSIDE the corpus tree (not a board, R-547: graded, nothing appended, nothing written) and requires the verdicts to be exactly:
 #   good   `string_concat` copied from the corpus with its REF          -> PASS in m3 and m4
 #   drift  prints 1 (its REF) on the first run, then each repetition computes another value -> the process angle PASSES and the
 #          iteration and time angles FAIL naming `mismatched` -- the case a one-run test grades green

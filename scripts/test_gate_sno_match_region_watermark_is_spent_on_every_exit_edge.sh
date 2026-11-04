@@ -25,7 +25,7 @@
 # ✅ CURED AND WIRED.  Owner: hq_U.  Row:
 # snocone-the-match-region-watermark-is-spent-on-one-edge-so-non-local-exits-out-of-the-region-overpop (rank 0).
 # It landed RED 6/9 at SCRIP 910f27184 -- deliberately UNWIRED, because a red gate in the blocking set is a broken
-# build for every seat -- and is wired into `make test` HERE, BY THE CURE, per CEO-381.  A gate that lands red with
+# build for every seat -- and is wired into `make test` HERE, BY THE CURE, per R-381.  A gate that lands red with
 # an owner and a row named in its own header is a debt with a due date; one that lands red with neither is a line
 # every seat learns to ignore.
 #
@@ -34,7 +34,7 @@
 # reads 9/9, from the same ./scrip.  ⛔ THE KILLSWITCH IS A MEASUREMENT INSTRUMENT, NOT A SUPPORTED CONFIGURATION:
 # nothing may depend on the OFF position, which is the retired behaviour and is kept only so the next reader can
 # re-derive the delta without owning a second tree.
-# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and CEO-1680
+# THE KILLSWITCH IS DELETED (hq_zetas 2026-10-17, the spine flip, under the cto's review: ZETA HAS NO MODES, and R-1680
 # allows no seam in SCRIP for a test): the 6/9 above was measured at the cure's landing and stands as history.
 set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_pl_call_with_depth_limit_answers_as_swipl_for_recursion_control_constructs_and_the_frame_each_builtin_call_costs.sh -- call_with_depth_limit/3 answers as swipl: the depth a proof
-# reached, or depth_limit_exceeded, for recursion, library list predicates, control constructs and builtin calls (ProRosetta integer-sequence-1, CEO-1926; ARCH-PROLOG-DATABASE section 8).
-# THE LOWERING (hq_runtime, CEO-2011): a program that names the predicate is DEPTH-COUNTED -- every activation frame carries LEVEL at base +0 and LIMITER at base +8, copied down from the
+# reached, or depth_limit_exceeded, for recursion, library list predicates, control constructs and builtin calls (ProRosetta integer-sequence-1, R-1926; ARCH-PROLOG-DATABASE section 8).
+# THE LOWERING (hq_runtime, R-2011): a program that names the predicate is DEPTH-COUNTED -- every activation frame carries LEVEL at base +0 and LIMITER at base +8, copied down from the
 # caller's frame at alpha (+1 for LEVEL); an active limiter's pair (LIMIT, REACHED, in the limiter's own frame) rises to the level and a level over LIMIT fails the call; a builtin call
 # charges one frame ($dl_tick before it); the last-call arm is off so a tail call is a frame. The limiter is a prelude clause: $dl_check, $dl_push, call(G), $dl_reached, and on redo
 # $dl_reset (REACHED back to the limiter's level + 1), else $dl_false (depth_limit_exceeded iff REACHED passed LIMIT). The interim prelude meta-interpreter (SCRIP 7b94a7efd) is gone.
 # Probes are cut from swipl IN THIS RUN and compared byte for byte with SCRIP's m3 and m4: the shapes of a proof (including the cto's member probe a-2 b-3 c-4, true, the exceeded road,
 # a nested limiter, a failing goal, the two error forms), the recursion boundary (tail, non-tail, mutual, a printing loop), and the frame a builtin costs at a limit of 1 (two programs).
-# THE GOALS PROBE (hq_runtime, CEO-2020, a COMPILED clause body: the other probes run as directives): the shapes the gate used to tolerate now answer as swipl -- a single builtin handed to the limiter AS THE GOAL (is, atom,
+# THE GOALS PROBE (hq_runtime, R-2020, a COMPILED clause body: the other probes run as directives): the shapes the gate used to tolerate now answer as swipl -- a single builtin handed to the limiter AS THE GOAL (is, atom,
 # sort, msort, atom_codes, assertz, nl, between, call/N, maplist, exclude), \+ fail, findall in a goal and in a clause body (swipl puts the goal 5 frames under findall/3 and a $add_findall_bag frame at the 6th: a forwarding chain
 # '$dl_findall'..'$dl_f5' in swi_builtins.pl, the 5th link ticking the floor), and nth0/nth1/last in swipl's shape ('$seek_list'/4 is the foreign skip, nth0 reads 2 at any index). The lowering: a builtin's own stub is its frame
 # (no $dl_tick inside atom/1, is/2 ... or a $mc: wrapper), and a leaf true/fail of a $cc shape is free. NOT REPRODUCED, measured against swipl 9.0.4 and left as debt: the library predicates length, memberchk, select,

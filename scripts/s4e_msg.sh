@@ -19,7 +19,7 @@
 #   s4e_msg.sh sweep --plant-green        step 8's probe: the same phase on a scratch postoffice; the live queue is never written
 #   s4e_msg.sh assign <seat> <topic>      ⭐ V2-1/LAW 2 ASSIGNMENT IS THE LOCK: HQ writes <seat>'s claim
 #                                         atomically + rings a contentless doorbell; that seat's next serves it FIRST
-#   s4e_msg.sh mint <topic> [rank] "GOAL"  ⭐ THE ONLY WAY A SEAT CAN ADD NEW WORK (2026-08-29 ceo ruling):
+#   s4e_msg.sh mint <topic> [rank] "GOAL"  ⭐ THE ONLY WAY A SEAT CAN ADD NEW WORK (2026-08-29 ruling):
 #                                         atomically writes a QUEUE.tsv row + a skeleton task baton; refuses a
 #                                         duplicate topic and a bad-topic filename the same way send does
 #   s4e_msg.sh banner [topic]             ⛔ MANDATORY LAST ACT OF EVERY SESSION: prints the COMPUTED
@@ -47,12 +47,12 @@ PO="${S4E_POST:-/home/resources/postoffice}"
 # status is the seat's computed verdict, and a formatter must never hold veto power over the thing it formats.
 S4E_FIT="$(dirname "${BASH_SOURCE[0]}")/util_fit_columns.py"
 s4e_fit() { if [ -f "$S4E_FIT" ]; then python3 "$S4E_FIT" "${1:-80}" 2>/dev/null || cat; else cat; fi; }
-# ⭐ s266 (ceo request, Lon reporting restarted seats assuming DUO): MODE IS COMPUTED, NEVER ASSUMED FROM PROSE.
-# /home/resources/postoffice/MODE (ceo custody, first line = value) is the single authority; absent = LOUD, never
+# ⭐ s266 (request, Lon reporting restarted seats assuming DUO): MODE IS COMPUTED, NEVER ASSUMED FROM PROSE.
+# /home/resources/postoffice/MODE (custody, first line = value) is the single authority; absent = LOUD, never
 # a silent default -- the identity-assert law applied to mode.
-s4e_mode_line() { local m; m="$(head -1 "$PO/MODE" 2>/dev/null)"; if [ -n "$m" ]; then printf 'MODE: %s\n' "$m"; else printf '⛔ MODE FILE ABSENT (%s/MODE) -- DO NOT ASSUME A MODE. Ask ceo; DUO-by-default applies ONLY when ceo has not published the file, and its absence here is an ERROR, not a default.\n' "$PO"; fi; }
+s4e_mode_line() { local m; m="$(head -1 "$PO/MODE" 2>/dev/null)"; if [ -n "$m" ]; then printf 'MODE: %s\n' "$m"; else printf '⛔ MODE FILE ABSENT (%s/MODE) -- DO NOT ASSUME A MODE. Ask the cto; its absence here is an ERROR, not a default.\n' "$PO"; fi; }
 ME="${S4E_SEAT:-}"
-# ⛔⭐ LAW 6 -- IDENTITY IS ASSERTED, NEVER GLOBBED (ARCH-FLEET-CEO.md, preflight V2-4, hq_P s258). The old block
+# ⛔⭐ LAW 6 -- IDENTITY IS ASSERTED, NEVER GLOBBED (the retired fleet architecture page, preflight V2-4, hq_P s258). The old block
 # ended in `*) ME="$(basename "$S4E")"` and every write path did `mkdir -p` on whatever came out. That pair is
 # EXACTLY how the phantom `claude01/` mailbox was born: seat01's clone predated the zero-padding commit, its ME
 # resolved to the literal "claude01", the script CREATED /home/resources/postoffice/claude01/inbox on the spot,
@@ -60,10 +60,9 @@ ME="${S4E_SEAT:-}"
 # that silently succeeds is the "non-empty is not alive" false-signal class on the fleet bus itself. Now: the
 # guess is CANONICALISED first (the known legacy spellings fold onto their real mailbox), then ASSERTED -- and
 # an identity with no mailbox is a loud non-zero exit, never a fresh directory.
-# ⭐ /home/claude IS `ceo` (Lon s257 topology ruling). The legacy `hq` mailbox stays readable until its backlog
+# ⭐ /home/claude IS `officer` (Lon s257 topology ruling). The legacy `hq` mailbox stays readable until its backlog
 # drains; it is simply no longer any root's identity.
 s4e_canon() { case "$1" in
-    claude)                    echo ceo;;
     claude0[1-9]|claude1[0-9]|claude20) echo "seat${1#claude}";;
     claude[1-9])               echo "seat0${1#claude}";;
     seat[1-9])                 echo "seat0${1#seat}";;
@@ -92,7 +91,7 @@ s4e_hq() { if [ -n "${S4E_HQ:-}" ]; then echo "$S4E_HQ"
 # ⛔⭐ A DRAINED MAILBOX REFUSES DELIVERY -- IT DOES NOT ACCEPT MAIL NOBODY WILL READ.
 # A box with a DRAINED file has no reader. Sending there SUCCEEDS at every level this script can see --
 # the mv works, the file is non-empty, `sent` prints -- and the message is simply never read by anyone.
-# MEASURED 2026-09-03: the ceo found FOUR messages rotting in hq/inbox, including a LON OVERRIDE from
+# MEASURED 2026-09-03: the officer found FOUR messages rotting in hq/inbox, including a LON OVERRIDE from
 # seat07 unread for eight hours and a cured row whose owner could not close it. ⭐ This is the
 # 'non-empty is not alive' false-signal class landing on the bus itself, and it is why the legacy `hq`
 # fallback is gone from s4e_hq() above: with every seat carrying an HQ file, that fallback could only
@@ -109,8 +108,6 @@ s4e_assert_not_drained() { [ -f "$PO/$1/DRAINED" ] || return 0
     else printf '\n    ⛔ AND %s HAS NO HQ FILE (%s) -- an HQ must write one: echo <hq> > %s\n' "$ME" "$PO/$ME/HQ" "$PO/$ME/HQ" >&2; fi
     printf '\n' >&2; exit 2; }
 if [ -z "$ME" ]; then case "$S4E" in
-    /home/claude)           ME=ceo;;
-    /home/claude_ceo)       ME=ceo;;
     /home/claude_cto)       ME=cto;;
     /home/claude_coo)       ME=coo;;
     /home/claude_cfo)       ME=cfo;;
@@ -130,7 +127,7 @@ if [ -z "$ME" ]; then case "$S4E" in
     /home/claude_packages)         ME=hq_packages;;
     /home/claude_dotnet)           ME=hq_dotnet;;
     /home/claude_jvm)              ME=hq_jvm;;
-    # the nine lettered HQ roots were renamed by language on 2026-09-16 (ceo CEO-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
+    # the nine lettered HQ roots were renamed by language on 2026-09-16 (R-767, Lon's word); hq_R folded into hq_prolog, hq_U into the cto, hq_V into the cfo
     /home/claude[0-9][0-9]) ME="seat${S4E#/home/claude}";;
     /home/claude[1-9])      ME="seat0${S4E#/home/claude}";;
     *)                      ME="$(basename "$S4E")";; esac; fi
@@ -145,13 +142,13 @@ ME="$(s4e_canon "$ME")"
 # glob (alphabetical) file order whenever a seat holds more than one claim.
 qrow()  { grep -P "^[0-9]+\t\Q$1\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1; }
 qrank() { local row; row="$(qrow "$1")"; [ -n "$row" ] && printf '%s' "$row" | cut -f1 || echo 999999; }
-# ⭐ next-tiebreak-by-mint-time-not-file-order (hq_C finding, ceo mint 2026-09-01): a topic's mint
+# ⭐ next-tiebreak-by-mint-time-not-file-order (hq_C finding, mint 2026-09-01): a topic's mint
 # timestamp, read from its own task file's "minted via `mint` by ..., <ISO-8601>" LINKS line (the
 # same line `mint` itself writes). Empty when the file or the line is absent -- PASS 3's sort then
 # treats "unknown mint time" as OLDEST within its rank tier (a real timestamp always outranks no
 # timestamp), never as a crash or a special case.
 s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' | head -1; }
-# ⭐ picker-skips-blocked-rows (ceo, 2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
+# ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
 # BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` only ever APPENDS the DONE marker (never deletes a
 # claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
 # QUEUE.done.tsv is the DONE-WHEN's own belt-and-suspenders for a blocker whose claim some future law
@@ -199,7 +196,7 @@ s4e_first_resolved_blocker() {   # <possibly '+'-joined blockers> -> prints the 
     return 1
 }
 
-# ⭐ s4e-done-does-not-clear-annotation (ceo 2026-08-29, hq_B's "your call" ask). SELF-CLEAR (above) earns
+# ⭐ s4e-done-does-not-clear-annotation (2026-08-29, hq_B's "your call" ask). SELF-CLEAR (above) earns
 # its keep and stays; this is the ESCAPE HATCH for the case it measurably got wrong: hq_B found
 # `snocone-parser-fixture-ast-drift-ruling` self-clear a dependent while its OWN ledger and the blocker's
 # both said, in bold, "closing this row must not be read as clearing it" for that one dependent (the fix
@@ -210,7 +207,7 @@ s4e_first_resolved_blocker() {   # <possibly '+'-joined blockers> -> prints the 
 # check of `s4e_blocker_done` above — that function's own law is "presence in the claim/QUEUE.done.tsv is
 # the WHOLE done-ness signal, never the state column" (the state column is stale on ~57% of landed rows).
 # This function answers a DIFFERENT question (did the blocker's author name ME as an exception), which is
-# the one place the state column IS the authority per ceo's ruling — the two never overlap in what they
+# the one place the state column IS the authority per ruling — the two never overlap in what they
 # certify, and neither should read the other's evidence.
 s4e_does_not_clear() {   # <blocker-topic> <dependent-topic> -> rc 0 iff blocker's row names dependent
     local blk="${1:-}" dep="${2:-}" st names
@@ -238,10 +235,10 @@ s4e_row_state() { qrow "${1:-}" | cut -f4; }
 # ⛔ PARKED-LON-HOLD is honoured as a SYNONYM, not migrated away, because THREE LIVE ROWS ALREADY CARRY IT — the
 # fleet invented this state by hand before the tool had one, exactly as it had invented PARKED-AWAITING before
 # BLOCKED-ON existed. A canonical spelling that orphans the rows already using the ad-hoc one cures nothing.
-# ⭐⭐ RESTRICTED:<x> — THE STATE THAT SURVIVES ITS OWN RELEASE (ceo ruling 2026-08-29, on hq_P's report; implemented hq_P).
+# ⭐⭐ RESTRICTED:<x> — THE STATE THAT SURVIVES ITS OWN RELEASE (ruling 2026-08-29, on hq_P's report; implemented hq_P).
 # ⛔ WHY IT IS NOT JUST ASSIGNED WITH A DIFFERENT NAME: ASSIGNED:<x> was carrying TWO meanings with DIFFERENT LIFETIMES.
-# (1) DISPATCH — HQ handed this work to x; when x lets go the assignment IS spent, and ceo's 2026-08-28 always-FREE
-# unclaim ruling is exactly right for it. (2) RESTRICTION — this row may only EVER be worked by x (CEO-19 HQ-only rows):
+# (1) DISPATCH — HQ handed this work to x; when x lets go the assignment IS spent, and the officer's 2026-08-28 always-FREE
+# unclaim ruling is exactly right for it. (2) RESTRICTION — this row may only EVER be worked by x (R-19 HQ-only rows):
 # releasing a lock does not spend that, because the restriction belongs to the ROW and not to one episode of work on it.
 # One spelling, two lifetimes, so no single rule about what release does could serve both -- and the one we had silently
 # destroyed (2). MEASURED, not theorised: hq_P released defect-c-zop-flat-regime-depth-compensate with plain `unclaim`,
@@ -276,7 +273,7 @@ s4e_release_clear()   { rm -f "$PO/released/${1}.release" 2>/dev/null || true; }
 # ⭐ CURE 1 — DEPENDENCY INVERSION: THE BLOCKER OUTRANKS THE BLOCKED, WHATEVER THE COLUMNS SAY.
 # `prolog-call-n-user-predicate-segfault` (rank 1) blocked `polyglot-scrip-demos-10-working`, the umbrella
 # outranked its own blocker, and so the rank-sorted picker served the BLOCKED work first — cured by hand that
-# once, by a ceo re-rank 2->1. Re-ranking by hand does not scale and does not survive the next mint: rank is a
+# once, by a re-rank 2->1. Re-ranking by hand does not scale and does not survive the next mint: rank is a
 # human's GUESS at priority, a dependency is a FACT, and a fact outranks a guess. PASS 3 no longer merely skips
 # a blocked row — it walks the chain and serves the blocker AT THE BLOCKED ROW'S OWN RANK POSITION.
 # ⛔ Bounded at 8 hops with a seen-set: a dependency CYCLE must degrade to "skip", never spin. Every reason to
@@ -303,9 +300,9 @@ s4e_servable_blocker() {   # <blocked-topic> -> prints the topic to serve INSTEA
     done
     return 1
 }
-# ⭐ THE CHAIN, SPELLED OUT (ceo 2026-09-26, row instruments-next-dependency-inversion-serves-an-officer-another-lane-s-row-
+# ⭐ THE CHAIN, SPELLED OUT (2026-09-26, row instruments-next-dependency-inversion-serves-an-officer-another-lane-s-row-
 # three-times-in-one-sitting-the-promoted-blocker-must-be-in-the-picker-s-own-lane, case (b)). s4e_servable_blocker walks
-# the hops and returns the LAST one, but every line the picker printed named only the FIRST: the ceo read "rank-1
+# the hops and returns the LAST one, but every line the picker printed named only the FIRST: the officer read "rank-1
 # bench-rivals-raku-pascal is BLOCKED-ON raku-frontend-real-world-syntax-gaps, which is un-DONE, unclaimed and FREE" over
 # a lock on raku-roast-100-percent-compile, a row that line never named -- and the first hop was BLOCKED-ON, not FREE.
 # Same walk, same 8-hop bound, printed as hop -> hop -> served.
@@ -326,8 +323,8 @@ s4e_blocker_chain() {   # <blocked-topic> <promoted-topic> -> "hop1 -> hop2 -> .
 s4e_row_owner_named() { local _o; _o="$(qrow "${1:-}" | cut -f3)"; case "$_o" in ''|unassigned) ;; *) printf '%s' "$_o";; esac; }
 # ⭐ AN OWNER CELL IS IN MY LANE when it names me, or names the lane I resolve to and that lane is not me -- a numbered
 # seat's HQ (s4e_my_lane reads its HQ file). ⛔ NOT s4e_hq: under the consolidated modes EVERY HQ file names an officer
-# (hq_icon's reads ceo, hq_raku's reads cto; the officers' read ceo), which is where `ask` routes, not a lane. Read as a
-# lane it handed the coo and hq_icon the ceo's rows and hq_raku the cto's (measured on a TENET fixture 2026-09-26).
+# (hq_icon's reads the officer, hq_raku's reads cto; the officers' read the officer), which is where `ask` routes, not a lane. Read as a
+# lane it handed the coo and hq_icon the officer's rows and hq_raku the cto's (measured on a TENET fixture 2026-09-26).
 s4e_owner_in_my_lane() {   # <owner-cell> -- rc 0 = mine, rc 1 = another seat's
     [ "${1:-}" = "$ME" ] && return 0
     [ -n "${_my_lane:-}" ] && [ "$_my_lane" != "$ME" ] && [ "${1:-}" = "$_my_lane" ]
@@ -363,7 +360,7 @@ s4e_ring_foreign_blocker_owner() {   # <owner> <blocker> <blocked> <rank> <chain
 # only in the any-lane fallback pass, exactly like the ordinary path's own own-lane/any-lane split. rc 0 =
 # admissible; rc 1 = refused, and the reason is already printed -- never a silent skip, per this row's own
 # explicit requirement.
-# ⛔⭐⭐ THE FLEET-12 RANK CAP -- A SEAT NEVER TAKES A ROW OF RANK 6 OR ABOVE (Lon 2026-09-06 11:20 via ceo,
+# ⛔⭐⭐ THE FLEET-12 RANK CAP -- A SEAT NEVER TAKES A ROW OF RANK 6 OR ABOVE (Lon 2026-09-06 11:20 via the officer,
 # MASTER-PLAN sec THE FLEET-12 PLAN, verbatim: "A SEAT NEVER TAKES A ROW OF RANK >= 6: park it back to FREE
 # with a one-line note and pick again"). Ranks 6-9 are HQ-ONLY -- design, shared engine, ABI, frames, bignum,
 # coexpr, DEFINE m3 -- and the CTO seat works the hardest of them by name.
@@ -372,10 +369,10 @@ s4e_ring_foreign_blocker_owner() {   # <owner> <blocker> <blocked> <rank> <chain
 # obediently, because the picker served it. A rule whose only enforcement is that twelve seats each remember
 # it is a hope -- the same shape as the style law each DONE-WHEN used to opt into by hand, which went red on
 # origin twice in one evening with nobody at fault.
-# ⭐ THE AUTHORITY TEST IS s4e_is_hq, WHICH DELIBERATELY COUNTS ceo AND cto. That is exactly right here and it
+# ⭐ THE AUTHORITY TEST IS s4e_is_hq, WHICH DELIBERATELY COUNTS the officer AND cto. That is exactly right here and it
 # is worth saying why, because the neighbouring lane check deliberately does NOT use it: this is an authority
 # question (may this identity take HQ-ranked work), not a lane question (whose work is this). cto exists to
-# take rank >= 6, and refusing the ceo anything is never correct.
+# take rank >= 6, and refusing the officer anything is never correct.
 s4e_rank_cap_refuses() {   # <rank> -- rc 0 = REFUSE this row for this identity, rc 1 = admissible
     case "${1:-}" in ''|*[!0-9]*) return 1;; esac   # a non-numeric rank is not a cap decision; leave it to the caller
     [ "$1" -ge 6 ] || return 1
@@ -401,11 +398,11 @@ s4e_promotion_admissible() {   # <promo-topic> <blocked-topic> <rank>
       return 1
     fi
     # ⛔⭐⭐ THE OWNER CELL CONSTRAINS A PROMOTION EXACTLY AS IT CONSTRAINS AN ORDINARY PICK, IN EVERY PASS, FOR EVERY
-    # IDENTITY (ceo 2026-09-26, row instruments-next-dependency-inversion-serves-an-officer-another-lane-s-row-...,
-    # CEO-1232: the officers run no board and hold no HQ's row). MEASURED the same sitting under TENET: `next` LOCKED the
-    # cto's gc-the-key-collision-plant-... and hq_raku's raku-roast-100-percent-compile for the ceo. The ordinary path
+    # IDENTITY (2026-09-26, row instruments-next-dependency-inversion-serves-an-officer-another-lane-s-row-...,
+    # R-1232: the officers run no board and hold no HQ's row). MEASURED the same sitting under TENET: `next` LOCKED the
+    # cto's gc-the-key-collision-plant-... and hq_raku's raku-roast-100-percent-compile for the officer. The ordinary path
     # skips a FREE row whose owner cell names another seat; this path never read the cell, and the one check that stood
-    # in for it -- CEO-779 below -- bites only a seat owning no language, which the ceo stopped being when TENET gave
+    # in for it -- R-779 below -- bites only a seat owning no language, which the officer stopped being when TENET gave
     # it rebus. So the blocker of another seat is REPORTED to the blocked row's own seat, its owner is rung, and nothing
     # is locked; a seat walking past someone else's blocked row skips it silently, as it skips every row that is not FREE.
     _own="$(s4e_row_owner_named "$_p")"
@@ -416,7 +413,7 @@ s4e_promotion_admissible() {   # <promo-topic> <blocked-topic> <rank>
       _bown="$(s4e_row_owner_named "$_blocked")"
       if ! s4e_seat_owns_a_language; then
         _xlane_refused=$(( ${_xlane_refused:-0} + 1 )); _xlane_last="$_p ($_own's, blocker of $_blocked)"
-        printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, which is %s'"'"'s row -- and %s holds NO language under MODE line 2 / the LANES line, so it is never served another lane'"'"'s row, own-lane pass or fallback (CEO-779).\n' \
+        printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, which is %s'"'"'s row -- and %s holds NO language under MODE line 2 / the LANES line, so it is never served another lane'"'"'s row, own-lane pass or fallback (R-779).\n' \
           "$_rank" "$_blocked" "$_ch" "$_own" "$ME"
       elif [ -z "$_bown" ] || s4e_owner_in_my_lane "$_bown"; then
         printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, and %s is %s'"'"'s row; your lane is %s.\n' \
@@ -427,13 +424,13 @@ s4e_promotion_admissible() {   # <promo-topic> <blocked-topic> <rank>
       return 1
     fi
     _tl="$(s4e_topic_lane "$_p")"
-    # ⛔ A SEAT WITH NO LANGUAGE IS REFUSED ANOTHER OWNER'S BLOCKER IN EVERY PASS (CEO-779). This is the check the
+    # ⛔ A SEAT WITH NO LANGUAGE IS REFUSED ANOTHER OWNER'S BLOCKER IN EVERY PASS (R-779). This is the check the
     # own-lane cut below skips in the any-lane pass -- which is exactly how the coo claimed the cfo's rung-2 row and
-    # the ceo locked a Raku row: the fallback pass asked no lane question at all. It reads $ME, not $_my_lane, so the
-    # ceo (whose s4e_my_lane is deliberately empty) is covered too. Printed as information, never a serve.
+    # the officer locked a Raku row: the fallback pass asked no lane question at all. It reads $ME, not $_my_lane, so the
+    # the officer (whose s4e_my_lane is deliberately empty) is covered too. Printed as information, never a serve.
     if [ -n "$_tl" ] && [ "$_tl" != "$ME" ] && [ "$_tl" != "${_my_lane:-$ME}" ] && ! s4e_seat_owns_a_language; then
       _xlane_refused=$(( ${_xlane_refused:-0} + 1 )); _xlane_last="$_p ($_tl's, blocker of $_blocked)"
-      printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, which is %s'"'"'s row -- and %s holds NO language under MODE line 2 / the LANES line, so it is never served another lane'"'"'s row, own-lane pass or fallback (CEO-779).\n' \
+      printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, which is %s'"'"'s row -- and %s holds NO language under MODE line 2 / the LANES line, so it is never served another lane'"'"'s row, own-lane pass or fallback (R-779).\n' \
         "$_rank" "$_blocked" "$_p" "$_tl" "$ME"
       printf '   Information, not a serve: %s stays FREE for %s. An instrument row reaches %s by assign or mint; another lane'"'"'s row is an ASK to its owner.\n' "$_p" "$_tl" "$ME"
       return 1
@@ -442,7 +439,7 @@ s4e_promotion_admissible() {   # <promo-topic> <blocked-topic> <rank>
       if [ -n "$_tl" ] && [ "$_tl" != "$_my_lane" ] && [ "${_lane_filter:-own-lane}" = own-lane ]; then
         printf '⛔ REFUSED PROMOTION: rank-%s %s is BLOCKED-ON %s, but %s is %s'"'"'s lane and yours is %s.\n' \
           "$_rank" "$_blocked" "$_p" "$_p" "$_tl" "$_my_lane"
-        if s4e_any_lane_closed; then printf '   Not promoted; %s stays skipped -- the any-lane fallback is CLOSED under TENET and QUINTET (ceo CEO-1302 (b), CEO-1356), so no pass retries it cross-lane.\n' "$_blocked"
+        if s4e_any_lane_closed; then printf '   Not promoted; %s stays skipped -- the any-lane fallback is CLOSED under TENET and QUINTET (R-1302 (b), R-1356), so no pass retries it cross-lane.\n' "$_blocked"
         else printf '   Not promoted (own-lane pass); %s stays skipped this pass -- retried cross-lane if your own lane has nothing else.\n' "$_blocked"; fi
         return 1
       fi
@@ -465,7 +462,7 @@ s4e_promotion_placeholder_ok() {   # <promo-topic> <blocked-topic> <rank>; rc 0 
     printf '   Not claimed. %s stays BLOCKED-ON %s until the blocker'"'"'s baton gets a real DONE-WHEN.\n' "$2" "$1"
     return 1
 }
-# ⛔⭐ ONE PROCESS PER IDENTITY (ceo RULING 2026-09-03, row bus-refuses-a-second-live-process-under-one-seat-identity).
+# ⛔⭐ ONE PROCESS PER IDENTITY (RULING 2026-09-03, row bus-refuses-a-second-live-process-under-one-seat-identity).
 # MEASURED by seat11, routed by hq_B 16:40: /home/claude11 held TWO live claude processes at once -- an interactive
 # session and a scheduled routine (`claude --name Fleet #11 --model claude-sonnet-5 --effort max`, per
 # .claude/scheduled_tasks.lock). LAW 6 above derives identity from the ROOT PATH, so BOTH are seat11 to the bus:
@@ -553,7 +550,7 @@ s4e_pid_acquire() {
         printf '\n    WHY THIS IS REFUSED RATHER THAN QUEUED: identity is derived from the ROOT PATH (LAW 6), so both\n' >&2
         printf '    processes in %s are "%s" to the bus -- ONE $ME, ONE claim namespace, ONE inbox. A claim HIDES its\n' "$S4E" "$ME" >&2
         printf '    row from the other picker, so the two would race SILENTLY and each would read a coherent, wrong world.\n' >&2
-        printf '\n    ONE PROCESS PER IDENTITY (ceo 2026-09-03). A scheduled or cron routine NEVER runs in a seat root:\n' >&2
+        printf '\n    ONE PROCESS PER IDENTITY (2026-09-03). A scheduled or cron routine NEVER runs in a seat root:\n' >&2
         printf '    it runs as its own identity in its own root, or not at all. If a routine is the incumbent here, stop\n' >&2
         printf '    it (check %s/.claude/scheduled_tasks.lock) rather than working around this refusal.\n' "$S4E" >&2
         printf '    If pid %s is a verb of YOURS that is legitimately still running (a long `done` DONE-WHEN holds the\n' "$_p" >&2
@@ -575,11 +572,11 @@ cmd="${1:-check}"
 # lock a mailbox that does not exist yet. ⛔ `check` and `clear` ARE locked, unlike the unread-mail banner below:
 # THE LOOP step 1 is `check`, and a `check` that quietly succeeds beside a second live writer is precisely the
 # silent-race reading this row exists to abolish. The refusal IS the diagnostic that surfaces the second process.
-# ⛔⭐⭐ THE READ-ONLY REPORTING VERBS DO NOT TAKE THE IDENTITY LOCK (ceo CEO-716, 2026-09-13).
+# ⛔⭐⭐ THE READ-ONLY REPORTING VERBS DO NOT TAKE THE IDENTITY LOCK (R-716, 2026-09-13).
 # THE LOCK EXISTS FOR ONE REASON, stated in its own refusal text: "A claim HIDES its row from the other
 # picker, so the two would race SILENTLY and each would read a coherent, wrong world." `banner` and
 # `check` CLAIM NOTHING -- measured, zero claim writes in either -- so holding it buys nothing.
-# ⛔ AND IT COST THE WHOLE FLEET: the ceo installed Stop and UserPromptSubmit hooks in all thirteen roots
+# ⛔ AND IT COST THE WHOLE FLEET: the officer installed Stop and UserPromptSubmit hooks in all thirteen roots
 # that run exactly these two verbs at every turn boundary. `banner` is SLOW -- it runs handoff_status
 # across three repos -- so it held the claim mutex for the length of a report, and any verb the seat ran
 # in that window died on "ANOTHER LIVE PROCESS ALREADY HOLDS THE IDENTITY hq_*". Lon: "A weird error keeps
@@ -609,21 +606,21 @@ case "$cmd" in mailbox|banner|check|premise|"") ;; *) s4e_pid_acquire;; esac
 # /*------------------------------------------------------------------------------------------------------*/
 # ⛔⭐⭐ THE CODEGEN CONTROL ARM -- `done` COMPUTES WHETHER A LANDING TOUCHED CODEGEN, AND CITES A BOARD OF ITS
 # OWN TREE RATHER THAN RUNNING ONE.  Row done-runs-the-snobol4-master-arm-itself-for-any-row-whose-commits-touch-
-# codegen (ceo, CEO-342 rule 4, minted 2026-09-06).  THE INCIDENT: seat11's DEFINE landing d067ceae4 turned 299
+# codegen (R-342 rule 4, minted 2026-09-06).  THE INCIDENT: seat11's DEFINE landing d067ceae4 turned 299
 # SNOBOL4 rungs entries red and ITS DONE-WHEN PASSED -- the rule "a codegen landing carries the rungs as its
 # control arm" lived in prose, so the one command whose job is to certify completion could not see it, and three
 # hours of eight HQs went to the bisect, the revert and the re-measure.
 #
-# ⛔⭐⭐ THE MECHANISM IS **CITE**, NOT **RUN**, AND THAT IS A RULING AND NOT A PREFERENCE (ceo CEO-697,
+# ⛔⭐⭐ THE MECHANISM IS **CITE**, NOT **RUN**, AND THAT IS A RULING AND NOT A PREFERENCE (R-697,
 # 2026-09-13, verbatim: "NO SEAT RUNS A FULL BLOCKING SET FOR A LANDING VERDICT ... your verdict is your row
 # DONE-WHEN, the gates your diff touched, and make preflight").  The row's own GOAL anticipated this and offered
-# both branches -- "test_corpus_snobol4.sh, OR the one-board-per-tree CITED board of the same tree" -- and CEO-697
-# decided which one is lawful.  ⛔ ITS CENTRAL RUNNER IS RETIRED: CEO-697 quoted MODE line 2 under NONET ("every
-# rungs and package board is the coo's"), which died with CEO-775; since CEO-1232 the lander grades its own
+# both branches -- "test_corpus_snobol4.sh, OR the one-board-per-tree CITED board of the same tree" -- and R-697
+# decided which one is lawful.  ⛔ ITS CENTRAL RUNNER IS RETIRED: R-697 quoted MODE line 2 under NONET ("every
+# rungs and package board is the coo's"), which died with R-775; since R-1232 the lander grades its own
 # language's suites, the gates it touched and make preflight, and every other language's verdict is that HQ's next
 # per-landing pass on origin, which stamps the range it covers.  Cite-not-run survives that ruling unchanged.  ⭐ THE REASON THIS MATTERS MORE HERE THAN
 # ANYWHERE ELSE: `done` runs in EVERY seat.  A `done` that auto-ran a rung suite board would not merely repeat the
-# drift CEO-697 was issued to stop, it would MECHANISE it and make it compulsory -- thirteen seats each firing a
+# drift R-697 was issued to stop, it would MECHANISE it and make it compulsory -- thirteen seats each firing a
 # board on every codegen landing, which is the 25m55s-at-load-11-13 contention the cfo measured, but automated.
 # An instrument that enforces a rule by breaking a newer one is not an instrument, it is a second defect.
 #
@@ -681,7 +678,7 @@ $(git -C "$repo" show --name-only --pretty=format: "$h" 2>/dev/null)"; done
 # s4e_baton_inherited <batonfile> -- the INHERITED set, READ LIVE from the baton, one entry per line.
 # ⛔ NEVER REMEMBERED AND NEVER DEFAULTED TO A LIST: a hard-coded population never announces what it left out,
 # which is the defect class this whole guard exists to end.  An ABSENT INHERITED line and an EMPTY one are the
-# same answer here -- "nothing is inherited" -- and that is deliberate: the convention (ceo, this row's own
+# same answer here -- "nothing is inherited" -- and that is deliberate: the convention (this row's own
 # ledger) is that the HQ writes the line at assignment from the live board, so its absence means none were named.
 s4e_baton_inherited() {
     [ -f "${1:-}" ] || return 0
@@ -707,7 +704,7 @@ s4e_cite_board() {
 # -- one rotted 46 hours at the postoffice root, a seat-to-seat brief neither end ever knew was lost. A message
 # whose header still names a reachable mailbox is RE-DELIVERED here; one that does not is REPORTED loudly and
 # left on disk. Never deleted: an undeliverable message is evidence, not garbage.
-# ⛔⭐⭐ ROWD-CLOSE HANDS OFF OR REDS THE FLEET (CEO-69 batch 5a + CEO-70; row done-must-hand-off-manifest-cited-rows, hq_P).
+# ⛔⭐⭐ ROWD-CLOSE HANDS OFF OR REDS THE FLEET (R-69 batch 5a + R-70; row done-must-hand-off-manifest-cited-rows, hq_P).
 # THREE IDENTICAL FLEET-WIDE REDS IN ONE DAY: closing a row cited as ROWD evidence in corpus_coverage_manifest.tsv reds
 # `make test` for EVERY seat until someone re-points the manifest BY HAND (pas-display-revival 07:49 -> pascal-bench-quick-
 # wrong-biggest 08:08 -> pascal-bool-family-truncated-output 14:35, the last caught mid-re-point). The manifest's own law,
@@ -1013,11 +1010,11 @@ s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
 # still holding a 29-message backlog that must stay VISIBLE until it is drained.
 # ⛔⭐ THIS IS THE REVERSE OF THE IDENTITY MAP AT :92-97 AND THE TWO MUST AGREE. hq_T WAS MISSING HERE while the
 # forward map had it, so `fleet` could not resolve hq_T's root and printed it as "0 STALLED (no root, retiring)"
-# with a FAILURE banner WHILE hq_T WAS LANDING ROWS BY THE HOUR (ceo measured 2026-09-03 22:36). A health view
-# that INVENTS a dead seat is worse than one that reports nothing: the ceo acts on it. The forward map gained
+# with a FAILURE banner WHILE hq_T WAS LANDING ROWS BY THE HOUR (measured 2026-09-03 22:36). A health view
+# that INVENTS a dead seat is worse than one that reports nothing: the officer acts on it. The forward map gained
 # hq_T when the fourth HQ opened; this one did not, because nothing checks that two hand-written tables of the
 # same fact still agree -- the same class as the per-root digests drifting from RULES.md.
-s4e_root() { case "$1" in ceo|hq) if [ -d /home/claude_ceo ]; then echo /home/claude_ceo; else echo /home/claude; fi;; cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_unicon) echo /home/claude_unicon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
+s4e_root() { case "$1" in cto) echo /home/claude_cto;; coo) echo /home/claude_coo;; cfo) echo /home/claude_cfo;; cao) echo /home/claude_cao;; cqo) echo /home/claude_cqo;; hq_icon) echo /home/claude_icon;; hq_unicon) echo /home/claude_unicon;; hq_prolog) echo /home/claude_prolog;; hq_raku) echo /home/claude_raku;; hq_pascal) echo /home/claude_pascal;; hq_snocone) echo /home/claude_snocone;; hq_snobol4) echo /home/claude_snobol4;; hq_templates) echo /home/claude_templates;; hq_runtime) echo /home/claude_runtime;; hq_collector) echo /home/claude_collector;; hq_zetas) echo /home/claude_zetas;; hq_packages) echo /home/claude_packages;; hq_dotnet) echo /home/claude_dotnet;; hq_jvm) echo /home/claude_jvm;;
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
 s4e_roster() { sed -n 's/^ROSTER:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1; }
 s4e_legacy_seats="hq hq_icon hq_unicon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm"
@@ -1031,113 +1028,112 @@ s4e_is_hq() { case " $(s4e_roster) $s4e_legacy_seats " in *" $1 "*) return 0;; *
 # roster Lon publishes, it changes twice a day (SEPTET is the fourth mode since 09-19), and a stale copy would
 # announce to stood-down seats while missing a standing one -- hq_snobol4 2026-09-20: an instrument that
 # re-implements another instrument's setup will drift from it silently, and the drift prints as a property of the
-# world. So the body MOVED here whole and `next` now calls it; the refusal text and every CEO citation are the
+# world. So the body MOVED here whole and `next` now calls it; the refusal text and every the officer citation are the
 # originals, unedited. rc=0 the seat stands, rc=1 refused with _REFUSE_KIND/_REFUSE_WHY set for the caller to print.
 s4e_mode_stands() {   # <seat> <mode> -> rc 0 stands, rc 1 refused (reason in _REFUSE_KIND/_REFUSE_WHY)
   local _seat="$1" _m="$2"
   _REFUSE_KIND=""; _REFUSE_WHY=""
   _dr() { _REFUSE_KIND="$1"; _REFUSE_WHY="$2"; }
-  # ⛔⭐⭐ THE ROSTER LINE DECIDES (Lon 2026-10-17, in-chat to the ceo, verbatim: "You can call this mode TENET mode. You will only have 5 modes, SOLO, DUO,
-  # TRIO, QUARTET, and TENET (full with varying)."; ceo CEO-1818): the mode NAME is one of five and no longer encodes who stands; MODE's machine-read
+  # ⛔⭐⭐ THE ROSTER LINE DECIDES (Lon 2026-10-17, in-chat, verbatim: "You can call this mode TENET mode. You will only have 5 modes, SOLO, DUO,
+  # TRIO, QUARTET, and TENET (full with varying)."; R-1818): the mode NAME is one of five and no longer encodes who stands; MODE's machine-read
   # ROSTER: line names the standing seats and, when present for the mode in force, it alone admits or refuses. The per-name arms below stay only
-  # for a MODE that carries no ROSTER line (the bus gates' scratch fixtures), SOLO beside CEO.
+  # for a MODE that carries no ROSTER line (the bus gates' scratch fixtures), SOLO beside the officer.
   local _rl; _rl="$(grep -m1 '^ROSTER:' "$PO/MODE" 2>/dev/null)"
   if [ -n "$_rl" ] && [ "$_m" = "$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')" ]; then
       case " ${_rl#ROSTER:} " in *" $_seat "*) return 0;; esac
-      _dr "a seat" "Under $_m the standing seats are the ones MODE's ROSTER line names --${_rl#ROSTER:} -- and $_seat is not one of them (Lon 2026-10-17, CEO-1818: five modes, SOLO DUO TRIO QUARTET TENET, the roster varies)."
+      _dr "a seat" "Under $_m the standing seats are the ones MODE's ROSTER line names --${_rl#ROSTER:} -- and $_seat is not one of them (Lon 2026-10-17, R-1818: five modes, SOLO DUO TRIO QUARTET TENET, the roster varies)."
       return 1
   fi
          case "$_seat" in
-           ceo) : ;;
-           # ⛔⭐ AN OFFICER IS A STOOD-DOWN IDENTITY UNDER MODE CEO, AND THE GUARD DID NOT KNOW IT (ceo CEO-755).
-           # The case below matched hq_* and seat* and let ceo through by name; cto, cfo and coo matched NOTHING
-           # and fell out of the case entirely, so under MODE CEO -- where line 2 says the ceo works the rows
+           # ⛔⭐ AN OFFICER IS A STOOD-DOWN IDENTITY UNDER MODE SOLO, AND THE GUARD DID NOT KNOW IT (R-755).
+           # The case below matched hq_* and seat* and let the officer through by name; cto, cfo and coo matched NOTHING
+           # and fell out of the case entirely, so under MODE SOLO -- where line 2 says the officer works the rows
            # itself -- three seats could still lock rows and hide them from the only seat that is standing.
            # The defect was invisible for exactly the reason the comment above names: falling out of a case
            # returns success, so "not refused" and "permitted" are the same observable.
-           # ⛔ MODE DUO (Lon 2026-09-19, in-chat to ceo: "let's move to CEO+CTO mode with CEO as Fable 5.1 effort=xhigh and CTO as
-           # Fable 5.1 effort=high"; CEO-907): the ceo and the cto work rows; the cfo and the coo stay stood down. The cto arm is
-           # split from cfo|coo for exactly CEO-755's reason -- one pattern for three seats under a mode that admits ONE of them
+           # ⛔ MODE DUO (Lon 2026-09-19, in-chat: "let's move to the officer+CTO mode with the officer as Fable 5.1 effort=xhigh and CTO as
+           # Fable 5.1 effort=high"; R-907): the officer and the cto work rows; the cfo and the coo stay stood down. The cto arm is
+           # split from cfo|coo for exactly R-755's reason -- one pattern for three seats under a mode that admits ONE of them
            # would have to fall out of the case for the admitted seat, and falling out returns success for the other two as well.
-           # ⛔⭐ DUO-STUPID ADMITS THE cto AND SAYS SO (ceo CEO-1087): an arm that returns success by FALLING OUT of
+           # ⛔⭐ DUO-STUPID ADMITS THE cto AND SAYS SO (R-1087): an arm that returns success by FALLING OUT of
            # this case is indistinguishable from a missing arm, which is the defect this whole table keeps re-learning,
            # so the admission is written down beside the refusals rather than left to the shape of the case.
-           # ⛔⭐ MODE DUO REDEFINED BY LON AS THE ceo AND THE coo (Lon 2026-10-02, in-chat to the ceo, verbatim: "Let's get COO to run our test
-           # suites for us and we do the fixing. Go to DUO mode, CEO + COO."; ceo CEO-1398): the coo is the testing officer, the ceo cures, and
-           # the cto, the cfo and every HQ stand down. The CEO-907 DUO (ceo + cto) is history; DUO-STUPID keeps the cto, its own reason (CEO-1087).
+           # ⛔⭐ MODE DUO REDEFINED BY LON AS THE OFFICER AND THE coo (Lon 2026-10-02, in-chat, verbatim: "Let's get COO to run our test
+           # suites for us and we do the fixing. Go to DUO mode, the officer + COO."; R-1398): the coo is the testing officer, the officer cures, and
+           # the cto, the cfo and every HQ stand down. The R-907 DUO (+ cto) is history; DUO-STUPID keeps the cto, its own reason (R-1087).
            cto)     case "$_m" in
-                      CEO|SOLO) _dr "an officer" "Under CEO only the ceo works rows -- the cto, the cfo and the coo are stood down.";;
-                      DUO) _dr "an officer" "Under DUO only the ceo and the coo work rows -- the coo runs the suites, the ceo cures, and the cto and the cfo are stood down (Lon 2026-10-02, CEO-1398).";;
-                      TRIO) _dr "an officer" "Under TRIO the ceo, the coo and hq_runtime work rows -- hq_runtime finishes the collector in asm, the coo runs the tests, and the cto and the cfo are stood down (Lon 2026-10-15, CEO-1809).";;
+                      SOLO) _dr "an officer" "Under SOLO only the lead seat works rows -- the cto, the cfo and the coo are stood down.";;
+                      DUO) _dr "an officer" "Under DUO only the lead seat and the coo work rows -- the coo runs the suites, the lead seat cures, and the cto and the cfo are stood down (Lon 2026-10-02, R-1398).";;
+                      TRIO) _dr "an officer" "Under TRIO the lead seat, the coo and hq_runtime work rows -- hq_runtime finishes the collector in asm, the coo runs the tests, and the cto and the cfo are stood down (Lon 2026-10-15, R-1809).";;
                       DUO-STUPID|QUARTET|SEXTET|QUINTET|NONET|UNDECET|SEPTET|OCTET|TENET) : ;; esac;;
-           # ⛔⭐ MODE TRIO REDEFINED AGAIN (Lon 2026-10-15 17:4x CDT, in-chat to the ceo, verbatim: "Keep HQ-RUNTIME going until he finishes. Shut down all but CEO and
-           # HQ-RUNTIME." then "Go to DUO mode." then "Keep COO. Make that TRIO mode."; ceo CEO-1809): the ceo, the coo and hq_runtime; the cto and the cfo are refused
-           # BY NAME and every HQ but hq_runtime is refused (CEO-755b). The CEO-1403 roster below (ceo, cto, coo) is history.
-           # ⛔⭐ MODE TRIO REDEFINED BY LON AS THE ceo, THE cto AND THE coo (Lon 2026-10-02, in-chat to the ceo, verbatim: "Let's get CTO to fix
-           # our hard bugs. Goto TRIO mode: CEO, CTO, and COO."; ceo CEO-1403): the cto and the coo are admitted BY NAME (the cto used to be
-           # admitted under TRIO only by falling out of its case, CEO-755b's class), the cfo is refused; the CEO-910 roster below is history.
-           # ⛔ MODE TRIO (Lon 2026-09-19, in-chat to ceo: "Go to TRIO mode" ... "I did not mean to say COO, I meant CFO"; CEO-910): the ceo, the cto and
-           # the cfo work rows; the coo stays stood down. The cfo arm is split from the coo arm for CEO-755's reason again: under TRIO one of
+           # ⛔⭐ MODE TRIO REDEFINED AGAIN (Lon 2026-10-15 17:4x CDT, in-chat, verbatim: "Keep HQ-RUNTIME going until he finishes. Shut down all but the officer and
+           # HQ-RUNTIME." then "Go to DUO mode." then "Keep COO. Make that TRIO mode."; R-1809): the officer, the coo and hq_runtime; the cto and the cfo are refused
+           # BY NAME and every HQ but hq_runtime is refused (R-755b). The R-1403 roster below (cto, coo) is history.
+           # ⛔⭐ MODE TRIO REDEFINED BY LON AS THE OFFICER, THE cto AND THE coo (Lon 2026-10-02, in-chat, verbatim: "Let's get CTO to fix
+           # our hard bugs. Goto TRIO mode: [officer], CTO, and COO."; R-1403): the cto and the coo are admitted BY NAME (the cto used to be
+           # admitted under TRIO only by falling out of its case, R-755b's class), the cfo is refused; the R-910 roster below is history.
+           # ⛔ MODE TRIO (Lon 2026-09-19, in-chat: "Go to TRIO mode" ... "I did not mean to say COO, I meant CFO"; R-910): the officer, the cto and
+           # the cfo work rows; the coo stays stood down. The cfo arm is split from the coo arm for R-755's reason again: under TRIO one of
            # the two is admitted, and a shared pattern would have to fall out of the case for it, which returns success for the other too.
            cfo)     case "$_m" in
-                      CEO|SOLO) _dr "an officer" "Under CEO only the ceo works rows -- the cto, the cfo and the coo are stood down.";;
-                      DUO) _dr "an officer" "Under DUO only the ceo and the coo work rows -- the coo runs the suites, the ceo cures, and the cto and the cfo are stood down (Lon 2026-10-02, CEO-1398).";;
-                      DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the ceo and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, CEO-1087).";;
-                      TRIO) _dr "an officer" "Under TRIO the ceo, the coo and hq_runtime work rows -- hq_runtime finishes the collector in asm, the coo runs the tests, and the cto and the cfo are stood down (Lon 2026-10-15, CEO-1809).";;
+                      SOLO) _dr "an officer" "Under SOLO only the lead seat works rows -- the cto, the cfo and the coo are stood down.";;
+                      DUO) _dr "an officer" "Under DUO only the lead seat and the coo work rows -- the coo runs the suites, the lead seat cures, and the cto and the cfo are stood down (Lon 2026-10-02, R-1398).";;
+                      DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the lead seat and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, R-1087).";;
+                      TRIO) _dr "an officer" "Under TRIO the lead seat, the coo and hq_runtime work rows -- hq_runtime finishes the collector in asm, the coo runs the tests, and the cto and the cfo are stood down (Lon 2026-10-15, R-1809).";;
                       QUARTET|SEXTET|QUINTET|NONET|UNDECET|SEPTET|OCTET|TENET) : ;; esac;;
            coo)     case "$_m" in
-                      CEO|SOLO) _dr "an officer" "Under CEO only the ceo works rows -- the cto, the cfo and the coo are stood down.";;
+                      SOLO) _dr "an officer" "Under SOLO only the lead seat works rows -- the cto, the cfo and the coo are stood down.";;
                       DUO) : ;;
-                      DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the ceo and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, CEO-1087).";;
+                      DUO-STUPID) _dr "an officer" "Under DUO-STUPID only the lead seat and the cto work rows -- the cfo and the coo are stood down (Lon 2026-09-21, R-1087).";;
                       TRIO|QUARTET|SEXTET|QUINTET|NONET|UNDECET|SEPTET|OCTET|TENET) : ;; esac;;
-           hq|hq_*) case "$_m" in   # hq_* not hq_?: a language HQ is hq_prolog, and a pattern that misses it falls out of the case, which returns success (CEO-755b's class)
-                      CEO|SOLO) _dr "an HQ" "Under CEO no HQ is standing -- the ceo works the rows itself.";;
-                      DUO) _dr "an HQ" "Under DUO no HQ is standing -- the coo runs the suites and the ceo cures (Lon 2026-10-02, CEO-1398).";;
-                      DUO-STUPID) _dr "an HQ" "Under DUO-STUPID no HQ is standing -- the ceo and the cto work the rows (Lon 2026-09-21, CEO-1087).";;
-                      TRIO) case "$_seat" in hq_runtime) : ;; *) _dr "an HQ" "Under TRIO only hq_runtime stands among the HQs -- the ceo, the coo and hq_runtime work rows, and $_seat is stood down (Lon 2026-10-15, CEO-1809).";; esac;;
-                      QUARTET) _dr "an HQ" "Under QUARTET no HQ is standing -- the four officers work the rows (Lon 2026-09-19, CEO-911).";;
-                      # ⛔⭐ MODE QUINTET (Lon 2026-09-28 17:2x, in-chat to the ceo, verbatim: "Bring the fleet into QUARTET mode: CEO, CTO, CFO, and COO. Leave HQ-SNOCONE alone. So QUNTET mode."; ceo CEO-1356).
-                      # The four officers and ONE language HQ, hq_snocone, named here so that no other hq_* seat is admitted by falling out of the case (CEO-755b).
-                      # ⛔⭐ MODE QUINTET REDEFINED (Lon 2026-10-17 11:4x CDT, in-chat to the ceo, verbatim: "Let's get CTO and CFO to join the fleet."; ceo CEO-1811): TRIO's ceo, coo and
-                      # hq_runtime plus the cto and the cfo -- the four officers and ONE HQ, now hq_runtime (the collector in asm); hq_snocone is refused by name. The CEO-1356 roster is history.
-                      QUINTET) case "$_seat" in hq_runtime) : ;; *) _dr "an HQ" "Under QUINTET only hq_runtime stands among the HQs -- the four officers and hq_runtime work rows, and $_seat is stood down (Lon 2026-10-17, CEO-1811).";; esac;;
-                      # ⛔⭐ MODE NONET (Lon 2026-09-25, in-chat to the ceo: "Go now to NONET mode." and, asked which five HQs stand: "SNO, PL, PAS, SNOCONE, and ICON"; ceo CEO-1266).
-                      # Written by name for CEO-755b's reason: before this arm every hq_* seat -- hq_raku and the lettered legacy names included -- was admitted under NONET by FALLING OUT of the case.
-                      # ⛔⭐ MODE NONET REDEFINED (Lon 2026-10-15 13:3x CDT, in-chat to the ceo, verbatim: "Have the GC collection code written in ASM versus C. Should I fire up HQ-RUNTIME since that is his job?" then "I started HQ-RUNTIME."; ceo CEO-1793): OCTET's four HQs and hq_runtime, named so no other hq_* seat falls out of the case (CEO-755b). The CEO-1266 roster above is history.
-                      NONET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas|hq_runtime) : ;; *) _dr "an HQ" "Under NONET five HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime -- and $_seat is not one of them: the four officers and those five work rows, and $_seat is stood down (Lon 2026-10-15, CEO-1793).";; esac;;
-                      # ⛔⭐ MODE UNDECET (Lon 2026-10-17, in-chat to the ceo: "We need to create two new HQ seats ... for finishing and polishing snobol4ever/snobol4dotnet and snobol4ever/snobol4jvm. Call them HQ-DOTNET and HQ-JVM." · "These two HQ's will certainly need to be fully apart of our fleet, they just happen not to be SCRIP."; ceo CEO-1817): NONET's five HQs and hq_dotnet and hq_jvm, named here so no other hq_* seat is admitted by falling out of the case (CEO-755b). The two own no SCRIP language; their roots hold no SCRIP clone and run this bus from the ceo root's SCRIP with S4E_HOME naming their root.
-                      UNDECET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas|hq_runtime|hq_dotnet|hq_jvm) : ;; *) _dr "an HQ" "Under UNDECET seven HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime hq_dotnet hq_jvm -- and $_seat is not one of them: the four officers and those seven work rows, and $_seat is stood down (Lon 2026-10-17, CEO-1817).";; esac;;
-                      # ⛔⭐ MODE SEXTET REDEFINED (Lon 2026-10-02 19:2x, in-chat to the ceo: "Do it yourself." and "I'll fire up HQ-ICON and HQ-SNOBOL4 to help."; ceo CEO-1433): the four officers and hq_icon and hq_snobol4; the CEO-912 SEXTET (hq_prolog and hq_icon) is history.
-                      # ⛔⭐ MODE SEXTET REDEFINED AGAIN (Lon 2026-10-10 09:0x CDT, in-chat to the ceo, verbatim: "Let's continue getting Prolog and Raku at 100% like SNOBOL4 and Icon." then "Let's also have HQ-PROLOG and HQ-RAKU join us."; ceo CEO-1591): the four officers and hq_prolog and hq_raku; the CEO-1433 SEXTET is history.
-                      SEXTET) case "$_seat" in hq_prolog|hq_raku) : ;; *) _dr "an HQ" "Under SEXTET only hq_prolog and hq_raku stand among the HQs -- the four officers and those two work rows, and $_seat is stood down (Lon 2026-10-10, CEO-1591).";; esac;;
-                      # ⛔⭐ MODE DECTET, EXPLICIT AND NOT A FALLTHROUGH (ceo CEO-979, 2026-09-20, on Lon's "Can you add some seats to fix bugs alongside the GC work?"). Before this arm existed an HQ under DECTET was
-                      # admitted by FALLING OUT of this case, which returns success -- the admission was correct and nothing in the file said it was INTENDED, which is CEO-755b's class exactly: the hazard is not that
+           hq|hq_*) case "$_m" in   # hq_* not hq_?: a language HQ is hq_prolog, and a pattern that misses it falls out of the case, which returns success (R-755b's class)
+                      SOLO) _dr "an HQ" "Under SOLO no HQ is standing -- the lead seat works the rows itself.";;
+                      DUO) _dr "an HQ" "Under DUO no HQ is standing -- the coo runs the suites and the lead seat cures (Lon 2026-10-02, R-1398).";;
+                      DUO-STUPID) _dr "an HQ" "Under DUO-STUPID no HQ is standing -- the lead seat and the cto work the rows (Lon 2026-09-21, R-1087).";;
+                      TRIO) case "$_seat" in hq_runtime) : ;; *) _dr "an HQ" "Under TRIO only hq_runtime stands among the HQs -- the lead seat, the coo and hq_runtime work rows, and $_seat is stood down (Lon 2026-10-15, R-1809).";; esac;;
+                      QUARTET) _dr "an HQ" "Under QUARTET no HQ is standing -- the four officers work the rows (Lon 2026-09-19, R-911).";;
+                      # ⛔⭐ MODE QUINTET (Lon 2026-09-28 17:2x, in-chat, verbatim: "Bring the fleet into QUARTET mode: [officer], CTO, CFO, and COO. Leave HQ-SNOCONE alone. So QUNTET mode."; R-1356).
+                      # The four officers and ONE language HQ, hq_snocone, named here so that no other hq_* seat is admitted by falling out of the case (R-755b).
+                      # ⛔⭐ MODE QUINTET REDEFINED (Lon 2026-10-17 11:4x CDT, in-chat, verbatim: "Let's get CTO and CFO to join the fleet."; R-1811): TRIO's the officer, coo and
+                      # hq_runtime plus the cto and the cfo -- the four officers and ONE HQ, now hq_runtime (the collector in asm); hq_snocone is refused by name. The R-1356 roster is history.
+                      QUINTET) case "$_seat" in hq_runtime) : ;; *) _dr "an HQ" "Under QUINTET only hq_runtime stands among the HQs -- the four officers and hq_runtime work rows, and $_seat is stood down (Lon 2026-10-17, R-1811).";; esac;;
+                      # ⛔⭐ MODE NONET (Lon 2026-09-25, in-chat: "Go now to NONET mode." and, asked which five HQs stand: "SNO, PL, PAS, SNOCONE, and ICON"; R-1266).
+                      # Written by name for R-755b's reason: before this arm every hq_* seat -- hq_raku and the lettered legacy names included -- was admitted under NONET by FALLING OUT of the case.
+                      # ⛔⭐ MODE NONET REDEFINED (Lon 2026-10-15 13:3x CDT, in-chat, verbatim: "Have the GC collection code written in ASM versus C. Should I fire up HQ-RUNTIME since that is his job?" then "I started HQ-RUNTIME."; R-1793): OCTET's four HQs and hq_runtime, named so no other hq_* seat falls out of the case (R-755b). The R-1266 roster above is history.
+                      NONET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas|hq_runtime) : ;; *) _dr "an HQ" "Under NONET five HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime -- and $_seat is not one of them: the four officers and those five work rows, and $_seat is stood down (Lon 2026-10-15, R-1793).";; esac;;
+                      # ⛔⭐ MODE UNDECET (Lon 2026-10-17, in-chat: "We need to create two new HQ seats ... for finishing and polishing snobol4ever/snobol4dotnet and snobol4ever/snobol4jvm. Call them HQ-DOTNET and HQ-JVM." · "These two HQ's will certainly need to be fully apart of our fleet, they just happen not to be SCRIP."; R-1817): NONET's five HQs and hq_dotnet and hq_jvm, named here so no other hq_* seat is admitted by falling out of the case (R-755b). The two own no SCRIP language; their roots hold no SCRIP clone and run this bus from the officer root's SCRIP with S4E_HOME naming their root.
+                      UNDECET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas|hq_runtime|hq_dotnet|hq_jvm) : ;; *) _dr "an HQ" "Under UNDECET seven HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime hq_dotnet hq_jvm -- and $_seat is not one of them: the four officers and those seven work rows, and $_seat is stood down (Lon 2026-10-17, R-1817).";; esac;;
+                      # ⛔⭐ MODE SEXTET REDEFINED (Lon 2026-10-02 19:2x, in-chat: "Do it yourself." and "I'll fire up HQ-ICON and HQ-SNOBOL4 to help."; R-1433): the four officers and hq_icon and hq_snobol4; the R-912 SEXTET (hq_prolog and hq_icon) is history.
+                      # ⛔⭐ MODE SEXTET REDEFINED AGAIN (Lon 2026-10-10 09:0x CDT, in-chat, verbatim: "Let's continue getting Prolog and Raku at 100% like SNOBOL4 and Icon." then "Let's also have HQ-PROLOG and HQ-RAKU join us."; R-1591): the four officers and hq_prolog and hq_raku; the R-1433 SEXTET is history.
+                      SEXTET) case "$_seat" in hq_prolog|hq_raku) : ;; *) _dr "an HQ" "Under SEXTET only hq_prolog and hq_raku stand among the HQs -- the four officers and those two work rows, and $_seat is stood down (Lon 2026-10-10, R-1591).";; esac;;
+                      # ⛔⭐ MODE DECTET, EXPLICIT AND NOT A FALLTHROUGH (R-979, 2026-09-20, on Lon's "Can you add some seats to fix bugs alongside the GC work?"). Before this arm existed an HQ under DECTET was
+                      # admitted by FALLING OUT of this case, which returns success -- the admission was correct and nothing in the file said it was INTENDED, which is R-755b's class exactly: the hazard is not that
                       # the wrong seat is admitted, it is that no reader can tell an intended admission from a missing arm. The six LANGUAGE HQs are named; every other hq_* name, the lettered hq_B..hq_V included, is refused.
-                      # ⛔⭐ MODE SEPTET (Lon 2026-09-20, in-chat to the ceo: "Go to mode SEPTET, with the four current officers and 3 more HQ's as Opus"; ceo CEO-979). THREE language HQs stand, chosen for GC work and
+                      # ⛔⭐ MODE SEPTET (Lon 2026-09-20, in-chat: "Go to mode SEPTET, with the four current officers and 3 more HQ's as Opus"; R-979). THREE language HQs stand, chosen for GC work and
                       # not for language coverage: hq_raku (31 of the 72 no_layout, the 8,000,486-hit method road), hq_snobol4 (31 no_layout, SnoRungs' two tiny-arena reds, the pattern-replacement class) and hq_prolog
                       # (10 no_layout and the findall enumeration defect, the only reds left in the 108-witness battery). hq_pascal and hq_snocone are REFUSED BY NAME rather than omitted: both have ZERO no_layout and
                       # rung suites at 246/246 and 336/336, so there is no GC work to give them, and hq_icon is refused for the same reason at two entries -- a refusal that states its measurement is a decision, not an oversight.
-                      # ⛔⭐ MODE SEPTET REDEFINED (Lon 2026-10-10 10:0x CDT, in-chat to the ceo, verbatim: "Give the tasks of mining and vendoring the Prolog programs in /home/resources to another HQ seat. Which HQ do you want on the team?"; ceo CEO-1595): the four officers, hq_prolog, hq_raku and hq_pascal -- the third HQ vendors the Prolog downloads as demos and suites; the CEO-979 SEPTET (hq_raku hq_snobol4 hq_prolog) is history.
-                      # ⛔⭐ MODE SEPTET REDEFINED AGAIN (Lon 2026-10-11 10:3x CDT, in-chat to the ceo, verbatim: "I suppose we should start HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG to help."; ceo CEO-1662): the four officers, hq_snobol4, hq_icon and hq_prolog -- the three languages of CEO-1660's order of work (Icon and SNOBOL4 first, then Prolog); the CEO-1595 SEPTET (hq_prolog hq_raku hq_pascal) is history.
-                      SEPTET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog) : ;; *) _dr "an HQ" "Under SEPTET three HQs stand -- hq_snobol4 hq_icon hq_prolog -- and $_seat is not one of them: the four officers and those three work rows, and $_seat is stood down (Lon 2026-10-11, CEO-1662).";; esac ;;
-                      # ⛔⭐ MODE OCTET (Lon 2026-10-15 10:5x CDT, in-chat to the ceo, verbatim: "Remember also we have Icon and Prolog needing to move most of their BB's operand and locals onto the
-                      # RSP-spine cells versus the RBP-activation frames." then "I can start HQ-ZETAS then."; ceo CEO-1778): SEPTET's three HQs and hq_zetas, named here so no other hq_* seat is admitted by falling out of the case (CEO-755b).
-                      OCTET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas) : ;; *) _dr "an HQ" "Under OCTET four HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas -- and $_seat is not one of them: the four officers and those four work rows, and $_seat is stood down (Lon 2026-10-15, CEO-1778).";; esac ;;
-                      # ⛔⭐ MODE TENET (Lon 2026-09-20, in-chat to the ceo, verbatim: "Let's got to TENET mode, 4 officers and 6 HQ's all running Opus 5 (xhigh). All officers running Opus 5 (max)."; ceo CEO-1010). TEN WORKING SEATS: the four officers and the SIX language HQs.
+                      # ⛔⭐ MODE SEPTET REDEFINED (Lon 2026-10-10 10:0x CDT, in-chat, verbatim: "Give the tasks of mining and vendoring the Prolog programs in /home/resources to another HQ seat. Which HQ do you want on the team?"; R-1595): the four officers, hq_prolog, hq_raku and hq_pascal -- the third HQ vendors the Prolog downloads as demos and suites; the R-979 SEPTET (hq_raku hq_snobol4 hq_prolog) is history.
+                      # ⛔⭐ MODE SEPTET REDEFINED AGAIN (Lon 2026-10-11 10:3x CDT, in-chat, verbatim: "I suppose we should start HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG to help."; R-1662): the four officers, hq_snobol4, hq_icon and hq_prolog -- the three languages of R-1660's order of work (Icon and SNOBOL4 first, then Prolog); the R-1595 SEPTET (hq_prolog hq_raku hq_pascal) is history.
+                      SEPTET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog) : ;; *) _dr "an HQ" "Under SEPTET three HQs stand -- hq_snobol4 hq_icon hq_prolog -- and $_seat is not one of them: the four officers and those three work rows, and $_seat is stood down (Lon 2026-10-11, R-1662).";; esac ;;
+                      # ⛔⭐ MODE OCTET (Lon 2026-10-15 10:5x CDT, in-chat, verbatim: "Remember also we have Icon and Prolog needing to move most of their BB's operand and locals onto the
+                      # RSP-spine cells versus the RBP-activation frames." then "I can start HQ-ZETAS then."; R-1778): SEPTET's three HQs and hq_zetas, named here so no other hq_* seat is admitted by falling out of the case (R-755b).
+                      OCTET) case "$_seat" in hq_snobol4|hq_icon|hq_unicon|hq_prolog|hq_zetas) : ;; *) _dr "an HQ" "Under OCTET four HQs stand -- hq_snobol4 hq_icon hq_prolog hq_zetas -- and $_seat is not one of them: the four officers and those four work rows, and $_seat is stood down (Lon 2026-10-15, R-1778).";; esac ;;
+                      # ⛔⭐ MODE TENET (Lon 2026-09-20, in-chat, verbatim: "Let's got to TENET mode, 4 officers and 6 HQ's all running Opus 5 (xhigh). All officers running Opus 5 (max)."; R-1010). TEN WORKING SEATS: the four officers and the SIX language HQs.
                       # ⛔ THIS ARM EXISTS BECAUSE THE coo PREDICTED ITS ABSENCE THIS MORNING, verbatim: "both cures are correct today and NEITHER SURVIVES THE NEXT MODE LON NAMES." TENET is that next mode, and the arm is written BEFORE the MODE file is flipped -- the ec3a99b43 order, never the reverse.
                       # TENET is DECTET's roster under Lon's own name for it; the arm is spelled out rather than aliased to DECTET because an alias makes two modes share one reason, and the reasons differ: DECTET was one-HQ-per-language for the shared nodes, TENET is six HQs driving their languages to 100% while the officers finish the GC.
-                      TENET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages) : ;; *) _dr "an HQ" "Under TENET the six LANGUAGE HQs, HQ-TEMPLATES, HQ-RUNTIME, HQ-COLLECTOR and HQ-ZETAS stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku hq_templates (Lon 2026-09-27, CEO-1321) hq_runtime (Lon 2026-10-07, CEO-1535) hq_collector (Lon 2026-10-07, CEO-1538) hq_zetas (Lon 2026-10-07, CEO-1539) -- and $_seat is not one of them (Lon 2026-09-20, CEO-1010).";; esac;;
-                      DECTET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku) : ;; *) _dr "an HQ" "Under DECTET the six LANGUAGE HQs stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku -- and $_seat is not one of them; the lettered hq_B..hq_V are history (CEO-767, CEO-979).";; esac ;;
-                      EXECUTIVE) _dr "an HQ" "Under EXECUTIVE only the executives (ceo, cto, coo, cfo) work rows -- every HQ is stood down (Lon 2026-09-07).";; esac;;
+                      TENET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages) : ;; *) _dr "an HQ" "Under TENET the six LANGUAGE HQs, HQ-TEMPLATES, HQ-RUNTIME, HQ-COLLECTOR and HQ-ZETAS stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku hq_templates (Lon 2026-09-27, R-1321) hq_runtime (Lon 2026-10-07, R-1535) hq_collector (Lon 2026-10-07, R-1538) hq_zetas (Lon 2026-10-07, R-1539) -- and $_seat is not one of them (Lon 2026-09-20, R-1010).";; esac;;
+                      DECTET) case "$_seat" in hq_icon|hq_unicon|hq_prolog|hq_snobol4|hq_snocone|hq_pascal|hq_raku) : ;; *) _dr "an HQ" "Under DECTET the six LANGUAGE HQs stand -- hq_icon hq_prolog hq_snobol4 hq_snocone hq_pascal hq_raku -- and $_seat is not one of them; the lettered hq_B..hq_V are history (R-767, R-979).";; esac ;;
+                      EXECUTIVE) _dr "an HQ" "Under EXECUTIVE only the executives (cto, coo, cfo) work rows -- every HQ is stood down (Lon 2026-09-07).";; esac;;
            # ⛔⭐ SEXTET AND SEPTET WERE MISSING FROM THIS LIST AND A NUMBERED SEAT WAS ADMITTED BY FALLING OUT OF THE
-           # CASE -- CEO-755b's class exactly, found 2026-09-20 by the coo the first time this table was asked about a
-           # seat OTHER than $ME (the announcing cure, ceo CEO-1002: its gate mailed seat07 under SEPTET and that is how
-           # the hole printed itself). Neither mode has a fleet: SEPTET is four officers and three language HQs (CEO-979)
-           # and SEXTET is the officers plus hq_prolog and hq_icon (CEO-912). ⛔ THE LESSON IS THE ONE THIS FILE KEEPS
+           # CASE -- R-755b's class exactly, found 2026-09-20 by the coo the first time this table was asked about a
+           # seat OTHER than $ME (the announcing cure, R-1002: its gate mailed seat07 under SEPTET and that is how
+           # the hole printed itself). Neither mode has a fleet: SEPTET is four officers and three language HQs (R-979)
+           # and SEXTET is the officers plus hq_prolog and hq_icon (R-912). ⛔ THE LESSON IS THE ONE THIS FILE KEEPS
            # RE-LEARNING: a guard written as "refuse these modes" grows a hole every time Lon names a new one, and the
            # hole is silent because falling out of a case returns success. Every new mode must be added HERE by name.
            seat*)   case "$_m" in
-                      CEO|SOLO|EXECUTIVE|DUO|DUO-STUPID|DUET|TRIO|QUARTET|QUINTET|SEXTET|SEPTET|OCTET|NONET|UNDECET|DECTET|TENET) _dr "a fleet seat" "There is NO FLEET in $_m -- only the ceo, the officers and the standing HQs work rows. (DUO is the pre-rename spelling of DUET and is refused too; SEXTET and SEPTET were added 2026-09-20 after a numbered seat was found admissible under both by falling out of this case.)";; esac;;
+                      SOLO|EXECUTIVE|DUO|DUO-STUPID|DUET|TRIO|QUARTET|QUINTET|SEXTET|SEPTET|OCTET|NONET|UNDECET|DECTET|TENET) _dr "a fleet seat" "There is NO FLEET in $_m -- only the officers and the standing HQs work rows. (DUO is the pre-rename spelling of DUET and is refused too; SEXTET and SEPTET were added 2026-09-20 after a numbered seat was found admissible under both by falling out of this case.)";; esac;;
          esac
   [ -n "$_REFUSE_WHY" ] && return 1
   return 0; }
@@ -1149,23 +1145,23 @@ s4e_standing_boxes() {   # [<mode>] -> one standing seat per line
     [ -f "$PO/$_b/DRAINED" ] && continue
     s4e_mode_stands "$_b" "$_m" && echo "$_b"
   done; }
-# ⛔⭐⭐ THE BUS ANNOUNCES THE START OF WORK (coo 2026-09-20, ceo CEO-1002 rank 0, on hq_snobol4's self-reported
+# ⛔⭐⭐ THE BUS ANNOUNCES THE START OF WORK (coo 2026-09-20, R-1002 rank 0, on hq_snobol4's self-reported
 # witness). claim and next LOCKED A ROW SILENTLY: the bus had claim, assign, ask and send and not one of them told
 # another seat that work had STARTED, so the only instrument that reported a collision was a branch that would not
 # fast-forward. MEASURED: hq_snobol4 measured the no_layout census for an hour; the cto spent their own hour on the
 # same 30 entries and the same cause and landed first at SCRIP 83fb80ee7; hq_snobol4 found out on a failed pull.
 # BOTH SEATS HELD ROWS -- the rows did not overlap BY NAME and did overlap BY POPULATION, which a claim on a topic
 # string can never catch and a live claims board shown at the moment of taking the row would have.
-# ⛔ LON, IN-CHAT TO THE ceo 2026-09-20, VERBATIM: "Them not telegramming before starting is YOUR FAULT! You set up
-# the system." -- so this is a defect in the BUS and not a discipline a seat must remember. The ceo's own first draft
+# ⛔ LON, in-chat 2026-09-20, VERBATIM: "Them not telegramming before starting is YOUR FAULT! You set up
+# the system." -- so this is a defect in the BUS and not a discipline a seat must remember. The officer's own first draft
 # of the law read TELEGRAM THE LANE WHEN YOU START, and they retracted it in the same ruling: a rule converting a
 # structural gap into an instruction is obeyed for a week and then not.
 # ⭐ IT CANNOT FAIL THE CLAIM. A lock that succeeded and an announcement that did not are two different facts, and
 # the seat owns the row either way; every delivery failure is COUNTED AND NAMED instead of aborting the take.
-# ⭐ THE SKILLS A ROW CALLS FOR, PRINTED WHERE A SEAT STARTS WORK (ceo CEO-2085). MEASURED 2026-10-31 14:5x CDT over every seat's transcript since the
+# ⭐ THE SKILLS A ROW CALLS FOR, PRINTED WHERE A SEAT STARTS WORK (R-2085). MEASURED 2026-10-31 14:5x CDT over every seat's transcript since the
 # skills landed (09:34-10:29 CDT): 20 Skill loads in about five hours across 10 seats, and 8 active seats never loaded one -- among them hq_prolog
 # (the prolog skill), hq_zetas (scrip-memory-model) and hq_runtime (rtx-asm-leaves), the seats whose lanes those skills were written for. SOP step 5
-# says load them; an instruction is obeyed for a week and then not (CEO-1002), so the bus names them at the claim and in the assign doorbell.
+# says load them; an instruction is obeyed for a week and then not (R-1002), so the bus names them at the claim and in the assign doorbell.
 s4e_skills_for_topic() {   # <topic> -> "/skill /skill ..." (empty when none matches)
   local t="$1" out=""
   case "$t" in *prolog*|*xsb*|*swi*|*trealla*|*clp*|*chr*|*tabl*) out="$out /prolog";; esac
@@ -1268,225 +1264,225 @@ s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notic
 s4e_lane_languages() { printf 'icon prolog snobol4 snocone pascal raku rebus'; }
 s4e_lane_owner_of_language() {
     case "$1" in
-      # ⛔ MODE DECTET (CEO-767, 2026-09-16, Lon: one HQ per language, four officers for the shared nodes): each
+      # ⛔ MODE DECTET (R-767, 2026-09-16, Lon: one HQ per language, four officers for the shared nodes): each
       # language's completeness AND speed owner is its HQ, named for the language; Rebus is closed and folded
       # into the cfo as keep-green; the officers own no language (cto the spine, cfo the collector and the
-      # SNOBOL4 runtime crash classes, coo the one runner, ceo the loop). Written out per language because the
+      # SNOBOL4 runtime crash classes, coo the one runner, the officer the loop). Written out per language because the
       # gate beside it compares this table to MODE line 2 LANGUAGE BY LANGUAGE, and a table that collapsed to a
       # default would agree with a line 2 that had drifted on six of them without anything noticing.
-      # ⛔ MODE CEO (CEO-903, 2026-09-18, Lon in-chat: "I'm thinking we go to CEO mode"): ONE SEAT HOLDS EVERY
+      # ⛔ MODE (R-903, 2026-09-18, Lon in-chat: "I'm thinking we go to the officer mode"): ONE SEAT HOLDS EVERY
       # LANGUAGE. Written out per language rather than collapsed to a default for the same reason the DECTET
       # table above was: the gate compares this table to MODE line 2 LANGUAGE BY LANGUAGE, and a default would
       # agree with a line 2 that had drifted on six of them without anything noticing. The DECTET mapping is
       # kept in the comment above so the flip back is a seven-line edit and not a reconstruction.
-      # ⛔ MODE CEO (CEO-1103, 2026-09-22, Lon in-chat to the ceo: "The fleet is quiet. It is just you, CEO. We will get GC 100%, you and me. Go to CEO mode only."): ONE SEAT HOLDS EVERY LANGUAGE again. Written out per language rather than collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE, and a default agrees with a line 2 that has drifted on six of them without anything noticing.
-      # ⛔ MODE SEPTET (CEO-979, 2026-09-20, Lon: "Go to mode SEPTET, with the four current officers and 3 more HQ's as Opus"): THREE language HQs stand and they were chosen by GC DEBT, not by
+      # ⛔ MODE (R-1103, 2026-09-22, Lon in-chat: "The fleet is quiet. It is just you, the officer. We will get GC 100%, you and me. Go to the officer mode only."): ONE SEAT HOLDS EVERY LANGUAGE again. Written out per language rather than collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE, and a default agrees with a line 2 that has drifted on six of them without anything noticing.
+      # ⛔ MODE SEPTET (R-979, 2026-09-20, Lon: "Go to mode SEPTET, with the four current officers and 3 more HQ's as Opus"): THREE language HQs stand and they were chosen by GC DEBT, not by
       # language coverage -- hq_raku 31 of the 72 no_layout plus the 8,000,486-hit method road, hq_snobol4 31 no_layout plus SnoRungs' two tiny-arena reds, hq_prolog 10 no_layout plus the findall
-      # enumeration defect. The four languages whose HQ is NOT standing stay with the ceo, and rebus stays the cfo's keep-green as under DECTET. Written out per language, never collapsed to a
+      # enumeration defect. The four languages whose HQ is NOT standing stay with the officer, and rebus stays the cfo's keep-green as under DECTET. Written out per language, never collapsed to a
       # default, for the reason the two tables above give: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE, and a default agrees with a line 2 that has drifted on four of them.
-      # ⛔ MODE TENET (CEO-1010, 2026-09-20, Lon: 4 officers and 6 HQs): EVERY language goes to its own HQ and the three the ceo was holding -- icon, pascal, snocone -- are handed over. Rebus stays the cfo's keep-green at 43/43. The officers own NO language, which is CEO-802 unchanged: they supervise and take the rows an HQ fails at.
-      # ⛔ A GC DEFECT IN AN HQ'S OWN LANGUAGE IS THAT HQ'S ROW AND OUTRANKS ITS COMPLETENESS WORK (CEO-1010 condition 1). This is not a preference: class 2 of the unmapped-slot population -- a graph with no frame layout has no map at all -- is PER-LANGUAGE by construction, and the cto assigned it to the HQs in writing before cutting. Without the rank, a live collector defect sits behind 1,455 roast entries.
-      # ⛔ MODE EXECUTIVE (CEO-1038, 2026-09-21, Lon in-chat: "We are currently running with only 4 officers, CEO, CTO, CFO,
-      # and COO. Just so you are clear."): the six language HQs are stood down and the REVIEWERS of CEO-802 become the
+      # ⛔ MODE TENET (R-1010, 2026-09-20, Lon: 4 officers and 6 HQs): EVERY language goes to its own HQ and the three the officer was holding -- icon, pascal, snocone -- are handed over. Rebus stays the cfo's keep-green at 43/43. The officers own NO language, which is R-802 unchanged: they supervise and take the rows an HQ fails at.
+      # ⛔ A GC DEFECT IN AN HQ'S OWN LANGUAGE IS THAT HQ'S ROW AND OUTRANKS ITS COMPLETENESS WORK (R-1010 condition 1). This is not a preference: class 2 of the unmapped-slot population -- a graph with no frame layout has no map at all -- is PER-LANGUAGE by construction, and the cto assigned it to the HQs in writing before cutting. Without the rank, a live collector defect sits behind 1,455 roast entries.
+      # ⛔ MODE EXECUTIVE (R-1038, 2026-09-21, Lon in-chat: "We are currently running with only 4 officers, the officer, CTO, CFO,
+      # and COO. Just so you are clear."): the six language HQs are stood down and the REVIEWERS of R-802 become the
       # owners -- the cto reviewed hq_prolog and hq_raku, the cfo reviewed the other four and already held rebus. This is
       # the CURE owner; the BOARD RUNNER is the coo for all seven on the MODE LANES line, because the coo holds the measure
-      # and by CEO-723 holds no cure lane. Written out per language rather than collapsed to a default for the reason every
+      # and by R-723 holds no cure lane. Written out per language rather than collapsed to a default for the reason every
       # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE TENET RESTORED (CEO-1040, 2026-09-21, Lon: "Go to TENET mode now."): six language HQs at Sonnet 5
+      # ⛔ MODE TENET RESTORED (R-1040, 2026-09-21, Lon: "Go to TENET mode now."): six language HQs at Sonnet 5
       # effort max plus four officers at Opus 5 effort max. Each language's owner is its HQ again; rebus stays the
       # cfo's keep-green. THE HQs OWN ITEM 4 OF THE GC COMMITMENT -- zero gradings lost to the collector -- which is
       # six-way parallel; the officers own items 1-3, which are single-site landings and are not. Written out per
       # language rather than collapsed to a default: the gate beside this compares it to MODE line 2 LANGUAGE BY
       # LANGUAGE, and a default would agree with a line 2 that had drifted on six of them without anything noticing.
-      # ⛔ MODE EXECUTIVE RESTORED (CEO-1051, 2026-09-21 13:0x, Lon in-chat to the ceo, verbatim: "I do not think we
+      # ⛔ MODE EXECUTIVE RESTORED (R-1051, 2026-09-21 13:0x, Lon in-chat, verbatim: "I do not think we
       # can afford running the 6 HQ's today. Let's bring those back down. We'll have to get GC complete without them."):
-      # the six language HQs stand down again after one afternoon and the CEO-802 REVIEWERS become the cure owners --
+      # the six language HQs stand down again after one afternoon and the R-802 REVIEWERS become the cure owners --
       # the cto reviewed hq_prolog and hq_raku, the cfo reviewed the other four and already held rebus. ⛔ THIS TABLE IS
-      # MOVED BEFORE THE MODE FILE, NOT AFTER, which is CEO-1046 landed forty minutes earlier and b36a7f709's procedure:
+      # MOVED BEFORE THE MODE FILE, NOT AFTER, which is R-1046 landed forty minutes earlier and b36a7f709's procedure:
       # two flips on 2026-09-21 left this table stale and make preflight RED FOR EVERY SEAT in BOTH directions inside
       # twenty minutes, the second red produced by the correct cure of the first. The coo's deeper cure -- the gate reads
       # a COMMITTED declaration so a flip that forgets its table is caught AT THE FLIP -- is rowed to them and not yet
       # landed, so until it is, the ORDER of these two edits is the whole guard. Written out per language rather than
       # collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE line 2
       # LANGUAGE BY LANGUAGE, and a default would agree with a line 2 that had drifted on six of them unnoticed.
-      # ⛔ MODE TENET RESTORED AGAIN (CEO-1055, 2026-09-21 13:3x, Lon in-chat to the ceo, verbatim: "Well then, I
+      # ⛔ MODE TENET RESTORED AGAIN (R-1055, 2026-09-21 13:3x, Lon in-chat, verbatim: "Well then, I
       # changed my mind once again. Go to TENET mode."): the six language HQs stand back up, each owning its own
       # language; rebus stays the cfo's keep-green. ⛔ THIS IS THE FOURTH MODE FLIP OF 2026-09-21 -- TENET at 12:08,
       # EXECUTIVE at 12:34, TENET again now, after SEPTET/EXECUTIVE earlier -- AND THE FLIP RATE IS THE ARGUMENT, NOT
       # THE FLIPS. Two of the four left this table stale and turned make preflight RED FOR EVERY SEAT; two did not,
-      # because the table moved in its own commit BEFORE the MODE file (CEO-1046, b36a7f709). That is a procedure
+      # because the table moved in its own commit BEFORE the MODE file (R-1046, b36a7f709). That is a procedure
       # followed twice and forgotten twice IN ONE DAY, which is the measured failure rate of a guard made of a seat
       # remembering to do two edits in the right order. The coo's row -- the gate reads a COMMITTED declaration, so a
       # flip that forgets its table is caught AT THE FLIP by the flipper's own preflight instead of by whoever lands
-      # next -- is ranked up on this evidence (CEO-1055). Written out per language rather than collapsed to a default
+      # next -- is ranked up on this evidence (R-1055). Written out per language rather than collapsed to a default
       # for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE CEO (CEO-1069, 2026-09-21 14:0x, Lon in-chat to the ceo, verbatim: "And now you are in CEO mode.
+      # ⛔ MODE (R-1069, 2026-09-21 14:0x, Lon in-chat, verbatim: "And now you are in the officer mode.
       # The fleet is going quiet now."): ONE SEAT HOLDS EVERY LANGUAGE. The six language HQs AND the three other
-      # officers are stood down; rebus comes back to the ceo with the rest. Written out per language rather than
+      # officers are stood down; rebus comes back to the officer with the rest. Written out per language rather than
       # collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE
       # line 2 LANGUAGE BY LANGUAGE, and a default would agree with a line 2 that had drifted on six of them.
       # ⛔ THIS TABLE MOVED BEFORE THE MODE FILE, through ../harness/scripts/mode_flip.sh --preview, which is the
       # mechanism landed at c641a38f one hour earlier after the table-before-the-file procedure was FOLLOWED TWICE
       # AND FORGOTTEN TWICE in a single day. This is its first real use.
-      # ⛔ MODE DUO-STUPID (CEO-1087, 2026-09-21 15:5x, Lon in-chat to the ceo, verbatim: "Let's get double stupid
-      # going, so go to DUO-STUPID mode, i.e. CEO and CTO."): TWO WORKING SEATS, the ceo and the cto. The split is
-      # BY THE WORK IN FRONT OF BOTH SEATS -- the C->BB->C->BB eradication of CEO-1086 -- and the language cells are
-      # assigned so that each seat owns the languages whose runtime carries its half of that population: the ceo
-      # holds SNOBOL4 and SNOCONE because rt_call_proc_descr and core.c's APPLY road are the ceo's half (1044 of the
+      # ⛔ MODE DUO-STUPID (R-1087, 2026-09-21 15:5x, Lon in-chat, verbatim: "Let's get double stupid
+      # going, so go to DUO-STUPID mode, i.e. the officer and CTO."): TWO WORKING SEATS, the officer and the cto. The split is
+      # BY THE WORK IN FRONT OF BOTH SEATS -- the C->BB->C->BB eradication of R-1086 -- and the language cells are
+      # assigned so that each seat owns the languages whose runtime carries its half of that population: the officer
+      # holds SNOBOL4 and SNOCONE because rt_call_proc_descr and core.c's APPLY road are the officer's half (1044 of the
       # 1062 live transitions measured on the SnoRungs pass at f177904f6), plus ICON and REBUS; the cto holds PROLOG,
       # RAKU and PASCAL and the by_name_dispatch.c / runtime_eval.c / rt_call_named_proc / rt_proc_call_gen_h half.
       # ⛔ THE NAME IS LON'S AND IT IS SPELLED OUT IN EVERY GUARD RATHER THAN ALIASED TO DUO: an alias would make
       # two modes share one reason, and a mode name that no `case` arm lists is admitted by FALLING OUT, which
-      # returns success (CEO-755b). Written out per language rather than collapsed to a default for the reason every
+      # returns success (R-755b). Written out per language rather than collapsed to a default for the reason every
       # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE QUARTET (CEO-1089, 2026-09-21 16:1x, Lon in-chat to the ceo, verbatim: "Let's get four times the
-      # stupid going. Go to QUARTET mode, CEO, CTO, CFO, and COO. Have COO do the before and after -O0 old versus new
+      # ⛔ MODE QUARTET (R-1089, 2026-09-21 16:1x, Lon in-chat, verbatim: "Let's get four times the
+      # stupid going. Go to QUARTET mode, the officer, CTO, CFO, and COO. Have COO do the before and after -O0 old versus new
       # GC and -O2 speed test for all languages."): FOUR WORKING SEATS, the four officers, the six language HQs stood
-      # down. ⛔ THE coo OWNS NO LANGUAGE CELL AND THAT IS THE RULE, NOT AN OVERSIGHT (CEO-723, Lon 2026-09-13:
+      # down. ⛔ THE coo OWNS NO LANGUAGE CELL AND THAT IS THE RULE, NOT AN OVERSIGHT (R-723, Lon 2026-09-13:
       # "It is not possible for COO to do two jobs. He failed at Pascal."): the coo holds THE MEASURE -- the before/after
       # speed and collector study Lon just ordered, across all seven languages -- and a seat holding the measure holds no
       # cure lane, so pascal moves to the cto rather than to the coo. The cfo takes ICON because its live rank-0 row is
-      # the icon builtin root class, and keeps REBUS as keep-green. The ceo keeps SNOBOL4 and SNOCONE, where its half of
+      # the icon builtin root class, and keeps REBUS as keep-green. The officer keeps SNOBOL4 and SNOCONE, where its half of
       # the C->BB population lives. Written out per language rather than collapsed to a default for the reason every
       # table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-      # ⛔ MODE DUO (CEO-1108, 2026-09-22, Lon in-chat to the ceo, verbatim: "Go to DUO mode. CEO and CTO as Opus 5
-      # effort max."): TWO WORKING SEATS, the ceo and the cto; the cfo and the coo stay stood down and no HQ stands.
+      # ⛔ MODE DUO (R-1108, 2026-09-22, Lon in-chat, verbatim: "Go to DUO mode. the officer and CTO as Opus 5
+      # effort max."): TWO WORKING SEATS, the officer and the cto; the cfo and the coo stay stood down and no HQ stands.
       # ⛔ THE SPLIT IS BY LAYER, NOT BY SITE COUNT, and the language cells follow the layer rather than driving it
-      # (the ceo's recommendation Lon acted on): the cto takes THE ENFORCEMENT HALF -- the per-safe-point slot-kind
+      # (the officer's recommendation Lon acted on): the cto takes THE ENFORCEMENT HALF -- the per-safe-point slot-kind
       # table, the planner giving every call result live across a poll a mapped slot, and the emitter REFUSING a safe
       # point that stores outside the map (their four already-claimed rows, of which
-      # gc-frame-maps-are-keyed-by-graph-not-by-safe-point-44-polls-2-maps is the keystone) -- while the ceo takes THE
+      # gc-frame-maps-are-keyed-by-graph-not-by-safe-point-44-polls-2-maps is the keystone) -- while the officer takes THE
       # SITE CONVERSIONS behind that refusal. ⛔ THE REASON THE ENFORCEMENT COMES FIRST IS MEASURED, NOT ARGUED
-      # (CEO-1107): with maps keyed by GRAPH and not by SAFE POINT, "what is live at this poll" is not a question the
+      # (R-1107): with maps keyed by GRAPH and not by SAFE POINT, "what is live at this poll" is not a question the
       # compiler can answer, so every one of the 120 open sites is a hand liveness judgment audited after the fact by
       # a five-minute rungs run -- 77 insertions by callee return class broke three languages in m3, and the 26 that
       # survived all eight smokes still cost 57 Icon programs against a clean-tree control arm.
-      # ⛔ THE LANGUAGE CELLS ARE THE DUO-STUPID SPLIT OF CEO-1087 UNCHANGED, deliberately: the work is layer-split, so
+      # ⛔ THE LANGUAGE CELLS ARE THE DUO-STUPID SPLIT OF R-1087 UNCHANGED, deliberately: the work is layer-split, so
       # re-cutting the language cells would be churn that costs both seats their bearings for no measured reason. The
-      # ceo keeps ICON because it is the sharpest detector in the tree (826/826 clean, and it is what caught the 57)
-      # and the conversions are the ceo's half; SNOBOL4 and SNOCONE stay with the ceo where its half of the C->BB
-      # population lives; REBUS stays the ceo's keep-green with the cfo stood down. The cto holds PROLOG, RAKU and
-      # PASCAL. ⛔ A SHARED-NODE LANDING STILL TRAVELS WITH ITS CONTROL ARM whoever lands it (CEO-801/757): the lane
+      # the officer keeps ICON because it is the sharpest detector in the tree (826/826 clean, and it is what caught the 57)
+      # and the conversions are the officer's half; SNOBOL4 and SNOCONE stay with the officer where its half of the C->BB
+      # population lives; REBUS stays the officer's keep-green with the cfo stood down. The cto holds PROLOG, RAKU and
+      # PASCAL. ⛔ A SHARED-NODE LANDING STILL TRAVELS WITH ITS CONTROL ARM whoever lands it (R-801/757): the lane
       # names the default picker and the reviewer-after-the-fact, never who may land.
       # ⛔ AND THE TWO SEATS DO NOT RUN RUNG_SUITES AT THE SAME TIME ON THIS BOX: a board taken while the other seat is
-      # building or grading is void (the cfo's flakiness finding plus CEO-1107's own rebuild-under-a-board), which is
+      # building or grading is void (the cfo's flakiness finding plus R-1107's own rebuild-under-a-board), which is
       # the second reason the layer split is the right one -- the cto's half is compile-and-gate work and needs almost
-      # no rungs passes, and the ceo's half is what needs them.
-       # ⛔ MODE CEO (CEO-1247, 2026-09-24 18:4x CDT, Lon in-chat to the ceo, verbatim: "The fleet is in CEO only mode." and "You, CEO, are
-       # seated as Fable 5.1 with max effort."): ONE SEAT HOLDS EVERY LANGUAGE for the SNOBOL4 speed campaign (CEO-1246). Written out per
+      # no rungs passes, and the officer's half is what needs them.
+       # ⛔ MODE (R-1247, 2026-09-24 18:4x CDT, Lon in-chat, verbatim: "The fleet is in the officer only mode." and "You, the officer, are
+       # seated as Fable 5.1 with max effort."): ONE SEAT HOLDS EVERY LANGUAGE for the SNOBOL4 speed campaign (R-1246). Written out per
        # language, never collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE line 2
        # LANGUAGE BY LANGUAGE. The DECTET mapping it replaces (icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=hq_pascal
-       # snocone=hq_snocone raku=hq_raku rebus=ceo, the last since CEO-1178) is the flip-back template; this table moves BEFORE the MODE
-       # file (CEO-1051's order: a flip that forgets its table reds make preflight for every seat).
-       # ⛔ MODE TENET (CEO-1266, 2026-09-25, minutes after NONET, Lon in-chat to the ceo: "I also included HQ-RAKU. So go to TENET mode, 4 officers + 6 HQ's."): every
-       # language goes to its own HQ and RAKU returns to hq_raku; REBUS stays the ceo's keep-green. The NONET block below is the record of the half hour between.
-       # ⛔ MODE NONET (CEO-1266, 2026-09-25, Lon in-chat to the ceo: "Go now to NONET mode."; the five HQs by his answer "SNO, PL, PAS, SNOCONE, and ICON"): the four
+       # snocone=hq_snocone raku=hq_raku rebus=officer, the last since R-1178) is the flip-back template; this table moves BEFORE the MODE
+       # file (R-1051's order: a flip that forgets its table reds make preflight for every seat).
+       # ⛔ MODE TENET (R-1266, 2026-09-25, minutes after NONET, Lon in-chat: "I also included HQ-RAKU. So go to TENET mode, 4 officers + 6 HQ's."): every
+       # language goes to its own HQ and RAKU returns to hq_raku; REBUS stays the officer's keep-green. The NONET block below is the record of the half hour between.
+       # ⛔ MODE NONET (R-1266, 2026-09-25, Lon in-chat: "Go now to NONET mode."; the five HQs by his answer "SNO, PL, PAS, SNOCONE, and ICON"): the four
        # officers and five language HQs; the two languages with no HQ go to an officer -- RAKU to the cto (its reviewer under DECTET, and its seat under QUARTET), REBUS to
-       # the ceo (its keep-green seat since CEO-1178). The CEO table above is the flip-back template. Written out per language, never collapsed to a default, for the
+       # the officer (its keep-green seat since R-1178). The officer table above is the flip-back template. Written out per language, never collapsed to a default, for the
        # reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-       # ⛔ MODE CEO (CEO-1275, 2026-09-26 08:5x, Lon in-chat to the ceo, verbatim: "Just so you are clear, we are in CEO mode only. The fleet is quiet."): ONE SEAT HOLDS EVERY
+       # ⛔ MODE (R-1275, 2026-09-26 08:5x, Lon in-chat, verbatim: "Just so you are clear, we are in the officer mode only. The fleet is quiet."): ONE SEAT HOLDS EVERY
        # LANGUAGE for the benchmark order of work (every language's kernels and demos against its oracle at -O0 into the README, SNOBOL4 first). The TENET mapping this replaces --
-       # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku -- is kept here so the flip back is a seven-line edit.
+       # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus the officer, raku hq_raku -- is kept here so the flip back is a seven-line edit.
        # Written out per language rather than collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE line 2 LANGUAGE BY LANGUAGE.
-       # ⭐ MODE TENET AGAIN (CEO-1285, 2026-09-26 13:5x, Lon in-chat to the ceo, verbatim: "Switch to TENET mode."): the seven-line edit the CEO block above promised -- every
-       # language HQ takes its language back, rebus stays the ceo's (Lon: "There is no HQ-REBUS.").
-       # ⛔⭐ MODE QUINTET (CEO-1356, 2026-09-28 17:2x, Lon in-chat to the ceo: "Bring the fleet into QUARTET mode: CEO, CTO, CFO, and COO. Leave HQ-SNOCONE alone. So QUNTET mode."): SNOCONE
-       # stays hq_snocone's; the other languages take the QUARTET map of CEO-1123 -- ICON, SNOBOL4 and REBUS to the ceo, PROLOG, RAKU and PASCAL to the cto. The TENET mapping
-       # this replaces -- icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku -- is the flip-back template.
-       # ⛔⭐ MODE CEO (CEO-1357, 2026-09-28 18:1x, Lon in-chat to the ceo, verbatim: "Go to CEO mode. For go all work but what we focus on together here. I want to focus on the 6 Snocone parsers (excluding Raku)."): ONE SEAT
-       # HOLDS EVERY LANGUAGE, and the one thing it works is the six self-hosted Snocone parsers with Lon. The QUINTET mapping this replaces -- icon ceo, prolog cto, snobol4 ceo, pascal cto,
-       # snocone hq_snocone, rebus ceo, raku cto -- is the flip-back template, and the TENET mapping stays in the QUINTET comment above.
-       # ⛔⭐ MODE DUO (CEO-1362, 2026-09-29 16:3x, Lon in-chat to the ceo: "Would it help to get CTO involved and to go to DUO mode? We have the bandwidth and the usage credits." then "Let me know
+       # ⭐ MODE TENET AGAIN (R-1285, 2026-09-26 13:5x, Lon in-chat, verbatim: "Switch to TENET mode."): the seven-line edit the officer block above promised -- every
+       # language HQ takes its language back, rebus stays the officer's (Lon: "There is no HQ-REBUS.").
+       # ⛔⭐ MODE QUINTET (R-1356, 2026-09-28 17:2x, Lon in-chat: "Bring the fleet into QUARTET mode: [officer], CTO, CFO, and COO. Leave HQ-SNOCONE alone. So QUNTET mode."): SNOCONE
+       # stays hq_snocone's; the other languages take the QUARTET map of R-1123 -- ICON, SNOBOL4 and REBUS to the officer, PROLOG, RAKU and PASCAL to the cto. The TENET mapping
+       # this replaces -- icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus the officer, raku hq_raku -- is the flip-back template.
+       # ⛔⭐ MODE (R-1357, 2026-09-28 18:1x, Lon in-chat, verbatim: "Go to the officer mode. For go all work but what we focus on together here. I want to focus on the 6 Snocone parsers (excluding Raku)."): ONE SEAT
+       # HOLDS EVERY LANGUAGE, and the one thing it works is the six self-hosted Snocone parsers with Lon. The QUINTET mapping this replaces -- icon the officer, prolog cto, snobol4 the officer, pascal cto,
+       # snocone hq_snocone, rebus the officer, raku cto -- is the flip-back template, and the TENET mapping stays in the QUINTET comment above.
+       # ⛔⭐ MODE DUO (R-1362, 2026-09-29 16:3x, Lon in-chat: "Would it help to get CTO involved and to go to DUO mode? We have the bandwidth and the usage credits." then "Let me know
        # when CTO can start. He is seated as Opus 5.5 with max effort."): TWO WORKING SEATS, split by layer -- the cto bakes every call and deferred-pattern address (no by-name lookup at run
-       # time, compile-time site tables, patch on a second DEFINE or assignment; its row is assigned, not picked), the ceo keeps the six parsers, the runtime diagnostics switch and the boards.
-       # Every language stays the ceo's, so this table is the MODE CEO table unchanged; the DUO guard arms above already admit the cto.
-       # ⛔⭐ MODE QUARTET (CEO-1364, 2026-09-29 18:3x, Lon in-chat to the ceo: "WIll we not benefit from having CFO and COO at work?" then "The goal is parser.sc same as C and 2x faster than SPITBOL."): the four officers,
-       # split by layer as DUO was -- the cto bakes the calls, the coo is the testing officer again (LANES: names the coo), the cfo takes the collector and allocation under the parsers, the ceo keeps the
-       # parsers and the stored-pattern thunks. Rows are assigned, not picked by language, so this table stays the MODE CEO table unchanged; the QUARTET guard arms above already admit cto, cfo and coo.
-      # ⛔ MODE TENET (CEO-1383, 2026-10-01 09:0x CDT, Lon in-chat to the ceo, verbatim: "Let's get all test suites for all
+       # time, compile-time site tables, patch on a second DEFINE or assignment; its row is assigned, not picked), the officer keeps the six parsers, the runtime diagnostics switch and the boards.
+       # Every language stays the officer's, so this table is the MODE SOLO table unchanged; the DUO guard arms above already admit the cto.
+       # ⛔⭐ MODE QUARTET (R-1364, 2026-09-29 18:3x, Lon in-chat: "WIll we not benefit from having CFO and COO at work?" then "The goal is parser.sc same as C and 2x faster than SPITBOL."): the four officers,
+       # split by layer as DUO was -- the cto bakes the calls, the coo is the testing officer again (LANES: names the coo), the cfo takes the collector and allocation under the parsers, the officer keeps the
+       # parsers and the stored-pattern thunks. Rows are assigned, not picked by language, so this table stays the MODE SOLO table unchanged; the QUARTET guard arms above already admit cto, cfo and coo.
+      # ⛔ MODE TENET (R-1383, 2026-10-01 09:0x CDT, Lon in-chat, verbatim: "Let's get all test suites for all
       # languages to 100%. Go to TENET mode, 4 officers, and 7 HQ's."): every language goes back to its own HQ, the eleventh seat
-      # hq_templates owns no language, rebus stays the ceo's keep-green as under the 2026-09-25 TENET (CEO-1266). Written out per
+      # hq_templates owns no language, rebus stays the officer's keep-green as under the 2026-09-25 TENET (R-1266). Written out per
       # language, never collapsed to a default, for the reason every table above gives: the gate beside this compares it to MODE
-      # line 2 LANGUAGE BY LANGUAGE. THIS TABLE IS MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔ MODE CEO (SOLO) (CEO-1396, 2026-10-02 09:1x CDT, Lon in-chat to the ceo, verbatim: "The fleet is idle. Go to CEO solo
-      # mode."): one working seat, the ceo, every language the ceo's; the officers and the seven HQs stood down with their claims
-      # parked in place (no re-lane, the CEO-1357/1372 precedent). The TENET table above is the flip-back template. THIS TABLE IS
-      # MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔ MODE TENET (CEO-1435) was a misreading, reverted to SEXTET the same sitting (CEO-1436, Lon: "Only HQ-ICON and HQ-SNOBOL4 and 4 officers are running.").
-      # ⛔⭐ MODE SEXTET (CEO-1433, 2026-10-02 19:2x, Lon in-chat to the ceo: "I'll fire up HQ-ICON and HQ-SNOBOL4 to help."): ICON to hq_icon, SNOBOL4 to hq_snobol4, the other five to the ceo; rows with an owner cell keep their owner.
-      # ⛔⭐ MODE TENET (CEO-1530, 2026-10-07 08:5x CDT, Lon in-chat to the ceo, verbatim: "Go to TENET mode with 4 officers and 7 HQ's."): the CEO-1383 TENET
-      # table again -- every language to its own HQ, hq_templates owning none, rebus the ceo's keep-green. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1587, 2026-10-09 18:2x CDT, Lon in-chat to the ceo, verbatim: "Bring the fleet to QUARTET mode, only four officers."): the ten HQs stand
-      # down (Lon had brought them idle at 17:4x); EVERY LANGUAGE TO THE ceo, who assigns, as the QUARTET of CEO-1521 (2026-10-05) and the DUO before it kept it; no
-      # re-lane (the CEO-1357/1372/1396 precedent: HQ rows and claims wait in place for the HQs' return). The TENET table above is the flip-back template:
-      # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus ceo, raku hq_raku. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE SEXTET (CEO-1591, 2026-10-10 09:0x CDT, Lon in-chat to the ceo, verbatim: "Let's continue getting Prolog and Raku at 100% like SNOBOL4 and Icon." then
-      # "Let's also have HQ-PROLOG and HQ-RAKU join us."): PROLOG to hq_prolog, RAKU to hq_raku, the other five to the ceo, who assigns; rows with an owner cell keep their
-      # owner. The QUARTET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1659, 2026-10-11 09:3x CDT, Lon in-chat to the ceo, verbatim: "Go to QUARTET mode with all four officers being seated as Opus 5.5 with
-      # xhigh effort."): the SEPTET of CEO-1595 ends -- hq_prolog, hq_raku and hq_pascal stand down with their claims and rows in place, nothing re-laned (the
-      # CEO-1357/1372/1396/1587 precedent); EVERY LANGUAGE TO THE ceo, who assigns, the table of CEO-1587. The SEXTET table above is the flip-back template:
-      # prolog hq_prolog, raku hq_raku, the other five the ceo. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE SEPTET (CEO-1662, 2026-10-11 10:3x CDT, Lon in-chat to the ceo, verbatim: "I suppose we should start HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG to help."):
-      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; rows with an owner cell keep their owner. The QUARTET
-      # table of CEO-1659 is the flip-back template (every language the ceo). MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE TENET (CEO-1665, 2026-10-11 11:3x CDT, Lon in-chat to the ceo, verbatim: "I suppose we can get the remaining 7 HQ's up and running all seated as Sonnet 5.5
-      # with xhigh effort. Lift the ban on Pascal and Raku."): the four officers and all ten HQs; the CEO-1383/1530 TENET table again -- every language to its own HQ, rebus
-      # the ceo's keep-green. The SEPTET table of CEO-1662 is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE QUARTET (CEO-1773, 2026-10-15 10:2x CDT, Lon in-chat to the ceo, verbatim: "The fleet has yet to start. We'll start officers only for a while."): the
-      # TENET of CEO-1665 ends before the fleet starts -- the ten HQs stay down with their claims and rows in place, nothing re-laned (the CEO-1357/1372/1396/1587/1659
-      # precedent); EVERY LANGUAGE TO THE ceo, who assigns, the table of CEO-1659; CEO-1765's focus (ORDER-OF-WORK icon prolog snobol4) stands. The TENET table of
-      # CEO-1665 is the flip-back template: every language to its own HQ, rebus the ceo's. MOVED AND COMMITTED BEFORE THE MODE FILE (CEO-1046/1051).
-      # ⛔⭐ MODE SEPTET (CEO-1777, 2026-10-15 10:5x CDT, Lon in-chat to the ceo, verbatim: "Would we benefit from having HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG join us? I'd
-      # start them as Sonnet 5.5 xhigh." then "We can have HQ-ICON work calgrind and optimize based on instruction count."): the SEPTET of CEO-1662 again -- the four
-      # officers, hq_snobol4, hq_icon and hq_prolog; ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; rows with an
-      # owner cell keep their owner. The QUARTET table of CEO-1773 is the flip-back template (every language the ceo). MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔ MODE QUARTET AGAIN (CEO-1809, 2026-10-15 18:5x CDT, Lon in-chat to the ceo, verbatim: "Let bring the fleet to idle and go to QUARTET mode."): the four officers
-      # only; every language to the ceo, who assigns, as CEO-1773's table; the SEPTET/OCTET/NONET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE NONET AGAIN (CEO-1813, 2026-10-17 14:3x CDT, Lon in-chat to the ceo, verbatim: "We should get HQ-SNOBOL4, HQ-ICON, HQ-PROLOG, and HQ=ZETAS also working in
-      # the fleet."): QUINTET's five plus those four -- CEO-1793's NONET roster, whose guard arm already admits exactly hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime.
-      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the ceo, who assigns; hq_zetas and hq_runtime own no language. The QUINTET table
-      # (every language the ceo) is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔ MODE QUARTET (CEO-1852, 2026-10-21 09:0x CDT, Lon in-chat to the ceo, verbatim: "Go to QUARTET mode, four officers seated as Opus 5.5 xhigh."): hq_icon and hq_prolog
-      # stand down with the rest of the reduced fleet, so ICON and PROLOG route to the ceo, who assigns, as CEO-1773's table; the two lines below this comment were hq_icon and hq_prolog
-      # under CEO-1827 and are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
-      # ⛔⭐ MODE TENET WITH THE THREE LANGUAGE HQs (CEO-1866, 2026-10-21 17:2x CDT, Lon in-chat to the ceo, verbatim: "I suspect we would benefit from having HQ-SNOBOL4, HQ-ICON, and
-      # HQ-PROLOG working for the fleet." · "I started HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG."): ICON to hq_icon, PROLOG to hq_prolog, SNOBOL4 to hq_snobol4 (NONET's arms, CEO-1813);
-      # the other four stay the ceo's, who assigns. The QUARTET arms (icon, prolog and snobol4 to the ceo) are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # line 2 LANGUAGE BY LANGUAGE. THIS TABLE IS MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔ MODE SOLO (SOLO) (R-1396, 2026-10-02 09:1x CDT, Lon in-chat, verbatim: "The fleet is idle. Go to the officer solo
+      # mode."): one working seat, the officer, every language the officer's; the officers and the seven HQs stood down with their claims
+      # parked in place (no re-lane, the R-1357/1372 precedent). The TENET table above is the flip-back template. THIS TABLE IS
+      # MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔ MODE TENET (R-1435) was a misreading, reverted to SEXTET the same sitting (R-1436, Lon: "Only HQ-ICON and HQ-SNOBOL4 and 4 officers are running.").
+      # ⛔⭐ MODE SEXTET (R-1433, 2026-10-02 19:2x, Lon in-chat: "I'll fire up HQ-ICON and HQ-SNOBOL4 to help."): ICON to hq_icon, SNOBOL4 to hq_snobol4, the other five to the officer; rows with an owner cell keep their owner.
+      # ⛔⭐ MODE TENET (R-1530, 2026-10-07 08:5x CDT, Lon in-chat, verbatim: "Go to TENET mode with 4 officers and 7 HQ's."): the R-1383 TENET
+      # table again -- every language to its own HQ, hq_templates owning none, rebus the officer's keep-green. MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE QUARTET (R-1587, 2026-10-09 18:2x CDT, Lon in-chat, verbatim: "Bring the fleet to QUARTET mode, only four officers."): the ten HQs stand
+      # down (Lon had brought them idle at 17:4x); EVERY LANGUAGE TO THE OFFICER, who assigns, as the QUARTET of R-1521 (2026-10-05) and the DUO before it kept it; no
+      # re-lane (the R-1357/1372/1396 precedent: HQ rows and claims wait in place for the HQs' return). The TENET table above is the flip-back template:
+      # icon hq_icon, prolog hq_prolog, snobol4 hq_snobol4, pascal hq_pascal, snocone hq_snocone, rebus the officer, raku hq_raku. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔⭐ MODE SEXTET (R-1591, 2026-10-10 09:0x CDT, Lon in-chat, verbatim: "Let's continue getting Prolog and Raku at 100% like SNOBOL4 and Icon." then
+      # "Let's also have HQ-PROLOG and HQ-RAKU join us."): PROLOG to hq_prolog, RAKU to hq_raku, the other five to the officer, who assigns; rows with an owner cell keep their
+      # owner. The QUARTET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE QUARTET (R-1659, 2026-10-11 09:3x CDT, Lon in-chat, verbatim: "Go to QUARTET mode with all four officers being seated as Opus 5.5 with
+      # xhigh effort."): the SEPTET of R-1595 ends -- hq_prolog, hq_raku and hq_pascal stand down with their claims and rows in place, nothing re-laned (the
+      # R-1357/1372/1396/1587 precedent); EVERY LANGUAGE TO THE OFFICER, who assigns, the table of R-1587. The SEXTET table above is the flip-back template:
+      # prolog hq_prolog, raku hq_raku, the other five the officer. MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE SEPTET (R-1662, 2026-10-11 10:3x CDT, Lon in-chat, verbatim: "I suppose we should start HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG to help."):
+      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the officer, who assigns; rows with an owner cell keep their owner. The QUARTET
+      # table of R-1659 is the flip-back template (every language the officer). MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE TENET (R-1665, 2026-10-11 11:3x CDT, Lon in-chat, verbatim: "I suppose we can get the remaining 7 HQ's up and running all seated as Sonnet 5.5
+      # with xhigh effort. Lift the ban on Pascal and Raku."): the four officers and all ten HQs; the R-1383/1530 TENET table again -- every language to its own HQ, rebus
+      # the officer's keep-green. The SEPTET table of R-1662 is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE QUARTET (R-1773, 2026-10-15 10:2x CDT, Lon in-chat, verbatim: "The fleet has yet to start. We'll start officers only for a while."): the
+      # TENET of R-1665 ends before the fleet starts -- the ten HQs stay down with their claims and rows in place, nothing re-laned (the R-1357/1372/1396/1587/1659
+      # precedent); EVERY LANGUAGE TO THE OFFICER, who assigns, the table of R-1659; R-1765's focus (ORDER-OF-WORK icon prolog snobol4) stands. The TENET table of
+      # R-1665 is the flip-back template: every language to its own HQ, rebus the officer's. MOVED AND COMMITTED BEFORE THE MODE FILE (R-1046/1051).
+      # ⛔⭐ MODE SEPTET (R-1777, 2026-10-15 10:5x CDT, Lon in-chat, verbatim: "Would we benefit from having HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG join us? I'd
+      # start them as Sonnet 5.5 xhigh." then "We can have HQ-ICON work calgrind and optimize based on instruction count."): the SEPTET of R-1662 again -- the four
+      # officers, hq_snobol4, hq_icon and hq_prolog; ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the officer, who assigns; rows with an
+      # owner cell keep their owner. The QUARTET table of R-1773 is the flip-back template (every language the officer). MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔ MODE QUARTET AGAIN (R-1809, 2026-10-15 18:5x CDT, Lon in-chat, verbatim: "Let bring the fleet to idle and go to QUARTET mode."): the four officers
+      # only; every language to the officer, who assigns, as R-1773's table; the SEPTET/OCTET/NONET table above is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔⭐ MODE NONET AGAIN (R-1813, 2026-10-17 14:3x CDT, Lon in-chat, verbatim: "We should get HQ-SNOBOL4, HQ-ICON, HQ-PROLOG, and HQ=ZETAS also working in
+      # the fleet."): QUINTET's five plus those four -- R-1793's NONET roster, whose guard arm already admits exactly hq_snobol4 hq_icon hq_prolog hq_zetas hq_runtime.
+      # ICON to hq_icon, SNOBOL4 to hq_snobol4, PROLOG to hq_prolog, the other four to the officer, who assigns; hq_zetas and hq_runtime own no language. The QUINTET table
+      # (every language the officer) is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔ MODE QUARTET (R-1852, 2026-10-21 09:0x CDT, Lon in-chat, verbatim: "Go to QUARTET mode, four officers seated as Opus 5.5 xhigh."): hq_icon and hq_prolog
+      # stand down with the rest of the reduced fleet, so ICON and PROLOG route to the officer, who assigns, as R-1773's table; the two lines below this comment were hq_icon and hq_prolog
+      # under R-1827 and are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔⭐ MODE TENET WITH THE THREE LANGUAGE HQs (R-1866, 2026-10-21 17:2x CDT, Lon in-chat, verbatim: "I suspect we would benefit from having HQ-SNOBOL4, HQ-ICON, and
+      # HQ-PROLOG working for the fleet." · "I started HQ-SNOBOL4, HQ-ICON, and HQ-PROLOG."): ICON to hq_icon, PROLOG to hq_prolog, SNOBOL4 to hq_snobol4 (NONET's arms, R-1813);
+      # the other four stay the officer's, who assigns. The QUARTET arms (icon, prolog and snobol4 to the officer) are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
       # ⛔⭐ MODE TRIO, THE THREE OFFICERS OVERNIGHT (Lon 2026-11-03 23:5x CST, in the cto's window, verbatim: "You CTO are seated as Fable 5.1 high. Both COO and CFO are
       # seated as Opus 5.5 high. Go to TRIO mode. It is just you three overnight." and "Have COO find the test suite programs that need fixing and fix those immediately
-      # between you and CFO and COO"; cto CEO-2116): every language's FREE rows route to the coo, the admin who finds and assigns (CEO-2095/2107; LANES: already names
-      # the coo for every language); rebus leaves the removed ceo seat. The hq seats and their rows stay in place (CEO-755c). The TENET table is the one above this note.
+      # between you and CFO and COO"; cto R-2116): every language's FREE rows route to the coo, the admin who finds and assigns (R-2095/2107; LANES: already names
+      # the coo for every language); rebus leaves the removed the officer seat. The hq seats and their rows stay in place (R-755c). The TENET table is the one above this note.
        icon)     printf 'coo';;
        prolog)   printf 'coo';;
-      # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (CEO-1827, 2026-10-18, Lon in-chat to the ceo: "we should run a reduced fleet until things settle"; roster ceo coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the ceo, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (CEO-1046).
+      # ⛔ REDUCED FLEET FOR THE SPINE CONVERSION (R-1827, 2026-10-18, Lon in-chat: "we should run a reduced fleet until things settle"; roster the officer coo hq_icon hq_prolog hq_zetas hq_dotnet hq_jvm): hq_snobol4 stands down, so SNOBOL4 routes to the officer, who assigns; hq_zetas is its hands for spine fallout meanwhile. The table moves BEFORE the MODE file (R-1046).
        snobol4)  printf 'coo';;
-      # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (CEO-1870, 2026-10-21 17:3x CDT, Lon in-chat to the ceo, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
-      # hq_pascal, RAKU to hq_raku; snocone and rebus stay the ceo's, who assigns. The two arms ceo for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔⭐ MODE TENET WITH FIVE LANGUAGE HQs (R-1870, 2026-10-21 17:3x CDT, Lon in-chat, verbatim: "I'm starting HQ-PASCAL and HQ-RAKU as Sonnet 5.5 xhigh."): PASCAL to
+      # hq_pascal, RAKU to hq_raku; snocone and rebus stay the officer's, who assigns. The two arms the officer for pascal and raku are the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
        pascal)   printf 'coo';;
-      # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (CEO-1871, 2026-10-21 17:4x CDT, Lon in-chat to the ceo, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
-      # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the ceo's. The arm ceo for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
+      # ⛔⭐ MODE TENET WITH SIX LANGUAGE HQs (R-1871, 2026-10-21 17:4x CDT, Lon in-chat, verbatim: "I started HQ-SONCONE. I want it to work on parser.sc programs completeness and
+      # speed performance versus the SCRIP C parsers."): SNOCONE to hq_snocone; rebus stays the officer's. The arm the officer for snocone is the flip-back template. MOVED AND COMMITTED BEFORE THE MODE FILE.
        snocone)  printf 'coo';;
        rebus)    printf 'coo';;
        raku)     printf 'coo';;
     esac
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
-# ⭐ A SEAT THAT OWNS NO LANGUAGE CURES NOTHING IN A LANGUAGE LANE (CEO-779; Lon 2026-09-16 11:22 CDT, verbatim to the ceo:
-# "Get the COO helping. The language seats now run their own tests and benchmarks."; CEO-781). Under DECTET the coo, the
-# ceo and the cto own no language in the LANES table, so the any-lane fallback -- the ordinary path AND the dependency-
+# ⭐ A SEAT THAT OWNS NO LANGUAGE CURES NOTHING IN A LANGUAGE LANE (R-779; Lon 2026-09-16 11:22 CDT, verbatim to the officer:
+# "Get the COO helping. The language seats now run their own tests and benchmarks."; R-781). Under DECTET the coo, the
+# the officer and the cto own no language in the LANES table, so the any-lane fallback -- the ordinary path AND the dependency-
 # inversion promotion -- must REFUSE them another owner's row instead of claiming it. MEASURED 2026-09-16 11:00 CDT:
-# `next` on coo CLAIMED the cfo's icon-gc-rung-2 row by promotion (released within the minute, unworked); CEO-771: `next`
-# on ceo LOCKED a Raku cure row. rc 0 = $ME owns a language in the table (an HQ, or the cfo for rebus); rc 1 = owns none.
+# `next` on coo CLAIMED the cfo's icon-gc-rung-2 row by promotion (released within the minute, unworked); R-771: `next`
+# on the officer LOCKED a Raku cure row. rc 0 = $ME owns a language in the table (an HQ, or the cfo for rebus); rc 1 = owns none.
 # The test is on the seat's RESOLVED lane (s4e_my_lane: an HQ is itself, a numbered seat is whoever its HQ file names,
-# an officer is itself, the ceo is empty and falls back to its identity) -- a seat07 whose HQ file reads hq_icon owns
-# icon THROUGH its HQ and keeps today's cross-lane fallback; the coo, cto and ceo resolve to themselves and own none.
+# an officer is itself, the officer is empty and falls back to its identity) -- a seat07 whose HQ file reads hq_icon owns
+# icon THROUGH its HQ and keeps today's cross-lane fallback; the coo, cto and the officer resolve to themselves and own none.
 # An HQ-shaped lane (hq_*) owns the language of its name by definition, table or no table (a legacy hq_C seat under
 # FLEET-16 keeps the fallback; test_gate_s4e_next_serves_own_lane arm (c)); the rule bites the OFFICERS the table
-# names for nothing: ceo, coo, cto today, and the cfo the day rebus leaves its cell.
+# names for nothing: the officer, coo, cto today, and the cfo the day rebus leaves its cell.
 s4e_seat_owns_a_language() { local _l _who; _who="$(s4e_my_lane 2>/dev/null)"; [ -n "$_who" ] || _who="$ME"; case "$_who" in hq_*) return 0;; esac; for _l in $(s4e_lane_languages); do [ "$(s4e_lane_owner_of_language "$_l")" = "$_who" ] && return 0; done; return 1; }
-# ⛔ THE ANY-LANE FALLBACK CLOSES UNDER TENET FOR EVERY SEAT, ORDINARY AND PROMOTION PATHS ALIKE (ceo CEO-1302 (b), 2026-09-27): an HQ
-# runs only its own language (CEO-1232) and holds one row, so a language seat whose lane has nothing servable is told so (rc 2), never
+# ⛔ THE ANY-LANE FALLBACK CLOSES UNDER TENET FOR EVERY SEAT, ORDINARY AND PROMOTION PATHS ALIKE (R-1302 (b), 2026-09-27): an HQ
+# runs only its own language (R-1232) and holds one row, so a language seat whose lane has nothing servable is told so (rc 2), never
 # handed another HQ's row; the census at the ruling found zero live rows owned `unassigned`, so the close strands nothing. MODE line 1.
 s4e_any_lane_closed() { case "$(head -1 "$PO/MODE" 2>/dev/null | tr -d '[:space:]')" in TENET|QUINTET) return 0;; esac; return 1; }
 s4e_lane_help() { local _l _o _out=""; for _l in $(s4e_lane_languages); do _o="$(s4e_lane_owner_of_language "$_l")"; _out="$_out$_l -> $_o · "; done; printf '%s' "${_out% · }"; }
@@ -1494,16 +1490,16 @@ s4e_topic_lane() {
     local _t="$1" _owner _lang
     _owner="$(qrow "$_t" | cut -f3)"
     # ⛔ THE EXECUTIVES BELONG IN THIS SHORT-CIRCUIT AND WERE MISSING (hq_B 2026-09-13, found while verifying
-    # CEO-672). It accepted only hq_* names, so a row whose owner cell EXPLICITLY said ceo/cto/coo/cfo fell
+    # R-672). It accepted only hq_* names, so a row whose owner cell EXPLICITLY said officer/cto/coo/cfo fell
     # through and was re-guessed from its prefix. Under NONET four of the seven completeness owners ARE
     # executives, so "an explicit, already-made decision beats a guess" was switched off for exactly the seats
     # the fallback most often names — and the failure is invisible because a guess still returns something.
-    case "$_owner" in ceo|cto|coo|cfo|cao|cqo|hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V) printf '%s' "$_owner"; return 0;; esac
+    case "$_owner" in cto|coo|cfo|cao|cqo|hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V) printf '%s' "$_owner"; return 0;; esac
     _lang="${_t%%-*}"
     case " $(s4e_lane_languages) " in *" $_lang "*) s4e_lane_owner_of_language "$_lang";; esac
 }
-# Identity lane: ceo is never restricted — checked by the CALLER against the identity SHAPE, the same
-# precedent the MODE guard above already set (⛔ NOT s4e_is_hq(), which counts ceo as an HQ and would
+# Identity lane: the officer is never restricted — checked by the CALLER against the identity SHAPE, the same
+# precedent the MODE guard above already set (⛔ NOT s4e_is_hq(), which counts the officer as an HQ and would
 # wrongly lane-restrict the one identity THE LANES table does not partition). An HQ's lane is itself. A
 # seat's lane is read from ITS OWN postoffice HQ file — the same file `ask`'s routing already treats as
 # authoritative — not a second hardcoded seat-number table that can drift from MASTER-PLAN while nobody
@@ -1514,13 +1510,13 @@ s4e_topic_lane() {
 s4e_my_lane() {
     case "$ME" in
       hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V) printf '%s' "$ME"; return 0;;
-      # ⭐⭐ AN EXECUTIVE'S LANE IS ITSELF, ON THE SAME LAW AS AN HQ's (ceo CEO-748, under MODE EXECUTIVE).
+      # ⭐⭐ AN EXECUTIVE'S LANE IS ITSELF, ON THE SAME LAW AS AN HQ's (R-748, under MODE EXECUTIVE).
       # ⛔ THIS IS NOT A NEW RULE, IT IS THE OLD RULE REACHING THE SEATS THAT NOW HOLD THE LANES: the table
-      # above gives all seven languages to ceo/cto/cfo, so under EXECUTIVE the set of lane-determinable
+      # above gives all seven languages to the officer/cto/cfo, so under EXECUTIVE the set of lane-determinable
       # seats was EMPTY and the own-lane pass could never run for anybody. test_gate_next_honours_the_lane_cut
       # measured it the minute the mode flipped and REFUSED rc=2 rather than passing vacuously -- the gate's
       # own note (line 51) had already named `s4e_my_lane` as the real defect and it came true unchanged.
-      # ⛔ THE ceo IS DELIBERATELY ABSENT and stays absent: the comment above this function is law -- the ceo
+      # ⛔ THE OFFICER IS DELIBERATELY ABSENT and stays absent: the comment above this function is law -- the officer
       # is never lane-restricted, and the own-lane pass would restrict it. coo/cto/cfo degrade safely because
       # the own-lane pass tries the WHOLE rank-sorted queue and then falls through to the any-lane pass, so a
       # seat whose lane is empty (the coo, which holds no cure lane at all) wanders rather than starves.
@@ -1528,18 +1524,18 @@ s4e_my_lane() {
       seat*) local _f="$PO/$ME/HQ" _l
              [ -f "$_f" ] || return 0
              _l="$(head -1 "$_f" | tr -d '[:space:]')"
-             # ⭐ A SEAT WHOSE HQ FILE NAMES AN EXECUTIVE HAS THAT EXECUTIVE'S LANE (ceo CEO-748). The law
-             # above restricts the ceo IDENTITY, never a seat reporting to it, and under EXECUTIVE every
+             # ⭐ A SEAT WHOSE HQ FILE NAMES AN EXECUTIVE HAS THAT EXECUTIVE'S LANE (R-748). The law
+             # above restricts the officer IDENTITY, never a seat reporting to it, and under EXECUTIVE every
              # language lane is held by an officer -- so refusing to read an officer's name here would have
              # left every numbered seat lane-blind for the same reason the executives themselves were.
-             case "$_l" in hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|ceo|cto|cfo|coo) printf '%s' "$_l";; esac ;;
+             case "$_l" in hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V|cto|cfo|coo) printf '%s' "$_l";; esac ;;
     esac
 }
 # ⭐⭐ THE ORDER OF WORK -- THE SET OF LIVE LANGUAGES, READ FROM A MACHINE LINE (row `snobol4-icon-postoffice-
-# next-refuses-a-row-of-a-language-parked-by-the-order-of-work-on-mode-line-2`, CEO-489; hq_P found it by
+# next-refuses-a-row-of-a-language-parked-by-the-order-of-work-on-mode-line-2`, R-489; hq_P found it by
 # being served a rank-0 SNOBOL4 row under MODE NONET while THE ORDER OF WORK IS ICON ONLY stood on line 2).
 # ⛔ WHY THE PROSE PARSE WAS THE DEFECT, not merely an incomplete one: it matched the single spelling
-# `ON <LANG> ONLY`, and the ceo wrote the live freeze as `THE ORDER OF WORK IS ICON ONLY` -- an `IS`, not an
+# `ON <LANG> ONLY`, and the officer wrote the live freeze as `THE ORDER OF WORK IS ICON ONLY` -- an `IS`, not an
 # `ON`. The extractor returned EMPTY, empty is documented here as NO FREEZE (never "undetermined"), and so
 # every parked-language row in the queue became servable, silently, with no refusal to read. ⭐ THE SHAPE IS
 # THIS PROJECT'S OWN RECURRING ONE, twice over: an instrument answering a NARROWER question than the one it
@@ -1550,17 +1546,17 @@ s4e_my_lane() {
 # gate and the code under test shared the assumption. A guard and its own canary must not share a failure
 # mode -- the identical lesson the argnote sweep's stale prune already taught this project.
 # ✅ THE CURE: the order of work is DECLARED, in a line the bus reads, never inferred from prose. Spelling,
-# ceo custody, fixed here so the ceo can write it (the row's GOAL: "the ceo writes the MODE line the moment
+# custody, fixed here so the officer can write it (the row's GOAL: "the officer writes the MODE line the moment
 # the gate defines its spelling"):
 #     ORDER-OF-WORK: icon
 # -- a line whose FIRST characters are `ORDER-OF-WORK:`, holding the whitespace/comma-separated list of
 # language tokens that are LIVE; everything else is PARKED. ⭐ MATCHED BY MARKER, NEVER BY LINE NUMBER: the
-# ceo PREPENDS each new dated entry, so a positional line 3 would be shoved to 4 by the next announcement
+# the officer PREPENDS each new dated entry, so a positional line 3 would be shoved to 4 by the next announcement
 # and start answering for a superseded order of work -- the same position-splice defect that makes
 # util_apply_score_grid.py refuse. The FIRST marker line wins, which under prepend-newest is the newest.
 # `ORDER-OF-WORK: all` (any case) means NO restriction, and so does an absent marker: absence falls back to
 # the prose parse below rather than silently opening the queue, so this cure never reads as a loosening.
-# ⭐ THE PROSE FALLBACK IS KEPT AND WIDENED TO THE `IS` FORM, deliberately: until the ceo writes the marker
+# ⭐ THE PROSE FALLBACK IS KEPT AND WIDENED TO THE `IS` FORM, deliberately: until the officer writes the marker
 # line, the fallback is the only thing standing between an idle seat and a parked language, and today's live
 # MODE is exactly the `IS` spelling. It stays a FALLBACK -- the marker line, when present, is the authority.
 # Returns a space-separated lowercase list, or empty for NO RESTRICTION (empty is never "undetermined").
@@ -1586,8 +1582,8 @@ s4e_mode_live_languages() {
 # slug carries no `snobol4-` prefix, the prefix table returned empty, and empty is documented above as
 # LANGUAGE-NEUTRAL -- never frozen out. So a PARKED-language row was handed to a seat by the very picker that
 # prints ⛔ SKIP for its prefixed siblings four lines earlier, in the same run.
-# ⭐ THIS IS CEO-489'S DEFECT ONE AXIS OVER, and that is the part worth carrying. That row cured an extractor
-# that answered a NARROWER question than it was read as answering (it matched `ON <LANG> ONLY`, the ceo wrote
+# ⭐ THIS IS R-489'S DEFECT ONE AXIS OVER, and that is the part worth carrying. That row cured an extractor
+# that answered a NARROWER question than it was read as answering (it matched `ON <LANG> ONLY`, the officer wrote
 # `IS ICON ONLY`, and empty meant no freeze). This one is the same sentence about the other operand: the
 # classifier answers "does this SLUG start with a language prefix?" and is read as "what language is this
 # ROW?". Both fail OPEN -- they leak parked work rather than idling a seat -- which is why neither announces
@@ -1599,7 +1595,7 @@ s4e_mode_live_languages() {
 # ✅ THE CURE, in the order the project's own doctrine ranks evidence -- DECLARED beats INFERRED beats NOTHING:
 #   1. the slug prefix table (unchanged, and still the authority when it answers);
 #   2. a DECLARED `LANGUAGE: <lang>` marker line in the baton -- the same shape as the ORDER-OF-WORK: line
-#      CEO-489 gave the MODE file, and for the same reason: a language that is written down cannot be
+#      R-489 gave the MODE file, and for the same reason: a language that is written down cannot be
 #      mis-parsed out of prose. Anyone minting or re-laning a row should write it;
 #   3. only then INFERENCE, and only from WITNESS PATHS AND ORACLE BINARIES (`corpus/tests/<lang>/`,
 #      `corpus/packages/<lang>/`, sbl/iconx/icont/swipl/gprolog) -- never from a bare file extension and never
@@ -1812,7 +1808,7 @@ s4e_strip_donewhen_comment() {
         print out
     }'
 }
-# ⛔⭐ RUN A ROW'S DONE-WHEN AT DISPATCH, BEFORE HANDING IT TO ANYONE (ceo ruling 2026-09-03 adopting seat09's
+# ⛔⭐ RUN A ROW'S DONE-WHEN AT DISPATCH, BEFORE HANDING IT TO ANYONE (ruling 2026-09-03 adopting seat09's
 # suggestion; row next-and-assign-re-run-a-rows-done-when-before-serving-it). MEASURED by seat09
 # (FINDING-2026-09-03-seat09-pascal-relop-array-field-row-was-already-cured-five-days-before-dispatch.md):
 # pascal-relop-into-array-and-field-lvalues-loses-value sat FREE for FIVE DAYS describing a bug that a sibling
@@ -1830,7 +1826,7 @@ s4e_strip_donewhen_comment() {
 # on spec. A criterion too slow to probe is NOT a failure of the row -- it times out, which is rc=2, which
 # serves the row with a warning. The safe direction is always SERVE.
 s4e_dispatch_timeout() { printf '%s' "${S4E_DISPATCH_PROBE_TIMEOUT:-120}"; }
-# ⛔ A PROBE'S BUDGET KILLS ITS WHOLE TREE (coo 2026-11-01, CEO-2107 as amended: "a probe that outlives its budget is killed by its timeout and reported";
+# ⛔ A PROBE'S BUDGET KILLS ITS WHOLE TREE (coo 2026-11-01, R-2107 as amended: "a probe that outlives its budget is killed by its timeout and reported";
 # Lon: "how do all the orphans get created? fix that."). GNU timeout signals only its own process group, and every runner wraps its programs in its OWN
 # `timeout -k 10 1500`, a second group: when the probe's timeout fired, the runner's group survived, was reparented to systemd, and ran on for up to 25
 # minutes (2026-11-01 14:2x: three XSB smoke trees from three timed-out assign probes, one `as` at 1.5 GB, the coo's scope pinned at its 4 GB memory.high).
@@ -1864,7 +1860,7 @@ s4e_donewhen_is_noop() {   # $1 = raw DONE-WHEN text; rc 0 = certifies nothing
 # 64byte-excess: ~88 batons carry seat05's 09-01 template whose compile step reads
 #     timeout -k 5 300s SCRIP/scrip --compile ... || { echo "... compile failed"; exit 1; }
 # so a MISSING or not-yet-built ./scrip reports rc=1 -- "there is real work here", which the dispatch probe serves
-# SILENTLY -- instead of rc=2 -- "I could not measure", which it serves WITH a warning. The ceo root's binary was
+# SILENTLY -- instead of rc=2 -- "I could not measure", which it serves WITH a warning. The officer root's binary was
 # timestamped 21 minutes AFTER the assign that read that row red. ⭐ THE CURE IS ONE GUARD AT THE TWO RUNNER SITES,
 # NOT A SWEEP OF 88 BATONS: a criterion is TEXT, and the property "this text drives the compiler" is readable from
 # the text. Sweeping the batons would fix the ones that exist today and none of the ones written tomorrow.
@@ -1911,7 +1907,7 @@ s4e_donewhen_is_placeholder() {   # $1 = raw column-0 DONE-WHEN text (already ex
 # never graded. ⭐ This holds even if a future edit re-breaks the extractor, and it also catches a criterion an
 # author simply mis-wrote -- the two cases a runner cannot tell apart and must not guess between.
 # ⛔⭐⭐ MORE THAN ONE COLUMN-0 `DONE-WHEN:` LINE IS AN AMBIGUOUS CONTRACT, AND ONLY THE FIRST HAS EVER RUN
-# (hq_T 2026-09-05, found while censusing the truncation class on the ceo's seed of six suspects). The extractor
+# (hq_T 2026-09-05, found while censusing the truncation class on the officer's seed of six suspects). The extractor
 # takes the first line by design; a baton carrying a SECOND column-0 DONE-WHEN: whose text is a real command has
 # therefore been closing on HALF ITS OWN CONTRACT, silently, with the other half sitting in the file where every
 # human reader counts it as part of the bar. ⭐ MEASURED: 39 live batons carry more than one such line; 10 extras
@@ -1924,7 +1920,7 @@ s4e_donewhen_is_placeholder() {   # $1 = raw column-0 DONE-WHEN text (already ex
 # concatenates them invents a bar nobody wrote. Same call, and the same wording, as s4e_donewhen_hidden_elsewhere
 # makes for its own case. The mint placeholder and the self-refusing stub are NOT counted -- a leftover placeholder
 # under a real criterion is untidy, not ambiguous, and 4 of the 39 are exactly that.
-# ⛔⭐⭐ A BYTE-IDENTICAL SECOND LINE IS NOT A SECOND CONTRACT (hq_T 2026-09-05, ceo's baton-repair order on the
+# ⛔⭐⭐ A BYTE-IDENTICAL SECOND LINE IS NOT A SECOND CONTRACT (hq_T 2026-09-05, the officer's baton-repair order on the
 # four open rows of this class). The refusal above rests entirely on "which line is the contract is a question
 # about intent" -- and when the two texts are IDENTICAL there is no such question: the extractor taking the first
 # loses nothing, no half of any bar went unrun, and the row was never in the false-closure hazard at all. Counting
@@ -2048,8 +2044,8 @@ s4e_dispatch_probe() {
     case "$rc" in 124|137) _dp_why="did not finish within ${to}s (probe budget, not the row's fault)"; return 2;; esac
     [ "$rc" = 0 ] && { _dp_why="exited 0"; return 0; }
     _dp_why="exited $rc"; return 1; }
-# ⛔⭐ STATIC, PRE-CLAIM PLACEHOLDER REFUSAL (row mint-dispatch-refuses-a-placeholder-done-when, ceo
-# CEO-286 2026-09-05): `next` and `assign` used to DISPATCH a row whose DONE-WHEN is still the mint
+# ⛔⭐ STATIC, PRE-CLAIM PLACEHOLDER REFUSAL (row mint-dispatch-refuses-a-placeholder-done-when, the officer
+# R-286 2026-09-05): `next` and `assign` used to DISPATCH a row whose DONE-WHEN is still the mint
 # boilerplate -- s4e_dispatch_probe already answers "could not measure" (rc=2) for it, correctly, but
 # both sides then SERVED the row anyway, indistinguishable from any other rc=2 (a slow criterion, a
 # missing compiler). A row opened onto an unmeasurable criterion can never be CLOSED by any amount of
@@ -2072,14 +2068,14 @@ s4e_predispatch_placeholder_check() {   # $1 = topic; rc 0 = placeholder (refuse
     fi
     return 1; }
 # ⛔⭐⭐ THE PREMISE GATE — THE SYMMETRIC HALF OF `done` (coo 2026-09-20, row instruments-claim-computes-the-
-# rows-premise-the-way-done-computes-its-done-when; ceo CEO-1002, on Lon's rule that a failure the system never
+# rows-premise-the-way-done-computes-its-done-when; R-1002, on Lon's rule that a failure the system never
 # asked anyone to avoid is a row against the SYSTEM). THE ASYMMETRY BEING CURED: the bus VERIFIES THE EXIT and
 # TRUSTS THE ENTRY. `done` runs the baton's DONE-WHEN and refuses on a red, so no seat can forget to prove a row
 # finished; `claim` and `next` ran NOTHING about the premise the row is built on, so a stale premise was
 # discovered only after the hour was spent. ⭐ MEASURED COST, ONE DAY, 2026-09-20, six wheel-spins and every one
 # of them cheap to check: the cfo built a 51-entry return-class taxonomy and withdrew it because the allocator
 # never collects (a fact in their own file); hq_prolog banked a trail mark to cure findall and it changed nothing
-# because the trail was empty; the cto announced a cure for a raw push a watchpoint then proved dead; the ceo
+# because the trail was empty; the cto announced a cure for a raw push a watchpoint then proved dead; the officer
 # inferred effort from `ps` and escalated a wrong finding to Lon; hq_snobol4 opened row 1 on a premise reading red
 # in every SnoRungs run when the entry is green at both arenas; hq_prolog inherited an eight-program bisect with three
 # claims false on this tree.
@@ -2160,7 +2156,7 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
          printf '  to be THE ONE CHEAP COMMAND: one that needs more than %ss is a finding about the premise, not a slow\n' "$to" >&2
          printf '  machine. Raise it for this claim with S4E_PREMISE_TIMEOUT=<seconds>, or make it cheaper.\n' >&2
          rm -f "$log"; return 0;;
-      126|127|2) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN exited %s -- %s -- so it was never graded (CEO-786:\n' "$rc" \
+      126|127|2) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN exited %s -- %s -- so it was never graded (R-786:\n' "$rc" \
            "$([ "$rc" -eq 127 ] && echo 'command not found' || { [ "$rc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
          printf '  cannot measure is not red). Admitted unverified. What it said:\n' >&2
          [ -s "$log" ] && sed -e 's/^/  | /' "$log" | tail -8 >&2
@@ -2189,7 +2185,7 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     printf '       inside a row built on it. Six seats spent that hour on 2026-09-20 alone; that is why this runs.\n' >&2
     printf '    WHAT TO DO, in order: (1) READ the premise output above -- it usually names what changed;\n' >&2
     printf '       (2) REWRITE the row against what is true today (its GOAL, its DONE-WHEN and its PREMISE-WHEN), or\n' >&2
-    printf '       (3) if the row is now moot, say so to the ceo in one line and let it be retired -- a premise that\n' >&2
+    printf '       (3) if the row is now moot, say so to the cto in one line and let it be retired -- a premise that\n' >&2
     printf '       went green elsewhere is work someone else already did, which is a finding, not a loss.\n' >&2
     printf '    ⛔ Do NOT weaken the PREMISE-WHEN to get past this. That is the false-green trap in its entry form.\n' >&2
     printf '    If the PREMISE is wrong and the ROW is right, that is a real event and the honest exit is loud:\n' >&2
@@ -2250,8 +2246,8 @@ s4e_age_compact() { [ -n "${1:-}" ] && [ "$1" -gt 0 ] 2>/dev/null || { echo "-";
     if   [ "$_s" -lt 3600 ]; then printf '%dm\n' $(( _s / 60 ))
     elif [ "$_s" -lt 86400 ]; then printf '%dh%02dm\n' $(( _s / 3600 )) $(( (_s % 3600) / 60 ))
     else printf '%dd%02dh\n' $(( _s / 86400 )) $(( (_s % 86400) / 3600 )); fi; }
-# ⛔⭐⭐ THE JOINED LOCK TEST — ONE CENSUS, NOT TWO HALF-CENSUSES (ceo CEO-297, 2026-09-05, reconciling two
-# readings that were each wrong in OPPOSITE directions at the FLEET-12 flip). Measured: the ceo censused by the
+# ⛔⭐⭐ THE JOINED LOCK TEST — ONE CENSUS, NOT TWO HALF-CENSUSES (R-297, 2026-09-05, reconciling two
+# readings that were each wrong in OPPOSITE directions at the FLEET-12 flip). Measured: the officer censused by the
 # claim file's STATUS line and named 52 seat locks older than the flip; `unclaim` then refused 43 of them because
 # their QUEUE rows read DONE while the claim file still said RUNNING. hq_T censused by claim status alone and read
 # zero live locks by retired seats. A RUNNING status line alone OVER-reports (a closed row whose claim was never
@@ -2274,7 +2270,7 @@ s4e_claim_verdict() { _t="${1:-}"; _c="$PO/claims/$_t.claim"
     _qs="$(awk -F'\t' -v T="$_t" '$2==T{print $4; exit}' "$PO/QUEUE.tsv" 2>/dev/null)"
     [ -n "$_qs" ] || { echo "ORPHAN"; return; }
     # ⛔⭐ "NOT DONE" IS THREE STATES, NOT ONE, AND READING IT AS ONE OVER-REPORTS -- measured by this very
-    # instrument on its first run (hq_T 2026-09-05). CEO-297 says "queue row is not DONE"; the live vocabulary
+    # instrument on its first run (hq_T 2026-09-05). R-297 says "queue row is not DONE"; the live vocabulary
     # closes a row THREE ways -- DONE, RETIRED and SUPERSEDED -- so a `DONE*` test called two closed rows open
     # and printed them as hidden work. That is the same shape as the half-census this instrument exists to
     # replace, reproduced inside the replacement, which is why the closed set is spelled out here once.
@@ -2336,7 +2332,7 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
 # see the "COLUMN 3 IS DELIBERATELY NOT TOUCHED" note at claim's own acquisition site, which documents col3
 # hq_B + claim seat12 as a MEANINGFUL pair (umbrella-HQ + working-seat), not drift to be cleaned. So this
 # ONLY FILLS AN EMPTY CELL — never overwrites an existing value, deliberate or not; an already-set col3
-# stays "a question routed to hq_P/ceo", exactly as that note already ruled. Writes the ASSIGNEE's OWN lane
+# stays "a question routed to hq_P/officer", exactly as that note already ruled. Writes the ASSIGNEE's OWN lane
 # (its postoffice HQ file, or itself if the assignee IS an HQ) — never the assignee's bare name, which would
 # be the exact drift the existing note warns against.
 s4e_backfill_owner_lane() {
@@ -2392,10 +2388,10 @@ case "$cmd" in check|clear) ;; *)
   elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_n" >&$_bfd
   elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread (announced above once); bash harness/scripts/s4e_msg.sh check\n' "$ME" "$_unread" >&$_bfd; fi ;;
 esac
-# ⭐ ONE PROTOCOL NUMBER, HOISTED (ceo 2026-08-29, row s4e-clear-needs-protocol-version-guard): next() and clear() both
+# ⭐ ONE PROTOCOL NUMBER, HOISTED (2026-08-29, row s4e-clear-needs-protocol-version-guard): next() and clear() both
 # guard on it now, and two inline copies of one value is the drift class this file convicts elsewhere. Bump it HERE and
 # in the shared PROTOCOL-VERSION file together.
-# ⛔ BUMPED 4 -> 5 (ceo ruling 2026-08-29, on hq_B's ask; "the word is given"). WHY A BUMP RATHER THAN A
+# ⛔ BUMPED 4 -> 5 (ruling 2026-08-29, on hq_B's ask; "the word is given"). WHY A BUMP RATHER THAN A
 # CADENCE: the state-column cure (d1ae2d30) lives in EACH SEAT'S OWN s4e_msg.sh, so a clone that has not
 # pulled keeps writing lying FREE rows at every claim. Measured after the one-time reconcile of 18 rows: the
 # A count went to 1 within minutes, and that one row was minted by a seat whose clone predates the cure. So
@@ -2406,16 +2402,16 @@ esac
 # ⛔⛔ ORDERING IS LOAD-BEARING AND IS THE ONE WAY THIS GOES WRONG: this commit must be PUSHED BEFORE
 # $PO/PROTOCOL-VERSION is raised to 5. The shared file is what seats compare against; raise it first and
 # every seat is refused work while the commit that would fix them does not yet exist on origin.
-# ⛔ BUMPED 5 -> 6 (ceo CEO-1356, 2026-09-28, at the QUINTET flip): the mode-admission table lives in each seat's own clone, and a
-# clone older than 3a1b8443b has no QUINTET arm, so a stood-down HQ is ADMITTED by falling out of the case (CEO-755b) -- measured:
+# ⛔ BUMPED 5 -> 6 (R-1356, 2026-09-28, at the QUINTET flip): the mode-admission table lives in each seat's own clone, and a
+# clone older than 3a1b8443b has no QUINTET arm, so a stood-down HQ is ADMITTED by falling out of the case (R-755b) -- measured:
 # hq_prolog claimed a row at 17:24:49, fifty-four seconds after MODE read QUINTET. Raising the number makes next() and clear()
 # refuse from every clone below it until it pulls, and a pulled clone refuses the stood-down seat by name.
-# ⛔ BUMPED 6 -> 7 (ceo CEO-1811, 2026-10-17, at the QUINTET redefinition): an older clone's QUINTET arm admits hq_snocone and refuses the live hq_runtime.
+# ⛔ BUMPED 6 -> 7 (R-1811, 2026-10-17, at the QUINTET redefinition): an older clone's QUINTET arm admits hq_snocone and refuses the live hq_runtime.
 S4E_PROTO=7
 case "$cmd" in
   send)  [ -n "${2:-}" ] || s4e_need send "a destination seat" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "A prose body must come through --stdin: a body in double quotes is expanded by YOUR shell before send ever runs."
          [ -n "${3:-}" ] || s4e_need send "a topic" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "The topic is the subject line the recipient sorts by; it becomes a filename, so keep it a slug."
-         to="$(s4e_canon "$2")"; topic="$3"; shift 3; [ "$to" = ceo ] && { echo "⛔ REFUSED: the ceo seat was fired 2026-10-31 (CEO-2088; CTO-469): a ruling ask, a design gap or a grant goes to the cto, a red, a fact or a test request to the coo" >&2; exit 2; }; s4e_assert_box "$to" destination; s4e_assert_not_drained "$to"
+         to="$(s4e_canon "$2")"; topic="$3"; shift 3; s4e_assert_box "$to" destination; s4e_assert_not_drained "$to"
          # ⛔ THE TOPIC BECOMES A FILENAME, SO IT IS VALIDATED BEFORE IT BECOMES A PATH (s191, seat1).  MEASURED, not hypothetical:
          # calling `send seat8 "<a whole message containing harness/scripts/...>"` made the topic carry slashes, the mv failed with
          # "No such file or directory" -- AND THE SCRIPT PRINTED `sent` ANYWAY.  A seat-to-seat message that is silently dropped
@@ -2524,14 +2520,14 @@ case "$cmd" in
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
   resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
   ask)   [ -n "${2:-}" ] || s4e_need ask "a topic" "s4e_msg.sh ask <topic> \"your question\"" "Sends q-<topic> to the HQ named in your postoffice HQ file, and refuses rc=2 when none is set."
-         # ⛔ TWO FORMS AND --stdin (ceo CEO-2081). MEASURED: the cqo and the cfo each ran ask <seat> <topic> --stdin within the hour; the verb
-         # took the seat as the topic and mailed the ceo the literal body "<topic> --stdin", the question itself lost. A first argument that
+         # ⛔ TWO FORMS AND --stdin (R-2081). MEASURED: the cqo and the cfo each ran ask <seat> <topic> --stdin within the hour; the verb
+         # took the seat as the topic and mailed the officer the literal body "<topic> --stdin", the question itself lost. A first argument that
          # names a mailbox is now the addressee, and --stdin reads the body from standard input as send does; an empty body is refused.
          if [ -n "${3:-}" ] && [ -d "$PO/$2/inbox" ]; then _hq="$2"; topic="$3"; shift 3; else topic="$2"; shift 2; _hq="$(s4e_hq)"; fi
          [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Name the seat: s4e_msg.sh ask <seat> <topic> --stdin, or set S4E_HQ." >&2; exit 2; }
          if [ "${1:-}" = "--stdin" ]; then _body="$(cat)"; else _body="$*"; fi
          [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED (rc 2): ask carries no question -- give it after the topic in quotes, or with --stdin on standard input. Nothing sent." >&2; exit 2; }
-         printf '%s\n' "$_body" | "$0" send "$_hq" "q-$topic" --stdin; exit $?;;   # send refuses a multi-line ARGUMENT; the body goes by its stdin (cfo, CEO-2081)
+         printf '%s\n' "$_body" | "$0" send "$_hq" "q-$topic" --stdin; exit $?;;   # send refuses a multi-line ARGUMENT; the body goes by its stdin (cfo, R-2081)
   # ⛔ CLEAR DELETES ONLY WHAT CHECK DISPLAYED (hq_C s269). MEASURED, not hypothetical: a message arrived
   # between this seat's `check` and its `clear`, and the old `rm -f *.msg` destroyed it UNREAD and
   # UNRECOVERABLE -- clear does not archive, and no sent-copy is kept anywhere. The banner had even printed
@@ -2542,7 +2538,7 @@ case "$cmd" in
          echo "[$ME] inbox: $n message(s)"; : > "$lc"
          for f in "$d"/*.msg; do [ -f "$f" ] || continue; basename "$f" >> "$lc"; echo "--- $(basename "$f")"; cat "$f"; done;;
   clear) d="$PO/$ME/inbox"; lc="$PO/$ME/.last-check"
-         # ⛔⭐ N-guard (ceo 2026-08-29, row s4e-clear-needs-protocol-version-guard, on hq_P's measured hole): clear gets the
+         # ⛔⭐ N-guard (2026-08-29, row s4e-clear-needs-protocol-version-guard, on hq_P's measured hole): clear gets the
          # SAME refusal next has. The archive cure at the mv below protects only clones that carry it — hq_B's stale clone
          # ran the old rm path and destroyed 5 read messages with archive/=0 — and the seats most likely to destroy mail
          # are exactly the stale ones. This guard reaches them through the shared PROTOCOL-VERSION bump: their NEXT already
@@ -2559,12 +2555,12 @@ case "$cmd" in
          _cl=0; _kept=0; _fail=0
          for f in "$d"/*.msg; do [ -f "$f" ] || continue; _b="$(basename "$f")"
            if grep -qxF "$_b" "$lc" 2>/dev/null; then
-             # ⛔⭐⭐ ARCHIVE, NEVER DESTROY (hq_P 2026-08-28, seat06's witness, ceo-granted).  `.last-check` is written by
+             # ⛔⭐⭐ ARCHIVE, NEVER DESTROY (hq_P 2026-08-28, seat06's witness, officer-granted).  `.last-check` is written by
              # check's ITERATION LOOP -- one basename per file, unconditionally -- so it records what check ITERATED, never
              # what the reader actually SAW.  This line used to be `rm -f "$f"`, so ANY truncation between check's `cat` and
              # the reader (a pipe through head/tail, a pager, a context clip) destroyed the body permanently while the seat
              # believed it had read its mail.  MEASURED, not hypothetical: it destroyed a message from hq_P to seat06, and
-             # one of ceo's the same morning.  ⭐ Note the ORTHOGONAL axis was already guarded -- clear refuses to delete
+             # one of the officer's the same morning.  ⭐ Note the ORTHOGONAL axis was already guarded -- clear refuses to delete
              # post-check arrivals (KEPT UNREAD below) -- so the arrival race was thought about; this is the other axis.
              # ⛔ AND A FAILED ARCHIVE KEEPS THE MAIL: falling back to rm would reinstate the exact defect being cured.
              if mkdir -p "$PO/$ME/archive" 2>/dev/null && mv -f "$f" "$PO/$ME/archive/$_b" 2>/dev/null; then _cl=$((_cl+1))
@@ -2615,8 +2611,8 @@ case "$cmd" in
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
          [ "$2" = --probe-overlap ] && { s4e_claim_probe_overlap; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"; mkdir -p "$PO/claims"
-         # ⭐ AN ASSIGNED ROW ITS OWNER CLAIMS BY NAME IS STARTED, THE SAME MARK `next` WRITES WHEN IT SERVES ONE (the coo 2026-09-27, ceo
-         # CEO-1306): PASS 1 appends RUNNING as it serves ASSIGNED->RUNNING, but `claim` on the same row said "already yours" and wrote
+         # ⭐ AN ASSIGNED ROW ITS OWNER CLAIMS BY NAME IS STARTED, THE SAME MARK `next` WRITES WHEN IT SERVES ONE (the coo 2026-09-27, the officer
+         # R-1306): PASS 1 appends RUNNING as it serves ASSIGNED->RUNNING, but `claim` on the same row said "already yours" and wrote
          # nothing, so an owner who took an assigned row by name left no trace a sweep could read -- util_queue_visibility_census.py's
          # BLOCKING-RED PAST WINDOW counts an assignment alone as NOT started. Once, with the bus notice, never twice.
          if [ -f "$c" ]; then own="$(head -1 "$c")"; if [ "$own" = "$ME" ]; then echo "already yours"
@@ -2631,7 +2627,7 @@ case "$cmd" in
               # neither takes a lock -- re-running a premise against a lock that already exists would refuse a
               # seat access to its OWN running row, which is eviction wearing a verification.
               # ⭐ AND HERE RATHER THAN IN EACH VERB, for the reason this file already gives twice on this very
-              # line (the queue-column write, hq_B; the claim announcement, CEO-1002): `next` reaches its lock by
+              # line (the queue-column write, hq_B; the claim announcement, R-1002): `next` reaches its lock by
               # running `$0 claim`, so one wiring covers the picker, the deliberate claim and any future verb that
               # claims through the primitive instead of re-implementing it. A cure that enumerates its acquiring
               # verbs silently reopens the first time a new one is minted.
@@ -2641,11 +2637,11 @@ case "$cmd" in
               # ⛔ A CLAIM LOCKS A ROW, SO A TOPIC WITH NO QUEUE.tsv ROW IS REFUSED rc 2 BEFORE ANY LOCK (coo 2026-10-14:
               # hq_templates claimed zzz-nonexistent-row, the bus wrote claims/zzz-nonexistent-row.claim and announced it
               # fleet-wide, and s4e_set_row_state's no-op on a rowless topic was swallowed by its `|| true` below).
-              [ -n "$(qrow "$topic")" ] || { echo "⛔ REFUSED (rc 2): no QUEUE.tsv row is named $topic -- a claim locks a row and there is none to lock; nothing written, nothing announced. Claim the row's exact topic, or ask the ceo to mint it."; exit 2; }
-              # ⛔⭐ A SEAT HOLDS AT MOST TWO LIVE ROWS (CLAUDE.md SOP 6; ceo CEO-2078, 2026-10-31). Measured: the coo held four and
+              [ -n "$(qrow "$topic")" ] || { echo "⛔ REFUSED (rc 2): no QUEUE.tsv row is named $topic -- a claim locks a row and there is none to lock; nothing written, nothing announced. Claim the row's exact topic, or ask the officer to mint it."; exit 2; }
+              # ⛔⭐ A SEAT HOLDS AT MOST TWO LIVE ROWS (CLAUDE.md SOP 6; R-2078, 2026-10-31). Measured: the coo held four and
               # hq_templates three, every extra one waiting on another seat and held as a claim instead of parked, so the picker
               # starved rows under them and the follow-up instrument flagged them stale for 41 hours. The remedy IS the park: a row
-              # in BLOCKED-ON:/PARKED-AWAITING:/PARKED state is not live here. An ASSIGNED-BY claim not yet RUNNING is the ceo's
+              # in BLOCKED-ON:/PARKED-AWAITING:/PARKED state is not live here. An ASSIGNED-BY claim not yet RUNNING is the officer's
               # lock, not the seat's hold, and the "already yours" path above never meets this count: the go is never refused.
               _cap_n=0; _cap_list=""
               for _c2 in "$PO"/claims/*.claim; do [ -f "$_c2" ] || continue
@@ -2657,7 +2653,7 @@ case "$cmd" in
                 _cap_n=$((_cap_n+1)); _cap_list="$_cap_list $_c2t"
               done
               if [ "$_cap_n" -ge 2 ]; then
-                echo "⛔ REFUSED (rc 1): $ME already holds $_cap_n live row(s):$_cap_list -- a seat holds at most two (CLAUDE.md SOP 6, ceo CEO-2078). Finish one (done), or park the one that waits on another seat: park <topic> BLOCKED-ON:<the row it waits for> -- then claim again. Nothing written, nothing announced."
+                echo "⛔ REFUSED (rc 1): $ME already holds $_cap_n live row(s):$_cap_list -- a seat holds at most two (CLAUDE.md SOP 6, R-2078). Finish one (done), or park the one that waits on another seat: park <topic> BLOCKED-ON:<the row it waits for> -- then claim again. Nothing written, nothing announced."
                 exit 1
               fi
               s4e_premise_gate "$topic" claim || exit 1
@@ -2679,18 +2675,18 @@ case "$cmd" in
                 # ⛔ COLUMN 3 IS DELIBERATELY NOT TOUCHED. serve() prints it as "owner", but on the live queue it
                 # carries an HQ on rows a SEAT holds (corpus-crosscheck-probe-total-conversion: col3 hq_B, claim
                 # seat12) -- which reads as umbrella-HQ + working-seat, not as drift. Writing the claimant there
-                # would destroy that, so col3 stays a question routed to hq_P/ceo, not a field this cure assumes.
+                # would destroy that, so col3 stays a question routed to hq_P/officer, not a field this cure assumes.
                 # ⭐ REMEMBER A RESTRICTION BEFORE OVERWRITING IT. The column must still learn about beginnings
                 # (hq_B's cure: 15 of 16 claimed rows read FREE before it), so a claimed RESTRICTED row still reads
                 # CLAIMED:<x> -- but unclaim would then have no way to know the row was ever restricted, and would
                 # correctly-but-destructively drive it to FREE. The claim file is the natural place: it already
                 # carries the owner and the DONE/OVERRIDE-BY receipts, it is deleted with the lock, and it cannot
                 # outlive the episode it describes. ⛔ ONLY RESTRICTED is remembered: an ASSIGNED dispatch really is
-                # spent on release and must NOT be restored (that is ceo's 2026-08-28 ruling, still governing).
+                # spent on release and must NOT be restored (that is the officer's 2026-08-28 ruling, still governing).
                 { _pre="$(s4e_row_state "$topic")"; if s4e_restricted_to "$_pre" >/dev/null; then printf 'PRIOR-STATE %s\n' "$_pre" >> "$c"; fi; }
                 s4e_set_row_state "$topic" "CLAIMED:$ME" || true
                 echo "claimed $topic"
-                # ⛔⭐ THE ANNOUNCEMENT IS PART OF TAKING THE ROW (ceo CEO-1002). `next` reaches its lock through this
+                # ⛔⭐ THE ANNOUNCEMENT IS PART OF TAKING THE ROW (R-1002). `next` reaches its lock through this
                 # very line (it runs `$0 claim`), so wiring it HERE covers the picker and the deliberate claim both --
                 # the same reasoning hq_P used to put the queue-column write here rather than in each verb.
                 s4e_announce_claim "$topic"
@@ -2717,7 +2713,7 @@ case "$cmd" in
              why="${3:-released by HQ}"; why="$why (forced by $ME over $own's claim)"
          fi
          # ⛔⭐ A COMPUTED DONE AND AN OVERRIDE DONE ARE NOT THE SAME THING, AND UNTIL 2026-08-27 THIS LINE COULD NOT
-         # TELL THEM APART (hq_C, as queue custodian, on a ceo audit ask). `done` at :288 appends the SAME bare `DONE`
+         # TELL THEM APART (hq_C, as queue custodian, on an officer audit ask). `done` at :288 appends the SAME bare `DONE`
          # token on BOTH paths -- the DONE-WHEN-passed path and the S4E_DONE_OVERRIDE path -- so a seat who overrode
          # with the reason "Session-boundary pause, not task completion" left a claim indistinguishable from a genuine
          # computed receipt. This refusal then made it PERMANENT: corpus-suites-consolidation, a genuinely open row,
@@ -2736,7 +2732,7 @@ case "$cmd" in
            fi
          fi
          why="${why:-${3:-released unworked}}"
-         # ⭐ unclaim-leaves-row-invisible-column-not-freed (ceo, 2026-08-28, on hq_P's icon-n2 measurement) —
+         # ⭐ unclaim-leaves-row-invisible-column-not-freed (2026-08-28, on hq_P's icon-n2 measurement) —
          # unclaim removed only the claim FILE and never touched QUEUE.tsv's state column, so a released row
          # stayed ASSIGNED/ASSIGNED:<seat> and next()'s PASS 3 (which serves only FREE|'') never saw it again —
          # the exact "half the hiding" this case's own header already named. Mirrors `park`'s write, same awk
@@ -2747,10 +2743,10 @@ case "$cmd" in
          # rewriter" that function's own header says it was factored out to prevent, grown back four lines below it.
          # Identical behaviour (col4 -> FREE), now through the one writer, so it inherits the lock instead of racing.
          # ⭐ A RESTRICTION IS NOT SPENT BY LETTING GO OF THE LOCK -- restore it rather than freeing the row.
-         # Everything else still goes to FREE, unchanged: ceo's 2026-08-28 ruling governs DISPATCH and is untouched.
-         # ⭐ unclaim-clobbers-a-park-written-around-the-claim-so-next-serves-a-superseded-row (ceo MEASURED 2026-09-02 ~14:55,
-         # cured hq_B the same day): ceo force-parked AROUND hq_B's live claim (S4E_PARK_FORCE=1 -> SUPERSEDED:folded-into-...),
-         # hq_B's unclaim then drove the column to FREE by the unconditional write below, erasing the park, and ceo's own
+         # Everything else still goes to FREE, unchanged: the officer's 2026-08-28 ruling governs DISPATCH and is untouched.
+         # ⭐ unclaim-clobbers-a-park-written-around-the-claim-so-next-serves-a-superseded-row (MEASURED 2026-09-02 ~14:55,
+         # cured hq_B the same day): the officer force-parked AROUND hq_B's live claim (S4E_PARK_FORCE=1 -> SUPERSEDED:folded-into-...),
+         # hq_B's unclaim then drove the column to FREE by the unconditional write below, erasing the park, and the officer's own
          # `next` LOCKED the resurrected rank-0 superseded row as topmost work -- twice, because the second unclaim did it
          # again. ⛔ A PARK WRITTEN AROUND A CLAIM IS NOT SPENT BY THE CLAIM'S RELEASE. The 2026-08-28 "always FREE" ruling
          # governs DISPATCH of the CLAIM-SHAPED states only -- CLAIMED:<seat>, ASSIGNED, ASSIGNED:<seat>, FREE, empty -- and is
@@ -2822,7 +2818,7 @@ case "$cmd" in
               printf '             MEASURING:<seat>:<pid>  (your own live measurement: the Stop gate passes while the pid lives; the sweep reverts it to ASSIGNED when it ends)\n' >&2
               printf '   Accepted: FREE PARKED BLOCKED ASSIGNED DONE SUPERSEDED RETIRED GRANT-NEEDED PARKED-LON-HOLD\n' >&2
               printf '             PARKED-AWAITING:<topic>  BLOCKED-ON:<topic>  ASSIGNED:<seat>  CLAIMED:<seat>\n' >&2
-              printf '             RESTRICTED:<seat>   (only <seat> may ever work it; survives unclaim -- for CEO-19 HQ-only rows)\n' >&2
+              printf '             RESTRICTED:<seat>   (only <seat> may ever work it; survives unclaim -- for R-19 HQ-only rows)\n' >&2
               printf '             DONE:<why>  SUPERSEDED:<why>  GRANT-NEEDED:<why>  PARKED-UMBRELLA:<why>\n' >&2
               printf '   ⭐ Put the REASON in the baton (%s/tasks/%s.task.md) — the queue is an INDEX, not a brief store.\n' "$PO" "$topic" >&2
               printf '   ⭐ To make a park SELF-CLEARING, spell it PARKED-AWAITING:<blocker> or BLOCKED-ON:<blocker>;\n' >&2
@@ -2962,7 +2958,7 @@ case "$cmd" in
                 printf '      clone reads a stale manifest. `git pull --rebase` in SCRIP before you close, or this guard\n' >&2
                 printf '      can pass on a manifest that no longer matches origin.\n' >&2
                 exit 1; fi
-              # ⛔⭐⭐ DONE IS COMPUTED, NEVER DECLARED (ARCH-FLEET-CEO.md LAW 1 "NO HAND-TYPED VERDICTS", γ port).
+              # ⛔⭐⭐ DONE IS COMPUTED, NEVER DECLARED (the retired fleet architecture page LAW 1 "NO HAND-TYPED VERDICTS", γ port).
               # Until now `done` appended the DONE marker UNCONDITIONALLY and never ran the task's DONE-WHEN --
               # so the one command whose entire job is to certify completion accepted the seat's word for it.
               # That is the exact shape of the v1 free-r10 inversion (an HQ ruling DONE on prose), sitting inside
@@ -3088,7 +3084,7 @@ case "$cmd" in
                   # beginning with `cd` — a natural and common way to write one — died with "timeout: failed to run
                   # command 'cd'" and exit 127, making that row permanently uncloseable. My own certifier rejecting
                   # valid work. Found by running all 86 live criteria from the CWD `done` actually uses.
-                  # ⭐⭐ THE OUTPUT IS CAPTURED, NOT DISCARDED (hq_C 2026-08-27, proposed to ceo and approved; CEO-30).
+                  # ⭐⭐ THE OUTPUT IS CAPTURED, NOT DISCARDED (hq_C 2026-08-27, proposed to the officer and approved; R-30).
                   # A MUTE CORRECT GATE IS ITS OWN DEFECT CLASS. This refusal used to print ONLY the exit code, so
                   # "DONE-WHEN exited 2" meant "work unfinished" OR "scrip binary missing" OR "path wrong" OR "corpus
                   # subtree moved" -- indistinguishable. MEASURED COST: hq_C's own row refused three times in one
@@ -3158,7 +3154,7 @@ case "$cmd" in
                       printf '\n⛔ REFUSED (rc=2): the DONE-WHEN did NOT FINISH within %ss (elapsed %ss), so `done` COULD NOT MEASURE it.\n' "$_dwto" "$_dwel" >&2
                       printf '    This is NOT a red criterion, NOT a pass and NOT a skip. The claim is UNCHANGED and the row stays open.\n' >&2
                     elif [ "$rc" -eq 126 ] || [ "$rc" -eq 127 ] || [ "$rc" -eq 2 ]; then
-                      # ⛔ CEO-786 (coo 2026-09-16; hq_prolog's rung-9 row exited 127 in zero seconds for eleven days and was read as RED): rc 126/127
+                      # ⛔ R-786 (coo 2026-09-16; hq_prolog's rung-9 row exited 127 in zero seconds for eleven days and was read as RED): rc 126/127
                       # (not executable / command not found) and rc 2 (the criterion itself REFUSED) are REFUSALS -- the instrument laws:
                       # cannot measure is not red. The row stays open, the claim unchanged, and the cause is printed from the criterion's own output.
                       printf '\n⛔ REFUSED (rc=2): the DONE-WHEN exited %s -- %s -- so `done` COULD NOT MEASURE it. This is NOT red: fix the criterion (cd into $S4E_HOME/SCRIP, name a script that exists, make it executable) and re-run.\n' \
@@ -3206,7 +3202,7 @@ case "$cmd" in
               # marker is written, because a landing that reds the rungs is NOT DONE however green its own
               # criterion is.  That ordering IS the cure: seat11's DONE-WHEN passed and the row closed, and the
               # 299 red rungs entries were discovered by other seats hours later.  See s4e_codegen_touched above
-              # for why the touch set is COMPUTED and why this CITES a board rather than running one (CEO-697, CEO-1232).
+              # for why the touch set is COMPUTED and why this CITES a board rather than running one (R-697, R-1232).
               _cg_repo="$S4E/SCRIP"; _cg_touch="$(s4e_codegen_touched "$_cg_repo" "$c")"
               if [ -n "$_cg_touch" ]; then
                 printf '\n⭐ CODEGEN CONTROL ARM -- this landing touches codegen, computed from the diff (never asserted):\n'
@@ -3246,24 +3242,24 @@ case "$cmd" in
                         "$_cg_s" "$(printf '%s' "$_cg_inh" | sed '/^$/d' | grep -c . || echo 0)"
                     else
                       # ⛔⭐⭐ COULD NOT MEASURE IS NOT A VERDICT, AND IT IS ALSO NOT A BLOCKER.  There is no board of
-                      # this exact tree in the database, and this seat MAY NOT RUN ONE (CEO-697's cite-not-run), so
+                      # this exact tree in the database, and this seat MAY NOT RUN ONE (R-697's cite-not-run), so
                       # refusing here would block every codegen landing in the fleet on a board this seat cannot make.
-                      # ⛔ THE STAGE PASS THIS BRANCH ONCE FED IS RETIRED (ceo CEO-1299, 2026-09-26): it recorded the
+                      # ⛔ THE STAGE PASS THIS BRANCH ONCE FED IS RETIRED (R-1299, 2026-09-26): it recorded the
                       # landing in codegen-landings.tsv "for the coo stage pass", a central board that died with
-                      # CEO-775, and nothing but its own gate read the file (46 rows, measured). Under CEO-1232 the
+                      # R-775, and nothing but its own gate read the file (46 rows, measured). Under R-1232 the
                       # reader of record is each HQ's next per-landing pass on origin, which stamps the range it
                       # covers, so the only record kept is the one on this row's baton.
                       printf '   ⚠⚠ %s: NO BOARD OF THIS TREE EXISTS -- so the control arm COULD NOT MEASURE, which is\n' "$_cg_s" >&2
-                      printf '      neither a pass nor a red. Not running one: under CEO-1232 this landing is graded by its lander on\n' >&2
+                      printf '      neither a pass nor a red. Not running one: under R-1232 this landing is graded by its lander on\n' >&2
                       printf '      its own language'"'"'s suites, the gates it touched and make preflight; every other language'"'"'s verdict is\n' >&2
                       printf '      that HQ'"'"'s next per-landing pass on origin, which stamps the range it covers.\n' >&2
-                      [ -f "$tf" ] && printf '\n- [%s·%s] ⚠ CODEGEN LANDING WITH NO CITABLE BOARD -- touched: %s (scrip=%s corpus=%s). The control arm could not measure and did not pretend to; under CEO-1232 the lander'"'"'s own-language suites and each other HQ'"'"'s next per-landing pass on origin are the verdict.\n' \
+                      [ -f "$tf" ] && printf '\n- [%s·%s] ⚠ CODEGEN LANDING WITH NO CITABLE BOARD -- touched: %s (scrip=%s corpus=%s). The control arm could not measure and did not pretend to; under R-1232 the lander'"'"'s own-language suites and each other HQ'"'"'s next per-landing pass on origin are the verdict.\n' \
                         "$ME" "$(date -u +%Y-%m-%d)" "$(printf '%s' "$_cg_touch" | tr '\n' ' ')" "${_cg_scrip:-?}" "${_cg_corpus:-?}" >> "$tf"
                     fi
                   done
                 fi
               fi
-              # ⛔⭐ THE RECEIPT (coo 2026-09-16, ceo CEO-790/793; row instruments-a-done-row-with-no-claim-and-no-receipt-was-closed-by-
+              # ⛔⭐ THE RECEIPT (coo 2026-09-16, R-790/793; row instruments-a-done-row-with-no-claim-and-no-receipt-was-closed-by-
               # a-path-that-bypassed-the-computed-done-name-and-refuse-it): a DONE is COMPUTED here, so the claim carries the
               # computation -- rc, the tree it ran on, how long, computed or overridden, when, by whom. A DONE row whose claim has
               # no such line reached DONE by a path outside this verb (17 in QUEUE.tsv on 2026-09-16, one reopened RED by audit);
@@ -3271,7 +3267,7 @@ case "$cmd" in
               _dtree="$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"; [ -n "$(git -C "$S4E/SCRIP" status --porcelain 2>/dev/null)" ] && _dtree="$_dtree-DIRTY"
               printf 'RECEIPT done rc=0 tree=%s elapsed=%ss via=%s %s by %s\n' "$_dtree" "${_dwel:-?}" "$([ -n "${S4E_DONE_OVERRIDE:-}" ] && echo override || echo computed)" "$(date -u +%FT%TZ)" "$ME" >> "$c"
               grep -q '^DONE$' "$c" || echo DONE >> "$c"; echo "done $topic"
-              # ⛔⭐ (a) DONE CLOSES ITS OWN WINDOW (hq_B scope, 2026-08-28, ratified by ceo as rank 1). Until now
+              # ⛔⭐ (a) DONE CLOSES ITS OWN WINDOW (hq_B scope, 2026-08-28, ratified by the officer as rank 1). Until now
               # this verb latched the CLAIM and never touched QUEUE.tsv -- s4e_mark_row() below writes only the
               # per-seat .last-row despite its name. So a verified close left the column reading FREE, and the row
               # became INVISIBLE IN ALL THREE PICKER PASSES (PASS 1/2 skip a DONE claim even for its owner; PASS 3
@@ -3289,18 +3285,18 @@ case "$cmd" in
               s4e_mark_row "$topic" DONE
               [ "${S4E_NO_BANNER:-0}" = "1" ] || "$0" banner "$topic" "${3:-}"
          elif [ ! -f "$c" ]; then
-              # ⛔⭐ hq_C's bus finding (ceo CEO-362, 2026-09-06): an ASSIGNED row with NO claim file used to answer
+              # ⛔⭐ hq_C's bus finding (R-362, 2026-09-06): an ASSIGNED row with NO claim file used to answer
               # "not your claim", which names the WRONG defect -- it says somebody else holds the row when in fact
               # NOBODY does, so the reader goes looking for the other owner instead of running `claim`. The row is
               # then uncloseable by anyone. Two distinguishable states must not share one diagnostic.
               printf 'no claim exists on this row -- run `claim %s` first\n' "$topic" >&2; exit 1
          else printf 'not your claim -- %s holds it, you are %s\n' "$(head -1 "$c")" "$ME" >&2; exit 1; fi;;
   reown) # ⭐⭐ CHANGE A ROW'S OWNER CELL (QUEUE.tsv field 3). The verb that did not exist, which is why the
-         # lane could rot without anyone being able to repair it (hq_B 2026-09-13, ceo CEO-672 part 2).
+         # lane could rot without anyone being able to repair it (hq_B 2026-09-13, R-672 part 2).
          # ⛔ REOWN IS NOT ASSIGN, AND CONFLATING THEM IS HOW PART 2 WENT UNDONE FOR AS LONG AS IT DID. `assign`
          # writes a CLAIM -- it locks one row to one seat for one sitting, LAW 2, "assignment is the lock". It
          # never touches column 3. So the queue header's own advice ("to move ownership properly, an HQ or the
-         # ceo runs: s4e_msg.sh assign <topic> <seat>") describes something assign does not do, AND states the
+         # the officer runs: s4e_msg.sh assign <topic> <seat>") describes something assign does not do, AND states the
          # arguments in the wrong order -- assign takes <seat> <topic>. Two errors in one sentence of guidance,
          # in the file the guidance is about. ⭐ A verb that does not exist is not discovered by reading docs
          # about it; it is discovered by trying to do the thing and finding nothing that does it.
@@ -3337,7 +3333,7 @@ case "$cmd" in
          mv "$_tmp" "$q"; chmod 664 "$q"
          printf 'reowned: %s  %s -> %s  (state %s unchanged, claim untouched)\n' "$topic" "$_old" "$seat" "$_state"
          ;;
-  assign) # ⭐ V2-1 / LAW 2 — ASSIGNMENT IS THE LOCK (ARCH-FLEET-CEO.md). HQ writes the seat's claim ATOMICALLY on HQ's
+  assign) # ⭐ V2-1 / LAW 2 — ASSIGNMENT IS THE LOCK (the retired fleet architecture page). HQ writes the seat's claim ATOMICALLY on HQ's
          # side, which makes the v1 dispatch race UNREPRESENTABLE: v1 mailed a brief AND let the seat run `next`, so two
          # channels answered "what am I working on" with nothing arbitrating -- that race is what killed seat13's session
          # (it held five rows, worked a sixth, and starved). There is now exactly one answer and it is a file on disk.
@@ -3357,7 +3353,7 @@ case "$cmd" in
            if grep -q '^DONE$' "$c"; then echo "⛔ REFUSED: '$topic' is already DONE (held by $own). Sweep it to QUEUE.done.tsv — do NOT re-dispatch landed work." >&2; exit 1; fi
            if [ "$own" = "$seat" ]; then echo "already assigned: $topic -> $seat"; exit 0; fi
            echo "⛔ REFUSED: '$topic' is held by $own, not $seat. Release that claim first (that is a deliberate act, not a retry)." >&2; exit 1; fi
-         # ⛔⭐ PRE-CLAIM PLACEHOLDER REFUSAL (row mint-dispatch-refuses-a-placeholder-done-when, ceo CEO-286
+         # ⛔⭐ PRE-CLAIM PLACEHOLDER REFUSAL (row mint-dispatch-refuses-a-placeholder-done-when, R-286
          # 2026-09-05): STATIC and UNCONDITIONAL -- not gated behind S4E_NO_DISPATCH_PROBE the way the
          # dynamic probe below is, because that escape hatch exists for a seat who wants to dispatch a row
          # DESPITE an "already satisfied" reading they believe is wrong; there is no equivalent case for a
@@ -3368,10 +3364,10 @@ case "$cmd" in
            printf '   Fix the baton'"'"'s DONE-WHEN line to a real command, then assign again. No claim written.\n' >&2
            exit 2
          fi
-         # ⛔ AN UNRUNNABLE DONE-WHEN IS REFUSED AT ASSIGN, LIKE THE PLACEHOLDER (CEO-786; coo 2026-09-16): the criterion is run once with the
+         # ⛔ AN UNRUNNABLE DONE-WHEN IS REFUSED AT ASSIGN, LIKE THE PLACEHOLDER (R-786; coo 2026-09-16): the criterion is run once with the
          # dispatch budget; exit 126/127 (not executable / command not found) or 2 (the criterion refused) is a REFUSAL naming the exit and
          # the first line the criterion said -- never a red, which is rc=1 with a line beginning RED. rc 0 and rc 1 dispatch as before.
-         # ⛔ THE PROBES RUN HOLDING NO BUS IDENTITY (CEO-2107 as amended, ARCH-SHARED-DEVELOPMENT 12 item 7; the coo 2026-11-01: three assigns whose
+         # ⛔ THE PROBES RUN HOLDING NO BUS IDENTITY (R-2107 as amended, ARCH-SHARED-DEVELOPMENT 12 item 7; the coo 2026-11-01: three assigns whose
          # probes ran past 240 s held the coo identity the whole time, so every coo send -- telegrams, tier1's alarms, the seat watch -- was REFUSED).
          # The identity is released here and taken again below, before the claim is written; nothing on the bus is touched in between.
          s4e_pid_release
@@ -3379,7 +3375,7 @@ case "$cmd" in
            _adw="$(s4e_donewhen_text "$PO/tasks/$topic.task.md")"; _alog="$(mktemp)"
            ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$seat" S4E_DONE_WHEN_RUN=1 s4e_bounded "$(s4e_dispatch_timeout)" bash -c "$_adw" ) >"$_alog" 2>&1; _arc=$?
            if [ "$_arc" -eq 126 ] || [ "$_arc" -eq 127 ] || [ "$_arc" -eq 2 ]; then
-             printf '\n⛔ REFUSED(2): %s HAS AN UNRUNNABLE DONE-WHEN -- it exited %s (%s) in a probe run; a criterion that cannot run is a refusal, not a red (CEO-786).\n' \
+             printf '\n⛔ REFUSED(2): %s HAS AN UNRUNNABLE DONE-WHEN -- it exited %s (%s) in a probe run; a criterion that cannot run is a refusal, not a red (R-786).\n' \
                "$topic" "$_arc" "$([ "$_arc" -eq 127 ] && echo 'command not found' || { [ "$_arc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
              printf '   first line it said: %s\n   Fix the DONE-WHEN (cd "$S4E_HOME/SCRIP", name a script that exists), then assign again. No claim written.\n' "$(grep -m1 . "$_alog" | cut -c1-160)" >&2
              rm -f "$_alog"; exit 2
@@ -3430,7 +3426,7 @@ case "$cmd" in
          # carry by hand; this makes it written. Col3 untouched here too, for the reason given at `claim`.
          s4e_set_row_state "$topic" "ASSIGNED:$seat" || true
          s4e_backfill_owner_lane "$topic" "$seat" || true   # fills col3 ONLY if blank -- see the function's own note
-         # THE DOORBELL CARRIES NO CONTENT (ARCH-FLEET-CEO: "the mail never carries content that isn't also in a file").
+         # THE DOORBELL CARRIES NO CONTENT (the retired fleet architecture page: "the mail never carries content that isn't also in a file").
          # A seat that never reads this message still resumes correctly, because the claim + task file are authoritative.
          # ⭐ THE DOORBELL GOES THROUGH --stdin LIKE EVERY OTHER PROSE BODY, AND THAT IS THE POINT (hq_B 2026-09-13).
          # ⛔ IT WAS AN ARGV SEND AND THE NEW PROSE GUARD REFUSED IT, WHICH BROKE `assign` -- caught by
@@ -3442,7 +3438,7 @@ case "$cmd" in
          if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
          then echo "assigned $topic -> $seat (claim written, doorbell sent)"
          else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi;;
-  # ⭐⭐ ceo RULING 2026-08-29 (row s4e-mint-subcommand, hq_C's find): A SEAT COULD NOT MINT A ROW — next|claim|
+  # ⭐⭐ the officer RULING 2026-08-29 (row s4e-mint-subcommand, hq_C's find): A SEAT COULD NOT MINT A ROW — next|claim|
   # unclaim|park|done|assign|ask|send|check|clear|mailbox|sweep|board|banner|fleet, NONE of them creates one. That
   # makes "a finding without a row is a finding nobody had" unreachable from a seat by construction. Two seats left
   # real defects loose in one session for want of this path; hq_B hand-appended to QUEUE.tsv (no lock, 16 live
@@ -3468,9 +3464,9 @@ case "$cmd" in
          # it there, once, is cheaper than another blank cell nobody catches until a seat wanders into it.
          owner=""
          if [ "${1:-}" = "--owner" ]; then owner="${2:?--owner needs an hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V argument}"; shift 2
-           # ⛔ THE EXECUTIVES WERE REFUSED HERE (hq_B 2026-09-13, CEO-672's class, found while curing it). This
+           # ⛔ THE EXECUTIVES WERE REFUSED HERE (hq_B 2026-09-13, R-672's class, found while curing it). This
            # accepted only hq_* names, so under NONET -- where FOUR of the seven completeness owners are the
-           # ceo, cto, coo and cfo -- `mint --owner ceo` was rejected outright and an Icon row could not be
+           # the officer, cto, coo and cfo -- `mint --owner officer` was rejected outright and an Icon row could not be
            # minted to the seat that owns Icon. s4e_is_hq() is the one roster and already counts all thirteen;
            # a second hand-written list beside it is the very defect this row exists to end.
            if ! s4e_is_hq "$owner"; then echo "⛔ REFUSED: --owner must be a standing seat ($(s4e_hqboxes | tr '\n' ' ')), not '$owner'." >&2; exit 2; fi
@@ -3487,11 +3483,11 @@ case "$cmd" in
          # hq_I 2026-09-06, on a row hq_B minted for them: "the baton carries TWO DONE-WHEN lines, yours and
          # the mint placeholder underneath". The extractor takes the FIRST and a human reading down the file
          # takes the LAST, so the two readers of one file disagreed.)
-         # ⛔⭐ THE PLACEHOLDER IS RUNNABLE AND ALWAYS RED (coo 2026-09-17, ceo CEO-829, row instrument-mint-writes-a-
+         # ⛔⭐ THE PLACEHOLDER IS RUNNABLE AND ALWAYS RED (coo 2026-09-17, R-829, row instrument-mint-writes-a-
          # runnable-always-red-placeholder-so-a-new-row-is-red-not-permanently-uncloseable). It used to be PROSE, so
          # every mint counted PERMANENTLY UNCLOSEABLE in test_gate_baton_donewhen_runnable.sh and pushed it past its
          # ceiling -- REDDING make test for every seat. That happened TWICE IN ONE HOUR on 2026-09-17, both on rows
-         # the ceo asked for, and the ceo wrote both criteria by hand to clear the red: MINTING, THE SANCTIONED WAY
+         # the officer asked for, and the officer wrote both criteria by hand to clear the red: MINTING, THE SANCTIONED WAY
          # TO ADD WORK, RED THE FLEET. The conflation was the defect, not the guard -- "nobody has written the
          # criterion yet, this row is four minutes old" and "this row's criterion is broken prose from six weeks
          # ago" are different facts. ⛔ THE GUARD IS NOT WEAKENED BY ONE INCH: this command EXITS 1, always, so
@@ -3501,9 +3497,9 @@ case "$cmd" in
          # picker's refusal to dispatch, the hidden-criterion gate, the multiple-contracts scanner -- keeps working
          # with no second spelling of the rule anywhere.
          dw_block="DONE-WHEN: echo \"⛔ NOT MEASURED: this row was minted with no acceptance criterion. Replace this line with a command that MEASURES the GOAL above; until then the row is RED and can never close.\"; exit 1"
-         # ⛔⭐⭐ A ROW EXISTS ONLY WHILE A MEASUREMENT SAYS THE PROBLEM EXISTS (Lon 2026-10-01, in-chat to the ceo:
+         # ⛔⭐⭐ A ROW EXISTS ONLY WHILE A MEASUREMENT SAYS THE PROBLEM EXISTS (Lon 2026-10-01, in-chat:
          # "So get your findings=0 or whatever you need to get your act together and the fleet working real needed
-         # work."; CEO-1386; RULES.md § FACT RULES). A mint that supplies NO DONE-WHEN used to write the placeholder
+         # work."; R-1386; RULES.md § FACT RULES). A mint that supplies NO DONE-WHEN used to write the placeholder
          # above and leave a row with no finish line; 80 such rows were live at the zero-base. Now it is REFUSED rc=2
          # with nothing written: a Lon word is minted with its WITNESS as the criterion. The one sanctioned exception
          # is a bus gate's fixture row, which names itself in S4E_MINT_NO_CRITERION; the baton carries the reason on
@@ -3511,9 +3507,9 @@ case "$cmd" in
          if ! printf '%s\n' "$goal" | grep -q '^DONE-WHEN:'; then
              if [ -n "${S4E_MINT_NO_CRITERION:-}" ]; then
                  dw_block="$dw_block
-MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; CEO-1386 -- the sweep retires this row unless a real DONE-WHEN replaces the placeholder)"
+MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-1386 -- the sweep retires this row unless a real DONE-WHEN replaces the placeholder)"
              else
-                 printf '⛔ REFUSED: no DONE-WHEN was supplied -- a row exists only while a measurement says the problem exists (CEO-1386).\n' >&2
+                 printf '⛔ REFUSED: no DONE-WHEN was supplied -- a row exists only while a measurement says the problem exists (R-1386).\n' >&2
                  printf '   Nothing was written: no QUEUE.tsv row, no baton. Mint again with the WITNESS as the criterion:\n' >&2
                  printf '      DONE-WHEN: bash ../harness/scripts/test_gate_<thing>.sh\n' >&2
                  printf '      DONE-WHEN: out=$(./scrip w.sno 2>&1); [ "$out" = "want" ] || exit 1; echo PASS\n' >&2
@@ -3605,9 +3601,9 @@ Distill a real first step from the GOAL above (and a real DONE-WHEN — see the 
 ## LEDGER
 - [$ME·$(date -u +%F)] Minted via \`s4e_msg.sh mint\`.
 TASKEOF
-         # ⛔⭐ THE ONE-NEXT-BLOCK RULE IS ENFORCED WHERE A BATON IS WRITTEN, NOT BY A SWEEP (ceo, CEO-1116,
+         # ⛔⭐ THE ONE-NEXT-BLOCK RULE IS ENFORCED WHERE A BATON IS WRITTEN, NOT BY A SWEEP (R-1116,
          # 2026-09-22, on the coo's finding of 9 non-conforming live batons against a ratchet ceiling of 1 over
-         # 782 checked).  test_gate_baton_one_next_block.sh is unwired BY A ceo RULING OF 2026-09-03 because it
+         # 782 checked).  test_gate_baton_one_next_block.sh is unwired BY An officer RULING OF 2026-09-03 because it
          # reads the LIVE postoffice and reds whenever another seat is mid-edit, so the drift to nine is the
          # PRICE of that ruling rather than an oversight -- and a periodic sweep over shared concurrently-edited
          # state can only ever REPORT, while a writer-side check PREVENTS.  A mint cannot CREATE a second
@@ -3640,15 +3636,15 @@ TASKEOF
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line
          # ⛔⭐ MODE GATES DISPATCH -- IT IS NOT DECORATION (row next-refuses-to-dispatch-to-an-hq-seat-when-mode-
-         # line-1-is-ceo; hq_C measured 2026-09-03 18:51). `next` printed "MODE: CEO" and dispatched in the SAME
+         # line-1-is-solo; hq_C measured 2026-09-03 18:51). `next` printed "MODE SOLO" and dispatched in the SAME
          # PRINTOUT: it served and LOCKED prolog-bagof-setof-...-rung-8b to hq_C at a moment when no HQ was standing.
          # ⛔ The damage is not the wasted turn, it is the LOCK: a claimed row leaves the picker, so a stood-down
          # identity holding a claim HIDES THAT ROW FROM THE WHOLE FLEET -- and it arrives by a route nobody watches.
          # `fleet` is the health view for a seat that STALLS; it has nothing to say about one that was never meant to
          # be running at all. Reading a value only to PRINT it is the same class as the board that computed its
          # failure names and sent them to /dev/null: the information was produced and then not used.
-         # ⛔ THE ceo IS NEVER REFUSED. s4e_is_hq() deliberately counts ceo as an HQ (it is an AUTHORITY test, used by
-         # unclaim's force path), but under MODE CEO the ceo is precisely who works the rows. So this guard matches on
+         # ⛔ THE OFFICER IS NEVER REFUSED. s4e_is_hq() deliberately counts the officer as an HQ (it is an AUTHORITY test, used by
+         # unclaim's force path), but under MODE SOLO the officer is precisely who works the rows. So this guard matches on
          # the IDENTITY SHAPE and must NOT be rewritten to call that predicate -- they answer different questions.
          # ⛔ AN ABSENT OR EMPTY MODE DOES NOT REFUSE HERE: s4e_mode_line above already says so loudly, and every
          # existing s4e gate fixture omits the file. Turning that into a refusal is a different row, not a free extra.
@@ -3657,14 +3653,14 @@ TASKEOF
              printf '⛔ REFUSING TO DISPATCH (rc=2): you are %s, %s, and MODE line 1 is %s.\n' "$ME" "$1" "$_mode" >&2
              printf '   Authority: %s/MODE (first line). %s\n' "$PO" "$2" >&2
              printf '   A claim taken by a stood-down identity HIDES that row from the whole fleet -- which is why this\n' >&2
-             printf '   is a REFUSAL and not a warning. If the mode is wrong, ask ceo to publish the real one.\n' >&2
+             printf '   is a REFUSAL and not a warning. If the mode is wrong, ask the cto to publish the real one.\n' >&2
              exit 2; }
-         # ⛔ THE GUARD BODY MOVED TO s4e_mode_stands (coo 2026-09-20, CEO-1002) so the announcing half can ask it about
+         # ⛔ THE GUARD BODY MOVED TO s4e_mode_stands (coo 2026-09-20, R-1002) so the announcing half can ask it about
          # OTHER seats. Same table, same refusals, same authority -- this line is the only thing that changed here.
          _REFUSE_KIND=""; _REFUSE_WHY=""
          s4e_mode_stands "$ME" "$_mode" || _refuse_dispatch "$_REFUSE_KIND" "$_REFUSE_WHY"
          # ⭐ ONE scratch file for this whole dispatch: `next` takes its lock by running `$0 claim` with both streams
-         # suppressed, and the announcement (ceo CEO-1002) has to survive that. Created here, before any serve path,
+         # suppressed, and the announcement (R-1002) has to survive that. Created here, before any serve path,
          # because BOTH lock sites below -- the ordinary serve and the dependency-inversion promotion -- re-print from it.
          # ⛔ NO EXIT TRAP HERE, DELIBERATELY: s4e_pid_arm already owns EXIT (it releases this seat's pid lock), and a
          # second `trap ... EXIT` REPLACES the first rather than adding to it -- a one-line scratch-file convenience
@@ -3713,7 +3709,7 @@ TASKEOF
            printf '%s\n' "$srow" | awk -F'\t' 'NF>3{print "owner: " $3 "   state: " $4}
                                                   NF>1&&NF<4{print "brief: " $3; print "first: " $4}'
            [ -f "$PO/tasks/$st.task.md" ] || printf '⛔ NO BATON at %s/tasks/%s.task.md — under V2-2 every live row must have one. Tell your HQ; do not invent the work.\n' "$PO" "$st"; }
-         # ⭐⭐ THE LANE FILTER LIVED ONLY IN PASS 3, AND A RE-SEATING WALKS STRAIGHT PAST IT (hq_B, ceo witness
+         # ⭐⭐ THE LANE FILTER LIVED ONLY IN PASS 3, AND A RE-SEATING WALKS STRAIGHT PAST IT (hq_B, the officer witness
          # 2026-09-03 22:55 CDT). MEASURED: seat07 held raku-roast-100-percent-compile (lane hq_T) while its own
          # lane's rank-0 SC4 snocone census sat FREE. The claim carried NO `ASSIGNED-BY` line, so no HQ dispatched
          # it across lanes; and the CONTROL ARM proves the free-row picker did not either -- with the claim removed,
@@ -3728,7 +3724,7 @@ TASKEOF
          # own-lane row that is waiting, and a human decides: keep working, or `unclaim` and let the owner have it.
          # ⭐ Same doctrine PASS 3 already runs on -- "a silent skip is indistinguishable from the row not existing",
          # and its cross-lane fallback is labelled rather than left to be reconstructed from the queue later. A serve
-         # that cannot be told from an in-lane one is exactly how this went unseen until the ceo read two claims side
+         # that cannot be told from an in-lane one is exactly how this went unseen until the officer read two claims side
          # by side. ⛔ It NEVER refuses and never changes the exit status: a notice that can block is a notice that
          # gets worked around. Lane-undetermined topics and a seat with no readable HQ file stay silent (empty lane
          # is UNDETERMINED, never a fifth lane), so a missing HQ file degrades to today's behaviour, as everywhere else.
@@ -3752,7 +3748,7 @@ TASKEOF
            if [ -n "$_wait" ]; then printf '   ⭐ WAITING IN YOUR OWN LANE:  %s\n' "$_wait"
              printf '      A row owned by YOUR OWN HQ is now auto-served (cured 2026-09-04: the owner-cell skip treated an HQ\n'
              printf '      like a rival seat and idled six seats at once). A row owned by a DIFFERENT HQ still needs a\n'
-             printf '      deliberate dispatch: that HQ or the ceo runs  s4e_msg.sh assign <topic> %s\n' "$ME"; fi
+             printf '      deliberate dispatch: that HQ or the cto runs  s4e_msg.sh assign <topic> %s\n' "$ME"; fi
            printf '   KEEP WORKING IT if that was the intent -- this is a NOTICE, NOT A REFUSAL, and the exit status is\n'
            printf '   unchanged. Otherwise put it back for its owner:  s4e_msg.sh unclaim %s\n' "$_t"; }
          # ⭐ HOISTED: the lane is needed by PASS 1 and PASS 2 as well as PASS 3 now, so it is computed ONCE here
@@ -3768,7 +3764,7 @@ TASKEOF
          # for free rows (its own note: eight freshly-minted rank-1 slices sat 40+ minutes behind 15 older
          # ones) and the fix was simply never applied to assigned rows. Alphabetical order is not a priority
          # signal, it is an artifact of naming -- the same class as the file-order picking V2-1 removed.
-         # ⭐ The deeper point, which the ceo took as the ruling for seat11: AN ORDER STATED IN PROSE ACROSS
+         # ⭐ The deeper point, which the officer took as the ruling for seat11: AN ORDER STATED IN PROSE ACROSS
          # EQUAL RANKS IS INVISIBLE TO THE PICKER. Rank is the only ordering the tool can see. This makes the
          # tie DETERMINISTIC and documented; it does not make prose orderable, and it should not be read as
          # doing so -- an intended order still has to be encoded as rank.
@@ -3816,7 +3812,7 @@ TASKEOF
            done | sort -t$'\t' -s -k1,1n)
          [ -f "$q" ] || { echo "no QUEUE.tsv — ask hq"; exit 1; }
          # PASS 3 -- free rows, RANK-SORTED numerically; ties inside one rank now tie-break by MINT TIME,
-         # newest first (next-tiebreak-by-mint-time-not-file-order, hq_C finding, ceo mint 2026-09-01) --
+         # newest first (next-tiebreak-by-mint-time-not-file-order, hq_C finding, mint 2026-09-01) --
          # was file order (QUEUE.tsv line position, an accident of mint sequence, not a priority signal:
          # measured, eight freshly-minted rank-1 fleet slices sat unclaimed 40+ minutes behind 15 older
          # rank-1 rows). A topic with no readable mint timestamp sorts as OLDEST in its tier (s4e_mint_ts),
@@ -3840,19 +3836,19 @@ TASKEOF
          s4e_report_owned_skips() {
            [ "${_owned_skipped:-0}" -gt 0 ] || return 0
            printf '↩ skipped %d free row(s) owned by another seat (topmost: %s).\n' "$_owned_skipped" "$_owned_first"
-           printf '   The owner column constrains the pick (ceo 2026-09-03). To take one anyway: s4e_msg.sh claim <topic>.\n'
-           # ⛔ THIS LINE WAS WRONG TWICE OVER (hq_B 2026-09-13, ceo CEO-672): it named `assign`, which writes a
+           printf '   The owner column constrains the pick (2026-09-03). To take one anyway: s4e_msg.sh claim <topic>.\n'
+           # ⛔ THIS LINE WAS WRONG TWICE OVER (hq_B 2026-09-13, R-672): it named `assign`, which writes a
            # CLAIM and never touches column 3, and it stated assign's arguments in the wrong order (assign takes
            # <seat> <topic>). It is the line a seat reads at the exact moment they do not know how to move a row
-           # -- the worst place for confident wrong guidance, and the reason part 2 of CEO-672 had no tool.
-           printf '   To move ownership properly, an HQ or the ceo runs: s4e_msg.sh reown <seat> <topic>.\n'
+           # -- the worst place for confident wrong guidance, and the reason part 2 of R-672 had no tool.
+           printf '   To move ownership properly, an HQ or the cto runs: s4e_msg.sh reown <seat> <topic>.\n'
            printf '   (reown changes the OWNER CELL; assign <seat> <topic> writes the CLAIM. Two different acts.)\n'; }
          s4e_pass3_scan() {
            # ⛔ RESET PER PASS, NOT PER next() -- s4e_pass3_scan is called TWICE (own-lane, then any-lane) and a
            # counter initialised outside it counts every skipped row once per pass. Measured: three rank-6+ rows
            # in a scratch queue reported "skipped 6". The honest number is the LAST pass's, because that is the
            # pass that actually gave up and produced the report the seat is reading.
-           # ⛔ THE OWNED-ROW COUNTER HAD THE SAME DEFECT AND KEPT IT: one ceo-owned row read "skipped 2 free row(s)
+           # ⛔ THE OWNED-ROW COUNTER HAD THE SAME DEFECT AND KEPT IT: one officer-owned row read "skipped 2 free row(s)
            # owned by another seat" for any seat with a lane (coo 2026-09-26, measured on a TENET fixture).
            _rankcap_skipped=0; _rankcap_first=""; _owned_skipped=0; _owned_first=""
          while IFS=$'\t' read -r rank topic brief step; do
@@ -3861,7 +3857,7 @@ TASKEOF
            # which is how `161-o2-red` — PARKED BY LON at s258, and saying so in its own baton — kept being served as
            # the fleet's TOPMOST rank-0 row. A ruling that only a human enforces is not a ruling. Anything not FREE is
            # not work: PARKED, BLOCKED, DONE all skip here.
-           # ⭐ picker-skips-blocked-rows (ceo, 2026-08-28): a BLOCKED-ON:<topic>/PARKED-AWAITING:<topic> row used
+           # ⭐ picker-skips-blocked-rows (2026-08-28): a BLOCKED-ON:<topic>/PARKED-AWAITING:<topic> row used
            # to skip HERE FOREVER, even the session AFTER its named blocker landed DONE, because nothing ever asked
            # again — bench-rivals-raku-pascal sat encoded as plain "FREE" (nobody had even written the block down)
            # through 9+ seats independently re-discovering the identical block, which is the OTHER half of this same
@@ -3892,7 +3888,7 @@ TASKEOF
                  # blocker that is already satisfied is the WORST row to hand out unprobed: it is blocking
                  # something else, so closing it here also un-blocks the row that named it.
                  # ⭐ THE CHAIN, NOT THE FIRST HOP -- see s4e_blocker_chain: a transitive promotion printed the first
-                 # hop as "un-DONE, unclaimed and FREE" and served a row the line never named (the ceo, case (b)).
+                 # hop as "un-DONE, unclaimed and FREE" and served a row the line never named (case (b)).
                  printf '⭐ DEPENDENCY INVERSION — rank-%s %s is BLOCKED-ON %s; %s is un-DONE, unclaimed and FREE.\n' "$rank" "$topic" "$(s4e_blocker_chain "$topic" "$promo")" "$promo"
                  printf '   Rank is a human guess at priority; a dependency is a fact, and a fact outranks a guess.\n'
                  printf '   You are being served THE BLOCKER at the blocked row'"'"'s own rank position.\n'
@@ -3909,7 +3905,7 @@ TASKEOF
            # ⭐ RESTRICTED:<x> IS SERVABLE, BUT ONLY TO x. Unlike ASSIGNED (which hides a row from everyone, its owner
            # included, so the owner must reach for `claim`), a restriction names who MAY work it -- so the picker can and
            # should hand it to that seat. Everyone else falls through to the generic skip below, as before.
-           # ⭐⭐ THE OWNER COLUMN CONSTRAINS THE PICK (ceo ruling 2026-09-03, on hq_B's measured case).
+           # ⭐⭐ THE OWNER COLUMN CONSTRAINS THE PICK (ruling 2026-09-03, on hq_B's measured case).
            # MEASURED: `next` served hq_B the rank-0 row port-exit-value-contract-untagged-rax-forges-dt-fail
            # whose owner column read hq_P. The picker ordered by rank and read only the STATE column, so
            # ownership was advisory AT THE MOMENT OF THE PICK -- a rank-0 row tagged to a seat in flight went to
@@ -3918,7 +3914,7 @@ TASKEOF
            # ⛔ THE COST OF GUESSING IS ASYMMETRIC AND THAT IS WHY THE DEFAULT IS SKIP: a wrongly-served row makes
            # TWO seats hold one piece of work (and a claim HIDES the row from its owner's own picker, so the owner
            # is locked out silently); a wrongly-skipped row costs one `claim` typed on purpose.
-           # ⭐ `assign` remains the HQ/ceo verb that MOVES ownership, and `claim <topic>` is the deliberate
+           # ⭐ `assign` remains the HQ/officer verb that MOVES ownership, and `claim <topic>` is the deliberate
            # override -- neither is touched here. Only the automatic pick is constrained.
            _serve_reason="rank $rank"
            case "$step" in
@@ -3926,7 +3922,7 @@ TASKEOF
                case "$brief" in
                  ''|unassigned) : ;;
                  "$ME") _serve_reason="rank $rank, your OWNER CELL" ;;
-                 # ⛔⭐ A ROW OWNED BY THE SEAT'S OWN HQ IS IN THE SEAT'S LANE AND IS SERVED (ceo, URGENT
+                 # ⛔⭐ A ROW OWNED BY THE SEAT'S OWN HQ IS IN THE SEAT'S LANE AND IS SERVED (URGENT
                  # 2026-09-04 19:52: SIX SEATS IDLE at load 0.65 with sixteen up, every lane reporting "queue
                  # empty" while QUEUE.tsv held 7 FREE rank<=1 rows per lane). The owner-cell skip treated an HQ
                  # exactly like a rival seat -- and under THE SNOBOL4 CUT every class row an HQ mints carries its
@@ -3947,7 +3943,7 @@ TASKEOF
                  # ⛔⭐ AND "YOUR HQ" MEANS THE LANE A NUMBERED SEAT RESOLVES TO, NEVER WHATEVER AN HQ FILE NAMES
                  # (coo 2026-09-26, same row as the owner cut in s4e_promotion_admissible). This arm read s4e_hq, and
                  # under the consolidated modes every HQ file names an officer: measured on a TENET fixture, `next`
-                 # LOCKED a ceo-owned row for the coo and for hq_icon, and a cto-owned one for hq_raku, each "owned by
+                 # LOCKED a officer-owned row for the coo and for hq_icon, and a cto-owned one for hq_raku, each "owned by
                  # your HQ (your lane)". An HQ and an officer resolve to themselves; only a seat's lane is its HQ.
                  *) if s4e_owner_in_my_lane "$brief"; then _serve_reason="rank $rank, owned by your HQ $brief (your lane)"
                     else _owned_skipped=$((_owned_skipped+1))
@@ -4004,7 +4000,7 @@ TASKEOF
                if [ -n "$_tl" ] && [ "$_tl" != "$_my_lane" ]; then continue; fi
                [ -n "$_tl" ] && _serve_reason="rank $rank, your OWN LANE ($_tl)"
              elif [ -n "$_tl" ] && [ "$_tl" != "$_my_lane" ]; then
-               # ⛔ THE FALLBACK IS NOT FOR A SEAT THAT OWNS NO LANGUAGE (CEO-779): the coo/cto wander into an HQ's cure
+               # ⛔ THE FALLBACK IS NOT FOR A SEAT THAT OWNS NO LANGUAGE (R-779): the coo/cto wander into an HQ's cure
                # row here exactly as the promotion path did. Counted and reported once at the end, exit 2 -- a refusal
                # to serve, never "QUEUE EMPTY", because the queue is not empty, it is somebody else's.
                if ! s4e_seat_owns_a_language || s4e_any_lane_closed; then
@@ -4025,7 +4021,7 @@ TASKEOF
              printf '⛔ REFUSING TO DISPATCH %s (rank %s) — %s\n' "$topic" "$rank" "$_ppc_why"
              printf '   Not claimed. An HQ or the mint author fixes the baton; this row stays free for everyone else.\n'
              continue; fi
-           # ⛔⭐ THE NEIGHBOURHOOD SURVIVES THE SUPPRESSION (coo 2026-09-20, ceo CEO-1002). `next` takes its lock by
+           # ⛔⭐ THE NEIGHBOURHOOD SURVIVES THE SUPPRESSION (coo 2026-09-20, R-1002). `next` takes its lock by
            # running `$0 claim` with BOTH streams sent to /dev/null -- correct for the claim's own chatter and fatal
            # for the announcement, which is the half of the cure the SERVED seat must actually read. So the output is
            # captured and the neighbourhood block is re-printed here. The notices themselves were already delivered by
@@ -4037,7 +4033,7 @@ TASKEOF
              serve "$topic" "FREE" "($_serve_reason; take it: s4e_msg.sh claim $topic)"; exit 0
            elif grep -q 'THE PREMISE OF THIS ROW IS RED' "$_cl_out" 2>/dev/null; then
              # ⛔⭐ A FAILED INNER CLAIM WAS SILENT HERE, AND A SILENT REFUSAL IS THE ONE OUTCOME THIS ROW
-             # FORBIDS. `next` captures the claim's streams (CEO-1002, for the announcement), so a premise
+             # FORBIDS. `next` captures the claim's streams (R-1002, for the announcement), so a premise
              # refusal raised inside that subprocess died in $_cl_out and the picker simply moved on -- the
              # seat would be served the NEXT row and never learn that the one above it needs rewriting, which
              # is how a stale row stays stale forever while every seat quietly steps around it. A lost race is
@@ -4054,7 +4050,7 @@ TASKEOF
          # attempt and the cross-lane fallback can never disagree about what "servable" means (every other
          # skip rule -- blocked-on, grant-wait, restricted, claimed, boomeranged -- runs identically in
          # both calls; only the lane check inside toggles). A seat/HQ with no determinable lane
-         # (s4e_my_lane empty: ceo, an unrecognized identity, or a seat whose HQ file is missing/stale)
+         # (s4e_my_lane empty: the officer, an unrecognized identity, or a seat whose HQ file is missing/stale)
          # never enters the own-lane pass at all -- lane-blind, exactly today's behaviour, is the safe
          # degradation for anything the lane mapping cannot see. GOAL's own fallback requirement ("a lane
          # guard that starves a seat whose lane is done is worse than the wandering it prevents") is why
@@ -4064,19 +4060,19 @@ TASKEOF
          _xlane_refused=0; _xlane_last=""; _promo_reported=" "
          if [ -n "$_my_lane" ]; then _lane_filter=own-lane; s4e_pass3_scan; fi
          _lane_filter=any-lane; s4e_pass3_scan
-         # ⛔ CEO-779: a seat that owns no language, held back ONLY by other lanes' rows, is REFUSED rc=2 -- not told the
+         # ⛔ R-779: a seat that owns no language, held back ONLY by other lanes' rows, is REFUSED rc=2 -- not told the
          # queue is empty (it is not; it is the HQs'). rc=2 is "could not serve", the same word every instrument uses.
          if [ "${_xlane_refused:-0}" -gt 0 ] && s4e_seat_owns_a_language && s4e_any_lane_closed; then
            s4e_report_owned_skips
            s4e_report_rankcap_skips
-           printf '⛔ REFUSED (rc=2): %s cross-lane row(s) NOT served -- your lane %s has nothing servable, and the any-lane fallback is CLOSED under TENET and QUINTET (ceo CEO-1302 (b), CEO-1356: an HQ runs only its own language, CEO-1232). Last: %s\n' "$_xlane_refused" "${_my_lane:-$ME}" "$_xlane_last"
-           printf '   Your lane is empty, not the queue: ask your officer or the ceo for your next row (s4e_msg.sh ask <topic>); another lane'"'"'s row is an ASK to its owner, never a claim.\n'
+           printf '⛔ REFUSED (rc=2): %s cross-lane row(s) NOT served -- your lane %s has nothing servable, and the any-lane fallback is CLOSED under TENET and QUINTET (R-1302 (b), R-1356: an HQ runs only its own language, R-1232). Last: %s\n' "$_xlane_refused" "${_my_lane:-$ME}" "$_xlane_last"
+           printf '   Your lane is empty, not the queue: ask your officer or the cto for your next row (s4e_msg.sh ask <topic>); another lane'"'"'s row is an ASK to its owner, never a claim.\n'
            exit 2
          fi
          if [ "${_xlane_refused:-0}" -gt 0 ] && ! s4e_seat_owns_a_language; then
            s4e_report_owned_skips
            s4e_report_rankcap_skips
-           printf '⛔ REFUSED (rc=2): %s cross-lane row(s) NOT served -- %s holds NO language under MODE line 2 / the LANES line (CEO-779; Lon 2026-09-16: "Get the COO helping. The language seats now run their own tests and benchmarks."). Last skipped: %s\n' "$_xlane_refused" "$ME" "${_xlane_last:-see the REFUSED PROMOTION lines above}"
+           printf '⛔ REFUSED (rc=2): %s cross-lane row(s) NOT served -- %s holds NO language under MODE line 2 / the LANES line (R-779; Lon 2026-09-16: "Get the COO helping. The language seats now run their own tests and benchmarks."). Last skipped: %s\n' "$_xlane_refused" "$ME" "${_xlane_last:-see the REFUSED PROMOTION lines above}"
            printf '   An instrument row reaches %s by assign or mint (s4e_msg.sh assign %s <topic>); another lane'"'"'s row is an ASK to its owner, never a claim.\n' "$ME" "$ME"
            exit 2
          fi
@@ -4086,7 +4082,7 @@ TASKEOF
          s4e_report_owned_skips
          s4e_report_rankcap_skips
          echo "QUEUE EMPTY — every row claimed. Ask hq: s4e_msg.sh ask work 'queue empty'"
-         [ -n "$_gw" ] && { echo "   ⭐ NOT empty of WORK — these rows are GOVERNANCE-GATED, waiting on a grant, not on a seat:"; printf '%s\n' "$_gw"; echo "   Chase the grant (route via your HQ to ceo), do not re-park these to FREE."; }
+         [ -n "$_gw" ] && { echo "   ⭐ NOT empty of WORK — these rows are GOVERNANCE-GATED, waiting on a grant, not on a seat:"; printf '%s\n' "$_gw"; echo "   Chase the grant (route via your HQ to the cto), do not re-park these to FREE."; }
          exit 1;;
   banner) [ "${2:-}" = --probe-once ] && s4e_banner_plant_once
          # ⛔ FACTS ONLY -- NO PREDICTIONS (Lon 2026-08-22: "Why are you trying to predict the future. Quit saying
@@ -4106,7 +4102,7 @@ TASKEOF
          # measured from seat07's transcript the same hour -- 4 banners, 2 score lines: the line printed LAST, after ~9 s of
          # slower work, where a Stop-hook timeout or a truncated display loses it, and its refusal went to /dev/null. So it
          # prints HERE, 0.18 s, before anything slow, and a refusal prints VISIBLY. Never the verdict: this is a pipeline.
-         # ⭐⭐ THE SUITE BANNER FIRST (Lon 2026-09-20 11:20 via ceo, THE FLEET-12 PLAN, MASTER-PLAN § THE
+         # ⭐⭐ THE SUITE BANNER FIRST (Lon 2026-09-20 11:20 via the officer, THE FLEET-12 PLAN, MASTER-PLAN § THE
          # FLEET-12 PLAN: "Banner every turn: python3 .github/scripts/util_suite_banner.py (hq_T wires it
          # into s4e_msg.sh banner, rank 0)"). It is the SUITE view -- one line per suite, on/off the curve --
          # and under the plan's own first rule, WORK THE SUITES NOT THE LANGUAGES, it outranks the per-language
@@ -4119,7 +4115,7 @@ TASKEOF
          # this file already carries three instances of. It reads .github/SUITES.tsv relative to its OWN path,
          # so it does not honour S4E_HOME; the probe below points at a nonexistent SCRIPT instead, which is the
          # failure this wiring can actually have.
-         # ⭐⭐ THE AHEAD-OF-ORIGIN LINE (ceo -> hq_B 2026-09-08, row instruments-the-banner-reports-a-seat-that-is-ahead-
+         # ⭐⭐ THE AHEAD-OF-ORIGIN LINE (-> hq_B 2026-09-08, row instruments-the-banner-reports-a-seat-that-is-ahead-
          # of-origin-because-finished-invisible-work-is-reported-by-nothing; rank 0). ⛔ THE GAP IT CLOSES: the fleet
          # reports a seat that STALLS and a seat that FAILS, and reported NOTHING about a seat whose work is finished,
          # correct and simply unpushed. No red exists anywhere in that state -- handoff_status.sh rc is about the tree,
@@ -4176,37 +4172,37 @@ TASKEOF
          if [ -x "$_ih" ]; then
            :
          fi
-         # THE LEDGER LINE (ARCH-SHARED-DEVELOPMENT 2.3, shared-dev step 1, CEO-2041): one line from the newest LOAD.tsv run, never sampling; quiet when absent.
+         # THE LEDGER LINE (ARCH-SHARED-DEVELOPMENT 2.3, shared-dev step 1, R-2041): one line from the newest LOAD.tsv run, never sampling; quiet when absent.
          python3 "$(dirname "${BASH_SOURCE[0]}")/util_seat_census.py" banner "$ME" 2>/dev/null || true
          # in the banner what you will do. You do not know the future."). Every line below is a measured fact about
          # state as it stands. What a later session does is not knowable here: HQ can re-rank the queue, and THE LOOP
          # reads the inbox before the queue. Two laws still hold: the verdict is COMPUTED, never typed, and it turns
          # on ONE question -- did the work land and get pushed (handoff_status.sh rc, the only sanctioned source).
          # An open question to HQ is HQ's backlog, never this seat's failure.
-         # ⭐ ceo-only, WARN-only (Lon trust-audit 2026-08-28: health checks must be HARNESS-FIRED, not remembered —
+         # ⭐ officer-only, WARN-only (Lon trust-audit 2026-08-28: health checks must be HARNESS-FIRED, not remembered —
          # the same defect class as the old hand-fired banner). Fast (<1s), reads the postoffice, never flips the
          # verdict; rc=2 from the census prints as its own refusal line rather than a silent green.
-         if [ "$ME" = "ceo" ] && [ -x "$S4E/harness/scripts/util_queue_visibility_census.py" ]; then
+         if [ "$ME" = "cto" ] && [ -x "$S4E/harness/scripts/util_queue_visibility_census.py" ]; then
              _cns="$(python3 "$S4E/harness/scripts/util_queue_visibility_census.py" 2>&1 | tail -1)"
              :
          fi
          hs="$S4E/harness/scripts/handoff_status.sh"
          [ -f "$hs" ] || hs="$(cd "$(dirname "$0")" && pwd)/handoff_status.sh"
-         # ⛔ SKIP_S_ARTIFACT_CHECK=1 (ceo 2026-08-27, Lon's "go fix it" — the missing-banners defect, seat09/hq_P diagnosis):
+         # ⛔ SKIP_S_ARTIFACT_CHECK=1 (2026-08-27, Lon's "go fix it" — the missing-banners defect, seat09/hq_P diagnosis):
          # the .s-artifact verifier runs `make pristine` (minutes; races and WIPES live builds), so every banner that reached
          # it blew the Stop hook's 100s timeout and Lon saw NO banner — precisely on SUCCESS. The check is WARN-ONLY by design
          # (cannot flip the verdict), so skipping it here changes nothing the banner asserts. The FULL check still runs on a
          # direct handoff_status.sh invocation — the real handoff verdict, where HQ-27 wants the pristine.
-         # ⛔ THE BANNER IS BOUNDED (ceo 2026-09-23 CEO-1173, on Lon's ask "is there a problem with the automatic display of the
+         # ⛔ THE BANNER IS BOUNDED (2026-09-23 R-1173, on Lon's ask "is there a problem with the automatic display of the
          # test suite banner"): a ten-seat sweep with a 90 s ceiling read the banner COMPLETE in six seats and TIMED OUT with NO
-         # suite table in four (ceo, snocone, prolog, pascal). handoff_status.sh took 107 s on a clean tree at load 9 against the
+         # suite table in four (snocone, prolog, pascal). handoff_status.sh took 107 s on a clean tree at load 9 against the
          # Stop hook's 120 s: 29 s with the seven-language slot-kind sweep (timeout 300) skipped, 11 s with the GC acceptance
          # display skipped too. Both are WARN-ONLY with their own honest skip switches (each prints SKIPPED, never a green). The
          # banner skips the sweep (it runs on a direct handoff_status.sh invocation, the boundary it was wired for) and bounds
          # the whole call at 75 s; a timeout is a REFUSAL that names the load, never a lost banner.
-         # ⛔ THE BANNER SKIPS THE GC ACCEPTANCE DISPLAY TOO (ceo 2026-10-14 CEO-1705, the coo's load reading 38 on 16 cores at
+         # ⛔ THE BANNER SKIPS THE GC ACCEPTANCE DISPLAY TOO (2026-10-14 R-1705, the coo's load reading 38 on 16 cores at
          # 12:21): util_gc_acceptance.py spawned util_gc_census.py for 40-70 s at every Stop of every seat, fourteen seats, and
-         # `timeout 75` kills only the bash, so the census outlived the banner -- the per-response class CEO-1671 removed. The
+         # `timeout 75` kills only the bash, so the census outlived the banner -- the per-response class R-1671 removed. The
          # four numbers still print on a direct handoff_status.sh invocation, the handoff boundary Lon's 09-21 order names.
          if [ -f "$hs" ]; then hout="$(SKIP_S_ARTIFACT_CHECK=1 SKIP_ZLS_ALL=1 SKIP_GC_ACCEPTANCE=1 timeout -k 5 75 bash "$hs" 2>&1)"; hrc=$?; else hout="handoff_status.sh NOT FOUND at $hs"; hrc=2; fi
          if [ "$hrc" = 124 ]; then hout="$hout"$'\n'"⛔ handoff_status.sh NOT MEASURED — timed out at the banner's 75 s budget (load $(cut -d' ' -f1 /proc/loadavg)); this is a refusal, not a red: run bash ../harness/scripts/handoff_status.sh by hand"; hrc=2; fi
@@ -4230,7 +4226,7 @@ TASKEOF
          fi
          qwait=0; for hb in $(s4e_hqboxes); do for f in "$PO/$hb"/inbox/*.msg; do [ -f "$f" ] || continue; case "$(basename "$f")" in *-"$ME"-q-*) qwait=$((qwait+1));; esac; done; done
          inbx=0; for f in "$PO/$ME/inbox"/*.msg; do [ -f "$f" ] && inbx=$((inbx+1)); done
-         # ⛔⭐ V2-3 -- DRAIN BEFORE MINT, MADE MECHANICAL (LAW 3, ARCH-FLEET-CEO.md; hq_P s258). Measured basis, from
+         # ⛔⭐ V2-3 -- DRAIN BEFORE MINT, MADE MECHANICAL (LAW 3, the retired fleet architecture page; hq_P s258). Measured basis, from
          # the fleet-v1 retrospective: 29 messages and 15 seat questions sat unread in HQ's inbox for 1h47m while HQ
          # minted new rows; seat13 starved holding five of them; HQ's own board line was the oldest on the board. The
          # rule "answer every pending question before minting" existed and was ignored, for the same reason the banner
@@ -4337,7 +4333,7 @@ TASKEOF
          mealt="${ME/#seat0/seat}"
          # ⛔⭐ THE ANCHOR WAS A PATH PREFIX A RE-GRID MOVED OUT FROM UNDER IT, AND IT FAILED SILENTLY AND DOWNWARD
          # (hq_snobol4 2026-09-20, measured against their own just-pushed finding; reproduced here on .github 52a2a8bd).
-         # This counter matched '^FINDING-'. Since Lon's 2026-09-18 ruling (CEO-859 + CTO-74) every finding lives at
+         # This counter matched '^FINDING-'. Since Lon's 2026-09-18 ruling (R-859 + CTO-74) every finding lives at
          # .github/findings/FINDING-*.md, so every path this sees begins 'findings/' and THE ANCHOR NEVER MATCHED:
          # same window, same repo, anchored 0 -- unanchored 5, across three seats. ⛔ A WRONG COUNT IS NOT THE HARM.
          # The banner's NOTHING LANDED verdict calls a session EMPTY when it sees no commit and no finding, and a
@@ -4377,7 +4373,7 @@ TASKEOF
          elif [ "$onlyhere" -eq 0 ] && [ "$hrc" -ne 0 ]; then line="✅ SUCCESS — $ME — safe to /clear (behind origin, nothing unpushed) — $lvl"
          elif [ "$hrc" -eq 0 ]; then line="✅ SUCCESS — $ME — safe to /clear — $lvl"
          # ⛔⭐ IN-PROGRESS, NOT FAILURE (Lon 2026-09-13: "Does FAILURE mean IN-PROGRESS?" then "Change FAILURE
-         # to IN-PROGRESS."; ceo CEO-713). THIS BRANCH MEASURES ONE FACT AND ONLY ONE: onlyhere > 0 -- dirty
+         # to IN-PROGRESS."; R-713). THIS BRANCH MEASURES ONE FACT AND ONLY ONE: onlyhere > 0 -- dirty
          # files or unpushed commits exist IN THIS CLONE AND NOWHERE ELSE. A seat mid-row holding two
          # uncommitted files HAS NOT FAILED AT ANYTHING; it is working, and calling that FAILURE told Lon a
          # working seat was broken thirteen times an hour. The measured instance: the coo read ⛔ FAILURE on
@@ -4416,7 +4412,7 @@ TASKEOF
          # verify is not a status.  PERSIST IT.  The verdict is already computed one line above; write it to BOARD.md
          # so `fleet`, `board`, and Lon reading the file all see the same COMPUTED line whatever the client does with
          # the hint.  Suppressed when `board` is the caller, so a seat's typed status is never clobbered by this.
-         # ⛔⭐⭐ THE COMPUTED VERDICT IS PRINTED (ceo CEO-708, 2026-09-13). It had stopped: 92739c0d6 applied
+         # ⛔⭐⭐ THE COMPUTED VERDICT IS PRINTED (R-708, 2026-09-13). It had stopped: 92739c0d6 applied
          # Lon's order about the SUITE TABLE to the whole banner and left the seat banner printing nothing at
          # all, so $line went to BOARD.md and never to a human. ⛔ THE COST WAS THIRTEEN SEATS: Lon /cleared
          # all nine HQs and all four officers without a verdict to read, verbatim -- "There was no diplay
@@ -4504,15 +4500,15 @@ TASKEOF
          # ⛔ SEAT LIST IS DISCOVERED, NEVER TYPED (s255): a hand-typed list silently omits any seat Lon adds,
          # and a seat missing from the health screen is a seat nobody looks at. Numeric sort so 10 follows 9.
          # ⛔⭐ THE CENSUS ENUMERATES POSTOFFICE MAILBOXES, NOT /home/claude* GLOBS (LAW 6, V2-4). The glob it
-         # replaced could not see hq_C, hq_P or ceo AT ALL -- the two HQs running the fleet were invisible on the
+         # replaced could not see hq_C, hq_P or the officer AT ALL -- the two HQs running the fleet were invisible on the
          # fleet's own health screen, and so was every message waiting in their inboxes. It also silently omitted
          # any mailbox whose seat root is not yet cloned, which is the state every new seat starts in. The
          # postoffice IS the fleet roster; the home directories are just where the clones happen to live.
          for seat in $(s4e_boxes | sort); do
            root="$(s4e_root "$seat")"
            row="-"; lockep=0; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue
-             # ⛔ THE JOINED TEST, NOT THE CLAIM STATUS ALONE (CEO-297): this line used `! grep DONE`, which
-             # reports a CLOSED row whose claim was never reconciled as an open lock -- 43 of the ceo's 52 at the
+             # ⛔ THE JOINED TEST, NOT THE CLAIM STATUS ALONE (R-297): this line used `! grep DONE`, which
+             # reports a CLOSED row whose claim was never reconciled as an open lock -- 43 of the officer's 52 at the
              # FLEET-12 flip. LOCK AGE and "0 STALLED" hang off this row, so the half-test alarmed on rows nobody held.
              if [ "$(head -1 "$c")" = "$seat" ] && [ "$(s4e_claim_verdict "$(basename "$c" .claim)")" = "HELD" ]; then row="$(basename "$c" .claim)"
                # ⛔ THE CLAIM FILE'S MTIME IS THE LOCK-ACQUISITION INSTANT AND NOTHING ELSE. It is not touched by
@@ -4554,7 +4550,7 @@ TASKEOF
            # marked rather than left for the reader to compute across two fields. Under an hour it stays quiet: a
            # freshly-claimed row legitimately has no commits yet, and flagging that would train the eye to ignore it.
            # ⛔⭐ SECOND DISCRIMINATOR, ADDED BY hq_C 2026-09-05 AFTER "0 STALLED" FIRED FALSELY ON THE SAME LIVE
-           # SEAT TWICE IN TWENTY MINUTES, from two different HQs (hq_B at 1h25m, ceo at 1h44m). seat05 was mid-cure
+           # SEAT TWICE IN TWENTY MINUTES, from two different HQs (hq_B at 1h25m, the officer at 1h44m). seat05 was mid-cure
            # the whole time: four substantive messages and a baton LEDGER rewritten minutes before each alarm.
            # COMMITS SINCE LOCK cannot see the highest-value work a seat in a census/witness lane does, and under
            # FLEET-<n> -- where seats walk/census/witness while HQs cure, and are often told NOT to touch src/ --
@@ -4581,7 +4577,7 @@ TASKEOF
            tot=$((tot+1)); [ -f "$PO/claims/$topic.claim" ] || free=$((free+1)); done < "$PO/QUEUE.tsv" 2>/dev/null
          printf '\n  queue: %s rows, %s free for the picker (a row with ANY claim file, DONE or not, is hidden)\n' "$tot" "$free"
          # ⛔⭐⭐ THE JOINED CLAIM CENSUS -- ONE INSTRUMENT, so the next flip runs this instead of two half-censuses
-         # that disagree (ceo CEO-297, asked for by name after the FLEET-12 flip produced exactly that). Verdict logic
+         # that disagree (R-297, asked for by name after the FLEET-12 flip produced exactly that). Verdict logic
          # lives in s4e_claim_verdict; this block only counts and names. It prints EVERY held row with its holder, so
          # "who is holding what" is answerable without reading the seat table above, which shows one row per seat.
          _hf="$(mktemp)"; _bf="$(mktemp)"; nheld=0; nrec=0; nawait=0; norph=0; nblock=0
@@ -4595,7 +4591,7 @@ TASKEOF
            esac
            if s4e_claim_blocks_free_row "$t"; then nblock=$((nblock+1))
              printf '  %-10s %-14s %s\n' "$h" "$v" "$t" >> "$_bf"; fi; done
-         printf '  CLAIM CENSUS (joined verdict, CEO-297): HELD iff the claim says RUNNING AND the queue row is OPEN --\n'
+         printf '  CLAIM CENSUS (joined verdict, R-297): HELD iff the claim says RUNNING AND the queue row is OPEN --\n'
          printf '    open = not DONE, not RETIRED, not SUPERSEDED (the vocabulary closes a row three ways, not one).\n'
          printf '    %s HELD  ·  %s RECEIPT  ·  %s AWAITING-SWEEP  ·  %s ORPHAN\n' "$nheld" "$nrec" "$nawait" "$norph"
          if [ "$nheld" -gt 0 ]; then printf '    HELD rows (holder / lock age / row) -- the only ones a release would free:\n'; sort "$_hf"; fi
@@ -4619,15 +4615,15 @@ TASKEOF
          # ⭐⛔ IS THE LAW CONSISTENT WITH ITSELF? -- REPORTED HERE, BLOCKING NOWHERE (hq_B 2026-09-14, row
          # instruments-mode-line2-can-contradict-itself-and-every-cross-check-is-blind-to-it).
          # Every other lane instrument compares a READER against MODE line 2, so all of them are blind by
-         # construction to line 2 contradicting ITSELF -- when CEO-723 left "REBUS IS CLOSED ... carries Pascal
+         # construction to line 2 contradicting ITSELF -- when R-723 left "REBUS IS CLOSED ... carries Pascal
          # and nothing else" standing beside "Rebus moves to hq_S" and "REBUS -- hq_S", the picker gate printed
          # rebus ✅ and the agreement was REAL. hq_I then routed a co-sign to "hq_S (Rebus)" off those words.
          # ⛔ IT IS PRINTED, NEVER ENFORCED, AND THE ASYMMETRY IS DELIBERATE. The gate exits 2 on prose it
-         # cannot parse, and line 2 is prose the ceo reinvents at every cut (81 of 91 MODE backups are
+         # cannot parse, and line 2 is prose the officer reinvents at every cut (81 of 91 MODE backups are
          # unparseable to it, measured). As a blocking arm it would red all thirteen seats the next time a
          # correct lane cut used a new phrasing -- which is exactly the defect I shipped once already with the
          # mode-line parser. So the hermetic --selftest is the blocking arm in preflight_arms.txt, and the
-         # LIVE verdict surfaces here, in the health view a seat runs on a cadence and the ceo reads.
+         # LIVE verdict surfaces here, in the health view a seat runs on a cadence and the officer reads.
          _l2g="$(dirname "${BASH_SOURCE[0]}")/test_gate_mode_line2_is_self_consistent.sh"
          if [ -x "$_l2g" ] || [ -r "$_l2g" ]; then
            _l2o="$(timeout -k 5 20 bash "$_l2g" 2>&1)"; _l2r=$?
@@ -4636,7 +4632,7 @@ TASKEOF
              1) printf '  ⛔ MODE LINE 2 CONTRADICTS ITSELF -- the law disagrees with the law, and every lane gate we own\n'
                 printf '     is comparing its table against the contradiction and printing agreement:\n'
                 printf '%s\n' "$_l2o" | grep -E 'CONTRADICTION|^      byte ' | sed 's/^/    /'
-                printf '     ⛔ This is the ceo'"'"'s line to edit. ASK ceo/inbox with the byte offsets; do not route work\n'
+                printf '     ⛔ This is the cto'"'"'s line to edit. ASK cto/inbox with the byte offsets; do not route work\n'
                 printf '        for the named language until it is cured -- a wrong-but-LIVE owner is the dangerous case,\n'
                 printf '        because the message arrives somewhere that can act on it (hq_S, 2026-09-14).\n';;
              *) printf '  ⚠️  MODE line 2 vs ITSELF: could not measure (rc=%s) -- NOT a clean bill. Run %s\n' "$_l2r" "$_l2g";;

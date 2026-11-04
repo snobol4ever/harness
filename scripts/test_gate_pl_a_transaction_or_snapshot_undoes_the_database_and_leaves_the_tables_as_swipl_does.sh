@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_transaction_or_snapshot_undoes_the_database_and_leaves_the_tables_as_swipl_does.sh -- TRANSACTIONS AND
-# SNAPSHOTS OVER TABLES, ARCH-PROLOG-TABLING-IDG.md section 6 (hq_zetas, row prolog-tabling-transactions-and-snapshots-..., CEO-1960). transaction(G) runs once(G) and keeps its changes on success;
+# SNAPSHOTS OVER TABLES, ARCH-PROLOG-TABLING-IDG.md section 6 (hq_zetas, row prolog-tabling-transactions-and-snapshots-..., R-1960). transaction(G) runs once(G) and keeps its changes on success;
 # on failure or an exception it undoes the changes made to the declared incremental and monotonic dynamics (a snapshot of each predicate at its first change) and leaves the tables as swipl does:
 # an incremental table re-evaluated against the rolled-back database reads invalid, a monotonic table keeps its old answers and stays valid (the answers its inside deltas added are removed), a table
 # the transaction created over untouched dependencies stays valid. snapshot(G) always undoes. The witness: incremental, eager and lazy monotonic tables, commit, failure, exception, snapshot, nested

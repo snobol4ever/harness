@@ -8,16 +8,16 @@
 #
 # ⛔ THIS IS A RATCHET, NOT A CLEAN GATE, AND THE COUNT IS COMPUTED, NEVER TYPED (the s169 lesson: a ratchet assembled
 # from the violations already seen is permanently one syntax behind the code).  The floor is the measured census, 0 since
-# CEO-1576 landing 3 deleted rt_proc_enter and every asm entry C could reach; a road put back reads RED.  Override for a
+# R-1576 landing 3 deleted rt_proc_enter and every asm entry C could reach; a road put back reads RED.  Override for a
 # deliberate, reviewed change: ASM_C_ASM_RATCHET=<n>.
 #
 # ⛔ WHAT A GREEN HERE DOES *NOT* PROVE.  The census is a STATIC, NAME-BASED call graph: INDIRECT calls (p->fn, dtp
 # slots, jump tables) are INVISIBLE to it, and that is the direction this machine uses most.  A count of 0 would prove
 # only that no NAMED road remains -- never that the property holds.  Read it as a floor that must fall, not a proof.
 # The census REFUSES to report at all unless it finds a PLANTED road and skips two planted decoys (its own selftest; a
-# MEASURED road died with its witness at CEO-1576, CEO-554: an instrument is never anchored on a found witness).
+# MEASURED road died with its witness at R-1576, R-554: an instrument is never anchored on a found witness).
 #
-# ⛔ THE GATE PROVES ITS INSTRUMENT ON EVERY RUN (CEO-1573): after the clean census it plants two roads in a fixture
+# ⛔ THE GATE PROVES ITS INSTRUMENT ON EVERY RUN (R-1573): after the clean census it plants two roads in a fixture
 # directory -- its own asm entry (a .globl that jumps through a register), a ONE-LINE body called by x86("call", ...) and
 # a multi-line body whose address the emitter bakes -- and the census must name both and count exactly two more.  A census that cannot see a planted road cannot grade the tree.
 set -uo pipefail

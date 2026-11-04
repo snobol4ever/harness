@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# test_gate_icon_shootout_is_ceo567_conforming.sh -- EVERY KERNEL IN benchmarks/icon/shootout IS A REVIEWED,
-# PRISTINE, REF-BEARING ICON PROGRAM (CEO-567 THE KERNEL CONVENTION; row icon-shootout-five-programs-are-raw-
+# test_gate_icon_shootout_kernels_are_reviewed_pristine_and_ref_bearing.sh -- EVERY KERNEL IN benchmarks/icon/shootout IS A REVIEWED,
+# PRISTINE, REF-BEARING ICON PROGRAM (R-567 THE KERNEL CONVENTION; row icon-shootout-five-programs-are-raw-
 # upstream-and-cannot-parse-under-scrip, cfo 2026-09-12).
 #
 # PER PROGRAM, FOUR THINGS, and each is a separate red so a reader can route it:
 #   GUARD    no `$ifdef`/`$ifndef`/`$endif` line remains -- the entry point is a plain `procedure main`, not a
 #            harness-defined symbol (upstream wrapped main in `$ifdef MAIN` for the Unicon bench driver).
 #   PARSE    SCRIP parses it (`--dump-ast` rc=0 and no "parse error") -- the semicolon form is committed as a
-#            reviewed file, never normalised at grade time (CEO-570).
+#            reviewed file, never normalised at grade time (R-570).
 #   ORACLE   icont compiles OUR copy and the oracle's own binary reproduces the .ref byte for byte -- so the ref
 #            we grade SCRIP against is the oracle's statement about THIS file, not our artifact (the two-bar
 #            rule of test_gate_icon_vendored_sources_compile_under_icont).
@@ -65,7 +65,7 @@ for p in "${PROGS[@]}"; do
     continue
   fi
   n_graded=$((n_graded+1))
-  [ -f "$T/$p.ref" ] || { RED+=("$p REF: no $p.ref beside the kernel (CEO-567 clause 3)"); continue; }
+  [ -f "$T/$p.ref" ] || { RED+=("$p REF: no $p.ref beside the kernel (R-567 clause 3)"); continue; }
   ( cd "$T" && timeout -k 5 30 "./$p.oracle" "${ARGS[@]}" <"$stdin_src" >"$T/$p.oracle.out" 2>"$T/$p.oracle.err" ); orc=$?
   cmp -s "$T/$p.ref" "$T/$p.oracle.out" || { RED+=("$p ORACLE: the oracle's own binary (rc=$orc) does not reproduce $p.ref -- the ref is not the oracle's statement about this file"); continue; }
   ok=1

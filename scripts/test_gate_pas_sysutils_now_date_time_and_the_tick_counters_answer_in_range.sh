@@ -3,7 +3,7 @@
 # GetTickCount64 exist and answer in the ranges fpc's do: Now is days since 1899-12-30 in local time, Date its integer part, Time its fraction,
 # the tick counters are non-negative and non-decreasing milliseconds.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): 10 of its programs name Now (timing, seeds) and died
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): 10 of its programs name Now (timing, seeds) and died
 # "no defining-point" or "undefined function"; the witness prints only the BOOLEAN range checks, since the values themselves differ per run.
 # THE CURE: sysutils.pas gains TDateTime = double and Now / Date / Time / GetTickCount / GetTickCount64 over the new runtime __pas_now
 # (clock_gettime REALTIME, local offset, 25569 days to the Unix epoch) and __pas_ticks (CLOCK_MONOTONIC milliseconds).

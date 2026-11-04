@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_act_word_census.sh -- EVERY ACTIVATION-FRAME WORD OF THE PATTERN LANGUAGES, BY ITS CAUSE (the cto, 2026-10-24; Lon 11:4x: "most of those
-# SNOBOL4 RBP are due to *DEFERRED_PATTERN and PATTERN_FUNCTION() and are valid. But do go verify each one and see."; CEO-1942: RSP is the default
+# SNOBOL4 RBP are due to *DEFERRED_PATTERN and PATTERN_FUNCTION() and are valid. But do go verify each one and see."; R-1942: RSP is the default
 # home, RBP only for a cell in an unbounded situation; ARCH-THREE-ZETAS-EMISSION 6.1).
 # Reads the plan table's act column (scrip --dump-plan --compile) over util_spine_population.sh's programs of the languages that lower to the
 # SNOBOL4 match frame (snobol4 snocone rebus raku by default) and tallies, per language, the boxes whose cell lives in the match frame or the blob

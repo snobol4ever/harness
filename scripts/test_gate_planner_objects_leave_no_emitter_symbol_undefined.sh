@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh [--list] [--at-most N] -- THE PLANNER IS A STAGE THAT LINKS WITHOUT THE EMITTER (ARCH-THREE-ZETAS-EMISSION 8 chunk 1,
-# "the planner reads no emitter state"; CEO-1990; the ceo's ruling of 2026-10-26 14:0x CDT that this reading, not the token census, is the row's finish line).
+# "the planner reads no emitter state"; R-1990; the ruling of 2026-10-26 14:0x CDT that this reading, not the token census, is the row's finish line).
 # util_emitter_memory_model_census.py counts the TOKENS g_emit_cfg, g_emit. and g_emitter. in src/planner, and the planner went on reading the emitter's state through the
 # emitter's FUNCTIONS (fence0_release_bytes read g_emit_cfg from inside the depth plan; once the planner ran before emission that was NULL and the plan's release was 0, so the
 # omega path of a SPAN-then-FENCE pattern released 16 bytes too many: SCRIP cde9bfc80, cured at a11ed1ed8). The link is the honest measure: every object compiled from src/planner/

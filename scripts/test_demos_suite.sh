@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${DEMOS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/demos/${1:-}}" || exit 2
 # test_demos_suite.sh <lang> [--no-write] -- THE DEMO SUITE ROW: every demo is a test AND a workhorse benchmark (Lon 2026-09-27, in-chat to
-# the ceo, verbatim: "ALso remember that all demos are also benchmarks. They are work-horse benchmarks." and "So demos are test suites in
+# the officer, verbatim: "ALso remember that all demos are also benchmarks. They are work-horse benchmarks." and "So demos are test suites in
 # that they have a small input (a sample of the larger work horse input) and a ref file. All demos are benchmarks since they can be run at
-# wall clock and perf values extracted. They are not run in loops."; ceo CEO-1312/1313; coo COO-206).
+# wall clock and perf values extracted. They are not run in loops."; R-1312/1313; coo COO-206).
 # THE TEST ROLE, graded here: every program under corpus/demos/<lang> (the DONE-WHEN's own census: *.sno *.icn *.pl *.sc *.pas *.raku
 # *.reb, and for scriptix the *.md documents but never a README.md, three levels deep) that its CONTAINERS.tsv does not declare a container or library block is run on its SAMPLE input --
 # stdin from <stem>.in (else <stem>.input), arguments from its <stem>.cmdline run_args (or an Icon <stem>.argv), its heap, stack and
 # compile_args from its sidecars (RULES.md clause 8 (f): the runner types none of its own) -- in mode 3 and in mode 4, in a scratch copy
 # of its directory with SNO_LIB its own directory then corpus/include (the scorecard's SELFDIR:include), and its stdout is compared byte for byte with <stem>.ref, cut from the language's oracle. A program with no ref
 # grades FAIL, counted and named, never skipped. The row is <lang>-demos: both_modes_pass over the programs, written through
-# util_score_row.py --column demos by the language's LANES seat (CEO-1232), with a progress row per program and mode (class benchmark,
+# util_score_row.py --column demos by the language's LANES seat (R-1232), with a progress row per program and mode (class benchmark,
 # suite <lang>-demos). THE BENCHMARK ROLE is the <stem>.workhorse sidecar (lib_declared_arena.sh declared_workhorse_beside): the full input,
 # run once at wall clock by the timing instruments, never here and never in a loop; this runner only counts the declarations.
 # EXIT: 0 every graded program passes both modes; 1 a red named; 2 could not measure.
@@ -22,12 +22,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 G=test_demos_suite
 refuse() { echo "⛔ REFUSED(2) [$G $L]: $*" >&2; exit 2; }
-case "$L" in icon|prolog|snobol4|snocone|scriptix|pascal|raku|rebus) ;; *) refuse "usage: test_demos_suite.sh <lang> [--no-write] -- lang one of icon prolog snobol4 snocone scriptix pascal raku rebus (got '${L}'; the SCRIPtix documents left demos/scrip and .scrip for demos/scriptix and .md on 2026-10-02, ceo CEO-1421)";; esac
+case "$L" in icon|prolog|snobol4|snocone|scriptix|pascal|raku|rebus) ;; *) refuse "usage: test_demos_suite.sh <lang> [--no-write] -- lang one of icon prolog snobol4 snocone scriptix pascal raku rebus (got '${L}'; the SCRIPtix documents left demos/scrip and .scrip for demos/scriptix and .md on 2026-10-02, R-1421)";; esac
 DD="${DEMOS_DIR:-$S4E/corpus/demos/$L}"
 SCRIP="$HERE/../../SCRIP/scrip"; RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"; TMO="${DEMO_TIMEOUT:-60}"
 [ -d "$DD" ] || refuse "no demo tree at $DD"
 DEMOS_PARENT="$(cd "$DD/.." && pwd)"; ROOT="$(cd "$DD/../.." && pwd)"   # <root>/demos/<lang>: the roots beside demos/ are mirrored
-# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries for <lang> is the one check (a port refuses a language it has no front end for), each demo runs in m3 alone, the AND is that one
 # mode, the rows are keyed <lang>-demos@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
@@ -44,7 +44,7 @@ IS_BOARD=0; one_runner_suite_is_a_board "$DD" && IS_BOARD=1
 CONT="$DD/CONTAINERS.tsv"
 MDX=(); [ "$L" = scriptix ] && MDX=(-o \( -name '*.md' ! -name 'README.md' \))
 mapfile -t PROGS < <(cd "$DD" && find . -maxdepth 3 -type f \( -name '*.sno' -o -name '*.icn' -o -name '*.pl' -o -name '*.sc' -o -name '*.pas' -o -name '*.raku' -o -name '*.reb' "${MDX[@]}" \) | sed 's|^\./||' | LC_ALL=C sort)
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812): under S4E_CHUNK=entry:<demo>[,...] (a request: the demo's path under the tree, or its stem) only those
+# ⭐ THE ROUND ROBIN'S SEAM (R-1806/1812): under S4E_CHUNK=entry:<demo>[,...] (a request: the demo's path under the tree, or its stem) only those
 # demos are graded, their rows appended, and no suite row is written (rr_end)
 . "$HERE/lib_rr.sh" && rr_load "$DD" || exit 2
 if [ "${S4E_LIST:-}" = 1 ]; then _lp=(); _lx=(); for r in "${PROGS[@]}"; do if [ -f "$CONT" ] && awk -F'\t' -v n="$r" '$1 == n { f = 1 } END { exit !f }' "$CONT"; then _lx+=("demos/$L/$r"); else _lp+=("demos/$L/$r"); fi; done
@@ -69,7 +69,7 @@ printf '%-40s %-6s %-6s %s\n' program m3 m4 note
 for r in "${PROGS[@]}"; do
     if [ -f "$CONT" ] && awk -F'\t' -v n="$r" '$1 == n { f = 1 } END { exit !f }' "$CONT"; then CONTN=$((CONTN+1)); continue; fi
     TOTAL=$((TOTAL+1)); f="$DD/$r"; stem="${f%.*}"; ref="$stem.ref"; d="$(dirname "$f")"; b="$(basename "$f")"
-    export S4E_TIMEOUT_KEY="demos/$L/$r"   # the unit a retried timeout's stamp names (CEO-1335)
+    export S4E_TIMEOUT_KEY="demos/$L/$r"   # the unit a retried timeout's stamp names (R-1335)
     if [ -s "$stem.workhorse" ]; then declared_workhorse_beside "$f" > /dev/null || refuse "$r: its .workhorse sidecar is refused (the reader said why above)"; WH=$((WH+1)); fi
     if [ ! -s "$ref" ]; then
         for m in m3 m4; do [ "$PORT" = 1 ] && [ "$m" = m4 ] && continue; printf 'benchmark\t%s-demos\t%s\tdemos/%s/%s\t%s\tFAIL\t0\tno-ref\n' "$L" "$L" "$L" "$r" "$m" >> "$PROG_ROWS"; done
@@ -106,7 +106,7 @@ for r in "${PROGS[@]}"; do
     t0="$(progress_clock)"
     # shellcheck disable=SC2086
     ( cd "$W" && SNO_LIB="$W:$S4E/corpus/include" "$TIMEOUT_RETRY" "$TMO" "$SCRIP" $sw --run $ca "$b" ${args[@]+-- "${args[@]}"} < "$in" > "$W/.m3" 2> "$W/.m3e" ); r3=$?
-    s3="$(progress_secs_since "$t0")"; t0="$(progress_clock)"   # each mode's own seconds for its row (CEO-1676 (c)); m4's take compile and link
+    s3="$(progress_secs_since "$t0")"; t0="$(progress_clock)"   # each mode's own seconds for its row (R-1676 (c)); m4's take compile and link
     v3="$(verdict "$r3" "$W/.m3" "$ref")"
     # shellcheck disable=SC2086
     if [ "$PORT" = 1 ]; then v4=-; r4=0   # a port has no mode 4: no compile, no row
@@ -127,20 +127,20 @@ for r in "${PROGS[@]}"; do
     rm -rf "$M"
 done
 SCRIP_HASH="$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"; [ "$PORT" = 1 ] && SCRIP_HASH="$(one_runner_port_tree | tr ' ' @)"; CORP_HASH="$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null || echo '?')"
-# ⭐ THE BOARD LINE IS THE RECEIPT (CEO-827/839, ceo CEO-1325 ask 1, coo COO-207): a *SUITE_BOARD line in key=value form, its
+# ⭐ THE BOARD LINE IS THE RECEIPT (R-827/839, R-1325 ask 1, coo COO-207): a *SUITE_BOARD line in key=value form, its
 # fraction stated as all_pass=/all_n= so util_score_row.py READS the row off the line that measured it (never typed beside
 # it) and archives it verbatim under .github/board-lines/. shipped= is the whole census, containers= the declared library
 # blocks it excludes, so shipped = all_n + containers reads off the line. Fields are read BY NAME (lib_board_line.sh).
 LINE="DEMOS_SUITE_BOARD lang=$L total=$TOTAL shipped=$((TOTAL+CONTN)) all_pass=$BOTH all_n=$TOTAL m3_pass=$M3P m4_pass=$M4P containers=$CONTN workhorse_declared=$WH chained=$CH tree=$SCRIP_HASH corpus=$CORP_HASH RT_OPT=-O0"
 echo "$LINE (the sample input against each demo's oracle ref; both_modes_pass=all_pass)"
 [ -n "$NAMED" ] && echo "  NOT BOTH-MODES PASS:$NAMED"
-[ "$WH" -lt "$TOTAL" ] && echo "  ⚠ WORKHORSE: $((TOTAL-WH)) of $TOTAL demo(s) declare no <stem>.workhorse -- the benchmark role is owed (CEO-1313)"
+[ "$WH" -lt "$TOTAL" ] && echo "  ⚠ WORKHORSE: $((TOTAL-WH)) of $TOTAL demo(s) declare no <stem>.workhorse -- the benchmark role is owed (R-1313)"
 # progress rows: the canonical tree always, a fixture only into the table it names explicitly (S4E_PROGRESS_DB), as the testpgms runner does
 if [ "$IS_BOARD" = 1 ] || [ -n "${S4E_PROGRESS_DB:-}" ]; then
-    progress_append_rows_tsv "$PROG_ROWS" || refuse "the progress database did not take this run's rows -- no row is written without them (CEO-750)"
+    progress_append_rows_tsv "$PROG_ROWS" || refuse "the progress database did not take this run's rows -- no row is written without them (R-750)"
 fi
 rr_selected && { rr_end "$ROWKEY"; exit 0; }
-if [ "$PORT" = 1 ]; then echo "suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $ROWKEY, assembled from these progress rows (CEO-1822), graded in m3 alone"
+if [ "$PORT" = 1 ]; then echo "suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $ROWKEY, assembled from these progress rows (R-1822), graded in m3 alone"
     if [ "$IS_BOARD" = 1 ] && [ "$NOWRITE" = 0 ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: not published (a fixture, or --no-write)"; fi
 elif [ "$IS_BOARD" = 1 ]; then
     if [ "$NOWRITE" = 0 ]; then

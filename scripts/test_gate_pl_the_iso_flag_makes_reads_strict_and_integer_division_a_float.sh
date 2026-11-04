@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_pl_the_iso_flag_makes_reads_strict_and_integer_division_a_float.sh -- set_prolog_flag(iso, true) MAKES AN ARGUMENT OVER PRIORITY 999 A SYNTAX ERROR AND 4 / 2 A FLOAT; THE DEFAULT IS UNCHANGED (ceo CEO-1272).
-# hq_prolog 2026-09-25, CEO-1270/1272. RULED: under THE SUPERSET the default reads f(a:-b) and gives 4 / 2 = 2 as swipl does, so SWI and the
+# test_gate_pl_the_iso_flag_makes_reads_strict_and_integer_division_a_float.sh -- set_prolog_flag(iso, true) MAKES AN ARGUMENT OVER PRIORITY 999 A SYNTAX ERROR AND 4 / 2 A FLOAT; THE DEFAULT IS UNCHANGED (R-1272).
+# hq_prolog 2026-09-25, R-1270/1272. RULED: under THE SUPERSET the default reads f(a:-b) and gives 4 / 2 = 2 as swipl does, so SWI and the
 # swipl-cut refs do not move; ISO's answer -- a syntax error (6.3.4.1: an argument's priority is at most 999) and 2.0 (9.1.7) -- comes through
 # ISO's own switch. THE CURE: the flag table gains iso (by_name_dispatch.c, rt_pl_iso_mode), / of two integers is a float under it, and the
 # reader (prolog_parse.c) parses arguments and list elements at 999 when the flag is on -- seeded from the runtime flag for read/1 and set by a

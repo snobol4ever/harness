@@ -5,7 +5,7 @@
 # '\"\\.[a-z]+\"' src/driver/scrip.c" -> ".sno .spt .sbl are SNOBOL4"). Three package suites carry no other extension --
 # spitbol_testpgms/ (8 .spt), spitbol_x32_tests/ (21 .spt), spitbol_x64_tests/ (36 .sbl) -- so every one of their 65 programs
 # REFUSED at the top gate before this cure: "REFUSE(2): spt is not a SCRIP source extension". THE MONITOR IS THE METHOD
-# (RULES.md), and an instrument gap that blocks a bracket is crawl work (hq_snobol4, CEO-1295(ii) follow-on): the same "spl scr"
+# (RULES.md), and an instrument gap that blocks a bracket is crawl work (hq_snobol4, R-1295(ii) follow-on): the same "spl scr"
 # participant pair sno already uses handles spt/sbl content identically -- spl just runs `sbl -bf <file>` and scr runs
 # `scrip --trace --run <file>`, neither branches on extension past this gate.
 # THE WITNESS: a three-statement OUTPUT='hello' program, copied under all three extensions, run with --oracle. Must AGREE

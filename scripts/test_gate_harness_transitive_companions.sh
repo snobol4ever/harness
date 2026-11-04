@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_harness_transitive_companions.sh -- THE ACCEPTANCE GATE for row
 # harness-copies-companions-to-closure-not-just-the-first-level (hq_T -> seat06, 2026-09-05,
 # minted on seat06's own FINDING-2026-09-04-seat06-corpus-suite-harness-transitive-include-
@@ -48,7 +48,7 @@ echo "=== gate: companion files are copied to transitive closure, with a cycle g
 
 echo "--- ARM 1: the real witness -- fail-once (one-level copier) then pass-once (the cure) ---"
 # ⛔⭐ THIS ARM DECLARES ITS OWN PER-PROGRAM BUDGET AND RECORDS EVERY DURATION, AND UNTIL 2026-09-12 IT DID
-# NEITHER (hq_V, CEO-601/COO-60). It inherited corpus_suite_harness.py's TIMEOUT default of TEN SECONDS, and
+# NEITHER (hq_V, R-601/COO-60). It inherited corpus_suite_harness.py's TIMEOUT default of TEN SECONDS, and
 # the witness is a program that runs until it EXHAUSTS THE HEAP and aborts -- so the arm's verdict turned
 # entirely on an undeclared duration. MEASURED both ways on the same corpus witness, caches warm, binaries
 # alternated: at this gate's own mint commit 55843f71b it aborted signal 6 in 3.8-4.5 s (under 10 s -> CRASH,
@@ -120,10 +120,10 @@ grep -q '^MISSING-ENTRY$' <<<"$out1" && { echo "⛔ REFUSED-TO-GRADE rc=2: array
 before_line="$(grep '^BEFORE' <<<"$out1")"
 after_line="$(grep '^AFTER' <<<"$out1")"
 secs_line="$(grep '^SECS' <<<"$out1")"
-# ⭐ THE PRE-CURE m4 VERDICT IS FAIL SINCE CEO-1354 (the coo 2026-10-11): the one-level copier leaves the second-level file absent, so
+# ⭐ THE PRE-CURE m4 VERDICT IS FAIL SINCE R-1354 (the coo 2026-10-11): the one-level copier leaves the second-level file absent, so
 # scrip --compile refuses rc 1; that refusal was a SKIP, and is now graded as mode 3 grades the same refusal from --run -- FAIL, a refusal
 # the oracle does not share. The arm still proves the copier's failure KIND (a refusal in both modes, never the program's own verdict).
-[ "$before_line" = "BEFORE FAIL FAIL" ] && ck ok "fail-once: the one-level copier reproduces the exact pre-cure verdicts (FAIL m3 / FAIL m4, the m4 compile refusal graded since CEO-1354)" \
+[ "$before_line" = "BEFORE FAIL FAIL" ] && ck ok "fail-once: the one-level copier reproduces the exact pre-cure verdicts (FAIL m3 / FAIL m4, the m4 compile refusal graded since R-1354)" \
     || ck no "fail-once did not reproduce the documented pre-cure shape -- ${before_line:-<no output>}"
 # ⛔ A HANG AT A DECLARED, GENEROUS BUDGET IS A REFUSAL, NOT A RED. The two readings "this program never
 # finishes" and "this program needed more than ${ARM1_BUDGET}s" are the same observation, and this arm cannot
@@ -139,7 +139,7 @@ fi
 # ⭐ THE CURED READING IS THE RUNTIME'S, NOT THIS GATE'S (the coo 2026-09-28): at the mint the witness exhausted the workspace heap and
 # aborted in both modes (CRASH CRASH, oracle-confirmed then); since the collector grew it runs to the end and matches ALL.ref, the
 # oracle's cut (PASS PASS). What companion-copying decides is that the second-level file is PRESENT, so the program compiles and both
-# modes read the same runtime verdict -- never the one-level copier's FAIL m3 / FAIL m4 (SKIP m4 before CEO-1354). Either cured reading holds; anything else reds.
+# modes read the same runtime verdict -- never the one-level copier's FAIL m3 / FAIL m4 (SKIP m4 before R-1354). Either cured reading holds; anything else reds.
 case "$after_line" in
   "AFTER CRASH CRASH"|"AFTER PASS PASS")
     ck ok "pass-once: the cured copier reaches the program in both modes (${after_line#AFTER }, the runtime's verdict with every companion present)" ;;
@@ -152,7 +152,7 @@ esac
 if [ -n "${secs_line:-}" ]; then
     after_secs="$(grep -oE 'after=[0-9.]+' <<<"$secs_line" | cut -d= -f2)"
     echo "    $secs_line   (this gate's mint commit 55843f71b measured the same witness aborting signal 6 in ~${ARM1_MINT_SECS}s)"
-    awk -v a="${after_secs:-0}" -v m="$ARM1_MINT_SECS" 'BEGIN{ if (a > 4*m) printf "    ⚠ NOTICE, reported and deliberately NOT red here: the cured witness now takes %.1fs where this gate\x27s mint tree took ~%.1fs (%.1fx). Same abort, signal 6, same input -- only the clock moved. Bisected to ac044419d (2026-09-09, the workspace-island-into-GC-heap merge, CEO-450/451/454/474): [WSI] island exhausted (1024 MB, 25165235 blocks) became [ZHP] heap exhausted (512 MB, 11184399 blocks) on a pinned allocation. That is a RUNTIME row and a shared node, not this gate\x27s to cure.\n", a, m, a/m }'
+    awk -v a="${after_secs:-0}" -v m="$ARM1_MINT_SECS" 'BEGIN{ if (a > 4*m) printf "    ⚠ NOTICE, reported and deliberately NOT red here: the cured witness now takes %.1fs where this gate\x27s mint tree took ~%.1fs (%.1fx). Same abort, signal 6, same input -- only the clock moved. Bisected to ac044419d (2026-09-09, the workspace-island-into-GC-heap merge, R-450/451/454/474): [WSI] island exhausted (1024 MB, 25165235 blocks) became [ZHP] heap exhausted (512 MB, 11184399 blocks) on a pinned allocation. That is a RUNTIME row and a shared node, not this gate\x27s to cure.\n", a, m, a/m }'
 fi
 
 echo "--- ARM 2/3/4: synthetic closure depth, cycle termination, and refusal-safety ---"

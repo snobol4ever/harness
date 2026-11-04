@@ -44,7 +44,7 @@ arm "lex error alone (no second line to latch onto)" UNGRADED-LEX "" "raku lex e
 # first arm below, which is how this was found. ⭐ A comment asserting that something matters is a claim like
 # any other, and the way to check it is to break the thing and watch.
 arm "parse error stays UNGRADED-PARSE" UNGRADED-PARSE "" "raku parse error line 15: syntax error" 1
-# ⛔⭐ THE SHAPE THE DRIVER ACTUALLY EMITS TODAY (hq_raku 2026-09-27, ceo CEO-1318). Every fixture above is the
+# ⛔⭐ THE SHAPE THE DRIVER ACTUALLY EMITS TODAY (hq_raku 2026-09-27, R-1318). Every fixture above is the
 # flex/bison parser's wording, which no binary has printed since the hand-written parser swapped in (SCRIP
 # 2d9817261): a refusal now opens with the POSITIONED `<file>:<line>:<col>: raku syntax error: <why>` and the bare
 # `raku: parse error in <file>` is line 2. This gate stayed green on the old fixtures while the real shape read

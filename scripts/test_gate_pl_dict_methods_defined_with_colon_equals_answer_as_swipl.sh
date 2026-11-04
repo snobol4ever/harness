@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_dict_methods_defined_with_colon_equals_answer_as_swipl.sh -- SWI DICT METHODS: Self.f() := V [:- Body] DEFINES A FUNCTION
 # ON THE DICTS OF THE DEFINING MODULE'S TAG, AND Dict.f() / Dict.f(Args) CALLS IT, AS swipl DOES (cfo 2026-10-14, row
-# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-ceo-1709: test_dict define_functions na, aa, a2, qna, qa2).
+# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-r-1709: test_dict define_functions na, aa, a2, qna, qa2).
 #
 # The reader had no := operator (swipl: 990 xfx), so every definition was a parse error. The reader already keeps f() apart from
 # the atom f (a TT_FNC with no children), and the cure keeps that distinction to the call: lower_prolog.c pl_dot_fn makes the

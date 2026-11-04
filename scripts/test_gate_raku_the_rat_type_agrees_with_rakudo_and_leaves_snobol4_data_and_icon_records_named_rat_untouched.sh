@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_rat_type_agrees_with_rakudo_and_leaves_snobol4_data_and_icon_records_named_rat_untouched.sh -- THE RAT TYPE: decimal literals, Int/Int division, Int ** negative Int, Rat and FatRat
 # arithmetic with arbitrary-size numerators and a denominator limit of 2**64, six-digit stringification, and every numeric builtin that takes a Rat (index, range bounds, x, floor, abs, sqrt, sprintf, Int,
-# ^N, sort, min, max, sum) (row raku-every-suite-to-100-under-nonet-ceo-1266; cto rulings ask-rat-type-arithmetic-hook and ask-rat-hook-reaches-core-numeric-coercion).
+# ^N, sort, min, max, sum) (row raku-every-suite-to-100-under-nonet-r-1266; cto rulings ask-rat-type-arithmetic-hook and ask-rat-hook-reaches-core-numeric-coercion).
 #
 # THE DEFECT: a Raku decimal literal was a binary double (0.1 + 0.2 printed 0.30000000000000004, 1/3 printed 0.3333333333333333, 6/3 was an Int), there was no Rat, no FatRat and no exact
 # arithmetic, Int ** -2 was 0 and 0 ** 0 died, and RakBench's mb-rat_mul_div_cancel, mb-rat_harmonic, pi-sequential-iteration and rc-dragon-curve could not pass.
@@ -13,7 +13,7 @@
 # THE OTHER LANGUAGES: ../harness/scripts/fixtures/rat_other_languages holds 18 SNOBOL4 programs that build a DATA named RAT and 18 Icon programs that build a record named Rat and push it through every coercion the
 # landing widened (+ - * / ** unary minus, SIN SQRT ABS CHAR DUPL LPAD SUBSTR ARRAY REMDR LT SIZE INTEGER REAL, integer real numeric string repl left sqrt sin abs % < to); their expected output (stdout, stderr and
 # rc, modes 3 and 4) was cut from the BASE binary (SCRIP b01fdb21a) before the change, so a byte of difference is a behaviour the landing changed for those languages.
-# RE-CUT (cfo 2026-10-17, row gate-raku-rat-an-icon-record-is-now-taken-as-numeric-error-102-in-icn-05-ceo-1807): icn_02 (sqrt), icn_05 (abs) and icn_17 (sin) of a record printed done on the base
+# RE-CUT (cfo 2026-10-17, row gate-raku-rat-an-icon-record-is-now-taken-as-numeric-error-102-in-icn-05-r-1807): icn_02 (sqrt), icn_05 (abs) and icn_17 (sin) of a record printed done on the base
 # binary where iconx raises 102; SCRIP 49c2cdaee cured abs and the math-builtins landing cured sqrt and sin, and their refs are re-cut to the runs that raise 102 at line 5 on record Rat_1(1,2) as iconx
 # does. Every other Icon fixture already agrees with iconx in error number, line and offending value.
 # FAILED ONCE: the six witnesses differ from Rakudo on b01fdb21a (Num literals, no Rat).

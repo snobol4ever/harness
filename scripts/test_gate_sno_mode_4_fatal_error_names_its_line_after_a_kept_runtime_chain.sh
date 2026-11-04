@@ -10,7 +10,7 @@
 # THE WITNESSES (each a program that ends in a division by zero, error 14; every expected line is cut from sbl -bf at run time):
 #   k1 EVAL('1 + 1') twice   k2 an EVAL whose value is a pattern   k3 CODE(' X = 1')   k4 the error inside a DEFINEd function called after two kept EVALs
 #   k5 control: ONE EVAL of a scalar (its chain is released, the static map was always read)
-# arm 0 (CEO-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
+# arm 0 (R-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
 set -u
 G=test_gate_sno_mode_4_fatal_error_names_its_line_after_a_kept_runtime_chain
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; SCRIP="$SD/scrip"

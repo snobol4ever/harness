@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """util_xsb_wfs_entry_is_the_driver.py -- A wfs_tests ENTRY IS THE PROGRAM XSB RUNS: THE DRIVER, WITH THE EXAMPLE CONSULTED AT RUN TIME (hq_packages 2026-10-28,
-ceo CEO-2005, DESIGN-PLAN xsb-tabling-wfs step 2, ARCH-PROLOG-WFS-TABLING.md section 8 R2).
+R-2005, DESIGN-PLAN xsb-tabling-wfs step 2, ARCH-PROLOG-WFS-TABLING.md section 8 R2).
 
 THE DEFECT, MEASURED: XSB's wfs_tests/test.sh runs `./gentest.sh wfs_test pNN "test(pNN)."`, that is `[wfs_test]. test(pNN). told.`: the driver wfs_test.P is the
-program, and test/1 consults pNN.P itself. The vendoring (CEO-700) wrote each entry as the example's own clauses (query/5, the :- table, the rules) followed by
+program, and test/1 consults pNN.P itself. The vendoring (R-700) wrote each entry as the example's own clauses (query/5, the :- table, the rules) followed by
 `:- initialization((consult(wfs_test), test(pNN), told))`, so the entry defined the example's predicates statically and test/1's consult(pNN) then asserted them
 a second time: permission_error(modify, static_procedure, query/5) and '$tbl p'/0, the driver printed nothing, and 72 entries read FAIL against XSB's answer
 (wfs_tests_p06: 0 of 4 lines). The entry is now the driver's text followed by `:- initialization((test(pNN), told)).`, the example staged beside as today (STAGED.tsv
@@ -49,7 +49,7 @@ def driver_source(pkg):
 def wfs_entry_text(pkg, name, goal):
     """The entry for wfs program NAME: the driver, then the vendoring's trailer that runs the goal and closes temp."""
     prog = name[len("wfs_tests_"):] if name.startswith("wfs_tests_") else name
-    return (driver_source(pkg) + MARK + f", CEO-700; CEO-1927; R2 of ARCH-PROLOG-WFS-TABLING.md): XSB wfs_tests/test.sh runs ./gentest.sh wfs_test {prog} \"{goal}.\" -- "
+    return (driver_source(pkg) + MARK + f", R-700; R-1927; R2 of ARCH-PROLOG-WFS-TABLING.md): XSB wfs_tests/test.sh runs ./gentest.sh wfs_test {prog} \"{goal}.\" -- "
             f"the driver wfs_test.P is the program and {prog}.P is consulted at run time from the staged upstream directory; the answer is the file temp (STAGED.tsv answer=temp-sorted)\n"
             f":- initialization(({goal}, told)).\n")
 

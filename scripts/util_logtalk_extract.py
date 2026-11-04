@@ -3,7 +3,7 @@
 
 Row: prolog-logtalk-iso-3268-conformance-cases-have-no-runner (the row NAME under-counts; see below).
 Lon 2026-09-11: "Let's get those Prolog programs graded."
-Spiked by the ceo (SCRIP d7766980e), HARDENED AND OWNED by hq_R 2026-09-12.
+Spiked by the officer (SCRIP d7766980e), HARDENED AND OWNED by hq_R 2026-09-12.
 
 ⛔ THE POPULATION IS 3617, NOT 3268 -- census by head form across the 192 tests.lgt:
     test/2 3268 · succeeds/1 162 · throws/2 134 · fails/1 53  = 3617
@@ -236,7 +236,7 @@ class FileCases(object):
 # tests: the predicates every case of directives/conditional_compilation calls (s1..s8, f01..f31) live in
 # file.pl and nowhere else. Grade without it and all 39 raise existence_error -- a complete, plausible,
 # entirely harness-made red on the one group whose subject is whether conditional compilation works at all
-# (measured 2026-09-12 against the ceo's independent emulation, which inlines the same file and passes 39).
+# (measured 2026-09-12 against the officer's independent emulation, which inlines the same file and passes 39).
 # ⭐ THE FILE IS NAMED BY THE VENDOR'S OWN tester.lgt, never guessed from the directory listing: op_3 and
 # discontiguous_1 also ship file.pl, include_1/ensure_loaded_1/initialization_1/multifile_1 ship main.pl or
 # file_1.pl, and a directory can ship a .pl the tester deliberately does NOT load.
@@ -325,9 +325,9 @@ def _conjunct_value(t):
     m = re.match(r"current_logtalk_flag\(\s*prolog_dialect\s*,\s*([a-z][a-zA-Z0-9_]*)\s*\)$", t)
     if m:
         return False if m.group(1) in _DIALECTS else None
-    # ⛔⭐ COINDUCTION IS DECLARED SUPPORTED, BECAUSE WE EXPECT TO HAVE EVERY FEATURE (Lon 2026-10-05, in-chat to the ceo, verbatim:
-    # "We do want ALL test programs to run. We have NO expected failures. We expect to have ALL features."; ceo CEO-1518, which
-    # withdraws CEO-1235 (3) option (a)). The 68 cyclic-term cases are in the denominator and read FAIL until SCRIP has rational
+    # ⛔⭐ COINDUCTION IS DECLARED SUPPORTED, BECAUSE WE EXPECT TO HAVE EVERY FEATURE (Lon 2026-10-05, in-chat, verbatim:
+    # "We do want ALL test programs to run. We have NO expected failures. We expect to have ALL features."; R-1518, which
+    # withdraws R-1235 (3) option (a)). The 68 cyclic-term cases are in the denominator and read FAIL until SCRIP has rational
     # trees (the cto's row prolog-rational-trees-cyclic-term-unification-comparison-copy-and-write-so-the-logtalk-coinduction-branch-
     # is-graded-as-supported). Their else-branches are lgtunit-skipped "- test" clauses, which are not cases, so nothing leaves.
     m = re.match(r"current_logtalk_flag\(\s*coinduction\s*,\s*([a-z]+)\s*\)$", t)
@@ -342,9 +342,9 @@ def _conjunct_value(t):
 # this map (normalised guard text -> True/False) only where every mode agrees; --census, which runs nothing, leaves it empty.
 PROBED = {}
 
-# ⛔⭐ FOUR GUARDS ARE RULED, NOT PROBED (ceo CEO-1524, 2026-10-05, on the coo's ask): each is an if/else whose two branches expect
+# ⛔⭐ FOUR GUARDS ARE RULED, NOT PROBED (R-1524, 2026-10-05, on the coo's ask): each is an if/else whose two branches expect
 # opposite outcomes of one goal, so no engine passes both -- the exclusive-configuration class of Lon's Windows and bounded rulings
-# (CEO-1519, CEO-1520). FEATURE PRESENT is decided for three: ^/2 is NOT callable (bagof_3 iso_bagof_3_09, setof_3 iso_setof_3_11: REVERSED by CEO-1526 on the cfo's measurement -- no oracle has a callable ^/2 and INRIA encodes ISO's answer, so the ABSENT branch is graded),
+# (R-1519, R-1520). FEATURE PRESENT is decided for three: ^/2 is NOT callable (bagof_3 iso_bagof_3_09, setof_3 iso_setof_3_11: REVERSED by R-1526 on the cfo's measurement -- no oracle has a callable ^/2 and INRIA encodes ISO's answer, so the ABSENT branch is graded),
 # the dialects whose atom may be both an infix and a postfix operator (op_3 iso_op_3_10), and '|' is an operator (op_3 iso_op_3_21,
 # whose guard asks for its ABSENCE, so it reads FALSE). The sibling branch of each is an EXCLUSIVE_BRANCH row of EXCLUDED_CASES.tsv;
 # the live branch is graded and reads FAIL until SCRIP has the feature (the cfo's work: ^/2 must be callable).

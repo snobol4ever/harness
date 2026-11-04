@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_suite_board_line_prints_shipped_with_outside_named.sh -- THE HARNESS BOARD LINE PRINTS PASS OVER THE SHIPPED
-# POPULATION WITH OUTSIDE NAMED, AND THE OUTSIDE ENTRIES REACH THE PROGRESS DB (coo 2026-09-16; ceo CEO-772, CEO-749; Lon
+# POPULATION WITH OUTSIDE NAMED, AND THE OUTSIDE ENTRIES REACH THE PROGRESS DB (coo 2026-09-16; R-772, R-749; Lon
 # 2026-09-16 "Get those fixed" -- OUTSIDE is debt; row snobol4-master-runner-publishes-over-the-graded-population-1972-not-
 # the-shipped-1980-with-outside-named).
 #
@@ -16,7 +16,7 @@
 #
 # ARMS (hermetic: a three-entry suite cut from the live rungs under mktemp in a tests/snobol4/ALL.sno layout, the progress
 # DB redirected by S4E_PROGRESS_DB to a scratch table -- the live table is never touched; a fixture outside the corpus is not
-# a board and the one-runner guard does not apply, CEO-547):
+# a board and the one-runner guard does not apply, R-547):
 #   (a) with one entry declared outside: SUITE_BOARD total=2 shipped=3 outside=1, all_n=2, m3_n=2 m4_n=2
 #   (b) the OUTSIDE_BASELINE line names the entry with its class and reason, and the count line says IN the shipped one
 #   (c) the scratch DB carries one OUTSIDE row per requested mode for the entry, note = class: reason
@@ -28,8 +28,8 @@
 #       ONE ORACLE REFUSES against their stored .ref. A declared fact beside the data may not depend on the caller
 #       remembering a flag; the escape is loud, not silent, which is arm (f).
 #   (e) STATIC: test_corpus_snobol4.sh writes --suite-total "$_sn4_shipped" and refuses when shipped=/outside= are absent
-#       and test_icon_arizona_suite.sh / test_icon_jcon_suite.sh write --suite-total "$SHIPPED", never a graded subset (ceo CEO-1245,
-#       CEO-1268: Zona 88/124 and Jcon 82/91, the ungraded staying in the denominator as debt)
+#       and test_icon_arizona_suite.sh / test_icon_jcon_suite.sh write --suite-total "$SHIPPED", never a graded subset (R-1245,
+#       R-1268: Zona 88/124 and Jcon 82/91, the ungraded staying in the denominator as debt)
 #   (f) --outside-none is the LOUD escape: total=3 shipped=3 outside=0 AND the printed line names the list it skipped
 #       and says the count is not comparable to a baseline board; --outside with --outside-none together REFUSE rc=2
 # FAIL_ONCE=1 rewrites the captured board line's shipped=3 to shipped=2 before arm (a) grades, to prove the arm trips.
@@ -50,7 +50,7 @@ printf '%s\tORACLE_REFUSES\tfixture: the oracle refuses this entry\n' "$NAME" > 
 DB="$W/results.tsv"; printf 'ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\n' > "$DB"
 echo "    fixture: 3 entries cut from the rungs; outside = $NAME"
 fails=0; checks=0; ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
-echo "=== gate: the board line prints PASS over the shipped population with OUTSIDE named (CEO-749) ==="
+echo "=== gate: the board line prints PASS over the shipped population with OUTSIDE named (R-749) ==="
 out="$(S4E_PROGRESS_DB="$DB" timeout -k 5 120 python3 "$H" run "$W/tests/snobol4/ALL.sno" "$W/tests/snobol4/ALL.ref" --modes m3,m4 --outside "$W/tests/snobol4/ALL.outside.tsv" 2>&1)"; rc=$?
 [ "$rc" -le 1 ] || refuse "the harness could not grade the fixture (rc=$rc): $(tail -3 <<<"$out")"
 board="$(grep '^SUITE_BOARD ' <<<"$out")"
@@ -75,8 +75,8 @@ R="$HERE/test_corpus_snobol4.sh"
 grep -q -- '--suite-total "\$_sn4_shipped"' "$R" && grep -q 'shipped=/outside= fields' "$R" && ck ok "(e) STATIC: test_corpus_snobol4.sh publishes --suite-total \$_sn4_shipped and refuses when shipped=/outside= are absent" || ck no "(e) test_corpus_snobol4.sh does not publish the shipped population or does not refuse on absent fields"
 for R in "$HERE/test_icon_arizona_suite.sh" "$HERE/test_icon_jcon_suite.sh"; do
   grep -q -- '--suite-total "\$SHIPPED"' "$R" && ! grep -qE -- '--suite-total "\$(TOTAL|total|GRADED)"' "$R" \
-    && ck ok "(e) STATIC: ${R##*/} publishes --suite-total \$SHIPPED, the shipped population (ceo CEO-1245, CEO-1268)" \
-    || ck no "(e) ${R##*/} publishes a graded subset as its suite total, not \$SHIPPED (ceo CEO-1245: the shipped population is the denominator)"
+    && ck ok "(e) STATIC: ${R##*/} publishes --suite-total \$SHIPPED, the shipped population (R-1245, R-1268)" \
+    || ck no "(e) ${R##*/} publishes a graded subset as its suite total, not \$SHIPPED (R-1245: the shipped population is the denominator)"
 done
 out3="$(S4E_PROGRESS_DB="$DB" timeout -k 5 120 python3 "$H" run "$W/tests/snobol4/ALL.sno" "$W/tests/snobol4/ALL.ref" --modes m3,m4 --outside-none 2>&1)"; board3="$(grep '^SUITE_BOARD ' <<<"$out3")"
 h(){ grep -oE " $1=[0-9]+" <<<"$board3" | head -1 | cut -d= -f2; }

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # util_gc_chain_matrix.sh -- THE CHAIN MATRIX (hq_collector 2026-10-11, ARCH-GC section 13): every gc_witness, mode 3 and mode 4, at the 64 KB window with a collection at every
-# safe point, under SCRIP_GC_CHAIN_CHECK=3, one line per witness and mode from the [CHAIN-WALK] SUMMARY, then the totals. A BOARD: the coo runs it on a row that asks (CEO-1671); a seat runs one witness by hand.
+# safe point, under SCRIP_GC_CHAIN_CHECK=3, one line per witness and mode from the [CHAIN-WALK] SUMMARY, then the totals. A BOARD: the coo runs it on a row that asks (R-1671); a seat runs one witness by hand.
 # CLEAN means whole == runs and offchain-swept, missing, bad-link, frameless, nosite, no-link, cycle, unknown-depth, visitor differ all 0. rc 0 = every line clean, rc 1 = one or more not, rc 2 = could not measure.
 #   usage: util_gc_chain_matrix.sh [witness-name-substring ...]     MATRIX_STRESS=1 (default) MATRIX_KB=64 (default)
 #   MATRIX_PLANT="<KNOB>=<v>" runs every witness a second time under that plant and adds a PLANT-DIFF check (the planted run's output in each mode must equal the unplanted run's). The poison
 #   falsifier SCRIP_GC_PLANT_POISON went with the marker scan (STEP B): naming it REFUSES rc 2, since a plant the runtime does not carry grades nothing. The fail-once of the chain is the
-#   commit-before form test_gate_gc_the_chain_over_the_maps_finds_every_frame_by_return_pc.sh names (CEO-1680).
+#   commit-before form test_gate_gc_the_chain_over_the_maps_finds_every_frame_by_return_pc.sh names (R-1680).
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"
 SCRIP="$ROOT/scrip"; WD="$ROOT/../harness/scripts/gc_witnesses"

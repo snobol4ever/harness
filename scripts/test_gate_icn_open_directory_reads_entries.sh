@@ -1,5 +1,5 @@
 #!/bin/bash
-# Icon open(<directory>) READS THE DIRECTORY'S ENTRIES. Row: the CEO-516 item-2 held three
+# Icon open(<directory>) READS THE DIRECTORY'S ENTRIES. Row: the R-516 item-2 held three
 # (rung36_jcon_recent). Exposed by the jcon suite, cured by hq_I 2026-09-10.
 #
 # THE DEFECT THIS PINS, in two parts -- the second is the one a plausible cure gets wrong:
@@ -26,7 +26,7 @@
 # order-SENSITIVE-FREE too: it asserts one entry per reads() by shape (no embedded newline, and the
 # set of names complete), never by position.
 # ⛔ A GATE THAT CANNOT MEASURE REFUSES rc=2 -- all 4 runs (2 witnesses x 2 modes) must be graded.
-# ⭐ NEGATIVE-TESTED AS A DISCRIMINATOR (CEO-510), both parts separately: with rt_dir_snapshot's
+# ⭐ NEGATIVE-TESTED AS A DISCRIMINATOR (R-510), both parts separately: with rt_dir_snapshot's
 # call site removed, ARM A goes RED in both modes ("entries read: 0"); with only the reads() 'd'
 # branch removed, ARM A stays GREEN and ARM B goes RED with 25-char chunks carrying newlines --
 # which is the point of having two arms, because part (2) is invisible to part (1)'s witness.

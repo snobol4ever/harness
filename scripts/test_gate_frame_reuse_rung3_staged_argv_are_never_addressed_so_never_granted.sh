@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 3, STEP (a), OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): THE STAGED CALL'S ARGV NON-GRANT.  bb_call_proc_staged marshals a callee's arguments over rsp
+# (cto, R-684 slice 2): THE STAGED CALL'S ARGV NON-GRANT.  bb_call_proc_staged marshals a callee's arguments over rsp
 # (x86_rsp_store64 32+16i) from the PRODUCER boxes' own slots (bcps_arg_slot: bb_slot_get / zls_off of the argument node),
 # and its beta resumes the callee through the callgen.act quad -- it never writes and never reads the call's own
 # call.argv quads, in any arm, alpha or beta (the census named them NOREF at 09c0e5608; every [rbp+N] of every body

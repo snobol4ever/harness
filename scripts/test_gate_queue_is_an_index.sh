@@ -10,8 +10,8 @@
 # THREE INVARIANTS: (1) every data row has exactly 4 fields; (2) every row has a baton; (3) no row carries
 # prose — a field that is not the SHAPE its column takes (rank: digits; topic: a slug; owner: a seat name;
 # state: WORD or WORD:<topic>), or longer than the cap, means someone put a brief back in the index.
-# ⛔ RE-CUT 2026-10-31 (ceo CEO-2079): the cap was 64 characters on EVERY field. Topics grew past that with the
-# -ceo-NNNN suffix (288 of 398 topics on 10-31) and a state of BLOCKED-ON:<topic> carries a whole topic by the bus's
+# ⛔ RE-CUT 2026-10-31 (R-2079): the cap was 64 characters on EVERY field. Topics grew past that with the
+# -officer-NNNN suffix (288 of 398 topics on 10-31) and a state of BLOCKED-ON:<topic> carries a whole topic by the bus's
 # own syntax, so the gate had read 318 of 398 rows as prose for weeks and nobody could act on it. Prose is a shape,
 # not a length: a space, a sentence, a second line. The cap stays as a backstop at 200 (QUEUE_FIELD_CAP).
 #

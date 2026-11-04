@@ -23,7 +23,7 @@
 # fields exist. (2) REFRESH: hb_coexpr_refresh.icn (two activations, then ^e restarts from the creation-time image while
 # every block moves) matches its iconx-cut ref at SCRIP_GC_STRESS=1,3,5,8 under SCRIP_GC_PLANT_SHIFT=4096 in BOTH modes.
 # (3) ARIZONA: coexpr.icn (image(^e), sixty co-expression operations) prints the same stdout as icont at stress 0 and 5
-# (58 lines; its &errout trace is the ceo's rowed finding, not graded here). (4) MEASURED, NOT ASSERTED: the reporter's
+# (58 lines; its &errout trace is the officer's rowed finding, not graded here). (4) MEASURED, NOT ASSERTED: the reporter's
 # images_on_stack counts every context whose image address lies inside its own thread's stack mapping and
 # images_off_stack reads 0 on the refresh witness. (5) the uncreated-thread gate holds both contracts (lazy refused,
 # eager already has its stack). (6) hb_coexpr_genp_scan.icn -- a generator called by VALUE inside a scan (rt.c's lazily

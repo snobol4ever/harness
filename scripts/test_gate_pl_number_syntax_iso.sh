@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_pl_number_syntax_iso.sh — number_chars/2 and number_codes/2 must PARSE the list argument and unify
 # NUMERICALLY, and must accept the ISO number syntax (row
 # flip-inria-number-chars-and-codes-reject-exponent-and-character-code-number-syntax, hq_R 2026-09-06).
 #
-# ⛔⭐ THE `NO` CLASS SPLIT INTO `RAISE` AND `NO` ON 2026-09-13 (hq_C, CEO-660's lane). Five of the six
+# ⛔⭐ THE `NO` CLASS SPLIT INTO `RAISE` AND `NO` ON 2026-09-13 (hq_C, R-660's lane). Five of the six
 # no-accept witnesses were written as "must FAIL, not accept" at a time when this engine could not raise at
 # all, and BOTH ORACLES RAISE ON THEM. Measured that day, goal for goal, each inside catch/3:
 #     number_chars(X,['a','b'])              swipl error(syntax_error(illegal_number),...)   gprolog syntax_error

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_copy_term_3_projects_freeze_when_and_clpfd_constraints_as_residual_goals_as_swipl.sh -- copy_term/3 RETURNS THE RESIDUAL GOALS OF ATTRIBUTED VARIABLES (ceo CEO-1930, hq_icon on the SWI umbrella; swipl 9.0.4; ARCH-PROLOG-CLPFD.md section 4 names copy_term/3 and term_attvars/2).
+# test_gate_pl_swi_copy_term_3_projects_freeze_when_and_clpfd_constraints_as_residual_goals_as_swipl.sh -- copy_term/3 RETURNS THE RESIDUAL GOALS OF ATTRIBUTED VARIABLES (R-1930, hq_icon on the SWI umbrella; swipl 9.0.4; ARCH-PROLOG-CLPFD.md section 4 names copy_term/3 and term_attvars/2).
 # copy_term(+Term, -Copy, -Gs) gives an attribute-free copy of Term and the goals that stand for the attributes: freeze/2 goals for a frozen variable, when/2 goals reconstructed from the suspension
 # (a nested ground/nonvar disjunction or conjunction comes back as ONE when(Cond, Goal), printed once however many variables it waits on), the goals each module's attribute_goals//1 gives (clpfd
 # through the library's own), and put_attr(V, Module, Value) for a module with none. term_attvars/2 follows the attribute values too, which is how a when(?=(X,Y), G) that waits on a hidden

@@ -6,8 +6,8 @@
 # jmp rax in the text and through its sealed alpha cell in the slab (x86_jmp_via_cell, both media), not by the record's three dependent loads;
 # a dynamic or run-time-defined callee keeps the registry jump, so arm 1 counts a load only when its callee is NOT declared dynamic in the kernel's
 # own source: the callee is read off the jump itself -- the record offset after the load is 8 + 128 * proc index (PROC_FN at +8, the stride rt.c
-# asserts) and the index names its .Lgccode_<name>_<index> label (the cto's ruling 2026-10-11, CEO-1663: nand.pl's two loads are its tail and
-# non-tail arms of one staged call to the dynamic state_/2, unchanged since before CEO-1632; corpus 0bc5934ce had grown the census from 23 to 42
+# asserts) and the index names its .Lgccode_<name>_<index> label (the cto's ruling 2026-10-11, R-1663: nand.pl's two loads are its tail and
+# non-tail arms of one staged call to the dynamic state_/2, unchanged since before R-1632; corpus 0bc5934ce had grown the census from 23 to 42
 # kernels and nand is the first with a dynamic predicate). ARM 1b, the fail-once: a registry jump to a STATIC proc planted into nand's text is
 # counted, and the planted jump to state_/2 is not. ARMS 2-3: two swipl-cut witnesses in m3 AND m4, the behaviour the cure keeps:
 # (2) a 300,000-deep last-call recursion with variable arguments in the default stack (the tail arm fires: the block staged from each

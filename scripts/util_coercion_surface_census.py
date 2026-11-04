@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_coercion_surface_census.py -- THE COERCION SURFACE CENSUS (hq_T, ceo CEO-662, 2026-09-13).
+"""util_coercion_surface_census.py -- THE COERCION SURFACE CENSUS (hq_T, R-662, 2026-09-13).
 
 A new descriptor tag owes an arm in every function that switches on a descriptor's tag. Before this census
 nobody could say what that set IS: DT_BOOL leaked three separate times (to_real; to_cstring;
@@ -162,7 +162,7 @@ def main():
             label = ", ".join(tags) if tags else "(no tag required; %s)" % why.split(":")[0]
             print("  ok   %-28s %-22s %s" % (os.path.basename(f), fn + "()", label))
 
-    print("== discovery -- TWO shapes, because the tag leaks through both (ceo CEO-662)")
+    print("== discovery -- TWO shapes, because the tag leaks through both (R-662)")
     print("   (a) switch on a descriptor tag  (b) an if-chain testing >= %d tags with a value-losing return  (c) a one-expression tag-membership classifier" % MIN_TAGS)
     found, uncovered, seen_site = 0, [], set()
     for r in SCAN_ROOTS:

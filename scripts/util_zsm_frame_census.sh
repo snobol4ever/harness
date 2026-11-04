@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_zsm_frame_census.sh -- THE ZSM ARM, ITS FRAME HALF: per graph, the RBP frame carved once at entry with the DECLARED resident bytes, and no frame
-# address formed outside the declared resident set (ARCH-ZETA-ONE-COORDINATE 3.3 (2); the cto's ask of 2026-10-22 12:0x under CEO-1895: "the per-graph
+# address formed outside the declared resident set (ARCH-ZETA-ONE-COORDINATE 3.3 (2); the cto's ask of 2026-10-22 12:0x under R-1895: "the per-graph
 # frame carved once at entry with the declared resident bytes and no frame address outside it, as a compile-time count under SCRIP_ZSM -- that count is
 # the switch's second finish line for every language, so make it read per graph and per language"; built by the cfo).
 #
@@ -30,10 +30,10 @@
 #   rc 0  every measured language reads outside=0 unbacked=0 excess=0 multi=0 · rc 1 one does not (named) · rc 2 could not measure
 # A COMPILE-ONLY census (no program runs); each compile takes a cc slot of the box-wide pool (util_cc_slot.sh). Grading the population is a BOARD:
 # the coo's loop runs it; a seat reads one program with --files.
-# RULING (the cto, 2026-10-25 02:3x CDT, CEO-1888; the coo's rises at bc63b803b and 6efe5b2eb): a rise whose moved graphs are ALL "new since the floor" (no graph that existed at the floor moved) is a POPULATION MOVE -- a predicate joined the base prelude or the injector's roots admitted a graph into every program -- and the loop RE-CUTS that language's floor to the landing's reading by itself, naming the landing in its record; only a rise in which an EXISTING graph moved is a placement regression telegrammed to the lander. A new graph's own excess is that graph's pre-allocation, the Prolog switch row's population (D3), never a row of its own.
-# EXTENDED 2026-10-25 08:5x CDT (the cto, CEO-1888; the coo's readings of $db_seedS/0 at fc2c72ef7 and $code_type/2 at 3b1fb4100): an EXISTING graph whose excess, outside and address count (addrs=) ALL scale by the same factor while frames= holds is a graph that GAINED BOXES of one shape -- a library's private copies seeded, a vendored library's clauses added, a dialect flip re-lowering a main graph -- and is a POPULATION MOVE the loop re-cuts by itself, naming the landing; a graph whose excess moves while addrs holds, or whose excess per address changes, is a placement regression telegrammed to the lander. On the command line --graphs comes BEFORE --files, which swallows every later argument.
+# RULING (the cto, 2026-10-25 02:3x CDT, R-1888; the coo's rises at bc63b803b and 6efe5b2eb): a rise whose moved graphs are ALL "new since the floor" (no graph that existed at the floor moved) is a POPULATION MOVE -- a predicate joined the base prelude or the injector's roots admitted a graph into every program -- and the loop RE-CUTS that language's floor to the landing's reading by itself, naming the landing in its record; only a rise in which an EXISTING graph moved is a placement regression telegrammed to the lander. A new graph's own excess is that graph's pre-allocation, the Prolog switch row's population (D3), never a row of its own.
+# EXTENDED 2026-10-25 08:5x CDT (the cto, R-1888; the coo's readings of $db_seedS/0 at fc2c72ef7 and $code_type/2 at 3b1fb4100): an EXISTING graph whose excess, outside and address count (addrs=) ALL scale by the same factor while frames= holds is a graph that GAINED BOXES of one shape -- a library's private copies seeded, a vendored library's clauses added, a dialect flip re-lowering a main graph -- and is a POPULATION MOVE the loop re-cuts by itself, naming the landing; a graph whose excess moves while addrs holds, or whose excess per address changes, is a placement regression telegrammed to the lander. On the command line --graphs comes BEFORE --files, which swallows every later argument.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), CEO-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
+# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), R-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
 [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 exec python3 - "$HERE" "$@" <<'PY'

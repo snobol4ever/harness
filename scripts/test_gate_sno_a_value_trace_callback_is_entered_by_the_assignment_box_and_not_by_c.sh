@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_value_trace_callback_is_entered_by_the_assignment_box_and_not_by_c.sh
 #
-# THE ROW (ceo CEO-1533, the cfo's reach map of 2026-10-07): snobol4-a-trace-callback-function-is-entered-from-c-by-the-trace-hook-mid-assignment-
-# the-non-tail-c-to-bb-road-ceo-1533. A TRACE(name,'VALUE',tag,fn) callback was entered by comm_var -> comm_var_hook -> rt_trace_event_args -> APPLY_fn: a C frame sat
+# THE ROW (R-1533, the cfo's reach map of 2026-10-07): snobol4-a-trace-callback-function-is-entered-from-c-by-the-trace-hook-mid-assignment-
+# the-non-tail-c-to-bb-road-r-1533. A TRACE(name,'VALUE',tag,fn) callback was entered by comm_var -> comm_var_hook -> rt_trace_event_args -> APPLY_fn: a C frame sat
 # between the assignment and the handler for the whole life of the handler (the C2BB trace read descr.tiny TF rt_call_proc_descr, once per event).
 # THE CURE: the assignment box's tap (bb_assign_global.cpp mon_var_trace_tap) asks comm_var_open to do everything but the call -- it fills a trace_pend_t of seven DESCR
 # cells on the spine (the handler's name, NAME(name), the tag, the saved g_trace and g_kw_ftrace, the value, the hook) and returns -- then enters the handler through

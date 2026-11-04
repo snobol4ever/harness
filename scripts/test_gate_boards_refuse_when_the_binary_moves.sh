@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_boards_refuse_when_the_binary_moves.sh -- A BOARD THAT STRADDLES A BINARY SWAP MUST REFUSE rc=2
-# BEFORE IT PUBLISHES A NUMBER (ceo CEO-524 (1), to the coo as THE ONE RUNNER, 2026-09-10).
+# BEFORE IT PUBLISHES A NUMBER (R-524 (1), to the coo as THE ONE RUNNER, 2026-09-10).
 #
 # THE WITNESS: hq_R's board straddled a binary swap and wrote m3 635/759 into SCORE.md WITH A CLEAN STAMP,
 # while the correct 756/759 from the same sitting was refused as dirty. The dirty guard reads the tree at
@@ -41,7 +41,7 @@
 #          likelier accident on a seat root), and PASSES when neither moved -- with the stamp exported.
 #   ARM 12 ONE SPELLING OF THE STAMP: no runner hand-writes `export S4E_TREE_AT_START`. It was written out in
 #          three runners and ABSENT from the three Icon package boards, so three of four boards the one runner
-#          runs stamped HEAD AT WRITE TIME -- CEO-524 (1)'s defect in its second form.
+#          runs stamped HEAD AT WRITE TIME -- R-524 (1)'s defect in its second form.
 #
 # HERMETIC: arms 3-7 run against scratch files under mktemp and never touch this tree's scrip, out/ or
 # SCORE.md. Arms 1-2 and 8-9 are static reads. NO BUILD REQUIRED -- this gate grades wiring and a library
@@ -87,7 +87,7 @@ printf 'AAAA' > "$W/a.bin"; printf 'BBBB' > "$W/b.so"
 # their contract (a board must not be able to continue past one) and it is exactly why they cannot be probed
 # in-process. The subshell's rc IS the measurement.
 echo "── ARM 7 (MID-RUN REBUILD): the harness refuses when the binary is rebuilt under it, printing no board and recording no rows ──"
-# (coo 2026-09-16; hq_raku's RakRungs 764/927 graded across a mid-run make; ceo CEO-802; row instruments-a-board-does-not-refuse-when-its-
+# (coo 2026-09-16; hq_raku's RakRungs 764/927 graded across a mid-run make; R-802; row instruments-a-board-does-not-refuse-when-its-
 # own-seat-rebuilds-the-binary-under-it-...). A 300-entry cut of the SNOBOL4 rungs under mktemp (several seconds of m3 grading); the harness runs against a SCRATCH COPY of ./scrip and out/ (SCRIP= and RT_DIR=) with the progress DB redirected; 0.6 s in,
 # while the busy loop still runs, the scratch binary is mutated (a byte appended: same program, new fingerprint) -- the board must end in
 # THE BINARY MOVED UNDER THIS BOARD, rc=2, no SUITE_BOARD, zero rows in the scratch DB. FAIL_ONCE=1 skips the mutation. (The verdict

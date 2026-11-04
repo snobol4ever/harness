@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_every_witness_passes_on_the_asm_walk_under_stress_in_both_modes.sh -- THE ROAD THE BENCHMARKS SHIP IS THE ROAD A RED
-# REACHES (the cto's review of dc4596a7e, f8ab07a92 and 485c7c910, 2026-10-17, item (1); hq_runtime's landing; CEO-1793).
+# REACHES (the cto's review of dc4596a7e, f8ab07a92 and 485c7c910, 2026-10-17, item (1); hq_runtime's landing; R-1793).
 #
 # ⛔ WHY THIS EXISTS. gc_sw_run takes the asm stack-walk step (rt_gc_sw_step_a, rtx_gc.s) only when the collector's census is off,
 # and the census follows SCRIP_DIAG, which is ON unless a runner turns it off. Every suite pass, every gate and every
-# SCRIP_GC_CHAIN_CHECK run therefore graded the C walk, while every benchmark (CEO-1262: diagnostics off) shipped the asm walk --
+# SCRIP_GC_CHAIN_CHECK run therefore graded the C walk, while every benchmark (R-1262: diagnostics off) shipped the asm walk --
 # the cto's gdb break on rt_gc_sw_step_a never fired on hb_coexpr_parked at the default. MEASURED when this gate was cut (SCRIP
 # 43552a85a): 760 entries into the step at SCRIP_DIAG=0, none at SCRIP_DIAG=1, on one binary.
 #
 # ARM (a): every witness of ../harness/scripts/gc_witnesses with a committed ref (refs are cut from the oracle), at SCRIP_DIAG=0
 # SCRIP_GC_STRESS=1 SCRIP_HEAP_KB=64 (a collection at every safe point in a window that forces growth), mode 3 and mode 4, at the
 # witness's declared stack (<stem>.stack) and compile switches (<stem>.cmdline, read by declared_compile_args_beside and placed after
-# scrip and after --compile: hb_label_trace_hook declares --stlimit, the switch label TRACE belongs to, Lon CEO-1243), stdin from <stem>.in, its stdout with the ^GC- lines dropped against its ref with the
+# scrip and after --compile: hb_label_trace_hook declares --stlimit, the switch label TRACE belongs to, Lon R-1243), stdin from <stem>.in, its stdout with the ^GC- lines dropped against its ref with the
 # same lines dropped. A witness that fails on every road is a line of ../harness/scripts/gc_witness_asm_walk_floor.tsv naming its live row:
 # printed DECLARED, never silenced, and RED when it passes in both modes (the cure moves the line out in the same commit).
 # THE RUN CAP is 60 s a mode for every witness, and a witness that needs longer declares it in ../harness/scripts/gc_witness_asm_walk_timeouts.tsv (witness, seconds, the measured reason; coo ruling 2026-11-01:

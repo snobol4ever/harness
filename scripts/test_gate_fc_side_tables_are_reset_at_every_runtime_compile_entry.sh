@@ -63,7 +63,7 @@ S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
 FL="$ROOT/src/planner/frame_layout.c"; [ -f "$FL" ] || { echo "⛔ GATE REFUSE(2) [$G]: $FL absent"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
-# RE-CUT 2026-10-09 cfo (CEO-1575, the g_lower stage landing B): frame_layout.c's counters and node maps are members of
+# RE-CUT 2026-10-09 cfo (R-1575, the g_lower stage landing B): frame_layout.c's counters and node maps are members of
 # g_lower_ir_t in src/lower/g_lower.h, so arm 1 reads the declared counters there (int <name>_n;) and the map checks the
 # g_lower.ir. spelling (fcn_gen, fcn_n, fca, znb_gen); what it covers is unchanged.
 RC=0

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_format_tilde_at_runs_its_goal_inserts_its_output_and_fails_or_throws_as_swipl.sh -- format's ~@ RUNS THE GOAL (ceo CEO-1930, hq_icon on the SWI umbrella; swipl 9.0.4).
+# test_gate_pl_format_tilde_at_runs_its_goal_inserts_its_output_and_fails_or_throws_as_swipl.sh -- format's ~@ RUNS THE GOAL (R-1930, hq_icon on the SWI umbrella; swipl 9.0.4).
 # SWI's format/2,3 directive ~@ takes the next argument as a goal, runs it once with current_output redirected, inserts what it wrote at that point of the line (the column stops ~t ~| see it),
 # and fails when the goal fails or raises its exception, AFTER the text so far and the goal's own output are written. SCRIP read the directive as an unknown one and ignored it, so
 # core/test_format fail#1 (format('~@', [fail]) must fail) and fail#2 (format('~@', [throw(error(42))]) must throw) read red in both modes, and format('~@', [write(hi)]) printed nothing.

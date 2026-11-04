@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_an_unknown_procedure_called_from_a_plunit_unit_is_module_qualified_in_its_existence_error_answers_as_swipl.sh -- AN UNKNOWN PROCEDURE CALLED FROM A plunit UNIT NAMES ITS MODULE IN THE existence_error (hq_prolog 2026-10-15, row prolog-swi-core-test-call-...-ceo-1664;
+# test_gate_pl_swi_an_unknown_procedure_called_from_a_plunit_unit_is_module_qualified_in_its_existence_error_answers_as_swipl.sh -- AN UNKNOWN PROCEDURE CALLED FROM A plunit UNIT NAMES ITS MODULE IN THE existence_error (hq_prolog 2026-10-15, row prolog-swi-core-test-call-...-r-1664;
 # core/test_call callN:qn8, callN:an8 and no_autoload:unknown expect existence_error(procedure, M:name/arity)).  swipl reports the module the goal was called from when
 # it is not user: a unit's goal reads plunit_<Unit>:name/Arity, call(Q:name, ...) reads Q:name/Arity, a goal inside a user-module helper stays name/Arity.  SCRIP's module
 # emulation (pl_module_flatten) has no module at run time, so (1) pl_user_call in lower_prolog.c wraps a call it cannot resolve inside a unit's clause (the key starts

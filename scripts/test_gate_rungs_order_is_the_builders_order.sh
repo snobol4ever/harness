@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_rungs_order_is_the_builders_order.sh -- THE COMMITTED RUNGS IS SORTED THE WAY ITS BUILDER SORTS.
-# Row promotion-re-sorts-the-master-so-rank-stays-the-greenest-prefix (ceo ruling 2026-09-03, on hq_B's
+# Row promotion-re-sorts-the-master-so-rank-stays-the-greenest-prefix (ruling 2026-09-03, on hq_B's
 # routed question; FINDING-2026-09-03-hq_B-a-promotion-changes-an-entrys-sort-key-*).
 #
 # THE LAW IT GUARDS is Lon's, not the builder's: "a smoke test would be say the first 20-50 tests... then

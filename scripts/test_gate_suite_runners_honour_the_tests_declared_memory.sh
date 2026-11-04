@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_suite_runners_honour_the_tests_declared_memory.sh -- LON'S WORD OF 2026-09-23, MEASURED.
 #
-# ⛔⭐ THE ROW.  Lon, in-chat to the ceo, verbatim: "Well, each test should have the needed amount of memory in the
-# attribute TSV/CSV files." (routed CEO-1167).  Before that word a program whose live set did not fit the shipped
+# ⛔⭐ THE ROW.  Lon, in-chat, verbatim: "Well, each test should have the needed amount of memory in the
+# attribute TSV/CSV files." (routed R-1167).  Before that word a program whose live set did not fit the shipped
 # window was a capacity red and an argument for raising the default for EVERYBODY.  After it, the program DECLARES
 # what it needs in its suite's ALL.csv heap_kb column, and the runner exports SCRIP_HEAP_KB FOR THAT PROGRAM ONLY.
 #
@@ -14,15 +14,15 @@
 # differ.  A reader that quietly does nothing fails that arm by construction.  Arm C is its negative control: the
 # NEIGHBOUR entry in the same csv, same runner, same loop, must still see the shipped default -- because a reader
 # that exports one program's arena over the whole run has not honoured a declaration, it has pinned an arena, which
-# is precisely the thing a declaration replaces (util_arena_pin_census.py, CEO-1146).
+# is precisely the thing a declaration replaces (util_arena_pin_census.py, R-1146).
 #
 # ⛔⭐ ARM A IS A DRIFT ALARM ON A COPIED CONSTANT.  lib_declared_arena.sh and corpus_suite_harness.py each carry a
 # copy of gc_heap.c's GC_HEAP_CAP_KB / GC_HEAP_KB_FLOOR.  A copy of a runtime constant that nothing checks is the
 # false-label class this column exists to close, so the #defines are re-read from source here and compared.
 #
-# ââ­â­ ARM D ENFORCES A RULING, NOT A PREFERENCE: A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (ceo CEO-1171, 2026-09-23, ruling on the coo's ask).
+# ââ­â­ ARM D ENFORCES A RULING, NOT A PREFERENCE: A DECLARATION IS A NUMBER ABOVE THE COMPILED CAP OR IT IS NOT A DECLARATION (R-1171, 2026-09-23, ruling on the coo's ask).
 # The refusal was asked for rather than assumed -- criterion-writing is not the instruments seat's verb --
-# and the answer was that warn-and-pass would mint the false label CEO-1101 exists against. So arm D may
+# and the answer was that warn-and-pass would mint the false label R-1101 exists against. So arm D may
 # not be relaxed to a warning by anyone reading this file later; it is law, cited, with its measurement.
 # ⛔⭐⭐ ARM D IS THE MEASUREMENT THAT MADE THIS COLUMN HONEST, AND IT IS NOT A STYLE CHECK.  gc_heap.c reads
 #     cap_kb = (long)GC_HEAP_CAP_KB; if (cap_kb < kb) cap_kb = kb;
@@ -35,15 +35,15 @@
 # silently accepted as a no-op.  Arm D2 requires the runtime to still behave that way, so the day the cap moves
 # this gate says so instead of continuing to enforce a rule the runtime no longer has.
 #
-# ⛔ ARM E IS CEO-1127's EVIDENCE BAR.  Every one of the ten seats grades ENTRIES EXTRACTED STANDALONE.  An
+# ⛔ ARM E IS R-1127's EVIDENCE BAR.  Every one of the ten seats grades ENTRIES EXTRACTED STANDALONE.  An
 # extracted pair has no sibling ALL.csv, so a declaration that did not travel would mean a program needing 16384 KB
 # runs at the shipped 128 in EXACTLY the workflow the fleet cures in, while passing on the board it is published
 # from -- two arms disagreeing for a reason neither names.
 #
 # FAIL_ONCE=1 restores the pre-column world -- all five shell readers (declared_arena_kb, declared_arena_kb_beside,
 # declared_stack_kb, declared_stack_kb_beside, declared_memory_table) return nothing for everybody AND the travelling sidecar is not
-# written -- and MEASURED 2026-09-23 21:5x (coo, the table arms T and the runner census R added on CEO-1229) it reds exactly fourteen
-# arms: B, C3, D1, D1b, E2, H1, H2, S1, S3, S6, T1, T2, T3 and T5 -- RE-MEASURED 2026-09-25 on the CEO-1261 cut, the same fourteen of 35.
+# written -- and MEASURED 2026-09-23 21:5x (coo, the table arms T and the runner census R added on R-1229) it reds exactly fourteen
+# arms: B, C3, D1, D1b, E2, H1, H2, S1, S3, S6, T1, T2, T3 and T5 -- RE-MEASURED 2026-09-25 on the R-1261 cut, the same fourteen of 35.
 # The other twenty-one are green BY CONSTRUCTION under the mutant and are named so nobody reads their green as coverage: A1..A4, A3b, D2 and S4 read the runtime, F reads the shipped tree, E1 names a path,
 # C1/C2/H3/S2 describe the reader-off world itself, G, S5 and O1-O4 drive the Python harness, which the mutant leaves alone (arm O's
 # own fail-once is measured against a harness without the OOM verdict and recorded at the arm), T4 refuses a
@@ -52,13 +52,13 @@
 # An arm that has never been seen to fail is an arm that reads "there was never a bug here" (this gate's own law,
 # COO-152), and a fail-once that reds for a STAGING reason while claiming to have proved the property is the shape
 # COO-153 found three of inside the mechanism built to disprove exactly that -- so the ten are listed, not counted.
-# ⛔⭐⭐⭐ RE-CUT 2026-09-25 FOR CEO-1261 (Lon, in-chat to the ceo, verbatim: "Let's set our default stack size and heap size for SCRIP to
+# ⛔⭐⭐⭐ RE-CUT 2026-09-25 FOR R-1261 (Lon, in-chat, verbatim: "Let's set our default stack size and heap size for SCRIP to
 # be the same as SPITBOL." and "Ensure that all the test suite programs have the stack size and heap size setting placed into the per-
 # program attribute files."). The shipped cap is SPITBOL's -d128m and the stack SPITBOL's -s4m, every program declares both, and a
 # heap_kb is the program's MAXIMUM heap (-d; exported as SCRIP_HEAP_CAP_KB), never its window. So the fixture is INVERTED: hungry.icn
 # (a 6.4 MB live set) DECLARES 4096 KB, which it cannot fit -- an honoured declaration makes it end in the runtime's out-of-memory
 # report naming the 4096 KB cap, while a reader that silently did nothing lets it complete at the 128 MB default, and the arms still
-# require the two verdicts to differ. CEO-1171's refusal of a cell at or below the shipped cap (arm D) and the stack floor rule (S3/S4)
+# require the two verdicts to differ. R-1171's refusal of a cell at or below the shipped cap (arm D) and the stack floor rule (S3/S4)
 # are RETIRED with it: a declaration equal to or below the default is a setting; a heap cell below the 1024 KB window and a stack cell
 # below 64 KB are what is refused. The pre-cut file is kept whole in history (SCRIP b547d2ea3); its arms are re-derived, not weakened.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
@@ -77,7 +77,7 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 ulimit -c 0 2>/dev/null || true
 DECL_KB=4096
 FIT_KB=16384
-echo "GATE $G -- declared arena ${DECL_KB} KB vs the shipped default; fixture in $T (planted, NOT a corpus suite: a gate's own mktemp fixture outside the corpus tree is not a board, CEO-547)"
+echo "GATE $G -- declared arena ${DECL_KB} KB vs the shipped default; fixture in $T (planted, NOT a corpus suite: a gate's own mktemp fixture outside the corpus tree is not a board, R-547)"
 
 # ── arm A: the copied constants still match gc_heap.c ──────────────────────────────────────────────────────────
 SRC="$ROOT/src/runtime/rt/gc_heap.c"
@@ -180,7 +180,7 @@ seen2=$(run_at_declared_arena "$T/pkg/ALL.csv" hungry -- bash -c 'echo "[${SCRIP
   || ck bad "C3 the declared entry saw $seen2, expected [$DECL_KB|UNSET]"
 
 # ── arm D: a cell below the window is REFUSED, and the runtime refuses the same cap itself ──────────────────────────
-# ⛔ CEO-1171's rule (a cell at or below the shipped cap grants no capacity and is refused) is RETIRED by CEO-1261: heap_kb is the
+# ⛔ R-1171's rule (a cell at or below the shipped cap grants no capacity and is refused) is RETIRED by R-1261: heap_kb is the
 # maximum, so 4096 declared under a 131072 default is a real, smaller cap that bites (arm B). What cannot be honoured is a maximum
 # below the initial window: D1 refuses it in the reader, D2 proves the runtime refuses the same cap, so the reader's rule is the
 # runtime's rule and not a copy that can drift from it.
@@ -196,7 +196,7 @@ d2=$?
 [ "$d2" != 0 ] && grep -q "is BELOW the ${rt_win} KB window and is REFUSED" "$T/d2.err" && ck ok "D2 the runtime refuses the same cap itself (SCRIP_HEAP_CAP_KB=$BADKB under the ${rt_win} KB window: rc=$d2, its own refusal) -- the reader's rule is the runtime's" \
   || ck bad "D2 SCRIP_HEAP_CAP_KB=$BADKB read rc=$d2 [$(head -c 160 "$T/d2.err")] -- gc_heap.c's window rule changed, so arm D1 is enforcing a rule the runtime no longer has"
 
-# ── arm E: the declaration travels with an extracted family (CEO-1127's evidence bar) ──────────────────────────
+# ── arm E: the declaration travels with an extracted family (R-1127's evidence bar) ──────────────────────────
 cat > "$T/fam.icn" <<'EOF'
 x
 EOF
@@ -291,7 +291,7 @@ h3=$(declared_arena_kb_beside "$T/pkg/frugal.icn"); h3_rc=$?
 [ "$h3_rc" = 0 ] && [ -z "$h3" ] && ck ok "H3 a program with no sidecar reads nothing (rc=0): the shipped default, not an error" \
   || ck bad "H3 a program with no sidecar read '$h3' rc=$h3_rc"
 
-# ── arm S: THE STACK, THE HEAP'S TWIN (CEO-1225, the coo 2026-09-23) ─────────────────────────────────────────────────────────
+# ── arm S: THE STACK, THE HEAP'S TWIN (R-1225, the coo 2026-09-23) ─────────────────────────────────────────────────────────
 # The runtime raises RLIMIT_STACK at init to SCRIP_STACK when set, else to its 64 MB floor (core.c), in BOTH modes. The witness:
 # a DEPTH-deep Icon recursion dies with ERROR 246 at the default floor and completes at STK_KB; its neighbour (half as deep)
 # completes at the default and dies at 16384k -- the measurement behind the floor rule: SCRIP_STACK REPLACES the floor, so a cell
@@ -329,7 +329,7 @@ declared_stack_kb "$T/stk/BAD.csv" deep >/dev/null 2>"$T/stk/bad.err"; s3=$?
   || ck bad "S3 stack_kb=$STKBAD returned rc=$s3 -- a stack no program can run on was accepted"
 STK_PROG=shallow.icn; runstk; s4a=$?; STK_PROG=shallow.icn; runstk SCRIP_STACK=256k; s4b=$?; grep -q 'ERROR 246' "$T/stk/err"; s4b246=$?
 [ "$s4a" != 124 ] && [ "$s4b" != 124 ] || refuse "arm S4 TIMED OUT (rc=124)"
-[ "$s4a" = 0 ] && [ "$s4b" != 0 ] && [ "$s4b246" = 0 ] && ck ok "S4 a declaration BELOW the default is a setting and is honoured as given: the depth-$((DEPTH / 25)) witness completes at the ${c_flr_kb} KB default and dies with ERROR 246 at SCRIP_STACK=256k (CEO-1261 retired the floor rule this arm used to hold)" \
+[ "$s4a" = 0 ] && [ "$s4b" != 0 ] && [ "$s4b246" = 0 ] && ck ok "S4 a declaration BELOW the default is a setting and is honoured as given: the depth-$((DEPTH / 25)) witness completes at the ${c_flr_kb} KB default and dies with ERROR 246 at SCRIP_STACK=256k (R-1261 retired the floor rule this arm used to hold)" \
   || ck bad "S4 the stack budget does not follow a smaller declaration (depth $((DEPTH / 25)): default rc=$s4a, 256k rc=$s4b) -- the runtime no longer honours SCRIP_STACK as the program's stack"
 s5=$(python3 - "$T/stk" "$STK_KB" "$HERE" "$DEPTH" 2>/dev/null <<'PY'
 import importlib.util, sys, os
@@ -355,7 +355,7 @@ s6=$(declared_stack_kb_beside "$T/stk2/deep.icn" 2>/dev/null); printf '%s\n' "$S
 [ "$s6" = "$STK_KB" ] && [ "$s6b" = 2 ] && ck ok "S6 a standalone program's deep.stack (deep TAB $STK_KB) is read beside it, and a bare-number .stack is REFUSED rc=2" \
   || ck bad "S6 the .stack sidecar read '$s6' (want $STK_KB) and a bare number returned rc=$s6b (want 2)"
 
-# ── arm T: THE ONE-READ TABLE the package runners grade through (CEO-1229, the coo 2026-09-23) ─────────────────────────────
+# ── arm T: THE ONE-READ TABLE the package runners grade through (R-1229, the coo 2026-09-23) ─────────────────────────────
 # declared_memory_table / declared_memory_begin / run_at_declared_table (lib_declared_arena.sh): the harness's own validators, one
 # python start per suite and one awk per run, because run_at_declared_arena's two python starts per run are over a minute of a
 # 427-program board in two modes. T2 drives a REAL run through the table. T5 is the defect the table's first cut shipped to itself
@@ -389,7 +389,7 @@ t5="$(declared_memory_table "$T/tbl/OTHER.csv" 2>/dev/null)"
 [ "$t5" = "$(printf 'a\t%s\t' "$DECL_KB")" ] && ck ok "T5 the table reads the FILE IT IS HANDED -- OTHER.csv's heap_kb=$DECL_KB, not the undeclared ALL.csv beside it" \
   || ck bad "T5 the table of OTHER.csv read '$t5' -- it read something other than the file it was handed"
 
-# ── arm R: EVERY PACKAGE RUNNER READS THE DECLARATION (CEO-1229: "wire the ten remaining package runners yourself on the SWI pattern,
+# ── arm R: EVERY PACKAGE RUNNER READS THE DECLARATION (R-1229: "wire the ten remaining package runners yourself on the SWI pattern,
 # each proven on a fixture") ────────────────────────────────────────────────────────────────────────────────────────────
 # STRUCTURAL, AND NAMED AS SUCH: it holds each runner's wiring against a later edit that drops it -- every one was PROVEN on a
 # fixture by the coo 2026-09-23 (a declared entry passes, the same entry emptied fails, a refused cell refuses; the receipts are in
@@ -402,7 +402,7 @@ done
 need scorecard_snobol4.sh table 'sc_decl_build' 3; need scorecard_snobol4.sh runs 'run_at_declared_table "\$SC_DECL"' 2
 need test_snobol4_gimpel_suite.sh through-the-scorecard 'scorecard_snobol4.sh" run --suites gimpel' 1
 need test_snobol4_aisnobol_suite.sh through-the-harness 'corpus_suite_harness.py"\{0,1\} run "\$SUITE/ALL.sno"' 1
-# ⭐ INRIA AND THE LOGTALK GRADER PASS THE DECLARATION AS SWITCHES (the coo 2026-09-28, CEO-1353/1355: both handed the declared heap to
+# ⭐ INRIA AND THE LOGTALK GRADER PASS THE DECLARATION AS SWITCHES (the coo 2026-09-28, R-1353/1355: both handed the declared heap to
 # SCRIP_HEAP_KB, the collector's initial WINDOW, and the stack to SCRIP_STACK): -d<kb>k -s<kb>k after --run in m3, leading the binary in m4.
 need test_prolog_inria_suite.sh begin 'declared_memory_begin "\$SUITE/ALL.csv"' 1
 need test_prolog_inria_suite.sh m3-switches '"--run"\] + decl_sw(_tidx, fam) + \[prog\]' 2; need test_prolog_inria_suite.sh m4-switches '\[b\] + decl_sw(_tidx, fam)' 2
@@ -410,18 +410,18 @@ need test_prolog_logtalk_suite.sh begin 'declared_memory_begin "\$SUITE/ALL.csv"
 need util_logtalk_grade.py per-case 'sw=decl_switches(decl' 2
 need util_logtalk_grade.py m3-switches '\[scrip, "--run"\] + list(sw) + \[prog\]' 1; need util_logtalk_grade.py m4-switches '\[b_out\] + list(sw)' 1
 need test_prolog_swi_suite.sh runs 'run_at_declared_arena "\$SWIT/ALL.csv"' 2
-# ⭐ THE THREE ICON PACKAGE RUNNERS PASS THE DECLARATION AS SWITCHES (ceo CEO-1353, the coo's census): declared_arena_switches reads both
+# ⭐ THE THREE ICON PACKAGE RUNNERS PASS THE DECLARATION AS SWITCHES (R-1353, the coo's census): declared_arena_switches reads both
 # cells, and the words ride the m3 command line after --run and the compile args and lead the m4 binary's arguments -- never SCRIP_HEAP_KB.
 for r in test_icon_arizona_suite.sh test_icon_ipl_suite.sh test_icon_jcon_suite.sh; do need "$r" heap+stack declared_arena_switches 1; need "$r" m3-switches '--run \$_ca \$_sw ' 1; done
 need test_icon_arizona_suite.sh m4-switches '"\$name" \$_sw ' 1; need test_icon_ipl_suite.sh m4-switches '"\$bin4" \$_sw' 2; need test_icon_jcon_suite.sh m4-switches '"\$name" \${_sw4\[@\]' 1
 [ -z "$r_miss" ] && ck ok "R  every package runner reads the declared heap and stack ($r_n wiring points across 17 runners and graders: the eight SNOBOL4, Prolog and Pascal loops, the scorecard behind gimpel, the harness behind aisnobol, inria, logtalk and its grader, SWI, and the three Icon runners)" \
   || ck bad "R  a runner lost its wiring:$r_miss"
 
-# ── arm O: A PROPERLY REPORTED OUT-OF-MEMORY IS ITS OWN OUTCOME, RECORDED WITH THE HEAP IT RAN UNDER (CEO-1229 (2)) ───────────
-# ⭐⭐ The ceo on this row, 2026-09-23 20:2x, verbatim: "THE PROGRESS WORD IS OOM: a run that ends in a properly reported out-of-memory
+# ── arm O: A PROPERLY REPORTED OUT-OF-MEMORY IS ITS OWN OUTCOME, RECORDED WITH THE HEAP IT RAN UNDER (R-1229 (2)) ───────────
+# ⭐⭐ The officer on this row, 2026-09-23 20:2x, verbatim: "THE PROGRESS WORD IS OOM: a run that ends in a properly reported out-of-memory
 # at the heap it ran under, recorded with that heap. It is not PASS and it is not FAIL or CRASH ... the harness lists every OOM program
 # by name". The runtime's report is the cto's (dc739c38a). This arm grades the HARNESS end to end on a four-entry Icon suite under
-# mktemp (a fixture, never a board, CEO-547; its own scratch progress table): O1 an entry past its DECLARED heap and an undeclared
+# mktemp (a fixture, never a board, R-547; its own scratch progress table): O1 an entry past its DECLARED heap and an undeclared
 # one past the shipped cap each read OOM in m3 AND m4, the progress row naming the cap the runtime reported -- the declared heap for
 # the first, the shipped cap for the second; O2 THE NEGATIVE CONTROL, an rc=1 wrong answer with no report reads FAIL, and the entry
 # that fits its declaration reads PASS -- a classifier that called every rc=1 an OOM, or that ate the declaration, reds here;

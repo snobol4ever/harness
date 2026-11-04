@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""util_gen_raku_setting.py -- THE RAKU SETTING AS EMBEDDED SOURCE (ARCH-RAKU-TO-100.md section 1.2 (c) and section 6 step 0, CEO-2044,
-the cao's row raku-ladder-step-1-the-setting-in-raku-the-loader-and-test-rakumod-as-its-first-file-ceo-2044).
+"""util_gen_raku_setting.py -- THE RAKU SETTING AS EMBEDDED SOURCE (ARCH-RAKU-TO-100.md section 1.2 (c) and section 6 step 0, R-2044,
+the cao's row raku-ladder-step-1-the-setting-in-raku-the-loader-and-test-rakumod-as-its-first-file-r-2044).
 The setting is Raku source under src/parsers/raku/setting/, one module per file, its name read from its path (Test.rakumod is Test,
 Test/Util.rakumod is Test::Util). This writes src/parsers/raku/raku_setting.inc, a committed table of the sources the Raku front end's
 module road (import_module in rk_syntax.c) reads when no file on the program's lib path names the module, exactly as the Pascal prelude

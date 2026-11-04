@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# util_objects_identical_stripped.sh <objdirA> <objdirB> [outA outB] -- R5 OF THE HEADER SPLIT (ARCH-HEADER-SPLIT.md section 1, CEO-2032, step 1a; hq_templates):
+# util_objects_identical_stripped.sh <objdirA> <objdirB> [outA outB] -- R5 OF THE HEADER SPLIT (ARCH-HEADER-SPLIT.md section 1, R-2032, step 1a; hq_templates):
 # a header move changes no object. Every .o present in both trees is copied through objcopy --strip-debug into a scratch dir and compared byte for byte;
 # the optional second pair (the out/ trees of the two roots, where the runtime's PIC objects and the parser modules live) is compared the same way.
 # A build-id directory suffix (-f65f143e2f, ten hex digits) is dropped from the pairing key, so two roots built from different sources still pair.
 # Prints "objects=N identical=N differing=M", then one line per differing object ("DIFF key"), and per object present in one tree only ("ONLY-A key" /
 # "ONLY-B key"). rc 0 all identical and none missing, rc 1 any difference or any object in one tree only, rc 2 the instrument could not measure.
-# --no-comdat [--moved FILE] (first arguments; R5-PRIME (b) of the cto's ruling CEO-2078, for a step that moves inline bodies into a compiled file): compares every object section by section and leaves
+# --no-comdat [--moved FILE] (first arguments; R5-PRIME (b) of the cto's ruling R-2078, for a step that moves inline bodies into a compiled file): compares every object section by section and leaves
 # out the COMDAT groups, .eh_frame, the debug sections and the symbols named in FILE (the moved functions and their static locals; the "static inline" copies sit in plain .text);
 # every other defined symbol is compared byte for byte with the relocations inside it, the string and constant pools by the
 # entry a relocation reaches. A mismatch names the object and the section; an object only the second tree has is "NEW-B" and no failure (a step that adds files). See lib_elf_noncomdat.py.

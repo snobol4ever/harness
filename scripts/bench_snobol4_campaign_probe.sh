@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_snobol4_campaign_probe.sh [--bar X] [--bud-ms N] [--scale N] -- THE SNOBOL4 SPEED CAMPAIGN'S CHEAP PROBE (ceo 2026-09-24, CEO-1246;
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_snobol4_campaign_probe.sh [--bar X] [--bud-ms N] [--scale N] -- THE SNOBOL4 SPEED CAMPAIGN'S CHEAP PROBE (2026-09-24, R-1246;
 # Lon: "keep optimizing SNOBOL4 benchmarks until we are 2-3x faster than SPITBOL ... Use the work horse demos and benchmarks").
 # WHAT IT MEASURES: four kernels' fixed-time twins (arith_loop, ident_call1, string_manip, table_access -- one per class: tight loop,
 # call, string, table) and one workhorse demo (treebank at --scale copies of its input, default 256) under the CLEAN SPITBOL benchmark
@@ -10,7 +10,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # EXIT 0 geomean >= bar; 1 below it; 2 REFUSED (oracle or binary missing, a build failure, a twin that did not print its ref, or
 # the demo's outputs differing between the engines -- a speed number over a wrong answer is not a number).
 # SCOUTING ONLY: ~20 s, never a board, appends and writes nothing; the published grids are test_snobol4_bench_suite.sh (kernels,
-# README Language status) and bench_triangulate_demos_snobol4.sh (demos). ⛔ NO SIZE IS TYPED HERE (ceo CEO-1485 over the equal-arena
+# README Language status) and bench_triangulate_demos_snobol4.sh (demos). ⛔ NO SIZE IS TYPED HERE (R-1485 over the equal-arena
 # arm, RULES.md clause 8 (g)(4)): each engine runs at its own defaults plus the UNIT's declaration -- a kernel's or treebank's .heap/.stack
 # as SCRIP's -d/-s switches, its .oracle_args as sbl's -- read by lib_declared_arena.sh; the window is never typed. CRITERION CHANGED
 # 2026-10-03: readings before ran sbl -s16m on the kernels and -d512m -i64m -s256m on treebank under ulimit -s 262144, and SCRIP's treebank
@@ -29,7 +29,7 @@ K="$S4E/corpus/benchmarks/snobol4"; D="$S4E/corpus/demos/snobol4/treebank"
 usrep() { grep -o 'BENCH mode=time.*' "$1" | head -1 | awk '{it=0; ns=0; mm=1; for(i=1;i<=NF;i++){split($i,a,"="); if(a[1]=="iters")it=a[2]; if(a[1]=="ns")ns=a[2]; if(a[1]=="mismatched")mm=a[2]} if(it>0 && mm==0) printf "%.3f", ns/it/1000; else print "REFUSE"}'; }
 elapsed_ms() { grep -o 'elapsed_ns=[0-9]*' "$1" | head -1 | cut -d= -f2 | awk '{printf "%.3f", $1/1e6}'; }
 WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "REFUSED(2): bench_rusage failed to build"; exit 2; }
-echo "sizes: each unit's declaration over each engine's defaults (CEO-1485) -- CRITERION CHANGED 2026-10-03; earlier readings ran typed sbl sizes and a 512 MB SCRIP window"
+echo "sizes: each unit's declaration over each engine's defaults (R-1485) -- CRITERION CHANGED 2026-10-03; earlier readings ran typed sbl sizes and a 512 MB SCRIP window"
 printf "%-16s %12s %12s %8s\n" program "sbl" "scrip m4" multiple
 LOGS=""
 for k in arith_loop ident_call1 string_manip table_access; do

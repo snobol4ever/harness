@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_snocone_bench_suite.sh -- THE SNOCONE BENCHMARK SUITE, GRADED AS A TEST UNDER ALL THREE ANGLES, IN BOTH MODES
 #
-# LON 2026-09-23 17:2x-17:4x CDT, in-chat to the ceo, verbatim (CEO-1221): "You messed up and forgot to have the benchmarks in the
+# LON 2026-09-23 17:2x-17:4x CDT, in-chat, verbatim (R-1221): "You messed up and forgot to have the benchmarks in the
 # test suite grid. Also work was never completed to make proper REF, IN, and OUT files and make all the benchmarks double as tests.
 # And all language tests need to be run through the three-angle harness: (1) wrapper process, (2) iterations, and (3) time limit."
 # -- "The reason to force a benchmark to also be a test is to guarantee it is not vacuous." -- "The source of the benchmark is the
@@ -14,7 +14,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # THE SIDECARS, per program NAME: REF = NAME.ref (cut from the oracle: sbl -bf on the SNOBOL4 twin, same input); IN = NAME.input,
 #   else the family's .input (NAME less -match / -match-fence), else /dev/null; MEMORY = NAME.heap and NAME.stack, each one line
 #   NAME<TAB>KB, read through lib_declared_arena.sh (the one reader) and passed as SPITBOL's switches -d<KB>k and -s<KB>k on THAT
-#   program's own command line, never the environment (CEO-1225, CEO-1261; the coo's arena-env row on CEO-1235 (2)(b)); every
+#   program's own command line, never the environment (R-1225, R-1261; the coo's arena-env row on R-1235 (2)(b)); every
 #   program declares both, at the shipped defaults unless it measured a need (Lon 2026-09-25, via ddfa57a55: "Ensure that all the
 #   test suite programs have the stack size and heap size setting placed into the per-program attribute files."). A retired
 #   NAME.heap_kb beside a program is REFUSED, never ignored, so an old declaration cannot vanish while its file sits there.
@@ -24,17 +24,17 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   iter     the generated wrapper (bench_wrap_snocone.py --mode iter): the test once, then N repetitions timed from inside
 #   time     the generated wrapper (--mode time): the test once, then repetitions counted inside a fixed budget
 #   The wrappers write their one BENCH line to TERMINAL (stderr); a wrapper run that prints no BENCH line is UNMEASURED, not a pass.
-# NO OUT FILE (CEO-1222, Lon: "OUT is really REF. My bad."): the REF is the one expected-output file. --out-dir keeps each run's
+# NO OUT FILE (R-1222, Lon: "OUT is really REF. My bad."): the REF is the one expected-output file. --out-dir keeps each run's
 #   stdout as <dir>/<program>.<mode>.<angle>.stdout for inspection only; without it they live in a temp dir removed at exit.
 # THE VERDICT: a program PASSES when all six runs (two modes x three angles) print its REF. The board line counts programs, and
 #   every program appends ONE progress row per mode (class benchmark, suite snocone-bench-ref: PASS when all three angles print
-#   the REF, else HANG / CRASH / UNPROVEN / FAIL, the first that applies), because util_score_row.py's cross-check (CEO-750)
+#   the REF, else HANG / CRASH / UNPROVEN / FAIL, the first that applies), because util_score_row.py's cross-check (R-750)
 #   refuses to publish a row with no appends behind it.
-# ⛔ THE TIMING COLUMNS ARE SCOUTING DATA, NEVER A GRID: timing grids wait on the quiet box (CEO-1219); the correctness verdict does not.
+# ⛔ THE TIMING COLUMNS ARE SCOUTING DATA, NEVER A GRID: timing grids wait on the quiet box (R-1219); the correctness verdict does not.
 #
 # USAGE: bash ../harness/scripts/test_snocone_bench_suite.sh [--out-dir DIR] [--n N] [--bud-ms MS] [--timeout S] [--no-write]
 #   --n N        iter-angle repetitions (default: each marked program's check=, else 1)   --bud-ms MS  time-angle budget (default 200)
-#   --no-write   do not publish; without it a whole-population pass publishes (CEO-1302 (a), lib_bench_write.sh) through util_score_row.py --column bench-ref (the coo's column for a benchmark CORRECTNESS row, key
+#   --no-write   do not publish; without it a whole-population pass publishes (R-1302 (a), lib_bench_write.sh) through util_score_row.py --column bench-ref (the coo's column for a benchmark CORRECTNESS row, key
 #                snocone-bench-ref, nick SncBench -- never --column bench, which is the grid's B TIMING cell); non-fatal by design.
 # EXIT 0 every program PASS; 1 any program not PASS; 2 REFUSED (no binary, no population, a tool that cannot be built).
 set -uo pipefail
@@ -42,7 +42,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E/corpus/benchmarks/snocone"; GEN="$HERE/bench_wrap_snocone.py"
 OUTDIR=""; NITER=""; BUD=200; TMO=300; NOWRITE=0
-# ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+# ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 while [ $# -gt 0 ]; do case "$1" in
   --out-dir) OUTDIR="$2"; shift 2;; --n) NITER="$2"; shift 2;; --bud-ms) BUD="$2"; shift 2;; --timeout) TMO="$2"; shift 2;;
   --write) shift;; --no-write) NOWRITE=1; shift;; *) echo "⛔ REFUSE(2): unknown argument '$1' (usage in the header)"; exit 2;; esac; done
@@ -51,14 +51,14 @@ refuse() { echo "⛔ SNOCONE BENCH SUITE REFUSE(2): $*"; exit 2; }
 [ -f "$RT/libscrip_rt.so" ] || refuse "no runtime at $RT/libscrip_rt.so"
 [ -f "$GEN" ] || refuse "the wrapper generator $GEN is missing"
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
-PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-database writer $PW is missing (CEO-331)"
+PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-database writer $PW is missing (R-331)"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" >/dev/null || refuse "the binary is older than the tree -- run make (util_require_fresh.sh)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/sncbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
 RUSAGE="$W/bench_rusage"; gcc -o "$RUSAGE" "$ROOT/tools/bench_rusage.c" 2>"$W/rusage.err" || refuse "tools/bench_rusage.c did not build: $(head -1 "$W/rusage.err")"
 mapfile -t POP < <(find "$BD" -type f -name '*.sc' | LC_ALL=C sort)
-# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the officer's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
 # S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
 # population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
 . "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
@@ -125,7 +125,7 @@ for f in "${POP[@]}"; do
 done
 N=${#POP[@]}
 [ -n "$NOTES" ] && printf 'NOT PASSING, NAMED:%b\n' "$NOTES"
-printf 'SCOUTING DATA -- one run each, a loaded box, NOT A GRID (timing waits for the quiet box, CEO-1219):%b\n' "$SCOUT"
+printf 'SCOUTING DATA -- one run each, a loaded box, NOT A GRID (timing waits for the quiet box, R-1219):%b\n' "$SCOUT"
 LINE="SUITE_BOARD family=snocone-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$P4 angles=process,iter,time refless=$REFLESS unwrappable=$UNWRAP heap_declared=$HEAPD"
 echo "$LINE"
 [ "$PREFUSED" = 0 ] || echo "⚠ $PREFUSED progress row(s) REFUSED (named above) -- the board stands, but it cannot be published until they are recorded"

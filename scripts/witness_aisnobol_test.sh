@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# witness_aisnobol_test.sh -- ONE PACKAGE PROGRAM GRADED THE WAY ITS RUNNER GRADES IT (ceo, 2026-10-18): the aisnobol package's
+# witness_aisnobol_test.sh -- ONE PACKAGE PROGRAM GRADED THE WAY ITS RUNNER GRADES IT (2026-10-18): the aisnobol package's
 # TEST (818 lines, its own TEST.IN, --stlimit, the SPITCORE library through SNO_LIB, and spitlib.idx that BUILDLIB writes first).
 # The coo's verifier read it CRASH in both modes at c200347cc as a first reading; run by hand outside the package it refuses on
 # the include and says nothing -- this script stages the package the way test_snobol4_aisnobol_suite.sh does, so a seat's

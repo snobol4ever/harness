@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_design_random_codegen_scope_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: random-codegen-scope (the cto, 2026-10-28, CEO-1998/1999;
+# test_design_random_codegen_scope_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: random-codegen-scope (the cto, 2026-10-28, R-1998/1999;
 # .github/ARCH-RANDOM-SNOBOL4-GENERATOR.md). Lon, verbatim: "CTO should make detailed plans and test sources and harnesses for the HQs to execute
 # and step through." The plan is corpus/demos/scriptix/infinite_snobol4/STEPS.tsv; the vocabulary each step must reach is COVERAGE.tsv beside it.
 #
@@ -12,7 +12,7 @@
 # VERDICT: one line per step, STEP N <slug>: coverage=V dotnet=V jvm=V -> GREEN|RED|REFUSED. rc 0 every graded arm GREEN (a REFUSED engine arm
 # is named, not counted); rc 1 any arm RED; rc 2 no arm could be graded. A generator that refuses scope=N ("bad option") is the measured
 # state of a generator step that has not landed and reads RED, not REFUSED; a missing icont or oracle is REFUSED.
-# THE RUN SLOT: the engine arms are harness children, so this script holds one of the box-wide S4E_RUN_SLOTS (CEO-1894) for its whole run.
+# THE RUN SLOT: the engine arms are harness children, so this script holds one of the box-wide S4E_RUN_SLOTS (R-1894) for its whole run.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -68,7 +68,7 @@ fi
 slug="$(col "$step" 2)"; inst="$(col "$step" 3)"; exec="$(col "$step" 4)"; seed0="$(col "$step" 5)"; batches="$(col "$step" 6)"; size="$(col "$step" 7)"
 pins="$(col "$step" 8)"; need="$(col "$step" 9)"; fams="$(col "$step" 10)"
 mkdir -p "$OUT"
-# one box-wide run slot for the whole step (CEO-1894), the shape of corpus_suite_harness._bounded_run
+# one box-wide run slot for the whole step (R-1894), the shape of corpus_suite_harness._bounded_run
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi

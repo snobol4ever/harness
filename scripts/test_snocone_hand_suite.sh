@@ -9,7 +9,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). This runner had NO binary preflight at all -- not even an existence check --
+# does, the officer -> hq_T 2026-09-04). This runner had NO binary preflight at all -- not even an existence check --
 # so `make`-less it would have graded a nonexistent binary into a full, plausible, entirely false all-FAIL
 # board. The shim covers both: missing REFUSES, stale REFUSES, each rc=2 with the cure printed. NO LOGIC HERE:
 # util_require_fresh.sh sources gate_require_fresh from lib_gate.sh, the ONE authority (hq_B 4c7253e99).

@@ -30,7 +30,7 @@
 # ⛔ AND IT IS A ROOT, NEVER AN INVALIDATION (hq_snobol4 via hq_prolog): a later read must return the SAME ball because
 # a handler matches its shape, so a generation-checked cache here would only convert garbage into a silent forget.
 #
-# Arms: (1) BEHAVIOUR -- the witness answers its oracle in BOTH modes across a 16-point band (CEO-1024: never {0,1,3,5}).
+# Arms: (1) BEHAVIOUR -- the witness answers its oracle in BOTH modes across a 16-point band (R-1024: never {0,1,3,5}).
 #           THIS IS ALSO THE INERTNESS DETECTOR: hq_snobol4 landed this same class with the visit behind an early return,
 #           measured the whole band byte-identical to base, and an inert cure reads as "I rooted it and nothing moved".
 #       (2) LOCKSTEP -- rtx_plunify.s may write the ball only through PL_BALL_ARM/PL_BALL_DROP and read its VALUE only

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_gate_no_symlinks.sh -- NO SYMBOLIC LINK WE CREATE, EVER (Lon 2026-10-17, in-chat to the ceo, verbatim: "Do not EVER use symlinks.
+# test_gate_no_symlinks.sh -- NO SYMBOLIC LINK WE CREATE, EVER (Lon 2026-10-17, in-chat, verbatim: "Do not EVER use symlinks.
 # Remove all symlink everywhere found in anywhere." · "Use proper absolute and relative paths for things." · "You guarantee the all repos are
-# siblings at the same level in their root folder. done and done."; ceo CEO-1820. Lon 2026-10-21, verbatim: "Get all those symlinks removed.
+# siblings at the same level in their root folder. done and done."; R-1820. Lon 2026-10-21, verbatim: "Get all those symlinks removed.
 # We do not use symlinks anywhere for the snobol4ever organization." · "Do not worry about symlink that are apart of pacakges. I am concerned
 # only with ones we create." · "In general, do not mess with /home/resources folder if the layout is as intended by the authors of the content
-# in those folders."; ceo CEO-1853).
+# in those folders."; R-1853).
 #
 # ARM 1 (blocking): every git repo beside this one in the root -- SCRIP, corpus, harness, .github and any port repo -- tracks ZERO
 #        symbolic links (git ls-files -s mode 120000).

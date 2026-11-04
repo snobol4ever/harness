@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icn_seq_null_argument_defaults.sh -- seq()'s OMITTED and &null arguments take the DEFAULT
-# (hq_I 2026-09-09, under CEO-445; witness cut from rung36_jcon_misc, which reported 0/4/8 where icont
+# (hq_I 2026-09-09, under R-445; witness cut from rung36_jcon_misc, which reported 0/4/8 where icont
 # reports 1/5/9). In Icon an omitted argument IS &null and a null argument takes the parameter default:
 # seq(,4) and seq(&null,4) both mean seq(1,4). lower_seq() honoured the default only for a MISSING
 # argument -- nargs==0 -- so `seq(,4)` arrived as (TT_VAR &null) with nargs==2, lowered to the integer 0,
@@ -15,7 +15,7 @@
 # call that omits an interior one -- which is exactly the call a comma makes visible.
 #
 # ⛔ REFUSES rc=2 rather than skipping: no scrip, no RT, no icont/iconx, or zero forms graded. Both modes,
-# graded against a FRESH icont cut of the SAME source -- never against a stored ref. Since the CEO-1393 oracle swap
+# graded against a FRESH icont cut of the SAME source -- never against a stored ref. Since the R-1393 oracle swap
 # (2026-10-01) icont requires semicolons and reads a newline as whitespace, as SCRIP does, so the one witness carries
 # them for both engines; the sed that derived SCRIP's copy from a semicolon-free oracle copy is retired with the swap.
 set -u

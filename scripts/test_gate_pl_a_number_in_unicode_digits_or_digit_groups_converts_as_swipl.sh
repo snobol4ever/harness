@@ -10,7 +10,7 @@
 # (test_unicode's two read cases), which belongs with the bootstrap parsers' lexer.
 # THE REFS ARE CUT FROM THE ORACLES, NEVER FROM SCRIP: the tables below were cut 2026-10-18 from /usr/bin/swipl and the pristine gplc build,
 # and every run re-cuts them and REFUSES rc=2 when an oracle and its table disagree or an oracle is absent.
-# FAIL-ONCE (CEO-1680): with the by_name_dispatch.c change reverted on the same tree, m3 and m4 both read FAIL (measured 2026-10-18).
+# FAIL-ONCE (R-1680): with the by_name_dispatch.c change reverted on the same tree, m3 and m4 both read FAIL (measured 2026-10-18).
 # Usage: bash ../harness/scripts/test_gate_pl_a_number_in_unicode_digits_or_digit_groups_converts_as_swipl.sh
 set -uo pipefail
 GATE_NAME=test_gate_pl_a_number_in_unicode_digits_or_digit_groups_converts_as_swipl

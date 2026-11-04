@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_swi_engines_answer_as_swipl_with_their_own_trail_and_under_collection.sh
-# -- SWI ENGINES (ceo CEO-1960/1964/1966, row prolog-swi-engines-designed-by-the-cto-and-built-ceo-1960; the cto's design ARCH-PROLOG-THREADS.md sec 4; SWI engines/test_engines.pl). engine_create/3,4, engine_next/2,
+# -- SWI ENGINES (R-1960/1964/1966, row prolog-swi-engines-designed-by-the-cto-and-built-r-1960; the cto's design ARCH-PROLOG-THREADS.md sec 4; SWI engines/test_engines.pl). engine_create/3,4, engine_next/2,
 # engine_next_reified/2, engine_yield/1, engine_post/2,3, engine_fetch/1, engine_destroy/1, engine_self/1, current_engine/1 and is_engine/1 are a LOCAL prelude library (prelude/engines.pl) over five leaves that drive a
 # generator coroutine (the '$co_*' road's cousin) running on the engine's OWN trail arena: a caller that backtracks across engine_next/2 never undoes the engine's bindings, an engine that backtracks into its goal
 # never undoes the caller's, an answer or yield is copied to the heap before it crosses the switch, an exception in the body crosses as data and is re-thrown on the caller's stack. TWO WITNESSES, refs cut from swipl

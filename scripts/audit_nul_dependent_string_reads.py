@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """audit_nul_dependent_string_reads.py [--src DIR] [--check | --update | --selftest] [--baseline FILE] [--tsv OUT] [--top N]
 
-The ratchet over NUL-DEPENDENT READS OF A DESCRIPTOR'S STRING (CTO-397, relayed by the ceo 2026-10-29; the brief line is "No strlen on a descriptor's .s").
+The ratchet over NUL-DEPENDENT READS OF A DESCRIPTOR'S STRING (CTO-397, relayed by the officer 2026-10-29; the brief line is "No strlen on a descriptor's .s").
 A descriptor string carries its length (slen) and may hold a NUL byte -- a SNOBOL4 string, a Prolog atom, an Icon string -- and a C read that stops at the
 first NUL (strlen, strcmp, strncmp, strchr, strstr, strcpy, strdup, ct_strdup, atoi and the strto family, puts and fputs, a printf-family call whose
 format has a %s) of a descriptor's .s silently truncates it.  The census walks src/runtime, src/driver, src/emitter and src/parsers (.c .h .cpp .inc,

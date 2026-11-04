@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_retaining_if_then_else_inside_an_inline_between_loop_retries_its_generator_every_iteration_as_swipl.sh -- THE WRONG-ANSWER WITNESS OF
-# SCRIP 850479705 (hq_zetas, the cto's ruling 2026-10-25 on hq_snobol4's speed reading, CEO-1680: red on the cure's parent, a proper test). A fail-driven loop over an inline between/3
+# SCRIP 850479705 (hq_zetas, the cto's ruling 2026-10-25 on hq_snobol4's speed reading, R-1680: red on the cure's parent, a proper test). A fail-driven loop over an inline between/3
 # whose body is a retaining if-then-else with an observable effect (member/2 in the then arm, a write) must run every iteration: on 12ece7319 the inner gate re-entered at its stale beta and the
 # loop printed w(1,a) w(1,b) done and stopped (its between/3 form hides the defect because its normal arm has no effect). The program is the witness and the expected output was cut from swipl 9.0.4.
 # rc 0 both modes equal the swipl-cut ref; rc 1 a mode differs; rc 2 cannot measure (no ./scrip, or no witness runner).

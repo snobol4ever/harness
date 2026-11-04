@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_module_rule_answers_as_swipl.sh
 #
-# THE RULE (the ceo, CEO-1607 and CEO-1612): SCRIP flattens modules by QUALIFIED RENAME. prolog_lower.c's first pass
+# THE RULE (the R-1607 and R-1612): SCRIP flattens modules by QUALIFIED RENAME. prolog_lower.c's first pass
 # (pl_module_flatten, the pass that already knows each clause's plunit unit) gives every clause its module -- the unit as
 # plunit_<Unit> between begin_tests/end_tests, else the latest module/2 or '$module_restore'/1, else user -- and renames a predicate a
 # module defines and does not export to '<M>:<name>' (a unit exports nothing; exports are module/2's list and export/1). Calls resolve

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ../harness/scripts/test_gate_gc_the_stack_is_completely_accounted_at_every_collection.sh -- THE STACK COMPLETENESS
-# GATE (coo, CEO-1099 rank 0, 2026-09-21).
+# GATE (coo, R-1099 rank 0, 2026-09-21).
 #
 # THERE ARE ONLY TWO WAYS TO MAKE A HARDWARE-STACK REGION TRAVERSABLE: DELETE IT OR DECLARE IT.  Eight
 # classes sit on the stack at a collection -- emitted box frames, the zeta-SPINE on RSP, gcc C frames, our
@@ -28,11 +28,11 @@
 # three raw-heap counters is incremented (gc_heap.c:1130 s_raw_heap->SPINE, :1130 h_raw_heap->HEADER,
 # :1147 i_raw_heap->RAW).
 #
-# ⛔ DEPTH IS PART OF THE VERDICT (CEO-1099).  A shallow witness reads nomap=0 and proves nothing: the ceo
+# ⛔ DEPTH IS PART OF THE VERDICT (R-1099).  A shallow witness reads nomap=0 and proves nothing: the officer
 # measured frames=1 nomap=0 i_raw_heap=0 on bench_icnstr_concat_table.icn and that is NOT evidence about deep
 # stacks.  This gate DECLARES the depth its population reaches and REFUSES rc=2 if the run does not reach it,
 # so a population that quietly got shallower cannot read clean.
-# ⛔ AND A POPULATION THAT NEVER COLLECTED REFUSES rc=2 (CEO-1044).
+# ⛔ AND A POPULATION THAT NEVER COLLECTED REFUSES rc=2 (R-1044).
 GATE_NAME="test_gate_gc_the_stack_is_completely_accounted_at_every_collection"
 . "$(dirname "$0")/lib_gate.sh"
 gate_parse_args "$@"
@@ -57,7 +57,7 @@ gate_require_fresh || exit 2
 # ⛔ A CRASHING WITNESS IS REJECTED ON PURPOSE: its evidence stops at an unknown point, so a clean reading
 #    from it cannot be distinguished from a reading that never got deep enough to see anything.
 # GC_STACK_WITNESSES overrides the population FOR THE FAIL-ONCE ARMS ONLY -- a detector arm that has never
-# tripped reads as "there was never a bug here", and it is detector arms that fail OPEN (CEO-1099).
+# tripped reads as "there was never a bug here", and it is detector arms that fail OPEN (R-1099).
 # ⛔⭐⭐ A WITNESS TOKEN IS name[:stress] AND THE STRESS IS PER WITNESS, WHICH IS A MEASUREMENT AND NOT A
 #   PREFERENCE (coo 2026-09-22).  SCRIP_GC_STRESS=n arms a collection at every n-th allocation
 #   (gc_heap.c:283) and the collection is TAKEN AT THE NEXT SAFE POINT -- so a run's collection count is a
@@ -81,14 +81,14 @@ DEFAULT_STRESS="${GC_STACK_STRESS:-1}"        # for a token written without its 
 CEILING="${GC_STACK_TIMEOUT:-120}"            # per-witness wall-clock ceiling; a hit is a TIMEOUT, never a crash
 DEPTH_FLOOR="${GC_STACK_DEPTH_FLOOR:-10}"     # max frames the population MUST reach, or the reading is shallow
 # ⛔⭐⭐ THE WITNESS ARENA IS A VARIABLE BECAUSE THE HARD CAP IS COMING AND 64 KB DOES NOT SURVIVE IT.
-#   Lon 2026-09-21, in-chat to the ceo, verbatim: "Place a hard cap on the GC HEAP. Do not extend it."  The
-#   ceo's working tree already carries it, and MEASURED AGAINST THAT BUILD (read-only, their binary, 2026-09-21
+#   Lon 2026-09-21, in-chat, verbatim: "Place a hard cap on the GC HEAP. Do not extend it."  The
+#   the officer's working tree already carries it, and MEASURED AGAINST THAT BUILD (read-only, their binary, 2026-09-21
 #   19:3x): procedure_coexpr_every_replace_1 and procedure_every_suspend_replace_3 complete at 64, 128, 256 and
 #   1024 KB, while procedure_coexpr_suspend_replace_3 ABORTS rc=134 at BOTH 64 and 128 KB -- "[ZHP] HARD CAP
 #   REACHED ... THIS REQUEST wanted 32767 payload bytes of block kind 215" -- and completes at 256 and 1024.
 #   With the arena hardcoded at 64 this gate would read UNPROVEN(2) on every capped tree FOREVER, because a
 #   crashing witness is rejected by design two blocks below.  That is how the gate's own DONE-WHEN refused on
-#   the ceo's root today.  ⛔ AND THE DISTINCTION THE CAP FORCES EVERYWHERE: an abort that says HARD CAP
+#   the officer's root today.  ⛔ AND THE DISTINCTION THE CAP FORCES EVERYWHERE: an abort that says HARD CAP
 #   REACHED is a CAPACITY verdict about the arena, never a defect in the collector -- an item-4 band that
 #   counts it as a grading lost will publish hundreds of false losses the day the cap lands.
 #   ⭐ THE DEFAULT MOVES TO 256 AND THE EVIDENCE IS UNCHANGED, WHICH IS THE ONLY REASON IT MAY MOVE: measured
@@ -148,12 +148,12 @@ MAXFRAMES=$(sed -n 's/^\[GC-WALK\] pop=[^ ]* *frames=\([0-9]*\) .*/\1/p' "$LOG" 
 MAXFRAMES="${MAXFRAMES:-0}"
 SUPPRESSED=$(sed -n 's/^\[GC-WALK\] site lines suppressed=\([0-9]*\) .*/\1/p' "$LOG" | awk '{s+=$1} END{print s+0}')
 
-# ⛔ CEO-1044: a population that never collected proves nothing about the collector.
+# ⛔ R-1044: a population that never collected proves nothing about the collector.
 if [ "$NCOLL" -eq 0 ]; then
-    echo "GATE UNPROVEN(2) [$GATE_NAME]: $NRUN witness(es) ran and produced ZERO collections -- a population that never collected proves nothing (CEO-1044)"; exit 2; fi
-# ⛔ CEO-1099: declare the depth, and refuse a reading that did not reach it.
+    echo "GATE UNPROVEN(2) [$GATE_NAME]: $NRUN witness(es) ran and produced ZERO collections -- a population that never collected proves nothing (R-1044)"; exit 2; fi
+# ⛔ R-1099: declare the depth, and refuse a reading that did not reach it.
 if [ "$MAXFRAMES" -lt "$DEPTH_FLOOR" ]; then
-    echo "GATE UNPROVEN(2) [$GATE_NAME]: population reached only frames=$MAXFRAMES, below the declared floor of $DEPTH_FLOOR -- a shallow stack reads clean and is not evidence about deep ones (CEO-1099)"; exit 2; fi
+    echo "GATE UNPROVEN(2) [$GATE_NAME]: population reached only frames=$MAXFRAMES, below the declared floor of $DEPTH_FLOOR -- a shallow stack reads clean and is not evidence about deep ones (R-1099)"; exit 2; fi
 
 # ── THE FIVE COMPLETENESS QUANTITIES, summed over every collection, from the runtime's own line.
 read -r NOMAP NOTAB IRH HRH SRH <<EOF

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_score_md_parses_and_github_is_marker_free.sh — the second half of the conflict-marker guard
 # (row `make-test-refuses-when-score-md-is-unparseable-or-a-tracked-github-file-carries-a-conflict-marker`,
-# ceo CEO-370 rank 1, minted from hq_R's blocker).
+# R-370 rank 1, minted from hq_R's blocker).
 #
 # ⛔⭐⭐ WHY A SECOND GUARD, WHEN THE PRE-COMMIT HOOK ALREADY REFUSES MARKERS. The hook grades the commit in
 # front of it, in the root where it is installed, and hooks DO NOT PROPAGATE THROUGH CLONE. It cannot see
@@ -17,7 +17,7 @@
 # quietly AND the file may be corrupt, so nothing anywhere says so. A failed WRITE must not red a board; a
 # corrupt LEADERBOARD must. This gate is that distinction, made mechanical.
 #
-# THE TWO VERDICTS ARE DIFFERENT ON PURPOSE (ceo's spec):
+# THE TWO VERDICTS ARE DIFFERENT ON PURPOSE (the officer's spec):
 #   rc=2  the table cannot be found or parsed -- this gate CANNOT MEASURE, so it REFUSES rather than
 #         inventing a verdict. An unparseable board is not a failing board; it is an unreadable one.
 #   rc=1  a tracked .github file carries a column-zero conflict marker -- that IS a defect, and a real one.

@@ -18,9 +18,9 @@
 # grades eight of nine grammars and reports the ninth as absent, which reads exactly like a clean census.
 # The Snocone lexer is a hand-written FSM (snocone_lex.c) and has no .l; Icon and Prolog are hand-written recursive-descent parsers
 # with no grammar at all, which is why this table has five parser dirs and not seven.
-# ⛔⭐⭐⭐ THE POST-PROCESS IS PART OF GENERATION, NOT A SEPARATE PASS OVER THE TREE (ceo CEO-851).  bison and flex emit a skeleton that calls
+# ⛔⭐⭐⭐ THE POST-PROCESS IS PART OF GENERATION, NOT A SEPARATE PASS OVER THE TREE (R-851).  bison and flex emit a skeleton that calls
 # malloc and free and includes <malloc.h>, and RULES.md line 29 forbids every libc allocation in every file of this tree, GENERATED OUTPUT
-# INCLUDED, because a generated file that is committed is source and Lon's acceptance test is a grep over the whole base.  The CEO-842 sweep
+# INCLUDED, because a generated file that is committed is source and Lon's acceptance test is a grep over the whole base.  The R-842 sweep
 # rewrote the committed outputs and DID NOT wire this, so `regenerate_parser_and_lexer_from_sources.sh` put the four names back and the
 # in-sync gate went RED on all NINE generated files at SCRIP 36f0edab5 -- committed output ct_alloc against fresh output malloc, 12 to 132
 # non-#line lines apiece.  It lives HERE rather than in the regenerator for the same reason the invocation table does: the gate regenerates

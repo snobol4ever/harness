@@ -141,14 +141,14 @@ def declared_argv(d):
     return names
 
 
-# ⛔⭐ THE SECOND DECLARATION, AND WHY IT COULD NOT BE A ROW IN ALL.argv (ceo CEO-962, 2026-09-20, on the coo's
+# ⛔⭐ THE SECOND DECLARATION, AND WHY IT COULD NOT BE A ROW IN ALL.argv (R-962, 2026-09-20, on the coo's
 # report; row instrument-the-nineteen-non-gc-blocking-arms-...). Three raku entries carry a REAL `sub MAIN(...)`
 # whose parameters are ALL DEFAULTED: they run correctly bare, and they CAN observe an argument if given one.
-# That second fact is the whole difference from Icon's never-named parameter, so the ceo REFUSED the widening of
+# That second fact is the whole difference from Icon's never-named parameter, so the officer REFUSED the widening of
 # inert_argv_match() that would have covered them -- "a matcher widened to cover them silently absolves an
 # unbounded future class of the same shape, and a criterion a widening satisfies while the debt stands is FALSE
 # rather than lenient" -- and ruled the cure to be A DECLARATION BESIDE THE DATA, the shape this tree already
-# uses for the CEO-409 mask and the OUTSIDE_SPITBOL_BASELINE sidecar: name the programs, with the reason.
+# uses for the R-409 mask and the OUTSIDE_SPITBOL_BASELINE sidecar: name the programs, with the reason.
 # ⛔ AND IT MUST BE A SEPARATE FILE, which is a MEASURED constraint and not a preference:
 # corpus_suite_harness.py:read_argv_sidecar REFUSES a name in ALL.argv declared with NO arguments ("no arguments
 # is already the default -- remove the line rather than restating it"), so the three could not be written there

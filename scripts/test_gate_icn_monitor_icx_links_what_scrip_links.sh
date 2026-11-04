@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_icn_monitor_icx_links_what_scrip_links.sh -- THE ICON ORACLE PARTICIPANT CAN BRACKET A PROGRAM THAT LINKS A LIBRARY
-# SHIPPED BESIDE IT (hq_icon 2026-09-25, ceo CEO-1272 (b)).
+# SHIPPED BESIDE IT (hq_icon 2026-09-25, R-1272 (b)).
 #
 # icont links ucode, never source. test_monitor_3way_sync_step_auto.sh compiled the icx participant with `icont -s` alone, so a
-# program whose `link` names a library beside it -- every CEO-1269 NAME_driver, io_lib, lists_lib -- died in the icx compile with
+# program whose `link` names a library beside it -- every R-1269 NAME_driver, io_lib, lists_lib -- died in the icx compile with
 # "cannot resolve reference to file 'NAME.u1'" and monitor_run.sh --oracle REFUSED: no bracket was possible on a linked program.
 # The harness now finds every library the program reaches in SCRIP's own search order (icon_driver.c icn_link_open: IPATH,
 # ICONPATH, the IPL procs beside the scrip binary, the linking file's directory), translates it into its scratch directory, and

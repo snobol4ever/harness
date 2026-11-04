@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_the_parser_module_and_the_user_program_each_adopt_their_own_program_top.sh -- THE PARSE-STAGE MODULE (SCRIP_PARSE_STAGE=sc,
-# CEO-1566/1749) RUNS INSIDE THE COMPILER AND COLLECTS THERE, AND THE USER PROGRAM RUNS AFTER IT IN THE SAME PROCESS (mode 3); EACH ADOPTS ITS
+# R-1566/1749) RUNS INSIDE THE COMPILER AND COLLECTS THERE, AND THE USER PROGRAM RUNS AFTER IT IN THE SAME PROCESS (mode 3); EACH ADOPTS ITS
 # OWN PROGRAM TOP, SO NO WALK FINDS ITS ROOT FRAME AWAY FROM THE ADOPTED TOP (cto 2026-10-15, after 3b2a97fe9 made that a refusal).
 # Two defects 3b2a97fe9's refusal exposed on this road, both silently relearned by every walk before it:
 #   (1) rt_sc_outer_call (rt_sc_module.c) handed rt_program_top_adopt the stack pointer from before its two scratch pushes, 16 bytes above the
@@ -15,8 +15,8 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }; G="$(basename "${BASH_SOURCE[0]}" .sh)"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
-MOD="$ROOT/out/libscrip_parser_snobol4.so"; [ -f "$MOD" ] || { echo "⛔ GATE REFUSE(2) [$G]: no parser module at $MOD -- run make parsers-sc (the default make does not build it, CEO-1877)"; exit 2; }
-[ "$MOD" -nt "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: the parser module $MOD is older than $SCRIP -- a module built by an older compiler carries older frame maps and site tables, so a walk reads nosite (CEO-2051: a false red on 10-30); run make parsers-sc"; exit 2; }
+MOD="$ROOT/out/libscrip_parser_snobol4.so"; [ -f "$MOD" ] || { echo "⛔ GATE REFUSE(2) [$G]: no parser module at $MOD -- run make parsers-sc (the default make does not build it, R-1877)"; exit 2; }
+[ "$MOD" -nt "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: the parser module $MOD is older than $SCRIP -- a module built by an older compiler carries older frame maps and site tables, so a walk reads nosite (R-2051: a false red on 10-30); run make parsers-sc"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ GATE REFUSE(2) [$G]: cannot load lib_oracle_flags.sh"; exit 2; }
 SBL="$(sbl_correctness_bin)" || { echo "⛔ GATE REFUSE(2) [$G]: no SPITBOL correctness oracle"; exit 2; }
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT

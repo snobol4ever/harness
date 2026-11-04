@@ -3,7 +3,7 @@
 # section 13.9 SIX, the DONE-WHEN of the row gc-one-stack-all-descriptors-no-marker-no-map-no-ledger-...; the cto's six conditions of 2026-10-11 on STEP B).
 #
 # WHAT THIS GATE HOLDS. A frame is found by its return PC and its link word through the per-site table, never by a marker on the stack, never by a scan, never by a second stack
-# (Lon 2026-09-30 and 2026-10-03, CEO-1368/1492). The marker machinery is deleted -- the frame-marker tag, the map's offset field, the cell walkers, the ceiling, the stale-frame plant, the
+# (Lon 2026-09-30 and 2026-10-03, R-1368/1492). The marker machinery is deleted -- the frame-marker tag, the map's offset field, the cell walkers, the ceiling, the stale-frame plant, the
 # 16-byte sweep census -- and the collector walks only the frames the chain names; a chain that stops short is a fatal that names the PC (13.9 ONE), never a skip.
 #
 # ARMS. (1) THE DELETIONS: the five files the row names carry zero lines of the marker machinery. (2) NO MARKER IN EMITTED CODE: the mode-4 text of a witness per front end names a map only
@@ -11,7 +11,7 @@
 # gc_chain_refuse on any stop short of ROOT, the refusal prints the entry PC and aborts through rt_bomb, and no fixed hop bound is declared in the walk (13.9 THREE). (4) LIVE, per front
 # end and per mode: seven witnesses and the cross-language gc_witnesses, at the 64 KB window with a collection at every safe point, answer exactly as their plain run (or their ref), and
 # the walk summary prints frames >= 1 with every stop short of root at zero (nosite, frameless, unknown-depth, cycle, no-link, no-rise, bad-link) and no refusal. (5) THE REAL PROGRAMS, the
-# CEO-1691 finish line: SnoRungs demo_porter and SncBench parser_pascal print their ref in both modes, demo_porter also under a collection at every fifth safe point over 300 input lines
+# R-1691 finish line: SnoRungs demo_porter and SncBench parser_pascal print their ref in both modes, demo_porter also under a collection at every fifth safe point over 300 input lines
 # (the stressed run is the one the marker scan answered wrongly: it read a dead sibling thunk's marker as the live frame in about a third of the collections and skipped the c2bb glue's
 # subject cell, so a spine change that moved a collection crashed it in mode 4). The proof that these arms can fail is the commit before STEP B: the same programs under the marker scan
 # (ea957ffc5 on that tree: demo_porter mode 4 SIGSEGV after collection 10, parser_pascal mode 3 'Parse Error').
@@ -115,7 +115,7 @@ if [ -f "$K.sc" ] && [ -f "$K.input" ] && [ -f "$K.ref" ]; then
   sed 's/MATCHAT()/VDIFFER()/g' "$K.sc" > "$W/k0.sc"
   if grep -q 'VDIFFER()' "$W/k0.sc"; then
     ( cd "$W" && SCRIP_GC_CHAIN_CHECK=1 timeout -k 5 600 "$SCRIP" -d4194304k -s2097152k k0.sc < "$K.input" > k0.o3 2> k0.e3 ); r0=$?
-    if [ "$r0" = 0 ] && cmp -s "$W/k0.o3" "$K.ref" && ! grep -aq 'GC-CHAIN\] REFUSED' "$W/k0.e3"; then ck ok "(6) parser_snobol4 with its MATCHAT() stamps as the zero-argument unknown callee VDIFFER() prints its ref in mode 3 under the chain check: a Snocone procedure's frame is hopped by its own SIG record, never by a leftover tiny-glue word above its top (CEO-1746; rc 139 on 0e4313bfc)"
+    if [ "$r0" = 0 ] && cmp -s "$W/k0.o3" "$K.ref" && ! grep -aq 'GC-CHAIN\] REFUSED' "$W/k0.e3"; then ck ok "(6) parser_snobol4 with its MATCHAT() stamps as the zero-argument unknown callee VDIFFER() prints its ref in mode 3 under the chain check: a Snocone procedure's frame is hopped by its own SIG record, never by a leftover tiny-glue word above its top (R-1746; rc 139 on 0e4313bfc)"
     else ck no "(6) parser_snobol4/VDIFFER() mode 3 rc=$r0 $(grep -ao 'stops short ([a-z-]*)' "$W/k0.e3" | head -1) -- the walker took a word above the frame top as the tiny-glue road"; fi
   else ck no "(6) the parser_snobol4 copy carries no MATCHAT() stamp to replace"; fi
 else ck no "(6) parser_snobol4 is missing from $CORPUS/benchmarks/snocone/parsers"; fi

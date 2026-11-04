@@ -175,7 +175,7 @@ donewhen_selftest() {
     [ "$f" -eq 0 ]
 }
 
-# ⛔⭐⭐ THE ONE DONE-WHEN EXTRACTOR, AND IT READS THE WHOLE CRITERION (hq_T 2026-09-05, ceo rank-0 ruling on
+# ⛔⭐⭐ THE ONE DONE-WHEN EXTRACTOR, AND IT READS THE WHOLE CRITERION (hq_T 2026-09-05, rank-0 ruling on
 # seat04's row s4e-msg-donewhen-truncation-false-closes-multiline-heredoc-batons; seat04 reproduced it end to end).
 # It used to be `sed -n 's/^DONE-WHEN:...//p' "$b" | head -1` at THREE sites -- one physical line, discarding
 # everything after it. ⛔ THAT IS A FALSE-GREEN ENGINE, NOT MERELY A TRUNCATION, and the direction is what makes it
@@ -212,7 +212,7 @@ s4e_field_criterion_text() {   # $1 = baton path, $2 = column-0 label (DONE-WHEN
     _dw_backticked=""
     first="$(sed -n "s/^${lbl}:[[:space:]]*//p" "$b" | head -1)"
     [ -n "$first" ] || return 0
-    # \u26d4\u2b50\u2b50 A SECOND LABEL OF THE SAME NAME IS NOT A SECOND CRITERION, IT IS A SILENTLY DISCARDED ONE (ceo CEO-1079).
+    # \u26d4\u2b50\u2b50 A SECOND LABEL OF THE SAME NAME IS NOT A SECOND CRITERION, IT IS A SILENTLY DISCARDED ONE (R-1079).
     # `head -1` above takes the FIRST and drops the rest without a word.  The coo measured 17 batons carrying the
     # PREMISE-WHEN placeholder and EIGHT carrying it BESIDE a real line, and observed that every one is harmless
     # TODAY only because the real line happens to come first -- so the day a baton is edited in the other order,
@@ -230,7 +230,7 @@ s4e_field_criterion_text() {   # $1 = baton path, $2 = column-0 label (DONE-WHEN
         printf '  READ : %s\n' "$first" >&2
         sed -n "s/^${lbl}:[[:space:]]*//p" "$b" | tail -n +2 | while IFS= read -r _d; do printf '  DROPPED: %s\n' "$_d" >&2; done
         printf '  Delete the one you do not mean.  A criterion that exists in the file and never runs is the\n' >&2
-        printf '  false-green shape this bus is built against (ceo CEO-1079).\n' >&2
+        printf '  false-green shape this bus is built against (R-1079).\n' >&2
       fi; }
     acc="$first"
     # ⛔⭐⭐ CONTINUE ONLY WHILE THE TEXT IS INCOMPLETE SHELL, NEVER "UNTIL THE NEXT FIELD LABEL" -- and that
@@ -276,7 +276,7 @@ s4e_donewhen_text() { s4e_field_criterion_text "$1" DONE-WHEN; }
 s4e_premise_text()  { s4e_field_criterion_text "$1" PREMISE-WHEN; }
 s4e_donewhen_incomplete() {   # $1 = criterion text; rc 0 = bash cannot finish reading it
     # ⛔ A TRAILING BACKSLASH (or a dangling && / || / |) IS INCOMPLETE SHELL, though `bash -n` swallows it silently (coo 2026-09-16, found by
-    # CEO-786's rc rule: a two-line criterion 'test -f X \' + '&& test -f Y' ran only its first line -- `test -f X \` is a usage error, rc=2 --
+    # R-786's rc rule: a two-line criterion 'test -f X \' + '&& test -f Y' ran only its first line -- `test -f X \` is a usage error, rc=2 --
     # which the old `done` mapped to red, so test_gate_s4e_donewhen_runs_the_whole_criterion's arm (A) passed for weeks on a criterion
     # whose second line never ran). The explicit continuation the format asks for must be READ as one.
     case "$(printf '%s' "${1:-}" | sed -e 's/[[:space:]]*$//')" in *\\|*'&&'|*'||'|*'|') return 0;; esac

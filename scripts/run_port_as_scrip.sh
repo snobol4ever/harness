@@ -1,6 +1,6 @@
 #!/bin/bash
 # run_port_as_scrip.sh [SCRIP's m3 command line: --run [switches] name.sno [-- arg ...]]
-# THE PORT ENGINE IN SCRIP'S CALLING SHAPE (CEO-1822; Lon 2026-10-18, in-chat to hq_jvm, verbatim: "Get all SNOBOL4 test suite package
+# THE PORT ENGINE IN SCRIP'S CALLING SHAPE (R-1822; Lon 2026-10-18, in-chat to hq_jvm, verbatim: "Get all SNOBOL4 test suite package
 # runners working with snobol4jvm."): the SNOBOL4 package runners call the program they grade as "$SCRIP" --run [switches] prog, each with
 # its own grading around that one line (live oracle diffs, masks, overlays). Under S4E_ENGINE=<port> one_runner_port_face names this file
 # as their SCRIP, and it re-says the m3 call in the shape every port runner shares (run_<engine>.sh [-dNk] [-sNk] [-u STR] name [-- args]),

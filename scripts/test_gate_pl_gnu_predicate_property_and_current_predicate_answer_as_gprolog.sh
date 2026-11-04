@@ -9,7 +9,7 @@
 # sets, because iso-dialect programs are graded against swipl as well as gprolog; '$pl_pp_pcheck' raises the domain error for a name in neither set. The
 # line and the multifile flag reach the runtime through the declaration table ($db_decls kinds 5 and 6, stored on the key record). current_predicate/1
 # keeps ISO's type_error(predicate_indicator, PI) outside the SWI dialect (ISO 8.8.2.3, held by the Logtalk ISO groups of iso_rung3; gprolog deviates
-# there, a ruling for the ceo); in the SWI dialect current_predicate(foo/ -1) now raises domain_error(not_less_than_zero, -1) and predicate_property(4, P)
+# there, a ruling for the officer); in the SWI dialect current_predicate(foo/ -1) now raises domain_error(not_less_than_zero, -1) and predicate_property(4, P)
 # fails, both as swipl.
 #
 # THE ARMS: g.pl (no SWI marker, 22 lines cut from gprolog 1.6.0) and s.pl (an SWI marker, 11 lines cut from swipl 9.0.4), each in mode 3 and mode 4,

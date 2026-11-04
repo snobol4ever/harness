@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_build_score_md.py -- computed generator for the SCORE.md "STANDARDIZED DISPLAY" grid (row
-# score-md-master-driven-display, ceo's all-hands-consolidation assignment to seat08, 2026-08-30).
+# score-md-master-driven-display, the officer's all-hands-consolidation assignment to seat08, 2026-08-30).
 #
 # WHY THIS EXISTS: SCORE.md is Lon's "central location for the current score" -- but its own text
 # already names its worst defect: 15 of 17 rows carried an unpinned "s283h tree" label that names no
@@ -17,7 +17,7 @@
 # run with real, checkable per-repo commit hashes (+DIRTY), same discipline as lib_gate.sh's gate_stamp,
 # so a reader can `git checkout` exactly what produced a given grid; (4) runs each language's RUNGS BOARD -- the harness's own
 # `run` on corpus/tests/<lang>/ALL.<ext> + ALL.ref, both modes -- and parses its one SUITE_BOARD line, so all seven languages carry
-# the SAME instrument in the same column (ceo 2026-09-01 -> hq_B; Lon's #1-priority Prolog number is that column's crash count).
+# the SAME instrument in the same column (2026-09-01 -> hq_B; Lon's #1-priority Prolog number is that column's crash count).
 import csv, os, re, subprocess, sys, time
 
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -73,10 +73,10 @@ GATES = {
 }
 
 
-# ⭐ THE RUNGS BOARD, ONE INSTRUMENT FOR ALL SEVEN (ceo 2026-09-01 -> hq_B: "the display should carry the same instrument for
+# ⭐ THE RUNGS BOARD, ONE INSTRUMENT FOR ALL SEVEN (2026-09-01 -> hq_B: "the display should carry the same instrument for
 # all seven -- a smoke on one row and a rung suite board on another is two axes in one grid"). The instrument is the harness's own
 # `run` on the language's ALL.<ext> + ALL.ref rungs, both modes -- exactly what test_corpus_snobol4.sh wraps for SNOBOL4 and what
-# ceo quoted for Prolog (total=371 · m3 pass=218 fail=5 crash=139 · m4 pass=218 fail=5 crash=7 skip=132 at 8eac17da). This file
+# the officer quoted for Prolog (total=371 · m3 pass=218 fail=5 crash=139 · m4 pass=218 fail=5 crash=7 skip=132 at 8eac17da). This file
 # still grades nothing itself: it invokes the harness unmodified and parses its ONE printed SUITE_BOARD line; a pattern miss is
 # UNPROVEN, never a guess. Counts are reported PER MODE and never summed (an XPASS in one mode can be a SKIP in the other).
 # ⛔ The smoke/floor column stays: the two columns answer different questions (floor = must-never-regress bar, rungs = the whole
@@ -86,10 +86,10 @@ RUNG_SUITES = {  # lang -> (extension of the rungs program file, --lang value fo
     "snobol4": (".sno", ""), "icon": (".icn", "icon"), "prolog": (".pl", "prolog"), "raku": (".raku", "raku"),
     "pascal": (".pas", "pascal"), "snocone": (".sc", "snocone"), "rebus": (".reb", "rebus"),
 }
-# ⛔ BOTH OF THESE READ THE BOARD BY POSITION AND BOTH WERE ONE INSERTION FROM SILENCE (coo, CEO-839).
+# ⛔ BOTH OF THESE READ THE BOARD BY POSITION AND BOTH WERE ONE INSERTION FROM SILENCE (coo, R-839).
 # `family=\S+ total=` required total to FOLLOW family, and the mode regex required EIGHT fields in exactly that
 # order with nothing between any two of them.  The same shape, in test_gate_harness_refusal_is_rc2.sh arm 9, went
-# red against a CORRECT board the day shipped=/outside= landed between total= and m3_n= (CEO-749/772) and stayed
+# red against a CORRECT board the day shipped=/outside= landed between total= and m3_n= (R-749/772) and stayed
 # red for a day -- and here a miss is worse than red: it returns UNPROVEN, so SCORE.md would have quietly said
 # "no SUITE_BOARD line from the harness" about a harness that printed one.  Fields are read BY NAME now.
 _SUITE_BOARD_LINE_RE = re.compile(r"^SUITE_BOARD .*$", re.M)

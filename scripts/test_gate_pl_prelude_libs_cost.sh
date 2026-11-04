@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_prelude_libs_cost.sh -- A PROGRAM NAMING NO VENDORED LIBRARY PAYS NOTHING FOR THEM; ONE NAMING A LIBRARY PAYS
 # FOR THAT LIBRARY ALONE (cfo 2026-10-10, row prolog-swi-library-modules-rbtrees-assoc-ordsets-apply-error-pairs-aggregate-
-# option-strings-516-swi-cases; CEO-1473's condition: "the compile-time cost measured on a program naming nothing and on one
+# option-strings-516-swi-cases; R-1473's condition: "the compile-time cost measured on a program naming nothing and on one
 # naming rbtrees, both gated fail-once pass-once").
 #
 # THE MECHANISM (src/parsers/prolog/prolog_parse.c pl_libs_append): a vendored library's source is parsed only when the
@@ -12,14 +12,14 @@
 # prelude injection and skips emission (90% of a compile).  Two readings per program: the instructions inclusive of
 # pl_libs_append, and the calls it makes to prolog_parse (one per library parsed).
 #   ARM 1 (names nothing): 0 library parses, and pl_libs_append <= 100,000 instructions -- the scan of every vendored
-#          RE-PINNED 400,000 -> 500,000 (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-ceo-1562): the selection pass scans every vendored
+#          RE-PINNED 400,000 -> 500,000 (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-r-1562): the selection pass scans every vendored
 #          library's export table against the program's references, and seven libraries (hashtable, nb_set, solution_sequences, csv, terms, random, backcomp)
 #          and the mctx helpers joined the set; measured 456,274 on c30687d4d (before the module-context helpers) and 478,329 on this landing; the cap keeps ~4% headroom.
 #          RE-PINNED 500,000 -> 540,000 (cfo 2026-10-15, GNU drivers row, stream second half): gnu_builtins.pl gained seven exports (set_stream_type/2,
 #          set_stream_eof_action/2, set_stream_buffering/2, stream_position/2, stream_line_column/3, set_stream_line_column/3, seek/4), about 3,700 instructions
 #          each in the scan; measured 504,112 on that landing; ~7% headroom. The scan is linear in the total export count -- a hashed reference set would make
 #          this arm flat (named to hq_prolog, whose selector it is).
-#          RE-PINNED 540,000 -> 100,000 (cqo 2026-10-30, CEO-2056): the scan is gone -- pl_libs_named looks each of the program's references up in
+#          RE-PINNED 540,000 -> 100,000 (cqo 2026-10-30, R-2056): the scan is gone -- pl_libs_named looks each of the program's references up in
 #          PL_PRELUDE_LIB_EXPORT_INDEX, the generated name-sorted index of every library's exports (util_gen_prolog_prelude_libs.py), so the arm no longer
 #          grows with the vendored set; measured 58,280 on this landing against 386,356 by the walk the morning of the same day (78 libraries).
 #          ARM 2 also read 3 parses once backcomp was vendored: library(error)'s has_type(proper_list, X) is the bare atom of backcomp's proper_list/1 export,
@@ -29,7 +29,7 @@
 #     exists for) it read 1 parse and 2,556,828 instructions, red; the first cut built the base prelude's key set before
 #     it knew whether any library was selected, 4,730,717 for hello world, red; the cure returned before any work (11,735
 #     with 6 libraries and name-only selection; 329,587 once the scan formatted a key per export, cured to compare in place).
-#   ARM 2 (names rbtrees, the largest library CEO-1473 names): exactly rbtrees and the libraries its own references need
+#   ARM 2 (names rbtrees, the largest library R-1473 names): exactly rbtrees and the libraries its own references need
 #          RE-PINNED 25,000,000 -> 27,000,000 (cfo 2026-10-10, GNU FD row): the selection pass scans every vendored library's export
 #          table against the program's references, so a thirteenth library (gnu_fd, 45 exports) costs ~1.3M instructions here --
 #          measured 24,447,993 on 70f3505ed and 25,794,816 with gnu_fd embedded; the cap keeps the ~5% headroom it had.
@@ -47,7 +47,7 @@
 #          last tree before the closure; the arm had drifted over the 15,000,000 pin by then) and 16,427,470 with the closure;
 #          the cap keeps ~5% over the reading. The parse count reads the calls pl_libs_append makes to pl_prelude_parse, the
 #          one road to prolog_parse since ae43ed256 (the count read 0 there, red with the right libraries parsed).
-#          CURED, NOT RE-PINNED (cqo 2026-10-30, CEO-2056): the arm read 17,525,166 on 0179cbcbe and 17,869,398 on f93d2180d (the ceo's reading) because
+#          CURED, NOT RE-PINNED (cqo 2026-10-30, R-2056): the arm read 17,525,166 on 0179cbcbe and 17,869,398 on f93d2180d (the officer's reading) because
 #          every closure pass walked every library's export table (78 libraries, ~1.4M instructions for two parsed) and the first pass walked the whole
 #          base prelude for each candidate export; the selection now binary-searches the export index per reference and asks the base prelude's key
 #          set (pl_prelude_keys) before walking. Measured 16,680,411 with the cure, 3.6% under the pin; what remains is the parse of rbtrees and error
@@ -66,13 +66,13 @@
 #     length/2, which the base prelude answers): arm 1's program names exactly those three and must still parse nothing.
 #     FAIL-ONCE: with name-only selection it read 3 parses (lists, error, option) and 10,376,063 instructions.
 #   ARM 4 (names clpfd's exports only as DATA -- open/4's alias(in), a term f(sum, chain, element, label, transpose)): 0 library
-#     parses (cfo 2026-10-11, row prolog-logtalk-reads-100-percent-...-ceo-1689).  A bare atom of an export's name selects its
+#     parses (cfo 2026-10-11, row prolog-logtalk-reads-100-percent-...-r-1689).  A bare atom of an export's name selects its
 #     library (the any-arity rule a closure such as maplist(foo, L) needs), and clpfd's export names are common atoms, so each
 #     selected all of clpfd and five libraries it reaches and cost ~9 s of compile (f(in) 9.36 s, f(sum) 9.05 s); three Logtalk
 #     stream_property/2 cases opening alias(in) timed out at 10 s.  The generator's QUIET_BARE now holds clpfd as it holds
 #     dcg_basics.  FAIL-ONCE: this arm with the table of SCRIP 59d6aad80 (before the cure) restored and rebuilt read 7 parses
 #     -- clpfd, apply, assoc, error, lists, pairs, gnu_builtins (a gdb break on register_lib_ops names them) -- red; 0 with it.
-#   ARM 5 (a program naming no library; CEO-2004): the base prelude's key set (g_stage2.pl_prelude_keys) is built ONCE, from the prelude parse
+#   ARM 5 (a program naming no library; R-2004): the base prelude's key set (g_stage2.pl_prelude_keys) is built ONCE, from the prelude parse
 #     prolog_inject_prelude already holds (pl_prelude_keys_seed), with a binary-searched sorted vector: pl_prelude_defines costs <= 100,000
 #     instructions inclusive. ARM 1 and ARM 2 read pl_libs_append only, so a cost outside it could not be seen: pl_prelude_defines re-parsed the whole
 #     base prelude (67 M) and then deduped 2,052 keys with a linear scan per key (50 M), 118 M of every Prolog compile (a hello-world --dump-ast read

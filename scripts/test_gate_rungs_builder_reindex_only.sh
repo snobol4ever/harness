@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_rungs_builder_reindex_only.sh -- ACCEPTANCE GATE for util_build_rungs_suite.py --reindex.
-# Row master-builder-needs-a-csv-only-reindex-path (ceo mint 2026-09-03, on hq_B's measured gap).
+# Row master-builder-needs-a-csv-only-reindex-path (mint 2026-09-03, on hq_B's measured gap).
 #
 # THE GAP: ALL.csv is a DERIVED index, and until now the only way to rebuild it also ABSORBED whatever loose
 # pairs happened to be present (prolog 404 -> 408). So a promotion that changes program text had two bad

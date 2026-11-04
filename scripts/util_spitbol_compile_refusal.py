@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""util_spitbol_compile_refusal.py -- a SPITBOL COMPILE REFUSAL, read by code and line (ceo CEO-1323, 2026-09-27, on Lon's
+"""util_spitbol_compile_refusal.py -- a SPITBOL COMPILE REFUSAL, read by code and line (R-1323, 2026-09-27, on Lon's
 "I want to see TPgm go to 8/8. I'm tired of seeing that 1/8.").
 
 WHAT IT GRADES. sbl -bf refuses to compile some programs: it prints its listing lines and one or more diagnostics of the shape
     <file>(<line>) : ERROR <code> -- <text>          or          <file>(<line>,<col>) : ERROR <code> -- <text>
 and exits nonzero without running anything (spitbol_testpgms/test2.spt: rc 231, ERROR 214 at line 238, measured deterministic
-30 of 30 runs on 2026-09-27). CEO-1323 grades such a program the way CEO-1316 grades a post-mortem: SCRIP passes by refusing
+30 of 30 runs on 2026-09-27). R-1323 grades such a program the way R-1316 grades a post-mortem: SCRIP passes by refusing
 where SPITBOL x64 refuses, and the grade is the CODE and the LINE of every diagnostic, read through the one error voice
 (util_render_error_voice.py spitbol renders SCRIP's "scrip: error <code>: <text> / at <file>:<line>" into this same shape).
 The rc alone never grades (the cfo's condition): an rc of 231 from a different error must read red.

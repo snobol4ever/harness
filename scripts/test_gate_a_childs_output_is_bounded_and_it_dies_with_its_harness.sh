@@ -2,14 +2,14 @@
 # test_gate_a_childs_output_is_bounded_and_it_dies_with_its_harness.sh -- corpus_suite_harness.py's ONE child runner (_run_raw) keeps at most
 # S4E_OUTPUT_CAP_MB of each stream and kills the child that passes it, and every child it starts dies with the harness however the harness dies.
 #
-# ⛔ THE DEFECT THIS GRADES (the coo 2026-10-22, COO-394; the ceo's ask at CEO-1883). _run_raw captured a child's output with no bound. A port
+# ⛔ THE DEFECT THIS GRADES (the coo 2026-10-22, COO-394; the officer's ask at R-1883). _run_raw captured a child's output with no bound. A port
 # entry printing in a loop through its 600 s timeout retry grew the harness to 8.15 GB anon RSS inside its 8192 MB mem scope. The kernel killed
 # the HARNESS (oom-kill 03:36:05, pid 1099808 python3; request 20261022T004850-hq_jvm-sno-rungs-jvm read 59 of 100 and REFUSED rc 2). The java it
-# ran lost its reader and spun 3 h 55 min at 100% CPU with no parent, until the ceo killed it by pid.
+# ran lost its reader and spun 3 h 55 min at 100% CPU with no parent, until the officer killed it by pid.
 #
 # THE ARMS (a scratch directory, no corpus, no SCRIP, no row; S4E_OUTPUT_CAP_MB=1 so a bounded printer passes it in about a second):
 #   1  BOUND: a child printing forever is killed at the bound: kind OVERFLOW, stdout exactly the bound, the child gone, well before the timeout.
-#   2  GRADE: classify grades it FAIL with the bound named, and does not retry it (no timeout retry, CEO-1335/Lon 10-15).
+#   2  GRADE: classify grades it FAIL with the bound named, and does not retry it (no timeout retry, R-1335/Lon 10-15).
 #   3  ORACLE: run_oracle hands the oracle-side callers a kind other than RAN, which every one reads as no answer.
 #   4  DIES WITH ITS HARNESS: a harness SIGKILLed mid-run takes its child with it within three seconds.
 #   5  THE OLD CONTRACT: output under the bound comes back whole; stdin is fed; merge_stderr interleaves as 2>&1; a timeout is HANG with the

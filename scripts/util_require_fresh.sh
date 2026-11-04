@@ -6,9 +6,9 @@
 # code. Every rule about WHAT counts as stale lives in that one function.
 #
 # ⛔⭐ WHY A SHIM AND NOT A REIMPLEMENTATION -- this is the whole point of the row (harness-and-ladder-
-# runner-refuse-on-a-stale-binary-like-the-artifact-regen-does, ceo -> hq_T 2026-09-04). The staleness
+# runner-refuse-on-a-stale-binary-like-the-artifact-regen-does, the officer -> hq_T 2026-09-04). The staleness
 # idea ALREADY existed twice in this repo: gate_require_fresh (lib_gate.sh) and assert_binary_current
-# (lib_build_currency.sh). ceo cured the commit-time defect in the second (3d12ca54, "IT IS NOT A
+# (lib_build_currency.sh). the officer cured the commit-time defect in the second (3d12ca54, "IT IS NOT A
 # SUPERSET, IT IS WRONG") and the fix never reached the first, so the identical defect regenerated there
 # and had to be cured a SECOND time nine days later (4c7253e99). ⭐ THE LESSON THE ROW ENCODES: the cost
 # of a copy is not the duplicated lines, it is that a cure applied to one copy STRENGTHENS EVERYONE'S
@@ -39,7 +39,7 @@
 #
 # ENV (both live in gate_require_fresh, the one authority -- this shim only passes them through):
 #   SCRIP_STALE_PROBE_SRC=<file>  ONE extra "newest source" candidate, for fail-once proofs against a SCRATCH file
-#                                 (the ceo's DONE-WHEN contract). It can only TIGHTEN the verdict, never loosen it.
+#                                 (the officer's DONE-WHEN contract). It can only TIGHTEN the verdict, never loosen it.
 #   SCRIP_ALLOW_STALE=1           the deliberate stale run: a stale artifact PASSES with a loud banner on BOTH streams,
 #                                 and gate_score_row refuses to write SCORE.md for the rest of that run. A MISSING
 #                                 artifact is never overridable -- nothing ran, so nothing was "deliberately" graded.

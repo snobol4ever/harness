@@ -5,7 +5,7 @@ supply getch()/kbhit() a real terminal, and `script(1)` cannot PACE the Quit key
 is polling inside test 3 -- ^\\ (0x1C) raises SIGQUIT the instant the pty's line discipline sees the byte
 (ISIG stays on under cbreak), independent of whether the subject has read()'d anything yet, so a Quit sent
 before test 3's kbhit() loop is reached lands on the wrong test. The keystroke script below (wait ~1s for
-startup, then a,b,^D / c,d,^D / e,f,^\\ ~0.3s apart) matches what the coo's ask and CEO-1354 describe and is
+startup, then a,b,^D / c,d,^D / e,f,^\\ ~0.3s apart) matches what the coo's ask and R-1354 describe and is
 proven byte-stable over 16 runs (8 m3 + 8 m4) against both SCRIP and the Arizona oracle (icont -s ... -x),
 hq_icon 2026-10-01, closing special/keyboard out of UNGRADED.tsv (Zona -> 119/119).
 
@@ -118,7 +118,7 @@ def render(raw_bytes, here):
     the ^\\ byte itself (local pty echo fires on receipt, before the subject ever read()s it) -- "scrip:
     error ..." lands glued onto that same line, which the renderer's anchored regex can't match at all. The
     fix is textual, not a renderer change (a second renderer reading pty-vs-non-pty context would be the
-    second implementation CEO-625 exists against): split the glued line so the renderer's HEAD pattern can
+    second implementation R-625 exists against): split the glued line so the renderer's HEAD pattern can
     match, then drop the ONE synthetic blank line the renderer adds on the assumption of a preceding '\\n'
     that, here, never existed -- restoring exactly what the oracle's own leading '\\n' produces: a fresh
     line, not a blank one. Verified byte-identical to the oracle over 8 m3 + 8 m4 runs, hq_icon 2026-10-01.

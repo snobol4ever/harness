@@ -10,7 +10,7 @@
 # code guards, tab/1 evaluates its argument with is/2 and requires an integer; tell(user), see(user) and append(user) switch to
 # the terminal instead of creating a file named user.
 #
-# THE DIALECT IS DECLARED (hq_prolog 2026-10-28, CEO-1995): the GNU tables declare --dialect=gnu (CEO-1810), so both arms run with it. Without it put/1
+# THE DIALECT IS DECLARED (hq_prolog 2026-10-28, R-1995): the GNU tables declare --dialect=gnu (R-1810), so both arms run with it. Without it put/1
 # is swipl's (3621a8ddd, a one-character atom is written) and put(a) prints "<a> true" where gprolog raises type_error(integer, a); the gate read RED on
 # that one line in both modes with SCRIP right, because it was cut before the dialect was a switch.
 # THE ARM: one program in the drivers' own style, 32 lines written out from gprolog 1.4.5, both modes, and no file named user

@@ -3,7 +3,7 @@
 # the standard stream, or OUTPUT(.V, unit, file) on a file) writes its record AND keeps the value: reading it back gives what was
 # last assigned, by plain assignment, by immediate ($) or conditional (.) pattern capture, and through a name ($N) as SPITCORE's IN() does.
 #
-# ⛔ THE DEFECT (row snobol4-an-output-associated-variable-loses-the-value-it-was-assigned, ceo 2026-09-24 witness; walked on aisnobol
+# ⛔ THE DEFECT (row snobol4-an-output-associated-variable-loses-the-value-it-was-assigned, the officer 2026-09-24 witness; walked on aisnobol
 # SIR 2026-09-25 by hq_snobol4). NV_SET_fn's I/O-channel arm wrote the record and RETURNED, so the value never reached the variable's
 # slot and every later read gave the null string. SPITCORE's IN(.OUTPUT.) assigns the input line to the output-associated OUTPUT.
 # (the echo) and returns $IN...N -- which came back empty, so GET.SENTENCE never assembled a sentence, SIR read to end of file and

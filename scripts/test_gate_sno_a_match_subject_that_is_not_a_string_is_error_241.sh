@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_match_subject_that_is_not_a_string_is_error_241.sh -- a SNOBOL4 pattern match whose SUBJECT is an ARRAY, TABLE, DATA instance, PATTERN, CODE or EXPRESSION value raises ERROR 241 and the statement then FAILS.
 #
-# # ⛔ THE DEFECT (found by hq_snobol4 2026-10-07 while curing the infinite_snobol4 concatenation, baton snobol4-every-suite-to-100-under-nonet-ceo-1266): sbl -bf answers  a ? 'i'  with a = ARRAY('0:3')
+# # ⛔ THE DEFECT (found by hq_snobol4 2026-10-07 while curing the infinite_snobol4 concatenation, baton snobol4-every-suite-to-100-under-nonet-r-1266): sbl -bf answers  a ? 'i'  with a = ARRAY('0:3')
 #   "ERROR 241 pattern match left operand is not a string" and the statement takes its failure branch; SCRIP read the ARRAY's bytes as a string, matched nothing and FAILED SILENTLY -- no error, &ERRTYPE unset, a program
 #   that traps it (SETEXIT) or ends on it (the default) behaved as if the match had merely missed. The class, measured against sbl one type at a time: ARRAY, TABLE, a DATA instance, a PATTERN, a CODE and an
 #   EXPRESSION raise 241; a NAME, an INTEGER, a REAL and the NULL string are subjects (they stringify or are empty) and raise nothing.

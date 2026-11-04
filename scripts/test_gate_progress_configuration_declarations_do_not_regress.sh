@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_progress_configuration_declarations_do_not_regress.sh -- THE CONFIGURATION RATCHET: A LANE THAT HAS
 # DECLARED WHAT IT EXERCISED MAY NEVER SILENTLY STOP, AND NO WRITER MAY STILL BE EMITTING THE OLD COLUMN WIDTH
-# (coo 2026-09-21; ceo rank 1 at CEO-1058, "the ratchet is still rank 1 as ruled").
+# (coo 2026-09-21 rank 1 at R-1058, "the ratchet is still rank 1 as ruled").
 #
 # ⛔⭐ THE HOLE THIS CLOSES IS IN A GUARD I LANDED MYSELF THIS MORNING, AND IT IS A HOLE OF SHAPE, NOT OF CARE.
 # util_progress_append.py refuses an undeclared row in exactly ONE case: when a GC axis is set IN THE WRITER'S
@@ -12,7 +12,7 @@
 # the only thing that closes a hole of that shape: not "declare or refuse" at the moment of writing, which the
 # writer cannot always know, but "having declared once, you may not stop", which the TABLE always knows.
 #
-# ⛔⭐ AND IT IS JUDGED AGAINST THE LIVE TABLE ON PURPOSE. This is the clause the ceo asked be applied (CEO-1058):
+# ⛔⭐ AND IT IS JUDGED AGAINST THE LIVE TABLE ON PURPOSE. This is the clause the officer asked be applied (R-1058):
 # A HERMETIC GATE THAT CONSTRUCTS ITS SUBJECT FRESH CANNOT SEE A DEFECT THAT EXISTS ONLY IN THE LONG-LIVED
 # ARTEFACT. test_gate_progress_append_writes_a_row.sh was green for FIFTEEN DAYS while `fingerprint` was
 # unreadable in 3.58M rows, for exactly the reason we built it that way: its mktemp table always gets a complete
@@ -34,7 +34,7 @@
 # NEVER declared. Measured on the live table the day it was written, exactly ONE measurer had written a declared
 # configuration SINCE THE COLUMN EXISTED -- hq_snocone, 12096 rows -- and the other nine had not; hq_pascal's
 # `pat` suite alone carries 854 full-width undeclared rows since the baseline.
-# ⛔ BOUNDED IN PLACE 2026-09-21 BY THE ceo (CEO-1060) AND THE BOUND IS RIGHT: the `config` column did not EXIST before
+# ⛔ BOUNDED IN PLACE 2026-09-21 BY THE (R-1060) AND THE BOUND IS RIGHT: the `config` column did not EXIST before
 # 17:53:17Z, so "has ever declared" spans THIRTY MINUTES, and a population that could not have contained the thing
 # cannot be evidence that nobody does it -- A NULL RESULT BOUNDS THE PROBE, NOT THE THING PROBED. What the number
 # actually establishes is that ONE SEAT HAS RUN A BOARD THROUGH THE NEW WRITER AND IT DECLARED CORRECTLY: a working
@@ -49,13 +49,13 @@
 # deliberately NOT done here: a seek that lands slightly wrong silently SHRINKS the population and the ratchet
 # goes green over the rows it failed to read, which is the "instrument reports success while doing nothing"
 # failure this gate exists to prevent. Correctness over speed for an instrument whose whole job is not to lie.
-# Revisit when the cost is felt, as an economy decision for the ceo (CEO-1046), not a unilateral one here.
-# BLOCKING in `make test` with the cost line above (CEO-1045); NOT in `make preflight` (CEO-1046: it reads a
+# Revisit when the cost is felt, as an economy decision for the (R-1046), not a unilateral one here.
+# BLOCKING in `make test` with the cost line above (R-1045); NOT in `make preflight` (R-1046: it reads a
 # live external artefact, so it is not hermetic and does not belong in the cheap hermetic set).
 #
-# PROVEN RED BEFORE THE CURE (CEO-1049), live table, 2026-09-21: the SAME ratchet with --baseline pulled back to
+# PROVEN RED BEFORE THE CURE (R-1049), live table, 2026-09-21: the SAME ratchet with --baseline pulled back to
 # 00:00Z the same day reads ⛔ RED, ARM A, 16298 SHORT ROWS of 31082 across FOUR measurers -- hq_snocone 8736,
-# cto 4032, hq_pascal 3444, ceo 86 -- and at the pinned baseline reads ✅ GREEN, 0 short of 15638. Same code,
+# cto 4032, hq_pascal 3444, the officer 86 -- and at the pinned baseline reads ✅ GREEN, 0 short of 15638. Same code,
 # same table, one parameter: a before/after pair on one tree plus the one change (RULES.md INSTRUMENT LAWS).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -77,7 +77,7 @@ TREE="$(python3 -c 'import sys; sys.path.insert(0,"'"$S4E"'/.github/scripts"); i
 
 # ⛔ THE PRE-EXISTING TABLE, IN THE LIVE SHAPE: the FULL 14-column header, plus history already written in the
 # SHORT 13-column shape that every pre-migration writer emitted. No arm below ever starts from an empty file --
-# that is the whole point of this gate (CEO-1058). `hist` rows are dated BEFORE the baseline on purpose: the
+# that is the whole point of this gate (R-1058). `hist` rows are dated BEFORE the baseline on purpose: the
 # ratchet must leave them alone, and arm 2 checks that it does.
 HDR='ts_utc	scrip	corpus	measurer	class	suite	lang	program	mode	outcome	secs	note	fingerprint	config'
 seed() {   # seed <db>  -- a table that already exists, already has history, already in the old short shape

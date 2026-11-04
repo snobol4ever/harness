@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_harness_renders_a_spitbol_fatal_into_stdout.sh -- A SPITBOL FATAL IS GRADABLE (ceo CEO-1344 on hq_snobol4's measurement,
+# test_gate_harness_renders_a_spitbol_fatal_into_stdout.sh -- A SPITBOL FATAL IS GRADABLE (R-1344 on hq_snobol4's measurement,
 # the cfo seconding; the coo's row instruments-a-spitbol-fatal-is-gradable-the-one-reader-renders-scrips-stderr-error-through-the-
-# spitbol-equivalence-list-into-stdout-and-masks-the-run-summary-lines-ceo-1344).
+# spitbol-equivalence-list-into-stdout-and-masks-the-run-summary-lines-r-1344).
 # THE DEFECT: x64 sbl -bf prints its fatal block ON STDOUT (and stderr), so a ref cut from the oracle for a program that ends in a
 # run-time fatal carries the block, and SCRIP's one error voice (stderr) could never match it -- six programs were ungradable by
 # construction (Budne tab.sno, rewind1.sno; Dotnet 1brc.sno, asgn1.sno; SnoRungs simple_output_62, user_function_arbno_rpos_1).
@@ -53,7 +53,7 @@ open(W + "/ALL.sno", "w").write(b + "\n" + src)
 ref = open(W + "/ref.stdout").read()
 open(W + "/ALL.ref", "w").write(b + "\n" + ref)
 with open(W + "/ALL.mask", "w") as m:
-    m.write("# the run-summary lines of a SPITBOL fatal block, oracle-internal (CEO-1344)\n")
+    m.write("# the run-summary lines of a SPITBOL fatal block, oracle-internal (R-1344)\n")
     for rx, why in rv.FATAL_SUMMARY_MASKS:
         m.write("*\t%s\t%s\n" % (rx, why))
 EOF
@@ -64,7 +64,7 @@ echo "--- ARM 1: the harness grades the witness PASS in both modes (ref cut from
 o1=$(cd "$ROOT" && S4E_PROGRESS_DB="$W/p1.tsv" timeout -k 5 120 python3 "$H" run "$W/ALL.sno" "$W/ALL.ref" --modes m3,m4 2>&1); r1=$?
 b1=$(grep -m1 '^SUITE_BOARD ' <<<"$o1")
 ck "1 rc 0, m3_pass=1 m4_pass=1 over 1 entry" '[ "$r1" = 0 ] && grep -q " m3_pass=1 " <<<"$b1" && grep -q " m4_pass=1 " <<<"$b1" && grep -q " total=1 " <<<"$b1"'
-[ "$r1" = 0 ] || printf '%s\n' "$o1" | grep -vE '^(DECLARED|RUNTIME|CEO-409)' | tail -6 | sed 's/^/      /'
+[ "$r1" = 0 ] || printf '%s\n' "$o1" | grep -vE '^(DECLARED|RUNTIME|R-409)' | tail -6 | sed 's/^/      /'
 
 echo "--- ARM 2: FAIL-ONCE -- with the render off (S4E_FATAL_RENDER=0) the same witness reads FAIL in both modes ---"
 o2=$(cd "$ROOT" && S4E_FATAL_RENDER=0 S4E_PROGRESS_DB="$W/p2.tsv" timeout -k 5 120 python3 "$H" run "$W/ALL.sno" "$W/ALL.ref" --modes m3,m4 2>&1); r2=$?
@@ -97,7 +97,7 @@ if [ -f "$DR" ]; then
   mkdir -p "$W/dot"; cp "$W/fatal_witness.sno" "$W/dot/fatal_witness.sno"; cp "$W/ALL.mask" "$W/dot/ALL.mask"
   cp "$W/fatal_witness.sno" "$W/dot/excluded_witness.sno"
   printf '\tY = 0\n\tX = 1 / Y\nEND\n' > "$W/dot/silent_fatal_witness.sno"
-  printf 'excluded_witness.sno\tNOT_SPITBOL_DIALECT\tgate fixture: a program whose fatal under sbl -bf is the CSNOBOL4 feature it uses, excluded by CEO-1286\n' > "$W/dot/EXCLUDED.tsv"
+  printf 'excluded_witness.sno\tNOT_SPITBOL_DIALECT\tgate fixture: a program whose fatal under sbl -bf is the CSNOBOL4 feature it uses, excluded by R-1286\n' > "$W/dot/EXCLUDED.tsv"
   printf 'rank,entry,origin,package,n_lines,stdin,want_rc,heap_kb,stack_kb,compile_args,run_args\n1,fatal_witness,fatal_witness,dotnet,5,0,0,131072,4096,,\n2,excluded_witness,excluded_witness,dotnet,5,0,0,131072,4096,,\n3,silent_fatal_witness,silent_fatal_witness,dotnet,3,0,0,131072,4096,,\n' > "$W/dot/ALL.csv"
   mkdir -p "$W/dbg"
   o6=$(cd "$ROOT" && DOTNET_SUITE="$W/dot" DOTNET_DEBUG_DIR="$W/dbg" S4E_PROGRESS_DB="$W/p6.tsv" S4E_ONE_RUNNER_FIXTURE="gate $GATE_NAME: the Dotnet runner over a one-program scratch suite, not a board" timeout -k 5 300 bash "$DR" 2>&1); r6=$?

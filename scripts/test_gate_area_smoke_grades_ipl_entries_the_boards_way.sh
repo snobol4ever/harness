@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_area_smoke_grades_ipl_entries_the_boards_way.sh -- THE AREA SMOKE GRADES AN IPL ENTRY THE WAY THE IPL BOARD DOES (the coo
-# 2026-10-02, row instruments-the-area-smoke-grades-ipl-entries-without-their-sidecars-and-reads-nine-false-reds, minted by the ceo).
+# 2026-10-02, row instruments-the-area-smoke-grades-ipl-entries-without-their-sidecars-and-reads-nine-false-reds, minted by the officer).
 # MEASURED CAUSE: the cfo's area smoke on 328bf9c9a read nine packages/icon/ipl entries NEW RED (webimage based cwd declchck farb
 # hebcalen parens puzz xtable) against the board's PASS readings. The smoke graded the generated ALL.icn/ALL.ref container, which no
 # runner maintains and which carries none of the per-program sidecars the board grades under (NAME.pin, the clock-and-entropy shim;
 # NAME.dat stdin; NAME.argv; NAME.outfiles; fixtures; the isolation directory). Run the board's way by hand, farb parens puzz xtable
 # read PASS. THE CURE: the smoke delegates the ipl table to test_icon_ipl_suite.sh's smoke mode (S4E_AREA_SMOKE_ENTRIES), which grades
 # the named entries through the board's own loop and writes no progress row and no score row; the one-runner guard admits that mode.
-# WHAT THIS GATE HOLDS, over the shared corpus read-only (a smoke is not a board, CEO-1342), witnesses progs/puzz progs/farb
+# WHAT THIS GATE HOLDS, over the shared corpus read-only (a smoke is not a board, R-1342), witnesses progs/puzz progs/farb
 # progs/parens progs/xtable, modes m3 m4:
 # (1) the smoke says it delegated, and every witness reads m3=PASS m4=PASS;
 # (2) the smoke wrote no score row: SUITES.tsv and SCORE.md byte-identical before and after;

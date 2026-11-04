@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_icon_vendored_sources_compile_under_icont.sh -- THE SEMICOLON-FORM GATE (CEO-321 (a), rank 1,
-# hq_I 2026-09-06). Lon's vendoring question, ruled by the ceo:
+# test_gate_icon_vendored_sources_compile_under_icont.sh -- THE SEMICOLON-FORM GATE (R-321 (a), rank 1,
+# hq_I 2026-09-06). Lon's vendoring question, ruled by the officer:
 #
 #   "the semicolon form may stand only where icont COMPILES it and REPRODUCES the .ref -- then it is
 #    standard Icon in a dialect-neutral form, not a shim; a rewrite icont REFUSES is a defect."
@@ -26,7 +26,7 @@
 # SCOPE: arizona_tests, the package whose conversion raised the question. ipl and jcon carry the same
 # converted-vendor-source shape and are NOT wired here yet -- deliberately, and named rather than implied:
 # wiring a package before its sidecars are settled produces a refusal whose DIAGNOSIS IS FALSE, which is
-# worse than no line (this row's own do-not-wire-blind shape, endorsed CEO-321 (d)).
+# worse than no line (this row's own do-not-wire-blind shape, endorsed R-321 (d)).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
@@ -58,7 +58,7 @@ for ref in "${REFS[@]}"; do
     for u in $made; do rm -f "$u.u1" "$u.u2"; done; made=""
     base="$(basename "$ref" .ref)"; dir="$(dirname "$ref")"; icn="$dir/$base.icn"
     [ -f "$icn" ] || continue
-    # ⛔ A LINKED LIBRARY SHIPPED BESIDE THE SOURCE IS TRANSLATED FIRST (CEO-1269, hq_icon 2026-09-25): a NAME_driver links
+    # ⛔ A LINKED LIBRARY SHIPPED BESIDE THE SOURCE IS TRANSLATED FIRST (R-1269, hq_icon 2026-09-25): a NAME_driver links
     # its library NAME, which may link other libraries shipped beside it, and icont links ucode, never source -- so the local
     # link closure is translated in this sandbox first, exactly as each driver's ref was cut from iconx. A name with no source
     # beside it resolves from icont's own library as it always did. Without this every driver whose library links a
@@ -91,9 +91,9 @@ for ref in "${REFS[@]}"; do
     # ⛔ The .dat stdin sidecar convention is the same one the suites and the ref-cutter use; they must
     # not disagree (RULES.md FACT RULE), so it is read here identically.
     stdin_src=/dev/null; [ -f "$dir/$base.dat" ] && stdin_src="$dir/$base.dat"
-    # ⛔ RUN UNDER `iconx <stem>`, THE INVOCATION EVERY REF WAS CUT UNDER (CEO-624): &progname is a function of the
+    # ⛔ RUN UNDER `iconx <stem>`, THE INVOCATION EVERY REF WAS CUT UNDER (R-624): &progname is a function of the
     # invocation, so `./kwds` answers `./kwds` against a ref reading `kwds` -- a divergence of the gate, not of the ref.
-    # ⛔⭐ special/keyboard IS PTY-GRADED, NOT STDIN-GRADED, by the suite that owns it (test_icon_arizona_suite.sh, CEO-1354): a redirected stdin cannot supply getch() and
+    # ⛔⭐ special/keyboard IS PTY-GRADED, NOT STDIN-GRADED, by the suite that owns it (test_icon_arizona_suite.sh, R-1354): a redirected stdin cannot supply getch() and
     # kbhit() a terminal, so the oracle's run here must go through the SAME icn_keyboard_pty_drive.py, or this arm reads a stdin run against a ref cut over a pty and cries
     # ref_diverged on every tree (the coo's loop and every seat's preflight-adjacent run read it red for a day, 2026-10-03). The driver renders the one error voice itself.
     if [ "$base" = keyboard ] && [ "${dir##*/}" = special ]; then
@@ -101,10 +101,10 @@ for ref in "${REFS[@]}"; do
     else
         got="$(cd "$dir" && timeout -k 5 "$TIMEOUT" "$ICONX" "$base" < "$stdin_src" 2>&1)"; exp="$(cat "$ref")"
     fi
-    # a CEO-409 mask beside the ref (env: the clock, the machine, the user) is applied to BOTH streams through the runner's own shim
+    # a R-409 mask beside the ref (env: the clock, the machine, the user) is applied to BOTH streams through the runner's own shim
     if [ -f "$dir/$base.mask" ]; then
-        got="$(printf '%s' "$got" | python3 "$HERE/util_apply_ceo409_mask.py" "$ref" "$base" "$WORK/.mask_n" 2>/dev/null)" \
-          && exp="$(printf '%s' "$exp" | python3 "$HERE/util_apply_ceo409_mask.py" "$ref" "$base" "$WORK/.mask_n" 2>/dev/null)" \
+        got="$(printf '%s' "$got" | python3 "$HERE/util_apply_line_mask.py" "$ref" "$base" "$WORK/.mask_n" 2>/dev/null)" \
+          && exp="$(printf '%s' "$exp" | python3 "$HERE/util_apply_line_mask.py" "$ref" "$base" "$WORK/.mask_n" 2>/dev/null)" \
           || { echo "⛔ $GATE REFUSES rc=2: $base.mask could not be applied" >&2; exit 2; }
     fi
     if [ "$got" != "$exp" ]; then

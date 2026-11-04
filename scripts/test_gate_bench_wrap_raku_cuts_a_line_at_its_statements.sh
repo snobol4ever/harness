@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ⛔⭐ THE RAKU WRAPPER GENERATOR CUTS A LINE AT ITS STATEMENTS BEFORE IT CLASSIFIES AN OUTPUT CALL (row instruments-bench-
-# wrap-raku-loops-every-kernel-whose-single-shot-prints-its-ref-..., ceo CEO-1283). raku-bench's microbenchmark bodies are ONE
+# wrap-raku-loops-every-kernel-whose-single-shot-prints-its-ref-..., R-1283). raku-bench's microbenchmark bodies are ONE
 # line of several statements (`my $i = 0; while (++$i <= 1024) { }; say $i;`), and bench_wrap_raku.py classified output calls a
 # whole line at a time, so it REFUSED 18 of the 37 kernels whose single shot prints its ref -- each graded FAIL on angles 2 and 3
 # and never timed. The cure cuts a line at its top-level semicolons (outside quotes, parens, brackets and braces) and terminates

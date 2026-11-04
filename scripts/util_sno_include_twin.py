@@ -3,7 +3,7 @@
 
 usage: util_sno_include_twin.py file.sno > expanded.sno      (SNO_LIB names the include directories, ':'-separated)
 
-The reference for parser_snobol4.sc's Preprocess pattern (CEO-1483): an independent re-implementation of what snobol4.l does with an include
+The reference for parser_snobol4.sc's Preprocess pattern (R-1483): an independent re-implementation of what snobol4.l does with an include
 line, so the C parser reads the SAME generated text the .sc parser generates for itself. The rules, from snobol4.l: a line that begins with -INCLUDE or
 -COPY (any case), blanks, then a quoted name ('...' or "...", at least one character, no newline inside), then anything up to the newline. The name is
 everything between the first and the LAST quote character of that kind on the line, trailing blanks trimmed; it is tried as written, then in each

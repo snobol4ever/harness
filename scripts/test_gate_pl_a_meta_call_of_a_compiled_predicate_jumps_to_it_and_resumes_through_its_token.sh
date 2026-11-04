@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_meta_call_of_a_compiled_predicate_jumps_to_it_and_resumes_through_its_token.sh -- A META-CALL ENTERS A COMPILED PREDICATE THE WAY A STATIC CALL DOES.
 # hq_prolog 2026-10-03, row prolog-bb-a-meta-call-of-a-compiled-predicate-jumps-to-it-and-resumes-through-its-token-not-rt-pl-goal-spine-prep-gen-h-resume-h-1863-call-sites
-# (CEO-1499 re-mint; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 4). ARM 1: zebra.pl's and queens_8.pl's mode-4 text name none of rt_pl_goal_spine_prep,
+# (R-1499 re-mint; ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 4). ARM 1: zebra.pl's and queens_8.pl's mode-4 text name none of rt_pl_goal_spine_prep,
 # rt_pl_goal_gen_h, rt_call_value_resume_h -- the call/N box resolves the goal through one value service (the fn and the goal's arity), dereferences the
 # goal again after the poll, copies its cells and the extra arguments onto its spine as the block, bumps the level inline, jumps with its wires and lands
 # as the static block arm does; a refusal is an armed ball and omega. ARMS 2-6: five witnesses vs swipl in m3 AND m4: call/1 and call/N of compiled

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_witness_a_false_relational_over_a_fetch_is_a_boolean_value.sh -- the DONE-WHEN witness of the hq_zetas row a-false-relational-over-an-array-element-or-record-field-in-value-position-leaves-a-null.
-# MEASURED 2026-10-08 by hq_pascal on SCRIP bae9f6840 (and on the builds of the icon, prolog, snobol4, raku, ceo and cfo roots): a FALSE relational whose operand is an array element or a record field, used as a VALUE (assigned, or passed to
+# MEASURED 2026-10-08 by hq_pascal on SCRIP bae9f6840 (and on the builds of the icon, prolog, snobol4, raku, the officer and cfo roots): a FALSE relational whose operand is an array element or a record field, used as a VALUE (assigned, or passed to
 # writeln), leaves a null where fpc -Miso has false, and the next numeric use dies with `scrip: error 102: numeric expected, offending value: &null`, in BOTH modes. A branch form (if a[i] = key) lowers differently, which is why no suite sees it.
 # ARMS, both modes, each expectation CUT LIVE from fpc -Miso: arr (the three-line program: want 2), rec (the record-field twin: want 2), arg (writeln(a[1] = 4) and writeln(r.n = 4): want ' false' twice), true (the true cases, which
 # are right today and must stay right). rc 0 every arm byte-identical, rc 1 any arm differs, rc 2 cannot measure. It is a UTIL, not a gate: it is red until the planner is cured, and it is not wired anywhere.

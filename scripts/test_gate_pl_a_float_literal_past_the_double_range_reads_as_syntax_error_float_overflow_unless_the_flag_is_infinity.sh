@@ -1,6 +1,6 @@
 #!/bin/bash
-# test_gate_pl_a_float_literal_past_the_double_range_reads_as_syntax_error_float_overflow_unless_the_flag_is_infinity.sh -- THE READER'S FLOAT OVERFLOW (ceo CEO-1959; row
-# prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664, SWI core/test_read.pl read_numbers:float_overflow#1). A decimal float literal that does not fit a
+# test_gate_pl_a_float_literal_past_the_double_range_reads_as_syntax_error_float_overflow_unless_the_flag_is_infinity.sh -- THE READER'S FLOAT OVERFLOW (R-1959; row
+# prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664, SWI core/test_read.pl read_numbers:float_overflow#1). A decimal float literal that does not fit a
 # double ('1.797693134862316e+308', 1.0e999, 2.5e400) is syntax_error(float_overflow) from term_string/3, term_to_atom/2 and atom_to_term/3 while the flag float_overflow is
 # `error` (its default); under `infinity` it reads 1.0Inf; the largest double and the spelled 1.0Inf are literals that always read. SCRIP read every such literal as inf.
 # The program is the witness and its ref was cut from swipl 10.1.5 (/home/resources/swipl-mon/bin/swipl) -- swipl 9.0.4 raises the error under `infinity` too, an oracle defect

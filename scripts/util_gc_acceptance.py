@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """util_gc_acceptance.py -- THE FOUR NUMBERS THE GC COMMITMENT IS MADE OF, computed, never typed.
 
-Lon 2026-09-21, in-chat to the ceo, accepting the ceo's four definitions and ordering the display:
+Lon 2026-09-21, in-chat, accepting the officer's four definitions and ordering the display:
 "Then we will commit to that. ... Can you display periodically the metrics which you are measuring
-to state we made it 100%."  CEO-1039.  ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 11.
+to state we made it 100%."  R-1039.  ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 11.
 
 THE FOUR, each with a DENOMINATOR so the claim is falsifiable:
   1 INSTRUMENTED  every C->BB site hooked, every allocating call site polled, every callback wrapped.
   2 VISIBILITY    every event in the DECLARED event space observable and observed.
   3 AUDITED       every collection checked by the exact-vs-conservative differential pass, and its
-                  SILENCE is the proof.  NOT 'every defect found' -- that is unprovable and the ceo
+                  SILENCE is the proof.  NOT 'every defect found' -- that is unprovable and the officer
                   refused to promise it (the cfo's trap converts 2 of 17).
   4 WORKING       ZERO gradings lost to the collector across the arena and stress axes.  This is NOT
                   the rungs' absolute score: SnoRungs' 11 non-GC gaps are language completeness and
@@ -65,7 +65,7 @@ def main():
     when = datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z")
     load = open("/proc/loadavg").read().split()[0]
     print("=" * 118)
-    print("GC ACCEPTANCE -- the four numbers, computed (CEO-1039)   SCRIP %s . corpus %s . %s . load %s"
+    print("GC ACCEPTANCE -- the four numbers, computed (R-1039)   SCRIP %s . corpus %s . %s . load %s"
           % (tree, corpus, when, load))
     print("=" * 118)
     refuse, fails = [], []
@@ -78,10 +78,10 @@ def main():
     outb     = num(r"OUTBOUND call_out_sites=(\d+)", cen); out_w = num(r"OUTBOUND call_out_sites=\d+ wrapped_in_\w+=(\d+)", cen)
     cons     = num(r"CENSUS conservative total=(\d+)", cen)
     c2bb_all = inb + outb if (inb is not None and outb is not None) else None
-    # ⛔⭐ THE C->BB COVERAGE LINE IS NO LONGER COMPUTED HERE (ceo CEO-1091, on Lon's 2026-09-21 order to fix the
+    # ⛔⭐ THE C->BB COVERAGE LINE IS NO LONGER COMPUTED HERE (R-1091, on Lon's 2026-09-21 order to fix the
     # broken gauges).  It used to count rt_c2bb_hit occurrences in THREE NAMED FILES over the CALLBACK SITE count --
     # two different populations, with the 11 real hooks in rt/rt.c excluded by construction, so the fraction read
-    # zero and meant nothing (CEO-1041/1071).  util_c2bb_coverage.py answers it against the denominator
+    # zero and meant nothing (R-1041/1071).  util_c2bb_coverage.py answers it against the denominator
     # test_gate_no_c_to_bb.sh itself prints, per site, by the proximity rule, and it is proven to fail once.
     rc_cov, cov = sh("python3 ../harness/scripts/util_c2bb_coverage.py")
     c2bb_cov_n = num(r"C2BB_COVERAGE hooked=(\d+)", cov)
@@ -111,7 +111,7 @@ def main():
                 print("      %-46s %s" % ("", "defined as #define RT_GC_CALLBACK(x) x, applied to all %d sites, takes" % (d or 0)))
                 print("      %-46s %s" % ("", "this line to 100% WITH NO SEMANTIC CHANGE WHATSOEVER.  A component of an"))
                 print("      %-46s %s" % ("", "acceptance commitment that a no-op can satisfy is not a measurement, and"))
-                print("      %-46s %s" % ("", "reporting it as '%d open' invited exactly that (CEO-1070)." % (d or 0)))
+                print("      %-46s %s" % ("", "reporting it as '%d open' invited exactly that (R-1070)." % (d or 0)))
                 print("      %-46s %s" % ("", "IT REFUSES UNTIL Rule 4 IS GIVEN A MEANING THE WRAPPER ENFORCES:"))
                 print("      %-46s %s" % ("", "a runtime frame holds NO RAW HEAP POINTER across a callback into emitted"))
                 print("      %-46s %s" % ("", "code.  Define that first, prove it fails once, then count sites."))
@@ -129,7 +129,7 @@ def main():
                 for ln_ in cov.split("\n"):
                     if ln_.startswith("  UNHOOKED"): print("      %-46s %s" % ("", ln_.strip()))
                 print("      %-46s %s" % ("", "denominator: the transfer sites test_gate_no_c_to_bb.sh itself names, not a"))
-                print("      %-46s %s" % ("", "second grep -- forking that definition is what CEO-1071 caught. HOOKED is a"))
+                print("      %-46s %s" % ("", "second grep -- forking that definition is what R-1071 caught. HOOKED is a"))
                 print("      %-46s %s" % ("", "PROXIMITY test (a hit within 3 lines at or above the transfer): the earlier"))
                 print("      %-46s %s" % ("", "function-body test was proven NOT to fail once and was replaced."))
                 if bad: fails.append("INSTRUMENTED/C->BB %d of %d transfer sites hooked" % (n, d))
@@ -148,7 +148,7 @@ def main():
                 print("      %-46s %s" % ("", "   (a poll IS emitted and a conditional jump steps over it -- cure is to"))
                 print("      %-46s %s" % ("", "   MOVE the poll past the landing pad, never to add a second one)"))
             if nm.startswith("safe-point"):
-                # ⛔⭐ WHAT THIS COMPONENT MEASURES, SAID IN ITS OWN OUTPUT (ceo CEO-1133, ruling two).  It was said
+                # ⛔⭐ WHAT THIS COMPONENT MEASURES, SAID IN ITS OWN OUTPUT (R-1133, ruling two).  It was said
                 # in rulings and ledgers while the display printed a bare percentage, and a reader who meets only
                 # the percentage reads a claim nobody made.  A component that cannot tell a poll that FIRES from one
                 # that never does must say so where the number is, not where the argument was.
@@ -207,7 +207,7 @@ def main():
     print("         They are each lane's LAST SELF-REPORTED reading, tree named in that lane's baton, which is")
     print("         the authority -- NOT this display.  A typed figure in a computed dashboard is the defect this")
     print("         dashboard exists against, and hq_snobol4 caught this section quoting a number they had already")
-    print("         WITHDRAWN (CEO-1052).  Under EXECUTIVE the six lanes are stood down and these cannot refresh")
+    print("         WITHDRAWN (R-1052).  Under EXECUTIVE the six lanes are stood down and these cannot refresh")
     print("         themselves, so READ THE BATON before acting on any line here.")
     for lane, txt in (("RakRungs", "-65 gradings over 36 programs at stress 16; BOTH FAMILIES SINCE CURED by hq_raku, row closed 853/929 over three arms"),
                       ("SnoRungs", "CORRECTED BY ITS OWN LANE: a 19-entry reading with hang=0 crash=0, superseding the withdrawn -26-plus-4-hangs"),

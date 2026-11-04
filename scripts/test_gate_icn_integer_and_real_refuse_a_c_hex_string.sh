@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_integer_and_real_refuse_a_c_hex_string.sh -- integer("0x10") and real("0x1p4") FAIL, as under icont (ceo CEO-640).
+# test_gate_icn_integer_and_real_refuse_a_c_hex_string.sh -- integer("0x10") and real("0x1p4") FAIL, as under icont (R-640).
 #
 # MEASURED 2026-09-12 on bebf6df1a (the adversarial batch, Lon: "Try to break it"): integer("0x10") answered 16 in both modes
 # where icont fails -- numeric() already refused a C-hex string through icn_numeric_is_c_hex, but integer() and real() fell

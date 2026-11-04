@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_picker_autounblock.sh -- DONE-WHEN gate for picker-skips-blocked-rows (ceo, 2026-08-28).
+# test_gate_picker_autounblock.sh -- DONE-WHEN gate for picker-skips-blocked-rows (2026-08-28).
 #
 # BEFORE this row: a row encoded as BLOCKED-ON:<topic>/PARKED-AWAITING:<topic> in QUEUE.tsv's state column
 # skipped next()'s PASS 3 FOREVER, even the session after <topic> landed DONE -- nothing ever re-asked. The

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test_gate_sno_value_is_restored_and_diag1_test1_grade_under_ceo1293_rows.sh -- VALUE is a function again, and the two programs that call VALUE where sbl -bf traps error 22 grade green through CEO-1293 rows (CEO-1507, hq_snobol4).
+# test_gate_sno_value_is_restored_and_diag1_test1_grade_under_their_mask_rows.sh -- VALUE is a function again, and the two programs that call VALUE where sbl -bf traps error 22 grade green through R-1293 rows (R-1507, hq_snobol4).
 #
-# # ⛔ THE RULING. Lon, CEO-1293: "Keep the VALUE function we like new features." The deletion of VALUE at 1e16ef2d9 was the defect (CEO-1507); VALUE is restored alone, UCASE and LCASE stay deleted.
-#   sbl -bf has no VALUE, so csnobol4_suite/diag1 (two VALUE('b') calls, source lines 175 and 181) and spitbol_testpgms/test1 (statement 137) trap error 22 in the oracle and run on in ours. CEO-1293's own CLASS
-#   clause grades each such enhancement one named line at a time: diag1's four &ERRLIMIT / &ERRTEXT / &ERRTYPE / &STCOUNT lines and test1's &STCOUNT line (beside its five older rows) carry CEO-1293 rows in their package's ALL.mask.
+# # ⛔ THE RULING. Lon, R-1293: "Keep the VALUE function we like new features." The deletion of VALUE at 1e16ef2d9 was the defect (R-1507); VALUE is restored alone, UCASE and LCASE stay deleted.
+#   sbl -bf has no VALUE, so csnobol4_suite/diag1 (two VALUE('b') calls, source lines 175 and 181) and spitbol_testpgms/test1 (statement 137) trap error 22 in the oracle and run on in ours. R-1293's own CLASS
+#   clause grades each such enhancement one named line at a time: diag1's four &ERRLIMIT / &ERRTEXT / &ERRTYPE / &STCOUNT lines and test1's &STCOUNT line (beside its five older rows) carry R-1293 rows in their package's ALL.mask.
 #
 # THE ARMS:
 #   1-2  m3 / m4 VALUE('B') answers the variable's value, VALUE of an unset name answers the null string                                          -- RED on 1e16ef2d9 (error 22)
@@ -19,7 +19,7 @@ ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside ha
 SCRIP="$ROOT/scrip"
 RT_DIR="$ROOT/out"
 CORPUS="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus"
-NAME=sno_value_is_restored_and_diag1_test1_grade_under_ceo1293_rows
+NAME=sno_value_is_restored_and_diag1_test1_grade_under_their_mask_rows
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -f "$RT_DIR/libscrip_rt.so" ] || refuse "no $RT_DIR/libscrip_rt.so -- cannot measure mode 4"
@@ -45,7 +45,7 @@ run_m3() { local src="$1" in="$2" out="$3"; shift 3; (cd "$T" && timeout -k 5 60
 run_m4() { local src="$1" in="$2" out="$3"; shift 3; local b="$out.bin"; : > "$out"
     if (cd "$T" && timeout -k 5 120 "$SCRIP" "$@" --compile --out="$out.s" "$src" < /dev/null > /dev/null 2>&1) && gcc -no-pie "$out.s" -L"$RT_DIR" -lscrip_rt -lm -Wl,-rpath,"$RT_DIR" -o "$b" 2>/dev/null
     then (cd "$T" && timeout -k 5 60 "$b" < "$in" > "$out" 2>/dev/null); else echo COMPILE-FAILED > "$out"; fi; }
-mask() { python3 "$HERE/util_apply_ceo409_mask.py" "$1" "$2" "$3.n" "--side=$4" < "$3" > "$3.masked" 2>/dev/null || refuse "the mask sidecar of $1 is refused"; }
+mask() { python3 "$HERE/util_apply_line_mask.py" "$1" "$2" "$3.n" "--side=$4" < "$3" > "$3.masked" 2>/dev/null || refuse "the mask sidecar of $1 is refused"; }
 run_m3 "$T/va.sno" /dev/null "$T/va.m3"; arm 1 "m3 VALUE answers the variable's value and the null string for an unset name" "$(cmp -s "$T/va.want" "$T/va.m3" && echo 1 || echo 0)"
 run_m4 "$T/va.sno" /dev/null "$T/va.m4"; arm 2 "m4 VALUE: the same" "$(cmp -s "$T/va.want" "$T/va.m4" && echo 1 || echo 0)"
 cp "$D1/diag1.sno" "$T/diag1.sno"; cp "$T1/test1.spt" "$T/test1.spt"
@@ -62,12 +62,12 @@ arm 3 "m3 diag1 graded under the real ALL.mask equals the oracle's stream" "$(cm
 arm 4 "m4 diag1: the same" "$(cmp -s "$T/d1.o.masked" "$T/d1.m4.masked" && echo 1 || echo 0)"
 cp "$T/d1.o" "$T/e.o"; cp "$T/d1.m3" "$T/e.m3"; cp "$T/d1.m4" "$T/e.m4"
 mask "$T/nod/ALL.ref" diag1 "$T/e.o" scrip; mask "$T/nod/ALL.ref" diag1 "$T/e.m3" scrip; mask "$T/nod/ALL.ref" diag1 "$T/e.m4" scrip
-arm 5 "FAIL-ONCE diag1: without its CEO-1293 rows both modes are RED against the oracle" "$({ ! cmp -s "$T/e.o.masked" "$T/e.m3.masked" && ! cmp -s "$T/e.o.masked" "$T/e.m4.masked"; } && echo 1 || echo 0)"
+arm 5 "FAIL-ONCE diag1: without its R-1293 rows both modes are RED against the oracle" "$({ ! cmp -s "$T/e.o.masked" "$T/e.m3.masked" && ! cmp -s "$T/e.o.masked" "$T/e.m4.masked"; } && echo 1 || echo 0)"
 mask "$T1/ALL.ref" test1 "$T/t1.o" oracle; mask "$T1/ALL.ref" test1 "$T/t1.m3" scrip; mask "$T1/ALL.ref" test1 "$T/t1.m4" scrip
 arm 6 "m3 test1 graded under the real ALL.mask equals the oracle's stream (oracle --side=oracle, ours --side=scrip)" "$(cmp -s "$T/t1.o.masked" "$T/t1.m3.masked" && echo 1 || echo 0)"
 arm 7 "m4 test1: the same" "$(cmp -s "$T/t1.o.masked" "$T/t1.m4.masked" && echo 1 || echo 0)"
 cp "$T/t1.o" "$T/f.o"; cp "$T/t1.m3" "$T/f.m3"
 mask "$T/not/ALL.ref" test1 "$T/f.o" oracle; mask "$T/not/ALL.ref" test1 "$T/f.m3" scrip
 arm 8 "FAIL-ONCE test1: without its &STCOUNT row m3 is RED against the oracle" "$(cmp -s "$T/f.o.masked" "$T/f.m3.masked" && echo 0 || echo 1)"
-if [ "$fail" -eq 0 ]; then echo "GATE PASS(0) [$NAME]: $pass arms -- VALUE is a function, diag1 and test1 grade green on their CEO-1293 rows and red without them"; exit 0; fi
+if [ "$fail" -eq 0 ]; then echo "GATE PASS(0) [$NAME]: $pass arms -- VALUE is a function, diag1 and test1 grade green on their R-1293 rows and red without them"; exit 0; fi
 echo "GATE FAIL(1) [$NAME]: $fail of $((pass + fail)) arms red"; exit 1

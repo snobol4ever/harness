@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_meta_specs_inc_is_current.sh -- THE BUILTINS' META-PREDICATE SPECS COME FROM ONE ORACLE-CUT TABLE PER DIALECT (the cto's
-# ARCH-PROLOG-DATABASE.md 4c, CEO-1964/1971; row prolog-predicate-property-meta-predicate-is-one-record-column-read-in-both-dialects-sec-4c-ceo-1964).
+# ARCH-PROLOG-DATABASE.md 4c, R-1964/1971; row prolog-predicate-property-meta-predicate-is-one-record-column-read-in-both-dialects-sec-4c-r-1964).
 # harness/scripts/pl_meta_specs.tsv is what swipl 9.0.4 and gprolog 1.4.5 answer for predicate_property(H, meta_predicate(S)) over their builtins
 # (util_gen_pl_meta_specs.py --cut); SCRIP/src/runtime/pl_meta_specs.inc is written from it and read through rt_pl_meta_builtin by the runtime's
 # predicate_property and the lowerer's compile-time fold alike. A TSV re-cut without a regeneration, an .inc edited by hand, or a hand-typed list

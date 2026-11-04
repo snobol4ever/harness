@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_callee_saved_register_at_an_allocating_return_is_named_not_assumed.sh
-# -- F1 RUNG 3, THE REGISTERS (cto 2026-09-18, the ceo's row (1) of CEO-845; row
+# -- F1 RUNG 3, THE REGISTERS (cto 2026-09-18, the officer's row (1) of R-845; row
 # gc-frame-placement-proof-...-and-callee-saved-registers-are-mapped; design
 # .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md sections 6.3 and 6.5 and section 7 F1; law RULES.md FACT RULE
-# THE COLLECTOR GUESSES NOTHING, CEO-812).
+# THE COLLECTOR GUESSES NOTHING, R-812).
 #
 # ⛔ WHY THIS GATE IS NOT THE ROW AS IT WAS HANDED TO ME, AND THE DISAGREEMENT IS THE POINT. The row says "the map
 # must carry the pointer-bearing callee-saved registers -- gc_frame_map_t has one reserved quad and nothing reads
@@ -111,14 +111,14 @@ export SNO_LIB="${SNO_LIB:-$S4E/corpus/include}"
 #   heap 6 are unchanged from 41323bc8e -- only the two readings that were always there and were never counted.
 #   ⛔ AND THE RESIDUAL IS NOW NAMED BY FILE AND GRAPH in the census report (`COPY <file> total=N: <graph>=n ...`),
 #   because a residual nobody can attribute is a residual nobody cures: 166 of the 289 are the deferred-pattern
-#   witness's primitive and capture roads, 43 the SNOBOL4 witness, and the rest the ceo's frontends.
+#   witness's primitive and capture roads, 43 the SNOBOL4 witness, and the rest the officer's frontends.
 #   289 -> 284 (cto 2026-09-23, CTO-143, row icon-gc-the-standing-chop-...; FIVE MOVES IN FOUR DAYS, EVERY ONE NAMED BY
 #   COMMIT, FILE, GRAPH AND REGISTER FROM A TWO-TREE CENSUS -- the gate's own eight witnesses compiled by a fresh worktree
 #   build at each commit and read by ONE census (HEAD's), bisected commit by commit, never a bracket): this ceiling stood at
 #   289 while origin read 271, 282, 293 and 295 in turn, and the red that finally fired (295) was three landings old.
 #   289 -> 271 at 25d0955d8 (rbx STEP 1, 09-20): the Icon witness 36 -> 18, the whole rbx/POP class of 18 gone -- the
 #   by-name call's rbx anchor left the register, so main, n31_to, the deref/coerce/binop/call_proc_staged sites each lost
-#   one reading. A FALL, the class shrinking. 271 -> 282 at 2344d2dc7 (ten of the ceo's twelve rejected safe-point sites take
+#   one reading. A FALL, the class shrinking. 271 -> 282 at 2344d2dc7 (ten of the officer's twelve rejected safe-point sites take
 #   their poll form, 09-22): the Pascal witness 13 -> 24, r13/CELL 66 -> 77, sites unchanged at 612 -- main, n20_binop_test,
 #   n23_call, n24_assign, n27_binop, n28_assign, n31_call each read ONE MORE r13 copy, and the defining form is the new poll's
 #   own spill-record reload (mov r13,[rsp+N] after rt_gc_point_arr_c), which this census files as CELL. 282 -> 293 at

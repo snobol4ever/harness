@@ -2,7 +2,7 @@
 # test_gate_gc_every_gva_island_cell_is_a_root_a_hidden_compiler_temporary_included.sh -- EVERY CELL OF THE PINNED GVA
 # ISLAND IS A ROOT, THE CELLS REGISTERED WITH NO NAME INCLUDED (cfo 2026-09-30, row snobol4-gc-a-nested-unevaluated-
 # expression-reference-holds-a-pre-collection-address-and-dies-under-the-flip-plant-with-stress-1; law RULES.md FACT RULE
-# THE COLLECTOR GUESSES NOTHING, CEO-812).
+# THE COLLECTOR GUESSES NOTHING, R-812).
 #
 # MEASURED 2026-09-30 on SCRIP b8a668968: the five-statement witness (P8 = *(X Y), Y = *(X 'q'), 'pq' P8; the cto's find,
 # FINDING-snobol4-gc-nested-unevaluated-expression-dies-under-the-flip-plant-with-stress-2026-09-29.md) died rc 139
@@ -29,7 +29,7 @@
 # of (a) printed the [GC-FLIP] plant line -- a green under a plant that never ran measures nothing; (c) THE WITNESS
 # REACHES A NAMELESS CELL: its mode-4 __gva_names carries a .quad 0 entry and the program resolves a deferred reference
 # through rt_defer_open_cell; (d) the source: gc_collect_ex calls gc_root_gva, which hands the asm drain (gc_wl_drain, the root walk in asm
-# since 16cddcd71, 10-15) the WHOLE island as one range, rng_p = RT_GVA_VA and rng_n = g_sxt_gva_n (re-cut CEO-2051: the C loop this arm read
+# since 16cddcd71, 10-15) the WHOLE island as one range, rng_p = RT_GVA_VA and rng_n = g_sxt_gva_n (re-cut R-2051: the C loop this arm read
 # before moved into the drain, so the old grep read red on a correct tree), and the NV walk no longer visits e->cell.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

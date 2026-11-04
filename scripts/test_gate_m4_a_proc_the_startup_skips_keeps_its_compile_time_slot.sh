@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_m4_a_proc_the_startup_skips_keeps_its_compile_time_slot.sh -- in mode 4 every procedure the binary registers at
 # startup sits in the registry slot the compiler gave it, so an index baked into a deterministic call names the same procedure
-# at run time (hq_icon, ceo CEO-1433 row snobol4-in-mode-4-a-snobol4-define-before-a-call-into-the-icon-section-runs-its-c-calls-
+# at run time (hq_icon, R-1433 row snobol4-in-mode-4-a-snobol4-define-before-a-call-into-the-icon-section-runs-its-c-calls-
 # on-a-misaligned-stack).
 #
 # FOUND on the infinite_snobol4 SCRIPtix demo (corpus 3fb0f7045): mode 4 died in glibc malloc on a co-expression thread with

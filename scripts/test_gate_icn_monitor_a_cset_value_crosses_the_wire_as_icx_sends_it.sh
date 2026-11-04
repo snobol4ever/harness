@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_monitor_a_cset_value_crosses_the_wire_as_icx_sends_it.sh -- AN ICON CSET VALUE NEVER BREAKS THE MONITOR WIRE
-# (hq_icon 2026-09-25, crawl work under CEO-1270 / CEO-1272).
+# (hq_icon 2026-09-25, crawl work under R-1270 / R-1272).
 #
 # SCRIP carries a cset as a DT_S descriptor whose length field is the sentinel 0xFFFFFFFF (IS_CSET_fn; the registry knows the
 # real length). core.c's two wire encoders typed it MWT_STRING and sent that sentinel as the value length, so the controller

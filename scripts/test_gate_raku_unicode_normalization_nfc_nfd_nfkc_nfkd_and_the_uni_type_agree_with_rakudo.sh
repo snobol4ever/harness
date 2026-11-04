@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_unicode_normalization_nfc_nfd_nfkc_nfkd_and_the_uni_type_agree_with_rakudo.sh -- Uni.new(...), Uni.NFC / .NFD / .NFKC / .NFKD, Str.NFC / .NFD / .NFKC / .NFKD, THE .list / .elems / .Str / .gist OF THE RESULT, AND Uni ~ Uni
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by classifying the failing sampled Roast files: S15-normalization is 49 uniform files of 500 to 2943 assertions each, `ok Uni.new(...).NFC.list ~~ (...)`, every one "You failed 2000 tests of 2000").
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by classifying the failing sampled Roast files: S15-normalization is 49 uniform files of 500 to 2943 assertions each, `ok Uni.new(...).NFC.list ~~ (...)`, every one "You failed 2000 tests of 2000").
 #
 # THE DEFECT, measured against Rakudo: SCRIP had no Uni type and no normalization forms: `Uni.new(0x1E0A, 0x0323)` produced nothing and `.NFC` was an undefined method, so S15-normalization/nfc-0.t .. nfkd-10.t, the four -sanity files and nfc-concat.t (49 files, over 70 000 assertions) failed wholesale; the four S15-nfg/mass-roundtrip-*.t files, which round-trip strings through the same forms, failed with them.
 # THE CURE: (../harness/scripts/util_gen_unicode_norm_tables.py -> src/runtime/rk_unicode_norm_tables.inc) the decomposition and composition data are GENERATED from the Unicode 17.0.0 UnicodeData.txt (the version the Roast files are generated from): canonical combining classes as ranges, canonical and compatibility decompositions, and the primary composites that survive the exclusions

@@ -2,7 +2,7 @@
 # test_gate_pl_a_static_call_n_in_tail_position_is_a_last_call.sh -- call/N whose goal is known at compile time (call(count, N1),
 # call(count(N1))) is lowered inline as its goal's conjunction; when that call/N is the last goal of a clause body or of a branch arm,
 # the inline conjunction's last staged call is a last call too and releases the frame, as swipl runs it in constant stack. THE RED
-# (CEO-1632 chunk 3; the cfo's s8, 2026-10-10): count(1000000) under -s512k died ERROR 246 for call(count, N1) in an if-then-else's
+# (R-1632 chunk 3; the cfo's s8, 2026-10-10): count(1000000) under -s512k died ERROR 246 for call(count, N1) in an if-then-else's
 # else arm, where the same body without call/2 ran after chunk 1: goal_inner's static call/N site lowered the conjunction with no
 # tail-node out parameter, so its last staged call was never sealed. THE CURE: the site takes the conjunction's tail node and seals it
 # with the plain tail seal when the call/N itself is in tail position; the tail arm's run-time tests (r13 at its entry value, a flat

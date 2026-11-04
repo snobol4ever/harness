@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_infix_operators_the_front_end_names_have_a_runtime_as_rakudos_do.sh -- THE OPERATORS THE PARSER TURNS INTO __rk_ CALLS THE RUNTIME NEVER IMPLEMENTED
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479). Measured with the sanctioned inventory plus a harvest of the name behind every error 22 across the
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479). Measured with the sanctioned inventory plus a harvest of the name behind every error 22 across the
 # Roast tree: 173 files abort with "undefined function called", and after is_run (Test::Util, 41) the next names are operators the front end generates and the runtime
 # does not handle: __rk_not_smartmatch (15), __rk_range_xb and __rk_range_xl (5), __rk_bor, __rk_lbor, __rk_gcd, __rk_lcm and more. A cross-check of every __rk_ name the
 # parser and lowerer generate against the names by_name_dispatch.c handles found 57 unhandled. This landing adds: !~~, ^.. and ^..^, +| +^ +&, ?| ?^, ~| ~&, gcd, lcm,

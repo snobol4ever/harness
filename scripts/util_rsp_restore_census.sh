@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# util_rsp_restore_census.sh -- WHERE DOES THE EMITTED CODE LOAD rsp FROM MEMORY? (ceo CEO-1830/1832, ARCH-ZETA-ONE-COORDINATE.md
-# section 4, the second instrument). A FORTH stack loads its pointer from memory only at a DISCARD (CEO-1759: a retry never
+# util_rsp_restore_census.sh -- WHERE DOES THE EMITTED CODE LOAD rsp FROM MEMORY? (R-1830/1832, ARCH-ZETA-ONE-COORDINATE.md
+# section 4, the second instrument). A FORTH stack loads its pointer from memory only at a DISCARD (R-1759: a retry never
 # restores rsp; a discard may). ZD-CHECK reads the PLAN; this census reads the ASM: for every PARTITION core entry of a master
 # it compiles mode 4 and counts `mov rsp, [memory]` sites by the port the nearest label above them names (the label's suffix
 # after its last underscore: alpha, beta, gamma, omega, or a number/other), plus `lea rsp, [rbp ...]` frame-base restores.

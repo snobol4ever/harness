@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_bench_raku_timed.sh -- ANGLE 1 of the Raku three-angle triangulation (row
 # bench-grids-rebase-to-two-number-basis), mirroring test_bench_prolog_timed.sh per
 # ARCH-BENCH-CAMPAIGN-README-TABLES.md § THREE-ANGLE TRIANGULATION.
@@ -64,7 +64,7 @@ KERNELS="${KERNELS:-}"   # optional allowlist, same convention as bench_prolog_f
 [ -d "$RDIR" ] || { echo "⛔ REFUSED-TO-GRADE raku bench corpus missing: $RDIR"; exit 2; }
 [ -f "$RDIR/prelude_rakudo.rakumod" ] || { echo "⛔ REFUSED-TO-GRADE $RDIR/prelude_rakudo.rakumod missing"; exit 2; }
 RAKU="$(rakudo_bin)" || exit 2
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1283)"; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1283)"; exit 2; }
 declare -a DECL_SW=()
 WRAP="$ROOT/tools/bench_rusage"; [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT

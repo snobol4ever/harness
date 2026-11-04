@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # lib_inventory.sh — THE ONE PACKAGE-INVENTORY BODY. Sourced by every package runner; never copied.
 #
-# ⭐ THE ORDER (Lon 2026-09-06, in-chat to ceo, verbatim: "Fix the never graded business. Let's lock
+# ⭐ THE ORDER (Lon 2026-09-06, in-chat, verbatim: "Fix the never graded business. Let's lock
 # down our package testing and make it complete."). Every program a vendored package SHIPS is either
 # GRADED against the package's own oracle or NAMED UNGRADABLE with the oracle's reason. Never dropped,
 # never counted as passed. The denominator is the SHIPPED population.
@@ -40,8 +40,8 @@
 # THE LINE, one shape, from every package runner:
 #   PACKAGE_INVENTORY package=<name> shipped=N graded=N ungraded=N ungradable=N deferred=N graded_stream=N graded_narrow=N
 #
-# ⛔⭐⭐ THE SIXTH TERM, `deferred=N`, AND WHY IT IS ON THE LINE RATHER THAN BESIDE IT (hq_T 2026-09-12, ceo
-# CEO-593, on Lon's CEO-579 *"Do not count the FD as failures for us."*). DEFERRED means IN SCOPE, NOT BUILT,
+# ⛔⭐⭐ THE SIXTH TERM, `deferred=N`, AND WHY IT IS ON THE LINE RATHER THAN BESIDE IT (hq_T 2026-09-12, the officer
+# R-593, on Lon's R-579 *"Do not count the FD as failures for us."*). DEFERRED means IN SCOPE, NOT BUILT,
 # NOT A FAILURE -- a scheduling ruling by Lon, never a fact about the oracle and never a seat's own judgement
 # (ARCH-PROGRAM-LEDGER.md § DEFERRED, sovereign; `.github/DEFERRED.tsv` is its machine twin).
 # ⛔ IT HAD TO JOIN THE SUM, WHICH IS WHY IT IS NOT A SECOND LINE LIKE THE SPLIT. The split is DETAIL and
@@ -69,7 +69,7 @@
 # ungradable; that is a ruling somebody makes once, in a file, with a reason a later reader can dispute.
 #
 # ⛔ THE FOURTH DECLARATION IS NOT A SIDECAR, AND THAT IS DELIBERATE: `.github/DEFERRED.tsv`, one file for
-# every package, in the repo whose custody is the ceo's. The three above record MEASUREMENTS and the lane
+# every package, in the repo whose custody is the officer's. The three above record MEASUREMENTS and the lane
 # that measures owns them; a deferral LIFTS A SCORE, so it must not be editable by the lane whose number it
 # raises. (`S4E_DEFERRED_TSV` redirects it, for scratch harnesses only.)
 
@@ -123,7 +123,7 @@
 #     can fix this by re-running, and a run-twice check sees a byte-stable program and calls the ruling wrong.
 #     The name has to say WHERE rather than WHEN.
 # ⛔⭐⭐ AND THE ADMISSION TEST ABOVE IS NOT ENOUGH ON ITS OWN -- SHARPENED 2026-09-10 BY THE ROW THAT WAS
-#     REFUSED UNDER IT (hq_V's kwds ask, ceo CEO-514; the correction is hq_V's and is recorded here because a
+#     REFUSED UNDER IT (hq_V's kwds ask, R-514; the correction is hq_V's and is recorded here because a
 #     ruling's own limits belong beside the ruling and not in a mailbox). The test I offered was CAN ANY
 #     ENVIRONMENT MAKE THESE AGREE -- a row whose output no environment can reconcile is a permanent ruling, one
 #     that some environment can is deferred work wearing a ruling's clothes. kwds passed that test and was still
@@ -136,7 +136,7 @@
 #     and the first reads as the second while quietly answering something weaker. ⛔ It fails in the direction
 #     this file's tie-break already calls the expensive one: a permanent-looking fact makes a ruling feel safe
 #     to close, and a closed ruling is what nobody re-reads.
-# ⭐⭐ ONE REASON ADMITTED 2026-09-13 (ceo CEO-724, on the last member of test_gate_no_ref_pins_oracle_internal_state.sh's
+# ⭐⭐ ONE REASON ADMITTED 2026-09-13 (R-724, on the last member of test_gate_no_ref_pins_oracle_internal_state.sh's
 # floor still sitting inside a graded denominator). It is the first one where the oracle RUNS the program fine and
 # the ref is still unmatchable, so none of the reasons above fit and reaching for ORACLE_REFUSES would have been a lie.
 #   ORACLE_ACCOUNTING_IN_OUTPUT -- the oracle's own output carries ITS OWN INTERNAL ACCOUNTING, so the ref can only be
@@ -160,7 +160,7 @@
 #     SAME semantic through the ONE ERROR VOICE equivalence list in both modes, so leaving the denominator costs no
 #     coverage. ⛔ AN EXCLUSION THAT DROPS A BEHAVIOUR NOBODY RE-CHECKS IS THE EXPENSIVE MISTAKE; pair every member of
 #     this class with the instrument that keeps its semantic.
-# ⛔ CONTAINER_OR_LIBRARY IS RETIRED (ceo CEO-1272, 2026-09-25): it conflated a library owed its driver with a file that is not a
+# ⛔ CONTAINER_OR_LIBRARY IS RETIRED (R-1272, 2026-09-25): it conflated a library owed its driver with a file that is not a
 # program. Every one of its 738 rows was split by measurement (corpus 84dadbe33) -- a LIBRARY to UNGRADED NEEDS_DRIVER, a CONTAINER to
 # CONTAINERS.tsv -- and the class is no longer a word this vocabulary knows, so a new row using it refuses.
 INV_CLASS_UNGRADABLE="NO_ORACLE_SHIPPED ORACLE_REFUSES ORACLE_CONTRACT_NOT_IMPLEMENTED NEEDS_INPUT NEEDS_INTERACTIVE_TTY NEEDS_NETWORK NEEDS_DISPLAY NONDETERMINISTIC RESULT_NOT_ON_STDOUT ENVIRONMENT_IDENTITY_IN_OUTPUT ORACLE_ACCOUNTING_IN_OUTPUT"
@@ -177,17 +177,17 @@ INV_CLASS_UNGRADABLE="NO_ORACLE_SHIPPED ORACLE_REFUSES ORACLE_CONTRACT_NOT_IMPLE
 # anyway until someone measures. One failure mode hides work forever; the other costs a row that stays open.
 # So the missing measurement never blocks the landing: it can only ever move a row FROM ungraded TO ungradable,
 # and that direction is the one a human is forced to justify. Same asymmetry ARM 8 protects one level up.
-# NEEDS_DRIVER (coo 2026-09-25, ceo CEO-1269): a LIBRARY is the program and NAME_driver is its grading vehicle, so a library
+# NEEDS_DRIVER (coo 2026-09-25, R-1269): a LIBRARY is the program and NAME_driver is its grading vehicle, so a library
 #   that ships no driver is OWED one -- in the denominator, a non-pass, named -- never ungradable for being a library.
 #   Measured at the ruling: gimpel ships 148 libraries and 144 drivers, and BALX, FLOORCEI, PHRASES and stringout have none.
 INV_CLASS_UNGRADED="NEEDS_STDIN_FIXTURE NEEDS_ARGV_FIXTURE NEEDS_RUNNER_WIRING NEEDS_VENDORED_SOURCE REF_NOT_CUT ORACLE_FAIL TIMEOUT NONDETERMINISTIC LIVE SUSPECT_USAGE NEEDS_DRIVER"
-# ⛔⭐ A CONTAINER IS NOT A PROGRAM AND LEAVES SHIPPED, NAMED WITH ITS MEASUREMENT (ceo CEO-1272, 2026-09-25, on the coo's
-# 886-row ask; CEO-700, CEO-1245, CEO-1269). The UNGRADABLE class CONTAINER_OR_LIBRARY conflated two facts, and the split is
+# ⛔⭐ A CONTAINER IS NOT A PROGRAM AND LEAVES SHIPPED, NAMED WITH ITS MEASUREMENT (R-1272, 2026-09-25, on the coo's
+# 886-row ask; R-700, R-1245, R-1269). The UNGRADABLE class CONTAINER_OR_LIBRARY conflated two facts, and the split is
 # made file by file BY MEASUREMENT (util_container_or_library.py): a LIBRARY is a program owed its driver (UNGRADED NEEDS_DRIVER
 # above, in the denominator); a CONTAINER is not a compilation unit on its own and is written in CONTAINERS.tsv beside the
 # package's other sidecars -- name<TAB>KIND<TAB>measurement -- where KIND is one of the six below, and INCLUDED_BY/OPENED_BY/
 # LOADED_BY name the file that splices, opens or loads it as the measurement's first word (LOADED_BY: a Prolog consult,
-# ensure_loaded, use_module, load_files or reexport names it -- ceo CEO-1621, 2026-10-10). inventory_line takes a container OUT of shipped,
+# ensure_loaded, use_module, load_files or reexport names it -- R-1621, 2026-10-10). inventory_line takes a container OUT of shipped,
 # refuses one that also sits in UNGRADED, UNGRADABLE or DEFERRED (two answers for one file), refuses one naming no shipped
 # file, and re-derives every row's measurement through util_container_or_library.py verify before it prints a line -- a row
 # whose measurement does not re-derive has not earned its way out of the denominator. PACKAGE_INVENTORY gains containers=N
@@ -204,10 +204,10 @@ inventory_container_names() {
         case "$line" in ''|'#'*) continue ;; esac
         name="$(printf '%s' "$line" | cut -f1)"; kind="$(printf '%s' "$line" | cut -f2)"; meas="$(printf '%s' "$line" | cut -f3-)"
         if [ -z "$name" ] || [ -z "$kind" ] || [ -z "${meas// /}" ]; then
-            inventory_refuse "$f line $n: expected name<TAB>KIND<TAB>measurement, got: $line -- a container with no measurement is an opinion (CEO-1272)"; return 2
+            inventory_refuse "$f line $n: expected name<TAB>KIND<TAB>measurement, got: $line -- a container with no measurement is an opinion (R-1272)"; return 2
         fi
         case " $INV_CONTAINER_KINDS " in *" $kind "*) ;; *)
-            inventory_refuse "$f line $n: KIND '$kind' is not one of: $INV_CONTAINER_KINDS -- a class-less or unknown container names no measurement (CEO-1272)"; return 2 ;;
+            inventory_refuse "$f line $n: KIND '$kind' is not one of: $INV_CONTAINER_KINDS -- a class-less or unknown container names no measurement (R-1272)"; return 2 ;;
         esac
         printf '%s\n' "$name"
     done < "$f"
@@ -236,7 +236,7 @@ INV_CLASS_LEGACY="EMPTY:NEEDS_STDIN_FIXTURE GRADABLE:REF_NOT_CUT NO-ORACLE-SHIPP
 inventory_refuse() { echo "⛔ INVENTORY REFUSES(2): $*" >&2; return 2; }
 . "$(dirname "${BASH_SOURCE[0]}")/lib_excluded.sh" || { echo "⛔ INVENTORY REFUSES(2): lib_excluded.sh unloadable -- the one EXCLUDED.tsv reader" >&2; return 2 2>/dev/null || exit 2; }
 
-# ⛔⭐⭐ THE ONE PLACE THAT DECIDES WHETHER A ROW NAMING OUR COMPILER IS A LIE OR A CONTROL (ceo CEO-541).
+# ⛔⭐⭐ THE ONE PLACE THAT DECIDES WHETHER A ROW NAMING OUR COMPILER IS A LIE OR A CONTROL (R-541).
 # `INV_AGREEMENT_MARKER` is vocabulary, not prose: it is the prefix a lane puts on OUR clause, and it is the
 # only thing that can move a compiler-naming row out of ARM 8's refusal. ⭐ It is deliberately a MARKER and
 # not a smarter regex over the sentence -- the failure this arm hunts (240 of 240 swi_tests rows) was written
@@ -252,7 +252,7 @@ _INV_ORACLE_RE='(^|[^a-z])(oracle|upstream|icont|iconx|sbl|spitbol|swipl|gprolog
 _inv_compiler_named_rows() {
     local f="$1" n line reason pre
     # ⛔⭐ DATA ROWS ONLY, AND THIS WAS MEASURED THE MOMENT THE MARKER WAS DOCUMENTED (hq_T 2026-09-10). The
-    # scan used to read the WHOLE FILE, comments included -- so writing the CEO-541 policy into ipl's own
+    # scan used to read the WHOLE FILE, comments included -- so writing the R-541 policy into ipl's own
     # header, in a sentence explaining that a program excluded because SCRIP fails it is a red moved out of
     # the denominator, REFUSED THE PACKAGE. ⭐ A comment cannot be a failure-as-reason: it is not the reason
     # column, no census reads it, and the refusal quotes `cut -f3-` of a data row. An instrument that fires on
@@ -444,7 +444,7 @@ inventory_line() {
             # excludes ALL.icn) and this body (which did not): two correct instruments answering two
             # different questions, and neither able to say so.
             case "${f##*/}" in ALL.*) continue ;; esac
-            # ⛔⭐ A DRIVER IS A GRADING VEHICLE, NEVER A SHIPPED PROGRAM (ceo CEO-1269, CEO-700 applied; coo 2026-09-25, row
+            # ⛔⭐ A DRIVER IS A GRADING VEHICLE, NEVER A SHIPPED PROGRAM (R-1269, R-700 applied; coo 2026-09-25, row
             # instruments-the-arizona-jcon-and-gimpel-runners-grade-a-library-through-its-driver-...): NAME_driver<ext> tests
             # the library NAME<ext>, and the library is the program. The runners grade the library by its driver and record
             # it under the library's name. gimpel counted 144 drivers AND 148 libraries here, and 292 was two populations.
@@ -480,7 +480,7 @@ inventory_line() {
     # a review habit: every one of those 240 entries is individually honest and well documented, naming
     # file, rung and exact error. 240 carefully-written TRUE notes compose into a denominator that cannot
     # fall. Diligence at the entry level is exactly what makes the aggregate invisible.
-    # ⭐⭐ AND THE ONE ADMITTED EXCEPTION IS A CONTROL, NOT A LOOSENING (ceo CEO-541, 2026-09-10, on hq_T's
+    # ⭐⭐ AND THE ONE ADMITTED EXCEPTION IS A CONTROL, NOT A LOOSENING (R-541, 2026-09-10, on hq_T's
     # ask). A row may name our compiler when, and only when, it does what icon/ipl's gincl/maccolor.icn does:
     # state THE ORACLE'S OWN VERDICT FIRST AND INDEPENDENTLY (Arizona icont refuses at line 23, verbatim, and
     # upstream's UNMODIFIED copy refuses identically), and only THEN add that we refuse at the same line with
@@ -488,7 +488,7 @@ inventory_line() {
     # ruling is not our own damage. ⛔ THE DISCRIMINATOR IS THE ONE THIS WHOLE ARM USES -- THE RULING MUST
     # STAND UNCHANGED IF SCRIP WERE PERFECT AT EVERYTHING ELSE -- and here it does: a perfect SCRIP would
     # still be refused by icont at line 23, so the row survives its own agreement clause being deleted.
-    # ⛔ AND IT IS ADMITTED BY A MARKER, NOT BY A READER'S JUDGEMENT, which is the entire point of CEO-541:
+    # ⛔ AND IT IS ADMITTED BY A MARKER, NOT BY A READER'S JUDGEMENT, which is the entire point of R-541:
     # `AGREEMENT-CONTROL:` prefixes OUR clause, so the arm separates a control from a failure-as-reason
     # MECHANICALLY. Without the marker the row stays refused however true its prose -- the tpp precedent
     # below is unweakened, and a row that merely mentions us in passing has not earned an exception.
@@ -505,7 +505,7 @@ inventory_line() {
 $badreason
     ⛔ UNGRADABLE is a statement about the ORACLE, never about us. A program excluded because SCRIP fails it is a RED MOVED OUT OF THE DENOMINATOR -- the score cannot fall when we fail, because failing is what removes the entry. If the oracle grades it and we do not, it is GRADED and RED. Move it, or give the oracle's own reason.
     ⭐ AND A ROW CITING **BOTH** IS STILL REFUSED, deliberately -- measured on arizona general/tpp.icn, whose reason gives \"TWO reasons this is ungradable here\": one oracle-side (tpp.ok was never vendored) and one ours (no preprocessor-only mode). The oracle-side half is sufficient on its own, so state it on its own; while our half is written beside it a reader cannot tell whether the ruling would survive without it, and that is the whole property this arm protects.
-    ⭐ THE ONE ADMITTED SHAPE (ceo CEO-541) is an AGREEMENT CONTROL: state the oracle's verdict first and on its own, then prefix our clause with $INV_AGREEMENT_MARKER -- as in \`... Arizona icont REFUSES IT AT COMPILE, rc=1, verbatim \"...\"; upstream's unmodified copy refuses identically. $INV_AGREEMENT_MARKER we refuse at the same line with the same class, so we AGREE with the oracle.\` The text before the marker must NAME THE ORACLE and must NOT name us; nothing else is accepted, and the marker cannot rescue a row whose ruling rests on our failure."
+    ⭐ THE ONE ADMITTED SHAPE (R-541) is an AGREEMENT CONTROL: state the oracle's verdict first and on its own, then prefix our clause with $INV_AGREEMENT_MARKER -- as in \`... Arizona icont REFUSES IT AT COMPILE, rc=1, verbatim \"...\"; upstream's unmodified copy refuses identically. $INV_AGREEMENT_MARKER we refuse at the same line with the same class, so we AGREE with the oracle.\` The text before the marker must NAME THE ORACLE and must NOT name us; nothing else is accepted, and the marker cannot rescue a row whose ruling rests on our failure."
             return 2
         fi
     fi
@@ -565,7 +565,7 @@ $badreason
     [ -z "$ambig" ] || { inventory_refuse "declared by a BARE NAME that names more than one shipped file:$ambig -- write the package-relative path instead. A bare name is only a name while it is unique; ipl ships four such collisions (gener/morse/repeats/spokes under both procs/ and progs/), so the ruling would land on whichever file the census happened to reach first."; return 2; }
     [ -z "$miss" ] || { inventory_refuse "declared but not shipped:$miss -- a declaration matching no file is a rename or a leftover, and both withdraw a guarantee silently"; return 2; }
 
-    # ⛔⭐ THE CONTAINERS LEAVE SHIPPED HERE, EACH ONE RESOLVED TO ONE FILE AND ITS MEASUREMENT RE-DERIVED (CEO-1272; the block
+    # ⛔⭐ THE CONTAINERS LEAVE SHIPPED HERE, EACH ONE RESOLVED TO ONE FILE AND ITS MEASUREMENT RE-DERIVED (R-1272; the block
     # beside INV_CONTAINER_KINDS above). Resolved like every other declaration -- a package-relative path, or a bare name while
     # it is unique -- and compared by RESOLVED FILE with the other three buckets, so a bare name here and a path there cannot hide
     # one file carrying two answers.
@@ -585,9 +585,9 @@ $badreason
             [ -z "${_declared["$c_rel"]:-}" ] || c_both="$c_both $c_rel"
             containers=$((containers + 1))
         done
-        [ -z "$c_miss" ] || { inventory_refuse "CONTAINERS.tsv names a file this package does not ship:$c_miss -- a container matching no file is a rename or a leftover (CEO-1272)"; return 2; }
+        [ -z "$c_miss" ] || { inventory_refuse "CONTAINERS.tsv names a file this package does not ship:$c_miss -- a container matching no file is a rename or a leftover (R-1272)"; return 2; }
         [ -z "$c_ambig" ] || { inventory_refuse "CONTAINERS.tsv declares by a BARE NAME that names more than one shipped file:$c_ambig -- write the package-relative path"; return 2; }
-        [ -z "$c_both" ] || { inventory_refuse "a container is also declared in UNGRADED.tsv, UNGRADABLE.tsv or DEFERRED.tsv:$c_both -- not a program and owed or ruled as one are two answers for one file (CEO-1272)"; return 2; }
+        [ -z "$c_both" ] || { inventory_refuse "a container is also declared in UNGRADED.tsv, UNGRADABLE.tsv or DEFERRED.tsv:$c_both -- not a program and owed or ruled as one are two answers for one file (R-1272)"; return 2; }
         local _v _vrc
         _v="$(python3 "$(dirname "${BASH_SOURCE[0]}")/util_container_or_library.py" verify "$INV_DIR" 2>&1)"; _vrc=$?
         [ "$_vrc" -eq 0 ] || { inventory_refuse "CONTAINERS.tsv does not re-derive its own measurements (util_container_or_library.py verify rc=$_vrc) -- a container leaves the denominator only on a measurement that holds:
@@ -604,8 +604,8 @@ $_v"; return 2; }
             if [ -f "$INV_DIR/CONTAINERS.tsv" ] && inventory_is_container "$INV_DIR" "$e_rel"; then e_con="$e_con $e_rel"; continue; fi
             excluded=$((excluded + 1))
         done
-        [ -z "$e_miss" ] || { inventory_refuse "EXCLUDED.tsv names a file this package does not ship:$e_miss -- an exclusion matching no file is a rename or a leftover (CEO-1286)"; return 2; }
-        [ -z "$e_con" ] || { inventory_refuse "EXCLUDED.tsv names a container:$e_con -- a container is already out of shipped, so excluding it again would subtract it twice (CEO-1286)"; return 2; }
+        [ -z "$e_miss" ] || { inventory_refuse "EXCLUDED.tsv names a file this package does not ship:$e_miss -- an exclusion matching no file is a rename or a leftover (R-1286)"; return 2; }
+        [ -z "$e_con" ] || { inventory_refuse "EXCLUDED.tsv names a container:$e_con -- a container is already out of shipped, so excluding it again would subtract it twice (R-1286)"; return 2; }
         excluded_tail=" excluded=$excluded denominator=$((shipped - excluded))"
     fi
 
@@ -633,7 +633,7 @@ $_v"; return 2; }
 
 # inventory_containers_of "<PACKAGE_INVENTORY line>" -- echo the line's containers=N, 0 when the package declares none. A row's
 # Excl is every shipped unit its denominator leaves out (Lon 2026-09-26, "use the Excl column to properly classify the exclusions
-# for good reasons only"; CEO-1288): its containers plus its EXCLUDED.tsv programs, read off the inventory the runner already
+# for good reasons only"; R-1288): its containers plus its EXCLUDED.tsv programs, read off the inventory the runner already
 # printed, never counted a second time.
 inventory_containers_of() {
     local n; n="$(printf '%s\n' "${1:-}" | grep -oE ' containers=[0-9]+' | head -1 | cut -d= -f2)"; echo "${n:-0}"
@@ -645,7 +645,7 @@ inventory_containers_of() {
 # pinned by EXACT STRING EQUALITY, so nothing may print from inside it. ⛔ But unlike the split, this one is
 # NOT OPTIONAL WHEN IT HAS CONTENT -- a deferred count with no names is the shape a wrong exclusion hides in.
 # It prints nothing and returns 0 when the count is zero, which is every package with a runner today.
-#   PACKAGE_INVENTORY_DEFERRED package=<n> deferred=N names=a,b,c ruled_by=CEO-...,CEO-...
+#   PACKAGE_INVENTORY_DEFERRED package=<n> deferred=N names=a,b,c ruled_by=R-...,R-...
 inventory_deferred_line() {
     [ -n "${INV_PACKAGE:-}" ] || { inventory_refuse "INV_PACKAGE unset -- the deferred line has no package to name"; return 2; }
     local def_n c f ruled names

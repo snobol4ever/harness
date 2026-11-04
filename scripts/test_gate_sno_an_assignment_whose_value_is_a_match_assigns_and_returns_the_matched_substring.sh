@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_assignment_whose_value_is_a_match_assigns_and_returns_the_matched_substring.sh
 #
-# THE DEFECT (the ceo's rank-1 row snobol4-an-assignment-whose-value-is-a-match-aborts-scrip, CEO-1449; 14 of 16 long runs of
+# THE DEFECT (the officer's rank-1 row snobol4-an-assignment-whose-value-is-a-match-aborts-scrip, R-1449; 14 of 16 long runs of
 # the a..z millions-run died of it): OUTPUT = (k = 'x' ? 'x') aborted SCRIP (libscrip_rt: BOMB with a garbage message, SIGABRT)
 # where sbl -bf assigns k the matched substring and returns it; the same in EVAL, inside a concatenation, under SIZE.
 # THE CAUSE (src/lower/lower_snobol4.c sx_lower TT_ASSIGN): an assignment V = (S ? P) lowers to a match whose pattern captures

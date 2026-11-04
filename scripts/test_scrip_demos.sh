@@ -67,7 +67,7 @@ echo ""
 echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
 # ⛔ A SWEEP THAT GRADED NOTHING IS NOT GREEN, AND A SKIPPED DEMO IS NOT A PASS (coo 2026-09-23, row instruments-polyglot-demos-
 # expected-output-files-are-ref-only-expected-converts-to-ref). This line used to be `[ "$FAIL" -eq 0 ]`, so when the refs were
-# renamed .expected -> .ref (CEO-1222) and this script still looked for .expected, it read PASS=0 FAIL=0 SKIP=10 and exited 0 --
+# renamed .expected -> .ref (R-1222) and this script still looked for .expected, it read PASS=0 FAIL=0 SKIP=10 and exited 0 --
 # measured, one run before the readers switched. A demo without its ref cannot be graded (RULES.md THE KERNEL CONVENTION clause 1:
 # every program carries a .ref), so it is counted red here, not skipped green.
 [ $((PASS + FAIL)) -gt 0 ] || { echo "⛔ REFUSED(2): no demo was graded (PASS=0 FAIL=0 SKIP=$SKIP) -- a sweep that graded nothing is not green"; exit 2; }

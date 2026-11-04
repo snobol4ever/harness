@@ -2,7 +2,7 @@
 """util_raku_ast_agreement.py -- does the new Raku parser build the tree the flex/bison parser builds?
 
 THE INSTRUMENT of row raku-the-new-parser-builds-the-tree-its-dump-ast-byte-identical-to-the-flex-bison-parsers-
-dump-on-every-master-entry-and-kernel-then-the-old-parser-is-deleted (Lon 2026-09-26 16:0x CDT, ceo CEO-1289:
+dump-on-every-master-entry-and-kernel-then-the-old-parser-is-deleted (Lon 2026-09-26 16:0x CDT, R-1289:
 "Then add the tree building code from the current parsers --dump-ast output."). Entry point:
 ../harness/scripts/util_raku_ast_agreement.sh, which the row's DONE-WHEN runs.
 
@@ -98,7 +98,7 @@ def cut(units, jobs, timeout):
     got = run_all(units, "--dump-ast", jobs, timeout)
     head = f"# cut by ../harness/scripts/util_raku_ast_agreement.py --cut from SCRIP {commit}: the flex/bison parser's `scrip --dump-ast`\n"
     with open(RUNGS_AST, "wb") as f:
-        f.write(("# ALL.ast -- the reference Raku AST of every entry of ALL.raku (row raku-the-new-parser-builds-the-tree, CEO-1289)\n" + head).encode())
+        f.write(("# ALL.ast -- the reference Raku AST of every entry of ALL.raku (row raku-the-new-parser-builds-the-tree, R-1289)\n" + head).encode())
         for k, _ in units:
             if not k.startswith("rungs:"):
                 continue

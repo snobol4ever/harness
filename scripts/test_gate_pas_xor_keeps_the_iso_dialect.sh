@@ -3,7 +3,7 @@
 # (and integer and / or) and writes every integer at its ISO default width, so SCRIP must too; shl and shr, which fpc -Miso refuses,
 # still flip the program to the FPC dialect and its natural widths.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): bitwise-operations
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): bitwise-operations
 # (ALL.dialect iso: fpc -Miso cut its ref) printed "a and b = 8" where the ref reads "a and b =           8". pascal.y's lexer wrapper
 # called pascal_flip_dialect(PAS_DIALECT_FPC) on an infix xor exactly as on shl / shr; the flip raises the seen_mode event and every
 # writeln of the program then passes width -4 (natural). A census by fpc -Miso: xor ACCEPTED ("          6"), shl, shr and otherwise

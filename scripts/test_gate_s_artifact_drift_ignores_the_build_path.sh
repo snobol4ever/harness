@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s_artifact_drift_ignores_the_build_path.sh
-# (coo 2026-09-08, ceo's TWENTIETH INSTRUMENT-LAW BATCH; the gate shape the ceo ordered in the
+# (coo 2026-09-08, the officer's TWENTIETH INSTRUMENT-LAW BATCH; the gate shape the officer ordered in the
 #  same landing as the cure, taken from the coo's own FINDING of the same evening.)
 #
 # ⛔ THE DEFECT, WHICH BLOCKED EVERY SEAT'S HANDOFF FROM 2026-08-30 UNTIL IT WAS MEASURED.
@@ -20,7 +20,7 @@
 # ⛔ WHY THIS GATES THE DISCRIMINATOR AND NOT THE WHOLE TREE. The obvious gate -- "clone the corpus
 # elsewhere and assert the verifier says CLEAN" -- cannot be written honestly, because the tree
 # legitimately carries REAL drift whenever codegen lands (43 real items the evening this was written,
-# which the ceo has PARKED until SNOBOL4 is 100%). Such a gate would red for a true reason and be
+# which the officer has PARKED until SNOBOL4 is 100%). Such a gate would red for a true reason and be
 # muted, and a muted check is worse than no check. So the population is the discriminator itself,
 # `files_with_real_drift`, exercised on scratch git repos under mktemp: hermetic, needs no compiler,
 # and asks exactly the question the defect got wrong.

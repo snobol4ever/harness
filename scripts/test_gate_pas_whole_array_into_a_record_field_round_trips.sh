@@ -2,14 +2,14 @@
 # test_gate_pas_whole_array_into_a_record_field_round_trips.sh -- a whole array assigned into a record field must read back what was stored
 #
 # ROW pascal-a-whole-array-assigned-into-a-record-field-reads-back-wrong-collapse-pack-and-the-dense-field-interior-to-one-authority
-# (hq_pascal 2026-09-20, ranked first by CEO-1021).  FAIL-ONCE ON ORIGIN 5418432bb: `r.name := t` and `p^.name := t` both read back
+# (hq_pascal 2026-09-20, ranked first by R-1021).  FAIL-ONCE ON ORIGIN 5418432bb: `r.name := t` and `p^.name := t` both read back
 # `09899` where fpc -Miso reads `bcdefghi`, in BOTH modes, AT THE SHIPPED ARENA WITH NO STRESS -- a silent wrong answer, exit 0, no
 # diagnostic, with no collector anywhere near it.
 #
 # THE MECHANISM THIS GATE HOLDS, so a future reader knows what it is protecting: a Pascal array value is a SOH-separated string, but a
 # record FIELD INTERIOR is DENSE -- __pas_field_idx_set writes element n at byte offset n-1 with no separator.  __pas_ca_pack must
 # therefore hand __pas_field_set a DENSE string and __pas_ca_unpack must explode a dense field back into SOH-separated elements.
-# DENSE IS THE AUTHORITY because the per-element writer and the reader already agree on it (CEO-1021: collapse to the authority, do
+# DENSE IS THE AUTHORITY because the per-element writer and the reader already agree on it (R-1021: collapse to the authority, do
 # not synchronise the copies).  If someone makes pack separated again, the per-element form keeps working and only this gate trips.
 #
 # ⛔ THE FOUR ARMS ARE A BRACKET, NOT A SUITE: `plainarray` and `ptrperchar` were ALREADY CORRECT before the cure and are here as the

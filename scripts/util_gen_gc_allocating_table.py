@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """util_gen_gc_allocating_table.py -- THE ALLOCATING SET AS A GENERATED TABLE THE EMITTER CAN READ, DERIVED FROM
 THE RUNTIME BINARY AND GATED AGAINST IT (cto 2026-09-18, row gc-the-emitter-emits-the-poll-not-the-template,
-the ceo's CEO-898 proposal; design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 6.5d; law RULES.md FACT
-RULE THE COLLECTOR GUESSES NOTHING, CEO-812).
+R-898 proposal; design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 6.5d; law RULES.md FACT
+RULE THE COLLECTOR GUESSES NOTHING, R-812).
 
 WHY THIS FILE EXISTS.  The poll is placed by hand at 97 remaining call sites, one judgement each, and that method
 has now cost four broken batches -- most recently a void-returning site that emptied the output of four frontends
@@ -62,7 +62,7 @@ BANNER = "gc_allocating_table.inc"
 
 NAME_W = 64
 def render(rows, so):
-    # CEO-1787: NO COUNT IN THE FILE. The table used to open with GC_ALLOC_TAB_N and four per-class counts, so
+    # R-1787: NO COUNT IN THE FILE. The table used to open with GC_ALLOC_TAB_N and four per-class counts, so
     # every landing that added a runtime function rewrote the same five lines and any two such landings conflicted
     # on rebase (46 regenerations in 30 hours on 10-14/15). The array is sized by its own rows and the length is one
     # fixed line after it; a new function is ONE inserted row, which git merges beside another seat's row. The gate
@@ -128,7 +128,7 @@ def selftest():
     rows = [("a_void", RC_VOID), ("b_descr", RC_DESCR), ("c_other", RC_OTHER), ("d_unknown", RC_UNKNOWN)]
     txt = render(rows, "x.so")
     ck("GC_ALLOC_TAB[] = {" in txt and "#define GC_ALLOC_TAB_N ((int)(sizeof GC_ALLOC_TAB / sizeof GC_ALLOC_TAB[0]))" in txt,
-       "the rendered table is sized by its own rows and its length is one fixed line (CEO-1787)")
+       "the rendered table is sized by its own rows and its length is one fixed line (R-1787)")
     ck(not re.search(r"#define GC_ALLOC_TAB_N\S* \d", txt), "no count is rendered -- a count line is rewritten by every landing that adds a function")
     grown = render(sorted(rows + [("bb_new", RC_VOID)]), "x.so")
     dl = [l for l in difflib.unified_diff(txt.split("\n"), grown.split("\n"), lineterm="", n=0) if l[:1] in "+-" and l[:3] not in ("+++", "---")]

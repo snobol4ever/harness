@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_raku.sh -- THE CROSS-PROOF SCAFFOLD for Raku (row bench-grids-rebase-to-two-number-basis,
 # hq_B 2026-09-01), modelled on bench_triangulate_prolog.sh per ARCH-BENCH-CAMPAIGN-README-TABLES.md § THREE-ANGLE
 # TRIANGULATION and Lon's 3-angle ruling (RULES.md § THE TWO-NUMBER BENCHMARK BASIS, second clause).
@@ -39,7 +39,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   |work_us/1000 - work_ms| > 1  -> VOID-UNITS   (same clock in two units; a disagreement is a unit bug)
 # ⛔ THE RAKUDO PRELUDE IS STAGED IN A SCRATCH DIR, NEVER LOADED WITH -I<corpus dir>: Rakudo precompiles a -M module
 # into a .precomp/ beside it, and `-I.` in corpus/benchmarks/raku/ wrote .precomp/ INTO THE CORPUS on the first
-# hand run (the tmp1/tmp2 litter class ceo just deleted, 2026-09-01). The writer is the cure: this script copies
+# hand run (the tmp1/tmp2 litter class the officer just deleted, 2026-09-01). The writer is the cure: this script copies
 # prelude_rakudo.rakumod into $W and passes -I$W, so the corpus is never a Rakudo output directory.
 # ⛔ FACT RULE / LABEL DUTY: every number names its arm and basis. Precision floors: SCRIP wall_us reads
 # CLOCK_MONOTONIC (~20 ns back-to-back floor, reported in us); Rakudo wall_us reads `now` (sub-us Instant). Both
@@ -61,7 +61,7 @@ RDIR="${RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
 REPS="${REPS:-3}"; T="${TIMEOUT:-120}"; KERNELS="${KERNELS:-}"; TOL="${TOL_PCT:-10}"
 . "$HERE/lib_perf_fmt.sh"     2>/dev/null || { echo "⛔ REFUSED: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple (s266)." >&2; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh -- the ONE authority for rival binaries." >&2; exit 2; }
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared -d/-s sidecars (CEO-1283)." >&2; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared -d/-s sidecars (R-1283)." >&2; exit 2; }
 # the kernel's declared heap and stack ride every SCRIP command line as -d/-s switches (its .heap/.stack sidecars; RULES.md hard-cap rule clause 8 (f))
 dsw_of() { local dw; dw=$(declared_switches_beside "$1") || { echo "⛔ REFUSED: $1: a sidecar the reader refuses (it said why above)" >&2; exit 2; }; printf '%s' "$dw"; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED: scrip not built ($SCRIP)." >&2; exit 2; }
@@ -238,13 +238,13 @@ for k in "${timed[@]}"; do
 done
 echo
 echo "TSV: $OUT_TSV"
-if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation raku "$OUT_TSV" || { echo "⛔ bench_triangulate_raku: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, CEO-331)"; exit 2; }; fi
+if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation raku "$OUT_TSV" || { echo "⛔ bench_triangulate_raku: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, R-331)"; exit 2; }; fi
 echo "TSV: $TRI_TSV (coverage-gate schema)"
 if [ "$any_disagree" -eq 1 ]; then echo "⛔ DISAGREE present in the cross-proof -- VOID: do not publish or cite those kernel/engine cells until re-measured."; fi
 if [ "$any_bad" -eq 1 ]; then echo "⛔ at least one angle-3 cell is DIFF/CRASH/VOID/BUILD-ERR -- do not publish or cite those cells."; fi
 if [ "$any_bad" -eq 1 ] || [ "$any_disagree" -eq 1 ]; then exit 1; fi
 if [ "$grid_incomplete" -eq 1 ]; then
-  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (CEO-676), so do not publish or cite this grid until every cell measures."
+  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (R-676), so do not publish or cite this grid until every cell measures."
   exit 1
 fi
 echo "every measured cell VERIFIED (byte-equal stdout on every rep, clock and unit invariants held); no DISAGREE in the cross-proof (AGREE or honestly UNPROVEN)."

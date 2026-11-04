@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# util_program_enumerator.py -- THE EXHAUSTIVE / RANDOM PROGRAM ENUMERATOR (ceo + Lon, 2026-09-04, row
+# util_program_enumerator.py -- THE EXHAUSTIVE / RANDOM PROGRAM ENUMERATOR (+ Lon, 2026-09-04, row
 # exhaustive-program-enumerator-to-length-n-with-oracle-divergences-as-witnesses; GOAL-TEST-SUITE-CONSISTENCY.md point 9).
 #
 #   python3 ../harness/scripts/util_program_enumerator.py --lang snobol4 --to-length 6 --report          # every program up to 6 tokens
@@ -7,7 +7,7 @@
 #   python3 ../harness/scripts/util_program_enumerator.py --selftest                                       # the fail-once arms, no oracle needed
 #   python3 harness/scripts/util_program_enumerator.py --engine jvm --to-length 5                          # the same population under a port
 #
-# THE ENGINE ARM (step 13 of the cto's DESIGN-PLAN random-codegen-scope, ARCH-RANDOM-SNOBOL4-GENERATOR.md; CEO-1999, hq_jvm):
+# THE ENGINE ARM (step 13 of the cto's DESIGN-PLAN random-codegen-scope, ARCH-RANDOM-SNOBOL4-GENERATOR.md; R-1999, hq_jvm):
 # --engine scrip (the default) runs SCRIP once per --modes entry (m3 interprets, m4 compiles, assembles and links); --engine dotnet|jvm
 # runs the batch once through the port's harness runner, run_snobol4<engine>.sh, in the calling shape every port runner shares (the
 # bare file name in the program's own folder), after the runner's --binaries check has passed, so a root without that engine, or with a

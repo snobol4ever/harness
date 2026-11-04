@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_read_term_syntax_error_option_answers_as_the_oracles.sh -- read_term/2,3 honour the syntax-error option in
-# both spellings, both modes (row prolog-read-term-accepts-the-syntax-error-option, minted by the ceo 2026-10-02 from the
+# both spellings, both modes (row prolog-read-term-accepts-the-syntax-error-option, minted by the officer 2026-10-02 from the
 # Logtalk 3.103.0-b01 run: the GNU adapter passes syntax_error(error), and SCRIP refused it with
 # domain_error(read_option, syntax_error(error))).
 #

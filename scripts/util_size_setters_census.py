@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """util_size_setters_census.py [--root DIR] [--allowlist FILE] [--json] -- NO RUNNER TYPES A SIZE OR SETS THE WINDOW.
 
-(Lon 2026-09-28 15:4x CDT, in-chat to the ceo, verbatim: "Ensure that every program in every language as it necessary stack size and heap
+(Lon 2026-09-28 15:4x CDT, in-chat, verbatim: "Ensure that every program in every language as it necessary stack size and heap
 size values stored in the per-program attribute file, and ensure that those command-line switches and environment variable values are
-being used by the harness shell scripts which run all of them."; ceo CEO-1353; RULES.md hard-cap rule clause 8 (g)(4); the coo's row
+being used by the harness shell scripts which run all of them."; R-1353; RULES.md hard-cap rule clause 8 (g)(4); the coo's row
 instruments-every-runner-passes-each-units-declared-heap-and-stack-in-both-modes-never-as-the-window-names-a-missing-one.)
 
 A test unit's heap and stack live WITH THE UNIT (its ALL.csv heap_kb / stack_kb, or <stem>.heap / <stem>.stack beside a standalone

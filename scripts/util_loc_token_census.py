@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """util_loc_token_census.py [--root DIR] [--exclude SUBDIR ...] [--depth N] [--files] -- LINES AND TOKENS OF THE HAND-WRITTEN SOURCE, BY src
-SUB-FOLDER (Lon 2026-10-08 16:1x CDT, in-chat to the ceo, verbatim: "It is time to clean the code. First run a census on lines of code and
+SUB-FOLDER (Lon 2026-10-08 16:1x CDT, in-chat, verbatim: "It is time to clean the code. First run a census on lines of code and
 number of tokens for hand-written code excluding parsers by SCRIP/src sub-folders."). A MEASUREMENT: it writes nothing.
   The population: every .c .h .cpp .hpp .inc .s .S .y .l file under src/ (default --root src), less every file under an excluded
   sub-folder (default: parsers) and less every GENERATED file -- one whose first twelve lines say generated, DO NOT EDIT, or carry a

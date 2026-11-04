@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_every_choice_leaving_builtin_keeps_its_callers_retaining_as_swipl.sh -- A PREDICATE THAT CAN LEAVE A CHOICE IS NEVER SPINE TIER
-# (hq_zetas 2026-10-15, PROLOG-SPINE-CHUNK-CEO-1757 under CEO-1797; the cto's condition 1 on the chunk's review).
+# (hq_zetas 2026-10-15, PROLOG-SPINE-CHUNK-R-1757 under R-1797; the cto's condition 1 on the chunk's review).
 # THE RISK: the frame-tier selector (frame_layout.c fl_select_spine_tier) unpins a Prolog graph only when no box of it can leave a choice and no
 # callee of it retains, closed transitively; the boxes that can leave a choice are a hand list (fl_box_retains).  A kind missing from the list is
 # SILENT: its graph is unpinned and its staged calls take the spine arm, whose beta never retries the callee -- solutions are lost, or a beta runs
@@ -13,7 +13,7 @@
 # deterministic goal and a soft-cut whose condition succeeds once (hq_zetas 2026-10-17: 0bb392122 unpinned both, and every tabled program, SWI
 # core/test_write and core/test_arith bombed at the spine-tier gamma).  The expected text is cut from swipl -q in this run; each of mode 3 and mode 4 is graded plain,
 # under SCRIP_GC_STRESS=1, under SCRIP_GC_CHAIN_CHECK=1 and under both (stdout only; the chain check prints its summary on stderr).
-# PROVEN RED (CEO-1680, a proper test, no plant in SCRIP): GATE_CORRUPT_REF=1 (this script's own switch) alters one line of swipl's answer and the
+# PROVEN RED (R-1680, a proper test, no plant in SCRIP): GATE_CORRUPT_REF=1 (this script's own switch) alters one line of swipl's answer and the
 # gate reads RED in all eight readings.
 # rc=0 all eight readings equal swipl · rc=1 a divergence · rc=2 REFUSAL (no swipl, no build).
 set -u

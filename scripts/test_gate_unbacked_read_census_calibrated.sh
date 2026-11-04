@@ -1,10 +1,10 @@
 #!/bin/bash
-# test_gate_unbacked_read_census_calibrated.sh -- THE UNBACKED-READ CENSUS READS BOTH WAYS (ceo CEO-1948; row zeta-the-unbacked-read-census-...).
+# test_gate_unbacked_read_census_calibrated.sh -- THE UNBACKED-READ CENSUS READS BOTH WAYS (R-1948; row zeta-the-unbacked-read-census-...).
 # util_zop_unbacked_census.py (the cfo's instrument, extended with --ref/--master/--workers/--board under this row) compiles every master entry on a scratch
 # build of a SCRIP ref with x86_zop's unbacked-key abort swapped for a count line, and prints UNBACKED_BOARD lang=<l> programs=<n> screaming=<s> reads=<r>.
 # This gate trusts it only when it tells a clean language from a screaming one: ARM 1 snobol4 at origin/main reads programs>0 and reads=0; ARM 2 prolog at
 # the whack-all tree (every non-root graph on the home frame; the annotated SCRIP tag whack-all-2026-10-24 at c37f6c77c, which outlives the wip branch,
-# CEO-1951) reads reads>0. rc 0 both arms hold; rc 1 an arm fails or the instrument is missing; rc 2 cannot measure.
+# R-1951) reads reads>0. rc 0 both arms hold; rc 1 an arm fails or the instrument is missing; rc 2 cannot measure.
 HERE="$(cd "$(dirname "$0")" && pwd)"; C="$HERE/util_zop_unbacked_census.py"
 [ -f "$C" ] || { echo "RED: $C does not exist yet (the row builds it)"; exit 1; }
 a1="$(python3 "$C" --ref origin/main --master snobol4 --board 2>&1 | grep '^UNBACKED_BOARD lang=snobol4 ' | tail -1)"

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_our_files_are_lf.sh -- OUR FILES ARE LF (Lon 2026-09-03, in-chat to hq_P, verbatim: "Do not use CRLF, use LF.";
-# 2026-09-04, in-chat to ceo, verbatim: "Fix the CRLF to LF problem. Why am I still hearing about that?").
+# 2026-09-04, in-chat, verbatim: "Fix the CRLF to LF problem. Why am I still hearing about that?").
 #
 # POPULATION: every git-tracked file in the sibling repos SCRIP, corpus and .github, corpus/packages/ INCLUDED since Lon's
-# word of 2026-10-02 (in-chat to the ceo, verbatim: "Get rid of all DOS line-endings; just say no to CR-LF."; ceo CEO-1414: 59
+# word of 2026-10-02 (in-chat, verbatim: "Get rid of all DOS line-endings; just say no to CR-LF."; R-1414: 59
 # vendored files converted in one corpus commit, two Gimpel oracle rejections cured by it), MINUS generated flex/bison outputs
 # and MINUS the files lf_gate_crlf_is_the_subject.tsv declares -- files whose carriage returns ARE what a test measures, each
 # with its reason; a declared file that is gone or holds no CR reds as STALE. (Until 2026-10-02 corpus/packages/ was excluded
@@ -20,7 +20,7 @@
 set -u
 GATE_NAME=test_gate_our_files_are_lf
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# ⛔ THE SCRIP POPULATION IS THIS GATE'S OWN REPO (coo 2026-10-08, CEO-1573): ROOT/SCRIP named the repo BESIDE a worktree by name, so
+# ⛔ THE SCRIP POPULATION IS THIS GATE'S OWN REPO (coo 2026-10-08, R-1573): ROOT/SCRIP named the repo BESIDE a worktree by name, so
 # from a worktree of any other name the gate refused ("not a git repo") or, with S4E_HOME set, graded the seat's root instead of the
 # landing. SCRIP is the parent of ../harness/scripts/; corpus and .github are S4E_HOME's, else the siblings of this checkout. Each repo carries
 # its LABEL, because the exception table is keyed by SCRIP / corpus / .github, never by a worktree's directory name.

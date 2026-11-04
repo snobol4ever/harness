@@ -2,7 +2,7 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_rtx_the_leaf_clobber_table_is_derived_and_gated_against_the_objects.sh -- THE CLOBBER SET OF EVERY ASM-RUNTIME ENTRY THE EMITTER READS IS DERIVED FROM THE ASSEMBLED
 # OBJECTS AND REFUSED THE MOMENT IT DISAGREES WITH THEM (cto 2026-09-30, row rtx-leaves-carry-no-register-veneer-an-asm-runtime-call-is-not-a-c-function; Lon 2026-09-30, in-chat to
-# the ceo, verbatim: "Ensure the veneer to save and restore registers has been removed from ALL x86 asm runtime calls since they are not C functions and do not require the extra.";
+# the officer, verbatim: "Ensure the veneer to save and restore registers has been removed from ALL x86 asm runtime calls since they are not C functions and do not require the extra.";
 # ARCH-RT-CALL-PROTOCOL.md section 15 THE LEAF CONTRACT).
 #
 # WHAT IT GATES.  A leaf saves and restores nothing; what it writes among the RTCC four is not declared by anyone but DERIVED: ../harness/scripts/util_rtx_abi_walk.py --clobber-table
@@ -10,7 +10,7 @@
 # ../harness/scripts/util_gen_rt_entry_table.py keeps the asm rows of harness/scripts/rt_entries.tsv equal to the result (--sync-asm writes them, --check-asm refuses a stale one).
 # src/runtime/rt_entry_table.inc is generated from that table and src/emitter/emit.cpp includes it, so x86_rtcc_clob_raw() can re-establish exactly the named registers at the
 # call site and nothing else.  A table that disagrees with the objects would let the emitter call a clobbering leaf bare, or spend a reload on a pure one: this gate refuses both.
-# STAGE 5c (DESIGN-PLAN zeta-layout step 5, CEO-2019): this gate used to hold src/templates/x86/rtx_clobber_table.inc, written by util_gen_rtx_clobber_table.py; both are deleted and the
+# STAGE 5c (DESIGN-PLAN zeta-layout step 5, R-2019): this gate used to hold src/templates/x86/rtx_clobber_table.inc, written by util_gen_rtx_clobber_table.py; both are deleted and the
 # runtime entry table is the one source, so the same four arms now read it (the gate keeps its name).
 #
 # FOUR ARMS.

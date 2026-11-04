@@ -1,5 +1,5 @@
 #!/bin/bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_no_worktree_blind_subject.sh -- CENSUSES THE WORKTREE-BLIND SUBJECT IDIOM, and REFUSES rc=2 when the
 # tree it is standing in is not the tree that idiom would have graded.
 #

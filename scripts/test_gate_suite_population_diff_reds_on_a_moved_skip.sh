@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_suite_population_diff_reds_on_a_moved_skip.sh -- A SKIP THAT MOVES IS A RED, IN EITHER DIRECTION
-# (coo 2026-09-17, CEO-824; row instruments-a-skip-count-change-between-batches-is-a-red-not-a-silent-population-change,
+# (coo 2026-09-17, R-824; row instruments-a-skip-count-change-between-batches-is-a-red-not-a-silent-population-change,
 # minted on the cfo's escalation).
 #
 # THE DEFECT, MEASURED, AND WHY A GATE RATHER THAN A HABIT.  The SNOBOL4 rungs read m4_pass=1970 m4_skip=0 at SCRIP
@@ -57,12 +57,12 @@ r(){ python3 "$D" "$1" "$2" >"$W/out" 2>&1; echo $?; }
 [ "$(r "$W/base" "$W/shard")" = 2 ] && ck ok "(d2) a shard reading against a full board REFUSES rc=2" \
   || ck no "(d2) shard-vs-full did not refuse: $(head -2 "$W/out" | tr '\n' ';')"
 
-# (e) THE REAL PAIR, out of the archive the ceo ruled into existence (CEO-827).  Every arm above plants its readings;
+# (e) THE REAL PAIR, out of the archive the officer ruled into existence (R-827).  Every arm above plants its readings;
 # this one reads what a runner actually printed, because a reconstruction is faithful at best and this row exists
 # precisely because nobody could diff the real pair on the morning it was ruled.
 # ⛔ THE ARCHIVE IS DATA THE FLEET PRODUCES, NOT A PREREQUISITE OF THIS INSTRUMENT, and the difference was measured
 # rather than reasoned: the first cut REFUSED rc=2 when .github/board-lines was absent, and within the hour the cto
-# reported this gate redding THEIR preflight -- their .github checkout simply predated the ceo's archive commit.
+# reported this gate redding THEIR preflight -- their .github checkout simply predated the officer's archive commit.
 # A gate that reds a seat for the state of a sibling repo they have not merged is grading the wrong thing. So an
 # absent archive is NOT MEASURED, said out loud and named in the population line; the planted arms above still
 # prove the instrument, and arm (e) grades a real reading whenever one is on disk.
@@ -89,7 +89,7 @@ for f in ${BL:+"$BL"/*.tsv}; do
 done
 [ "$pair_found" = 1 ] || [ -z "$BL" ] || ck ok "(e) the archive exists but holds no suite at two trees yet -- NOT MEASURED against real readings this run, and said so rather than counted as coverage"
 
-# (f) THE CALLER (CEO-827 (3)): the base-vs-head control arm of a shared-node landing is the only place two readings
+# (f) THE CALLER (R-827 (3)): the base-vs-head control arm of a shared-node landing is the only place two readings
 # of one suite exist at once, and the diff's verdict is part of that arm's verdict. The wrapper ENFORCES the entry
 # lines rather than asking for them, because a 40-line sample is where three skips hide in a 1982-entry board.
 C="$HERE/control_arm_population.sh"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_builtin_name_in_lvalue_base_position_carries_its_value.sh -- hq_C 2026-09-10, CEO-534,
+# test_gate_icn_builtin_name_in_lvalue_base_position_carries_its_value.sh -- hq_C 2026-09-10, R-534,
 # row icon-jcon-errors-red-both-modes-diagnosed-to-its-first-divergence-and-cured (jcon errors.icn line 88).
 #
 # WHAT IT PINS. A bare builtin/procedure NAME used as the BASE of an lvalue-capable operation -- x[i], x[i:j],

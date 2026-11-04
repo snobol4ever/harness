@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run_snobol4dotnet.sh -- THE DOTNET ENGINE'S RUNNER (Lon 2026-10-17, to hq_dotnet: "The suite banner should represent the snobol4dotnet
-# executable program, not SCRIP." and "hq_dotnet runs them"; ceo CEO-1822). corpus_suite_harness.py run_m3 dispatches here under
+# executable program, not SCRIP." and "hq_dotnet runs them"; R-1822). corpus_suite_harness.py run_m3 dispatches here under
 # S4E_ENGINE=dotnet, as it calls scrip --run under scrip, and grades what this prints with the same reader, masks, want_rc and refs.
 # The calling shape is the one every port runner shares (agreed with hq_jvm's run_snobol4jvm.sh, 2026-10-18):
 #

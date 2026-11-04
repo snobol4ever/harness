@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_conditional_compilation_and_initialized_vars_answer_as_fpc.sh -- fpc's conditional compilation, nested, with its
-# predefined macros, and initialized variables, every arm byte-identical to fpc (row pascal-dialects-one-switch-..., ceo CEO-1614;
+# predefined macros, and initialized variables, every arm byte-identical to fpc (row pascal-dialects-one-switch-..., R-1614;
 # .github/ARCH-PASCAL-DIALECTS.md section 2: "directives are not ignored any more").
 #
 # THE LEXER (src/parsers/pascal/pascal.l):

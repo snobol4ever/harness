@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# test_design_clause_source_record_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: consulted-clause-source-record (the cto, 2026-10-31, CEO-2064/2065;
+# test_design_clause_source_record_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: consulted-clause-source-record (the cto, 2026-10-31, R-2064/2065;
 # .github/ARCH-PROLOG-DATABASE.md section 23). The plan is corpus/tests/prolog/clause_source_record/STEPS.tsv; the witnesses are the csr_*.pl beside it,
-# each with a .ref cut from swipl 9.0.4 (-q -t halt, twice), the one SWI-dialect oracle (CEO-1603); csr_consulted_lib.pl is data the consult witness loads.
+# each with a .ref cut from swipl 9.0.4 (-q -t halt, twice), the one SWI-dialect oracle (R-1603); csr_consulted_lib.pl is data the consult witness loads.
 #
 #   --list         print the steps and run nothing
 #   --step N       grade step N: every witness of the step in mode 3 (./scrip w.pl) and mode 4 (--compile, gcc, run), from the witness folder,
 #                  byte-equal to its .ref with rc 0; probe 'witnesses' is green when every witness passes both modes
-#   --with-smoke   on the finish step (probe 'finish') also run test_smoke_prolog.sh, the lander smoke of CEO-1928 (the cqo's to run, never a board)
+#   --with-smoke   on the finish step (probe 'finish') also run test_smoke_prolog.sh, the lander smoke of R-1928 (the cqo's to run, never a board)
 #   --out DIR      where the .s, binaries and logs go (default /tmp/s4e-design-clause-source-record: never under the root, Lon 2026-10-29/31)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<reading> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure (no ./scrip,
-# no witness, no ref). It grades no corpus population: a witness folder is not a suite (CEO-1342).
+# no witness, no ref). It grades no corpus population: a witness folder is not a suite (R-1342).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
@@ -63,7 +63,7 @@ done
 pv="witnesses=$((m3p + m4p))/$((2 * n))"; pr=RED
 [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && pr=GREEN
 if [ "$probe" = finish ] && [ "$smoke" = 1 ]; then
-    if S4E_ONE_RUNNER_OVERRIDE="CEO-1928 lander smoke, design clause-source-record step $step" bash "$HERE/test_smoke_prolog.sh" > "$OUT/step$step/smoke_prolog.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED($OUT/step$step/smoke_prolog.log)"; pr=RED; fi
+    if S4E_ONE_RUNNER_OVERRIDE="R-1928 lander smoke, design clause-source-record step $step" bash "$HERE/test_smoke_prolog.sh" > "$OUT/step$step/smoke_prolog.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED($OUT/step$step/smoke_prolog.log)"; pr=RED; fi
 fi
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$pv -> $pr${reds:+ (reds:$reds)}"
 [ "$pr" = GREEN ]

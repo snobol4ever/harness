@@ -3,7 +3,7 @@
 # from the VALUE of a global, and the Icon errors that identity currently gates must keep raising.
 #
 # WHY THIS EXISTS (row icon-a-language-discriminator-in-the-runtime-gates-whether-errors-are-raised-at-all,
-# hq_I census, ceo-verified, hq_U co-signing). src/runtime/core/core.c carries:
+# hq_I census, officer-verified, hq_U co-signing). src/runtime/core/core.c carries:
 #     int core_icn_active(void) { extern long g_stno; extern long g_line; return g_stno == 0 && g_line > 0; }
 # and 22 sites across six runtime files branch on it to decide whether Icon run-time errors 201 202 204
 # 101 103 110 113 114 are RAISED AT ALL. That is language identity smuggled through two unrelated globals'
@@ -31,7 +31,7 @@
 # like a regression. The string-builtin route to 103 is a known open defect with its own row, so ARM B
 # grades the SCAN route and this header names the gap instead of the gate asserting it.
 #
-# ⭐ ANCHORED ON THE ORACLE, NOT ON OUR OWN OUTPUT (CEO-554). Every ARM B witness is run through iconx in
+# ⭐ ANCHORED ON THE ORACLE, NOT ON OUR OWN OUTPUT (R-554). Every ARM B witness is run through iconx in
 # the same invocation and SCRIP is compared against THAT, so curing anything moves both sides together and
 # no cure can invalidate this instrument. hq_U lost an open gate this week to exactly that trap.
 #

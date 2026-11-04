@@ -59,9 +59,9 @@ PO="$W/po"; ME=hq_B
 FIX() { env -u S4E_PID_LOCK -u S4E_NO_DISPATCH_PROBE S4E_HOME="$W" S4E_POST="$PO" S4E_SEAT="$ME" \
         S4E_NO_BANNER=1 "$@"; }
 mk_po() {
-  rm -rf "$PO"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/$ME/inbox" "$PO/ceo/inbox" || return 2
+  rm -rf "$PO"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/$ME/inbox" "$PO/cto/inbox" || return 2
   : > "$PO/BOARD.md"; : > "$PO/QUEUE.done.tsv"; printf 'NONET\n' > "$PO/MODE"
-  printf '5\n' > "$PO/PROTOCOL-VERSION"; printf 'ceo\n' > "$PO/$ME/HQ"
+  printf '5\n' > "$PO/PROTOCOL-VERSION"; printf 'cto\n' > "$PO/$ME/HQ"
   printf '# gate fixture queue\n' > "$PO/QUEUE.tsv"; }
 # rowcount <topic> -> number of QUEUE.tsv rows naming it (expected 0 on a refusal, 1 on a mint)
 rowcount() { grep -cP "^[0-9]+\t\Q$1\E\t" "$PO/QUEUE.tsv" 2>/dev/null || true; }
@@ -103,11 +103,11 @@ arms() {   # arms <label> <script> -> 0 iff all seven contracts hold on <script>
         | FIX bash "$s" mint t-heredoc 5 --owner hq_T --stdin 2>&1)"; rc=$?
   if [ "$rc" != 0 ]; then echo "    ✗ t-heredoc: rc=$rc, expected 0 -- the encouraged multi-line witness shape was REFUSED:"; printf '%s\n' "$out" | head -3 | sed 's/^/        /'; ok=0
   elif [ ! -f "$PO/tasks/t-heredoc.task.md" ]; then echo "    ✗ t-heredoc: reported success but wrote no baton"; ok=0; fi
-  # ⛔⭐ ARM 7 (rewritten 2026-10-01, CEO-1386 -- Lon: "a row exists only while a measurement says the problem exists"):
+  # ⛔⭐ ARM 7 (rewritten 2026-10-01, R-1386 -- Lon: "a row exists only while a measurement says the problem exists"):
   # a mint supplying NO DONE-WHEN is REFUSED rc=2 with nothing written. The old arm asserted the opposite (rc=0 and a
   # placeholder baton); that ruling is RETIRED: 80 placeholder rows were live at the zero-base, none of them work.
   out="$(printf 'GOAL: fixture with no criterion at all.\n' | S4E_MINT_NO_CRITERION= FIX bash "$s" mint t-none 5 --owner hq_T --stdin 2>&1)"; rc=$?
-  if [ "$rc" != 2 ]; then echo "    ✗ t-none: rc=$rc, expected 2 -- a mint supplying NO DONE-WHEN must be REFUSED (CEO-1386)"; ok=0
+  if [ "$rc" != 2 ]; then echo "    ✗ t-none: rc=$rc, expected 2 -- a mint supplying NO DONE-WHEN must be REFUSED (R-1386)"; ok=0
   elif [ -f "$PO/tasks/t-none.task.md" ]; then echo "    ✗ t-none: REFUSED but wrote a baton anyway"; ok=0
   elif [ "$(rowcount t-none)" != 0 ]; then echo "    ✗ t-none: REFUSED but appended a QUEUE.tsv row anyway"; ok=0
   elif ! printf '%s' "$out" | grep -q 'DONE-WHEN'; then echo "    ✗ t-none: refused but never names DONE-WHEN, so the author cannot tell what to fix"; ok=0; fi
@@ -161,7 +161,7 @@ echo "  -- MUTANT 2 (the missing-criterion refusal unwired; ARM 7 MUST go red)"
 mk_po || exit 2
 out="$(printf 'GOAL: fixture with no criterion at all.\n' | S4E_MINT_NO_CRITERION= FIX bash "$MUT2" mint t-none 5 --owner hq_T --stdin 2>&1)"; rc=$?
 if [ "$rc" = 2 ]; then echo "    ✗ mutant 2 still refused the no-criterion mint -- ARM 7 cannot tell the cure from its absence"; RC=1
-else echo "    ✓ mutant 2 accepted the no-criterion mint (rc=$rc) -- the CEO-1386 guard is load-bearing"; fi
+else echo "    ✓ mutant 2 accepted the no-criterion mint (rc=$rc) -- the R-1386 guard is load-bearing"; fi
 echo ""
 if [ "$RC" = 0 ]; then echo "✅ GATE PASS [mint_refuses_a_prose_donewhen]: mint refuses prose, true, the self-refusing stub AND a missing criterion (rc=2, nothing written); mints real, heredoc, unresolvable-word and no-criterion rows unchanged; mutant reds"
 else echo "⛔ GATE FAIL [mint_refuses_a_prose_donewhen]: see the arms above"; fi

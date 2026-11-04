@@ -2,7 +2,7 @@
 # test_gate_pas_a_static_variable_of_2_gib_or_more_is_refused_where_fpc_cannot_link_it.sh -- a Pascal variable whose type needs 2 GiB (2147483648 bytes) or more
 # is refused at compile time with a static-storage limit diagnostic, as fpc refuses it (it cannot link the data); a smaller array runs as before.
 #
-# WHY (PAT iso7185prt1881 and prt1882, "Create an array impossible to contain in memory"; the ceo's pat-five-reds-after-the-coo-measurement-fix, 2026-10-21):
+# WHY (PAT iso7185prt1881 and prt1882, "Create an array impossible to contain in memory"; the officer's pat-five-reds-after-the-coo-measurement-fix, 2026-10-21):
 # var a: array[0..maxint] of integer made SCRIP ask the allocator for 32 GB, which ended in the allocator's hard-cap message ([ZHP] heap exhausted) rather than
 # in a refusal of the program. THE CURE (lower_pascal_tree.c): the element size now multiplies without overflow (saturating at 2^62) and a variable declaration whose
 # size exceeds 2147483647 bytes counts a static-storage limit error, summarised on its own line ('N static-storage limit error(s) in FILE -- no code generated').

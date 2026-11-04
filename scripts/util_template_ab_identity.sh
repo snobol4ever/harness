@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_template_ab_identity.sh -- THE IDENTITY A/B THAT STORES NOTHING (the cto, 2026-11-01, templates-zero; the lesson of CEO-1902 and of
+# util_template_ab_identity.sh -- THE IDENTITY A/B THAT STORES NOTHING (the cto, 2026-11-01, templates-zero; the lesson of R-1902 and of
 # today's second flood: an A/B that keeps every program's .s on both sides is 2.7 GB a sweep of 186 programs, and seven sweeps of the cto's
 # live session held 19.5 GB when /tmp passed 85 percent. A door, not discipline: this instrument cannot keep a population.)
 #

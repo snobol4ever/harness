@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # lib_elf_noncomdat.py [--moved FILE] <objdirA> <objdirB> [outA outB] -- THE --no-comdat ARM OF util_objects_identical_stripped.sh (R5-PRIME (b), ARCH-HEADER-SPLIT.md section 1, the cto's ruling
-# CEO-2078; hq_templates). A step that carries out R3 by moving inline bodies into a compiled file cannot keep every object byte-identical: the copies of the moved bodies vanish from every
+# R-2078; hq_templates). A step that carries out R3 by moving inline bodies into a compiled file cannot keep every object byte-identical: the copies of the moved bodies vanish from every
 # includer's object, the weak ones in COMDAT groups and the "static inline" ones in plain .text (with their function-local statics in .data/.bss). What must not move is everything else.
 # For every object present in both trees this compares, without debug info, the CODE AND DATA OF EVERY DEFINED SYMBOL that is not a member of a COMDAT group and not one of the moved functions
 # (or a static local of one): the bytes of its slice of the section and the relocations inside it. Left out:

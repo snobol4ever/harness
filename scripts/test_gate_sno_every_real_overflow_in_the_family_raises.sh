@@ -2,7 +2,7 @@
 # test_gate_sno_every_real_overflow_in_the_family_raises.sh -- EVERY member of the real arithmetic family
 # raises on overflow. Not the four that were tested when the check was written; all of them.
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, x64 math_pow). rt_real_overflow existed and ADD, SUB, MUL, DIV and BINOP_POW
+# ⛔ THE DEFECT (2026-09-14, x64 math_pow). rt_real_overflow existed and ADD, SUB, MUL, DIV and BINOP_POW
 # all called it. BINOP_POW_PROMOTE -- the same operator reached through the promoting path -- returned
 # `REALVAL(pow(ld, rd))` with no finite check at all, so `1.2532722125503777 ** 2.6531489453414562e+10` handed
 # back `inf` while its sibling one line above raised 266. math_pow: CRASH -> 3600 pass / 0 fail.

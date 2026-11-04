@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 2 OPENER of frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): AN INSTRUMENT BEFORE A BYTE MOVES.  util_frame_field_reference_census.py pairs every
+# (cto, R-684 slice 2): AN INSTRUMENT BEFORE A BYTE MOVES.  util_frame_field_reference_census.py pairs every
 # granted frame field (--dump-zeta) with the graph's own emitted body (--compile, the FN__<mangled> or main label)
 # and counts literal [rbp+N] references plus lea-covered call.argv blocks.  A field with none is NOREF -- a LEAD
 # for the rung that grants less, never a verdict: access through another base register or from another body

@@ -10,7 +10,7 @@
 # again, in the same direction, for FOUR of the seven packages it reports: snobol4's gimpel, aisnobol,
 # dotnet and testpgms are ALL wired AND their sidecars validate (ARM 20 pins all four), so NEITHER named
 # cause holds -- their cells are prose only because no suite pass has rewritten them since the carriage
-# landed, and under ONE RUNNER ONE BOARD (CEO-523) only the coo may run one.
+# landed, and under ONE RUNNER ONE BOARD (R-523) only the coo may run one.
 # ⭐⭐ THE GENERAL FORM, and it is the reusable half: A DIAGNOSTIC THAT CAN ONLY OBSERVE AN ABSENCE MUST
 # ENUMERATE EVERY CAUSE OF THE ABSENCE, AND ENUMERATING FROM MEMORY IS HOW YOU GET TWO OF FOUR. Each
 # enumeration was written by someone who had just measured the cause in front of them and then generalised.
@@ -155,6 +155,6 @@ fi
 if [ -n "$_need" ]; then
     echo "CAUSE=D $LABEL: WIRED by $WIRED, every honesty/duplicate/vocabulary arm clean (ext $EXT from $EXT_FROM). ⛔ CONDITIONAL, AND THIS IS THE FALSIFIABLE PART: its sidecars declare exclusions such that a pass emits a clause ONLY IF IT GRADES EXACTLY $_need PROGRAM(S). Grade any other number and the buckets do not sum, the body refuses, and the cell stays prose however many passes are run. If a pass grades something else, the defect is the SIDECAR DATA -- typically a name counted in BOTH graded and ungradable -- not the runner and not the pass."
 else
-    echo "CAUSE=D $LABEL: WIRED by $WIRED AND its data validates outright (ext $EXT from $EXT_FROM) -- the carriage is correct and the buckets sum. The cell is prose only because no suite pass has rewritten it since; it needs ONE RUNNER PASS, which under ONE RUNNER ONE BOARD (CEO-523) is the coo's. ⛔ NOT CARRIAGE WORK -- editing this runner would change a correct one."
+    echo "CAUSE=D $LABEL: WIRED by $WIRED AND its data validates outright (ext $EXT from $EXT_FROM) -- the carriage is correct and the buckets sum. The cell is prose only because no suite pass has rewritten it since; it needs ONE RUNNER PASS, which under ONE RUNNER ONE BOARD (R-523) is the coo's. ⛔ NOT CARRIAGE WORK -- editing this runner would change a correct one."
 fi
 exit 0

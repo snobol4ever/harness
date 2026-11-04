@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_test_module_exits_as_rakudos_does_when_the_plan_is_not_met_or_a_test_fails.sh -- A TAP FILE THAT RAN FEWER TESTS THAN IT PLANNED IS NOT A PASS
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479). FOUND by the sanctioned Roast inventory plus a per-file TAP count: of the 199 files the
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479). FOUND by the sanctioned Roast inventory plus a per-file TAP count: of the 199 files the
 # scoreboard classified PASS, only 41 had run every planned test. The Test emulation (by_name_dispatch.c __rk_test_*) printed the plan and left the exit status 0
 # however few tests ran, so a file whose assertions were lost (a failing match as an argument killed the whole call, an unimplemented function ended the run)
 # read as a green file; classify() in lib_raku_roast_bucket.sh grades PASS on no not-ok line and rc 0 with a plan. Rakudo's Test sets the status in its END phase:

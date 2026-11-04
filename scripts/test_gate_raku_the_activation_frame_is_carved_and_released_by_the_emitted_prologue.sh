@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_activation_frame_is_carved_and_released_by_the_emitted_prologue.sh -- A RAKU CALL CROSSES NO C HELPER TO CARVE, FILL OR RELEASE ITS FRAME
-# (row raku-the-block-protocol-reaches-its-own-call-regime-the-six-frame-helpers-leave-every-raku-graph-ceo-1488; Lon 2026-10-03: "Oh you want all languages to use
-# the ZETA technique and ASM not C. Yes that one send as high priority since it is huge speed increase."; ceo CEO-1491; design of record
+# (row raku-the-block-protocol-reaches-its-own-call-regime-the-six-frame-helpers-leave-every-raku-graph-r-1488; Lon 2026-10-03: "Oh you want all languages to use
+# the ZETA technique and ASM not C. Yes that one send as high priority since it is huge speed increase."; R-1491; design of record
 # .github/ARCH-PROLOG-C-OUT-OF-THE-BOX.md section 1 and 1.6a, as landed for Prolog at SCRIP e95282e39).
 #
 # THE POPULATION. A Raku graph is on the block protocol when lower_raku.c marks it (a TT_SUB_DECL proc with no slurpy and no named rest: IR_graph_t.block_args),

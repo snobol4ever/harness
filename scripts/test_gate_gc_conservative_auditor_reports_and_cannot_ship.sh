@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_conservative_auditor_reports_and_cannot_ship.sh -- RUNG 3 OF ARCH-GC § 9, MEASURED.
 #
-# ⛔⭐ THE GRANT AND ITS EXPIRY.  Lon 2026-09-21, in-chat to the ceo, verbatim: "So if you need a conservative
+# ⛔⭐ THE GRANT AND ITS EXPIRY.  Lon 2026-09-21, in-chat, verbatim: "So if you need a conservative
 # scan temporarily to get your diagnostics done, then go ahead.  But ensure in the end all is exact scanning."
 # A GRANT WITH AN EXPIRY AND NO REMOVAL MECHANISM IS A PERMANENT GRANT, so the expiry is built, not promised.
 # This gate is the four structural conditions of that grant, each as an arm that can fail:
@@ -19,15 +19,15 @@
 #       the count falls only by curing roots or by writing down a measurement.
 #   (f) THE EXPIRY IS STRUCTURAL -- the day no OPEN row remains and a sweep finds nothing, THIS ARM PRINTS
 #       RETIREMENT-PENDING AND NAMES THE ROW THAT DELETES IT.  A disabled auditor is a conservative scan wearing an if.
-#       ⛔ AMENDED 2026-09-26 (cfo, the ceo's CEO-1291 ruling (b)): this arm used to RED at open_rows=0 holders=0, and
+#       ⛔ AMENDED 2026-09-26 (cfo, R-1291 ruling (b)): this arm used to RED at open_rows=0 holders=0, and
 #       the g_icn_op cure made that day arrive.  But this gate sweeps FOUR witnesses and ARCH-GC section 9 condition (3)
-#       grades the retirement over the CORPUS across a declared window, which under CEO-1232 only the language HQs may
+#       grades the retirement over the CORPUS across a declared window, which under R-1232 only the language HQs may
 #       run.  So the silence here is necessary, not sufficient: it reads GREEN with RETIREMENT-PENDING printed, and the
 #       deletion is graded by row gc-the-conservative-auditor-retires-on-six-hq-receipts-each-master-under-the-auditor-build-at-stress-1-and-3-reads-zero-findings
 #       (six receipts, one per language HQ: its rungs under this auditor build at stress 1 and 3 at the shipped
 #       arena, zero findings), whose own landing deletes everything (f1) lists.
 # ⛔⭐ PASS B WAS BLIND TO THE COMPILE-TIME ARENA FROM 2026-09-27 TO 2026-10-01, AND (d3)/(e2) WERE RED ON ORIGIN FOR IT (cfo,
-# 2026-10-01). 9d3f8a061 (no-more-whack-a-mole, CEO-1332) moved g_fh into a cv_t, g_fhv, grown in the compile-time arena by
+# 2026-10-01). 9d3f8a061 (no-more-whack-a-mole, R-1332) moved g_fh into a cv_t, g_fhv, grown in the compile-time arena by
 # ct_grow, and pass B scanned only static, stack and heapint. The plant still bit: with drv_gc_roots skipped the program
 # printed "B file(file(tmp3))", the name string reclaimed and its bytes re-issued. But pass B named nothing, on the cure and
 # on a clean origin worktree alike. Every runtime table the conversion moved into that arena went invisible the same way.
@@ -39,12 +39,12 @@
 # owner is listed: in=libscrip_rt.so+0x...<g_fhv>[ct+0x110,owners=g_emit_cfg,g_fhv]. So nm still resolves the holder to a
 # symbol, now g_fhv. Unplanted, the witness reads 0 findings over 344 live arena blocks and 9.7M words; planted, 1, the
 # tmp3 string.
-# ⛔⭐ (d3) AND (e2) STAND ON A PLANT SINCE 2026-09-26 (cfo, the CEO-1274 board row; CEO-554).  Both were keyed on a holder the
+# ⛔⭐ (d3) AND (e2) STAND ON A PLANT SINCE 2026-09-26 (cfo, the R-1274 board row; R-554).  Both were keyed on a holder the
 # sweep FOUND, and when 957efcc7c took the lc_vec class off the collected heap the sweep found none and both went red on a
 # correct tree: a proof that needs a live defect dies of the cure.  SCRIP_GC_PLANT_UNROOT=1 exists ONLY in the auditor build
 # (#ifdef SCRIP_GC_AUDIT_B in gc_heap.c's root phase): it skips drv_gc_roots, so g_fh -- this detector's first real find --
 # is a lost root on purpose, and pass B must name it.  The unplanted sweep still grades every real holder in (e1) and (f1).
-# ⛔⭐ (e2) RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip). The plant above left
+# ⛔⭐ (e2) RETIRED UNDER R-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip). The plant above left
 # src at 9b73a8a5c (the exact-compactor rewrite), so the planted run named no holder and (e2) read FAIL (no_nm_g_fhv) from the coo's
 # blocking-set run of 2026-10-15 17:56 on, on a correct tree. The recorded readings are its fail-once: planted, 1 finding resolving
 # through nm -S to g_fhv; unplanted, 0 over 344 live arena blocks (cfo 2026-10-01). (d4a) and (d4b) stay: the FH vector is gone from
@@ -72,7 +72,7 @@ SRC="src/runtime/rt/gc_audit_b.c"; HDR="src/runtime/rt/gc_audit_b.h"; DECL="../h
 for f in "$SRC" "$HDR" "$DECL" src/runtime/rt/gc_heap.c; do [ -f "$ROOT/$f" ] || refuse "$f is missing -- it is part of this rung's deliverable"; done
 command -v nm >/dev/null 2>&1 || refuse "no nm -- this gate resolves a holder OFFSET to a SYMBOL and cannot key a declaration on an offset"
 [ -f "$ROOT/out/libscrip_rt.so" ] || refuse "no out/libscrip_rt.so -- there is no shipped library to census"
-echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- CEO-931/934; the CEO-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
+echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- R-931/934; the R-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 
 echo "-- (a) THE SHIPPED BUILD CARRIES ZERO CONSERVATIVE SCAN"
@@ -180,18 +180,18 @@ echo "-- (e) EVERY HOLDER IS CURED OR DECLARED"
 for w in $WITS; do run_aud "$w" 3 1 > /dev/null; cat "$T/e" >> "$T/all.err"; done
 DECLF="$ROOT/$DECL"
 if [ "${FAIL_ONCE:-0}" = 1 ]; then printf '# FAIL_ONCE: the ledger is emptied so arm (e1) must RED on every holder pass B names\n' > "$T/decl.empty"; DECLF="$T/decl.empty"; echo "     FAIL_ONCE=1 -- the declared ledger is EMPTY for this run; (e1) is expected to RED"; fi
-# the holder resolution is the ONE reader the receipts of the retirement row also run (CEO-1307): ../harness/scripts/util_gc_audit_b_receipt.py
+# the holder resolution is the ONE reader the receipts of the retirement row also run (R-1307): ../harness/scripts/util_gc_audit_b_receipt.py
 python3 "$ROOT/../harness/scripts/util_gc_audit_b_receipt.py" holders "$T/all.err" "$AUD_SO" "$DECLF" > "$T/holders.txt"
 sed 's/^/     /' "$T/holders.txt"
 undecl=$(grep "^HOLDER" "$T/holders.txt" | grep -c "UNDECLARED" || true)
 nh=$(awk '/^TOTALHOLDERS/{print $2}' "$T/holders.txt"); nopen=$(awk '/^OPENROWS/{print $2}' "$T/holders.txt")
 ck $([ "$undecl" = 0 ] && echo ok || echo no) "(e1) every holder pass B named over the declared witness set is CURED or DECLARED in $DECL ($undecl undeclared)"
-echo "     (e2) RETIRED under CEO-1680 (cto 2026-10-17): the SCRIP_GC_PLANT_UNROOT seam it graded left src at 9b73a8a5c; its recorded reading stands as the fail-once (header)"
+echo "     (e2) RETIRED under R-1680 (cto 2026-10-17): the SCRIP_GC_PLANT_UNROOT seam it graded left src at 9b73a8a5c; its recorded reading stands as the fail-once (header)"
 
 echo "-- (f) THE EXPIRY IS STRUCTURAL"
 if [ "${nopen:-0}" = 0 ] && [ "${nh:-0}" = 0 ]; then
     echo "     ⭐ RETIREMENT-PENDING: no OPEN row remains in $DECL and this gate's sweep named NO holder"
-    ck ok "(f1) RETIREMENT-PENDING, not yet retired: the corpus half of the criterion (ARCH-GC section 9 condition (3); ceo CEO-1291 ruling (b)) is row gc-the-conservative-auditor-retires-on-six-hq-receipts-each-master-under-the-auditor-build-at-stress-1-and-3-reads-zero-findings -- six HQ receipts, then ONE landing deletes src/runtime/rt/gc_audit_b.[ch], the #ifdef blocks and call in gc_heap.c, the Makefile lines, this gate, $DECL, the UNROOT row of the plant table and util_gc_acceptance.py's AUDITED metric"
+    ck ok "(f1) RETIREMENT-PENDING, not yet retired: the corpus half of the criterion (ARCH-GC section 9 condition (3); R-1291 ruling (b)) is row gc-the-conservative-auditor-retires-on-six-hq-receipts-each-master-under-the-auditor-build-at-stress-1-and-3-reads-zero-findings -- six HQ receipts, then ONE landing deletes src/runtime/rt/gc_audit_b.[ch], the #ifdef blocks and call in gc_heap.c, the Makefile lines, this gate, $DECL, the UNROOT row of the plant table and util_gc_acceptance.py's AUDITED metric"
 else
     ck ok "(f1) the expiry has not come: ${nopen:-0} OPEN row(s) and ${nh:-0} holder(s) named -- the day both read 0 this arm prints RETIREMENT-PENDING and the six-receipt row grades the deletion"
 fi

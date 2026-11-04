@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_harness_runs_an_entry_after_its_package_prelude.sh -- corpus_suite_harness.run_suite_entry RUNS EVERY ENTRY AFTER ITS PACKAGE'S
-# ALL.prelude (hq_prolog's ask on the ceo's CEO-1632, the Prolog dialect ruling; the coo 2026-10-11). The rosetta-prolog refs were cut by
+# ALL.prelude (hq_prolog's ask on R-1632, the Prolog dialect ruling; the coo 2026-10-11). The rosetta-prolog refs were cut by
 # swipl, which reads a double-quoted text as a string; SCRIP reads an unmarked program as GNU/ISO, codes. The package's contract with its
 # oracle is `:- set_prolog_flag(double_quotes, string).` before every program, declared once in ALL.prelude beside the container, the way
 # util_logtalk_grade.py prepends the iso flag. The prelude is prefixed to the entry's FIRST LINE so a line a message names stays the entry's.

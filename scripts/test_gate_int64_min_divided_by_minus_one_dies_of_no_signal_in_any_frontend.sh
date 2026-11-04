@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # test_gate_int64_min_divided_by_minus_one_dies_of_no_signal_in_any_frontend.sh -- row prolog-swi-test-arith-run-dies-with-sigfpe-
-# under-the-runner-a-crash-never-a-fail (rank 0; routed to the cfo by CEO-1309, widened to every frontend by CEO-1315).
+# under-the-runner-a-crash-never-a-fail (rank 0; routed to the cfo by R-1309, widened to every frontend by R-1315).
 #
 # THE DEFECT: the smallest 64-bit integer divided by -1 does not fit, and x86's idiv traps on it; any C '/' or '%' that reaches
 # it unguarded kills scrip with SIGFPE (rc 136, a core dump) -- a CRASH, never a FAIL. Measured on a build at bc96cf1b2: every
-# frontend below died of the signal. CEO-1304 landing 2 (the shared division node's rt_int_neg_div) cured SNOBOL4, Snocone,
+# frontend below died of the signal. R-1304 landing 2 (the shared division node's rt_int_neg_div) cured SNOBOL4, Snocone,
 # Rebus, Icon and Prolog's //; Prolog's / (pl_arith2's raw C division) and Raku's div, % and mod (__rk_intdiv and __rk_mod) still
 # died, and Raku's / answered -9223372036854775808 (a raw -a). THE CURE: both hand a divisor of -1 to the shared node.
 #
 # EACH ARM runs one program per frontend in mode 3 and mode 4. None may die of a signal (rc >= 128), and each is graded against
 # its own oracle:
 #   Prolog  //, /, mod, rem and div against swipl. swipl ITSELF raises error(signal(fpe,8)) on /, so the ref line for / is cut
-#           from // (the ceo's DONE-WHEN of 2026-09-27: the exact quotient is 9223372036854775808).
+#           from // (the officer's DONE-WHEN of 2026-09-27: the exact quotient is 9223372036854775808).
 #   Icon    /, % and unary - against iconx, which prints the large integer (-m is the same quotient as m / -1; it wrapped
 #           to itself until the cfo's negation landing, which also raises SNOBOL4's 011 -- that arm is in the SNOBOL4 runtime-error gate).
 #   Raku    div, /, % and mod against Rakudo.
 #   SNOBOL4, Snocone, Rebus  / raises error 14 (SPITBOL's 'division caused integer overflow') and terminates. sbl -bf itself
-#           dies rc 136 there, so the number cannot be read from it; this is the landing-2 overflow class (CEO-1315).
+#           dies rc 136 there, so the number cannot be read from it; this is the landing-2 overflow class (R-1315).
 #           REMDR(m, -1) answers 0.
 #   Pascal  m div d never dies of a signal. fpc raises runtime error 200 there and scrip answers 9223372036854775808. That VALUE
 #           is Pascal's own overflow question (hq_pascal); this gate grades only the crash.

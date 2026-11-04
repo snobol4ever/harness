@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# util_rsp_reset_beta_sites.py <list> <asm dir> <out.tsv> -- the per-site twin of util_rsp_reset_by_port_census.py: one row per rsp reset inside a box beta (program, function, box, label, instruction), same function-body dedupe, so the row count equals the census total. <list> is util_spine_population.sh output (lang<TAB>path), <asm dir> holds 1.s..N.s compiled in list order. (hq_prolog 2026-10-28, CEO-1996)
+# util_rsp_reset_beta_sites.py <list> <asm dir> <out.tsv> -- the per-site twin of util_rsp_reset_by_port_census.py: one row per rsp reset inside a box beta (program, function, box, label, instruction), same function-body dedupe, so the row count equals the census total. <list> is util_spine_population.sh output (lang<TAB>path), <asm dir> holds 1.s..N.s compiled in list order. (hq_prolog 2026-10-28, R-1996)
 import collections, hashlib, re, sys, os
 sys.path.insert(0, '/home/claude_prolog/harness/scripts')
 import util_rsp_reset_by_port_census as C

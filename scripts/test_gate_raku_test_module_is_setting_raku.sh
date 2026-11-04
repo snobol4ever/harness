@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_raku_test_module_is_setting_raku.sh -- RAKU'S Test MODULE IS RAKU SOURCE IN THE SETTING, NOT C (ARCH-RAKU-TO-100.md section 1.2 (c) and
-# section 6 step 0; CEO-2044/2045; the cao's row raku-ladder-step-1-the-setting-in-raku-the-loader-and-test-rakumod-as-its-first-file-ceo-2044).
+# section 6 step 0; R-2044/2045; the cao's row raku-ladder-step-1-the-setting-in-raku-the-loader-and-test-rakumod-as-its-first-file-r-2044).
 #
 # THE LAW: `use Test` loads SCRIP/src/parsers/raku/setting/Test.rakumod (Rakudo's lib/Test.rakumod, Artistic 2.0, adapted), embedded by
 # util_gen_raku_setting.py as src/parsers/raku/raku_setting.inc and read by the module road (import_module in rk_syntax.c), which splices in only the
-# routines a program reaches (autoload per name, as the Prolog prelude). The C Test arms are DELETED (CEO-2045: a deletion carries its re-expression):
+# routines a program reaches (autoload per name, as the Prolog prelude). The C Test arms are DELETED (R-2045: a deletion carries its re-expression):
 # the parser's rename of plan/ok/is/... to __rk_test_* (rk_tree.c), the lowerer's subtest and throws-like cases (lower_raku.c), the __rk_test_ block of
 # by_name_dispatch.c with its TAP state (g_runtime.tap).
 #

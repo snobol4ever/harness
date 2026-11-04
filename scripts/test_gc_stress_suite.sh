@@ -40,7 +40,7 @@ TIMEOUT="${TIMEOUT:-180}"   # ⛔ was 60 (row dead-suite-path-consumer-sweep): o
 # step earlier: this one could not even say whether a binary EXISTED.
 if [ ! -x "$SCRIP" ]; then echo "⛔ REFUSED-TO-GRADE rc=2: scrip not built at $SCRIP" >&2; exit 2; fi
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
+# does, the officer -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
 # whose SHA the board will stamp on the verdict. NO LOGIC HERE -- util_require_fresh.sh sources
 # gate_require_fresh from lib_gate.sh, the ONE authority (hq_B 4c7253e99), never a second copy.
 "$HERE/util_require_fresh.sh" --gate test_gc_stress_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2

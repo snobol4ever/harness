@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # util_parser_phase_profile.sh [lang ...] -- THE PHASE PROFILE: EACH parser.sc's PARSE CLOCK SPLIT INTO LEX, SYNTAX AND TREE BUILD
-# (Lon 2026-09-30 09:2x CDT, in-chat to the ceo, verbatim: "you can loosen the fact we wish to be at par with the C versions of
+# (Lon 2026-09-30 09:2x CDT, in-chat, verbatim: "you can loosen the fact we wish to be at par with the C versions of
 # parsers, but the truth is our competition is really SPITBOL. So we want to be 2-3x times faster than SPITBOL at parsing. The lex,
-# syntax, and tree build. Those three areas we must OPTIMIZE to the MAX!!!"; CEO-1367; the coo's row
+# syntax, and tree build. Those three areas we must OPTIMIZE to the MAX!!!"; R-1367; the coo's row
 # util-parser-phase-profile-lex-syntax-and-tree-build-shares-per-parser-sc-so-every-landing-names-the-phase-it-moved). A MEASUREMENT:
 # it writes no row, no score cell, no progress append. The grid (util_parser_grid.sh) says HOW FAST; this says WHERE THE TIME GOES,
 # so a landing names the phase it moved.
 #
 # THE CHAIN AND THE LIST ARE THE GRID'S: bootstrap/<chain> + parser_<lang>.sc compiled once to a mode-4 binary (a language named
 # in PHASE_VIA_TRANSPILE, default raku, compiles the transpiled chain as the grid does), run over every corpus program of the
-# language less each file that ends SCRIP's own run (the grid's scan, SCRIP's arm only), at the chain's declared heap and stack (bootstrap/parser_<lang>.heap, .stack -- the grid's own since CEO-1485; CRITERION CHANGED 2026-10-03, earlier profiles ran -s2000m -d8000m -i64m), SCRIP_DIAG=0,
+# language less each file that ends SCRIP's own run (the grid's scan, SCRIP's arm only), at the chain's declared heap and stack (bootstrap/parser_<lang>.heap, .stack -- the grid's own since R-1485; CRITERION CHANGED 2026-10-03, earlier profiles ran -s2000m -d8000m -i64m), SCRIP_DIAG=0,
 # PARSER_TREE_HASH=1. PHASE_FILES=<n> keeps the first n files of the list (default all).
 # ⛔ THE BOX IS SHARED: CALLGRIND RUNS WITH --pop-on-jump=* AND UNDER A WATCHDOG. Measured 2026-09-30 (the coo's own mistake): a
 # box's jump to a function's first instruction is a CALL to callgrind, and box-to-box jumps run at one rsp, so its call stack never
@@ -40,10 +40,10 @@
 # move) and one with 16 nops planted at the entry of Reduce, its Reduce_α label (only TREE may move); either moving another phase is rc 1.
 # THE RUNTIME MEASURED IS A CHECKOUT'S OWN, AS THE GRID'S: PHASE_ROOT=<a SCRIP checkout> (default this one) names the scrip, runtime
 # and bootstrap/, refused when older than that checkout's src/; RT_OPT is read back from the linked runtime's tag, never assumed
-# (the -O2 -DRT_DIAG=0 speed runtime is built by hand in a scratch worktree, as for the grid; no -O2 arm lives here, CEO-1246).
+# (the -O2 -DRT_DIAG=0 speed runtime is built by hand in a scratch worktree, as for the grid; no -O2 arm lives here, R-1246).
 # rc 0 = every language measured and under the bar (and the plant held when asked); 1 = a language at or over 10 percent
 # UNCLASSIFIED, or a plant moved the wrong phase; 2 = something could not be measured (named on its line). A heavy run: never two
-# in flight (CEO-1342); PHASE_OUT=<dir> keeps the profiles, lists and maps.
+# in flight (R-1342); PHASE_OUT=<dir> keeps the profiles, lists and maps.
 set -uo pipefail
 G=util_parser_phase_profile
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SELF="$(cd "$HERE/../../SCRIP" && pwd)"

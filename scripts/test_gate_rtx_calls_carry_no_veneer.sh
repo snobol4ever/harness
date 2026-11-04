@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_rtx_calls_carry_no_veneer.sh -- EMITTED CODE CALLS EVERY ASM-RUNTIME ENTRY BARE AND THROUGH THE GOT, AND EVERY
-# CALL INTO THE C RUNTIME STILL CARRIES THE VENEER (cto 2026-09-23, CEO-1224, row
-# spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11; Lon in-chat to the ceo, verbatim:
+# CALL INTO THE C RUNTIME STILL CARRIES THE VENEER (cto 2026-09-23, R-1224, row
+# spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11; Lon in-chat, verbatim:
 # "get rid of veneer for all RT ASM instances.").
 #
 # THE EMITTER HALF OF THE CONTRACT whose callee half test_gate_rtx_entries_keep_the_rtcc_four.sh proves. Before this row

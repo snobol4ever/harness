@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (util_score_row.py db_crosscheck, hq_raku 2026-09-16)"
 # test_gate_score_row_rewrites_in_place.sh — the invariant gate for THE ONE LEADERBOARD's write path
 # (row `score-md-rows-are-rewritten-by-the-runner-that-measured-them`, hq_T 2026-09-03).
@@ -335,7 +335,7 @@ fi
 examined=$((examined + 1))
 S10="$(mktemp -d "${TMPDIR:-/tmp}/score_dryrun.XXXXXX")"
 mkdir -p "$S10/.github/scripts"; cp "$GH/SCORE.md" "$S10/.github/SCORE.md"
-# ⭐ THE SCRATCH TREE NEEDS THE SUITE TABLE TOO (hq_T 2026-09-06, ceo CEO-363): a V/M write now mirrors into
+# ⭐ THE SCRATCH TREE NEEDS THE SUITE TABLE TOO (hq_T 2026-09-06, R-363): a V/M write now mirrors into
 # .github/SUITES.tsv or refuses naming the row, so a scratch tree carrying only SCORE.md is not a scratch
 # copy of what this command touches -- it is half of one, and the preview would refuse for a reason that is
 # about the fixture rather than about the write.
@@ -344,7 +344,7 @@ mkdir -p "$S10/.github/scripts"; cp "$GH/SCORE.md" "$S10/.github/SCORE.md"
 d10_before="$(md5sum < "$S10/.github/SCORE.md")"
 d10out="$(S4E_HOME="$S10" python3 "$HELPER" write --lang icon --column vendor --suite Arizona \
     --text 'Arizona: m3 46/124 · m4 46/124 (`test_icon_arizona_suite.sh`)' --measurer hq_T --dry-run \
-    --criterion-changed '2026-09-16:fixture -- this preview arm moves the Arizona denominator, so it carries the stamp CEO-785 requires' 2>&1)"; d10rc=$?
+    --criterion-changed '2026-09-16:fixture -- this preview arm moves the Arizona denominator, so it carries the stamp R-785 requires' 2>&1)"; d10rc=$?
 d10_after="$(md5sum < "$S10/.github/SCORE.md")"
 if [ "$d10rc" -ne 0 ]; then
     echo "GATE FAIL: write --dry-run exited $d10rc over a scratch board (want 0)"
@@ -361,7 +361,7 @@ elif ! printf '%s' "$d10out" | grep -q 'grid V'; then
 fi
 rm -rf "$S10"
 
-# ⛔⭐⭐ ARM 21-24 — THE CARRIAGE (CEO-316, off Lon 2026-09-06: "grade EVERY SINGLE package program from
+# ⛔⭐⭐ ARM 21-24 — THE CARRIAGE (R-316, off Lon 2026-09-06: "grade EVERY SINGLE package program from
 # Icon and Prolog"). A V cell's shipped population used to come from PACKAGE_SHIPPED, three integers typed
 # into util_score_row.py by a reader of somebody else's board. ⛔ A TRANSCRIBED DENOMINATOR CANNOT GO STALE
 # LOUDLY -- it goes stale silently and every percent over it stays plausible. Measured on the live board

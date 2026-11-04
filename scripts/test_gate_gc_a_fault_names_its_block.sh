@@ -37,7 +37,7 @@ command -v gcc >/dev/null 2>&1 || refuse "no gcc -- this gate plants its own fix
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 ulimit -c 0 2>/dev/null || true
 LEDGER=16384; TINY=8; [ "${FAIL_ONCE:-0}" = 1 ] && { LEDGER=0; TINY=0; }
-echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- CEO-931/934; the CEO-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
+echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- R-931/934; the R-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
 echo "birth ring SCRIP_GC_BIRTH_LEDGER=$LEDGER"
 cat > "$T/plant.c" <<'PLANTC'
 #include <stdio.h>

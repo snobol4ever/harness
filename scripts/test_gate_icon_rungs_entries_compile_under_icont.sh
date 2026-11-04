@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# test_gate_icon_rungs_entries_compile_under_icont.sh -- THE ICON RUNGS GRADABILITY GATE (CEO-483, hq_V
-# 2026-09-10; the standing criterion behind CEO-477's one-liner-joiner repair).
+# test_gate_icon_rungs_entries_compile_under_icont.sh -- THE ICON RUNGS GRADABILITY GATE (R-483, hq_V
+# 2026-09-10; the standing criterion behind R-477's one-liner-joiner repair).
 #
-# THE CRITERION, in the ceo's words: every RUN-GRADED rungs entry compiles under `icont -s -c`.
+# THE CRITERION, in the officer's words: every RUN-GRADED rungs entry compiles under `icont -s -c`.
 #
-# ⛔⛔ WHY THIS IS A GATE AND NOT A ONE-OFF SHELL LINE. The joiner defect CEO-477 cured (SCRIP f59db4cd8) put a
+# ⛔⛔ WHY THIS IS A GATE AND NOT A ONE-OFF SHELL LINE. The joiner defect R-477 cured (SCRIP f59db4cd8) put a
 # statement terminator INSIDE a construct -- `;` before `else`, before `then`, before a case body's `}`, and
 # directly inside `( )`. Every one of those is a SYNTAX ERROR to Arizona icont and a NO-OP to us, so the
 # fourteen entries carrying them READ GREEN ON EVERY BOARD while being ungradable against the oracle at all.
@@ -51,13 +51,13 @@ trap 'rm -rf "$WORK"' EXIT
 
 # ── THE POPULATION READS ITSELF OUT OF ALL.csv AND IS NEVER A LITERAL HERE (RULES.md: a DONE-WHEN never pins a
 # population count).
-# ⭐⛔ EVERY ENTRY, RUN-GRADED AND AST-GRADED ALIKE (CEO-497, 2026-09-10, ruling hq_V's HQV-19 ask). This gate
+# ⭐⛔ EVERY ENTRY, RUN-GRADED AND AST-GRADED ALIKE (R-497, 2026-09-10, ruling hq_V's HQV-19 ask). This gate
 # ORIGINALLY selected only entries declaring a RUN mode, on the reasoning that an ast-only entry is never
 # compiled by anything so asking icont to compile it grades a witness the suite does not. THAT REASONING WAS
 # WRONG, and the counter-example is in this lane's own record: parser/paren_seq and parser/case_multi_clause
 # carried INVALID ICON -- write((x := 1; x)) and a trailing semicolon after the last case clause -- for as long
 # as our parser tolerated it. Both were ast-graded, both were therefore invisible to this gate AND to every
-# board, and they surfaced only because a PARSER cure exposed them (HQV-19). The ceo's ruling states the
+# board, and they surfaced only because a PARSER cure exposed them (HQV-19). the ruling states the
 # principle better than the exclusion did: an AST fixture that carries invalid Icon pins a parse THE ORACLE
 # REJECTS, so the tree it asserts is not Icon's tree. Measured before widening: all 153 ast-graded compile.
 mapfile -t NAMES < <(python3 - "$CSV" <<'PY'

@@ -2,7 +2,7 @@
 # test_gate_monitor_a_binary_participant_ends_its_stream_when_the_trace_budget_is_spent.sh -- a binary monitor participant
 # whose trace budget runs out goes quiet on the wire and ENDs its stream at exit; it never speaks the text protocol on the
 # binary wire (cto 2026-09-26, row monitor-comm-var-falls-through-to-the-text-protocol-once-the-trace-budget-is-spent-...,
-# measured by the coo 2026-09-25 21:2x and ruled at CEO-1274 (6)). THE DEFECT: comm_var in src/runtime/core/core.c returned
+# measured by the coo 2026-09-25 21:2x and ruled at R-1274 (6)). THE DEFECT: comm_var in src/runtime/core/core.c returned
 # early only while g_trace_budget was non-zero; at zero it fell through to the text mon_send VALUE, which g_monitor_bin did
 # not guard, so the participant wrote nine text bytes onto the binary wire and blocked forever on an ack the reader could
 # not send (it was waiting for the other four bytes of a 13-byte header) until the timeout killed it.

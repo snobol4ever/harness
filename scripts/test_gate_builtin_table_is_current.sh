@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_builtin_table_is_current.sh -- THE BUILTIN TABLE IS THE ONE TABLE, AND NOTHING WAS LOST OR RENUMBERED (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3;
-# CEO-2016). harness/scripts/builtins.tsv is the one statement of what a builtin is; util_gen_builtin_table.py writes SCRIP/src/runtime/builtin_table.h and builtin_table.inc from it.
+# R-2016). harness/scripts/builtins.tsv is the one statement of what a builtin is; util_gen_builtin_table.py writes SCRIP/src/runtime/builtin_table.h and builtin_table.inc from it.
 #   arm 1  the table is valid and both generated files are exactly what the generator writes (a table edited without regenerating, or a generated file edited by hand, is stale)
 #   arm 2  THE UNION: every name any of the twelve sources (util_builtin_sources.py: dop_direct_fp, g_bn_direct, icn_bi_tbl, the known lists, builtin_ids.h, every strcmp(fn, ...) and
 #          strcmp(meth, ...) arm, pas_bi_names.h, lower_raku.c's targets, pl_leaf_kind) spells has a row; a name a chain still spells and the table lost is the defect
@@ -8,7 +8,7 @@
 #   arm 4  builtin_ids.h carries no private hash: bid_of IS bt_bid_legacy, the generated table's (step 1 resolves nothing differently)
 #   arm 5  a C program built against the REAL headers: bt_bid_of(vocab, name) returns every row's bid; bid_of(name) returns the legacy id of every legacy name and 0 for every other
 #          (bid_of is vocabulary-blind: every row spelling a legacy NAME gets the legacy id, every other name 0, exactly as before the table); the largest bid sits below BID_TABSZ
-#   arm 6+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a legacy bid renumbered, a source name dropped, a bid reused, a row with no entry
+#   arm 6+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (R-1680): a legacy bid renumbered, a source name dropped, a bid reused, a row with no entry
 # rc 0 every arm holds · rc 1 an arm failed · rc 2 cannot measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

@@ -65,10 +65,10 @@ nc=0
 for f in $(find "$S4E/corpus/demos/prolog" "$S4E/corpus/benchmarks/prolog" -name '*.pl' 2>/dev/null | sort); do srcs+=("$f"); nc=$((nc+1)); done
 [ "${#srcs[@]}" -gt 0 ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: zero .pl sources (ladder=$nl probe_plz=$np corpus=$nc)"; gate_stamp; exit 2; }
 compiled=0; refused=0; other=0; : > "$W/refused.txt"; : > "$W/other.txt"
-# ⭐ PARALLEL (hq_prolog 2026-10-28, row prolog-gate-quad-regs-does-not-finish-in-400-seconds-at-head-ceo-1663): the population is every rung, demo and benchmark program (about 750 now that they compile,
+# ⭐ PARALLEL (hq_prolog 2026-10-28, row prolog-gate-quad-regs-does-not-finish-in-400-seconds-at-head-r-1663): the population is every rung, demo and benchmark program (about 750 now that they compile,
 # each emitting ~15 MB of prelude-heavy asm); one compile at a time and one scanner over all of it took more than 900 s unloaded and never reached its verdict. Each program is compiled by its own
 # worker (QUAD_JOBS, default 6) and each worker prints ONE result line; the counts below are read from those lines, so the verdict is the sequential gate's, only sooner.
-# every worker holds ONE box-wide run slot for its job (CEO-1894: harness children go through S4E_RUN_SLOTS, default 8, slots under /tmp/s4e-run-slots; the kernel frees the lock when the worker exits)
+# every worker holds ONE box-wide run slot for its job (R-1894: harness children go through S4E_RUN_SLOTS, default 8, slots under /tmp/s4e-run-slots; the kernel frees the lock when the worker exits)
 quad_slot() { local n="${S4E_RUN_SLOTS:-8}" i d="${S4E_RUN_SLOT_DIR:-/tmp/s4e-run-slots}"; mkdir -p "$d" 2>/dev/null || return 0
   while :; do
     for i in $(seq 0 $((n - 1))); do exec 9>"$d/slot$i" || return 0; flock -n 9 && return 0; done

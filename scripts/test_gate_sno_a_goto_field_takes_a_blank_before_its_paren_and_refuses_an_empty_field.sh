@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_goto_field_takes_a_blank_before_its_paren_and_refuses_an_empty_field.sh
 #
-# THE ROW (ceo CEO-1449, found on the cfo's CODE row 302976d18): snobol4-the-goto-field-refuses-a-blank-before-its-paren-and-
+# THE ROW (R-1449, found on the cfo's CODE row 302976d18): snobol4-the-goto-field-refuses-a-blank-before-its-paren-and-
 # accepts-an-empty-field-the-reverse-of-spitbol. '        X = 1  :S (L1)' runs in sbl -bf and SCRIP refused the whole program;
 # '        X = 1  :' is sbl's compile error 219 and SCRIP compiled and ran it -- both directions wrong under ONE PARSER, ONE DIALECT
-# (CEO-1428 (2)). The CODE-only pair folded in: CODE('*comment') and CODE('') compile in sbl and failed in SCRIP.
+# (R-1428 (2)). The CODE-only pair folded in: CODE('*comment') and CODE('') compile in sbl and failed in SCRIP.
 #
 # SPITBOL'S RULE (sbl.min cmp13-cmp31 and scngf; measured on sbl -bf): in a goto field S and F may be followed by blanks before
 # their ( or <, and so may the ':' (': S(L1)'); a field ends at its close, so 'S(L1) F(L2)' is two fields; a ':' with no field

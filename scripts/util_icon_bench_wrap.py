@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_icon_bench_wrap.py -- GENERATE the three-angle wrapper around one pristine Icon benchmark kernel.
 
-THE ONE AUTHORITY for the wrapped form (RULES.md THE KERNEL CONVENTION, CEO-567; CEO-1221, Lon 2026-09-23: "The source of
+THE ONE AUTHORITY for the wrapped form (RULES.md THE KERNEL CONVENTION, R-567; R-1221, Lon 2026-09-23: "The source of
 the benchmark is the apple-core of the test, the wrapper code can be added to do both the test and the measurements."). The
 kernel file is never edited: this reads it, renames its `procedure main` to `bench_kernel__`, and appends a generated `main`
 that runs it

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""util_asm_identity.py --base <SCRIP dir> [--new <SCRIP dir>] [--jobs N] [--langs snobol4,icon,...] [--keep DIR] -- THE MOVE PROOF (ceo CEO-1988).
+"""util_asm_identity.py --base <SCRIP dir> [--new <SCRIP dir>] [--jobs N] [--langs snobol4,icon,...] [--keep DIR] -- THE MOVE PROOF (R-1988).
 
-A landing that MOVES a calculation (the emitter's memory model into the planner, CEO-1988) changes no emitted byte. This compiles every entry
+A landing that MOVES a calculation (the emitter's memory model into the planner, R-1988) changes no emitted byte. This compiles every entry
 of the seven master suites (corpus/tests/<lang>/ALL.*, extracted by corpus_suite_harness's own readers, the one extraction authority), every
 benchmark kernel (corpus/benchmarks/<lang>/) and every demo (corpus/demos/<lang>/) to mode-4 assembly with TWO scrip binaries -- the base tree's
 and the new tree's -- and compares the bytes. Each compile runs in its program's own directory with SNO_LIB = that directory and corpus/include,
@@ -76,8 +76,8 @@ def tree_programs(kind, lang):
 
 
 def run_slot():
-    # ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (CEO-1894), the same flock pool corpus_suite_harness.py takes: three seats proving moves at once
-    # ran 20 compile workers beside the box's 8 slots (load 15-25 on 16 cores, ceo 2026-10-26 12:10 CDT, Lon: "what's the health of the machine?").
+    # ONE POOL OF RUN SLOTS FOR THE WHOLE BOX (R-1894), the same flock pool corpus_suite_harness.py takes: three seats proving moves at once
+    # ran 20 compile workers beside the box's 8 slots (load 15-25 on 16 cores, the officer 2026-10-26 12:10 CDT, Lon: "what's the health of the machine?").
     # A wait for a slot is taken BEFORE the compile's timeout starts, so it can never read as a hang.
     if os.environ.get('S4E_RUN_SLOT_HELD'):
         return None

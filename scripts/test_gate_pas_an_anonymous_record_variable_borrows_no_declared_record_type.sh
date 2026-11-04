@@ -2,7 +2,7 @@
 # test_gate_pas_an_anonymous_record_variable_borrows_no_declared_record_type.sh -- a record variable declared with its own record-type
 # (no type-identifier) keeps its own field types: a field declared integer is written as an integer (ISO 7185 6.4.3.3, 6.9.3)
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. FOUND BY PROBING, NOT BY ANY SUITE:
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. FOUND BY PROBING, NOT BY ANY SUITE:
 # after type q = record c: char; n: integer end, the program var r: record i: integer; j: integer end; r.i := 5; writeln(r.i) printed
 # byte 0x05 where fpc -Miso prints 5, and with r do writeln(i) printed 'A' for 65. pas_with_sel_rtype, asked the record type of a record
 # variable, fell back to g_pas_rectypes[0] -- the FIRST record type declared anywhere -- when no declared type's fields matched the

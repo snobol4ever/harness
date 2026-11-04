@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_postoffice_identity.sh -- NEGATIVE-INJECTION GATE for fleet-v2 preflight V2-3 + V2-4 (hq_P, s258).
-# ⛔ LAW 0 (ARCH-FLEET-CEO.md): no instrument backs a DONE-WHEN until negative-injection proves it can say NO.
+# ⛔ LAW 0 (the retired fleet architecture page): no instrument backs a DONE-WHEN until negative-injection proves it can say NO.
 # Every check below was RUN AGAINST THE PRE-PATCH SCRIPT FIRST and observed to FAIL -- that is what makes a
 # later green meaningful. The whole gate runs inside a THROWAWAY postoffice ($S4E_POST) so it can never touch
 # /home/resources/postoffice; identity is forced with $S4E_SEAT so no test depends on which root it runs in.
@@ -19,7 +19,7 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 pass=0; fail=0
 ok()   { pass=$((pass+1)); printf '  ok   %s\n' "$1"; }
 no()   { fail=$((fail+1)); printf '  FAIL %s\n' "$1"; [ -n "${2:-}" ] && printf '       %s\n' "$2"; }
-newpo(){ rm -rf "$T/po"; mkdir -p "$T/po"/{ceo,hq_C,hq_P,seat01,seat08}/inbox "$T/po/claims"; : > "$T/po/BOARD.md"; : > "$T/po/QUEUE.tsv"; }
+newpo(){ rm -rf "$T/po"; mkdir -p "$T/po"/{cto,hq_C,hq_P,seat01,seat08}/inbox "$T/po/claims"; : > "$T/po/BOARD.md"; : > "$T/po/QUEUE.tsv"; }
 run()  { S4E_POST="$T/po" S4E_HOME="$T/root" S4E_SEAT="$1" bash "$S" "${@:2}" 2>&1; }
 rc()   { S4E_POST="$T/po" S4E_HOME="$T/root" S4E_SEAT="$1" bash "$S" "${@:2}" >/dev/null 2>&1; echo $?; }
 mkdir -p "$T/root/harness/scripts"
@@ -43,22 +43,19 @@ n=$(ls "$T/po/seat08/inbox" 2>/dev/null | wc -l)
 newpo
 out="$(run claude01 check)"
 printf '%s' "$out" | grep -q '^\[seat01\]' && ok "identity claude01 canonicalises to seat01" || no "identity claude01 canonicalises to seat01" "${out:0:70}"
-# 5. /home/claude resolves to ceo, not the retiring hq (Lon s257 topology ruling).
+# 5. a root path resolves to its seat; /home/claude, the fired seat's root (Lon 2026-11-04, CTO-487), resolves to none and is refused.
 # ⛔ `env -u S4E_SEAT` IS LOAD-BEARING, NOT TIDINESS. This is the ONE check here that derives identity from
 # the ROOT PATH rather than being handed one, so an ambient exported S4E_SEAT silently overrides the very
 # mapping it exists to test. Every other invocation goes through run()/rc(), which set S4E_SEAT explicitly
 # and are immune. MEASURED 2026-09-03: green with the variable unset, green with S4E_HOME exported alone,
-# and RED ("FAIL /home/claude resolves to ceo", identity read back as hq_B) the moment S4E_SEAT is exported
+# and RED ("FAIL /home/claude resolves to the officer", identity read back as hq_B) the moment S4E_SEAT is exported
 # -- which is exactly the environment `done` runs a DONE-WHEN in, and this gate is a component of
 # test_gate_dispatch_bus_failure_modes, now an arm of `make test` for all sixteen seats. A seat whose shell
 # exports its own identity would have gotten a red make test for a reason having nothing to do with its work.
 # ⭐ This is the defect s4e_msg.sh's own `done` comment names: a verdict that depends on the grader's
 # environment is not a verdict, and it is invisible from both sides -- it passed 5/5 for me at rest.
-out="$(env -u S4E_SEAT S4E_POST="$T/po" S4E_HOME=/home/claude bash "$S" check 2>&1)"
-printf '%s' "$out" | grep -q '^\[ceo\]' && ok "/home/claude resolves to ceo" || no "/home/claude resolves to ceo" "${out:0:70}"
-out="$(env -u S4E_SEAT S4E_POST="$T/po" S4E_HOME=/home/claude_ceo bash "$S" check 2>&1)"
-printf '%s' "$out" | grep -q '^\[ceo\]' && ok "/home/claude_ceo resolves to ceo (the root renamed 2026-09-06)" || no "/home/claude_ceo resolves to ceo" "${out:0:70}"
-mkdir -p "$T/po/cto/inbox"
+out="$(env -u S4E_SEAT S4E_POST="$T/po" S4E_HOME=/home/claude bash "$S" check 2>&1)"; r=$?
+{ [ "$r" -ne 0 ] && printf '%s' "$out" | grep -qi 'no postoffice mailbox' && [ "$(ls "$T/po" | grep -c '^claude')" = 0 ]; } && ok "/home/claude resolves to no seat and is refused, no mailbox created (rc=$r)" || no "/home/claude is refused" "rc=$r ${out:0:70}"
 out="$(env -u S4E_SEAT S4E_POST="$T/po" S4E_HOME=/home/claude_cto bash "$S" check 2>&1)"
 printf '%s' "$out" | grep -q '^\[cto\]' && ok "/home/claude_cto resolves to cto (the CTO seat, 2026-09-06)" || no "/home/claude_cto resolves to cto" "${out:0:70}"
 mkdir -p "$T/po/coo/inbox"
@@ -79,7 +76,7 @@ out="$(run hq_P check)"
 echo "== V2-4 census enumerates mailboxes, not /home/claude* globs =="
 newpo
 out="$(run hq_P fleet)"
-for m in ceo hq_C hq_P seat01; do printf '%s' "$out" | grep -q "  $m " && ok "fleet sees $m" || no "fleet sees $m" "absent from census"; done
+for m in cto hq_C hq_P seat01; do printf '%s' "$out" | grep -q "  $m " && ok "fleet sees $m" || no "fleet sees $m" "absent from census"; done
 echo "== V2-3 HQ banner refuses the tick on a stale inbox =="
 newpo
 printf 'FROM seat01 TO hq_P RE q-something\nquestion\n' > "$T/po/hq_P/inbox/1-seat01-q-something.msg"

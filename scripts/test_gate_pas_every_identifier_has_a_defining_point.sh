@@ -14,7 +14,7 @@
 # text, string and the FPC integer and real type names) are defined by the implementation.
 # Measured before landing, every acceptance program (PasRungs, the FPC suite, P4, P5, the benchmarks, 456 programs): the only programs
 # newly refused are five FPC-suite programs that apply an FPC system-unit identifier (inoutres, random, returnnilifgrowheapfails,
-# cp_acp) -- fpc -Miso runs them, ISO 7185 refuses them -- named in fpc_tests/ISO_EXPECTED_REFUSALS.tsv under CEO-1225/1228.
+# cp_acp) -- fpc -Miso runs them, ISO 7185 refuses them -- named in fpc_tests/ISO_EXPECTED_REFUSALS.tsv under R-1225/1228.
 #
 # ARMS: four vendored PAT witnesses and one minted one (a procedure's local applied after its procedure has closed -- the arm that
 # proves the table is SCOPED, not flat; fpc -Miso refuses it too: Identifier not found), each required to be REFUSED with a non-empty

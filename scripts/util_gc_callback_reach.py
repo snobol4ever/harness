@@ -2,7 +2,7 @@
 """util_gc_callback_reach.py [--tsv OUT] [--timeout S] [--quiet] [PROGRAM ...]
 
 THE LIVE COUNT OF THE CALLBACK WRAPS (row gc-the-forty-nine-callback-wrap-sites-carry-rt-gc-callback-and-the-count-is-live-not-
-static, the cfo, 2026-09-28; ceo CEO-1040/1041).  Every C site that calls back into user code carries RT_GC_CALLBACK or
+static, the cfo, 2026-09-28; R-1040/1041).  Every C site that calls back into user code carries RT_GC_CALLBACK or
 RT_GC_CALLBACK_V (src/runtime/rt/gc_heap.h), whose close, rt_gc_cb_close(mark, __FILE__, __LINE__, lo, hi), reports raw arena
 words left live in an unmapped C frame across a collection (Rule 4).  util_gc_acceptance.py counts those wraps STATICALLY, and a
 static count cannot tell "every site wrapped" from "no site ever run": a wrap nothing reaches guards nothing a witness can see.

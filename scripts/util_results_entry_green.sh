@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# util_results_entry_green.sh -- ONE TEST'S VERDICT, READ FROM THE PROGRESS DATABASE THE coo WRITES (ceo CEO-1812; Lon 2026-10-17, in-chat to
-# the ceo, verbatim: "have each seat fix the one bug, then tell COO to re-run that one test on the side of the cycle."). The DONE-WHEN of a
+# util_results_entry_green.sh -- ONE TEST'S VERDICT, READ FROM THE PROGRESS DATABASE THE coo WRITES (R-1812; Lon 2026-10-17, in-chat to
+# the officer, verbatim: "have each seat fix the one bug, then tell COO to re-run that one test on the side of the cycle."). The DONE-WHEN of a
 # one-bug row: the seat cures, files `s4e_test_request.sh <suite> <program>`, the coo's loop grades that one test ahead of its round robin and
 # writes its two rows, and this reader closes the row from them. It runs nothing and builds nothing: the seat's own run count stays zero.
 #

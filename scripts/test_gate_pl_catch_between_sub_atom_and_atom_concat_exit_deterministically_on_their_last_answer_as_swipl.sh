@@ -12,7 +12,7 @@
 # catch goal that has choices, a cut inside catch, a ball thrown by a range inside catch, and bindings undone after a deterministic exit.
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: the table below was cut 2026-10-17 from /usr/bin/swipl, and every run re-cuts it from the
 # live swipl and REFUSES rc=2 when oracle and table disagree or swipl is absent.
-# FAIL-ONCE (CEO-1680, a witness red on the commit before the cure): with the five cure files reverted on the same tree, m3 and m4 both read FAIL
+# FAIL-ONCE (R-1680, a witness red on the commit before the cure): with the five cure files reverted on the same tree, m3 and m4 both read FAIL
 # (measured 2026-10-17), and PASS=2 again once they were restored.
 # NOT GRADED: atom_concat(-,+,+) -- swipl exits det, SCRIP's range still ends past the one answer (its lower bound would need computing).
 # Usage: bash ../harness/scripts/test_gate_pl_catch_between_sub_atom_and_atom_concat_exit_deterministically_on_their_last_answer_as_swipl.sh

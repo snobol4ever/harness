@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_pascal_fixed_iter.sh -- ANGLE 2 of the Pascal three-angle triangulation (row bench-rivals-raku-pascal,
 # mirroring bench_prolog_fixed_iter.sh / ARCH-BENCH-CAMPAIGN-README-TABLES.md THREE-ANGLE TRIANGULATION).
 #
@@ -45,7 +45,7 @@ KERNELS="${KERNELS:-}"   # optional allowlist, space-separated basenames -- same
 [ -f "$SCALE" ] || { echo "⛔ REFUSED-TO-GRADE SCALE.tsv missing: $SCALE"; exit 2; }
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh"; exit 2; }
 FPC="$(fpc_bin)" || exit 2
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1281)"; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
 declare -a DECL_SW=(); declare -A DECLW=()
 WRAP="$ROOT/tools/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
@@ -62,7 +62,7 @@ fpc_build() {
 # identical copy of test_bench_pascal_timed.sh's function (see that file's header for why this is kept
 # distinct from any NMAX-style search ceiling: only quick:m3/m4 has a genuine crash boundary, and a
 # generic "cap" would wrongly shrink bases like fpc's that have no crash risk at all).
-# ⭐ quick's cliff is gone (ceo CEO-1987, 2026-10-26: fpc's output at reps 12..5000 in m3 and m4); no kernel carries a crash cap now.
+# ⭐ quick's cliff is gone (R-1987, 2026-10-26: fpc's output at reps 12..5000 in m3 and m4); no kernel carries a crash cap now.
 kernel_crash_cap() { echo ""; }
 # pick_spacing / slope3: identical copies of test_bench_pascal_timed.sh's functions (see that file's
 # header for the full derivation and the live measurement that picked x4/x16 over x2/x4) -- kept as exact
@@ -163,7 +163,7 @@ while IFS=$'\t' read -r k nf ns; do
   unset RATE
 done < "$SCALE"
 echo
-echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh; CEO-1281): ${#DECLW[@]} kernel(s)"
+echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh; R-1281): ${#DECLW[@]} kernel(s)"
 for k in "${!DECLW[@]}"; do echo "  $k: ${DECLW[$k]}"; done
 echo
 echo "CHECK RESULT: ok=$tot_ok bad=$tot_bad   (bad = crash/DNF/build-fail on at least one engine this run; correctness itself is angle 1's job)"

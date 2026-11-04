@@ -14,7 +14,7 @@
 # EVAL today. An error inside EVAL is quiet under the EVAL stage and the handler fires on the failure path of the statement holding
 # the EVAL (IR_SETEXIT_TEST, after the EVAL has landed: a gdb trace reads open, land, then the handler); the out-of-memory road fires
 # at once but its handler RETURN ends in error 242 on both roads. The eval_frames_unwind hook this landing first carried was deleted
-# with the jump it guarded (rt_unwind_to_activation, CEO-1468): a path that sets SNO_LVL_UNWIND again is re-minted from its own red.
+# with the jump it guarded (rt_unwind_to_activation, R-1468): a path that sets SNO_LVL_UNWIND again is re-minted from its own red.
 # ARMS, each both modes unless named: (A) the road -- the witness writes a C2BB trace with a positive control (EVAL(*X), a via.dtx
 # crossing this row does not touch) and no chain.eval line; with SCRIP_EVAL_OPEN=0 the same program writes chain.eval lines, so the
 # arm can see the road it grades (REFUSE when it cannot). (B) the emission -- the mode-4 text calls rt_eval_open and rt_eval_land.

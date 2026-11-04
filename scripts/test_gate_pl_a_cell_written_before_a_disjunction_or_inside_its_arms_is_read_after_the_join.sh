@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_cell_written_before_a_disjunction_or_inside_its_arms_is_read_after_the_join.sh -- ON A HOME-SET PROLOG GRAPH EVERY CELL A CLAUSE WRITES BEFORE A DISJUNCTION, AND EVERY
 # VARIABLE WHOSE FIRST WRITE LIES INSIDE ITS ARMS, IS READ AFTER THE JOIN WHERE THE WRITE LEFT IT (hq_snobol4, D3 kind 5, 2026-10-24; the cfo's ARCH-PROLOG-ACTIVATION-LIFETIME section 4;
-# CEO-1945/1946). TWO DEFECTS, ONE WITNESS SET. (i) emit.cpp carved an admitted disjunction at a literal 32 bytes while the planner's carve for the kind on a home-set graph is 64 (the arms'
+# R-1945/1946). TWO DEFECTS, ONE WITNESS SET. (i) emit.cpp carved an admitted disjunction at a literal 32 bytes while the planner's carve for the kind on a home-set graph is 64 (the arms'
 # 32 plus the choice header at +24..+63), so every cell below a disjunction was read 32 bytes off: X = 1, ( true ; true ), write(X) printed _G0. (ii) a variable first written in an
 # arm ( Y = 1 ; Y = 2 ), write(Y) was hosted at its plan-order first use, the read after the join, and the arms wrote it before that box carved it: the FATAL of x86_zop (an IR_VAR with
 # no frame bytes). Every expectation is CUT FROM THE ORACLE, swipl, at run time, one program per cell, graded in m3 (--run) and m4 (--compile, run_prolog_via_x86_backend.sh).

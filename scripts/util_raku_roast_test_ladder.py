@@ -4,7 +4,7 @@
 Lon, in-chat to hq_raku 2026-09-27, verbatim, in order: "forget the benchmark kernels and start crawling the simple
 rungs of Roast, tests at a time, not files at a time." / "So we just need a sort order for the complexity-index of all
 the test. Just ignore which file they belong." / "No, it is lost. Just proceed without it. Make a new one." / "So you
-should end up with a list of sets of tests from all the files." The method is the ceo's CEO-1289 answer to Lon's "Is
+should end up with a list of sets of tests from all the files." The method is R-1289 answer to Lon's "Is
 there a way to order the Roast such that the complexity grows from simple to more complex?": order by measured
 construct sets, fewest new constructs first, grade per TAP test, `use Test` is rung one.
 
@@ -39,7 +39,7 @@ THREE VERBS.
 CONSTRUCTS are read off the test's code -- the code run since the previous test's statement (when the file flows
 straight on to this test) plus the test's own statement, from its #TL line to its end -- by a Raku-aware tokenizer: keywords, operators (longest match), method names, sub calls, variable sigils and twigils, literal and quote
 kinds, regexes, blocks, pointies, colonpairs, meta-operators. REFUSES rc=2 when it cannot measure.
-ECONOMY (ceo CEO-1333): --jobs defaults to max(2, min(4, 16 - load)) read from /proc/loadavg; the run enters the batch
+ECONOMY (R-1333): --jobs defaults to max(2, min(4, 16 - load)) read from /proc/loadavg; the run enters the batch
 class at its top (util_batch.sh, shared-dev step 4), so no child is niced.
 """
 import argparse, collections, hashlib, os, re, subprocess, sys, tempfile, shutil

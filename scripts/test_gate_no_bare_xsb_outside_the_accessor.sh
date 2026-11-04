@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_no_bare_xsb_outside_the_accessor.sh -- THE XSB ORACLE IS NAMED ONE WAY (ceo CEO-1927, 2026-10-23).
+# test_gate_no_bare_xsb_outside_the_accessor.sh -- THE XSB ORACLE IS NAMED ONE WAY (R-1927, 2026-10-23).
 #
 # Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin to use XSB system as the third oracle."
 # RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE: XSB 5.0.0 is reached only through xsb_bin() in lib_oracle_flags.sh,
@@ -27,7 +27,7 @@ pop=$(find "$HERE" \( -name '*.sh' -o -name '*.py' \) -not -path '*/fixtures/*' 
 echo "bare xsb sites under ../harness/scripts/ (population: $pop scripts; the oracle is xsb_bin): $n"
 if [ "$n" -ne 0 ]; then
   printf '%s\n' "$list"
-  echo "⛔ GATE FAIL [$GATE_NAME]: $n site(s) name the XSB oracle outside xsb_bin -- reach it through lib_oracle_flags.sh (RULES.md § Oracles, CEO-1927)"
+  echo "⛔ GATE FAIL [$GATE_NAME]: $n site(s) name the XSB oracle outside xsb_bin -- reach it through lib_oracle_flags.sh (RULES.md § Oracles, R-1927)"
   exit 1
 fi
 echo "✅ GATE PASS [$GATE_NAME]: every XSB invocation under ../harness/scripts/ goes through xsb_bin"

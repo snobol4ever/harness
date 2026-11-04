@@ -68,7 +68,7 @@ run_one() {
     local exp="${icn%.icn}.ref"
     [ -f "$exp" ] || return 0
     # a container (corpus_suite_harness.py's `#---- <seq> <name>` banners) is the harness's to grade, never this
-    # per-file loop -- it was out of reach while loose programs carried a .expected; since CEO-1222 both are .ref
+    # per-file loop -- it was out of reach while loose programs carried a .expected; since R-1222 both are .ref
     grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$icn" && return 0
     local base="${icn%.icn}"
     local name

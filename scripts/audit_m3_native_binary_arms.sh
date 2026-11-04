@@ -6,7 +6,7 @@
 # A silent unimplemented x86 BINARY arm let mode-3 fall through to the C oracle and masked missing native
 # bytes; M3-NATIVE-0 requires such arms to fail LOUDLY instead.  This script is that gate.
 # ⛔ THE REMEDY CHANGED AT THE s269 STRIP: bomb_bytes()/bomb_text() were deleted as dead (no arm called
-# either; CEO-11b, Lon indifferent).  The remedy for a fake-jmp stub is now the emission-discipline law
+# either; R-11b, Lon indifferent).  The remedy for a fake-jmp stub is now the emission-discipline law
 # itself -- IMPLEMENT the arm, adding an encoder to x86_asm.h if an instruction is missing.  Never
 # hand-encode bytes.  The BOMB classification is gone with the functions; pass/fail logic is unchanged.
 set -u

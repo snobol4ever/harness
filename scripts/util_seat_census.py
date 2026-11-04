@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""util_seat_census.py -- THE LEDGER: WHO LOADS THE BOX, FROM THE CGROUP SCOPES (ARCH-SHARED-DEVELOPMENT.md sections 2 and 8 step 1, CEO-2041;
-the cao's row shared-dev-step-1-the-seat-census-reads-the-cgroup-scopes-and-the-ledger-load-tsv-is-written-every-five-minutes-ceo-2041).
+"""util_seat_census.py -- THE LEDGER: WHO LOADS THE BOX, FROM THE CGROUP SCOPES (ARCH-SHARED-DEVELOPMENT.md sections 2 and 8 step 1, R-2041;
+the cao's row shared-dev-step-1-the-seat-census-reads-the-cgroup-scopes-and-the-ledger-load-tsv-is-written-every-five-minutes-r-2041).
 
 The load average says THAT the box is busy, never WHO. Every cgroup under user-1000.slice is a ledger line the kernel keeps exactly: cpu.stat's
 usage_usec counts every descendant, short-lived compilers included, which a ps sampler undercounts. This walks them, samples cpu.stat twice ten seconds
@@ -765,7 +765,7 @@ def budget_print_props(name):
     return 0
 
 
-TMP_SEAT_MB = 4096   # ARCH-SHARED-DEVELOPMENT 2.3, /tmp move (2): a seat over 4 GB of /tmp is named; the banner shows each seat its own figure against it (the coo 2026-11-01, CEO-2095)
+TMP_SEAT_MB = 4096   # ARCH-SHARED-DEVELOPMENT 2.3, /tmp move (2): a seat over 4 GB of /tmp is named; the banner shows each seat its own figure against it (the coo 2026-11-01, R-2095)
 
 
 def banner(seat):

@@ -5,7 +5,7 @@
 # modes, so no board flags it by exit code -- it is a silent-wrong-answer class.
 #
 # Row snobol4-define-redefinition-m3-binary-realization-the-dentry-consumer-for-mode-3 (hq_U's lane, minted by
-# the ceo CEO-321). Sibling row define-redefinition-ordering (hq_S). This gate replaces that row's MINT
+# the R-321). Sibling row define-redefinition-ordering (hq_S). This gate replaces that row's MINT
 # PLACEHOLDER DONE-WHEN, which was un-runnable by construction and therefore could never close the row.
 #
 # ⭐ THE CLASS IS FOUR TERMS IN SERIES AND A FIX AT ANY ONE MEASURES AS NO CHANGE (hq_S's root cause, and the

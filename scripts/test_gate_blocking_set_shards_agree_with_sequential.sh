@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_blocking_set_shards_agree_with_sequential.sh -- A SHARDED RUN REDS THE SAME NAME SET AS A SEQUENTIAL ONE
-# (coo 2026-09-17, ceo CEO-829, from the cfo's economy measurement; row instrument-the-blocking-set-shards-and-a-
+# (coo 2026-09-17, R-829, from the cfo's economy measurement; row instrument-the-blocking-set-shards-and-a-
 # sharded-run-reds-the-same-name-set-as-a-sequential-one).
 #
 # WHY THE ACCEPTANCE IS NOT A SPEEDUP.  The 338-arm set costs about 35 minutes while origin/main took 22 landings
@@ -8,7 +8,7 @@
 # shape: landings arrive in BURSTS and a 35-minute set cannot fit inside one at all.  Sharding is the obvious
 # answer and the obvious answer is where the lie gets in: a fan-out changes the box's load, the working directory
 # two arms share, and whether two boards run at once.  So the gate does not ask "was it faster".  It asks whether
-# the RED NAME SET and the REFUSED NAME SET are the same ones (CEO-825 clause 1: two readings can agree on a count
+# the RED NAME SET and the REFUSED NAME SET are the same ones (R-825 clause 1: two readings can agree on a count
 # and disagree on membership).  An arm whose verdict changes with HOW it was run is THE FINDING.
 #
 #   (a) PARTITION, over the REAL 337-arm declaration and without running one of them: every shard's arms plus the

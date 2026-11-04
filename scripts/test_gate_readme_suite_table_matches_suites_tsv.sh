@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_readme_suite_table_matches_suites_tsv.sh -- THE README'S SUITE TABLE IS THE RENDER OF .github/SUITES.tsv, NEVER A HAND COPY.
 #
-# ⛔ THE DEFECT (row instruments-the-readme-suite-table-is-written-from-the-suite-table-and-a-gate-holds-it-current, the ceo on Lon's
-# word 2026-09-23 16:2x, verbatim: "We want the test suite numbers and the benchmark numbers in the README."; CEO-1216; the coo). The
+# ⛔ THE DEFECT (row instruments-the-readme-suite-table-is-written-from-the-suite-table-and-a-gate-holds-it-current, the officer on Lon's
+# word 2026-09-23 16:2x, verbatim: "We want the test suite numbers and the benchmark numbers in the README."; R-1216; the coo). The
 # README's suite table said it read the leaderboard "on 2026-09-07" sixteen days later -- Gimpel 104/127 there against 127/132 in the
 # record, Budne 72/120 against 71/71, IPL 75/89 against 194/194 -- and two suites the record carries were not in it at all. A hand-kept
 # copy of a table that moves about fifty times a day has no writer, so it is wrong within hours and nobody can say which cell.
@@ -14,7 +14,7 @@
 #   (default) --pinned, and every row matches SUITES.tsv as it stands NOW: the currency the other repo moves about fifty times a day, so
 #             it can lag between a lane's row write and the next render -- the REPORTED arm, and the row's DONE-WHEN.
 # ARMS: 1 the pinned check reads green on the real README; 2 (default mode) the current check too; 3 FAIL-ONCE BUILT IN: a scratch copy of
-# the README with ONE cell changed reds the pinned check and names the row; 4 the render names Raku IN DEVELOPMENT (CEO-1219) and no other
+# the README with ONE cell changed reds the pinned check and names the row; 4 the render names Raku IN DEVELOPMENT (R-1219) and no other
 # language carries a label; 5 a copy whose markers are gone reds (the table is not generated at all).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,7 +75,7 @@ PY
   fi
 fi
 
-# ARM 4 -- Raku is labelled IN DEVELOPMENT (CEO-1219) and no other language carries a label.
+# ARM 4 -- Raku is labelled IN DEVELOPMENT (R-1219) and no other language carries a label.
 examined=$((examined+1))
 blk="$(sed -n '/^<!-- SUITE-TABLE:BEGIN/,/^<!-- SUITE-TABLE:END -->/p' "$ROOT/README.md")"
 rk=$(printf '%s\n' "$blk" | grep -c '^| Raku — IN DEVELOPMENT |'); other=$(printf '%s\n' "$blk" | grep -E '^\| [A-Za-z0-9]+ — ' | grep -vc '^| Raku — ')

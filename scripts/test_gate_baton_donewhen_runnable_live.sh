@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_gate_baton_donewhen_runnable_live.sh -- the DONE-WHEN of row live-batons-all-carry-a-computable-donewhen (ladder I, rank 1).
 #
-# ⭐ WHY A SECOND GATE AND NOT A FLAG ON THE FIRST (ceo ruling 2026-09-02, on hq_P's measurement). test_gate_baton_donewhen_runnable.sh answers "can this DONE-WHEN reach a verdict?" over EVERY
+# ⭐ WHY A SECOND GATE AND NOT A FLAG ON THE FIRST (ruling 2026-09-02, on hq_P's measurement). test_gate_baton_donewhen_runnable.sh answers "can this DONE-WHEN reach a verdict?" over EVERY
 # baton on disk, and other rows already grade against that number. This gate asks the narrower question the ruling scopes: "can every LIVE row's DONE-WHEN reach a verdict?" ⛔ It COMPOSES the first
 # gate rather than reimplementing its parser -- one authority for "is this DONE-WHEN runnable", never a second copy that can drift from it. Modifying the first gate's output to add a filter would
 # have moved a number other rows are pinned to; that is why this is a wrapper.

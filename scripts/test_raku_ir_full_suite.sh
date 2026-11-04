@@ -3,11 +3,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # ../harness/scripts/test_raku_ir_full_suite.sh — Raku rungs-suite run sweep, both modes, via corpus_suite_harness.py.
 # Re-pointed off the retired test/raku rung tree (row test-raku-ir-full-suite-skips-rc-0-when-its-population-
 # directory-is-absent): the old TRACK-4 population never existed under the one-flat-suite corpus reorg, so this
-# always printed "SKIP ... rc=0" -- a never-ran reading as green (GOAL-CEO.md CEO-20, FINDING-2026-08-30-hq_B).
+# always printed "SKIP ... rc=0" -- a never-ran reading as green (the archived ruling record R-20, FINDING-2026-08-30-hq_B).
 # Population is the rungs pair corpus/tests/raku/ALL.raku + ALL.ref. An absent population REFUSES rc=2 -- it
 # is never silently skipped.
 # ⛔ --modes m3,m4 EXPLICITLY: --lang raku alone defaults the harness to the ast dump instrument. Every entry is graded in
-# both modes -- there is no modes column (Lon 2026-09-23, CEO-1218/1230).
+# both modes -- there is no modes column (Lon 2026-09-23, R-1218/1230).
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"

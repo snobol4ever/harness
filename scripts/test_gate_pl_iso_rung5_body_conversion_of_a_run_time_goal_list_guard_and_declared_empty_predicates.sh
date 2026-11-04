@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung5_body_conversion_of_a_run_time_goal_list_guard_and_declared_empty_predicates.sh -- PROLOG ISO LADDER, RUNG 5 (cto, CEO-617, 2026-09-12).
+# test_gate_pl_iso_rung5_body_conversion_of_a_run_time_goal_list_guard_and_declared_empty_predicates.sh -- PROLOG ISO LADDER, RUNG 5 (cto, R-617, 2026-09-12).
 # THE RUNG (ISO 7.6.2 body conversion, 8.10.1.3, 7.5.1 / 8.8): (1) a goal reaching call/1 is CONVERTED BEFORE IT RUNS:
 # `call((fail, 1))` raises type_error(callable, (fail,1)) without running `fail`, `call((write(3), 1))` raises without
 # printing, `call((1 ; true))` raises instead of succeeding -- whether the term is built at run time (the resolver on a
@@ -25,8 +25,8 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 MODES="${PL_RUNG_MODES:-m3,m4}"
 TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT
 red=0; total=0
-# ⭐ THE FLOOR IS THE FAMILY'S POPULATION, READ FROM THE BOARD, NEVER A LITERAL (ceo CEO-1305, 2026-09-27): the literal floors
-# stood above populations the CEO-1266 crawl shrank at 97ade7cf7 (coinduction declared unsupported, engine guards probed), so
+# ⭐ THE FLOOR IS THE FAMILY'S POPULATION, READ FROM THE BOARD, NEVER A LITERAL (R-1305, 2026-09-27): the literal floors
+# stood above populations the R-1266 crawl shrank at 97ade7cf7 (coinduction declared unsupported, engine guards probed), so
 # functor_3 read 19 of 19 under a floor of 21. A case the grader names GUARDED OUT has already left the population; a case it
 # names OUTSIDE, UNGRADABLE or DEFERRED leaves the floor here, per mode, from its identity line. Every other case must PASS:
 # the gate still reds on a lost pass, and a newly admitted case enters the floor the run it enters the population.

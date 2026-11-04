@@ -2,12 +2,12 @@
 """util_c2bb_coverage.py -- IS EVERY C->BB TRANSFER VISIBLE IN A TRACE?  One number, with a denominator
 that is the SAME population test_gate_no_c_to_bb.sh names.
 
-⛔ WHY THIS EXISTS (ceo CEO-1091, on Lon's 2026-09-21 order to fix the broken gauges).  util_gc_acceptance.py
+⛔ WHY THIS EXISTS (R-1091, on Lon's 2026-09-21 order to fix the broken gauges).  util_gc_acceptance.py
 printed a line called "C->BB entry sites carrying rt_c2bb_hit" whose NUMERATOR counted occurrences of
 rt_c2bb_hit in THREE NAMED FILES (by_name_dispatch.c, core/core.c, runtime_eval.c) and whose DENOMINATOR was
 the INBOUND+OUTBOUND CALLBACK SITE count.  Those are not the same population, so the fraction was not a
 coverage reading of anything -- and the 11 hooks that DO exist, all in rt/rt.c, were excluded BY CONSTRUCTION,
-so the zero meant "the instrument does not look where the hooks are" (CEO-1041/1071).
+so the zero meant "the instrument does not look where the hooks are" (R-1041/1071).
 
 ⛔ THE DEFINITION OF A TRANSFER IS NOT RE-DERIVED HERE.  It is read from test_gate_no_c_to_bb.sh's own site
 lines, exactly as test_gate_no_c_to_bb_ratchet.sh reads them, for the reason that gate's header gives: a second

@@ -1,9 +1,9 @@
-# blocking_set_serial_arms.txt -- ARMS THAT RUN ALONE, DECLARED (coo 2026-09-17, ceo CEO-829).
+# blocking_set_serial_arms.txt -- ARMS THAT RUN ALONE, DECLARED (coo 2026-09-17, R-829).
 #
 # run_blocking_set.sh --shards N fans the declared set out over N children. An arm whose COMMAND contains any
 # pattern below is in NO shard: the parent runs it, one at a time, before the fan-out starts.
 #
-# ⛔ WHY DECLARED AND NOT SNIFFED. The ceo's hazard census the hour this row was minted found 280 of 336 arms
+# ⛔ WHY DECLARED AND NOT SNIFFED. The officer's hazard census the hour this row was minted found 280 of 336 arms
 # building a mktemp workdir -- and SAID that the census UNDER-DETECTS, which is the honest reading: a null
 # result bounds the probe, not the thing probed. The three classes below are the ones already KNOWN to break
 # under a naive fan-out, each from a measurement someone already paid for. Add a pattern here with its reason
@@ -51,7 +51,7 @@ gc_every_allocating_runtime_entry_returns_to_a_safe_point
 #    sends signals at all. It is root-scoped and pattern-scoped to its own mktemp dir, so it cannot reach another
 #    arm; it runs alone because its own MEASUREMENT would otherwise be a measurement of the box.
 a_blocking_set_death_names_its_killer
-# 4. ARMS THAT MOVE THE WATCHED SURFACE BY DESIGN (ceo 2026-09-23, CEO-1197: one pass of 409 arms read 123 refused,
+# 4. ARMS THAT MOVE THE WATCHED SURFACE BY DESIGN (2026-09-23, R-1197: one pass of 409 arms read 123 refused,
 #    121 of them RACED on exactly these two). gc_conservative_auditor builds its OWN library configuration into out/
 #    (out/rt_pic-<tag>, out/libscrip_rt-<tag>.so, and the Makefile archives the previous .so under out/attic) --
 #    101 concurrent arms shared that path in one pass; gc_acceptance_never_prints moves ../harness/scripts/gc_event_coverage.floor

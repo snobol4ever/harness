@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_scalar_gist_and_the_str_of_every_aggregate_and_object_and_put_agree_with_rakudo.sh -- A SCALAR'S .gist, THE .Str OF EVERY LIST / ARRAY / HASH / PAIR / SET / OBJECT BEHIND ~ AND "{...}" INTERPOLATION, AND put
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by a 120-file mode-3 sample of the Roast files that compile: S02-magicals/USER.t and its one-assertion siblings died on lives-ok { $*USER.gist }).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by a 120-file mode-3 sample of the Roast files that compile: S02-magicals/USER.t and its one-assertion siblings died on lives-ok { $*USER.gist }).
 #
 # THE DEFECTS, each measured against Rakudo: (1) .gist on a Str, Int, Num, Bool, bignum or Nil was never implemented -- meth_call failed, so say "abc".gist and say 5.gist printed NOTHING and a lives-ok block ending in .gist died rc 255;
 # (2) the single string-coercion entry __rk_str (behind unary ~, the ~ operator and every "{...}" interpolation) returned a List, Array, Hash, Pair, Set, Bag or object UNTOUCHED, so ~@a printed [1 2 3] (the gist), "x" ~ @a printed x (the list

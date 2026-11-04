@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_seat_digests_within_budget.sh [root...] -- EVERY SEAT'S CLAUDE.md IS A SHORT SOP, NOT A HISTORY (Lon 2026-10-31, in-chat to the ceo,
+# test_gate_seat_digests_within_budget.sh [root...] -- EVERY SEAT'S CLAUDE.md IS A SHORT SOP, NOT A HISTORY (Lon 2026-10-31, in-chat,
 # verbatim: "Reduce the size of CLAUDE.md files but ensure standard operating procedure, SOP, and motus operandi, mode of operations, etc are
-# solid."; ceo CEO-2071). GREEN when every /home/claude_*/CLAUDE.md (or the roots named) is at most 24 KB AND carries the five SOP markers the
+# solid."; R-2071). GREEN when every /home/claude_*/CLAUDE.md (or the roots named) is at most 24 KB AND carries the five SOP markers the
 # generator writes: the standing law, the sitting order, the landing recipe, the go rule and the manuals folder. RED rc 1 names each root that
 # fails and why. REFUSES rc 2 when no root is found. Measured 2026-10-31 09:3x before the cure: 19 of 19 roots red (44 to 107 KB, no markers).
 BUDGET=24576

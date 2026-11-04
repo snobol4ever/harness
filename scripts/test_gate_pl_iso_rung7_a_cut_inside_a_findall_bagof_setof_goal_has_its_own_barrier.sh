@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung7_a_cut_inside_a_findall_bagof_setof_goal_has_its_own_barrier.sh -- PROLOG ISO LADDER, RUNG 7 (cto, CEO-617/650, 2026-09-13).
+# test_gate_pl_iso_rung7_a_cut_inside_a_findall_bagof_setof_goal_has_its_own_barrier.sh -- PROLOG ISO LADDER, RUNG 7 (cto, R-617/650, 2026-09-13).
 # THE RUNG (ISO 7.8.4 cut, 8.10.1/8.10.2/8.10.3 findall/bagof/setof): the Goal of findall/3, bagof/3 and setof/3 is
 # called AS BY call/1, so a `!` anywhere inside it is LOCAL to that goal -- it prunes the goal's remaining choice
 # points, the collection then completes with the solutions gathered so far, and the CALLER's choice points are
@@ -81,7 +81,7 @@ arm a_cut_inside_a_collection_goal_is_local_to_that_goal "$TMPD/cut.pl" "$(print
 floor if_then_2 11
 floor soft_cut_2_3 21
 floor cut_0 19
-# findall_3's floor follows its population, 14 -> 13 (cto 2026-09-26): 97ade7cf7 (ceo CEO-1235 (3)) declares coinduction
+# findall_3's floor follows its population, 14 -> 13 (cto 2026-09-26): 97ade7cf7 (R-1235 (3)) declares coinduction
 # unsupported, as gprolog's adapter does, so lgt_findall_3_11 -- a cyclic-term (STO) case under
 # :- if(current_logtalk_flag(coinduction, supported)), not a cut barrier -- leaves the graded population and is named
 # on the grader's board as GUARDED OUT; its debt stays on the rational-trees row. The 13 that remain pass in m3 and m4.

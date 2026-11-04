@@ -2,10 +2,10 @@
 """bench_wrap_rebus.py <kernel.reb> --mode iter|time [--n N] [--bud-ms MS] [-o OUT.reb]
 
 THE GENERATED WRAPPER FOR ONE PRISTINE REBUS BENCHMARK -- it does the test and the measurement at once (RULES.md FACT RULE THE
-KERNEL CONVENTION and its 2026-09-23 addendum, CEO-1221; Lon, verbatim: "The source of the benchmark is the apple-core of the test,
+KERNEL CONVENTION and its 2026-09-23 addendum, R-1221; Lon, verbatim: "The source of the benchmark is the apple-core of the test,
 the wrapper code can be added to do both the test and the measurements."). The kernel file is never edited: this script writes a
 NEW program, to OUT or stdout, and the runner (test_rebus_bench_suite.sh) deletes it after the run. Row rebus-benchmarks-double-as-
-tests-ref-in-out-through-the-three-angle-harness-with-a-row-in-the-suite-grid, built by the coo on CEO-1227.
+tests-ref-in-out-through-the-three-angle-harness-with-a-row-in-the-suite-grid, built by the coo on R-1227.
 
 WHAT THE GENERATED PROGRAM DOES, IN ORDER:
   1. THE TEST. The kernel's main runs once, its body verbatim, so STDOUT is byte-comparable with the .ref.

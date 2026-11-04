@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_allocating_set_is_a_generated_table_gated_against_the_call_graph.sh
 # ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 6.5d (cto, 2026-09-18; row
-# gc-the-emitter-emits-the-poll-not-the-template, rung 1; the ceo's CEO-898 proposal).
+# gc-the-emitter-emits-the-poll-not-the-template, rung 1; R-898 proposal).
 #
 # WHAT THIS GATE HOLDS. The poll is placed by hand, one judgement per call site, and that method has cost four
 # broken batches. The cure is for THE EMITTER to emit it, because the emitter already routes every named runtime

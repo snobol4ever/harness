@@ -2,7 +2,7 @@
 # test_gate_s4e_next_serves_own_lane.sh -- `next` MUST SERVE A SEAT ONLY ITS OWN HQ-LANE'S ROWS, FALLING
 # THROUGH TO ANOTHER LANE ONLY WHEN ITS OWN LANE HAS NOTHING SERVABLE.
 # Row next-serves-a-seat-only-rows-in-its-hqs-lane-and-no-row-carries-a-blank-owner-cell (seat14 found the
-# class; ceo ruled it rank 0, 2026-09-03 20:57 CDT).
+# class; the officer ruled it rank 0, 2026-09-03 20:57 CDT).
 #
 # THE MEASURED DEFECT: seat03 (Icon lane) held a snobol4-* row; seat05 (Prolog lane) held an icon-jcon-*
 # row; seat06 (Prolog rungs lane) held a snobol4-gimpel-aisnobol-dotnet row; seat16 (Rebus lane) held an
@@ -22,8 +22,8 @@
 #       identity is served even though its topic's language-derived lane would say otherwise.
 #   (e) A LANE-UNDETERMINED TOPIC (no recognized language prefix, no owner cell) IS LANE-NEUTRAL: served
 #       in the OWN-LANE pass itself, not deferred to fallback -- this is this row's own kind of topic.
-#   (f) ceo IS NEVER LANE-RESTRICTED (GOAL's explicit carve-out, same identity-shape reasoning as the
-#       MODE guard -- not s4e_is_hq(), which counts ceo as an HQ).
+#   (f) the officer IS NEVER LANE-RESTRICTED (GOAL's explicit carve-out, same identity-shape reasoning as the
+#       MODE guard -- not s4e_is_hq(), which counts the officer as an HQ).
 #   (g) AN HQ IDENTITY IS ALSO LANE-RESTRICTED, not just fleet seats (GOAL: "an HQ is restricted to its
 #       own lane's rows").
 #   (h) A SEAT'S LANE READS FROM ITS OWN POSTOFFICE HQ FILE, and a missing/stale one degrades to
@@ -37,11 +37,11 @@ refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_lane.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"
-for s in ceo hq_icon hq_prolog hq_snobol4 seat07 seat14 seat99_no_hq_file; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
+for s in cto hq_icon hq_prolog hq_snobol4 seat07 seat14 seat99_no_hq_file; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 rm -f "$W/seat99_no_hq_file/HQ"     # mailbox exists, HQ file deliberately does not -- (h) tests this exact degradation
 printf 'hq_icon\n' > "$W/seat07/HQ"     # seat07's lane is hq_icon for this fixture (icon)
 printf 'hq_prolog\n' > "$W/seat14/HQ"     # seat14's lane is hq_prolog for this fixture (prolog)
-printf 'TENET\n# fixture line 2: the ROSTER names the fixture seats so the mode guard admits them\nLANES: icon=coo prolog=coo snobol4=coo\nROSTER: ceo hq_icon hq_prolog hq_snobol4 seat07 seat14 seat99_no_hq_file\n' > "$W/MODE"
+printf 'TENET\n# fixture line 2: the ROSTER names the fixture seats so the mode guard admits them\nLANES: icon=coo prolog=coo snobol4=coo\nROSTER: cto hq_icon hq_prolog hq_snobol4 seat07 seat14 seat99_no_hq_file\n' > "$W/MODE"
 mk(){ printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$2" > "$W/tasks/$2.task.md"; }
 run_next(){ S4E_POST="$W" S4E_SEAT="$1" S4E_RELEASE_COOLDOWN=0 bash "$SUT" next 2>&1; }
 fails=0; checks=0
@@ -63,7 +63,7 @@ grep -qi 'own lane' <<<"$out" && ck ok "(b) the serve reason names OWN LANE" || 
 reset_q
 mk 0 snobol4-only-row unassigned FREE
 rc=0; out="$(run_next seat07)" || rc=$?
-[ "$rc" -eq 2 ] && grep -qiE 'lane .*has nothing servable|lane is empty' <<<"$out" && ck ok "(c) seat07's lane (hq_icon) is empty: REFUSED rc 2, the lane is empty and not the queue -- the any-lane fallback is CLOSED under TENET (ceo CEO-1302 (b), CEO-1356)" \
+[ "$rc" -eq 2 ] && grep -qiE 'lane .*has nothing servable|lane is empty' <<<"$out" && ck ok "(c) seat07's lane (hq_icon) is empty: REFUSED rc 2, the lane is empty and not the queue -- the any-lane fallback is CLOSED under TENET (R-1302 (b), R-1356)" \
   || ck no "(c) an empty own lane must refuse rc 2 naming the closed fallback, never serve another lane's row -- rc=$rc got: $(grep -E '^LOCKED|REFUSED' <<<"$out")"
 [ -z "$(ls "$W/claims" 2>/dev/null)" ] && grep -qP '^0\tsnobol4-only-row\tunassigned\tFREE$' "$W/QUEUE.tsv" && ck ok "(c) the other lane's row stays FREE and unclaimed -- an ASK to its owner, never a claim" \
   || ck no "(c) the other lane's row must stay FREE and unclaimed -- $(cat "$W/QUEUE.tsv") claims: $(ls "$W/claims" 2>/dev/null)"
@@ -74,7 +74,7 @@ rc=0; out="$(run_next seat07)" || rc=$?
 #     though $ME never appears in s4e_topic_lane's own HQ-name check.
 # ⭐ DELIBERATELY NOT TESTED: an owner cell naming a DIFFERENT HQ than the picker (e.g. "hq_icon" read while
 # picking as seat07, whose lane happens to also be hq_icon) is left to the PRE-EXISTING skip -- unconditional,
-# regardless of lane, exactly as ceo ruled it (s4e_msg.sh "fine when the owner is idle and wrong when they
+# regardless of lane, exactly as the officer ruled it (s4e_msg.sh "fine when the owner is idle and wrong when they
 # are working it, and the picker cannot tell the difference, so it must not guess"). s4e_topic_lane's own
 # "owner cell wins" clause exists for callers OUTSIDE this skip-loop (a future mint/assign gate reading
 # "what lane does this topic belong to" independent of who is asking); inside next's own dispatch it is
@@ -97,11 +97,11 @@ grep -qE '^LOCKED.*postoffice-tooling-row' <<<"$out" && ck ok "(e) a topic with 
   || ck no "(e) a lane-undetermined topic must be lane-neutral, not treated as belonging to some other lane"
 grep -qi 'cross-lane fallback' <<<"$out" && ck no "(e) a lane-neutral topic must NOT be reported as a cross-lane fallback -- it never needed one" || ck ok "(e) not mislabelled as a fallback"
 
-# (f) ceo is never lane-restricted
+# (f) no officer is lane-free: the seat that was is fired (Lon 2026-11-04, CTO-487), so the cto, whose lane owns no language here, is NOT served an icon row under TENET
 reset_q
-mk 0 icon-row-for-ceo unassigned FREE
-out="$(run_next ceo)"
-grep -qE '^LOCKED.*icon-row-for-ceo' <<<"$out" && ck ok "(f) ceo is served the topmost row regardless of lane" || ck no "(f) ceo must never be lane-restricted"
+mk 0 icon-row-for-cto unassigned FREE
+out="$(run_next cto)"
+grep -qE '^LOCKED.*icon-row-for-cto' <<<"$out" && ck no "(f) the cto was served another lane's row -- no officer is lane-free" || ck ok "(f) the cto is lane-restricted like every seat: the icon row is not served"
 
 # (g) an HQ identity is also lane-restricted, not just fleet seats
 reset_q
@@ -135,7 +135,7 @@ grep -qP '^2\tgeneric-tooling-fixture\thq_icon\tFREE$' "$W/QUEUE.tsv" && ck ok "
 # (k) assign backfills a BLANK col3 to the assignee's own lane
 reset_q
 mk 0 topic-blank-owner-for-assign unassigned FREE
-S4E_POST="$W" S4E_SEAT=ceo bash "$SUT" assign seat07 topic-blank-owner-for-assign >/dev/null 2>&1
+S4E_POST="$W" S4E_SEAT=cto bash "$SUT" assign seat07 topic-blank-owner-for-assign >/dev/null 2>&1
 grep -qP '^0\ttopic-blank-owner-for-assign\thq_icon\t' "$W/QUEUE.tsv" && ck ok "(k) assign backfills a blank col3 with the assignee's own lane (seat07 -> hq_icon)" \
   || ck no "(k) assign must backfill a blank owner cell, not leave the next wanderer's trap set -- QUEUE.tsv row: $(grep topic-blank-owner-for-assign "$W/QUEUE.tsv")"
 # (l) assign NEVER overwrites an already-set col3, even one that differs from the assignee's own lane --
@@ -143,11 +143,11 @@ grep -qP '^0\ttopic-blank-owner-for-assign\thq_icon\t' "$W/QUEUE.tsv" && ck ok "
 # (see the "COLUMN 3 IS DELIBERATELY NOT TOUCHED" note at claim's own acquisition site).
 reset_q
 mk 0 topic-preowned-for-assign hq_prolog FREE
-S4E_POST="$W" S4E_SEAT=ceo bash "$SUT" assign seat07 topic-preowned-for-assign >/dev/null 2>&1
+S4E_POST="$W" S4E_SEAT=cto bash "$SUT" assign seat07 topic-preowned-for-assign >/dev/null 2>&1
 grep -qP '^0\ttopic-preowned-for-assign\thq_prolog\t' "$W/QUEUE.tsv" && ck ok "(l) assign leaves an already-set col3 (hq_prolog) untouched even though the assignee's own lane is hq_icon" \
   || ck no "(l) assign must never overwrite an existing owner cell -- QUEUE.tsv row: $(grep topic-preowned-for-assign "$W/QUEUE.tsv")"
 
-# (m) A CROSS-LANE RESUME IS ANNOUNCED. ceo's witness, 2026-09-03 22:55 CDT: seat07 held
+# (m) A CROSS-LANE RESUME IS ANNOUNCED. the officer's witness, 2026-09-03 22:55 CDT: seat07 held
 # raku-roast-100-percent-compile (lane hq_snobol4) while its own lane's rank-0 SC4 snocone census sat FREE. The
 # claim carried no ASSIGNED-BY, so no HQ dispatched it across lanes -- and (c)'s own control arm shows PASS 3
 # would have skipped that row on its owner cell anyway. It was PASS 2, which resumes an unfinished claim with
@@ -164,7 +164,7 @@ grep -qE '^RESUME .*snobol4-held-cross-lane' <<<"$out" && ck ok "(m1) an in-flig
   || ck no "(m1) PASS 2 must keep resuming a held claim; only the silence was the defect -- got: $(grep -E '^RESUME|^LOCKED|QUEUE EMPTY' <<<"$out")"
 grep -qi 'cross-lane hold' <<<"$out" && ck ok "(m2) the cross-lane resume SAYS SO -- a serve indistinguishable from an in-lane one is how this went unseen" \
   || ck no "(m2) resuming a row outside the seat's lane must be announced in its own printout"
-grep -q 'icon-own-lane-waiting' <<<"$out" && ck ok "(m3) the notice names the own-lane row that was waiting (the ceo read this by hand off two claims)" \
+grep -q 'icon-own-lane-waiting' <<<"$out" && ck ok "(m3) the notice names the own-lane row that was waiting (read this by hand off two claims)" \
   || ck no "(m3) the notice must name what is waiting in the seat's own lane, or it is a complaint with no next step"
 # (m4) A NOTICE THAT CAN BLOCK IS A NOTICE THAT GETS WORKED AROUND -- the serve still succeeds.
 rc=0; S4E_POST="$W" S4E_SEAT=seat07 S4E_RELEASE_COOLDOWN=0 bash "$SUT" next >/dev/null 2>&1 || rc=$?

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_mark_worklist_visits_typed_layouts_not_words.sh -- THE MARK WORKLIST VISITS EVERY HEAP BLOCK BY ITS KIND'S LAYOUT,
 # NEVER BY SNIFFING ITS WORDS (cfo 2026-10-01; row gc-the-mark-worklist-walks-typed-visitors-not-words-every-heap-block-kind-has-a-layout-
-# and-hb-ws-is-split-by-allocation-site; Lon 2026-09-17 CEO-812/815, Rule 2b of ARCH-GC-COMPILE-TIME-FRAME-MAPS.md).
+# and-hb-ws-is-split-by-allocation-site; Lon 2026-09-17 R-812/815, Rule 2b of ARCH-GC-COMPILE-TIME-FRAME-MAPS.md).
 # THE DEFECT IT HOLDS SHUT: on db4a6b1fc the worklist handed every marked HB_WS, HB_DINST, HB_ARR and HB_PLJ payload to the sniffing
 # frame scan -- a heap-interior word scan with the 16-byte descriptor sniff -- and hq_raku's witness read DATINST_t.type as 0xdbdbdbdb
 # after a slide (benchmark_point_class_add m3 CRASH under the poison fill). The cure landed in pieces (hb_scan_interior deleted, HB_WS

@@ -4,7 +4,7 @@
 #
 # THE DONE-WHEN of row snocone-gc-the-snocone-share-of-the-unmapped-slot-population-censused-by-name-and-the-
 # master-clean-under-forced-collection (hq_snocone, 2026-09-20), which is this lane's FIRST row under MODE TENET:
-# MODE line 2 / CEO-1011 -- "COMPLETENESS DOES NOT OPEN IN A LANGUAGE UNTIL THAT LANGUAGE'S GC SHARE IS MEASURED
+# MODE line 2 / R-1011 -- "COMPLETENESS DOES NOT OPEN IN A LANGUAGE UNTIL THAT LANGUAGE'S GC SHARE IS MEASURED
 # CLEAN BY ORACLE DIFF AT THE TINY ARENA", the census NAMING and never counting, the rungs graded by ORACLE and
 # never by rc. ⛔ RED ON ORIGIN TODAY at ARM 3 (one entry, eval_datatype_defer_1) -- see the gc gate beside it.
 #
@@ -23,7 +23,7 @@
 # is the number this arm binds on, and the BELOW-REGION members are printed, named and attributed to the cto's
 # classes 1 and 4 rather than silently counted into a pass.
 #
-# ⛔⭐ THE BAND, NOT A POINT (ceo CEO-1024, measured by hq_raku who reversed their own green for it): the fleet
+# ⛔⭐ THE BAND, NOT A POINT (R-1024, measured by hq_raku who reversed their own green for it): the fleet
 # graded GC health at stress 1, 3 and 5, and the raku rungs at stress 16 lost 65 gradings over 36 distinct
 # programs that the 1-3-5 band called green. And the divergence points are NOT MONOTONE in the plant -- hq_snobol4
 # has a witness red at 25 while green at 10, 12, 16, 20, 35 and 50 -- so a band chosen by where the last known red
@@ -39,7 +39,7 @@
 # hq_snocone per landing; it is deliberately NOT in `make test` -- the blocking set is the shared resource that
 # does not scale with seats (MODE line 2 CONDITION 2) and wiring a five-minute arm into it is the coo's call.
 #
-# ⛔⭐⭐ EXTENDED 2026-09-21 (hq_snocone, MODE TENET, ceo-1040 "item 4 of the GC commitment": ZERO GRADINGS LOST
+# ⛔⭐⭐ EXTENDED 2026-09-21 (hq_snocone, MODE TENET, R-1040 "item 4 of the GC commitment": ZERO GRADINGS LOST
 # TO THE COLLECTOR, axes named not counted). What was here before this date tested ONE axis: SCRIP_GC_STRESS,
 # arena PINNED at SNC_GC_ARENA (default 64 KB, the floor) for every point. That is exactly the hole hq_snobol4 found in
 # hq_prolog's FIRST cut of SCRIP 46f348488: "a band varying the arena alone reads GREEN over an arena-insensitive
@@ -48,7 +48,7 @@
 # same way. ADDED: ARM 0 (the shipped-arena, stress-0 baseline every other arm is diffed against -- this is what
 # SncRungs' own 100% board already means, re-proven on THIS pinned tree rather than cited from a past one) and ARM 4
 # (the SAME stress band, run at the SHIPPED arena instead of the tiny one). ONE AXIS MOVES AT A TIME, per
-# ceo-1040 precondition 1: ARM4(N) vs ARM0 isolates STRESS ALONE (arena held at shipped in both); ARM3(N) vs
+# R-1040 precondition 1: ARM4(N) vs ARM0 isolates STRESS ALONE (arena held at shipped in both); ARM3(N) vs
 # ARM4(N) isolates ARENA ALONE (stress held at N in both) -- textbook one-variable-at-a-time, applied here the
 # way hq_prolog's control/arena/stress triple applies it, adapted to a rung suite small enough to run un-sharded.
 # ⛔ WHY ARM0 IS NOT "ARENA=1MB, STRESS=0" (the naive control): that configuration was ALREADY MEASURED, by this
@@ -57,15 +57,15 @@
 # exact false-clean this gate's own ARM 1 exists to catch. So arena is tested where it is DECIDABLE: composed
 # with a forcing stress, one axis moved against the other, never alone against an inert cell.
 #
-# ⛔⭐ CORRECTED 2026-09-22 (hq_snocone, measured post CEO-1095/Makefile:644 buildinfo) -- THE "TINY" ARM USED TO
-# PIN SCRIP_HEAP_MB=1, WHICH IS NOW THE WRONG DIRECTION. Since CEO-1095 (Lon 2026-09-21) the shipped, compiled-in
+# ⛔⭐ CORRECTED 2026-09-22 (hq_snocone, measured post R-1095/Makefile:644 buildinfo) -- THE "TINY" ARM USED TO
+# PIN SCRIP_HEAP_MB=1, WHICH IS NOW THE WRONG DIRECTION. Since R-1095 (Lon 2026-09-21) the shipped, compiled-in
 # default committed window is GC_HEAP_KB=128 (gc_heap.c:14), and an MB pin now RAISES the window rather than
 # lowering it: SCRIP_HEAP_MB=1 sets a 1024 KB window, 8x the 128 KB shipped default, and the cfo measured it
 # collecting 13x LESS often than leaving the knob unset entirely (1613 vs 21362 regenerations, one binary,
 # bench_icnstr_concat_table.icn). A gate that still pinned SCRIP_HEAP_MB=1 believing it was "tiny" was therefore
 # grading an arena LOOSER than what we ship and calling that the exasperation arm -- the same false-clean shape
 # ARM 1 exists to catch, just on the other axis. The fleet's sanctioned tiny-arena knob is now SCRIP_HEAP_KB
-# (Makefile SCRIP_HEAP_KB_TINY, default 128 -- which as of CEO-1095 equals the shipped default, so it can no
+# (Makefile SCRIP_HEAP_KB_TINY, default 128 -- which as of R-1095 equals the shipped default, so it can no
 # longer stand in for "smaller than shipped"). The only value that is both legal (gc_heap.c aborts below
 # GC_HEAP_KB_FLOOR=64) and strictly BELOW the 128 KB shipped default is the floor itself, so ARM 3 below now pins
 # SCRIP_HEAP_KB=64 by default -- genuinely tiny relative to what we ship, not merely tiny relative to a retired
@@ -83,7 +83,7 @@ SCRIP_DIR="$S4E/SCRIP"
 SCRIP="${SCRIP:-$SCRIP_DIR/scrip}"
 M="$S4E/corpus/tests/snocone"
 BAND="${SNC_GC_BAND:-1 3 5 8 16}"
-ARENA="${SNC_GC_ARENA:-64}"   # KB, not MB, since CEO-1095 -- 64 is GC_HEAP_KB_FLOOR, the smallest legal window and the only one still BELOW the 128 KB shipped default
+ARENA="${SNC_GC_ARENA:-64}"   # KB, not MB, since R-1095 -- 64 is GC_HEAP_KB_FLOOR, the smallest legal window and the only one still BELOW the 128 KB shipped default
 fail() { echo "⛔ RED: $*" >&2; exit 1; }
 refuse() { echo "REFUSES rc=2: $*" >&2; exit 2; }
 [ -x "$SCRIP" ] || refuse "scrip not built at $SCRIP -- cannot measure"
@@ -112,7 +112,7 @@ nomap="$(printf '%s\n' "$line" | grep -o 'NO-MAP=[0-9]*' | cut -d= -f2)"
 [ -n "$nomap" ] || refuse "the census verdict line carries no NO-MAP field -- the criterion cannot be read off it"
 [ "$nomap" -eq 0 ] || fail "NO-MAP=$nomap -- this lane owns class 2 (a graph the compiler refuses a frame layout for has no map at all), and $nomap site(s) are in it: $(grep -m5 'MEMBER NO-MAP' "$W/census.txt")"
 # --- SELF-TEST: prove the comparison/naming logic below would catch a PLANTED divergence before spending a
-# single scrip invocation on it (CEO-1040 precondition 2: a fail-once before any zero means anything). This
+# single scrip invocation on it (R-1040 precondition 2: a fail-once before any zero means anything). This
 # proves THIS SCRIPT's own comparison code, not the compiler -- the compiler-level fail-once for the STRESS
 # axis is already on record and is not re-derived here: eval_datatype_defer_1, cured at SCRIP 83b8bc9d2,
 # GOAL-SNOCONE-100.md SC-TENET-2026-09-20 -- named at stress=1, absent at stress=2,3,4,5,8 and at BOTH arenas,
@@ -127,7 +127,7 @@ same="$(comm -23 "$W/selftest_A" "$W/selftest_A")$(comm -13 "$W/selftest_A" "$W/
 echo "SELF-TEST comparison logic: identical sets correctly named as no difference"
 
 # --- ARM 0: THE BASELINE -- shipped arena, SCRIP_GC_STRESS unset (stress=0), no knobs at all. Axis point
-# (arena=shipped, stress=0) of ceo-1040's declared grid. Every other arm below is diffed against THIS, measured
+# (arena=shipped, stress=0) of R-1040's declared grid. Every other arm below is diffed against THIS, measured
 # fresh on this pinned tree, never against a remembered number from a past sitting.
 out0="$(timeout -k 5 3000 python3 "$HERE/corpus_suite_harness.py" run "$M/ALL.sc" "$M/ALL.ref" --lang snocone --modes m3,m4 2>&1)"
 board0="$(printf '%s\n' "$out0" | grep -m1 '^SUITE_BOARD')" || { printf '%s\n' "$out0" | tail -5 >&2; refuse "ARM 0 baseline (shipped arena, no stress) printed no SUITE_BOARD line"; }
@@ -139,10 +139,10 @@ names0="$(tr '\n' ' ' < "$W/ns_base")"
 [ -s "$W/ns_base" ] && refuse "ARM 0 baseline (shipped arena, no stress -- what we ship) is not clean: $names0 -- fix the rungs before grading any GC axis against it"
 echo "ARM 0 BASELINE NAME-SET: <none> (as SncRungs' own 100% board requires)"
 
-# --- ARM 3 (tiny arena) + ARM 4 (shipped arena), SAME stress band -- ONE AXIS MOVES AT A TIME (CEO-1040
+# --- ARM 3 (tiny arena) + ARM 4 (shipped arena), SAME stress band -- ONE AXIS MOVES AT A TIME (R-1040
 # precondition 1). ARM4(N) vs ARM0 isolates STRESS ALONE; ARM3(N) vs ARM4(N) isolates ARENA ALONE.
 bad=0; arena_bad=0
-run_band_arm() { # $1=label(tiny|shipped) $2=KB ("" = shipped/unset, since CEO-1095) $3=STRESS
+run_band_arm() { # $1=label(tiny|shipped) $2=KB ("" = shipped/unset, since R-1095) $3=STRESS
     local label="$1" mb="$2" st="$3" coll=0 regens=0 f b in n out board tot names
     local albl="shipped(128KB compiled-in)"; [ -n "$mb" ] && albl="${mb}KB"
     for f in "$W/e"/*.sc; do

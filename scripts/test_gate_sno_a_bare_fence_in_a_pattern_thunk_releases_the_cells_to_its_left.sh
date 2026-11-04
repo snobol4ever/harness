@@ -4,8 +4,8 @@
 # REM, BAL) commits it, so backtracking into the thunk fails the whole match cleanly, in both modes, statically and inside EVAL, as
 # SPITBOL answers it -- no [ZGC-STALE] SIGSEGV.
 #
-# ⛔ THE DEFECT (row snobol4-tab-then-a-bare-fence-then-an-integer-in-a-pattern-touches-a-stale-gc-pointer; found by the ceo's one-minute
-#   run of the SCRIPtix program, CEO-1441, batch 33: 'ab' ? (TAB(0)) FENCE 0). The integer forces a run-time concatenation, so TAB(0)
+# ⛔ THE DEFECT (row snobol4-tab-then-a-bare-fence-then-an-integer-in-a-pattern-touches-a-stale-gc-pointer; found by the officer's one-minute
+#   run of the SCRIPtix program, R-1441, batch 33: 'ab' ? (TAB(0)) FENCE 0). The integer forces a run-time concatenation, so TAB(0)
 #   FENCE becomes the thunk PAT$0 matched through MATCH_DEFER. fence0_release_bytes found the fence only on a chain from a MATCH_BEGIN,
 #   and a thunk has none, so the FENCE released nothing and TAB's 16-byte cell stayed on the spine at the thunk's gamma. Backtracking
 #   into the thunk goes PAT$0_beta -> the abort-exit marker -> PAT$0_omega, which assumes no cell is left: it read the saved r12 and the
@@ -16,7 +16,7 @@
 #
 # THE ARMS (expectations cut from sbl -bf AT RUN TIME):
 #   1-2  m3 / m4 STATIC: the row's witness, stored and deferred X FENCE over TAB, RTAB, SPAN, BREAK, REM, a capture over it  -- RED on base
-#   3-4  m3 / m4 EVAL: the same shapes and the ceo's ('ab' ? (TAB(0)) FENCE 0), EVALed                         -- RED on base
+#   3-4  m3 / m4 EVAL: the same shapes and the officer's ('ab' ? (TAB(0)) FENCE 0), EVALed                         -- RED on base
 #   5-6  CONTROL m3 / m4: shapes base already answers -- LEN(1) FENCE (no cell), TAB(0) FENCE 'x' in a statement, the thunk
 #        matched through with nothing after it
 # EXIT: 0 all arms pass · 1 an arm failed · 2 REFUSED (no binary, no oracle, no tmpdir, the oracle's answer moved).

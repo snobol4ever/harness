@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_chain_hops_a_function_body_nested_in_a_match_in_the_mapped_main_block.sh
 #
-# WHAT THIS GATE HOLDS (hq_collector 2026-10-11, row gc-the-chain-visits-a-frame-entered-through-the-c2bb-glue-from-a-deferred-call-inside-a-match-the-glue-subject-cell-is-walked-ceo-1688,
+# WHAT THIS GATE HOLDS (hq_collector 2026-10-11, row gc-the-chain-visits-a-frame-entered-through-the-c2bb-glue-from-a-deferred-call-inside-a-match-the-glue-subject-cell-is-walked-r-1688,
 # measured on SnoRungs demo_porter): a SNOBOL4 function body is emitted inline in the program's main block, so its sites belong to the MAPPED main graph. A poll inside a pattern match
 # nested in such a body (the body's own statement frame, `stem P`, `token p`) is a rule 6 site with enclosing kind 0: the enclosing frame is fp + 8 + depth, and the word there is the define
 # shim's exit label (the body is a frameless activation) or a caller's landing. The map-less case hopped through that word since 7abc44233; the mapped case took the sum as main's frame, 0x98

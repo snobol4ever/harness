@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test_gate_sno_data_type_named_list_is_a_record.sh -- a SNOBOL4 DATA type named list is a record: its fields read and assign, and a field function on a wrong datatype is ERROR 41, as under SPITBOL (ceo CEO-646).
+# test_gate_sno_data_type_named_list_is_a_record.sh -- a SNOBOL4 DATA type named list is a record: its fields read and assign, and a field function on a wrong datatype is ERROR 41, as under SPITBOL (R-646).
 #
 # MEASURED 2026-09-12 on 88dfe7505 (the cfo's report): DATA('list(n,a)') then a(x) = ARRAY(...) raised Icon's 107 "record
 # expected" in both modes -- three rungs entries lost (user_function_{rem_array,eval_pos}_replace_branch_*) -- because the
-# Icon non-record guard that landed in CEO-644 keyed on the TYPE NAME "list" and sat on the field-variable entry both
+# Icon non-record guard that landed in R-644 keyed on the TYPE NAME "list" and sat on the field-variable entry both
 # lowerers share; a field function on a wrong datatype read 107 or 207 where SPITBOL says ERROR 041. Cure: the list test is
 # the runtime's list tag (rt_list_view), and the field-variable box picks rt_field_var_strict (Icon: 107 / 207) on the strict
 # node the Icon lowerer marks and rt_field_var (SPITBOL: ERROR 41 on any argument that is not an instance carrying the field)

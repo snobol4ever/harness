@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_donewhen_exemption_census_names_every_row.sh -- THE DONE-WHEN EXEMPTION CENSUS, PINNED BOTH WAYS (ceo CEO-967, on the coo's
+# test_gate_donewhen_exemption_census_names_every_row.sh -- THE DONE-WHEN EXEMPTION CENSUS, PINNED BOTH WAYS (R-967, on the coo's
 # COO-116 report; row instruments-the-donewhen-exemption-census-names-every-criterion-that-measures-its-one-runner-exemption). The bus
 # runs every computed DONE-WHEN under S4E_DONE_WHEN_RUN=1, a ONE-RUNNER exemption, so a criterion that runs the guard or a guarded
 # runner can be measuring the exemption rather than its subject. util_donewhen_exemption_census.py names each such baton with its owner,
@@ -11,7 +11,7 @@
 # (rc 0 or 1) and prints its population beside the rc; (7) an AREA SMOKE the guard admits for every seat -- S4E_AREA_SMOKE_ENTRIES set
 # non-empty on the command or exported before it, a runner in lib_one_runner.sh's ONE_RUNNER_SMOKE_MODE_RUNNERS, no population named --
 # is counted SMOKE and never named, while a plain run of that runner, a smoke of a runner without a smoke mode, a smoke naming --corpus
-# and a smoke beside another board stay BOARD (ceo CEO-1505: the census named hq_icon's closable IPL mask row; FAILED ONCE on the census
+# and a smoke beside another board stay BOARD (R-1505: the census named hq_icon's closable IPL mask row; FAILED ONCE on the census
 # before that landing, which read all six BOARD); (8) a census that cannot read the smoke-mode list REFUSES rc 2.
 # ⛔ FAILED ONCE: before this landing there was no census, and the row's DONE-WHEN read "No such file".
 # EXIT 0 every arm holds; 1 an arm is red; 2 REFUSED.
@@ -68,7 +68,7 @@ mk9 swi-file-with-corpus 'cd "$S4E_HOME/SCRIP" && bash ../harness/scripts/test_p
 out9="$(S4E_TASKS="$T9/tasks" S4E_QUEUE="$T9/QUEUE.tsv" python3 "$C" 2>&1)"; rc9=$?
 n9=$(grep -cE '^  BOARD +hq_prolog .*(swi-without-file|file-on-a-runner-not-listed|swi-file-with-corpus) ' <<<"$out9")
 [ "$rc9" = 1 ] && [ "$n9" = 3 ] && ! grep -q 'onefile-swi' <<<"$out9" && grep -q 'ONEFILE 1, GUARD 0, BOARD 3, SMOKE 0, CLEAR 0; exposed and LIVE: 3$' <<<"$out9" \
-  && ck ok "(9) a one-file run of a runner on lib_one_runner.sh's single-file list is counted ONEFILE and never named (CEO-1664); without --file, on a runner off the list, or naming --corpus it stays BOARD" \
+  && ck ok "(9) a one-file run of a runner on lib_one_runner.sh's single-file list is counted ONEFILE and never named (R-1664); without --file, on a runner off the list, or naming --corpus it stays BOARD" \
   || ck no "(9) rc=$rc9 named-BOARD=$n9 :: $(tr '\n' '|' <<<"$out9" | cut -c1-400)"
 mkdir -p "$T/nolib"; cp "$C" "$T/nolib/"
 S4E_TASKS="$T7/tasks" S4E_QUEUE="$T7/QUEUE.tsv" python3 "$T/nolib/${C##*/}" > /dev/null 2>&1; r8=$?

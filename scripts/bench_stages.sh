@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export SCRIP_DIAG=0
 # bench_stages.sh <snobol4|raku> [--reps R] [--only "k1 k2"] [--prog FILE --input FILE] -- each program's RUNTIME and its START-UP+COMPILE, per engine.
-# THE METHOD (ceo CEO-1987; Lon 2026-10-26, in-chat to the ceo, verbatim: "The precise time-stamp for the first line and last line of the program
+# THE METHOD (R-1987; Lon 2026-10-26, in-chat, verbatim: "The precise time-stamp for the first line and last line of the program
 # should be gathered." · "why is not a timing call injected at first source line and last source line sufficient to measure RUNTIME?" · "To report
 # compile-time from SCRIP would be total process exec_time - (END_TIME - START_TIME), where END and START times are those just mentioned."): the
 # language's wrapper generator writes the program VERBATIM with a clock read at its first line and one at its last (--mode once), the SAME copy runs

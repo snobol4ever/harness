@@ -13,7 +13,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #   PORTTRACE_EXT       rungs/source extension, leading dot    e.g. .pl
 #   PORTTRACE_FAMILIES  default graded families                 e.g. "probe_plz ladder"
 #
-# ⭐⭐ THE INSTRUMENT IS OURS, NOT THE ORACLE'S (ceo CEO-172, 2026-09-03, on hq_T's measured correction of its
+# ⭐⭐ THE INSTRUMENT IS OURS, NOT THE ORACLE'S (R-172, 2026-09-03, on hq_T's measured correction of its
 # own ask). SCRIP_PL_TRACE=1 makes x86_port_hook -- installed at the GENERIC x86_jcc/x86_jmp/x86_deflabel port
 # sites in src/templates/x86/x86_asm.h that every language's Byrd boxes flow through -- emit one runtime call
 # per port (Call=α proceed, Redo=β recede, Exit=γ succeed, Fail=ω concede) printing "(N) D Port: box [-> target]"
@@ -30,7 +30,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # MOVED, never that it is RIGHT. Say "pinned" in every receipt that quotes one; a self-pin called an oracle diff
 # is a false provenance claim, and this file exists partly so that claim is never made by accident.
 #
-# ⭐⭐ POINT 6 HAS TWO SHAPES, AND THIS BODY IS ONLY THE FIRST. `test_gate_icn_port_trace.sh` (ceo mint
+# ⭐⭐ POINT 6 HAS TWO SHAPES, AND THIS BODY IS ONLY THE FIRST. `test_gate_icn_port_trace.sh` (mint
 # 2026-09-03, row icon-port-trace-gate-against-ampersand-trace) is a REAL ORACLE DIFF: iconx's `&trace := -1`
 # prints one line per user-procedure activation, and that gate normalises it onto the same four Byrd ports and
 # grades SCRIP against it. It is DELIBERATELY NOT built on this body and must not be "unified" into it -- its ref
@@ -93,7 +93,7 @@ port_trace_main() {
   REF="$RUNGS_DIR/ALL.trace"; PREFIX_CAP="${PREFIX_CAP:-400}"; T="${TIMEOUT:-20}"
   gate_require_exec "$SCRIP" "scrip binary"
   gate_require "$RT/libscrip_rt.so" "runtime library"
-  # ⛔ THE BINARY IS AS NEW AS src/ OR THE GATE CANNOT MEASURE (cto 2026-09-27 22:1x, from the port-trace bisect under CEO-1343):
+  # ⛔ THE BINARY IS AS NEW AS src/ OR THE GATE CANNOT MEASURE (cto 2026-09-27 22:1x, from the port-trace bisect under R-1343):
   # a worktree whose make had refused rc 2 graded the PREVIOUS tree's binary here and stamped the NEW tree's hash on the
   # verdict -- a reading of nothing wearing a hash. The guard every other gate carries, in the ONE body all seven share.
   [ -n "${SCRIP_BIN:-}" ] || "$HERE/util_require_fresh.sh" --gate "$GATE_NAME" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
@@ -108,7 +108,7 @@ port_trace_main() {
     # ⛔ AN EMPTY SELECTION IS UNMEASURED, NEVER A PASS -- a rung with no witness must refuse exactly as the ladder runner does.
     [ -n "${origins// /}" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: no ladder origins $SELDESC in $RUNGS_DIR/ALL.csv"; gate_stamp; exit 2; }; fi
   W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT; trap 'rm -rf "$W"; exit 143' TERM; trap 'rm -rf "$W"; exit 130' INT; trap 'rm -rf "$W"; exit 129' HUP
-  # ⛔⭐ THE WORK DIR IS RELEASED PER ORIGIN, NOT PER RUN (ceo 2026-10-01, Lon: "find out why /tmp keeps filling and fix the root
+  # ⛔⭐ THE WORK DIR IS RELEASED PER ORIGIN, NOT PER RUN (2026-10-01, Lon: "find out why /tmp keeps filling and fix the root
   # problem"): every origin leaves two asm files, two objects, two linked binaries and six outputs, and a master of ~2000 entries
   # held 3.7 GB in one $W until the run ended -- several seats' sets in flight filled a 63 GB /tmp to 90%. Only the normalised
   # trace and a diff survive an origin; and a TERM/INT/HUP (an arm timeout, a seat's kill) now runs the release too, since bash
@@ -185,7 +185,7 @@ port_trace_main() {
     ks=OK; { cmp -s "$W/$o.s0" "$W/$o.s0b" && [ -s "$W/$o.s0" ] && ! cmp -s "$W/$o.s0" "$W/$o.s1"; } || { ks=FAIL; bad=$((bad+1)); }
     # the m3 arms are the ones that did NOT cd into $W, so they are where the absolute path entered the trace
     # each run at the heap and stack the entry declares: extract writes them beside the witness as w.heap / w.stack, keyed by the
-    # witness's own stem (ceo CEO-1353, RULES.md clause 8 (g); the coo 2026-10-03: these four runs passed no declaration)
+    # witness's own stem (R-1353, RULES.md clause 8 (g); the coo 2026-10-03: these four runs passed no declaration)
     psw="$(declared_switches_beside "$src")" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: $o: a .heap or .stack sidecar the reader refuses"; gate_stamp; exit 2; }
     (cd "$W" && timeout -k 5 "$T" "$SCRIP" --run $psw "$srcbn" </dev/null >"$W/$o.m3.out0" 2>/dev/null); r30=$?
     (cd "$W" && env "$PORT_TRACE_ENV=1" timeout -k 5 "$T" "$SCRIP" --run $psw "$srcbn" </dev/null >"$W/$o.m3.out1" 2>"$W/$o.m3.raw"); r31=$?
@@ -220,7 +220,7 @@ port_trace_main() {
         { echo "%---- $o $m total=$total prefix=$p"; head -n "$p" "$W/$o.$m.norm"; } >> "$W/ALL.trace"; v=CUT
       else
         meta=$(refmeta "$o" "$m"); rt=${meta%% *}; rp=${meta##* }
-        # ⛔⭐⭐ NOREF IS A CANNOT-MEASURE, NOT A FAILED CHECK (hq_T 2026-09-11, on the ceo's finding that these
+        # ⛔⭐⭐ NOREF IS A CANNOT-MEASURE, NOT A FAILED CHECK (hq_T 2026-09-11, on the officer's finding that these
         # gates are wired into no recipe and that icn reads "22 failed checks of 24"). A witness with NO REF BLOCK
         # has never been pinned; the gate learned nothing about it. Counting it into `bad` publishes a backlog that
         # looks like defects and is not one -- MEASURED across all six self-pin gates plus icn: 218 of the failed

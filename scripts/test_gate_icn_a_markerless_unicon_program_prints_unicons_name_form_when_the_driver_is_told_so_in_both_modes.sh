@@ -5,7 +5,7 @@
 #
 # WHY (cto CTO-473, 2026-11-04, on hq_unicon's ask): a program of Unicon's own tests that carries no marker is plain Icon by R1, but its ref is cut by unicon, whose name() of a table
 # element is table_1["abc"] where Arizona prints T["abc"]. Option (a) ruled: the package says the program is Unicon (compile_args), the DRIVER turns the switch into the per-program
-# Unicon state R1 sets from a marker (the root of the parse tree carries it; lower selects ICN$UNAME), and nothing past the driver sees a flag (CEO-1838/1840). Not the vendored
+# Unicon state R1 sets from a marker (the root of the parse tree carries it; lower selects ICN$UNAME), and nothing past the driver sees a flag (R-1838/1840). Not the vendored
 # sources (they stay verbatim) and not an exclusion (the row reads 100 over the whole package).
 #
 # ARMS (both modes, every expectation CUT LIVE from the oracle): nmform with --dialect=unicon against unicon; nmform with no switch against Arizona icont (the default is unchanged);

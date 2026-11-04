@@ -38,16 +38,16 @@ refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_promo_lane.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"
-for s in ceo hq_C hq_B hq_P hq_T seat07; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
+for s in cto hq_C hq_B hq_P hq_T seat07; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 
 # ⛔⭐⭐ THE FIXTURE BRINGS ITS OWN TWO-LANE TABLE, BECAUSE ITS SUBJECT IS PROMOTION AND FREEZE, NOT THE
-# LIVE LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; ceo CEO-953 directed
+# LIVE LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; R-953 directed
 # this shape: "Cure the SCENARIO -- let it build its own two-seat table in its scratch postoffice -- rather
 # than the lane table"). THE HISTORY THIS CLOSES: the picker's language->owner table is a baked `case` inside
 # s4e_msg.sh, and every mode that gives all seven languages to one seat dissolves this gate's scenario. Under
-# MODE CEO it printed three arms UNBUILDABLE; under TRIO and QUARTET (all seven to the ceo) it REFUSED rc=2
+# MODE SOLO it printed three arms UNBUILDABLE; under TRIO and QUARTET (all seven to the officer) it REFUSED rc=2
 # outright and took `make test-postoffice` down with it, which is one of the twenty-three blocking arms that
-# left every seat without a landing gate (CEO-944). The gate was correct to refuse rather than lower its bar,
+# left every seat without a landing gate (R-944). The gate was correct to refuse rather than lower its bar,
 # and correct not to be cured by editing the live lane table -- but a fixture that can only run in modes with
 # two or more lanes is a fixture that goes dark exactly when the fleet consolidates.
 # ⭐ SO THE SCENARIO IS MADE SELF-SUFFICIENT. Everything else this gate needs it already builds in its own
@@ -73,18 +73,18 @@ case $? in
 esac
 SUT="$W/picker_fixture.sh"
 mkdir -p "$W/$_PINNED_OWN_OWNER/inbox" "$W/$_PINNED_OWN_OWNER/archive" "$W/$_PINNED_CROSS_OWNER/inbox" "$W/$_PINNED_CROSS_OWNER/archive"
-# ⛔⭐⭐ THE FIXTURE DERIVES ITS LANGUAGE FROM THE PICKER UNDER TEST, AND NAMES NONE (hq_B 2026-09-13, ceo
-# CEO-672). This block used to read `printf 'hq_B\n' > "$W/seat07/HQ"` with the comment "seat07's lane is
+# ⛔⭐⭐ THE FIXTURE DERIVES ITS LANGUAGE FROM THE PICKER UNDER TEST, AND NAMES NONE (hq_B 2026-09-13, the officer
+# R-672). This block used to read `printf 'hq_B\n' > "$W/seat07/HQ"` with the comment "seat07's lane is
 # hq_B for this fixture (icon)", and every row below hardcoded `hq_B` as its owner cell -- a FOURTH copy of
 # the language->owner table, living inside the very test that grades the picker that owns the table.
-# ⭐ WHEN NONET MOVED ICON TO THE CEO, CHECK (a) WENT RED FOR THE WRONG REASON. Promotion had not broken; the
+# ⭐ WHEN NONET MOVED ICON TO THE OFFICER, CHECK (a) WENT RED FOR THE WRONG REASON. Promotion had not broken; the
 # fixture still believed hq_B owned Icon, so seat07 had no own-lane row and the cross-lane blocker was
 # CORRECTLY promoted. A fixture that restates its subject's facts does not fail when the subject is wrong --
 # it fails when the subject is RIGHT and has moved, which is the most expensive red there is: it points at
 # the cure and calls it the bug. Editing the assertion to match would have buried a real defect.
 # ⛔ AND CHASING IT UNCOVERED THE REAL ONE: `s4e_my_lane` recognises only hq_* names, so an executive is not a
 # lane at all. Under NONET four of the seven completeness owners ARE executives, so a seat whose HQ is one of
-# them resolves to NO lane and goes lane-blind. That is documented, deliberate ("ceo is never restricted") and
+# them resolves to NO lane and goes lane-blind. That is documented, deliberate ("the officer is never restricted") and
 # is a separate ruling from this row -- so the fixture must not depend on it either way.
 # ⭐ SO IT ASKS FOR WHAT IT ACTUALLY NEEDS: a language whose owner IS lane-determinable, chosen at run time.
 # The checks below grade the PROMOTION and FREEZE mechanisms, which is their real subject, and they now
@@ -95,7 +95,7 @@ _lane_langs="$(bash -c '. /dev/stdin <<<"$(sed -n "/^s4e_lane_languages()/,/^s4e
 # The frozen language in blocks (d)-(g) is SNOBOL4 by name (the freeze string is prose in MODE), so the
 # fixture's OWN language must be a different one, or (d) would be testing two mechanisms at once.
 _own_lang=""; _own_owner=""
-# ⛔ AND ITS OWNER MUST DIFFER FROM SNOBOL4's (ceo CEO-766, 2026-09-16): blocks (a)-(c) grade a CROSS-lane
+# ⛔ AND ITS OWNER MUST DIFFER FROM SNOBOL4's (R-766, 2026-09-16): blocks (a)-(c) grade a CROSS-lane
 # promotion, and the cross language is snobol4 BY NAME, so an own language that shares snobol4's owner makes
 # the blocker an own-lane row -- the picker promotes it, correctly, and the gate reads 2 of 10 RED on a correct
 # picker. Measured the minute the cfo took icon beside snobol4. Skipping same-owner languages keeps a cross
@@ -105,15 +105,15 @@ for _l in $_lane_langs; do
   [ "$_l" = snobol4 ] && continue
   _o="$(_lane_owner_of "$_l")"
   [ -n "$_sno_owner" ] && [ "$_o" = "$_sno_owner" ] && continue
-  # ⛔ ceo IS ADMITTED HERE AND THAT IS NOT A CONTRADICTION OF THE LAW ABOVE (ceo CEO-755, MODE CEO). The law
-  # restricts the ceo IDENTITY -- ME=ceo is never lane-filtered. This fixture never runs AS the ceo: it runs as
-  # a numbered seat whose HQ file names the owner, and a seat reporting to the ceo is lane-determinable exactly
-  # as a seat reporting to an HQ is. Refusing ceo here would have made the gate ungradable in the one mode where
+  # ⛔ the officer IS ADMITTED HERE AND THAT IS NOT A CONTRADICTION OF THE LAW ABOVE (R-755, MODE SOLO). The law
+  # restricts the officer IDENTITY -- ME=officer is never lane-filtered. This fixture never runs AS the officer: it runs as
+  # a numbered seat whose HQ file names the owner, and a seat reporting to the officer is lane-determinable exactly
+  # as a seat reporting to an HQ is. Refusing the officer here would have made the gate ungradable in the one mode where
   # every language has the same owner -- i.e. it would go dark precisely when the lane cut is simplest to check.
-  case "$_o" in hq_*|ceo|cto|cfo|coo) _own_lang="$_l"; _own_owner="$_o"; break;; esac
+  case "$_o" in hq_*|cto|cfo|coo) _own_lang="$_l"; _own_owner="$_o"; break;; esac
 done
-[ -n "$_own_lang" ] || refuse "no language in the picker's table is owned by a lane-determinable seat (hq_*, ceo, cto, cfo or coo), so an own-lane scenario cannot be built. This is a real finding about the lane cut, not a broken fixture -- report it rather than lowering the bar."
-# ⛔⭐⭐ HOW MANY LANES DOES THE TABLE ACTUALLY HAVE? (ceo CEO-755, the day MODE went to CEO.) Blocks (a)-(c)
+[ -n "$_own_lang" ] || refuse "no language in the picker's table is owned by a lane-determinable seat (hq_*, cto, cfo or coo), so an own-lane scenario cannot be built. This is a real finding about the lane cut, not a broken fixture -- report it rather than lowering the bar."
+# ⛔⭐⭐ HOW MANY LANES DOES THE TABLE ACTUALLY HAVE? (R-755, the day MODE went to the officer.) Blocks (a)-(c)
 # grade a CROSS-lane promotion, and a cross lane has to EXIST to be graded. Under a single-seat mode the
 # table gives all seven languages to one owner, so there is no second lane and the fixture's old cross-lane
 # row -- a snobol4 row with an `unassigned` owner cell -- resolved to the SAME lane and was promoted, exactly
@@ -131,7 +131,7 @@ _live_mode="$(head -1 "${S4E_POST_LIVE:-/home/resources/postoffice}/MODE" 2>/dev
 _one_lane=0
 if [ "${_n_owners:-0}" -le 1 ]; then
   case "$_live_mode" in
-    CEO) _one_lane=1 ;;
+    SOLO) _one_lane=1 ;;
     *) refuse "the picker's table gives every language to ONE owner ($_own_owner) while MODE line 1 reads '${_live_mode:-unreadable}', which declares more than one working seat. A cross-lane scenario cannot be built and this disagreement is the finding: either the table collapsed or the mode did." ;;
   esac
 fi
@@ -155,9 +155,9 @@ set_mode 'FLEET-16'   # no language freeze active for this block -- isolates the
 unbuilt=0
 unbuildable(){ unbuilt=$((unbuilt+1)); printf '  ----  %s  [UNBUILDABLE: %s]\n' "$1" "$2"; }
 if [ "$_one_lane" = 1 ]; then
-  unbuildable "(a) own-lane pass serves the genuine own-lane fallback row, not the cross-lane promoted blocker" "one lane under MODE CEO"
-  unbuildable "(b) the refusal is printed, naming both the blocked row and the refused blocker" "one lane under MODE CEO"
-  unbuildable "(c) cross-lane fallback still promotes the blocker when the seat's own lane has nothing else" "one lane under MODE CEO"
+  unbuildable "(a) own-lane pass serves the genuine own-lane fallback row, not the cross-lane promoted blocker" "one lane under MODE SOLO"
+  unbuildable "(b) the refusal is printed, naming both the blocked row and the refused blocker" "one lane under MODE SOLO"
+  unbuildable "(c) cross-lane fallback still promotes the blocker when the seat's own lane has nothing else" "one lane under MODE SOLO"
 else
 reset_q
 mk 0 ${_own_lang}-blocked-row      "$_own_owner" BLOCKED-ON:snobol4-blocker-row
@@ -186,7 +186,7 @@ fi
 # Same lane on both rows this time (deliberately) so a refusal here can ONLY be explained by the freeze,
 # never by the lane cut above -- isolates the item-(3) mechanism from item-(2)'s.
 set_mode 'FLEET-8
-# 2026-09-04 18:23 CDT ceo: MODE FLEET-16 -> FLEET-8 ON SNOBOL4 ONLY, on Lon'"'"'s word'
+# 2026-09-04 18:23 CDT the officer: MODE FLEET-16 -> FLEET-8 ON SNOBOL4 ONLY, on Lon'"'"'s word'
 
 # (d)+(e): an active SNOBOL4-only freeze refuses a same-lane Icon blocker, and says so; a same-lane
 # SNOBOL4-language row at a worse rank is served instead.
@@ -217,7 +217,7 @@ grep -qE "^(LOCKED|FREE).*${_own_lang}-frozen-blocker" <<<"$out" \
 
 # (g) POSITIVE CONTROL: a language-neutral promotion candidate (no recognized prefix) is never frozen out.
 set_mode 'FLEET-8
-# 2026-09-04 18:23 CDT ceo: MODE FLEET-16 -> FLEET-8 ON SNOBOL4 ONLY, on Lon'"'"'s word'
+# 2026-09-04 18:23 CDT the officer: MODE FLEET-16 -> FLEET-8 ON SNOBOL4 ONLY, on Lon'"'"'s word'
 reset_q
 mk 0 ${_own_lang}-blocked-row4        "$_own_owner" BLOCKED-ON:postoffice-tooling-blocker
 mk 5 postoffice-tooling-blocker unassigned FREE

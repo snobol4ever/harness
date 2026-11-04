@@ -3,7 +3,7 @@
 # test_gate_icn_pre_step_tool_matches_icont_e.sh -- SCRIP'S OWN ICON PRE-STEP, out/scrip-ipp (JCON's preprocessor in Icon, compiled by
 # scrip), WRITES THE TEXT THE ORACLE'S icont -E WRITES, ON EVERY CORPUS .icn (Lon 2026-09-30: "So we want to provide for SCRIP the IPP,
 # Icon Pre Processor, as a pre-step." · "Let's use JCON's full pre-processor written in Icon as our IPP if it looks good." · "Do not use
-# the oracle's pre-process step if it is part of the product"; RULES.md FACT RULE SCRIP DOES NOT PREPROCESS; GOAL-CEO.md CEO-1366).
+# the oracle's pre-process step if it is part of the product"; RULES.md FACT RULE SCRIP DOES NOT PREPROCESS; the archived ruling record R-1366).
 #
 # THE CONTRACT: for every corpus program (tests, packages, benchmarks, demos; ALL.* containers excluded), run in its own directory with
 # LPATH naming the IPL include directories: whenever icont -E exits 0 the pre-step exits 0 and its PROGRAM TEXT is identical -- the

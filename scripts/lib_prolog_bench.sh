@@ -13,7 +13,7 @@
 # The cure is not a SCRIP-specific guard (NO PER-ENGINE FILTER): every engine's loop stdout is compared byte-for-byte against N
 # copies of the kernel's .ref, and a run whose output is not exactly N answers is reported as what it IS --
 # LOOP-OUTPUT-MISMATCH(lines=<seen>/<wanted>) -- and never as a rate. The observation prints first, the belief nowhere.
-# gnu_filter is the one gprolog output filter, defined beside the oracle accessors (CEO-1599); four callers source this library and
+# gnu_filter is the one gprolog output filter, defined beside the oracle accessors (R-1599); four callers source this library and
 # not lib_oracle_flags.sh, so it is sourced here when it is not already in scope.
 command -v gprolog_output_filter >/dev/null 2>&1 || . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_oracle_flags.sh"
 gnu_filter() { gprolog_output_filter; }
@@ -29,7 +29,7 @@ loop_check() {
   echo "LOOP-OUTPUT-MISMATCH(lines=$(wc -l < "$o.f")/$(wc -l < "$o.want"))"; return 1
 }
 # ⭐ gen_counted_set <outdir> [engine] -- MATERIALISE THE COUNTED KERNEL SET, the ONE replacement for the retired checked-in
-# corpus/benchmarks/prolog/vanroy/ directory (hq_P 2026-09-13, CEO-567: the iteration count may not live inside the artifact under
+# corpus/benchmarks/prolog/vanroy/ directory (hq_P 2026-09-13, R-567: the iteration count may not live inside the artifact under
 # measurement). vanroy/ was 21 files, each bench/<k>.pl with `main :- l__(N).` frozen in; the N values were lifted verbatim into
 # corpus/benchmarks/prolog/fixed-iter-n.tsv when it was retired, so this generates the same 21 programs at the same 21 counts from
 # the pristine sources instead of reading a derived artifact out of git. Writes <outdir>/<kernel>.pl and echoes the count.
@@ -43,10 +43,10 @@ gen_counted_set() {
   root="${S4E_HOME:-$(cd "$here/../.." && pwd)}"
   pro="$root/corpus/benchmarks/prolog"; tsv="$pro/fixed-iter-n.tsv"; gen="$here/bench_prolog_wrap.sh"
   [ -s "$tsv" ] || { echo "⛔ REFUSED (rc=2): committed-N table missing or empty: $tsv" >&2; return 2; }
-  [ -x "$gen" ] || { echo "⛔ REFUSED (rc=2): wrapper generator missing: $gen -- the counted form is generated, never checked in (CEO-567)" >&2; return 2; }
+  [ -x "$gen" ] || { echo "⛔ REFUSED (rc=2): wrapper generator missing: $gen -- the counted form is generated, never checked in (R-567)" >&2; return 2; }
   mkdir -p "$out" || return 2
   local made=0
-  while IFS=$'\t' read -r k n _nr; do   # _nr: the rival count column (CEO-1281) -- this set is the SCRIP count's; a two-field read would swallow it into n
+  while IFS=$'\t' read -r k n _nr; do   # _nr: the rival count column (R-1281) -- this set is the SCRIP count's; a two-field read would swallow it into n
     case "$k" in ''|'#'*|kernel) continue ;; esac
     case "$n" in ''|*[!0-9]*) echo "⛔ REFUSED (rc=2): $tsv row '$k' has a non-numeric N '$n'" >&2; return 2 ;; esac
     src="$pro/bench/$k.pl"

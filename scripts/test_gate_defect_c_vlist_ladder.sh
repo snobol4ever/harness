@@ -37,11 +37,11 @@ SCRIP="$ROOT/scrip"; RT="$ROOT/out"
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 [ -x "$SCRIP" ]                 || { echo "⛔ REFUSES (rc=2): $SCRIP not built. Run make first -- this is NOT a pass."; exit 2; }
 command -v valgrind >/dev/null  || { echo "⛔ REFUSES (rc=2): valgrind absent; the deterministic arm cannot run, so no verdict is possible."; exit 2; }
-# ⭐⭐ RE-POINTED TO THE RUNGS (hq_P 2026-08-30; ceo RULING `defect-c-gate-answer`). The loose tree
+# ⭐⭐ RE-POINTED TO THE RUNGS (hq_P 2026-08-30 RULING `defect-c-gate-answer`). The loose tree
 # corpus/probe/vlist_select is GONE -- probe/ was deleted in the total conversion -- and this gate had been
 # REFUSING rc=2 ever since. It refused rather than passing, which is the only reason the ladder was not
 # silently green while grading nothing.
-# ⛔ NO STANDALONE DUPLICATE IS KEPT. ceo ruled the re-point goes through lib_rungs_extract.sh:
+# ⛔ NO STANDALONE DUPLICATE IS KEPT. the officer ruled the re-point goes through lib_rungs_extract.sh:
 # rungs_extract_family materializes all eight entries as separately-compilable, separately-runnable
 # standalone .sno/.ref pairs in a scratch dir, and everything below this line then does EXACTLY what it
 # always did, per witness -- own .s, own binary, REPS x `env -i`, own valgrind arm.

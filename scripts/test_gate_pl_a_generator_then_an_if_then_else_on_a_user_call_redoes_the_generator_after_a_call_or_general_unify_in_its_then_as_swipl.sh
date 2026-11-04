@@ -1,6 +1,6 @@
 #!/bin/bash
-# test_gate_pl_a_generator_then_an_if_then_else_on_a_user_call_redoes_the_generator_after_a_call_or_general_unify_in_its_then_as_swipl.sh -- THE GATE ARM'S COORDINATE ORIGIN (ceo CEO-1959; row
-# prolog-the-gate-arm-origin-sits-after-the-conditions-operand-cells-so-a-then-branch-redo-resumes-the-generator-at-the-wrong-rsp-ceo-1959, built by hq_zetas under the cto; finding
+# test_gate_pl_a_generator_then_an_if_then_else_on_a_user_call_redoes_the_generator_after_a_call_or_general_unify_in_its_then_as_swipl.sh -- THE GATE ARM'S COORDINATE ORIGIN (R-1959; row
+# prolog-the-gate-arm-origin-sits-after-the-conditions-operand-cells-so-a-then-branch-redo-resumes-the-generator-at-the-wrong-rsp-r-1959, built by hq_zetas under the cto; finding
 # .github/findings/FINDING-2026-10-25-hq_packages-an-if-then-else-whose-condition-binds-a-fresh-variable-the-then-branch-uses-loses-the-generators-redo.md; class table taken apart by the cfo on 5f0f016f3).
 # THE WITNESS: between(1,3,L), ( q1(R0) -> R = R0 ; fail ) with q1(X) :- X = [a,b]. answers L = 1 and then loses the generator (swipl: 1, 2, 3). THE CLASS (cfo, 24 shape probes): it needs (1) a retained generator
 # BEFORE the if-then-else (between/3 -- member/2 PASSES, so between's retained activation is part of it), (2) a condition that is a USER-PREDICATE CALL leaving operand cells on the spine (q1(R0) and q1(_) both fail;

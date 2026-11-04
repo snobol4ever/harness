@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh -- THE XSB DIALECT WRITES A TERM IN XSB'S OWN STYLE (hq_packages 2026-10-28, CEO-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests).
+# test_gate_pl_xsb_dialect_write_prints_a_term_as_xsb_does.sh -- THE XSB DIALECT WRITES A TERM IN XSB'S OWN STYLE (hq_packages 2026-10-28, R-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests).
 # XSB 5.0.0 writes every infix operator spaced (a + b, a = b, a : b, X is Y) except the comma and the semicolon (a,b and a;b); a term of priority above 1000 under write/1 and writeq/1
 # is parenthesized ((a :- b), (a;b), (a --> b), (dynamic a)) where the comma term is not (a,b), and under writeln/1 and write_term(T, [priority(999)]) the comma term is too ((a,b));
 # a prefix operator is followed by a space (- a, \+ a, - (1 + 2), - 1 for -(1) under write and - (1) under writeq); writeq wraps an operator atom that is a compound's argument

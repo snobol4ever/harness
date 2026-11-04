@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_predicate_property_of_a_directive_or_bar_name_has_no_property_as_swipl.sh -- ?-, :- AND | ARE NOT PREDICATES IN THE SWI DIALECT (hq_packages, ceo CEO-1959; Trealla issues_test1071 prints
+# test_gate_pl_predicate_property_of_a_directive_or_bar_name_has_no_property_as_swipl.sh -- ?-, :- AND | ARE NOT PREDICATES IN THE SWI DIALECT (hq_packages, R-1959; Trealla issues_test1071 prints
 # whether predicate_property('?-'(_,_), _) holds: swipl 9.0.4 and 10.1.5 say it does not). swipl reports NO property for ?-/1, ?-/2, :-/1, :-/2 and |/2 (they are operators the clause reader and the directive
 # runner consume, not predicates) while ,/2 ;/2 ->/2 carry sixteen properties and call/1, findall/3 seventeen; SCRIP answered built_in and defined for the five. CURED in the run-time branch of
 # predicate_property (by_name_dispatch.c) and the compile-time one (lower_prolog.c, a constant head): in the SWI dialect those three names are not built-ins. The GNU/ISO branch is untouched.

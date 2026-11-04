@@ -34,7 +34,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 set -uo pipefail
 GATE_NAME=test_prolog_logtalk_suite
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SUITE="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/logtalk_iso"
 SCRIP="$HERE/../../SCRIP/scrip"
@@ -50,7 +50,7 @@ while [ $# -gt 0 ]; do
         *) refuse "unknown argument '$1' -- this runner has no silent fall-through" ;;
     esac
 done
-# ⛔ THE FAN-OUT CEILING (ceo CEO-1333; the ceo's word to the coo 2026-10-01 12:1x CDT, a Logtalk pass at 12 jobs put load1 at 18 on a
+# ⛔ THE FAN-OUT CEILING (R-1333; the officer's word to the coo 2026-10-01 12:1x CDT, a Logtalk pass at 12 jobs put load1 at 18 on a
 # shared box): the default width is lib_fanout.sh's fanout_width, max(2, min(4, cores - demand)), read at launch; a --jobs or LOGTALK_JOBS above
 # it is CLAMPED and the clamp is printed, never silent -- the shape run_blocking_set.sh gives --shards. This runner defaulted to 12.
 . "$HERE/lib_fanout.sh" || refuse "../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling has no instrument"
@@ -58,7 +58,7 @@ _fw=$(fanout_width)
 case "$JOBS" in
     '') JOBS=$_fw ;;
     *[!0-9]*|0) refuse "--jobs takes a count of 1 or more (got '$JOBS')" ;;
-    *) if [ "$JOBS" -gt "$_fw" ]; then echo "fanout: --jobs $JOBS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (CEO-1333/1394: max(2, min(4, cores - demand)), never load1)"; JOBS=$_fw; fi ;;
+    *) if [ "$JOBS" -gt "$_fw" ]; then echo "fanout: --jobs $JOBS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (R-1333/1394: max(2, min(4, cores - demand)), never load1)"; JOBS=$_fw; fi ;;
 esac
 
 [ -d "$SUITE" ] || refuse "no vendored suite at $SUITE -- a suite that is absent is not a suite that is failing"
@@ -90,7 +90,7 @@ case "$_pfout" in
     Every case program embeds this shim, so grading now would publish a complete, plausible board that measures the harness and not the language." ;;
 esac
 
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # ALL.csv's heap_kb and stack_kb are read ONCE through lib_declared_arena.sh (the one reader; a refused cell refuses the board) and the
 # validated table goes to the grader, which runs each case in both modes at its own declaration (util_logtalk_grade.py decl_env).
 # Line 2 hands the guard the same suite this runner grades -- S4E_CORPUS, else S4E_HOME's corpus, exactly as SUITE above.
@@ -99,7 +99,7 @@ _decl="$(mktemp "${TMPDIR:-/tmp}/lgt_decl.XXXXXX")"
 declared_memory_begin "$SUITE/ALL.csv" "$_decl" || { rm -f "$_decl"; refuse "a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; }
 _out="$(mktemp "${TMPDIR:-/tmp}/lgt_board.XXXXXX")"
 trap 'rm -f ${_decl:+"$_decl"} ${_out:+"$_out"}' EXIT; trap 'rm -f ${_decl:+"$_decl"} ${_out:+"$_out"}; exit 143' TERM; trap 'rm -f ${_decl:+"$_decl"} ${_out:+"$_out"}; exit 130' INT
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1802/1805/1806; Lon 2026-10-17, in-chat to the coo: "Get LogTalk working now that you have batches."): under
+# ⭐ THE ROUND ROBIN'S SEAM (R-1802/1805/1806; Lon 2026-10-17, in-chat to the coo: "Get LogTalk working now that you have batches."): under
 # S4E_CHUNK the part's cases (group:case, as ALL.csv and PARTITION.tsv name them) are graded in the partition's order, LOGTALK_RR_BATCH (25) names
 # per grader call, both modes each call, and each call's rows are appended as it ends. Between two calls a waiting request or a spent S4E_RR_BUDGET
 # stops the part (RR_YIELD; the loop resumes it at the next name). No suite row is written from a part: util_score_row.py from-progress assembles it.
@@ -133,7 +133,7 @@ _shell="$(grep -m1 '^BOARD_FOR_SHELL ' "$_out" || true)"
 [ -n "$_shell" ] || { echo "⚠ SCORE.md NOT UPDATED [$GATE_NAME]: the run printed no BOARD_FOR_SHELL line, so there is no measurement to record"; rm -f "$_out" "$_decl"; exit 1; }
 set -- $_shell
 _pop="$2"; _both="$3"; _m3p="$4"; _m3f="$5"; _m4p="${6:-}"; _m4f="${7:-}"
-# ⭐ THE EXCLUDED CASES (EXCLUDED_CASES.tsv beside the suite, Lon 2026-10-05, ceo CEO-1519/1520) ride the shell line as a named trailing
+# ⭐ THE EXCLUDED CASES (EXCLUDED_CASES.tsv beside the suite, Lon 2026-10-05, R-1519/1520) ride the shell line as a named trailing
 # field, never a position, and reach the row as --excluded so the grid shows Excl beside PASS over the population (shipped = both).
 _excl="$(printf '%s\n' "$_shell" | grep -o 'excluded=[0-9]*' | cut -d= -f2)"
 [ -n "$_excl" ] || refuse "the grader's BOARD_FOR_SHELL line carries no excluded= field -- the Excl column would be a guess"
@@ -144,7 +144,7 @@ _excl="$(printf '%s\n' "$_shell" | grep -o 'excluded=[0-9]*' | cut -d= -f2)"
 # would otherwise print "population=0, identity 0 == 0 ✓" and read as a clean board.
 "$HERE/util_require_population.sh" --gate "$GATE_NAME" "$_pop" 1 "logtalk_iso cases graded (BOARD_FOR_SHELL population)" || { rm -f "$_out" "$_decl"; exit 2; }
 
-# ⛔⭐ ONE ROW PER CASE PER MODE (CEO-331), appended from what the grader just wrote. NON-FATAL BY DESIGN,
+# ⛔⭐ ONE ROW PER CASE PER MODE (R-331), appended from what the grader just wrote. NON-FATAL BY DESIGN,
 # exactly like gate_score_row: a runner that gets red-ed by its own bookkeeping is a runner people stop
 # calling. ⛔ WITHOUT THIS THE SUITE READS AS **MISSING** TO util_progress_flips --coverage even while the
 # board is green, so a flip the progress table cannot see is a flip nobody is paid for (coo, 2026-09-12).
@@ -166,7 +166,7 @@ _iv="$(inventory_line 192 0)"; _ivrc=$?
 
 _board="$(grep -m1 '^LOGTALK_ISO_BOARD ' "$_out" || true)"
 _ident="$(grep -m1 ' identity ' "$_out" | sed 's/^ *//' || true)"
-_txt="logtalk_iso (ISO/IEC 13211-1, the suite's own per-case expectations) $_both/$_pop by the AND PER CASE — a case passes when it passes in EVERY mode graded (CEO-372), which is NOT either per-mode count: $_m3p/$_pop m3"
+_txt="logtalk_iso (ISO/IEC 13211-1, the suite's own per-case expectations) $_both/$_pop by the AND PER CASE — a case passes when it passes in EVERY mode graded (R-372), which is NOT either per-mode count: $_m3p/$_pop m3"
 [ -n "$_m4p" ] && _txt="$_txt · $_m4p/$_pop m4 are equal counts over sets that differ"
 _txt="$_txt — every case graded against the standard as the standard states it, not an oracle diff; $_ident"
 # ⛔⭐ THE SUITE ROW STATES THE **AND PER CASE**, PASSED EXPLICITLY, AND THE KEY IS LOWERCASE `logtalk`.
@@ -175,11 +175,11 @@ _txt="$_txt — every case graded against the standard as the standard states it
 # `logtalk`; (2) no --suite-pass/--suite-total was given, so util_score_row tried to read a fraction out of
 # the prose and REFUSED, leaving SCORE.md rewritten and SUITES.tsv untouched -- the adrift-cell split state
 # the handoff instrument warns on; (3) even had it read one, the per-mode fraction is the WRONG NUMBER when
-# the modes differ. m3 and m4 both say 1218 over sets that are not the same. CEO-372's answer is the AND per
+# the modes differ. m3 and m4 both say 1218 over sets that are not the same. R-372's answer is the AND per
 # case, and only this runner can compute it, so only this runner may state it.
 _sc="$HERE/util_score_row.py"
-# A DENOMINATOR MOVE IS STAMPED THROUGH S4E_CRITERION_CHANGED='<YYYY-MM-DD>:<reason>' (the test_corpus_snobol4.sh convention, CEO-785): the
-# writer refuses a moved denominator without it, and this runner had no way to pass it (hq_prolog 2026-09-25, when CEO-1235 (a) moved 3600 -> 3528).
+# A DENOMINATOR MOVE IS STAMPED THROUGH S4E_CRITERION_CHANGED='<YYYY-MM-DD>:<reason>' (the test_corpus_snobol4.sh convention, R-785): the
+# writer refuses a moved denominator without it, and this runner had no way to pass it (hq_prolog 2026-09-25, when R-1235 (a) moved 3600 -> 3528).
 python3 "$_sc" write --lang prolog --column vendor --text "$_txt${_iv:+ · $_iv (\`$GATE_NAME.sh\`)}" \
     --measurer "${S4E_SEAT:-}" --modes "$MODES" --suite logtalk --suite-pass "$_both" --suite-total "$_pop" --excluded "$_excl" \
     ${S4E_CRITERION_CHANGED:+--criterion-changed "$S4E_CRITERION_CHANGED"} \

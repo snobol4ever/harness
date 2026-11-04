@@ -2,8 +2,8 @@
 # test_gate_raku_roast_a_timeout_reads_hang_not_crash.sh -- THE ROAST RUNNER WRITES A TIMEOUT AS HANG, NEVER CRASH (coo 2026-10-23).
 # raku_roast_scoreboard.sh's classify() files rc 124 under CRASH (its board line's bucket is CRASH / TIMEOUT) and roast_outcome wrote that
 # CRASH into the progress DB, so ten S15-normalization files that ran past the 30 s m3 cap under the verifier pool's load read CRASH m3 on
-# ab0adf375 and went to the ceo as crashes (COO-412); nfc-9 runs 22.8 s alone on 26e79fe3e and dies by no signal. The verdict ladder's HANG
-# is the timeout's verdict. The gate grades on its own fixture tree (CEO-547): a spinning .t and a passing control, the runner pointed at
+# ab0adf375 and went to the officer as crashes (COO-412); nfc-9 runs 22.8 s alone on 26e79fe3e and dies by no signal. The verdict ladder's HANG
+# is the timeout's verdict. The gate grades on its own fixture tree (R-547): a spinning .t and a passing control, the runner pointed at
 # them by RAKU_ROAST_TREE/MANIFEST/DCSV, the progress DB and the score row redirected, the retry off (S4E_TIMEOUT_RETRY=0) so the m3 cap is
 # 5 s and the m4 run's 10 s. RED BEFORE THE CURE: on harness bf76cbe the spin's two rows read CRASH.
 # EXIT: 0 every arm holds · 1 an arm is red · 2 REFUSED -- cannot measure.

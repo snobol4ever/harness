@@ -52,7 +52,7 @@ sys.path.insert(0, HERE)
 
 FIXED = ["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args",
          "section", "kind", "err", "err_arg"]
-# ⛔ DECLARED, NEVER DERIVED: a program's heap, stack and command line (CEO-1261; clause 8 (f), CEO-1281) are carried forward
+# ⛔ DECLARED, NEVER DERIVED: a program's heap, stack and command line (R-1261; clause 8 (f), R-1281) are carried forward
 # from the table on disk by entry -- nothing in a goal's text regenerates them. Before this line --write dropped heap_kb and
 # stack_kb, which corpus 4d805e1bc wrote into both tables, and --check read both tables STALE.
 DECLARED = {"heap_kb": "131072", "stack_kb": "4096", "compile_args": "", "run_args": ""}

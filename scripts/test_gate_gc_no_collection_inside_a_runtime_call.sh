@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_no_collection_inside_a_runtime_call.sh -- THE ALLOCATOR NEVER COLLECTS AND NEITHER DOES A RUNTIME CALL:
 # a safe point is taken by EMITTED code at the return of an allocating runtime call, never by C inside the call
-# (Lon 2026-09-17, in-chat to the ceo; RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812: "a landing that adds
+# (Lon 2026-09-17, in-chat; RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812: "a landing that adds
 # ... a collection inside a runtime call is reverted on sight").
 #
 # MEASURED 2026-09-23 (cto, row gc-a-site-that-refuses-every-poll-form-names-an-unrooted-holder-...): a bare poll after
@@ -11,7 +11,7 @@
 # regeneration; the tvsubs road (a[2:3] := "XYZ") built the new string with rt_str_alloc, then called rt_assign_var
 # RECURSIVELY, whose entry seam collected with the two shielded cells repaired -- and the OUTER body's C local `vc`
 # (the VCELL block) was stale across it, so `vc->len = srclen` wrote 0x0000000000000003 into the relocated result string.
-# Under ordinary compaction the block usually keeps its address (84.7% of forwardings, CEO-1109), which is why a shielded
+# Under ordinary compaction the block usually keeps its address (84.7% of forwardings, R-1109), which is why a shielded
 # seam inside a runtime call reads green for months: it protects the two cells it was handed and nothing else the C
 # frames hold.  The seam is deleted; the emitted poll after rt_assign_var_strict (bb_assign_var.cpp:47) is the safe point.
 #
@@ -54,9 +54,9 @@ want="$(printf '%s\n' "$DECLARED" | sed '/^$/d' | sort -u)"
 new="$(comm -13 <(printf '%s\n' "$want" | sed '/^$/d') <(printf '%s\n' "$callers" | sed '/^$/d' | sort -u) | tr '\n' ';')"
 gone="$(comm -23 <(printf '%s\n' "$want" | sed '/^$/d') <(printf '%s\n' "$callers" | sed '/^$/d' | sort -u) | tr '\n' ';')"
 n=$(printf '%s\n' "$callers" | sed '/^$/d' | wc -l)
-if [ -n "$new" ]; then echo "  FAIL (a) a runtime function collects INSIDE its own call and is not on the declared standing set: $new -- the safe point belongs to the emitted code at the call's return (CEO-812); delete the seam, never add one"; RC=1
+if [ -n "$new" ]; then echo "  FAIL (a) a runtime function collects INSIDE its own call and is not on the declared standing set: $new -- the safe point belongs to the emitted code at the call's return (R-812); delete the seam, never add one"; RC=1
 elif [ -n "$gone" ]; then echo "  FAIL (a) a declared seam is gone and the standing set still names it: $gone -- move the list in the landing that earned it"; RC=1
-elif [ "$n" -gt 0 ]; then echo "  ok   (a) exactly the declared standing seam(s) remain, $n by name: $(printf '%s' "$callers" | tr '\n' ' ') -- the ratchet drives this to 0 (the ceo's row names them)"
+elif [ "$n" -gt 0 ]; then echo "  ok   (a) exactly the declared standing seam(s) remain, $n by name: $(printf '%s' "$callers" | tr '\n' ' ') -- the ratchet drives this to 0 (the officer's row names them)"
 else echo "  ok   (a) ZERO runtime functions collect inside their own call: every safe point is emitted"; fi
 if grep -q 'rt_gc_point_arr(sh, 2' "$ROOT/src/runtime/pattern_match.c" 2>/dev/null; then echo "  FAIL (b) the assignment body's entry seam is back (c_rt_assign_var_body) -- the stale-vc scribble this gate names"; RC=1; else echo "  ok   (b) c_rt_assign_var_body carries no entry seam"; fi
 echo "population: 2 arm(s) graded, callers=$n declared=$(printf '%s\n' "$want" | sed '/^$/d' | wc -l)"

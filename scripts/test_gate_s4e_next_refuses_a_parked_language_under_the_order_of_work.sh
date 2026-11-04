@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # ⭐⭐ GATE: `next` REFUSES A ROW OF A LANGUAGE THE ORDER OF WORK HAS PARKED -- AND SAYS SO.
 # Row `snobol4-icon-postoffice-next-refuses-a-row-of-a-language-parked-by-the-order-of-work-on-mode-line-2`
-# (CEO-489, hq_P). ⛔ THE MEASURED DEFECT, 2026-09-10: MODE line 1 read NONET and line 2 carried
+# (R-489, hq_P). ⛔ THE MEASURED DEFECT, 2026-09-10: MODE line 1 read NONET and line 2 carried
 # `THE ORDER OF WORK IS ICON ONLY`, and `s4e_msg.sh next` served hq_P a rank-0 SNOBOL4 row through the
 # owner-cell pass. The picker DID hold a language-freeze check; its extractor matched exactly one spelling,
-# `ON <LANG> ONLY`, and the ceo had written `IS ICON ONLY`. The extractor returned EMPTY, empty is
+# `ON <LANG> ONLY`, and the officer had written `IS ICON ONLY`. The extractor returned EMPTY, empty is
 # documented in the picker as NO FREEZE (never "undetermined"), and so every parked-language row in the
 # queue became servable -- silently, with no refusal to read. The only thing between an idle seat and hours
 # of parked-language work was the seat remembering to refuse.
@@ -16,7 +16,7 @@
 # ✅ THE CURE UNDER TEST: THE ORDER OF WORK is DECLARED in a machine line the bus reads --
 #     ORDER-OF-WORK: icon
 # -- the whitespace/comma-separated list of LIVE languages, matched BY MARKER anywhere in MODE (never by
-# line number: the ceo prepends each dated entry, so a positional line would be shoved down by the next
+# line number: the officer prepends each dated entry, so a positional line would be shoved down by the next
 # announcement and start answering for a superseded order of work). Absent marker falls back to the prose
 # parse, now widened to the `IS` form as well, so the cure never reads as a loosening.
 # ARMS: (a) the live `IS` spelling parks a rank-0 SNOBOL4 row and the icon row is served instead
@@ -28,7 +28,7 @@
 #       (g) POSITIVE CONTROL -- no marker and no ONLY clause: the SNOBOL4 row is served (no misfire)
 #       (h) the marker is found deep in the file, and the FIRST of several wins (prepend-newest)
 #       (i) a language-neutral topic is never parked by any order of work
-#       (j) an EXPLICIT ASSIGNMENT outranks the order of work -- the ceo dispatching a parked-language row
+#       (j) an EXPLICIT ASSIGNMENT outranks the order of work -- the officer dispatching a parked-language row
 #           by name is a deliberate direction, the same precedent `claim` and the rank cap already set
 #       -- ARMS (k)..(o) added hq_S 2026-09-10, THE SAME DEFECT ONE OPERAND OVER (see below) --
 #       (k) a row whose SLUG names no language but whose BATON names SNOBOL4's own witnesses is parked
@@ -49,7 +49,7 @@ mkdir -p "$W/tasks" "$W/claims" "$W/released"
 # the seats under test are hq_snobol4 and hq_prolog (coo 2026-09-25): the arms ran as hq_P and hq_S, and since the NONET
 # flip at 87701eadb the seat guard admits only the five HQs it names under NONET, so every arm read a guard refusal
 # instead of the picker (18 of 19 red on origin); the comments keep the old names, which record who found each arm
-for s in ceo hq_C hq_B hq_P hq_S hq_T seat07 hq_snobol4 hq_prolog; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
+for s in cto hq_C hq_B hq_P hq_S hq_T seat07 hq_snobol4 hq_prolog; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 mk(){ printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$2" > "$W/tasks/$2.task.md"; }
 # ⭐ mkb = mk with a CHOSEN BATON BODY. Arms (k)..(o) turn on what the baton says, and `mk`'s fixed
 # "GOAL: fixture" says nothing -- which is exactly why every arm above passed while the live picker was
@@ -64,8 +64,8 @@ reset_q(){ : > "$W/QUEUE.tsv"; rm -f "$W/claims/"*.claim 2>/dev/null; }
 set_mode(){ : > "$W/MODE"; local l; for l in "$@"; do printf '%s\n' "$l" >> "$W/MODE"; done; }
 # ⭐ THE LIVE PROSE, COPIED FROM /home/resources/postoffice/MODE line 2 as it stood 2026-09-10 -- the
 # spelling that actually defeated the picker. Never rewrite this to suit the parser; that is the defect.
-LIVE_L2='# 2026-09-09 09:0x CDT ceo: MODE stays NONET; THE ORDER OF WORK IS ICON ONLY, on Lon'"'"'s word (2026-09-09 09:0x CDT, in-chat to ceo, verbatim: "Switch to Icon completely.").'
-OTHER_L2='# 2026-09-08 19:09 CDT ceo: MODE EXECUTIVE -> QUARTET on Lon'"'"'s word; the four HQs work rows and the executives rule.'
+LIVE_L2='# 2026-09-09 09:0x CDT cto: MODE stays NONET; THE ORDER OF WORK IS ICON ONLY, on Lon'"'"'s word (2026-09-09 09:0x CDT, in-chat, verbatim: "Switch to Icon completely.").'
+OTHER_L2='# 2026-09-08 19:09 CDT cto: MODE EXECUTIVE -> QUARTET on Lon'"'"'s word; the four HQs work rows and the executives rule.'
 
 echo "=== gate: next refuses a row of a language parked by THE ORDER OF WORK ==="
 
@@ -142,11 +142,11 @@ grep -qE '^LOCKED.*snobol4-rungs-red-fixture' <<<"$out" \
   || ck no "(g) an inactive order of work must restrict nothing -- got: $(grep -E '^LOCKED|QUEUE EMPTY' <<<"$out")"
 
 # --- (h): FOUND BY MARKER, NOT BY POSITION; FIRST WINS ---------------------------------------------------
-# ⭐ The ceo PREPENDS each dated entry, so a positional read (line 3) would be shoved down by the very next
+# ⭐ The officer PREPENDS each dated entry, so a positional read (line 3) would be shoved down by the very next
 # announcement and start answering for a superseded order of work. Marker at depth 6 here, with a
 # SUPERSEDED marker below it: the first must win, which under prepend-newest is the newest.
-set_mode 'NONET' "$LIVE_L2" "$OTHER_L2" '# 2026-09-07 08:15 CDT ceo: CEO-382 announcement shape.' \
-         '# 2026-09-06 15:41 CDT ceo: MODE OCTET.' 'ORDER-OF-WORK: icon' \
+set_mode 'NONET' "$LIVE_L2" "$OTHER_L2" '# 2026-09-07 08:15 CDT R-382 announcement shape.' \
+         '# 2026-09-06 15:41 CDT cto: MODE OCTET.' 'ORDER-OF-WORK: icon' \
          '# older entries below' 'ORDER-OF-WORK: prolog'
 reset_q
 mk 0 prolog-inria-red-fixture    hq_snobol4 FREE
@@ -168,7 +168,7 @@ grep -qE '^LOCKED.*postoffice-tooling-fixture' <<<"$out" \
   || ck no "(i) a language-neutral topic must never be parked -- got: $(grep -E '^LOCKED|QUEUE EMPTY' <<<"$out")"
 
 # --- (j): AN EXPLICIT ASSIGNMENT OUTRANKS THE ORDER OF WORK ----------------------------------------------
-# ⭐ PINNED DELIBERATELY, so nobody later "tightens" the freeze into blocking the ceo's own dispatch. The
+# ⭐ PINNED DELIBERATELY, so nobody later "tightens" the freeze into blocking the officer's own dispatch. The
 # order of work is the DEFAULT a picker applies when choosing for itself; a row an authority pointed at this
 # seat BY NAME is a decision already taken -- the same precedent the rank cap states outright ("an explicit
 # direction outranks the cap") and that `claim` has always been. This row itself reached hq_P that way: its
@@ -179,7 +179,7 @@ mk 0 snobol4-assigned-tooling-fixture hq_snobol4 ASSIGNED:hq_snobol4
 # ⛔ THE ASSIGNMENT LIVES IN THE CLAIM FILE, NOT THE QUEUE COLUMN -- PASS 1 reads `claims/<topic>.claim`
 # (first line the assignee, an `ASSIGNED-BY` line, neither DONE nor RUNNING), which is precisely what
 # `dispatch` writes. A fixture that set only the ASSIGNED:<seat> column would prove nothing about PASS 1.
-{ echo 'hq_snobol4'; echo "ASSIGNED-BY ceo $(date -u +%FT%TZ)"; } > "$W/claims/snobol4-assigned-tooling-fixture.claim"
+{ echo 'hq_snobol4'; echo "ASSIGNED-BY cto $(date -u +%FT%TZ)"; } > "$W/claims/snobol4-assigned-tooling-fixture.claim"
 out="$(run_next hq_snobol4)"
 grep -qE 'snobol4-assigned-tooling-fixture' <<<"$out" && ! grep -qE 'QUEUE EMPTY' <<<"$out" \
   && ck ok "(j) a row ASSIGNED to this seat by name is still served -- an explicit direction outranks the default" \
@@ -193,8 +193,8 @@ grep -qE 'snobol4-assigned-tooling-fixture' <<<"$out" && ! grep -qE 'QUEUE EMPTY
 # and passed it: the slug carries no `snobol4-` prefix, the prefix table returned empty, and empty means
 # LANGUAGE-NEUTRAL. The picker printed ⛔ SKIP for four prefixed SNOBOL4 rows and then handed out an
 # unprefixed one, in the same run, four lines apart.
-# ⭐ THIS IS CEO-489'S OWN DEFECT ON THE OTHER OPERAND, and that is why it belongs in THIS gate rather than a
-# new one. CEO-489 cured an extractor that answered "does MODE contain `ON <LANG> ONLY`?" while being read as
+# ⭐ THIS IS R-489'S OWN DEFECT ON THE OTHER OPERAND, and that is why it belongs in THIS gate rather than a
+# new one. R-489 cured an extractor that answered "does MODE contain `ON <LANG> ONLY`?" while being read as
 # "what is the order of work?". This one is an extractor that answers "does this SLUG start with a language
 # prefix?" while being read as "what language is this ROW?". Both fail OPEN -- they leak parked work rather
 # than idle a seat -- so neither announces itself: a seat that is served a row does not audit why.
@@ -236,7 +236,7 @@ grep -qE '^LOCKED.*postoffice-picker-tooling-fixture' <<<"$out" \
   || ck no "(l) genuinely language-neutral tooling must survive every order of work -- got: $(grep -E '^LOCKED|QUEUE EMPTY' <<<"$out")"
 
 # --- (m): THE DECLARED LINE, which is what everyone SHOULD write ------------------------------------------
-# ⭐ Same doctrine CEO-489 landed one operand over: a language that is DECLARED cannot be mis-parsed out of
+# ⭐ Same doctrine R-489 landed one operand over: a language that is DECLARED cannot be mis-parsed out of
 # prose. This baton names no corpus path and no oracle -- inference has nothing to work with -- and the row
 # is parked anyway, on the strength of one written line.
 set_mode 'NONET' "$LIVE_L2" 'ORDER-OF-WORK: icon'

@@ -30,7 +30,7 @@ S4E_ONE_RUNNER_SINGLE_FILE=""; _sf_prev=""; for _sf_a in "$@"; do [ "$_sf_prev" 
 #               files are GNU Prolog's own compiler-driver entry points and no-op on an empty
 #               argument_list (e.g. Pl2Wam/ciaolib.pl's `go_other1([]) :- !.` clause), so they print
 #               0 bytes in all three arms. ⛔ AN EMPTY AGREEMENT IS NOT A PASS (Lon 2026-10-05 via the
-#               ceo, CEO-1523): it proves only that the file loads, so it is UNGRADED, named in
+#               R-1523): it proves only that the file loads, so it is UNGRADED, named in
 #               UNGRADED.tsv, owed its driver; a PASS needs m3 = m4 = gprolog AND a non-empty output.
 #   REJECT   -- times out. A real, ALREADY-KNOWN class (`misc-single-witness-parser-crashes`' own
 #               claim: these hang after a parse-error, a defect in error recovery, not a fresh bug).
@@ -39,9 +39,9 @@ S4E_ONE_RUNNER_SINGLE_FILE=""; _sf_prev=""; for _sf_a in "$@"; do [ "$_sf_prev" 
 #               NOT contain the LIB signal). Loudly flagged and FAILS the gate -- a genuinely new
 #               failure shape must never be silently folded into LIB or REJECT.
 #
-# AUTHORS: seat05, 2026-08-30 (Lon direct via ceo, row gnu-prolog-suite-runner-and-score)
+# AUTHORS: seat05, 2026-08-30 (Lon direct via the officer, row gnu-prolog-suite-runner-and-score)
 #
-# ⭐ --driver REL.pl GRADES ONE DRIVEN LIBRARY THE BOARD'S WAY (the cfo, 2026-10-14, ceo CEO-1727: "a row's criterion grades the way the
+# ⭐ --driver REL.pl GRADES ONE DRIVEN LIBRARY THE BOARD'S WAY (the cfo, 2026-10-14, R-1727: "a row's criterion grades the way the
 # board grades, ruled exclusions included ... through the runner, never a second copy of drop_excluded_lines"). REL.pl is the library as
 # the board names it (BipsPl/flag.pl); the loop below runs for that file alone -- its driver, m3, m4, live gprolog, the stale-ref check
 # and EXCLUDED_LINES.tsv -- writes no progress row and no score row (lib_one_runner.sh admits it for every seat, as the SWI runner's
@@ -53,7 +53,7 @@ set -uo pipefail   # deliberately NOT -e: a per-file compile/run failure is DATA
 
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-[ -f "$HERE/lib_progress.sh" ] && . "$HERE/lib_progress.sh"   # CEO-331: a runner that grades with its OWN loop appends its own rows
+[ -f "$HERE/lib_progress.sh" ] && . "$HERE/lib_progress.sh"   # R-331: a runner that grades with its OWN loop appends its own rows
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_flag_gate.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: lib_inventory.sh unloadable"; exit 2; }
 ONLY_DRIVER=""
@@ -87,8 +87,8 @@ is_bootstrap_only() {  # $1 = rel path (for the named list), $2 = full path (for
 [ -d "$PKG" ]        || { echo "⛔ REFUSED-TO-GRADE: $PKG missing"; exit 2; }
 [ -x "$SCRIP" ]      || { echo "⛔ REFUSED-TO-GRADE: scrip not built"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, the officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. the officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
@@ -98,7 +98,7 @@ is_bootstrap_only() {  # $1 = rel path (for the named list), $2 = full path (for
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/gnu_suite_XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # each file runs in BOTH modes at what its row in ALL.csv declares (entry = its path under the package without .pl) -- heap_kb,
 # stack_kb, read once through lib_declared_arena.sh, the one reader -- and at the shipped default when it declares nothing; a refused
 # cell refuses the board. The classifying compile and the gprolog oracle run as before.
@@ -113,7 +113,7 @@ declared_memory_begin "$PKG/ALL.csv" "$DECL" || { echo "⛔ REFUSED-TO-GRADE: a 
 gprolog_out() { local _f="$1" _in="${2:-/dev/null}"; if [ $# -ge 2 ]; then shift 2; else shift $#; fi
     cd "$TMP" && "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$GPROLOG_BIN" --consult-file "$_f" --query-goal halt ${1+--} "$@" < "$_in" 2>/dev/null \
     | gprolog_output_filter --compile-diagnostics; }
-# ⛔ ONE FIXED-PATH DRIVER AT A TIME ON THE BOX (the coo 2026-10-17, on the cfo's catch, CEO-1810): ten drivers make and remove a fixed /tmp/gnu_drv_*
+# ⛔ ONE FIXED-PATH DRIVER AT A TIME ON THE BOX (the coo 2026-10-17, on the cfo's catch, R-1810): ten drivers make and remove a fixed /tmp/gnu_drv_*
 # path (dec10io, char_io, consult, os_interf, pl_error, read, sockets, src_rdr, stream, utils), and two runs of one at once -- another seat's pass or gate
 # beside the coo's -- disagree with the ref for a reason that is neither program's: the loop's pass at 371ce73cc refused on os_interf "differs from live
 # gprolog" while live gprolog alone matched that ref three runs of three. drv_lock FILE holds one box-wide lock across a driver's runs (SCRIP m3, m4,
@@ -142,8 +142,8 @@ if [ -n "$ONLY_DRIVER" ]; then
     FILES=("$PKG/$ONLY_DRIVER")
     progress_append() { :; }   # one driver is not a board: no progress row
 fi
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<dir/stem>[,...] (PARTITION.tsv's keys) only those programs
-# are graded and their rows appended, and no suite row is written (rr_end) -- one program at a time, re-graded after each fix (Lon 2026-10-23, CEO-1926)
+# ⭐ THE ROUND ROBIN'S SEAM (R-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<dir/stem>[,...] (PARTITION.tsv's keys) only those programs
+# are graded and their rows appended, and no suite row is written (rr_end) -- one program at a time, re-graded after each fix (Lon 2026-10-23, R-1926)
 . "$HERE/lib_rr.sh" && rr_load "$PKG" || exit 2
 if rr_selected; then _fs=(); for f in "${FILES[@]}"; do _r="${f#"$PKG"/}"; rr_admits "${_r%.pl}" && _fs+=("$f"); done; FILES=(${_fs[@]+"${_fs[@]}"}); fi
 TOTAL=${#FILES[@]}
@@ -151,11 +151,11 @@ TOTAL=${#FILES[@]}
 
 LIB=0; OK_TOTAL=0; OK_PASS=0; OK_FAIL=0; OK_TIMEOUT=0; REJECT=0; UNEXPECTED=0; LADDER=0; EMPTY=0; CON_N=0; DRIVEN=0; UGB=0; EXN=0
 UNEXPECTED_NAMES=(); REJECT_NAMES=(); OK_FAIL_NAMES=(); OK_TIMEOUT_NAMES=(); EMPTY_NAMES=(); SIDE_ERR=()
-# ⛔⭐ THE ROW IS PUBLISHED OVER THE SHIPPED POPULATION, AND AN EMPTY OUTPUT GRADES NOTHING (Lon 2026-10-05, in-chat to the ceo, verbatim:
-# "What's up with \"GNU source\" test suite entry? Is that real? Did you write drivers for all those?"; ceo CEO-1523). The row read 11/11:
+# ⛔⭐ THE ROW IS PUBLISHED OVER THE SHIPPED POPULATION, AND AN EMPTY OUTPUT GRADES NOTHING (Lon 2026-10-05, in-chat, verbatim:
+# "What's up with \"GNU source\" test suite entry? Is that real? Did you write drivers for all those?"; R-1523). The row read 11/11:
 # the 11 files that compile print 0 bytes in m3, m4 and gprolog with zero arguments, so their three-way agreement proved only that they
-# load, and the 45 libraries owed their drivers since CEO-1312 were not in the denominator at all. Now: population = the shipped .pl files
-# less the CONTAINERS.tsv rows (excluded, the Excl column, CEO-1288); a program PASSES only when m3 = m4 = gprolog AND that output is not
+# load, and the 45 libraries owed their drivers since R-1312 were not in the denominator at all. Now: population = the shipped .pl files
+# less the CONTAINERS.tsv rows (excluded, the Excl column, R-1288); a program PASSES only when m3 = m4 = gprolog AND that output is not
 # empty; an empty three-way agreement and a library are UNGRADED and must each be NAMED in UNGRADED.tsv -- the board refuses an unnamed one
 # and a stale row (a named program that now grades, or names no shipped file).
 declare -A CON_SET=() UNG_SET=() UGB_SET=() EX_SET=()
@@ -170,7 +170,7 @@ if [ -f "$PKG/UNGRADED.tsv" ]; then
         UNG_SET[$_un]="${_uc:-NEEDS_DRIVER}"; done < "$PKG/UNGRADED.tsv"
 fi
 # ⛔⭐ A FILE THE ORACLE GIVES NO ANSWER FOR IS NAMED IN UNGRADABLE.tsv AND STAYS IN THE DENOMINATOR AS DEBT (the coo 2026-10-10, row
-# prolog-gnu-every-prolog-source-file-...-ceo-1312; CEO-749, CEO-1286, CEO-1588 (a)). Measured: six of the 55 cannot be driven against
+# prolog-gnu-every-prolog-source-file-...-r-1312; R-749, R-1286, R-1588 (a)). Measured: six of the 55 cannot be driven against
 # gprolog -- ciaolib.pl and whole.pl and foreign.pl fail its compile, no_le_interf.pl and no_sockets.pl are stubs this build links other
 # files in place of, top_level.pl reads its queries from a terminal. Each gets one UNGRADED progress row per mode whose note is its class
 # (the container runner's shape, lib_container_package_runner.sh), is never compiled or run here, and a driver beside it is a stale row.
@@ -179,7 +179,7 @@ if [ -f "$PKG/UNGRADABLE.tsv" ]; then
         [ -f "$PKG/$_gn" ] || { echo "⛔ REFUSED-TO-GRADE: UNGRADABLE.tsv names $_gn, which this package does not ship"; exit 2; }
         UGB_SET[$_gn]="$_gc"; done < "$PKG/UNGRADABLE.tsv"
 fi
-# ⛔⭐ ... AND SINCE CEO-1696 IT LEAVES THE DENOMINATOR (Lon 2026-10-11 16:0x CDT, in-chat to the ceo, verbatim: "Exclude any program in which we
+# ⛔⭐ ... AND SINCE R-1696 IT LEAVES THE DENOMINATOR (Lon 2026-10-11 16:0x CDT, in-chat, verbatim: "Exclude any program in which we
 # have no way to get output from an oracle, or in which we do not know the answer."; RULES.md FACT RULE A PROGRAM WITH NO ORACLE ANSWER IS
 # EXCLUDED, NEVER DEBT): each UNGRADABLE.tsv row keeps the oracle's measurement and an EXCLUDED.tsv row of class NO_ORACLE_ANSWER carries it
 # verbatim; a file EXCLUDED.tsv names is out of the population as a container is, shown in Excl beside the containers, and writes no row.
@@ -189,7 +189,7 @@ while IFS= read -r _en; do [ -n "$_en" ] || continue
     [ -f "$PKG/$_en" ] || { echo "⛔ REFUSED-TO-GRADE: EXCLUDED.tsv names $_en, which this package does not ship"; exit 2; }
     EX_SET[$_en]=1; done <<< "$_exn"
 declare -A LADDER_RUNG_COUNT LADDER_RUNG_NAMES
-# ⛔⭐ AN EXCLUDED LINE IS NAMED, WITH ITS RULING (ceo CEO-1527 (a), 2026-10-06: SCRIP's integers are unbounded like SWI's, so
+# ⛔⭐ AN EXCLUDED LINE IS NAMED, WITH ITS RULING (R-1527 (a), 2026-10-06: SCRIP's integers are unbounded like SWI's, so
 # current_prolog_flag(bounded, false) is the answer and gprolog's `true` differs by ruling, not defect: "Name it an excluded line with that
 # ruling as its reason, never a row for the cfo"). EXCLUDED_LINES.tsv: name<TAB>line prefix<TAB>ruling. A driver output line that starts with
 # the prefix leaves all three outputs before the comparison; the _driver.ref stays gprolog's whole answer. A row whose program is not
@@ -213,10 +213,10 @@ echo "=== GNU Prolog vendored suite ($TOTAL files, $PKG) ==="
 for f in "${FILES[@]}"; do
     base="$(basename "$f" .pl)"
     rel="${f#"$PKG"/}"
-    # ⭐ THE UNIT'S DECLARED COMPILE SWITCHES (clause 8 (f), CEO-1281): ALL.csv's compile_args, right after --run and --compile in both modes -- the
-    # GNU tables declare --dialect=gnu (cfo 2026-10-17, row prolog-gnu-semantics-leak-...-ceo-1810), and this runner types none of its own.
+    # ⭐ THE UNIT'S DECLARED COMPILE SWITCHES (clause 8 (f), R-1281): ALL.csv's compile_args, right after --run and --compile in both modes -- the
+    # GNU tables declare --dialect=gnu (cfo 2026-10-17, row prolog-gnu-semantics-leak-...-r-1810), and this runner types none of its own.
     read -r -a CA <<< "$(declared_compile_args_from_table "$DECL" "${rel%.pl}")"
-    export S4E_TIMEOUT_KEY="$rel"   # the unit a retried timeout's stamp names (CEO-1335)
+    export S4E_TIMEOUT_KEY="$rel"   # the unit a retried timeout's stamp names (R-1335)
     out="$TMP/${base}.s"
     probe_log="$TMP/${base}.probe"
 
@@ -229,8 +229,8 @@ for f in "${FILES[@]}"; do
         [ "$VERBOSE" -eq 1 ] && echo "  EXCLUDED (EXCLUDED.tsv, NO_ORACLE_ANSWER -- ${UGB_SET[$rel]:-no UNGRADABLE.tsv row}) $rel"
         continue
     fi
-    # ⛔⭐ A LIBRARY IS GRADED THROUGH ITS DRIVER (Lon 2026-09-27 via the ceo, CEO-1312: "So then create drivers for all the Prolog
-    # source"; CEO-700, CEO-1269; the coo's drivers, CEO-1523/1525). NAME_driver.pl beside NAME.pl calls the predicates NAME.pl
+    # ⛔⭐ A LIBRARY IS GRADED THROUGH ITS DRIVER (Lon 2026-09-27 via the R-1312: "So then create drivers for all the Prolog
+    # source"; R-700, R-1269; the coo's drivers, R-1523/1525). NAME_driver.pl beside NAME.pl calls the predicates NAME.pl
     # defines and prints the answers; SCRIP m3, SCRIP m4 and gprolog all run the DRIVER, and the verdict is recorded under the
     # LIBRARY's name, as the arizona, jcon, IPL and gimpel runners record theirs. A BipsPl file is GNU's own built-in source, which
     # neither system can load as user code, so its driver calls the built-ins it defines and gprolog's answer is that file's code.
@@ -251,7 +251,7 @@ for f in "${FILES[@]}"; do
         DRIVEN=$((DRIVEN+1)); OK_TOTAL=$((OK_TOTAL+1))
         [ -z "${UNG_SET[$rel]:-}" ] || SIDE_ERR+=("$rel has a driver and UNGRADED.tsv still names it -- delete the stale row")
         dout="$TMP/${base}.drv.s"; dbin="$TMP/${base}.drv.bin"
-        # ⭐ A DRIVER'S COMMAND LINE TRAVELS WITH IT (hard-cap clause 8 (f), CEO-1281; the coo 2026-10-10, row -ceo-1312): NAME_driver.argv is
+        # ⭐ A DRIVER'S COMMAND LINE TRAVELS WITH IT (hard-cap clause 8 (f), R-1281; the coo 2026-10-10, row -r-1312): NAME_driver.argv is
         # one line of the program's own arguments and NAME_driver.in its standard input, beside the driver, fed alike to m3 (after --), to the
         # m4 binary and to gprolog (after --, its argument_list/1). Measured need: Pl2Wam/all.pl is pl2wam, whose own initialization reads
         # argument_list/1 and aborts with none; run as pl2wam user -o user over a fixed input it compiles that input to WAM. A driver with
@@ -260,7 +260,7 @@ for f in "${FILES[@]}"; do
         din=/dev/null; [ -f "${drv%.pl}.in" ] && din="${drv%.pl}.in"
         # ⛔ A DRIVER RUNS IN THE SCRATCH DIRECTORY, never in the tree under test: dec10io's tell(user) made a FILE named user in the cwd
         # (a SCRIP defect the driver exposed) and a dirty SCRIP skips every row this pass writes.
-        # each mode's own wall for its row (CEO-1676 (c)): m3 its run, m4 the compile, link and run
+        # each mode's own wall for its row (R-1676 (c)): m3 its run, m4 the compile, link and run
         drv_lock "$drv"; _t0="$(progress_clock)"
         "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$drv" --out="$dout" < /dev/null > "$probe_log" 2>&1; drc=$?
         _cs="$(progress_secs_since "$_t0")"; _t0="$(progress_clock)"
@@ -284,7 +284,7 @@ for f in "${FILES[@]}"; do
         fi
         if [ "$m3_out" = "$gp_out" ] && [ "$m4_out" = "$gp_out" ]; then _gv=PASS; else _gv=FAIL; fi
         D_V=$_gv; D_M3=$(diff <(printf '%s\n' "$gp_out") <(printf '%s\n' "$m3_out") | grep -c '^>'); D_M4=$(diff <(printf '%s\n' "$gp_out") <(printf '%s\n' "$m4_out") | grep -c '^>')
-        # ⛔ A TIMEOUT UNDER LOAD IS A TIMEOUT, NEVER A FAIL (ceo CEO-1686, CEO-1574's load-guard rule for every runner; the coo 2026-10-11): at
+        # ⛔ A TIMEOUT UNDER LOAD IS A TIMEOUT, NEVER A FAIL (R-1686, R-1574's load-guard rule for every runner; the coo 2026-10-11): at
         # load 20-30 five driver compiles read rc 124 on 966109bb9 (Pl2Wam/all.pl among them with 0 of 201 lines differing) and the row fell
         # 18 -> 17 on a reading of the box, not the program. A driver whose compile or run answered 124 -- after util_timeout_retry.sh's own
         # retry -- while the 1-minute load is at or above the cores is COULD NOT MEASURE: named with the load, recorded UNGRADED, outside pass
@@ -293,7 +293,7 @@ for f in "${FILES[@]}"; do
             _l1="${GNU_SUITE_LOAD1:-$(cut -d' ' -f1 /proc/loadavg 2>/dev/null || echo 0)}"; _nc="$(nproc 2>/dev/null || echo 1)"   # GNU_SUITE_LOAD1: a fixture's load
             if awk -v l="$_l1" -v n="$_nc" 'BEGIN { exit !(l + 0 >= n + 0) }'; then
                 D_V=TIMEOUT; OK_TIMEOUT=$((OK_TIMEOUT+1)); OK_TIMEOUT_NAMES+=("$rel (compile rc $drc, m3 rc $m3rc, m4 rc $m4rc at load1 $_l1 on $_nc cores)")
-                echo "  DRIVEN TIMEOUT $rel -- compile rc $drc, m3 rc $m3rc, m4 rc $m4rc at load1 $_l1 on $_nc cores: could not measure (CEO-1686), not a FAIL"
+                echo "  DRIVEN TIMEOUT $rel -- compile rc $drc, m3 rc $m3rc, m4 rc $m4rc at load1 $_l1 on $_nc cores: could not measure (R-1686), not a FAIL"
                 if command -v progress_append >/dev/null 2>&1; then
                     progress_append package gnu prolog "$rel" m3 UNGRADED "$S3" "timeout-under-load load1=$_l1 cores=$_nc" || true
                     progress_append package gnu prolog "$rel" m4 UNGRADED "$S4" "timeout-under-load load1=$_l1 cores=$_nc" || true
@@ -317,7 +317,7 @@ for f in "${FILES[@]}"; do
     if is_bootstrap_only "$rel" "$f"; then
         LIB=$((LIB+1))
         [ -n "${UNG_SET[$rel]:-}" ] || SIDE_ERR+=("$rel is a library (no entry point) and UNGRADED.tsv does not name it NEEDS_DRIVER")
-        # the note is the work owed: a library still owed its driver keeps the note it has carried since CEO-1523; a file owed something
+        # the note is the work owed: a library still owed its driver keeps the note it has carried since R-1523; a file owed something
         # else (all.pl, NEEDS_ARGV_FIXTURE) carries its UNGRADED.tsv class, as the container runner's rows do
         _ln="library-needs-driver"; [ "${UNG_SET[$rel]:-NEEDS_DRIVER}" = NEEDS_DRIVER ] || _ln="${UNG_SET[$rel]}"
         if command -v progress_append >/dev/null 2>&1; then
@@ -330,7 +330,7 @@ for f in "${FILES[@]}"; do
 
     _t0="$(progress_clock)"
     "$TIMEOUT_RETRY" "$CLASSIFY_TIMEOUT" "$SCRIP" --compile "${CA[@]}" "$f" --out="$out" < /dev/null > "$probe_log" 2>&1
-    rc=$?; _cs="$(progress_secs_since "$_t0")"   # the classify compile is mode 4's compile: its row carries it (CEO-1676 (c))
+    rc=$?; _cs="$(progress_secs_since "$_t0")"   # the classify compile is mode 4's compile: its row carries it (R-1676 (c))
 
     if [ "$rc" -eq 124 ]; then
         REJECT=$((REJECT+1)); REJECT_NAMES+=("$rel")
@@ -372,7 +372,7 @@ for f in "${FILES[@]}"; do
         # summary line gets its own literal match since it carries no line number.
         gp_out=$(printf '%s\n' "$gp_raw" | gprolog_output_filter --compile-diagnostics)
 
-        # ⛔⭐ CEO-331: one progress row per program per mode, from a runner that grades with its OWN loop (the coverage
+        # ⛔⭐ R-331: one progress row per program per mode, from a runner that grades with its OWN loop (the coverage
         # report read gnu as MISSING, 0 of 62). ⛔ THIS SUITE'S VERDICT IS A THREE-WAY AGREEMENT m3=m4=gprolog, so a
         # per-MODE outcome cannot be derived from it without lying about what was compared -- a mode is not graded
         # independently here. Both rows carry the SAME agreement verdict and the note names the comparison, rather than
@@ -470,7 +470,7 @@ fi
 echo ""
 if [ "$OK_TIMEOUT" -gt 0 ]; then
     echo ""
-    echo "-- TIMEOUT UNDER LOAD (could not measure, CEO-1686 -- outside pass and fail; the suite row is not written from this pass): $OK_TIMEOUT --"
+    echo "-- TIMEOUT UNDER LOAD (could not measure, R-1686 -- outside pass and fail; the suite row is not written from this pass): $OK_TIMEOUT --"
     for n in "${OK_TIMEOUT_NAMES[@]}"; do echo "   $n"; done
 fi
 echo "GNU_SUITE_BOARD population=$POP pass=$OK_PASS driven=$DRIVEN excluded=$((CON_N + EXN)) containers=$CON_N no_oracle_answer=$EXN empty=$EMPTY ungradable=$UGB total=$TOTAL lib=$LIB ok=$OK_TOTAL ok_pass=$OK_PASS/$OK_TOTAL ok_fail=$OK_FAIL reject=$REJECT ladder=$LADDER(subset of ok_fail) unexpected=$UNEXPECTED timeout_under_load=$OK_TIMEOUT"
@@ -490,7 +490,7 @@ if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
 if [ "$OK_TIMEOUT" -gt 0 ]; then
-    echo "SUITES.tsv NOT UPDATED: $OK_TIMEOUT driver(s) timed out under load (CEO-1686: a timeout under load is could-not-measure, so this pass is not a reading of the suite) -- re-read on a quieter box"
+    echo "SUITES.tsv NOT UPDATED: $OK_TIMEOUT driver(s) timed out under load (R-1686: a timeout under load is could-not-measure, so this pass is not a reading of the suite) -- re-read on a quieter box"
 else
 python3 "$HERE/util_score_row.py" write --lang prolog --column vendor --suite GNU --modes m3,m4 \
     --suite-pass "$OK_PASS" --suite-total "$POP" --excluded "$((CON_N + EXN))" ${S4E_CRITERION_CHANGED:+--criterion-changed "$S4E_CRITERION_CHANGED"} \
@@ -505,4 +505,4 @@ fi
 "$HERE/util_require_population.sh" --gate test_prolog_gnu_suite "$TOTAL" 1 "prolog GNU source files discovered" || exit 2
 [ "$((CON_N + EXN + UGB + LIB + OK_TOTAL + REJECT + UNEXPECTED))" -eq "$TOTAL" ] || { echo "⛔ BUCKET COUNTS DON'T SUM TO TOTAL -- instrument bug, refusing to trust the board"; exit 2; }
 [ "$OK_FAIL" -eq 0 ] && [ "$UNEXPECTED" -eq 0 ] || exit 1
-[ "$OK_TIMEOUT" -eq 0 ] || exit 2   # a pass with a timeout under load and no red is could-not-measure (CEO-1686)
+[ "$OK_TIMEOUT" -eq 0 ] || exit 2   # a pass with a timeout under load and no red is could-not-measure (R-1686)

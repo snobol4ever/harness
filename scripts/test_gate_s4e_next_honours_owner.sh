@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s4e_next_honours_owner.sh -- `next` MUST NOT HAND A SEAT A ROW ANOTHER SEAT OWNS.
-# Row picker-skips-a-row-owned-by-another-seat-unless-that-seat-picks (ceo ruling 2026-09-03, on hq_B's case).
+# Row picker-skips-a-row-owned-by-another-seat-unless-that-seat-picks (ruling 2026-09-03, on hq_B's case).
 #
 # THE MEASURED DEFECT: `next` served hq_B the rank-0 row port-exit-value-contract-untagged-rax-forges-dt-fail
 # whose QUEUE owner column read hq_P. The picker sorted by rank and read only the STATE column, so ownership
@@ -33,7 +33,7 @@ mkdir -p "$W/tasks" "$W/claims" "$W/released"
 for s in hq_B hq_P; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 # ⛔ THE MODE IS PROBED, NOT BELIEVED (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms).
 # This line read `printf 'DUO\n' > "$W/MODE"`. DUO gained a stand-down arm for EVERY HQ on 2026-09-19
-# (CEO-907), so the picker refused to dispatch both of this fixture's seats and SEVEN of its nine arms went
+# (R-907), so the picker refused to dispatch both of this fixture's seats and SEVEN of its nine arms went
 # red -- none of them about the owner column, which is this gate's whole subject. The mode string was
 # incidental to what is graded here and became load-bearing without anyone choosing it. The rule now lives in
 # lib_gate.sh as a sourced authority: candidates are probed against the picker with an empty queue (claiming
@@ -77,7 +77,7 @@ rm -f "$W/claims/"*.claim
 # proved the arm wrong rather than the change. A control that only ever runs against the cured build cannot
 # tell "I broke this" from "this never worked that way".
 : > "$W/QUEUE.tsv"; mk 0 owned_by_other hq_P FREE; mk 3 dispatched_to_me unassigned ASSIGNED:hq_B
-printf 'hq_B\nASSIGNED-BY ceo\n' > "$W/claims/dispatched_to_me.claim"
+printf 'hq_B\nASSIGNED-BY cto\n' > "$W/claims/dispatched_to_me.claim"
 out="$(run_next hq_B)"
 grep -q 'dispatched_to_me' <<<"$out" && ck ok "(f) HQ DISPATCH still works: an ASSIGNED:hq_B row is served even past a rank-0 row owned by another seat" || ck no "(f) an ASSIGNED:<me> row must still be served -- the owner rule must not break dispatch"
 rm -f "$W/claims/"*.claim
@@ -89,9 +89,9 @@ rm -f "$W/claims/"*.claim
 # coincide would pass against either behaviour and prove nothing -- the whole content of this arm is the
 # disagreement.
 : > "$W/QUEUE.tsv"; mk 2 aaa_older_row unassigned ASSIGNED:hq_B; mk 2 zzz_newer_row unassigned ASSIGNED:hq_B
-printf '# TASK aaa_older_row\nLINKS: minted via `mint` by ceo, 2026-09-01T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/aaa_older_row.task.md"
-printf '# TASK zzz_newer_row\nLINKS: minted via `mint` by ceo, 2026-09-03T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/zzz_newer_row.task.md"
-for t in aaa_older_row zzz_newer_row; do printf 'hq_B\nASSIGNED-BY ceo\n' > "$W/claims/$t.claim"; done
+printf '# TASK aaa_older_row\nLINKS: minted via `mint` by the officer, 2026-09-01T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/aaa_older_row.task.md"
+printf '# TASK zzz_newer_row\nLINKS: minted via `mint` by the officer, 2026-09-03T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/zzz_newer_row.task.md"
+for t in aaa_older_row zzz_newer_row; do printf 'hq_B\nASSIGNED-BY cto\n' > "$W/claims/$t.claim"; done
 out="$(run_next hq_B)"
 grep -q 'zzz_newer_row' <<<"$out" && ck ok "(g) PASS 1 tie-break is rank THEN mint time: the newer-minted row wins over the alphabetically-first one" || ck no "(g) PASS 1 served the alphabetically-first row -- the tie-break is still glob order, not mint time"
 echo "------------------------------------------------------------"

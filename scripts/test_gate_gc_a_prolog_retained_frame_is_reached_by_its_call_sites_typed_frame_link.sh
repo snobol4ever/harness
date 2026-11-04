@@ -14,7 +14,7 @@
 # ARMS: (1) the witness (q/2 holds a heap term across a pending member/2 choice while its caller churns, then backtracks
 # into it), mode 3 and mode 4, at SCRIP_GC_STRESS=1 and 3 under SCRIP_GC_CHAIN_CHECK=3: swipl's answer, offchain-swept=0,
 # frame-links > 0, bad-link=0, the visitor differ=0 refused=0; (2) every Prolog gc_witness, both modes, stress 1:
-# offchain-swept=0 and bad-link=0; (3) RETIRED (hq_collector 2026-10-14, CEO-1680, the seams row): it displaced a followed link through the runtime plant
+# offchain-swept=0 and bad-link=0; (3) RETIRED (hq_collector 2026-10-14, R-1680, the seams row): it displaced a followed link through the runtime plant
 # SCRIP_GC_PLANT_FRAME_LINK and read the refusal -- a seam in SCRIP that existed only so this arm could trip. The refusal road's proper
 # fail-once is a witness red on the commit before its cure: vmin.pl (tasks/gc_prolog_act_word_trailed_past_an_older_choice.witness.sh)
 # died by FRAME-LINK REFUSED bad-link on 19f0479c4, the parent of 8d632491b, in both modes; (4) the witness's --dump-zeta

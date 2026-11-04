@@ -2,7 +2,7 @@
 # test_gate_pas_a_program_header_file_binds_to_the_console_as_fpc_miso_binds_it.sh -- a file named in the program heading (other than input and output) is
 # bound by the oracle, fpc -Miso, to the command-line argument of its position and, with no such argument, to the console: reset reads standard input, rewrite
 # writes standard output (FPCSource rtl/inc/text.inc fpc_textinit_iso: assign(t, paramstr(nr)), an empty name being the console; compiler/pmodules.pas numbers
-# the heading's files 1, 2, ... skipping INPUT and OUTPUT). MEASURED 2026-10-09 by the ceo grading the ISO-dialect Pascal downloads (CEO-1589): Pascal-S
+# the heading's files 1, 2, ... skipping INPUT and OUTPUT). MEASURED 2026-10-09 by the officer grading the ISO-dialect Pascal downloads (R-1589): Pascal-S
 # (srcfil), the Hueras-Ledgard prettyprinter (INPUTFILE, OUTPUTFILE) and the P4 interpreter (prd, prr) died "Runtime error 2 at $0" under scrip in both modes
 # where fpc -Miso read standard input. CAUSE: lower_pascal_tree.c bound a heading file to the console only under an explicit {$mode iso} directive, and
 # otherwise reset opened a file named after the variable; the oracle is fpc -Miso, so with no mode directive the program IS in ISO mode. CURE: the heading
@@ -10,7 +10,7 @@
 # binding (a heading file named by argv) is not built: every graded run passes no argument.
 # ARMS, both modes, cut LIVE from fpc -Miso on the same stdin: (1) hdrin -- reset of a heading file reads standard input; (2) hdrout -- rewrite of a heading
 # file writes standard output (not interleaved with output: fpc gives the heading file its own 256-byte buffer, flushed when the program ends, so its lines
-# land before output's; scrip shares one stream -- a buffering divergence recorded in GOAL-CEO.md CEO-1589, not gated here); (3) hdrcopy -- two heading files, one read and one written. FAIL_ONCE=1 corrupts arm 3's ref.
+# land before output's; scrip shares one stream -- a buffering divergence recorded in the archived ruling record R-1589, not gated here); (3) hdrcopy -- two heading files, one read and one written. FAIL_ONCE=1 corrupts arm 3's ref.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

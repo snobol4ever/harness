@@ -1,5 +1,5 @@
 /*  util_gen_prolog_prelude_libs_refs.pl -- the PREDICATE REFERENCES of a vendored SWI library, read by SWI's own reader
-    (cfo 2026-10-10, CEO-1473; called by util_gen_prolog_prelude_libs.py, never run by hand).
+    (cfo 2026-10-10, R-1473; called by util_gen_prolog_prelude_libs.py, never run by hand).
 
     WHY SWI READS IT.  The generator renames a library's unexported predicates '$<lib>_<name>'.  A name is often ALSO data
     in the same library -- library(error) has a helper text/1 and the type name text in has_type(text, X) -- so renaming
@@ -19,7 +19,7 @@
     The library is loaded from SWI's own library directory first, so its operators and meta-predicate declarations are
     known, and read in the module that file declares (library(option) is module swi_option); the vendored file must be
     byte-identical to that copy or this refuses (exit 2).  An optional THIRD argument names the file to READ instead
-    (the generator's EXPANDED mode, cfo 2026-10-10, row prolog-clpfd-library-clpfd-vendored-...-ceo-1596: the text SWI
+    (the generator's EXPANDED mode, cfo 2026-10-10, row prolog-clpfd-library-clpfd-vendored-...-r-1596: the text SWI
     itself compiles, written by util_gen_prolog_prelude_libs_expand.pl); the identity check stays on the vendored file.
 */
 :- initialization(main, main).

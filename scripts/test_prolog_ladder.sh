@@ -2,7 +2,7 @@
 # test_prolog_ladder.sh -- THE CONSTRUCT-LADDER RUNNER, the landing gate of every Prolog rung of the rebuild
 # (RULES.md § THE PROLOG REBUILD GATE clause 4; ARCH-PROLOG-BYRD-BOX-TRANSLATION.md § E; minted by hq_B 2026-09-02).
 #   --to N     grade rungs 0..N CUMULATIVELY (default: every rung the rungs carries)
-#   --only N   grade rung N ALONE -- the rung under construction, while the rungs below it are still red (ceo 2026-09-02: land rung 6 on --only 6
+#   --only N   grade rung N ALONE -- the rung under construction, while the rungs below it are still red (2026-09-02: land rung 6 on --only 6
 #              while --to 6 waits for rungs 2-5). Mutually exclusive with --to: a request that names both selectors REFUSES rc=2 rather than guessing.
 #   --list     print the witnesses per rung and exit 0 without grading
 # POPULATION: every origin `ladder__rungNN_<slug>` of corpus/tests/prolog/ALL.csv with NN <= N, materialized OUT of the rungs

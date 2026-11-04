@@ -3,7 +3,7 @@
 # value (MWT_UNKNOWN) on either side as UNGRADED: counted and NAMED on its VERDICT line beside AGREE and DIVERGE, never a match.
 #
 # ⛔ THE DEFECT THIS GRADES (the cfo, CFO-152, 2026-09-23 07:4x; row monitor-the-controller-reads-an-untyped-value-as-agree-so-a-
-# wrong-rat-passes-ungraded-is-a-named-count-never-a-match, dispatched to the coo by the ceo 13:4x). monitor_sync_bin.py's
+# wrong-rat-passes-ungraded-is-a-named-count-never-a-match, dispatched to the coo by the officer 13:4x). monitor_sync_bin.py's
 # keys_match WILDCARDED type AND value bytes whenever either side sent MWT_UNKNOWN, so the pair read AGREE with nothing compared.
 # rkx sends a Rat as UNKNOWN with no bytes, so a WRONG SCRIP Rat read AGREE; SPITBOL sends every TABLE, ARRAY, PATTERN, NAME,
 # CODE and EXPRESSION as UNKNOWN, so anything SCRIP stored there read AGREE too, and monitor_run.sh then printed "agree

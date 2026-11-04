@@ -19,7 +19,7 @@ TMPD="$(mktemp -d)"; trap 'rm -rf "$TMPD"' EXIT   # PER-INVOCATION scratch: /tmp
 
 cd "$DEMO"
 # ⛔⭐⭐ THE REFUSED ARM — A REFUSING PROGRAM'S COMMITTED .s IS A PRE-CUT SNAPSHOT, NOT AN ARTIFACT (hq_P 2026-09-02,
-# ceo row regen-demo-s-artifacts-writes-a-refused-marker-for-a-refusing-program).  The graceful-skip above is right for a
+# the officer row regen-demo-s-artifacts-writes-a-refused-marker-for-a-refusing-program).  The graceful-skip above is right for a
 # CRASH — a flaky failure must never erase a good .s — but it is WRONG for a construct-ladder REFUSAL, because a refusal
 # is not a transient: the compiler ran, understood the program, and declined it by name.  Leaving the last-good .s in
 # place then publishes asm that NO CURRENT COMPILER EMITS.  Measured at the rung-6 landing: the four Prolog demo .s

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_pl_asserting_a_conjunction_of_sixty_thousand_goals_does_not_overflow_the_default_stack_answers_as_swipl.sh -- A RUN-TIME CLAUSE WHOSE BODY IS A SIXTY-THOUSAND-GOAL CONJUNCTION ASSERTS INSIDE THE DEFAULT 4 MB STACK, IN BOTH MODES
 # (hq_prolog 2026-10-15, row prolog-asserting-a-long-conjunction-or-a-deep-term-overflows-three-stages-and-the-frame-layout-is-superquadratic-swi-test-db-big-clause,
-# CEO-1784; SWI db/test_db.pl res_compiler:big_clause asserts a 60000-goal clause).
-# THE CURE (stages 1 and 2 of the row, the runtime's and the lowerer's, the ceo's split): every pass that walked a right-nested conjunction by recursion now iterates
+# R-1784; SWI db/test_db.pl res_compiler:big_clause asserts a 60000-goal clause).
+# THE CURE (stages 1 and 2 of the row, the runtime's and the lowerer's, the officer's split): every pass that walked a right-nested conjunction by recursion now iterates
 # down the last child -- pl_cell_tree (the clause-to-tree reader; its variable lookup is a hash instead of a linear scan), pl_db_body_ill_typed, and in the lowerer
 # pl_flatten_conj, pl_rewrite_control, pb_expand_goal, tr_assign_slots (whose slot map hashes names past 24) and collect_conj -- so the C stack no longer grows with the goal
 # count.  The body is sixty thousand `true` goals (lowering drops them, so only the passes above are measured, not the emitter that hq_zetas owns): RED BEFORE, on the

@@ -2,7 +2,7 @@
 # test_gate_sno_eval_fails_when_its_expression_fails.sh -- EVAL(expr) must FAIL when the expression fails or
 # raises, not quietly return the null string.
 #
-# ⛔ THE DEFECT (ceo 2026-09-14, found in the x64 tests' own exception harness, chks.inc). eval_string_transient
+# ⛔ THE DEFECT (2026-09-14, found in the x64 tests' own exception harness, chks.inc). eval_string_transient
 # reported success whenever the chain RAN, and read the result out of the EVAL temp. An expression that FAILED
 # never wrote that temp, so EVAL handed back the leftover empty value with a success indication: SQRT(-1.0)
 # and 1/0 both "succeeded" as the null string. A SYNTAX error did fail, because the chain could not be built --

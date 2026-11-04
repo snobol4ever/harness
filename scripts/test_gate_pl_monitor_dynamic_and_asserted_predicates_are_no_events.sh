@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_pl_monitor_dynamic_and_asserted_predicates_are_no_events.sh -- THE PROLOG PLUG IS SILENT FOR A PREDICATE THE PROGRAM DECLARES DYNAMIC OR
-# CREATES BY ASSERT (ceo CEO-1269, MONITOR-BINARY-DESIGN.md, the Prolog reading of the contract: no CALL, no STMT inside its clauses, no RETURN, on
-# every side; gpx and swx already hold it). hq_prolog 2026-09-25, CEO-1266/1270; the cure is lower_prolog.c pl_pred_graph, whose silence test
+# CREATES BY ASSERT (R-1269, MONITOR-BINARY-DESIGN.md, the Prolog reading of the contract: no CALL, no STMT inside its clauses, no RETURN, on
+# every side; gpx and swx already hold it). hq_prolog 2026-09-25, R-1266/1270; the cure is lower_prolog.c pl_pred_graph, whose silence test
 # for prelude (library) predicates now also asks pl_db_owned -- declared dynamic, or given a database slot with no clause in the file.
 # THE BRACKET IT CURES: sync_step_prolog_4.pl against gpx agreed to step 34 (LABEL stno=12) and diverged at step 35, scr firing
 # CALL counter/1 for the dynamic counter/1 where gpx fires nothing. With the plug silent the witness agrees to its end (AGREE=44 DIVERGE=0).
 # ARMS: 1 (no oracle) the trace names the static st/1 and NEITHER the dynamic counter/1, NOR the asserted made/1,
-#       NOR a meta-called ==/2 (a built-in's compiled meta-call wrapper is library code: the second half of CEO-1269, bracketed on Logtalk
+#       NOR a meta-called ==/2 (a built-in's compiled meta-call wrapper is library code: the second half of R-1269, bracketed on Logtalk
 #       logical_update_semantics_clause_retract at step 117, scr firing CALL ==/2 for the case's (Assertion) goal) -- st/1 is the control against
 #       a plug that went silent for everything. (A program may not redefine a built-in under gprolog -- gplc refuses append/3 -- so no oracle
 #       arbitrates a same-named program predicate; the silence test still keeps one the file defines, via !pl_file_defines.)

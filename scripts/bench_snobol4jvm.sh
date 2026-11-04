@@ -7,7 +7,7 @@
 # POPULATION: every *.sno directly under corpus/benchmarks/snobol4, by extension (the SnoBench population). Each kernel's .ref is
 # the standalone program's real output, cut from sbl -bf.
 # THE TEST: the pristine kernel run once as a process under run_snobol4jvm.sh must print exactly its .ref with rc 0. The pass count is
-# printed on the SNOBOL4JVM_BENCH line; this runner writes no score row (SnoBench@jvm enters the one SUITES.tsv through its writer, CEO-1822).
+# printed on the SNOBOL4JVM_BENCH line; this runner writes no score row (SnoBench@jvm enters the one SUITES.tsv through its writer, R-1822).
 # THE TIMES, all wall clock from /usr/bin/time outside the program, so neither engine's TIME() units enter a number:
 #   cold  -- the pristine kernel as one process: for snobol4jvm this includes the JVM start and the JIT's warm-up.
 #   warm  -- per repetition of the kernel's work: bench_wrap_snobol4.py --mode iter generates the wrapper with --n 1 and --n K, and

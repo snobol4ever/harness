@@ -11,7 +11,7 @@
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }   # m3 runs at the declared size (CEO-1353)
+. "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }   # m3 runs at the declared size (R-1353)
 SCRIP="${HERE}/../../SCRIP/scrip"
 TIMEOUT=30
 PASS=0; FAIL=0; SKIP=0; ORACLE_MISS=0; M3_PASS=0; M3_FAIL=0; M4_PASS=0; M4_FAIL=0; DIVERGE=0; NOORACLE=0

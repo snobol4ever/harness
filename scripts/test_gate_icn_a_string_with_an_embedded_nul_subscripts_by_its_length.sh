@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_a_string_with_an_embedded_nul_subscripts_by_its_length.sh -- a string is subscripted by its CARRIED length (ceo CEO-641).
+# test_gate_icn_a_string_with_an_embedded_nul_subscripts_by_its_length.sh -- a string is subscripted by its CARRIED length (R-641).
 #
 # MEASURED 2026-09-12 on 969a4bc89 (the adversarial batch, Lon: "Try to break it"): string(&cset) is 256 characters and
 # *string(&cset) read 256, but string(&cset)[255] and [256] FAILED in both modes where icont answers "\xfe" and "\xff",

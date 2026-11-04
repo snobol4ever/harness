@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ⛔⭐⭐ NEGATIVE-ARM GATE for the ROWD-CLOSE guard in s4e_msg.sh (row done-must-hand-off-manifest-cited-rows, CEO-69 batch 5a + CEO-70).
+# ⛔⭐⭐ NEGATIVE-ARM GATE for the ROWD-CLOSE guard in s4e_msg.sh (row done-must-hand-off-manifest-cited-rows, R-69 batch 5a + R-70).
 # THE DEFECT IT PINS: closing a row cited as ROWD evidence in corpus_coverage_manifest.tsv reds `make test` for EVERY seat
 # until the manifest is re-pointed by hand. THREE identical fleet-wide reds in one day before the guard existed.
 # ⛔ THIS GATE DRIVES THE REAL `done` PATH end-to-end in a scratch world (S4E_HOME/S4E_POST/S4E_SEAT are all overridable) --
@@ -25,7 +25,7 @@ fail=0; note(){ printf '%-58s %s\n' "$1" "$2"; }
 # ARM 1 -- cited topic, COMPUTED close: must REFUSE rc=1
 mkclaim cited-topic; rc="$(arm cited-topic)"
 if [ "$rc" = 1 ] && grep -q 'ROWD evidence' "$tmp/err"; then note "ARM1 cited + computed close" "REFUSES rc=1 ✅"; else note "ARM1 cited + computed close" "⛔ rc=$rc (want 1 + ROWD message)"; fail=1; fi
-# ARM 1b -- the refusal must NAME the pull-before-close requirement (ceo required it IN the text)
+# ARM 1b -- the refusal must NAME the pull-before-close requirement (required it IN the text)
 if grep -q 'pull --rebase' "$tmp/err"; then note "ARM1b refusal names pull-before-close" "✅"; else note "ARM1b refusal names pull-before-close" "⛔ absent"; fail=1; fi
 # ARM 2 -- cited topic, OVERRIDE close: must STILL refuse (guard sits above the done/OVERRIDE fork)
 mkclaim cited-topic; rc="$(S4E_DONE_OVERRIDE='test override' arm cited-topic)"

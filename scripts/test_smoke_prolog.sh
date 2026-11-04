@@ -10,7 +10,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Claude Sonnet 4.6 · Claude Sonnet  DATE: 2026-05-31
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 SMX_SIG='\[SMX\]'                       # both refuse banners begin with "[SMX]"
 P2=0; F2=0; P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0
 
@@ -81,7 +81,7 @@ main :- count(3).
 EOF
 
 # a clause ending in a bare disjunction, retried under findall: SIGSEGV from e41bf8a6a to a650ba35a, three days unseen by every smoke and
-# core entry (ceo CEO-1864, the cfo's suggestion); the answer is swipl 9.0.4's
+# core entry (R-1864, the cfo's suggestion); the answer is swipl 9.0.4's
 pl "clause_ends_in_a_bare_disjunction" "[1,2]" << 'EOF'
 :- initialization(main).
 cq(X) :- (X = 1 ; X = 2).
@@ -92,5 +92,5 @@ echo ""
 echo "mode-2 (--run):            PASS=$P2 FAIL=$F2                / $N   (HARD GATE)"
 echo "mode-3 (--run):               PASS=$P3 FAIL=$F3 REFUSED=$X3   / $N   (tracked)"
 echo "mode-4 (--compile x86):       PASS=$P4 FAIL=$F4 REFUSED=$X4   / $N   (tracked)"
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F2" -eq 0 ]

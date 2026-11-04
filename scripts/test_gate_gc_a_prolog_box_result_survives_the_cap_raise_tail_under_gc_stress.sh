@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_a_prolog_box_result_survives_the_cap_raise_tail_under_gc_stress.sh -- A PROLOG BOX'S RESULT SURVIVES THE CAP RAISE
-# TAIL IN BOTH MEDIA (cfo 2026-10-22, CEO-1895). SCRIP eac5ddd84 put the heap cap's raise entry (rt_pl_cap_raise, an rtx entry of
+# TAIL IN BOTH MEDIA (cfo 2026-10-22, R-1895). SCRIP eac5ddd84 put the heap cap's raise entry (rt_pl_cap_raise, an rtx entry of
 # clobber mask 0: it keeps rax:rdx unless it raises) inside every Prolog poll gate. In the binary medium (mode 3) the call was
 # emitted by x86_call_ro as movabs rax, <entry>; call rax, so whenever the gate's body ran the box result in rax was the entry's
 # address: the site's DT_FAIL test read garbage and the program exited at the root's gamma with rc 0 and no output. The text

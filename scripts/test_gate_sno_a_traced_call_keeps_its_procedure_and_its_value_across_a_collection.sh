@@ -2,7 +2,7 @@
 # test_gate_sno_a_traced_call_keeps_its_procedure_and_its_value_across_a_collection.sh -- A TRACE FUNCTION MAY COLLECT
 #
 # MEASURED 2026-10-02 by the cto (row snobol4-ais-test-mode-4-drops-a-return-trace-block-after-a-collection-first-bad-3e494a406,
-# ceo CEO-1402/1403): AIS TEST lost the RETURN trace block of ASSOCL and its returned list in mode 4 at the shipped 1024 KB window,
+# R-1402/1403): AIS TEST lost the RETURN trace block of ASSOCL and its returned list in mode 4 at the shipped 1024 KB window,
 # right at 128 KB and 4 MB, and in BOTH modes under SCRIP_GC_STRESS=1. Two defects, one class -- a C or template holder of a heap
 # address kept across a call that runs the user's TRACE function, which allocates and so can collect:
 #  (1) src/runtime/rt/rt.c: rt_proc_call_prologue and rt_proc_call_prologue_lex fire the CALL trace (rt_trace_event_args), and

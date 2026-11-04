@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_clib_sidecar_builds_the_library_a_program_loads.sh -- A <stem>.clib SIDECAR BUILDS THE VENDORED C LIBRARY A PROGRAM
 # LOADS, AND THE RUN FINDS IT ON FPATH IN BOTH MODES AS ICONX FINDS ITS OWN BUILD (hq_icon 2026-09-27, Arizona general/cfuncs under
-# CEO-1336; clause 8 (f): the unit declares what its run needs, the runner types nothing of its own).
+# R-1336; clause 8 (f): the unit declares what its run needs, the runner types nothing of its own).
 #
 # iconx exports FPATH=". <its bin>" into every program, and pathload (ipl io.icn) searches FPATH for the library; the distribution's
 # bin holds its build of ipl/cfuncs. declared_clib_beside (lib_declared_arena.sh, the one reader) reads "<libname>.so <dir>", builds

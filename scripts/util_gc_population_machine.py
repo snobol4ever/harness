@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""THE POPULATION MACHINE (CEO-1165 form, generalized for the acceptance bar of CEO-1202): a language rungs BY NAME through
+"""THE POPULATION MACHINE (R-1165 form, generalized for the acceptance bar of R-1202): a language rungs BY NAME through
 the harness reader and refs, on one tree (--single, the acceptance census) or on a control tree and a cure tree (the landing
 evidence), in mode 3 and mode 4, over a list of named collector ARMS, arms run SEQUENTIALLY with a fixed environment (a
 threaded first cut mis-assigned stress levels), every child under RLIMIT_AS 6 GB.
@@ -13,7 +13,7 @@ usage: util_gc_population_machine.py <lang> <control_root|-> <cure_root> [--arms
          fN    = SCRIP_HEAP_KB=128 SCRIP_GC_STRESS=N SCRIP_GC_PLANT_FLIP=1 (every live block COPIED to disjoint ground and ALL old
                  ground PROT_NONE until the next collection: a stale pointer FAULTS where it is used, with a located [ZGC-STALE]
                  report -- the arm that turns a silent wrong answer into a crash, CTO-155)
-         default r0,r1 -- the CEO-1165 form (stress 0 and 1 under forced relocation), kept for comparability
+         default r0,r1 -- the R-1165 form (stress 0 and 1 under forced relocation), kept for comparability
 ⛔ WHY BOTH RELOCATION SETTINGS: forced relocation makes a stale copy of a MOVED block wrong at once, but it also moves every
    block, which can hide a word that points at a RECLAIMED block whose ground ordinary compaction refills (hq_icon's unitgenr,
    2026-09-23: mode 4 red at 128 KB with RELOC=0, green with RELOC=1).  An acceptance census names both.

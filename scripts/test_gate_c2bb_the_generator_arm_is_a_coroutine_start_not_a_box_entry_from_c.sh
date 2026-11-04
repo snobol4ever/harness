@@ -2,11 +2,11 @@
 # test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh
 #
 # ⛔⭐ WHAT THIS GATE HOLDS, AND WHY IT IS A MEASUREMENT AND NOT AN OPINION (cto 2026-09-21, CTO-123, MODE
-# QUARTET, under CEO-1093's re-cut of the C->BB->C->BB eradication).  rt_proc_call_gen_h is TWO roads wearing
+# QUARTET, under R-1093's re-cut of the C->BB->C->BB eradication).  rt_proc_call_gen_h is TWO roads wearing
 # ONE name, and every instrument in the tree charged both of them to the caller:
 #   * p->is_generator  -- ct_zalloc a rt_genp_s, scrip_co_ctx_init(&g->co, rt_genp_thread_entry, g),
 #     scrip_coexpr_activate.  The box is entered by rt_genp_entry_c ON THE COROUTINE'S OWN pthread STACK,
-#     at the site RULES.md/CEO-970 SANCTIONS by name (genp.spine / genp.spine.n2).  The caller's C frame is
+#     at the site RULES.md/R-970 SANCTIONS by name (genp.spine / genp.spine.n2).  The caller's C frame is
 #     never underneath emitted code: it is parked in scrip_coexpr_activate on a different stack.
 #   * p->jmp_entry     -- rt_proc_call_open then rt_proc_enter, hit as gen_h.enter.  THIS one is a real C->BB
 #     entry from the caller's own stack and is exactly what the eradication is for.
@@ -21,7 +21,7 @@
 # record count per rider call is unchanged and every EMITTED-code caller of the same API -- which no census had
 # ever seen take this road -- now names its arm too, so the trace got strictly louder, never quieter.
 #
-# ⭐ WHAT IS ASSERTED, per witness, over a WITNESS population (never corpus/: ONE RUNNER, ONE BOARD, CEO-523):
+# ⭐ WHAT IS ASSERTED, per witness, over a WITNESS population (never corpus/: ONE RUNNER, ONE BOARD, R-523):
 #   A  the program still answers its .ref byte for byte -- a trace claim over a wrong answer is worthless
 #   B  gen_h.enter is ABSENT: no rider hit on this population reached the one arm that enters a box from C
 #   C  #gen_h.coro == #genp.spine + #genp.spine.n2 -- every generator-arm call starts EXACTLY ONE coroutine,
@@ -29,7 +29,7 @@
 #   D  #gen_h.call_value + #gen_h.pl_goal == #gen_h.coro -- every rider record is accounted for by the
 #      coroutine arm, so none of them is unexplained
 #   E  #gen_h.resume_frame == #gen_h.coro_resume, and a resume starts NO new coroutine (it is C's share of C)
-# ⛔ NON-INERT OR REFUSE (CEO-1044): a witness whose gen_h.coro count is ZERO never took the arm and proves
+# ⛔ NON-INERT OR REFUSE (R-1044): a witness whose gen_h.coro count is ZERO never took the arm and proves
 # nothing, so this REFUSES rc=2 rather than passing.  A silent trace is as available to a broken build as to a
 # cure -- the defect 26af9d482 landed on.
 #
@@ -39,13 +39,13 @@
 # the unmapped-C-frame row, not this one.  What does not survive is the claim that these three sites ENTER A
 # BOX FROM C on the road they actually take.
 #
-# ⛔⭐ A CAPACITY REFUSAL IS NOT A RED (coo's telegram 2026-09-21 19:5x, CEO-1101, Lon: "Place a hard cap on the GC
+# ⛔⭐ A CAPACITY REFUSAL IS NOT A RED (coo's telegram 2026-09-21 19:5x, R-1101, Lon: "Place a hard cap on the GC
 # HEAP. Do not extend it.").  The declared arena is now a HARD CAP and a tiny one CAN refuse a live set -- the coo
 # measured procedure_coexpr_suspend_replace_3 aborting rc=134 with [ZHP] HARD CAP REACHED at 64 and 128 KB against
-# the ceo's capped build, completing at 256 and 1024.  This gate runs at 1 MB, above that fuse on that witness, but
+# the officer's capped build, completing at 256 and 1024.  This gate runs at 1 MB, above that fuse on that witness, but
 # the fuse is general: an abort on capacity says NOTHING about whether the generator arm is a coroutine start, so it
 # REFUSES rc=2 and names the cap rather than reporting a red about a claim it never got to measure.  ⛔ The cure for
-# a capacity refusal is a ROW, never a bigger default here -- the tiny arena is the mandatory instrument (CEO-934).
+# a capacity refusal is a ROW, never a bigger default here -- the tiny arena is the mandatory instrument (R-934).
 #
 # ⭐ FAIL-ONCE IS BUILT IN: FAIL_ONCE=1 plants one synthetic gen_h.enter record into the first witness's trace
 # and requires arm B to red on it.  REFUSE_ONCE=1 plants a hard-cap abort and requires the capacity arm to
@@ -53,8 +53,8 @@
 # only by reading it is the thing these laws exist against.
 # A gate that cannot say no is the instrument this fleet keeps re-finding.
 #
-# ⭐ RE-CUT 2026-10-15 (hq_templates, row templates-the-c2bb-generator-arm-gate-refuses-hb-coexpr-genp-scan-writes-no-trace-ceo-1758).
-# SCRIP eaa97e0c8 (hq_icon 2026-10-14, CEO-1553) put an Icon value call of a region-frame generator on the spine: the block prep
+# ⭐ RE-CUT 2026-10-15 (hq_templates, row templates-the-c2bb-generator-arm-gate-refuses-hb-coexpr-genp-scan-writes-no-trace-r-1758).
+# SCRIP eaa97e0c8 (hq_icon 2026-10-14, R-1553) put an Icon value call of a region-frame generator on the spine: the block prep
 # opens the n2 generator and bb_call_value jumps into it, so neither Icon witness reaches rt_proc_call_gen_h any more and both
 # wrote NO trace (the refusal of this row). Measured on that tree: no gc_witnesses program and no corpus tests/icon or
 # benchmarks/icon program takes the coroutine arm; a Raku sequence pulled lazily (rk_seq_pull) still does. So the population
@@ -101,7 +101,7 @@ run_witness() {
   if [ "$rc" -ne 0 ] && grep -q 'HARD CAP REACHED' "$TMP/$w.err" 2>/dev/null; then
     echo "⛔ GATE REFUSES (2): $w hit the arena HARD CAP (rc=$rc) at SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64}, so it never finished and this gate measured NOTHING."
     sed -n '/HARD CAP REACHED/p' "$TMP/$w.err" | head -2
-    echo "   ⛔ A CAPACITY VERDICT ABOUT THE ARENA IS NOT A COLLECTOR DEFECT AND IS NOT A FAILURE OF THIS CLAIM (coo, 2026-09-21, CEO-1101). The cure is a ROW, never a bigger default here (CEO-934)."
+    echo "   ⛔ A CAPACITY VERDICT ABOUT THE ARENA IS NOT A COLLECTOR DEFECT AND IS NOT A FAILURE OF THIS CLAIM (coo, 2026-09-21, R-1101). The cure is a ROW, never a bigger default here (R-934)."
     exit 2
   fi
   if [ "$rc" -ne 0 ] || ! diff -q "$out" "$ref" >/dev/null 2>&1; then

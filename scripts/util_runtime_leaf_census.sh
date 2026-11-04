@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_runtime_leaf_census.sh -- THE LEAF CENSUS: where a program's instructions go, by LAYER, in one mode.
-# HQ-RUNTIME's first row (Lon 2026-10-07, CEO-1534/1535): measure before converting a C leaf to asm.
+# HQ-RUNTIME's first row (Lon 2026-10-07, R-1534/1535): measure before converting a C leaf to asm.
 #
 # USAGE   util_runtime_leaf_census.sh PROGRAM --mode m3|m4 [--top N]
 # PRINTS  LEAF_INPUT program=P stdin=NAME.in|NAME.stdin|NAME.dat|none   (what the run read on stdin, as the bench runners feed it)
@@ -33,7 +33,7 @@
 # THE RUN goes through lib_ir_measure.sh's ir_measure (the one authority for a reading: a run that died is voided, not counted),
 # at the program's declared sizes (lib_declared_arena.sh: -d<kb>k -s<kb>k after --run in mode 3, at the head of the binary's argv
 # in mode 4; compile args from its .cmdline sidecar), on a binary util_require_fresh.sh has passed. Mode 4 links the suite
-# harness's way, PIE (SCRIP 27e4e3960, CEO-1536). LEAF_VG_FLAGS adds valgrind flags (say --main-stacksize=...); LEAF_TMO is
+# harness's way, PIE (SCRIP 27e4e3960, R-1536). LEAF_VG_FLAGS adds valgrind flags (say --main-stacksize=...); LEAF_TMO is
 # the callgrind timeout in seconds (default 900); VALGRIND names the valgrind binary; LEAF_CG_OUT keeps the profile (for
 # callgrind_annotate or KCachegrind) at that path.
 set -uo pipefail
@@ -61,7 +61,7 @@ PROG="$(cd "$(dirname "$PROG")" && pwd)/$(basename "$PROG")"
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || refuse "cannot load lib_ir_measure.sh -- this instrument will not read Ir by hand"
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || refuse "cannot load lib_declared_arena.sh -- a run at undeclared sizes is not the program's run"
 # A leaf census is a benchmark measurement: it runs with every diagnostic off unless the caller sets SCRIP_DIAG itself (Lon
-# 2026-09-25, CEO-1262: "For benchmarks turn off diagnostics"); at the default the collector's self-checks (the trap ledger,
+# 2026-09-25, R-1262: "For benchmarks turn off diagnostics"); at the default the collector's self-checks (the trap ledger,
 # the assert scan, the heap verify, the block index, the fix check) cost concord.icn 209 M of 549 M instructions and read as
 # "C runtime" on the LEAF_SHARE line (hq_runtime 2026-10-17).
 export SCRIP_DIAG="${SCRIP_DIAG:-0}"

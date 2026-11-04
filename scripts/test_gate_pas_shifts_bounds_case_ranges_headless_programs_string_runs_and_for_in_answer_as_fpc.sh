@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_shifts_bounds_case_ranges_headless_programs_string_runs_and_for_in_answer_as_fpc.sh -- the FPC parse tail that stopped PasRosetta
-# programs (the dialects row pascal-dialects-...-ceo-1614, chunk 6), each as fpc in its own mode answers.
+# programs (the dialects row pascal-dialects-...-r-1614, chunk 6), each as fpc in its own mode answers.
 #
 # MEASURED 2026-10-11 by hq_pascal on SCRIP b2a65df31: of 129 PasRosetta programs stopping at a parse error, the classes taken here
 # are shr/shl/xor, expressions in subrange and array bounds, case labels as expressions and ranges, a program with no heading, a dotted
@@ -8,7 +8,7 @@
 # THE DIALECT: fpc -Miso refuses shl/shr/xor, which are identifiers in ISO (PAT iso7185pat0001 declares variables of those names). So
 # the lexer makes them operators only right after an operand (a name, a literal, ')' or ']') and flips the dialect to fpc. fpc -Miso
 # accepts the bound and label expressions, case ranges, headless and dotted programs, string runs and for ... in, so the ISO dialect
-# takes them (CEO-1624).
+# takes them (R-1624).
 # Under fpc's own modes a boolean writes TRUE/FALSE unpadded, which SCRIP now does once the dialect is fpc or objfpc. Integers already
 # did; ISO keeps ' true'.
 # THE LOWERING: shl is ishift(a, b), shr is ishift(a, -b), xor is ixor, or <> on booleans. Bound and label expressions fold through

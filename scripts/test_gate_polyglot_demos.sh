@@ -8,8 +8,8 @@
 #
 # rc=0 both modes 10/10 (CLEAN); rc=1 examined all 10 in both modes, at least one FAIL (VIOLATION);
 # rc=2 scrip unbuilt or the demo corpus absent -- cannot measure (UNPROVEN, never a silent pass).
-# RENAMED 2026-10-02 (Lon, in-chat to the ceo: "Rename the folder to be corpus/demos/scriptix since *.scrip will be its own
-# language. And rename the *.scrip sources to be *.md, plain markdown files"; ceo CEO-1421): corpus/demos/scriptix/demoNN/*.md.
+# RENAMED 2026-10-02 (Lon, in-chat: "Rename the folder to be corpus/demos/scriptix since *.scrip will be its own
+# language. And rename the *.scrip sources to be *.md, plain markdown files"; R-1421): corpus/demos/scriptix/demoNN/*.md.
 # PATH NOTE (corrected AGAIN 2026-08-29, seat10) -- THIS PATH HAS NOW ROUND-TRIPPED: demo/scrip ->
 # scrip -> demo/scrip, all within about one day. seat15 (earlier 2026-08-29) verified corpus/scrip/
 # was current and pointed DEMO_DIR there; a later same-day Lon-ordered move (corpus commit

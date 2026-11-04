@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_libraries_hashtable_nb_set_solution_sequences_csv_terms_random_answer_as_swipl.sh -- SIX MORE OF SWIPL 9.0.4'S OWN LIBRARIES ANSWER AS SWIPL, IN BOTH MODES
-# (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-ceo-1562; CEO-1473's scheme, SCRIP's prelude libraries).
+# (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-r-1562; R-1473's scheme, SCRIP's prelude libraries).
 #
 # THE CURE: library(hashtable), library(nb_set), library(solution_sequences), library(csv), library(terms) and library(random), vendored
 # verbatim under src/parsers/prolog/prelude/ and embedded by util_gen_prolog_prelude_libs.py, reach a program that names one of their

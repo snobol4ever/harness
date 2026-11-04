@@ -3,7 +3,7 @@
 # alignment of every field of the records declared after it at n bytes, {$Push}/{$Pop} save and restore that setting beside
 # {$MinEnumSize} and {$PackSet}, and SizeOf of the record answers as fpc does.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. FPC test_tpushpop2 halted rc=2:
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. FPC test_tpushpop2 halted rc=2:
 # SizeOf of a record declared under {$PackRecords 1} equalled SizeOf of one declared inside {$Push}{$PackRecords 4}{$Pop},
 # because the lexer skipped {$PackRecords} as an unknown directive and every record laid out at natural alignment.
 #

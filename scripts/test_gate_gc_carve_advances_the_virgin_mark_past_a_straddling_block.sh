@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_carve_advances_the_virgin_mark_past_a_straddling_block.sh -- A BLOCK CARVED BELOW THE VIRGIN MARK THAT ENDS
 # ABOVE IT DIRTIES GROUND THE ARENA STILL CALLS UNTOUCHED (cfo 2026-09-16, THE COLLECTOR, the rehash row taken back from
-# hq_snobol4 under CEO-802).
+# hq_snobol4 under R-802).
 #
 # MECHANISM, measured with gdb on the row's own witness and not inferred: rt_gcheap_carve (gc_heap.c) skips the payload
 # memset when `at >= g_hp_virgin` -- the virgin-zero elision of 963c0390b (HP-2), correct only while EVERY byte above the

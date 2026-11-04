@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_a_rungs_with_xfails_never_reads_done.sh
-# (coo 2026-09-08, ceo CEO-416, on Lon's FACT RULE of 2026-09-03: "there is no such thing now as
+# (coo 2026-09-08, R-416, on Lon's FACT RULE of 2026-09-03: "there is no such thing now as
 #  XFAIL. We are shooting for 100%.")
 #
 # ⛔ AN XFAIL COUNTS AS A FAIL, SO A RUNGS CARRYING ONE IS NOT DONE HOWEVER ITS FRACTION READS.
@@ -11,7 +11,7 @@
 # rendered that row four different ways in one evening and every one of them printed "done".
 #
 # ⭐ THIS GATE IS DELIBERATELY INDEPENDENT OF WHICH FRACTION THE ROW CARRIES. The convention question
-# (1871/1898 vs 1898/1898 vs 1894/1894) is the ceo's to settle and was still open when this landed;
+# (1871/1898 vs 1898/1898 vs 1894/1894) is the officer's to settle and was still open when this landed;
 # what is NOT open is that a suite with a live xfail must never render as finished. So the arms assert
 # the DONE VERDICT, never the numbers -- a gate that pinned the fraction would have to be rewritten by
 # whichever way the ruling went, and would have been wrong in the meantime.

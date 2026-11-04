@@ -3,7 +3,7 @@
 # LARGEST clause needs, not the sum over its clauses: only one clause of an activation is ever live (clause k+1 is tried only once
 # clause k is exhausted), so every slot a clause's constructs hold -- a call's staged arguments, an if-then-else or disjunction
 # record -- overlays the same slots in every other clause, as the clause variables already do. THE RED (the cto 2026-10-11, bracketing
-# the cfo's hakank_swi_nvalue for CEO-1632): nvalue dies ERROR 246 at its declared 4 MB with nothing printed where swipl prints its
+# the cfo's hakank_swi_nvalue for R-1632): nvalue dies ERROR 246 at its declared 4 MB with nothing printed where swipl prints its
 # solutions, and runs at 6 MB. Under gdb on a mode-4 build the fault is NOT deep recursion: it is the rep stos that zeroes
 # clpfd run_propagator/2's frame, 0x35a70 = 219,760 bytes for its 51 clauses, crossing the 4 KB guard page below the stack after rsp
 # jumped past it -- about 18 nested propagator runs fill 4 MB. MEASURED on generated predicates (mode 4, the sub rsp of FN__p): one

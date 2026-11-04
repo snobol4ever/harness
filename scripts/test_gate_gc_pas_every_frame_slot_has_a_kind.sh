@@ -1,14 +1,14 @@
 #!/bin/bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_gc_pas_every_frame_slot_has_a_kind.sh -- row gc-every-zeta-slot-of-a-pascalpas-graph-registers-its-kind-in-frame-layout (ceo, 2026-09-17, CEO-820;
+# test_gate_gc_pas_every_frame_slot_has_a_kind.sh -- row gc-every-zeta-slot-of-a-pascalpas-graph-registers-its-kind-in-frame-layout (2026-09-17, R-820;
 # EMERGENCY GC RESET, ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F1: the collector guesses nothing, every frame word carries a
 # compile-time kind).  POPULATION: every entry of the Pascal rung suite(s), extracted through the harness's own readers and laid out by
 # `scrip --dump-zeta`; util_zls_frame_map_census.py reports every word of the zls region no zls_field covers (region-gap, scope-gap,
 # overlap, vslot-unmapped, provisional-kind, unknown-kind).  FAIL-ONCE ON ORIGIN 162e8a172: the return-value cell IR_RETURN writes at
 # frame +0 was unregistered in every function graph (raku 318, pascal 514, icon 304, prolog 88364 holes) and two Icon pad quads were
 # unregistered (scanseq +8, revswap +56); all registered at this landing, every rung suite reads holes=0.
-# THE DETECTOR ARM (re-cut 2026-10-14, hq_raku, CEO-1680 + the cto's yes): the one-function fixture is dumped once by
+# THE DETECTOR ARM (re-cut 2026-10-14, hq_raku, R-1680 + the cto's yes): the one-function fixture is dumped once by
 # `--dump-zeta`; the census must read that saved text green (--dumps), and with its first field line dropped by this gate it
 # must read rc 1, or this gate REFUSES rc=2. The old SCRIP_TEST_PLANT_ZLS_HOLE seam in zls_dump is deleted: no plant in SCRIP -- a detector that fails open
 # reads as "there was never a bug here".  NOT CENSUSED HERE, said so the reader does not over-read a green: the emitter's wire header

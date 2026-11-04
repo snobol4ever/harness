@@ -3,7 +3,7 @@
 #
 # WHY THIS EXISTS AND WHY IT IS NOT A BOARD. test_pascal_pat_suite.sh grades all 427 vendored programs, so it is a
 # board and refuses every seat but THE ONE RUNNER. This grades only a NAMED, fixed list of witnesses -- a gate
-# population, not a board (CEO-547: what makes a run a board is the population it grades, not the entry point) -- so
+# population, not a board (R-547: what makes a run a board is the population it grades, not the entry point) -- so
 # the owning HQ can measure its own cures between the coo's passes without standing in for the coo.
 #
 # THE LIST is the coo's 2026-09-13 full PAT accounting (baton pascal-pat-suite-427-to-100-percent-by-class): the named

@@ -2,7 +2,7 @@
 """bench_wrap_snocone.py <prog.sc> --mode iter|time [--n N] [--bud-ms MS] [-o OUT.sc]
 
 THE GENERATED WRAPPER FOR ONE PRISTINE SNOCONE BENCHMARK -- it does the test and the measurement at once (RULES.md FACT RULE
-THE KERNEL CONVENTION and its 2026-09-23 addendum, CEO-1221; Lon, verbatim: "The source of the benchmark is the apple-core of the
+THE KERNEL CONVENTION and its 2026-09-23 addendum, R-1221; Lon, verbatim: "The source of the benchmark is the apple-core of the
 test, the wrapper code can be added to do both the test and the measurements."). The source file is never edited: this script
 writes a NEW program, to OUT or stdout, and the runner deletes it after the run.
 

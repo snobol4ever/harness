@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_zd_check_reads_zero_violations_on_the_cores.sh -- THE PLAN IS CONSISTENT ON EVERY MASTER'S CORE (ceo CEO-1830,
+# test_gate_zd_check_reads_zero_violations_on_the_cores.sh -- THE PLAN IS CONSISTENT ON EVERY MASTER'S CORE (R-1830,
 # ARCH-ZETA-ONE-COORDINATE.md section 4). For each of the seven masters it extracts every PARTITION.tsv core entry, compiles
 # it with SCRIP_ZD_CHECK=1 (mode 4, asm to scratch, nothing linked or run) and sums the verifier's violations: the three edge
 # laws in the absolute coordinate and the staging reads across runs with an unknown base. A graph with violations=0 has a
@@ -13,19 +13,19 @@
 # the FENCE release, the match-end restore), so a green language reads false violations there -- measured 2026-10-18 at
 # 5c37a2dee: SNOBOL4 65 relative over 25 compiled core entries while every one of them passes; a count that cannot tell a defect
 # from the verifier's own gap is a ledger line, never a verdict. As a language gains the absolute coordinate its count enters
-# the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the ceo's fourth landing). THE RELATIVE COUNTS ARE A RATCHET meanwhile:
-# RELATIVE_FLOOR below is each language's relative count at the ceo's cut of hq_zetas's two zd_plan branches (2026-10-18 12:4x CDT:
+# the verdict (ARCH-ZETA-ONE-COORDINATE.md section 5, the officer's fourth landing). THE RELATIVE COUNTS ARE A RATCHET meanwhile:
+# RELATIVE_FLOOR below is each language's relative count at the officer's cut of hq_zetas's two zd_plan branches (2026-10-18 12:4x CDT:
 # snobol4 0, rebus 0, raku 0, pascal 0, snocone 3; was pascal 8, snocone 7 at dda4f93ff), and a language reading above its floor is RED (RELATIVE-OVER-FLOOR) -- a
 # planner change that breaks a green language's plan trips here the same tick; a floor may only fall, by editing this table in
 # the landing that lowers the count. snocone falls to 0 with hq_zetas's item-1 branch (every graph on the absolute coordinate; an omega
-# into MATCH_BEGIN read as the FENCE abort it is, a discard), cut by the ceo with its SCRIP half.
+# into MATCH_BEGIN read as the FENCE abort it is, a discard), cut by the officer with its SCRIP half.
 # compiled=<c> below entries=<n> names the core entries the gate could not cut standalone. Until 2026-10-24 that was SNOBOL4's eight
 # stdin-carrying entries (porter, claws5, treebank, json and user_function_fence_span_replace_branch_1): the extractor REFUSES an entry
-# that carries stdin unless --out-in names where it goes, and the gate passed none, so eight plans went unread (hq_snobol4, CEO-1962);
+# that carries stdin unless --out-in names where it goes, and the gate passed none, so eight plans went unread (hq_snobol4, R-1962);
 # the extract now writes the stdin beside the source, compiling reads none of it, and SNOBOL4 compiles 31 of 31.
 # rc 0 total violations 0 over every core; rc 1 a violation; rc 2 cannot measure (no scrip, a master without a partition,
 # a language whose core compiled 0 entries). --lang <l> limits it to one language (a seat's handful; the board is the coo's).
-# Fail-once: ARCH-ZETA-ONE-COORDINATE.md section 4 and the ceo's ledger record the Icon core reading violations at 6d138d652.
+# Fail-once: ARCH-ZETA-ONE-COORDINATE.md section 4 and the officer's ledger record the Icon core reading violations at 6d138d652.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$(cd "$HERE/../../SCRIP" 2>/dev/null && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP"; exit 2; }

@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_snobol4_bar.sh -- THE SPEED ROW'S CRITERION (ceo CEO-1276, 2026-09-26; Lon: "mint some delegated tasks to implement those improvements and
-# enhance the SCRIP to run even faster"): ONE kernel or ONE demo, the bare multiple SPITBOL time / SCRIP mode-4 time (RULES.md FACT RULE, CEO-1242),
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_snobol4_bar.sh -- THE SPEED ROW'S CRITERION (R-1276, 2026-09-26; Lon: "mint some delegated tasks to implement those improvements and
+# enhance the SCRIP to run even faster"): ONE kernel or ONE demo, the bare multiple SPITBOL time / SCRIP mode-4 time (RULES.md FACT RULE, R-1242),
 # against a bar. It is the DONE-WHEN of every row the 2026-09-26 why-slower profile minted, so a row closes on the same instrument that found it.
 #
 #   kernel K BAR        K's fixed-time twin under the three-angle harness (test_snobol4_bench_suite.sh) on a mktemp fixture -- never the corpus
-#                       directory, so never a board (CEO-547) and no row is written -- BENCH_ORACLE_ARM=1, BAR_BUD_MS (500) per point, BAR_ITER_N (3)
-#                       iterations, both engines at SPITBOL's own defaults (-d128m -i1m -s4m, CEO-1261). The multiple is the harness's own two
+#                       directory, so never a board (R-547) and no row is written -- BENCH_ORACLE_ARM=1, BAR_BUD_MS (500) per point, BAR_ITER_N (3)
+#                       iterations, both engines at SPITBOL's own defaults (-d128m -i1m -s4m, R-1261). The multiple is the harness's own two
 #                       time-twin readings, sbl and m4, taken in the same run.
 #   demo D BAR          D's whole program on the README's input scale, best of BAR_REPS (3) elapsed under tools/bench_rusage, each engine at
 #                       its own defaults plus the DEMO's declaration -- its .oracle_args on sbl -bf, its .heap/.stack as the mode-4 binary's
-#                       -d/-s (ceo CEO-1485, RULES.md clause 8 (g)(4); CRITERION CHANGED 2026-10-03: readings before ran BAR_SW
+#                       -d/-s (R-1485, RULES.md clause 8 (g)(4); CRITERION CHANGED 2026-10-03: readings before ran BAR_SW
 #                       "-d512m -i64m -s256m" on both under ulimit -s 262144, the equal-arena arm the law overtook); stdout must be
 #                       byte-identical on both engines or the run REFUSES -- a speed number over a wrong answer is not a number.
 #
@@ -60,7 +60,7 @@ case "$KIND" in
     [ -n "$s" ] && [ -n "$m" ] || refuse_timing "a run printed no BENCH_RUSAGE line (sbl='$s' m4='$m')"
     cmp -s "$T/sbl.out" "$T/m4.out" && [ -s "$T/m4.out" ] || refuse "$NAME: outputs differ between sbl -bf and mode 4 (or are empty) -- no multiple over a wrong answer"
     x=$(awk -v s="$s" -v m="$m" 'BEGIN{printf "%.4f", s/m}')
-    awk -v s="$s" -v m="$m" 'BEGIN{printf "demo %s: SPITBOL %.1f ms, m4 %.1f ms (best of %s, %s)\n", "'"$NAME"'", s/1e6, m/1e6, "'"${BAR_REPS:-3}"'", "'"sbl [$OAD] m4 [$SWD], the declarations -- CRITERION CHANGED 2026-10-03, CEO-1485"'"}'
+    awk -v s="$s" -v m="$m" 'BEGIN{printf "demo %s: SPITBOL %.1f ms, m4 %.1f ms (best of %s, %s)\n", "'"$NAME"'", s/1e6, m/1e6, "'"${BAR_REPS:-3}"'", "'"sbl [$OAD] m4 [$SWD], the declarations -- CRITERION CHANGED 2026-10-03, R-1485"'"}'
     verdict "$x" "demo $NAME" ;;
   *) refuse "kind must be kernel or demo";;
 esac

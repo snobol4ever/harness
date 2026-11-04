@@ -3,7 +3,7 @@
 # (fpc -Miso refuses both, measured; it accepts shortstring, widestring, unicodestring, rawbytestring, utf8string, ansichar, pansichar
 # and pwidechar), so SCRIP reads it in the FPC dialect: natural write widths and FPC's System routines (str with a width, random).
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): largest-five-adjacent-number (no program
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): largest-five-adjacent-number (no program
 # heading, digits, s : AnsiString) stayed ISO in SCRIP's eyes and died "error 22: undefined function called" on str(i:5, s). THE CURE:
 # pascal.y's pascal_note_type_ident flips the dialect on ansistring and pchar as it does on an undeclared string; pascal.tab.c
 # regenerated with the pinned bison 3.8.2.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_raku_rungs_is_clean_at_the_tiny_arena.sh -- RAKU'S ITEM 4 OF THE GC COMMITMENT (hq_raku, row
-# raku-gc-zero-gradings-lost-to-the-collector-across-the-arena-and-stress-axes-named-not-counted; ceo CEO-1039/1040,
+# raku-gc-zero-gradings-lost-to-the-collector-across-the-arena-and-stress-axes-named-not-counted; R-1039/1040,
 # TENET). GOAL: "ZERO GRADINGS LOST TO THE COLLECTOR" -- the arena and stress axes must cost this lane nothing,
 # proven per entry, on a named tree, with the instrument shown able to catch a real divergence first.
 #
@@ -35,10 +35,10 @@
 # and an absent env var both leave the plant permanently off. The task's declared stress point "0" is therefore
 # not a missing eighth arm -- it IS the `arena` arm above, and this file does not spend a redundant run on it.
 #
-# ⛔⭐⭐ A STRESS BAND, NEVER A STRESS POINT, AND SPAN BOTH ENDS -- ceo CEO-1024. hq_raku's own map-family window
+# ⛔⭐⭐ A STRESS BAND, NEVER A STRESS POINT, AND SPAN BOTH ENDS -- R-1024. hq_raku's own map-family window
 # was 1-6 and INVISIBLE at >=8 while the grammar family was wrong at every point above 0; hq_snobol4 has a witness
 # red at m4 stress 25 while green at 10/12/16/20/35/50. Whatever a band finds is a lower bound, never a
-# population. THE DECLARED BAND HERE IS THE TASK'S OWN AXIS LIST (CEO-1039/1040), not a locally chosen one:
+# population. THE DECLARED BAND HERE IS THE TASK'S OWN AXIS LIST (R-1039/1040), not a locally chosen one:
 # stress in {1,3,5,8,16} plus the {0 == arena} point above.
 #
 # ⛔ A TIMEOUT IS NOT A DIVERGENCE. Under stress a correct program can run orders of magnitude slower; rc=124

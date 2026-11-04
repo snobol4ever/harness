@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_gen_builtin_table.py [--check | --write] [--tsv FILE] [--out DIR] -- harness/scripts/builtins.tsv -> SCRIP/src/runtime/builtin_table.h and builtin_table.inc
-# (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; CEO-2016).
+# (DESIGN-PLAN builtin-table step 1; ARCH-BUILTIN-TABLE.md section 3; R-2016).
 #
 # builtins.tsv is the ONE table of builtins: one row per builtin per vocabulary. This writes the two generated files the runtime and the compiler include:
 #   builtin_table.h    bt_row_t, the enums, BT_ROWS, BT_BID_MAX, BT_LEGACY_LAST, and bt_bid_legacy(s, len): the vocabulary-blind hash of the 186 names that carried an id before the

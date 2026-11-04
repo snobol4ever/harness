@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_set_stream_encodings_pure_input_and_format_s_answer_as_swipl.sh -- set_stream/2, THE ONE-BYTE AND wchar_t ENCODINGS,
 # library(pure_input) AND format/2's ~s ANSWER AS swipl 9.0.4 (cfo 2026-10-14, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-
-# in-both-modes-ceo-1664, CEO-1698: test_pio's engine half; 9 corpus files name set_stream, 9 tmp_file, 10 phrase_from_file).
+# in-both-modes-r-1664, R-1698: test_pio's engine half; 9 corpus files name set_stream, 9 tmp_file, 10 phrase_from_file).
 #
 # (1) set_stream/2 is a C leaf ('$set_stream'/2, by_name_dispatch.c): alias (moved from a stream that held it), eof_action, type,
 # encoding (wraps the stream in the transcoder, re-kinds a wrapped one, or turns it back to UTF-8), line_position and file_name change the

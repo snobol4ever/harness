@@ -24,7 +24,7 @@
 #       finds and the marker scan does not; the cut witness, 902 of 929 walks in both modes) and offchain-swept (a marker frame holding no
 #       heap pointer that the chain leaves for dead; the mode-4 choice and throw witnesses, 1203 and 100). A walk that stops short refuses
 #       the pass (rt_gc_frames_visit returns 0).
-#   (3) THE GRADER CAN SAY NO (CEO-1680 form (a), cto 2026-10-17; the runtime's SCRIP_GC_PLANT_PL_RECLAIM seam is gone): the two
+#   (3) THE GRADER CAN SAY NO (R-1680 form (a), cto 2026-10-17; the runtime's SCRIP_GC_PLANT_PL_RECLAIM seam is gone): the two
 #       witnesses the reclaim's two protections keep green -- the later-clauses walk (w7, a live walk's generation) and the erased
 #       choice (w3, a frame holds the fragment) -- are graded in both modes against a corrupted copy of their swipl refs and must
 #       read DIFF, so arm (2)'s equality is a measurement and not a grader that passes anything.

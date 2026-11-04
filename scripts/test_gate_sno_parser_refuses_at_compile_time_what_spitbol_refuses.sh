@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_sno_parser_refuses_at_compile_time_what_spitbol_refuses.sh -- the first product of the grammar-based harness
-# (Lon and the ceo, 2026-10-01, CEO-1393): gen_every_snobol4.icn enumerated every OUTPUT = <expression> statement of at
+# (Lon and the officer, 2026-10-01, R-1393): gen_every_snobol4.icn enumerated every OUTPUT = <expression> statement of at
 # most 3 tokens (10834) and each went through SCRIP's compile (scrip --compile: the parser and the lowerer, which owns every
-# refusal that is a meaning check -- the constant fold and the name-required rule moved there from the parser at CEO-2016) and
+# refusal that is a meaning check -- the constant fold and the name-required rule moved there from the parser at R-2016) and
 # through sbl -bf; where the oracle refuses a statement AT COMPILE TIME and SCRIP's compile accepts it, SCRIP grades a compile
 # refusal as a runtime answer.
 # Three classes, one witness each, canonical shapes from the census (699 statements of the first two kinds, 20 of the
@@ -11,7 +11,7 @@
 # oracle's lexer and a parse refusal in SCRIP (&ANCHOR. X). Each arm wants the two verdicts EQUAL; the arm is red today.
 #   bash ../harness/scripts/test_gate_sno_parser_refuses_at_compile_time_what_spitbol_refuses.sh [ARM]   -- one class arm alone (a row's DONE-WHEN)
 # ⛔ the verdict is the rc of `scrip --compile --out=FILE` on the statement alone (0 accepts, nonzero refuses); a stale scrip is
-# REFUSED rc=2 by util_require_fresh.sh. Until CEO-2016 the verdict was the standalone parser's, out/parser_snobol4; the parser no
+# REFUSED rc=2 by util_require_fresh.sh. Until R-2016 the verdict was the standalone parser's, out/parser_snobol4; the parser no
 # longer refuses a fold or a value used where a name is required, so that binary would read ACCEPT for what the compile refuses.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -u

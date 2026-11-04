@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_field_function_call_takes_the_name_entry.sh -- A SNOBOL4 CALL BY AN UNKNOWN NAME (no bid, not a system function:
 # a DATA field function, a DATA constructor, a DEFINE'd function whose entry is pending) goes through that name's CALLEE RECORD,
 # baked at the site: a pure field to rt_call_fld_sn4, every other such name to rt_call_callee_sn4 (the bake, Lon 2026-09-29: "You
-# should have no by-name lookup for FUNCTION CALLS."; CEO-1360/1362, layers 5-7). This supersedes the name entry of CEO-1249 (ceo
+# should have no by-name lookup for FUNCTION CALLS."; R-1360/1362, layers 5-7). This supersedes the name entry of R-1249 (the officer
 # 2026-09-24: rt_call_name_sn4 answering the field access by the name, treebank's by-name calls 85% field accessors): the name entry
 # survives only as the leaves' own slow road and is emitted at NO site. SCRIP_SN4_DIRECT=0 is the control arm (every such site calls
 # rt_call_arr_bl_sn4). THREE ARMS: (1) the .s of the witness carries the baked leaves for the field and constructor calls under the

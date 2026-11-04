@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_spine_cell_grid_is_anchored_at_the_region_base.sh -- THE LICENCE FOR A COLLECTOR THAT DOES NOT
 # GUESS WHERE A SPINE CELL BEGINS (cto 2026-09-20; row gc-the-planner-gives-a-call-result-live-across-a-safe-
-# point-a-mapped-slot-...; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812; ARCH-GC section 2b Rule
+# point-a-mapped-slot-...; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812; ARCH-GC section 2b Rule
 # 1a and section 7 F1).
 #
 # WHAT IS BEING HELD HERE, IN ONE SENTENCE.  ARCH-GC says the collector "walks the spine from RSP to its base as an
@@ -80,7 +80,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_the_spine_cell_grid_is_anchored_at_the_
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- build before grading"
 [ -f "$CENSUS" ] || refuse "the census $CENSUS is missing -- nothing to grade"
 [ -f "$WIT" ] || refuse "the row's witness $WIT is missing"
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
 echo "POPULATION (declared): $(printf '%s\n' $POP | wc -w) witness(es), the shared GC witness set in four"
 echo "languages -- MEASURED at 4.8s for the whole gate, which is why it is the WHOLE set and not a sample"
 echo "(MODE TENET CONDITION 2: the landing gate is the shared resource; a cheap arm may be wide). GRID_POP= narrows it."

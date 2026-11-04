@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a two-line mktemp witness, not a board (CEO-523/CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a two-line mktemp witness, not a board (R-523/R-547)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_snocone_deferred_eval_survives_a_collection.sh
 #

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_spine_tagged_cell_walk_is_load_bearing.sh -- THE LICENCE FOR THE SPINE-CELL VERDICT IN THE
 # SAFE-POINT CONTRACT CHECKER (cto 2026-09-22, MODE DUO/QUARTET; row gc-the-planner-gives-every-call-result-live-
-# across-a-safe-point-a-slot-the-map-covers; ARCH-GC section 2b RULE 1a and section 3b, CEO-996/1108).
+# across-a-safe-point-a-slot-the-map-covers; ARCH-GC section 2b RULE 1a and section 3b, R-996/1108).
 #
 # WHAT IS HELD HERE, IN ONE SENTENCE.  util_gc_safe_point_contract.py stopped calling 222 findings over 111 sites
 # K3 MEMBERS and started calling them SPINE-CELL, on the ground that a call result stored as rax at a 16-byte
@@ -77,13 +77,13 @@ fi
 # hb_coexpr_sigma.icn was excluded on 2026-09-22 because it could not pass arm (a): at SCRIP_HEAP_MB=1 with
 # SCRIP_GC_STRESS=3 it answered its ref exactly at 14 lines, and adding alone took it to
 # 7 LINES AT rc=0 -- half a co-expression's output lost with a zero exit, and a witness whose CONTROL leg is
-# red proves nothing about a B leg.  That was the ceo's r13 row and the exclusion said in its own text that
+# red proves nothing about a B leg.  That was the officer's r13 row and the exclusion said in its own text that
 # it went back the moment the row landed.  IT LANDED: SCRIP e42cc0909 turned the bare polls at bb_deref.cpp:39
 # and bb_scan_upto.cpp:52 into x86_rt_gc_poll_rec_sigma with keep_rax zero, where the subject base was live in
 # r13 across the poll.  RE-MEASURED BY THIS SEAT AT faddd1a00, 80 draws, four cells of 20: relocation OFF and
 # ON, crossed with plain ASLR and setarch -R, 20 of 20 PASS AT 14 LINES IN EVERY CELL.  Arm (a) passes and the
 # spine knob still changes its answer, so it qualifies for arm (b) as well and is a member again -- which is a
-# reading of the ceo's board taken from the enforcement side and independent of it.
+# reading of the officer's board taken from the enforcement side and independent of it.
 # ⛔ AND ONE HELD OUT, NAMED HERE WITH ITS ROW, REPORTED ON EVERY RUN AND NEVER SILENTLY DROPPED (cto 2026-09-22, evening).
 # hb_nested_match_outer_subject.sno prints NO for OK-3-y2y under at stress 1, 3, 4, 6 and 8 and answers
 # right at 0, 2, 5, 10 and 16 and at every stress WITHOUT relocation, at MB=1 and at the shipped 128 KB alike.  Bisected
@@ -104,7 +104,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_the_spine_tagged_cell_walk_is_load_bear
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- build before grading"
 [ -f "$FLOOR" ] || refuse "the declared contract floor $FLOOR is missing -- the verdict this gate licenses has no population"
 command -v setarch >/dev/null 2>&1 || refuse "setarch is not on this box, so ASLR cannot be pinned and a single graded cell is a SAMPLE whose flaky outcome is the PASS (the coo, 2026-09-22) -- this gate refuses rather than publishing a coin flip"
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob)"
 echo "POPULATION (declared): $(printf '%s\n' $POP | wc -w) witness(es) NAMED above; ASLR pinned with setarch -R; each run bounded by $CAP. SPINE_AB_POP= narrows it."
 
 run_leg() { # $1 witness path, $2 knob value ("" or 1)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_driver_extension_table_lives_once.sh -- THE CLOSED SOURCE-EXTENSION LIST LIVES ONCE, AND AN
-# EXTENSION NOT IN IT REFUSES RATHER THAN SELECTING A PATH.  CEO-604, on hq_U's .sbl finding
+# EXTENSION NOT IN IT REFUSES RATHER THAN SELECTING A PATH.  R-604, on hq_U's .sbl finding
 # (FINDING-2026-09-12-hq_U-an-unknown-source-extension-selects-a-different-emit-path-instead-of-refusing-
 # and-a-passing-ablation-explained-one-program-of-twenty-four.md).
 #
@@ -23,7 +23,7 @@
 #      NOT refused with the unknown-extension diagnostic (it may fail for any other reason -- a .pas file
 #      full of SNOBOL4 is a parse error, and that is not this gate's business).
 #   2  an extension the usage does NOT print is REFUSED rc=2, and the refusal NAMES the list.
-#   3  .raku and .pas appear in the usage (CEO-604 names them: they were the measured omission).
+#   3  .raku and .pas appear in the usage (R-604 names them: they were the measured omission).
 #   4  the two readers print the SAME set -- the refusal diagnostic's list and the usage's list are
 #      byte-identical, which is what "lives once" means observably.
 #   5  a file with NO extension is still SNOBOL4 and is not refused, and a path whose DIRECTORY carries a
@@ -84,10 +84,10 @@ for e in .xyz .lgt .cob .txt; do
     if [ "$rc" = 2 ] && printf '%s' "$out" | grep -q "$UNKNOWN_MARK"; then ok "ARM 2 $e REFUSES rc=2 and names the list"
     else red "ARM 2 $e is in no list yet did not refuse: rc=$rc (want 2), diagnostic: $(printf '%s' "$out" | head -1 | cut -c1-90)"; fi
 done
-# ARM 3 -- the two extensions CEO-604 names, because they were the measured omission.
+# ARM 3 -- the two extensions R-604 names, because they were the measured omission.
 for e in .raku .pas; do
     EXAMINED=$((EXAMINED+1))
-    case "$EXTS_SP" in *" $e "*) ok "ARM 3 $e appears in the usage";; *) red "ARM 3 $e is accepted by the driver but the usage does not print it -- the exact omission CEO-604 ruled on";; esac
+    case "$EXTS_SP" in *" $e "*) ok "ARM 3 $e appears in the usage";; *) red "ARM 3 $e is accepted by the driver but the usage does not print it -- the exact omission R-604 ruled on";; esac
 done
 # ARM 4 -- ONE TABLE, OBSERVABLY: the refusal's list and the usage's list are the same set.
 EXAMINED=$((EXAMINED+1))

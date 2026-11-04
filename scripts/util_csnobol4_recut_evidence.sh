@@ -1,13 +1,13 @@
 #!/bin/bash
-# ⭐ THE ADJUDICATION EVIDENCE TABLE FOR THE csnobol4 DEAD-PIN RE-CUT (ceo CEO-424 / CEO-426 / CEO-427).
+# ⭐ THE ADJUDICATION EVIDENCE TABLE FOR THE csnobol4 DEAD-PIN RE-CUT (R-424 / R-426 / R-427).
 #
 # WHAT IT IS FOR.  The re-cut moves programs OUT of the SPITBOL baseline where SPITBOL simply lacks the
-# feature, and leaves them IN where SPITBOL's own program-level diagnosis is the point (rewind1).  The ceo
+# feature, and leaves them IN where SPITBOL's own program-level diagnosis is the point (rewind1).  The officer
 # ruled the adjudication is PER PROGRAM and belongs to hq_S (A-P) and hq_R (Q-Z), with hq_B doing the re-cut
 # in ONE commit carrying a per-entry identity line.  This script produces the evidence those two seats
 # adjudicate FROM, so the table is cut ONCE by one instrument instead of twice by two.
 #
-# ⛔ (1) THE PREDICATE IS NOT AN rc AND NOT AN ERROR NUMBER (ceo CEO-424, in the coo's words: "NEITHER KEY IS
+# ⛔ (1) THE PREDICATE IS NOT AN rc AND NOT AN ERROR NUMBER (R-424, in the coo's words: "NEITHER KEY IS
 #     THE FACT, THE FACT IS DID SPITBOL RUN IT CLEAN").  hq_V's classifier keys on `ERROR NNN` and misses
 #     rc=0-with-no-number; the outside-baseline file keys on rc=1 and compile refusals and misses these,
 #     which COMPILE FINE and die INSIDE the run.  So this script records no verdict of its own: it runs each
@@ -16,7 +16,7 @@
 # ⛔ (2) STDIN COMES FROM AFTER THE `END` STATEMENT, via split_at_end, the suite's own convention.  A
 #     `</dev/null` run here prints a clean-looking table from a STARVED program: measured, `tab` is 3 lines
 #     and "ERROR 235 -- subscripted operand is not table or array" starved, and 277 lines fed.  That trap
-#     took hq_P, the cto and the ceo in one night, the last of them while actively looking for it.
+#     took hq_P, the cto and the officer in one night, the last of them while actively looking for it.
 #
 # ⛔ (3) EVERY ENGINE IS REACHED BY ABSOLUTE PATH, never `command -v` -- none of them is on PATH, and
 #     `command -v` answers "is it on PATH", not "does it exist".  A missing engine REFUSES rc=2 rather than

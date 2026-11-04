@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """util_spitbol_post_mortem.py <oracle-stdout> <body-out> -- remove SPITBOL's fatal-error post-mortem block from sbl's stdout.
 
-ceo CEO-1316 (2026-09-27), on Lon's word "I want to see TPgm go to 8/8": a program whose sbl answer is a fatal post-mortem at rc 0
+R-1316 (2026-09-27), on Lon's word "I want to see TPgm go to 8/8": a program whose sbl answer is a fatal post-mortem at rc 0
 is GRADED, not marked OUTSIDE. The block is removed ONLY when it has exactly the measured shape, and any other shape REFUSES rc 2.
 The caller compares the remainder byte for byte with SCRIP's stdout and grades the banner's code and statement against SCRIP's
-stderr through util_render_error_voice.py spitbol. The accounting is never graded (CEO-420 (b): memory used/left, REGENERATIONS,
+stderr through util_render_error_voice.py spitbol. The accounting is never graded (R-420 (b): memory used/left, REGENERATIONS,
 stmts executed and execution time belong to the engine, not the program -- the rewind-174 gate's precedent).
 
 THE SHAPE, measured on test4..test8 of spitbol_testpgms (sbl -bf, stdout only) and derived line by line from stopr in

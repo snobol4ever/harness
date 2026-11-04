@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icn_converted_arith_error_reports_its_own_number.sh -- THE INVARIANT GATE for the &error := -1
-# CONVERSION CLASS in shared arithmetic (CEO-532, hq_U 2026-09-10).  Under error conversion an arithmetic
+# CONVERSION CLASS in shared arithmetic (R-532, hq_U 2026-09-10).  Under error conversion an arithmetic
 # operation that cannot produce a value must RAISE ITS OWN error before it fails, so that &errornumber,
 # &errortext and &errorvalue describe THIS operation.  The measured defect: a DT_I fast block that returns
 # FAILDESCR ahead of the frame's own setjmp raises nothing at all, and the three keywords keep whatever the

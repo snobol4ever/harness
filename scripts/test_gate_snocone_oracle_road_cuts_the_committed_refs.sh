@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_snocone_oracle_road_cuts_the_committed_refs.sh -- `corpus_suite_harness.py capture-oracle-refs --lang snocone` (the transpile-then-SPITBOL road,
-# snocone_oracle_run.sh) cuts, byte for byte, the ref a SncRungs entry already carries. (cfo, CEO-1868, on the ten one-statement entries it tightened: "A fail-once arm
+# snocone_oracle_run.sh) cuts, byte for byte, the ref a SncRungs entry already carries. (cfo, R-1868, on the ten one-statement entries it tightened: "A fail-once arm
 # for it: cutting one of these ten with --lang snocone must reproduce the committed ref byte for byte.") The ten plus two printing entries so the road is not only read
 # on a blank line. A ref comes from the oracle (SPITBOL's run of the SNOBOL4 text scrip --transpile writes), never from SCRIP's own run.
 # ARM 1  each entry: extract it alone, cut its ref through the road in a scratch family, cmp with the committed ref -- identical.
-# ARM 2  FAIL-ONCE, a proper test (CEO-1680): the same comparison against a COPY of a committed ref with one line appended must read DIFFERENT.
+# ARM 2  FAIL-ONCE, a proper test (R-1680): the same comparison against a COPY of a committed ref with one line appended must read DIFFERENT.
 # ARM 3  the road RUNS the program it is handed: a copy of the first entry whose OUTPUT string is changed is cut to the changed answer, never to the committed ref.
 # EXIT 0 green, 1 red (the entry and the arm named), 2 could not measure (named).
 set -u

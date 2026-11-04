@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_user_display_overrides_the_builtin_difference_list_sinks_and_bagof_of_a_runtime_goal_sorts_its_groups_answer_as_swipl.sh -- THREE SWI BEHAVIOURS THE ProRosetta CRAWL FOUND (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-ceo-1562; wireworld and
+# test_gate_pl_swi_user_display_overrides_the_builtin_difference_list_sinks_and_bagof_of_a_runtime_goal_sorts_its_groups_answer_as_swipl.sh -- THREE SWI BEHAVIOURS THE ProRosetta CRAWL FOUND (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-r-1562; wireworld and
 # stem-and-leaf-plot): (1) a file that DEFINES display/1 (swipl: library(edinburgh), not a system predicate) calls its own definition, not the built-in that prints
 # a term with canonical lists -- the det-leaf table in lower_prolog.c now yields to a file definition of the names swipl keeps outside the system module
 # (pl_swi_library_leaf: display/1,2, concat_atom/2,3, numbervars/1, string_to_atom/2, read_term_from_chars/3 ...); (2) format/3 and with_output_to/2 accept the

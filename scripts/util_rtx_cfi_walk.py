@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_rtx_cfi_walk.py -- prove, from the assembled objects, that every asm leaf declares its frame to the unwinder TRUTHFULLY
-at every instruction (ceo CEO-1548, row rtx-every-leaf-carries-cfi-so-the-icon-frame-walk-crosses-a-frameless-leaf-by-the-
-unwinder-and-the-fourteen-word-probe-goes-ceo-1548; ARCH-ICON-RTX.md section 9.8 fact (a); ARCH-RT-CALL-PROTOCOL.md).
+at every instruction (R-1548, row rtx-every-leaf-carries-cfi-so-the-icon-frame-walk-crosses-a-frameless-leaf-by-the-
+unwinder-and-the-fourteen-word-probe-goes-r-1548; ARCH-ICON-RTX.md section 9.8 fact (a); ARCH-RT-CALL-PROTOCOL.md).
 
 WHY.  rt_icn_frames (gc_heap.c) and every other C-road walk reach the first emitted frame through the system unwinder: a C
 function called from an asm leaf returns into the leaf, and only the leaf's FDE says where the leaf's own return address into

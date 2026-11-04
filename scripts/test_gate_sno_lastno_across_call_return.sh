@@ -7,7 +7,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 #
 # Row: gstno-lastno-not-restored-across-call-return-boundary (hq_U). Witness minted and oracle-verified by
 # seat11 2026-09-05; this gate is the runnable criterion for it (the row was minted with the placeholder
-# DONE-WHEN and was therefore UNPICKABLE -- ceo census 19:02).
+# DONE-WHEN and was therefore UNPICKABLE -- the officer census 19:02).
 #
 # ⛔ GENERAL AND TRACE-INDEPENDENT: the witness below uses no TRACE at all. A cure that only fixes the SIG
 # shim (bb_define_sr) and not the other conventions (bb_call_proc_staged ab3b_z/fn_cell and the generic-slim

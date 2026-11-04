@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_every_graded_suite_has_an_attribute_csv.sh -- every row of SUITES.tsv (the machine-read SUITE TABLE) names a suite
-# whose attribute file ALL.csv exists, so a program's declared memory (heap_kb, Lon 2026-09-23 CEO-1167/1168) has a place to
+# whose attribute file ALL.csv exists, so a program's declared memory (heap_kb, Lon 2026-09-23 R-1167/1168) has a place to
 # live for EVERY graded suite. Cheap, no build, hermetic (reads the checkout only). PASS rc=0, FAIL rc=1 naming each missing
 # file, REFUSE rc=2 when SUITES.tsv cannot be read or maps a key this table does not know (a suite this gate cannot place is
 # not silently green). The key->directory table is DECLARED here because SUITES.tsv carries no path column.
-# ⛔ A BENCHMARK ROW (key *-bench-ref, CEO-1221) HAS NO ALL.csv BY RULING: the coo 2026-09-23, answering hq_snocone -- a benchmark
+# ⛔ A BENCHMARK ROW (key *-bench-ref, R-1221) HAS NO ALL.csv BY RULING: the coo 2026-09-23, answering hq_snocone -- a benchmark
 # declares its memory in a per-program NAME.heap sidecar beside the program (the harness's own heap_sidecar_path format), never a
 # per-tree attribute file. So a *-bench-ref key is PLACED when its benchmark directory exists, counted apart from the ALL.csv
 # suites. Its first row (snocone-bench-ref) refused this gate for every seat's preflight for one push -- hq_pascal's report.
@@ -29,12 +29,12 @@ rows=0; ok=0; okb=0; missing=(); unknown=()
 while IFS=$'\t' read -r key rest; do
   [ -z "$key" ] && continue; case "$key" in \#*|key) continue;; esac
   rows=$((rows+1))
-  # ⭐ A PORT ENGINE'S ROW (key <suite>@dotnet or <suite>@jvm, CEO-1822) grades the bare suite's own programs on the same corpus, so it is placed
+  # ⭐ A PORT ENGINE'S ROW (key <suite>@dotnet or <suite>@jvm, R-1822) grades the bare suite's own programs on the same corpus, so it is placed
   # by the bare key; an engine no runner knows stays an unknown key.
   k="$key"; case "$key" in *@dotnet|*@jvm) k="${key%@*}";; esac
   d="${DIR[$k]:-}"
   if [ -z "$d" ]; then unknown+=("$key"); continue; fi
-  # ⭐ A DEMO ROW (key *-demos, CEO-1312/1313; coo COO-206) is a benchmark row too: every demo declares its memory, command line and
+  # ⭐ A DEMO ROW (key *-demos, R-1312/1313; coo COO-206) is a benchmark row too: every demo declares its memory, command line and
   # workhorse run in sidecars beside it (NAME.heap/.stack/.cmdline/.workhorse), never a per-tree attribute file -- placed like *-bench-ref.
   case "$k" in *-bench-ref|*-demos) if [ -d "$S4E/$d" ]; then okb=$((okb+1)); else missing+=("$key -> $d (its benchmark or demo tree)"); fi; continue;; esac
   if [ -s "$S4E/$d/ALL.csv" ]; then ok=$((ok+1)); else missing+=("$key -> $d/ALL.csv"); fi

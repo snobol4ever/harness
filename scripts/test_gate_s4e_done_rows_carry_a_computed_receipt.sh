@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_s4e_done_rows_carry_a_computed_receipt.sh -- EVERY DONE IS COMPUTED, AND THE CLAIM CARRIES THE COMPUTATION (coo
-# 2026-09-16; ceo CEO-790/793; row instruments-a-done-row-with-no-claim-and-no-receipt-was-closed-by-a-path-that-bypassed-
+# 2026-09-16; R-790/793; row instruments-a-done-row-with-no-claim-and-no-receipt-was-closed-by-a-path-that-bypassed-
 # the-computed-done-name-and-refuse-it).
 #
 # THE DEFECT: prolog-failed-initialization-goal-exits-1-where-swipl-exits-0 read DONE in QUEUE.tsv with NO claim, NO ledger
@@ -23,14 +23,14 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 [ -f "$MSG" ] && [ -f "$CENSUS" ] || { echo "⛔ REFUSED-TO-GRADE: $MSG or $CENSUS missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED-TO-GRADE: mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
 PO="$W/po"; ME=hq_T
-mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" "$PO/ceo/inbox"; : > "$PO/BOARD.md"; printf 'TRIO\n' > "$PO/MODE"
+mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" "$PO/cto/inbox"; : > "$PO/BOARD.md"; printf 'TRIO\n' > "$PO/MODE"
 printf '# fixture\n1\tfx-live\t%s\tFREE\n1\tfx-receipted\t%s\tDONE\n1\tfx-orphan\tunassigned\tDONE\n' "$ME" "$ME" > "$PO/QUEUE.tsv"; : > "$PO/QUEUE.done.tsv"
 for t in fx-live fx-receipted fx-orphan; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: grep -q green-body %s/green.txt\nLINKS: none\n## NEXT\n(none)\n## LEDGER\n' "$t" "$W" > "$PO/tasks/$t.task.md"; done
 printf 'green-body\n' > "$W/green.txt"
 printf '%s\nDONE\nRECEIPT done rc=0 tree=fixture elapsed=0s via=computed 2026-09-16T00:00:00Z by %s\n' "$ME" "$ME" > "$PO/claims/fx-receipted.claim"
 run(){ S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$MSG" "$@" 2>&1; }
 fails=0; checks=0; ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
-echo "=== gate: every DONE is computed and the claim carries the computation (CEO-790/793) ==="
+echo "=== gate: every DONE is computed and the claim carries the computation (R-790/793) ==="
 run claim fx-live >/dev/null; out="$(run done fx-live)"; rc=$?
 [ -n "${FAIL_ONCE:-}" ] && sed -i '/^RECEIPT /d' "$PO/claims/fx-live.claim"
 rl="$(grep '^RECEIPT done rc=0 tree=' "$PO/claims/fx-live.claim" | head -1)"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_cut_redo_reaches_its_own_barrier.sh -- A CUT INSIDE AN IF-THEN-ELSE, A SOFT-CUT, A DISJUNCTION OR A catch/3 ARM (ISO 7.8.4, 7.8.7,
 # 7.8.8, 7.8.9) cuts the CLAUSE and nothing more, and a cut that is not at the top of an arm leaves that arm's redo alive (hq_prolog 2026-09-25,
-# CEO-1266; the cure is lower_prolog.c at 412be71e1).
+# R-1266; the cure is lower_prolog.c at 412be71e1).
 # THE DEFECT. The arm's redo pointed at the clause's cut barrier, a bare IR_FAIL, which the gate's redo dispatch resolved to the GATE'S own omega,
 # so backtracking resumed mem/2 in a frame the cut had already torn down: c1 below SIGSEGV'd in both modes. And any cut ANYWHERE inside an arm
 # forfeited the arm's whole redo, so (true -> (X = 1 ; X = 2, !) ; true) never produced X = 2.

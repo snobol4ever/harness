@@ -2,7 +2,7 @@
 # test_gate_pas_function_result_record_fields_assign_through_the_name.sh -- a function whose RESULT is a record can have its fields assigned through the function name (Mk.s := n; Mk.a[1] := n; with Mk do ...),
 # as fpc -Mobjfpc reads it.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): the target of Mk.s := n
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): the target of Mk.s := n
 # lowered to __pas_unresolved_target (the function name was not a record variable, so the field select had no layout) and the program died
 # 6.5.3.2 at run time; a local record assigned to Mk whole (Mk := x) worked. THE CURE: E_procedure_decl registers the function name as a record
 # variable of its result type (pas_recvar_add_from_type) and the body opens with Mk := <the record's initial block>, the same init a local record

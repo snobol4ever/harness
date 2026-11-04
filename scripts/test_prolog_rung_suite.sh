@@ -32,7 +32,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 CORPUS="${CORPUS:-$S4E/corpus/tests/prolog}"
 RUNG=""
@@ -59,7 +59,7 @@ if [ ! -x "$SCRIP" ]; then
     exit 2
 fi
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
+# does, the officer -> hq_T 2026-09-04). Existence is not currency: a binary that IS there can still predate the tree
 # whose SHA the board stamps on the verdict. NO LOGIC HERE -- util_require_fresh.sh sources gate_require_fresh
 # from lib_gate.sh, the ONE authority (hq_B 4c7253e99), never a second copy.
 "$HERE/util_require_fresh.sh" --gate test_prolog_rung_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
@@ -70,7 +70,7 @@ if [ ! -d "$CORPUS" ]; then
 fi
 
 # run a single program in a given mode, echoing its stdout
-# A loose program runs at the heap and stack it declares beside itself, read by lib_declared_arena.sh (ceo CEO-1353, RULES.md clause 8 (g));
+# A loose program runs at the heap and stack it declares beside itself, read by lib_declared_arena.sh (R-1353, RULES.md clause 8 (g));
 # m4's switches are carried by run_prolog_via_x86_backend.sh, which reads the same sidecars. A sidecar the reader refuses is rc 2 here.
 . "$HERE/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh" >&2; exit 2; }
 run_prog() {
@@ -98,7 +98,7 @@ mode_is_refused() {
 }
 
 # collect the corpus file list into the FILES array (loose) and SUITE_FILES (converted families).
-# Discriminator for a converted family .pl: its .ref sibling carries the harness's banner lines (CEO-1222: every expected
+# Discriminator for a converted family .pl: its .ref sibling carries the harness's banner lines (R-1222: every expected
 # output is a .ref, so a plain .ref beside a loose witness no longer means "converted family" -- the banners do, as in
 # the Icon runners' twin cure). A .ref with no banner line is a loose witness's expected output.
 # (the OLD dual-extension individual files, e.g. rung05/29/30's per-entry .pl, always carry BOTH —

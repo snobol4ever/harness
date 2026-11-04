@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_bench_prolog_timed.sh -- ANGLE 1 of the Prolog three-angle triangulation (row bench-rivals-prolog,
 # mirroring test_bench_snobol4_timed.sh / ARCH-BENCH-CAMPAIGN-README-TABLES.md THREE-ANGLE TRIANGULATION).
 #
@@ -27,7 +27,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
 PRO="${PROLOG_DIR:-$S4E/corpus/benchmarks/prolog}"
-# ⛔ NMAX WAS 65536 UNTIL CEO-1281 (2026-09-26) AND THAT CAP WAS THE GPROLOG DISAGREEMENT: gprolog's wall_us is real_time/1 x 1000, a
+# ⛔ NMAX WAS 65536 UNTIL R-1281 (2026-09-26) AND THAT CAP WAS THE GPROLOG DISAGREEMENT: gprolog's wall_us is real_time/1 x 1000, a
 #   1 ms tick, and a kernel like cal (0.38 us/it on gprolog) reached the cap at 25 ms of work -- 25 ticks -- so its self-measured WORK
 #   per iteration read 0.38 on one angle and 0.44 on the other (1.16x, DISAGREE) while its CPU rates agreed. The search now runs on to
 #   the 500 ms budget for every engine (4194304 caps only a runaway), and angle 2's committed counts for the sub-3-us kernels were
@@ -52,7 +52,7 @@ gplc_bin >/dev/null || exit 2
 . "$HERE/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE (rc=2): cannot source lib_prolog_bench.sh -- the ONE loop-output check"; exit 2; }
 WRAP="$ROOT/tools/bench_rusage"
 [ -x "$WRAP" ] || gcc -O2 -o "$WRAP" "$ROOT/tools/bench_rusage.c" || { echo "⛔ REFUSED: bench_rusage failed to build" >&2; exit 2; }
-# ⛔⭐ THE GENERATOR IS THE SOLE PRODUCER OF THE WRAPPED FORM (CEO-567 DONE-WHEN, verbatim: "the harness
+# ⛔⭐ THE GENERATOR IS THE SOLE PRODUCER OF THE WRAPPED FORM (R-567 DONE-WHEN, verbatim: "the harness
 #   is the sole producer of the wrapped self-timing self-counting form").  Until 2026-09-13 THIS SCRIPT
 #   WAS A SECOND PRODUCER: a local mkwrap() that sed'd `main :-` into `bench__main :-` and wrapped it in
 #   a frozen `l__(N)`.  It worked, which is why it survived -- but it emitted NO TIMING BRACKET, so angle
@@ -61,11 +61,11 @@ WRAP="$ROOT/tools/bench_rusage"
 #   property angle 1 exists for is UNTOUCHED, because what makes angle 1 independent is that N is
 #   DERIVED FRESH by the doubling search, never where the wrapper text comes from.
 GEN="${GEN:-$HERE/bench_prolog_wrap.sh}"
-[ -x "$GEN" ] || { echo "⛔ REFUSED-TO-GRADE: the wrapper generator $GEN is missing or not executable -- angle 1 will not hand-roll a second wrapper (CEO-567)"; exit 2; }
-. "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple and the carrier of the load stamp (s266/CEO-697)"; exit 2; }
-. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (CEO-1281)"; exit 2; }
-# ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (ceo CEO-1281, 2026-09-26): DECL_SW carries the <k>.heap / <k>.stack sidecars as
-#   SPITBOL's -d<kb>k -s<kb>k switches (lib_declared_arena.sh, the suite runner's reader; a switch is recorded with the run, CEO-1225, and
+[ -x "$GEN" ] || { echo "⛔ REFUSED-TO-GRADE: the wrapper generator $GEN is missing or not executable -- angle 1 will not hand-roll a second wrapper (R-567)"; exit 2; }
+. "$HERE/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_perf_fmt.sh -- the ONE authority for printing a multiple and the carrier of the load stamp (s266/R-697)"; exit 2; }
+. "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE: cannot load lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars (R-1281)"; exit 2; }
+# ⛔ THE SCRIP ARMS RUN UNDER THE KERNEL'S OWN DECLARATION (R-1281, 2026-09-26): DECL_SW carries the <k>.heap / <k>.stack sidecars as
+#   SPITBOL's -d<kb>k -s<kb>k switches (lib_declared_arena.sh, the suite runner's reader; a switch is recorded with the run, R-1225, and
 #   SCRIP_HEAP_KB would move the WINDOW), and every m3 and m4 launch below -- the single-shot correctness gate included -- carries them. Before this line tak overflowed the
 #   shipped 4 MB stack in the correctness gate and read SKIP on all four engines (an instrument gap wearing a kernel finding's words).
 declare -a DECL_SW=(); declare -A DECLW=()
@@ -75,7 +75,7 @@ declare -a DECL_SW=(); declare -A DECLW=()
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # No ulimit here: SCRIP's stack is DECL_SW's -s, and the rivals' own stacks are theirs. Until 2026-10-01 this line was ulimit -s unlimited.
 #   MEASURED 2026-10-01 at c1c899df3: all 23 kernels read the same on gprolog, swipl, m3 and m4 at the shell's soft 8 MB stack and at
-#   unlimited, and the generated loop is failure-driven (between/3 then fail), so N never deepens a stack (RULES.md clause 8 (g), CEO-1353).
+#   unlimited, and the generated loop is failure-driven (between/3 then fail), so N never deepens a stack (RULES.md clause 8 (g), R-1353).
 
 # genwrap SRC N OUT ENG -- ask the ONE generator for the counted, self-timing form.  ⛔ Never write the
 # wrapper here: a second producer is how angle 1 came to have a rate and no work number for months.
@@ -98,7 +98,7 @@ run1() {
     #   ⭐ A doubled prelude is invisible on every engine that tolerates redefinition and fatal on the
     #   one that does not, which is why this comment is longer than the fix.
     gnu) out=$("$WRAP" timeout -k 5 "$T" "$(gprolog_bin)" --consult-file "$pl" --query-goal halt >"$W/o.$$" 2>"$W/e.$$") ;;
-    # ⭐ gplc -- GNU Prolog's NATIVE compiler (Prolog -> WAM -> mini-assembly -> x86-64, linked; ceo CEO-1281 on Lon's question of 2026-09-26,
+    # ⭐ gplc -- GNU Prolog's NATIVE compiler (Prolog -> WAM -> mini-assembly -> x86-64, linked; R-1281 on Lon's question of 2026-09-26,
     #   "Is GNU Prolog a true compiler?"): the gnu arm above is gprolog's BYTE-CODE WAM interpreter (a consulted file never becomes native
     #   code), so until this arm the grid compared SCRIP with two interpreters. Same generated program as gnu (--engine=gnu inlines the
     #   real_time/1 prelude), compiled here with --no-top-level so the binary exits after its initialization goals and prints no banner.
@@ -154,8 +154,8 @@ search() {
 
 echo "TIME-BASED PROLOG BENCHMARKS -- angle 1: fixed wall-time budget (${BUDGET_MS}ms), iterations counted via live doubling search"
 echo "engines: gnu gplc swi m3 m4 (gnu = "$(gprolog_bin)" --consult-file, the byte-code WAM; gplc = GNU Prolog compiled native)   corpus: $B   budget: TIME_BUDGET_MS=$BUDGET_MS cap NMAX=$NMAX   external instrument: tools/bench_rusage"
-echo "wrapper: GENERATED per engine by $(basename "$GEN") --mode=iter (never checked in, CEO-567 -- this angle no longer writes its own)"
-# ⛔ CEO-697: A COST WITHOUT THE LOAD IT RAN UNDER IS NOT A COST, and perf_grid_begin welds the load to
+echo "wrapper: GENERATED per engine by $(basename "$GEN") --mode=iter (never checked in, R-567 -- this angle no longer writes its own)"
+# ⛔ R-697: A COST WITHOUT THE LOAD IT RAN UNDER IS NOT A COST, and perf_grid_begin welds the load to
 #   the shared-axes line so this harness CANNOT print a rate without it -- two runs of one tree on this
 #   box have been measured differing by up to 2.15x.
 perf_grid_begin "Prolog kernels vs gnu/swi -- angle 1, live doubling search · rate = iterations / CPU(user+sys) · WORK = self-measured wall inside the bracket · RT_OPT=-O0"
@@ -175,7 +175,7 @@ for pl in "$B"/*.pl; do
   go=$(cd "$W" && timeout -k 5 15 "$(gprolog_bin)" --consult-file "$PRO/prelude_gplc.pl" --consult-file "$pl" --query-goal halt 2>/dev/null </dev/null | gnu_filter)
   so=$(cd "$W" && timeout -k 5 15 swipl -q -g halt "$PRO/prelude_swipl.pl" "$pl" 2>/dev/null </dev/null | head -200)
   m3o=$(cd "$W" && timeout -k 5 15 "$SCRIP" --run "${DECL_SW[@]}" "$pl" </dev/null 2>/dev/null | head -200)
-  # ⛔ A gplc REFUSAL DARKENS THE gplc CELL, NEVER THE KERNEL (CEO-1281, found the hour the arm was born): witness_depth_nrev8 defines
+  # ⛔ A gplc REFUSAL DARKENS THE gplc CELL, NEVER THE KERNEL (R-1281, found the hour the arm was born): witness_depth_nrev8 defines
   #   append/3, which gplc refuses as "redefining built-in predicate append/3" where gprolog's consult only prints an error line and runs
   #   the built-in -- the kernel is OUTSIDE THE gplc BASELINE (RULES.md § THE OUTSIDE-BASELINE TEST IS ABOUT THE ORACLE), and the first
   #   cut of this gate SKIPped the whole kernel on all five engines for it. The three engines that decide SKIP stay gnu, swi and m3.
@@ -206,7 +206,7 @@ for pl in "$B"/*.pl; do
          BWORK["$k:$eng"]="NA"; BOVH["$k:$eng"]="NA"; BN["$k:$eng"]="-" ;;
       *) R[$eng]="$r"
          el=$(awk '{print $3}' <<<"$res"); wk=$(awk '{print $4}' <<<"$res"); BN["$k:$eng"]="$n"
-         # ⛔ A MISSING work_us IS PRINTED AS DARK, NEVER BLANK AND NEVER ZERO (CEO-676, dark-is-worse-
+         # ⛔ A MISSING work_us IS PRINTED AS DARK, NEVER BLANK AND NEVER ZERO (R-676, dark-is-worse-
          #   than-red): an engine whose bracket did not report could not measure its subject, and it
          #   must say so in its own voice rather than leave the column looking filled.
          # ⛔⭐ WORK IS PUBLISHED PER ITERATION, AND ON THIS ANGLE THAT IS MANDATORY, NOT A PREFERENCE.
@@ -233,7 +233,7 @@ for pl in "$B"/*.pl; do
   [ "$ckstat" = ok ] && tot_ok=$((tot_ok+1)) || tot_dark_rows=$((tot_dark_rows+1))
   printf "%-14s %14s %14s %14s %14s %14s  %s\n" "$k" "${R[gnu]:-NA}" "${R[gplc]:-NA}" "${R[swi]:-NA}" "${R[m3]:-NA}" "${R[m4]:-NA}" "$ckstat"
 done
-# ⭐⭐ THE TWO-NUMBER WORK/OVERHEAD BASIS ON ANGLE 1 -- the CEO-567 DONE-WHEN clause "the three angles
+# ⭐⭐ THE TWO-NUMBER WORK/OVERHEAD BASIS ON ANGLE 1 -- the R-567 DONE-WHEN clause "the three angles
 #   run over the wrapped form with the process wrapper's numbers printed beside the self-measured ones".
 #   ⛔ THIS ANGLE COULD NOT CARRY THESE TWO GRIDS AT ALL BEFORE 2026-09-13, and for two stacked reasons,
 #   each of which alone was enough: (a) the local mkwrap() emitted no timing bracket, so there was no
@@ -267,14 +267,14 @@ echo "  MINUS self-measured work. It is startup+load+teardown, which the kernel 
 echo "  N-independent, which is why it is NOT divided by N the way the work column above is."
 echo "  ⛔ wall minus wall, never CPU minus wall -- the rate column above uses CPU and is a DIFFERENT"
 echo "  instrument; subtracting across the two would publish the difference of two clocks as an overhead."
-echo "  DARK = the engine ran but its bracket reported no work_us; it is named, never left blank (CEO-676)."
+echo "  DARK = the engine ran but its bracket reported no work_us; it is named, never left blank (R-676)."
 printf "%-14s %14s %14s %14s %14s %14s\n" BENCHMARK gnu gplc swi m3 m4
 printf "%-14s %14s %14s %14s %14s %14s\n" "--------------" "--------------" "--------------" "--------------" "--------------" "--------------"
 for k in "${basis_rows[@]}"; do
   printf "%-14s %14s %14s %14s %14s %14s\n" "$k" "${BOVH[$k:gnu]:-DARK}" "${BOVH[$k:gplc]:-DARK}" "${BOVH[$k:swi]:-DARK}" "${BOVH[$k:m3]:-DARK}" "${BOVH[$k:m4]:-DARK}"
 done
 echo
-echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh, the suite runner's reader; CEO-1281): ${#DECLW[@]} kernel(s)"
+echo "DECLARED SIDECARS carried as switches on the m3 and m4 command lines (lib_declared_arena.sh, the suite runner's reader; R-1281): ${#DECLW[@]} kernel(s)"
 for k in "${!DECLW[@]}"; do echo "  $k: ${DECLW[$k]}"; done
 echo
 # ⛔⭐ THE VERDICT FOLDS IN, AND THAT IS A RULING THE MEASUREMENT EARNED RATHER THAN A PREFERENCE.

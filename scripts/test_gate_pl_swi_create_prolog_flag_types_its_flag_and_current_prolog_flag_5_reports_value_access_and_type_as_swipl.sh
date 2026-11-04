@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_create_prolog_flag_types_its_flag_and_current_prolog_flag_5_reports_value_access_and_type_as_swipl.sh -- A RUN-TIME PROLOG FLAG HAS A TYPE AND AN ACCESS (ceo CEO-1930, hq_icon on the SWI umbrella; swipl 9.0.4).
+# test_gate_pl_swi_create_prolog_flag_types_its_flag_and_current_prolog_flag_5_reports_value_access_and_type_as_swipl.sh -- A RUN-TIME PROLOG FLAG HAS A TYPE AND AN ACCESS (R-1930, hq_icon on the SWI umbrella; swipl 9.0.4).
 # swipl types every flag it creates -- create_prolog_flag/3's type(boolean|atom|integer|float|term), or the type of the first value set_prolog_flag gives a new name -- checks every later value
 # against that type (type_error(bool|atom|integer|float, V); a boolean takes on/off/true/false and keeps true/false), refuses a read_only flag (permission_error(modify, flag, F)), and keeps an
 # existing flag's type and access when create_prolog_flag meets it again (keep(true) leaves it alone). '$current_prolog_flag'(Name, Value, Scope, Access, Type) reports value, access (read|write) and

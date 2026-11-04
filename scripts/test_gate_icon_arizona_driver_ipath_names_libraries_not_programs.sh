@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona runner invoked as an instrument fixture over a scratch package outside corpus, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the Arizona runner invoked as an instrument fixture over a scratch package outside corpus, not a board (R-547)"
 # test_gate_icon_arizona_driver_ipath_names_libraries_not_programs.sh -- A DRIVER RUN'S IPATH NAMES THE SUITE'S LIBRARIES, NEVER ITS
-# PROGRAMS (hq_icon 2026-09-28, ruled by the coo on hq_icon's ask; Arizona general/cfunc under CEO-1336).
+# PROGRAMS (hq_icon 2026-09-28, ruled by the coo on hq_icon's ask; Arizona general/cfunc under R-1336).
 #
 # general/ ships io.icn, an Arizona TEST PROGRAM, and the library cfunc.icn says `link io` meaning the IPL library that defines pathload.
 # icont links ucode only and the suite holds no io.u, so iconx falls through to the installed io; SCRIP's link search reads source, so
@@ -45,7 +45,7 @@ rm -f "$S"/*.u1 "$S"/*.u2 "$X"/*.u1 "$X"/*.u2 "$S/lib_driver" "$S/helper"
 echo "  HOLDS: a driver run links the suite's libraries through IPATH and never a shipped program that shares a library's name"
 out="$(cd "$ROOT" && env S4E_HOME="$W/az" IPATH="$X" S4E_PROGRESS_DB="$W/p.tsv" S4E_SCORE_NO_WRITE="gate $G" timeout -k 5 300 bash "$R" 2>&1)"; r=$?
 oc() { awk -F'\t' -v p="$1" -v m="$2" 'NR>1 && $8==p && $9==m {print $10}' "$W/p.tsv" 2>/dev/null | tail -1; }
-l3="$(oc general/lib m3)"; l4="$(oc general/lib m4)"   # the board keys a program by its path key <subdir>/<stem>, as its container does (CEO-1366 (b))
+l3="$(oc general/lib m3)"; l4="$(oc general/lib m4)"   # the board keys a program by its path key <subdir>/<stem>, as its container does (R-1366 (b))
 if [ "$r" = 2 ] || [ "$r" = 124 ]; then echo "  arm L FAIL: the runner could not measure its fixture (rc=$r): $(printf '%s\n' "$out" | grep -E 'REFUSE|⛔' | head -2 | tr '\n' ' ')"; RC=1
 elif [ "$l3" = PASS ] && [ "$l4" = PASS ]; then echo "  arm L PASS: lib, graded through lib_driver with a same-named test program in the suite, reads PASS/PASS"
 else echo "  arm L FAIL: general/lib reads ${l3:-none}/${l4:-none} (want PASS/PASS -- a FAIL means the driver linked the suite's test program)"; RC=1; fi

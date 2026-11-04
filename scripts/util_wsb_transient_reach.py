@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_wsb_transient_reach.py -- DOES A REGEX ROAD REACH A SAFE POINT? (hq_runtime, ceo-2079; the TRANSIENT rows of gc_wsb_producers.tsv; ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14)
+"""util_wsb_transient_reach.py -- DOES A REGEX ROAD REACH A SAFE POINT? (hq_runtime, R-2079; the TRANSIENT rows of gc_wsb_producers.tsv; ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14)
 
 WHAT IT MEASURES.  The eleven TRANSIENT rows of gc_wsb_producers.tsv say that rx.c's graph (RxNode, RxSet, RxCap, RxProg and their vectors, all HB_WSB blocks that point at each
 other) lives inside one rx_compile or rx_exec call, and that this machine collects only at an emitted poll after an allocating runtime call returns, so no collection finds the

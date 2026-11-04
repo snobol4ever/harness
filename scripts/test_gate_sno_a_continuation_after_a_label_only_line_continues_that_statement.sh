@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_sno_a_continuation_after_a_label_only_line_continues_that_statement.sh -- a line holding only a label, followed by a
 # continuation line ('+' or '.' in column 1), is ONE statement: the label labels the continued body, and &STNO and &STCOUNT count one.
 #

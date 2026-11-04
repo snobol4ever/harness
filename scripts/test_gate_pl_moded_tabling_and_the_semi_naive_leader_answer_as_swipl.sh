@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_moded_tabling_and_the_semi_naive_leader_answer_as_swipl.sh
 #
-# THE ROW: prolog-swi-tabling-mode-directed-tabling-and-answer-subsumption (hq_prolog, rank 1, class b1 of CEO-1624).
+# THE ROW: prolog-swi-tabling-mode-directed-tabling-and-answer-subsumption (hq_prolog, rank 1, class b1 of R-1624).
 # MODE-DIRECTED TABLING: `:- table p(M1,..,Mn)` with Mi a variable, index or + (the variant's arguments) or first, -, last, min,
 # max, sum, lattice(PI) or po(PI) (the moded arguments). The LOWERER (lower_prolog.c pl_table_specs) reads the spec and gives the
 # wrapper p(A..) :- '$tbl_mcall'(p(A..), '$tbl p'(A..), Spec); the module rule (prolog_lower.c pl_mod_table_pi) renames the spec's

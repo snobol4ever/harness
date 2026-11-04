@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_a_catch_of_a_generator_after_a_retained_generator_keeps_its_frame_live_and_redoes_as_swipl.sh -- THE CATCH'S UNMARK KEEPS THE CALLEE'S FRAME (hq_packages, ceo CEO-1959/1960; found on
+# test_gate_pl_a_catch_of_a_generator_after_a_retained_generator_keeps_its_frame_live_and_redoes_as_swipl.sh -- THE CATCH'S UNMARK KEEPS THE CALLEE'S FRAME (hq_packages, R-1959/1960; found on
 # Trealla's sundry_shift_compiled, which died on signal 11 at pc 0xb0 in both modes; the SWI-dialect class of every clause that runs a retained generator and then catch/3 of a generator).
 # THE WITNESS: s1(Y) :- member(_, [a,b]), catch(member(Y, [k1,k2]), _, true). answers [k1,k2,k1,k2] in swipl; SCRIP exited on SIGSEGV at pc 0xb0 -- no shift, no continuation, no engine is involved, and
 # the same catch directly under shift/1 (s8) is only the shape that surfaced it. THE MECHANISM (measured in gdb on the mode-4 binary): the catch's IR_UNMARK is the nondeterministic-exit pop (ival & 8,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_clpfd_helpers_called_by_name_answer_as_swipl.sh -- THE CLPFD ROADS THAT REACH A HELPER BY ITS NAME AS DATA
-# ANSWER AS SWIPL, IN BOTH MODES (cfo 2026-10-10, row prolog-clpfd-the-gnu-fd-spelling-...-ceo-1596; the vendoring scheme of
-# CEO-1473, util_gen_prolog_prelude_libs.py's RENAME_AS_DATA).
+# ANSWER AS SWIPL, IN BOTH MODES (cfo 2026-10-10, row prolog-clpfd-the-gnu-fd-spelling-...-r-1596; the vendoring scheme of
+# R-1473, util_gen_prolog_prelude_libs.py's RENAME_AS_DATA).
 #
 # THE DEFECT.  The generator renames a vendored library's local helpers into '$clpfd_<name>' so they cannot collide with a
 # program's predicates, by rewriting every REFERENCE SWI's reader reports.  Sixteen clpfd helpers are reached by their NAME

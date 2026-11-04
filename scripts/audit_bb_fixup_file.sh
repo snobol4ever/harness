@@ -42,8 +42,8 @@ blank_lines=$(grep -c '^[[:space:]]*$' "$f" || true)
 port_english=$(strip "$f"  | grep -cE 'PORT_ALPHA|PORT_BETA|PORT_GAMMA|PORT_OMEGA' || true)
 local_vars=$(python3 "$HERE/audit_template_locals.py" "$f")
 rp=$(python3 "$HERE/audit_template_returns.py" "$f")
-# ⛔ THE TWO-STATICS CAP IS WITHDRAWN (Lon 2026-10-11 12:4x CDT, in-chat to the ceo, verbatim: "For templates, Your rule of "at most two static functions" seems
-# excessive."; ceo CEO-1674): a template keeps as many static helper functions as its shape needs, so the census no longer counts them; the count is
+# ⛔ THE TWO-STATICS CAP IS WITHDRAWN (Lon 2026-10-11 12:4x CDT, in-chat, verbatim: "For templates, Your rule of "at most two static functions" seems
+# excessive."; R-1674): a template keeps as many static helper functions as its shape needs, so the census no longer counts them; the count is
 # still printed as information. The line-oriented rules stand (no locals, one x86 per source line, one return from IF terms).
 st=$(grep -cE '^static' "$f" || true); hc=0
 sig_decls=$(strip "$f"     | grep -cE '\)[[:space:]]*\{[[:space:]]*(std::string|int |long |const char|auto |bool |double |char |uint64_t|size_t|IR_t)' || true)
@@ -70,7 +70,7 @@ printf "  blank_lines   (empty lines):          %d\n" "$blank_lines"
 printf "  port_english  (PORT_ALPHA/etc):       %d\n" "$port_english"
 printf "  local_vars    (lines declaring one):  %d\n" "$local_vars"
 printf "  returns_plus  (returns beyond 1 per fn): %d\n" "$rp"
-printf "  helper_count  (statics, not counted since CEO-1674): %d\n" "$st"
+printf "  helper_count  (statics, not counted since R-1674): %d\n" "$st"
 printf "  sig_decls     (decls on sig line):    %d\n" "$sig_decls"
 printf "  over_col      (lines > 200 chars):    %d\n" "$over_col"
 printf "  multi_x86     (>=2 x86() per line):   %d\n" "$multi_x86"

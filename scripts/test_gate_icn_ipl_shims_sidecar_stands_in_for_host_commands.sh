@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_icn_ipl_shims_sidecar_stands_in_for_host_commands.sh -- the NAME.shims/ sidecar (hq_icon 2026-10-04; Lon CEO-1474; one gate per sidecar,
-# CEO-1315): stand-in host commands put first on PATH for the unit's run, the oracle's and both SCRIP modes' alike (an MS-DOS dir, an ULTRIX ls, a
+# test_gate_icn_ipl_shims_sidecar_stands_in_for_host_commands.sh -- the NAME.shims/ sidecar (hq_icon 2026-10-04; Lon R-1474; one gate per sidecar,
+# R-1315): stand-in host commands put first on PATH for the unit's run, the oracle's and both SCRIP modes' alike (an MS-DOS dir, an ULTRIX ls, a
 # fixed nm). The planted unit pipes a command no box has. GREEN: the ref carries the stand-in's answer and m3 and m4 pass. RED: with the shims
 # ignored the ref loses it. A stand-in that is not executable refuses (rc 2).
 set -uo pipefail

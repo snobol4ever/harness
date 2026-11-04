@@ -233,11 +233,11 @@ def read_contract(pkg_dir):
     m4 the same way). And `units<TAB>ref-beside` -- the package's own harness grades a source only when a <stem>.ref sits beside
     it (the Icon packages' boards), so a source without one (a library graded through its driver, a spliced include) is no unit
     here either. Absent file = stdout alone and every source a unit, as every package before the file existed. Any other key or
-    value refuses. ⭐ XSB's own contract (ceo CEO-1927, 2026-10-23; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB
+    value refuses. ⭐ XSB's own contract (R-1927, 2026-10-23; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB
     PACKAGE): `oracle<TAB>xsb-gentest` -- each ref is cut from XSB 5.0.0 (xsb_bin) as XSB's own test scripts run the program, the run each
     entry's row of ORACLE_RUNS.tsv records, in a copy of `upstream<TAB><dir>` (the upstream test tree, an absolute path), its answer the
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
-    harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (ceo CEO-2072, hq_unicon): an Icon
+    harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (R-2072, hq_unicon): an Icon
     package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
     out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": ""}
     cf = pkg_dir / "CONTRACT.tsv"
@@ -274,7 +274,7 @@ def read_contract(pkg_dir):
 
 
 def read_staged(pkg_dir):
-    """STAGED.tsv (CEO-1927): name<TAB>stage<TAB>answer<TAB>evidence -- an entry whose SCRIP run needs its upstream test directory staged
+    """STAGED.tsv (R-1927): name<TAB>stage<TAB>answer<TAB>evidence -- an entry whose SCRIP run needs its upstream test directory staged
     (stage=upstream: it loads a sibling by its upstream name) and whose answer is stdout or the file temp it writes (answer=stdout|temp-sorted, as
     wfs_tests' own harness grades it). Absent file: none. A malformed row refuses."""
     sf = pkg_dir / "STAGED.tsv"
@@ -523,8 +523,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                 if _why is None and not _L1:
                     _op0 = Path(contract["upstream"]) / _r["dir"] / f"{_r['file']}_old"
                     _n0 = len(h.xsb_answer_lines(_op0.read_bytes())) if _op0.is_file() else 0
-                    _why = (f"XSB prints nothing where its NAME_old has {_n0} lines -- no answer (NO_ORACLE_ANSWER, CEO-1927 (3))" if _n0 else
-                            "XSB's answer is empty, as its NAME_old is -- a silent engine passes it, so it measures nothing (FAKEABLE_NO_OBSERVABLE, CEO-1865)")
+                    _why = (f"XSB prints nothing where its NAME_old has {_n0} lines -- no answer (NO_ORACLE_ANSWER, R-1927 (3))" if _n0 else
+                            "XSB's answer is empty, as its NAME_old is -- a silent engine passes it, so it measures nothing (FAKEABLE_NO_OBSERVABLE, R-1865)")
             if _why:
                 excluded.append((name, _why))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({_why[:90]})", file=sys.stderr)
@@ -578,7 +578,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         if ora_kind == "OVERFLOW":
             # ⛔ A RUN THE OUTPUT BOUND KILLED IS NO ANSWER (the coo 2026-10-23, measured on rosetta-pascal: seven interactive programs that loop at
             # EOF printing a prompt -- menu, nim-game, pig-the-dice-game -- each wrote exactly the bound, 268435457 bytes, twice, and were absorbed:
-            # ALL.ref grew from 236 KB to 1.88 GB; ceo CEO-1927 (5)). _run_raw hands back the truncated stream with kind OVERFLOW and no rc.
+            # ALL.ref grew from 236 KB to 1.88 GB; R-1927 (5)). _run_raw hands back the truncated stream with kind OVERFLOW and no rc.
             excluded.append((name, f"the oracle's output passed the harness's bound (S4E_OUTPUT_CAP_MB, {h._OUTPUT_CAP} bytes) and the run was killed -- no answer"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle output OVERFLOW)", file=sys.stderr)
             continue
@@ -622,7 +622,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
             excluded.append((name, "oracle produced EMPTY output -- refusing to mint a vacuous ref"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (empty oracle output)", file=sys.stderr)
             continue
-        # ⭐ A CR IN THE ORACLE'S ANSWER IS THE PROGRAM'S OUTPUT BYTE (ceo CEO-1926, ruled 2026-10-23, .github fda2eb592; withdraws the coo's
+        # ⭐ A CR IN THE ORACLE'S ANSWER IS THE PROGRAM'S OUTPUT BYTE (R-1926, ruled 2026-10-23, .github fda2eb592; withdraws the coo's
         # exclusion of 2026-10-09): the ref keeps it byte for byte -- the container is read back split on LF only (_read_lf_lines), so a CR
         # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
         want_rc = ora_rc if ora_rc else 0
@@ -630,7 +630,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                      stdin=stdin_text, want_rc=want_rc)
         entries.append(e)
         if len(_ladder) > 1:
-            # ⛔ THE LABEL IS THE MODE FPC COMPILED IN, NOT THE RUNG THAT ASKED (hq_pascal 2026-10-11, CEO-1657 clause 4): a source's own
+            # ⛔ THE LABEL IS THE MODE FPC COMPILED IN, NOT THE RUNG THAT ASKED (hq_pascal 2026-10-11, R-1657 clause 4): a source's own
             # {$mode X} overrides the command line, so 102 entries cut on the -Miso rung under {$mode delphi} or {$mode objfpc} read "iso"
             # and two delphi programs sat on ISO_EXPECTED_REFUSALS.tsv. The source's first {$mode X} names the mode; every directive in
             # rosetta-pascal sits in a branch fpc takes ({$ifdef fpc}, {$else} of {$ifndef fpc}), measured, so the first one is the one fpc obeys.
@@ -674,7 +674,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     out_xsbold = pkg_dir / f"{out_prefix}.xsbold"
     if xsbold:
         out_xsbold.write_text("# each absorbed entry's XSB answer against the upstream NAME_old XSB ships, as gentest.sh compares (sorted; MATCH-w: equal once "
-                              "white space is removed, diff -w): name<TAB>check. The ref is XSB's answer either way (ceo CEO-1927 (1)).\n"
+                              "white space is removed, diff -w): name<TAB>check. The ref is XSB's answer either way (R-1927 (1)).\n"
                               + "".join(f"{n}\t{c}\n" for n, c in xsbold))
     elif out_xsbold.exists():
         out_xsbold.unlink()
@@ -699,7 +699,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     table_lang = lang or "snobol4"
     cols, _ = m.LANG_TABLES[table_lang]
     # ⛔⭐⭐ READ THE OLD CSV BEFORE OVERWRITING IT, FOR heap_kb AND heap_kb ALONE (Lon 2026-09-23 /
-    # CEO-1167). Every other column in this file is DERIVED -- re-run the builder and it regenerates
+    # R-1167). Every other column in this file is DERIVED -- re-run the builder and it regenerates
     # byte-identically from the package sources. heap_kb is the one column that is not: it is a
     # MEASUREMENT a seat paid for with two readings (matched at that arena, not matched one step below),
     # and nothing in a program's text can regenerate it. This builder overwrote out_csv unconditionally,
@@ -708,11 +708,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     # failure the rungs builder's own MERGE-NEVER-OVERWRITE note was written about one file over.
     # ⛔⭐ AN ENTRY WITH NO DECLARATION OF ITS OWN GETS THE SHIPPED DEFAULTS WRITTEN OUT (the coo 2026-10-02, measured: corpus 239502c47's
     # arizona_tests rebuild absorbed 18 drivers under names no old row carried, wrote their heap_kb/stack_kb blank, and
-    # test_gate_the_default_stack_and_heap_are_spitbols arm 4 went red, blocking; ceo CEO-1409): the rungs builder's DEFAULT_HEAP_KB /
+    # test_gate_the_default_stack_and_heap_are_spitbols arm 4 went red, blocking; R-1409): the rungs builder's DEFAULT_HEAP_KB /
     # DEFAULT_STACK_KB (SPITBOL's -d128m -s4m, the harness constants), never a blank cell -- a carried-forward measurement still wins.
     _old_heap = {}
-    _old_stack = {}   # stack_kb: the same kind of paid-for measurement, carried forward the same way (CEO-1225)
-    _old_cmd = {}     # compile_args and run_args: the unit's command line, carried forward the same way (clause 8 (f), CEO-1281)
+    _old_stack = {}   # stack_kb: the same kind of paid-for measurement, carried forward the same way (R-1225)
+    _old_cmd = {}     # compile_args and run_args: the unit's command line, carried forward the same way (clause 8 (f), R-1281)
     _cmd_cols = ["compile_args", "run_args"]   # a new table gets both; a rebuild keeps the ones the table has, never imposes one
     _of_col = ["out_files"] if any(getattr(e, "out_files", None) for e in entries) else []   # derived from <stem>.outfiles, every build
     _se_col = ["stderr"] if merged else []   # derived from CONTRACT.tsv, every build
@@ -728,8 +728,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         t = _ref_text(e) if lang == "prolog" else ""
         toks = (["fresh-vars"] if _fv_rx.search(t) else []) + (["error-context"] if _ec_rx.search(t) else []) + (["ignore-all-space"] if contract["compare"] == "ignore-all-space" else [])
         return "+".join(toks)
-    _cm_col = ["compare"] if any(_cm_val(e) for e in entries) else []   # derived from CONTRACT.tsv and the refs, every build (CEO-1927)
-    _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (CEO-1927)
+    _cm_col = ["compare"] if any(_cm_val(e) for e in entries) else []   # derived from CONTRACT.tsv and the refs, every build (R-1927)
+    _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (R-1927)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
     # 657 such rows), and a unit this build does not absorb -- a library graded through its driver, a program whose oracle output
@@ -819,7 +819,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                     continue
                 _kept.append(_ln)
         if not _kept:
-            _kept = ["# ALL.mask -- CEO-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
+            _kept = ["# ALL.mask -- R-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
                      "# whose program ships a <stem>.mask are written from it by util_build_package_suite.py under the entry's name."]
         out_mask.write_text("\n".join(_kept + _mask_rows) + "\n", encoding="utf-8")
         print("    masks: %d row(s) from %d <stem>.mask sidecar(s) written into %s under the entry names"

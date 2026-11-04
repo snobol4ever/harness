@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_concatenating_an_array_table_or_data_value_with_a_nonnull_operand_is_error_8_or_9.sh -- a SNOBOL4 concatenation whose LEFT operand is an ARRAY, TABLE or DATA instance raises ERROR 8, whose RIGHT one does ERROR 9.
 #
-# # ⛔ THE DEFECT (row scriptix-demos TixDemo 10/12, the two infinite_snobol4 demos, coo pass 37; found by the baton NEXT of snobol4-every-suite-to-100-under-nonet-ceo-1266): inf_eval.sno line 150 of its input,
+# # ⛔ THE DEFECT (row scriptix-demos TixDemo 10/12, the two infinite_snobol4 demos, coo pass 37; found by the baton NEXT of snobol4-every-suite-to-100-under-nonet-r-1266): inf_eval.sno line 150 of its input,
 #   g(8) f(u[X]) ? ANY('([{')  , concatenates the string g(8) with f(u[X]) -- the ARRAY a, since u[''] is null and a[''] is a[0]. sbl -bf raises ERROR 9 ("concatenation right operand is not a string or pattern"); SCRIP
 #   built a STRING from it (str_concat_d stringifies a DT_A, DT_T and a DT_DATA instance: the empty string for an array) and the line read FAIL. The SNOBOL4 lowerer emitted BINOP_CONCAT, which every language shares, so the
 #   operand check could not live in str_concat_d (Raku objects and Icon lists concatenate there).

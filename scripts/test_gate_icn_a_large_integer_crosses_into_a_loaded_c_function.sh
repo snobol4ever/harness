@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_large_integer_crosses_into_a_loaded_c_function.sh -- A LARGE INTEGER PASSED TO A loadfunc'd C FUNCTION ARRIVES AS
 # ICONX'S OWN LARGE-INTEGER BLOCK, AND ONE RETURNED COMES BACK AS AN ICON INTEGER, IN BOTH MODES (hq_icon 2026-09-27, crawl work under
-# CEO-1270/CEO-1336: Arizona general/cfuncs, whose lgconv(10^30) died "error 101: integer expected" with the library in reach).
+# R-1270/R-1336: Arizona general/cfuncs, whose lgconv(10^30) died "error 101: integer expected" with the library in reach).
 #
 # The C calling convention of the Arizona distribution (ipl/cfuncs/icall.h) hands a function iconx descriptors: an integer too large
 # for a word is D_Lrgint, its v-word a struct b_bignum {title, blksize, msd, lsd, int sign, 32-bit digits most significant first}.

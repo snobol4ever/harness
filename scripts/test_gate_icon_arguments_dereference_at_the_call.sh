@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_icon_arguments_dereference_at_the_call.sh -- ICON ARGUMENT LISTS STAGE VARIABLES AND DEREFERENCE AT THE CALL.
-# Row icon-arizona-traps-write-dereferences-its-arguments-eagerly-not-after-all-are-evaluated (coo, CEO-452, 2026-09-09);
+# Row icon-arizona-traps-write-dereferences-its-arguments-eagerly-not-after-all-are-evaluated (coo, R-452, 2026-09-09);
 # diagnosis hq_U, .github FINDING-2026-09-09-hq_U-icon-argument-lists-must-stage-variables-and-dereference-at-the-call-...
 #
 # THE RULE (iconx invoke.r:67-74, Jcon gen_bc.icn:1636-1641): an argument list is evaluated left to right into
@@ -17,11 +17,11 @@
 # on 2026-09-09 when the generator call's entry link was re-pointed to the last ARGUMENT instead of the last DEREF).
 # p17-p20 pin the CALL THROUGH A VALUE (IR_CALL_VALUE, shared with Prolog): a variable argument reaches the runtime
 # dispatcher as the VARIABLE and is dereferenced there unless the callee is name(), so name() through a value answers
-# for a local, a subscript and a global, and deref timing through a value matches the direct call (CEO-464/468).
-# p21-p25 (row icon-argument-staging-widening-..., coo, CEO-477): an ASSIGNMENT (and +:=) in argument position yields its
+# for a local, a subscript and a global, and deref timing through a value matches the direct call (R-464/468).
+# p21-p25 (row icon-argument-staging-widening-..., coo, R-477): an ASSIGNMENT (and +:=) in argument position yields its
 # left operand as a VARIABLE, a SECTION s[i:j] is a substring variable, and an element generator (!R) reaching a builtin
 # through a value (name) arrives as the variable; every expected output pinned from iconx 9.5 on 2026-09-09.
-# p14 is the ceo's CEO-456 R7 witness: arguments are passed by VALUE (a callee assigning its parameter does not
+# p14 is R-456 R7 witness: arguments are passed by VALUE (a callee assigning its parameter does not
 # write the caller's variable). Expected outputs are PINNED from icont/iconx 9.5 (2026-09-09); the gate is hermetic
 # and never consults the oracle, so it cannot go green because an oracle install moved.
 set -uo pipefail

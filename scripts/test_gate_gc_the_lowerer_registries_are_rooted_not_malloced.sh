@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_lowerer_registries_are_rooted_not_malloced.sh -- THE LOWERER'S TWO FILE-SCOPE REGISTRIES LIVE ON THE
-# COLLECTED HEAP AND ARE ROOTED (cfo 2026-09-18, reverting SCRIP f62a33aed in pieces under CEO-840).
+# COLLECTED HEAP AND ARE ROOTED (cfo 2026-09-18, reverting SCRIP f62a33aed in pieces under R-840).
 #
 # The lowerers run at RUN TIME whenever a program compiles with CODE or EVAL, so sno_build_graph executes with
 # collections live and every lowerer static is a holder of the unrooted-static-holder class.
@@ -11,15 +11,15 @@
 #   entries off the end.
 #   g_bb_src (three parallel arrays behind bb_src_note) is the same shape one file down and had never been named.
 #
-# ⛔⭐ RE-PINNED 2026-09-25 by the cfo on the ceo's CEO-1272 (.github 639a475b): Lon's word of 2026-09-24 (CEO-1244, "Use the
+# ⛔⭐ RE-PINNED 2026-09-25 by the cfo on R-1272 (.github 639a475b): Lon's word of 2026-09-24 (R-1244, "Use the
 # special compile-time heap, and use alloc/copy/abandon at geometric growth for dynamic arrays and buffers.") supersedes
-# CEO-840's reading of these two registries as it did the cv_t bullet. g_bb_labels' lc_vec and g_bb_src's three arrays now
+# R-840's reading of these two registries as it did the cv_t bullet. g_bb_labels' lc_vec and g_bb_src's three arrays now
 # grow through ct_grow in the compile-time arena, which never moves, so the collector neither owns nor visits their blocks.
 # What stays required is the ROOT OF EVERY HEAP POINTER THEY HOLD: arms 1 and 2 now demand the element visits (each label's
 # name and landing, each source record's node and text) and REFUSE a visit of the arena block; arm 3 demands ct_grow and
 # refuses the collected heap and every C allocator; arm 4 is unchanged. The history below is the record of the old rule.
 # ⛔ THE ARM THAT MATTERS IS ARM 3. Both were briefly "cured" by moving them to malloc/calloc/realloc (f62a33aed).
-# That is what Lon's FACT RULE forbids and what the ceo's whole-tree sweep measured the cost of -- 8 of 15 collector
+# That is what Lon's FACT RULE forbids and what the officer's whole-tree sweep measured the cost of -- 8 of 15 collector
 # gates red -- because malloc'd memory never moves, so an unrooted holder of it is only ACCIDENTALLY safe. THE CURE
 # FOR AN UNROOTED HOLDER IS A ROOT, NEVER A DIFFERENT ALLOCATOR. Arm 3 requires lc_vec_push and bb_src_note to still
 # allocate from the collected heap, so this gate cannot be made green by taking the holders out of the collector's
@@ -36,7 +36,7 @@
 # and arm 3 red (bb_src_note allocating with realloc), with arms 1 and 4 green -- so the two halves are independently
 # measured and neither rides the other's green.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# RE-CUT 2026-10-09 cfo (CEO-1575, the g_lower stage): the two registries live in g_lower.lc (g_bb_labels -> g_lower.lc.bb_labels,
+# RE-CUT 2026-10-09 cfo (R-1575, the g_lower stage): the two registries live in g_lower.lc (g_bb_labels -> g_lower.lc.bb_labels,
 # g_bb_src -> g_lower.lc.bb_src), so the structural arms read the new spelling; what they count is unchanged.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -57,14 +57,14 @@ RC=0
 # from the table (labels [1 0 1 1 0]) and with the .src run deleted (bb_src [1 0 0]); both arms red, both green on the tree.
 n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" lower_gc_roots | awk '/offsetof\(bb_label_entry_t, name\)/{a++} /offsetof\(bb_label_entry_t, landing\)/{c++} /rt_gc_run_ptr_fields\(g_lower\.lc\.bb_labels\.data, .*, 2, off\)/{r++} /&g_lower\.lc\.bb_labels\.data\)/{d++} /^bb_src_gc_roots\(\);/{b++} END{printf "%d %d %d %d %d", a+0, c+0, r+0, b+0, d+0}')
 if [ "$n" = "1 1 1 1 0" ] && grep -q 'lower_gc_roots();' "$ROOT/src/runtime/rt/gc_heap.c"; then
-    echo "  structural labels PASS (lower_gc_roots runs the name and landing fields of every g_lower.lc.bb_labels entry through rt_gc_run_ptr_fields and calls bb_src_gc_roots, and the collector calls lower_gc_roots; the label block itself is arena memory and is not visited -- CEO-1272)"
+    echo "  structural labels PASS (lower_gc_roots runs the name and landing fields of every g_lower.lc.bb_labels entry through rt_gc_run_ptr_fields and calls bb_src_gc_roots, and the collector calls lower_gc_roots; the label block itself is arena memory and is not visited -- R-1272)"
 else echo "  structural labels FAIL (lower_gc_roots [offsetof name, offsetof landing, the 2-field run over bb_labels.data, bb_src_gc_roots, &g_lower.lc.bb_labels.data] = [$n], want [1 1 1 1 0], or gc_heap.c never calls lower_gc_roots)"; RC=1; fi
 n=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" bb_src_gc_roots | awk '/rt_gc_run_ptr_fields\(g_lower\.lc\.bb_src\.nd, .*, 1, off\)/{a++} /rt_gc_run_ptr_fields\(g_lower\.lc\.bb_src\.src, .*, 1, off\)/{b++} /&g_lower\.lc\.bb_src\.(nd|src|line)\)/{c++} END{printf "%d %d %d", a+0, b+0, c+0}')
-if [ "$n" = "1 1 0" ]; then echo "  structural bb_src PASS (bb_src_gc_roots runs every entry's node and source text through rt_gc_run_ptr_fields; the three parallel arrays are arena memory and are not visited -- CEO-1272)"
+if [ "$n" = "1 1 0" ]; then echo "  structural bb_src PASS (bb_src_gc_roots runs every entry's node and source text through rt_gc_run_ptr_fields; the three parallel arrays are arena memory and are not visited -- R-1272)"
 else echo "  structural bb_src FAIL (bb_src_gc_roots [the run over nd, the run over src, a block visit] = [$n], want [1 1 0]: an element a registry holds is not rooted, or an arena block is being visited as if the collector owned it)"; RC=1; fi
-# ⛔⭐ THE COLLECTED-HEAP ALLOCATOR FAMILY COMES FROM ITS ONE AUTHORITY, NOT FROM A SPELLING TYPED HERE (ceo CEO-946).
+# ⛔⭐ THE COLLECTED-HEAP ALLOCATOR FAMILY COMES FROM ITS ONE AUTHORITY, NOT FROM A SPELLING TYPED HERE (R-946).
 # THIS ARM WAS RED ON ORIGIN FOR DAYS AND THE HOLDERS WERE FINE: it grepped for rt_ws_alloc / rt_ws_realloc, and the
-# HB_WS kind with both of those names was DELETED at place D (the cfo, CEO-925) when its sites took typed kinds. The
+# HB_WS kind with both of those names was DELETED at place D (the cfo, R-925) when its sites took typed kinds. The
 # three holders moved to the ATOMIC sibling rt_wsb_alloc / rt_wsb_realloc, which is still the COLLECTED heap -- marked,
 # relocated, interior never scanned -- and is on util_c_allocator_census.py's ROOTED-HEAP list, the tree's one record of
 # which allocators the collector owns. So the gate said "moved off the heap instead of rooted" about a holder that had
@@ -91,7 +91,7 @@ for fn in lc_vec_push bb_src_note; do
     body=$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$LC" "$fn")
     [ -n "$body" ] || { echo "  fact-rule FAIL ($fn not found in lower_common.c, so this arm measured nothing)"; bad=1; continue; }
     printf '%s' "$body" | grep -qE '\b(malloc|calloc|realloc|free)[[:space:]]*\(' && { echo "  fact-rule FAIL ($fn grows with a C allocator)"; bad=1; }
-    printf '%s' "$body" | grep -qE "$ROOTED_RX" && { echo "  fact-rule FAIL ($fn grows on the COLLECTED heap -- CEO-1244/1272 put every compile-time population in the compile-time arena)"; bad=1; }
+    printf '%s' "$body" | grep -qE "$ROOTED_RX" && { echo "  fact-rule FAIL ($fn grows on the COLLECTED heap -- R-1244/1272 put every compile-time population in the compile-time arena)"; bad=1; }
     printf '%s' "$body" | grep -qE '\bct_grow[[:space:]]*\(' || { echo "  fact-rule FAIL ($fn does not grow through ct_grow, the compile-time arena's alloc/copy/abandon)"; bad=1; }
 done
 if [ "$bad" -eq 0 ]; then echo "  fact-rule PASS (lc_vec_push and bb_src_note grow through ct_grow in the compile-time arena -- never the collected heap, never a C allocator)"; else RC=1; fi

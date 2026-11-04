@@ -3,12 +3,12 @@
 # PROGRAM. When they do, at least one ref is wrong, and nothing in the tree says which -- so a board built on
 # the wrong one reports a red that is CORRECT OUTPUT FAILING A BAD REF.
 #
-# ⛔ WHY THIS EXISTS, and it is a measured cost, not a hypothetical (hq_B 2026-09-03, row ICN4, ceo CEO-177):
+# ⛔ WHY THIS EXISTS, and it is a measured cost, not a hypothetical (hq_B 2026-09-03, row ICN4, R-177):
 # `procedure_every_scan_replace_5` in ALL.ref said Icon's x[-3+:6] FAILS; `rung36_jcon_lists` in
 # rung36_all.ref said it yields `[4] 3 4 5 6`. THE SOURCES WERE BYTE-IDENTICAL. icont agrees with the second.
 # ALL.ref was wrong, so the rungs board's two reds were correct SCRIP output failing a bad ref -- and I
 # "cured" the compiler to match the bad ref, landing a real regression and a FALSE GREEN at 380/381 that five
-# green arms and a ceo audit all missed, because not one of them asked the ORACLE.
+# green arms and an officer audit all missed, because not one of them asked the ORACLE.
 # ⭐ A ref is evidence about a PAST ORACLE RUN, not about the oracle. This gate cannot tell which ref is right
 # -- only an oracle run can -- but it can prove that a disagreement EXISTS, which is the cheap half and the
 # half that was available to me for free the whole time. It converts "somebody eventually notices" into a red.

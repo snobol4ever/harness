@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ../harness/scripts/test_gate_gc_the_safe_point_census_counts_emitted_paths_not_source_proximity.sh
-# THE SAFE-POINT CENSUS MUST NOT READ A PARTIAL CURE AS A WHOLE ONE (coo, CEO-1109 rank 0, 2026-09-22).
+# THE SAFE-POINT CENSUS MUST NOT READ A PARTIAL CURE AS A WHOLE ONE (coo, R-1109 rank 0, 2026-09-22).
 #
 # ⛔ THE DEFECT, FOUND BY THE cto AND NOT BY READING THE CODE.  util_gc_census.py safe-points decides POLLED
 # by finding poll text in SOURCE within --poll-window lines after the call.  POLLED is a claim about EMITTED
@@ -18,7 +18,7 @@
 # reaches two of the four expansions, and requires the census to call it PARTIAL.  Under the old criterion
 # that same plant read a clean POLLED, and the gate proves that too by showing the poll text IS inside the
 # source window it would have been read from.  ⛔ NOTHING UNDER src/ IS TOUCHED: the fixture symlinks the
-# real .so and the other emitter directories and copies only src/templates/bb (CEO-547 -- a gate's own
+# real .so and the other emitter directories and copies only src/templates/bb (R-547 -- a gate's own
 # mktemp fixture outside the corpus tree is not a board).
 #
 # ARMS, EACH BY EXIT CODE: 0 the census declares multi_path_sites and partially_polled, the identity

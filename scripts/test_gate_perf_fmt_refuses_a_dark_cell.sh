@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_perf_fmt_refuses_a_dark_cell.sh -- ⭐ THE DARK-CELL LAW, LOCKED (CEO-676; hq_P 2026-09-13).
+# test_gate_perf_fmt_refuses_a_dark_cell.sh -- ⭐ THE DARK-CELL LAW, LOCKED (R-676; hq_P 2026-09-13).
 #
 # A benchmark arm that cannot measure its subject must REFUSE, naming the subject -- it must never
 # emit a blank cell, and a grid must refuse to publish a column it could not fill.  This gate holds
@@ -50,7 +50,7 @@ dark "zero both"                  0   0       "crypt m3 vs gnu"
 # also broke live cells would be caught here, not in a grid three sessions later.
 echo "B. a measurable subject still prints its multiple, unchanged"
 # PERF_STAMP_OFF=1 HERE IS NOT THE TEST BEING BENT TO PASS -- it is this section testing the thing it was
-# always about. CEO-743 welded a load stamp onto every standalone number, so a bare perf_mult now prints
+# always about. R-743 welded a load stamp onto every standalone number, so a bare perf_mult now prints
 # "2.000x   . load 3.21 on 16 cores"; B pins the VALUE FORMATTING, and PERF_STAMP_OFF is the documented
 # composition path for a caller building its own line. The stamp law itself is pinned in section I below.
 m() { local want="$1" got; got="$(PERF_STAMP_OFF=1 perf_mult "$2" "$3" 2>/dev/null)"
@@ -140,7 +140,7 @@ for h in bench_triangulate_pascal.sh bench_triangulate_prolog.sh bench_triangula
     else ok "$h: no row-deleting guard, grid opened and closed"; fi
 done
 #-----------------------------------------------------------------------------------------------------
-# I. CEO-743: EVERY WALL-CLOCK NUMBER RECORDS THE LOAD AT MEASUREMENT, IN THE SAME LINE AS THE NUMBER.
+# I. R-743: EVERY WALL-CLOCK NUMBER RECORDS THE LOAD AT MEASUREMENT, IN THE SAME LINE AS THE NUMBER.
 # WHY THIS SECTION EXISTS RATHER THAN A NOTE IN A PROCEDURE: the ruling puts the stamp in lib_perf_fmt.sh
 # "so it cannot be forgotten", and the census that earned it is that EIGHT bench scripts print multiples
 # through perf_row and never call perf_grid_begin -- so the stamp the file already carried reached NONE of
@@ -148,7 +148,7 @@ done
 # THE WARRANT IS A MEASUREMENT, NOT A PREFERENCE: one unchanged binary read 0.549x at load 6.96 and 0.384x
 # at load 29.84, so the ratio moved by 30% of itself and the SIGN of the error is not knowable from inside
 # the reading. Two such numbers are identical on paper and 30% apart in fact.
-echo "I. every number carries the load it was measured under (CEO-743)"
+echo "I. every number carries the load it was measured under (R-743)"
 # THE PRECONDITION IS SET EXPLICITLY, AND FINDING IT IS HALF THE VALUE OF THIS SECTION. Section C opens grids
 # and the sections after it never close the last one, so PERF_GRID_OPEN was still 1 here and the first two
 # arms failed on a library that was behaving correctly. That is worth stating rather than quietly working

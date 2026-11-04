@@ -54,7 +54,7 @@ CONTROLS=" list_alt_elem1_control list_alt_nonalt_gen_control "
 
 red=0; examined=0
 for p in $PROGS; do
-    # ⛔ THE FIXTURE LIVES IN THE ICON RUNGS, NOT BESIDE IT (coo 2026-09-25, on the ceo's triage of hq_icon's report): corpus
+    # ⛔ THE FIXTURE LIVES IN THE ICON RUNGS, NOT BESIDE IT (coo 2026-09-25, on the officer's triage of hq_icon's report): corpus
     # a80ca7617 (09-10) absorbed these witnesses into tests/icon/ALL.icn after measuring each three ways, and deleted the loose
     # pairs; the rungs renamed each entry by feature (list_alt_elem1_control is procedure_every_elemgen_replace_11), and
     # ALL.csv keeps the old name in its origin column. So the gate refused "missing committed fixture" on every run since. It

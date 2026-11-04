@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_raku_grammar_actions_are_called_from_the_lowered_parse_loop_not_from_c_agree_with_rakudo.sh -- GRAMMAR ACTIONS ARE BOX CALLS, NOT A C WALK OVER THE MATCH TREE
-# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-ceo-1600, ARCH-RAKU-BOXES section 4 step 1; CEO-1576; the shape told to the cfo,
+# (row raku-no-c-site-calls-user-code-the-21-rt-call-proc-descr-roads-become-open-roads-or-emitted-loops-r-1600, ARCH-RAKU-BOXES section 4 step 1; R-1576; the shape told to the cfo,
 # whose regex chunk 2 retires it when an action becomes a call at the rule's gamma).
 #
 # THE DEFECT: G.parse(str, :actions(A)) ran grammar_parse_core, then rk_apply_actions walked the Match tree in C and invoked each action method through invoke_method_proc, the C road
-# into a box CEO-1576 deleted (rt_call_proc_descr: A__num reached a C road into a box, DELETED; rc 139). Two more defects the road hid: `make EXPR` written as a listop with an infix
+# into a box R-1576 deleted (rt_call_proc_descr: A__num reached a C road into a box, DELETED; rc 139). Two more defects the road hid: `make EXPR` written as a listop with an infix
 # argument stayed an undefined call `make`, and a quantified named capture ($<num> of <num>+) and a hyper method over it were Lists where Rakudo has Arrays.
 # THE CURE: lower_raku.c rk_parse_actions_walk lowers .parse / .subparse with an actions argument (the pair or the positional the parser leaves) into the parse without it, a C leaf
 # __rk_actions_plan that returns the post-order (method name, Match) plan as a typed list, and an emitted loop calling each through __rk_named_call's open road; rk_apply_actions keeps

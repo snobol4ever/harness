@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_suite_table_language_verdict.py <lang> <base-scrip-hash> [--home DIR]
 
-The home-stretch criterion (Lon 2026-09-23 14:1x, in-chat to the ceo, verbatim: "Each HQ should be on that same
+The home-stretch criterion (Lon 2026-09-23 14:1x, in-chat, verbatim: "Each HQ should be on that same
 task. The one task is all test suites to 100% for each language."): reads THE SUITE TABLE's machine record
 (/home/resources/progress/SUITES.tsv, written by each runner through util_score_row.py) as it stands now
 under the seat root, and grades ONE language: every row of that language must read today_pass == today_total > 0

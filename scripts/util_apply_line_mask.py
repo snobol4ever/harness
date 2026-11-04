@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_apply_ceo409_mask.py -- apply the CEO-409 line masks of ONE suite entry to a stream on stdin.
+"""util_apply_line_mask.py -- apply the R-409 line masks of ONE suite entry to a stream on stdin.
 
 ⛔⭐ THIS IS A SHIM OVER corpus_suite_harness.py, NEVER A SECOND IMPLEMENTATION.  It imports that file's own
 read_mask_sidecar() and apply_line_mask(), so a bash runner and the python harness mask the SAME lines by the
@@ -9,18 +9,18 @@ the same replace-never-delete marker.  ⭐ THE DIALECT IS THE WHOLE REASON THIS 
 quantifiers are all silently different or absent in an ERE, so a re-implementation would agree on every mask
 anyone happened to test and diverge on the first one they did not.
 
-Usage:  util_apply_ceo409_mask.py <ref-path> <entry-name> <count-out-path> [--side=oracle|scrip]  < stream > masked-stream
---side names whose stream this is (CEO-1316 (2)): an ORACLE-ONLY row removes its one line only from --side=oracle, and does
+Usage:  util_apply_line_mask.py <ref-path> <entry-name> <count-out-path> [--side=oracle|scrip]  < stream > masked-stream
+--side names whose stream this is (R-1316 (2)): an ORACLE-ONLY row removes its one line only from --side=oracle, and does
 nothing on --side=scrip or with no side -- a caller that cannot say which stream it holds can never delete a line.
 Writes the masked stream to stdout and the masked-line COUNT to <count-out-path> (guardrail 3: an invisible mask
 is the hiding mechanism, a counted one is a measurement).  REFUSES rc=2 on a malformed sidecar, which is
 read_mask_sidecar()'s own refusal -- not a copy of its policy.  ⭐ And <count-out-path>.major: 1 when guardrail 4 makes THIS stream's
 fixture UNGRADABLE, 0 otherwise, decided by the harness's own mask_majority() over the stream's line count (grep -c '' counts the
-same lines) -- so a bash runner never restates the rule, and an ORACLE-IDENTITY row (ceo CEO-1351) is exempt there exactly as here.
+same lines) -- so a bash runner never restates the rule, and an ORACLE-IDENTITY row (R-1351) is exempt there exactly as here.
 """
 import importlib.util, os, sys, pathlib
 def refuse(msg):
-    sys.stderr.write("REFUSE(rc=2): util_apply_ceo409_mask.py: %s\n" % msg); sys.exit(2)
+    sys.stderr.write("REFUSE(rc=2): util_apply_line_mask.py: %s\n" % msg); sys.exit(2)
 side = "both"
 if len(sys.argv) == 5 and sys.argv[4] in ("--side=oracle", "--side=scrip"):
     side = sys.argv[4].split("=", 1)[1]

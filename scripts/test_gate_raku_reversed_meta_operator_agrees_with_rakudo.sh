@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_reversed_meta_operator_agrees_with_rakudo.sh -- THE R META-OPERATOR SWAPS ITS OPERANDS AND REVERSES THE OPERATOR'S ASSOCIATIVITY
-# (row raku-reversed-meta-operator-r, found measuring M1 WhateverCode; ceo CEO-1479).
+# (row raku-reversed-meta-operator-r, found measuring M1 WhateverCode; R-1479).
 #
 # THE DEFECT: the recognizer accepted R- R/ R~ R** R< R<=> ... but the tree builder matched the operator text against each precedence level's own list, found
 # no operator called "R-", and dropped the right operand: 5 R- 2 printed 5 where Rakudo prints -3. THE CURE (rk_syntax.c x_in / x_level / x_cmp / x_unary,

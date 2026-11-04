@@ -3,7 +3,7 @@
 # set variable; AssignFile / CloseFile as Assign / Close; a bracket actual for an open-array parameter is an ARRAY (Sum([1,2,3]),
 # Longest(['ab','abcd']), with string members); sysutils' TryStrToInt (decimal, signed, $hex, rejecting junk) and FileExists.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): 8 probes against fpc, every one differing --
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): 8 probes against fpc, every one differing --
 # include / exclude, assignfile, closefile, fileexists, trystrtoint died "error 22: undefined function called"; Sum([1,2,3]) read 0 and a
 # string bracket stopped at the ISO 6.7.1 set-member check, because a [...] actual was always a SET. THE CURE (lower_pascal_tree.c):
 # include / exclude lower to s := s +/- [e] when pas_dialect_fpc holds; assignfile / closefile re-enter mk_call as assign / close;

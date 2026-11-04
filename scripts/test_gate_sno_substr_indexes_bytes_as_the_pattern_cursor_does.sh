@@ -3,7 +3,7 @@
 # SCRIP's own pattern cursor, SIZE, LEN, TAB, POS, BREAK, SPAN and ANY already do, so a cursor taken by @ on a non-ASCII subject indexes
 # the same byte in SUBSTR; Raku's .substr keeps counting characters, as Rakudo does.
 #
-# ⛔ THE DEFECT (row snobol4-the-pattern-cursor-counts-bytes-but-substr-indexes-characters-..., CEO-1295 (ii), found by hq_snocone: 42
+# ⛔ THE DEFECT (row snobol4-the-pattern-cursor-counts-bytes-but-substr-indexes-characters-..., R-1295 (ii), found by hq_snocone: 42
 # of 66 non-ASCII .pl sources refused under parser_prolog.sc on the SCRIP arm): SUBSTR_fn (string_builtins.c) counted UTF-8 code
 # points, and the SNOBOL4 doors (_SUBSTR_ in core.c, bn_substr in by_name_dispatch.c) called it, so s = 'éé:-x'; s ? 'éé' @c;
 # SUBSTR(s, c + 1, 1) read x where sbl reads ':'. A census of 24 indexing probes (SIZE, SUBSTR, @, LEN, TAB, RTAB, POS, RPOS,

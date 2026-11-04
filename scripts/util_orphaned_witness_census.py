@@ -5,7 +5,7 @@ It is ORPHANED when its name appears NOWHERE in that language's `ALL.csv`, `ALL.
 `ALL.excluded.txt` -- so it is not passing, not expected-failing, and not excluded: no
 denominator contains it, and no board has ever run it.
 
-WHY THIS IS ITS OWN SHAPE, worse than an xfail (ceo CEO-414, hq_P 2026-09-08):
+WHY THIS IS ITS OWN SHAPE, worse than an xfail (R-414, hq_P 2026-09-08):
 an xfail is at least censused by test_gate_no_xfail_survives.sh.  An orphan appears in NO
 count we keep, because every count starts from ALL.csv.  The SNOBOL4 rungs read 1894/1894
 FAIL=0 with a SEGFAULTING witness (nested_arbno_rpos) sitting in the tree beside it.

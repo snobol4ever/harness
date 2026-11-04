@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: three package runners invoked on scratch packages as instrument fixtures, not boards (CEO-1269, CEO-523)"
-# test_gate_package_runners_grade_a_library_through_its_driver.sh -- THE LIBRARY RULE, HELD BY THE RUNNERS (ceo CEO-1269, CEO-700
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: three package runners invoked on scratch packages as instrument fixtures, not boards (R-1269, R-523)"
+# test_gate_package_runners_grade_a_library_through_its_driver.sh -- THE LIBRARY RULE, HELD BY THE RUNNERS (R-1269, R-700
 # applied; coo 2026-09-25, row instruments-the-arizona-jcon-and-gimpel-runners-grade-a-library-through-its-driver-...). A library is
 # the program and NAME_driver is its grading vehicle, never a program in the shipped population. So a package runner (a) excludes
 # every *_driver file from the shipped count by name, and (b) grades the library by its driver -- the library's verdict in each mode
@@ -34,7 +34,7 @@ fails=0; checks=0
 ck() { checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 has() { grep -qE -- "$2" "$1"; }
 
-# ---- the Icon fixture (the semicolon dialect SCRIP reads, CEO-495), refs cut from iconx
+# ---- the Icon fixture (the semicolon dialect SCRIP reads, R-495), refs cut from iconx
 I="$T/icn"; C="$T/cut"; mkdir -p "$I" "$C" || exit 2
 printf 'procedure dbl(x);\n   return 2 * x;\nend\n' > "$I/alib.icn"
 printf 'link alib\nprocedure main();\n   write("dbl(21) = ", dbl(21));\n   write("dbl(-4) = ", dbl(-4));\nend\n' > "$I/alib_driver.icn"
@@ -51,7 +51,7 @@ grep -qx 'dbl(21) = 42' "$I/alib_driver.ref" && grep -qx 'half(9) = 4' "$C/blib_
 echo 'half(9) = 5' > "$I/blib_driver.ref"
 
 # ---- the SNOBOL4 fixture in gimpel's shape (-INCLUDE the library), the passing drivers' refs cut from sbl -bf. Catspaw's SPITBOL form
-# under lower-case names (Lon 2026-09-27, CEO-1319; coo COO-204): libraries name.inc, programs name.spt, drivers name_driver.sno, and a
+# under lower-case names (Lon 2026-09-27, R-1319; coo COO-204): libraries name.inc, programs name.spt, drivers name_driver.sno, and a
 # stem the form ships twice -- the program dlib.spt and the library dlib.inc it includes -- driven by dlib_driver (the program) and
 # dlib_lib_driver (the library). Every progress key is the library's own file. FAILED ONCE on the runner and writer before it: dlib_driver
 # carried dlib.inc and dlib_lib_driver was refused as an orphan, and the keys read alib.sno.
@@ -82,7 +82,7 @@ progress_arms() {   # progress_arms <label> <db> <pass-lib> <fail-lib>
   grep -q '_driver ' <<<"$r" && ck no "$1: a progress row names a DRIVER: $(grep '_driver ' <<<"$r" | tr '\n' ';')" || ck ok "$1: no progress row names a driver"
 }
 
-echo "=== gate: a package runner grades a library through its driver, never the driver as a program (CEO-1269) ==="
+echo "=== gate: a package runner grades a library through its driver, never the driver as a program (R-1269) ==="
 # ---- arizona
 AZ="$T/az/corpus/packages/icon/arizona_tests"; mkdir -p "$AZ/general" "$AZ/special" && cp "$I"/*.icn "$I"/*.ref "$AZ/general/" && cp "$I"/*.tsv "$AZ/"
 S4E_HOME="$T/az" S4E_PROGRESS_DB="$T/az.tsv" timeout -k 5 600 bash "$HERE/test_icon_arizona_suite.sh" > "$T/az.out" 2>&1; rc=$?
@@ -132,9 +132,9 @@ grep -qx hmn "$L/mlib_driver.ref" || { echo "⛔ REFUSED(2): iconx did not answe
 rm -rf "$L/cut"; printf '# fixture\n# name<TAB>CLASS<TAB>reason\nhelper.icn\tNEEDS_DRIVER\tlinked by mlib, no driver (fixture)\nnlib.icn\tNEEDS_DRIVER\tlinked by the driver, no driver of its own (fixture)\n' > "$L/UNGRADED.tsv"
 printf '# fixture\n# name<TAB>CLASS<TAB>reason\n' > "$L/UNGRADABLE.tsv"
 S4E_PROGRESS_DB="$T/lk.tsv" timeout -k 5 600 bash "$HERE/test_icon_jcon_suite.sh" --corpus "$L" > "$T/lk.out" 2>&1
-_lb="$(grep -m1 '^JCON_SUITE_BOARD ' "$T/lk.out")"; _lok=1; for _kv in shipped=3 graded=1 gap=2 m3_pass=1 m4_pass=1; do grep -qE "(^| )$_kv( |\$)" <<<"$_lb" || _lok=0; done   # each field on its own (CEO-839)
+_lb="$(grep -m1 '^JCON_SUITE_BOARD ' "$T/lk.out")"; _lok=1; for _kv in shipped=3 graded=1 gap=2 m3_pass=1 m4_pass=1; do grep -qE "(^| )$_kv( |\$)" <<<"$_lb" || _lok=0; done   # each field on its own (R-839)
 [ -n "$_lb" ] && [ "$_lok" = 1 ] && ck ok "jcon: a driver linking two libraries on one line, one of which links a third, passes in m3 as in m4" || ck no "jcon: the link-line fixture: $(grep -m1 '^JCON_SUITE_BOARD' "$T/lk.out" | cut -c1-120) $(grep -m1 'FAIL' "$T/lk.out" | cut -c1-100)"
-# ---- ipl (coo 2026-09-25, hq_icon's ask: the 382 IPL libraries CEO-1272 made NEEDS_DRIVER are graded through NAME_driver like Arizona's
+# ---- ipl (coo 2026-09-25, hq_icon's ask: the 382 IPL libraries R-1272 made NEEDS_DRIVER are graded through NAME_driver like Arizona's
 # and Jcon's). procs/alib is a library with a passing driver and procs/blib one whose driver's ref is deliberately wrong; procs/opt's
 # driver must link procs/opt.icn, not the progs/opt.icn namesake that ICONPATH names first -- IPL ships four basenames twice over,
 # so the driver run puts its own directory first on IPATH. Every ref is cut live from iconx in a directory holding only its closure.

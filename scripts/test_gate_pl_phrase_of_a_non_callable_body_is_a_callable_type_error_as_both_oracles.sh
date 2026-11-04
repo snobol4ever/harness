@@ -6,7 +6,7 @@
 # and =.. with a number as the functor raised type_error(atom, 27). A clause before it now refuses a non-callable body as callable.
 # THE REFS ARE CUT FROM THE ORACLES, NEVER FROM SCRIP: the table was cut 2026-10-18 and every run re-cuts it from /usr/bin/swipl and from the
 # pristine gplc build, and REFUSES rc=2 when either disagrees with it or is absent.
-# FAIL-ONCE (CEO-1680): with the new '$dcg_body' clause removed on the same tree, the ISO-default program read FAIL in both modes (measured
+# FAIL-ONCE (R-1680): with the new '$dcg_body' clause removed on the same tree, the ISO-default program read FAIL in both modes (measured
 # 2026-10-18, type_error(atom,...) on all three lines).
 # Usage: bash ../harness/scripts/test_gate_pl_phrase_of_a_non_callable_body_is_a_callable_type_error_as_both_oracles.sh
 set -uo pipefail

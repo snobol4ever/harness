@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # test_gate_sno_error_voice_statement_number_from_a_code_map_no_per_statement_store.sh -- DONE-WHEN for the row
-# error-voice-statement-number-from-a-code-map-no-per-statement-store (ceo CEO-1385, minted 2026-09-30, handed to
-# hq_snobol4 2026-10-01 09:2x). Since 18f22388e (diagnostics off by default, CEO-1243) a SNOBOL4/Snocone fatal error
+# error-voice-statement-number-from-a-code-map-no-per-statement-store (R-1385, minted 2026-09-30, handed to
+# hq_snobol4 2026-10-01 09:2x). Since 18f22388e (diagnostics off by default, R-1243) a SNOBOL4/Snocone fatal error
 # prints no "; statement N" where sbl -bf's post-mortem always does. THE CURE (not yet landed): the emitter writes a
 # code-to-statement map beside the emitted code in both media and core_error_voice recovers stno from the faulting
 # return address through it -- never a per-statement store on the execution path (TRACE's existing --stlimit-gated
-# store, bb_stmt_mark/rt_stmt_enter, is UNCHANGED and stays off by default; --stlimit/TRACE are CEO-1243's business,
+# store, bb_stmt_mark/rt_stmt_enter, is UNCHANGED and stays off by default; --stlimit/TRACE are R-1243's business,
 # not this row's).
 # FOUR WITNESSES, INLINE (re-measured here against sbl -bf at run time, never a frozen number): until 2026-10-02 they
 # were packages/snobol4/spitbol_testpgms test4/test5/test7/test8 themselves (the coo, 2026-09-30 19:22), which ended in a
 # SPITBOL post-mortem because each opened with a Macro SPITBOL 360/370 statement SPITBOL x64 refuses. Lon modernized
-# those four on 2026-10-02 (ceo CEO-1401: "fix the I/O associations to be modern", "Change the CHAR to CHR") and they
+# those four on 2026-10-02 (R-1401: "fix the I/O associations to be modern", "Change the CHAR to CHR") and they
 # now run to completion, so the gate carries the four refused statements itself, each a few statements deep -- two
 # INPUT(.INPUT,,72) (ERROR 116), the DATA field CHAR (ERROR 248), an OUTPUT with a FORTRAN format (ERROR 160) -- the
 # same error classes the vendored programs raised, and a gate anchored on a found witness dies when the witness is
-# cured (ceo CEO-554). "in line"/"in statement" are read from the oracle's own post-mortem through
+# cured (R-554). "in line"/"in statement" are read from the oracle's own post-mortem through
 # util_spitbol_post_mortem.py, never hardcoded.
-# TWO ARITHMETIC WITNESSES (ceo CEO-1572, the coo's audit 2026-10-08: the nine arms above were all BUILTIN faults and the GOAL was red on an
+# TWO ARITHMETIC WITNESSES (R-1572, the coo's audit 2026-10-08: the nine arms above were all BUILTIN faults and the GOAL was red on an
 # arithmetic one): arith1  X = N + "q"  at top level (sbl: statement 1) and arith2  the same statement inside a DEFINEd function G (sbl: statement
 # 2). The arithmetic boxes call an asm leaf (rt_add_sno ...) that sets up no rbp frame, so the frame-pointer walk skipped the return address
 # into the statement and the voice read statement 0; the cure walks the stack by its unwind CFI (_Unwind_Backtrace) and takes the innermost

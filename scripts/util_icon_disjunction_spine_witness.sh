@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_icon_disjunction_spine_witness.sh -- A RESUMABLE-ARM DISJUNCTION NEEDS NO RBP FRAME HOME (CEO-1865, ruled 2026-10-21: "ICON'S 70 DISJUNCTION HOMES: prove
+# util_icon_disjunction_spine_witness.sh -- A RESUMABLE-ARM DISJUNCTION NEEDS NO RBP FRAME HOME (R-1865, ruled 2026-10-21: "ICON'S 70 DISJUNCTION HOMES: prove
 # your reading first, with a variant that admits one resumable-arm disjunction to the spine and runs green or red. Then mint the row to hq_icon, naming that
 # witness in its DONE-WHEN").
 # THE VARIANT (hq_zetas, scratch worktree, never landed): zd_dj_retains() answers 0 for the named disjunction, and the beta regrow (op_zbgrow, SCRIP 48ee9deb2

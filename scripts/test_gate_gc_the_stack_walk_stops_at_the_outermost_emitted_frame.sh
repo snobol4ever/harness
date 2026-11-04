@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_stack_walk_stops_at_the_outermost_emitted_frame.sh -- the emitted-stack walk is bounded ABOVE
 # by the outermost emitted frame, not by the [stack] VMA end. Row
-# gc-the-emitted-stack-walk-takes-a-ceiling-at-the-rt-outer-call-entry-rsp (ceo, 2026-09-21);
+# gc-the-emitted-stack-walk-takes-a-ceiling-at-the-rt-outer-call-entry-rsp (2026-09-21);
 # ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 10.
 #
 # WHAT WAS WRONG. gc_seg_next stage 2 took its upper bound from gc_stack_top() -- the [stack] VMA end read out of

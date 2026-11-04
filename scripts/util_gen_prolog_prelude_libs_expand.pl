@@ -1,5 +1,5 @@
 /*  util_gen_prolog_prelude_libs_expand.pl -- a vendored SWI library AS SWI ITSELF COMPILES IT: term- and goal-expanded by
-    SWI's own loader, printed by portray_clause (cfo 2026-10-10, CEO-1473/1596; row
+    SWI's own loader, printed by portray_clause (cfo 2026-10-10, R-1473/1596; row
     prolog-clpfd-library-clpfd-vendored-its-operators-imported-at-the-use-module-directive-...; called by
     util_gen_prolog_prelude_libs.py for a library in its EXPANDED set, never run by hand).
 

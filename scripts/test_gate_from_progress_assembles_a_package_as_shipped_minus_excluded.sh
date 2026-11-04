@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# test_gate_from_progress_assembles_a_package_as_shipped_minus_excluded.sh -- THE ASSEMBLED PACKAGE ROW IS THE RUNNER'S ROW (ceo CEO-1802/1803; Lon
-# 2026-10-15 via the ceo, verbatim: "Why is not the suite board a list of tests and not a list of suites? Then each set gets updated in round robin.").
+# test_gate_from_progress_assembles_a_package_as_shipped_minus_excluded.sh -- THE ASSEMBLED PACKAGE ROW IS THE RUNNER'S ROW (R-1802/1803; Lon
+# 2026-10-15 via the officer, verbatim: "Why is not the suite board a list of tests and not a list of suites? Then each set gets updated in round robin.").
 # A package read a chunk at a time has its suite row ASSEMBLED by util_score_row.py from-progress from the latest per-program readings, and that row
 # must be the one lib_container_package_runner.sh publishes from a whole run: shipped minus EXCLUDED, so shipped = denominator + Excl.
 # THE FIXTURE (a scratch corpus and progress DB; the real table and DB are never read or written): package zzpkg ships a b c d e f g (.pl); the
-# container ALL.pl/ALL.csv grades a b c d; e is shipped with no table row (no ref: Excl since CEO-1926, b89afd6, and debt_unread_by_design names it);
+# container ALL.pl/ALL.csv grades a b c d; e is shipped with no table row (no ref: Excl since R-1926, b89afd6, and debt_unread_by_design names it);
 # f is an EXCLUDED.tsv row (NO_ORACLE_ANSWER); g is
 # a CONTAINERS.tsv fragment. Readings: a, c and d PASS in both modes; b PASS m3, FAIL m4; d's m4 reading is named d.pl (GNU's spelling).
 #   ARM 1  the row is 3/4 with excluded=3: pass 3 (a c d), denominator {a b c d} = 4, Excl = 1 EXCLUDED row + 1 fragment + e, no ref (re-cut by the
-#          coo 2026-10-23 to CEO-1926's rule, "How can a program that can not be measured be a FAILURE?"; it read 3/5 excluded=2 before b89afd6).
+#          coo 2026-10-23 to R-1926's rule, "How can a program that can not be measured be a FAILURE?"; it read 3/5 excluded=2 before b89afd6).
 #   ARM 2  SUITE_ROW_PACKAGE prints shipped=7 table=4 excluded=3 denominator=4 debt_unread_by_design=1.
 #   ARM 3  a master key is untouched: the rebus rungs fixture keys its total on ALL.csv alone (no SUITE_ROW_PACKAGE line).
-#   ARM 4  an entry whose latest readings are OUTSIDE in both modes leaves the denominator into excluded (CEO-1696): 2/3 excluded=4.
+#   ARM 4  an entry whose latest readings are OUTSIDE in both modes leaves the denominator into excluded (R-1696): 2/3 excluded=4.
 #   ARM 5  SWI assembles BY CASE from the oracle's enumeration (its table lists files, its rows name cases): files u/test_a (ua:t1 PASS, ua:t2 PASS,
 #          ua:t3 FAIL in the ref, unit ub EMPTY with test t4) and u/test_b (uc:x PASS); EXCLUDED_CASES.tsv names ua:t2#1. Declared 5, Excl 2 (t4 has no
 #          oracle answer, t2 is excluded), graded 3. Readings: t1 and x PASS both modes, t3 PASS m3 / FAIL m4, and a reading of the excluded t2 that
@@ -21,7 +21,7 @@
 #          WINDOWS_ONLY (one instance out) and g:x BOUNDED_INTEGERS_ONLY (every instance out); CONTAINERS.tsv names three files, which are no cases.
 #          Population g:a g:b#1 g:b#2 g:w g:o (5), Excl 2. Readings: a, b#1 and w PASS both modes, b#2 PASS m3 / FAIL m4, o OUTSIDE both modes (it
 #          stays in the denominator, as the runner's row), and a stale bare g:b reading from before the #k keys. The row is 3/5 excluded=2.
-#   ARM 8  SWI counts a library graded by its driver as ONE case named driver under the library's name (CEO-1269; ceo CEO-2016): the table entry u/lib has
+#   ARM 8  SWI counts a library graded by its driver as ONE case named driver under the library's name (R-1269; R-2016): the table entry u/lib has
 #          no u/lib.ref but a u/lib_driver.pl (no begin_tests) and a u/lib_driver.ref, and the runner records u/lib.pl:driver. Declared 1, graded 1, the
 #          reading PASS in both modes: 1/1. ARM 9  an entry with neither a ref nor a driver still REFUSES rc 2, naming it: a reader that cannot see
 #          its population prints no row.
@@ -55,10 +55,10 @@ ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1));
 o1="$(S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite zzpkg --dry-run 2>&1)"; r1=$?
 o3="$(S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite reb-rungs --dry-run 2>&1)"; r3=$?
 [ "$r1" = 0 ] && [ "$r3" = 0 ] || { printf '%s\n%s\n' "$o1" "$o3" | tail -6; echo "GATE REFUSE(2): from-progress --dry-run did not run (rc $r1, $r3)"; exit 2; }
-ck "1 the package row is 3/4 excluded=3 (shipped minus EXCLUDED, d.pl matched to d; e, shipped with no table row, has no ref and is Excl, CEO-1926)" 'grep -q "would set zzpkg -> 3/4 excluded=3 " <<<"$o1"'
+ck "1 the package row is 3/4 excluded=3 (shipped minus EXCLUDED, d.pl matched to d; e, shipped with no table row, has no ref and is Excl, R-1926)" 'grep -q "would set zzpkg -> 3/4 excluded=3 " <<<"$o1"'
 ck "2 SUITE_ROW_PACKAGE shipped=7 table=4 excluded=3 denominator=4 debt_unread_by_design=1" 'grep -q "^SUITE_ROW_PACKAGE suite=zzpkg shipped=7 table=4 excluded_rows=1 containers=1 outside=0 excluded=3 denominator=4 debt_unread_by_design=1$" <<<"$o1"'
 ck "3 a master key keeps ALL.csv as its population (reb-rungs 2/2, no SUITE_ROW_PACKAGE)" 'grep -q "would set reb-rungs -> 2/2 stamped" <<<"$o3" && ! grep -q "^SUITE_ROW_PACKAGE" <<<"$o3"'
-# arm 4: an entry the oracle refuses in BOTH modes (latest readings OUTSIDE m3 and m4) leaves the denominator and counts in excluded (CEO-1696)
+# arm 4: an entry the oracle refuses in BOTH modes (latest readings OUTSIDE m3 and m4) leaves the denominator and counts in excluded (R-1696)
 row 13 zzpkg prolog c m3 OUTSIDE; row 14 zzpkg prolog c m4 OUTSIDE
 o4="$(S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" python3 "$SR" from-progress --suite zzpkg --dry-run 2>&1)"
 ck "4 c refused by the oracle in both modes leaves the denominator: 2/3 excluded=4, outside=1" 'grep -q "would set zzpkg -> 2/3 excluded=4 " <<<"$o4" && grep -q " outside=1 excluded=4 denominator=3 " <<<"$o4"'

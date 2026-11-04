@@ -58,23 +58,23 @@ if [ -z "$POP" ]; then
 fi
 # ── PINS ── measured at SCRIP c6bf8e789, 2026-09-20, by the ONE_LINER below.  Umbrella total 10.
 # ⛔ EDIT ONLY DOWNWARD.  rt.c is the cfo's (row gc-rt-c-c-to-bb-entries-...): 4 asm shims + rt_proc_call_gen_h's
-# member-fnptr, all five blocked on the 19 foreign callers in the ceo's files.
-# ⭐ 7 -> 5 ON 2026-09-20, AND IT IS A SANCTION PLUS A MOVE, NOT A CONVERSION (cto, CEO-970): the two generator
-# spines rt_genp_spine_enter and rt_genp_spine_enter_n2 were held here pending the ceo's ruling on whether a
-# fresh coroutine stack's first frame is the sanctioned initial-start class.  The ceo ruled it IS -- both are
+# member-fnptr, all five blocked on the 19 foreign callers in the officer's files.
+# ⭐ 7 -> 5 ON 2026-09-20, AND IT IS A SANCTION PLUS A MOVE, NOT A CONVERSION (cto, R-970): the two generator
+# spines rt_genp_spine_enter and rt_genp_spine_enter_n2 were held here pending the ruling on whether a
+# fresh coroutine stack's first frame is the sanctioned initial-start class.  The officer ruled it IS -- both are
 # reached only from rt_genp_entry_c, which rt_genp_thread_entry jumps to, which scrip_co_ctx_init installs as
 # the entry on a fresh coroutine stack with no emitted code beneath it, structurally identical to
 # scrip_coexpr_trampoline_entry -- so they moved beside that twin in rt_coexpr.c and test_gate_no_c_to_bb.sh
 # sanctions them by name.  ⛔ THE cfo's ROW DID NOT ADVANCE BY THIS: rt.c reads 5 because two entries left the
 # file sanctioned, not because two conversions landed.  If Lon's INITIAL START is per-run rather than per-stack,
 # the sanction is withdrawn, the two return as conversions on the cfo's row, and this pin goes back to 7.
-# runtime_eval.c and by_name_dispatch.c are the ceo's row gc-the-five-c-to-bb-entries-outside-rt-c-....
-# ⭐ 10 -> 0 ON 2026-10-14 (cto, CEO-1749): the sweep on SCRIP 0bd04f618 reads no transfer left in rt.c, by_name_dispatch.c
+# runtime_eval.c and by_name_dispatch.c are the officer's row gc-the-five-c-to-bb-entries-outside-rt-c-....
+# ⭐ 10 -> 0 ON 2026-10-14 (cto, R-1749): the sweep on SCRIP 0bd04f618 reads no transfer left in rt.c, by_name_dispatch.c
 # or runtime_eval.c, so all three pins drop; the one transfer the sweep sees is rt_sc_module.c's, whose pin or cure is
-# hq_snocone's rank-0 row under CEO-1749.
-# ⭐ rt_sc_module.c pinned at 1 on 2026-10-14 (hq_snocone, CEO-1749): rt_sc_outer_call, the COMPILE-TIME entry of the linked parse-stage module
-# (no program live) -- a whole-program entry sanctioned as CEO-1735 reads it. The run-time arm (CODE/EVAL with a program live) takes the C
-# parser and has no pin; a run-time parse through the module returns later as a BOX ROAD (CEO-1576), its own row.
+# hq_snocone's rank-0 row under R-1749.
+# ⭐ rt_sc_module.c pinned at 1 on 2026-10-14 (hq_snocone, R-1749): rt_sc_outer_call, the COMPILE-TIME entry of the linked parse-stage module
+# (no program live) -- a whole-program entry sanctioned as R-1735 reads it. The run-time arm (CODE/EVAL with a program live) takes the C
+# parser and has no pin; a run-time parse through the module returns later as a BOX ROAD (R-1576), its own row.
 PINS="
 1 src/runtime/rt/rt_sc_module.c
 "

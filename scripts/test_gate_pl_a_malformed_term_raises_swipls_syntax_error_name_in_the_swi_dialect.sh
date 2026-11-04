@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_a_malformed_term_raises_swipls_syntax_error_name_in_the_swi_dialect.sh -- THE SWI SYNTAX-ERROR VOCABULARY (ceo CEO-1959, hq_packages; SWI core/test_syntax.pl op_3, op_5, quote_1, number_2).
+# test_gate_pl_a_malformed_term_raises_swipls_syntax_error_name_in_the_swi_dialect.sh -- THE SWI SYNTAX-ERROR VOCABULARY (R-1959, hq_packages; SWI core/test_syntax.pl op_3, op_5, quote_1, number_2).
 # SCRIP raised syntax_error(cannot_start_term) for EVERY malformed text; swipl names the culprit: operator_expected (a term where an operator was due: "a b", "f(a", "[a ", "(a b)"), operator_clash (two
 # non-associative operators: "a :- b :- c", "a = b = c", "fx600 fx600 1"), operator_balance (an operand missing: "1 + ", "a |", "a:-"), end_of_clause (end of text right after a separator or an opener: "f(a,", "[a|", "f("),
 # cannot_start_term (a stray closer: "a )", "f(a ]"), quoted_punctuation (a comma where a term starts: "f(,a)", "[,]"), list_rest ("[a|b|c]"), illegal_number ("0x", "0b2"), end_of_file ("2'" and "0'" at the end of the

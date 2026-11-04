@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_colon_operator_is_600_xfy.sh -- THE COLON IS op(600, xfy, :), AS IN gprolog AND swipl (and the Logtalk suite: lgt_operators_40).
-# hq_prolog 2026-09-25, CEO-1270; the cure is prolog_parse.c's infix table, which carried ":" at 200 -- the priority of ^ -- so a:b+c read as
+# hq_prolog 2026-09-25, R-1270; the cure is prolog_parse.c's infix table, which carried ":" at 200 -- the priority of ^ -- so a:b+c read as
 # (a:b)+c where both oracles read a:(b+c), and current_op(P, T, :) answered 200 xfy. NO MONITOR BRACKET: a reader table, compared line for line.
 # RED BEFORE on origin: op(200,xfy) and +(:(a,b),c), m3 AND m4.
 set -u

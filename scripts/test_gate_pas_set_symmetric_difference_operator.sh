@@ -2,7 +2,7 @@
 # test_gate_pas_set_symmetric_difference_operator.sh -- the set symmetric-difference operator a >< b, which fpc accepts in every mode
 # (-Miso included), at the additive operators' precedence and left-associative, answers (a - b) + (b - a) as fpc does.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): symmetric-difference-2 (ALL.dialect iso) stopped
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): symmetric-difference-2 (ALL.dialect iso) stopped
 # at "pascal parse error line 13: syntax error" on s3 := s1 >< s2. THE CURE: pascal.l lexes >< as an XOROP whose leaf names "><" (the
 # tree is xor's shape, TT_FNC(op, a, b), at simple_expression); mk_call lowers it to __pas_setuni(__pas_setdif(a, b),
 # __pas_setdif(b, a)). pascal.lex.c regenerated with the pinned flex 2.6.4.

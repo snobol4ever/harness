@@ -3,7 +3,7 @@
 # its spread gains the closed world's statement walk (kind=stmt, preset 3, walk random, limit 12) at --scope 11 and above, and is the six
 # configurations it was below that, so every lower scope's census reads the batches it read.
 #
-# THE RULING (ceo, 2026-10-29, answering Q3 of row random-codegen-step-11-the-code-road-ceo-1999, DESIGN-PLAN random-codegen-scope step 11):
+# THE RULING (2026-10-29, answering Q3 of row random-codegen-step-11-the-code-road-r-1999, DESIGN-PLAN random-codegen-scope step 11):
 # "yes. util_inf_snobol4_coverage_census.py's SPREAD gains kind=stmt (preset 3, walk random, limit 12) when the scope is 11 or more. Land
 # it yourself in harness, with a red-before arm."
 #

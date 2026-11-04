@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_gather_and_take_collect_what_the_body_takes_as_rakudos_do.sh -- `gather` / `take` (31 Roast files' first refusal: "an excised node (rk_excise) has no native template")
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; Roast compile census 796/1381 on SCRIP 137f4d712; ceo CEO-1479).
-# THE DESIGN (as re-landed by the cto on the lazy-generator row, CEO-1600/1619; the eager rk_desugar_gather collector is gone). A gather body is a hoisted block that
+# (row raku-every-suite-to-100-under-nonet-r-1266; Roast compile census 796/1381 on SCRIP 137f4d712; R-1479).
+# THE DESIGN (as re-landed by the cto on the lazy-generator row, R-1600/1619; the eager rk_desugar_gather collector is gone). A gather body is a hoisted block that
 # is a GENERATOR PROC: its `take` is IR_SUSPEND on Icon's suspend road; a for over a gather, an array assignment, say, [i], .head and the eager methods PUMP it
 # through IR_PROC_GEN with a bound where one exists; a gather that escapes (returned, assigned to a scalar, passed, taken) is a Seq pulled one value at a time
 # through the heap generator handle rt_genp_s on its own coroutine stack; a take inside a nested block (map's) or a called sub is a dynamic take delivered through

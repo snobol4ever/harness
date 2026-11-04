@@ -28,7 +28,7 @@ body="$(awk '/^typedef struct DESCR_t \{/{f=1;next} f&&/^\} DESCR_t;/{exit} f' "
 [ -n "$body" ] || { echo "RTX DESCR SHAPE: REFUSES rc=2 -- could not extract the DESCR_t body from $D"; exit 2; }
 if printf '%s\n' "$body" | grep -q '\['; then
   echo "RTX DESCR SHAPE: FAIL -- DESCR_t carries an ARRAY member: $(printf '%s\n' "$body" | grep '\[' | head -1 | sed 's/^ *//')"
-  echo "  a char array inside DESCR_t turns the toolchain's default -fstack-protector-strong on for EVERY C function holding a DESCR_t local (canary + 16-byte movaps temporaries); on 2026-09-19 uint8_t src_node[3] alone took a SNOBOL4 rungs entry from green to SIGSEGV with the emitted asm byte-identical (ceo, row gc-the-frame-map-is-write-only). Spell multi-byte fields as named bytes."
+  echo "  a char array inside DESCR_t turns the toolchain's default -fstack-protector-strong on for EVERY C function holding a DESCR_t local (canary + 16-byte movaps temporaries); on 2026-09-19 uint8_t src_node[3] alone took a SNOBOL4 rungs entry from green to SIGSEGV with the emitted asm byte-identical (row gc-the-frame-map-is-write-only). Spell multi-byte fields as named bytes."
   exit 1
 fi
 echo "RTX DESCR SHAPE: PASS -- no array member in DESCR_t ($(printf '%s\n' "$body" | grep -c ';') fields)"

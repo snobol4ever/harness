@@ -1,8 +1,8 @@
 #!/bin/bash
-# test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh -- THE THREE HARNESS EDITS OF CEO-1864 (the ceo to hq_dotnet 2026-10-21, the six asks
-# granted; landed by the coo on CEO-1872, the coo grades the port engines). (1) "Give a mask row an engine qualifier and have the reader skip a scrip-only row
+# test_gate_a_port_answers_in_sbls_voice_and_reads_its_own_exclusions.sh -- THE THREE HARNESS EDITS OF R-1864 (to hq_dotnet 2026-10-21, the six asks
+# granted; landed by the coo on R-1872, the coo grades the port engines). (1) "Give a mask row an engine qualifier and have the reader skip a scrip-only row
 # for another engine." (3) "A port engine's compile-refusal arm compares stdout with sbl's, and yes, exit 231 after a compile error as sbl does" -- with
-# CEO-1858 (2), "The error report and compile errors go to stdout, where sbl writes them", the run-time error arm too. (4) "Admit LON_UNICODE_BY_DESIGN in
+# R-1858 (2), "The error report and compile errors go to stdout, where sbl writes them", the run-time error arm too. (4) "Admit LON_UNICODE_BY_DESIGN in
 # lib_excluded.sh only on an engine-keyed list, EXCLUDED.dotnet.tsv beside the package's EXCLUDED.tsv, read only when S4E_ENGINE is dotnet."
 # Hermetic, no build, nothing live: scratch mask files, streams, exclusion lists, a scratch corpus and progress DB.
 # ARMS: (1) a mask row with engine=scrip is offered under scrip and skipped under S4E_ENGINE=dotnet; an unqualified row is offered to both. (2) a fourth

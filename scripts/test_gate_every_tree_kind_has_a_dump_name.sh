@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_every_tree_kind_has_a_dump_name.sh -- EVERY tree_e KIND IN src/ir/ast.h HAS ITS NAME IN tt_e_name, SPELLED AS ITS
-# ENUMERATOR (cfo 2026-09-29, row parser-sc-accuracy-...-ceo-1364; Lon 2026-09-27, verbatim: "Write a C function to dump the AST.
+# ENUMERATOR (cfo 2026-09-29, row parser-sc-accuracy-...-r-1364; Lon 2026-09-27, verbatim: "Write a C function to dump the AST.
 # Write an equivalent Snocone function to dump the tree. ... Get the trees to match 100%.").
 #
 # WHY: ir_dump_tree (src/ir/ast_print.c) prints a node's kind as tt_e_name[e->t], and the table is kept by hand with designated

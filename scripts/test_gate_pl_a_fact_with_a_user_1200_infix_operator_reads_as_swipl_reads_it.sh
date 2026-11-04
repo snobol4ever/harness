@@ -3,7 +3,7 @@
 # infix operator of priority 1200 (op(1200, xfx, Name), op(1200, xfy, Name)) is a FACT of that operator's functor, in both modes, as swipl reads
 # it. The clause reader parsed a head at priority 1199 and took only :-, --> and => as 1200 continuations, so every other 1200 infix fact died
 # with "expected . at end of fact": CHR's rule name `Name @ Head <=> Body` (library(chr) exports op(1200, xfx, @)) never reached the lowerer
-# (CEO-1960, ARCH-PROLOG-CONSTRAINTS.md section 3). The probe is cut from swipl in THIS run (swipl_bin), never written by hand; the self-test
+# (R-1960, ARCH-PROLOG-CONSTRAINTS.md section 3). The probe is cut from swipl in THIS run (swipl_bin), never written by hand; the self-test
 # feeds the same comparison a corrupted reference and requires it to be seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

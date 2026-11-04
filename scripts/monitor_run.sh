@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# monitor_run.sh -- THE ONE COMMAND AN HQ USES THE IPC SYNC-STEP MONITOR THROUGH (ceo 2026-09-23, CEO-1186; Lon: "finish up IPC
+# monitor_run.sh -- THE ONE COMMAND AN HQ USES THE IPC SYNC-STEP MONITOR THROUGH (2026-09-23, R-1186; Lon: "finish up IPC
 # sync-step monitor and let me know when the HQ's can begin to use"). Design: MONITOR-BINARY-DESIGN.md § THE PLUG INTERFACE.
 #
 #   bash ../harness/scripts/monitor_run.sh <source>            # --modes: SCRIP mode 3 against SCRIP mode 4 in lock-step (every language)
@@ -25,7 +25,7 @@
 # the wrong code with no warning. --oracle's default "scr" participant runs mode-3 (already covered above); only
 # --modes needs scr4, so the check below runs only for that path.
 set -u
-# THE BINARY IS THIS REPOSITORY'S OWN (the coo 2026-10-03, CEO-1496): SD was $S4E/SCRIP, the sibling checkout beside the root, so from a
+# THE BINARY IS THIS REPOSITORY'S OWN (the coo 2026-10-03, R-1496): SD was $S4E/SCRIP, the sibling checkout beside the root, so from a
 # worktree every run below -- and the harness it calls -- graded a different checkout's build than the one the caller stood in.
 SD="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../SCRIP" && pwd)"; SCRIP="$SD/scrip"
 src="${1:-}"; [ -n "$src" ] && [ -f "$src" ] || { echo "REFUSE(2): usage: monitor_run.sh <source> [--modes|--trace|--oracle] [--input FILE]"; exit 2; }
@@ -38,7 +38,7 @@ src="$(realpath "$src")"; base="${src%.*}"; ext="${src##*.}"
 case "${ext,,}" in p|pp|lpr|dpr) ext=pas;; pro|prolog|plt) ext=pl;; esac
 case "$ext" in sno|spt|sbl|icn|pl|pas|raku|sc|reb) ;; *) echo "REFUSE(2): $ext is not a SCRIP source extension"; exit 2;; esac
 # every run below at the heap and stack the source declares beside itself (<base>.heap / <base>.stack, which extract writes for a suite entry):
-# -d/-s after --run, leading each compiled binary's arguments (ceo CEO-1353, RULES.md clause 8 (g)); the participants read the same sidecars
+# -d/-s after --run, leading each compiled binary's arguments (R-1353, RULES.md clause 8 (g)); the participants read the same sidecars
 . "$SD/../harness/scripts/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 SW="$(declared_switches_beside "$src")" || { echo "REFUSE(2): $src: a .heap or .stack sidecar the reader refuses (it said why above)"; exit 2; }
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
@@ -104,7 +104,7 @@ else
 fi
 [ "$input" = /dev/null ] || export MONITOR_STDIN="$input"
 # MONITOR_HARNESS names a stand-in harness for a gate that must make the controller say something a real run cannot be made to (a
-# PROTOCOL ERR); it is never set by a seat. Until SD became this repository (CEO-1496) such a gate swapped the harness through S4E_HOME.
+# PROTOCOL ERR); it is never set by a seat. Until SD became this repository (R-1496) such a gate swapped the harness through S4E_HOME.
 PARTICIPANTS="$parts" timeout -k 5 300 bash "${MONITOR_HARNESS:-$SD/../harness/scripts/test_monitor_3way_sync_step_auto.sh}" "$src" > "$W/harness.out" 2>&1; hrc=$?
 steps=$(grep -oE 'all reached END after [0-9]+ steps' "$W/harness.out" | grep -oE '[0-9]+' | head -1)
 verdict=$(grep -aoE 'VERDICT AGREE=[0-9]+ DIVERGE=[0-9]+ UNGRADED=[0-9]+' "$W/harness.out" | head -1 | sed 's/^VERDICT //')

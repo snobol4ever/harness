@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test_gate_icn_bal_argument_types_raise_as_icont.sh -- bal() with a non-cset, non-string or non-integer argument raises 104 / 103 / 101 with the offending value, as under icont, on the generator path too (ceo CEO-652).
+# test_gate_icn_bal_argument_types_raise_as_icont.sh -- bal() with a non-cset, non-string or non-integer argument raises 104 / 103 / 101 with the offending value, as under icont, on the generator path too (R-652).
 #
 # MEASURED 2026-09-12 on 3a510fa4e (the coo's fourth pass: Zona 88->87, Jcon 82->81, the errors program at its step for
-# bal([],,,"")): bal([]) FAILED SILENTLY where icont raises 104 "cset expected" -- the CEO-645 landing made bal a generator
+# bal([],,,"")): bal([]) FAILED SILENTLY where icont raises 104 "cset expected" -- the R-645 landing made bal a generator
 # at every arity and the generator re-pump (rt_call_arr_gen_s) called bn_bal_gen directly, bypassing icn_argtype_gate;
 # find/upto through the same re-pump had the same hole. Cure: the re-pump runs the gate on the FIRST pump (resume cell 0)
 # for bal, find and upto. Arms: seven bal shapes under &error (list as c1, c2, c3, subject, a non-integer position, a

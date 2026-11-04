@@ -8,7 +8,7 @@
 #
 #   INVARIANT A — THE REGIME IS DERIVED AND LOAD-BEARING (RECUT 2026-09-16, hq_raku).
 #   ⛔ THE KILLSWITCH FORM OF THIS ARM IS DEAD BY LAW, NOT BY CHOICE. It read: with SCRIP_RK_ZFRAME=0
-#   both witnesses must exit nonzero. That switch was DELETED on 2026-09-09 by `709a755df` (CEO-447,
+#   both witnesses must exit nonzero. That switch was DELETED on 2026-09-09 by `709a755df` (R-447,
 #   Lon 09-09 09:2x: "Get rid of enumerated shape class now!!!") along with the other 28 frame-placement
 #   switches, and `test_gate_no_zeta_frame_switches.sh` was wired BLOCKING in the same commit to keep
 #   every such name out of src/ forever. So the old arm could only be greened by re-adding a getenv that
@@ -88,7 +88,7 @@ if [ -z "$A2FILES" ]; then
 else
     A2HITS=$(grep -rnoE 'getenv\("SCRIP_[A-Z0-9_]*(RBP|FRAME|PIN|ZFRAME|CARVE)[A-Z0-9_]*"\)' $A2FILES 2>/dev/null | grep -vE 'getenv\("SCRIP_GC_' || true)
     if [ -n "$A2HITS" ]; then
-        echo "  FAIL a frame-placement getenv is back on the Raku path (CEO-447: ζ HAS NO MODES):"
+        echo "  FAIL a frame-placement getenv is back on the Raku path (R-447: ζ HAS NO MODES):"
         printf '%s\n' "$A2HITS" | sed 's/^/        /'
         FAIL=1
     else

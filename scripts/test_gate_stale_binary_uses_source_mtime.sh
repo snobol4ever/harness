@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_stale_binary_uses_source_mtime.sh -- THE ACCEPTANCE GATE for gate_require_fresh's staleness basis
 # (row stale-binary-refusal-compares-against-the-head-commit-time-not-the-newest-tracked-source, hq_B measured
-# 2026-09-03, ceo ruled, cured seat02 2026-09-04).
+# 2026-09-03 ruled, cured seat02 2026-09-04).
 #
 # WHAT IT PROVES, in BOTH directions, hermetically, in a throwaway git sandbox (never touches the real tree):
 #   ARM 1 "committed after building" -- the ORDINARY order of work (build, grade, THEN commit): a binary newer

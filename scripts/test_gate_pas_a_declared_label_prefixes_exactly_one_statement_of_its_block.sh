@@ -3,7 +3,7 @@
 # label-declaration-part in which a label occurs shall closest-contain exactly one statement in which that label occurs; 6.2.2.1: each label
 # contained by the program-block shall have a defining-point
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. PAT iso7185prt1836 declares label 1
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. PAT iso7185prt1836 declares label 1
 # and prefixes no statement with it; scrip ran it to rc 0, fpc -Miso refuses it (warning "Label not defined", then an error). NO BRACKET:
 # a static refusal sends no event. The cure: g_pas_scope keeps a per-block label list (lab/nlab/clab, PasDef reused, formal = the count of
 # statements the label prefixes); label_list declares, the labelled-statement rule counts a prefix only when the label's block is the

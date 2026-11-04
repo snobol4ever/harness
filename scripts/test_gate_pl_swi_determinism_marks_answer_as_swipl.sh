@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_determinism_marks_answer_as_swipl.sh -- SWI-PROLOG 9'S DETERMINISM MARKS, $/0 AND $/1, ANSWER AS SWIPL IN BOTH
-# MODES (cfo 2026-10-11, row prolog-swi-determinism-marks-dollar-0-and-dollar-1-parse-and-run-so-probench-det-answers-its-ref-ceo-1660;
+# MODES (cfo 2026-10-11, row prolog-swi-determinism-marks-dollar-0-and-dollar-1-parse-and-run-so-probench-det-answers-its-ref-r-1660;
 # ProBench det, the van Roy kernel in SWI's dialect, died at "expected . at end of SSU rule" on rdet(N) => $p, $, N1 is N - 1, rdet(N1)).
 #
 # THE CURE.  The parser reads $ as SWI's op(1, fx, $).  The lowerer places the semantics: a $ in a clause-level conjunction is the

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_env_sidecar_reaches_the_oracle_and_both_modes.sh -- NAME.env SETS THE UNIT'S ENVIRONMENT FOR THE REF AND BOTH
-# SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). IPL's termcap programs (hcal4unx, mr, yahtz)
+# SCRIP MODES ALIKE (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). IPL's termcap programs (hcal4unx, mr, yahtz)
 # need TERM and TERMCAP, ranstars TERM=ansi, hotedit HOME at its run directory: one sidecar, read by ipl_env_apply in
 # lib_icon_ipl_isolation.sh and applied by the cutter's run_isolated and by ipl_isolation_run alike.
 # GREEN: a planted unit that prints GREETING and HOME cuts a ref carrying the sidecar's values (HOME=@RUNDIR resolves to the run

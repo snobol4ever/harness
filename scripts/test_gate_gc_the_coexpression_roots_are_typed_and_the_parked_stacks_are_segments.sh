@@ -2,7 +2,7 @@
 # test_gate_gc_the_coexpression_roots_are_typed_and_the_parked_stacks_are_segments.sh -- row
 # gc-the-coexpression-stacks-take-typed-visits-from-their-structs-and-the-seven-gc-zeta-frame-calls-in-gc-coexpr-roots-go
 # (cto, 2026-09-19, MODE TRIO; ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 6.2f; law RULES.md FACT RULE THE COLLECTOR
-# GUESSES NOTHING, CEO-812; Lon 2026-09-19 in-chat: "r13 for SNOBOL4 and Icon points to the subject string, &subject").
+# GUESSES NOTHING, R-812; Lon 2026-09-19 in-chat: "r13 for SNOBOL4 and Icon points to the subject string, &subject").
 #
 # WHAT WAS THERE. gc_coexpr_roots swept SEVEN regions word by word with gc_zeta_frame: the parked main thread's whole
 # [stack] mapping, the root context's gc_spill[6] and xmit[2], every linked context's gc_spill[6], xmit[2] and
@@ -62,7 +62,7 @@
 # carries no r13 spill before it. (4) THE GLOBAL'S VISIT IS LOAD-BEARING: the sigma witness matches its ref at every
 # stress in both modes (the parked sweep bounded at park_sp, glibc's words excluded). (5) THE PACKAGE HOLDS NO SUBJECT
 # WORD: scrip_coexpr_entry_pkg_t has no r13/r15 field and no visitor reads one; hb_coexpr_create (a co-expression created
-# inside a scan, first activated after collections) matches its ref at every stress. RE-CUT (hq_collector 2026-10-14, CEO-1680,
+# inside a scan, first activated after collections) matches its ref at every stress. RE-CUT (hq_collector 2026-10-14, R-1680,
 # the seams row): arms 4 and 5 used to contrast with SCRIP_GC_COEXPR_PLANT=2/3, runtime switches that hid the contexts or dropped
 # the visit so the loss could be watched -- seams in SCRIP that existed only so these arms could trip; the plant is deleted and the
 # contrasts with it. FAIL_ONCE=1 grades arms 2, 4 and 5 against a corrupted ref.
@@ -75,7 +75,7 @@
 # caller's r13; the bound at park_sp is the polls row's step once every parking site carries a record -- Lon
 # 2026-09-19: do not let optimization stand in the way of a working GC. (b) Arizona transmit.icn and coexpr.icn lose
 # their &errout trace output under SCRIP_GC_STRESS=5 on origin acbb36b00 (12 -> 2 and 18 -> 0 lines, rc 0), the
-# same on a clean base build and on this tree -- pre-existing, handed to the ceo's Icon seat.
+# same on a clean base build and on this tree -- pre-existing, handed to the officer's Icon seat.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

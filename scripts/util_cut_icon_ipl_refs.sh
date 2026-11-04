@@ -80,12 +80,12 @@ PROGS="$PKG/$SUBDIR"
 
 [ -d "$PROGS" ] || { echo "⛔ GATE REFUSES: corpus subtree missing: $PROGS" >&2; exit 2; }
 ICON="$(icon_bin)" || exit 2
-# ⛔⭐⭐ THE REF IS CUT FROM THE RUN, AND THE CLASSIFICATION EVIDENCE FROM THE LINK (hq_R 2026-09-10, CEO-508).
+# ⛔⭐⭐ THE REF IS CUT FROM THE RUN, AND THE CLASSIFICATION EVIDENCE FROM THE LINK (hq_R 2026-09-10, R-508).
 # This script used to cut through the ONE-STEP `icon` driver with stdout and stderr folded into one file, and
 # icont writes EVERYTHING to stderr -- so for any program whose link closure touches a missing builtin, icont's
 # own "undeclared identifier" warnings landed INSIDE what would be the ref: text SCRIP can never reproduce. The
 # UNDECLARED_IDENTIFIER arm below was refusing on the INSTRUMENT'S contamination, not on the program. Measured on
-# the five gprogs rows CEO-458 sent here: clrs2pdb/fmap2pdb/gifs2pdb/wifs2pdb write 1 byte each and webimage 64
+# the five gprogs rows R-458 sent here: clrs2pdb/fmap2pdb/gifs2pdb/wifs2pdb write 1 byte each and webimage 64
 # bytes of HTML, rc=0 and zero stderr, and SCRIP m3 already matched all five BYTE-FOR-BYTE -- five programs with
 # real ground truth held out of the denominator by a stream, not by a defect.
 # ⛔ THE FLAGS ARE LOAD-BEARING AND WERE MEASURED, NOT GUESSED. `icon` is a symlink to the icont ELF binary and
@@ -120,7 +120,7 @@ ipl_isolation_baseline "$S4E/corpus" || echo "⚠ could not snapshot the ipl sub
 # (/dev/null, as before). test_icon_ipl_suite.sh's RUN tier looks up the SAME file -- see FACT RULE in
 # that script's header: a script and its own DONE-WHEN (and its sibling ref-cutter) must not disagree.
 # ⛔⭐ BOTH SIDECARS ARE READ HERE, BY THE SHARED READER, NOT BY A SECOND COPY OF THE CONVENTION
-# (hq_I 2026-09-06, CEO-328: "one path-aware cutter that reads both sidecars ... never a fork of the
+# (hq_I 2026-09-06, R-328: "one path-aware cutter that reads both sidecars ... never a fork of the
 # cutter or the grader"). The stdin lookup below is deliberately left inline because it predates the
 # reader and is one line; the argv lookup goes through ipl_argv_read in lib_icon_ipl_isolation.sh so the
 # cutter that MINTS a ref and the suite that CHECKS it cannot disagree about what the program was given.
@@ -327,7 +327,7 @@ for f in "${FILES[@]}"; do
   ev1="$(cat "$OUT1.link" 2>/dev/null)$(ev_normalize "$OUT1" "$base")"
   ev_link="$(cat "$OUT1.link" 2>/dev/null)"
   # ⛔⭐ DISPLAY_REFUSED IS SPLIT OUT OF ORACLE_FAIL ON PURPOSE, AND THE DISTINCTION IS THE WHOLE POINT
-  # (hq_I 2026-09-06, CEO-316, measured over gprogs/): the oracle's own binary prints "<prog>: can't open
+  # (hq_I 2026-09-06, R-316, measured over gprogs/): the oracle's own binary prints "<prog>: can't open
   # display" and exits 1 on a headless box. Folding that into ORACLE_FAIL is not a cosmetic mislabel --
   # ORACLE_FAIL lands in UNGRADED.tsv, the file of work SOMEBODY IS OWED (supply argv, author a fixture),
   # and 136 of gprogs' 177 mains are display-bound. Filing them as owed manufactures 136 rows NO LANE CAN
@@ -368,7 +368,7 @@ for f in "${FILES[@]}"; do
   # which one actually happened. Checked over the WHOLE output, same discipline as DISPLAY_REFUSED above,
   # not just line 1 (SUSPECT_USAGE's narrower scope) -- icont can print several before or after any real
   # output the program does produce.
-  # ⛔⭐⭐ MOVED AHEAD OF THE rc!=0 ARM, AND THAT ORDERING WAS THE DEFECT (hq_I 2026-09-06, CEO-326,
+  # ⛔⭐⭐ MOVED AHEAD OF THE rc!=0 ARM, AND THAT ORDERING WAS THE DEFECT (hq_I 2026-09-06, R-326,
   # measured over all 212 ORACLE_FAIL rows). This arm sat BELOW `if [ "$rc1" -ne 0 ]`, so it could only
   # ever see a run that had ALREADY SUCCEEDED -- the rc=0 half of one piece of evidence. The other half,
   # 72 programs carrying the SAME unresolved-graphics-builtin diagnostic and then DYING on it (error 106,
@@ -379,7 +379,7 @@ for f in "${FILES[@]}"; do
   # (a link-time diagnostic) is INDEPENDENT of rc, so gating it on rc silently halves its population.
   # The two failure points stay distinguished by the RC COLUMN and by the action text, which is the
   # honest split: same cause, two consequences.
-  # ⛔⭐⭐ AND THIS ARM NOW ASKS THE SECOND QUESTION IT ALWAYS MEANT TO (hq_R 2026-09-10, CEO-508). A link-time
+  # ⛔⭐⭐ AND THIS ARM NOW ASKS THE SECOND QUESTION IT ALWAYS MEANT TO (hq_R 2026-09-10, R-508). A link-time
   # diagnostic is a fact about the LINK; whether the program then produced ground truth is a fact about the RUN,
   # and folding them into one stream made the first answer the second. The refusal is unchanged wherever it was
   # ever right -- the run FAILED (rc!=0), or the run wrote NOTHING and the diagnostic was the entire "output",
@@ -415,7 +415,7 @@ for f in "${FILES[@]}"; do
     continue
   fi
   # ⛔⭐⭐ THE EVIDENCE IS THE ORACLE'S OWN FIRST WORDS, NEVER A SENTENCE WE COMPOSED (hq_I 2026-09-06,
-  # CEO-326). This arm used to write ONE reason onto every row it produced -- "needs argv/stdin this
+  # R-326). This arm used to write ONE reason onto every row it produced -- "needs argv/stdin this
   # driver does not supply, or genuine rejection" -- a COMPOUND claim, both halves untested, and it
   # reached 212 rows of ipl/UNGRADED.tsv. Measured, those 212 are: 88 that cannot run on this oracle at
   # all (no graphics facility), 6 that want a tty, 34 that print their own usage banner, and 84 that are
@@ -531,7 +531,7 @@ for f in "${FILES[@]}"; do
   done
   # ⛔⛔ HELD, NEVER MINTED HERE -- the sleep-1 confirmation loop above is STRUCTURALLY BLIND to a
   # MINUTE-granularity clock read, and Icon's &dateline is exactly that ("Sunday, September 6, 2026
-  # 9:38 am"). MEASURED (hq_I 2026-09-06, CEO-316): filexref, gcomp, qt and shar are all STABLE across
+  # 9:38 am"). MEASURED (hq_I 2026-09-06, R-316): filexref, gcomp, qt and shar are all STABLE across
   # four runs 1.2s apart and ALL FOUR DIFFER across a single minute boundary. The previous fix reasoned
   # "a second-granularity dependency cannot survive a 1s gap" and was right about seconds and silent
   # about minutes -- more agreeing sub-minute runs never close it, they repeat the same coincidence
@@ -565,7 +565,7 @@ for f in "${FILES[@]}"; do
   # ⛔ CLASSIFIED NONDETERMINISTIC, deliberately NOT a new class name: hq_T's ruling vocabulary is frozen,
   # and NONDETERMINISTIC is not a euphemism here -- the output genuinely varies between runs, the period
   # is simply longer than anyone watched. The reason names the marker so the ruling can be re-examined.
-  # ⭐ UNLESS THE UNIT DECLARES NAME.pin (hq_icon 2026-09-27; ceo CEO-1315 ruled the clock and urandom pin, wrapping this cutter's
+  # ⭐ UNLESS THE UNIT DECLARES NAME.pin (hq_icon 2026-09-27; R-1315 ruled the clock and urandom pin, wrapping this cutter's
   # iconx as it wraps both SCRIP modes): under the pin the clock reads one fixed instant on every run and every day, so the period
   # this arm exists for is gone, and the determinism arms above decide as they do for any other program.
   _clk=""; [ -f "$PROGS/${f%.icn}.pin" ] || _clk=$(grep -ohE '&dateline|&date|&clock|&now|&time' "$PROGS/$f" 2>/dev/null | sort -u | tr '\n' ' ')

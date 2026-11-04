@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test_gate_icn_ipl_mask_sidecar_masks_what_varies_on_both_sides.sh -- the NAME.mask sidecar (hq_icon 2026-10-04; Lon CEO-1474, in-chat to hq_icon,
+# test_gate_icn_ipl_mask_sidecar_masks_what_varies_on_both_sides.sh -- the NAME.mask sidecar (hq_icon 2026-10-04; Lon R-1474, in-chat to hq_icon,
 # verbatim: "The answer is the test harness needs a mechanism for masking to allow these tests which are run-dependent, or environment dependent so
-# that these tests can actually run and be graded."; one gate per sidecar, CEO-1315; the mask is the CEO-409 mask through util_apply_ceo409_mask.py,
-# CEO-1504). A malformed row (no reason) refuses (rc 2). The planted unit prints its HOME, which NAME.env sets to the run
+# that these tests can actually run and be graded."; one gate per sidecar, R-1315; the mask is the R-409 mask through util_apply_line_mask.py,
+# R-1504). A malformed row (no reason) refuses (rc 2). The planted unit prints its HOME, which NAME.env sets to the run
 # directory -- a fresh path on every run -- beside a stable line. GREEN: with NAME.mask masking that one line the real cutter mints the unit (its
 # determinism arms compare the masked runs), the ref on disk carries a raw run path, and m3 and m4 pass the masked comparison. RED: with the mask
 # ignored by ipl_graded_cmp the cutter sees two different runs and mints nothing. A malformed mask refuses (rc 2).
@@ -13,7 +13,7 @@ sg_init
 plant() {
   printf 'procedure main()\n   write("home: ", getenv("HOME") | "unset");\n   every write("stable: ", 6 * (7 to 10));\nend\n' > "$SG_PKG/progs/maskw.icn"
   printf 'HOME=@RUNDIR\n' > "$SG_PKG/progs/maskw.env"
-  printf '# CEO-409 rows (entry<TAB>regex<TAB>measured reason)\nmaskw\t^home: .*$\tHOME is the run directory, a fresh mktemp path on every run (measured: two cutter runs differ in this line only)\n' > "$SG_PKG/progs/maskw.mask"
+  printf '# R-409 rows (entry<TAB>regex<TAB>measured reason)\nmaskw\t^home: .*$\tHOME is the run directory, a fresh mktemp path on every run (measured: two cutter runs differ in this line only)\n' > "$SG_PKG/progs/maskw.mask"
 }
 red=0
 g="$(sg_verdict "$SG_HERE" maskw plant)"; gref="$(cat "$(sg_ref "$SG_HERE" maskw)" 2>/dev/null)"

@@ -4,7 +4,7 @@
 # from the pointee's array TYPE, via pas_ptrexpr_target/pas_arrtype_high/pas_arrtype_lo), the same loop-lowering the named
 # array-variable case already used.
 #
-# MEASURED 2026-10-01 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. monitor_run.sh --oracle on
+# MEASURED 2026-10-01 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. monitor_run.sh --oracle on
 # corpus/packages/pascal/fpc_tests/test_opt_treg3.pas bracketed the divergence at step 5 (stno 16): fpx continues past
 # `fillchar(p^, 101*sizeof(longint), 0)` to stno 17, scr ENDs right there. Root cause, src/parsers/pascal/pascal.y's fillchar
 # lowering only recognized a destination that is a bare TT_VAR naming an array variable (pas_array_high_get keyed on the

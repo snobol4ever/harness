@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""util_parser_sc_census.py [--lang L[,L]] [--population corpus|ladder|rungs] [--declared TSV] [--jobs N (default: the fan-out ceiling of lib_fanout.py, max(2, min(4, cores - demand)), CEO-1333)] [--timeout S] [--list TSV]
+"""util_parser_sc_census.py [--lang L[,L]] [--population corpus|ladder|rungs] [--declared TSV] [--jobs N (default: the fan-out ceiling of lib_fanout.py, max(2, min(4, cores - demand)), R-1333)] [--timeout S] [--list TSV]
 
-DOES EACH BOOTSTRAP PARSER WORK? (Lon 2026-09-23 15:2x, in-chat to the ceo: hq_snocone "to get all the SCRIP bootstrap
+DOES EACH BOOTSTRAP PARSER WORK? (Lon 2026-09-23 15:2x, in-chat: hq_snocone "to get all the SCRIP bootstrap
 parsers working".) For every language, the Snocone-hosted parser SCRIP/bootstrap/parser_<lang>.sc -- loaded behind the
 14-file bootstrap runtime in the order ../harness/scripts/run_scrip_parser.sh declares, BY CONCATENATION (the Snocone branch of the
 driver never reads a -L chain; util_parser_sc_census.sh's note) -- is run by ./scrip over every program of a declared
@@ -53,8 +53,8 @@ SEQ = re.compile(r"^SEQ[0-9]")
 # language a CRASH named START-UP, none run (each would only time out later). --timeout S still fixes one limit for all.
 TMIN, TMAX, TBOOT = 10, 300, 120
 # HUGE HEAP AND HUGE STACK, ALWAYS (Lon 2026-09-26, in-chat to hq_snocone, verbatim: "You should run with huge heap and huge stack
-# always to avoid limits."), committed lazily (RSS 45 MB either way) -- and the size is the CHAIN's declaration, never typed here (ceo
-# CEO-1353, RULES.md clause 8 (g)(4)): bootstrap/parser_<lang>.heap and .stack, read through corpus_suite_harness, the one reader.
+# always to avoid limits."), committed lazily (RSS 45 MB either way) -- and the size is the CHAIN's declaration, never typed here (the officer
+# R-1353, RULES.md clause 8 (g)(4)): bootstrap/parser_<lang>.heap and .stack, read through corpus_suite_harness, the one reader.
 import corpus_suite_harness as _harness
 
 

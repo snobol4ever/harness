@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # test_gate_package_runners_print_the_inventory.sh — the invariant gate for THE PACKAGE LOCKDOWN's
 # instrument (row every-package-runner-prints-shipped-graded-ungraded-and-ungradable-and-the-leaderboard-
-# carries-the-inventory, hq_T 2026-09-06, rank 0 on the ceo's order; Lon: "Fix the never graded business.
+# carries-the-inventory, hq_T 2026-09-06, rank 0 on the order; Lon: "Fix the never graded business.
 # Let's lock down our package testing and make it complete.").
 #
 # WHAT IT PROTECTS. Every lockdown row's DONE-WHEN is `ungraded=0`, so the number that criterion reads is
@@ -166,7 +166,7 @@ if [ "$rc" -ne 0 ]; then
     echo "GATE FAIL: an oracle-side UNGRADABLE reason was rejected (rc=$rc): $out"; violations=$((violations+1))
 fi
 
-# ARM 8b — ⭐⭐ THE ONE ADMITTED EXCEPTION, AND IT IS CONTROL-ARMED BOTH WAYS (ceo CEO-541, on hq_T's ask).
+# ARM 8b — ⭐⭐ THE ONE ADMITTED EXCEPTION, AND IT IS CONTROL-ARMED BOTH WAYS (R-541, on hq_T's ask).
 # icon/ipl's gincl/maccolor.icn names our compiler and is NOT a failure-as-reason: it states Arizona icont's
 # own refusal verbatim, then upstream's control on the UNMODIFIED file, and only THEN that we refuse at the
 # same line with the same class. That last clause is a CONTROL -- it strengthens the ruling by showing the
@@ -179,13 +179,13 @@ examined=$((examined+1))
 printf 'f3.icn\tORACLE_REFUSES\tArizona icont REFUSES IT AT COMPILE, rc=1, verbatim "Line 23 # \\"map16\\": invalid declaration", and upstream ships the identical refusal on the unmodified file. AGREEMENT-CONTROL: scrip refuses at the same line with the same class, so we agree.\n' > "$TD/p/UNGRADABLE.tsv"
 out="$(run_inv 2 0)"; rc=$?
 if [ "$rc" -ne 0 ]; then
-    echo "GATE FAIL: a marked AGREEMENT-CONTROL row was refused (rc=$rc) -- CEO-541 admits it: $out"; violations=$((violations+1))
+    echo "GATE FAIL: a marked AGREEMENT-CONTROL row was refused (rc=$rc) -- R-541 admits it: $out"; violations=$((violations+1))
 fi
 # ⛔ AND THE NEGATIVE DIRECTION, WHICH IS THE HALF THAT KEEPS THE ARM HONEST. Three plants, each a way the
 # marker could be used to smuggle a failure-as-reason past the check, and each must STILL refuse:
 #   (a) the marker with NO oracle verdict before it -- the ruling rests on us and says so politely;
 #   (b) the marker with our compiler named BEFORE it -- the oracle's verdict is no longer independent, which
-#       is the exact tpp defect (a row citing BOTH), and CEO-541 explicitly did not weaken that precedent;
+#       is the exact tpp defect (a row citing BOTH), and R-541 explicitly did not weaken that precedent;
 #   (c) the marker in the CLASS column rather than the reason -- admission by accident of spelling.
 for _plant in \
   'f3.icn\tORACLE_REFUSES\tAGREEMENT-CONTROL: scrip produces zero PASS/FAIL lines for this file today\n' \
@@ -208,7 +208,7 @@ for _plant in \
 done
 
 # ARM 8c — ⛔⭐ A COMMENT IS NOT A REASON, AND THE ARM MUST NOT FIRE ON ITS OWN DOCUMENTATION. Measured the
-# moment CEO-541 was written into icon/ipl's header (hq_T 2026-09-10): the honesty scan read the WHOLE file,
+# moment R-541 was written into icon/ipl's header (hq_T 2026-09-10): the honesty scan read the WHOLE file,
 # so a header sentence explaining that a program excluded because SCRIP fails it is a red moved out of the
 # denominator REFUSED THE PACKAGE. ⭐ The cost of a check that answers a wider question than it was asked
 # lands on the lane doing the right thing -- documenting the rule -- which is the worst possible place for it.
@@ -427,7 +427,7 @@ fi
 # COULD emit a line, not runners that DO -- and those differed for EVERY runner wired so far. jcon is the
 # worked case: it sourced the body and called it, the census said wired=1, and it could not emit a line at
 # all, because its UNGRADED.tsv was 2-column and its call SWALLOWED the refusal into a warning. A number
-# that is wrong for every member of its population is not a census, and the ceo has since made this report
+# that is wrong for every member of its population is not a census, and the officer has since made this report
 # load-bearing under Lon's order, which is the worst moment to be carrying an unprovable claim.
 # ⭐ STATIC ANALYSIS CANNOT PROVE EMISSION -- only running the runner does, and that is board_packages.sh's
 # job, not a 2-second mktemp-only gate's. So the honest move is not a cleverer grep: it is to stop printing
@@ -614,7 +614,7 @@ PINNED = {"icon":    ["arizona", "ipl", "jcon"],
 #     write into any other; table_shape_error() rejects the 8-column M/L/V display outright. So `--column
 #     vendor`, which every package runner passes, can land in ONE cell and one only.
 #   * this arm selected `ln.count('|') >= 8` and then read `ln.split('|')[4]` WITHOUT stripping the outer
-#     pipes -- so it bound to the 8-column display (the grid CEO-174 added ABOVE the standardized one on
+#     pipes -- so it bound to the 8-column display (the grid R-174 added ABOVE the standardized one on
 #     2026-09-03, named in find_table's comment as the reason position is not identity) and read a cell the
 #     one writer is forbidden to touch. Two errors that cancelled into a plausible-looking number.
 # ⛔ THE MEASURED COST, and it is the arizona report this arm has been printing: arizona's clause is
@@ -667,7 +667,7 @@ for lang in sorted(U.PROGRESS_COUNTED):
 print("    ARM 19 board=%s  pinned packages holding their own clause=%d/%d"
       % (os.path.basename(os.environ['SCORE_MD']), pinned_n - bad, pinned_n))
 if lacking:
-    # ⛔ THIS LINE USED TO END "every one is PARKED-LON-HOLD" AND THAT WAS TWICE WRONG BY 2026-09-11. CEO-546
+    # ⛔ THIS LINE USED TO END "every one is PARKED-LON-HOLD" AND THAT WAS TWICE WRONG BY 2026-09-11. R-546
     # (2026-09-10 19:2x) reopened SNOBOL4 for the seats whose Icon rows closed, and four of the seven named
     # here are snobol4 -- so the clause that told a reader this list was unreachable had outlived its ruling.
     # ⭐ AND THE DEEPER ERROR IS THAT IT NAMED A CAUSE AT ALL: "no clause yet" has at least four causes, and
@@ -700,7 +700,7 @@ fi
 # the body; ARM 17/18 grade carriage and reader; ARM 19 grades the board. NOT ONE of them ever points the
 # body at the ELEVEN REAL SIDECAR PAIRS the runners actually read. So the body was gated and its data was
 # not, and the gap is not theoretical: it swallowed a live defect for four hours on origin this very day.
-# ⛔ THE MEASURED WITNESS. Two seats filed the same ceo ruling (CEO-527, cfuncs/extlvals) into
+# ⛔ THE MEASURED WITNESS. Two seats filed the same ruling (R-527, cfuncs/extlvals) into
 # arizona_tests/UNGRADABLE.tsv four hours apart, so the file held 38 rows for 36 distinct programs. The
 # honesty arm fired first -- not on the duplicate but on the older copy's `SCRIP: 'cannot find ...'`
 # evidence clause -- and `inventory_line` for arizona returned rc=2 AT ANY GRADED COUNT.
@@ -719,7 +719,7 @@ fi
 # it fatal in the runner, it is to call the same body somewhere a red is free -- here, hermetically, in <1s.
 # ⛔ THIS ARM DELIBERATELY DOES NOT GRADE THE ARITHMETIC, and says so rather than letting a reader assume
 # it: the bucket-sum identity needs a GRADED count, which only a real suite pass produces, and under ONE
-# RUNNER ONE BOARD (CEO-523) this gate may not run one. So it feeds each package the graded count that makes
+# RUNNER ONE BOARD (R-523) this gate may not run one. So it feeds each package the graded count that makes
 # its own sum hold, which lets every OTHER arm of the body speak -- honesty, internal duplicates, both-files,
 # missing reason, closed vocabulary, stale name, moved package. The arithmetic stays the runner's to fail.
 # ⭐ EXTENSION COMES FROM THE DATA, NEVER FROM A LANG->EXT MAP: each sidecar's own name column carries it
@@ -727,7 +727,7 @@ fi
 # A map in this script would be one more number typed into a gate, which is this row's whole subject; a
 # package whose rows disagree about their extension REFUSES rc=2 rather than picking one.
 # ⛔ RATCHETED BY NAME, for ARM 19's reasons verbatim. The backlog was MEASURED BEFORE WIRING (ARM 7 of
-# test_gate_gate_wiring_ratchet.sh, ceo CEO-520: a live-tree arm is legitimate exactly when its red
+# test_gate_gate_wiring_ratchet.sh, R-520: a live-tree arm is legitimate exactly when its red
 # population is small enough that every red has a named author still in the room) and it is 1 of 11:
 # icon/ipl, whose gincl/maccolor.icn row states the oracle's refusal AND upstream's control AND our
 # agreement with both. That row is hq_R's lane and its mention of us is an AGREEMENT CONTROL, not a
@@ -740,18 +740,18 @@ if [ ! -d "$PKGINV_CORPUS/packages" ]; then
     exit 2
 fi
 # THE RATCHET, measured off the live sidecars 2026-09-10 by hq_T and raised only by measurement.
-# ⭐ RAISED 2026-09-10 (hq_T, ceo CEO-541): icon/ipl joins the pinned set the moment its two agreement-control
+# ⭐ RAISED 2026-09-10 (hq_T, R-541): icon/ipl joins the pinned set the moment its two agreement-control
 # rows carry the marker. It was the ONE unpinned refusal this arm printed as its work list, and the reason it
 # refused was the honesty arm reading `SCRIP refuses at the SAME line` as a failure-as-reason -- which it was
 # not. ⛔ PINNING IS THE POINT OF CURING IT: the cure lives in a .tsv WORDING, and ARM 20 exists because a
 # wording change reverts a board cell to prose with every gate green. Unpinned, this row could be un-cured by
 # one careless edit and nothing would say so.
-# ⭐ RE-PINNED 2026-09-27 (coo, ceo CEO-1306, the five-gates row): icon/jcon_tests LEAVES the set -- its UNGRADABLE.tsv and UNGRADED.tsv
+# ⭐ RE-PINNED 2026-09-27 (coo, R-1306, the five-gates row): icon/jcon_tests LEAVES the set -- its UNGRADABLE.tsv and UNGRADED.tsv
 # declare zero rows because every Jcon program is graded (SUITES.tsv jcon 86/86, PACKAGE_INVENTORY ungraded=0 ungradable=0), so the data
 # the pin was taken over was emptied by the work the pin exists to protect, not by a wording edit; it re-enters with its next declared
 # row. prolog/logtalk_iso (6 rows) and prolog/swi_tests (70 rows) JOIN it: this arm read both validating clean and unpinned.
 # ⭐ RE-PINNED 2026-09-27 17:3x (coo COO-212/213, the same reading as icon/jcon_tests above): snobol4/spitbol_testpgms LEAVES the set -- its
-# UNGRADABLE.tsv and UNGRADED.tsv declare zero rows since corpus cb91a43f2 (hq_snobol4, ceo CEO-1323) graded all eight programs (SUITES.tsv
+# UNGRADABLE.tsv and UNGRADED.tsv declare zero rows since corpus cb91a43f2 (hq_snobol4, R-1323) graded all eight programs (SUITES.tsv
 # testpgms 8/8 on 162bb56ea); the data the pin was taken over was emptied by the grading work, not by a wording edit. It re-enters with
 # its next declared row. Eleven pinned.
 # ⭐ RE-PINNED 2026-09-28 (hq_snobol4, the same reading again): snobol4/aisnobol LEAVES the set -- its UNGRADABLE.tsv and UNGRADED.tsv declare
@@ -761,12 +761,12 @@ fi
 # ⭐ RE-PINNED 2026-10-01 (hq_icon, the same reading again): icon/arizona_tests LEAVES the set -- its UNGRADABLE.tsv and UNGRADED.tsv declare
 # zero rows because special/keyboard (NEEDS_RUNNER_WIRING, the last row) is now graded: icn_keyboard_pty_drive.py wires a pty-timed 3-phase
 # keystroke driver into test_icon_arizona_suite.sh's special-case (a redirected stdin cannot supply getch()/kbhit() a terminal, and
-# script(1) cannot pace the Quit key to land inside test 3's poll -- CEO-1354, the coo's ask), special/keyboard.ref cut from the oracle
+# script(1) cannot pace the Quit key to land inside test 3's poll -- R-1354, the coo's ask), special/keyboard.ref cut from the oracle
 # (icont -s ... -x), special/keyboard.mask covers the two Quit-timing traceback lines (L28/L32, OS-scheduling-dependent, proven stable over
 # 16 driver runs). The data the pin was taken over was emptied by the grading work, not by a wording edit. It re-enters with its next
 # declared row. Nine pinned.
 # ⭐ RE-PINNED 2026-10-02 (the coo, the same reading again): snobol4/gimpel LEAVES the set -- its UNGRADABLE.tsv and UNGRADED.tsv declare
-# zero rows since corpus f2ae706da (the ceo, CEO-1412: sbl -bf answers all 145 drivers, balx and floorcei given drivers, refs cut for the 29
+# zero rows since corpus f2ae706da (the R-1412: sbl -bf answers all 145 drivers, balx and floorcei given drivers, refs cut for the 29
 # drivers that had none; the Gimpel board reads scored=145 unscr=0 OUTSIDE 0). The data the pin was taken over was emptied by the grading work,
 # not by a wording edit; this arm read red in the coo's blocking set at 7ff503611 from that landing until this one. It re-enters with its next
 # declared row. Eight pinned.
@@ -776,7 +776,7 @@ for _sd in $(find "$PKGINV_CORPUS/packages" -maxdepth 3 \( -name UNGRADABLE.tsv 
              | while IFS= read -r _f; do dirname "$_f"; done | sort -u); do
     _a20_n=$((_a20_n+1))
     _rel="$(basename "$(dirname "$_sd")")/$(basename "$_sd")"
-    # ⛔⭐⭐ AN EMPTY SIDECAR IS 'NOTHING DECLARED YET', NOT A REFUSAL (ceo CEO-604, on hq_R's find while building
+    # ⛔⭐⭐ AN EMPTY SIDECAR IS 'NOTHING DECLARED YET', NOT A REFUSAL (R-604, on hq_R's find while building
     # the x64tests runner: snobol4/spitbol_x64_tests ships a header and no data row, and THE WHOLE GATE REFUSED
     # rc=2 for all thirteen seats on it -- every new package was RED AT BIRTH, and the one thing a package cannot
     # have on the day it is created is a declaration). ⭐ THE DEFECT IS NOT THE REFUSAL, IT IS WHAT THE ARM KEYED
@@ -807,8 +807,8 @@ for _sd in $(find "$PKGINV_CORPUS/packages" -maxdepth 3 \( -name UNGRADABLE.tsv 
     _ext="$(cat "$_sd/UNGRADABLE.tsv" "$_sd/UNGRADED.tsv" 2>/dev/null | grep -v '^#' | grep -v '^[[:space:]]*$' \
             | cut -f1 | sed -n 's/.*\(\.[A-Za-z0-9]*\)$/\1/p' | sort -u)"
     _nx="$(printf '%s\n' "$_ext" | grep -c .)"
-    # ONE DIALECT, ITS SPELLINGS (Lon 2026-09-14, "Change the *.sno to *.inc", CEO-1274/1315; Lon 2026-09-27, Catspaw's SPITBOL form under
-    # lower-case names, CEO-1319; coo COO-203/204): a SNOBOL4 package ships its include libraries as name.inc (NAME.INC the day before)
+    # ONE DIALECT, ITS SPELLINGS (Lon 2026-09-14, "Change the *.sno to *.inc", R-1274/1315; Lon 2026-09-27, Catspaw's SPITBOL form under
+    # lower-case names, R-1319; coo COO-203/204): a SNOBOL4 package ships its include libraries as name.inc (NAME.INC the day before)
     # beside its programs, name.spt in the SPITBOL form and NAME.sno before it, so gimpel's rows name several. They are one extension
     # family, handed to the body together exactly as test_snobol4_gimpel_suite.sh hands them; any other mix still refuses below.
     if [ "$_nx" -gt 1 ] && [ -z "$(printf '%s\n' "$_ext" | grep -v -x -E '\.(sno|spt|INC|inc)')" ]; then _ext="$(printf '%s' "$_ext" | tr '\n' ' ')"; _nx=1; fi
@@ -926,7 +926,7 @@ esac
 # exclusions already account for everything shipped) as C rather than as a forecast. MEASURED 2026-09-11 --
 # that branch is UNREACHABLE from well-formed data, because over-declaring means naming a file the package
 # does not ship and lib_inventory.sh's "declared but not shipped" arm refuses first. It stays in the reader
-# as a guard and gets NO arm here, on this lane's own CEO-541 ruling: an arm that asserts WHICH check caught
+# as a guard and gets NO arm here, on this lane's own R-541 ruling: an arm that asserts WHICH check caught
 # something fails exactly when a stronger check gets there first. The guard is cheap; an arm on it would be
 # a test of the body's check order wearing the costume of a test of the reader.
 printf 'y.sno\tSCRIP_REFUSES\tSCRIP cannot compile this program\n' >> "$TD/cz/packages/snobol4/aisnobol/UNGRADABLE.tsv"

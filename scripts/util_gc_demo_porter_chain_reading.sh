@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_gc_demo_porter_chain_reading.sh -- the chain check read on SnoRungs demo_porter, whole program, both modes (hq_collector 2026-10-11, row
-# gc-the-chain-visits-a-frame-entered-through-the-c2bb-glue-from-a-deferred-call-inside-a-match-the-glue-subject-cell-is-walked-ceo-1688; ARCH-GC section 13).
+# gc-the-chain-visits-a-frame-entered-through-the-c2bb-glue-from-a-deferred-call-inside-a-match-the-glue-subject-cell-is-walked-r-1688; ARCH-GC section 13).
 #   usage: util_gc_demo_porter_chain_reading.sh      rc 0 = GREEN, 1 = RED (a chain-check mismatch or a wrong output), 2 = could not measure
 # demo_porter is the corpus program whose mode-4 run crashed (SIGSEGV on a stale subject pointer after collection 10) once a spine change moved a frame (SCRIP ea957ffc5, reverted); this reads
 # the program as it stands, with no such change: (a) the natural run, whole input; (b) a collection at every fifth safe point over the first 300 input lines. Per run, in mode 3 and mode 4:

@@ -8,12 +8,12 @@ graph of every program it is pointed at and reports every word the table does NO
 
   region-gap        a byte in [0, region_end) of the graph that no scope's field covers (the classic hole:
                     the return-value cell IR_RETURN writes at frame +0 was never registered -- found by this
-                    census on the Raku rungs, ceo 2026-09-17, CEO-820)
+                    census on the Raku rungs, the officer 2026-09-17, R-820)
   scope-gap         a byte inside a scope's [lo, hi) between two registered fields
   overlap           a byte two fields of one scope claim with two different kinds (two kinds for one word); two
                     fields of ONE kind over the same bytes are not a hole -- the Prolog clause overlay lays every
                     alternative clause over one base, never two live at once, and its kind map keeps each
-                    overlaid word one kind (ceo CEO-1844 (b), 2026-10-18; 0 two-kind words in 280682 fields)
+                    overlaid word one kind (R-1844 (b), 2026-10-18; 0 two-kind words in 280682 fields)
   vslot-unmapped    a named variable slot (vslot) not covered by exactly one field (one offset, size and kind;
                     the overlay's repeats of it count once)
   provisional-kind  a field printed with `(audit)` -- a kind nobody verified against the template
@@ -40,11 +40,11 @@ unlanded-feature gaps, no mystery -- and rc=2 there is an honest REFUSAL that a 
 the same thing as raku's red.
 rc 0 = graded > 0 and holes == 0; rc 1 = holes > 0; rc 2 = nothing graded (the denominator is zero).
 Set ZLS_LIST_ALL=1 to print every hole (the default caps the listing).
-THE MACHINE-READ LINE, frozen for the coo's maps census (CEO-821): one per run,
+THE MACHINE-READ LINE, frozen for the coo's maps census (R-821): one per run,
   ZLS-MAP lang=<l> graphs=<n> words=<n> unkinded=<n> holes=<n> graded=<n> no_layout=<n> no_layout_declared=<n>
     no_layout_never_emitted=<n> no_layout_emitted_no_layout=<n> no_layout_unmeasured=<n>
 
-⛔⭐ THE THREE KIND FIELDS, AND WHY THE DISCRIMINATOR IS NOT THE rc (cto 2026-09-20, building CEO-1025 and
+⛔⭐ THE THREE KIND FIELDS, AND WHY THE DISCRIMINATOR IS NOT THE rc (cto 2026-09-20, building R-1025 and
 correcting its discriminator on the data).  The ruling is right that `no_layout` CONFLATES TWO POPULATIONS WITH
 OPPOSITE OWNERS: (a) the compiler REFUSED the entry, so nothing was emitted, there is no leaf boundary and no
 store -- a COMPLETENESS debt wearing a GC census's clothes; and (b) the compiler EMITTED the graph and the planner
@@ -65,15 +65,15 @@ REFUSES when they disagree -- measured 2026-09-20: a first cut of this field use
 counted 7 lines against no_layout=9 and refused rc=2.  It was right to.  The sidecar note below uses NO-LAYOUT-SIDECAR (no
 space) for the same reason.
 no_layout_declared is APPENDED, never inserted: the frozen token and the order and meaning of every field before it are
-untouched, and no_layout stays the TOTAL so no consumer silently changes its mind about what it is reading (ceo CEO-1003,
+untouched, and no_layout stays the TOTAL so no consumer silently changes its mind about what it is reading (R-1003,
 cto's three conditions, 2026-09-20).  It is PRINTED FOR EVERY LANGUAGE INCLUDING ZERO, so a diff of two census lines is a
 diff of numbers and never of shapes.  A DECLARED no-layout is an entry the rungs' own ALL.wantrc gives a NON-ZERO rc:
 the suite declares it must not compile, so having no frame is the correct and permanent answer rather than a defect.
 words = 8-byte words of every graded graph's zls region; unkinded = words of those inside a reported hole.
 Detector arm: --dumps grades saved `--dump-zeta` texts instead of running scrip, so a gate can dump a clean
 fixture, corrupt ONE field line of that text itself, and require rc 1 -- proof this census still detects a hole
-the day the real ones are gone (CEO-554).  The detector lives in the INSTRUMENT, never in SCRIP: the old
-SCRIP_TEST_PLANT_ZLS_HOLE seam in zls_dump was deleted under CEO-1680 (hq_raku 2026-10-14, the cto's yes).
+the day the real ones are gone (R-554).  The detector lives in the INSTRUMENT, never in SCRIP: the old
+SCRIP_TEST_PLANT_ZLS_HOLE seam in zls_dump was deleted under R-1680 (hq_raku 2026-10-14, the cto's yes).
 """
 import argparse, os, re, subprocess, sys, tempfile
 from pathlib import Path
@@ -86,7 +86,7 @@ FRAME_LAYOUT_H = (HERE.parent.parent / "SCRIP") / "src" / "planner" / "frame_lay
 def kinds_of_the_enum():
     """The kind names the ZK_ enum defines, read from frame_layout.h so a kind added there is known here the same landing
     (a hard-coded set went stale at 50f4604e6: ZK_PTR_FRAME_H = 5 read as unknown-kind on a Raku generator graph, hq_raku
-    2026-10-14, CEO-1697).  An enum this cannot read REFUSES rc=2: an empty set would call every field a hole."""
+    2026-10-14, R-1697).  An enum this cannot read REFUSES rc=2: an empty set would call every field a hole."""
     try:
         text = FRAME_LAYOUT_H.read_text()
     except OSError as e:
@@ -186,7 +186,7 @@ NO_LAYOUT_KINDS = ("NEVER-EMITTED", "EMITTED-NO-LAYOUT", "UNMEASURED")
 def dump_one(scrip, path, timeout):
     """returns (graphs, err, kind); kind is "" on success and one of NO_LAYOUT_KINDS otherwise.
 
-    ⛔ THE KIND IS RETURNED STRUCTURALLY AND IS NEVER RE-PARSED OUT OF `err` BY A CONSUMER (cto 2026-09-20, CEO-1025).
+    ⛔ THE KIND IS RETURNED STRUCTURALLY AND IS NEVER RE-PARSED OUT OF `err` BY A CONSUMER (cto 2026-09-20, R-1025).
     A guard keyed on a spelling is a coincidence and not a guard -- hq_snobol4 lost a sitting to a classifier keyed
     on old filename stems the same evening this field was ruled.  The fact is known HERE, at the only place that
     runs the compiler, and it travels as a value."""
@@ -215,7 +215,7 @@ def dump_text(path):
 
 
 def wantrc_sidecar(lang, s4e_home):
-    """THE DECLARATION IS ALREADY IN THE DATA (hq_raku, granted ceo CEO-1003 + cto, 2026-09-20).  A program the suite itself
+    """THE DECLARATION IS ALREADY IN THE DATA (hq_raku, granted R-1003 + cto, 2026-09-20).  A program the suite itself
     declares must not compile HAS no frame layout, and that is the correct and permanent answer rather than a refusal the
     census cannot tell from a compiler defect.  The declaration is DERIVED from the rungs' own ALL.wantrc -- the same
     sidecar util_raku_entry_grade.sh already grades rc against -- so it cannot go stale the way a hand-kept list does, and

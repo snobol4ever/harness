@@ -2,7 +2,7 @@
 # test_gate_pas_char_ansichar_and_widechar_typecasts_in_the_fpc_dialects.sh -- Char(x), AnsiChar(x) and WideChar(x) with an ordinal
 # argument yield that character in the FPC dialects, in an assignment, a concatenation and an ord(...) argument, as fpc does.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): additive-primes died "error 22: undefined
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): additive-primes died "error 22: undefined
 # function called" on a call to ansichar; the lowerer knew the names as types only. THE CURE (lower_pascal_tree.c): mk_call lowers
 # char / ansichar / widechar with an argument to __pas_chrlit(x) when the whole program is in an FPC dialect and no routine or
 # declaration of that name exists. ISO programs keep their behaviour (ISO 7185 has no typecast).

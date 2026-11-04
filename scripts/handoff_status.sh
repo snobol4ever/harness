@@ -114,7 +114,7 @@ for r in "${REPOS[@]}"; do
   printf "  %-22s %-10s local=%s origin=%s\n" "$name [$br]" "$st" "${lh:0:9}" "${oh:0:9}"
 done
 echo "------------------------------------------------------------"
-echo "=== .s ARTIFACT DRIFT (RULES.md handoff step 4) — BLOCKING since 2026-08-30 (ceo: the s272 ramp condition was met — hq_B drove the standing owed count to 0 and confirmed via this script) ==="
+echo "=== .s ARTIFACT DRIFT (RULES.md handoff step 4) — BLOCKING since 2026-08-30 (the s272 ramp condition was met — hq_B drove the standing owed count to 0 and confirmed via this script) ==="
 echo "    (owed artifacts now BLOCK the handoff verdict; a verifier REFUSAL (rc=2, cannot measure) still only warns. If blocked and the debt is not yours: run the three regen scripts named in RULES.md handoff step 4 — earlier sessions' unregenerated codegen surfaces on whoever handoffs next, which is correct, not an accusation.)"
 # ⛔ A SUB-CHECK THAT COULD NOT MEASURE MAKES THE COMPOSITE REFUSE, NEVER PASS (coo 2026-09-16, hq_snobol4's witness: a stale-binary
 # refusal here was warn-only and the run ended CHAT SESSION COMPLETE with the check never run; hq_prolog's general form). Every
@@ -128,19 +128,19 @@ if [ "${SKIP_S_ARTIFACT_CHECK:-0}" = "1" ]; then
   unknown=1; unknown_reasons+=(".s artifact drift NOT GRADED: skipped by SKIP_S_ARTIFACT_CHECK=1 -- unset it and re-run")
 elif [ "$_ho_seat" != coo ] && [ -z "${S4E_ONE_TEST_ADMIT:-}" ]; then
   # ⛔⭐⭐⭐⭐ ZERO OR ONE TEST PER SEAT (Lon 2026-10-11 11:5x CDT, verbatim: "I'm thinking each seat can run ZERO test, oh ONE test, instead. Then let
-  # COO prioritize testing on a per feature basis and still cycle through everything eventually."; ceo CEO-1671): this verifier regenerates
+  # COO prioritize testing on a per feature basis and still cycle through everything eventually."; R-1671): this verifier regenerates
   # every demo and benchmark .s of every language (102 artifacts, each a compile) in a disposable clone, and it ran here for EVERY seat at
-  # every handoff -- and through the Stop hook's banner at every response. MEASURED 11:57 CDT: load 29 on 16 cores, the ceo's and
+  # every handoff -- and through the Stop hook's banner at every response. MEASURED 11:57 CDT: load 29 on 16 cores, the officer's and
   # hq_templates' chains both compiling the Prolog benches. The drift check is the coo's, once per batch of landings; a seat's handoff
-  # does not run it and is not blocked by it. S4E_ONE_TEST_ADMIT="why" is the ceo's loud audit-window override.
-  echo "  ARTIFACT DRIFT: not graded by seat $_ho_seat -- the coo's loop grades .s drift once per batch (ZERO OR ONE TEST PER SEAT, CEO-1671)"
+  # does not run it and is not blocked by it. S4E_ONE_TEST_ADMIT="why" is the officer's loud audit-window override.
+  echo "  ARTIFACT DRIFT: not graded by seat $_ho_seat -- the coo's loop grades .s drift once per batch (ZERO OR ONE TEST PER SEAT, R-1671)"
 else
   verifier="$SELF_DIR/util_verify_s_artifacts_owed.sh"
   if [ ! -x "$verifier" ]; then
     echo "  ⛔ $verifier missing/not executable — .s drift is UNVERIFIED this run."
     unknown=1; unknown_reasons+=(".s artifact drift NOT GRADED: the verifier is missing")
   else
-    # ⛔⭐⭐ THIS WARN-ONLY CHECK MUST NOT RUN A DESTRUCTIVE BUILD (row `stop-hook-pristine`, hq_P s274; ceo CEO-30).
+    # ⛔⭐⭐ THIS WARN-ONLY CHECK MUST NOT RUN A DESTRUCTIVE BUILD (row `stop-hook-pristine`, hq_P s274; R-30).
     # Until now this line invoked the verifier with NO ARGUMENTS, so it defaulted to SKIP_PRISTINE=0 and ran a full
     # `make pristine` in the LIVE checkout -- wiping ./scrip and out/ -- to feed a block whose own header three lines
     # up says "WARN-ONLY, does not affect the verdict below". The most destructive operation in the whole chain was
@@ -264,15 +264,15 @@ else
 fi
 echo "------------------------------------------------------------"
 echo "------------------------------------------------------------"
-echo "GC ACCEPTANCE — the four numbers of CEO-1039 — WARN-ONLY, does not affect the verdict below"
+echo "GC ACCEPTANCE — the four numbers of R-1039 — WARN-ONLY, does not affect the verdict below"
 echo "    (Lon 2026-09-21 ordered the metrics displayed periodically; a handoff is the boundary where a stale"
-echo "     number costs something, which is CEO-822's reason for putting the seven-language sweep here too."
+echo "     number costs something, which is R-822's reason for putting the seven-language sweep here too."
 echo "     SKIP_GC_ACCEPTANCE=1 skips it and SAYS SO: a display that did not run prints nothing green.)"
 if [ -n "${SKIP_GC_ACCEPTANCE:-}" ]; then echo "  SKIPPED by SKIP_GC_ACCEPTANCE — the four numbers were NOT read on this handoff"; else
   timeout -k 5 2400 python3 "$SELF_DIR/util_gc_acceptance.py" 2>&1 | sed "s/^/  /" || true
 fi
 echo "ALL-LANGUAGE SLOT-KIND SWEEP (util_gc_census.py maps --zls-langs all) — WARN-ONLY, does not affect the verdict below"
-echo "    (CEO-822, 2026-09-17, on the coo's ask: the FAST THREE stay wired in make test — a 35s number that moves once a"
+echo "    (R-822, 2026-09-17, on the coo's ask: the FAST THREE stay wired in make test — a 35s number that moves once a"
 echo "     day does not belong on every seat's per-landing verdict — and THE SEVEN run HERE, once, at the boundary where a"
 echo "     stale number costs something. SKIP_ZLS_ALL=1 skips it and SAYS SO: a sweep that did not run prints nothing green.)"
 _zls_root="$SELF_DIR/../../SCRIP"

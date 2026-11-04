@@ -4,7 +4,7 @@
 #
 # WHAT THIS GATE HOLDS, AND THE DIAGNOSIS IT CORRECTS. F6 step 4's admission predicate was "the call's
 # result is stored to a mapped frame slot before the poll" (CTO-75/76). 131 of the 210 allocating call
-# sites cannot satisfy it, and the standing reading of that -- the ceo's CEO-884, and the cto's own
+# sites cannot satisfy it, and the standing reading of that -- R-884, and the cto's own
 # bucket line in CTO-76 -- was that they are BLOCKED ON STEP 2 until the static map grows a slot vector
 # naming which frame offsets are live DESCRs.
 #
@@ -13,7 +13,7 @@
 # at all. A map that describes the frame perfectly still cannot see a value that never reached the frame.
 # What those sites need is not a better description of the stack -- it is for the value to BE on the stack.
 #
-# ⛔⭐ SUPERSEDED IN PLACE 2026-09-18 BY 6.5c's RECORD FORM, AND THE REASON IS THE ceo's CEO-898. 6.5b's spill-PAIR
+# ⛔⭐ SUPERSEDED IN PLACE 2026-09-18 BY 6.5c's RECORD FORM, AND THE REASON IS R-898. 6.5b's spill-PAIR
 # put the cell INSIDE the word-swept range and relied on gc_zeta_frame to relocate it -- and gc_zeta_frame is
 # exactly what F6 step 3 DELETES. The moment `conservative total` reaches 0, a cell that only the sweep visits is
 # visited by NOTHING and keeps its pre-collection address through a moving collection. Five sites were on that
@@ -23,7 +23,7 @@
 # cell is deliberately OUTSIDE the swept range. ⭐ THAT IS THE ARM-3 INVERSION: this gate used to prove the walker
 # SWEEPS the range the cell lands in; it now proves the cell lies BELOW the floor, so the relocation arm 1
 # measures cannot have come from the sweep. The cure survives the sweep's deletion by construction, which is the
-# property the ceo's rank-0 row needs from this half.
+# property the officer's rank-0 row needs from this half.
 #
 # THE ORIGINAL MECHANISM, KEPT BECAUSE THE DIAGNOSIS IT CORRECTS IS THE POINT. x86_rt_gc_poll_res() spilled the
 # rax:rdx pair as a 16-byte DESCR cell under rsp across the poll and reloads it after:

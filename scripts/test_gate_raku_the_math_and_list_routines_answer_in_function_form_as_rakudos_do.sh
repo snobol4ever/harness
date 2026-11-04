@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_math_and_list_routines_answer_in_function_form_as_rakudos_do.sh -- THE ROUTINES RAKU OFFERS BOTH AS A FUNCTION AND AS A METHOD
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479). The harvest of the name behind every error 22 across the Roast tree (173 files abort with "undefined function
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479). The harvest of the name behind every error 22 across the Roast tree (173 files abort with "undefined function
 # called") and an oracle probe of the builtin surface found the function forms of the standard math and list routines unresolved: floor(2.5), ceiling, round, truncate, sign, log2,
 # log10, sinh, cosh, tanh, asinh, acosh, atanh, sec, cosec, cotan, atan2, keys(%h), values, kv, pairs, elems(@a), end(@a), shift(@a), pop(@a), unshift(@a, x), ords, map and
 # grep and first with a leading block in parentheses (map({ $_ * 2 }, 1, 2) iterated only its first item); and several of the method forms did not exist (asin acos atan sinh

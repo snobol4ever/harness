@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """util_suite_partition.py -- THE STORED PARTITION OF A SUITE: a core, feature shells and bounded chunks, built once from the attribute table and
 committed beside it as PARTITION.tsv, so the verifier loop looks a subset up by name and never queries the attribute file per landing (Lon
-2026-10-11 13:0x CDT, in-chat to the ceo, verbatim: "subsets need to be identified independent of a query against the attribute file for the long
+2026-10-11 13:0x CDT, in-chat, verbatim: "subsets need to be identified independent of a query against the attribute file for the long
 running test suites. So to partition them as major cores, and shells around that core with each major feature broken out. Or some kind of clustered
 partitioning." and "One reason for the subsets on large suites is so they can be run in chunks even when the full regressions are being run in its
-'spare' time."; ceo CEO-1676; ARCH-SUITE-PARTITIONS.md).
+'spare' time."; R-1676; ARCH-SUITE-PARTITIONS.md).
 
 usage: util_suite_partition.py build <ALL.csv> [--out PARTITION.tsv] [--core-k 3] [--ubiquitous 0.5] [--chunk-entries 100] [--secs results.tsv --suite-key K]
        util_suite_partition.py check <ALL.csv>      # rebuild in memory, compare with the stored PARTITION.tsv beside it: rc 0 same, 1 differs, 2 missing
@@ -141,7 +141,7 @@ def build(rows, feats, core_k=3, ubiquitous=0.5, chunk_entries=100, secs=None):
 
 def render(out, shape, params):
     b = io.StringIO()
-    b.write("# PARTITION.tsv -- built by util_suite_partition.py (ceo CEO-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; "
+    b.write("# PARTITION.tsv -- built by util_suite_partition.py (R-1676; ARCH-SUITE-PARTITIONS.md); regenerate, never edit by hand; "
             "`util_suite_partition.py check <ALL.csv>` is the gate.\n")
     b.write("# params: core_k=%d ubiquitous=%s chunk_entries=%d secs=%s\n" % (params["core_k"], params["ubiquitous"], params["chunk_entries"], params["secs"] or "none"))
     b.write("# shape: entries=%d features=%d ubiquitous=%d(%s) distinctive=%d core=%d clusters=%d chunks=%d sizes=%s\n" % (

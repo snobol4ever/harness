@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_a_compiled_program_runs_on_a_stack_it_maps_itself.sh -- A MODE-4 PROGRAM RUNS ON A STACK THE RUNTIME MAPS FOR IT, 2 MB
-# ALIGNED AND HUGE-PAGE ADVISED, NOT ON THE PROCESS STACK (ceo 2026-09-25, CEO-1265; Lon 2026-09-25 10:06, in-chat to the ceo:
+# ALIGNED AND HUGE-PAGE ADVISED, NOT ON THE PROCESS STACK (2026-09-25, R-1265; Lon 2026-09-25 10:06, in-chat:
 # "continue getting all demos and benchmarks running faster than SPITBOL"). The process stack grows down a 4 KB page at a time and can
 # never take a transparent huge page; the calculator demo touched 48 MB of it in 12,312 faults, two thirds of its run. The emitted main
 # calls rt_main_stack_adopt first (the -s budget rounded up to 2 MB, MADV_HUGEPAGE, a PROT_NONE guard page below) and moves rsp there.

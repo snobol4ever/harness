@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_icn_class_witness.sh -- ONE runnable, oracle-anchored acceptance witness per open hq_I Icon class row.
 #
-# WHY THIS EXISTS (ceo 19:02 2026-09-05, "placeholder-done-whens-in-your-lane-16-rows-unpickable"): sixteen FREE
+# WHY THIS EXISTS (19:02 2026-09-05, "placeholder-done-whens-in-your-lane-16-rows-unpickable"): sixteen FREE
 # rows in the hq_I lane carried the MINT PLACEHOLDER as their DONE-WHEN, and since mint-dispatch-refuses-a-
 # placeholder-done-when landed the picker will not serve them -- they were invisible work. Each row's DONE-WHEN
 # is now one line, "bash ../harness/scripts/util_icn_class_witness.sh <slug>", instead of sixteen bespoke heredocs that
@@ -230,7 +230,7 @@ else
     printf 'M4-BUILD-FAILED\n' > "$T/m4"; m4="M4-BUILD-FAILED"
 fi
 ok3=0; ok4=0
-# ONE ERROR VOICE (RULES.md, CEO-623/625): SCRIP prints its own error shape, so each mode is graded THROUGH the renderer against the oracle's text
+# ONE ERROR VOICE (RULES.md, R-623/625): SCRIP prints its own error shape, so each mode is graded THROUGH the renderer against the oracle's text
 python3 "$HERE/util_render_error_voice.py" icon < "$T/m3" > "$T/m3r" || { echo "UNPROVEN(2) [$SLUG]: the error-voice renderer refused the m3 output"; exit 2; }
 python3 "$HERE/util_render_error_voice.py" icon < "$T/m4" > "$T/m4r" || { echo "UNPROVEN(2) [$SLUG]: the error-voice renderer refused the m4 output"; exit 2; }
 cmp -s "$T/ref" "$T/m3r" && ok3=1

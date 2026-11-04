@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_parser_raku_sc_nest8_witness.sh -- THE WITNESS: bootstrap/parser_raku.sc compiled to a mode-4 binary dies in emitted
 # code (SIGSEGV, pc 3, inside a match_assign_cond box) on ../harness/scripts/fixtures/parser_sc/raku_nest8.raku -- eight nested while loops
-# with `next if` guards -- while seven nested loops parse; the same file parses in the C parser (ceo 2026-09-30, CEO-1374).
+# with `next if` guards -- while seven nested loops parse; the same file parses in the C parser (2026-09-30, R-1374).
 # RED while the defect stands: rc 1 when the binary dies (rc >= 128) or prints no tree; rc 0 when it prints a tree; rc 2 when
 # the grammar cannot be built.  The build is util_parser_sc_grade.sh's (chain + parser, transpile, compile, link).
 set -u

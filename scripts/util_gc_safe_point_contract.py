@@ -31,7 +31,7 @@ WHAT SECTION 3 DECLARES, quoted, and the four clauses this file grades it into:
   K3  THE SLOT IS ONE THE COLLECTOR COVERS, AND THERE ARE TWO MECHANISMS, NOT ONE.  A store of rax or rdx in
       the window lands either inside a GC_LAY_DESCR / GC_LAY_PTR_GC entry of the graph's own frame map
       (ARCH-GC section 2b RULE 1b, the RBP activation frames) or as a TAGGED CELL ON THE ζ-SPINE
-      (RULE 1a, `gc_cell_visit` inside `gc_walk_words`).  This is the clause section 3b (CEO-996) found had
+      (RULE 1a, `gc_cell_visit` inside `gc_walk_words`).  This is the clause section 3b (R-996) found had
       never been enforced; ⛔ THE FIRST ENFORCEMENT OF IT ASSERTED RULE 1b OVER A POPULATION RULE 1a OWNS and
       called 222 findings over 111 sites a defect.  See SPINE-CELL below -- the correction is MEASURED, not
       argued, and the class is still NAMED so that nothing goes dark.
@@ -60,9 +60,9 @@ spine walk is LOAD-BEARING for this population; the frame map never covered it a
 ⛔⭐ AND SPINE-CELL IS NOT A DEFECT FLOOR, WHICH COST THE FLEET A RED BEFORE IT WAS NOTICED (cto 2026-09-22).
 The floor comparison graded every column with one polarity -- read ABOVE declared is WORSE -- and that rule owns
 K1..K4 and UND.  It does NOT own SPINE.  SPINE counts stores COVERED by RULE 1a's mechanism, so a cure that turns
-a bare poll into x86_rt_gc_poll_rec_sigma RAISES it: the ceo's e42cc0909 and c60097828 did exactly that and 14
+a bare poll into x86_rt_gc_poll_rec_sigma RAISES it: the officer's e42cc0909 and c60097828 did exactly that and 14
 witness/clause pairs went "ABOVE the declared floor", reported as a REGRESSION IN THE EMITTED SAFE-POINT SEQUENCE
-when what had happened was the safe points getting better.  This is the same shape the ceo named law-shaped today
+when what had happened was the safe points getting better.  This is the same shape the officer named law-shaped today
 after three retractions in one day: A CHECKER ASSERTING A RULE THAT DOES NOT OWN THE POPULATION IT IS GRADING.
 SPINE is therefore compared with BLOCKING_KEYS omitting it, and its movement is printed as SPINEMOVED in BOTH
 DIRECTIONS and never blocks.  Neither direction is unambiguously bad -- a store moving INTO the mapped region
@@ -106,7 +106,7 @@ CALL_WINDOW_CAP = 80
 CLAUSE_TEXT = {
     "K1": "the poll is at the return of a call (ARCH-GC 3: a safe point is exactly a call's return point)",
     "K2": "the call's result is stored before the poll (REPORTED, never blocking: a dead result need not be stored)",
-    "K3": "the result's slot is MAPPED (ARCH-GC 3: 'stored to its mapped slot', 'never only in rax'; 3b CEO-996)",
+    "K3": "the result's slot is MAPPED (ARCH-GC 3: 'stored to its mapped slot', 'never only in rax'; 3b R-996)",
     "K4": "the store is on EVERY path into the poll (no label joins the window after the last result store)",
 }
 
@@ -222,7 +222,7 @@ def declared_pointer_free(t):
     """the DECLARED reason a WIDE type holds no heap pointer, or None -- decided from the type's OWN assert, checked
     present on disk at reader time, never from sizeof (the cfo, 2026-09-22: K2 convicted rt_call_value_spine_prep's
     CVSPINE_t on width alone, which would push a seat toward poll_res at a site where poll_res mints a spine cell
-    whose tag word is a code address -- the declared return class deciding a site's form is CEO-1107's shape living
+    whose tag word is a code address -- the declared return class deciding a site's form is R-1107's shape living
     inside the reader).  A table entry whose cited assert is gone from the file is NOT honoured: the declaration
     expired with its source."""
     d = DECLARED_POINTER_FREE.get(t)
@@ -554,7 +554,7 @@ CALL_ENTERED = set()
 
 
 def parity_walk(insns, succ, asm_text):
-    """K5 -- the RSP parity at every poll call, walked from each function's OWN entry (CEO-1151).
+    """K5 -- the RSP parity at every poll call, walked from each function's OWN entry (R-1151).
 
     ⛔ WHY NOT THE ANCHOR WALK: the grid census places a call site only where a graph's map-cell anchor reaches
     it, and in procedure_write_253 -- the cfo's misaligned-stack witness -- it UNREACHES 40 of 74 call sites and
@@ -572,7 +572,7 @@ def parity_walk(insns, succ, asm_text):
     range; a call falls through (the callee returns to the same rsp).  The ABI requires rsp 0 mod 16 AT the call
     instruction, so a poll call at parity 8 is MISALIGNED: every C callee on that path runs misaligned and the
     first aligned SSE store faults -- the movaps in vsnprintf that convicted bb_call_value 67/70 with the
-    collector never run (CEO-1151).  Returns {poll index: (entry label, set of parities)}."""
+    collector never run (R-1151).  Returns {poll index: (entry label, set of parities)}."""
     fn_labels = set(re.findall(r"^\s*\.type\s+([\w.$]+)\s*,\s*@function", asm_text, re.M))
     call_targets = set(re.findall(r"^\s*call\s+([^\s;#\[]+)\s*(?:;.*)?$", asm_text, re.M))
     CALL_ENTERED.clear()
@@ -620,7 +620,7 @@ def parity_rows(par, i):
         return [("K5", "UNDECIDABLE", "PARITY-UNKNOWN from %s -- an rsp write this walk cannot read on some path" % lab)]
     if 8 in ps:
         return [("K5", "MEMBER", "MISALIGNED rsp is 8 mod 16 at this call on %s path(s) from %s -- every C callee on "
-                 "that path is misaligned and the first aligned SSE store faults (CEO-1151)"
+                 "that path is misaligned and the first aligned SSE store faults (R-1151)"
                  % ("every" if ps == {8} else "some", lab))]
     return [("K5", "ALIGNED", "rsp is 0 mod 16 at this call on every path from %s" % lab)]
 
@@ -656,12 +656,12 @@ FLOOR_HEADER = (
     "# x86_rt_gc_poll_res at the two by-name call sites; the four reached at two depths are now PLACED as SPINE-CELL at\n"
     "# every depth (owner_ks), and the six in the co-expression body plus one call_value beta site reach NO ANCHOR and\n"
     "# are NAMED POLL-RES-ENVELOPE.  A poll ARRIVING at a site this reader cannot place is a site that was UNPOLLED before,\n"
-    "# not the tree getting worse; the RSP-parity screen (CEO-1151) grades those seven in the bare-poll row.\n"
+    "# not the tree getting worse; the RSP-parity screen (R-1151) grades those seven in the bare-poll row.\n"
     "# 2026-09-25 cto: five Prolog witnesses re-declared, UNDECIDABLE only, every added row K3 NO-ANCHOR-REACHES-SITE in a Prolog\n"
     "# call box (the class this reader already could not place at 958 of these rows): findall 234 -> 294, root_cells 214 -> 274,\n"
     "# pldb 152 -> 210, batch_b 210 -> 274, atom_dup 148 -> 154.  1186 of them were on origin 496b24635, identical on a control and\n"
     "# on the IR_BOUND cure (hq_prolog's lowering landings); the last 20 with 15 new sites bisect to 7691706a8 (nl/0 permission).\n"
-    "# k5 is the RSP-PARITY clause (CEO-1151, cto 2026-09-22): a poll call at rsp 8 mod 16 on any path from its function's\n"
+    "# k5 is the RSP-PARITY clause (R-1151, cto 2026-09-22): a poll call at rsp 8 mod 16 on any path from its function's\n"
     "# own entry (a box entry ASSUMED on the grid, a called function at 8), which misaligns every C callee on that path.\n"
     "# COLUMNS: witness  sites  k1  k2  k3  k4  k5  undecidable  spine_cell\n"
 )
@@ -839,7 +839,7 @@ def report(scrip, progs, workdir, out=print, name_cap=48):
     par_und = sum(1 for r in allrows if r[4] == "K5" and r[5] == "UNDECIDABLE")
     out("CONTRACT PARITY sites=%d aligned=%d misaligned=%d undecided=%d -- rsp parity at every poll call, walked from"
         " each function's OWN entry (a box entered by the wiring's jump is ASSUMED on the grid, a called function enters"
-        " at 8 mod 16); a misaligned poll misaligns every C callee on its path (CEO-1151), and an undecided one is"
+        " at 8 mod 16); a misaligned poll misaligns every C callee on its path (R-1151), and an undecided one is"
         " NAMED above, never counted green" % (tot["sites"], tot["ALIGNED"], tot["K5"], par_und))
     out("CONTRACT SPINE-CELL IS NAMED, NOT FORGIVEN: %d finding(s) above are call results stored as tagged DESCR"
         " cells on the ζ-SPINE, which ARCH-GC 2b RULE 1a covers and this graph's frame map does not. They are"
@@ -1054,8 +1054,8 @@ def selftest():
 
 
 # ======================================================================================================================
-# THE BARE-POLL RE-SCREEN (the ceo's DONE-WHEN clause for row gc-the-116-bare-poll-sites-already-counted-as-done-are-
-# re-screened-by-the-zero-collection-arm, CEO-1137/1144; cto 2026-09-23).
+# THE BARE-POLL RE-SCREEN (the officer's DONE-WHEN clause for row gc-the-116-bare-poll-sites-already-counted-as-done-are-
+# re-screened-by-the-zero-collection-arm, R-1137/1144; cto 2026-09-23).
 #
 # THE QUESTION.  The census credits a site as POLLED when a poll is EMITTED after its allocating call; the bare form
 # (x86_rt_gc_poll, 131 of 195 credited sites on 2026-09-23) roots nothing and had TWO convictions as a silent wrong
@@ -1074,7 +1074,7 @@ def selftest():
 # reading counts notes against `call rt_gc_poll_asm` per witness and REFUSES (rc 2) on any mismatch: an instrument that
 # could lose a site silently must say so instead.
 #
-# THE ENVIRONMENT IS PINNED (ceo 2026-09-24, CEO-1250): the reach reading compiles every witness with SCRIP_SNO_STMTKW=1 and
+# THE ENVIRONMENT IS PINNED (2026-09-24, R-1250): the reach reading compiles every witness with SCRIP_SNO_STMTKW=1 and
 # the stress-0 runs carry it too -- the rung suites' configuration, under which the trace-hook sites (bb_define.cpp, bb_suspend.cpp,
 # xa_flat.cpp) are emitted. Read from a bare shell, nine WITNESSED rows turned STALE and the ceiling arm went red on a tree
 # nobody had changed; a reading that depends on the caller's shell is not a reading.
@@ -1083,7 +1083,7 @@ def selftest():
 # that reaches each site wins); the reading grades the declared rows and names a row whose witness no longer reaches its
 # site STALE and a row the census no longer credits RETIRED.  A pin is not a default: the stress-0 arm runs at
 # SCRIP_HEAP_MB=512 with SCRIP_HEAP_KB removed, because the quantity it measures is the poll's PRESENCE with the collector
-# never running, and a tiny arena would make every reading NOT-ZERO by construction (CEO-931 pin rule; the gate that runs
+# never running, and a tiny arena would make every reading NOT-ZERO by construction (R-931 pin rule; the gate that runs
 # this declares itself in the tiny-arena gate's pinned set).
 # ======================================================================================================================
 BARE_TABLE = os.path.join(HERE, "gc_bare_poll_witnesses.tsv")
@@ -1098,7 +1098,7 @@ BARE_EXERCISE_RX = re.compile(r"\[GC-EXERCISE\].*?\bcollections=(\d+)\b.*?\bgrew
 BARE_ARENA_MB = "512"
 BARE_TABLE_HEADER = (
     "# gc_bare_poll_witnesses.tsv -- THE DECLARED WITNESS OF EVERY CREDITED BARE-POLL SITE (cto, row gc-the-116-bare-poll-\n"
-    "# sites-already-counted-as-done-are-re-screened-by-the-zero-collection-arm; ceo CEO-1137/1144).  Written by\n"
+    "# sites-already-counted-as-done-are-re-screened-by-the-zero-collection-arm; R-1137/1144).  Written by\n"
     "# `util_gc_safe_point_contract.py <witnesses> --write-bare-poll-table`, read by `--bare-poll`.  ONE ROW PER SITE the\n"
     "# census credits with the bare form (util_gc_census.py safe-points --list-polled, form=x86_rt_gc_poll).  A row is named\n"
     "# <template>:<callees>#<n>: the template, the callee names the census prints for the site, and the ordinal n among the\n"

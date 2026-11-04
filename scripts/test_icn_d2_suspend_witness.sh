@@ -46,7 +46,7 @@ ICONT="$(icont_bin)" || { echo "⛔ REFUSE rc=2: the Icon oracle is unreachable.
 WORK="$(mktemp -d)" || { echo "⛔ REFUSE rc=2: no scratch dir"; exit 2; }
 trap 'rm -rf "$WORK"' EXIT
 # ⛔ Run every arm from a SCRATCH cwd: a fixture's 3-arg OUTPUT is a SPITBOL FILE SPEC, not a FORTRAN format, so a program can
-# legitimately create a file named after it and dirty the tree (ceo s273, cured the same way in test_snoflake_suite.sh).
+# legitimately create a file named after it and dirty the tree (s273, cured the same way in test_snoflake_suite.sh).
 ARMED="${SCRIP_ICN_GENFRAME2:-0}"
 REPS="${REPS:-5}"   # ⛔ never 1: a single sample cannot distinguish "correct" from "intermittently fatal", and the armed path IS intermittently fatal today.
 # ---------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ end
 procedure main()
    every write(gen());
 end'
-# ⛔⭐ APPLY (`!`) TO A GENERATOR -- this witness set flipped the gate default-ON (ceo s283f) with ZERO
+# ⛔⭐ APPLY (`!`) TO A GENERATOR -- this witness set flipped the gate default-ON (s283f) with ZERO
 # coverage of this shape (measured hq_B 2026-08-29: this file's only two `!` characters, before this
 # witness, were the shebang and a `!=` inside a comment). bb_call_value.cpp (the `!`-apply call-emission
 # template) has zero N-2 awareness -- RULES.md § INSTRUMENT LAWS FIFTH BATCH, witness D: a gate that had
@@ -104,12 +104,12 @@ end'
 # ⛔⭐ WATCHED TO FAIL — RECORDED HERE BECAUSE THE EVIDENCE IS PERISHABLE (hq_B, 2026-08-29T21:1xZ).
 # The row that demanded this witness made one clause non-negotiable: the widened script must be seen to go RED
 # on the apply case BEFORE any cure lands, because a widened witness that is green on its first run has not
-# been shown to test anything. ceo disclosed honestly that the STANDALONE witness was watched to fail
+# been shown to test anything. the officer disclosed honestly that the STANDALONE witness was watched to fail
 # extensively pre-cure (rc=139, 5/5, plus a killswitch-off control) but that this INTEGRATED spelling was born
 # post-cure and had never been seen red THROUGH THIS SCRIPT. Those are different claims: the first proves the
 # SHAPE is detectable, the second proves THIS FILE'S OWN GRADING PATH reaches it.
 # ⛔⭐ NAMING AN ABSENT SYMBOL MANUFACTURES EVIDENCE OF ITS PRESENCE — a defect hq_B created here and then
-# fell for (2026-08-29). The cure ceo's FINDING credits is identified by a symbol that HAS NEVER EXISTED IN
+# fell for (2026-08-29). The cure the officer's FINDING credits is identified by a symbol that HAS NEVER EXISTED IN
 # ANY SOURCE FILE, in any commit. Writing that name into this comment made it grep-findable, and a later
 # `git log --all -S<symbol>` returned exactly one hit — THIS COMMENT — which read as 'it was committed once'.
 # seat03 measured it correctly and independently (suspend_apply CRASH 5/5 both modes) and said the cure never
@@ -126,8 +126,8 @@ end'
 # cure exists. Once every seat pulls, nobody can reproduce it without a deliberate checkout, and "we watched
 # it fail" becomes an assertion instead of a record. A negative result that cannot be re-obtained must be
 # recorded at the moment it is cheap.
-# ⭐ MERGE (ceo s283h, rebase of the cure onto hq_B's widening -- two seats, one file, merged per the house rule):
-# hq_B's provenance + watched-to-fail record above is kept verbatim; the program BODY takes ceo's three-yield
+# ⭐ MERGE (s283h, rebase of the cure onto hq_B's widening -- two seats, one file, merged per the house rule):
+# hq_B's provenance + watched-to-fail record above is kept verbatim; the program BODY takes the officer's three-yield
 # alternation, because a single-yield apply never re-enters the window -- only >=2 yields exercise the cure's
 # RESUME dance (rt_genp_deliver_n2_γ's post-coret β: rax=H, rsp=[H+24]-40, jmp [H+32]), and a witness that
 # never resumes would leave the cure's hardest leg unpinned.

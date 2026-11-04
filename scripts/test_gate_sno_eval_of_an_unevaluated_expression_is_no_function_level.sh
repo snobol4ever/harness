@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_eval_of_an_unevaluated_expression_is_no_function_level.sh -- AN EXPR THUNK IS NOT A FUNCTION CALL, AND
-# THE CALL THAT ENTERS IT HANDS ITS EPILOGUE THE TRUE LEVEL WORD (hq_zetas 2026-10-08, row spine-bake-...-ceo-1362, layer
+# THE CALL THAT ENTERS IT HANDS ITS EPILOGUE THE TRUE LEVEL WORD (hq_zetas 2026-10-08, row spine-bake-...-r-1362, layer
 # 11 d chunk 2a; the cto asked for a witness with a SPITBOL ref for each of the two defects the chunk cured).
 #
 # DEFECT 1 -- EVAL OF AN UNEVALUATED EXPRESSION COUNTED A FUNCTION LEVEL. The compiler makes *(expr) a thunk procedure

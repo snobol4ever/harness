@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_no_header_reaches_more_units_than_its_users.sh -- NO HEADER REACHES MORE UNITS THAN ITS USERS (ARCH-HEADER-SPLIT.md sections 1 and 2, CEO-2032, step 1a;
-# Lon 2026-10-30, in-chat to the ceo: "I want the header files designed properly NOT to cause total re-builds.").
+# test_gate_no_header_reaches_more_units_than_its_users.sh -- NO HEADER REACHES MORE UNITS THAN ITS USERS (ARCH-HEADER-SPLIT.md sections 1 and 2, R-2032, step 1a;
+# Lon 2026-10-30, in-chat: "I want the header files designed properly NOT to cause total re-builds.").
 #
 # ARM 1  fan-in: no header is over the R4 ceiling (fanin <= users + 4, and <= one third of the units outside the base set) that was not over it in
 #        header_fanin.baseline.tsv, and no over-ceiling header's fanin has risen above its baseline figure. A set of names, never a count.
@@ -9,7 +9,7 @@
 # ARM 4  path: no unit or header writes a bare-name include of a header in another directory more often than its baseline figure (R2).
 # ARM 5  unused: no unit carries more direct includes none of whose declarations it names than its baseline figure (R2).
 # ARM 6  (control) the instrument CAN fail: a fixture tree built from hand-written .d files reads exactly the over-ceiling header, umbrella, unused include,
-#        bare include and long inline body that were put in it, and a clean fixture reads none (a PROPER test: no seam in SCRIP's own code, CEO-1680).
+#        bare include and long inline body that were put in it, and a clean fixture reads none (a PROPER test: no seam in SCRIP's own code, R-1680).
 # ARM 7  (control) the baseline is lowered and never raised: against a fixture baseline set one figure lower than the fixture, each arm's ratchet names
 #        the figure, --write-baseline refuses, and against an equal baseline every arm reads 0.
 # ARM 8  (control) util_objects_identical_stripped.sh: identical trees read objects=N identical=N differing=0 rc 0; one object recompiled with a different

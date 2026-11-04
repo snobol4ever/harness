@@ -2,7 +2,7 @@
 """bench_wrap_raku.py <kernel.raku> --mode iter|time|once [--n N] [--bud-ms MS] [-o OUT.raku]
 
 THE GENERATED WRAPPER FOR ONE PRISTINE RAKU BENCHMARK -- the test and the measurement in one program (RULES.md FACT RULE THE
-KERNEL CONVENTION and its 2026-09-23 addendum, CEO-1221; Lon 2026-09-24 14:2x, in-chat to the ceo: create the RakBench runner).
+KERNEL CONVENTION and its 2026-09-23 addendum, R-1221; Lon 2026-09-24 14:2x, in-chat: create the RakBench runner).
 The kernel file is never edited: this writes a NEW program that test_raku_bench_suite.sh deletes after the run. The shape mirrors
 bench_wrap_rebus.py so one reader parses every language's BENCH line; the spelling is the subset SCRIP's Raku front-end parses
 today (a sub per half, `while`, `if ... ne ...`, string `~`, `note(...)`, `wall_us()` -- probed 2026-09-24).
@@ -13,7 +13,7 @@ WHAT THE GENERATED PROGRAM DOES, IN ORDER:
      STDOUT is byte-comparable with the .ref.
   2. THE MEASUREMENT. `sub bench_quiet()` holds the same statements with every whole-statement `say E;` / `put E;` / `print E;`
      spelled as appends to a local string it returns (a line is first cut at its top-level semicolons, so the `say $i;` that
-     ends raku-bench's one-line bodies is a whole output call; CEO-1283), then repeats -- N times (angle 2) or until the
+     ends raku-bench's one-line bodies is a whole output call; R-1283), then repeats -- N times (angle 2) or until the
      budget is spent (angle 3) -- after one warm-up repetition that fixes the wanted capture and restarts the clock; ONE line
      goes to stderr:
        BENCH mode=iter kernel=main iters=<n> ns=<elapsed> mismatched=<m> value=<chars of the wanted capture>
@@ -23,7 +23,7 @@ WHAT THE GENERATED PROGRAM DOES, IN ORDER:
      quiet body whose output was lost (a capture that reads empty) or that computes something else fails; mismatched= counts
      repetitions whose capture differs from the first.
 
-THE SHAPES THE WRAPPER CARRIES (hq_raku 2026-10-21, row raku-every-suite-to-100-under-nonet-ceo-1266; test_gate_bench_wrap_raku_wraps_a_main_kernel_a_multiline_say_and_file_scope_state.sh):
+THE SHAPES THE WRAPPER CARRIES (hq_raku 2026-10-21, row raku-every-suite-to-100-under-nonet-r-1266; test_gate_bench_wrap_raku_wraps_a_main_kernel_a_multiline_say_and_file_scope_state.sh):
   * `sub MAIN`: never in the generated program as MAIN (the runtime would call it again at the end, after the repetitions had advanced the state it reads). It enters twice, renamed:
     bench_tmain (verbatim; bench_test calls it last, so the test's stdout is the .ref) and bench_qmain (its output calls quiet; bench_quiet calls it).
   * a string literal that runs over several lines in a say/put/print line is one logical line, the newlines kept; an output line with no semicolon before a closing brace is terminated;
@@ -33,13 +33,13 @@ THE SHAPES THE WRAPPER CARRIES (hq_raku 2026-10-21, row raku-every-suite-to-100-
   * `slurp(FILE)` reads a named file and is repeatable; only `slurp()` with no argument and $*IN are stdin.
   * a `class`/`role`/`grammar`/`enum` declared without a scope declarator in the body or in MAIN is package-scoped (`our`), so its two
     copies collide (Rakudo: "Redeclaration of symbol 'A'"; mb-loop_object_accessor's one-line body, rc-forest-fire-stringify's enum
-    inside MAIN): the test copy stays verbatim and the quiet copy declares it `my` (ceo CEO-1987, 2026-10-26).
+    inside MAIN): the test copy stays verbatim and the quiet copy declares it `my` (R-1987, 2026-10-26).
 
 REFUSED BY NAME (no silent fallback): a kernel that reads stdin ($*IN, get, lines, slurp(), prompt); an identifier spelled
 bench_...; an output call that is not a whole statement (`say` inside a block, `.say` / `.print` method forms inside an
 expression, `printf`, `sprintf`-less formats); a hoisted declaration that itself prints (its output could not be made quiet).
 
---mode once (ceo CEO-1987, Lon 2026-10-26: "The precise time-stamp for the first line and last line of the program should be
+--mode once (R-1987, Lon 2026-10-26: "The precise time-stamp for the first line and last line of the program should be
 gathered."): the kernel's declarations hoisted as above, then `my $bench_t0 = wall_us();` as the first executed line, the body
 verbatim (a MAIN called as bench_tmain), and a last line that notes `BENCH mode=once kernel=main iters=1 ns=<last - first>`; the
 same copy runs under rakudo and SCRIP, and the runner's external stopwatch minus ns= is each engine's start-up and compile. A
@@ -208,7 +208,7 @@ def joined(expr):
 
 
 def statements(c):
-    """the statements of one line of code, cut at its top-level semicolons (CEO-1283: raku-bench's microbenchmark bodies
+    """the statements of one line of code, cut at its top-level semicolons (R-1283: raku-bench's microbenchmark bodies
     are ONE line -- `my $i = 0; while (++$i <= 1024) { }; say $i;` -- so a trailing `say` is a whole output call only once
     the line is cut); a line holding one statement comes back whole."""
     return [p for p in cut(c, ';') if p.strip()]

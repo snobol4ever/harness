@@ -4,9 +4,9 @@
 # test_prolog_bench_suite.sh grades each kernel under three angles in both modes (the process wrapper on the pristine kernel, then the
 # programs bench_prolog_wrap.sh generates: fixed iterations and fixed time), the REF checked on every run -- in the iteration angle as
 # N copies of the REF (loop_check), in the time angle as the answer once with every repetition held == to it (row prolog-benchmarks-
-# double-as-tests-..., hq_prolog, CEO-1221; the Rebus twin is test_gate_rebus_bench_runner_holds_the_ref_on_every_angle.sh). Lon,
+# double-as-tests-..., hq_prolog, R-1221; the Rebus twin is test_gate_rebus_bench_runner_holds_the_ref_on_every_angle.sh). Lon,
 # verbatim: "The reason to force a benchmark to also be a test is to guarantee it is not vacuous." This gate plants a fixture OUTSIDE
-# the corpus tree (not a board, CEO-547: graded, nothing appended, nothing written) and requires the verdicts to be exactly:
+# the corpus tree (not a board, R-547: graded, nothing appended, nothing written) and requires the verdicts to be exactly:
 #   good   nrev copied from the corpus with its REF                     -> PASS in m3 and m4
 #   drift  a kernel whose value moves every call: its first answer IS its REF, so the process angle PASSES, and the iteration and
 #          time angles FAIL (LOOP-OUTPUT-MISMATCH, bench__mismatch) -- the case a one-run test grades green

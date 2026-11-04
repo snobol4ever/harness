@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_icn_a_value_producer_inside_a_user_procedure_call_argument_gets_its_frame_slot_and_answers_as_iconx.sh -- THE OPERAND THE ROW DOES NOT CARRY (row
-# icon-a-value-producer-in-an-every-scan-body-gets-its-frame-slot-again-after-planner-step-4b-ceo-2006, found by the coo's identity pass, worked by hq_zetas).
+# icon-a-value-producer-in-an-every-scan-body-gets-its-frame-slot-again-after-planner-step-4b-r-2006, found by the coo's identity pass, worked by hq_zetas).
 # THE WITNESS: a program defining its own Image(x) and calling Image(every 1 to 3) | "none" aborted the compile with FATAL drive_value_slot: IR op=13 is a value-producer with no
 # frame slot, in both modes, on every build since planner step 4b (a970b2748). The call's result is the DEREF row's operand 0 and the call is no row of the chain.
 # THE MECHANISM: 4b made drive_value_slot read the node's own plan row; an operand the chain does not carry as a row has none, and the layout answer it used to ask for had no

@@ -9,7 +9,7 @@
 # already / removed / no-spypoint messages and the "no matching predicate" warning (N/any for a bare name); spy switches the debugger on when it is
 # off; the predicate-indicator errors; spypoint_condition/3; nospyall/0; debugging/0 (mode, leashing, the unknown flag, the spypoints). Outside the SWI
 # dialect nodebug/0 resets the leash to full, as gprolog's $debug_switch_off does. debug/0, nodebug/0 and notrace/0 print NOTHING in every dialect:
-# both systems define them, swipl prints nothing and gprolog prints its mode line, and CEO-1536 takes SWI in a GNU/SWI conflict -- so the two mode lines
+# both systems define them, swipl prints nothing and gprolog prints its mode line, and R-1536 takes SWI in a GNU/SWI conflict -- so the two mode lines
 # leave this comparison as they leave the board's (gnu_prolog EXCLUDED_LINES.tsv, BipsPl/debugger.pl). The witness turns the debugger off after each
 # call that can switch it on (r/1), because gprolog 1.6.0 itself raises existence_error('$get_cut_level'/1) in a consulted if-then-else once its
 # debugger is on (see BipsPl/debugger_driver.pl).

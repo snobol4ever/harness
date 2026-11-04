@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# DONE-WHEN for row icon-master-identity-gate-refuses-rc2-in-the-blocking-set-so-it-asserts-nothing (hq_V, CEO-586 -> CEO-547).
-# ⛔ IT ASSERTS WHAT THE REFUSAL SAYS, NOT MERELY ITS CODE (CEO-547 part 2, RULES.md batch 23 / CEO-594). The refusal
-# said "a rung suite suite run is a board and this seat is not the coo" -- which is CEO-523 working exactly as written.
+# DONE-WHEN for row icon-master-identity-gate-refuses-rc2-in-the-blocking-set-so-it-asserts-nothing (hq_V, R-586 -> R-547).
+# ⛔ IT ASSERTS WHAT THE REFUSAL SAYS, NOT MERELY ITS CODE (R-547 part 2, RULES.md batch 23 / R-594). The refusal
+# said "a rung suite suite run is a board and this seat is not the coo" -- which is R-523 working exactly as written.
 # So the defect was never the guard and never the comparison: it was a BOARD SITTING IN THE BLOCKING SET. This grades
 # both halves of the cure -- the gate is out of `make test` and in the coo's pass, AND the comparison still measures
 # and can still say no. ⛔ NO POPULATION LITERAL: every count is read from what the gate prints.
@@ -23,8 +23,8 @@ for l in open("Makefile",encoding="utf-8"):
 sys.stdout.write("".join(out))
 PY
 }
-recipe test    | grep -q "$G" && fail "arm 1 -- the gate is STILL in the blocking set; it runs the corpus Icon rungs, which ONE RUNNER, ONE BOARD (CEO-523) refuses to every seat but the coo, so wired it can only ever exit rc=2"
-recipe test-boards | grep -q "$G" || fail "arm 2 -- the gate is not in the coo's pass (make test-boards): CEO-547 moved it there, it must not simply vanish"
+recipe test    | grep -q "$G" && fail "arm 1 -- the gate is STILL in the blocking set; it runs the corpus Icon rungs, which ONE RUNNER, ONE BOARD (R-523) refuses to every seat but the coo, so wired it can only ever exit rc=2"
+recipe test-boards | grep -q "$G" || fail "arm 2 -- the gate is not in the coo's pass (make test-boards): R-547 moved it there, it must not simply vanish"
 row="$(grep -P "^\Q$G\E\t" ../harness/scripts/gate_wiring.tsv)" || fail "arm 3 -- the gate is absent from gate_wiring.tsv, the one population"
 cls="$(cut -f2 <<<"$row")"; why="$(cut -f3 <<<"$row")"; by="$(cut -f4 <<<"$row")"
 [ "$cls" = RULING ] || fail "arm 4 -- gate_wiring.tsv still classes it $cls, not RULING"

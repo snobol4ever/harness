@@ -1,10 +1,10 @@
 # one_runner_gate_arms.txt -- the gates that drive a runner as an INSTRUMENT FIXTURE (a slice inside the blocking set, never a
 # seat's board run). Each declares S4E_ONE_RUNNER_FIXTURE="why" on its line 2 and is admitted for every seat; the seat-level
-# S4E_ONE_RUNNER_OVERRIDE is not a road to another language's board (RULES.md SHARED-NODE VERDICT SCOPE, CEO-1232 clause 6;
+# S4E_ONE_RUNNER_OVERRIDE is not a road to another language's board (RULES.md SHARED-NODE VERDICT SCOPE, R-1232 clause 6;
 # enforced by lib_one_runner.sh and corpus_suite_harness.py, hq_prolog 2026-09-24).
 test_gate_absent_line_is_unproven_not_red
 test_gate_board_population_floor
-test_gate_ceo409_mask_is_read_by_the_bash_runners
+test_gate_line_mask_is_read_by_the_bash_runners
 test_gate_crosscheck_family_list_autodiscovers
 test_gate_ec_uni_complete
 test_gate_gc_snocone_deferred_eval_survives_a_collection

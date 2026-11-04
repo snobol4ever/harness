@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_the_icon_errorvalue_keyword_survives_a_collection.sh
-#   cto 2026-09-26, row icon-master-under-scrip-gc-stress-5-... (row 774, rewritten on the ceo's CEO-1271 to read
+#   cto 2026-09-26, row icon-master-under-scrip-gc-stress-5-... (row 774, rewritten on R-1271 to read
 #   its named IcnRungs entries as extracted witnesses). The last red of its 22 was procedure_record_every_replace_12:
 #   under SCRIP_GC_STRESS=5 its &errorvalue read back as "record record_-2604246222170760229(0)" where iconx reads
 #   list_13(0).

@@ -2,7 +2,7 @@
 # test_gate_template_form_census_names_a_planted_two_form_box.sh — the form census names a box that emits two forms,
 # the guard that chooses between them and the break-out it needs, and a kind the emitter hands to two boxes
 # (hq_templates, row templates-a-form-census-names-every-box-that-serves-more-than-one-ir-form-and-the-split-each-needs,
-# ceo CEO-1321; Lon 2026-09-27: "...to consider having other IR/BB broken out properly by form/pattern").
+# R-1321; Lon 2026-09-27: "...to consider having other IR/BB broken out properly by form/pattern").
 #
 # THE FIXTURE. A scratch copy of this tree's src/templates/bb, src/templates/xa and src/emitter/emit.cpp (the real
 # tree is never written), read by the census twice: as copied, and after planting

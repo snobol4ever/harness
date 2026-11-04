@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_read_term_subterm_positions_and_comments_answer_as_swipl.sh
-# -- READ_TERM'S subterm_positions AND comments (ceo CEO-1959; ARCH-PROLOG-DATABASE.md sec 11; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664, SWI core/test_read.pl
+# -- READ_TERM'S subterm_positions AND comments (R-1959; ARCH-PROLOG-DATABASE.md sec 11; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664, SWI core/test_read.pl
 # 16 valid_position_* cases, position#1, pos_block). The byte extent of every term is a field of every tree_t node (start, end: the two padding holes, sizeof unchanged), the lexer's token carries
 # its start and end, the parser's reduce stamps each node from its first token and its last consumed token, and read_term builds the position term in one walk over the tree: From-To, string_position
 # for every double_quotes form, list_position, brace_term_position, term_position (functor token found by lexing the gap for an infix or postfix operator), minus the 7 bytes of the reader's

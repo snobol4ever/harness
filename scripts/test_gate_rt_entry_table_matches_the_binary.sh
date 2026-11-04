@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_rt_entry_table_matches_the_binary.sh -- THE RUNTIME ENTRY TABLE AND THE BINARY AGREE (DESIGN-PLAN zeta-layout step 5; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 3 R4;
-# CEO-2019). harness/scripts/rt_entries.tsv has one row per runtime symbol emitted code calls; util_gen_rt_entry_table.py writes SCRIP/src/runtime/rt_entry_table.inc from it.
+# R-2019). harness/scripts/rt_entries.tsv has one row per runtime symbol emitted code calls; util_gen_rt_entry_table.py writes SCRIP/src/runtime/rt_entry_table.inc from it.
 # STAGE 5c (the clobber half) has landed: the emitter reads the .inc (emit_rtx_clob_mask scans g_rt_entries), and the table carries every registered asm-runtime entry, not only the
 # ones a template names. The gate holds it to the built libscrip_rt.so, to gc_allocating_table.inc (until hq_collector's 5c row deletes it), to the assembled objects (the clobbers of
 # every asm row) and to the templates that name the symbols:
@@ -19,7 +19,7 @@
 #          a non-allocating row that claims 1, and a row whose rc is widened from OTHER to DESCR each read red (arms 8b to 8d)
 #   arm 6  the RT_CLOB_ bits are the RTCC_C_ bits of x86_rtcc.h
 #   arm 7  rt_entry_table.inc compiles standalone and holds RT_ENTRIES rows
-#   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (CEO-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
+#   arm 8+ NEGATIVE CONTROLS on corrupted copies of the table, never a seam in src (R-1680): a wrong rc, a dropped symbol, a symbol the binary does not have, an invalid conv
 #   arm 12 STAGE 5b (graded always now): every row (an asm entry and a libc import excepted) has exactly one RT_ENTRY_DECL(sym, conv, transfers) under SCRIP/src at its definition, saying the table's conv and
 #          transfers, and no declaration lacks a row (RED until hq_runtime declares them; `util_gen_rt_entry_table.py --sync-decls` then derives the table's two columns from them)
 #   arm 13+ CONTROLS of arm 12 on a scratch tree: agreeing declarations read clean; a missing one, a double one, a wrong conv, a wrong transfers and a stray one are each named
@@ -74,7 +74,7 @@ def refuse(msg):
 
 def emitted_targets(paths):
     """The targets of the call and jmp instructions in the emitted asm files paths: sym@PLT, qword ptr [rip + sym@GOTPCREL] and a bare sym (the shape of a call the linker resolves at once). The asm is what emitted code
-    names; a census of the templates' source misses a callee a template picks by a ternary or an IR field (CEO-1680's blind census)."""
+    names; a census of the templates' source misses a callee a template picks by a ternary or an IR field (R-1680's blind census)."""
     out, env = set(), dict(os.environ, LC_ALL='C')
     for i in range(0, len(paths), 100):
         for pat in (GREP_REF, GREP_BARE):

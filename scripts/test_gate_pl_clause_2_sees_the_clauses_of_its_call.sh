@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_clause_2_sees_the_clauses_of_its_call.sh -- THE LOGICAL UPDATE VIEW FOR clause/2 AND retract/1 (ISO 7.5.4: a goal that iterates a
 # dynamic predicate sees the clauses as they were when it was CALLED; a clause erased meanwhile is still visited, one added meanwhile is not).
-# hq_prolog 2026-09-25, CEO-1270. THE BRACKET: Logtalk logical_update_semantics_clause_retract against gpx agreed to step 66 (the first pass through
+# hq_prolog 2026-09-25, R-1270. THE BRACKET: Logtalk logical_update_semantics_clause_retract against gpx agreed to step 66 (the first pass through
 # clause(cr(X),_), write(X), retract(cr(_)), fail) and diverged at step 67 -- gprolog resumed clause/2 at line 242 for X = 2, SCRIP fell to the
 # else-branch at 245. The store kept erased slots in place but rt_pl_db_clause_at hid an erased slot from EVERY reader, including an iteration
 # that began before the erase. The cure: an erase stamps its slot with the predicate's next_ref serial (nonzero), the enumeration reads $db_gen

@@ -28,7 +28,7 @@ PATCH
     echo "OK  spitbol built: $X64/bin/sbl"
 fi
 
-# bootsbl copy (monitor uses this name; a copy, never a link -- CEO-1820)
+# bootsbl copy (monitor uses this name; a copy, never a link -- R-1820)
 [ -e "$X64/bin/bootsbl" ] || cp -p "$X64/bin/sbl" "$X64/bin/bootsbl"
 
 # Smoke test — SPITBOL exits 1 in sandbox (segfault-on-exit) but output is correct

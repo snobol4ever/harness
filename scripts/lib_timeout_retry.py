@@ -1,5 +1,5 @@
 """lib_timeout_retry.py -- subprocess.run FOR A GRADED RUN: A TIMEOUT WHILE THE 1-MINUTE LOAD EXCEEDS THE CORES IS COULD NOT MEASURE,
-SO THE COMMAND IS RUN ONCE MORE AND ONLY A SECOND TIMEOUT STANDS (ceo CEO-1335; the coo 2026-10-09). The Python graders' face of
+SO THE COMMAND IS RUN ONCE MORE AND ONLY A SECOND TIMEOUT STANDS (R-1335; the coo 2026-10-09). The Python graders' face of
 util_timeout_retry.sh (the bash runners' face) -- the two write one stamp format, read the load through lib_fanout.py (the harness's
 one definition), and honour S4E_TIMEOUT_RETRY=0 the same way.
 
@@ -11,7 +11,7 @@ one definition), and honour S4E_TIMEOUT_RETRY=0 the same way.
     file stems).
     ⛔⭐ EVERY TIMEOUT IS RETRIED ONCE, LONGER, WHATEVER THE LOAD (Lon 2026-10-15 15:3x CDT, in-chat to the coo, verbatim: "So timeout
     SHOULD NOT count as valid." and "The strategy should be to accumulate a list of timeouts, and do a retry with longer timeouts.";
-    superseding CEO-1335's load test and same-length retry). The retry's limit is longer(T): S4E_TIMEOUT_RETRY_FACTOR (default 6)
+    superseding R-1335's load test and same-length retry). The retry's limit is longer(T): S4E_TIMEOUT_RETRY_FACTOR (default 6)
     times T, capped at S4E_TIMEOUT_RETRY_CAP seconds (default 600) unless T is longer already; the stamp carries at=<limit>s.
 """
 import os

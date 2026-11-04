@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """util_gen_pascal_prelude_units.py -- SCRIP'S OWN PASCAL RTL UNITS AS PRELUDE SOURCES (row pascal-uses-and-units-..., Lon 2026-10-10,
-CEO-1611: "Certainly we should allow the "uses" feature for Pascal since SNOBOL4 has INCLUDE, and Snocone will have import.").
+R-1611: "Certainly we should allow the "uses" feature for Pascal since SNOBOL4 has INCLUDE, and Snocone will have import.").
 The units a program names in a uses clause and no file beside it supplies -- sysutils, math, strutils, strings -- are SCRIP's own
 Pascal, one file each under src/parsers/pascal/prelude/, and the driver (pascal_driver.c) parses one only when a program names it,
 exactly as a unit beside the program. This writes src/parsers/pascal/pascal_prelude_units.inc, a committed table of the sources, the
-way util_gen_prolog_prelude_libs.py writes the Prolog prelude libraries' (CEO-1473): { name, source } pairs ending in { 0, 0 }.
+way util_gen_prolog_prelude_libs.py writes the Prolog prelude libraries' (R-1473): { name, source } pairs ending in { 0, 0 }.
   python3 ../harness/scripts/util_gen_pascal_prelude_units.py            write the .inc
   python3 ../harness/scripts/util_gen_pascal_prelude_units.py --check    rc 1 when the committed .inc differs from a fresh generation, 0 when equal
   --dir D and --out F read the units from D and write or check F (the sync gate's self-test plants on scratch copies); rc 2 refuses.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_startup_touch_ab.sh -- THE MATCHED TWO-ARM A/B FOR THE `-ffunction-sections` + LINK-ORDERING LEVER ON THE RT .so.
 # Row rtx-startup-linker-ordering (hq_P, 2026-09-04, FLEET-16). Its DONE-WHEN is this script exiting 0.
 #

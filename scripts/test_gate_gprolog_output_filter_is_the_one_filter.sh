@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gprolog_output_filter_is_the_one_filter.sh -- ONE FILTER OVER gprolog's STANDARD OUTPUT, AND IT READS BOTH BANNERS (the coo
-# 2026-10-10, ceo CEO-1599 on the oracle swap CEO-1598: Lon, in-chat to the ceo, verbatim: "Get the new oracle 1.6.0 and begin using it
+# 2026-10-10, R-1599 on the oracle swap R-1598: Lon, in-chat, verbatim: "Get the new oracle 1.6.0 and begin using it
 # instead of the older one."). MEASURED: gprolog 1.6.0 prints its banner as three lines and then one EMPTY line, where 1.4.5 printed four
 # lines and a compiling line; the five copies of the 1.4.5 filter (the GNU runner twice, lib_prolog_bench.sh's gnu_filter,
 # test_bench_prolog_4way.sh, test_bench_prolog_modes.sh) kept that empty line, and every one of the 48 GNU driver outputs differed from its

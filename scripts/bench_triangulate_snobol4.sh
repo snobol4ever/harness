@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_snobol4.sh -- THE CROSS-PROOF, item 3 of row bench-triangulation-3angle
 # (Lon 2026-08-24, in-chat, verbatim in substance: "I want to cross prove ... All of it wrapped in
 # the perf-like process measuring CPU time, disk time, elapsed time -- program-reported numbers
@@ -67,7 +67,7 @@ if [ "$CHECK_SHAPE" -eq 1 ]; then
   [ -f "$B/$KERNEL.sno" ] || { echo "⛔ REFUSED: --check-shape kernel '$KERNEL' has no $B/$KERNEL.sno" >&2; exit 2; }
   RUN_B="$(mktemp -d)"; CLEANUP="$RUN_B"
   for ext in sno ref dat xfail; do [ -f "$B/$KERNEL.$ext" ] && cp "$B/$KERNEL.$ext" "$RUN_B/"; done
-  for side in heap stack; do [ -f "$B/$KERNEL.$side" ] && cp "$B/$KERNEL.$side" "$RUN_B/"; done   # the declared arena travels with the kernel (CEO-1353)
+  for side in heap stack; do [ -f "$B/$KERNEL.$side" ] && cp "$B/$KERNEL.$side" "$RUN_B/"; done   # the declared arena travels with the kernel (R-1353)
 fi
 trap '[ -n "$CLEANUP" ] && rm -rf "$CLEANUP"' EXIT
 
@@ -211,13 +211,13 @@ perf_grid_end || grid_incomplete=1
 
 echo
 echo "TSV: $OUT_TSV"
-if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation snobol4 "$OUT_TSV" || { echo "⛔ bench_triangulate_snobol4: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, CEO-331)"; exit 2; }; fi
+if [ "${CHECK_SHAPE:-0}" != 1 ]; then . "$HERE/lib_progress.sh"; progress_append_triangulation snobol4 "$OUT_TSV" || { echo "⛔ bench_triangulate_snobol4: the progress database did not take this run's kernels (see above) -- a benchmark run that leaves the table untouched is a defect of the run (progress/README.md, R-331)"; exit 2; }; fi
 if [ "$any_disagree" -eq 1 ]; then
   echo "⛔ DISAGREE or CHECK-FAIL present -- VOID: do not publish or cite those kernels' numbers until re-measured (or their correctness fixed)."
   exit 1
 fi
 if [ "$grid_incomplete" -eq 1 ]; then
-  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (CEO-676), so do not publish or cite this grid until every cell measures."
+  echo "⛔ the FACT-RULE grid above is INCOMPLETE -- a cell REFUSED (its subject is named on stderr). VOID as a reading: a dark cell is worse than a red one (R-676), so do not publish or cite this grid until every cell measures."
   exit 1
 fi
 echo "all measured kernels AGREE (each within its OWN baked noise tolerance -- see the per-row tol= values above, not a flat ${TOL}%)."

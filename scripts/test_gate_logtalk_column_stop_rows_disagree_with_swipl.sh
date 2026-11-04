@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh -- THE THIRD NO_ORACLE_ANSWER EVIDENCE FORM IS A MEASUREMENT, NOT A MASK (ceo CEO-1977, 2026-10-25,
-# amending CEO-1696 for six rows). logtalk_iso's EXCLUDED_CASES.tsv names format_2 and format_3 tab_table_pip_0110_16, _19 and _20 NO_ORACLE_ANSWER: each asserts
+# test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh -- THE THIRD NO_ORACLE_ANSWER EVIDENCE FORM IS A MEASUREMENT, NOT A MASK (R-1977, 2026-10-25,
+# amending R-1696 for six rows). logtalk_iso's EXCLUDED_CASES.tsv names format_2 and format_3 tab_table_pip_0110_16, _19 and _20 NO_ORACLE_ANSWER: each asserts
 # the text a NEWER swipl lays out for a ~t fill point and a ~N+ column stop, and the pinned oracle swipl 9.0.4 prints a different text. A row like that is true only
 # while swipl keeps disagreeing with the assertion. This gate runs the oracle (the swipl_bin accessor) on the control string of EVERY NO_ORACLE_ANSWER row whose
 # test body is a column-stop format/2,3 call and reds the row whose asserted text swipl now prints (the row is stale: the case returns to the denominator).
@@ -8,7 +8,7 @@
 #       (2) THE POPULATION IS NOT EMPTY AND IS THE RULED SIX OR MORE (a gate that reads zero rows proves nothing)
 #       (3) CONTROL: tab_table_pip_0110_17, a column-stop case the suite passes, ASSERTS the text swipl prints -- the same extractor and the same oracle read AGREE
 #           there, so arm (1)'s "differ" is a reading and not a parser that always differs
-#       (4) CAN FAIL: a mktemp corpus (outside corpus/, CEO-547) that files the passing control case as a NO_ORACLE_ANSWER row reads RED (rc 1) and names it stale
+#       (4) CAN FAIL: a mktemp corpus (outside corpus/, R-547) that files the passing control case as a NO_ORACLE_ANSWER row reads RED (rc 1) and names it stale
 # rc 0 all arms; rc 1 a stale row or a failed control; rc 2 swipl or the files are absent (could not measure).
 # Usage: bash ../harness/scripts/test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh
 set -u
@@ -58,7 +58,7 @@ with open(os.path.join(tmp, "probe.pl"), "w", encoding="utf-8") as fh:
 PY
 timeout 60 "$SW" -q -f "$T/probe.pl" -t halt < /dev/null > "$T/out" 2> "$T/err" || refuse "swipl could not run the probe: $(head -c 300 "$T/err")"
 fails=0; rows=0; ck() { if [ "$1" = ok ]; then echo "  ok    $2"; else echo "  FAIL  $2"; fails=$((fails+1)); fi; }
-echo "=== gate: the column-stop NO_ORACLE_ANSWER rows disagree with swipl 9.0.4 (CEO-1977) ==="
+echo "=== gate: the column-stop NO_ORACLE_ANSWER rows disagree with swipl 9.0.4 (R-1977) ==="
 while IFS=$'\t' read -r key kind verdict printed; do
   [ "$kind" = row ] || continue
   rows=$((rows+1))

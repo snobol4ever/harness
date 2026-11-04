@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """util_round_robin_freshness.py [--loop-dir D] [--hours H] -- IS THE VERIFIER LOOP REFRESHING ITS LIVE POPULATION, ONE TEST AT A TIME?
 
-The DONE-WHEN of the coo's row instruments-the-verifier-loop-cycles-every-suites-chunks-in-its-spare-time-and-runs-core-plus-shell-per-landing-ceo-1676,
-re-cut by the ceo at CEO-1835 (2026-10-18) on the coo's measurement: the old criterion counted every program name ever recorded in the progress
-database, ghosts included (gimpel 562 names for 145 shipped), and the suites the focus idles and the ceo holds, so it measured the bookkeeping, not
+The DONE-WHEN of the coo's row instruments-the-verifier-loop-cycles-every-suites-chunks-in-its-spare-time-and-runs-core-plus-shell-per-landing-r-1676,
+re-cut by the officer at R-1835 (2026-10-18) on the coo's measurement: the old criterion counted every program name ever recorded in the progress
+database, ghosts included (gimpel 562 names for 145 shipped), and the suites the focus idles and the officer holds, so it measured the bookkeeping, not
 the loop. THE POPULATION is the live one: the suite rotation's members as the loop itself lists them (loop8.sh's ROT array in the loop directory),
 less the members idle_units names, each member's denominator as util_score_row.py from-progress --dry-run reads it (total=, its db_suite=);
 a member from-progress cannot read is named unresolved and left out. Members idle under ORDER-OF-WORK and members HELD (listed in idle_units below its "# HELD"
 line) are left out and NAMED with their counts. FRESH: the distinct programs of a member's progress suite, capped at its denominator, with a coo reading tagged rr=1 (the round robin) or req=<seat> (a request, the
-loop's other input, CEO-1806) inside the window. OUTSIDE: any coo reading in the window that carries neither tag, over the whole database.
+loop's other input, R-1806) inside the window. OUTSIDE: any coo reading in the window that carries neither tag, over the whole database.
 Prints one ROUND_ROBIN_LIVE line; rc 0 iff outside is 0 and four fifths of the live population is fresh, 1 otherwise, 2 when it cannot measure."""
 import argparse, datetime, os, re, subprocess, sys
 
@@ -126,7 +126,7 @@ def main():
     tests = sum(live.values())
     nfresh = sum(min(len(fresh.get(k, ())), n) for k, n in live.items())   # capped at the denominator: a program outside it never counts twice
     fmt = lambda d: ",".join("%s:%d" % kv for kv in sorted(d.items())) or "none"
-    print("ROUND_ROBIN_LIVE window=%gh members=%d tests=%d fresh=%d (%.0f%%) outside=%d idle=[%s] held=[%s]%s (ceo CEO-1835: the rotation's non-idle, non-held members; fresh is rr=1 or req=)"
+    print("ROUND_ROBIN_LIVE window=%gh members=%d tests=%d fresh=%d (%.0f%%) outside=%d idle=[%s] held=[%s]%s (R-1835: the rotation's non-idle, non-held members; fresh is rr=1 or req=)"
           % (a.hours, len(live), tests, nfresh, 100.0 * nfresh / tests, outside, fmt(idle_n), fmt(held_n), (" unresolved=[%s]" % ",".join(unread)) if unread else ""))
     worst = sorted(((n - min(len(fresh.get(k, ())), n), k, min(len(fresh.get(k, ())), n), n) for k, n in live.items()), reverse=True)[:6]
     print("ROUND_ROBIN_STALEST " + " ".join("%s=%d/%d" % (k, fr, n) for _, k, fr, n in worst))

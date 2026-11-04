@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_dynamic_variables_distro_kernel_vm_raku_and_compiler_objects_and_a_twigil_variable_in_a_string_agree_with_rakudo.sh -- $*DISTRO, $*KERNEL, $*VM, $*RAKU, $*PERL AND $*RAKU.compiler AS OBJECTS WITH RAKUDO'S FIELDS AND STRING FORMS, AND `$*NAME` INTERPOLATED IN A DOUBLE-QUOTED STRING
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by classifying the Roast files that do not compile: `$*DISTRO.is-win`, `$*KERNEL.name`, `$*VM.name`, `$*RAKU.compiler.version` guard a large share of the platform-conditional tests).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by classifying the Roast files that do not compile: `$*DISTRO.is-win`, `$*KERNEL.name`, `$*VM.name`, `$*RAKU.compiler.version` guard a large share of the platform-conditional tests).
 #
 # THE DEFECT, measured against Rakudo: none of $*DISTRO $*KERNEL $*VM $*RAKU $*PERL existed (`$*VM.name` was "variable '*VM' is read but never assigned", the native emitter refused the program), so every test that asks the platform a question (`skip "..." if $*DISTRO.is-win`)
 # did not compile; and a `*` twigil variable inside a double-quoted string was left as literal text ("$*PID" printed $*PID, "a $*X b" printed a $*X b, "$*VM" printed $*VM).

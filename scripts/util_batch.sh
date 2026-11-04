@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_batch.sh -- THE BATCH CLASS (the cto, ARCH-SHARED-DEVELOPMENT 4.5 (b) and 5, CEO-2041 step 4; built by the cfo 2026-10-31).
+# util_batch.sh -- THE BATCH CLASS (the cto, ARCH-SHARED-DEVELOPMENT 4.5 (b) and 5, R-2041 step 4; built by the cfo 2026-10-31).
 # A batch job (an identity run, a census, a compile-all sweep, a callgrind, a placement-watch kick, a port HQ's board regrade, the
 # DONE-WHEN sweep) runs ONLY through this wrapper, and a script that is batch by nature calls it at its own top:
 #     [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"

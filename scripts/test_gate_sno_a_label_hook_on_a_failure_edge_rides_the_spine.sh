@@ -22,7 +22,7 @@
 #   4  W2 m4 under the switch == oracle
 #   5  STRUCTURE: in W1's mode-4 asm under the switch, every box that loads a label name for the hook opens with a
 #      spine push (sub rsp, N) -- none writes a frame slot off an unreserved rsp. RE-CUT 2026-10-14 (hq_snobol4, row
-#      snobol4-blocking-gate-a-label-hook-on-a-failure-edge-refuses-hooks-moved-ceo-1697): since f947ec8e6 the hook is a
+#      snobol4-blocking-gate-a-label-hook-on-a-failure-edge-refuses-hooks-moved-r-1697): since f947ec8e6 the hook is a
 #      sealed IR_STMT_MARK box (asm comment "# sno_label_hook") that carves a pending-trace record and passes the label from
 #      the .S<n> string pool (lea rdi, [rip + .Sn]); the old scan read an inline .string after a _lit_string_α label and
 #      found 0. The scan now resolves each sno_label_hook box's .Sn to its label and reads the box's first instruction.

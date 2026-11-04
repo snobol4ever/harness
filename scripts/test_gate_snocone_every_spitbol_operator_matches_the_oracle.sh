@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_snocone_every_spitbol_operator_matches_the_oracle.sh -- EVERY SPITBOL UNARY AND BINARY OPERATOR IS A SNOCONE OPERATOR (Lon 2026-10-07,
 # in-chat to hq_snocone, verbatim: "We want all SPITBOL binary operators implemented in Snocone." / "We want all SPITBOL unary operators implemented in

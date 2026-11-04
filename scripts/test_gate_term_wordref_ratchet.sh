@@ -86,7 +86,7 @@ PINS="
  1 src/runtime/rt/rt.h
 "
 PIN_TOTAL=$(echo "$PINS" | awk 'NF{t+=$1} END{print t+0}')
-# ⭐ PROLOG SOURCE IS NOT THE C REPRESENTATION (cfo 2026-10-10, CEO-1473's vendored libraries): src/parsers/prolog/prelude/*.pl
+# ⭐ PROLOG SOURCE IS NOT THE C REPRESENTATION (cfo 2026-10-10, R-1473's vendored libraries): src/parsers/prolog/prelude/*.pl
 # are swipl's own library files, where Term is a Prolog VARIABLE NAME (library(aggregate) 43 lines, (error) 16), and
 # src/parsers/prolog/prolog_prelude_libs.inc is that same Prolog text embedded as C strings by util_gen_prolog_prelude_libs.py.
 # Neither is the C `Term *` this ladder deletes, so *.pl and that generated table are outside the scope; at the mint every
@@ -98,11 +98,11 @@ BAK_HITS=$(find "$SRC" -name '*.bak' -exec grep -cw 'Term' {} + 2>/dev/null | aw
 # dodge the unpinned-file rule above exists to catch.  Verified equal (136) to the tracked sweep on a clean tree.
 FILES=$(grep -rIlw 'Term' "$SRC" 2>/dev/null | grep -v '\.bak$' | grep -v '\.pl$' | grep -v '/prolog_prelude_libs\.inc$' | sed "s#^$SRC/#src/#" | sort)
 NFILES=$(echo "$FILES" | grep -c . )
-# ⭐⭐ THE FINISH LINE (Lon 2026-09-02 10:35, in-chat to ceo: "First order of business is to simply remove the definition of the struct named Term. Delete it now."):
+# ⭐⭐ THE FINISH LINE (Lon 2026-09-02 10:35, in-chat: "First order of business is to simply remove the definition of the struct named Term. Delete it now."):
 # a ratchet that could only REFUSE at zero could never say YES to its own goal (the criterion-that-cannot-say-YES defect, INSTRUMENT LAWS).
 # Zero files bearing the word is the census COMPLETE, not "nothing examined": the parsers dir exists (checked above), the sweep ran, it found none.
 # ⭐ RUNG 13, CLAUSE 2 (ARCH-PROLOG-BYRD-BOX-TRANSLATION.md § E: "resolution.{c,h} hold no resolve_choice"; hq_B 2026-09-02). The second
-# choice-point/trail/env machine left resolution.{c,h} with ceo's Term deletion; a `resolve_choice` word-ref returning is that machine
+# choice-point/trail/env machine left resolution.{c,h} with the officer's Term deletion; a `resolve_choice` word-ref returning is that machine
 # returning under the old name. Checked BEFORE the zero-Term finish line so the ratchet cannot say YES to rung 13 on the Term half alone.
 # Absent files read 0 -- rung 2 deletes them, and a deleted file cannot carry the machine.
 RC_HITS=0

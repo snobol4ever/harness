@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_swi_runner_grades_a_signal_death_crash_never_fail.sh -- A SWI CASE THE RUN NEVER REACHED BECAUSE THE RUN DIED IS CRASH (OR
-# HANG), NEVER FAIL, IN THE CASE ROW, THE BOARD LINE AND THE PROGRESS ROW (the coo 2026-09-27, ceo CEO-1309: "the SWI runner's
+# HANG), NEVER FAIL, IN THE CASE ROW, THE BOARD LINE AND THE PROGRESS ROW (the coo 2026-09-27, R-1309: "the SWI runner's
 # grade_one never captures the run's exit status, so a signal death grades FAIL, never CRASH"; the verdict ladder: CRASH never
 # collapses into FAIL).
 #

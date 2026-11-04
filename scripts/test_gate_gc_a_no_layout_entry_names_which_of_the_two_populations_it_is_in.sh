@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_gc_a_no_layout_entry_names_which_of_the_two_populations_it_is_in.sh -- CEO-1025 MADE MECHANICAL, AND ITS
-# DISCRIMINATOR CORRECTED ON THE DATA (cto 2026-09-20, MODE TENET; ruling CEO-1025 on hq_prolog's fork).
+# test_gate_gc_a_no_layout_entry_names_which_of_the_two_populations_it_is_in.sh -- R-1025 MADE MECHANICAL, AND ITS
+# DISCRIMINATOR CORRECTED ON THE DATA (cto 2026-09-20, MODE TENET; ruling R-1025 on hq_prolog's fork).
 #
 # THE RULING: `no_layout` CONFLATES TWO POPULATIONS WITH OPPOSITE OWNERS.  (a) THE COMPILER REFUSED THE ENTRY --
 # nothing emitted, no leaf boundary, no store: a COMPLETENESS debt wearing a GC census's clothes, declared with its
@@ -44,7 +44,7 @@ chmod +x "$T"/stub_*.sh
 
 # (a)(b)(c) EVERY KIND IS REACHABLE AND LANDS IN EXACTLY ONE BUCKET.  ⛔ A BUCKET NOTHING CAN LAND IN IS NOT A
 # BUCKET, and a field that reads zero because it is unreachable is indistinguishable from a field that reads zero
-# because the tree is clean -- which is the whole defect CEO-1025 was ruling on, one level up.
+# because the tree is clean -- which is the whole defect R-1025 was ruling on, one level up.
 for arm in emit:EMITTED-NO-LAYOUT:no_layout_emitted_no_layout refuse:NEVER-EMITTED:no_layout_never_emitted hang:UNMEASURED:no_layout_unmeasured; do
   k="${arm%%:*}"; rest="${arm#*:}"; kind="${rest%%:*}"; field="${rest##*:}"
   out="$(SCRIP="$T/stub_$k.sh" timeout -k 5 120s python3 "$TOOL" --files "$T/w.sno" --timeout 1 2>&1)"
@@ -79,7 +79,7 @@ fi
 mkdir -p "$T/fakeroot/scripts" "$T/fakeroot/src" "$T/fakeroot/out"
 # The consumer runs lib_build_currency.sh at its --root since the coo's 0176b35dd (a census of an unbuilt tree is a
 # statement about a different program), so the FAKE root must be a BUILT tree or every arm below refuses rc=2 for the
-# wrong reason -- which is exactly how arms e, f and g read red on origin at CEO-1161 (cto). The census's own selftest
+# wrong reason -- which is exactly how arms e, f and g read red on origin at R-1161 (cto). The census's own selftest
 # satisfies the guard the same way: the real library sourced, one src/ file older than two fresh artifacts.
 cp "$ROOT/../harness/scripts/lib_build_currency.sh" "$T/fakeroot/scripts/"
 : > "$T/fakeroot/src/stub.c"; touch -t 202001010000 "$T/fakeroot/src/stub.c"

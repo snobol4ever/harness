@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_suspended_scan_banks_its_subject_where_the_walker_relocates_it.sh -- A GENERATOR THAT SUSPENDS INSIDE A
 # SCAN BANKS ITS LIVE SUBJECT IN A FRAME WORD THE MAP DECLARES AS A COLLECTED-HEAP POINTER, SO A COLLECTION DURING THE
-# SUSPENSION RELOCATES IT -- since hq_collector's chain step 2 (ARCH-GC 13.5) A DT_S CELL WHOSE TAG THE WALKER READS (cto 2026-09-23, CTO-154; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812; hq_icon's
+# SUSPENSION RELOCATES IT -- since hq_collector's chain step 2 (ARCH-GC 13.5) A DT_S CELL WHOSE TAG THE WALKER READS (cto 2026-09-23, CTO-154; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812; hq_icon's
 # IPL finding FINDING-2026-09-23-hq_icon-ipl-unitgenr-mode4-only-error-103-after-five-prior-allocation-cycles-gc-adjacent.md).
 #
 # MEASURED: unitgenr (corpus/packages/icon/ipl/gprogs, the last red of the IPL package in mode 4) died with error 103 in
@@ -22,8 +22,8 @@
 # iconx-cut ref at SCRIP_GC_STRESS=1,3,5 with SCRIP_GC_RELOC 0 and 1 at the compiled default arena, mode 3 and mode 4;
 # (b) THE PLANT: SCRIP_GC_PLANT_SCAN_BANK=1 loses the answer at stress 1 in both modes -- the cure is load-bearing;
 # (c) THE MAP: --dump-zeta of the witness declares "scan.suspend-leave live subject cell" a DESCR.  FAIL_ONCE=1 grades arm (a)
-# against a corrupted copy of the iconx ref and requires it to red (CEO-1680 form (a)).
-# ⛔⭐ (b) RETIRED UNDER CEO-1680 (cto 2026-10-17): the SCRIP_GC_PLANT_SCAN_BANK seam left emit.cpp (row emit-the-three-emitter-plants-...);
+# against a corrupted copy of the iconx ref and requires it to red (R-1680 form (a)).
+# ⛔⭐ (b) RETIRED UNDER R-1680 (cto 2026-10-17): the SCRIP_GC_PLANT_SCAN_BANK seam left emit.cpp (row emit-the-three-emitter-plants-...);
 # its recorded reading is its fail-once: tagging the bank DT_I lost the answer at stress 1 in both modes, the cure load-bearing.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
@@ -45,7 +45,7 @@ else echo "  FAIL (a) a suspended scan resumed on a stale subject --$band"; RC=1
 ( cd "$T" && env -u SCRIP_HEAP_MB SCRIP_HEAP_KB=512 SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_STRESS=1 timeout -k 5 60s "$SCRIP" --run "$W.icn" </dev/null >/dev/null 2>a2.err ); fa=$(grep -c "^\[GC-FLIP\] plant:" "$T/a2.err"); fa=${fa:-0}
 if [ "$fa" -ge 1 ]; then echo "  ok   (a2) THE FLIP PLANT APPLIED: $fa banner line(s) at stress 1 -- the flip=1 half of (a) graded forced movement, not an unplanted run"
 else echo "  FAIL (a2) the flip plant printed its applied banner $fa time(s) at SCRIP_HEAP_KB=512 stress 1 -- the flip=1 half of (a) may have graded a run nothing moved"; RC=1; fi
-echo "  --   (b) RETIRED under CEO-1680: the SCRIP_GC_PLANT_SCAN_BANK seam left emit.cpp; its recorded reading (the witness lost its answer at stress 1 in both modes) is the fail-once (header)"
+echo "  --   (b) RETIRED under R-1680: the SCRIP_GC_PLANT_SCAN_BANK seam left emit.cpp; its recorded reading (the witness lost its answer at stress 1 in both modes) is the fail-once (header)"
 z=$( cd "$T" && "$SCRIP" --dump-zeta "$W.icn" 2>&1 | grep -c 'DESCR    scan.suspend-leave live subject cell' || true )
 if [ "${z:-0}" -ge 1 ]; then echo "  ok   (c) the map declares the banked subject a DESCR cell ($z field(s) in the witness's graphs)"; else echo "  FAIL (c) no DESCR scan.suspend-leave live subject cell in the witness's layout -- the bank is invisible to the walker again"; RC=1; fi
 echo "population: 2 arm(s) graded, (b) retired"

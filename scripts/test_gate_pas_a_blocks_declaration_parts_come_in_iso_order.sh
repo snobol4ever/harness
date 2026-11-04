@@ -5,10 +5,10 @@
 # suite-table-the-home-stretch. A block is label, const, type, var, then procedures and functions, each part at most once (6.2.1).
 # The grammar accepted the parts in any order, so PAT iso7185prt0024/0031/0040/0054/0055 (each one reversed pair) compiled and ran.
 # decl_part now yields its rank and decl_part_list carries the last rank on bison's own value stack -- no new state, nesting free.
-# ⛔⭐ THIS IS A RULING, NOT ONLY A CURE (Lon 2026-09-23, in-chat to the ceo, verbatim: "use ISO as oracle"; CEO-1225). fpc -Miso
+# ⛔⭐ THIS IS A RULING, NOT ONLY A CURE (Lon 2026-09-23, in-chat, verbatim: "use ISO as oracle"; R-1225). fpc -Miso
 # ACCEPTS out-of-order parts, and 15 programs of the vendored FPC suite rely on it (13 were green the day this landed). ISO wins:
 # they are named, with the measurement, in corpus/packages/pascal/fpc_tests/OUTSIDE_ISO_BASELINE.tsv (mirrored by UNGRADABLE.tsv),
-# stay in the FPC row's denominator (CEO-749 shape, OUTSIDE=15), and test_pascal_fpc_suite.sh cross-checks each run that every one
+# stay in the FPC row's denominator (R-749 shape, OUTSIDE=15), and test_pascal_fpc_suite.sh cross-checks each run that every one
 # is still refused. Before landing, every other acceptance program in the corpus was compiled with the check (PasRungs, P4, P5,
 # benchmarks): zero tripped.
 #

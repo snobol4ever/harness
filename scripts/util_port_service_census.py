@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# util_port_service_census.py -- HOW WELL THE coo SERVES THE PORT HQs, MEASURED FROM ITS OWN REQUEST RECORDS (ceo CEO-1911; Lon 2026-10-22 14:5x CDT,
-# in-chat to the ceo, verbatim: "Let's get COO to better service HQ-JVM and HQ-DOTNET."). It runs nothing and reads three records:
+# util_port_service_census.py -- HOW WELL THE coo SERVES THE PORT HQs, MEASURED FROM ITS OWN REQUEST RECORDS (R-1911; Lon 2026-10-22 14:5x CDT,
+# in-chat, verbatim: "Let's get COO to better service HQ-JVM and HQ-DOTNET."). It runs nothing and reads three records:
 #   (1) TURNAROUND: every request the coo served inside the window (postoffice/test_requests/done/*.req: filed=, served=, engine=), per engine --
 #       the minutes from filed to served, median, p90 and max; SCRIP's requests are printed beside the ports' for comparison and never graded here.
 #   (2) WAITING: every port request still pending (postoffice/test_requests/*.req, engine= set), its age now.

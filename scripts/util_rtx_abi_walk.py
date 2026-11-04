@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_rtx_abi_walk.py -- prove, from the assembled objects, that every RTX entry keeps the RTCC four.
 
-THE CONTRACT (src/runtime/rtx/rtx_abi.inc, ARCH-SNOBOL4-RTX.md section 2; Lon 2026-09-23, CEO-1224):
+THE CONTRACT (src/runtime/rtx/rtx_abi.inc, ARCH-SNOBOL4-RTX.md section 2; Lon 2026-09-23, R-1224):
 emitted code calls an asm-runtime entry BARE, so the entry returns r8, r10 and r11 exactly as it
 received them and r9 as the GVA base. This walker reads `objdump -d -r` of each object built from
 src/runtime/rtx/*.s -- the instruction stream after cpp AND gas macros, with the relocations that

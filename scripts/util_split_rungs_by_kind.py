@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_split_rungs_by_kind.py -- split a rung suite suite pair into ONE-LINERS and MULTI-LINERS.
 
-Lon's 4th/5th consolidation statements (routed by ceo 2026-08-29, TRIO): the end state has NO
+Lon's 4th/5th consolidation statements (routed by the officer 2026-08-29, TRIO): the end state has NO
 per-language folders -- per language, a ONE-LINERS file and a MULTI-LINERS file side by side in one
 flat dir. Today's rungs is ONE file carrying both kinds; this splits the kinds into two files.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_forced_relocation_moves_every_live_block.sh -- THE DELIVERABLE OF THE cfo's ROW
 # `gc-every-live-block-relocates-on-every-collection-so-a-stale-pointer-cannot-accidentally-still-work`
-# (ceo-minted 2026-09-21, MODE TENET).
+# (officer-minted 2026-09-21, MODE TENET).
 #
 # ⛔ THE NUMBER THIS ROW EXISTS FOR, MEASURED BEFORE ANY CURE WAS WRITTEN AND NOT PROJECTED.  Over
 # bench_icnstr_concat_table.icn at the mandated 1 MB arena -- 1613 collections, 1058128 live-block forwardings --
@@ -41,7 +41,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_forced_relocation_moves_every_live_bloc
 [ -f "$LIBDIR/libscrip_rt.so" ] || refuse "no out/libscrip_rt.so -- the m4 arm would have measured nothing"
 . ../harness/scripts/util_require_fresh.sh 2>/dev/null || true
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-echo "ARENA SCRIP_HEAP_KB=$ARENA_KB (a window the flip fits in: the live set must fit above the page-rounded top, so the knob is the one proof that EVERY live block moves -- CEO-1794, ARCH-GC 15.11 (8))"
+echo "ARENA SCRIP_HEAP_KB=$ARENA_KB (a window the flip fits in: the live set must fit above the page-rounded top, so the knob is the one proof that EVERY live block moves -- R-1794, ARCH-GC 15.11 (8))"
 echo "    band: $PTS · modes m3 m4 · knob SCRIP_GC_PLANT_FLIP off/on ON ONE BINARY · the flip's own banner under SCRIP_ZETA_TELEM=1 counts its applications"
 run_one() {
   local bin="$1" src="$2" st="$3" flip="$4" out="$5" err="$6"

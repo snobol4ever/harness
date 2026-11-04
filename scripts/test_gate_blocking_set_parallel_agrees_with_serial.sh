@@ -2,7 +2,7 @@
 # test_gate_blocking_set_parallel_agrees_with_serial.sh -- THE PARALLEL BLOCKING SET AGREES WITH THE SERIAL ONE
 # ARM FOR ARM, AND AN ARM THAT RACED ANOTHER ARM IS rc=2 AND NEVER A RED.
 # (coo 2026-09-20, row instruments-the-blocking-set-is-367-serial-arms-and-it-caps-every-seat-in-the-fleet,
-# minted by the ceo on Lon's TENET condition 2.)
+# minted by the officer on Lon's TENET condition 2.)
 #
 # THE MEASUREMENT THIS EXISTS FOR.  The blocking set declares 370 arms, all of them blocking, and it is
 # essentially SERIAL: the cfo read 227 arms after 22 minutes at load 4.5-5.0, 850 arm-seconds inside 862
@@ -23,7 +23,7 @@
 # THE ARMS
 #   (a) ARM FOR ARM: sequential and --shards 3 produce the IDENTICAL arm->rc map over one fixture, and the
 #       same exit code.  Name sets agree AND every arm's own verdict agrees -- two readings can agree on a
-#       count and disagree on membership (CEO-825 clause 1), and on membership while disagreeing per arm.
+#       count and disagree on membership (R-825 clause 1), and on membership while disagreeing per arm.
 #   (b) A RACE IS REFUSED AND NAMES BOTH ARMS: two arms that rendezvous and move the same watched path are
 #       BOTH rc=2, both named with the path, and the run exits 2 (UNPROVEN) rather than 1 (RED).
 #   (c) A GENUINE RED SURVIVES A RACE: an independent red arm in the same run is still RED and still decides

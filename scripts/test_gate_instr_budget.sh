@@ -135,13 +135,13 @@ TOL_PCT="${TOL_PCT:-2}"
 # ⛔ Re-pinning it down would freeze a BROKEN program's cost as the target, and the eventual real FIX would then
 # read as a ~6x REGRESSION and fail this gate. The budget stays where it is until the fixed point is restored;
 # the arm's own FAIL line is the correct signal in the meantime. Routed as its own finding.
-# ⛔⭐ ALL FOUR WATERMARKS REBASED 2026-10-02 (the coo, on the ceo's ask; row instruments-test-gate-instr-budget-watermarks-are-
+# ⛔⭐ ALL FOUR WATERMARKS REBASED 2026-10-02 (the coo, on the officer's ask; row instruments-test-gate-instr-budget-watermarks-are-
 # stale-...): measured RT_OPT=-O0, mode-4, `make` at SCRIP 496798c3b, corpus 3e9976d2b, all four correctness arms OK, one run
 # (Ir is an instruction count: load cannot move it, see DETERMINISM above). The gate is wired into no recipe; it read FAIL on
-# every tree since some landing nobody re-based for (CEO-803), which taught readers to ignore it. Each move, with its cause:
+# every tree since some landing nobody re-based for (R-803), which taught readers to ignore it. Each move, with its cause:
 #     roman          8225814 -> 12872014  (+56.5%)  SAME PROGRAM (roman.sno unchanged since the pin but for the 08-29 demos rename):
 #                    a real compiler/runtime cost accrued since the a9defbae-era pin, NOT ATTRIBUTED here -- reported to the
-#                    ceo, who holds the speed concern. The new pin is a fresh basis so the NEXT regression reds; it blesses nothing.
+#                    the officer, who holds the speed concern. The new pin is a fresh basis so the NEXT regression reds; it blesses nothing.
 #     beauty      1897159187 -> 1430567872  (-24.6%)  SAME beauty.sno and still the FIXED POINT; the drop is unattributed
 #                    (compiler, runtime or its -INCLUDE set) -- quote it as no win until decomposed the way hq_P did on 08-24.
 #     table_access  10249870 -> 15480433  (+51.0%)  DIFFERENT PROGRAM: the kernel was rewritten (corpus 723e5aa08, cb366317c,
@@ -157,43 +157,43 @@ ROMAN_IR_WATERMARK="${ROMAN_IR_WATERMARK:-12872014}"
 #   2,215,545,392  pin-era program, pin-era compiler   (the 2026-08-22 pin)
 #   2,185,743,429  pin-era program, TODAY's compiler   -> -1.35%  <- THE ONLY REAL COMPILER DELTA, and it is still a FIXED POINT
 #   1,897,159,187  new program, today's compiler       -> -13.2% of the drop is the EDITED WORKLOAD, not the compiler
-# ⭐ CLEAN A/B OF THE TWO BEAUTY FORMS (ceo s271 task 1), ONE TREE, ONE SITTING, one pristine -O0 build at SCRIP `22971235`
-# with NO src change between arms -- ceo's own two runs were hours apart with script commits between them, so this re-runs
+# ⭐ CLEAN A/B OF THE TWO BEAUTY FORMS (s271 task 1), ONE TREE, ONE SITTING, one pristine -O0 build at SCRIP `22971235`
+# with NO src change between arms -- the officer's own two runs were hours apart with script commits between them, so this re-runs
 # it properly rather than quoting across trees.  All three arms VERIFIED SELF-HOST FIXED POINTS:
 #   2,185,743,429  DECLARED_CONSTANT form, 630 lines  (corpus 8e309aa4)
 #   1,888,454,918  classic frozen,         622 lines  (corpus 1ce15a5ac, the pre-BEAUTY-CN snapshot)
 #   1,897,159,187  classic + Lon's 4-line edit, 618 lines  (corpus e63689fae -- what ships, and what is pinned above)
 # ⭐ THE MULTIPLE, on the faster axis, reference = the constants form: classic is 1.16x.  Stated as percentages with the
 # basis NAMED, because a percent without its basis is the trap: the constants form spends +15.7% MORE instructions than
-# classic (percent OF classic); equivalently classic spends -13.6% (percent OF the constants total).  ceo measured 1.15x
+# classic (percent OF classic); equivalently classic spends -13.6% (percent OF the constants total).  the officer measured 1.15x
 # / ~13% hours apart across trees -- independent agreement to 0.2%, so that reading was sound and is now tight.
 # ⛔ LON'S 4-LINE EDIT IS NOT RESOLVABLE BY THIS INSTRUMENT: +0.46% against a workload whose own run-to-run jitter is
 # ~0.4% (three runs: 1,890,181,588 / 1,897,159,187 / 1,898,412,363).  It sits AT the noise floor -- do not quote it as a cost.
 # ⛔ So the honest reading of a -14.4% NOTE here was: -1.35% earned, -13.2% is a different program.  The new pin is a fresh
 # basis, and NO cross-workload comparison may be made against the old one (RULES.md: a SLOPE is not a TOTAL; a number carried
 # into a new column must be re-measured).  Beauty remains the Milestone-1 self-host fixed point under the new source.
-# ⛔⭐ BEAUTY RE-PINNED 2026-10-11 by the ceo (row snobol4-the-instruction-budget-gate-reads-beauty-at-1622m-ir-...-ceo-1637; GOAL-CEO.md CEO-1640): 1,430,567,872 -> 1,626,072,751 (SCRIP `3cb3126a5`, HEAD
+# ⛔⭐ BEAUTY RE-PINNED 2026-10-11 by the officer (row snobol4-the-instruction-budget-gate-reads-beauty-at-1622m-ir-...-r-1637; the archived ruling record R-1640): 1,430,567,872 -> 1,626,072,751 (SCRIP `3cb3126a5`, HEAD
 # `7cf8878ba` whose only difference is the generated allocating table), THE PRICE OF ONE RULED FEATURE, NAMED, not a workload change (beauty.sno unchanged since corpus 924bd8bd0, 618 lines,
 # every arm below a verified fixed point).  BISECTED from the pin tree with this gate's own measure_ir in a scratch worktree (callgrind, -O0, mode 4), the staircase, each step a
 # parent -> child pair unless noted:
 #   1,430,285,467  496798c3b  the pin tree re-measured: reproduces the pin to 0.02%, so the pin was sound
 #   1,448,889,372  974557f25  the parent of the step below (+1.3% over 10-02..10-05: under the band)
-#   1,619,272,123  6ec5871c8  gc: the chain over the maps, STEP A (ARCH-GC s13, CEO-1492) -- +170,382,751, +11.76%, THE WHOLE RED: the runtime emitter (beauty resolves deferred expressions
+#   1,619,272,123  6ec5871c8  gc: the chain over the maps, STEP A (ARCH-GC s13, R-1492) -- +170,382,751, +11.76%, THE WHOLE RED: the runtime emitter (beauty resolves deferred expressions
 #                             at run time, rt_defer_resolve 491,254 calls, bb_emit_x86 4,211) scans every box twice for the per-site tables and re-asks frame membership per instruction
 #                             (xop_frame_member 9,365 -> 89,717 calls, zd_k 14,164 -> 95,481, zdp_scratch_cell 16,380 -> 204,922) with linear scans over its rsp snapshot vectors (+37M in
 #                             std::vector<x86_rsp_snap_t> iteration alone).  The site tables are the ruled design; the dry-run scan, the re-classification and the linear scans are the
-#                             cto's row gc-the-emitters-rsp-prepass-of-the-chain-over-the-maps-step-a-costs-beauty-170m-ir-...-ceo-1639 (DONE-WHEN: this gate with BEAUTY_IR_WATERMARK=1448889372).
+#                             cto's row gc-the-emitters-rsp-prepass-of-the-chain-over-the-maps-step-a-costs-beauty-170m-ir-...-r-1639 (DONE-WHEN: this gate with BEAUTY_IR_WATERMARK=1448889372).
 #                             When it lands this gate reads "improved; consider re-pinning down" and the owner re-pins to the reading, naming the cure.
 #   1,633,132,812  e3421a999  10-07, the peak measured
 #   1,502,416,860 -> 1,501,577,470  ea03e8627 -> dc6654135  the ACCESS trace callback road: -0.06%, neutral
-#   1,567,768,103 -> 1,516,094,868  badc713de -> 2356c4868  the C name-save stack deleted (CEO-1542): -51,673,235, -3.3%, a win kept
+#   1,567,768,103 -> 1,516,094,868  badc713de -> 2356c4868  the C name-save stack deleted (R-1542): -51,673,235, -3.3%, a win kept
 #   1,560,638,441  dbd4b7cf1  10-10 18:46, the cto's reading reproduced
-#   1,621,141,491 -> 1,621,212,235  302521554 -> 7210bcef1  the KEYWORD trace road (CEO-1635): +71K, 0.004%
-#   1,620,291,817 -> 1,624,407,409  1ba942a4a -> 4030b0d03  the VALUE trace inside a match (CEO-1636): +4.1M, +0.25%, of which +2.9M is strcmp in the variable hash walk (layout) and
+#   1,621,141,491 -> 1,621,212,235  302521554 -> 7210bcef1  the KEYWORD trace road (R-1635): +71K, 0.004%
+#   1,620,291,817 -> 1,624,407,409  1ba942a4a -> 4030b0d03  the VALUE trace inside a match (R-1636): +4.1M, +0.25%, of which +2.9M is strcmp in the variable hash walk (layout) and
 #                             +0.7M the NV_SET_fn -> NV_SET_p_fn wrapper layer; no capture, cursor or pump probe shows in the per-function diff (beauty runs no cursor assignment)
-#   1,624,515,945 -> 1,626,072,751  666108ad4 -> 3cb3126a5  the DATA TWEAK hook road (CEO-1638): +1.56M, +0.10%
+#   1,624,515,945 -> 1,626,072,751  666108ad4 -> 3cb3126a5  the DATA TWEAK hook road (R-1638): +1.56M, +0.10%
 # Two readings of one tree differ by up to 0.14% (6ec5871c8 twice: 1,618,721,415 / 1,619,272,123; 4030b0d03 by this gate 1,622,070,134, by the worktree 1,624,407,409), inside the band.
-# ⛔⭐ BEAUTY RE-PINNED DOWN 2026-10-11 by the cto, the owner the block above names (row gc-the-emitters-rsp-prepass-of-the-chain-over-the-maps-step-a-costs-beauty-170m-ir-...-ceo-1639):
+# ⛔⭐ BEAUTY RE-PINNED DOWN 2026-10-11 by the cto, the owner the block above names (row gc-the-emitters-rsp-prepass-of-the-chain-over-the-maps-step-a-costs-beauty-170m-ir-...-r-1639):
 # 1,626,072,751 -> 1,466,981,489, this gate's own reading of the cure over 299e125f8 (fixed point kept, beauty.s byte-identical to its base at every step, 465 of 518 programs across every
 # language byte-identical and the other 53 refused alike by both trees). THE CURE, five steps on the runtime emitter, each a callgrind reading of beauty fed its own source:
 #   1,624,099,019  56c4ad49a  the base re-measured

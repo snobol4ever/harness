@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-547)"
 # test_gate_package_runners_read_each_units_declared_compile_args.sh -- A TEST UNIT'S COMPILE SWITCHES ARE ITS OWN DECLARATION, AND A
-# RUNNER TYPES NONE OF ITS OWN. RULES.md hard-cap rule clause 8 (f); ceo CEO-1281; Lon 2026-09-26 11:1x-11:2x CDT, in-chat to the ceo,
+# RUNNER TYPES NONE OF ITS OWN. RULES.md hard-cap rule clause 8 (f); R-1281; Lon 2026-09-26 11:1x-11:2x CDT, in-chat,
 # verbatim: "Basically the command-line arguments for compile time and run time (if needed) should be stored per-test unit."
 #
 # ⛔⭐ WHY EVERY ARM READS A VERDICT PAIR. Landing 3 of the compile_args row deleted the typing: corpus_suite_harness.py no longer puts
@@ -28,7 +28,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 #   L4  its --compile-only reader (a compile-only census, the cfo 2026-10-22): a run_args cell is read and ignored, the compile half
 #       returned; another unit's name, a word outside the admitted list and an unknown option still refuse rc 2
 #   X1  corpus_suite_harness.py extract carries the unit's heap, stack and command line out beside it, named by the output's stem
-#       (CEO-1127: an entry extracted standalone is how every seat cures); an undeclaring unit gets no .cmdline
+#       (R-1127: an entry extracted standalone is how every seat cures); an undeclaring unit gets no .cmdline
 #   X2  extract-family carries <stem>.cmdline, and the harness run on the extracted pair -- no ALL.csv beside it -- applies it
 #   S1  scorecard_snobol4.sh on a scratch gimpel table (the path test_snobol4_gimpel_suite.sh grades through)
 #   S2  scorecard_snobol4.sh on a scratch benchmarks dir with no table: the <stem>.cmdline sidecar is the only declaration
@@ -179,7 +179,7 @@ board_pair P6 "$rc" "$out"
 mk_icn "$W/jcon"; csv_pair decl nodecl > "$W/jcon/ALL.csv"
 run_db P7 "$W/p7.tsv" -- "$HERE/test_icon_jcon_suite.sh" --corpus "$W/jcon"
 A="$W/az/corpus/packages/icon/arizona_tests"; mk_icn "$A/general"; mkdir -p "$A/special"; csv_pair general/decl general/nodecl > "$A/ALL.csv"
-DBPFX=general/ run_db P8 "$W/p8.tsv" S4E_HOME="$W/az" -- "$HERE/test_icon_arizona_suite.sh"   # the board keys <subdir>/<stem> (b4f66ce42, CEO-1366 (b))
+DBPFX=general/ run_db P8 "$W/p8.tsv" S4E_HOME="$W/az" -- "$HERE/test_icon_arizona_suite.sh"   # the board keys <subdir>/<stem> (b4f66ce42, R-1366 (b))
 P="$W/ipl/corpus/packages/icon/ipl"; mk_icn "$P/progs"; for d in gprogs procs gprocs incl gincl; do mkdir -p "$P/$d"; done; csv_pair progs/decl progs/nodecl > "$P/ALL.csv"
 DBPFX=progs/ run_db P9 "$W/p9.tsv" S4E_HOME="$W/ipl" -- "$HERE/test_icon_ipl_suite.sh"
 mk_sno "$W/x32" spt
@@ -256,7 +256,7 @@ else red D1 "run_test and compile_mode4 are no longer in test_corpus_snobol4.sh 
 # ── landing 5: A, the accept arm; R, the ratchet ───────────────────────────────────────────────────────────
 adm="$(cd "$ROOT" && python3 -c 'import sys; sys.path.insert(0, "../harness/scripts"); import corpus_suite_harness as h; print(" ".join(h.COMPILE_ARGS_ADMITTED))' 2>/dev/null)"
 if [ -z "$adm" ]; then red A "COMPILE_ARGS_ADMITTED could not be read from the harness"; else
-    # A word is graded on a witness in its own language (cfo 2026-10-17, CEO-1810): --stlimit on cnt.sno against sbl's output, --dialect=gnu on dia.pl,
+    # A word is graded on a witness in its own language (cfo 2026-10-17, R-1810): --stlimit on cnt.sno against sbl's output, --dialect=gnu on dia.pl,
     # which prints the '$dialect' flag -- gnu with the switch, iso without it (the control: a switch scrip ignored would read iso).
     printf ':- initialization(main).\nmain :- current_prolog_flag(%s, D), write(D), nl.\n' "'\$dialect'" > "$W/dia.pl"
     a_bad=""; for w in $adm; do
@@ -290,13 +290,13 @@ PYC
     else red A "not accepted:${a_bad:- none}; corpus census: $census"; fi
 fi
 # R: exactly these scripts may type the switch, each for the reason given; gates are not runners and are not censused
-# (lib_ladder.sh left this list 2026-09-28: each ladder witness carries its own --stlimit in its row's compile_args, CEO-1353, the coo)
+# (lib_ladder.sh left this list 2026-09-28: each ladder witness carries its own --stlimit in its row's compile_args, R-1353, the coo)
 RATCHET_EXEMPT="lib_port_trace.sh:the port-trace grader's instrumentation, not a unit attribute (landing 3's ruling)
 util_stlimit_keeps_three_package_answers.sh:an instrument that measures the switch itself -- its arms type it by design
 corpus_suite_harness.py:COMPILE_ARGS_ADMITTED is the switch's one definition
-run_port_as_scrip.sh:the port face names the switch only to DROP it from SCRIP's m3 call, as corpus_suite_harness.py's _engine_argv drops it (CEO-1822, fd481a4)
-util_gc_safe_point_contract.py:CEO-1250 pins its reach reading's environment to the switch
-util_gc_demo_porter_chain_reading.sh:a one-entry GC witness reading (hq_collector's porter reading): --stlimit is tests/snobol4 demo_porter's own ALL.csv compile_args, spelled on its command line as the harness passes it (the coo, ceo CEO-1697)"
+run_port_as_scrip.sh:the port face names the switch only to DROP it from SCRIP's m3 call, as corpus_suite_harness.py's _engine_argv drops it (R-1822, fd481a4)
+util_gc_safe_point_contract.py:R-1250 pins its reach reading's environment to the switch
+util_gc_demo_porter_chain_reading.sh:a one-entry GC witness reading (hq_collector's porter reading): --stlimit is tests/snobol4 demo_porter's own ALL.csv compile_args, spelled on its command line as the harness passes it (the coo, R-1697)"
 ratchet_offenders() {  # <dir> -> the basename of every non-gate .sh/.py in it with an executable line typing the switch
     local f; for f in "$1"/*.sh "$1"/*.py; do [ -f "$f" ] || continue
         case "${f##*/}" in test_gate_*) continue;; esac

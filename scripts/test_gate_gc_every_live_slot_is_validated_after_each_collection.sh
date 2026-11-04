@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_every_live_slot_is_validated_after_each_collection.sh -- THE INDEPENDENT ENUMERATION, ROAD (c) OF THE VALIDATOR ROW, FINISH LINE
-# of icon-gc-the-per-collection-heap-validator-every-live-typed-slot-is-checked-against-the-vacancy-table-... (ceo's 2026-10-17 ruling: "(c) is the
+# of icon-gc-the-per-collection-heap-validator-every-live-typed-slot-is-checked-against-the-vacancy-table-... (the officer's 2026-10-17 ruling: "(c) is the
 # row's FINISH LINE, the independent enumeration (a linear heap walk over the START bitmap with each type's slots, and for the stack the per-site
 # cell map)"; the DONE-WHEN of that row IS this gate's exit code). THE DESIGN IS THE cto's RULING OF 2026-10-30, ARCH-GC-COMPILE-TIME-FRAME-MAPS 13.14.
 #
@@ -29,7 +29,7 @@
 # ARMS. (1) SILENT ON THE CURED TREE, WITH REACH AND NO UNROWED TYPE: six witnesses, stress 1 and 3, mode 3 and mode 4, 64 KB: every collection prints its
 # [ZGC-VALIDATE-HEAP] summary, every summary reads unrowed=none and findings=0, stdout equals the expected output, and the witnesses that allocate DVEC,
 # ARR or AGGV reach a laid block and validate a heap pointer (a run that reaches none is not a reading). (2) FAIL-ONCE, by a seam inside THIS instrument
-# (CEO-1680: a seam only in an instrument, never in SCRIP): an LD_PRELOAD shim over out/interposable/libscrip_rt.so overwrites one heap-resident registry
+# (R-1680: a seam only in an instrument, never in SCRIP): an LD_PRELOAD shim over out/interposable/libscrip_rt.so overwrites one heap-resident registry
 # entry of rt_gc_fix_run with a copy of another, so the slot is never registered, never fixed, and invisible to road (a); on a program whose array sits
 # above garbage that dies, the walk must name it AT the collection that moved the pointee, and road (a) must read zero on the same run. This arm needs
 # only the rows of the blocks it plants through and so reads while arm (1) is still RED. (3) INERT WHEN OFF: no [ZGC-VALIDATE-HEAP] line without the knob

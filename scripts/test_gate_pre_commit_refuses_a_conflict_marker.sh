@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pre_commit_refuses_a_conflict_marker.sh — the invariant gate for ARM 1 of the pre-commit hook
-# (row `pre-commit-hook-refuses-a-staged-conflict-marker-in-any-tracked-file`, hq_C's mint, ceo CEO-370 rank 1).
+# (row `pre-commit-hook-refuses-a-staged-conflict-marker-in-any-tracked-file`, hq_C's mint, R-370 rank 1).
 #
 # WHAT IT PROTECTS. A conflict marker committed to a shared authority does not fail where it was made -- it
 # fails for every other seat, in a file they never touched. Measured 2026-09-06: a SCORE.md landed carrying

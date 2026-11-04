@@ -2,7 +2,7 @@
 # ⛔⭐ A BOARD PARSER THAT RE-ARMS ON EVERY DASHED RULE READS THE LAST GRID, NOT THE FIRST, AND THE CONSUMING
 # LOOP ASSIGNS BY KEY -- so a second grid under the same kernel names does not add rows, it SILENTLY WINS, and
 # the triangulator prints a complete, plausible agreement table built from two different physical quantities
-# (FINDING-2026-09-13-hq_P-a-board-parser-that-restarts-on-every-dashed-rule..., ceo ruling CEO-730).
+# (FINDING-2026-09-13-hq_P-a-board-parser-that-restarts-on-every-dashed-rule..., ruling R-730).
 # ⭐ THIS GATE PROVES THE SHAPE BY EXECUTION, NOT BY GREP ALONE: it runs BOTH awk programs over a two-grid
 # fixture and asserts the OLD one is fooled (its own discriminator self-test -- a fixture that cannot expose
 # the defect would let the cured arm pass vacuously) before asserting the CURED one is not. The census that

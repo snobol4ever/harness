@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# util_unabsorbed_census.py -- WHICH OF OUR OWN SOURCES ARE NOT YET IN THE ONE-LINER / MULTI-LINER RUNGS (ceo, 2026-09-04,
+# util_unabsorbed_census.py -- WHICH OF OUR OWN SOURCES ARE NOT YET IN THE ONE-LINER / MULTI-LINER RUNGS (2026-09-04,
 # on Lon's order: "For every source from every language that we've generated or that existed in corpus which is not
 # part of any third-party package, if you can get it to run and it has output then add that to the test suite list.
-# I.e. All our testing should be ONE-LINER and MULTI-LINER Python test suite. Oh yeah, CEO, have you ensured that all
+# I.e. All our testing should be ONE-LINER and MULTI-LINER Python test suite. Oh yeah, [officer], have you ensured that all
 # test sources have been moved into the ONE-LINER and MULTI-LINER?").
 #   python3 ../harness/scripts/util_unabsorbed_census.py [--lang L] [--list]
 # Walks corpus/ minus packages/ (third-party is the package instrument's business) and minus programs/ (Lon 2026-09-04:
@@ -11,8 +11,8 @@
 # tests/<lang>/ALL.excluded.txt with a reason), loose pair (has a .ref/.expected/.std beside it), fixture
 # (parser/coverage trees or parser_/probe_/coverage_ names), loose source with no ref, DECLARED-KEEPER (a
 # KEEP.md declares it a permanent keeper, or a PENDING.md defers it to a LIVE row -- read from the builder's own
-# matchers, see below), or a KERNEL source (benchmarks/<lang>/, demos/<lang>/ -- never owed absorption, CEO-565
-# one copy + CEO-567 kernel convention: kernel-with-ref owes nothing, kernel-owed-ref owes a ref cut from the
+# matchers, see below), or a KERNEL source (benchmarks/<lang>/, demos/<lang>/ -- never owed absorption, R-565
+# one copy + R-567 kernel convention: kernel-with-ref owes nothing, kernel-owed-ref owes a ref cut from the
 # oracle and is named). Prints the population per tree and language; rc=0 when no unaccounted runnable source
 # remains for the languages asked, rc=1 naming what is owed, rc=2 when corpus/ cannot be read or the deferral
 # contract cannot be read. A DONE-WHEN reads its rc, never a pinned count.
@@ -69,7 +69,7 @@ def _additive_origin(top, lang, base):
 # _EXTRA_TEST_TREES categories by hand; nothing enforces the two lists agreeing).
 _TESTS_ADDITIVE_CATS = ('tests', 'scrip_test', 'snocone_ladder')
 # ======================================================= the deferral contract, READ FROM THE BUILDER ===
-# ⛔⭐⭐ ONE SET OF DECLARATIONS, TWO INSTRUMENTS (ceo CEO-606, 2026-09-12, on hq_B's snocone absorption row).
+# ⛔⭐⭐ ONE SET OF DECLARATIONS, TWO INSTRUMENTS (R-606, 2026-09-12, on hq_B's snocone absorption row).
 # This census and util_build_rungs_suite.py were each succeeding on their own terms and disagreeing about the
 # same 68 files: the builder REFUSES BY CONTRACT to absorb a source a KEEP.md declares a permanent keeper or a
 # PENDING.md defers to a live row, while this census had never heard of either filename and printed all 68 as
@@ -92,7 +92,7 @@ try:
     _spec = importlib.util.spec_from_file_location('_census_reads_the_builder', _BLD)
     _bld = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_bld)
     _declared_in_keep, _pending_deferral, _PO = _bld._declared_in_keep, _bld._pending_deferral, _bld.PO
-    # ⛔ THE ONE AUTHORITY FOR "this language has no rival implementation" (CEO-607) reached through the
+    # ⛔ THE ONE AUTHORITY FOR "this language has no rival implementation" (R-607) reached through the
     # module this census ALREADY loads -- never a second import and never a second spelling of the set. A
     # census that guessed the membership could hand a language that HAS an oracle the derived-ref arm below,
     # which silently downgrades every one of its refs from measured to authored.
@@ -125,7 +125,7 @@ def _declared_keeper_of(abspath, lang):
     fix invisible to the instrument that measures it.
     ⛔ Scoped to corpus/tests/<lang>/ because that is the builder's own ROOT and therefore the only tree whose
     KEEP.md/PENDING.md either instrument reads. (benchmarks/rebus/KEEP.md exists and is read by NOTHING; it
-    describes a kernel tree, which CEO-609 already places outside absorption debt, so nothing turns on it --
+    describes a kernel tree, which R-609 already places outside absorption debt, so nothing turns on it --
     but do not mistake its presence for a contract this census honours.)"""
     root = os.path.join(C, 'tests', lang)
     if not abspath.startswith(root + os.sep): return None
@@ -137,10 +137,10 @@ def _declared_keeper_of(abspath, lang):
         pf, prow, pstate = pd
         if pstate in ('LIVE', 'UNVERIFIABLE'): return (os.path.relpath(pf, C), 'DEFERRED row %s: %s' % (prow or 'UNNAMED', pstate))
     return None
-# ⛔⭐ THE KERNEL TREES ARE NOT ABSORPTION DEBT (ceo CEO-609, addendum to CEO-606; CEO-565 ONE COPY + CEO-567 the
+# ⛔⭐ THE KERNEL TREES ARE NOT ABSORPTION DEBT (R-609, addendum to R-606; R-565 ONE COPY + R-567 the
 # kernel convention). A source under benchmarks/<lang>/ or demos/<lang>/ is a kernel program: it is graded where
 # it lives, by the benchmark and demo instruments, and absorbing a second copy of it into a rung suite is the very
-# duplication CEO-565 forbids. What it CAN owe is a ref: with a .ref/.expected/.std beside it there is nothing
+# duplication R-565 forbids. What it CAN owe is a ref: with a .ref/.expected/.std beside it there is nothing
 # owed (kernel-with-ref); without one it is owed a ref cut from the oracle (kernel-owed-ref) and is named.
 # ⛔ KEYED ON THE TREE, NEVER ON THE LANGUAGE SEGMENT MATCHING THE FILE'S OWN LANGUAGE -- measured:
 # demos/snobol4/claws5/claws5.sc and demos/snobol4/porter/porter.sc are SNOCONE sources living under the
@@ -168,7 +168,7 @@ def _fixture_of_a_witness(root, rel, f):
 def _own_ref(root, base, files):
     """The .ref/.expected/.std beside `base` that BELONGS TO IT, or None.
     ⛔⭐ A REF IS CLAIMED BY BASENAME, AND A BASENAME IS NOT UNIQUE ACROSS LANGUAGES IN ONE DIRECTORY
-    (hq_B 2026-09-12, measured while landing CEO-609 and caught by reading the very first run of the new
+    (hq_B 2026-09-12, measured while landing R-609 and caught by reading the very first run of the new
     counter, not by a test). corpus/demos/snobol4/claws5/ holds claws5.sno AND claws5.sc beside ONE
     claws5.ref cut for the SNOBOL4 program -- so a plain "does base + '.ref' exist" credited the SNOCONE
     source with another language's pinned output and reported it as kernel-with-ref, OWING NOTHING. Same
@@ -190,8 +190,8 @@ def _ref_is_ambiguous(root, base, files):
     twins = [x for x in files if x.rsplit('.', 1)[-1] in EXT and x[:x.rfind('.')] == base]
     return len(twins) > 1 and any(os.path.exists(os.path.join(root, base + e)) for e in _REF_EXTS)
 
-# ⛔⭐ A SOURCE WITH NO ORACLE ANSWER IS EXCLUDED, NEVER DEBT (Lon 2026-10-11 16:0x CDT, in-chat to the ceo, verbatim: "Exclude any program in which
-# we have no way to get output from an oracle, or in which we do not know the answer."; ceo CEO-1696, RULES.md § Oracles). Outside tests/<lang>/ (tests/scrip_test/ is not one; tests/<lang>/'s
+# ⛔⭐ A SOURCE WITH NO ORACLE ANSWER IS EXCLUDED, NEVER DEBT (Lon 2026-10-11 16:0x CDT, in-chat, verbatim: "Exclude any program in which
+# we have no way to get output from an oracle, or in which we do not know the answer."; R-1696, RULES.md § Oracles). Outside tests/<lang>/ (tests/scrip_test/ is not one; tests/<lang>/'s
 # accounting is ALL.excluded.txt, the builder's), a source is accounted by a row of an EXCLUDED.tsv in its own directory or any directory above it
 # up to corpus/<tree>: <path relative to that EXCLUDED.tsv's directory> TAB NO_ORACLE_ANSWER TAB <the measurement>, the package tables' own shape.
 # A row with no measurement, or of any other class, accounts nothing (hq_icon's ASK of 2026-10-17: the Arizona icont-bench harness under
@@ -214,7 +214,7 @@ def _no_oracle_answer(root, f):
         if r in _noa_cache[t]: return (os.path.relpath(t, C), _noa_cache[t][r])
         if d == stop or d == C: return None
         d = os.path.dirname(d)
-no_oracle = collections.defaultdict(list)        # {lang: [(path, (EXCLUDED.tsv, measurement)), ...]} -- excluded, never debt (CEO-1696)
+no_oracle = collections.defaultdict(list)        # {lang: [(path, (EXCLUDED.tsv, measurement)), ...]} -- excluded, never debt (R-1696)
 
 
 for root, dirs, files in os.walk(C):
@@ -266,7 +266,7 @@ for root, dirs, files in os.walk(C):
         _dk = _declared_keeper_of(os.path.join(root, f), lang) if top == 'tests' else None
         if f.startswith('ALL.'): kind = 'container'
         # ⛔⭐ A DECLARED FIXTURE IS NOT A LOOSE SOURCE, AND ABSORBING ONE BREAKS THE WITNESS THAT DECLARES IT
-        # (hq_V 2026-09-12, CEO-598/599, found while classifying icon's 59 owed). A file inside `NAME.fixtures/`
+        # (hq_V 2026-09-12, R-598/599, found while classifying icon's 59 owed). A file inside `NAME.fixtures/`
         # is DATA belonging to the witness `NAME.icn` beside that directory -- lib_icn_rundir.sh (THE ONE
         # AUTHORITY for the run-directory contract) stages exactly those files into a fresh rundir, and
         # test_gate_icn_rundir_contract grades the result against the live Arizona oracle. It is accounted BY
@@ -280,7 +280,7 @@ for root, dirs, files in os.walk(C):
         # so a census that counts load-bearing data as debt is a criterion that commands the damage.
         elif _fixture_of_a_witness(root, rel, f): kind = 'accounted'
         elif top in ('include', 'library'): kind = 'module'
-        # ⛔⭐ THE DECLARATION IS THE ACCOUNTING, AND IT KEEPS ITS OWN NAME (ceo CEO-606): a declared keeper is
+        # ⛔⭐ THE DECLARATION IS THE ACCOUNTING, AND IT KEEPS ITS OWN NAME (R-606): a declared keeper is
         # reported as its own category rather than folded into `accounted`, because ALL.excluded.txt keeps ITS
         # own meaning -- "this cannot run with output". Those are two different facts about a file, and one
         # bucket for both would destroy the distinction in the only report that carries it. Placed AHEAD of the
@@ -307,10 +307,10 @@ for root, dirs, files in os.walk(C):
         elif top in ('demos', 'benchmarks') and ((base, top) in additive_excluded[lang] or _additive_origin(top, lang, base) in absorbed_origins[lang]): kind = 'accounted'
         elif top == 'tests' and (any((base, c) in additive_excluded[lang] for c in _TESTS_ADDITIVE_CATS)
                                   or any(_additive_origin(c, lang, base) in absorbed_origins[lang] for c in _TESTS_ADDITIVE_CATS)): kind = 'accounted'
-        # ⛔⭐ A DERIVED REF IS ITS OWN CLASS AND MUST NOT READ AS AN ORACLE-CUT ONE (CEO-607, 2026-09-12, on
+        # ⛔⭐ A DERIVED REF IS ITS OWN CLASS AND MUST NOT READ AS AN ORACLE-CUT ONE (R-607, 2026-09-12, on
         # hq_C's ASK; option (a)). This arm sits AHEAD of the kernel arm below ON PURPOSE. Rebus has NO
-        # INDEPENDENT RIVAL IMPLEMENTATION, so CEO-391's one-oracle-per-language has no binary to name for it and
-        # its kernels can never be given "a ref cut from its oracle" -- the remedy the kernel arm prints. CEO-607
+        # INDEPENDENT RIVAL IMPLEMENTATION, so R-391's one-oracle-per-language has no binary to name for it and
+        # its kernels can never be given "a ref cut from its oracle" -- the remedy the kernel arm prints. R-607
         # rules the remedy that exists: the ref is DERIVED from a CROSS-LANGUAGE computation of the same kernel
         # under a REAL oracle (the rival program and its oracle output), the hand arithmetic is the second
         # witness, and both are RECORDED in a `.derivation` beside the ref.
@@ -345,7 +345,7 @@ for (top, lang), c in sorted(rows.items()):
     for k, v in c.items(): tot[k] += v
 d = sum(len(v) for v in dangling.values())
 # ⛔⭐ A KERNEL SOURCE WITH NO REF IS DEBT, AND IT JOINS THE rc -- the same call this file already made for a
-# dangling ref, for the same reason: a debt reported beside an rc=0 is a debt nobody is measured on. CEO-609
+# dangling ref, for the same reason: a debt reported beside an rc=0 is a debt nobody is measured on. R-609
 # names it "owed a ref cut from the oracle", and rc=1 fires when something is owed. ⭐ It is its OWN bucket and
 # is never folded into the absorption number: those are sources awaiting a rung suite entry, these are kernel
 # programs that stay where they live and want an oracle-cut ref. Summing them would keep the arithmetic
@@ -358,7 +358,7 @@ n = sum(len(v) for v in owed.values()) + d + k
 # ⭐ It is reported as its own bucket and never folded into 'loose pair': those are sources awaiting absorption,
 # these are refs whose source is already gone. Summing them would hide a ref-side regression inside a source-side
 # backlog that is being worked down anyway -- the arithmetic would stay plausible while the meaning drained out.
-print('UNABSORBED_CENSUS%s: containers=%d modules=%d accounted=%d declared-keepers=%d kernel-with-ref=%d derived-refs=%d no-oracle-answer=%d OWED=%d (loose pairs %d, fixtures %d, loose no-ref %d, DANGLING REFS %d, KERNEL OWED A REF %d) -- an owed source is absorbed into its rungs with an oracle-cut ref, or named in ALL.excluded.txt with the reason it cannot run with output; an owed DANGLING REF is a .ref/.expected/.std whose source no longer exists and is deleted once its content is proven preserved (diff it against the rungs entry that absorbed it) or restored beside its source; a KERNEL source owed a ref is given one cut from its oracle and stays where it lives; a DERIVED REF is a kernel of a language with NO RIVAL IMPLEMENTATION (CEO-607) whose ref is derived cross-language under a real oracle with the derivation recorded beside it -- accounted, never owed, never available to a language that has an oracle, and kept a SEPARATE class from kernel-with-ref so a derived ref never reads as an oracle-cut one. Declared keepers are REPORTED BESIDE owed and never folded into it -- one rung suite per language is the order, and a keeper is a deliberate exception that is SEEN, not one that hides; a NO ORACLE ANSWER source (CEO-1696) is named with its measurement in an EXCLUDED.tsv beside or above it, excluded and never owed' % (' lang=' + A.lang if A.lang else '', tot['container'], tot['module'], tot['accounted'], tot['declared-keeper'], tot['kernel-with-ref'], tot['derived-ref'], tot['no-oracle-answer'], n, tot['loose pair (has ref)'], tot['fixture'], tot['loose source (no ref)'], d, k))
+print('UNABSORBED_CENSUS%s: containers=%d modules=%d accounted=%d declared-keepers=%d kernel-with-ref=%d derived-refs=%d no-oracle-answer=%d OWED=%d (loose pairs %d, fixtures %d, loose no-ref %d, DANGLING REFS %d, KERNEL OWED A REF %d) -- an owed source is absorbed into its rungs with an oracle-cut ref, or named in ALL.excluded.txt with the reason it cannot run with output; an owed DANGLING REF is a .ref/.expected/.std whose source no longer exists and is deleted once its content is proven preserved (diff it against the rungs entry that absorbed it) or restored beside its source; a KERNEL source owed a ref is given one cut from its oracle and stays where it lives; a DERIVED REF is a kernel of a language with NO RIVAL IMPLEMENTATION (R-607) whose ref is derived cross-language under a real oracle with the derivation recorded beside it -- accounted, never owed, never available to a language that has an oracle, and kept a SEPARATE class from kernel-with-ref so a derived ref never reads as an oracle-cut one. Declared keepers are REPORTED BESIDE owed and never folded into it -- one rung suite per language is the order, and a keeper is a deliberate exception that is SEEN, not one that hides; a NO ORACLE ANSWER source (R-1696) is named with its measurement in an EXCLUDED.tsv beside or above it, excluded and never owed' % (' lang=' + A.lang if A.lang else '', tot['container'], tot['module'], tot['accounted'], tot['declared-keeper'], tot['kernel-with-ref'], tot['derived-ref'], tot['no-oracle-answer'], n, tot['loose pair (has ref)'], tot['fixture'], tot['loose source (no ref)'], d, k))
 for lang in sorted(set(list(owed) + list(dangling) + list(kernel_owed) + list(keepers) + list(no_oracle))):
     bits = []
     if dangling[lang]: bits.append('dangling refs %d' % len(dangling[lang]))

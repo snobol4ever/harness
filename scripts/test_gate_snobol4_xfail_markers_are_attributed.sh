@@ -3,7 +3,7 @@
 # rungs must NAME A LIVE ROW, so that "expected to fail" always carries a route to a cure.
 #
 # ⛔ WHY THIS GATE EXISTS (hq_P 2026-09-06, row snobol4-every-xfail-fixed-as-a-faulty-test-or-cured-
-# as-a-defect; CEO-328 (4) asked the question in prose and nobody could run it). Measured at the time
+# as-a-defect; R-328 (4) asked the question in prose and nobody could run it). Measured at the time
 # of writing: of 32 markers, 6 named a live row, 3 named a row that was never minted, and 23 named NO
 # ROW AT ALL -- they cite a FINDING and the words "Known, still open". ⭐ A FINDING IS A RECORD, NOT A
 # ROUTE: under Lon's THERE IS NO XFAIL ruling, a marker whose text names no row leaves its reader with
@@ -23,7 +23,7 @@
 #
 # ⛔ REPORTED, NOT BLOCKING, ON PURPOSE: it is RED today (28 of 34 carry no usable route; the other 6 name a live row, but only in prose). It is wired into `make test`
 # with a leading `-` exactly like test_gate_no_xfail_survives.sh, and the ramp to blocking is a
-# ceo/Lon date decision, not a script author's.
+# officer/Lon date decision, not a script author's.
 #
 # ⭐ SIX ARMS NEGATIVE-TESTED AT LANDING, because a gate that cannot fail is the trap this row is
 # about: rc=1 real tree · rc=2 missing QUEUE.tsv · rc=2 QUEUE parsing to zero rows · rc=2 missing
@@ -52,7 +52,7 @@ QUEUE="${S4E_QUEUE:-/home/resources/postoffice/QUEUE.tsv}"
 # ⛔ REFUSE rc=2 rather than skip-as-success: an instrument that cannot measure must say so. A missing
 # ALL.xfail is NOT "zero unattributed markers" -- it is a gate that graded nothing and must not print
 # the same string as one that passed.
-# ⭐ AMENDED 2026-10-02 (ceo CEO-1408): the POPULATION is ALL.csv's xfail column (below), so an ABSENT ALL.xfail is MEASURABLE -- it is
+# ⭐ AMENDED 2026-10-02 (R-1408): the POPULATION is ALL.csv's xfail column (below), so an ABSENT ALL.xfail is MEASURABLE -- it is
 # zero reason blocks. util_build_rungs_suite.py --resort deletes an empty ALL.xfail, which is exactly the state of a rungs with no
 # markers left (SnoRungs on 2026-10-02). Read as empty: zero marked entries grade CLEAN, and any marked entry grades NO REASON AT
 # ALL (RED) -- never a skip. The refusal stays for a missing QUEUE.tsv or ALL.csv, which ARE the population and the routes.

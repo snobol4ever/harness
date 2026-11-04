@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_icon_rate_3way.sh — FIXED-TIME RATE comparison: SCRIP m3/m4 vs Arizona iconx vs JCON.
 #
 # ⭐ WHY FIXED-TIME AND NOT FIXED-ITERATION (Lon, 2026-08-21, in-chat: "flip the tests to loop on a
@@ -32,7 +32,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # Usage: [REPS=3] [WARM=500] [BUD=1500] bash ../harness/scripts/bench_icon_rate_3way.sh
 # Oracles: icont_bin()/iconx_bin() and jcon_path_export() -- all three from lib_oracle_flags.sh, the ONE authority.
 # ⛔ RETIRED 2026-09-23 -- see the refusal on the next line; the header below is kept as the record of what this measured.
-echo "⛔ RETIRED(2) bench_icon_rate_3way.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, CEO-567 THE KERNEL CONVENTION, CEO-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, tools/bench_rusage)." >&2; exit 2
+echo "⛔ RETIRED(2) bench_icon_rate_3way.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, R-567 THE KERNEL CONVENTION, R-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, tools/bench_rusage)." >&2; exit 2
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200/s255), Icon-aware since row icon-oracle-accessors-shared." >&2; exit 3; }
@@ -42,7 +42,7 @@ ICONT_BIN="$(icont_bin)" || exit 2
 iconx_bin >/dev/null || exit 2
 I="$(dirname "$ICONT_BIN")"
 export PATH="$I:$PATH"
-# ⛔ SCRIP/refs IS DELETED ORG-WIDE (CEO-765) -- this line used to read J=$R/refs/jcon-master/bin, putting a DEAD
+# ⛔ SCRIP/refs IS DELETED ORG-WIDE (R-765) -- this line used to read J=$R/refs/jcon-master/bin, putting a DEAD
 # directory on PATH. MEASURED, and it is worse than a blank column: jcont failed silently, jcon timed 0, vs-jcon
 # read "-", and the empty jcon checksum made CHECKSUMS print MISMATCH on EVERY ROW while the board still EXITED 0.
 # jcon_path_export() is the ONE authority (lib_oracle_flags.sh) and it EXPORTS PATH rather than handing back a

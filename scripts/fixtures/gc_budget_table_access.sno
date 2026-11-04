@@ -1,6 +1,6 @@
 * gc_budget_table_access.sno -- THE FIXTURE OF test_gate_gc_a_collection_over_a_small_live_set_stays_under_its_instruction_budget.sh,
 * whose every line below this header is corpus benchmarks/snobol4/table_access.sno at corpus cb366317c^ byte-for-byte (the form the
-* 760 K Ir budget was measured on, CEO-1256).  corpus cb366317c (2026-09-25) made the kernel a straight-line snippet whose
+* 760 K Ir budget was measured on, R-1256).  corpus cb366317c (2026-09-25) made the kernel a straight-line snippet whose
 * live set is 964 blocks, not 712, and the gate read that change as a refusal; a cost gate pins the program it was
 * calibrated on.  Edit this file and the budget must be re-measured on it.
 * table_access -- fills a 500-entry TABLE of even numbers and totals it, N times over.

@@ -18,7 +18,7 @@
 # second code path. Default stays ".sno" so all 21 existing SNOBOL4 callers are byte-identical;
 # icon callers set RUNGS_EXT=.icn (and RUNGS_DIR=$S4E/corpus/tests/icon) before sourcing/calling.
 # ⛔⛔⭐ INTERIM PROMOTION PROTOCOL -- READ THIS BEFORE YOU PROMOTE OR RETIRE AN XFAIL MARKER
-# (ceo ruling 2026-09-01, routed here by hq_C; the row it was INTERIM until, `optbypass-pin-stable-subset`, is RETIRED.)
+# (ruling 2026-09-01, routed here by hq_C; the row it was INTERIM until, `optbypass-pin-stable-subset`, is RETIRED.)
 #
 # ⛔⭐ A MARKER LIVES IN **FOUR** PLACES, NOT THREE -- THIS PARAGRAPH SAID THREE UNTIL 2026-09-06 AND THAT
 # OMISSION HAS NOW COST TWO SEATS AND ONE BLOCKING RED ON ORIGIN:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_mod_in_the_fpc_dialects_keeps_the_dividends_sign_and_takes_a_negative_divisor.sh -- in a source that names a {$mode} (objfpc, delphi,
 # tp), i mod j is the truncated remainder fpc computes: the sign of the dividend, a negative divisor allowed (-7 mod 3 is -1, 7 mod -3 is 1). The ISO
-# 7185 6.7.2.2 rule (a result in 0..j-1, an error for j zero or negative) binds the ISO dialect only (CEO-1657), where it stays.
+# 7185 6.7.2.2 rule (a result in 0..j-1, an error for j zero or negative) binds the ISO dialect only (R-1657), where it stays.
 #
 # MEASURED 2026-10-21 by hq_pascal on the parent (SCRIP 1aeeea663), fpc 3.2.2 against scrip, one program in each dialect:
 #   objfpc  fpc "-1 -2 1 1" / "1 -2 -1"   scrip "2 -2 1 1" / the 6.7.2.2 refusal of a negative divisor

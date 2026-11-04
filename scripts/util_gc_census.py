@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_gc_census.py -- THE COLLECTOR GUESSES NOTHING: the census instruments (coo, CEO-813/814/815, 2026-09-17;
+"""util_gc_census.py -- THE COLLECTOR GUESSES NOTHING: the census instruments (coo, R-813/814/815, 2026-09-17;
 row gc-instruments-the-safe-point-census-the-maps-census-and-scrip-gc-coverage-words-scanned-zero-are-wired-gates;
 design .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md, law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING).
 
@@ -21,7 +21,7 @@ to trip on a planted violation by --selftest (39 arms, the ratchet included):
                  spellings are FROZEN -- the cfo's walker row prints them, this census only counts them.
   callbacks      TWO DIRECTIONS, each with its own denominator, both printed.  INBOUND: every call into the by-name
                  dispatcher (the rt_call_* family) from a runtime frame.  OUTBOUND: every call OUT of the runtime
-                 into emitted code through the apply / user-call hook chain -- CEO-836's gdb crash class, where the
+                 into emitted code through the apply / user-call hook chain -- R-836's gdb crash class, where the
                  raw heap `const char *fn` is live across `APPLY_fn(fn, args, nargs)` and comes back reading "\003".
                  The scope is DERIVED (every .c/.h under src/runtime and src/driver), the inbound set is derived by
                  name shape, the OUTBOUND set is DECLARED and says so, and a declared symbol that has vanished from
@@ -30,8 +30,8 @@ to trip on a planted violation by --selftest (39 arms, the ratchet included):
                  all is printed beside the count, because wrapped=0 with no definition is not progress pending.
                  Want unwrapped 0 on both.
   maps           TWO HALVES, printed and graded separately, because a green slot-kind half beside an absent table would
-                 read as if the design existed.  SLOT-KIND: the ceo's util_zls_frame_map_census.py over each language's
-                 rungs (token frozen CEO-821), want unkinded=0 and holes=0, with no_layout NAMED beside the number and
+                 read as if the design existed.  SLOT-KIND: the officer's util_zls_frame_map_census.py over each language's
+                 rungs (token frozen R-821), want unkinded=0 and holes=0, with no_layout NAMED beside the number and
                  never folded into it; the wire header past region_end and the spine are NAMED as not censused here
                  (section 2b makes the spine tagged cells, so its census is the tag census, not a hole count).
                  TABLE: section 6.4, from three independent producers per witness -- the frame allocator (--dump-zeta),
@@ -132,7 +132,7 @@ def census_allocator(path, out=print):
 # the target, the target may allocate, and it returns past us to OUR caller, so the allocation happens with
 # the caller's frame live.  objdump prints a jump to a local label as <fn+0xNN>, and the symbol pattern below
 # refuses a '+', so only true inter-function transfers are recorded; a self-edge is dropped.
-# ⛔⭐ AND A CONDITIONAL TAIL JUMP IS ONE TOO, AND SO IS A TRANSFER THROUGH THE GOT (cto 2026-09-23, CEO-1224, row
+# ⛔⭐ AND A CONDITIONAL TAIL JUMP IS ONE TOO, AND SO IS A TRANSFER THROUGH THE GOT (cto 2026-09-23, R-1224, row
 # spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11).  The 09-18 cure above
 # named `je c_rt_str_alloc` and then matched `jmp` alone, so an asm entry whose ONLY road to its allocating C twin
 # was a CONDITIONAL exit -- VARVAL_fn (jne/jz c_VARVAL_fn), rt_size_d, rt_str_coerce, rt_match_enter, rt_defer_close,
@@ -217,7 +217,7 @@ def _nm_names(path):
 
 def _linked_module_symbols(so, out=print):
     """THE LINKED PARSE-STAGE MODULE IS EMITTED CODE, NOT RUNTIME C (6a3ff25a9 linked out/sc_mod/scparsers.o into the runtime; the
-    ceo's CEO-1732). Its 31,000 labels are not runtime functions the emitter calls by name, and the allocating set names only
+    R-1732). Its 31,000 labels are not runtime functions the emitter calls by name, and the allocating set names only
     those. The module is told apart by the names its own object defines, never by their shape: a .so that links the module
     (it defines scparsers_sc_module) and whose object is unreadable, or a name the module defines that another object in the
     .so also defines, REFUSES by name rather than guessing which one the call graph meant. Empty when no module is linked."""
@@ -271,14 +271,14 @@ def _call_close(line, m):
 # started counting something it could not see before, so a reader never reads the step as a regression or a win
 # (SUITES.tsv's criterion_changed column, the same rule).  The baseline writer prints them into the file it writes.
 CRITERION_CHANGES = [
-    "2026-09-23 cto, SCRIP this landing (CEO-1224, row spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-"
+    "2026-09-23 cto, SCRIP this landing (R-1224, row spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-"
     "preserves-r8-to-r11): safe-points. A CONDITIONAL TAIL EXIT IS A CALL-GRAPH EDGE, AND SO IS A TRANSFER THROUGH A GOT "
     "SLOT. The 09-18 cure made `jmp` an edge and left `je/jne/...` out, so every asm entry whose only road to its allocating C "
     "twin was a conditional exit read NON-ALLOCATING -- VARVAL_fn, rt_size_d, rt_str_coerce, rt_match_enter, rt_defer_close, "
     "table_find_pair_d, rt_cap_open -- and 67 functions with them (the checked-in allocating table 1698 -> 1765, none "
     "removed). allocating_call_sites 230 -> 236, polled 230 -> 232, unpolled 0 -> 4, identity 232 + 0 + 4 == 236, "
     "MEASURED ON THE PARENT TREE 8a2e9bdff (its own binary, this census) BEFORE the row that surfaced it, so the rise is the "
-    "instrument getting honest about a standing tree, not a landing going backwards (the CEO-1119 shape; the ratchet refuses "
+    "instrument getting honest about a standing tree, not a landing going backwards (the R-1119 shape; the ratchet refuses "
     "a rise, so the baseline is raised here). THE FOUR, EACH A ROW: bb_match_begin.cpp rt_match_enter, bb_match_defer.cpp and "
     "bb_match_value.cpp rt_defer_close, bb_unop.cpp rt_size_d -- allocating calls with no safe point after them. The same row "
     "made emitted code call the asm runtime bare and turned every such exit into a CALL from a local stub, which is how the "
@@ -286,14 +286,14 @@ CRITERION_CHANGES = [
     "nearest symbol rather than the target: the walk resolves the slot through its GLOB_DAT relocation and skips PLT stubs. "
     "Selftest 65 -> 69 arms (a conditional exit, a GOT slot to the allocator and one to a stranger, a GOT call with no map, a "
     "PLT stub).",
-    "2026-09-22 coo, SCRIP this landing (CEO-1147, row instruments-the-safe-point-census-reader-...): safe-points. "
+    "2026-09-22 coo, SCRIP this landing (R-1147, row instruments-the-safe-point-census-reader-...): safe-points. "
     "FOUR READER DEFECTS, AND THEY CANCELLED ON THE HEADLINE WHILE FOUR INDIVIDUAL SITES WERE WRONG IN BOTH "
     "DIRECTIONS. polled 190 -> 190, partially_polled 0 -> 6, unpolled 63 -> 57, identity 190 + 6 + 57 == 253. "
     "(a) MUTUALLY EXCLUSIVE STATEMENT ARMS: emit.cpp's icn_trace_tap and xa_flat.cpp's xa_icn_trace_tap are an "
     "if/else-if/else chain of allocating hook calls followed by ONE poll; the base predicate read each arm's "
     "SUCCESSOR ARM as a later call and stopped the window, so six sites read UNPOLLED. _stmt_sibling_offsets is "
     "the statement-level twin of _ternary_sibling_offsets, which COO-146 named and did not mechanize. "
-    "(b) THE CONDITIONAL SKIP, THE ONLY SPECIES THAT MADE THE NUMBER TOO BIG (ceo, CEO-1132): the guard's `je` is "
+    "(b) THE CONDITIONAL SKIP, THE ONLY SPECIES THAT MADE THE NUMBER TOO BIG (R-1132): the guard's `je` is "
     "emitted ABOVE the call and its landing pad BELOW the poll, so a reader looking only BETWEEN them sees nothing "
     "and credits a poll that is stepped over whenever g_trace == 0 -- which is every program that never assigns "
     "&trace. Two sites were credited that way; they are PARTIAL now, not polled. "
@@ -309,19 +309,19 @@ CRITERION_CHANGES = [
     "rt_gc_poll_asm with no branch at all. `long g_trace = 0` is src/runtime/keywords.c:17. "
     "⛔ partially_polled IS NOW RATCHETED. It was printed, demanded zero by the census header, and watched by "
     "NOTHING; six sites could have become sixty with every gate green. "
-    "⛔ AND THE CENSUS NOW REFUSES rc=2 ON A STALE BUILD (ceo CEO-1147 calls this the sharpest of the four): "
+    "⛔ AND THE CENSUS NOW REFUSES rc=2 ON A STALE BUILD (R-1147 calls this the sharpest of the four): "
     "census_safe_points derives its DENOMINATOR from out/libscrip_rt.so via allocating_entries_from_binary, so an "
     "unbuilt tree does not merely date the verdict, it changes WHICH CALLS ARE COUNTED. Witnessed both ways at the "
     "landing. lib_build_currency.sh is SOURCED, never reimplemented, and there is deliberately no escape hatch.",
-    "2026-09-22 coo, SCRIP this landing (CEO-1119, on the coo's measured delta): safe-points. A POLL THAT FOLLOWS "
+    "2026-09-22 coo, SCRIP this landing (R-1119, on the coo's measured delta): safe-points. A POLL THAT FOLLOWS "
     "A LATER CALL IS THAT CALL'S SAFE POINT. The base predicate's poll window now stops at the first intervening "
-    "emitted call, the stop the expansion-site window has carried since CEO-1116 -- the SAME defect one level up, "
-    "held back at COO-142 because it moves the published headline and that is the ceo's call. polled 156 -> 149, "
+    "emitted call, the stop the expansion-site window has carried since R-1116 -- the SAME defect one level up, "
+    "held back at COO-142 because it moves the published headline and that is the officer's call. polled 156 -> 149, "
     "unpolled 97 -> 104 on SCRIP 20424784f. ⭐ THE RISE IS THE INSTRUMENT GETTING HONEST, NOT THE TREE GETTING "
-    "WORSE (ceo, CEO-1119, the CEO-935 shape): the ratchet REFUSES a rise by design, so the baseline is raised in "
-    "this same landing. This SUPERSEDES the ceo's NEXT MOVE note carried below, which forecast this change -- it "
+    "WORSE (R-1119, the R-935 shape): the ratchet REFUSES a rise by design, so the baseline is raised in "
+    "this same landing. This SUPERSEDES the officer's NEXT MOVE note carried below, which forecast this change -- it "
     "is history now, not a forecast. ⛔ THE MECHANICAL ARM ALONE READS 148, NOT 149, AND THE DIFFERENCE IS THE "
-    "WHOLE POINT: a mechanical stop can NOMINATE a site and cannot CONVICT one (the symmetric half of the ceo's "
+    "WHOLE POINT: a mechanical stop can NOMINATE a site and cannot CONVICT one (the symmetric half of the officer's "
     "own law that a static reader can reject a site and cannot clear one). Sixteen first nominations, nine thrown "
     "away by hand, seven published. The ninth rejection -- bb_call_value.cpp:130, where the intervening call at "
     ":134 sits inside the ELSE arm opened at :131 -- was named at COO-143 as an unmechanized blind spot rather "
@@ -334,9 +334,9 @@ CRITERION_CHANGES = [
     "bb_field_get.cpp:21/:39), and a latching one CLEARED THREE the hand read convicted "
     "(bb_match_capture.cpp:124/:163, bb_rev_assign_var.cpp:19) because it read the arm the site LIVES IN as an arm "
     "the site is excluded from. Five planted selftest arms hold both directions, each proven able to go red "
-    "(selftest 47 -> 52 arms). SCRIP_GC_CENSUS_BASE_CALL_STOP=0 reproduces the pre-CEO-1119 reading and was "
+    "(selftest 47 -> 52 arms). SCRIP_GC_CENSUS_BASE_CALL_STOP=0 reproduces the pre-R-1119 reading and was "
     "verified byte-identical on all 97 names.",
-    "2026-09-22 coo, SCRIP this landing (CEO-1109, the cto's finding): safe-points. ONE SOURCE CALL LINE IS NOT ONE "
+    "2026-09-22 coo, SCRIP this landing (R-1109, the cto's finding): safe-points. ONE SOURCE CALL LINE IS NOT ONE "
     "EMITTED PATH. The predicate reads SOURCE PROXIMITY while POLLED is a claim about EMITTED CONTROL FLOW, and the "
     "emitter concatenates strings, so a call written once inside a file-local helper or a #define is spliced into "
     "every path that expands that unit. TWO NEW COLUMNS, multi_path_sites and partially_polled, and partially_polled "
@@ -373,7 +373,7 @@ CRITERION_CHANGES = [
     "SNOBOL4 capture opens behind the cap_open_sym() macro. A first, looser chooser rule resolved that macro against "
     "the next routine's literals and read 'none allocating' -- a candidate set that is not the target's is worse than "
     "UNRESOLVED, so the macro form now reads its own replacement text and an arm plants that trap.",
-    "2026-09-17 coo, SCRIP this landing: CALLBACKS, ON CEO-836's WORD THAT THE NUMBER IS NOW LOAD-BEARING. The "
+    "2026-09-17 coo, SCRIP this landing: CALLBACKS, ON R-836's WORD THAT THE NUMBER IS NOW LOAD-BEARING. The "
     "63 was wrong three ways and the third is the one that mattered. (i) THE SCOPE WAS TWO HAND-NAMED FILES AND "
     "ONE OF THEM HOLDS NO SITE: gen_runtime.c contributes zero, so the census read ONE file while naming two, and "
     "FIVE real sites of the identical class stood outside any denominator, in pattern_match.c, rt/rt.c and "
@@ -383,9 +383,9 @@ CRITERION_CHANGES = [
     "rt_call_arr_* forwarders at by_name_dispatch.c:5167-5171. The test is now the declarator prefix BEFORE the "
     "name, with the C keywords that may precede a call excluded. (iii) THE CRASH THE NUMBER IS SUPPOSED TO BOUND "
     "WAS NOT IN IT: the regex matched calls TO the dispatcher and never the callback OUT of it, so "
-    "by_name_dispatch.c:5260 `out = APPLY_fn(fn, args, nargs);` -- the exact gdb site CEO-836 traced, the raw heap "
+    "by_name_dispatch.c:5260 `out = APPLY_fn(fn, args, nargs);` -- the exact gdb site R-836 traced, the raw heap "
     "name pointer live across a call into emitted code -- was outside the census entirely. OUTBOUND is now its own "
-    "printed population over a DECLARED set (APPLY_fn, _usercall_hook; rt_chain_enter and rt_chain_enter_v left the tree with CEO-1576) that "
+    "printed population over a DECLARED set (APPLY_fn, _usercall_hook; rt_chain_enter and rt_chain_enter_v left the tree with R-1576) that "
     "REFUSES rc=2 if a named symbol leaves the tree. (iv) RT_GC_CALLBACK IS DEFINED NOWHERE IN src/: wrapped=0 was "
     "never 'nobody has wrapped one yet', and a no-op macro would have taken this census to GREEN with no semantic "
     "change -- the definition's absence is now PRINTED beside the count. THE ARITHMETIC CLOSES: 63 -> 48 on the "
@@ -545,7 +545,7 @@ def _param_literals(own_text, site_line, ident, depth=0, all_text=None):
                 lits += found
                 # the caller passes an IDENTIFIER, not a literal: its candidates are the string literals of that identifier's
                 # initializers in the same file (bb_call_fn.cpp's osym = _meth ? "rk_method_open" : ... ? "rk_callwith_open"
-                # : "rk_callsame_open", passed to bcfn_method_open_enter(..., osym, ofp); the cto 2026-10-10, CEO-1627). An
+                # : "rk_callsame_open", passed to bcfn_method_open_enter(..., osym, ofp); the cto 2026-10-10, R-1627). An
                 # identifier with no literal initializer in the file resolves to nothing, and UNRESOLVED stays the answer.
                 av = args[idx].strip()
                 if not found and re.match(r"[A-Za-z_]\w*$", av):
@@ -707,7 +707,7 @@ def emitter_call_sites(files):
 # --poll-window lines after the call -- which is a question about the source file, while POLLED is a claim about
 # emitted control flow.  Where a unit expands more than once the two come apart, and they come apart in the WORST
 # DIRECTION: one poll in the shared body reads the site fully POLLED however many of its paths actually carry it.
-# FOUND BY THE cto, NOT BY READING THIS CODE (CEO-1109, relayed by the ceo 2026-09-22): bb_assign_global's comm_var
+# FOUND BY THE cto, NOT BY READING THIS CODE (R-1109, relayed by the officer 2026-09-22): bb_assign_global's comm_var
 # tap is ONE x86("call", ...) line spliced into FOUR paths, and at one of them the fresh string is live only in
 # rax:rdx and rooted nowhere -- so polling the rooted paths alone would have read the site POLLED with a quarter of
 # it still uncollectable.  THEY DECLINED AND LEFT IT UNPOLLED, which is why this is a criterion change and not a
@@ -1083,7 +1083,7 @@ def _emitted_guard_skips_poll(lines, i, poll_abs):
     DEFINED BELOW the poll -- so the emitted poll sits inside the skipped region and executes only when the guard's
     condition holds.  None when no such envelope is provable.
 
-    ⛔ THIS IS THE FOURTH SPECIES OF CENSUS BLINDNESS AND THE ONLY ONE THAT MAKES THE NUMBER TOO BIG (ceo, CEO-1132).
+    ⛔ THIS IS THE FOURTH SPECIES OF CENSUS BLINDNESS AND THE ONLY ONE THAT MAKES THE NUMBER TOO BIG (R-1132).
     The other three under-count; this one CREDITS A POLL THAT NEVER RUNS.  The shape is invisible to every reader that
     looks only BETWEEN the call and the poll -- _poll_is_guarded does exactly that -- because the branch is emitted
     ABOVE the call and its landing pad BELOW the poll, so the span between them is perfectly innocent.
@@ -1103,8 +1103,8 @@ def _emitted_guard_skips_poll(lines, i, poll_abs):
     to PARTIAL, which is a DEBT the bar still demands be zero; failing to fire leaves today's reading untouched.  A
     label whose definition this cannot find, or a computed jump target, simply yields None.
 
-    ⛔⭐⭐ THE SECOND CONDITION, AND THE SIX SITES IT GIVES BACK (cto 2026-09-22 late, ceo CEO-1160 overturning
-    CEO-1132 for them).  The first cut asked whether the POLL runs on every path and never asked whether the CALL
+    ⛔⭐⭐ THE SECOND CONDITION, AND THE SIX SITES IT GIVES BACK (cto 2026-09-22 late, R-1160 overturning
+    R-1132 for them).  The first cut asked whether the POLL runs on every path and never asked whether the CALL
     does.  Read from the emitted bytes of hb_coexpr_genp_scan.icn, the trace taps are the first instructions of the
     procedure ports recogn_γ and recogn_ω: push rax, push rdx, align-enter, cmp g_trace, je sk, lea rdi, call
     rt_trace_*_hook, call rt_gc_poll_asm, sk: align-leave, pop rdx, pop rax.  The guard sits ABOVE the hook call,
@@ -1115,7 +1115,7 @@ def _emitted_guard_skips_poll(lines, i, poll_abs):
     jump emitted BETWEEN the call and the poll that lands below the poll -- the poll skipped, the call not.  So the
     jump search now runs from the line after the call to the poll, never above the call.  The cost of the first cut
     was measured before it was withdrawn: it minted a row on the six, hq_icon's 8f26f80a0 cured them into a real
-    bug (hb_bignum_length.icn wrong 5 of 5 at stress 1, the fourth conviction of the CEO-1107 shape), and two
+    bug (hb_bignum_length.icn wrong 5 of 5 at stress 1, the fourth conviction of the R-1107 shape), and two
     further literal poll_res swaps failed on the same crash.  The selftest plants both shapes: the pair-guard reads
     WHOLE and the between-jump reads PARTIAL, fail-once on the latter."""
     lo, hi = 0, len(lines)
@@ -1213,7 +1213,7 @@ def _ternary_sibling_offsets(lines, i, window_lines, counts=None):
     must not stop the poll window.
 
     ⛔ THIS IS THE BLIND SPOT COO-143 NAMED BY HAND RATHER THAN ROUNDING AWAY, AND MECHANIZING IT IS THE WHOLE GAP
-    BETWEEN THE MECHANICAL ARM'S 148 AND THE 149 THE ceo PUBLISHED (CEO-1119).  bb_call_value.cpp:130 is the last
+    BETWEEN THE MECHANICAL ARM'S 148 AND THE 149 THE OFFICER PUBLISHED (R-1119).  bb_call_value.cpp:130 is the last
     line of the THEN arm of the ternary opened at :126; the ELSE arm opens at :131 with a leading ':' and RUNS ON
     through :134, which carries the call.  A stop keyed on a line's leading character exempts :131 and then trips on
     :134 -- the same confusion of EXCLUSIVE ARMS with SEQUENCE that COO-142 recorded in the expansion-path reader and
@@ -1336,8 +1336,8 @@ def _ternary_sibling_offsets(lines, i, window_lines, counts=None):
 # ⛔ IT NOMINATES A SITE FOR A HAND READ AND CLEARS NOTHING, and two reasons why are already known: the `je` to
 # ω above the tail means the FAIL path skips the poll, so the honest column for those three is partially_polled
 # and not polled; and bb_call_fn.cpp:141's ZD arm carries `if (_.op_sb) { ... return s; }` ABOVE its tail, an early
-# return no brace-depth reader can see.  Nothing here moves a count, by design -- CEO-1116 set the stop and the
-# headline is the ceo's to move.
+# return no brace-depth reader can see.  Nothing here moves a count, by design -- R-1116 set the stop and the
+# headline is the officer's to move.
 def _brace_depth_at(lines, lo, hi):
     """depth at the START of each 1-based line in [lo, hi], relative to lo, counted LITERAL-FREE so that a template's
     (long)'{' is a character and not a brace (the same reason _paren_delta exists)."""
@@ -1411,15 +1411,15 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
     if not sites:
         out("CENSUS safe-points REFUSED(2): no x86(\"call\", ...) sites found in the emitter files -- wrong tree?"); return 2
     poll_rx = re.compile(r"g_gc_pending|rt_gc_poll" + (("|" + re.escape(poll_helper)) if poll_helper else ""))
-    # ⛔⭐ THE BASE WINDOW STOPS AT AN INTERVENING EMITTED CALL, AND SINCE CEO-1119 THAT IS THE CRITERION, NOT A
-    # KNOB.  A poll that follows a LATER call is THAT call's safe point, not this one's -- the ceo RULED the
-    # reading correct for the expansion window (CEO-1116) and, on the measured delta, for the base predicate
-    # (CEO-1119): it takes polled 156 -> 149 and unpolled 97 -> 104 on SCRIP 20424784f.  THE RISE IS THE
+    # ⛔⭐ THE BASE WINDOW STOPS AT AN INTERVENING EMITTED CALL, AND SINCE R-1119 THAT IS THE CRITERION, NOT A
+    # KNOB.  A poll that follows a LATER call is THAT call's safe point, not this one's -- the officer RULED the
+    # reading correct for the expansion window (R-1116) and, on the measured delta, for the base predicate
+    # (R-1119): it takes polled 156 -> 149 and unpolled 97 -> 104 on SCRIP 20424784f.  THE RISE IS THE
     # INSTRUMENT GETTING HONEST, NOT THE TREE GETTING WORSE, and gc_census_baseline.tsv carries that ruling at
-    # the file so the next reader meets it there.  SCRIP_GC_CENSUS_BASE_CALL_STOP=0 reproduces the pre-CEO-1119
+    # the file so the next reader meets it there.  SCRIP_GC_CENSUS_BASE_CALL_STOP=0 reproduces the pre-R-1119
     # reading for an auditor comparing across the change; it is an escape hatch, never the default.
     base_call_stop = os.environ.get("SCRIP_GC_CENSUS_BASE_CALL_STOP", "1") != "0"
-    # ⛔ THE POLL HELPERS ARE A FAMILY AND THE rec FAMILY DOES NOT CALL rt_gc_poll AT ALL (the ceo, CEO-1118).
+    # ⛔ THE POLL HELPERS ARE A FAMILY AND THE rec FAMILY DOES NOT CALL rt_gc_poll AT ALL (the R-1118).
     # x86_rt_gc_poll{,_res,_rec_sigma,_rec_sigma_word,_rec_sigma_pair,_rec1} all emit a safe point, and the rec forms
     # emit x86("call", "rt_gc_point_arr_c", ...) -- a line that MATCHES CALL_RX and does NOT match poll_rx, so a stop
     # keyed on poll_rx alone would truncate the window AT A POLL and mint the FALSE UNPOLLED the exemption exists to
@@ -1470,7 +1470,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
         # _ternary_sibling_offsets).  Offsets here are ALTERNATIVES to the site, not successors, so a call on one of
         # them is not an intervening call.  MEASURED SCOPE on SCRIP 20424784f: this moves EXACTLY ONE site,
         # bb_call_value.cpp:130, which is the whole gap between the mechanical arm's 148 and the hand-read 149 the
-        # ceo published (CEO-1119).  Empty unless base_call_stop, so the pre-stop census is untouched by it.
+        # the officer published (R-1119).  Empty unless base_call_stop, so the pre-stop census is untouched by it.
         sibling = _ternary_sibling_offsets(lines, i, window_lines) if base_call_stop else set()
         # ⛔ AND THE SAME EXCLUSIVITY SPELLED AS STATEMENTS, WHICH COO-146 NAMED AND DID NOT MECHANIZE.  See
         # _stmt_sibling_offsets: an `else if` arm is an ALTERNATIVE, never a successor.  MEASURED SCOPE at this
@@ -1483,8 +1483,8 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
                 break
             # ⛔ THE SAME DEFECT ONE LEVEL DOWN, AND IT IS MEASURED HERE RATHER THAN ASSUMED.  The expansion-site
             # window (_window_after) has stopped at the first intervening emitted call since 2026-09-22, because a
-            # poll that follows a LATER call is that call's safe point and not this one's -- the ceo RULED that
-            # reading correct (CEO-1116, 2026-09-22, on the coo's ask).  The BASE window did not carry the stop, so
+            # poll that follows a LATER call is that call's safe point and not this one's -- the officer RULED that
+            # reading correct (R-1116, 2026-09-22, on the coo's ask).  The BASE window did not carry the stop, so
             # this knob exists to COUNT what adding it would reclassify before anyone moves the published headline.
             # Default OFF: with the variable unset this census is byte-for-byte what it was, which is the whole point
             # of measuring a criterion change instead of landing one.
@@ -1544,7 +1544,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
                          + (f" ... +{npaths - 6} more" if npaths > 6 else ""))
         if hit and guard:
             # ⛔ THE POLL IS EMITTED AND IS STEPPED OVER.  Crediting it is the ONE species of this census's blindness
-            # that makes the headline TOO BIG (ceo, CEO-1132), so it lands in the column the bar still wants at zero
+            # that makes the headline TOO BIG (R-1132), so it lands in the column the bar still wants at zero
             # rather than in polled.  The cure is to move the poll below the landing pad, not to change this reader.
             partial.append(f"{name}: the poll is emitted INSIDE a conditional skip -- "
                            f"x86(\"j..\", {guard[0]}) at {os.path.relpath(f, ROOT)}:{guard[1]} jumps PAST it to "
@@ -1577,7 +1577,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
                 partial.append(f"{name} in {unit[0]} {unit[1]}(): {n_polled} of {len(paths)} expansion site(s) poll")
         elif _poll_is_guarded(window_lines[:stop], poll_rx, sibling):
             # The poll is selected by something; it reaches SOME of the unit's paths.  A declared partial is honest,
-            # a partial counted as whole is DARK wearing a number (ceo, CEO-1109).
+            # a partial counted as whole is DARK wearing a number (R-1109).
             partial.append(f"{name} in {unit[0]} {unit[1]}(): poll is guarded and the unit emits <= {npaths} paths")
         else:
             polled += 1
@@ -1599,7 +1599,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
     # in the reader and are not listed here -- listing a cured reason is how a caveat outlives its cause.  These
     # three are LIVE, and each one can only make the number TOO BIG.
     out("CENSUS safe-points \u26d4 THE COUNT IS AN UPPER BOUND, FOR THREE LIVE REASONS, EACH OF WHICH CAN ONLY "
-        "INFLATE IT: (1) PRESENCE, NOT CORRECTNESS (ceo CEO-1133) -- this census reads whether a poll is EMITTED, "
+        "INFLATE IT: (1) PRESENCE, NOT CORRECTNESS (R-1133) -- this census reads whether a poll is EMITTED, "
         "never whether it FIRES; the cfo measured x86_rt_gc_poll_res at bb_call_value 67/70 adding ZERO collections "
         "over 818 cells with a name set identical to no poll at all, and a site can be credited POLLED, never fire, "
         "and still be broken by the poll's presence. (2) MULTI-PATH ({} site(s) here): a poll in a body that is "
@@ -1620,7 +1620,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
         "so the sentence promising it protected the headline was TRUE OF THE CODE AND FALSE OF THE READING. Since this "
         "landing a poll emitted INSIDE a conditional skip -- the jump above the call, its landing pad below the poll -- "
         "lands there instead of in polled, which is the one species of this census's blindness that made the number too "
-        "BIG (ceo CEO-1132).")
+        "BIG (R-1132).")
     cap = len(unpolled) if os.environ.get("SCRIP_GC_CENSUS_LIST_ALL") == "1" else 25
     for u in unpolled[:cap]:
         out(f"  UNPOLLED {u}")
@@ -1637,7 +1637,7 @@ def census_safe_points(so, emitter_files, poll_window=12, poll_helper="", out=pr
             "the cfo measured the emitted mode-4 output of three of the four POLLED ON THE SUCCESS PATH AND SKIPPED ON THE "
             "FAIL PATH (the `je` to \u03c9 sits above the tail), which is partially_polled and not polled. \u26d4\u26d4 "
             "BEFORE POLLING A SITE NAMED HERE, READ ITS EMITTED ASM: a second poll six instructions after the first moves "
-            "this census BY PRESENCE ALONE, which is the class CEO-1169 named one level up.".format(len(tails), len(unpolled)))
+            "this census BY PRESENCE ALONE, which is the class R-1169 named one level up.".format(len(tails), len(unpolled)))
         for _name, (_p, _d0, _dp, _nc) in tails:
             out(f"  COMMON-TAIL {_name} -> poll at line {_p} (site depth {_d0}, tail depth {_dp}, {_nc} exclusive-arm call(s) between)")
     _pcap = len(partial) if os.environ.get("SCRIP_GC_CENSUS_LIST_ALL") == "1" else 25
@@ -1708,7 +1708,7 @@ CALLBACK_RX = re.compile(r"(?<![A-Za-z0-9_])(rt_call_(?:proc_descr|arr[A-Za-z0-9
 
 def _marker_spans(src, marker):
     """(start, end) offsets of every MARKER( ... ) and MARKER_V( ... ) span, paren-matched -- a call is wrapped only when it lies inside one.
-       The _V variant COUNTS (ceo CEO-1104): a VOID callee cannot take the value form at all -- RT_GC_CALLBACK(rt_chain_enter(fn)) is
+       The _V variant COUNTS (R-1104): a VOID callee cannot take the value form at all -- RT_GC_CALLBACK(rt_chain_enter(fn)) is
        `error: variable or field _cb_r declared void`, proven by compiling it -- so a detector blind to _V makes one site permanently
        uncountable and would force a wrap that does not build. Strictly widening: it can only turn UNWRAPPED into WRAPPED where a
        sanctioned wrapper really encloses the call."""
@@ -1728,18 +1728,18 @@ def _marker_spans(src, marker):
 
 # A CALLBACK SITE HAS TWO DIRECTIONS AND ONE DENOMINATOR EACH.  INBOUND: a runtime frame calls the by-name
 # dispatcher (the rt_call_* family), which runs user code.  OUTBOUND: a runtime frame calls out through the apply /
-# user-call hook chain into emitted code.  CEO-836's gdb site is OUTBOUND -- by_name_dispatch.c's
+# user-call hook chain into emitted code.  R-836's gdb site is OUTBOUND -- by_name_dispatch.c's
 # `out = APPLY_fn(fn, args, nargs);`, where the raw heap `const char *fn` is live across the call and comes back
 # reading "\003" -- and no INBOUND count contains it.  Two populations, both printed: one denominator over two
 # populations is no denominator over either.
 OUTBOUND_SYMS = [
-    ("APPLY_fn",         "by_name_dispatch.c's apply path; CEO-836's gdb site holds `const char *fn` across it"),
+    ("APPLY_fn",         "by_name_dispatch.c's apply path; R-836's gdb site holds `const char *fn` across it"),
     ("_usercall_hook",   "the driver hook the runtime reaches emitted code through (driver_hooks.c -> call_user_function -> label_lookup)"),
 ]
 # rt_chain_enter and rt_chain_enter_v (runtime_eval.c's chain entry into emitted code, COO-100) LEFT THE TREE with the
-# C->BB deletions of CEO-1576 (row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero-the-eval-chain-shims-in-runtime-eval-c-
+# C->BB deletions of R-1576 (row gc-the-five-c-to-bb-entries-outside-rt-c-go-to-zero-the-eval-chain-shims-in-runtime-eval-c-
 # and-the-three-riders-in-by-name-dispatch-c, DONE): the box jumps to the address the C returns, so there is no outbound call
-# to count. Dropped from the declared set by the cto 2026-10-10 (CEO-1627 routing); with them declared the census REFUSED(2)
+# to count. Dropped from the declared set by the cto 2026-10-10 (R-1627 routing); with them declared the census REFUSED(2)
 # "appear nowhere in the censused scope" and the ratchet read callbacks.unwrapped NOT-MEASURED on origin from 08c00e5b4.
 OUTBOUND_RX = re.compile(r"(?<![A-Za-z0-9_])(" + "|".join(re.escape(x) for x, _ in OUTBOUND_SYMS) + r")\s*\(")
 
@@ -1760,7 +1760,7 @@ def _is_declaration(src, line_start, match_start):
     and nothing else.  A blank head falls back to the previous non-blank line, for a definition whose return
     type sits on its own line."""
     head = src[line_start:match_start]
-    # A DECLARATOR PREFIX BEGINS AT A STATEMENT BOUNDARY, NOT AT THE MARGIN (cfo 2026-09-19, the ceo's CEO-942
+    # A DECLARATOR PREFIX BEGINS AT A STATEMENT BOUNDARY, NOT AT THE MARGIN (cfo 2026-09-19, R-942
     # false positive).  core.c:2382 is `if (!g_user_call_hook) { extern DESCR_t _usercall_hook(const char *name,
     # DESCR_t *args, int nargs); g_user_call_hook = _usercall_hook; }` -- one line holding a BLOCK-LOCAL EXTERN
     # DECLARATION and an assignment of the hook's ADDRESS, and no call at all.  Matching the declarator prefix
@@ -1856,7 +1856,7 @@ def census_callbacks(files, marker="RT_GC_CALLBACK", out=print, root=None):
     for u in in_unwrapped[:_cbcap]:
         out(f"  UNWRAPPED-INBOUND {u}")
     if len(in_unwrapped) > _cbcap:
-        out(f"  ... {len(in_unwrapped) - _cbcap} more unwrapped INBOUND -- SCRIP_GC_CENSUS_LIST_ALL=1 prints every one (a count without names cannot be triaged; the safe-point list above has honoured this since CEO-1039 and these two did not, ceo CEO-1104)")
+        out(f"  ... {len(in_unwrapped) - _cbcap} more unwrapped INBOUND -- SCRIP_GC_CENSUS_LIST_ALL=1 prints every one (a count without names cannot be triaged; the safe-point list above has honoured this since R-1039 and these two did not, R-1104)")
 
     missing = [s for s, _why in OUTBOUND_SYMS if s not in seen_syms]
     out(f"CENSUS callbacks OUTBOUND set=DECLARED({','.join(s for s, _ in OUTBOUND_SYMS)}) -- a DECLARED set is a "
@@ -1870,13 +1870,13 @@ def census_callbacks(files, marker="RT_GC_CALLBACK", out=print, root=None):
             f"census (a watermark's command must still describe the tree it runs on)")
         return 2
     out(f"CENSUS callbacks OUTBOUND call_out_sites={out_sites} wrapped_in_{marker}={out_wrapped} "
-        f"unwrapped={len(out_unwrapped)} want unwrapped=0 -- this is CEO-836's crash class: the raw heap name "
+        f"unwrapped={len(out_unwrapped)} want unwrapped=0 -- this is R-836's crash class: the raw heap name "
         f"pointer live across the call")
     _cbcap = len(out_unwrapped) if os.environ.get("SCRIP_GC_CENSUS_LIST_ALL") == "1" else 15
     for u in out_unwrapped[:_cbcap]:
         out(f"  UNWRAPPED-OUTBOUND {u}")
     if len(out_unwrapped) > _cbcap:
-        out(f"  ... {len(out_unwrapped) - _cbcap} more unwrapped OUTBOUND -- SCRIP_GC_CENSUS_LIST_ALL=1 prints every one (a count without names cannot be triaged; the safe-point list above has honoured this since CEO-1039 and these two did not, ceo CEO-1104)")
+        out(f"  ... {len(out_unwrapped) - _cbcap} more unwrapped OUTBOUND -- SCRIP_GC_CENSUS_LIST_ALL=1 prints every one (a count without names cannot be triaged; the safe-point list above has honoured this since R-1039 and these two did not, R-1104)")
 
     COUNTS.setdefault("callbacks", {})["unwrapped"] = len(in_unwrapped)
     COUNTS["callbacks"]["unwrapped_outbound"] = len(out_unwrapped)
@@ -1900,7 +1900,7 @@ def callback_scope_files(root):
     return sorted(fs)
 
 
-ZLS_TOOL = "util_zls_frame_map_census.py"          # the ceo's slot-kind base tool (CEO-820)
+ZLS_TOOL = "util_zls_frame_map_census.py"          # the officer's slot-kind base tool (R-820)
 ZLS_RX = re.compile(r"^ZLS-MAP lang=(\S+) graphs=(\d+) words=(\d+) unkinded=(\d+) holes=(\d+) graded=(\d+) no_layout=(\d+)")
 ZLS_KIND_RX = re.compile(r"no_layout_never_emitted=(\d+) no_layout_emitted_no_layout=(\d+) no_layout_unmeasured=(\d+)")
 ZLS_LANGS_ALL = ["rebus", "snocone", "pascal", "icon", "raku", "snobol4", "prolog"]   # ~32 s for the seven
@@ -1912,8 +1912,8 @@ MAPS_SYMBOLS = ("rt_gc_frame_maps_install", "rt_gc_frame_maps")   # section 6.4:
 
 
 def census_maps_slotkind(root, langs, out=print):
-    """HALF A -- every word of every graded graph's zls region has a declared kind (the ceo's tool, token frozen CEO-821).
-    no_layout entries are NAMED beside the number and never folded into it (CEO-749's rule)."""
+    """HALF A -- every word of every graded graph's zls region has a declared kind (the officer's tool, token frozen R-821).
+    no_layout entries are NAMED beside the number and never folded into it (R-749's rule)."""
     tool = os.path.join(root, "..", "harness", "scripts", ZLS_TOOL)
     if not os.path.exists(tool):
         out(f"CENSUS maps/slot-kind REFUSED(2): no {ZLS_TOOL} at {tool}"); return 2
@@ -1929,12 +1929,12 @@ def census_maps_slotkind(root, langs, out=print):
             if mm:
                 m = mm
         if not m:
-            out(f"CENSUS maps/slot-kind REFUSED(2): {ZLS_TOOL} --lang {lang} printed no ZLS-MAP line (rc={r.returncode}) -- the token is frozen (CEO-821); a census that parses prose is the defect one level up"); return 2
+            out(f"CENSUS maps/slot-kind REFUSED(2): {ZLS_TOOL} --lang {lang} printed no ZLS-MAP line (rc={r.returncode}) -- the token is frozen (R-821); a census that parses prose is the defect one level up"); return 2
         _l, graphs, words, unkinded, holes, gr, nl = m.group(1), *(int(x) for x in m.groups()[1:])
         km = ZLS_KIND_RX.search(m.string)
         if not km:
             out(f"CENSUS maps/slot-kind REFUSED(2): lang={lang} printed a ZLS-MAP line without the three kind fields"
-                " -- no_layout CONFLATES two populations with OPPOSITE OWNERS (ceo CEO-1025) and an absent field would"
+                " -- no_layout CONFLATES two populations with OPPOSITE OWNERS (R-1025) and an absent field would"
                 " read as zero, which is how the conflation looked like a clean split in the first place"); return 2
         never, emitted_nl, unmeasured = (int(x) for x in km.groups())
         if never + emitted_nl + unmeasured != nl:
@@ -1955,7 +1955,7 @@ def census_maps_slotkind(root, langs, out=print):
             out("CENSUS maps/slot-kind " + ln)
         if len(named) != nl:
             out(f"CENSUS maps/slot-kind REFUSED(2): lang={lang} counted no_layout={nl} but {ZLS_TOOL} printed {len(named)} NO-LAYOUT line(s)"
-                " -- this line has said NAMED AND UNCOUNTED since CEO-749 while printing no name at all (cto 2026-09-20, CTO-96); a census that"
+                " -- this line has said NAMED AND UNCOUNTED since R-749 while printing no name at all (cto 2026-09-20, CTO-96); a census that"
                 " claims to name must print the names or refuse, and a count without its names is a work list nobody can pick up"); return 2
         COUNTS.setdefault("maps", {})[f"slotkind_bad_{lang}"] = bad
     out(f"CENSUS maps/slot-kind swept {len(swept)} of {len(ZLS_LANGS_ALL)} language(s) ({', '.join(swept)}); graded={graded} no_layout={nolayout} UNCOUNTED "
@@ -1998,7 +1998,7 @@ def read_gcmaps(text):
 
 
 # THE BLOB-FRAME CLASS MUST BE IN THE WITNESS SET OR THE CENSUS REFUSES (cto 2026-09-17, after their PAT$0 cure was
-# built, measured against the SNOBOL4 rungs, cost one entry and was withdrawn under CEO-589).  A stored-pattern
+# built, measured against the SNOBOL4 rungs, cost one entry and was withdrawn under R-589).  A stored-pattern
 # activation frame presents NO map cell -- ARCH-GC 6.2b states the walk rule for it -- so a table census run over
 # witnesses that contain no pattern reads 0 divergences BY NEVER LOOKING, the same shape as words_scanned=0 on a run
 # that never collected.  A zero has to be a zero somebody could have failed.
@@ -2231,7 +2231,7 @@ def selftest():
             fails += 1
     w = tempfile.mkdtemp(prefix="gc_census_selftest."); __import__("atexit").register(__import__("shutil").rmtree, w, True)
     buf = []
-    # THE FOURTH-SPECIES RULE, BOTH SHAPES PLANTED (cto 2026-09-22, CEO-1160): a guard ABOVE the call that lands
+    # THE FOURTH-SPECIES RULE, BOTH SHAPES PLANTED (cto 2026-09-22, R-1160): a guard ABOVE the call that lands
     # below the poll skips the PAIR and is WHOLE; a jump emitted BETWEEN the call and the poll is the PARTIAL shape.
     pair = ['/*----*/', 'std::string s = x86("push", "rax") + x86("push", "rdx") + x86_align_call_enter()',
             '    + x86("cmp", "rax", (long)0) + x86("je", sk);',
@@ -2246,7 +2246,7 @@ def selftest():
                's += x86("def", sk) + x86_align_call_leave() + x86("pop", "rdx") + x86("pop", "rax");',
                '}']
     ck(_emitted_guard_skips_poll(pair, 4, 4) is None,
-       "fourth species: a guard ABOVE the call that lands below the poll skips call and poll TOGETHER -- the pair is whole and the rule does not fire (the six trace-tap sites, CEO-1160)")
+       "fourth species: a guard ABOVE the call that lands below the poll skips call and poll TOGETHER -- the pair is whole and the rule does not fire (the six trace-tap sites, R-1160)")
     ck(_emitted_guard_skips_poll(between, 3, 4) == ("sk", 4),
        "fourth species FAIL-ONCE: a jump emitted BETWEEN the call and the poll that lands below the poll skips the poll alone and reads PARTIAL, named with its label and line")
     # conservative + allocator, on a fixture collector
@@ -2519,8 +2519,8 @@ def selftest():
     ck(rc == 0 and _sp_has(buf, allocating_call_sites=2, polled=2, partially_polled=0, unpolled=0)
        and not any(l.lstrip().startswith("PARTIAL") for l in buf),
        "safe-points: a guard ABOVE the calls whose landing pad stands below the poll skips the call AND the poll on "
-       "the taken path -- the PAIR is a guarded allocation with its own poll, WHOLE and polled (CEO-1160 overturning "
-       "CEO-1132's reading for exactly this shape: the six trace-tap sites, measured from the emitted bytes)")
+       "the taken path -- the PAIR is a guarded allocation with its own poll, WHOLE and polled (R-1160 overturning "
+       "R-1132's reading for exactly this shape: the six trace-tap sites, measured from the emitted bytes)")
     tpl_between = os.path.join(w, "between.cpp")
     open(tpl_between, "w").write("std::string g(int kind){ std::string sk = \"L1\";\n    std::string s;\n    if (kind == 1) s += x86(\"call\", \"rt_concat\", fp);\n    else if (kind == 2) s += x86(\"call\", \"rt_concat\", fp);\n    s += x86(\"cmp\", \"rax\", (long)0) + x86(\"je\", sk);\n    s += x86(\"lea\", \"r8\", \"[rip + __]\", (uint64_t)&g_gc_pending, \"g_gc_pending\");\n    s += x86(\"def\", sk);\n    return s;\n}\n")
     buf.clear(); rc = census_safe_points("", [tpl_between], out=buf.append, allocating=alloc)
@@ -2534,13 +2534,13 @@ def selftest():
     ck(rc == 0 and _sp_has(buf, allocating_call_sites=2, polled=2, partially_polled=0, unpolled=0),
        "safe-points: a guard ABOVE the calls that is itself conditional (IF(kind == 2 || kind == 3, ... je)) guards "
        "the pair on the arms it is emitted on and nothing on the others -- every arm is WHOLE either way, so the "
-       "disjointness of guard and arm decides nothing for a guard above the call (CEO-1160)")
+       "disjointness of guard and arm decides nothing for a guard above the call (R-1160)")
     tpl_else = os.path.join(w, "elsearm.cpp")
     open(tpl_else, "w").write("std::string g(int kind){ std::string sk = \"L1\";\n    std::string s = IF(kind == 2, x86(\"cmp\", \"rax\", (long)0) + x86(\"je\", sk));\n    if (kind == 1) s += x86(\"call\", \"rt_concat\", fp);\n    else s += x86(\"call\", \"rt_concat\", fp);\n    s += x86(\"lea\", \"r8\", \"[rip + __]\", (uint64_t)&g_gc_pending, \"g_gc_pending\");\n    s += x86(\"def\", sk);\n    return s;\n}\n")
     buf.clear(); rc = census_safe_points("", [tpl_else], out=buf.append, allocating=alloc)
     ck(rc == 0 and _sp_has(buf, allocating_call_sites=2, polled=2, partially_polled=0, unpolled=0),
        "safe-points: a BARE else under a guard ABOVE the calls is whole like its siblings -- a pair guard needs no "
-       "proof of disjointness because it skips the call with the poll (CEO-1160)")
+       "proof of disjointness because it skips the call with the poll (R-1160)")
     # ⛔ ITEM (iv): A FORM SWAP MUST CHANGE THE READING.  The count alone cannot tell two trees apart, which is how a
     # contaminated tree read 177 exactly as the clean one did; the histogram is the column that can.
     tpl_f1 = os.path.join(w, "form1.cpp"); tpl_f2 = os.path.join(w, "form2.cpp")
@@ -2574,7 +2574,7 @@ def selftest():
     buf.clear(); rc = census_safe_points("", [tpl_xf], out=buf.append, allocating=alloc)
     ck(rc == 1 and _sp_has(buf, allocating_call_sites=1, polled=0, unpolled=1),
        "safe-points: a g_gc_pending poll in the NEXT routine, inside the line window, does NOT make this site polled (the false green of 2026-09-17)")
-    # ⛔ THE BASE WINDOW'S INTERVENING-CALL STOP (CEO-1119) AND ITS TWO ARM EXEMPTIONS, PLANTED IN BOTH DIRECTIONS.
+    # ⛔ THE BASE WINDOW'S INTERVENING-CALL STOP (R-1119) AND ITS TWO ARM EXEMPTIONS, PLANTED IN BOTH DIRECTIONS.
     # The stop is the direction that NOMINATES a site, the exemptions are the direction that CLEARS one, so both are
     # planted: a fixture that MUST stop and a fixture that MUST NOT.
     tpl_iv = os.path.join(w, "intervening.cpp")
@@ -2584,9 +2584,9 @@ def selftest():
                             '}\n')
     buf.clear(); rc = census_safe_points("", [tpl_iv], out=buf.append, allocating=alloc)
     ck(rc == 1 and _sp_has(buf, allocating_call_sites=1, polled=0, unpolled=1),
-       "safe-points: a poll that sits after a LATER emitted call is THAT call's safe point -- the site above it reads UNPOLLED (the base-window stop, CEO-1119)")
+       "safe-points: a poll that sits after a LATER emitted call is THAT call's safe point -- the site above it reads UNPOLLED (the base-window stop, R-1119)")
     # ⛔ THE SIBLING ARM SPELLED OVER SEVERAL LINES -- the blind spot COO-143 named by hand rather than rounding away,
-    # and the only gap between the mechanical arm's 148 and the 149 the ceo published.  The site is the last line of
+    # and the only gap between the mechanical arm's 148 and the 149 the officer published.  The site is the last line of
     # the THEN arm; the ELSE arm opens with ':' and RUNS ON, carrying the intervening call on its last line.  A stop
     # keyed on the leading character exempts the ':' line and then trips on the one after it.
     tpl_sa = os.path.join(w, "siblingarm.cpp")
@@ -2717,7 +2717,7 @@ def selftest():
     ck("INBOUND call_back_sites=1 " in "\n".join(buf),
        "callbacks: two prototypes ending ';', a one-line definition ending '}' and a definition whose return type is on its own line contribute exactly ONE site -- the one real inner call")
     # (ii-b) A BLOCK-LOCAL EXTERN SHARING ITS LINE WITH A STATEMENT IS STILL A DECLARATION (cfo 2026-09-19, the
-    # ceo's CEO-942 false positive): the declarator prefix is matched from the STATEMENT boundary, not the margin,
+    # R-942 false positive): the declarator prefix is matched from the STATEMENT boundary, not the margin,
     # and a call that starts its own statement after that boundary must still count -- both directions planted.
     cb_stmt = os.path.join(w, "cb_stmt.c")
     open(cb_stmt, "w").write(
@@ -2731,7 +2731,7 @@ def selftest():
        "callbacks: a block-local extern sharing its line with a statement is NOT a site, while the real call after the ';' on that same line IS -- exactly one inbound site over the two lines")
     ck("OUTBOUND call_out_sites=3 " in _t,
        "callbacks: the address-of assignment of an outbound hook beside its own extern declaration is not a way out of the runtime, while the three real outbound calls are counted")
-    # (iii) the OUTBOUND direction: CEO-836's gdb site shape
+    # (iii) the OUTBOUND direction: R-836's gdb site shape
     cb_out = os.path.join(w, "cb_out.c")
     open(cb_out, "w").write(
         "static DESCR_t f(const char *fn, DESCR_t *args, int nargs) {\n"
@@ -2741,7 +2741,7 @@ def selftest():
     buf.clear(); rc = census_callbacks([cb_out], out=buf.append)
     j = "\n".join(buf)
     ck(rc == 1 and "OUTBOUND call_out_sites=4 wrapped_in_RT_GC_CALLBACK=1 unwrapped=3" in j and "cb_out.c:2:APPLY_fn" in j,
-       "callbacks: the OUTBOUND direction counts CEO-836's `out = APPLY_fn(fn, args, nargs);` site, wrapped and unwrapped apart -- and no INBOUND count contains it")
+       "callbacks: the OUTBOUND direction counts R-836's `out = APPLY_fn(fn, args, nargs);` site, wrapped and unwrapped apart -- and no INBOUND count contains it")
     ck("INBOUND call_back_sites=0" in j,
        "callbacks: that same fixture reads INBOUND 0 -- proof the two directions are two populations and the old single count could not see the crash")
     cb_v = os.path.join(w, "cb_v.c")
@@ -2753,12 +2753,12 @@ def selftest():
     buf.clear(); rc = census_callbacks([cb_v], out=buf.append)
     jv = "\n".join(buf)
     ck(rc == 1 and "OUTBOUND call_out_sites=4 wrapped_in_RT_GC_CALLBACK=1 unwrapped=3" in jv,
-       "callbacks: the VOID variant RT_GC_CALLBACK_V counts as a wrap and the three bare calls beside it still count as unwrapped -- a void callee cannot take the value form (RT_GC_CALLBACK(_usercall_hook(fn)) is `_cb_r declared void`, proven by compiling it), so a detector blind to _V leaves that site permanently uncountable (ceo CEO-1104)")
+       "callbacks: the VOID variant RT_GC_CALLBACK_V counts as a wrap and the three bare calls beside it still count as unwrapped -- a void callee cannot take the value form (RT_GC_CALLBACK(_usercall_hook(fn)) is `_cb_r declared void`, proven by compiling it), so a detector blind to _V leaves that site permanently uncountable (R-1104)")
     # (iv) the marker's absence is PRINTED, never read as progress pending
     nodef = os.path.join(w, "nodef"); os.makedirs(os.path.join(nodef, "src"), exist_ok=True)
     buf2 = []; census_callbacks([cb_out], out=buf2.append, root=nodef); jnd = "\n".join(buf2)
     ck("defined_in_tree=NO" in jnd and "would not compile" in jnd,
-       "callbacks: a marker with no #define anywhere in src/ is PRINTED as undefined beside wrapped=0 -- proven against a ROOT that has no definition, because RT_GC_CALLBACK now EXISTS in the real tree and this arm asserted its ABSENCE, so it went red the day the wrapper was written (ceo CEO-1104: a self-test must not be keyed on the state the work removes)")
+       "callbacks: a marker with no #define anywhere in src/ is PRINTED as undefined beside wrapped=0 -- proven against a ROOT that has no definition, because RT_GC_CALLBACK now EXISTS in the real tree and this arm asserted its ABSENCE, so it went red the day the wrapper was written (R-1104: a self-test must not be keyed on the state the work removes)")
     ck("defined_in_tree=src/runtime/rt/gc_heap.h" in j,
        "callbacks: and against the REAL root the same line NAMES the definition site, so a no-op macro cannot pass as a cure unnoticed -- both directions proven, not one")
     ck("defined_in_tree=" in "\n".join(buf) and "scripts" not in "",
@@ -2817,7 +2817,7 @@ def main(argv):
     ap.add_argument("--ratchet", default="", help="a baseline TSV (census<TAB>key<TAB>count<TAB>note); refuse an increase, and a fall the baseline has not recorded")
     ap.add_argument("--write-baseline", default="", help="write today's counts as a baseline TSV (the landing that earned the fall runs this)")
     ap.add_argument("--root", default=ROOT)
-    ap.add_argument("--built-from", default="", help="the checkout whose build the --root scratch copied its out/ and src/ from (a staged root is copies, never links -- CEO-1820); the build-currency question is asked of that tree")
+    ap.add_argument("--built-from", default="", help="the checkout whose build the --root scratch copied its out/ and src/ from (a staged root is copies, never links -- R-1820); the build-currency question is asked of that tree")
     ap.add_argument("--poll-window", type=int, default=12,
                     help="lines, read ONLY under SCRIP_GC_CENSUS_WINDOW_UNIT=lines; the default window is SCRIP_GC_CENSUS_WINDOW_X86 x86 calls (14)")
     ap.add_argument("--poll-helper", default="")
@@ -2839,7 +2839,7 @@ def main(argv):
         if os.path.isdir(dd):
             emitter_files += [os.path.join(dd, f) for f in sorted(os.listdir(dd)) if f.endswith((".cpp", ".c", ".h"))]
     # ⛔⭐ BUILD CURRENCY FIRST, AND THIS CENSUS WENT NINE DAYS WITHOUT IT.  A DONE-WHEN READ GREEN ON AN UNCOMPILED
-    # TREE (the coo, 2026-09-22; ceo CEO-1147 calls it the sharpest of this row's four items).  It is not a courtesy
+    # TREE (the coo, 2026-09-22; R-1147 calls it the sharpest of this row's four items).  It is not a courtesy
     # check here: census_safe_points derives its DENOMINATOR from the built runtime -- allocating_entries_from_binary
     # reads out/libscrip_rt.so for the allocating symbol set -- so a stale .so does not merely date the verdict, it
     # silently changes WHICH CALLS ARE COUNTED and hands back a confident number for a program nobody is shipping.
@@ -2848,7 +2848,7 @@ def main(argv):
     # ⛔ AND THERE IS DELIBERATELY NO ESCAPE HATCH.  Every other knob in this file has one for an auditor comparing
     # across a criterion change; a bypass HERE would re-admit the exact false green the refusal exists to stop.
     # THE QUESTION IS ASKED OF THE TREE THAT OWNS THE RUNTIME ARTIFACT (cto 2026-09-24, the seventeen-red row): when
-    # --root is a scratch the emitted-paths gate staged by COPYING ROOT's .so and the templates it doctors (no link, CEO-1820),
+    # --root is a scratch the emitted-paths gate staged by COPYING ROOT's .so and the templates it doctors (no link, R-1820),
     # it names ROOT with --built-from, since that root has no ../harness/scripts/ and its copies are newer than any
     # binary by construction, and asked there the check refused every run (rc=2, "census printed no headline") while
     # grading nothing -- the artifacts are ROOT's and ROOT's src is what built them; a scratch that names no
@@ -2894,12 +2894,12 @@ def main(argv):
     if a.write_baseline:
         # ⛔ THIS WRITER USED TO DESTROY THE RECORD IT EXISTS TO KEEP, AND THE PROCEDURE THAT DESTROYS IT IS THE ONE
         # THE GATE PRINTS.  Measured by the coo 2026-09-22 before running it: the file carries FOURTEEN comment lines
-        # that CRITERION_CHANGES does not -- every "CRITERION UNCHANGED, COUNT EARNED" note the ceo, cto and cfo wrote
+        # that CRITERION_CHANGES does not -- every "CRITERION UNCHANGED, COUNT EARNED" note the officer, cto and cfo wrote
         # by hand across 2026-09-18/19 recording WHOSE landing earned each fall, plus three CRITERION CHANGED entries
         # added to the file and never to the list.  A truncating rewrite drops all fourteen, so any seat following
         # arm (c)'s own instruction ("lower the baseline in the landing that earned it") silently deletes other
         # seats' provenance.  The counts are regenerated; every prior comment line is CARRIED FORWARD.
-        header = ["# gc_census_baseline.tsv -- the counts THE COLLECTOR GUESSES NOTHING drives to 0 (coo, CEO-818/819 section 7).",
+        header = ["# gc_census_baseline.tsv -- the counts THE COLLECTOR GUESSES NOTHING drives to 0 (coo, R-818/819 section 7).",
                   "# Written by `util_gc_census.py all --write-baseline`; every landing that lowers a count rewrites this file",
                   "# in the same sitting -- test_gate_gc_instrument_censuses_are_wired_and_trip.sh reds on an increase AND on an",
                   "# unrecorded fall.  census\tkey\tcount\twant"]

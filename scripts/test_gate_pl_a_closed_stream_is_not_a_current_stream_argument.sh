@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_closed_stream_is_not_a_current_stream_argument.sh -- current_output/1 AND current_input/1 GIVEN A CLOSED STREAM, OR A NON-STREAM, RAISE domain_error(stream, S) (ISO 8.11.1.3, 8.11.2.3).
-# hq_prolog 2026-09-25, CEO-1270; the cure is by_name_dispatch.c rt_pl_dop_curstream_guard_c, which accepted ANY '$stream'(K) term and now
+# hq_prolog 2026-09-25, R-1270; the cure is by_name_dispatch.c rt_pl_dop_curstream_guard_c, which accepted ANY '$stream'(K) term and now
 # requires its handle to be live. NO MONITOR BRACKET: an error expectation, and the oracles do not agree with each other -- gprolog quietly FAILS
 # and swipl raises existence_error -- so the witness is the standard as the Logtalk suite states it (sics_current_output_1_04, sics_current_input_1_04).
 # RED BEFORE on origin: both closed-stream lines printed nothing (the goal failed), m3 AND m4.

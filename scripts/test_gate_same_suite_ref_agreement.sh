@@ -2,7 +2,7 @@
 # test_gate_same_suite_ref_agreement.sh -- THE SAME-SUITE TWIN of test_gate_cross_suite_ref_agreement.sh:
 # TWO ENTRIES IN ONE RUNGS MUST NOT HOLD CONTRADICTORY REFS FOR A BYTE-IDENTICAL PROGRAM.
 #
-# ⛔ WHY THIS EXISTS (hq_B's find 2026-09-04, routed by ceo, task
+# ⛔ WHY THIS EXISTS (hq_B's find 2026-09-04, routed by the officer, task
 # same-suite-contradictory-refs-gate-two-entries-one-program-two-answers): the Icon rungs held
 # contradictory refs for one program that appeared TWICE UNDER TWO NAMES IN THE SAME RUNGS (not one rung suite
 # vs a sibling suite, which the cross-suite gate already covers) -- and the cross-suite gate cannot see it,
@@ -26,7 +26,7 @@
 # METHOD: within each language's own rungs, group entries by their SOURCE BODY (banner/name excluded --
 # that is what the shared reader already returns as `Entry.sno_lines`). Two or more entries sharing one
 # body are, by construction, the same program under different names. For every such group (every entry is
-# run-graded in both modes -- there is no modes column, CEO-1230) their ref
+# run-graded in both modes -- there is no modes column, R-1230) their ref
 # bodies (progname-normalized, same reasoning as the cross-suite gate: a program that echoes
 # &progname/its own name is not disagreeing, it is naming itself) and their `want_rc` must all agree. A
 # group that does not is a contradiction: at least one ref or want_rc is wrong, named entry-vs-entry so

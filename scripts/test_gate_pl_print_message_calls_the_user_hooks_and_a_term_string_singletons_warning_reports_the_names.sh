@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_print_message_calls_the_user_hooks_and_a_term_string_singletons_warning_reports_the_names.sh
-# -- THE MESSAGE HOOKS AND THE SINGLETONS WARNING (ceo CEO-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664, SWI core/test_read.pl
+# -- THE MESSAGE HOOKS AND THE SINGLETONS WARNING (R-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664, SWI core/test_read.pl
 # read_term:warn_singletons). Three gaps, one witness built on the suite's own catch_messages helper. (1) print_message/2 ignored user:thread_message_hook/3 and message_hook/3; it now
 # calls the first and then the second with the message term, its kind and its translated lines, and a hook that succeeds stops the default print. (2) asserta/assertz of a clause whose
 # head is module-qualified -- (user:H :- B), with or without a clause reference -- raised permission_error(modify, static_procedure, (:)/2); the head is now unqualified before the

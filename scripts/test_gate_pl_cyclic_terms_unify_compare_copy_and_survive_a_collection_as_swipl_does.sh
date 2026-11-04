@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_cyclic_terms_unify_compare_copy_and_survive_a_collection_as_swipl_does.sh -- RATIONAL TREES, THE CORE (cto 2026-10-05, CEO-1521,
+# test_gate_pl_cyclic_terms_unify_compare_copy_and_survive_a_collection_as_swipl_does.sh -- RATIONAL TREES, THE CORE (cto 2026-10-05, R-1521,
 # row prolog-rational-trees-cyclic-term-unification-comparison-copy-and-write-so-the-logtalk-coinduction-branch-is-graded-as-supported).
 # Unification without the occurs check builds a cyclic term (X = f(X)); every walk over a term must then terminate on it with SWI-Prolog's answer.
 # The walk is SWI's own (pl-prims.c do_unify / do_compare): a left-to-right agenda and a LINK per compound pair, undone at the end, so a revisited

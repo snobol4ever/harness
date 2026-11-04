@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # test_gate_board_population_floor.sh -- THE ACCEPTANCE GATE for row every-board-wrapper-refuses-on-a-
 # zero-population-instead-of-passing-vacuously (hq_T -> seat16, 2026-09-04).
 #
@@ -101,7 +101,7 @@ echo "--- ARM 5 (REAL dynamic proof, the WITNESSED scenario): gimpel wrapper ref
 sleep 60 & FAKE_PID=$!
 FAKE_BOARDS="$W/fake_boards"; mkdir -p "$FAKE_BOARDS"
 printf '%s|%s|%s|%s|%s\n' "$FAKE_PID" "/fake/root" "/fake/out" "1" "2026-01-01T00:00:00" > "$FAKE_BOARDS/$FAKE_PID.board"
-# ⛔ ON A SCRATCH CORPUS (ceo CEO-1302 (c), coo 2026-09-27): the fixture exemption no longer admits the shared corpus, so the wrapper
+# ⛔ ON A SCRATCH CORPUS (R-1302 (c), coo 2026-09-27): the fixture exemption no longer admits the shared corpus, so the wrapper
 # grades a copy of the gimpel package with include copied beside it, the population it would copy into its own overlay anyway.
 PFC="$W/pfcorpus"; mkdir -p "$PFC/packages/snobol4"; cp -a "$(cd "$HERE/../.." && pwd)/corpus/packages/snobol4/gimpel" "$PFC/packages/snobol4/gimpel"
 cp -a "$(cd "$HERE/../.." && pwd)/corpus/include" "$PFC/include"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_swi_expand_file_name_answers_as_swipl.sh -- expand_file_name/2 AS SWIPL 9.0.4 ANSWERS IT (hq_icon 2026-10-31, row prolog-swi-to-100-the-failing-cases-ceo-1930, SWI files/test_glob glob_expand:glob).
+# test_gate_pl_swi_expand_file_name_answers_as_swipl.sh -- expand_file_name/2 AS SWIPL 9.0.4 ANSWERS IT (hq_icon 2026-10-31, row prolog-swi-to-100-the-failing-cases-r-1930, SWI files/test_glob glob_expand:glob).
 # THE FEATURE: src/parsers/prolog/prelude/swi_builtins.pl, a LOCAL prelude library over directory_files/2 and wildcard_match/2.  A name with no ? * [ { is returned as the one-element list it was after $VAR and ~ expansion, existing
 # or not; a name with one is split at '/', each wildcard segment lists its directory and matches it (a leading '.' only by a segment that starts with '.'; '.' and '..' are entries), a literal segment after a wildcard
 # must exist, a trailing '/' is dropped, the whole strings are msort-ed, an unmatched [ or { raises syntax_error(Unmatched ...), an unbound name raises instantiation_error and a compound one type_error(text, _).

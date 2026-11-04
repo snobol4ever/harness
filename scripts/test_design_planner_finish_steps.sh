@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_design_planner_finish_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: planner-finish (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_planner_finish_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: planner-finish (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-THREE-ZETAS-EMISSION.md section 11). The plan is corpus/tests/snobol4/planner_finish/STEPS.tsv; the witnesses are the
 # planner_finish/ folders of corpus/tests/{snobol4,icon,prolog,pascal}, each program beside a .ref cut from its oracle (sbl -bf, icont/iconx,
 # swipl 9.0.4 -q -t halt, fpc 3.2.2).
@@ -50,7 +50,7 @@ slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 [ -f "$CENSUS" ] || refuse "no census at $CENSUS"
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi

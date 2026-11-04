@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_dynamic_and_open_arrays_and_const_and_out_parameters_answer_as_fpc.sh -- FPC's dynamic arrays and open-array parameters,
-# which fpc -Miso accepts (so the ISO dialect accepts them, CEO-1624), and const and out parameters, each as its fpc mode answers (the
-# dialects row pascal-dialects-...-ceo-1614, chunk 5).
+# which fpc -Miso accepts (so the ISO dialect accepts them, R-1624), and const and out parameters, each as its fpc mode answers (the
+# dialects row pascal-dialects-...-r-1614, chunk 5).
 #
 # MEASURED 2026-10-11 by hq_pascal: of PasRosetta's 319 graded programs, 63 stopped at a parse error on "array of" and 15 on a const
 # parameter, on SCRIP 6eda0b182, where every arm below is a parse error.

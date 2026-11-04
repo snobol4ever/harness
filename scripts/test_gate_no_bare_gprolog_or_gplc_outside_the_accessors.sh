@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh -- THE GNU PROLOG ORACLE IS NAMED ONE WAY (ceo CEO-1598, 2026-10-10).
+# test_gate_no_bare_gprolog_or_gplc_outside_the_accessors.sh -- THE GNU PROLOG ORACLE IS NAMED ONE WAY (R-1598, 2026-10-10).
 #
-# Lon 2026-10-10 10:2x CDT, in-chat to the ceo, verbatim: "Get the new oracle 1.6.0 and begin using it instead of the older one."
+# Lon 2026-10-10 10:2x CDT, in-chat, verbatim: "Get the new oracle 1.6.0 and begin using it instead of the older one."
 # The oracle moved from /usr/bin/gprolog (1.4.5, Lon's apt install, left in place) to the pristine 1.6.0 build under
 # /home/resources/gprolog-mon/pristine (ORACLES.md, ORACLE SWAP 2026-10-10). The ONE way a script names it is gprolog_bin / gplc_bin in
 # lib_oracle_flags.sh. A bare `gprolog`, `gplc`, `command -v gprolog`, `command -v gplc` or `/usr/bin/gprolog` anywhere else under ../harness/scripts/

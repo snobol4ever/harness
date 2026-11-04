@@ -18,7 +18,7 @@
 # second field on line 1) and falls back to the claim file's own mtime otherwise -- both are fields
 # the postoffice (or the filesystem) writes, never the sender.
 
-_s4e_rg_authority_set=" ceo hq hq_B hq_C hq_P "
+_s4e_rg_authority_set=" cto hq hq_B hq_C hq_P "
 
 # _s4e_rg_claim_start_ns <claim_file> -- prints claim_start in nanoseconds, or fails (return 1).
 _s4e_rg_claim_start_ns() {

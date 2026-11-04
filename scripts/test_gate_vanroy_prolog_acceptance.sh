@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_vanroy_prolog_acceptance.sh -- the PERF-SIDE ACCEPTANCE INSTRUMENT of the PROLOG REDESIGN program (Lon escalation 2026-09-02 10:00, ceo-routed; hq_P owns P6 and P7).
+# test_gate_vanroy_prolog_acceptance.sh -- the PERF-SIDE ACCEPTANCE INSTRUMENT of the PROLOG REDESIGN program (Lon escalation 2026-09-02 10:00, officer-routed; hq_P owns P6 and P7).
 #
 # ⭐ WHAT IT GRADES: the 21 van Roy kernels in their COUNTED form, mode 3, GENERATED per run (see the note at D= below; they were read from the retired corpus/benchmarks/prolog/vanroy/ until 2026-09-13). Baseline measured by hq_P at SCRIP fa12d7cb, -O0:
 #     3 CLEAN · 8 REFUSE (rc=134) · 8 SIGSEGV (rc=139) · 2 rc=1
@@ -29,7 +29,7 @@ CLEAN_FLOOR=3      # WORST-OF-REPS, measured hq_P 2026-09-02, SCRIP fa12d7cb, -O
 REPS="${VANROY_REPS:-3}"   # worst-of-N. 1 is NOT a valid setting for a verdict -- see the header; it is offered only for a quick eyeball.
 cd "$R/SCRIP" 2>/dev/null || { echo "⛔ REFUSED (rc=2): no $R/SCRIP"; exit 2; }
 [ -x ./scrip ] || { echo "⛔ REFUSED (rc=2): ./scrip is not built -- a board built on a missing binary is a plausible all-FAIL table, not a measurement"; exit 2; }
-# ⛔⭐ THE 21 KERNELS ARE GENERATED, NOT READ OUT OF GIT (hq_P 2026-09-13, CEO-567). This gate used to read
+# ⛔⭐ THE 21 KERNELS ARE GENERATED, NOT READ OUT OF GIT (hq_P 2026-09-13, R-567). This gate used to read
 # corpus/benchmarks/prolog/vanroy/*.pl -- 21 checked-in files, each bench/<k>.pl with `main :- l__(N).` frozen in, i.e. the
 # iteration count living inside the artifact under measurement. That directory is RETIRED; gen_counted_set() rebuilds the same
 # 21 kernels at the same 21 counts from the pristine bench/ sources plus corpus/benchmarks/prolog/fixed-iter-n.tsv, which is
@@ -37,7 +37,7 @@ cd "$R/SCRIP" 2>/dev/null || { echo "⛔ REFUSED (rc=2): no $R/SCRIP"; exit 2; }
 # directory's. ⛔ The CLEAN_FLOOR above was pinned against the OLD checked-in files, which were generated from PRE-conversion
 # bench/ sources (they wrapped a self-timing main/0 that raised existence_error(wall_us/1)); the subject is the same 21
 # computations at the same counts, but it is not the same bytes -- so the floor is re-proven against this form, never assumed.
-# ⛔⭐ FOURTH DIMENSION, REPORTED NOT BLOCKING (hq_P 2026-09-13, CEO-676): "CLEAN" HERE MEANS rc=0, AND rc=0 IS
+# ⛔⭐ FOURTH DIMENSION, REPORTED NOT BLOCKING (hq_P 2026-09-13, R-676): "CLEAN" HERE MEANS rc=0, AND rc=0 IS
 # WEAKER THAN THE CLAIM THIS BOARD IS READ AS MAKING. Measured on this tree with loop_check() wired into the m3
 # census: SEVEN of the 21 exit 0 WITHOUT producing their N answers -- deriv 26954/65536, divide10 15186/65536,
 # meta_qsort 199/1024, nrev 1438/65536, ops8 26954/65536, zebra 11/256, and ham 107/16 (which OVER-produces,
@@ -50,7 +50,7 @@ cd "$R/SCRIP" 2>/dev/null || { echo "⛔ REFUSED (rc=2): no $R/SCRIP"; exit 2; }
 # shape for a re-cut is the SUITES.tsv `criterion_changed` discipline -- the new number published BESIDE the old
 # with its reason, never silently in place of it. So CLEAN_FLOOR keeps grading exactly what it was pinned
 # against (rc=0, worst-of-REPS), and CLEAN_GRADED is printed beside it, named per kernel, blocking NOTHING today.
-# ⛔ THE RAMP TO BLOCKING IS A ceo/Lon DECISION, NOT A SCRIPT AUTHOR'S -- it needs the floor re-pinned against the
+# ⛔ THE RAMP TO BLOCKING IS A officer/Lon DECISION, NOT A SCRIPT AUTHOR'S -- it needs the floor re-pinned against the
 # graded criterion in the same commit, citing the measurement. Until then this half is EVIDENCE, not a verdict.
 . "$R/harness/scripts/lib_prolog_bench.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot source lib_prolog_bench.sh -- the one authority for materialising the counted set"; exit 2; }
 . "$R/harness/scripts/lib_perf_fmt.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot source lib_perf_fmt.sh -- the one authority for stamping a measurement with its load"; exit 2; }

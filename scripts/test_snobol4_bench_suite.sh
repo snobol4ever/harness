@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${BENCH_SNOBOL4_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/benchmarks/snobol4}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_snobol4_bench_suite.sh [--no-write] -- THE SNOBOL4 BENCHMARKS GRADED AS TESTS: every kernel under corpus/benchmarks/snobol4, both
 # modes, all three angles, its REF checked on every run (the SnoBench row of SCORE.md THE SUITE TABLE; Lon 2026-09-24 14:2x, in-chat
-# to the ceo: create a runner for SnoBench; built by the ceo on the shape of test_rebus_bench_suite.sh, the coo's COO-164 contract).
+# to the officer: create a runner for SnoBench; built by the officer on the shape of test_rebus_bench_suite.sh, the coo's COO-164 contract).
 # Lon 2026-09-23, verbatim: "The reason to force a benchmark to also be a test is to guarantee it is not vacuous." -- "The source of
 # the benchmark is the apple-core of the test, the wrapper code can be added to do both the test and the measurements."
 #
@@ -22,13 +22,13 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   The `value=` on the BENCH line is the kernel function's own census (not the .ref, which the test half already held):
 #   the runner holds it to the FIRST repetition through mismatched=0.
 # MEMORY: a kernel that needs more than the shipped arena or stack declares it beside itself -- NAME.heap and NAME.stack, one line
-# NAME TAB KB each -- read through lib_declared_arena.sh (CEO-1171's floors), exported for THAT program only (CEO-1225).
+# NAME TAB KB each -- read through lib_declared_arena.sh (R-1171's floors), exported for THAT program only (R-1225).
 # ⛔ TIMING IS SCOUTING, NOT PUBLISHED: the BENCH and BENCH_RUSAGE numbers are printed per run; no rate enters a grid from here
-# (bench_triangulate_snobol4.sh is the timing instrument). CEO-1222: REF only -- each run's stdout lives in a temp dir that is deleted.
+# (bench_triangulate_snobol4.sh is the timing instrument). R-1222: REF only -- each run's stdout lives in a temp dir that is deleted.
 # PUBLISH: the board is the SNOBOL4 lane's (MODE LANES snobol4=hq_snobol4). One progress row per kernel per mode (class benchmark,
-# suite snobol4-bench-ref, config declared) is appended when the population is the corpus tree; a whole-population pass then calls util_score_row.py by default (CEO-1302 (a), --no-write opts out)
+# suite snobol4-bench-ref, config declared) is appended when the population is the corpus tree; a whole-population pass then calls util_score_row.py by default (R-1302 (a), --no-write opts out)
 # write --lang snobol4 --column bench-ref, whose lane check admits only the lane's seat. A population OUTSIDE the corpus tree
-# (a fixture, BENCH_SNOBOL4_DIR) is not a board (CEO-547): it is graded, and nothing is appended or written.
+# (a fixture, BENCH_SNOBOL4_DIR) is not a board (R-547): it is graded, and nothing is appended or written.
 # THE ORACLE ARM (BENCH_ORACLE_ARM=1; Lon 2026-09-24 15:1x: run the same 23 on SPITBOL using the 3-angle harness and show the
 # comparison): the same pristine kernel and the SAME generated twins run under the CLEAN SPITBOL benchmark oracle (sbl_clean_bin,
 # lib_oracle_flags.sh -- official upstream plus its two class-A patches, TIME() in nanoseconds; never the monitor-hooked x64/bin/sbl,
@@ -45,10 +45,10 @@ SCRIP="$HERE/../../SCRIP/scrip"
 RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
 BUD_MS="${BENCH_BUD_MS:-200}"
-NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
-# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries is the one check, each kernel runs its three angles in m3 alone with its declared heap and stack as switches, angle 1's external
 # stopwatch is /usr/bin/time (SCRIP's tools/bench_rusage lives in SCRIP, which a port root does not hold; stdout untouched either way), the rows
@@ -84,7 +84,7 @@ if [ "$ORACLE_ARM" = 1 ]; then
 fi
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name "*.$EXT" -printf '%f\n' | sed "s/\.$EXT\$//" | LC_ALL=C sort)
-# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the officer's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
 # S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
 # population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
 . "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
@@ -129,7 +129,7 @@ for k in "${KERNELS[@]}"; do
   okboth=1
   sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_beside "$f")" || refuse "$k: a .heap or .stack sidecar is refused (the reader said why above)"; }   # a port reads its declared heap and stack as -dNk -sNk
   for m in $MODES; do
-    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (CEO-1676 (c))
+    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
     else
@@ -182,11 +182,11 @@ echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
 [ "$PORT" = 1 ] && echo "  tree: engine $(one_runner_port_tree) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)" || echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=-O0"
 if [ "$IS_BOARD" = 0 ]; then
-  echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
+  echo "  population $BD is OUTSIDE the corpus tree -- not a board (R-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
   rr_selected && { rr_end $SUITE_KEY; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }
-  if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (CEO-1822), graded in m3 alone"; [ "$NOWRITE" = 0 ] && one_runner_port_publish "$SUITE_KEY@$(one_runner_engine)"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
+  if [ "$PORT" = 1 ]; then echo "  suite row: the $(one_runner_engine) engine writes no SCRIP row -- its row is $SUITE_KEY@$(one_runner_engine), assembled from these progress rows (R-1822), graded in m3 alone"; [ "$NOWRITE" = 0 ] && one_runner_port_publish "$SUITE_KEY@$(one_runner_engine)"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; fi
   . "$HERE/lib_bench_write.sh" || refuse "lib_bench_write.sh unloadable -- the one rule for when a bench row publishes"
   read -r WRITE WRITE_WHY <<<"$(bench_row_writes "$(cd "$HERE/../.." && pwd)/corpus/benchmarks/snobol4" "$BD" "" "$NOWRITE")"
   echo "  row write: $([ "$WRITE" = 1 ] && echo yes || echo no) -- $WRITE_WHY"

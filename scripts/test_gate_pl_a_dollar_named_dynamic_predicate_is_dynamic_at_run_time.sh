@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_a_dollar_named_dynamic_predicate_is_dynamic_at_run_time.sh -- A PREDICATE NAMED WITH A LEADING $ IS A USER PREDICATE (ceo CEO-1522).
+# test_gate_pl_a_dollar_named_dynamic_predicate_is_dynamic_at_run_time.sh -- A PREDICATE NAMED WITH A LEADING $ IS A USER PREDICATE (R-1522).
 # pl_db_decls_capture skipped every dynamic predicate whose name starts with $, taking it for SCRIP's own, so a user's ':- dynamic('$c_'/2).'
 # never reached the run-time registry: an assertz through the term road, a predicate_property and a retractall each saw a "static" predicate,
 # and the Logtalk runtime ('$lgt_send_to_obj_'/3 and its cache family) raised permission_error(modify, static_procedure) at its first cache

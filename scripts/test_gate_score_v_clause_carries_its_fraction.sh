@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_score_v_clause_carries_its_fraction.sh -- the invariant gate for the V-cell CLAUSE
 # TRUNCATION class (row score-v-clause-truncation-publishes-a-graded-package-as-ungraded, hq_T
-# 2026-09-05; standing rule recorded as ceo CEO-297, "IN A PACKAGE CLAUSE, THE FRACTION LEADS").
+# 2026-09-05; standing rule recorded as R-297, "IN A PACKAGE CLAUSE, THE FRACTION LEADS").
 #
 # WHAT IT PROTECTS. The PROGRESS percent reads the September-10 grid's V column only, and
 # util_score_row.py's counted_fractions() reads each package BY CLAUSE: from the package's name to

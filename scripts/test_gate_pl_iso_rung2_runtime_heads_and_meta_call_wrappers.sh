@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_iso_rung2_runtime_heads_and_meta_call_wrappers.sh -- PROLOG ISO LADDER, RUNG 2 (cto, CEO-617, 2026-09-12).
+# test_gate_pl_iso_rung2_runtime_heads_and_meta_call_wrappers.sh -- PROLOG ISO LADDER, RUNG 2 (cto, R-617, 2026-09-12).
 # THE RUNG: a database builtin whose head, clause or predicate indicator is only known at RUN TIME -- asserta(_),
 # four(F), asserta(F), retract((H :- B)) with H bound by a helper, clause(_, B), abolish(foo/X), retractall(T) --
 # raises the ISO error term ($db_t_guard: instantiation_error, type_error(callable), permission_error on a control

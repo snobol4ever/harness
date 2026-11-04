@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_gc_a_scanned_subject_with_an_embedded_nul_keeps_its_length_across_a_collection.sh -- hq_icon, 2026-09-24, MODE
 # DECTET; row icon-gc-g-scan-subj-ptr-is-not-relocated-so-rt-scan-subj-len-falls-back-to-strlen-and-loses-an-embedded-nul-length
-# (ceo CEO-1152, named by the cfo at fa1dc84a5).
+# (R-1152, named by the cfo at fa1dc84a5).
 #
 # WHAT WAS THERE, AND IT WAS TWO HOLDERS OF ONE ADDRESS AGAIN. rt_scan_subj_len() answers the scan subject's length from a cache
 # keyed on the subject's ADDRESS (g_scan_subj_ptr / g_scan_subj_len). gen_gc_roots moved g_scan_subj at every collection and never

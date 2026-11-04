@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
-# test_gate_add_ladder_witness_lands_the_entry_in_the_builders_order.sh -- A MINT LANDS ITS ENTRY WHERE THE BUILDER'S KEY PUTS IT (ceo CEO-2019,
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
+# test_gate_add_ladder_witness_lands_the_entry_in_the_builders_order.sh -- A MINT LANDS ITS ENTRY WHERE THE BUILDER'S KEY PUTS IT (R-2019,
 # the SnoRungs order gate red at 880 of 2189 with nine hq_dotnet harvests at the tail). util_add_ladder_witness.py used to APPEND the new
 # entry and leave the sort to a --resort nobody ran after a harvest, so every mint broke test_gate_rungs_order_is_the_builders_order
 # (Lon's level law: `rank <= N` selects the greenest N). It now places the entry by the builder's own key through the builder's resort_rungs,

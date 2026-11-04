@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_map_keeps_each_result_as_an_item_and_a_brace_of_pairs_using_the_topic_is_a_block.sh -- TWO CORE SEMANTICS THE ROAST SURVEY FOUND WRONG
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479).
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479).
 #
 # 1. MAP KEEPS EACH RESULT AS ONE ITEM, AND ONLY A SLIP SPILLS. (1, 2).map({ ($_, $_ * 2) }) is ((1 2) (2 4)) in Rakudo, and map({ "k$_" => $_ }) yields two Pairs;
 #    SCRIP's inline map accumulation (by_name_dispatch.c __rk_map_append) spilled every typed aggregate, so a List, an Array and a Pair result were flattened:

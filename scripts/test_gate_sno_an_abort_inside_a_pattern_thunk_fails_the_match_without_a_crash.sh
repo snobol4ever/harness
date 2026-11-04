@@ -3,8 +3,8 @@
 # *ABORT, *((ABORT)), a stored p = ABORT or p = LEN(1) ABORT matched directly or through *p, the run-time-built pattern of EVAL) fails
 # the whole match, in both modes, statically and inside EVAL alike, as SPITBOL answers it -- no SIGSEGV.
 #
-# ⛔ THE DEFECT (row snobol4-a-deferred-abort-in-a-pattern-crashes-scrip-where-spitbol-fails-the-match; found by the ceo's first
-#   one-minute run of the SCRIPtix program, CEO-1441: '1' ? *ABORT and ']' ? *((ABORT)) &INPUT end every long run). zd_k gave
+# ⛔ THE DEFECT (row snobol4-a-deferred-abort-in-a-pattern-crashes-scrip-where-spitbol-fails-the-match; found by the officer's first
+#   one-minute run of the SCRIPtix program, R-1441: '1' ? *ABORT and ']' ? *((ABORT)) &INPUT end every long run). zd_k gave
 #   IR_MATCH_ABORT a 16-byte spine cell it never reads (every op off its zero list gets one; its sibling cut box FENCE0 is on it). In a
 #   pattern thunk the seal is the thunk's own abort-exit marker -- a second IR_MATCH_ABORT, literal 1 -- and the user ABORT's omega edge
 #   enters that marker's beta. The user box pushed its cell and popped it on its omega; the marker's beta, planned as if its own alpha
@@ -17,7 +17,7 @@
 #
 # THE ARMS (expectations cut from sbl -bf AT RUN TIME):
 #   1-2  m3 / m4 STATIC: deferred, stored, stored-then-deferred ABORT, with a capture before it, n preset              -- RED on base
-#   3-4  m3 / m4 EVAL: the same shapes and the ceo's ']' ? *((ABORT)) &INPUT, EVALed                              -- RED on base
+#   3-4  m3 / m4 EVAL: the same shapes and the officer's ']' ? *((ABORT)) &INPUT, EVALed                              -- RED on base
 #   5-6  CONTROL m3 / m4: shapes base already answers -- plain ABORT, LEN(1) ABORT and an ABORT arm in a statement, *FAIL
 # EXIT: 0 all arms pass · 1 an arm failed · 2 REFUSED (no binary, no oracle, no tmpdir, the oracle's answer moved).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?

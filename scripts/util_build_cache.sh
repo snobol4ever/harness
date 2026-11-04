@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_build_cache.sh -- ONE BUILD PER TREE (the cto, ARCH-SHARED-DEVELOPMENT.md section 3.2, CEO-2041 step 6; Lon 2026-10-31: "Everyone is
+# util_build_cache.sh -- ONE BUILD PER TREE (the cto, ARCH-SHARED-DEVELOPMENT.md section 3.2, R-2041 step 6; Lon 2026-10-31: "Everyone is
 # compiling at the same time"). A SCRIP build is a pure function of (the SCRIP tree, the runtime flags, the toolchain), so the first clean build
 # of a tree publishes its artifacts under /home/resources/builds/scrip/<key>/ and every other root at the same tree copies them in with `make`
 # and compiles nothing. The Makefile's `all` calls `fetch` first and `publish` after a successful build; nothing else changes.
@@ -26,7 +26,7 @@
 # touched newer than every source, so make's own rules and the freshness guard (gate_require_fresh, mtime against the newest tracked source)
 # read them as a build of this tree; out/buildinfo records key, tree, toolchain and FETCHED|BUILT. RETENTION: the newest 60 entries by last use
 # (<key>/.used, touched at every fetch), pruned at publish. S4E_NO_BUILD_CACHE=1 turns both directions off (the control arm);
-# S4E_BUILD_CACHE_DIR points a gate at a scratch cache. Never a symlink (CEO-1817). THE RPATH: a published or fetched binary must name its runtime as $ORIGIN-relative
+# S4E_BUILD_CACHE_DIR points a gate at a scratch cache. Never a symlink (R-1817). THE RPATH: a published or fetched binary must name its runtime as $ORIGIN-relative
 # (the Makefile since 2026-10-31 16:5x); an absolute rpath is the producer's root, so such an entry is neither published nor fetched (found on the cqo's root, which ran another seat's runtime).
 set -u
 CACHE="${S4E_BUILD_CACHE_DIR:-/home/resources/builds/scrip}"

@@ -3,8 +3,8 @@
 
 Census of DELIMITER-JOINED AGGREGATES (RULES.md FACT RULE NO DELIMITER-JOINED AGGREGATES; Lon 2026-09-28 08:5x CDT, in-chat to
 hq_pascal, verbatim: "What are seperator bytes? Are you storing data as tag delimited strings? Where are you doing that crazy
-thing?" · "Do not store records like that." · "Get rid of ALL delimited based processing like the one I just discovered."; ceo
-CEO-1349, the cfo's row).  It reads every .c/.cpp/.h/.y/.l under --dir, skips generated flex/bison output, and lists every SITE
+thing?" · "Do not store records like that." · "Get rid of ALL delimited based processing like the one I just discovered."; the officer
+R-1349, the cfo's row).  It reads every .c/.cpp/.h/.y/.l under --dir, skips generated flex/bison output, and lists every SITE
 where a value is joined by, split on, or tagged with a SEPARATOR BYTE: a control-byte literal ('\\x01', "\\001", '\\x05', '\\x1f',
 '\\x04' and the rest of \\x01..\\x07 and \\x1c..\\x1f, in char or string form) or a macro that names one (SOH), used on a line
 that is not a whole-byte table (eight or more distinct byte escapes on one line is a table, not a separator) and not the macro's
@@ -12,7 +12,7 @@ own #define (printed as the separator's DEFINITION beside its file).  Each site 
 CARRIER -- PASCAL (records and arrays: __pas_*, arr_get/arr_set_pure, pascal.y init literals, norm_charseq in lower_common.c, a
 shared node), RAKU (arrays, lists, hashes: the __rk_* and generic builtins, rt_str_method, out_write_str, rt_make_flat_agg,
 lower_raku.c, rk_tree.c), REGISTRY_KEY (src/runtime/aggregates.c's \\001-prefixed type-tagged registry keys: a MEMBER since
-CEO-1350, the cfo's view adopted by the ceo) or OTHER (anything else found: a member until its owner names it) -- and the
+R-1350, the cfo's view adopted by the officer) or OTHER (anything else found: a member until its owner names it) -- and the
 NON-MEMBERS are carried from a declaration file with their reasons, counted separately and printed every run, never silently
 exempt: x86_asm.h's \\x01 port mark in the TEXT medium (emitter bookkeeping) and the whole-byte tables.  It is a census, not a
 verdict: --baseline FILE compares the member count PER CARRIER against a baseline that may only fall (above: a separator-joined
@@ -162,7 +162,7 @@ def read_baseline(path):
 def report(d, sites, defs, tables, exempt, stale, top, baseline):
     by_c = Counter(s[3] for s in sites)
     by_file = Counter(s[0] for s in sites)
-    print("DELIMITED-AGGREGATE CENSUS (RULES.md NO DELIMITER-JOINED AGGREGATES, CEO-1349): %d member site(s) in %d file(s) under %s; %d non-member site(s) carried with reasons; %d whole-byte table line(s) skipped by rule; %d separator definition(s)"
+    print("DELIMITED-AGGREGATE CENSUS (RULES.md NO DELIMITER-JOINED AGGREGATES, R-1349): %d member site(s) in %d file(s) under %s; %d non-member site(s) carried with reasons; %d whole-byte table line(s) skipped by rule; %d separator definition(s)"
           % (len(sites), len(by_file), d, len(exempt), len(tables), len(defs)))
     print("%-14s %6s   %s" % ("carrier", "sites", "files"))
     for c in CARRIERS:

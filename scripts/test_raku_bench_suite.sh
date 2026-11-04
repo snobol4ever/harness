@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${BENCH_RAKU_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/benchmarks/raku}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_raku_bench_suite.sh [--no-write] -- THE RAKU BENCHMARKS GRADED AS TESTS: every kernel under corpus/benchmarks/raku, both modes,
 # all three angles, its REF checked on every run (the RakBench row of SCORE.md THE SUITE TABLE; Lon 2026-09-24 14:2x, in-chat to
-# the ceo: create a runner for RakBench; built by the ceo on the shape of test_rebus_bench_suite.sh, the coo's COO-164 contract).
+# the officer: create a runner for RakBench; built by the officer on the shape of test_rebus_bench_suite.sh, the coo's COO-164 contract).
 # Lon 2026-09-23, verbatim: "The reason to force a benchmark to also be a test is to guarantee it is not vacuous."
 #
 # POPULATION: every *.raku directly under the benchmark tree, by extension -- never a kernel list. Each kernel's .ref is the
@@ -18,10 +18,10 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #       mismatched=0, value= the .ref's count. A wrapper run with no BENCH line is UNMEASURED, and that is a FAIL here.
 # MEMORY: NAME.heap and NAME.stack sidecars beside a kernel, read through lib_declared_arena.sh, exported for THAT program only.
 # ⛔ TIMING IS SCOUTING, NOT PUBLISHED: the BENCH and BENCH_RUSAGE numbers are printed per run; bench_triangulate_raku.sh is the
-# timing instrument. CEO-1222: REF only -- each run's stdout lives in a temp dir that is deleted.
+# timing instrument. R-1222: REF only -- each run's stdout lives in a temp dir that is deleted.
 # PUBLISH: the board is the Raku lane's (MODE LANES raku=hq_raku). One progress row per kernel per mode (class benchmark, suite
-# raku-bench-ref, config declared) is appended when the population is the corpus tree; a whole-population pass then calls util_score_row.py write by default (CEO-1302 (a), --no-write opts out)
-# --lang raku --column bench-ref. A population OUTSIDE the corpus tree (BENCH_RAKU_DIR) is not a board (CEO-547).
+# raku-bench-ref, config declared) is appended when the population is the corpus tree; a whole-population pass then calls util_score_row.py write by default (R-1302 (a), --no-write opts out)
+# --lang raku --column bench-ref. A population OUTSIDE the corpus tree (BENCH_RAKU_DIR) is not a board (R-547).
 # EXIT 0 every kernel PASS; 1 any kernel not PASS; 2 REFUSED.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +33,7 @@ SCRIP="$HERE/../../SCRIP/scrip"
 RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
 BUD_MS="${BENCH_BUD_MS:-200}"
-NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
@@ -45,8 +45,8 @@ WRAP="$HERE/../../SCRIP/tools/bench_rusage"
 [ -x "$WRAP" ] || gcc -O0 -o "$WRAP" "$HERE/../../SCRIP/tools/bench_rusage.c" || refuse "tools/bench_rusage failed to build -- angle 1 has no wrapper"
 case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer (got '$ITER_N')";; esac
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
-# ⭐ BENCH_ANGLES CHOOSES THE ANGLES GRADED (Lon 2026-10-08, in-chat to the ceo: "Why does RakBench take so long to run? Are the benchmarks
-# parameters tunable so that could be reduced?"; CEO-1564): default process,iter,time; the coo's standing loop grades the row with
+# ⭐ BENCH_ANGLES CHOOSES THE ANGLES GRADED (Lon 2026-10-08, in-chat: "Why does RakBench take so long to run? Are the benchmarks
+# parameters tunable so that could be reduced?"; R-1564): default process,iter,time; the coo's standing loop grades the row with
 # BENCH_ANGLES=process -- the pristine kernel once per mode against its .ref, the row's verdict -- and the three angles run on the publish
 # cadence. An angle not chosen is not generated, built or run, reads "-" in its column, and the board line names the angles graded.
 ANGLES="${BENCH_ANGLES:-process,iter,time}"; DO_P=0; DO_I=0; DO_T=0
@@ -55,7 +55,7 @@ for _a in "${_angs[@]}"; do case "$_a" in process) DO_P=1;; iter) DO_I=1;; time)
 [ "$DO_P$DO_I$DO_T" != 000 ] || refuse "BENCH_ANGLES names no angle (got '$ANGLES')"
 [ "$((DO_P+DO_I+DO_T))" = "${#_angs[@]}" ] || refuse "BENCH_ANGLES names an angle twice (got '$ANGLES')"
 ANGLES="$( { [ $DO_P = 1 ] && printf 'process,'; [ $DO_I = 1 ] && printf 'iter,'; [ $DO_T = 1 ] && printf 'time,'; } | sed 's/,$//')"
-# ⭐ THE ORACLE ARM (BENCH_ORACLE_ARM=1; ceo CEO-1987, Lon 2026-10-25: "Let's do the Pascal benchmarks and then Raku next." -- bench_triangulate_raku.sh
+# ⭐ THE ORACLE ARM (BENCH_ORACLE_ARM=1; R-1987, Lon 2026-10-25: "Let's do the Pascal benchmarks and then Raku next." -- bench_triangulate_raku.sh
 # times only self-timed kernels and every kernel is pristine since the kernel convention, so it refuses with 0 measurable): the SAME generated
 # fixed-time twin runs under rakudo with the benchmark prelude staged as raku_oracle_run.sh stages it (-I<staged> -Mprelude_rakudo: wall_us()
 # is a SCRIP builtin), printed as `scouting <k> raku:` lines beside the m3/m4 ones and an informational `<k> raku PASS|FAIL` line
@@ -69,12 +69,12 @@ fi
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name "*.$EXT" -printf '%f\n' | sed "s/\.$EXT\$//" | LC_ALL=C sort)
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.$EXT under $BD -- a population of zero is not a green board"
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded,
-# their rows appended, and no suite row is written (rr_end) -- one program at a time (Lon 2026-10-23, CEO-1926)
+# ⭐ THE ROUND ROBIN'S SEAM (R-1806/1812, as test_prolog_bench_suite.sh): under S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded,
+# their rows appended, and no suite row is written (rr_end) -- one program at a time (Lon 2026-10-23, R-1926)
 . "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
 if rr_selected; then _ks=(); for k in "${KERNELS[@]}"; do rr_admits "$k" && _ks+=("$k"); done; KERNELS=(${_ks[@]+"${_ks[@]}"}); fi
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
-# ⭐ A WRAPPER READS ITS KERNEL'S DATA FROM ITS OWN DIRECTORY (cfo 2026-10-23, CEO-1926): parse-json and parse-json-no-obj-creation open
+# ⭐ A WRAPPER READS ITS KERNEL'S DATA FROM ITS OWN DIRECTORY (cfo 2026-10-23, R-1926): parse-json and parse-json-no-obj-creation open
 # $*PROGRAM.parent.add('panda-projects.json'); the pristine kernel runs from $BD and finds it, but the iter and time twins are generated into $T and
 # died rc 1 "Failed to open file" on every reading since the angles ran. Every data file of the tree that a kernel names is copied beside them.
 for _d in "$BD"/*; do case "${_d##*/}" in *."$EXT"|*.ref|*.heap|*.stack|*.ast|*.s|*.tsv|*.md|LICENSE*) continue;; esac
@@ -138,7 +138,7 @@ for k in "${KERNELS[@]}"; do
     python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" -o "$T/$k.$a.$EXT" 2>"$T/$k.$a.gen" || gen_ok=0; done
   okboth=1
   for m in m3 m4; do
-    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (CEO-1676 (c))
+    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""; [ $DO_P = 1 ] || r1=-; [ $DO_I = 1 ] || r2=-; [ $DO_T = 1 ] || r3=-
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
     else
@@ -182,7 +182,7 @@ echo "$LINE"
 [ -n "$OUTN" ] && echo "  not run, out of the denominator (OUTSIDE.tsv, Lon 2026-10-10):$OUTN"
 echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty) RT_OPT=$(readelf --debug-dump=info "$HERE/../../SCRIP/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' ' || echo '?') (read from libscrip_rt.so's DWARF)"
 if [ "$IS_BOARD" = 0 ]; then
-  echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
+  echo "  population $BD is OUTSIDE the corpus tree -- not a board (R-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
   rr_selected && { rr_end "$SUITE_KEY"; [ "$BOTH" = "$TOTAL" ] && exit 0 || exit 1; }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_zeta_layout_check_negative_controls_red.sh -- THE LAYOUT CHECKER CAN FAIL (DESIGN-PLAN zeta-layout step 1; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH 5; CEO-2019).
+# test_gate_zeta_layout_check_negative_controls_red.sh -- THE LAYOUT CHECKER CAN FAIL (DESIGN-PLAN zeta-layout step 1; ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH 5; R-2019).
 # harness/scripts/util_zeta_layout_check.py reads a program's mode-4 text against ./scrip --dump-plan. A checker that reads 0 proves nothing until it is shown to read
-# more on a corrupted input, so each arm CORRUPTS A COPY OF THE CHECKER'S OWN INPUT (never a line of SCRIP's src, CEO-1680: a witness shown red against a corrupted
+# more on a corrupted input, so each arm CORRUPTS A COPY OF THE CHECKER'S OWN INPUT (never a line of SCRIP's src, R-1680: a witness shown red against a corrupted
 # reference) and demands that exactly the class the corruption belongs to rises over the clean reading:
 #   CARVE         the plan's K for one lit_integer row made 48 (the box still carves 16)
 #   EXCURSION     a push and a pop split by a conditional jump, planted in a lit_integer box
@@ -17,7 +17,7 @@
 #   SITE-UNGRADED / SITE-HOP / SITE-UNEXERCISED on zl08: each rule the program emits prints the line its class owns with the summary's count, and every rule it does not emit
 #                 prints UNEXERCISED; a nonzero GC_SITE_EXT byte planted in a record prints SITE-UNGRADED ext=nonzero
 #   TRANSFER-POP  zl02 clean reads no leak (the cure 34561c005 pops before each deferred jmp rax); with those pops removed from today's text (the
-#                 SYNTHETIC leak, CEO-576: the found leak is cured, the control re-creates it) it reads popped=0; the pop added back reads fewer; a WRONG pop still reads
+#                 SYNTHETIC leak, R-576: the found leak is cured, the control re-creates it) it reads popped=0; the pop added back reads fewer; a WRONG pop still reads
 #   ZSM           the instrument's own balanced push/pop around rt_zdp_ev (SCRIP_ZSM=1 SCRIP_ZSM_ALL=1) adds no EXCURSION and is counted as skipped
 #   ALIGN         a plan with its last graph cut off
 #   rc 2          an unreadable input prints no mismatches= line
@@ -229,7 +229,7 @@ grade('TRANSFER-POP: the clean zl02 reads no leak and pops before each deferred 
       not [l for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP')] and nleak >= 2, '%d pops' % nleak)
 r, cl = run(write('run_leak.s', leak), w2 + '/plan.txt')
 tl = [l for l in r.stdout.splitlines() if l.startswith('TRANSFER-POP')]
-grade('TRANSFER-POP: zl02 with those pops removed (the synthetic leak, CEO-576) reads popped=0 for its deferred gotos', len(tl) >= 2 and all('popped=0' in l for l in tl), '%d lines' % len(tl))
+grade('TRANSFER-POP: zl02 with those pops removed (the synthetic leak, R-576) reads popped=0 for its deferred gotos', len(tl) >= 2 and all('popped=0' in l for l in tl), '%d lines' % len(tl))
 if tl:
     m = re.match(r'TRANSFER-POP \S+ (n\d+_goto_deferred_bx) L\d+ popped=0 wanted=\d+', tl[0])
     if not m:

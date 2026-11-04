@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_an_external_value_answers_type_image_copy_identity_and_sort_as_iconx.sh -- AN ICON EXTERNAL VALUE (a block a loaded C
 # function makes with alcexternal) ANSWERS type(), image(), copy(), === AND sort() AS ICONX DOES, IN BOTH MODES (hq_icon 2026-09-27,
-# crawl work under CEO-1336: Arizona general/extlvals; Lon granted the one new counter, g_agg_external_ser, in-chat 19:1x).
+# crawl work under R-1336: Arizona general/extlvals; Lon granted the one new counter, g_agg_external_ser, in-chat 19:1x).
 #
 # iconx's rexternal.r and ralc.r are the contract: alcexternal rounds the block to whole words and numbers it from ONE serial shared by
 # every external; type() is the block's extlname or "external"; image() is its extlimage or <name>_<id>(<data words>); copy() is its

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# util_gimpel_is_the_catspaw_spitbol_form.py -- Lon 2026-09-27 ~12:0x CDT, in-chat to the ceo, verbatim: "Use the *.inc names
-# exclusively. Ensure we have the SPITBOL dialect from the Mark Emmer's distribution, and not the SNOBOL4 dialect." (CEO-1319)
+# util_gimpel_is_the_catspaw_spitbol_form.py -- Lon 2026-09-27 ~12:0x CDT, in-chat, verbatim: "Use the *.inc names
+# exclusively. Ensure we have the SPITBOL dialect from the Mark Emmer's distribution, and not the SNOBOL4 dialect." (R-1319)
 # The vendored Gimpel package must be Catspaw's (Mark Emmer's) Algorithms-in-SNOBOL4 distribution v1.06, its \SPITBOL form,
 # kept at /home/resources/gimpel/SPITBOL -- never its \SNOBOL4 (SNOBOL4+) form and never a fleet edit. Four checks, each named:
 #   FORM     every file of the \SPITBOL form is vendored under its own name LOWER-CASED (NAME.INC -> name.inc, ASM.SPT -> asm.spt,
@@ -15,8 +15,8 @@
 #              LINUX           the lines that differ are EXACTLY the declared line numbers (vendored numbering), reason mandatory
 #              COMMENTED_OUT   each declared line is EXACTLY the form's line behind a leading '*', and no other line differs
 #                              for it: Catspaw's own unfinished commenting-out completed where SPITBOL rejects the file (Lon
-#                              2026-10-02, in-chat to the ceo, verbatim: "Find out why and fix why SPITBOL rejects these
-#                              programs."; ceo CEO-1413)
+#                              2026-10-02, in-chat, verbatim: "Find out why and fix why SPITBOL rejects these
+#                              programs."; R-1413)
 #   NOTHING  every other vendored file is a driver's own (NAME_driver.sno/.ref/.input/.in), a sidecar the runner or the
 #            inventory reads (ALL.*, *.tsv, README.md, PROVENANCE.md), or declared in LOCAL.tsv (name<TAB>reason)
 #   NAMES    no library or program is named *.sno or with an upper-case extension: *.inc exclusively, a program *.spt

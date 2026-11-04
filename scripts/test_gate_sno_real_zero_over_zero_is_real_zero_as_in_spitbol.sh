@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_real_zero_over_zero_is_real_zero_as_in_spitbol.sh
 #
-# SPITBOL'S RULE (measured with sbl -bf; ceo CEO-1419 ticket snobol4-real-zero-divided-by-zero-is-zero-in-spitbol-
+# SPITBOL'S RULE (measured with sbl -bf; R-1419 ticket snobol4-real-zero-divided-by-zero-is-zero-in-spitbol-
 # where-scrip-raises-error-262, found by Lon's infinite_snobol4): a real division whose numerator and divisor are both
 # zero -- 0 / 0.0, 0.0 / 0, -0.0 / 0, 0.0 / 0.0 -- yields REAL 0. with no error, and that value is 0.0 afterwards
 # (EQ(X,0) succeeds, 1 / X raises 262). A non-zero real over zero is still 262, and integer 0 / 0 is still 14.

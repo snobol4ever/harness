@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_swi_open_pipe_wait_for_input_and_a_broken_pipe_write_as_swipl.sh -- open(pipe(Cmd), Mode, S [, Opts]), wait_for_input/3 and a write to a pipe whose reader has gone, as
-# swipl 9.0.4 (the cqo, 2026-11-01, row prolog-swi-suite-to-100-ceo-1981; SWI files/test_pipe 0/4 -> 4/4 both modes).
+# swipl 9.0.4 (the cqo, 2026-11-01, row prolog-swi-suite-to-100-r-1981; SWI files/test_pipe 0/4 -> 4/4 both modes).
 # THE RULINGS, each measured on swipl: open(pipe(Cmd)) runs Cmd under popen in mode read or write; append and update raise existence_error(source_sink, pipe(Cmd)), an unbound Cmd
 # instantiation_error, a non-atom Cmd type_error(atom, Cmd); a read pipe opened in text mode without bom(false) reads ahead at open (BOM detection), so it waits for the first byte; a write pipe
 # ignores SIGPIPE so a write to a pipe whose reader has exited raises io_error(write, S) at the write that hits it; the flags pipe (true) and pid (the process id) are read-only;

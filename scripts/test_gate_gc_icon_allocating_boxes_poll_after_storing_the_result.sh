@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_gc_icon_allocating_boxes_poll_after_storing_the_result.sh -- an Icon allocating box STORES ITS RESULT to
 # its mapped frame cell and then POLLS g_gc_pending at the return, so a collection happens in emitted code with no
-# runtime C frame live (.github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F6 step 1b, CEO-821; the collector
-# guesses nothing, RULES.md FACT RULE, CEO-812).
+# runtime C frame live (.github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F6 step 1b, R-821; the collector
+# guesses nothing, RULES.md FACT RULE, R-812).
 #
-# FAIL-ONCE, MEASURED ON ORIGIN 25282e7a5 (cto, 2026-09-17), the reading the ceo named as this landing's basis:
+# FAIL-ONCE, MEASURED ON ORIGIN 25282e7a5 (cto, 2026-09-17), the reading the officer named as this landing's basis:
 # `every i := 1 to 4000000 do L := [i, i+1, i+2]` read ONE collection and 861956 KB RSS in mode 3, because
 # IR_MAKE_LIST is an emitted box that reaches NO safe point at all -- the shielded rt_gc_point_arr points the frozen
 # design keeps are by-name dispatch and string_ops, and an every-do loop over a list constructor enters neither, so

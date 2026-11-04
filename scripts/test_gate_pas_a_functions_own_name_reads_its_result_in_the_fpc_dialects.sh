@@ -4,7 +4,7 @@
 # every compound assignment (+=, -=, *=, /=) lowers through the same operator rules as its long form (string + char concatenates, set
 # union / difference / intersection, real division); in ISO the bare name stays a recursive call (b6 reads 130 4, as fpc -Miso).
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): number-names and entropy died "BOMB --
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): number-names and entropy died "BOMB --
 # bb_call_proc_staged: a block-protocol callee is called with the wrong argument count": uniquechars += str[n] inside function
 # uniquechars(str) read the bare name as a zero-argument recursive call. And E_assignment's compound desugar built a raw TT_ADD, so
 # s += c with c a char summed codes (xyz read 363). fpc -Mfpc and -Mobjfpc read the bare name as the result (b6: 11 1), -Miso and

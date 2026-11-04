@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_library_modules_answer_as_swipl.sh -- THE VENDORED SWI LIBRARIES ANSWER AS SWIPL, IN BOTH MODES (cfo
 # 2026-10-10, row prolog-swi-library-modules-rbtrees-assoc-ordsets-apply-error-pairs-aggregate-option-strings-516-swi-cases;
-# CEO-1473).
+# R-1473).
 #
 # THE CURE: swipl 9.0.4's own library(apply), library(error), library(pairs), library(heaps), library(aggregate),
 # library(strings) and -- once SCRIP read SSU '=>' rules (SCRIP 1cb1b42aa) -- library(rbtrees), library(assoc),

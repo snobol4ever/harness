@@ -3,7 +3,7 @@
 # nothing behind: no cache entry the collector must keep, no compile-time arena block (cfo 2026-10-03, row
 # snobol4-a-distinct-eval-text-leaves-a-cache-key-and-1-5-kb-of-compile-time-arena-behind-forever-so-150k-distinct-evals-die-at-a-16-mb-cap).
 #
-# MEASURED 2026-10-03 on SCRIP 745a917ea (the cfo's review of the ceo's 56de2bc13): a program evaluating N DISTINCT texts `i " + 1"` grows without
+# MEASURED 2026-10-03 on SCRIP 745a917ea (the cfo's review of the officer's 56de2bc13): a program evaluating N DISTINCT texts `i " + 1"` grows without
 # bound where sbl -bf stays flat at 3 MB. Peak RSS 67 MB at 20k, 277 MB at 100k, 803 MB at 300k (the same loop over 10 repeated texts: 15 MB flat).
 # Two residues per distinct text: (1) THE COLLECTED HEAP: eval_chain_settle inserts a "seen once" marker (key, NULL) for every released chain and the
 # cache never drops one, so eval_gc_roots keeps every key alive -- live blocks at exit 20450 at 20k against 460 for the repeated control; under a

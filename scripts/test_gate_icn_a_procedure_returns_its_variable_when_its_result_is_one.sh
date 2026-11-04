@@ -20,7 +20,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 # variables assigned and swapped (stdout and exit status), a returned local substring and a returned local each raising
 # 111 (the controls that must stay errors), a PARAMETER SHADOWING A GLOBAL returned and assigned (111: it is the
 # parameter, a local -- Arizona's tracer caught the first cut treating it as the global), calls through a value used as values, and the &trace lines of a returned and a
-# suspended variable ("(variable = ...)") compared on stderr. RUN FIRST THEN WIRED (CEO-381): RED 2 of 6 on SCRIP 3e50bcf2d.
+# suspended variable ("(variable = ...)") compared on stderr. RUN FIRST THEN WIRED (R-381): RED 2 of 6 on SCRIP 3e50bcf2d.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

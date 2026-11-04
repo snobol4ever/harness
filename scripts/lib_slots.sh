@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # lib_slots.sh -- THE ONE RULE OF THE BOX'S TWO POOLS, WITH A SEAT'S SHARE AND THE GRADER'S RESERVATION (the cto, ARCH-SHARED-DEVELOPMENT.md
-# section 4.3 and 4.6, CEO-2041 step 3; Lon 2026-10-31: "Everyone is compiling at the same time" / "Maximize sharing and minimize contention").
+# section 4.3 and 4.6, R-2041 step 3; Lon 2026-10-31: "Everyone is compiling at the same time" / "Maximize sharing and minimize contention").
 # Sourced by util_cc_slot.sh and util_run_slot.sh (the takers that exec a command) and by the design-step harnesses (which hold a run slot in
 # their own shell); corpus_suite_harness.py reads the SAME knobs from this file (the S4E_*_DEFAULT lines below, by name) and follows the same
 # rule, which test_gate_pools_cap_a_seat_and_reserve_the_grader.sh checks on both.
@@ -10,11 +10,11 @@
 # (<pool dir>/seat/<seat>/0..cap-1, cap S4E_CC_SEAT_CAP 4 or S4E_RUN_SEAT_CAP 3) and ONLY THEN a pool slot, both held on their own fd for the
 # process's life (the kernel frees a killed holder's locks), so a seat at its cap waits on its own files and never on the pool: another seat's
 # single compile is never behind one seat's eight. A full pool or a full seat is waited on by RESCANNING every file twice a second, never by
-# queuing on one (CEO-2054). THE GRADER (S4E_CLASS=grader: the coo's loop8 and tier1 and everything they start) takes no seat file and may take
+# queuing on one (R-2054). THE GRADER (S4E_CLASS=grader: the coo's loop8 and tier1 and everything they start) takes no seat file and may take
 # any run slot; every other taker may take only run slots 0..N-1-S4E_RUN_GRADER_RESERVED, so two run slots always answer the grader at once.
 # A run already under a harness slot (S4E_RUN_SLOT_HELD) takes nothing (no nested wait, no deadlock); a compile slot is held by a compiler, a
 # leaf that starts nothing. The census reads the holders from /proc/*/fd (a held file is open for the holder's life: kernel truth, no sidecar). The seat is S4E_SEAT (every root's settings env sets it),
-# else the first path component under /home of the working directory. A wait of a second or more is one line in SLOT_WAITS.tsv (CEO-2078).
+# else the first path component under /home of the working directory. A wait of a second or more is one line in SLOT_WAITS.tsv (R-2078).
 S4E_CC_POOL_DEFAULT=8
 S4E_RUN_POOL_DEFAULT=8
 S4E_CC_SEAT_CAP_DEFAULT=4
@@ -25,7 +25,7 @@ s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or m
     local f w k="$1" t0="$2"; shift 2
     f="${S4E_SLOT_WAITS:-/home/resources/progress/SLOT_WAITS.tsv}"; w=$(awk -v a="$t0" -v b="$(date +%s.%N)" 'BEGIN{printf "%.1f", b-a}')
     case "$w" in 0.*) return 0;; esac
-    [ -s "$f" ] || printf '# at_utc\tseat\tkind\twait_s\tcmd  -- one line per slot wait of a second or more (ceo CEO-2078: the pools kept no record, so contention could not be measured)\n' > "$f" 2>/dev/null
+    [ -s "$f" ] || printf '# at_utc\tseat\tkind\twait_s\tcmd  -- one line per slot wait of a second or more (R-2078: the pools kept no record, so contention could not be measured)\n' > "$f" 2>/dev/null
     printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$(s4e_slot_seat)" "$k" "$w" "$(printf %s "$*" | tr '\t\n' '  ' | cut -c1-80)" >> "$f" 2>/dev/null
     return 0
 }

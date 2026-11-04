@@ -5,7 +5,7 @@
 # declared here that now passes -- because a floor that outlives its defect silences the next regression.
 # Move a line out of this file in the LANDING THAT CURES IT, never to make a board green.
 # pair	reason
-# CURED AND REMOVED 2026-09-22 (ceo): hb_coexpr_sigma.icn:s5 was declared here as standing-on-origin and it is CURED by
+# CURED AND REMOVED 2026-09-22 (the officer): hb_coexpr_sigma.icn:s5 was declared here as standing-on-origin and it is CURED by
 #   e42cc0909, which took bb_deref.cpp:39 and bb_scan_upto.cpp:52 from a bare poll to x86_rt_gc_poll_rec_sigma(0) where the
 #   subject base is live in r13. ⛔ THE LANDING THAT CURED IT DID NOT MOVE THIS LINE, so the sweep read RED(1) FOR EVERY SEAT
 #   until now -- the floor outliving its defect, which is the same debt shape as the census baseline that c60097828 left

@@ -3,7 +3,7 @@
 # (also {$ZEROBASEDSTRINGS+}) the first character of an ansistring is s[0], low(s) is 0 and high(s) is Length(s)-1; {$ZEROBASEDSTRINGS OFF}
 # (or -) and {$Pop} restore one-based strings; a shortstring is untouched.
 #
-# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-ceo-1266. FPC webtbs_tw22936 halted rc=1 on its
+# MEASURED 2026-10-03 by hq_pascal, row pascal-every-suite-to-100-under-nonet-r-1266. FPC webtbs_tw22936 halted rc=1 on its
 # first check after the directive: the lexer ignored {$ZEROBASEDSTRINGS} so low(s) stayed 1.
 #
 # CURE (Lon granted the new global in-chat 2026-10-03): pascal.l keeps g_pas_zerobased_strings (set and cleared by the

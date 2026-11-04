@@ -7,8 +7,8 @@
 # and INTEGER(2, 7) is INTEGER(2). CONVERT's second argument must be a non-null string (sbl.min s_cnv: gtstg, then the
 # null test): CONVERT('1') is ERROR 074, as are a pattern or an array type; an integer, real or name type converts to its
 # string and fails plainly as an unknown datatype name.
-# WHAT SCRIP DID (the ceo's row snobol4-a-builtin-called-with-fewer-or-more-arguments-than-it-declares-fails-where-spitbol-
-# pads-with-null-and-drops-extras, CEO-1422/1428): the by-id fast block of try_call_builtin_by_name_bl_s returned a body's
+# WHAT SCRIP DID (the officer's row snobol4-a-builtin-called-with-fewer-or-more-arguments-than-it-declares-fails-where-spitbol-
+# pads-with-null-and-drops-extras, R-1422/1428): the by-id fast block of try_call_builtin_by_name_bl_s returned a body's
 # -1 ("not mine") to a caller that reads any non-zero as handled, so SIZE() and friends FAILED; and a short or over call
 # reached APPLY's registered body by a different road than the explicit-null call (INTEGER() failed, INTEGER(2, 7) was 2).
 # THE CURE, AT THE NORMALIZATION, NEVER PER BUILTIN: the fast block falls through on a decline; register_fn keeps the

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_eval_chains_nothing_references_are_reclaimed_and_a_full_code_pool_is_loud.sh -- EVAL's compiled chains: reclaimed when nothing
-# can reference them, and a full code pool is error 204, never a quiet FAIL (hq_icon 2026-10-03, ceo row
+# can reference them, and a full code pool is error 204, never a quiet FAIL (hq_icon 2026-10-03 row
 # snobol4-after-about-523000-distinct-evals-every-later-eval-fails-in-one-scrip-process).
 #
 # MEASURED 2026-10-03 on f7e45d9de: inf_eval.sno over 600,000 DISTINCT lines `'y-z' ? BAL | LEN(i % 3) | 'q<i>'` answers as sbl for 523,251 lines and

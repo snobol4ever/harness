@@ -11,7 +11,7 @@
 #
 # THE FIXTURE builds its own trail with rt_pl_tr_init and grades the mark against the collector's own answer for the
 # young block: a live block is rooted by an ordinary trail entry whose cell word the collector rewrites, so the
-# expected mark is that rewritten cell minus the 16-byte block header. No plant, no seam in SCRIP (CEO-1680): the
+# expected mark is that rewritten cell minus the 16-byte block header. No plant, no seam in SCRIP (R-1680): the
 # arms read RED on the tree before the cure (the mark never moved) and GREEN after it.
 #   (a) a dead old block, a live old block K, the mark, a dead young block, a live young block Y: the mark is Y's
 #       new header, K's cell lies below it, Y's cell at or above it

@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_icon_bench_suite.sh -- THE ICON BENCHMARK SUITE, GRADED AS A TEST UNDER ALL THREE ANGLES, IN BOTH MODES (IcnBench)
 #
 # LON 2026-09-23, in-chat to hq_icon, verbatim: "So each of our benchmarks do double as correctness tests with REF files. If this is
 # not so, make it so. Add all the benchmarks suites for each language to the test suite grid." -- "All the benchmark programs are
 # meant to be the real deal with input and output if necessary, REF, IN, OUT files. Then the harness is responsible of taking that
 # text and wrapping it in the 3-angle technique. One process measures system performance metrics, and the programs loop and measure
-# two ways, by interation and by time." Law: RULES.md FACT RULE THE KERNEL CONVENTION and its 2026-09-23 addendum (CEO-1221), and
-# CEO-1222 (OUT is REF). The row contract is the coo's, one for all seven languages: key icon-bench-ref, nick IcnBench.
+# two ways, by interation and by time." Law: RULES.md FACT RULE THE KERNEL CONVENTION and its 2026-09-23 addendum (R-1221), and
+# R-1222 (OUT is REF). The row contract is the coo's, one for all seven languages: key icon-bench-ref, nick IcnBench.
 #
 # THE POPULATION is every .icn under corpus/benchmarks/icon, recursively, with a `procedure main` -- printed as the denominator.
 # THE SIDECARS, per kernel NAME, beside it: REF = NAME.ref (cut from Arizona icont/iconx 9.5.25a, util_cut_icon_kernel_refs.sh);
 #   IN = NAME.in, else NAME.stdin, else NAME.dat (the name the icont bench kernels arrived with), else /dev/null; ARGV = NAME.argv
 #   through ipl_argv_read, the ONE reader; MEMORY = NAME.heap and NAME.stack, one line NAME<TAB>KB each, read through
-#   declared_switches_beside (the harness's own reader) and passed as -d<kb>k -s<kb>k on THAT kernel's command line (CEO-1353).
+#   declared_switches_beside (the harness's own reader) and passed as -d<kb>k -s<kb>k on THAT kernel's command line (R-1353).
 # THE THREE ANGLES, in m3 (scrip --run) and m4 (--compile, gcc -no-pie, run), every run from the kernel's own directory (a kernel
 #   opens its argv files by relative name), STDOUT compared with the REF on EVERY run:
 #   process  the PRISTINE kernel under tools/bench_rusage (elapsed, CPU, RSS): stdout must be the REF.
@@ -27,16 +27,16 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   SCRIP loop defect pass as a PROC kernel. Before it, the oracle's run of the PRISTINE kernel is the REF's own check: a REF it
 #   does not reproduce is REF DRIFT, and a kernel whose wrapped form alone misses the REF (its output turns on what the wrapper
 #   adds -- &allocated, &progname) is WRAPPER-SENSITIVE. Either is UNPROVEN in both modes and named, never graded.
-# NO OUT FILE (CEO-1222): the REF is the one expected-output file; each run's stdout lives in a temp dir removed at exit, or in
+# NO OUT FILE (R-1222): the REF is the one expected-output file; each run's stdout lives in a temp dir removed at exit, or in
 #   --out-dir as <dir>/<kernel>.<mode>.<angle>.stdout for inspection only.
 # THE VERDICT: a kernel PASSES when all six runs (two modes x three angles) print its REF. Every kernel appends ONE progress row per
 #   mode (class benchmark, suite icon-bench-ref): PASS when all three angles print the REF, else HANG / CRASH / UNPROVEN / FAIL, the
-#   worst that applies -- util_score_row.py's CEO-750 cross-check refuses to publish a row with no appends behind it.
-# ⛔ THE TIMINGS ARE SCOUTING DATA, NEVER A GRID: timing grids wait for the quiet box (CEO-1219), and bench_triangulate_icon.sh is the
+#   worst that applies -- util_score_row.py's R-750 cross-check refuses to publish a row with no appends behind it.
+# ⛔ THE TIMINGS ARE SCOUTING DATA, NEVER A GRID: timing grids wait for the quiet box (R-1219), and bench_triangulate_icon.sh is the
 #   timing instrument. The defaults (n=2, 200 ms) prove the machinery and the refs, not a rate. RT_OPT is -O0.
 #
 # USAGE: bash ../harness/scripts/test_icon_bench_suite.sh [--out-dir DIR] [--n N] [--bud-ms MS] [--timeout S] [--no-write] [kernel ...]
-#   --no-write  do not publish; without it a whole-population pass (no kernel named) publishes (CEO-1302 (a)) through util_score_row.py --column bench-ref (key icon-bench-ref, nick IcnBench); non-fatal by design.
+#   --no-write  do not publish; without it a whole-population pass (no kernel named) publishes (R-1302 (a)) through util_score_row.py --column bench-ref (key icon-bench-ref, nick IcnBench); non-fatal by design.
 # EXIT 0 every kernel PASS; 1 any kernel not PASS; 2 REFUSED (no binary, no oracle, no population, a tool that cannot be built).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
@@ -44,7 +44,7 @@ S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E/corpus/benchmarks/icon"; GEN="$HERE/util_icon_bench_wrap.py"
 OUTDIR=""; NITER=2; BUD=200; TMO=300; NOWRITE=0; WANT=""
 refuse() { echo "⛔ ICON BENCH SUITE REFUSE(2): $*"; exit 2; }
-# ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+# ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 while [ $# -gt 0 ]; do case "$1" in
   --out-dir) OUTDIR="$2"; shift 2;; --n) NITER="$2"; shift 2;; --bud-ms) BUD="$2"; shift 2;; --timeout) TMO="$2"; shift 2;;
   --write) shift;; --no-write) NOWRITE=1; shift;; -*) refuse "unknown argument '$1' (usage in the header)";; *) WANT="$WANT $1"; shift;; esac; done
@@ -57,7 +57,7 @@ ICONT="$(icont_bin)" || refuse "the Arizona icont oracle is missing (reached by 
 [ -f "$RT/libscrip_rt.so" ] || refuse "no runtime at $RT/libscrip_rt.so"
 [ -f "$GEN" ] || refuse "the wrapper generator $GEN is missing"
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
-PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-database writer $PW is missing (CEO-331)"
+PW="$HERE/util_progress_append.py"; [ -f "$PW" ] || refuse "the one progress-database writer $PW is missing (R-331)"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" >/dev/null || refuse "the binary is older than the tree -- run make (util_require_fresh.sh)"
 W="$(mktemp -d "${TMPDIR:-/tmp}/icnbench.XXXXXX")" || refuse "cannot make a work dir"; trap 'rm -rf "$W"' EXIT
 [ -n "$OUTDIR" ] || OUTDIR="$W/out"; mkdir -p "$OUTDIR" || refuse "cannot make $OUTDIR"
@@ -66,7 +66,7 @@ POP=()
 while IFS= read -r f; do grep -q '^[[:space:]]*procedure[[:space:]]\+main' "$f" || continue
   n="$(basename "$f" .icn)"; [ -n "$WANT" ] && ! grep -qw -- "$n" <<<"$WANT" && continue; POP+=("$f")
 done < <(find "$BD" -type f -name '*.icn' | LC_ALL=C sort)
-# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the ceo's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
+# ⭐ THE ROUND ROBIN'S SEAM AND THE LIST MODE (the coo 2026-10-23, the officer's seam census; as test_raku_bench_suite.sh, lib_rr.sh): under
 # S4E_CHUNK=entry:<kernel>[,...] only those kernels are graded, their rows appended, no suite row written (rr_end); under S4E_LIST=1 the
 # population is printed (RR_POP, the key its progress rows carry) and nothing graded -- util_score_row.py from-progress reads it (rr_list)
 . "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
@@ -93,7 +93,7 @@ PASS=0; P3=0; P4=0; REFLESS=0; DRIFT=0; WSENS=0; LIN=0; LPROC=0; HEAPD=0; PREFUS
 for f in "${POP[@]}"; do
   rel="${f#"$BD"/}"; NM="$(basename "$f" .icn)"; KD="$(dirname "$f")"; ref="${f%.icn}.ref"; IN="$(stdin_of "$f")"; K="$W/k"; rm -rf "$K"; mkdir -p "$K"
   HEAPENV=(-u SCRIP_HEAP_MB); kb="$(declared_switches_beside "$f")"; krc=$?; declare -a SWA=(); [ -n "$kb" ] && read -r -a SWA <<<"$kb"
-  # the ORACLE's declared environment, NAME.oracle_env (ceo CEO-1353 clause 8 (g)(3)): iconx's own knobs (MSTKSIZE, BLKSIZE, ...) for a
+  # the ORACLE's declared environment, NAME.oracle_env (R-1353 clause 8 (g)(3)): iconx's own knobs (MSTKSIZE, BLKSIZE, ...) for a
   # kernel that needs more than iconx's default, on every oracle run below and on no SCRIP run (the coo 2026-10-03: until now iconx ran
   # every kernel at its default, so a kernel that declared its oracle's need read REF DRIFT here).
   oe="$(declared_oracle_env_beside "$f")" || krc=2; declare -a OENV=(); [ -n "$oe" ] && read -r -a OENV <<<"$oe"
@@ -102,7 +102,7 @@ for f in "${POP[@]}"; do
     record "$rel" m3 UNGRADED 0 "no .ref"; record "$rel" m4 UNGRADED 0 "no .ref"; continue; fi
   if [ "$krc" != 0 ] || [ "$arc" != 0 ]; then why="a malformed ${NM}.heap, ${NM}.stack or ${NM}.oracle_env (the reader said why above)"; [ "$arc" != 0 ] && why="a malformed ${NM}.argv (the reader said why above)"
     printf '  %-40s UNPROVEN -- %s\n' "$rel" "$why"; record "$rel" m3 UNPROVEN 0 "$why"; record "$rel" m4 UNPROVEN 0 "$why"; continue; fi
-  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SWITCHES (ceo CEO-1353): after scrip in m3, leading the binary's arguments in m4 (a --
+  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SWITCHES (R-1353): after scrip in m3, leading the binary's arguments in m4 (a --
   # before the kernel's argv), never SCRIP_HEAP_KB -- gc_heap.c reads that as the collector's WINDOW, so every declared kernel ran at
   # window = cap. The oracle runs get none of these switches; they get NAME.oracle_env (OENV above).
   [ -n "$kb" ] && HEAPD=$((HEAPD + 1))
@@ -173,7 +173,7 @@ for f in "${POP[@]}"; do
 done
 N=${#POP[@]}
 [ -n "$NOTES" ] && printf 'NOT PASSING, NAMED:%b\n' "$NOTES"
-printf 'SCOUTING DATA -- one run each on a loaded box, NOT A GRID (timing waits for the quiet box, CEO-1219):%b\n' "$SCOUT"
+printf 'SCOUTING DATA -- one run each on a loaded box, NOT A GRID (timing waits for the quiet box, R-1219):%b\n' "$SCOUT"
 LINE="SUITE_BOARD family=icon-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$P4 angles=process,iter,time loop_in=$LIN loop_proc=$LPROC refless=$REFLESS ref_drift=$DRIFT wrapper_sensitive=$WSENS heap_declared=$HEAPD"
 echo "$LINE"
 rr_selected && { rr_end icon-bench-ref; [ "$PASS" = "$N" ] && exit 0 || exit 1; }

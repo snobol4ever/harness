@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_sort_comparator_is_an_emitted_merge_sort_not_a_c_to_bb_entry.sh -- A TWO-PARAMETER SORT COMPARATOR IS CALLED FROM EMITTED CODE: NO C-TO-BB ENTRY PER COMPARISON
-# (row raku-a-sort-comparator-block-is-entered-from-c-once-per-comparison-the-non-tail-c-to-bb-road-ceo-986-phase-2-ceo-1533, routed by the ceo CEO-1533; Lon 2026-09-20 verbatim: "Ensure that BB's are never called from C except the first time at initial start.").
+# (row raku-a-sort-comparator-block-is-entered-from-c-once-per-comparison-the-non-tail-c-to-bb-road-r-986-phase-2-r-1533, routed by the R-1533; Lon 2026-09-20 verbatim: "Ensure that BB's are never called from C except the first time at initial start.").
 #
 # THE DEFECT: `@a.sort({ $^a <=> $^b })` ran __rk_arr_sort, a C sort loop that called the comparator block through rt_call_proc_descr once per comparison (rt_c2bb_hit site descr.enter.lex): 15 C-to-BB entries over both modes for
 # five numbers (30 on the row's witness at 57f4cf251). THE CURE (lower_raku.c rk_sort_cmp_walk, rk_sort_helper): after the anonymous blocks are hoisted, a `.sort` method call whose argument is a two-parameter block is rewritten to a call of a
 # per-site helper sub __rk_sortc_<block> that the lowerer builds as a tree -- a stable bottom-up merge sort over a copy of the receiver whose comparison is a DIRECT call of the block's proc by name, exactly the
 # shape the emitted map / grep / first / reduce loops use -- so the whole sort is emitted code and the comparator is a box call. A hash receiver, a one-parameter (key) block and the no-block sort are untouched.
-# NOT HERE: `.sort(&by)` and `.sort(-> $x, $y { })` do not parse (Confused) and `sort { } , @a` (the function form) is refused by the compile guard on `$^a` -- both measured, both separate defects; the other non-tail C-to-BB roads of CEO-986 phase 2 (TWEAK/BUILD,
+# NOT HERE: `.sort(&by)` and `.sort(-> $x, $y { })` do not parse (Confused) and `sort { } , @a` (the function form) is refused by the compile guard on `$^a` -- both measured, both separate defects; the other non-tail C-to-BB roads of R-986 phase 2 (TWEAK/BUILD,
 # callsame/callwith, the meth_call redispatch, the Str coercion, the map/grep/first block loops) stay on the cfo's list.
 #
 # THE WITNESS, graded in m3 (--run) and m4 (--compile + link) against a ref cut by Rakudo (/usr/bin/raku), with SCRIP_C2BB_TRACE on every run and the entry count required to be 0, then under SCRIP_GC_STRESS 1 3 5 in both modes:

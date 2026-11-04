@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_harness_refusal_is_rc2.sh -- THE ACCEPTANCE GATE for row harness-refusal-exit-code-unified-on-rc-2
-# (ceo CEO-233 -> hq_T 2026-09-04, minted on hq_T's own receipt: two refusal codes in one harness).
+# (R-233 -> hq_T 2026-09-04, minted on hq_T's own receipt: two refusal codes in one harness).
 #
 # THE DEFECT: corpus_suite_harness.py's refuse() exited rc=3 by this file's own local convention, while
 # lib_gate.sh's three-code ladder and every bash gate say a refusal is rc=2 -- 0 measured-and-clean · 1
@@ -17,12 +17,12 @@
 # ARMS: 1 behavioural refusal (missing suite file) -> rc=2 · 2 the source carries ZERO sys.exit(3) arms and
 # refuse() exits 2 · 3 a red board still exits 1 (the distinction that must survive) · 4 a clean run still
 # exits 0 · 5 the staleness refusal, which was already 2, is unchanged -- both refusal paths now agree.
-# ⛔⭐ CEO-547 PART 2 (cto, 2026-09-11): arms 4, 6, 7, 8 and 9 graded the corpus rungs itself, so ONE RUNNER, ONE
-# BOARD (CEO-523) refused each of them rc=2 on every seat but the coo -- THIS GATE was why `make test` was red for
+# ⛔⭐ R-547 PART 2 (cto, 2026-09-11): arms 4, 6, 7, 8 and 9 graded the corpus rungs itself, so ONE RUNNER, ONE
+# BOARD (R-523) refused each of them rc=2 on every seat but the coo -- THIS GATE was why `make test` was red for
 # twelve of thirteen seats, and two of the five arms read GREEN off that wrong rc. Every grading arm now runs on
 # this gate's own fixtures under $W, outside the corpus tree, and the two arms that could not distinguish one
 # rc=2 from another assert what the refusal SAYS. Arm 4's rc check was also dead code (a line-continuation
-# detached its `else`), which is why the banner claimed 16 checks and 15 ran; it is 23 now (arm 10, coo CEO-839).
+# detached its `else`), which is why the banner claimed 16 checks and 15 ran; it is 23 now (arm 10, coo R-839).
 # ⭐ ARMS 6-9 ADDED 2026-09-10 (hq_T, row corpus-suite-harness-run-without-lang-silently-regrades-...): a suite
 # pair whose suffix names a dialect REFUSES rc=2 without --lang, in `run` AND in `pin-ref`, and the refusal names
 # the flag instead of accusing the corpus · the explicit `--lang snobol4` escape hatch still reaches the
@@ -33,7 +33,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
-. "$HERE/lib_board_line.sh"      # board_field/board_is: a board is read BY NAME, never by adjacency (CEO-839)
+. "$HERE/lib_board_line.sh"      # board_field/board_is: a board is read BY NAME, never by adjacency (R-839)
 H="$HERE/corpus_suite_harness.py"
 RUNGS="$S4E/corpus/tests/rebus"
 [ -f "$H" ] || { echo "⛔ REFUSED-TO-GRADE rc=2: harness not found at $H"; exit 2; }
@@ -44,8 +44,8 @@ command -v python3 >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE rc=2: python3
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_rc2.XXXXXX")" || { echo "⛔ REFUSED-TO-GRADE rc=2: mktemp failed"; exit 2; }
 trap 'rm -rf "$W"' EXIT
 # ⛔⭐ EVERY GRADING ARM BELOW RUNS ON THIS GATE'S OWN FIXTURES, NEVER ON THE CORPUS RUNGS ITSELF (cto, 2026-09-11,
-# CEO-547 part 2, on the ceo's ruling that make test was red for twelve of thirteen seats). ONE RUNNER, ONE BOARD
-# (CEO-523) refuses a run whose POPULATION is under the corpus tree to any seat but the coo, and arms 4, 6, 7, 8 and
+# R-547 part 2, on the ruling that make test was red for twelve of thirteen seats). ONE RUNNER, ONE BOARD
+# (R-523) refuses a run whose POPULATION is under the corpus tree to any seat but the coo, and arms 4, 6, 7, 8 and
 # 9 each pointed at a real rungs -- so on every seat but the coo they collected a ONE-RUNNER rc=2 instead of the
 # behaviour they claim to grade. ⛔ TWO OF THEM READ **GREEN** ON THAT WRONG RC, which is the false green this gate
 # exists to prevent: arm 5 asserted only `rc=2` and the one-runner refusal is also 2, and arm 8 asserted only that
@@ -79,7 +79,7 @@ echo "--- ARM 1: a refusal (missing suite file) exits rc=2, not rc=3 AND NOT rc=
 # ⛔ THIS ARM FOUND A LIVE DEFECT ONE LAYER BELOW THE ROW: a missing ALL.<ext>/ALL.ref reached Path.read_text()
 # and died with a FileNotFoundError TRACEBACK, which Python exits 1 for -- and rc=1 here means "ran fine, some
 # entries are RED". The case where NOTHING was graded returned the code for a measured red board. Cured in
-# cmd_run with an existence check ahead of every reader; this arm keeps it dead. ⭐ Note the ceo's own DONE-WHEN
+# cmd_run with an existence check ahead of every reader; this arm keeps it dead. ⭐ Note the officer's own DONE-WHEN
 # for this row used `--lang snobol4`, which argparse REJECTS (snobol4 is spelled as the empty default), so it
 # exited 2 from argparse and read GREEN on a harness that was still crashing. A behavioural arm has to name a
 # form the tool actually accepts, or it grades the argument parser.
@@ -151,7 +151,7 @@ echo "--- ARM 8: the line-per-entry reader stays REACHABLE when asked for explic
 out="$(timeout -k 5 120 python3 "$H" run "$W/clean/ALL.reb" "$W/clean/ALL.ref" --lang snobol4 --modes m3 2>&1)"; rc=$?
 grep -qi 'has suffix' <<<"$out" && ck no "--lang snobol4 was refused by the suffix guard -- the explicit escape hatch is gone" \
                                 || ck ok "--lang snobol4 still selects the SNOBOL4 grammar deliberately (rc=$rc)"
-grep -qiE 'one runner|is a board' <<<"$out" && ck no "this arm never reached the grammar -- it collected a ONE-RUNNER refusal, the false green CEO-547 part 2 removed" \
+grep -qiE 'one runner|is a board' <<<"$out" && ck no "this arm never reached the grammar -- it collected a ONE-RUNNER refusal, the false green R-547 part 2 removed" \
                                             || ck ok "and it reached the reader rather than an unrelated refusal"
 echo "--- ARM 9: a .sno pair with no --lang is UNTOUCHED (every existing caller) ---"
 # The census before the cure: every `harness run` invocation in ../harness/scripts/ that omits --lang passes a .sno pair.
@@ -163,9 +163,9 @@ echo "--- ARM 9: a .sno pair with no --lang is UNTOUCHED (every existing caller)
 out="$(timeout -k 5 300 python3 "$H" run "$W/sno/ALL.sno" "$W/sno/ALL.ref" --modes m3 2>&1)"; rc=$?
 if [ "$rc" = 0 ] || [ "$rc" = 1 ]; then ck ok "a .sno pair still grades with no --lang (rc=$rc)"
 else ck no "the guard caught a .sno caller -- got rc=$rc -- $(tail -c 300 <<<"$out")"; fi
-# ⛔⭐ THIS ARM READ THE BOARD BY POSITION AND WAS RED FOR A DAY OVER A CORRECT BOARD (ceo CEO-839, coo's
+# ⛔⭐ THIS ARM READ THE BOARD BY POSITION AND WAS RED FOR A DAY OVER A CORRECT BOARD (R-839, coo's
 # row instruments-rc2-gate-arm9-...): it grepped '^SUITE_BOARD family=ALL total=2 m3_n=2 ', which asserts
-# that NOTHING sits between total= and m3_n=, and SCRIP 3ade619f2 (CEO-749/772) correctly put shipped= and
+# that NOTHING sits between total= and m3_n=, and SCRIP 3ade619f2 (R-749/772) correctly put shipped= and
 # outside= there.  It then reported the failure as "no board over the 2 entries" -- reading like the run
 # graded nothing rather than like the pattern was stale, which is why nothing caught it: this is a make test
 # arm, not a preflight arm.  It now reads each field BY NAME through lib_board_line.sh, so a board that adds

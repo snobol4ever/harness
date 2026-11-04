@@ -34,7 +34,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (CEO-1335): a timeout under load is retried once, util_timeout_retry.sh
+export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a graded run's timeout (R-1335): a timeout under load is retried once, util_timeout_retry.sh
 . "$HERE/lib_icn_rundir.sh"   # THE ONE AUTHORITY for a witness's stdin/argv/fixtures/env contract -- see that file's header
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
@@ -65,7 +65,7 @@ trap 'rm -rf "$ICN_SCRATCH"' EXIT
 declare -a SUITE_FILES=()
 # converted-family discriminator (see header note): a .ref sibling AND corpus_suite_harness.py's section banners
 # (`#---- <seq> <name>`) in the source. The sibling alone decided while loose programs carried a .expected; since
-# CEO-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
+# R-1222 every loose expected output is a .ref as well, so the source's own shape is what tells a container.
 is_suite_file() { [ -f "${1%.icn}.ref" ] && grep -qE '^#-{3,} [0-9]+ [^[:space:]]' "$1"; }
 
 # rung36 per-category tally (sidecar map at corpus/rung36_categories.txt)
@@ -127,14 +127,14 @@ run_one() {
     # ⛔⭐ RUN FROM A SCRATCH CWD, NOT FROM THE CORPUS (hq_B 2026-08-30, hq_C's cure (1) on the tmp3
     # recurrence). Icon tests legitimately do file I/O against RELATIVE paths -- rung36_jcon_io.icn opens
     # tmp1/tmp2 "w" and rung36_jcon_iobig.icn testio()s tmp3/tmp4 -- and with cwd set to the corpus dir
-    # those writes land in the SOURCE TREE. tmp3 was committed by accident, ceo deleted it, and the next
+    # those writes land in the SOURCE TREE. tmp3 was committed by accident, the officer deleted it, and the next
     # run of THIS SCRIPT put it straight back as an untracked file, which handoff_status.sh reads as a
     # dirty corpus. ⭐ Fixing the cwd fixes every scratch-writing test at once, present and future, and
     # needs no per-test knowledge -- unlike deleting the file (the writer survives) or ignoring the name
     # (the symptom is silenced while a test still writes into the source tree).
     # ⛔ The program is passed ABSOLUTE so nothing depends on cwd to FIND it; only what it WRITES moves.
     tdir="$ICN_SCRATCH"; tfn="$icn"
-    # ⭐⛔ THE RUN-DIRECTORY CONTRACT (hq_P, CEO-532). A witness that declares NAME.argv / NAME.fixtures/ /
+    # ⭐⛔ THE RUN-DIRECTORY CONTRACT (hq_P, R-532). A witness that declares NAME.argv / NAME.fixtures/ /
     # NAME.env is a program whose ANSWER DEPENDS ON ITS ENVIRONMENT, so it gets a fresh directory holding
     # exactly its declared fixtures -- never the shared scratch, whose contents are whatever ran before it.
     # ⛔ A malformed declaration REFUSES(2) for the whole board instead of degrading to "no contract": a
@@ -146,10 +146,10 @@ run_one() {
     # line, which reads as a shorter suite rather than as an aborted one.
     local -a rd_argv=() rd_env=()
     local rd_rc
-    # ⭐ THE DECLARED HEAP AND STACK (CEO-1353): icn_rundir_sizes fills rd_sw with -d<kb>k -s<kb>k for the SCRIP command line.
+    # ⭐ THE DECLARED HEAP AND STACK (R-1353): icn_rundir_sizes fills rd_sw with -d<kb>k -s<kb>k for the SCRIP command line.
     local -a rd_sw=(); rd_rc=0; if icn_rundir_sizes "$icn" rd_sw; then :; else rd_rc=$?; fi
     if [ "$rd_rc" -eq 2 ]; then echo "⛔ REFUSE(2) $name: malformed NAME.heap or NAME.stack declaration (the reader said why above)" >&2; exit 2; fi
-    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (CEO-1353)" >&2; fi
+    if [ "$rd_rc" -eq 1 ]; then echo "    $name: declares no heap and stack beside it -- runs at the shipped default, NAMED (R-1353)" >&2; fi
     if icn_rundir_declares "$icn"; then
         rd_rc=0; icn_rundir_argv "$icn" rd_argv || rd_rc=$?
         if [ "$rd_rc" -eq 2 ]; then echo "⛔ REFUSE(2) $name: malformed argv declaration" >&2; exit 2; fi

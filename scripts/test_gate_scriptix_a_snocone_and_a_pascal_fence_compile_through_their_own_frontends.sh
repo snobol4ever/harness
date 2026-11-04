@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_scriptix_a_snocone_and_a_pascal_fence_compile_through_their_own_frontends.sh
 #
-# THE DEFECT (the cto 2026-10-02, ceo CEO-1437 row scriptix-a-snocone-or-pascal-fence-is-not-compiled-so-two-of-the-seven-
+# THE DEFECT (the cto 2026-10-02, R-1437 row scriptix-a-snocone-or-pascal-fence-is-not-compiled-so-two-of-the-seven-
 # languages-cannot-sit-in-one-scriptix-file; Lon: "Change that ugly SNOBOL4 code to Snocone."): the SCRIPtix splitter
 # (src/driver/polyglot.c parse_scrip_polyglot) read fences named SNOBOL4 / SCRIP / Scrip, Icon, Prolog, Raku and Rebus and
 # skipped every other, so a .md whose fence is Snocone or Pascal compiled nothing and printed "scrip: sm_lower failed".

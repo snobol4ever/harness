@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_code_of_text_that_does_not_compile_raises_spitbols_compile_error.sh
 #
-# THE ROW (ceo CEO-1442, the cfo's report): snobol4-code-of-text-that-does-not-compile-fails-silently-where-spitbol-raises-the-
+# THE ROW (R-1442, the cfo's report): snobol4-code-of-text-that-does-not-compile-fails-silently-where-spitbol-raises-the-
 # compile-error. CODE(' X = (1') under SETEXIT is trapped as error 226 in sbl -bf; SCRIP's CODE failed with &ERRTYPE 0 and raised
 # nothing, both modes. The CODE analogue of the EVAL cure e9213711a (test_gate_sno_eval_of_text_that_does_not_compile_raises_...).
 #

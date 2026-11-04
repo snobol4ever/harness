@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_writes_to_errout_flushes_output_first.sh -- WRITING TO &errout FLUSHES &output FIRST, IN BOTH MODES, AS ICONX DOES
-# (hq_icon 2026-09-26, crawl work under CEO-1270: IPL openchk and press, the AD class).
+# (hq_icon 2026-09-26, crawl work under R-1270: IPL openchk and press, the AD class).
 #
 # iconx flushes &output before anything reaches &errout, so a program's merged stdout+stderr reads in program order. The
 # write builtin flushed stdout before a file argument only for write (the nl case), never for writes; a mode-4 binary, whose

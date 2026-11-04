@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_table_convert_creation_order.sh -- CONVERT(table,'ARRAY') places entries in CREATION order.
-# Row snobol4-table-convert-to-array-uses-hash-bucket-order-not-documented-creation-order (ceo CEO-356,
+# Row snobol4-table-convert-to-array-uses-hash-bucket-order-not-documented-creation-order (R-356,
 # briefed by seat01/seat02; cured hq_P 2026-09-06).
 #
 # ⭐ THIS IS DOCUMENTED SPITBOL SEMANTICS, NOT DIALECT LATITUDE.  Manual v3.7, Reference sec CONVERT:

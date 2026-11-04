@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_demo_full_3way.sh  claws5 + treebank FULL-corpus tri-identity gate (sbl == m3 == m4).
 # Encodes the s107 recipe: oracle temp-prepend (-CASE 0 control card + tab &TRIM = 0  never patch corpus).
-# ⛔ NO SIZE IS TYPED HERE (ceo CEO-1353, RULES.md clause 8 (g)(3)-(4)): each demo's own <stem>.heap/.stack reach SCRIP in both modes
+# ⛔ NO SIZE IS TYPED HERE (R-1353, RULES.md clause 8 (g)(3)-(4)): each demo's own <stem>.heap/.stack reach SCRIP in both modes
 # and its <stem>.oracle_args reaches sbl, through lib_declared_arena.sh. MEASURED 2026-10-03 (the coo) on these full inputs: treebank
 # dies ERROR 246 at sbl's default stack and answers from -s8m (two readings), which treebank.oracle_args declares; claws5 answers at sbl's
 # defaults; SCRIP at each demo's declared -d131072k -s4096k is tri-identical in both modes under the shell's own 8 MB ulimit -- the

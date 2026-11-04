@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_monitor_names_and_types_a_value_as_icx_does.sh -- A VALUE EVENT NAMES THE SOURCE VARIABLE AND TYPES THE VALUE AS
-# ICX DOES (hq_icon 2026-09-25, crawl work under CEO-1270 / CEO-1272 (c)).
+# ICX DOES (hq_icon 2026-09-25, crawl work under R-1270 / R-1272 (c)).
 #
 # Three false divergences the monitor census over the 111 graded Arizona programs measured, each from SCRIP's plug:
 #   (1) a static local went on the wire under its lowering's mangled global name (main__STATIC__y) where icx sends y;

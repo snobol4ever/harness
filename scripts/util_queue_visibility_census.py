@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# util_queue_visibility_census.py (ceo, 2026-08-28 — born from Lon's trust audit: "if items got lost the
+# util_queue_visibility_census.py (2026-08-28 — born from Lon's trust audit: "if items got lost the
 # instant they were minted, you must go back and scan for missed items").  THE PICKER'S RULE IS THE
 # INSTRUMENT: any claim file hides a row, DONE or not (s4e_msg.sh next).  Every prior by-eye health check
 # that read QUEUE.tsv's state column over-counted pickable work and missed hidden rows — this script asks
@@ -14,7 +14,7 @@
 #   P   task file whose ^DONE-WHEN: line is still the MINT PLACEHOLDER (unclosable the same way E is, but
 #       harder to see: the line EXISTS, so E cannot catch it, and `done` executes it whole -- prose is not a
 #       command, so a seat can do the whole job correctly and still get a refusal INDISTINGUISHABLE from the
-#       one a genuinely wrong cure produces (hq_P census 2026-09-05, ceo ruling CEO-289).
+#       one a genuinely wrong cure produces (hq_P census 2026-09-05, ruling R-289).
 # ⛔⭐ CLASS P KEYS ON THE DONE-WHEN LINE, NEVER ON THE FILE, AND THAT IS THE WHOLE POINT OF THE ARM.  The
 # obvious census -- grep -l the placeholder text over tasks/ -- returns 112 where the true figure is 44, a
 # 2.5x OVER-REPORT, because ledger lines, handoff notes and QA answers MENTION the placeholder; hq_P found
@@ -55,7 +55,7 @@ n = int(mode.split('-')[1]) if mode.startswith('FLEET-') else 0
 # when only two HQs existed.  Harmless TODAY only because class B filters holders that start with 'seat', so
 # no HQ is ever tested against it; the moment that filter widens, every hq_B/hq_T claim reads as stood-down.
 # A latent wrong answer that is currently unreachable is still a wrong answer, and it costs one line to fix.
-active = set(f"seat{i:02d}" for i in range(1, n + 1)) | {'hq_B', 'hq_C', 'hq_P', 'hq_T', 'hq_U', 'hq_S', 'hq_I', 'hq_R', 'hq_V', 'ceo', 'cto', 'coo'}
+active = set(f"seat{i:02d}" for i in range(1, n + 1)) | {'hq_B', 'hq_C', 'hq_P', 'hq_T', 'hq_U', 'hq_S', 'hq_I', 'hq_R', 'hq_V', 'cto', 'coo'}
 A2 = sorted(t for t, r in rows.items() if r['state'] == 'FREE' and t in claims and claims[t]['done'])
 B  = sorted(t for t, c in claims.items() if not c['done'] and c['holder'].startswith('seat') and c['holder'] not in active)
 # ⭐ A TOMBSTONE IS NOT LOST WORK (hq_C 2026-08-27, from triaging this census's own first C! list).  A baton
@@ -72,11 +72,11 @@ def _head(t):
     except OSError: return ''
 def _tombstone(t):
     h = _head(t).upper()
-    # RESOLVED-BEFORE-CLAIM joined the tombstone family 2026-08-28 (ceo): a baton kept for PROVENANCE after
+    # RESOLVED-BEFORE-CLAIM joined the tombstone family 2026-08-28 (the officer): a baton kept for PROVENANCE after
     # its defect was independently fixed before anyone claimed it — deliberately de-indexed so it cannot be
     # picked up (witness: conform-opsyn-alias-..., flagged as C! four census runs in a row before this line).
     return t.startswith('RETIRED') or 'SUPERSEDED' in h or 'RENAMED' in h or 'RESOLVED' in h
-# ⛔⭐ A RETIRED ROW IS ACCOUNTED FOR, NOT LOST (ceo 2026-10-01, CEO-1386/1387 -- the queue zero-base moved 539 rows to
+# ⛔⭐ A RETIRED ROW IS ACCOUNTED FOR, NOT LOST (2026-10-01, R-1386/1387 -- the queue zero-base moved 539 rows to
 # QUEUE.retired.tsv and every one of their batons read C! on the next census, 539 false findings). A row in the retired
 # file is the law's own tombstone: nothing is deleted, the baton stays under tasks/, and the row comes back only by a
 # re-mint from a current red. E and P likewise read only the LIVE rows: a placeholder on a done or retired baton is
@@ -92,7 +92,7 @@ def _donewhen_line(t):
     return ''
 P  = sorted(t for t in tasks if t in rows and not _tombstone(t) and PLACEHOLDER in _donewhen_line(t))
 F  = sorted(t for t, r in rows.items() if ('PARKED' in r['state'] or r['state'] == 'BLOCKED') and r['owner'] == 'unassigned')
-# ⛔⭐ R: a DONE row with NO COMPUTED RECEIPT (coo 2026-09-16, ceo CEO-790/793) -- the state column says DONE but no claims/<topic>.claim
+# ⛔⭐ R: a DONE row with NO COMPUTED RECEIPT (coo 2026-09-16, R-790/793) -- the state column says DONE but no claims/<topic>.claim
 # carries DONE, so it reached DONE by a path outside `done` (the verb that COMPUTES completion and, since today, writes a
 # RECEIPT line: rc, tree, elapsed, via, time, seat). 17 such rows on 2026-09-16; one, reopened by audit, was RED on origin.
 # --grade-receiptless runs each such row's DONE-WHEN (under a 120 s timeout) and classes it: prose (no runnable criterion / the mint
@@ -107,7 +107,7 @@ def _grade(t):
     body = dw[len('DONE-WHEN:'):].strip()
     if not body or body.startswith('⛔') or body.startswith('TBD') or body.lower().startswith('tbd'): return 'prose'
     root = os.environ.get('S4E_HOME') or os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    # S4E_DONE_WHEN_RUN=1 admits THE RUN (lib_one_runner.sh) and, since ceo CEO-997, publishes NOTHING: util_score_row.py
+    # S4E_DONE_WHEN_RUN=1 admits THE RUN (lib_one_runner.sh) and, since R-997, publishes NOTHING: util_score_row.py
     # no longer reads it as a leaderboard-write door. It had to be closed there rather than dropped here -- this census
     # grades EVERY receiptless row's criterion, so while that door stood, a hygiene pass over a row whose DONE-WHEN is a
     # board was a fleet-wide publish button, and the row's own seat never ran it.
@@ -135,10 +135,10 @@ for name, lst, note in (("A2 FREE-behind-DONE-claim", A2, "verify each DONE, the
             print(f"    {t}" + (f"  [rank {r.get('rank','?')}, owner {r.get('owner','?')}]" + (f"  criterion: {_grade(t)}" if GRADE else "") if name.startswith('R ') else ''))
 if Rh:
     print(f"R  (history, informational) {len(Rh)} row(s) in QUEUE.done.tsv carry DONE with no claim carrying DONE -- swept before the receipt existed; not counted")
-# ⭐⭐ THE TWO SWEEP LINES (the coo 2026-09-27, ceo CEO-1306, row instruments-the-queue-census-names-blocking-red-rows-past-their-two-hour-
-# window-and-hq-lane-rows-unserved-past-24-hours-ceo-1306). Measured the morning they were ruled: three blocking-red rows of the 09-26 audit
+# ⭐⭐ THE TWO SWEEP LINES (the coo 2026-09-27, R-1306, row instruments-the-queue-census-names-blocking-red-rows-past-their-two-hour-
+# window-and-hq-lane-rows-unserved-past-24-hours-r-1306). Measured the morning they were ruled: three blocking-red rows of the 09-26 audit
 # board sat FREE for 23 hours while every seat's make test read them as tolerated reds, and 227 rank-0/1 rows sat FREE in HQ lanes -- 40
-# at rank 0 -- that their HQs would not serve while each held its one row. The ceo swept both by hand; these two lines make the sweep a
+# at rank 0 -- that their HQs would not serve while each held its one row. The officer swept both by hand; these two lines make the sweep a
 # reading, printed EVERY run, zero included.
 #   BLOCKING-RED PAST WINDOW  a row whose baton LINKS line carries BLOCKING-RED and whose owner has not STARTED within two hours of the later
 #       of the tagged time (`since <ISO>`) and the row's first assignment. STARTED is the owner's own act: its claim from FREE (CLAIMED:<owner>,
@@ -149,7 +149,7 @@ if Rh:
 #       another live claim -- rank 0 first, oldest first.
 # Each named row carries its age and the officer RULES.md's escalation channel (clause 2) routes it to by default: the collector, rt.c and
 # the safe-point road to the cfo; the emitter, planner, templates and spine to the cto; instruments, gates, censuses and the bus to the
-# coo; everything else to the cto (COO-461: the ceo seat is gone, its rows routed to nobody). S4E_CENSUS_NOW=YYYY-MM-DDTHH:MM:SSZ pins the clock, so a fixture reads the same answer every run.
+# coo; everything else to the cto (COO-461). S4E_CENSUS_NOW=YYYY-MM-DDTHH:MM:SSZ pins the clock, so a fixture reads the same answer every run.
 import re as _re
 from datetime import datetime as _dt, timedelta as _td, timezone as _tz
 def _iso(s):
@@ -251,9 +251,9 @@ print(f"HQ-LANE UNSERVED PAST 24H: {len(HQ)}  (FREE, rank 0 or 1, minted over 24
 for rank, _, t, owner, other, age in HQ:
     print(f"    {t}  [rank {rank}, minted {age.total_seconds() / 3600:.0f} h ago, {owner} holds {other}] -> {_route(t)}")
 if HQx: print(f"    (named, not counted: {len(HQx)} such row(s) whose mint time the baton does not carry -- {' '.join(HQx[:5])})")
-if HQdown: print(f"    (kept by MODE, not counted: {' '.join('%s=%d' % kv for kv in sorted(HQdown.items()))} -- a seat MODE stands down keeps its rows in place and serves none (ceo CEO-1905; CEO-1895), as util_ceo_followups.py reads it)")
+if HQdown: print(f"    (kept by MODE, not counted: {' '.join('%s=%d' % kv for kv in sorted(HQdown.items()))} -- a seat MODE stands down keeps its rows in place and serves none (R-1905; R-1895), as the follow-up census (retired) reads it)")
 findings += len(BR) + len(HQ)
-# DONE-WHEN RUNS A BOARD (ceo CEO-1342 clause 5; the coo's row bus-done-runs-no-board-for-any-seat-..., 2026-09-28): the bus's
+# DONE-WHEN RUNS A BOARD (R-1342 clause 5; the coo's row bus-done-runs-no-board-for-any-seat-..., 2026-09-28): the bus's
 # computed done no longer admits a board run for any seat but the lane owner, so a live row whose DONE-WHEN runs a suite, a board or
 # the guard can never close through done -- named here for its lane to rewrite (read the coo's SUITE TABLE row through
 # ../harness/scripts/util_suite_row_at_or_after.sh instead). The names come from util_donewhen_exemption_census.py, the one reader of that class.
@@ -268,7 +268,7 @@ try:
     _xc_note = ''
 except Exception as _e:
     _xc_note = f" (the exemption census could not be read: {type(_e).__name__}: {_e})"
-print(f"DONE-WHEN RUNS A BOARD (cannot close through done, CEO-1342 clause 5): {len(DB)}{_xc_note}")
+print(f"DONE-WHEN RUNS A BOARD (cannot close through done, R-1342 clause 5): {len(DB)}{_xc_note}")
 for r in sorted(DB, key=lambda r: (r.get('owner', ''), r.get('topic', ''))):
     print(f"    {r.get('topic')}  [owner {r.get('owner')}, {r.get('state')}, {r.get('class')} <- {', '.join(sorted(set(r.get('mechanism') or [])))[:120]}] -> rewrite to read the coo's row: ../harness/scripts/util_suite_row_at_or_after.sh <key> <tree>")
 findings += len(DB)

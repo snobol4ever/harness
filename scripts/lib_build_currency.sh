@@ -2,7 +2,7 @@
 # lib_build_currency.sh -- THE ONE AUTHORITY ON "IS THE THING I AM ABOUT TO GRADE ACTUALLY BUILT FROM src/?"
 #
 # ⛔ WHY THIS EXISTS (hq_B measured 2026-09-03, row stale-binary-preflight-also-covers-out-libscrip-rt-so,
-# widened by ceo on the class finding): the stale-binary preflight graded ./scrip against src/ mtimes and said
+# widened by the officer on the class finding): the stale-binary preflight graded ./scrip against src/ mtimes and said
 # NOTHING about out/libscrip_rt.so -- the SHIPPED RUNTIME, which lags src/ exactly as the binary can. A 13:37
 # .so against a 14:16 src read `exec_stmt` as STILL EXPORTED when it had already been deleted.
 # ⭐ THE DANGEROUS DIRECTION IS THE FALSE GREEN: a stale OLDER .so still exports a symbol that source deleted,

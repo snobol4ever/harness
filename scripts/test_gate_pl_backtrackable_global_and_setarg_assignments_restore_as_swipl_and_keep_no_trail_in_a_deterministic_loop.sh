@@ -3,7 +3,7 @@
 # a trail entry so that backtracking can restore the old value; the entry is needed only when a choice point newer than the written cell exists. SCRIP
 # logged EVERY assignment of a heap-resident cell while any choice point existed (the directive's own catch frame is one), so a deterministic loop of
 # two million b_setval or setarg calls kept every old value alive and exhausted a 16 MB heap with resource_error(stack) where swipl runs it in constant
-# space (CHR keeps each constraint store in a b_setval cell, one assignment per constraint added or removed: ProRosetta hailstone-sequence-6, CEO-2005).
+# space (CHR keeps each constraint store in a b_setval cell, one assignment per constraint added or removed: ProRosetta hailstone-sequence-6, R-2005).
 # Two halves, both modes. RESTORE: 21 cases (nested choice points, an assignment between two choice points, \+, findall, catch, a mutation of a term older
 # than the choice point and of a term newer than it) printed by SCRIP and by swipl in THIS run, compared byte for byte; the cases print what the next
 # alternative sees, so a skipped entry that was needed reads wrong. EXACT: 1000 rounds of 300 logged setargs on a term older than the choice point plus one b_setval of the

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_packed_char_array_field_of_an_array_element_reads_back_what_was_assigned.sh -- a field of type packed array [1..n] of char of a
 # record that is an ELEMENT OF AN ARRAY is assigned a string and reads back the same string: d[i].name := 'abc...'; writeln(d[i].name).
-# MEASURED 2026-10-09 by hq_pascal on the Star Trek demo (CEO-1579): its Damage Control Report printed the eight device names blank, every
+# MEASURED 2026-10-09 by hq_pascal on the Star Trek demo (R-1579): its Damage Control Report printed the eight device names blank, every
 # number right. Minimised: a single record variable r.name round-trips; d[2].name does not (writeln prints nothing).
 # CAUSE: the selector action marks a char-array FIELD (pas_cafield_mark_add, which makes the assignment pack the string and the read unpack it) on the
 # single-record path only; the array-of-records path (pas_arrrec_flatten) marked only a char-valued field. CURE (lower_pascal_tree.c, the selector

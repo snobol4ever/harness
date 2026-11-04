@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_what_fpc_miso_accepts_beyond_iso_answers_as_fpc.sh -- the extensions fpc -Miso accepts answer as fpc does (ARCH-PASCAL-DIALECTS.md section 2:
-# a flip point is a construct fpc -Miso refuses; one it accepts is the ISO dialect's to accept, row pascal-dialects-...-ceo-1614, the FPC chunk).
+# a flip point is a construct fpc -Miso refuses; one it accepts is the ISO dialect's to accept, row pascal-dialects-...-r-1614, the FPC chunk).
 #
 # MEASURED 2026-10-11 by hq_pascal on PasRosetta (35 of 664; of its 319 graded programs 215 stopped at a parse error), each a red in both modes on
 # SCRIP 45e63ef51 where fpc -Miso compiles and runs the program:
@@ -17,7 +17,7 @@
 #     aggregates (f: v; ...) and arrays of them, at program and procedure level.
 # CONTROLS that must not move: an empty argument list on a procedure with formals is still refused (6.8.2.3, PAT 0800, which the empty-
 # parentheses grammar first let through to a run-time BOMB), write() with none still refused (6.9.3, PAT 0900), and the 6.2.1 order of
-# declaration parts still refused (Lon's ISO-as-oracle ruling, CEO-1225).
+# declaration parts still refused (Lon's ISO-as-oracle ruling, R-1225).
 #
 # ARMS, both modes, every expectation cut LIVE from fpc -Miso: assign, loops, consts, tconsts; three refusal controls. FAIL_ONCE=1 corrupts
 # arm assign's expectation.

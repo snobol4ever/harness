@@ -19,7 +19,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the SNOBOL4 statement instrum
 # simply stopped counting statements ALTOGETHER would make that diff vanish too -- both modes agreeing on a
 # wrong number is not a cure. So every arm here compares SCRIP's &STCOUNT against the ORACLE's own reading
 # of the same program, and arm 2 sweeps the amount of work inside the fragment so the count has to TRACK
-# the oracle across a range rather than match it at one point. That is the boundary shape CEO-678 named for
+# the oracle across a range rather than match it at one point. That is the boundary shape R-678 named for
 # limit, size and depth rows, applied to a counter: a verdict arm asks "did it count?", a boundary arm asks
 # "did it count the right number, everywhere?".
 #

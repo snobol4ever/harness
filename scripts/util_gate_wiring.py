@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_gate_wiring.py -- THE ONE POPULATION OF GATES, and the RATCHET over it.
 
-WHAT IT PROTECTS (row requested by hq_S 2026-09-06, routed by the ceo as CEO-326 because it is a
+WHAT IT PROTECTS (row requested by hq_S 2026-09-06, routed by the officer as R-326 because it is a
 handoff_status check rather than law).  hq_S's measured case, verbatim: test_gate_sno_fence_body_dynamic_
 operand.sh landed on disk IN THE SAME PUSH as the cure it grades, and was never added to the recipe.  For a
 day the ONE instrument that can grade that cure was run by nothing.  Nothing could have noticed: the gate was
@@ -118,7 +118,7 @@ _SUBMAKE = re.compile(r"\$\(MAKE\)(.*)$")
 
 # ⛔⭐ A TARGET WHOSE POPULATION IS DECLARED BY ANOTHER TARGET, and this map is the difference between an
 # instrument that sees the blocking set and one that sees a single line.  `make test` became loop-and-report
-# on 2026-09-12 (CEO-582): its recipe is now ONE line, `bash ../harness/scripts/run_blocking_set.sh`, and the ~155 arms
+# on 2026-09-12 (R-582): its recipe is now ONE line, `bash ../harness/scripts/run_blocking_set.sh`, and the ~155 arms
 # it runs are the recipe lines of `test-sequential`, which the driver reads.  MEASURED THE MINUTE THE
 # RESTRUCTURE LANDED, before this map existed: reachable() fell from 292 scripts to 103 and the doubles walk
 # lost test-postoffice -- 189 gates would have read as run by nothing, in the comfortable direction that
@@ -404,7 +404,7 @@ def check(root, out=sys.stdout):
           % (len(by_cls["WIRED"]), len(by_cls["RULING"]), task_n,
              "unset" if ceiling is None else ceiling), file=out)
     v = 0
-    # ⛔ ONE LINE PER SCRIPT (hq_U 2026-09-10, ceo CEO-516). FIRST among the refusals on purpose: it is the
+    # ⛔ ONE LINE PER SCRIPT (hq_U 2026-09-10, R-516). FIRST among the refusals on purpose: it is the
     # cheapest to read and the only one whose author is reliably still in the room -- a double recipe line is a
     # merge artifact minutes old, never a backlog. ⭐ AND IT IS THE ONE ARM HERE THAT MAY GRADE THE LIVE TREE
     # INSIDE `make test`, which the coverage arms deliberately may not (see test_gate_gate_wiring_ratchet.sh
@@ -737,7 +737,7 @@ def selftest(out=sys.stdout):
         ck("14 unexpandable optional targets are named", sorted(skipped), ["preflight", "test-postoffice"])
         # ARM 15 ONE LINE PER SCRIPT — hq_U's case, rebuilt to the byte: the same gate on two `test:` lines,
         # one dash-prefixed with the TRUE cost, one blocking with the STALE cost it had replaced. ⛔ THIS IS
-        # THE DETECTOR ARM, and the detector arm is the one that fails OPEN (CEO-480/481): if the count ever
+        # THE DETECTOR ARM, and the detector arm is the one that fails OPEN (R-480/481): if the count ever
         # stops seeing the double, this arm goes green reading "there was never a bug here", so it asserts the
         # refusal FIRES, NAMES the script, and SAYS the two comments disagree -- three claims, not one rc.
         TW = ["-bash ../harness/scripts/test_gate_a.sh   # ~13s MEASURED (17 arms)",

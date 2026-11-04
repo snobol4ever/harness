@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # test_gate_the_tiny_open_protocol_and_its_glue_record_agree.sh -- TWO FILES HOLD ONE CONTRACT AND NOTHING BOUND THEM.
 #
-# ⛔⭐ THE DEFECT, MEASURED BY THE ceo AT THE COST OF TWO FAILED CONVERSION ATTEMPTS (CEO-1089, cured by the cto
+# ⛔⭐ THE DEFECT, MEASURED BY THE OFFICER AT THE COST OF TWO FAILED CONVERSION ATTEMPTS (R-1089, cured by the cto
 # 2026-09-21 as spine).  rt_call_open_by_name returns a two-word {entry, protocol}; the protocol's low byte is `how`.
 # bb_glue_enter_c2bb performs the jump, and its how==2 arm (the TINY/alpha record) built a FIXED 48-byte record whose
 # ARGUMENT COUNT WAS THE LITERAL ZERO and which never copied g_call_args.  rt_tiny_record_enter's own asm shim -- the
 # other way into the same target -- sizes its record FROM nargs, copies every argument out of g_call_args, and writes
 # the real count.  So the two roads into one callee disagreed about the record's shape.
 # ⛔ IT PRESENTED AS A WRONG ANSWER, NOT A CRASH: a target opened onto how=2 with arguments entered WITH NO ARGUMENTS and
-# read unbound parameters (the ceo measured APPLY(ZFN,41) returning 1 instead of 42).  The 2026-09-21 cure made the open
+# read unbound parameters (measured APPLY(ZFN,41) returning 1 instead of 42).  The 2026-09-21 cure made the open
 # take the tiny road ONLY at nargs<=0 and sent an argument-bearing call down the NAMED road.
 # ⛔ AND THAT WORKAROUND CRASHED A SNOCONE FUNCTION (the cto, 2026-10-03, row snocone-apply-of-a-snocone-defined-function-
 # crashes-scrip): for a Snocone function p->fn IS its tiny alpha, so APPLY('f', 2) took the named road (how=1, the glue

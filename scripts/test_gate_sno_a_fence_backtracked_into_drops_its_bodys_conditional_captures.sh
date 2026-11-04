@@ -3,7 +3,7 @@
 # conditional assignment (. NAME, . *F()) that P recorded is discarded, as SPITBOL does, in both modes: only the attempt that reaches
 # the end of the match assigns.
 #
-# ⛔ THE DEFECT (row snobol4-the-indirect-counter-increment-at-bootstrap-counter-sc-16-raises-error-41-..., CEO-1295; and the cto's
+# ⛔ THE DEFECT (row snobol4-the-indirect-counter-increment-at-bootstrap-counter-sc-16-raises-error-41-..., R-1295; and the cto's
 # row snobol4-a-fence-inside-an-alternation-changes-its-never-matched-siblings-..., the json members). IR_MATCH_FENCE1's beta
 # jumped straight to omega without running its body's beta, so the 24-byte conditional-capture records the body pushed on r12
 # (bb_match_capture phase 1: alpha add r12,24 / beta sub r12,24) survived and ran at match end:

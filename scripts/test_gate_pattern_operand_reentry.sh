@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pattern_operand_reentry.sh -- pattern operand temporaries must be per-ACTIVATION, not per-SITE.
 # Row snobol4-pattern-operand-temporaries-are-per-site-globals-clobbered-by-reentry (hq_C mint, seat01 census,
-# hq_P cure 2026-09-06); re-cut 2026-10-11 (CEO-1663).
+# hq_P cure 2026-09-06); re-cut 2026-10-11 (R-1663).
 #
 # ⛔⭐ WHY THIS GATE CARRIES A MIRROR ARM. A cure that stores operand 0 LAST, after the re-entrant call returns,
 # MOVES the window rather than closing it, and reverses SNOBOL4's left-to-right evaluation order on the way. A

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_set_held_in_a_record_keeps_its_members.sh -- a set stored in a field of a heap record, or in a field of an element
-# of an array of records, keeps its members, as fpc -Miso does (row pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# of an array of records, keeps its members, as fpc -Miso does (row pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. A Pascal set is a 32-byte bitmap; a heap record and an array of records are held as
 # one string of SOH-separated fields, and their writers flattened each value with to_cstring/strlen, so a bitmap was cut at its first

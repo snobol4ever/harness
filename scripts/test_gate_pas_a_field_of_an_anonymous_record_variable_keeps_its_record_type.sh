@@ -2,7 +2,7 @@
 # test_gate_pas_a_field_of_an_anonymous_record_variable_keeps_its_record_type.sh -- a record variable declared with its own record-type
 # (no type-identifier) whose field is of a record type: that field's own fields are selected, assigned and written (ISO 7185 6.5.3.3)
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. FOUND BY PROBING, NOT BY ANY SUITE
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. FOUND BY PROBING, NOT BY ANY SUITE
 # (the rungs' nested records all go through a named outer type): type q = record a, b: integer end; var g: record x: integer; c: q end;
 # g.c.a := 42; writeln(g.c.a) wrote nothing and every statement after it was skipped, where fpc -Miso prints 42. The selector g.c.a lowers
 # through pas_nested_field_resolve, which asked pas_with_sel_rtype for the record type of g.c -- and that function found a record-type for

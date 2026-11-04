@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ⛔⭐ THE RAKU WRAPPER GENERATOR WRAPS A KERNEL THAT DEFINES sub MAIN, PRINTS A STRING THAT RUNS OVER LINES, ENDS A BLOCK ON AN OUTPUT STATEMENT WITH NO SEMICOLON, PRINTS THE
-# TOPIC WITH A BARE .say, READS A NAMED FILE, AND KEEPS THE FILE-SCOPE STATE ITS HOISTED SUBS READ (row raku-every-suite-to-100-under-nonet-ceo-1266, RakBench 68 of 80;
+# TOPIC WITH A BARE .say, READS A NAMED FILE, AND KEEPS THE FILE-SCOPE STATE ITS HOISTED SUBS READ (row raku-every-suite-to-100-under-nonet-r-1266, RakBench 68 of 80;
 # hq_raku 2026-10-21 against SCRIP 218731c54). THE REDS, measured on the coo's board at SCRIP e06e1d5e3 and again by hand: twelve kernels read FAIL on the fixed-iterations and
 # fixed-time angles, and eleven of them were the generator's: (1) spinner, rc-forest-fire, rc-forest-fire-stringify, rc-mandelbrot: the kernel's `sub MAIN` was nested in the
 # wrapper subs and never called, so the capture was empty (value=0 where the .ref has 536704 characters); (2) rc-dragon-curve: one `say "..."` whose string runs over five lines

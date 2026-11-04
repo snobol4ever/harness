@@ -2,7 +2,7 @@
 # test_gate_pas_sizeof_of_an_array_element_folds.sh -- SizeOf(a[i]) of a static or dynamic array (anonymous element type or a
 # dynamic-array alias) folds to the element's size, as fpc reads it, and fillchar(a[k], n * SizeOf(a[0]), v) fills exactly n elements.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): SizeOf of an element expression was never folded
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): SizeOf of an element expression was never folded
 # and died as a by-name call ("error 22: undefined function called"), the common fillchar(G[0], length(G) * SizeOf(G[0]), #0) form
 # with it. THE CURE (lower_pascal_tree.c): pas_elem_size answers a static array's size over its count, else the size of its element
 # type (the array's scalar type, or pas_arrtype_elem of a dynamic-array alias) through pas_sizeof_builtin_size / pas_sizeof_lookup;

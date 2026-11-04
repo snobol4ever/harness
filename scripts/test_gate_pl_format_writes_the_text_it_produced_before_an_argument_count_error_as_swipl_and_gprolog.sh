@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_format_writes_the_text_it_produced_before_an_argument_count_error_as_swipl_and_gprolog.sh -- format/2 writes the text it produced
-# before an argument-count error, as swipl 10 and gprolog 1.6 do, in both modes (row prolog-rosetta-eight-programs-crash-or-fail-with-one-output-shape-knights-tour-2-and-kin-ceo-1887,
+# before an argument-count error, as swipl 10 and gprolog 1.6 do, in both modes (row prolog-rosetta-eight-programs-crash-or-fail-with-one-output-shape-knights-tour-2-and-kin-r-1887,
 # hq_prolog 2026-10-22: Rosetta knights-tour-2 calls format('%3.0d',[N]) -- a C directive, so the whole text is literal and the argument is left over -- and swipl and gprolog print
 # %3.0d before the error while SCRIP raised first and printed nothing outside the GNU dialect).
 # WHAT IS GRADED: five calls, each in a catch that prints a marker: too many arguments (abc with [1]), not enough ((a~wb~wc) with [x] and (x~w~n~w) with [a]), a leftover argument after ~w,

@@ -1,10 +1,10 @@
-# coercion_surface_sites.tsv -- THE DECLARED COERCION SURFACE (hq_T, ceo CEO-662, 2026-09-13).
+# coercion_surface_sites.tsv -- THE DECLARED COERCION SURFACE (hq_T, R-662, 2026-09-13).
 #
 # WHY THIS FILE EXISTS. A new descriptor tag owes an arm in every function that switches on a descriptor's
-# tag, and before this census nobody could say what that set IS. The DT_BOOL tag (CEO-654) leaked three
+# tag, and before this census nobody could say what that set IS. The DT_BOOL tag (R-654) leaked three
 # times in a row -- to_real, to_cstring, then is_numeric_like/to_int_slow/rt_concat_parts_d -- and each leak
 # was found the same way: by watching a program that worked yesterday stop working. Three asks in a row is
-# the finding, not the arms (CEO-662). This file turns "the tag leaks and I find out later" into a census.
+# the finding, not the arms (R-662). This file turns "the tag leaks and I find out later" into a census.
 #
 # ⛔ IT IS A DATA FILE ON PURPOSE, NOT A GREP. util_coercion_surface_census.py DISCOVERS every
 # `switch (x.v)` / `switch (x->v)` under src/runtime and src/driver and REDS on any site not listed here --
@@ -20,20 +20,20 @@
 # Correctness is the oracle's job. This is the cheap half that was missing entirely.
 #
 # ⛔ A SITE WHERE A BOOL MUST COERCE DIFFERENTLY FROM ITS 1/0 INTEGER VALUE IS AN ASK, NOT AN ARM
-# (CEO-662's one standing exception). Such sites carry OPEN-ASK in the `why` column and no DT_BOOL in
-# tags_required, so the census stays green while the question is with the ceo rather than silently answered.
+# (R-662's one standing exception). Such sites carry OPEN-ASK in the `why` column and no DT_BOOL in
+# tags_required, so the census stays green while the question is with the officer rather than silently answered.
 #
 file	function	tags_required	why
-src/runtime/core/core.c	to_real	DT_BOOL	numeric coercion; a Bool contributes its 1/0 integer value (ceo CEO-656)
-src/runtime/core/core.c	to_int_slow	DT_BOOL	integer twin of to_real; same 1/0 value (ceo CEO-662)
-src/runtime/core/core.c	c_VARVAL_fn	DT_BOOL	THE descriptor->string coercion; renders True/False, the same rendering CEO-656 ruled for to_cstring and CEO-662 for rt_concat_parts_d
+src/runtime/core/core.c	to_real	DT_BOOL	numeric coercion; a Bool contributes its 1/0 integer value (R-656)
+src/runtime/core/core.c	to_int_slow	DT_BOOL	integer twin of to_real; same 1/0 value (R-662)
+src/runtime/core/core.c	c_VARVAL_fn	DT_BOOL	THE descriptor->string coercion; renders True/False, the same rendering R-656 ruled for to_cstring and R-662 for rt_concat_parts_d
 src/runtime/core/core.c	datatype	DT_BOOL	the type-name table; answers BOOL
 src/runtime/core/core.c	_CONVERT_	-	the CONVERT builtin: it tests DT_S only to materialize a counted string view once at entry (rt_cstr_d, hq_snobol4 2026-09-25) and DT_SNUL to route the null string; every value it returns is produced by VARVAL_fn / to_int / to_real / rt_str_to_real / pat_lit / code, each declared above or below, so a new tag is covered by delegation and owes no arm here
 src/runtime/core/core.c	trace_spell_value	DT_BOOL@VARVAL_fn	the tracer spells a value for a trace line; its default arm hands the value to VARVAL_fn, so it is correct BY DELEGATION and owes no arm of its own -- declared as a delegation rather than given a redundant case
 src/runtime/core/core.c	_VDIFFER_	DT_BOOL	DIFFER compares by value; a Bool differs from a value exactly as its 1/0 does
-src/runtime/pattern_match.c	rt_concat_parts_d	DT_BOOL	concatenation renders True/False (ceo CEO-662)
+src/runtime/pattern_match.c	rt_concat_parts_d	DT_BOOL	concatenation renders True/False (R-662)
 src/runtime/pattern_match.c	_sort_type_rank	DT_BOOL	sort orders by type rank first; an unranked tag sorts arbitrarily against every other
-src/runtime/by_name_dispatch.c	to_cstring	DT_BOOL	method-dispatch string coercion; renders True/False (ceo CEO-656)
+src/runtime/by_name_dispatch.c	to_cstring	DT_BOOL	method-dispatch string coercion; renders True/False (R-656)
 src/runtime/by_name_dispatch.c	rt_mc_type_name	DT_BOOL	the name method dispatch reports for a receiver; answers Bool
 src/runtime/by_name_dispatch.c	rk_raku_scalar	DT_BOOL	the .raku rendering of one scalar for a typed Hash, Pair, List or Array element: Nil, Bool::True and Bool::False, a number as itself, anything else a quoted Str (hq_raku 2026-10-03)
 src/runtime/by_name_dispatch.c	rk_qh_w	DT_BOOL	a Set / Bag / Mix weight read as a double: an Int, a Num or a Bool (True is 1, False is 0), anything else weighs nothing (hq_raku 2026-10-07)
@@ -46,8 +46,8 @@ src/runtime/core/argval.c	VARVAL_d_fn	DT_BOOL	an independent descriptor->string 
 src/runtime/string_ops.c	c_str_concat_d	DT_BOOL@descr_to_str	concatenation hands every non-DT_S/non-DT_DATA operand to descr_to_str; covered by delegation
 src/runtime/string_ops.c	str_repeat_d	DT_BOOL@descr_to_str	string repetition stringifies its left operand through descr_to_str; covered by delegation
 src/runtime/arithmetic.c	rt_num_arith_body	DT_BOOL@is_numeric_like	all arithmetic gates on is_numeric_like and then coerces with to_real/to_int, each of which carries the tag; covered by delegation
-src/runtime/arithmetic.c	rt_num_pos_sno	DT_BOOL@is_numeric_like	SNOBOL4 affirmation (ceo CEO-1648): a string is read by SPITBOL's grammar (sno_numeric_operand), every other tag is gated by is_numeric_like, then to_real/to_int coerce, each carrying the tag; covered by delegation
-src/runtime/core/core.c	is_numeric_like	DT_BOOL	the gate every arithmetic operation passes through; without the tag here rt_num_arith_body returns FAILDESCR and Bool arithmetic yields nothing (ceo CEO-662)
+src/runtime/arithmetic.c	rt_num_pos_sno	DT_BOOL@is_numeric_like	SNOBOL4 affirmation (R-1648): a string is read by SPITBOL's grammar (sno_numeric_operand), every other tag is gated by is_numeric_like, then to_real/to_int coerce, each carrying the tag; covered by delegation
+src/runtime/core/core.c	is_numeric_like	DT_BOOL	the gate every arithmetic operation passes through; without the tag here rt_num_arith_body returns FAILDESCR and Bool arithmetic yields nothing (R-662)
 src/runtime/string_ops.c	c_str_concat_fracdigit_d	-	Icon's `||` only: it rejects any operand failing core_icn_str_ok before coercing, and no Icon program can hold a Bool -- DT_BOOL is minted by the Raku lowering alone
 src/runtime/arithmetic.c	big_route_operand	-	routes only bignum-shaped operands; a Bool is a 1/0 machine integer and is never a big
 src/runtime/arithmetic.c	rt_cset_compl	-	cset complement; a Bool is not a cset and FAILDESCR is the right answer
@@ -82,7 +82,7 @@ src/runtime/by_name_dispatch.c	pl_iso_unbound	-	Prolog ISO unbound-variable test
 src/runtime/by_name_dispatch.c	pl_text_is_unbalanced	-	Prolog text balance check; same reason
 src/runtime/by_name_dispatch.c	rt_pl_dop_atomic_list_concat_c	-	Prolog atomic_list_concat/2,3; same reason
 src/runtime/by_name_dispatch.c	rt_pl_dop_concat_atom_c	-	Prolog atom_concat/3; same reason
-src/runtime/rt/gc_heap.c	gc_type_says_ref	-	SCRIP_GC_MAPS reporter only, never a coercion: it asks whether a tag REFERENCES THE HEAP, not what a value coerces to, and it is read-only beside the conservative scan. A new tag owes a row here only if the tag can hold a heap pointer; a new non-referencing tag correctly falls to default and is counted as not-a-slot (F6 step 3, ceo CEO-867)
+src/runtime/rt/gc_heap.c	gc_type_says_ref	-	SCRIP_GC_MAPS reporter only, never a coercion: it asks whether a tag REFERENCES THE HEAP, not what a value coerces to, and it is read-only beside the conservative scan. A new tag owes a row here only if the tag can hold a heap pointer; a new non-referencing tag correctly falls to default and is counted as not-a-slot (F6 step 3, R-867)
 src/runtime/rt/gc_heap.c	gc_tag_known	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): it asks whether a byte in a DESCR-kinded frame slot is a known tag at all, so residue in an unzeroed slot is counted (i_badtag) instead of guessed at; a new tag owes a row here because the walker must know it exists.
 src/runtime/rt/gc_heap.c	gc_tag_bears_ptr	-	SCRIP_GC_MAPS frame walker-reporter only, never a coercion (cto 2026-09-19, CTO-88): the pointer-bearing tags gc_visit_one visits, used to tell a tagged spine cell from a raw word beside it; a new tag owes a row here only if the tag can hold a heap pointer, exactly as gc_type_says_ref above.
 src/runtime/pattern_match.c	sort_impl	-	SORT/RSORT arguments: the first must be an array or table (256), a vector's second must convert to a field name (257) -- a Bool is not a name, so 257 is its right answer; the column goes through rt_sno_cnv_num (258)

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""util_skill_check.py <name>... -- A FLEET SKILL IS WELL-FORMED AND CARRIES ITS SEVEN PARTS (ceo CEO-2071). Reads .github/skills/<name>/SKILL.md
+"""util_skill_check.py <name>... -- A FLEET SKILL IS WELL-FORMED AND CARRIES ITS SEVEN PARTS (R-2071). Reads .github/skills/<name>/SKILL.md
 beside this harness. GREEN rc 0 when the file exists, opens with YAML frontmatter whose `name:` equals the folder and whose `description:` is 40 to
 1024 characters, is 3 to 40 KB, and carries the seven section markers a seat needs: the oracle (## 1), the manuals under /home/resources/manuals
 (## 2), the source map (## 3), the ARCH pages (## 4), the suites and their runners (## 5), the debugging order (## 6) and the rulings (## 7).
 RED rc 1 names each missing part. REFUSE rc 2 with no name. The DONE-WHEN of every skill row; red on an absent skill by construction.
---parser-constructs <name> (CEO-2075): greps each SCRIP/bootstrap/parser_*.sc for the construct families a parser-as-pattern is made of (the
+--parser-constructs <name> (R-2075): greps each SCRIP/bootstrap/parser_*.sc for the construct families a parser-as-pattern is made of (the
 Compiland shape, Shift and Reduce, immediate and deferred assignment, the memo table, the counter stack, PushVal, tail loops, the token convention,
 keyword lookups, FENCE, FLUSH, ARBNO, cursor pairs, the anchored nested match, the preprocess stage, the driver tail, the module wrapper, the library,
 the no-functions rule, the proving gates) and RED rc 1 names every family a parser carries that the skill does not name.
---craft <name>... (CEO-2076): the profile of a CRAFT skill, which has no oracle and no manual folder: the same frontmatter and size, and the seven
+--craft <name>... (R-2076): the profile of a CRAFT skill, which has no oracle and no manual folder: the same frontmatter and size, and the seven
 sections a craft needs in order -- ## 1. THE RULES, ## 2. THE FILES, ## 3. WORKED EXAMPLES, ## 4. THE PROVING INSTRUMENTS, ## 5. THE FORBIDDEN FORMS,
-## 6. THE ARCH PAGES, ## 7. HOW A LANDING IS PROVED -- naming RULES.md, an ARCH- page, harness/scripts and a CEO- receipt, with at least three
+## 6. THE ARCH PAGES, ## 7. HOW A LANDING IS PROVED -- naming RULES.md, an ARCH- page, harness/scripts and a ruling receipt (R-NNNN or CTO-NNNN), with at least three
 quoted code blocks (a craft skill quotes real lines from the files it governs). RED rc 1 names each missing part; red on an absent skill.
 """
 import glob, os, re, sys
@@ -80,7 +80,7 @@ def parser_constructs(name):
         else:
             print("OK   %s (%d parsers)" % (fam, len(where)))
     return rc
-CRAFT_MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "RULES.md", "ARCH-", "harness/scripts", "CEO-", "```"]
+CRAFT_MARKS = ["## 1", "## 2", "## 3", "## 4", "## 5", "## 6", "## 7", "RULES.md", "ARCH-", "harness/scripts", "```"]
 CRAFT_HEADS = ["THE RULES", "THE FILES", "WORKED EXAMPLES", "THE PROVING INSTRUMENTS", "THE FORBIDDEN FORMS", "THE ARCH PAGES", "HOW A LANDING IS PROVED"]
 def check_craft(name):
     p = os.path.join(ROOT, ".github", "skills", name, "SKILL.md")
@@ -101,6 +101,7 @@ def check_craft(name):
     if not (3072 <= sz <= 40960): why.append("size %d not in 3..40 KB" % sz)
     for k in CRAFT_MARKS:
         if k not in t: why.append("missing '%s'" % k)
+    if not re.search(r"\b[A-Z]{1,3}-[0-9]+\b", t): why.append("missing a ruling receipt (R-NNNN, CTO-NNNN)")
     for i, h in enumerate(CRAFT_HEADS):
         if not re.search(r"^## %d\. %s" % (i + 1, re.escape(h)), t, re.M): why.append("section %d is not '## %d. %s ...'" % (i + 1, i + 1, h))
     quoted = len(re.findall(r"^```", t, re.M)) // 2

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_gnu_file_and_os_builtins_answer_as_gnu_prolog.sh -- the ten GNU Prolog file and OS builtins Logtalk's GNU adapter
 # uses answer as gplc 1.4.5 does, byte for byte, in both modes (row prolog-the-ten-gnu-file-and-os-builtins-logtalk-needs, minted by the
-# ceo 2026-10-02 from the Logtalk 3.103.0-b01 run: each was an existence error).
+# 2026-10-02 from the Logtalk 3.103.0-b01 run: each was an existence error).
 #
 # THE TEN: environ/2 and file_property/2 (prelude Prolog over the det leaves $gnu_environ_list/1 and $gnu_file_props/2, so both
 # enumerate on backtracking), working_directory/1, change_directory/1, make_directory/1, delete_file/1, file_exists/1,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_icn_ipl_reason_is_the_oracles_own_words.sh -- hq_I 2026-09-06, CEO-326.
+# test_gate_icn_ipl_reason_is_the_oracles_own_words.sh -- hq_I 2026-09-06, R-326.
 #
 # THE DEFECT THIS PINS. util_cut_icon_ipl_refs.sh wrote ONE composed sentence onto every row its rc!=0
 # arm produced -- "needs argv/stdin this driver does not supply, or genuine rejection" -- and that
@@ -142,7 +142,7 @@ elif [ -n "$missing" ]; then green "ARM 6: the cutter's mains predicate admits l
 else green "ARM 6: the cutter's mains predicate admits leading whitespace (no file currently depends on it, and the arm says so)"; fi
 
 # ── ARM 7: THE NAME.argv SIDECAR, END TO END, AND THE ARM THAT MAKES IT MEAN ANYTHING IS THE LAST ONE.
-# CEO-328 ruled ONE path-aware cutter reading BOTH sidecars, never a fork, so the reader lives in
+# R-328 ruled ONE path-aware cutter reading BOTH sidecars, never a fork, so the reader lives in
 # lib_icon_ipl_isolation.sh and the cutter and the suite both call it. Three execution shapes must agree
 # on the SAME declaration: the oracle takes args bare after the filename, m3 needs `--` to separate them
 # from SCRIP's own flags, m4's linked binary takes them bare. ⛔ hq_T's load-bearing arm carried over
@@ -246,12 +246,12 @@ else
   # ⛔ THE SAME EXCLUSIONS AS THE TWO AUTHORITIES THIS ARM CHECKS (coo 2026-09-25, on hq_icon's finding): lib_inventory.sh and
   # test_icon_ipl_suite.sh both leave NAME.fixtures/ out of the shipped census, and this find counted
   # progs/iheader.fixtures/sample.icn (corpus 0c87851ca, 09-12) as a program -- 851 against 852, a red about the gate. A
-  # *_driver file is its library's grading vehicle, not a program (CEO-1269), and the census drops it by name too.
+  # *_driver file is its library's grading vehicle, not a program (R-1269), and the census drops it by name too.
   g=$(find "$PKG" -name '*.ref' ! -name ALL.ref ! -path '*.fixtures/*' | wc -l)
   u=$(awk -F'\t' 'NF>2 && $1 !~ /^#/{n++} END{print n+0}' "$PKG/UNGRADED.tsv")
   d=$(awk -F'\t' 'NF>2 && $1 !~ /^#/{n++} END{print n+0}' "$PKG/UNGRADABLE.tsv")
   sh=$(find "$PKG" -name '*.icn' ! -name 'ALL.icn' ! -name '*_driver.icn' ! -path '*.fixtures/*' | wc -l)
-  # ⛔ AND A CONTAINER IS NOT A PROGRAM (ceo CEO-1272, coo 2026-09-25): CONTAINERS.tsv names the files that leave shipped with their
+  # ⛔ AND A CONTAINER IS NOT A PROGRAM (R-1272, coo 2026-09-25): CONTAINERS.tsv names the files that leave shipped with their
   # measurement ($include'd gincl/ declarations, $define tables), and lib_inventory.sh subtracts them -- so does this count.
   c=0; [ -f "$PKG/CONTAINERS.tsv" ] && c=$(awk -F'\t' 'NF>2 && $1 !~ /^#/{n++} END{print n+0}' "$PKG/CONTAINERS.tsv"); sh=$((sh - c))
   if [ "$((g+u+d))" -ne "$sh" ]; then red "ARM 10: buckets do not sum -- graded($g) + ungraded($u) + ungradable($d) = $((g+u+d)), shipped=$sh. ⛔ COUNTED, never quoted: graded is the .ref files on disk, not a number carried from a ledger."

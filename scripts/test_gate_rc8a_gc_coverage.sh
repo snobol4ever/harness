@@ -23,7 +23,7 @@
 #   (3) "pz=0 whenever a root region is registered" -- c6bf8e789 (2026-09-19, THE E SWITCH) deleted punt-zero with the
 #       word sweep and the descriptor sniff, and [GC-COV] has printed no pz field since; the old arm read the absent field
 #       as pz=1 and would have called it a FAIL.
-#   (2) "the CAS capture-pending island is walked when occupied" -- the coo's match-records landing (CEO-1543/1545/1547, 2026-10-07)
+#   (2) "the CAS capture-pending island is walked when occupied" -- the coo's match-records landing (R-1543/1545/1547, 2026-10-07)
 #       deleted g_capo, g_dcf and g_dfx and the side region they were carved from: each record is now a spine region its own box
 #       carves and pops, typed DESCR cells the stack walk visits, so rt_cas_gc_roots roots none of them and [GC-COV]'s
 #       cas_scanned_bytes reads 0 by construction (802 collections, max 0, on the landing tree; 48 on a954b0d8e before it).
@@ -74,7 +74,7 @@ N=$(grep -c . <<<"$L")
 echo "  witness: inline (the gate's own fixture), printed [$GOT] as sbl -bf does; $N collection(s) read at SCRIP_GC_STRESS=1"
 echo "  [RETIRED] (1) RTCC range registration -- removed by be6b03b5e; the spill block's invariant is test_gate_gc_the_caller_saved_spill_block_never_holds_a_heap_reference.sh"
 echo "  [RETIRED] (3) pz=0 -- punt-zero deleted by c6bf8e789; [GC-COV] prints no pz field"
-echo "  [RETIRED] (2) the CAS island walk -- g_capo, g_dcf and g_dfx left the runtime with their side region (CEO-1543/1545/1547); cas_scanned_bytes reads 0 by construction"
+echo "  [RETIRED] (2) the CAS island walk -- g_capo, g_dcf and g_dfx left the runtime with their side region (R-1543/1545/1547); cas_scanned_bytes reads 0 by construction"
 # ---- ASSERTION 4: the *-target capture's spine record survives the collections its deferred call fires (SELF-ARMING) ----
 W2="$T/rc8a_spine_witness.sno"
 cat > "$W2" <<'SNO'

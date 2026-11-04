@@ -8,8 +8,8 @@
 # injection set carries one entry (inj_recorded) writing r8 and r10 under a planted row that records them, and the lies are
 # walked under the same planted table, so lie_clobber's unrecorded r10 must still be caught. AND NO ROW MAY NAME r9: the GVA
 # base is a constant of the run, so every exit of every entry, its C tails included, reloads it (RTX_GVA_R9 then ret) and the
-# site re-establishes nothing for it -- a call_bare site could not (cto 2026-10-07). (cto 2026-09-23, CEO-1224, row
-# spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11; Lon in-chat to the ceo, verbatim:
+# site re-establishes nothing for it -- a call_bare site could not (cto 2026-10-07). (cto 2026-09-23, R-1224, row
+# spine-no-rtccb-veneer-on-any-call-into-the-asm-runtime-the-rtx-abi-preserves-r8-to-r11; Lon in-chat, verbatim:
 # "get rid of veneer for all RT ASM instances.").
 #
 # WHY THIS IS THE LOAD-BEARING CHECK OF THE ROW. Emitted code now calls every RTX entry BARE -- no g_rtccb write-back before

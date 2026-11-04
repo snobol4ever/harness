@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_blocking_set_records_the_build_behaviour_ledger_before_the_fan_out.sh -- THE FAN-OUT PARENT RECORDS THE TREE'S BUILD-BEHAVIOUR LEDGER LINE ONCE, SERIALLY, BEFORE
-# ANY SHARD STARTS, so no arm ever writes out/build_behaviour.sig and the race detector has nothing to convict (the coo 2026-10-14, ceo CEO-1754 follow-up).
+# ANY SHARD STARTS, so no arm ever writes out/build_behaviour.sig and the race detector has nothing to convict (the coo 2026-10-14, R-1754 follow-up).
 # THE DEFECT: gate_require_built_from appends a line to out/build_behaviour.sig on a tree's FIRST observation. A set always runs on a tree the loop has just
 # built, so the first arm of every shard observed it for the first time together and appended together: the 10-13 set on 2781bf6e4 refused nine arms as RACED,
 # the 10-14 set on 0b870cf3e six, a different handful each time. A line per arm in blocking_set_serial_arms.txt would chase the handful; the writer is the cause.

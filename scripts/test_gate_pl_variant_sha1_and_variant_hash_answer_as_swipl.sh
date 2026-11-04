@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_variant_sha1_and_variant_hash_answer_as_swipl.sh -- variant_sha1/2 AND variant_hash/2 EXIST AND KEEP swipl's CONTRACT: a
 # hash invariant over variable renaming, distinct for terms that are not variants, a 40-digit lower-case hex SHA-1 atom, and swipl's
-# errors (cfo 2026-10-14, row prolog-swi-core-test-hash-every-case-agrees-with-swipl-in-both-modes-ceo-1664, CEO-1698).
+# errors (cfo 2026-10-14, row prolog-swi-core-test-hash-every-case-agrees-with-swipl-in-both-modes-r-1664, R-1698).
 #
 # SWI's core/test_hash.pl read 10/20 in both modes: every variant_sha1 and variant_hash case raised existence_error. They are base
 # prelude predicates now (src/parsers/prolog/prolog_parse.c): the term is copied without attributes (copy_term_nat/2), each variable

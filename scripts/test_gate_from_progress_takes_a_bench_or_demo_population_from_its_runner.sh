@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_from_progress_takes_a_bench_or_demo_population_from_its_runner.sh -- A BENCH OR DEMO ROW FROM THE PER-PROGRAM READINGS, ITS POPULATION
-# THE RUNNER'S OWN (the coo 2026-10-23, on the ceo's word, verbatim: "from-progress: yes, teach it the bench and demo keys, so a one-program re-grade
-# writes those rows."; CEO-1926/1927).
+# THE RUNNER'S OWN (the coo 2026-10-23, on the officer's word, verbatim: "from-progress: yes, teach it the bench and demo keys, so a one-program re-grade
+# writes those rows."; R-1926/1927).
 #
 # util_score_row.py from-progress assembled a row only for a key with an ALL.csv (the masters, the packages) or a port's census; SCRIP's bench and demo
 # rows came from a whole runner pass alone, so a one-program re-grade (S4E_CHUNK=entry:NAME) left IcnDemo, ProDemo, ProBench and RakBench stale. Now a
@@ -14,7 +14,7 @@
 #   4 an S4E_CHUNK in from-progress's environment does not narrow the population (still 1/2)
 #   5 a runner that lists no member (an empty demo tree) refuses rc 2 -- a population of zero is never a row
 #   6 a runner that names nothing out of the denominator reads excluded=0 -- a cell the runner's own write left stale is cleared (ProBench, 10-11..10-23)
-#   7-9 THE SEAM CENSUS (CEO-1927): the snobol4 bench runner lists its real tree and grades nothing; under S4E_CHUNK=entry:<kernel> it grades that one
+#   7-9 THE SEAM CENSUS (R-1927): the snobol4 bench runner lists its real tree and grades nothing; under S4E_CHUNK=entry:<kernel> it grades that one
 #     kernel, its two rows in this gate's table, and writes no suite row; every test_*_bench_suite.sh and test_demos_suite.sh carries rr_load, rr_list, rr_end
 # FAIL-ONCE: on util_score_row.py before this gate's landing every from-progress here refuses "no suite table for key" (rc 2) -- arms 2-6 red.
 set -uo pipefail
@@ -51,7 +51,7 @@ ck "5 a runner that lists no member refuses rc 2 (rc $r5)" '[ "$r5" = 2 ] && gre
 Z="$T/corpus2/demos/prolog"; mkdir -p "$Z/alpha" "$Z/beta"; cp "$D/alpha/alpha.pl" "$D/alpha/alpha.ref" "$Z/alpha/"; cp "$D/beta/beta.pl" "$D/beta/beta.ref" "$Z/beta/"
 o6="$(S4E_CORPUS_ROOT="$T/corpus2" DEMOS_DIR="$Z" python3 "$SR" from-progress --suite prolog-demos --dry-run 2>&1)"
 ck "6 a runner that names nothing out reads excluded=0, never a stale count (1/2 excluded=0)" 'grep -q "would set prolog-demos -> 1/2 excluded=0 " <<<"$o6"'
-# THE SEAM CENSUS (CEO-1927): every bench runner and the demos runner takes S4E_CHUNK and S4E_LIST through lib_rr.sh -- one runner behaviourally,
+# THE SEAM CENSUS (R-1927): every bench runner and the demos runner takes S4E_CHUNK and S4E_LIST through lib_rr.sh -- one runner behaviourally,
 # all of them by their source. The real snobol4 bench tree, read only; its one graded kernel's rows go to this gate's scratch table.
 unset S4E_CORPUS_ROOT DEMOS_DIR BENCH_RAKU_DIR
 SB="$HERE/../../corpus/benchmarks/snobol4"; nsb=$(find "$SB" -maxdepth 1 -type f -name '*.sno' | wc -l); k1=$(find "$SB" -maxdepth 1 -type f -name '*.sno' -printf '%f\n' | LC_ALL=C sort | head -1 | sed 's/\.sno$//')

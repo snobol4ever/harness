@@ -3,7 +3,7 @@
 # nested to any depth) in a record or class: SetLength on the field or on an element of it, Length, High, Low and indexed reads and writes act
 # on a real dynamic array; and inside a function method the bare method name reads its result variable in the FPC dialects.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, CEO-1709; the 12 programs of the empty-output class that use the classes unit
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, R-1709; the 12 programs of the empty-output class that use the classes unit
 # need a TStringList whose storage is a dynamic-array field): SetLength(FItems, n) on a field took the STRING SetLength (n spaces) and
 # stored it back; Length(FItems) read 1 or the string length; High(FItems) was an undefined call; an `array of string` field read back
 # character codes ("44/44 52/52" for TWO/three); and a method `Total` whose body read `Total` recursed to a stack overflow (fpc reads the

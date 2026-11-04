@@ -30,7 +30,7 @@ if not fix:
 fix = [fix[0]]
 i = fix[0]
 stmt = lines[i].strip()
-# ⭐ THE BRACKET GOES TO STDERR (ceo ruling, 2026-08-28): the correctness anchor and the perf instrument
+# ⭐ THE BRACKET GOES TO STDERR (ruling, 2026-08-28): the correctness anchor and the perf instrument
 # never share a channel, so stdout stays byte-identical and every committed .ref is untouched.
 # ⛔ THIS WAS A TEMP FILE UNTIL TONIGHT, and only because SCRIP silently discarded every write to an
 # OUTPUT association on a file descriptor. hq_C cured that (SCRIP 69178c73) -- and the defect was WIDER

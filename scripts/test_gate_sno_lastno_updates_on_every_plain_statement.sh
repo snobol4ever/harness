@@ -6,7 +6,7 @@
 # 0 (or whatever a CALL boundary's APPLY_fn save-restore, core.c:4195, last left there) no matter how many plain statements run.
 #
 # ⛔ GRADED UNDER --stlimit ON LON'S WORD (2026-10-02, in-chat to the cto, choosing how this gate grades: "Grade under
-# --stlimit"; ceo CEO-1243, Lon 2026-09-24: "It is invalid to trigger off source content, since an EVAL or CODE can do
+# --stlimit"; R-1243, Lon 2026-09-24: "It is invalid to trigger off source content, since an EVAL or CODE can do
 # the same without you knowing." and "The &STLIMIT feature with trace instrumentation should be controlled by a
 # command-line switch."): &STNO/&LASTNO/&LINE/&LASTLINE are the instrumentation switch's, a default build carries no
 # per-statement store and none is inferred from the source, so the witness is graded with --stlimit in both modes, and a
@@ -14,7 +14,7 @@
 # the comparison can say no. The default-build premise this header first carried (an inline bb_stmt_mark in every
 # default build) no longer holds: no statement marker is emitted without --stlimit.
 #
-# hq_snobol4, CEO-1295(ii) follow-on: found bisecting spitbol_testpgms/test1.spt under THE MONITOR (once
+# hq_snobol4, R-1295(ii) follow-on: found bisecting spitbol_testpgms/test1.spt under THE MONITOR (once
 # test_gate_monitor_run_accepts_spt_and_sbl_extensions.sh unblocked it) -- run plain (no --stlimit; the package's own
 # declared compile_args, so the suite's own grading is unaffected), a SETEXIT(.ERRORS) diagnostic handler reported
 # "ERROR AT 58" for all 24 of its errors, real statement numbers 72..260 in the oracle. Still a real default-build defect:

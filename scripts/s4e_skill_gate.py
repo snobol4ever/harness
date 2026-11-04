@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """s4e_skill_gate.py -- THE SKILL GATE (the cto, 2026-11-01; Lon in the cto's window: "Ensure the skills are described properly so that each seat
 will use them ... I haven't noticed any use the skills specific to coding within SCRIP"). MEASURED before it: in the day since the skills were
-installed (CEO-2071) the language skills were loaded 30 times across the seats and the coding skills (scrip-c-code, lowering, box-templates,
+installed (R-2071) the language skills were loaded 30 times across the seats and the coding skills (scrip-c-code, lowering, box-templates,
 rtx-asm-leaves, gates-and-witnesses, snocone-parser-patterns) 19 times, seven seats loading none; the digests named only the language skills
 and scrip-memory-model, and a description keyed on file names never fires at prompt time. THE GATE: a PreToolUse hook in every root
 (util_fleet_settings.sh writes it; matcher Edit|Write|MultiEdit|NotebookEdit|Bash). It reads Claude Code's hook JSON on stdin (tool_name,

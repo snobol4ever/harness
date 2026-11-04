@@ -3,7 +3,7 @@
 # variable builds p(X, Y) in an argument position and then passes D, H and K. The compound-building node carves 64 bytes, so its operand is wider than one cell;
 # x86_zop resolved a later sibling's slot as a word inside that wide carve (the first operand to hit won, exact slots were not preferred), and the callee read
 # the compound's own words where D, H and K were: r(g, p(1,2), p(1,2), 1, 2) for r(g, p(1,2), dd, hh, kk). It broke every program that builds a structure in
-# the arguments of call/N with a variable closure and passes more arguments after it (ProRosetta minesweeper-game: map_grid_row, CEO-1926). The probe is cut
+# the arguments of call/N with a variable closure and passes more arguments after it (ProRosetta minesweeper-game: map_grid_row, R-1926). The probe is cut
 # from swipl in THIS run (swipl_bin); SCRIP's m3 and m4 are compared byte for byte; the self-test feeds the comparison a corrupted reference.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

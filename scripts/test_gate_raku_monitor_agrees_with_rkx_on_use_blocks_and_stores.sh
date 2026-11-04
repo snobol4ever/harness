@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_monitor_agrees_with_rkx_on_use_blocks_and_stores.sh -- the Raku plug of the IPC sync-step monitor fires the
 # events the instrumented Rakudo (rkx) fires, on the forms the Roast walk tripped over (hq_raku 2026-09-25, Lon in-chat: "walk
-# the roast test suite using IPC sync-step monitor"; ceo CEO-1270). Each rule was MEASURED against rkx one form at a time:
+# the roast test suite using IPC sync-step monitor"; R-1270). Each rule was MEASURED against rkx one form at a time:
 #   use <Module>;            fires a statement event; only a version pragma (use v6, use v6.d) does not
 #   { ... } hoisted __blk_N  is a block, not a routine: no CALL, no RETURN; its tail statement keeps its line
 #   .= / ++ / -- / (a,b)=    fire no VALUE (rkx instruments assign_op only); = and op= do; internal temps never do

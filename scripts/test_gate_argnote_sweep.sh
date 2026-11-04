@@ -16,7 +16,7 @@ trap 'rm -rf "$TMP"' EXIT
 stray=0; jumpnote=0; emitfail=0; total=0; notes=0; failed=""
 JRE='^[[:space:]]+(jmp|je|jne|jg|jl|jge|jle|ja|jb|jae|jbe|js|jns|jz|jnz|jc|jnc|jo|jno|jp|jnp|jecxz|jrcxz)[[:space:]].*#'
 # ⚠️⭐ THE RATIONALE BELOW IS RETRACTED LAW, AND THIS PRUNE IS BOTH UNNECESSARY AND ALREADY INERT.  READ THIS FIRST.
-# ⭐ WHAT LON ACTUALLY RULED, 2026-08-27, in-chat to CEO, verbatim in substance: "Do not use the lon_cherryholmes folder as runtime tests.  Use them for parser tests
+# ⭐ WHAT LON ACTUALLY RULED, 2026-08-27, in-chat, verbatim in substance: "Do not use the lon_cherryholmes folder as runtime tests.  Use them for parser tests
 # all day long.  And in fact, all the corpus/programs need work and cannot be converted to tests currently."  Mechanically: PARSER TESTS unrestricted; RUNTIME AND
 # SCORED BOARDS no; the whole corpus/programs/ tree (EBNF, lon_cherryholmes, TZ) is not convertible to tests currently.  Reading, compiling, running BY HAND, citing
 # and measuring all stay free -- the restriction is solely about installing these programs AS TESTS.  Authority: RULES.md ABSOLUTE RULES, the lon_cherryholmes block.
@@ -24,7 +24,7 @@ JRE='^[[:space:]]+(jmp|je|jne|jg|jl|jge|jle|ja|jb|jae|jbe|js|jns|jz|jnz|jc|jnc|j
 # lon_cherryholmes UNRESTRICTED ("use them for parser tests all day long").  Nothing here needs to exclude that tree.
 # ⚠️ AND THE PRUNE IS ALREADY INERT: it reads `-path '*/programs/lon' -prune`, which stopped matching when the s272 re-grid renamed the directory to
 # lon_cherryholmes/, so the 99 files ALREADY flow through this sweep.  The status quo therefore already matches the ruling; removing the dead prune is a
-# BEHAVIOURAL edit and this commit is comment-only by grant (hq_C, ceo), so it is left for an attributed commit of its own.
+# BEHAVIOURAL edit and this commit is comment-only by grant (hq_C, the officer), so it is left for an attributed commit of its own.
 # ⛔⭐ THE TRAP WORTH CARRYING AWAY: the assertion below was written to RE-CHECK the prune -- but it greps for the SAME stale name the prune uses, so both died
 # together and the check reported 0 and read as proof of exclusion while proving nothing.  A GUARD AND ITS OWN CANARY MUST NOT SHARE A FAILURE MODE.
 # ⛔ HISTORICAL, SUPERSEDED, KEPT FOR THE RECORD ONLY: THE OFF-LIMITS TREE IS PRUNED BY CONSTRUCTION, NOT SKIPPED IN THE LOOP (RULES.md ABSOLUTE RULE 1; row `scorecard-drop-lon`, s189).  This gate roots at the CORPUS ROOT and

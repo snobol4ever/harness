@@ -4,12 +4,12 @@
 # region on its own coroutine stack, not the ZLS arena").
 #
 # ⛔ WHAT THIS GATE USED TO DO AND WHY IT HAD TO CHANGE (COO-80, 2026-09-19, row
-# instrument-the-nineteen-non-gc-blocking-arms, CEO-944/949). It ran each witness with SCRIP_ZETA_TELEM=1,
+# instrument-the-nineteen-non-gc-blocking-arms, R-944/949). It ran each witness with SCRIP_ZETA_TELEM=1,
 # captured 2>&1 into one string, stripped the lines beginning `[ZLS]`, compared the remainder to "1 2 3" and
 # RED if any `[ZLS]` line survived -- an activation served from the ZLS arena. TWO SEPARATE THINGS HAVE SINCE
 # GONE WRONG WITH THAT, and it read RED for every seat with the compiler behaving perfectly:
 #
-#   (1) ⛔ THE ZLS ARM IS A RETIRED CRITERION, MEASURING A DELETED INSTRUMENT. SCRIP 74010795d (CEO-448/454,
+#   (1) ⛔ THE ZLS ARM IS A RETIRED CRITERION, MEASURING A DELETED INSTRUMENT. SCRIP 74010795d (R-448/454,
 #       Lon: "get rid of all that ZLS and ZETA #define's") DELETED the arena itself -- zeta_alloc.c gone, the
 #       never-pushed zls2 arena and the collector's chain walk gone, every ZC_/ZLS_ name gone. NOTHING UNDER
 #       src/ HAS PRINTED A `[ZLS]` LINE SINCE, so that count has been structurally 0 and the arm could not
@@ -47,7 +47,7 @@ gate_require_fresh "$ROOT" src "$ROOT/scrip" "$ROOT/out/libscrip_rt.so"
 # ---- THE RETIREMENT IS HELD, NOT ASSUMED: the arena's absence is a SOURCE property now and it has exactly
 # one keeper. If that keeper disappears this gate must not carry on reporting on a property nobody checks.
 ZKEEP="$HERE/test_gate_no_zeta_frame_switches.sh"
-[ -f "$ZKEEP" ] || refuse "test_gate_no_zeta_frame_switches.sh is gone -- it is the sole holder of the ZLS-arena-is-deleted property (SCRIP 74010795d, CEO-448/454) that this gate's retired arm used to watch at runtime, and with it absent that property has NO keeper; restore it or re-home the census before grading this witness"
+[ -f "$ZKEEP" ] || refuse "test_gate_no_zeta_frame_switches.sh is gone -- it is the sole holder of the ZLS-arena-is-deleted property (SCRIP 74010795d, R-448/454) that this gate's retired arm used to watch at runtime, and with it absent that property has NO keeper; restore it or re-home the census before grading this witness"
 grep -q 'rt_zls\|ZLS' "$ZKEEP" || refuse "test_gate_no_zeta_frame_switches.sh no longer mentions the ZLS/rt_zls names -- the source census this gate defers to has changed subject, so the arena-absence property is unheld; re-home it before grading this witness"
 
 TD="$(mktemp -d)"; trap 'rm -rf "$TD"' EXIT

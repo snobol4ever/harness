@@ -1,5 +1,5 @@
 #!/bin/bash
-# ../harness/scripts/test_gate_raku_roast_note_stores_the_first_dying_test_and_the_last_stderr_line.sh -- hq_raku 2026-10-30, ceo CEO-2030.
+# ../harness/scripts/test_gate_raku_roast_note_stores_the_first_dying_test_and_the_last_stderr_line.sh -- hq_raku 2026-10-30, R-2030.
 #
 # ⛔⭐ WHAT IT PINS. A Roast FAIL, CRASH or HANG reading stores, in its note, the first test that did not pass, the rc and the last diagnostic line, so every red has a
 # class a rewrite step can claim. Before this the note was the program's FIRST stderr line, and for 148 programs that was the Test epilogue `# You planned N tests, but ran M`:

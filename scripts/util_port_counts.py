@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_port_counts.py -- EXACT per-box alpha/beta execution counts, and beta/alpha backtrack pressure.
 
-Lon (2026-08-28, via ceo, slice 4 of perf-symbol-attribution-tooling): "SCRIP can instrument alpha and
+Lon (2026-08-28, slice 4 of perf-symbol-attribution-tooling): "SCRIP can instrument alpha and
 beta to produce execution counts." The deliverable named is exact counts beside perf's samples --
 alpha-count = executions per box, beta/alpha = backtrack pressure per box, the alternation/defer
 hotspots ranked BY FACT rather than by sample.

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_sno_file_keyword_follows_spitbols_file_name_table.sh -- &FILE, &LINE, &LASTFILE and &LASTLINE around -INCLUDE and
-# -LINE answer as sbl -bf in both modes (row snobol4-budne-atn-include-and-line-read-pass-ceo-1812: Budne include and line FAIL in
+# -LINE answer as sbl -bf in both modes (row snobol4-budne-atn-include-and-line-read-pass-r-1812: Budne include and line FAIL in
 # both modes on 92893767d). SPITBOL maps statement numbers to file names in one table (r_sfn, sbl.min filnm/newfn/read4): a new
 # file name is entered at the next statement's number, and an include's end re-enters the outer name at cmpsn+1 -- right when the
 # include's last line is a statement (its end is read by the continuation peek, cmpsn still that statement's), one statement late
 # when it is a comment or a control card (read after cmpsn was bumped), so the first outer statement keeps the include's name. A
 # blank line is a null statement and takes that name itself; a comment before a -LINE latches nothing. The ref is CUT FROM THE
-# ORACLE at run time (sbl -bf in the witness directory), never typed; mode 4 is linked the way the harness grades (PIE, CEO-1536).
+# ORACLE at run time (sbl -bf in the witness directory), never typed; mode 4 is linked the way the harness grades (PIE, R-1536).
 # FAIL_ONCE (2026-10-17, the tree before the cure, e92e2acc8, built in a scratch worktree): RED in both modes -- 6 of 9 witnesses
 # diverge (cmt, card, inc_inc, inc_line, nested, cmt_line; blank, stmt and blank_after read green there, the old tree latching
 # nothing); blank_after guards the null-statement arm and read red on the cure's first draft, which carried the latch past a blank

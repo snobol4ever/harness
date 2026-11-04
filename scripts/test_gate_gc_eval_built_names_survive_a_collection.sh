@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_eval_built_names_survive_a_collection.sh -- THE NAMES RUNTIME-COMPILED CODE BAKES SURVIVE A COLLECTION, BOTH MEDIA, THE STRESS BAND.
-# ⛔ THE MEASURED DEFECT (ceo 2026-09-19, CEO-924; handed by the cto as user_function_eval_pos_replace_branch_1 reading error 41 under
+# ⛔ THE MEASURED DEFECT (2026-09-19, R-924; handed by the cto as user_function_eval_pos_replace_branch_1 reading error 41 under
 # SCRIP_GC_STRESS): eval_build_chain minted the chain's target variable name with rt_heap_strdup_c, the emitter baked that heap string's
 # address into the chain's code, and the first collection between the build and the run slid the string away -- NV_SET_fn was then
 # called with a garbage name, the chain never assigned EVAL$, and every EVAL whose window held a collection FAILED as a statement

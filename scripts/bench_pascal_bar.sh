@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_pascal_bar.sh -- THE PASCAL SPEED ROW'S CRITERION (ceo CEO-1281, 2026-09-26; the Pascal twin of bench_prolog_bar.sh): ONE kernel under
-# corpus/benchmarks/pascal, the bare multiple fpc time / SCRIP mode-4 time (RULES.md FACT RULE, CEO-1242) against a bar, read from angle 1 of the
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_pascal_bar.sh -- THE PASCAL SPEED ROW'S CRITERION (R-1281, 2026-09-26; the Pascal twin of bench_prolog_bar.sh): ONE kernel under
+# corpus/benchmarks/pascal, the bare multiple fpc time / SCRIP mode-4 time (RULES.md FACT RULE, R-1242) against a bar, read from angle 1 of the
 # Pascal three-angle harness (test_bench_pascal_timed.sh: the WORK slope in us per rep fitted over a x1/x4/x16 triple of reps, a COST, the reps=1
 # output held to the .ref first, the kernel run under its declared -d/-s sidecars) for the one kernel, in ONE run -- no board, no row written.
 #   kernel K BAR       K is the kernel's file stem (bubble, queens, whet, ...). A kernel whose arm reads SKIP, NA or NONLINEAR REFUSES: no

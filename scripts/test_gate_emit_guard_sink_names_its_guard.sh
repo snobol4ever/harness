@@ -8,8 +8,8 @@
 # Implement op=N" and sent the reader to write something already there. Cured in 7d54b9354 by splitting it
 # into drive_no_template (the default only) and drive_guard_refused(nd, __LINE__) (the other 58).
 #
-# ⛔⛔ WHY THIS GATE MANUFACTURES ITS TRIP INSTEAD OF FINDING ONE, which is the whole design and is a ceo
-# ruling (CEO-554), not a convenience. The row originally asked for a gate that reaches a guard sink with a
+# ⛔⛔ WHY THIS GATE MANUFACTURES ITS TRIP INSTEAD OF FINDING ONE, which is the whole design and is an officer
+# ruling (R-554), not a convenience. The row originally asked for a gate that reaches a guard sink with a
 # real program. MEASURED 2026-09-11: there is no such program. The witness the row itself cites,
 # `x :=: (y := 5)`, is cured and prints 51 matching iconx; a compile-only sweep of 215 Icon package programs
 # tripped the sink ZERO times; and the one live trip that did exist that day -- `create foo()` with foo
@@ -18,7 +18,7 @@
 # WITNESS, WHERE EVERY POSSIBLE WITNESS IS A DEFECT THE ORG IS ACTIVELY DELETING, GOES FROM GREEN TO
 # REFUSING ON THE DAY SOMEONE DOES GOOD WORK. Anchoring here was not an option; the trip has to be made.
 #
-# ⛔⭐ THE MANUFACTURED TRIP IS RETIRED UNDER CEO-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip).
+# ⛔⭐ THE MANUFACTURED TRIP IS RETIRED UNDER R-1680 (cto 2026-10-17; Lon 2026-10-11: no broken code planted so a test can trip).
 # The SCRIP_TEST_PLANT_GUARD_SINK seam left emit.cpp in row emit-the-three-emitter-plants-...'s landing. Its recorded
 # reading is the fail-once: with the seam set the hello aborted rc 134 printing "REFUSED AT A GUARD -- emit.cpp:<line>" and "NOT a missing
 # template", never "has NO TEMPLATE"; unset, 30 programs' .s were byte-identical to a build without the seam. No program reaches a guard sink
@@ -51,7 +51,7 @@ o2="$("$SCRIP" "$T/w.icn" </dev/null 2>&1)"; rc2=$?
 graded=$((graded+1))
 if [ "$rc2" = 0 ] && [ "$o2" = "hello" ]; then echo "  PASS witness runs normally"; else echo "  FAIL witness did not run normally (rc=$rc2)"; fail=$((fail+1)); fi
 [ "$graded" = 3 ] || refuse "expected 3 arms, graded $graded"
-echo "graded=$graded FAIL=$fail (static arms on the shipped library: no program reaches a guard sink, and the trip seam is retired under CEO-1680)"
+echo "graded=$graded FAIL=$fail (static arms on the shipped library: no program reaches a guard sink, and the trip seam is retired under R-1680)"
 if [ "$fail" -ne 0 ]; then echo "GATE FAIL(1) [$NAME]: $fail/$graded"; exit 1; fi
 echo "GATE PASS(0) [$NAME]: $graded/$graded"
 exit 0

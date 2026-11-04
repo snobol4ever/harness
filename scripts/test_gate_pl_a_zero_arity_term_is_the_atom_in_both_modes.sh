@@ -7,7 +7,7 @@
 # HISTORY. Pinned at R1.3 (SCRIP cf3ed3dd5, cto 2026-09-27) as "the reader yields the atom": the expected text was WRITTEN HERE, not cut from an
 # oracle, because the choice was SCRIP's own. SCRIP ec412dc27 (2026-10-17, cfo) reversed the choice on purpose -- `a()` is a zero-arity compound
 # distinct from the atom `a`, as SWI-7 reads it, core/test_term 50 -> 53 of 54 -- and left this pin behind, so the blocking arm read RED on a
-# tree that was right (the ceo found it red at c33d10f89 and at 037114866, CEO-1995). The probe below is cut from swipl in THIS run
+# tree that was right (found it red at c33d10f89 and at 037114866, R-1995). The probe below is cut from swipl in THIS run
 # (swipl_bin), never from SCRIP's output and never written by hand, so the gate can no longer disagree with the oracle it claims to follow.
 # ISO 13211-1 has no `foo()` (a syntax error, GNU Prolog refuses it too); SWI-Prolog 7+ is the oracle for the superset choice.
 set -u

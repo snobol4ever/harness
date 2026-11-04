@@ -3,7 +3,7 @@
 # the one already there, and `park` REFUSES a BLOCKED-ON:/PARKED-AWAITING: topic that names no real row.
 # Row s4e-park-adds-a-blocker-and-refuses-an-unresolvable-topic (hq_P s285, FINDING-2026-09-02-hq_P-pascal-
 # bubble-m3-segv-was-cured-by-the-zd-normalize-inrun-arm-and-the-row-stayed-parked-a-day-behind-a-rewritten-
-# blocker.md; ceo ACCEPTED 2026-09-02 ~17:40 CDT). MEASURED: seat11's correct park (BLOCKED-ON:calling-
+# blocker.md; the officer ACCEPTED 2026-09-02 ~17:40 CDT). MEASURED: seat11's correct park (BLOCKED-ON:calling-
 # convention-depth-tracked, the row that actually cured it) was overwritten TWICE by later re-parks recording
 # a different hypothesis; when the true blocker landed DONE nothing was left naming it, so the row could not
 # self-clear and eight seats released it unworked.

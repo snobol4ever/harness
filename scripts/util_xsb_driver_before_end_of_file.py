@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """util_xsb_driver_before_end_of_file.py -- THE DRIVER THE VENDORING APPENDS MUST COME BEFORE THE PROGRAM'S OWN `end_of_file.` (hq_icon 2026-10-28,
-row prolog-xsbtests-to-100-the-58-failing-programs-ceo-1926).
+row prolog-xsbtests-to-100-the-58-failing-programs-r-1926).
 
 THE DEFECT, MEASURED: 80 of the xsb_tests package's vendored programs end their own text with a clause `end_of_file.` -- XSB's consult stops reading at it,
-and so does SCRIP's. The vendoring (CEO-700) appended each program's driver (`:- initialization(xsb_sorted_output((test)))`) AFTER that line, so SCRIP never
+and so does SCRIP's. The vendoring (R-700) appended each program's driver (`:- initialization(xsb_sorted_output((test)))`) AFTER that line, so SCRIP never
 read it: the program ran no goal, printed nothing, and read FAIL against XSB's answer. Moving the driver to stand where `end_of_file.` stood runs the
 goal exactly as XSB's `[FILE]. test.` does (the file's text up to the clause, then the goal); 17 programs (nine incremental_tests, three nonmt_tests, two
 sub_tests and prolog_tests test_cleanup, uwoc, sub_tests test_answer_abstraction) read PASS in both modes from the move alone, with no other change.

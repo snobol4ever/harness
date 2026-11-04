@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail
-# test_gate_icn_version_keyword_is_the_oracles.sh -- &version IS THE ORACLE'S, IN BOTH MODES (hq_icon 2026-10-03, CEO-1474 "take the gftrace version cure").
-# The one Icon oracle is Arizona icont/iconx 9.5.25a (ceo 2026-09-08), so the keyword that names the implementation answers what iconx answers. Until
+# test_gate_icn_version_keyword_is_the_oracles.sh -- &version IS THE ORACLE'S, IN BOTH MODES (hq_icon 2026-10-03, R-1474 "take the gftrace version cure").
+# The one Icon oracle is Arizona icont/iconx 9.5.25a (2026-09-08), so the keyword that names the implementation answers what iconx answers. Until
 # 2026-10-03 src/runtime/keywords.c answered "Jcon Version 2.2", a leftover of the retired Jcon dialect, and every program that prints &version in its
 # output (IPL progs/gftrace writes it into the header of the file it generates) carried a line no oracle-cut ref could match. ⛔ SCOPE: the keyword's
 # text only. Measured on the oracle and not on SCRIP: the other keywords the old Jcon kwds.std disagrees about (&allocated, &regions, &storage, &features)

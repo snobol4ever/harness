@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # bench_snobol4_jvm_table.sh -- snobol4jvm against pristine SPITBOL and CSNOBOL4, one INSTRUCTION-COUNT table over the SnoBench kernels (hq_jvm, row
-# jvm-bench-every-snobench-kernel-is-counted-in-instructions-for-the-jar-spitbol-and-csnobol4-in-one-table; Lon 2026-10-31 17:4x CDT, CEO-2091 relayed by the
+# jvm-bench-every-snobench-kernel-is-counted-in-instructions-for-the-jar-spitbol-and-csnobol4-in-one-table; Lon 2026-10-31 17:4x CDT, R-2091 relayed by the
 # cto, verbatim: "Keep the HQ-JVM and HQ-DOTNET doing their benchmarks and speed improvements.").
-# THE BASIS is CEO-2035's: perf stat -e instructions:u, user-space instructions retired by the process and every thread it starts (the JIT and the collector
+# THE BASIS is R-2035's: perf stat -e instructions:u, user-space instructions retired by the process and every thread it starts (the JIT and the collector
 # included). OVERHEAD is an empty program (END alone); WORK is the kernel's total less OVERHEAD; each is the median of N runs. The jar and SPITBOL are counted by
 # util_instr_count.sh (their declared sizes, the output-equality refusal); CSNOBOL4 (/home/resources/csnobol4/snobol4) is counted here by the same perf and its
 # output must equal the kernel's .ref, else the cell is REFUSED, never counted. A multiple is the jar's WORK over the other engine's WORK (the larger the slower).
@@ -116,7 +116,7 @@ done
     echo "# JVM-BENCH-TABLE -- snobol4jvm against pristine SPITBOL and CSNOBOL4, in instructions"
     echo
     echo "Measured $(date '+%F %H:%M %Z') by bench_snobol4_jvm_table.sh -n $N; snobol4jvm $(git -C "$ROOT/snobol4jvm" rev-parse --short HEAD 2>/dev/null), load $(cut -d' ' -f1-3 /proc/loadavg); corpus $(git -C "$ROOT/corpus" rev-parse --short HEAD 2>/dev/null)."
-    echo "Basis: perf stat -e instructions:u (CEO-2035), median of $N runs; WORK is the kernel's total less an empty program's. SPITBOL is /home/resources/spitbol-bench-oracle/sbl, CSNOBOL4 is /home/resources/csnobol4/snobol4 (output must equal the kernel's .ref)."
+    echo "Basis: perf stat -e instructions:u (R-2035), median of $N runs; WORK is the kernel's total less an empty program's. SPITBOL is /home/resources/spitbol-bench-oracle/sbl, CSNOBOL4 is /home/resources/csnobol4/snobol4 (output must equal the kernel's .ref)."
     echo
     echo "| kernel | jar work (G) | sbl work (M) | csnobol4 work (M) | jar / sbl | jar / csnobol4 | jar overhead (G) | note |"
     echo "|---|---|---|---|---|---|---|---|"

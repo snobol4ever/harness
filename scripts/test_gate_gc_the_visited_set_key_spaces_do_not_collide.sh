@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_visited_set_key_spaces_do_not_collide.sh -- THE COLLECTOR'S VISITED SET HOLDS THREE KINDS OF KEY IN ONE
 # TABLE, AND A KEY OF ONE KIND MUST NEVER ANSWER A QUESTION OF ANOTHER (cto 2026-09-23, CTO-153; law RULES.md FACT RULE THE
-# COLLECTOR GUESSES NOTHING, CEO-812).
+# COLLECTOR GUESSES NOTHING, R-812).
 #
 # MEASURED 2026-09-23 on procedure_every_scan_replace_9 (the Icon rungs), the ONE entry the holder-(A) landing bda7691cc
 # turned non-green (CRASH at SCRIP_GC_STRESS=1/3/5 under in both modes, [ZGC-STALE] "THE FAULT HAPPENED

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_pl_consult_loads_a_file_of_clauses_directives_and_initialization_goals.sh -- consult/1 AT RUN TIME (ceo CEO-1522).
+# test_gate_pl_consult_loads_a_file_of_clauses_directives_and_initialization_goals.sh -- consult/1 AT RUN TIME (R-1522).
 # SCRIP had no consult/1 for a file named at run time (the driver inlines only a literal consult at compile time), so the Logtalk adapter's
 # '$lgt_load_prolog_code'(File, _, _) :- consult(File) raised existence_error(procedure, consult/1) after Logtalk compiled its first entity.
 # consult/1 lives in the prelude: it resolves F or F.pl, reads every term, runs a directive (multifile and discontiguous accepted), adds a clause,

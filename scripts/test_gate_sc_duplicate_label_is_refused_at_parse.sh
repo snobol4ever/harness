@@ -3,7 +3,7 @@
 # parse in BOTH media, as the SNOBOL4 parser refuses it and as sbl -bf refuses the transpile (ERROR 217, duplicate label).
 #
 # THE DEFECT (row snocone-a-label-defined-in-two-functions-is-error-217-in-the-transpile-where-scrip-compiles-it, the cto's
-# finding on the SETEXIT row 95d1f4136, ceo CEO-1499): Snocone labels are SNOBOL4 labels -- global to the program -- yet a
+# finding on the SETEXIT row 95d1f4136, R-1499): Snocone labels are SNOBOL4 labels -- global to the program -- yet a
 # label defined in two function bodies compiled and ran (printed fg, rc 0, SCRIP 8475d7a65..1e16ef2d9), and a SETEXIT trap
 # in the second function walked into the first function's chain. The parser kept no program-wide set of user labels;
 # sc_append_label_node (snocone_parse.y) now keeps one (a cv_t on ScParseState, grown on demand) and raises

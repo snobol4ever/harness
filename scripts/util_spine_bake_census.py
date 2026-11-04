@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_spine_bake_census.py <emitted.s> -- the closing reading of row spine-bake-every-call-and-deferred-pattern-address-no-by-name-lookup-at-run-time-ceo-1362.
+"""util_spine_bake_census.py <emitted.s> -- the closing reading of row spine-bake-every-call-and-deferred-pattern-address-no-by-name-lookup-at-run-time-r-1362.
 
 Reads the mode-4 asm of the Snocone parser chain and prints two readings:
   (1) THUNK LINES: lines naming a compiler thunk (EXPR$ PAT$ PATV$ SCV$, or a SNO$ hook string): want 0.

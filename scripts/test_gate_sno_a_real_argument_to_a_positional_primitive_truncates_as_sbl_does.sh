@@ -5,7 +5,7 @@
 # deferred *X road) took a real but not a real string. The same conversion decides the other two answers, which are NOT the "not an integer" error: a
 # negative result (after truncation: -0.5 is 0, -1.5 is -1) is the primitive's "negative or too large" error, and a real past the integer range is that
 # same error, while a non-numeric string stays the "not an integer" error.
-# Row snobol4-a-real-argument-to-tab-rtab-pos-rpos-or-len-is-truncated-to-an-integer-by-sbl-where-scrip-raises-181 (CEO-1489 probes, hq_snobol4).
+# Row snobol4-a-real-argument-to-tab-rtab-pos-rpos-or-len-is-truncated-to-an-integer-by-sbl-where-scrip-raises-181 (R-1489 probes, hq_snobol4).
 #
 # THE WITNESSES (each its own program over the subject 'v66', every answer cut from sbl -bf at run time and reduced to MATCH <capture> | FAIL | error N):
 #   w01 RTAB(2.5)  w02 TAB(1.9)  w03 POS(0.5)  w04 RPOS(2.7)  w05 LEN(1.5)        literal reals, one per primitive
@@ -13,7 +13,7 @@
 #   w08 LEN(-0.5) = 0   w09 LEN(-1.5) error 121   w10 POS(1E30) error 163           truncation toward zero, then the negative / too-large error
 #   w11 RTAB('abc') error 181                                                      a non-numeric string stays the not-an-integer error
 #   w12 LEN(*R) R=2.5   w13 TAB(*S) S='1.5'                                        the deferred roads
-# arm 0 (CEO-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
+# arm 0 (R-1680, a proper test, no seam): the comparator grades a corrupted copy of sbl's answer and must read it RED.
 set -u
 G=test_gate_sno_a_real_argument_to_a_positional_primitive_truncates_as_sbl_does
 HERE="$(cd "$(dirname "$0")" && pwd)"; SD="$HERE/../../SCRIP"; SCRIP="$SD/scrip"

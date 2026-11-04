@@ -11,7 +11,7 @@
 # tag-types are left alone.
 #
 # ⭐ THE OTHER HALF OF THE SAME SENTENCE -- "equal to the set of values", a variant-part that OMITS a tag value (PAT iso7185prt1856)
-# -- WAS HELD FOR A RULING AND IS NOW HERE: ceo CEO-1231 (2026-09-24), ISO wins. Measured before it landed, it refused exactly six
+# -- WAS HELD FOR A RULING AND IS NOW HERE: R-1231 (2026-09-24), ISO wins. Measured before it landed, it refused exactly six
 # acceptance programs, each now carrying empty arms for the values it omitted, behaviour unchanged: two rungs entries,
 # program_record_array_replace_2 (blck) and program_record_packed_replace_1 (scalar, pointer), their outputs byte-identical under
 # the oracle that cut their refs (fpc default mode for the first, whose enum write fpc -Miso cannot build; fpc -Miso for the second);

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_pl_print_1_honours_portray_and_costs_nothing_without_it.sh
-# Row prolog-logtalk-write-term-print-and-write-canonical-family (hq_R, CEO-650); design approved by the
+# Row prolog-logtalk-write-term-print-and-write-canonical-family (hq_R, R-650); design approved by the
 # cto 2026-09-13: the LOWERER MINTS A WRAPPER CLAUSE and the existing goal dispatch finds it -- no new goal
 # machinery, no runtime-to-Prolog callback.
 #
@@ -9,7 +9,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # print/1 stays the $write det leaf it is today (GNU Prolog is canonical for print/1's own quoting, Lon's
 # word, SCRIP af74eb56e -- print/1 was $writeq at this gate's mint and moved to $write afterward; this gate
 # is updated to the current, oracle-verified baseline rather than the compiler reverted to satisfy a stale
-# gate, per CEO-589).
+# gate, per R-589).
 #
 # ⛔⭐ ARM 1 IS THE POINT AND IT RUNS FIRST, BY ORDER, NOT BY CONVENTION. The cure's whole claim is that a
 # program WITHOUT portray/1 pays nothing -- no proc, no dispatch, no emitted byte. That claim is easy to
@@ -18,7 +18,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 #
 # ⛔⭐ ARM 1 WAS A PINNED WHOLE-EMISSION md5 AND THAT WAS A DEFECT OF MINE, NOW DELETED (hq_R 2026-09-13, on
 # hq_U's report). RULES.md says .s byte-identity must never be wired into a gate, and this is exactly why:
-# hq_U landed CEO-684 slice 1, which shrinks every activation frame by one 16-byte slot per call node, so
+# hq_U landed R-684 slice 1, which shrinks every activation frame by one 16-byte slot per call node, so
 # every offset in the file moved and the pin necessarily reddened -- on a CORRECT landing, for a reason
 # having nothing to do with portray. hq_U told me rather than bumping the constant, which is the right call:
 # re-pinning another seat's constant is how a pin stops meaning anything. A second such landing (the
@@ -52,7 +52,7 @@ PLEOF
 echo "=== ARM 1 (FIRST, and the one that can be faked by running it last): no portray/1 costs nothing ==="
 sed 's/print(/write(/g' "$D/noportray.pl" > "$D/nowrite.pl"
 gate_emit_md5() {   # $1 = .pl to compile, $2 = .s to write -- path- AND basename-normalised, so only CODE differs
-  # Every program is compiled from ONE path, $D/prog.pl (cfo 2026-10-17, row prolog-gnu-semantics-leak-...-ceo-1810): the emission
+  # Every program is compiled from ONE path, $D/prog.pl (cfo 2026-10-17, row prolog-gnu-semantics-leak-...-r-1810): the emission
   # carries the source path as .byte data in the atom table (a predicate's file/line properties), which the sed below cannot rewrite,
   # so two different file names made two equal programs differ by their name alone.
   cp "$1" "$D/prog.pl" || return 1
@@ -184,7 +184,7 @@ case "$got" in
     caught_print\(portray_fired\)*) PASS=$((PASS+1)) ;;
     *) printf '  RED  a throwing portray/1 did not propagate through print/1: got [%s]\n' "$got"; FAIL=$((FAIL+1)) ;;
 esac
-# ⭐ THE GAP THIS ARM USED TO PIN IS CLOSED (hq_prolog 2026-09-25, CEO-1270): format("~p", [T]) with a THROWING portray/1 swallowed the
+# ⭐ THE GAP THIS ARM USED TO PIN IS CLOSED (hq_prolog 2026-09-25, R-1270): format("~p", [T]) with a THROWING portray/1 swallowed the
 # ball -- plc_portray_hit recorded it in the writer's pthrown slot and plc_fb_term dropped it -- and printed the plain term where swipl raises.
 # plc_fb_term now returns the ball and ~p raises it as format's own, so print/1 and print/2 (which now write through ~p) and
 # write_term(T, [portray(true)]) all propagate a portray/1 throw, as swipl does (caught_format(portray_fired)).

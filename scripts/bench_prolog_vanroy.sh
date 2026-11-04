@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_prolog_vanroy.sh — PL-SPEED-0 MEASUREMENT RAIL (van Roy loop harness).
 # Per-iteration compute (ms) for GNU (gprolog consult) · SWI (swipl) · SCRIP m3
 # (--run) · SCRIP m4 (compiled binary), each bench looped via the PROVEN
@@ -9,13 +9,13 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # so fast engines get big N (precision) and slow ones small N (bounded wall);
 # per-iteration ms = (wall - engine startup floor) / N, which is N-independent at
 # ⛔ RETIRED PATH: that board also left its gprolog-calibrated wrapper in VANROY_DIR as a checked-in artifact. Both the
-# board and the directory are gone (CEO-567); see the note at the foot of this file. What remains here is --two-number (the
+# board and the directory are gone (R-567); see the note at the foot of this file. What remains here is --two-number (the
 # 21-kernel bucket board) and --measured-from (its rule check), neither of which writes anything.
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 PORTABLE-HOME: the sibling root (all repos + oracles are siblings under ONE root; /home/claude2-style seat roots work with zero env; S4E_HOME overrides)
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"
 SCRIP="${SCRIP:-$ROOT/scrip}"; RT="${RT_DIR:-$ROOT/out}"
 B="${BENCH_DIR:-$S4E/corpus/benchmarks/prolog/bench}"
-NTSV="${NTSV:-$S4E/corpus/benchmarks/prolog/fixed-iter-n.tsv}"   # the 21-kernel universe, since vanroy/ retired (CEO-567)
+NTSV="${NTSV:-$S4E/corpus/benchmarks/prolog/fixed-iter-n.tsv}"   # the 21-kernel universe, since vanroy/ retired (R-567)
 T="${TIMEOUT:-240}"; MIN_WALL_MS="${MIN_WALL_MS:-300}"; NMAX="${NMAX:-65536}"
 # ⭐ THE TWO AUTHORITIES, SOURCED NOT REIMPLEMENTED: lib_oracle_flags.sh owns WHICH BINARY IS THE RIVAL
 # (swipl_bin/gprolog_bin, loud rc=2 refusal when absent) and lib_perf_fmt.sh owns HOW A MULTIPLE IS PRINTED
@@ -32,7 +32,7 @@ TWO_NUMBER=0; RULECHECK=; for a in "$@"; do [ "$a" = --two-number ] && TWO_NUMBE
 # nobody runs.
 for i in $(seq $#); do [ "${!i}" = --measured-from ] && { j=$((i+1)); RULECHECK="${!j}"; }; done
 # THE SCRIP ROWS RUN AT EACH KERNEL'S DECLARED HEAP AND STACK: TN_DECL holds lib_declared_arena.sh's -d<kb>k -s<kb>k for the kernel
-#   in hand, set by tn_decl before every SCRIP run (RULES.md clause 8 (g), CEO-1353). Until 2026-10-01 this line was ulimit -s unlimited
+#   in hand, set by tn_decl before every SCRIP run (RULES.md clause 8 (g), R-1353). Until 2026-10-01 this line was ulimit -s unlimited
 #   and SCRIP got nothing, so tak (declared 65536 KB) overflowed at the 4 MB default. MEASURED 2026-10-01 at c1c899df3: all 23 kernels
 #   read the same on gprolog, swipl, m3 and m4 at the shell's soft 8 MB stack and at unlimited.
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED-TO-GRADE (rc=2): cannot source lib_declared_arena.sh -- the ONE reader of a program's declared stack and heap sidecars"; exit 2; }
@@ -135,7 +135,7 @@ two_number_board() {
   # ── THE UNIVERSE IS vanroy/ (21); THE SOURCES ARE bench/ (23). Measured 2026-09-01: 0 of 21 vanroy files carry a
   # wall_ms bracket and 10 of 23 bench files do -- vanroy/*.pl are mkwrap OUTPUTS the legacy path regenerates, not
   # kernels. So names come from vanroy, source text from bench. ⛔ Do not let the two directories blur.
-  # ⛔⭐ THE UNIVERSE MOVED FROM A DIRECTORY OF GENERATED FILES TO A COMMITTED TABLE (hq_P 2026-09-13, CEO-567): it was
+  # ⛔⭐ THE UNIVERSE MOVED FROM A DIRECTORY OF GENERATED FILES TO A COMMITTED TABLE (hq_P 2026-09-13, R-567): it was
   # `ls vanroy/*.pl`, i.e. the denominator was a property of a DERIVED ARTIFACT. Same 21 names, verified identical by diff at
   # the retirement; test_gate_bench_rivals_coverage.sh reads the same table, so the two boards cannot drift apart.
   local KERNELS NK; KERNELS=$(awk -F'\t' '!/^[[:space:]]*#/ && NF && $1 != "kernel" { print $1 }' "$NTSV" | sort)
@@ -238,10 +238,10 @@ if [ -n "$RULECHECK" ]; then
   exit 0
 fi
 if [ "$TWO_NUMBER" -eq 1 ]; then two_number_board; exit $?; fi
-# ⛔⭐ THE LEGACY PER-ITERATION PRODUCER PATH WAS DELETED HERE (hq_P 2026-09-13, CEO-567, 77 lines: wall_ms/med5/mkwrap/
+# ⛔⭐ THE LEGACY PER-ITERATION PRODUCER PATH WAS DELETED HERE (hq_P 2026-09-13, R-567, 77 lines: wall_ms/med5/mkwrap/
 # auto_range, the startup-floor block and the per-iteration board). IT WAS THE ROOT PRODUCER OF corpus/benchmarks/prolog/vanroy/
 # -- its board ended `mkwrap "$pl" "$NG" "$V/$s.pl"   # checked-in driver = gprolog-calibrated wrapper`, which is precisely the
-# artifact CEO-567 forbids: the iteration count frozen into the file under measurement, and calibrated to ONE engine at that, so
+# artifact R-567 forbids: the iteration count frozen into the file under measurement, and calibrated to ONE engine at that, so
 # every other engine was measured on gprolog's N. Retiring the directory without retiring its producer would have left the next
 # run of this script to recreate it. The three angles that replace it all GENERATE their wrapper: angle 1
 # test_bench_prolog_timed.sh (live doubling search), angle 2 bench_prolog_fixed_iter.sh (committed N from fixed-iter-n.tsv),
@@ -255,7 +255,7 @@ if [ "$TWO_NUMBER" -eq 1 ]; then two_number_board; exit $?; fi
 # rule-check that test_gate_vanroy_bucket_rule.sh grades against fixtures. Neither writes anything. THE NAME STAYS: "van Roy"
 # is the kernel set's PROVENANCE, never the retired directory's.
 [ -n "$RULECHECK" ] || [ "$TWO_NUMBER" -eq 1 ] || {
-    echo "⛔ REFUSED (rc=2): the legacy per-iteration board is RETIRED (CEO-567) -- it wrote the checked-in wrapped form."
+    echo "⛔ REFUSED (rc=2): the legacy per-iteration board is RETIRED (R-567) -- it wrote the checked-in wrapped form."
     echo "   Use one of the generating angles instead:"
     echo "     angle 1  bash ../harness/scripts/test_bench_prolog_timed.sh      (live doubling search for N)"
     echo "     angle 2  bash ../harness/scripts/bench_prolog_fixed_iter.sh      (committed N, corpus/benchmarks/prolog/fixed-iter-n.tsv)"

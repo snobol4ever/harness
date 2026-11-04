@@ -3,7 +3,7 @@
 # test_gate_icon_gc_share_named_and_rungs_clean_under_forced_collection.sh
 #
 # THE DONE-WHEN of row icon-gc-the-icon-share-of-the-unmapped-slot-population-censused-by-name-and-the-master-
-# clean-at-one-megabyte (hq_icon, 2026-09-20), this lane's FIRST row under MODE TENET: MODE line 2 / CEO-1011 --
+# clean-at-one-megabyte (hq_icon, 2026-09-20), this lane's FIRST row under MODE TENET: MODE line 2 / R-1011 --
 # "COMPLETENESS DOES NOT OPEN IN A LANGUAGE UNTIL THAT LANGUAGE'S GC SHARE IS MEASURED CLEAN BY ORACLE DIFF AT
 # THE TINY ARENA", the census NAMING and never counting, the rungs graded by ORACLE and never by rc.
 #
@@ -24,13 +24,13 @@
 # of what it names is BELOW-REGION, which its own header says is where spine words live BY CONSTRUCTION and was
 # never the discriminator (CFO-114/CFO-136, named to this lane by hq_snocone). This lane owes class 2, NO-MAP --
 # the per-language class the cto assigned to the HQs in writing -- so NO-MAP is what this arm binds on.
-# ⛔⭐ AND no_layout IS SPLIT PER CEO-1025, on hq_prolog's fork: (a) THE COMPILER REFUSED THE ENTRY -- nothing
+# ⛔⭐ AND no_layout IS SPLIT PER R-1025, on hq_prolog's fork: (a) THE COMPILER REFUSED THE ENTRY -- nothing
 # emitted, no leaf boundary, no store, a completeness debt wearing a GC census's clothes, declared with its rung
 # and NOT gating completeness; (b) THE COMPILER EMITTED THE GRAPH AND THE PLANNER GAVE IT NO LAYOUT -- boundaries
 # exist and store into unmapped slots, and THAT gates completeness. Icon's no_layout is 0, so BOTH buckets are
 # empty for this language and the split is vacuous here -- which is a measurement to re-take, not a fact to keep.
 #
-# ⛔⭐ ARM 3 GRADES A BAND AND SPANS BOTH ENDS OF IT, NEVER A POINT, AND NEVER MOVES UP INSTEAD. CEO-1024: the
+# ⛔⭐ ARM 3 GRADES A BAND AND SPANS BOTH ENDS OF IT, NEVER A POINT, AND NEVER MOVES UP INSTEAD. R-1024: the
 # raku rungs at stress 16 lost 65 gradings over 36 distinct programs that a 1-3-5 band called green. But
 # hq_raku's own follow-up is the half people will skip -- their map family is wrong at stress 1 THROUGH 6 and
 # INVISIBLE at 8 and above, while their grammar family is wrong at every point above 0, so a lane that moves its
@@ -79,7 +79,7 @@ while IFS= read -r org; do
 done < <(awk -F, 'NR>1{print $3}' "$M/ALL.csv")
 [ "$rows" -gt 0 ] || refuse "ALL.csv carries no entry rows -- a census over an empty population reads zero by never looking"
 [ "$got" -eq "$rows" ] || refuse "materialized $got of $rows entries out of the rungs -- a population that did not come out whole is not the population the board grades"
-# ⛔ DECLARED READER BLIND SPOT, inside the printed denominator and never subtracted from it (CEO-749): the
+# ⛔ DECLARED READER BLIND SPOT, inside the printed denominator and never subtracted from it (R-749): the
 # extractor has no --out-argv, so the 6 argv-bearing entries of ALL.argv run WITHOUT their arguments in ARM 1.
 # That can only make an entry do LESS work, so it can only UNDERCOUNT collectors -- it biases ARM 1 toward its
 # own refusal and never toward a green. ARM 3 grades through the harness, which reads the argv sidecar itself.
@@ -111,17 +111,17 @@ echo "ARM 2 undecidable=${und:-unread} -- ⛔ for icon this is the load-bearing 
 zls="$(timeout -k 5 900 python3 "$HERE/util_zls_frame_map_census.py" --lang icon 2>/dev/null | grep -m1 '^ZLS-MAP lang=icon')" \
     || refuse "the frame-map census could not measure icon -- no_layout cannot be split when it cannot be read"
 echo "ARM 2 $zls"
-# ⛔ measured 2026-09-21: the census now also prints no_layout_emitted_no_layout=N (CEO-1025's split), whose
+# ⛔ measured 2026-09-21: the census now also prints no_layout_emitted_no_layout=N (R-1025's split), whose
 # tail is itself the literal substring "no_layout=N" -- an unanchored grep -o took BOTH hits, handing this
 # variable a two-line value and making the -eq test below die with "integer expression expected". Anchor on
 # a preceding space or start-of-line so only the standalone field matches.
 nl="$(printf '%s\n' "$zls" | grep -oE '(^| )no_layout=[0-9]+' | tr -d ' ' | cut -d= -f2)"
 [ -n "$nl" ] || refuse "the frame-map census verdict carries no no_layout field"
 if [ "$nl" -eq 0 ]; then
-    echo "ARM 2 CEO-1025 SPLIT: no_layout=0, so (a) never-emitted and (b) emitted-without-a-layout are BOTH EMPTY for icon -- the split is vacuous in this language"
+    echo "ARM 2 R-1025 SPLIT: no_layout=0, so (a) never-emitted and (b) emitted-without-a-layout are BOTH EMPTY for icon -- the split is vacuous in this language"
 else
-    echo "ARM 2 CEO-1025 SPLIT OWED: no_layout=$nl must be split into (a) compiler REFUSED the entry (rc=2, nothing emitted, no boundary, no store -- a completeness debt, declared with its rung, does NOT gate completeness) and (b) EMITTED with no layout (boundaries store into unmapped slots -- gates completeness). Derive it from the rc the census prints, never by hand."
-    fail "no_layout=$nl for icon and this gate cannot tell bucket (a) from bucket (b) -- CEO-1025 requires the split before any of it is treated as a GC row"
+    echo "ARM 2 R-1025 SPLIT OWED: no_layout=$nl must be split into (a) compiler REFUSED the entry (rc=2, nothing emitted, no boundary, no store -- a completeness debt, declared with its rung, does NOT gate completeness) and (b) EMITTED with no layout (boundaries store into unmapped slots -- gates completeness). Derive it from the rc the census prints, never by hand."
+    fail "no_layout=$nl for icon and this gate cannot tell bucket (a) from bucket (b) -- R-1025 requires the split before any of it is treated as a GC row"
 fi
 [ "$nomap" -eq 0 ] || fail "NO-MAP=$nomap -- this lane owns class 2 (a graph the compiler refuses a frame layout for has no map at all), and $nomap site(s) are in it: $(grep -m5 'MEMBER NO-MAP' "$W/census.txt")"
 # --- ARM 1 + ARM 3 OVER THE BAND ---
@@ -147,7 +147,7 @@ for STRESS in $BAND; do
         v=$(printf '%s\n' "$board" | grep -o "$k=[0-9]*" | cut -d= -f2)
         [ "${v:-0}" -eq 0 ] || { echo "  stress=$STRESS $k=$v"; pbad=$((pbad + v)); }
     done
-    # ⛔ THE NAME SET, NEVER THE COUNT (CEO-1024): a same-count comparison between two band points hides a
+    # ⛔ THE NAME SET, NEVER THE COUNT (R-1024): a same-count comparison between two band points hides a
     # divergence that MOVED, which is the one comparison this class is built to walk through.
     names="$(printf '%s\n' "$out" | grep -E '^ +(FAIL|CRASH|HANG|UNPROVEN) ' | awk '{print $2"/"$3}' | sort -u | tr '\n' ' ')"
     echo "ARM 3 stress=$STRESS NAME-SET: ${names:-<none>}"

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_pl_rungs_board_floor.sh -- FLOOR gate for the Prolog rungs board (ceo CEO-152: "the rungs
+# test_gate_pl_rungs_board_floor.sh -- FLOOR gate for the Prolog rungs board (R-152: "the rungs
 # board >= its pre-cure count in both modes"). Runs the rungs in 16 shards and sums them.
 #
 # ⛔ A FLOOR, NOT A TARGET: it fails when the board drops BELOW the pin, never for being above it. Raise the
 # pin in the landing commit that earns it, and say what moved it (never a PINNED POPULATION -- see A CRITERION NEVER PINS
 # A POPULATION COUNT in .github/GOAL-TEST-SUITE-CONSISTENCY.md, the anti-pattern that retired the optbypass watermark).
-# ⛔ PER MODE, NEVER SUMMED (the ceo's standing rule for this board): m3 and m4 are graded independently and
+# ⛔ PER MODE, NEVER SUMMED (the officer's standing rule for this board): m3 and m4 are graded independently and
 # a rise in one may not pay for a fall in the other.
 # ⭐ SHARDED BECAUSE THE RUNGS EXCEEDS THE SINGLE-CALL CAP (row corpus-runner-master-suite-exceeds-single-call-cap,
 # hq_B 2026-09-02); --shard k/N partitions the suite exactly once so the shard boards SUM to the monolithic board.
@@ -28,7 +28,7 @@ refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$P/ALL.pl" ] && [ -f "$P/ALL.ref" ] || refuse "rungs suite not found at $P"
 W="$(mktemp -d)" || refuse "mktemp failed"; trap 'rm -rf "$W"' EXIT
 for k in $(seq 1 "$SHARDS"); do
-  # Every entry is graded in both modes: there is no modes column (Lon 2026-09-23, CEO-1218/1230).
+  # Every entry is graded in both modes: there is no modes column (Lon 2026-09-23, R-1218/1230).
   # ⛔⭐ KEEP THE WHOLE HARNESS OUTPUT, NOT ONLY THE LINES THIS GATE WANTS (hq_B routed this to me 2026-09-13,
   # and it is my file). Piping straight into `grep SUITE_BOARD` discards every other line the harness emitted --
   # including the ONE RUNNER refusal, which is the single most likely reason a shard prints no board line at

@@ -5,9 +5,9 @@
 # died with SIGSEGV in rt_gc_visit_descr (gc_heap.c:458, the DT_A element loop) reading a->data at 0x70001000 whose
 # bytes had been reused as a string. Cause: the DT_A and DT_DATA arms of rt_gc_visit_descr called gc_slot_reg on
 # &a->data, &u->fields and the aggregate handle but NEVER gc_mark_blk on the blocks themselves, so the vector a live
-# array points at was swept while the array stayed reachable. Before CEO-661 rung 1 the four HB_WS/HB_WSS/HB_DINST/
+# array points at was swept while the array stayed reachable. Before R-661 rung 1 the four HB_WS/HB_WSS/HB_DINST/
 # HB_ARR types were force-marked live at every regeneration, which hid the missing mark completely; rung 1 removed
-# the force-mark and exposed it. This is the same class the ceo cured for the name-value table in rung 1 -- a root
+# the force-mark and exposed it. This is the same class the officer cured for the name-value table in rung 1 -- a root
 # walk that VISITS without MARKING -- and every one of these blocks must be marked before it can be made to slide.
 # ARMS: (1) SNOBOL4 ARRAY live across heavy collection, both modes, byte-identical to sbl -bf; (2) SNOBOL4 DATA
 # record the same, both modes, byte-identical to sbl -bf; (3) an Icon record the same, mode 3, byte-identical to

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_findings_live_in_the_findings_directory.sh -- EVERY TRACKED FINDING LIVES IN .github/findings/ AND NOWHERE ELSE
-# (Lon 2026-09-18, in-chat, relayed by the cto: "every FINDING file lives in .github/findings/, NEVER in the .github root"; ceo CEO-859/862/866,
-# RULES.md line 31). RENAMED FROM test_gate_no_finding_files.sh, WHICH ENFORCED THE OPPOSITE. That gate implemented CEO-760/796's prohibition;
+# (Lon 2026-09-18, in-chat, relayed by the cto: "every FINDING file lives in .github/findings/, NEVER in the .github root"; R-859/862/866,
+# RULES.md line 31). RENAMED FROM test_gate_no_finding_files.sh, WHICH ENFORCED THE OPPOSITE. That gate implemented R-760/796's prohibition;
 # Lon retired the prohibition on 2026-09-18 and the gate went RED IN make preflight FOR EVERY SEAT the moment the first permitted FINDING landed
 # (the cto's, .github e3b47af1) -- a fleet-wide landing block created by a law change, which is the cost of a gate that encodes a rule's POLARITY
 # rather than its INVARIANT. It is repurposed rather than deleted for the same reason the digest gate's arm was flipped rather than dropped: the
@@ -11,7 +11,7 @@
 # FAIL_ONCE=1 plants a FINDING at the .github ROOT in a scratch clone and grades that clone, so the criterion is proven to red.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"
-# ⛔ SCRIP IS THIS GATE'S OWN REPO, .github S4E_HOME's ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, CEO-1573): ROOT/SCRIP named
+# ⛔ SCRIP IS THIS GATE'S OWN REPO, .github S4E_HOME's ELSE THE SIBLING OF THIS CHECKOUT (coo 2026-10-08, R-1573): ROOT/SCRIP named
 # the directory BESIDE a worktree, so a worktree of any other name refused ("not a git checkout").
 GH="${S4E_HOME:-$ROOT}/.github"; SC="$(cd "$HERE/../../SCRIP" && pwd)"
 if [ -n "${FAIL_ONCE:-}" ]; then

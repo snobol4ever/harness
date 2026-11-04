@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_stream_property_of_a_bound_stream_or_a_named_alias_is_deterministic.sh -- stream_property/2 LEAVES NO CHOICE POINT WHEN ITS ANSWER IS UNIQUE, AS swipl
-# (cfo 2026-10-15, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-in-both-modes-ceo-1664; the cause measured by the cto, 2026-10-15).
+# (cfo 2026-10-15, row prolog-swi-library-test-pio-every-case-agrees-with-swipl-in-both-modes-r-1664; the cause measured by the cto, 2026-10-15).
 #
 # lower_prolog.c lowered stream_property/2 to the gen2 over $pl_sp_count and $pl_sp_nth, which walks every stream x property slot, so even
 # stream_property(S, position(P)) with S bound left a choice point after its one answer. swipl is deterministic whenever the stream and the property are

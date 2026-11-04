@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_every_safe_point_has_a_compile_time_frame_shape.sh -- EVERY ACTIVATION FRAME NAMES ITS COMPILE-TIME MAP IN BOTH MEDIA, AND NO FRAME CARRIES A MARKER
 # (cto 2026-09-17, CTO-65; re-cut at ARCH-GC section 13 STEP B by hq_collector 2026-10-11: the map cell the frames used to store is gone, the chain finds a frame by its
-# return PC through the per-site table; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, CEO-812).
+# return PC through the per-site table; law RULES.md FACT RULE THE COLLECTOR GUESSES NOTHING, R-812).
 #
 # WHAT IT HOLDS. (1) TAGS: descr.h and descr_tags.inc carry DT_RAW, carry NO frame-marker tag, and the tag-layout verifier agrees.
 # (2) STATIC, MODE 4: for every benchmark program that compiles, the .s carries one .Lgcmap_<graph> map per frame graph, one prologue anchor note (`# GCANCHOR <map label> <the

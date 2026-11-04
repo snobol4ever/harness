@@ -2,7 +2,7 @@
 export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (--stlimit): Icon &trace rides the call/return hooks that are off by default since SCRIP 2026-09-24 (Lon: monitor hooks behind the switch)
 # test_gate_icn_call_site_parity_at_proc_call_open.sh -- SysV call-site parity at rt_proc_call_open{,_det}.
 #
-# WHY THIS EXISTS (CEO-458): the Icon generator call site entered rt_proc_call_open_det at rsp 8-mod-16,
+# WHY THIS EXISTS (R-458): the Icon generator call site entered rt_proc_call_open_det at rsp 8-mod-16,
 # a real ABI violation, because bb_call_proc_staged's N-2 pad kept compensating for a REGION HAND-OFF push
 # that N-3 had moved to the OTHER SIDE of the call. A compensating pad outlived the push it compensated for.
 # It was latent for weeks and only surfaced when a callee finally reached an aligned SSE store -- a movaps
@@ -45,7 +45,7 @@ procedure g();
     suspend 1;
 end
 EOF
-# ⛔⭐ THE FOURTH SYNTHETIC WITNESS, AND IT IS THE ONE THAT MAKES THIS GATE HONEST (hq_U, CEO-507).
+# ⛔⭐ THE FOURTH SYNTHETIC WITNESS, AND IT IS THE ONE THAT MAKES THIS GATE HONEST (hq_U, R-507).
 # The three witnesses below call a generator BY NAME, so every one of them goes through bb_call_proc_staged.
 # The surviving face of the alignment class lives in the OTHER door -- bb_call_value -- and its n2_align pad
 # needs `flat_gen`, which is a property of the CALL SITE's enclosing procedure, not of the callee.  So a
@@ -92,14 +92,14 @@ for w in gen_arg gen_noarg nongen_arg gen_via_value; do
     else echo "  FAIL $w @0x$a: rsp%16=$rem -- SysV requires 0 at a call; a pad no longer matches its push"; FAIL=$((FAIL+1)); fi
   done
 done
-# ⛔⭐ ARM B, THE CALLEE SIDE (hq_U, CEO-483). ARM A ABOVE IS ON THE WRONG SIDE OF THE PUSH BLOCK TO SEE THIS
+# ⛔⭐ ARM B, THE CALLEE SIDE (hq_U, R-483). ARM A ABOVE IS ON THE WRONG SIDE OF THE PUSH BLOCK TO SEE THIS
 # CLASS, and that is measured, not argued: dropping the N-2 pad SIGSEGVs patchu in both modes while arm A
 # stays 2/2 GREEN, because rt_proc_call_open is a CALLER-side call ABOVE the push block and the pad moves
 # parity BELOW it, at the jmp into the callee. Arm A is correct and is not weakened; it simply cannot reach
 # past the jmp. So this arm measures the other side.
 #
 # ⛔ AND IT DOES NOT MEASURE rsp AT THE CALLEE'S FIRST INSTRUCTION, which is the obvious thing to write and is
-# WRONG: since CEO-483 the generator entry frame is FIVE words and entry rsp is 8-mod-16 ON PURPOSE -- the
+# WRONG: since R-483 the generator entry frame is FIVE words and entry rsp is 8-mod-16 ON PURPOSE -- the
 # odd word moved across the call into the callee's own carve, which absorbs it. A gate pinned to the entry
 # instruction would go red on the very landing that cured the bug. What SysV actually requires, and what the
 # crash actually violates, is 0-mod-16 AT A CALL: so this arm breaks on the FIRST call the callee BODY makes
@@ -119,7 +119,7 @@ for w in gen_arg gen_noarg nongen_arg gen_via_value; do
     else echo "  FAIL $w/$fn @0x$body: callee-body rsp%16=$rem at its first call -- the carve is not absorbing the parity its call site handed it; every helper this body reaches is misaligned and the first aligned SSE store in one of them dies"; FAIL=$((FAIL+1)); fi
   done
 done
-# ⛔⭐ ARM C, THE FOUR NAMED WITNESSES (hq_U, CEO-507). Arms A and B measure the INVARIANT on ten-line
+# ⛔⭐ ARM C, THE FOUR NAMED WITNESSES (hq_U, R-507). Arms A and B measure the INVARIANT on ten-line
 # programs; this arm measures that the four programs the class was found through still RUN.  It grades
 # ONE thing and says so: a parity fault presents as a SIGNAL death, so a rc >= 128 is the verdict here and
 # nothing else is.  ⛔ IT DELIBERATELY DOES NOT DIFF ANY OF THEM AGAINST ITS .std -- geddump's output is
@@ -172,13 +172,13 @@ for w in diffu diffn; do
   [ "$arc" -eq 0 ] || refuse "$w: ipl_argv_read returned $arc -- without the declared argv this witness runs a different program, so this arm CANNOT MEASURE"
   run_named "$w" "$IPL" "$w.icn" "$TD/empty.in" "${WA[@]}"
 done
-# ⛔⭐ ARM D, THE PAD CENSUS (hq_U, CEO-507). Not every `sub rsp, 8` is a pad -- several are ABI WORDS with
+# ⛔⭐ ARM D, THE PAD CENSUS (hq_U, R-507). Not every `sub rsp, 8` is a pad -- several are ABI WORDS with
 # real readers, and their own notes say which ([rsp+16]=REGION, [rsp+24]=L7, the N-2 word).  So this arm
 # does NOT count `sub rsp, 8`; it counts the sites that DECLARE THEMSELVES ALIGNMENT COMPENSATION, which is
 # the population the class is made of: a self-named PL-CALL-ALIGN pad in the GENERATOR regime, and any
 # force_align_arg_pointer wrapper outside the declared PL port-trace reporting set.  ⭐ THE DISCRIMINATOR IS
 # THE SELF-DECLARATION ON PURPOSE: a pad that has to announce itself as compensating for a push is a pad
-# that will outlive the push, which is literally how this class was born (CEO-458).  Every exemption below
+# that will outlive the push, which is literally how this class was born (R-458).  Every exemption below
 # is NAMED with why it is not a pad -- an allowlist nobody signed is not an allowlist.
 pad_hits=0
 for f in $(find "$ROOT/src/templates" "$ROOT/src/runtime" -type f \( -name '*.cpp' -o -name '*.c' -o -name '*.h' -o -name '*.s' \) 2>/dev/null | sort); do
@@ -188,7 +188,7 @@ for f in $(find "$ROOT/src/templates" "$ROOT/src/runtime" -type f \( -name '*.cp
       # class covers; they are diagnostics, not the ABI. Retiring them is a separate row, not this census.
   esac
   n="$(/usr/bin/grep -c 'force_align_arg_pointer' "$f" 2>/dev/null || true)"
-  [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && { echo "  FAIL $f: $n force_align_arg_pointer wrapper(s) -- a per-site pad; the parity is fixed at the source, never hidden by a wrapper (CEO-501)"; pad_hits=$((pad_hits+n)); }
+  [ -n "$n" ] && [ "$n" -gt 0 ] 2>/dev/null && { echo "  FAIL $f: $n force_align_arg_pointer wrapper(s) -- a per-site pad; the parity is fixed at the source, never hidden by a wrapper (R-501)"; pad_hits=$((pad_hits+n)); }
 done
 GRADED=$((GRADED+1))
 if [ "$pad_hits" -eq 0 ]; then echo "  PASS pad census: 0 undeclared force_align wrappers under src/templates and src/runtime"

@@ -13,7 +13,7 @@ SCRIP="${HERE}/../../SCRIP/scrip"
 OUTDIR="${HERE}/../../SCRIP/out"
 TESTD="$S4E/corpus/tests/scrip_test"   # re-pointed: SCRIP/test moved to corpus (repo-boundary ruling)
 P3=0; F3=0; P4=0; F4=0
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timeout is a TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timeout is a TIMEOUT; under overload the smoke refuses
 EXPECTED=$'TRI: mainline alive\nTRI: DOUBLE(21) = 42'
 
 run_m3() {

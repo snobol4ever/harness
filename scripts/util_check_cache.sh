@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_check_cache.sh -- THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT section 3.3; row shared-dev-step-7-the-check-cache-a-deterministic-gate-runs-
-# once-per-tree-for-done-and-the-sweep-ceo-2041; the cto's design, built by the cqo 2026-10-31). A deterministic check is a pure function of the
+# once-per-tree-for-done-and-the-sweep-r-2041; the cto's design, built by the cqo 2026-10-31). A deterministic check is a pure function of the
 # four trees and the arguments, so it runs ONCE per tree for the whole fleet and every later run on the same trees replays its verdict.
 #
 #   util_check_cache.sh [--fresh] NAME -- COMMAND [ARG...]

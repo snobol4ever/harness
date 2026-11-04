@@ -6,7 +6,7 @@ usage: util_inf_snobol4_differential.py --engine dotnet|jvm|scrip BATCH [BATCH .
 
 Lon 2026-10-22, in-chat to hq_dotnet, verbatim: "Go resurrect the random SNOBOL4 source generator we used a few weeks ago to test SCRIP. Find
 snobol4dotnet bugs using that technique. Keep changing things around a bit to get variance." · "That random source generator was written in
-Icon." · "For every class of program that fails, add a program to SnoRungs test suite to capture future regressions." The ceo (CEO-1915): any
+Icon." · "For every class of program that fails, add a program to SnoRungs test suite to capture future regressions." The (R-1915): any
 seat reruns batch N, a fixed seed per batch, the batch's verdict line.
 
 THE GENERATOR IS ONE SOURCE: the Icon section of corpus/demos/scriptix/infinite_snobol4/infinite_snobol4.md (the SCRIPtix program; its
@@ -27,7 +27,7 @@ then a total line. rc 0 when no batch differs, 1 when one does, 2 when it cannot
 A shape that hangs both engines is the language, not a defect: it goes into inf_exclude.tsv beside the generator, and into
 inf_exclusions() in the Icon section, with its reason and measurement.
 
-THE SCOPE LADDER (the cto, 2026-10-28, CEO-1999; ARCH-RANDOM-SNOBOL4-GENERATOR.md DESIGN-PLAN: random-codegen-scope): --scope N passes the
+THE SCOPE LADDER (the cto, 2026-10-28, R-1999; ARCH-RANDOM-SNOBOL4-GENERATOR.md DESIGN-PLAN: random-codegen-scope): --scope N passes the
 generator word scope=N, under which the generator emits the construct families of DESIGN-PLAN steps 1..N and no later one, so a batch is
 identified by (scope, seed0, N) for ever; --scope 0 (the default) passes no word and is today's grammar, so every batch hq_dotnet has run
 under seed0 20261022 keeps its text. --pin key=value overrides one of the options the batch would draw (walk, kind, preset, limit, elimit,

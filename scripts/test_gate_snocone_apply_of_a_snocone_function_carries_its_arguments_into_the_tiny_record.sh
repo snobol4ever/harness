@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_snocone_apply_of_a_snocone_function_carries_its_arguments_into_the_tiny_record.sh
 #
-# THE DEFECT (the ceo's rank-1 row snocone-apply-of-a-snocone-defined-function-crashes-scrip, CEO-1446; it killed the SCRIPtix
+# THE DEFECT (the officer's rank-1 row snocone-apply-of-a-snocone-defined-function-crashes-scrip, R-1446; it killed the SCRIPtix
 # demo infinite_snobol4.md at its own sample's line 262): APPLY('f', 2), APPLY(x, 3), EVAL("APPLY('f', 4)") and APPLY of an
 # NRETURN Snocone function died with a general-protection fault in the slab (mode 3) or printed nothing (mode 4), where the
 # transpile runs under sbl -bf and under SCRIP alike.

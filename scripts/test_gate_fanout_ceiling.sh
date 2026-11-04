@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test_gate_fanout_ceiling.sh -- THE FAN-OUT CEILING IS HELD BY ITS INSTRUMENT (ceo CEO-1333, 2026-09-27 17:2x CDT; the cfo's row
+# test_gate_fanout_ceiling.sh -- THE FAN-OUT CEILING IS HELD BY ITS INSTRUMENT (R-1333, 2026-09-27 17:2x CDT; the cfo's row
 # instruments-lib-fanout-a-seat-reads-the-load-before-fanning-out-...). MEASURED CAUSE: load 52.6 on 16 cores at 17:05 with three seats
 # fanning out at once (14 + 13 children and a callgrind) and every other seat's proofs five times slower. THE RULE: a seat caps its
 # concurrent children at max(2, min(4, cores - demand)) and runs a census serially in the batch class. WHAT THIS GATE HOLDS: (1) the helper
-# exists and answers 2 at a planted load of 52 and min(4, cores - 1) at a planted load of 1, and 3 where cores - demand is 3 (FANOUT_TEST_LOAD plants the demand, CEO-1394); (2) the
+# exists and answers 2 at a planted load of 52 and min(4, cores - 1) at a planted load of 1, and 3 where cores - demand is 3 (FANOUT_TEST_LOAD plants the demand, R-1394); (2) the
 # python mirror agrees with the shell helper at every planted load; (3) retired 2026-10-31 with the batch class (shared-dev step 4: no nice anywhere, the batch gate holds it); (4) the live reading is a
 # number in 2..4; (5) FAIL-ONCE: a planted helper without the min(4, ...) clamp reads cores - 1 at load 1 and this gate's own arm reds
 # on it; (6) the fanning runners it was landed for still source the helper (a runner that stops reading the load is the defect this

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the scorecard's one verb invoked as an instrument fixture over a scratch corpus, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the scorecard's one verb invoked as an instrument fixture over a scratch corpus, not a board (R-523)"
 # test_gate_gimpel_runner_masks_the_engine_clock_lines.sh -- THE GIMPEL RUNNER READS THE PACKAGE'S ALL.mask BEFORE IT COMPARES (the coo
-# 2026-10-02, row instruments-the-gimpel-runner-reads-all-mask-so-timer-and-timegc-grade-their-pinned-lines, ceo CEO-1412). MEASURED CAUSE:
-# scorecard_snobol4.sh grade() was a plain cmp, so the CEO-409 rows corpus f2ae706da declared for gimpel's timegc_driver (the engine clock
+# 2026-10-02, row instruments-the-gimpel-runner-reads-all-mask-so-timer-and-timegc-grade-their-pinned-lines, R-1412). MEASURED CAUSE:
+# scorecard_snobol4.sh grade() was a plain cmp, so the R-409 rows corpus f2ae706da declared for gimpel's timegc_driver (the engine clock
 # and the storage units COLLECT() frees) were never applied and timegc read DIFF DIFF on every pass; with the mask applied it reads PASS
-# PASS (the ceo by hand, then this seat through the runner). WHAT THIS GATE HOLDS, over a scratch corpus outside corpus/ (CEO-547) holding
+# PASS (by hand, then this seat through the runner). WHAT THIS GATE HOLDS, over a scratch corpus outside corpus/ (R-547) holding
 # timegc_driver, its two includes, its ref, its ALL.csv row and its two ALL.mask rows, graded through the runner's own `one` verb:
 # (1) with the mask, PASS in both modes, and the note column counts the masked lines on both sides;
 # (2) PLANTED, the same fixture with an ALL.mask that has no timegc row -- an unmasked timing difference -- reads DIFF in both modes;

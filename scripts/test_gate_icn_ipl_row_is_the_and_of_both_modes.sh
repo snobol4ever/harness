@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 export S4E_DB_CHECK_OVERRIDE="gate fixture: this gate plants no progress rows (util_score_row.py db_crosscheck, hq_raku 2026-09-16)"
-# test_gate_icn_ipl_row_is_the_and_of_both_modes.sh -- the IPL SCORE row is the AND of both modes per program (ceo CEO-627).
+# test_gate_icn_ipl_row_is_the_and_of_both_modes.sh -- the IPL SCORE row is the AND of both modes per program (R-627).
 #
 # MEASURED 2026-09-12 on 146d027e7: test_icon_ipl_suite.sh published --suite-pass "$M3_RUN_PASS" alone, so a run that read
 # m3 162/162 · m4 161/162 and exited rc=1 on that mode-4 red still wrote "162/162 ✅ done" to SCORE.md and SUITES.tsv. The
-# sibling runners (arizona, jcon) publish gate_and_per_program over both modes (CEO-545): a program is green only if BOTH
+# sibling runners (arizona, jcon) publish gate_and_per_program over both modes (R-545): a program is green only if BOTH
 # modes are. Arms: (1) the IPL write passes $AND_PASS with --modes m3,m4 and never a single mode's count; (2) AND_PASS is
 # derived by gate_and_per_program from both modes' FAIL, CRASH and HANG names; (3) the helper itself lowers the row for a red
 # in one mode only, counts a program red in both modes once, and publishes the full population when nothing is red; (4) every

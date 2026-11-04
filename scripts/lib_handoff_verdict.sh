@@ -21,7 +21,7 @@ handoff_lane_of_artifact() {
   esac
 }
 # handoff_seat_lanes <seat> [MODE file] -> the languages MODE's LANES: line gives that seat (space-separated; empty for an officer
-# that owns none -- coo, ceo, cto today)
+# that owns none -- coo, the officer, cto today)
 handoff_seat_lanes() {
   local seat="$1" mode="${2:-${S4E_POST:-/home/resources/postoffice}/MODE}" lanes
   lanes="$(grep -m1 '^LANES:' "$mode" 2>/dev/null | sed 's/^LANES://')"

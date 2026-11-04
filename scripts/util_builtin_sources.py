@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # util_builtin_sources.py [--names SOURCE] [--root SCRIP] -- THE BUILTIN NAMES THE SCRIP SOURCES SPELL TODAY, SOURCE BY SOURCE (DESIGN-PLAN builtin-table step 1,
-# ARCH-BUILTIN-TABLE.md section 3 "THE SOURCES THE FIRST CUT HARVESTS"; CEO-2016).
+# ARCH-BUILTIN-TABLE.md section 3 "THE SOURCES THE FIRST CUT HARVESTS"; R-2016).
 #
 # The table harness/scripts/builtins.tsv is the one statement of what a builtin is. Until the chains are deleted (steps 2 to 6) the names also live in the places below; this reads
 # each place as TEXT (nothing is compiled or run) so the gate can prove THE UNION: every name any source spells has a row. A source that no longer exists in the tree (a later step

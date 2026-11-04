@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_program_that_links_setup_call_cleanup_compiles_and_links_a_predicate_of_three_unit_clauses_in_mode_4.sh -- a program that links
 # setup_call_cleanup/3 and holds a predicate of three unit clauses (v1(_). v1(_). v1(_).) assembles and links in mode 4 and prints as swipl does
-# (row prolog-logtalk-eight-bagof-and-setof-cases-pass-in-mode-3-and-do-not-link-in-mode-4-ceo-1887, hq_prolog 2026-10-22: eight Logtalk bagof_3 and
+# (row prolog-logtalk-eight-bagof-and-setof-cases-pass-in-mode-3-and-do-not-link-in-mode-4-r-1887, hq_prolog 2026-10-22: eight Logtalk bagof_3 and
 # setof_3 cases passed in mode 3 and died in mode 4 at the assembler, "symbol .Lv1$2F1_a_10384_246 is already defined").
 # THE DEFECT: the release check the setup_call_cleanup road adds to a flat procedure's omega (x86_pl_scc_release_check, xa_flat.cpp) took local label
 # 246 for its skip target, and the same procedure's inline choice mark (x86_pl_choice_mark, emitted when the predicate has more than one clause)

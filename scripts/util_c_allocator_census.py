@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""util_c_allocator_census.py -- THE CENSUS THAT PROVES ZERO, AND SAYS WHERE EACH SITE WENT (coo, CEO-842/843).
+"""util_c_allocator_census.py -- THE CENSUS THAT PROVES ZERO, AND SAYS WHERE EACH SITE WENT (coo, R-842/843).
 
-LON'S ACCEPTANCE TEST IS TEXTUAL AND IT IS HIS (2026-09-18, in-chat to ceo, verbatim: "Eradicate ALL usage of
+LON'S ACCEPTANCE TEST IS TEXTUAL AND IT IS HIS (2026-09-18, in-chat, verbatim: "Eradicate ALL usage of
 malloc, calloc, free, and realloc.  At the end ensure 0 instances found in the SCRIP source base."), so half of
 this tool is a count of four names that must reach 0 over the WHOLE tree -- src/parsers and the checked-in
 generated flex/bison output included, because a generated file that is committed is source.
 
-⛔⭐ THE OTHER HALF IS THE ceo's OWN WARNING AND IT IS WHY THIS IS NOT A grep (CEO-843, verbatim): "a census that
+⛔⭐ THE OTHER HALF IS THE OFFICER'S OWN WARNING AND IT IS WHY THIS IS NOT A grep (R-843, verbatim): "a census that
 only counts the four names would read green on a tree where half the runtime quietly lives outside the
 collector."  The rule names THREE destinations and only one of them is right for a given site:
 
   ROOTED-HEAP   rt_gcheap_alloc / rt_wsb_alloc / rt_ws_alloc_descr / rt_wsb_realloc / rt_pvec_alloc / rt_pvec_realloc / rt_pl_struct_alloc / rt_pm_struct_alloc -- anything the RUNNING PROGRAM can reach, walked like everything
-                else, with a root.  If you are unsure, this is the answer (CEO-842).
+                else, with a root.  If you are unsure, this is the answer (R-842).
                 rt_gcheap_alloc(HB_x, n) IS THE COLLECTED HEAP ITSELF, named by its typed class: a site that moves from
                 rt_wsb_alloc to rt_gcheap_alloc(HB_NVAR|HB_FNCB|HB_DATB|..., n) (ARCH-GC 13.14, ae5420a68, 249a84550) stays on
                 the collected heap and gains a typed visitor.  Until it was listed here the census read such a conversion as a
@@ -109,7 +109,7 @@ _WORD_RX = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 def resolve_aliases(defines):
-    """⛔ THE ALIAS QUESTION IS TRANSITIVE AND THE ONE-LEVEL ANSWER IS WRONG TWICE (CEO-844 clause 1).
+    """⛔ THE ALIAS QUESTION IS TRANSITIVE AND THE ONE-LEVEL ANSWER IS WRONG TWICE (R-844 clause 1).
 
     bison writes `#define YYSTACK_ALLOC YYMALLOC` beside `#define YYMALLOC malloc`: a reader who only asks
     whether a define's body IS a forbidden name sees neither the chain nor the 15 calls made through it, and a
@@ -162,7 +162,7 @@ def scan(files, root):
         rel = os.path.relpath(f, root)
         src = strip_comments(raw)
         texts[rel] = src
-        # ⛔ THE PROSE RESIDUE IS MEASURED HERE AND NEVER FOLDED INTO THE COUNT (CEO-844 clause 2).  The
+        # ⛔ THE PROSE RESIDUE IS MEASURED HERE AND NEVER FOLDED INTO THE COUNT (R-844 clause 2).  The
         # generated bison and flex files carry the GPL sentence "This program is free software"; that sentence
         # is not usage.  An instrument that counts it reads a permanent false red, and the cheapest way to
         # clear a false red is to delete a licence header -- so this population is printed APART, with its
@@ -239,7 +239,7 @@ def aliases_lookup(aliases, nm):
 
 
 def runtime_reachable(rel):
-    """the question CEO-842 says to ask: can the emitted program still reach this after the compile ends?
+    """the question R-842 says to ask: can the emitted program still reach this after the compile ends?
     src/runtime is the directory where the answer is yes by construction."""
     return rel.startswith("src/runtime" + os.sep) or rel.startswith("src/runtime/")
 
@@ -260,7 +260,7 @@ _INDEXED = re.compile(r"(?<![A-Za-z0-9_])([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[|->)")
 _ADDR_OF = re.compile(r"&\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?![\w\[])")
 
 
-# ⛔⭐ WHO OWNS THE BLOCK (RULES.md line 29 as amended by CEO-850; the hazard named in CEO-850's last clause).
+# ⛔⭐ WHO OWNS THE BLOCK (RULES.md line 29 as amended by R-850; the hazard named in R-850's last clause).
 # libc hands ownership out through more doors than the four names, and a block libc owns may not be handed to
 # OUR bookkeeping under any of them.  Two shapes, one root cause:
 #   ct_drop / ct_grow on a libc-owned pointer -- the arena reads the 32 bytes BEFORE the block looking for its
@@ -269,7 +269,7 @@ _ADDR_OF = re.compile(r"&\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?![\w\[])")
 #     SEGFAULTS (rc 139); where they are mapped, the magic never matches, the drop returns silently and the buffer
 #     LEAKS (8 KB a call on the memstream sites).  The MAGIC guard makes it neither safe nor correct -- this line
 #     said "safe, not correct" until that measurement.
-#   a collector root over a libc-owned pointer -- the ceo's named hazard: the next getline reallocs it through
+#   a collector root over a libc-owned pointer -- the officer's named hazard: the next getline reallocs it through
 #     libc and the root then names memory the collector never moved and libc has freed.
 _LIBC_OUT_PARAM = ("getline", "getdelim", "posix_memalign", "asprintf", "vasprintf", "open_memstream", "open_wmemstream")
 _LIBC_RETURNS = ("strdup", "strndup", "strdupa", "malloc", "calloc", "realloc", "aligned_alloc",
@@ -436,7 +436,7 @@ def libc_ownership_census(texts, out=print):
                         hits.append((rel, src.count("\n", 0, a + mm.start()) + 1, ours, got, owner, what))
     uniq = sorted({(h[0], h[1]): h for h in hits}.values())
     out(f"CENSUS c-allocators LIBC-OWNED-MISUSE={len(uniq)} want=0 -- a block LIBC owns handed to OUR "
-        f"bookkeeping (RULES.md line 29 as amended, CEO-850: the test is WHO OWNS THE BLOCK, never what the "
+        f"bookkeeping (RULES.md line 29 as amended, R-850: the test is WHO OWNS THE BLOCK, never what the "
         f"function is called). ct_drop on a libc pointer reads the 32 bytes BEFORE the block hunting a magic "
         f"header it does not own: under ASLR that read can land in an UNMAPPED gap and SEGFAULT (measured, the cfo "
         f"CFO-153), and where it is mapped the magic never matches and the buffer LEAKS -- the MAGIC guard makes "
@@ -452,7 +452,7 @@ def libc_ownership_census(texts, out=print):
 
 
 # ⛔⭐ THE LIBC DOORS (row instruments-the-c-allocator-census-knows-open-memstream-as-libc-owned-..., the coo 2026-09-23, the
-# cfo's CFO-153 item 4, ceo CEO-1208).  Lon's four names are not the only way a block reaches libc's heap: CEO-850 named the
+# cfo's CFO-153 item 4, R-1208).  Lon's four names are not the only way a block reaches libc's heap: R-850 named the
 # other doors for the OWNERSHIP test above, but only a door whose block is later handed to OUR bookkeeping was ever counted --
 # a bare strdup kept in a static table (by_name_dispatch.c, 6a6983d9e) was in no count at all, and open_memstream was not even
 # a door, so four ct_drop()s on its buffers read LIBC-OWNED-MISUSE=0 while each leaked 8 KB a call and segfaulted under ASLR.
@@ -488,7 +488,7 @@ def libc_doors_census(texts, out=print):
 
 
 def container_census(texts, out=print):
-    """⛔⭐ MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (CEO-846; the cfo's CFO-96/97 find).
+    """⛔⭐ MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (R-846; the cfo's CFO-96/97 find).
 
     A root walk that visits a container's CONTENTS but never marks the CONTAINER READS AS ROOTED TO EVERY
     CENSUS EVER WRITTEN -- including this one's destination column, which only asks where an allocation went.
@@ -531,7 +531,7 @@ def container_census(texts, out=print):
                 row = (rel, name, sym, "/".join(sorted(kinds)))
                 (live if ("pointer" in kinds and "array" not in kinds) else latent).append(row)
     out(f"CENSUS c-allocators CONTAINER-UNMARKED LIVE={len(live)} want=0 LATENT={len(latent)} over {walks} root "
-        f"walk(s) -- MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (CEO-846, CFO-96/97). A walk that visits a "
+        f"walk(s) -- MARK THE CONTAINER, NOT ONLY WHAT IT POINTS AT (R-846, CFO-96/97). A walk that visits a "
         f"container's contents and never the container reads as ROOTED to every census ever written, this one's "
         f"destination column included: g_name_save was reclaimed under a live call while its walk existed and "
         f"was called")
@@ -574,7 +574,7 @@ def read_sites_baseline(path):
 
 
 def read_ruled_permanent(path):
-    """CLASS 3, RULED-PERMANENT (ceo CEO-856, the cfo's shape). Rows are file<TAB>symbol<TAB>sites<TAB>ruling<TAB>reason.
+    """CLASS 3, RULED-PERMANENT (R-856, the cfo's shape). Rows are file<TAB>symbol<TAB>sites<TAB>ruling<TAB>reason.
     ⛔ A MISSING FILE IS AN EMPTY REGISTRY, NOT A REFUSAL -- no site is ruled permanent until one is written down, and
     that is the correct resting state. An unreadable or malformed row is dropped LOUDLY by the caller, never silently."""
     rows, bad = [], []
@@ -592,7 +592,7 @@ def read_ruled_permanent(path):
 
 
 def ruling_resolves(ruling, root=None):
-    """⛔⭐ THE CITATION IS A HARD ARM, NOT A COURTESY FIELD (ceo CEO-856, quoting the cfo's own sentence: the citation
+    """⛔⭐ THE CITATION IS A HARD ARM, NOT A COURTESY FIELD (R-856, quoting the cfo's own sentence: the citation
     is the only thing standing between a third class and a hiding place). A class-3 entry whose cited ruling does not
     resolve is a CLASS 1 EVASION IN DISGUISE and REDS.
 
@@ -600,7 +600,7 @@ def ruling_resolves(ruling, root=None):
     absent .github cannot resolve a ruling landed this morning, and convicting an honest entry because the reader is
     behind is the same fault as passing a dishonest one. None is carried to the caller as rc=2, could-not-measure.
 
-    ⛔⭐ THE SEAM (ceo CEO-560): every guard ships a sanctioned way to be TRIPPED that does not require doing the
+    ⛔⭐ THE SEAM (R-560): every guard ships a sanctioned way to be TRIPPED that does not require doing the
     forbidden thing. RECORD_OVERRIDE names the record explicitly, so the rc=2 branch can be proved by pointing the
     reader at a path that is not there -- without deleting anybody's .github. Without a seam that branch would be
     unreachable from a test and would sit here unexecuted, which is the precise shape this census exists against."""
@@ -608,53 +608,62 @@ def ruling_resolves(ruling, root=None):
         record = RECORD_OVERRIDE
         if not os.path.exists(record):
             return None, record
-    else:
-        cands = []
-        if root:
-            cands.append(os.path.join(root, ".github", "GOAL-CEO.md"))
-        if os.environ.get("S4E_HOME"):
-            cands.append(os.path.join(os.environ["S4E_HOME"], ".github", "GOAL-CEO.md"))
-        cands.append(os.path.join(os.path.dirname(os.path.dirname(HERE)), ".github", "GOAL-CEO.md"))
-        record = next((c for c in cands if os.path.exists(c)), cands[-1])
-        if not os.path.exists(record):
-            # ⭐ THE RECORD FILE IS GONE ON LON'S WORD (2026-11-04, cto CTO-487: the fired ceo seat's GOAL-CEO.md is deleted) and its series is read
-            # from git history instead: the parent of the commit that deleted it, one `git show` per process. A CTO-NNNN resolves in GOAL-CTO.md.
-            text = _read_deleted_record(os.path.dirname(record))
-            if text is None:
-                return None, record
-            cto = os.path.join(os.path.dirname(record), "GOAL-CTO.md")
-            if ruling.startswith("CTO-") and os.path.exists(cto):
-                st = os.stat(cto)
-                text = text + _read_record(cto, st.st_mtime_ns, st.st_size)
-            return (ruling in text), record + " (git history)"
-    try:
-        st = os.stat(record)
-        text = _read_record(record, st.st_mtime_ns, st.st_size)
-    except Exception:
-        return None, record
-    return (ruling in text), record
+        try:
+            st = os.stat(record)
+            return (ruling in _read_record(record, st.st_mtime_ns, st.st_size)), record
+        except Exception:
+            return None, record
+    cands = []
+    if root:
+        cands.append(os.path.join(root, ".github"))
+    if os.environ.get("S4E_HOME"):
+        cands.append(os.path.join(os.environ["S4E_HOME"], ".github"))
+    cands.append(os.path.join(os.path.dirname(os.path.dirname(HERE)), ".github"))
+    gh = next((c for c in cands if os.path.isdir(c)), cands[-1])
+    if ruling.startswith("CTO-"):
+        cto = os.path.join(gh, "GOAL-CTO.md")
+        try:
+            st = os.stat(cto)
+            return (ruling in _read_record(cto, st.st_mtime_ns, st.st_size)), cto
+        except Exception:
+            return None, cto
+    m = re.fullmatch(r"R-([0-9]+)", ruling)
+    if not m:
+        return False, gh
+    nums = _archived_series_numbers(gh)
+    if nums is None:
+        return None, gh + " (archived record blob " + ARCHIVED_RECORD_BLOB + ")"
+    return (m.group(1) in nums), gh + " (archived record blob " + ARCHIVED_RECORD_BLOB + ")"
+
+
+ARCHIVED_RECORD_BLOB = "aca1775911731fd0591c2c647e0aa7a4bd63dcb9"
+LIVE_SERIES = ("CTO", "COO", "CFO", "CAO", "CQO")
 
 
 @functools.lru_cache(maxsize=4)
-def _read_deleted_record(github_dir):
-    """GOAL-CEO.md as it stood when it was deleted: `git rev-list -1 HEAD -- GOAL-CEO.md` names the deleting commit, its parent holds the last text.
-    None when the repo has no such history (a scratch .github), which the caller reports as could-not-measure, never as a resolved citation."""
-    import subprocess
+def _archived_series_numbers(github_dir):
+    """⭐ AN R-NNNN IS A RULING OF THE ARCHIVED SERIES (Lon 2026-11-04, CTO-487: the fired seat's record is deleted and its citations are
+    renamed R-NNNN). The record's last text is the git blob ARCHIVED_RECORD_BLOB in .github's history, read once per process; its series is
+    the three-letter prefix it cites most that is no live seat's, and the answer is the set of numbers cited under it. None when the blob is
+    absent (a scratch .github), which the caller reports as could-not-measure, never as a resolved citation."""
+    import subprocess, collections
     try:
-        c = subprocess.run(["git", "-C", github_dir, "rev-list", "-1", "HEAD", "--", "GOAL-CEO.md"], capture_output=True, text=True, timeout=60)
-        h = c.stdout.strip()
-        if c.returncode != 0 or not h:
-            return None
-        s = subprocess.run(["git", "-C", github_dir, "show", h + "^:GOAL-CEO.md"], capture_output=True, text=True, errors="replace", timeout=60)
-        return s.stdout if s.returncode == 0 and s.stdout else None
+        s = subprocess.run(["git", "-C", github_dir, "cat-file", "-p", ARCHIVED_RECORD_BLOB], capture_output=True, text=True, errors="replace", timeout=60)
     except Exception:
         return None
+    if s.returncode != 0 or not s.stdout:
+        return None
+    cites = re.findall(r"\b([A-Z]{3})-([0-9]+)\b", s.stdout)
+    series = collections.Counter(p for p, _ in cites if p not in LIVE_SERIES).most_common(1)
+    if not series:
+        return None
+    return frozenset(n for p, n in cites if p == series[0][0])
 
 
 @functools.lru_cache(maxsize=8)
 def _read_record(path, mtime_ns, size):
     """The record is read ONCE per process for a given (path, mtime, size): the selftest resolves 35 rulings against
-    a 2.8 MB GOAL-CEO.md, and decoding it 35 times was 0.6 s of the preflight arm's budget (cfo 2026-09-24). A record
+    a 2.8 MB ruling record, and decoding it 35 times was 0.6 s of the preflight arm's budget (cfo 2026-09-24). A record
     that changes on disk changes its key, so no stale text is ever graded."""
     return open(path, encoding="utf-8", errors="replace").read()
 
@@ -678,7 +687,7 @@ def split_ruled_permanent(viol, rows):
 
 
 def provenance(now, base):
-    """⛔⭐ THE SPLIT CEO-846 ORDERED, AND IT TURNS ENTIRELY ON WHAT A SITE WAS BEFORE.
+    """⛔⭐ THE SPLIT R-846 ORDERED, AND IT TURNS ENTIRELY ON WHAT A SITE WAS BEFORE.
 
     The clause `the arena may not hold anything the runtime can reach` was written as one rule over two
     different acts, and only one of them is the evasion:
@@ -724,7 +733,7 @@ def provenance(now, base):
 
 def tracked_sources_outside_src(root):
     """⛔⭐ THE POPULATION LON'S ACCEPTANCE TEST GRADES IS THE SOURCE BASE, NOT src/ (coo 2026-09-18, on the cto's
-    finding; CEO-842's census clause).  CEO-842 splits the work by directory -- ceo src/parsers, cfo src/runtime,
+    finding; R-842's census clause).  R-842 splits the work by directory -- the officer src/parsers, cfo src/runtime,
     cto the middle, coo src/driver and src/tools -- and TOP-LEVEL tools/ IS NAMED IN NONE OF THEM.  But the
     acceptance test is TEXTUAL and it is Lon's: a grep for the four names over the SCRIP source base returns ZERO.
     A census scoped to src/ prints ZERO and PASSES while that grep prints seventeen.
@@ -780,7 +789,7 @@ def census(root, by_dir=False, sites=False, out=print):
         return 2
     forb, dest, aliases, alias_calls, prose, bare, texts_for_container = scan(files, root)
     out(f"CENSUS c-allocators SCOPE files={len(files)} under src/ (every {'/'.join(SRC_EXT)} file, generated flex "
-        f"and bison output INCLUDED -- a generated file that is checked in is source, CEO-842)")
+        f"and bison output INCLUDED -- a generated file that is checked in is source, R-842)")
 
     # ⛔⭐ AND THE SCOPE LINE ABOVE IS NOT LON'S SCOPE.  See tracked_sources_outside_src.
     n_outside, outside_hits = tracked_sources_outside_src(root)
@@ -803,16 +812,16 @@ def census(root, by_dir=False, sites=False, out=print):
             byf[rel] = byf.get(rel, 0) + 1
         out(f"CENSUS c-allocators OUTSIDE-SRC={len(outside_hits)} in {len(byf)} of {n_outside} tracked "
             f"{'/'.join(SRC_EXT)} file(s) OUTSIDE src/ -- ⛔ LON'S ACCEPTANCE TEST IS A GREP OVER THE SOURCE BASE "
-            f"AND THIS IS THE PART OF IT src/ DOES NOT COVER. CEO-842 splits the work by directory and TOP-LEVEL "
+            f"AND THIS IS THE PART OF IT src/ DOES NOT COVER. R-842 splits the work by directory and TOP-LEVEL "
             f"tools/ AND ../harness/scripts/ ARE NAMED IN NO LANE, so these survived every seat's sweep while every seat's "
-            f"census read zero. NAMED, not ruled: whether they convert is the ceo's call, not this instrument's")
+            f"census read zero. NAMED, not ruled: whether they convert is the officer's call, not this instrument's")
         for rel, n in sorted(byf.items(), key=lambda kv: -kv[1]):
             out(f"  OUTSIDE-SRC {rel} {n} site(s)")
         outside_refused = False
 
     per = {n: sum(1 for s in forb if s[2] == n) for n in FORBIDDEN}
     total = len(forb)
-    out("CENSUS c-allocators FORBIDDEN total=%d (%s) want=0 -- Lon's acceptance test, CEO-842" %
+    out("CENSUS c-allocators FORBIDDEN total=%d (%s) want=0 -- Lon's acceptance test, R-842" %
         (total, " ".join(f"{n}={per[n]}" for n in FORBIDDEN)))
     # ⛔ THE DECOMPOSITION IS PRINTED BECAUSE TWO HONEST TOOLS GET TWO DIFFERENT TOTALS HERE AND THE DIFFERENCE IS
     # NOT AN ERROR.  A grammar's action code is COPIED into its generated twin, so `raku.y` and `raku.tab.c` hold
@@ -827,7 +836,7 @@ def census(root, by_dir=False, sites=False, out=print):
         f"last two OVERLAP by construction (a grammar's action code is copied into its generated twin) and both "
         f"are checked in, so both must reach zero: a cure in only one of the pair is undone by the next regeneration")
     out(f"CENSUS c-allocators ALIASES={len(aliases)} ALIAS-CALLS={len(alias_calls)} want=0/0 -- the rule forbids "
-        f"these four under ANY spelling (CEO-844): a define whose body REACHES a forbidden name, through however "
+        f"these four under ANY spelling (R-844): a define whose body REACHES a forbidden name, through however "
         f"many other defines, is that name, and every CALL through such a spelling is a call site a four-name "
         f"grep cannot see")
     for (rel, ln, nm), (target, chain) in sorted(aliases.items())[:12]:
@@ -844,18 +853,18 @@ def census(root, by_dir=False, sites=False, out=print):
         dper[d] = dper.get(d, 0) + 1
     out("CENSUS c-allocators DESTINATIONS " + " ".join(f"{d}={dper.get(d, 0)}" for d in DESTINATIONS) +
         " -- where the converted sites went; a count of the four names alone would read green on a tree where "
-        "half the runtime quietly lives outside the collector (CEO-843)")
+        "half the runtime quietly lives outside the collector (R-843)")
 
     # ⛔ THE ANTI-EVASION POPULATION
     viol = [(r, l, s) for (r, l, s, d) in dest if d == "ARENA" and runtime_reachable(r)]
     mmap_out = [(r, l, s) for (r, l, s, d) in dest if d == "MMAP" and not is_collector_bookkeeping(r)]
     out(f"CENSUS c-allocators ARENA-IN-RUNTIME={len(viol)} -- the arena holding runtime-reachable memory. ⛔ THIS "
-        f"TOTAL IS NOT A VERDICT ON ITS OWN (CEO-846): it is split below by WHAT EACH SITE WAS BEFORE, because "
+        f"TOTAL IS NOT A VERDICT ON ITS OWN (R-846): it is split below by WHAT EACH SITE WAS BEFORE, because "
         f"the clause was one rule over two different acts and only one of them is the evasion")
     for rel, ln, sym in viol[:15]:
         out(f"  ARENA-IN-RUNTIME {rel}:{ln} {sym}")
 
-    # ⛔⭐ THE CLASS SPLIT (CEO-846).  Class 1 is the evasion and is a hard red; class 2 is transitional debt
+    # ⛔⭐ THE CLASS SPLIT (R-846).  Class 1 is the evasion and is a hard red; class 2 is transitional debt
     # that the ratchet drives to zero.  The discriminator is the per-file provenance baseline, and WITHOUT IT
     # THE SPLIT IS NOT COMPUTABLE -- so it REFUSES rather than guessing, and never silently calls debt an
     # evasion (which would red an honest landing) or an evasion debt (which would admit the very thing the
@@ -866,10 +875,10 @@ def census(root, by_dir=False, sites=False, out=print):
     live_c, latent_c = container_census(texts_for_container, out=out)
     COUNTS["container_unmarked_live"] = len(live_c)
 
-    # ⛔⭐ CLASS 3, RULED-PERMANENT (ceo CEO-856 on the cfo's proposal, cfo-859).  Class 2 DEBT means "was a libc
+    # ⛔⭐ CLASS 3, RULED-PERMANENT (R-856 on the cfo's proposal, cfo-859).  Class 2 DEBT means "was a libc
     # malloc, now in the arena, HOLDER NOT YET ROOTED", and its whole meaning is that it ratchets to zero as each
     # holder is rooted.  That model assumes every arena-in-runtime site is a holder waiting to be rooted.  Some are
-    # not: CEO-854 ruled all five getline buffers PERMANENTLY and CORRECTLY arena -- the program is handed a copy and
+    # not: R-854 ruled all five getline buffers PERMANENTLY and CORRECTLY arena -- the program is handed a copy and
     # no buffer pointer enters anything the collector walks, so there is no future landing in which rooting them
     # becomes correct.  Counting those as debt makes the ratchet's target of zero UNREACHABLE BY CONSTRUCTION, which
     # is how a ratchet stops being believed.  Class 3 is COUNTED, PRINTED, and NOT driven to zero -- and it is the
@@ -970,7 +979,7 @@ def census(root, by_dir=False, sites=False, out=print):
     out(f"CENSUS c-allocators PROSE-RESIDUE={n_prose} in {len(prose)} file(s) -- NOT call sites and NOT in the "
         f"count above: the four names inside comments and string literals, most of them the GPL sentence "
         f"'This program is free software' that bison and flex write into every generated file. ⛔ A LICENCE "
-        f"HEADER IS NEVER EDITED TO MAKE A GREP READ ZERO (CEO-844 clause 2)")
+        f"HEADER IS NEVER EDITED TO MAKE A GREP READ ZERO (R-844 clause 2)")
     for rel, n in sorted(prose.items(), key=lambda kv: (-kv[1], kv[0]))[:12]:
         out(f"  PROSE {rel} {n}")
     out(f"CENSUS c-allocators NON-CALL-REFS={len(bare)} -- NOT call sites and NOT in the count above: the four "
@@ -1004,7 +1013,7 @@ def census(root, by_dir=False, sites=False, out=print):
     COUNTS["aliases"] = len(aliases)
     COUNTS["alias_calls"] = len(alias_calls)
     COUNTS["prose_residue"] = n_prose
-    # ⛔ A CLASS-3 ENTRY WHOSE CITATION DOES NOT RESOLVE REDS (ceo CEO-856): it is a class-1 evasion in disguise, so
+    # ⛔ A CLASS-3 ENTRY WHOSE CITATION DOES NOT RESOLVE REDS (R-856): it is a class-1 evasion in disguise, so
     # it joins the evasion in the verdict rather than being a note under a green line.  A MALFORMED ROW REDS TOO -- a
     # row this reader dropped is a licence nobody granted.  ⛔ AND AN UNREADABLE RECORD REFUSES rc=2 AHEAD OF BOTH:
     # could-not-measure is never green and never red, and an unmerged .github is exactly that case.
@@ -1028,16 +1037,16 @@ def census(root, by_dir=False, sites=False, out=print):
 # drive to zero, and a ratchet on it is an instruction to edit a copyright header.  alias_calls IS ratcheted --
 # that one is ours and it is the half a four-name grep cannot see.
 # ⛔ arena_in_runtime is the TOTAL and is PRINTED, but what is RATCHETED is arena_in_runtime_ratcheted -- the total
-# MINUS class 3 (ceo CEO-856, 2026-09-18).  Ratcheting the raw total was correct while every arena-in-runtime site was
-# a holder waiting to be rooted; CEO-854 ruled five of them permanently and correctly arena, so the raw total can no
+# MINUS class 3 (R-856, 2026-09-18).  Ratcheting the raw total was correct while every arena-in-runtime site was
+# a holder waiting to be rooted; R-854 ruled five of them permanently and correctly arena, so the raw total can no
 # longer reach zero and a ratchet with an unreachable target teaches the fleet to raise baselines.  ⭐ THIS IS NOT A
 # WEAKENING: evasion is still a HARD 0, debt still only falls, and every site that leaves the ratchet must be named in
 # c_allocator_ruled_permanent.tsv with a ruling that RESOLVES -- an unresolved citation reds the census outright.
 # ⛔ outside_src_sites IS RATCHETED BUT IS NOT A HARD ZERO (coo 2026-09-18, the cto's finding).  Whether the 20
-# sites in tools/rakugram and ../harness/scripts/monitor must CONVERT is a ruling nobody has made -- CEO-842 splits the work
+# sites in tools/rakugram and ../harness/scripts/monitor must CONVERT is a ruling nobody has made -- R-842 splits the work
 # by directory and top-level tools/ and ../harness/scripts/ are named in no lane.  So the instrument does what an instrument
 # may do without a ruling: it counts them, names them, and refuses to let the number GROW while the question is
-# open.  If the ceo rules them in, the count falls to 0 and the ratchet reds asking for the win to be recorded.
+# open.  If the officer rules them in, the count falls to 0 and the ratchet reds asking for the win to be recorded.
 RATCHET_KEYS = ["forbidden_total", "malloc", "calloc", "realloc", "free", "aliases", "alias_calls",
                 "arena_in_runtime_ratcheted", "arena_in_runtime_evasion", "arena_in_runtime_debt",
                 "container_unmarked_live", "libc_owned_misuse", "libc_doors", "outside_src_sites"]
@@ -1129,7 +1138,7 @@ def selftest():
     os.remove(os.path.join(ld, "alias.c"))
     os.remove(os.path.join(ld, "dirty.c"))
 
-    # ⛔ CEO-844 clause 1: bison's chain, which one level of alias reading does not see and a grep never sees.
+    # ⛔ R-844 clause 1: bison's chain, which one level of alias reading does not see and a grep never sees.
     open(os.path.join(ld, "chain.c"), "w").write(
         "#define YYMALLOC malloc\n#define YYSTACK_ALLOC YYMALLOC\n"
         "void *f(void) { return YYSTACK_ALLOC(8); }\n")
@@ -1150,7 +1159,7 @@ def selftest():
        "flex's `#define yyrealloc pascal_yyrealloc` RENAMES flex's hook and is NOT an alias of C realloc -- a substring reader calls it one and mislabels it `yy`")
     os.remove(os.path.join(ld, "rename.c"))
 
-    # ⛔ CEO-844 clause 2: the licence sentence is not usage.
+    # ⛔ R-844 clause 2: the licence sentence is not usage.
     open(os.path.join(ld, "gpl.c"), "w").write(
         "/* This program is free software; you can redistribute it and/or modify\n"
         "   it under the terms of the GNU General Public License.  free free */\n"
@@ -1193,7 +1202,7 @@ def selftest():
     ck(rc == 2 and "A vacuous zero is not a pass" in "\n".join(buf),
        "zero forbidden names AND zero destination symbols REFUSES rc=2 -- that is a tool reading the wrong thing, not a cured tree")
 
-    # ⛔⭐ CEO-850: WHO OWNS THE BLOCK.  Tested on both sides, because the arm's whole value is telling a
+    # ⛔⭐ R-850: WHO OWNS THE BLOCK.  Tested on both sides, because the arm's whole value is telling a
     # libc-owned pointer from an arena-owned one that is spelled identically two hundred lines away.
     def lc(src_):
         b2 = []
@@ -1207,7 +1216,7 @@ def selftest():
     h = lc("void f(void){ char *b = NULL; size_t c = 0; getline(&b, &c, stdin); "
            "rt_gc_visit_raw((const char **)&b); }\n")
     ck(len(h) == 1 and h[0][5] == "a collector root",
-       "A COLLECTOR ROOT LAID OVER A getline-OWNED BUFFER IS NAMED -- the ceo's hazard on holder 12: the next getline reallocs it through libc and the root names memory the collector never moved. This shape is NOT in the tree today and the arm reds the moment it is added")
+       "A COLLECTOR ROOT LAID OVER A getline-OWNED BUFFER IS NAMED -- the officer's hazard on holder 12: the next getline reallocs it through libc and the root names memory the collector never moved. This shape is NOT in the tree today and the arm reds the moment it is added")
     h = lc("static char *tbuf = NULL;\nvoid f(void){ static size_t tc = 0; getline(&tbuf, &tc, fp); }\n")
     ck(len(h) == 0,
        "a getline-owned static that is never handed to our bookkeeping is NOT a misuse hit -- libc owns it and keeps it; the doors census below counts its getline() as a LIBC-DOOR instead")
@@ -1228,7 +1237,7 @@ def selftest():
     ck(len(d) == 0,
        "and a prototype, ct_strdup (our arena), strdupa (stack, freed with its frame), a string literal and a comment are NOT doors")
 
-    # ⛔⭐ CEO-846: the class split is the arm that decides whether an honest sweep lands or a cfo-f62a33aed
+    # ⛔⭐ R-846: the class split is the arm that decides whether an honest sweep lands or a cfo-f62a33aed
     # shaped evasion does, so it is tested on BOTH sides -- a debt that must NOT red as an evasion, and an
     # evasion that must NOT be excused as debt.
     B = {"src/runtime/a.c": {"forbidden": 4, "rooted_heap": 0, "arena": 0, "mmap": 0},
@@ -1267,7 +1276,7 @@ def selftest():
     ck(sum(x[1] for x in evd2) == 3 and sum(x[1] for x in debtd2) == 4,
        "AND THE WIDER LIST DID NOT BLIND THE EVASION: the same three sites moved to ct_alloc instead read CLASS 1 x3 (and the four libc sites stay class-2 debt) -- a conversion to the arena is still named")
 
-    # ⛔⭐ CEO-846 / CFO-96-97: the container arm, tested on the shape that fooled every census before it.
+    # ⛔⭐ R-846 / CFO-96-97: the container arm, tested on the shape that fooled every census before it.
     def cc(body_src):
         buf2 = []
         lv, lt = container_census({"src/runtime/t.c": body_src}, out=buf2.append)
@@ -1286,7 +1295,7 @@ def selftest():
     ck(len(lv) == 0 and any(x[2] == "g_tab" for x in lt),
        "a FIXED ARRAY of pointers is LATENT, not LIVE -- its storage is static so there is no block to mark, and calling that a defect is how this arm would become noise (it is exactly _var_buckets, which core_gc_roots marks per slot and marks correctly)")
 
-    # ⛔⭐ CLASS 3, RULED-PERMANENT, PROVED ON BOTH SIDES (ceo CEO-856).  A class whose citation arm has never been
+    # ⛔⭐ CLASS 3, RULED-PERMANENT, PROVED ON BOTH SIDES (R-856).  A class whose citation arm has never been
     # seen to RED is a hiding place with a comment on it, so every one of these arms plants the failure rather than
     # asserting the success: an entry with a bogus ruling must RED, an entry beyond its licensed count must fall back
     # to the ordinary grading, and a stale row must be NAMED.  The same shape as the fingerprint gate's planted arm.
@@ -1299,7 +1308,7 @@ def selftest():
 
         open(reg, "w").write("# f\nsrc/runtime/perm.c\tct_alloc\t1\tCEO-854\tproven unreachable, ruled arena\n")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
-        ck("CLASS-3-RULED-PERMANENT=1" in j and "ruled by CEO-854" in j and "MINUS THIS = 0" in j,
+        ck("CLASS-3-RULED-PERMANENT=1" in j and "ruled by R-854" in j and "MINUS THIS = 0" in j,
            "A RULED-PERMANENT SITE IS COUNTED IN CLASS 3, NAMED WITH ITS RULING, AND TAKEN OUT OF THE RATCHETED NUMBER -- which is the whole point: it can never be rooted, so carrying it as debt makes the ratchet's target unreachable by construction")
         ck(COUNTS.get("arena_in_runtime") == 1 and COUNTS.get("arena_in_runtime_ratcheted") == 0,
            "and the RAW TOTAL is still measured and printed beside it -- two numbers, the honest total and the one the ratchet drives, neither replacing the other")
@@ -1308,7 +1317,7 @@ def selftest():
 
         open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tCEO-999999\tno such ruling\n")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
-        ck(rc == 1 and "CITATION DOES NOT RESOLVE" in j and "CEO-999999" in j,
+        ck(rc == 1 and "CITATION DOES NOT RESOLVE" in j and "R-999999" in j,
            "⛔ AN ENTRY WHOSE CITED RULING DOES NOT RESOLVE REDS -- an entry in class 3 with no ruling behind it is a CLASS 1 EVASION IN DISGUISE, and this arm is the only thing standing between a third class and a hiding place")
 
         open(os.path.join(sd, "perm2.c"), "w").write("void *g(void){ return ct_alloc(8); }\nvoid *h(void){ return ct_alloc(9); }\n")
@@ -1330,7 +1339,7 @@ def selftest():
 
         open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tCEO-854\tok\n")
         global RECORD_OVERRIDE
-        RECORD_OVERRIDE = os.path.join(w, "no-such-record", "GOAL-CEO.md")
+        RECORD_OVERRIDE = os.path.join(w, "no-such-record", "record.md")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
         RECORD_OVERRIDE = None
         ck(rc == 2 and "NOT MEASURABLE" in j,
@@ -1387,7 +1396,7 @@ def main(argv):
     ap.add_argument("--root", default=ROOT)
     ap.add_argument("--ratchet", default="")
     ap.add_argument("--write-baseline", default="")
-    ap.add_argument("--write-sites-baseline", default="", help="the PER-FILE provenance baseline the CEO-846 "
+    ap.add_argument("--write-sites-baseline", default="", help="the PER-FILE provenance baseline the R-846 "
                     "class split is keyed on -- what each file held BEFORE the sweep")
     ap.add_argument("--by-dir", action="store_true", help="the four-name count per directory, for the split")
     ap.add_argument("--sites", action="store_true", help="name every remaining forbidden call site")
@@ -1413,7 +1422,7 @@ def main(argv):
                 if line.startswith("#") and not line.startswith(_std):
                     carried.append(line.rstrip("\n"))
         with open(a.write_baseline, "w", encoding="utf-8") as fh:
-            fh.write("# c_allocator_baseline.tsv -- the counts Lon's eradication order drives to 0 (coo, CEO-842/843).\n"
+            fh.write("# c_allocator_baseline.tsv -- the counts Lon's eradication order drives to 0 (coo, R-842/843).\n"
                      "# Written by `util_c_allocator_census.py --write-baseline`; the landing that lowers a count\n"
                      "# rewrites this file in the same sitting.  key\tcount\n")
             for c in carried:
@@ -1434,7 +1443,7 @@ def main(argv):
         except Exception:
             tree, dirty = "unknown", ""
         with open(a.write_sites_baseline, "w", encoding="utf-8") as fh:
-            fh.write("# c_allocator_sites_baseline.tsv -- WHAT EACH FILE HELD BEFORE THE SWEEP (coo, CEO-846).\n"
+            fh.write("# c_allocator_sites_baseline.tsv -- WHAT EACH FILE HELD BEFORE THE SWEEP (coo, R-846).\n"
                      "#\n"
                      "# ⛔ THIS FILE IS THE DISCRIMINATOR AND IT IS THE WHOLE POINT OF THE SPLIT.  The clause `the\n"
                      "# arena may not hold anything the runtime can reach` covers two different acts: a site that\n"

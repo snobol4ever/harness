@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_paren_call_passes_its_arguments.sh -- a parenthesized Raku call must pass its ARGUMENTS,
-# never one concatenated list (hq_T 2026-09-06, CEO-332 / Lon: "let's not see stuck ever again ... go fix ONE
+# never one concatenated list (hq_T 2026-09-06, R-332 / Lon: "let's not see stuck ever again ... go fix ONE
 # program in each and let's begin the climb").
 #
 # ⛔ THE DEFECT, measured on roast S04-statements/until.t. `is($i, 5, 'desc')` built
@@ -45,7 +45,7 @@ ck() { examined=$((examined + 1)); if [ "$1" = ok ]; then printf '  ok   %s\n' "
 # run_both <file> -> prints "m3<TAB>m4" md5s; a mode that will not build prints BUILDFAIL, never an empty
 # string, because two empty strings compare equal and would read as agreement.
 #
-# ⛔⭐⭐ A CRASH IS NOT A VERDICT, AND THIS GATE USED TO TURN ONE INTO A DIVERGE (hq_T 2026-09-06, ceo CEO-365).
+# ⛔⭐⭐ A CRASH IS NOT A VERDICT, AND THIS GATE USED TO TURN ONE INTO A DIVERGE (hq_T 2026-09-06, R-365).
 # `scrip --compile` on these witnesses SIGSEGVs INTERMITTENTLY and the failure was folded into the same
 # BUILDFAIL string a genuine build error produces -- then COMPARED as a value, so one arm crashing and the
 # other succeeding printed "m4 DIVERGE: listop BUILDFAIL vs paren <md5>". That names the wrong defect
@@ -69,7 +69,7 @@ CRASHED=0
 SETARCH=""   # ⭐ ASLR STAYS ON. The setarch -R narrowing this line used to carry was a workaround for the
              # Raku top-level uninitialised-context SIGSEGV, and that defect is CURED (lower_raku.c, this same
              # landing), so the gate keeps its teeth and grades the condition every other seat runs under
-             # (ceo CEO-367: cure the compiler, leave the gate alone). Measured: cured build 10/10 rc=0 with
+             # (R-367: cure the compiler, leave the gate alone). Measured: cured build 10/10 rc=0 with
              # ASLR ON; base build 10/10 rc=2, refusing honestly instead of inventing a DIVERGE.
 # _try <mode> <file> -> md5 of the output, or the literal CRASH / BUILDFAIL. Sets CRASHED when the tool died
 # on a signal (rc >= 128) or was killed by the timeout (124), both of which mean UNMEASURED, not "failed".
@@ -140,7 +140,7 @@ echo "--- ARM 6 — the AST carries no __rk_arr wrapper around a testop argument
 # __rk_arr, so the arm reported the cure present while every other arm reported it absent. A negative assertion
 # over a truncated reading is indistinguishable from the property holding, which is this whole gate's own theme
 # arriving inside the gate.
-# RE-CUT 2026-10-31 (cao, CEO-2044): Test is Raku source in the setting, so the call is an ordinary (TT_FNC is ...) node and the dump also
+# RE-CUT 2026-10-31 (cao, R-2044): Test is Raku source in the setting, so the call is an ordinary (TT_FNC is ...) node and the dump also
 # carries the spliced setting (whose own code builds lists); the arm reads the program's own call statement, never the whole dump.
 ast="$(timeout -k 5 10 "$ROOT/scrip" --dump-ast "$W/arity.raku" 2>&1 </dev/null)"
 call="$(printf '%s\n' "$ast" | grep '^(STMT :subj (TT_FNC is (TT_VAR is)')"
@@ -157,7 +157,7 @@ echo "--- ARM 7 — the roast program this cure flipped stays green in both mode
 # ⛔⭐ THE WITNESS IS RESOLVED, NOT HARDCODED (hq_raku 2026-09-16). This read "$ROOT/refs/roast/..."
 # until today and SCRIP/refs/ WAS DELETED ORG-WIDE on 2026-09-16, so this BLOCKING arm refused rc=2 on every
 # renamed root -- a COULD-NOT-MEASURE sitting inside the blocking set for all ten seats, which is the class
-# the loop-and-report cure (CEO-582) exists to make visible rather than to tolerate. Same resolver the roast
+# the loop-and-report cure (R-582) exists to make visible rather than to tolerate. Same resolver the roast
 # scoreboard and the ablation ranker use, so the three cannot disagree about where roast lives.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_raku_roast_bucket.sh" 2>/dev/null || true
 if command -v roast_resolve_population >/dev/null 2>&1 && roast_resolve_population "$ROOT" 2>/dev/null; then

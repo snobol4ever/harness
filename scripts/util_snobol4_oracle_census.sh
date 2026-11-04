@@ -77,7 +77,7 @@ for pkg in $PKGS; do
     # harness.inc', library/, include/) beside it -- the rungs' probes resolved in the tree and not in a flat copy.
     rel="${pkg#$CORPUS/}"; run="$SCRATCH/$rel"; rm -rf "$run"; mkdir -p "$(dirname "$run")"; cp -r "$pkg" "$run"; rm -f "$run/ORACLE_ACCEPTANCE.tsv"
     # ⛔ A PACKAGE WHOSE RUNNER STAGES ITS INCLUDES INTO THE PROGRAM'S CWD DECLARES THE DIRECTORY IN INCLUDE_STAGING.tsv (dir<TAB>why), and the census
-    # stages it the same way (the coo 2026-10-18, ceo's ruling): SPITBOL's -INCLUDE search is cwd-relative, and snoflake's 51 gimpel-* programs read
+    # stages it the same way (the coo 2026-10-18, ruling): SPITBOL's -INCLUDE search is cwd-relative, and snoflake's 51 gimpel-* programs read
     # ERR "include file cannot be opened" here while test_snoflake_suite.sh, which copies gimpel/*.INC and *.IN beside them, gets their answers.
     if [ -f "$pkg/INCLUDE_STAGING.tsv" ]; then
         while IFS=$'\t' read -r sd _why; do

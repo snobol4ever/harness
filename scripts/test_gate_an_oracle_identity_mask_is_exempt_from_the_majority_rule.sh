@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the x32/x64 runners invoked on one-program scratch fixtures, not a board (CEO-547)"
-# test_gate_ceo1351_an_oracle_identity_mask_is_exempt_from_the_majority_rule.sh -- ceo CEO-1344 (2) and CEO-1351 (2026-09-27/28): HOST()
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the x32/x64 runners invoked on one-program scratch fixtures, not a board (R-547)"
+# test_gate_an_oracle_identity_mask_is_exempt_from_the_majority_rule.sh -- R-1344 (2) and R-1351 (2026-09-27/28): HOST()
 # answers the implementation's own identity ("x86-64:unix :Macro SPITBOL 15.01 #" under sbl -bf), the ORACLE'S OWN INTERNAL STATE, which SCRIP
 # does not impersonate -- so spitbol_x32_tests/host.spt and spitbol_x64_tests/host.sbl mask that line and grade on host(0). They print two
-# lines, and CEO-409 guardrail 4 read one masked line of two as a majority-masked fixture, UNGRADABLE. CEO-1351 (shape A): a mask row whose
-# reason cites CEO-1344 is an ORACLE-IDENTITY row, exempt from the half while at least one line stays unmasked, admitted only as a content
-# regex -- one rule, corpus_suite_harness.py's mask_majority(), read by the bash runners through util_apply_ceo409_mask.py's .major; and the
-# x32/x64 runners read ALL.mask at all (they did not; the CEO-432 shim was wired into testpgms only).
+# lines, and R-409 guardrail 4 read one masked line of two as a majority-masked fixture, UNGRADABLE. R-1351 (shape A): a mask row whose
+# reason cites R-1344 is an ORACLE-IDENTITY row, exempt from the half while at least one line stays unmasked, admitted only as a content
+# regex -- one rule, corpus_suite_harness.py's mask_majority(), read by the bash runners through util_apply_line_mask.py's .major; and the
+# x32/x64 runners read ALL.mask at all (they did not; the R-432 shim was wired into testpgms only).
 #
-#   S1  shim, a CEO-1344 row masking 1 of 2 oracle lines: count 1, .major 0     S2  the same row with no CEO-1344 in its reason: .major 1
-#   S3  a CEO-1344 row matching BOTH lines: .major 1 (nothing left to grade)     S4  a CEO-1344 row plus an ordinary row, one line each: .major 1
-#   S5  a CEO-1344 row written L1 refuses rc 2                                    S6  a CEO-1344 row written ORACLE-ONLY refuses rc 2
-#   C1  classify(): sbl's two lines against ours "host(): " / "host(0)" with the CEO-1344 row: PASS, 1 masked
-#   C2  ours "host(): " / "host(1)": FAIL (the unmasked line still grades)        C3  the row with no CEO-1344 citation: FAIL (guardrail 4)
+#   S1  shim, a R-1344 row masking 1 of 2 oracle lines: count 1, .major 0     S2  the same row with no R-1344 in its reason: .major 1
+#   S3  a R-1344 row matching BOTH lines: .major 1 (nothing left to grade)     S4  a R-1344 row plus an ordinary row, one line each: .major 1
+#   S5  a R-1344 row written L1 refuses rc 2                                    S6  a R-1344 row written ORACLE-ONLY refuses rc 2
+#   C1  classify(): sbl's two lines against ours "host(): " / "host(0)" with the R-1344 row: PASS, 1 masked
+#   C2  ours "host(): " / "host(1)": FAIL (the unmasked line still grades)        C3  the row with no R-1344 citation: FAIL (guardrail 4)
 #   R1  the x32 runner on a one-program fixture (host.spt + the package's own ALL.mask row): PASS both modes, masked_lines=1
 #   R2  the same fixture with no ALL.mask: RED both modes                         R3  the x64 runner on host.sbl + its ALL.mask: PASS both modes
 # FAIL_ONCE=1 runs S and C against a copy of the harness and shim whose ORACLE_IDENTITY_RULING names no ruling: S1 and C1 red.
@@ -35,15 +35,15 @@ PK="${S4E_CORPUS_ROOT:-$ROOT/../corpus}/packages/snobol4"
 [ -f "$PK/spitbol_x32_tests/host.spt" ] && [ -f "$PK/spitbol_x64_tests/host.sbl" ] || refuse "host.spt / host.sbl are not in $PK -- the premise moved"
 LIB="$HERE"
 if [ "${FAIL_ONCE:-}" = 1 ]; then
-    mkdir -p "$T/lib"; cp "$HERE/util_apply_ceo409_mask.py" "$T/lib/"
-    sed 's/^ORACLE_IDENTITY_RULING = "CEO-1344"$/ORACLE_IDENTITY_RULING = "NO-SUCH-RULING"/' "$HERE/corpus_suite_harness.py" > "$T/lib/corpus_suite_harness.py"
+    mkdir -p "$T/lib"; cp "$HERE/util_apply_line_mask.py" "$T/lib/"
+    sed 's/^ORACLE_IDENTITY_RULING = "R-1344"$/ORACLE_IDENTITY_RULING = "NO-SUCH-RULING"/' "$HERE/corpus_suite_harness.py" > "$T/lib/corpus_suite_harness.py"
     grep -q '^ORACLE_IDENTITY_RULING = "NO-SUCH-RULING"$' "$T/lib/corpus_suite_harness.py" || refuse "FAIL_ONCE could not neuter ORACLE_IDENTITY_RULING -- the constant moved"
     LIB="$T/lib"; echo "  FAIL_ONCE=1: S and C arms read a harness whose ORACLE_IDENTITY_RULING names no ruling"
 fi
-SHIM="$LIB/util_apply_ceo409_mask.py"
+SHIM="$LIB/util_apply_line_mask.py"
 red=0; n=0
 arm() { n=$((n+1)); if [ "$2" = ok ]; then echo "  ok   $1"; else echo "  RED  $1 -- $3"; red=$((red+1)); fi; }
-ID='CEO-1344 oracle identity: this gate'"'"'s witness line'
+ID='R-1344 oracle identity: this gate'"'"'s witness line'
 ORA=$'host(): x86-64:unix :Macro SPITBOL 15.01 #\nhost(0)\n'
 shim() { mkdir -p "$T/$1"; printf '%b' "$2" > "$T/$1/ALL.mask"; printf '%s' "$ORA" | python3 "$SHIM" "$T/$1/ALL.ref" e "$T/$1/n" --side=oracle > "$T/$1/out" 2>"$T/$1/err"; echo $?; }
 maj() { cat "$T/$1/n.major" 2>/dev/null || echo missing; }
@@ -52,12 +52,12 @@ r="$(shim s2 "e\t^host\\\\(\\\\): .*\$\tthe same line with no ruling cited\n")";
 r="$(shim s3 "e\t^host\t$ID\n")"; { [ "$r" = 0 ] && [ "$(cat "$T/s3/n")" = 2 ] && [ "$(maj s3)" = 1 ]; } && arm S3 ok || arm S3 red "rc=$r count=$(cat "$T/s3/n" 2>/dev/null) major=$(maj s3)"
 r="$(shim s4 "e\t^host\\\\(\\\\): .*\$\t$ID\ne\t^host\\\\(0\\\\)\$\tan ordinary row\n")"; { [ "$r" = 0 ] && [ "$(maj s4)" = 1 ]; } && arm S4 ok || arm S4 red "rc=$r major=$(maj s4)"
 r="$(shim s5 "e\tL1\t$ID\n")"; [ "$r" = 2 ] && arm S5 ok || arm S5 red "rc=$r, want 2"
-r="$(shim s6 "e\tORACLE-ONLY:host(0)\t$ID and CEO-1293\n")"; [ "$r" = 2 ] && arm S6 ok || arm S6 red "rc=$r, want 2"
+r="$(shim s6 "e\tORACLE-ONLY:host(0)\t$ID and R-1293\n")"; [ "$r" = 2 ] && arm S6 ok || arm S6 red "rc=$r, want 2"
 cv="$(cd "$LIB" && python3 - <<'PY' 2>&1
 import importlib.util, re
 spec = importlib.util.spec_from_file_location("h", "corpus_suite_harness.py"); h = importlib.util.module_from_spec(spec); spec.loader.exec_module(h)
 ora = "host(): x86-64:unix :Macro SPITBOL 15.01 #\nhost(0)\n"
-idm = [(("regex", re.compile(r"^host\(\): .*$")), "CEO-1344 oracle identity: gate")]
+idm = [(("regex", re.compile(r"^host\(\): .*$")), "R-1344 oracle identity: gate")]
 plain = [(("regex", re.compile(r"^host\(\): .*$")), "no ruling cited")]
 for tag, ours, m in (("C1", "host(): \\nhost(0)\\n", idm), ("C2", "host(): \\nhost(1)\\n", idm), ("C3", "host(): \\nhost(0)\\n", plain)):
     v = h.classify(["printf", ours], 10, ora, mask=m)

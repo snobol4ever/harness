@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_by_name_call_survives_collect.sh -- A FUNCTION NAME IS NOT A HEAP OBJECT: a by-name call still
-# resolves its function after COLLECT has run twice (hq_V, HQV-52/53, ceo rank-0
+# resolves its function after COLLECT has run twice (hq_V, HQV-52/53, rank-0
 # snobol4-a-by-name-call-loses-its-function-name-across-collect-so-the-next-builtin-resolves-the-empty-string).
 #
 # MECHANISM, measured 2026-09-13 and not inferred: the lowerer interns every function-name string through

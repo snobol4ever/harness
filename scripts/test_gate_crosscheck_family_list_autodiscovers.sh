@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # ../harness/scripts/test_gate_crosscheck_family_list_autodiscovers.sh -- row corpus-suite-family-list-should-autodiscover.
 # test_corpus_snobol4.sh's suite-family list is a hardcoded `for family in ...` literal (SCRIP 1d38f034,
 # hq_P s277): a suite .sno/.ref pair that lands on disk but is never added to that list is INVISIBLE to the

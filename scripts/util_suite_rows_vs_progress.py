@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_suite_rows_vs_progress.py -- THE CROSS-LANGUAGE BATCH AUDIT (MODE line 2 under DECTET, CEO-775; ceo CEO-780a; coo
+"""util_suite_rows_vs_progress.py -- THE CROSS-LANGUAGE BATCH AUDIT (MODE line 2 under DECTET, R-775; R-780a; coo
 2026-09-16, row util-suite-rows-vs-progress-the-cross-language-batch-audit-lands-as-an-instrument).
 
 After each batch every HQ's suite rows are on origin and AGREE with the progress DB; a disagreement is a row. This reads
@@ -14,12 +14,12 @@ modes each program declares (its LAST outcome per mode; PASS only when every rec
               reconciliation test_gate_score_row_denominator_includes_xfails.sh uses, sourced from one table below)
   xpass       programs whose PASS rows carry the note `xfail` -- THE DB FOLDS XPASS INTO PASS AND A SUITE BOARD DOES NOT
               (hq_snocone 2026-09-16): a numerator gap EQUAL to xpass means stale xfail markers still on the suite (promote
-              them, CEO-753); a gap with xpass 0 means the row is simply behind its tree or its runner counts differently.
+              them, R-753); a gap with xpass 0 means the row is simply behind its tree or its runner counts differently.
 
 VERDICT per row: AGREE · DISAGREE (numerator and/or denominator, each with the difference) · UNPROVEN (no DB rows on the
-row's tree, named -- CEO-750: a row without per-program evidence is DARK wearing a number) · DEFERRED (no tree, a DEFERRED
-criterion: gnu_fd, CEO-579). rc=1 when any graded row DISAGREES; rc=2 when zero rows are gradable; else 0. An UNPROVEN row
-does not by itself make rc=2 (CEO-786 confirmed this reading for the sibling gate: a per-row rc=2 is a standing refusal).
+row's tree, named -- R-750: a row without per-program evidence is DARK wearing a number) · DEFERRED (no tree, a DEFERRED
+criterion: gnu_fd, R-579). rc=1 when any graded row DISAGREES; rc=2 when zero rows are gradable; else 0. An UNPROVEN row
+does not by itself make rc=2 (R-786 confirmed this reading for the sibling gate: a per-row rc=2 is a standing refusal).
 
 --selftest builds a scratch SUITES.tsv, DB and corpus under mktemp: an agreeing row, a planted NUMERATOR disagreement whose
 gap equals its xpass count, a planted DENOMINATOR disagreement, an UNPROVEN row and a DEFERRED row, and proves rc=1 naming
@@ -37,7 +37,7 @@ DBNAME = {"sno-rungs": "snobol4-rungs", "icn-rungs": "icon-rungs", "pl-rungs": "
 
 def dbname(key):
     """The progress table's suite name for a SUITES.tsv key. A port engine's key carries its engine (sno-rungs@dotnet) and so does its
-    progress name (snobol4-rungs@dotnet): the map is read for the bare key and the engine rides through (CEO-1822), so a port's rows
+    progress name (snobol4-rungs@dotnet): the map is read for the bare key and the engine rides through (R-1822), so a port's rows
     and SCRIP's can never be joined to one another's key."""
     base, at, engine = key.partition("@")
     return DBNAME.get(base, base) + at + engine
@@ -53,27 +53,27 @@ SIDECAR = {"sno-rungs": "tests/snobol4/ALL.outside.tsv",
 UNG = {"UNGRADED", "SKIP", "MISSING", "UNPROVEN"}
 
 
-# ⛔ A DRIVER IS ITS LIBRARY'S VEHICLE (CEO-1269): the progress writer records NAME_driver under NAME, and a sidecar written before the
+# ⛔ A DRIVER IS ITS LIBRARY'S VEHICLE (R-1269): the progress writer records NAME_driver under NAME, and a sidecar written before the
 # re-keying still names the driver (gimpel's OUTSIDE file: BAL_driver.sno), so the stem folds the suffix -- else the one program
 # counts twice, once from the DB and once from the sidecar (gimpel read 160 against its row of 148, coo 2026-09-25).
-# ⛔ AN INCLUDE LIBRARY'S FILE IS NAME.INC OR NAME.inc AND ITS PROGRESS KEY STAYS NAME.sno (corpus fb0900573; ceo CEO-1317, declared in
+# ⛔ AN INCLUDE LIBRARY'S FILE IS NAME.INC OR NAME.inc AND ITS PROGRESS KEY STAYS NAME.sno (corpus fb0900573; R-1317, declared in
 # gimpel's README): the stem folds .INC/.inc too, else gimpel's sidecars named 10 libraries a second time (152 against its row of 142).
 # ⛔ AND THE PAIR CONVENTION: a stem the package ships twice, as the program x.spt and the library x.inc, is graded through x_driver and
-# x_lib_driver (gimpel since CEO-1319), so x_lib_driver's stem is x -- else its OUTSIDE row counted a 146th program against gimpel's 145.
+# x_lib_driver (gimpel since R-1319), so x_lib_driver's stem is x -- else its OUTSIDE row counted a 146th program against gimpel's 145.
 def stem(n):
     b = re.sub(r"\.(sno|spt|sc|icn|pl|reb|raku|pas|inc|INC)$", "", n.split("/")[-1])
     return b[: -len("_lib_driver")] if b.endswith("_lib_driver") else re.sub(r"_driver$", "", b)
 
 
-# ⛔ PACKAGES WITH NO OUTSIDE FILE WHOSE ROW IS STILL THEIR SHIPPED POPULATION (ceo CEO-1272, coo 2026-09-25): IPL publishes the
+# ⛔ PACKAGES WITH NO OUTSIDE FILE WHOSE ROW IS STILL THEIR SHIPPED POPULATION (R-1272, coo 2026-09-25): IPL publishes the
 # inventory's shipped count since SCRIP e6120e5ba, so its UNGRADED/UNGRADABLE sidecars are part of the row's denominator exactly as
 # they are for the packages above; without the fold the audit read IPL's 843 against a DB population of 194.
 PKG_SIDECARS = {"ipl": "packages/icon/ipl", "puzzles": "packages/prolog/puzzles"}
 
 
 def container_stems(corpus, key):
-    """The names a row's denominator leaves out, from the sidecars beside the suite: CONTAINERS.tsv (CEO-1272, files that are not
-    programs) and EXCLUDED.tsv (CEO-1286, programs not in the SPITBOL dialect) -- together the row's Excl (CEO-1288). A DB row
+    """The names a row's denominator leaves out, from the sidecars beside the suite: CONTAINERS.tsv (R-1272, files that are not
+    programs) and EXCLUDED.tsv (R-1286, programs not in the SPITBOL dialect) -- together the row's Excl (R-1288). A DB row
     written for one on an older corpus, before its sidecar named it, is not a program of the row and is not counted."""
     d = os.path.dirname(SIDECAR[key]) if key in SIDECAR else PKG_SIDECARS.get(key)
     out = set()
@@ -121,7 +121,7 @@ def read_db(db, want):
 
 def sidecar_stems(corpus, key):
     """(outside, ungradable, ungraded) name sets from the suite's sidecars: the OUTSIDE file the map names, plus the
-    package's UNGRADABLE.tsv / UNGRADED.tsv beside it (ceo CEO-798: the runner's PACKAGE_INVENTORY line is the population
+    package's UNGRADABLE.tsv / UNGRADED.tsv beside it (R-798: the runner's PACKAGE_INVENTORY line is the population
     authority and those two files are its record on disk; csnobol4: 61 UNGRADABLE of which the 49 OUTSIDE are a subset)."""
     sc = SIDECAR.get(key)
     out, ungradable, ungraded = set(), set(), set()
@@ -141,8 +141,8 @@ def sidecar_stems(corpus, key):
             if l.startswith("#") or not l.strip():
                 continue
             name = l.split("\t")[0].strip()
-            # a name carrying ':' is a ROW inside an already-graded program, not a program of its own (ceo
-            # CEO-516: lgint's three unbounded bigexp arms are named this way so lgint stays in the graded
+            # a name carrying ':' is a ROW inside an already-graded program, not a program of its own (the officer
+            # R-516: lgint's three unbounded bigexp arms are named this way so lgint stays in the graded
             # population) -- counting it here double-counts the program as an extra OUTSIDE entry.
             if ":" in name:
                 continue
@@ -162,7 +162,7 @@ def sidecar_stems(corpus, key):
 
 def population_inputs(corpus, key, d):
     """The DB rows and the sidecar name sets ONE suite's population is tallied from, with CONTAINERS.tsv's names removed from all of
-    them (CEO-1272). Shared by this audit and util_score_row.py's write-time cross-check, so the two cannot disagree on who counts."""
+    them (R-1272). Shared by this audit and util_score_row.py's write-time cross-check, so the two cannot disagree on who counts."""
     side, s_ungradable, s_ungraded = sidecar_stems(corpus, key)
     cont = container_stems(corpus, key)
     if cont:
@@ -179,7 +179,7 @@ def population_inputs(corpus, key, d):
 
 def classify(mm, outside_named):
     v = {o for o, _n in mm.values()}
-    # the runner's recorded class outranks the sidecar (ceo CEO-799): a sidecar-named entry WITH a DB row keeps the DB's class;
+    # the runner's recorded class outranks the sidecar (R-799): a sidecar-named entry WITH a DB row keeps the DB's class;
     # the sidecar classes only an entry the DB has no row for (Budne: 49 declared, 22 measured today, 27 UNGRADABLE debt)
     if "OUTSIDE" in v:
         return "OUTSIDE"
@@ -257,7 +257,7 @@ def audit(suites, db, corpus, out=print):
         d, side, s_ungradable, s_ungraded = population_inputs(corpus, key, d)
         if not d:
             unproven.append(key)
-            out(f"{tag} {'-':>10} {'-':>5}  {'-':10} {'-':19}  UNPROVEN: no progress rows for this suite on {tree} (CEO-750)")
+            out(f"{tag} {'-':>10} {'-':>5}  {'-':10} {'-':19}  UNPROVEN: no progress rows for this suite on {tree} (R-750)")
             continue
         cnt, pop, xpass, labels, bounded, shards = tally(d, side, s_ungradable, s_ungraded)
         graded += 1
@@ -272,7 +272,7 @@ def audit(suites, db, corpus, out=print):
             why.append(f"numerator row {P} EXCEEDS the DB's '{'/'.join(sorted(labels))}' upper bound {cnt['PASS']} ({cnt['PASS'] - p_row:+d})")
         elif p_row != cnt["PASS"]:
             gap = cnt["PASS"] - p_row
-            why.append(f"numerator row {P} vs DB {cnt['PASS']} ({gap:+d})" + (" = xpass: STALE MARKERS, promote them (CEO-753)" if gap == xpass and xpass > 0 else ""))
+            why.append(f"numerator row {P} vs DB {cnt['PASS']} ({gap:+d})" + (" = xpass: STALE MARKERS, promote them (R-753)" if gap == xpass and xpass > 0 else ""))
         if t_row != pop:
             why.append(f"denominator row {T} vs DB population {pop} ({t_row - pop:+d}; PASS {cnt['PASS']} FAIL {cnt['FAIL']} OUTSIDE {cnt['OUTSIDE']} UNGRADABLE {cnt['UNGRADABLE']} UNGRADED {cnt['UNGRADED']} DEFERRED {cnt['DEFERRED']})")
         if shards:
@@ -310,7 +310,7 @@ def selftest():
                 "snc-rungs\tSncM\tx\tsnocone\t2026-09-03\t1\t3\t2026-09-16\t1\t3\tfeedbeef1\tfixture\n",       # DB 2/3, the extra PASS is an xfail-noted one: gap == xpass
                 "gimpel\tGimpel\tx\tsnobol4\t2026-09-04\t1\t2\t2026-09-16\t1\t2\tfeedbeef1\tfixture\n",         # DB 1/3 (1 PASS 1 FAIL 1 UNGRADED): denominator planted
                 "roast\tRoast\tx\traku\t2026-09-03\t4\t986\t2026-09-13\t6\t986\tdeadbeef2\tfixture\n",           # no rows on its tree: UNPROVEN
-                "gnu_fd\tGnuFD\tx\tprolog\t\t\t\t\t\t30\t\tDEFERRED by ruling CEO-579\n",
+                "gnu_fd\tGnuFD\tx\tprolog\t\t\t\t\t\t30\t\tDEFERRED by ruling R-579\n",
                 "inria\tINRIA\tx\tprolog\t2026-09-05\t1\t3\t2026-09-16\t2\t3\tfeedbeef1\tfixture\n",           # DB 3 PASS all noted outcome-class: an upper bound, row 2 <= 3 AGREE-BOUNDED
                 "swi\tSWI\tx\tprolog\t2026-09-05\t1\t3\t2026-09-16\t3\t3\tfeedbeef1\tfixture\n"]              # DB 2 PASS noted outcome-class: row 3 EXCEEDS the bound -> DISAGREE
         open(suites, "w").write("# fixture\n" + hdr + "".join(rows))
@@ -350,7 +350,7 @@ def selftest():
         rc = audit(suites, db, os.path.join(w, "corpus"), out=buf.append)
         ck(rc == 2, "(c) rc=2 REFUSES on an empty DB (zero rows gradable)")
         # (d) THE THREE POPULATION RULES OF 2026-09-25 (coo): a driver-named sidecar row and its library-named DB row are ONE program
-        # (CEO-1269); a CONTAINERS.tsv name is no program even with a stale DB row on the tree (CEO-1272); and a package with no outside
+        # (R-1269); a CONTAINERS.tsv name is no program even with a stale DB row on the tree (R-1272); and a package with no outside
         # file folds its sidecars BY PATH, so two files sharing a basename count twice (IPL). Each row reads AGREE only with all three.
         dn = os.path.join(w, "corpus", "packages", "snobol4", "dotnet"); os.makedirs(dn)
         open(os.path.join(dn, "OUTSIDE_SPITBOL_BASELINE.tsv"), "w").write("X_driver.sno\tORACLE_REFUSES\tfixture\nq_lib_driver.sno\tORACLE_REFUSES\tthe library of a twice-shipped stem (fixture)\n")

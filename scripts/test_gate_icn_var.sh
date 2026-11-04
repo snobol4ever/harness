@@ -67,7 +67,7 @@ BAD=0
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built at $SCRIP — run ../harness/scripts/build_scrip.sh"; exit 2; }
 
 A2=""; A3=""; A4=""; SMX3=0; SMX4=0; RC3=0
-# ⭐ THE ENTRY'S OWN COMMAND LINE (ceo CEO-1353, clause 8 (g)(4); clause 8 (f)): RUN_SW holds its declared heap and stack as -d<kb>k -s<kb>k
+# ⭐ THE ENTRY'S OWN COMMAND LINE (R-1353, clause 8 (g)(4); clause 8 (f)): RUN_SW holds its declared heap and stack as -d<kb>k -s<kb>k
 # (never SCRIP_HEAP_KB, the collector's window) and RUN_AV its ALL.argv arguments -- this gate passed neither, so entry 882
 # (rung36_jcon_image, dump(args)) read its one declared argument as absent in every mode and the gate stood red.
 declare -a RUN_SW=() RUN_AV=()
@@ -300,7 +300,7 @@ while IFS=$'\t' read -r -a ROW; do
     [ -f "${out%.icn}.in" ] && cp "${out%.icn}.in" "${out%.icn}.stdin"   # run3 looks for .stdin, extract writes .in
     CN=$((CN+1))
     exp=$(cat "$ref" 2>/dev/null || true)
-    # the entry runs at the heap its ALL.csv row declares (heap_kb, CEO-1167/1225), as every suite runner does -- an undeclared
+    # the entry runs at the heap its ALL.csv row declares (heap_kb, R-1167/1225), as every suite runner does -- an undeclared
     # entry runs at the shipped default, unchanged
     run3 "$out" 30
     if [ "$A2" = "$exp" ]; then r2=PASS; C2P=$((C2P+1)); else r2=FAIL; C2F=$((C2F+1)); fi

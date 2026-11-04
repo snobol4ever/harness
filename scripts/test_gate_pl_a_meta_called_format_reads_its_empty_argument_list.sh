@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_meta_called_format_reads_its_empty_argument_list.sh -- format(F, []) REACHED THROUGH call/N PRINTS F (ISO-superset format/2;
-# hq_prolog 2026-09-25, CEO-1266/1270; the cure is unification.c rt_pl_format_run, which now dereferences its argument list before reading it).
+# hq_prolog 2026-09-25, R-1266/1270; the cure is unification.c rt_pl_format_run, which now dereferences its argument list before reading it).
 # THE DEFECT. The leftover-argument test asked plc_is_nil of the list cell AS PASSED; a meta-call hands the leaf a reference to [] rather than
 # [] itself, so an untouched empty list read as "arguments left over" and raised domain_error(format_arguments, []) -- X = format("b~n", []),
 # call(X) failed where the same goal written directly printed b. A list that directives consumed (format("d ~w~n", [1])) was unaffected,

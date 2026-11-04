@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_box_cell_shapes_inc_is_current.sh -- THE CELL-SHAPE TABLE AND THE PLANNER AGREE (ARCH-ZETA-ONE-COORDINATE 3.5 (iii); ARCH-THREE-ZETAS-EMISSION
-# 10 (3); the cto, CEO-1923). harness/scripts/box_cell_shapes.tsv is the one statement of what each box kind carves at its alpha; the planner's zd_k_own
+# 10 (3); the cto, R-1923). harness/scripts/box_cell_shapes.tsv is the one statement of what each box kind carves at its alpha; the planner's zd_k_own
 # reads SCRIP/src/planner/box_cell_shapes.inc, which util_gen_box_cell_shapes.py writes from it. A table edited without regenerating, or an .inc edited
 # by hand, is the drift this gate names; and the planner must read the table, never a hand list of kinds beside it.
 # rc 0 current · rc 1 stale, or zd_k_own_g (zd_k_own on a tree before SCRIP 0c9f5d7f9, where it became a wrapper) decides a carve without the table · rc 2 cannot read the table, the .inc or the planner.

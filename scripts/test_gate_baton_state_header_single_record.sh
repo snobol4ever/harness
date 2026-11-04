@@ -4,7 +4,7 @@
 # ⛔⭐ WHY: 81% of baton `state:` headers disagreed with QUEUE.tsv (hq_B: agree=7, DISAGREE=29 over non-FREE rows
 # with a baton). park/done/unclaim/assign write the QUEUE column and append a ledger line but never rewrite the
 # baton's line 1 — while `next` tells every seat "THE BATON IS THE TASK FILE", whose first line is then wrong 4
-# times in 5. ceo RULED at mint: DELETE the owner/state fields from baton line 1 rather than sync them. A state
+# times in 5. the officer RULED at mint: DELETE the owner/state fields from baton line 1 rather than sync them. A state
 # that exists in ONE file cannot go stale in two; QUEUE.tsv is the single record and the picker printout already
 # carries owner/state on every serve.
 # ⭐ THIS GATE IS THE ARM THAT KEEPS IT DELETED. Sweeping once without it just gets re-dirtied by the next mint —

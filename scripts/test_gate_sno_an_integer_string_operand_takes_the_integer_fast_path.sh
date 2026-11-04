@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_an_integer_string_operand_takes_the_integer_fast_path.sh -- AN ARITHMETIC ON TWO NUMERIC STRINGS USED TO PARSE EACH
 # OPERAND SIX TO EIGHT TIMES: big_str_operand (strtoll), is_numeric_like (a scan, then strtod), operand_is_real_str (strtoll and
 # strtod), to_real (strtod), to_int (strtoll), behind a setjmp and an Icon error context -- about 1,700 Ir per "12" + "3" at -O0,
-# 47 M of the calculator demo's 373 M (ceo 2026-09-25, CEO-1257; notebook section 17). Since this landing every RT_BINOP_ENTRY
+# 47 M of the calculator demo's 373 M (2026-09-25, R-1257; notebook section 17). Since this landing every RT_BINOP_ENTRY
 # tests the two operands with rt_int_str_operand first (blanks, an optional sign, digits, blanks, exactly the run of the descriptor
 # and no overflow), and a pair of integer strings takes the same fast block a pair of integers takes; anything else (reals, empty,
 # overflow, a non-numeric shape, DATA) falls through to the unchanged general path with the ORIGINAL operands.

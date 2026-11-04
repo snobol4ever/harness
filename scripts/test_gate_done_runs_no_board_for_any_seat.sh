@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_done_runs_no_board_for_any_seat.sh -- DONE RUNS NO BOARD FOR ANY SEAT (ceo CEO-1342 clause 5; the coo's row
+# test_gate_done_runs_no_board_for_any_seat.sh -- DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5; the coo's row
 # bus-done-runs-no-board-for-any-seat-a-done-when-that-needs-a-suite-verdict-reads-the-coos-suite-table-row-at-a-tree-at-or-after-the-landing).
 # THE DEFECT: MODE's LANES line names the coo for every language, so every other seat's board run refuses rc=2 -- except through
 # `s4e_msg.sh done`, which exported S4E_DONE_WHEN_RUN=1 around a computed DONE-WHEN and both one-runner guards ADMITTED that run
@@ -22,7 +22,7 @@ for f in "$L" "$H" "$RA" "$XC"; do gate_require "$f" "$(basename "$f")" || exit 
 CORPUS="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}/corpus"
 gate_require "$CORPUS/tests/rebus/ALL.reb" "the rebus rungs (a real board path for the guard to judge)" || exit 2
 W=$(mktemp -d) || exit 2; trap 'git -C "$ROOT" worktree remove --force "$W/home/SCRIP" >/dev/null 2>&1; rm -rf "$W"' EXIT INT TERM
-# ⭐ THE OFFICER IS AN OFFICER NO REBUS LANE NAMES (the coo 2026-11-01): the cto was that seat until the dual bosses (CEO-2095) put it on every
+# ⭐ THE OFFICER IS AN OFFICER NO REBUS LANE NAMES (the coo 2026-11-01): the cto was that seat until the dual bosses (R-2095) put it on every
 # lane (rebus=coo,cto), and an owner is admitted before the done refusal is reached; so arms 1a, 2 and 5 take the first of cfo, cao, cqo the lane omits.
 OFF=""; _rb=",$(bash -c "source \"$L\"; one_runner_who rebus" 2>/dev/null),"; for _c in cfo cao cqo; do case "$_rb" in *",$_c,"*) ;; *) OFF=$_c; break;; esac; done
 [ -n "$OFF" ] || { echo "REFUSE(2): every officer owns rebus -- the officer arms cannot be built"; exit 2; }
@@ -35,7 +35,7 @@ ck "1a rc 2, DONE RUNS NO BOARD FOR ANY SEAT named, util_suite_row_at_or_after.s
 o1b=$(S4E_SEAT=hq_icon S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r1b=$?
 ck "1b and a language HQ under the same variable is refused as before (ONE SEAT, ONE LANGUAGE)" '[ "$r1b" = 2 ]'
 o1c=$(S4E_SEAT=coo S4E_DONE_WHEN_RUN=1 bash -c "source \"$L\"; one_runner_guard test_x_suite.sh \"$CORPUS/tests/rebus/ALL.reb\"" 2>&1); r1c=$?
-ck "1c the lane owner the LANES line names (coo, CEO-1342) passes under its own done: the loop's rows are written through done too" '[ "$r1c" = 0 ]'
+ck "1c the lane owner the LANES line names (coo, R-1342) passes under its own done: the loop's rows are written through done too" '[ "$r1c" = 0 ]'
 
 echo "--- ARM 2: the harness guard refuses the same way ---"
 o2=$(cd "$ROOT" && S4E_SEAT=$OFF S4E_DONE_WHEN_RUN=1 python3 -c "import sys; sys.path.insert(0, '../harness/scripts'); import corpus_suite_harness as h; h._one_runner_guard('$CORPUS/tests/rebus/ALL.reb', '$CORPUS', 'rebus')" 2>&1); r2=$?

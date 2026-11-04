@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""audit_bare_timeout_census.py -- THE CENSUS OF GRADED RUNS WHOSE TIMEOUT IS NOT RETRIED UNDER LOAD (ceo CEO-1335; the coo 2026-10-09).
+"""audit_bare_timeout_census.py -- THE CENSUS OF GRADED RUNS WHOSE TIMEOUT IS NOT RETRIED UNDER LOAD (R-1335; the coo 2026-10-09).
 
 A runner that grades a unit under its own per-program timeout calls util_timeout_retry.sh ("$TIMEOUT_RETRY", timeout's own argv) or,
 in Python, lib_timeout_retry.run (subprocess.run's own signature): a timeout while the 1-minute load exceeds the cores is then run once

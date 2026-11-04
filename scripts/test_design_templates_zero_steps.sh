@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# test_design_templates_zero_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: templates-zero (the cto, 2026-11-01, CEO-2095;
+# test_design_templates_zero_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: templates-zero (the cto, 2026-11-01, R-2095;
 # .github/ARCH-CALL-FORMS.md section 9). The plan is corpus/tests/shared/templates_zero/STEPS.tsv. A step's measurement is its PROBE over the
 # SCRIP tree (the per-file template audit, a symbol census, a kind's dispatch, the pipeline order, the whole-set census) and its WITNESSES:
 # master entries named <lang>:<entry>, each graded in both modes by corpus_suite_harness.py run --partition entry:<entry> (a handful of named
-# entries is any seat's own test, never a board, CEO-1893).
+# entries is any seat's own test, never a board, R-1893).
 #
 #   --list       print the steps and run nothing
 #   --step N     run step N's probe tokens, then grade its witnesses in both modes

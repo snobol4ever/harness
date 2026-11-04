@@ -3,9 +3,9 @@
 # compile: the three compile-time witnesses (200 DEFINEs and a 608-entry blob layout vs sbl -bf, 600 predicates vs gprolog) plus zero compiler tables bound
 #          by a compile-time population cap in the census; runtime: the 70-argument Icon call vs iconx plus zero runtime tables
 #          bound by a runtime population cap; census: the ratchet -- file/static/field declarations may only fall from BASELINE, and the
-#          locals a program fills (CEO-1231 stage 2) may only fall from BASELINE_FUNCTION_SCOPE; witness: every LOUD guard's refusal read
+#          locals a program fills (R-1231 stage 2) may only fall from BASELINE_FUNCTION_SCOPE; witness: every LOUD guard's refusal read
 #          at its cap+1 by the program ../harness/scripts/fixtures/dyn_caps/WITNESSES.tsv names for it. Every verb first sets aside the compilation
-#          units ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv declares, each checked against the scrip and libscrip_rt link lines (CEO-1235 (3)).
+#          units ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv declares, each checked against the scrip and libscrip_rt link lines (R-1235 (3)).
 # rc 0 GREEN, 1 RED, 2 REFUSE (an oracle or the binary missing). The population regexes are the page's § 6 list, spelled once here.
 # The GNU Prolog oracle is gplc's native binary, never `"$(gprolog_bin)" --consult-file`: the top level prints a four-line banner and consult's two
 # "compiling ..." lines to STDOUT before the program runs, so that arm read 606 lines against a correct 600 and could never go green (cfo 2026-09-23).
@@ -17,7 +17,7 @@ mode=${1:-}; [ -n "$mode" ] || { echo "REFUSE(2): usage: util_dyn_caps_witness.s
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 python3 ../harness/scripts/audit_fixed_caps_census.py --tsv "$T/c.tsv" --no-report > "$T/census.txt" 2>&1 || { echo "REFUSE(2): the census refused -- $(tail -2 "$T/census.txt" | tr '\n' ' ')"; exit 2; }
 red=0
-# ⭐ NOT SHIPPED (ceo CEO-1235 (3)): ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv names the compilation units no program's run reaches (unit
+# ⭐ NOT SHIPPED (R-1235 (3)): ../harness/scripts/fixtures/dyn_caps/NOT_SHIPPED.tsv names the compilation units no program's run reaches (unit
 # tests, tools, demos); their rows leave $T/c.tsv before any line below reads it. THE LINK IS THE EVIDENCE: each row is checked against
 # make's own RT_PIC_SRCS (what `$(CC) -shared` links into libscrip_rt) and src/driver/scrip.c (the scrip link). A linked file, a header
 # or a file the tree no longer has sets nothing aside and reads RED by name, in every verb. DYN_CAPS_NOT_SHIPPED overrides the path.
@@ -91,15 +91,15 @@ runtime)
 census)
   B=../harness/scripts/fixtures/dyn_caps/BASELINE; [ -f "$B" ] || { echo "REFUSE(2): no baseline at $B"; exit 2; }
   BF=../harness/scripts/fixtures/dyn_caps/BASELINE_FUNCTION_SCOPE; [ -f "$BF" ] || { echo "REFUSE(2): no function-scope baseline at $BF"; exit 2; }
-  # ⭐ THE GUARD LINES READ THE CLASSIFIER (audit_fixed_caps_census.py, CEO-1231): u is every file/static/field table, macro OR literal
+  # ⭐ THE GUARD LINES READ THE CLASSIFIER (audit_fixed_caps_census.py, R-1231): u is every file/static/field table, macro OR literal
   # bound, with no capacity guard at a fill (never compared, or compared only as an index or an iteration) and not read-only; d is
   # every such table whose guard DROPS -- skips, truncates, clamps or fails silently at the cap. A const table is class A by rule and in
   # neither. ⛔ ONE line ends "never compared in its file: N", on purpose: the row's DONE-WHEN greps that suffix, and two lines ending in
   # it would let either one's zero pass the criterion for both.
   [ "$(head -1 "$T/c.tsv" | cut -f8-9,11)" = "$(printf 'guard\tconst\tfill')" ] || { echo "REFUSE(2): the census TSV carries no guard/const/fill columns -- an older census cannot be read by these lines"; exit 2; }
-  # ⭐ ARENAS (CEO-1231 (1), stage 2 (b)): the census's scope `arena` rows -- a constant 64 KiB or more from an allocator -- count with the
+  # ⭐ ARENAS (R-1231 (1), stage 2 (b)): the census's scope `arena` rows -- a constant 64 KiB or more from an allocator -- count with the
   # file-scope tables in all three lines below, and CLASS_AB.tsv may declare them (the sigaltstack).
-  # ⭐ THE CLASS A/B DECLARATION IS A FIXTURE (ceo CEO-1234 (1)): a table CLASS_AB.tsv names, with the measurement that earned its class,
+  # ⭐ THE CLASS A/B DECLARATION IS A FIXTURE (R-1234 (1)): a table CLASS_AB.tsv names, with the measurement that earned its class,
   # leaves the no-guard and drop lines as a const table does by rule; the ratchet COUNT is unchanged; a row naming a table the tree no
   # longer declares is RED (a stale keep-list is one nobody notices has stopped applying).
   AB="${DYN_CAPS_CLASS_AB:-../harness/scripts/fixtures/dyn_caps/CLASS_AB.tsv}"; [ -f "$AB" ] || { echo "REFUSE(2): no class A/B declaration at $AB"; exit 2; }
@@ -109,7 +109,7 @@ census)
   u=$(awk -F'\t' 'FILENAME==ARGV[1] {if ($0 !~ /^#/ && NF >= 4) ab[$1 SUBSEP $2] = 1; next} FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena") && $8=="NONE" && $9=="" && !(($1 SUBSEP $4) in ab)' "$AB" "$T/c.tsv" | wc -l)
   d=$(awk -F'\t' 'FILENAME==ARGV[1] {if ($0 !~ /^#/ && NF >= 4) ab[$1 SUBSEP $2] = 1; next} FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena") && $8=="DROP" && $9=="" && !(($1 SUBSEP $4) in ab)' "$AB" "$T/c.tsv" | wc -l)
   # the TABLES a row declares, not the rows: a row is (file, name), and one name can declare several tables in one file
-  # (bb_match_capture.cpp's three b buffers, CEO-1269) -- counting rows printed 23 over 25 declared tables
+  # (bb_match_capture.cpp's three b buffers, R-1269) -- counting rows printed 23 over 25 declared tables
   nab=$(awk -F'\t' 'FILENAME==ARGV[1] {if ($0 !~ /^#/ && NF >= 4) ab[$1 SUBSEP $2] = 1; next} FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena") && (($1 SUBSEP $4) in ab)' "$AB" "$T/c.tsv" | wc -l)
   stale=$(awk -F'\t' 'FNR==NR {if (FNR>1 && ($3=="file"||$3=="static"||$3=="field"||$3=="arena"||($3=="local" && $9=="" && $11!="" && $11 !~ /^B:/))) have[$1 SUBSEP $4] = 1; next} !/^#/ && NF >= 4 && !(($1 SUBSEP $2) in have) {print "  " $1 ":" $2}' "$T/c.tsv" "$AB")
   echo "fixed-bound declarations at file, static or field scope and fixed-size arenas: $n (baseline $base); with no capacity guard at a fill, by a macro or a literal bound -- compared only as an index or an iteration, or never compared in its file: $u"
@@ -117,11 +117,11 @@ census)
   echo "declared class A or B by $AB (out of the two lines above, in the count): $nab table(s); stale declarations: $(printf '%s' "$stale" | grep -c .)"
   echo "set aside as not shipped by $NS, each row checked against the scrip and libscrip_rt link lines: $nst table(s) and $nsl local(s) a program fills, in $nsf of $(grep -c . "$T/ns.all") declared file(s); linked, header or stale declarations: $(printf '%s' "$nsred" | grep -c .)"
   [ -z "$stale" ] || { echo "RED: $AB declares a table the tree no longer declares -- remove the row in the landing that removed the table:"; printf '%s\n' "$stale"; red=1; }
-  # ⭐ THE SECOND POPULATION (CEO-1231 (1), stage 2): every local a program's data fills -- the census's fill column names how (COUNTER,
+  # ⭐ THE SECOND POPULATION (R-1231 (1), stage 2): every local a program's data fills -- the census's fill column names how (COUNTER,
   # CALLEE:f, FORMAT:f, COPY:f, READ:f, PATH:f); B:<why> is fixed by construction and out; const is read-only and out. Unguarded is DROP
-  # and NONE together (CEO-1231 (2): a drop is not a guard); guarded is LOUD, which the reader also gives a GROW (the at-cap path
+  # and NONE together (R-1231 (2): a drop is not a guard); guarded is LOUD, which the reader also gives a GROW (the at-cap path
   # allocates). The population is ratcheted like the file-scope one, against its own BASELINE_FUNCTION_SCOPE.
-  # ⭐ A LOCAL MAY BE DECLARED (ceo 2026-10-02, the coo's arm-5 ask, ruling (a): gc_audit_b.c's /proc/self/maps buffer buf[16384] is
+  # ⭐ A LOCAL MAY BE DECLARED (2026-10-02, the coo's arm-5 ask, ruling (a): gc_audit_b.c's /proc/self/maps buffer buf[16384] is
   # class A): a CLASS_AB.tsv row naming a local a program fills keeps it IN the count, as a declared table stays in its count, and takes
   # it OUT of the guarded, dropping and no-guard terms, printed apart; a row naming a local the tree no longer declares is stale above.
   bf=$(cat "$BF")
@@ -135,10 +135,10 @@ census)
   if [ "$fn" -gt "$bf" ]; then echo "RED: the function-scope population grew from $bf to $fn -- a new fixed local that a program fills landed; make it grow, and list it: python3 ../harness/scripts/audit_fixed_caps_census.py --tsv FILE (column fill)"; red=1; elif [ "$fn" -lt "$bf" ]; then echo "NOTE: the function-scope population $fn is below its baseline $bf -- lower BASELINE_FUNCTION_SCOPE in the same landing"; fi
   ;;
 witness)
-  # ⭐ THE WITNESS VERB (CEO-1231: the refusal read at cap+1). N = the census's LOUD guards (tables, arenas and the locals a program
+  # ⭐ THE WITNESS VERB (R-1231: the refusal read at cap+1). N = the census's LOUD guards (tables, arenas and the locals a program
   # fills) that CLASS_AB.tsv does not declare; each needs a WITNESSES.tsv row whose program reaches its cap+1 and whose run ends in
   # the row's rc with the row's refusal on stderr. SILENT: the run ended rc 0 past the cap and nothing refused. A row whose guard is no
-  # longer LOUD (converted, or never) is STALE and RED. GREEN when K = N, silent 0 and nothing stale -- ⛔ 0 OF 0 IS GREEN (ceo CEO-1235
+  # longer LOUD (converted, or never) is STALE and RED. GREEN when K = N, silent 0 and nothing stale -- ⛔ 0 OF 0 IS GREEN (R-1235
   # (1): a guard need not remain; every cap converted to growth is the row's end state), so an N of 0 is read only from a census that
   # classified guards at all: a census TSV whose guard column is empty everywhere REFUSES rather than reading a vacuous 0 of 0.
   SB="${SCRIP_BIN:-./scrip}"; [ -x "$SB" ] || { echo "REFUSE(2): no scrip binary at $SB"; exit 2; }
@@ -163,7 +163,7 @@ witness)
   done < "$T/loud"
   stale=$(awk -F'\t' 'FILENAME==ARGV[1] {have[$1 SUBSEP $2] = 1; next} !/^#/ && NF >= 6 && !(($1 SUBSEP $2) in have) {print "  STALE       " $1 ":" $2 " -- not a LOUD guard of this census"}' "$T/loud" "$WT")
   [ -z "$stale" ] || { printf '%s\n' "$stale"; X=$(printf '%s\n' "$stale" | grep -c .); }
-  [ "$N" = 0 ] && echo "  no LOUD guard remains: every cap is converted to growth or declared class A/B (0 of 0 is GREEN, ceo CEO-1235 (1))"
+  [ "$N" = 0 ] && echo "  no LOUD guard remains: every cap is converted to growth or declared class A/B (0 of 0 is GREEN, R-1235 (1))"
   echo "refusal read at the cap: $K of $N guards, silent: $S"
   { [ "$K" = "$N" ] && [ "$S" = 0 ] && [ "$X" = 0 ]; } || red=1
   ;;

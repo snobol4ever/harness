@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_exit_converts_its_argument_as_integer_does.sh -- hq_icon, 2026-10-01 (the coo's red, found regenerating the
-# Arizona container under CEO-1392, which grades rc: arizona_tests/general/checkc.icn line 187, exit(abs(3.0)), iconx rc 3).
+# Arizona container under R-1392, which grades rc: arizona_tests/general/checkc.icn line 187, exit(abs(3.0)), iconx rc 3).
 #
 # WHAT WAS THERE. by_name_dispatch.c took exit's status only from an INTEGER argument and exited 0 for anything else, so
 # exit(3.0), exit(abs(3.0)) and exit("3") exited 0 where iconx exits 3, and exit("x") exited 0 where iconx raises error 101.

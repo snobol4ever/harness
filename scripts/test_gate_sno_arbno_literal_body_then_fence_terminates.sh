@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_arbno_literal_body_then_fence_terminates.sh -- ARBNO(P) WHOSE BODY BEGINS WITH A LITERAL, FOLLOWED BY A FENCE(Q)
-# THAT IS BACKTRACKED INTO, TERMINATES AND ANSWERS AS SPITBOL DOES (ceo 2026-09-30, found rewriting bootstrap/parser_raku.sc:
+# THAT IS BACKTRACKED INTO, TERMINATES AND ANSWERS AS SPITBOL DOES (2026-09-30, found rewriting bootstrap/parser_raku.sc:
 # `'a' ARBNO(' b') FENCE(' ' | '') RPOS(0)` on 'a b' -- sbl -bf says yes, ./scrip never returns; the same with FENCE(' ') -- sbl no,
 # ./scrip never returns; two fences -- sbl yes, ./scrip never returns. ARBNO(FENCE(...)) and ARBNO((' ' | '') 'x') agree on both
 # engines, so the shape is the LITERAL-FIRST body. The witness and its oracle-cut ref: ../harness/scripts/fixtures/pattern/

@@ -33,8 +33,8 @@ gate_require_exec "$ROOT/scrip" "the scrip compiler (make -j4 scrip)"
 gate_require "$SCAN" "the scan half of this gate"
 
 CORP="$(cd "$ROOT/../corpus" 2>/dev/null && pwd || true)"
-# ⛔⭐⭐ AN UNRESOLVABLE *NAMED* WITNESS REFUSES rc=2 -- IT DOES NOT SILENTLY SHRINK THE POPULATION (ceo ruling 2026-09-02,
-# GOAL-CEO CEO-151; found by hq_P while curing the demo regen).  This roster used to name `demos/prolog/family.pl`, which has
+# ⛔⭐⭐ AN UNRESOLVABLE *NAMED* WITNESS REFUSES rc=2 -- IT DOES NOT SILENTLY SHRINK THE POPULATION (ruling 2026-09-02,
+# the archived ruling record R-151; found by hq_P while curing the demo regen).  This roster used to name `demos/prolog/family.pl`, which has
 # not existed since 924bd8bd0 renamed corpus/demo -> corpus/demos (the file is and was `family_prolog.pl`).  The gather was
 # `[ -f ... ] && PROGS+=(...)`, so the missing name was DROPPED WITHOUT A WORD and the gate went green over FIVE witnesses
 # while reading -- to anyone looking at the roster -- as if it had covered six.  ⛔ NOT A FALSE GREEN: A QUIETLY NARROWED ONE,

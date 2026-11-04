@@ -17,7 +17,7 @@
 # by re-running one line, and a disagreement is a diff of two file lists rather than two opinions.
 #
 # ⛔ IT WRITES NOTHING: no SCORE row, no RAKU-COVERAGE.md, no board, no progress append. ONE RUNNER ONE BOARD
-# (CEO-775) is untouched -- a board is what it GRADES AND PUBLISHES (CEO-547), and this publishes nothing --
+# (R-775) is untouched -- a board is what it GRADES AND PUBLISHES (R-547), and this publishes nothing --
 # so it is admitted to any seat and carries no one_runner_guard.
 # ⛔ IT REFUSES rc=2 rather than printing the success shape over a population it could not measure, and it
 # asserts its own identity (parsed + parse_fail + other == total) rather than assuming it.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_code_parameter_is_callable_and_the_test_module_judges_blocks_and_matches.sh -- THE HIGHER-ORDER SUB AND THE TEST FUNCTIONS THE ROAST SURVEY FOUND MISSING
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; ceo CEO-1479). Measured by the sanctioned non-publishing inventory (raku_roast_scoreboard.sh --inventory) plus a
+# (row raku-every-suite-to-100-under-nonet-r-1266; R-1479). Measured by the sanctioned non-publishing inventory (raku_roast_scoreboard.sh --inventory) plus a
 # per-file TAP count: of 360 Roast files that run and fail, 190 hit a Test function SCRIP reported as PARSED BUT NOT IMPLEMENTED (throws_like 100, dies_ok 62,
 # lives_ok 61, eval_lives_ok 21), and a call of a missing function (like, unlike, or a code parameter) is error 22 that ends the run.
 # 1. A CODE PARAMETER IS CALLABLE. sub apply(&f) { f(3) } died "undefined function": only my &g declarations registered g as a code variable. rk_tree.c rkb_param now

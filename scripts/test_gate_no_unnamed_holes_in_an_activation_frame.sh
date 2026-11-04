@@ -1,6 +1,6 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# ⭐ WITNESS GATE for CEO-684 slice 1: AN ACTIVATION FRAME RESERVES ONLY WHAT IT NAMES.  --dump-zeta prints the
+# ⭐ WITNESS GATE for R-684 slice 1: AN ACTIVATION FRAME RESERVES ONLY WHAT IT NAMES.  --dump-zeta prints the
 # typed per-activation frame layout -- every field with its offset, size and kind -- and the sum of those fields
 # must TILE the region [16, region_end).  A byte in the region that no field covers is storage the emitter
 # reserved, the collector walks past and no template can address: it costs one stack byte per activation forever
@@ -8,7 +8,7 @@
 # ⛔ WHY A HOLE IS A DEFECT AND NOT A TUNING MATTER, which is the whole reason this is a blocking gate and not a
 # report: the cost is INVISIBLE WHEREVER FRAMES ARE RECLAIMED.  A deterministic call drops its frame at once, so
 # an over-reserved frame has never shown up in any benchmark we run; it becomes an UNBOUNDED stack cost at exactly
-# the moment a frame is RETAINED behind a live choicepoint, which is the Prolog backtracking case (CEO-683/684).
+# the moment a frame is RETAINED behind a live choicepoint, which is the Prolog backtracking case (R-683/684).
 # Measured on r/1 of a four-variable clause: 41 slots, 688 bytes, of which 7 x 16 = 112 bytes are uncovered.
 # ⛔ THE GATE IS A TILING CENSUS, NOT A SIZE PIN, deliberately.  Pinning a byte count would red on every legitimate
 # change to what a frame CARRIES and would teach the next seat to bump the number; a tiling census only ever fires

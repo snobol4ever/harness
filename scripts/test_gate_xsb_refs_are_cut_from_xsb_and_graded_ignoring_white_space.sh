@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space.sh -- XSB IS THE ORACLE OF THE XSB PACKAGE, AS ITS OWN SCRIPTS RUN IT (ceo CEO-1927).
+# test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space.sh -- XSB IS THE ORACLE OF THE XSB PACKAGE, AS ITS OWN SCRIPTS RUN IT (R-1927).
 #
 # Lon 2026-10-23 11:3x CDT, in-chat to the cfo, verbatim: "Since SWIPL does not have all XSB, we should begin to use XSB system as the third oracle."
 # RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE: each program runs as XSB's own gentest.sh runs it
 # ([NAME]. tell(temp). GOAL. told.), its answer sorted, compared ignoring white space, its ref cut from that run and checked against NAME_old.
-# A mktemp package outside corpus/ (CEO-547) declares CONTRACT.tsv oracle=xsb-gentest, upstream=<a fixture test tree>, compare=ignore-all-space,
+# A mktemp package outside corpus/ (R-547) declares CONTRACT.tsv oracle=xsb-gentest, upstream=<a fixture test tree>, compare=ignore-all-space,
 # and ORACLE_RUNS.tsv rows; util_build_package_suite.py builds it --twice with the real XSB (xsb_bin) and corpus_suite_harness.py grades it with
 # the real SCRIP, mode 3, no progress row. ARMS:
 #   1 the ref of ft_tests_t_sorted is XSB's temp SORTED (the program writes c, a, b): ALL.ref holds a, b, c
-#   2 ALL.xsbold names t_sorted MATCH (its NAME_old is a b c) and t_stale DIFF (its NAME_old is stale; the ref is still XSB's, CEO-1927 (1))
-#   3 t_silent writes nothing: EXCLUDED, FAKEABLE_NO_OBSERVABLE (CEO-1865) -- a silent engine would pass an empty ref
+#   2 ALL.xsbold names t_sorted MATCH (its NAME_old is a b c) and t_stale DIFF (its NAME_old is stale; the ref is still XSB's, R-1927 (1))
+#   3 t_silent writes nothing: EXCLUDED, FAKEABLE_NO_OBSERVABLE (R-1865) -- a silent engine would pass an empty ref
 #   4 t_norun has no ORACLE_RUNS.tsv row: EXCLUDED, "run it nowhere" -- never cut from another oracle; 4b t_cr's answer carries a CR (a\rb):
-#     ABSORBED, ALL.ref holding it byte for byte (ceo CEO-1926, 2026-10-23: a CR in an oracle's answer is the program's output byte)
+#     ABSORBED, ALL.ref holding it byte for byte (R-1926, 2026-10-23: a CR in an oracle's answer is the program's output byte)
 #   5 every absorbed ALL.csv row's compare cell reads ignore-all-space
 #   6 graded: t_ws (SCRIP prints p06:p, XSB p06 : p) PASSES -- diff -w; t_tok (SCRIP prints p06:q) FAILS -- a token is not white space
 #   8 PHASE 2, STAGED (STAGED.tsv stage=upstream): t_sib loads helper by its upstream name -- PASSES with the run directory staged as its upstream
 #     test directory (helper.pl written there, its appended driver cut off), FAILS without the column; 9 t_tmp's answer is the file temp it writes
 #     (answer=temp-sorted): PASSES graded as temp's lines sorted, FAILS without the column (stdout is empty); 10 t_dat reads data/d.txt by its
 #     upstream path, a data file vendored under the package's upstream/ft_tests/data/: PASSES staged, FAILS without the stage column
-#   7 THE OVERFLOW ARM (CEO-1927 (5)): a plain prolog package (swipl) whose one program prints without end, built under S4E_OUTPUT_CAP_MB=1:
+#   7 THE OVERFLOW ARM (R-1927 (5)): a plain prolog package (swipl) whose one program prints without end, built under S4E_OUTPUT_CAP_MB=1:
 #     EXCLUDED as an OVERFLOW, never absorbed (rosetta-pascal's seven interactive programs were, at 268435457 bytes each, 2026-10-23)
-#  11 THE CR ARM (CEO-1926): in that plain package cr.pl prints x CR LF y LF -- absorbed, its ref carrying the CR at end of line; graded, it
+#  11 THE CR ARM (R-1926): in that plain package cr.pl prints x CR LF y LF -- absorbed, its ref carrying the CR at end of line; graded, it
 #     PASSES (SCRIP prints the same CR), and a control container whose cr.pl prints LF where the oracle printed CR FAILS against that ref
 # FAIL-ONCE: on the harness before this gate's landing the builder refuses the contract (rc 2) and absorbs the overflow -- arms 1-7 read red there.
 # Arms 4b, 10 and 11 read red on harness 23cdfb0, before the CR ruling and the upstream data staging landed (t_cr and cr excluded for their CR,
@@ -66,14 +66,14 @@ printf ":- initialization((write('p06:q'), nl)).\n" > $P/ft_tests_t_tok.pl
 printf ':- initialization(true).\n' > $P/ft_tests_t_norun.pl
 printf ':- initialization(true).\n' > $P/ft_tests_t_cr.pl
 printf ":- initialization((see('data/d.txt'), read(X), seen, write(X), nl)).\n" > $P/ft_tests_t_dat.pl
-# phase 2 (CEO-1927): t_sib loads its sibling by the UPSTREAM name; the vendored helper carries a driver the staging must cut off; t_tmp's answer is temp
+# phase 2 (R-1927): t_sib loads its sibling by the UPSTREAM name; the vendored helper carries a driver the staging must cut off; t_tmp's answer is temp
 printf ':- [helper].\n:- initialization((h(X), write(X), nl)).\n' > $P/ft_tests_t_sib.pl
-printf 'h(5).\n\n%% DRIVER (appended by the vendoring, CEO-700): fixture\n:- initialization((write(driver_ran), nl)).\n' > $P/ft_tests_helper.pl
+printf 'h(5).\n\n%% DRIVER (appended by the vendoring, R-700): fixture\n:- initialization((write(driver_ran), nl)).\n' > $P/ft_tests_helper.pl
 printf ':- initialization((tell(temp), write(y), nl, write(x), nl, told)).\n' > $P/ft_tests_t_tmp.pl
 cp $U/ft_tests/t_sorted.P $U/ft_tests/t_xcl.P; printf ':- initialization((write(a), nl)).\n' > $P/ft_tests_t_xcl.pl
 printf '# fixture\nft_tests_t_xcl.pl\tNO_ORACLE_ANSWER\tfixture: its answer carries the cpu time on some runs\n' > $P/EXCLUDED.tsv
 printf '# fixture\nft_tests_t_sib.pl\tupstream\tstdout\tloads helper by its upstream name\nft_tests_t_tmp.pl\tupstream\ttemp-sorted\twrites its answer to temp\nft_tests_t_dat.pl\tupstream\tstdout\treads data/d.txt by its upstream path\n' > $P/STAGED.tsv
-printf 'oracle\txsb-gentest\tgate fixture (CEO-1927)\nupstream\t%s\tgate fixture\ncompare\tignore-all-space\tgate fixture (gentest.sh diff -w)\n' "$U" > $P/CONTRACT.tsv
+printf 'oracle\txsb-gentest\tgate fixture (R-1927)\nupstream\t%s\tgate fixture\ncompare\tignore-all-space\tgate fixture (gentest.sh diff -w)\n' "$U" > $P/CONTRACT.tsv
 { echo "# fixture"; for t in t_sorted t_stale t_silent t_ws t_tok t_cr t_sib t_tmp t_xcl t_dat; do printf 'ft_tests_%s\tft_tests\tgentest\t%s\ttest.\t-e segfault_handler\\(warn\\).\tft_tests/test.sh\n' $t $t; done; } > $P/ORACLE_RUNS.tsv
 cd "$HERE/../../SCRIP" || { echo "⛔ REFUSED(2) [$GATE_NAME]: no SCRIP beside the harness"; exit 2; }
 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$P" --lang prolog --twice > $T/build.out 2>&1; brc=$?

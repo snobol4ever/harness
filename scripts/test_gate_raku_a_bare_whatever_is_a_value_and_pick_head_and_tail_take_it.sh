@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_bare_whatever_is_a_value_and_pick_head_and_tail_take_it.sh -- THE TERM * THAT IS NOT AN OPERAND IS THE TYPE OBJECT Whatever
-# (row raku-whatever-as-a-value-and-an-open-range-end, raku-every-suite-to-100-under-nonet-ceo-1266). After the WhateverCode landing the remaining first-refusals of the Roast
+# (row raku-whatever-as-a-value-and-an-open-range-end, raku-every-suite-to-100-under-nonet-r-1266). After the WhateverCode landing the remaining first-refusals of the Roast
 # compile census on the star were 46 files: a * that no operator curries (pick(*), head(*), a => *, a bare my $w = *) reached the driver guard as an unresolved variable.
 # lower_raku.c now lowers a leftover * to the Whatever type object (__rk_typeobj), so .WHAT is (Whatever); and pick (new: a random sample without replacement, one element with no
 # argument, the whole list shuffled for *), head and tail (the count * means all) accept it.

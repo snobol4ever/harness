@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ⭐⭐ GATE: THE TWO ON-DISK TRACEBACK WITNESSES MATCH THEIR ORACLE-CUT REFS, BYTE FOR BYTE, IN BOTH MODES.
-# Clause 1 of FINDING-2026-09-10-ceo-a-generator-records-no-activation-so-three-symptoms-in-three-lanes-are-
-# one-root.md, made mechanical (ceo CEO-541: "make that generator witness permanent and gradable AS clause 1
+# Clause 1 of FINDING-2026-09-10-officer-a-generator-records-no-activation-so-three-symptoms-in-three-lanes-are-
+# one-root.md, made mechanical (R-541: "make that generator witness permanent and gradable AS clause 1
 # of the finding"). The cure is the cto's `3e68226ea` -- the flat_gen prologue now records an activation, as
 # a record-only tap so the trace lines stay exactly as they were.
 # ⛔ WHY THIS EXISTS BESIDE test_gate_icn_generator_records_its_activation.sh RATHER THAN INSTEAD OF IT, since

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_template_state_words.py -- ARCH-ZETA-ONE-COORDINATE section 3.1 THE DERIVATION: every box kind's STATE WORDS, read from the templates.
 
-THE RULE (the cto under CEO-1885/1888, 2026-10-22): a STATE WORD is a frame word a box keeps beyond its operand cell -- a word its own
+THE RULE (the cto under R-1885/1888, 2026-10-22): a STATE WORD is a frame word a box keeps beyond its operand cell -- a word its own
 template reads or writes at a port other than the alpha that wrote it -- and three facts of the TEMPLATE force one, never facts of a language:
   address-escapes  the box's word's address goes into r13, the Prolog choice register B, which outlives the box (the BOUND's and the
                    DISJUNCTION's choice header); or into an argument register before a call, when the box has no operand cell (every
@@ -1036,7 +1036,7 @@ def proof_rows(world, summary):
     return out
 
 
-TSV_HEAD = """# state_word_kinds.tsv -- THE DECLARED STATE WORDS (ARCH-ZETA-ONE-COORDINATE section 3.1; the cto under CEO-1885/1888, 2026-10-22).
+TSV_HEAD = """# state_word_kinds.tsv -- THE DECLARED STATE WORDS (ARCH-ZETA-ONE-COORDINATE section 3.1; the cto under R-1885/1888, 2026-10-22).
 # GENERATED: `python3 harness/scripts/util_template_state_words.py --write` writes this file from the templates; --check refuses it when it drifts.
 # One row per box kind whose template keeps a frame word beyond its operand cell: key<TAB>class<TAB>template<TAB>pattern<TAB>line<TAB>port<TAB>via<TAB>when
 #   key       the IR kind as --dump-homes prints it

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_prolog_ir_slope.sh -- THE TWO-NUMBER WORK/OVERHEAD BASIS FOR PROLOG KERNELS, AS AN Ir REGRESSION.
 # Row prolog-has-no-ir-at-fixed-work-instrument-so-every-speed-number-in-the-lane-is-wall-clock-only
-# (hq_prolog 2026-09-16, officer cto). Modelled on bench_ir_slope.sh (snobol4, hq_P, ceo audit CEO-192).
+# (hq_prolog 2026-09-16, officer cto). Modelled on bench_ir_slope.sh (snobol4, hq_P, the officer audit R-192).
 #
 # ⛔⭐ WHY THIS EXISTS. MODE line 2 states the speed basis for every language HQ and it ends with an
 # Ir-AT-FIXED-WORK CLAUSE BESIDE THE WALL-CLOCK BAR, NEVER INSTEAD OF IT. SNOBOL4 could produce that
@@ -108,7 +108,7 @@ echo "         printed side by side and NEVER subtracted across (RULES.md FACT R
 echo "  ⛔ Ir IS NOT TIME: instructions retired, not cycles. This board never replaces the timed angles."
 echo "  linearity: slope(N,2N) vs slope(2N,4N) must agree within ${LIN_TOL}% or the row reads NONLINEAR."
 echo "  multiple = oracle WORK / SCRIP m4 WORK (FASTER axis: above 1.00x SCRIP does less work per iteration)."
-echo "  instrument is LOAD-IMMUNE, so no load stamp is required (CEO-743 binds wall-clock numbers only)."
+echo "  instrument is LOAD-IMMUNE, so no load stamp is required (R-743 binds wall-clock numbers only)."
 echo "         For the record the box was at $(perf_load_stamp 2>/dev/null || cut -d' ' -f1-3 /proc/loadavg)."
 printf '%-22s %8s %12s %12s %12s %12s %13s %13s %11s  %s\n' kernel N "m3 WORK" "m4 WORK" "gnu WORK" "swi WORK" "m4 OVERHEAD" "gnu OVERHEAD" "linearity" "x vs gnu (m4)"
 N=0; RC=0

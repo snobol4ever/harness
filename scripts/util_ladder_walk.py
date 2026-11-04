@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-# util_ladder_walk.py — THE LADDER WALK (ceo instrument, Lon 2026-09-01: "Make a master plan and being CEO ensure the fleet walks along the ladders").
+# util_ladder_walk.py — THE LADDER WALK (instrument, Lon 2026-09-01: "Make a master plan and being [officer] ensure the fleet walks along the ladders").
 # Reads the rung tables of .github/MASTER-PLAN.md (### LADDER <ID> — <name> ... | rung | row | lane | gate |) and joins each rung's ROW
 # with the postoffice (QUEUE.tsv rank/owner/state · claims/<row>.claim holder+DONE · QUEUE.done.tsv · QUEUE.retired.tsv · tasks/<row>.task.md) to print,
-# per ladder, where every rung stands, then the VIOLATIONS the ceo must act on:
+# per ladder, where every rung stands, then the VIOLATIONS the officer must act on:
 #   V1 RUNG-WITHOUT-ROW   a rung whose row is TO-MINT or has no QUEUE row (the lane named owes the mint) -- a row the zero-base sweep RETIRED
-#                         is no violation: it returns only by re-mint from a current red (ceo CEO-1386), so the rung prints RETIRED (CEO-1510)
+#                         is no violation: it returns only by re-mint from a current red (R-1386), so the rung prints RETIRED (R-1510)
 #   V2 OFF-LADDER SEAT    a seat holding a live claim on a row that is no rung while a rung is FREE (finish or park, then step onto a rung)
 #   V3 STALE PARK         a rung PARKED-AWAITING:x / BLOCKED-ON:x whose blocker x is DONE (un-park owed)
 #   V4 RANK INVERSION     a FREE row, rung or off-ladder, at rank 0/1 that is neither an every-suite-to-100 row, nor a BLOCKING-RED gate row
-#                         (its baton's LINKS line), nor a vendored-package row (ceo CEO-1574 re-cut to CEO-1386: rank 0 and 1 are for a red on
+#                         (its baton's LINKS line), nor a vendored-package row (R-1574 re-cut to R-1386: rank 0 and 1 are for a red on
 #                         the SUITE TABLE or a blocking gate, and the zero-base sweep re-ranks every other red to 2; the older rule, that
 #                         rungs live at rank 0/1 and a rung FREE at rank 2 is an inversion, is withdrawn -- a rung at rank 2 is the sweep's own doing)
 #   V5 UNOWNED BLOCK      a rung bare-PARKED/BLOCKED with owner unassigned (nobody re-runs its gate)
@@ -80,7 +80,7 @@ ladder_by_id = {l['id']: l for l in ladders}
 LADDER_TOK_RE = re.compile(r'\bLADDER:([A-Za-z0-9]+)')
 links_ladders = {}
 non_ladder = set()
-blocking_red = set()   # a baton whose LINKS line carries BLOCKING-RED names a blocking gate: rank 0/1 is its by CEO-1386
+blocking_red = set()   # a baton whose LINKS line carries BLOCKING-RED names a blocking gate: rank 0/1 is its by R-1386
 for t in tasks:
     try: body = open(os.path.join(PO, 'tasks', t + '.task.md'), encoding='utf-8', errors='replace').read()
     except OSError: continue
@@ -110,7 +110,7 @@ for l in ladders:
                 mb = re.match(r'^(PARKED-AWAITING|BLOCKED-ON):(.+)$', s)
                 if mb and is_done(mb.group(2)): viol('V3 STALE PARK', '%s/%s: %s is %s but %s is DONE — un-park owed' % (l['id'], r['rung'], t, s, mb.group(2)))
                 if s in ('PARKED', 'BLOCKED') and q['owner'] == 'unassigned': viol('V5 UNOWNED BLOCK', '%s/%s: %s is %s with owner unassigned' % (l['id'], r['rung'], t, s))
-        elif t in retired_rows: st = 'RETIRED (CEO-1386: returns only by re-mint from a current red)'; counts['RETIRED'] += 1
+        elif t in retired_rows: st = 'RETIRED (R-1386: returns only by re-mint from a current red)'; counts['RETIRED'] += 1
         elif t in tasks: st = 'ROWLESS (task file only)'; counts['MISSING'] += 1; viol('V1 RUNG-WITHOUT-ROW', '%s/%s: %s has a task file but no QUEUE row — lane %s' % (l['id'], r['rung'], t, r['lane']))
         else: st = 'MISSING'; counts['MISSING'] += 1; viol('V1 RUNG-WITHOUT-ROW', '%s/%s: %s exists nowhere — lane %s owes the mint' % (l['id'], r['rung'], t, r['lane']))
         lines.append('  %-5s %-64s %s' % (r['rung'], t[:64], st))
@@ -136,7 +136,7 @@ for t, c in sorted(claims.items()):
     if c['done'] or not re.match(r'^seat\d\d$', h) or t in rung_rows: continue
     if any_free_rung: viol('V2 OFF-LADDER SEAT', '%s holds %s (no rung) while a rung is FREE — finish within the sitting or park, then `next`' % (h, t))
 # V4 off-ladder FREE rows at rung ranks
-# ⛔⭐ PACKAGE ROWS ARE EXEMPT FROM V4 (RULES.md § FACT RULES THE PACKAGE-CLASS RULE, ceo CEO-230/CEO-233, on Lon
+# ⛔⭐ PACKAGE ROWS ARE EXEMPT FROM V4 (RULES.md § FACT RULES THE PACKAGE-CLASS RULE, R-230/R-233, on Lon
 # 2026-09-04 13:20: the percentage IS the V column). A row minted from a vendored industry-standard suite -- the
 # umbrella itself, or one of the class rows censused out of it -- is LADDER-RANK WORK by law, so rank 0/1 is where
 # it belongs and a V4 line naming one is noise. The 16:14 walk printed 18 such lines; at 16:38 it was 45 of 62.
@@ -189,7 +189,7 @@ def is_package_row(t):
     seg = t.split('-')
     if len(seg) < 3 or seg[0].lower() not in LANG_PREFIX: return False
     return any(x.lower() in PKG_TOKENS for x in seg[1:3])
-# V4 FREE rows at rank 0/1 (ceo CEO-1574, re-cut to CEO-1386: rank 0 and 1 are for a red on the SUITE TABLE -- an every-suite-to-100 row -- or a
+# V4 FREE rows at rank 0/1 (R-1574, re-cut to R-1386: rank 0 and 1 are for a red on the SUITE TABLE -- an every-suite-to-100 row -- or a
 # blocking gate -- a baton tagged BLOCKING-RED; the zero-base sweep re-ranks every other red to 2 and never touches those two, so any other FREE
 # row at rank 0/1 is one the sweep has not yet seen or one minted above its station). Rung and off-ladder rows alike; package rows exempt as before.
 _pkg_exempt = []; _law_exempt = []
@@ -198,16 +198,16 @@ for t, q in sorted(queue.items(), key=lambda kv: (kv[1]['rank'], kv[0])):
     if q['rank'] <= 1 and not is_done(t) and t not in claims:
         if is_package_row(t): _pkg_exempt.append(t); continue
         if '-every-suite-to-100-' in t or t in blocking_red: _law_exempt.append(t); continue
-        viol('V4 RANK INVERSION', '%sFREE row %s at rank %d — neither a SUITE TABLE red (every-suite-to-100) nor a BLOCKING-RED gate (CEO-1386); the sweep re-ranks it to 2' % ('rung ' if t in rung_rows else 'off-ladder ', t, q['rank']))
+        viol('V4 RANK INVERSION', '%sFREE row %s at rank %d — neither a SUITE TABLE red (every-suite-to-100) nor a BLOCKING-RED gate (R-1386); the sweep re-ranks it to 2' % ('rung ' if t in rung_rows else 'off-ladder ', t, q['rank']))
 if not PKG_TOKENS:
     print('⚠ V4 EXEMPTION OFF: no vendored-package census readable (looked under $S4E_HOME/corpus/packages and $S4E_HOME/harness/scripts) -- package rows below are flagged as inversions and should not be read as new')
 elif _pkg_exempt:
     print('V4 EXEMPT (package rule): %d FREE package row(s) at rank 0/1 -- ladder-rank by law, not inversions (%d token(s) censused from %d source(s) on disk)' % (len(_pkg_exempt), len(PKG_TOKENS), len(PKG_SOURCES)))
 if _law_exempt:
-    print('V4 EXEMPT (CEO-1386): %d FREE row(s) at rank 0/1 that are a SUITE TABLE red or a BLOCKING-RED gate -- rank 0/1 is theirs by law' % len(_law_exempt))
+    print('V4 EXEMPT (R-1386): %d FREE row(s) at rank 0/1 that are a SUITE TABLE red or a BLOCKING-RED gate -- rank 0/1 is theirs by law' % len(_law_exempt))
 # V6 orphans — any row of any recognized language (not just Prolog) sitting on no ladder: no table entry, no LADDER:<tok> LINKS tag, no NON-LADDER exemption
-# ⛔ ONE CENSUS LINE PER LANE, NOT ONE PER ROW (ceo 2026-09-03 22:33). Widening V6 from Prolog to all seven
-# languages took it from 2 lines to 95, and the ceo reads this every tick on an 8% budget: 95 lines is not a
+# ⛔ ONE CENSUS LINE PER LANE, NOT ONE PER ROW (2026-09-03 22:33). Widening V6 from Prolog to all seven
+# languages took it from 2 lines to 95, and the officer reads this every tick on an 8% budget: 95 lines is not a
 # violation report, it is a haystack, and the reliable response to a haystack is to stop reading it. ⭐ The
 # count is the actionable part; the names are triage. So each lane gets ONE line carrying the TOTAL (nothing is
 # hidden) plus its three highest-ranked names, and --v6-rows still prints every row for whoever is working the

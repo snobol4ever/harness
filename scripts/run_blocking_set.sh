@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # run_blocking_set.sh -- RUN EVERY ARM OF THE BLOCKING SET, THEN REPORT.  The loop-and-report driver behind
-# `make test`, ruled CEO-582 (2026-09-11) on the cfo's first full census of that target.
+# `make test`, ruled R-582 (2026-09-11) on the cfo's first full census of that target.
 #
 # THE DEFECT IT EXISTS TO KILL, MEASURED BEFORE IT WAS BUILT: `make test` was ONE target of ~150 recipe
 # lines and make ABORTS ON THE FIRST FAILING LINE, so when arm 15 went red the set died 24 seconds in and
@@ -39,12 +39,12 @@
 #   bash ../harness/scripts/run_blocking_set.sh --serial-arms F  # read a different declaration of the arms that run alone
 #   bash ../harness/scripts/run_blocking_set.sh --shared-surfaces F  # read a different declaration of the watched surface
 #
-# ⭐ SHARDS, AND WHAT THEY ARE ACCEPTED ON (ceo CEO-829, from the cfo's economy measurement: 338 arms, ~35
+# ⭐ SHARDS, AND WHAT THEY ARE ACCEPTED ON (R-829, from the cfo's economy measurement: 338 arms, ~35
 # minutes at load 1.5-2.6, against an origin/main that took 22 landings today -- and the gaps between the last
 # twelve were 0,2,2,9,4,0,3,3,322,1,3,49 minutes, so THE AVERAGE HIDES THE SHAPE: landings arrive in BURSTS of
 # three or four inside five minutes and a 35-minute set cannot fit inside a burst at all).
 # ⛔ THE ACCEPTANCE IS NOT A SPEEDUP. It is that a sharded run reds THE SAME RED NAME SET as a sequential one on
-# the same tree (CEO-825 clause 1): an arm whose verdict changes with HOW it was run is the finding, and a faster
+# the same tree (R-825 clause 1): an arm whose verdict changes with HOW it was run is the finding, and a faster
 # set that quietly greens an arm is worth less than the slow one. Speed is reported BESIDE name-set identity,
 # never instead of it; test_gate_blocking_set_shards_agree_with_sequential.sh is what asserts it.
 # ⛔ THE HAZARD IS REAL AND THE CENSUS THAT FOUND IT UNDER-DETECTS, so hazardous arms are DECLARED, not sniffed:
@@ -288,7 +288,7 @@ race_stamp_line() {  # race_stamp_line <shape> <arms> <wall-seconds> <load-at-st
         "$1" "$2" "$3" "$4" "$(cut -d" " -f1 /proc/loadavg 2>/dev/null || echo ?)" "$tree" "$RACE_STATE" "$5"
 }
 # ⛔⭐⭐ A RUN THAT DIES MUST SAY WHO KILLED IT (coo 2026-09-20, row instruments-a-blocking-set-run-is-killed-
-# from-outside-and-no-seat-completed-one-today, ceo on the cfo's CFO-147). FIVE DEATHS, THREE SEATS, ONE
+# from-outside-and-no-seat-completed-one-today, on the cfo's CFO-147). FIVE DEATHS, THREE SEATS, ONE
 # AFTERNOON: the cfo at arm 103 with SIGTERM and at arm 166 with SIGKILL DESPITE setsid, hq_prolog at arm 6
 # after thirty seconds, hq_raku at 18 and at 61 -- and not one of them said what ended it, so every seat spent
 # the afternoon guessing between a wall clock, an OOM and another seat's pkill. Ten seats share ONE UNIX USER,
@@ -423,10 +423,10 @@ if [ -n "$SHARD" ]; then
 fi
 if [ -n "$SHARDS" ]; then
     case "$SHARDS" in [1-9]|[1-9][0-9]) : ;; *) refuse "--shards takes a count 1..99 (got '$SHARDS')" ;; esac
-    # ⛔ THE FAN-OUT CEILING (ceo CEO-1333, 2026-09-27): a seat caps its concurrent children at max(2, min(4, cores - demand)), read from
+    # ⛔ THE FAN-OUT CEILING (R-1333, 2026-09-27): a seat caps its concurrent children at max(2, min(4, cores - demand)), read from
     # ../harness/scripts/lib_fanout.sh at launch; a requested width above it is CLAMPED and the clamp is printed, never silent.
     . "$HERE/lib_fanout.sh" || refuse "../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling has no instrument"
-    _fw=$(fanout_width); if [ "$SHARDS" -gt "$_fw" ] 2>/dev/null; then echo "fanout: --shards $SHARDS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (CEO-1333/1394: max(2, min(4, cores - demand)), never load1)"; SHARDS=$_fw; fi
+    _fw=$(fanout_width); if [ "$SHARDS" -gt "$_fw" ] 2>/dev/null; then echo "fanout: --shards $SHARDS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (R-1333/1394: max(2, min(4, cores - demand)), never load1)"; SHARDS=$_fw; fi
 fi
 if [ "$SHARD_N" -gt 0 ]; then
     KEEP_F=(); KEEP_C=(); _slot=0
@@ -463,7 +463,7 @@ fi
 # pick 10:03:28, set started 10:03:52. Nothing was stale. Every arm refused anyway.
 # ⛔ WHY THIS IS NOT MERELY WASTEFUL: rc=2 IS NOT RED, so the set runs to completion and prints "6 blocking
 # arm(s) failed, 256 refused" -- and a seat at the end of a long sitting reads the 6 and lands. A gate that is
-# two-thirds DARK reports in the same shape as a gate that is two-thirds green. That is CEO-582 (DARK is worse
+# two-thirds DARK reports in the same shape as a gate that is two-thirds green. That is R-582 (DARK is worse
 # than RED) arriving inside the landing gate itself.
 # ⭐ AND IT IS hq_raku's FINDING FROM THE OTHER DIRECTION, THE SECOND REPORT OF ONE SHAPE IN A DAY: their board
 # refused with THE BINARY MOVED UNDER THIS BOARD only at the END, after the run was already paid for, and they
@@ -548,12 +548,12 @@ if [ -n "$SHARDS" ]; then
         arm_exec "${CMDS[$i]}"
         printf 'ARMRESULT\t%s\t%s\t%s\t%s\n' "$ARM_RC" "$ARM_SEC" "$([ -n "${FLAGS[$i]}" ] && echo R || echo B)" "${CMDS[$i]}" >> "$WORK/results.tsv"
         printf '[serial] rc=%-3s %4ds  %s\n' "$ARM_RC" "$ARM_SEC" "${CMDS[$i]}"
-        # ⛔ A RED WITH NO OUTPUT IS A NAME WITHOUT EVIDENCE (ceo CEO-1197): the death gate was red in the serial
+        # ⛔ A RED WITH NO OUTPUT IS A NAME WITHOUT EVIDENCE (R-1197): the death gate was red in the serial
         # phase of two full passes and green alone, and nothing said which of its twelve arms failed, because this
         # line threw the arm's output away.  The tail of a non-green serial arm travels with its name.
         [ "$ARM_RC" -eq 0 ] || printf '%s\n' "$ARM_OUT" | tail -8 | sed 's/^/       | /'
     done
-    # ⛔ A GRADER INSIDE A SHARD TAKES ITS SHARE OF THE CORES, NOT ITS OWN DEFAULT (ceo 2026-10-15 16:25 health check: load 21 on 16 cores with the
+    # ⛔ A GRADER INSIDE A SHARD TAKES ITS SHARE OF THE CORES, NOT ITS OWN DEFAULT (2026-10-15 16:25 health check: load 21 on 16 cores with the
     # set at 4 shards and two pl_iso_rung gates each grading Logtalk at --jobs 8 -- about 16 compile workers from two arms). The eight rung gates read
     # PL_RUNG_JOBS (default 8); under fan-out it defaults to cores / shards, at least 1, unless the caller set it.
     export PL_RUNG_JOBS="${PL_RUNG_JOBS:-$(( $(nproc) / SHARDS > 0 ? $(nproc) / SHARDS : 1 ))}"
@@ -624,7 +624,7 @@ if [ -n "$SHARDS" ]; then
             [ "$kind" = B ] && bref=$((bref + 1))
         else r=$((r + 1)); printf '  RED  rc=%-3s %s%s\n' "$rc" "$cmd" "$_rep"; [ "$kind" = B ] && bred=$((bred + 1)); fi
     done < "$WORK/results.tsv"
-    # ⛔ THE SHARDS' EVIDENCE IS RE-EMITTED, NOT ONLY THEIR MACHINE LINES (ceo CEO-1197): each child printed the
+    # ⛔ THE SHARDS' EVIDENCE IS RE-EMITTED, NOT ONLY THEIR MACHINE LINES (R-1197): each child printed the
     # output tail of every arm it reds or refuses; the parent used to keep the child's ARMRESULT lines and delete
     # the rest with $WORK, so a fan-out red arrived as a bare name.  Each line is prefixed so no consumer of the
     # report's own RED/REFUSED lines can read a child's line as a second verdict.

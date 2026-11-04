@@ -2,7 +2,7 @@
 # test_gate_s4e_done_timeout_is_a_refusal.sh -- `s4e_msg.sh done` budgets its DONE-WHEN at 3600s by DEFAULT, and a
 # criterion that does not finish inside that budget is a REFUSAL (rc=2, "I could not measure"), never a red criterion
 # (rc=1, "I measured and it is not done"). Both outcomes quote the budget they ran under AND the wall-clock they used.
-# Row s4e-done-timeout-default-below-make-test-under-fleet-load (hq_B measured 2026-09-03, ceo dispatched rank 0): the
+# Row s4e-done-timeout-default-below-make-test-under-fleet-load (hq_B measured 2026-09-03 dispatched rank 0): the
 # default was 900s while `make test` measures ~1100s on this box under twelve seats, so every DONE-WHEN containing
 # `make test` -- every rung baton, most instrument rows -- died at the default for a reason unrelated to the work AND
 # reported it as "NOT DONE ... exited 124", sending the seat off to debug work that was already finished.

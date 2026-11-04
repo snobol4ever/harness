@@ -164,7 +164,7 @@ base="$(basename "$SNO")"; base="${base%.*}"
 STDIN_SRC="${STDIN_SRC:-/dev/null}"
 [[ -n "${MONITOR_STDIN:-}" && -f "${MONITOR_STDIN}" ]] && STDIN_SRC="$MONITOR_STDIN"
 [[ "$STDIN_SRC" = "/dev/null" && -f "${SNO%.*}.input" ]] && STDIN_SRC="${SNO%.*}.input"
-# ⭐ THE UNIT'S DECLARATION REACHES EVERY PARTICIPANT (ceo CEO-1353, RULES.md clause 8 (g); the coo 2026-10-03): the SCRIP participants run
+# ⭐ THE UNIT'S DECLARATION REACHES EVERY PARTICIPANT (R-1353, RULES.md clause 8 (g); the coo 2026-10-03): the SCRIP participants run
 # at the heap and stack <stem>.heap / <stem>.stack declare (-d/-s after --run, leading a compiled participant's arguments), and the oracle
 # participants at the knobs the reader admits for them -- <stem>.oracle_args for spl (sbl -s/-d), <stem>.oracle_env for icx and gpx. Until
 # this every participant ran at its default, so a unit that needs its declared stack died in the monitor where it passes on its board.
@@ -175,7 +175,7 @@ _mon_oe="$(declared_oracle_env_beside "$SNO")" || { echo "FAIL $SNO: a .oracle_e
 SSW=(); [[ -n "$_mon_sw" ]] && read -r -a SSW <<<"$_mon_sw"
 OARGS=(); [[ -n "$_mon_oa" ]] && read -r -a OARGS <<<"$_mon_oa"
 OENV=(); [[ -n "$_mon_oe" ]] && read -r -a OENV <<<"$_mon_oe"
-# the runtime this harness links against is its own repository's (the coo 2026-10-03, CEO-1496): $S4E/SCRIP/out is a sibling checkout's
+# the runtime this harness links against is its own repository's (the coo 2026-10-03, R-1496): $S4E/SCRIP/out is a sibling checkout's
 # when the harness runs from a worktree, so a worktree's participant linked a runtime the worktree never built
 SD="$(cd "$HERE/../../SCRIP" && pwd)"
 
@@ -275,7 +275,7 @@ fi
 #   - InitStatementMsil + OpCode.Init → LABEL on every stmt entry (coverage-f)
 #   - InternName → MWK_NAME_DEF on first id use (coverage-e, streaming intern)
 # Run with -bf for case-sensitive identifiers (matches csn/spl invocation).
-# ⭐ scr3 / scr4 (ceo 2026-09-23, CEO-1185, Lon: "Get IPC sync-step monitor working for all languages"): TWO SCRIP participants
+# ⭐ scr3 / scr4 (2026-09-23, R-1185, Lon: "Get IPC sync-step monitor working for all languages"): TWO SCRIP participants
 # facing each other -- mode 3 (--run) against mode 4 (the compiled binary) -- on ONE source of ANY frontend, both built with
 # --trace so the shared hooks (rt_trace_stmt/_value/_call/_return, MONITOR-BINARY-DESIGN.md § THE PLUG INTERFACE) put every
 # statement, assignment, call and return on the binary wire; the SNOBOL4 path's own events ride the same wire. No oracle bridge
@@ -316,7 +316,7 @@ if [[ "$want_dot" = "1" ]]; then
     PIDS+=($!)
 fi
 
-# ⭐ rkx (cfo 2026-09-23, Lon: "Build the Rakudo IPC sync-step monitor inside Rakudo just like CEO did for Icon and Prolog"):
+# ⭐ rkx (cfo 2026-09-23, Lon: "Build the Rakudo IPC sync-step monitor inside Rakudo just like officer did for Icon and Prolog"):
 # the Rakudo 2026.05 fork built by ../harness/scripts/monitor/oracles/build_rakudo_mon.sh -- the compiler injects four extops (monitor_rkx.c
 # beside perl6_ops.c) into the user's compilation unit only: p6monstmt before every statement of every statement list, p6moncall at
 # every named routine's entry, p6monret around every routine body, p6monval after every store to a named variable; CORE and every
@@ -333,14 +333,14 @@ if [[ "${want_rkx:-0}" = "1" ]]; then
     PIDS+=($!)
 fi
 
-# ⭐ icx (ceo 2026-09-23, Lon: "Each oracle must be INSTRUMENTED with IPC COMM calls"): the Arizona icont/iconx fork built by
+# ⭐ icx (2026-09-23, Lon: "Each oracle must be INSTRUMENTED with IPC COMM calls"): the Arizona icont/iconx fork built by
 # ../harness/scripts/monitor/oracles/build_icon_mon.sh -- icont emits a stmt opcode at every statement of every statement list, iconx fires
 # the four hooks (statement, value, call, return) through the shared monitor_ipc_lib.c on the READY/GO wire; silent no-op when the
 # pipes are unset (the fork's untraced output is the pristine oracle's, proven by the build script's control arm).
 if [[ "${want_icx:-0}" = "1" ]]; then
     ICX_SRC="$(realpath "$SNO")"
-    # ⭐ icx LINKS WHAT SCRIP LINKS (hq_icon 2026-09-25, ceo CEO-1272 (b)). icont links ucode, never source, so a program whose
-    # `link` names a library shipped beside it (every CEO-1269 NAME_driver, io_lib, lists_lib ...) failed to compile here with
+    # ⭐ icx LINKS WHAT SCRIP LINKS (hq_icon 2026-09-25, R-1272 (b)). icont links ucode, never source, so a program whose
+    # `link` names a library shipped beside it (every R-1269 NAME_driver, io_lib, lists_lib ...) failed to compile here with
     # "cannot resolve reference to file 'io_lib.u1'" and the bracket refused. Every library the program reaches is now found in
     # SCRIP's OWN search order (src/parsers/icon/icon_driver.c icn_link_open: IPATH, ICONPATH, the IPL procs beside the scrip
     # binary, then the linking file's directory), translated into $TMP/icxlib, and icont links from there -- so both participants
@@ -375,7 +375,7 @@ if [[ "${want_icx:-0}" = "1" ]]; then
     PIDS+=($!)
 fi
 
-# ⭐ gpx (ceo 2026-09-23, CEO-1189; Lon: "Build IPC sync-step monitor into GNU Prolog just like you did for Icon"): the GNU Prolog
+# ⭐ gpx (2026-09-23, R-1189; Lon: "Build IPC sync-step monitor into GNU Prolog just like you did for Icon"): the GNU Prolog
 # fork built by ../harness/scripts/monitor/oracles/build_gprolog_mon.sh -- its pl2wam injects a call_c fire-point at every user predicate's
 # entry (call), before every body goal of every user clause (statement, the clause's source line) and at the end of every clause
 # (return); the fire-points (monitor_gpx.c in EnginePl) speak the shared monitor_ipc_lib.c wire and are silent no-ops when the
@@ -393,7 +393,7 @@ if [[ "${want_gpx:-0}" = "1" ]]; then
     PIDS+=($!)
 fi
 
-# ⭐ swx (cfo 2026-09-24, CEO-1236; Lon: "To complete the IPC sync-step monitor for Prolog we must instrument SWIPL in the same
+# ⭐ swx (cfo 2026-09-24, R-1236; Lon: "To complete the IPC sync-step monitor for Prolog we must instrument SWIPL in the same
 # manner as Gnu Prolog"): the SWI-Prolog fork built by ../harness/scripts/monitor/oracles/build_swipl_mon.sh -- its loader stores every clause
 # of the program file with '$mon_stmt'(Line) before each body goal (the goal's own first line, from the reader's subterm positions)
 # and '$mon_ret' at the clause's end, and its VM fires CALL at the entry of every predicate so stored (pl-vmi.c,
@@ -411,7 +411,7 @@ if [[ "${want_swx:-0}" = "1" ]]; then
 fi
 
 # ⭐ fpx (coo 2026-09-23, on Lon's word to the coo at 06:32 CDT: "Build the Free Pascal Compiler (FPC) IPC sync-step monitor inside
-# FPC just like CEO did for Icon and Prolog"): the Free Pascal fork built by ../harness/scripts/monitor/oracles/build_fpc_mon.sh -- under -gi
+# FPC just like officer did for Icon and Prolog"): the Free Pascal fork built by ../harness/scripts/monitor/oracles/build_fpc_mon.sh -- under -gi
 # its compiler injects a fire-point at every element of every statement list (statement, the statement's own source line), after
 # every store to a named variable and at the top of every for-loop iteration (value), at every user procedure's entry (call) and
 # exit label (return, with the function's result); the fire-points (rtl/inc/monipc.inc, Pascal over the system unit's own
@@ -439,7 +439,7 @@ for p in "${PARTICIPANTS[@]}"; do
 done
 
 # ⛔⭐ THE CONTROLLER IS BOUNDED, BECAUSE IT USED TO BE THE THING THAT HUNG (hq_T 2026-09-09,
-# ceo brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-counting-on-it`).  Every
+# the officer brief `the-ipc-sync-step-monitor-does-not-run-and-lon-is-counting-on-it`).  Every
 # PARTICIPANT above carries `timeout $((TIMEOUT*2))`; the controller carried none, and a
 # bare `wait` on it is unbounded.  So the one process with no bound was the one that blocked
 # -- on a FIFO open whose writer had already exited -- and the whole harness inherited its

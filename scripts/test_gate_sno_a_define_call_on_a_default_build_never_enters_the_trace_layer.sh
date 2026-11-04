@@ -3,7 +3,7 @@
 # DEFINE'd function's call and return never enter the trace layer to learn it is idle: ZERO calls to trace_idle and to
 # rt_trace_event_args over a witness of 400 calls (200 direct, 200 through APPLY); with the switch on and a trace budget
 # armed, the same witness traces every port (cto 2026-09-26, row snobol4-a-define-call-on-a-default-build-still-enters-
-# the-trace-layer-...; the ceo's CEO-1274 callgrind profile of indirect_dispatch: trace_idle 3.62 percent and
+# the-trace-layer-...; R-1274 callgrind profile of indirect_dispatch: trace_idle 3.62 percent and
 # rt_trace_event_args 2.92 percent of the kernel's instructions on a default build).
 # THE INSTRUMENT is gdb's breakpoint hit count on the two functions (no perf here; callgrind is slower and mode-3 code
 # lives in a slab it must be told about). Arms: (m3) scrip --run under gdb, (m4) the --compile'd and linked binary

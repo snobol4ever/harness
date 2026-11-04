@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_a_spent_limit_releases_the_generator_slots_it_cut_so_the_chain_over_the_maps_walks.sh -- A SPENT LIMITATION'S GATE RELEASES WHAT IT CUT
-# (hq_icon 2026-10-28, row icon-the-collectors-chain-over-the-maps-stops-short-bad-link-in-ipl-fstartbl-ceo-2006; hq_collector's bisect, first bad SCRIP e80dc7d0e).
+# (hq_icon 2026-10-28, row icon-the-collectors-chain-over-the-maps-stops-short-bad-link-in-ipl-fstartbl-r-2006; hq_collector's bisect, first bad SCRIP e80dc7d0e).
 #
 # e80dc7d0e made a homed limitation gate leave through its beta, which restores the rsp it marked at its alpha: the frame of the generator the limit cut is
 # popped. The caller's generator slot (a PTR_FRAME_H word of the call that produced it) kept the dead header, and the next collection's walk of the chain over
@@ -8,7 +8,7 @@
 # bombed in both modes. A bounded expression already nulls every activation slot that points below the restored rsp (x86_release_acts); the gate now does the same
 # at its beta (kinds 5 and 4), and the planner gives IR_LIMIT_GATE the release lists the emitter reads (plan_facts.cpp).
 #
-# ARMS (mktemp fixtures outside corpus/, CEO-547; the real SCRIP, mode 3 and mode 4; expected output cut live from Arizona icont/iconx):
+# ARMS (mktemp fixtures outside corpus/, R-547; the real SCRIP, mode 3 and mode 4; expected output cut live from Arizona icont/iconx):
 #   1 witness A (hq_collector's twelve lines: every p := gen(2,3) \ 3, then a second every over the same generator) prints iconx's answer plain, both modes
 #   2 witness A under SCRIP_GC_STRESS=1 and =3 (a collection at every allocation / every third) prints it too, both modes
 #   3 witness B (limits over a generator in a procedure, a scan, allocation between the limits, a limit conjoined with a plain generator) equals iconx plain and at stress 3, both modes

@@ -3,7 +3,7 @@
 # keeps its own const / type / var parts in SOURCE order, so a typed record constant sees its record type; (2) Min and Max of real
 # arguments answer as reals; (3) round of a half goes to the even integer in the FPC dialects and away from zero in ISO.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): knapsack-problem-unbounded (uses math, const
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): knapsack-problem-unbounded (uses math, const
 # sack: bounty = (...)) died "FATAL emit_drive: IR op=4 ... REFUSED AT A GUARD": pas_flatten_units merged EVERY const part ahead of EVERY
 # type part, so the typed record constant was lowered before its type existed (its initialisers assigned __pas_unresolved_target and
 # sack.weight read 0); min(real, real) hit the integer-only math Min ("actual-parameter 1 of 'min' is a real value"); and round(22.5)

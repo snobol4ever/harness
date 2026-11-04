@@ -2,7 +2,7 @@
 # test_gate_gc_blob_carve_invariant_is_named_and_held.sh -- the R-4(b) SNOBOL4 stored-pattern blob frame
 # (emit.cpp, "R-4(b) BLOB ACTIVATION FRAME") and the deferred-capture pump that re-enters emitted code at a
 # match's end. Row gc-the-blob-frame-interior-takes-one-static-layout-and-its-cross-frame-dependency-is-named
-# (cto, 2026-09-19); the earlier criterion (CEO-829 on CEO-824(2)) is superseded by measurement, recorded below.
+# (cto, 2026-09-19); the earlier criterion (R-829 on R-824(2)) is superseded by measurement, recorded below.
 #
 # WHAT THIS GATE USED TO HOLD, AND WHY IT INVERTED. Until 2026-09-19 the carve was a DEPTH CONTRACT: growing it
 # by 16, 32 or 48 bytes killed user_function_eval_pos_replace_branch_1 in mode 3 with the emitted program otherwise

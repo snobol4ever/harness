@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_icon_bar.sh -- THE ICON SPEED ROW'S CRITERION (ceo CEO-1276, 2026-09-26; the Icon twin of bench_snobol4_bar.sh): ONE kernel under
-# corpus/benchmarks/icon, the bare multiple Arizona iconx time / SCRIP mode-4 time (RULES.md FACT RULE, CEO-1242) against a bar, read from
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_icon_bar.sh -- THE ICON SPEED ROW'S CRITERION (R-1276, 2026-09-26; the Icon twin of bench_snobol4_bar.sh): ONE kernel under
+# corpus/benchmarks/icon, the bare multiple Arizona iconx time / SCRIP mode-4 time (RULES.md FACT RULE, R-1242) against a bar, read from
 # the three-angle harness bench_triangulate_icon.sh (the fixed-time twin's microseconds per iteration, BAR_BUD_MS (500) per point,
 # BAR_N (5) iterations per fixed-iteration point) in ONE run with --out to a mktemp TSV -- no board, no row written.
 #   kernel K BAR       K is the kernel's file stem (bench_icnagg_field_isolate, concord, geddump, ...). A kernel whose two timed angles

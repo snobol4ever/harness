@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_gc_the_name_save_stack_and_the_eval_tables_are_rooted_not_moved_off_the_heap.sh -- THREE HOLDERS OF THE
 # UNROOTED-STATIC-HOLDER CLASS ARE ROOTED, AND THE GATE REFUSES THE OTHER CURE (cfo 2026-09-17, under Lon's FACT RULE
-# CEO-832 and the ceo's CEO-836 ordering: REMOVING malloc AND ROOTING THE HOLDERS ARE THE SAME JOB AND THE ROOTING
+# R-832 and R-836 ordering: REMOVING malloc AND ROOTING THE HOLDERS ARE THE SAME JOB AND THE ROOTING
 # COMES FIRST).
 #
 # THE CLASS: a C file-scope static holds a pointer into the COLLECTED heap, no root walk visits it, a compaction
@@ -19,7 +19,7 @@
 #
 # ⛔ WHY ARM 3 EXISTS AND IS THE POINT OF THE GATE. These three were briefly "cured" by moving them OFF the collected
 # heap to malloc/calloc/realloc/strdup (SCRIP f62a33aed). That passes every behavioural arm below and is FORBIDDEN:
-# Lon's rule is that we have a collector and the collector is the allocator, and the ceo measured what a whole-tree
+# Lon's rule is that we have a collector and the collector is the allocator, and the officer measured what a whole-tree
 # sweep in that shape costs -- 8 of 15 collector gates red, because malloc'd memory never moves, so an unrooted
 # holder of it is only ACCIDENTALLY safe. THE CURE FOR AN UNROOTED HOLDER IS A ROOT, NEVER A DIFFERENT ALLOCATOR.
 # Arm 3 therefore requires the three allocation sites to still read rt_ws_alloc / rt_ws_realloc / rt_heap_strdup_c,
@@ -27,7 +27,7 @@
 #
 # ⛔ WHY THE STRESS BAND AND NOT TWO VALUES. The row's own DONE-WHEN samples SCRIP_GC_STRESS=30 and =200 only. On
 # origin this witness is GREEN at 30 and at 200 and RED at 5 and 10 -- the crashing band is ragged, so two sampled
-# points are a lottery (CEO-807). This gate walks a BAND and any red in it is a red.
+# points are a lottery (R-807). This gate walks a BAND and any red in it is a red.
 # FAIL-ONCE MEASURED, 2026-09-17, not asserted: on origin (SCRIP bdc486824) m3 SIGSEGVs rc=139 at stress 5 and 10 and
 # passes at 15..500; with the eval tables back on the collected heap and NO roots, m3 and m4 SIGSEGV at 30 and m4 at
 # 200 as well; with all three holders rooted, all 16 behavioural arms rc=0 byte-identical.
@@ -48,14 +48,14 @@ n="$(python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$ROOT/src/runti
 seq=$(grep -oE 'g_rk_cbh_cur = (&H|H\.prev);' "$ROOT/src/runtime/by_name_dispatch.c" | sed -e 's/.*&H;/L/' -e 's/.*H\.prev;/U/' | tr -d '\n')
 paired=$(printf '%s' "$seq" | awk '{ok = ($0 ~ /^(LU+)+$/) ? 1 : 0; print ok}')
 nl=$(printf '%s' "$seq" | tr -cd L | wc -c)
-if [ "${n%% *}" = 1 ] && [ "${paired:-0}" = 1 ] && [ "$nl" -ge 4 ]; then echo "  structural holds PASS (bnd_gc_roots walks the rk_cbh_t chain from g_rk_cbh_cur, every Raku block-callback builtin links its frame record and unlinks it before the next link in source order ($nl links, order $seq) -- the holder g_rk_cb_hold is gone, CEO-1560; visiting a descriptor inside a block does not mark the block)"
+if [ "${n%% *}" = 1 ] && [ "${paired:-0}" = 1 ] && [ "$nl" -ge 4 ]; then echo "  structural holds PASS (bnd_gc_roots walks the rk_cbh_t chain from g_rk_cbh_cur, every Raku block-callback builtin links its frame record and unlinks it before the next link in source order ($nl links, order $seq) -- the holder g_rk_cb_hold is gone, R-1560; visiting a descriptor inside a block does not mark the block)"
 else echo "  structural holds FAIL (bnd_gc_roots chain walk, site links, site unlinks = [$n], link/unlink order [$seq], want the walk present, at least 4 links, and in source order every link followed by its unlink before the next link: a held array is reclaimed under a live callback and re-carved as a string)"; RC=1; fi
 if python3 "$ROOT/../harness/scripts/util_c_function_body.py" "$ROOT/src/runtime/runtime_eval.c" eval_gc_roots 2>/dev/null | head -1 | grep -q '^void eval_gc_roots(void) {$' && grep -q 'eval_gc_roots();' "$ROOT/src/runtime/rt/gc_heap.c"; then
     echo "  structural eval PASS (eval_gc_roots is defined in runtime_eval.c AND called from the collector's root phase -- a root walk nothing calls is not a root)"
 else echo "  structural eval FAIL (eval_gc_roots is missing, or gc_heap.c never calls it: the label table and the eval cache have no root)"; RC=1; fi
-# ⛔⭐ THE COLLECTED-HEAP ALLOCATOR FAMILY COMES FROM ITS ONE AUTHORITY, NOT FROM A SPELLING TYPED HERE (ceo CEO-946).
+# ⛔⭐ THE COLLECTED-HEAP ALLOCATOR FAMILY COMES FROM ITS ONE AUTHORITY, NOT FROM A SPELLING TYPED HERE (R-946).
 # THIS ARM WAS RED ON ORIGIN FOR DAYS AND THE HOLDERS WERE FINE: it grepped for rt_ws_alloc / rt_ws_realloc, and the
-# HB_WS kind with both of those names was DELETED at place D (the cfo, CEO-925) when its sites took typed kinds. The
+# HB_WS kind with both of those names was DELETED at place D (the cfo, R-925) when its sites took typed kinds. The
 # three holders moved to the ATOMIC sibling rt_wsb_alloc / rt_wsb_realloc, which is still the COLLECTED heap -- marked,
 # relocated, interior never scanned -- and is on util_c_allocator_census.py's ROOTED-HEAP list, the tree's one record of
 # which allocators the collector owns. So the gate said "moved off the heap instead of rooted" about a holder that had
@@ -83,7 +83,7 @@ for fn in eval_cache_put rt_label_set_fn; do
     printf '%s' "$body" | grep -qE '\b(malloc|calloc|realloc|strdup)[[:space:]]*\(' && { echo "  fact-rule FAIL ($fn allocates with a C allocator -- moving a holder off the collected heap is the SAME EVASION as pinning it, one indirection further out; the cure for an unrooted holder is a ROOT)"; bad=1; }
     printf '%s' "$body" | grep -qE "$ROOTED_RX" || { echo "  fact-rule FAIL ($fn no longer allocates from the collected heap at all, so the roots below are guarding nothing)"; bad=1; }
 done
-grep -q 'rt_rk_cb_grow\|g_rk_cb_hold' "$ROOT/src/runtime/rt/rt.c" && { echo "  fact-rule FAIL (a grown Raku holder is back in rt.c: since CEO-1560 the Raku block-callback holds are rk_cbh_t cells on the builtin's own C frame, chained from g_rk_cbh_cur and visited by bnd_gc_roots, and allocate nothing)"; bad=1; }
+grep -q 'rt_rk_cb_grow\|g_rk_cb_hold' "$ROOT/src/runtime/rt/rt.c" && { echo "  fact-rule FAIL (a grown Raku holder is back in rt.c: since R-1560 the Raku block-callback holds are rk_cbh_t cells on the builtin's own C frame, chained from g_rk_cbh_cur and visited by bnd_gc_roots, and allocate nothing)"; bad=1; }
 if [ "$bad" -eq 0 ]; then echo "  fact-rule PASS (both eval holders still allocate from the COLLECTED heap and the Raku holds are frame cells, never a grown holder -- this gate cannot be made green by taking them out of the collector's sight)"; else RC=1; fi
 ( cd "$T" && timeout -k 5 20s "$SBL" -bf w.sno </dev/null ) > "$T/w.ref" 2>&1 || { echo "⛔ GATE REFUSE(2) [$G]: the oracle refused its own witness -- no ref to grade against"; exit 2; }
 [ -s "$T/w.ref" ] || { echo "⛔ GATE REFUSE(2) [$G]: the oracle produced an EMPTY ref"; exit 2; }

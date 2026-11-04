@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_thrown_ball_never_redoes_a_builtin_generator.sh -- a ball thrown after a builtin generator has
 # answered must travel to its catch/3, never re-enter the generator as a redo (cto 2026-09-27, CTO-188, found by the
-# pl2wam demo row prolog-demo-gnus-wam-compiler-pl2wam-...-ceo-1312).
+# pl2wam demo row prolog-demo-gnus-wam-compiler-pl2wam-...-r-1312).
 #
 # WHAT THIS PINS. SCRIP wires box N+1's omega to box N's beta, so a ball riding omega lands on the beta of every
 # box to its left. ARCH-PROLOG-BYRD-BOX-TRANSLATION.md section A.1 review C9 put the ball test (test r15, r15 ; jne

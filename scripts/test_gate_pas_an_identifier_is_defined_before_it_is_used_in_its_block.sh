@@ -3,7 +3,7 @@
 # precede all its applied occurrences; the scope of a declaration is its WHOLE block, so a use earlier in that block of a name the block
 # defines later is a use before the defining-point, even when an enclosing block defines the same name
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. PAT iso7185prt1917 (const one = one
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. PAT iso7185prt1917 (const one = one
 # inside a procedure, with an outer one) and iso7185prt1915 (const two = one; one = 2) ran to rc 0. fpc -Miso ACCEPTS both (it leaves this
 # undetected), so the refusal arms are graded by the clause, not by the oracle. The cure (parser only, inside the granted g_pas_scope --
 # Lon's grant names 6.2.2.9 use-before-definition): every applied occurrence that resolves to a defining-point of an ENCLOSING block is

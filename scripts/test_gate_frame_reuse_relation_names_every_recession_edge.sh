@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 0 OF frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2).  RUNG 0 IS AN INSTRUMENT, NOT AN OPTIMISATION: --dump-zeta now prints, per graph, the
+# (cto, R-684 slice 2).  RUNG 0 IS AN INSTRUMENT, NOT AN OPTIMISATION: --dump-zeta now prints, per graph, the
 # INTERFERENCE RELATION over every result slot -- who writes it (spine position), who last reads it, and whether
 # any box that can recede sits between the two -- with every recession edge treated as a live edge.  A slot may
 # be reused only when the relation can NAME, for a candidate, the absence of any beta landing between its last

@@ -2,7 +2,7 @@
 # test_gate_icn_loadfunc_returns_a_callable.sh — loadfunc() RESOLVES A SYMBOL AND RETURNS SOMETHING YOU CAN CALL.
 #
 # THE DEFECT THIS PINS (hq_S 2026-09-10, row icon-loadfunc-exits-1-with-no-output-master-procedure-write-254,
-# CEO-476).  by_name_dispatch.c's loadfunc arm dlopen'd the library, resolved the symbol with dlsym, and then
+# R-476).  by_name_dispatch.c's loadfunc arm dlopen'd the library, resolved the symbol with dlsym, and then
 # set `*out = FAILDESCR` UNCONDITIONALLY — on the success path too.  So loadfunc could never return a callable
 # and f(x) could never work.
 #

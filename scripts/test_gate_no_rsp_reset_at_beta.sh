@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_no_rsp_reset_at_beta.sh -- A BETA NEVER RESETS RSP (Lon 2026-10-21, in-chat to the ceo, verbatim: "Ensure that we NEVER reset RSP at
+# test_gate_no_rsp_reset_at_beta.sh -- A BETA NEVER RESETS RSP (Lon 2026-10-21, in-chat, verbatim: "Ensure that we NEVER reset RSP at
 # BETA." · "The reason there is no reason to reset RSP at beta is because allocations are balanced via ALPHA pushes and OMEGA pops." · "I should
-# also see a count of RSP resets at BETA and see the count go to ZERO."; ceo CEO-1854/1856).
+# also see a count of RSP resets at BETA and see the count go to ZERO."; R-1854/1856).
 # Compiles every program of util_spine_population.sh with this root's ./scrip (mode 4 asm) and counts, with util_rsp_reset_by_port_census.py, every
 # write of rsp that is not a relative add, sub, push or pop inside a box's beta code, each distinct function body once.
 #   test_gate_no_rsp_reset_at_beta.sh [--lang L]

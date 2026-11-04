@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_text_parameter_is_the_file_its_actual_names.sh -- a var formal of type text is a file inside its routine: f^, eoln,
 # read, readln and write act on the file the actual names, the required input and output included (ISO 7185 6.6.3.3, 6.10; row
-# pascal-p4-self-hosts-under-scrip..., ceo CEO-1311)
+# pascal-p4-self-hosts-under-scrip..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. Only declared text variables were registered as files, so inside procedure
 # p(var f: text) the parser took f for a variable: read(f, c) read an integer into f (ISO 6.9.1 error on the first letter), f^ became

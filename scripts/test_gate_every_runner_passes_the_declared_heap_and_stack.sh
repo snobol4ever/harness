@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over a scratch population, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over a scratch population, not a board (R-547)"
 # test_gate_every_runner_passes_the_declared_heap_and_stack.sh -- EVERY RUNNER PASSES EACH UNIT'S DECLARED HEAP AND STACK IN BOTH MODES,
-# NEVER AS THE WINDOW (Lon 2026-09-28 15:4x CDT, in-chat to the ceo, verbatim: "Ensure that every program in every language as it necessary
+# NEVER AS THE WINDOW (Lon 2026-09-28 15:4x CDT, in-chat, verbatim: "Ensure that every program in every language as it necessary
 # stack size and heap size values stored in the per-program attribute file, and ensure that those command-line switches and environment
-# variable values are being used by the harness shell scripts which run all of them."; ceo CEO-1353; half (b) of the coo's row
+# variable values are being used by the harness shell scripts which run all of them."; R-1353; half (b) of the coo's row
 # instruments-every-runner-passes-each-units-declared-heap-and-stack-in-both-modes-never-as-the-window-names-a-missing-one).
 # THE VERDICT-PAIR METHOD of test_gate_package_runners_read_each_units_declared_compile_args.sh, extended to SIZE. Each runner family
 # grades FOUR scratch units of two witnesses whose outcome depends on the declared size, in both modes:
@@ -21,7 +21,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # family's row runner and its two correctness scripts over a scratch kernel dir of four Prolog units (the coo, 2026-10-01; FAIL_ONCE reds
 # PBM and PB4 through the stubbed declared_switches_beside; PBS runs from ../harness/scripts/ itself, since it finds its binary beside its own script and
 # reads the sidecars through declared_arena_kb_beside, which the plant leaves alone, so it stays green). THE MASSIVE SET (the coo 2026-10-03,
-# LARGE CHUNKS, CEO-1478..1484): EVERY runner family, each driven through its OWN population override (a scratch package, corpus, kernel
+# LARGE CHUNKS, R-1478..1484): EVERY runner family, each driven through its OWN population override (a scratch package, corpus, kernel
 # dir, S4E_HOME or suite variable) and read from its own progress rows or printed verdicts -- SNOBOL4 SF X64 X32 TP GS AIS; Prolog PI PG PS PR
 # PL and the timing angles PBT PBF PBP PBV; Icon IA IJ II IB IT ITX IR IAR IBR; Pascal SPF SPW SPT SPB SPTM SPTM4 SPFI SPTR; Raku RR RB RTM RFI RTR;
 # Snocone and Rebus SCB RBB RBT SCT; and the coo's own MON (monitor_run.sh --oracle), PT (lib_port_trace.sh) and AS (the area smoke). Each
@@ -224,7 +224,7 @@ ov=$(PROLOG_DIR="$PV" NTSV="$PV/fixed-iter-n.tsv" SCRIP="$SCRIP" RT_DIR="$RT" ti
 pbtab "$ov" '$2==u && $1 ~ /^(MEASURED|DECLARED|REFUSE)$/ {print ($4 ~ /^[0-9]+$/ ? "PASS" : "FAIL"); exit}' > "$W/pbv.tsv"
 quad PBV "$W/pbv.tsv" "bench_prolog_vanroy.sh --two-number over a scratch PROLOG_DIR, SCRIP_us (rc $rv)" m3
 
-# THE SNOBOL4 PACKAGE RUNNERS (the coo 2026-10-03, CEO-1353 gate (b), the massive set): each over a scratch package of the four units
+# THE SNOBOL4 PACKAGE RUNNERS (the coo 2026-10-03, R-1353 gate (b), the massive set): each over a scratch package of the four units
 # through its own suite override, outcomes from its scratch progress DB; a key a runner spells its own way is mapped back to the unit.
 # remap <db> <sed> -- the same table with column 8 rewritten, so outcome() reads the unit name
 remap() { awk -F'\t' -v OFS='\t' 'NR==1 {print; next} {print}' "$1" | sed -E "$2"; }

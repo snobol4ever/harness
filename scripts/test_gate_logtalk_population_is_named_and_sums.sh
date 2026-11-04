@@ -129,7 +129,7 @@ PY
 [ "${n:-0}" -ge 15 ] || fail "ARM 6: shim_helpers() read $n names out of lib_logtalk_lgtunit.pl -- an empty or tiny set silently marks every helper-using case UNGRADED and the board still reconciles"
 
 # ---- ARM 7 — A DATABASE CLAUSE IN LOGTALK-ONLY SYNTAX IS DROPPED, AND THE FILE STILL GRADES. Measured
-# 2026-09-12 against the ceo's independent emulation: one `cleanup :- ^^clean_text_input.` helper travels
+# 2026-09-12 against the officer's independent emulation: one `cleanup :- ^^clean_text_input.` helper travels
 # with every case of its file, so the generated program was a PARSE ERROR and all 49 predicates/is_2 cases
 # came back `nooutput` -- a verdict on the harness wearing the shape of an arithmetic red. 40 files and
 # 1486 of 3617 cases were graded that way. ⭐ The defect could only ever produce reds, which is why it did
@@ -301,9 +301,9 @@ else
     echo "    ARM 14 SKIPPED: no vendored suite at $SUITE_REAL"
 fi
 
-# ---- ARM 15 — EVERY CASE IS GRADED OR EXCLUDED BY NAME (Lon 2026-10-05, in-chat to the ceo, verbatim: "We do want ALL test programs to
+# ---- ARM 15 — EVERY CASE IS GRADED OR EXCLUDED BY NAME (Lon 2026-10-05, in-chat, verbatim: "We do want ALL test programs to
 # run. We have NO expected failures. We expect to have ALL features." and "Mark the Windows dependent tests as Excluded." and "Mark the
-# bounded-integer tests as Excluded."; ceo CEO-1518..1520, withdrawing CEO-1235 (3) option (a) and the CEO-1266 probe). Five properties on
+# bounded-integer tests as Excluded."; R-1518..1520, withdrawing R-1235 (3) option (a) and the R-1266 probe). Five properties on
 # one fixture: the coinduction case is IN the population (the feature is declared supported); both branches of an engine guard are graded,
 # never probed; a Windows-branch case named WINDOWS_ONLY in EXCLUDED_CASES.tsv leaves and its unix twin is graded; a bounded-integers case
 # named BOUNDED_INTEGERS_ONLY leaves without running, its heap/stack declaration no orphan; and the board prints excluded=2. Then the two

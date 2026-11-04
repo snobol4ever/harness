@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_placeholders_in_a_sub_and_a_for_body_a_comma_list_as_the_last_statement_or_return_value_and_sort_with_a_leading_block_agree_with_rakudo.sh -- `$^a` IN A NAMED SUB AND IN A for BODY, A COMMA LIST (`1, 2` / `return 1, 2` / `$a, $b`) AS A ROUTINE'S VALUE, AND `sort { $^a <=> $^b }, @list`
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by classifying the Roast files that do not compile: the placeholder `^a` is the second most common unassigned-variable refusal, 11 files, e.g. integration/advent2013-day23.t, S32-list/reduce.t, S06-signature/multi-invocant.t, S32-array/splice.t).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by classifying the Roast files that do not compile: the placeholder `^a` is the second most common unassigned-variable refusal, 11 files, e.g. integration/advent2013-day23.t, S32-list/reduce.t, S06-signature/multi-invocant.t, S32-array/splice.t).
 #
 # THE DEFECTS, each measured against Rakudo: (1) a caret placeholder worked in an anonymous block (`{ $^a + 1 }`) and in `.map: { $^a }` but NOT in a named sub or `my sub` whose body has no signature: `sub meow { $^a }; say meow(5)`, `sub cat2 { $^b ~ $^a }` were refused by the native emitter
 # ("variable '^a' is read but never assigned"); (2) nor in a `for` body (`for 1, 2 { say $^a }`, `for 1, 2, 3, 4 { say $^a + $^b }` must step two at a time); (3) a COMMA LIST WITHOUT PARENTHESES as a routine's last statement or as the operand of return kept only its FIRST ITEM: `sub g { 1, 2 }; say g()` printed 1 (Rakudo (1 2)),

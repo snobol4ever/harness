@@ -2,7 +2,7 @@
 # test_gate_pas_eoln_needs_a_defined_file_not_at_its_end.sh -- ISO 7185 6.6.6.5: when eoln(f) is activated it is an error if f is
 # undefined or if eof(f) is true
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. The eoln arms in by_name_dispatch.c
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. The eoln arms in by_name_dispatch.c
 # answered both errors quietly: eoln of a never-opened text file fell through to reading STDIN (PAT iso7185prt1741 ran to rc 0), and eoln
 # at end-of-file answered true (PAT 1866). NO BRACKET: an absent error sends no event. The cure: __pas_eoln_f stops with 6.6.6.5 when its
 # file is no open stream or is at its end, and __pas_eoln (input) stops at end-of-file. fpc -Miso faults on the undefined file (its runtime

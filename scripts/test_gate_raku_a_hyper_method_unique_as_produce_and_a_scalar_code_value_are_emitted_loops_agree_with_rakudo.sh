@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_hyper_method_unique_as_produce_and_a_scalar_code_value_are_emitted_loops_agree_with_rakudo.sh -- THE RESIDUAL C LOOPS THAT CALLED USER CODE ARE EMITTED LOOPS
-# (row raku-hyper-methods-unique-as-produce-and-a-code-value-in-a-scalar-are-emitted-loops-not-c-loops-ceo-1600; ARCH-RAKU-BOXES section 4 step 1; CEO-1576).
+# (row raku-hyper-methods-unique-as-produce-and-a-code-value-in-a-scalar-are-emitted-loops-not-c-loops-r-1600; ARCH-RAKU-BOXES section 4 step 1; R-1576).
 #
-# THE DEFECT: after the step-1 landings four C loops still reached user code and so CEO-1576's named bomb (rk_proc_descr_rq ... reached user code with no request channel, rc 139):
+# THE DEFECT: after the step-1 landings four C loops still reached user code and so R-1576's named bomb (rk_proc_descr_rq ... reached user code with no request channel, rc 139):
 # __rk_hyper_meth called meth_call per element from C (a hyper method over objects with a user method), rk_list_more_methods called the block for unique / squish / repeated :as and for
 # produce, and map over a code value held in a $-variable fell to the C list loop.
 # THE CURE (lower_raku.c): rk_hyper_meth_walk (before capture analysis) rewrites @x>>.m(args) into a .map over a block calling .m(args) on the topic -- the emitted loop, each call

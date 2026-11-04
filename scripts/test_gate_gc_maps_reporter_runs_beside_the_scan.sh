@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_gc_maps_reporter_runs_beside_the_scan.sh -- F6 STEP 3: THE WALKER AS A REPORTER, BEHIND SCRIP_GC_MAPS=1.
-# ⭐ WHAT STEP 3 IS FOR (ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F6, ceo CEO-867): the conservative scan --
+# ⭐ WHAT STEP 3 IS FOR (ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 7 F6, R-867): the conservative scan --
 # gc_zeta_frame, cons_stack, rt_cas_live_span and the heap-interior sniff, CENSUS conservative total=13 (24 until 2026-09-19: the cas-span byte scan and its gc_zeta_frame call went with the blob static layout, then 21 -> 13 the same day when the seven coexpression sweeps became typed visits and one segment walk, cto) -- may only be
 # DELETED once a census says the typed walk and the sniff agree. This gate is that census. It walks every range the
 # conservative scan walks, classifies each 16-byte cell TWICE (by the DESCR type tag alone, which is the frozen design's
@@ -59,7 +59,7 @@ for w in w.sno g.icn; do
     pops=$(grep -o 'pop=[a-z]*' "$W/onerr_$w.txt" | sort -u | tr '\n' ' ')
     if [ "$ron" -ne 0 ] || [ "$n" -eq 0 ]; then echo "  arm 2 RED [$w]: reporter produced no census (rc=$ron, $n line(s))"; bad=1; continue; fi
     echo "  arm 2 PASS [$w]: $n census line(s) over populations: $pops"
-    if [ "${so:-x}" = "0" ]; then echo "  arm 3 PASS [$w]: sniff_only=0 -- the typed walk found everything the guesser found. ⛔ NECESSARY, NOT SUFFICIENT (ceo CEO-881): it cannot see a pointer that is only in a REGISTER or only in a C FRAME at the moment of collection"
+    if [ "${so:-x}" = "0" ]; then echo "  arm 3 PASS [$w]: sniff_only=0 -- the typed walk found everything the guesser found. ⛔ NECESSARY, NOT SUFFICIENT (R-881): it cannot see a pointer that is only in a REGISTER or only in a C FRAME at the moment of collection"
     else echo "  arm 3 RED [$w]: sniff_only=$so -- the sniff is visiting cells the type tag says are not references"; bad=1; fi
     grep 'GC-MAPS' "$W/onerr_$w.txt" | tail -4 | sed 's/^/      /'
 done
@@ -131,8 +131,8 @@ done
 # REACHABLE BY CURING SAVE RECORDS and must not be written as the E switch's licence. ⛔ WHAT THIS ARM HOLDS: no NEW raw
 # push of a heap pointer appears on a graded collection. A cure lowers the ratchet only after the same read-watchpoint
 # experiment shows the word it removes was LIVE.
-# ⛔ RE-DECLARED 1 -> 2 (cfo 2026-09-26, the CEO-1274 board row), BY THE SAME EXPERIMENT AND NOT BY ARGUMENT. Bisected on the
-# two witnesses at stress 1, 128 KB: af773a80e (CEO-1251, the inline poll gate) is the first commit above 1 (it read 3; HEAD reads
+# ⛔ RE-DECLARED 1 -> 2 (cfo 2026-09-26, the R-1274 board row), BY THE SAME EXPERIMENT AND NOT BY ARGUMENT. Bisected on the
+# two witnesses at stress 1, 128 KB: af773a80e (R-1251, the inline poll gate) is the first commit above 1 (it read 3; HEAD reads
 # 2 in both modes). The two words sit in main's graph at off=-112 (a HB_WSB payload) and off=-280 (a string payload). With ASLR
 # off, an access watchpoint armed at the first collection reporting both (hb_defer_subject collection 7, hb_nested_match_outer_
 # subject collection 10) and the collector's own accesses filtered, the PROGRAM's first touch of each slot afterwards is a WRITE:

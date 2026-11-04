@@ -4,7 +4,7 @@
 # subdirectories of the vendored swipl-devel src/Tests tree). Lon 2026-09-12, in-chat to cto, verbatim: "Get all SWI
 # tests graded." Row prolog-swi-tests-all-2879-cases-graded-per-case-against-swipl-by-path.
 #
-# The oracle is swipl, never our shim (ceo ruling 2026-09-06). Each (file, unit) runs in its OWN swipl process so a
+# The oracle is swipl, never our shim (ruling 2026-09-06). Each (file, unit) runs in its OWN swipl process so a
 # C-level abort in one unit (test_string's string_upper/2 on a non-Latin-1 codepoint SIGABRTs swipl 9.0.4) cannot
 # swallow a sibling unit's verdict. The verdict per CASE is read from plunit's own bookkeeping after run_tests/1:
 # passed/5, failed/4, failed_assertion/7, blocked/4 -- never scraped from printed dots.

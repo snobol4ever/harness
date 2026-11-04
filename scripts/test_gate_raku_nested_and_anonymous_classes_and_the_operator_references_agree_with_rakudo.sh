@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_nested_and_anonymous_classes_and_the_operator_references_agree_with_rakudo.sh -- A CLASS OR ROLE DECLARED BELOW THE TOP LEVEL (in a block, a sub, an if, a for, a do, another class), AN ANONYMOUS CLASS, AND THE OPERATOR REFERENCES &[+] / &infix:<cmp> / &prefix:<->
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by classifying the 530 Roast files that do not compile: 31 die "assignment to 'x' has an rhs shape with no native arm", 5 of them on `my $*OUT = class { ... }`; operator references are used by 80 Roast files, anonymous classes by 21).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by classifying the 530 Roast files that do not compile: 31 die "assignment to 'x' has an rhs shape with no native arm", 5 of them on `my $*OUT = class { ... }`; operator references are used by 80 Roast files, anonymous classes by 21).
 #
 # THE DEFECTS, each measured against Rakudo: (1) the lowerer discovered classes and roles only among the PROGRAM'S OWN TOP-LEVEL STATEMENTS, so `{ class Foo { method m { 42 } }; say Foo.new.m }` printed NOTHING (the whole block silently did nothing), and so for a class declared in an if, a for, a do, a sub or another class's method -- the way Roast
 # files wrap each test; (2) an anonymous class `my $c = class { ... }`, `anon class`, `class :: is P`, `(class { ... }).new` died "rhs shape with no native arm" or BOMB "bb_call marshal"; (3) `.new` on a variable holding a class (`my $c = Foo; $c.new`) did nothing, for a named class too;

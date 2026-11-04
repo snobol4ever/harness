@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_gc_decidable_roots.sh -- hq_snocone's DECIDABLE TEST (coo, CEO-818/819 § 7 F6 step 6):
+# util_gc_decidable_roots.sh -- hq_snocone's DECIDABLE TEST (coo, R-818/819 § 7 F6 step 6):
 #   CAN A SUITE BE GREEN WHILE THE COLLECTOR DOES NOT FIND THE ROOTS?
 #
 # The question is decidable with one witness and three runs.  ../harness/scripts/fixtures/gc_roots_witness.sno holds one value of

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""util_donewhen_exemption_census.py -- AN EXEMPTION IS INVISIBLE TO THE THING IT EXEMPTS (ceo CEO-967, on the coo's COO-116 report;
+"""util_donewhen_exemption_census.py -- AN EXEMPTION IS INVISIBLE TO THE THING IT EXEMPTS (R-967, on the coo's COO-116 report;
 row instruments-the-donewhen-exemption-census-names-every-criterion-that-measures-its-one-runner-exemption).
 
 The bus runs every computed DONE-WHEN with S4E_DONE_WHEN_RUN=1, a sanctioned ONE-RUNNER exemption (lib_one_runner.sh admits the run
 whatever seat asks). So a criterion that shells out to a board, a suite runner or the guard itself and reads what comes back can be
 measuring THE EXEMPTION rather than its subject: measured on COO-116, the one criterion on one tree read G=0 with the exemption set
-and G=2 with it cleared. This census NAMES every such baton -- it fixes none (the ceo: "name them, do not sweep them") -- because for
+and G=2 with it cleared. This census NAMES every such baton -- it fixes none ("name them, do not sweep them") -- because for
 some rows the exemption merely admits a run the criterion wants, and for others it is the whole verdict, and only the row's owner can
 tell which. Each exposed baton is printed with its QUEUE.tsv owner and state, the mechanism it shells out to, and a class:
 
@@ -14,13 +14,13 @@ tell which. Each exposed baton is printed with its QUEUE.tsv owner and state, th
   BOARD   the criterion runs a guarded board or runner (a name in ../harness/scripts/one_runner_boards.txt, corpus_suite_harness.py run, or any
           test_*_suite.sh / board_*.sh / scorecard_*.sh) and reads its rc or output -- the exemption ADMITS the run; the owner says
           whether admitting it is what the criterion means.
-  SMOKE   every guarded runner it names runs as an AREA SMOKE the guard admits for every seat (ceo CEO-1505, row instruments-the-
+  SMOKE   every guarded runner it names runs as an AREA SMOKE the guard admits for every seat (R-1505, row instruments-the-
           donewhen-census-names-an-area-smoke-as-a-board): S4E_AREA_SMOKE_ENTRIES set non-empty on that command (or exported before
           it), the runner one of lib_one_runner.sh's ONE_RUNNER_SMOKE_MODE_RUNNERS -- READ FROM THAT LINE, never copied here -- and no
           population named (no --corpus, no CORPUS=), the three conditions one_runner_guard admits on. A smoke writes no progress row
           and no score row, so it is not a board run; counted, never named as exposed. A plain run of the same runner, a smoke of a
           runner without a smoke mode, or a smoke beside any other board stays BOARD.
-  ONEFILE every guarded runner it names runs in its ONE-FILE mode the guard admits for every seat and for the bus done (ceo CEO-1664):
+  ONEFILE every guarded runner it names runs in its ONE-FILE mode the guard admits for every seat and for the bus done (R-1664):
           the runner one of lib_one_runner.sh's ONE_RUNNER_SINGLE_FILE_RUNNERS -- READ FROM THAT LINE -- with --file <one file> on every
           command naming it and no population named. That mode grades exactly one file and writes no progress row and no score row, so
           it is not a board run; counted, never named as exposed. The same runner without --file stays BOARD.

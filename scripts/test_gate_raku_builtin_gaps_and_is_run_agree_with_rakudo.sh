@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_builtin_gaps_and_is_run_agree_with_rakudo.sh -- THE BUILTIN GAPS THE ROAST SWEEP NAMED, THE FILE-SCOPE TOPIC, Order::X / Bool::X, is_run AND is-eqv
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; measured by running all 880 compiled Roast files once and tallying what kills the 558 that abort before their plan completes).
+# (row raku-every-suite-to-100-under-nonet-r-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; measured by running all 880 compiled Roast files once and tallying what kills the 558 that abort before their plan completes).
 #
 # THE DEFECTS, each measured against Rakudo with a one-line probe (a 137-expression sweep: 58 differed): "hello".comb(2) split into single characters; samecase, .codes, "3.7".Num and 0b101 / 0o17 literals were absent or 0;
 # list .rotate .pairs .antipairs .batch .repeated .squish were absent; 10.log(10) ignored the base and 12345.6789.round(0.01) ignored the scale; 100.polymod(10,10) was absent; .subst(/re/, "x", :g) ignored the regex and the
@@ -13,7 +13,7 @@
 # NOT HERE (own rows): method calls on a standard handle ($*OUT.say crashes at lowering -- BOMB "IR_VAR arg names a local with no LOWER-granted varslot", measured on base too), Rat arithmetic (0.1+0.2 prints
 # 0.30000000000000004, 1/3 prints a Num, 1.5.WHAT is Num), Set/Bag/Mix, the Seq flavour of .raku, X and Z returning nested lists, the Range type, IO::Path.
 #
-# RE-CUT 2026-10-31 (cao, CEO-2044): is_run and is-eqv are roast's Test::Util routines, which SCRIP's Raku setting now carries as Raku
+# RE-CUT 2026-10-31 (cao, R-2044): is_run and is-eqv are roast's Test::Util routines, which SCRIP's Raku setting now carries as Raku
 # (src/parsers/raku/setting/Test/Util.rakumod), so the isrun witness says `use Test::Util;` as the roast programs and Rakudo do.
 # THE WITNESSES, each graded in m3 (--run) and m4 (--compile + link) against a ref cut by Rakudo (/usr/bin/raku; the is_run ref is cut with the roast Test::Util module): builtins (exact), isrun (its ok / not ok lines),
 # then builtins under SCRIP_GC_STRESS 1 3 5, both modes.

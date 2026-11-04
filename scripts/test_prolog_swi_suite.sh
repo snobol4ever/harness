@@ -17,7 +17,7 @@ S4E_ONE_RUNNER_SINGLE_FILE=""; _sf_prev=""; for _sf_a in "$@"; do [ "$_sf_prev" 
 #
 # THE VERDICT per case is agreement: oracle PASS and scrip pass, or oracle FAIL and scrip FAIL (an agreement control,
 # counted separately as hit_fail_agree).  A case passes the SUITE when it agrees in EVERY mode graded (AND per case,
-# CEO-372); the SUITES.tsv row states that number over the declared population.
+# R-372); the SUITES.tsv row states that number over the declared population.
 #
 # A run is a BOARD (RULES.md ONE RUNNER, ONE BOARD): only the coo runs it, on origin HEAD, once per landing batch.
 #
@@ -38,7 +38,7 @@ RT="${RT_DIR:-$HERE/../../SCRIP/out}"
 SWIT="${S4E_CORPUS:-$S4E/corpus}/packages/prolog/swi_tests"   # the expression line 2 hands the guard, so it judges the suite graded here
 PLUNIT="$S4E/corpus/tests/prolog/plunit.pl"
 MATCH_PY="$HERE/util_swi_match.py"
-STO_PY="$HERE/util_swi_sto_merge.py"   # each deferred sto(rational_trees) case's ALONE verdict, put where the file's run deferred it (CEO-1684)
+STO_PY="$HERE/util_swi_sto_merge.py"   # each deferred sto(rational_trees) case's ALONE verdict, put where the file's run deferred it (R-1684)
 MODES="m3,m4"; JOBS="${SWI_JOBS:-}"; ONLY_FILE=""; NAME_REDS=0; VERBOSE=0
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 while [ $# -gt 0 ]; do
@@ -51,7 +51,7 @@ while [ $# -gt 0 ]; do
         *) refuse "unknown argument '$1' -- this runner has no silent fall-through" ;;
     esac
 done
-# ⛔ THE FAN-OUT CEILING (ceo CEO-1333; the ceo's word to the coo 2026-10-01 12:1x CDT, a Logtalk pass at 12 jobs put load1 at 18 on a
+# ⛔ THE FAN-OUT CEILING (R-1333; the officer's word to the coo 2026-10-01 12:1x CDT, a Logtalk pass at 12 jobs put load1 at 18 on a
 # shared box): the default width is lib_fanout.sh's fanout_width, max(2, min(4, cores - demand)), read at launch; a --jobs or SWI_JOBS above
 # it is CLAMPED and the clamp is printed, never silent -- the shape run_blocking_set.sh gives --shards. This runner defaulted to 12.
 . "$HERE/lib_fanout.sh" || refuse "../harness/scripts/lib_fanout.sh is missing -- the fan-out ceiling has no instrument"
@@ -59,7 +59,7 @@ _fw=$(fanout_width)
 case "$JOBS" in
     '') JOBS=$_fw ;;
     *[!0-9]*|0) refuse "--jobs takes a count of 1 or more (got '$JOBS')" ;;
-    *) if [ "$JOBS" -gt "$_fw" ]; then echo "fanout: --jobs $JOBS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (CEO-1333/1394: max(2, min(4, cores - demand)), never load1)"; JOBS=$_fw; fi ;;
+    *) if [ "$JOBS" -gt "$_fw" ]; then echo "fanout: --jobs $JOBS clamped to $_fw at CPU demand $(fanout_demand) ($(fanout_source)) on $(fanout_cores) cores (R-1333/1394: max(2, min(4, cores - demand)), never load1)"; JOBS=$_fw; fi ;;
 esac
 [ -d "$SWIT" ] || refuse "no vendored package at $SWIT -- a package that is absent is not a package that is failing"
 [ -f "$PLUNIT" ] || refuse "$PLUNIT missing"
@@ -68,7 +68,7 @@ esac
 . "$HERE/lib_gate.sh"
 . "$HERE/lib_inventory.sh"
 [ -f "$HERE/lib_progress.sh" ] && . "$HERE/lib_progress.sh"
-# ⭐ DECLARED MEMORY, BOTH HALVES (Lon 2026-09-23 18:3x, CEO-1225; the coo): each case file runs at the heap and the stack its row
+# ⭐ DECLARED MEMORY, BOTH HALVES (Lon 2026-09-23 18:3x, R-1225; the coo): each case file runs at the heap and the stack its row
 # in ALL.csv declares -- heap_kb, stack_kb, read through lib_declared_arena.sh, the one reader -- for THAT file only. This board read
 # neither until now. Every cell is checked here, once, before anything is graded: a refused cell refuses the board rather than
 # quietly grading its program at the default.
@@ -78,11 +78,11 @@ case "$_decl_rcpt" in *REFUSED*) refuse "a declared-memory cell in $SWIT/ALL.csv
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/swi_board_XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$WORK/wrap.pl"
 FILES="$WORK/files.txt"
-# ⭐ A LIBRARY IS GRADED BY ITS DRIVER (ceo CEO-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8, option 1, 2026-10-29): NAME_driver.pl with a NAME_driver.ref beside it, no begin_tests, is the grading vehicle of the library
+# ⭐ A LIBRARY IS GRADED BY ITS DRIVER (R-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8, option 1, 2026-10-29): NAME_driver.pl with a NAME_driver.ref beside it, no begin_tests, is the grading vehicle of the library
 # NAME.pl -- its stdout against the ref cut from swipl, one case named driver, recorded under the library's name (clp/linprog.pl:driver), as the gimpel and arizona runners grade theirs.
 { grep -rl --include='*.pl' 'begin_tests(' "$SWIT"; find "$SWIT" -type f -name '*_driver.pl' | while IFS= read -r _d; do grep -q 'begin_tests(' "$_d" || printf '%s\n' "$_d"; done; } | sort > "$FILES"
-if [ -n "$ONLY_FILE" ]; then grep -F -- "/$ONLY_FILE" "$FILES" > "$FILES.one" || refuse "--file $ONLY_FILE matches no shipped test file"; _nf=$(wc -l < "$FILES.one"); [ "$_nf" = 1 ] || refuse "--file $ONLY_FILE matches $_nf shipped test files -- it grades exactly one (CEO-1664)"; mv "$FILES.one" "$FILES"; fi
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1802/1805/1806): under S4E_CHUNK only the part's files (keyed dir/test_x, as ALL.csv and PARTITION.tsv key them) are
+if [ -n "$ONLY_FILE" ]; then grep -F -- "/$ONLY_FILE" "$FILES" > "$FILES.one" || refuse "--file $ONLY_FILE matches no shipped test file"; _nf=$(wc -l < "$FILES.one"); [ "$_nf" = 1 ] || refuse "--file $ONLY_FILE matches $_nf shipped test files -- it grades exactly one (R-1664)"; mv "$FILES.one" "$FILES"; fi
+# ⭐ THE ROUND ROBIN'S SEAM (R-1802/1805/1806): under S4E_CHUNK only the part's files (keyed dir/test_x, as ALL.csv and PARTITION.tsv key them) are
 # graded, their cases' rows are appended as a whole run appends them, and no suite row is written (rr_end below). A part grades one file at a time, both
 # modes, and stops between two files when a request waits or its S4E_RR_BUDGET is spent (RR_YIELD; the loop resumes the part at the next file).
 . "$HERE/lib_rr.sh" && rr_load "$SWIT" || exit 2
@@ -95,18 +95,18 @@ cat > "$WORK/grade_one.sh" <<'GEOF'
 #!/usr/bin/env bash
 f="$1"; mode="$2"
 . "$LIB_DECL" || exit 2
-TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(dirname "$LIB_DECL")/util_timeout_retry.sh}"   # the runner exports it; a lifted grade_one finds it beside LIB_DECL (CEO-1335)
+TIMEOUT_RETRY="${TIMEOUT_RETRY:-$(dirname "$LIB_DECL")/util_timeout_retry.sh}"   # the runner exports it; a lifted grade_one finds it beside LIB_DECL (R-1335)
 rel="${f#"$SWIT"/}"; ref="${f%.pl}.ref"; od="$WORK/out/${rel%.pl}"; mkdir -p "$od"
 drv=0; key="${rel%.pl}"; case "$f" in *_driver.pl) grep -q 'begin_tests(' "$f" || { drv=1; key="${rel%_driver.pl}"; } ;; esac   # a driver is declared at its library's row of ALL.csv
-export S4E_TIMEOUT_KEY="$rel"   # the unit a retried timeout's stamp names (CEO-1335)
+export S4E_TIMEOUT_KEY="$rel"   # the unit a retried timeout's stamp names (R-1335)
 act="$od/$mode.actual"; : > "$act"
 if [ ! -f "$ref" ]; then echo "NOREF" > "$od/$mode.tsv"; exit 0; fi
-# ⛔ THE RUN'S EXIT STATUS TRAVELS WITH ITS OUTPUT (the coo 2026-09-27, ceo CEO-1309): the matcher saw the output alone, so a run killed
+# ⛔ THE RUN'S EXIT STATUS TRAVELS WITH ITS OUTPUT (the coo 2026-09-27, R-1309): the matcher saw the output alone, so a run killed
 # by a signal part-way left its unreported cases reading FAIL -- a crash graded as a wrong answer, which the verdict ladder forbids (CRASH
 # never collapses into FAIL). rc is the run's own status (timeout passes a child's signal on as 128+N and answers 124 itself); a mode-4
 # program that never compiled has no run, and keeps rc 0 and its FAIL.
 rc=0
-_t0="${EPOCHREALTIME/,/.}"   # the process's own wall (CEO-1676 (c)): the aggregator divides it over the case rows this process produced
+_t0="${EPOCHREALTIME/,/.}"   # the process's own wall (R-1676 (c)): the aggregator divides it over the case rows this process produced
 if [ "$drv" = 1 ]; then
     # the driver is the program: no plunit wrapper, the whole stdout is the one case's answer
     if [ "$mode" = "m4" ]; then
@@ -128,7 +128,7 @@ elif [ "$mode" = "m4" ]; then
 else
     run_at_declared_arena "$SWIT/ALL.csv" "${rel%.pl}" -- "$TIMEOUT_RETRY" 60 "$SCRIP" --run "$PLUNIT" "$f" "$WORK/wrap.pl" < /dev/null > "$act" 2>"$od/m3.err"; rc=$?
 fi
-# ⭐ EACH sto(rational_trees) CASE ALONE (ceo CEO-1684): the shim defers every such case in the file's run, so a cyclic-term case that loops
+# ⭐ EACH sto(rational_trees) CASE ALONE (R-1684): the shim defers every such case in the file's run, so a cyclic-term case that loops
 # or exhausts the stack can no longer end its whole file (core/test_arith 221 cases -> 61, core/test_term 52 -> 9 when run in line, measured
 # on 4783ee83e); here each deferred spec runs ALONE in the same program -- m4 the same binary -- from its own directory, whose pj_sto_only.pl
 # names it, under its own 30 s timeout, and util_swi_sto_merge.py puts its verdict where the file's run deferred it: a case that loops or
@@ -184,12 +184,12 @@ work, files, modes, swit, name_reds = sys.argv[1], sys.argv[2], sys.argv[3].spli
 tot = {m: collections.Counter() for m in modes}
 declared = 0; ungraded_reason = collections.Counter(); ungraded_cases = 0
 both = 0; graded_cases = 0; noref = []
-# ⛔⭐ EXCLUDED_CASES.tsv -- ONE CASE OUT OF THE DENOMINATOR BY RULING, NAMED (ceo CEO-1710, Lon 2026-10-14 13:3x CDT, verbatim: "We want
-# dynamic growing everything. So if another oracle has fixed and we can do better and go longer. That we should."; and CEO-1696). A row is
+# ⛔⭐ EXCLUDED_CASES.tsv -- ONE CASE OUT OF THE DENOMINATOR BY RULING, NAMED (R-1710, Lon 2026-10-14 13:3x CDT, verbatim: "We want
+# dynamic growing everything. So if another oracle has fixed and we can do better and go longer. That we should."; and R-1696). A row is
 # file<TAB>case<TAB>class<TAB>measurement: file as the board prints it (db/test_db.pl), case the board's label (unit:test#k for one
 # instance, unit:test for every instance), class SCRIP_EXCEEDS_ORACLE (the oracle's answer comes from a fixed limit SCRIP grows past, or
-# from an oracle defect its own upstream has fixed), NO_ORACLE_ANSWER, or THREADS_EXCLUDED_BY_LON (ceo CEO-1766, Lon 2026-10-15, in-chat to
-# the ceo, verbatim: "Put the multi-threaded Prolog work as excluded for now."): a case whose body reaches a thread builtin, its measurement
+# from an oracle defect its own upstream has fixed), NO_ORACLE_ANSWER, or THREADS_EXCLUDED_BY_LON (R-1766, Lon 2026-10-15, in-chat to
+# the officer, verbatim: "Put the multi-threaded Prolog work as excluded for now."): a case whose body reaches a thread builtin, its measurement
 # naming the builtin; the 14 engine cases stay in the denominator. Such a case writes no progress row and leaves the denominator
 # as Excl, counted under its class beside the oracle's own NO_ORACLE_ANSWER cases. A row with another class refuses rc 2; a row naming a
 # case the file does not declare is STALE and reads the run red, so a declaration can never outlive what it names.
@@ -212,7 +212,7 @@ rows = []; reds = []; perfile = []
 for f in open(files).read().split('\n'):
     if not f: continue
     rel = f[len(swit) + 1:]; od = os.path.join(work, 'out', rel[:-3])
-    # a driver is recorded under its library's name (clp/linprog_driver.pl -> clp/linprog.pl, the one case 'driver'), CEO-1269
+    # a driver is recorded under its library's name (clp/linprog_driver.pl -> clp/linprog.pl, the one case 'driver'), R-1269
     disp = rel[:-len('_driver.pl')] + '.pl' if rel.endswith('_driver.pl') and 'begin_tests(' not in open(f, errors='replace').read() else rel
     per = {}
     for m in modes:
@@ -234,16 +234,16 @@ for f in open(files).read().split('\n'):
     for i, row in enumerate(first):
         label, verdict = row[0], row[1]
         if verdict == 'UNGRADED':
-            # ⛔⭐ THE 77 ARE APPENDED, NOT SKIPPED (coo COO-84 4d / CEO-779, 2026-09-16). They were counted, classified
+            # ⛔⭐ THE 77 ARE APPENDED, NOT SKIPPED (coo COO-84 4d / R-779, 2026-09-16). They were counted, classified
             # and PRINTED on the board line and then dropped on this `continue`, so the DB carried 2858 programs for a
-            # row whose denominator is 2935 and the CEO-749 identity -- PASS+FAIL+OUTSIDE+UNGRADABLE+UNGRADED+DEFERRED
+            # row whose denominator is 2935 and the R-749 identity -- PASS+FAIL+OUTSIDE+UNGRADABLE+UNGRADED+DEFERRED
             # == population -- could not be checked from the DB at all. ⭐ A case NAMED on the board and ABSENT from the
             # table is worse than one that is simply missing: the board says the denominator is whole, and the only
             # instrument that could contradict it has no row to do it with.
             # The vocabulary already carries both words (util_progress_append.py OUTCOMES), so nothing is invented here:
             # the 45 the ORACLE refuses are UNGRADABLE -- its reason, never ours -- and the 30 EMPTY plus 2 BLOCKED are
             # UNGRADED. The reason travels in the note column so the class stays checkable case by case.
-            # ⛔⭐ SINCE CEO-1696 THEY ARE EXCLUDED, NEVER DEBT (Lon 2026-10-11 16:0x CDT, in-chat to the ceo, verbatim: "Exclude any program in
+            # ⛔⭐ SINCE R-1696 THEY ARE EXCLUDED, NEVER DEBT (Lon 2026-10-11 16:0x CDT, in-chat, verbatim: "Exclude any program in
             # which we have no way to get output from an oracle, or in which we do not know the answer."): every one of the 77 is the oracle's
             # (it refuses the unit, runs it to an EMPTY unit, or plunit BLOCKS the case), so each is NO_ORACLE_ANSWER -- named on the board by
             # its reason, out of the denominator as Excl, and, like a container's fragment, it writes no row: the identity the DB checks is
@@ -259,7 +259,7 @@ for f in open(files).read().split('\n'):
         ok_all = True
         for m in modes:
             r = per[m][i] if i < len(per[m]) else [label, 'FAIL', 'no row']
-            # ⛔ CRASH AND HANG STAY THEMSELVES (coo 2026-09-27, CEO-1309): every non-PASS was counted and recorded as FAIL.
+            # ⛔ CRASH AND HANG STAY THEMSELVES (coo 2026-09-27, R-1309): every non-PASS was counted and recorded as FAIL.
             v = r[1] if r[1] in ('PASS', 'FAIL', 'CRASH', 'HANG') else 'FAIL'
             tot[m][v] += 1
             if r[1] == 'PASS' and 'agreement control' in (r[2] if len(r) > 2 else ''): tot[m]['agree_fail'] += 1
@@ -273,9 +273,9 @@ for rel, p, g, u in perfile:
     print('  %-48s %4d/%-4d agree (AND per case)%s' % (rel, p, g, ('  ungraded=%d' % u) if u else ''))
 print('SWI_BOARD declared=%d graded=%d %s ungraded=%d' % (declared, graded_cases,
       ' '.join('%s_pass=%d %s_fail=%d %s_agree_fail=%d %s_crash=%d %s_hang=%d' % (m, tot[m]['PASS'], m, tot[m]['FAIL'], m, tot[m]['agree_fail'], m, tot[m]['CRASH'], m, tot[m]['HANG']) for m in modes), ungraded_cases))
-print('  AND per case (agrees with the oracle in EVERY mode graded, the number the suite row states): %d/%d graded (%d declared, %d EXCLUDED: NO_ORACLE_ANSWER CEO-1696, EXCLUDED_CASES.tsv CEO-1710 and CEO-1766)' % (both, graded_cases, declared, ungraded_cases))
+print('  AND per case (agrees with the oracle in EVERY mode graded, the number the suite row states): %d/%d graded (%d declared, %d EXCLUDED: NO_ORACLE_ANSWER R-1696, EXCLUDED_CASES.tsv R-1710 and R-1766)' % (both, graded_cases, declared, ungraded_cases))
 print('  identity: graded %d + ungraded %d == declared %d %s' % (graded_cases, ungraded_cases, declared, '✓' if graded_cases + ungraded_cases == declared else '⛔ DOES NOT SUM'))
-print('  EXCLUDED (CEO-1696 NO_ORACLE_ANSWER by the oracle\'s reason; CEO-1710 and CEO-1766 EXCLUDED_CASES.tsv by class) -- named, never a pass, out of the denominator: ' + ', '.join('%s=%d' % kv for kv in sorted(ungraded_reason.items(), key=lambda kv: -kv[1])))
+print('  EXCLUDED (R-1696 NO_ORACLE_ANSWER by the oracle\'s reason; R-1710 and R-1766 EXCLUDED_CASES.tsv by class) -- named, never a pass, out of the denominator: ' + ', '.join('%s=%d' % kv for kv in sorted(ungraded_reason.items(), key=lambda kv: -kv[1])))
 graded_files = {pf[0] for pf in perfile}
 stale = sorted(k for k in set(excl_cases) - excl_used if k[0] in graded_files)   # a row for a file this run did not grade is not judged
 if excl_cases: print('  EXCLUDED_CASES.tsv: %d row(s), %d applied, %d STALE%s' % (len(excl_cases), len(excl_used), len(stale), (' -- ' + ' '.join('%s:%s' % k for k in stale)) if stale else ''))
@@ -292,7 +292,7 @@ read -r BOTH DECLARED GRADED NOREF STALE < "$WORK/summary.txt"
 if command -v progress_append_rows_tsv >/dev/null 2>&1 && [ -s "$WORK/rows.tsv" ] && [ -z "$ONLY_FILE" ]; then
     progress_append_rows_tsv "$WORK/rows.tsv" >/dev/null || echo "⚠ progress rows NOT recorded"
 fi
-rr_selected && { rr_end swi; exit 0; }   # a part or a request writes its cases' rows and no suite row (CEO-1802)
+rr_selected && { rr_end swi; exit 0; }   # a part or a request writes its cases' rows and no suite row (R-1802)
 INV_PACKAGE=swi_tests; INV_DIR="$SWIT"; INV_EXT=".pl"
 _shipped_tests=$(wc -l < "$FILES")
 _iv="$(inventory_line "$((_shipped_tests - NOREF))" 0)"; _ivrc=$?
@@ -300,11 +300,11 @@ _iv="$(inventory_line "$((_shipped_tests - NOREF))" 0)"; _ivrc=$?
 if [ -n "$ONLY_FILE" ]; then
     echo "SUITES.tsv NOT UPDATED (by design): --file grades one file and cannot produce a suite-wide number."
 else
-    # the denominator is the GRADED cases (CEO-1696): DECLARED - GRADED are NO_ORACLE_ANSWER cases, shown as Excl
+    # the denominator is the GRADED cases (R-1696): DECLARED - GRADED are NO_ORACLE_ANSWER cases, shown as Excl
     printf 'SUITE_BOARD suite=swi lang=prolog tier=run pass=%s total=%s excluded=%s runner=test_prolog_swi_suite.sh\n' "$BOTH" "$GRADED" "$((DECLARED - GRADED))"
     python3 "$HERE/util_score_row.py" write --lang prolog --column vendor --suite SWI \
         --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$GRADED" --excluded "$((DECLARED - GRADED))" \
-        --text "swi_tests (swipl-devel src/Tests, every plunit case, agreement with swipl 9.0.4 per case) $BOTH/$GRADED by the AND PER CASE, $((DECLARED - GRADED)) case(s) EXCLUDED, NO_ORACLE_ANSWER (CEO-1696) and EXCLUDED_CASES.tsv's SCRIP_EXCEEDS_ORACLE (CEO-1710) and THREADS_EXCLUDED_BY_LON (CEO-1766), over modes $MODES (\`test_prolog_swi_suite.sh\`)${_iv:+ · $_iv (\`test_prolog_swi_suite.sh\`)}" \
+        --text "swi_tests (swipl-devel src/Tests, every plunit case, agreement with swipl 9.0.4 per case) $BOTH/$GRADED by the AND PER CASE, $((DECLARED - GRADED)) case(s) EXCLUDED, NO_ORACLE_ANSWER (R-1696) and EXCLUDED_CASES.tsv's SCRIP_EXCEEDS_ORACLE (R-1710) and THREADS_EXCLUDED_BY_LON (R-1766), over modes $MODES (\`test_prolog_swi_suite.sh\`)${_iv:+ · $_iv (\`test_prolog_swi_suite.sh\`)}" \
         || echo "⚠ SUITES.tsv NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
 fi
 [ "${STALE:-0}" -eq 0 ] || { echo "⛔ $STALE EXCLUDED_CASES.tsv row(s) name a case no graded file declares -- STALE (named above); a declaration may not outlive what it names"; exit 1; }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_queue_census_placeholder_arm.sh — the invariant gate for class P of util_queue_visibility_census.py
-# (ceo ruling CEO-289, 2026-09-05, from hq_P's 44-baton FINDING; built by hq_T).
+# (ruling R-289, 2026-09-05, from hq_P's 44-baton FINDING; built by hq_T).
 #
 # WHAT IT PROTECTS.  A baton whose DONE-WHEN is still the mint skeleton is UNCLOSABLE: `done` executes that
 # line whole, prose is not a command, so a seat can do the whole job correctly and get a refusal that is
@@ -35,7 +35,7 @@ mkpo() {
 baton() { # baton <po> <topic> <first-line> <done-when> <extra-body>
     { printf '# TASK %s\n' "$2"; printf 'GOAL: %s\n' "$3"; printf 'DONE-WHEN: %s\n' "$4"; printf '%s\n' "$5"; } > "$1/tasks/$2.task.md"
 }
-# ⛔⭐ A ROW EXISTS ONLY WHILE A MEASUREMENT SAYS THE PROBLEM EXISTS (Lon 2026-10-01, CEO-1386/1387): class P reads only
+# ⛔⭐ A ROW EXISTS ONLY WHILE A MEASUREMENT SAYS THE PROBLEM EXISTS (Lon 2026-10-01, R-1386/1387): class P reads only
 # LIVE rows, so every baton the arms below plant sits on a QUEUE.tsv row (rank, topic, owner, state) unless the arm
 # is proving the opposite -- ARM 1b plants the same placeholder baton on a RETIRED row and wants it NOT counted.
 row()  { printf '0\t%s\thq_X\tFREE\n' "$2" >> "$1/QUEUE.tsv"; }           # row <po> <topic>  -- a live FREE row
@@ -52,7 +52,7 @@ echo "--- ARM 1 (fail once): a baton whose DONE-WHEN IS the placeholder is COUNT
 mkpo "$T/a" || exit 2
 baton "$T/a" synth_placeholder 'a synthetic row' "$PLACE" '## LEDGER'; row "$T/a" synth_placeholder
 n=$(pcount "$T/a"); ck "$([ "$n" = 1 ] && echo ok || echo no)" "class P counts the placeholder baton on a LIVE row (got '$n', want 1)"
-echo "--- ARM 1b (CEO-1386/1387): the SAME placeholder baton on a RETIRED row is history, NOT counted ---"
+echo "--- ARM 1b (R-1386/1387): the SAME placeholder baton on a RETIRED row is history, NOT counted ---"
 mkpo "$T/r" || exit 2
 baton "$T/r" synth_retired 'a synthetic row' "$PLACE" '## LEDGER'; rrow "$T/r" synth_retired
 n=$(pcount "$T/r"); ck "$([ "$n" = 0 ] && echo ok || echo no)" "class P does NOT count a placeholder baton whose row is retired (got '$n', want 0)"

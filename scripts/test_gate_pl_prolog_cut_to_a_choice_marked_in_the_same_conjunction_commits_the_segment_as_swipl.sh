@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_prolog_cut_to_a_choice_marked_in_the_same_conjunction_commits_the_segment_as_swipl.sh -- THE SEGMENT COMMIT OF ARCH-PROLOG-C-OUT-OF-THE-BOX section 2.3 (the cto's ruling
-# 2026-10-31 12:0x CDT, built by the cqo in row prolog-swi-suite-to-100-ceo-1981; SWI core/test_misc cut_to and cut_to_cleanup).
+# 2026-10-31 12:0x CDT, built by the cqo in row prolog-swi-suite-to-100-r-1981; SWI core/test_misc cut_to and cut_to_cleanup).
 # THE RULING: B names a frame and the in-frame choices are reached only by the compile-time omega wiring, so B := Ch prunes nothing; LOWER recognises prolog_current_choice(V) followed in the
 # same conjunction by prolog_cut_to(V), V fresh and used nowhere else, and lowers the segment between them as ( Seg -> true ): the bound banks B and the trail mark, the fence commit restores them,
 # and a pruned call_cleanup runs its cleanup on the commit road. The run-time meta-call road (pl_cutcall_walk) compiles a goal carrying the pair as it compiles a goal carrying a cut, with V one

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""util_bb_placement_census.py -- CEO-1722: does every BB OPERAND (result) and every BB LOCAL live on the RSP SPINE?
+"""util_bb_placement_census.py -- R-1722: does every BB OPERAND (result) and every BB LOCAL live on the RSP SPINE?
 
-THE WORD (Lon 2026-10-14, in-chat to the ceo): "You have a problem in that the RSP-spine is not being used for 90% of ALL BB
+THE WORD (Lon 2026-10-14, in-chat): "You have a problem in that the RSP-spine is not being used for 90% of ALL BB
 operands." and "And add BB's LOCALS to that list also."  THE GOAL: every BB operand and every BB local lives on the RSP spine at
 a fixed compile-time offset unless the BB FRAME-PLACEMENT CRITERION forces it off -- an RBP activation frame only where unbounded
 growth can intervene between a cell's write and its read (a gamma-suspend, a frame a choice point or a generator retains); a
@@ -17,13 +17,13 @@ HOMES come from the COMPILER'S OWN STATE, not from a base-register count of the 
   NONE        no cell (wiring, a K=0 protocol box, an elided result)
 Every rip-relative or absolute memory operand in the .s is a runtime cell, a keyword, a GOT entry or a global variable's GVA
 cell, never a BB operand's or local's home; the base-register view is printed beside the compiler view (BB_PLACEMENT_ASM) so
-the ceo's measurement of 2026-10-14 reproduces next to the classification that answers it.
+the officer's measurement of 2026-10-14 reproduces next to the classification that answers it.
 
-THE TWO TESTS (CEO-1750, Lon 2026-10-14: "first assumption is RSP-spine, but if a BB operand can not be reached by fixed RSP
+THE TWO TESTS (R-1750, Lon 2026-10-14: "first assumption is RSP-spine, but if a BB operand can not be reached by fixed RSP
 offset, or a BB local can not be reached by same RSP relative address for ALPHA and BETA ... ONLY these two cases go to an RBP
 ACTIVATION FRAME. ALL the rest/remaining must be RSP SPINE CELLS."), per cell, over the box graph (`scrip --dump-bb` edges) and the
 compiler's own rsp facts (`scrip --dump-homes`):
-  PLAN_ROW retains_code > 0  a DYNAMIC box (CEO-1949, the cto's ruling as design seat): a box whose gamma leaves rsp at a distance from its alpha no
+  PLAN_ROW retains_code > 0  a DYNAMIC box (R-1949, the cto's ruling as design seat): a box whose gamma leaves rsp at a distance from its alpha no
                              compile-time offset states. The census asks the planner's ONE RETAINS TABLE (planner_retains, SCRIP src/planner/zeta_plan.cpp,
                              the plan dump's retains_code column, found by its NAME in PLAN_COLUMNS) and nothing else: 1 suspend, 2 coexpression,
                              3 unknown-callee, 4 generator-callee, 5 retaining-callee, 6 unresolved-callee, 7 deferred-pattern, 8 gate-holds,
@@ -31,13 +31,13 @@ compiler's own rsp facts (`scrip --dump-homes`):
                              resumable= and a grep of the callee's asm decide nothing;
   [RSPFX] rsp=renormal       a cut, which restores rsp to the frame base;
   [LOCALUSE] local=V         a box that touches local V (the compiler's own name, VAR_REF included);
-  [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, CEO-1751).
-  PATTERN ENTRY (CEO-1954): a MATCH combinator's operand edge to a MATCH child is a CONTROL successor (the child is entered through its combinator, no
+  [HOMES] standing=K         the root graph's standing cells (global-type, STANDING, R-1751).
+  PATTERN ENTRY (R-1954): a MATCH combinator's operand edge to a MATCH child is a CONTROL successor (the child is entered through its combinator, no
                              gamma edge reaches it), and entering an ARBNO's child is an UNBOUNDED-PUSH edge -- each iteration pushes state, the planner's act cause
                              arbno_iteration -- so a cell written outside an ARBNO and read inside its body is read an unknown number of pushes later.
   OPERAND TEST: result cell P fails iff for some consumer O a control path P ... O (not through P again) crosses a dynamic box
   with no cut after it, or P is itself dynamic (the path starts at P's gamma edges: once P fails (its omega) its cell is popped and
-  nothing reads it, CEO-1865; an Icon DISJUNCTION is no consumer: its op edges name its arms, and the emitted box reads only its own carve --
+  nothing reads it, R-1865; an Icon DISJUNCTION is no consumer: its op edges name its arms, and the emitted box reads only its own carve --
   the arm selector at [rsp + 16] -- while each arm's last box copies its result into that carve); LOCAL TEST: local V fails iff some box touching it can be entered, at alpha or
   beta, on a path from a dynamic box with no cut between.  No graph-level proxy (generator, retained graph, more than one SUCCEED)
   forces anything by itself.
@@ -52,11 +52,11 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
   BB_PLACEMENT_CLASS <lang> <state>:<cause> <A|L> <kind> count=..
   BB_PLACEMENT_TESTS <lang>|total offspine=.. operand_test=.. local_test=.. standing=.. other=..   (other = off the spine, no test fails)
   BB_PLACEMENT_TESTS_WHY <lang> <test>:<why> count=..
-  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. home_without_test=.. test_without_home=.. ruled=..   (CEO-1854: an operand the compiler carves on the spine
+  BB_PLACEMENT_FRAMEHOME <lang> homes=.. agree=.. home_without_test=.. test_without_home=.. ruled=..   (R-1854: an operand the compiler carves on the spine
       AND mirrors to an RBP frame slot -- scrip --dump-homes' xf=/xfwhy= -- is TEST 1's frame home; agree = the census's own operand path test
       fails too; home_without_test = homed where the path test passes; test_without_home = the path test fails and nothing is homed, each a
       read at a fixed rsp offset to verify by hand -- the census's retaining-callee proxy over-reaches for an Icon procedure that never suspends;
-      CEO-1949 (narrowed by the ceo): ruled = a home the path test does not force that the planner's own facts name a class the ceo ruled right by Lon's
+      R-1949 (narrowed by the officer): ruled = a home the path test does not force that the planner's own facts name a class the officer ruled right by Lon's
       first test -- a PINNED TEMP (HOMETEST operand:pinned-temp, xfwhy read-across-retaining-edge) WITNESSED by a retry edge, i.e. a box with an incoming beta
       edge lies on a gamma path between the write and a consumer's read, so a retry re-reads the cell; or a RETAINING DISJUNCTION (xfwhy retaining-disjunction
       on an IR_DISJUNCTION, zls_dj_retains). A pinned temp with NO such box is not read across a retaining edge: it counts as home_without_test, the planner's
@@ -66,7 +66,7 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       hwt: the home_without_test side of the same homes, the improper RBP allocations; nohome: the test_without_home side; --cells names
       them frame_homed_untested and spine_unhomed; a frame_homed row's tenth column is the planner's HOMETEST why, e.g. operand:pinned-temp, so a residue names its rule at once)
   BB_HOSTS <lang> ops_rsp=.. ops_rbp=.. ops_precarved=.. ops_none=.. loc_rsp=.. loc_rbp=.. loc_rbp_forced=.. loc_rbp_misplaced=.. loc_none=..
-  BB_HOSTS_RBP_CLASS <lang> class=<c> count=..   (ceo CEO-1980, Lon 2026-10-25: "there is no reason that the LIFO can not be enforced": every ops_rbp operand by class --
+  BB_HOSTS_RBP_CLASS <lang> class=<c> count=..   (R-1980, Lon 2026-10-25: "there is no reason that the LIFO can not be enforced": every ops_rbp operand by class --
       call-act-word (a call box's frame/beta pair), construct-record (a BOUND/GATE/TO record), record-across-excursion (the same read across a
       retaining edge), operand-across-retaining-edge (a spine cell mirrored to the frame), address-escapes; the classes sum to ops_rbp)
       (Lon 2026-10-21: RSP-hosted against RBP-hosted, operands and locals. An operand is RBP-hosted when it lives behind rbp or the compiler
@@ -74,12 +74,12 @@ OUTPUT (stdout; the row's DONE-WHEN greps ^BB_PLACEMENT):
       it does not. ops_prealloc = a box granted a frame slot at entry whose cell is NOT an RBP home (on the spine, or no cell): a PRE-ALLOCATION
       (Lon 2026-10-21: "SPINE allocations MUST ONLY be allocated PER BOX and at ALPHA at EACH BOX."); the pre-allocation count is
       ops_prealloc + ops_precarved + loc_rbp_misplaced. util_placement_watch.sh records these per tree in /home/resources/progress/PLACEMENT.tsv.)
-  BB_UNWIND <lang>|total rsp_loads=.. retry_restore=.. discard_restore=.. multi_pop=..   (CEO-1755/1759, from the emitted .s: see asm_unwind)
+  BB_UNWIND <lang>|total rsp_loads=.. retry_restore=.. discard_restore=.. multi_pop=..   (R-1755/1759, from the emitted .s: see asm_unwind)
   BB_UNWIND_RSPLOAD <lang> <class> count=..   every rsp load by the label it sits under: restore_* is a RETRY loading rsp from a saved
       value (banned), discard_* a FENCE, ARBNO, cut or statement landing dropping rsp to a saved depth (allowed, counted apart)
   BB_UNWIND_MULTIPOP <lang> into=<box kind> count=..
   --tsv PATH writes one row per misplaced (lang state cause table graph@sig kind count).
-  --cells PATH writes one row per OFF-SPINE cell, naming the CEO-1750 test it fails (the cto's review of the spine flip,
+  --cells PATH writes one row per OFF-SPINE cell, naming the R-1750 test it fails (the cto's review of the spine flip,
       2026-10-17): lang home state test why graph@sig table kind cell -- home RBP or RSP_CARVED, state *_forced or *_misplaced,
       test operand, local or none (none: off the spine with no test failing, which is what misplaced means), why the dynamic
       box's reason, cell the box id or the local's name.
@@ -179,7 +179,7 @@ def homes_of(lang, src, tmp):
         for gi in name_gi.get(name, ()):
             fx['retains'][(gi, ai)] = max(c, fx['retains'].get((gi, ai), 0))
     if nodes and ri is None:
-        print('BB_PLACEMENT REFUSE: the plan dump of %s carries no retains_code column -- ./scrip is older than the planner\'s one retains table (CEO-1949: a retaining edge is planner_retains above 0, nothing else)' % src)
+        print('BB_PLACEMENT REFUSE: the plan dump of %s carries no retains_code column -- ./scrip is older than the planner\'s one retains table (R-1949: a retaining edge is planner_retains above 0, nothing else)' % src)
         sys.exit(2)
     return nodes, locs, fx
 
@@ -212,9 +212,9 @@ def port_of(lab):
 
 
 def asm_unwind(path, seen_sec):
-    """BB_UNWIND (CEO-1755) from the emitted code: every rsp load and every failure-edge pop, by the port of the label it sits under.
+    """BB_UNWIND (R-1755) from the emitted code: every rsp load and every failure-edge pop, by the port of the label it sits under.
     retry_restore = an rsp load (mov/lea/xchg/pop rsp, leave) under a box's beta or omega label or a redo entry; discard_restore = the same
-    under a FENCE, ARBNO, cut or statement label (CEO-1759: a discard may drop rsp to a saved depth); multi_pop = a jump to a beta label preceded
+    under a FENCE, ARBNO, cut or statement label (R-1759: a discard may drop rsp to a saved depth); multi_pop = a jump to a beta label preceded
     in its straight line by more than one add rsp, or by one that differs from the box's own carve (sub rsp at its alpha).  Graph exits
     (the procedure's own gamma/omega label), alpha and gamma roads, the gc site and the program's startup are counted apart by class."""
     c = collections.Counter()

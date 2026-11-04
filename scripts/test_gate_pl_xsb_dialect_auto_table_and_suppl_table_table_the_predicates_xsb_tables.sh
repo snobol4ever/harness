@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_xsb_dialect_auto_table_and_suppl_table_table_the_predicates_xsb_tables.sh -- THE XSB COMPILER DIRECTIVES auto_table AND suppl_table TABLE THE PREDICATES XSB TABLES (hq_packages 2026-10-28,
-# DESIGN-PLAN xsb-tabling-wfs step 4, ARCH-PROLOG-WFS-TABLING.md section 8 R4; CEO-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests).
+# DESIGN-PLAN xsb-tabling-wfs step 4, ARCH-PROLOG-WFS-TABLING.md section 8 R4; R-1927: XSB 5.0.0 is the oracle of packages/prolog/xsb_tests).
 # XSB's compiler (cmplib/tabdef.P, suppltab.P) runs these at compile time: auto_table tables (1) the predicate named by the goal argument of tnot/1, tfindall/3, tbagof/3, tsetof/3, (2) every directly
 # recursive predicate that no :- mode declaration proves terminating (a '+' argument that is a variable of the head's structure), (3) then one predicate of every remaining loop of the call graph (the one
 # in most loops, then an exported one, then of smaller arity, then the first); suppl_table(N) tables a predicate whose clause has an edb-dependency of N or more (and sums, or takes the maximum, if-then

@@ -4,7 +4,7 @@
 Usage: python3 ../harness/scripts/util_gen_unicode_norm_tables.py --unicode-data UnicodeData.txt [--props DerivedNormalizationProps.txt] [--out PATH] [--check]
 
   --unicode-data  the UnicodeData.txt of the Unicode version the Raku lane is graded against (Roast S15-normalization is generated from Unicode 17.0.0;
-                  a copy is at /home/claude_ceo/.scratch/mon/rakudo-mon/build/t/3rdparty/Unicode/17.0.0/UnicodeData.txt, the 15.0.0 one at
+                  a copy is in a rakudo build tree at t/3rdparty/Unicode/17.0.0/UnicodeData.txt, the 15.0.0 one at
                   /home/resources/roast-master/3rdparty/Unicode/15.0.0/UnicodeData.txt).
   --props         a DerivedNormalizationProps.txt (the system one, /usr/share/unicode/DerivedNormalizationProps.txt, is 15.1.0): its Full_Composition_Exclusion
                   list fixes the EXPLICIT composition exclusions (CompositionExclusions.txt has not grown since Unicode 3.1); every other exclusion is computed

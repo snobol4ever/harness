@@ -2,9 +2,9 @@
 # test_gate_picker_lane_table_agrees_with_mode.sh -- the picker's language->owner table is a SECOND COPY of
 # MODE line 2, and this is what keeps the copy honest.
 #
-# ⛔⭐ THE MEASURED CASE (ceo CEO-672, 2026-09-13; re-measured independently by hq_B before acting on it).
+# ⛔⭐ THE MEASURED CASE (R-672, 2026-09-13; re-measured independently by hq_B before acting on it).
 # `s4e_topic_lane`'s language fallback was a FLEET-era map that NONET invalidated wholesale. SIX OF SEVEN
-# languages named a seat that does not own them: icon->hq_B where Icon is the ceo · snobol4->hq_P where it is
+# languages named a seat that does not own them: icon->hq_B where Icon is the officer · snobol4->hq_P where it is
 # the cfo · snocone->hq_P where it is hq_I · pascal->hq_P where it is the coo · rebus->hq_T where it is hq_S ·
 # prolog->hq_C where the cto owns completeness. Exactly one, raku->hq_T, was still right.
 # ⛔ IT FAILED IN BOTH DIRECTIONS AT ONCE, which is why it ran for as long as NONET had been open: `next`
@@ -12,10 +12,10 @@
 # thirty rows before locking a SNOBOL4 row it then released unworked. A dispatcher that is wrong in one
 # direction starves a lane loudly; wrong in both, every seat sees a plausible queue and nobody sees a gap.
 #
-# ⭐⭐ WHY THIS IS A GATE AND NOT A DERIVATION, WHICH IS THE PART WORTH ARGUING. The ceo offered both and left
+# ⭐⭐ WHY THIS IS A GATE AND NOT A DERIVATION, WHICH IS THE PART WORTH ARGUING. The officer offered both and left
 # the choice here. Deriving the owner from MODE line 2 at call time sounds strictly better -- no copy, no rot.
 # ⛔ IT WAS MEASURED AND REJECTED. The only parseable ownership shape in line 2 is the phrase "THE SEATS: RAKU
-# -- hq_T; ... ICON -- the ceo", and `grep -c 'THE SEATS:'` over the MODE backups says it appears in ONE of the
+# -- hq_T; ... ICON -- the officer", and `grep -c 'THE SEATS:'` over the MODE backups says it appears in ONE of the
 # last TEN versions: line 2 is prose whose phrasing is reinvented at every mode cut. A parser over it would
 # have found nothing for nine of ten modes and fallen back to the hardcoded table -- today's bug, with
 # machinery on top and a false claim of freshness. ⭐ The general form: you cannot derive a fact from a
@@ -40,7 +40,7 @@ MODEF="${LANE_GATE_MODE:-$PO/MODE}"
 
 echo "picker lane table vs MODE line 2 -- recomputed live, $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 s4e_subject_announce "$REPO" >/dev/null || true
-# ⛔ TWO CLOCKS, BOTH STAMPED (the cfo's ask, CEO-1056). This arm compares a REPO FILE moved by git against a
+# ⛔ TWO CLOCKS, BOTH STAMPED (the cfo's ask, R-1056). This arm compares a REPO FILE moved by git against a
 # LIVE SHARED FILE moved by another seat's write, so its red cannot say WHICH SIDE IS BEHIND -- and on 2026-09-21
 # that ambiguity produced three false reds in one day, the third from a seat who had the LAW fresh and the TREE
 # thirty minutes stale and checked only the clock that had burned them twice already. Printing both turns an
@@ -65,7 +65,7 @@ fi
 table_owner() { bash -c '. /dev/stdin <<<"$(sed -n "/^s4e_lane_languages()/,/^s4e_lane_help()/p" "$1")"; s4e_lane_owner_of_language "$2"' _ "$MSG" "$1" 2>/dev/null; }
 
 # ── what MODE LINE 2 says. ⭐ Two independent shapes, because line 2 has used both and neither is promised:
-#   (a) "THE SEATS: RAKU -- hq_T; ... ICON -- the ceo"     (the NONET cut)
+#   (a) "THE SEATS: RAKU -- hq_T; ... ICON -- the officer"     (the NONET cut)
 #   (c) "THE SEATS: ... REBUS -- CLOSED, NO OWNER"          a language with NO owner by declaration
 #   (b) "<seat> ICON", "<seat> SNOBOL4", ...               (the CONCERN-1 roster earlier in the same line)
 # A language found by NEITHER is UNPARSEABLE, and unparseable is rc=2 for that language -- never an assumed
@@ -95,8 +95,8 @@ for L in $LANGS; do
     case "$M" in
       CONFLICT:*) printf '  %-9s %-8s %-8s ⛔ MODE LINE 2 CONTRADICTS ITSELF (%s)\n' "$L" "${T:-?}" "--" "${M#CONFLICT:}"; CONFLICT=$((CONFLICT+1));;
       "")         printf '  %-9s %-8s %-8s ⚠️  unparseable in line 2 -- cannot check\n' "$L" "${T:-?}" "--"; UNPARSED=$((UNPARSED+1));;
-      CLOSED)     if [ "$T" = "${LANE_GATE_CLOSED_OWNER:-ceo}" ]; then printf '  %-9s %-8s %-8s ✅ closed language, table routes to the arbiter\n' "$L" "$T" "$M";
-                  else printf '  %-9s %-8s %-8s ⛔ DISAGREE -- MODE line 2 declares %s CLOSED, so a %s-* row is a REOPENING question and belongs to the arbiter (%s), not to %s\n' "$L" "${T:-?}" "$M" "$L" "$L" "${LANE_GATE_CLOSED_OWNER:-ceo}" "${T:-<nothing>}"; FAIL=$((FAIL+1)); fi;;
+      CLOSED)     if [ "$T" = "${LANE_GATE_CLOSED_OWNER:-cto}" ]; then printf '  %-9s %-8s %-8s ✅ closed language, table routes to the arbiter\n' "$L" "$T" "$M";
+                  else printf '  %-9s %-8s %-8s ⛔ DISAGREE -- MODE line 2 declares %s CLOSED, so a %s-* row is a REOPENING question and belongs to the arbiter (%s), not to %s\n' "$L" "${T:-?}" "$M" "$L" "$L" "${LANE_GATE_CLOSED_OWNER:-cto}" "${T:-<nothing>}"; FAIL=$((FAIL+1)); fi;;
       "$T")       printf '  %-9s %-8s %-8s ✅\n' "$L" "$T" "$M";;
       *)          printf '  %-9s %-8s %-8s ⛔ DISAGREE -- the table sends %s-* rows to %s; MODE line 2 says %s owns %s\n' "$L" "${T:-?}" "$M" "$L" "${T:-<nothing>}" "$M" "$L"; FAIL=$((FAIL+1));;
     esac
@@ -120,5 +120,5 @@ if [ "$UNPARSED" -ne 0 ]; then
     echo "      this copy entirely. Until then a language can drift here and nobody is told."
     exit 2
 fi
-echo "✅ GATE OK -- all $N language fallbacks name the owner MODE line 2 names (a CLOSED language must route to ${LANE_GATE_CLOSED_OWNER:-ceo})"
+echo "✅ GATE OK -- all $N language fallbacks name the owner MODE line 2 names (a CLOSED language must route to ${LANE_GATE_CLOSED_OWNER:-cto})"
 exit 0

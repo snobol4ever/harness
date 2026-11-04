@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_feature_reps.sh -- THE HANDFUL: a small set of representative programs directly related to a fix, run by the seat that lands it
-# (Lon 2026-10-11 13:4x CDT, in-chat to the ceo, verbatim: "I suspect the ONE TEST per change is too restrictive. It should be a small
-# handful of representative programs directly related to the fix."; ceo CEO-1677; RULES.md section ONE TESTING OFFICER clause (7) as amended).
-# The handful is LOOKED UP, never queried: the language's master partition (corpus/tests/<lang>/PARTITION.tsv, CEO-1676) names a CORE whose
+# (Lon 2026-10-11 13:4x CDT, in-chat, verbatim: "I suspect the ONE TEST per change is too restrictive. It should be a small
+# handful of representative programs directly related to the fix."; R-1677; RULES.md section ONE TESTING OFFICER clause (7) as amended).
+# The handful is LOOKED UP, never queried: the language's master partition (corpus/tests/<lang>/PARTITION.tsv, R-1676) names a CORE whose
 # entries cover every distinctive feature three times; the representatives of feature F are the core entries whose shells carry F, in core
 # order (the entries marking the most features first), capped at REPS_CAP (default 8) over all the features named. They are graded by the
 # harness's own smoke engine (corpus_suite_harness.py smoke --entries: declared sizes, stdin, masks, both modes) which writes no progress row
@@ -43,6 +43,6 @@ printf '%s\n' "$out" | grep -E '^AREA_SMOKE_(ENTRY|TABLE)' | sed 's/^AREA_SMOKE_
 secs="$(echo "$(date +%s.%N) - $T0" | bc | sed 's/^\./0./')"
 line="$(printf '%s\n' "$out" | grep -m1 '^AREA_SMOKE_TABLE')"
 case "$rc" in 0) v=GREEN;; 2) v=REFUSED;; *) v=RED;; esac
-echo "FEATURE_REPS $v lang=$lang features=${FEATS[*]} reps=${#reps[@]} ${line#AREA_SMOKE_TABLE table=*/ } wall=${secs}s rc=$rc (no progress row, no score row: a seat's handful, CEO-1677)"
+echo "FEATURE_REPS $v lang=$lang features=${FEATS[*]} reps=${#reps[@]} ${line#AREA_SMOKE_TABLE table=*/ } wall=${secs}s rc=$rc (no progress row, no score row: a seat's handful, R-1677)"
 [ "$rc" = 2 ] && printf '%s\n' "$out" | tail -3
 exit $rc

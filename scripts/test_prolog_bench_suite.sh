@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${BENCH_PROLOG_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/benchmarks/prolog/bench}" || exit 2
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # test_prolog_bench_suite.sh -- THE PROLOG BENCHMARKS DOUBLE AS TESTS: every kernel graded in both modes under three angles, the
 # REF held on every run (ProBench, key prolog-bench-ref; row prolog-benchmarks-double-as-tests-ref-in-out-through-the-three-angle-
-# harness-with-a-row-in-the-suite-grid, CEO-1221, to the coo's contract COO-164). Lon, verbatim: "The reason to force a benchmark to
+# harness-with-a-row-in-the-suite-grid, R-1221, to the coo's contract COO-164). Lon, verbatim: "The reason to force a benchmark to
 # also be a test is to guarantee it is not vacuous." -- "The source of the benchmark is the apple-core of the test, the wrapper code
 # can be added to do both the test and the measurements."
 # THE THREE ANGLES, per kernel, per mode: (1) PROCESS -- the pristine kernel under tools/bench_rusage, stdout == <k>.ref; (2) ITER --
@@ -14,7 +14,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 # POPULATION: corpus/benchmarks/prolog/bench/*.pl, the pristine kernels. The upstream copies under src/ and the per-engine
 # preludes are not in it yet -- the row's NEXT converts src/ into kernels with oracle-cut REFs, and a kernel with no REF is counted
 # FAIL, never skipped. Memory: a <k>.heap / <k>.stack sidecar is honoured through lib_declared_arena.sh.
-# A whole-population pass publishes the suite row by default (CEO-1302 (a), lib_bench_write.sh; --no-write opts out): util_score_row.py write --lang prolog --column bench-ref. Exit: 0 every kernel passes, 1 not, 2 refused.
+# A whole-population pass publishes the suite row by default (R-1302 (a), lib_bench_write.sh; --no-write opts out): util_score_row.py write --lang prolog --column bench-ref. Exit: 0 every kernel passes, 1 not, 2 refused.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
@@ -24,7 +24,7 @@ SCRIP="$HERE/../../SCRIP/scrip"
 RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
 ITER_N="${BENCH_ITER_N:-3}"
 BUD_MS="${BENCH_BUD_MS:-200}"
-NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (ceo CEO-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
+NOWRITE=0; [ "${1:-}" = --no-write ] && NOWRITE=1   # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 [ -d "$BD" ] || refuse "no benchmark tree at $BD"
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- run make first"
@@ -39,20 +39,20 @@ case "$ITER_N" in ''|*[!0-9]*|0) refuse "BENCH_ITER_N must be a positive integer
 case "$BUD_MS" in ''|*[!0-9]*|0) refuse "BENCH_BUD_MS must be a positive whole number of milliseconds (got '$BUD_MS')";; esac
 IS_BOARD=0; one_runner_suite_is_a_board "$BD" && IS_BOARD=1
 mapfile -t KERNELS < <(find "$BD" -maxdepth 1 -type f -name '*.pl' -printf '%f\n' | sed 's/\.pl$//' | LC_ALL=C sort)
-# ⭐ THE ROUND ROBIN'S SEAM (ceo CEO-1806/1812): under S4E_CHUNK=entry:<kernel>[,...] (a request) only those kernels are graded, their rows appended,
+# ⭐ THE ROUND ROBIN'S SEAM (R-1806/1812): under S4E_CHUNK=entry:<kernel>[,...] (a request) only those kernels are graded, their rows appended,
 # and no suite row is written (rr_end)
 . "$HERE/lib_rr.sh" && rr_load "$BD" || exit 2
 if rr_selected; then _ks=(); for k in "${KERNELS[@]}"; do rr_admits "$k" && _ks+=("$k"); done; KERNELS=(${_ks[@]+"${_ks[@]}"}); fi
 [ "${#KERNELS[@]}" -gt 0 ] || refuse "no *.pl under $BD -- a population of zero is not a green board"
-# ⭐ OUTSIDE.tsv NAMES A KERNEL OUT OF THE DENOMINATOR (hq_prolog 2026-10-10, corpus 0bc5934ce: queens_clpfd, Lon's CEO-579 "Do not count the
-# FD as failures for us", the OUTSIDE_CLPFD class of CEO-1593): kernel<TAB>CLASS<TAB>evidence. The kernel is still graded and its progress
+# ⭐ OUTSIDE.tsv NAMES A KERNEL OUT OF THE DENOMINATOR (hq_prolog 2026-10-10, corpus 0bc5934ce: queens_clpfd, Lon's R-579 "Do not count the
+# FD as failures for us", the OUTSIDE_CLPFD class of R-1593): kernel<TAB>CLASS<TAB>evidence. The kernel is still graded and its progress
 # rows written (it grades the day CLP(FD) is in the baseline), but it leaves total/all_n and is shown as excluded=, so shipped = total +
 # excluded reads off the line and the row's Excl column; a malformed row, another class, or a name that is no kernel refuses rc 2.
 declare -A OUTS; NOUT=0; OUTN=""
 if [ -f "$BD/OUTSIDE.tsv" ]; then
   while IFS=$'\t' read -r _ok _ocls _oev || [ -n "$_ok" ]; do
     case "$_ok" in ''|'#'*) continue ;; esac
-    [ "$_ocls" = OUTSIDE_CLPFD ] || refuse "OUTSIDE.tsv names $_ok with class '$_ocls' -- OUTSIDE_CLPFD is the one class (CEO-579, CEO-1593)"
+    [ "$_ocls" = OUTSIDE_CLPFD ] || refuse "OUTSIDE.tsv names $_ok with class '$_ocls' -- OUTSIDE_CLPFD is the one class (R-579, R-1593)"
     [ -n "${_oev// /}" ] || refuse "OUTSIDE.tsv names $_ok with no evidence -- an exclusion with no measurement is an opinion"
     [ -f "$BD/$_ok.pl" ] || refuse "OUTSIDE.tsv names $_ok, which is no kernel under $BD"
     OUTS[$_ok]="$_ocls"
@@ -82,7 +82,7 @@ bench_ok() {
 }
 printf '%-20s %-4s %-7s %-7s %-7s %s\n' kernel mode process iter time verdict
 declare -A PASSN; PASSN[m3]=0; PASSN[m4]=0; BOTH=0; TOTAL=0; NAMED=""; HEAPD=0
-# ⭐ EACH KERNEL'S REF NAMES ITS ORACLE (ceo CEO-1603 (3), the coo 2026-10-10, on the swap CEO-1598): a ref is gprolog's answer unless a
+# ⭐ EACH KERNEL'S REF NAMES ITS ORACLE (R-1603 (3), the coo 2026-10-10, on the swap R-1598): a ref is gprolog's answer unless a
 # <k>.oracle sidecar beside the kernel (one line, NAME<TAB>ORACLE<TAB>why) names another. MEASURED: gprolog 1.6.0 refuses
 # witness_depth_nrev8 ("fatal error: redefining built-in predicate append/3"), where 1.4.5 ignored the redefinition and answered with
 # its own append/3 -- so that ref was never the kernel's answer under gprolog; it is swipl 9.0.4's (swipl -q -t halt), one oracle per
@@ -113,7 +113,7 @@ for k in "${KERNELS[@]}"; do
   bash "$GEN" "$f" --mode=time --bud="$BUD_MS" --engine=scrip -o "$T/$k.time.pl" >/dev/null 2>"$T/$k.time.gen" || gen_ok=0
   okboth=1
   for m in m3 m4; do
-    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (CEO-1676 (c))
+    _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
     else
@@ -151,7 +151,7 @@ echo "$LINE"
 [ -n "$ORC_NAMED" ] && echo "  refs not cut from gprolog:$ORC_NAMED"
 echo "  tree: SCRIP=$(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null)$(git -C "$HERE/../../SCRIP" diff --quiet 2>/dev/null || echo -dirty) corpus=$(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)$(git -C "$S4E/corpus" diff --quiet 2>/dev/null || echo -dirty)"
 if [ "$IS_BOARD" = 0 ]; then
-  echo "  population $BD is OUTSIDE the corpus tree -- not a board (CEO-547): graded, and no progress row and no suite row written"
+  echo "  population $BD is OUTSIDE the corpus tree -- not a board (R-547): graded, and no progress row and no suite row written"
 else
   progress_append_rows_tsv "$PROG_ROWS" || echo "⚠ PROGRESS DB NOT UPDATED -- the board above stands, its per-program rows do not (reason above)" >&2
   rr_selected && { rr_end prolog-bench-ref; exit 0; }

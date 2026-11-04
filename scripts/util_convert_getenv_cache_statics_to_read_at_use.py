@@ -5,7 +5,7 @@
 #
 # ⛔⛔ SCOPE RE-CUT 2026-09-02: THIS SCRIPT'S DEFAULT `target_offsets()` STILL TARGETS THE COMPILE-TIME
 # DIRS (emitter/lower/ir/driver/optimizer/templates/parsers) AND SKIPS src/runtime/ -- THAT POPULATION IS
-# NOW ENTIRELY OUT OF SCOPE (ceo ruling, routed hq_B: compile-time working state was never covered by the
+# NOW ENTIRELY OUT OF SCOPE (ruling, routed hq_B: compile-time working state was never covered by the
 # no-new-globals law; see RULES.md line 169's clarification and the task baton's SCOPE RE-CUT). Running
 # this script's --apply against compile-time dirs again would rebuild the discarded batch -- don't.
 # Salvage record of what was built, verified, and then discarded: /home/resources/postoffice/salvage/
@@ -34,7 +34,7 @@
 # THE TRANSFORM IS DELETION, NOTHING ELSE: `static int _zd = -1; if (_zd < 0) { _zd = ...; }` behaves
 # identically with `static` removed -- `_zd` still starts at -1 and the guard still fires and sets it,
 # just on every CALL/every loop iteration instead of once ever. That is exactly "read at the point of
-# use" (ceo ruling, RULES.md line 169's clarification): the cache bought nothing a board can measure at
+# use" (ruling, RULES.md line 169's clarification): the cache bought nothing a board can measure at
 # compile time, and removing `static` is a pure storage-duration change, not a logic change -- no other
 # text is touched. Each target's exact byte offset comes from util_census_function_scope_statics.py's
 # scanner (the SAME instrument this row's census was built and verified on), so this never re-derives

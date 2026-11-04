@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_one_function_installs_a_compiled_proc_for_the_mode_3_loop_and_raku_eval.sh -- THE PER-PROC REGISTER, EMIT AND INSTALL IS ONE LIBRARY FUNCTION, CALLED BY THE MODE-3 LOOP AND BY RAKU EVAL,
-# AND THE EVAL PATH NAMES NO RAKU TREE KIND (row raku-every-suite-to-100-under-nonet-ceo-1266; the cto's YES to the fold, re-raku-eval-hashes-for-review 2026-10-07, two conditions in one landing).
+# AND THE EVAL PATH NAMES NO RAKU TREE KIND (row raku-every-suite-to-100-under-nonet-r-1266; the cto's YES to the fold, re-raku-eval-hashes-for-review 2026-10-07, two conditions in one landing).
 #
 # ⛔ THE DEFECT: scrip.c's mode-3 loop and runtime_eval.c's rk_emit_new_procs each carried a copy of the same thirty steps -- register the proc and its properties, set the frame floor, pick the jmp entry, emit_chain,
 # register the GC frame map and site table, set the frame bytes, the fn, the thunk record, the entry cells, the zstatic bit, the patzeta record, the generator region and the direct-call entry. Copies drift: the Prolog run-time
@@ -11,7 +11,7 @@
 # lower_raku_eval_stage2 takes the parsed tree whole, places the EVAL sub, lowers it and returns its name; runtime_eval.c holds only rk_parse_tree, that call and the install.
 #
 # THE ARMS (source census, no build, ~0.1s):
-#   1  src/driver/driver_procs.c defines driver_register_proc, driver_proc_props and driver_install_proc, once each (moved out of emit.cpp by the cfo's road row L3(b), CEO-1990:
+#   1  src/driver/driver_procs.c defines driver_register_proc, driver_proc_props and driver_install_proc, once each (moved out of emit.cpp by the cfo's road row L3(b), R-1990:
 #      registration is the driver's, and the emitter takes the planner's road as a parameter)
 #   2  rk_emit_new_procs calls driver_register_proc, driver_proc_props and driver_install_proc and names none of the install steps
 #   3  scrip.c calls driver_install_proc once, calls driver_register_proc and driver_proc_props from register_procs_all, and its mode-3 loop names no install step

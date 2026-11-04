@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_sub_or_method_that_writes_a_file_scope_variable_changes_the_variable_agree_with_rakudo.sh -- A NAMED SUB OR A METHOD THAT ASSIGNS, INCREMENTS, APPENDS TO OR PUSHES ONTO A FILE-SCOPE `my` VARIABLE CHANGES THAT VARIABLE (the outer-lexical gap), A DESTRUCTURING ASSIGNMENT AS A SUB'S LAST STATEMENT, AND AN ASSIGNMENT WHOSE RIGHT SIDE IS A TOP-LEVEL **
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; named in the headers of the loose-operator and hyper-operator gates as "a sub that captures a file-scope my @log and pushes to it"; the counter / flag / log idiom of the Roast files: `my $count = 0; sub inc { $count++ }`).
+# (row raku-every-suite-to-100-under-nonet-r-1266; named in the headers of the loose-operator and hyper-operator gates as "a sub that captures a file-scope my @log and pushes to it"; the counter / flag / log idiom of the Roast files: `my $count = 0; sub inc { $count++ }`).
 #
 # THE DEFECT, measured against Rakudo: a named sub (or a method) that WROTE a variable declared at file scope never changed it. `my $count = 0; sub inc { $count++ }; inc(); inc(); say $count` printed 0 (Rakudo 2); `my @log; sub note($v) { @log.push($v) }` left @log empty;
 # `my %seen; sub mark($k) { %seen{$k} = True }` left %seen empty; `$s ~= $t`, `$acc += $n`, `$depth++` in a recursive sub, a flag set by a sub, a counter bumped by a method, `.map: { $n += $_ }` inside a sub: every one printed the value from before the call. Reading worked (rk_file_scope_reads_are_globals), writing did not: in the SNOBOL4-style

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_open_a_file_it_may_not_open_is_a_permission_error.sh -- OPEN/3,4 ON A FILE THE PROCESS MAY NOT OPEN RAISES
 # permission_error(open, source_sink, F); ONLY A MISSING FILE OR DIRECTORY IS existence_error(source_sink, F) (cfo 2026-10-11, row
-# prolog-logtalk-reads-100-percent-...-ceo-1689: Logtalk open_4 lgt_open_4_27..30, graded since the instrument change 5e21752da).
+# prolog-logtalk-reads-100-percent-...-r-1689: Logtalk open_4 lgt_open_4_27..30, graded since the instrument change 5e21752da).
 #
 # pl_open_leaf (src/runtime/by_name_dispatch.c) answered every fopen failure existence_error(source_sink, F). ISO 8.11.5.3 makes
 # "the source/sink cannot be opened" a permission_error(open, source_sink, F), and both oracles measured agree, shape for shape:

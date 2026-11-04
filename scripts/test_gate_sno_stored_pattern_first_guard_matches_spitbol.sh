@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_stored_pattern_first_guard_matches_spitbol.sh -- A STORED PATTERN'S FIRST-CHARACTER GUARD NEVER CHANGES WHAT THE
-# MATCH DOES (ceo 2026-09-29, SCRIP bb51520b1, 5955a2e73 and the cure landed beside this gate; GOAL-SNOCONE-100 cursors 29n-29p).
+# MATCH DOES (2026-09-29, SCRIP bb51520b1, 5955a2e73 and the cure landed beside this gate; GOAL-SNOCONE-100 cursors 29n-29p).
 #
 # A PAT$n thunk whose FIRST set the compiler can name fails at its entry, or succeeds with the empty match, when the cursor's
 # character cannot start it -- through *X by the pattern the program binds to X, the binding re-checked from X's cell at run time.

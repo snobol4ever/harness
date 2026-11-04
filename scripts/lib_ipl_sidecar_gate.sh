@@ -1,5 +1,5 @@
 # lib_ipl_sidecar_gate.sh -- the shared body of the IPL run-sidecar gates (hq_icon 2026-09-27; Lon's word "Get IPL to 843.";
-# ceo CEO-1315: "one gate per sidecar proving red once and green once"). A gate plants ONE unit and its sidecar in a scratch
+# R-1315: "one gate per sidecar proving red once and green once"). A gate plants ONE unit and its sidecar in a scratch
 # IPL-shaped package, then drives it through the REAL cutter (util_cut_icon_ipl_refs.sh, S4E_HOME pointed at the scratch home)
 # and through ipl_isolation_run -- the function test_icon_ipl_suite.sh grades with -- in m3 and m4, exactly as the runner calls
 # it (argv after --, the NAME.rc status graded when declared). GREEN: run it against the scripts beside this file. RED: run it
@@ -26,7 +26,7 @@ sg_fresh_pkg() {
 sg_doctor() {
   local code="$1" file="${2:-lib_icon_ipl_isolation.sh}" d="$SG_T/doctored.$RANDOM"
   mkdir -p "$d"; cp "$SG_HERE"/util_cut_icon_ipl_refs.sh "$SG_HERE"/lib_oracle_flags.sh "$SG_HERE"/lib_icon_ipl_isolation.sh "$SG_HERE"/ipl_pin_shim.c "$SG_HERE"/test_icon_ipl_suite.sh "$d"/
-  cp "$SG_HERE"/util_apply_ceo409_mask.py "$SG_HERE"/corpus_suite_harness.py "$SG_HERE"/util_render_error_voice.py "$d"/
+  cp "$SG_HERE"/util_apply_line_mask.py "$SG_HERE"/corpus_suite_harness.py "$SG_HERE"/util_render_error_voice.py "$d"/
   python3 - "$d/$file" "$code" <<'PY' || { echo "⛔ GATE REFUSE(2): the doctoring edit did not apply" >&2; return 2; }
 import sys
 p, code = sys.argv[1], sys.argv[2]
@@ -48,7 +48,7 @@ sg_verdict() {
   want="$( . "$sd/lib_icon_ipl_isolation.sh"; ipl_rc_declared "$SG_PKG/progs/$n.icn" )" || want=MALFORMED
   if [ "$minted" -eq 1 ]; then
     local out3="$SG_T/$n.$tag.m3" out4="$SG_T/$n.$tag.m4" bin="$SG_T/$n.$tag.bin" stdin=/dev/null ca
-    # ⛔ THE UNIT'S COMPILE SWITCHES ARE THE PACKAGE'S OWN DECLARATION, READ AS THE RUNNER READS THEM (clause 8 (f), CEO-1281; the coo's
+    # ⛔ THE UNIT'S COMPILE SWITCHES ARE THE PACKAGE'S OWN DECLARATION, READ AS THE RUNNER READS THEM (clause 8 (f), R-1281; the coo's
     # batch audit 2026-09-27): the scratch package carries the real IPL ALL.csv's header and its first row re-keyed to this fixture, and
     # the cell comes back through declared_memory_table + declared_compile_args_from_table -- this lib types no switch of its own.
     awk -F, -v OFS=, -v k="progs/$n" 'NR==1 { print; next } NR==2 { $2 = k; $3 = "ipl__" k; print; exit }' "$SG_HERE/../../corpus/packages/icon/ipl/ALL.csv" > "$SG_PKG/ALL.csv"

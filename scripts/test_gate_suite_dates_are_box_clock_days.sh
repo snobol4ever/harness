@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_suite_dates_are_box_clock_days.sh -- A SUITE ROW IS DATED ON THE BOX CLOCK, AND A READING CANNOT BE GRADED TOMORROW
-# (row instruments-suite-banner-set-refuses-a-date-later-than-the-box-clock-day, CEO-1229, the coo).
+# (row instruments-suite-banner-set-refuses-a-date-later-than-the-box-clock-day, R-1229, the coo).
 # ⛔ THE DEFECT: .github 4f4ca80f, committed 19:59 CDT on 2026-09-23, wrote pat and pas-rungs dated 2026-09-24 -- the UTC day -- while
 # fpc and pascal-bench-ref in the same commit read 2026-09-23. SUITES.tsv's dates are box-clock days (the box is America/Chicago), so a
 # graded date a day ahead is a false label, and a like-for-like basis day can land a day late.

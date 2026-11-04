@@ -1,4 +1,4 @@
-%  WITNESS for the Prolog root cell region overlapping the ROOT frame map cell (ceo CEO-953, on the cto's gdb reading).
+%  WITNESS for the Prolog root cell region overlapping the ROOT frame map cell (R-953, on the cto's gdb reading).
 %  unification.c: PL_DB_CELL0 24, PL_DB_CELLS_MAX 64 -- rt_pl_db_get/rt_pl_nb_set address cell k at (root - 24 - 8k),
 %  so 64 cells grow DOWNWARD from root-24.  emit.cpp:3197 places main's ROOT map cell at the jcon value region as a
 %  16-byte DT_MAP cell, measured under gdb at root-48 with frame_bytes 272, which is inside that span.

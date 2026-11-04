@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask.sh -- THE THIRD QUAD AT RULE-1 AND RULE-2 SITES (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16.1 (b), the cto
-# 2026-10-30, CEO-2046; zeta-layout step 4a-2; the pool shared by prefix, the cto 2026-11-04, CEO-2118). The sibling gate holds the rule-0 and rule-4 entries; this one holds the rbp
+# 2026-10-30, R-2046; zeta-layout step 4a-2; the pool shared by prefix, the cto 2026-11-04, R-2118). The sibling gate holds the rule-0 and rule-4 entries; this one holds the rbp
 # frames of Prolog, Raku and Icon (rule 1) and the flat generator (rule 2): such an entry's third quad is 0 (the site declares no cells) or NW in its HIGH 32 bits (the extent in
 # 8-byte words of the run, w = 0 its oldest word) and in its LOW 32 bits a BYTE OFFSET from the table's first quad into the pool after the last entry, at which sit the mask words
 # (bit w names the word at R + 8A - 8(w + 1), set on the first word of a DESCR cell, the planner's arrival carve stack folded from the word_kind column, CTO-504); the site reads
 # ceil(NW / 64) of them. A, the run base's distance from R in words, rides in the entry's FOURTH quad (CTO-509): the run base is not rbp where the run sits on an INDEF base, so
-# the anchor is the compile-time constant dk / 8 (zl03: a run at R + 80 to 192 under an rbp 1872 above R); it is 0 exactly when the third is 0, and NW never exceeds it. THE POOL IS SHARED BY PREFIX (CEO-2118): a site whose mask is a prefix of a longer site's mask points
+# the anchor is the compile-time constant dk / 8 (zl03: a run at R + 80 to 192 under an rbp 1872 above R); it is 0 exactly when the third is 0, and NW never exceeds it. THE POOL IS SHARED BY PREFIX (R-2118): a site whose mask is a prefix of a longer site's mask points
 # into that longer block, so a clause that builds a term cell by cell (every site one word deeper than the last) costs one block, not one per site; before it the pool was quadratic
 # in a clause's size (hakank_swi_sudoku: 436,148 quads at 1,600 elements, the assembler killed at 8.3 GB). A LANDING site (kind 2) carries 0: its K is not the call's (Icon
 # proc_gen landings overshoot their base by 40 bytes, measured).

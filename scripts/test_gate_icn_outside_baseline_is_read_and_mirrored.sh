@@ -2,14 +2,14 @@
 # test_gate_icn_outside_baseline_is_read_and_mirrored.sh -- every OUTSIDE_ARIZONA_BASELINE.tsv under
 # corpus/packages/icon is well formed, mirrored into the lockdown buckets with the SAME class word, names
 # something that exists, carries the MEASUREMENT that put it there -- and is actually READ by the runner that
-# grades its package.  Offline, no oracle, no ./scrip, under two seconds.  hq_T 2026-09-11, ceo CEO-578.
+# grades its package.  Offline, no oracle, no ./scrip, under two seconds.  hq_T 2026-09-11, R-578.
 #
-# ⛔⭐⭐ WHY THE LAST ARM EXISTS, AND IT IS THE WHOLE REASON THIS GATE WAS WRITTEN. ceo CEO-527 ruled cfuncs and
+# ⛔⭐⭐ WHY THE LAST ARM EXISTS, AND IT IS THE WHOLE REASON THIS GATE WAS WRITTEN. R-527 ruled cfuncs and
 # extlvals outside the Arizona baseline WEEKS before 09-11, and on 09-11 they were still printing four red cells.
 # Two separate failures, and the gate catches both: the rows were never written down, AND the runner that grades
 # that package had no reader for the file they belong in -- test_icon_arizona_suite.sh never opened
 # OUTSIDE_ARIZONA_BASELINE.tsv at all, while its sister test_icon_jcon_suite.sh had read its own copy since
-# CEO-470.  ⭐ A RULING LANDED IN A FILE NO INSTRUMENT OPENS IS INDISTINGUISHABLE FROM A RULING NOBODY MADE, and
+# R-470.  ⭐ A RULING LANDED IN A FILE NO INSTRUMENT OPENS IS INDISTINGUISHABLE FROM A RULING NOBODY MADE, and
 # it fails in the expensive direction: everyone believes the question is closed while the board goes on saying no.
 # ⛔ The same shape as the hoisted-and-never-wired gate_bin_watch the arizona runner's own header records, and as
 # the KEEP.md that declared a pair whose source had left the tree.  The cure is the same one every time: an arm
@@ -24,7 +24,7 @@
 # ruling READ by the runner that grades the package, and do the file and its mirror tell one story -- and keeps
 # the measurement check only as a FLOOR against a bare name.  ⭐ Two files, two oracles, two premises, two gates;
 # merging them would give one gate that asks the wrong question of half its rows.
-# ⛔ NOT A BOARD: it grades no corpus program, runs no compiler, publishes no row (CEO-547 -- what makes a run a
+# ⛔ NOT A BOARD: it grades no corpus program, runs no compiler, publishes no row (R-547 -- what makes a run a
 # board is the population it grades).
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -39,7 +39,7 @@ ck() { checks=$((checks+1)); if [ "$1" = ok ]; then printf '  OK   %s\n' "$2"; e
 FILES=$(ls "$PKGROOT"/*/OUTSIDE_ARIZONA_BASELINE.tsv 2>/dev/null)
 [ -n "$FILES" ] || { echo "⛔ GATE REFUSES(2): no OUTSIDE_ARIZONA_BASELINE.tsv under $PKGROOT -- nothing to grade, and a silent pass here would read as agreement" >&2; exit 2; }
 echo "=== OUTSIDE_ARIZONA_BASELINE.tsv, $(printf '%s\n' "$FILES" | wc -l) file(s) under corpus/packages/icon ==="
-# ⭐ THE ROW-LEVEL EXEMPTION IS PART OF THE STANDARD, NOT A HOLE IN IT (ceo CEO-516): a key holding ':' names a
+# ⭐ THE ROW-LEVEL EXEMPTION IS PART OF THE STANDARD, NOT A HOLE IN IT (R-516): a key holding ':' names a
 # ROW INSIDE a graded program (lgint:bigexp(3 ^ 41)), so it has no shipped file and no mirror by design -- the
 # program stays in the denominator, which is the entire intent.  Keys without ':' are programs and carry both.
 for f in $FILES; do
@@ -76,7 +76,7 @@ for f in $FILES; do
     else ck fail "$pkg/$name: reason cites no observation (no measurement, control, rc=, byte-identical or printed output) -- a name entering a baseline file carries its measurement, never just the name (hq_V, standing since 2026-09-10)"
     fi
     case "$name" in
-      *:*) ck ok "$pkg/$name: ROW-LEVEL key -- exempt from the shipped-file and mirror arms by construction (CEO-516)" ;;
+      *:*) ck ok "$pkg/$name: ROW-LEVEL key -- exempt from the shipped-file and mirror arms by construction (R-516)" ;;
       *)
         [ -f "$(dirname "$f")/$name" ] \
           && ck ok "$pkg/$name: names a shipped file" \
@@ -108,13 +108,13 @@ for f in $FILES; do
     *)             runner="" ;;
   esac
   if [ -z "$runner" ]; then
-    ck fail "$pkg: no runner is mapped to this package in this gate -- a new package's exclusions would be declared and never read, which is the CEO-578 defect exactly; add the mapping WITH the runner's reader"
+    ck fail "$pkg: no runner is mapped to this package in this gate -- a new package's exclusions would be declared and never read, which is the R-578 defect exactly; add the mapping WITH the runner's reader"
   elif [ ! -f "$runner" ]; then
     ck fail "$pkg: mapped runner ${runner##*/} is not on disk"
   else
     grep -q 'OUTSIDE_ARIZONA_BASELINE.tsv' "$runner" \
       && ck ok "$pkg: ${runner##*/} opens OUTSIDE_ARIZONA_BASELINE.tsv" \
-      || ck fail "$pkg: ${runner##*/} never opens OUTSIDE_ARIZONA_BASELINE.tsv -- the rows are a ruling no instrument reads (ceo CEO-578: four cells sat red for weeks under exactly this)"
+      || ck fail "$pkg: ${runner##*/} never opens OUTSIDE_ARIZONA_BASELINE.tsv -- the rows are a ruling no instrument reads (R-578: four cells sat red for weeks under exactly this)"
     grep -q 'is_outside_baseline' "$runner" \
       && ck ok "$pkg: ${runner##*/} calls is_outside_baseline" \
       || ck fail "$pkg: ${runner##*/} defines no is_outside_baseline call -- opening the file is not reading it"

@@ -7,7 +7,7 @@
 # 9 witnesses across the language per the GOAL's own list (writeln, loops, procedures, functions,
 # arrays, records, sets, files): writeln_basic, loop_for, loop_while, procedure_call, function_call
 # (recursive), array_basic, record_basic, set_membership, files_stdin.
-# ⭐ EVERY EXPECTED STRING BELOW IS ORACLE-CUT (fpc -Miso, FPC 3.2.2, ISO 7185 mode — GOAL-CEO CEO-33),
+# ⭐ EVERY EXPECTED STRING BELOW IS ORACLE-CUT (fpc -Miso, FPC 3.2.2, ISO 7185 mode — the archived ruling record R-33),
 # never hand-typed — each witness was built as a standalone .pas, compiled+run under fpc -Miso, and its
 # literal captured stdout pasted in as the `expected` argument, then cross-checked against SCRIP in both
 # modes before landing here.
@@ -24,7 +24,7 @@
 # AUTHORS: Lon Jones Cherryholmes · Jeffrey Cooper M.D. · Claude  DATE: 2026-09-03
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${HERE}/../../SCRIP/scrip"
-. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # CEO-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
+. "$HERE/lib_smoke_honest.sh" || { echo "SMOKE REFUSE(2): lib_smoke_honest.sh unloadable"; exit 2; }   # R-2081: a timed-out step prints TIMEOUT; under overload the smoke refuses
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 MODE3_MIN="${MODE3_MIN:-1}"
 MODE4_MIN="${MODE4_MIN:-0}"
@@ -177,5 +177,5 @@ EOF
 echo ""
 echo "mode-3 (--run):      PASS=$P3 FAIL=$F3  / $N   (HARD: zero FAIL — primary native mode)"
 echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN)"
-smoke_refuse_if_loaded   # CEO-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
+smoke_refuse_if_loaded   # R-2081: a timeout under load over 2x cores refuses rc 2 before any verdict or score write
 [ "$F3" -eq 0 ] && [ "$F4" -eq 0 ] && [ "$P3" -ge "$MODE3_MIN" ] && [ "$P4" -ge "$MODE4_MIN" ]

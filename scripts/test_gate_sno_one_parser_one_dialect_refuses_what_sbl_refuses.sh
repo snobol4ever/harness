@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_one_parser_one_dialect_refuses_what_sbl_refuses.sh
 #
-# THE RULING (ceo CEO-1428, on the cfo's question): ONE PARSER, ONE DIALECT -- whatever sbl -bf refuses at compile time
+# THE RULING (R-1428, on the cfo's question): ONE PARSER, ONE DIALECT -- whatever sbl -bf refuses at compile time
 # SCRIP refuses, in the main compile and in EVAL and CODE alike, never a looser EVAL. Three texts SCRIP accepted (row
 # snobol4-scrips-parser-accepts-a-doubled-quote-a-comma-list-and-an-overflowing-integer-that-spitbols-compiler-rejects):
 #   'a''b' and "a""b"     sbl 220 (missing operator): SPITBOL has no doubled-quote escape, the second quote opens a new

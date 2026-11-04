@@ -35,9 +35,9 @@
 #
 # ⛔ IT NEVER TOUCHES THE LIVE PROGRESS TABLE. The run records its per-entry rows to a SCRATCH S4E_PROGRESS_DB,
 # which is the documented control arm in util_progress_append.py ("gates use a scratch file; the live table is
-# never touched by a gate"). It also writes NO SCORE.md cell: under CEO-308 the icon board cell is owned by
+# never touched by a gate"). It also writes NO SCORE.md cell: under R-308 the icon board cell is owned by
 # `board_icon_rungs.sh` and a second runner over a second population writing that cell is the exact defect
-# CEO-308 ruled on. This gate is a control arm, and control arms live in the ledger.
+# R-308 ruled on. This gate is a control arm, and control arms live in the ledger.
 #
 # CONTROL ARMS (all announce themselves; none can quietly produce a green):
 #   FAIL_ONCE=1 [or FAIL_ONCE=<origin>]  inject ONE pinned-PASS entry as FAIL after the real run and re-grade.

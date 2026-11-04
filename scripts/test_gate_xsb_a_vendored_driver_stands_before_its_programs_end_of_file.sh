@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_xsb_a_vendored_driver_stands_before_its_programs_end_of_file.sh -- THE DRIVER THE VENDORING APPENDS IS READ (hq_icon 2026-10-28, row
-# prolog-xsbtests-to-100-the-58-failing-programs-ceo-1926).
+# prolog-xsbtests-to-100-the-58-failing-programs-r-1926).
 #
 # 80 of the xsb_tests package's vendored programs end their own text with a clause `end_of_file.`; XSB's consult stops reading there and so does SCRIP's.
-# The vendoring (CEO-700) appended each program's driver AFTER that clause, so SCRIP never read it: the program ran no goal, printed nothing, and read FAIL
+# The vendoring (R-700) appended each program's driver AFTER that clause, so SCRIP never read it: the program ran no goal, printed nothing, and read FAIL
 # against XSB's answer (17 of the 71 graded ones read PASS in both modes once the driver stood where end_of_file stood, nothing else changed).
 # util_xsb_driver_before_end_of_file.py --check names every vendored file and every ALL.pl entry whose driver follows such a clause; --apply moves it.
 #
-# ARMS (a mktemp package outside corpus/, CEO-547, two programs e1 and e2 and their ALL.pl and ALL.csv; the real SCRIP, mode 3 and mode 4):
+# ARMS (a mktemp package outside corpus/, R-547, two programs e1 and e2 and their ALL.pl and ALL.csv; the real SCRIP, mode 3 and mode 4):
 #   1 e1 carries its driver AFTER end_of_file.: --check names e1 (file and ALL.pl entry), not e2, and exits 1
 #   2 THE DEFECT, as measured: SCRIP prints nothing for e1 in mode 3 -- the driver is never read (the premise of the cure)
 #   3 --apply moves e1's driver (file and ALL.pl entry) and touches nothing else: e2.pl is byte-identical, e1's text before the clause is, the line count is
@@ -34,7 +34,7 @@ P="$T/pkg"; mkdir -p "$P"
 fail=0
 ok() { echo "  ok   $1"; }
 bad() { echo "  FAIL $1"; fail=1; }
-DRV=$'% DRIVER (appended by the vendoring, CEO-700): fixture\n:- initialization((write(driver_ran), nl)).\n'
+DRV=$'% DRIVER (appended by the vendoring, R-700): fixture\n:- initialization((write(driver_ran), nl)).\n'
 printf 'p(1).\nend_of_file.\nq(2).\n\n%s' "$DRV" > "$P/e1.pl"
 printf 'p(1).\n\n%s' "$DRV" > "$P/e2.pl"
 printf 'rank,entry\n1,e1\n2,e2\n' > "$P/ALL.csv"

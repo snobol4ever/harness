@@ -2,7 +2,7 @@
 # stale-binary preflight
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_rbx_is_the_frontier.sh -- row gc-rbx-is-the-bump-frontier-every-scratch-use-is-retargeted-and-every-save-
-# becomes-a-reload (cto 2026-09-20; ceo CEO-959/974; Lon 2026-09-19, in-chat to the ceo: "RBX was always meant to be the
+# becomes-a-reload (cto 2026-09-20; R-959/974; Lon 2026-09-19, in-chat: "RBX was always meant to be the
 # GC bump frontier. If it is not so, make it so.").
 #
 # WHAT DRIFTED, AND WHY NO INSTRUMENT NOTICED.  ARCH-SNOBOL4-RTX.md section 2, which ARCH-ICON-RTX.md names as THE single
@@ -26,7 +26,7 @@
 # the emitted .s, and the flip needed a new emitted allocation shape first.
 #
 # ⛔ THE SECOND REASON IS LON'S WORD, AND IT IS WHY THESE TWO ARMS ARE RETIRED RATHER THAN PENDING.  That allocation
-# shape was cut on a branch, disassembled, and RETIRED IN CHAT 2026-09-20 (CEO-1007, CTO-98), verbatim: "So forget the
+# shape was cut on a branch, disassembled, and RETIRED IN CHAT 2026-09-20 (R-1007, CTO-98), verbatim: "So forget the
 # inline GC bump.  It is just too long."  The measurement he ruled on, one concat site of bench_icnstr_concat_table.icn
 # in mode 4: 15 -> 86 emitted instructions, +302 object text bytes per site, THE BUMP ALONE 27 against a ceiling of 6 --
 # 13 after every fold that actually exists, and 8 irreducible (header write, top commit, block count, bound check) before

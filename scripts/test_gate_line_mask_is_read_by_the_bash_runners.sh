@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
-# test_gate_ceo409_mask_is_read_by_the_bash_runners.sh -- GATE (hq_T, ceo CEO-432 item 1).
-# ⛔⭐ WHAT WENT WRONG WITHOUT IT: hq_R's CEO-409 mask mechanism landed in corpus_suite_harness.py and was INERT
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
+# test_gate_line_mask_is_read_by_the_bash_runners.sh -- GATE (hq_T, R-432 item 1).
+# ⛔⭐ WHAT WENT WRONG WITHOUT IT: hq_R's R-409 mask mechanism landed in corpus_suite_harness.py and was INERT
 # for every suite graded by a BASH runner with its own loop -- a `<name>.mask` sidecar dropped beside a csnobol4
 # fixture did nothing at all, silently.  That is the worst way for a safety mechanism to be absent: the author
 # sees a well-formed green board and concludes the mask was honoured, so the absence CONFIRMS the belief.
@@ -11,7 +11,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # things depending on which runner read it, which is the shape nobody debugs because both readers look right.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SHIM="$HERE/util_apply_ceo409_mask.py"
+SHIM="$HERE/util_apply_line_mask.py"
 [ -f "$SHIM" ] || { echo "⛔ GATE REFUSES (rc=2): $SHIM is not on disk -- the shim moved; re-pin rather than grade a name that no longer exists."; exit 2; }
 [ -f "$HERE/corpus_suite_harness.py" ] || { echo "⛔ GATE REFUSES (rc=2): corpus_suite_harness.py is not beside the shim -- the shared body moved."; exit 2; }
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
@@ -48,7 +48,7 @@ printf 'e\ttime = [0-9.]+$\t\n' > "$W/e.mask"
 printf '%s' "$IN" | python3 "$SHIM" "$W/e.ref" e "$W/n" >/dev/null 2>&1; rc=$?
 [ "$rc" = 2 ]; arm $? "a mask row with an empty reason REFUSES rc=2 (not rc=1, which would read as a measured red)"
 
-# (G) A LINE-NUMBER KEY, L<n>, MASKS BY POSITION (CEO-1167): gc2.icn's &collections output shares its digit
+# (G) A LINE-NUMBER KEY, L<n>, MASKS BY POSITION (R-1167): gc2.icn's &collections output shares its digit
 # alphabet with legitimate surrounding grammar-generation lines, so no content regex can reach it without
 # also matching most of the file (guardrail 4). L2 masks OUTPUT line 2 (1-indexed) regardless of content.
 printf 'e\tL2\tampersand-collections is implementation-defined (Icon book, appendix)\n' > "$W/e.mask"
@@ -70,7 +70,7 @@ OUT="$(printf '%s' "$IN" | python3 "$SHIM" "$W/e.ref" e "$W/n" 2>/dev/null)"
 # (E) THE BASH RUNNER READS IT AT ALL -- the inertness this gate is named for. Asserted on the runner's source,
 # because the alternative is a twenty-minute suite run to learn a fact a parse settles.
 R="$HERE/test_snobol4_csnobol4_suite.sh"
-[ -f "$R" ] && grep -q 'util_apply_ceo409_mask.py' "$R"; arm $? "test_snobol4_csnobol4_suite.sh reaches the mask shim (hq_R's landing is not inert here)"
+[ -f "$R" ] && grep -q 'util_apply_line_mask.py' "$R"; arm $? "test_snobol4_csnobol4_suite.sh reaches the mask shim (hq_R's landing is not inert here)"
 
 # (F) AND THE RUNNER'S OWN NORMALISATION OBEYS REPLACE-NEVER-DELETE. Its &FILL rule used to be a sed `d`, which
 # is the same defect one layer down: both sides lose the line, so an absent line passes as a masked one.
@@ -79,4 +79,4 @@ R="$HERE/test_snobol4_csnobol4_suite.sh"
 echo "graded $N arm(s)"
 if [ "$N" = 0 ]; then echo "⛔ GATE REFUSES (rc=2): graded zero arms."; exit 2; fi
 if [ "$FAIL" != 0 ]; then echo "⛔ GATE FAIL: $FAIL of $N arm(s) red"; exit 1; fi
-echo "✅ GATE OK: $N/$N -- the CEO-409 mask is read by the bash runner, through the harness's own body, replace-never-delete."
+echo "✅ GATE OK: $N/$N -- the R-409 mask is read by the bash runner, through the harness's own body, replace-never-delete."

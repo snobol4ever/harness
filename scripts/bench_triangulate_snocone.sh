@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_snocone.sh -- Snocone benchmark board vs its SNOBOL4 twin (row
 # readme-perf-grids-three-angles-all-seven, I26). Snocone compiles into the same engine as SNOBOL4
 # (README § Snocone), so "the SNOBOL4 twin" -- the identical kernel hand-translated into SNOBOL4 syntax,
@@ -41,7 +41,7 @@ SBL_FLAGS="$(sbl_lang_flags)"
 # it REFUSES rather than re-deriving a private extraction (same law as lib_perf_fmt.sh / lib_oracle_flags.sh).
 . "$HERE/lib_ir_measure.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_ir_measure.sh -- this board will not read Ir by hand"; exit 2; }
 # each Snocone kernel runs at its declared heap and stack (-d/-s after --run in mode 3, leading the binary's arguments in mode 4) and the
-# SPITBOL twin at the sizes its .oracle_args declares (ceo CEO-1353, RULES.md clause 8 (g); the coo 2026-10-03: all three arms ran bare)
+# SPITBOL twin at the sizes its .oracle_args declares (R-1353, RULES.md clause 8 (g); the coo 2026-10-03: all three arms ran bare)
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "⛔ REFUSED (rc=2): cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
 
 echo "SNOCONE_TRIANGULATE -- callgrind Ir vs SPITBOL (clean oracle $SBL_FLAGS), RT_OPT=-O0, tree $(git -C "$HERE/../../SCRIP" rev-parse --short HEAD 2>/dev/null || echo '?')"

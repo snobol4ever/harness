@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_shim_runs_a_forall_test_per_instance.sh -- the plunit shim (corpus/tests/prolog/plunit.pl) runs a test
 # carrying forall(Gen) once per solution of Gen, printing one verdict line per instance, as plunit does (cto, 2026-09-12,
-# row prolog-swi-shim-runs-a-forall-test-once-per-generator-instance, ceo re CTO-33). RED BEFORE: 4/94 agree on
+# row prolog-swi-shim-runs-a-forall-test-once-per-generator-instance, the officer re CTO-33). RED BEFORE: 4/94 agree on
 # library/test_utf8.pl, every instance after the first reading 'no verdict from scrip'.
 # ARMS, both modes: (1) a witness with a two-solution forall and a zero-solution forall prints exactly the instance lines
 # plunit would; (2) library/test_utf8.pl through the shim reads hit >= 90 of 94 in util_swi_match.py.

@@ -4,7 +4,7 @@
 # exponent, general and number shapes on the 80-bit path Format takes (the double widened exactly, 21 digits, FPC's round_digits with
 # HALF_ROUNDUP and AGRESSIVE_ROUNDUP, FloatToStrF's leading-minus removal on a zero result); a user routine named format still wins.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, row pascal-every-suite-to-100-under-nonet-ceo-1266): 30 of the package's
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, row pascal-every-suite-to-100-under-nonet-r-1266): 30 of the package's
 # 206 non-passing programs call Format, which no prelude or runtime defined -- an integer-only bracket lowered as a set and died at run
 # time with "error 22: undefined function called", a bracket holding a string or a real stopped at compile time with an ISO 7185 6.7.1
 # set-constructor violation. THE CURE: lower_pascal_tree.c's pas_format_call lowers Format(fmt, [e1..eN]) -- no user format in scope,

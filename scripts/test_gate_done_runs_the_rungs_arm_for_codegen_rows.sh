@@ -2,17 +2,17 @@
 # test_gate_done_runs_the_rungs_arm_for_codegen_rows.sh -- `s4e_msg.sh done` carries the rungs as a CONTROL ARM on
 # any landing whose DIFF touches codegen, and it CITES a board of that exact tree rather than running one.
 #
-# THE INCIDENT (ceo, CEO-342 rule 4, row done-runs-the-snobol4-master-arm-itself-...): seat11's DEFINE landing
+# THE INCIDENT (R-342 rule 4, row done-runs-the-snobol4-master-arm-itself-...): seat11's DEFINE landing
 # d067ceae4 turned 299 SNOBOL4 rungs entries red AND ITS DONE-WHEN PASSED, because "a codegen landing carries the
 # rungs as its control arm" lived in prose and `done` could not see it. Three hours of eight HQs went to the
 # bisect, the revert and the re-measure. A law the tooling does not enforce is a hope.
 #
-# ⛔⭐ CITE, NOT RUN, AND THAT IS A RULING (ceo CEO-697 2026-09-13). `done` runs in EVERY seat, so a `done` that
-# auto-ran a rung suite board would MECHANISE the very contention CEO-697 was issued to stop -- thirteen seats firing a
+# ⛔⭐ CITE, NOT RUN, AND THAT IS A RULING (R-697 2026-09-13). `done` runs in EVERY seat, so a `done` that
+# auto-ran a rung suite board would MECHANISE the very contention R-697 was issued to stop -- thirteen seats firing a
 # board per codegen landing. The row's own GOAL offered both branches ("test_corpus_snobol4.sh, OR the one-board-
-# per-tree CITED board of the same tree") and CEO-697 picks one. ⛔ ITS STAGE PASS IS RETIRED (ceo CEO-1299,
+# per-tree CITED board of the same tree") and R-697 picks one. ⛔ ITS STAGE PASS IS RETIRED (R-1299,
 # 2026-09-26): an uncited landing was recorded in codegen-landings.tsv "for the coo stage pass", the central board
-# that died with CEO-775, and nothing but arm (5) read the file. Under CEO-1232 the lander's own-language suites and
+# that died with R-775, and nothing but arm (5) read the file. Under R-1232 the lander's own-language suites and
 # each other HQ's next per-landing pass on origin are the verdict, and `done` says so.
 #
 # TEN ARMS against a THROWAWAY postoffice, a THROWAWAY git tree and a THROWAWAY progress database under mktemp --
@@ -21,8 +21,8 @@
 #   (2) CODEGEN + cited CLEAN board    -> closes, and the receipt says the board was CITED and names the tree
 #   (3) CODEGEN + cited board RED      -> REFUSES rc=1 and NAMES the failing entries, row NOT closed
 #   (4) same red board, reds == INHERITED -> closes (the inherited set is honoured)
-#   (5) CODEGEN + NO board of this tree-> closes, says COULD NOT MEASURE and cites CEO-1232, records the landing on
-#       its own baton, and writes NO codegen-landings.tsv (the retired stage pass, CEO-1299)
+#   (5) CODEGEN + NO board of this tree-> closes, says COULD NOT MEASURE and cites R-1232, records the landing on
+#       its own baton, and writes NO codegen-landings.tsv (the retired stage pass, R-1299)
 #   (6) S4E_DONE_SKIP_RUNGS_ARM=why   -> closes, why echoed AND written to the baton ledger
 #   (7) ANTI-ASSERT: the touch set is COMPUTED FROM THE DIFF -- a baton whose PROSE says codegen but whose diff
 #       touches nothing gets no arm, and a diff that touches codegen gets the arm with nothing declaring it
@@ -63,7 +63,7 @@ dirty_codegen() { echo '/* touched */' >> "$HOME_T/SCRIP/src/ir/IR.h"; }
 # tree trivially touches no codegen. They were green about NOTHING -- the exact "fixture that passes for a reason
 # the gate does not name" this suite exists to catch, produced while writing the suite. The assert is the cure:
 # a fixture that cannot establish its precondition must REFUSE, never quietly hand an arm a free pass.
-# ⛔ THE HARNESS MOVE (CEO-1819, 10-17) re-pointed this write to harness/scripts/, a sibling repo outside SCRIP's git tree, so SCRIP
+# ⛔ THE HARNESS MOVE (R-1819, 10-17) re-pointed this write to harness/scripts/, a sibling repo outside SCRIP's git tree, so SCRIP
 # stayed clean and the assert below refused every run since (the coo's loop, bset-16, 10-21). The non-codegen path is SCRIP's own docs/.
 dirty_other()   { mkdir -p "$HOME_T/SCRIP/docs" || return 2
   echo 'note' >> "$HOME_T/corpus/tests/notes.txt"; echo 'doc' >> "$HOME_T/SCRIP/docs/readme.md" || return 2
@@ -138,13 +138,13 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   [ "$RC" = 1 ] || { echo "  [$lbl] (8) a partially-inherited red board exited $RC (want 1)"; say; ok=0; }
   grep -q 'gamma_3' "$W/out" || { echo "  [$lbl] (8) the refusal does not name the NON-inherited entry"; say; ok=0; }
   awk '/Entries failing/,0' "$W/out" | grep -q 'beta_2' && { echo "  [$lbl] (8) it named an entry the baton DOES inherit"; say; ok=0; }
-  # (5) CODEGEN + NO board of this tree -> closes, COULD NOT MEASURE, CEO-1232 cited, the baton records it, no stage-pass file
+  # (5) CODEGEN + NO board of this tree -> closes, COULD NOT MEASURE, R-1232 cited, the baton records it, no stage-pass file
   mk_tree || return 2; mk_db "" || return 2; mk_po t5 || return 2; clean_tree; dirty_codegen; assert_codegen_dirty || return 2
   run "$s" t5
   [ "$RC" = 0 ] || { echo "  [$lbl] (5) no citable board exited $RC (want 0 -- cannot-measure must not block the fleet)"; say; ok=0; }
   grep -q 'COULD NOT MEASURE' "$W/out" || { echo "  [$lbl] (5) an unmeasurable arm did not SAY so"; say; ok=0; }
-  grep -q 'CEO-1232' "$W/out" || { echo "  [$lbl] (5) the unmeasured arm does not cite CEO-1232 (the lander's suites and each HQ's next pass)"; say; ok=0; }
-  [ ! -e "$PO/codegen-landings.tsv" ] || { echo "  [$lbl] (5) codegen-landings.tsv was written -- the stage pass it fed is retired (CEO-1299)"; ok=0; }
+  grep -q 'R-1232' "$W/out" || { echo "  [$lbl] (5) the unmeasured arm does not cite R-1232 (the lander's suites and each HQ's next pass)"; say; ok=0; }
+  [ ! -e "$PO/codegen-landings.tsv" ] || { echo "  [$lbl] (5) codegen-landings.tsv was written -- the stage pass it fed is retired (R-1299)"; ok=0; }
   grep -q 'NO CITABLE BOARD' "$PO/tasks/t5.task.md" || { echo "  [$lbl] (5) the baton ledger does not record the unmeasured arm"; ok=0; }
   closed t5 || { echo "  [$lbl] (5) row not closed"; ok=0; }
   # (6) SKIP FLAG -- loud AND recorded

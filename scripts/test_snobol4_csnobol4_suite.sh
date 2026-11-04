@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${CSNOBOL4_SUITE:=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/corpus/packages/snobol4/csnobol4_suite}" || exit 2
-# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), CEO-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
+# ⛔ THE STATEMENT INSTRUMENTATION (--stlimit) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), R-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26 (Lon 2026-09-24 16:0x: off by default, never inferred from the source)
 # test_snobol4_csnobol4_suite.sh — Phil Budne's CSNOBOL4 test suite, graded against its OWN oracle.
 #
 # Suite: corpus/packages/snobol4/csnobol4_suite (vendored, unmodified). A NAME.sno with a sibling NAME.ref
@@ -43,7 +43,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # its OWN historical .ref here (K-format fixed-record I/O looks broken; rewind1 SIGSEGVs on REWIND(5); genc
 # now dies at statement 568 with "Error 24, Undefined or erroneous goto", a failure mode never seen before
 # in this row), so the REGEN-CANDIDATE tiebreak (below) would misfile a live-oracle regression as "our .ref
-# might be stale." ceo ruling (task ledger, snobol4-csnobol4-thirty-regen-candidate-refs-stale-pin-or-real-
+# might be stale." ruling (task ledger, snobol4-csnobol4-thirty-regen-candidate-refs-stale-pin-or-real-
 # defect #28) covers breakline/k/rewind1; hq_P extended it to genc (msg re-csnobol4-genc-second-gap-and-a-
 # third-mystery, 2026-09-04): do NOT re-cut any of the four .refs; grade plainly against csnobol4 and let
 # them stay red until the oracle itself is fixed. They still count as ordinary RED (RED-M3/RED-M4,
@@ -115,7 +115,7 @@ SUITE="${CSNOBOL4_SUITE:-$ROOT/corpus/packages/snobol4/csnobol4_suite}"
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-8}"
 
 [ -d "$SUITE" ] || { echo "⛔ REFUSE(rc=2): suite dir missing: $SUITE"; exit 2; }
-# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; CEO-1822; Lon 2026-10-18, in-chat to hq_dotnet,
+# ⭐ UNDER A PORT ENGINE THIS RUNNER GRADES THE PORT WITH ITS OWN GRADING (S4E_ENGINE=dotnet|jvm; R-1822; Lon 2026-10-18, in-chat to hq_dotnet,
 # verbatim: "Get all SNOBOL4 package runners working with snobol4dotnet."): SCRIP is the port's face (one_runner_port_face), the port runner's
 # --binaries is the one check, each pair runs in m3 alone with its declared heap and stack as switches, its rows are keyed csnobol4@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. A preload pair runs WITHOUT -L under a port (preload_for
@@ -126,8 +126,8 @@ ROWKEY=csnobol4; [ "$PORT" = 1 ] && ROWKEY="csnobol4@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP — build first (make)"; exit 2; }
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
@@ -138,7 +138,7 @@ fi
 COMPAT=""
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_oracle_flags.sh unloadable"; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_inventory.sh unloadable"; exit 2; }
-. "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable -- a run that leaves the progress table untouched is the same defect as one that leaves its SCORE row untouched (ceo CEO-330/331)"; exit 2; }
+. "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ REFUSE(rc=2): lib_progress.sh unloadable -- a run that leaves the progress table untouched is the same defect as one that leaves its SCORE row untouched (R-330/331)"; exit 2; }
 SBL="$(sbl_correctness_bin)" || exit 2; SBL_FLAGS="$(sbl_lang_flags)"
 RECUT="${RECUT_FROM_SPITBOL:-0}"
 OUTSIDE="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"
@@ -175,7 +175,7 @@ argv_for() { case "$1" in genc) echo v311.sil;; esac; }
 # is indistinguishable from a typo. These two entries were the package's whole UNGRADED bucket, and the
 # sidecar reason said the pickup was a runner map; measured, it was a driver flag AND this map.
 preload_for() { case "$1" in preload1) echo "-Laa/aa.sno";; preload2) echo "-Laa/aa.sno -Lbb/bb.sno";; esac; }
-# ⛔⭐⭐ CEO-409 LINE MASKS ARE READ HERE, THROUGH THE HARNESS'S OWN BODY (hq_T 2026-09-08, ceo CEO-432 item 1).
+# ⛔⭐⭐ R-409 LINE MASKS ARE READ HERE, THROUGH THE HARNESS'S OWN BODY (hq_T 2026-09-08, R-432 item 1).
 # hq_R's mask mechanism landed in corpus_suite_harness.py (0ffb087b2) and was INERT for this suite, because this
 # runner grades with its own loop and never calls the harness: a `<name>.mask` sidecar dropped beside a csnobol4
 # fixture did exactly nothing, silently, which is the worst way for a safety mechanism to be absent -- the author
@@ -188,7 +188,7 @@ preload_for() { case "$1" in preload1) echo "-Laa/aa.sno";; preload2) echo "-Laa
 # the malformed-row refusal are all the ONE authority's.
 # ⛔ DEFAULT-OFF AND MEASURABLY SO: no `<name>.mask` beside the fixture and this is byte-identical to the path that
 # ran before it, which is every csnobol4 program today (zero sidecars in the suite).
-MASK_TOKEN='<<CEO-409 MASKED IMPLEMENTATION-DEFINED LINE>>'
+MASK_TOKEN='<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>'
 MASKED_LINES=0; MASKED_FIX=0; MASKED_LIST=""
 MASK_N=0
 # ⛔ GUARDRAIL 2, ENFORCED BEFORE ANY GRADING: a sidecar naming a program the suite does not contain REFUSES.
@@ -200,12 +200,12 @@ mask_preflight() {
         [ -e "$f" ] || break
         any=1; n="$(basename "$f" .mask)"
         # ⛔ `ALL` is the SUITE-WIDE sidecar and names no single program by design; every other stem must name one.
-        [ "$n" = ALL ] || [ -f "$SUITE/$n.sno" ] || { echo "⛔ REFUSE(rc=2): $f names no program in this suite -- $n.sno is not in $SUITE."; echo "   CEO-409 guardrail 2: a mask that matches nothing is one nobody notices has stopped applying."; exit 2; }
+        [ "$n" = ALL ] || [ -f "$SUITE/$n.sno" ] || { echo "⛔ REFUSE(rc=2): $f names no program in this suite -- $n.sno is not in $SUITE."; echo "   R-409 guardrail 2: a mask that matches nothing is one nobody notices has stopped applying."; exit 2; }
         [ -f "$SUITE/$n.ref" ] || { echo "⛔ REFUSE(rc=2): $f has no $n.ref beside it, and the sidecar path is derived from the REF -- the shim would look for a file that is not there and report no masks, which is a silent nothing rather than a refusal."; exit 2; }
         # the sidecar's own row validation is the harness's, reached through the shim, so it cannot drift from it.
         printf '' | python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/$n.ref" "$n" "$W/mask_n" >/dev/null || exit 2
     done
-    [ "$any" = 1 ] && echo "CEO-409 masks: $(ls "$SUITE"/*.mask 2>/dev/null | wc -l) sidecar(s) armed and validated"
+    [ "$any" = 1 ] && echo "R-409 masks: $(ls "$SUITE"/*.mask 2>/dev/null | wc -l) sidecar(s) armed and validated"
     return 0
 }
 # ⛔⭐ THE COUNT TRAVELS IN A FILE, NOT A VARIABLE, AND THAT IS FORCED RATHER THAN CHOSEN. normalize() is called
@@ -218,7 +218,7 @@ mask_preflight() {
 # per-program `<name>.mask` is possible; but its live sidecar is `ALL.mask`, masking SPITBOL's own allocator
 # bookkeeping, which no program in the suite can compute and every program could print. Naming 93 programs one per
 # row would be a census that goes stale the next time a program is added -- and a mask that has silently stopped
-# covering a new entry is the unauditable shape CEO-409 exists against. The `*` entry column resolves it, in the
+# covering a new entry is the unauditable shape R-409 exists against. The `*` entry column resolves it, in the
 # harness's masks_for(), so both readers agree by construction rather than by both being written carefully.
 mask_ref_for() { # $1=name -> echoes the ref path whose stem carries the applicable sidecar, or nothing
     [ -f "$SUITE/$1.mask" ] && { printf '%s' "$SUITE/$1.ref"; return 0; }
@@ -236,13 +236,13 @@ mask_apply() { # $1=name $2=text -> echoes the masked text; leaves the replaced-
 }
 normalize() { # $1=name $2=text -> echoes text, masked per tests.in's dump/trace convention for that name
     local n="$1" t="$2"
-    # ⛔⭐ A SPITBOL FATAL IS GRADABLE (CEO-1344, the coo's row instruments-a-spitbol-fatal-is-gradable-...): this runner captures
+    # ⛔⭐ A SPITBOL FATAL IS GRADABLE (R-1344, the coo's row instruments-a-spitbol-fatal-is-gradable-...): this runner captures
     # 2>&1 and cuts its refs the same way, so the SCRIP error block inside the captured text is replaced by the oracle's fatal
     # block as a merged capture reads it (measured: the error line twice, the run summary twice), through the ONE renderer; the
     # run-summary lines are masked by ALL.mask beside the data. The oracle's own text carries no SCRIP block and passes untouched.
     t="$(printf '%s' "$t" | python3 "$HERE/util_render_error_voice.py" spitbol --fatal-merged)"
     t="$(printf '%s' "$t" | sed -E 's/^x86-64  [A-Z][a-z]{2} [A-Z][a-z]{2} +[0-9]+ [0-9:]+ [0-9]{4}$/x86-64  xxx/')"
-    # ⛔⭐ THE &FILL RULE REPLACES, IT NO LONGER DELETES (hq_T 2026-09-08, CEO-432 item 1: "replace-never-delete,
+    # ⛔⭐ THE &FILL RULE REPLACES, IT NO LONGER DELETES (hq_T 2026-09-08, R-432 item 1: "replace-never-delete,
     # guardrail 4 as the harness has it"). This line used to be `/^&FILL = '/d`, and a DELETED line lets a MISSING
     # line pass as a masked one: the fixture that prints nothing where the oracle prints an &FILL matched, because
     # both sides had the line removed. Rewriting to a marker preserves line count AND position, so an absent line
@@ -268,7 +268,7 @@ PY
 W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 RUN="$W/run"; mkdir -p "$RUN"
 cp -rp "$SUITE"/. "$RUN"/ 2>/dev/null || true
-# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
+# ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; R-1167, R-1225; wired by the coo on R-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board. The oracle runs as before.
 # Line 2 hands the guard the same suite this runner grades (CSNOBOL4_SUITE), so a scratch fixture is judged as one.
@@ -276,7 +276,7 @@ cp -rp "$SUITE"/. "$RUN"/ 2>/dev/null || true
 DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 # ⛔⭐ RECORD THE TREE THIS RUN GRADES, AT ITS START (hq_T 2026-09-08). A board takes ten to forty minutes and its
-# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the CEO-174 dirty-tree guard
+# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the R-174 dirty-tree guard
 # actively pushes you toward, since a dirty tree skips the write entirely -- moves HEAD under a measurement that
 # already happened, and the row then names a tree carrying commits it never ran. Measured three times in one
 # sitting, twice while doing the disciplined thing. util_score_row.py stamps this instead of HEAD, and says so
@@ -317,19 +317,19 @@ CSN_PASS=0; CSN_FAIL=0; CSN_EXT=0
 REGEN=0; REGEN_LIST=""
 EXCLUDED_LIST=""; CR_LIST=""
 OUTSIDE_LIST=""; RECUT_OK=0; RECUT_OUT=0
-NOA_LIST=""   # CEO-1696: a shipped program with no ref that EXCLUDED.tsv names (NO_ORACLE_ANSWER: sbl -bf prints nothing), shipped and excluded, never graded
+NOA_LIST=""   # R-1696: a shipped program with no ref that EXCLUDED.tsv names (NO_ORACLE_ANSWER: sbl -bf prints nothing), shipped and excluded, never graded
 [ "$RECUT" != 0 ] && { : > "$OUTSIDE.tmp"; [ -f "$OUTSIDE" ] || : > "$OUTSIDE"; }
 MOD_SUMMARY=""
 
-. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (CEO-1802/1805/1806); this runner appends each program's rows as it grades it
+. "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806); this runner appends each program's rows as it grades it
 for sno in "$SUITE"/*.sno; do
     [ -e "$sno" ] || { echo "⛔ REFUSE(rc=2): zero .sno files in $SUITE"; exit 2; }
     name="$(basename "$sno" .sno)"
     rr_admits "$name" || continue; rr_yield "$name" && break
-    export S4E_TIMEOUT_KEY="$name"   # the unit a retried timeout's stamp names (CEO-1335)
+    export S4E_TIMEOUT_KEY="$name"   # the unit a retried timeout's stamp names (R-1335)
     ref="$SUITE/$name.ref"
     if [ ! -f "$ref" ]; then           # not a graded pair (support file) — never hand-curated
-        # ⭐⭐ A COMPILE REFUSAL IS GRADED HERE AS spitbol_testpgms GRADES IT (CEO-1323; Lon 2026-09-26, verbatim: "Get ALL 8 working in SCRIP since they are
+        # ⭐⭐ A COMPILE REFUSAL IS GRADED HERE AS spitbol_testpgms GRADES IT (R-1323; Lon 2026-09-26, verbatim: "Get ALL 8 working in SCRIP since they are
         # SPITBOL programs."; SPITBOL's own deck is never excluded, test_gate_excluded_not_spitbol_dialect_named_and_out_of_the_denominator.sh arm (e)):
         # diag2 is a SPITBOL program sbl -bf refuses to compile (rc 231, ERROR 214 -- bad label or misplaced continuation line, at line 232), so it has no
         # ref and no exclusion row. SCRIP passes by refusing where SPITBOL x64 refuses: util_spitbol_compile_refusal.py reads the oracle's diagnostics as
@@ -342,7 +342,7 @@ for sno in "$SUITE"/*.sno; do
             (cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS "$name.sno" < /dev/null > "$ora" 2>/dev/null); orc=$?
             cr_pairs=""; crc=1
             [ "$orc" -ne 0 ] && { cr_pairs="$(python3 "$HERE/util_spitbol_compile_refusal.py" oracle "$ora" "$orc")"; crc=$?; }
-            [ "$crc" = 2 ] && { echo "⛔ REFUSE(rc=2): $name -- sbl exited rc $orc with a diagnostic in a shape util_spitbol_compile_refusal.py was not measured on (its reason above); CEO-1323 grades only the measured shape"; exit 2; }
+            [ "$crc" = 2 ] && { echo "⛔ REFUSE(rc=2): $name -- sbl exited rc $orc with a diagnostic in a shape util_spitbol_compile_refusal.py was not measured on (its reason above); R-1323 grades only the measured shape"; exit 2; }
             if [ "$crc" = 0 ]; then
                 ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
                 TOTAL=$((TOTAL+1))
@@ -363,7 +363,7 @@ for sno in "$SUITE"/*.sno; do
                 continue
             fi
         fi
-        inventory_is_excluded "$SUITE" "$name.sno" && NOA_LIST="$NOA_LIST $name"   # unless EXCLUDED.tsv names it: a shipped program the oracle gives no answer for (CEO-1696)
+        inventory_is_excluded "$SUITE" "$name.sno" && NOA_LIST="$NOA_LIST $name"   # unless EXCLUDED.tsv names it: a shipped program the oracle gives no answer for (R-1696)
         [ "$PORT" = 1 ] && is_outside_baseline "$name" && { progress_append package csnobol4 snobol4 "$name" m3 UNGRADED 0 "unscored: OUTSIDE_SPITBOL_BASELINE.tsv names it, the oracle gives no answer and it has no ref" >/dev/null 2>&1 || true; }   # a port's row reads every shipped program (from-progress)
         continue
     fi
@@ -379,7 +379,7 @@ for sno in "$SUITE"/*.sno; do
     TOTAL=$((TOTAL+1))
     exp="$(normalize "$name" "$(cat "$ref")")"
     _mn="$(cat "$W/mask_n" 2>/dev/null || echo 0)"
-    [ "$_mn" = ERR ] && { echo "⛔ REFUSE(rc=2): the CEO-409 masker refused on $name (its own message follows) -- a runner that cannot apply a declared mask must not grade as though there were none:"; sed 's/^/   /' "$W/mask_err" 2>/dev/null; exit 2; }
+    [ "$_mn" = ERR ] && { echo "⛔ REFUSE(rc=2): the R-409 masker refused on $name (its own message follows) -- a runner that cannot apply a declared mask must not grade as though there were none:"; sed 's/^/   /' "$W/mask_err" 2>/dev/null; exit 2; }
     if [ "${_mn:-0}" -gt 0 ]; then
         # ⛔ GUARDRAIL 4, THE HARNESS'S OWN FORM: a mask covering half a fixture's ref lines or more makes that
         # fixture UNGRADABLE -- it belongs outside the baseline, named, not carried in the denominator behind a
@@ -388,7 +388,7 @@ for sno in "$SUITE"/*.sno; do
         _rl="$(printf '%s' "$exp" | grep -c '' )"
         if [ "$_rl" -gt 0 ] && [ "$((_mn * 2))" -ge "$_rl" ]; then
             echo "⛔ REFUSE(rc=2): $name would have $_mn of its $_rl ref lines masked."
-            echo "   CEO-409 guardrail 4 -- a majority-masked fixture is UNGRADABLE and belongs OUTSIDE the baseline,"
+            echo "   R-409 guardrail 4 -- a majority-masked fixture is UNGRADABLE and belongs OUTSIDE the baseline,"
             echo "   named in OUTSIDE_SPITBOL_BASELINE.tsv, not carried in the denominator behind a mask."; exit 2
         fi
         # ⛔ GUARDRAIL 3: counted and printed. An invisible mask is the machine for hiding reds; a printed one is
@@ -424,7 +424,7 @@ for sno in "$SUITE"/*.sno; do
     # referencing program (TRACE(), error messages, &FILE) embed a throwaway tmpdir string instead of the
     # bare name the .ref expects — a harness artifact, not a SCRIP or oracle divergence (found triaging
     # row snobol4-csnobol4-thirty-regen-candidate-refs-stale-pin-or-real-defect, seat07 2026-09-04).
-    _t0="$(progress_clock)"   # each mode's own wall for its row (CEO-1676 (c)); m4's takes its compile and link
+    _t0="$(progress_clock)"   # each mode's own wall for its row (R-1676 (c)); m4's takes its compile and link
     got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT $pre_extra --run $ca $sz "$relprog" ${xargs_extra:+-- $xargs_extra} < "$inp" 2>&1)"; rc3=$?
     s3="$(progress_secs_since "$_t0")"
     got3="$(normalize "$name" "$got3")"
@@ -458,7 +458,7 @@ for sno in "$SUITE"/*.sno; do
         M4_REJECT=$((M4_REJECT+1)); RED4="$RED4 $name(CC)"
     fi
 
-    # an EXTENSION program's ref was cut by the oracle its EXTENSIONS.tsv row names, so sbl is not asked to reproduce it (CEO-1416)
+    # an EXTENSION program's ref was cut by the oracle its EXTENSIONS.tsv row names, so sbl is not asked to reproduce it (R-1416)
     if is_extension "$name"; then CSN_EXT=$((CSN_EXT+1)); continue; fi
     gotc="$(cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS "$relprog" $xargs_extra < "$inp" 2>&1)"
     gotc="$(normalize "$name" "$gotc")"
@@ -476,12 +476,12 @@ echo "── csnobol4_suite: $TOTAL pairs · $TREE_LABEL · corpus $CORP_HASH ·
 # binary guard is: a refusal that fires after the row is published is an annotation, not a refusal.
 GATE_NAME=test_snobol4_csnobol4_suite gate_tree_unmoved
 echo "CSNOBOL4_SUITE_BOARD total=$TOTAL m3_PASS=$M3_PASS m3_FAIL=$M3_FAIL m3_REJECT=$M3_REJECT m3_CRASH=$M3_CRASH m3_HANG=$M3_HANG m4_PASS=$M4_PASS m4_FAIL=$M4_FAIL m4_REJECT=$M4_REJECT m4_CRASH=$M4_CRASH m4_HANG=$M4_HANG"
-echo "sbl -bf re-read against the refs (staleness check, informational): PASS=$CSN_PASS FAIL=$CSN_FAIL EXTENSION=$CSN_EXT (an extension ref is not sbl's to reproduce, CEO-1416)"
+echo "sbl -bf re-read against the refs (staleness check, informational): PASS=$CSN_PASS FAIL=$CSN_FAIL EXTENSION=$CSN_EXT (an extension ref is not sbl's to reproduce, R-1416)"
 # ⛔ GUARDRAIL 3 -- PRINTED WHETHER OR NOT ANY MASK EXISTS. A line that appears only when masks are in play tells
 # the reader nothing on the day one is added and everything on the day one is removed; masked_lines=0 is the
 # reading that says "this board declined to grade nothing", and it is the one worth having by default.
-echo "CEO-409 masks: masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s)${MASKED_LIST:+ ·$MASKED_LIST} (excluded at the LINE; every fixture stays in the denominator)"
-[ -n "$CR_LIST" ] && echo "COMPILE_REFUSAL graded by the code and line of every diagnostic, as sbl refuses it (CEO-1323):$CR_LIST"
+echo "R-409 masks: masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s)${MASKED_LIST:+ ·$MASKED_LIST} (excluded at the LINE; every fixture stays in the denominator)"
+[ -n "$CR_LIST" ] && echo "COMPILE_REFUSAL graded by the code and line of every diagnostic, as sbl refuses it (R-1323):$CR_LIST"
 [ -n "$OUTSIDE_LIST" ] && echo "OUTSIDE_SPITBOL_BASELINE ($(printf '%s' "$OUTSIDE_LIST" | wc -w), programs sbl -bf refuses, named in $OUTSIDE, out of the denominator):$OUTSIDE_LIST"
 [ "$RECUT" != 0 ] && echo "RECUT_FROM_SPITBOL: refs re-cut=$RECUT_OK outside-baseline=$RECUT_OUT"
 if [ "$RECUT" != 0 ]; then U="$SUITE/UNGRADABLE.tsv"; { [ -f "$U" ] && awk -F"\t" '$3!~/outside the SPITBOL baseline/' "$U"; cat "$OUTSIDE"; } > "$U.tmp" && mv -f "$U.tmp" "$U"; echo "UNGRADABLE.tsv: outside-the-SPITBOL-baseline rows mirrored ($(grep -c 'outside the SPITBOL baseline' "$U"))"; fi
@@ -497,7 +497,7 @@ if [ "$RECUT" != 0 ]; then U="$SUITE/UNGRADABLE.tsv"; { [ -f "$U" ] && awk -F"\t
 # is the right "graded" figure for a census of $SUITE itself. graded_narrow=0: grading is byte-exact
 # against .ref, never by error-number-only.
 INV_PACKAGE=csnobol4; INV_DIR="$SUITE"; INV_EXT=".sno"
-if ! rr_selected; then   # a chunk grades a part of the package, and the inventory sums the whole shipped package (CEO-1802)
+if ! rr_selected; then   # a chunk grades a part of the package, and the inventory sums the whole shipped package (R-1802)
 INV_LINE="$(inventory_line "$TOTAL" 0)"
 if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
 fi
@@ -507,28 +507,28 @@ fi
 # turn a real measurement into a red board. Matches the other package suites (Arizona/JCON/fpc/GNU/SWI);
 # this one and snoflake_suite's own runner were the two missing it (board-packages-into-make-test-
 # reported-then-blocking, seat13 2026-09-03).
-# ⭐ THE INVENTORY CLAUSE RIDES IN THE CELL TOO (util_score_row.py's inventory_clauses(), CEO-316):
+# ⭐ THE INVENTORY CLAUSE RIDES IN THE CELL TOO (util_score_row.py's inventory_clauses(), R-316):
 # appended verbatim when non-empty, runner name immediately after so `by=`/backtick attribution
 # finds it within the reader's 200-char window; absent when inventory_line refused.
 # ⛔⭐ NAME THE SUITE FRACTION EXPLICITLY (cto 2026-09-08, the cure b2660262e gave the snoflake and ipl runners and
 # b7f48462a gave Arizona): without --suite-pass/--suite-total the writer REFUSED this row every time ("carries no N/M
 # fraction") and the Budne cell was hand-set (62/97 at 19162985f); the runner now writes its own AND-per-program count.
-# ⛔ CEO-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-ceo-749): TOTAL
+# ⛔ R-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-r-749): TOTAL
 # above counts the GRADED fixtures only (an outside one takes its `continue` first), so the row publishes PASS over SHIPPED =
 # graded plus the OUTSIDE_LIST, OUTSIDE=k named and stamped through lib_outside_shape.sh. Before this it read 71/71 with 49
 # programs listed in OUTSIDE_SPITBOL_BASELINE.tsv -- a 100% the law does not allow.
-rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request wrote its rows as it went, and writes no suite row (CEO-1802)
+rr_selected && { rr_end "$ROWKEY"; exit 0; }   # a chunk or a request wrote its rows as it went, and writes no suite row (R-1802)
 OUT_N="$(printf '%s\n' $OUTSIDE_LIST | grep -c .)"; NOA_N="$(printf '%s\n' $NOA_LIST | grep -c .)"; SHIPPED=$((TOTAL + OUT_N + NOA_N))
 . "$HERE/lib_outside_shape.sh" || exit 2
-# ⛔⭐ CEO-1286 (Lon 2026-09-26): the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv beside the suite) leave the denominator; the
+# ⛔⭐ R-1286 (Lon 2026-09-26): the programs NOT IN THE SPITBOL DIALECT (EXCLUDED.tsv beside the suite) leave the denominator; the
 # oracle-refused programs that ARE SPITBOL dialect (diag1/diag2 by origin, the lowercase ones owed their case conversion, tab, rewind1) stay.
-# ⛔⭐ CEO-1696 (Lon 2026-10-11: "Exclude any program in which we have no way to get output from an oracle, or in which we do not know the answer."): a refless
+# ⛔⭐ R-1696 (Lon 2026-10-11: "Exclude any program in which we have no way to get output from an oracle, or in which we do not know the answer."): a refless
 # program EXCLUDED.tsv names NO_ORACLE_ANSWER (include2, include3, include4, noexec: sbl -bf runs them and prints nothing) is shipped and leaves the denominator too.
 EXCL_D_N="$(excluded_in_outside "$SUITE" "$OUTSIDE_LIST $NOA_LIST")" || exit 2; DENOM=$((SHIPPED - EXCL_D_N))
-[ -z "$NOA_LIST" ] || echo "EXCLUDED_NO_ORACLE_ANSWER=$NOA_N shipped with no ref and named NO_ORACLE_ANSWER in EXCLUDED.tsv (CEO-1696):$NOA_LIST"
-echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, CEO-1286): pass over $DENOM"
+[ -z "$NOA_LIST" ] || echo "EXCLUDED_NO_ORACLE_ANSWER=$NOA_N shipped with no ref and named NO_ORACLE_ANSWER in EXCLUDED.tsv (R-1696):$NOA_LIST"
+echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
 python3 "$HERE/corpus_suite_harness.py" extension-check "$SUITE" || exit 2
-if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (CEO-1822), graded in m3 alone"
+if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (R-1822), graded in m3 alone"
     if [ "$SUITE" = "$ROOT/corpus/packages/snobol4/csnobol4_suite" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 else
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp csnobol4 "$DENOM" "$OUT_N" "$EXCL_D_N")" || exit 2
@@ -536,7 +536,7 @@ python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite C
     ${_cc:+--criterion-changed "$_cc"} \
     --suite-pass "$BOTH_PASS" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
     --measurer "${S4E_SEAT:-}" \
-    --text "both_modes_pass=$BOTH_PASS/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect or with no oracle answer, EXCLUDED.tsv, CEO-1286 and CEO-1696; NO_ORACLE_ANSWER=$NOA_N) OUTSIDE=$OUT_N EXTENSION=$EXT_N (refs not cut by sbl, named in EXTENSIONS.tsv), graded $BOTH_PASS/$TOTAL · total=$TOTAL m3 PASS=$M3_PASS FAIL=$M3_FAIL REJECT=$M3_REJECT CRASH=$M3_CRASH HANG=$M3_HANG · m4 PASS=$M4_PASS FAIL=$M4_FAIL REJECT=$M4_REJECT CRASH=$M4_CRASH HANG=$M4_HANG · masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s) (CEO-409, excluded at the line, fixture stays in the denominator)${INV_LINE:+ · $INV_LINE (\`test_snobol4_csnobol4_suite.sh\`)} · the $(inventory_containers_of "${INV_LINE:-}") include fragments of CONTAINERS.tsv (CEO-1272) are outside this graded-pair population, so they are named here and are not Excl (CEO-1288)" \
+    --text "both_modes_pass=$BOTH_PASS/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect or with no oracle answer, EXCLUDED.tsv, R-1286 and R-1696; NO_ORACLE_ANSWER=$NOA_N) OUTSIDE=$OUT_N EXTENSION=$EXT_N (refs not cut by sbl, named in EXTENSIONS.tsv), graded $BOTH_PASS/$TOTAL · total=$TOTAL m3 PASS=$M3_PASS FAIL=$M3_FAIL REJECT=$M3_REJECT CRASH=$M3_CRASH HANG=$M3_HANG · m4 PASS=$M4_PASS FAIL=$M4_FAIL REJECT=$M4_REJECT CRASH=$M4_CRASH HANG=$M4_HANG · masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s) (R-409, excluded at the line, fixture stays in the denominator)${INV_LINE:+ · $INV_LINE (\`test_snobol4_csnobol4_suite.sh\`)} · the $(inventory_containers_of "${INV_LINE:-}") include fragments of CONTAINERS.tsv (R-1272) are outside this graded-pair population, so they are named here and are not Excl (R-1288)" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
 fi
 

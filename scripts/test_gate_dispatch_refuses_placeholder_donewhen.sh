@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # test_gate_dispatch_refuses_placeholder_donewhen.sh -- next/assign REFUSE to dispatch a row whose
 # DONE-WHEN is still the mint placeholder, rather than serving it "unverified" like any other
-# could-not-measure criterion. Row mint-dispatch-refuses-a-placeholder-done-when, ceo ruling CEO-286
+# could-not-measure criterion. Row mint-dispatch-refuses-a-placeholder-done-when, ruling R-286
 # 2026-09-05, adopting hq_T's measurement: s4e_dispatch_probe already answers rc=2 "could not measure"
 # for a placeholder DONE-WHEN -- correctly -- but both next's dispatch gate and assign's dispatch probe
 # then SERVED the row anyway, indistinguishable from a slow criterion or a missing compiler. A row
 # opened onto an unmeasurable criterion can never be CLOSED by any amount of correct work (`done`
 # executes the DONE-WHEN line whole; prose is not a command), so the refusal a seat gets when trying to
 # close it is indistinguishable from the one a genuinely wrong CURE produces. Two rows were opened onto
-# exactly this shape on 2026-09-05 alone (the err-msgs row hq_P had to re-mint, and CEO-285's rank-0
+# exactly this shape on 2026-09-05 alone (the err-msgs row hq_P had to re-mint, and R-285's rank-0
 # oracle row).
 #
 # FOUR ARMS, hermetic under a scratch postoffice per mktemp -- never the live one:
@@ -36,10 +36,10 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # original shell's pid in a subshell, so the obvious guard compares equal and deletes the fixture
 # mid-run (measured while building test_gate_s4e_one_process_per_identity.sh).
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; HQ=ceo; SEAT=seat01; BUDGET=4
+PO="$W/po"; ME=hq_B; HQ=cto; SEAT=seat01; BUDGET=4
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote a literal mode, kept in step with the live
-# fleet -- it read QUARTET, under which no HQ stands (CEO-911). This fixture's serving seat is hq_B, so every
+# fleet -- it read QUARTET, under which no HQ stands (R-911). This fixture's serving seat is hq_B, so every
 # serve became a dispatch refusal and the placeholder mechanism this gate exists for was never exercised;
 # worse, several arms READ AS PASSING on it, because "next did not serve the placeholder" is satisfied by a
 # refusal that served nothing at all. ⛔ BOTH IDENTITIES ARE NAMED IN THE PROBE: this fixture drives an HQ

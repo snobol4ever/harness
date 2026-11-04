@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer.sh -- if/3 IS NOT A PREDICATE OF THE LANGUAGE (cto CEO-1888/1996, ARCH-PROLOG-DATABASE.md 4c addendum).
+# test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer.sh -- if/3 IS NOT A PREDICATE OF THE LANGUAGE (cto R-1888/1996, ARCH-PROLOG-DATABASE.md 4c addendum).
 # swipl 9.0.4, swipl 10.1.5 and the gprolog oracle (gprolog_bin) all answer a call of if(C,T,E) with existence_error(procedure, if/3), as a body goal and through call/1, and
 # predicate_property(if(_,_,_), _) has no answer in any of them. SCRIP defined it as a soft cut in every dialect but the SWI one (added by abd2fb800 for a
 # Logtalk unit that runs only where predicate_property(if(_,_,_), built_in) holds, which neither oracle satisfies); the three sites are deleted, so SCRIP
 # ships no control construct its dialect's oracle lacks. A program that defines its OWN if/3 keeps it (arm own). The expected text below is cut from the
 # oracles and RE-CHECKED against live swipl and gprolog on every run: an oracle that cannot answer REFUSES rc 2, an oracle that disagrees reds the gate.
 # RED BEFORE: on c33d10f89 the plain program ran if/3 as a soft cut in the default dialect and printed called, called, no_property in m3 and m4 (2 arms red).
-# The retired witness test_gate_pl_iso_rung6_the_soft_cut_if_3_predicate.sh asserted the opposite baseline (CEO-1996 ruling).
+# The retired witness test_gate_pl_iso_rung6_the_soft_cut_if_3_predicate.sh asserted the opposite baseline (R-1996 ruling).
 set -u
 GATE_NAME=test_gate_pl_if_3_is_no_predicate_in_any_dialect_as_swipl_and_gprolog_answer
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

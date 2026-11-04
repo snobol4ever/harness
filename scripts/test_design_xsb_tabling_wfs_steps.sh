@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# test_design_xsb_tabling_wfs_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: xsb-tabling-wfs (the cto, 2026-10-28, CEO-1996/1998;
+# test_design_xsb_tabling_wfs_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: xsb-tabling-wfs (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PROLOG-WFS-TABLING.md section 8). The plan is corpus/tests/prolog/xsb_wfs/STEPS.tsv; the witnesses are the .P programs beside it
 # (XSB's syntax, as the package corpus/packages/prolog/xsb_tests vendors XSB's own tests), each with a .ref cut from XSB 5.0.0 (xsb_bin(),
-# ORACLES.md; CEO-1927) by XSB's gentest protocol: `[w]. tell(temp). test. told.` and the file temp's non-empty lines sorted.
+# ORACLES.md; R-1927) by XSB's gentest protocol: `[w]. tell(temp). test. told.` and the file temp's non-empty lines sorted.
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness in mode 3 and mode 4 AS THE PACKAGE RUNS AN ENTRY -- the package prelude's directive lines prefixed,
 #                the vendored sorted-output driver appended (or, for a NAME:temp:GOAL witness, initialization((GOAL, told)) with the answer the
 #                file temp sorted), every sibling .P staged beside under its own name and as .pl, the declared -d131072k -s4096k -- compared with
 #                diff -w (ALL.csv's ignore-all-space); then the step's probe tokens: entries=... (the named package entries through
-#                corpus_suite_harness.py smoke, no progress row, at most eight: the handful of CEO-1677), families=... and row=N (results.tsv and
+#                corpus_suite_harness.py smoke, no progress row, at most eight: the handful of R-1677), families=... and row=N (results.tsv and
 #                SUITES.tsv READ, never run). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from XSB (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.xsb_wfs.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
@@ -72,7 +72,7 @@ PRE="$(grep -v '^#' "$PKG/ALL.prelude" | grep -v '^$')"
 DRIVER="xsb_nonempty_line(L) :- string_length(L, N), N > 0. xsb_write_lines([]). xsb_write_lines([X|Xs]) :- write(X), nl, xsb_write_lines(Xs).
 xsb_sorted_output(G) :- with_output_to(string(S), catch(ignore(G), E, print_message(error, E))), split_string(S, '\\n', '', L0), include(xsb_nonempty_line, L0, L1), msort(L1, L), xsb_write_lines(L)."
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi
@@ -107,7 +107,7 @@ readings=""; pgreen=1
 for tok in $probe; do
     key="${tok%%=*}"; val="${tok#*=}"
     case "$key" in
-        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (CEO-1677)"
+        entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (R-1677)"
                  sm="$(cd "$ROOT" && S4E_HOME="$ROOT" timeout -k 10 1500 python3 "$HERE/corpus_suite_harness.py" smoke nl write --tables packages/prolog/xsb_tests --entries "$es" --modes m3,m4 2>&1)"
                  printf '%s\n' "$sm" > "$OUT/step$step/smoke.log"
                  ok=0; for e in $es; do printf '%s\n' "$sm" | grep -E "^AREA_SMOKE_ENTRY .*entry=$e .*m3=PASS.*m4=PASS" > /dev/null && ok=$((ok + 1)); done

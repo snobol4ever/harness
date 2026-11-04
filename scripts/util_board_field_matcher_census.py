@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""util_board_field_matcher_census.py -- EVERY MATCHER THAT READS A BOARD LINE BY POSITION (coo, CEO-839, row
+"""util_board_field_matcher_census.py -- EVERY MATCHER THAT READS A BOARD LINE BY POSITION (coo, R-839, row
 instruments-rc2-gate-arm9-anchors-on-board-line-position-and-has-been-red-since-shipped-entered-the-line).
 
 THE DISEASE, stated once: a check that matches a SUITE_BOARD line by ADJACENCY breaks the day a correct field is
 inserted, and it breaks SILENTLY -- it reports the board as absent, which reads like "the run graded nothing"
 rather than "my pattern is stale".  test_gate_harness_refusal_is_rc2.sh arm 9 greps
 '^SUITE_BOARD family=ALL total=2 m3_n=2 ' and has been RED since SCRIP 3ade619f2 put `shipped=` and `outside=`
-between total= and m3_n= (CEO-749/772).  The board it rejects is correct.  That is the instrument law
+between total= and m3_n= (R-749/772).  The board it rejects is correct.  That is the instrument law
 EXTRACTION ANCHORS ON IDENTITY, NEVER POSITION failing inside a gate whose whole job is guarding a refusal code.
 
 WHAT THIS COUNTS, and what it deliberately does not:

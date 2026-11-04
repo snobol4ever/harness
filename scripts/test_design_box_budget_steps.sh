@@ -2,7 +2,7 @@
 # test_design_box_budget_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: box-budget (the cto, 2026-11-04, CTO-474/475/478; the design text
 # in .github/skills/shared-box/SKILL.md's DESIGN section). The plan is corpus/tests/shared/box_budget/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME against the live ledgers and instruments, so a step reads RED until its instrument exists and GREEN only while
-# the box meets it (a DONE-WHEN a deletion satisfies is false, CEO-1386).
+# the box meets it (a DONE-WHEN a deletion satisfies is false, R-1386).
 #   --list       print the steps and run nothing
 #   --step N     run step N's probe (600 s budget)
 #   --probe N    the same (the plan has no witness programs; its witnesses are the ledgers)

@@ -10,7 +10,7 @@
 #   FAIL-ONCE (a proper test, never a seam in SCRIP): the same 300 facts after ONE rule (which leaves the path and compiles every fact) must read over 200 M instructions dearer than the
 #     data path, else the instrument cannot see a compile and refuses rc 2.
 #   ARM 3 (collection): the witness under SCRIP_GC_STRESS=1 at a 128 KB window, mode 3, answers as swipl.
-# The cost arm is an instruction count (CEO-1785/1786), never a clock.
+# The cost arm is an instruction count (R-1785/1786), never a clock.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP"; exit 2; }

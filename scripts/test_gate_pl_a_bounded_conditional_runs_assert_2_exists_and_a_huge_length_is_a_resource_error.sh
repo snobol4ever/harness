@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_bounded_conditional_runs_assert_2_exists_and_a_huge_length_is_a_resource_error.sh -- THREE SWI-SUITE DEATHS, ONE PROGRAM.
-# hq_prolog 2026-10-03 (row prolog-every-suite-to-100-under-nonet-ceo-1266, SWI crawl). (1) The reader's :- if(current_prolog_flag(bounded, V)) read the flag
+# hq_prolog 2026-10-03 (row prolog-every-suite-to-100-under-nonet-r-1266, SWI crawl). (1) The reader's :- if(current_prolog_flag(bounded, V)) read the flag
 # BACKWARDS (bounded true -> taken), while the runtime flag table, the arithmetic (2^100 is exact) and swipl all say bounded=false, so every
 # :- if(current_prolog_flag(bounded, false)) block of the SWI suite was DROPPED at read time: test_arith's whole bigint unit read EMPTY and test_locale lost 51 cases.
 # (2) assert/2 (a clause and its reference, swipl's alias of assertz/2) was refused by the lowerer as "not on the ladder yet", exit 2, so a file naming it graded 0:
 # test_db, test_dbref, test_module, test_undo. (3) length(L, 1<<66) looped until the C stack died (ERROR 246, no catch); swipl raises
 # resource_error(stack), and test_arith's bigint:length case ends the whole file at that point under the corrected conditional.
 # (4) THE PROC TABLE HAD A FIXED CAP OF 256 (PL_BB_TABLE_MAX): past it pl_bb_register returned NULL and a later lookup missed. The corrected conditional lets test_arith's bigint unit in,
-# whose clause(H, B, Ref) has a variable head, so every static predicate is seeded (CEO-1467), the procs pass 256, and mode 4 emitted test/0 and test/1 TWICE (`symbol already
+# whose clause(H, B, Ref) has a variable head, so every static predicate is seeded (R-1467), the procs pass 256, and mode 4 emitted test/0 and test/1 TWICE (`symbol already
 # defined`, the assembler refuses the whole file). The table is a growing vector now; the last arm assembles and links the real shim plus core/test_arith.pl.
 # RED BEFORE on origin 83bb0341e, m3 AND m4: the first three lines read no/yes/no (the block dropped), assert/2 exit 2 at compile, length died fatally.
 set -u

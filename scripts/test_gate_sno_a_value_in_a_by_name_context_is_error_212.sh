@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_sno_a_value_in_a_by_name_context_is_error_212.sh -- A VALUE WHERE A NAME IS REQUIRED IS ERROR 212 AS THE STATEMENT IS COMPILED (cfo 2026-10-23, CEO-1926;
+# test_gate_sno_a_value_in_a_by_name_context_is_error_212.sh -- A VALUE WHERE A NAME IS REQUIRED IS ERROR 212 AS THE STATEMENT IS COMPILED (cfo 2026-10-23, R-1926;
 # SnoRungs code_eval_capture_indirect_replace_branch_2; the rule copied from sbl.min cdgnm: an operand compiled by name is a variable, an indirection, a subscript, a
 # function call, a deferred expression, a keyword or an undefined operator, and anything else -- a literal, a defined operator, a concatenation, an alternation, a
 # match, an assignment, a selection, unary + - ~ ? . @ -- is "syntax error: value used where name is required"). Every expectation is CUT FROM THE ORACLE, sbl -bf,

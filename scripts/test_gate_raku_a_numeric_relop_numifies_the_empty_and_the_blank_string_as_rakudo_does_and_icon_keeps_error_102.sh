@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_numeric_relop_numifies_the_empty_and_the_blank_string_as_rakudo_does_and_icon_keeps_error_102.sh -- A RAKU NUMERIC RELOP NUMIFIES "" AND A BLANK STRING
 # TO 0, A NON-NUMERIC STRING RAISES THE ONE SCRIP VOICE ON THE CATCHABLE ROAD, AND ICON'S RELOP ON THE SAME INPUTS IS ERROR 102 AS BEFORE (row
-# raku-every-suite-to-100-under-nonet-ceo-1266, the master's scrip_test_rk_given18; the cto's answer A to re-ask-raku-relop-numifies-empty-string-shared-rt-jct-relop).
+# raku-every-suite-to-100-under-nonet-r-1266, the master's scrip_test_rk_given18; the cto's answer A to re-ask-raku-relop-numifies-empty-string-shared-rt-jct-relop).
 #
 # THE DEFECT: "" == 0, " " == 0 and a when arm with a numeric literal on "" stopped the program with error 102 "numeric expected"; Rakudo numifies "" and a blank string to 0.
 # THE CURE: the Raku lowerer marks its numeric relop nodes (== != < <= > >=, a when arm with a numeric literal included) with IR_STRICT_RELOP_NUMIFY_BLANK in the node's

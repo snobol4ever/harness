@@ -5,7 +5,7 @@
 # as SPITBOL answers it.
 #
 # ⛔ THE DEFECT (row snobol4-convert-folds-a-lower-case-datatype-name-where-spitbol-fails-it; found by the cfo on the arity row 0edc85c92,
-#   measured and rowed by the ceo). Two dispatch sites upper-cased the type name before comparing it to INTEGER, REAL and STRING:
+#   measured and rowed by the officer). Two dispatch sites upper-cased the type name before comparing it to INTEGER, REAL and STRING:
 #   bn_convert and the inline BID_CONVERT arm, both in src/runtime/by_name_dispatch.c. The core _CONVERT_ beside them already compared
 #   exactly, so the answer depended on which road a call took, and 'integer' converted on both. SCRIP's other datatype-name inputs are
 #   not folded: DATATYPE only returns names, and ARRAY, TABLE and PATTERN reach _CONVERT_'s strcmp.

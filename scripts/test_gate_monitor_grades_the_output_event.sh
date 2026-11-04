@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_monitor_grades_the_output_event.sh -- THE OUTPUT EVENT (coo 2026-09-25, row instruments-the-monitor-grades-no-output-event-so-
-# a-wrong-value-written-without-an-assignment-reads-agree; ceo CEO-1272 on hq_icon's measurement). The contract graded STMT, VALUE, CALL,
+# a-wrong-value-written-without-an-assignment-reads-agree; R-1272 on hq_icon's measurement). The contract graded STMT, VALUE, CALL,
 # BIND and RETURN, so a wrong value written straight to standard output -- write(f(x)), OUTPUT = f(X), writeln(g) -- was never an event,
 # and both sides agreed event for event over a wrong answer. A participant now sends the bytes it writes to stdout as MWK_OUTPUT records
 # and says OUTPUT hello before its first statement; the controller absorbs the records into one byte stream per participant and requires
@@ -86,5 +86,5 @@ else
 fi
 echo "population: $checks graded arm(s) -- 5 hermetic pairs of scripted participants through the real controller, the icx fork live on one witness${wait7:+, arm 7 waiting}"
 if [ "$fails" != 0 ]; then echo "⛔ GATE FAIL(1) [monitor_grades_the_output_event]: $fails of $checks arms red"; exit 1; fi
-if [ -n "$wait7" ]; then echo "⛔ GATE REFUSES(2) [monitor_grades_the_output_event]: $checks of $checks arms hold, and arm 7 waits: $wait7 -- THE TWO SIDES LAND IN ORDER (CEO-1272): the fork's side is proven; the SCRIP plug's MWK_OUTPUT hello and bytes are owed"; exit 2; fi
+if [ -n "$wait7" ]; then echo "⛔ GATE REFUSES(2) [monitor_grades_the_output_event]: $checks of $checks arms hold, and arm 7 waits: $wait7 -- THE TWO SIDES LAND IN ORDER (R-1272): the fork's side is proven; the SCRIP plug's MWK_OUTPUT hello and bytes are owed"; exit 2; fi
 echo "GATE PASS(0) [monitor_grades_the_output_event]: $checks of $checks arms hold"; exit 0

@@ -2,8 +2,8 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_scrip_switches_are_spitbols.sh -- EVERY SPITBOL SWITCH SCRIP HONOURS BEHAVES AS sbl -bf DOES, AND EVERY ONE IT
 # CANNOT HONOUR IS REFUSED WITH A STATED REASON, NEVER READ AS A FILE NAME AND NEVER ACCEPTED-AND-IGNORED (cto 2026-09-23,
-# row spine-scrip-command-line-switches-are-spitbols-every-sbl-h-switch-with-spitbols-meaning; Lon in-chat to the ceo,
-# verbatim: "Do make our SCRIP command-line switches just like SPITBOL."; CEO-1224, the three collisions ruled CEO-1227:
+# row spine-scrip-command-line-switches-are-spitbols-every-sbl-h-switch-with-spitbols-meaning; Lon in-chat,
+# verbatim: "Do make our SCRIP command-line switches just like SPITBOL."; R-1224, the three collisions ruled R-1227:
 # "(1) Reject -F with stated reason. (2) keep our defaults for now. (3) reject for now.").
 #
 # THE ORACLE IS sbl -bf ITSELF, run beside scrip on the same witness for every behavioural switch: -n (compile, no
@@ -58,7 +58,7 @@ refused "-F case folding" "-F" "case"
 refused "-y save file" "-y" "save"
 refused "-k run with errors" "-k" "compilation error"
 for sw in -c -a -l -p -z -g60 -t80 -h -e; do refused "$sw listing/statistics" "$sw" "listing"; done
-# ⭐ aac5d0f5d made -o=file the -LIST SINK, not a refusal (CEO-1389 (2)) -- m3 takes it as a driver switch (it
+# ⭐ aac5d0f5d made -o=file the -LIST SINK, not a refusal (R-1389 (2)) -- m3 takes it as a driver switch (it
 # setenv's SCRIP_SNO_LIST_SINK and parses the program in the same process); a standalone m4 binary has no such
 # switch parsing of its own, so the SAME env var goes straight to its environment instead (test_snoflake_suite.sh's
 # own fix uses this exact split). Both must land the listing in the file and keep stdout to just the program's OUTPUT.

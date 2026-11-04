@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_match_inside_eval_that_fails_after_a_backtrack_point_returns_from_its_chain.sh
 #
-# THE DEFECT (the cto 2026-10-02, ceo CEO-1419 ticket snobol4-a-match-inside-eval-that-fails-after-a-backtrack-point-or-meets-
+# THE DEFECT (the cto 2026-10-02, R-1419 ticket snobol4-a-match-inside-eval-that-fails-after-a-backtrack-point-or-meets-
 # abort-crashes-scrip, found by Lon's infinite_snobol4 demo): EVAL of a pattern match whose last-emitted box keeps state on the
 # spine (ARB, BAL, REM, TAB, RTAB, SPAN, BREAK, BREAKX, FENCE of ARB, ABORT) died of SIGSEGV, a general-protection fault on the
 # chain's own ret, both modes: 'z' ? ARB FAIL, 'a' ? ABORT. sbl fails or matches.

@@ -2,7 +2,7 @@
 # test_gate_pas_a_two_dimensional_array_of_records_is_indexed_by_both_subscripts.sh -- an array declared with two index types whose
 # element is a record (var g: array [0..2, 0..3] of cell) is read and written through BOTH subscripts, g[i, j].f, with and without a
 # with-statement. MEASURED 2026-10-09 by hq_pascal on the Star Trek demo of the P5 samples (row pascal-demos-pascal-s-the-basic-interpreter-and-star-trek-...,
-# ceo CEO-1579): monitor_run.sh --oracle bracketed the first divergence at step 103 (stno 160, ishistory := FALSE inside with galaxy[i, j]):
+# R-1579): monitor_run.sh --oracle bracketed the first divergence at step 103 (stno 160, ishistory := FALSE inside with galaxy[i, j]):
 # fpx assigns, scr ENDs with error 22 (undefined function called). Cause: var_decl registered an array of records with pas_array_add (one
 # dimension) and never recorded its column count, so the selector action left g[i, j] as a three-child index, which no builtin answers.
 # CURE (src/lower/lower_pascal_tree.c, the var_decl action): a record-element array declared with two index types registers pas_array_add2d with its

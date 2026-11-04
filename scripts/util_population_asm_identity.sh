@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # util_population_asm_identity.sh -- ONE TREE AGAINST ANOTHER, BYTE FOR BYTE, OVER THE SPINE POPULATION (ARCH-THREE-ZETAS-EMISSION 10: every planner
-# chunk landing is byte-identical on util_spine_population.sh, 274 of 274, against its parent; the cto, CEO-1923).
+# chunk landing is byte-identical on util_spine_population.sh, 274 of 274, against its parent; the cto, R-1923).
 # Compiles every program of the population in mode 4 with this tree's binary and with the CONTROL binary (a worktree build of the parent), each
-# compile through a cc slot (util_cc_slot.sh, CEO-1894), from the program's own directory with its declared compile args, and compares the two
+# compile through a cc slot (util_cc_slot.sh, R-1894), from the program's own directory with its declared compile args, and compares the two
 # outputs whole. With --m3 it also runs every program in mode 3 under both binaries (its declared -d/-s and its .in stdin, each run in a run slot
 # of the box-wide pool, corpus_suite_harness._bounded_run) and compares rc and stdout -- the answers, since mode 3 emits into a sealed slab.
 #   util_population_asm_identity.sh --control PATH [--scrip PATH] [--lang L]... [--m3] [--m3-timeout S] [--jobs N] [--timeout S] [--names] [--files F...]
@@ -12,7 +12,7 @@
 # could not measure (no binary, no population, or a compile that fails or times out on either tree -- refused, never counted identical).
 # This is a BOARD over 274 programs: a seat runs it only as a planner chunk's own proof (the chunk rows' receipts), the coo's loop otherwise.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), CEO-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
+# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), R-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
 [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
 exec python3 - "$HERE" "$@" <<'PY'
 import collections, concurrent.futures, os, subprocess, sys, tempfile

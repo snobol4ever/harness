@@ -4,7 +4,7 @@
 Row instruments-the-refless-census-names-every-benchmark-and-test-carrying-no-ref-by-language
 (coo, 2026-09-21, MODE TENET).
 
-LON'S ORDER, verbatim to the ceo 2026-09-20: "Add a REF file for all benchmark and tests since how would you
+LON'S ORDER, verbatim to the officer 2026-09-20: "Add a REF file for all benchmark and tests since how would you
 know what you are measuring unless the output is correct." Landed as RULES.md FACT RULES clause 1.
 
 ⛔ THIS IS THE CENSUS AND NOT THE CUTTING. Each language's HQ cuts its own refs from its own oracle, because
@@ -14,7 +14,7 @@ denominator. So a refless program is never a failure HERE: this instrument exits
 and the number it prints is the work outstanding, not a red. It REFUSES rc=2 when it can find no population,
 because reporting zero refless programs for a tree it could not read is the one answer that would be a lie.
 
-⛔ IT NAMES AND NEVER ONLY COUNTS (CEO-997 batch 30 clause 2 -- an instrument that aggregates must be able to
+⛔ IT NAMES AND NEVER ONLY COUNTS (R-997 batch 30 clause 2 -- an instrument that aggregates must be able to
 answer "name one member of this count"). Every count printed here is followed by its members; --check FAILS
 if any nonzero count cannot produce one. A bare "168 refless" is the shape that let 62% of the benchmark tree
 be timed without anyone knowing its output was correct.
@@ -24,13 +24,13 @@ identically today -- a program with no expected output -- and only one of them i
   * OUTSIDE-BASELINE: the program has NO ref AND the ONE oracle REFUSES it, so no ref CAN exist. It is
     named in an OUTSIDE tsv
     with the measurement that put it there, it is a statement about the ORACLE and never about us (RULES.md
-    FACT RULE CEO-542), and per CEO-749 IT STAYS IN THE PUBLISHED DENOMINATOR.
+    FACT RULE R-542), and per R-749 IT STAYS IN THE PUBLISHED DENOMINATOR.
   * REFLESS: nobody has cut the ref yet. It is simply ungraded, and it is work owed.
 ⛔ THE CLASSES ARE EXCLUSIVE AND HAS-REF WINS, WHICH IS A CHOICE AND IS STATED: a program may both carry a
 ref and be listed OUTSIDE (three SNOBOL4 rungs entries are exactly that), and such a program is counted
 HAS-REF here because this census measures REF DEBT, not denominator membership. So the OUTSIDE column reads
 "refless, and explained" -- it is the part of the gap that is NOT work owed. Denominator membership is
-SUITES.tsv's and the harness's business, and per CEO-749 an OUTSIDE entry stays in the published denominator
+SUITES.tsv's and the harness's business, and per R-749 an OUTSIDE entry stays in the published denominator
 either way.
 
 Counting an OUTSIDE program as refless overstates the debt and invites someone to "fix" a row that is about
@@ -319,7 +319,7 @@ def main():
                 show = outs if args.limit == 0 else outs[: args.limit]
                 print("      OUTSIDE-BASELINE -- refless AND EXPLAINED, so NOT work owed: the ONE oracle")
                 print("      refuses these, they STAY in the published")
-                print("      denominator (CEO-749); a statement about the oracle, never about us (CEO-542): %s%s"
+                print("      denominator (R-749); a statement about the oracle, never about us (R-542): %s%s"
                       % (", ".join(show),
                          "" if len(show) == len(outs) else "  ... and %d more" % (len(outs) - len(show))))
         print("")

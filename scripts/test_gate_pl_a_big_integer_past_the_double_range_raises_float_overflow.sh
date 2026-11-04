@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_big_integer_past_the_double_range_raises_float_overflow.sh -- float/1, exp/1, log/1 AND sqrt/1 OF A BIG INTEGER PAST THE DOUBLE RANGE RAISE evaluation_error(float_overflow) (ISO 9.1.4.1; Logtalk unbounded float_03, exp_01, log_01, sqrt_01).
-# hq_prolog 2026-09-25, CEO-1270; the cure is by_name_dispatch.c: pl_big_as_real converted a big integer by printing it to decimal and running
+# hq_prolog 2026-09-25, R-1270; the cure is by_name_dispatch.c: pl_big_as_real converted a big integer by printing it to decimal and running
 # strtod -- quadratic in its digits, and on 7^7^7's 695,975 digits it returned inf SILENTLY, which pl_ax_float_result will not call an overflow
 # because its input was already infinite. A big integer past 1025 bits now converts to +-inf from its limb count (bignum.c rt_big_bits), anything
 # in range keeps the exact decimal path (so no printed float moves by an ulp), and the unary path raises float_overflow when a big operand

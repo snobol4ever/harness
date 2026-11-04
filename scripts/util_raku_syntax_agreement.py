@@ -2,8 +2,8 @@
 """util_raku_syntax_agreement.py -- does `scrip --syntax` accept exactly what Rakudo's `raku -c` accepts?
 
 THE INSTRUMENT of row raku-a-new-hand-written-lexer-and-parser-syntax-checking-first-no-trees-agreeing-with-
-raku-dash-c-on-every-master-entry-benchmark-kernel-and-roast-file-lon-2026-09-26 (Lon 2026-09-26 16:0x CDT, ceo
-CEO-1289: "Get a new lexer/parser for Raku before doing the benchmarks. Just get the syntax checking first and
+raku-dash-c-on-every-master-entry-benchmark-kernel-and-roast-file-lon-2026-09-26 (Lon 2026-09-26 16:0x CDT, the officer
+R-1289: "Get a new lexer/parser for Raku before doing the benchmarks. Just get the syntax checking first and
 produce no trees.").
 
 THE POPULATION, three parts, every unit named by a durable key:

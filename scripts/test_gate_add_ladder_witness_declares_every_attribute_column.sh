@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_add_ladder_witness_declares_every_attribute_column.sh -- util_add_ladder_witness.py WRITES EVERY ATTRIBUTE COLUMN
-# (heap_kb, stack_kb, compile_args, run_args) on the ALL.csv row it adds (ceo CEO-1323, on hq_snocone's entry 1994 filled by
+# (heap_kb, stack_kb, compile_args, run_args) on the ALL.csv row it adds (R-1323, on hq_snocone's entry 1994 filled by
 # hand; RULES.md hard-cap rule clause 8 (f), Lon 2026-09-26: every test unit stores the command line its compile and run
 # need). The values are READ from the rungs' own ladder rows -- never baked into the tool -- an explicit switch overrides,
 # and a rung suite whose ladder rows disagree REFUSES rc 2. Hermetic: a scratch copy of the SNOBOL4 rungs under mktemp, the
@@ -66,7 +66,7 @@ out="$(python3 "$TOOL" --lang snobol4 --rungs-dir "$D" --origin "$ORIGIN" --sour
   && ck ok "(4) ladder rows disagreeing on heap_kb REFUSE rc 2 by name, nothing written" || ck no "(4) the disagreeing rungs: rc=$rc $(printf '%s\n' "$out" | grep -m1 REFUSED)"
 python3 "$TOOL" --lang snobol4 --rungs-dir "$D" --origin "$ORIGIN" --source "$T/w.sno" --heap-kb 131072 --apply > /dev/null 2>&1; rc=$?
 [ "$rc" = 0 ] && [ "$(col "$D/ALL.csv" "$ORIGIN" heap_kb)" = 131072 ] && ck ok "(5) --heap-kb resolves the disagreement and the row is minted with it" || ck no "(5) --heap-kb on the disagreeing rungs: rc=$rc"
-# (6) RED PROOF: a copy of the tool with the one line that fills the columns removed leaves all four BLANK -- the build CEO-1323 found
+# (6) RED PROOF: a copy of the tool with the one line that fills the columns removed leaves all four BLANK -- the build R-1323 found
 # (the doctored dir is ../harness/scripts/ mirrored by symlink, so the tool's sibling modules and the harness it re-invokes resolve as in
 #  the tree; only the tool itself is a real, doctored copy. Its S4E root then reads wrong, and --rungs-dir makes that moot.)
 . "$HERE/lib_fixture_root.sh" || exit 2; fixture_root "$T/dx" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot stage a copied root at $T/dx"; exit 2; }; rm -f "$T/dx/harness/scripts/util_add_ladder_witness.py"; cp "$TOOL" "$T/dx/harness/scripts/"

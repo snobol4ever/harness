@@ -2,7 +2,7 @@
 # test_gate_pas_a_subrange_variable_is_given_only_values_of_its_subrange.sh -- ISO 7185 6.8.2.2 and 6.9.1: assigning or reading a value
 # outside a subrange variable's type is an error, detected by default; fpc's {$R+} and {$R-} keep their fpc meaning
 #
-# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-ceo-1266. The subrange check existed
+# MEASURED 2026-09-26 by hq_pascal, both modes, row pascal-every-suite-to-100-under-nonet-r-1266. The subrange check existed
 # (pas_subvar_get + __pas_range_check) but ran only under an explicit {$R+} -- fpc's default of range checks off -- and never on read: b := 10
 # into 1..5 printed 10, and PAT iso7185prt1755 (read 10 into 1..5) ran to rc 0. ISO makes both an error and PAT expects them detected. NO
 # BRACKET: an absent error sends no event. The cure: g_pas_range_check_on is three-state -- 2 by default (ISO: checked, and a failure

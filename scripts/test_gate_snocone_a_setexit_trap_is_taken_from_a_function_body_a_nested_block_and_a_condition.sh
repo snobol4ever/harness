@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_snocone_a_setexit_trap_is_taken_from_a_function_body_a_nested_block_and_a_condition.sh
 #
-# THE DEFECT (the ceo's rank-1 row snocone-a-setexit-trap-is-not-taken-from-a-function-body-or-an-if-or-while-condition,
-# found rewriting infinite_snobol4.md's first section in Snocone, CEO-1437): under SETEXIT a Snocone error was not trapped
+# THE DEFECT (the officer's rank-1 row snocone-a-setexit-trap-is-not-taken-from-a-function-body-or-an-if-or-while-condition,
+# found rewriting infinite_snobol4.md's first section in Snocone, R-1437): under SETEXIT a Snocone error was not trapped
 # where the same program put through scrip --transpile and run as SNOBOL4 is trapped, under SCRIP and under sbl -bf alike.
 # Four causes, one per arm family below:
 #   (1) a label inside a function body was never an LBL__ entry, so SETEXIT of it raised 187 and armed nothing

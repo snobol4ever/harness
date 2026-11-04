@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_right_sealed_defer_beta_no_double_teardown.sh -- THE ACCEPTANCE GATE for row
-# snobol4-a-right-sealed-defer-tears-down-its-zeta-frame-twice (cto 2026-09-11, CEO-564: the snobol4-rungs
+# snobol4-a-right-sealed-defer-tears-down-its-zeta-frame-twice (cto 2026-09-11, R-564: the snobol4-rungs
 # 16 CRASH + 8 HANG class).
 #
 # THE DEFECT: a MATCH_DEFER whose referenced pattern is RIGHT-SEALED -- its rightmost element is a FENCE, so
@@ -13,7 +13,7 @@
 # both corrupt. The observed crash is a jump into the middle of the mode-3 slab with rbp=0 and rsp still high,
 # which is why it never looked like the stack exhaustion an unbounded ARBNO would produce.
 #
-# ⛔⭐ THIS GATE GRADES OUTPUT AGAINST THE ORACLE, NEVER EXIT STATUS (ceo CEO-564, on hq_S's measurement that a
+# ⛔⭐ THIS GATE GRADES OUTPUT AGAINST THE ORACLE, NEVER EXIT STATUS (R-564, on hq_S's measurement that a
 # crash row had been "cured" into a silent truncation that every rc-based predicate passed). A program here is
 # GREEN only when its stdout is byte-identical to spitbol's on the same source, in BOTH modes. An rc-based arm
 # could not tell this cure from a silencing, and that is the whole point of the row.
@@ -24,7 +24,7 @@
 # a cure that stopped building the frame, not one that stopped popping it twice.
 #
 # HERMETIC: every program is written to mktemp. It grades no corpus population and publishes no row, so it is
-# not a board (ONE RUNNER, ONE BOARD, CEO-523/CEO-547) and every seat can run it.
+# not a board (ONE RUNNER, ONE BOARD, R-523/R-547) and every seat can run it.
 # EXIT: 0 all arms · 1 an arm failed · 2 REFUSED (no spitbol oracle, no build, no mktemp).
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 set -uo pipefail

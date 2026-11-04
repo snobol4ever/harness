@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 export SCRIP_DIAG=0
 # bench_parser_ir_slope.sh <lang> -- THE PARSER GRID ON INSTRUCTIONS: THE STAND-ALONE C PARSER AND THE .sc PARSER CHAIN, Ir PER BYTE OF SOURCE.
-# (Lon 2026-10-21 17:4x CDT, in-chat to the ceo, CEO-1871, verbatim: "I want it to work on parser.sc programs completeness and speed performance
-# versus the SCRIP C parsers."; row snocone-parser-sc-every-bootstrap-parser-at-the-c-parsers-parse-clock-ceo-1871.) util_parser_grid.sh reads the
+# (Lon 2026-10-21 17:4x CDT, in-chat to the R-1871, verbatim: "I want it to work on parser.sc programs completeness and speed performance
+# versus the SCRIP C parsers."; row snocone-parser-sc-every-bootstrap-parser-at-the-c-parsers-parse-clock-r-1871.) util_parser_grid.sh reads the
 # CLOCK and refuses under load (perf_load_guard); callgrind Ir is load-immune, so this steers the speed work on a busy box and the grid's clock
 # reading stays the DONE-WHEN. NOT A WALL-CLOCK PREDICTOR (Ir cannot see cache misses or stalls): it answers "how many instructions does the parse do".
 #

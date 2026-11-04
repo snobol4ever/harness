@@ -35,7 +35,7 @@ WIT="$ROOT/../harness/scripts/gc_witnesses/hb_coexpr_create.icn"
 APPLY_KB=256; DECLINE_KB=64
 LIT='[GC-FLIP] plant:'
 run() { local kb="$1" tel="$2" out="$3"; if [ "$tel" = tel ]; then ( cd "$T" && env SCRIP_HEAP_KB="$kb" SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_STRESS=3 SCRIP_ZETA_TELEM=1 timeout -k 5 300 "$SCRIP" "$WIT" >/dev/null 2>"$out" </dev/null ); else ( cd "$T" && env SCRIP_HEAP_KB="$kb" SCRIP_GC_PLANT_FLIP=1 SCRIP_GC_STRESS=3 timeout -k 5 300 "$SCRIP" "$WIT" >/dev/null 2>"$out" </dev/null ); fi; }
-echo "  HOLDS: the flip's applied banner is the proof it applied and prints with nothing asked for; its decline spells no literal a count would match; every gate that plants the flip reads the banner; the knob table is closed against src/ (CEO-1794: the flip is the one movement plant left, SHIFT, RELOC, PIN_SKIP, PIN_TYPE, UNROOT and RTCCB retired with the bitmap collector, ARCH-GC section 15)"
+echo "  HOLDS: the flip's applied banner is the proof it applied and prints with nothing asked for; its decline spells no literal a count would match; every gate that plants the flip reads the banner; the knob table is closed against src/ (R-1794: the flip is the one movement plant left, SHIFT, RELOC, PIN_SKIP, PIN_TYPE, UNROOT and RTCCB retired with the bitmap collector, ARCH-GC section 15)"
 run "$APPLY_KB" notel "$T/a_notel.txt"; run "$APPLY_KB" tel "$T/a_tel.txt"
 a_tel=$(grep -c "^\[GC-FLIP\] plant:" "$T/a_tel.txt"); a_tel=${a_tel:-0}
 a_bare=$(grep -c "^\[GC-FLIP\] plant:" "$T/a_notel.txt"); a_bare=${a_bare:-0}

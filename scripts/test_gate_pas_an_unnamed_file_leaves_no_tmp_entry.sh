@@ -2,7 +2,7 @@
 # test_gate_pas_an_unnamed_file_leaves_no_tmp_entry.sh -- a Pascal file variable with no external name is a temporary file:
 # the runtime mkstemps it under /tmp and must unlink it at creation (POSIX tmpfile semantics -- the open descriptor keeps it
 # alive). 513 /tmp/scrip_pas_* files sat on disk on 2026-10-01 from by_name_dispatch.c's two mkstemp sites, one per
-# unnamed rewrite ever run (ceo, Lon: "find out why /tmp keeps filling and fix the root problem"). The witness rewrites,
+# unnamed rewrite ever run (Lon: "find out why /tmp keeps filling and fix the root problem"). The witness rewrites,
 # writes, resets and reads back an unnamed text file in BOTH modes; the gate counts /tmp/scrip_pas_* before and after and
 # wants the count unchanged, and wants the program's answer, so a runtime that stopped creating the file cannot pass either.
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?

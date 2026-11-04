@@ -4,7 +4,7 @@
 # SPITBOL'S RULE: an error in an operand fails the statement that raised it. Under SETEXIT the handler is entered;
 # under &ERRLIMIT > 0 or inside EVAL (stage stgee) the error is counted and the operation fails. So -ARB raises 10
 # (negation operand is not numeric) and +ARB raises 4, and 'abc' ? -ARB ABORT is ERROR 10, never a crash.
-# WHAT SCRIP DID (ceo CEO-1434's assigned row snobol4-an-error-raised-in-a-pattern-concatenated-with-abort-crashes-
+# WHAT SCRIP DID (R-1434's assigned row snobol4-an-error-raised-in-a-pattern-concatenated-with-abort-crashes-
 # scrip-inside-eval, found by the infinite_snobol4 SCRIPtix run at expression 2,358): bb_unop's TT_MNS/TT_PLS box
 # called rt_num_neg_sno / rt_num_pos, stored the result and went on to gamma WITHOUT TESTING IT. When the error returned
 # (counted, the operation fails) the FAIL descriptor flowed on as a value into the concatenation and the match, which

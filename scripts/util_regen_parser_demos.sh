@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# util_regen_parser_demos.sh [--cut-refs] -- THE SEVEN BOOTSTRAP PARSERS AS SNOCONE DEMOS (Lon 2026-09-30, in-chat to the ceo,
+# util_regen_parser_demos.sh [--cut-refs] -- THE SEVEN BOOTSTRAP PARSERS AS SNOCONE DEMOS (Lon 2026-09-30, in-chat,
 # verbatim: "Add the seven parser_lang.sc programs as DEMOS and benchmarks for Snocone."; a demo is a test on its sample input and
-# a workhorse benchmark on its full input, run once at wall clock -- Lon 2026-09-27, CEO-1312/1313).
+# a workhorse benchmark on its full input, run once at wall clock -- Lon 2026-09-27, R-1312/1313).
 # For each language L the demo corpus/demos/snocone/parser_L/parser_L.sc is REGENERATED from SCRIP/bootstrap: the 14-file runtime
 # chain in run_scrip_parser.sh's order plus bootstrap/parser_L.sc, concatenated (a Snocone program cannot include a library; no
 # .chain sidecar -- that name is the demo runner's own library declaration, corpus-relative -- the list lives here and in the gate). The demo's sample input parser_L.in and its workhorse
@@ -12,7 +12,7 @@
 set -u
 here=$(cd "$(dirname "$0")" && pwd); W=$(cd "$here/../../SCRIP" && pwd); ROOT=$(cd "$W/.." && pwd); B="$W/bootstrap"; D="$ROOT/corpus/demos/snocone"
 SBL="${SBL:-/home/resources/x64/bin/sbl}"; CUT=0; [ "${1:-}" = --cut-refs ] && CUT=1
-# The oracle cuts each ref at the sizes the chain declares for it, bootstrap/parser_<lang>.oracle_args (ceo CEO-1353, RULES.md
+# The oracle cuts each ref at the sizes the chain declares for it, bootstrap/parser_<lang>.oracle_args (R-1353, RULES.md
 # clause 8 (g)(3): the one reader passes the oracle's declaration whenever a ref is cut), never a size typed here.
 . "$here/lib_declared_arena.sh" || { echo "REFUSE(2): cannot load lib_declared_arena.sh"; exit 2; }
 CHAIN="global case assign match counter stack tree ShiftReduce tdump gen qize semantic omega trace"

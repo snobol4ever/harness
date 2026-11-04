@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_icn_ipl_declared_status_and_empty_output_are_graded.sh -- A PROGRAM WHOSE CORRECT EXIT STATUS IS NOT 0, OR WHOSE CORRECT
-# OUTPUT IS EMPTY, IS GRADED ON IT (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; ceo CEO-1315). IPL's ttt, hr and krieg end
+# OUTPUT IS EMPTY, IS GRADED ON IT (hq_icon 2026-09-27; Lon's word "Get IPL to 843."; R-1315). IPL's ttt, hr and krieg end
 # every run in stop() (status 1); progs/proto exits before it prints. The status is declared in the pre-existing NAME.rc (seat07's
 # sidecar, which the cutter already mints under) and test_icon_ipl_suite.sh now grades it in both modes; an empty output by design
 # is declared in NAME.empty, with its reason, and the cutter then mints the empty ref instead of refusing it as EMPTY.

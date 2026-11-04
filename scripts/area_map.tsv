@@ -1,4 +1,4 @@
-# area_map.tsv -- THE CARRIER MAP OF THE AREA SMOKE (coo 2026-09-28, row instruments-the-area-smoke-...-ceo-1342; Lon's sixth
+# area_map.tsv -- THE CARRIER MAP OF THE AREA SMOKE (coo 2026-09-28, row instruments-the-area-smoke-...-r-1342; Lon's sixth
 # question, verbatim: "So how will each HQ know to consult this attribute table to determine the set of tests to run for that
 # language?" -- THE SEAT MUST NOT HAVE TO KNOW). test_area_smoke.sh with no argument reads the landing's diff against
 # origin/main and maps every touched file and changed function through THIS table to the feature columns of the attribute
@@ -9,7 +9,7 @@
 #   a directory relative to SCRIP/, trailing slash, covering every file under it, e.g. src/parsers/snobol4/
 #   a symbol    a bare C identifier: the function a -U0 hunk header names, e.g. sno_capt_body
 # A FEATURE is a column name exactly as the tables spell it (FENCE, scan, cut, record ...), or one of the two widenings:
-#   *           every feature column of every table (a SHARED NODE reaches every language -- the CEO-405 widening)
+#   *           every feature column of every table (a SHARED NODE reaches every language -- the R-405 widening)
 #   lang:<x>    every feature column of the tables under tests/<x> and packages/<x>/ (a frontend or lowerer of one language)
 #   <x>:<col>   that column in the tables of language x only -- the form for a column several languages share whose carrier is
 #               one language's own (its lowerer): the unqualified name would select every language's column of that name
@@ -18,7 +18,7 @@
 # ⛔ The gate test_gate_area_smoke_reads_the_attribute_rows.sh keeps every feature column of every runnable table named in an
 # explicit row and every carrier existing in the tree; a row naming a file that has moved is a red, not a stale entry.
 #
-# ---- SHARED NODES: every language reaches them (the CEO-405 widening) ----
+# ---- SHARED NODES: every language reaches them (the R-405 widening) ----
 *	src/runtime/
 *	src/emitter/
 *	src/planner/
@@ -213,7 +213,7 @@ alternation	src/templates/bb/bb_scan_alternate.cpp
 # reads_the_attribute_rows.sh arm 7a read three Icon columns unmapped. Their carriers: Icon's !x lowers to IR_ITERATE (bb_iterate.cpp, the
 # every loop's box too), and alternation in a generator is lower_alt / lower_alt_impl in src/lower/lower_icon.c.
 every	src/templates/bb/bb_iterate.cpp
-# Icon sections s[i:j], s[i+:n], s[i-:n] (the coo 2026-10-15, CEO-1679 tier 1: aeea98779 broke every string section in a small procedure and no core entry took one): the section
+# Icon sections s[i:j], s[i+:n], s[i-:n] (the coo 2026-10-15, R-1679 tier 1: aeea98779 broke every string section in a small procedure and no core entry took one): the section
 # column is the 62nd attribute column; its carriers are the section templates and the runtime that answers a section (subscript_get2_s and its callers, rt_substr).
 section	subscript_get2_s
 section	subscript_get2_ext_s

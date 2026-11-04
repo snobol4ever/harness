@@ -2,7 +2,7 @@
 # test_gate_a_blocking_set_death_names_its_killer.sh -- A RUN THAT DIES SAYS WHAT ENDED IT: SIGNAL, ARM REACHED,
 # ELAPSED, AND THE SENDER -- OR SAYS IN WORDS THAT THE KILLER LEFT NO RECORD.
 # (coo 2026-09-20, row instruments-a-blocking-set-run-is-killed-from-outside-and-no-seat-completed-one-today,
-# minted by the ceo on the cfo's CFO-147.)
+# minted by the officer on the cfo's CFO-147.)
 #
 # THE MEASUREMENT THIS EXISTS FOR. 2026-09-20: the cfo's blocking set died at ARM 103 with SIGTERM and again at
 # ARM 166 with SIGKILL DESPITE BEING setsid-DETACHED; hq_prolog's died at ARM 6 after THIRTY SECONDS; hq_raku's
@@ -281,7 +281,7 @@ fi
 # Makefile newer than a binary that is semantically current. Reflog: build 10:01:58, rebase pick 10:03:28, set
 # started 10:03:52. Nothing was stale; every arm refused anyway.
 # ⛔ AND rc=2 IS NOT RED, so the set completed and printed "6 blocking arm(s) failed, 256 refused" -- a
-# two-thirds DARK gate reporting in the same shape as a two-thirds green one. CEO-582 inside the landing gate.
+# two-thirds DARK gate reporting in the same shape as a two-thirds green one. R-582 inside the landing gate.
 # ⭐ SCRIP_STALE_PROBE_SRC IS THE LIBRARY'S OWN SANCTIONED SCRATCH PROBE (lib_gate.sh): it names one extra
 # candidate for "newest source" so a proof like this runs against a temp file instead of touching a tracked
 # src/ file -- a proof that edits the tree it grades is how a green gate and a dirty checkout coexist. It can

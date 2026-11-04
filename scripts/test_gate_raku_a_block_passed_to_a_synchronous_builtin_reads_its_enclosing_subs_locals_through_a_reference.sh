@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_a_block_passed_to_a_synchronous_builtin_reads_its_enclosing_subs_locals_through_a_reference.sh -- CLOSURE CAPTURE, THE NON-ESCAPING ROAD (M3 of row
-# raku-every-suite-to-100-under-nonet-ceo-1266; the cto's binding design q-raku-closure-capture, 2026-10-03, with his three conditions of 2026-10-04).
+# raku-every-suite-to-100-under-nonet-r-1266; the cto's binding design q-raku-closure-capture, 2026-10-03, with his three conditions of 2026-10-04).
 # THE DEFECT: a block is hoisted to its own proc, so a variable of the enclosing sub it read or wrote was an unresolved name in a different graph: sub f(Int $n) { (1,2).map: { $_ + $n } }
 # was refused at the driver guard (about 100 Roast files first-refuse on a captured ordinary name, and the benchmark witnesses rc-perfect-shuffle and divide-and-conquer).
 # THE CURE, lower_raku.c rk_cap_find/rk_cap_block (a pass before the hoist): for a block that is a literal argument of a SYNCHRONOUS builtin -- the table rk_cap_synchronous in the source:
@@ -12,7 +12,7 @@
 # array through the same, a copy from one through __rk_deref. The closure value is a typed DT_A with the static marker rk_proto_closure in ARBLK.proto, as List and Pair are: no collector edit,
 # no descr tag. ONE function, by_name_dispatch.c rk_call_block, unwraps a closure and prepends its refs to the staged arguments, and every block callback (map, grep, first, sort, reduce, smartmatch
 # against a block, subtest, __blk_invoke) goes through it, so the no_c_to_bb count does not rise (the ratchet reads 0 rose) and the callbacks can move to the open road unchanged.
-# ARM 2, THE ESCAPING ROAD (the cto's road b, 2026-10-04; row raku-every-suite-to-100-under-nonet-ceo-1266): a block that is assigned to a variable, returned, passed to a routine not in the table, or
+# ARM 2, THE ESCAPING ROAD (the cto's road b, 2026-10-04; row raku-every-suite-to-100-under-nonet-r-1266): a block that is assigned to a variable, returned, passed to a routine not in the table, or
 # nested in an escaping block is NEVER closed over a stack slot. Each local it captures is classified in the owning sub (rk_cap_proc, rk_cap_boxes): captured by VALUE (a plain hidden leading
 # parameter, the value read at the moment the closure is made) when nothing assigns it after its declaration, and BOXED when anything does -- an assignment, an element or hash store, a push or other
 # mutating method, an array or hash (a container), or a declaration whose own initializer is the closure (my $B := { ... $B() }): the declaration builds a one-slot heap cell reached by a DT_N

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_an_array_of_records_held_as_a_record_field_compiles_and_runs.sh -- a record field whose type is an array of records
 # (o.arr[j].a[i], o.arr[j].n) compiles, runs and prints what fpc -Miso prints, in both modes -- no BOMB
-# (the CRASH row minted by hq_pascal on ceo CEO-1343 from the coo's COO-213 witness p2)
+# (the CRASH row minted by hq_pascal on R-1343 from the coo's COO-213 witness p2)
 #
 # MEASURED 2026-09-28 by hq_pascal on SCRIP fcae697bb, both modes: fldarr (the coo's p2) ABORTS rc 134 with
 # "BOMB -- bb_call marshal: IR_VAR arg names a local with no LOWER-granted varslot"; fpc -Miso prints two lines.

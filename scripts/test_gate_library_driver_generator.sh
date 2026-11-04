@@ -1,6 +1,6 @@
 #!/bin/bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
-# test_gate_library_driver_generator.sh -- THE HERMETIC GATE FOR util_gen_library_driver.py (ceo CEO-706 ->
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
+# test_gate_library_driver_generator.sh -- THE HERMETIC GATE FOR util_gen_library_driver.py (R-706 ->
 # hq_B, rank 0, 2026-09-13).  It proves the generator's four brief-named arms plus the two its own proving
 # ground added, and EVERY ARM WAS MADE TO FAIL ONCE before it was made to pass.
 #

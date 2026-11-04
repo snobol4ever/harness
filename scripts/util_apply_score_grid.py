@@ -9,7 +9,7 @@ row's provenance -- exactly as it found them.
 from the first `| Language |` header through the next `_tree: ..._` stamp, which fails in two independent
 ways that compose into a file-destroying one:
 
-  (1) BOUND BY POSITION, NOT SHAPE. SCORE.md carries TWO `| Language |` grids since ceo CEO-174 added the
+  (1) BOUND BY POSITION, NOT SHAPE. SCORE.md carries TWO `| Language |` grids since R-174 added the
       September-10 M/L/V/B grid ABOVE the standardized display. `s.index('\\n| Language |')` finds the
       SEPTEMBER-10 GRID -- not the display this script's own docstring named. Measured on the live file
       (hq_T 2026-09-04): the first header is line 57 (7 columns, the Sept-10 grid), the display is line 70

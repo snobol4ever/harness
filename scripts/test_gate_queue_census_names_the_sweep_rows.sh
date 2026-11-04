@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_queue_census_names_the_sweep_rows.sh -- util_queue_visibility_census.py PRINTS THE TWO SWEEP LINES AND NAMES THE RIGHT ROWS ON
-# EACH, AND `claim` BY NAME MARKS AN ASSIGNED ROW STARTED (the coo 2026-09-27, ceo CEO-1306, row instruments-the-queue-census-names-
-# blocking-red-rows-past-their-two-hour-window-and-hq-lane-rows-unserved-past-24-hours-ceo-1306).
+# EACH, AND `claim` BY NAME MARKS AN ASSIGNED ROW STARTED (the coo 2026-09-27, R-1306, row instruments-the-queue-census-names-
+# blocking-red-rows-past-their-two-hour-window-and-hq-lane-rows-unserved-past-24-hours-r-1306).
 #
 # Measured the morning it was ruled: three blocking-red rows of the 09-26 audit board sat FREE 23 hours while every make test read
 # them as tolerated reds, and 227 rank-0/1 rows sat FREE in HQ lanes that their HQs would not serve while each held its one row. The
@@ -31,20 +31,20 @@ mkdir -p "$W/claims" "$W/tasks" "$W/coo/inbox"; printf 'TENET\n' > "$W/MODE"; : 
 row()   { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; }
 baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: true\nLINKS: %s\n## NEXT\n## LEDGER\n%s\n' "$1" "$2" "${3:-}" > "$W/tasks/$1.task.md"; }
 claimf(){ local t="$1"; shift; printf '%s\n' "$@" > "$W/claims/$t.claim"; }
-BR='minted via `mint` by ceo, 2026-09-27T07:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T08:00Z'
-row 0 br-stuck-row hq_icon ASSIGNED:hq_icon;            baton br-stuck-row "$BR";        claimf br-stuck-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T08:30:00Z'
-row 0 br-gc-collector-row hq_icon ASSIGNED:hq_icon;     baton br-gc-collector-row "$BR"; claimf br-gc-collector-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T08:00:00Z'
-row 0 br-running-row hq_icon ASSIGNED:hq_icon;          baton br-running-row "$BR";      claimf br-running-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T08:30:00Z' RUNNING
+BR='minted via `mint` by the officer, 2026-09-27T07:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T08:00Z'
+row 0 br-stuck-row hq_icon ASSIGNED:hq_icon;            baton br-stuck-row "$BR";        claimf br-stuck-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'
+row 0 br-gc-collector-row hq_icon ASSIGNED:hq_icon;     baton br-gc-collector-row "$BR"; claimf br-gc-collector-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:00:00Z'
+row 0 br-running-row hq_icon ASSIGNED:hq_icon;          baton br-running-row "$BR";      claimf br-running-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z' RUNNING
 row 0 br-young-row hq_icon ASSIGNED:hq_icon
-baton br-young-row 'minted via `mint` by ceo, 2026-09-27T11:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T11:00Z'; claimf br-young-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T11:00:00Z'
+baton br-young-row 'minted via `mint` by the officer, 2026-09-27T11:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T11:00Z'; claimf br-young-row hq_icon 'ASSIGNED-BY cto 2026-09-27T11:00:00Z'
 row 0 br-ledger-row hq_icon ASSIGNED:hq_icon
-baton br-ledger-row "$BR" '- [hq_icon·2026-09-27 04:1x CDT] started: the bisect is under way'; claimf br-ledger-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T08:30:00Z'
+baton br-ledger-row "$BR" '- [hq_icon·2026-09-27 04:1x CDT] started: the bisect is under way'; claimf br-ledger-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'
 row 0 br-claimed-row hq_icon CLAIMED:hq_icon;           baton br-claimed-row "$BR";      claimf br-claimed-row hq_icon
-row 0 br-done-row hq_icon DONE;                         baton br-done-row "$BR";         claimf br-done-row hq_icon 'ASSIGNED-BY ceo 2026-09-27T08:30:00Z' DONE
-OLD='minted via `mint` by ceo, 2026-09-25T00:00:00Z'
+row 0 br-done-row hq_icon DONE;                         baton br-done-row "$BR";         claimf br-done-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z' DONE
+OLD='minted via `mint` by the officer, 2026-09-25T00:00:00Z'
 row 0 hq-old-free-row hq_raku FREE;     baton hq-old-free-row "$OLD"
 row 2 hq-old-rank2-row hq_raku FREE;    baton hq-old-rank2-row "$OLD"
-row 1 hq-young-free-row hq_raku FREE;   baton hq-young-free-row 'minted via `mint` by ceo, 2026-09-27T00:00:00Z'
+row 1 hq-young-free-row hq_raku FREE;   baton hq-young-free-row 'minted via `mint` by the officer, 2026-09-27T00:00:00Z'
 row 0 hq-no-hold-row hq_pascal FREE;    baton hq-no-hold-row "$OLD"
 row 1 hq-held-row hq_raku CLAIMED:hq_raku; baton hq-held-row "$OLD"; claimf hq-held-row hq_raku
 names() { printf '%s\n' "$1" | awk -v h="$2" 'index($0, h) == 1 {f = 1; next} f && /^    [a-z]/ {print $1; next} f {exit}' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -55,9 +55,9 @@ o="$(S4E_PO="$W" S4E_CENSUS_NOW=2026-09-27T12:00:00Z python3 "$Q" 2>&1)"; r=$?
 b="$(names "$o" 'BLOCKING-RED PAST WINDOW:')"; bl="$(grep -m1 '^BLOCKING-RED PAST WINDOW:' <<<"$o")"
 if grep -q '^BLOCKING-RED PAST WINDOW: 2 ' <<<"$bl" && [ "$b" = "br-gc-collector-row br-stuck-row" ] \
    && grep -qE '^    br-gc-collector-row .*-> cfo$' <<<"$o" && grep -qE '^    br-stuck-row .*-> cto$' <<<"$o"; then
-    ok B "names exactly [$b], routed cfo and ceo; the RUNNING, young, ledger-started, claimed-from-FREE and DONE rows stay off"
+    ok B "names exactly [$b], routed cfo and cto; the RUNNING, young, ledger-started, claimed-from-FREE and DONE rows stay off"
 else
-    red B "line [${bl:0:60}] names [$b] (want 2: br-gc-collector-row br-stuck-row, routed cfo and ceo)"
+    red B "line [${bl:0:60}] names [$b] (want 2: br-gc-collector-row br-stuck-row, routed cfo and cto)"
 fi
 o2="$(S4E_PO="$W" S4E_CENSUS_NOW=2026-09-27T09:00:00Z python3 "$Q" 2>&1)"
 grep -q '^BLOCKING-RED PAST WINDOW: 0 ' <<<"$o2" && grep -q '^BLOCKING-RED PAST WINDOW: 2 ' <<<"$o" && ok T "at 09:00Z, before any window closed, the same fixture names none" \
@@ -70,7 +70,7 @@ else
 fi
 
 # ── C: `claim` by name marks an assigned row started, once ──────────────────────────────────────────────────────────────────
-claimf c-assigned-row coo 'ASSIGNED-BY ceo 2026-09-27T08:30:00Z'; row 1 c-assigned-row coo ASSIGNED:coo; baton c-assigned-row 'minted via `mint` by ceo, 2026-09-27T08:00:00Z'
+claimf c-assigned-row coo 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'; row 1 c-assigned-row coo ASSIGNED:coo; baton c-assigned-row 'minted via `mint` by the officer, 2026-09-27T08:00:00Z'
 S4E_POST="$W" S4E_SEAT=coo bash "$M" claim c-assigned-row > "$W/c1.out" 2>&1
 S4E_POST="$W" S4E_SEAT=coo bash "$M" claim c-assigned-row > "$W/c2.out" 2>&1
 nr="$(grep -cx RUNNING "$W/claims/c-assigned-row.claim")"

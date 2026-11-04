@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""util_emitter_memory_model_census.py [--at-most N] [--list] [--only A|B|D] [--in f1,f2] [--not-in f1,f2] -- THE MEMORY MODEL IS CALCULATED IN THE PLANNER AND NOWHERE ELSE (ceo CEO-1988).
+"""util_emitter_memory_model_census.py [--at-most N] [--list] [--only A|B|D] [--in f1,f2] [--not-in f1,f2] -- THE MEMORY MODEL IS CALCULATED IN THE PLANNER AND NOWHERE ELSE (R-1988).
 
-Lon 2026-10-26, in-chat to the ceo, verbatim: "Oh, big dummy, you've been lying again. So get the memory-model calculations moved out of EMITTER and
+Lon 2026-10-26, in-chat, verbatim: "Oh, big dummy, you've been lying again. So get the memory-model calculations moved out of EMITTER and
 SOLELY into PLANNER."  The deletion of the 27 named placement predicates (util_placement_predicates_census.py, alive=0/27) was reported as
 "placement decided once" while the emitter went on calculating the memory model; this census counts what that one did not.
 
 Read from SCRIP's source, no build, no run:
   (A) CALLS from src/emitter/ and src/templates/ into a function DEFINED in src/planner/, the frame layout (src/planner/frame_layout.c) or the
       zeta-depth analysis (src/planner/zeta_depth.c) -- the
-      emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call, and a call inside a one-line definition (`int f(void) { return g(); }`) is one (the census skipped those until ceo CEO-1995: 10 calls hidden at SCRIP ef933fe08);
+      emitter asking the memory model a question instead of reading the planner's record; a declaration (`extern ... name(...);`) is not a call, and a call inside a one-line definition (`int f(void) { return g(); }`) is one (the census skipped those until R-1995: 10 calls hidden at SCRIP ef933fe08);
   (B) DEFINITIONS in src/emitter/ of a memory-model function (a name in the fc_ frame_ zd_ zls_ xop_ act_ planner_ families) -- a calculation that
       lives in the emitter;
   (D) references in src/planner/ to the EMITTER'S state -- `g_emitter.` (the emitter's global struct, where the planner keeps its own tables
@@ -17,7 +17,7 @@ Read from SCRIP's source, no build, no run:
       "the planner reads no emitter state");
   (C) whole-graph index reads in src/emitter/ (`g_emit_cfg->all` and `->all[`), REPORTED, not in the bar: the emitter emits a chain and walks it,
       and which of these reads computes a memory fact is the landing's to show.
-The bar is A + B + D. Per seat (CEO-1990): --only A|B|D makes the bar that part alone; --in / --not-in keep or drop the A calls made inside the
+The bar is A + B + D. Per seat (R-1990): --only A|B|D makes the bar that part alone; --in / --not-in keep or drop the A calls made inside the
 named functions (a function's body runs from its column-0 definition to the next one), so a track's DONE-WHEN is its own count. --at-most N exits 1 when A + B > N (the ratchet each landing owes: it may only fall); rc 2 when the tree cannot be read.
 """
 import os
@@ -130,7 +130,7 @@ def main(argv):
     if only or fin is not None or fout:
         print('SCOPED_BAR=%d only=%s in=%s not-in=%s' % (bar, only or 'A+B+D', ','.join(sorted(fin)) if fin is not None else '-', ','.join(sorted(fout)) or '-'))
     if at_most is not None and bar > at_most:
-        print('⛔ RED: the bar %d is over the ratchet %d -- the memory model is not the planner alone (CEO-1988)' % (bar, at_most))
+        print('⛔ RED: the bar %d is over the ratchet %d -- the memory model is not the planner alone (R-1988)' % (bar, at_most))
         return 1
     return 0
 

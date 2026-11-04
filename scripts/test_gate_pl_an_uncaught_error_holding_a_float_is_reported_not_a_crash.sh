@@ -10,7 +10,7 @@
 # THE CURE: mode 3's wire is the naked stub pl_root_ω (and $-16, %rsp; push $0; jmp), mode 4's omega aligns before its call.
 #
 # Four programs x two modes: the report line swipl-style SCRIP prints, rc 2, never a signal.
-# THE FIXTURE IS initialization(main, main) (hq_prolog 2026-10-15, CEO-1766): since SCRIP bb7cfbe56 a raising initialization/1 goal is a warning
+# THE FIXTURE IS initialization(main, main) (hq_prolog 2026-10-15, R-1766): since SCRIP bb7cfbe56 a raising initialization/1 goal is a warning
 # and the program goes on at rc 0, as swipl -q and gprolog 1.6.0 both do, so it never reaches the root omega; the main/2 form still does, and
 # swipl 9.0.4 exits 2 on all four goals here as SCRIP does.
 # rc=0 clean · rc=1 a divergence · rc=2 REFUSAL.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_an_operator_atom_operand_is_bracketed.sh -- AN ATOM THAT IS AN OPERATOR, WRITTEN AS THE OPERAND OF AN INFIX OPERATOR, IS BRACKETED
 # (ISO 7.10.5 h: "an atom which is an operator ... is output with brackets" as an operand, so the text reads back as the same term; hq_prolog
-# 2026-09-25, CEO-1266; the cure is unification.c plc_wt's infix arm and plc_first_char).
+# 2026-09-25, R-1266; the cure is unification.c plc_wt's infix arm and plc_first_char).
 # THE DEFECT. The prefix-operator arm already bracketed an operator-atom operand (-(-)); the infix arm never looked, so write((<)/(>)) printed
 # `</ >`, writeq((:-)/2) printed `:-/2`, writeq((-)-1) printed `--1` -- text that does not read back as the term written (--1 is -(-(1))).
 # THE EXPECTATIONS ARE THE ORACLES': gprolog and swipl print the eleven lines below identically (2026-09-25). The two lines they disagree on --

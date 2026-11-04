@@ -1,6 +1,6 @@
 #!/bin/bash
 # Icon '^' with an exponent NO WORD CAN HOLD. Row icon-jcon-lgint-large-integer-arithmetic-prints-every
-# -digit-as-its-shipped-ref-oracle-cannot-finish (Lon 2026-09-10 "Get lgint and toby working.", CEO-491).
+# -digit-as-its-shipped-ref-oracle-cannot-finish (Lon 2026-09-10 "Get lgint and toby working.", R-491).
 #
 # THE DEFECT THIS PINS (measured 2026-09-10, hq_I, SCRIP 3bbdfc8c7): rt_big_arith_route returned
 # FAILDESCR for EVERY x ^ v with v a large integer, so all sixteen of lgint's bigexp rows printed
@@ -11,10 +11,10 @@
 # ⛔ WHY THIS GATE HAS TWO KINDS OF ARM, AND WHY THAT IS NOT A HEDGE.
 # lgint cannot be graded against Arizona iconx as a whole: iconx does not reject a 20-digit exponent,
 # so at "-2 ^ 36472996377170786403" it starts squaring bignums toward a ~10^19-bit result and never
-# returns (600 s cap, 142 of 452 lines; ceo NOTE on the baton). That is UNBOUNDED, not slow. But the
+# returns (600 s cap, 142 of 452 lines; the officer NOTE on the baton). That is UNBOUNDED, not slow. But the
 # unboundedness is confined to |base| >= 2 with a POSITIVE huge exponent -- every other row answers
 # instantly. So this gate does NOT fall back to the shipped ref wholesale; it grades against the live
-# oracle everywhere the oracle can answer (ARM A, 14 rows) and leans on the CEO-491 jcon-provenance
+# oracle everywhere the oracle can answer (ARM A, 14 rows) and leans on the R-491 jcon-provenance
 # ruling ONLY for the four rows that provably cannot be measured (ARM B). Naming which rows are which
 # is the point: "the oracle cannot finish this program" is true and would have licensed grading all
 # eighteen off jcon, which would have imported jcon's divergences as if they were Icon's semantics.
@@ -25,19 +25,19 @@
 #   36472996377170788352, which is EVEN, so C pow() on the converted exponent answers +1.0 where Icon
 #   answers -1.0. The parity that governs is the parity of the INTEGER, and this arm is what holds
 #   that, since a plausible "just call pow()" cure passes every other row here.
-# ARM B -- JCON-PROVENANCE (CEO-491), the four unmeasurable rows: |base| >= 2 with a positive huge
+# ARM B -- JCON-PROVENANCE (R-491), the four unmeasurable rows: |base| >= 2 with a positive huge
 #   exponent raises 203 (integer overflow), NOT 204 (real overflow). &errornumber is PRIMED to 204
 #   first -- deliberately the very number the bug printed -- so a regression to "nothing was raised,
 #   the stale &errornumber was reported" reads 204 here and goes RED. Without that priming this arm
 #   would pass against the very bug it exists to catch. (The prime uses 0 ^ -1, whose 204 is oracle-
 #   verified by test_gate_icn_pow_error_cases.sh. 1 / 0 CANNOT be used: SCRIP does not honour &error
-#   for integer division by zero -- a separate open defect hq_I named to the ceo 2026-09-10.)
+#   for integer division by zero -- a separate open defect hq_I named to the officer 2026-09-10.)
 #
 # ⛔ READ THE NUMBER, NEVER THE MESSAGE SHAPE (RULES.md THE INSTRUMENT LAWS, EIGHTEENTH BATCH,
-# CEO-510): every arm compares a VALUE the program itself printed via &errornumber, so a change to the
+# R-510): every arm compares a VALUE the program itself printed via &errornumber, so a change to the
 # fatal-report format cannot turn this red while the semantics are right.
 # ⛔ A GATE THAT CANNOT MEASURE REFUSES rc=2 -- all 36 runs (18 rows x 2 modes) must be graded.
-# ⭐ NEGATIVE-TESTED AS A DISCRIMINATOR, not merely watched go green (CEO-510): the two source files
+# ⭐ NEGATIVE-TESTED AS A DISCRIMINATOR, not merely watched go green (R-510): the two source files
 # were restored to their pre-cure content, the runtime rebuilt, and this gate run again -- rc=1, RED
 # on BOTH arms in BOTH modes, with armB reading exactly "num=204" (the stale &errornumber) and armA
 # missing all nine exact-value rows. Cured tree: rc=0. So it can fail, and it fails on the real bug.
@@ -108,4 +108,4 @@ wantB='prime=prime=204
 ROWS=4; run_both armB "$wantB" 0
 [ "$graded" = 36 ] || { echo "⛔ GATE REFUSES (rc=2): graded $graded of the 36 required runs"; exit 2; }
 [ "$bad" = 0 ] || { echo "⛔ GATE RED [icn_pow_large_integer_exponent]: Icon '^' with a large-integer exponent does not answer as the oracle does"; exit 1; }
-echo "✅ GATE OK [icn_pow_large_integer_exponent]: 14 oracle-graded rows match iconx live and the 4 unmeasurable rows raise 203 (CEO-491 jcon provenance) -- BOTH modes"
+echo "✅ GATE OK [icn_pow_large_integer_exponent]: 14 oracle-graded rows match iconx live and the 4 unmeasurable rows raise 203 (R-491 jcon provenance) -- BOTH modes"

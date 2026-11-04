@@ -4,7 +4,7 @@
 # return, lower_prolog.c g_pl_decl_dyn_name, and PL_DB_CELLS_MAX in the runtime) dropped the 64th user declaration silently (slot 0 is the registry's), so
 # a program with 64 or more ":- dynamic" declarations printed nothing in both modes where swipl answers. Now the compile-time tables grow (ct_grow), every
 # Prolog root frame carries PL_DB_FRAME_CELLS = 256 cells and every cell past them lives in the registry's overflow vector, which grows by doubling
-# (ceo CEO-1522, Lon's no-fixed-limits law: the 257th used to refuse rc=2 at compile time and BOMB at run time, which is how the Logtalk demo died).
+# (R-1522, Lon's no-fixed-limits law: the 257th used to refuse rc=2 at compile time and BOMB at run time, which is how the Logtalk demo died).
 # Witnesses, all in both modes against swipl's text: N = 70 and N = 300 declarations asserted and read back; 300 predicates created at RUN TIME
 # by assertz with no declaration (Logtalk's shape); 300 global variables set and read back.
 # RED BEFORE on origin 689af8179: N = 70 prints nothing (rc 0) in both modes.

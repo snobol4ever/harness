@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" || exit 2
-# ⛔ THE INSTRUMENTATION SWITCH (--stlimit, which carries the call/return hooks Icon &trace rides) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), CEO-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26
+# ⛔ THE INSTRUMENTATION SWITCH (--stlimit, which carries the call/return hooks Icon &trace rides) IS EACH PROGRAM'S OWN compile_args DECLARATION, read per program below (clause 8 (f), R-1281): this runner exported SCRIP_SNO_STMTKW=1 for every program until 2026-09-26
 # test_icon_arizona_suite.sh — grade SCRIP m3 (--run) + m4 (--compile+link) against the vendored
 # official Arizona Icon test suite (corpus/packages/icon/arizona_tests, upstream 9.5).
 #
@@ -31,10 +31,10 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ⛔⭐ THE DECLARED ARENA (Lon 2026-09-23, "each test should have the needed amount of memory in the
-# attribute TSV/CSV files"; CEO-1167). SOURCED, never reimplemented -- this runner, its two Icon siblings
+# attribute TSV/CSV files"; R-1167). SOURCED, never reimplemented -- this runner, its two Icon siblings
 # and corpus_suite_harness.py must not be able to disagree about what one cell means.
 . "$HERE/lib_declared_arena.sh"
-# ⛔⭐ CEO-409 LINE MASKS, READ HERE THROUGH THE HARNESS'S OWN SHIM (util_apply_ceo409_mask.py), never a
+# ⛔⭐ R-409 LINE MASKS, READ HERE THROUGH THE HARNESS'S OWN SHIM (util_apply_line_mask.py), never a
 # second implementation -- see test_snobol4_csnobol4_suite.sh for the reasoning (the regex dialect is
 # python's, and a re-implementation in sed/awk agrees on every mask anyone tested and diverges on the
 # first one using \d or a lazy quantifier). A per-program sidecar is $SUITE/$name.mask beside $name.ref;
@@ -47,32 +47,32 @@ mask_apply() { # $1=std_path $2=name $3=text -> echoes the masked text; count la
     local mp="${1%.ref}.mask"
     [ -f "$mp" ] || { printf '%s' "$3"; return 0; }
     local out
-    if ! out="$(printf '%s' "$3" | python3 "$HERE/util_apply_ceo409_mask.py" "$1" "$2" "$RUNDIR/mask_n" 2>"$RUNDIR/mask_err")"; then
+    if ! out="$(printf '%s' "$3" | python3 "$HERE/util_apply_line_mask.py" "$1" "$2" "$RUNDIR/mask_n" 2>"$RUNDIR/mask_err")"; then
         echo "⛔ REFUSED TO GRADE rc=2: $2's mask sidecar could not be applied -- $(cat "$RUNDIR/mask_err" 2>/dev/null)"; exit 2
     fi
     printf '%s' "$out"
 }
 . "$HERE/lib_flag_gate.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_flag_gate.sh unloadable" >&2; exit 2; }
 . "$HERE/lib_inventory.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_inventory.sh unloadable" >&2; exit 2; }
-. "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_progress.sh unloadable -- a run that records nothing is a defect of that run (CEO-331)" >&2; exit 2; }
+. "$HERE/lib_progress.sh" 2>/dev/null || { echo "⛔ GATE REFUSES: lib_progress.sh unloadable -- a run that records nothing is a defect of that run (R-331)" >&2; exit 2; }
 PROGRESS_CONFIG="$(progress_config_of_env)"   # every row declares what it ran under: the GC axis in this environment, else shipped (the board sets none per child)
 # ⛔ COUNTED, NOT SWALLOWED, AND NOT FATAL. See lib_progress.sh's header: it never hides the writer's rc and
 # the caller decides. Aborting mid-loop would let one bookkeeping failure destroy a real measurement of 90
 # programs (the reason gate_score_row is non-fatal); `|| true` would turn "never written" into silence.
 PROGRESS_FAILED=0
-# ⛔ THE PROGRESS KEY IS THE PATH KEY <subdir>/<stem> (coo 2026-10-08, CEO-1366 (b)): the container ALL.csv keys arizona_tests
+# ⛔ THE PROGRESS KEY IS THE PATH KEY <subdir>/<stem> (coo 2026-10-08, R-1366 (b)): the container ALL.csv keys arizona_tests
 # general/args, the IPL board writes progs/when, and this board wrote the bare stem -- two keys for one program in the progress table.
-arizona_progress() { progress_append package arizona icon "$sub/$1" "$2" "$3" "${AZ_SECS:-0}" || PROGRESS_FAILED=$((PROGRESS_FAILED+1)); }   # AZ_SECS: that mode's own wall (CEO-1676 (c))
+arizona_progress() { progress_append package arizona icon "$sub/$1" "$2" "$3" "${AZ_SECS:-0}" || PROGRESS_FAILED=$((PROGRESS_FAILED+1)); }   # AZ_SECS: that mode's own wall (R-1676 (c))
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 RT_SO="$HERE/../../SCRIP/out/libscrip_rt.so"
 CORPUS="$S4E/corpus"
 PKG="$CORPUS/packages/icon/arizona_tests"
-PKG_CSV="$PKG/ALL.csv"   # the attribute file the heap_kb declaration lives in (CEO-1167)
+PKG_CSV="$PKG/ALL.csv"   # the attribute file the heap_kb declaration lives in (R-1167)
 SUITE_SUBDIRS="general special"   # ⛔ every subdirectory the package ships; add a new one here, not to a private list elsewhere
-# ⛔⭐⭐ THE ONE-ORACLE RULE, APPLIED TO THIS PACKAGE (ceo CEO-527, landed CEO-578 by hq_T 2026-09-11). A program
+# ⛔⭐⭐ THE ONE-ORACLE RULE, APPLIED TO THIS PACKAGE (R-527, landed R-578 by hq_T 2026-09-11). A program
 # whose ground truth is not Arizona ICON but the Arizona DISTRIBUTION has no baseline answer here, so it is OUT of
 # the graded denominator and NAMED -- never hidden and never counted either way. The sister runner has read its own
-# OUTSIDE_ARIZONA_BASELINE.tsv since CEO-470; this one did not, so two rows the ceo ruled outside weeks ago went on
+# OUTSIDE_ARIZONA_BASELINE.tsv since R-470; this one did not, so two rows the officer ruled outside weeks ago went on
 # printing four red cells (cfuncs m3+m4, extlvals m3+m4) because THE RULING HAD NO READER. ⭐ A ruling landed in a
 # file no instrument opens is indistinguishable from a ruling nobody made.
 # ⛔ THE KEY IS THE PACKAGE-RELATIVE PATH WITH EXTENSION ("general/cfuncs.icn"), not the bare basename the jcon copy
@@ -103,13 +103,13 @@ if [ ! -x "$SCRIP" ]; then
   exit 2
 fi
 # ⛔⭐ STALE-BINARY PREFLIGHT (row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-regen-
-# does, ceo -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
-# tree describes. ceo's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
+# does, the officer -> hq_T 2026-09-04). The line above proves a binary EXISTS; this one proves it is the binary this
+# tree describes. the officer's witness, twice on 2026-09-04: a 10:57 binary graded at 14:03 read RED, then GREEN after
 # an incremental make -- a vendor board is exactly where that is least visible, because a plausible all-FAIL
 # table is this class's normal output. NO LOGIC HERE: util_require_fresh.sh sources gate_require_fresh from
 # lib_gate.sh, the ONE authority (hq_B 4c7253e99) -- never a second copy of the staleness rule.
 "$HERE/util_require_fresh.sh" --gate test_icon_arizona_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
-# ⛔⭐ THE BINARY MOVED UNDER THIS BOARD (ceo CEO-524 (1), wired by the coo 2026-09-10 as THE ONE RUNNER).
+# ⛔⭐ THE BINARY MOVED UNDER THIS BOARD (R-524 (1), wired by the coo 2026-09-10 as THE ONE RUNNER).
 # The line above proves the binary is CURRENT AT THE START. It cannot see a swap that happens while the board is
 # still grading, and the dirty guard downstream reads the tree at WRITE time -- so hq_R's board straddled a binary
 # swap and published m3 635/759 into SCORE.md with a CLEAN stamp while the correct 756/759 was refused as dirty.
@@ -134,13 +134,13 @@ GATE_NAME=test_icon_arizona_suite gate_tree_watch "$(cd "$HERE/../.." && pwd)"
 # nothing it reads moves; only what it WRITES lands here, and dies with the trap.
 RUNDIR="$(mktemp -d "${TMPDIR:-/tmp}/ariz_run.XXXXXX")" || { echo "⛔ GATE REFUSES: mktemp failed" >&2; exit 2; }
 trap 'rm -rf "$RUNDIR"' EXIT
-# ⭐ THE DECLARED COMPILE SWITCHES, READ ONCE (clause 8 (f), CEO-1281): declared_memory_table validates every cell of the attribute file
+# ⭐ THE DECLARED COMPILE SWITCHES, READ ONCE (clause 8 (f), R-1281): declared_memory_table validates every cell of the attribute file
 # through the harness's own validators before one program is graded; each program then looks its compile_args up with one awk.
 CA_TBL="$RUNDIR/compile_args.tsv"
 declared_memory_table "$PKG_CSV" > "$CA_TBL" || { echo "⛔ REFUSED TO GRADE rc=2: a cell in $PKG_CSV is refused (named above) -- this board does not grade around it" >&2; exit 2; }
 # ⛔⭐ A UNIT WITH NO DECLARING ROW IS NAMED, NEVER GRADED SILENTLY AT THE DEFAULTS (RULES.md 8 (f); coo 2026-09-27): each graded unit and
 # each re-checked outside-baseline unit is asked once, and the names print beside the declared-arena receipt, empty or not. The 23
-# driver-graded libraries of CEO-1269 had no row until corpus 2026-09-27 and ran without the --stlimit this runner typed for every
+# driver-graded libraries of R-1269 had no row until corpus 2026-09-27 and ran without the --stlimit this runner typed for every
 # program until 286483382. util_icon_package_units.py lists the keys.
 DECL_CSV_OF_TABLE="$PKG_CSV"; declare -A UNDECLARED=() DECL_ASKED=()
 decl_ask() { [ -n "${DECL_ASKED[$1]:-}" ] && return 0; DECL_ASKED[$1]=1; declared_row_in_table "$CA_TBL" "$1"; case $? in 0) ;; 1) UNDECLARED[$1]=1 ;; *) exit 2 ;; esac; }
@@ -148,7 +148,7 @@ decl_ask() { [ -n "${DECL_ASKED[$1]:-}" ] && return 0; DECL_ASKED[$1]=1; declare
 # ── SHIPPED: every .icn under every subdirectory this package ships, computed fresh, never hand-pinned.
 SHIPPED=0
 SHIPPED_NAMES=""
-# ⛔⭐ A CONTAINER IS NOT A SHIPPED PROGRAM (ceo CEO-1272; coo 2026-09-25): CONTAINERS.tsv beside the package names the files that
+# ⛔⭐ A CONTAINER IS NOT A SHIPPED PROGRAM (R-1272; coo 2026-09-25): CONTAINERS.tsv beside the package names the files that
 # are not a compilation unit on their own, each with its measurement, and lib_inventory.sh takes them out of shipped; this census
 # reads the same list (keyed general/NAME.icn, as the other sidecars are) so the board's shipped and the inventory's are one number.
 _cn="$(inventory_container_names "$PKG")" || { echo "⛔ GATE REFUSES: CONTAINERS.tsv is malformed (named above) -- the shipped census cannot be read" >&2; exit 2; }
@@ -162,10 +162,10 @@ for sub in $SUITE_SUBDIRS; do
     # walked into). lib_inventory.sh already skips `ALL.*` when it counts shipped, and the ipl package paid
     # for the disagreement: a `find -name '*.icn'` counted our generated ALL.icn as a vendored program, the
     # runner said 852 where the container's own accounting said 851, and a VENDOR score carried a file we
-    # wrote. CEO-331 asks for an ALL.csv on this package next, which creates exactly that container here --
+    # wrote. R-331 asks for an ALL.csv on this package next, which creates exactly that container here --
     # so the census excludes it BEFORE the file exists, not after the number moves.
     case "$(basename "$icn")" in ALL.*) continue ;; esac
-    # ⛔⭐ A DRIVER IS NOT A SHIPPED PROGRAM, IT IS ITS LIBRARY'S GRADING VEHICLE (ceo CEO-1269; coo 2026-09-25): NAME_driver.icn
+    # ⛔⭐ A DRIVER IS NOT A SHIPPED PROGRAM, IT IS ITS LIBRARY'S GRADING VEHICLE (R-1269; coo 2026-09-25): NAME_driver.icn
     # links NAME.icn and exercises it, the library is the program, and it is graded below by its driver under its own name.
     case "$(basename "$icn")" in *_driver.icn) continue ;; esac
     case "$CONTAINER_NAMES" in *" $sub/$(basename "$icn") "*) continue ;; esac
@@ -203,7 +203,7 @@ M4_PASS=0; M4_REJECT=0; M4_FAIL=0; M4_CRASH=0; M4_HANG=0
 M3_REJECT_NAMES=""; M3_FAIL_NAMES=""; M3_CRASH_NAMES=""; M3_HANG_NAMES=""
 M4_REJECT_NAMES=""; M4_FAIL_NAMES=""; M4_CRASH_NAMES=""; M4_HANG_NAMES=""
 m3rc=0; m4rc=0
-. "$HERE/lib_rr.sh" && rr_load "$PKG" || exit 2   # the round robin's seam (CEO-1802/1805/1806): one part or a request's entries, rows as each program ends
+. "$HERE/lib_rr.sh" && rr_load "$PKG" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries, rows as each program ends
 
 for sub in $SUITE_SUBDIRS; do
 [ -n "${RR_STOP:-}" ] && break
@@ -228,18 +228,18 @@ for std in "$SUITE"/*.ref; do
   # general/convert_driver) but six by the library alone (cfunc io_lib lists_lib random_lib scan_lib sets_lib); admitting by the driver's
   # stem only graded none of the six in any part or request (S4E_CHUNK=entry:general/io_lib read graded=0, rc 0), so their 10-15 readings
   # were never refreshed and the Zona row stayed stamped bae359133. The resume key is the one the part holds.
-  _rk="$sub/$name"; rr_admits "$_rk" || { _rk="$sub/${name%_driver}"; rr_admits "$_rk"; } || continue; rr_yield "$_rk" && { RR_STOP=1; break; }   # the round robin's part (CEO-1802/1806), keyed as ALL.csv keys it
+  _rk="$sub/$name"; rr_admits "$_rk" || { _rk="$sub/${name%_driver}"; rr_admits "$_rk"; } || continue; rr_yield "$_rk" && { RR_STOP=1; break; }   # the round robin's part (R-1802/1806), keyed as ALL.csv keys it
   icn="$SUITE/$name.icn"
   [ -f "$icn" ] || continue
-  # ⛔⭐ THE IDENTITY IS THE LIBRARY, THE EXECUTABLE IS ITS DRIVER (ceo CEO-1269). $name stays the file that RUNS -- the ref was
+  # ⛔⭐ THE IDENTITY IS THE LIBRARY, THE EXECUTABLE IS ITS DRIVER (R-1269). $name stays the file that RUNS -- the ref was
   # cut from iconx running NAME_driver, and &progname/&file answer to it -- while $id is the program being graded: every count,
   # name list, progress row and outside-baseline lookup below keys on $id. A driver whose library is not shipped, or a library
   # carrying its own ref AND a driver, is two answers to one question and refuses rather than choosing.
   id="$name"
   case "$name" in *_driver)
     id="${name%_driver}"
-    [ -f "$SUITE/$id.icn" ] || { echo "⛔ REFUSED TO GRADE rc=2: $sub/$name.icn is a driver whose library $sub/$id.icn is not shipped -- a vehicle with nothing to carry (CEO-1269)" >&2; exit 2; }
-    [ -f "$SUITE/$id.ref" ] && { echo "⛔ REFUSED TO GRADE rc=2: $sub/$id has its own .ref AND a driver $sub/$name -- two grading vehicles for one library (CEO-1269)" >&2; exit 2; } ;;
+    [ -f "$SUITE/$id.icn" ] || { echo "⛔ REFUSED TO GRADE rc=2: $sub/$name.icn is a driver whose library $sub/$id.icn is not shipped -- a vehicle with nothing to carry (R-1269)" >&2; exit 2; }
+    [ -f "$SUITE/$id.ref" ] && { echo "⛔ REFUSED TO GRADE rc=2: $sub/$id has its own .ref AND a driver $sub/$name -- two grading vehicles for one library (R-1269)" >&2; exit 2; } ;;
   esac
   # ⛔ OUT OF THE DENOMINATOR BEFORE IT IS COUNTED, NEVER SUBTRACTED AFTER: a program excluded after TOTAL++ would
   # ride in the fraction the board publishes and be named as excluded in the same breath, which is two answers.
@@ -259,7 +259,7 @@ for std in "$SUITE"/*.ref; do
   # silently match nothing and every declaration would read as absent -- a default that looks like a
   # decision. _sw expands to NOTHING for an undeclared entry, so an undeclared program's command
   # line is byte-identical to what it was before this existed.
-  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SPITBOL'S SWITCHES (ceo CEO-1353, the coo's census): -d<kb>k -s<kb>k after --run
+  # ⭐ THE DECLARATION RIDES THE COMMAND LINE AS SPITBOL'S SWITCHES (R-1353, the coo's census): -d<kb>k -s<kb>k after --run
   # and the compile args in m3, leading the binary's own arguments in m4, never the compile step -- spelled by declared_arena_switches
   # as corpus_suite_harness._size_switches spells them. ⛔ NEVER SCRIP_HEAP_KB: gc_heap.c reads it as the collector's initial WINDOW,
   # so every declared program ran at window = cap = 128 MB where the shipped window is 1 MB (and under make test-arena the
@@ -268,7 +268,7 @@ for std in "$SUITE"/*.ref; do
     echo "⛔ REFUSED TO GRADE rc=2: $sub/$name carries a heap_kb or stack_kb cell this runner will not honour (reason above) -- grading it at the shipped default would publish a row whose sizes its own attribute file contradicts"; exit 2
   fi
   [ -n "$_sw" ] && ARENA_NAMES="$ARENA_NAMES $sub/$id=[$_sw]"
-  # ⭐ AND ITS DECLARED COMPILE SWITCHES, THE SAME KEY (clause 8 (f), CEO-1281): placed after --run and --compile, before the source.
+  # ⭐ AND ITS DECLARED COMPILE SWITCHES, THE SAME KEY (clause 8 (f), R-1281): placed after --run and --compile, before the source.
   decl_ask "$sub/$id"
   _ca="$(declared_compile_args_from_table "$CA_TBL" "$sub/$id")" || exit 2
 
@@ -285,7 +285,7 @@ for std in "$SUITE"/*.ref; do
   # SCRIP alike (measured 2026-09-08 against icont 9.5.25a: "large.icn    :", "sub/large.icn:", "ral/large.icn:" for the
   # bare, subdir and absolute forms). The .ref files were cut with the bare name from inside $SUITE; an absolute $icn
   # here read `large` red on a compiler that matched the oracle byte for byte.
-  # ⛔⭐ THE EXIT STATUS IS CAPTURED, AND UNTIL 2026-09-09 IT WAS THROWN AWAY (hq_T, CEO-445 item 2). This
+  # ⛔⭐ THE EXIT STATUS IS CAPTURED, AND UNTIL 2026-09-09 IT WAS THROWN AWAY (hq_T, R-445 item 2). This
   # runner counted PASS / REJECT / FAIL only, so a SIGSEGV and a TIMEOUT both landed in FAIL, indistinguishable
   # from a wrong answer -- while BOTH sibling Icon runners (jcon, ipl) already split CRASH and HANG out. ⭐ The
   # three route to different cures: a wrong answer is a semantics bug to diff against the oracle, a crash is a
@@ -298,12 +298,12 @@ for std in "$SUITE"/*.ref; do
   # ucode (icont cannot see an untranslated .icn beside the program), so the suite first on IPATH linked the older shipped options.icn
   # and turned ilib red in both modes at 6850da706 (hq_icon's bisect, line 169 "a:1 b:1 c:-" for "abc:-").
   _ipath=(); case "$name" in *_driver) _ipath=(env "IPATH=$LIBPATH${IPATH:+:$IPATH}") ;; esac
-  # ⛔ A PROGRAM THAT LOADS C DECLARES ITS LIBRARY (hq_icon 2026-09-27, general/cfuncs under CEO-1336): iconx exports FPATH=". <its bin>"
+  # ⛔ A PROGRAM THAT LOADS C DECLARES ITS LIBRARY (hq_icon 2026-09-27, general/cfuncs under R-1336): iconx exports FPATH=". <its bin>"
   # into every program, and its bin holds the distribution's build of ipl/cfuncs, so pathload(LIB, ...) finds libcfunc.so there. A
   # <stem>.clib sidecar names the vendored sources; declared_clib_beside (lib_declared_arena.sh, the one reader) builds them and the run
   # gets FPATH=". <that directory>" in both modes -- the same search iconx makes. No sidecar, no FPATH: every other program runs as before.
   _fp=(); _clib="$(declared_clib_beside "$SUITE/$name.icn" "$PKG")" || exit 2; [ -n "$_clib" ] && _fp=(env "FPATH=. $_clib")
-  # ⛔⭐ special/keyboard IS PTY-GRADED, NOT STDIN-GRADED (coo's ask, CEO-1354, hq_icon 2026-10-01): a redirected
+  # ⛔⭐ special/keyboard IS PTY-GRADED, NOT STDIN-GRADED (coo's ask, R-1354, hq_icon 2026-10-01): a redirected
   # stdin cannot supply getch()/kbhit() a real terminal, and `script(1)` cannot pace the Quit key to land while
   # the program polls in test 3 (^\ raises SIGQUIT the instant the pty sees it, not when the subject reads it).
   # icn_keyboard_pty_drive.py drives the program's own fixed 3-phase keystroke protocol over a real pty and
@@ -314,11 +314,11 @@ for std in "$SUITE"/*.ref; do
     m3out=$(cd "$SUITE" && "$TIMEOUT_RETRY" $((TIMEOUT+5)) python3 "$HERE/icn_keyboard_pty_drive.py" "$SUITE" "$TIMEOUT" -- "$SCRIP" --run $_ca $_sw "$name.icn"); m3rc=$?
   else
     m3out=$(cd "$SUITE" && ${_ipath[@]+"${_ipath[@]}"} ${_fp[@]+"${_fp[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $_ca $_sw "$name.icn" < "$stdin_file" 2>&1); m3rc=$?
-    # ⛔⭐ ONE ERROR VOICE (CEO-625): SCRIP's error shape is rendered through the Icon equivalence list before the compare.
+    # ⛔⭐ ONE ERROR VOICE (R-625): SCRIP's error shape is rendered through the Icon equivalence list before the compare.
     m3out=$(printf '%s\n' "$m3out" | python3 "$HERE/util_render_error_voice.py" icon)
   fi
   AZ_SECS="$(progress_secs_since "$AZ_T0")"
-  # CEO-409: an implementation-defined line is masked to the SAME marker in both streams before compare.
+  # R-409: an implementation-defined line is masked to the SAME marker in both streams before compare.
   m3out="$(mask_apply "$std" "$name" "$m3out")"; exp3="$(mask_apply "$std" "$name" "$exp3")"
   if printf '%s' "$m3out" | grep -q 'parse error'; then
     M3_REJECT=$((M3_REJECT+1)); M3_REJECT_NAMES="$M3_REJECT_NAMES $id"; arizona_progress "$id" m3 REJECT
@@ -337,7 +337,7 @@ for std in "$SUITE"/*.ref; do
   fi
 
   # ── mode 4: --compile (asm to stdout) -> assemble+link libscrip_rt.so -> run ─────────────────────
-  # ⛔⭐ THE m4 INVOCATION IS PINNED TO ./NAME, AND THAT IS THIS RUNNER'S OWN GROUND TRUTH (ceo ruling
+  # ⛔⭐ THE m4 INVOCATION IS PINNED TO ./NAME, AND THAT IS THIS RUNNER'S OWN GROUND TRUTH (ruling
   # 2026-09-11, "neither ref is wrong, the runner is"; hq_B FINDING-2026-09-11-...-progname). &progname IS
   # argv[0], so a program printing it has an output that is A FUNCTION OF HOW IT WAS INVOKED. This built to
   # `mktemp /tmp/ariz_XXXXXX.bin` and ran it by that absolute path -- a name that matches NO ref cut from any
@@ -367,7 +367,7 @@ for std in "$SUITE"/*.ref; do
     fi
   fi
   AZ_SECS="$(progress_secs_since "$AZ_T0")"
-  # CEO-409: same marker, same reasoning as the m3 arm above.
+  # R-409: same marker, same reasoning as the m3 arm above.
   m4out="$(mask_apply "$std" "$name" "$m4out")"; exp4="$(mask_apply "$std" "$name" "$exp4")"
   if printf '%s\n%s\n%s' "$m4diag" "$m4out" "$(cat "$s4" 2>/dev/null)" | grep -q 'parse error'; then
     M4_REJECT=$((M4_REJECT+1)); M4_REJECT_NAMES="$M4_REJECT_NAMES $id"; arizona_progress "$id" m4 REJECT
@@ -394,7 +394,7 @@ done
 # PREPROCESS.tsv beside the package names each contract -- program<TAB>argv<TAB>rc, program in the sidecar key form (general/tpp.icn),
 # argv the files after -E relative to the program's directory, rc the oracle's exit -- and STEM.E.ref beside the program holds
 # icont -E's stderr then stdout. EVERY ARGV FILE IS A PROGRAM graded by that one run, under its own name. The fragments it $includes
-# are CONTAINERS (CONTAINERS.tsv, CEO-1272), out of shipped. The preprocessor is the frontend both modes share and -E emits no code,
+# are CONTAINERS (CONTAINERS.tsv, R-1272), out of shipped. The preprocessor is the frontend both modes share and -E emits no code,
 # so the one verdict is recorded in m3 and in m4 alike, each progress row saying so. A contract whose ref is missing, whose argv
 # names no shipped file, or whose program also carries a NAME.ref refuses: two vehicles, or none, for one program.
 PRE_TSV="$PKG/PREPROCESS.tsv"
@@ -432,7 +432,7 @@ fi
 
 # ⛔ CWD FIDELITY'S OWN SIDE EFFECT (found this session): see the PRE-RUN SNAPSHOT note above -- this
 # leaves real litter in a tracked corpus tree on every run, which would also trip the score-writer's own
-# dirty-tree refusal below (CEO-174) forever, not just this once. Removed by NAME against the snapshot
+# dirty-tree refusal below (R-174) forever, not just this once. Removed by NAME against the snapshot
 # taken before grading started -- never `git clean` (that verb is repo-wide-destructive by nature; this
 # harness knows exactly which files it just caused to exist and removes only those).
 for sub in $SUITE_SUBDIRS; do
@@ -480,7 +480,7 @@ echo "m4 REJECT ($M4_REJECT):$M4_REJECT_NAMES"
 # board must never fold into either count (RULES.md: "measured and clean" vs "never ran" may not share
 # an output). Counted as ZERO of the population per Lon's ruling until each is individually resolved.
 echo "NOT GRADED ($GAP, of $SHIPPED shipped, zero of population until graded -- the PACKAGE_INVENTORY line below splits these into ungraded=owed vs ungradable=ruled):$UNGRADED_NAMES"
-# ⛔ PRINTED WHETHER OR NOT THE LIST IS EMPTY (CEO-409 guardrail 3 on masks): a line that appears only when
+# ⛔ PRINTED WHETHER OR NOT THE LIST IS EMPTY (R-409 guardrail 3 on masks): a line that appears only when
 # something is excluded tells the reader nothing on the day one is added and everything on the day one is removed.
 echo "OUTSIDE_ARIZONA_BASELINE ($(printf '%s' "$OUTSIDE_LIST" | wc -w), out of the graded denominator, named in $OUTSIDE):${OUTSIDE_LIST:- none}"
 OUT_UNSHIPPED=""; OUT_UNMIRRORED=""; OUT_STALE=""; OUT_RECHECKED=0; OUT_UNCHECKED=""
@@ -529,7 +529,7 @@ if [ -z "$OUT_UNSHIPPED$OUT_UNMIRRORED$OUT_STALE" ]; then
         echo "OUTSIDE_ARIZONA_BASELINE.tsv agrees with the lockdown buckets; NO ROW WAS RE-MEASURED, so every row stands on its recorded reason alone:${OUT_UNCHECKED:- none}"
     fi
 fi
-# ⛔ BEFORE THE BOARD LINE AND BEFORE ANY SCORE.md WRITE, NEVER AFTER (ceo CEO-524 (1)): a refusal that fires
+# ⛔ BEFORE THE BOARD LINE AND BEFORE ANY SCORE.md WRITE, NEVER AFTER (R-524 (1)): a refusal that fires
 # after the row is published is an annotation, not a refusal -- the same lesson test_gate_progress_rows_carry_
 # the_start_fingerprint.sh was written for. gate_bin_unmoved exits 2 itself when the fingerprint moved.
 GATE_NAME=test_icon_arizona_suite gate_bin_unmoved
@@ -539,7 +539,7 @@ GATE_NAME=test_icon_arizona_suite gate_bin_unmoved
 GATE_NAME=test_icon_arizona_suite gate_tree_unmoved
 BOARD_LINE="ARIZONA_SUITE_BOARD shipped=$SHIPPED graded=$TOTAL gap=$GAP m3_pass=$M3_PASS m3_reject=$M3_REJECT m3_fail=$M3_FAIL m3_crash=$M3_CRASH m3_hang=$M3_HANG m4_pass=$M4_PASS m4_reject=$M4_REJECT m4_fail=$M4_FAIL m4_crash=$M4_CRASH m4_hang=$M4_HANG"; echo "$BOARD_LINE"
 # ⛔⭐ THE ARENA IS PART OF THE ROW'S LABEL. RULES.md THE INSTRUMENT LAWS: a number is not labelled until it
-# carries its tree, mode, oracle and RT_OPT -- and since CEO-1167 a board may grade two programs at two
+# carries its tree, mode, oracle and RT_OPT -- and since R-1167 a board may grade two programs at two
 # different arenas, so the arena joins that list or the row cannot be reproduced from its own output. The
 # receipt prints even when nothing declares, because "0 declared" is the reading that says the whole board
 # ran at the shipped default, and its ABSENCE would be indistinguishable from a runner that forgot to look.
@@ -550,25 +550,25 @@ for n in $(printf '%s\n' "${!UNDECLARED[@]}" | sort); do echo "   $n"; done
 # ⭐ THE PACKAGE LOCKDOWN inventory line, via the shared body (lib_inventory.sh) -- never a second copy
 # of the arithmetic. UNGRADABLE.tsv/UNGRADED.tsv beside $PKG (hq_I, corpus a284bcdbb) already split the
 # GAP printed above; graded_narrow=0, this suite compares full output, never by error-number-only.
-rr_selected && { rr_end arizona; exit 0; }   # a part or a request wrote each program's rows as it went, and writes no suite row (CEO-1802)
+rr_selected && { rr_end arizona; exit 0; }   # a part or a request wrote each program's rows as it went, and writes no suite row (R-1802)
 INV_PACKAGE=arizona; INV_DIR="$PKG"; INV_EXT=".icn"
 INV_LINE="$(inventory_line "$TOTAL" 0)"
 if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
-# ⭐ THE ROW'S Excl (Lon 2026-09-26, "use the Excl column to properly classify the exclusions for good reasons only"; CEO-1288): every
-# shipped unit the denominator leaves out, classified -- here the general/tpp1..tpp5 include fragments of CONTAINERS.tsv (CEO-1272),
+# ⭐ THE ROW'S Excl (Lon 2026-09-26, "use the Excl column to properly classify the exclusions for good reasons only"; R-1288): every
+# shipped unit the denominator leaves out, classified -- here the general/tpp1..tpp5 include fragments of CONTAINERS.tsv (R-1272),
 # read off the inventory line above, so shipped = denominator + Excl reads off the row. Unknown when the inventory refused: none written.
 . "$HERE/lib_outside_shape.sh" 2>/dev/null || { echo "⛔ REFUSED TO GRADE: lib_outside_shape.sh unloadable" >&2; exit 2; }
 EXCL_N=""; [ -n "$INV_LINE" ] && EXCL_N="$(inventory_containers_of "$INV_LINE")"
 if SPLIT_LINE="$(inventory_split_line)"; then [ -n "$SPLIT_LINE" ] && echo "$SPLIT_LINE"
 else echo "⛔ PACKAGE INVENTORY SPLIT REFUSED (rc=2, reason above) -- the classes do not sum to their own buckets, so neither reading is published" >&2; fi
-[ "${PROGRESS_FAILED:-0}" -eq 0 ] || echo "⛔ PROGRESS DB: $PROGRESS_FAILED per-program appends FAILED -- this run is not fully recorded (CEO-331); the board lines stand, the table does not" >&2
+[ "${PROGRESS_FAILED:-0}" -eq 0 ] || echo "⛔ PROGRESS DB: $PROGRESS_FAILED per-program appends FAILED -- this run is not fully recorded (R-331); the board lines stand, the table does not" >&2
 # ⛔ ONE LEADERBOARD (RULES.md FACT RULE, Lon 2026-09-03 ~16:05: "any run of a test suite by any
 # session will update the ONE LEADERBOARD"). This records the board line printed just above into
 # .github/SCORE.md -- it RUNS NOTHING, it only writes down what this script already measured.
 # ⛔ NON-FATAL BY DESIGN: a bookkeeping failure must never turn a real measurement into a red board,
 # because a gate that goes red for a reason unrelated to the code is a gate people route around. It
 # warns and names the unrecorded row instead; it has no silent path.
-# ⭐ THE INVENTORY CLAUSE RIDES IN THE CELL TOO (util_score_row.py's inventory_clauses(), CEO-316):
+# ⭐ THE INVENTORY CLAUSE RIDES IN THE CELL TOO (util_score_row.py's inventory_clauses(), R-316):
 # appended verbatim when non-empty, with the runner name immediately after it so `by=`/backtick
 # attribution finds it within the reader's 200-char window; absent when inventory_line refused, so
 # a refusal never gets transcribed as if it were a measurement.
@@ -582,12 +582,12 @@ else echo "⛔ PACKAGE INVENTORY SPLIT REFUSED (rc=2, reason above) -- the class
 #      means a RULING; $GAP is just shipped-minus-graded and today is 34 ungradable + 0 ungraded. Saying
 #      "34 ungraded" put a flat contradiction beside this cell's own "ungraded=0 ungradable=34".
 #      The neutral phrase is the honest one: the inventory clause riding alongside does the splitting.
-# ⛔⭐⭐ POINT 1 IS SUPERSEDED (ceo CEO-1245 2026-09-24, re-ruled CEO-1268 2026-09-25 on the coo's audit COO-183; CEO-749, CEO-786,
-# CEO-799b, Lon 2026-09-16 "get those fixed"): THE SHIPPED POPULATION IS THE DENOMINATOR. The row publishes $AND_PASS/$SHIPPED; the
+# ⛔⭐⭐ POINT 1 IS SUPERSEDED (R-1245 2026-09-24, re-ruled R-1268 2026-09-25 on the coo's audit COO-183; R-749, R-786,
+# R-799b, Lon 2026-09-16 "get those fixed"): THE SHIPPED POPULATION IS THE DENOMINATOR. The row publishes $AND_PASS/$SHIPPED; the
 # $GAP not graded stay IN it as debt, each named by class in the inventory clause, and a program leaves the gap only by being graded
 # or ruled outside with its measurement -- never by narrowing the total. The graded fraction still rides in the cell, labelled as such.
-# ⛔⭐ THE ROW IS THE AND PER PROGRAM WHEN THE MODES DISAGREE (ceo CEO-545, ruled 2026-09-10 on the coo's
-# handling; it supersedes the m3-where-they-differ convention retired at ceo-372). THE DEFECT THIS REPLACES,
+# ⛔⭐ THE ROW IS THE AND PER PROGRAM WHEN THE MODES DISAGREE (R-545, ruled 2026-09-10 on the coo's
+# handling; it supersedes the m3-where-they-differ convention retired at R-372). THE DEFECT THIS REPLACES,
 # measured on the 2026-09-10 19:00 pass: this line passed --suite-pass "$M3_PASS" -- m3's 84 -- into a cell
 # whose m4 read 83, so the published row asserted a fraction NO MODE MEASURED and did it silently, every pass,
 # whenever the modes differed. The coo corrected it by hand and the runner would have done it again next hour.
@@ -605,6 +605,6 @@ _cc="${S4E_CRITERION_CHANGED:-}"
 if [ -z "$_cc" ] && [ -n "$EXCL_N" ]; then _cc="$(excluded_shape_stamp arizona "$SHIPPED" - "$EXCL_N" "$EXCL_N")" || exit 2; fi
 python3 "$HERE/util_score_row.py" write --lang icon --column vendor --suite Arizona --modes m3,m4 --suite-pass "$AND_PASS" --suite-total "$SHIPPED" \
     ${_cc:+--criterion-changed "$_cc"} ${EXCL_N:+--excluded "$EXCL_N"} \
-    --measurer "${S4E_SEAT:-}" --text "AND per program $AND_PASS/$SHIPPED shipped (ceo CEO-1245: the shipped population is the denominator; CEO-545: a program is green only if BOTH modes are; union of reds $AND_RED:$AND_NAMES) · graded $AND_PASS/$TOTAL · m3 $M3_PASS/$TOTAL · m4 $M4_PASS/$TOTAL graded (of $SHIPPED shipped, $TOTAL graded, $GAP not graded and owed -- the inventory clause splits ungraded=owed from ungradable=ruled, m3_fail=$M3_FAIL m4_fail=$M4_FAIL, reject $M3_REJECT/$M4_REJECT)${INV_LINE:+ · $INV_LINE (\`test_icon_arizona_suite.sh\`)} · $BOARD_LINE" \
+    --measurer "${S4E_SEAT:-}" --text "AND per program $AND_PASS/$SHIPPED shipped (R-1245: the shipped population is the denominator; R-545: a program is green only if BOTH modes are; union of reds $AND_RED:$AND_NAMES) · graded $AND_PASS/$TOTAL · m3 $M3_PASS/$TOTAL · m4 $M4_PASS/$TOTAL graded (of $SHIPPED shipped, $TOTAL graded, $GAP not graded and owed -- the inventory clause splits ungraded=owed from ungradable=ruled, m3_fail=$M3_FAIL m4_fail=$M4_FAIL, reject $M3_REJECT/$M4_REJECT)${INV_LINE:+ · $INV_LINE (\`test_icon_arizona_suite.sh\`)} · $BOARD_LINE" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why; a denominator move wants S4E_CRITERION_CHANGED='YYYY-MM-DD:reason' on this runner's call)"
 

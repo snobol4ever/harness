@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_a_function_result_belongs_to_its_activation_and_a_name_has_its_own_scopes_type.sh -- recursion, nested routines and named array types answer as fpc -Miso.
 #
-# MEASURED 2026-10-10 by hq_pascal on the Scheme demo (an ISO 7185 port of pascal-lisp, row pascal-demos-...-ceo-1579), each red in both modes on SCRIP 85fe66208:
+# MEASURED 2026-10-10 by hq_pascal on the Scheme demo (an ISO 7185 port of pascal-lisp, row pascal-demos-...-r-1579), each red in both modes on SCRIP 85fe66208:
 # (1) a function's result variable was one global shared by every activation: f := n * 10; t := f(n - 1) returned the innermost
 #     activation's value (fpc 30, SCRIP 0), and the Scheme expander's expandlist returned its last recursive call's list. CURE: the function
 #     name is a local of its own activation (pas_local_add at both function-body entries); a result never assigned now stops with 6.6.2

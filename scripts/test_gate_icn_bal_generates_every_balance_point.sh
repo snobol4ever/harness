@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_bal_generates_every_balance_point.sh -- bal() is a generator at every arity and resumes to the next balance point (ceo CEO-645).
+# test_gate_icn_bal_generates_every_balance_point.sh -- bal() is a generator at every arity and resumes to the next balance point (R-645).
 #
 # MEASURED 2026-09-12 (row icon-bal-generator-yields-one-result-not-a-backtracking-sequence; the adversarial batch a13):
 # `every writes(bal('+-', '(', ')', "(a+b)+c-(d)+e"))` printed 6 alone where icont prints 6 8 12 -- bal with two or more

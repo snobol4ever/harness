@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_gather_and_the_sequence_operator_are_lazy_generator_boxes_with_no_cap.sh -- `gather`/`take` and the sequence operator `...` are lazy generator boxes
-# (row raku-gather-take-and-the-sequence-operator-are-lazy-generator-boxes-with-no-cap-ceo-1600; the cto; CEO-1600 step 2, the escape boundary CEO-1619).
+# (row raku-gather-take-and-the-sequence-operator-are-lazy-generator-boxes-with-no-cap-r-1600; the cto; R-1600 step 2, the escape boundary R-1619).
 # THE DESIGN (lower_raku.c, by_name_dispatch.c, rt.c). A gather body is a hoisted block that is a GENERATOR PROC on Icon's suspend road: its `take` is IR_SUSPEND, a
 # `for` over a gather pumps it through IR_PROC_GEN (the generator's frame retained on the consumer's stack, every value delivered at the γ landing, no collector array,
 # no cap), an array assignment, say/print, [i], .head(n) and the eager methods pump it with a bound where one exists. A gather that ESCAPES (a scalar, a return, an
@@ -16,7 +16,7 @@
 # infinite sequence, a nested gather taken as a value, a Seq read twice, a gather's .is-lazy; both modes; then the five DONE-WHEN programs under the collector plant at a
 # 64 KB window (SCRIP_GC_STRESS 1 and 3, both modes) and one chain-checked run (SCRIP_GC_CHAIN_CHECK=3: missing=0, mapdiff=0); then the census that rk_sequence and the
 # caps are gone from by_name_dispatch.c. FAIL-ONCE: on the base tree 4f4752498 every DONE-WHEN witness read RED (the eager desugar hit the heap cap or refused).
-# RE-CUT (cfo 2026-10-17, row gate-raku-gather-witness-w6-prints-false-where-rakudo-prints-true-in-both-modes-ceo-1807): w6's last line, (gather { take 1 }).is-lazy, was typed as True; Rakudo
+# RE-CUT (cfo 2026-10-17, row gate-raku-gather-witness-w6-prints-false-where-rakudo-prints-true-in-both-modes-r-1807): w6's last line, (gather { take 1 }).is-lazy, was typed as True; Rakudo
 # v2026.05 (rakudo-local) and v2022.12 (apt) both print False, and SCRIP has printed False since bc0390872 (a Seq is lazy only when it comes from an infinite range). The whole w6 ref now
 # equals both Rakudos' output line for line.
 # EXIT: 0 every witness-mode pair equals Rakudo's output and the census is clean; 1 one differs; 2 REFUSED (stale binary, no gcc).

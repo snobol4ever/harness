@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_zsm_declared_census.sh -- THE ZSM ARM: DECLARED AGAINST ACTUAL, the second finish line of every placement switch
 # (ARCH-ZETA-ONE-COORDINATE section 3.3; Lon 2026-10-22 10:1x CDT, verbatim: "Consider using the ZETA STATE MACHINE (ZSM) to help trace the RBP and
-# RSP allocations and de-allocations."; ruled by the cto under CEO-1888/1895, built by the cfo at the cto's ask).
+# RSP allocations and de-allocations."; ruled by the cto under R-1888/1895, built by the cfo at the cto's ask).
 #
 # WHAT IT MEASURES. With SCRIP_ZSM=1 SCRIP_ZSM_ALL=1 every box's ports call the runtime's state machine (rt_zdp_sm_event), and each event
 # carries the box's DECLARATION read from the planner through ONE accessor, zsm_declared_word() in src/planner/zeta_plan.cpp (zd_k, and the
@@ -35,7 +35,7 @@
 # THE POPULATION is util_spine_population.sh's (the one the placement watch and the pre-allocation gate count), each program run with its
 # declared -d/-s (lib_declared_arena.sh declared_switches_beside), its .cmdline compile args and its .in stdin, in mode 3 and mode 4 (compiled with
 # the ZSM switches so the events are planted, linked against out/libscrip_rt.so, run with SCRIP_ZSM_DECL=1). Every child takes a run slot of the
-# box-wide pool (corpus_suite_harness._bounded_run, CEO-1894) and every compile a cc slot (util_cc_slot.sh).
+# box-wide pool (corpus_suite_harness._bounded_run, R-1894) and every compile a cc slot (util_cc_slot.sh).
 #
 #   util_zsm_declared_census.sh [--lang L]... [--modes m3,m4] [--files F...] [--timeout S] [--verbose] [--sites]
 #     one ZSM_DECL line per (lang, mode, kind, port) that disagreed or refused (every one with --verbose), ZSM_DECL_UNMEASURED per program that printed no
@@ -46,9 +46,9 @@
 #   rc 1  a declared value disagreed with the actual rsp, or a declaration could not be read (the kinds and ports named)
 #   rc 2  could not measure (a stale binary, no population, nothing measured)
 # CALIBRATION (the cto's order): SNOBOL4 reads 0 first; a switch then reads its language on <switch>^ and on the switch, and an output-equal
-# switch with a nonzero count is not done (corrupted memory grades as FAIL, not segv, CEO-1895). This census is a BOARD: the coo's loop runs it.
+# switch with a nonzero count is not done (corrupted memory grades as FAIL, not segv, R-1895). This census is a BOARD: the coo's loop runs it.
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), CEO-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
+# THE BATCH CLASS (ARCH-SHARED-DEVELOPMENT 4.5 (b), R-2041 step 4): this script runs only as a batch job, in s4e-batch.slice.
 [ -n "${S4E_BATCH_HELD:-}" ] || exec bash "$HERE/util_batch.sh" bash "$0" "$@"
 "$HERE/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 exec python3 - "$HERE" "$@" <<'PY'

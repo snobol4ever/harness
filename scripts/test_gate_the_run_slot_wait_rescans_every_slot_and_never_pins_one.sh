@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_the_run_slot_wait_rescans_every_slot_and_never_pins_one.sh -- a run that finds every box run slot held WAITS BY RESCANNING ALL OF THEM, never by
-# queueing on one (coo 2026-10-30 12:4x CDT; the instruments lane; CEO-1894's pool, CEO-2033). MEASURED: the loop's xsb request (corpus_suite_harness.py
+# queueing on one (coo 2026-10-30 12:4x CDT; the instruments lane; R-1894's pool, R-2033). MEASURED: the loop's xsb request (corpus_suite_harness.py
 # run) started while all eight /tmp/s4e-run-slots were held, took the fallback slot (its pid modulo 8 = slot3) and blocked on that one lock for 17 minutes,
 # the holder being a serial regrade script that keeps its slot for hours, while slots 1 and 4 to 7 stood free; every request behind it waited too. The old
 # fallback was `flock slot<pid%N>` in corpus_suite_harness.py:_run_slot and util_run_slot.sh (test_design_*.sh and test_gate_pl_quad_regs.sh carry copies).
@@ -9,7 +9,7 @@
 #   B  util_run_slot.sh with all eight held, then one released: the wrapped command runs within 6 s.
 #   C  with the pool free both take a slot at once (< 2 s).
 #   D  under S4E_RUN_SLOT_HELD both take none and do not wait, whatever the pool holds.
-#   E  CENSUS (ceo CEO-2054: the cure everywhere): no script of this directory that names the run or compile pool queues on one slot -- no pid, thread or
+#   E  CENSUS (R-2054: the cure everywhere): no script of this directory that names the run or compile pool queues on one slot -- no pid, thread or
 #      $$ modulo fallback and no blocking flock on fd 8/9 (util_quiet_slice.sh takes EVERY slot by design and is the one exemption); offenders are named.
 #   F  the eleven test_design_*_steps.sh share ONE pool-take snippet (byte-identical, else the arm names the odd one); run, with all eight held and one freed.
 #   G  test_gate_pl_quad_regs.sh's quad_slot, extracted and run the same way.   H  util_cc_slot.sh (S4E_CC_SLOT_DIR) the same.

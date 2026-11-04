@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """audit_fixed_caps_census.py [--tsv OUT] [--top N] [--dir src] [--no-report] [--selftest]
 
-Census of FIXED-SIZE storage in the SCRIP compiler and runtime (Lon 2026-09-23, in-chat to the ceo: "we must still handle
+Census of FIXED-SIZE storage in the SCRIP compiler and runtime (Lon 2026-09-23, in-chat: "we must still handle
 almost everything without a FIXED LIMIT ... Scan the SCRIP for all fixed arrays, fixed buffers, etc.").  It reads every
 .c/.cpp/.h under --dir, skips generated flex/bison output, and lists (1) every array declaration with a constant bound --
 literal or UPPER_CASE macro -- with its scope (file/static, struct field, local, parameter), the bound resolved through the
 tree's #defines where it can be, and whether the bound's macro is ever compared against in the same file (a loud guard) or
 never (a silent overrun); (2) every #define whose name ends in MAX/CAP/LIMIT/SIZE/DEPTH/ENTRIES/SLOTS/COUNT/LEN with a
 numeric value and its use count.  It is a census, not a verdict: the classification (bounded by the machine vs a
-population cap a program can outgrow) is the reader's, written beside each row in the design page.  Since CEO-1231 stage 2 each
+population cap a program can outgrow) is the reader's, written beside each row in the design page.  Since R-1231 stage 2 each
 LOCAL also carries a fill column -- how a program's data fills it (COUNTER, CALLEE:f, FORMAT:f, COPY:f, READ:f, PATH:f), or B:<why>
 when it is fixed by construction -- and a guard read like a table's; the TSV columns are file line scope name bound size dims guard
 const sites fill.  A declaration is scoped at its own position in text whose comments and strings are blanked.
@@ -20,12 +20,12 @@ from collections import Counter, defaultdict
 
 CAP_NAME = re.compile(r"_(MAX|CAP|LIMIT|SIZE|DEPTH|ENTRIES|SLOTS|COUNT|LEN|BUCKETS|N)\b|^(MAX|N)[A-Z_]*$")
 DEFINE = re.compile(r"^\s*#\s*define\s+([A-Z][A-Z0-9_]*)\s+(\S.*?)\s*$")
-# ⛔ A COMPARISON IS NOT A DECLARATION (coo 2026-09-24, CEO-1231's re-derivation): `return (e && e[0] == '0');` read as the type
+# ⛔ A COMPARISON IS NOT A DECLARATION (coo 2026-09-24, R-1231's re-derivation): `return (e && e[0] == '0');` read as the type
 # word `e`, the separator `&&`, the name `e` and the "initializer" `== '0'`, so every one-line getenv switch of that shape was a
 # phantom table -- 87 of them in the census on c2cdd7480, 8 at file scope inside the ratchet's population (frame_layout.c zc_nofc,
 # lower_icon.c icn_kw_assignable, lower_raku.c rk_fld_priv, lower_snobol4.c sno_setexit_on, by_name_dispatch.c plw_vvb_on, core.c
 # core_setexit_on, rt.c rt_byname_alpha_on, runtime_eval.c's EVAL_TMP_MARK switch). `&&` is no type separator and `==` no initializer.
-# ⛔ A DECLARATION IS A STATEMENT, NOT A LINE (coo 2026-10-08, the 200-column re-flow CEO-1565): `post` was CONSUMED, so the `;` that
+# ⛔ A DECLARATION IS A STATEMENT, NOT A LINE (coo 2026-10-08, the 200-column re-flow R-1565): `post` was CONSUMED, so the `;` that
 # ends one declaration could not anchor the next and `static char * cache[1024]; static char buf[24];` read one table; and `}` was no
 # anchor, so `{ return 0; } char c2[2] = ...` read none. The re-flow put each child on its own line and 11 tables the census had never
 # seen appeared with byte-identical objects (lower_prolog.c buf, keywords.c g_kw_cset_regc_len, gc_heap.c g_ah_tb, by_name_dispatch.c
@@ -124,8 +124,8 @@ def resolve(bound, defines, depth=0):
     return None
 
 
-# ==================================================================== guard classification (CEO-1231) ===
-# ⭐⭐ A GUARD IS A GROWTH OR A LOUD REFUSAL, NEVER A DROP (ceo CEO-1231 (2), 2026-09-24, on the coo's ask). Until this section the census
+# ==================================================================== guard classification (R-1231) ===
+# ⭐⭐ A GUARD IS A GROWTH OR A LOUD REFUSAL, NEVER A DROP (R-1231 (2), 2026-09-24, on the coo's ask). Until this section the census
 # read a table as "guarded" when its bound macro appeared in ANY comparison in its file -- so pl_list_to_arr's n < 4096, which keeps the
 # write in bounds by failing silently, read the same as frame_layout.c's zv table, which aborts naming itself. Each comparison of a
 # table's bound is now a SITE with a class:
@@ -146,11 +146,11 @@ def resolve(bound, defines, depth=0):
 # emit.cpp g_strtab/g_csettab and g_ab_fn_cells, raku re.c group_name LOUD; driver_call.c call_stack (return FAILDESCR), emit.cpp
 # g_gc_map_names (the cfo: drops past 8192), lower_snobol4.c DEFINE names, prolog_driver.c g_pl_consulted and rt.c g_call_args (past 64
 # arguments, the defect hq_snobol4 isolated by hand the same morning) DROP.
-# SPILL (the cfo, 2026-10-11, on hq_snobol4's row snobol4-the-deferred-capture-cells-...-indexes, CEO-1507 (4)): a table whose at-cap
+# SPILL (the cfo, 2026-10-11, on hq_snobol4's row snobol4-the-deferred-capture-cells-...-indexes, R-1507 (4)): a table whose at-cap
 # road is a CORRECT SLOWER ROAD -- past the cap a site keeps working without the table (an uncached path), losing nothing -- is neither
 # LOUD nor a DROP. The census cannot read that from a comparison (g_sno_defer_cells' cap is a compile-time counter in emit.cpp, another
 # file), so it is RULED here, table by table, and only ever with the WITNESS GATE that proves the road: the gate must exist beside this
-# script, drive sites past the cap and grade them against the oracle in both modes, and fail once against a corrupted ref (CEO-1680).
+# script, drive sites past the cap and grade them against the oracle in both modes, and fail once against a corrupted ref (R-1680).
 # A ruling whose gate is missing reads NONE again. Key: (file basename, table name) -> gate script name.
 SPILL_RULED = {("pattern_match.c", "g_sno_defer_cells"): "test_gate_sno_defer_pair_sites_past_the_cap_take_the_uncached_road.sh"}
 PRIM = re.compile(r"\b(abort|exit|_exit|_Exit|longjmp|siglongjmp|__builtin_trap)\s*\(")
@@ -500,7 +500,7 @@ class GuardReader:
 def decl_prefix(lines, i, name):
     """The declaration's own text before NAME on line I (1-based) of comment-stripped LINES: walked back to the `;` that ends the previous
     statement, the `{` that opens the enclosing block, or the `}` of a block that is not a struct, union or enum body (whose braces belong
-    to this declaration's type). ⛔ coo 2026-10-08 (CEO-1565): the physical line was read instead, so `if (e->is_const) { char eb[192];`
+    to this declaration's type). ⛔ coo 2026-10-08 (R-1565): the physical line was read instead, so `if (e->is_const) { char eb[192];`
     and `if (!sno_const_static_on()) ... char cb[130];` read as read-only tables, and the re-flowed `} g_bid_tab[BID_TABSZ] = {` lost the
     `static const struct {` three lines above it."""
     line = lines[i - 1] if 0 < i <= len(lines) else ""
@@ -558,7 +558,7 @@ def classify_guards(rows, texts):
     for r in rows:
         p, i, scope, name, bound = r[0], r[1], r[2], r[3], r[4]
         if scope not in ("file", "static", "field"):
-            # function-scope arrays are CEO-1231's second population and get their own reader; until it lands they carry no guard
+            # function-scope arrays are R-1231's second population and get their own reader; until it lands they carry no guard
             # reading at all, rather than one the file-scope rules were never calibrated for
             out.append(tuple(r[:7]) + ("", "", ""))
             continue
@@ -573,8 +573,8 @@ def classify_guards(rows, texts):
     return out, gr
 
 
-# ==================================================================== the function-scope reader (CEO-1231 (1), stage 2) ===
-# ⭐⭐ THE SECOND POPULATION: FUNCTION-SCOPE ARRAYS A PROGRAM FILLS (ceo CEO-1231 (1), 2026-09-24, on the coo's ask of 09-23 21:08). The
+# ==================================================================== the function-scope reader (R-1231 (1), stage 2) ===
+# ⭐⭐ THE SECOND POPULATION: FUNCTION-SCOPE ARRAYS A PROGRAM FILLS (R-1231 (1), 2026-09-24, on the coo's ask of 09-23 21:08). The
 # file/static/field census could not see msort/2 of a 5000-element list come back with 4096 elements: the array that drops them,
 # rt_pl_sort_cell's `pl_cell_t *elems[4096]`, is a LOCAL. A local counts when a PROGRAM'S DATA SETS ITS OCCUPANCY -- the fill column:
 #   COUNTER   NAME[k] written with k incremented, inside a loop the data drives (or a recursive function)
@@ -593,7 +593,7 @@ def classify_guards(rows, texts):
 # (the literal N or N-1, its macro, sizeof NAME, or -- inside a callee -- the parameter that carries it) whose operand is the fill's
 # counter, the loop's count variable, the copy's length or the call's result, with `k + 1 >= n` and `strlen(src)` read as operands.
 # GROW (the at-cap path allocates) counts as guarded. A bounded libc fill that nothing checks is a DROP (it truncates silently); an
-# unbounded one (strcpy, sprintf, memcpy with a data length) is NONE. ⛔ A DROP IS UNGUARDED (CEO-1231 (2)), so the criterion line
+# unbounded one (strcpy, sprintf, memcpy with a data length) is NONE. ⛔ A DROP IS UNGUARDED (R-1231 (2)), so the criterion line
 # "function-scope arrays a program fills, unguarded: N" counts DROP and NONE together. ⛔ THIS READER NEVER TOUCHES THE FILE-SCOPE
 # ROWS: their guard reading, the 355 and the no-guard and drop lines are byte-identical with it and without it.
 LOCAL_LIBC = {  # name: (dest arg, size arg, source-or-format arg, kind)
@@ -1112,7 +1112,7 @@ class LocalReader:
         return res
 
 
-# ⭐ THE THIRD POPULATION: FIXED-SIZE ARENAS (ceo CEO-1231 (1): "arenas sized by a shift constant (PL_TR_ARENA_LG2) join the same
+# ⭐ THE THIRD POPULATION: FIXED-SIZE ARENAS (R-1231 (1): "arenas sized by a shift constant (PL_TR_ARENA_LG2) join the same
 # class"). An arena is storage a program fills that no declaration names: a region of a constant size, 64 KiB or more, taken from an
 # allocator at run time -- the Prolog trail (rt_slab_region(PL_TR_ARENA_BYTES * 2)), the CAS and DCAP islands, the pinned GVA island.
 # Each is a row of scope `arena`, named by its size macro, counted with the file-scope tables; its guard is read from every comparison
@@ -1180,7 +1180,7 @@ def selftest():
             "extern int t4_extern[T5_MAX];\n"
             "int t5_plain[T5_MAX];\n"
             "void f(void) {\n    extern int t4_extern[T5_MAX];\n    static struct { int q; } t6_local_static[T6_MAX];\n    (void)t6_local_static;\n}\n"
-            # ⭐ CEO-1231: a comparison that is not a declaration, and one table per guard shape, graded by NAME below
+            # ⭐ R-1231: a comparison that is not a declaration, and one table per guard shape, graded by NAME below
             "static int t7_switch(void) { const char *e = getenv(\"X\"); return (e && e[0] == '0'); }\n"
             "#define T8_MAX 8\nstatic int t8_drop[T8_MAX]; static int t8_drop_n;\n"
             "void t8_put(int v) { if (t8_drop_n < T8_MAX) t8_drop[t8_drop_n++] = v; }\n"
@@ -1199,7 +1199,7 @@ def selftest():
             "static void t15_full(const char *w) { fprintf(stderr, \"%s\\n\", w); exit(2); }\n"
             "#define T15_MAX 8\nstatic int t15_wrapped[T15_MAX]; static int t15_wrapped_n;\n"
             "void t15_put(int v) { if (t15_wrapped_n >= T15_MAX) t15_full(\"t15\"); t15_wrapped[t15_wrapped_n++] = v; }\n")
-        # ⭐ CEO-1231 stage 2: one local per fill shape and guard shape, graded by NAME on (fill, guard) below
+        # ⭐ R-1231 stage 2: one local per fill shape and guard shape, graded by NAME on (fill, guard) below
         open(os.path.join(d, "b.c"), "w").write(
             "static void l_fatal(const char *w) { fprintf(stderr, \"%s\\n\", w); exit(2); }\n"
             "struct node { struct node *next; int v; };\n"
@@ -1268,14 +1268,14 @@ def selftest():
             "static int s4_after_tail[8];\n"
             "static int s5_brace_chr(void) { return '{'; }\n"
             "static int s5_after_brace[8];\n")
-        # ⭐ A DECLARATION IS A STATEMENT, NOT A LINE (coo 2026-10-08, CEO-1565): two on one line, one after a block's closing brace, a
+        # ⭐ A DECLARATION IS A STATEMENT, NOT A LINE (coo 2026-10-08, R-1565): two on one line, one after a block's closing brace, a
         # local whose line holds an identifier containing "const", and a const struct whose name stands lines below its qualifiers
         open(os.path.join(d, "g.c"), "w").write(
             "static char *g1_first[8]; static char g1_second[24];\n"
             "void g2(int c) { if (c) { return; } char g2_after_brace[2] = { (char)c, 0 }; (void)g2_after_brace; }\n"
             "void g3(int is_const, const char *s) { if (is_const) { char g3_not_const[64]; snprintf(g3_not_const, sizeof g3_not_const, \"p_%s\", s); } }\n"
             "static const struct {\n    const char *nm;\n    int id;\n} g4_const_multiline[4] = { {\"a\", 1} };\n")
-        # ⭐ CEO-1624: a VLA sized by a local computed at entry (rk_rat.c's `char res[L]`, filled by snprintf) and one sized by a parameter
+        # ⭐ R-1624: a VLA sized by a local computed at entry (rk_rat.c's `char res[L]`, filled by snprintf) and one sized by a parameter
         # are not caps; a local sized by a short #define named like a variable stays a counted table
         open(os.path.join(d, "v.c"), "w").write(
             "#define K 4\n"
@@ -1341,7 +1341,7 @@ def selftest():
         shutil.rmtree(d, ignore_errors=True)
 
 
-# ⭐ A BOUND THAT IS A VARIABLE OF ITS OWN FUNCTION IS A VLA, NOT A CAP (the coo 2026-10-10, ceo CEO-1624): BOUND_RE reads an UPPER_CASE
+# ⭐ A BOUND THAT IS A VARIABLE OF ITS OWN FUNCTION IS A VLA, NOT A CAP (the coo 2026-10-10, R-1624): BOUND_RE reads an UPPER_CASE
 # word as a macro, so hq_raku's `char res[L]` in rk_rat.c (7229ef797), with `size_t L` computed from strlen at the function's entry -- a
 # stack array sized by its need, THE LIFETIME RULE's own shape -- was counted as a fixed table bound by a macro named L, and the snprintf
 # into it tagged FORMAT:snprintf DROP; the ratchet read 32 against 30. A local whose bound is one identifier that no #define names and
@@ -1423,7 +1423,7 @@ def main(argv):
                     defines[m.group(1)] = v
                     define_sites[m.group(1)] = "%s:%d" % (p, i)
     rows = []
-    # ⛔⭐ A DECLARATION'S SCOPE IS READ FROM CODE, AT ITS OWN POSITION (coo 2026-09-24, stage 2 of CEO-1231, found calibrating the
+    # ⛔⭐ A DECLARATION'S SCOPE IS READ FROM CODE, AT ITS OWN POSITION (coo 2026-09-24, stage 2 of R-1231, found calibrating the
     # function-scope reader): the census counted braces in RAW lines and scoped every declaration by the depth at the START of its line.
     # So (1) a `'{'` char literal or a "{}" in a string skewed the depth for the rest of the file -- re.c, unification.c, emit_str.cpp
     # and by_name_dispatch.c ended off 0 -- and typedef'd struct fields there read as locals; (2) a local on the line that opens its
@@ -1548,13 +1548,13 @@ def main(argv):
     _drift = sorted(q for q, d in _depth_end.items() if d)
     if _drift:
         print("FIXED-CAPS CENSUS: brace depth does not return to 0 in %d file(s), their scopes are suspect: %s" % (len(_drift), ", ".join(_drift)))
-    # ⭐ THE GUARD COLUMN IS THE CLASSIFIER'S (CEO-1231): LOUD / DROP / NONE for every bound, macro or literal, with the evidence sites
+    # ⭐ THE GUARD COLUMN IS THE CLASSIFIER'S (R-1231): LOUD / DROP / NONE for every bound, macro or literal, with the evidence sites
     # in the last column; `const` marks a read-only table. The old guarded/UNGUARDED reading (the macro compared anywhere in the file)
     # is retired with it.
     rows += arena_rows(texts, defines)
     rows, _vla = vla_rows(rows, texts, defines)
     rows, _gr = classify_guards(rows, texts)
-    # ⭐ AND THE FILL COLUMN, the function-scope reader's (CEO-1231 (1), stage 2): a local's fill kind, B:<why> when it is fixed by
+    # ⭐ AND THE FILL COLUMN, the function-scope reader's (R-1231 (1), stage 2): a local's fill kind, B:<why> when it is fixed by
     # construction, empty when nothing fills it; empty for every other scope.
     rows = classify_locals(rows, texts, _gr, defines)
     if out:
@@ -1582,7 +1582,7 @@ def main(argv):
         print("  %-40s uses=%-3d value=%-10s defined %s" % (mname, n, resolve(mname, defines) if resolve(mname, defines) is not None else defines.get(mname, "?"), define_sites.get(mname, "?")))
     fsf = [r for r in rows if r[2] in ("file", "static", "field")]
     g = Counter((r[7], bool(r[8])) for r in fsf)
-    print("\nGUARDS AT FILE, STATIC OR FIELD SCOPE (CEO-1231: a guard is a growth or a loud refusal, never a drop): %d LOUD, %d DROP, "
+    print("\nGUARDS AT FILE, STATIC OR FIELD SCOPE (R-1231: a guard is a growth or a loud refusal, never a drop): %d LOUD, %d DROP, "
           "%d with no capacity guard; const (read-only, class A by rule) %d of them; the refusing functions the LOUD reading accepts: %d"
           % (g[("LOUD", False)], g[("DROP", False)], g[("NONE", False)], sum(v for (k, c), v in g.items() if c), len(_gr.refusing)))
     for label, want in (("DROP -- the cap is reached and the write is skipped, truncated, clamped or failed silently", "DROP"),
@@ -1593,7 +1593,7 @@ def main(argv):
             print("  %s:%d %s %s[%s]  %s" % (r[0], r[1], r[2], r[3], r[4], r[9][:160]))
     fsc = [r for r in rows if r[2] == "local" and not r[8] and r[10] and not r[10].startswith("B:")]
     kinds = Counter((k.split(":")[0], r[7]) for r in fsc for k in r[10].split(","))
-    print("\nFUNCTION-SCOPE ARRAYS A PROGRAM FILLS (CEO-1231 stage 2; a drop is not a guard): %d -- %d guarded (a loud refusal or a growth), "
+    print("\nFUNCTION-SCOPE ARRAYS A PROGRAM FILLS (R-1231 stage 2; a drop is not a guard): %d -- %d guarded (a loud refusal or a growth), "
           "%d dropping at the cap, %d with no guard; %d more fixed by construction (class B, read by machine), %d locals nothing fills"
           % (len(fsc), sum(1 for r in fsc if r[7] == "LOUD"), sum(1 for r in fsc if r[7] == "DROP"), sum(1 for r in fsc if r[7] == "NONE"),
              sum(1 for r in rows if r[2] == "local" and r[10].startswith("B:")), sum(1 for r in rows if r[2] == "local" and not r[10] and not r[8])))

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: test_demos_suite.sh invoked on a scratch demo tree as an instrument fixture, not a board (CEO-1312)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: test_demos_suite.sh invoked on a scratch demo tree as an instrument fixture, not a board (R-1312)"
 # test_gate_demos_suite_grades_each_demo_in_both_modes.sh -- THE DEMO SUITE ROW'S RUNNER AND THE WORKHORSE READER (Lon 2026-09-27: "all
 # demos are also benchmarks. They are work-horse benchmarks." and "So demos are test suites in that they have a small input ... and a ref
-# file."; ceo CEO-1312/1313; coo COO-206).
+# file."; R-1312/1313; coo COO-206).
 # ONE SCRATCH DEMO TREE (outside every corpus checkout), graded by test_demos_suite.sh snobol4:
 #   a/hello.sno   PASS both modes, a .workhorse sidecar            b/echo.sno   reads its SAMPLE stdin from echo.in (a copy of a shared
 #   c/bad.sno     a wrong ref: FAIL, named                                        file, the shape shared demo inputs take), PASS both modes
@@ -46,7 +46,7 @@ out="$(DEMOS_DIR="$F" S4E_PROGRESS_DB="$T/db.tsv" timeout -k 5 600 bash "$HERE/t
 _b="$(printf '%s\n' "$out" | grep -m1 '^DEMOS_SUITE_BOARD ')"; _ok=1
 for kv in lang=snobol4 total=6 shipped=7 all_pass=4 all_n=6 m3_pass=4 m4_pass=4 containers=1 workhorse_declared=1 chained=1; do grep -qE "(^| )$kv( |\$)" <<<"$_b" || _ok=0; done
 [ "$_ok" = 1 ] && ck ok "(1) the board: a DEMOS_SUITE_BOARD line, total=6 shipped=7 all_pass=4 all_n=6 m3/m4 4 containers=1 workhorse_declared=1 chained=1 (the chained demo PASS both modes on units-then-program; the shared stdin read through echo.in; the link manifest resolved through the depth-keeping copy)" || ck no "(1) the board line: $_b"
-# (1b) the writer READS the fraction off that line by name and would archive it verbatim (CEO-827): a receipt that is prose is the CEO-1325 fault
+# (1b) the writer READS the fraction off that line by name and would archive it verbatim (R-827): a receipt that is prose is the R-1325 fault
 # (the write path itself gates on a clean committed tree and the lane seat, neither of which a gate may assume, so the
 #  READER is called directly: the same two functions `write` runs on --text)
 _w="$(python3 - "$HERE" "$_b" <<'PY'
@@ -56,7 +56,7 @@ p, t, why = u.fraction_from_text(line, None, None)
 print("archivable=%s pass=%s total=%s why=%s" % ("yes" if m else "no", p, t, why))
 PY
 )"
-grep -qx 'archivable=yes pass=4 total=6 why=None' <<<"$_w" && ck ok "(1b) util_score_row reads all_pass=4 all_n=6 off the DEMOS_SUITE_BOARD line by name and its archiver matches it (CEO-827)" || ck no "(1b) the writer's reader on the board line: $_w"
+grep -qx 'archivable=yes pass=4 total=6 why=None' <<<"$_w" && ck ok "(1b) util_score_row reads all_pass=4 all_n=6 off the DEMOS_SUITE_BOARD line by name and its archiver matches it (R-827)" || ck no "(1b) the writer's reader on the board line: $_w"
 { grep -q 'c/bad.sno(m3=FAIL,m4=FAIL)' <<<"$out" && grep -q 'd/noref.sno(no-ref)' <<<"$out"; } && ck ok "(2) the reds are named, the ref-less demo as no-ref" || ck no "(2) the named reds: $(grep 'NOT BOTH' <<<"$out")"
 _rows="$(awk -F'\t' 'NR>1 && $5=="benchmark" && $6=="snobol4-demos" {print $8" "$9" "$10}' "$T/db.tsv" 2>/dev/null | sort)"
 { [ "$(printf '%s\n' "$_rows" | grep -c .)" = 12 ] && grep -qx 'demos/snobol4/e/linked.icn m4 PASS' <<<"$_rows" && grep -qx 'demos/snobol4/f/chained.sno m4 PASS' <<<"$_rows" && grep -qx 'demos/snobol4/a/hello.sno m3 PASS' <<<"$_rows" && grep -qx 'demos/snobol4/d/noref.sno m4 FAIL' <<<"$_rows" && ! grep -q util <<<"$_rows"; } \

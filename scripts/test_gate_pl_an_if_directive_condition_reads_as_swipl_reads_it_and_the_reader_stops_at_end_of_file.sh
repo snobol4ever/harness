@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_an_if_directive_condition_reads_as_swipl_reads_it_and_the_reader_stops_at_end_of_file.sh -- the static reader evaluates a :- if / :- elif
 # condition as swipl 9.0.4 does, and stops reading a file at the term end_of_file, m3 and m4 (cfo 2026-10-18, row
-# prolog-an-if-directive-condition-the-reader-cannot-evaluate-is-false-or-an-error-never-true-current-predicate-flags-and-goals-ceo-1604, the ceo's
+# prolog-an-if-directive-condition-the-reader-cannot-evaluate-is-false-or-an-error-never-true-current-predicate-flags-and-goals-r-1604, the officer's
 # design word there). THE DEFECT: prolog_parse.c eval_if_condition_tree answered unknown for every condition but true, fail, false, a negation
 # and two flags, and the caller kept the branch of an unknown -- every current_predicate/1, every other flag (dialect read yap, swi, gprolog,
 # sicstus and ciao all at once) and every goal read TRUE. THE CURE: current_predicate(N/A) against the clauses kept so far, the static builtins
@@ -13,7 +13,7 @@
 # is scrip, a run-time answer this gate does not grade.
 # THE REFS ARE CUT FROM THE ORACLE, NEVER FROM SCRIP: the table below was cut 2026-10-18 from /usr/bin/swipl, and every run re-cuts it from the
 # live swipl and REFUSES rc=2 when oracle and table disagree or swipl is absent.
-# FAIL-ONCE (CEO-1680, a witness red on the commit before the cure): with the three cure files reverted on the same tree, m3 and m4 both read FAIL
+# FAIL-ONCE (R-1680, a witness red on the commit before the cure): with the three cure files reverted on the same tree, m3 and m4 both read FAIL
 # (measured 2026-10-18), and PASS=2 again once they were restored.
 # Usage: bash ../harness/scripts/test_gate_pl_an_if_directive_condition_reads_as_swipl_reads_it_and_the_reader_stops_at_end_of_file.sh
 set -uo pipefail

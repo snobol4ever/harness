@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # util_raku_core_names_regen.sh -- re-cut src/parsers/raku/rk_core_names.inc from the Raku oracle's own CORE setting.
 #   The hand-written syntax checker (src/parsers/raku/rk_syntax.c, row raku-a-new-hand-written-lexer-and-parser-...,
-#   Lon 2026-09-26, CEO-1289) needs Rakudo's is_name / is_type answers to parse the way Rakudo does: `my Foo $x`,
+#   Lon 2026-09-26, R-1289) needs Rakudo's is_name / is_type answers to parse the way Rakudo does: `my Foo $x`,
 #   `sub f(Foo $x)`, `Foo[...]` and `is Foo` all turn on whether Foo names a type. Those answers come from the CORE
 #   setting, so the table is cut from the oracle (/usr/bin/raku), never typed: every non-sigiled CORE:: symbol two
 #   package levels deep (four under X::, where roast names deep exception types; enum values included, enum stashes

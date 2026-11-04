@@ -25,8 +25,8 @@
 # There is no flag that skips step 2 -- there is no box-wide form.
 #
 # ⛔⭐⭐ --explain-only EXISTS BECAUSE A REFUSAL YOU CAN ONLY REACH BY KILLING IS NOT
-# A REACHABLE REFUSAL (CEO-560; row a-seats-kill-must-name-its-own-root-and-the-
-# refusal-is-reachable-without-killing-anything, CEO-976, coo 2026-09-20).
+# A REACHABLE REFUSAL (R-560; row a-seats-kill-must-name-its-own-root-and-the-
+# refusal-is-reachable-without-killing-anything, R-976, coo 2026-09-20).
 # The incident that rowed it: at about 01:4x CDT 2026-09-20 a seat signalled ELEVEN
 # pids over a pattern list including `corpus_suite_harness` and `test-arena` --
 # patterns EVERY seat shares -- and SIX were pids it had not verified were its own.
@@ -234,7 +234,7 @@ done
 
 # ⛔⭐ EVERY SIGNAL THIS SCRIPT SENDS IS RECORDED, BECAUSE A KILL THAT LEAVES NO RECORD CANNOT BE NAMED BY ITS
 # VICTIM (coo 2026-09-20, row instruments-a-blocking-set-run-is-killed-from-outside-and-no-seat-completed-one-
-# today, ceo on the cfo's CFO-147). FIVE DEATHS, THREE SEATS, ONE AFTERNOON -- the cfo at arm 103 with SIGTERM
+# today, on the cfo's CFO-147). FIVE DEATHS, THREE SEATS, ONE AFTERNOON -- the cfo at arm 103 with SIGTERM
 # and arm 166 with SIGKILL despite setsid, hq_prolog at arm 6 after thirty seconds, hq_raku at 18 and at 61 --
 # and NOT ONE OF THEM COULD SAY WHO KILLED IT. Ten seats share one unix user, so the question "was that me?"
 # is answerable only from a shared record. This is that record: append-only, one line per pid signalled,

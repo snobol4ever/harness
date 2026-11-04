@@ -22,7 +22,7 @@
 # not fall back to a private format -- same law as lib_oracle_flags.sh.
 #
 #=====================================================================================================
-# ⛔⭐ THE DARK-CELL LAW (CEO-676, dark-is-worse-than-red CEO-582 arriving in the benchmark harness;
+# ⛔⭐ THE DARK-CELL LAW (R-676, dark-is-worse-than-red R-582 arriving in the benchmark harness;
 # hq_P 2026-09-13).  A BENCHMARK ARM THAT CANNOT MEASURE ITS SUBJECT REFUSES, NAMING THE SUBJECT.
 # It never emits a blank cell, and a grid refuses to publish a column it could not fill.
 #
@@ -40,7 +40,7 @@
 # words (bench_icon_kernels.sh prints "<1 tick") -- that is a MEASUREMENT, not a dark cell, and
 # it is exactly why the refusal names the subject rather than guessing on the caller's behalf.
 #
-# ⛔⭐ AND A VERDICT WITHOUT ITS LOAD IS NOT A VERDICT (CEO-697 one layer deeper, hq_P 2026-09-13).
+# ⛔⭐ AND A VERDICT WITHOUT ITS LOAD IS NOT A VERDICT (R-697 one layer deeper, hq_P 2026-09-13).
 # The ruling says a COST without the load it ran under is not a cost.  Measured on this box: two
 # runs of IDENTICAL angle-2 code differ by up to 2.15x, and gnu's `cal` column moved 1,352,177 ->
 # 742,684 iterations/s (1.82x) between two runs of unchanged code.  Two van Roy gates PASS on a
@@ -88,7 +88,7 @@ perf_is_cost() {
 perf_refuse() {
     PERF_DARK_CELLS=$(( ${PERF_DARK_CELLS:-0} + 1 ))
     printf 'REFUSED'
-    printf '⛔ perf: REFUSED to print a multiple for %s -- %s (a dark cell is worse than a red one: CEO-676)\n' \
+    printf '⛔ perf: REFUSED to print a multiple for %s -- %s (a dark cell is worse than a red one: R-676)\n' \
            "${1:-<unnamed subject>}" "${2:-unmeasurable operand}" >&2
     return 2
 }
@@ -108,12 +108,12 @@ perf_refuse() {
 #   measure its subject at all (no run, no bracket reading, a build that failed, a generator that refused).
 perf_dark_cell() {
     PERF_DARK_CELLS=$(( ${PERF_DARK_CELLS:-0} + 1 ))
-    printf '⛔ perf: dark cell for %s -- %s (a dark cell is worse than a red one: CEO-676)\n' \
+    printf '⛔ perf: dark cell for %s -- %s (a dark cell is worse than a red one: R-676)\n' \
            "${1:-<unnamed subject>}" "${2:-could not measure its subject}" >&2
     return 0
 }
 #-----------------------------------------------------------------------------------------------------
-# perf_stamp_suffix / perf_stamp_once_for_rows -- CEO-743: EVERY WALL-CLOCK NUMBER RECORDS THE LOAD AT
+# perf_stamp_suffix / perf_stamp_once_for_rows -- R-743: EVERY WALL-CLOCK NUMBER RECORDS THE LOAD AT
 # MEASUREMENT, IN THE SAME LINE AS THE NUMBER.  ⛔ The ruling is explicit that this belongs in this file
 # "so it cannot be forgotten, rather than in a procedure that must be remembered", and the census that
 # earned it is the reason: EIGHT benchmark scripts -- bench_icon_classic_set.sh, bench_icon_kernels.sh,
@@ -210,10 +210,10 @@ perf_load_stamp() {
     awk -v l="$la" -v c="$cores" 'BEGIN{ printf "load %s on %s cores (%.2f/core)", l, c, l/c }'
 }
 #-----------------------------------------------------------------------------------------------------
-# perf_load_guard -- THE LOAD GUARD a timing criterion names on a refusal (ceo CEO-1574, 2026-10-08, the coo's row
-# instruments-the-sweep-keeps-a-row-whose-finish-line-refused-on-a-load-guard-instead-of-retiring-it-ceo-1562). A timing-shaped
+# perf_load_guard -- THE LOAD GUARD a timing criterion names on a refusal (R-1574, 2026-10-08, the coo's row
+# instruments-the-sweep-keeps-a-row-whose-finish-line-refused-on-a-load-guard-instead-of-retiring-it-r-1562). A timing-shaped
 # refusal -- angles that DISAGREE, a harness that printed no row or no time twin because the kernel ran past its budget -- taken
-# while the box is busy is not a measurement of the program (a multiple is not load-invariant, CEO-743), and the zero-base sweep
+# while the box is busy is not a measurement of the program (a multiple is not load-invariant, R-743), and the zero-base sweep
 # retired fourteen live performance rows on exactly that between 10-07 20:16 and 10-08 19:17. Prints one phrase and returns 0 when
 # the 1-minute load per core is at or above BENCH_LOAD_GUARD_PER_CORE (default 0.5: on this 16-core box the fleet's builds and the
 # coo's fan-out/4 board read 1.2-2.4/core, a quiet box under 0.3); the phrase carries the words "load-guard" the sweep keys on
@@ -226,10 +226,10 @@ perf_load_guard() {
     cores="$(getconf _NPROCESSORS_ONLN 2>/dev/null)" || cores=""
     thr="${BENCH_LOAD_GUARD_PER_CORE:-0.5}"
     [ -n "$la" ] && [ -n "$cores" ] || { printf 'load UNKNOWN (no /proc/loadavg)'; return 1; }
-    awk -v l="$la" -v c="$cores" -v t="$thr" 'BEGIN{ r = l / c; if (r >= t) { printf "load-guard: load %s on %s cores (%.2f/core) at or above the %s/core guard -- a timing refusal under load is not a measurement (CEO-743)", l, c, r, t; exit 0 } printf "load %s on %s cores (%.2f/core), under the %s/core guard", l, c, r, t; exit 1 }'
+    awk -v l="$la" -v c="$cores" -v t="$thr" 'BEGIN{ r = l / c; if (r >= t) { printf "load-guard: load %s on %s cores (%.2f/core) at or above the %s/core guard -- a timing refusal under load is not a measurement (R-743)", l, c, r, t; exit 0 } printf "load %s on %s cores (%.2f/core), under the %s/core guard", l, c, r, t; exit 1 }'
 }
 #-----------------------------------------------------------------------------------------------------
-# perf_build_stamp [LIB] -- the build a reading was taken on, RT_OPT beside RT_DIAG, READ BACK and never assumed (ceo CEO-1390,
+# perf_build_stamp [LIB] -- the build a reading was taken on, RT_OPT beside RT_DIAG, READ BACK and never assumed (R-1390,
 # 2026-10-01: every bar line and grid header names RT_DIAG beside RT_OPT -- a LABEL, not a configuration; the bars keep grading
 # the shipped library). RT_OPT is the RT_OPT this run was handed, else the checkout's own `make buildinfo`. RT_DIAG is read
 # from the library's bytes: an RT_DIAG=1 build carries the collector's [ZGC-WALK] telemetry string, and -DRT_DIAG=0 compiles

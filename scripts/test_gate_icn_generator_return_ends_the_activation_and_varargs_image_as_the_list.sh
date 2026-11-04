@@ -6,7 +6,7 @@ export SCRIP_SNO_STMTKW=1   # this grader asks for the instrumentation switch (-
 # not END the activation (the next resume reached omega and printed a spurious "NAME failed", where Icon's
 # return removes the generator), and its variadic parameter imaged as &null instead of the collected list.
 # Both had ONE cause and are cured together (row icon-a-traced-generator-that-returns-traces-as-failed, cfo,
-# under CEO-545). 1493214e4 named the first of them explicitly as left uncured; the second it never touched.
+# under R-545). 1493214e4 named the first of them explicitly as left uncured; the second it never touched.
 #
 # ⛔ IT SITS BESIDE test_gate_icn_generator_return_traces_returned_not_failed.sh, NOT INSTEAD OF IT, and the
 # overlap was checked rather than assumed: that gate bounds its generator with `\ 2` so the post-return

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """util_emitted_alloc_cost.py -- THE EMITTED COST OF AN ALLOCATION SITE, IN BYTES AND IN INSTRUCTIONS.
 
-⛔⭐ LON, IN-CHAT TO THE ceo 2026-09-20 13:3x CDT, VERBATIM: "Ensure that you do not bloat BBs with GC allocation code
-that is more than 4-6 instructions. Beware of code size getting too large."  The ceo made it MANDATORY rather than
-optional the same sitting (CEO-997, granting the coo's CEO-985 ask): every arm measuring the inline-versus-leaf class
+⛔⭐ LON, in-chat 2026-09-20 13:3x CDT, VERBATIM: "Ensure that you do not bloat BBs with GC allocation code
+that is more than 4-6 instructions. Beware of code size getting too large."  The officer made it MANDATORY rather than
+optional the same sitting (R-997, granting the coo's R-985 ask): every arm measuring the inline-versus-leaf class
 carries its EMITTED BYTE COUNT beside its wall clock, BOTH ARMS, same tree plus the one change -- and THE INSTRUCTION
 COUNT AT THE SITE, DISASSEMBLED, IS THE GRADED QUANTITY, because Lon gave a number and a number nothing reads is a wish.
 

@@ -3,7 +3,7 @@
 # (TIntArray) is an array, not a set, with string members kept as strings (Joined(['a','bb'], '-')); (2) a statement-position raise, with no
 # try and no {$mode} directive, selects the ObjFPC dialect as try does (fpc's default mode refuses raise; the ref was cut under -Mobjfpc).
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta (CEO-1562, CEO-1709): chinese-remainder-theorem (uses SysUtils, no {$mode}) stopped at
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta (R-1562, R-1709): chinese-remainder-theorem (uses SysUtils, no {$mode}) stopped at
 # "pascal parse error line 22" on  if (mod1 = 0) or (mod2 = 0) then raise SysUtils.Exception.Create(...)  because pascal_oo_keyword flipped on class
 # and try only; once parsed it died "Arrays are empty" because SolveN([2,3,2], [3,5,7]) passed SETS to TIntArray formals (the open-array
 # rewrite keyed on the $open$ mask only), and a one-character string member of an array of string became its character code.

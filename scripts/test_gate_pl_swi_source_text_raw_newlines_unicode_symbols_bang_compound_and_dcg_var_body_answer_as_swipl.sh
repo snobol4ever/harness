@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_source_text_raw_newlines_unicode_symbols_bang_compound_and_dcg_var_body_answer_as_swipl.sh -- SWI SOURCE TEXT THE LEXER AND THE PRELUDE USED TO REFUSE: A RAW NEWLINE INSIDE A QUOTED ITEM, A UNICODE SYMBOL AS AN ATOM,
-# A NO-BREAK SPACE AS LAYOUT, !(A) AS A COMPOUND, A DCG BODY THAT IS A VARIABLE (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-ceo-1562;
+# A NO-BREAK SPACE AS LAYOUT, !(A) AS A COMPOUND, A DCG BODY THAT IS A VARIABLE (hq_prolog 2026-10-15, row prolog-every-suite-to-100-under-tenet-r-1562;
 # the ProRosetta crawl: abbreviations-easy, align-columns, calendar, csv-to-html-translation-1/3, strip-comments-from-a-string-1, json-pointer-1,
 # generate-chess960-starting-position-1, sieve-of-eratosthenes-12, lunar-arithmetic, parsing-rpn-calculator-algorithm, odd-word-problem, balanced-ternary-2).
 # THE CURE: (1) a program that carries the SWI dialect marker (a use_module/2 or module/2 directive, prolog_lower.c pl_dialect_marker) lexes a raw newline inside a

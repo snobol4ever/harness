@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_initialization_main_main_exit_status_answers_as_swipl.sh
 #
-# THE DEFECT (hq_prolog 2026-10-15, found curing the rungs' bb7cfbe56 reds; ceo CEO-1766 ordered the row): a program whose
+# THE DEFECT (hq_prolog 2026-10-15, found curing the rungs' bb7cfbe56 reds; R-1766 ordered the row): a program whose
 # `:- initialization(main, main).` goal FAILS exits 1 under swipl 9.0.4 ("main: false" on stderr) and 0 under SCRIP in mode 3.
 # The main/2 form is swipl's script contract: success halts 0, an uncaught error halts 2, a failure halts 1.
 #

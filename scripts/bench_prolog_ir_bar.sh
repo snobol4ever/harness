@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_prolog_ir_bar.sh -- THE LOAD-IMMUNE BAR FOR ONE PROLOG KERNEL: SCRIP mode-4 WORK (callgrind Ir per iteration of the bar's
-# own angle-1 loop) against the rival's WORK on the SAME twin, and the multiple rival/SCRIP. Ruled CEO-1315 (Lon 2026-09-27, in-chat
+# own angle-1 loop) against the rival's WORK on the SAME twin, and the multiple rival/SCRIP. Ruled R-1315 (Lon 2026-09-27, in-chat
 # to hq_prolog, verbatim: "Yes, you are correct to use instruction counts. That is good enough."): a prolog-speed row may close on
-# this reading, with the wall-clock bench_prolog_bar.sh reading reported beside it, self-stamping its load (CEO-743).
+# this reading, with the wall-clock bench_prolog_bar.sh reading reported beside it, self-stamping its load (R-743).
 #   usage: bench_prolog_ir_bar.sh kernel K [gplc|gnu|swi] [BAR]     K = the kernel's file stem under corpus/benchmarks/prolog/bench
 #          rival gplc (default; GNU Prolog compiled native, --no-top-level), gnu ("$(gprolog_bin)" --consult-file, the byte-code WAM) or swi.
 #          BAR (default 1.0): exits 0 when rival WORK / SCRIP m4 WORK >= BAR (SCRIP retires no more instructions per iteration than
@@ -54,5 +54,5 @@ TREE="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo '?')$(git -C "
 [ "$ml" = ok ] && [ "$rl" = ok ] || { echo "IR_BAR kernel=$K rival=$RIVAL m4 WORK=$mw ($ml) $RIVAL WORK=$rw ($rl) N=$n1 tree=SCRIP $TREE -- NONLINEAR, not graded"; exit 2; }
 mult="$(perf_mult "$rw" "$mw" "kernel $K: $RIVAL WORK over SCRIP m4 WORK")" || refuse "perf_mult refused the cell (rival WORK=$rw, m4 WORK=$mw)"
 ok="$(awk -v r="$rw" -v m="$mw" -v bar="$BAR" 'BEGIN{ print (r / m >= bar + 0) ? 1 : 0 }')"
-echo "IR_BAR kernel=$K rival=$RIVAL bar=$BAR multiple=$mult m4 WORK=$mw Ir/iter $RIVAL WORK=$rw Ir/iter N=$n1 tree=SCRIP $TREE (Ir is load-immune: instructions retired, not cycles; CEO-743 binds wall-clock numbers only) $([ "$ok" = 1 ] && echo AT-OR-ABOVE-BAR || echo BELOW-BAR)"
+echo "IR_BAR kernel=$K rival=$RIVAL bar=$BAR multiple=$mult m4 WORK=$mw Ir/iter $RIVAL WORK=$rw Ir/iter N=$n1 tree=SCRIP $TREE (Ir is load-immune: instructions retired, not cycles; R-743 binds wall-clock numbers only) $([ "$ok" = 1 ] && echo AT-OR-ABOVE-BAR || echo BELOW-BAR)"
 [ "$ok" = 1 ]

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pools_cap_a_seat_and_reserve_the_grader.sh -- THE POOLS WITH A SEAT'S SHARE (the cto, ARCH-SHARED-DEVELOPMENT.md 4.3 and 4.6,
-# CEO-2041 step 3; Lon 2026-10-31: "Everyone is compiling at the same time"). Hermetic: scratch pool directories under mktemp (the takers'
+# R-2041 step 3; Lon 2026-10-31: "Everyone is compiling at the same time"). Hermetic: scratch pool directories under mktemp (the takers'
 # S4E_CC_SLOT_DIR / S4E_RUN_SLOT_DIR seam), a scratch SLOT_WAITS ledger, fixture seats by S4E_SEAT, sleep commands as the work.
 #   arm 1  TWO SEATS CONTEND: seats A and B each start sixteen compiles (util_cc_slot.sh sleep) at pool 8, cap 4; sampled five times a second,
 #          neither seat ever holds five pool slots, the pool never holds nine, and both seats hold at least one at the same instant (fairness)

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_an_array_element_read_or_store_allocates_nothing.sh -- A ONE-INDEX SUBSCRIPT IN VALUE CONTEXT (x = A[i], A[i] + 1,
 # A[i] as a pattern subject) is lowered with the marker "container-value" and emitted as rt_subscript_val, which returns an array
 # element by value without minting the 80-byte name-trap cell rt_subscript_var makes; a store A[i] = v goes through the fused
-# subscripted-assignment arm without one either. (ceo 2026-09-24, CEO-1249: array_sum minted 4 M cells for 200 K element accesses
+# subscripted-assignment arm without one either. (2026-09-24, R-1249: array_sum minted 4 M cells for 200 K element accesses
 # and collected 9,698 times at the shipped arena; the reads alone were 10.1 G -> 6.1 G Ir.) SCRIP_SUB_VAL=0 is the control arm
 # (every such site calls rt_subscript_var_container_only again).
 # THREE ARMS: (1) the witness's .s carries rt_subscript_val sites under the cure and none under the control arm; (2) the witness
@@ -13,7 +13,7 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # stores -- prints the oracle's lines in m3 and m4 under both arms; (3) a 20,000-element read/store loop runs at the shipped
 # arena with ZERO collections under the cure (SCRIP_ZETA_TELEM counts them; the control arm collects), so the allocation is gone,
 # not merely cheaper. EXIT 0 all arms; 1 a red (named); 2 REFUSED (oracle or binary missing).
-# ⛔ A NAME VALUE STORED IN AN ELEMENT MUST COME BACK AS A NAME (ceo 2026-09-24, CEO-1251): the first cut of this cure left the lowerer's
+# ⛔ A NAME VALUE STORED IN AN ELEMENT MUST COME BACK AS A NAME (2026-09-24, R-1251): the first cut of this cure left the lowerer's
 # IR_DEREF after the value-context subscript, so A[3] = .hold; q = A[3] read q as hold's VALUE (STRING) where SPITBOL keeps the NAME --
 # rt_subscript_val already returns the element (the table arm derefs the trap once), and the second deref read a stored name through.
 # The lowerer now wires the subscript's result straight to its consumer under the cure (the control arm keeps the deref because its

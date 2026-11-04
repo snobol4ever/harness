@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_no_zeta_frame_switches.sh — THE PRISON for RULES.md FACT RULE "THE ζ TIER IS DERIVED, NEVER ENUMERATED"
-# (Lon 2026-09-09 09:2x CDT: "Get rid of enumerated shape class now!!!"; ceo CEO-447; landed by the cto).
+# (Lon 2026-09-09 09:2x CDT: "Get rid of enumerated shape class now!!!"; R-447; landed by the cto).
 #
 # A box's tier (ζ-SPINE on RSP vs ζ-ACTIVATION-FRAME on RBP) is DERIVED per graph from the two frame-placement
 # conditions in ONE selector. Every env switch that once chose a frame placement by hand -- the 2026-09-09 census
@@ -19,12 +19,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 # run (SCRIP 5dafed741). Deleting it would blind two blocking gates to cure a census. PIN in this class meant PINNED FRAMES. The exclusion
 # is exactly the SCRIP_GC_ prefix and nothing wider: the row's DONE-WHEN plants a getenv("SCRIP_PIN_FRAMES") in a scratch tree and proves
 # this gate still reds on it.
-# ⛔⭐ RULING 2026-09-19 (ceo CEO-948, the same shape as the SCRIP_GC_ ruling above and for the same measured reason):
+# ⛔⭐ RULING 2026-09-19 (R-948, the same shape as the SCRIP_GC_ ruling above and for the same measured reason):
 # A PLANT SEAM THAT A BLOCKING GATE USES IS DECLARED HERE WITH ITS GATE, AND THE DECLARATION CHECKS ITSELF.
 # The census went red on the clean tree again -- this time on getenv("SCRIP_BLOB_CARVE_PAD") (emit.cpp:2529, added by
 # the GC landing 01aa9008c "the R-4(b) blob carve is a DEPTH CONTRACT, named and held by a gate that plants the
 # perturbation"), and it was red on origin for every seat with no record anywhere. The tension is real and it is between
-# two laws: CEO-554 says an instrument must be able to PLANT its trip through a cached-getenv seam, because a gate
+# two laws: R-554 says an instrument must be able to PLANT its trip through a cached-getenv seam, because a gate
 # anchored on a found witness dies the day someone cures the witness; RULES.md's ζ TIER IS DERIVED says no env switch
 # chooses a frame placement. A seam that PADS THE CARVE is not inert -- it changes emitted frame geometry -- so the
 # census is right to see it, and deleting it would blind test_gate_gc_blob_carve_invariant_is_named_and_held.sh, which
@@ -45,16 +45,16 @@ done
 hits=$(grep -rnoE 'getenv\("SCRIP_[A-Z0-9_]*(RBP|FRAME|PIN|ZFRAME|CARVE)[A-Z0-9_]*"\)' "$ROOT/src" 2>/dev/null | grep -vE 'getenv\("SCRIP_GC_' | { [ -n "$SEAM_RX" ] && grep -vE "$SEAM_RX" || cat; } || true)
 n=$(printf '%s' "$hits" | grep -c . || true)
 if [ "$n" -ne 0 ]; then
-  echo "⛔ FAIL: $n zeta frame switch(es) under src/ -- the tier is DERIVED, never enumerated (RULES.md, CEO-447):"
+  echo "⛔ FAIL: $n zeta frame switch(es) under src/ -- the tier is DERIVED, never enumerated (RULES.md, R-447):"
   printf '%s\n' "$hits" | sed "s#^$ROOT/##"
   exit 1
 fi
-# CEO-448 (Lon: "get rid of all that ZLS and ZETA #define's"): no ZC_/ZLS identifier, no rt_zls store symbol, no
+# R-448 (Lon: "get rid of all that ZLS and ZETA #define's"): no ZC_/ZLS identifier, no rt_zls store symbol, no
 # zeta_choices/zeta_alloc file may exist under src/ -- the frame layout is typed per activation, never a store.
 zhits=$(grep -rnoE '\b(ZC_[A-Z0-9_]+|ZLS[A-Z0-9_]*|rt_zls2?_[a-z_]+)\b' "$ROOT/src" 2>/dev/null; ls "$ROOT/src/ir/zeta_choices.h" "$ROOT/src/runtime/rt/zeta_alloc.c" "$ROOT/src/runtime/rt/zeta_alloc.h" 2>/dev/null)
 zn=$(printf '%s' "$zhits" | grep -c . || true)
 if [ "$zn" -ne 0 ]; then
-  echo "⛔ FAIL: $zn ZC_/ZLS identifier(s) or zeta store file(s) under src/ -- the ζ stores and defines died in CEO-448:"
+  echo "⛔ FAIL: $zn ZC_/ZLS identifier(s) or zeta store file(s) under src/ -- the ζ stores and defines died in R-448:"
   printf '%s\n' "$zhits" | sed "s#^$ROOT/##"
   exit 1
 fi

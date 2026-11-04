@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_prefix_operator_wins_the_write_over_a_postfix_one.sh -- AN ATOM THAT IS BOTH A PREFIX AND A POSTFIX OPERATOR WRITES o(X) IN PREFIX FORM (as gprolog and swipl; Logtalk op_3 iso_op_3_20).
-# hq_prolog 2026-09-25, CEO-1270; the cure is unification.c plc_op_info/plc_op_is_postfix: the writer took whichever user definition it met
+# hq_prolog 2026-09-25, R-1270; the cure is unification.c plc_op_info/plc_op_is_postfix: the writer took whichever user definition it met
 # first and chose postfix whenever ANY postfix definition existed, so after op(555, xf, o) beside op(555, fx, o), o(2) printed "2 o".
 # BRACKET-FREE: an output divergence on the writer, compared line for line with gprolog. A postfix-only atom still writes postfix (last line).
 # RED BEFORE on origin: 2 o / 3 o / 9 o, m3 AND m4.

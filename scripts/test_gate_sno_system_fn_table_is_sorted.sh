@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_system_fn_table_is_sorted.sh -- sn4_is_system_fn (src/runtime/snobol4_system_fns.h) is a BINARY SEARCH over
-# g_sn4_system_fns[] since the ceo's 2026-09-24 speed-campaign landing (CEO-1247 notebook section 3 item 1): the linear scan
+# g_sn4_system_fns[] since the officer's 2026-09-24 speed-campaign landing (R-1247 notebook section 3 item 1): the linear scan
 # it replaced ran 77 strcmps on EVERY by-name SNOBOL4 call (treebank x256: 1.15 G of 4.93 G Ir in the scan alone). A binary
 # search is only correct over a strcmp-SORTED, DUPLICATE-FREE table, and C cannot assert that at compile time, so this gate
 # pins it: the table is parsed out of the header and checked in strcmp (byte) order. No build, ~0.1 s.

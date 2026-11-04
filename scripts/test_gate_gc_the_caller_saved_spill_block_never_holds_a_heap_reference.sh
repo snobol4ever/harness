@@ -7,19 +7,19 @@
 # `if (g_gc_rrng[i].hi) continue;`, which is exactly how that range and only that range is registered.  The other
 # caller, the Prolog trail, uses the topword form with a null hi and IS visited.  g_gc_rrng_ss is incremented at
 # registration and read nowhere; g_gc_segs is collected and read nowhere, so no conservative segment scan covers it
-# either -- correctly, per CEO-812.  THE REGISTRATION'S ONLY EFFECT IS TO INCREMENT A COUNTER NOBODY READS: to every
+# either -- correctly, per R-812.  THE REGISTRATION'S ONLY EFFECT IS TO INCREMENT A COUNTER NOBODY READS: to every
 # reader g_rtccb is a registered GC root, and to the collector it is not.
 #
 # ⛔ THE cfo RULED THAT VISITING IT IS NOT AN OPTION AT ALL, AND THE LAW DECIDES IT RATHER THAN TASTE.  g_rtccb is
 # thirty-two RAW MACHINE WORDS WITH NO TYPE TAGS.  Visiting them means asking of each word "does this look like it
-# points into a heap block", WHICH IS A CONSERVATIVE SCAN BY DEFINITION, and CEO-812 froze that out: everything on
+# points into a heap block", WHICH IS A CONSERVATIVE SCAN BY DEFINITION, and R-812 froze that out: everything on
 # the emitted stack is a DESCR and its type field is the only tag, the heap walks typed visitors, no conservative
 # scan and no pinning in any form.  A precise visit is impossible because the words carry nothing to be precise
 # about.  So the registration and the seamsafe API are DELETED (the cfo's landing, gc_heap.c is their file) and
 # THIS GATE IS WHAT MAKES THAT SAFE.
 #
 # ⛔⭐ THE MEASUREMENT THAT BUILT THIS GATE WAS WRONG, AND BUILDING THE GATE IS WHAT CAUGHT IT.  I reported to the
-# cfo, the ceo and three HQs that the block was LATENT, NOT LIVE -- "47 witnesses at SCRIP_HEAP_MB=1
+# cfo, the officer and three HQs that the block was LATENT, NOT LIVE -- "47 witnesses at SCRIP_HEAP_MB=1
 # SCRIP_GC_STRESS=3, ZERO slots holding a heap pointer".  THAT SWEEP RAN WITHOUT SCRIP_GC_MAPS=1, AND
 # gc_walk_print RETURNS EARLY WHEN gc_maps_on() IS FALSE, so neither [GC-RTCCB] nor [GC-WALK-RTCCB] COULD HAVE
 # PRINTED UNDER ANY CIRCUMSTANCES.  I grepped for a line the run was incapable of emitting and read the silence as
@@ -42,7 +42,7 @@
 # survive a collection may live there -- r8 the anchor, r9 the GVA, r10 and r11 scratch, per the declared
 # convention in rtx/rtcc.h.  A value that must survive a poll goes in a frame slot covered by that frame's static
 # map, or is handed to the shield as a TAGGED DESCR cell in arr[], which the poll's own refusal text says in words
-# (CEO-972).
+# (R-972).
 set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 2
 ROOT="$PWD"
@@ -63,7 +63,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [gc_the_caller_saved_spill_block_never_hold
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- build before grading"
 [ -d "$WD" ] || refuse "no $WD -- nothing to grade"
 RUNCWD=$(mktemp -d) || refuse "no mktemp for the run cwd"; trap 'rm -rf "$RUNCWD"' EXIT; cd "$RUNCWD" || refuse "cannot enter $RUNCWD -- a witness run from the checkout root litters it (tmp3/tmp4) and races every concurrent arm"
-echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- CEO-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob) · stress $STRESS"
+echo "ARENA SCRIP_HEAP_KB=${SCRIP_HEAP_KB:-64} (the tiny arena of GC testing is the 64 KB floor -- R-1146: the old MB=1 knob is a 1024 KB window, eight times the shipped 128 KB, and ran the collector ZERO times on a 3000-string witness; the count of collections is read from the run, never assumed from the knob) · stress $STRESS"
 
 # (a) THE REPORTER EXISTS AND IS REACHED.  ⛔ AN ARM THAT GRADES A COUNTER NOTHING INCREMENTS PASSES BY NEVER
 # LOOKING, which is the failure THE INSTRUMENT LAWS exist to catch and the reason this arm comes first.
@@ -101,7 +101,7 @@ uslots="$(printf '%s' "$slots" | tr ', ' '\n\n' | grep -E '^[0-9]+$' | sort -un 
 if [ "$hits" = 0 ]; then
   ck ok "(b) THE INVARIANT HOLDS: over $witn witness(es), $coll of which actually collected, NO g_rtccb slot held a pointer into a heap block at any collection"
 else
-  ck no "(b) ⛔ A CALLER-SAVED SPILL SLOT HELD A POINTER INTO A HEAP BLOCK AT A COLLECTION, $hits time(s), slot(s) [$uslots], in:$named. ⛔⭐ WHAT THIS ESTABLISHES AND WHAT IT DOES NOT, stated because the difference is this row's own subject: it establishes that the invariant the cfo stated -- g_rtccb is CALLER-SAVED SCRATCH and nothing that must survive a collection lives there -- IS NOT TRUE OF THIS TREE. It does NOT establish a lost value: a pointer in an unvisited slot is NECESSARY BUT NOT SUFFICIENT, exactly as a store below the region base was (CTO-101), because the same block may be rooted elsewhere -- the subject is, through the shield and through the visit of the subject pointer itself. ⭐ THE SHARPER HAZARD IS NOT SWEEPING BUT STALENESS: this block is never visited, so a root walk that FORWARDS a moving block cannot rewrite g_rtccb's copy, and the emitted reload after the poll restores the pre-move word. THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: put the value in a frame slot covered by that frame's static map, or hand it to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints the slot index and the word"
+  ck no "(b) ⛔ A CALLER-SAVED SPILL SLOT HELD A POINTER INTO A HEAP BLOCK AT A COLLECTION, $hits time(s), slot(s) [$uslots], in:$named. ⛔⭐ WHAT THIS ESTABLISHES AND WHAT IT DOES NOT, stated because the difference is this row's own subject: it establishes that the invariant the cfo stated -- g_rtccb is CALLER-SAVED SCRATCH and nothing that must survive a collection lives there -- IS NOT TRUE OF THIS TREE. It does NOT establish a lost value: a pointer in an unvisited slot is NECESSARY BUT NOT SUFFICIENT, exactly as a store below the region base was (CTO-101), because the same block may be rooted elsewhere -- the subject is, through the shield and through the visit of the subject pointer itself. ⭐ THE SHARPER HAZARD IS NOT SWEEPING BUT STALENESS: this block is never visited, so a root walk that FORWARDS a moving block cannot rewrite g_rtccb's copy, and the emitted reload after the poll restores the pre-move word. THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan R-812 forbids: put the value in a frame slot covered by that frame's static map, or hand it to the shield as a TAGGED DESCR cell in arr[] (R-972). SCRIP_GC_MAPS=1 prints the slot index and the word"
 fi
 
 # (c) THE POPULATION IS DECIDABLE AND SAYS SO.  ⛔ hq_prolog MEASURED THAT AT THE TINY ARENA WITH NO STRESS PLANT
@@ -122,7 +122,7 @@ reg="$ROOT/src/runtime/rtx/rtcc_init.c"
 if [ ! -f "$reg" ]; then
   ck ok "(d) rtcc_init.c is gone entirely -- nothing registers the block"
 elif grep -q "rt_gc_root_range_add_seamsafe" "$reg"; then
-  ck no "(d) ⛔ rtcc_init.c STILL REGISTERS the block as a root range, and gc_heap.c's only walk over that table skips exactly that shape. Until the registration is deleted the file says ROOT and the collector says nothing -- the cfo ruled DELETE IT (CTO-153), because visiting 32 untagged words is the conservative scan CEO-812 froze out. This arm is expected RED until that landing arrives and is the reason this gate is REPORTED and not blocking"
+  ck no "(d) ⛔ rtcc_init.c STILL REGISTERS the block as a root range, and gc_heap.c's only walk over that table skips exactly that shape. Until the registration is deleted the file says ROOT and the collector says nothing -- the cfo ruled DELETE IT (CTO-153), because visiting 32 untagged words is the conservative scan R-812 froze out. This arm is expected RED until that landing arrives and is the reason this gate is REPORTED and not blocking"
 else
   ck ok "(d) the seamsafe registration is deleted -- rtcc_init.c no longer tells its readers the block is a GC root"
 fi
@@ -134,7 +134,7 @@ else
   ck no "(e) this gate is not named in the Makefile -- a gate in no runner is not measuring (RULES.md THE INSTRUMENT LAWS)"
 fi
 
-# (f) THE CONVENTION IS DECLARED WHERE ITS READERS ARE, AND THE DECLARATION IS FINDABLE.  ⛔ CEO-1053 RULED NO ON A
+# (f) THE CONVENTION IS DECLARED WHERE ITS READERS ARE, AND THE DECLARATION IS FINDABLE.  ⛔ R-1053 RULED NO ON A
 # DECLARED CONVENTION BEING A MECHANISM BY ITSELF -- "A convention enforced by nothing will drift" -- and the proof
 # was already in hand from the other end: rtcc_init.c registers this block as a root range and gc_heap.c walks all
 # 32 slots, counts, optionally prints AND NEVER VISITS, so a belief that the range was visited survived only as a
@@ -145,7 +145,7 @@ hdr="$ROOT/src/runtime/rtx/rtcc.h"
 if [ -f "$hdr" ] && grep -q "CALLER-SAVED SPILL BLOCK AND IT IS NOT A GC ROOT" "$hdr" && grep -q "_Static_assert" "$hdr"; then
   ck ok "(f) the convention is declared in rtx/rtcc.h as a _Static_assert naming the block, the words (slot 5 = r8 the anchor, 6 = r9 the GVA, 7 and 8 = r10/r11 scratch) and the reason -- a reader of g_rtccb cannot open the header without reading why nothing that must survive a collection may live there"
 else
-  ck no "(f) ⛔ rtx/rtcc.h carries no declaration of the caller-saved convention. THE MECHANISM IS THEN UNHELD: CEO-1053 admits a declared convention as one of the four mechanisms shielding a value across a safe point ONLY while a gate holds it and a declaration states it. Restore the _Static_assert or retire this gate in the same landing"
+  ck no "(f) ⛔ rtx/rtcc.h carries no declaration of the caller-saved convention. THE MECHANISM IS THEN UNHELD: R-1053 admits a declared convention as one of the four mechanisms shielding a value across a safe point ONLY while a gate holds it and a declaration states it. Restore the _Static_assert or retire this gate in the same landing"
 fi
 
 # (g) FAIL-ONCE.  ⛔⭐ THE ARM THAT MAKES ARM (b)'s GREEN MEAN SOMETHING.  Today arm (b) is red on 806 standing
@@ -184,7 +184,7 @@ fi
 if [ $((unrep + swept)) = 0 ]; then
   ck ok "(i) THE SHARPER HALF HOLDS: over $hits detection(s), $movd named a block the collector moved and NONE was left wrong by the collection -- 0 unrepaired, 0 swept"
 else
-  ck no "(i) ⛔ $((unrep + swept)) CALLER-SAVED WORD(S) WERE WRONG AFTER A COLLECTION -- $unrep UNREPAIRED (the collector forwarded the block and nothing rewrote the word) and $swept SWEPT (the block was never forwarded, so the word names ground the arena will re-issue), out of $hits detection(s) of which $movd named a moved block, in:$stale_named. ⭐ THE REMAINING $((hits - unrep - swept)) ARE HARMLESS BY LUCK AND NOT BY MECHANISM: the block they name did not move at this collection, and nothing in the engine promises that. ⛔ THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan CEO-812 forbids: a value live across a safe point goes in a frame slot covered by that frame's static map, or is handed to the shield as a TAGGED DESCR cell in arr[] (CEO-972). SCRIP_GC_MAPS=1 prints one GC-RTCCB-STALE line per detection naming the slot, the word, the block's type and size, and which of the two ways it went wrong"
+  ck no "(i) ⛔ $((unrep + swept)) CALLER-SAVED WORD(S) WERE WRONG AFTER A COLLECTION -- $unrep UNREPAIRED (the collector forwarded the block and nothing rewrote the word) and $swept SWEPT (the block was never forwarded, so the word names ground the arena will re-issue), out of $hits detection(s) of which $movd named a moved block, in:$stale_named. ⭐ THE REMAINING $((hits - unrep - swept)) ARE HARMLESS BY LUCK AND NOT BY MECHANISM: the block they name did not move at this collection, and nothing in the engine promises that. ⛔ THE CURE IS NOT TO VISIT g_rtccb -- 32 untagged words cannot be visited precisely and a sniff is the conservative scan R-812 forbids: a value live across a safe point goes in a frame slot covered by that frame's static map, or is handed to the shield as a TAGGED DESCR cell in arr[] (R-972). SCRIP_GC_MAPS=1 prints one GC-RTCCB-STALE line per detection naming the slot, the word, the block's type and size, and which of the two ways it went wrong"
 fi
 
 echo "population: $checks arm(s) graded, $fails FAIL; $witn witness(es), $coll collected, $hits g_rtccb heap reference(s), $movd naming a moved block, $unrep unrepaired, $swept swept"

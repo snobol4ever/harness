@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_the_asm_allocator_carves_reused_ground_after_a_collection.sh -- THE ARMED ASM CARVE (rtx_alloc.s) USED TO REFUSE ANY
 # BLOCK BELOW THE VIRGIN MARK, so after the first collection EVERY allocation of the process fell to c_rt_gcheap_alloc: table_access
 # at the shipped 128 KB arena made 398,079 allocations and the C entry answered 398,079 of them, ~250 Ir each against ~35 in the
-# armed path (ceo 2026-09-25, CEO-1256; callgrind of the 60-iteration twin). Since this landing the armed path carves reused ground
+# armed path (2026-09-25, R-1256; callgrind of the 60-iteration twin). Since this landing the armed path carves reused ground
 # too: it zeroes the payload in line (the tail 32 bytes of a string, the whole payload otherwise, exactly as rt_gcheap_carve does),
 # keeps the virgin mark the maximum it ever was, and stops at g_hp_fr.line, which is now the LOWER of the pacing line and the
 # quarantine's low bound (gc_fr_line_sync), so it can never carve into PROT_NONE ground; C is reached only at a line or quarantine

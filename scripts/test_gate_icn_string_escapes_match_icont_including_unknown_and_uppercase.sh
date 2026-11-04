@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_icn_string_escapes_match_icont_including_unknown_and_uppercase.sh -- every one-character escape in an Icon string or cset literal means what icont says it means: recognized letters are case-insensitive, \8 and \9 are their digit values, \x is hex but \X is not, and an UNRECOGNIZED escape is the character itself with the backslash dropped (ceo CEO-665).
+# test_gate_icn_string_escapes_match_icont_including_unknown_and_uppercase.sh -- every one-character escape in an Icon string or cset literal means what icont says it means: recognized letters are case-insensitive, \8 and \9 are their digit values, \x is hex but \X is not, and an UNRECOGNIZED escape is the character itself with the backslash dropped (R-665).
 #
 # MEASURED 2026-09-13 on 24f1ec353, found by the image-leak row's own oracle-diff arm: "q\y" imaged as "q\\y" where
 # icont says "qy" -- our lexer's default arm KEPT the backslash for an escape it did not recognize, where icont's

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_monitor_2way_sync_step_all_langs.sh -- THE ONE HARNESS ARM OF THE ONE SYNC-STEP DESIGN (ceo 2026-09-23, CEO-1185; Lon, verbatim:
+# test_monitor_2way_sync_step_all_langs.sh -- THE ONE HARNESS ARM OF THE ONE SYNC-STEP DESIGN (2026-09-23, R-1185; Lon, verbatim:
 # "Get IPC sync-step monitor working for all languages, Icon, Prolog, Pascal, and Raku."; MONITOR-BINARY-DESIGN.md § THE PLUG INTERFACE).
 # For each language with a plug, one committed witness under ../harness/scripts/monitor/witnesses/ runs through the auto harness with TWO SCRIP
 # participants -- mode 3 (--run) against mode 4 (the compiled binary) -- both built with --trace, so every statement, assignment,

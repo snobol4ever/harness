@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_the_press_and_chat80_dec10_surface_answers_as_swipl.sh
 #
-# THE ROWS (hq_pascal's, found vendoring PRESS and CHAT-80 under CEO-1595; hq_prolog 2026-10-10): abolish/2 refused at compile;
+# THE ROWS (hq_pascal's, found vendoring PRESS and CHAT-80 under R-1595; hq_prolog 2026-10-10): abolish/2 refused at compile;
 # put/1 of a one-element code list a type error; the recorded database (recorda/recordz/recorded/erase) missing; prompt/2, prompt1/1, statistics/2 and style_check/1 missing; library(quintus) missing
 # (log/2, acos/2, sqrt/2, otherwise/0); and in mode 4 an asserted clause calling the program's
 # own for/2 refused at run time.

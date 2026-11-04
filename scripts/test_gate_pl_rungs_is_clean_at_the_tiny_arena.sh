@@ -2,9 +2,9 @@
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_pl_rungs_is_clean_at_the_tiny_arena.sh -- PROLOG'S GC SHARE, HALF TWO (hq_prolog, row
 # prolog-gc-the-prolog-share-of-the-unmapped-slot-population-censused-by-name-and-the-master-clean-at-one-megabyte;
-# ceo CEO-1011 / TENET condition 1, hardened on Lon's challenge 2026-09-20).
+# R-1011 / TENET condition 1, hardened on Lon's challenge 2026-09-20).
 #
-# ⛔ WHAT THIS GATE EXISTS FOR, AND WHY NO EXISTING INSTRUMENT SEES IT. The ceo measured hq_snobol4's nine-line
+# ⛔ WHAT THIS GATE EXISTS FOR, AND WHY NO EXISTING INSTRUMENT SEES IT. The officer measured hq_snobol4's nine-line
 # witness at SCRIP_HEAP_MB=1: four of seven stress points RETURN A WRONG ANSWER, SILENTLY, EXIT 0, NO DIAGNOSTIC.
 # Every rc-shaped census reads GREEN over that class -- and so does a pass TOTAL, because a board that loses one
 # entry and gains another reads identical (the swap, GOAL-TEST-SUITE-CONSISTENCY's per-entry-identity lesson).
@@ -23,17 +23,17 @@
 #   ARM stress:N : compiled default (unset) + SCRIP_GC_STRESS=N -- does COLLECTING OFTEN change an answer, one arm per N
 #
 # ⛔⭐⭐ RE-POINTED 2026-09-22 (hq_prolog), CAUGHT BEFORE A RE-MEASURE COULD BE BUILT ON THE STALE READING, NOT
-# AFTER: ceo CEO-1095 (Lon 2026-09-21, "take the default GC arena down to 128 KB") made the compiled default
+# AFTER: R-1095 (Lon 2026-09-21, "take the default GC arena down to 128 KB") made the compiled default
 # GC_HEAP_KB=128 the tiny/exasperating arena FOR EVERY SEAT, and made an explicit SCRIP_HEAP_MB=1 pin (1024 KB)
 # 8x LOOSER than that default, collecting 13x LESS (measured by the cfo on bench_icnstr_concat_table.icn: 1613
-# collections at 1 MB against 21362 at the 128 KB default). Before CEO-1095 an SCRIP_HEAP_MB=1 pin WAS the
+# collections at 1 MB against 21362 at the 128 KB default). Before R-1095 an SCRIP_HEAP_MB=1 pin WAS the
 # exasperating arm; today it is the opposite one. This gate's "arena"/"stress:N" arms therefore leave
 # SCRIP_HEAP_MB/SCRIP_HEAP_KB UNSET ON PURPOSE, so they always track WHATEVER Lon's current tiny-arena default
 # is with no maintenance owed here when it moves again (the same reasoning the Makefile gives for `?=` over
 # `:=` on this knob). "control" is the one arm that now needs an EXPLICIT loose pin (512 MB) to keep a genuine
 # contrast to diff against, matching the value this gate's own DECIDABILITY probe already assumed for it.
 #
-# ⛔⭐⭐ A STRESS BAND, NEVER A STRESS POINT -- ceo CEO-1024, 2026-09-20, and it retired MY OWN first number.
+# ⛔⭐⭐ A STRESS BAND, NEVER A STRESS POINT -- R-1024, 2026-09-20, and it retired MY OWN first number.
 # hq_raku ran the raku rungs at SCRIP_HEAP_MB=1 SCRIP_GC_STRESS=16 on the same tree and same binary as two
 # green arms: m3 853 -> 817, m4 853 -> 824. SIXTY-FIVE GRADINGS LOST, ZERO GAINED, THIRTY-SIX DISTINCT
 # PROGRAMS, every one exit 0 with no diagnostic and a plausible wrong answer, every one MATCHING at stress 0.
@@ -65,12 +65,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="${SCRIP:-$ROOT/scrip}"; P="${PL_SUITE_DIR:-$S4E/corpus/tests/prolog}"
 SHARDS="${SHARDS:-16}"; CONTROL_MB="${CONTROL_MB:-512}"
-# ⛔ THE DEFAULT BAND GOES WELL ABOVE 5 AND ABOVE 16 ON PURPOSE (CEO-1024). 16 is where hq_raku found 36 silently
+# ⛔ THE DEFAULT BAND GOES WELL ABOVE 5 AND ABOVE 16 ON PURPOSE (R-1024). 16 is where hq_raku found 36 silently
 # wrong raku programs; a band that STOPS at the highest value anyone has yet found a defect at is the same
 # circular choice this gate was just corrected for, so it carries a value ABOVE the known one.
 # ⛔⭐⭐ SPAN BOTH ENDS, NON-UNIFORM -- and this default is the THIRD cut of this line, each one corrected by
 # a measurement rather than by reasoning. (1) STRESS_N=8, picked as the top of hq_snobol4 known red band {1,2,4,8}:
-# a band that ENDS WHERE THE DEFECTS START. (2) {16,32} after CEO-1024, which is the SAME ERROR MIRRORED --
+# a band that ENDS WHERE THE DEFECTS START. (2) {16,32} after R-1024, which is the SAME ERROR MIRRORED --
 # hq_raku map family window is stress 1..6 and is INVISIBLE at 8 and above, so "a lane that moves its band from
 # 1-3-5 up to 16 and reports clean has traded one blind spot for another" (hq_raku, verbatim). (3) This one.
 # The cto adds the shape that forbids a straight line in EITHER direction: hq_snobol4 has a witness RED at m4
@@ -91,8 +91,8 @@ refuse(){ GATE_VERDICT=2; echo "⛔ REFUSED-TO-GRADE(2): $*"; exit 2; }
 W="$(mktemp -d)" || refuse "mktemp failed"
 # ⛔⭐⭐ A REFUSAL MUST NOT DESTROY THE EVIDENCE NEEDED TO DIAGNOSE THE REFUSAL. Measured on this gate's own
 # first band run: it refused on a key-set mismatch and then deleted its mktemp workdir on the way out, so the
-# per-entry records that would have explained the mismatch were gone before I could read them. That is the ceo's
-# exclusion-filter shape (CEO-1019 retraction) inside my own file -- THE MOTION THAT REMOVED THE NOISE REMOVED
+# per-entry records that would have explained the mismatch were gone before I could read them. That is the officer's
+# exclusion-filter shape (R-1019 retraction) inside my own file -- THE MOTION THAT REMOVED THE NOISE REMOVED
 # THE ANSWER WITH IT, and no instrument can report that, because the report is what was deleted.
 # So: green cleans up, ANYTHING ELSE KEEPS THE WORKDIR AND PRINTS WHERE IT IS.
 GATE_VERDICT=2
@@ -172,7 +172,7 @@ run_arm(){ # $1 = tag
 # [GC-WALK] shows the collector ran 8001 times. A seat copying it across languages gets a clean zero FOR THE
 # WRONG REASON and the output cannot tell the two apart. Hence the POSITIVE CONTROL below: this probe must show
 # the counter FIRING before a zero anywhere else may be read as "did not collect".
-collect_probe(){ # $1 = SCRIP_HEAP_MB or empty (empty = compiled default, currently GC_HEAP_KB=128 per CEO-1095), $2 = SCRIP_GC_STRESS -> prints the [GC-WALK] count
+collect_probe(){ # $1 = SCRIP_HEAP_MB or empty (empty = compiled default, currently GC_HEAP_KB=128 per R-1095), $2 = SCRIP_GC_STRESS -> prints the [GC-WALK] count
   ( [ -n "$1" ] && export SCRIP_HEAP_MB="$1"
     export SCRIP_GC_MAPS=1 SCRIP_GC_STRESS="$2"
     timeout -k 5 120 "$SCRIP" "$W/probe.pl" < /dev/null 2>&1 >/dev/null | grep -c '^\[GC-WALK\]' || true )
@@ -180,7 +180,7 @@ collect_probe(){ # $1 = SCRIP_HEAP_MB or empty (empty = compiled default, curren
 printf ':- initialization(main).\nmk(0,[]) :- !.\nmk(N,[N|T]) :- M is N-1, mk(M,T).\nmain :- mk(2000,L), length(L,X), write(X), nl.\n' > "$W/probe.pl"
 pos=$(collect_probe "" 1)
 [ "${pos:-0}" -gt 0 ] || refuse "POSITIVE CONTROL FAILED: [GC-WALK] counted 0 at the compiled default arena stress 1, where the collector certainly runs. The decidability instrument is not reporting on this tree, so a zero anywhere below would be uninterpretable -- and an uninterpretable zero reported as 'did not collect' is exactly the false clean this arm exists to prevent."
-echo "DECIDABILITY positive-control [GC-WALK]=$pos at the compiled default arena (GC_HEAP_KB, currently 128 KB per CEO-1095), stress=1 -- the counter fires, so a zero below is a MEASURED zero"
+echo "DECIDABILITY positive-control [GC-WALK]=$pos at the compiled default arena (GC_HEAP_KB, currently 128 KB per R-1095), stress=1 -- the counter fires, so a zero below is a MEASURED zero"
 for _a in $ARMS; do
   case "$_a" in control) _mb="$CONTROL_MB"; _st=0 ;; arena) _mb=""; _st=0 ;; stress:*) _mb=""; _st="${_a#stress:}" ;; esac
   _w=$(collect_probe "$_mb" "$_st")

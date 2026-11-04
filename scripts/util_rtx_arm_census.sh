@@ -51,7 +51,7 @@ PROG="${1:?usage: util_rtx_arm_census.sh <prog.sno> [m3|m4|both]}"
 MODE="${2:-m3}"
 case "$MODE" in m3|m4|both) ;; *) echo "FATAL: MODE must be m3|m4|both (got '$MODE')"; exit 1; esac
 [ -f "$SO" ] || { echo "FATAL: $SO missing — run make libscrip_rt first"; exit 1; }
-# THE INTERPOSABLE RUNTIME (cto 2026-10-15, CEO-1795): the shipped runtime binds its own functions (RT_BIND in the Makefile), so a
+# THE INTERPOSABLE RUNTIME (cto 2026-10-15, R-1795): the shipped runtime binds its own functions (RT_BIND in the Makefile), so a
 # preloaded definition no longer reaches a call made inside it or a mode-3 call through an address it took. The interposer runs
 # against out/interposable/libscrip_rt.so, the same objects with every symbol preemptible, which LD_LIBRARY_PATH puts ahead of RUNPATH.
 make -s -C "$ROOT" out/interposable/libscrip_rt.so > /dev/null || { echo "FATAL: out/interposable/libscrip_rt.so did not link"; exit 2; }

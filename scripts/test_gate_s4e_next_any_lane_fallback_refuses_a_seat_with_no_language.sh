@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # test_gate_s4e_next_any_lane_fallback_refuses_a_seat_with_no_language.sh — THE PICKER'S ANY-LANE FALLBACK REFUSES A
 # SEAT THAT OWNS NO LANGUAGE (row picker-dependency-inversion-serves-a-blocker-across-lanes-to-a-seat-that-cures-nothing;
-# ceo CEO-771/CEO-779; Lon 2026-09-16 11:22 CDT, verbatim to the ceo: "Get the COO helping. The language seats now run
-# their own tests and benchmarks."; CEO-781).
+# R-771/R-779; Lon 2026-09-16 11:22 CDT, verbatim to the officer: "Get the COO helping. The language seats now run
+# their own tests and benchmarks."; R-781).
 #
 # MEASURED 2026-09-16 11:00 CDT on the live postoffice: `next` run by the coo -- whose own-lane pass found nothing --
 # fell to the any-lane pass and, by DEPENDENCY INVERSION, CLAIMED the cfo's rank-0 blocker
 # icon-gc-rung-2-every-live-aggregate-slides-and-hb-pinned-is-deleted to coo (claims/…claim read "coo / RUNNING");
-# CEO-771 measured the same path locking a Raku cure row for the ceo. The picker's own comment said a seat with no lane
-# "wanders rather than starves" -- true under EXECUTIVE, a defect under DECTET where the coo, ceo and cto cure nothing
-# in a language lane (CEO-723, CEO-766, CEO-775).
+# R-771 measured the same path locking a Raku cure row for the officer. The picker's own comment said a seat with no lane
+# "wanders rather than starves" -- true under EXECUTIVE, a defect under DECTET where the coo, the officer and cto cure nothing
+# in a language lane (R-723, R-766, R-775).
 #
 # THE CURE UNDER TEST (s4e_msg.sh): s4e_seat_owns_a_language; s4e_promotion_admissible refuses a promoted blocker in
 # ANOTHER owner's lane to a seat that owns no language in EVERY pass; the ordinary any-lane CROSS-LANE FALLBACK skips
@@ -17,7 +17,7 @@
 #
 # ARMS (hermetic, its own scratch postoffice under mktemp; MODE DECTET; lanes read from the picker's own table):
 #   (a) coo: the blocked HQ row's FREE blocker (an HQ's) is NOT claimed, the refusal is printed naming both topics, rc=2
-#   (b) ceo (no lane at all): the same blocker is NOT claimed
+#   (b) the officer (no lane at all): the same blocker is NOT claimed
 #   (c) CONTROL — the owning HQ: the blocker IS served (LOCKED, claim written) by dependency inversion
 #   (d) CONTROL — a language-owning officer (the rebus owner) with its own FREE row: served its own row, never the blocker
 #   (e) coo with an instrument row of its own (owner cell coo): served it, rc=0 -- a lane-less seat is not starved of ITS rows
@@ -32,12 +32,12 @@ W="$(mktemp -d "${TMPDIR:-/tmp}/gate_nolane_fallback.XXXXXX")" || refuse "mktemp
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/tasks" "$W/claims" "$W/released"
 # ⛔⭐ THE FIXTURE BRINGS ITS OWN TABLE, BECAUSE ITS SUBJECT IS THE owns-a-language TEST AND NOT THE LIVE
-# LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; the shape ceo CEO-953
+# LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; the shape R-953
 # directed for its sister gate). This gate needs a table carrying BOTH an hq_* lane and an officer lane, so
-# that the seats it puts under test -- coo and ceo -- own nothing while a real lane exists beside them to
+# that the seats it puts under test -- coo and the officer -- own nothing while a real lane exists beside them to
 # prove the refusal is about THEM and not about an empty table. Every mode that gives all seven languages to
-# one seat (CEO, TRIO, QUARTET today) leaves no hq_* owner at all, and this gate then REFUSED rc=2 and took
-# make test-postoffice down with it -- one of the twenty-three blocking arms of CEO-944. It was right to
+# one seat (the officer, TRIO, QUARTET today) leaves no hq_* owner at all, and this gate then REFUSED rc=2 and took
+# make test-postoffice down with it -- one of the twenty-three blocking arms of R-944. It was right to
 # refuse rather than lower its bar; what it lacked was the one piece of scenario it could not write itself.
 # The staging rule is a SOURCED AUTHORITY in lib_gate.sh, shared with the sister gate, never a private copy;
 # the mechanism under test is the real one in the staged file, and whether the LIVE table is correct is a
@@ -65,15 +65,15 @@ for _l in $_lane_langs; do
                 cfo|cto) [ -z "$_off_lang" ] && { _off_lang="$_l"; _off_owner="$_o"; };; esac
 done
 [ -n "$_hq_lang" ] || refuse "no language in the picker's table is owned by an hq_* seat; the HQ control arm cannot be built"
-for s in ceo coo cto cfo $_hq_owner ${_off_owner:-cfo}; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
+for s in cao coo cto cfo $_hq_owner ${_off_owner:-cfo}; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
 printf 'DECTET\n# fixture line 2\nLANES: fixture\n' > "$W/MODE"
-echo "    fixture: HQ lane = $_hq_owner (owns $_hq_lang); officer lane = ${_off_owner:-none} (owns ${_off_lang:-nothing}); lane-less seats under test = coo, ceo"
+echo "    fixture: HQ lane = $_hq_owner (owns $_hq_lang); officer lane = ${_off_owner:-none} (owns ${_off_lang:-nothing}); lane-less seats under test = coo, cao"
 mk(){ printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$2" > "$W/tasks/$2.task.md"; }
 run_next(){ S4E_POST="$W" S4E_SEAT="$1" S4E_RELEASE_COOLDOWN=0 bash "$SUT" next 2>&1; }
 fails=0; checks=0
 ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 reset_q(){ : > "$W/QUEUE.tsv"; rm -f "$W/claims/"*.claim "$W/released/"* 2>/dev/null; }
-echo "=== gate: next's any-lane fallback refuses a seat that owns no language (CEO-779) ==="
+echo "=== gate: next's any-lane fallback refuses a seat that owns no language (R-779) ==="
 # (a) coo vs a blocked HQ row whose blocker is FREE in the HQ's lane
 reset_q
 mk 0 ${_hq_lang}-blocked-row "$_hq_owner" BLOCKED-ON:${_hq_lang}-blocker-row
@@ -84,13 +84,13 @@ else ck no "(a) coo must not claim ${_hq_lang}-blocker-row and must exit 2 -- rc
 grep -q 'REFUSED PROMOTION' <<<"$out" && grep -q "${_hq_lang}-blocked-row" <<<"$out" && grep -q "${_hq_lang}-blocker-row" <<<"$out" && grep -q 'NO language' <<<"$out" \
   && ck ok "(a2) the refusal is printed, naming the blocked row, the blocker and the reason (no language)" \
   || ck no "(a2) the refusal must name both topics and say the seat holds no language -- got: $out"
-# (b) ceo, whose s4e_my_lane is deliberately empty
+# (b) the officer, whose s4e_my_lane is deliberately empty
 reset_q
 mk 0 ${_hq_lang}-blocked-row "$_hq_owner" BLOCKED-ON:${_hq_lang}-blocker-row
 mk 0 ${_hq_lang}-blocker-row "$_hq_owner" FREE
-out="$(run_next ceo)"; rc=$?
-[ ! -f "$W/claims/${_hq_lang}-blocker-row.claim" ] && ck ok "(b) ceo (no lane at all) is NOT served the HQ's blocker either" \
-  || ck no "(b) the ceo must not claim ${_hq_lang}-blocker-row -- got: $(grep -E '^LOCKED' <<<"$out")"
+out="$(run_next cao)"; rc=$?
+[ ! -f "$W/claims/${_hq_lang}-blocker-row.claim" ] && ck ok "(b) cao (no lane at all) is NOT served the HQ's blocker either" \
+  || ck no "(b) the officer must not claim ${_hq_lang}-blocker-row -- got: $(grep -E '^LOCKED' <<<"$out")"
 # (c) CONTROL: the owning HQ IS served the blocker by dependency inversion
 reset_q
 mk 0 ${_hq_lang}-blocked-row "$_hq_owner" BLOCKED-ON:${_hq_lang}-blocker-row

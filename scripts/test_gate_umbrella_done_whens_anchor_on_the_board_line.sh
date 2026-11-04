@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # test_gate_umbrella_done_whens_anchor_on_the_board_line.sh -- every umbrella DONE-WHEN reads its score from the runner's OWN
 # labelled board line, never from a whole-stdout token grep. hq_T 2026-09-04, row
-# umbrella-done-whens-anchor-on-the-runners-own-board-line-never-on-any-line-with-pass (ceo mint on hq_B + seat02's flag, 20:39).
+# umbrella-done-whens-anchor-on-the-runners-own-board-line-never-on-any-line-with-pass (mint on hq_B + seat02's flag, 20:39).
 #
-# ⛔⭐ THE DEFECT: the ceo's umbrella template grepped the runner's WHOLE stdout for PASS=[1-9] to prove it measured, then for
+# ⛔⭐ THE DEFECT: the officer's umbrella template grepped the runner's WHOLE stdout for PASS=[1-9] to prove it measured, then for
 # (FAIL|REJECT|CRASH|HANG|...)=[1-9] to red it. That assumes EVERY score-shaped token in the stream belongs to the score. False since
-# CEO-251 REQUIRED informational arms beside it: snoflake prints an sbl-vs-@expect line and csnobol4 a triangulation line, both
+# R-251 REQUIRED informational arms beside it: snoflake prints an sbl-vs-@expect line and csnobol4 a triangulation line, both
 # carrying FAIL= BY DESIGN, so those rows read unfinished against a PERFECT SCRIP. And false in the other direction where a runner
 # spells its count lowercase -- dotnet's clean suite read "printed no PASS count" and refused.
 # ⭐ BOTH FAILURES ARE THE SAME BUG WEARING OPPOSITE MASKS: a false red and a false refusal out of one wrong assumption, which is why

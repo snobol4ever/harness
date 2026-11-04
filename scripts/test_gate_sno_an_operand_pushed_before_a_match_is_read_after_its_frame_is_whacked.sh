@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_sno_an_operand_pushed_before_a_match_is_read_after_its_frame_is_whacked.sh
 #
-# THE ROWS (ceo CEO-1466, one cure for both): snobol4-an-alternation-whose-right-operand-is-a-match-loses-its-left-operand-the-pbalt-
+# THE ROWS (R-1466, one cure for both): snobol4-an-alternation-whose-right-operand-is-a-match-loses-its-left-operand-the-pbalt-
 # marshal-reads-an-unwritten-stack-slot (the cfo's) and snobol4-an-argument-evaluated-before-a-match-in-a-later-argument-is-read-from-
-# the-wrong-stack-slot (the cto's, BLOCKED on it). From the ceo's CEO-1461 seed-1205 GP fault, reduced by hq_icon (FINDING-2026-10-03-
+# the-wrong-stack-slot (the cto's, BLOCKED on it). From R-1461 seed-1205 GP fault, reduced by hq_icon (FINDING-2026-10-03-
 # hq_icon-eval-chain-reads-an-unwritten-stack-slot-as-an-alternation-operand) and the cfo: P = 'k' | ('xyz' ? 'y') then 'zzk' ? P . V
 # read V = '' where sbl -bf reads k, in both modes, compiled or EVAL'd; DUPL, REPLACE, LPAD and a three-arm alternation the same way;
 # with pointer-shaped stale bytes it was the strlen fault under rcp_of.
@@ -11,7 +11,7 @@
 # addressed 96 bytes too high ([rsp + 176] for a cell at [rsp + 80]): the zd read loop (emit.cpp, the g_zd_read loop) added 64 +
 # emit_match_begin_frame_extra for every IR_MATCH_BEGIN between producer and consumer, but every IR_MATCH_END ends in release_pump's
 # frame whack (mov rsp, rbp; pop rbp), so a match whose END also lies between them has no frame left on the stack.
-# THE CURE (the cto's, b96c81f66, landed by the cfo under CEO-1466): walking back from the consumer, an IR_MATCH_END opens a closed
+# THE CURE (the cto's, b96c81f66, landed by the cfo under R-1466): walking back from the consumer, an IR_MATCH_END opens a closed
 # region (counted) and nothing inside it, its IR_MATCH_BEGIN included, adds height -- that frame and every byte pushed inside it are
 # gone. An operand read INSIDE an open match is unchanged. The cto's own gate, ..._reads_its_own_slot.sh, carries nine direct shapes
 # and seven EVAL lines; this one adds the bounds that were never wrong and the crash witness on both EVAL roads.
@@ -84,7 +84,7 @@ cat > "$D/ev.sno" <<'SNO'
 *  inf_eval.sno -- the evaluator of infinite_snobol4: one SNOBOL4 expression per line of standard input, EVALed, one
 *  result line out, so SPITBOL and SCRIP running it on the same lines can be compared line for line. SETEXIT traps
 *  every error, EVAL's compile errors included, and the loop keeps going (Lon 2026-10-02).
-*  THE VARIABLES a..z BELONG TO THE TEST (Lon 2026-10-02, in-chat to the ceo: "So never use variable a..z since they are
+*  THE VARIABLES a..z BELONG TO THE TEST (Lon 2026-10-02, in-chat: "So never use variable a..z since they are
 *  used by the test for simplicity."): every name of this program is inf_-prefixed, because SNOBOL4 scope is dynamic and
 *  an EVALed (k = 5) would otherwise stomp the evaluator's own counter. A batch's PRE-SET lines give a..z their values
 *  and the batch code may stomp on them (Lon: "They can be stomped on. That is the fun of the batch."); state lives for
@@ -132,7 +132,7 @@ m4build ev || refuse "the crash witness's evaluator does not build in mode 4"
 for o in 1; do
     g3=$(cd "$D" && SCRIP_EVAL_OPEN=$o timeout -k 5 20 "$B/scrip" ev.sno < ev.txt 2>&1 | tr '\n' '|')
     g4=$(cd "$D" && SCRIP_EVAL_OPEN=$o timeout -k 5 20 ./ev.bin < ev.txt 2>&1 | tr '\n' '|')
-    n=$((n + 1)); if [ "$w" = "$g3" ] && [ "$w" = "$g4" ]; then echo "  ok    crash witness, SCRIP_EVAL_OPEN=$o, both modes: $w (the SCRIP_EVAL_OPEN=0 arm is retired: the C road it re-armed is DELETED under CEO-1576 and bombs by design, ceo CEO-1630)"; else RC=1; echo "  RED   crash witness SCRIP_EVAL_OPEN=$o: sbl [$w] m3 [$g3] m4 [$g4]"; fi
+    n=$((n + 1)); if [ "$w" = "$g3" ] && [ "$w" = "$g4" ]; then echo "  ok    crash witness, SCRIP_EVAL_OPEN=$o, both modes: $w (the SCRIP_EVAL_OPEN=0 arm is retired: the C road it re-armed is DELETED under R-1576 and bombs by design, R-1630)"; else RC=1; echo "  RED   crash witness SCRIP_EVAL_OPEN=$o: sbl [$w] m3 [$g3] m4 [$g4]"; fi
 done
 [ $RC = 0 ] && echo "GATE PASS(0) [an_operand_pushed_before_a_match_is_read_after_its_frame_is_whacked]: $n arms agree with sbl"
 [ $RC = 0 ] || echo "GATE FAIL(1) [an_operand_pushed_before_a_match_is_read_after_its_frame_is_whacked]: an operand read across a closed match differs from sbl"

@@ -1,14 +1,14 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ WITNESS GATE for row snobol4-the-match-operator-in-value-position-has-no-value-so-the-whole-statement-is-silently-dropped
-# (hq_I found it walking the Snocone rung09 ladder as defect D2; ceo routed the cure to cfo as CEO-673; cfo 2026-09-13).
+# (hq_I found it walking the Snocone rung09 ladder as defect D2; the officer routed the cure to cfo as R-673; cfo 2026-09-13).
 # A match with the binary match operator in VALUE position yields the matched substring and COMPOSES with the
 # expression around it.  MEASURED on 854f31238, BOTH modes: it had NO VALUE in the general expression lowerer, so
 # the ENTIRE enclosing statement was silently dropped -- OUTPUT = (S ? 'hel') 'X' printed nothing at rc=0 where
 # sbl -bf prints helX, and dump-ir showed no ASSIGN box and no concatenation ever built.  The operator only ever
 # appeared to work through a special case in case TT_ASSIGN that rewrites a right-hand side which is ENTIRELY a
 # TT_SCAN into a capture into the assignment target.
-# ⛔ GRADED ON THE OUTPUT, BYTE FOR BYTE, NEVER ON rc (ceo CEO-673 addendum, CEO-556 class): the broken shapes
+# ⛔ GRADED ON THE OUTPUT, BYTE FOR BYTE, NEVER ON rc (R-673 addendum, R-556 class): the broken shapes
 # exit 0 with no output, so every rc-based predicate reads them as green and cannot tell a cure from a silencing.
 # ⛔ ARMS 5-7 ARE CONTROLS: the two shapes that ALREADY WORKED through the special case, and a FAILED match, whose
 # correct answer is that the statement fails and prints nothing -- a cure that makes a failed match yield the null

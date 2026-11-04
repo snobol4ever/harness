@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_the_default_stack_and_heap_are_spitbols.sh -- LON'S WORDS OF 2026-09-25, HELD BY MECHANISM (ceo CEO-1261), verbatim, in-chat to
-# the ceo: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL." and "Ensure that all the test suite
+# test_gate_the_default_stack_and_heap_are_spitbols.sh -- LON'S WORDS OF 2026-09-25, HELD BY MECHANISM (R-1261), verbatim, in-chat to
+# the officer: "Let's set our default stack size and heap size for SCRIP to be the same as SPITBOL." and "Ensure that all the test suite
 # programs have the stack size and heap size setting placed into the per-program attribute files."
 # SPITBOL prints its own defaults on its usage screen: "option defaults: -F -d128m -i1m -m16m -s4m" -- a 128 MB maximum heap, a 1 MB
 # initial heap that is also the enlarge amount, a 4 MB stack. SCRIP's are GC_HEAP_CAP_KB and GC_HEAP_KB in gc_heap.c and

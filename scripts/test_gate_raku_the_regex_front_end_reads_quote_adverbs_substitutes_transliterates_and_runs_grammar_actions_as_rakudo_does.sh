@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_raku_the_regex_front_end_reads_quote_adverbs_substitutes_transliterates_and_runs_grammar_actions_as_rakudo_does.sh -- THE REGEX FRONT END: m:i m:g m:x m:nth m:ov m:c m:p, $var @var <$var> <@var>
 # interpolation, s/// S/// with a double-quoted or closure replacement, tr/// TR/// with :c :d :s, lexical and nested grammars and `my regex`, proto token + <sym>, actions with make / .made / .ast,
-# Match.caps / .chunks / .Int / .put, <( )> markers, && conjunction, < a b > word lists, **^N (row raku-every-suite-to-100-under-nonet-ceo-1266; follows the rx.c landing 2c4fb2e59).
+# Match.caps / .chunks / .Int / .put, <( )> markers, && conjunction, < a b > word lists, **^N (row raku-every-suite-to-100-under-nonet-r-1266; follows the rx.c landing 2c4fb2e59).
 #
 # THE DEFECT, measured over Roast S05 (98 files, run one by one): after rx.c replaced the Pike NFA, 221 of 2138 regex literals the files contain still refused and 10 files never started.
 # The front end ignored every quote adverb (`m:i/abc/` printed False, `TR/eox/EOX/` was a string), interpolated nothing, had no s/// or tr///, did not register a grammar below the top level or a

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # util_zeta_layout_check.py --asm run.s --plan plan.txt [--classes C,C] [--show N] [--quiet] -- THE LAYOUT CHECKER of DESIGN-PLAN zeta-layout (step 1).
 #
-# ONE SOURCE OF TRUTH FOR THE THREE ZETAS' LAYOUTS (ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 5, CEO-2019): the planner's row (./scrip --dump-plan) is the
+# ONE SOURCE OF TRUTH FOR THE THREE ZETAS' LAYOUTS (ARCH-ZETA-LAYOUT-ONE-SOURCE-OF-TRUTH.md section 5, R-2019): the planner's row (./scrip --dump-plan) is the
 # record of every box's depth; this checks a program's MODE-4 assembly against it. It is an INSTRUMENT, the one place our own generated text is re-parsed (the
-# compiler never re-reads its output, CEO-2019 R2). It changes nothing and reads no binary.
+# compiler never re-reads its output, R-2019 R2). It changes nothing and reads no binary.
 #
 # Inputs: --asm  the mode-4 text from `./scrip --compile --out=run.s prog`;   --plan  `./scrip --dump-plan prog` on stdout.
 # Pairing: the Nth PLAN graph is the Nth chain of the text (a `.Lgccode_` label opens a chain) and its rows are the chain's boxes in order (`.type nI_kind_bx`

@@ -3,7 +3,7 @@
 # (hq_packages 2026-10-22: the rows that class the package's reds need a finish line a seat can run on its named entries; the package's own refs are swipl's output of the driven program
 # (README: every ref CUT FROM THE ORACLE), so the live swipl run IS the ref and cannot drift from it.)
 # For each entry E: oracle = swipl -q E.pl (stdout, stdin /dev/null); m3 = scrip E.pl; m4 = scrip --compile E.pl, linked, run -- each at the entry's declared heap and stack (ALL.csv, lib_declared_arena.sh),
-# stdout equal to the oracle's after trailing newlines (as the harness compares: corpus_suite_harness run_oracle strips them). An entry the oracle gives NO output for is reported ORACLE_SILENT and counts as a failure of the instrument's caller (the package excludes those, CEO-1696).
+# stdout equal to the oracle's after trailing newlines (as the harness compares: corpus_suite_harness run_oracle strips them). An entry the oracle gives NO output for is reported ORACLE_SILENT and counts as a failure of the instrument's caller (the package excludes those, R-1696).
 # Usage: bash ../harness/scripts/test_xsb_package_entries_vs_swipl.sh [--modes m3,m4] ENTRY...       (ENTRY = the package's flat name without .pl, e.g. table_tests_abol_test3)
 # rc 0 = every named entry equal in every mode, 1 = a difference, 2 = could not measure (no scrip, no swipl, an unknown entry).
 set -uo pipefail

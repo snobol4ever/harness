@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_gc_share_callgrind.sh PROG.sno INPUT COPIES BAR_PCT -- THE COLLECTOR'S SHARE OF A PROGRAM'S INSTRUCTIONS, MEASURED UNDER
-# CALLGRIND (load-invariant, CEO-743), GRADED AGAINST A BAR (hq_collector, the cost row of CEO-1574).
+# CALLGRIND (load-invariant, R-743), GRADED AGAINST A BAR (hq_collector, the cost row of R-1574).
 #
 # The program runs in mode 3 at its DECLARED sizes (the <stem>.heap / <stem>.stack sidecars beside it, clause 8 (g)) with
 # INPUT concatenated COPIES times on stdin, from corpus/include so its -INCLUDEs resolve.  callgrind_annotate --inclusive=yes
@@ -12,7 +12,7 @@ P="${1:-}"; IN="${2:-}"; N="${3:-}"; BAR="${4:-}"
 [ -n "$P" ] && [ -n "$IN" ] && [ -n "$N" ] && [ -n "$BAR" ] || { echo "REFUSE(2): usage: $0 PROG.sno INPUT COPIES BAR_PCT"; exit 2; }
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; S4E="$(cd "$ROOT/.." && pwd)"
 # The collector's share is a benchmark measurement: it runs with every diagnostic off unless the caller sets SCRIP_DIAG itself
-# (Lon 2026-09-25, CEO-1262: "For benchmarks turn off diagnostics"); at the default the collector's self-checks (the trap ledger,
+# (Lon 2026-09-25, R-1262: "For benchmarks turn off diagnostics"); at the default the collector's self-checks (the trap ledger,
 # the assert scan, the heap verify, the block index, the fix check) are counted inside gc_collect_ex -- on treebank at 64 copies
 # 59.7 M of 340 M instructions read as the collector where 19.0 M are the collection (hq_runtime 2026-10-17).
 export SCRIP_DIAG="${SCRIP_DIAG:-0}"

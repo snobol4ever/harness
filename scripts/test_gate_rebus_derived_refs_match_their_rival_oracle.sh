@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test_gate_rebus_derived_refs_match_their_rival_oracle.sh -- A NO-RIVAL LANGUAGE'S REF IS DERIVED, AND
-# THE DERIVATION IS RE-COMPUTED HERE RATHER THAN BELIEVED.  CEO-607 (2026-09-12, hq_C's ASK, option (a)).
+# THE DERIVATION IS RE-COMPUTED HERE RATHER THAN BELIEVED.  R-607 (2026-09-12, hq_C's ASK, option (a)).
 #
-# ⛔ THE PROBLEM THIS EXISTS FOR.  Rebus has no independent rival implementation, so CEO-391's one-oracle-
+# ⛔ THE PROBLEM THIS EXISTS FOR.  Rebus has no independent rival implementation, so R-391's one-oracle-
 # per-language has no binary to name for it and `corpus/benchmarks/rebus/*.reb` can never carry an
 # oracle-cut ref.  The tempting repair -- run SCRIP and save what it printed -- is the one repair that
 # measures nothing: A REF CUT FROM THE IMPLEMENTATION IT GRADES PROVES ONLY THAT THE IMPLEMENTATION IS
 # DETERMINISTIC, and Rebus is the one language where that mistake is easy to make because nothing else can
-# be asked.  CEO-607 rules the answer: the ref is DERIVED, the derivation is RECORDED beside it, and the
+# be asked.  R-607 rules the answer: the ref is DERIVED, the derivation is RECORDED beside it, and the
 # strongest derivation is a CROSS-LANGUAGE COMPUTATION of the same kernel under a real oracle, with the
 # hand arithmetic as the second witness.
 #

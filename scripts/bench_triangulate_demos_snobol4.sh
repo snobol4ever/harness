@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # bench_triangulate_demos_snobol4.sh -- THREE-ANGLE TRIANGULATION FOR THE **DEMO** PROGRAMS.
 # Minted 2026-08-27 by hq_P on Lon's in-chat PIVOT, verbatim in substance: "Get numbers for 3-angle
 # performance numbers on all the demo programs. claws5, treebank, json, calculator, beauty. And keep
@@ -54,7 +54,7 @@ OUT=""; CHECK_SHAPE=0
 while [ $# -gt 0 ]; do case "$1" in --check-shape) CHECK_SHAPE=1;; --out) OUT="$2"; shift;; esac; shift; done
 
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || { echo "⛔ REFUSED: cannot load lib_oracle_flags.sh -- the ONE oracle-flag authority (s200)." >&2; exit 2; }
-# ⛔ NO SIZE IS TYPED HERE (ceo CEO-1485 over the equal-arena arm, RULES.md clause 8 (g)(3)-(4)): each engine runs at its own shipped defaults
+# ⛔ NO SIZE IS TYPED HERE (R-1485 over the equal-arena arm, RULES.md clause 8 (g)(3)-(4)): each engine runs at its own shipped defaults
 # plus the PROGRAM's declaration, measured at its DEMO-SCALE.tsv scale -- its <stem>.oracle_args on sbl, its <stem>.heap/.stack as SCRIP's
 # -d/-s in both modes -- read once per row by lib_declared_arena.sh; the window is never typed. CRITERION CHANGED 2026-10-03: readings
 # before ran DEMO-SCALE.tsv's sbl_extra_flags (-d512m -i64m -s256m, now retired) on sbl, its -s as ulimit -s on all three engines, and
@@ -77,7 +77,7 @@ trap 'rm -rf "$W"' EXIT
 
 # ⛔ SPITBOL RESOLVES -INCLUDE FROM ITS CURRENT DIRECTORY (beauty/ORACLE-REF.md; SNOLIB does not reach this binary), so its arm runs in a
 # directory holding a copy of corpus/include/*.inc -- run from anywhere else beauty's sixteen -INCLUDEs fail, SPITBOL prints a compile
-# listing at rc 1, and the grid graded SCRIP's right answer against it (ceo CEO-1987, 2026-10-26: from that directory sbl and m3 both
+# listing at rc 1, and the grid graded SCRIP's right answer against it (R-1987, 2026-10-26: from that directory sbl and m3 both
 # print beauty.sno back byte for byte, its fixed point; the 2026-10-25 grid's "beauty wrong answer" was this)
 SBLCWD="$W/sbl-cwd"; mkdir -p "$SBLCWD" && cp -p "$S4E/corpus/include/"*.inc "$SBLCWD/" || { echo "⛔ REFUSED: cannot stage corpus/include for SPITBOL's -INCLUDE ($SBLCWD)." >&2; exit 2; }
 # ---- scaled input, built once and cached by (name,scale) -------------------------------------
@@ -142,7 +142,7 @@ echo "⛔ BASIS: one iteration = ONE WHOLE PROGRAM RUN. Every number is a TOTAL 
 echo "   startup AND compile -- NOT a kernel slope. Never share a column with benchmarks/snobol4."
 echo "instrument: tools/bench_rusage external cpu(user+sys); engines: $ENGINES; budget(a1)=${BUDGET_MS}ms; reps(a2)=$REPS_A2; tol=${TOL}%"
 RT_OPT_READ=$(readelf --debug-dump=info "$(dirname "$SCRIP")/out/libscrip_rt.so" 2>/dev/null | grep -m1 -o ' -O[0-3sg]' | tr -d ' '); RT_OPT_READ="${RT_OPT_READ:-?}"
-echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=$RT_OPT_READ (read from libscrip_rt.so's DWARF); sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (CEO-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
+echo "oracle: $SBL $(sbl_lang_flags); RT_OPT=$RT_OPT_READ (read from libscrip_rt.so's DWARF); sizes: each program's own .oracle_args (sbl) and .heap/.stack (SCRIP -d/-s) over each engine's defaults -- CRITERION CHANGED 2026-10-03 (R-1485): earlier readings ran sbl -d512m -i64m -s256m, ulimit -s 262144 on all three engines and a 4 GB SCRIP window"
 echo "trees: SCRIP $(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null)  corpus $(git -C "$S4E/corpus" rev-parse --short HEAD 2>/dev/null)"
 # ⛔ THE GRID OPENS HERE so no multiple below can print without the load it ran under, and so a cell that
 # REFUSES is counted in THIS shell (perf_row is called directly, never inside $( ) -- arm G of the dark-cell gate).

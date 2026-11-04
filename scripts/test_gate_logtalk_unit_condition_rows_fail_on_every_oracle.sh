@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh -- THE FOURTH NO_ORACLE_ANSWER EVIDENCE FORM IS A MEASUREMENT, NOT A MASK (ceo CEO-2002 and cto, 2026-10-28).
+# test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh -- THE FOURTH NO_ORACLE_ANSWER EVIDENCE FORM IS A MEASUREMENT, NOT A MASK (R-2002 and cto, 2026-10-28).
 # logtalk_iso's EXCLUDED_CASES.tsv names the twelve cases of control/if_3 NO_ORACLE_ANSWER: the unit carries `condition :- predicate_property(if(_,_,_), built_in).`, lgtunit skips a whole unit
 # whose condition fails, and swipl 9.0.4, swipl 10.1.5 and the gprolog oracle all answer that goal false -- no oracle answers any case of the unit. A row like that is true only while every
 # oracle keeps answering the condition false. This gate runs the three oracles on the condition of the unit of EVERY NO_ORACLE_ANSWER row whose group file carries a `condition :- G.` clause
 # and reds the row the day one of them answers true (the case returns to the denominator in that landing). Only a row whose own reason text claims the
-# condition form is probed (cto CEO-2127): a row justified by another form may carry a Logtalk-local condition (set_encoding/1, max_depth_option_supported/0)
+# condition form is probed (cto R-2127): a row justified by another form may carry a Logtalk-local condition (set_encoding/1, max_depth_option_supported/0)
 # that plain Prolog answers false vacuously, and that reading would be neither the row's evidence nor its refutation.
 # ARMS: (1) every such row: swipl 9.0.4, swipl 10.1.5 and the gprolog oracle each answer the unit's condition false (a call that raises counts false, as lgtunit's condition check does)
 #       (2) THE POPULATION IS NOT EMPTY AND IS THE RULED TWELVE OR MORE (a gate that reads zero rows proves nothing)
 #       (3) CONTROL: control/soft_cut_2_3's condition (predicate_property('*->'(_,_), built_in)) reads TRUE on swipl 9.0.4 -- the same extractor and the same oracle read TRUE where the condition
 #           holds, so arm (1)'s "false" is a reading and not a probe that always answers false
-#       (4) CAN FAIL: a mktemp corpus (outside corpus/, CEO-547) that files a case of that passing unit as a NO_ORACLE_ANSWER row reads RED (rc 1) and names the row stale
-#       (5) CAN FAIL AT CASE LEVEL (cto CEO-2127, 2026-11-04): the same form reads a case's own condition({G}) option (predicate_property_2 lgt_predicate_property_2_23, G false on every
+#       (4) CAN FAIL: a mktemp corpus (outside corpus/, R-547) that files a case of that passing unit as a NO_ORACLE_ANSWER row reads RED (rc 1) and names the row stale
+#       (5) CAN FAIL AT CASE LEVEL (cto R-2127, 2026-11-04): the same form reads a case's own condition({G}) option (predicate_property_2 lgt_predicate_property_2_23, G false on every
 #           oracle, is a row); a mktemp corpus filing lgt_predicate_property_2_22 (its condition true on swipl 9.0.4) as a NO_ORACLE_ANSWER row reads RED (rc 1) and names the row stale
 # rc 0 all arms; rc 1 a stale row or a failed control; rc 2 an oracle or the files are absent, or an oracle printed neither true nor false (could not measure).
 # Usage: bash ../harness/scripts/test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh
@@ -82,7 +82,7 @@ probe() { timeout -k 5 60 "$@" < /dev/null 2> "$T/err" | grep -P '\t(row|control
 probe "$SW" -q -f "$T/probe.pl" -t halt > "$T/sw9" ; probe "$SW10" -q -f "$T/probe.pl" -t halt > "$T/sw10"; probe "$GP" --consult-file "$T/probe.pl" --query-goal halt > "$T/gp"
 for f in sw9 sw10 gp; do [ -s "$T/$f" ] || refuse "oracle $f printed no reading of the probe: $(head -c 300 "$T/err")"; done
 fails=0; rows=0; ck() { if [ "$1" = ok ]; then echo "  ok    $2"; else echo "  FAIL  $2"; fails=$((fails+1)); fi; }
-echo "=== gate: the unit-condition NO_ORACLE_ANSWER rows fail on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle (CEO-2002) ==="
+echo "=== gate: the unit-condition NO_ORACLE_ANSWER rows fail on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle (R-2002) ==="
 while IFS=$'\t' read -r key kind v9; do
   [ "$kind" = row ] || continue
   rows=$((rows+1))
@@ -105,7 +105,7 @@ if [ -z "${S4E_UNITCOND_NO_SELF:-}" ]; then
     && printf 'predicate_property_2:lgt_predicate_property_2_22\tNO_ORACLE_ANSWER\ta row naming a case whose own condition option holds on swipl (gate fixture)\n' > "$F2/packages/prolog/logtalk_iso/EXCLUDED_CASES.tsv" || refuse "fixture 2 could not be built"
   S4E_UNITCOND_NO_SELF=1 S4E_CORPUS="$F2" bash "$0" > "$T/fixture2.out" 2>&1; frc2=$?
   [ "$frc2" = 1 ] && grep -q 'FAIL  (1) predicate_property_2:lgt_predicate_property_2_22: the condition reads swipl 9.0.4 true' "$T/fixture2.out" \
-    && ck ok "(5) CAN FAIL AT CASE LEVEL: a row naming a case whose own condition option holds reads RED (rc 1) and is named stale (CEO-2127)" \
+    && ck ok "(5) CAN FAIL AT CASE LEVEL: a row naming a case whose own condition option holds reads RED (rc 1) and is named stale (R-2127)" \
     || ck no "(5) CAN FAIL AT CASE LEVEL: the fixture row read rc=$frc2, not rc 1 naming the stale row: $(tail -2 "$T/fixture2.out" | tr '\n' ' ')"
 fi
 [ "$fails" -eq 0 ] && { echo "GATE logtalk_unit_condition_rows_fail_on_every_oracle OK -- $rows row(s), swipl $("$SW" --version | head -1)"; exit 0; }

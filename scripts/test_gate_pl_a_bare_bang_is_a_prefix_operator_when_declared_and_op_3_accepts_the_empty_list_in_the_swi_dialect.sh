@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_bare_bang_is_a_prefix_operator_when_declared_and_op_3_accepts_the_empty_list_in_the_swi_dialect.sh
-# -- THE READER'S BANG AND NIL OPERATORS (ceo CEO-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-ceo-1664, SWI core/test_read.pl read_op:modify). In the SWI
+# -- THE READER'S BANG AND NIL OPERATORS (R-1959; row prolog-swi-core-test-read-every-case-agrees-with-swipl-in-both-modes-r-1664, SWI core/test_read.pl read_op:modify). In the SWI
 # dialect `:- op(600, fy, !)` makes the cut atom a prefix operator -- `![]`, `![x]`, `! a`, `!!a` and `f(! a, b)` read as !/1 terms while `!`, `[!]` and `f(!)` stay the atom -- and
 # `:- op(600, fy, [])` / `op(601, fy, [])` are accepted (SCRIP refused with permission_error(create, operator, []), and the directive form never registered a bare `!`) and change
 # no list reading: `-[x]`, `[]` and `[a|T]` read as lists. The program is the witness and its ref was cut from swipl 10.1.5 (/home/resources/swipl-mon/bin/swipl); swipl 9.0.4 raises

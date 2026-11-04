@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # ../harness/scripts/bench_rtx_3arm.sh -- RTX-0e: THE THREE-ARM INTERLEAVED HARNESS.
 #
 # WHY THIS EXISTS (s209, and it retro-qualifies numbers already in the ladder)
@@ -50,7 +50,7 @@ export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector'
 #   - A ~1.00 ON/PRISTINE is THE ANSWER, not a failed measurement (s187/s204 rule).
 #     State the expected band BEFORE running this.
 # ⛔ RETIRED 2026-09-23 -- see the refusal on the next line; the header below is kept as the record of what this measured.
-echo "⛔ RETIRED(2) bench_rtx_3arm.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, CEO-567 THE KERNEL CONVENTION, CEO-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, tools/bench_rusage)." >&2; exit 2
+echo "⛔ RETIRED(2) bench_rtx_3arm.sh: superseded 2026-09-23 by ../harness/scripts/bench_triangulate_icon.sh (hq_icon, R-567 THE KERNEL CONVENTION, R-1221). It read timing the KERNEL printed itself -- rate/*.icn self-timed with &time, rtx/*.icn wrote ms: -- and every Icon benchmark is now a pristine kernel with a .ref and no clock in its source; the harness generates the wrapper and times it (fixed iterations, fixed time, tools/bench_rusage)." >&2; exit 2
 
 set -u
 FAM="CALL"; PRISTINE=""; RTX=""; ROUNDS=5; USE_MIN=0; ASLR_OFF=0; RTCC_MODE=0

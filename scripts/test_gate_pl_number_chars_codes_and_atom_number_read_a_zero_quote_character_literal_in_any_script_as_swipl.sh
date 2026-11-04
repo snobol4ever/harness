@@ -1,5 +1,5 @@
 #!/bin/bash
-# test_gate_pl_number_chars_codes_and_atom_number_read_a_zero_quote_character_literal_in_any_script_as_swipl.sh -- A 0'C CHARACTER-CODE LITERAL IN TEXT (hq_packages, ceo CEO-1959; found on Trealla's
+# test_gate_pl_number_chars_codes_and_atom_number_read_a_zero_quote_character_literal_in_any_script_as_swipl.sh -- A 0'C CHARACTER-CODE LITERAL IN TEXT (hq_packages, R-1959; found on Trealla's
 # issues_test0763, issues_test0779 and issues_test0903: number_chars(N, "0'<U+1D11E>") raised syntax_error(illegal_number) where swipl answers 119070).
 # THE REGRESSION (mine, 367370215): pl_parse_number sent every text carrying a non-ASCII byte through the Unicode-decimal-digit converter (pl_digits_to_ascii), which refuses a text that is not all digits, so
 # number_chars/number_codes/atom_number refused 0'e-acute, 0'<euro>, 0'<U+1D11E> and 0'<Arabic-Indic digit>; term_to_atom and the source reader (the lexer) were not on that road and kept reading them.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_gnu_dialect_value_builtins_answer_as_gnu_prolog.sh -- the GNU Prolog value builtins GNU's own compiler
 # pl2wam executes answer as GNU Prolog 1.6.0 does, and read_term skips a % comment inside a clause (cto 2026-09-27,
-# CTO-188, the pl2wam demo row prolog-demo-gnus-wam-compiler-pl2wam-...-ceo-1312).
+# CTO-188, the pl2wam demo row prolog-demo-gnus-wam-compiler-pl2wam-...-r-1312).
 #
 # WHAT THIS PINS. (1) In-place sort/1, msort/1 and keysort/1 (GNU: the list is rewritten in its own cells, not undone
 # on backtracking, duplicates removed by shortening it); their ISO errors are graded by formal only. (2) The stream

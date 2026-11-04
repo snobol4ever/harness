@@ -85,7 +85,7 @@
 ../harness/scripts/test_gate_every_tree_kind_has_a_dump_name.sh
 ../harness/scripts/test_gate_tmp_scratch_is_released.sh
 ../harness/scripts/test_gate_a_descr_is_minted_whole_never_field_by_field.sh
-# ../harness/scripts/test_gate_pl_prelude_libs_in_sync.sh -- MOVED to make test (the coo 2026-10-14, ceo CEO-1697): it read 8.68 s CPU on 2781bf6e4
+# ../harness/scripts/test_gate_pl_prelude_libs_in_sync.sh -- MOVED to make test (the coo 2026-10-14, R-1697): it read 8.68 s CPU on 2781bf6e4
 #   against the 5 s budget, so it is a blocking arm, not a cheap one; it still blocks every landing through the blocking set
 ../harness/scripts/test_gate_pas_prelude_units_in_sync.sh
 ../harness/scripts/test_area_smoke.sh

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_select_dict_the_dict_operators_and_destructive_dict_assignment_answer_as_swipl.sh -- select_dict/3, :< AND >:<,
 # b_set_dict/3 AND nb_set_dict/3, get_dict/5 AND A DICT'S KEY CHECK ANSWER AS swipl (cfo 2026-10-14, row
-# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-ceo-1709).
+# prolog-swi-core-test-dict-every-case-agrees-with-swipl-in-both-modes-r-1709).
 #
 # SCRIP's library(dicts) (src/parsers/prolog/prelude/dicts.pl, SCRIP's own text) lacked select_dict/3, :</2, >:</2, b_set_dict/3 and
 # nb_set_dict/3, and the reader had no :< or >:< operator (swipl declares both 700 xfx), so test_dict's clauses using them were

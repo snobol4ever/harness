@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_sno_input_keeps_the_last_record_it_read.sh -- the INPUT variable holds the last record it delivered, so &DUMP lists
-# INPUT = '<last record>' as sbl -bf does (ceo CEO-1410, 2026-10-02).
+# INPUT = '<last record>' as sbl -bf does (R-1410, 2026-10-02).
 #
 # FOUND by running spitbol_testpgms/test6.spt to completion on Lon's word ("Fix test6 also."): its final &DUMP lists
 # INPUT = 'SLITERAL<LITERAL,...' under sbl and SCRIP's dump left INPUT out. THE CAUSE: NV_GET_untapped answered a reference to

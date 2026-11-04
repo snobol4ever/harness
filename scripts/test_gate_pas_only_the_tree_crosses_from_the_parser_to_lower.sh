@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pas_only_the_tree_crosses_from_the_parser_to_lower.sh -- the Pascal lowerer takes nothing from the Pascal parser but
 # the tree: no symbol the parser's objects define is referenced by lower_pascal.o, and none the lowerer defines is referenced by the
-# parser (Lon 2026-09-27, relayed by hq_snocone, ruled by the ceo at CEO-1322: "Ensure that only the tree_t gets sent/used by parser
+# parser (Lon 2026-09-27, relayed by hq_snocone, ruled by the officer at R-1322: "Ensure that only the tree_t gets sent/used by parser
 # stage to the lower stage. All global structures needed at runtime, are built in the lower stage."; RULES.md ONLY tree_t CROSSES
 # FROM A PARSER TO THE LOWER STAGE; row pascal-only-tree-t-crosses-from-the-pascal-parser-to-lower-the-nested-record-index-side-table)
 #
@@ -13,7 +13,7 @@
 #
 # ARMS: (1) link -- nm over the linked objects of this tree: the lowerer's objects (one per src/lower/lower_pascal*.c) reference no
 # symbol defined in the parser's objects (one per src/parsers/pascal/*.c), and those reference none the lowerer's define (the audit's
-# arms A and C for one language). RE-CUT 2026-10-14 by hq_pascal (CEO-1697): SCRIP 1889d257e moved the semantic front end into the
+# arms A and C for one language). RE-CUT 2026-10-14 by hq_pascal (R-1697): SCRIP 1889d257e moved the semantic front end into the
 # lowerer and deleted pascal_sem.c, and this arm still named pascal_sem.o -- it REFUSED where the objdir was clean and graded an Oct 9
 # leftover where it was not. Both object sets are now read from the sources on disk, and an object older than its source refuses;
 # (2) nrec -- a record's array field indexed through a record variable and two pointers, both modes, stdout and exit code

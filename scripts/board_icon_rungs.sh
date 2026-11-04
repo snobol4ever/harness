@@ -26,7 +26,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # noticing that it moved is.
 #
 # ⛔ NOT WIRED INTO THE BLOCKING SET. `make test`'s membership is a ruling, not a script's to take —
-# and a board that is red-by-construction must never be made blocking. Routed to ceo at mint.
+# and a board that is red-by-construction must never be made blocking. Routed to the officer at mint.
 #
 # ⭐ FLOOR, NOT A PINNED TOTAL (RULES.md § the denominator law): growth needs no re-pin; only an
 # ATTRIBUTED retirement may lower these, in the same commit that shrinks the rungs.
@@ -44,7 +44,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ⛔⭐ RECORD THE TREE THIS RUN GRADES, AT ITS START (hq_T 2026-09-08). A board takes ten to forty minutes and its
-# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the CEO-174 dirty-tree guard
+# SCORE.md write happens at the END; a seat who commits and pushes mid-run -- which the R-174 dirty-tree guard
 # actively pushes you toward, since a dirty tree skips the write entirely -- moves HEAD under a measurement that
 # already happened, and the row then names a tree carrying commits it never ran. Measured three times in one
 # sitting, twice while doing the disciplined thing. util_score_row.py stamps this instead of HEAD, and says so
@@ -52,7 +52,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # ⛔ THE HAND-SPELLED export S4E_TREE_AT_START THAT STOOD HERE IS RETIRED ONTO gate_tree_watch (coo
 # 2026-09-10, COO-54). It was written out in THREE runners and ABSENT from the three Icon package
 # boards the one runner runs every hour, so three of four boards stamped HEAD AT WRITE TIME -- which is
-# CEO-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
+# R-524 (1)'s defect in its second form. One spelling, in lib_gate.sh, set by the same call that takes
 # the baseline: a board cannot now acquire the stamp without also acquiring the refusal.
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 CORPUS="${CORPUS:-$S4E/corpus/tests/icon}"
@@ -67,7 +67,7 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # number mixed two populations graded against two different kinds
 # of expected output and could not be read as anything. Re-pinned from the honest split measured on
 # SCRIP 4f847224 / corpus 53477317: run-graded m3/m4 PASS=377 of 381, ast-graded PASS=153 of 153.
-# ⭐ Note which way the old instrument moved when the corpus got BETTER: the ceo's re-cut of 30 stale AST pins
+# ⭐ Note which way the old instrument moved when the corpus got BETTER: the officer's re-cut of 30 stale AST pins
 # (corpus 53477317) gave those fixtures correct dumps, which match RUN output even less, so the old board fell
 # 398 -> 377. An instrument that gets worse as its subject improves is not miscalibrated, it is measuring
 # something else.
@@ -89,7 +89,7 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # was faulty FOR THIS HARNESS, so the test was fixed -- opt2(["-x"]) over a literal list, ref re-cut from icont,
 # marker dropped, ALL.xfail deleted -- and the rungs reads XFAIL=0 with 596/596 both modes. A real argv-through-
 # the-harness witness is still owed once the argv sidecar lands (hq_T's harness row); this comment is not it.
-# ⭐ RE-PINNED 596 -> 607 (hq_B 2026-09-05 ~16:0x, MODE OCTET, on the ceo's order to re-pin the watermark).
+# ⭐ RE-PINNED 596 -> 607 (hq_B 2026-09-05 ~16:0x, MODE OCTET, on the order to re-pin the watermark).
 # ⛔ THE ORDER SAID 601 AND 601 IS ALREADY STALE — pinned to the MEASURED number, not the relayed one.
 # hq_P measured 601/601 both modes on SCRIP `7e190f16a`; corpus `bb5ee2b69` then minted the 8 declared-missing
 # isolation-phase witnesses, so the run-graded population is 609, not 601. Measured here on SCRIP `b812fb6d1`
@@ -101,21 +101,21 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # ladder_rung26_pow_pow_negbase_real and ladder_rung26_pow_pow_zero_negexp. They are open Icon defects to cure,
 # which is why 607 and not 609: a floor is what today already holds, never what tomorrow owes.
 # ⭐ RE-PINNED 607 -> 707 (cfo 2026-09-08 22:5x CDT, MODE NONET): board_icon_rungs.sh on SCRIP 259fddd68 + the three absorbed cfo witnesses (corpus, --absorb-only): entries=860 · m3 PASS=707 · m4 PASS=707 of 707, both modes, load 5.
-# ⭐ RE-PINNED 707 -> 709 (hq_C 2026-09-09, CEO-445): the board asks for the re-pin in the commit that earned it. Measured on corpus af179eebd
+# ⭐ RE-PINNED 707 -> 709 (hq_C 2026-09-09, R-445): the board asks for the re-pin in the commit that earned it. Measured on corpus af179eebd
 # (the five Jcon A-I absorptions, of which rung36_jcon_image PASSES) plus the ladder-rung absorptions other seats landed in the same window:
 # entries=879 · run-graded 726 · m3 PASS=709 · m4 PASS=709; per-entry identity 0 regressions / 0 vanished over 1557 examined.
 # ⛔ THE DENOMINATOR MOVED 707 -> 726 IN THE SAME BREATH, so the floor rising by 2 while 17 reds appeared is NOT a contradiction: growth needs
 # no re-pin (RULES.md § the denominator law) and the floor guards the PASS SET, never the fraction. Reading 709/726 as "worse than 707/707" is
-# the error this comment exists to stop -- the earlier number was over a population that HELD ITS REDS OUT, which is what CEO-445 retired.
+# the error this comment exists to stop -- the earlier number was over a population that HELD ITS REDS OUT, which is what R-445 retired.
 # ⚠ A CONCURRENT SEAT PINNED 708 IN THIS SAME MINUTE and it is superseded, not disagreed with: 708 and 709 are two honest measurements of a
 # tree that grew between them. Kept the higher because a floor is a ratchet over the pass SET; if 709 ever reds, the entry that fell is the
 # finding, not this pin.
-# ⭐ RE-PINNED 708 -> 713 (cfo 2026-09-09 09:4x CDT, MODE NONET): board_icon_rungs.sh on the ilib cure (x <- e enters at α; case arms lowered onto their result) + hq_V's CEO-445 rungs in the denominator: entries=881 · m3 PASS=713 · m4 PASS=713 of 728, both modes, load ~5; the 13 FAIL + 2 CRASH are hq_V's rungs minted BEFORE their cures, by design.
+# ⭐ RE-PINNED 708 -> 713 (cfo 2026-09-09 09:4x CDT, MODE NONET): board_icon_rungs.sh on the ilib cure (x <- e enters at α; case arms lowered onto their result) + hq_V's R-445 rungs in the denominator: entries=881 · m3 PASS=713 · m4 PASS=713 of 728, both modes, load ~5; the 13 FAIL + 2 CRASH are hq_V's rungs minted BEFORE their cures, by design.
 # ⭐ 713 SUPERSEDES 709 THE SAME WAY 709 SUPERSEDED 708 (cfo, resolving the rebase at 09:5x): two honest measurements of a tree that grew between them; the floor is a ratchet over the pass SET and takes the later, higher run.
 # ⭐ RE-PINNED 713 -> 714 (cfo 2026-09-09 09:5x CDT) on the REBASED tree: the ilib cure + f046ef00b (:=: against a static or global) measured together, entries=881 · m3 714 · m4 714 of 728; the 11 FAIL + 2 CRASH + 1 HANG are hq_V's pre-cure rungs and hq_C's three starved Jcon entries (the HANG is one of them waiting on the stdin it has no sidecar for).
 # ⭐ RE-PINNED 714 -> 718 (hq_V 2026-09-09 10:39 CDT, MODE NONET) on SCRIP `f48a3f0c7` + corpus `23638085f`, the tree this seat's own landing made: the cfo's ilib rung-4 witness absorbed as rung21 (procedure_write_269, green both modes) plus the cures other seats landed in the same window. entries=885 · run-graded 732 · m3 PASS=718 · m4 PASS=718, both modes equal. ⚠ THE DENOMINATOR GREW 728 -> 732 IN THE SAME BREATH and growth needs no re-pin: the floor is a ratchet over the PASS SET, never the fraction.
 # ⛔ TWO OF THE REMAINING 14 ARE GREEN THAT ASSERT NOTHING AND THE FLOOR CANNOT SEE IT: procedure_write_264 PASSES while five of its six oracle trace lines are absent, because lib_ladder.sh discards stderr -- FINDING-2026-09-09-hq_V-the-ladder-cannot-see-stderr-so-two-trace-rungs-grade-green-while-five-of-six-oracle-lines-are-missing.md. A watermark ratchets what is measured; it does not make an unmeasured line safe.
-# ⭐ hq_I 2026-09-09 (CEO-452): at the rebase, the sort type-class comparator measured 720/732 both modes on SCRIP 1848637a7 +
+# ⭐ hq_I 2026-09-09 (R-452): at the rebase, the sort type-class comparator measured 720/732 both modes on SCRIP 1848637a7 +
 # corpus a059b477d while hq_V measured 718 on f48a3f0c7 + 23638085f. ⛔ NEITHER READING DOMINATED -- 720 carried the comparator cure
 # on an older tree, 718 a newer tree without it -- so the floor was LEFT AT 718 and the MERGED tree was measured afterwards rather
 # than picking the bigger number. ⭐ RE-PINNED 718 -> 720 on that measurement: SCRIP 21fdd28f7 + corpus a059b477d, entries=885 ·
@@ -124,8 +124,8 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # it the same tree reads 720 -- procedure_write_261 and procedure_write_263, both modes. That is also why the number went into a
 # SECOND commit and not the cure's own: a floor written before the tree it guards exists is a guess wearing a measurement's clothes.
 # ⭐ RE-PINNED 720 -> 738 (hq_V 2026-09-09 17:0x CDT, MODE NONET) on SCRIP `63efd8436` + corpus `ca2b8a110`, both on origin: entries=903 · run-graded 750 · m3 PASS=738 · m4 PASS=738, both modes equal, xfail=0 xpass=0.
-# ⛔ MOST OF THE +18 OVER 720 IS NOT NEW CURING, IT IS A READING OF MINE BEING CORRECTED: hq_C's alt-bound cure `b3039f014` was already on origin when I measured the previous board, my build predated it by minutes, and the four entries I had recorded as red -- hq_C's eleven-shape probe and my three CEO-461 rungs -- are GREEN in both modes on the cured tree. The cell was RE-MEASURED, never annotated.
-# ⭐ RE-PINNED 738 -> 739 (hq_I 2026-09-09, CEO-452 follow-on): sortf on a SET and on a RECORD, a defaulted/negative field index,
+# ⛔ MOST OF THE +18 OVER 720 IS NOT NEW CURING, IT IS A READING OF MINE BEING CORRECTED: hq_C's alt-bound cure `b3039f014` was already on origin when I measured the previous board, my build predated it by minutes, and the four entries I had recorded as red -- hq_C's eleven-shape probe and my three R-461 rungs -- are GREEN in both modes on the cured tree. The cell was RE-MEASURED, never annotated.
+# ⭐ RE-PINNED 738 -> 739 (hq_I 2026-09-09, R-452 follow-on): sortf on a SET and on a RECORD, a defaulted/negative field index,
 # and the field-tie order, all cut from icont. SCRIP 170baeda2 + corpus 36f9e9ea9, entries=904 · run-graded 751 · m3 PASS=739 ·
 # m4 PASS=739; per-entry identity 0 regressions / 0 vanished over 1557 examined. ⛔⭐ WORTH THE LINE BECAUSE IT COST ME A FALSE RED:
 # measured against hq_V's 738 on a tree whose CORPUS I had not pulled, this same binary read 721/732 and the board printed RED with
@@ -133,16 +133,16 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # grading 732, so the ratchet compared a pass count against a floor from a LARGER POPULATION. A floor is a scalar and carries no
 # denominator, so it cannot tell a stale corpus from a real regression, and it reads in the alarming direction. PULL EVERY REPO,
 # THEN MEASURE: the board was green on the merged tree with no code change at all.
-# ⭐ RE-PINNED 739 -> 740 (hq_I 2026-09-09, CEO-468): `f ! record` spreads the record's fields as arguments, as icont does, and a
+# ⭐ RE-PINNED 739 -> 740 (hq_I 2026-09-09, R-468): `f ! record` spreads the record's fields as arguments, as icont does, and a
 # non-container raises 126. procedure_write_260 (ladder__rung24_records_apply_bang_spreads_the_fields) flips in both modes.
 # entries=904 · run-graded 751 · m3 PASS=740 · m4 PASS=740; per-entry identity 0 regressions / 0 vanished over 1557 examined.
-# ⭐ RE-PINNED 740 -> 742 (hq_R 2026-09-09, CEO-476): element generation over a SET concurrent with deletion no longer
+# ⭐ RE-PINNED 740 -> 742 (hq_R 2026-09-09, R-476): element generation over a SET concurrent with deletion no longer
 # skips every second element -- `table_icn_nth` indexed the LIVE ordered vector, so `delete` compacted it under a cursor
 # that had already advanced.  Flips procedure_write_258 and procedure_every_elemgen_replace_9; ALL NINE delete cases of
 # jcon's own gener.icn torture test read [ok] where seven of nine failed on the clean tree.
 # entries=906 · run-graded 753 · m3 PASS=742 · m4 PASS=742.  SNOBOL4 rungs as the shared-node control arm on the same
 # tree: both-modes PASS=1893/1917, m3 FAIL=0, m4 FAIL=0.
-# ⭐ RE-PINNED 742 -> 743 (hq_I 2026-09-09, CEO-474, hq_U co-signing): the procedure-value discriminator -- proc(name,0) yields the
+# ⭐ RE-PINNED 742 -> 743 (hq_I 2026-09-09, R-474, hq_U co-signing): the procedure-value discriminator -- proc(name,0) yields the
 # BUILT-IN even where a user procedure of that name exists, proc(name) yields what the global holds, and image(), type() and the
 # call path read the marker instead of guessing from the name. entries=909 · run-graded 756 · m3 PASS=743 · m4 PASS=743.
 # ⭐ RE-PINNED 743 -> 748 (hq_I 2026-09-09): read and reads take a FILE first, as icont does; the reads(count) shape we invented is
@@ -150,7 +150,7 @@ ENTRY_FLOOR="${ICON_RUNGS_ENTRY_FLOOR:-534}"
 # THIS LANDING'S (rung27_read_reads_bytes and call_through_a_static_variable_reads_the_static, both modes, measured by stashing the
 # change and re-running the identity gate: improved 12 -> 14). The other three arrived with the same pull and are read forward.
 # ⭐ RE-PINNED 748 -> 750 (hq_S 2026-09-10): loadfunc resolves a symbol AND returns a callable, so procedure_write_254
-# flips green in both modes (row icon-loadfunc-exits-1-with-no-output-master-procedure-write-254, CEO-476/485; the
+# flips green in both modes (row icon-loadfunc-exits-1-with-no-output-master-procedure-write-254, R-476/485; the
 # nulldesc grant). entries=909 · run-graded 756 · m3 PASS=750 · m4 PASS=750, SCRIP 64292dee1.
 # ⭐ RE-PINNED 750 -> 756 (hq_V 2026-09-10, MODE NONET / ICON ONLY) on SCRIP `8410097ca` + corpus `726448e76`, both
 # on origin. entries=911 · run-graded 758 · m3 PASS=756 · m4 PASS=756, both modes equal, xfail=0 xpass=0. TWO
@@ -213,7 +213,7 @@ echo "=== Icon RUNGS board — corpus/tests/icon/ALL.icn ==="
 # ⛔ Kept in a SEPARATE stream, deliberately: folding stderr into $_raw would put arbitrary diagnostic
 # text through the `grep '^SUITE_BOARD '` parses below, and a board that mis-parses its own verdict to
 # gain a fail list has traded the number for the names rather than getting both.
-# ⛔⭐ THE BINARY MOVED UNDER THIS BOARD (ceo CEO-524 (1), wired by the coo 2026-09-10 as THE ONE RUNNER).
+# ⛔⭐ THE BINARY MOVED UNDER THIS BOARD (R-524 (1), wired by the coo 2026-09-10 as THE ONE RUNNER).
 # This board hands a 763-entry rungs to the harness under a 1800 s cap -- the longest window on the fleet and
 # therefore the widest swap hazard. The staleness checks inside the harness prove the binary is CURRENT AT THE
 # START and the dirty guard downstream reads the tree at WRITE time; neither can see a rebuild that lands while
@@ -232,7 +232,7 @@ GATE_NAME=board_icon_rungs gate_tree_watch "$(cd "$HERE/../.." && pwd)"
 _errf=$(mktemp); trap 'rm -f "$_errf"' EXIT
 # ⛔⭐ THE OUTSIDE LIST RIDES ONLY IF IT EXISTS, and its absence is not an error: a suite with nothing outside
 # its baseline has no file, exactly as a package without one does. When it IS there the harness REFUSES on a
-# name it cannot find in the suite, so a stale list cannot quietly shrink the denominator (ceo ruling
+# name it cannot find in the suite, so a stale list cannot quietly shrink the denominator (ruling
 # 2026-09-08: a rung suite entry the oracle cannot run is outside the rungs' baseline, recorded with the
 # oracle's own words and never masked per line).
 OUTSIDE_TSV="$CORPUS/ALL.outside.tsv"
@@ -242,7 +242,7 @@ _raw=$(timeout -k 5 1800 python3 "$HARNESS" run "$RUNGS_ICN" "$RUNGS_REF" --lang
 # what it greps, so without this the entries dropped from the denominator would be INVISIBLE on the very
 # board whose number they changed -- which is precisely the masking the ruling forbids. Printed before the
 # counts, so a reader sees what left the population before reading the population.
-# ⛔ BEFORE THE FIRST NUMBER IS PRINTED AND BEFORE ANY SCORE.md WRITE, NEVER AFTER (ceo CEO-524 (1)): a refusal
+# ⛔ BEFORE THE FIRST NUMBER IS PRINTED AND BEFORE ANY SCORE.md WRITE, NEVER AFTER (R-524 (1)): a refusal
 # that fires after the row is published is an annotation, not a refusal. Placed here rather than beside the
 # score-row call because this board PRINTS its counts long before it writes them, and a printed number gets
 # quoted. gate_bin_unmoved exits 2 itself when the fingerprint moved.
@@ -266,21 +266,21 @@ field() { echo "$board" | grep -oE "$1=[0-9]+" | cut -d= -f2; }
 mt=$(field total)
 m3p=$(field m3_pass); m3f=$(field m3_fail); m3c=$(field m3_crash); m3h=$(field m3_hang); m3u=$(field m3_unproven); m3x=$(field m3_xfail); m3xp=$(field m3_xpass)
 m4p=$(field m4_pass); m4f=$(field m4_fail); m4c=$(field m4_crash); m4h=$(field m4_hang); m4u=$(field m4_unproven); m4s=$(field m4_skip); m4x=$(field m4_xfail); m4xp=$(field m4_xpass)
-# ⛔⭐ THE AND PER PROGRAM (ceo-372, 2026-09-06): the number this board's leaderboard row states is the count of
+# ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06): the number this board's leaderboard row states is the count of
 # entries green in EVERY mode they were graded in. It is read from the harness, never re-derived here -- m3p and
 # m4p cannot yield it, because the AND is a fact about each ENTRY and the board line has already thrown the
 # entries away. That is precisely why this row published one mode until now.
 # ⛔ REFUSE RATHER THAN READ A ZERO. An older harness prints no all_pass=, `field` returns empty, and a row
 # written over an empty string is a plausible false number -- this board's whole failure class.
 mall=$(field all_pass)
-# ⛔⭐ THE XFAIL OUTCOME SPLIT (ceo CEO-432 item 2): xfail says EXPECTED RED and nothing about WHICH red, so a
+# ⛔⭐ THE XFAIL OUTCOME SPLIT (R-432 item 2): xfail says EXPECTED RED and nothing about WHICH red, so a
 # crash, a hang, a wrong answer and a compile refusal are four different repairs wearing one count -- and an entry
 # that crashes in one mode and merely answers wrong in the other cannot show at all without a re-run.
 xfsplit() { # $1=mode prefix -> "wrong=A crash=B hang=C unproven=D skip=E"; an absent bucket is not a zero
     local m="$1" k v out=""
     for k in wrong crash hang unproven skip; do
         v="$(field "${m}_xfail_${k}")"
-        [ -n "$v" ] || { echo "⛔ BOARD REFUSES: SUITE_BOARD carries no ${m}_xfail_${k}= field -- the outcome split cannot be assembled (CEO-432 item 2)." >&2; exit 2; }
+        [ -n "$v" ] || { echo "⛔ BOARD REFUSES: SUITE_BOARD carries no ${m}_xfail_${k}= field -- the outcome split cannot be assembled (R-432 item 2)." >&2; exit 2; }
         out="${out}${out:+ }${k}=${v}"
     done
     printf '%s' "$out"
@@ -291,7 +291,7 @@ xfsplit() { # $1=mode prefix -> "wrong=A crash=B hang=C unproven=D skip=E"; an a
 # substitution's status, so this is where the refusal actually crosses back out.
 m3xs="$(xfsplit m3)" || exit 2
 m4xs="$(xfsplit m4)" || exit 2
-[ -n "$mall" ] || { echo "⛔ BOARD REFUSES: SUITE_BOARD carries no all_pass= field -- this row is the AND per program (ceo-372) and cannot be assembled without it; corpus_suite_harness.py beside this script emits it."; exit 2; }
+[ -n "$mall" ] || { echo "⛔ BOARD REFUSES: SUITE_BOARD carries no all_pass= field -- this row is the AND per program (R-372) and cannot be assembled without it; corpus_suite_harness.py beside this script emits it."; exit 2; }
 # ⛔⭐ AND THE SAME REFUSAL FOR THE xfail/xpass FIELDS, because this row now PUBLISHES them (coo 2026-09-08): a
 # headline that holds N constant while xfail and xpass trade underneath it is blind to movement inside its own
 # known-red set -- a cured bug and a stale marker are both invisible in it, in opposite directions. `field` returns
@@ -320,7 +320,7 @@ echo "rerun a single mode: python3 $HARNESS run $RUNGS_ICN $RUNGS_REF --lang ico
 # `grep -c` exits 1 on zero matches, so the bare assignment aborted the board silently right after the "rerun a
 # single mode" line -- measured by the strip row's `done` 20 minutes later. `|| true` keeps grep's own "0" and its
 # failing status out of set -e; the empty-case default stays for a missing file.
-# OOM is a red the harness names on its own line (CEO-1229 (2): every out-of-memory program by name, so each gets its heap declaration);
+# OOM is a red the harness names on its own line (R-1229 (2): every out-of-memory program by name, so each gets its heap declaration);
 # it is counted inside FAIL on SUITE_BOARD, and this filter dropped it until 2026-10-03 (the coo, gate (b)'s Icon arm: a 2 MB-capped
 # entry read FAIL=2 per mode with one name printed) -- so a board's OOM reds were counted and never named.
 _nfail=$(grep -cE '^[[:space:]]*(FAIL|OOM|CRASH|HANG|XPASS|UNPROVEN) ' "$_errf" 2>/dev/null || true); _nfail=${_nfail:-0}
@@ -339,9 +339,9 @@ if [ "$graded" -lt "$ENTRY_FLOOR" ]; then
     RED=1
 fi
 # ⛔⭐ THE DRIFT CHECK MUST SUBTRACT WHAT WAS DELIBERATELY REMOVED, OR IT ACCUSES THE SUITE OF DRIFT ON EVERY
-# GREEN RUN. MEASURED (hq_V 2026-09-09, CEO-476): ALL.icn carried 905 banner markers, ALL.ref 905 and ALL.csv 905
+# GREEN RUN. MEASURED (hq_V 2026-09-09, R-476): ALL.icn carried 905 banner markers, ALL.ref 905 and ALL.csv 905
 # rows with the three name-sets IDENTICAL -- nothing had drifted by any reading -- and this check still printed
-# "the suite file and its provenance index disagree", because `graded` excludes the entries the CEO-390/391
+# "the suite file and its provenance index disagree", because `graded` excludes the entries the R-390/391
 # outside-baseline ruling removes from the denominator and `CSV_ENTRIES` still counts their rows. The harness
 # prints that population as OUTSIDE_BASELINE_COUNT and names every member with the oracle's own reason on every
 # run, so the number to reconcile against was already on screen and merely was not being read.
@@ -355,7 +355,7 @@ fi
 # line was written for exactly that case. Under `set -o pipefail` it never got the chance: with no outside list
 # the harness prints no OUTSIDE_BASELINE_COUNT at all, this grep exits 1, the pipeline fails, and `set -e` kills
 # the board HERE -- one line before the denominator reconciliation, the watermark verdict and the SCORE.md write.
-# MEASURED when CEO-503 retired the last outside row: the board ran all 759 entries, printed its full numbers and
+# MEASURED when R-503 retired the last outside row: the board ran all 759 entries, printed its full numbers and
 # the six non-PASS names, then vanished with rc=1 and wrote NO row. That is the worst shape an instrument can
 # fail in -- it looks like a completed run in the log and leaves the board silently stale, which the FACT RULE
 # counts as a defect of the session. An empty outside list must read as ZERO OUTSIDE, never as a dead board.
@@ -395,11 +395,11 @@ fi
 # ANY run -- recording only green boards would make the leaderboard a trophy cabinet, showing each
 # suite's best remembered day rather than its state, which is the exact opposite of what it is for.
 # ⛔⭐ DECLARE THE PAIR RATHER THAN RELY ON THE TEXT HAPPENING TO CARRY ONE FRACTION (hq_T 2026-09-06,
-# ceo CEO-363). This row auto-resolved until now only because its board line prints m3 and m4 with the SAME
+# R-363). This row auto-resolved until now only because its board line prints m3 and m4 with the SAME
 # numbers, so the two fractions collapsed to one reading; the day the modes diverge -- which is exactly the
 # day the number matters -- it would have started refusing instead. A mechanism that works because two
 # values happen to be equal is not wired, it is lucky.
-# ⛔⭐ AND THE DECLARED PAIR IS THE AND PER PROGRAM (ceo-372): the entries green in EVERY graded mode, never
+# ⛔⭐ AND THE DECLARED PAIR IS THE AND PER PROGRAM (R-372): the entries green in EVERY graded mode, never
 # m4 alone (what this row published until now), never m3 alone, never min(m3p,m4p). ⭐ NOTE THIS BOARD'S OWN
 # HISTORY IS THE ARGUMENT FOR IT: m3p and m4p have been EQUAL here, which reads as "both modes agree" and is
 # not the same claim at all -- equal COUNTS are consistent with two disjoint sets of reds. Only the AND can

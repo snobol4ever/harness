@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_gc_a_stale_read_of_vacated_ground_faults_and_names_its_block.sh -- RUNG 1 OF ARCH-GC § 9, MEASURED.
 #
-# ⛔⭐ THE ROW (Lon 2026-09-21, in-chat to the ceo, verbatim: "Now you must discover a technique to automatically
+# ⛔⭐ THE ROW (Lon 2026-09-21, in-chat, verbatim: "Now you must discover a technique to automatically
 # flush out the GC ... We want things like our sync-step IPC monitor which is iron-clad and guaranteed to self
-# measure and self correct."; ceo CEO-1027, ARCH-GC § 9 RUNG 1).  SCRIP_GC_POISON has filled every vacated tail
+# measure and self correct."; R-1027, ARCH-GC § 9 RUNG 1).  SCRIP_GC_POISON has filled every vacated tail
 # with 0xDB since long before this row, AND THAT MEMORY STAYED MAPPED READABLE AND WRITABLE: a stale pointer read
 # returned a plausible 0xDB byte, the program printed a wrong answer and exited 0.  0xDB appeared exactly once in
 # the whole tree, at the memset that wrote it -- a tripwire nothing was ever attached to.  The cure is page
@@ -39,7 +39,7 @@ refuse() { echo "⛔ GATE REFUSED(2) [$G]: $1"; exit 2; }
 command -v gcc >/dev/null 2>&1 || refuse "no gcc -- this gate plants its own fixture and cannot build it"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 TRAPENV=""; [ "${FAIL_ONCE:-0}" = 1 ] && TRAPENV="SCRIP_GC_TRAP=0"
-echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- CEO-931/934; the CEO-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
+echo "ARENA SCRIP_HEAP_KB=$SCRIP_HEAP_KB (the shipped window -- R-931/934; the R-1146 sweep moved this off MB=1, which named 1024 KB and ran the collector ZERO times on four of six witnesses. The exasperation knob is SCRIP_GC_STRESS, never the arena -- 33rd batch clause 1)"
 cat > "$T/plant.c" <<'PLANTC'
 #include <stdio.h>
 #include <stdlib.h>

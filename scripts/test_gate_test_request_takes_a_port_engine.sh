@@ -1,10 +1,10 @@
 #!/bin/bash
-# test_gate_test_request_takes_a_port_engine.sh -- A PORT ENGINE'S REQUEST IS REFUSED AT FILING (ceo CEO-1912, re-cut by the coo; Lon 2026-10-22 15:0x, verbatim:
-# "Let HQ-JVM and HQ-DOTNET run their own tests."; the ceo 15:2x: "A request that bounces back ungraded a turn later is a dark road; a refusal at filing
-# is not."). CEO-1872's port lane is reversed: MODE LANES gives snobol4@dotnet to hq_dotnet and snobol4@jvm, snocone@jvm, rebus@jvm to hq_jvm, and the
-# coo's loop grades no port engine (loop v14j), so s4e_test_request.sh --engine dotnet|jvm REFUSES rc 2, names the HQ whose lane it is and CEO-1912,
+# test_gate_test_request_takes_a_port_engine.sh -- A PORT ENGINE'S REQUEST IS REFUSED AT FILING (R-1912, re-cut by the coo; Lon 2026-10-22 15:0x, verbatim:
+# "Let HQ-JVM and HQ-DOTNET run their own tests."; the officer 15:2x: "A request that bounces back ungraded a turn later is a dark road; a refusal at filing
+# is not."). R-1872's port lane is reversed: MODE LANES gives snobol4@dotnet to hq_dotnet and snobol4@jvm, snocone@jvm, rebus@jvm to hq_jvm, and the
+# coo's loop grades no port engine (loop v14j), so s4e_test_request.sh --engine dotnet|jvm REFUSES rc 2, names the HQ whose lane it is and R-1912,
 # and files nothing; the file keeps its name so its wiring stands. Hermetic, no build, nothing live: s4e_test_request.sh against a scratch request
-# folder and the real corpus tables (read only). ARMS: (1) --engine dotnet --suites and --engine jvm --suites refuse rc 2 naming CEO-1912 and the HQ,
+# folder and the real corpus tables (read only). ARMS: (1) --engine dotnet --suites and --engine jvm --suites refuse rc 2 naming R-1912 and the HQ,
 # filing nothing. (2) a dotnet request by part refuses rc 2 naming hq_dotnet and files nothing. (3) a jvm request by entry refuses rc 2 naming hq_jvm
 # and files nothing. (4) a SCRIP request carries no engine line. (5) a port seat is found by its root name (hq_dotnet, hq_jvm) for a SCRIP request.
 # (6) an unknown engine refuses rc 2 and files nothing. (7) --engine scrip files a plain SCRIP request: no engine line, no engine in its name.
@@ -21,7 +21,7 @@ arm() { examined=$((examined+1)); if eval "$2"; then echo "  ok   $1"; else echo
 nreq() { ls "$T/req"/*.req 2>/dev/null | wc -l; }
 n0=$(nreq); bash "$Q" --engine dotnet --suites > "$T/sd" 2>&1; rd=$?
 bash "$Q" --engine jvm --suites > "$T/sj" 2>&1; rj=$?
-arm "(1) --engine dotnet|jvm --suites refuse rc 2 naming CEO-1912 and the HQ, filing nothing" '[ $rd = 2 ] && [ $rj = 2 ] && grep -q "REFUSED(2)" "$T/sd" && grep -q "CEO-1912" "$T/sd" && grep -q "hq_dotnet" "$T/sd" && grep -q "hq_jvm" "$T/sj" && ! grep -q "^sno-rungs " "$T/sd" && [ $(nreq) = $n0 ]'
+arm "(1) --engine dotnet|jvm --suites refuse rc 2 naming R-1912 and the HQ, filing nothing" '[ $rd = 2 ] && [ $rj = 2 ] && grep -q "REFUSED(2)" "$T/sd" && grep -q "R-1912" "$T/sd" && grep -q "hq_dotnet" "$T/sd" && grep -q "hq_jvm" "$T/sj" && ! grep -q "^sno-rungs " "$T/sd" && [ $(nreq) = $n0 ]'
 n0=$(nreq); S4E_SEAT=hq_dotnet bash "$Q" --engine dotnet gimpel --part core > "$T/o2" 2>&1; r2=$?
 arm "(2) a dotnet part request refuses rc 2 naming hq_dotnet and files nothing" '[ $r2 = 2 ] && grep -q "REFUSED(2)" "$T/o2" && grep -q "hq_dotnet" "$T/o2" && grep -q "nothing filed" "$T/o2" && [ $(nreq) = $n0 ]'
 n0=$(nreq); S4E_SEAT=hq_jvm bash "$Q" --engine jvm sno-rungs "$(awk -F'\t' '!/^#/ && $2=="core" {print $1; exit}' "$C/tests/snobol4/PARTITION.tsv")" > "$T/o3" 2>&1; r3=$?

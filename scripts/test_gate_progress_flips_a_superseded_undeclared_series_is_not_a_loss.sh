@@ -2,9 +2,9 @@
 # test_gate_progress_flips_a_superseded_undeclared_series_is_not_a_loss.sh -- THE NET MEASURE READS A PROGRAM ACROSS ITS RUNNER'S SWITCH
 # FROM AN UNDECLARED CONFIGURATION TO A DECLARED ONE, AND NEVER HIDES A DECLARED DIVERGENCE WHILE DOING IT.
 #
-# ⛔ THE DEFECT (the ceo's measurement 2026-09-23 17:0x CDT; row instruments-progress-flips-counts-a-program-lost-when-its-runner-began-
+# ⛔ THE DEFECT (the officer's measurement 2026-09-23 17:0x CDT; row instruments-progress-flips-counts-a-program-lost-when-its-runner-began-
 # declaring-a-config-and-the-undeclared-series-stopped, the coo). .github/scripts/util_progress_flips.py keys its NET series on (suite,
-# program, mode, config) -- rightly, CEO-1047/1050: a shipped PASS must never hide an arena FAIL. But when a runner began DECLARING its
+# program, mode, config) -- rightly, R-1047/1050: a shipped PASS must never hide an arena FAIL. But when a runner began DECLARING its
 # configuration, the program's undeclared series stopped, and its last reading stayed its verdict forever: over 09-20..09-23 the tool
 # listed 37 rungs programs LOST and every one of the 37 PASSED on its latest published clean reading. The gain count had the mirror
 # fault: a series that went red-to-green before the switch read as a gain the program no longer has, and a program red before the
@@ -17,7 +17,7 @@
 # A declared series is never superseded: one that stopped (a retired arm) stays LOST and says STOPPED beside the program's latest reading.
 #
 # THE FIXTURE (hermetic: a planted table through --db, a 5 h window; H before it, W1 and W2 inside it):
-#   P   undeclared PASS@H FAIL@W1, shipped PASS@W2     -> NOT lost (the ceo's 37)            M1  undeclared FAIL@H, shipped PASS@W2 -> GAINED
+#   P   undeclared PASS@H FAIL@W1, shipped PASS@W2     -> NOT lost (the officer's 37)            M1  undeclared FAIL@H, shipped PASS@W2 -> GAINED
 #   P2  undeclared PASS@H FAIL@W1, shipped FAIL@W2     -> lost, across the switch            M2  undeclared FAIL@H PASS@W1, shipped FAIL@W2
 #   R   undeclared PASS@H FAIL@W1, never switched      -> lost                                    -> NOT gained (the old rule's false gain)
 #   S   shipped PASS@H FAIL@W1                         -> lost (declared series untouched)   A   undeclared PASS@H, shipped PASS@W2 and

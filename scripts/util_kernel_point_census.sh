@@ -2,8 +2,8 @@
 # util_kernel_point_census.sh <lang> <max_ms> <kernel>... -- THE POINT CONVENTION, MEASURED: each named benchmark kernel of
 # corpus/benchmarks/<lang> is run ONCE in mode 3 under its declared -d/-s sidecars (<kernel>.heap, <kernel>.stack: "<name><TAB><kb>"),
 # its wall clock printed in ms, and the census reads RED (rc 1) when any single run exceeds <max_ms> -- Lon's point convention is
-# 0.5 to 5 s per point (RULES.md THE KERNEL CONVENTION; CEO-1264), so a kernel whose one run takes 20 s makes every three-angle grading of it
-# cost twelve runs of 20 s (CEO-1564: RakBench's 3293 s a pass were four such kernels). rc 2 when the kernel, the binary or the corpus is
+# 0.5 to 5 s per point (RULES.md THE KERNEL CONVENTION; R-1264), so a kernel whose one run takes 20 s makes every three-angle grading of it
+# cost twelve runs of 20 s (R-1564: RakBench's 3293 s a pass were four such kernels). rc 2 when the kernel, the binary or the corpus is
 # missing: a census that cannot measure says so. Mode 3 only: the kernel's own work, no harness angles.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"; W="$(cd "$HERE/../../SCRIP" && pwd)"

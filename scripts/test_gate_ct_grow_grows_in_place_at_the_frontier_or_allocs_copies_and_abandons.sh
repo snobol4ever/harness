@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # test_gate_ct_grow_grows_in_place_at_the_frontier_or_allocs_copies_and_abandons.sh -- ct_grow in src/ir/ct_arena.c grows a compile-time block the
 # way Lon ruled twice: realloc's two cheap cases (ARCH-DYNAMIC-STORAGE.md § 4.0, Lon 2026-09-23: "grown in place and copy and grown just
-# like realloc does. Of course grow in place only occurs at the frontier."; CEO-1211), and otherwise ALLOC, COPY, ABANDON (Lon 2026-09-24
+# like realloc does. Of course grow in place only occurs at the frontier."; R-1211), and otherwise ALLOC, COPY, ABANDON (Lon 2026-09-24
 # 12:4x, in-chat to the cfo: "Use the special compile-time heap, and use alloc/copy/abandon at geometric growth for dynamic arrays and
-# buffers."; CEO-1244). RE-PINNED 2026-09-25 by the cfo from test_gate_ct_grow_takes_reallocs_contract_and_frees_the_old_block.sh
-# (d2efe8a8f), whose case 3 FREED the old block through ct_drop: CEO-1244 supersedes that contract, and every arm below that read a free
+# buffers."; R-1244). RE-PINNED 2026-09-25 by the cfo from test_gate_ct_grow_takes_reallocs_contract_and_frees_the_old_block.sh
+# (d2efe8a8f), whose case 3 FREED the old block through ct_drop: R-1244 supersedes that contract, and every arm below that read a free
 # now reads an abandon. Row compiler-every-population-table-grows-in-the-compile-time-arena-through-ct-grow-no-fixed-limit-a-program-can-reach.
 #
 # ARM 1, the primitive, through a C harness linked against the allocator's own source (no build of scrip needed). The allocator keeps its state
-# in g_lower.ir (CEO-1575, the ceo's ruling of 2026-10-09 14:10), so the harness defines the one g_lower from the same G_LOWER_INIT that
+# in g_lower.ir (R-1575, the ruling of 2026-10-09 14:10), so the harness defines the one g_lower from the same G_LOWER_INIT that
 # lower_common.c uses -- ct_poison starts at -1 here exactly as in scrip:
 #   1a FITS      a grow within the block's power-of-two class returns the SAME pointer.
 #   1b FRONTIER  the last block carved grows IN PLACE: same pointer, payload intact, the frontier advanced.
@@ -18,7 +18,7 @@
 #                A cure that went back to freeing reds this arm.
 #   1d NO BIN    the abandoned block never returns to a bin: the next same-class allocation is a DIFFERENT block.
 #   1e BIG       a block above the 8 MB bin moves to a new mapping with the payload copied, and the old mapping stays readable.
-# ARM 2 (RETIRED 2026-09-26 with the SCRIP_AB road, CEO-1274 (2)): the snapshot restore in bb_ab_emit_nodes carried the grown op_arg_slot: SCRIP_AB=1 on a
+# ARM 2 (RETIRED 2026-09-26 with the SCRIP_AB road, R-1274 (2)): the snapshot restore in bb_ab_emit_nodes carried the grown op_arg_slot: SCRIP_AB=1 on a
 #   program whose first DEFINE has 60 names and whose second has 20 compiles rc 0 (the regression that found the drop's one broken
 #   caller, 2026-09-23; kept as the arm that proves the restore still hands back the grown array).
 # rc 0 GREEN · 1 RED (named) · 2 REFUSE (cannot measure).
@@ -95,7 +95,7 @@ L = ["        DEFINE('BIG(A,B)%s')" % ",".join("L%d" % i for i in range(1, 61)),
      "END"]
 open(sys.argv[1], "w").write("\n".join(L) + "\n")
 EOF
-echo "  arm 2 RETIRED with the SCRIP_AB road (cto 2026-09-26, CEO-1274 (2)): the snapshot restore it witnessed lived in bb_ab_emit_nodes, which is deleted; nothing on a live road restores an op_arg_slot snapshot, so there is nothing to re-witness"
+echo "  arm 2 RETIRED with the SCRIP_AB road (cto 2026-09-26, R-1274 (2)): the snapshot restore it witnessed lived in bb_ab_emit_nodes, which is deleted; nothing on a live road restores an op_arg_slot snapshot, so there is nothing to re-witness"
 gate_stamp
 [ "$red" = 0 ] && { echo "GATE GREEN [$GATE_NAME]"; exit 0; }
 echo "GATE RED(1) [$GATE_NAME]"; exit 1

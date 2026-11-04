@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_an_exception_is_a_value_that_die_carries_and_catch_and_throws_like_read.sh -- AN EXCEPTION IS A TYPED VALUE: die CARRIES IT, $! HOLDS IT, CATCH CATCHES IN ANY BLOCK, throws-like READS IT
-# (row raku-every-suite-to-100-under-nonet-ceo-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; the Roast compile census after the Match landing: `$!` 20 first-refusals, and throws-like in 54 of 240 sampled compiled files).
+# (row raku-every-suite-to-100-under-nonet-r-1266, Lon 2026-09-25: "use IPC sync-step monitor to crawl the test suites to 100%"; the Roast compile census after the Match landing: `$!` 20 first-refusals, and throws-like in 54 of 240 sampled compiled files).
 #
 # THE DEFECT: an exception was only a message string in one fixed C buffer (g_script_exception). `$!` was refused by the compile guard; X::AdHoc.new(payload=>..) was rewritten by the parser to its bare payload string
 # and `when X::AdHoc` to a default arm; a die with an object lost the object; CATCH worked only directly inside `try` (a CATCH in a bare block or a sub body was ignored and the die killed the program); `try` as an

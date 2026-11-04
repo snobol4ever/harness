@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ WITNESS GATE for row snobol4-gimpel-recursive-list-functions-overflow-the-call-stack-where-spitbol-completes
-# (cfo 2026-09-12, on the ceo's CEO-626 naming of the prototype defect).
+# (cfo 2026-09-12, on R-626 naming of the prototype defect).
 #
 # DEFINE(proto, entry) is executable: EACH execution binds the prototype -- the formal NAMES, the locals list
 # and the entry.  0d54a825f made the ENTRY follow the executed DEFINE; the PROTOTYPE still does not: the

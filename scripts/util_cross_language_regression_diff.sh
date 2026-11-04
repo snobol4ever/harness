@@ -127,7 +127,7 @@ PYEOF
 lang_src()  { case "$1" in snobol4) echo "$CORPUS/tests/snobol4/ALL.sno";; icon) echo "$CORPUS/tests/icon/ALL.icn";; prolog) echo "$CORPUS/tests/prolog/ALL.pl";; esac; }
 lang_ref()  { case "$1" in snobol4) echo "$CORPUS/tests/snobol4/ALL.ref";; icon) echo "$CORPUS/tests/icon/ALL.ref";; prolog) echo "$CORPUS/tests/prolog/ALL.ref";; esac; }
 lang_args() { case "$1" in snobol4) echo "--modes m3,m4";; icon) echo "--lang icon --modes m3,m4";; prolog) echo "--lang prolog --modes m3,m4";; esac; }
-# Every entry of every rung suite is graded in both modes: there is no modes column (Lon 2026-09-23, CEO-1218/1230).
+# Every entry of every rung suite is graded in both modes: there is no modes column (Lon 2026-09-23, R-1218/1230).
 
 run_rungs() {  # $1=lang $2=stdout-file $3=stderr-file ; returns the harness's own exit code
     local lang="$1" out="$2" err="$3" src ref

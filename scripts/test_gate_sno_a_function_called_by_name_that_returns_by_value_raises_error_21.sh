@@ -4,7 +4,7 @@
 # field :(f(x))) that leaves by RETURN instead of NRETURN raises sbl's error 021 "function called by name returned a value", reported in the
 # CALLER's statement, as sbl reports it. A deferred target . *f(x), builtins and DATA field accessors called by name stay legal.
 # Row snobol4-a-return-from-a-function-called-by-name-is-error-21-in-sbl-at-five-by-name-contexts-and-scrip-raises-it-at-none-a-per-call-site-by-name-mark
-# (found by the cfo 2026-10-03 on the ceo's CEO-1489 hand-off; the cfo's probes and this gate's first draft are theirs).
+# (found by the cfo 2026-10-03 on R-1489 hand-off; the cfo's probes and this gate's first draft are theirs).
 #
 # WHY SCRIP RAISED NOTHING. h(x) with the body `h = .V :(RETURN)`: sbl -bf stops every by-name context with ERROR 021; SCRIP took the RETURNed NAME as
 # if it had been NRETURNed ('xy' ? LEN(1) . h(1) set V to x). The call site only consulted the by-name request when the callee had set the NRETURN

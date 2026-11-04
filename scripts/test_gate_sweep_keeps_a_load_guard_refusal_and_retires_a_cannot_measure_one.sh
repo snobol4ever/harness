@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ../harness/scripts/test_gate_sweep_keeps_a_load_guard_refusal_and_retires_a_cannot_measure_one.sh
-# ceo 2026-10-08 21:5x CDT (CEO-1574), closing the coo's row
-# instruments-the-sweep-keeps-a-row-whose-finish-line-refused-on-a-load-guard-instead-of-retiring-it-ceo-1562.
+# 2026-10-08 21:5x CDT (R-1574), closing the coo's row
+# instruments-the-sweep-keeps-a-row-whose-finish-line-refused-on-a-load-guard-instead-of-retiring-it-r-1562.
 #
-# WHAT IT GRADES. The zero-base sweep (.github/scripts/util_queue_zero_base.py --apply, ceo CEO-1386) runs every FREE row's
+# WHAT IT GRADES. The zero-base sweep (.github/scripts/util_queue_zero_base.py --apply, R-1386) runs every FREE row's
 # DONE-WHEN and RETIRES a row whose finish line reads rc 2 (cannot measure). A benchmark bar reads rc 2 under load by the
-# two-number law -- a multiple is not load-invariant (CEO-743): its angles DISAGREE, or its harness prints no row because the
+# two-number law -- a multiple is not load-invariant (R-743): its angles DISAGREE, or its harness prints no row because the
 # kernel ran past its budget -- so every sweep that ran while the fleet built retired the live performance rows: eight on
-# 2026-10-07 20:16, four on 2026-10-08 15:18, two more at 19:17 (CEO-1572), each re-minted by hand and each a row the fleet
+# 2026-10-07 20:16, four on 2026-10-08 15:18, two more at 19:17 (R-1572), each re-minted by hand and each a row the fleet
 # could not pick meanwhile.
 # THE CURE this gate pins: an rc 2 whose output names the LOAD GUARD -- the words "load-guard", which the four bench bars print
 # through perf_load_guard (lib_perf_fmt.sh) on a timing-shaped refusal when the box reads at or above BENCH_LOAD_GUARD_PER_CORE
@@ -32,10 +32,10 @@ PASS=0; FAIL=0; T=$'\t'
 ok()  { PASS=$((PASS+1)); echo "  ✅ $1: $2"; }
 red() { FAIL=$((FAIL+1)); echo "  ⛔ $1 RED: $2"; }
 mkdir -p "$W/tasks" "$W/salvage"; : > "$W/QUEUE.done.tsv"; : > "$W/QUEUE.retired.tsv"
-printf '# fixture queue (CEO-1574 gate)\n' > "$W/QUEUE.tsv"
+printf '# fixture queue (R-1574 gate)\n' > "$W/QUEUE.tsv"
 OLD="$(date -d '2 days ago' +%Y-%m-%dT%H:%M:%S)"
 row()   { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; }
-baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: %s\nLINKS: minted via `mint` by ceo, 2026-10-01T00:00:00Z\n## NEXT\n## LEDGER\n' "$1" "$2" > "$W/tasks/$1.task.md"; touch -d "$OLD" "$W/tasks/$1.task.md"; }
+baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: %s\nLINKS: minted via `mint` by the officer, 2026-10-01T00:00:00Z\n## NEXT\n## LEDGER\n' "$1" "$2" > "$W/tasks/$1.task.md"; touch -d "$OLD" "$W/tasks/$1.task.md"; }
 row 2 fx-load-guard-row coo FREE; baton fx-load-guard-row "echo 'REFUSE(2) load-guard: load 99.0 on 16 cores (6.19/core) at or above the 0.5/core guard -- fixture'; exit 2"
 row 2 fx-cannot-row coo FREE;     baton fx-cannot-row "echo 'REFUSE(2): fixture cannot measure (no oracle)'; exit 2"
 row 0 fx-red-row coo FREE;        baton fx-red-row "exit 1"
@@ -58,20 +58,20 @@ if [ "$nl" = 1 ] && [ "$m0" = "$m1" ]; then
 else
     red B "baton: $nl LEDGER line(s) naming LOAD GUARD with the refusal line, mtime $m0 -> $m1 (want 1, unchanged)"
 fi
-grep -qE "^2${T}fx-cannot-row${T}coo${T}RETIRED:zero-base-ceo-1386-cannot-measure-rc2$" "$W/QUEUE.retired.tsv" && ! grep -q 'fx-cannot-row' "$W/QUEUE.tsv" \
+grep -qE "^2${T}fx-cannot-row${T}coo${T}RETIRED:zero-base-r-1386-cannot-measure-rc2$" "$W/QUEUE.retired.tsv" && ! grep -q 'fx-cannot-row' "$W/QUEUE.tsv" \
     && ok C "the plain rc 2 beside it is still retired as cannot-measure-rc2" \
     || red C "plain rc 2: retired [$(grep 'fx-cannot-row' "$W/QUEUE.retired.tsv" | cut -c1-80)] live [$(grep -c 'fx-cannot-row' "$W/QUEUE.tsv")] (want retired cannot-measure-rc2, not live)"
 grep -qE "^2${T}fx-red-row${T}coo${T}FREE$" "$W/QUEUE.tsv" && grep -q 'ran RED (rc=1)' "$W/tasks/fx-red-row.task.md" \
     && ok R "the rank-0 red is kept, re-ranked to 2, and ledgered RED" \
     || red R "red row: [$(grep 'fx-red-row' "$W/QUEUE.tsv" | cut -c1-60)] ledger RED lines $(grep -c 'ran RED' "$W/tasks/fx-red-row.task.md") (want rank 2 FREE, 1)"
-grep -qE "^2${T}fx-green-row${T}coo${T}DONE:zero-base-green-ceo-1386$" "$W/QUEUE.done.tsv" \
+grep -qE "^2${T}fx-green-row${T}coo${T}DONE:zero-base-green-r-1386$" "$W/QUEUE.done.tsv" \
     && ok G "the green is archived DONE" \
-    || red G "green row: done [$(grep 'fx-green-row' "$W/QUEUE.done.tsv" | cut -c1-60)] (want DONE:zero-base-green-ceo-1386)"
+    || red G "green row: done [$(grep 'fx-green-row' "$W/QUEUE.done.tsv" | cut -c1-60)] (want DONE:zero-base-green-r-1386)"
 s="$(ls "$W"/salvage/zero-base-*.tsv 2>/dev/null | head -1)"
 [ -n "$s" ] && grep -qE "^fx-load-guard-row${T}coo${T}FREE${T}LOAD-GUARD-kept${T}2${T}KEEP$" "$s" \
     && ok S "the salvage log names the class LOAD-GUARD-kept with rc 2 and place KEEP" \
     || red S "salvage: [$( [ -n "$s" ] && grep 'fx-load-guard-row' "$s" | cut -c1-100)] (want class LOAD-GUARD-kept, rc 2, KEEP)"
-# THE KNIT (ceo CEO-1574, measured on the first sweep under the guard): a criterion that builds in the root and is killed at the
+# THE KNIT (R-1574, measured on the first sweep under the guard): a criterion that builds in the root and is killed at the
 # timeout leaves the tree half-built, and every later binary-running criterion refuses rc 2 -- nine false retirements on 2026-10-08.
 # The sweep knits the tree (ZB_KNIT_CMD, by default make in the root) once before the run phase and again after every kill; the
 # fixture plants a criterion that sleeps past --timeout 1 and hands the sweep an echo as its knit, so this gate never builds.

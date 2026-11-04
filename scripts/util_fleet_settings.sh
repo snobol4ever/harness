@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # util_fleet_settings.sh [--apply] -- LON'S ONE SCRIPT: every seat root's .claude/settings.local.json and the three slices (ARCH-SHARED-
-# DEVELOPMENT.md 4.2 and 8 step 2; the cto's design CEO-2041, written by the ceo). No other hand changes a root's settings (section 9).
+# DEVELOPMENT.md 4.2 and 8 step 2; the cto's design R-2041, written by the officer). No other hand changes a root's settings (section 9).
 # WITHOUT --apply it changes nothing: it prints, root by root, the unified diff it would write, then the slice and tmpfiles commands.
 # WITH --apply, in this order:
 #   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10), every slice row of the ONE declared budget table
@@ -13,7 +13,7 @@
 #   (3) every seat root's settings.local.json, a dated .bak beside it: the env block (S4E_SEAT, S4E_SEAT_JOBS=4, MAKEFLAGS=--jobs=4,
 #       TMPDIR=/tmp/s4e/<seat>), a SessionStart hook running that root's harness/scripts/s4e_session_start.sh, a PreToolUse hook running that
 #       root's harness/scripts/s4e_skill_gate.py on Edit|Write|MultiEdit|NotebookEdit|Bash (THE SKILL GATE, the cto 2026-11-01), and every dead hook removed
-#       (a hook that cds into SCRIP and runs scripts/s4e_msg.sh, which has not existed since CEO-1819); everything else left as it is
+#       (a hook that cds into SCRIP and runs scripts/s4e_msg.sh, which has not existed since R-1819); everything else left as it is
 #   (4) every live Claude session placed now through s4e_session_start.sh --pid (the env block reaches a session at its next start)
 #   (5) s4e_session_start.sh --check, printed
 # rc 0 done (or a clean dry run); 1 a step failed (named); 2 refused.
@@ -28,7 +28,7 @@ STAMP=$(date +%Y%m%dT%H%M%S)
 mapfile -t SLICES < <(python3 -I "$HERE/util_seat_census.py" --budget-props)
 [ "${#SLICES[@]}" -gt 0 ] && [ -n "${SLICES[0]}" ] && [ "${SLICES[0]#REFUSED}" = "${SLICES[0]}" ] || { echo "REFUSE(2): no slice row in the budget table (util_seat_census.py --budget-props: ${SLICES[0]:-nothing})" >&2; exit 2; }
 TF="$HOME/.config/user-tmpfiles.d/s4e.conf"
-SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " ceo cto cfo coo cao cqo cio " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
+SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " cto cfo coo cao cqo cio " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
 fail=0
 if [ "$APPLY" -eq 1 ]; then
   for s in "${SLICES[@]}"; do systemctl --user set-property $s && echo "SLICE set: $s" || { echo "FAILED: systemctl --user set-property $s"; fail=1; }; done
@@ -38,7 +38,7 @@ fi
 python3 - "$APPLY" "$STAMP" $ROOTS <<'PY'
 import difflib, json, os, re, sys
 apply, stamp, roots = sys.argv[1] == "1", sys.argv[2], sys.argv[3:]
-OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"}
+OFFICERS = {"cto", "cfo", "coo", "cao", "cqo", "cio"}
 DEAD = re.compile(r"/SCRIP\s*&&\s*bash\s+scripts/s4e_msg\.sh")
 changed = 0
 for root in roots:

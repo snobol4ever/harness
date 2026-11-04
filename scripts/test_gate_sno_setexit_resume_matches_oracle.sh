@@ -5,7 +5,7 @@
 # faces where they disagree (error NUMBERING, and the CSNOBOL4-only END trap) are deliberately absent.
 # Non-vacuous by construction: SCRIP_SETEXIT=0 must turn the resume faces RED (proven at the tail).
 set -u
-# ⛔⭐ TWO PREFLIGHT DEFECTS CURED HERE 2026-09-05 (hq_P), BOTH FOUND BY ceo READING THIS GATE 5-OF-6 RED ON A TREE
+# ⛔⭐ TWO PREFLIGHT DEFECTS CURED HERE 2026-09-05 (hq_P), BOTH FOUND BY the officer READING THIS GATE 5-OF-6 RED ON A TREE
 # THAT CONTAINED THE CURE. Neither was a compiler question and both produced the same symptom -- a full, plausible,
 # entirely false red board -- which is why this preamble is now the canonical one and not a hand-rolled pair of lines.
 #   (1) THE ROOT FALLBACK NAMED A SEAT. It read ${S4E_HOME:-/home/claude_P}, so with S4E_HOME unset in any OTHER
@@ -75,7 +75,7 @@ if [ "$n" -lt 4 ]; then
     exit 2
 fi
 echo "  killswitch SCRIP_SETEXIT=0 moves $n/4 resume faces (NON-VACUOUS)"
-# ⛔⭐ THE M4 COMPOSITION FACE (hq_P 2026-09-05, ceo CEO-286 audit). Everything above this line runs mode 3 ONLY,
+# ⛔⭐ THE M4 COMPOSITION FACE (hq_P 2026-09-05, R-286 audit). Everything above this line runs mode 3 ONLY,
 # which is exactly why the 09-04 closure of this row was green and BLIND to a mode-4 defect that printed ZERO bytes
 # at rc=0. The pair below is ONE INGREDIENT APART -- same program, same handler, the only difference being whether
 # the handler's label is ALSO a DEFINE'd function name -- so a red here names the composition, not "m4 is broken".

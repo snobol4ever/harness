@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # test_gate_pl_clause_2_reads_static_code_on_every_road_and_obeys_the_iso_and_protect_flags.sh -- clause/2 ON A STATIC USER PROCEDURE ANSWERS THROUGH ALL THREE ROADS, AND THE FLAGS RULE WHEN IT RAISES.
-# hq_prolog 2026-10-03, ceo CEO-1467 (method approved in-chat: seed in the startup block the static predicates a clause/2 or clause/3 term names,
+# hq_prolog 2026-10-03, R-1467 (method approved in-chat: seed in the startup block the static predicates a clause/2 or clause/3 term names,
 # goal OR data, and all static ones when such a head is a variable). THE THREE ROADS: a literal head at a call site, a head built at run time
 # (T =.. [h3, _], clause(T, B)), and a goal reached as DATA through call/1 (core/test_call's two clause tests run as pj_test bodies). Before the cure the
 # last two FAILED on a static procedure (no clause terms in the db: only a literal-head site seeded them) while the first answered.
-# THE RULE (ruled CEO-1467, the superset): the DEFAULT answers like swipl; under set_prolog_flag(iso, true) AND under protect_static_code true a head that
+# THE RULE (ruled R-1467, the superset): the DEFAULT answers like swipl; under set_prolog_flag(iso, true) AND under protect_static_code true a head that
 # resolves to a user static procedure raises permission_error(access, private_procedure, PI) (ISO 8.8.1.3 e, gprolog's reading); a builtin or control
 # head raises on every road under every flag; a dynamic procedure always answers; an unknown one fails. Each variant is run in m3 AND m4.
 # RED BEFORE on origin c0fbd4343, m3 AND m4 (measured, a stashed-cure rebuild): the default variant RAISED on every static row (the flag defaulted true), and

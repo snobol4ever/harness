@@ -33,7 +33,7 @@ classify() {
   echo "PASS"
 }
 # THE BUCKET. GRADED means our compiler ran the file and TAP came out; everything else is a reason it did not.
-# ⛔⭐ THE PARSER SAYING SO, IN ITS OWN WORDS, AND THE ONE PLACE THAT KNOWS THEM (hq_raku 2026-09-27, ceo CEO-1318).
+# ⛔⭐ THE PARSER SAYING SO, IN ITS OWN WORDS, AND THE ONE PLACE THAT KNOWS THEM (hq_raku 2026-09-27, R-1318).
 # The hand-written parser that replaced flex/bison (SCRIP 2d9817261, 2026-09-26) refuses with a POSITIONED first
 # line, `<file>:<line>:<col>: raku syntax error: <why>`, and the driver's bare `raku: parse error in <file>` comes
 # SECOND. Every test here read line 1 for `parse error`, the old parser's first-line wording, so from the swap on a
@@ -106,7 +106,7 @@ roast_bucket() {
     *)      echo UNGRADED-OTHER ;;
   esac
 }
-# ⛔⭐ THE STORED FIRST CAUSE OF A RED (hq_raku 2026-10-30, ceo CEO-2030, the cto's ARCH-FLEET-PLAN-TO-100 section 2.5). A FAIL, CRASH or HANG reading carried the program's
+# ⛔⭐ THE STORED FIRST CAUSE OF A RED (hq_raku 2026-10-30, R-2030, the cto's ARCH-FLEET-PLAN-TO-100 section 2.5). A FAIL, CRASH or HANG reading carried the program's
 # FIRST stderr line, and for 148 programs that line was the Test epilogue `# You planned N tests, but ran M` -- the symptom of dying, never the death -- so 157 reds had no class
 # a rewrite step could claim. This answers one line, never empty, tab-free: the first test that did not pass (the first `not ok N - desc`, else the first test the plan promised and
 # the run never reached, with the last test that did pass beside it), the program's rc, and the LAST stderr line that is not the Test epilogue (the die message, the signal, the diagnostic a timeout never printed).

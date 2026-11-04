@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_claim_computes_the_premise.sh -- `claim` and `next` RUN a row's PREMISE-WHEN and REFUSE the lock
 # when it comes back red, the way `done` runs its DONE-WHEN and refuses to close.
-# Row instruments-claim-computes-the-rows-premise-the-way-done-computes-its-done-when (coo 2026-09-20; ceo
-# CEO-1002, on Lon's rule that when a seat fails to do a thing the system never asked them to do, the row is
+# Row instruments-claim-computes-the-rows-premise-the-way-done-computes-its-done-when (coo 2026-09-20; the officer
+# R-1002, on Lon's rule that when a seat fails to do a thing the system never asked them to do, the row is
 # against the SYSTEM -- a ruling that converts a structural gap into an instruction is obeyed for a week).
 # THE ASYMMETRY BEING CURED: the bus VERIFIED THE EXIT and TRUSTED THE ENTRY. SIX WHEEL-SPINS IN ONE DAY,
 # 2026-09-20, every one a premise that was cheap to check and that nothing made anyone check: a 51-entry
@@ -43,7 +43,7 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # ⛔ $BASHPID, not $$: a bare EXIT trap fires inside forked children too, and bash keeps $$ at the original
 # shell's pid in a subshell, so the obvious guard compares equal and deletes the fixture mid-run.
 MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=ceo; HQ=ceo; SEAT=cto
+PO="$W/po"; ME=cao; HQ=cao; SEAT=cto
 # ⛔⭐ env -u: this gate is itself a DONE-WHEN, so it runs INSIDE a `done` that `next` may have invoked as its
 # own probe. S4E_PID_LOCK, the dispatch opt-out AND the premise variables leak in from that parent and would
 # silently change what the fixture measures -- an inherited S4E_PREMISE_OVERRIDE would disable the feature
@@ -110,7 +110,7 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   [ "$rc" = 0 ] || { echo "  [$lbl] (4) claim REFUSED a baton with no PREMISE-WHEN -- that would stop 1100+ live rows"; ok=0; }
   [ -f "$PO/claims/t-absent.claim" ] || { echo "  [$lbl] (4) a baton with no premise did not lock"; ok=0; }
   grep -q 'PREMISE UNVERIFIED' <<<"$out" || { echo "  [$lbl] (4) an unchecked premise was SILENT -- silence reads as verified"; ok=0; }
-  rm -f "$PO/claims/t-live.claim"   # (3) and (4) are proven and the seat holds two; claim refuses a third (CEO-2078), so release one before (5)
+  rm -f "$PO/claims/t-live.claim"   # (3) and (4) are proven and the seat holds two; claim refuses a third (R-2078), so release one before (5)
   # ---- (5) NOOP-NOT-VERIFIED ---------------------------------------------------------------------------
   out="$(FIX bash "$s" claim t-noop 2>&1)"; rc=$?
   [ "$rc" = 0 ] || { echo "  [$lbl] (5) claim REFUSED a vacuous premise -- it certifies nothing, which is not the same as red"; ok=0; }
@@ -139,13 +139,13 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   [ -f "$PO/claims/t-ovr.claim" ] || { echo "  [$lbl] (8) the override did not lock"; ok=0; }
   grep -q 'OVERRIDDEN' <<<"$out" || { echo "  [$lbl] (8) the override was SILENT"; ok=0; }
   grep -q 'PREMISE OVERRIDDEN' "$PO/tasks/t-ovr.task.md" || { echo "  [$lbl] (8) the override left no receipt in the baton -- an escape hatch with no record is the hole it replaces"; ok=0; }
-  rm -f "$PO/claims/t-live.claim"   # the seat holds two (t-live from next, t-ovr); a cap refusal here would mask the premise refusal arm 9 grades (CEO-2078)
+  rm -f "$PO/claims/t-live.claim"   # the seat holds two (t-live from next, t-ovr); a cap refusal here would mask the premise refusal arm 9 grades (R-2078)
   # ---- (9) WHOLE-FIELD: the truncation class must not be re-imported on the new label -------------------
   out="$(FIX bash "$s" claim t-multi 2>&1)"; rc=$?
   [ "$rc" = 0 ] && { echo "  [$lbl] (9) a MULTI-LINE premise was read one line at a time: the heredoc opener exited 0 having run nothing and the row locked on a premise that never ran"; ok=0; }
   [ -f "$PO/claims/t-multi.claim" ] && { echo "  [$lbl] (9) the truncated premise locked the row"; ok=0; }
   # ---- (10) NOT-SWALLOWED: the DONE-WHEN must stop at the new label ------------------------------------
-  rm -f "$PO/claims/t-live.claim" "$PO/claims/t-ovr.claim"   # the fixture seat holds two live rows by here and claim refuses a third (CEO-2078); release them, they are proven
+  rm -f "$PO/claims/t-live.claim" "$PO/claims/t-ovr.claim"   # the fixture seat holds two live rows by here and claim refuses a third (R-2078); release them, they are proven
   FIX bash "$s" claim t-swallow >/dev/null 2>&1 || { echo "  [$lbl] fixture: could not claim t-swallow"; return 2; }
   rm -f "$PO/premise-ran.marker"
   out="$(FIX bash "$s" done t-swallow 2>&1)"; rc=$?

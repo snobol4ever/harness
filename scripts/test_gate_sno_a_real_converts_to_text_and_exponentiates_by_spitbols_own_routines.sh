@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_sno_a_real_converts_to_text_and_exponentiates_by_spitbols_own_routines.sh
 #
-# SPITBOL'S RULES (sbl.min, read by the cfo 2026-10-02 for ceo CEO-1419's ticket snobol4-real-to-string-differs-in-the-last-digit-
+# SPITBOL'S RULES (sbl.min, read by the cfo 2026-10-02 for R-1419's ticket snobol4-real-to-string-differs-in-the-last-digit-
 # and-a-real-in-a-match-loses-its-trailing-point; x64 sbl builds without .cncr, so its own code runs, never syscr):
 #   REAL TO STRING, gts10-gts28: scale the magnitude into [0.1, 1.0) by steps of 10**10 and a powers-of-ten table, ADD the rounding
 #   bias 0.5*10**-15, rescale once if that reached 1.0, multiply by 10**15 and TRUNCATE (cvttsd2si). That is not C's correctly
@@ -18,7 +18,7 @@
 # rt_sno_pow used pow() and squaring (6050 of 19,200 differed); a deferred real pattern converted by "%g" ('0' ? R matched, sbl
 # fails); bn_size returned 0 for every real; the trace voice spelled a real by "%g" (F(3) where sbl prints F(3.)). A real built into
 # a pattern at run time (pattern_match.c rcp_of, under SNO$PBALT, pat_cat, ARBNO, FENCE and every EVAL) converted by gcvt, so
-# '0' ? (0.0 | 'q') matched (ceo's row snobol4-a-whole-number-real-as-an-alternation-arm-converts-without-its-point, from Lon's
+# '0' ? (0.0 | 'q') matched (the officer's row snobol4-a-whole-number-real-as-an-alternation-arm-converts-without-its-point, from Lon's
 # infinite_snobol4 demo): the build arm read 13 of its 18 lines differing on the parent c59242660, both modes, and 0 on the cure.
 # NOT COVERED: a subnormal result, which sbl zeroes through its MXCSR underflow test on every real operation (0. both sides here
 # only by the conversion's own scaling), and Pascal's real writer, which has its own formatter and its own row.

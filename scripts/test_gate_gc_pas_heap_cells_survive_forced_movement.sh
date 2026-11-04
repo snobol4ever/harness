@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_pas_heap_cells_survive_forced_movement.sh -- row pascal-gc-the-pas-heap-cell-table-holds-collected-heap-strings-and-the-collector-never-visits-it
-# (minted ceo 2026-09-20 CEO-mint; PREMISE MEASURED FALSE AND THE ROW REWRITTEN BY hq_pascal THE SAME DAY -- see THE PREMISE below).
+# (minted the officer 2026-09-20 officer-mint; PREMISE MEASURED FALSE AND THE ROW REWRITTEN BY hq_pascal THE SAME DAY -- see THE PREMISE below).
 # THE MECHANISM, read out of the code rather than recalled: new(p) is rewritten by the parser (pascal.y) into __pas_alloc_rec(nfields); the runtime arm
 # (by_name_dispatch.c) does TWO allocations -- pas_heap_take() returns an INTEGER INDEX and pas_heap_cell(n,1) hands back a DESCR_t slot in the Pascal-private
 # side table g_pas_heap, while the record's fields are built as an SOH-separated string by rt_str_alloc, which IS rt_gcheap_alloc(DT_S) on the COLLECTED,
@@ -16,7 +16,7 @@
 # "is the string there", not "does the collector visit the table", and the visiting function does not carry the string.  This gate exists so that the answer
 # is MEASURED on every run instead of re-derived from a grep by the next seat who asks.
 # ⛔ BEING CALLED IS NOT BEING CORRECT, which is why this gate forces movement rather than hoping for it.  Under a sliding collector a root that is VISITED
-# but not FORWARDED is still corruption, and a null result bounds the probe rather than the thing probed (the ceo's own honest half of the mint).  So:
+# but not FORWARDED is still corruption, and a null result bounds the probe rather than the thing probed (the officer's own honest half of the mint).  So:
 #   SCRIP_GC_STRESS=N   forces a collection every Nth allocation -- UNSET IS ZERO FORCED COLLECTIONS, which is why ARM 1 exists.
 #   SCRIP_GC_PLANT_SHIFT forces a deterministic shift every collection, so live blocks MOVE even when they would otherwise stay put.
 #   SCRIP_GC_POISON is ON BY DEFAULT (gc_heap.c) and fills vacated space with 0xDB, so an unforwarded cell reads garbage rather than stale-but-plausible bytes.
@@ -33,7 +33,7 @@
 # Whatever a band finds is a LOWER BOUND, never a population (hq_prolog 2026-09-20: their window is ragged and non-monotonic, wrong at 1,2,3,5,10,25 and right
 # at 0,20,40,50 -- a sample of {20,40,50} would have called it clean).
 set -u
-# ⛔ CEO-1680 (ceo 2026-10-17): the detector arm that ran each witness under SCRIP_TEST_PLANT_PAS_ROOT_SKIP=1 is GONE with the seam it read -- no switch
+# ⛔ R-1680 (2026-10-17): the detector arm that ran each witness under SCRIP_TEST_PLANT_PAS_ROOT_SKIP=1 is GONE with the seam it read -- no switch
 # in SCRIP exists so a test can fail. The root walk's fail-once is a PROPER test: the same witnesses on a worktree of f0d0adf5b^ (the commit before
 # pas_gc_roots visited the heap table) read red under this band, measured once at the landing that deleted the seam; each run's own fail-once is the
 # oracle comparison below, which reads RED on any wrong answer, over a collector the INERT and NO-MOVE arms prove live and moving.
@@ -139,7 +139,7 @@ for w in $WITNESSES; do
         if [ "$col" -eq 0 ]; then echo "INERT   $tag -- collections=0: this point never ran a collector, so its answer is a statement about the program and not about the collector"; INERT=$((INERT+1)); continue; fi
         if [ "$mv" -eq 0 ]; then echo "NO-MOVE $tag -- collections=$col but moved=0B: nothing relocated, so forwarding was never exercised"; NOMOVE=$((NOMOVE+1)); continue; fi
         pl=$(grep -c '^\[GC-FLIP\] plant:' "$W/err.txt"); pl=${pl:-0}
-        if [ "$sh" -ne 0 ] && [ "$pl" -eq 0 ]; then echo "UNPLANTED $tag -- collections=$col moved=${mv}B but the flip plant applied ZERO times: gc_plant_shift_bytes() returns 0 whenever the arena headroom is not strictly greater than the shift, and it used to do so SILENTLY. This point relocated blocks by ordinary compaction alone, which is the very thing the plant exists to go beyond, so it is NOT a green and NOT a no-move. Measured by the cto 2026-09-21 on the cfo's flag, pasrec at a 1024 KB window (the MB-spelled pin of the day, which the CEO-1146 sweep retired; this figure is CITED at the configuration it was measured under and not re-measured here) stress 3: shift 4096 applies 495 times, 65536 applies 466, 262144 applies 373, 1048576 applies ZERO with rc=0 and byte-identical stdout -- so before this arm existed, a big-enough shift under the mandated tiny arena made this gate PASS having planted nothing at all"; UNPLANTED=$((UNPLANTED+1)); continue; fi
+        if [ "$sh" -ne 0 ] && [ "$pl" -eq 0 ]; then echo "UNPLANTED $tag -- collections=$col moved=${mv}B but the flip plant applied ZERO times: gc_plant_shift_bytes() returns 0 whenever the arena headroom is not strictly greater than the shift, and it used to do so SILENTLY. This point relocated blocks by ordinary compaction alone, which is the very thing the plant exists to go beyond, so it is NOT a green and NOT a no-move. Measured by the cto 2026-09-21 on the cfo's flag, pasrec at a 1024 KB window (the MB-spelled pin of the day, which the R-1146 sweep retired; this figure is CITED at the configuration it was measured under and not re-measured here) stress 3: shift 4096 applies 495 times, 65536 applies 466, 262144 applies 373, 1048576 applies ZERO with rc=0 and byte-identical stdout -- so before this arm existed, a big-enough shift under the mandated tiny arena made this gate PASS having planted nothing at all"; UNPLANTED=$((UNPLANTED+1)); continue; fi
         if [ "$rc" -ne 0 ]; then echo "RED     $tag -- rc=$rc collections=$col moved=${mv}B"; RED=$((RED+1)); continue; fi
         if [ "$out" = "$REF" ]; then MATCH=$((MATCH+1)); else echo "RED     $tag -- ORACLE DIFF, collections=$col moved=${mv}B"; echo "$out" | head -3 | sed 's/^/          got: /'; echo "$REF" | head -3 | sed 's/^/          want:/'; RED=$((RED+1)); fi
       done

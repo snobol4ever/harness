@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_gc_acceptance_never_prints_a_number_over_a_refusal.sh -- the coo, 2026-09-22, MODE DECTET.
 # RULES.md THE INSTRUMENT LAWS: an instrument that reports success while doing nothing is THE recurring failure;
 # a missing prerequisite is rc=2, never green.  util_gc_acceptance.py's own docstring says it of itself:
@@ -36,7 +36,7 @@ export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus
 # (2) FAIL-ONCE PROOF: the same trigger against a copy of the display with the rc guard disabled -- exactly the
 # pre-cure code -- must print the false 100%, so arm 1's assertion is shown to be capable of failing.  (3) with the
 # floor restored the display prints the VISIBILITY counts again: the cure must not mint a permanent refusal.
-# ⛔ This seat holds no cure lane (CEO-723) and edits no src/: the display and the gate are instruments.
+# ⛔ This seat holds no cure lane (R-723) and edits no src/: the display and the gate are instruments.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -105,7 +105,7 @@ rm -f "$FLOOR"
 python3 "$BROKEN" > "$T/broken.txt" 2>&1
 cp -f "$T/floor.saved" "$FLOOR"
 vis_line "$T/broken.txt" | sed 's/^/    ! /'
-# ⛔ RE-DECLARED 2026-09-26 (cfo, CEO-1274 board row): this arm grepped '100.0%' and went red the day event coverage fell to
+# ⛔ RE-DECLARED 2026-09-26 (cfo, R-1274 board row): this arm grepped '100.0%' and went red the day event coverage fell to
 # 15/16, when the pre-cure copy printed '15 / 16 93.8%' over the same rc=2 -- a false number all the same.  A FAIL-ONCE arm
 # must test the PREDICATE arm 1 asserts (any '%' in VISIBILITY), never one value of it, or it is anchored on the coverage.
 false_pct=$(vis_line "$T/broken.txt" | grep '%' | head -1 | sed 's/^ *//')

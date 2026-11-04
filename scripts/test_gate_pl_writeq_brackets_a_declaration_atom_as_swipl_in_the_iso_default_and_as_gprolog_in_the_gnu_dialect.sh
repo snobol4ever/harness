@@ -2,7 +2,7 @@
 # test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh -- writeq of the declaration atoms
 # (public, dynamic, discontiguous, initialization, module, multifile, meta_predicate, table, not) as operands, m3 and m4 (cfo 2026-10-18, row
 # prolog-writeq-brackets-the-swi-declaration-atoms-its-own-current-op-does-not-list-public-dynamic-table-not).
-# TWO ORACLES, ONE PER DIALECT (CEO-1536: the ISO default is graded by swipl, and SWI wins a conflict; --dialect=gnu is gprolog's):
+# TWO ORACLES, ONE PER DIALECT (R-1536: the ISO default is graded by swipl, and SWI wins a conflict; --dialect=gnu is gprolog's):
 # (1) THE ISO DEFAULT, against swipl 9.0.4 on terms BUILT with =.. (swipl cannot read the unbracketed form -- these are its operators): swipl brackets
 #     eight of the nine, and writes module and not bare. prolog_atom.c op_cols_fill seeded module as fx 1150 for the writer, so SCRIP wrote
 #     ((module),4) and - (module); swipl 9.0.4 has no module operator. The seed is gone.
@@ -10,7 +10,7 @@
 #     the writer hides its seeded columns under --dialect=gnu (SCRIP 6a58680d6).
 # THE REFS ARE CUT FROM THE ORACLES, NEVER FROM SCRIP: both tables were cut 2026-10-18 (swipl from /usr/bin/swipl, gprolog from the pristine
 # gplc build), and every run re-cuts both and REFUSES rc=2 when an oracle and its table disagree or an oracle is absent.
-# FAIL-ONCE (CEO-1680): with the module seed restored on the same tree, (1) read FAIL in both modes on its module line (measured 2026-10-18).
+# FAIL-ONCE (R-1680): with the module seed restored on the same tree, (1) read FAIL in both modes on its module line (measured 2026-10-18).
 # Usage: bash ../harness/scripts/test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect.sh
 set -uo pipefail
 GATE_NAME=test_gate_pl_writeq_brackets_a_declaration_atom_as_swipl_in_the_iso_default_and_as_gprolog_in_the_gnu_dialect

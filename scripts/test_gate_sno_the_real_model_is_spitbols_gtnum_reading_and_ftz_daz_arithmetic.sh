@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# test_gate_sno_the_real_model_is_spitbols_gtnum_reading_and_ftz_daz_arithmetic.sh -- SCRIP's SNOBOL4 real model IS SPITBOL's (ceo
-# CEO-1352 ruling 2, 2026-09-28: "not IEEE by choice"; RULES.md section Oracles, one oracle one feature set; X64T is SPITBOL's own deck).
+# test_gate_sno_the_real_model_is_spitbols_gtnum_reading_and_ftz_daz_arithmetic.sh -- SCRIP's SNOBOL4 real model IS SPITBOL's (the officer
+# R-1352 ruling 2, 2026-09-28: "not IEEE by choice"; RULES.md section Oracles, one oracle one feature set; X64T is SPITBOL's own deck).
 # The two halves land TOGETHER because half the model is worse than none (measured: gtnum alone took X64T math_diff 15376/0 -> 15364/12).
 #   (i)  READING: a real literal (the SNOBOL4 lexer's T_REAL, the Snocone parser's sc_real_literal) and EVAL/REAL() of a numeric string
 #        (rt_str_to_real) read the decimal digits the way SPITBOL's gtnum does (sbl.min 22758 ff.): the mantissa accumulated as a real,

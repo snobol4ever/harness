@@ -1,6 +1,6 @@
 #!/bin/bash
 # test_gate_pl_a_backquoted_string_first_in_a_file_reads_no_uninitialised_lexer_state.sh
-# -- THE PROLOG LEXER'S STRING-PIECE STATE IS INITIALISED (ceo CEO-1959, hq_packages; SWI core/test_unicode.pl died on signal 11 and lost all ten of its cases). prolog_lex.c scanned a single- or double-quoted
+# -- THE PROLOG LEXER'S STRING-PIECE STATE IS INITIALISED (R-1959, hq_packages; SWI core/test_unicode.pl died on signal 11 and lost all ten of its cases). prolog_lex.c scanned a single- or double-quoted
 # token with lx->slen, lx->run0 and lx->pc reset, but a BACKQUOTED token reset only slen, and lexer_init set none of run0 or pc: the first backquoted string of a file read the Parser's uninitialised stack
 # (pc_flush handed pc_piece a length of 327,768,084 and ct_strndup walked off the end), so the crash followed the stack's contents -- core/test_unicode.pl died under the declared arena -d131072k -s4096k and passed
 # without it, a prefix of its numbers unit died while longer ones lived, and the same program passed from another directory. A fault that follows stack garbage cannot be witnessed by waiting for a crash, so THE WITNESS IS

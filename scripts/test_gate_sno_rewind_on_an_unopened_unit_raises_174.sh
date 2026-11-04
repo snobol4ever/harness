@@ -8,12 +8,12 @@
 # is a transcript of SPITBOL's OWN fatal termination (memory used/left, REGENERATIONS, stmts executed,
 # execution time) which no implementation produces by being correct. A correct cure on a dead-pinned
 # program cannot flip it; test_gate_no_ref_pins_oracle_internal_state.sh names the class and rewind1 was
-# the last member of it still inside a graded denominator (ceo CEO-724). THE SEMANTIC MOVES HERE SO THAT
+# the last member of it still inside a graded denominator (R-724). THE SEMANTIC MOVES HERE SO THAT
 # LEAVING THE DENOMINATOR COSTS NO COVERAGE -- an exclusion that drops a behaviour nobody re-checks is the
 # expensive mistake this file is written to prevent.
 #
 # ⭐ THE EXPECTATION IS CUT FROM sbl -bf AT RUN TIME AND COMPARED THROUGH THE ONE ERROR VOICE (RULES.md
-# § ONE ERROR VOICE, ceo CEO-623/625): the runtime prints its own SCRIP-shaped error for every language and
+# § ONE ERROR VOICE, R-623/625): the runtime prints its own SCRIP-shaped error for every language and
 # never an oracle's shape, so the captured stream is rendered by util_render_error_voice.py spitbol and the
 # oracle's own ERROR line is what it is diffed against. Measured: the rendered line is BYTE-IDENTICAL to
 # the oracle's. What is NOT graded here, deliberately, is SPITBOL's termination accounting -- that is the

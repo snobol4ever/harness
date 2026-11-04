@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_no_rungs_ref_is_an_ast_dump.sh -- NO RUNGS REF IS AN AST DUMP. Every entry of every rung suite is graded by RUNNING it in
-# both modes (Lon 2026-09-23, CEO-1218/1230: "Get rid of those m3 and and m4 specific columns. We do not do that here."), so a ref
+# both modes (Lon 2026-09-23, R-1218/1230: "Get rid of those m3 and and m4 specific columns. We do not do that here."), so a ref
 # that is a `--dump-ast` dump can only ever manufacture a red that means nothing: the entry's program output is diffed against a
 # parse tree. This gate is the survivor of test_gate_ast_shaped_refs_are_declared_ast.sh (hq_T 2026-09-05), whose converse arm
 # asked that such a ref be DECLARED modes=ast; with the declaration gone, the only correct count of dump-shaped refs is zero.

@@ -3,7 +3,7 @@
 # after read/1 has consumed "2." from standard input, the next format's column stop counts from column 2, whether stdin is a file or a pipe. SCRIP
 # folded the consumed input into the output position from ftell(stdin), which fails on a pipe, so the carry was dropped there and every pipe-fed
 # program printed its first column-stopped line two spaces wider than the ref (ProRosetta arithmetic-integer-1, graded through a pipe: FAIL in m3 and m4,
-# CEO-2002). The probe is cut from swipl in THIS run for BOTH stdin kinds (swipl_bin); SCRIP's m3 and m4 are each run with a file and with a pipe and
+# R-2002). The probe is cut from swipl in THIS run for BOTH stdin kinds (swipl_bin); SCRIP's m3 and m4 are each run with a file and with a pipe and
 # compared byte for byte; the self-test feeds the comparison a corrupted reference and requires it seen.
 set -u
 G="$(basename "${BASH_SOURCE[0]}" .sh)"

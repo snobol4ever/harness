@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """util_progress_prune_ghosts.py [--apply] [--db PATH] [--suites-tsv PATH] SUITE=PACKAGE_DIR ...
 
-THE GHOSTS OF A SUITE'S PROGRESS ROWS (ceo CEO-1366 (b), row icon-package-containers-regenerated-from-the-shipped-files-and-every-
-container-key-equals-its-boards-progress-key-ceo-1366; the coo 2026-10-09). A ghost is a program key the progress table holds for a
+THE GHOSTS OF A SUITE'S PROGRESS ROWS (R-1366 (b), row icon-package-containers-regenerated-from-the-shipped-files-and-every-
+container-key-equals-its-boards-progress-key-r-1366; the coo 2026-10-09). A ghost is a program key the progress table holds for a
 suite that NEITHER the suite's board writes NOR its container names NOR its package excludes -- a key an older board, a replay or a
 harness run of another shape wrote, and that no reader will ever write again. Measured 2026-10-09: IPL 613 bare-stem keys from before
-its board wrote <subdir>/<stem>; Arizona 90 icon/arizona_tests/general/*.icn keys of the ceo's 09-05 replay, and its 119 bare stems
+its board wrote <subdir>/<stem>; Arizona 90 icon/arizona_tests/general/*.icn keys of the officer's 09-05 replay, and its 119 bare stems
 once its board writes <subdir>/<stem> (SCRIP b4f66ce42).
 
 For each SUITE (its progress key, e.g. arizona) and PACKAGE_DIR (the container's directory):

@@ -2,11 +2,11 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "${0##*/}" "${WIRTH76_SUITE:=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}/corpus/packages/pascal/wirth1976}" || exit 2
 # test_pascal_wirth76_suite.sh -- THE Wirth76 SUITE ROW: Niklaus Wirth's Algorithms + Data Structures = Programs (1976), each program
 # transcribed to ISO 7185 with its driver (corpus/packages/pascal/wirth1976/, hq_pascal's row), graded in both SCRIP modes against
-# refs cut from fpc -Miso. Lon 2026-10-09 17:0x CDT, in-chat to the ceo, verbatim: "Have drivers created for the Wirth 1976 and make it
-# an official test suite." (CEO-1580; the coo's row instruments-the-wirth76-suite-row-...). The shape of test_pascal_fpc_suite.sh, without
+# refs cut from fpc -Miso. Lon 2026-10-09 17:0x CDT, in-chat, verbatim: "Have drivers created for the Wirth 1976 and make it
+# an official test suite." (R-1580; the coo's row instruments-the-wirth76-suite-row-...). The shape of test_pascal_fpc_suite.sh, without
 # the fpc_tests history: every <name>.pas is a whole program, <name>.ref its oracle output, <name>.in its stdin when present, ALL.wantrc
 # fpc's own exit status where it is not 0, ALL.timeout.tsv a declared run timeout with its reason, ALL.csv each unit's heap_kb/stack_kb.
-# A .pas with no .ref is UNGRADED (REF_NOT_CUT), never dropped. The row is THE AND PER PROGRAM (ceo-372): green in both modes.
+# A .pas with no .ref is UNGRADED (REF_NOT_CUT), never dropped. The row is THE AND PER PROGRAM (R-372): green in both modes.
 set -u
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -20,7 +20,7 @@ SUITE="${WIRTH76_SUITE:-$S4E/corpus/packages/pascal/wirth1976}"
 KEY="${WIRTH76_SUITE_KEY:-wirth76}"
 WANTRC="$SUITE/ALL.wantrc"
 RUN_TIMEOUT="${WIRTH76_SUITE_RUN_TIMEOUT:-10}"
-[ -d "$SUITE" ] || { echo "⛔ REFUSED-TO-GRADE: $SUITE missing (the package is hq_pascal's row: pascal-wirth-1976-...-ceo-1580)"; exit 2; }
+[ -d "$SUITE" ] || { echo "⛔ REFUSED-TO-GRADE: $SUITE missing (the package is hq_pascal's row: pascal-wirth-1976-...-r-1580)"; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE: scrip not built"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate test_pascal_wirth76_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_SO" ] || { echo "⛔ REFUSED-TO-GRADE: $RT_SO missing (m4 link needs it)"; exit 2; }
@@ -58,7 +58,7 @@ for name in "${PROGS[@]}"; do
     wantrc=$(awk -F'\t' -v n="$name" '$1==n{print $2; exit}' "$WANTRC" 2>/dev/null); [ -n "$wantrc" ] || wantrc=0
     m3ok=0; _t0="$(progress_clock)"
     m3out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --run "$pas" < "$inp" 2>/dev/null); m3rc=$?
-    S3="$(progress_secs_since "$_t0")"   # each mode's own wall for its row (CEO-1676 (c)); m4's takes its compile and link
+    S3="$(progress_secs_since "$_t0")"   # each mode's own wall for its row (R-1676 (c)); m4's takes its compile and link
     if [ "$m3out" = "$exp" ] && [ "$m3rc" = "$wantrc" ]; then
         M3_PASS=$((M3_PASS+1)); m3ok=1; printf 'package\t%s\tpascal\t%s\tm3\tPASS\t%s\t\n' "$KEY" "$name" "$S3" >>"$PROG_ROWS"
     else

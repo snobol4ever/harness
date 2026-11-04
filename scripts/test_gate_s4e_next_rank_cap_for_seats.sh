@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_s4e_next_rank_cap_for_seats.sh -- proves next() refuses rank-6-and-above rows for SEATS and
-# still serves them to HQs, the ceo and the cto (row seat-picker-refuses-rows-of-rank-six-and-above-for-seats,
-# rank 0; Lon 2026-09-06 11:20 via ceo, MASTER-PLAN sec THE FLEET-12 PLAN: "A SEAT NEVER TAKES A ROW OF
+# still serves them to HQs, the officer and the cto (row seat-picker-refuses-rows-of-rank-six-and-above-for-seats,
+# rank 0; Lon 2026-09-06 11:20 via the officer, MASTER-PLAN sec THE FLEET-12 PLAN: "A SEAT NEVER TAKES A ROW OF
 # RANK >= 6: park it back to FREE with a one-line note and pick again").
 #
 # ⛔ THE NEGATIVE ARMS ARE THE POINT, NOT THE POSITIVE ONE. A cap that also refused HQs would idle every
@@ -26,7 +26,7 @@ fail() { echo "  ⛔ $1"; viol=$((viol+1)); }
 
 reset_sbx() {
     rm -rf "$SBX"; mkdir -p "$SBX/claims" "$SBX/tasks" "$SBX/released"
-    for s in seat01 hq_T ceo cto; do mkdir -p "$SBX/$s/inbox" "$SBX/$s/archive"; done
+    for s in seat01 hq_T cao cto; do mkdir -p "$SBX/$s/inbox" "$SBX/$s/archive"; done
     printf 'FLEET-12\n' > "$SBX/MODE"
     printf 'hq_T\n' > "$SBX/seat01/HQ"
     : > "$SBX/BOARD.md"; : > "$SBX/QUEUE.tsv"
@@ -73,10 +73,10 @@ arms=$((arms+1)); OUT="$(pick_as cto)"
 printf '%s' "$OUT" | grep -q "$CAP" && fail "ARM 4: cto was refused a rank-9 row -- the CTO seat exists to work exactly this band"
 printf '%s' "$OUT" | grep -q 'LOCKED rank_nine_row' || fail "ARM 4b: cto was not served the rank-9 row"
 
-# ---- ARM 5: the ceo is never refused ----
+# ---- ARM 5: the officer is never refused ----
 reset_sbx; mk_row 8 rank_eight_row
 arms=$((arms+1))
-printf '%s' "$(pick_as ceo)" | grep -q "$CAP" && fail "ARM 5: the ceo was refused a rank-8 row -- the ceo is never restricted"
+printf '%s' "$(pick_as cao)" | grep -q "$CAP" && fail "ARM 5: the cao was refused a rank-8 row -- an officer is never rank-capped"
 
 # ---- ARM 6: the refusal NAMES the override rather than dead-ending ----
 reset_sbx; mk_row 7 rank_seven_row
@@ -108,5 +108,5 @@ if [ "$viol" -ne 0 ]; then
     echo "⛔ GATE FAIL [$GATE]: $viol of $arms arms broken"
     exit 1
 fi
-echo "GATE PASS(0) [$GATE]: $arms arms -- seats capped at rank 5, HQs/ceo/cto uncapped and SERVED, skips counted in ONE line, explicit direction outranks, override named"
+echo "GATE PASS(0) [$GATE]: $arms arms -- seats capped at rank 5, HQs/cao/cto uncapped and SERVED, skips counted in ONE line, explicit direction outranks, override named"
 exit 0

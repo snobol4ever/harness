@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_a_bar_inside_an_argument_is_the_infix_operator_as_swipl.sh -- A `|` INSIDE AN ARGUMENT IS THE 1100 INFIX
 # OPERATOR, AS swipl READS IT; ONLY A LIST ELEMENT ENDS AT IT (cfo 2026-10-14, row
-# prolog-swi-library-test-main-every-case-agrees-with-swipl-in-both-modes-ceo-1664).
+# prolog-swi-library-test-main-every-case-agrees-with-swipl-in-both-modes-r-1664).
 #
 # SWI's library(optparse) writes opt_convert(A|B, ...) and the DCG rule type(A|B) --> ..., and swipl reads both: an argument
 # is read at 1200 in the SWI dialect and `|` is the infix operator '|'/2 there. SCRIP's reader (prolog_parse.c pt_term)

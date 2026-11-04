@@ -1,7 +1,7 @@
 # live_dep_files.awk -- print each compiler dependency file (.d) whose object's FIRST prerequisite, its source, still exists.
-# (ceo CEO-1352; the coo's row build-an-incremental-make-survives-a-moved-source-a-dep-file-whose-source-is-gone-is-left-out-by-rule-not-by-name)
+# (R-1352; the coo's row build-an-incremental-make-survives-a-moved-source-a-dep-file-whose-source-is-gone-is-left-out-by-rule-not-by-name)
 # The Makefile's -include reads the objdirs' .d files through this filter: a SOURCE THAT MOVED (re.c from src/parsers/raku to
-# src/runtime, CEO-1289; prolog_atom.c from src/parsers/prolog to src/runtime/rt, 481a8cd96) leaves every older objdir a .d naming the
+# src/runtime, R-1289; prolog_atom.c from src/parsers/prolog to src/runtime/rt, 481a8cd96) leaves every older objdir a .d naming the
 # old path as its object's first prerequisite, and -MP phony-targets headers only, so the next incremental make dies "No rule to make
 # target" on a file nobody should build. Left out, the object rebuilds from its pattern rule and the .d is rewritten.
 # BY RULE, NEVER BY NAME: the filter reads the path the .d itself names, so the third move needs no edit here.

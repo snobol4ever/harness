@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_sno_a_capture_slices_the_subject_and_table_convert_mkpat_take_the_direct_table.sh -- TWO COSTS OF PORTER AND JSON
-# (ceo 2026-09-25, CEO-1259; notebook section 19). (1) An IMMEDIATE capture (`pat $ x`, the asm entries rt_cap_open_gva and
+# (2026-09-25, R-1259; notebook section 19). (1) An IMMEDIATE capture (`pat $ x`, the asm entries rt_cap_open_gva and
 # rt_cap_open_plain) allocated a fresh string and copied the captured bytes on every capture, and a DEFERRED-CALL capture
 # (`pat . *f()`) in the conditional pump was the one shape refused the slice every other conditional capture took; porter
 # spent 7.7% in the capture entry and 4.5% in the allocator for it, and collected for it. Since this landing every capture is a

@@ -1,7 +1,7 @@
 #!/bin/bash
 # test_gate_one_runner_admits_a_port_engine_by_lang_at_engine_and_keys_its_rows.sh -- THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17 to
 # hq_dotnet: "The suite banner should represent the snobol4dotnet executable program, not SCRIP." and, asked who runs the SNOBOL4 suites on
-# the snobol4dotnet engine, "hq_dotnet runs them"; ceo CEO-1822). Hermetic, no build: a scratch MODE whose LANES line carries
+# the snobol4dotnet engine, "hq_dotnet runs them"; R-1822). Hermetic, no build: a scratch MODE whose LANES line carries
 # snobol4@dotnet=hq_dotnet, and a staged root in the real shape -- a COPY of this folder at <root>/harness/scripts, a stub engine tree at
 # <root>/snobol4dotnet, a plain-copy two-entry rungs suite at <root>/corpus (no checkout, so the guard judges it a board and the lane
 # decides) -- with a stub dotnet host that prints nothing (both entries' refs are empty) and scratch progress tables. Nothing live is read or
@@ -98,7 +98,7 @@ assemble() { env -u S4E_ENGINE S4E_PROGRESS_DB="$1" python3 "$R/harness/scripts/
 arm "8b the bare sno-rungs assembly reads none of the @dotnet rows"   'assemble "$T/admitted.tsv" | grep -q " read=0 unread=2 "'
 sed 's/\tsnobol4-rungs@dotnet\t/\tsnobol4-rungs\t/' "$T/admitted.tsv" > "$T/bare_control.tsv"
 arm "8c CONTROL: the same rows under the bare key are read (2 of 2)"  'assemble "$T/bare_control.tsv" | grep -q " read=2 unread=0 "'
-# THE FIRST PUBLISH OPENS THE PORT ROW (ceo CEO-1822): from-progress --suite sno-rungs@dotnet over a table that holds only SCRIP's bare row
+# THE FIRST PUBLISH OPENS THE PORT ROW (R-1822): from-progress --suite sno-rungs@dotnet over a table that holds only SCRIP's bare row
 # opens sno-rungs@dotnet through util_suite_banner.py --open (the bare row's nick, emoji, lang) and fills it; a second publish adds no row
 B="$H/../../.github/scripts/util_suite_banner.py"
 [ -r "$B" ] || { echo "REFUSE(2) [$G]: no util_suite_banner.py at $B beside this harness -- the first-publish arms cannot be measured"; exit 2; }

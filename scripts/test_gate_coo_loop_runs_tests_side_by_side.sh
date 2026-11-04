@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_coo_loop_runs_tests_side_by_side.sh [results.tsv] [hours] -- THE coo's ROUND ROBIN RUNS SEVERAL TESTS AT ONCE, AT MOST FOUR (Lon
-# 2026-10-31, in-chat to the ceo, verbatim: "Then release my restriction and run as many as would be prudent to match the tradeoffs of other seats
-# work versus completing in a timely fashion."; ceo CEO-2068, lifting CEO-1805/1891's one test at a time). Reads the coo's rr=1 readings in
+# 2026-10-31, in-chat, verbatim: "Then release my restriction and run as many as would be prudent to match the tradeoffs of other seats
+# work versus completing in a timely fashion."; R-2068, lifting R-1805/1891's one test at a time). Reads the coo's rr=1 readings in
 # progress/results.tsv over the last HOURS (default 6). A program's interval is [end - its summed m3+m4 secs, end]. GREEN when some program of
 # at least 3 s holds another program's end strictly inside its interval with a 1 s margin either side (a serial loop cannot produce that), and no
 # instant inside such a long interval sees more than 4 programs (the cap; short programs can only be undercounted, so the cap arm never reads a

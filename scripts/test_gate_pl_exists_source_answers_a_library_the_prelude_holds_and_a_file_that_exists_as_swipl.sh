@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_exists_source_answers_a_library_the_prelude_holds_and_a_file_that_exists_as_swipl.sh -- exists_source/1 IS TRUE FOR A LIBRARY THE PRELUDE HOLDS AND FOR A FILE THAT EXISTS (hq_packages
-# 2026-10-28, cto DESIGN-PLAN clpr-chr step 9, ARCH-PROLOG-CLPR-CHR.md R9; ceo CEO-2005). swipl 9.0.4 answers exists_source(library(clpr)) and exists_source(library(lists)) true, a library it does not
+# 2026-10-28, cto DESIGN-PLAN clpr-chr step 9, ARCH-PROLOG-CLPR-CHR.md R9; R-2005). swipl 9.0.4 answers exists_source(library(clpr)) and exists_source(library(lists)) true, a library it does not
 # have false, a file that exists (with or without its .pl) true, one that does not false, and a variable an instantiation_error. SCRIP evaluated the directive form at read time (:- if(exists_source(
 # library(X))), the parser's own table) and had NO predicate: a body goal raised existence_error(procedure, exists_source/1). A goal naming a library literally is now decided by the lowerer from the same
 # table (true when the prelude holds the library, fail when it does not), and the prelude's exists_source/1 answers a file spec and a variable. KNOWN LIMIT, named: a library name reached only through

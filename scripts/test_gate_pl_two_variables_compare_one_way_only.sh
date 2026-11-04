@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_two_variables_compare_one_way_only.sh -- THE STANDARD ORDER OF TWO DISTINCT VARIABLES IS ONE-WAY (ISO 7.2.1: Var @< Var is an
-# implementation-dependent TOTAL order; hq_prolog 2026-09-25, CEO-1266; the cure is unification.c at 92e8f4db7).
+# implementation-dependent TOTAL order; hq_prolog 2026-09-25, R-1266; the cure is unification.c at 92e8f4db7).
 # THE DEFECT. The comparison numbered variables by where a walk of the FIRST argument and then the second met them, so f(_) @< f(_) held in BOTH
 # directions, compare/3 answered < both ways round, and bagof/setof, which order free-variable groups by pairwise comparison, could return them in
 # an order no sort gives. The cure compares two unbound cells by address.

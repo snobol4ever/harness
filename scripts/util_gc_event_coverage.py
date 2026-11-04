@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_gc_event_coverage.py -- SCRIP'S GC EVENT SPACE, AND WHICH EVENTS THE CORPUS ACTUALLY EXERCISES.
 
-Row gc-event-coverage-is-the-criterion-not-collection-count (coo, 2026-09-21, MODE TENET, CEO-1029).
+Row gc-event-coverage-is-the-criterion-not-collection-count (coo, 2026-09-21, MODE TENET, R-1029).
 
 WHY THE AXIS CHANGED. A stress setting only tests the gc-points where a collection ACTUALLY OCCURS, and that
 subset need not differ between executions -- so COLLECTION COUNT is the wrong axis. Measured on this tree:
@@ -14,7 +14,7 @@ raises it is worth keeping.
 ⛔ THE DENOMINATOR IS THE WHOLE POINT OF THIS INSTRUMENT, SO IT IS PRINTED THREE WAYS AND NEVER ONE.
 This row exists because a green instrument was measuring the wrong axis. Ratcheting a SUBSET and letting it
 read as "the event space" would be that same offence one level up, so the report carries, by name and never as
-a count alone (CEO-997 batch 30 clause 2):
+a count alone (R-997 batch 30 clause 2):
   OBSERVABLE  -- the event has telemetry the collector already emits, so it can be exercised and counted here.
   OWED        -- the event is real and the collector does not distinguish it. NAMED, never silently dropped.
   ABSENT      -- the event does not exist in this collector at all. Carrying a bucket that can never fill
@@ -22,7 +22,7 @@ a count alone (CEO-997 batch 30 clause 2):
                  its absence is ASSERTED: the day a code path appears, this instrument REDS and demands the
                  event be reclassified rather than quietly keeping a stale map.
 
-⛔ THIS INSTRUMENT EDITS NO src/. Under CEO-723 this seat holds no cure lane; every OBSERVABLE event below is
+⛔ THIS INSTRUMENT EDITS NO src/. Under R-723 this seat holds no cure lane; every OBSERVABLE event below is
 read from telemetry that is already in the tree, and every OWED event is a one-line ask to the seat that owns
 the collector, not a change made here.
 """

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_string_zero_is_true_and_the_string_function_forms_agree_with_rakudo.sh -- THE STRING "0" IS TRUE, lc / uc / split / comb / first / words / not / hash / slip / sleep / val AS FUNCTIONS, AND substr WITH WhateverCode ARGUMENTS
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; found by reading the 100 failing assertions of S32-str and the 114 "undefined function called" aborts across the 900 Roast files that compile).
+# (row raku-every-suite-to-100-under-nonet-r-1266; found by reading the 100 failing assertions of S32-str and the 114 "undefined function called" aborts across the 900 Roast files that compile).
 #
 # THE DEFECTS, each measured against Rakudo: ?'0', so '0' and '0'.Bool were False (the runtime kept Perl's rule; Raku's only false strings are the empty one -- ?'00' was already True); lc("ÅÄÖ") and uc("åäö") as FUNCTIONS went to an
 # ASCII builtin and returned the argument unchanged while the methods were right; split(",", $s), comb(2, $s), first(&f, @l), words($s), not($x), hash(a => 1), slip(...), sleep(n) and val($s) had no function form ("undefined function called" in 114 Roast aborts, 8 of them

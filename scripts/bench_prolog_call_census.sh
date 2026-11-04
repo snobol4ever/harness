@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
-# bench_prolog_call_census.sh -- THE BYRD-BOX SCORE'S INSTRUMENT (ceo CEO-1280, 2026-09-26; Lon: "tell me where are we not using the BB's
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
+# bench_prolog_call_census.sh -- THE BYRD-BOX SCORE'S INSTRUMENT (R-1280, 2026-09-26; Lon: "tell me where are we not using the BB's
 # layout to run the logic, versus having C function run the logic"): compiles every kernel under corpus/benchmarks/prolog/bench to mode-4
 # asm in a mktemp dir and counts, over all of them, the emitted CALL SITES into each runtime entry -- the places where a box hands its
 # logic to a C function. With no argument it prints the whole census (entry, sites, kernels). With a regex it counts the sites whose

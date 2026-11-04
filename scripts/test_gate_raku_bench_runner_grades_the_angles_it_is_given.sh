@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_raku_bench_runner_grades_the_angles_it_is_given.sh -- test_raku_bench_suite.sh GRADES EXACTLY THE ANGLES BENCH_ANGLES NAMES
-# (Lon 2026-10-08, in-chat to the ceo, verbatim: "Why does RakBench take so long to run? Are the benchmarks parameters tunable so that could
-# be reduced?"; ceo CEO-1564; the coo 2026-10-10). The coo's standing loop grades RakBench with BENCH_ANGLES=process -- the pristine kernel
+# (Lon 2026-10-08, in-chat, verbatim: "Why does RakBench take so long to run? Are the benchmarks parameters tunable so that could
+# be reduced?"; R-1564; the coo 2026-10-10). The coo's standing loop grades RakBench with BENCH_ANGLES=process -- the pristine kernel
 # once per mode against its .ref -- and the three angles run on the publish cadence. This gate plants a fixture OUTSIDE the corpus tree
-# (not a board, CEO-547: graded, nothing appended, nothing written) of two kernels and requires:
+# (not a board, R-547: graded, nothing appended, nothing written) of two kernels and requires:
 #   arm 1  BENCH_ANGLES=process: good reads PASS - - PASS and badref FAIL - - FAIL in both modes; the board line says angles=process and
 #          all_pass=1 all_n=2; no wrapper is generated (the iter and time columns are "-")
 #   arm 2  BENCH_ANGLES=time,process: the line names the angles in the runner's order, angles=process,time

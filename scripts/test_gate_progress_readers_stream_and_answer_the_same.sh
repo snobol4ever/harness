@@ -2,7 +2,7 @@
 # test_gate_progress_readers_stream_and_answer_the_same.sh -- THE TWO PROGRESS-TABLE READERS STREAM THE TABLE AND GIVE THE SAME ANSWER
 # THEY GAVE WHEN THEY HELD IT WHOLE.
 #
-# ⛔ THE DEFECT (coo 2026-09-23, the ceo's CEO-1212 under CEO-801, found by the memory-scope row's own measurement): two .github
+# ⛔ THE DEFECT (coo 2026-09-23, R-1212 under R-801, found by the memory-scope row's own measurement): two .github
 # readers held the whole progress table -- 4.18M rows, 619 MB -- to answer questions about a few aggregates. util_progress_flips.py
 # --ratchet built a dict per row (4,721,516 KB peak, the heaviest arm of the blocking set and the one that set its memory cap), and
 # util_suite_banner.py's _progress_by_suite() kept every row (713,648 KB) behind every score-row write. Both grow with the table.

@@ -23,13 +23,13 @@ DEMO="${DEMO:-$S4E/corpus/demos/snobol4/json}"
 PROBE="${PROBE:-$S4E/corpus/tests/snobol4}"
 JFJC_JSON_REF="probe_loose_json_fence_jstrbody_cas_citm_catalog_json.ref"
 JFJC_MF_REF="probe_loose_json_fence_jstrbody_cas_citm_catalog_match_fence.ref"
-# ⛔ EACH WORKLOAD RUNS AT THE STACK AND HEAP IT DECLARES (clause 8 (f); the coo 2026-10-01, the ceo's yes to the instrument row): the
+# ⛔ EACH WORKLOAD RUNS AT THE STACK AND HEAP IT DECLARES (clause 8 (f); the coo 2026-10-01, the officer's yes to the instrument row): the
 # unit is a program ON AN INPUT, so its .heap/.stack sidecars sit beside its ref under the ref's stem and are read by the one reader,
 # declared_switches_beside. MEASURED at SCRIP 4cfd7e0f4, two readings each: json-match-fence.sno on citm_catalog.json overflows (ERROR
 # 246) at -s8192k, -s16384k and -s32768k and matches the ref at -s65536k; sbl -bf overflows at its default and matches from -s16384k.
 # The gate ran every arm at the runtime's defaults until this, so the two match-fence arms read FAIL on a stack, not on FENCE.
 # json.sno on the same input matches at the defaults and declares them (131072 KB heap, 4096 KB stack -- hq_snobol4 2026-10-17: the
-# undeclared ref had no partner beside it, a DANGLING REF to util_unabsorbed_census.py, and an undeclared unit is a CEO-1353 gap).
+# undeclared ref had no partner beside it, a DANGLING REF to util_unabsorbed_census.py, and an undeclared unit is a R-1353 gap).
 . "$(dirname "${BASH_SOURCE[0]}")/lib_declared_arena.sh" || { echo "  REFUSED TO GRADE: lib_declared_arena.sh unloadable"; exit 2; }
 JSON_SW="$(declared_switches_beside "$PROBE/${JFJC_JSON_REF%.ref}.sno")" || { echo "  REFUSED TO GRADE: a sidecar of ${JFJC_JSON_REF%.ref} is refused (the reader said why above)"; exit 2; }
 MF_SW="$(declared_switches_beside "$PROBE/${JFJC_MF_REF%.ref}.sno")" || { echo "  REFUSED TO GRADE: a sidecar of ${JFJC_MF_REF%.ref} is refused (the reader said why above)"; exit 2; }

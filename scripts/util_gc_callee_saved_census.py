@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """util_gc_callee_saved_census.py -- WHAT IS IN A CALLEE-SAVED REGISTER AT AN ALLOCATING RETURN, READ OFF THE
-EMITTED CODE INSTEAD OF OFF A PARAGRAPH (cto 2026-09-18, CEO-845 row (1); design
+EMITTED CODE INSTEAD OF OFF A PARAGRAPH (cto 2026-09-18, R-845 row (1); design
 .github/ARCH-GC-COMPILE-TIME-FRAME-MAPS.md sections 6.5 and 7 F1; law RULES.md FACT RULE THE COLLECTOR GUESSES
-NOTHING, CEO-812).
+NOTHING, R-812).
 
 THE FACT THIS INSTRUMENT EXISTS TO STOP HOLDING BY MEMORY.  Section 6.5 of the frozen design asserts, in prose,
 that r13 is the ONE callee-saved register that can hold a collected-heap pointer at an allocating return and only
@@ -82,7 +82,7 @@ NARROW = set(a for a, r in ALIAS.items() if a != r)
 
 SUBJECT_SEEDS = ("rt_match_enter", "rt_scan_enter", "rt_scan_reenter", "rt_scan_reenter_live")
 def _rtx_twins():
-    """\u26d4 A SEED'S REGISTERED C TWIN IS THE SEED (hq_collector 2026-10-14, row gc-blocking-gate-spill-record-red-arm-3-...-ceo-1697,
+    """\u26d4 A SEED'S REGISTERED C TWIN IS THE SEED (hq_collector 2026-10-14, row gc-blocking-gate-spill-record-red-arm-3-...-r-1697,
     measured on the spill-record gate's deferred witness at SCRIP ff95bdb59): since the rtx verdict road (a3e8864e0) a match
     opens as `call qword ptr [rip + rt_match_enter@GOTPCREL]; cmp rax, -1; jne L; call c_rt_match_enter@PLT; L:` -- the asm
     leaf answers -1 to hand the C twin the case it does not take -- and the walk back from the seeding `mov r13, rax` meets

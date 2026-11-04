@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_aggregates_are_typed_storage.sh -- a Raku Array, List, Hash, Pair or Junction is typed DESCR-slot storage, never a string whose elements are
-# joined by a separator byte (row raku-arrays-lists-and-hashes-are-typed-storage-no-delimiter-joined-strings-lon-2026-09-28; ceo CEO-1349, CEO-1479; RULES.md
+# joined by a separator byte (row raku-arrays-lists-and-hashes-are-typed-storage-no-delimiter-joined-strings-lon-2026-09-28; R-1349, R-1479; RULES.md
 # FACT RULE NO DELIMITER-JOINED AGGREGATES). Lon, in-chat to hq_pascal 2026-09-28, verbatim as relayed: "Get rid of ALL delimited based processing like the
 # one I just discovered."
 #

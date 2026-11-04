@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_swi_a_meta_argument_qualification_collapses_a_chain_as_swipl_does.sh -- a meta argument of spec ':' that arrives already qualified is collapsed the way swipl
-# 9.0.4 collapses it (CEO-2081, ARCH-PROLOG-DATABASE section 6 rule 4; SWI core/test_meta_predicate qualify#6). swipl drops the OUTER qualifier when it is an atom and the inner term
+# 9.0.4 collapses it (R-2081, ARCH-PROLOG-DATABASE section 6 rule 4; SWI core/test_meta_predicate qualify#6). swipl drops the OUTER qualifier when it is an atom and the inner term
 # is itself _:_ (the inner first argument may be an atom, a variable, a number, a compound or a list), repeats, and stops when the outer qualifier is not an atom: m2:m1:x gives
 # m1:x, m2:42:x gives 42:x, m2:f(a):x gives f(a):x, m2:1:2:x gives 1:2:x, m2:m3:_:x gives _:x, while 1:2:x and 1:m3:x stay. Before the cure '$mq_inner' continued only while the INNER
 # qualifier was an atom, so the number, compound, list and variable cases kept the outer module. Double-quoted text is left out on purpose: its default flag differs by dialect and

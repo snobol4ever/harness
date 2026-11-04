@@ -4,7 +4,7 @@
 # THE DEFECT THIS EXISTS TO KILL (seat16's audit, FINDING-2026-08-22-seat16-rung-gate-false-green-audit.md):
 # 31 of 105 gates COULD NOT SAY NO.  Four distinct classes, one root cause -- a gate that examined NOTHING
 # reported the same thing as a gate that examined everything and found it clean.  At 16 seats a gate that
-# cannot fail closes rows on false green at scale, and ARCH-FLEET-CEO.md LAW 1 ("done is computed, never
+# cannot fail closes rows on false green at scale, and the retired fleet architecture page LAW 1 ("done is computed, never
 # declared") is only as good as the gates a DONE-WHEN cites.
 #
 # THE THREE EXIT CODES.  This is the whole idea: "I checked and it is clean" and "I could not check" must
@@ -128,7 +128,7 @@ gate_require_exec() {
 # binary is older than the newest git-TRACKED FILE under <src-subdir> or Makefile. Never HEAD's commit time --
 # a commit's %ct is when it was AUTHORED, and the ordinary order of work (build, grade, THEN commit) moves HEAD
 # past a binary that is genuinely current without changing a byte of source (row stale-binary-refusal-compares-
-# against-the-head-commit-time-not-the-newest-tracked-source, hq_B/ceo 2026-09-04, this function's own SIBLING
+# against-the-head-commit-time-not-the-newest-tracked-source, hq_B/officer 2026-09-04, this function's own SIBLING
 # defect: lib_build_currency.sh's assert_binary_current dropped the identical commit-time half in 3d12ca54 --
 # "Fixes c9b9e144, which shipped max(newest src/ commit %ct, newest src/ file mtime). The commit half ... IS
 # WRONG" -- but this second, unrelated copy of the same idea was never unified onto that fix and kept it).
@@ -146,7 +146,7 @@ gate_require_fresh() {
         _t="$(stat -c %Y "$_root/$_f" 2>/dev/null)" || continue
         if [ "$_t" -gt "$_newest_t" ] 2>/dev/null; then _newest_t="$_t"; _newest_f="$_f"; fi
     done < <(git -C "$_root" ls-files -- "$_srcdir" Makefile 2>/dev/null)
-    # ⭐ THE PROBE (ceo's DONE-WHEN contract for row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-
+    # ⭐ THE PROBE (the officer's DONE-WHEN contract for row harness-and-ladder-runner-refuse-on-a-stale-binary-like-the-artifact-
     # regen-does, hq_T 2026-09-04): SCRIP_STALE_PROBE_SRC names ONE extra candidate for "newest source". It exists so a
     # fail-once proof can run against a SCRATCH file instead of touching a tracked src/ file in the real tree -- a proof
     # that edits the tree it grades is how a green gate and a dirty checkout coexist. It can only make the verdict
@@ -164,7 +164,7 @@ gate_require_fresh() {
         fi
     done
     if [ "$_stale" = 1 ] && [ "${SCRIP_ALLOW_STALE:-}" = 1 ]; then
-        # ⛔⭐ THE DELIBERATE STALE RUN -- LOUD AND RECORDED, NEVER SILENT (ceo's brief, same row). LOUD: the banner goes to
+        # ⛔⭐ THE DELIBERATE STALE RUN -- LOUD AND RECORDED, NEVER SILENT (the officer's brief, same row). LOUD: the banner goes to
         # BOTH streams, so it lands in whatever a reader captured. RECORDED: gate_score_row refuses to write THE ONE
         # LEADERBOARD while SCRIP_ALLOW_STALE=1 is set -- a board row stamps a tree hash, and a number measured on a binary
         # older than that tree is a lie wearing a provenance clause. The verdict may be quoted only WITH this banner; it is
@@ -198,7 +198,7 @@ gate_tree_signature() {
 # gate_behaviour_signature <repo-root> <scrip-binary> -- md5 of the .s this binary EMITS for the pinned witnesses in
 # ../harness/scripts/fixtures/build_behaviour/. Prints the signature on stdout; returns 1 and prints nothing if NO witness compiles
 # (the caller turns that into rc=2 -- "I could not establish what you are about to grade"). A witness that does not compile signs as
-# one fixed line naming it and its rc (the coo 2026-10-18: CEO-1838 left Icon and Prolog aborting at compile by order, and the old
+# one fixed line naming it and its rc (the coo 2026-10-18: R-1838 left Icon and Prolog aborting at compile by order, and the old
 # all-three rule refused every runner in every language); when every witness emits, the signature is byte-identical to the old one.
 # ~0.10s MEASURED for all three witnesses. Emission is deterministic TWICE OVER, and the second is the load-bearing one:
 # two runs on ONE binary are byte-identical, AND a 155-object rebuild of an UNCHANGED tree reproduces the signature
@@ -233,7 +233,7 @@ gate_behaviour_signature() {
 # object among 269 leaves all three artifacts newer than every source in the tree. The mtime guard is satisfied by
 # make having RUN. It is structurally incapable of failing after a make that compiled anything at all.
 #
-# ⭐ WHAT THIS PROVES, STATED HONESTLY: it is a SELF-PIN, in exactly the sense CEO-395 draws for rungs refs and the
+# ⭐ WHAT THIS PROVES, STATED HONESTLY: it is a SELF-PIN, in exactly the sense R-395 draws for rungs refs and the
 # port-trace standard draws for its two shapes. It proves the emitted code HAS NOT MOVED under a tree that HAS NOT
 # MOVED. It proves nothing whatever about whether that code is RIGHT -- the oracle diffs do that. That narrow claim is
 # the one the FINDING needed and could not get: hq_P's three builds sat on ONE commit, so the tree signature was
@@ -289,7 +289,7 @@ gate_require_built_from() {
     _now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     if [ -z "$_prev" ]; then
         # A LEDGER BELONGS TO THE CHECKOUT IT DESCRIBES (the coo 2026-10-15): a scratch root's out/ was once a symlink to the real checkout's, and its probe line landed
-        # in the REAL ledger mid fan-out (the RACED refusals). No link exists any more (CEO-1820): a staged root copies out/, so the line below lands in the root that was probed.
+        # in the REAL ledger mid fan-out (the RACED refusals). No link exists any more (R-1820): a staged root copies out/, so the line below lands in the root that was probed.
         printf '%s %s %s %s %s\n' "$_ts" "$_bs" "$_so" "$_now" "${S4E_SEAT:-unknown}" >> "$_led"
         # bounded, and pruned HERE rather than by a cron nobody runs (THE PACE RULES). One line per distinct tree.
         if [ "$(wc -l < "$_led" 2>/dev/null || echo 0)" -gt 400 ] 2>/dev/null; then tail -n 200 "$_led" > "$_led.t" 2>/dev/null && mv -f "$_led.t" "$_led" 2>/dev/null; fi
@@ -374,7 +374,7 @@ gate_bin_unmoved() {
 # sentence attached to a number that describes no single tree. ⭐ AN ANNOTATION IS NOT A REFUSAL: the row is
 # still published, still checkoutable, still quoted. Worse, only THREE runners ever set that variable, and the
 # three Icon PACKAGE boards the one runner runs every hour set NONE of it -- so their rows stamped HEAD AT
-# WRITE TIME, which is precisely the defect CEO-524 (1) was raised about, in its second form.
+# WRITE TIME, which is precisely the defect R-524 (1) was raised about, in its second form.
 #
 # SO THIS SETS THE VARIABLE *AND* REFUSES: gate_tree_watch exports S4E_TREE_AT_START in util_score_row's own
 # vocabulary (`SCRIP=<h>,corpus=<h>`), so a caller gets the honest stamp by calling it, and gate_tree_unmoved
@@ -386,10 +386,10 @@ gate_bin_unmoved() {
 # on a seat root than a commit is -- the coo edited corpus refs by hand four times on the day this was written.
 # No false positives: a board READS SCRIP and corpus and writes neither. ⛔ .github IS NEVER WATCHED -- the
 # board writes SCORE.md and SUITES.tsv itself, so watching it would make every board trip on its own row.
-# ⛔ THE SCRIP WATCHED IS THE CHECKOUT THIS LIBRARY LIVES IN (coo 2026-10-08, the class of CEO-1573): every board grades its own
+# ⛔ THE SCRIP WATCHED IS THE CHECKOUT THIS LIBRARY LIVES IN (coo 2026-10-08, the class of R-1573): every board grades its own
 # checkout's scrip, so a board run from a worktree watched <root>/SCRIP -- the directory BESIDE the worktree, by name -- and refused
 # "cannot read HEAD" (or, beside a seat root, watched a tree it was not grading). corpus stays <root>/corpus, the caller's root.
-# ⛔ UNDER A PORT ENGINE THE GRADED CHECKOUT IS THE PORT'S (CEO-1822): S4E_ENGINE=<port> grades the driver its runner's --paths names first,
+# ⛔ UNDER A PORT ENGINE THE GRADED CHECKOUT IS THE PORT'S (R-1822): S4E_ENGINE=<port> grades the driver its runner's --paths names first,
 # and a port root holds no SCRIP, so the SCRIP slot watches that driver's git toplevel (snobol4dotnet) -- it refused "cannot read HEAD" there.
 _gate_tree_repo() { case "$2" in
     SCRIP) if [ "${S4E_ENGINE:-scrip}" != scrip ]; then
@@ -435,10 +435,10 @@ gate_tree_unmoved() {
 # gate_and_per_program <graded-total> <mode-A red names> <mode-B red names> -- THE ROW WHEN THE MODES DISAGREE.
 # Echoes "<and_pass> <union_count> <union names...>"; returns 2 and echoes nothing if the total is not a number.
 #
-# ⛔ THE RULE IS ceo CEO-545, ruled 2026-09-10 on the coo's handling: when the two modes disagree the row is the
+# ⛔ THE RULE IS R-545, ruled 2026-09-10 on the coo's handling: when the two modes disagree the row is the
 # AND PER PROGRAM -- a program is green only if BOTH modes are -- the UNION OF REDS IS NAMED, and the per-mode
 # numerators are carried BESIDE it, never a single fraction that hides which mode. It supersedes the
-# m3-where-they-differ convention retired at ceo-372.
+# m3-where-they-differ convention retired at R-372.
 #
 # ⛔⭐ IT LIVES HERE BECAUSE TWO RUNNERS GOT IT WRONG IN TWO DIFFERENT DIRECTIONS ON THE SAME PASS (coo,
 # 2026-09-10). test_icon_jcon_suite handed util_score_row a --text carrying TWO fractions and the instrument
@@ -495,7 +495,7 @@ gate_floor() {
 # -- is stripped; command substitution's trailing-newline trim absorbs that padding on both sides.
 #
 # SCRIP'S SIDE IS READ IN EITHER VOICE (the coo 2026-10-18): the old `** Error nnn in statement` line, or SCRIP's one error voice
-# (`scrip: error nnn: ...`, CEO-623) rendered through util_render_error_voice.py spitbol, the equivalence list, into SPITBOL's
+# (`scrip: error nnn: ...`, R-623) rendered through util_render_error_voice.py spitbol, the equivalence list, into SPITBOL's
 # `ERROR nnn --` line; the stale reading of the first voice alone failed X64T's cfreq, which raises the oracle's own ERROR 235.
 # Returns 0 (match) or 1 (mismatch); prints nothing, same silent contract as the `cmp -s` it replaces.
 gate_oracle_stdout_match() {
@@ -519,9 +519,9 @@ gate_oracle_stdout_match() {
     [ "$((10#$ora_code))" -eq "$((10#$act_code))" ]
 }
 # gate_port_answer_matches <oracle-stdout> <engine-stdout> <oracle-rc> <engine-rc> -- 0 when a PORT engine answered exactly as sbl -bf did, its
-# error report and compile errors on STDOUT where sbl writes them (ceo CEO-1858 (2) to hq_dotnet) and its exit status sbl's, 231 after a compile
-# error (CEO-1864 (3)): the two stdouts byte-equal once the fatal report's ACCOUNTING lines are dropped from both (stmts executed, execution time,
-# the three stmt / rates, REGENERATIONS, memory used and left: the engine's bookkeeping, never graded, CEO-420 (b) and util_spitbol_post_mortem.py),
+# error report and compile errors on STDOUT where sbl writes them (R-1858 (2) to hq_dotnet) and its exit status sbl's, 231 after a compile
+# error (R-1864 (3)): the two stdouts byte-equal once the fatal report's ACCOUNTING lines are dropped from both (stmts executed, execution time,
+# the three stmt / rates, REGENERATIONS, memory used and left: the engine's bookkeeping, never graded, R-420 (b) and util_spitbol_post_mortem.py),
 # and the two rcs equal. The accounting is dropped only after an ERROR banner, so an answer that prints such a line itself is still compared whole.
 # SCRIP's own voice (stderr, a nonzero exit) stays gate_oracle_stdout_match's; a runner offers this arm only under a port engine.
 gate_port_answer_matches() {
@@ -760,10 +760,10 @@ gate_file_executes_scrip() {
 # first analysis had the right instinct (the pipeline is the only structural difference from the sibling that never
 # flaked) and then talked itself out of it with a capacity argument about a timing bug.
 # THE COST OF THE DELAY, so nobody repeats it: THREE seats reported false work items from this -- hq_T's own ARM 15 runs,
-# the coo's make-test report, and hq_R's, which the ceo turned into a ruling (CEO-462) directing a cure to
+# the coo's make-test report, and hq_R's, which the officer turned into a ruling (R-462) directing a cure to
 # test_gate_pl_gz5c.sh, a file that has carried the guard on line 3 since 2026-09-05. Four innocent files accused.
 # gate_file_has_bin_watch_guard <file> -- 0 the file watches its artifacts for a MID-RUN swap and checks them
-# before it publishes, 1 it does not, 2 unreadable.  ⛔ THE POPULATION RULE FOR ceo CEO-524 (1) LIVES HERE AND
+# before it publishes, 1 it does not, 2 unreadable.  ⛔ THE POPULATION RULE FOR R-524 (1) LIVES HERE AND
 # NOWHERE ELSE, for the same reason gate_file_has_fresh_guard does: a census that re-spells its own rule is a
 # second copy, and the copy is what drifts.  THREE CONDITIONS, and the third is the one that matters -- the
 # defect this grades is not a missing check, it is a check that fires AFTER the number is already on the page:
@@ -833,15 +833,15 @@ gate_file_has_fresh_guard() {
 
 # ---------------------------------------------------------------------------------------------------------
 # ⛔⭐ STAGING A PICKER WITH A PINNED LANE TABLE, FOR THE POSTOFFICE GATES WHOSE SUBJECT IS A MECHANISM AND
-# NOT THE LIVE LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; the shape ceo
-# CEO-953 directed: cure the SCENARIO, not the lane table).
+# NOT THE LIVE LANE CUT (COO-80, 2026-09-19, row instrument-the-nineteen-non-gc-blocking-arms; the shape the officer
+# R-953 directed: cure the SCENARIO, not the lane table).
 # THE PROBLEM THESE SOLVE. The picker's language->owner map is a baked `case` inside s4e_msg.sh. Two gates in
 # make test-postoffice grade mechanisms that need a table with a PARTICULAR SHAPE -- two distinct lanes for
 # test_gate_next_honours_the_lane_cut, and an hq_* lane beside an officer lane for
 # test_gate_s4e_next_any_lane_fallback_refuses_a_seat_with_no_language. Every mode that gives all seven
-# languages to one seat (CEO, TRIO, QUARTET today) dissolves both scenarios, and both gates then REFUSE rc=2
+# languages to one seat (the officer, TRIO, QUARTET today) dissolves both scenarios, and both gates then REFUSE rc=2
 # and take the whole target down with them -- which is how make test-postoffice came to be one of the
-# twenty-three blocking arms that left every seat without a landing gate (CEO-944). Both gates were RIGHT to
+# twenty-three blocking arms that left every seat without a landing gate (R-944). Both gates were RIGHT to
 # refuse rather than lower their bar, and right not to be cured by editing the live table; what they were
 # missing is the ability to build the one part of their scenario they could not write themselves.
 # ⛔ THIS IS NOT A FIXTURE RESTATING ITS SUBJECT'S FACTS. It pins the table needed to EXERCISE a mechanism;
@@ -904,7 +904,7 @@ gate_stage_picker_lane_table() {
 # ⛔⭐ A POSTOFFICE FIXTURE MUST NOT HARDCODE THE MODE IT RUNS ITS SEATS UNDER (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). THE FAILURE THIS CLOSES, measured today:
 # test_gate_s4e_next_honours_owner.sh writes `DUO` into its scratch MODE and grades the OWNER COLUMN with two
-# HQ seats. On 2026-09-19 DUO gained a stand-down arm for every HQ (CEO-907), so the picker began REFUSING TO
+# HQ seats. On 2026-09-19 DUO gained a stand-down arm for every HQ (R-907), so the picker began REFUSING TO
 # DISPATCH both of its seats and seven of its nine arms went red -- not one of them about the owner column,
 # which is the gate's entire subject. The mode string was incidental to what it grades and it became load-
 # bearing without anyone choosing that. A fixture whose seats are stood down is not measuring its subject.
@@ -919,7 +919,7 @@ gate_stage_picker_lane_table() {
 # prints the first candidate mode under which EVERY named seat is NOT refused dispatch; rc 1 when none is.
 # ⛔ A fixture that drives two kinds of identity must name both: a mode standing EITHER of them down empties
 # the scenario just as thoroughly as one standing down the only seat, and the FLEET seats and the HQs are
-# refused by different arms of the same table (seat* is refused in every consolidated mode, hq_* in CEO, DUO,
+# refused by different arms of the same table (seat* is refused in every consolidated mode, hq_* in the officer, DUO,
 # TRIO, QUARTET, SEXTET and EXECUTIVE), so the two constraints genuinely differ.
 gate_pick_dispatchable_mode() {
     local _sut="$1" _post="$2" _seats="$3"; shift 3

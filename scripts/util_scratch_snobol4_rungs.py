@@ -15,7 +15,7 @@ empty, the loose tree the runner still looks for; ROOT/corpus is `git init`ed wi
 fixture. Prints "SCRATCH_RUNGS entries=N root=ROOT pattern=PATTERN"; rc 2 when the
 rungs cannot be read or nothing matches.
 
-⛔ WHY (ceo CEO-1302 (c), 2026-09-27): the one-runner fixture exemption holds only for a population outside the shared corpus.
+⛔ WHY (R-1302 (c), 2026-09-27): the one-runner fixture exemption holds only for a population outside the shared corpus.
 test_gate_nreturn_by_name_value_broken.sh and test_gate_snocone_returns_codegen.sh ran test_corpus_snobol4.sh over the real
 1991-entry rungs as their SNOBOL4 non-regression arm, so the coo's control arm of 2026-09-26 made two whole SnoRungs passes and
 appended 7964 rows. They now grade the rungs entries their rows are about, in a root that is no checkout of the shared corpus.

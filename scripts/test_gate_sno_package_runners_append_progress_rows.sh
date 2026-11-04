@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 # test_gate_sno_package_runners_append_progress_rows.sh -- THE SNOBOL4 PACKAGE RUNNERS RECORD ONE PROGRESS ROW PER
 # PROGRAM PER MODE, ON THE STREAM-EQUAL BASIS, AND NEVER FROM A SCRATCH SUITE INTO THE LIVE TABLE.
 # Row snobol4-snoflake-aisnobol-and-dotnet-runners-wired-onto-lib-inventory-with-their-sidecars (coo, 2026-09-07;
-# CEO-383 rulings 2 and 3: "the measure counts only runner-appended rows, so the runner is defective, not the flip";
+# R-383 rulings 2 and 3: "the measure counts only runner-appended rows, so the runner is defective, not the flip";
 # a board published under an inventory REFUSE(2) is void). Before this landing test_snoflake_suite.sh and
 # test_snobol4_dotnet_suite.sh appended NOTHING (util_progress_flips.py --coverage: snoflake MISSING, dotnet MISSING),
 # so Flake's 131 -> 134 was unpaid and invisible; aisnobol records through corpus_suite_harness.py already.
@@ -12,11 +12,11 @@ export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrum
 # built binary (util_require_fresh refuses rc=2 on a stale or absent one) and the sbl -bf oracle.
 #   1  snoflake, scratch suite + scratch table: exactly 6 rows (3 fixtures x 2 modes)
 #   2  a byte-equal fixture is PASS in both modes
-#   3  an error-number-only fixture is UNGRADED (never PASS) in mode 3 -- the CEO-383 basis
+#   3  an error-number-only fixture is UNGRADED (never PASS) in mode 3 -- the R-383 basis
 #   4  the board prints the table's reading: SNOFLAKE_BOARD ... both_modes_stream_pass=1
 #   5  the inventory does not refuse: PACKAGE_INVENTORY ... ungradable=2 (the two fixtures SPITBOL itself errors on are OUTSIDE THE SPITBOL BASELINE,
-#      named in the scratch OUTSIDE_SPITBOL_BASELINE.tsv and mirrored into UNGRADABLE.tsv). ⛔ THIS ARM READ graded_narrow=2 UNTIL 2026-09-08 (ceo,
-#      CEO-392): Lon ruled the score divides by the programs SPITBOL runs clean, so an error-number-only comparison is no longer a graded bucket at all --
+#      named in the scratch OUTSIDE_SPITBOL_BASELINE.tsv and mirrored into UNGRADABLE.tsv). ⛔ THIS ARM READ graded_narrow=2 UNTIL 2026-09-08 (the officer,
+#      R-392): Lon ruled the score divides by the programs SPITBOL runs clean, so an error-number-only comparison is no longer a graded bucket at all --
 #      the fixture leaves the denominator instead of being graded by a narrower instrument. The arm is not weakened: it still proves the inventory sums.
 #   6  the same scratch suite WITHOUT S4E_PROGRESS_DB records nothing (says NOT recorded) and writes no SCORE.md cell
 #   7  this seat's snoflake rows in the live table are exactly as many after arm 6 as before it (the table is shared and grows under other seats)
@@ -59,7 +59,7 @@ outcome() { awk -F'\t' -v p="$2" -v m="$3" 'NR>1 && $8==p && $9==m {print $10}' 
 mkdir -p "$W/sno"; for f in indirect-real-illegal-type stlimit-nonnegative gimpel-general-purpose-macro; do
     [ -f "$SNO/$f.sno" ] || { echo "GATE UNPROVEN(2) [$G]: fixture $f.sno missing from $SNO"; exit 2; }; cp "$SNO/$f.sno" "$W/sno/"; done
 cp -r "$SNO/gimpel" "$W/sno/gimpel"
-printf 'gimpel-general-purpose-macro.sno\tORACLE_REFUSES\tdoes not run in SPITBOL: ERROR 285 -- include file cannot be opened; source checked 2026-09-08 (ceo)\nstlimit-nonnegative.sno\tORACLE_REFUSES\tdoes not run in SPITBOL: ERROR 244 -- statement count exceeds value of stlimit keyword; source checked 2026-09-08 (ceo)\n' > "$W/sno/OUTSIDE_SPITBOL_BASELINE.tsv"
+printf 'gimpel-general-purpose-macro.sno\tORACLE_REFUSES\tdoes not run in SPITBOL: ERROR 285 -- include file cannot be opened; source checked 2026-09-08 (the officer)\nstlimit-nonnegative.sno\tORACLE_REFUSES\tdoes not run in SPITBOL: ERROR 244 -- statement count exceeds value of stlimit keyword; source checked 2026-09-08 (the officer)\n' > "$W/sno/OUTSIDE_SPITBOL_BASELINE.tsv"
 cp "$W/sno/OUTSIDE_SPITBOL_BASELINE.tsv" "$W/sno/UNGRADABLE.tsv"
 OUT1="$(cd "$ROOT" && S4E_PROGRESS_DB="$W/db1.tsv" SNOFLAKE_SUITE="$W/sno" ARM_CSN=0 timeout -k 5 300 bash "$HERE/test_snoflake_suite.sh" 2>&1)"
 n="$(rows "$W/db1.tsv")"; [ "$n" = 6 ] && ok 1 "6 rows recorded in the scratch table" || red 1 "expected 6 rows in $W/db1.tsv, got $n"

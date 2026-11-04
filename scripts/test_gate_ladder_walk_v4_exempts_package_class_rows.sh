@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # test_gate_ladder_walk_v4_exempts_package_class_rows.sh -- THE ACCEPTANCE GATE for row ladder-walk-v4-exempts-package-
-# class-rows (ceo CEO-230 -> hq_T 2026-09-04; law RULES.md § FACT RULES THE PACKAGE-CLASS RULE, on Lon 13:20: the
+# class-rows (R-230 -> hq_T 2026-09-04; law RULES.md § FACT RULES THE PACKAGE-CLASS RULE, on Lon 13:20: the
 # percentage IS the V column).
 #
 # THE DEFECT: util_ladder_walk.py's V4 RANK INVERSION flagged EVERY FREE off-ladder row at rank 0/1 -- including the class
 # rows minted from a vendored-package census (icon-arizona-class-…, pascal-fpc-class-…, prolog-inria-class-…), which are
-# LADDER-RANK WORK by law and belong at rank 1. The ceo's 16:14 walk printed 18 such lines; on the 2026-09-04 evening
-# queue the count was 27 of 62 V4 lines, so the report the ceo reads every tick was nearly half noise, and a report that
+# LADDER-RANK WORK by law and belong at rank 1. The officer's 16:14 walk printed 18 such lines; on the 2026-09-04 evening
+# queue the count was 27 of 62 V4 lines, so the report the officer reads every tick was nearly half noise, and a report that
 # is half noise is a report nobody reads (the same finding that turned V6 into a census).
 #
 # ⛔ THE CURE IS BY SHAPE, NOT BY A LIST OF PACKAGE NAMES, and this gate pins that: a list is a census that drifts

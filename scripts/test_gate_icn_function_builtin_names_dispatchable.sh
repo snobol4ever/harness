@@ -6,7 +6,7 @@
 # static table icn_function_names[]. A HAND-TYPED TABLE IS A CLAIM ABOUT A SET, and this file is the thing
 # that keeps it true: it grades the table in BOTH directions against the live Icon oracle.
 #
-# ⛔⭐⭐ RE-CUT BY RULING (ceo CEO-481, 2026-09-09 19:04, applying CEO-463). THIS GATE NO LONGER DEMANDS
+# ⛔⭐⭐ RE-CUT BY RULING (R-481, 2026-09-09 19:04, applying R-463). THIS GATE NO LONGER DEMANDS
 # DISPATCHABILITY. function() ENUMERATES THE ORACLE'S LIST, name for name, display included; the enumeration
 # is compared against iconx's own function() output and nothing else. A name's DISPATCH is a separate
 # question with a separate owner -- display's is hq_B's rung-41 display row, and its red there is honest.
@@ -102,7 +102,7 @@ if [ -s "$TMP/fn.s" ] && gcc -no-pie "$TMP/fn.s" -L"$ROOT/out" -lscrip_rt -Wl,-r
 else
     red "ARM 2: mode-4 compile/link of the function() witness failed"
 fi
-# -- ARM 3: THE ENUMERATION IS THE ORACLE'S, NAME FOR NAME, IN BOTH DIRECTIONS (ceo CEO-481) --------------
+# -- ARM 3: THE ENUMERATION IS THE ORACLE'S, NAME FOR NAME, IN BOTH DIRECTIONS (R-481) --------------
 # This is the gate's whole verdict now. Both directions are named separately because they fail for opposite
 # reasons: an invented name is a table nobody checked against iconx, a missing one silently rewrites every
 # oracle-cut ref that prints function() -- which is exactly how IPL ifncsgen went red at bdd554570.
@@ -138,7 +138,7 @@ while read -r name ar; do
     [ "$listed" = 0 ] && [ "$dispatchable" = 1 ] && MISSING_FROM_TABLE="$MISSING_FROM_TABLE $name"
 done < "$TMP/oracle_arity.txt"
 [ "$GRADED" -gt 0 ] || { echo "⛔ GATE REFUSES(2): graded zero names"; exit 2; }
-# ⛔ INFORMATIONAL ONLY (ceo CEO-481) -- these two lines REPORT and never red. Dispatch is a separate
+# ⛔ INFORMATIONAL ONLY (R-481) -- these two lines REPORT and never red. Dispatch is a separate
 # question with a separate owner; a truthful enumeration must not be blocked by an unimplemented builtin.
 [ -z "$NOT_DISPATCHABLE" ] && echo "  · every yielded name dispatches at the oracle's arity" || echo "  ⚠ REPORTED, not a failure: yielded but not dispatchable (ERROR 022 at oracle arity) --$NOT_DISPATCHABLE"
 [ -z "$MISSING_FROM_TABLE" ] || echo "  ⚠ REPORTED, not a failure: SCRIP dispatches these but function() does not yield them --$MISSING_FROM_TABLE"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_pl_tries_and_table_inspection_answer_as_swipl.sh
 #
-# THE ROW: prolog-swi-tabling-the-table-directive-and-tabled-resolution-453-swi-cases (hq_prolog), PHASE 2 (a) on the ceo's and the
+# THE ROW: prolog-swi-tabling-the-table-directive-and-tabled-resolution-453-swi-cases (hq_prolog), PHASE 2 (a) on the officer's and the
 # cto's approval (the row's QA and LEDGER, 2026-10-09): A TRIE IS ONE TYPED HEAP KIND and the tables live in tries. HB_TRIE (the header:
 # root node, entry vector, the tabling status and data DESCR) and HB_TRIEN (a node: token DESCR, value DESCR, parent, child vector) are
 # walked by pl_trie_gc_visit in unification.c; the trie registry hangs off the program root at the end of pl_db_reg_t. A key is its

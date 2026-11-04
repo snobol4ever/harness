@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# control_arm_population.sh -- THE POPULATION HALF OF A SHARED-NODE CONTROL ARM (coo 2026-09-17, ceo CEO-827 (3)).
+# control_arm_population.sh -- THE POPULATION HALF OF A SHARED-NODE CONTROL ARM (coo 2026-09-17, R-827 (3)).
 #
-# WHERE THIS RUNS.  A board run holds ONE reading and can diff nothing, and under CEO-775 each language runner
+# WHERE THIS RUNS.  A board run holds ONE reading and can diff nothing, and under R-775 each language runner
 # produces exactly one board per landing -- so THE ONLY PLACE TWO READINGS OF ONE SUITE EXIST AT ONCE is the
 # base-vs-head control arm the SHARED-NODE VERDICT SCOPE bar already requires.  That arm hands both readings here,
-# and THE DIFF'S VERDICT BECOMES PART OF THE ARM'S VERDICT (CEO-827): "no worse than the clean tree" has always
+# and THE DIFF'S VERDICT BECOMES PART OF THE ARM'S VERDICT (R-827): "no worse than the clean tree" has always
 # meant the pass count, and a landing can hold the pass count while three programs stop being graded.
 #
 #   bash ../harness/scripts/control_arm_population.sh BASE_OUT HEAD_OUT
@@ -33,11 +33,11 @@ done
 # the entry-line requirement: at least one reading must name its non-PASS entries, or a moved skip can never be named
 if ! grep -qE '^  [A-Z]+(\([^)]*\))? (m3|m4) [^ ]+:' "$BASE" && ! grep -qE '^  [A-Z]+(\([^)]*\))? (m3|m4) [^ ]+:' "$HEAD"; then
   refuse "neither reading carries the runner's per-entry lines -- re-run BOTH arms with SUITE_LIST_ALL=1 and keep stderr. \
-A 40-line sample is exactly where three skips hide in a 1982-entry board (CEO-827)"
+A 40-line sample is exactly where three skips hide in a 1982-entry board (R-827)"
 fi
 echo "=== control arm: the POPULATION half (skip counts and the graded denominator), base -> head ==="
 python3 "$D" "$BASE" "$HEAD"; rc=$?
-echo "--- the two verbatim board lines, for the receipt (CEO-827: a receipt that paraphrases its board cannot be compared) ---"
+echo "--- the two verbatim board lines, for the receipt (R-827: a receipt that paraphrases its board cannot be compared) ---"
 grep -h -m1 'SUITE_BOARD ' "$BASE" | sed 's/^/  base: /'
 grep -h -m1 'SUITE_BOARD ' "$HEAD" | sed 's/^/  head: /'
 if [ "$rc" = 0 ]; then
@@ -45,6 +45,6 @@ if [ "$rc" = 0 ]; then
 elif [ "$rc" = 1 ]; then
   echo "⛔ CONTROL-ARM POPULATION RED: the population moved under this landing. The pass counts are NOT comparable "
   echo "   across it -- name the entries above and row them, or record the criterion change. This verdict is part of "
-  echo "   the control arm's verdict (CEO-827), not an advisory beside it."
+  echo "   the control arm's verdict (R-827), not an advisory beside it."
 fi
 exit $rc

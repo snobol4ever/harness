@@ -1,10 +1,10 @@
 #!/bin/bash
-# lib_one_runner.sh -- ONE RUNNER, ONE BOARD (Lon 2026-09-10 16:3x CDT, in-chat to ceo, verbatim: "Quit running the boards over and over
-# again. Co-ordinate with one runner and one board. Do something to alleviate the churn."; RULES.md § FACT RULES, CEO-523).
+# lib_one_runner.sh -- ONE RUNNER, ONE BOARD (Lon 2026-09-10 16:3x CDT, in-chat, verbatim: "Quit running the boards over and over
+# again. Co-ordinate with one runner and one board. Do something to alleviate the churn."; RULES.md § FACT RULES, R-523).
 # Sourced on line 2 of every rung suite/package board runner and called by corpus_suite_harness.py run: a board is refused (rc=2) to any
-# seat but the one MODE's LANES: line names for the board's LANGUAGE (CEO-775 below; the centralized coo runner is history). Exempt: the bus's own
+# seat but the one MODE's LANES: line names for the board's LANGUAGE (R-775 below; the centralized coo runner is history). Exempt: the bus's own
 # computed `done`/dispatch run of a DONE-WHEN (S4E_DONE_WHEN_RUN=1, set by s4e_msg.sh, one run per closure) and a loud, named
-# override (S4E_ONE_RUNNER_OVERRIDE="why", printed on the board). ⛔⭐ THE OVERRIDE ADMITS THE RUN AND NOTHING ELSE (ceo CEO-961,
+# override (S4E_ONE_RUNNER_OVERRIDE="why", printed on the board). ⛔⭐ THE OVERRIDE ADMITS THE RUN AND NOTHING ELSE (R-961,
 # 2026-09-20, on the coo's report; row one-runner-override-gates-the-run-and-the-leaderboard-write-needs-its-own-consent): until that
 # ruling the same variable also opened util_score_row.py's LEADERBOARD write, so there was no way to say "run the arm and publish
 # nothing" and a runner driven as a CONTROL ARM -- the shape RULES.md § SHARED-NODE VERDICT SCOPE requires of every landing -- published
@@ -12,7 +12,7 @@
 # now needs its OWN loud recorded consent, S4E_SCORE_WRITE="why", or the seat the LANES: line names for that language; a control arm
 # writes NOTHING by default. Identity: S4E_SEAT if set, else the ONE root-path map in
 # util_score_row.derive_measurer (never a fourth copy). `bash lib_one_runner.sh --check` exits 0/2 silently for a Makefile arm to test.
-# ⛔⭐ WHAT MAKES A RUN A BOARD IS THE POPULATION IT GRADES, NOT THE ENTRY POINT (ceo CEO-547 part 1, 2026-09-11, on the cfo's
+# ⛔⭐ WHAT MAKES A RUN A BOARD IS THE POPULATION IT GRADES, NOT THE ENTRY POINT (R-547 part 1, 2026-09-11, on the cfo's
 # measurement). one_runner_guard <board> [suite_path]: with a suite_path OUTSIDE the corpus tree the run is NOT a board and is
 # never refused -- a gate's own two-entry mktemp fixture publishes no row, writes no score, grades no corpus population and costs
 # about a second. Called with no suite_path, the run is judged a board, so a caller that does not say what it grades is refused
@@ -27,11 +27,11 @@
 # or under make test) enters nothing; a `bash -c "source ..."` probe is not a runner ($0 is not the file at the bottom of the source
 # stack); and a verb that never calls the guard -- scorecard_snobol4.sh oracle, whose last line util_ref_mint.sh parses -- is not a
 # board and is left exactly as it was (measured: the first shape, entered at source time, broke that verb's protocol line).
-# ⭐ THE LIBRARY'S OWN FOLDER, RESOLVED ONCE WHEN SOURCED (ceo CEO-1917; hq_jvm 2026-10-22: a port runner called by a relative path published no
+# ⭐ THE LIBRARY'S OWN FOLDER, RESOLVED ONCE WHEN SOURCED (R-1917; hq_jvm 2026-10-22: a port runner called by a relative path published no
 # row -- test_snobol4_aisnobol_suite.sh cds into the engine root, and one_runner_port_publish then took dirname of a RELATIVE BASH_SOURCE[0],
 # "can't open file /home/claude_jvm/../harness/scripts/util_score_row.py"). Every function below reads _ONE_RUNNER_HERE, never BASH_SOURCE at call time.
 _ONE_RUNNER_HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# ⛔ EVERY CHILD RUNS HEADLESS (the ceo 2026-10-23, after an oracle re-measure opened GUI windows on Lon's desktop): every guarded runner
+# ⛔ EVERY CHILD RUNS HEADLESS (2026-10-23, after an oracle re-measure opened GUI windows on Lon's desktop): every guarded runner
 # sources this file first, so the display variables leave the runner's environment here and no program, oracle or helper it starts can
 # open a window; corpus_suite_harness.py drops them for its own children the same way.
 unset DISPLAY WAYLAND_DISPLAY
@@ -51,17 +51,17 @@ one_runner_seat() {
   S4E_HOME="${S4E_HOME:-$(cd "$here/../.." && pwd)}" python3 -c 'import sys; sys.path.insert(0,sys.argv[1]); import util_score_row as u; print(u.derive_measurer() or "")' "$here" 2>/dev/null
 }
 # ⛔⭐ WHOSE corpus IS IT? (coo 2026-09-18, row instruments-the-progress-fingerprint-gate-appends-no-rows-arms-1-and-2-red-and-arm-4-
-# vacuous). CEO-547 part 1 says a gate's own mktemp fixture is not a board because it grades no corpus population -- but the test
+# vacuous). R-547 part 1 says a gate's own mktemp fixture is not a board because it grades no corpus population -- but the test
 # written for it asked a PATH question, "is the suite under the corpus root", and the corpus root is whatever S4E_HOME/corpus
 # resolves to. A hermetic fixture that builds its own two-repo world and points S4E_HOME at it therefore lands INSIDE its own corpus
 # tree and is judged a board: test_gate_progress_rows_carry_the_start_fingerprint.sh was DARK on origin for a day because its
 # eight-entry scratch rungs was refused rc=2, the harness appended nothing, and arms 1 and 2 read FAIL for a reason that was never
-# about fingerprints. ⭐ THE FACT ASKED IS THE ONE CEO-547 NAMES -- is this the population every seat has? -- and it is asked of the
+# about fingerprints. ⭐ THE FACT ASKED IS THE ONE R-547 NAMES -- is this the population every seat has? -- and it is asked of the
 # remote: a real checkout carries origin snobol4ever/corpus, a `git init` scratch world carries no remote at all. ⛔ BOTH FACTS, NEVER
 # EITHER: a real board that merely redirected its progress writes is still a board, and a checkout that merely lost its remote is
 # still the shared population. ⛔ UNREADABLE ANSWERS BOARD: a guard that cannot tell must refuse, never wave through.
-# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, CEO-2041): a runner that sources this file makes its mktemp debris in
-# /tmp/s4e/<seat>, the directory the census measures. THE SEAT IS THE ROOT'S (the cto, CEO-2106, 2026-11-01: four live sessions ran without
+# ONE SCRATCH DIRECTORY PER SEAT (ARCH-SHARED-DEVELOPMENT 6, shared-dev step 8, R-2041): a runner that sources this file makes its mktemp debris in
+# /tmp/s4e/<seat>, the directory the census measures. THE SEAT IS THE ROOT'S (the cto, R-2106, 2026-11-01: four live sessions ran without
 # S4E_SEAT and their runners made debris at the /tmp root; the seat derives from the root path by one_runner_seat, S4E_SEAT only overrides it).
 _one_runner_tmp_seat="$(one_runner_seat 2>/dev/null)"
 case "${_one_runner_tmp_seat:-}" in ''|*[!a-z0-9_]*) ;; *) mkdir -p -m 700 "/tmp/s4e/$_one_runner_tmp_seat" 2>/dev/null && export TMPDIR="/tmp/s4e/$_one_runner_tmp_seat";; esac
@@ -82,7 +82,7 @@ one_runner_writes_the_live_progress_table() {
   local db="${S4E_PROGRESS_DB:-$ONE_RUNNER_LIVE_PROGRESS_DB}"
   [ "$(readlink -f "$db" 2>/dev/null || printf '%s' "$db")" = "$(readlink -f "$ONE_RUNNER_LIVE_PROGRESS_DB" 2>/dev/null || printf '%s' "$ONE_RUNNER_LIVE_PROGRESS_DB")" ]
 }
-# ⛔⭐ OUTSIDE THE CONFIGURED ROOT IS NOT OUTSIDE THE SHARED CORPUS (coo 2026-09-23, found wiring the package runners for CEO-1229).
+# ⛔⭐ OUTSIDE THE CONFIGURED ROOT IS NOT OUTSIDE THE SHARED CORPUS (coo 2026-09-23, found wiring the package runners for R-1229).
 # The root below is whatever S4E_CORPUS or S4E_HOME say, so pointing either at a scratch directory made EVERY real corpus suite read
 # "outside the corpus tree, not a board" -- and a seat no lane names was admitted to it, the harness too (its paths["corpus"] is
 # S4E_HOME/corpus). The suite's OWN checkout answers instead, whatever the environment says: a suite inside a checkout of the shared
@@ -102,18 +102,18 @@ one_runner_suite_is_a_board() {
   [ -n "$cr" ] || return 0
   case "$sp" in "$cr"/*|"$cr") ;; *) one_runner_in_a_shared_checkout "$(dirname "$sp")" && return 0; return 1;; esac
   if ! one_runner_corpus_is_the_shared_population "$cr" && ! one_runner_writes_the_live_progress_table; then
-    printf 'ONE-RUNNER: FIXTURE, not a board -- %s is under %s, which is not a checkout of %s, and this run appends to a scratch progress table. No row reaches the shared record (CEO-547 part 1).\n' "$sp" "$cr" "$ONE_RUNNER_SHARED_CORPUS_REMOTE"
+    printf 'ONE-RUNNER: FIXTURE, not a board -- %s is under %s, which is not a checkout of %s, and this run appends to a scratch progress table. No row reaches the shared record (R-547 part 1).\n' "$sp" "$cr" "$ONE_RUNNER_SHARED_CORPUS_REMOTE"
     return 1
   fi
   return 0
 }
 # ⛔⭐⭐⭐ NO CENTRAL RUNNER: EVERY LANGUAGE HQ RUNS ITS OWN LANGUAGE'S TEST AND BENCHMARK SUITES (Lon 2026-09-16 10:5x CDT, in-chat
-# to ceo, verbatim: "So do not have a centralized runner at all. Let's each HQ run its language test and benchmark suites."; ceo CEO-775,
+# to the officer, verbatim: "So do not have a centralized runner at all. Let's each HQ run its language test and benchmark suites."; R-775,
 # RULES.md § FACT RULE -- ONE RUNNER PER LANGUAGE). The property Lon wanted on 09-10 -- one runner per board, no two seats grading the
 # same suite -- is kept by PARTITIONING the runner by language instead of centralizing it: a board belongs to the language it grades,
 # and the seat that may run it is the seat MODE's LANES: line names for that language (rebus=cfo today). Nobody is the runner of every
 # board; an officer is refused every board its lane does not name, exactly as a non-coo seat was before. The law source is the LANES
-# line, never a name baked in here (CEO-756 still binds). A board with no language (board_packages.sh) is admitted to any LANES seat;
+# line, never a name baked in here (R-756 still binds). A board with no language (board_packages.sh) is admitted to any LANES seat;
 # its per-language runners refuse the seats that do not own them.
 one_runner_lang() {
   local board="${1:-}" suite="${2:-}" sp l
@@ -140,24 +140,24 @@ one_runner_lang() {
     *) printf 'unknown';;
   esac
 }
-# ⛔⭐ AN ABSENT OR UNPARSEABLE LANES LINE REFUSES RATHER THAN RESOLVES (ceo CEO-957, 2026-09-19, on the coo's
+# ⛔⭐ AN ABSENT OR UNPARSEABLE LANES LINE REFUSES RATHER THAN RESOLVES (R-957, 2026-09-19, on the coo's
 # report; row instruments-an-absent-lanes-line-in-mode-must-refuse-not-resolve-every-language-to-the-coo).
-# This function used to fall back to a BAKED SEAT NAME when MODE carried no LANES: line -- ceo under MODE CEO
-# and coo under EVERY other mode, for EVERY language. That is the CENTRALIZED RUNNER that CEO-775 removed on
+# This function used to fall back to a BAKED SEAT NAME when MODE carried no LANES: line -- the officer under MODE SOLO
+# and coo under EVERY other mode, for EVERY language. That is the CENTRALIZED RUNNER that R-775 removed on
 # Lon's word, reachable by deleting one line from MODE, and it contradicted the rule written three lines above
-# it in this same file: the law source is the LANES line, never a name baked in here. It is the CEO-907 shape
+# it in this same file: the law source is the LANES line, never a name baked in here. It is the R-907 shape
 # in a new place -- a flip rewrites the prose and leaves a machine-read line behind. Reproduced by both seats:
 # a three-line MODE carrying QUARTET and no LANES read icon -> coo, rebus -> coo, all -> coo.
 # one_runner_who now returns EMPTY, and one_runner_guard refuses rc=2 on an empty owner NAMING THE MISSING
 # LANES LINE specifically -- a missing line and a line that names no owner for this language are DIFFERENT
 # faults and a reader must not have to guess which one they are looking at.
-one_runner_seat_is_language_hq() {   # an hq_* seat IS a language HQ by its name (Lon: "all 5 HQ's"; CEO-1342: the LANES line names the coo for every language, so an HQ is no longer found there -- read by name it is refused, read from LANES it would be ADMITTED with the override, the hole the coo closed 2026-09-28)
+one_runner_seat_is_language_hq() {   # an hq_* seat IS a language HQ by its name (Lon: "all 5 HQ's"; R-1342: the LANES line names the coo for every language, so an HQ is no longer found there -- read by name it is refused, read from LANES it would be ADMITTED with the override, the hole the coo closed 2026-09-28)
   case "$1" in hq_*) return 0;; *) return 1;; esac
 }
 one_runner_lanes_line() {
   grep -m1 '^LANES:' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | sed 's/^LANES://'
 }
-# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, ceo CEO-1822; "hq_dotnet runs them"): S4E_ENGINE names the program a board grades,
+# ⛔⭐ THE ENGINE IS A RUNNER SETTING (Lon 2026-10-17, R-1822; "hq_dotnet runs them"): S4E_ENGINE names the program a board grades,
 # scrip by default. A port engine's board is its own HQ's, so under S4E_ENGINE=<port> the lane is looked up as <lang>@<port> (LANES:
 # snobol4@dotnet=hq_dotnet) and the bare <lang> key -- SCRIP's lane -- does not admit it. An unknown engine names no lane, so it refuses.
 # "all" stays the bare keys only (the [a-z0-9]*= pattern cannot match an @ key). Mirrored word for word by corpus_suite_harness.py.
@@ -200,7 +200,7 @@ one_runner_port_tree() {
   printf '%s %s%s' "$_e" "$(git -C "$_t" rev-parse --short HEAD)" "$(git -C "$_t" diff --quiet HEAD 2>/dev/null || printf -- -dirty)"
 }
 # one_runner_port_publish <suite>@<engine> -- a port's whole canonical pass publishes its row, as SCRIP's runners publish theirs on a
-# whole-population pass (CEO-1302 (a); agreed by hq_jvm and hq_dotnet on the bus, 2026-10-18): util_score_row.py from-progress over the
+# whole-population pass (R-1302 (a); agreed by hq_jvm and hq_dotnet on the bus, 2026-10-18): util_score_row.py from-progress over the
 # rows the pass appended. Shut by S4E_SCORE_NO_WRITE as SCRIP's write is; a refusal is said aloud and never turns the board red.
 one_runner_port_publish() {
   if [ -n "${S4E_SCORE_NO_WRITE:-}" ]; then echo "SUITES.tsv: $1 NOT PUBLISHED -- this run publishes nothing by its caller's own declaration (S4E_SCORE_NO_WRITE): $S4E_SCORE_NO_WRITE"; return 0; fi
@@ -218,18 +218,16 @@ one_runner_who() {
     *) case "$key" in *[!a-z0-9_@]*) printf '';; *) printf '%s' "$lanes" | tr ' ' '\n' | sed -n "s/^$key=//p" | head -1;; esac;;
   esac
 }
-# ⛔⭐ THE ceo AND THE coo ARE NEVER REFUSED (Lon 2026-10-25 18:2x CDT, in-chat to the ceo, verbatim: "Ensure the test and package runner
-# never refuse CEO in addition to allowing COO."; ceo CEO-1976): the ceo is admitted to every board, a port engine's included, whatever
-# LANES: names; the coo, the testing officer, to every SCRIP board whatever LANES: names (a port board stays its port HQ's, CEO-1912/1913).
+# ⛔⭐ THE coo IS NEVER REFUSED (Lon 2026-10-25 18:2x CDT, in-chat, R-1976): the coo, the testing officer, is admitted to every SCRIP board
+# whatever LANES: names (a port board stays its port HQ's, R-1912/1913). The fired seat the same ruling admitted to every board is gone (CTO-487).
 # corpus_suite_harness.py:_one_runner_guard and util_score_row.py's lane-owner write mirror this.
 one_runner_seat_admitted() {
   local seat="$1" who="$2" w
-  [ "$seat" = ceo ] && return 0
   [ "$seat" = coo ] && [ "$(one_runner_engine)" = scrip ] && return 0
   for w in ${who//,/ }; do [ "$seat" = "$w" ] && return 0; done
   return 1
 }
-# ⛔⭐ THE BINARY IS STAMPED WHERE EVERY BOARD STARTS (coo 2026-09-16; hq_raku's report against themselves, ceo CEO-802; row instruments-
+# ⛔⭐ THE BINARY IS STAMPED WHERE EVERY BOARD STARTS (coo 2026-09-16; hq_raku's report against themselves, R-802; row instruments-
 # a-board-does-not-refuse-when-its-own-seat-rebuilds-the-binary-under-it-the-raku-master-graded-a-tree-that-changed-mid-run): a board and a
 # build share one mutable artefact, ./scrip + out/libscrip_rt.so, and a board whose seat ran `make` under it printed RakRungs 764/927 -- a
 # measurement of nothing. one_runner_guard exports S4E_BIN_AT_START (lib_gate.sh's fingerprint shape: md5 first 12 of each file, space-
@@ -238,7 +236,7 @@ one_runner_seat_admitted() {
 one_runner_bin_fingerprint() {
   # the checkout THIS FILE lives in, whose scrip every runner beside it grades ($SD/scrip) -- never S4E_HOME/SCRIP, which in a worktree is
   # another binary (the coo 2026-09-28: util_progress_append.py reads the same tree, so the start and the append-time readings agree)
-  # ⛔ under a port engine the graded files are the ones its runner names with --paths, the list that checks nothing (CEO-1822;
+  # ⛔ under a port engine the graded files are the ones its runner names with --paths, the list that checks nothing (R-1822;
   # util_progress_append.py's bin_fingerprint reads the same list), so a rebuild of the port under its board refuses that board as a SCRIP
   # rebuild does, and a source edited under it (which --binaries reads as stale) does not; a runner that predates --paths is read by --binaries
   local _t _b _r _run _f _bins
@@ -256,8 +254,8 @@ one_runner_bin_fingerprint() {
   md5sum "$_b" "$_r" 2>/dev/null | cut -c1-12 | tr '\n' ' '
 }
 # one_runner_population_of "$@" -- the population a runner was pointed at by its caller: the word after --corpus on its command line,
-# else its CORPUS variable, else nothing (the runner grades its default population, the one its environment resolves). ⛔ WHY (ceo
-# CEO-1302 (c), 2026-09-27): the fixture exemption holds only for a population outside the shared corpus, and a runner that takes its
+# else its CORPUS variable, else nothing (the runner grades its default population, the one its environment resolves). ⛔ WHY (the officer
+# R-1302 (c), 2026-09-27): the fixture exemption holds only for a population outside the shared corpus, and a runner that takes its
 # population from an argument or its own variable called the guard with none, so the guard judged the default -- the real corpus --
 # and refused a gate's scratch package (test_icon_jcon_suite.sh --corpus <mktemp>). Such a runner hands this to the guard.
 one_runner_population_of() {
@@ -266,8 +264,8 @@ one_runner_population_of() {
 }
 ONE_RUNNER_SMOKE_MODE_RUNNERS="test_icon_ipl_suite.sh test_snobol4_gimpel_suite.sh"   # runners with an area-smoke mode that writes nothing (see one_runner_guard)
 ONE_RUNNER_SINGLE_FILE_RUNNERS="test_prolog_swi_suite.sh test_prolog_gnu_suite.sh"   # runners whose --file mode grades exactly one file and writes no progress row and no score row (see one_runner_guard)
-# ⭐ THE cto LANDS THE ROWS ASSIGNED TO IT (ceo CEO-2085, on the cto's ask; CEO-2067: while the roster was small the cto took the toughest jobs of
-# any kind, and prolog-lifo-step-3 was assigned to it). CEO-2029's refusal stands for the cto's own design work; a cto that holds a live claim (an
+# ⭐ THE cto LANDS THE ROWS ASSIGNED TO IT (R-2085, on the cto's ask; R-2067: while the roster was small the cto took the toughest jobs of
+# any kind, and prolog-lifo-step-3 was assigned to it). R-2029's refusal stands for the cto's own design work; a cto that holds a live claim (an
 # assigned row it is landing) runs that landing's proof -- the smokes and the handful the landing recipe requires -- like any lander.
 one_runner_single_entry() {  # rc 0 when S4E_CHUNK names exactly ONE entry: entry:<name>, no comma, no glob, no @resume, no space (the cto's ruling 2026-11-01)
   case "${S4E_CHUNK:-}" in entry:?*) ;; *) return 1;; esac
@@ -280,13 +278,13 @@ one_runner_on_roster() {  # seat: rc 0 when MODE's ROSTER: line names it (a drai
 }
 one_runner_cto_lands() { local c d="${S4E_POST:-/home/resources/postoffice}/claims"; for c in "$d"/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c" 2>/dev/null)" = cto ] && ! grep -qx DONE "$c" && return 0; done; return 1; }
 one_runner_guard() {
-  # ⭐ THE RUN'S START, STAMPED BY EVERY RUNNER FOR ITSELF (Lon 2026-10-08, in-chat to the ceo: "List in a grid the total time for each test
-  # suite to run."; CEO-1562): util_score_row.py turns it into the row's wall clock (SUITES.tsv today_secs, the grid's Wall). Unconditional,
+  # ⭐ THE RUN'S START, STAMPED BY EVERY RUNNER FOR ITSELF (Lon 2026-10-08, in-chat: "List in a grid the total time for each test
+  # suite to run."; R-1562): util_score_row.py turns it into the row's wall clock (SUITES.tsv today_secs, the grid's Wall). Unconditional,
   # unlike S4E_BIN_AT_START: a runner a board launches times its own run, not its parent's.
   S4E_RUN_T0="$(date +%s)"; export S4E_RUN_T0
   if [ -z "${S4E_BIN_AT_START:-}" ]; then S4E_BIN_AT_START="$(one_runner_bin_fingerprint)" && export S4E_BIN_AT_START; fi
   local board="${1:-${0##*/}}" suite="${2:-}" seat who lang
-  case "$(one_runner_seat)" in cto) if [ -z "${S4E_DONE_WHEN_RUN:-}" ] && ! one_runner_cto_lands; then printf '⛔ REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, CEO-2029, verbatim: "Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing."). Put the witness and its expected answer in the step plan and let an executor or the coo (s4e_test_request.sh) run it.\n' "$(one_runner_seat)" >&2; return 2; fi;; esac
+  case "$(one_runner_seat)" in cto) if [ -z "${S4E_DONE_WHEN_RUN:-}" ] && ! one_runner_cto_lands; then printf '⛔ REFUSE(2) A DESIGN OFFICER RUNS NO TESTS: seat %s designs only (Lon 2026-10-30, R-2029, verbatim: "Ensure that both CTO and CAO will only ever do design and never waste time with implementation or testing."). Put the witness and its expected answer in the step plan and let an executor or the coo (s4e_test_request.sh) run it.\n' "$(one_runner_seat)" >&2; return 2; fi;; esac
   if [ -n "$suite" ] && ! one_runner_suite_is_a_board "$suite"; then return 0; fi
   one_runner_mem_scope
   if [ -z "${S4E_MEM_OOM_AT_START:-}" ]; then S4E_MEM_OOM_AT_START="$(python3 "$_ONE_RUNNER_HERE/util_mem_scope.py" oom-kills 2>/dev/null || echo 0)"; export S4E_MEM_OOM_AT_START; fi
@@ -294,11 +292,11 @@ one_runner_guard() {
   if [ -n "$seat" ] && one_runner_seat_admitted "$seat" "$who"; then return 0; fi
   # ⭐ ONE ENTRY IS A LANDER'S RE-GRADE, NOT A BOARD (the cto's ruling to the coo, 2026-11-01 09:5x CST, on hq_icon's fault: S4E_CHUNK=entry:progs/
   # adlfirst bash test_icon_ipl_suite.sh refused rc 2 here, so a language HQ could not re-grade the one program its row names when that program
-  # lives only in a package container; CEO-1342 as amended by CEO-1893/1926: "a lander fixes ONE program and re-grades THAT program in both modes
+  # lives only in a package container; R-1342 as amended by R-1893/1926: "a lander fixes ONE program and re-grades THAT program in both modes
   # before the push"): a run whose S4E_CHUNK names exactly ONE entry (entry:<name>; no comma, no glob, no @resume) is admitted for every seat on
   # MODE's ROSTER: line, says so, and writes NO live progress line (its table is a scratch file under TMPDIR, the FIXTURE's arm) and NO score row
   # (S4E_SCORE_NO_WRITE). Two entries, a tier, a chunk or no chunk stay a board and keep the refusal below. The lane owner never reaches this line
-  # (admitted above), so the coo's own one-entry grading keeps writing the record; the design officer's refusal (CEO-2029) stands above it.
+  # (admitted above), so the coo's own one-entry grading keeps writing the record; the design officer's refusal (R-2029) stands above it.
   if one_runner_single_entry && one_runner_on_roster "$seat"; then
     local _sp; _sp="$(mktemp "${TMPDIR:-/tmp}/s4e-single-entry.XXXXXX")" || { printf '⛔ REFUSE(2) ONE-RUNNER SINGLE ENTRY: no scratch progress table under %s\n' "${TMPDIR:-/tmp}" >&2; return 2; }
     S4E_PROGRESS_DB="$_sp"; S4E_SCORE_NO_WRITE="a single entry is a lander's re-grade, not a board (the cto's ruling 2026-11-01)"; export S4E_PROGRESS_DB S4E_SCORE_NO_WRITE
@@ -308,10 +306,10 @@ one_runner_guard() {
   # ⛔⭐ ONE SEAT, ONE LANGUAGE: A LANGUAGE HQ NEVER RUNS ANOTHER LANGUAGE'S BOARD -- NEITHER EXEMPTION BELOW ADMITS IT (Lon 2026-09-24,
   # in-chat to hq_prolog, verbatim: "Just have each seat run only their own test suites." / "We can not have all 5 HQ's deciding to
   # run all seven test suites simultaneously. Fix that."). An hq_* seat the LANES: line names falls through to the refusal; a
-  # shared-code landing is graded by its lander on its OWN language and every other language reads it on its own next pass (CEO-775).
+  # shared-code landing is graded by its lander on its OWN language and every other language reads it on its own next pass (R-775).
   # A GATE running a runner as an instrument fixture (a tiny slice inside the blocking set, never a seat's board run) says so with
   # S4E_ONE_RUNNER_FIXTURE="why" and is admitted for every seat; S4E_ONE_RUNNER_OVERRIDE is the SEAT's override and is not an HQ's.
-  # ⛔⭐ AND THE EXEMPTION HOLDS ONLY FOR A POPULATION OUTSIDE THE SHARED CORPUS (ceo CEO-1302 (c), 2026-09-27, on the coo's COO-198
+  # ⛔⭐ AND THE EXEMPTION HOLDS ONLY FOR A POPULATION OUTSIDE THE SHARED CORPUS (R-1302 (c), 2026-09-27, on the coo's COO-198
   # report): it admitted the variable alone, whatever the runner graded, so test_gate_nreturn_by_name_value_broken.sh and
   # test_gate_snocone_returns_codegen.sh ran test_corpus_snobol4.sh over the real 1991-entry rungs inside a control arm -- two whole
   # SnoRungs passes and 7964 dev-pass rows under a seat that runs no board. A suite path that reaches this line is a board (a scratch one
@@ -322,12 +320,12 @@ one_runner_guard() {
   # ⭐ THE AREA SMOKE'S DELEGATED GRADE (the coo 2026-10-02, row instruments-the-area-smoke-grades-ipl-entries-without-their-sidecars-
   # and-reads-nine-false-reds): a package whose board grades each program under per-program sidecars the harness cannot apply (the IPL's
   # .pin shim, .dat stdin, .argv, .outfiles, fixtures) is smoked THROUGH ITS OWN RUNNER in that runner's smoke mode -- the named entries
-  # only, no progress row, no score row (CEO-1342: every seat runs the area smoke; a smoke is not a board). Admitted only for a runner
+  # only, no progress row, no score row (R-1342: every seat runs the area smoke; a smoke is not a board). Admitted only for a runner
   # in ONE_RUNNER_SMOKE_MODE_RUNNERS, which honours S4E_AREA_SMOKE_ENTRIES and writes nothing, and only with no suite path named.
   if [ -n "${S4E_AREA_SMOKE_ENTRIES:-}" ] && [ -z "$suite" ] && case " $ONE_RUNNER_SMOKE_MODE_RUNNERS " in *" $board "*) true ;; *) false ;; esac; then
     printf 'ONE-RUNNER AREA SMOKE by %s on %s: %s named entr(ies), no progress row and no score row\n' "${seat:-?}" "$board" "$(printf '%s\n' $S4E_AREA_SMOKE_ENTRIES | grep -c .)"; return 0
   fi
-  # ⭐ ONE FILE IS NOT A BOARD (ceo CEO-1664, 2026-10-11, measured: under SEPTET hq_prolog, the cto and the cfo work SWI's 1563 reds
+  # ⭐ ONE FILE IS NOT A BOARD (R-1664, 2026-10-11, measured: under SEPTET hq_prolog, the cto and the cfo work SWI's 1563 reds
   # class by class, and every one of them was refused rc 2 grading the one plunit file its row names -- the runner's own --file mode,
   # which its header calls "a development aid, never a board; writes no row", fell through to the board refusal). A runner in
   # ONE_RUNNER_SINGLE_FILE_RUNNERS sets S4E_ONE_RUNNER_SINGLE_FILE from its OWN argv on line 2 (empty without --file, so an inherited
@@ -339,30 +337,30 @@ one_runner_guard() {
   if [ -n "${S4E_ONE_RUNNER_FIXTURE:-}" ]; then
     local _fxpop="${S4E_CORPUS:-${S4E_HOME:-$(cd "$_ONE_RUNNER_HERE/../.." && pwd)}/corpus}"
     if [ -z "$suite" ] && ! one_runner_in_a_shared_checkout "$_fxpop"; then printf 'ONE-RUNNER FIXTURE by %s on %s: %s\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_FIXTURE"; return 0; fi
-    printf '⛔ ONE-RUNNER FIXTURE NOT ADMITTED: %s grades %s, the shared corpus or a population a board reads -- the exemption admits a scratch population only (ceo CEO-1302 (c)); point the fixture at one (S4E_HOME, --corpus, the runner'"'"'s *_SUITE) with a scratch S4E_PROGRESS_DB\n' "$board" "${suite:-$_fxpop}" >&2
+    printf '⛔ ONE-RUNNER FIXTURE NOT ADMITTED: %s grades %s, the shared corpus or a population a board reads -- the exemption admits a scratch population only (R-1302 (c)); point the fixture at one (S4E_HOME, --corpus, the runner'"'"'s *_SUITE) with a scratch S4E_PROGRESS_DB\n' "$board" "${suite:-$_fxpop}" >&2
   fi
   local _hq=0; [ -n "$seat" ] && one_runner_seat_is_language_hq "$seat" && _hq=1
   if [ "$_hq" = 0 ]; then
-    # ⛔ DONE RUNS NO BOARD FOR ANY SEAT (ceo CEO-1342 clause 5, the coo's row bus-done-runs-no-board-for-any-seat-..., 2026-09-28): the bus's
+    # ⛔ DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5, the coo's row bus-done-runs-no-board-for-any-seat-..., 2026-09-28): the bus's
     # computed done (S4E_DONE_WHEN_RUN=1) was the one road by which a non-tester seat still ran a suite; it is refused here and in the
     # harness alike. A DONE-WHEN that needs a suite's verdict reads the coo's SUITE TABLE row at a tree at or after the landing
     # (../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>); the lane owner's own done never reaches this line (admitted above).
-    if [ "${S4E_DONE_WHEN_RUN:-}" = 1 ]; then printf '⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (ceo CEO-1342 clause 5): %s is a board, seat %s is not its runner, and the bus computed done no longer admits it -- read the coo'"'"'s SUITE TABLE row instead: ../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>\n' "$board" "${seat:-?}"; return 2; fi
+    if [ "${S4E_DONE_WHEN_RUN:-}" = 1 ]; then printf '⛔ REFUSE(2) DONE RUNS NO BOARD FOR ANY SEAT (R-1342 clause 5): %s is a board, seat %s is not its runner, and the bus computed done no longer admits it -- read the coo'"'"'s SUITE TABLE row instead: ../harness/scripts/util_suite_row_at_or_after.sh <suite-key> <tree>\n' "$board" "${seat:-?}"; return 2; fi
     if [ -n "${S4E_ONE_RUNNER_OVERRIDE:-}" ]; then printf '⚠ ONE-RUNNER OVERRIDE by %s on %s: %s\n' "${seat:-?}" "$board" "$S4E_ONE_RUNNER_OVERRIDE"; return 0; fi
   else
     printf '⛔ ONE SEAT, ONE LANGUAGE: %s is a language HQ -- no S4E_ONE_RUNNER_OVERRIDE and no DONE-WHEN admits it to a %s board (Lon 2026-09-24: "Just have each seat run only their own test suites.")\n' "$seat" "${lang:-unknown}" >&2
   fi
   local _noseat
   if [ -z "$(one_runner_lanes_line)" ]; then
-    _noseat="<NO SEAT: the MODE file carries NO LANES: line at all, so no language has an owner. This REFUSES and no longer resolves to a baked name (ceo CEO-957). Fix MODE, or, in a fixture, declare a lane table the way gate_stage_picker_lane_table does>"
+    _noseat="<NO SEAT: the MODE file carries NO LANES: line at all, so no language has an owner. This REFUSES and no longer resolves to a baked name (R-957). Fix MODE, or, in a fixture, declare a lane table the way gate_stage_picker_lane_table does>"
   else
     _noseat="<no seat -- the LANES line is present but names none for this language>"
   fi
-  printf '⛔ REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: %s is a %s board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, MODE line 2, RULES.md § ONE RUNNER PER LANGUAGE, CEO-775); another language board is an ASK to that language HQ. S4E_ONE_RUNNER_OVERRIDE="why" is loud and recorded, and it admits THE RUN ONLY -- publishing a leaderboard row needs its own consent, S4E_SCORE_WRITE="why" (ceo CEO-961).\n' "$board" "$lang" "${seat:-?}" "${who:-$_noseat}" "$lang"
+  printf '⛔ REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: %s is a %s board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, MODE line 2, RULES.md § ONE RUNNER PER LANGUAGE, R-775); another language board is an ASK to that language HQ. S4E_ONE_RUNNER_OVERRIDE="why" is loud and recorded, and it admits THE RUN ONLY -- publishing a leaderboard row needs its own consent, S4E_SCORE_WRITE="why" (R-961).\n' "$board" "$lang" "${seat:-?}" "${who:-$_noseat}" "$lang"
   return 2
 }
 # ⛔⭐ THE SEAM: EVERY GUARD SHIPS A SANCTIONED WAY TO BE TRIPPED THAT DOES NOT REQUIRE DOING THE FORBIDDEN THING
-# (ceo CEO-560, 2026-09-11, on hq_B's self-report and hq_U's mirror case the same hour; FINDING-2026-09-11-hq_B-a-guard-
+# (R-560, 2026-09-11, on hq_B's self-report and hq_U's mirror case the same hour; FINDING-2026-09-11-hq_B-a-guard-
 # whose-only-proof-of-firing-is-committing-the-act-it-forbids.md). Until now the ONLY route to this guard's refusal was
 # S4E_SEAT=coo -- i.e. asserting another seat's identity, the exact act the guard exists to stop -- so proving it fires
 # meant committing the offence. A guard that can only be tested that way is tested that way OR NOT AT ALL, and "not at

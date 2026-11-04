@@ -2,7 +2,7 @@
 # test_gate_pl_predicate_property_of_a_head_known_only_at_run_time_asks_the_registry.sh
 #
 # THE ROW: prolog-a-run-time-dynamic-1-records-the-predicate-and-predicate-property-of-a-head-the-compiler-never-saw-asks-the-
-# registry (cfo; found by the ceo, CEO-1523). predicate_property/2 written with a constant head is answered by the lowerer
+# registry (cfo; found by the R-1523). predicate_property/2 written with a constant head is answered by the lowerer
 # from what the compiler knows; a head it knows nothing about (a predicate a run-time consult, a run-time dynamic/1 or an
 # assertz brings in) compiled to plain failure. It now goes to the run-time enumerator ($pl_pp_count/$pl_pp_nth) the
 # variable-head case uses, so the registry answers.

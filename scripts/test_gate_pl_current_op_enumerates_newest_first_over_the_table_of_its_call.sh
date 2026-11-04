@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_current_op_enumerates_newest_first_over_the_table_of_its_call.sh -- current_op/3 ENUMERATES NEWEST FIRST OVER THE OPERATORS OF ITS CALL (as gprolog; Logtalk current_op_3 iso_current_op_3_40).
-# hq_prolog 2026-09-25, CEO-1270; the cure is lower_prolog.c pl_cc_gen2_desc: the enumeration walked the table oldest-first, so a case that
+# hq_prolog 2026-09-25, R-1270; the cure is lower_prolog.c pl_cc_gen2_desc: the enumeration walked the table oldest-first, so a case that
 # removes an operator after printing another -- op(444,fy,baz), op(444,fy,quux), current_op(444,fy,Op), write(Op), op(0,fy,quux), fail -- printed
 # baz and never quux, where the suite accepts bazquux or quuxbaz. It now counts down from the table size taken at the call: an operator added
 # meanwhile is not visited, one removed meanwhile is skipped (gprolog's answer; swipl alone also keeps the removed one).

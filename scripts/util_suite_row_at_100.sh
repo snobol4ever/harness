@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# util_suite_row_at_100.sh <suite-key> -- ONE SUITE TABLE ROW AT 100 PERCENT, READ, NEVER RUN (ceo CEO-1903; Lon 2026-10-22 12:0x CDT, in-chat to the ceo,
+# util_suite_row_at_100.sh <suite-key> -- ONE SUITE TABLE ROW AT 100 PERCENT, READ, NEVER RUN (R-1903; Lon 2026-10-22 12:0x CDT, in-chat,
 # verbatim: "Get both HQ-JVM and HQ-DOTNET working with leader boards."). The DONE-WHEN of a board row -- a port engine's <key>@<engine> (gimpel@jvm,
 # sno-rungs@dotnet) or SCRIP's bare key -- reads /home/resources/progress/SUITES.tsv by header name and runs nothing: the row moves only when the coo's
-# loop grades its programs and util_score_row.py writes it, so a seat's `done` measures the board instead of running one (CEO-1342, CEO-1872).
+# loop grades its programs and util_score_row.py writes it, so a seat's `done` measures the board instead of running one (R-1342, R-1872).
 #   rc 0  today_pass == today_total > 0 and the row is not VOID      (printed: SUITE_ROW key pass/total date tree)
 #   rc 1  below 100 percent, or VOID                                  (printed the same way, with the count still owed)
 #   rc 2  could not measure: no key, no such row, an unreadable table, a reading that is not a number

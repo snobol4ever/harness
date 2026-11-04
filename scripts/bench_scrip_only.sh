@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat to the ceo: "For benchmarks turn off all diagnostic code."; ceo CEO-1262)
+export SCRIP_DIAG=0   # benchmarks run with every diagnostic off: the collector's self-checks and the node-id stores (Lon 2026-09-25, in-chat: "For benchmarks turn off all diagnostic code."; R-1262)
 # SCRIP-only Icon/JCON benchmark runner — no icont/iconx oracle required.
 # Runs each of the 10 benchmark programs under mode-3 (--run) and mode-4 (--compile+gcc),
 # reports rc / output-line-count / mode-3==mode-4 byte-identity. Oracle column intentionally

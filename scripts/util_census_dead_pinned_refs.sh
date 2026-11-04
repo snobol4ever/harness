@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ../harness/scripts/util_census_dead_pinned_refs.sh — censuses PINS (.ref/.std/ALL.ref) whose OWN CONTENT is a
 # transcript of the ORACLE'S DEATH: SPITBOL's fatal termination report, ending in its allocator counters
-# `memory used (bytes)` / `memory left (bytes)`.  Row: the ceo's HOLD dispatch to hq_B, 2026-09-08 —
+# `memory used (bytes)` / `memory left (bytes)`.  Row: the officer's HOLD dispatch to hq_B, 2026-09-08 —
 # "have it ready to re-run and report the before-and-after", the honest measure of hq_R's termination-report
-# landing.  Reports; changes nothing.  Deleting a pin is a SEPARATE, HELD decision (ceo: removing programs
+# landing.  Reports; changes nothing.  Deleting a pin is a SEPARATE, HELD decision (removing programs
 # from a denominator is the hardest edit on the board to undo).
 #
 # ⛔⭐ WHY A PIN LIKE THIS IS NOT A BUG WE CAN CURE.  The premise of a package board is "the oracle runs this
@@ -41,14 +41,14 @@
 #     you the predicate HAS NOT CHANGED; it can never tell you the predicate is RIGHT.  The old sentence
 #     claimed the stronger thing, and the stronger thing is what a hurried reader remembers.
 #
-# (3) ⭐ --behind: A DEAD PIN DOES NOT MERELY MISCLASSIFY, IT CONCEALS (ceo CEO-427, 2026-09-08).  Because the
+# (3) ⭐ --behind: A DEAD PIN DOES NOT MERELY MISCLASSIFY, IT CONCEALS (R-427, 2026-09-08).  Because the
 #     ref pins a transcript of SPITBOL dying, the suite never compares SCRIP's real output to anything -- it
-#     sees a mismatch, writes FAIL, and nobody asks what our output WAS.  The ceo found three programs that
+#     sees a mismatch, writes FAIL, and nobody asks what our output WAS.  The officer found three programs that
 #     ABORT behind their dead pins, one cause, invisible for as long as the pins existed.  `--behind` runs
 #     SCRIP on each dead-pinned program and reports WHAT THE PIN WAS HIDING: CRASH / TIMEOUT / rc + line count.
 #     ⛔ IT FEEDS STDIN THROUGH split_at_end, THE SUITE'S OWN CONVENTION (stdin follows the END statement in
 #     the same file).  A </dev/null run here would print a clean-looking table from a STARVED program -- the
-#     trap that took hq_P, the cto and the ceo in one night, the last of them while actively looking for it.
+#     trap that took hq_P, the cto and the officer in one night, the last of them while actively looking for it.
 #
 # Exit: 0 = censused (any count; a report is not a verdict).  2 = REFUSED, could not measure.
 set -u
@@ -128,7 +128,7 @@ echo
 echo "TOTAL dead-pinned entries: $tot_dead   (per-program pins examined: $tot_pins)"
 echo "affected:$dead_dirs"
 [ -n "${DIVERGE:-}" ] && { echo; echo "⚠️ PREDICATE DRIFT -- this census matches with -a and scorecard_snobol4.sh's sbl_died no longer does."; echo "   ⛔ This is NOT a claim that a number is being hidden: GNU grep in a script answers the same either way"; echo "   (measured 2026-09-08, hq_T + hq_B, on the real rungs). It is a spelling-drift guard only -- -a is"; echo "   insurance against a non-GNU grep on PATH, at zero verdict cost. Restore -a there and this goes quiet."; echo "   authority: $DIVERGE"; }
-# ⭐ WHAT THE PINS CONCEAL (ceo CEO-427).  Opt-in, because it BUILDS NOTHING but does RUN every dead-pinned
+# ⭐ WHAT THE PINS CONCEAL (R-427).  Opt-in, because it BUILDS NOTHING but does RUN every dead-pinned
 # program, and a census must stay cheap enough that nobody skips it.
 if [ "$BEHIND" = 1 ]; then
   echo
@@ -152,7 +152,7 @@ if [ "$BEHIND" = 1 ]; then
     # ⛔⭐ THE PROGRAM KEEPS ITS OWN EXTENSION.  The first cut of this block wrote "$stem.run" and SCRIP
     # infers the FRONTEND FROM THE EXTENSION -- so every program was run as an unknown language and the
     # table reported 10 CRASHes that were artifacts of this instrument, not defects.  Caught only by
-    # checking a row against a ceo ruling that said the same program was clean.  Same family as everything
+    # checking a row against a ruling that said the same program was clean.  Same family as everything
     # else in this file: an instrument answering a narrower question than the one asked, silently.
     python3 - "$src" "$W/r/$stem.$srcext" "$W/r/$stem.in" <<'SPLITPY'
 import re, sys

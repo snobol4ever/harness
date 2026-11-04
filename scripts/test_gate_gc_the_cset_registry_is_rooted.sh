@@ -7,7 +7,7 @@
 # was never registered for update, which is the g_name_save shape one table over.
 # ⛔ WITNESS, AND IT IS A WRONG ANSWER RATHER THAN A CRASH, WHICH IS WHY NO CRASH-SHAPED ARM WOULD EVER HAVE FOUND IT: an Icon cset UNION
 # reads *c = 26 or 256 instead of 16, with a NUL inside the cset. Measured on origin at SCRIP ad42031a9 RED at stress 1,2,3,4,5,8,10 and
-# GREEN at 0,15,20,30,50,100 -- a RAGGED BAND, so a two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (CEO-807).
+# GREEN at 0,15,20,30,50,100 -- a RAGGED BAND, so a two-point DONE-WHEN at 30 and 200 reads clean and banks the defect (R-807).
 # THE CURE is kw_cset_gc_roots(), called from the root phase, visiting every entry's ptr and name through rt_gc_visit_raw -- which
 # range-checks, so a registered pointer into the emitted string table is a safe no-op, and which calls gc_slot_reg so the slot is UPDATED
 # when the block moves rather than merely marked.

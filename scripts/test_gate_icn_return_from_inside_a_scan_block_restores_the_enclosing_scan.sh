@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_icn_return_from_inside_a_scan_block_restores_the_enclosing_scan.sh
 #
-# WHY THIS EXISTS (hq_R's witness .github b76ecb2e9, cured by hq_U on the ceo's scan/conjunction-resumption
+# WHY THIS EXISTS (hq_R's witness .github b76ecb2e9, cured by hq_U on the officer's scan/conjunction-resumption
 # cut).  A RETURN executed from inside a string-scanning block leaves the ENCLOSING scan pointed at the INNER
 # subject.  `"AB" ? (inner("zz") || move(1))` printed `zzz` in both modes where iconx prints `zzA`: inner
 # returns `zz`, then the outer `move(1)` takes the second character of `zz` instead of the second character

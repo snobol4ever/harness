@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the ipl ref cutter invoked as an instrument fixture over a SCRATCH package, not a board (CEO-523)"
-export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (CEO-1386)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the ipl ref cutter invoked as an instrument fixture over a SCRATCH package, not a board (R-523)"
+export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_icn_ipl_cutter_detects_a_nondeterministic_program.sh -- proves util_cut_icon_ipl_refs.sh's flake
 # detector ACTUALLY DETECTS. Instrument side of row icon-ipl-qei-nested-icont-nondeterminism-neither-cutter-
-# detects (ceo mint CEO-516 -> hq_R): "the cutter's flake detector (an N-rep arm) fails once against a planted
+# detects (mint R-516 -> hq_R): "the cutter's flake detector (an N-rep arm) fails once against a planted
 # nondeterministic program."
 #
 # ⛔⭐ WHY THIS GATE EXISTS AT ALL. The cutter already HAD a determinism arm -- four sub-second runs plus a

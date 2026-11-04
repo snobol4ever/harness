@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_harness_stages_prolog_load_companions.sh -- A PROLOG ENTRY'S LOADED MODULE IS STAGED BESIDE IT (the coo 2026-10-10, row
-# instruments-the-harness-stages-a-prolog-companion-loaded-by-use-module-ensure-loaded-consult-or-include-ceo-1603; the ceo, CEO-1603, on
+# instruments-the-harness-stages-a-prolog-companion-loaded-by-use-module-ensure-loaded-consult-or-include-r-1603; the R-1603, on
 # hq_prolog's report: "the companion patterns know no Prolog use_module or ensure_loaded, so a program loading a module vendored beside
 # it runs without it (puzzles farmer loads bplan.pl)"). corpus_suite_harness._copy_companions stages what an entry names into the
 # isolated directory it runs in; it knew quoted names with an extension, Icon $include/open and SNOBOL4 -INCLUDE, and staged none of

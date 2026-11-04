@@ -3,7 +3,7 @@
 # (element size from the declared type, overlapping runs in either direction, rows of a two-level array, nested aggregates) and over string
 # characters (Move(t[2], s[3], 4)) copies exactly the run fpc copies.
 #
-# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (ceo CEO-1709): 10 of its programs call Move and died "error 22:
+# MEASURED 2026-10-14 by hq_pascal for PasRosetta's empty-output class (R-1709): 10 of its programs call Move and died "error 22:
 # undefined function called" (or, for a whole array, "integer expected"). THE CURE: mk_call lowers Move whose first two arguments are
 # element selects of array or string variables, in the FPC dialects, to the new runtime __pas_move (a 0-based or declared-lo aware run copy
 # of bytes / element-size cells, memmove order, pas_agg_copy for aggregate cells) or, for strings, s := __pas_strmove(s, j, t, i, n).

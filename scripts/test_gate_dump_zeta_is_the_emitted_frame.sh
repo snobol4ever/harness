@@ -1,7 +1,7 @@
 #!/bin/bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ⭐ RUNG 2 OPENER, SECOND INSTRUMENT, of frame-slot-reuse-a-live-range-in-a-byrd-graph-extends-to-every-point-reachable-by-recession
-# (cto, CEO-684 slice 2): THE DUMP MUST BE THE EMITTED FRAME.  --dump-zeta used to run slot assignment in a
+# (cto, R-684 slice 2): THE DUMP MUST BE THE EMITTED FRAME.  --dump-zeta used to run slot assignment in a
 # pipeline state the compile and run paths never see: no proc registration, no fl_derive_tier, no zframe mark.
 # zls_callee_is_gen() therefore read false for every staged call, the callgen.act quad was not granted in the
 # dump while the emitter granted it, and every graph with a staged call to a registered generator callee (every

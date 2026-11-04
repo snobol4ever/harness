@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_gate_pl_prelude_libs_in_sync.sh -- THE VENDORED SWI LIBRARIES AND THE TABLE SCRIP EMBEDS AGREE (cfo 2026-10-10, row
-# prolog-swi-library-modules-rbtrees-assoc-ordsets-apply-error-pairs-aggregate-option-strings-516-swi-cases; CEO-1473).
+# prolog-swi-library-modules-rbtrees-assoc-ordsets-apply-error-pairs-aggregate-option-strings-516-swi-cases; R-1473).
 #
-# THE RULING (CEO-1473): swipl's pure-Prolog libraries are vendored under src/parsers/prolog/prelude/<lib>.pl with their BSD
+# THE RULING (R-1473): swipl's pure-Prolog libraries are vendored under src/parsers/prolog/prelude/<lib>.pl with their BSD
 # headers and embedded by a generator at build like the parsers.  The generator is ../harness/scripts/util_gen_prolog_prelude_libs.py;
 # its product src/parsers/prolog/prolog_prelude_libs.inc is committed, as the parsers' .tab.c are, so a vendored file
 # changed without regenerating (or a table edited by hand) would ship a library SCRIP's source no longer states.

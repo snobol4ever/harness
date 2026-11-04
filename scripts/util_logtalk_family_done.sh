@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# util_logtalk_family_done.sh -- the DONE-WHEN body of one Logtalk FAMILY row (ceo CEO-650): grades each named group
+# util_logtalk_family_done.sh -- the DONE-WHEN body of one Logtalk FAMILY row (R-650): grades each named group
 # with util_logtalk_grade.py --group (a development aid, never a board -- the coo's test_prolog_logtalk_suite.sh is the
 # board) in BOTH modes and is green only when every group's cases ALL PASS IN BOTH MODES over a non-zero population.
 #
@@ -41,7 +41,7 @@ for G in "$@"; do
   set -- $L; [ "${1:-}" = BOARD_FOR_SHELL ] && [ "${2:-0}" -gt 0 ] || { echo "⛔ REFUSE(2): group $G graded nothing ($L)"; exit 2; }
   pop=$2; both=$3; p3=$4; f3=$5; p4=$6; f4=$7
   # ⛔ THE GRADED DENOMINATOR IS THE POPULATION MINUS WHAT THE ORACLE CANNOT RUN, AND IT IS NAMED EVERY TIME
-  # IT IS USED (cto ruling 2026-09-13; RULES.md FACT RULE CEO-542, CEO-391: outside-the-baseline is named
+  # IT IS USED (cto ruling 2026-09-13; RULES.md FACT RULE R-542, R-391: outside-the-baseline is named
   # beside the suite, out of the denominator, NEVER HIDDEN). ⭐ An absent outside= field means an OLDER grader
   # that cannot assign the bucket -- it reads 0 and the verdict falls back to the full population, which is
   # the strict direction. A missing measurement must never be the lenient one.
@@ -76,7 +76,7 @@ for G in "$@"; do
   # DECLARED DONE: the refusal is applied ONCE, at the verdict, and only where the verdict would otherwise
   # have been GREEN. A red row is never stopped by it. A big-bang --strict over the grading path would have
   # stopped 40 live rows in two lanes to remove a false confidence nobody was acting on -- a cure that
-  # trades one thing for another (CEO-589), which is no better as process than it is in the suite.
+  # trades one thing for another (R-589), which is no better as process than it is in the suite.
   CLAIM=""
   if [ -f "$HERE/util_logtalk_crossindex.py" ]; then
     CIOUT=$(LOGTALK_SUITE="$SUITE" python3 "$HERE/util_logtalk_crossindex.py" --group "$G" 2>&1) || true

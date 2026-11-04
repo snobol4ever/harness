@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """util_suite_wall_clock_census.py -- THE WALL CLOCK OF EVERY SUITE, read from the one record (Lon 2026-10-08 16:2x CDT, in-chat to the
-ceo, verbatim: "List in a grid the total time for each test suite to run. COO has been running them, so he will know."; CEO-1562, row
-instruments-every-suite-board-line-carries-its-wall-clock-and-the-suite-table-shows-it-lon-2026-10-08-ceo-1562).
+the officer, verbatim: "List in a grid the total time for each test suite to run. COO has been running them, so he will know."; R-1562, row
+instruments-every-suite-board-line-carries-its-wall-clock-and-the-suite-table-shows-it-lon-2026-10-08-r-1562).
 
 One line per SUITES.tsv row, in the grid's order (lang, then nickname): its today_secs -- the seconds from the runner's start
 (one_runner_guard stamps S4E_RUN_T0) to its row write, carried by util_score_row.py into util_suite_banner.py --set --secs -- with the

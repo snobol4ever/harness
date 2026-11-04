@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_snobol4_name_as_pattern_matches_sbl.sh -- A NAME STANDING ALONE AS A PATTERN MATCHES THE STRING OF ITS VARIABLE'S NAME, AS SPITBOL DOES, IN BOTH MODES
-# (row snobol4-a-name-used-as-a-pattern-matches-its-variables-name-in-spitbol-where-scrip-fails; found by the ceo's millions-run, CEO-1450). Every witness is
+# (row snobol4-a-name-used-as-a-pattern-matches-its-variables-name-in-spitbol-where-scrip-fails; found by the officer's millions-run, R-1450). Every witness is
 # run by the correctness oracle (sbl -bf) and by SCRIP's mode 3 and mode 4 and the gate compares standard output and exit code. WITNESSES: the name literal as
 # the pattern of a statement, a variable holding a NAME as the pattern, the same two inside EVAL (the runtime road), a name that does not occur in the subject
 # (the match fails), a name followed by a literal, and a name as one arm of an alternation.

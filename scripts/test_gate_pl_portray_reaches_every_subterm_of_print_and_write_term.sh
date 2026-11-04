@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pl_portray_reaches_every_subterm_of_print_and_write_term.sh -- print/1, print/2 AND write_term/2,3 WITH portray(true) OR portrayed(true) CALL portray/1 ON EVERY SUBTERM (as swipl; Logtalk print_1, print_2, portray_1, write_term_3 137-145).
-# hq_prolog 2026-09-25, CEO-1270. THE DEFECTS: print/1 consulted portray/1 at the top term only (print(A) :- portray(A) -> true ; writeq(A)), so
+# hq_prolog 2026-09-25, R-1270. THE DEFECTS: print/1 consulted portray/1 at the top term only (print(A) :- portray(A) -> true ; writeq(A)), so
 # print(a(foo)) printed a(foo) where the hook doubles foo; print/2 never consulted it; write_term refused portrayed(true) with domain_error; and
 # predicate_property(portray(_), dynamic / multifile) failed where portray/1 is predeclared. THE CURE routes all three writers through format's ~p,
 # the C writer path that already calls portray/1 on every subterm from a plain leaf (lower_prolog.c pl_cc_print_via_format; write_term takes it when

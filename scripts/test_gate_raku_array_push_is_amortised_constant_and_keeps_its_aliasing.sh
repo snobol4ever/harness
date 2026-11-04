@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_raku_array_push_is_amortised_constant_and_keeps_its_aliasing.sh -- Array.push IS NOT A COPY OF THE ARRAY
-# (row raku-every-suite-to-100-under-nonet-ceo-1266; coo FINDING 2026-10-03: "Array.push is quadratic in the array's length, both modes": 40000 pushes took 18.56 s in
+# (row raku-every-suite-to-100-under-nonet-r-1266; coo FINDING 2026-10-03: "Array.push is quadratic in the array's length, both modes": 40000 pushes took 18.56 s in
 # mode 3, Rakudo 0.18 s; Roast gives each file 5 s). The lowering turns @l.push(x) into @l = push_pure(@l, x) and push_pure built a NEW array of the old elements plus the new
 # ones on every call. push_pure and append_pure now append in place (rk_arr_append, amortised doubling) when the receiver is an Array (ARBLK.proto NULL); a List, a
 # non-array receiver and the front operations keep the copying road. Aliasing is Rakudo's: a copy made by my @n = @m is a separate array, a by-reference @a parameter and a

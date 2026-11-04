@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_design_prolog_lifo_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-lifo (the cto, 2026-10-28, CEO-1997/1998;
+# test_design_prolog_lifo_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-lifo (the cto, 2026-10-28, R-1997/1998;
 # .github/ARCH-PROLOG-ACTIVATION-LIFETIME.md section 9). The plan is corpus/tests/prolog/lifo/STEPS.tsv; the witnesses are the .pl beside it, each
-# with a .ref cut from swipl 9.0.4 (-q -t halt), the one SWI-dialect oracle (CEO-1603).
+# with a .ref cut from swipl 9.0.4 (-q -t halt), the one SWI-dialect oracle (R-1603).
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness of the step in mode 3 (./scrip w.pl) and mode 4 (--compile, as, gcc, run) under SCRIP_ZD_RTCHECK=1,
@@ -44,7 +44,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 4)"; wits="$(col "$step" 5)"
 [ -x "$SC/scrip" ] || refuse "no $SC/scrip"
 mkdir -p "$OUT/step$step"
-# one box-wide run slot for the step (CEO-1894)
+# one box-wide run slot for the step (R-1894)
 if [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
     . "$HERE/lib_slots.sh"; s4e_slot_hold run || true   # the one rule (lib_slots.sh): a seat file, then a pool slot; the grader's two slots reserved
 fi

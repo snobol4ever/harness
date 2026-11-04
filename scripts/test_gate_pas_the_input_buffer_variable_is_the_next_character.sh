@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test_gate_pas_the_input_buffer_variable_is_the_next_character.sh -- input^, the buffer variable of the required textfile input,
-# is the character the next read will deliver, as fpc -Miso gives it (ISO 7185 6.4.3.5, 6.10; row pascal-p4-self-hosts..., CEO-1311)
+# is the character the next read will deliver, as fpc -Miso gives it (ISO 7185 6.4.3.5, 6.10; row pascal-p4-self-hosts..., R-1311)
 #
 # MEASURED 2026-09-27 by hq_pascal, both modes. The selector rule sent a buffer variable of a declared textfile to __pas_tbuf_get but
 # excluded the standard streams, so input^ fell through to a pointer dereference and every program that read input^ stopped with

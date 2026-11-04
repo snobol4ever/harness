@@ -37,7 +37,7 @@
 #      joins the test family beside BINOP_TEST (SCRIP_ZD_TESTFAM, its killswitch), so its omega target heads its own run at the
 #      run base the call's omega exit pops to. Witness w7. This also reaches the joins (D) cut: w6 stays green under
 #      SCRIP_ZD_JOIN_CUT=0 alone, so its fail-once now turns both killswitches off.
-#      w7's FAIL-ONCE IS STRUCTURAL SINCE fc306f22a (cfo, CEO-1422 shape B): every SNOBOL4 statement's failure exits now
+#      w7's FAIL-ONCE IS STRUCTURAL SINCE fc306f22a (cfo, R-1422 shape B): every SNOBOL4 statement's failure exits now
 #      pass an IR_SETEXIT_TEST, which carries infinip's run past the negated call, so w7 prints the oracle's 3,2,1,ok even
 #      under SCRIP_ZD_TESTFAM=0 -- the output can no longer show the defect (measured by the cto on fc306f22a alone; an EVAL'd
 #      form, which the cfo's lowering leaves without the node, is green too because an EVAL chain's carve reserves its slots).
@@ -47,10 +47,10 @@
 # EVERY ARM IS GRADED AGAINST THE ORACLE: the witness's --transpile run on sbl -bf (a Snocone program's oracle), both modes, stdout.
 # FAIL-ONCE, BUILT IN UNTIL 2026-10-17: witness 1 went red under SCRIP_ZD_BLOBBACK=0, witness 3 under SCRIP_ZD_5B=1 and w5.sno
 # under SCRIP_ZD_OMEGA_STMTLAND=0. THOSE KILLSWITCHES ARE DELETED (hq_zetas, the spine flip, under the cto's review: ZETA HAS NO
-# MODES, and CEO-1680 allows no seam in SCRIP for a test); SCRIP_ZD_5B had already been read and never used since the flip's
+# MODES, and R-1680 allows no seam in SCRIP for a test); SCRIP_ZD_5B had already been read and never used since the flip's
 # ZD-5b went on, so its arm measured nothing. Their fail-once readings stand as history, like w6's and w7's below. w6 (D) and w7 (E) have NO per-run control since 2026-10-14 (hq_zetas, row spine-zd-omega-test-kind-
-# ...-ceo-1389, the cto's road (a)): their fail-once needed SCRIP_ZD_TESTFAM=0, which selected the test family's members per op at
-# run time and is deleted -- the family is ir_decides_own_failure_kind, declared in src/ir/ir_node.h, a definition, not a switch, and CEO-1680
+# ...-r-1389, the cto's road (a)): their fail-once needed SCRIP_ZD_TESTFAM=0, which selected the test family's members per op at
+# run time and is deleted -- the family is ir_decides_own_failure_kind, declared in src/ir/ir_node.h, a definition, not a switch, and R-1680
 # allows no seam in SCRIP for a test. PROVEN ONCE, at that landing, on a local uncommitted build whose family lacked IR_CALL and
 # IR_BINOP_TEST (exactly what the switch selected): w6 m3 under SCRIP_ZD_JOIN_CUT=0 printed only [ab ] against the oracle's four
 # lines (green with the family alone, as before), and w7's plan claimed 50 nodes against 53 shipped. Both stay graded against the

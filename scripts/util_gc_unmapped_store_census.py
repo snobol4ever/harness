@@ -2,11 +2,11 @@
 """THE UNMAPPED-STORE CENSUS -- every emitted safe point whose shielded store lands outside its graph's frame map.
 
 ARCH-GC-COMPILE-TIME-FRAME-MAPS.md section 3 has read, since the page was written, that a safe point is
-"placed AFTER the call's result has been stored to its mapped slot".  Section 3b (CEO-996) is the finding that
-NOTHING HAS EVER ENFORCED THE CLAUSE, and section 3c (CFO-134, CEO-1006) splits the population into four storage
+"placed AFTER the call's result has been stored to its mapped slot".  Section 3b (R-996) is the finding that
+NOTHING HAS EVER ENFORCED THE CLAUSE, and section 3c (CFO-134, R-1006) splits the population into four storage
 classes.  This is the instrument the row owes first: the clause made checkable, per graph, NAMING EVERY MEMBER.
 
-WHY A STATIC READ OF EMITTED CODE AND NOT AN rc-SHAPED ARM (CEO-997, CEO-556).  The failure this class produces is
+WHY A STATIC READ OF EMITTED CODE AND NOT AN rc-SHAPED ARM (R-997, R-556).  The failure this class produces is
 a quiet whole-match failure that exits 0 with a plausible wrong answer -- the collector sweeps a live block, the
 arena re-issues it in place, and the program prints something.  No rc can tell a cure from a silencing, so the
 CURE is graded by ORACLE DIFF on the witness and the POPULATION is graded here, off the emitted text.
@@ -59,7 +59,7 @@ THE ARITHMETIC IS CONFIRMED AGAINST THE RUNTIME ON THE ROW'S WITNESS.  hq_snobol
 `mov [rsp+0],rax / mov [rsp+8],rdx / call rt_gc_poll` at .Lcall_alpha_76_240; this census reads the poll's spine
 displacement as -32, so the pointer word at [rsp+8] sits at -24 -- and SCRIP_GC_MAPS=1 prints
 `[GC-WALK-SPINE] graph=main off=-24 ... text=EXPR$0$lvl1` at the same site.  Two independent roads, same byte.
-Since af773a80e (CEO-1251) the call sits behind the inline pending test -- push rax, the load and test of
+Since af773a80e (R-1251) the call sits behind the inline pending test -- push rax, the load and test of
 g_gc_pending, pop rax, je 1f -- and shielded_stores() steps over that six-instruction preamble as the poll's own
 (gate_preamble_ending_at): the je skips only the poll body, so both paths passed the stores.
 
@@ -667,7 +667,7 @@ def spill65b_at(insns, i):
 
 
 def gate_preamble_ending_at(insns, j):
-    """the length of the CEO-1251 inline pending test whose `je 1f` is insns[j], or 0.
+    """the length of the R-1251 inline pending test whose `je 1f` is insns[j], or 0.
 
     THE SHAPE, from x86_gc_gate in x86_asm.h (af773a80e, 2026-09-25): every poll is emitted as `push rax / mov rax,
     [rip+g_gc_pending@GOTPCREL] / mov eax,[rax] / test eax,eax / pop rax / je 1f` and then the poll body, with the
@@ -835,7 +835,7 @@ def grid_verdict(k, pad=0):
     the spine from RSP to its base as an array of cells, reading tags: precise, path-independent, no map, no
     sniff, no guess".  gc_heap.c does not walk an array: gc_walk_words steps EIGHT bytes at a time and tries
     gc_cell_visit at every step, so what it finds depends on where the walk happened to land -- which is the one
-    thing CEO-812 says the collector may never do.  A grid walk is only available to it if the emitter puts every
+    thing R-812 says the collector may never do.  A grid walk is only available to it if the emitter puts every
     cell start on one grid anchored at the region base, and that is a property of EMITTED CODE, which is this
     seat's lane and this census's job to measure rather than assume."""
     if k % CELL == 0:
@@ -934,7 +934,7 @@ def build_frames(asm_path, report_text, tag):
     stores rax into [rbp+752], a MAPPED slot, four instructions before its poll, with a `cmp al,104 / je`
     between -- and the branch is where the backward walk stopped.  A shared reader's REACH BOUNDARY is not the
     property being measured, and inheriting the boundary while asking a different question is how a measurement
-    becomes a fiction that reads like a five-alarm fire (the ceo's CEO-1019 lesson, one level over)."""
+    becomes a fiction that reads like a five-alarm fire (R-1019 lesson, one level over)."""
     insns = CS.parse(asm_path)
     for ins in insns:
         if ins.labels and any(str(L).startswith(".Lgcsite_") for L in ins.labels):
@@ -1142,7 +1142,7 @@ def report(scrip, progs, workdir, out=print):
         "begins its collection with the emitted spine floor on the 16-byte descriptor-cell grid anchored at the "
         "region base, so the walk of [floor, base) could read each cell AT ITS START by stepping the grid -- the "
         "array-of-cells walk ARCH-GC 2b Rule 1a and 7 F1 describe. It does not: gc_walk_words steps 8 bytes and "
-        "tries gc_cell_visit at every step, which is a guess about where a cell begins (CEO-812 forbids exactly "
+        "tries gc_cell_visit at every step, which is a guess about where a cell begins (R-812 forbids exactly "
         "that) and is why a tag the recognizer does not know is a LOST value and a zero word pair could be a "
         "SPURIOUS one. An OFF-GRID call is a site where no grid walk is available at all and the guess is the "
         "only road, so it is named here rather than counted.")
@@ -1226,7 +1226,7 @@ def report(scrip, progs, workdir, out=print):
             "entirely on whether the collector's root set covers THAT WORD, typed")
     out(f"CENSUS unmapped-store UNREAD-ROAD symbols={len({k[0] for k in all_unread})} "
         f"words={len(all_unread)} stores={sum(all_unread.values())} -- ⛔ NAMED BY WORD AND NOT BY SYMBOL SINCE "
-        "2026-09-21 (ceo CEO-1042's condition on arm (h)): a criterion whose selling point is that it ADMITS the "
+        "2026-09-21 (R-1042's condition on arm (h)): a criterion whose selling point is that it ADMITS the "
         "stores the old count could not see, and which then cannot READ them, is a zero over an unmeasured "
         "population. A symbol-wide count cannot say WHICH WORD a collector must visit, so it could never have "
         "adjudicated the road it was measuring the size of.")

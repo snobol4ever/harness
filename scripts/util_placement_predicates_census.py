@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# util_placement_predicates_census.py -- THE EMITTER'S PLACEMENT PREDICATES, COUNTED BY NAME UNTIL THE LAST SWITCH READS 0 (ceo CEO-1919; the cto's
-# ARCH-THREE-ZETAS-EMISSION.md section 9.1, which names this census and its floor of 27; Lon 2026-10-22 16:0x, in-chat to the ceo, verbatim: "how complete
-# is the new PLANNER design?" -- the answer had no instrument for the predicates). CEO-1895's programme deletes "the emitter's 27 placement predicates
+# util_placement_predicates_census.py -- THE EMITTER'S PLACEMENT PREDICATES, COUNTED BY NAME UNTIL THE LAST SWITCH READS 0 (R-1919; the cto's
+# ARCH-THREE-ZETAS-EMISSION.md section 9.1, which names this census and its floor of 27; Lon 2026-10-22 16:0x, in-chat, verbatim: "how complete
+# is the new PLANNER design?" -- the answer had no instrument for the predicates). R-1895's programme deletes "the emitter's 27 placement predicates
 # ... as each switch lands": each answers "frame slot or not" at emission, a second decider beside the PLANNER. This counts, per name, whether a
 # DEFINITION still exists anywhere under SCRIP/src and how many places NAME it (calls and declarations), grouped as section 9.1 groups them.
 # USE: python3 harness/scripts/util_placement_predicates_census.py [--at-most N]    (N defaults to the floor, 27; --at-most 0 is the programme's end)

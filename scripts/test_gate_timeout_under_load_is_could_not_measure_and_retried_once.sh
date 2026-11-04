@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # test_gate_timeout_under_load_is_could_not_measure_and_retried_once.sh -- A PER-PROGRAM TIMEOUT WHILE THE 1-MINUTE LOAD EXCEEDS THE
-# CORES IS COULD NOT MEASURE: THE HARNESS RE-RUNS THAT ONE PROGRAM ONCE, AND ONLY A SECOND TIMEOUT GRADES HANG (ceo CEO-1335; row
+# CORES IS COULD NOT MEASURE: THE HARNESS RE-RUNS THAT ONE PROGRAM ONCE, AND ONLY A SECOND TIMEOUT GRADES HANG (R-1335; row
 # instruments-a-per-program-timeout-while-load1-exceeds-the-cores-is-could-not-measure-retried-once-serially-before-fail-and-the-
-# retry-stamped-on-the-progress-row-ceo-1335; the coo 2026-10-09).
-# MEASURED: at load 39 two Prolog rung entries that run in 0.1 to 0.6 s read m4 TIMEOUT under a graded run (CEO-1335's origin), and
+# retry-stamped-on-the-progress-row-r-1335; the coo 2026-10-09).
+# MEASURED: at load 39 two Prolog rung entries that run in 0.1 to 0.6 s read m4 TIMEOUT under a graded run (R-1335's origin), and
 # at load ~25 pass 42's RakBench lost point_class_add's iter angle to rc 124 the same way -- the timeout measured the scheduler.
 # THE FIXTURE, under mktemp, through corpus_suite_harness.classify itself: a program that times out on its first run (it leaves a
 # marker and sleeps past a 1 s timeout) and answers on its second, the load planted through lib_fanout's FANOUT_PROC seam.

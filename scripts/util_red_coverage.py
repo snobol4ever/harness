@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""util_red_coverage.py [--suite KEY ...] [--limit N] [--engines] -- EVERY RED HAS A ROW, PER CLASS NOT PER ENTRY (ceo CEO-1887 line 2).
+"""util_red_coverage.py [--suite KEY ...] [--limit N] [--engines] -- EVERY RED HAS A ROW, PER CLASS NOT PER ENTRY (R-1887 line 2).
 
 Joins the coo's /home/resources/progress/results.tsv (the newest reading per suite, program and mode) with the live batons under the
 postoffice (every QUEUE row not DONE, RETIRED or SUPERSEDED): a red is ROWED when the program's name (its last path component, or the
 entry name after a family prefix) appears in a live baton's text, UNROWED otherwise. Unrowed reds are grouped into CLASSES by their
 fingerprint (results.tsv column 13), else by their note with digits stripped (column 12), else by outcome, and each class names one
-witness: the ceo mints one row per class with that witness, never one per entry (XsbTests' 733 reds are not 733 rows).
+witness: the officer mints one row per class with that witness, never one per entry (XsbTests' 733 reds are not 733 rows).
 UNGRADED and UNGRADABLE rows are not reds here; they are completeness (line 3) and are counted beside the reds.
 Port-engine suites (a key with @) are skipped unless --engines.
 Board line per suite: RED_COVERAGE_BOARD suite=<k> reds=<n> rowed=<r> unrowed=<u> classes=<c> ungraded=<g>

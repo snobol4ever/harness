@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (CEO-523)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture, not a board (R-523)"
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_a_collection_over_a_small_live_set_stays_under_its_instruction_budget.sh -- THE FIXED COST OF A COLLECTION, PINNED.
 # At the shipped 128 KB arena table_access spends 76% of its instructions in 2,482 collections of a ~712-block live set, and the
 # cost of one such collection is mostly walks that do not depend on the live set: the root walks over the name and function
 # tables, the defer-cell scan, the vacated-ground ledger, the plant seams read per block, the slot fixup's second lookup, the
-# worklist traffic of integer descriptors (ceo 2026-09-25, CEO-1256). The CEO-1256 landing cut that from 851 K to about 650 K Ir
+# worklist traffic of integer descriptors (2026-09-25, R-1256). The R-1256 landing cut that from 851 K to about 650 K Ir
 # per collection; this gate keeps it from creeping back. THE INSTRUMENT is callgrind (load-immune: instructions, not time) on the
 # table_access iteration twin at 128 KB: gc_collect_ex inclusive Ir divided by the collection count the runtime reports.
 # ARMS: (1) the twin computes its value; (2) collections >= 100 (population); (3) Ir per collection <= 760,000.
 # FAIL_ONCE (recorded): the pre-cure runtime at 0f560a28e read 851 K per collection; this tree reads about 650 K.
 # Cost ~8 s (callgrind over ten repetitions). EXIT 0 all arms; 1 a red; 2 REFUSED (valgrind, the kernel or the build missing).
-# ⛔ RE-POINTED 2026-09-26 (cfo, the CEO-1274 board row), TWO CHANGES UNDER IT AND BOTH NAMED: (a) corpus cb366317c made
+# ⛔ RE-POINTED 2026-09-26 (cfo, the R-1274 board row), TWO CHANGES UNDER IT AND BOTH NAMED: (a) corpus cb366317c made
 # table_access a straight-line snippet (964-block live set, not 712; the twin prints kernel=main), so the gate now measures
-# its OWN frozen copy, ../harness/scripts/fixtures/gc_budget_table_access.sno -- the form the budget was measured on; (b) since CEO-1261/
+# its OWN frozen copy, ../harness/scripts/fixtures/gc_budget_table_access.sno -- the form the budget was measured on; (b) since R-1261/
 # 1262 SCRIP_HEAP_KB is the collector's WINDOW under a 128 MB cap, so the arena is stated on the twin's command line as
 # SPITBOL switches, -i128k -d128k (window = cap = 128 KB), and a run that grew or hit the cap is REFUSED (clause 4).
 # Re-measured on this fixture 2026-09-26: 240 collections, grew=0, 676,429 Ir per collection.

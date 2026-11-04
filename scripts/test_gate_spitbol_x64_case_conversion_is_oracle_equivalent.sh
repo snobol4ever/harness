@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # test_gate_spitbol_x64_case_conversion_is_oracle_equivalent.sh
-# ⭐ THE PROOF BEHIND CEO-571's UPPERCASE CONVERSION OF corpus/packages/snobol4/spitbol_x64_tests.
+# ⭐ THE PROOF BEHIND R-571's UPPERCASE CONVERSION OF corpus/packages/snobol4/spitbol_x64_tests.
 #
 # WHY.  SPITBOL folds case by default; our one mandated arm is `sbl -bf` and `-f` turns folding OFF, because
 # that is the arm SCRIP's case-sensitive SNOBOL4 matches (lib_oracle_flags.sh, s189).  29 of these 36 vendored
 # programs are written in SPITBOL's lower-case idiom and `-bf` refused them with "No END statement found".
-# CEO-571 ruled the cure is to convert the SOURCE in the repo, once -- never at grade time.  A conversion is
+# R-571 ruled the cure is to convert the SOURCE in the repo, once -- never at grade time.  A conversion is
 # only legitimate if it did not change what the program MEANS, and that is what this gate measures:
 #
 #   for every *.sbl in the package:   sbl ORIGINAL (folding, upstream's own invocation, vendored tree)
 #                             vs      sbl -bf CURRENT (our converted tree)
 #   must agree BYTE-FOR-BYTE on stdout AND stderr AND on the exit code.
 #
-# ⛔ rc ALONE IS NOT THE VERDICT.  Measured during CEO-571: the math tests changed one line each yet diverged,
+# ⛔ rc ALONE IS NOT THE VERDICT.  Measured during R-571: the math tests changed one line each yet diverged,
 # because their `-INCLUDE` was still lower case and the `-bf` run then printed NOTHING AT ALL while still
 # exiting 0.  A silent empty run reads green to any check that only reads `$?`.  Hence stdout+stderr+rc.
 #

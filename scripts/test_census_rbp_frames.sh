@@ -69,7 +69,7 @@ CORPUS="${1:-$S4E/corpus}"
 # total conversion) -- this DIR now contributes 0 by construction, same as `feat`'s drop under
 # tests-consolidate-snobol4-loose. EXPECTED, not a regression; override via EARN2_DIRS if the suite
 # entries (tests/snobol4/probe/bb*.sno) need to rejoin this census.
-DIRS="${EARN2_DIRS:-crosscheck/patterns library/probe_reference/bb tests/snobol4/probe_loose demo benchmarks/snobol4}"   # re-pointed (ceo s283h): probe/earn0's loose files are converted into suites; probe_loose holds the residual loose witnesses
+DIRS="${EARN2_DIRS:-crosscheck/patterns library/probe_reference/bb tests/snobol4/probe_loose demo benchmarks/snobol4}"   # re-pointed (s283h): probe/earn0's loose files are converted into suites; probe_loose holds the residual loose witnesses
 
 if [ ! -x "$SCRIP" ]; then echo "SKIP  scrip not built: $SCRIP"; exit 0; fi
 

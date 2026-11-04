@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test_gate_pas_variant_record_arms_share_one_byte_storage_as_fpc_overlays_them.sh -- the arms of a variant record are laid over ONE byte storage, in fpc -Miso's layout, so an integer, a real, a set, a character or a Boolean written through one arm reads back through another arm's bytes (CEO-647).
+# test_gate_pas_variant_record_arms_share_one_byte_storage_as_fpc_overlays_them.sh -- the arms of a variant record are laid over ONE byte storage, in fpc -Miso's layout, so an integer, a real, a set, a character or a Boolean written through one arm reads back through another arm's bytes (R-647).
 #
-# RULED CEO-647 (2026-09-12 19:10 CDT, GOAL-CEO.md): P5's pint writes an integer through one variant of an anonymous variant record and reads its bytes through the other; fpc -Miso overlays the variants in one storage (r.i := 258 reads r.b = 2 1 0 0 0 0 0 0) and SCRIP read back zeros --
+# RULED R-647 (2026-09-12 19:10 CDT, the archived ruling record): P5's pint writes an integer through one variant of an anonymous variant record and reads its bytes through the other; fpc -Miso overlays the variants in one storage (r.i := 258 reads r.b = 2 1 0 0 0 0 0 0) and SCRIP read back zeros --
 # one oracle, no compat switch, no patched pint. MEASURED 2026-10-09 by hq_pascal: Pascal-P5's pint ran no program under SCRIP before this landing, because its getrel/putrel/getint/putint pun a real, an integer, a set and a char through packed byte arrays.
 # CURE (pascal.y, by_name_dispatch.c, lower_pascal.c; no new global): a variant part whose every field has a byte class and whose arms are not slot-for-slot compatible becomes a REGION -- the arms share the slot of their first field, which holds
 # the region's bytes as a string, laid out per arm in declaration order with natural alignment (fldov, widened to 64 bits: slot, field class and size, byte offset, region size); a read of an arm's field is __pas_rdecode (bytes -> the field's value),
@@ -10,7 +10,7 @@
 # a variant after the tag changed still stop naming 6.5.3.3. A record variable passed to a var formal as a region field travels copy-in and copy-out through __pas_rpatch in lower_call. The old slot-sharing stays for every variant part with a field that has no byte class
 # (a pointer, a record, a file, an unsized array) and for arms that are slot-for-slot compatible, so tprec4, tprec12, the PAT variant tests and P4's compiler read exactly as before (differential --dump-ir and run of every changed package source against the parent).
 # NOT COVERED, written down: an array arm whose elements are an INLINE subrange (packed array [1..8] of 0..255 -- the element size and sign are overwritten by the index range before the field is registered; a named byte type works), a region passed whole to a var formal,
-# the 6.5.3.3 check on an element of an array arm, and PAT 1702d (a var actual that aliases one arm while another arm is written needs a reference, not a copy -- awaiting the ceo's ruling).
+# the 6.5.3.3 check on an element of an array arm, and PAT 1702d (a var actual that aliases one arm while another arm is written needs a reference, not a copy -- awaiting the ruling).
 #
 # ARMS, both modes: four controls cut LIVE from fpc -Miso (integer/real/set/char/Boolean against bytes in a plain record, a record with a two-field arm against a one-field arm, a pointer, a nested record, an array element, a with-statement, a var actual, and the arithmetic, comparison, div/mod, set and Boolean operators over the fields of a tagless variant record) must be
 # byte-identical; two faults must still stop naming 6.5.3.3 with the stdout before the stop intact. FAIL_ONCE=1 corrupts the first control's ref.

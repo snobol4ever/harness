@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over a scratch population, not a board (CEO-547)"
+export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: a runner invoked as an instrument fixture over a scratch population, not a board (R-547)"
 # test_gate_swi_runner_keeps_what_a_killed_mode4_run_printed.sh -- test_prolog_swi_suite.sh grades a plunit file that hangs part-way the
 # same in both modes: the cases it printed before the kill PASS in mode 3 AND mode 4, the case that hangs reads HANG in both.
 #

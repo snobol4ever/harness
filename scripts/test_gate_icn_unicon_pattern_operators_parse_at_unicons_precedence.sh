@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# test_gate_icn_unicon_pattern_operators_parse_at_unicons_precedence.sh -- THE UNICON PATTERN OPERATORS PARSE WHERE unigram.y PUTS THEM (ceo CEO-2072, ARCH-UNICON R6; hq_unicon).
+# test_gate_icn_unicon_pattern_operators_parse_at_unicons_precedence.sh -- THE UNICON PATTERN OPERATORS PARSE WHERE unigram.y PUTS THEM (R-2072, ARCH-UNICON R6; hq_unicon).
 # unigram.y: ?? is expr2a (looser than to and .|), .| is expr2 (the level of to), -> and => are expr6 (the additive level: tighter than ||), a prefix .> is expr10, a backquote text is a primary.
 # Four arms over one program dumped with scrip --dump-ast: ARM 1 -> and => bind tighter than ||; ARM 2 .| sits below || and ?? below .|; ARM 3 the prefix .> and the backquote primary; ARM 4 FAIL-ONCE: the same
-# structure checks run against a deliberately wrong expectation must read red (a criterion fails once before it is trusted, CEO-1680). rc 0 all hold - rc 1 an arm is red - rc 2 REFUSED (no scrip).
+# structure checks run against a deliberately wrong expectation must read red (a criterion fails once before it is trusted, R-1680). rc 0 all hold - rc 1 an arm is red - rc 2 REFUSED (no scrip).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; SC="$HERE/../../SCRIP/scrip"
 [ -x "$SC" ] || { echo "⛔ REFUSED(2) [pattern_operators_parse]: no scrip at $SC -- run make"; exit 2; }
