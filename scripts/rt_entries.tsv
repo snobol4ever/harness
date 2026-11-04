@@ -58,7 +58,7 @@ core_icn_argtype_check	leaf	OTHER	1	-	0	call,alloc
 core_icn_by_zero_at	leaf	OTHER	1	-	0	call,alloc
 core_icn_error	leaf	OTHER	1	-	0	call,alloc
 core_icn_int_ok_d	leaf	OTHER	1	-	0	call,alloc
-core_icn_int_operand_ok	asm	-	0	none	-	call,clob,asm
+core_icn_int_operand_ok	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
 core_icn_limit_count_check	leaf	OTHER	1	-	0	call,alloc
 core_icn_to_int_check	leaf	OTHER	1	-	0	call,alloc
 core_icn_toby_ctx	leaf	-	0	-	0	call
@@ -110,7 +110,7 @@ rk_rat_binop	leaf	OTHER	1	-	0	call,alloc
 rt_ab_cell_bind_table	leaf	-	0	-	0	call
 rt_ab_undef_fn_fail	leaf	VOID	1	-	0	call,alloc
 rt_ab_undef_fn_stub	leaf	VOID	1	-	0	call,alloc
-rt_add	asm	-	0	none	-	clob,asm
+rt_add	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_add_big	leaf	DESCR	1	-	0	call,alloc
 rt_add_sno	asm	-	0	none	-	clob,asm
 rt_agg_alloc	asm	OTHER	1	r8|r10|r11	-	alloc,clob,asm
@@ -152,7 +152,7 @@ rt_cdiff_strict	leaf	DESCR	1	-	0	call,alloc
 rt_cmp_d	asm	-	0	none	-	call,clob,asm
 rt_co_env	leaf	-	0	-	0	call
 rt_coerce_int_d	leaf	OTHER	1	-	0	call,alloc
-rt_coerce_num2_d	asm	-	0	r8|r10|r11	-	call,clob,asm
+rt_coerce_num2_d	asm	VOID	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_coerce_real_d	leaf	VOID	1	-	0	call,alloc
 rt_coerce_str_d	leaf	OTHER	1	-	0	call,alloc
 rt_cset_compl	leaf	DESCR	1	-	0	call,alloc
@@ -189,7 +189,7 @@ rt_eval_open_raise	open	OTHER	1	-	1	call,alloc
 rt_faildescr	asm	-	0	none	-	clob,asm
 rt_field_var	leaf	DESCR	1	-	0	call,alloc
 rt_field_var_strict	leaf	DESCR	1	-	0	call,alloc
-rt_field_var_strict_at	asm	-	0	r8|r10|r11	-	clob,asm
+rt_field_var_strict_at	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_fp_model_spitbol	leaf	-	0	-	0	call
 rt_gc_clear_run	asm	-	0	r8	-	clob,asm
 rt_gc_core_roots_run	asm	-	0	r8|r10|r11	-	clob,asm
@@ -239,7 +239,7 @@ rt_icn_tabs_install	leaf	-	0	-	0	call
 rt_icn_window_pos	leaf	OTHER	1	-	0	call,alloc
 rt_icn_zframe_args_install	leaf	-	0	-	0	call
 rt_is_truthy	asm	-	0	none	-	call,clob,asm
-rt_jct_relop	asm	-	0	none	-	call,clob,asm
+rt_jct_relop	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_jmp_frame_lexprep2	leaf	-	0	-	0	call
 rt_keyword_dump_set	leaf	-	0	-	0	call
 rt_keyword_error_set	leaf	-	0	-	0	call
@@ -682,7 +682,7 @@ rt_quit_trap_300	leaf	-	0	-	0	call
 rt_quit_trap_320	leaf	-	0	-	0	call
 rt_random_var_strict	leaf	DESCR	1	-	0	call,alloc
 rt_relop_rat	leaf	OTHER	1	-	0	call,alloc
-rt_relop_val_coerce	asm	-	0	none	-	call,clob,asm
+rt_relop_val_coerce	asm	VOID	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_rev_swap_fwd	leaf	-	0	-	0	call
 rt_rev_swap_undo	leaf	-	0	-	0	call
 rt_rk_arr_at	asm	-	0	r8|r10|r11	-	clob,asm
@@ -695,7 +695,7 @@ rt_sg_scan_nonmember	leaf	-	0	-	0	call
 rt_shim_nv_gamma	leaf	DESCR	1	-	0	call,alloc
 rt_shim_nv_in	leaf	VOID	1	-	0	call,alloc
 rt_shim_nv_omega	leaf	VOID	1	-	0	call,alloc
-rt_size_d	asm	-	0	none	-	call,clob,asm
+rt_size_d	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_sno_goto_special_is	leaf	OTHER	1	-	0	call,alloc
 rt_sno_mkexpr_d	leaf	DESCR	1	-	0	call,alloc
 rt_sno_mkpat_d	leaf	DESCR	1	-	0	call,alloc
@@ -704,7 +704,7 @@ rt_sno_patck_d	leaf	DESCR	1	-	0	call,alloc
 rt_sno_xlv_d	leaf	-	0	-	0	call
 rt_stmt_enter_p	leaf	VOID	1	-	0	call,alloc
 rt_str_alloc	asm	OTHER	1	r8|r10|r11	-	alloc,clob,asm
-rt_str_coerce	asm	-	0	none	-	clob,asm
+rt_str_coerce	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_sub	asm	-	0	none	-	clob,asm
 rt_sub_big	leaf	DESCR	1	-	0	call,alloc
 rt_sub_sno	asm	-	0	none	-	clob,asm
@@ -715,7 +715,7 @@ rt_subscript_var_container_only	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_subscript_var_strict	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_substr	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_swap_var	leaf	DESCR	1	-	0	call,alloc
-rt_table_assign_fast	asm	DESCR	1	r10|r11	-	call,alloc,clob,asm
+rt_table_assign_fast	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_trace_call_hook_f	leaf	VOID	1	-	0	call,alloc
 rt_trace_call_hook_p	leaf	VOID	1	-	0	call,alloc
 rt_trace_fail_hook	leaf	VOID	1	-	0	call,alloc
