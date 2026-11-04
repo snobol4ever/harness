@@ -9,7 +9,7 @@ cd "$(dirname "$0")/../../SCRIP" || exit 1
 # them: .Lstartup_procs (128-byte rt_proc_t rows, the root "main" row last) and .Lstartup_phash (the open-addressed int table, built with the runtime's own rt_proc_hash_fill so the probe agrees), each behind a
 # 16-byte rt_hblk_t header so a later rt_gcheap_grow_block copies the block into the collected heap, and ONE call, rt_procs_install(rows, n, hash, cap), points g_runtime.abi.rt_gen_procs and proc_hsl at them.
 # A module whose procedures are not all plain (a DEFINE scope, a thunk, a Prolog dcfn, a skipped slot, a repeated name) keeps rt_proc_register_rec; the decision is the driver's, from the records.
-# FOUR ARMS. STATIC: every Icon benchmark in mode 4 has no call to rt_proc_register_rec, exactly ONE rt_procs_install, and tables that parse: the rt_hblk_t sizes equal 16 plus the payload, the row count
+# FOUR ARMS. STATIC: every Icon benchmark in mode 4 has no call to rt_proc_register_rec, exactly ONE rt_procs_install, and tables that parse: the rt_hblk_t granule counts equal 16 plus the payload over 16, the row count
 # agrees with the install call's n, and an independent FNV-1a probe finds every procedure's name at its own row (the root last). BEHAVIOURAL: a witness with variadic, generator, recursive, static-local and
 # 60 plain procedures run in BOTH modes byte-equal to the oracle (Arizona icont 9.5.25a), including proc("name") and a string invocation, the oracle's output carrying the lines compared. GROW (gdb on the
 # mode-4 tgrlink, stopped before main): 200 rt_proc_register calls past the static block leave every original and added name findable (count, lookup and the block moved into the heap). FALLBACK (the
@@ -55,7 +55,7 @@ def header(i):
     if a[0][0] != '.long' or a[1][0] != '.short' or a[2][:2] != ['.short', '0']: return None
     return int(a[0][1]), int(a[1][1])
 hp, hh = header(ip), header(ih)
-if not hp or not hh: print('BAD a block header is not .long size / .short type / .short 0'); sys.exit(0)
+if not hp or not hh: print('BAD a block header is not .long gran / .short type / .short 0'); sys.exit(0)
 j = ip + 1; body = []
 while j < ih and st[j].split()[:2] != ['.balign', '16']:
     if st[j].startswith(('.quad', '.long')): body.append(st[j])
@@ -63,13 +63,13 @@ while j < ih and st[j].split()[:2] != ['.balign', '16']:
 nb = sum(bytes_of(l) for l in body)
 if nb % 128: print('BAD the rows are %d bytes, not a multiple of 128' % nb); sys.exit(0)
 n = nb // 128
-if hp[0] != 16 + 128 * n: print('BAD procs header size %d, want %d' % (hp[0], 16 + 128 * n)); sys.exit(0)
+if hp[0] != (16 + 128 * n) // 16: print('BAD procs header granules %d, want %d' % (hp[0], (16 + 128 * n) // 16)); sys.exit(0)
 slots = []
 k = ih + 1
 while k < len(st) and st[k].startswith('.long'):
     slots.append(int(st[k].split()[1])); k += 1
 cap = len(slots)
-if cap & (cap - 1) or cap < 8 or hh[0] != 16 + 4 * cap or (n + 1) * 4 >= cap * 3: print('BAD hash cap %d header %d rows %d' % (cap, hh[0], n)); sys.exit(0)
+if cap & (cap - 1) or cap < 8 or hh[0] != (16 + 4 * cap) // 16 or (n + 1) * 4 >= cap * 3: print('BAD hash cap %d header %d rows %d' % (cap, hh[0], n)); sys.exit(0)
 if sum(1 for v in slots if v) != n or any(v < 0 or v > n for v in slots): print('BAD the hash holds %d nonzero slots for %d rows' % (sum(1 for v in slots if v), n)); sys.exit(0)
 text = '\n'.join(src)
 m = re.search(r'mov\s+esi,\s*(\d+)\s*\n\s*lea\s+rdx,\s*\[rip\s*\+\s*\.Lstartup_phash\]\s*\n\s*mov\s+ecx,\s*(\d+)\s*\n\s*call\s+rt_procs_install@PLT', text)
