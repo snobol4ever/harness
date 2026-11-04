@@ -934,6 +934,7 @@ test_gate_pl_retract_body_variable_is_call_and_the_gnu_dialect_raises_as_gprolog
 test_gate_pl_retract_logical_view_flags_gensym_and_swi_atom_concat_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_reverse_ends_on_a_partial_list_and_duplicate_term_copies_a_bound_cell_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_select_dict_the_dict_operators_and_destructive_dict_assignment_answer_as_swipl.sh	WIRED	-	-	-
+test_gate_pl_set_locale_publishes_its_properties_and_the_colon_directives_of_format_group_by_them_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_set_stream_encodings_pure_input_and_format_s_answer_as_swipl.sh	WIRED	-	-	-
 test_gate_pl_set_stream_position_round_trips_and_refuses.sh	WIRED	-	-	-
 test_gate_pl_setup_call_cleanup_runs_its_cleanup_on_every_road.sh	WIRED	-	-	-
