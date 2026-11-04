@@ -4276,6 +4276,8 @@ TASKEOF
            printf '# --- swept %s by %s: %s rows ---\n' "$(date -u +%FT%TZ)" "$ME" "$ng" >> "$d"; cat "$gone" >> "$d"
            mv "$keep" "$q"; chmod 664 "$q"; else rm -f "$keep"; fi
          rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows moved to QUEUE.done.tsv (nothing deleted; buffer backed up)\n' "$nk" "$ng"
+         _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
+         S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --check > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --apply 2>&1 | sed 's/^/sweep: /'
          # ⛔ A DONE ROW WITH NO COMPUTED RECEIPT IS NOT SWEPT -- AND THAT IS SAID, BY NAME, rc=2 (coo 2026-09-16, CEO-790/793). It used
          # to be kept silently, indistinguishable from a live row; the ceo's audit reads this refusal.
          _nr=0; _nrl=""
