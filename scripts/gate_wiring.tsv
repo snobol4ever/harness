@@ -1038,6 +1038,7 @@ test_gate_prolog_a_dead_frame_slot_is_not_a_root.sh	WIRED	-	-	-
 test_gate_prolog_a_dead_slot_kill_spares_a_cell_another_frame_cell_names.sh	WIRED	-	-	-
 test_gate_prolog_a_reference_into_a_block_traces_one_cell.sh	WIRED	-	-	-
 test_gate_prolog_bench_runner_holds_the_ref_on_every_angle.sh	WIRED	-	-	-
+test_gate_prolog_commit_tidy_is_incremental.sh	WIRED	-	-	-
 test_gate_prolog_dynamic_predicate_with_file_clauses.sh	WIRED	-	-	-
 test_gate_prolog_ground_literal_is_one_box.sh	WIRED	-	-	-
 test_gate_queue_census_names_the_sweep_rows.sh	WIRED	-	-	-
