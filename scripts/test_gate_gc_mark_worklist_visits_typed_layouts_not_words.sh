@@ -7,9 +7,10 @@
 # after a slide (benchmark_point_class_add m3 CRASH under the poison fill). The cure landed in pieces (hb_scan_interior deleted, HB_WS
 # split into kind-named allocators: HB_WSB raw bytes, HB_WSC chars, HB_DVEC descriptors, HB_PVEC pointers, ...); this gate is what the row
 # owed so the shape cannot quietly come back.
-# ARMS: (1) KIND COVERAGE, static: every `#define HB_<KIND> <n>` in gc_heap.h is named in the mark loop's dispatch (the region from
-# `while (g_gc_mhead)` to `if (g_gc_wln == 0) break;` in gc_heap.c) by an equality, a range, or the pointer-free leaf line -- a kind
-# no visitor names would fall to the interior counter; PLANT: the same reader over gc_heap.h plus an injected kind must name it missing.
+# ARMS: (1) KIND COVERAGE, static: every `#define HB_<KIND> <n>` in gc_heap.h is named in the mark dispatch, which since SCRIP 18bfe4a81
+# is three places: gc_visit_mblk in gc_heap.c (equalities, a range, the pointer-free leaf line), the asm mark run rt_gc_mark_run in
+# rtx_gc.s, and the typed-layout rows of gc_slot_table.c (gc_slot_row_t sr_* = { lo, hi, ...}) -- a kind no visitor names would fall
+# to the interior counter; PLANT: the same reader over gc_heap.h plus an injected kind must name it missing.
 # (2) NO UNTYPED ALLOCATION, static: zero calls of the retired rt_ws_alloc( spelling, and every rt_gcheap_alloc( / rt_gcheap_grow_block(
 # call in src/ outside gc_heap.c passes an HB_ constant as its kind; PLANT: the reader must flag a synthetic call with a variable kind.
 # (3) THE DATINST WITNESS BY RATE: ../harness/scripts/fixtures/gc/datinst_point_bless.raku (point_class_add cut to 12 lines: a class whose add
@@ -25,20 +26,25 @@ set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
-H="$ROOT/src/runtime/rt/gc_heap.h"; C="$ROOT/src/runtime/rt/gc_heap.c"
+H="$ROOT/src/runtime/rt/gc_heap.h"; C="$ROOT/src/runtime/rt/gc_heap.c"; RTXS="$ROOT/src/runtime/rtx/rtx_gc.s"; SLOTC="$ROOT/src/runtime/rt/gc_slot_table.c"
 W="$ROOT/../harness/scripts/fixtures/gc/datinst_point_bless.raku"; R="${W%.raku}.ref"
-for f in "$H" "$C" "$W" "$R"; do [ -s "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
+for f in "$H" "$C" "$RTXS" "$SLOTC" "$W" "$R"; do [ -s "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0
 kinds_missing() {
-    python3 - "$1" "$2" <<'PY'
+    python3 - "$1" "$2" "$3" "$4" <<'PY'
 import re, sys
-h, c = open(sys.argv[1]).read(), open(sys.argv[2]).read()
+h, c, s, st = (open(a).read() for a in sys.argv[1:5])
 kinds = {m.group(1): int(m.group(2)) for m in re.finditer(r'^#define\s+(HB_[A-Z0-9_]+)\s+(\d+)\s*$', h, re.M)}
-a = c.find('while (g_gc_mhead)'); b = c.find('if (g_gc_wln == 0) break;', a)
-if not kinds or a < 0 or b < 0: print('UNREADABLE'); sys.exit(0)
-reg = c[a:b]
+a = c.find('void gc_visit_mblk('); b = c.find('\n}\n', a)
+sa = s.find('RTX_FUNC(rt_gc_mark_run)'); sb = s.find('RTX_ENDF(rt_gc_mark_run)', sa)
+ra = st.find('static const gc_slot_row_t sr_'); rb = st.find('gc_slot_rows[]', ra)
+if not kinds or min(a, b, sa, sb, ra, rb) < 0: print('UNREADABLE'); sys.exit(0)
+reg, asm, rows = c[a:b], s[sa:sb], st[ra:rb]
 named = set(re.findall(r'h->type == (HB_[A-Z0-9_]+)', reg))
+named |= {k for k in kinds if re.search(r'\b' + k + r'\b', asm)}
+for lo, hi in re.findall(r'gc_slot_row_t sr_\w+ = \{ (HB_[A-Z0-9_]+), (HB_[A-Z0-9_]+),', rows):
+    if lo in kinds and hi in kinds: named |= {k for k, v in kinds.items() if kinds[lo] <= v <= kinds[hi]}
 for lo, hi in re.findall(r'h->type >= (HB_[A-Z0-9_]+) && h->type <= (HB_[A-Z0-9_]+)', reg):
     if lo in kinds and hi in kinds: named |= {k for k, v in kinds.items() if kinds[lo] <= v <= kinds[hi]}
 for op, lo in re.findall(r'h->type (<=?) (HB_[A-Z0-9_]+)', reg):
@@ -46,8 +52,8 @@ for op, lo in re.findall(r'h->type (<=?) (HB_[A-Z0-9_]+)', reg):
 print(' '.join(sorted(k for k in kinds if k not in named)))
 PY
 }
-miss=$(kinds_missing "$H" "$C"); nk=$(grep -cE '^#define[[:space:]]+HB_[A-Z0-9_]+[[:space:]]+[0-9]+[[:space:]]*$' "$H")
-cp "$H" "$T/plant.h"; printf '#define HB_ZZPLANT 299\n' >> "$T/plant.h"; pmiss=$(kinds_missing "$T/plant.h" "$C")
+miss=$(kinds_missing "$H" "$C" "$RTXS" "$SLOTC"); nk=$(grep -cE '^#define[[:space:]]+HB_[A-Z0-9_]+[[:space:]]+[0-9]+[[:space:]]*$' "$H")
+cp "$H" "$T/plant.h"; printf '#define HB_ZZPLANT 299\n' >> "$T/plant.h"; pmiss=$(kinds_missing "$T/plant.h" "$C" "$RTXS" "$SLOTC")
 if [ "$miss" = UNREADABLE ] || [ "$pmiss" != HB_ZZPLANT ]; then echo "⛔ GATE REFUSE(2) [$G]: the kind reader cannot measure (reader='$miss' plant='$pmiss', want the plant named alone)"; exit 2; fi
 if [ -z "$miss" ]; then echo "  arm 1 PASS: all $nk HB_ kinds of gc_heap.h are named in the mark worklist's dispatch; the planted kind is named missing"
 else echo "  arm 1 FAIL: kinds the mark worklist does not name: $miss"; RC=1; fi
