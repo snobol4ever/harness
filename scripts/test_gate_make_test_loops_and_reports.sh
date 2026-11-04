@@ -84,9 +84,9 @@ fi
 # (c)+(d) END TO END THROUGH make ITSELF, on a scratch tree.  A red sits at arm 2 of 4 and each arm leaves a
 # receipt file, so "how many arms ran" is COUNTED from the filesystem rather than parsed out of a summary
 # the driver wrote about itself.
-mkdir -p "$W/tree/scripts"
-cp "$DRIVER" "$W/tree/scripts/run_blocking_set.sh"
-cat > "$W/tree/Makefile" <<'MK'
+mkdir -p "$W/fix/SCRIP" "$W/fix/harness/scripts"
+cp "$DRIVER" "$W/fix/harness/scripts/run_blocking_set.sh"
+cat > "$W/fix/SCRIP/Makefile" <<'MK'
 test:
 	@bash ../harness/scripts/run_blocking_set.sh
 
@@ -96,17 +96,17 @@ test-sequential:
 	bash -c 'touch ran.3'
 	bash -c 'touch ran.4'
 MK
-( cd "$W/tree" && make test >"$W/mk.out" 2>&1 ); mkrc=$?
-ran=$(ls "$W/tree" | grep -c '^ran\.')
+( cd "$W/fix/SCRIP" && make test >"$W/mk.out" 2>&1 ); mkrc=$?
+ran=$(ls "$W/fix/SCRIP" | grep -c '^ran\.')
 if [ "$ran" -eq 4 ] && [ "$mkrc" -ne 0 ]; then
     ok c "\`make test\` with a red at arm 2 of 4 ran all 4 arms and exited $mkrc"
 else
     fail c "\`make test\` reached $ran of 4 arms and exited $mkrc (want 4 arms, non-zero)"
     sed 's/^/      /' "$W/mk.out" | head -8
 fi
-rm -f "$W"/tree/ran.*
-( cd "$W/tree" && make test-sequential >"$W/mkseq.out" 2>&1 ); seqrc=$?
-seqran=$(ls "$W/tree" | grep -c '^ran\.')
+rm -f "$W"/fix/SCRIP/ran.*
+( cd "$W/fix/SCRIP" && make test-sequential >"$W/mkseq.out" 2>&1 ); seqrc=$?
+seqran=$(ls "$W/fix/SCRIP" | grep -c '^ran\.')
 if [ "$seqran" -eq 2 ] && [ "$seqrc" -ne 0 ]; then
     ok d "the legacy twin \`make test-sequential\` stops at the red having reached 2 of 4 -- the abort this row cures, measured"
 else
