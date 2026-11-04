@@ -487,6 +487,14 @@ s4e_pid_release() { local _f="$PO/$ME/.pid" _p _t
     [ -f "$_f" ] || return 0; read -r _p _t _ < "$_f" 2>/dev/null || true
     [ "${_p:-}" = "$$" ] && rm -f "$_f"; return 0; }
 s4e_pid_arm() { trap 's4e_pid_release' EXIT; trap 's4e_pid_release; exit 130' INT; trap 's4e_pid_release; exit 143' TERM HUP; }
+s4e_pid_retake() { local _f="$PO/$ME/.pid" _mine _p _t _i; _mine="$(s4e_proc_start $$)" || return 0; [ -w "$PO/$ME" ] || return 0
+    for _i in $(seq 1 120); do
+        if ( set -o noclobber; printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f" ) 2>/dev/null; then export S4E_PID_LOCK="$ME:$$:$_mine"; return 0; fi
+        _p=""; _t=""; [ -f "$_f" ] && { read -r _p _t _ < "$_f" 2>/dev/null || true; }
+        s4e_pid_live "${_p:-}" "${_t:-}" || { rm -f "$_f" 2>/dev/null; continue; }
+        sleep 0.5
+    done
+    printf '⛔ REFUSED (rc=2): could not retake the identity %s for the write within 60 s (pid %s holds it); the measurement is not written -- run the verb again.\n' "$ME" "${_p:-?}" >&2; exit 2; }
 s4e_pid_acquire() {
     local _f="$PO/$ME/.pid" _mine _hs _hp _ht _p _t _at _c _tries=0
     _mine="$(s4e_proc_start $$)" || _mine=""
@@ -721,8 +729,11 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
       grep -q '^DONE$' "$_c" && continue
       if grep -q '^RUNNING' "$_c" || ! grep -q '^ASSIGNED-BY ' "$_c"; then _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: %s is running it, CEO-755c)\n' "$_t" "$(head -1 "$_c")"; continue; fi
       cp "$_c" "$_sv"; _had=1; fi
-    printf '%s\nSWEEP-CLOSE %s by %s (row %s, owner %s)\n' "$ME" "$(date -u +%FT%TZ)" "$ME" "$_st" "$_ow" > "$_c"
+    _tok="SWEEP-CLOSE $(date -u +%FT%TZ) by $ME pid $$"; printf '%s\n%s (row %s, owner %s)\n' "$ME" "$_tok" "$_st" "$_ow" > "$_c"
+    s4e_pid_release
     _t0="$(date +%s)"; S4E_DONE_TIMEOUT="$_to" S4E_NO_BANNER=1 "$0" done "$_t" > "$_log" 2>&1 < /dev/null; _r=$?; _el="$(( $(date +%s) - _t0 ))"
+    s4e_pid_retake
+    if ! grep -qF "$_tok" "$_c" 2>/dev/null; then _nk=$((_nk+1)); printf 'SWEEP kept %s (its claim changed under the sweep: left as found, nothing restored)\n' "$_t"; continue; fi
     if [ "$_r" -eq 0 ] && grep -q '^DONE$' "$_c" 2>/dev/null; then
       printf 'CLOSED-BY-SWEEP for owner %s (row was %s)\n' "$_ow" "$_st" >> "$_c"
       _tree="$(grep '^RECEIPT' "$_c" | tail -1 | sed -n 's/.* tree=\([^ ]*\) .*/\1/p')"
@@ -741,10 +752,12 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   local _w _g _r _k _o _x _ok=1 _why="" _now
   _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
   mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; _now="$(date -u +%FT%TZ)"
-  _g="sweep-plant-green-$$"; _r="sweep-plant-red-$$"; _k="sweep-plant-live-claim-$$"; _b="sweep-plant-bare-claim-$$"
-  printf '# plant queue (box-scheduler step 8, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-owner\tFREE\n2\t%s\tplant-other\tASSIGNED:plant-other\n2\t%s\tplant-other\tCLAIMED:plant-other\n' \
-    "$_g" "$_r" "$_k" "$_b" > "$_w/QUEUE.tsv"
-  for _x in "$_g|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_r|test -f \"\$S4E_HOME/harness/scripts/sweep-plant-absent-$$\"" "$_k|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_b|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\""; do
+  _g="sweep-plant-green-$$"; _r="sweep-plant-red-$$"; _k="sweep-plant-live-claim-$$"; _b="sweep-plant-bare-claim-$$"; _sw="sweep-plant-swap-$$"
+  printf '# plant queue (box-scheduler step 8, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-owner\tFREE\n2\t%s\tplant-other\tASSIGNED:plant-other\n2\t%s\tplant-other\tCLAIMED:plant-other\n2\t%s\tplant-owner\tFREE\n' \
+    "$_g" "$_r" "$_k" "$_b" "$_sw" > "$_w/QUEUE.tsv"
+  printf 'plant-other\nASSIGNED-BY plant %s\nRUNNING\n' "$_now" > "$_w/swap.foreign"
+  for _x in "$_g|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_r|test -f \"\$S4E_HOME/harness/scripts/sweep-plant-absent-$$\"" "$_k|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_b|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" \
+      "$_sw|cp \"$_w/swap.foreign\" \"$_w/claims/$_sw.claim\" && test -f \"$_w/sweep-plant-absent-$$\""; do
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' "${_x%%|*}" "${_x#*|}" "$ME" "$_now" > "$_w/tasks/${_x%%|*}.task.md"; done
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_g.claim"
   printf 'plant-other\nASSIGNED-BY plant %s\nRUNNING\n' "$_now" > "$_w/claims/$_k.claim"; cp "$_w/claims/$_k.claim" "$_w/live.before"; printf 'plant-other\n' > "$_w/claims/$_b.claim"; cp "$_w/claims/$_b.claim" "$_w/bare.before"
@@ -756,7 +769,8 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   [ -e "$_w/claims/$_r.claim" ] && { _ok=0; _why="$_why the red row kept a sweep claim;"; }
   { grep -qP "^2\t\Q$_k\E\tplant-other\tASSIGNED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/live.before" "$_w/claims/$_k.claim"; } || { _ok=0; _why="$_why the live claim was touched;"; }
   { grep -qP "^2\t\Q$_b\E\tplant-other\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/bare.before" "$_w/claims/$_b.claim"; } || { _ok=0; _why="$_why the bare claim was touched;"; }
-  if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s and bare claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b"; rm -rf "$_w"; return 0; fi
+  { grep -qP "^2\t\Q$_sw\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why a claim swapped under the sweep was not left as found;"; }
+  if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s, bare claim %s and swapped claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b" "$_sw"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
@@ -2657,6 +2671,7 @@ case "$cmd" in
          [ -f "$b" ] && printf '\n- %s **STATE -> %s** by %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$st" "$ME" >> "$b"
          echo "$topic state -> $st";;
   done)  [ -n "${2:-}" ] || s4e_need done "a topic" "s4e_msg.sh done <topic>" "Closes a row by RUNNING its baton DONE-WHEN; it refuses on a red or an rc=2. Completion is computed, never declared."
+         [ "$2" = --probe-lock ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_done_lock.sh"; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"
          # ⛔ THE BANNER FIRES ITSELF HERE (HQ 2026-08-22, after seat4 finished its row and gave NO banner until Lon
          # asked for one). LAW 15 lived only as a step in the seat's CLAUDE.md -- and a step in a markdown file is a
@@ -2853,6 +2868,7 @@ case "$cmd" in
                     printf '     The claim and the QUEUE column are UNCHANGED. Build, then re-run `done`.\n' >&2
                     exit 2; fi
                   _dwto="${S4E_DONE_TIMEOUT:-3600}"; _dwt0="$(date +%s)"
+                  _dcb="$(cat "$c")"; s4e_pid_release
                   # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a DONE-WHEN that names only cacheable test_gate_*.sh runs once per
                   # tree for the fleet; util_check_cache.sh replays a stored verdict on clean trees at the same hashes and runs live otherwise.
                   if bash "$S4E/harness/scripts/util_check_cache.sh" --cacheable-text "$dw" 2>/dev/null; then
@@ -2862,6 +2878,8 @@ case "$cmd" in
                     ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_DONE_WHEN_RUN=1 s4e_bounded "$_dwto" bash -c "$dw" ) >"$_dwlog" 2>&1; rc=$?
                   fi
                   _dwel="$(( $(date +%s) - _dwt0 ))"
+                  s4e_pid_retake
+                  [ "$(cat "$c" 2>/dev/null)" = "$_dcb" ] || { printf '⛔ REFUSED (rc=2): the claim %s changed while the DONE-WHEN ran (unclaimed, parked, swept or re-claimed meanwhile); nothing is written -- read it, then run done again.\n' "$c" >&2; rm -f "$_dwlog"; exit 2; }
                   if [ "$rc" -eq 0 ]; then
                     rm -f "$_dwlog"
                     printf '  ✅ DONE-WHEN exited 0 in %ss (timeout %ss) — completion is COMPUTED, not claimed.\n' "$_dwel" "$_dwto"
