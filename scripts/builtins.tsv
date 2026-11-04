@@ -1254,3 +1254,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1255	pl	$ssu_begin	1	1	rt_pl_dop_ssu_begin	leaf	-	-	0	dop_direct
 1256	pl	$mkground	-	-	-	inline	-	-	0	pl_leaf
 1257	icn	ICN$UNAME	1	1	bt_ICNx24UNAME	leaf	-	-	0	fn_arms
+1258	icn	ICN$UPVAR	1	1	bt_ICNx24UPVAR	leaf	-	-	0	fn_arms
