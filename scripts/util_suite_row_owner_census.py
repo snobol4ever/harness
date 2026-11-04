@@ -87,7 +87,11 @@ if not roster: refuse("%s has no ROSTER: line" % MODE)
 held_by = {}
 for f in queue:
     if len(f) >= 4 and f[0].isdigit() and f[3].startswith(("CLAIMED:", "ASSIGNED:")): held_by.setdefault(f[3].split(":", 1)[1], []).append(f[1])
-seats = [s for s in roster if s != "coo"]; short = []
+# CTO-485 (Lon 2026-11-04, in the cto's window: HQ-COLLECTOR is ON CALL): a seat on MODE's keyed ON-CALL: line is seated but serves only when woken
+# for its own class of red, so an empty queue behind it is correct and never short; no ON-CALL: line means no seat is on call.
+try: oncall = set(next((l.split(":", 1)[1].split() for l in open(MODE, encoding="utf-8") if l.startswith("ON-CALL:")), []))
+except OSError as e: refuse("%s unreadable: %s" % (MODE, e))
+seats = [s for s in roster if s != "coo" and s not in oncall]; short = []
 for s in seats:
     h = held_by.get(s, [])
     if len(h) < QUEUE_MIN: short.append("  RED  seat %s holds %d live row(s)%s: nothing queued behind it -- assign its best FREE row ahead (s4e_msg.sh assign %s <topic>)" % (s, len(h), (" (" + h[0] + ")") if h else "", s))
