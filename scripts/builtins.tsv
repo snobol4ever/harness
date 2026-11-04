@@ -1264,3 +1264,5 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1265	rk	close	-	-	bt_rk_close	leaf	-	-	0	fn_arms
 1266	rk	trim	-	-	bt_str_trim	leaf	-	-	0	fn_arms
 1267	rk	$system	-	-	bt_rk_x24system	leaf	-	-	0	fn_arms
+1268	icn	ICN$IMM	0	0	bt_ICNx24IMM	leaf	-	-	0	fn_arms
+1269	icn	ICN$UDIGITS	1	1	bt_ICNx24UDIGITS	leaf	-	-	0	fn_arms

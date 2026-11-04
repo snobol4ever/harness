@@ -52,22 +52,59 @@ def code_end(line):
         elif c == '#': return len(line[:i].rstrip())
         i += 1
     return len(line.rstrip())
-ENDER = re.compile(r'(?<![\w$&])(return|break)$')
-BEGINNER = re.compile(r'''(?:[A-Za-z_0-9"'(\[{\\/*+\-!~]|\$[(<]|&[A-Za-z])''')
-NOT_BEGINNER = re.compile(r'(?:then|else|do|of|to|by)\b')
-KEYWORD_AT_START = re.compile(r'&[A-Za-z]')
-ENDS_EXPR = re.compile(r'''(?:[\w"')\]}]|\$[)>])$''')
-CONTINUES = re.compile(r'(?<![\w$&])(?:if|while|until|every|case|not|create|then|else|do|of|to|by|initial|local|static|default|repeat)$')
+B, E = 1, 2
+WORDS = {'break': 3, 'case': 1, 'create': 1, 'critical': 1, 'default': 1, 'end': 1, 'every': 1, 'fail': 3, 'if': 1, 'initial': 1, 'initially': 2, 'local': 1, 'next': 3, 'not': 1, 'repeat': 1, 'return': 3, 'static': 1, 'suspend': 3, 'thread': 1, 'until': 1, 'while': 1}
+RESERVED = {'abstract', 'by', 'class', 'do', 'else', 'global', 'import', 'invocable', 'link', 'method', 'of', 'package', 'procedure', 'record', 'then', 'to'}
+OPS = [('$(', 1), ('$)', 2), ('$<', 1), ('$>', 2), ('(', 1), (')', 2), ('[', 1), (']', 2), ('{', 1), ('}', 2), ('<<@', 3), ('<@', 3), ('@>>', 3), ('@>', 3), ('|||:=', 0), ('~===:=', 0), ('===:=', 0), ('~===', 1), ('===', 1), ('|||', 1), ('~==:=', 0), ('==:=', 0), ('~==', 1), ('==', 1),
+       ('||:=', 0), ('~=:=', 0), ('~=', 1), ('||', 1), ('++:=', 0), ('--:=', 0), ('**:=', 0), ('++', 1), ('--', 1), ('**', 1), ('.|', 0), ('.>', 0), ('.$', 0), ('&&', 0), ('->', 0), ('=>', 0), ('::', 1), (':=:', 0), (':=', 0), ('??', 0), ('<->', 0), ('<-', 0), ('+:', 0), ('-:', 0),
+       ('\\', 1), ('@', 1), ('?', 1), ('=', 1), ('~', 1), ('|', 1), ('^', 1), ('/', 1), ('.', 1), ('-', 1), ('+', 1), ('*', 1), ('&', 1), ('!', 1)]
+OPS.sort(key=lambda o: -len(o[0]))
+ENDERS = {'return', 'break', 'next', 'fail', 'suspend'}
+NUMBER = re.compile(r'(?:\d+[rR][0-9a-zA-Z]+|\d+(?:\.\d*)?(?:[eE][-+]?\d+)?(?:[kKmMgGtTpP]|[dD]\d+)?|\.\d+(?:[eE][-+]?\d+)?)')
+IDENT = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+def lex(text):
+    out = []; i = 0; n = len(text); line = 1; start = 0
+    while i < n:
+        c = text[i]
+        if c == '\n': line += 1; start = i + 1; i += 1; continue
+        if c in ' \t\r\f\v': i += 1; continue
+        if c == '#':
+            while i < n and text[i] != '\n': i += 1
+            continue
+        if c == '$' and text[start:i].strip() == '' and IDENT.match(text, i + 1):
+            while i < n and text[i] != '\n': i += 1
+            continue
+        if c in '"\'':
+            j = i + 1; l0 = line
+            while j < n and text[j] != c:
+                if text[j] == '\\': j += 1
+                if j < n and text[j] == '\n': line += 1; start = j + 1
+                j += 1
+            out.append((l0, line, 3, i, j + 1, '')); i = j + 1; continue
+        if c == '`':
+            dbl = text.startswith('``', i); j = i + (2 if dbl else 1); stop = '``' if dbl else '`'
+            while j < n and not text.startswith(stop, j): j += 1
+            out.append((line, line, 2, i, j + len(stop), '')); i = j + len(stop); continue
+        m = NUMBER.match(text, i) if (c.isdigit() or c == '.') else None
+        if m and m.end() > i + (c == '.'):
+            out.append((line, line, 3, i, m.end(), '')); i = m.end(); continue
+        m = IDENT.match(text, i)
+        if m:
+            w = m.group(); out.append((line, line, WORDS.get(w, 0 if w in RESERVED else 3), i, m.end(), w)); i = m.end(); continue
+        for o, f in OPS:
+            if text.startswith(o, i): out.append((line, line, f, i, i + len(o), '')); i += len(o); break
+        else:
+            out.append((line, line, 0, i, i + 1, '')); i += 1
+    return out
 def preinsert(lines):
-    added = []
-    for i, line in enumerate(lines):
-        e = code_end(line)
-        code = line[:e]
-        nxt = next((l.strip() for l in lines[i + 1:] if l.strip() and not l.strip().startswith('#')), '')
-        if ENDER.search(code): hit = BEGINNER.match(nxt) and not NOT_BEGINNER.match(nxt)
-        else: hit = KEYWORD_AT_START.match(nxt) and ENDS_EXPR.search(code) and not CONTINUES.search(code)
-        if nxt and hit:
-            lines[i] = line[:e] + ';' + line[e:]; added.append((i + 1, e))
+    text = '\n'.join(lines); toks = lex(text); marks = []
+    for a, b in zip(toks, toks[1:]):
+        if text[text.rfind('\n', 0, a[3]) + 1:a[3]].lstrip().split(' ')[0] in ('procedure', 'method', 'record') or text[text.rfind('\n', 0, a[3]) + 1:].lstrip().startswith(('procedure ', 'method ', 'record ')): continue
+        if a[1] < b[0] and a[2] & E and b[2] & B and b[5] != 'end' and (b[5] == '' and text[b[3]] not in '"\'`' and not text[b[3]].isdigit() and text[b[3]] != '.' or text[b[3]:b[3] + 2] == '.' or a[5] in ENDERS): marks.append(a[4])
+    for off in reversed(marks): text = text[:off] + ';' + text[off:]
+    lines[:] = text.split('\n')
+    added = []; line = 1; k = 0; marks.sort()
+    for off in marks: added.append((text.count('\n', 0, off + k) + 1, off)); k += 1
     return added
 SCRIP_BIN = os.path.join(ROOT, 'scrip')
 PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
