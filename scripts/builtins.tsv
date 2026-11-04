@@ -1257,3 +1257,10 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1258	icn	ICN$UPVAR	1	1	bt_ICNx24UPVAR	leaf	-	-	0	fn_arms
 1259	rk	__rk_inv	-	-	bt___rk_inv	leaf	-	-	0	rk_targets
 1260	icn	ICN$USYSTEM	1	1	bt_ICNx24USYSTEM	leaf	-	-	0	fn_arms
+1261	rk	where	-	-	bt_rk_where	leaf	-	-	0	fn_arms
+1262	rk	seek	-	-	bt_rk_seek	leaf	-	-	0	fn_arms
+1263	rk	reverse	-	-	bt_rk_reverse	leaf	-	-	0	fn_arms
+1264	rk	open	-	-	bt_rk_open	leaf	-	-	0	fn_arms
+1265	rk	close	-	-	bt_rk_close	leaf	-	-	0	fn_arms
+1266	rk	trim	-	-	bt_str_trim	leaf	-	-	0	fn_arms
+1267	rk	$system	-	-	bt_rk_x24system	leaf	-	-	0	fn_arms
