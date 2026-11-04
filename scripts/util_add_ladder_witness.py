@@ -65,7 +65,8 @@ ORACLE = {
     "snocone": ["/home/resources/x64/bin/sbl", "-bf"],  # ⛔ NOT RUNNABLE ON THE WITNESS -- see SNOCONE SUPPORT below
     "raku": ["/home/resources/rakudo-local/bin/raku"],  # Rakudo 2026.05, the ONE Raku oracle (rakudo_bin() in lib_oracle_flags.sh
     "prolog": ["/usr/bin/swipl", "-q", "-t", "halt"],  # THE SWI-Prolog oracle, swipl_bin() in lib_oracle_flags.sh; -q -t halt: the witness's own initialization(main) runs once and no toplevel is entered (cto, CEO-1959)
-    "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
+    "pascal": [str(HERE / "fpc_oracle_run.sh"), "-Miso"],
+    "unicon": [str(HERE / "unicon_oracle_run.sh")],  # the coo 2026-11-04 (Lon: "do the RUNGS for Unicon"): a Unicon rung's ref is cut by the Unicon translator through unicon_bin() (icon skill R2); selected by --oracle unicon on an icon witness  # fpc 3.2.2 -Miso through the one-step wrapper corpus_suite_harness.py's resolver names (compile to a tmpdir, run); a witness needing an FPC dialect says {$mode objfpc} in its own source, which fpc honours over -Miso as scrip does
 }
 # ⛔⭐ `-bf` IS NOT OPTIONAL AND NOT A PER-PROGRAM WORKAROUND (RULES sec Oracles, s189): SPITBOL case-folds
 # names by default and SCRIP is case-sensitive, so a ref cut without -f grades a different language, and plain
@@ -353,6 +354,7 @@ def next_entry_name(rows, prefix="procedure_write_"):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--lang", default="icon", choices=sorted(ORACLE))
+    ap.add_argument("--oracle", choices=["unicon"], default=None, help="icon only: cut the ref with the Unicon translator (unicon_oracle_run.sh) for a Unicon rung")
     ap.add_argument("--entry-name", default="", help="override the builder-derived entry name (rarely right)")
     ap.add_argument("--origin", required=True, help="ladder__rungNN_<slug>, must be new and NN must be an existing rung")
     ap.add_argument("--source", required=True, help="path to the new witness's source file")
@@ -429,7 +431,7 @@ def main():
     if not sno_lines:
         refuse("--source is empty")
 
-    oracle_argv = ORACLE[lang]
+    oracle_argv = ORACLE["unicon" if getattr(args, "oracle", None) == "unicon" else lang]
     if not Path(oracle_argv[0]).is_file():
         refuse("shared oracle missing at %s -- fix the shared tree, never fall back to PATH" % oracle_argv[0])
     # ⛔ WHICH FILE THE ORACLE READS IS A PER-LANGUAGE FACT, not a caller preference. snocone MUST cut from a
