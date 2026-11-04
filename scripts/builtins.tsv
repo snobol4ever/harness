@@ -1249,3 +1249,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1250	rk	__rk_unbase	-	-	bt___rk_unbase	leaf	-	-	0	fn_arms,rt_known
 1251	pas	__pas_writestr	-	-	-	inline	-	-	0	pas
 1252	pas	__pas_pview	-	-	-	inline	-	-	0	pas
+1253	pas	__pas_pstrview	-	-	-	inline	-	-	0	pas
