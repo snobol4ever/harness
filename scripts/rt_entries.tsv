@@ -98,6 +98,7 @@ pas_arr_make	leaf	DESCR	1	-	0	call,alloc
 pas_arr_set	leaf	DESCR	1	-	0	call,alloc
 prolog_atom_init	leaf	VOID	1	-	0	call,alloc
 prolog_atom_intern	leaf	OTHER	1	-	0	call,alloc
+prolog_op_cols_warm	leaf	VOID	1	-	0	call,alloc
 prolog_op_table_add	leaf	OTHER	1	-	0	call,alloc
 record_register	leaf	VOID	1	-	0	call,alloc
 rk_box_back	leaf	-	0	-	0	call
