@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """WHICH DESCRIPTOR KINDS CARRY A HEAP PAYLOAD -- ONE FACT, FIVE SPELLINGS IN ONE FILE, GRADED AGAINST ITS AUTHORITY.
 
+⛔ THE AUTHORITY MOVED (hq_collector, 2026-11-04, from SCRIP 18bfe4a81 and f2faefaff): the mark run is asm, and its class
+table .Lmk_class in rtx_gc.s is the road production follows.  gc_visit_one is the C slow road: the asm drain calls it
+only for MK_SLOW cells, and a kind with its own class had its dead case label deleted.  So the AUTHORITY is the asm
+class table; gc_visit_one is a spelling whose missing kinds are declared; the table must not be read from rtx_alloc.s
+(the file it left).
+
 THE ASK THIS ANSWERS, verbatim from the cfo (CFO-141, 2026-09-20, to the cto): "Build it as A DECLARED SUBSET
 instead: the stack recognizer's kind set must be a subset of the heap visitor's, every kind in the heap visitor
 must be either PRESENT in the stack recognizer or NAMED IN A DECLARED EXCLUSION LIST WITH ITS REASON, and an
@@ -33,17 +39,13 @@ import re, sys, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GC_HEAP = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "src", "runtime", "rt", "gc_heap.c")
-RTX_ALLOC = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "src", "runtime", "rtx", "rtx_alloc.s")
-ASM_SPELLING = "rt_gc_mark_run"
-ASM_ROLE = ("the ASM MARK RUN's class table (.Lmk_class in rtx_alloc.s) -- its push filter and its dispatch, used in place "
-            "of gc_tag_bears_ptr and gc_visit_one's switch for every entry the run drains; it has no exclusions, so it "
-            "must equal the authority")
+RTX_GC = os.path.join(os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"), "src", "runtime", "rtx", "rtx_gc.s")
 KIND_RX = re.compile(r"\bDT_[A-Z0-9_]+\b")
 CALL_RX = re.compile(r"\b(gc_[a-z0-9_]+)\s*\(")
-AUTHORITY = "gc_visit_one"
+AUTHORITY = "rt_gc_mark_run"
 
 ROLES = {
-    "gc_visit_one": "THE AUTHORITY -- the heap visitor, handed a descriptor that IS one, reads its type field",
+    "gc_visit_one": "the C SLOW ROAD -- the asm drain calls it only for MK_SLOW cells and gc_visit_pseg calls it on a parked segment's trail records; a kind with its own asm class never reaches it",
     "gc_cell_visit": "the EMITTED-STACK cell recognizer -- guesses whether a word pair is a descriptor at all",
     "gc_tag_bears_ptr": "the PRECEDING-TAG test in gc_walk_words and gc_walk_dump -- classifies a heap word as cell or raw",
     "gc_sniff_would_take": "an INSTRUMENT half -- the maps reporter's model of what the old sniff would have taken",
@@ -61,13 +63,17 @@ DECLARED = {
                                          "speculative recognizer, so it must diverge from the authority exactly "
                                          "where the recognizer does or the census stops describing it."),
     ("gc_type_says_ref", "DT_SNUL"): ("EXCLUDED", "same reason, other side of the same census."),
+    ("gc_visit_one", "DT_A"): ("EXCLUDED", "the asm mark run walks an array through its own class MK_A; gc_visit_one is called from the asm drain only for MK_SLOW cells (SCRIP f2faefaff, measured) and a case label for a kind with an asm class is dead code"),
+    ("gc_visit_one", "DT_T"): ("EXCLUDED", "the asm mark run walks a table through its own class MK_T; same reason as DT_A"),
+    ("gc_visit_one", "DT_DATA"): ("EXCLUDED", "the asm mark run walks a DATA instance or element vector through its own class MK_DATA; same reason as DT_A"),
+    ("gc_visit_one", "DT_PCELL"): ("EXCLUDED", "the asm mark run marks a Pascal pointer through its own class MK_PCELL with the containment check (SCRIP f2faefaff deleted the dead case label here); same reason as DT_A"),
 }
 
 
 def bodies(text):
-    """{function name: body text} for every `static ... name(...) { ... }` in the file, braces balanced"""
+    """{function name: body text} for every `static` or `void` ... name(...) { ... } in the file, braces balanced"""
     out = {}
-    for m in re.finditer(r"^static\s[^\n(]*?\b([a-z_0-9]+)\s*\([^;{]*\)\s*\{", text, re.M):
+    for m in re.finditer(r"^(?:static|void)\s[^\n(]*?\b([a-z_0-9]+)\s*\([^;{]*\)\s*\{", text, re.M):
         i, depth = m.end() - 1, 0
         for j in range(i, len(text)):
             if text[j] == "{":
@@ -117,14 +123,14 @@ def asm_kinds(text):
     return ks
 
 
-def report(path=GC_HEAP, out=print, asm_path=RTX_ALLOC):
+def report(path=GC_HEAP, out=print, asm_path=RTX_GC):
     """rc 0 clean, 1 an undeclared or stale divergence (named), 2 refused"""
     if not os.path.exists(path):
         out(f"KINDSETS REFUSED(2): {path} is missing -- nothing to grade")
         return 2
     asm = asm_kinds(open(asm_path, encoding="utf-8", errors="replace").read()) if os.path.exists(asm_path) else None
     if asm is None:
-        out(f"KINDSETS REFUSED(2): the class table .Lmk_class of {ASM_SPELLING} is not in {asm_path} -- a moved table "
+        out(f"KINDSETS REFUSED(2): the authority, the class table .Lmk_class of {AUTHORITY} is not in {asm_path} -- a moved table "
             "reads as agreement, which is the failure this instrument exists to catch")
         return 2
     bods = bodies(open(path, encoding="utf-8", errors="replace").read())
@@ -133,13 +139,11 @@ def report(path=GC_HEAP, out=print, asm_path=RTX_ALLOC):
         out(f"KINDSETS REFUSED(2): {', '.join(sorted(missing))} not found in {os.path.basename(path)} -- a renamed "
             "spelling reads as agreement, which is the failure this instrument exists to catch")
         return 2
-    auth, auth_h = kinds_of(AUTHORITY, bods)
+    auth, auth_h = asm, None
     out(f"KINDSETS AUTHORITY {AUTHORITY} kinds={len(auth)} {' '.join(sorted(auth))}"
         + (f" (expanded: {' '.join(sorted(auth_h))})" if auth_h else ""))
     bad = 0
     for fn in sorted(ROLES):
-        if fn == AUTHORITY:
-            continue
         ks, hs = kinds_of(fn, bods)
         out(f"KINDSETS SPELLING {fn} kinds={len(ks)} role={ROLES[fn]}"
             + (f" (expanded: {' '.join(sorted(hs))})" if hs else ""))
@@ -154,25 +158,16 @@ def report(path=GC_HEAP, out=print, asm_path=RTX_ALLOC):
         for k in sorted(ks - auth):
             bad += 1
             out(f"KINDSETS NOT-A-SUBSET {fn} takes {k} and the authority {AUTHORITY} does not -- a copy that goes "
-                "BEYOND its authority visits something the heap visitor cannot follow")
+                "BEYOND its authority visits something the mark run cannot follow")
         for k in sorted(ks):
             if (fn, k) in DECLARED:
                 bad += 1
                 state = DECLARED[(fn, k)][0]
                 out(f"KINDSETS STALE {fn} HAS {k} and it is still declared {state} -- the cure landed and the "
                     "declaration did not move; remove the entry in the landing that earns it")
-    out(f"KINDSETS SPELLING {ASM_SPELLING} kinds={len(asm)} role={ASM_ROLE}")
-    for k in sorted(auth - asm):
-        bad += 1
-        out(f"KINDSETS UNDECLARED {ASM_SPELLING} lacks {k} -- the authority {AUTHORITY} has it and the asm mark run "
-            "drops every such descriptor at its push, so the block it points at is swept while the heap visitor would mark it")
-    for k in sorted(asm - auth):
-        bad += 1
-        out(f"KINDSETS NOT-A-SUBSET {ASM_SPELLING} takes {k} and the authority {AUTHORITY} does not -- a copy that goes "
-            "BEYOND its authority visits something the heap visitor cannot follow")
     out(f"KINDSETS NOT IN THIS POPULATION AND SAID SO: gc_tag_known answers a DIFFERENT question (is this byte a "
         f"plausible tag at all, including DT_I, DT_R and the DT_P..DT_MAP block) and is not a payload test; "
-        f"rt_gc_visit_descr dispatches on {AUTHORITY}'s own switch and is not a second spelling.")
+        f"rt_gc_visit_descr enters the mark run and is not a second spelling.")
     out(f"KINDSETS file={os.path.basename(path)} authority={AUTHORITY} spellings={len(ROLES) + 1} undeclared_or_stale={bad}")
     return 1 if bad else 0
 
@@ -191,7 +186,8 @@ def selftest():
            "static int gc_cell_visit(DESCR_t *d) { if (d->v == DT_S) return 1; return gc_helper(d); }\n")
     b = bodies(src)
     arm("bodies finds every static function", set(b) == {"gc_helper", "gc_visit_one", "gc_cell_visit"})
-    arm("kinds_of reads the authority's switch", kinds_of("gc_visit_one", b)[0] == {"DT_S", "DT_X"})
+    arm("kinds_of reads a spelling's switch", kinds_of("gc_visit_one", b)[0] == {"DT_S", "DT_X"})
+    arm("bodies finds a non-static void function", "gc_visit_one" in bodies("void gc_visit_one(DESCR_t *d) { switch (d->v) { case DT_S: return; } }\n"))
     arm("kinds_of expands a same-file helper rather than losing its kinds",
         kinds_of("gc_cell_visit", b)[0] == {"DT_S", "DT_DATA"})
     arm("kinds_of names the helper it expanded", kinds_of("gc_cell_visit", b)[1] == {"gc_helper"})

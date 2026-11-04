@@ -65,7 +65,7 @@ rep="$(timeout -k 5 60s python3 "$CENSUS" 2>&1)"; rrc=$?
 auth="$(printf '%s\n' "$rep" | grep -m1 '^KINDSETS AUTHORITY ')"
 ak="$(printf '%s\n' "$auth" | sed -n 's/.* kinds=\([0-9]*\) .*/\1/p')"
 if [ "${ak:-0}" -ge 11 ] 2>/dev/null; then
-  ck ok "(b) the authority is read out of gc_heap.c and carries ${ak} kinds -- $(printf '%s\n' "$auth" | cut -c1-120)"
+  ck ok "(b) the authority is read out of the class table in rtx_gc.s and carries ${ak} kinds -- $(printf '%s\n' "$auth" | cut -c1-120)"
 else
   ck no "(b) the authority read as ${ak:-?} kinds -- a shrunken authority makes every copy look like a subset, which is agreement by erasure: $auth"
 fi
@@ -85,10 +85,9 @@ spec = importlib.util.spec_from_file_location("ks", census_path)
 ks = importlib.util.module_from_spec(spec); spec.loader.exec_module(ks)
 text = open(src, encoding="utf-8").read()
 lines = []
-drop = text.replace("if (d->v == DT_T) { rt_hblk_t *th = gc_blk_of((const char *)d->tbl); if (th && th->type == HB_AGGT && (char *)d->tbl == (char *)(th + 1)) { rt_gc_visit_descr(d); return 1; } return 0; }",
-                    "if (0) { return 0; }", 1)
-add = text.replace("    if (d->v == DT_A && gc_block_exact((const char *)d->arr, HB_ARR)) { rt_gc_visit_descr(d); return 1; }",
-                   "    if (d->v == DT_SNUL) { rt_gc_visit_descr(d); return 1; }\n    if (d->v == DT_A && gc_block_exact((const char *)d->arr, HB_ARR)) { rt_gc_visit_descr(d); return 1; }", 1)
+drop = text.replace("    if (d->v == DT_T) { rt_hblk_t *th = gc_blk_of((const char *)d->tbl); return (th && th->type == HB_AGGT && (char *)d->tbl == (char *)(th + 1)) ? 1 : 0; }",
+                    "    if (0) { return 0; }", 1)
+add = text.replace("static int gc_cell_ok(const DESCR_t *d) {\n", "static int gc_cell_ok(const DESCR_t *d) {\n    if (d->v == DT_SNUL) return 1;\n", 1)
 for name, doctored in (("DROP", drop), ("ADD", add)):
     if doctored == text:
         print(f"PLANT-{name} FAILED-TO-SET-UP the anchor text was not found"); continue
