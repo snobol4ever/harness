@@ -962,7 +962,7 @@ def proc_check():
             rows.append(f)
     mgr = {r[0] for r in rows if r[5].startswith("/usr/lib/systemd/systemd --user")}
     work = re.compile(r"(/harness/scripts/|/SCRIP/scrip\b|/scrip --|\bas --64\b|^(\S*/)?gcc\b|^(\S*/)?make\b|corpus_suite_harness|^timeout )")
-    keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh|^ssh: \S+ \[mux\]$|^xclip -selection )")
+    keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh|^ssh: \S+ \[mux\]$|^xclip -selection |util_jobserver\.sh hold )")
     orphans = []
     for pid, ppid, et, rss, cg, a in rows:
         sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
