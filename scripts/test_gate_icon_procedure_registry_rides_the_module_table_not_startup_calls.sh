@@ -3,7 +3,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1
 ../harness/scripts/util_require_fresh.sh --gate "$(basename "$0" .sh)" || exit $?
 # test_gate_icon_procedure_registry_rides_the_module_table_not_startup_calls.sh -- AN ICON PROGRAM'S PROCEDURE REGISTRY IS STATIC DATA THE COMPILER EMITS AND ONE CALL INSTALLS BY POINTER, NOT ONE RUNTIME
-# CALL PER PROCEDURE (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-ceo-1969, slice 2).
+# CALL PER PROCEDURE (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-r-1969, slice 2).
 # ⛔ THE MEASURED DEFECT: module_init called rt_proc_register_rec once per procedure (and rt_proc_set_gen_region_ft / rt_proc_set_frame after it), and each call built an rt_proc_t in a growable array
 # (rt_gen_proc_grow, the first call allocating the table) and inserted the name into the FNV hash (proc_hsl, a 1024-slot table allocated on the first insert). The compiler already held every field, so it emits
 # them: .Lstartup_procs (128-byte rt_proc_t rows, the root "main" row last) and .Lstartup_phash (the open-addressed int table, built with the runtime's own rt_proc_hash_fill so the probe agrees), each behind a

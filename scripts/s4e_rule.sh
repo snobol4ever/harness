@@ -90,7 +90,6 @@ body="$(printf '%s\n' "$text" | tail -n +2 | tr '\n' ' ' | sed 's/[[:space:]][[:
 [ -n "$to" ] || refuse "--to names the seats telegrammed (comma-separated)"
 IFS=, read -ra seats <<< "$to"
 for s in "${seats[@]}"; do
-    [ "$s" = ceo ] && refuse "the ceo seat was fired 2026-10-31 (CTO-469)"
     [ -n "$s" ] && [ -d "$PO/$s/inbox" ] || refuse "no postoffice mailbox '$s'"
 done
 [ -n "$row" ] || refuse "--row names the row whose baton records the ruling"
