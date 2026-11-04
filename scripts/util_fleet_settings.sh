@@ -28,7 +28,7 @@ STAMP=$(date +%Y%m%dT%H%M%S)
 mapfile -t SLICES < <(python3 -I "$HERE/util_seat_census.py" --budget-props)
 [ "${#SLICES[@]}" -gt 0 ] && [ -n "${SLICES[0]}" ] && [ "${SLICES[0]#REFUSED}" = "${SLICES[0]}" ] || { echo "REFUSE(2): no slice row in the budget table (util_seat_census.py --budget-props: ${SLICES[0]:-nothing})" >&2; exit 2; }
 TF="$HOME/.config/user-tmpfiles.d/s4e.conf"
-SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " ceo cto cfo coo cao cqo " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
+SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " ceo cto cfo coo cao cqo cio " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
 fail=0
 if [ "$APPLY" -eq 1 ]; then
   for s in "${SLICES[@]}"; do systemctl --user set-property $s && echo "SLICE set: $s" || { echo "FAILED: systemctl --user set-property $s"; fail=1; }; done
@@ -38,7 +38,7 @@ fi
 python3 - "$APPLY" "$STAMP" $ROOTS <<'PY'
 import difflib, json, os, re, sys
 apply, stamp, roots = sys.argv[1] == "1", sys.argv[2], sys.argv[3:]
-OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo"}
+OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"}
 DEAD = re.compile(r"/SCRIP\s*&&\s*bash\s+scripts/s4e_msg\.sh")
 changed = 0
 for root in roots:
