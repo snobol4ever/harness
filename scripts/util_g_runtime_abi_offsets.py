@@ -30,7 +30,7 @@ def main():
     with tempfile.TemporaryDirectory() as d:
         c = os.path.join(d, "p.c"); x = os.path.join(d, "p")
         open(c, "w").write(probe)
-        inc = ["-I" + os.path.join(ROOT, "src", p) for p in ("runtime/core", "ir", "runtime", "runtime/rt")]
+        inc = ["-I" + os.path.join(ROOT, "src", p) for p in ("runtime/core", "ir", "runtime", "runtime/rt", ".")]
         r = subprocess.run(["gcc", "-w", "-o", x, c] + inc, capture_output=True, text=True)
         if r.returncode:
             print(r.stderr); sys.exit(2)

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""util_dyn_caps_gen.py <dir> -- writes the six cap-exceeding witnesses of ARCH-DYNAMIC-STORAGE.md into <dir>:
+"""util_dyn_caps_gen.py <dir> -- writes the seven cap-exceeding witnesses of ARCH-DYNAMIC-STORAGE.md into <dir>:
 defines200.sno (200 DEFINEs; SNO_DEF_MAX is 128), preds600.pl (600 predicates; MAX_PREDS is 512), args70.icn (a 70-argument
 call; CALL_ARGS_MAX is 64), multi300.raku (300 multi candidates that all accept one call; by_name_dispatch.c held 256 accepted
 candidates and silently answered k256 for K300), cmpdeep.pl (compare/3 on terms nested 200000 deep; unification.c held a 1024-frame
 walk stack and fell back to the recursive walk), blobs150.sno (a pattern built at run time with 150 unfenced alternations, matched through a deferred
 reference, so its blob frame's layout needs 4 * 150 + 8 = 608 entries; emit.cpp's g_blob_lay held 512 and silently dropped the
-rest, and the tiling check then aborted -- hq_snocone's transpiled parser_rebus.sno wall, cfo 2026-09-24). Each is a legal program
+rest, and the tiling check then aborted -- hq_snocone's transpiled parser_rebus.sno wall, cfo 2026-09-24), opdata140.sno (140 DATA types of two fields declared through an OPSYN alias of DATA and built and read by name; the function-table road of core.c held 64 constructor and 128 accessor trampolines, and mode 4 answered error 22 from the 65th type, hq_runtime 2026-11-04). Each is a legal program
 of its industry-standard language whose answer the oracle prints. The SNOBOL4 ones keep every line under SPITBOL's 1024 columns."""
 import os
 import sys
@@ -53,6 +53,12 @@ def main(argv):
          "t(N) :- nest(N, a, T1), nest(N, c, T2), compare(O, T1, T2), write(N-O), nl, compare(O2, T2, T1), write(O2), nl, compare(O3, T1, T1), write(O3), nl.",
          ":- t(10), t(2000), t(20000), t(200000)."]
     open(os.path.join(d, "cmpdeep.pl"), "w", newline="\n").write("\n".join(L) + "\n")
+    n = 140
+    L = ["        OPSYN('mydata', 'DATA')", "        i = 0", "L1      mydata('t' i '(a' i ',b' i ')')", "        i = i + 1", "        LT(i,%d)                        :S(L1)" % n]
+    for i in range(n):
+        L += ["        x%d = APPLY('t%d',%d,%d)" % (i, i, i, i + 1), "        OUTPUT = a%d(x%d) + b%d(x%d)" % (i, i, i, i)]
+    L.append("END")
+    open(os.path.join(d, "opdata140.sno"), "w", newline="\n").write("\n".join(L) + "\n")
     return 0
 
 
