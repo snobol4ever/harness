@@ -2088,7 +2088,7 @@ S4E_PROTO=7
 case "$cmd" in
   send)  [ -n "${2:-}" ] || s4e_need send "a destination seat" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "A prose body must come through --stdin: a body in double quotes is expanded by YOUR shell before send ever runs."
          [ -n "${3:-}" ] || s4e_need send "a topic" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "The topic is the subject line the recipient sorts by; it becomes a filename, so keep it a slug."
-         to="$(s4e_canon "$2")"; topic="$3"; shift 3; s4e_assert_box "$to" destination; s4e_assert_not_drained "$to"
+         to="$(s4e_canon "$2")"; topic="$3"; shift 3; [ "$to" = ceo ] && { echo "⛔ REFUSED: the ceo seat was fired 2026-10-31 (CEO-2088; CTO-469): a ruling ask, a design gap or a grant goes to the cto, a red, a fact or a test request to the coo" >&2; exit 2; }; s4e_assert_box "$to" destination; s4e_assert_not_drained "$to"
          # ⛔ THE TOPIC BECOMES A FILENAME, SO IT IS VALIDATED BEFORE IT BECOMES A PATH (s191, seat1).  MEASURED, not hypothetical:
          # calling `send seat8 "<a whole message containing harness/scripts/...>"` made the topic carry slashes, the mv failed with
          # "No such file or directory" -- AND THE SCRIPT PRINTED `sent` ANYWAY.  A seat-to-seat message that is silently dropped
