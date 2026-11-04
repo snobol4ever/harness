@@ -25,7 +25,22 @@ def token_end(line, col):
         j = i
         while j < len(line) and (line[j].isalnum() or line[j] == '_' or line[j] == '.'): j += 1
         return j
+    if c == '$' and i + 1 < len(line) and line[i + 1] in '()<>': return i + 2
     return i + 1
+def settle(line, e):
+    q = None; i = 0; s = 0
+    while i < len(line):
+        c = line[i]
+        if q:
+            if c == '\\': i += 1
+            elif c == q:
+                if s < e <= i: e = i + 1
+                q = None
+        elif c in '"\'': q = c; s = i
+        elif c == '#': break
+        i += 1
+    while 0 < e < len(line) and (line[e - 1].isalnum() or line[e - 1] in '_.') and (line[e].isalnum() or line[e] in '_.'): e += 1
+    return e
 def code_end(line):
     q = None; i = 0
     while i < len(line):
@@ -37,13 +52,30 @@ def code_end(line):
         elif c == '#': return len(line[:i].rstrip())
         i += 1
     return len(line.rstrip())
+ENDER = re.compile(r'(?<![\w$&])(return|break)$')
+BEGINNER = re.compile(r'''(?:[A-Za-z_0-9"'(\[{\\/*+\-!~]|\$[(<]|&[A-Za-z])''')
+NOT_BEGINNER = re.compile(r'(?:then|else|do|of|to|by)\b')
+KEYWORD_AT_START = re.compile(r'&[A-Za-z]')
+ENDS_EXPR = re.compile(r'''(?:[\w"')\]}]|\$[)>])$''')
+CONTINUES = re.compile(r'(?<![\w$&])(?:if|while|until|every|case|not|create|then|else|do|of|to|by|initial|local|static|default|repeat)$')
+def preinsert(lines):
+    added = []
+    for i, line in enumerate(lines):
+        e = code_end(line)
+        code = line[:e]
+        nxt = next((l.strip() for l in lines[i + 1:] if l.strip() and not l.strip().startswith('#')), '')
+        if ENDER.search(code): hit = BEGINNER.match(nxt) and not NOT_BEGINNER.match(nxt)
+        else: hit = KEYWORD_AT_START.match(nxt) and ENDS_EXPR.search(code) and not CONTINUES.search(code)
+        if nxt and hit:
+            lines[i] = line[:e] + ';' + line[e:]; added.append((i + 1, e))
+    return added
 SCRIP_BIN = os.path.join(ROOT, 'scrip')
 PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
 def parse_error(path):
     r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
     return None if r.returncode == 0 else (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
 def fix(path, check):
-    lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = []
+    lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = preinsert(lines)
     for _ in range(500):
         err = parse_error(path if not check and not added else write_tmp(path, lines))
         if err is None: break
@@ -51,15 +83,15 @@ def fix(path, check):
         if not m: return added, err
         L, C = int(m.group(1)), int(m.group(2))
         if L < 1 or L > len(lines): return added, err
-        e = token_end(lines[L - 1], C); before = lines[L - 1]
+        before = lines[L - 1]; e = settle(before, token_end(before, C))
         lines[L - 1] = before[:e] + ';' + before[e:]
         err2 = parse_error(write_tmp(path, lines))
         if err2 is not None and not ERR.search(err2):
             e = code_end(before); lines[L - 1] = before[:e] + ';' + before[e:]
         added.append((L, e))
-        if not check: open(path, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
     else:
         return added, 'gave up after 500 insertions (a container of many programs is converted with --master)'
+    if added and not check: open(path, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
     return added, None
 def write_tmp(path, lines):
     t = path + '.semi.icn'; open(t, 'w', encoding='utf-8', newline='').write('\n'.join(lines)); return t
