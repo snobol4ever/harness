@@ -66,6 +66,7 @@ mailbox
 send
 assign
 reown
+rule
 VERBS
   # (4) WROTE-NOTHING
   after="$(fingerprint)"
