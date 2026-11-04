@@ -1873,7 +1873,7 @@ s4e_need() {   # $1 = verb, $2 = what is missing, $3 = the usage line, $4 = one 
     [ -n "${4:-}" ] && printf '   %s\n' "$4" >&2
     printf '   All verbs: %s\n' "$_S4E_VERBS" >&2
     exit 2; }
-_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|rule|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami"
+_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami"
 s4e_premise_is_placeholder() {   # $1 = raw PREMISE-WHEN text; rc 0 = the field is present but expresses nothing
     case "$(printf '%s' "${1:-}" | tr -d '[:space:]')" in
       ''|'⛔NOTEXPRESSED'*|'NOTEXPRESSED'*|TODO*|TBD*|'⛔TODO'*) return 0;; esac
@@ -2271,6 +2271,7 @@ case "$cmd" in
          d="$PO/$to/inbox/$(date +%s%N)-$ME-$topic.msg"
          if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
+  resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
   ask)   [ -n "${2:-}" ] || s4e_need ask "a topic" "s4e_msg.sh ask <topic> \"your question\"" "Sends q-<topic> to the HQ named in your postoffice HQ file, and refuses rc=2 when none is set."
          # ⛔ TWO FORMS AND --stdin (ceo CEO-2081). MEASURED: the cqo and the cfo each ran ask <seat> <topic> --stdin within the hour; the verb
          # took the seat as the topic and mailed the ceo the literal body "<topic> --stdin", the question itself lost. A first argument that
@@ -3426,7 +3427,9 @@ TASKEOF
          # at once -- an infrastructure failure is not a rename, so we pin and say so.
          qrows="$(grep -cP '^[0-9]+\t' "$q" 2>/dev/null)"; qrows="${qrows:-0}"   # qrow/qrank are top-level now, shared with banner()
          # ONE printer for every serve path, so a resumed row and a freshly locked row can never describe themselves differently.
-         serve() { local st="$1" verb="$2" sfx="${3:-}" srow; srow="$(qrow "$st")"; printf '%s %s %s\n' "$verb" "$st" "$sfx"
+         serve() { local st="$1" verb="$2" sfx="${3:-}" srow _rl; srow="$(qrow "$st")"
+           _rl="$(awk '/^## RESUME/{f=1;next} /^## /{f=0} f && /^RESUME /{print; exit}' "$PO/tasks/$st.task.md" 2>/dev/null)"; [ -n "$_rl" ] && printf '%s\n' "$_rl"
+           printf '%s %s %s\n' "$verb" "$st" "$sfx"
            if [ -f "$PO/tasks/$st.task.md" ]; then printf 'task: %s\n' "$PO/tasks/$st.task.md"
              printf '      ⭐ THE BATON IS THE TASK FILE, NOT THIS PRINTOUT — read GOAL + DONE-WHEN + the ONE ## NEXT block,\n'
              printf '      work THAT, then rewrite ## NEXT before you stop. Questions go in ## QA, receipts in ## LEDGER.\n'
@@ -4436,7 +4439,7 @@ TASKEOF
   board) if [ $# -gt 1 ]; then shift; grep -v "^$ME |" "$PO/BOARD.md" 2>/dev/null > "$PO/.b.$$" || true; printf '%s | %s | %s\n' "$ME" "$*" "$(date -u +%H:%M)" >> "$PO/.b.$$"; mv "$PO/.b.$$" "$PO/BOARD.md"; fi; cat "$PO/BOARD.md"
          # posting a board line IS the handoff gesture -- so the banner fires here too (see `done` above).
          [ "${S4E_NO_BANNER:-0}" = "1" ] || S4E_BANNER_NO_BOARD=1 "$0" banner;;
-  *) echo "usage: next|claim|unclaim|park|done|assign|reown|mint|rule|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
+  *) echo "usage: next|claim|unclaim|park|done|assign|reown|mint|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
      # ⛔⭐ THE BACKTICK TRAP -- FIVE MEASURED OCCURRENCES, and it is printed here because THIS SCRIPT CANNOT
      # DETECT IT. A backtick used for emphasis inside a double-quoted body is COMMAND SUBSTITUTION: the
      # caller's shell runs the word, prints "X: command not found" on the CALLER's stderr, and substitutes

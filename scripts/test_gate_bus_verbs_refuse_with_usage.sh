@@ -67,6 +67,7 @@ send
 assign
 reown
 rule
+resume
 VERBS
   # (4) WROTE-NOTHING
   after="$(fingerprint)"
