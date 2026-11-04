@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask.sh -- THE THIRD QUAD AT RULE-1 AND RULE-2 SITES (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16.1 (b), the cto
-# 2026-10-30, CEO-2046; zeta-layout step 4a-2). The sibling gate holds the rule-0 and rule-4 entries; this one holds the rbp frames of Prolog, Raku and Icon (rule 1) and the flat
-# generator (rule 2): such an entry's third quad is 0 (the site declares no cells) or a BYTE OFFSET from the table's first quad into the pool after the last entry, at which sits
-# one word NW (the extent in 8-byte words, from R up to the cells the planner knows: op_zrun + op_zxb + adj + op_vdj_live + the encoder's K, never past the frame base) followed
-# by ceil(NW / 64) mask words (bit q names the word at R + 8q, set on the first word of a DESCR cell, the planner's arrival carve stack folded from the word_kind column). The
-# extent is stated in the block because rbp - R is not known at a rule-1 site (its depth field is 0) and exceeds NW wherever the run sits on an INDEF base. Identical blocks are
-# shared. A LANDING site (kind 2) carries 0: its K is not the call's (Icon proc_gen landings overshoot their base by 40 bytes, measured).
+# 2026-10-30, CEO-2046; zeta-layout step 4a-2; the pool shared by prefix, the cto 2026-11-04, CEO-2118). The sibling gate holds the rule-0 and rule-4 entries; this one holds the rbp
+# frames of Prolog, Raku and Icon (rule 1) and the flat generator (rule 2): such an entry's third quad is 0 (the site declares no cells) or NW in its HIGH 32 bits (the extent in
+# 8-byte words, from R up to the cells the planner knows: op_zrun + op_zxb + adj + op_vdj_live + the encoder's K, never past the frame base) and in its LOW 32 bits a BYTE OFFSET
+# from the table's first quad into the pool after the last entry, at which sit the mask words (bit q names the word at R + 8q, set on the first word of a DESCR cell, the planner's
+# arrival carve stack folded from the word_kind column); the site reads ceil(NW / 64) of them. The extent is stated in the entry because rbp - R is not known at a rule-1 site (its
+# depth field is 0) and exceeds NW wherever the run sits on an INDEF base. THE POOL IS SHARED BY PREFIX (CEO-2118): a site whose mask is a prefix of a longer site's mask points
+# into that longer block, so a clause that builds a term cell by cell (every site one word deeper than the last) costs one block, not one per site; before it the pool was quadratic
+# in a clause's size (hakank_swi_sudoku: 436,148 quads at 1,600 elements, the assembler killed at 8.3 GB). A LANDING site (kind 2) carries 0: its K is not the call's (Icon
+# proc_gen landings overshoot their base by 40 bytes, measured).
 # The gate compiles zl03 (Icon: rules 1 and 2), zl05 (Prolog: rule 1) and zl08 (Raku: rules 1 and 2) in mode 4 and reads their .Lgcsites tables: quads = 4 + 3n + pool; a rule 1 or
-# rule 2 third quad is 0 or an aligned offset into the pool; the block at it holds NW >= 1 and exactly ceil(NW / 64) mask words with no bit at or past NW; the pool is tiled
-# exactly by the blocks the entries reference (rule 0 and 4 deep masks included, shared blocks counted once); a kind-2 entry carries 0; every witness has a block with a set bit
-# at rule 1 and the Icon and Raku witnesses one at rule 2 (so the check was exercised). Then each witness runs as a mode-4 binary under the collector's stress (every 8th poll collects; the step harness runs stress 1)
-# with SCRIP_GC_CHAIN_CHECK=3, whose census (gc_told_window) reads the masks: its stdout must equal the ref, at least one rule-1 or rule-2 window must have been read, and no declared
-# extent may reach past the site's frame base (declared_past_base 0). --corrupt sets a bit one word past the first block's extent (the static arm must read RED); --corrupt-over
-# gives every kind-2 rule-1 or rule-2 entry of the Icon witness the largest block of its table and re-runs the census (declared_past_base must read above 0, RED).
+# rule 2 third quad is 0 or an aligned offset into the pool with NW >= 1 above it; the block at an offset holds at least ceil(NW / 64) words for every site naming it and no bit at
+# or past the LARGEST NW naming it; the pool is tiled exactly by the longest block at each offset (rule 0 and 4 deep masks included); a kind-2 entry carries 0; every witness has a
+# block with a set bit at rule 1 and the Icon and Raku witnesses one at rule 2 (so the check was exercised). Then each witness runs as a mode-4 binary under the collector's stress
+# (every 8th poll collects; the step harness runs stress 1) with SCRIP_GC_CHAIN_CHECK=3, whose census (gc_told_window) reads the masks: its stdout must equal the ref, at least one
+# rule-1 or rule-2 window must have been read, and no declared extent may reach past the site's frame base (declared_past_base 0). --corrupt sets a bit one word past the first
+# block's largest extent (the static arm must read RED); --corrupt-over gives every kind-2 rule-1 or rule-2 entry of the Icon witness the largest block of its table, NW and all,
+# and re-runs the census (declared_past_base must read above 0, RED).
 # rc 0 held · rc 1 a bar unmet · rc 2 cannot measure (no scrip, no witness, a compile or link refused)
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,19 +79,20 @@ for k, (tname, n, q, qi) in enumerate(tables):
                 landing += 1
             if third == 0:
                 continue
-            if third < lo or (third - lo) % 8 or (third - lo) // 8 >= len(pool):
-                bad.append('%s entry %d: rule %d offset %d outside [%d, %d)' % (tname, e, rule, third, lo, lo + 8 * len(pool)))
+            off, nw = third & 0xFFFFFFFF, third >> 32
+            if off < lo or (off - lo) % 8 or (off - lo) // 8 >= len(pool):
+                bad.append('%s entry %d: rule %d offset %d outside [%d, %d)' % (tname, e, rule, off, lo, lo + 8 * len(pool)))
                 continue
-            s = (third - lo) // 8
-            nw = int(pool[s])
+            s = (off - lo) // 8
             if nw < 1:
-                bad.append('%s entry %d: rule %d block at %d states NW %d' % (tname, e, rule, s, nw))
+                bad.append('%s entry %d: rule %d entry at %d states NW %d' % (tname, e, rule, s, nw))
                 continue
             want = (nw + 63) // 64
-            if s + 1 + want > len(pool):
+            if s + want > len(pool):
                 bad.append('%s entry %d: rule %d block at %d (NW %d) runs past the pool of %d words' % (tname, e, rule, s, nw, len(pool)))
                 continue
-            refs[s] = (1 + want, rule, nw)
+            if s not in refs or nw > refs[s][2]:
+                refs[s] = (want, rule, nw)
         elif rule in (0, 4) and depth > 512 and third:
             if third < lo or (third - lo) % 8 or (third - lo) // 8 + (depth // 8 + 63) // 64 > len(pool):
                 bad.append('%s entry %d: rule %d pool offset %d outside the pool' % (tname, e, rule, third))
@@ -96,13 +101,13 @@ for k, (tname, n, q, qi) in enumerate(tables):
     if mode == 1 and not done_corrupt:
         for s, (ln, rule, nw) in sorted(refs.items()):
             if rule in (1, 2) and nw % 64:
-                pool[s + 1 + nw // 64] = str(int(pool[s + 1 + nw // 64]) | (1 << (nw % 64)))
+                pool[s + nw // 64] = str(int(pool[s + nw // 64]) | (1 << (nw % 64)))
                 done_corrupt = True
                 break
     for s, (ln, rule, nw) in sorted(refs.items()):
         if rule not in (1, 2):
             continue
-        words = [int(x) for x in pool[s + 1:s + 1 + (nw + 63) // 64]]
+        words = [int(x) for x in pool[s:s + (nw + 63) // 64]]
         blocks[rule] += 1
         if any(words):
             setbits[rule] += 1
@@ -126,7 +131,7 @@ for k, (tname, n, q, qi) in enumerate(tables):
         if big is not None:
             for (e, kind, rule, depth, third) in ents:
                 if rule in (1, 2) and (kind & 255) == 2 and third == 0:
-                    lines[qi[3 + 3 * e + 2]] = re.sub(r'(\.quad\s+)\S+$', lambda m: m.group(1) + str(lo + 8 * big), lines[qi[3 + 3 * e + 2]])
+                    lines[qi[3 + 3 * e + 2]] = re.sub(r'(\.quad\s+)\S+$', lambda m: m.group(1) + str((lo + 8 * big) | (refs[big][2] << 32)), lines[qi[3 + 3 * e + 2]])
                     landing += 1
 if mode == 2:
     open(path, 'w', encoding='utf-8').write('\n'.join(lines))
@@ -153,6 +158,6 @@ PY
     [ "$(echo "$cen" | cut -d' ' -f2)" -eq 0 ] || { echo "RED: $n declares an extent past the frame base"; rc=1; }
 done
 [ "$MODE" = 2 ] && { [ "$rc" -eq 1 ] && echo "GATE RED [gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask] (--corrupt-over: a landing mask past its base was read)" || echo "NOT RED: --corrupt-over did not make the census read a past-base extent"; exit "$rc"; }
-[ "$rc" -eq 0 ] && echo "GATE OK [gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask]: every rule-1 and rule-2 entry is 0 or an offset to {NW, mask words}, the blocks tile the pool, no landing is masked, no extent passes its base, three witnesses run under stress" \
+[ "$rc" -eq 0 ] && echo "GATE OK [gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask]: every rule-1 and rule-2 entry is 0 or NW over an offset to its mask words (shared by prefix), the blocks tile the pool, no landing is masked, no extent passes its base, three witnesses run under stress" \
     || echo "GATE RED [gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask]"
 exit $rc
