@@ -139,7 +139,11 @@ EXCLUDED_CLASSES = {
     # ceo CEO-2002 and cto (2026-10-28), the fourth evidence form: the case's UNIT carries `condition :- G.` and every Prolog oracle answers G false, so lgtunit skips the
     # whole unit under every oracle (control/if_3: G is predicate_property(if(_,_,_), built_in), false on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle).
     # test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh runs each oracle on every such row's condition and reds the row the day one of them answers true.
-    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, asserts a column-stop format/2 text that swipl 9.0.4 does not print, or sits in a unit whose own condition/0 every oracle answers false",
+    # cto CEO-2117 (2026-11-04), the fifth evidence form: a write_term max_depth case over a LIST whose asserted text is GNU Prolog's ([1,2,3|...] at 3) where the pinned
+    # oracle swipl 9.0.4 prints [1,2|...]; the generated program carries no dialect marker, so it is the default dialect, which takes SWI where GNU and SWI conflict
+    # (CEO-1536; Lon on the contending Logtalk sort case, COO-455: "Do exclude that LogTalk failure since it contends."). The assertion is a ref that is not the oracle's.
+    # test_gate_logtalk_max_depth_rows_disagree_with_swipl.sh runs swipl on every such row and reds the row the day swipl prints the asserted text.
+    "NO_ORACLE_ANSWER": "no oracle answers the case: its goal calls a Logtalk system predicate no Prolog oracle has, builds a term of an arity beyond 2^64 that no run builds, asserts a column-stop format/2 text that swipl 9.0.4 does not print, asserts a write_term max_depth list text that swipl 9.0.4 does not print, or sits in a unit whose own condition/0 every oracle answers false",
 }
 
 
@@ -187,9 +191,14 @@ def _unit_condition_false_on_oracle(db):
     return False
 
 
+def _max_depth_list_write(g):
+    """The goal calls write_term/2,3 on a list literal with a max_depth(N) option (the fifth NO_ORACLE_ANSWER evidence form, CEO-2117): GNU and SWI count a list's depth differently."""
+    return bool(re.search(r"(?<![A-Za-z0-9_])write_term\s*\((?:[^,()\[\]]*,)?\s*\[[^\]]*\]\s*,\s*\[[^\]]*max_depth\(\d+\)", g))
+
+
 def _no_oracle_answer(case):
     g = case.goal or ""
-    return any(k in LOGTALK_SYSTEM for k in called_predicates(g)) or bool(re.search(r"(?<![A-Za-z0-9_])functor\s*\([^()]*,\s*\d{20,}\s*\)", g)) or _column_stop_format(g)
+    return any(k in LOGTALK_SYSTEM for k in called_predicates(g)) or bool(re.search(r"(?<![A-Za-z0-9_])functor\s*\([^()]*,\s*\d{20,}\s*\)", g)) or _column_stop_format(g) or _max_depth_list_write(g)
 
 
 def _bounded_max_arity_only(case):
@@ -1067,7 +1076,7 @@ def grade(root, scrip, modes, jobs=8, limit=None, only_group=None, seq_table=SEQ
             if xr is not None and xr[0] == "NO_ORACLE_ANSWER":
                 if not (_no_oracle_answer(c) or _unit_condition_false_on_oracle(fc.db)):
                     exerr.append((xk, "is excluded NO_ORACLE_ANSWER and its goal %r neither calls a Logtalk system predicate nor builds a "
-                                      "term of an arity beyond 2^64, and its unit carries no condition every oracle answers false -- the row is stale or names the wrong case" % ((c.goal or "")[:80],)))
+                                      "term of an arity beyond 2^64 nor writes a list under max_depth, and its unit carries no condition every oracle answers false -- the row is stale or names the wrong case" % ((c.goal or "")[:80],)))
                     continue
                 excl_hits.append((xk, xr[0], xr[1]))
                 continue

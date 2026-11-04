@@ -427,6 +427,7 @@ test_gate_ladder_walk_v4_exempts_package_class_rows.sh	WIRED	-	-	-
 test_gate_lib_rungs_extract_refuses_without_a_language.sh	WIRED	-	-	-
 test_gate_library_driver_generator.sh	WIRED	-	-	-
 test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh	WIRED	-	-	-
+test_gate_logtalk_max_depth_rows_disagree_with_swipl.sh	WIRED	-	-	-
 test_gate_logtalk_population_is_named_and_sums.sh	WIRED	-	-	-
 test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh	WIRED	-	-	-
 test_gate_m4_a_proc_the_startup_skips_keeps_its_compile_time_slot.sh	WIRED	-	-	-
