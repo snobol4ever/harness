@@ -496,6 +496,7 @@ test_gate_package_contract_merges_stderr_and_a_rebuild_keeps_settings_rows.sh	WI
 test_gate_package_runners_grade_a_library_through_its_driver.sh	WIRED	-	-	-
 test_gate_package_runners_print_the_inventory.sh	WIRED	-	-	-
 test_gate_package_runners_read_each_units_declared_compile_args.sh	WIRED	-	-	-
+test_gate_package_splice_keeps_every_other_entry_and_twice_crosses_a_second.sh	WIRED	-	-	-
 test_gate_parser_demos_match_bootstrap.sh	WIRED	-	-	-
 test_gate_parser_generated_files_in_sync.sh	WIRED	-	-	-
 test_gate_parser_raku_sc_nest8_witness.sh	WIRED	-	-	-

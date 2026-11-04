@@ -52,6 +52,17 @@ Stdin: `<stem>.stdin` / `<stem>.IN` / `<stem>.in` / `<stem>.input` beside the so
 (vendored packages ship the exact case they shipped in -- aisnobol's are `.IN` -- so this checks case
 variants explicitly rather than relying on with_suffix()'s case-sensitive match).
 
+THE SPLICE, --only NAME[,NAME...] (the cqo 2026-11-04, row corpus-the-twenty-programs-...-ceo-2029; a whole rebuild of rosetta-pascal
+re-cut every ref and moved 30 of the 311 its rows had graded, measured 18:2xZ): only the named programs are cut from the oracle, by the
+same checks as a whole build (--twice included), and every other entry stays byte-identical. A named program already in the container is
+re-cut IN PLACE, keeping its banner number, its rank and its declared heap_kb, stack_kb, compile_args, run_args and mode_gap_s; one not in
+it is appended after the last entry. ALL.csv, ALL.dialect, ALL.wantrc, ALL.argv and ALL.mask change only on the named entries' lines;
+ALL.excluded.txt drops a named program absorbed now and names one excluded now. THE GATE (refuse rc 2, nothing written): the container as
+it stands must read back byte-identically through its reader (read_suite for SNOBOL4, read_block_suite else) and write_suite; a named program in the container that this cut
+excludes refuses (removing an entry renumbers every banner after it); the spliced container is staged and every untouched entry must
+read back with the same banner number, source, ref and stdin, and every untouched ALL.csv line must be the same line.
+The partition (util_suite_partition.py build) and the package's own tables (UNGRADED.tsv, EXCLUDED.tsv) are the lander's, as after a build.
+
 Grading is unchanged machinery: python3 ../harness/scripts/corpus_suite_harness.py run ALL.<ext> ALL.ref --modes m3,m4
 Stdlib only except corpus_suite_harness/util_build_rungs_suite, imported for the ONE suite-grammar and
 ONE attribute-table authorities respectively -- never a second parser or a second column set.
@@ -61,6 +72,9 @@ import re
 import sys
 import csv
 import argparse
+import io
+import math
+import time
 import tempfile
 from pathlib import Path
 
@@ -294,7 +308,7 @@ def read_oracle_runs(pkg_dir):
     return runs
 
 
-def build(pkg_dir, lang, out_prefix="ALL", twice=False):
+def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     ext = LANG_EXT[lang]
     paths = h.resolve_paths()
     h.check_scrip(paths)
@@ -346,6 +360,14 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
                   if not p.stem.startswith(out_prefix))
     if not srcs:
         h.refuse(f"no {ext} files under {pkg_dir} (direct or one level down)")
+    all_srcs = srcs
+    if only is not None:
+        _by_name = {(f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem): s for s in srcs}
+        _unknown = sorted(set(only) - set(_by_name))
+        if _unknown:
+            h.refuse(f"--only names {len(_unknown)} program(s) {pkg_dir.name} does not ship: {', '.join(_unknown)}")
+        srcs = [_by_name[n] for n in sorted(set(only))]
+        print(f"splice: cutting only {len(srcs)} named program(s) of {len(all_srcs)} shipped; every other entry stays byte-identical", file=sys.stderr)
     entries, excluded, dialects = [], [], []
     for i, src in enumerate(srcs, 1):
         # ⭐ QUALIFY WITH PARENT DIR WHEN NESTED (measured on csnobol4_suite: aa.sno at pkg_dir root AND
@@ -524,6 +546,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         _ladder = [flags, "", "-Mobjfpc", "-Mdelphi", "-Mtp"] if (lang == "pascal" and contract["dialect"] == "any-fpc-mode") else [flags]
         for _fl in _ladder:
             ora_text, ora_rc, ora_kind = _oracle_isolated(_fl)
+            _t_first = time.time()
             if not (lang == "pascal" and ora_rc == 126 and not ora_text.strip()):
                 break
         if lang == "pascal" and ora_rc == 126 and not ora_text.strip():
@@ -534,6 +557,12 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
         # oracle."): a program that prints the time, a random draw or an address answers differently on every run, so a ref cut from
         # one run grades SCRIP against an accident. Under --twice the oracle runs again in a fresh directory and a program whose
         # output or exit code differs is excluded with that reason, never absorbed.
+        # ⛔ THE SECOND RUN STARTS IN A LATER SECOND (the cqo 2026-11-04, measured on rosetta-pascal sleeping-beauty-problem: fpc's randomize
+        # seeds from the wall clock in whole seconds, both runs of a sub-second compile-and-run drew the same seed and the program was absorbed
+        # with a ref from one accident; three hand runs 2.5 s apart printed 1500363, 1498900, 1499633 wakings). A program seeded from time(NULL)
+        # repeats itself inside one second, so the rerun waits until the clock has passed the second the first run ended in.
+        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW"):
+            time.sleep(max(0.0, math.floor(_t_first) + 1.05 - time.time()))
         if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and _oracle_isolated(_fl)[:2] != (ora_text, ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
@@ -617,6 +646,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     tot = len(srcs)
     if len(entries) + len(excluded) != tot:
         h.refuse(f"population arithmetic broken: {len(entries)} absorbed + {len(excluded)} excluded != {tot} shipped")
+    if only is not None:
+        return splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs)
 
     out_sno = pkg_dir / f"{out_prefix}{ext}"
     out_ref = pkg_dir / f"{out_prefix}.ref"
@@ -803,6 +834,179 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
     return entries, excluded, tot
 
 
+def _lines(path):
+    if not path.is_file():
+        return []
+    t = path.read_text(encoding="utf-8")
+    return t[:-1].split("\n") if t.endswith("\n") else t.split("\n")
+
+
+def _is_row(ln):
+    return bool(ln.strip()) and not ln.lstrip().startswith("#")
+
+
+def _keyed_text(old, header, rows, names, sep):
+    by = {r.split(sep, 1)[0]: r for r in rows}
+    out, placed = [], set()
+    for ln in old:
+        k = ln.split(sep, 1)[0]
+        if _is_row(ln) and k in names:
+            if k in by and k not in placed:
+                out.append(by[k])
+                placed.add(k)
+            continue
+        out.append(ln)
+    out += [r for r in rows if r.split(sep, 1)[0] not in placed]
+    if not any(_is_row(ln) for ln in out):
+        return None
+    if not old:
+        out = header + out
+    return "\n".join(out) + "\n"
+
+
+def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract, merged, staged, all_srcs):
+    sno = lang in ("", "snobol4")
+    lc = None if sno else h.LANG_CONFIGS.get(lang)
+    if lc is None and not sno:
+        h.refuse(f"--only needs a container the harness reads (lang {lang!r} is neither SNOBOL4 nor in LANG_CONFIGS)")
+    f_src, f_ref, f_in, f_csv = f"{out_prefix}{ext}", f"{out_prefix}.ref", f"{out_prefix}.in", f"{out_prefix}.csv"
+    for _f in (f_src, f_ref, f_csv):
+        if not (pkg_dir / _f).is_file():
+            h.refuse(f"--only splices into an existing container: {_f} is missing in {pkg_dir}")
+    bre = None if sno else h.banner_re_for(lc["comment_open"], lc["comment_close"])
+    def _read(d):
+        _i = d / f_in
+        try:
+            if sno:
+                return h.read_suite(str(d / f_src), str(d / f_ref), in_path=str(_i) if _i.is_file() else None)
+            return h.read_block_suite(str(d / f_src), str(d / f_ref), bre, in_path=str(_i) if _i.is_file() else None)
+        except ValueError as _e:
+            h.refuse(f"splice gate: the container in {d} does not read: {_e}")
+    def _shape(es):
+        return {e.name: (e.seq, list(e.sno_lines), list(e.ref), e.stdin) for e in es}
+    names = {e.name for e in entries} | {n for n, _w in excluded}
+    old = _read(pkg_dir)
+    old_names = [e.name for e in old]
+    before = _shape(old)
+    gone = [(n, w) for n, w in excluded if n in before]
+    if gone:
+        h.refuse(f"splice gate: {len(gone)} named program(s) in the container are excluded by this cut, and removing an entry renumbers every "
+                 f"banner after it -- a whole rebuild's business or an exclusion row's: {'; '.join(f'{n}: {w}' for n, w in gone)}")
+    new_by = {e.name: e for e in entries}
+    appended = [e for e in entries if e.name not in before]
+    merged_entries = [new_by.get(e.name, e) for e in old] + appended
+    staged_files = {}
+    with tempfile.TemporaryDirectory(prefix="pkgsuite_splice_") as _td:
+        _td = Path(_td)
+        (_td / "as-is").mkdir()
+        (_td / "spliced").mkdir()
+        h.write_suite(list(old), str(_td / "as-is" / f_src), str(_td / "as-is" / f_ref), out_in=str(_td / "as-is" / f_in), lang=lang)
+        for _f in (f_src, f_ref, f_in):
+            _a = (pkg_dir / _f).read_bytes() if (pkg_dir / _f).is_file() else b""
+            _b = (_td / "as-is" / _f).read_bytes() if (_td / "as-is" / _f).is_file() else b""
+            if _a != _b:
+                h.refuse(f"splice gate: {_f} as it stands does not read back byte-identically through its reader and write_suite "
+                         f"({len(_a)} bytes on disk, {len(_b)} rewritten), so no splice can keep its other entries byte-identical")
+        for seq, e in enumerate(merged_entries, 1):
+            e.seq = seq
+        wrote_in = h.write_suite(merged_entries, str(_td / "spliced" / f_src), str(_td / "spliced" / f_ref), out_in=str(_td / "spliced" / f_in), lang=lang)
+        after = _shape(_read(_td / "spliced"))
+        for n in old_names:
+            if n not in names and after.get(n) != before[n]:
+                h.refuse(f"splice gate: untouched entry {n} would change (banner number, source, ref or stdin) -- nothing written")
+        for _f in (f_src, f_ref) + ((f_in,) if wrote_in else ()):
+            staged_files[_f] = (_td / "spliced" / _f).read_bytes()
+    if not wrote_in:
+        staged_files[f_in] = None
+    table_lang = lang or "snobol4"
+    cols, _ = m.LANG_TABLES[table_lang]
+    _fv_rx = re.compile(r"(?<![A-Za-z0-9_])_[A-Za-z]?[0-9]+(?![A-Za-z0-9_])")
+    _ec_rx = re.compile(r"(?<![A-Za-z0-9_])error\(")
+    def _cm_val(e):
+        t = "\n".join(e.ref) if lang == "prolog" else ""
+        toks = (["fresh-vars"] if _fv_rx.search(t) else []) + (["error-context"] if _ec_rx.search(t) else []) + (["ignore-all-space"] if contract["compare"] == "ignore-all-space" else [])
+        return "+".join(toks)
+    csv_lines = _lines(pkg_dir / f_csv)
+    hdr = next(csv.reader([csv_lines[0]]))
+    ix = {c: i for i, c in enumerate(hdr)}
+    known = {"rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr",
+             "compare", "stage", "answer", "mode_gap_s"} | {c for c, _fn in cols}
+    if set(hdr) - known or "entry" not in ix or "rank" not in ix:
+        h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
+    for e in entries:
+        for _col, _need in (("out_files", getattr(e, "out_files", None)), ("compare", _cm_val(e)), ("stderr", merged), ("stage", e.name in staged)):
+            if _need and _col not in ix:
+                h.refuse(f"splice gate: {e.name} needs a {_col} cell and {f_csv} has no {_col} column -- a whole rebuild adds it")
+    rows = [next(csv.reader([ln])) for ln in csv_lines[1:]]
+    row_at = {r[ix["entry"]]: k for k, r in enumerate(rows)}
+    rank_max = max([int(r[ix["rank"]]) for r in rows if r[ix["rank"]].isdigit()] or [0])
+    def _fmt(v):
+        _s = io.StringIO()
+        csv.writer(_s, lineterminator="\n").writerow([v[c] for c in hdr])
+        return _s.getvalue()[:-1]
+    out_lines = list(csv_lines)
+    for e in entries:
+        flags_row = m.attrs_for_text("\n".join(e.sno_lines), table_lang)
+        v = {"entry": e.name, "origin": f"{pkg_dir.name}__{e.name}", "package": pkg_dir.name, "n_lines": len(e.sno_lines), "stdin": 1 if e.stdin else 0,
+             "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "",
+             "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
+             "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
+             "stage": "upstream" if e.name in staged else "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
+        v.update({c: flags_row[c] for c, _fn in cols})
+        if e.name in row_at:
+            prev = rows[row_at[e.name]]
+            v["rank"] = prev[ix["rank"]]
+            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s"):
+                if c in ix and prev[ix[c]].strip():
+                    v[c] = prev[ix[c]].strip()
+            out_lines[row_at[e.name] + 1] = _fmt(v)
+        else:
+            rank_max += 1
+            v["rank"] = rank_max
+            out_lines.append(_fmt(v))
+    for k, (a, b) in enumerate(zip(csv_lines, out_lines)):
+        if a != b and (k == 0 or rows[k - 1][ix["entry"]] not in names):
+            h.refuse(f"splice gate: untouched line {k + 1} of {f_csv} would change -- nothing written")
+    staged_files[f_csv] = ("\n".join(out_lines) + "\n").encode()
+    def _keyed(f, header, rows_, keys):
+        t = _keyed_text(_lines(pkg_dir / f), header, rows_, keys, "\t")
+        staged_files[f] = None if t is None else t.encode("utf-8")
+    _keyed(f"{out_prefix}.dialect", ["# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode"], [f"{n}\t{d}" for n, d in dialects], names)
+    _keyed(f"{out_prefix}.wantrc", [], [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc], names)
+    _keyed(f"{out_prefix}.argv", [], [e.name + "\t" + "\t".join(e.argv) for e in entries if getattr(e, "argv", None)], names)
+    _src_of = {f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem: s for s in all_srcs}
+    _mask_rows = []
+    for e in entries:
+        _mp = _src_of[e.name].with_suffix(".mask")
+        for _ln in (_mp.read_text(encoding="utf-8").splitlines() if _mp.is_file() else []):
+            if not _is_row(_ln):
+                continue
+            _f = _ln.split("\t")
+            if len(_f) < 3 or not _f[1].strip() or not _f[2].strip():
+                h.refuse(f"{_mp}: a mask row is entry<TAB>regex-or-L<n><TAB>reason -- got {_ln!r}")
+            _mask_rows.append("\t".join([e.name] + _f[1:]))
+    if _mask_rows:
+        _keyed(f"{out_prefix}.mask", ["# ALL.mask -- CEO-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
+                                      "# whose program ships a <stem>.mask are written from it by util_build_package_suite.py under the entry's name."],
+               _mask_rows, {r.split("\t", 1)[0] for r in _mask_rows})
+    _ex = [ln for ln in _lines(pkg_dir / f"{out_prefix}.excluded.txt") if ln.split(": ", 1)[0] not in names]
+    _ex = sorted(_ex + [f"{n}: {w}" for n, w in excluded], key=lambda ln: (ln.split(": ", 1)[0], ln))
+    staged_files[f"{out_prefix}.excluded.txt"] = ("\n".join(_ex) + "\n").encode() if _ex else None
+    for _f, _b in staged_files.items():
+        if _b is None:
+            if (pkg_dir / _f).exists():
+                (pkg_dir / _f).unlink()
+        elif not (pkg_dir / _f).is_file() or (pkg_dir / _f).read_bytes() != _b:
+            (pkg_dir / _f).write_bytes(_b)
+    print(f"\n{pkg_dir}: SPLICED {len(entries)} absorbed ({len(entries) - len(appended)} re-cut in place, {len(appended)} appended) and {len(excluded)} "
+          f"excluded of {len(names)} named; {len([n for n in old_names if n not in names])} untouched entries proved identical (banner, source, ref, stdin)", file=sys.stderr)
+    for e in entries:
+        print(f"    {'APPENDED' if e in appended else 'RE-CUT'} {e.name}", file=sys.stderr)
+    for n, w in excluded:
+        print(f"    EXCLUDED {n}: {w}", file=sys.stderr)
+    return entries, excluded, len(names)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("package_dir")
@@ -810,11 +1014,18 @@ def main():
                      help="default snobol4 (blank); selects extension + attribute table + oracle")
     ap.add_argument("--twice", action="store_true",
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
+    ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
+                    help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
     args = ap.parse_args()
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
         h.refuse(f"not a directory: {pkg_dir}")
-    build(pkg_dir, args.lang, twice=args.twice)
+    only = None
+    if args.only is not None:
+        only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
+        if not only:
+            h.refuse("--only names no program")
+    build(pkg_dir, args.lang, twice=args.twice, only=only)
 
 
 if __name__ == "__main__":

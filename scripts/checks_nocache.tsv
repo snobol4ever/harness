@@ -251,3 +251,4 @@ test_gate_vanroy_bucket_rule.sh	a clock or a counter (elapsed time, perf, callgr
 test_gate_x32t_and_x64t_a_print_nothing_engine_passes_no_program.sh	the progress store or a board (a graded population)
 test_gate_xsb_refs_are_cut_from_xsb_and_graded_ignoring_white_space.sh	the progress store or a board (a graded population)
 test_gate_zd_omega_head_acceptance.sh	a clock or a counter (elapsed time, perf, callgrind)
+test_gate_package_splice_keeps_every_other_entry_and_twice_crosses_a_second.sh	a clock or a counter (elapsed time, perf, callgrind)
