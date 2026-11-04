@@ -127,6 +127,7 @@ lang:pascal	src/lower/lower_pascal_class.c
 lang:pascal	src/lower/lower_pascal_class.h
 lang:pascal	src/lower/lower_pascal_generics.c
 lang:pascal	src/lower/lower_pascal_generics.h
+lang:pascal	src/runtime/pas_xr.c
 # a column several languages share, carried by ONE language's lowerer, is qualified <lang>:<column> on each lowerer: an unqualified
 # row on lower_icon.c selected Raku's and Pascal's while on every Icon lowerer landing (the coo 2026-10-11, the first verifier batch)
 pascal:while	src/lower/lower_pascal_tree.c

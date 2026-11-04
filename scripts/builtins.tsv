@@ -1266,3 +1266,9 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1267	rk	$system	-	-	bt_rk_x24system	leaf	-	-	0	fn_arms
 1268	icn	ICN$IMM	0	0	bt_ICNx24IMM	leaf	-	-	0	fn_arms
 1269	icn	ICN$UDIGITS	1	1	bt_ICNx24UDIGITS	leaf	-	-	0	fn_arms
+1270	pas	__pas_xr_cvt	1	-1	pas_xr_cvt_d	inline	-	-	0	dop_direct,pas
+1271	pas	__pas_xr_bin	-	-	-	inline	-	-	0	pas
+1272	pas	__pas_xr_cmp	-	-	-	inline	-	-	0	pas
+1273	pas	__pas_xr_un	-	-	-	inline	-	-	0	pas
+1274	pas	__pas_xr_str	-	-	-	inline	-	-	0	pas
+1275	pas	__pas_xr_ev	1	-1	pas_xr_ev_d	inline	-	-	0	dop_direct,pas
