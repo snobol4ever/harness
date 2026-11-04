@@ -232,7 +232,6 @@ rt_gen_spine_pass_ω	asm	-	0	none	-	clob,asm
 rt_gen_spine_resume_enter	asm	-	0	none	-	call,clob,asm
 rt_goto_resolve	open	OTHER	1	-	1	call,alloc
 rt_gva_island	leaf	-	0	-	0	call
-rt_icn_cset_register	leaf	VOID	1	-	0	call,alloc
 rt_icn_lconcat_d	leaf	DESCR	1	-	0	call,alloc
 rt_icn_needle_coerce	leaf	OTHER	1	-	0	call,alloc
 rt_icn_subject_coerce	leaf	OTHER	1	-	0	call,alloc

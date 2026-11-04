@@ -21,7 +21,9 @@
 # lookup. No allocator changed: the cure for an unrooted holder is a root, never a different allocator.
 #
 # ARMS. (1) STRUCTURE, both directions: no raw `static const char *cs` cache remains in keywords.c, the two branches
-# cache an int slot, and the generation-stamped index refresh exists and is reached from kw_cset_find_ptr. (2) BAND,
+# cache an int slot, the generation-stamped refresh of the CONTENT index (kw_cset_gc_refresh, reached from kw_cset_intern) exists, and
+# the POINTER-KEYED index is gone (hq_icon, ceo-1969 slice 3: every reader of a cset descriptor reads the block header, so no registry is keyed on a
+# pre-move address and the second holder this gate was cut for cannot exist; arms 2 and 3 still read the behaviour at every stress level). (2) BAND,
 # both media: the witness matches its icont-cut ref at stress 0,1,3,5 under in a 128 KB arena, and
 # EVERY arm reports collections>0 from the run's own report -- a tiny arena states a configuration, a collection count
 # states an exercise. (3) LENGTH AFTER A MOVE: *&cset, *&ascii and *&lcase read the icont answer once the blocks have
@@ -38,13 +40,14 @@ RC=0
 K="$ROOT/src/runtime/keywords.c"
 WIT="$ROOT/../harness/scripts/gc_witnesses/hb_kw_cset_index_across_a_collection.icn"; REF="${WIT%.icn}.ref"
 for f in "$K" "$WIT" "$REF"; do [ -f "$f" ] || { echo "⛔ GATE REFUSE(2) [$G]: missing $f"; exit 2; }; done
-echo "  HOLDS: &cset and &ascii are found by the registry slot and the pointer index is rebuilt after a move, so a collection cannot make a keyword cset read as the empty string"
+echo "  HOLDS: &cset and &ascii are found by the registry slot and no pointer-keyed index exists to go stale after a move, so a collection cannot make a keyword cset read as the empty string"
 raw=$(grep -c 'static const char \*cs = NULL;' "$K")
 slot=$(grep -c 'static int csi = -1;' "$K")
-ref=$(grep -c 'kw_cset_hindex_refresh' "$K")
+ref=$(grep -c 'kw_cset_gc_refresh' "$K")
+idx=$(grep -c 'kw_cset_find_ptr\|kw_cset_hindex' "$K")
 gen=$(grep -c 'rt_gc_runs_count' "$K")
-if [ "$raw" = 0 ] && [ "$slot" -ge 2 ] && [ "$ref" -ge 2 ] && [ "$gen" -ge 1 ]; then echo "  arm 1 PASS: no raw address cache ($raw), both keyword branches cache a registry slot ($slot), the index refresh exists and is reached ($ref) and is stamped on the collection count ($gen)"
-else echo "  arm 1 FAIL: raw_address_caches=$raw int_slot_caches=$slot index_refresh=$ref generation_stamp=$gen"; RC=1; fi
+if [ "$raw" = 0 ] && [ "$slot" -ge 2 ] && [ "$ref" -ge 2 ] && [ "$idx" = 0 ] && [ "$gen" -ge 1 ]; then echo "  arm 1 PASS: no raw address cache ($raw), both keyword branches cache a registry slot ($slot), the generation-stamped refresh of the content index exists and is reached ($ref) and is stamped on the collection count ($gen), and no pointer-keyed index is left to go stale ($idx)"
+else echo "  arm 1 FAIL: raw_address_caches=$raw int_slot_caches=$slot index_refresh=$ref pointer_keyed_index=$idx generation_stamp=$gen"; RC=1; fi
 "$SCRIP" --compile --out="$T/w.s" "$WIT" >/dev/null 2>&1 && gcc "$T/w.s" -o "$T/w4" -L"$ROOT/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$ROOT/out" >/dev/null 2>&1 || { echo "  arm 2 REFUSE: the witness does not build in mode 4"; RC=1; }
 want="$(cat "$REF")"; band=""; bad=0
 for st in 0 1 3 5; do

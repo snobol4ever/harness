@@ -85,7 +85,6 @@ src/templates/bb/bb_keyword_snobol4.cpp:rt_keyword_read_snobol4#2	UNWITNESSED
 src/templates/bb/bb_limit.cpp:core_icn_limit_count_check#1	hb_sibling_frames_leave_no_dead_map_cell.icn
 src/templates/bb/bb_limit.cpp:core_icn_limit_count_check#2	hb_sibling_frames_leave_no_dead_map_cell.icn
 src/templates/bb/bb_limit.cpp:core_icn_limit_count_check#3	hb_sibling_frames_leave_no_dead_map_cell.icn
-src/templates/bb/bb_lit_charset.cpp:rt_icn_cset_register#1	hb_icn_scan_any_and_bal_with_a_cset.icn
 src/templates/bb/bb_make_list.cpp:rt_make_list#1	hb_size_result_polled.icn
 src/templates/bb/bb_make_list.cpp:rt_make_list#2	UNWITNESSED
 src/templates/bb/bb_match_atp.cpp:rt_at_cursor_patv#1	hb_sno_a_stored_pattern_captures_into_an_element_polled.sno

@@ -957,7 +957,7 @@ def selftest():
        and (DECLARED_POINTER_FREE.__setitem__("_plant_t", ("src/ir/descr.h", "NO SUCH ASSERT PLANTED", "plant")) or declared_pointer_free("_plant_t") is None),
        "K2 FAIL-ONCE: the pointer-free declaration is honoured only while its cited assert is on disk -- a planted entry citing text descr.h does not carry reads None")
     DECLARED_POINTER_FREE.pop("_plant_t", None)
-    rows, _s, _r = run("        call rt_icn_cset_register@PLT\n        call rt_gc_poll@PLT\n")
+    rows, _s, _r = run("        call rt_procs_install@PLT\n        call rt_gc_poll@PLT\n")
     ck(any(r[4] == "K2" and r[5] == "VACUOUS" for r in rows) and not any(r[5] == "MEMBER" for r in rows),
        "K2 NEGATIVE: a VOID-returning entry has no result to lose and must NOT be a member (%s)" % (rows,))
     rows, _s, _r = run("        call rt_no_such_entry_anywhere@PLT\n        call rt_gc_poll@PLT\n")
