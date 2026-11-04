@@ -714,8 +714,22 @@ s4e_manifest_rowd_cite() {   # echo the citing manifest line(s) for topic $1; rc
     [ -n "$t" ] && [ -f "$m" ] || return 1
     awk -F'\t' -v t="$t" '/^#/ {next} $3=="ROWD" && $4==t {print; f=1} END{exit !f}' "$m"
 }
+s4e_lane_officer() {   # <topic> -> the officer of its lane from MODE's LANES: (lane=officer); a lane LANES does not name is the fleet system's, the cio
+    local _l="${1%%-*}" _o; _o="$(sed -n 's/^LANES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | tr ' ' '\n' | sed -n "s/^$_l=//p" | head -1)"
+    [ -n "$_o" ] && [ -d "$PO/$_o/inbox" ] && { echo "$_o"; return; }; echo cio; }
+s4e_row_last_touch() {   # <topic> -> epoch seconds of the newest LEDGER date on the baton or ASSIGNED-BY stamp on the claim; 0 when none
+    local _b="$PO/tasks/$1.task.md" _c="$PO/claims/$1.claim" _d _m=0 _e
+    for _d in $(grep -oE '^- \[[A-Za-z_0-9]+·20[0-9]{2}-[0-9]{2}-[0-9]{2}' "$_b" 2>/dev/null | grep -oE '20[0-9]{2}-[0-9]{2}-[0-9]{2}') $(sed -n 's/^ASSIGNED-BY [^ ]* \(20[0-9T:-]*Z\).*/\1/p' "$_c" 2>/dev/null); do
+        _e="$(date -d "$_d" +%s 2>/dev/null)" || continue; [ "$_e" -gt "$_m" ] && _m="$_e"; done; echo "$_m"; }
+s4e_telegram() {   # <seat> <topic> <text> -- a telegram written straight into the inbox (the sweep holds no identity across its rows)
+    [ -d "$PO/$1/inbox" ] || return 1; { printf 'FROM %s TO %s RE %s\n%s\n' "$ME" "$1" "$2" "$3"; } > "$PO/$1/inbox/$(date +%s%N)-$ME-$2.msg"; }
+s4e_reown_cell() {   # <topic> <seat> -- the owner cell only, under the mint lock, as reown does
+    local _q="$PO/QUEUE.tsv" _tmp _lk="$PO/.mint.lock" _i _got=0; for _i in $(seq 1 20); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
+    _tmp="$(mktemp)"; TOPIC="$1" NEW="$2" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$_q" > "$_tmp"
+    if [ "$(wc -l < "$_tmp")" -eq "$(wc -l < "$_q")" ] && grep -qP "^[0-9]+\t\Q$1\E\t\Q$2\E\t" "$_tmp"; then mv "$_tmp" "$_q"; chmod 664 "$_q"; else rm -f "$_tmp"; fi
+    [ "$_got" = 1 ] && rmdir "$_lk" 2>/dev/null; grep -qP "^[0-9]+\t\Q$1\E\t\Q$2\E\t" "$_q"; }
 s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHEN reads green closes itself in the sweep, through done and every guard done carries
-  local _only="" _to="${S4E_SWEEP_TIMEOUT:-600}" _q="$PO/QUEUE.tsv" _l _t _st _ow _c _sv _had _r _t0 _el _log _tree _nc=0 _nk=0 _nl=0
+  local _only="" _to="${S4E_SWEEP_TIMEOUT:-600}" _q="$PO/QUEUE.tsv" _l _t _st _ow _c _sv _had _r _t0 _el _log _tree _nc=0 _nk=0 _nl=0 _nr=0 _ne=0 _stale="${S4E_SWEEP_STALE_H:-48}" _off _age _rf="$PO/sweep.refusals.tsv" _rk
   while [ $# -gt 0 ]; do case "$1" in --only) _only="${2:-}"; shift 2;; --timeout) _to="${2:-}"; shift 2;;
     *) printf '⛔ REFUSED(2): sweep --close-green takes --only <topic> and --timeout <s>, not %s\n' "$1" >&2; return 2;; esac; done
   case "$_to" in ''|*[!0-9]*) printf '⛔ REFUSED(2): sweep --close-green --timeout takes whole seconds\n' >&2; return 2;; esac
@@ -735,6 +749,19 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
       grep -q '^DONE$' "$_c" && continue
       if grep -q '^RUNNING' "$_c" || ! grep -q '^ASSIGNED-BY ' "$_c"; then _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: %s is running it, CEO-755c)\n' "$_t" "$(head -1 "$_c")"; continue; fi
       cp "$_c" "$_sv"; _had=1; fi
+    case "$_st" in ASSIGNED:?*)
+      _age="$(( ( $(date +%s) - $(s4e_row_last_touch "$_t") ) / 3600 ))"
+      if [ "$(s4e_row_last_touch "$_t")" -gt 0 ] && [ "$_age" -ge "$_stale" ]; then
+        _off="$(s4e_lane_officer "$_t")"; _as="${_st#ASSIGNED:}"
+        if s4e_reown_cell "$_t" "$_off" && s4e_set_row_state "$_t" FREE; then
+          [ "$_had" = 1 ] && rm -f "$_c"
+          printf '\n- [%s·%s] ESCALATED BY THE SWEEP (box-scheduler step 9, CTO-496): ASSIGNED:%s with no LEDGER line or claim stamp for %s h (bar %s h); owner cell %s -> %s, state FREE; the officer assigns or retires it.\n' \
+            "$ME" "$(date -u +%FT%H:%MZ)" "$_as" "$_age" "$_stale" "$_ow" "$_off" >> "$PO/tasks/$_t.task.md"
+          s4e_telegram "$_off" "escalated-stale-assigned-row-$_t" "The sweep escalated row $_t to you: it was ASSIGNED:$_as with no LEDGER line or claim stamp for $_age h (bar $_stale h). Owner cell is now $_off and the state FREE; assign it again, re-cut it or retire it (box-scheduler step 9)."
+          [ "$_as" != "$_off" ] && s4e_telegram "$_as" "your-stale-assigned-row-escalated-$_t" "The sweep took row $_t from you: ASSIGNED:$_as with no LEDGER line or claim stamp for $_age h (bar $_stale h). It is now the $_off's, state FREE. No reply is owed; if you were working it, say so to the $_off (box-scheduler step 9)."
+          _ne=$((_ne+1)); printf 'SWEEP escalated %s to %s (ASSIGNED:%s silent %s h)\n' "$_t" "$_off" "$_as" "$_age"; continue
+        fi
+      fi;; esac
     _tok="SWEEP-CLOSE $(date -u +%FT%TZ) by $ME pid $$"; printf '%s\n%s (row %s, owner %s)\n' "$ME" "$_tok" "$_st" "$_ow" > "$_c"
     s4e_pid_release
     _t0="$(date +%s)"; S4E_DONE_TIMEOUT="$_to" S4E_NO_BANNER=1 "$0" done "$_t" > "$_log" 2>&1 < /dev/null; _r=$?; _el="$(( $(date +%s) - _t0 ))"
@@ -747,12 +774,26 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
         "$ME" "$(date -u +%FT%H:%MZ)" "$_el" "${_tree:-?}" "$_st" "$_ow" >> "$PO/tasks/$_t.task.md"
       _nc=$((_nc+1)); printf 'SWEEP closed %s (was %s, owner %s, %ss)\n' "$_t" "$_st" "$_ow" "$_el"
     else
+      if grep -qE 'the DONE-WHEN exited (2|126|127) --' "$_log"; then
+        _rk="$(awk -F'\t' -v t="$_t" '$1==t {print $2}' "$_rf" 2>/dev/null | tail -1)"; _rk=$(( ${_rk:-0} + 1 ))
+        { [ -f "$_rf" ] && awk -F'\t' -v t="$_t" '$1!=t' "$_rf"; printf '%s\t%s\t%s\n' "$_t" "$_rk" "$(date -u +%FT%TZ)"; } > "$_rf.tmp" && mv "$_rf.tmp" "$_rf"
+        if [ "$_rk" -ge 3 ]; then
+          rm -f "$_c"; s4e_set_row_state "$_t" "RETIRED:criterion-refused-$_rk-sweeps-$(date -u +%F)"
+          printf '\n- [%s·%s] RETIRED BY THE SWEEP (box-scheduler step 9, CTO-496): its DONE-WHEN refused (rc 2, 126 or 127) on %s consecutive sweeps, the last: %s. A criterion that cannot measure is not a row; re-cut it (recut, step 27) to reopen.\n' \
+            "$ME" "$(date -u +%FT%H:%MZ)" "$_rk" "$(grep -m1 'the DONE-WHEN exited' "$_log" | sed 's/^[[:space:]]*//' | cut -c1-200)" >> "$PO/tasks/$_t.task.md"
+          s4e_telegram "$_ow" "retired-refusing-row-$_t" "The sweep retired row $_t: its DONE-WHEN refused (rc 2, 126 or 127) on $_rk consecutive sweeps; it cannot be measured, so it is not a row. State RETIRED. Re-cut the criterion (recut) to reopen it; no reply is owed otherwise (box-scheduler step 9)."
+          _nr=$((_nr+1)); printf 'SWEEP retired %s (its DONE-WHEN refused on %s consecutive sweeps)\n' "$_t" "$_rk"; continue
+        fi
+        if [ "$_had" = 1 ]; then cp "$_sv" "$_c"; else rm -f "$_c"; fi
+        _nk=$((_nk+1)); printf 'SWEEP kept %s (its DONE-WHEN refused, %s of 3 consecutive sweeps before it retires)\n' "$_t" "$_rk"; continue
+      fi
+      [ -f "$_rf" ] && { awk -F'\t' -v t="$_t" '$1!=t' "$_rf" > "$_rf.tmp" && mv "$_rf.tmp" "$_rf"; }
       if [ "$_had" = 1 ]; then cp "$_sv" "$_c"; else rm -f "$_c"; fi
       _nk=$((_nk+1)); printf 'SWEEP kept %s (done rc %s in %ss: %s)\n' "$_t" "$_r" "$_el" "$(grep -m1 -E 'NOT DONE|REFUSED|refuse' "$_log" | sed 's/^[[:space:]]*//' | cut -c1-140)"
     fi
   done < "$_l"
   rm -f "$_l" "$_sv" "$_log"
-  printf 'sweep --close-green: %s closed, %s kept red or unmeasured, %s kept under a live claim (timeout %ss per row)\n' "$_nc" "$_nk" "$_nl" "$_to"
+  printf 'sweep --close-green: %s closed, %s retired, %s escalated, %s kept red or unmeasured, %s kept under a live claim (timeout %ss per row)\n' "$_nc" "$_nr" "$_ne" "$_nk" "$_nl" "$_to"
 }
 s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the archive run on a scratch postoffice; the live queue is never written
   local _w _g _r _k _o _x _ok=1 _why="" _now
@@ -778,6 +819,38 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   { grep -qP "^2\t\Q$_sw\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why a claim swapped under the sweep was not left as found;"; }
   if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s, bare claim %s and swapped claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b" "$_sw"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
+}
+s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refusing row retires on the third sweep, a stale ASSIGNED row escalates to its lane officer, a timeout and a fresh row are kept
+  local _w _o _why="" _now _r2 _st _fr _tm _off
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant9.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" "$_w/plant-owner/inbox" "$_w/plant-slow/inbox" "$_w/cio/inbox" "$_w/coo/inbox"; _now="$(date -u +%FT%TZ)"
+  cp "$PO/MODE" "$_w/MODE" 2>/dev/null
+  _r2="rc2-plant-$$"; _st="prolog-stale-plant-$$"; _fr="prolog-fresh-plant-$$"; _tm="timeout-plant-$$"; _off="$(s4e_lane_officer "$_st")"; mkdir -p "$_w/$_off/inbox"
+  printf '# plant queue (box-scheduler step 9, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n' "$_r2" "$_st" "$_fr" "$_tm" > "$_w/QUEUE.tsv"
+  mk() { printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [%s·%s] minted\n' "$1" "$2" "$3" "$4" > "$_w/tasks/$1.task.md"; }
+  mk "$_r2" 'cd "$S4E_HOME" && exit 2' plant-owner "$(date -u +%F)"; mk "$_st" 'cd "$S4E_HOME" && false' plant-slow 2026-10-01; mk "$_fr" 'cd "$S4E_HOME" && false' plant-slow "$(date -u +%F)"; mk "$_tm" 'cd "$S4E_HOME" && sleep 30' plant-owner "$(date -u +%F)"
+  printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_r2.claim"; printf 'plant-slow\nASSIGNED-BY plant 2026-10-01T00:00:00Z\n' > "$_w/claims/$_st.claim"
+  printf 'plant-slow\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_fr.claim"; cp "$_w/claims/$_fr.claim" "$_w/fresh.before"; printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_tm.claim"
+  _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
+  grep -qP "^2\t\Q$_r2\E\tplant-owner\tASSIGNED:plant-owner$" "$_w/QUEUE.tsv" || _why="$_why the refusing row moved on the first sweep;"
+  grep -qP "^2\t\Q$_st\E\t\Q$_off\E\tFREE$" "$_w/QUEUE.tsv" || _why="$_why the stale row was not escalated to $_off and freed;"
+  [ -e "$_w/claims/$_st.claim" ] && _why="$_why the stale row kept its ASSIGNED-BY claim;"
+  [ "$(ls "$_w/$_off/inbox" | wc -l)" = 1 ] && [ "$(ls "$_w/plant-slow/inbox" | wc -l)" = 1 ] || _why="$_why the escalation telegrams did not go to $_off and plant-slow;"
+  grep -q 'ESCALATED BY THE SWEEP' "$_w/tasks/$_st.task.md" || _why="$_why the stale row has no ledger line;"
+  { grep -qP "^2\t\Q$_fr\E\tplant-slow\tASSIGNED:plant-slow$" "$_w/QUEUE.tsv" && cmp -s "$_w/fresh.before" "$_w/claims/$_fr.claim"; } || _why="$_why the fresh row was touched;"
+  _o="$_o
+$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
+  grep -qP "^2\t\Q$_r2\E\tplant-owner\tASSIGNED:plant-owner$" "$_w/QUEUE.tsv" || _why="$_why the refusing row moved on the second sweep;"
+  _o="$_o
+$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
+  grep -qP "^2\t\Q$_r2\E\tplant-owner\tRETIRED:criterion-refused-3-sweeps" "$_w/QUEUE.tsv" || _why="$_why the refusing row is not RETIRED after three sweeps;"
+  [ -e "$_w/claims/$_r2.claim" ] && _why="$_why the retired row kept a claim;"
+  grep -q 'RETIRED BY THE SWEEP' "$_w/tasks/$_r2.task.md" || _why="$_why the retired row has no ledger line;"
+  ls "$_w/plant-owner/inbox" | grep -q "retired-refusing-row" || _why="$_why plant-owner got no retirement telegram;"
+  grep -qP "^2\t\Q$_tm\E\tplant-owner\tASSIGNED:plant-owner$" "$_w/QUEUE.tsv" || _why="$_why the timing-out row moved;"
+  grep -qP "^\Q$_tm\E\t" "$_w/sweep.refusals.tsv" 2>/dev/null && _why="$_why a timeout was counted as a refusal;"
+  if [ -z "$_why" ]; then printf 'SWEEP retired plant %s (its DONE-WHEN refused on 3 consecutive sweeps, telegram to plant-owner) escalated plant %s (ASSIGNED:plant-slow silent since 2026-10-01, to %s, state FREE); the fresh row and the timing-out row kept\n' "$_r2" "$_st" "$_off"; rm -rf "$_w"; return 0; fi
+  printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -25 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
     _h="$(head -1 "$_o")"; _to="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO \([^ ]*\) RE .*$/\1/p')"
@@ -4187,6 +4260,7 @@ TASKEOF
          # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
          # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
          [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
+         [ "${2:-}" = "--plant-rc2" ] && { s4e_sweep_plant_rc2_stale; exit $?; }
          if [ "${2:-}" = "--close-green" ]; then shift 2; s4e_sweep_close_green "$@" || exit $?; fi
          q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
          cp "$q" "$q.bak.sweep-$(date -u +%Y%m%dT%H%M%SZ)"
