@@ -14,7 +14,7 @@ box_cell_shapes.inc, the rtx clobber table) is refused outright: regenerated, ne
 """
 import json, os, re, sys, tempfile
 
-LANG = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": "icon", "unicon": "icon", "prolog": "prolog", "pascal": "pascal", "raku": "raku"}
+LANG = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": "icon", "unicon": "unicon", "prolog": "prolog", "pascal": "pascal", "raku": "raku"}
 GENERATED = ("gc_allocating_table.inc", "box_cell_shapes.inc", "rtx_clobber_table.inc", "rtx_clobbers.inc")
 RULES = [   # (regex on the path, skills) -- every matching rule applies; the path is normalised to forward slashes
     (r"/SCRIP/src/templates/", ["box-templates"]),
@@ -26,6 +26,7 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/src/runtime/rt/gc_|/SCRIP/src/runtime/rtx/rtx_(gc|alloc)\.s$", ["gc-collector"]),
     (r"/SCRIP/src/runtime/rt/rt\.c$|/SCRIP/src/lower/lower_call_forms\.c$|/harness/scripts/builtins\.tsv$", ["runtime-calls"]),
     (r"/SCRIP/Makefile$", ["scrip-build"]),
+    (r"/SCRIP/src/lower/lower_icon_class\.c$|/corpus/tests/icon/unicon/|/corpus/packages/icon/unicon_tests/|/\.github/GOAL-UNICON-100\.md$|/harness/scripts/[^/]*unicon[^/]*$", ["unicon"]),
     (r"/harness/scripts/test_[^/]*\.sh$|/corpus/(tests|packages|demos|benchmarks)/.*(\.ref|/ALL\.csv|/STEPS\.tsv|/LADDER\.tsv)$|/corpus/tests/.*\.(sno|icn|pl|pas|raku|sc|reb)$", ["gates-and-witnesses"]),
 ]
 WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+(?P<path>[\w./~-]+)")
