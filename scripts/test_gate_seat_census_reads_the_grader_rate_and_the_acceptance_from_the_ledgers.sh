@@ -153,6 +153,8 @@ procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope
     echo "520 2575 99999 4000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-grader.slice/run-x.scope bash loop8.sh"
     echo "530 500 $2 9000 $sl/vte-a.scope /home/claude_a/SCRIP/scrip --run child.pl"
     echo "540 2575 $2 14000 $sl/vte-b.scope ugrep -G -rnoiE ceo corpus"
+    echo "560 2575 $2 4000 $sl/vte-a.scope ssh: /home/x/.ssh/cm-git@github.com-22 [mux]"
+    echo "570 2575 $2 1000 $sl/vte-a.scope xclip -selection clipboard"
     echo "550 2575 $2 30000 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Nautilus.slice/app.scope /usr/bin/nautilus --gapplication-service"; } > "$1/ps.txt"
 }
 parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
@@ -174,7 +176,7 @@ n=$((n + 1)); [ -e "$T/proc_bad/cg/user@1000.service/app.slice/app-org.gnome.Ter
 n=$((n + 1)); out="$(python3 -I "$CENSUS" --memory-check --root "$T/proc_cache/cg" --seats "$T/proc_cache/SEATS.tsv" --load "$T/none.tsv" 2>&1)"
 if printf '%s\n' "$out" | grep -F "  seat a scope cur=3900MB high=4096MB anon=300MB file=3600MB" >/dev/null && printf '%s\n' "$out" | grep -E 'anon=[0-9]+MB file=[0-9]+MB' >/dev/null; then echo "  ok   ARM $n: --memory-check prints each seat scope's anon against its file pages (the step-7 probe)"; else echo "  RED  ARM $n: --memory-check has no anon/file line: $(printf '%s' "$out" | head -3 | tr '\n' '|')"; fail=1; fi
 parm "COO-461 FAIL-ONCE: any process of a seat scope orphaned 25 min is red BY SEAT, its command no fleet word (the cao's ugrep)" "$T/proc_bad" 1 "orphan pid 540 of seat b, 25 min old"
-parm "control: a child whose parent lives, a standing daemon, a young orphan and a desktop app outside every seat scope are not named" "$T/proc_bad" 1 "orphans=2 " "pid 5[1235]0"
+parm "control: a child whose parent lives, a standing daemon, a young orphan, a desktop app outside every seat scope, the git ssh mux and the clipboard holder are not named" "$T/proc_bad" 1 "orphans=2 " "pid 5[123567]0"
 parm "control: an orphan under five minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"
 n=$((n + 1)); if grep -q 'tmp_check, proc_check' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
