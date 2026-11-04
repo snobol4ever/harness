@@ -16,8 +16,8 @@
 #                may not contain @ or whitespace) | tsvmin=FILE:N (harness/scripts/FILE holds at least N non-comment rows) | rule5=N (SCRIP_GC_SITES_REPORT=1 --compile over
 #                the gc_witnesses population and this step's witnesses: rule=5 site records at most N; a compile that fails REFUSES) | rspmoves=N (the template rsp-move
 #                census: x86("push" | x86("pop" | x86("sub"/"add", "rsp" in src/templates/bb and xa, at most N) | layoutcheck=N (util_zeta_layout_check.py over the step's
-#                witnesses' mode-4 asm against --dump-plan, mismatches at most N; REFUSED while the checker does not exist) | rows=L|ALL (SUITES.tsv today_pass not below
-#                ROWS0.tsv) | -
+#                witnesses' mode-4 asm against --dump-plan, mismatches at most N; REFUSED while the checker does not exist) | rows=L|ALL (SUITES.tsv's pass rate, today_pass over
+#                today_total, not below ROWS0.tsv's pass over total; a suite with no today_total reads below; the cto CTO-507: only the finish carries it) | -
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against)
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.exceptions.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
@@ -171,7 +171,7 @@ for tok in $probe; do
             [ "$val" = ALL ] && ls="icon pascal prolog raku rebus scriptix snobol4 snocone" || ls="${val//,/ }"
             short=""
             for l in $ls; do
-                short="$short$(awk -F'\t' -v L="$l" 'FNR == NR { if (FNR > 1 && $2 == L) r[$1] = $3; next } FNR == 2 { for (i = 1; i <= NF; i++) h[$i] = i } FNR > 2 && $4 == L && ($1 in r) && $(h["today_pass"]) + 0 < r[$1] + 0 { printf "%s %s<%s ", $1, $(h["today_pass"]), r[$1] }' "$ROWS0" "$SUITES")"
+                short="$short$(awk -F'\t' -v L="$l" 'FNR == NR { if (FNR > 1 && $2 == L) { r[$1] = $3; t[$1] = $4 } next } FNR == 2 { for (i = 1; i <= NF; i++) h[$i] = i } FNR > 2 && $4 == L && ($1 in r) && t[$1] + 0 > 0 { p = $(h["today_pass"]) + 0; n = $(h["today_total"]) + 0; if (n <= 0 ? r[$1] + 0 > 0 : p * (t[$1] + 0) < (r[$1] + 0) * n) printf "%s %s/%s<%s/%s ", $1, p, n, r[$1], t[$1] }' "$ROWS0" "$SUITES")"
             done
             bad="$(printf '%s' "$short" | wc -w)"; readings="$readings rows_below=$bad[${short% }]"; [ "$bad" = 0 ] || pgreen=0 ;;
         *) refuse "unknown probe token $tok in step $step" ;;
