@@ -290,6 +290,7 @@ test_gate_icn_a_clib_sidecar_builds_the_library_a_program_loads.sh	WIRED	-	-	-
 test_gate_icn_a_closed_file_raises_212_on_read_and_213_on_write.sh	WIRED	-	-	-
 test_gate_icn_a_large_integer_crosses_into_a_loaded_c_function.sh	WIRED	-	-	-
 test_gate_icn_a_linked_procedure_reports_its_own_file.sh	WIRED	-	-	-
+test_gate_icn_a_markerless_unicon_program_prints_unicons_name_form_when_the_driver_is_told_so_in_both_modes.sh	WIRED	-	-	-
 test_gate_icn_a_one_character_substring_swap_builds_one_string.sh	WIRED	-	-	-
 test_gate_icn_a_part_of_a_statement_on_a_later_line_reports_its_own_line.sh	WIRED	-	-	-
 test_gate_icn_a_procedure_entered_or_resumed_from_c_reads_its_statics.sh	WIRED	-	-	-

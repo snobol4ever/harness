@@ -204,6 +204,13 @@ def stdin_for(stem, pkg_dir):
     return None
 
 
+def icn_marked(text):
+    """True when an Icon source carries a Unicon marker the way icon_lex.c icn_source_is_unicon reads it: a declaration-level class, package or import header, or the
+    word thread, critical or abstract (comments and string literals set aside). The ALL.csv compile_args of a UNMARKED entry then carries the contract's dialect switch."""
+    code = re.sub(r'#[^\n]*', '', re.sub(r'"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'', '""', text))
+    return bool(re.search(r'\b(?:thread|critical|abstract)\b', code) or re.search(r'(?m)^[ \t]*(?:class|import)[ \t]+\w', code) or re.search(r'(?m)^[ \t]*package[ \t]+[\w"]', code))
+
+
 def read_contract(pkg_dir):
     """The package's own run contract, CONTRACT.tsv beside its sources: key<TAB>value<TAB>evidence, '#' comments. What the
     package's OWN harness does to produce its refs, declared once with the package and read here, never typed by a runner.
@@ -218,7 +225,7 @@ def read_contract(pkg_dir):
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
     harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (ceo CEO-2072, hq_unicon): an Icon
     package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
-    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": ""}
+    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -242,9 +249,11 @@ def read_contract(pkg_dir):
             out["upstream"] = f[1]
         elif f[0] == "compare" and f[1] == "ignore-all-space":
             out["compare"] = "ignore-all-space"
+        elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
+            out["unmarked_compile_args"] = f[1].strip()
         else:
             h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, dialect=any-fpc-mode, "
-                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir> and compare=ignore-all-space only")
+                     f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
     return out
@@ -729,7 +738,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False):
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1

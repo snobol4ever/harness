@@ -4703,7 +4703,8 @@ def oracle_args_declarations(src_path):
 # -S joins 2026-11-01 (cao, CEO-2110, row prolog-xsb-wfs-step-10): XSB's oracle switch carried as the entry's compile_args; scrip --run -S and a
 # binary from scrip --compile -S both read the source as if it began with ':- use_subsumptive_tabling.' (an open call then a subsumed one: 1 table,
 # as XSB -S; 2 without), and the 39 xsb_tests runs ORACLE_RUNS.tsv records with -S declare it (test_gate_xsb_an_oracle_switch_is_the_entrys_compile_args.sh).
-COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "-S")
+# --dialect=unicon joins 2026-11-04 (cto, CTO-473): a markerless UniTests program is a Unicon program because the package says so; the driver turns the switch into the per-program Unicon state a class, package or import marker sets.
+COMPILE_ARGS_ADMITTED = ("--stlimit", "--dialect=gnu", "--dialect=unicon", "-S")
 
 
 def validate_out_files_cell(raw, where):
