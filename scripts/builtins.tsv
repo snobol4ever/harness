@@ -385,9 +385,9 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 376	pas	__pas_view	4	4	pas_view_make	inline	-	-	0	dop_direct,pas
 377	pas	__pas_wide2s	-	-	-	inline	-	-	0	pas
 378	rk	__blk_close	-	-	bt___blk_close	leaf	-	-	0	fn_arms,rt_known
-379	rk	__blk_invoke	-	-	bt___blk_invoke	leaf	-	-	0	fn_arms,rt_known
+379	rk	__blk_invoke	-	-	bt___blk_invoke	open	-	-	0	fn_arms,rt_known
 380	rk	__blk_ref	1	1	rt_rk_blk_ref	leaf	-	-	0	dop_direct,fn_arms,rt_known
-381	rk	__multi_call	-	-	bt___multi_call	leaf	-	-	0	fn_arms,rt_known
+381	rk	__multi_call	-	-	bt___multi_call	open	-	-	0	fn_arms,rt_known
 382	rk	__param_check	-	-1	rt_rk_param_check	leaf	-	-	0	dop_direct,fn_arms,rt_known
 383	rk	__rk_actions_plan	-	-	bt___rk_actions_plan	leaf	-	-	0	fn_arms,rk_targets
 384	rk	__rk_adjacent_pairs	-	-	bt___rk_adjacent_pairs	leaf	-	-	0	fn_arms,rt_known
@@ -397,7 +397,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 388	rk	__rk_arr	-	-	bt___rk_arr	leaf	-	-	0	fn_arms,rk_targets,rt_known
 389	rk	__rk_arr_at	2	2	rt_rk_arr_at	leaf	-	-	0	dop_direct,fn_arms,rk_targets,rt_known
 390	rk	__rk_arr_first	-	-	bt___rk_arr_first	leaf	-	-	0	fn_arms,rt_known
-391	rk	__rk_arr_flat	-	-	bt___rk_arr_flat	leaf	-	-	0	fn_arms,rt_known
+391	rk	__rk_arr_flat	-	-	bt___rk_flat	leaf	-	-	0	fn_arms,rt_known
 392	rk	__rk_arr_grep	-	-	bt___rk_arr_grep	leaf	-	-	0	fn_arms,rt_known
 393	rk	__rk_arr_keys	-	-	bt___rk_arr_keys	leaf	-	-	0	fn_arms,rt_known
 394	rk	__rk_arr_kv	-	-	bt___rk_arr_kv	leaf	-	-	0	fn_arms,rt_known
@@ -439,7 +439,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 430	rk	__rk_elem_ref	-	-	bt___rk_elem_ref	leaf	-	-	0	fn_arms,rk_targets,rt_known
 431	rk	__rk_enum	-	-	bt___rk_enum	leaf	-	-	0	rk_targets
 432	rk	__rk_eqv	-	-	bt___rk_eqv	leaf	-	-	0	fn_arms,rt_known
-433	rk	__rk_eval	-	-	bt___rk_eval	leaf	-	-	0	fn_arms,rk_targets,rt_known
+433	rk	__rk_eval	-	-	bt___rk_eval	open	-	-	0	fn_arms,rk_targets,rt_known
 434	rk	__rk_exc_umeth	-	-	bt___rk_exc_umeth	leaf	-	-	0	fn_arms,rk_targets,rt_known
 435	rk	__rk_exc_umsg	-	-	bt___rk_exc_umsg	leaf	-	-	0	fn_arms,rk_targets,rt_known
 436	rk	__rk_exend	-	-	bt___rk_exend	leaf	-	-	0	fn_arms,rk_targets,rt_known
@@ -450,7 +450,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 441	rk	__rk_gcd	-	-	bt___rk_gcd	leaf	-	-	0	fn_arms,rt_known
 442	rk	__rk_gist_capture	-	-	bt___rk_gist_capture	leaf	-	-	0	fn_arms,rk_targets,rt_known
 443	rk	__rk_gist_named_capture	-	-	bt___rk_gist_named_capture	leaf	-	-	0	fn_arms,rk_targets,rt_known
-444	rk	__rk_gist_pre	-	-	bt___rk_gist_pre	leaf	-	-	0	fn_arms,rk_targets
+444	rk	__rk_gist_pre	-	-	bt___rk_gist_pre	open	-	-	0	fn_arms,rk_targets
 445	rk	__rk_given_mod	-	-	bt___rk_given_mod	leaf	-	-	0	rk_targets
 446	rk	__rk_grep_append	2	2	rt_rk_grep_append	leaf	-	-	0	dop_direct,fn_arms,rk_targets,rt_known
 447	rk	__rk_hash	-	-	bt___rk_hash	leaf	-	-	0	fn_arms,rk_targets,rt_known
@@ -490,7 +490,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 481	rk	__rk_mkbool	-	-	bt___rk_mkbool	leaf	-	-	0	fn_arms,rk_targets,rt_known
 482	rk	__rk_mkcplx_i	-	-	bt___rk_mkcplx_i	leaf	-	-	0	fn_arms,rk_targets
 483	rk	__rk_mod	-	-	bt___rk_mod	leaf	-	-	0	fn_arms,rk_targets,rt_known
-484	rk	__rk_named_call	-	-	bt___rk_named_call	leaf	-	-	0	fn_arms,rk_targets,rt_known
+484	rk	__rk_named_call	-	-	bt___rk_named_call	open	-	-	0	fn_arms,rk_targets,rt_known
 485	rk	__rk_new_Bag	-	-	bt___rk_new_Bag	leaf	-	-	0	rk_targets
 486	rk	__rk_new_Mix	-	-	bt___rk_new_Mix	leaf	-	-	0	rk_targets
 487	rk	__rk_new_Set	-	-	bt___rk_new_Set	leaf	-	-	0	rk_targets
@@ -570,8 +570,8 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 561	rk	__rk_sprintf	-	-	bt___rk_sprintf	leaf	-	-	0	fn_arms,rk_targets
 562	rk	__rk_sprintf_d	-	-	bt___rk_sprintf_d	leaf	-	-	0	fn_arms,rk_targets
 563	rk	__rk_st	-	-	bt___rk_st	leaf	-	-	0	rk_targets
-564	rk	__rk_str	-	-	bt___rk_str	leaf	-	-	0	fn_arms,rk_targets,rt_known
-565	rk	__rk_str_pre	-	-	bt___rk_str_pre	leaf	-	-	0	fn_arms,rk_targets
+564	rk	__rk_str	-	-	bt___rk_str	open	-	-	0	fn_arms,rk_targets,rt_known
+565	rk	__rk_str_pre	-	-	bt___rk_str_pre	open	-	-	0	fn_arms,rk_targets
 566	rk	__rk_subscr_adv	-	-	bt___rk_subscr_adv	leaf	-	-	0	fn_arms,rt_known
 567	rk	__rk_subst_close	-	-	bt___rk_subst_close	leaf	-	-	0	fn_arms,rk_targets
 568	rk	__rk_subst_next	-	-	bt___rk_subst_next	leaf	-	-	0	fn_arms,rk_targets
@@ -585,7 +585,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 585	rk	__rk_typeobj	-	-	bt___rk_typeobj	leaf	-	-	0	fn_arms,rk_targets,rt_known
 586	rk	__rk_unany	-	-	bt___rk_unany	leaf	-	-	0	fn_arms,rt_known
 587	rk	__rk_undef	0	-1	rt_rk_undef	leaf	-	-	0	dop_direct,fn_arms,rk_targets
-588	rk	__rk_unicmp	-	-	bt___rk_unicmp	leaf	-	-	0	fn_arms,rt_known
+588	rk	__rk_unicmp	-	-	bt___rk_coll	leaf	-	-	0	fn_arms,rt_known
 589	rk	__rk_unpack_named	-	-	bt___rk_unpack_named	leaf	-	-	0	fn_arms,rk_targets,rt_known
 590	rk	__rk_unset	-	-	bt___rk_unset	leaf	-	-	0	fn_arms,rk_targets,rt_known
 591	rk	__rk_when_match	-	-	bt___rk_when_match	leaf	-	-	0	fn_arms,rk_targets,rt_known
@@ -637,7 +637,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 637	rk	index	-	-	bt_index	leaf	-	-	0	fn_arms
 638	rk	join	-	-	bt_join	leaf	-	-	0	fn_arms
 639	rk	lc	-	-	bt_lc	leaf	-	-	0	fn_arms
-640	rk	length	-	-	bt_length	leaf	-	-	0	fn_arms
+640	rk	length	-	-	bt_chars	leaf	-	-	0	fn_arms
 641	rk	lines	-	-	bt_lines	leaf	-	-	0	fn_arms
 642	rk	make-temp-dir	-	-	bt_makex2Dtempx2Ddir	leaf	-	-	0	fn_arms
 643	rk	make-temp-file	-	-	bt_makex2Dtempx2Dfile	leaf	-	-	0	fn_arms
@@ -649,8 +649,8 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 649	rk	nqp::bindattr_i	4	4	rt_rk_bindattr	leaf	-	-	0	dop_direct,rt_known
 650	rk	nqp::bindattr_n	4	4	rt_rk_bindattr	leaf	-	-	0	dop_direct,rt_known
 651	rk	nqp::bindattr_s	4	4	rt_rk_bindattr	leaf	-	-	0	dop_direct,rt_known
-652	rk	nqp::create	-	-	bt_nqpx3Ax3Acreate	leaf	-	-	0	fn_arms,rt_known
-653	rk	obj_new	-	-	bt_obj_new	leaf	-	-	0	fn_arms,rt_known
+652	rk	nqp::create	-	-	bt_nqpx3Ax3Acreate	open	-	-	0	fn_arms,rt_known
+653	rk	obj_new	-	-	bt_obj_new	open	-	-	0	fn_arms,rt_known
 654	rk	pick	-	-	bt_pick	leaf	-	-	0	fn_arms,rt_known
 655	rk	prepend_pure	-	-	bt_prepend_pure	leaf	-	-	0	fn_arms,rt_known
 656	rk	print_fh	-	-	bt_print_fh	leaf	-	-	0	fn_arms
@@ -678,18 +678,18 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 678	rk	rk_write_list	-	-	bt_rk_write_list	leaf	-	-	0	fn_arms,rk_targets,rt_known
 679	rk	rk_writes	-	-	bt_rk_writes	leaf	-	-	0	fn_arms,rk_targets,rt_known
 680	rk	say_fh	-	-	bt_say_fh	leaf	-	-	0	fn_arms
-681	rk	script_die	-	-	bt_script_die	leaf	-	-	0	fn_arms,rt_known
+681	rk	script_die	-	-	bt_die	leaf	-	-	0	fn_arms,rt_known
 682	rk	sleep	-	-	bt_sleep	leaf	-	-	0	fn_arms,rt_known
 683	rk	slurp	-	-	bt_slurp	leaf	-	-	0	fn_arms
 684	rk	sprintf	-	-	bt_sprintf	leaf	-	-	0	fn_arms,rt_known
 685	rk	spurt	-	-	bt_spurt	leaf	-	-	0	fn_arms
 686	rk	srand	-	-	bt_srand	leaf	-	-	0	fn_arms,rt_known
 687	rk	str_index	-	-	bt_str_index	leaf	-	-	0	fn_arms
-688	rk	str_lc	-	-	bt_str_lc	leaf	-	-	0	fn_arms
+688	rk	str_lc	-	-	bt_lc	leaf	-	-	0	fn_arms
 689	rk	str_rindex	-	-	bt_str_rindex	leaf	-	-	0	fn_arms
 690	rk	str_substr	-	-	bt_str_substr	leaf	-	-	0	fn_arms
 691	rk	str_trim	-	-	bt_str_trim	leaf	-	-	0	fn_arms
-692	rk	str_uc	-	-	bt_str_uc	leaf	-	-	0	fn_arms
+692	rk	str_uc	-	-	bt_uc	leaf	-	-	0	fn_arms
 693	rk	substr	-	-	bt_substr	leaf	-	-	0	fn_arms
 694	rk	sum	-	-	bt_sum	leaf	-	-	0	fn_arms
 695	rk	syntax_error	-	-	bt_syntax_error	leaf	-	-	0	fn_arms
@@ -1255,3 +1255,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1256	pl	$mkground	-	-	-	inline	-	-	0	pl_leaf
 1257	icn	ICN$UNAME	1	1	bt_ICNx24UNAME	leaf	-	-	0	fn_arms
 1258	icn	ICN$UPVAR	1	1	bt_ICNx24UPVAR	leaf	-	-	0	fn_arms
+1259	rk	__rk_inv	-	-	bt___rk_inv	leaf	-	-	0	rk_targets

@@ -6,8 +6,12 @@
 #   builtin_table.h    bt_row_t, the enums, BT_ROWS, BT_BID_MAX, BT_LEGACY_LAST, and bt_bid_legacy(s, len): the vocabulary-blind hash of the 186 names that carried an id before the
 #                      table existed (builtin_ids.h). bid_of in builtin_ids.h IS bt_bid_legacy, so every name resolves to exactly the id it resolved to before the table: step 1
 #                      changes no resolution. A row with a bid above BT_LEGACY_LAST is a name no code resolves yet; its language step lifts it.
-#   builtin_table.inc  g_builtins[BT_ROWS] (the rows in bid order) and bt_bid_of(vocab, s, len): the open-addressed hash of every row by vocabulary and name. Included by ONE
-#                      translation unit of the runtime.
+#   builtin_table.inc  g_builtins[BT_ROWS] (the rows in bid order), bt_row_of(vocab, s, len) (the row index of a name, -1 for none) and bt_bid_of(vocab, s, len): the open-addressed
+#                      hash of every row by vocabulary and name. Included by ONE translation unit of the runtime.
+#   builtin_leaf.inc   bt_leaf_t and g_bt_leaf[BT_ROWS]: the leaf of every row whose conv is leaf and whose entry is a bt_ name (a bt_ entry promises the leaf shape
+#                      DESCR_t f(DESCR_t *args, int nargs); a leaf that declines returns a DESCR_t whose .v is RTX_NOT_HANDLED); bt_open_t and g_bt_open[BT_ROWS]: the same for a
+#                      row whose conv is open (int f(DESCR_t *args, int nargs, DESCR_t *out, long *rq): the road that may ask the box to open a call; it returns 0 when it declines). A leaf not written yet is a weak hidden reference that
+#                      resolves to 0, so a step lands one chain at a time; test_gate_every_leaf_row_has_its_leaf closes that at the finish. Included by ONE translation unit.
 # --check regenerates in memory and compares with the files on disk (rc 0 current, rc 1 stale or the table invalid, rc 2 cannot read); --write replaces them.
 # THE TABLE IS VALIDATED before anything is written: unique bids, unique (vocab, name), a known vocab and conv, an entry on every row that is not inline, integer or "-" bounds.
 import os, re, subprocess, sys, tempfile
@@ -125,6 +129,14 @@ def pow2_over(n):
     return p
 
 
+def is_leaf_row(r):
+    return r['conv'] == 'leaf' and r['entry'].startswith('bt_')
+
+
+def is_open_row(r):
+    return r['conv'] == 'open' and r['entry'].startswith('bt_')
+
+
 def gen(rows):
     n, bmax = len(rows), max(r['bid'] for r in rows)
     leg = legacy_rows(rows)
@@ -154,6 +166,7 @@ def gen(rows):
     h.append('enum { ' + ', '.join('BT_FLAG_%s = %d' % (f.upper(), b) for f, b in FLAGS.items()) + ' };')
     h.append('typedef struct { char name[BT_NAME_W]; char entry[BT_ENTRY_W]; unsigned short bid; unsigned char vocab; unsigned char conv; unsigned char flags; unsigned char recv; signed char min; signed char max; short op; } bt_row_t;')
     h.append('extern const bt_row_t g_builtins[BT_ROWS];')
+    h.append('int bt_row_of(int vocab, const char * s, unsigned len);')
     h.append('int bt_bid_of(int vocab, const char * s, unsigned len);')
     h.append('static const struct { char nm[BT_LEGACY_W]; unsigned short len; unsigned short id; } bt_legacy_tab[BT_LEGACY_TABSZ] = {')
     for i in range(0, lsz, 4):
@@ -178,30 +191,55 @@ def gen(rows):
     for i in range(0, hsz, 16):
         c.append('    ' + ','.join(str(s[1] + 1) if s else '0' for s in hslots[i:i + 16]) + ',')
     c.append('};')
-    c.append('int bt_bid_of(int vocab, const char * s, unsigned len) {')
+    c.append('int bt_row_of(int vocab, const char * s, unsigned len) {')
     c.append('    unsigned hv = 5381u;')
     c.append('    unsigned i;')
-    c.append('    if (!s || !len) return 0;')
+    c.append('    if (!s || !len) return -1;')
     c.append('    for (i = 0; i < len; i++) hv = hv * 33u + (unsigned char)s[i];')
     c.append('    hv = (hv + (unsigned)vocab * 0x9E3779B1u) & (unsigned)(BT_HASHSZ - 1);')
-    c.append('    for (;;) { unsigned k = bt_hash_tab[hv]; if (!k) return 0; { const bt_row_t * r = &g_builtins[k - 1]; if (r->vocab == vocab && !strncmp(r->name, s, len) && !r->name[len]) return r->bid; } hv = (hv + 1u) & (unsigned)(BT_HASHSZ - 1); }')
+    c.append('    for (;;) { unsigned k = bt_hash_tab[hv]; if (!k) return -1; { const bt_row_t * r = &g_builtins[k - 1]; if (r->vocab == vocab && !strncmp(r->name, s, len) && !r->name[len]) return (int)(k - 1); } hv = (hv + 1u) & (unsigned)(BT_HASHSZ - 1); }')
     c.append('}')
-    return '\n'.join(h) + '\n', '\n'.join(c) + '\n'
+    c.append('int bt_bid_of(int vocab, const char * s, unsigned len) {')
+    c.append('    int k = bt_row_of(vocab, s, len);')
+    c.append('    return k < 0 ? 0 : g_builtins[k].bid;')
+    c.append('}')
+    l = []
+    l.append('typedef DESCR_t (*bt_leaf_t)(DESCR_t * args, int nargs);')
+    seen = []
+    for r in rows:
+        if is_leaf_row(r) and r['entry'] not in seen:
+            seen.append(r['entry'])
+            l.append('extern DESCR_t %s(DESCR_t * args, int nargs) __attribute__((weak, visibility("hidden")));' % r['entry'])
+    l.append('static const bt_leaf_t g_bt_leaf[BT_ROWS] = {')
+    for i in range(0, n, 8):
+        l.append('    ' + ' '.join(('%s,' % r['entry']) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
+    l.append('};')
+    l.append('typedef int (*bt_open_t)(DESCR_t * args, int nargs, DESCR_t * out, long * rq);')
+    for r in rows:
+        if is_open_row(r) and r['entry'] not in seen:
+            seen.append(r['entry'])
+            l.append('extern int %s(DESCR_t * args, int nargs, DESCR_t * out, long * rq) __attribute__((weak, visibility("hidden")));' % r['entry'])
+    l.append('static const bt_open_t g_bt_open[BT_ROWS] = {')
+    for i in range(0, n, 8):
+        l.append('    ' + ' '.join(('%s,' % r['entry']) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
+    l.append('};')
+    return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n'
 
 
-def styled(h, c):
+def styled(h, c, l):
     """The generated text laid out by the fleet's own 200-column tool (util_reflow_200.py), so a regenerated file is the file a seat commits and --check compares like with like."""
     tool = os.path.join(HERE, 'util_reflow_200.py')
     if not os.path.exists(tool):
         raise OSError('no %s' % tool)
     with tempfile.TemporaryDirectory() as d:
-        ph, pc = os.path.join(d, 'builtin_table.h'), os.path.join(d, 'builtin_table.inc')
+        ph, pc, pl = os.path.join(d, 'builtin_table.h'), os.path.join(d, 'builtin_table.inc'), os.path.join(d, 'builtin_leaf.inc')
         open(ph, 'w', encoding='utf-8').write(h)
         open(pc, 'w', encoding='utf-8').write(c)
-        r = subprocess.run([sys.executable, '-I', tool, '--apply', ph, pc], capture_output=True, text=True)
+        open(pl, 'w', encoding='utf-8').write(l)
+        r = subprocess.run([sys.executable, '-I', tool, '--apply', ph, pc, pl], capture_output=True, text=True)
         if r.returncode != 0:
             raise OSError('util_reflow_200.py --apply failed: %s' % (r.stdout + r.stderr)[-300:])
-        return open(ph, encoding='utf-8').read(), open(pc, encoding='utf-8').read()
+        return open(ph, encoding='utf-8').read(), open(pc, encoding='utf-8').read(), open(pl, encoding='utf-8').read()
 
 
 def main(argv):
@@ -220,17 +258,18 @@ def main(argv):
         print('GATE RED: the table is invalid: %s' % e)
         return 1
     try:
-        h, c = styled(*gen(rows))
+        h, c, l = styled(*gen(rows))
     except OSError as e:
         print('util_gen_builtin_table: %s' % e, file=sys.stderr)
         return 2
-    ph, pc = os.path.join(out, 'builtin_table.h'), os.path.join(out, 'builtin_table.inc')
+    ph, pc, pl = os.path.join(out, 'builtin_table.h'), os.path.join(out, 'builtin_table.inc'), os.path.join(out, 'builtin_leaf.inc')
     if '--write' in argv:
         open(ph, 'w', encoding='utf-8').write(h)
         open(pc, 'w', encoding='utf-8').write(c)
-        print('wrote %s and %s: %d rows, bids up to %d, %d legacy' % (ph, pc, len(rows), max(r['bid'] for r in rows), len(legacy_rows(rows))))
+        open(pl, 'w', encoding='utf-8').write(l)
+        print('wrote %s, %s and %s: %d rows, bids up to %d, %d legacy' % (ph, pc, pl, len(rows), max(r['bid'] for r in rows), len(legacy_rows(rows))))
         return 0
-    stale = [p for p, want in ((ph, h), (pc, c)) if not os.path.exists(p) or open(p, encoding='utf-8').read() != want]
+    stale = [p for p, want in ((ph, h), (pc, c), (pl, l)) if not os.path.exists(p) or open(p, encoding='utf-8').read() != want]
     if stale:
         print('GATE RED: stale or missing: %s -- run: python3 harness/scripts/util_gen_builtin_table.py --write' % ', '.join(stale))
         return 1
