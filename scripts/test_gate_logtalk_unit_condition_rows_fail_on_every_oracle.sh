@@ -3,12 +3,16 @@
 # logtalk_iso's EXCLUDED_CASES.tsv names the twelve cases of control/if_3 NO_ORACLE_ANSWER: the unit carries `condition :- predicate_property(if(_,_,_), built_in).`, lgtunit skips a whole unit
 # whose condition fails, and swipl 9.0.4, swipl 10.1.5 and the gprolog oracle all answer that goal false -- no oracle answers any case of the unit. A row like that is true only while every
 # oracle keeps answering the condition false. This gate runs the three oracles on the condition of the unit of EVERY NO_ORACLE_ANSWER row whose group file carries a `condition :- G.` clause
-# and reds the row the day one of them answers true (the case returns to the denominator in that landing).
+# and reds the row the day one of them answers true (the case returns to the denominator in that landing). Only a row whose own reason text claims the
+# condition form is probed (cto CEO-2127): a row justified by another form may carry a Logtalk-local condition (set_encoding/1, max_depth_option_supported/0)
+# that plain Prolog answers false vacuously, and that reading would be neither the row's evidence nor its refutation.
 # ARMS: (1) every such row: swipl 9.0.4, swipl 10.1.5 and the gprolog oracle each answer the unit's condition false (a call that raises counts false, as lgtunit's condition check does)
 #       (2) THE POPULATION IS NOT EMPTY AND IS THE RULED TWELVE OR MORE (a gate that reads zero rows proves nothing)
 #       (3) CONTROL: control/soft_cut_2_3's condition (predicate_property('*->'(_,_), built_in)) reads TRUE on swipl 9.0.4 -- the same extractor and the same oracle read TRUE where the condition
 #           holds, so arm (1)'s "false" is a reading and not a probe that always answers false
 #       (4) CAN FAIL: a mktemp corpus (outside corpus/, CEO-547) that files a case of that passing unit as a NO_ORACLE_ANSWER row reads RED (rc 1) and names the row stale
+#       (5) CAN FAIL AT CASE LEVEL (cto CEO-2127, 2026-11-04): the same form reads a case's own condition({G}) option (predicate_property_2 lgt_predicate_property_2_23, G false on every
+#           oracle, is a row); a mktemp corpus filing lgt_predicate_property_2_22 (its condition true on swipl 9.0.4) as a NO_ORACLE_ANSWER row reads RED (rc 1) and names the row stale
 # rc 0 all arms; rc 1 a stale row or a failed control; rc 2 an oracle or the files are absent, or an oracle printed neither true nor false (could not measure).
 # Usage: bash ../harness/scripts/test_gate_logtalk_unit_condition_rows_fail_on_every_oracle.sh
 set -u
@@ -32,7 +36,7 @@ for ln in open(os.path.join(pkg, "EXCLUDED_CASES.tsv"), encoding="utf-8"):
     if ln.startswith("#") or not ln.strip():
         continue
     f = ln.rstrip("\n").split("\t")
-    if len(f) >= 2 and f[1] == "NO_ORACLE_ANSWER":
+    if len(f) >= 3 and f[1] == "NO_ORACLE_ANSWER" and "condition" in f[2]:
         rows.append(f[0])
 cond = re.compile(r"^[ \t]*condition[ \t]*:-[ \t]*(.*?)\.[ \t]*$", re.M | re.S)
 def unit_condition(group):
@@ -41,9 +45,27 @@ def unit_condition(group):
         if m:
             return " ".join(m.group(1).split())
     return None
+def case_condition(group, case):
+    for path in glob.glob(os.path.join(pkg, "*", group, "tests.lgt")):
+        txt = open(path, encoding="utf-8").read()
+        i = txt.find("test(" + case + ",")
+        if i < 0:
+            continue
+        j = txt.find(":-", i)
+        head = txt[i:j] if j > i else txt[i:i + 2000]
+        k = head.find("condition(")
+        if k < 0:
+            return None
+        s, e, depth = k + len("condition("), k + len("condition("), 1
+        while e < len(head) and depth > 0:
+            depth += (head[e] == "(") - (head[e] == ")"); e += 1
+        g = "".join(head[s:e - 1].split())
+        return g[1:-1] if g.startswith("{") and g.endswith("}") else g
+    return None
 out = []
 for key in rows:
-    c = unit_condition(key.split(":", 1)[0])
+    g, _, cs = key.partition(":")
+    c = unit_condition(g) or case_condition(g, cs)
     if c:
         out.append((key, "row", c))
 ctl = unit_condition("soft_cut_2_3")
@@ -65,8 +87,8 @@ while IFS=$'\t' read -r key kind v9; do
   [ "$kind" = row ] || continue
   rows=$((rows+1))
   v10="$(awk -F'\t' -v k="$key" '$1==k{print $3}' "$T/sw10")"; vg="$(awk -F'\t' -v k="$key" '$1==k{print $3}' "$T/gp")"
-  if [ "$v9" = false ] && [ "$v10" = false ] && [ "$vg" = false ]; then ck ok "(1) $key: the unit's condition is false on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle"
-  else ck no "(1) $key: the unit's condition reads swipl 9.0.4 $v9, swipl 10.1.5 ${v10:-nothing}, gprolog ${vg:-nothing} -- an oracle answers TRUE, the row is stale and the case returns to the denominator"; fi
+  if [ "$v9" = false ] && [ "$v10" = false ] && [ "$vg" = false ]; then ck ok "(1) $key: the condition is false on swipl 9.0.4, swipl 10.1.5 and the gprolog oracle"
+  else ck no "(1) $key: the condition reads swipl 9.0.4 $v9, swipl 10.1.5 ${v10:-nothing}, gprolog ${vg:-nothing} -- an oracle answers TRUE, the row is stale and the case returns to the denominator"; fi
 done < "$T/sw9"
 [ "$rows" -ge 12 ] && ck ok "(2) population: $rows unit-condition NO_ORACLE_ANSWER row(s) read, at least the ruled twelve" || ck no "(2) population: $rows row(s) read, fewer than the ruled twelve -- the extractor or the table moved"
 c="$(awk -F'\t' '$2=="control"{print $3}' "$T/sw9")"
@@ -75,9 +97,16 @@ if [ -z "${S4E_UNITCOND_NO_SELF:-}" ]; then
   F="$T/fixture"; mkdir -p "$F/packages/prolog/logtalk_iso/control/soft_cut_2_3" && cp "$PKG/control/soft_cut_2_3/tests.lgt" "$F/packages/prolog/logtalk_iso/control/soft_cut_2_3/" \
     && printf 'soft_cut_2_3:commons_soft_cut_2_3_01\tNO_ORACLE_ANSWER\ta row naming a case of a unit whose condition holds on swipl (gate fixture)\n' > "$F/packages/prolog/logtalk_iso/EXCLUDED_CASES.tsv" || refuse "fixture copy failed"
   S4E_UNITCOND_NO_SELF=1 S4E_CORPUS="$F" bash "$0" > "$T/fixture.out" 2>&1; frc=$?
-  [ "$frc" = 1 ] && grep -q 'FAIL  (1) soft_cut_2_3:commons_soft_cut_2_3_01: the unit.s condition reads swipl 9.0.4 true' "$T/fixture.out" \
+  [ "$frc" = 1 ] && grep -q 'FAIL  (1) soft_cut_2_3:commons_soft_cut_2_3_01: the condition reads swipl 9.0.4 true' "$T/fixture.out" \
     && ck ok "(4) CAN FAIL: a row naming a case of a unit whose condition holds reads RED (rc 1) and is named stale" \
     || ck no "(4) CAN FAIL: the fixture row read rc=$frc, not rc 1 naming the stale row: $(tail -2 "$T/fixture.out" | tr '\n' ' ')"
+  F2="$T/fixture2"; mkdir -p "$F2/packages/prolog/logtalk_iso/predicates/predicate_property_2" "$F2/packages/prolog/logtalk_iso/control/soft_cut_2_3" \
+    && cp "$PKG/predicates/predicate_property_2/tests.lgt" "$F2/packages/prolog/logtalk_iso/predicates/predicate_property_2/" && cp "$PKG/control/soft_cut_2_3/tests.lgt" "$F2/packages/prolog/logtalk_iso/control/soft_cut_2_3/" \
+    && printf 'predicate_property_2:lgt_predicate_property_2_22\tNO_ORACLE_ANSWER\ta row naming a case whose own condition option holds on swipl (gate fixture)\n' > "$F2/packages/prolog/logtalk_iso/EXCLUDED_CASES.tsv" || refuse "fixture 2 could not be built"
+  S4E_UNITCOND_NO_SELF=1 S4E_CORPUS="$F2" bash "$0" > "$T/fixture2.out" 2>&1; frc2=$?
+  [ "$frc2" = 1 ] && grep -q 'FAIL  (1) predicate_property_2:lgt_predicate_property_2_22: the condition reads swipl 9.0.4 true' "$T/fixture2.out" \
+    && ck ok "(5) CAN FAIL AT CASE LEVEL: a row naming a case whose own condition option holds reads RED (rc 1) and is named stale (CEO-2127)" \
+    || ck no "(5) CAN FAIL AT CASE LEVEL: the fixture row read rc=$frc2, not rc 1 naming the stale row: $(tail -2 "$T/fixture2.out" | tr '\n' ' ')"
 fi
 [ "$fails" -eq 0 ] && { echo "GATE logtalk_unit_condition_rows_fail_on_every_oracle OK -- $rows row(s), swipl $("$SW" --version | head -1)"; exit 0; }
 echo "GATE logtalk_unit_condition_rows_fail_on_every_oracle RED -- $fails arm(s)"; exit 1
