@@ -416,6 +416,7 @@ test_gate_icon_m4_invocation_is_pinned.sh	WIRED	-	-	-
 test_gate_icon_math_builtins_raise_iconx_errors_on_a_wrong_type_or_a_domain.sh	WIRED	-	-	-
 test_gate_icon_package_container_keys_equal_board_keys.sh	WIRED	-	-	-
 test_gate_icon_package_units_carry_their_attribute_row.sh	WIRED	-	-	-
+test_gate_icon_procedure_registry_rides_the_module_table_not_startup_calls.sh	WIRED	-	-	-
 test_gate_icon_rungs_entries_compile_under_icont.sh	WIRED	-	-	-
 test_gate_icon_runners_grade_the_preprocess_only_contract.sh	WIRED	-	-	-
 test_gate_icon_scratch_names_are_not_tracked.sh	WIRED	-	-	-

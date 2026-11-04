@@ -676,6 +676,7 @@ rt_proc_set_generator	leaf	-	0	-	0	call
 rt_proc_set_jmpentry	leaf	-	0	-	0	call
 rt_proc_set_nparams	leaf	-	0	-	0	call
 rt_proc_value	asm	-	0	none	-	call,clob,asm
+rt_procs_install	leaf	VOID	1	-	0	call,alloc
 rt_program_top_adopt	leaf	-	0	-	0	call
 rt_program_top_adopt_top	leaf	-	0	-	0	call
 rt_quit_trap_300	leaf	-	0	-	0	call
