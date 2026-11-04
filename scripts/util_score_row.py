@@ -2090,6 +2090,15 @@ def cmd_from_progress(a):
         if o.returncode != 0:
             return o.returncode
     cmd = [sys.executable, SUITE_BANNER, "--set", full_key, str(cnt["PASS"]), str(total), _box_clock_day(), oldest[1]]
+    # ⭐ EACH MODE'S OWN PASS COUNT (Lon 2026-11-04, in-chat to the cto, verbatim: "The display banner need modifying to show both mode 3 and mode 4 numbers
+    # seperately."; CTO-482): over the SAME population the row's Pass counts (pkg_pop for a package, pop for a master), the programs whose latest reading in
+    # that one mode is PASS; written as --m3 N --m4 N (a port's row, graded in m3 alone, carries --m3 only) and shown as the grid's M3 and M4 beside the AND.
+    for _m in modes:
+        if pkg:
+            _n = sum(1 for e in pkg_pop if last_by.get(e, {}).get(_m, ("",))[0] == "PASS")
+        else:
+            _n = sum(1 for e in pop if e in d and d[e].get(_m, ("",))[0] == "PASS")
+        cmd += ["--" + _m, str(_n)]
     if (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip():
         cmd += ["--criterion-changed", (a.criterion_changed or os.environ.get("S4E_CRITERION_CHANGED", "")).strip()]
     # ⛔ the Wall is written only when EVERY reading carries its seconds: a sum over the few readings a subset re-took is a fraction of the
