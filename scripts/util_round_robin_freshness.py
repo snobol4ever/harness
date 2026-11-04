@@ -71,31 +71,29 @@ def stem(n):
     return n[: len(n) - len(b)] + (b.rsplit(".", 1)[0] if "." in b else b)
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--loop-dir", default="/home/claude_coo/.scratch/verifier")
-    ap.add_argument("--hours", type=float, default=72.0)
-    a = ap.parse_args()
-    db = os.environ.get("S4E_PROGRESS_DB", "/home/resources/progress/results.tsv")
-    if not os.path.exists(db):
-        refuse("the progress DB %s does not exist" % db)
-    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=a.hours)).strftime("%Y-%m-%dT%H:%M:%S")
-    idle, held = idle_and_held(a.loop_dir)
+def live_members(loop_dir, popfn=None):
+    """The live population: {progress suite: denominator} over the rotation's non-idle, non-held members, with the idle and held counts and the
+    members from-progress cannot read. popfn(key) -> (db_suite, total) defaults to population(); util_seat_census.py --lap passes a cached one."""
+    popfn = popfn or population
+    idle, held = idle_and_held(loop_dir)
     live, idle_n, held_n, unread = {}, {}, {}, []
-    for member, key in rotation(a.loop_dir):
+    for member, key in rotation(loop_dir):
         if not key:
             continue
         if member in held or member in idle:
-            dbsuite, total = population(key)
+            dbsuite, total = popfn(key)
             (held_n if member in held else idle_n)[member] = total if total is not None else -1
             continue
-        dbsuite, total = population(key)
+        dbsuite, total = popfn(key)
         if dbsuite is None:
             unread.append(member)
             continue
         live[dbsuite] = live.get(dbsuite, 0) + total
-    if not live:
-        refuse("no live rotation member resolved to a table")
+    return live, idle_n, held_n, unread
+
+
+def fresh_of(db, since, live):
+    """({progress suite: set of fresh program stems}, outside) over the coo's readings after `since`: fresh is tagged rr=1 or req=<seat>."""
     fresh, outside = {}, 0
     with open(db, encoding="utf-8", errors="replace") as fh:
         fh.readline()
@@ -109,6 +107,22 @@ def main():
                 continue
             if f[5] in live:
                 fresh.setdefault(f[5], set()).add(stem(f[7]))
+    return fresh, outside
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--loop-dir", default="/home/claude_coo/.scratch/verifier")
+    ap.add_argument("--hours", type=float, default=72.0)
+    a = ap.parse_args()
+    db = os.environ.get("S4E_PROGRESS_DB", "/home/resources/progress/results.tsv")
+    if not os.path.exists(db):
+        refuse("the progress DB %s does not exist" % db)
+    since = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=a.hours)).strftime("%Y-%m-%dT%H:%M:%S")
+    live, idle_n, held_n, unread = live_members(a.loop_dir)
+    if not live:
+        refuse("no live rotation member resolved to a table")
+    fresh, outside = fresh_of(db, since, live)
     tests = sum(live.values())
     nfresh = sum(min(len(fresh.get(k, ())), n) for k, n in live.items())   # capped at the denominator: a program outside it never counts twice
     fmt = lambda d: ",".join("%s:%d" % kv for kv in sorted(d.items())) or "none"

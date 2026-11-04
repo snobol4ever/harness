@@ -39,8 +39,14 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   util_seat_census.py --acceptance S   step 9's DONE-WHEN (default 86400): over the busy runs (twelve at least) the grader at 2.0 cores or more, no seat's
                                        ten-minute mean above 4.0 while another seat waited for a slot, pressure some avg300 under 30, builds FETCHED ten
                                        times the BUILT (BUILDS.tsv, written by util_build_cache.sh), landings on origin/main at 10 an hour or more
+  util_seat_census.py --lap [S]        box-budget step 1 (CTO-474/478): the LAP line over the last S seconds (default 3600): the loop's rows per hour (the coo's
+                                       readings tagged rr=1 or req=), fresh=F/T (util_round_robin_freshness.py's live population and fresh rule over 72 h), the ETA of
+                                       the stale rows at that rate and the whole lap's length; LAP_SLICES each class's mean cores and share and LAP_SEATS each seat's
+                                       from LOAD.tsv; LAP_WAITS the slot waits from SLOT_WAITS.tsv; `run` appends the LAP line to LOAD.tsv every tick. The population
+                                       (85 s of from-progress calls) is cached an hour in LAP_POP.tsv. rc 0 printed; rc 2 no results.tsv or no live population
   --load F --seats F --root DIR        read and write these instead (the gate's fixtures)
   --results F --waits F --builds F --repos DIR   the other ledgers and the repo root, for the fixtures
+  --loop-dir D --pop-cache F           the loop's directory (loop8.sh's ROT, idle_units) and the population cache, for --lap's fixtures
 """
 import os, re, sys, time, glob, subprocess
 CG = "/sys/fs/cgroup/user.slice/user-1000.slice"
@@ -53,6 +59,9 @@ RESULTS = "/home/resources/progress/results.tsv"
 WAITS = "/home/resources/progress/SLOT_WAITS.tsv"
 BUILDS = "/home/resources/progress/BUILDS.tsv"
 TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
+LAPPOP = "/home/resources/progress/LAP_POP.tsv"
+LOOPDIR = "/home/claude_coo/.scratch/verifier"
+FRESH_H = 72
 
 
 def arg(flag, default):
@@ -317,6 +326,12 @@ def run(do_append, do_print):
         lines.append([utc, "UNMAPPED", "LON", u.rsplit("/", 1)[-1], "-", "-", "-", "-", "-", "-", "-", "-"])
     box = box_line(held, app_cores)
     lines.append([utc, "BOX", "BOX", "box", " ".join("%s=%s" % (k, box[k]) for k in BOXCOLS), "-", "-", "-", "-", "-", "-", "-"])
+    try:
+        lp, _ = lap_lines(3600)
+        if lp:
+            lines.append([utc, "LAP", "LAP", "lap", lp[0][4:], "-", "-", "-", "-", "-", "-", "-"])
+    except Exception:
+        pass
     if do_append:
         path = arg("--load", LOAD)
         new = not os.path.exists(path) or os.path.getsize(path) == 0
@@ -327,7 +342,7 @@ def run(do_append, do_print):
                 f.write("\t".join(l) + "\n")
     if do_print:
         for l in lines:
-            print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] != "BOX" else "BOX %s" % l[4])
+            print("%-8s %-6s %-14s %6s cores %6s MB peak %6s oom %s pids %s cc %s run %s tmp %s" % tuple(l[1:]) if l[1] not in ("BOX", "LAP") else "%s %s" % (l[1], l[4]))
     return 0
 
 
@@ -475,6 +490,104 @@ def newest_run(path):
         return None, []
     last = rows[-1][0]
     return last, [r for r in rows if r[0] == last]
+
+
+def lap_population(loop_dir, cache_path, max_age=3600):
+    """The live population by util_round_robin_freshness.py's own rule (never a second copy), each member's (db_suite, total) cached for an hour."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import util_round_robin_freshness as rrf
+    now = time.time(); cache = {}
+    for line in rd(cache_path).splitlines():
+        f = line.split("\t")
+        if len(f) == 4 and not line.startswith("#"):
+            try:
+                cache[f[0]] = (float(f[1]), None if f[2] == "-" else f[2], None if f[3] == "-" else int(f[3]))
+            except ValueError:
+                continue
+    def popfn(key):
+        if key in cache and now - cache[key][0] < max_age:
+            return cache[key][1], cache[key][2]
+        dbs, tot = rrf.population(key)
+        cache[key] = (now, dbs, tot)
+        return dbs, tot
+    try:
+        live, idle_n, held_n, unread = rrf.live_members(loop_dir, popfn)
+    except SystemExit:
+        return rrf, None, []
+    try:
+        with open(cache_path + ".tmp", "w") as f:
+            f.write("# key\tat\tdb_suite\ttotal  -- util_seat_census.py --lap's population cache (util_score_row.py from-progress --dry-run, an hour)\n")
+            for k, (t, d, n) in sorted(cache.items()):
+                f.write("%s\t%.0f\t%s\t%s\n" % (k, t, d or "-", "-" if n is None else n))
+        os.replace(cache_path + ".tmp", cache_path)
+    except OSError:
+        pass
+    return rrf, live, unread
+
+
+def lap_lines(window):
+    """box-budget step 1: [LAP, LAP_SLICES, LAP_SEATS, LAP_WAITS] lines, or (None, reason) when it cannot measure."""
+    db = arg("--results", RESULTS)
+    if not os.path.exists(db):
+        return None, "no results.tsv at %s" % db
+    rrf, live, unread = lap_population(arg("--loop-dir", LOOPDIR), arg("--pop-cache", LAPPOP))
+    if not live:
+        return None, "no live rotation member resolved to a table (loop dir %s)" % arg("--loop-dir", LOOPDIR)
+    now = time.time()
+    fresh, outside = rrf.fresh_of(db, time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(now - FRESH_H * 3600)), live)
+    tests = sum(live.values()); nfresh = sum(min(len(fresh.get(k, ())), n) for k, n in live.items())
+    cut = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(now - window)); rows = 0; progs = set()
+    with open(db, encoding="utf-8", errors="replace") as fh:
+        fh.readline()
+        for line in fh:
+            f = line.rstrip("\n").split("\t")
+            if len(f) >= 14 and f[0] >= cut and f[3] == "coo" and (rrf.TAG_RR.search(f[13]) or rrf.TAG_REQ.search(f[13])):
+                rows += 1; progs.add((f[5], rrf.stem(f[7])))
+    rph = rows / (window / 3600.0); rpt = rows / len(progs) if progs else 2.0; stale = tests - nfresh
+    if rph > 0:
+        h = stale * rpt / rph
+        eta = "+%.1fh(%s)" % (h, time.strftime("%Y-%m-%dT%H:%MZ", time.gmtime(now + h * 3600))); laph = "%.1f" % (tests * rpt / rph)
+    else:
+        eta, laph = "never", "never"
+    out = ["LAP window=%ds rows_per_hour=%.0f programs=%d rows_per_test=%.2f fresh=%d/%d (%.0f%%) fresh_window=%dh stale=%d eta=%s lap_h=%s outside=%d unresolved=%d"
+           % (window, rph, len(progs), rpt, nfresh, tests, 100.0 * nfresh / tests, FRESH_H, stale, eta, laph, outside, len(unread))]
+    runs = runs_in(arg("--load", LOAD), now - window); cls, seat = {}, {}
+    for r in runs:
+        for x in r:
+            try:
+                if x[1] == "CLASS":
+                    cls[x[2]] = cls.get(x[2], 0.0) + float(x[4])
+                elif x[1] == "UNIT" and x[2] == "SEAT":
+                    seat[x[3]] = seat.get(x[3], 0.0) + float(x[4])
+            except (ValueError, IndexError):
+                continue
+    n = max(1, len(runs)); tot = sum(cls.values()) / n
+    out.append("LAP_SLICES window=%ds runs=%d cores=%.2f " % (window, len(runs), tot) + " ".join("%s=%.2fc(%.0f%%)" % (k, v / n, 100.0 * v / n / tot if tot else 0.0) for k, v in sorted(cls.items(), key=lambda kv: -kv[1])))
+    out.append("LAP_SEATS window=%ds " % window + (" ".join("%s=%.2fc" % (k, v / n) for k, v in sorted(seat.items(), key=lambda kv: -kv[1])) or "none"))
+    w = {"cc": [0, 0.0, 0.0], "run": [0, 0.0, 0.0]}; ws = {}
+    for l in rd(arg("--waits", WAITS)).splitlines():
+        r = l.split("\t")
+        if len(r) < 4 or l.startswith("#"):
+            continue
+        try:
+            if utc_s(r[0]) < now - window:
+                continue
+            sec = float(r[3])
+        except ValueError:
+            continue
+        e = w.setdefault(r[2], [0, 0.0, 0.0]); e[0] += 1; e[1] += sec; e[2] = max(e[2], sec); ws[r[1]] = ws.get(r[1], 0.0) + sec
+    out.append("LAP_WAITS window=%ds " % window + " ".join("%s=%d/%.0fs/max%.0fs" % (k, e[0], e[1], e[2]) for k, e in sorted(w.items()))
+               + " by_seat=" + (",".join("%s:%.0fs" % kv for kv in sorted(ws.items(), key=lambda kv: -kv[1])) or "none"))
+    return out, None
+
+
+def lap(window):
+    out, why = lap_lines(window)
+    if out is None:
+        print("REFUSED(2): " + why)
+        return 2
+    print("\n".join(out))
+    return 0
 
 
 TMP_SEAT_MB = 4096   # ARCH-SHARED-DEVELOPMENT 2.3, /tmp move (2): a seat over 4 GB of /tmp is named; the banner shows each seat its own figure against it (the coo 2026-11-01, CEO-2095)
@@ -782,6 +895,9 @@ def health():
 
 def main():
     av = sys.argv[1:]
+    if "--lap" in av:
+        v = arg("--lap", "3600")
+        return lap(int(v) if v.isdigit() else 3600)
     if "--grader-rate" in av:
         return grader_rate(int(arg("--grader-rate", "7200")))
     if "--acceptance" in av:

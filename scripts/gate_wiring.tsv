@@ -1196,6 +1196,7 @@ test_gate_scrip_sizes_the_heap_with_d_and_i.sh	WIRED	-	-	-
 test_gate_scrip_switches_are_spitbols.sh	WIRED	-	-	-
 test_gate_scriptix_a_call_into_the_icon_section_returns_with_the_callers_r12.sh	WIRED	-	-	-
 test_gate_scriptix_a_snocone_and_a_pascal_fence_compile_through_their_own_frontends.sh	WIRED	-	-	-
+test_gate_seat_census_prints_the_lap_rows_per_hour_fresh_eta_slices_and_waits.sh	WIRED	-	-	-
 test_gate_seat_census_reads_the_grader_rate_and_the_acceptance_from_the_ledgers.sh	WIRED	-	-	-
 test_gate_seat_digests_within_budget.sh	WIRED	-	-	-
 test_gate_seat_identity_one_map.sh	WIRED	-	-	-
