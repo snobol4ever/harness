@@ -5,7 +5,7 @@
 # WITH --apply, in this order:
 #   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10), every slice row of the ONE declared budget table
 #       /home/resources/postoffice/BUDGET.tsv (box-budget step 2, CTO-478; util_seat_census.py --budget-props), on 2026-11-04:
-#         app.slice and s4e.slice CPUWeight=100                                      (the sessions' side against the loops' side, CTO-474 (2))
+#         app.slice CPUWeight=100, s4e.slice CPUWeight=200                         (the loops' side outranks the sessions' at the top, box-scheduler step 7, CTO-496)
 #         app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G   (the sessions; the default 100, equal to any desktop app, CEO-2105 (d))
 #         s4e-grader.slice CPUWeight=300 MemoryMax=10G                               (the grader outranks the sessions, CEO-2105 (d))
 #         s4e-batch.slice  CPUWeight=50 MemoryMax=12G                                (batch, step 4 moves the boards and censuses in)
