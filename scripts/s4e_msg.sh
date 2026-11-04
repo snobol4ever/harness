@@ -14,6 +14,9 @@
 #   s4e_msg.sh claim <topic>              s4e_msg.sh board [my new status text]
 #   s4e_msg.sh sweep                      ⭐ LAW 4: move landed (DONE) rows out of QUEUE.tsv into
 #                                         QUEUE.done.tsv — the buffer must never become a graveyard again
+#   s4e_msg.sh sweep --close-green [--only T] [--timeout S]   CTO-496 step 8: every open row with no RUNNING claim is put
+#                                         through done; green closes (receipt in its LEDGER), red and rc 2 keep the row untouched
+#   s4e_msg.sh sweep --plant-green        step 8's probe: the same phase on a scratch postoffice; the live queue is never written
 #   s4e_msg.sh assign <seat> <topic>      ⭐ V2-1/LAW 2 ASSIGNMENT IS THE LOCK: HQ writes <seat>'s claim
 #                                         atomically + rings a contentless doorbell; that seat's next serves it FIRST
 #   s4e_msg.sh mint <topic> [rank] "GOAL"  ⭐ THE ONLY WAY A SEAT CAN ADD NEW WORK (2026-08-29 ceo ruling):
@@ -699,6 +702,60 @@ s4e_manifest_rowd_cite() {   # echo the citing manifest line(s) for topic $1; rc
     local t="$1" m="$S4E/harness/scripts/corpus_coverage_manifest.tsv"
     [ -n "$t" ] && [ -f "$m" ] || return 1
     awk -F'\t' -v t="$t" '/^#/ {next} $3=="ROWD" && $4==t {print; f=1} END{exit !f}' "$m"
+}
+s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHEN reads green closes itself in the sweep, through done and every guard done carries
+  local _only="" _to="${S4E_SWEEP_TIMEOUT:-600}" _q="$PO/QUEUE.tsv" _l _t _st _ow _c _sv _had _r _t0 _el _log _tree _nc=0 _nk=0 _nl=0
+  while [ $# -gt 0 ]; do case "$1" in --only) _only="${2:-}"; shift 2;; --timeout) _to="${2:-}"; shift 2;;
+    *) printf '⛔ REFUSED(2): sweep --close-green takes --only <topic> and --timeout <s>, not %s\n' "$1" >&2; return 2;; esac; done
+  case "$_to" in ''|*[!0-9]*) printf '⛔ REFUSED(2): sweep --close-green --timeout takes whole seconds\n' >&2; return 2;; esac
+  [ -f "$_q" ] || { printf '⛔ REFUSED(2): no %s\n' "$_q" >&2; return 2; }
+  _l="$(mktemp)"; _sv="$(mktemp)"; _log="$(mktemp)"
+  awk -F'\t' '!/^#/ && NF>=4 {print $2"\t"$3"\t"$4}' "$_q" > "$_l"
+  while IFS=$'\t' read -r _t _ow _st; do
+    [ -n "$_only" ] && [ "$_t" != "$_only" ] && continue
+    case "$_st" in DONE*|RETIRED*|SUPERSEDED*|PARKED-LON-HOLD*|GRANT-NEEDED*) continue;; esac
+    [ -f "$PO/tasks/$_t.task.md" ] || continue
+    _c="$PO/claims/$_t.claim"; _had=0
+    if [ -f "$_c" ]; then
+      grep -q '^DONE$' "$_c" && continue
+      if grep -q '^RUNNING' "$_c"; then _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: %s is running it, CEO-755c)\n' "$_t" "$(head -1 "$_c")"; continue; fi
+      cp "$_c" "$_sv"; _had=1; fi
+    printf '%s\nSWEEP-CLOSE %s by %s (row %s, owner %s)\n' "$ME" "$(date -u +%FT%TZ)" "$ME" "$_st" "$_ow" > "$_c"
+    _t0="$(date +%s)"; S4E_DONE_TIMEOUT="$_to" S4E_NO_BANNER=1 "$0" done "$_t" > "$_log" 2>&1 < /dev/null; _r=$?; _el="$(( $(date +%s) - _t0 ))"
+    if [ "$_r" -eq 0 ] && grep -q '^DONE$' "$_c" 2>/dev/null; then
+      printf 'CLOSED-BY-SWEEP for owner %s (row was %s)\n' "$_ow" "$_st" >> "$_c"
+      _tree="$(grep '^RECEIPT' "$_c" | tail -1 | sed -n 's/.* tree=\([^ ]*\) .*/\1/p')"
+      printf '\n- [%s·%s] CLOSED BY THE SWEEP (box-scheduler step 8, CTO-496): DONE-WHEN rc 0 in %ss at SCRIP %s; the row was %s, owner %s.\n' \
+        "$ME" "$(date -u +%FT%H:%MZ)" "$_el" "${_tree:-?}" "$_st" "$_ow" >> "$PO/tasks/$_t.task.md"
+      _nc=$((_nc+1)); printf 'SWEEP closed %s (was %s, owner %s, %ss)\n' "$_t" "$_st" "$_ow" "$_el"
+    else
+      if [ "$_had" = 1 ]; then cp "$_sv" "$_c"; else rm -f "$_c"; fi
+      _nk=$((_nk+1)); printf 'SWEEP kept %s (done rc %s in %ss: %s)\n' "$_t" "$_r" "$_el" "$(grep -m1 -E 'NOT DONE|REFUSED|refuse' "$_log" | sed 's/^[[:space:]]*//' | cut -c1-140)"
+    fi
+  done < "$_l"
+  rm -f "$_l" "$_sv" "$_log"
+  printf 'sweep --close-green: %s closed, %s kept red or unmeasured, %s kept under a live claim (timeout %ss per row)\n' "$_nc" "$_nk" "$_nl" "$_to"
+}
+s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the archive run on a scratch postoffice; the live queue is never written
+  local _w _g _r _k _o _x _ok=1 _why="" _now
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; _now="$(date -u +%FT%TZ)"
+  _g="sweep-plant-green-$$"; _r="sweep-plant-red-$$"; _k="sweep-plant-live-claim-$$"
+  printf '# plant queue (box-scheduler step 8, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-owner\tFREE\n2\t%s\tplant-other\tASSIGNED:plant-other\n' \
+    "$_g" "$_r" "$_k" > "$_w/QUEUE.tsv"
+  for _x in "$_g|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\"" "$_r|test -f \"\$S4E_HOME/harness/scripts/sweep-plant-absent-$$\"" "$_k|test -f \"\$S4E_HOME/harness/scripts/s4e_msg.sh\""; do
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: minted via mint by %s, %s\n## NEXT\n## QA\n## LEDGER\n' "${_x%%|*}" "${_x#*|}" "$ME" "$_now" > "$_w/tasks/${_x%%|*}.task.md"; done
+  printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_g.claim"
+  printf 'plant-other\nASSIGNED-BY plant %s\nRUNNING\n' "$_now" > "$_w/claims/$_k.claim"; cp "$_w/claims/$_k.claim" "$_w/live.before"
+  _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 60 2>&1)"
+  grep -qP "^2\t\Q$_g\E\tplant-owner\tDONE$" "$_w/QUEUE.done.tsv" 2>/dev/null || { _ok=0; _why="$_why the green row is not archived DONE;"; }
+  grep -qP "^2\t\Q$_g\E\t" "$_w/QUEUE.tsv" && { _ok=0; _why="$_why the green row is still live;"; }
+  grep -q 'CLOSED BY THE SWEEP' "$_w/tasks/$_g.task.md" || { _ok=0; _why="$_why the green row has no ledger receipt;"; }
+  grep -qP "^2\t\Q$_r\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" || { _ok=0; _why="$_why the red row moved;"; }
+  [ -e "$_w/claims/$_r.claim" ] && { _ok=0; _why="$_why the red row kept a sweep claim;"; }
+  { grep -qP "^2\t\Q$_k\E\tplant-other\tASSIGNED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/live.before" "$_w/claims/$_k.claim"; } || { _ok=0; _why="$_why the live claim was touched;"; }
+  if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s untouched)\n' "$_g" "$_r" "$_k"; rm -rf "$_w"; return 0; fi
+  printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
     _h="$(head -1 "$_o")"; _to="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO \([^ ]*\) RE .*$/\1/p')"
@@ -4297,6 +4354,8 @@ TASKEOF
          # nothing ever moved a landed row out, so the picker walked a graveyard and HQ re-dispatched finished work.
          # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
          # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
+         [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
+         if [ "${2:-}" = "--close-green" ]; then shift 2; s4e_sweep_close_green "$@" || exit $?; fi
          q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
          cp "$q" "$q.bak.sweep-$(date -u +%Y%m%dT%H%M%SZ)"
          keep="$(mktemp)"; gone="$(mktemp)"; nk=0; ng=0
