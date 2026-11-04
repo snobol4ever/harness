@@ -10,6 +10,8 @@
 #                ircall=W:N (callgrind Ir per call of loop witness W's mode-4 binary, 200000 calls, at most N)
 #                nosym=a,b (no definition or reference of the names under SCRIP/src, read) | gate=name (bash name.sh rc 0) | smoke=L|ALL (test_smoke_L.sh green; ALL = the eight)
 #                rows=L|ALL (SUITES.tsv today_pass not below the pass recorded in ROWS0.tsv beside STEPS.tsv) | rowsmin=N (harness/scripts/builtins.tsv holds at least N rows) | -
+#                leafbound (the finish: builtin_leaf.inc declares no weak entry, and every conv leaf or open row of builtins.tsv names a symbol the built runtime DEFINES, so no g_bt_leaf or g_bt_open slot reads 0;
+#                           the nm of out/libscrip_rt.so cannot show an unbound hidden weak, the linker drops it, so the source and the table are read beside the defined symbols; cto 2026-11-04)
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against; the design seat records it once; an executor re-records before its step)
 #   --out DIR    where the runs go (default <root>/.scratch/builtin_table)
@@ -120,6 +122,15 @@ ircall() { # $1 witness -> Ir per call of its mode-4 binary under callgrind
     [ -n "$ir" ] || { echo "REFUSED"; return; }
     echo $(( ir / CALLS ))
 }
+leafbound() { # -> "weak=W zero=Z rows=R": W lines of builtin_leaf.inc that declare a weak entry, Z conv leaf|open rows whose entry is not a defined bt_ symbol of the built runtime (the generator binds only bt_ entries, so the slot reads 0); REFUSED when it cannot measure
+    local inc="${S4E_BT_LEAF_INC:-$SC/src/runtime/builtin_leaf.inc}" tsv="${S4E_BT_TSV:-$TSV}" nmf="${S4E_BT_NM:-}" so="$SC/out/libscrip_rt.so" defined w
+    [ -r "$inc" ] && [ -r "$tsv" ] || { echo REFUSED; return; }
+    if [ -n "$nmf" ]; then [ -r "$nmf" ] || { echo REFUSED; return; }; defined="$(awk '$2 == "T" || $2 == "t" {print $3}' "$nmf")"
+    else [ -r "$so" ] || { echo REFUSED; return; }; defined="$(nm "$so" 2> /dev/null | awk '$2 == "T" || $2 == "t" {print $3}')"; fi
+    printf '%s\n' "$defined" | grep -qx bt_row_of || { echo REFUSED; return; }
+    w="$(grep -c 'weak' "$inc")"
+    awk -F'\t' -v w="$w" 'FNR == NR { d[$1] = 1; next } !/^#/ && $1 != "bid" && ($7 == "leaf" || $7 == "open") { r++; if (!($6 in d) || $6 !~ /^bt_/) z++ } END { if (r == 0) print "REFUSED"; else printf "weak=%d zero=%d rows=%d\n", w, z + 0, r }' <(printf '%s\n' "$defined") "$tsv"
+}
 readings=""; pgreen=1
 [ "$probe" = "-" ] && probe=""
 for tok in $probe; do
@@ -136,6 +147,8 @@ for tok in $probe; do
         nosym) bad=0; for s in ${val//,/ }; do grep -rqw "$s" "$SC/src" && bad=$((bad + 1)); done; readings="$readings nosym_present=$bad"; [ "$bad" = 0 ] || pgreen=0 ;;
         gate) [ -f "$HERE/$val.sh" ] || { readings="$readings gate[$val]=missing"; pgreen=0; continue; }
             if ( cd "$SC" && timeout -k 10 1800 bash "$HERE/$val.sh" > "$OUT/step$step/$val.log" 2>&1 ); then readings="$readings gate[$val]=green"; else readings="$readings gate[$val]=red"; pgreen=0; fi ;;
+        leafbound) r="$(leafbound)"; [ "$r" = REFUSED ] && refuse "leafbound cannot measure: builtin_leaf.inc, builtins.tsv, an unstripped out/libscrip_rt.so defining bt_row_of, or a leaf or open row is missing"
+            wk="${r#weak=}"; wk="${wk%% *}"; zr="${r#*zero=}"; zr="${zr%% *}"; readings="$readings leafbound[$r]"; { [ "$wk" = 0 ] && [ "$zr" = 0 ]; } || pgreen=0 ;;
         smoke) [ "$val" = ALL ] && ls="$SMOKES" || ls="${val//,/ }"
             for l in $ls; do if ( cd "$SC" && timeout -k 10 900 bash "$HERE/test_smoke_$l.sh" > "$OUT/step$step/smoke_$l.log" 2>&1 ); then readings="$readings smoke[$l]=green"; else readings="$readings smoke[$l]=red"; pgreen=0; fi; done ;;
         rows) [ -r "$SUITES" ] || refuse "no $SUITES"; [ -r "$ROWS0" ] || refuse "no $ROWS0 (--rows0 records it)"
