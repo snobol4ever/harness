@@ -25,6 +25,9 @@
 # sees direct calls, tail jumps and GOT slots, so an indirect call is followed only through the roots it names (every rx.c symbol, the one RxEnv callback); a function pointer stored into an
 # RxEnv by a form the scan does not read is REFUSED (an initializer), and one stored anywhere else and called from outside rx.c is invisible. The arm reads the built runtime, so it is only as
 # current as out/libscrip_rt.so (util_require_fresh below).
+# (5) THE HOOKED ROWS' CLAIM: a HOOKED:<fn>,... row of gc_wsb_producers.tsv says the producer's WSB payload carries collected-heap pointers that the validator cannot see, and that each named hook rewrites them; the
+# arm reads util_wsb_producer_audit.py --hooks: every hook is defined as a void function in the row's file and called by the C collection body (runtime/rt/gc_heap.c) and by the asm fast path (runtime/rtx/rtx_gc.s, RTX_CALL),
+# the road SCRIP_DIAG=0 takes. (5a) a fixture hook in both bodies reads clean and one left out of either reads RED; (5b) a hook the file does not define reads RED and a table with no HOOKED row REFUSES rc 2.
 # rc=0 every arm holds; rc=1 an arm failed; rc=2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)"; G="$(basename "${BASH_SOURCE[0]}" .sh)"
@@ -94,5 +97,28 @@ printf 'void f(void) {\n    rt_heap_out_of_memory(1, 2, 3, 4);\n    abort();\n}\
 out2="$(python3 -I "$RX" --disasm "$T/cut.dis" $FXA --src "$T/src2" 2>&1)"; rc2=$?
 if [ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'abort()' && [ "$rc2" = 0 ]; then echo "  ok   (4d) a cut call site not followed by abort() reads RED, and one that is reads clean"
 else echo "  RED  (4d) the cut call-site fixtures: rc=$rc and rc=$rc2, wanted 1 and 0: $(printf '%s' "$out" | head -1 | cut -c1-160)"; bad=1; fi
-if [ "$bad" = 0 ]; then echo "GATE PASS(0) [$G]: 6 arm(s)"; exit 0; fi
+CH="runtime/rt/gc_heap.c"; SH="runtime/rtx/rtx_gc.s"
+out="$(python3 -I "$AUD" --hooks "$ROOT/src" "$TAB" "$CH" "$SH" 1 2>&1)"; rc=$?
+if [ "$rc" = 0 ]; then echo "  ok   (5) every HOOKED producer's hooks are defined in its file and called by both collection bodies: $(printf '%s' "$out" | head -1 | cut -c1-200)"
+elif [ "$rc" = 2 ]; then refuse "(5) the hook reader could not measure: $(printf '%s' "$out" | head -2 | tr '\n' ' ' | cut -c1-300)"
+else echo "  RED  (5) a HOOKED producer's hook is missing or left out of a collection body: $(printf '%s' "$out" | head -4 | tr '\n' ' ' | cut -c1-400)"; bad=1; fi
+mkdir -p "$T/hk/runtime/rt" "$T/hk/runtime/rtx"
+printf 'static int *fx_tab;\nvoid fx_hook(void) { (void)fx_tab; }\nvoid fx_grow(void) { fx_tab = (int *)rt_wsb_realloc(fx_tab, 8); }\n' > "$T/hk/runtime/fx_reg.c"
+printf 'void gc_collect_ex(void) { fx_hook(); }\n' > "$T/hk/$CH"
+printf 'Lfast:\n    RTX_CALL(fx_hook)\n' > "$T/hk/$SH"
+printf 'runtime/fx_reg.c\tfx_tab = (int *)rt_wsb_realloc\tHOOKED:fx_hook\tfixture\n' > "$T/hk.tsv"
+out="$(python3 -I "$AUD" --hooks "$T/hk" "$T/hk.tsv" "$CH" "$SH" 1 2>&1)"; rc=$?
+printf 'Lfast:\n    RTX_CALL(other_hook)\n' > "$T/hk/$SH"
+out2="$(python3 -I "$AUD" --hooks "$T/hk" "$T/hk.tsv" "$CH" "$SH" 1 2>&1)"; rc2=$?
+printf 'void gc_collect_ex(void) { }\n' > "$T/hk/$CH"; printf 'Lfast:\n    RTX_CALL(fx_hook)\n' > "$T/hk/$SH"
+out3="$(python3 -I "$AUD" --hooks "$T/hk" "$T/hk.tsv" "$CH" "$SH" 1 2>&1)"; rc3=$?
+if [ "$rc" = 0 ] && [ "$rc2" = 1 ] && printf '%s' "$out2" | grep -q "hook fx_hook is not called from $SH" && [ "$rc3" = 1 ] && printf '%s' "$out3" | grep -q "hook fx_hook is not called from $CH"; then echo "  ok   (5a) a hook in both bodies reads clean, and one left out of the asm fast path or of the C body reads RED and rc 1"
+else echo "  RED  (5a) the hook fixtures: both=$rc asm-missing=$rc2 c-missing=$rc3, wanted 0, 1 and 1: $(printf '%s' "$out2" | head -2 | tr '\n' ' ' | cut -c1-200)"; bad=1; fi
+printf 'void gc_collect_ex(void) { fx_hook(); }\n' > "$T/hk/$CH"; printf 'Lfast:\n    RTX_CALL(fx_hook)\n' > "$T/hk/$SH"; printf 'static int *fx_tab;\nvoid fx_grow(void) { fx_tab = (int *)rt_wsb_realloc(fx_tab, 8); }\n' > "$T/hk/runtime/fx_reg.c"
+out="$(python3 -I "$AUD" --hooks "$T/hk" "$T/hk.tsv" "$CH" "$SH" 1 2>&1)"; rc=$?
+printf '' > "$T/hk0.tsv"
+out2="$(python3 -I "$AUD" --hooks "$T/hk" "$T/hk0.tsv" "$CH" "$SH" 1 2>&1)"; rc2=$?
+if [ "$rc" = 1 ] && printf '%s' "$out" | grep -q 'hook fx_hook is not defined' && [ "$rc2" = 2 ]; then echo "  ok   (5b) a hook the row names but the file does not define reads RED, and a table with no HOOKED row REFUSES rc 2 (a blind instrument is not green)"
+else echo "  RED  (5b) the undefined-hook and blind fixtures: rc=$rc and rc=$rc2, wanted 1 and 2: $(printf '%s' "$out" | head -2 | tr '\n' ' ' | cut -c1-200)"; bad=1; fi
+if [ "$bad" = 0 ]; then echo "GATE PASS(0) [$G]: arms (1) to (5b)"; exit 0; fi
 echo "GATE RED(1) [$G]: see the RED arms above"; exit 1

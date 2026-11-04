@@ -100,9 +100,42 @@ def load(tsv):
     return rows
 
 
+def hooks(root, tsv, cfile, sfile, minimum):
+    rows = [r for r in load(tsv) if r[2].startswith('HOOKED:')]
+    if len(rows) < minimum:
+        print('REFUSE hooked rows=%d wanted at least %d' % (len(rows), minimum))
+        return 2
+    try:
+        csrc = open(os.path.join(root, cfile), errors='replace').read()
+        ssrc = open(os.path.join(root, sfile), errors='replace').read()
+    except OSError as e:
+        print('REFUSE collector body unreadable: %s' % e)
+        return 2
+    bad = []
+    for (rel, sub, cls, why) in rows:
+        try:
+            own = open(os.path.join(root, rel), errors='replace').read()
+        except OSError:
+            bad.append('%s: file absent' % rel)
+            continue
+        for fn in cls[len('HOOKED:'):].split(','):
+            if not re.search(r'^(?:static\s+)?void\s+%s\s*\(' % re.escape(fn), own, re.M):
+                bad.append('%s: hook %s is not defined' % (rel, fn))
+            if not re.search(r'\b%s\s*\(\s*\)\s*;' % re.escape(fn), csrc):
+                bad.append('%s: hook %s is not called from %s' % (rel, fn, cfile))
+            if not re.search(r'RTX_CALL\(\s*%s\s*\)' % re.escape(fn), ssrc):
+                bad.append('%s: hook %s is not called from %s' % (rel, fn, sfile))
+    print('wsb_wsc_hooked rows=%d bad=%d' % (len(rows), len(bad)))
+    for b in bad:
+        print('UNHOOKED ' + b)
+    return 1 if bad else 0
+
+
 def main(argv):
+    if len(argv) >= 7 and argv[1] == '--hooks':
+        return hooks(argv[2], argv[3], argv[4], argv[5], int(argv[6]))
     if len(argv) < 3 or argv[1] not in ('--check', '--list'):
-        print('usage: util_wsb_producer_audit.py --check|--list <src-root> <audit.tsv>', file=sys.stderr)
+        print('usage: util_wsb_producer_audit.py --check|--list <src-root> <audit.tsv> | --hooks <src-root> <audit.tsv> <collector.c> <collector.s> <min-rows>', file=sys.stderr)
         return 2
     root, tsv = argv[2], argv[3]
     audited = load(tsv)
