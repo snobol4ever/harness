@@ -59,11 +59,61 @@ usage() {
   echo "       --root <dir>     name the root this kill is scoped to; a root that is not the caller's own REFUSES" >&2
 }
 
+KILL_LEDGER="${S4E_KILL_LEDGER:-${S4E_POST:-/home/resources/postoffice}/kills.tsv}"
+kill_ledger_append() {  # kill_ledger_append <pid> <signal> <target-cwd> <target-cmd>
+  local when me sender_root line
+  when="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  me="${S4E_SEAT:-$(basename "$S4E" 2>/dev/null | sed 's/^claude_//')}"
+  sender_root="$S4E"
+  # TAB-separated, and every field is a WORD so a reader splitting on tabs cannot shift a column.
+  line="$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+      "$when" "${me:-unknown}" "$sender_root" "$$" "$2" "$1" "${4:-unknown}" "${3:-unknown}" "${pattern:-<none>}")"
+  if ! ( flock 9 2>/dev/null; printf '%s\n' "$line" >> "$KILL_LEDGER" ) 9>>"${KILL_LEDGER}.lock" 2>/dev/null; then
+    echo "  ⚠ COULD NOT RECORD this kill in $KILL_LEDGER -- the signal was still sent, and its victim will read 'no ledger entry'" >&2
+  fi
+}
+me_seat="${S4E_SEAT:-$(printf '%s' "$S4E" | sed -n 's|^/home/claude_\(.*\)$|\1|p')}"; bgdir="/tmp/s4e/${me_seat:-seat}/bg"
+mine_pid() {  # mine_pid <pid> -> 0 when the pid carries one of this seat's handles or runs under this root; prints why
+  local env h cwd; [ -d "/proc/$1" ] || { echo "pid $1 is not alive"; return 1; }
+  h="$(tr '\0' '\n' < "/proc/$1/environ" 2>/dev/null | sed -n 's/^S4E_BG_HANDLE=//p')"
+  [ -n "$h" ] && [ -f "$bgdir/$h.handle" ] && { echo "handle $h of $me_seat"; return 0; }
+  cwd=$(readlink -f "/proc/$1/cwd" 2>/dev/null); case "$cwd" in "$S4E"|"$S4E"/*) echo "cwd $cwd under $S4E"; return 0 ;; esac
+  echo "not mine: no handle of $me_seat in its environment${h:+ (handle $h is not under $bgdir)} and cwd ${cwd:-?} is not under $S4E"; return 1; }
+kill_one() {  # kill_one <pid> <why>: TERM, then KILL after 3 s; the ledger line; prints the KILL-MINE line
+  local pid="$1" cwd cmd i; cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null); cmd=$( (tr '\0' ' ' < "/proc/$pid/cmdline") 2>/dev/null | sed 's/[[:space:]]*$//')
+  kill -TERM "$pid" 2>/dev/null; kill_ledger_append "$pid" TERM "$cwd" "$cmd"
+  for i in 1 2 3 4 5 6; do [ -d "/proc/$pid" ] || break; sleep 0.5; done
+  [ -d "/proc/$pid" ] && { kill -KILL "$pid" 2>/dev/null; kill_ledger_append "$pid" KILL "$cwd" "$cmd"; sleep 0.5; }
+  echo "KILL-MINE pid=$pid root=$S4E $2 signalled=$([ -d "/proc/$pid" ] && echo TERM+KILL,still-alive || echo TERM,gone) cmd=$(printf '%s' "$cmd" | cut -c1-120)"; }
+probe() {
+  local o id pid why="" f other
+  o="$(bash "$(dirname "${BASH_SOURCE[0]}")/util_run_slot.sh" --bg sleep 600 2>&1)" || { echo "KILL-MINE PROBE RED: util_run_slot.sh --bg refused [$o]"; exit 1; }
+  id="$(printf '%s\n' "$o" | sed -n 's/^BG handle=\([^ ]*\) .*/\1/p')"; pid="$(printf '%s\n' "$o" | sed -n 's/.* pid=\([0-9]*\) .*/\1/p')"
+  [ -n "$id" ] && [ -n "$pid" ] || { echo "KILL-MINE PROBE RED: no BG handle line [$o]"; exit 1; }
+  o="$(bash "${BASH_SOURCE[0]}" --handle "$id" 2>&1)"; printf '%s\n' "$o" | grep -q "^KILL-MINE pid=$pid " || why="$why --handle did not kill its own run [$o];"
+  [ -d "/proc/$pid" ] && why="$why pid $pid is still alive after --handle;"
+  [ -f "$bgdir/$id.handle" ] && why="$why the handle file was not retired;"
+  o="$(bash "${BASH_SOURCE[0]}" --pid 1 2>&1)"; [ $? = 2 ] && [ -d /proc/1 ] || why="$why --pid 1 was not refused rc 2 [$o];"
+  other="$(for f in /proc/[0-9]*/cwd; do c=$(readlink -f "$f" 2>/dev/null) || continue
+    case "$c" in /home/claude_*) case "$c" in "$S4E"|"$S4E"/*) ;; *) echo "${f#/proc/}" | cut -d/ -f1; break ;; esac ;; esac; done)"
+  if [ -n "$other" ]; then o="$(bash "${BASH_SOURCE[0]}" --pid "$other" 2>&1)"; [ $? = 2 ] && [ -d "/proc/$other" ] || why="$why another root's pid $other was not refused rc 2 [$o];"; fi
+  o="$(bash "${BASH_SOURCE[0]}" --handle "no-such-handle-$$" 2>&1)"; [ $? = 2 ] || why="$why an unknown handle was not refused rc 2 [$o];"
+  [ -z "$why" ] && { echo "KILL-MINE probe ok handle=$id own_pid=$pid killed=yes foreign_refused=pid1${other:+,pid$other} unknown_handle_refused=yes root=$S4E"; exit 0; }
+  echo "KILL-MINE PROBE RED:$why"; exit 1; }
 explain_only=""
 named_root=""
 pattern=""
 while [ $# -gt 0 ]; do
   case "$1" in
+    --probe) probe ;;
+    --handle) h="${2:-}"; [ -n "$h" ] || { echo "refuse: --handle needs the id a BG line printed -- rc=2" >&2; exit 2; }
+      [ -f "$bgdir/$h.handle" ] || { echo "refuse: no handle $h under $bgdir (not this seat's background run) -- rc=2, nothing signalled" >&2; exit 2; }
+      hp="$(sed -n 's/^pid=\([0-9]*\) .*/\1/p' "$bgdir/$h.handle")"
+      if ! w="$(mine_pid "$hp")"; then rm -f "$bgdir/$h.handle"; echo "refuse: handle $h: $w (the handle is retired) -- rc=2, nothing signalled" >&2; exit 2; fi
+      kill_one "$hp" "handle=$h ($w)"; rm -f "$bgdir/$h.handle"; exit 0 ;;
+    --pid) hp="${2:-}"; [[ "$hp" =~ ^[0-9]+$ ]] || { echo "refuse: --pid needs a number -- rc=2" >&2; exit 2; }
+      w="$(mine_pid "$hp")" || { echo "refuse: pid $hp: $w -- rc=2, nothing signalled" >&2; exit 2; }
+      kill_one "$hp" "pid=$hp ($w)"; exit 0 ;;
     --explain-only) explain_only=1; shift ;;
     --root) named_root="${2:-}"; shift 2 || { echo "refuse: --root needs a directory" >&2; exit 2; } ;;
     --root=*) named_root="${1#--root=}"; shift ;;
@@ -194,19 +244,6 @@ done
 # ⛔ AND AN UNWRITABLE LEDGER DOES NOT BLOCK THE KILL. A seat trying to stop its own runaway process must not
 # be stopped by a full disk; the kill proceeds and the failure is PRINTED, so the victim's report will read
 # "no ledger entry" honestly rather than being silently robbed of its answer.
-KILL_LEDGER="${S4E_KILL_LEDGER:-${S4E_POST:-/home/resources/postoffice}/kills.tsv}"
-kill_ledger_append() {  # kill_ledger_append <pid> <signal> <target-cwd> <target-cmd>
-  local when me sender_root line
-  when="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  me="${S4E_SEAT:-$(basename "$S4E" 2>/dev/null | sed 's/^claude_//')}"
-  sender_root="$S4E"
-  # TAB-separated, and every field is a WORD so a reader splitting on tabs cannot shift a column.
-  line="$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
-      "$when" "${me:-unknown}" "$sender_root" "$$" "$2" "$1" "${4:-unknown}" "${3:-unknown}" "${pattern:-<none>}")"
-  if ! ( flock 9 2>/dev/null; printf '%s\n' "$line" >> "$KILL_LEDGER" ) 9>>"${KILL_LEDGER}.lock" 2>/dev/null; then
-    echo "  ⚠ COULD NOT RECORD this kill in $KILL_LEDGER -- the signal was still sent, and its victim will read 'no ledger entry'" >&2
-  fi
-}
 for pid in "${targets[@]}"; do
   _cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null)
   # ⛔ THE SUBSHELL IS THE POINT: a pid can vanish between enumeration and this read (a child dying with its
