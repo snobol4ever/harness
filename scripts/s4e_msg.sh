@@ -487,6 +487,9 @@ s4e_pid_release() { local _f="$PO/$ME/.pid" _p _t
     [ -f "$_f" ] || return 0; read -r _p _t _ < "$_f" 2>/dev/null || true
     [ "${_p:-}" = "$$" ] && rm -f "$_f"; return 0; }
 s4e_pid_arm() { trap 's4e_pid_release' EXIT; trap 's4e_pid_release; exit 130' INT; trap 's4e_pid_release; exit 143' TERM HUP; }
+s4e_pid_is_mine() { local _p="$1" _cw; case "$_p" in ''|*[!0-9]*) return 1;; esac; [ -d "/proc/$_p" ] || return 1
+    tr '\0' '\n' < "/proc/$_p/environ" 2>/dev/null | grep -qx "S4E_SEAT=$ME" && return 0
+    _cw="$(readlink "/proc/$_p/cwd" 2>/dev/null)"; case "$_cw" in "$S4E"|"$S4E"/*|/tmp/s4e/"$ME"|/tmp/s4e/"$ME"/*) return 0;; esac; return 1; }
 s4e_pid_retake() { local _f="$PO/$ME/.pid" _mine _p _t _i; _mine="$(s4e_proc_start $$)" || return 0; [ -w "$PO/$ME" ] || return 0
     for _i in $(seq 1 120); do
         if ( set -o noclobber; printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f" ) 2>/dev/null; then export S4E_PID_LOCK="$ME:$$:$_mine"; return 0; fi
@@ -723,7 +726,10 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
     [ -n "$_only" ] && [ "$_t" != "$_only" ] && continue
     case "$_st" in DONE*|RETIRED*|SUPERSEDED*|PARKED-LON-HOLD*|GRANT-NEEDED*) continue;; esac
     [ -f "$PO/tasks/$_t.task.md" ] || continue
-    case "$_st" in CLAIMED*|RUNNING*) _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: the row reads %s)\n' "$_t" "$_st"; continue;; esac
+    case "$_st" in CLAIMED*|RUNNING*) _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: the row reads %s)\n' "$_t" "$_st"; continue;;
+      MEASURING:*) _ms="${_st#MEASURING:}"; _mp="${_ms##*:}"; _ms="${_ms%%:*}"
+        if [ -d "/proc/$_mp" ]; then _nl=$((_nl+1)); printf 'SWEEP kept %s (measuring: pid %s of %s lives)\n' "$_t" "$_mp" "$_ms"; continue; fi
+        s4e_set_row_state "$_t" "ASSIGNED:$_ms" && printf 'SWEEP reverted %s to ASSIGNED:%s (its measurement pid %s ended)\n' "$_t" "$_ms" "$_mp"; _nk=$((_nk+1)); continue;; esac
     _c="$PO/claims/$_t.claim"; _had=0
     if [ -f "$_c" ]; then
       grep -q '^DONE$' "$_c" && continue
@@ -2562,7 +2568,11 @@ case "$cmd" in
          case "$st" in
            FREE|PARKED|BLOCKED|ASSIGNED|DONE|SUPERSEDED|RETIRED|GRANT-NEEDED|PARKED-LON-HOLD) : ;;
            PARKED-AWAITING:?*|BLOCKED-ON:?*|ASSIGNED:?*|CLAIMED:?*|RESTRICTED:?*|DONE:?*|SUPERSEDED:?*|GRANT-NEEDED:?*|PARKED-UMBRELLA:?*|PARKED-LON-HOLD:?*) : ;;
+           MEASURING:?*) _mseat="${st#MEASURING:}"; _mpid="${_mseat##*:}"; _mseat="${_mseat%%:*}"
+              { [ "$_mseat" = "$ME" ] && [ "$_mpid" != "$_mseat" ]; } || { printf '⛔ REFUSED: a MEASURING state is MEASURING:<your seat>:<pid>, not "%s".\n' "$st" >&2; exit 2; }
+              s4e_pid_is_mine "$_mpid" || { printf '⛔ REFUSED: pid %s is not a live process of %s (S4E_SEAT in its environment, or its cwd under your root or /tmp/s4e/%s); a MEASURING park names the measurement you wait on.\n' "$_mpid" "$ME" "$ME" >&2; exit 2; } ;;
            *) printf '⛔ REFUSED: "%s" is not a state. ARG 3 IS THE STATE COLUMN, NOT A REASON — that is the mistake this guard exists for.\n' "$st" >&2
+              printf '             MEASURING:<seat>:<pid>  (your own live measurement: the Stop gate passes while the pid lives; the sweep reverts it to ASSIGNED when it ends)\n' >&2
               printf '   Accepted: FREE PARKED BLOCKED ASSIGNED DONE SUPERSEDED RETIRED GRANT-NEEDED PARKED-LON-HOLD\n' >&2
               printf '             PARKED-AWAITING:<topic>  BLOCKED-ON:<topic>  ASSIGNED:<seat>  CLAIMED:<seat>\n' >&2
               printf '             RESTRICTED:<seat>   (only <seat> may ever work it; survives unclaim -- for CEO-19 HQ-only rows)\n' >&2

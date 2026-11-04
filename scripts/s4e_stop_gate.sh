@@ -26,8 +26,14 @@ if [ "$u" -gt 0 ]; then
     reason="$seat has $u unread telegram(s) ($heads). THE LOOP step 1 before stopping: bash harness/scripts/s4e_msg.sh check, act or reply, then clear; an empty inbox is the acknowledgement."
     what="mail=$u"
 else
+    mrow="$(grep -P "\tMEASURING:\Q$seat\E:[0-9]+\$" "$PO/QUEUE.tsv" 2>/dev/null | sort -n | head -1)"; mpid="${mrow##*:}"
     row="$(grep -P "\t(ASSIGNED|CLAIMED):\Q$seat\E\$" "$PO/QUEUE.tsv" 2>/dev/null | sort -n | head -1)"
-    if [ -n "$row" ]; then
+    if [ -n "$mrow" ] && [ ! -d "/proc/$mpid" ]; then
+        t="$(printf '%s' "$mrow" | cut -f2)"
+        reason="$seat is stopping while row $t reads MEASURING:$seat:$mpid and pid $mpid is gone: the measurement ended, so the row is yours to work again"
+        reason="$reason (read its log, then done, or park it on a real blocker)."
+        what="measured=$t"
+    elif [ -n "$row" ]; then
         t="$(printf '%s' "$row" | cut -f2)"; st="$(printf '%s' "$row" | cut -f4)"
         nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f && NF' "$PO/tasks/$t.task.md" 2>/dev/null | head -1 | cut -c1-300)"
         reason="$seat is stopping while row $t reads $st. Work it now (bash harness/scripts/s4e_msg.sh next; its baton NEXT: ${nx:-empty});"

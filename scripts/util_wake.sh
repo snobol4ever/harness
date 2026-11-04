@@ -35,14 +35,18 @@ if [ "${1:-}" = --probe ]; then
     sed -i "s/\tASSIGNED:$seat\$/\tPARKED-AWAITING:plant-request/" "$w/QUEUE.tsv"
     o="$(gate --dry)"; case "$o" in "PASS "*) ;; *) why="$why a parked row did not pass [$o];";; esac
     o="$(gate --dry --json)"; [ "$o" = "{}" ] || why="$why the pass JSON is not empty [$o];"
-    sed -i "s/\tPARKED-AWAITING:plant-request\$/\tCLAIMED:$seat/" "$w/QUEUE.tsv"
+    sleep 300 & mp=$!; sed -i "s/\tPARKED-AWAITING:plant-request\$/\tMEASURING:$seat:$mp/" "$w/QUEUE.tsv"
+    o="$(gate --dry)"; case "$o" in "PASS "*) ;; *) why="$why a MEASURING row with a live pid did not pass [$o];";; esac
+    kill "$mp" 2>/dev/null; wait "$mp" 2>/dev/null
+    o="$(gate --dry)"; case "$o" in "BLOCK $seat is stopping while row $t reads MEASURING:$seat:$mp and pid $mp is gone"*) ;; *) why="$why a MEASURING row with a dead pid did not block [$o];";; esac
+    sed -i "s/\tMEASURING:$seat:$mp\$/\tCLAIMED:$seat/" "$w/QUEUE.tsv"
     cf="/tmp/s4e/$seat/stop_blocks.$(date +%Y%m%d%H)"; sv=""; [ -f "$cf" ] && { sv="$(mktemp)"; cp "$cf" "$sv"; }
     rm -f "$cf"; for i in 1 2 3; do gate > /dev/null; done
     o="$(gate)"; case "$o" in "CAP 3 continuations this hour"*) ;; *) why="$why the cap did not hold at 3 [$o];";; esac
     rm -f "$cf"; [ -n "$sv" ] && mv "$sv" "$cf"
     if wired "$seat"; then wd="wired=yes"; else wd="wired=no"; why="$why $seat's settings.json Stop hook does not run s4e_banner_cached.sh;"; fi
     [ -z "$why" ] && { echo "WAKE by=hook delivered seat=$seat row=$t $wd: the Stop hook blocks the idle with unread mail first, then with the ASSIGNED or CLAIMED row and its NEXT;" \
-        "a parked row passes; the cap holds"; exit 0; }
+        "a parked row passes; a MEASURING row passes while its pid lives and blocks when it is gone; the cap holds"; exit 0; }
     echo "WAKE by=hook RED seat=$seat:$why"; exit 1
 fi
 seat="${1:-}"; [ -n "$seat" ] || refuse "usage: util_wake.sh <seat> | --probe <seat>"
