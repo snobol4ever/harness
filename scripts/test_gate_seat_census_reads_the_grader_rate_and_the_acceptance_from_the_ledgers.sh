@@ -137,10 +137,11 @@ n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check, tmp_check' 
 # THE PROCESS AND MEMORY ARMS (the coo 2026-11-01, Lon: "So does you periodic check look for orphans and such so it can find this problem sooner rather than
 # later?"): planted ps lists, cgroup trees and pressure files prove --proc-check names an orphaned fleet run by seat, a stalled box and a throttled scope,
 # and leaves a young orphan, a standing daemon and a child with a live parent alone.
-procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60>
+procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope_a_anon_mb] -- scope a's memory.stat: anon (default all but 200 MB) and file the rest
   local cg="$1/cg/user@1000.service/app.slice/app-org.gnome.Terminal.slice" sl="0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Terminal.slice"
   mkdir -p "$cg/vte-a.scope" "$cg/vte-b.scope"
   echo $(( $3 * 1048576 )) > "$cg/vte-a.scope/memory.current"; echo $(( 4096 * 1048576 )) > "$cg/vte-a.scope/memory.high"
+  local an="${5:-$(( $3 - 200 ))}"; printf 'anon %s\nfile %s\nkernel 0\n' $(( an * 1048576 )) $(( ($3 - an) * 1048576 )) > "$cg/vte-a.scope/memory.stat"
   echo $(( 1000 * 1048576 )) > "$cg/vte-b.scope/memory.current"; echo $(( 4096 * 1048576 )) > "$cg/vte-b.scope/memory.high"
   printf 'some avg10=%s avg60=%s avg300=%s total=1\nfull avg10=0 avg60=0 avg300=0 total=0\n' "$4" "$4" "$4" > "$1/pmem"
   { printf 'utc\tseat\tclass\tscope\tpid\tstart\tweighted\n'
@@ -160,9 +161,16 @@ parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
 procplant "$T/proc_bad" 1500 3900 37.50
 procplant "$T/proc_ok"  1500 1000 0.50; sed -i '/^500 /d' "$T/proc_ok/ps.txt"
 procplant "$T/proc_young" 300 1000 0.50
+procplant "$T/proc_cache" 1500 3900 0.50 300; sed -i '/^500 /d' "$T/proc_cache/ps.txt"
 parm "FAIL-ONCE: a fleet run orphaned to the user manager 25 min is red BY SEAT"           "$T/proc_bad"   1 "orphan pid 500 of seat a, 25 min old, 1536 MB"
 parm "FAIL-ONCE: box memory pressure 37.5 over a minute is red"                             "$T/proc_bad"   1 "box memory pressure some avg60 37.5"
-parm "FAIL-ONCE: a seat scope at 3900 of 4096 MB memory.high is red BY SEAT"                "$T/proc_bad"   1 "seat a's scope holds 3900 of its 4096 MB"
+parm "FAIL-ONCE: a seat scope at 3900 of 4096 MB memory.high by its own anon (3700 MB) is red BY SEAT" "$T/proc_bad" 1 "seat a's scope holds 3900 of its 4096 MB memory.high, anon=3700MB file=200MB"
+parm "box-budget step 7: the same 3900 MB held by file pages (anon 300 MB) is RECLAIMED, never alarmed" "$T/proc_cache" 0 "RECLAIMED seat a: its scope held 3900 of its 4096 MB memory.high by file pages (anon=300MB file=3600MB); asked the kernel for 828 MB of file pages: ok" "RED"
+n=$((n + 1)); rq="$(cat "$T/proc_cache/cg/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-a.scope/memory.reclaim" 2>/dev/null)"
+if [ "$rq" = "$(( 828 * 1048576 )) swappiness=0" ]; then echo "  ok   ARM $n: the reclaim asks for file pages only, down to 75 percent of memory.high (memory.reclaim '$rq')"; else echo "  RED  ARM $n: memory.reclaim reads '$rq', not '$(( 828 * 1048576 )) swappiness=0'"; fail=1; fi
+n=$((n + 1)); [ -e "$T/proc_bad/cg/user@1000.service/app.slice/app-org.gnome.Terminal.slice/vte-a.scope/memory.reclaim" ] && { echo "  RED  ARM $n: an anon-held scope was reclaimed (that would swap its own memory)"; fail=1; } || echo "  ok   ARM $n: an anon-held scope is alarmed, never reclaimed"
+n=$((n + 1)); out="$(python3 -I "$CENSUS" --memory-check --root "$T/proc_cache/cg" --seats "$T/proc_cache/SEATS.tsv" --load "$T/none.tsv" 2>&1)"
+if printf '%s\n' "$out" | grep -F "  seat a scope cur=3900MB high=4096MB anon=300MB file=3600MB" >/dev/null && printf '%s\n' "$out" | grep -E 'anon=[0-9]+MB file=[0-9]+MB' >/dev/null; then echo "  ok   ARM $n: --memory-check prints each seat scope's anon against its file pages (the step-7 probe)"; else echo "  RED  ARM $n: --memory-check has no anon/file line: $(printf '%s' "$out" | head -3 | tr '\n' '|')"; fail=1; fi
 parm "control: a child whose parent lives, a standing daemon and a young orphan are not named" "$T/proc_bad" 1 "orphans=1 " "pid 5[123]0"
 parm "control: an orphan under ten minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"

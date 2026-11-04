@@ -30,9 +30,10 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores while it waits, Lon's terminal waiting
   --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
   --proc-check                         RED by name: a fleet process orphaned to the user manager 10 min or more, box memory pressure avg60 >= 10, a seat scope at 90%% of memory.high
+                                       whose ANON is at 90%% of it; a scope there by its file pages is RECLAIMED (memory.reclaim swappiness=0), never alarmed (box-budget step 7)
   --watch-check                        RED when the coo's loop, tier1 (the fleet watch) or the seat watch is not running, or the fleet watch has not passed in 15 min
   --health                             --check, --memory-check, --cpu-check, --tmp-check, --proc-check and --watch-check together; rc the worst
-  --memory-check                       step 8's DONE-WHEN: every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
+  --memory-check                       step 8's DONE-WHEN (it prints each live seat scope's cur, high, anon and file, box-budget step 7): every live seat scope's memory.max below the box, the sessions' slice and the two s4e slices
                                        capped, S4E_SEAT in each session and both runners placing TMPDIR=/tmp/s4e/<seat>, /tmp under 60, no oom_kill in 24 h
   util_seat_census.py --grader-rate S  step 5's DONE-WHEN (default 7200): 200 distinct programs per hour or more among results.tsv's rr=1 rows while the ledger's
                                        cores_busy mean read 12 or more; rc 2 when the box was not busy (the rate under no contention measures nothing)
@@ -752,6 +753,27 @@ def check():
     return 0
 
 
+def mem_split(d):
+    """(memory.current, memory.high or 0, anon, file) of a cgroup in bytes: memory.current counts page cache, so anon is the scope's own memory."""
+    st = {}
+    for l in rd(os.path.join(d, "memory.stat")).splitlines():
+        k, _, v = l.partition(" ")
+        if k in ("anon", "file") and v.strip().isdigit():
+            st[k] = int(v)
+    hi = rd(os.path.join(d, "memory.high")).strip()
+    return num(d, "memory.current"), int(hi) if hi.isdigit() else 0, st.get("anon", 0), st.get("file", 0)
+
+
+def reclaim_file(d, nbytes):
+    """Ask the kernel to drop nbytes of the scope's file pages (memory.reclaim swappiness=0: no anon page is swapped); 'ok', 'partial' or why not."""
+    try:
+        with open(os.path.join(d, "memory.reclaim"), "w") as f:
+            f.write("%d swappiness=0" % nbytes)
+        return "ok"
+    except OSError as e:
+        return "partial" if e.errno == 11 else "refused (%s)" % (e.strerror or e)
+
+
 def memory_check():
     """Step 8's DONE-WHEN (ARCH-SHARED-DEVELOPMENT 6): every live seat scope's memory.max set and below the box, the three slices capped, TMPDIR per seat
     in force (MEASURED 2026-10-31: Claude Code passes the settings env block's S4E_SEAT and MAKEFLAGS to its shells but drops its TMPDIR, so the per-seat
@@ -765,12 +787,14 @@ def memory_check():
     for l in rd("/proc/meminfo").splitlines():
         if l.startswith("MemTotal:"):
             box = int(l.split()[1]) * 1024
-    gaps, seen = [], 0
+    gaps, seen, split = [], 0, []
     for seat, (cls, sc) in sorted(seat_map(arg("--seats", SEATS)).items()):
         d = os.path.join(root, sc)
         if cls != "SEAT" or not os.path.isdir(d):
             continue
         seen += 1
+        cur, hi, an, fl = mem_split(d)
+        split.append("  seat %s scope cur=%dMB high=%sMB anon=%dMB file=%dMB" % (seat, cur // 1048576, hi // 1048576 if hi else "max", an // 1048576, fl // 1048576))
         mx = rd(os.path.join(d, "memory.max")).strip()
         if not mx.isdigit() or int(mx) >= box:
             gaps.append("seat %s: memory.max %s is not below the box" % (seat, mx or "?"))
@@ -812,6 +836,8 @@ def memory_check():
     if ooms:
         gaps.append("oom_kill in the last 24 h: " + " ".join(sorted(ooms)))
     print("MEMORY CHECK seats=%d box=%d MB tmp=%.0f%% gaps=%d" % (seen, box // 1048576, used, len(gaps)))
+    for l in split:
+        print(l)
     if gaps:
         for g in gaps:
             print("  RED  " + g)
@@ -951,16 +977,26 @@ def proc_check():
     if mp is not None and mp >= 10:
         gaps.append("box memory pressure some avg60 %.1f (10 is the bar): tasks stalled on memory %.0f percent of the last minute" % (mp, mp))
     term = os.path.join(root, "user@1000.service", "app.slice", "app-org.gnome.Terminal.slice")
+    notes = []
     for d in sorted(glob.glob(os.path.join(term, "*.scope"))):
-        cur, high = rd(os.path.join(d, "memory.current")).strip(), rd(os.path.join(d, "memory.high")).strip()
-        if cur.isdigit() and high.isdigit() and int(high) > 0 and int(cur) >= 0.9 * int(high):
-            gaps.append("seat %s's scope holds %d of its %d MB memory.high (90 percent is the bar): the kernel throttles it -- find what it is running" % (by_scope.get(os.path.basename(d), "?"), int(cur) // 1048576, int(high) // 1048576))
-    print("PROC CHECK orphans=%d mem_pressure_avg60=%s gaps=%d" % (len(orphans), "%.1f" % mp if mp is not None else "-", len(gaps)))
+        cur, high, an, fl = mem_split(d)
+        if high <= 0 or cur < 0.9 * high:
+            continue
+        who, mb = by_scope.get(os.path.basename(d), "?"), lambda b: b // 1048576
+        if an >= 0.9 * high:
+            gaps.append("seat %s's scope holds %d of its %d MB memory.high, anon=%dMB file=%dMB (its own anon at 90 percent of memory.high is the bar): the kernel throttles it -- find what it is running" % (who, mb(cur), mb(high), mb(an), mb(fl)))
+            continue
+        want = min(fl, max(0, cur - int(0.75 * high)))
+        how = reclaim_file(d, want)
+        notes.append("  RECLAIMED seat %s: its scope held %d of its %d MB memory.high by file pages (anon=%dMB file=%dMB); asked the kernel for %d MB of file pages: %s, now %d MB" % (who, mb(cur), mb(high), mb(an), mb(fl), mb(want), how, mb(num(d, "memory.current"))))
+    print("PROC CHECK orphans=%d mem_pressure_avg60=%s reclaimed=%d gaps=%d" % (len(orphans), "%.1f" % mp if mp is not None else "-", len(notes), len(gaps)))
+    for l in notes:
+        print(l)
     if gaps:
         for g in gaps:
             print("  RED  " + g)
         return 1
-    print("  GREEN no orphaned fleet process, box memory pressure under 10, every seat scope under 90 percent of its memory.high")
+    print("  GREEN no orphaned fleet process, box memory pressure under 10, no seat scope's own anon at 90 percent of its memory.high (file pages reclaimed, not alarmed)")
     return 0
 
 
