@@ -41,7 +41,12 @@ s4e_slot_hold() {
     esac
     sfd=7; seat="$(s4e_slot_seat)"
     mkdir -p "$dir/seat/$seat" 2>/dev/null || return 1
-    t0=$(date +%s.%N)
+    t0=$(date +%s.%N); local bound; bound="${S4E_SLOT_WAIT_MAX:-}"
+    if [ -z "$bound" ]; then if [ "$grader" = 1 ]; then bound=900; else case "$(date +%H)" in 0[6-9]|1[0-9]|2[01]) bound=300;; *) bound=900;; esac; fi; fi
+    s4e_slot_bound() { awk -v a="$t0" -v b="$(date +%s.%N)" -v m="$bound" 'BEGIN {exit !(b - a >= m)}' || return 0
+        s4e_slot_note "$kind-refused" "$t0" "bound=${bound}s"
+        printf 'REFUSE(2) [util_%s_slot]: no %s slot within %s s for %s (pool %s of %s slots, seat cap %s): the box is over-admitted, the wait is recorded in SLOT_WAITS.tsv, nothing ran (box-budget step 5).\n' "$kind" "$kind" "$bound" "$seat" "$n" "$dir" "$cap" >&2
+        return 2; }
     if [ "$grader" = 0 ]; then
         while :; do
             i=0
@@ -51,6 +56,7 @@ s4e_slot_hold() {
                 eval "exec $sfd>&-"
                 i=$((i + 1))
             done
+            s4e_slot_bound || return 2
             sleep 0.5
         done
     fi
@@ -62,6 +68,7 @@ s4e_slot_hold() {
             eval "exec $pfd>&-"
             i=$((i + 1))
         done
+        s4e_slot_bound || { [ "$grader" = 0 ] && eval "exec $sfd>&-"; return 2; }
         sleep 0.5
     done
     [ "$kind" = run ] && export S4E_RUN_SLOT_HELD=1

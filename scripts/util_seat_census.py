@@ -64,6 +64,8 @@ COLS = ["utc", "kind", "class", "name", "cores", "mem_mb", "mem_peak_mb", "oom_k
 BOXCOLS = ["cores_busy", "load1", "pressure_some_avg60", "pressure_some_avg300", "mem_available_mb", "swap_used_mb", "tmp_pct", "cc_held", "run_held", "slice_held", "builds_fetched", "compiles", "checks_hit", "oracle_hit"]
 RESULTS = "/home/resources/progress/results.tsv"
 WAITS = "/home/resources/progress/SLOT_WAITS.tsv"
+ADMISSION_WAIT_DAY_S = 300
+ADMISSION_CC_BAR = 8
 BUILDS = "/home/resources/progress/BUILDS.tsv"
 TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
 LAPPOP = "/home/resources/progress/LAP_POP.tsv"
@@ -590,6 +592,60 @@ def lap_lines(window):
     return out, None
 
 
+def admission_check(window):
+    """box-budget step 5 (CTO-478): admission by the pools bounds every wait. Over the last window seconds: no slot wait over ADMISSION_WAIT_DAY_S
+    by day (06-22 local), never more than ADMISSION_CC_BAR compilers box-wide (the cc slots held per tick), and heavy runs through the pools
+    (a SEAT tick over 2 cores holding no slot is outside; the bar is 1 percent of seat ticks). rc 0 GREEN, 1 RED naming each bar, 2 no ledger."""
+    now = time.time(); waits = rd(arg("--waits", WAITS))
+    if not waits.strip():
+        print("REFUSED(2): no slot-wait ledger at %s" % arg("--waits", WAITS)); return 2
+    n = 0; mx = 0.0; mxat = ""; over_day = []; over_night = 0; refused = 0
+    for l in waits.splitlines():
+        r = l.split("\t")
+        if len(r) < 4 or l.startswith("#"):
+            continue
+        try:
+            at = utc_s(r[0]); sec = float(r[3])
+        except ValueError:
+            continue
+        if at < now - window:
+            continue
+        if r[2].endswith("-refused"):
+            refused += 1; continue
+        n += 1
+        if sec > mx:
+            mx, mxat = sec, "%s/%s/%s" % (r[0], r[1], r[2])
+        if sec > ADMISSION_WAIT_DAY_S:
+            if 6 <= time.localtime(at).tm_hour < 22:
+                over_day.append("%s:%s:%s:%.0fs" % (r[0][11:16], r[1], r[2], sec))
+            else:
+                over_night += 1
+    runs = runs_in(arg("--load", LOAD), now - window); cc_max = 0; cc_at = ""; seat_ticks = 0; outside = 0; outside_who = {}
+    for r in runs:
+        cc = 0
+        for x in r:
+            try:
+                if x[1] == "UNIT" and x[2] == "SEAT":
+                    seat_ticks += 1; cc += int(x[9]); held = int(x[9]) + int(x[10])
+                    if float(x[4]) > 2.0 and held == 0:
+                        outside += 1; outside_who[x[3]] = outside_who.get(x[3], 0) + 1
+            except (ValueError, IndexError):
+                continue
+        if cc > cc_max:
+            cc_max, cc_at = cc, (r[0][0] if r and r[0] else "")
+    out_bar = max(1, seat_ticks // 100); why = []
+    if over_day:
+        why.append("%d wait(s) over %ds by day (%s)" % (len(over_day), ADMISSION_WAIT_DAY_S, " ".join(over_day[:5])))
+    if cc_max > ADMISSION_CC_BAR:
+        why.append("%d compilers box-wide at %s (bar %d)" % (cc_max, cc_at, ADMISSION_CC_BAR))
+    if outside > out_bar:
+        why.append("%d seat ticks over 2 cores holding no slot (bar %d of %d): %s" % (outside, out_bar, seat_ticks, ",".join("%s:%d" % kv for kv in sorted(outside_who.items(), key=lambda kv: -kv[1])[:5])))
+    print("ADMISSION window_s=%d waits=%d refused_at_bound=%d max_wait_s=%.0f at=%s over_%ds_day=%d over_%ds_night=%d compilers_max=%d compilers_bar=%d outside_pool_ticks=%d/%d bar=%d verdict=%s%s"
+          % (window, n, refused, mx, mxat or "-", ADMISSION_WAIT_DAY_S, len(over_day), ADMISSION_WAIT_DAY_S, over_night, cc_max, ADMISSION_CC_BAR, outside, seat_ticks, out_bar,
+             "GREEN" if not why else "RED", "" if not why else " :: " + "; ".join(why)))
+    return 0 if not why else 1
+
+
 def lap(window):
     out, why = lap_lines(window)
     if out is None:
@@ -1058,6 +1114,9 @@ def main():
     if "--lap" in av:
         v = arg("--lap", "3600")
         return lap(int(v) if v.isdigit() else 3600)
+    if "--admission-check" in av:
+        v = arg("--admission-check", "86400")
+        return admission_check(int(v) if v.isdigit() else 86400)
     if "--grader-rate" in av:
         return grader_rate(int(arg("--grader-rate", "7200")))
     if "--acceptance" in av:

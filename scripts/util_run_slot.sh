@@ -14,6 +14,6 @@
 # SINCE 2026-10-31 (the cto, ARCH-SHARED-DEVELOPMENT 4.3, CEO-2041 step 3) THE RULE LIVES IN lib_slots.sh: a seat file first (cap S4E_RUN_SEAT_CAP, default 3), then a pool slot;
 # S4E_CLASS=grader takes no seat file and may take any slot, every other taker leaves the top S4E_RUN_GRADER_RESERVED (2) slots to the grader.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
-s4e_slot_hold run || exec "$@"
+s4e_slot_hold run; _rc=$?; [ "$_rc" = 2 ] && exit 2; [ "$_rc" = 0 ] || exec "$@"
 s4e_slot_note run "$S4E_SLOT_T0" "$@"
 exec "$@"
