@@ -149,7 +149,7 @@ if Rh:
 #       another live claim -- rank 0 first, oldest first.
 # Each named row carries its age and the officer RULES.md's escalation channel (clause 2) routes it to by default: the collector, rt.c and
 # the safe-point road to the cfo; the emitter, planner, templates and spine to the cto; instruments, gates, censuses and the bus to the
-# coo; everything else to the ceo. S4E_CENSUS_NOW=YYYY-MM-DDTHH:MM:SSZ pins the clock, so a fixture reads the same answer every run.
+# coo; everything else to the cto (COO-461: the ceo seat is gone, its rows routed to nobody). S4E_CENSUS_NOW=YYYY-MM-DDTHH:MM:SSZ pins the clock, so a fixture reads the same answer every run.
 import re as _re
 from datetime import datetime as _dt, timedelta as _td, timezone as _tz
 def _iso(s):
@@ -174,7 +174,7 @@ def _route(t):
     w = set(t.lower().replace('_', '-').replace('.', '-').split('-'))
     for who, keys in _ROUTE:
         if w & set(keys): return who
-    return 'ceo'
+    return 'cto'
 _LEDGER = _re.compile(r'^- \[([A-Za-z0-9_]+)·([^\]]*)\]')
 def _ledger_when(s):
     m = _re.match(r'(\d{4}-\d\d-\d\d)(?:[ T](\d\d):(\d)(\d|x))?', s.strip())

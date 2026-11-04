@@ -7,7 +7,7 @@
 # them as tolerated reds, and 227 rank-0/1 rows sat FREE in HQ lanes that their HQs would not serve while each held its one row. The
 # census's two lines make that sweep a reading. A FIXTURE POSTOFFICE, the clock pinned (S4E_CENSUS_NOW), reds each line once:
 #   B   BLOCKING-RED PAST WINDOW names exactly the two rows no owner started within two hours of the later of the tagged time and the
-#       assignment -- one routed to the cfo by its topic, one to the ceo -- and none of: a row whose claim carries RUNNING, a row still
+#       assignment -- one routed to the cfo by its topic, one to the cto -- and none of: a row whose claim carries RUNNING, a row still
 #       inside its window, a row whose owner wrote a LEDGER line after the assignment, a row its owner claimed from FREE, a DONE row
 #   T   the same fixture read at an earlier clock, before either window closed, names none: the line reads time, not tags
 #   H   HQ-LANE UNSERVED PAST 24H names exactly the FREE rank-0 row minted 60 hours ago whose HQ holds another claim -- not a rank-2 row,
@@ -54,7 +54,7 @@ o="$(S4E_PO="$W" S4E_CENSUS_NOW=2026-09-27T12:00:00Z python3 "$Q" 2>&1)"; r=$?
 [ "$r" = 2 ] && unproven "the census refused the fixture: $(tail -2 <<<"$o" | tr '\n' ' ')"
 b="$(names "$o" 'BLOCKING-RED PAST WINDOW:')"; bl="$(grep -m1 '^BLOCKING-RED PAST WINDOW:' <<<"$o")"
 if grep -q '^BLOCKING-RED PAST WINDOW: 2 ' <<<"$bl" && [ "$b" = "br-gc-collector-row br-stuck-row" ] \
-   && grep -qE '^    br-gc-collector-row .*-> cfo$' <<<"$o" && grep -qE '^    br-stuck-row .*-> ceo$' <<<"$o"; then
+   && grep -qE '^    br-gc-collector-row .*-> cfo$' <<<"$o" && grep -qE '^    br-stuck-row .*-> cto$' <<<"$o"; then
     ok B "names exactly [$b], routed cfo and ceo; the RUNNING, young, ledger-started, claimed-from-FREE and DONE rows stay off"
 else
     red B "line [${bl:0:60}] names [$b] (want 2: br-gc-collector-row br-stuck-row, routed cfo and ceo)"
