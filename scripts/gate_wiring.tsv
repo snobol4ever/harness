@@ -1039,6 +1039,7 @@ test_gate_prolog_a_dead_slot_kill_spares_a_cell_another_frame_cell_names.sh	WIRE
 test_gate_prolog_a_reference_into_a_block_traces_one_cell.sh	WIRED	-	-	-
 test_gate_prolog_bench_runner_holds_the_ref_on_every_angle.sh	WIRED	-	-	-
 test_gate_prolog_dynamic_predicate_with_file_clauses.sh	WIRED	-	-	-
+test_gate_prolog_ground_literal_is_one_box.sh	WIRED	-	-	-
 test_gate_queue_census_names_the_sweep_rows.sh	WIRED	-	-	-
 test_gate_queue_census_placeholder_arm.sh	WIRED	-	-	-
 test_gate_raku_a_bare_whatever_is_a_value_and_pick_head_and_tail_take_it.sh	WIRED	-	-	-
