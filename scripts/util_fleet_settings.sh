@@ -3,7 +3,9 @@
 # DEVELOPMENT.md 4.2 and 8 step 2; the cto's design CEO-2041, written by the ceo). No other hand changes a root's settings (section 9).
 # WITHOUT --apply it changes nothing: it prints, root by root, the unified diff it would write, then the slice and tmpfiles commands.
 # WITH --apply, in this order:
-#   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10):
+#   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10), every slice row of the ONE declared budget table
+#       /home/resources/postoffice/BUDGET.tsv (box-budget step 2, CTO-478; util_seat_census.py --budget-props), on 2026-11-04:
+#         app.slice and s4e.slice CPUWeight=100                                      (the sessions' side against the loops' side, CTO-474 (2))
 #         app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G   (the sessions; the default 100, equal to any desktop app, CEO-2105 (d))
 #         s4e-grader.slice CPUWeight=300 MemoryMax=10G                               (the grader outranks the sessions, CEO-2105 (d))
 #         s4e-batch.slice  CPUWeight=50 MemoryMax=12G                                (batch, step 4 moves the boards and censuses in)
@@ -23,7 +25,8 @@ command -v systemctl >/dev/null || { echo "REFUSE(2): no systemctl" >&2; exit 2;
 ROOTS=$(ls -d /home/claude_* 2>/dev/null)
 [ -n "$ROOTS" ] || { echo "REFUSE(2): no /home/claude_* roots" >&2; exit 2; }
 STAMP=$(date +%Y%m%dT%H%M%S)
-SLICES=("app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G" "s4e-grader.slice CPUWeight=300 MemoryMax=10G" "s4e-batch.slice CPUWeight=50 MemoryMax=12G")
+mapfile -t SLICES < <(python3 -I "$HERE/util_seat_census.py" --budget-props)
+[ "${#SLICES[@]}" -gt 0 ] && [ -n "${SLICES[0]}" ] && [ "${SLICES[0]#REFUSED}" = "${SLICES[0]}" ] || { echo "REFUSE(2): no slice row in the budget table (util_seat_census.py --budget-props: ${SLICES[0]:-nothing})" >&2; exit 2; }
 TF="$HOME/.config/user-tmpfiles.d/s4e.conf"
 SEATS=$(for r in $ROOTS; do x=${r##*/claude_}; case " ceo cto cfo coo cao cqo " in *" $x "*) echo "$x";; *) echo "hq_$x";; esac; done)
 fail=0

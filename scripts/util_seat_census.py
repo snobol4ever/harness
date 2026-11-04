@@ -44,6 +44,12 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        the stale rows at that rate and the whole lap's length; LAP_SLICES each class's mean cores and share and LAP_SEATS each seat's
                                        from LOAD.tsv; LAP_WAITS the slot waits from SLOT_WAITS.tsv; `run` appends the LAP line to LOAD.tsv every tick. The population
                                        (85 s of from-progress calls) is cached an hour in LAP_POP.tsv. rc 0 printed; rc 2 no results.tsv or no live population
+  util_seat_census.py --budget-check   box-budget step 2 (CTO-474/478): every row of the ONE declared budget table /home/resources/postoffice/BUDGET.tsv read against the
+                                       live cgroup files (cpu.weight, cpu.max, memory.high, memory.max, memory.swap.max, pids.max): a slice by its path, @SEAT and
+                                       @LON every live session scope of that class in SEATS.tsv; rc 0 all agree, 1 RED naming unit, file, live and declared, 2 no table
+  util_seat_census.py --budget-props [NAME]  the systemd properties of the row NAME (its name or unit), or one `unit props...` line per slice row: what
+                                       s4e_session_start.sh, util_fleet_settings.sh and the loop starters apply (systemctl --user set-property, systemd-run -p)
+  --budget F                           the table (default S4E_BUDGET, else /home/resources/postoffice/BUDGET.tsv), for the fixtures
   --load F --seats F --root DIR        read and write these instead (the gate's fixtures)
   --results F --waits F --builds F --repos DIR   the other ledgers and the repo root, for the fixtures
   --loop-dir D --pop-cache F           the loop's directory (loop8.sh's ROT, idle_units) and the population cache, for --lap's fixtures
@@ -60,6 +66,8 @@ WAITS = "/home/resources/progress/SLOT_WAITS.tsv"
 BUILDS = "/home/resources/progress/BUILDS.tsv"
 TERM = "user@1000.service/app.slice/app-org.gnome.Terminal.slice/"
 LAPPOP = "/home/resources/progress/LAP_POP.tsv"
+BUDGET = "/home/resources/postoffice/BUDGET.tsv"
+BUDGET_KNOBS = [("CPUWeight", "cpu.weight"), ("CPUQuota", "cpu.max"), ("MemoryHigh", "memory.high"), ("MemoryMax", "memory.max"), ("MemorySwapMax", "memory.swap.max"), ("TasksMax", "pids.max")]
 LOOPDIR = "/home/claude_coo/.scratch/verifier"
 FRESH_H = 72
 
@@ -590,6 +598,106 @@ def lap(window):
     return 0
 
 
+def budget_path():
+    return arg("--budget", os.environ.get("S4E_BUDGET") or BUDGET)
+
+
+def budget_rows(path=None):
+    """The declared budget table: one dict per row (name, unit, the six systemd knobs, applied_by, ruling); '-' is a knob the row does not declare."""
+    out = []
+    for line in rd(path or budget_path()).splitlines():
+        f = line.split("\t")
+        if not line.strip() or line.startswith("#") or f[0] == "name" or len(f) < 8:
+            continue
+        r = {"name": f[0], "unit": f[1]}
+        for i, (k, _) in enumerate(BUDGET_KNOBS):
+            r[k] = f[2 + i].strip()
+        r["applied_by"] = f[8] if len(f) > 8 else "-"; r["ruling"] = f[9] if len(f) > 9 else "-"
+        out.append(r)
+    return out
+
+
+def budget_row(name, path=None):
+    return next((r for r in budget_rows(path) if name in (r["name"], r["unit"])), None)
+
+
+def budget_props(row):
+    """The systemd properties a row declares, as set-property and systemd-run -p take them."""
+    return ["%s=%s" % (k, row[k]) for k, _ in BUDGET_KNOBS if row and row.get(k, "-") not in ("-", "")]
+
+
+def budget_file_value(knob, v):
+    """The cgroup file's text for a declared systemd value: 400% -> '400000 100000', 4G -> bytes, infinity -> max."""
+    v = v.strip()
+    if v in ("infinity", "max"):
+        return "max 100000" if knob == "CPUQuota" else "max"
+    if knob == "CPUQuota":
+        return "%d 100000" % round(float(v.rstrip("%")) * 1000)
+    if knob in ("MemoryHigh", "MemoryMax", "MemorySwapMax"):
+        m = re.fullmatch(r"(\d+)([KMGT]?)", v)
+        return str(int(m.group(1)) * 1024 ** " KMGT".index(m.group(2) or " ")) if m else v
+    return v
+
+
+def slice_path(unit):
+    """A user slice's cgroup path under user@1000.service: systemd nests a slice by the dashes of its name (s4e-grader.slice -> s4e.slice/s4e-grader.slice)."""
+    parts = unit[:-len(".slice")].split("-")
+    return "/".join("-".join(parts[:i + 1]) + ".slice" for i in range(len(parts)))
+
+
+def budget_check():
+    path = budget_path(); rows = budget_rows(path)
+    if not rows:
+        print("REFUSED(2): no budget table, or no row in it, at %s" % path)
+        return 2
+    root = arg("--root", CG)
+    if not os.path.isdir(root):
+        print("REFUSED(2): no cgroup tree at %s" % root)
+        return 2
+    live = seat_map(arg("--seats", SEATS))
+    gaps, units, knobs = [], 0, 0
+    for r in rows:
+        if r["unit"].startswith("@"):
+            targets = [("%s %s" % (r["unit"][1:].lower(), who), os.path.join(root, sc)) for who, (cls, sc) in sorted(live.items()) if cls == r["unit"][1:] and os.path.isdir(os.path.join(root, sc))]
+        else:
+            d = os.path.join(root, "user@1000.service", slice_path(r["unit"]))
+            if not os.path.isdir(d):
+                gaps.append("%s (%s): absent, no cgroup at %s" % (r["name"], r["unit"], d)); continue
+            targets = [(r["unit"], d)]
+        for who, d in targets:
+            units += 1
+            for k, f in BUDGET_KNOBS:
+                if r[k] in ("-", ""):
+                    continue
+                knobs += 1; want = budget_file_value(k, r[k]); got = rd(os.path.join(d, f)).strip()
+                if got != want:
+                    gaps.append("%s: %s reads %s, the table declares %s=%s (%s)" % (who, f, got or "absent", k, r[k], want))
+    print("BUDGET CHECK table=%s rows=%d units=%d knobs=%d gaps=%d" % (path, len(rows), units, knobs, len(gaps)))
+    if gaps:
+        for g in gaps[:20]:
+            print("  RED  " + g)
+        return 1
+    print("  GREEN every declared knob of the %d rows reads its declared value on the %d live units" % (len(rows), units))
+    return 0
+
+
+def budget_print_props(name):
+    if name:
+        r = budget_row(name)
+        if r is None:
+            print("REFUSED(2): no row %s in %s" % (name, budget_path()))
+            return 2
+        print(" ".join(budget_props(r)))
+        return 0
+    rows = [r for r in budget_rows() if r["unit"].endswith(".slice")]
+    if not rows:
+        print("REFUSED(2): no slice row in %s" % budget_path())
+        return 2
+    for r in rows:
+        print(" ".join([r["unit"]] + budget_props(r)))
+    return 0
+
+
 TMP_SEAT_MB = 4096   # ARCH-SHARED-DEVELOPMENT 2.3, /tmp move (2): a seat over 4 GB of /tmp is named; the banner shows each seat its own figure against it (the coo 2026-11-01, CEO-2095)
 
 
@@ -895,6 +1003,11 @@ def health():
 
 def main():
     av = sys.argv[1:]
+    if "--budget-check" in av:
+        return budget_check()
+    if "--budget-props" in av:
+        v = arg("--budget-props", "")
+        return budget_print_props("" if v.startswith("--") else v)
     if "--lap" in av:
         v = arg("--lap", "3600")
         return lap(int(v) if v.isdigit() else 3600)
