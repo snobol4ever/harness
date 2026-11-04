@@ -411,6 +411,7 @@ test_gate_icn_writes_to_errout_flushes_output_first.sh	WIRED	-	-	-
 test_gate_icon_arguments_dereference_at_the_call.sh	WIRED	-	-	-
 test_gate_icon_arizona_driver_ipath_names_libraries_not_programs.sh	WIRED	-	-	-
 test_gate_icon_features_and_preprocessor_symbols_agree.sh	WIRED	-	-	-
+test_gate_icon_global_and_local_names_ride_the_module_table_not_startup_calls.sh	WIRED	-	-	-
 test_gate_icon_m4_invocation_is_pinned.sh	WIRED	-	-	-
 test_gate_icon_math_builtins_raise_iconx_errors_on_a_wrong_type_or_a_domain.sh	WIRED	-	-	-
 test_gate_icon_package_container_keys_equal_board_keys.sh	WIRED	-	-	-

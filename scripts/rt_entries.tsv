@@ -233,10 +233,10 @@ rt_gen_spine_resume_enter	asm	-	0	none	-	call,clob,asm
 rt_goto_resolve	open	OTHER	1	-	1	call,alloc
 rt_gva_island	leaf	-	0	-	0	call
 rt_icn_cset_register	leaf	VOID	1	-	0	call,alloc
-rt_icn_global_note	leaf	-	0	-	0	call
 rt_icn_lconcat_d	leaf	DESCR	1	-	0	call,alloc
 rt_icn_needle_coerce	leaf	OTHER	1	-	0	call,alloc
 rt_icn_subject_coerce	leaf	OTHER	1	-	0	call,alloc
+rt_icn_tabs_install	leaf	-	0	-	0	call
 rt_icn_window_pos	leaf	OTHER	1	-	0	call,alloc
 rt_icn_zframe_args_install	leaf	-	0	-	0	call
 rt_is_truthy	asm	-	0	none	-	call,clob,asm
@@ -663,7 +663,6 @@ rt_proc_call_open_det1	open	OTHER	1	-	1	call,alloc
 rt_proc_call_open_det2	open	OTHER	1	-	1	call,alloc
 rt_proc_drop_frame_h	leaf	-	0	-	0	call
 rt_proc_fn	open	-	0	-	1	call
-rt_proc_loc_add	leaf	-	0	-	0	call
 rt_proc_pinned	leaf	-	0	-	0	call
 rt_proc_register	leaf	VOID	1	-	0	call,alloc
 rt_proc_register_rec	leaf	VOID	1	-	0	call,alloc
