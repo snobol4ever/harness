@@ -102,8 +102,8 @@ run_test() {
     local prog_file="$sno" stdin_file=""
     if is_stdin_test "$name"; then
         local prog_tmp stdin_tmp
-        prog_tmp=$(mktemp /tmp/scrip_prog_XXXXXX.sno)
-        stdin_tmp=$(mktemp /tmp/scrip_stdin_XXXXXX)
+        prog_tmp=$(mktemp "${TMPDIR:-/tmp}/scrip_prog_XXXXXX.sno")
+        stdin_tmp=$(mktemp "${TMPDIR:-/tmp}/scrip_stdin_XXXXXX")
         split_at_end "$sno" "$prog_tmp" "$stdin_tmp"
         prog_file="$prog_tmp"
         stdin_file="$stdin_tmp"

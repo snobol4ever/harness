@@ -18,7 +18,7 @@ P3=0; F3=0; P4=0; F4=0; N=0
 
 icon() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/icn_XXXXXX.icn)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/icn_XXXXXX.icn")
     cat > "$tmp"
     N=$((N+1))
     local a3 a4 r3 r4
@@ -26,7 +26,7 @@ icon() {
     # mode 4: --compile emits standalone x86-64 asm to stdout; assemble + link libscrip_rt.so + run.
     a4=""
     local s4 bin4
-    s4=$(mktemp /tmp/icn_XXXXXX.s); bin4=$(mktemp /tmp/icn_XXXXXX.bin); rm -f "$bin4"
+    s4=$(mktemp "${TMPDIR:-/tmp}/icn_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/icn_XXXXXX.bin"); rm -f "$bin4"
     if smoke_t -k 5 8 "$SCRIP" --compile "$tmp" >"$s4" 2>/dev/null </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null)

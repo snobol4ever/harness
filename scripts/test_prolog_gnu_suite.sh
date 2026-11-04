@@ -96,7 +96,7 @@ is_bootstrap_only() {  # $1 = rel path (for the named list), $2 = full path (for
 [ -f "$RT_SO" ]      || { echo "⛔ REFUSED-TO-GRADE: $RT_SO missing (m4 link needs it)"; exit 2; }
 [ -n "$GPROLOG_BIN" ] || { echo "⛔ REFUSED-TO-GRADE: gprolog not on PATH"; exit 2; }
 
-TMP="$(mktemp -d /tmp/gnu_suite_XXXXXX)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/gnu_suite_XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 # ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
 # each file runs in BOTH modes at what its row in ALL.csv declares (entry = its path under the package without .pl) -- heap_kb,

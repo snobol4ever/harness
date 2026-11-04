@@ -9,7 +9,7 @@
 #                rc 0 (a move changes no byte, so a witness that reads red names a regression of the landing); then the step's PROBE tokens
 #                (STEPS.tsv's header spells them: the census's A-fn counts, a symbol absent or present in a source scope, the slot-map
 #                registration count, the two dumps, the ZSM frame line, the cfo's scoped bar, the finish): red before the step lands, green after
-#   --out DIR    where the .s and logs go (default <root>/.scratch/planner_finish)
+#   --out DIR    where the .s and logs go (default a fresh /tmp/s4e/<seat>/runner_out.planner_finish.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure
 # (no ./scrip, no witness, no ref, no census). The finish token runs the census bar, the count of the four names the plan deletes (drive_slots_all,
@@ -22,7 +22,7 @@ SC="$ROOT/SCRIP"
 STEPS="$ROOT/corpus/tests/snobol4/planner_finish/STEPS.tsv"
 CENSUS="$HERE/util_emitter_memory_model_census.py"
 NMGATE="$HERE/test_gate_planner_objects_leave_no_emitter_symbol_undefined.sh"
-OUT="$ROOT/.scratch/planner_finish"
+OUT=""
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""
@@ -35,6 +35,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR]"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default planner_finish; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: planner-finish -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/<lang>/planner_finish"

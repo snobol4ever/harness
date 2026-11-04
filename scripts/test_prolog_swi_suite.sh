@@ -75,7 +75,7 @@ esac
 . "$HERE/lib_declared_arena.sh" || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"
 _decl_rcpt="$(declared_arena_receipt "$SWIT/ALL.csv")"; printf '%s\n' "$_decl_rcpt"
 case "$_decl_rcpt" in *REFUSED*) refuse "a declared-memory cell in $SWIT/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it";; esac
-WORK="$(mktemp -d /tmp/swi_board_XXXXXX)"; trap 'rm -rf "$WORK"' EXIT
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/swi_board_XXXXXX")"; trap 'rm -rf "$WORK"' EXIT
 printf 'main :- run_tests.\n:- initialization(main).\n' > "$WORK/wrap.pl"
 FILES="$WORK/files.txt"
 # ⭐ A LIBRARY IS GRADED BY ITS DRIVER (ceo CEO-1269; cto ARCH-PROLOG-CLPR-CHR.md section 8, option 1, 2026-10-29): NAME_driver.pl with a NAME_driver.ref beside it, no begin_tests, is the grading vehicle of the library

@@ -27,7 +27,7 @@ check() {
 skip() { echo "SKIP $1 ($2 not found)"; }
 
 # One hello-world program used across all modes
-SNO=$(mktemp /tmp/scrip_smoke_XXXXXX.sno)
+SNO=$(mktemp "${TMPDIR:-/tmp}/scrip_smoke_XXXXXX.sno")
 printf "        OUTPUT = 'hello'\nEND\n" > "$SNO"
 trap 'rm -f "$SNO"' EXIT
 

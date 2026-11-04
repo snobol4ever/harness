@@ -9,7 +9,7 @@ PASS=0; FAIL=0
 
 snocone() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/sc_XXXXXX.sc)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/sc_XXXXXX.sc")
     cat > "$tmp"
     local actual; actual=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null)
     rm -f "$tmp"

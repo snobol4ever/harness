@@ -9,7 +9,7 @@ PASS=0; FAIL=0
 
 rebus() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/reb_XXXXXX.reb)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/reb_XXXXXX.reb")
     cat > "$tmp"
     local actual; actual=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null)
     rm -f "$tmp"

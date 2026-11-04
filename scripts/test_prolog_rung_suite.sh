@@ -259,8 +259,8 @@ run_corpus() {
     fi
 }
 
-PROBE="$(mktemp /tmp/plprobe_XXXXXX.pl)"
-ERRF="$(mktemp /tmp/plerr_XXXXXX.txt)"           # stderr of the last run_prog call; a driver ladder refusal is read from here
+PROBE="$(mktemp "${TMPDIR:-/tmp}/plprobe_XXXXXX.pl")"
+ERRF="$(mktemp "${TMPDIR:-/tmp}/plerr_XXXXXX.txt")"           # stderr of the last run_prog call; a driver ladder refusal is read from here
 printf ':- initialization(main).\nmain :- write(ok), nl.\n' > "$PROBE"
 trap 'rm -f "$PROBE" "$ERRF"' EXIT
 

@@ -11,7 +11,7 @@
 #                latest=... (results.tsv's latest reading per entry PASS in both modes, READ), row=N (SUITES.tsv's rosetta-pascal
 #                today_pass at least N, READ). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/pascal_front_end)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.pascal_front_end.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -20,7 +20,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/pascal/front_end"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/pascal_front_end"
+OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
 TABLES_H="$SC/src/lower/lower_pascal_tree.h"
@@ -37,6 +37,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_front_end; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: pascal-front-end -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/pascal/front_end (refs from fpc 3.2.2)"

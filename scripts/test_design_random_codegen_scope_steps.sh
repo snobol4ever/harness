@@ -7,7 +7,7 @@
 #   --step N     run step N: the COVERAGE arm (is the construct family emitted at --scope N? red before the generator change, green after), then
 #                one ENGINE arm per port engine present in this root (dotnet, jvm: the step's batches under the differential driver against
 #                sbl -bf; differ=0 is GREEN, a differing batch is RED, an engine this root does not hold is REFUSED, never green)
-#   --out DIR    where the batches go (default <root>/.scratch/inf_snobol4/design)
+#   --out DIR    where the batches go (default a fresh /tmp/s4e/<seat>/runner_out.inf_snobol4_design.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: one line per step, STEP N <slug>: coverage=V dotnet=V jvm=V -> GREEN|RED|REFUSED. rc 0 every graded arm GREEN (a REFUSED engine arm
 # is named, not counted); rc 1 any arm RED; rc 2 no arm could be graded. A generator that refuses scope=N ("bad option") is the measured
@@ -23,7 +23,7 @@ DRV="$HERE/util_inf_snobol4_differential.py"
 CEN="$HERE/util_inf_snobol4_coverage_census.py"
 ENUM="$HERE/util_program_enumerator.py"
 RED="$HERE/util_inf_snobol4_reduce.py"
-OUT="$ROOT/.scratch/inf_snobol4/design"
+OUT=""
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 [ -f "$GEN_MD" ] || refuse "no generator at $GEN_MD"
@@ -37,6 +37,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR]"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default inf_snobol4_design; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 # the step table's columns are read by number with awk: a tab-separated row with EMPTY cells cannot go through bash read (its IFS collapses them)
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 # the landed probes: a grep over the sources, never a run

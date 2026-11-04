@@ -32,7 +32,7 @@ fi
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"
 [ -n "$slug" ] || refuse "no step $step in $STEPS"
 cd "$S4E" || refuse "cannot enter $S4E"
-out="$(mktemp /tmp/s4e_box_scheduler_step.XXXXXX)"
+out="$(mktemp "${TMPDIR:-/tmp}/s4e_box_scheduler_step.XXXXXX")"
 timeout -k 5 600 bash -c "$probe" > "$out" 2>&1; rc=$?
 tail -5 "$out" | sed 's/^/    /'; rm -f "$out"
 case "$rc" in 0) v=GREEN; ec=0 ;; 124|137) v="REFUSED (the probe ran past its 600 s budget)"; ec=2 ;; *) v=RED; ec=1 ;; esac

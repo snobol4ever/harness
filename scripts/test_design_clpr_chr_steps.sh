@@ -10,7 +10,7 @@
 #                row=N (SUITES.tsv's rosetta-prolog today_pass at least N, READ), nolib=path (swi_tests UNGRADED.tsv does not list the path,
 #                READ). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from swipl (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/clpr_chr)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.clpr_chr.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -19,7 +19,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/prolog/clpr_chr"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/clpr_chr"
+OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
 UNGRADED="$ROOT/corpus/packages/prolog/swi_tests/UNGRADED.tsv"
@@ -36,6 +36,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default clpr_chr; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: clpr-chr -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/prolog/clpr_chr (refs from swipl 9.0.4)"

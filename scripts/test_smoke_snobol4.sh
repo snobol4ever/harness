@@ -11,7 +11,7 @@ P3=0; F3=0; P4=0; F4=0
 
 run_m3() {
     local label="$1" src="$2" expected="$3"
-    local tmp; tmp=$(mktemp /tmp/sno_XXXXXX.sno)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/sno_XXXXXX.sno")
     printf '%s\n' "$src" > "$tmp"
     local actual; actual=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" < /dev/null 2>/dev/null)
     rm -f "$tmp"
@@ -24,10 +24,10 @@ run_m3() {
 
 run_m4() {
     local label="$1" src="$2" expected="$3"
-    local tmp; tmp=$(mktemp /tmp/sno_XXXXXX.sno)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/sno_XXXXXX.sno")
     printf '%s\n' "$src" > "$tmp"
     local s o bin
-    s=$(mktemp /tmp/sno_XXXXXX.s); o="${s%.s}.o"; bin="${s%.s}.bin"
+    s=$(mktemp "${TMPDIR:-/tmp}/sno_XXXXXX.s"); o="${s%.s}.o"; bin="${s%.s}.bin"
     local actual
     if smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" < /dev/null > "$s" 2>/dev/null \
        && as "$s" -o "$o" 2>/dev/null \

@@ -31,7 +31,7 @@ run_m3() {
 run_m4() {
     local label="$1"; shift
     local s o bin actual rc to=0
-    s=$(mktemp /tmp/poly_XXXXXX.s); o="${s%.s}.o"; bin="${s%.s}.bin"
+    s=$(mktemp "${TMPDIR:-/tmp}/poly_XXXXXX.s"); o="${s%.s}.o"; bin="${s%.s}.bin"
     timeout -k 5 8 "$SCRIP" --compile --target=x86 "$@" < /dev/null > "$s" 2>/dev/null; rc=$?
     if smoke_note "$rc"; then to=1
     elif [ "$rc" = 0 ] && as "$s" -o "$o" 2>/dev/null \

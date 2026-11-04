@@ -16,7 +16,7 @@ P2=0; F2=0; P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0
 
 pl() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/pl_XXXXXX.pl)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/pl_XXXXXX.pl")
     cat > "$tmp"
     N=$((N+1))
     local r2 r3 r4
@@ -28,7 +28,7 @@ pl() {
     # mode 3 — --run (tracked; REFUSED until regrown). PL-GZ-1b(d): a program the native blob does not
     # cover executes via the mode-2 interpreter and says so on stderr — output is STILL verified
     # (mismatch = FAIL); a verified fallback counts REFUSED, NOT a native PASS.
-    local e3; e3=$(mktemp /tmp/pl_m3err_XXXXXX)
+    local e3; e3=$(mktemp "${TMPDIR:-/tmp}/pl_m3err_XXXXXX")
     local o3; o3=$(smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>"$e3" </dev/null)
     if grep -q "MODE-3 INTERP-FALLBACK" "$e3"; then
         if [ "$o3" = "$expected" ]; then r3="m3 REFUSED"; X3=$((X3+1)); else r3="m3 FAIL"; F3=$((F3+1)); fi

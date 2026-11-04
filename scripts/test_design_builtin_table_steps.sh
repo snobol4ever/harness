@@ -14,7 +14,7 @@
 #                           the nm of out/libscrip_rt.so cannot show an unbound hidden weak, the linker drops it, so the source and the table are read beside the defined symbols; cto 2026-11-04)
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against; the design seat records it once; an executor re-records before its step)
-#   --out DIR    where the runs go (default <root>/.scratch/builtin_table)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.builtin_table.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -25,7 +25,7 @@ WD="$ROOT/corpus/tests/shared/builtin_table"
 BENCH="$ROOT/corpus/benchmarks"
 STEPS="$WD/STEPS.tsv"
 ROWS0="$WD/ROWS0.tsv"
-OUT="$ROOT/.scratch/builtin_table"
+OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 SBL=/home/resources/x64/bin/sbl
 ICONT=/home/resources/icon-master/bin/icont
@@ -47,6 +47,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut | --rows0"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default builtin_table; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 wext() { local w="$1"; for e in sno icn raku; do [ -f "$WD/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then

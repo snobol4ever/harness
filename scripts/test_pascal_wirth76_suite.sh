@@ -31,7 +31,7 @@ if [ -f "$TIMEOUT_TSV" ]; then
         case "$_ts" in ''|*[!0-9]*) echo "⛔ REFUSED-TO-GRADE: ALL.timeout.tsv gives $_tn the non-numeric timeout '$_ts'"; exit 2;; esac
         TMO_OF[$_tn]="$_ts"; echo "-- declared run timeout: $_tn ${_ts}s ($_tr)"; done < "$TIMEOUT_TSV"
 fi
-TMP="$(mktemp -d /tmp/wirth76_suite_XXXXXX)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/wirth76_suite_XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED-TO-GRADE: lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
 DECL="$TMP/declared_memory.tsv"

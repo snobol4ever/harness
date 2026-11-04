@@ -77,7 +77,7 @@ NREF=0
 "$HERE/util_require_fresh.sh" --gate test_pascal_fpc_suite "$SCRIP" "${RT_DIR:-$HERE/../../SCRIP/out}/libscrip_rt.so" || exit 2
 [ -f "$RT_SO" ]  || { echo "⛔ REFUSED-TO-GRADE: $RT_SO missing (m4 link needs it)"; exit 2; }
 
-TMP="$(mktemp -d /tmp/fpc_suite_XXXXXX)"
+TMP="$(mktemp -d "${TMPDIR:-/tmp}/fpc_suite_XXXXXX")"
 trap 'rm -rf "$TMP"' EXIT
 # ⭐ THE DECLARED HEAP AND STACK (Lon 2026-09-23 18:3x; CEO-1167, CEO-1225; wired by the coo on CEO-1229, the SWI runner's pattern):
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,

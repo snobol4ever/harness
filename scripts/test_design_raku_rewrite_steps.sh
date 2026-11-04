@@ -14,7 +14,7 @@
 #                  smoke              test_smoke_raku.sh green
 #                Red before the step lands, green after.
 #   --cut        re-cut every witness ref from Rakudo (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/raku_rewrite)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.raku_rewrite.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -23,7 +23,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/raku/rewrite"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/raku_rewrite"
+OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 RESULTS=/home/resources/progress/results.tsv
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
@@ -39,6 +39,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default raku_rewrite; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: raku-rewrite -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/raku/rewrite (refs from Rakudo 2026.05)"

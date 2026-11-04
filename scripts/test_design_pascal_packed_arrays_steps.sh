@@ -11,7 +11,7 @@
 #                named rosetta-pascal entries through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight,
 #                R-1677), hdrfield=NAME (gc_heap.h's rt_hblk_t declares a field uint32_t NAME). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/pascal_packed_arrays)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.pascal_packed_arrays.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> [st=<pass>/<n>] probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -20,7 +20,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/pascal/packed_arrays"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/pascal_packed_arrays"
+OUT=""
 HEAP_H="$SC/src/runtime/rt/gc_heap.h"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
@@ -35,6 +35,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_packed_arrays; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: pascal-packed-arrays -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/pascal/packed_arrays (refs from fpc 3.2.2)"

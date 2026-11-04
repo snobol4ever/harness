@@ -12,7 +12,7 @@
 #                corpus_suite_harness.py smoke, no progress row, at most eight: the handful of CEO-1677), families=... and row=N (results.tsv and
 #                SUITES.tsv READ, never run). Red before the step lands, green after.
 #   --cut        re-cut every witness ref from XSB (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/xsb_wfs)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.xsb_wfs.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -22,7 +22,7 @@ SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/prolog/xsb_wfs"
 PKG="$ROOT/corpus/packages/prolog/xsb_tests"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/xsb_wfs"
+OUT=""
 RESULTS=/home/resources/progress/results.tsv
 SUITES=/home/resources/progress/SUITES.tsv
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
@@ -38,6 +38,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default xsb_wfs; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: xsb-tabling-wfs -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/prolog/xsb_wfs (XSB syntax, refs from XSB 5.0.0)"

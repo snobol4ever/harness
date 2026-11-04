@@ -32,14 +32,14 @@ P3=0; F3=0; P4=0; F4=0; N=0
 
 pascal() {
     local label="$1" expected="$2" stdin_data="${3:-}"
-    local tmp; tmp=$(mktemp /tmp/pas_XXXXXX.pas)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.pas")
     cat > "$tmp"
     N=$((N+1))
     local a3 a4 r3 r4
     a3=$(printf '%s\n' "$stdin_data" | smoke_t -k 5 8 "$SCRIP" --run "$tmp" 2>/dev/null)
     a4=""
     local s4 bin4
-    s4=$(mktemp /tmp/pas_XXXXXX.s); bin4=$(mktemp /tmp/pas_XXXXXX.bin); rm -f "$bin4"
+    s4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/pas_XXXXXX.bin"); rm -f "$bin4"
     if smoke_t -k 5 8 "$SCRIP" --compile "$tmp" --out="$s4" </dev/null >/dev/null 2>&1 && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(printf '%s\n' "$stdin_data" | smoke_t -k 5 8 "$bin4" 2>/dev/null)

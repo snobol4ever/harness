@@ -11,7 +11,7 @@
 #                witcensus=f1,f2:N (the same count over the step's OWN witnesses, mode 4, at most N: the 2b step's rt_call_arr family against the one write), smoke (test_smoke_icon.sh green), rows (SUITES.tsv's icon rows today_pass equal to total, READ). Red before the step
 #                lands, green after.
 #   --cut        re-cut every witness ref from iconx (the design seat's road; an HQ that changes a witness re-cuts it the same way)
-#   --out DIR    where the runs go (default <root>/.scratch/icon_scanning_asm)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.icon_scanning_asm.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -21,7 +21,7 @@ SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/icon/scanning_asm"
 BENCH="$ROOT/corpus/benchmarks/icon"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/icon_scanning_asm"
+OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 ICONT=/home/resources/icon-master/bin/icont
 ALLF="rt_scan_enter rt_scan_leave rt_scan_sync_in rt_scan_sync_out rt_scan_live_subj rt_scan_reenter_live rt_scan_needle rt_icn_cset_bits_d rt_icn_cset_member_n rt_keyword_var rt_substr"
@@ -38,6 +38,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default icon_scanning_asm; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: icon-scanning-asm -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/icon/scanning_asm (refs from Arizona Icon)"

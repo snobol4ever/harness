@@ -18,16 +18,16 @@ P3=0; F3=0; X3=0; P4=0; F4=0; X4=0; N=0
 
 raku() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/rk_XXXXXX.raku)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.raku")
     cat > "$tmp"
     N=$((N+1))
     local a3 a4 r3 r4
     local e3 e4 s4 bin4
     local rc3=0 rc4=0
-    e3=$(mktemp /tmp/rk_XXXXXX.e3); e4=$(mktemp /tmp/rk_XXXXXX.e4)
+    e3=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.e3"); e4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.e4")
     a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
     a4=""
-    s4=$(mktemp /tmp/rk_XXXXXX.s); bin4=$(mktemp /tmp/rk_XXXXXX.bin); rm -f "$bin4"
+    s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
     if smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then
             a4=$(smoke_t -k 5 8 "$bin4" 2>/dev/null </dev/null); rc4=$?
@@ -53,17 +53,17 @@ raku() {
 # stdout must match expected AND rc must be nonzero; rc=0 or stdout mismatch = FAIL.
 raku_dies() {
     local label="$1" expected="$2"
-    local tmp; tmp=$(mktemp /tmp/rk_XXXXXX.raku)
+    local tmp; tmp=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.raku")
     cat > "$tmp"
     N=$((N+1))
     local a3 a4 r3 r4
     local e3 e4 s4 bin4
     local rc3=0 rc4=0
-    e3=$(mktemp /tmp/rk_XXXXXX.e3); e4=$(mktemp /tmp/rk_XXXXXX.e4)
+    e3=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.e3"); e4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.e4")
     a3=$(smoke_t -k 5 8 "$SCRIP" --run    "$tmp" 2>"$e3" </dev/null); rc3=$?
     a4=""
     local crc4=0
-    s4=$(mktemp /tmp/rk_XXXXXX.s); bin4=$(mktemp /tmp/rk_XXXXXX.bin); rm -f "$bin4"
+    s4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.s"); bin4=$(mktemp "${TMPDIR:-/tmp}/rk_XXXXXX.bin"); rm -f "$bin4"
     smoke_t -k 5 8 "$SCRIP" --compile --target=x86 "$tmp" >"$s4" 2>"$e4" </dev/null; crc4=$?
     if [ "$crc4" -eq 0 ] && [ -s "$s4" ] && [ -f "$RT_SO" ]; then
         if gcc -no-pie "$s4" -L"${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$bin4" 2>/dev/null; then

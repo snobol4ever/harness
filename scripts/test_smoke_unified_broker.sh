@@ -35,21 +35,21 @@ _run() {
 
 sno() {
     local label="$1" expected="$2" tmp
-    tmp=$(mktemp /tmp/ub_XXXXXX.sno)
+    tmp=$(mktemp "${TMPDIR:-/tmp}/ub_XXXXXX.sno")
     cat > "$tmp"
     _run "$label" "$tmp" "$expected"
 }
 
 icn() {
     local label="$1" expected="$2" tmp
-    tmp=$(mktemp /tmp/ub_XXXXXX.icn)
+    tmp=$(mktemp "${TMPDIR:-/tmp}/ub_XXXXXX.icn")
     cat > "$tmp"
     _run "$label" "$tmp" "$expected"
 }
 
 pl() {
     local label="$1" expected="$2" tmp
-    tmp=$(mktemp /tmp/ub_XXXXXX.pl)
+    tmp=$(mktemp "${TMPDIR:-/tmp}/ub_XXXXXX.pl")
     cat > "$tmp"
     _run "$label" "$tmp" "$expected"
 }
@@ -165,7 +165,7 @@ echo "=== Raku ==="
 
 raku() {
     local label="$1" expected="$2" tmp
-    tmp=$(mktemp /tmp/ub_XXXXXX.raku)
+    tmp=$(mktemp "${TMPDIR:-/tmp}/ub_XXXXXX.raku")
     cat > "$tmp"
     _run "$label" "$tmp" "$expected"
 }

@@ -7,7 +7,7 @@
 #   --step N     grade step N: every witness of the step in mode 3 (./scrip w.pl) and mode 4 (--compile, as, gcc, run) under SCRIP_ZD_RTCHECK=1,
 #                byte-equal to its .ref with rc 0 (a SIGILL is the depth check firing and reads RED(depth-check)); then the step's PROBE over the
 #                witnesses (the mode-4 .s, the placement census, the predictor report): red before the step lands, green after
-#   --out DIR    where the .s and logs go (default <root>/.scratch/prolog_lifo)
+#   --out DIR    where the .s and logs go (default a fresh /tmp/s4e/<seat>/runner_out.prolog_lifo.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> probe=<reading> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure (no ./scrip,
 # no witness, no oracle ref). Step 7 (the finish) runs the fleet's instruments, which take minutes, and names each.
@@ -17,7 +17,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/prolog/lifo"
 STEPS="$WD/STEPS.tsv"
-OUT="$ROOT/.scratch/prolog_lifo"
+OUT=""
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
 mode=""; step=""
@@ -30,6 +30,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR]"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default prolog_lifo; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: prolog-lifo -- $(grep -c -v '^#' "$STEPS" | awk '{print $1-1}') steps (STEPS.tsv); witnesses in $WD"

@@ -20,7 +20,7 @@
 #                ROWS0.tsv) | -
 #   --cut        re-cut every witness ref from its oracle (the design seat's road; an HQ that changes a witness re-cuts it the same way)
 #   --rows0      record SUITES.tsv's rows into ROWS0.tsv (the reading the rows probe compares against)
-#   --out DIR    where the runs go (default <root>/.scratch/zeta_layout)
+#   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.exceptions.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> m3s=<pass>/<n> m4s=<pass>/<n> probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -u
@@ -31,7 +31,7 @@ WD="$ROOT/corpus/tests/shared/exceptions"
 GCW="$HERE/gc_witnesses"
 STEPS="$WD/STEPS.tsv"
 ROWS0="$WD/ROWS0.tsv"
-OUT="$ROOT/.scratch/exceptions"
+OUT=""
 SUITES=/home/resources/progress/SUITES.tsv
 SBL=/home/resources/x64/bin/sbl
 SMOKES="snobol4 snocone rebus icon prolog raku pascal polyglot"
@@ -50,6 +50,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut | --rows0"
+[ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default exceptions; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 wext() { local w="$1"; for e in sno icn pl pas raku; do [ -f "$WD/$w.$e" ] && { echo "$e"; return 0; }; done; return 1; }
 if [ "$mode" = list ]; then
