@@ -898,7 +898,32 @@ def derive_measurer():
     m = re.match(r"^/home/claude([0-9]{1,2})$", root)
     if m:
         return "seat%02d" % int(m.group(1))
+    m = re.match(r"^/home/claude_([a-z0-9_]+)$", root)
+    if m:
+        x = m.group(1)
+        if x in roster_officers():
+            return x
+        if "hq_" + x in roster_seats():
+            return "hq_" + x
     return ""
+# THE ROSTER NAMES THE OFFICERS (the cio, 2026-11-04, measured: /home/claude_cio read as hq_cio by a hand list that predated it). A root
+# /home/claude_<x> is the officer <x> when MODE's ROSTER: line carries <x> bare, and the HQ hq_<x> when it carries hq_<x>; the hand list is
+# kept only for a MODE that cannot be read (a scratch fixture).
+MODE_PATH = "/home/resources/postoffice/MODE"
+OFFICERS_FALLBACK = frozenset({"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"})
+def roster_seats(mode_path=None):
+    try:
+        for line in open(mode_path or os.environ.get("S4E_MODE_PATH") or MODE_PATH, errors="replace"):
+            if line.startswith("ROSTER:"):
+                return frozenset(line[len("ROSTER:"):].split())
+    except OSError:
+        pass
+    return frozenset()
+def roster_officers(mode_path=None):
+    r = roster_seats(mode_path)
+    if not r:
+        return OFFICERS_FALLBACK
+    return frozenset(s for s in r if not s.startswith("hq_")) | {"ceo"}
 
 
 # ⛔⭐⭐ THE ROSTER IS ASKED AT THE WRITE PATH, BECAUSE THE MITIGATION WAS A SEAT'S MEMORY (hq_I 2026-09-13, row

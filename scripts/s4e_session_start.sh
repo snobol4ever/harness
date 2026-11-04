@@ -27,7 +27,11 @@ try:
 except Exception:
     census, BROWS = None, {}
 LEDGER = "/home/resources/progress/SEATS.tsv"
-OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo"}
+try:
+    import util_score_row as _usr
+    OFFICERS = set(_usr.roster_officers())
+except Exception:
+    OFFICERS = {"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"}
 TERM = "app-org.gnome.Terminal.slice"
 SEAT_PROPS = census.budget_props(BROWS.get("@SEAT")) if census else []   # CPUQuota (CEO-2105): the session scope IS the door -- every child of a seat session inherits a four-core cap
 LON_PROPS = census.budget_props(BROWS.get("@LON")) if census else []   # CEO-2105 (d): inside the sessions' slice Lon's terminal outranks every seat (100) ten to one
