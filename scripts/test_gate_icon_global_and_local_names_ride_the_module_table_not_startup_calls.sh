@@ -3,7 +3,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1
 ../harness/scripts/util_require_fresh.sh --gate "$(basename "$0" .sh)" || exit $?
 # test_gate_icon_global_and_local_names_ride_the_module_table_not_startup_calls.sh -- AN ICON PROGRAM'S GLOBAL NAMES AND ITS PROCEDURES' PARAMETER, LOCAL AND OFFSET NAMES ARE STATIC DATA THE COMPILER EMITS AND
-# ONE CALL INSTALLS BY POINTER, NOT ONE RUNTIME CALL PER NAME (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-ceo-1969, slice 1).
+# ONE CALL INSTALLS BY POINTER, NOT ONE RUNTIME CALL PER NAME (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-r-1969, slice 1).
 # ⛔ THE MEASURED DEFECT: module_init called rt_icn_global_note once per global name (a LOWERER function, src/lower/lower_common.c, gset_add into g_lower.lc.icn_gnames, running inside every Icon process) and
 # rt_proc_loc_add once per procedure with a name table, and gva_register noted every declared global again. The only reader of either table is display() and variable(), and RULES.md says every runtime table is
 # built by lower. The compiler already held both, so it emits them as data: .Lstartup_gnames (a pointer array) and .Lstartup_icn_loc (48-byte rows), each behind a 32-byte arena block header (CT_MAGIC_BIG) so a

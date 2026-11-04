@@ -52,7 +52,7 @@ Stdin: `<stem>.stdin` / `<stem>.IN` / `<stem>.in` / `<stem>.input` beside the so
 (vendored packages ship the exact case they shipped in -- aisnobol's are `.IN` -- so this checks case
 variants explicitly rather than relying on with_suffix()'s case-sensitive match).
 
-THE SPLICE, --only NAME[,NAME...] (the cqo 2026-11-04, row corpus-the-twenty-programs-...-ceo-2029; a whole rebuild of rosetta-pascal
+THE SPLICE, --only NAME[,NAME...] (the cqo 2026-11-04, row corpus-the-twenty-programs-...-r-2029; a whole rebuild of rosetta-pascal
 re-cut every ref and moved 30 of the 311 its rows had graded, measured 18:2xZ): only the named programs are cut from the oracle, by the
 same checks as a whole build (--twice included), and every other entry stays byte-identical. A named program already in the container is
 re-cut IN PLACE, keeping its banner number, its rank and its declared heap_kb, stack_kb, compile_args, run_args and mode_gap_s; one not in
@@ -986,7 +986,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
                 h.refuse(f"{_mp}: a mask row is entry<TAB>regex-or-L<n><TAB>reason -- got {_ln!r}")
             _mask_rows.append("\t".join([e.name] + _f[1:]))
     if _mask_rows:
-        _keyed(f"{out_prefix}.mask", ["# ALL.mask -- CEO-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
+        _keyed(f"{out_prefix}.mask", ["# ALL.mask -- R-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
                                       "# whose program ships a <stem>.mask are written from it by util_build_package_suite.py under the entry's name."],
                _mask_rows, {r.split("\t", 1)[0] for r in _mask_rows})
     _ex = [ln for ln in _lines(pkg_dir / f"{out_prefix}.excluded.txt") if ln.split(": ", 1)[0] not in names]

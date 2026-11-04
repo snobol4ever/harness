@@ -4,7 +4,7 @@
 # cuts only the named programs from the oracle and splices them into the existing container, every other entry byte-identical; and
 # --twice runs the oracle a second time in a LATER wall-clock second than the first run ended in.
 #
-# WHY (the cqo 2026-11-04, row corpus-the-twenty-programs-with-no-reading-...-ceo-2029): a whole rebuild of rosetta-pascal re-cut every
+# WHY (the cqo 2026-11-04, row corpus-the-twenty-programs-with-no-reading-...-r-2029): a whole rebuild of rosetta-pascal re-cut every
 # ref and moved 30 of the 311 its rows had graded, so 18 owed programs could land only by a splice. And --twice absorbed
 # sleeping-beauty-problem, whose fpc randomize seeds from the clock in whole seconds: both sub-second runs drew one seed (hand runs
 # 2.5 s apart printed 1500363, 1498900, 1499633 wakings), and the same blind spot let date and random printers through the rebuild.

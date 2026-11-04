@@ -152,7 +152,7 @@ procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope
     echo "510 2575 60 2000 $sl/vte-b.scope /home/claude_b/SCRIP/scrip --run young.pl"
     echo "520 2575 99999 4000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-grader.slice/run-x.scope bash loop8.sh"
     echo "530 500 $2 9000 $sl/vte-a.scope /home/claude_a/SCRIP/scrip --run child.pl"
-    echo "540 2575 $2 14000 $sl/vte-b.scope ugrep -G -rnoiE ceo corpus"
+    echo "540 2575 $2 14000 $sl/vte-b.scope ugrep -G -rnoiE officer corpus"
     echo "560 2575 $2 4000 $sl/vte-a.scope ssh: /home/x/.ssh/cm-git@github.com-22 [mux]"
     echo "570 2575 $2 1000 $sl/vte-a.scope xclip -selection clipboard"
     echo "580 2575 $2 3000 $sl/vte-a.scope /usr/bin/bash /home/claude_cto/harness/scripts/util_jobserver.sh hold 8"
