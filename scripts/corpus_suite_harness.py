@@ -1760,16 +1760,19 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
     _trd = os.environ.get("S4E_ENTRY_TRACE_DIR", "")
     if _trd:
         os.makedirs(_trd, exist_ok=True)
+    def _gap(mode):
+        if mode_gap_s:
+            print(f"MODE GAP {where or Path(sno_path).stem}: {mode_gap_s}s before {mode}, declared in ALL.csv's mode_gap_s", file=sys.stderr)
+            time.sleep(mode_gap_s)
     if "m3" in modes:
+        _gap("m3")
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
         out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
-        if "m3" in modes and mode_gap_s:
-            print(f"MODE GAP {where or Path(sno_path).stem}: {mode_gap_s}s between m3 and m4, declared in ALL.csv's mode_gap_s", file=sys.stderr)
-            time.sleep(mode_gap_s)
+        _gap("m4")
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
