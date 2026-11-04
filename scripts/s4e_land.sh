@@ -22,7 +22,8 @@
 #                a repo that carries commits and is not named refuses, since its tree is what the gate reads.
 #   --probe      the step's proof, against scratch origins (bare repos borrowing this root's objects; corpus sparse): arm 1 lands with a red
 #                gate and must push nothing; arm 2 moves every origin first, plants a push race on corpus inside the gate, and must land all
-#                four repos with the race rejected, recorded in a scratch postoffice and re-landed. Prints LAND dry-run ok stages=N.
+#                four repos with the race rejected, recorded in a scratch postoffice and re-landed; arm 3 finds the box-wide landing lease held, waits, names the holder,
+#                pushes nothing, then lands once it is free. Prints LAND dry-run ok stages=N.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
@@ -105,8 +106,24 @@ probe() {
     done
     git -C "$T/origin/corpus.git" log --format=%s main | grep -x "$RACE" > /dev/null || { echo "LAND dry-run RED: the racer's corpus commit is not on origin"; exit 1; }
     [ "$(awk -F'\t' '$3 == "corpus"' "$T/po/PUSH_REJECTED.tsv" 2>/dev/null | wc -l)" = 1 ] || { echo "LAND dry-run RED: the rejected corpus push was not recorded once in PUSH_REJECTED.tsv"; exit 1; }
-    echo "LAND dry-run ok stages=$n rejected=1 repos=${#ORDER[@]} arms=2 (scratch origins borrowing $home; a red gate pushed nothing;"\
-         "moved origins rebased; a push race rejected, recorded, re-landed and verified)"
+    log="$T/arm3.log"; declare -A was3
+    for r in "${ORDER[@]}"; do was3[$r]="$(git -C "$T/origin/$r.git" rev-parse main)"
+        git -C "$T/work/$r" commit -q --allow-empty -m "probe: a third commit in $r" || refuse "probe: cannot commit in $r"; done
+    ( exec 8>> "$T/po/.land.lease"; flock 8; printf 'seat=probe-holder pid=%s row=lease-plant since=%s\n' "$$" "$(date -u +%FT%TZ)" > "$T/po/.land.lease"; sleep 20 ) & holder=$!
+    sleep 1
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" S4E_LAND_LEASE_WAIT=3 bash "$SELF" --home "$T/work" --gate 'true' > "$log" 2>&1; rc=$?
+    sed 's/^/    arm3| /' "$log" | tail -4
+    kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
+    [ "$rc" = 2 ] && grep -q 'LAND stage=lease waiting: held by seat=probe-holder' "$log" && grep -q 'lease is still held after 3 s' "$log" \
+        || { echo "LAND dry-run RED: arm 3 (the lease held by another lander) returned rc=$rc, not the refusal rc 2 that waits on and names the holder"; exit 1; }
+    for r in "${ORDER[@]}"; do [ "$(git -C "$T/origin/$r.git" rev-parse main)" = "${was3[$r]}" ] || { echo "LAND dry-run RED: arm 3 pushed $r while the lease was held"; exit 1; }; done
+    log="$T/arm3b.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'true' > "$log" 2>&1; rc=$?
+    [ "$rc" = 0 ] && grep -q "LAND stage=lease held seat=$seat" "$log" || { echo "LAND dry-run RED: arm 3 (the lease released) returned rc=$rc without taking the lease"; exit 1; }
+    for r in "${ORDER[@]}"; do git -C "$T/origin/$r.git" log --format=%s main | grep -x "probe: a third commit in $r" > /dev/null \
+        || { echo "LAND dry-run RED: arm 3 did not land $r once the lease was free"; exit 1; }; done
+    echo "LAND dry-run ok stages=$n rejected=1 repos=${#ORDER[@]} arms=3 (scratch origins borrowing $home; a red gate pushed nothing;"\
+         "moved origins rebased; a push race rejected, recorded, re-landed and verified; a held lease waited on, its holder named, nothing pushed; landed once free)"
     exit 0
 }
 advance() {
@@ -114,6 +131,14 @@ advance() {
     c="$(git -C "$1" commit-tree "main^{tree}" -p main -m "$2")" && git -C "$1" update-ref refs/heads/main "$c" main || refuse "probe: cannot advance $1"
 }
 [ "$mode" = probe ] && probe
+lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAND_LEASE_WAIT:-1800}"
+exec 8>> "$lease" 2>/dev/null || refuse "cannot open the landing lease $lease"
+if ! flock -n 8; then
+    echo "LAND stage=lease waiting: held by $(tail -1 "$lease" 2>/dev/null | cut -c1-120); a landing serializes box-wide so origin cannot move under a gate (box-scheduler step 18; up to $lw s)"
+    flock -w "$lw" 8 || refuse "the landing lease is still held after $lw s by $(tail -1 "$lease" 2>/dev/null | cut -c1-120): nothing fetched, nothing pushed"
+fi
+printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$lease"
+echo "LAND stage=lease held seat=$seat pid=$$ (released when this landing exits)"
 LOG="/tmp/s4e/$seat/land.$$"
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
