@@ -671,6 +671,11 @@ def budget_check():
                 if r[k] in ("-", ""):
                     continue
                 knobs += 1; want = budget_file_value(k, r[k]); got = rd(os.path.join(d, f)).strip()
+                if k == "CPUQuota" and "box_controller" in r.get("applied_by", ""):
+                    gn, wn = got.split()[0] if got else "", want.split()[0]
+                    if not gn.isdigit() or int(gn) > int(wn):
+                        gaps.append("%s: %s reads %s, above the declared CEILING %s=%s (%s); box_controller.sh moves this knob under it (box-scheduler step 26)" % (who, f, got or "absent", k, r[k], want))
+                    continue
                 if got != want:
                     gaps.append("%s: %s reads %s, the table declares %s=%s (%s)" % (who, f, got or "absent", k, r[k], want))
     print("BUDGET CHECK table=%s rows=%d units=%d knobs=%d gaps=%d" % (path, len(rows), units, knobs, len(gaps)))

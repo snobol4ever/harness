@@ -36,7 +36,8 @@ H = "name\tunit\tCPUWeight\tCPUQuota\tMemoryHigh\tMemoryMax\tMemorySwapMax\tTask
 rows = [("sessions-top", "app.slice", "100", "-", "-", "-", "-", "-"), ("loops-top", "s4e.slice", "100", "-", "-", "-", "-", "-"),
         ("sessions", "app-org.gnome.Terminal.slice", "100", "-", "20G", "24G", "-", "-"), ("grader", "s4e-grader.slice", "300", "-", "-", "10G", "-", "-"),
         ("batch", "s4e-batch.slice", "50", "-", "-", "12G", "-", "-"), ("seat", "@SEAT", "100", "400%", "4G", "8G", "1G", "2048"), ("lon", "@LON", "1000", "-", "-", "-", "-", "-")]
-open(d + "/BUDGET.tsv", "w").write("# the gate's table\n" + H + "".join("\t".join(r) + "\tgate\tgate\n" for r in rows))
+ab = lambda r: "box_controller.sh moves the quota under this ceiling" if (os.environ.get("CEIL") and r[0] == "seat") else "gate"
+open(d + "/BUDGET.tsv", "w").write("# the gate's table\n" + H + "".join("\t".join(r) + "\t" + ab(r) + "\tgate\n" for r in rows))
 odd = [r if r[0] != "seat" else r[:3] + ("300%",) + r[4:] for r in rows]
 odd = [r if r[0] != "grader" else r[:2] + ("301",) + r[3:] for r in odd]
 open(d + "/ODD.tsv", "w").write(H + "".join("\t".join(r) + "\tgate\tgate\n" for r in odd))
@@ -57,6 +58,11 @@ plant "$T/high" 300 "400000 100000" "$G3" 1 1000
 plant "$T/nobatch" 300 "400000 100000" "$G4" 0 1000
 plant "$T/lon" 300 "400000 100000" "$G4" 1 100
 arm "the planted box agrees with its table: GREEN over 5 slices, 2 live seats and Lon (the gone seat's scope not read)" "$T/good" 0 "rows=7 units=8 knobs=22 gaps=0" -- --budget-check
+CEIL=1 plant "$T/ceil_under" 300 "200000 100000" "$G4" 1 1000
+CEIL=1 plant "$T/ceil_over" 300 "500000 100000" "$G4" 1 1000
+arm "box-scheduler step 26: a controller-moved quota UNDER its declared ceiling (200% of 400%) reads GREEN" "$T/ceil_under" 0 "gaps=0" -- --budget-check
+arm "box-scheduler step 26 FAIL-ONCE: the same knob ABOVE its ceiling (500% of 400%) reads RED naming the ceiling" "$T/ceil_over" 1 "seat a: cpu.max reads 500000 100000, above the declared CEILING CPUQuota=400%" -- --budget-check
+arm "box-scheduler step 26: a quota the table declares exactly (no controller) still reads RED when it moves" "$T/quota" 1 "seat a: cpu.max reads max 100000, the table declares CPUQuota=400% (400000 100000)" -- --budget-check
 arm "FAIL-ONCE: the grader slice at weight 100 reads RED naming it" "$T/grader" 1 "s4e-grader.slice: cpu.weight reads 100, the table declares CPUWeight=300 (300)" -- --budget-check
 arm "FAIL-ONCE: a seat scope with no quota reads RED naming the seat" "$T/quota" 1 "seat a: cpu.max reads max 100000, the table declares CPUQuota=400% (400000 100000)" -- --budget-check
 arm "FAIL-ONCE: a seat scope's memory.high at 3G reads RED naming both seats" "$T/high" 1 "seat b: memory.high reads $G3, the table declares MemoryHigh=4G ($G4)" -- --budget-check
