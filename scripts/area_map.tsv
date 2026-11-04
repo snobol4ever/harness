@@ -33,7 +33,9 @@
 *	src/lower/g_lower.h
 *	src/parsers/g_parser.h
 *	src/lower/lc_vec.h
-*	src/templates/bb/bb_template_common.h
+*	src/emitter/emit_state.h
+*	src/emitter/emit_knobs.h
+*	src/planner/frame_layout.h
 *	src/templates/bb/bb_templates.h
 *	src/templates/bb/bb_main.cpp
 *	src/templates/bb/bb_section.cpp
