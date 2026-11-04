@@ -627,6 +627,15 @@ def budget_props(row):
     return ["%s=%s" % (k, row[k]) for k, _ in BUDGET_KNOBS if row and row.get(k, "-") not in ("-", "")]
 
 
+def budget_knob_gap(r, k, got):
+    """'' when the live file value meets row r's knob k; else the reason. A CPUQuota the controller moves (box-scheduler step 26) is a ceiling."""
+    want = budget_file_value(k, r[k])
+    if k == "CPUQuota" and "box_controller" in r.get("applied_by", ""):
+        gn, wn = got.split()[0] if got else "", want.split()[0]
+        if not gn.isdigit() or int(gn) > int(wn):
+            return "reads %s, above the declared CEILING %s=%s (%s); box_controller.sh moves this knob under it (box-scheduler step 26)" % (got or "absent", k, r[k], want)
+        return ""
+    return "" if got == want else "reads %s, the table declares %s=%s (%s)" % (got or "absent", k, r[k], want)
 def budget_file_value(knob, v):
     """The cgroup file's text for a declared systemd value: 400% -> '400000 100000', 4G -> bytes, infinity -> max."""
     v = v.strip()
@@ -670,14 +679,10 @@ def budget_check():
             for k, f in BUDGET_KNOBS:
                 if r[k] in ("-", ""):
                     continue
-                knobs += 1; want = budget_file_value(k, r[k]); got = rd(os.path.join(d, f)).strip()
-                if k == "CPUQuota" and "box_controller" in r.get("applied_by", ""):
-                    gn, wn = got.split()[0] if got else "", want.split()[0]
-                    if not gn.isdigit() or int(gn) > int(wn):
-                        gaps.append("%s: %s reads %s, above the declared CEILING %s=%s (%s); box_controller.sh moves this knob under it (box-scheduler step 26)" % (who, f, got or "absent", k, r[k], want))
-                    continue
-                if got != want:
-                    gaps.append("%s: %s reads %s, the table declares %s=%s (%s)" % (who, f, got or "absent", k, r[k], want))
+                knobs += 1; got = rd(os.path.join(d, f)).strip()
+                bad = budget_knob_gap(r, k, got)
+                if bad:
+                    gaps.append("%s: %s %s" % (who, f, bad))
     print("BUDGET CHECK table=%s rows=%d units=%d knobs=%d gaps=%d" % (path, len(rows), units, knobs, len(gaps)))
     if gaps:
         for g in gaps[:20]:

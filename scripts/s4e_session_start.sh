@@ -159,7 +159,8 @@ def check():
             except Exception: return "?"
         for k, fn in census.BUDGET_KNOBS:
             v = BROWS["@SEAT"][k]
-            if v != "-" and rd(fn) != census.budget_file_value(k, v): gaps.append("%s: %s=%s, the budget table declares %s=%s" % (seat, fn, rd(fn), k, v))
+            bad = census.budget_knob_gap(BROWS["@SEAT"], k, rd(fn)) if v != "-" else ""
+            if bad: gaps.append("%s: %s %s" % (seat, fn, bad))
     print("SEATS live=%d registered=%d gaps=%d" % (len(live), len(newest), len(gaps)))
     for g in gaps[:12]: print("  RED " + g)
     if gaps: return 1
