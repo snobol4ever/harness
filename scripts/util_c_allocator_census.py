@@ -617,13 +617,38 @@ def ruling_resolves(ruling, root=None):
         cands.append(os.path.join(os.path.dirname(os.path.dirname(HERE)), ".github", "GOAL-CEO.md"))
         record = next((c for c in cands if os.path.exists(c)), cands[-1])
         if not os.path.exists(record):
-            return None, record
+            # ⭐ THE RECORD FILE IS GONE ON LON'S WORD (2026-11-04, cto CTO-487: the fired ceo seat's GOAL-CEO.md is deleted) and its series is read
+            # from git history instead: the parent of the commit that deleted it, one `git show` per process. A CTO-NNNN resolves in GOAL-CTO.md.
+            text = _read_deleted_record(os.path.dirname(record))
+            if text is None:
+                return None, record
+            cto = os.path.join(os.path.dirname(record), "GOAL-CTO.md")
+            if ruling.startswith("CTO-") and os.path.exists(cto):
+                st = os.stat(cto)
+                text = text + _read_record(cto, st.st_mtime_ns, st.st_size)
+            return (ruling in text), record + " (git history)"
     try:
         st = os.stat(record)
         text = _read_record(record, st.st_mtime_ns, st.st_size)
     except Exception:
         return None, record
     return (ruling in text), record
+
+
+@functools.lru_cache(maxsize=4)
+def _read_deleted_record(github_dir):
+    """GOAL-CEO.md as it stood when it was deleted: `git rev-list -1 HEAD -- GOAL-CEO.md` names the deleting commit, its parent holds the last text.
+    None when the repo has no such history (a scratch .github), which the caller reports as could-not-measure, never as a resolved citation."""
+    import subprocess
+    try:
+        c = subprocess.run(["git", "-C", github_dir, "rev-list", "-1", "HEAD", "--", "GOAL-CEO.md"], capture_output=True, text=True, timeout=60)
+        h = c.stdout.strip()
+        if c.returncode != 0 or not h:
+            return None
+        s = subprocess.run(["git", "-C", github_dir, "show", h + "^:GOAL-CEO.md"], capture_output=True, text=True, errors="replace", timeout=60)
+        return s.stdout if s.returncode == 0 and s.stdout else None
+    except Exception:
+        return None
 
 
 @functools.lru_cache(maxsize=8)

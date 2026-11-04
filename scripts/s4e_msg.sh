@@ -1010,7 +1010,7 @@ s4e_lane_owner_of_language() {
       # officers are stood down; rebus comes back to the ceo with the rest. Written out per language rather than
       # collapsed to a default for the reason every table above gives: the gate beside this compares it to MODE
       # line 2 LANGUAGE BY LANGUAGE, and a default would agree with a line 2 that had drifted on six of them.
-      # ⛔ THIS TABLE MOVED BEFORE THE MODE FILE, through ../harness/scripts/ceo_mode_flip.sh --preview, which is the
+      # ⛔ THIS TABLE MOVED BEFORE THE MODE FILE, through ../harness/scripts/mode_flip.sh --preview, which is the
       # mechanism landed at c641a38f one hour earlier after the table-before-the-file procedure was FOLLOWED TWICE
       # AND FORGOTTEN TWICE in a single day. This is its first real use.
       # ⛔ MODE DUO-STUPID (CEO-1087, 2026-09-21 15:5x, Lon in-chat to the ceo, verbatim: "Let's get double stupid
