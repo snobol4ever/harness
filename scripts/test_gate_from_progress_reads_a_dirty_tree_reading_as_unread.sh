@@ -10,6 +10,9 @@
 #   ARM 2  SUITE_ROW_DIRTY_UNREAD names r2 and r3.
 #   ARM 3  an older CLEAN reading under a newer dirty one stands: r2 m4 FAIL on the clean tree before its dirty PASS -> r2 reads FAIL, 1/3, half_read=0.
 #   ARM 4  a clean re-grade after the dirty one counts: r2 m4 PASS on a clean tree, later -> 2/3.
+#   ARM 5  a scratch S4E_SCORE_MD is the display writer's target (the cto 2026-11-04, row harness-util-score-row-score-md-display-writer-ignores-s4e-score-md-...): a
+#          written from-progress under a fixture root, with S4E_SUITES_TSV and S4E_SCORE_MD on scratch copies, moves the scratch SCORE.md and leaves the
+#          root's byte-equal. PROVEN TO FAIL on harness 19d1a9f's util_score_row.py: SCORE_MD ignored the variable and the root's display line moved.
 # PROVEN TO FAIL on harness 3157665's util_score_row.py (before the cure): all four arms FAIL -- it reads read=3 unread=0 half_read=0 (pass=3, every
 # dirty PASS counted), prints no SUITE_ROW_DIRTY_UNREAD, lets the newer dirty PASS displace the clean FAIL (arm 3: 2/3) and r3's dirty PASSes count (arm 4: 3/3).
 # EXIT 0 every arm holds; 1 an arm failed; 2 could not measure.
@@ -39,6 +42,13 @@ ck "3 the older clean reading under the dirty one stands: r2 reads FAIL, 1/3, ha
 row 9 abc1234 r2 m4 PASS
 o4="$(run)"
 ck "4 a clean re-grade after the dirty reading counts: 2/3" 'grep -q "would set reb-rungs -> 2/3 stamped" <<<"$o4"'
-echo "GATE from-progress-dirty-tree-unread: $((n - fails))/$n arms hold (population: 3 entries, 9 readings, 4 of them dirty)"
+row 10 abc1234 r3 m3 PASS; row 11 abc1234 r3 m4 PASS
+GH="$(cd "${S4E_HOME:-$HERE/../..}/.github" 2>/dev/null && pwd)"
+[ -f "$GH/SCORE.md" ] && [ -f "$GH/scripts/util_suite_banner.py" ] && [ -f /home/resources/progress/SUITES.tsv ] || { echo "GATE REFUSE(2): no SCORE.md, banner or SUITES.tsv to copy for arm 5"; exit 2; }
+mkdir -p "$T/root/.github/scripts" "$T/scr" && cp "$GH/SCORE.md" "$T/root/.github/SCORE.md" && cp "$GH/SCORE.md" "$T/scr/SCORE.md" && cp "$GH/scripts/util_suite_banner.py" "$T/root/.github/scripts/" && cp /home/resources/progress/SUITES.tsv "$T/scr/SUITES.tsv"
+o5="$(S4E_HOME="$T/root" S4E_CORPUS_ROOT="$T/corpus" S4E_PROGRESS_DB="$DB" S4E_SUITES_TSV="$T/scr/SUITES.tsv" S4E_SCORE_MD="$T/scr/SCORE.md" python3 "$SR" from-progress --suite reb-rungs --criterion-changed "2026-11-04:a three-entry fixture" 2>&1)"; r5=$?
+[ "$r5" = 0 ] || { tail -5 <<<"$o5"; echo "GATE REFUSE(2): the written from-progress of arm 5 did not run (rc $r5)"; exit 2; }
+ck "5 a scratch S4E_SCORE_MD takes the display write and the root SCORE.md stays byte-equal" 'cmp -s "$GH/SCORE.md" "$T/root/.github/SCORE.md" && ! cmp -s "$GH/SCORE.md" "$T/scr/SCORE.md"'
+echo "GATE from-progress-dirty-tree-unread: $((n - fails))/$n arms hold (population: 3 entries, 11 readings, 4 of them dirty)"
 [ "$fails" = 0 ] || exit 1
 exit 0

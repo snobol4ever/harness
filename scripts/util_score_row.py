@@ -39,7 +39,7 @@ import os, re, subprocess, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SCORE_MD = os.path.join(S4E, ".github", "SCORE.md")
+SCORE_MD = os.environ.get("S4E_SCORE_MD") or os.path.join(S4E, ".github", "SCORE.md")
 REPOS = ["SCRIP", "corpus"]
 
 # The grid's columns, keyed by the short name a runner passes to --column.  Index is the cell position
