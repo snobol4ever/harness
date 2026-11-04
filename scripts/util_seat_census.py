@@ -29,7 +29,7 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
                                        app.slice's own delta; rc 1 RED naming the gap; rc 2 no ledger or no cgroup tree
   --cpu-check                          RED on cpu pressure avg300 >= 30, a busy box with idle pools, a seat over 2 cores holding no slot, the grader under 2 cores while it waits, Lon's terminal waiting
   --tmp-check                          RED by name, largest first, for every seat whose /tmp (session scratchpads and /tmp/s4e/<seat>) is over TMP_SEAT_MB
-  --proc-check                         RED by name: a fleet process orphaned to the user manager 10 min or more, box memory pressure avg60 >= 10, a seat scope at 90%% of memory.high
+  --proc-check                         RED by name: a fleet process, or any process of a seat session scope, orphaned to the user manager 5 min or more, box memory pressure avg60 >= 10, a seat scope at 90%% of memory.high
                                        whose ANON is at 90%% of it; a scope there by its file pages is RECLAIMED (memory.reclaim swappiness=0), never alarmed (box-budget step 7)
   --watch-check                        RED when the coo's loop, tier1 (the fleet watch) or the seat watch is not running, or the fleet watch has not passed in 15 min
   --health                             --check, --memory-check, --cpu-check, --tmp-check, --proc-check and --watch-check together; rc the worst
@@ -937,7 +937,8 @@ def proc_check():
     """THE PROCESS AND MEMORY ARM OF THE HEALTH CHECK (the coo 2026-11-01, Lon: "So does you periodic check look for orphans and such so it can find this
     problem sooner rather than later?" -- it did not: at 14:4x CST three XSB smoke trees orphaned by timed-out assign probes ran on reparented to the user
     manager, one `as` at 1.5 GB, the coo's scope sat at 3.3 of its 4 GB memory.high, and box memory pressure read 37 percent with no arm red). RED by name:
-    every fleet process (a harness script, a scrip, as, gcc, make, a runner) whose parent is the user manager and that is ten minutes old or more, not one of
+    every fleet process (a harness script, a scrip, as, gcc, make, a runner), and any process at all in a live seat's session scope (COO-461: the cao's orphaned
+    ugrep over the whole corpus ran 15 min at 1.76 cores unnamed, its command no fleet word), whose parent is the user manager and that is five minutes old or more, not one of
     the standing daemons (the loop, tier1, the seat watch, a swap, the cron census, sweep and git maintenance) -- its seat read from the cgroup it kept;
     box memory pressure some avg60 of 10 or more; and every seat scope at 90 percent or more of its memory.high (the scope the kernel is throttling)."""
     root = arg("--root", CG)
@@ -959,8 +960,8 @@ def proc_check():
     keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh)")
     orphans = []
     for pid, ppid, et, rss, cg, a in rows:
-        if ppid in mgr and int(et) >= 600 and work.search(a) and not keep.search(a):
-            sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
+        sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
+        if ppid in mgr and int(et) >= 300 and (work.search(a) or sc in by_scope) and not keep.search(a):
             who = by_scope.get(sc) or ("grader" if "s4e-grader" in cg or "s4e-mem-" in cg else "batch" if "s4e-batch" in cg else "?")
             orphans.append((int(rss), pid, who, int(et), a))
     for rss, pid, who, et, a in sorted(orphans, reverse=True):
