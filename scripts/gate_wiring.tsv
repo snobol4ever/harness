@@ -1251,6 +1251,7 @@ test_gate_sno_a_distinct_eval_text_leaves_no_residue_once_its_chain_is_released.
 test_gate_sno_a_dollar_indirection_of_an_existing_name_resolves_in_one_lookup_and_agrees_with_sbl.sh	WIRED	-	-	-
 test_gate_sno_a_dynamic_function_called_from_a_code_built_function_returns_its_value.sh	WIRED	-	-	-
 test_gate_sno_a_failed_unary_minus_or_plus_takes_its_boxs_failure_exit.sh	WIRED	-	-	-
+test_gate_sno_a_failing_match_past_a_deferred_argument_prim_pops_the_hoisted_cells_under_it.sh	WIRED	-	-	-
 test_gate_sno_a_fence_after_a_live_deferred_thunk_finds_its_own_slots.sh	WIRED	-	-	-
 test_gate_sno_a_fence_backtracked_into_drops_its_bodys_conditional_captures.sh	WIRED	-	-	-
 test_gate_sno_a_fence_before_a_run_or_inside_an_arbno_body_retries_what_follows_it.sh	WIRED	-	-	-
