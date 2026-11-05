@@ -1,0 +1,11 @@
+[Unit]
+Description=Fleet queue tick, one fresh box_tick.sh process under flock (fleet-queue step 10; shadow mode)
+Documentation=file://@ROOT@/harness/scripts/box_tick.sh
+
+[Service]
+Type=oneshot
+Environment=S4E_HOME=@ROOT@
+Environment=S4E_SEAT=@SEAT@
+WorkingDirectory=@ROOT@
+ExecStart=/bin/bash @ROOT@/harness/scripts/box_tick.sh --tick
+TimeoutStartSec=240

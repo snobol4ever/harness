@@ -1,0 +1,11 @@
+[Unit]
+Description=Fleet queue tick every 60 seconds (fleet-queue step 10)
+
+[Timer]
+OnActiveSec=5
+OnUnitActiveSec=60
+AccuracySec=1s
+Unit=s4e-tick.service
+
+[Install]
+WantedBy=timers.target
