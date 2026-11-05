@@ -40,7 +40,7 @@ if [ "$mode" = cut ]; then
         bash "$HERE/util_oracle.sh" sbl --stdin "$in" --timeout 60 -- -bf "$src" > "$w.ref" 2>/dev/null; echo "cut $w.ref (sbl rc $?): $(wc -l < "$w.ref") lines"
     done
     for src in *.pl; do
-        w="${src%.pl}"; timeout -k 5 60 "$(swipl_bin)" -q -t halt "$src" < /dev/null > "$w.ref" 2>/dev/null; echo "cut $w.ref (swipl rc $?): $(wc -l < "$w.ref") lines"
+        w="${src%.pl}"; bash "$HERE/util_oracle.sh" swipl --timeout 60 -- -q -t halt "$src" > "$w.ref" 2>/dev/null; echo "cut $w.ref (swipl rc $?): $(wc -l < "$w.ref") lines"
     done
     for src in *.icn; do
         w="${src%.icn}"; x="$(mktemp "${TMPDIR:-/tmp}/bg_icx.XXXXXX")"
