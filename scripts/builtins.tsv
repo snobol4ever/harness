@@ -1276,3 +1276,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1277	icn	ICN$UMUTEX	0	1	bt_ICNx24UMUTEX	leaf	-	-	0	fn_arms
 1278	pl	$undo_push	1	1	rt_pl_dop_undo_push	leaf	-	-	0	dop_direct
 1279	pl	$undo_take	1	1	rt_pl_dop_undo_take	leaf	-	-	0	dop_direct
+1280	rk	__rk_slurp	-	-	bt___rk_slurp	leaf	-	-	0	fn_arms,rk_targets
