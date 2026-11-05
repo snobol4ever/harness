@@ -7,24 +7,25 @@
 # mem "seat:cur_mb:high_mb:anon_mb ..."; madmit (maintenance admitted now, 1 or 0); PSI_TARGET (30, the bar).
 # THE GRADER IS JUDGED BY ITS OWN SLICE (the cio 2026-11-04 17:5x, on the coo's measurement: box PSI 58 with grader PSI 1.5 and the law shrank the grader to 1;
 # 22 requests waited 4 h): box heat shrinks the grader only when the grader's own PSI is 10 or more, and a calm grader (PSI under 10) with a queue grows even on a
-# hot box; the box's heat is the sessions' and goes to the sessions and batch quotas. Per-slice PSI, not box PSI, judges each actuator (skill fleet-ops-industry 1).
+# hot box; a hot box with a calm grader raises the sessions and batch quotas (COO-475), and only a starving grader lowers them. Per-slice PSI, not box PSI, judges each actuator (skill fleet-ops-industry 1).
 decide() {
   local hot=0 idle=0 x s c a p cur hi an nw nsq nbq njt nm why
   awk -v c="$cpu60" -v b="$busy" 'BEGIN {exit !(c > 30 && b >= 14)}' && hot=1
   awk -v c="$cpu60" -v b="$busy" 'BEGIN {exit !(c < 15 || b < 13)}' && idle=1
-  local dsq; dsq=$(awk -v c="$cpu60" -v b="$busy" -v t="${PSI_TARGET:-30}" 'BEGIN {d = 0; if (b < 13) d = (13 - b) * 100; else if (c > t + 5 && b >= 14) d = -(c - t) * 10; else if (c < t - 5) d = (t - c) * 10; if (d > 300) d = 300; if (d < -300) d = -300; printf "%d", int(d / 50) * 50}')   # PROPORTIONAL (Lon 2026-11-04 15:2x: "do as you see fit"): the step follows the error from the PSI target, a dead band of 5, at most 3 cores a tick
+  local dsq; dsq=$(awk -v c="$cpu60" -v b="$busy" -v g="$gcpu10" -v t="${PSI_TARGET:-30}" 'BEGIN {d = 0; if (c > t + 5 && g < 10) d = (c - t) * 10; else if (c > t + 5 && g >= 10) d = -(c - t) * 10; else if (b < 13) d = (13 - b) * 100; else if (c < t - 5) d = (t - c) * 10; if (d > 300) d = 300; if (d < -300) d = -300; printf "%d", int(d / 50) * 50}')   # PROPORTIONAL (Lon 2026-11-04 15:2x: "do as you see fit"): the step follows the error from the PSI target, a dead band of 5, at most 3 cores a tick; JUDGED BY THE GRADER'S OWN SLICE (COO-475, Lon 2026-11-05: "monitor and tune it on the fly"): a hot box (PSI over the target by 5) with a calm grader (PSI under 10) RAISES the sessions whatever busy reads, so the fleet's own work is not throttled to protect a grader that is not starving; a hot box with a starving grader (PSI 10 or more) LOWERS them; an idle box (busy under 13) and a cold box (PSI under the target by 5) raise them as before; otherwise hold
   nw=$w; why=hold
   if awk -v c="$gcpu10" -v m="$gmem10" 'BEGIN {exit !(c > 50 || m > 20)}' || [ "${to_new:-0}" -gt 0 ]; then nw=$((w - 2)); why="down:grader_cpu_psi=$gcpu10,grader_mem_psi=$gmem10,new_timeouts=$to_new"
   elif [ $hot = 1 ] && [ "$sq" -le "$SQ_FLOOR" ] && awk -v c="$gcpu10" 'BEGIN {exit !(c >= 10)}'; then nw=$((w - 1)); why="down:box_hot_cpu_psi60=$cpu60,sessions_at_floor=$sq,grader_cpu_psi=$gcpu10"
   elif awk -v c="$gcpu10" -v q="$q" -v h="$hot" 'BEGIN {exit !((h == 0 || c < 10) && c < 20 && q > 0)}'; then nw=$((w + 1)); why="up:grader_cpu_psi=$gcpu10,queued=$q,box_hot=$hot"; fi
   [ $nw -lt $WMIN ] && nw=$WMIN; [ $nw -gt $WMAX ] && nw=$WMAX
   echo "ACTUATOR grader width=$nw from=$w floor=$WMIN ceiling=$WMAX why=$why"
-  nsq=$((sq + dsq)); why=hold; [ $dsq -lt 0 ] && why="down${dsq}:cpu_psi60=$cpu60,busy=$busy"; [ $dsq -gt 0 ] && why="up+${dsq}:cpu_psi60=$cpu60,busy=$busy"
+  nsq=$((sq + dsq)); why=hold; [ $dsq -lt 0 ] && why="down${dsq}:grader_cpu_psi=$gcpu10,cpu_psi60=$cpu60,busy=$busy"; [ $dsq -gt 0 ] && why="up+${dsq}:grader_cpu_psi=$gcpu10,cpu_psi60=$cpu60,busy=$busy"
   [ $nsq -lt $SQ_FLOOR ] && nsq=$SQ_FLOOR; [ $nsq -gt $sqc ] && nsq=$sqc
   echo "ACTUATOR sessions quota=$nsq from=$sq floor=$SQ_FLOOR ceiling=$sqc why=$why"
   nbq=$((nsq / 5)); [ $nbq -lt 100 ] && nbq=100; [ $nbq -gt 200 ] && nbq=200
   echo "ACTUATOR batch quota=$nbq from=$(( sq / 5 < 100 ? 100 : (sq / 5 > 200 ? 200 : sq / 5) )) floor=100 ceiling=200 why=follows-sessions"
-  njt=$(( jt + dsq / 100 )); why=hold; [ $dsq -le -100 ] && why="down:cpu_psi60=$cpu60,busy=$busy"; [ $dsq -ge 100 ] && why="up:cpu_psi60=$cpu60,busy=$busy"
+  local jdsq; jdsq=$(awk -v c="$cpu60" -v b="$busy" -v t="${PSI_TARGET:-30}" 'BEGIN {d = 0; if (c > t + 5 && b >= 14) d = -(c - t) * 10; else if (c < t - 5) d = (b < 13) ? (13 - b) * 100 : (t - c) * 10; if (d > 300) d = 300; if (d < -300) d = -300; printf "%d", int(d / 50) * 50}')   # THE COMPILE TOKENS KEEP THE OLD BOX-HEAT RULE (COO ruling 2026-11-05 18:08 CST, box-law): they fall on a hot busy box (PSI over target+5 with busy 14 or more), rise only on a cold box (PSI under target-5), and otherwise hold; a hot box never raises them, whatever the grader's PSI; decoupled from the sessions step dsq
+  njt=$(( jt + jdsq / 100 )); why=hold; [ $jdsq -le -100 ] && why="down:cpu_psi60=$cpu60,busy=$busy"; [ $jdsq -ge 100 ] && why="up:cpu_psi60=$cpu60,busy=$busy"
   [ $njt -lt $JT_FLOOR ] && njt=$JT_FLOOR; [ $njt -gt $jtc ] && njt=$jtc
   echo "ACTUATOR jobserver tokens=$njt floor=$JT_FLOOR ceiling=$jtc from=$jt why=$why"
   for x in $slotless; do s=${x%%:*}; c=${x#*:}; case " $capped " in *" $s:"*) continue;; esac; echo "ACTUATOR seatcap seat=$s quota=200 from=400 why=slotless:cores=$c"; done
