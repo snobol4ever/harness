@@ -24,6 +24,10 @@
 #                                         duplicate topic and a bad-topic filename the same way send does
 #   s4e_msg.sh banner [topic]             ⛔ MANDATORY LAST ACT OF EVERY SESSION: prints the COMPUTED
 #                                         SUCCESS/FAILURE banner + whether re-firing advances anything
+#   s4e_msg.sh recut <topic> --stdin <<'R' ... R  ⭐ box-scheduler step 27 (CTO-496): re-cuts a row's DONE-WHEN; the old
+#                                         criterion stays verbatim on a DONE-WHEN-WAS receipt above the new one, and a row
+#                                         the sweep retired (RETIRED:criterion-refused-...) reopens to FREE
+#   s4e_msg.sh recut --probe              the verb proved on a scratch postoffice: RECUT wrote DONE-WHEN-WAS
 set -u
 # ⛔ DOTGLOB (seat8, 2026-08-22): every "$S4E"/*/ or "$root"/*/ directory scan below silently skipped
 # .github -- bash's bare `*` glob does not match dot-directories by default. That blinds FOUR checks to
@@ -2108,7 +2112,7 @@ s4e_need() {   # $1 = verb, $2 = what is missing, $3 = the usage line, $4 = one 
     [ -n "${4:-}" ] && printf '   %s\n' "$4" >&2
     printf '   All verbs: %s\n' "$_S4E_VERBS" >&2
     exit 2; }
-_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami"
+_S4E_VERBS="next|claim|unclaim|park|done|assign|reown|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|premise|whoami"
 s4e_premise_is_placeholder() {   # $1 = raw PREMISE-WHEN text; rc 0 = the field is present but expresses nothing
     case "$(printf '%s' "${1:-}" | tr -d '[:space:]')" in
       ''|'⛔NOTEXPRESSED'*|'NOTEXPRESSED'*|TODO*|TBD*|'⛔TODO'*) return 0;; esac
@@ -2326,6 +2330,57 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
   if awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_s" '$2==t&&NF>3{$4=s} {print}' "$_q" > "$_tmp"; then cat "$_tmp" > "$_q" || _rc=1; else _rc=1; fi
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
   return $_rc
+}
+# ⭐ recut (box-scheduler step 27, CTO-496): a row's DONE-WHEN that is wrong is RE-CUT, never patched in place. The old block is kept
+# VERBATIM on one DONE-WHEN-WAS receipt line that sits directly above the new DONE-WHEN line (its lines joined by " ⏎ "), so the baton keeps
+# every criterion it has had. A row the sweep retired (RETIRED:criterion-refused-...) reopens to FREE; any other state stays as it is.
+# The new text passes mint's own lint (s4e_donewhen_unrunnable_why: no prose, no no-op, no placeholder) and may not carry a baton section
+# or field label at column 0, which would tear the file. rc 0 written; rc 2 refused, nothing written; rc 3 could not write.
+s4e_recut_write() {   # <topic> --stdin  |  <topic> <criterion words...>
+    local _t="$1" _b _q="$PO/QUEUE.tsv" _lk="$PO/.mint.lock" _got=0 _i _n _new _old _rec _rl _why _st _to _ln _tmp _qt _stamp
+    shift
+    if [ "${1:-}" = --stdin ] || [ "${1:-}" = - ]; then _new="$(cat)"; shift; else _new="$*"; fi
+    case "$_t" in ""|*/*|*$'\n'*) printf '⛔ REFUSED (rc=2): recut needs a topic (no slash, no newline). Nothing written.\n' >&2; return 2;; esac
+    _b="$PO/tasks/$_t.task.md"
+    [ -f "$_b" ] || { printf '⛔ REFUSED (rc=2): no baton %s -- recut re-cuts a row that exists. Nothing written.\n' "$_b" >&2; return 2; }
+    grep -qP "^[0-9]+\t\Q$_t\E\t" "$_q" 2>/dev/null || { printf '⛔ REFUSED (rc=2): no QUEUE.tsv row is named %s. Nothing written.\n' "$_t" >&2; return 2; }
+    _n="$(grep -c '^DONE-WHEN:' "$_b")"
+    [ "$_n" = 1 ] || { printf '⛔ REFUSED (rc=2): %s carries %s DONE-WHEN: lines, not one; delete the one you do not mean, then recut. Nothing written.\n' "$_t" "$_n" >&2; return 2; }
+    _new="$(printf '%s\n' "$_new" | sed '1s/^DONE-WHEN:[[:space:]]*//')"
+    [ -n "$(printf '%s' "$_new" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED (rc=2): the new criterion is empty. Nothing written.\n' >&2; return 2; }
+    if printf '%s\n' "$_new" | grep -qE '^(## |(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):)'; then
+        printf '⛔ REFUSED (rc=2): the criterion carries a baton section or field label at column 0; it would tear the file. Nothing written.\n' >&2; return 2; fi
+    _why="$(s4e_donewhen_unrunnable_why "$_new")" && { printf '⛔ REFUSED (rc=2): the new DONE-WHEN is not a runnable criterion -- %s. Nothing written; mint and recut judge a criterion by the same rule.\n   Your DONE-WHEN: %s\n' "$_why" "$(printf '%s\n' "$_new" | head -1 | cut -c1-120)" >&2; return 2; }
+    _old="$(awk 'BEGIN { s = 0 } /^DONE-WHEN:/ && !s { s = 1; sub(/^DONE-WHEN:[[:space:]]*/, ""); print; next }
+        s && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { exit }
+        s { print }' "$_b")"
+    [ "$_old" != "$_new" ] || { printf '⛔ REFUSED (rc=2): the new criterion is the old one; a re-cut must change the criterion. Nothing written.\n' >&2; return 2; }
+    _rec="$(printf '%s' "$_old" | awk 'NR > 1 { printf " ⏎ " } { printf "%s", $0 }')"
+    _stamp="$(date -u +%FT%TZ)"
+    _rl="DONE-WHEN-WAS: $_stamp by $ME (box-scheduler step 27, CTO-496): ${_rec:-(empty)}"
+    for _i in $(seq 1 50); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
+    [ "$_got" = 1 ] || { printf '⛔ REFUSED (rc=3): could not take the mint lock %s for 5s. Nothing written; retry.\n' "$_lk" >&2; return 3; }
+    _st="$(awk -F'\t' -v t="$_t" '$2 == t && NF > 3 { print $4; exit }' "$_q")"
+    case "$_st" in RETIRED:*) _to=FREE;; *) _to="$_st";; esac
+    _tmp="$(mktemp "$_b.recut.XXXXXX")" || { rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): cannot make a temporary beside %s. Nothing written.\n' "$_b" >&2; return 3; }
+    _ln="- [$ME·$(date -u +%F)] RE-CUT DONE-WHEN (box-scheduler step 27, CTO-496): the old criterion is kept on its DONE-WHEN-WAS line above the new DONE-WHEN; state ${_st:-none} -> ${_to:-none}. New criterion: $(printf '%s' "$_new" | head -1 | cut -c1-200)"
+    B_NEW="$_new" B_REC="$_rl" awk '
+        BEGIN { nw = ENVIRON["B_NEW"]; rl = ENVIRON["B_REC"]; s = 0; d = 0 }
+        /^DONE-WHEN:/ && !d { print rl; print "DONE-WHEN: " nw; d = 1; s = 1; next }
+        s == 1 && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { s = 2 }
+        s == 1 { next }
+        { print }' "$_b" > "$_tmp" \
+    && L="$_ln" awk 'function out() { if (!done) print ENVIRON["L"]; done = 1 } /^## / && led { out(); led = 0 } { print } /^## LEDGER/ { led = 1 } END { if (led) out() }' "$_tmp" > "$_tmp.l" \
+    && mv "$_tmp.l" "$_tmp" && mv "$_tmp" "$_b" \
+        || { rm -f "$_tmp" "$_tmp.l"; rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): the baton %s could not be rewritten. Nothing written.\n' "$_b" >&2; return 3; }
+    if [ "$_to" != "$_st" ]; then
+        { _qt="$(mktemp "$_q.recut.XXXXXX")" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && $4 ~ /^RETIRED:/ { $4 = s } { print }' "$_q" > "$_qt" && cat "$_qt" > "$_q"; } \
+            || { rm -f "$_qt"; rmdir "$_lk" 2>/dev/null; printf '⛔ RECUT PARTIAL (rc=3): the baton %s is re-cut, but the QUEUE.tsv state of %s could not be reopened to FREE; reopen it by hand.\n' "$_b" "$_t" >&2; return 3; }
+        rm -f "$_qt"
+    fi
+    rmdir "$_lk" 2>/dev/null
+    printf 'RECUT wrote DONE-WHEN-WAS and DONE-WHEN for %s: the old criterion is kept on its receipt above the new DONE-WHEN; state %s -> %s; baton %s\n' "$_t" "${_st:-none}" "${_to:-none}" "$_b"
+    return 0
 }
 # ⭐⭐ NO BLANK OWNER CELL, THE OTHER HALF (row next-serves-a-seat-only-rows-in-its-hqs-lane-and-no-row-
 # carries-a-blank-owner-cell). Column 3 stays the UMBRELLA-HQ/lane, never the working seat's own name --
@@ -3632,6 +3687,9 @@ TASKEOF
            printf '  `claim` and `next` run it and REFUSE the lock when it goes red, so the row gets rewritten instead of\n' >&2
            printf '  worked. Six seats lost an hour each to a stale premise on 2026-09-20; every one was cheap to check.\n' >&2; }
          exit 0;;
+  recut) [ "${2:-}" = --probe ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_recut.sh"; exit $?; }
+         [ -n "${2:-}" ] || s4e_need recut "a topic" "s4e_msg.sh recut <topic> --stdin <<'R' (the new criterion) R" "Re-cuts a row's DONE-WHEN: the old criterion is kept on a DONE-WHEN-WAS receipt, and a row the sweep retired reopens to FREE."
+         s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line
@@ -4707,7 +4765,7 @@ TASKEOF
   board) if [ $# -gt 1 ]; then shift; grep -v "^$ME |" "$PO/BOARD.md" 2>/dev/null > "$PO/.b.$$" || true; printf '%s | %s | %s\n' "$ME" "$*" "$(date -u +%H:%M)" >> "$PO/.b.$$"; mv "$PO/.b.$$" "$PO/BOARD.md"; fi; cat "$PO/BOARD.md"
          # posting a board line IS the handoff gesture -- so the banner fires here too (see `done` above).
          [ "${S4E_NO_BANNER:-0}" = "1" ] || S4E_BANNER_NO_BOARD=1 "$0" banner;;
-  *) echo "usage: next|claim|unclaim|park|done|assign|reown|mint|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
+  *) echo "usage: next|claim|unclaim|park|done|assign|reown|mint|recut|rule|resume|ask|send|check|clear|mailbox|sweep|board|banner|fleet|whoami"
      # ⛔⭐ THE BACKTICK TRAP -- FIVE MEASURED OCCURRENCES, and it is printed here because THIS SCRIPT CANNOT
      # DETECT IT. A backtick used for emphasis inside a double-quoted body is COMMAND SUBSTITUTION: the
      # caller's shell runs the word, prints "X: command not found" on the CALLER's stderr, and substitutes
