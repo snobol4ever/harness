@@ -152,6 +152,39 @@ qrank() { local row; row="$(qrow "$1")"; [ -n "$row" ] && printf '%s' "$row" | c
 # treats "unknown mint time" as OLDEST within its rank tier (a real timestamp always outranks no
 # timestamp), never as a crash or a special case.
 s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' | head -1; }
+# ⭐ THE QUEUE (DESIGN-PLAN fleet-queue step 3, the cio 2026-11-05; skill fleet-bus section 8): one job per row in a beanstalkd tube, put by mint
+# (--tier TIER or --to SEAT) and moved by assign (to seat-SEAT); the baton head carries "QUEUE-JOB: <id> tube=<tube>"; the tiers come from
+# .github/TIERS.tsv (step 2), never from a seat pattern here. util_queue.py is the one client; a put that fails leaves the row minted and says so.
+S4E_TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
+s4e_tier_name() { case "$1" in 1|fable) echo fable;; 2|opus) echo opus;; 3|sonnet) echo sonnet;; 4|haiku) echo haiku;; *) return 1;; esac; }
+s4e_tier_of() { local _t; _t="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $7; exit}' "$S4E_TIERS" 2>/dev/null)"; [ -n "$_t" ] && s4e_tier_name "$_t"; }
+s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku) echo 3600;; *) echo 3600;; esac; }
+s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
+s4e_queue_put() { python3 "$S4E/harness/scripts/util_queue.py" put "$1" "$2" --pri "$3" --ttr "$4" 2>/dev/null; }   # <tube> <topic> <pri> <ttr> -> job id
+s4e_queue_delete() { python3 "$S4E/harness/scripts/util_queue.py" delete "$1" >/dev/null 2>&1; }
+s4e_baton_job_get() { grep -m1 '^QUEUE-JOB:' "$PO/tasks/$1.task.md" 2>/dev/null | sed 's/^QUEUE-JOB: *//'; }   # "<id> tube=<tube>"
+s4e_baton_job_set() {   # <topic> <id> <tube>: one QUEUE-JOB line after LINKS, replaced when present
+    local _b="$PO/tasks/$1.task.md"
+    if grep -q '^QUEUE-JOB:' "$_b"; then sed -i "s|^QUEUE-JOB:.*|QUEUE-JOB: $2 tube=$3|" "$_b"
+    else sed -i "0,/^LINKS:/{/^LINKS:/a\\
+QUEUE-JOB: $2 tube=$3
+}" "$_b"; fi; }
+s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
+    case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
+s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job, record it on the baton, print one line; rc 1 when the daemon refused
+    local _ttr _id; _ttr="$(s4e_row_budget_ttr "$1")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$4")"
+    _id="$(s4e_queue_put "$2" "$1" "$((1000 + $3))" "$_ttr")" || _id=""
+    [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $((1000 + $3)) --ttr $_ttr" >&2; return 1; }
+    s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$((1000 + $3)) ttr=$_ttr"; }
+s4e_mint_probe_queue() {   # fleet-queue step 3's probe: the SKILLS gate and one put into tier-haiku, deleted again; no row minted
+    local _skills=0 _id="" _del=0
+    s4e_skills_required_ok haiku "GOAL: a plant with no skills line" || _skills=1
+    s4e_skills_required_ok haiku "GOAL: a plant
+SKILLS: fleet-bus" || _skills=0
+    _id="$(s4e_queue_put tier-haiku "probe-mint-$$" 1002 3600)" || _id=""
+    [ -n "$_id" ] && s4e_queue_delete "$_id" && _del=1
+    printf 'MINT tube=tier-haiku pri=1002 ttr=3600 job=%s skills_required=%s deleted=%s\n' "${_id:-none}" "$_skills" "$_del"
+    [ -n "$_id" ] && [ "$_skills" = 1 ] && [ "$_del" = 1 ]; exit $?; }
 # ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
 # BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` only ever APPENDS the DONE marker (never deletes a
 # claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
@@ -3492,7 +3525,11 @@ case "$cmd" in
          _sk="$(s4e_skills_for_topic "$topic")"
          if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
          then echo "assigned $topic -> $seat (claim written, doorbell sent)"
-         else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi;;
+         else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi
+         # fleet-queue step 3: the row's job moves to seat-<seat> (a directed assign); a row with no job yet gets one there
+         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; [ -n "$_oldjob" ] && s4e_queue_delete "$_oldjob"
+         _atier="$(s4e_tier_of "$seat")" || _atier=haiku
+         s4e_queue_enqueue_row "$topic" "seat-$seat" "$(qrank "$topic")" "$_atier" || true;;
   # ⭐⭐ the officer RULING 2026-08-29 (row s4e-mint-subcommand, hq_C's find): A SEAT COULD NOT MINT A ROW — next|claim|
   # unclaim|park|done|assign|ask|send|check|clear|mailbox|sweep|board|banner|fleet, NONE of them creates one. That
   # makes "a finding without a row is a finding nobody had" unreachable from a seat by construction. Two seats left
@@ -3503,7 +3540,8 @@ case "$cmd" in
   # rank is sniffed, not fixed-position: the token right after topic is consumed as rank ONLY if it is
   # ALL DIGITS (never true of real GOAL prose, even prose that happens to start with a number — that always
   # has a following space/letter); otherwise it defaults to 2 and the same token starts the goal text.
-  mint)  [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically."
+  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue
+         [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat> | --tier fable|opus|sonnet|haiku | --to <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically, and with --tier or --to one job in the queue (fleet-queue step 3)."
          topic="$2"; shift 2
          rank=2
          if [ -n "${1:-}" ]; then case "$1" in *[!0-9]*|'') :;; *) rank="$1"; shift;; esac; fi
@@ -3517,7 +3555,12 @@ case "$cmd" in
          # needed — this is every mint this fleet has actually issued so far. Only a topic naming no
          # language (a postoffice/tooling/meta row, this fix's own first victim) needs the flag; asking for
          # it there, once, is cheaper than another blank cell nobody catches until a seat wanders into it.
-         owner=""
+         owner=""; q_tube=""; q_tier=""
+         if [ "${1:-}" = "--tier" ]; then q_tier="$(s4e_tier_name "${2:?--tier needs fable|opus|sonnet|haiku}")" || { echo "⛔ REFUSED: --tier must be fable, opus, sonnet or haiku, not '$2'." >&2; exit 2; }
+           owner="@$q_tier"; q_tube="tier-$q_tier"; shift 2
+         elif [ "${1:-}" = "--to" ]; then q_tier="$(s4e_tier_of "${2:?--to needs a seat}")" || { echo "⛔ REFUSED: --to must name a seat of $S4E_TIERS, not '$2'." >&2; exit 2; }
+           owner="$2"; q_tube="seat-$2"; shift 2
+         fi
          if [ "${1:-}" = "--owner" ]; then owner="${2:?--owner needs an hq_icon|hq_unicon|hq_prolog|hq_raku|hq_pascal|hq_snocone|hq_snobol4|hq_templates|hq_runtime|hq_collector|hq_zetas|hq_packages|hq_dotnet|hq_jvm|hq_C|hq_B|hq_P|hq_T|hq_U|hq_S|hq_I|hq_R|hq_V argument}"; shift 2
            # ⛔ THE EXECUTIVES WERE REFUSED HERE (hq_B 2026-09-13, R-672's class, found while curing it). This
            # accepted only hq_* names, so under NONET -- where FOUR of the seven completeness owners are the
@@ -3593,6 +3636,8 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
                  printf '   See any of %s/tasks/*.task.md for live examples.\n' "$PO" >&2
                  exit 2; }
          fi
+         if [ -n "$q_tube" ] && ! s4e_skills_required_ok "$q_tier" "$goal"; then
+           printf '⛔ REFUSED (rc=2): a %s row carries a "SKILLS: <skill> ..." line naming the skills its executor loads first (Lon 2026-11-05: "given the proper SKILL FIRST"); none in the GOAL text. Nothing was written.\n' "$q_tier" >&2; exit 2; fi
          [ -n "$owner" ] || owner="$(s4e_topic_lane "$topic")"
          if [ -z "$owner" ]; then
            printf '⛔ REFUSED: cannot derive an owner lane for "%s" -- its name starts with no language prefix\n' "$topic" >&2
@@ -3680,6 +3725,7 @@ TASKEOF
          printf '%s\t%s\t%s\tFREE\n' "$rank" "$topic" "$owner" >> "$q"
          rmdir "$lock" 2>/dev/null; trap 's4e_pid_release' EXIT
          echo "minted $topic (rank $rank, owner $owner, state FREE) -> $b"
+         [ -n "$q_tube" ] && s4e_queue_enqueue_row "$topic" "$q_tube" "$rank" "$q_tier"
          [ -n "$pw_block" ] && {
            printf '⚠ NO PREMISE-WHEN — you are the one reader who knows what this row ASSUMES, and you are looking at\n' >&2
            printf '  it right now. Write the one cheap command that proves that assumption still holds, into %s:\n' "$b" >&2
