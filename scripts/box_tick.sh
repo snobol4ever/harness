@@ -58,6 +58,13 @@ sense() {   # the sensors of box_controller.sh's --decide, read the same way; se
 
 period_s() { systemctl --user cat s4e-tick.timer 2>/dev/null | sed -n 's/^OnUnitActiveSec=\([0-9]*\)$/\1/p' | head -1; }
 
+leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the holder died or the TTR ran out) is expired by the bus verb; one line per expiry in $TICK_DIR/leases.log
+  local c t out
+  for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; grep -q '^RESERVED job=' "$c" || continue; grep -q '^DONE$' "$c" && continue
+    t="$(basename "$c" .claim)"
+    out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
+    printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/leases.log"
+  done; return 0; }
 tick() {
   local started law=0 flk=1 swp=0 rc_d rc_p rc_s agree=0 n=0 old_age=-1 stamp mgr fresh=0 plant_out swp_out
   : "${S4E_SEAT:?REFUSE(2): the tick runs under a seat identity (S4E_SEAT unset); the unit sets it}"
@@ -76,6 +83,7 @@ tick() {
   [ -f "$OLD/decide.last" ] && old_age=$(( $(date +%s) - $(stat -c %Y "$OLD/decide.last") ))
   { printf '%s TICK law=%s agree=%s/%s old_age_s=%s plant=%s\n' "$stamp" "$law" "$agree" "$n" "$old_age" "$(printf '%s' "$plant_out" | tail -1 | cut -c1-120)"; sed "s/^/$stamp /" "$TICK_DIR/decide.last"; } >> "$TICK_DIR/shadow.log"
   [ "$(wc -l < "$TICK_DIR/shadow.log")" -gt 20000 ] && { tail -n 10000 "$TICK_DIR/shadow.log" > "$TICK_DIR/shadow.tmp" && mv "$TICK_DIR/shadow.tmp" "$TICK_DIR/shadow.log"; }
+  leases   # fleet-queue step 5: every claim whose reserved job is back in its tube is expired through the bus (the LEDGER line, the claim archived, QUEUED:<tube>)
   swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
   printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"
   printf '%s\n' "$swp_out" | grep -q '^SWEEP closed plant ' && swp=1
@@ -110,6 +118,7 @@ install_units() {
 
 case "${1:-}" in
   --tick) tick; exit $?;;
+  --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
   *) echo "usage: box_tick.sh --tick | --probe-fresh | --install" >&2; exit 2;;

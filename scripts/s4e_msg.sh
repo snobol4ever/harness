@@ -2747,6 +2747,21 @@ case "$cmd" in
                 printf '       PREMISE-WHEN: <command>   in %s\n' "$b" >&2; exit 1; fi
               printf '%s\n' "$pw"; exit 0;;
          esac;;
+  expire) # fleet-queue step 5 (the cio 2026-11-05): a reserved job whose holder is gone is back in its tube (beanstalkd released it when the holder's
+         # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
+         # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
+         [ -n "${2:-}" ] || s4e_need expire "a topic" "s4e_msg.sh expire <topic>" "Clears the claim of a reserved job that is back in its tube (the lease expired); the tick's verb."
+         topic="$2"; c="$PO/claims/$topic.claim"; [ -f "$c" ] || { echo "EXPIRE $topic: no claim"; exit 1; }
+         _ej="$(grep -m1 '^RESERVED job=' "$c" | sed 's/^RESERVED job=\([0-9]*\) tube=\([^ ]*\).*/\1 \2/')"; [ -n "$_ej" ] || { echo "EXPIRE $topic: the claim holds no reserved job"; exit 1; }
+         _eid="${_ej%% *}"; _etube="${_ej##* }"; _eholder="$(head -1 "$c")"
+         _est="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_eid" 2>/dev/null | cut -f3)"
+         case "$_est" in ready|delayed) ;; reserved) echo "EXPIRE $topic: job $_eid is still reserved (the holder lives)"; exit 1;; "") echo "EXPIRE $topic: job $_eid is gone (done or escalated); nothing to expire"; exit 1;; *) echo "EXPIRE $topic: job $_eid reads $_est"; exit 1;; esac
+         mkdir -p "$PO/claims/expired"; _ets="$(date -u +%FT%TZ)"; mv "$c" "$PO/claims/expired/$topic.claim.$_ets"
+         _erl="$(awk '/^## RESUME/{f=1;next} /^## /{f=0} f && /^RESUME /{print; exit}' "$PO/tasks/$topic.task.md" 2>/dev/null | cut -c1-200)"
+         s4e_ledger_prepend "$topic" "LEASE expired holder=$_eholder job=$_eid tube=$_etube at $_ets: the holder was gone and the job is back in $_etube; the next seat resumes at ${_erl:+the RESUME line: $_erl}${_erl:-NEXT (no RESUME line)}" 2>/dev/null \
+           || sed -i "s|^## LEDGER\$|## LEDGER\n- [$ME·$_ets] LEASE expired holder=$_eholder job=$_eid tube=$_etube: the holder was gone and the job is back in $_etube; the next seat resumes at ${_erl:+the RESUME line}${_erl:-NEXT}.|" "$PO/tasks/$topic.task.md"
+         s4e_set_row_state "$topic" "QUEUED:$_etube" || true
+         echo "EXPIRE $topic job=$_eid tube=$_etube holder=$_eholder claim_archived=1 ledger=1 resume_line=$([ -n "$_erl" ] && echo 1 || echo 0)"; exit 0;;
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
          [ "$2" = --probe-overlap ] && { s4e_claim_probe_overlap; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"; mkdir -p "$PO/claims"
