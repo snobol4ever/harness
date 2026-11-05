@@ -1198,6 +1198,7 @@ test_gate_score_row_write_lands_display_and_grid_or_neither.sh	WIRED	-	-	-
 test_gate_score_row_write_names_the_lane_owner_from_mode.sh	WIRED	-	-	-
 test_gate_score_tables_agree.sh	WIRED	-	-	-
 test_gate_score_unreadable_package_is_marked.sh	WIRED	-	-	-
+test_gate_scrip_environment_is_scanned_once_not_read_once_per_knob.sh	WIRED	-	-	-
 test_gate_scrip_sizes_the_heap_with_d_and_i.sh	WIRED	-	-	-
 test_gate_scrip_switches_are_spitbols.sh	WIRED	-	-	-
 test_gate_scriptix_a_call_into_the_icon_section_returns_with_the_callers_r12.sh	WIRED	-	-	-
