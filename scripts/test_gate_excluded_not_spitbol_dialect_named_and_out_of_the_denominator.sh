@@ -28,9 +28,11 @@
 #   (f) each package's row carries today_excluded, and it classifies EVERY shipped unit the denominator leaves out (Lon 2026-09-26,
 #       "use the Excl column to properly classify the exclusions for good reasons only"; CEO-1288): no fewer than the package's
 #       CONTAINERS.tsv include fragments (a container is never in a denominator, so an Excl below them hides one -- Jcon read 86/86
-#       with an empty Excl over five), and no more than those plus the EXCLUDED.tsv rows. csnobol4_suite's fragments are outside its
-#       graded-pair population and named in its row text, not Excl (CEO-1288), so its bound is EXCLUDED.tsv alone. Arm (f) also reads
-#       every other language's package that ships a CONTAINERS.tsv (Icon's arizona_tests, jcon_tests and ipl).
+#       with an empty Excl over five), and no more than those plus the EXCLUDED.tsv rows. csnobol4_suite was bounded by EXCLUDED.tsv alone
+#       (CEO-1288) while its own runner wrote its Excl; since the round robin's assembler (util_score_row.py from-progress, CEO-1802,
+#       2026-10-15) writes every package row as shipped minus EXCLUDED, its nine include fragments included, it is bounded like the rest
+#       (hq_snobol4 2026-11-04). Arm (f) also reads every other language's package that ships a CONTAINERS.tsv (Icon's arizona_tests,
+#       jcon_tests and ipl).
 # FAIL_ONCE=1 plants a dotnet row naming a shipped program the oracle RUNS (chap8_funcs.sno), so arm (c) trips.
 # FAIL_ONCE=d plants an x64 DEFERRED-AFTER-ANNOUNCEMENT row whose evidence does not cite CEO-1345, so arm (a) trips.
 # FAIL_ONCE=n plants a csnobol4_suite NO_ORACLE_ANSWER row for include.sno, which the oracle answers (eight lines), so arm (c) trips.
@@ -100,7 +102,7 @@ for spec in aisnobol:aisnobol csnobol4_suite:csnobol4 dotnet:dotnet gimpel:gimpe
   [ -z "$not_outside" ] && ck ok "(c) $p: every NOT_SPITBOL_DIALECT program is in OUTSIDE_SPITBOL_BASELINE.tsv (rejected by SPITBOL, half one) and every NO_ORACLE_ANSWER program gets no answer from sbl -bf" || ck FAIL "(c) $p: the oracle does not refuse these, so they cannot be excluded:$not_outside"
   [ -z "$dup" ] && ck ok "(d) $p: no name twice" || ck FAIL "(d) $p: named twice: $dup"
   [ -z "$deck" ] && ck ok "(e) $p: SPITBOL's own test deck is not excluded" || ck FAIL "(e) $p: SPITBOL's own programs excluded:$deck"
-  if [ "$p" = csnobol4_suite ]; then arm_f "$key" 0 "$n"; else arm_f "$key" "$(cont_n "$d")" "$n"; fi
+  arm_f "$key" "$(cont_n "$d")" "$n"
 done
 for spec in icon/arizona_tests:arizona icon/jcon_tests:jcon icon/ipl:ipl; do
   d="${S4E_CORPUS_ROOT:-$ROOT/corpus}/packages/${spec%%:*}"

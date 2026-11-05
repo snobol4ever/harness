@@ -315,7 +315,7 @@ M4_PASS=0; M4_FAIL=0; M4_REJECT=0; M4_CRASH=0; M4_HANG=0; RED4=""
 BOTH_PASS=0   # programs PASS in m3 AND m4 -- the suite table's reading (ceo-372), what util_score_row's --suite-pass names
 CSN_PASS=0; CSN_FAIL=0; CSN_EXT=0
 REGEN=0; REGEN_LIST=""
-EXCLUDED_LIST=""
+EXCLUDED_LIST=""; CR_LIST=""
 OUTSIDE_LIST=""; RECUT_OK=0; RECUT_OUT=0
 NOA_LIST=""   # CEO-1696: a shipped program with no ref that EXCLUDED.tsv names (NO_ORACLE_ANSWER: sbl -bf prints nothing), shipped and excluded, never graded
 [ "$RECUT" != 0 ] && { : > "$OUTSIDE.tmp"; [ -f "$OUTSIDE" ] || : > "$OUTSIDE"; }
@@ -329,6 +329,40 @@ for sno in "$SUITE"/*.sno; do
     export S4E_TIMEOUT_KEY="$name"   # the unit a retried timeout's stamp names (CEO-1335)
     ref="$SUITE/$name.ref"
     if [ ! -f "$ref" ]; then           # not a graded pair (support file) — never hand-curated
+        # ⭐⭐ A COMPILE REFUSAL IS GRADED HERE AS spitbol_testpgms GRADES IT (CEO-1323; Lon 2026-09-26, verbatim: "Get ALL 8 working in SCRIP since they are
+        # SPITBOL programs."; SPITBOL's own deck is never excluded, test_gate_excluded_not_spitbol_dialect_named_and_out_of_the_denominator.sh arm (e)):
+        # diag2 is a SPITBOL program sbl -bf refuses to compile (rc 231, ERROR 214 -- bad label or misplaced continuation line, at line 232), so it has no
+        # ref and no exclusion row. SCRIP passes by refusing where SPITBOL x64 refuses: util_spitbol_compile_refusal.py reads the oracle's diagnostics as
+        # (line, code) pairs, SCRIP's stderr is rendered through util_render_error_voice.py spitbol and read the same way, the two sets must be equal, and
+        # SCRIP exits nonzero printing nothing on stdout (m3) or emitting no assembly (m4); the rc alone never grades. It applies to a program recorded in
+        # OUTSIDE_SPITBOL_BASELINE.tsv that EXCLUDED.tsv does not name, under SCRIP only (a port engine keeps the UNGRADED reading below); a diagnostic in a
+        # shape the helper was not measured on refuses rc 2.
+        if [ "$PORT" != 1 ] && is_outside_baseline "$name" && ! inventory_is_excluded "$SUITE" "$name.sno"; then
+            ora="$W/$name.oracle"
+            (cd "$RUN" && "$TIMEOUT_RETRY" "$TIMEOUT" "$SBL" $SBL_FLAGS "$name.sno" < /dev/null > "$ora" 2>/dev/null); orc=$?
+            cr_pairs=""; crc=1
+            [ "$orc" -ne 0 ] && { cr_pairs="$(python3 "$HERE/util_spitbol_compile_refusal.py" oracle "$ora" "$orc")"; crc=$?; }
+            [ "$crc" = 2 ] && { echo "⛔ REFUSE(rc=2): $name -- sbl exited rc $orc with a diagnostic in a shape util_spitbol_compile_refusal.py was not measured on (its reason above); CEO-1323 grades only the measured shape"; exit 2; }
+            if [ "$crc" = 0 ]; then
+                ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
+                TOTAL=$((TOTAL+1))
+                _t0="$(progress_clock)"; m3="$W/$name.m3"
+                (cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT --run $ca "$name.sno" < /dev/null > "$m3" 2> "$m3.err"); r3=$?; s3="$(progress_secs_since "$_t0")"
+                got3="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$m3.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
+                st3=FAIL; [ "$r3" -ne 0 ] && [ ! -s "$m3" ] && [ "$got3" = "$cr_pairs" ] && st3=PASS
+                progress_append package csnobol4 snobol4 "$name" m3 "$st3" "$s3" >/dev/null 2>&1 || true
+                _t0="$(progress_clock)"; s4f="$W/$name.s"
+                (cd "$RUN" && SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" $COMPAT --compile $ca "$name.sno" < /dev/null > "$s4f" 2> "$s4f.err"); r4=$?; s4="$(progress_secs_since "$_t0")"
+                got4="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$s4f.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
+                st4=FAIL; [ "$r4" -ne 0 ] && [ ! -s "$s4f" ] && [ "$got4" = "$cr_pairs" ] && st4=PASS
+                progress_append package csnobol4 snobol4 "$name" m4 "$st4" "$s4" >/dev/null 2>&1 || true
+                if [ "$st3" = PASS ]; then M3_PASS=$((M3_PASS+1)); else M3_FAIL=$((M3_FAIL+1)); RED3="$RED3 $name"; fi
+                if [ "$st4" = PASS ]; then M4_PASS=$((M4_PASS+1)); else M4_FAIL=$((M4_FAIL+1)); RED4="$RED4 $name"; fi
+                [ "$st3" = PASS ] && [ "$st4" = PASS ] && BOTH_PASS=$((BOTH_PASS+1))
+                CR_LIST="$CR_LIST $name($(printf '%s' "$cr_pairs" | tr '\t\n' ': ' | sed 's/ *$//'))"
+                continue
+            fi
+        fi
         inventory_is_excluded "$SUITE" "$name.sno" && NOA_LIST="$NOA_LIST $name"   # unless EXCLUDED.tsv names it: a shipped program the oracle gives no answer for (CEO-1696)
         [ "$PORT" = 1 ] && is_outside_baseline "$name" && { progress_append package csnobol4 snobol4 "$name" m3 UNGRADED 0 "unscored: OUTSIDE_SPITBOL_BASELINE.tsv names it, the oracle gives no answer and it has no ref" >/dev/null 2>&1 || true; }   # a port's row reads every shipped program (from-progress)
         continue
@@ -447,6 +481,7 @@ echo "sbl -bf re-read against the refs (staleness check, informational): PASS=$C
 # the reader nothing on the day one is added and everything on the day one is removed; masked_lines=0 is the
 # reading that says "this board declined to grade nothing", and it is the one worth having by default.
 echo "CEO-409 masks: masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s)${MASKED_LIST:+ ·$MASKED_LIST} (excluded at the LINE; every fixture stays in the denominator)"
+[ -n "$CR_LIST" ] && echo "COMPILE_REFUSAL graded by the code and line of every diagnostic, as sbl refuses it (CEO-1323):$CR_LIST"
 [ -n "$OUTSIDE_LIST" ] && echo "OUTSIDE_SPITBOL_BASELINE ($(printf '%s' "$OUTSIDE_LIST" | wc -w), programs sbl -bf refuses, named in $OUTSIDE, out of the denominator):$OUTSIDE_LIST"
 [ "$RECUT" != 0 ] && echo "RECUT_FROM_SPITBOL: refs re-cut=$RECUT_OK outside-baseline=$RECUT_OUT"
 if [ "$RECUT" != 0 ]; then U="$SUITE/UNGRADABLE.tsv"; { [ -f "$U" ] && awk -F"\t" '$3!~/outside the SPITBOL baseline/' "$U"; cat "$OUTSIDE"; } > "$U.tmp" && mv -f "$U.tmp" "$U"; echo "UNGRADABLE.tsv: outside-the-SPITBOL-baseline rows mirrored ($(grep -c 'outside the SPITBOL baseline' "$U"))"; fi
