@@ -910,7 +910,7 @@ def derive_measurer():
 # /home/claude_<x> is the officer <x> when MODE's ROSTER: line carries <x> bare, and the HQ hq_<x> when it carries hq_<x>; the hand list is
 # kept only for a MODE that cannot be read (a scratch fixture).
 MODE_PATH = "/home/resources/postoffice/MODE"
-OFFICERS_FALLBACK = frozenset({"ceo", "cto", "cfo", "coo", "cao", "cqo", "cio"})
+OFFICERS_FALLBACK = frozenset({"cto", "cfo", "coo", "cao", "cqo", "cio"})
 def roster_seats(mode_path=None):
     try:
         for line in open(mode_path or os.environ.get("S4E_MODE_PATH") or MODE_PATH, errors="replace"):
@@ -923,7 +923,7 @@ def roster_officers(mode_path=None):
     r = roster_seats(mode_path)
     if not r:
         return OFFICERS_FALLBACK
-    return frozenset(s for s in r if not s.startswith("hq_")) | {"ceo"}
+    return frozenset(s for s in r if not s.startswith("hq_"))
 
 
 # ⛔⭐⭐ THE ROSTER IS ASKED AT THE WRITE PATH, BECAUSE THE MITIGATION WAS A SEAT'S MEMORY (hq_I 2026-09-13, row

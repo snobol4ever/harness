@@ -22,7 +22,7 @@
 #
 # ARMS. (1) STRUCTURE, both directions: no raw `static const char *cs` cache remains in keywords.c, the two branches
 # cache an int slot, the generation-stamped refresh of the CONTENT index (kw_cset_gc_refresh, reached from kw_cset_intern) exists, and
-# the POINTER-KEYED index is gone (hq_icon, ceo-1969 slice 3: every reader of a cset descriptor reads the block header, so no registry is keyed on a
+# the POINTER-KEYED index is gone (hq_icon, R-1969 slice 3: every reader of a cset descriptor reads the block header, so no registry is keyed on a
 # pre-move address and the second holder this gate was cut for cannot exist; arms 2 and 3 still read the behaviour at every stress level). (2) BAND,
 # both media: the witness matches its icont-cut ref at stress 0,1,3,5 under in a 128 KB arena, and
 # EVERY arm reports collections>0 from the run's own report -- a tiny arena states a configuration, a collection count

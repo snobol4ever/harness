@@ -76,13 +76,13 @@ L2="$(sed -n '2p' "$MODEF")"
 mode_owner() {
     local _lang_uc _a _b
     _lang_uc="$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')"
-    # (d) the machine-read `LANES: <lang>=<seat> ...` keyed line (CEO-674; the structural cure the comment below asked for): when it names the
+    # (d) the machine-read `LANES: <lang>=<seat> ...` keyed line (R-674; the structural cure the comment below asked for): when it names the
     #     language it IS the law, and the prose shapes below are not consulted -- a stale block of line 2 must not outvote the keyed line
     #     (2026-11-04: this gate read green against a "coo ICON," in a block from September until MODE was capped, box-scheduler step 14).
-    _d="$(grep -m1 '^LANES:' "$MODEF" | grep -oE "(^|[[:space:]])$1=(ceo|cto|coo|cfo|cao|cqo|cio|hq_[A-Za-z0-9]+)" | head -1 | sed 's/.*=//')"
+    _d="$(grep -m1 '^LANES:' "$MODEF" | grep -oE "(^|[[:space:]])$1=(cto|coo|cfo|cao|cqo|cio|hq_[A-Za-z0-9]+)" | head -1 | sed 's/.*=//')"
     if [ -n "$_d" ]; then printf '%s' "$_d"; return 0; fi
-    _a="$(printf '%s' "$L2" | grep -oE "$_lang_uc -- (the )?(ceo|cto|coo|cfo|hq_[A-Za-z0-9]+)" | head -1 | sed -E 's/.* -- (the )?//')"
-    _b="$(printf '%s' "$L2" | grep -oE "(ceo|cto|coo|cfo|hq_[A-Za-z0-9]+) $_lang_uc[ ,]" | head -1 | sed -E 's/ .*//')"
+    _a="$(printf '%s' "$L2" | grep -oE "$_lang_uc -- (the )?(cto|coo|cfo|hq_[A-Za-z0-9]+)" | head -1 | sed -E 's/.* -- (the )?//')"
+    _b="$(printf '%s' "$L2" | grep -oE "(cto|coo|cfo|hq_[A-Za-z0-9]+) $_lang_uc[ ,]" | head -1 | sed -E 's/ .*//')"
     if [ -z "${_a:-}" ] && [ -z "${_b:-}" ] && printf '%s' "$L2" | grep -qE "$_lang_uc -- CLOSED"; then printf 'CLOSED'; return 0; fi
     if [ -n "$_a" ] && [ -n "$_b" ] && [ "$_a" != "$_b" ]; then printf 'CONFLICT:%s/%s' "$_a" "$_b"; return 0; fi
     printf '%s' "${_a:-$_b}"

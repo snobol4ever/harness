@@ -6,8 +6,8 @@
 #   (1) the slices FIRST (a weight below app.slice enables the cpu controller there, section 10), every slice row of the ONE declared budget table
 #       /home/resources/postoffice/BUDGET.tsv (box-budget step 2, CTO-478; util_seat_census.py --budget-props), on 2026-11-04:
 #         app.slice CPUWeight=100, s4e.slice CPUWeight=200                         (the loops' side outranks the sessions' at the top, box-scheduler step 7, CTO-496)
-#         app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G   (the sessions; the default 100, equal to any desktop app, CEO-2105 (d))
-#         s4e-grader.slice CPUWeight=300 MemoryMax=10G                               (the grader outranks the sessions, CEO-2105 (d))
+#         app-org.gnome.Terminal.slice CPUWeight=100 MemoryHigh=20G MemoryMax=24G   (the sessions; the default 100, equal to any desktop app, R-2105 (d))
+#         s4e-grader.slice CPUWeight=300 MemoryMax=10G                               (the grader outranks the sessions, R-2105 (d))
 #         s4e-batch.slice  CPUWeight=50 MemoryMax=12G                                (batch, step 4 moves the boards and censuses in)
 #   (2) /tmp/s4e/<seat> for every seat, made at every login by ~/.config/user-tmpfiles.d/s4e.conf (a reboot empties /tmp; TMPDIR points there)
 #   (3) every seat root's settings.local.json, a dated .bak beside it: the env block (S4E_SEAT, S4E_SEAT_JOBS=4, MAKEFLAGS=--jobs=4,

@@ -3,7 +3,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1
 ../harness/scripts/util_require_fresh.sh --gate "$(basename "$0" .sh)" || exit $?
 # test_gate_scrip_environment_is_scanned_once_not_read_once_per_knob.sh -- A PROCESS WITH NO SCRIP_ VARIABLE IN ITS ENVIRONMENT MAKES NO getenv CALL FOR A SCRIP_ NAME AT START-UP; THE ANSWER IS ONE
-# SCAN OF environ, CACHED IN ONE STATE INT, AND EVERY PLACE THAT CHANGES THE ENVIRONMENT RESETS IT (row icon-speed-the-empty-icon-program-starts-in-at-most-400000-user-instructions-ceo-2035;
+# SCAN OF environ, CACHED IN ONE STATE INT, AND EVERY PLACE THAT CHANGES THE ENVIRONMENT RESETS IT (row icon-speed-the-empty-icon-program-starts-in-at-most-400000-user-instructions-r-2035;
 # CTO-501: a global that holds state and is not a value stack is granted; STATE-GLOBAL = g_runtime.scrip_env, a three-valued int: 0 not scanned, 1 no SCRIP_ variable, 2 some exists).
 # ⛔ THE MEASURED DEFECT: the empty Icon program in mode 4 made 23 getenv("SCRIP_...") calls at start-up (SCRIP_STACK x2, ALLOC_HIST, EVAL_RET in a library constructor, the nine of gc_knobs_hoist, NOHUGE,
 # GC_STRESS, GC_BUDGET_MB, EXPR_STORE_DBG, NV_TRACE, MON_SYNTH, B1C_PARITY, GC_MAPS_DUMP and three at exit), each a linear walk of environ (about 840 user instructions at 73 variables) that answers NULL.

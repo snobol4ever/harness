@@ -58,7 +58,7 @@ probe() { local t o why="" k
     t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mode_cap_probe.XXXXXX")" || { echo "REFUSE(2) [mode-cap --probe]: mktemp failed"; exit 2; }
     trap 'rm -rf "$t"' EXIT
     { echo TENET; for i in $(seq 1 12); do printf '# 2026-11-%02d 10:0x CST: block %s %s PRIOR: ' "$i" "$i" "$(head -c 900 /dev/zero | tr '\0' x)"; done; echo
-      echo '# PRIOR LINE 2 (old): history'; echo 'ROSTER: cio coo'; echo '# ROSTER is MACHINE-READ'; echo 'BOSSES: cio coo cto'; echo '# 2026-09-05 09:32 CDT ceo: MODE QUARTET'; } > "$t/MODE"
+      echo '# PRIOR LINE 2 (old): history'; echo 'ROSTER: cio coo'; echo '# ROSTER is MACHINE-READ'; echo 'BOSSES: cio coo cto'; echo '# 2026-09-05 09:32 CDT cto: MODE QUARTET'; } > "$t/MODE"
     run() { S4E_MODE_FILE="$t/MODE" S4E_SEAT="${ME}" bash "${BASH_SOURCE[0]}" "$@" 2>&1; }
     o="$(run --check)"; [ $? = 1 ] && printf '%s\n' "$o" | grep -q '^MODE-CAP RED' || why="$why over the cap did not read RED [$o];"
     o="$(run --apply)"; [ $? = 0 ] || why="$why --apply did not end GREEN [$o];"

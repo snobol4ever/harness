@@ -264,7 +264,7 @@ if [ -n "$INV_LINE" ]; then echo "$INV_LINE"; else echo "⚠ inventory refused (
 # ⭐ THE ROW, NAMING ITS OWN FRACTION (the shape test_snoflake_suite.sh uses). ⛔ BEFORE THIS THIS RUNNER WROTE
 # NO ROW AT ALL -- not a suite row and not a SCORE.md cell -- so gimpel's reading on the board had only ever been
 # set BY HAND, by the coo, from this runner's printed line. A number nobody's runner writes is a number nothing
-# re-measures. The table's reading is the officer-372 AND per program over the SPITBOL baseline.
+# re-measures. The table's reading is the R-372 AND per program over the SPITBOL baseline.
 # ⛔ R-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-r-749): the
 # row reads PASS over SHIPPED ($TOTAL = the graded drivers plus the $UNSCR the oracle refuses), OUTSIDE=$UNSCR named and
 # stamped through lib_outside_shape.sh -- the outside drivers stay in the denominator as debt to cure. Before this the

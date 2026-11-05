@@ -750,7 +750,7 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
     _c="$PO/claims/$_t.claim"; _had=0
     if [ -f "$_c" ]; then
       grep -q '^DONE$' "$_c" && continue
-      if grep -q '^RUNNING' "$_c" || ! grep -q '^ASSIGNED-BY ' "$_c"; then _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: %s is running it, CEO-755c)\n' "$_t" "$(head -1 "$_c")"; continue; fi
+      if grep -q '^RUNNING' "$_c" || ! grep -q '^ASSIGNED-BY ' "$_c"; then _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: %s is running it, R-755c)\n' "$_t" "$(head -1 "$_c")"; continue; fi
       cp "$_c" "$_sv"; _had=1; fi
     case "$_st" in ASSIGNED:?*)
       _age="$(( ( $(date +%s) - $(s4e_row_last_touch "$_t") ) / 3600 ))"
@@ -1018,10 +1018,10 @@ s4e_root() { case "$1" in cto) echo /home/claude_cto;; coo) echo /home/claude_co
     seat0[1-9]|seat1[0-9]|seat20) echo "/home/claude${1#seat}";; *) echo "";; esac; }
 s4e_roster() { sed -n 's/^ROSTER:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1; }
 s4e_legacy_seats="hq hq_icon hq_unicon hq_prolog hq_raku hq_pascal hq_snocone hq_snobol4 hq_templates hq_runtime hq_collector hq_zetas hq_packages hq_dotnet hq_jvm"
-s4e_legacy_seats="$s4e_legacy_seats hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V ceo cto coo cfo cao cqo"
+s4e_legacy_seats="$s4e_legacy_seats hq_C hq_P hq_B hq_T hq_U hq_S hq_I hq_R hq_V cto coo cfo cao cqo"
 s4e_hqboxes() { for _h in $(s4e_roster) $s4e_legacy_seats; do [ -d "$PO/$_h/inbox" ] && echo "$_h"; done | awk '!seen[$0]++'; }
 s4e_is_hq() { case " $(s4e_roster) $s4e_legacy_seats " in *" $1 "*) return 0;; *) return 1;; esac; }
-# ⛔⭐⭐ ONE AUTHORITY FOR "IS THIS SEAT STANDING", CALLED TWICE (coo 2026-09-20, ceo CEO-1002, row
+# ⛔⭐⭐ ONE AUTHORITY FOR "IS THIS SEAT STANDING", CALLED TWICE (coo 2026-09-20, R-1002, row
 # instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat). This case was INLINE in `next`,
 # where it could only ever answer the question about $ME -- and the announcing cure has to ask it about EVERY OTHER
 # SEAT, to know who to tell. ⛔ A SECOND COPY OF THIS TABLE IS THE ONE THING THAT MUST NOT HAPPEN HERE: it is the
@@ -1210,7 +1210,7 @@ s4e_announce_claim() {   # <topic> -- box-scheduler step 21 (CTO-496): a claim n
   [ -s "$_mine" ] || _no=1
   printf '%s\t%s\t%s\ttouches=%s\tmailed=%s\tsuppressed=%s\n' "$(date -u +%FT%TZ)" "$ME" "$_t" "$(tr '\n' ' ' < "$_mine" | sed 's/ $//')" "${_list:- none}" "$_sup" >> "$PO/CLAIMS.log" 2>/dev/null
   rm -f "$_mine" "$_theirs"
-  _sk="$(s4e_skills_for_topic "$_t")"; [ -n "$_sk" ] && printf '⭐ LOAD BEFORE TOUCHING CODE (SOP step 5, CEO-2085): %s -- the Skill tool, once per session\n' "$_sk"
+  _sk="$(s4e_skills_for_topic "$_t")"; [ -n "$_sk" ] && printf '⭐ LOAD BEFORE TOUCHING CODE (SOP step 5, R-2085): %s -- the Skill tool, once per session\n' "$_sk"
   printf -- '-- the neighbourhood, read at the moment you took this row --\n'
   printf '  OVERLAP by=paths notices_sent=%d notices_suppressed=%d to:%s\n' "$_n" "$_sup" "${_list:- NONE}"
   [ "$_no" = 1 ] && printf '  ⛔ NO TOUCHES ON THE BATON: no overlap can be computed, so NO claim notice went out. Add a TOUCHES: line (path prefixes under the root, space-separated) to %s/tasks/%s.task.md so the seats that touch the same files hear of this claim.\n' "$PO" "$_t"
@@ -1249,18 +1249,18 @@ s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notic
     echo "OVERLAP PROBE RED:$_why"; return 1
 }
 # One line of prose for the `mint` refusal, DERIVED so it cannot drift from the arms above.
-# ⭐ A SEAT THAT OWNS NO LANGUAGE CURES NOTHING IN A LANGUAGE LANE (CEO-779; Lon 2026-09-16 11:22 CDT, verbatim to the ceo:
-# "Get the COO helping. The language seats now run their own tests and benchmarks."; CEO-781). Under DECTET the coo, the
-# ceo and the cto own no language in the LANES table, so the any-lane fallback -- the ordinary path AND the dependency-
+# ⭐ A SEAT THAT OWNS NO LANGUAGE CURES NOTHING IN A LANGUAGE LANE (R-779; Lon 2026-09-16 11:22 CDT, verbatim to the officer:
+# "Get the COO helping. The language seats now run their own tests and benchmarks."; R-781). Under DECTET the coo, the
+# officer and the cto own no language in the LANES table, so the any-lane fallback -- the ordinary path AND the dependency-
 # inversion promotion -- must REFUSE them another owner's row instead of claiming it. MEASURED 2026-09-16 11:00 CDT:
-# `next` on coo CLAIMED the cfo's icon-gc-rung-2 row by promotion (released within the minute, unworked); CEO-771: `next`
-# on ceo LOCKED a Raku cure row. rc 0 = $ME owns a language in the table (an HQ, or the cfo for rebus); rc 1 = owns none.
+# `next` on coo CLAIMED the cfo's icon-gc-rung-2 row by promotion (released within the minute, unworked); R-771: `next`
+# on officer LOCKED a Raku cure row. rc 0 = $ME owns a language in the table (an HQ, or the cfo for rebus); rc 1 = owns none.
 # The test is on the seat's RESOLVED lane (s4e_my_lane: an HQ is itself, a numbered seat is whoever its HQ file names,
-# an officer is itself, the ceo is empty and falls back to its identity) -- a seat07 whose HQ file reads hq_icon owns
-# icon THROUGH its HQ and keeps today's cross-lane fallback; the coo, cto and ceo resolve to themselves and own none.
+# an officer is itself, the officer is empty and falls back to its identity) -- a seat07 whose HQ file reads hq_icon owns
+# icon THROUGH its HQ and keeps today's cross-lane fallback; the coo, cto and officer resolve to themselves and own none.
 # An HQ-shaped lane (hq_*) owns the language of its name by definition, table or no table (a legacy hq_C seat under
 # FLEET-16 keeps the fallback; test_gate_s4e_next_serves_own_lane arm (c)); the rule bites the OFFICERS the table
-# names for nothing: ceo, coo, cto today, and the cfo the day rebus leaves its cell.
+# names for nothing: officer, coo, cto today, and the cfo the day rebus leaves its cell.
 s4e_lane_languages() { printf 'icon prolog snobol4 snocone pascal raku rebus'; }
 s4e_lane_owner_of_language() {
     case "$1" in
@@ -3701,7 +3701,7 @@ TASKEOF
              printf '      ⭐ THE BATON IS THE TASK FILE, NOT THIS PRINTOUT — read GOAL + DONE-WHEN + the ONE ## NEXT block,\n'
              printf '      work THAT, then rewrite ## NEXT before you stop. Questions go in ## QA, receipts in ## LEDGER.\n'
              printf '      ⛔ the current block is the FIRST ^## NEXT — demote the one you replace to ## SUPERSEDED-NEXT; the sweep archives it to\n'
-             printf '      tasks/archive/<topic>.superseded.md and keeps NEXT under 8192 bytes (box-scheduler step 15; one-next-block gate, ceo 2026-08-29).\n'
+             printf '      tasks/archive/<topic>.superseded.md and keeps NEXT under 8192 bytes (box-scheduler step 15; one-next-block gate, 2026-08-29).\n'
              printf '      ⛔ a baton with NO ## NEXT block: distill one from GOAL + the latest ledger, write it, THEN work.\n'; fi
            # ⭐ V2-2: QUEUE.tsv is an INDEX (rank·topic·owner·state), not a brief store. Fields 3 and 4 are
            # owner and state now, so printing them as "brief:"/"first:" would announce "brief: unassigned".
@@ -4665,8 +4665,8 @@ TASKEOF
          S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --check > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --apply 2>&1 | sed 's/^/sweep: /'
          _bc="$(dirname "${BASH_SOURCE[0]}")/util_baton_check.py"   # box-scheduler step 15: every baton NEXT under the cap, SUPERSEDED blocks archived; the sweep keeps it so
          S4E_POST="$PO" S4E_SEAT="$ME" python3 "$_bc" --all > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" python3 "$_bc" --apply 2>&1 | sed 's/^/sweep: /'
-         # ⛔ A DONE ROW WITH NO COMPUTED RECEIPT IS NOT SWEPT -- AND THAT IS SAID, BY NAME, rc=2 (coo 2026-09-16, CEO-790/793). It used
-         # to be kept silently, indistinguishable from a live row; the ceo's audit reads this refusal.
+         # ⛔ A DONE ROW WITH NO COMPUTED RECEIPT IS NOT SWEPT -- AND THAT IS SAID, BY NAME, rc=2 (coo 2026-09-16, R-790/793). It used
+         # to be kept silently, indistinguishable from a live row; the officer's audit reads this refusal.
          _nr=0; _nrl=""
          while IFS= read -r line; do
            case "$line" in \#*|'') continue;; esac

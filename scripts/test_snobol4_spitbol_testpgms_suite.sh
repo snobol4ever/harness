@@ -120,7 +120,7 @@ TOTAL=0; SCORED=0; UNSCR=0; M3P=0; M3F=0; M4P=0; M4F=0; UNSCR_LINES=""; RED_LINE
 # UNSCORED arms below, which key on sbl's own listing -- so nothing new is computed here; what is added is the
 # RECORD (OUTSIDE_SPITBOL_BASELINE.tsv beside the package, mirrored by UNGRADABLE.tsv) and a live cross-check
 # that says STALE or UNRECORDED aloud rather than letting a written ruling drift away from what sbl does today.
-# BOTH is the officer-372 AND per program: the suite row states both_modes_pass over the baseline, never a per-mode count.
+# BOTH is the R-372 AND per program: the suite row states both_modes_pass over the baseline, never a per-mode count.
 BOTH=0; OUTSIDE_LIST=""; OUTSIDE_TSV="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"; MIRROR_TSV="$SUITE/UNGRADABLE.tsv"
 for p in $progs; do
     rr_admits "$p" || continue
@@ -340,7 +340,7 @@ fi
 # ⭐ THE ROW, NAMING ITS OWN FRACTION (the shape test_snoflake_suite.sh uses, which this row's GOAL names).
 # The --text below carries several distinct N/M, so util_score_row's fraction_from_text() would correctly
 # decline to guess and abort the whole write -- which is why this cell was hand-recorded before and still
-# showed retired --compat text. The table's reading is the officer-372 AND per program over the SPITBOL
+# showed retired --compat text. The table's reading is the R-372 AND per program over the SPITBOL
 # baseline: both_modes_pass/baseline, never a per-mode count.
 # ⛔ R-749 SHAPE (row snobol4-four-package-rows-leave-their-outside-baseline-programs-out-of-the-denominator-r-749):
 # PASS over SHIPPED ($TOTAL = graded plus the $UNSCR outside the SPITBOL baseline), OUTSIDE=$UNSCR named and stamped

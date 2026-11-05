@@ -3,7 +3,7 @@ set -u
 cd "$(dirname "$0")/../../SCRIP" || exit 1
 ../harness/scripts/util_require_fresh.sh --gate "$(basename "$0" .sh)" || exit $?
 # test_gate_icon_cset_literal_is_read_by_its_header_not_registered_by_a_call.sh -- AN ICON CSET LITERAL IS A STATIC BLOCK WHOSE LENGTH AND BITS LIVE IN ITS OWN HEADER; NOTHING REGISTERS IT AT RUN TIME
-# (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-ceo-1969, slice 3).
+# (row icon-the-startup-rebuilds-compile-time-tables-procedures-csets-globals-registered-by-c-calls-at-run-time-r-1969, slice 3).
 # ⛔ THE MEASURED DEFECT: bb_lit_charset emitted push/push/call rt_icn_cset_register/pop/pop and a GC poll inside every cset literal's alpha (49 sites over the 17 Icon benchmarks), and the call appended (ptr, len)
 # to the address-keyed registry kw_cset_names so that kw_cset_len(ptr) and kw_cset_bits(ptr) could answer "is this exact address a cset, how long, which bits". Scanning-asm step 2b-1 already made every literal a
 # header-carrying block (.cset_hdr: int32 length at p-40, magic 0xC5E7B175 at p-36, the 32-byte table at p-32). A reader that holds a cset DESCRIPTOR (slen 0xFFFFFFFF) therefore reads the header and needs no
