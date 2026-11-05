@@ -756,3 +756,4 @@ subscript_get2_ext_strict	leaf	DESCR	1	-	0	call,alloc
 subscript_get2_strict	leaf	DESCR	1	-	0	call,alloc
 table_find_pair_d	asm	-	0	r8|r10|r11	-	clob,asm
 to_int	leaf	OTHER	1	-	0	call,alloc
+rt_ball_rule_set	leaf	-	0	-	0	call
