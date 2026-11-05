@@ -31,20 +31,20 @@ mkdir -p "$W/claims" "$W/tasks" "$W/coo/inbox"; printf 'TENET\n' > "$W/MODE"; : 
 row()   { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; }
 baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: true\nLINKS: %s\n## NEXT\n## LEDGER\n%s\n' "$1" "$2" "${3:-}" > "$W/tasks/$1.task.md"; }
 claimf(){ local t="$1"; shift; printf '%s\n' "$@" > "$W/claims/$t.claim"; }
-BR='minted via `mint` by the officer, 2026-09-27T07:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T08:00Z'
+BR='minted via `mint` by cto, 2026-09-27T07:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T08:00Z'
 row 0 br-stuck-row hq_icon ASSIGNED:hq_icon;            baton br-stuck-row "$BR";        claimf br-stuck-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'
 row 0 br-gc-collector-row hq_icon ASSIGNED:hq_icon;     baton br-gc-collector-row "$BR"; claimf br-gc-collector-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:00:00Z'
 row 0 br-running-row hq_icon ASSIGNED:hq_icon;          baton br-running-row "$BR";      claimf br-running-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z' RUNNING
 row 0 br-young-row hq_icon ASSIGNED:hq_icon
-baton br-young-row 'minted via `mint` by the officer, 2026-09-27T11:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T11:00Z'; claimf br-young-row hq_icon 'ASSIGNED-BY cto 2026-09-27T11:00:00Z'
+baton br-young-row 'minted via `mint` by cto, 2026-09-27T11:00:00Z · BLOCKING-RED: fixture gates since 2026-09-27T11:00Z'; claimf br-young-row hq_icon 'ASSIGNED-BY cto 2026-09-27T11:00:00Z'
 row 0 br-ledger-row hq_icon ASSIGNED:hq_icon
 baton br-ledger-row "$BR" '- [hq_icon·2026-09-27 04:1x CDT] started: the bisect is under way'; claimf br-ledger-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'
 row 0 br-claimed-row hq_icon CLAIMED:hq_icon;           baton br-claimed-row "$BR";      claimf br-claimed-row hq_icon
 row 0 br-done-row hq_icon DONE;                         baton br-done-row "$BR";         claimf br-done-row hq_icon 'ASSIGNED-BY cto 2026-09-27T08:30:00Z' DONE
-OLD='minted via `mint` by the officer, 2026-09-25T00:00:00Z'
+OLD='minted via `mint` by cto, 2026-09-25T00:00:00Z'
 row 0 hq-old-free-row hq_raku FREE;     baton hq-old-free-row "$OLD"
 row 2 hq-old-rank2-row hq_raku FREE;    baton hq-old-rank2-row "$OLD"
-row 1 hq-young-free-row hq_raku FREE;   baton hq-young-free-row 'minted via `mint` by the officer, 2026-09-27T00:00:00Z'
+row 1 hq-young-free-row hq_raku FREE;   baton hq-young-free-row 'minted via `mint` by cto, 2026-09-27T00:00:00Z'
 row 0 hq-no-hold-row hq_pascal FREE;    baton hq-no-hold-row "$OLD"
 row 1 hq-held-row hq_raku CLAIMED:hq_raku; baton hq-held-row "$OLD"; claimf hq-held-row hq_raku
 names() { printf '%s\n' "$1" | awk -v h="$2" 'index($0, h) == 1 {f = 1; next} f && /^    [a-z]/ {print $1; next} f {exit}' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//'; }
@@ -70,7 +70,7 @@ else
 fi
 
 # ── C: `claim` by name marks an assigned row started, once ──────────────────────────────────────────────────────────────────
-claimf c-assigned-row coo 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'; row 1 c-assigned-row coo ASSIGNED:coo; baton c-assigned-row 'minted via `mint` by the officer, 2026-09-27T08:00:00Z'
+claimf c-assigned-row coo 'ASSIGNED-BY cto 2026-09-27T08:30:00Z'; row 1 c-assigned-row coo ASSIGNED:coo; baton c-assigned-row 'minted via `mint` by cto, 2026-09-27T08:00:00Z'
 S4E_POST="$W" S4E_SEAT=coo bash "$M" claim c-assigned-row > "$W/c1.out" 2>&1
 S4E_POST="$W" S4E_SEAT=coo bash "$M" claim c-assigned-row > "$W/c2.out" 2>&1
 nr="$(grep -cx RUNNING "$W/claims/c-assigned-row.claim")"

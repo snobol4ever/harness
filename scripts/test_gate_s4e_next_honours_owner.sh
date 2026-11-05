@@ -89,8 +89,8 @@ rm -f "$W/claims/"*.claim
 # coincide would pass against either behaviour and prove nothing -- the whole content of this arm is the
 # disagreement.
 : > "$W/QUEUE.tsv"; mk 2 aaa_older_row unassigned ASSIGNED:hq_B; mk 2 zzz_newer_row unassigned ASSIGNED:hq_B
-printf '# TASK aaa_older_row\nLINKS: minted via `mint` by the officer, 2026-09-01T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/aaa_older_row.task.md"
-printf '# TASK zzz_newer_row\nLINKS: minted via `mint` by the officer, 2026-09-03T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/zzz_newer_row.task.md"
+printf '# TASK aaa_older_row\nLINKS: minted via `mint` by cto, 2026-09-01T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/aaa_older_row.task.md"
+printf '# TASK zzz_newer_row\nLINKS: minted via `mint` by cto, 2026-09-03T10:00:00Z\nDONE-WHEN: true\n## NEXT\nfixture\n' > "$W/tasks/zzz_newer_row.task.md"
 for t in aaa_older_row zzz_newer_row; do printf 'hq_B\nASSIGNED-BY cto\n' > "$W/claims/$t.claim"; done
 out="$(run_next hq_B)"
 grep -q 'zzz_newer_row' <<<"$out" && ck ok "(g) PASS 1 tie-break is rank THEN mint time: the newer-minted row wins over the alphabetically-first one" || ck no "(g) PASS 1 served the alphabetically-first row -- the tie-break is still glob order, not mint time"

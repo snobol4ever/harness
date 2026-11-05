@@ -35,7 +35,7 @@ mkdir -p "$W/tasks" "$W/salvage"; : > "$W/QUEUE.done.tsv"; : > "$W/QUEUE.retired
 printf '# fixture queue (R-1574 gate)\n' > "$W/QUEUE.tsv"
 OLD="$(date -d '2 days ago' +%Y-%m-%dT%H:%M:%S)"
 row()   { printf '%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$4" >> "$W/QUEUE.tsv"; }
-baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: %s\nLINKS: minted via `mint` by the officer, 2026-10-01T00:00:00Z\n## NEXT\n## LEDGER\n' "$1" "$2" > "$W/tasks/$1.task.md"; touch -d "$OLD" "$W/tasks/$1.task.md"; }
+baton() { printf '# TASK %s\nGOAL: fixture\nDONE-WHEN: %s\nLINKS: minted via `mint` by cto, 2026-10-01T00:00:00Z\n## NEXT\n## LEDGER\n' "$1" "$2" > "$W/tasks/$1.task.md"; touch -d "$OLD" "$W/tasks/$1.task.md"; }
 row 2 fx-load-guard-row coo FREE; baton fx-load-guard-row "echo 'REFUSE(2) load-guard: load 99.0 on 16 cores (6.19/core) at or above the 0.5/core guard -- fixture'; exit 2"
 row 2 fx-cannot-row coo FREE;     baton fx-cannot-row "echo 'REFUSE(2): fixture cannot measure (no oracle)'; exit 2"
 row 0 fx-red-row coo FREE;        baton fx-red-row "exit 1"

@@ -15,7 +15,7 @@ fail() { echo "GATE FAIL [s4e_next_tiebreak]: $1"; exit 1; }
 mk_seat() { mkdir -p "$SBX/$1/inbox" "$SBX/$1/archive"; }
 mk_task() { # $1=topic $2=mint-iso-ts (empty for none)
     if [ -n "$2" ]; then
-        printf 'LINKS: minted via `mint` by the officer, %s\n' "$2" > "$SBX/tasks/$1.task.md"
+        printf 'LINKS: minted via `mint` by cto, %s\n' "$2" > "$SBX/tasks/$1.task.md"
     else
         printf 'no mint line at all\n' > "$SBX/tasks/$1.task.md"
     fi
