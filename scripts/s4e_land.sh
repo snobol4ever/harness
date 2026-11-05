@@ -64,6 +64,7 @@ mkdir -p "/tmp/s4e/$seat" || refuse "cannot make /tmp/s4e/$seat"
 if [ "$mode" = tables ]; then
     [ -f "$TSV" ] || refuse "no registry at $TSV"
     awk -F'\t' '!/^#/' "$TSV" | column -t -s $'\t'
+    for k in $(awk -F'\t' '!/^#/ && $1 != "name" && !s[$1]++ {print $1}' "$TSV"); do r="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${r%%/*}"; [ -e "$home/$r/.git" ] || echo "# skipped in this home: $k (no $r checkout under $home)"; done
     exit 0
 fi
 probe() {
@@ -204,7 +205,7 @@ take_lease() {
     printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$lease"
     echo "LAND stage=lease held seat=$seat pid=$$ after_gate=1 (released after the push)"
 }
-drop_lease() { flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }
+drop_lease() { printf 'free: released by seat=%s pid=%s at %s\n' "$seat" "$$" "$(date -u +%FT%TZ)" > "$lease"; flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }   # the file names the last holder until the next takes it; a waiter reads free:
 LOG="/tmp/s4e/$seat/land.$$"
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
@@ -263,6 +264,10 @@ regen() {
     written=()
     mapfile -t ks < <(awk -F'\t' -v p="^($phase)\$" '!/^#/ && $1 != "name" && $2 ~ p && !s[$1]++ {print $1}' "$TSV")
     [ "${#ks[@]}" -gt 0 ] || refuse "the registry has no $phase-phase table"
+    local present_ks=() sk; skipped=()
+    for k in "${ks[@]}"; do if sk="$(absent_repo_of "$k")"; then skipped+=("$k:no-$sk"); else present_ks+=("$k"); fi; done   # a table whose output lives in a repo the home lacks is not this landing's (the cfo and the cqo, 2026-11-04: a three-sibling home refused on the .github tables)
+    ks=("${present_ks[@]}")
+    [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
         ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) &
@@ -285,7 +290,11 @@ regen() {
         ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 || red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"
         written+=("$k")
     done
-    summary="${#ks[@]} checked, ${#stale[@]} stale${stale[*]:+ (${stale[*]})}"
+    summary="${#ks[@]} checked, ${#stale[@]} stale${stale[*]:+ (${stale[*]})}${skipped[*]:+ skipped=${skipped[*]}}"
+}
+absent_repo_of() {   # <table name> -> prints the repo of its first output when that repo has no checkout in the home (rc 0), else rc 1
+    local o r; o="$(awk -F'\t' -v k="$1" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${o%%/*}"
+    [ -n "$r" ] && [ "$r" != "$o" ] && [ ! -e "$home/$r/.git" ] && { printf '%s' "$r"; return 0; }; return 1
 }
 commit_regen() {
     local r o k f outs msg
