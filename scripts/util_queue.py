@@ -124,6 +124,12 @@ def main(a):
             except gs.NotFoundError:
                 sys.exit(1)
             s = c.stats_job(j.id); print("%d\t%d\t%d\t%d\t%s" % (j.id, s["pri"], s["ttr"], s["age"], j.body))
+        elif v == "stats-tube":
+            try:
+                st = c.stats_tube(a[1])
+            except gs.NotFoundError:
+                st = {"current-jobs-ready": 0, "current-jobs-reserved": 0, "current-jobs-delayed": 0, "current-jobs-buried": 0, "total-jobs": 0, "current-watching": 0}
+            print("TUBE %s ready=%d reserved=%d delayed=%d buried=%d total=%d watching=%d" % (a[1], st["current-jobs-ready"], st["current-jobs-reserved"], st["current-jobs-delayed"], st["current-jobs-buried"], st["total-jobs"], st["current-watching"]))
         elif v == "stats-job":
             s = c.stats_job(int(a[1])); print("\t".join(str(s[k]) for k in ("id", "tube", "state", "pri", "age", "ttr", "time-left", "reserves", "timeouts", "releases", "buries", "kicks")))
         elif v == "delete": c.delete(int(a[1]))
