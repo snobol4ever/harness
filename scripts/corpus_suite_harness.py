@@ -1458,7 +1458,9 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     # them clean 20/20 -- -no-pie SIGSEGVs them 20/20, RSP == 0x0 at fault under -no-pie, a normal valid stack
     # address at the identical program point under PIE. -no-pie is the arm that is wrong, not a measurement
     # artifact. Do not re-add it here without re-opening that ruling.
-    r = subprocess.run(["gcc", str(o_path), "-L", rt_dir, "-lscrip_rt", "-lm",
+    # GOLD, NOT BFD (CTO-522 test-cycle step 3, MEASURED 2026-11-05 by worker_10: a hello link is 45,087,272 instructions
+    # under -fuse-ld=gold against 79,919,646 under bfd). PIE stays the gcc default; the link mode is otherwise unchanged.
+    r = subprocess.run(["gcc", str(o_path), "-fuse-ld=gold", "-L", rt_dir, "-lscrip_rt", "-lm",
                          "-Wl,-rpath," + rt_dir, "-o", str(out_bin)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=str(paths["scrip_root"]))
     if r.returncode != 0:
