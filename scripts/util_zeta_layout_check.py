@@ -620,12 +620,12 @@ def check(graphs, chains, tabs, site_box):
         n = int(q[0])
         enters = []
         for k in range(n):
-            if 6 + 3 * k >= len(q):
+            if 7 + 4 * k >= len(q):
                 break
-            m = SITE_ENT.match(q[4 + 3 * k])
-            if not m or not q[5 + 3 * k].isdigit():
+            m = SITE_ENT.match(q[4 + 4 * k])
+            if not m or not q[5 + 4 * k].isdigit():
                 continue
-            w = int(q[5 + 3 * k])
+            w = int(q[5 + 4 * k])
             rule, depth, kind, ext = (w >> 16) & 255, w >> 32, w & 0xffff, (w >> 24) & 255
             rule_seen[rule] += 1
             if ext:

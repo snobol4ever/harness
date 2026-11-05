@@ -8,7 +8,7 @@
 # search accepts that the mask does not name -- the cells a told walk would FAIL TO VISIT); so_unmasked (those on sites of any other rule); mask_only (a pointer-bearing cell the mask names and the
 # search rejects) and mask_scalar (a scalar cell the mask names, harmless); outside (a mask bit beyond its window); nosite_cells (cells the search accepts in a gap with no site of its own);
 # hdr_cells, blob_cells and tail_cells (cells the search accepts in the frame HEADER, the blob gap and the tail, where section 16 gives no mask). BIT q OF THE MASK NAMES THE WORD AT r + 8q,
-# r the address just above the return slot, q below depth/8: measured, and the gate's neighbour test_gate_gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask says [r+8, r+depth).
+# r the address just above the return slot, q below depth/8: measured, and the gate's neighbour test_gate_gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask says [r+8, r+depth).
 #
 # ARMS. (1) THE CENSUS: over the eight zeta-layout witnesses (mode 3, stress 3, 128 KB, one at a time through the run slot) every walk's search_only and mask_only read 0 and every
 # witness's output equals its ref; RED while any cell is named by one side only. (2) REACH: the SNOBOL4 and Pascal witnesses have masked frames and agreeing cells (a run that reaches no masked

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
-# test_gate_gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask.sh -- THE SPINE WALK IS TOLD ITS CELLS (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16 step (2), the
-# cto 2026-10-29, CEO-2011). Every site entry of the GC site table is {pc_off, w, mask}: w = kind | rule << 16 | depth << 32, and mask the word-kind bits of a rule 0 or
-# rule 4 site over [r + 8, r + depth) -- bit j the word at r + 8 + 8j, set on the first word of a DESCR cell -- inline in the third quad when depth is at most 512 bytes,
-# else a BYTE OFFSET from the table's first quad into a pool of mask words after the last entry (never a pointer). The planner's per-node arrival mask (znode_t wkoff,
-# folded from the word_kind column of harness/scripts/box_cell_shapes.tsv) is shifted by the site's depth below the arrival point. Rules 1 and 2 carry their own offset to a block
-# {NW, mask words} (test_gate_gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask.sh holds them); every other rule carries 0.
-# The gate compiles two SNOBOL4 core entries in mode 4, reads their .Lgcsites tables and holds: quads = 4 + 3n + pool; an inline mask has no bit at or past depth/8; an
+# test_gate_gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask.sh -- THE SPINE WALK IS TOLD ITS CELLS (ARCH-GC-COMPILE-TIME-FRAME-MAPS 16 step (2), the
+# cto 2026-10-29, CEO-2011; the fourth quad and the base-relative coordinate, CTO-504 and CTO-509, zeta-layout step 4a-3). Every site entry of the GC site table is {pc_off, w, mask,
+# anchor}: w = kind | rule << 16 | depth << 32, anchor the run base's distance from R in words (A), and mask the word-kind bits of a rule 0 or rule 4 site -- bit w the word at
+# R + 8A - 8(w + 1), w = 0 the oldest word of the run, set on the first word of a DESCR cell -- inline in the third quad when depth is at most 512 bytes, else a BYTE OFFSET from
+# the table's first quad into a pool of mask words after the last entry (never a pointer). A rule 0 or rule 4 site that declares cells carries anchor = depth / 8, else 0. The
+# planner's per-node block (znode_t wkoff, folded from the word_kind column of harness/scripts/box_cell_shapes.tsv) is shifted once by the graph's pre words. Rules 1 and 2 carry
+# their own offset to a block (test_gate_gc_site_table_rule_1_and_rule_2_entries_carry_their_word_kind_mask.sh holds them); every other rule carries 0 and anchor 0.
+# The gate compiles two SNOBOL4 core entries in mode 4, reads their .Lgcsites tables and holds: quads = 4 + 4n + pool; an inline mask has no bit at or past depth/8; an
 # offset lands inside the pool and the pool holds ceil(depth/512) words for it; a rule that is none of 0, 1, 2 and 4 carries 0; the small program has at least one nonzero inline
 # mask and the deep program at least one pool entry (so the check was exercised); and both programs run to their refs in mode 3 and as a mode-4 binary under
-# SCRIP_GC_STRESS=1, which walks the stack through the 24-byte entries. --corrupt drops one quad from the first table (the script's own switch, no seam in SCRIP) and must
+# SCRIP_GC_STRESS=1, which walks the stack through the 32-byte entries. --corrupt drops one quad from the first table (the script's own switch, no seam in SCRIP) and must
 # read RED.
 # rc 0 held · rc 1 a bar unmet · rc 2 cannot measure (no scrip, no partition entry, a compile refused)
 set -u
@@ -53,15 +54,16 @@ bad, nz_inline, pool_entries, entries = [], 0, 0, 0
 for k, (name, n, q) in enumerate(tables):
     if corrupt and k == 0 and q:
         q = q[:-1]
-    if len(q) < 3 + 3 * n:
-        bad.append('%s: %d quads after the count, want at least %d (3 header + 3 per entry)' % (name, len(q), 3 + 3 * n))
+    if len(q) < 3 + 4 * n:
+        bad.append('%s: %d quads after the count, want at least %d (3 header + 4 per entry)' % (name, len(q), 3 + 4 * n))
         continue
-    pool = q[3 + 3 * n:]
+    pool = q[3 + 4 * n:]
     need = 0
     r12 = False
     for e in range(n):
-        w = int(q[3 + 3 * e + 1])
-        third = int(q[3 + 3 * e + 2])
+        w = int(q[3 + 4 * e + 1])
+        third = int(q[3 + 4 * e + 2])
+        anchor = int(q[3 + 4 * e + 3])
         rule, depth = (w >> 16) & 0xFFFF, (w >> 32) & 0xFFFFFFFF
         entries += 1
         if rule in (1, 2):
@@ -69,9 +71,11 @@ for k, (name, n, q) in enumerate(tables):
                 r12 = True
             continue
         if rule not in (0, 4):
-            if third != 0:
-                bad.append('%s entry %d: rule %d carries a mask %#x' % (name, e, rule, third))
+            if third != 0 or anchor != 0:
+                bad.append('%s entry %d: rule %d carries a mask %#x and anchor %d' % (name, e, rule, third, anchor))
             continue
+        if anchor not in (0, depth // 8) or (third != 0 and anchor != depth // 8):
+            bad.append('%s entry %d: rule %d anchor %d, want depth/8 = %d (mask %#x)' % (name, e, rule, anchor, depth // 8, third))
         if depth <= 512:
             if depth % 8 == 0 and (third >> (depth // 8)) != 0:
                 bad.append('%s entry %d: inline mask %#x has a bit at or past depth/8 = %d' % (name, e, third, depth // 8))
@@ -80,7 +84,7 @@ for k, (name, n, q) in enumerate(tables):
         elif third:
             pool_entries += 1
             nw = (depth // 8 + 63) // 64
-            lo = 32 + 24 * n
+            lo = 32 + 32 * n
             if third < lo or (third - lo) % 8 or (third - lo) // 8 + nw > len(pool):
                 bad.append('%s entry %d: pool offset %d outside [%d, %d) for %d words' % (name, e, third, lo, lo + 8 * len(pool), nw))
             need = max(need, (third - lo) // 8 + nw)
@@ -109,6 +113,6 @@ PY
         [ "$got" = "$(cat "$W/$entry.ref")" ] || { echo "RED: $entry mode 4 under SCRIP_GC_STRESS=1 differs from its ref"; rc=1; }
     else echo "REFUSE(2): $entry does not link"; exit 2; fi
 done
-[ "$rc" -eq 0 ] && echo "GATE OK [gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask]: every entry is {pc, w, mask}, the masks sit inside their depth, the pool offsets land, both programs run under stress" \
-    || echo "GATE RED [gc_site_table_entries_are_three_quads_and_carry_their_word_kind_mask]"
+[ "$rc" -eq 0 ] && echo "GATE OK [gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask]: every entry is {pc, w, mask, anchor}, the masks sit inside their depth and anchor, the pool offsets land, both programs run under stress" \
+    || echo "GATE RED [gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask]"
 exit $rc
