@@ -80,9 +80,9 @@ for spec in aisnobol:aisnobol csnobol4_suite:csnobol4 dotnet:dotnet gimpel:gimpe
   while IFS=$'\t' read -r name cls ev; do
     [ -n "$name" ] || continue; n=$((n+1))
     if [ "$cls" = DEFERRED-AFTER-ANNOUNCEMENT-LON-2026-09-27 ]; then
-      { [ "${#ev}" -ge 60 ] && printf '%s' "$ev" | grep -q 'R-1345'; } || bad_shape="$bad_shape $name"; ndef=$((ndef+1))
+      { [ "${#ev}" -ge 60 ] && printf '%s' "$ev" | grep -qE '\b[A-Z]{1,3}-1345\b'; } || bad_shape="$bad_shape $name"; ndef=$((ndef+1))
     elif [ "$cls" = NO_ORACLE_ANSWER ]; then
-      { [ "${#ev}" -ge 60 ] && printf '%s' "$ev" | grep -q 'R-1696'; } || bad_shape="$bad_shape $name"; nnoa=$((nnoa+1))
+      { [ "${#ev}" -ge 60 ] && printf '%s' "$ev" | grep -qE '\b[A-Z]{1,3}-1696\b'; } || bad_shape="$bad_shape $name"; nnoa=$((nnoa+1))
     else
       { [ "$cls" = NOT_SPITBOL_DIALECT ] && [ "${#ev}" -ge 60 ] && printf '%s' "$ev" | grep -q 'CSNOBOL4' && printf '%s' "$ev" | grep -q 'sbl -bf'; } || bad_shape="$bad_shape $name"
     fi
