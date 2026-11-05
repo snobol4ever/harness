@@ -11,6 +11,12 @@
 #                                                                  artifacts into a temp dir and rename it into place; the second writer drops its
 #                                                                  copy; prints PUBLISHED <key> or one reason; ALWAYS rc 0 (a cache never fails a build)
 #   util_build_cache.sh status  --root SCRIP --tag RT_TAG          key, cleanliness, hit or miss, the entry count
+#   util_build_cache.sh probe-dead-objects --root X --tag Y          the proof on a scratch root and a scratch cache: an object with no source is neither
+#                                                                  published nor kept by a fetch; prints DEAD-OBJECTS publish_excluded=1 fetch_dropped=1 inplace_dropped=1
+# THE OBJECT SET IS THE MAKEFILE'S (the cio 2026-11-04, hq_runtime's red: entry 226543e9 carried 14 objects of deleted sources, bb_define.o and bb_unify.o among
+# them, to every fetched tree, and test_gate_rtx_ctor_armed.sh died in multiple definitions): publish lists out/rt_pic-<tag>/<name>.o and .d for the names of
+# the Makefile's RT_PIC_OBJS, never `ls *.o`, and refuses to publish a build missing one of them; a fetch, on the copy road and on the already-in-place road,
+# removes every out/rt_pic-<tag>/*.o and *.d the MANIFEST does not name (FETCHED ... dropped=N).
 #
 # THE CLEAN TEST: `git status --porcelain` shows no tracked change and no untracked file under src/, bootstrap/ or the Makefile; a dirty tree
 # computes locally and stores nothing (section 3.1). THE ARTIFACTS: what `make all` writes (scrip, out/scrip-ipp, out/libscrip_rt-<tag>.so,
@@ -34,7 +40,8 @@ while [ $# -gt 0 ]; do
         *) echo "util_build_cache.sh: unknown argument $1" >&2; exit 2 ;;
     esac
 done
-[ -n "$verb" ] && [ -n "$root" ] && [ -n "$tag" ] || { echo "usage: util_build_cache.sh key|fetch|publish|status --root SCRIP --tag RT_TAG" >&2; exit 2; }
+[ -n "$verb" ] && [ -n "$root" ] && [ -n "$tag" ] || { echo "usage: util_build_cache.sh key|fetch|publish|status|probe-dead-objects --root SCRIP --tag RT_TAG" >&2; exit 2; }
+[ "$verb" = probe-dead-objects ] && root="$PWD"
 root="$(cd "$root" 2>/dev/null && pwd -P)" || { echo "util_build_cache.sh: no root" >&2; exit 2; }
 tree="$(git -C "$root" rev-parse HEAD^{tree} 2>/dev/null)" || tree=""
 tool="$(gcc --version 2>/dev/null | head -1)|$(ccache --version 2>/dev/null | head -1)"
@@ -57,13 +64,26 @@ manifest() {
     local f
     for f in $required; do printf '%s\n' "$f"; done
     for f in $optional; do [ -f "$root/$f" ] && printf '%s\n' "$f"; done
-    ( cd "$root" && ls out/rt_pic-"$tag"/*.o out/rt_pic-"$tag"/*.d 2>/dev/null ) || true
+    local n
+    for n in $(rt_objects); do [ -f "$root/out/rt_pic-$tag/$n.o" ] && printf 'out/rt_pic-%s/%s.o\n' "$tag" "$n"; [ -f "$root/out/rt_pic-$tag/$n.d" ] && printf 'out/rt_pic-%s/%s.d\n' "$tag" "$n"; done
+}
+rt_objects() {   # the basenames of the Makefile's RT_PIC_OBJS, read from the Makefile itself (never the directory, which keeps a deleted source's object)
+    ( cd "$root" && env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -s --no-print-directory --eval='s4e-print-rt-objs: ; @echo $(RT_PIC_OBJS)' s4e-print-rt-objs 2>/dev/null ) | tr ' ' '\n' | sed -n 's#.*/##; s#\.o$##p'
+}
+missing_objects() { local n m=""; for n in $(rt_objects); do [ -f "$root/out/rt_pic-$tag/$n.o" ] || m="$m $n"; done; printf '%s' "$m"; }
+prune_unnamed() {   # <entry>: remove every runtime object or .d under this root that the entry's MANIFEST does not name; prints the count
+    local x c=0
+    for x in "$root"/out/rt_pic-"$tag"/*.o "$root"/out/rt_pic-"$tag"/*.d; do
+        [ -e "$x" ] || continue
+        grep -qxF "out/rt_pic-$tag/${x##*/}" "$1/MANIFEST" || { rm -f "$x"; c=$((c + 1)); }
+    done
+    printf '%s' "$c"
 }
 write_buildinfo() {
     mkdir -p "$1/out"
     printf 'key %s\ntree %s\nrt_tag %s\ntoolchain %s\nsource %s\nroot %s\nutc %s\n' "$key" "$tree" "$tag" "$tool" "$2" "$1" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$1/out/buildinfo"
 }
-ledger() { printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${S4E_SEAT:-$(basename "$(dirname "$root")")}" "$1" "$key" "$root" >> /home/resources/progress/BUILDS.tsv 2>/dev/null || true; }   # the builds ledger (ARCH-SHARED-DEVELOPMENT 11.5): FETCHED and BUILT are the two the acceptance counts
+ledger() { printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${S4E_SEAT:-$(basename "$(dirname "$root")")}" "$1" "$key" "$root" >> "${S4E_BUILDS_LEDGER:-/home/resources/progress/BUILDS.tsv}" 2>/dev/null || true; }   # the builds ledger (ARCH-SHARED-DEVELOPMENT 11.5): FETCHED and BUILT are the two the acceptance counts
 case "$verb" in
     key) echo "$key"; exit 0 ;;
     status)
@@ -80,8 +100,9 @@ case "$verb" in
         [ -f "$e/MANIFEST" ] || { ledger MISS; echo "build cache: MISS $key"; exit 1; }
         if [ -f "$root/out/buildinfo" ] && [ "$(sed -n 's/^key //p' "$root/out/buildinfo")" = "$key" ] && cmp -s "$e/scrip" "$root/scrip" && cmp -s "$e/out/libscrip_rt.so" "$root/out/libscrip_rt.so" && [ -x "$root/scrip" ] && [ -f "$root/out/libscrip_rt.so" ]; then
             ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" 2>/dev/null )
+            dropped="$(prune_unnamed "$e")"
             touch "$e/.used" 2>/dev/null || true
-            ledger INPLACE; echo "FETCHED $key (already in place)"; exit 0
+            ledger INPLACE; echo "FETCHED $key (already in place; dropped=$dropped unnamed runtime objects)"; exit 0
         fi
         rpath_is_own "$e/scrip" && rpath_is_own "$e/out/scrip-ipp" || { echo "build cache: entry $key carries an absolute rpath (built before the \$ORIGIN Makefile), building locally"; exit 1; }
         n=0
@@ -95,9 +116,10 @@ case "$verb" in
         done < "$e/MANIFEST"
         grep -l '/SCRIP/' $(sed -n 's/^\(out\/rt_pic-[^/]*\/[^ ]*\.d\)$/\1/p' "$e/MANIFEST" | sed "s|^|$root/|") 2>/dev/null | while IFS= read -r d; do sed -i -E "s#(^|[[:space:]])/[^[:space:]]*/SCRIP/#\1$root/#g" "$d"; done
         ( cd "$root" && xargs -d '\n' touch < "$e/MANIFEST" )
+        dropped="$(prune_unnamed "$e")"
         write_buildinfo "$root" FETCHED
         touch "$e/.used" 2>/dev/null || true
-        ledger FETCHED; echo "FETCHED $key ($n files from $e)"
+        ledger FETCHED; echo "FETCHED $key ($n files from $e; dropped=$dropped unnamed runtime objects)"
         exit 0 ;;
     publish)
         [ "${S4E_NO_BUILD_CACHE:-}" = 1 ] && { echo "build cache OFF (S4E_NO_BUILD_CACHE=1), nothing published"; exit 0; }
@@ -110,6 +132,8 @@ case "$verb" in
         for f in scrip out/scrip-ipp; do rpath_is_own "$root/$f" || { echo "build cache: $f carries an absolute rpath (a binary that would load its producer's runtime in another root), nothing published"; exit 0; }; done
         if [ -f "$root/out/scrip0" ] && ! rpath_is_own "$root/out/scrip0"; then echo "build cache: out/scrip0 carries an absolute rpath (fetched before the \$ORIGIN Makefile; the default make never relinks it), removing it so this build can publish"; rm -f "$root/out/scrip0" "$root/out/libscrip_rt0.so"; fi
         [ -n "$(ls "$root/out/rt_pic-$tag"/*.o 2>/dev/null)" ] || { echo "build cache: no runtime objects under out/rt_pic-$tag, nothing published"; exit 0; }
+        [ -n "$(rt_objects)" ] || { echo "build cache: the Makefile lists no RT_PIC_OBJS (make --eval failed), nothing published"; exit 0; }
+        mo="$(missing_objects)"; [ -z "$mo" ] || { echo "build cache: runtime objects the Makefile names are missing:$mo, nothing published"; exit 0; }
         t="$CACHE/.tmp.$key.$$"
         rm -rf "$t"; mkdir -p "$t" || { echo "build cache: cannot write $CACHE, nothing published"; exit 0; }
         grep -lE "(^|[[:space:]])/[^[:space:]]*/SCRIP/" "$root"/out/rt_pic-"$tag"/*.d 2>/dev/null | while IFS= read -r d; do sed -i -E "s#(^|[[:space:]])/[^[:space:]]*/SCRIP/#\1$root/#g" "$d"; done
@@ -127,5 +151,24 @@ case "$verb" in
         fi
         ls -1t "$CACHE"/*/.used 2>/dev/null | tail -n +$((KEEP + 1)) | while IFS= read -r u; do rm -rf "$(dirname "$u")"; done
         exit 0 ;;
-    *) echo "usage: util_build_cache.sh key|fetch|publish|status --root SCRIP --tag RT_TAG" >&2; exit 2 ;;
+    probe-dead-objects)
+        T="$(mktemp -d "/tmp/s4e/${S4E_SEAT:-$(id -un)}/build-cache-probe.XXXXXX")" || { echo "REFUSE(2): cannot make a scratch directory" >&2; exit 2; }
+        trap 'rm -rf "$T"' EXIT
+        mkdir -p "$T/root/out/rt_pic-probe" "$T/cache" || exit 2
+        printf 'RT_PIC_OBJS := out/rt_pic-probe/alive_a.o out/rt_pic-probe/alive_b.o\nall: ; @true\n' > "$T/root/Makefile"
+        for f in scrip out/scrip-ipp out/libscrip_rt-probe.so out/libscrip_rt.so; do printf 'probe %s\n' "$f" > "$T/root/$f"; done; chmod +x "$T/root/scrip"
+        for n in alive_a alive_b dead; do printf 'o %s\n' "$n" > "$T/root/out/rt_pic-probe/$n.o"; printf 'out/rt_pic-probe/%s.o: src/%s.c\n' "$n" "$n" > "$T/root/out/rt_pic-probe/$n.d"; done
+        ( cd "$T/root" && git init -q && git add Makefile && git -c user.name=probe -c user.email=probe@s4e commit -q -m probe ) || { echo "REFUSE(2): cannot make the scratch root" >&2; exit 2; }
+        pub="$(S4E_BUILD_CACHE_DIR="$T/cache" S4E_BUILDS_LEDGER=/dev/null bash "$0" publish --root "$T/root" --tag probe)"
+        k="$(S4E_BUILD_CACHE_DIR="$T/cache" bash "$0" key --root "$T/root" --tag probe)"
+        pe=0; [ -f "$T/cache/$k/MANIFEST" ] && grep -qx 'out/rt_pic-probe/alive_a.o' "$T/cache/$k/MANIFEST" && grep -qx 'out/rt_pic-probe/alive_b.d' "$T/cache/$k/MANIFEST" && ! grep -q 'dead' "$T/cache/$k/MANIFEST" && [ ! -e "$T/cache/$k/out/rt_pic-probe/dead.o" ] && pe=1
+        printf 'o dead\n' > "$T/root/out/rt_pic-probe/dead.o"; printf 'o stale\n' > "$T/root/out/rt_pic-probe/stale.o"
+        inp="$(S4E_BUILD_CACHE_DIR="$T/cache" S4E_BUILDS_LEDGER=/dev/null bash "$0" fetch --root "$T/root" --tag probe)"
+        ip=0; printf '%s' "$inp" | grep -q '^FETCHED .*already in place; dropped=3' && [ ! -e "$T/root/out/rt_pic-probe/dead.o" ] && [ ! -e "$T/root/out/rt_pic-probe/stale.o" ] && [ -e "$T/root/out/rt_pic-probe/alive_a.o" ] && ip=1
+        printf 'o dead\n' > "$T/root/out/rt_pic-probe/dead.o"; printf 'changed\n' > "$T/root/scrip"
+        cp="$(S4E_BUILD_CACHE_DIR="$T/cache" S4E_BUILDS_LEDGER=/dev/null bash "$0" fetch --root "$T/root" --tag probe)"
+        fd=0; printf '%s' "$cp" | grep -q '^FETCHED .* files from .*; dropped=1' && [ ! -e "$T/root/out/rt_pic-probe/dead.o" ] && [ -e "$T/root/out/rt_pic-probe/alive_b.d" ] && cmp -s "$T/root/scrip" "$T/cache/$k/scrip" && fd=1
+        echo "DEAD-OBJECTS publish_excluded=$pe fetch_dropped=$fd inplace_dropped=$ip (publish: $pub; in place: $inp; copy: $cp)"
+        [ "$pe$fd$ip" = 111 ] && exit 0; exit 1 ;;
+    *) echo "usage: util_build_cache.sh key|fetch|publish|status|probe-dead-objects --root SCRIP --tag RT_TAG" >&2; exit 2 ;;
 esac

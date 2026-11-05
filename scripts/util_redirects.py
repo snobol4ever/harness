@@ -83,7 +83,7 @@ def build_rows():
     ceo = [r for r in rows if r[1] == "GOAL-CEO.md"]
     if ceo:
         c = ceo[0]
-        rows.append(("ruling-series", "CEO-NNNN", c[2], c[3], "GOAL-CTO.md (the series closed at CEO-2133; rulings continue as CTO-NNNN, CTO-469)", "git -C .github show %s^:GOAL-CEO.md | grep -n 'CEO-NNNN'" % c[2]))
+        rows.append(("ruling-series", "CEO-NNNN", c[2], c[3], "GOAL-CTO.md (the series closed at CEO-2133; rulings continue as CTO-NNNN, CTO-469; alias R-NNNN, CIO-1)", "git -C .github show %s^:GOAL-CEO.md | grep -n 'CEO-NNNN'" % c[2]))
     for prefix, goal in RULING_SERIES:
         if os.path.exists(os.path.join(GH, goal)):
             rows.append(("ruling-series", prefix + "-NNNN", "-", "-", goal + " (LIVE CURSOR)", "grep -n '%s-NNNN' .github/%s" % (prefix, goal)))
@@ -167,7 +167,8 @@ def live_basenames():
 
 
 NAME_RE = re.compile(r"(?<![A-Za-z0-9_./-])([A-Za-z0-9][A-Za-z0-9_.-]*\.md)(?![A-Za-z0-9_-])")
-RULING_RE = re.compile(r"\b(CEO|CTO|COO|CIO|CAO|CFO|CQO)-(\d{1,4})\b")
+RULING_RE = re.compile(r"\b(CEO|R|CTO|COO|CIO|CAO|CFO|CQO)-(\d{1,4})\b")
+ALIAS = {"R": "CEO"}   # CIO-1 (2026-11-04): R-NNNN is the alias of the closed series CEO-NNNN; both resolve to the one CEO-NNNN row
 
 
 def sweep(map_rows=None, quiet=False):
@@ -203,7 +204,7 @@ def sweep(map_rows=None, quiet=False):
             else:
                 unresolved.setdefault(n, []).append(rel)
         for m in RULING_RE.finditer(text):
-            if m.group(1) in series:
+            if ALIAS.get(m.group(1), m.group(1)) in series:
                 redirected += 1
             else:
                 ruling_stale += 1
@@ -235,7 +236,7 @@ def resolve(key):
     m = RULING_RE.fullmatch(key)
     hits = []
     for r in rows:
-        if m and r[0] == "ruling-series" and r[1].startswith(m.group(1) + "-"):
+        if m and r[0] == "ruling-series" and r[1].startswith(ALIAS.get(m.group(1), m.group(1)) + "-"):
             hits.append(tuple(x.replace("NNNN", m.group(2)) if i in (1, 5) else x for i, x in enumerate(r)))
         elif not m and (r[1] == key or os.path.basename(r[1]) == key):
             hits.append(r)
