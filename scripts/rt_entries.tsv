@@ -644,14 +644,14 @@ rt_pl_mkground	leaf	VOID	1	-	0	call,alloc
 rt_pl_occurs_a	asm	-	0	none	-	clob,asm
 rt_pl_pseg_ball	asm	VOID	1	r8|r10|r11	1	alloc,clob,asm
 rt_pl_pseg_switch	asm	-	0	r8|r10|r11	1:rax|rdx	clob,asm
-rt_pl_quad_seed	asm	-	0	r8|r10|r11	-	call,clob,asm
+rt_pl_quad_seed	asm	VOID	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_pl_root_omega	leaf	VOID	1	-	0	call,alloc
 rt_pl_throw_raise	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_tr_refuse	leaf	-	0	-	0	call
 rt_pl_tv1_walk_a	asm	-	0	none	-	clob,asm
 rt_pl_type_cold	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_unify_const_cold	leaf	-	0	-	0	call
-rt_pl_unify_deep	asm	-	0	r8|r10|r11	-	clob,asm
+rt_pl_unify_deep	asm	UNKNOWN	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_zguard_cold	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_proc_call_epilogue_named_γ	leaf	-	0	-	0	call
 rt_proc_call_epilogue_named_ω	leaf	-	0	-	0	call
@@ -740,7 +740,7 @@ rt_zdp_origin	asm	-	0	none	-	call,clob,asm
 rt_zdp_probe	asm	-	0	r8|r10|r11	-	call,clob,asm
 rtcc_load_all	leaf	-	0	-	0	call
 rtx_int_str_operand	asm	-	0	none	-	clob,asm
-rtx_pl_unify	asm	-	0	r8|r10|r11	-	call,clob,asm
+rtx_pl_unify	asm	OTHER	1	r8|r10|r11	-	call,alloc,clob,asm
 scrip_coexpr_activate	leaf	OTHER	1	-	0	call,alloc
 scrip_coexpr_create	leaf	-	0	-	0	call
 scrip_cofail	leaf	VOID	1	-	0	call,alloc
