@@ -795,7 +795,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 795	rkm	starts-with	-	-	bt_startsx2Dwith	leaf	-	-	0	meth_arms
 796	rkm	subst	-	-	bt_subst	leaf	-	-	0	meth_arms
 797	rkm	substr	-	-	bt_m_substr	leaf	-	-	0	meth_arms
-798	rkm	substr-rw	-	-	bt_substrx2Drw	leaf	-	-	0	meth_arms
+798	rkm	substr-rw	-	-	bt_m_substr	leaf	-	-	0	meth_arms
 799	rkm	succ	-	-	bt_succ	leaf	-	-	0	meth_arms
 800	rkm	sum	-	-	bt_m_sum	leaf	-	-	0	meth_arms
 801	rkm	tail	-	-	bt_m_tail	leaf	-	-	0	meth_arms
