@@ -132,6 +132,63 @@ def main(a):
             c.use(a[1]); print(c.kick(int(a[2]) if len(a) > 2 else 1))
         elif v in ("bury", "touch"):
             refuse("%s acts on a job reserved by the same connection: the bus does it inside one reserve (s4e_msg.sh), not from a fresh process" % v)
+        elif v == "reserve-hold":
+            # fleet-queue step 4 and 5: reserve one job over TUBES, print "id<TAB>tube<TAB>pri<TAB>topic", then stay alive as a detached HOLDER on the
+            # same connection (beanstalkd releases a reserved job the moment its connection closes, so the lease lives exactly as long as this process):
+            # every INTERVAL s it touches the job while the claim file names --seat on its first line and the session --session is alive; it deletes
+            # the job when the claim reads DONE, releases it when the claim vanishes, names another seat, or the session died, and exits.
+            tubes = a[1].split(","); seat = session = claim = None; batons = None; timeout = 0; i = 2
+            while i < len(a):
+                if a[i] == "--seat": seat = a[i + 1]
+                elif a[i] == "--session": session = a[i + 1]
+                elif a[i] == "--claim-dir": claim = a[i + 1]
+                elif a[i] == "--timeout": timeout = int(a[i + 1])
+                elif a[i] == "--baton-dir": batons = a[i + 1]
+                else: refuse("reserve-hold: unknown flag " + a[i])
+                i += 2
+            if not (seat and claim): refuse("reserve-hold needs --seat SEAT --claim-dir DIR (the claim is DIR/<topic>.claim, the topic being the job body)")
+            for t in tubes: c.watch(t)
+            if "default" not in tubes: c.ignore("default")
+            try:
+                j = c.reserve(timeout=timeout)
+            except gs.TimedOutError:
+                sys.exit(1)
+            if batons and not os.path.isfile(os.path.join(batons, j.body + ".task.md")):
+                c.delete(j.id); print("STALE %d %s: no baton, deleted" % (j.id, j.body), file=sys.stderr); sys.exit(3)
+            st = c.stats_job(j.id); ttr = int(st["ttr"]); interval = max(2, min(5, ttr // 3)); claim = os.path.join(claim, j.body + ".claim")
+            print("%d\t%s\t%d\t%s" % (j.id, st["tube"], st["pri"], j.body)); sys.stdout.flush()
+            if os.fork() > 0: os._exit(0)
+            os.setsid()
+            if os.fork() > 0: os._exit(0)
+            logd = "/tmp/s4e/%s" % seat; os.makedirs(logd, exist_ok=True)
+            log = open("%s/queue_hold.%d.log" % (logd, j.id), "a")
+            os.dup2(log.fileno(), 1); os.dup2(log.fileno(), 2); os.close(0)
+            def say(m): print("%s hold job=%d %s" % (time.strftime("%FT%TZ", time.gmtime()), j.id, m)); sys.stdout.flush()
+            say("start tube=%s ttr=%d interval=%d claim=%s session=%s" % (st["tube"], ttr, interval, claim, session))
+            grace = time.time() + 60
+            while True:
+                time.sleep(interval)
+                try:
+                    lines = open(claim).read().splitlines()
+                except OSError:
+                    lines = None
+                if lines is None:
+                    if not os.path.isdir(os.path.dirname(claim)): say("claim dir gone: release"); break
+                    if time.time() < grace: continue
+                    say("claim gone: release"); break
+                if any(l.strip() == "DONE" for l in lines):
+                    say("claim reads DONE: delete")
+                    try: c.delete(j.id)
+                    except Exception as e: say("delete: %s" % e)
+                    os._exit(0)
+                if lines and lines[0].strip() != seat: say("claim names %s, not %s: release" % (lines[0].strip(), seat)); break
+                if session and os.system("pgrep -f '^claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
+                    say("session %s is gone: release" % session); break
+                try: c.touch(j.id)
+                except Exception as e: say("touch: %s (the lease is gone)" % e); os._exit(0)
+            try: c.release(j.id, priority=int(st["pri"]))
+            except Exception as e: say("release: %s" % e)
+            os._exit(0)
         elif v == "reserve":
             tubes = a[1].split(","); timeout = 0
             if len(a) > 3 and a[2] == "--timeout": timeout = int(a[3])
