@@ -13,8 +13,12 @@
 #   derive      every binary-phase table is re-derived from the built runtime and every built-phase table checked; a stale one is rewritten,
 #               the source tables regenerated again, committed, and SCRIP rebuilt
 #   gate        the row's DONE-WHEN (--row TOPIC) or --gate CMD, run from the root with S4E_HOME set; rc 0 lands, rc 1 RED, rc 2 refuses
+#   lease       taken AFTER the gate (the box-wide flock <postoffice>/.land.lease serializes the pushes, never a gate); under it origin is fetched
+#               again and a moved origin rebased: a move under the affected set (SCRIP/src/runtime, SCRIP/src/templates, SCRIP/Makefile, a generated
+#               table's output, the row's TOUCHES: prefixes; any move when the row has none) drops the lease and re-runs the gate unleased, a move
+#               outside it pushes the rebased tree with the gate standing; the lease is released after the last push (LAND stage=lease released held_s=N)
 #   push:<repo> git push origin HEAD:main, then git ls-remote must name the local HEAD; SCRIP, harness, corpus, .github in that order. A push
-#               the origin refused (it moved after the rebase) is recorded by s4e_push_rejected.sh and the landing goes round again from fetch
+#               the origin refused (a hand push outside the lease) is recorded by s4e_push_rejected.sh and the landing goes round again from fetch
 #               (--tries, default 3), so the gate always reads the tree that is pushed
 # USAGE: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [REPO...]
 #   --home DIR   the root holding SCRIP harness corpus [.github] (default: the root this script sits in); a clean worktree layout
@@ -31,7 +35,7 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$HERE/$(basename "${BASH_SOURCE[0]}")"
 ORDER=(SCRIP harness corpus .github)
-home=""; gate=""; row=""; gt=1800; tries=3; mode=land; names=()
+home=""; gate=""; row=""; gt=1800; tries=3; mode=land; names=(); touches=""; proved=""
 refuse() { echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
 red() { echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
 while [ $# -gt 0 ]; do
@@ -43,8 +47,12 @@ while [ $# -gt 0 ]; do
         --tries) tries="${2:-}"; shift 2 ;;
         --probe) mode=probe; shift ;;
         --tables) mode=tables; shift ;;
+        --push) mode=push; shift ;;
+        --proved) proved="${2:-}"; shift 2 ;;
+        --touches) touches="${2:-}"; shift 2 ;;
         SCRIP|harness|corpus|.github) names+=("$1"); shift ;;
-        *) refuse "usage: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [SCRIP|harness|corpus|.github ...] | --probe | --tables" ;;
+        *) refuse "usage: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [--touches 'prefix ...'] [REPO ...]"\
+                  " | --push [--gate CMD | --proved TEXT] [REPO ...] | --probe | --tables" ;;
     esac
 done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
@@ -96,8 +104,9 @@ probe() {
     S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "bash harness/scripts/util_require_fresh.sh --gate s4e_land_probe && bash $T/race.sh" > "$log" 2>&1; rc=$?
     sed 's/^/    arm2| /' "$log" | tail -16
     [ "$rc" = 0 ] || { echo "LAND dry-run RED: arm 2 (moved origins and a planted race) returned rc=$rc"; exit 1; }
-    n="$(sed -n 's/^LAND ok stages=\([0-9]*\) rejected=1 .*/\1/p' "$log")"
-    [ -n "$n" ] || { echo "LAND dry-run RED: arm 2 did not read LAND ok with exactly one rejected push"; exit 1; }
+    n="$(sed -n 's/^LAND ok stages=\([0-9]*\) rounds=0 .*/\1/p' "$log")"
+    [ -n "$n" ] && grep -q '^LAND stage=regate:lease reason=unaffected files=0' "$log" && grep -q '^LAND stage=lease released held_s=[0-9]* (pushed ' "$log" \
+        || { echo "LAND dry-run RED: arm 2 did not read LAND ok with the race's empty move rebased under the lease (no file changed, so the gate stands) and no round more"; exit 1; }
     for r in "${ORDER[@]}"; do
         b="$T/origin/$r.git"
         [ "$(git -C "$b" rev-parse main)" = "$(git -C "$T/work/$r" rev-parse HEAD)" ] || { echo "LAND dry-run RED: origin of $r is not the landed HEAD"; exit 1; }
@@ -105,25 +114,74 @@ probe() {
         git -C "$b" log --format=%s main | grep -x "probe: origin moved under $r before the landing" > /dev/null || { echo "LAND dry-run RED: origin $r lost its own commit"; exit 1; }
     done
     git -C "$T/origin/corpus.git" log --format=%s main | grep -x "$RACE" > /dev/null || { echo "LAND dry-run RED: the racer's corpus commit is not on origin"; exit 1; }
-    [ "$(awk -F'\t' '$3 == "corpus"' "$T/po/PUSH_REJECTED.tsv" 2>/dev/null | wc -l)" = 1 ] || { echo "LAND dry-run RED: the rejected corpus push was not recorded once in PUSH_REJECTED.tsv"; exit 1; }
+    [ "$(awk -F'\t' '$3 == "corpus"' "$T/po/PUSH_REJECTED.tsv" 2>/dev/null | wc -l)" = 0 ] || { echo "LAND dry-run RED: arm 2 had a push rejected although the move was rebased under the lease"; exit 1; }
     log="$T/arm3.log"; declare -A was3
     for r in "${ORDER[@]}"; do was3[$r]="$(git -C "$T/origin/$r.git" rev-parse main)"
         git -C "$T/work/$r" commit -q --allow-empty -m "probe: a third commit in $r" || refuse "probe: cannot commit in $r"; done
-    ( exec 8>> "$T/po/.land.lease"; flock 8; printf 'seat=probe-holder pid=%s row=lease-plant since=%s\n' "$$" "$(date -u +%FT%TZ)" > "$T/po/.land.lease"; sleep 20 ) & holder=$!
+    ( exec 8>> "$T/po/.land.lease"; flock 8; printf 'seat=probe-holder pid=%s row=lease-plant since=%s\n' "$$" "$(date -u +%FT%TZ)" > "$T/po/.land.lease"; sleep 300 ) & holder=$!
     sleep 1
     S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" S4E_LAND_LEASE_WAIT=3 bash "$SELF" --home "$T/work" --gate 'true' > "$log" 2>&1; rc=$?
     sed 's/^/    arm3| /' "$log" | tail -4
     kill "$holder" 2>/dev/null; wait "$holder" 2>/dev/null
-    [ "$rc" = 2 ] && grep -q 'LAND stage=lease waiting: held by seat=probe-holder' "$log" && grep -q 'lease is still held after 3 s' "$log" \
-        || { echo "LAND dry-run RED: arm 3 (the lease held by another lander) returned rc=$rc, not the refusal rc 2 that waits on and names the holder"; exit 1; }
+    [ "$rc" = 2 ] && grep -q '^LAND stage=gate rc=0' "$log" && grep -q 'LAND stage=lease waiting: held by seat=probe-holder' "$log" && grep -q 'lease is still held after 3 s' "$log" \
+        || { echo "LAND dry-run RED: arm 3 (the lease held by another lander) returned rc=$rc, not a gate run unleased and then the refusal rc 2 that waits on and names the holder"; exit 1; }
     for r in "${ORDER[@]}"; do [ "$(git -C "$T/origin/$r.git" rev-parse main)" = "${was3[$r]}" ] || { echo "LAND dry-run RED: arm 3 pushed $r while the lease was held"; exit 1; }; done
     log="$T/arm3b.log"
     S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'true' > "$log" 2>&1; rc=$?
     [ "$rc" = 0 ] && grep -q "LAND stage=lease held seat=$seat" "$log" || { echo "LAND dry-run RED: arm 3 (the lease released) returned rc=$rc without taking the lease"; exit 1; }
     for r in "${ORDER[@]}"; do git -C "$T/origin/$r.git" log --format=%s main | grep -x "probe: a third commit in $r" > /dev/null \
         || { echo "LAND dry-run RED: arm 3 did not land $r once the lease was free"; exit 1; }; done
-    echo "LAND dry-run ok stages=$n rejected=1 repos=${#ORDER[@]} arms=3 (scratch origins borrowing $home; a red gate pushed nothing;"\
-         "moved origins rebased; a push race rejected, recorded, re-landed and verified; a held lease waited on, its holder named, nothing pushed; landed once free)"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/racer" reset -q --hard HEAD \
+        || refuse "probe: cannot clone the racer"
+    git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
+    racer() {   # racer <script> <marker> <file>: inside the gate, once, land a file under corpus/tests/shared/box_scheduler on the scratch origin
+        printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main' "$T/$2" "$T/$2" "$T/racer" > "$T/$1"
+        printf ' && echo race > "tests/shared/box_scheduler/%s" && git add -A && git commit -q -m "probe: a racer lands %s" && git push -q origin HEAD:main\n' "$3" "$3" >> "$T/$1"; }
+    racer race4.sh raced4 "probe-race4-$$.txt"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a fourth commit in $r" || refuse "probe: cannot commit in $r"; done
+    log="$T/arm4.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --touches 'harness/scripts/s4e_land.sh' \
+        --gate "bash harness/scripts/util_require_fresh.sh --gate s4e_land_probe && echo g >> $T/gates4 && bash $T/race4.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm4| /' "$log" | grep -E 'regate|LAND ok|LAND RED|REFUSE' | tail -4
+    [ "$rc" = 0 ] && grep -q '^LAND stage=regate:lease reason=unaffected files=1' "$log" && [ "$(wc -l < "$T/gates4")" = 1 ] \
+        || { echo "LAND dry-run RED: arm 4 (a race under an untouched path) rc=$rc: expected regate:lease unaffected and one gate run, got $(wc -l < "$T/gates4" 2>/dev/null) run(s)"; exit 1; }
+    racer race5.sh raced5 "probe-race5-$$.txt"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a fifth commit in $r" || refuse "probe: cannot commit in $r"; done
+    log="$T/arm5.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --touches 'corpus/tests/shared' \
+        --gate "bash harness/scripts/util_require_fresh.sh --gate s4e_land_probe && echo g >> $T/gates5 && bash $T/race5.sh" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm5| /' "$log" | grep -E 'regate|LAND ok|LAND RED|REFUSE' | tail -4
+    [ "$rc" = 0 ] && grep -q '^LAND stage=regate:2 reason=affected files=1' "$log" && [ "$(wc -l < "$T/gates5")" = 2 ] \
+        || { echo "LAND dry-run RED: arm 5 (a race under a touched path) rc=$rc: expected regate:2 affected and two gate runs, got $(wc -l < "$T/gates5" 2>/dev/null) run(s)"; exit 1; }
+    git -C "$T/work/corpus" commit -q --allow-empty -m "probe: a hand-proved commit in corpus" || refuse "probe: cannot commit in corpus"
+    log="$T/arm6.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --push --proved 'probe: proved by hand on this tree' --home "$T/work" corpus > "$log" 2>&1; rc=$?
+    sed 's/^/    arm6| /' "$log" | tail -3
+    [ "$rc" = 0 ] && grep -q '^LAND ok mode=push .*hand_push=leased' "$log" && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: a hand-proved commit in corpus" > /dev/null \
+        && [ "$(grep -vc '^#' "$T/po/HAND_PUSHES.tsv")" = 1 ] || { echo "LAND dry-run RED: arm 6 (a hand push under the lease) rc=$rc"; exit 1; }   # grep -x, not -q: under pipefail a -q that closes the pipe early kills git log with SIGPIPE
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --push --home "$T/work" corpus > "$T/arm6b.log" 2>&1
+    [ $? = 2 ] || { echo "LAND dry-run RED: a hand push without a proof was not refused rc 2"; exit 1; }
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a seventh commit in $r" || refuse "probe: cannot commit in $r"; done
+    log="$T/arm7.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "flock -n $T/po/.land.lease true && echo free > $T/free7 && sleep 2" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm7| /' "$log" | grep -E 'lease|LAND ok|LAND RED|REFUSE' | tail -4
+    h="$(sed -n 's/^LAND stage=lease released held_s=\([0-9]*\) .*/\1/p' "$log" | tail -1)"
+    [ "$rc" = 0 ] && [ "$(cat "$T/free7" 2>/dev/null)" = free ] && [ -n "$h" ] && [ "$h" -le 3 ] \
+        || { echo "LAND dry-run RED: arm 7 (the gate runs unleased, the lease covers only the push) rc=$rc free=$(cat "$T/free7" 2>/dev/null) held_s=${h:-?}"; exit 1; }
+    racer race8.sh raced8 "probe-race8-$$.txt"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: an eighth commit in $r" || refuse "probe: cannot commit in $r"; done
+    log="$T/arm8.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" S4E_LAND_PLANT="bash $T/race8.sh" bash "$SELF" --home "$T/work" --gate "echo g >> $T/gates8" > "$log" 2>&1; rc=$?
+    sed 's/^/    arm8| /' "$log" | grep -E 'REJECTED|regate|lease released|LAND ok|LAND RED|REFUSE' | tail -5
+    [ "$rc" = 0 ] && grep -q '^LAND stage=push:corpus REJECTED' "$log" && grep -q '^LAND ok stages=[0-9]* rounds=1 ' "$log" \
+        && [ "$(awk -F'\t' '$3 == "corpus"' "$T/po/PUSH_REJECTED.tsv" 2>/dev/null | wc -l)" = 1 ] && [ "$(wc -l < "$T/gates8")" = 2 ] \
+        && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: a racer lands probe-race8-$$.txt" > /dev/null \
+        && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$(git -C "$T/work/corpus" rev-parse HEAD)" ] \
+        || { echo "LAND dry-run RED: arm 8 (a hand push between the lease's fetch and the push) rc=$rc: expected one rejected corpus push recorded, one round more, two gate runs, the racer kept"; exit 1; }
+    echo "LAND dry-run ok stages=$n rounds=1 repos=${#ORDER[@]} arms=8 regate=affected hand_push=leased lease=push-only (scratch origins borrowing $home; a red gate pushed nothing;"\
+         "moved origins rebased; a move under the gate rebased under the lease and re-gated unleased; a held lease waited on after the gate, its holder named, nothing pushed; landed once free;"\
+         "a race under an untouched path did not re-gate, one under a touched path did; a hand push went under the lease with its proof recorded, and without one refused;"\
+         "the gate found the lease free and the lease was held $h s; a push rejected by a hand push outside the lease was recorded once and re-landed)"
     exit 0
 }
 advance() {
@@ -131,14 +189,22 @@ advance() {
     c="$(git -C "$1" commit-tree "main^{tree}" -p main -m "$2")" && git -C "$1" update-ref refs/heads/main "$c" main || refuse "probe: cannot advance $1"
 }
 [ "$mode" = probe ] && probe
-lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAND_LEASE_WAIT:-1800}"
+# THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
+# hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
+# the tree is rebased there -- a move under the row's affected set drops the lease and re-runs the gate unleased, a move outside it pushes the rebased tree with the
+# gate standing (the merge-queue shape: optimistic gating, serialized pushing). A lease is held for the seconds a fetch, a rebase and four pushes take, never a gate.
+lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAND_LEASE_WAIT:-1800}"; lease_since=0
 exec 8>> "$lease" 2>/dev/null || refuse "cannot open the landing lease $lease"
-if ! flock -n 8; then
-    echo "LAND stage=lease waiting: held by $(tail -1 "$lease" 2>/dev/null | cut -c1-120); a landing serializes box-wide so origin cannot move under a gate (box-scheduler step 18; up to $lw s)"
-    flock -w "$lw" 8 || refuse "the landing lease is still held after $lw s by $(tail -1 "$lease" 2>/dev/null | cut -c1-120): nothing fetched, nothing pushed"
-fi
-printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$lease"
-echo "LAND stage=lease held seat=$seat pid=$$ (released when this landing exits)"
+take_lease() {
+    if ! flock -n 8; then
+        echo "LAND stage=lease waiting: held by $(tail -1 "$lease" 2>/dev/null | cut -c1-120); the lease serializes the pushes box-wide, never a gate (box-scheduler step 18; up to $lw s)"
+        flock -w "$lw" 8 || refuse "the landing lease is still held after $lw s by $(tail -1 "$lease" 2>/dev/null | cut -c1-120): the gate ran, nothing pushed; run the landing again"
+    fi
+    lease_since="$(date +%s)"
+    printf 'seat=%s pid=%s row=%s since=%s\n' "$seat" "$$" "${row:-gate}" "$(date -u +%FT%TZ)" > "$lease"
+    echo "LAND stage=lease held seat=$seat pid=$$ after_gate=1 (released after the push)"
+}
+drop_lease() { flock -u 8; echo "LAND stage=lease released held_s=$(( $(date +%s) - lease_since )) $1"; }
 LOG="/tmp/s4e/$seat/land.$$"
 mkdir -p "$LOG" || refuse "cannot make $LOG"
 declare -A stage_done
@@ -156,7 +222,11 @@ if [ -n "$row" ]; then
     gate="$(sed -n 's/^DONE-WHEN: //p' "$tf" | head -1)"
     [ -n "$gate" ] || refuse "the baton of $row carries no DONE-WHEN"
 fi
-[ -n "$gate" ] || refuse "no gate: name the row (--row TOPIC) or the command (--gate CMD); a landing is never pushed ungated"
+if [ -n "$row" ] && [ -z "$touches" ]; then touches="$(sed -n 's/^TOUCHES: //p' "$tf" | head -1)"; fi
+if [ "$mode" = push ]; then
+    [ -n "$gate" ] || [ -n "$proved" ] || refuse "a hand push under the lease names its proof: --gate CMD (run here) or --proved 'what was proved, where'" \
+        "(recorded in HAND_PUSHES.tsv)"
+else [ -n "$gate" ] || refuse "no gate: name the row (--row TOPIC) or the command (--gate CMD); a landing is never pushed ungated"; fi
 named() { local x; [ "${#names[@]}" = 0 ] && return 0; for x in "${names[@]}"; do [ "$x" = "$1" ] && return 0; done; return 1; }
 for r in "${present[@]}"; do
     [ -n "$(git -C "$home/$r" status --porcelain --untracked-files=no)" ] && refuse "$r has uncommitted tracked changes: a landing lands commits"
@@ -272,34 +342,75 @@ push_one() {
     echo "LAND stage=push:$r REJECTED: origin is ${theirs:0:9}, not ${mine:0:9} ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
     return 3
 }
+# THE AFFECTED SET (the cfo 2026-11-04 19:4x: a 40-minute gate rejected three times; the cao: runtime, templates, the Makefile and every generated table
+# change every program). After a rejected push the gate is re-run only when the rebase brought in a commit under SCRIP/src/runtime, SCRIP/src/templates,
+# SCRIP/Makefile, a generated table's output, or one of the row's TOUCHES: prefixes; a landing with no TOUCHES re-gates on any change at all.
+declare -A origin_seen
+note_origins() { local r; for r in "${present[@]}"; do origin_seen[$r]="$(git -C "$home/$r" rev-parse origin/main)"; done; }
+affected_since() {   # -> prints "reason=affected|unaffected files=N"; rc 0 affected
+    local r f old new n=0 hit=0 t p; local -a outs
+    mapfile -t outs < <(awk -F'\t' '!/^#/ && $1 != "name" {print $3}' "$TSV")
+    for r in "${present[@]}"; do
+        old="${origin_seen[$r]:-}"; new="$(git -C "$home/$r" rev-parse origin/main)"; [ -n "$old" ] && [ "$old" != "$new" ] || continue
+        while IFS= read -r f; do
+            [ -n "$f" ] || continue; n=$((n+1)); p="$r/$f"
+            case "$p" in SCRIP/src/runtime/*|SCRIP/src/templates/*|SCRIP/Makefile) hit=1 ;; esac
+            for t in "${outs[@]}"; do [ "$p" = "$t" ] && hit=1; done
+            if [ -n "$touches" ]; then for t in $touches; do case "$p" in "$t"|"$t"/*) hit=1 ;; esac; done; else hit=1; fi
+        done < <(git -C "$home/$r" diff --name-only "$old" "$new" 2>/dev/null)
+    done
+    [ "$hit" = 1 ] && { echo "reason=affected files=$n"; return 0; }; echo "reason=unaffected files=$n"; return 1; }
+record_hand_push() { local f="${S4E_POSTOFFICE:-/home/resources/postoffice}/HAND_PUSHES.tsv"
+    [ -s "$f" ] || printf '# at_utc\tseat\trepo\tsha\tproof  -- hand pushes made under the landing lease (s4e_land.sh --push); the lease is what keeps origin still under a running gate\n' > "$f"
+    printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "$1" "$2" "${proved:-gate: $(printf '%s' "$gate" | cut -c1-100)}" >> "$f"; }
 pushed=(); rejected=0; attempt=1
-while :; do
-    fetch
-    rebase
-    regen source regenerate
-    commit_regen regenerate
-    mark regenerate "$summary"
-    build build
-    mark build "${binfo:-built}"
-    regen 'binary|built' derive; d="$summary"; dw=("${written[@]}")
-    if [ "${#dw[@]}" -gt 0 ]; then
-        commit_regen derive
-        regen source derive; written+=("${dw[@]}"); commit_regen derive
-        build derive
-        d="$d; source again: $summary; rebuilt ${binfo:-built}"
+land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the gate unleased, then the lease only around a fetch, a rebase and the pushes; rc 3 = go round again
+    local r a moved=0 rc
+    fetch; rebase
+    if [ "$mode" != push ]; then
+        regen source regenerate; commit_regen regenerate; mark regenerate "$summary"
+        build build; mark build "${binfo:-built}"
+        regen 'binary|built' derive; d="$summary"; dw=("${written[@]}")
+        if [ "${#dw[@]}" -gt 0 ]; then
+            commit_regen derive
+            regen source derive; written+=("${dw[@]}"); commit_regen derive
+            build derive
+            d="$d; source again: $summary; rebuilt ${binfo:-built}"
+        fi
+        mark derive "$d"
     fi
-    mark derive "$d"
-    gate_run
-    again=0
+    if [ -z "$gate" ]; then mark proved "hand proof recorded, no gate run here: $(printf '%s' "$proved" | cut -c1-120)"
+    elif [ "$attempt" = 1 ]; then gate_run
+    elif a="$(affected_since)"; then mark "regate:$attempt" "$a"; gate_run
+    else mark "regate:$attempt" "$a (the gate of attempt $((attempt-1)) stands: the rebase brought nothing under the row's population)"; fi
+    note_origins
+    take_lease
+    fetch
+    for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$home/$r" rev-parse origin/main)" ] || moved=1; done
+    if [ "$moved" = 1 ]; then
+        rebase
+        if a="$(affected_since)"; then drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
+        mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
+        note_origins
+    fi
+    [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     for r in "${ORDER[@]}"; do
         [ -e "$home/$r/.git" ] || continue
         push_one "$r"; rc=$?
-        [ "$rc" = 3 ] && { again=1; break; }
+        [ "$rc" = 3 ] && { drop_lease "(a push was rejected: going round again)"; return 3; }
     done
-    [ "$again" = 0 ] && break
+    drop_lease "(pushed ${pushed[*]:-nothing})"
+    return 0
+}
+while :; do
+    if land_round; then break; fi
     rejected=$((rejected + 1)); attempt=$((attempt + 1))
     [ "$attempt" -gt "$tries" ] && red push "the origin moved under $tries attempts; pushed so far: ${pushed[*]:-none}"
 done
+if [ "$mode" = push ]; then
+    for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
+    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
+fi
 rm -rf "$LOG"
-echo "LAND ok stages=${#stage_done[@]} rejected=$rejected pushed=${pushed[*]:-none} attempts=$attempt ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
 exit 0
