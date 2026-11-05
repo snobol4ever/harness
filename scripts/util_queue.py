@@ -99,7 +99,7 @@ def main(a):
             import greenstalk; cl = "greenstalk"
         except ImportError:
             cl = "stdlib"
-        print("QUEUE daemon=beanstalkd version=%s binlog=%d listen=%s:%d client=%s tubes=%s pid=%s uptime_s=%s" % (st.get("version", "?"), binlog, HOST, PORT, cl, st.get("current-tubes", "?"), st.get("pid", "?"), st.get("uptime", "?")))
+        print("QUEUE daemon=beanstalkd version=%s binlog=%d listen=%s:%d client=%s tubes=%s pid=%s uptime_s=%s" % (st.get("version", "?").strip('"'), binlog, HOST, PORT, cl, st.get("current-tubes", "?"), st.get("pid", "?"), st.get("uptime", "?")))
         if cl != "greenstalk": print("  (client=stdlib, the transport fallback: pip3 install --user greenstalk)")
         if not binlog: print("  (binlog=0: set BEANSTALKD_EXTRA=\"-b /var/lib/beanstalkd -f 1000\" in /etc/default/beanstalkd and sudo systemctl restart beanstalkd)")
         sys.exit(0 if cl == "greenstalk" and binlog else 1)
