@@ -1,0 +1,50 @@
+# impact_proof.tsv -- THE PROOF A LANDING OWES, BY WHAT IT TOUCHES (DESIGN-PLAN box-scheduler step 13, CTO-496; the president 2026-11-05, row
+# box-scheduler-step-13-the-landing-proof-is-sized-by-the-change-impact-set-cto-496; the design text is the shared-box skill's DESIGN section 8:
+# "the proof is sized by the change-impact set (a Makefile line owes the build gate, not eight smokes)").
+# util_impact_set.py --root <repo> --commit HEAD --proof reads THIS table and prints PROOF arms=A smokes=S gates=G ... then one ARM line per command.
+#
+# FORMAT, whole-line comments only, TAB-separated:   repo<TAB>carrier<TAB>owes
+#   repo     SCRIP, harness, corpus or .github (the root's directory name, or --repo)
+#   carrier  a file (Makefile), a directory with a trailing slash (src/), a glob over the repo-relative path (scripts/test_gate_*.sh, *.md),
+#            or `.` the repo's catch-all. THE LONGEST CARRIER THAT MATCHES A TOUCHED FILE DECIDES ITS ROW; a file no row names falls to the catch-all,
+#            so an unmapped file owes MORE proof, never less (the safe direction; the area map's own refusal still guards src/).
+#   owes     a comma list of: -  build  preflight  area  refgates  buildgates  self
+#     build       ARM build:      cd SCRIP && make -j8
+#     preflight   ARM preflight:  cd SCRIP && make preflight   (the cheap hermetic arms, no build; the law's per-landing verdict names it)
+#     area        the file is a src/ carrier: the carrier map (test_area_smoke.sh --list-only) names the languages; ARM area, and ARM smoke
+#                 test_smoke_<lang>.sh for each language that has one; a SHARED NODE (a * row) owes the declared shared-smokes instead
+#     refgates    ARM gate for each WIRED test_gate_*.sh whose source names this file's repo-relative path (a path literal, never the basename and
+#                 never the parent directory: MEASURED 2026-11-05 on the president's worktree, src/runtime/posix_leaves.c names 0 gates by path and
+#                 150 by its directory, so a directory match would size every runtime landing at the whole set)
+#     buildgates  ARM gate for each gate the @ buildgates directive names (a Makefile line is read by 54 gates, so it owes the declared few)
+#     self        the file is a gate script: ARM gate for it, wired or not, since its lander must run it
+#   `-` owes nothing: a prose or record file.
+# DIRECTIVES, repo column `@`:   @<TAB>buildgates<TAB>gate names      @<TAB>shared-smokes<TAB>language names (test_smoke_<name>.sh)
+#   shared-smokes is clause (8) of RULES.md, ONE TESTING OFFICER, the eight per-language smokes MEASURED there at 8-20 s in all.
+#   A name a directive gives that is not a file in the scripts directory REFUSES rc 2: a missing arm is never dropped quietly.
+# ONLY WIRED GATES ARE OWED (gate_wiring.tsv): a TASK gate is debt and reads red by design, a RULING gate is deliberately out of make test; the PROOF
+#   line counts the ones it left out as unwired=N.
+# HYPOTHESIS, marked: a gate that reads a file through a lib_ helper or a directory sweep names no path literal and is not found by refgates; that
+#   blind spot is the one preflight_arms.txt names for its own grep, and the eight smokes and the coo's lap are what cover a shared node.
+@	buildgates	test_gate_build_freshness_is_behavioural.sh test_gate_make_fetches_a_cached_build_on_a_clean_tree.sh
+@	shared-smokes	snobol4 icon prolog snocone rebus raku pascal polyglot
+SCRIP	src/	build,preflight,area,refgates
+SCRIP	Makefile	build,preflight,buildgates
+SCRIP	bootstrap/	build,preflight,refgates
+SCRIP	tools/	preflight,refgates
+SCRIP	docs/	-
+SCRIP	miscellaneous/	-
+SCRIP	README.md	-
+SCRIP	LICENSE	-
+SCRIP	NOTICE	-
+SCRIP	.	build,preflight,refgates
+harness	scripts/test_gate_*.sh	preflight,self
+harness	scripts/	preflight,refgates
+harness	*.md	-
+harness	LICENSE	-
+harness	.	preflight,refgates
+corpus	*.md	-
+corpus	.	preflight,refgates
+.github	scripts/	preflight,refgates
+.github	skills/	refgates
+.github	.	refgates
