@@ -312,7 +312,7 @@ mask_preflight
 TOTAL=0
 M3_PASS=0; M3_FAIL=0; M3_REJECT=0; M3_CRASH=0; M3_HANG=0; RED3=""
 M4_PASS=0; M4_FAIL=0; M4_REJECT=0; M4_CRASH=0; M4_HANG=0; RED4=""
-BOTH_PASS=0   # programs PASS in m3 AND m4 -- the suite table's reading (ceo-372), what util_score_row's --suite-pass names
+BOTH_PASS=0   # programs PASS in m3 AND m4 -- the suite table's reading (R-372), what util_score_row's --suite-pass names
 CSN_PASS=0; CSN_FAIL=0; CSN_EXT=0
 REGEN=0; REGEN_LIST=""
 EXCLUDED_LIST=""; CR_LIST=""
