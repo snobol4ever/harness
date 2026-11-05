@@ -2,7 +2,7 @@
 # test_design_batch_grader_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: batch-grader (the cio, 2026-11-05, on Lon's word: "For the test
 # harness, you should move INTO SCRIP. Let scrip run a list of source files on the command line, and reset its base memory cleanly each time."; the
 # design text in .github/skills/suites-and-grading/SKILL.md section 5; the SCRIP side ruled by the cto). The plan is corpus/tests/shared/batch_grader/STEPS.tsv;
-# the witnesses are the programs beside it, each .ref cut from its oracle (sbl -bf; icont and iconx), never from our output. A step's measurement is
+# the witnesses are the programs beside it, each .ref cut from its oracle (sbl -bf; icont and iconx; swipl -q -t halt for the Prolog witnesses of steps 8 and 9, CTO-522), never from our output. A step's measurement is
 # its PROBE, one bash command run from S4E_HOME, so a step reads RED until scrip has the switch and GREEN only while the witnesses say so.
 #   --list       print the steps and run nothing
 #   --step N     run step N's probe (600 s budget; S4E_SEAT names the seat whose /tmp/s4e/<seat> the probe writes under)
@@ -38,6 +38,9 @@ if [ "$mode" = cut ]; then
         w="${src%.sno}"; [ -f "$w.expect" ] && { echo "skip $w: the oracle cannot answer it ($w.expect is the record kind)"; continue; }
         in=/dev/null; [ -f "$w.in" ] && in="$w.in"
         bash "$HERE/util_oracle.sh" sbl --stdin "$in" --timeout 60 -- -bf "$src" > "$w.ref" 2>/dev/null; echo "cut $w.ref (sbl rc $?): $(wc -l < "$w.ref") lines"
+    done
+    for src in *.pl; do
+        w="${src%.pl}"; timeout -k 5 60 "$(swipl_bin)" -q -t halt "$src" < /dev/null > "$w.ref" 2>/dev/null; echo "cut $w.ref (swipl rc $?): $(wc -l < "$w.ref") lines"
     done
     for src in *.icn; do
         w="${src%.icn}"; x="$(mktemp "${TMPDIR:-/tmp}/bg_icx.XXXXXX")"
