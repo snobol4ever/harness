@@ -60,6 +60,8 @@ test_gate_add_ladder_witness_declares_every_attribute_column.sh	WIRED	-	-	-
 test_gate_add_ladder_witness_lands_the_entry_in_the_builders_order.sh	WIRED	-	-	-
 test_gate_aggregate_registry_keys_are_descrs.sh	WIRED	-	-	-
 test_gate_an_assignment_to_a_value_raises_111_at_run_time_instead_of_aborting.sh	WIRED	-	-	-
+test_gate_an_oracle_identity_mask_is_exempt_from_the_majority_rule.sh	WIRED	-	-	-
+test_gate_an_oracle_only_mask_removes_one_named_oracle_line.sh	WIRED	-	-	-
 test_gate_apply_reaches_every_formal_at_every_arity.sh	WIRED	-	-	-
 test_gate_area_smoke_grades_gimpel_drivers_the_boards_way.sh	WIRED	-	-	-
 test_gate_area_smoke_grades_ipl_entries_the_boards_way.sh	WIRED	-	-	-
@@ -93,9 +95,6 @@ test_gate_c2bb_the_generator_arm_is_a_coroutine_start_not_a_box_entry_from_c.sh	
 test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh	WIRED	-	-	-
 test_gate_capture_stdin_and_red_exit.sh	WIRED	-	-	-
 test_gate_cas_island_grows_with_the_declared_stack.sh	WIRED	-	-	-
-test_gate_an_oracle_only_mask_removes_one_named_oracle_line.sh	WIRED	-	-	-
-test_gate_an_oracle_identity_mask_is_exempt_from_the_majority_rule.sh	WIRED	-	-	-
-test_gate_line_mask_is_read_by_the_bash_runners.sh	WIRED	-	-	-
 test_gate_check_cache_hits_on_an_identical_tree.sh	WIRED	-	-	-
 test_gate_claim_and_next_announce_the_start_of_work.sh	WIRED	-	-	-
 test_gate_claim_computes_the_premise.sh	WIRED	-	-	-
@@ -221,6 +220,7 @@ test_gate_gc_pas_heap_cells_survive_forced_movement.sh	WIRED	-	-	-
 test_gate_gc_raku_every_frame_slot_has_a_kind.sh	WIRED	-	-	-
 test_gate_gc_rbx_is_the_frontier.sh	WIRED	-	-	-
 test_gate_gc_record_type_table_is_rooted_not_blanket_marked.sh	WIRED	-	-	-
+test_gate_gc_rule_1_and_rule_2_mask_coverage_stays_at_or_over_its_floor.sh	WIRED	-	-	-
 test_gate_gc_runtime_compiled_code_bakes_no_arena_address.sh	WIRED	-	-	-
 test_gate_gc_scan_subject_saves_are_rooted.sh	WIRED	-	-	-
 test_gate_gc_site_table_entries_are_four_quads_and_carry_their_word_kind_mask.sh	WIRED	-	-	-
@@ -432,6 +432,7 @@ test_gate_ladder_forms_check_selftest.sh	WIRED	-	-	-
 test_gate_ladder_walk_v4_exempts_package_class_rows.sh	WIRED	-	-	-
 test_gate_lib_rungs_extract_refuses_without_a_language.sh	WIRED	-	-	-
 test_gate_library_driver_generator.sh	WIRED	-	-	-
+test_gate_line_mask_is_read_by_the_bash_runners.sh	WIRED	-	-	-
 test_gate_logtalk_column_stop_rows_disagree_with_swipl.sh	WIRED	-	-	-
 test_gate_logtalk_max_depth_rows_disagree_with_swipl.sh	WIRED	-	-	-
 test_gate_logtalk_population_is_named_and_sums.sh	WIRED	-	-	-
