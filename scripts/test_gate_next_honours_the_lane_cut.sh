@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test_gate_next_honours_the_lane_cut.sh -- THE DEPENDENCY-PROMOTION PATH IN `next` MUST HONOUR THE SAME
+# test_gate_next_honours_the_lane_cut.sh -- (box-scheduler step 32, the cio 2026-11-04: `next` writes nothing and serves a FREE row, a promoted blocker included, as ^FREE; a served row reads ^(LOCKED|FREE) here, LOCKED being the pre-step-32 word) THE DEPENDENCY-PROMOTION PATH IN `next` MUST HONOUR THE SAME
 # LANE CUT AND MODE LANGUAGE FREEZE THE ORDINARY FREE-ROW PATH ALREADY APPLIES, BEFORE IT EVER CLAIMS A ROW.
 # Row next-dependency-promotion-walks-around-the-mode-lane-filter (seat01 measured the class; hq_B minted).
 #
@@ -164,9 +164,9 @@ mk 0 ${_own_lang}-blocked-row      "$_own_owner" BLOCKED-ON:snobol4-blocker-row
 mk 5 snobol4-blocker-row   unassigned FREE
 mk 1 ${_own_lang}-fallback-row     unassigned FREE
 out="$(run_next seat07)"
-grep -qE "^LOCKED.*${_own_lang}-fallback-row" <<<"$out" && ! grep -qE '^LOCKED.*snobol4-blocker-row' <<<"$out" \
+grep -qE "^(LOCKED|FREE).*${_own_lang}-fallback-row" <<<"$out" && ! grep -qE '^(LOCKED|FREE).*snobol4-blocker-row' <<<"$out" \
   && ck ok "(a) own-lane pass serves the genuine own-lane fallback row, not the cross-lane promoted blocker" \
-  || ck no "(a) a cross-lane blocker must not be promoted while an own-lane row is servable -- got: $(grep -E '^LOCKED' <<<"$out")"
+  || ck no "(a) a cross-lane blocker must not be promoted while an own-lane row is servable -- got: $(grep -E '^(LOCKED|FREE)' <<<"$out")"
 grep -qi 'REFUSED PROMOTION' <<<"$out" && grep -q "${_own_lang}-blocked-row" <<<"$out" && grep -q 'snobol4-blocker-row' <<<"$out" \
   && ck ok "(b) the refusal is printed, naming both the blocked row and the refused blocker" \
   || ck no "(b) a refused promotion must be a visible REFUSAL naming both topics, never a silent skip -- got: $out"
@@ -177,9 +177,9 @@ reset_q
 mk 0 ${_own_lang}-blocked-row2     "$_own_owner" BLOCKED-ON:snobol4-blocker-row2
 mk 5 snobol4-blocker-row2  unassigned FREE
 out="$(run_next seat07)"
-grep -qE '^LOCKED.*snobol4-blocker-row2' <<<"$out" \
+grep -qE '^(LOCKED|FREE).*snobol4-blocker-row2' <<<"$out" \
   && ck ok "(c) cross-lane fallback still promotes the blocker when the seat's own lane has nothing else" \
-  || ck no "(c) dependency promotion must still work cross-lane when nothing own-lane is servable -- got: $(grep -E '^LOCKED|QUEUE EMPTY' <<<"$out")"
+  || ck no "(c) dependency promotion must still work cross-lane when nothing own-lane is servable -- got: $(grep -E '^(LOCKED|FREE)|QUEUE EMPTY' <<<"$out")"
 fi
 
 # --- (d)+(e)+(f): THE MODE LANGUAGE FREEZE ---------------------------------------------------------------
@@ -195,9 +195,9 @@ mk 0 ${_own_lang}-blocked-row3       "$_own_owner" BLOCKED-ON:${_own_lang}-froze
 mk 5 ${_own_lang}-frozen-blocker     "$_own_owner" FREE
 mk 1 snobol4-fallback-row    unassigned FREE
 out="$(run_next seat07)"
-grep -qE '^LOCKED.*snobol4-fallback-row' <<<"$out" && ! grep -qE "^LOCKED.*${_own_lang}-frozen-blocker" <<<"$out" \
+grep -qE '^(LOCKED|FREE).*snobol4-fallback-row' <<<"$out" && ! grep -qE "^(LOCKED|FREE).*${_own_lang}-frozen-blocker" <<<"$out" \
   && ck ok "(d) an active SNOBOL4-only freeze refuses a same-lane blocker of the OTHER language; the SNOBOL4 fallback row is served instead" \
-  || ck no "(d) the freeze must refuse promotion by LANGUAGE even when the lane matches -- got: $(grep -E '^LOCKED' <<<"$out")"
+  || ck no "(d) the freeze must refuse promotion by LANGUAGE even when the lane matches -- got: $(grep -E '^(LOCKED|FREE)' <<<"$out")"
 grep -qi 'REFUSED PROMOTION' <<<"$out" && grep -qi 'SNOBOL4' <<<"$out" \
   && ck ok "(e) the freeze refusal is printed and names the frozen language" \
   || ck no "(e) a freeze-refused promotion must be a visible, named REFUSAL, never a silent skip -- got: $out"
@@ -211,9 +211,9 @@ mk 0 ${_own_lang}-blocked-row3       "$_own_owner" BLOCKED-ON:${_own_lang}-froze
 mk 5 ${_own_lang}-frozen-blocker     "$_own_owner" FREE
 mk 1 snobol4-fallback-row    unassigned FREE
 out="$(run_next seat07)"
-grep -qE "^LOCKED.*${_own_lang}-frozen-blocker" <<<"$out" \
+grep -qE "^(LOCKED|FREE).*${_own_lang}-frozen-blocker" <<<"$out" \
   && ck ok "(f) CONTROL: the same same-lane blocker IS promoted when no MODE freeze is active" \
-  || ck no "(f) CONTROL FAILED: with no freeze active, promotion must work exactly as before this row -- got: $(grep -E '^LOCKED' <<<"$out")"
+  || ck no "(f) CONTROL FAILED: with no freeze active, promotion must work exactly as before this row -- got: $(grep -E '^(LOCKED|FREE)' <<<"$out")"
 
 # (g) POSITIVE CONTROL: a language-neutral promotion candidate (no recognized prefix) is never frozen out.
 set_mode 'FLEET-8
@@ -222,9 +222,9 @@ reset_q
 mk 0 ${_own_lang}-blocked-row4        "$_own_owner" BLOCKED-ON:postoffice-tooling-blocker
 mk 5 postoffice-tooling-blocker unassigned FREE
 out="$(run_next seat07)"
-grep -qE '^LOCKED.*postoffice-tooling-blocker' <<<"$out" \
+grep -qE '^(LOCKED|FREE).*postoffice-tooling-blocker' <<<"$out" \
   && ck ok "(g) CONTROL: a language-neutral blocker is promoted even under an active freeze" \
-  || ck no "(g) CONTROL FAILED: a topic with no recognized language prefix must never be frozen out -- got: $(grep -E '^LOCKED' <<<"$out")"
+  || ck no "(g) CONTROL FAILED: a topic with no recognized language prefix must never be frozen out -- got: $(grep -E '^(LOCKED|FREE)' <<<"$out")"
 
 # --- (h)+(i)+(j): A ROW OWNED BY THE SEAT'S OWN HQ IS SERVED -------------------------------------------
 # ⛔ seat09's EXACT CASE, 2026-09-04 19:52, when SIX SEATS SAT IDLE at load 0.65 with sixteen up: a seat whose
@@ -238,16 +238,16 @@ reset_q
 printf 'hq_P\n' > "$W/seat07/HQ"
 mk 1 snobol4-row-owned-by-my-own-hq  hq_P FREE
 out="$(run_next seat07)"
-grep -qE '^LOCKED.*snobol4-row-owned-by-my-own-hq' <<<"$out" \
+grep -qE '^(LOCKED|FREE).*snobol4-row-owned-by-my-own-hq' <<<"$out" \
   && ck ok "(h) a FREE row owned by the seat's OWN HQ is served (seat09's case: six seats idle before this)" \
-  || ck no "(h) an own-HQ row must be served, not skipped as if a rival seat held it -- got: $(grep -E '^LOCKED|QUEUE EMPTY' <<<"$out")"
+  || ck no "(h) an own-HQ row must be served, not skipped as if a rival seat held it -- got: $(grep -E '^(LOCKED|FREE)|QUEUE EMPTY' <<<"$out")"
 grep -qiE 'owned by your HQ' <<<"$out" \
   && ck ok "(i) and the serve REASON says so, so a reader can tell it from an unowned pick" \
   || ck no "(i) the printout must name why it was served -- got: $out"
 reset_q
 mk 1 icon-row-owned-by-another-hq  hq_B FREE
 out="$(run_next seat07)"
-! grep -qE '^LOCKED.*icon-row-owned-by-another-hq' <<<"$out" \
+! grep -qE '^(LOCKED|FREE).*icon-row-owned-by-another-hq' <<<"$out" \
   && ck ok "(j) CONTROL: a row owned by a DIFFERENT HQ is still skipped -- the lane boundary holds" \
   || ck no "(j) CONTROL FAILED: another HQ's row must never be auto-served; that is what `claim` is for"
 printf 'hq_B\n' > "$W/seat07/HQ"

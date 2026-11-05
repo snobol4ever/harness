@@ -909,6 +909,36 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     ls "$w/plant-x/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
+s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next writes nothing, serves the newest assign first, prints a FREE row unlocked; an assigned row's claim passes the cap
+    local w o why="" before after a b c x y z
+    [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-serve]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_serve.XXXXXX")" || { echo "REFUSE(2) [next --probe-serve]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$w"' EXIT; mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
+    a="serve-older-assign-$$"; b="serve-newer-assign-$$"; c="serve-free-$$"; x="serve-live-x-$$"; y="serve-live-y-$$"; z="serve-assigned-z-$$"
+    printf '# plant queue (box-scheduler step 32)\n1\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tFREE\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tASSIGNED:%s\n' \
+        "$a" "$ME" "$ME" "$b" "$ME" "$ME" "$c" "$ME" "$x" "$ME" "$ME" "$y" "$ME" "$ME" "$z" "$ME" "$ME" > "$w/QUEUE.tsv"
+    for t in "$a" "$b" "$c" "$x" "$y" "$z"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: false\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" > "$w/tasks/$t.task.md"; done
+    printf '%s\nASSIGNED-BY coo 2026-11-04T10:00:00Z\n' "$ME" > "$w/claims/$a.claim"; printf '%s\nASSIGNED-BY coo 2026-11-04T12:00:00Z\n' "$ME" > "$w/claims/$b.claim"
+    printf '%s\nRUNNING\n' "$ME" > "$w/claims/$x.claim"; printf '%s\nRUNNING\n' "$ME" > "$w/claims/$y.claim"; printf '%s\nASSIGNED-BY coo 2026-11-04T11:00:00Z\n' "$ME" > "$w/claims/$z.claim"
+    run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 S4E_NO_PREMISE_CHECK=1 bash "$0" "$@" 2>&1; }
+    before="$(cat "$w/QUEUE.tsv" "$w"/claims/*.claim | md5sum)"
+    o="$(run next)"; after="$(cat "$w/QUEUE.tsv" "$w"/claims/*.claim | md5sum)"
+    [ "$before" = "$after" ] || why="$why next wrote to the queue or a claim;"
+    printf '%s\n' "$o" | grep -q "^ASSIGNED $b " || why="$why the newest assign ($b, 12:00) was not served first [$(printf '%s' "$o" | grep -m1 '^ASSIGNED\|^RESUME\|^FREE\|^LOCKED' | cut -c1-80)];"
+    printf '%s\n' "$o" | grep -q 'claim ' || why="$why next did not tell the seat to claim;"
+    grep -qx RUNNING "$w/claims/$b.claim" && why="$why next wrote RUNNING;"
+    rm -f "$w/claims/$a.claim" "$w/claims/$b.claim" "$w/claims/$x.claim" "$w/claims/$y.claim" "$w/claims/$z.claim"
+    printf '# plant queue\n2\t%s\t%s\tFREE\n' "$c" "$ME" > "$w/QUEUE.tsv"
+    o="$(run next)"; printf '%s\n' "$o" | grep -q "^FREE $c " || why="$why a free row was not served as FREE [$(printf '%s' "$o" | grep -m1 '^[A-Z]* serve' | cut -c1-80)];"
+    [ -e "$w/claims/$c.claim" ] && why="$why next locked the free row;"
+    printf '2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tASSIGNED:%s\n' "$x" "$ME" "$ME" "$y" "$ME" "$ME" "$z" "$ME" "$ME" >> "$w/QUEUE.tsv"
+    printf '%s\nRUNNING\n' "$ME" > "$w/claims/$x.claim"; printf '%s\nRUNNING\n' "$ME" > "$w/claims/$y.claim"; printf '%s\nASSIGNED-BY coo 2026-11-04T11:00:00Z\n' "$ME" > "$w/claims/$z.claim"
+    o="$(run claim "$z")"; grep -qx RUNNING "$w/claims/$z.claim" || why="$why claim of an assigned row was refused past two live claims (the cap counted it) [$(printf '%s' "$o" | grep -m1 REFUSED | cut -c1-100)];"
+    o="$(run claim "$c")"; grep -qx RUNNING "$w/claims/$c.claim" 2>/dev/null && why="$why a fourth live claim of a FREE row passed the cap of two;"
+    [ -z "$why" ] && { echo "NEXT writes=0 order=assign-time counted_live=0 (probe: two assigned rows served newest-assign first with no write, a FREE row served unlocked, an assigned row claimed past two live claims, a free row refused)"; exit 0; }
+    echo "NEXT PROBE RED:$why"; exit 1; }
 s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arrivals, one heading across two verbs; after check one line; a third arrival, one heading again
     local w o1 o2 o3 o4 h why=""
     [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-once]: S4E_SEAT unset"; exit 2; }
@@ -3606,7 +3636,8 @@ TASKEOF
            printf '  `claim` and `next` run it and REFUSE the lock when it goes red, so the row gets rewritten instead of\n' >&2
            printf '  worked. Six seats lost an hour each to a stale premise on 2026-09-20; every one was cheap to check.\n' >&2; }
          exit 0;;
-  next)  q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
+  next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
+         q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line
          # ⛔⭐ MODE GATES DISPATCH -- IT IS NOT DECORATION (row next-refuses-to-dispatch-to-an-hq-seat-when-mode-
          # line-1-is-ceo; hq_C measured 2026-09-03 18:51). `next` printed "MODE: CEO" and dispatched in the SAME
@@ -3758,16 +3789,15 @@ TASKEOF
            # START -- the row stays ASSIGNED, unflipped, un-served, and the seat reads why. Refusing to serve is
            # not unclaiming: putting the row back is the HQ's call or an explicit `unclaim`, never a side effect.
            s4e_premise_gate "$t" next || continue
-           echo "RUNNING" >> "$c"
            s4e_cross_lane_notice "$t" assigned
-           serve "$t" "ASSIGNED->RUNNING" "(dispatched by $(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f2))"; exit 0
-         done < <(for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue
+           serve "$t" "ASSIGNED" "(assigned by $(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f2) at $(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f3); newest assign first; start it: s4e_msg.sh claim $t)"; exit 0
+         done < <(for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue   # box-scheduler step 32: next writes nothing and serves ASSIGNED rows in assign order, the newest first
              [ "$(head -1 "$c")" = "$ME" ] || continue
              grep -q '^DONE$' "$c" && continue
              grep -q '^ASSIGNED-BY ' "$c" || continue
              grep -q '^RUNNING$' "$c" && continue
-             t="$(basename "$c" .claim)"; printf '%s\t%s\t%s\n' "$(qrank "$t")" "$(s4e_mint_ts "$t")" "$t"
-           done | sort -t$'\t' -s -k1,1n -k2,2r | cut -f1,3-)
+             t="$(basename "$c" .claim)"; printf '%s\t%s\n' "$(grep -m1 '^ASSIGNED-BY ' "$c" | cut -d' ' -f3)" "$t"
+           done | sort -t$'\t' -s -k1,1r)
          # PASS 2 -- my own unfinished work, same rank-sort fix, same reason.
          while IFS=$'\t' read -r _rk t; do
            [ -n "${t:-}" ] || continue
@@ -3777,7 +3807,6 @@ TASKEOF
              continue; fi
            if [ -z "$row" ]; then
              echo "⛔ $q IS MISSING OR HAS NO ROWS — cannot tell a renamed row from an unreadable queue, so RESUMING $t rather than unpinning you. Ask hq before trusting any next(1) verdict."; fi
-           grep -q '^RUNNING$' "$c" || echo "RUNNING" >> "$c"
            s4e_cross_lane_notice "$t" resume
            serve "$t" "RESUME" "(yours, unfinished — s4e_msg.sh done $t when the handoff clause is met)"; exit 0
          done < <(for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue
@@ -3850,27 +3879,25 @@ TASKEOF
                  # not just a verdict, per the row's own DONE-WHEN ("prints the annotation text").
                  printf '⛔ %s reached DONE but its state explicitly excludes %s from self-clear (DOES-NOT-CLEAR) — staying %s.\n' "$resolved_blk" "$topic" "$step" >&2
                  printf '   %s state: %s\n' "$resolved_blk" "$(s4e_row_state "$resolved_blk")" >&2
-               elif [ -n "$resolved_blk" ] && s4e_is_request_id "$resolved_blk" && "$0" park "$topic" "ASSIGNED:$(s4e_request_seat "$resolved_blk")" >/dev/null 2>&1; then step="ASSIGNED:$(s4e_request_seat "$resolved_blk")"
-               elif [ -n "$resolved_blk" ] && _rs="$(s4e_restore_state "$topic"; :)" && "$0" park "$topic" "$_rs" >/dev/null 2>&1; then step="$_rs"
+               elif [ -n "$resolved_blk" ]; then   # step 32: next writes nothing; the sweep (step 31) and done (step 35) write the restored state
+                 if s4e_is_request_id "$resolved_blk"; then step="ASSIGNED:$(s4e_request_seat "$resolved_blk")"; else step="$(s4e_restore_state "$topic"; :)"; fi
+                 printf '  (%s waited on %s, which is resolved; read as %s here, written by the sweep)\n' "$topic" "$resolved_blk" "$step"
                # ⭐ CURE 1 — DEPENDENCY INVERSION (picker-dependency-and-boomerang-blindness). The blocker is
                # un-DONE, so the old code skipped this row and walked on down the rank order — which is how a
                # blocker RANKED BELOW the umbrella it blocks got served after the work it blocks. Reaching this
                # row at rank N is itself the proof that its blocker deserves rank N: serve the BLOCKER, here.
                elif promo="$(s4e_servable_blocker "$topic")" && [ -n "$promo" ] && s4e_promotion_admissible "$promo" "$topic" "$rank" \
-                    && s4e_promotion_placeholder_ok "$promo" "$topic" "$rank" && "$0" claim "$promo" >"$_cl_out" 2>&1; then
-                 sed -n '/^-- the neighbourhood/,$p' "$_cl_out"; rm -f "$_cl_out"
-                 echo "RUNNING" >> "$PO/claims/$promo.claim"
+                    && s4e_promotion_placeholder_ok "$promo" "$topic" "$rank"; then
                  # ⛔ THE PROMOTED BLOCKER IS A SERVED ROW LIKE ANY OTHER, so it is probed like any other. A
                  # blocker that is already satisfied is the WORST row to hand out unprobed: it is blocking
                  # something else, so closing it here also un-blocks the row that named it.
-                 s4e_dispatch_gate "$promo" "$rank" || continue
                  # ⭐ THE CHAIN, NOT THE FIRST HOP -- see s4e_blocker_chain: a transitive promotion printed the first
                  # hop as "un-DONE, unclaimed and FREE" and served a row the line never named (the ceo, case (b)).
                  printf '⭐ DEPENDENCY INVERSION — rank-%s %s is BLOCKED-ON %s; %s is un-DONE, unclaimed and FREE.\n' "$rank" "$topic" "$(s4e_blocker_chain "$topic" "$promo")" "$promo"
                  printf '   Rank is a human guess at priority; a dependency is a fact, and a fact outranks a guess.\n'
                  printf '   You are being served THE BLOCKER at the blocked row'"'"'s own rank position.\n'
                  printf '   When %s lands DONE, %s un-blocks ITSELF — its state column is the self-clearing spelling.\n' "$promo" "$topic"
-                 serve "$promo" "LOCKED" "(promoted over blocked $topic, rank $rank)"; exit 0
+                 serve "$promo" "FREE" "(promoted over blocked $topic, rank $rank; take it: s4e_msg.sh claim $promo)"; exit 0   # step 32: next locks nothing, a promoted blocker is served FREE like any other
                fi ;;
            esac
            # ⭐ CURE 3 — GOVERNANCE-GATED ROWS SKIP HERE, ATTRIBUTABLY. The generic non-FREE skip below would
@@ -4003,14 +4030,11 @@ TASKEOF
            # for the announcement, which is the half of the cure the SERVED seat must actually read. So the output is
            # captured and the neighbourhood block is re-printed here. The notices themselves were already delivered by
            # that inner call, under this same identity; re-announcing would double every inbox.
-           if "$0" claim "$topic" >"$_cl_out" 2>&1; then
-             sed -n '/^-- the neighbourhood/,$p' "$_cl_out"; rm -f "$_cl_out"
-             echo "RUNNING" >> "$PO/claims/$topic.claim"
-             # ⛔⭐ ONE CALL, TWO SERVE PATHS -- see s4e_dispatch_gate. Never inline this again.
-             s4e_dispatch_gate "$topic" "$rank" || continue
+           if s4e_premise_gate "$topic" next >"$_cl_out" 2>&1; then   # step 32: next locks nothing; `claim <topic>` is the only writer of a RUNNING claim
+             rm -f "$_cl_out"
              s4e_report_owned_skips
              s4e_report_rankcap_skips
-             serve "$topic" "LOCKED" "($_serve_reason)"; exit 0
+             serve "$topic" "FREE" "($_serve_reason; take it: s4e_msg.sh claim $topic)"; exit 0
            elif grep -q 'THE PREMISE OF THIS ROW IS RED' "$_cl_out" 2>/dev/null; then
              # ⛔⭐ A FAILED INNER CLAIM WAS SILENT HERE, AND A SILENT REFUSAL IS THE ONE OUTCOME THIS ROW
              # FORBIDS. `next` captures the claim's streams (CEO-1002, for the announcement), so a premise
