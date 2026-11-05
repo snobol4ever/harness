@@ -1705,6 +1705,7 @@ class Entry:
         self.answer_file = None       # "temp" when ALL.csv's answer column reads temp-sorted: the graded output is that file's lines, sorted (R-1927)
         self.mode_gap_s = 0
         self.stack_kb = None      # int KB of STACK this entry declares (R-1225), or None = the runtime's 64 MB floor.
+        self.timeout_s = None     # int seconds this entry DECLARES as its bound (test-cycle step 6, CTO-522), or None = the harness TIMEOUT.
         self.heap_kb = None       # int KB this entry DECLARES it needs, or None = the shipped default.
                                    # Lon 2026-09-23 / R-1167. DECLARED in ALL.csv's heap_kb column (or a
                                    # travelling <stem>.heap sidecar), never inferred -- a program's own text
@@ -1823,7 +1824,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, R-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1842,7 +1843,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         _gap("m4")
@@ -1850,7 +1851,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -2722,7 +2723,7 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin,
                              want_rc=_want, prog_argv=getattr(entry, 'argv', None),
                              mask=getattr(entry, 'mask', None),
-                             where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None),
+                             where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=(None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s),
                              compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
                              merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
                              answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
@@ -3709,6 +3710,16 @@ def cmd_run(args):
         print(f"DECLARED STACK: {_nst} of {len(entries)} entr(y/ies) carry a stack_kb declaration from "
               f"{_stack_src} and run at it; the rest run at the runtime's {GC_STACK_FLOOR_KB} KB floor. "
               + ", ".join(f"{_e.name}={_e.stack_kb}KB" for _e in entries if _e.stack_kb), file=sys.stderr)
+    # ⭐ AND THE timeout_s COLUMN, the same way (CTO-522, test-cycle step 6): the declared bound a program may run for, the third
+    # declared size beside heap_kb and stack_kb. A bound the run does not honour would be a declaration that lies, so it is applied here.
+    _tmo_decl, _tmo_src = timeout_declarations(args.sno)
+    if _tmo_decl:
+        for _e in entries:
+            if _e.name in _tmo_decl:
+                _e.timeout_s = _tmo_decl[_e.name]
+        _ntm = sum(1 for _e in entries if _e.timeout_s)
+        print(f"DECLARED TIMEOUT: {_ntm} of {len(entries)} entr(y/ies) carry a timeout_s declaration from {_tmo_src} and run at it unless TIMEOUT is set; "
+              f"the rest run at the harness TIMEOUT; an explicit TIMEOUT in the environment keeps its own bound.", file=sys.stderr)
     # ⛔ A MISSING DECLARATION IS NAMED ON THIS RUN'S OWN OUTPUT (Lon 2026-09-28, R-1353 gap 5: "a missing declaration runs silently
     # at the default"): the counts above went to stderr and said nothing at all when the column or the table was absent. Every entry that
     # declares no heap_kb or no stack_kb is NAMED on stdout, with where the declaration was looked for, so a board's transcript shows it.
@@ -4708,6 +4719,66 @@ def heap_declarations(sno_path):
 
 
 
+def timeout_sidecar_path(sno_path):
+    """<stem>.timeout beside an extracted pair: the declared bound in seconds that travels with the entry (test-cycle step 6,
+    CTO-522). stack_sidecar_path's twin, for the same reason: an extracted entry has no sibling ALL.csv, so a declaration that
+    lived only in the csv would be silently dropped by the workflow the fleet uses to cure."""
+    return str(Path(sno_path).with_suffix(".timeout"))
+
+
+def validate_timeout_s(raw, where):
+    """Parse ONE timeout_s cell into a whole number of seconds, or refuse rc=2 naming the cell; None for the empty cell, which
+    means "absent: the harness TIMEOUT". The bound is a declaration, not a measurement: a program past its bound is a HANG, so a
+    bound below one second or above a day is a typo and is refused, never clamped."""
+    if raw is None:
+        return None
+    t = str(raw).strip()
+    if not t:
+        return None
+    if not t.isdigit():
+        refuse(f"{where}: timeout_s={t!r} is not a plain integer count of seconds")
+    v = int(t)
+    if not 1 <= v <= 86400:
+        refuse(f"{where}: timeout_s={v} is outside 1..86400 seconds")
+    return v
+
+
+def timeout_declarations(sno_path):
+    """{entry: declared timeout in seconds} for the suite at `sno_path`, and the evidence -- stack_declarations' twin in the same
+    order: a travelling <stem>.timeout sidecar first, then the sibling ALL.csv's timeout_s column. ({}, None) when neither declares
+    anything: every entry runs at the harness TIMEOUT, as before."""
+    _p = Path(timeout_sidecar_path(sno_path))
+    if _p.is_file():
+        out = {}
+        for ln, line in enumerate(_p.read_text(encoding="utf-8").splitlines(), 1):
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            name, _, secs = line.partition("\t")
+            v = validate_timeout_s(secs, f"{_p}:{ln}")
+            if v is not None:
+                out[name.strip()] = v
+        if out:
+            return out, _p.name
+    _csv_path = Path(sno_path).parent / "ALL.csv"
+    if _csv_path.is_file():
+        import csv as _csvm
+        out = {}
+        try:
+            with open(_csv_path, newline="") as _f:
+                rdr = _csvm.DictReader(_f)
+                if not rdr.fieldnames or "timeout_s" not in rdr.fieldnames:
+                    return {}, None
+                for _n, _row in enumerate(rdr, 2):
+                    v = validate_timeout_s(_row.get("timeout_s"), f"{_csv_path}:{_n}")
+                    if v is not None:
+                        out[_row.get("entry")] = v
+        except OSError:
+            return {}, None
+        if out:
+            return out, _csv_path.name
+    return {}, None
+
+
 def stack_sidecar_path(sno_path):
     """<stem>.stack beside an extracted pair, the stack's twin of heap_sidecar_path (R-1225): the declaration travels with the
     entry, one line NAME<TAB>KB, or it is not a declaration."""
@@ -5237,6 +5308,22 @@ def cmd_extract_family(args):
                 _sf.write("%s\t%s\n" % (_n, _v))
     elif os.path.exists(stack_sidecar_path(args.out_sno)):
         os.remove(stack_sidecar_path(args.out_sno))
+    # ⭐ AND timeout_s TRAVELS THE SAME WAY (CTO-522, test-cycle step 6): an extracted pair carries its declared bound in <stem>.timeout.
+    _tmo_sel = {}
+    with open(args.csv, newline="") as _cf:
+        for _r in _csv.DictReader(_cf):
+            _v = (_r.get("timeout_s") or "").strip()
+            if _v:
+                _tmo_sel[_r["entry"]] = _v
+    _mine = [(_e.name, _tmo_sel[_e.name]) for _e in sel if _e.name in _tmo_sel]
+    if _mine:
+        with open(timeout_sidecar_path(args.out_sno), "w", encoding="utf-8") as _tf:
+            _tf.write("# timeout_s declaration carried out of %s by extract-family (family=%s). entry<TAB>seconds.\n"
+                      % (Path(args.csv).name, args.family))
+            for _n, _v in _mine:
+                _tf.write("%s\t%s\n" % (_n, _v))
+    elif os.path.exists(timeout_sidecar_path(args.out_sno)):
+        os.remove(timeout_sidecar_path(args.out_sno))
     # ⭐ AND THE COMMAND LINE (clause 8 (f), R-1281): compile_args and run_args travel in <stem>.cmdline, NAME<TAB>compile_args<TAB>
     # run_args, which read_command_line_columns reads first for a pair with no ALL.csv.
     _cmd_sel = {}
@@ -5276,11 +5363,13 @@ def _write_extracted_unit_sidecars(suite_sno, entry_name, out_sno):
     stem = Path(out_sno).stem
     kb = validate_heap_kb(row.get("heap_kb"), where) if row else None
     st = validate_stack_kb(row.get("stack_kb"), where) if row else None
+    tmo = validate_timeout_s(row.get("timeout_s"), where) if row else None
     ca = validate_args_cell(row.get("compile_args"), "compile_args", where) if row else None
     ra = validate_args_cell(row.get("run_args"), "run_args", where) if row else None
     mark = "# carried out of %s by extract (entry %s)." % (csv_path.name, entry_name)
     for path, body in ((heap_sidecar_path(out_sno), None if kb is None else "%s\t%s" % (stem, kb)),
                        (stack_sidecar_path(out_sno), None if st is None else "%s\t%s" % (stem, st)),
+                       (timeout_sidecar_path(out_sno), None if tmo is None else "%s\t%s" % (stem, tmo)),
                        (cmdline_sidecar_path(out_sno), None if not (ca or ra) else "%s\t%s\t%s" % (stem, " ".join(ca or []), " ".join(ra or [])))):
         if body is not None:
             Path(path).write_text(mark + "\n" + body + "\n", encoding="utf-8")
