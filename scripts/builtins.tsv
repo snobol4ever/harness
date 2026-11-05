@@ -1278,3 +1278,17 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1279	pl	$undo_take	1	1	rt_pl_dop_undo_take	leaf	-	-	0	dop_direct
 1280	rk	__rk_slurp	-	-	bt___rk_slurp	leaf	-	-	0	fn_arms,rk_targets
 1281	rk	__rk_meth_nc	-	-	bt___rk_meth_nc	open	-	-	0	fn_arms,rk_targets,rt_known
+1282	icn	ICN$UMKDIR	1	2	bt_ICNx24UMKDIR	leaf	-	-	0	fn_arms
+1283	icn	ICN$URMDIR	1	1	bt_ICNx24URMDIR	leaf	-	-	0	fn_arms
+1284	icn	ICN$UCHMOD	2	2	bt_ICNx24UCHMOD	leaf	-	-	0	fn_arms
+1285	icn	ICN$UUMASK	0	1	bt_ICNx24UUMASK	leaf	-	-	0	fn_arms
+1286	icn	ICN$USETENV	2	2	bt_ICNx24USETENV	leaf	-	-	0	fn_arms
+1287	icn	ICN$USYS_ERRSTR	1	1	bt_ICNx24USYS_ERRSTR	leaf	-	-	0	fn_arms
+1288	icn	ICN$UGETPID	0	0	bt_ICNx24UGETPID	leaf	-	-	0	fn_arms
+1289	icn	ICN$UGETPPID	0	0	bt_ICNx24UGETPPID	leaf	-	-	0	fn_arms
+1290	icn	ICN$UGETPGRP	0	0	bt_ICNx24UGETPGRP	leaf	-	-	0	fn_arms
+1291	icn	ICN$UGETUID	0	0	bt_ICNx24UGETUID	leaf	-	-	0	fn_arms
+1292	icn	ICN$UGETEUID	0	0	bt_ICNx24UGETEUID	leaf	-	-	0	fn_arms
+1293	icn	ICN$UGETGID	0	0	bt_ICNx24UGETGID	leaf	-	-	0	fn_arms
+1294	icn	ICN$UGETEGID	0	0	bt_ICNx24UGETEGID	leaf	-	-	0	fn_arms
+1295	icn	ICN$UCHDIR	0	1	bt_ICNx24UCHDIR	leaf	-	-	0	fn_arms
