@@ -169,6 +169,74 @@ s4e_baton_job_set() {   # <topic> <id> <tube>: one QUEUE-JOB line after LINKS, r
     else sed -i "0,/^LINKS:/{/^LINKS:/a\\
 QUEUE-JOB: $2 tube=$3
 }" "$_b"; fi; }
+# ⭐ fleet-queue step 6 (the cio 2026-11-05; skill fleet-bus section 8): A ROW'S JOB FOLLOWS ITS ROW. done DELETES the row's job once its DONE line
+# is written; park BURIES it while the row is out of the picker; a lift of that park KICKS it back to ready (done's blocker unblock, the step-31
+# verdict, park FREE, a grant). A job a live holder reserves belongs to the holder's connection, so the holder does the delete (on DONE), the bury
+# (on PARK) and the exit (on KILL), and writes BURIED back to the claim.
+s4e_done_job_id() {   # <topic> -> the row's job id: the RESERVED job of its claim, else the baton's QUEUE-JOB
+    local _c="$PO/claims/$1.claim" _j=""
+    [ -f "$_c" ] && _j="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
+    [ -n "$_j" ] || _j="$(s4e_baton_job_get "$1" | awk '{print $1}')"
+    printf '%s' "$_j"; }
+s4e_park_state_buries() {   # <state>: rc 0 for a state that takes a row OUT of the picker, and so buries its job; FREE, ASSIGNED, CLAIMED and DONE do not
+    case "$1" in PARKED|PARKED-*|BLOCKED|BLOCKED-ON:*|GRANT-NEEDED|GRANT-NEEDED:*|RETIRED|RETIRED:*|SUPERSEDED|SUPERSEDED:*) return 0;; *) return 1;; esac; }
+s4e_kick_row() {   # <topic> <who>: a row that leaves its park kicks its buried job back to ready; prints kicked_by=<who> job=<id>, or kicked_by=none when there is nothing buried to kick
+    local _j
+    _j="$(s4e_baton_job_get "$1" | awk '{print $1}')"
+    [ -n "$_j" ] || { printf 'kicked_by=none job=none\n'; return 0; }
+    if python3 "$S4E/harness/scripts/util_queue.py" kick-job "$_j" >/dev/null 2>&1; then printf 'kicked_by=%s job=%s\n' "$2" "$_j"
+    else printf 'kicked_by=none job=%s (not buried: nothing to kick)\n' "$_j"; fi
+    return 0; }
+s4e_done_delete_job() {   # <topic>: done deletes the row's job once its DONE line is written. A job a live holder reserves cannot be deleted from a second connection (beanstalkd answers NOT_FOUND), so the holder deletes it on that DONE line: wait up to 12 s for it. The receipt goes on the claim as JOB-RECEIPT.
+    local _t="$1" _c="$PO/claims/$1.claim" _j _how="" _i _s
+    _j="$(s4e_done_job_id "$_t")"
+    if [ -z "$_j" ]; then printf 'job_deleted=0 job=none (the row has no job)\n'; return 0; fi
+    if python3 "$S4E/harness/scripts/util_queue.py" delete "$_j" >/dev/null 2>&1; then _how=bus
+    elif ! python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" >/dev/null 2>&1; then _how=gone
+    else
+        for _i in $(seq 1 12); do sleep 1; python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" >/dev/null 2>&1 || { _how=holder; break; }; done
+    fi
+    if [ -n "$_how" ]; then
+        printf 'job_deleted=1 job=%s by=%s\n' "$_j" "$_how"
+        [ -f "$_c" ] && printf 'JOB-RECEIPT job_deleted=1 job=%s by=%s %s by %s\n' "$_j" "$_how" "$(date -u +%FT%TZ)" "$ME" >> "$_c"
+        return 0
+    fi
+    _s="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | cut -f3)"
+    printf 'job_deleted=0 job=%s state=%s (a holder still reserves it after 12 s; it deletes the job on its next read of the DONE line)\n' "$_j" "${_s:-?}"
+    return 0; }
+s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-queue step 6): done and park remove each WORKTREE: <path> the baton names, when s4e_worktree.sh exists (box-scheduler 36); one LEDGER line per removal
+    local _b="$PO/tasks/$1.task.md" _w _rc
+    [ -f "$S4E/harness/scripts/s4e_worktree.sh" ] || return 0
+    while IFS= read -r _w; do
+        [ -n "$_w" ] || continue
+        _n="$(basename "$_w")"; _n="${_n#wt-}"
+        bash "$S4E/harness/scripts/s4e_worktree.sh" rm "$_n" >/dev/null 2>&1; _rc=$?
+        printf -- '- [%s·%s] WORKTREE rm %s rc=%s (fleet-queue step 6: done and park remove the worktrees the baton names)\n' "$ME" "$(date -u +%F)" "$_w" "$_rc" >> "$_b"
+    done <<< "$(sed -n 's/^WORKTREE: //p' "$_b" 2>/dev/null)"
+    return 0; }
+s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker buries its job (step 6). A live holder of OUR claim buries it: PARK on the claim, BURIED back; the claim is cleared only after that, because a claim that vanishes releases the job to its tube. With no live holder the bus buries a ready job (bury-ready); a row with no job gets a put-buried one. rc 0 done or nothing to do (another seat's holder, a non-park state); rc 3 refused, nothing set.
+    local _t="$1" _st="$2" _c="$PO/claims/$1.claim" _j="" _ok=0 _i _o _rc _tube="" _tier="" _ttr _pri _rank _id
+    s4e_park_state_buries "$_st" || return 0
+    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && [ "$(head -1 "$_c")" != "$ME" ]; then return 0; fi
+    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && grep -q '^RESERVED job=' "$_c"; then
+        _j="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
+        grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"
+        for _i in $(seq 1 24); do grep -q '^BURIED ' "$_c" && { _ok=1; break; }; sleep 1; done
+        [ "$_ok" = 1 ] && { echo "  (job $_j buried by its holder)"; return 0; }
+    fi
+    [ -n "$_j" ] || _j="$(s4e_baton_job_get "$_t" | awk '{print $1}')"
+    if [ -n "$_j" ]; then
+        _o="$(python3 "$S4E/harness/scripts/util_queue.py" bury-ready "$_j" 2>/dev/null)"; _rc=$?
+        if [ "$_rc" = 0 ]; then echo "  (job $_j buried: $_o)"; return 0; fi
+        if [ "$_rc" = 4 ]; then printf '⛔ REFUSED (rc=3): park %s: job %s is still reserved by a holder that did not bury it within 24 s (%s). Nothing set; the PARK line on the claim stays and the holder acts on its next read, so run park again.\n' "$_t" "$_j" "$_o" >&2; return 3; fi
+    fi
+    _tube="$(s4e_baton_job_get "$_t" | awk '{print $2}' | sed 's/^tube=//')"
+    if [ -z "$_tube" ]; then _tier="$(s4e_tier_of "$(s4e_row_owner_named "$_t")")"; _tube="tier-${_tier:-haiku}"; fi
+    _rank="$(qrank "$_t")"; _pri="$(s4e_queue_pri "$_tube" "$_rank")"; _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "${_tier:-haiku}")"
+    _id="$(python3 "$S4E/harness/scripts/util_queue.py" put-buried "$_tube" "$_t" --pri "$_pri" --ttr "$_ttr" 2>/dev/null)" || _id=""
+    [ -n "$_id" ] || { printf '⛔ REFUSED (rc=3): park %s could not bury a job (put-buried into %s failed; util_queue.py status tells why). Nothing set.\n' "$_t" "$_tube" >&2; return 3; }
+    s4e_baton_job_set "$_t" "$_id" "$_tube"; echo "  (no job to bury: job $_id put and buried in $_tube)"
+    return 0; }
 s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
@@ -964,7 +1032,7 @@ s4e_unblock_dependents() {   # step 35: <closed-topic> -> every row BLOCKED-ON:/
         s4e_does_not_clear "$_c" "$_t" && continue
         if _rs="$(s4e_restore_state "$_t")"; then :; else _rec=0; fi
         s4e_set_row_state "$_t" "$_rs" || continue
-        _n=$((_n+1)); s4e_restore_forget "$_t"
+        _n=$((_n+1)); s4e_restore_forget "$_t"; s4e_kick_row "$_t" done
         printf -- '- [%s %s] UNBLOCKED: %s closed DONE; state %s -> %s (box-scheduler step 35)\n' "$ME" "$(date -u +%FT%TZ)" "$_c" "$_st" "$_rs" >> "$PO/tasks/$_t.task.md"
         case "$_rs" in ASSIGNED:?*|CLAIMED:?*) _who="${_rs#*:}";; *) _who="$(s4e_row_owner_named "$_t")";; esac
         [ -n "$_who" ] && [ -d "$PO/$_who" ] && s4e_telegram "$_who" "$_t" "done: $_c closed DONE; your row $_t was $_st and is back as $_rs -- s4e_msg.sh next serves it (box-scheduler step 35)." 2>/dev/null < /dev/null && _tg=$((_tg+1))
@@ -994,6 +1062,53 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     ls "$w/plant-x/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
+s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch postoffice: a row A with a READY job is parked BLOCKED-ON:B and its job is buried (no holder: the bury-ready road); B is done, A returns to its state and its job is kicked back to ready by that done
+    local w o why="" a b tube j now drc n
+    [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-bury]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_bury.XXXXXX")" || { echo "REFUSE(2) [park --probe-bury]: mktemp failed"; exit 2; }
+    a="bury-parked-$$"; b="bury-closer-$$"; tube="probe-park-$$"; j=""; now="$(date -u +%FT%TZ)"
+    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1' EXIT
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/plant-x/inbox" || { echo "REFUSE(2) [park --probe-bury]: cannot make the scratch postoffice"; exit 2; }
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$w/MODE"
+    j="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$a" --pri 1000 --ttr 60 2>/dev/null)" || j=""
+    [ -n "$j" ] || { echo "REFUSE(2) [park --probe-bury]: no beanstalkd job could be put (util_queue.py status tells why)"; exit 2; }
+    printf '# plant queue (fleet-queue step 6)\n2\t%s\tplant-x\tFREE\n2\t%s\t%s\tFREE\n' "$a" "$b" "$ME" > "$w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" "$j" "$tube" > "$w/tasks/$a.task.md"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
+    printf '%s\nRUNNING\n' "$ME" > "$w/claims/$b.claim"
+    run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
+    run park "$a" "BLOCKED-ON:$b" > /dev/null
+    n=0; [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = buried ] && n=1
+    [ "$n" = 1 ] || why="$why park did not bury the ready job;"
+    grep -q "^RESTORE-STATE: FREE$" "$w/tasks/$a.task.md" || why="$why park did not record RESTORE-STATE FREE;"
+    o="$(run done "$b")"; drc=$?
+    [ "$drc" = 0 ] || why="$why done of the closer returned rc $drc;"
+    printf '%s\n' "$o" | grep -q "kicked_by=done job=$j" || why="$why done did not kick the job [$(printf '%s' "$o" | grep -m1 'kicked_by' | cut -c1-100)];"
+    [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = ready ] || why="$why the job is not ready after the done;"
+    [ "$(grep -P "^2\t\Q$a\E\t" "$w/QUEUE.tsv" | cut -f4)" = FREE ] || why="$why the row did not return to FREE;"
+    grep -q '^RESTORE-STATE: ' "$w/tasks/$a.task.md" && why="$why the RESTORE-STATE line was not retired;"
+    if [ -z "$why" ]; then echo "PARK buried=1 kicked_by=done restored=1 (probe: a parked row's ready job was buried; the blocker's done returned the row to FREE and kicked the job back to ready)"; exit 0; fi
+    echo "PARK PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
+s4e_done_plant_delete() {   # step 6's done probe (done --probe-delete) on a scratch postoffice: a claimed row whose READY job sits in a scratch tube; done closes it and deletes the job (stats-job reads not found), the JOB-RECEIPT on the claim
+    local w o x tube j now rc why=""
+    [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-delete]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_delete.XXXXXX")" || { echo "REFUSE(2) [done --probe-delete]: mktemp failed"; exit 2; }
+    x="delete-done-$$"; tube="probe-done-$$"; j=""; now="$(date -u +%FT%TZ)"
+    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1' EXIT
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [done --probe-delete]: cannot make the scratch postoffice"; exit 2; }
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$w/MODE"
+    j="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$x" --pri 1000 --ttr 60 2>/dev/null)" || j=""
+    [ -n "$j" ] || { echo "REFUSE(2) [done --probe-delete]: no beanstalkd job could be put (util_queue.py status tells why)"; exit 2; }
+    printf '2\t%s\t%s\tASSIGNED:%s\n' "$x" "$ME" "$ME" > "$w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$x" "$now" "$j" "$tube" > "$w/tasks/$x.task.md"
+    printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$x.claim"
+    o="$(env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" done "$x" 2>&1)"; rc=$?
+    [ "$rc" = 0 ] || why="$why done returned rc $rc [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
+    python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" >/dev/null 2>&1 && why="$why the job is still there after done;"
+    grep -q "^JOB-RECEIPT job_deleted=1 job=$j by=bus" "$w/claims/$x.claim" || why="$why no JOB-RECEIPT job_deleted=1 on the claim;"
+    grep -q '^DONE$' "$w/claims/$x.claim" || why="$why the claim did not read DONE;"
+    if [ -z "$why" ]; then echo "DONE job_deleted=1 (probe: a claimed row closed by done; its ready job was deleted by the bus, stats-job reads not found, the JOB-RECEIPT is on the claim)"; exit 0; fi
+    echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
 s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next writes nothing, serves the newest assign first, prints a FREE row unlocked; an assigned row's claim passes the cap
     local w o why="" before after a b c x y z
     [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-serve]: S4E_SEAT unset"; exit 2; }
@@ -2946,6 +3061,7 @@ case "$cmd" in
          # swept into QUEUE.done.tsv). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
          # it self-clearing instead of needing a human to remember to come back and re-park it.
          [ "${2:-}" = --probe-awaiting ] && s4e_sweep_plant_awaiting
+         [ "${2:-}" = --probe-bury ] && { s4e_park_plant_bury; exit $?; }
          [ -n "${2:-}" ] || s4e_need park "a topic" "s4e_msg.sh park <topic> [STATE]" "Takes a row out of the picker WITHOUT closing it (default state PARKED; park <topic> FREE puts it back). It has no no-argument listing -- \`board\` is the verb that prints the board."
          topic="$2"; st="${3:-PARKED}"; q="$PO/QUEUE.tsv"
          # ⛔⭐ ARG 3 IS THE STATE, NOT A REASON — AND IT USED TO ACCEPT ANY STRING AT ALL (hq_P, 2026-08-29,
@@ -2964,7 +3080,7 @@ case "$cmd" in
          esac
          case "$st" in
            FREE|PARKED|BLOCKED|ASSIGNED|DONE|SUPERSEDED|RETIRED|GRANT-NEEDED|PARKED-LON-HOLD) : ;;
-           PARKED-AWAITING:?*|BLOCKED-ON:?*|ASSIGNED:?*|CLAIMED:?*|RESTRICTED:?*|DONE:?*|SUPERSEDED:?*|GRANT-NEEDED:?*|PARKED-UMBRELLA:?*|PARKED-LON-HOLD:?*) : ;;
+           PARKED-AWAITING:?*|BLOCKED-ON:?*|ASSIGNED:?*|CLAIMED:?*|RESTRICTED:?*|DONE:?*|RETIRED:?*|SUPERSEDED:?*|GRANT-NEEDED:?*|PARKED-UMBRELLA:?*|PARKED-LON-HOLD:?*) : ;;
            MEASURING:?*) _mseat="${st#MEASURING:}"; _mpid="${_mseat##*:}"; _mseat="${_mseat%%:*}"
               { [ "$_mseat" = "$ME" ] && [ "$_mpid" != "$_mseat" ]; } || { printf '⛔ REFUSED: a MEASURING state is MEASURING:<your seat>:<pid>, not "%s".\n' "$st" >&2; exit 2; }
               s4e_pid_is_mine "$_mpid" || { printf '⛔ REFUSED: pid %s is not a live process of %s (S4E_SEAT in its environment, or its cwd under your root or /tmp/s4e/%s); a MEASURING park names the measurement you wait on.\n' "$_mpid" "$ME" "$ME" >&2; exit 2; } ;;
@@ -3040,6 +3156,8 @@ case "$cmd" in
          # it has no authority over a claim it does not hold. Now: a live claim held by someone else REFUSES the
          # park (like assign); S4E_PARK_FORCE=1 overrides but ANNOTATES the claim instead of deleting it, so the
          # holder's `done` still works.
+         s4e_park_bury "$topic" "$st" || exit $?
+         s4e_park_state_buries "$st" && s4e_worktree_rm_row "$topic"
          c="$PO/claims/$topic.claim"
          if [ -f "$c" ] && ! grep -q '^DONE$' "$c" && [ "$(head -1 "$c")" != "$ME" ]; then
              hold="$(head -1 "$c")"
@@ -3084,6 +3202,10 @@ case "$cmd" in
            [ -f "$_gb" ] && printf '\n- %s **GOVERNANCE GATE LIFTED** by %s — gate was `%s`; grant: %s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$ME" "$cur_st" "$S4E_GRANT_BY" >> "$_gb"
          fi
          s4e_set_row_state "$topic" "$st"
+         if s4e_park_state_buries "$cur_st" && ! s4e_park_state_buries "$st"; then
+             _kb=park; case "$cur_st" in PARKED-AWAITING:*) s4e_is_request_id "${cur_st#*:}" && _kb=verdict;; esac
+             s4e_kick_row "$topic" "$_kb"
+         fi
          [ -n "${_restore:-}" ] && s4e_restore_record "$topic" "$_restore"
          case "$st" in BLOCKED-ON:*|PARKED-AWAITING:*) ;; *) s4e_restore_forget "$topic";; esac
          b="$PO/tasks/$topic.task.md"
@@ -3091,6 +3213,7 @@ case "$cmd" in
          echo "$topic state -> $st";;
   done)  [ -n "${2:-}" ] || s4e_need done "a topic" "s4e_msg.sh done <topic>" "Closes a row by RUNNING its baton DONE-WHEN; it refuses on a red or an rc=2. Completion is computed, never declared."
          [ "$2" = --probe-unblock ] && s4e_done_plant_unblock
+         [ "$2" = --probe-delete ] && { s4e_done_plant_delete; exit $?; }
          [ "$2" = --probe-lock ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_done_lock.sh"; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"
          # ⛔ THE BANNER FIRES ITSELF HERE (HQ 2026-08-22, after seat4 finished its row and gave NO banner until Lon
@@ -3421,6 +3544,7 @@ case "$cmd" in
               _dtree="$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null || echo unknown)"; [ -n "$(git -C "$S4E/SCRIP" status --porcelain 2>/dev/null)" ] && _dtree="$_dtree-DIRTY"
               printf 'RECEIPT done rc=0 tree=%s elapsed=%ss via=%s %s by %s\n' "$_dtree" "${_dwel:-?}" "$([ -n "${S4E_DONE_OVERRIDE:-}" ] && echo override || echo computed)" "$(date -u +%FT%TZ)" "$ME" >> "$c"
               grep -q '^DONE$' "$c" || echo DONE >> "$c"; echo "done $topic"
+              s4e_done_delete_job "$topic"; s4e_worktree_rm_row "$topic"
               # ⛔⭐ (a) DONE CLOSES ITS OWN WINDOW (hq_B scope, 2026-08-28, ratified by the officer as rank 1). Until now
               # this verb latched the CLAIM and never touched QUEUE.tsv -- s4e_mark_row() below writes only the
               # per-seat .last-row despite its name. So a verified close left the column reading FREE, and the row

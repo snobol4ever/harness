@@ -9,6 +9,8 @@
 #   python3 util_queue.py delete|bury|kick-job|touch ID    the verb on one job (bury and touch need the job reserved by this connection: the bus does that inside one call)
 #   python3 util_queue.py kick TUBE [N]              kicks N buried jobs of TUBE (default 1)
 #   python3 util_queue.py reserve TUBE[,TUBE...] [--timeout S]     reserves one job over the watched tubes, prints id tube pri topic; rc 1 on nothing ready
+#   python3 util_queue.py put-buried TUBE TOPIC [--pri N] [--ttr S]     fleet-queue step 6: put a job and bury it at once (a parked row with no job); prints the id
+#   python3 util_queue.py bury-ready ID                                 fleet-queue step 6: bury a READY job (rc 0 buried or already buried, rc 1 no such job, rc 4 reserved by another connection)
 # rc 0 ok, 1 nothing/red, 2 could not reach the daemon or no client (the refusal names the line that cures it). No tube is ever created by name here but
 # by a put; a reserve by this process that exits releases the job back at once (beanstalkd releases a reserved job when its connection closes), so the
 # bus keeps the connection open across its own write and then lets the TTR be the lease (step 5): see s4e_msg.sh for the reserve-then-claim shape.
@@ -56,8 +58,8 @@ class _Stdlib:
             r = self._cmd("peek-ready"); return _Stdlib.Job(int(r[1]), self._body(r))
         def delete(self, i): self._cmd("delete %d" % i)
         def release(self, i, priority=1000, delay=0): self._cmd("release %d %d %d" % (i, priority, delay))
-        def bury(self, i, priority=1000): self._cmd("bury %d %d" % (i, priority))
-        def touch(self, i): self._cmd("touch %d" % i)
+        def bury(self, i, priority=1000): self._cmd("bury %d %d" % (getattr(i, "id", i), priority))
+        def touch(self, i): self._cmd("touch %d" % getattr(i, "id", i))
         def kick(self, n=1): return int(self._cmd("kick %d" % n)[1])
         def kick_job(self, i): self._cmd("kick-job %d" % i)
         def stats_job(self, i): return self._yaml(self._cmd("stats-job %d" % i))
@@ -187,14 +189,52 @@ def main(a):
                     try: c.delete(j.id)
                     except Exception as e: say("delete: %s" % e)
                     os._exit(0)
+                if any(l.strip() == "KILL" for l in lines):
+                    say("claim reads KILL: delete")
+                    try: c.delete(j.id)
+                    except Exception as e: say("delete: %s" % e)
+                    os._exit(0)
+                parks = [l.strip()[5:] for l in lines if l.strip().startswith("PARK ")]
+                if parks:
+                    say("claim reads PARK %s: bury" % parks[0])
+                    try:
+                        c.bury(j, priority=int(st["pri"]))
+                        with open(claim, "a") as f: f.write("BURIED job=%d %s %s\n" % (j.id, parks[0], time.strftime("%FT%TZ", time.gmtime())))
+                    except Exception as e: say("bury: %s" % e)
+                    os._exit(0)
                 if lines and lines[0].strip() != seat: say("claim names %s, not %s: release" % (lines[0].strip(), seat)); break
                 if session and os.system("pgrep -f '^claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
                     say("session %s is gone: release" % session); break
-                try: c.touch(j.id)
+                try: c.touch(j)
                 except Exception as e: say("touch: %s (the lease is gone)" % e); os._exit(0)
             try: c.release(j.id, priority=int(st["pri"]))
             except Exception as e: say("release: %s" % e)
             os._exit(0)
+        elif v == "put-buried":
+            # fleet-queue step 6: a job that is born buried (a parked row with no job to bury): put it, reserve it on this connection, bury it.
+            if len(a) < 3: refuse("put-buried TUBE TOPIC [--pri N] [--ttr S]")
+            tube, topic = a[1], a[2]; pri = 1000; ttr = 3600; i = 3
+            while i < len(a):
+                if a[i] == "--pri": pri = int(a[i + 1]); i += 2
+                elif a[i] == "--ttr": ttr = int(a[i + 1]); i += 2
+                else: refuse("put-buried: unknown flag " + a[i])
+            if not hasattr(c, "reserve_job"): refuse("put-buried needs greenstalk: pip3 install --user greenstalk")
+            c.use(tube); jid = c.put(topic, priority=pri, ttr=ttr)
+            c.bury(c.reserve_job(jid), priority=pri); print(jid)
+        elif v == "bury-ready":
+            # fleet-queue step 6: bury a READY job (reserve-job by id, then bury). rc 0 buried or already buried; rc 1 no such job; rc 4 reserved by another connection.
+            jid = int(a[1])
+            try:
+                st = c.stats_job(jid)
+            except gs.NotFoundError:
+                sys.exit(1)
+            if st["state"] == "buried": print("already buried %d" % jid); sys.exit(0)
+            if st["state"] != "ready": print("held %d state %s" % (jid, st["state"])); sys.exit(4)
+            try:
+                job = c.reserve_job(jid)
+            except gs.NotFoundError:
+                print("held %d (reserved while we looked)" % jid); sys.exit(4)
+            c.bury(job, priority=int(st["pri"])); print("buried %d" % jid)
         elif v == "reserve":
             tubes = a[1].split(","); timeout = 0
             if len(a) > 3 and a[2] == "--timeout": timeout = int(a[3])
