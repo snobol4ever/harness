@@ -585,6 +585,34 @@ def run_oracle(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=
     return out.decode("utf-8", "replace").rstrip("\n"), rc, kind
 
 
+def process_ending(kind, rc):
+    """THE ENDING OF A PROCESS (Lon 2026-11-05, in the coo's window, verbatim: "A process has EXIT CODE, STDOUT, and STDERR to choose
+    from. That should be good enough. Since the STDERR has the syntax errors. But you still need CRASH, ABORT, and HANG as outcomes."):
+    HANG past the bound, ABORT on SIGABRT, CRASH on any other signal, else EXIT with its code. A signal reaches us negative from a
+    direct child and as 128+n through a shell wrapper (the icon, pascal, raku and snocone oracle drivers), so 129-159 reads as a signal,
+    the same window util_oracle.sh refuses to cache. Returns (ending, rc)."""
+    if kind == "HANG":
+        return "HANG", None
+    if kind in ("UNPROVEN", "OVERFLOW"):
+        return kind, rc
+    if rc is not None and rc < 0:
+        return ("ABORT" if -rc == 6 else "CRASH"), rc
+    if rc is not None and 129 <= rc <= 159:
+        return ("ABORT" if rc - 128 == 6 else "CRASH"), rc
+    return "EXIT", rc
+
+
+def run_oracle_record(oracle_bin, flags, sno_path, timeout, stdin_text=None, prog_args=None, out_files=None, merge_stderr=False, env=None):
+    """run_oracle's own invocation, every argument the same, keeping the whole process record: (ending, rc, stdout text, stderr text)."""
+    sno_path = Path(sno_path)
+    argv = [oracle_bin] + flags.split() + _host_u_switch(sno_path, prog_args) + [sno_path.name] + (list(prog_args) if prog_args else [])
+    _out_files_clear(sno_path.parent, out_files)
+    kind, out, err, rc = _run_raw(argv, timeout, cwd=str(sno_path.parent), env=env, stdin_text=stdin_text, merge_stderr=merge_stderr)
+    out = _out_files_append(out, sno_path.parent, out_files) if out_files else out
+    ending, rc = process_ending(kind, rc)
+    return ending, rc, out.decode("utf-8", "replace").rstrip("\n"), (err or b"").decode("utf-8", "replace")
+
+
 def xsb_oracle_bin():
     """THE XSB ORACLE (R-1927; RULES.md § Oracles, FACT RULE XSB IS THE THIRD PROLOG ORACLE, FOR THE XSB PACKAGE), reached
     through lib_oracle_flags.sh's xsb_bin() alone -- a missing launcher refuses rc=2 with the accessor's own words."""
@@ -742,7 +770,7 @@ class Verdict:
         the exact signal; HANG/UNPROVEN/SKIP just need the same kind; PASS/FAIL need matching text."""
         if self.kind != other.kind:
             return False
-        if self.kind == "CRASH":
+        if self.kind in ("CRASH", "ABORT"):
             return self.returncode == other.returncode
         if self.kind in ("PASS", "FAIL"):
             return self.text().rstrip("\n") == other.text().rstrip("\n")
@@ -948,6 +976,42 @@ def _run_raw(argv, timeout, cwd=None, env=None, stdin_text=None, merge_stderr=Fa
 # ⭐ THE SUBSTITUTION REPLACES, IT NEVER DELETES. A deleted line would let a MISSING line pass as a masked one --
 # the fixture that prints nothing would match the fixture that prints a clock. Line count and position are
 # preserved by rewriting the matched line to a canonical marker in BOTH streams.
+class Expect:
+    """One entry's line of ALL.expect.tsv (cmd_expect --write): the oracle's ending, exit code, stdout convention and stderr."""
+    def __init__(self, ending, rc, stdout, stderr, head):
+        self.ending, self.rc, self.stdout, self.stderr, self.head = ending, (int(rc) if rc not in ("", None) else None), stdout, stderr, head
+
+
+def read_expect_sidecar(src_path):
+    """ALL.expect.tsv beside a master -> {entry: Expect}; {} when there is none (the entry then grades as before, by ALL.wantrc)."""
+    p = Path(src_path).with_name("ALL.expect.tsv")
+    out = {}
+    if not p.is_file():
+        return out
+    for ln in p.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not ln.strip() or ln.startswith("#"):
+            continue
+        f = ln.split("\t")
+        if len(f) < 5:
+            refuse(f"{p}: a line is not entry<TAB>ending<TAB>rc<TAB>stdout<TAB>stderr[<TAB>head]: {ln[:80]}")
+        out[f[0]] = Expect(f[1], f[2], f[3], f[4], f[5] if len(f) > 5 else "")
+    return out
+
+
+def against_expect(v, ex):
+    """THE WHOLE PROCESS RECORD (Lon 2026-11-05): a run PASSes only when its ending, exit code, stdout and stderr agree with the oracle's.
+    run_all_modes already graded the exit code against ex.rc and stdout against the ref; this adds stderr: where the oracle reported an
+    ERROR (stderr text with a nonzero exit, or SPITBOL's "(n) : ERROR nnn --" fatal line at exit 0: a syntax error, a run-time error),
+    SCRIP must report one on stderr too. A warning or a program's own terminal output on stderr is not an error and is not graded."""
+    if ex is None or v.kind != "PASS":
+        if ex is not None and v.kind != "PASS" and ex.ending == "EXIT" and v.kind in ("CRASH", "ABORT", "HANG"):
+            v.detail = (v.detail + "; " if v.detail else "") + f"the oracle EXITs {ex.rc}"
+        return v
+    if ex.stderr == "error" and not (v.stderr or b"").strip():
+        return Verdict("FAIL", v.stdout, v.stderr, v.returncode, detail=f"the oracle reported an error on stderr ({ex.head[:80]}); SCRIP reported none")
+    return v
+
+
 def read_mask_sidecar(ref_path):
     """<stem>.mask beside the ref: `entry<TAB>python-regex<TAB>reason[<TAB>engine=NAME[,NAME]]` (the qualifier, R-1864 (1), keeps a
     row from every engine it does not name), or `entry<TAB>L<n><TAB>reason` for a
@@ -1192,7 +1256,7 @@ def _classify_run(argv, timeout, expected_text, cwd=None, env=None, stdin_text=N
     if kind == "UNPROVEN":
         return Verdict("UNPROVEN", out, err, None, detail=err.decode("utf-8", "replace"))
     if rc is not None and rc < 0:
-        return Verdict("CRASH", out, err, rc, detail=f"signal {-rc}")
+        return Verdict("ABORT" if -rc == 6 else "CRASH", out, err, rc, detail=f"signal {-rc}")
     return _grade_output(out, err, rc, expected_text, want_rc=want_rc, mask=mask, merge_stderr=merge_stderr, ws_blind=ws_blind)
 
 
@@ -2591,66 +2655,165 @@ def _copy_companions(text, companion_dir, dest_dir):
                 break
 
 
+def stage_entry(entry, td, ext=".sno", companion_dir=None):
+    """THE ONE WRITER OF AN ENTRY'S PROGRAM (split out of run_suite_entry 2026-11-05 for the expect census, so the oracle and SCRIP read
+    the same bytes): the program file in td (its prelude, its companions, its argv files beside it); returns (path, expected text)."""
+    cand = Path(td) / f"{entry.name}{ext}"
+    if getattr(entry, 'stage_upstream', False) and companion_dir:
+        _sd = stage_upstream(companion_dir, entry.name, Path(td) / "u", ext)
+        if _sd is None:
+            refuse(f"{entry.name}: ALL.csv stages it upstream and {companion_dir}/SOURCES.tsv names no upstream file for it")
+        cand = _sd / f"{entry.name}{ext}"
+    if entry.kind == "line":
+        text = entry.sno_lines[0] + "\n"
+        expected = entry.ref
+    else:
+        text = "\n".join(entry.sno_lines) + "\n"
+        expected = "\n".join(entry.ref)
+    # ⛔⭐ entry.name CAN CARRY A '/' (util_build_package_suite.py qualifies a nested source as
+    # "parentdir/stem", e.g. arizona_tests' "general/args") -- the first package whose entries are
+    # actually EXECUTED through this exact function to carry one (csnobol4_suite's nested-name
+    # collision fix only touched CSV/naming, never grading, since its own nested file was excluded).
+    # Without this, cand.write_text() raises FileNotFoundError: the intermediate directory under the
+    # fresh tempdir was never created. A no-op for every flat entry name (parents=True on an
+    # already-existing Path(td) is a safe no-op), so nothing already grading through this function
+    # can regress.
+    cand.parent.mkdir(parents=True, exist_ok=True)
+    # ⭐ A PACKAGE'S PRELUDE (hq_prolog's ask on R-1632, the coo 2026-10-11): ALL.prelude beside the container holds the text every
+    # entry runs after -- the package's contract with the oracle that cut its refs (rosetta-prolog: swipl read a double-quoted text
+    # as a string, so `:- set_prolog_flag(double_quotes, string).`), as util_logtalk_grade.py prepends the iso flag. Its non-blank
+    # lines that are not `#` notes are joined and PREFIXED TO THE ENTRY'S FIRST LINE, never a line of their own, so a message that
+    # names a line still names the entry's own. No ALL.prelude: the entry is byte-identical to before.
+    _pre = (Path(companion_dir) / "ALL.prelude") if companion_dir else None
+    if _pre is not None and _pre.is_file():
+        _pt = " ".join(l.strip() for l in _pre.read_text().splitlines() if l.strip() and not l.lstrip().startswith("#"))
+        if _pt:
+            text = _pt + " " + text
+    cand.write_text(text)
+    # ⛔⭐ A NESTED ENTRY'S COMPANIONS LIVE BESIDE IT, AND LAND BESIDE IT (the coo 2026-10-01, measured on the regenerated arizona_tests
+    # container): the entry runs in cand.parent (td/general for "general/fncs1"), but its companions were looked up in the suite's
+    # own directory and copied into td -- so fncs1's open("gc1.icn"), prepro's prepro.dat and recent's data files were never
+    # there, and three programs that match their refs when staged beside the source read FAIL here. The lookup directory is the
+    # suite directory plus the entry's own subdirectory (the subdirectory's copy wins, the suite directory's is kept as a fallback),
+    # and the copy lands where the program runs; a flat entry is unchanged.
+    _sub = Path(entry.name).parent
+    _cdir = (Path(companion_dir) / _sub) if (companion_dir and str(_sub) not in ("", ".")) else companion_dir
+    if _cdir != companion_dir:
+        _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
+    _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
+    # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
+    # that is a file beside the suite travels with the entry the same way a named include does.
+    for _tok in (getattr(entry, 'argv', None) or []):
+        if _cdir and _tok and '/' not in _tok and (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists():
+            (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
+    return cand, expected
+
+
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
-        cand = Path(td) / f"{entry.name}{ext}"
-        if getattr(entry, 'stage_upstream', False) and companion_dir:
-            _sd = stage_upstream(companion_dir, entry.name, Path(td) / "u", ext)
-            if _sd is None:
-                refuse(f"{entry.name}: ALL.csv stages it upstream and {companion_dir}/SOURCES.tsv names no upstream file for it")
-            cand = _sd / f"{entry.name}{ext}"
-        if entry.kind == "line":
-            text = entry.sno_lines[0] + "\n"
-            expected = entry.ref
-        else:
-            text = "\n".join(entry.sno_lines) + "\n"
-            expected = "\n".join(entry.ref)
-        # ⛔⭐ entry.name CAN CARRY A '/' (util_build_package_suite.py qualifies a nested source as
-        # "parentdir/stem", e.g. arizona_tests' "general/args") -- the first package whose entries are
-        # actually EXECUTED through this exact function to carry one (csnobol4_suite's nested-name
-        # collision fix only touched CSV/naming, never grading, since its own nested file was excluded).
-        # Without this, cand.write_text() raises FileNotFoundError: the intermediate directory under the
-        # fresh tempdir was never created. A no-op for every flat entry name (parents=True on an
-        # already-existing Path(td) is a safe no-op), so nothing already grading through this function
-        # can regress.
-        cand.parent.mkdir(parents=True, exist_ok=True)
-        # ⭐ A PACKAGE'S PRELUDE (hq_prolog's ask on R-1632, the coo 2026-10-11): ALL.prelude beside the container holds the text every
-        # entry runs after -- the package's contract with the oracle that cut its refs (rosetta-prolog: swipl read a double-quoted text
-        # as a string, so `:- set_prolog_flag(double_quotes, string).`), as util_logtalk_grade.py prepends the iso flag. Its non-blank
-        # lines that are not `#` notes are joined and PREFIXED TO THE ENTRY'S FIRST LINE, never a line of their own, so a message that
-        # names a line still names the entry's own. No ALL.prelude: the entry is byte-identical to before.
-        _pre = (Path(companion_dir) / "ALL.prelude") if companion_dir else None
-        if _pre is not None and _pre.is_file():
-            _pt = " ".join(l.strip() for l in _pre.read_text().splitlines() if l.strip() and not l.lstrip().startswith("#"))
-            if _pt:
-                text = _pt + " " + text
-        cand.write_text(text)
-        # ⛔⭐ A NESTED ENTRY'S COMPANIONS LIVE BESIDE IT, AND LAND BESIDE IT (the coo 2026-10-01, measured on the regenerated arizona_tests
-        # container): the entry runs in cand.parent (td/general for "general/fncs1"), but its companions were looked up in the suite's
-        # own directory and copied into td -- so fncs1's open("gc1.icn"), prepro's prepro.dat and recent's data files were never
-        # there, and three programs that match their refs when staged beside the source read FAIL here. The lookup directory is the
-        # suite directory plus the entry's own subdirectory (the subdirectory's copy wins, the suite directory's is kept as a fallback),
-        # and the copy lands where the program runs; a flat entry is unchanged.
-        _sub = Path(entry.name).parent
-        _cdir = (Path(companion_dir) / _sub) if (companion_dir and str(_sub) not in ("", ".")) else companion_dir
-        if _cdir != companion_dir:
-            _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
-        _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
-        # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
-        # that is a file beside the suite travels with the entry the same way a named include does.
-        for _tok in (getattr(entry, 'argv', None) or []):
-            if _cdir and _tok and '/' not in _tok and (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists():
-                (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
-        return run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin,
-                             want_rc=getattr(entry, 'want_rc', 0), prog_argv=getattr(entry, 'argv', None),
+        cand, expected = stage_entry(entry, td, ext, companion_dir)
+        _ex = getattr(entry, 'expect', None)
+        _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
+        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin,
+                             want_rc=_want, prog_argv=getattr(entry, 'argv', None),
                              mask=getattr(entry, 'mask', None),
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None),
                              compile_args=getattr(entry, 'compile_args', None), out_files=getattr(entry, 'out_files', None),
                              merge_stderr=getattr(entry, 'merge_stderr', False), ws_blind=getattr(entry, 'compare_ws', False),
                              answer_file=getattr(entry, 'answer_file', None), mode_gap_s=getattr(entry, 'mode_gap_s', 0))
+        return {m: against_expect(v, _ex) for m, v in _v.items()}
 
 
 # ================================================================== CLI ===
+def _expect_stdout_against_ref(out, exp):
+    """The oracle's raw stdout against the entry's ref, naming the convention that matched: =ref (whole), =ref-before-fatal (the ref cut
+    at SPITBOL's run-time fatal line, as the Rebus refs are), =ref-through-fatal (the fatal line kept, its statistics dump not, as
+    SnoRungs' simple_output_62); differs when none does, noref when the entry has none."""
+    if exp is None:
+        return "noref"
+    if out == exp:
+        return "=ref"
+    if exp == "" and out.lstrip("\n").startswith("macro spitbol version"):
+        return "=ref-compile-refusal"   # SPITBOL refused at compile time (exit 231, execution suppressed): its stdout is its listing, the program printed nothing
+    m = FATAL_REF_LINE.search(out)
+    if m:
+        if out[:m.start()].rstrip("\n") == exp:
+            return "=ref-before-fatal"
+        e = out.find("\n", m.start())
+        if (out if e < 0 else out[:e]).rstrip("\n") == exp:
+            return "=ref-through-fatal"
+    return "differs"
+
+
+def cmd_expect(args):
+    """THE EXPECTED RESULT IS THE ORACLE'S WHOLE PROCESS RECORD (Lon 2026-11-05, in the coo's window: "A process has EXIT CODE, STDOUT,
+    and STDERR to choose from. ... But you still need CRASH, ABORT, and HANG as outcomes."; "Well, the master harness NEEDS ONE."). A ref
+    keeps the oracle's stdout only and ALL.wantrc an exit code declared by hand, so a SCRIP exit that differs from the oracle's, or a
+    syntax error the oracle reports on stderr and SCRIP does not, grades nowhere. This census runs every entry of a master through the
+    language's oracle exactly as run_oracle does (stage_entry writes the same bytes run_suite_entry grades) and prints one line per
+    entry: name, ending (EXIT, ABORT, CRASH, HANG), exit code, stdout against the entry's ref (=ref or differs), stderr (empty or text)
+    and its first line. Nothing is graded, no progress row is written; --write keeps the lines as ALL.expect.tsv beside the master."""
+    import concurrent.futures
+    paths = resolve_paths()
+    lang = args.lang or "snobol4"
+    if lang == "rebus":
+        oracle_bin, flags = str(HARNESS_SCRIPTS / "snocone_oracle_run.sh"), ""
+    else:
+        oracle_bin, flags = resolve_oracle_bin(paths, lang)
+    if lang != "snobol4":
+        cfg = LANG_CONFIGS[lang]
+        ext = cfg["ext"]
+        entries = read_block_suite(args.sno, args.ref, banner_re_for(cfg["comment_open"], cfg["comment_close"]), in_path=sidecar_in_path(args.sno),
+                                   x_path=sidecar_xfail_path(args.sno), w_path=sidecar_wantrc_path(args.sno), a_path=sidecar_argv_path(args.sno), modes=["m3"])
+    else:
+        ext = ".sno"
+        entries = read_suite(args.sno, args.ref, in_path=sidecar_in_path(args.sno), x_path=sidecar_xfail_path(args.sno),
+                             w_path=sidecar_wantrc_path(args.sno), a_path=sidecar_argv_path(args.sno), modes=["m3"])
+    if args.only:
+        want = set(x.strip() for x in args.only.split(",") if x.strip())
+        entries = [e for e in entries if e.name in want]
+    require_population(paths, len(entries), 1, f"entries read from {args.sno}")
+    comp = Path(args.sno).parent
+    root = Path(tempfile.mkdtemp(prefix="csh_expect_"))
+    oenv = dict(os.environ, SETL4PATH=".:%s" % paths["inc"]) if lang in ("snobol4", "snocone", "rebus") else None   # scorecard_snobol4.sh's sc_oracle_run: an -INCLUDE resolves against the corpus library
+
+    def one(e):
+        with tempfile.TemporaryDirectory(dir=root) as td:
+            cand, expected = stage_entry(e, td, ext, comp)
+            ending, rc, out, err = run_oracle_record(oracle_bin, flags, cand, args.timeout, stdin_text=e.stdin, prog_args=getattr(e, "argv", None),
+                                                     out_files=getattr(e, "out_files", None), merge_stderr=getattr(e, "merge_stderr", False), env=oenv)
+            exp = expected.rstrip("\n") if expected is not None else None
+            so = _expect_stdout_against_ref(out, exp)
+            se = ("error" if (err.strip() and ((rc not in (None, 0)) or FATAL_REF_LINE.search(err))) else ("text" if err.strip() else "empty"))
+            head = next((l.strip() for l in err.splitlines() if l.strip()), "").replace("\t", " ")[:200]
+            return (e.name, ending, "" if rc is None else str(rc), so, se, head, getattr(e, "want_rc", 0))
+
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.jobs)) as ex:
+            rows = list(ex.map(one, entries))
+    finally:
+        import shutil
+        shutil.rmtree(root, ignore_errors=True)
+    lines = ["\t".join(r[:6]) for r in rows]
+    tally = {}
+    for r in rows:
+        k = r[1] if r[1] != "EXIT" else ("EXIT0" if r[2] == "0" else "EXITnz")
+        tally[k] = tally.get(k, 0) + 1
+    differs = sum(1 for r in rows if r[3] in ("differs", "noref"))
+    stderr_text = sum(1 for r in rows if r[4] == "error")
+    declared_off = [r[0] for r in rows if r[1] == "EXIT" and r[2] != "" and int(r[2]) != int(r[6] or 0)]
+    for l in lines:
+        print(l)
+    print("EXPECT_CENSUS lang=%s entries=%d %s stdout_differs=%d stderr_error=%d declared_rc_disagrees=%d%s" % (
+        lang, len(rows), " ".join(f"{k}={v}" for k, v in sorted(tally.items())), differs, stderr_text, len(declared_off),
+        (" (" + ",".join(declared_off[:12]) + ("..." if len(declared_off) > 12 else "") + ")") if declared_off else ""))
+    if args.write:
+        out = Path(args.sno).with_name("ALL.expect.tsv")
+        out.write_text("# ALL.expect.tsv -- the oracle's whole process record per entry (corpus_suite_harness.py expect): entry ending rc stdout stderr stderr_head\n"
+                       + "\n".join(lines) + "\n")
+        print(f"WROTE {out}")
+
+
 def cmd_capture_oracle_refs(args):
     """For a family with NO committed .ref files at all (oracle-graded loose files, e.g.
     probe/conformance -- see corpus-suites-consolidation task, probe-consolidate-conformance):
@@ -3448,6 +3611,16 @@ def cmd_run(args):
                              a_path=sidecar_argv_path(args.sno), modes=modes)
     FATAL_RENDER["voice"] = _fatal_render_voice_for(args.lang)
     FATAL_RENDER["merged_voice"] = _merged_render_voice_for(args.lang)
+    _expect = read_expect_sidecar(args.sno)
+    if _expect:
+        _untrusted = 0
+        for _e in entries:
+            _x = _expect.get(_e.name)
+            if _x is not None and not _x.stdout.startswith("=ref"):
+                _x, _untrusted = None, _untrusted + 1   # the census run did not reproduce the ref, so its record is not the ref's oracle answer
+            _e.expect = _x
+        print("EXPECT %d of %d entries graded against the oracle's whole process record (ALL.expect.tsv: ending, exit code, stdout, stderr error);"
+              " %d record(s) whose oracle stdout did not reproduce the ref are not applied" % (sum(1 for _e in entries if getattr(_e, "expect", None) is not None), len(entries), _untrusted))
     _masks = read_mask_sidecar(args.ref)
     if _masks:
         _seen = set()
@@ -3654,7 +3827,7 @@ def cmd_run(args):
     # hq_U measured three SNOBOL4 entries that CRASH in m3 and merely answer WRONG in m4 -- so the single number
     # hides a PER-MODE split as well as a per-debt one. XFAIL stays as the total, so every existing reader is
     # untouched; the split rides beside it and costs one dict key per kind.
-    _XK = ("PASS", "FAIL", "CRASH", "HANG", "UNPROVEN", "SKIP")
+    _XK = ("PASS", "FAIL", "CRASH", "ABORT", "HANG", "UNPROVEN", "SKIP")
     # ⭐⭐ OOM ON THE BOARD LINE (R-1229 (2); the verdict is _oom_verdict's). The PROGRESS ROW says OOM. The SUITE_BOARD line keeps
     # an OOM inside <m>_fail and prints how many of them were OOM beside it as <m>_fail_oom, the way the xfail split rides beside
     # xfail (R-432 item 2) -- because 89 files under ../harness/scripts/ name this line on 2026-09-24, the boards among them read fail (+crash)
@@ -3722,7 +3895,7 @@ def cmd_run(args):
                 _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, _entry_note(e.xfail, verdicts[m], shard_tag)))
                 if kind == _OOMK:
                     oom_named.append((e.name, m, verdicts[m], e.xfail))
-                ck = "FAIL" if kind == _OOMK else kind   # the board line's fail keeps an OOM (see _OOMK above)
+                ck = "FAIL" if kind == _OOMK else ("CRASH" if kind == "ABORT" else kind)   # the board line's fail keeps an OOM (see _OOMK above); its crash column keeps an ABORT (SIGABRT), whose progress row says ABORT
                 # ⛔ An XFAIL entry (probe/passthru's law-0d witnesses: non-green at conversion time,
                 # see convert_one()) is EXPECTED to stay red -- bucketing it as XFAIL/XPASS instead of
                 # FAIL/PASS keeps a documented, pre-existing defect from inflating a caller's FAIL count
@@ -4234,7 +4407,7 @@ def cmd_pin_ref(args):
             v = run_m3(paths, one, "\n".join(old_ref), stdin_text=stdin_text, want_rc=e.want_rc, prog_argv=e.argv, compile_args=e.compile_args)
         else:
             v = run_m4(paths, one, "\n".join(old_ref), tmp, stdin_text=stdin_text, want_rc=e.want_rc, prog_argv=e.argv, compile_args=e.compile_args)
-        if v.kind in ("CRASH", "HANG", "UNPROVEN", "SKIP", "OOM"):
+        if v.kind in ("CRASH", "ABORT", "HANG", "UNPROVEN", "SKIP", "OOM"):
             refuse(f"{args.mode} on {args.entry} came back {v.kind} ({v.detail}) -- a pin records what the "
                    f"compiler DOES, and a run that crashed or could not be made says nothing about that")
         # ⭐ Verdict.text is a METHOD here, not a property -- and the whole file calls it as one. Reading the
@@ -5706,6 +5879,14 @@ def main():
     pt.add_argument("--list", action="store_true", help="also print the selected entry names, one per line, in partition order")
     pt.set_defaults(func=cmd_partition)
 
+    ex = sub.add_parser("expect", help="THE ORACLE'S WHOLE PROCESS RECORD per entry (ending, exit code, stdout against the ref, stderr), nothing graded")
+    ex.add_argument("sno"); ex.add_argument("ref")
+    ex.add_argument("--lang", default="")
+    ex.add_argument("--only", default="", help="comma-separated entry names")
+    ex.add_argument("--jobs", type=int, default=4)
+    ex.add_argument("--timeout", type=int, default=60)
+    ex.add_argument("--write", action="store_true", help="keep the lines as ALL.expect.tsv beside the master")
+    ex.set_defaults(func=cmd_expect)
     e = sub.add_parser("extract", help="materialize ONE suite entry back into a standalone .sno (+ optional .ref/.in/.xfail) file")
     e.add_argument("sno")
     e.add_argument("ref")

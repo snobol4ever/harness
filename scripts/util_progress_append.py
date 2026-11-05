@@ -75,7 +75,7 @@ CLASSES = ("rungs", "package", "benchmark")
 # the heap it ran under, recorded with that heap. It is not PASS and it is not FAIL or CRASH"): the runtime's own report since SCRIP
 # dc739c38a, classified by corpus_suite_harness._oom_verdict, the note carrying heap_cap_kb= (the cap the runtime named) and
 # oom_error= (its error number). Not green: a PASS that becomes OOM is a loss to every reader of this table.
-OUTCOMES = ("PASS", "FAIL", "CRASH", "HANG", "SKIP", "REFUSE", "UNGRADED", "UNPROVEN", "MISSING", "REJECT", "XFAIL", "XPASS",
+OUTCOMES = ("PASS", "FAIL", "CRASH", "ABORT", "HANG", "SKIP", "REFUSE", "UNGRADED", "UNPROVEN", "MISSING", "REJECT", "XFAIL", "XPASS",
             "DEFERRED", "OUTSIDE", "UNGRADABLE", "OOM")
 DB_DEFAULT = "/home/resources/progress/results.tsv"
 HERE = os.path.dirname(os.path.abspath(__file__))
