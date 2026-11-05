@@ -180,7 +180,7 @@ rt_div	asm	-	0	r8	-	clob,asm
 rt_div_diviso	asm	-	0	r8	-	clob,asm
 rt_div_divrc	asm	-	0	r8	-	clob,asm
 rt_div_sno	asm	-	0	r8	-	clob,asm
-rt_div_strict	asm	-	0	r8	-	clob,asm
+rt_div_strict	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_eval_dtx_land_γ	leaf	DESCR	1	-	0	call,alloc
 rt_eval_dtx_land_ω	leaf	-	0	-	0	call
 rt_eval_land	leaf	DESCR	1	-	0	call,alloc
@@ -274,7 +274,7 @@ rt_mod	asm	-	0	r8	-	clob,asm
 rt_mod_diviso	asm	-	0	r8	-	clob,asm
 rt_mod_divrc	asm	-	0	r8	-	clob,asm
 rt_mod_sno	asm	-	0	r8	-	clob,asm
-rt_mod_strict	asm	-	0	r8	-	clob,asm
+rt_mod_strict	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_mul	asm	-	0	none	-	clob,asm
 rt_mul_big	leaf	DESCR	1	-	0	call,alloc
 rt_mul_sno	asm	-	0	none	-	clob,asm
