@@ -9,7 +9,7 @@
 # rename moves label spellings and gc-site numbers, never bytes: templates-zero 6a and 6b were graded so), then deleted too. Nothing of a
 # program outlives its own comparison; the scratch dir is one pair wide and goes on EXIT.
 #
-# USE (from any root; A and B are SCRIP roots with a built ./scrip; each compile takes a run slot through util_run_slot.sh, niced):
+# USE (from any root; A and B are SCRIP roots with a built ./scrip; each compile takes a run slot through util_run_slot.sh, no nice: the batch class weights the job):
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --population            # every committed benchmark and demo source
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --population --step N   # plus step N's witnesses of templates_zero/STEPS.tsv
 #   bash harness/scripts/util_template_ab_identity.sh A_ROOT B_ROOT --list FILE             # one source path per line
@@ -55,7 +55,7 @@ fi
 for p in "${PROGS[@]:-}"; do [ -n "$p" ] && echo "$p" >> "$LISTF"; done
 total=$(wc -l < "$LISTF"); [ "$total" -gt 0 ] || { echo "REFUSE(2): the population is empty"; exit 2; }
 norm() { sed -E 's/\.cpp:[0-9]+/.cpp:N/g; s/\.c:[0-9]+/.c:N/g' "$1" | sha256sum | cut -c1-16; }
-compile() { ( cd "$2" && nice -n 19 bash "$HERE/util_run_slot.sh" timeout -k 5 300 "$1/scrip" --compile --out="$3" "$4" < /dev/null > "$5" 2>&1 ); }
+compile() { ( cd "$2" && bash "$HERE/util_run_slot.sh" timeout -k 5 300 "$1/scrip" --compile --out="$3" "$4" < /dev/null > "$5" 2>&1 ); }
 text_same=0; bytes_same=0; diffn=0; fail=0; rc=0
 while IFS= read -r p; do
   [ -n "$p" ] || continue
