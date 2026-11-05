@@ -129,12 +129,23 @@ def pow2_over(n):
     return p
 
 
+OWN_SLOT_VOCABS = ('rk',)
+
+
+def slot_sym(r):
+    if r['entry'].startswith('bt_'):
+        return r['entry']
+    if r['vocab'] in OWN_SLOT_VOCABS and r['conv'] in ('leaf', 'open'):
+        return 'bt_' + sanitize(r['name'])
+    return None
+
+
 def is_leaf_row(r):
-    return r['conv'] == 'leaf' and r['entry'].startswith('bt_')
+    return r['conv'] == 'leaf' and slot_sym(r) is not None
 
 
 def is_open_row(r):
-    return r['conv'] == 'open' and r['entry'].startswith('bt_')
+    return r['conv'] == 'open' and slot_sym(r) is not None
 
 
 def gen(rows):
@@ -207,21 +218,21 @@ def gen(rows):
     l.append('typedef DESCR_t (*bt_leaf_t)(DESCR_t * args, int nargs);')
     seen = []
     for r in rows:
-        if is_leaf_row(r) and r['entry'] not in seen:
-            seen.append(r['entry'])
-            l.append('extern DESCR_t %s(DESCR_t * args, int nargs) __attribute__((weak, visibility("hidden")));' % r['entry'])
+        if is_leaf_row(r) and slot_sym(r) not in seen:
+            seen.append(slot_sym(r))
+            l.append('extern DESCR_t %s(DESCR_t * args, int nargs) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
     l.append('static const bt_leaf_t g_bt_leaf[BT_ROWS] = {')
     for i in range(0, n, 8):
-        l.append('    ' + ' '.join(('%s,' % r['entry']) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
+        l.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_leaf_row(r) else '0,' for r in rows[i:i + 8]))
     l.append('};')
     l.append('typedef int (*bt_open_t)(DESCR_t * args, int nargs, DESCR_t * out, long * rq);')
     for r in rows:
-        if is_open_row(r) and r['entry'] not in seen:
-            seen.append(r['entry'])
-            l.append('extern int %s(DESCR_t * args, int nargs, DESCR_t * out, long * rq) __attribute__((weak, visibility("hidden")));' % r['entry'])
+        if is_open_row(r) and slot_sym(r) not in seen:
+            seen.append(slot_sym(r))
+            l.append('extern int %s(DESCR_t * args, int nargs, DESCR_t * out, long * rq) __attribute__((weak, visibility("hidden")));' % slot_sym(r))
     l.append('static const bt_open_t g_bt_open[BT_ROWS] = {')
     for i in range(0, n, 8):
-        l.append('    ' + ' '.join(('%s,' % r['entry']) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
+        l.append('    ' + ' '.join(('%s,' % slot_sym(r)) if is_open_row(r) else '0,' for r in rows[i:i + 8]))
     l.append('};')
     return '\n'.join(h) + '\n', '\n'.join(c) + '\n', '\n'.join(l) + '\n'
 
