@@ -53,6 +53,6 @@ mkdir -p "/tmp/s4e/${S4E_SEAT:-cio}"
 out="$(mktemp "${TMPDIR:-/tmp}/s4e_batch_grader_step.XXXXXX")"
 S4E_HOME="$S4E" timeout -k 5 600 bash -c "$probe" > "$out" 2>&1; rc=$?
 tail -5 "$out" | sed 's/^/    /'; refused=0; grep -q 'REFUSE(2)' "$out" && refused=1; rm -f "$out"
-case "$rc" in 0) v=GREEN; ec=0 ;; 124|137) v="REFUSED (the probe ran past its 600 s budget)"; ec=2 ;; 2) if [ "$refused" = 1 ]; then v="REFUSED (could not measure)"; ec=2; else v="RED (scrip refused the switch with rc 2: the instrument does not exist yet)"; ec=1; fi ;; *) v=RED; ec=1 ;; esac
+case "$rc" in 0) v=GREEN; ec=0 ;; 124|137) v="REFUSED (the probe ran past its 600 s budget)"; ec=2 ;; 2) if [ "$refused" = 1 ]; then v="REFUSED (could not measure)"; ec=2; else v="RED (the probe exited 2 without its own REFUSE(2): scrip refused a switch it does not have yet, or cmp found no output file -- the lines above say which)"; ec=1; fi ;; *) v=RED; ec=1 ;; esac
 echo "VERDICT: STEP $step $slug: probe rc=$rc -> $v"
 exit $ec
