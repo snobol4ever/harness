@@ -31,7 +31,7 @@ fi
 [ $# -ge 1 ] || { echo "usage: util_batch.sh CMD [ARG]..." >&2; exit 2; }
 [ -z "${S4E_IN_SLICE:-}" ] || { echo "⛔ REFUSE(2) util_batch.sh: inside a quiet slice -- a batch job must not share a clock measurement's box (ARCH-SHARED-DEVELOPMENT 5)" >&2; exit 2; }
 [ -z "${S4E_BATCH_HELD:-}" ] || exec "$@"
-[ "${S4E_CLASS:-}" != grader ] || exec "$@"
+[ "${S4E_CLASS:-}" != grader ] || { export S4E_BATCH_HELD=grader; exec "$@"; }   # the grader is its own class: the job runs unwrapped, and HELD is set so a self-wrapping script runs once (hq_zetas 2026-11-04: without it, 13 scripts exec-looped forever under loop8)
 . "$HERE/lib_slots.sh" || { echo "⛔ REFUSE(2) util_batch.sh: lib_slots.sh unloadable" >&2; exit 2; }
 seat="$(s4e_slot_seat)"
 lockdir="${S4E_BATCH_LOCK_DIR:-/tmp/s4e-batch}"
