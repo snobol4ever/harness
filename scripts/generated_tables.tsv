@@ -30,3 +30,5 @@ parsers	built	SCRIP/src/parsers/pascal/pascal.lex.c	bash harness/scripts/test_ga
 gc_allocating_table	binary	SCRIP/src/templates/x86/gc_allocating_table.inc	python3 harness/scripts/util_gen_gc_allocating_table.py --check	python3 harness/scripts/util_gen_gc_allocating_table.py
 rt_entries_asm	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-asm	python3 harness/scripts/util_gen_rt_entry_table.py --sync-asm
 rt_entries_alloc	binary	harness/scripts/rt_entries.tsv	python3 harness/scripts/util_gen_rt_entry_table.py --check-alloc	python3 harness/scripts/util_gen_rt_entry_table.py --sync-alloc
+redirects	source	.github/REDIRECTS.tsv	python3 harness/scripts/util_redirects.py --check	python3 harness/scripts/util_redirects.py --regenerate
+rules_index	source	.github/RULES-INDEX.md	python3 harness/scripts/util_rules_index.py --check	python3 harness/scripts/util_rules_index.py --regenerate
