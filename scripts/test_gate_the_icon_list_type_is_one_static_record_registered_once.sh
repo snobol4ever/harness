@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_gate_the_icon_list_type_is_one_static_record_registered_once.sh -- AN ICON LIST'S TYPE RECORD IS ONE STATIC DATBLK_t OFF THE HEAP, LINKED INTO THE TYPE
-# REGISTRY ONCE AT START-UP (the cto, CTO-510, 2026-11-04, option A, row icon-lists-tables-and-record-fields-are-built-and-read-in-c-from-the-emitted-site-ceo-1969,
+# REGISTRY ONCE AT START-UP (the cto, CTO-510, 2026-11-04, option A, row icon-lists-tables-and-record-fields-are-built-and-read-in-c-from-the-emitted-site-r-1969,
 # step 1 slice A1; STATE-GLOBAL under CTO-501). Before it five C sites each guarded a DEFDAT_fn("list(...)") with a static flag and the record was an HB_DATB heap
 # block the compactor moved, so no box or leaf could hold its address.
 # FOUR READINGS: (a) no DEFDAT_fn("list( ... ") call remains anywhere under src/ (the registry is not asked for the list type by spelling it again); (b) core.c defines
