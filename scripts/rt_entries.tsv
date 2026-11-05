@@ -91,7 +91,7 @@ gc_run_verdicts	asm	-	0	r8|r10|r11	-	clob,asm
 gc_wl_drain	asm	-	0	r8|r10|r11	-	clob,asm
 gva_register	leaf	OTHER	1	-	0	call,alloc
 icn_field_get	leaf	DESCR	1	-	0	call,alloc
-icn_field_get_at	asm	-	0	r8|r10|r11	-	clob,asm
+icn_field_get_at	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 memcmp	leaf	-	0	-	-	call,import
 pas_arr_get	leaf	DESCR	1	-	0	call,alloc
 pas_arr_make	leaf	DESCR	1	-	0	call,alloc
