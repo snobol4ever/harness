@@ -469,6 +469,8 @@ def rbp_class(kind, xfwhy, home):
         return 'call-act-word'
     if home == 'SPINE':
         return 'operand-across-retaining-edge'
+    if xfwhy == 'retaining-condition':
+        return 'operand-across-retaining-edge'
     if xfwhy == 'construct-record':
         return 'construct-record'
     if xfwhy == 'address-escapes':
