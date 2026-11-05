@@ -909,6 +909,28 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     ls "$w/plant-x/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
+s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arrivals, one heading across two verbs; after check one line; a third arrival, one heading again
+    local w o1 o2 o3 o4 h why=""
+    [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-once]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_banner_once.XXXXXX")" || { echo "REFUSE(2) [banner --probe-once]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$w"' EXIT; mkdir -p "$w/$ME/inbox" "$w/tasks" "$w/claims"; printf '# plant\n' > "$w/QUEUE.tsv"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
+    printf 'FROM plant TO %s RE one\nbody one\n' "$ME" > "$w/$ME/inbox/1-plant-one.msg"; printf 'FROM plant TO %s RE two\nbody two\n' "$ME" > "$w/$ME/inbox/2-plant-two.msg"
+    run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
+    o1="$(run whoami)"; o2="$(run whoami)"
+    h="$(printf '%s\n%s\n' "$o1" "$o2" | grep -c 'HAS [0-9]* UNREAD HQ MESSAGE')"; [ "$h" = 1 ] || why="$why the heading printed $h times over two verbs (want 1);"
+    printf '%s\n' "$o1" | grep -q 'HAS 2 UNREAD' || why="$why the first heading did not count both arrivals;"
+    printf '%s\n' "$o2" | grep -q '2 unread (announced above once)' || why="$why the second verb did not print the one-line reminder [$(printf '%s' "$o2" | head -1 | cut -c1-80)];"
+    run check > /dev/null; o3="$(run whoami)"
+    printf '%s\n' "$o3" | grep -q '2 read, not cleared' || why="$why after check the banner is not the one read-not-cleared line [$(printf '%s' "$o3" | head -1 | cut -c1-80)];"
+    printf '%s\n' "$o3" | grep -q 'HAS [0-9]* UNREAD' && why="$why the heading reprinted after check;"
+    printf 'FROM plant TO %s RE three\nbody three\n' "$ME" > "$w/$ME/inbox/3-plant-three.msg"; o4="$(run whoami)"
+    printf '%s\n' "$o4" | grep -q 'HAS 1 UNREAD HQ MESSAGE' && printf '%s\n' "$o4" | grep -q 'RE three' || why="$why a new arrival did not get its own heading once [$(printf '%s' "$o4" | head -2 | tr '\n' '|' | cut -c1-100)];"
+    printf '%s\n' "$o4" | grep -q 'RE one' && why="$why the new heading re-listed an announced message;"
+    run check > /dev/null; run clear > /dev/null; run whoami > /dev/null; [ -f "$w/$ME/.banner.announced" ] && why="$why the announced record outlived an emptied inbox;"
+    [ -z "$why" ] && { echo "BANNER headings_reprinted=0 arrivals=3 headings=2 after_check=one-line (probe: two arrivals announced once across two verbs, one line after check, a third arrival announced alone, the record pruned on clear)"; exit 0; }
+    echo "BANNER PROBE RED:$why"; exit 1; }
 s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> ASSIGNED:<the request's seat>, one telegram
     local _l _t _st _b _seat _n=0 _v
     while IFS= read -r _l; do
@@ -2321,12 +2343,24 @@ s4e_sweep_orphans
 # REFUSED rc=2 rather than proceed, which is the instrument working -- but a human banner on stdout silently
 # corrupts every machine-readable verb, and only the newest verb happened to notice.
 _bfd=1; case "$cmd" in whoami) _bfd=2;; esac
+# ⭐ ONCE PER ARRIVAL (box-scheduler step 37, CTO-503; the seats' friction reports: the same six-line heading on every verb for hours). The heading
+# names only messages never announced before ($PO/$ME/.banner.announced); after `check` has displayed everything the banner is one line
+# ("N read, not cleared") until a new message arrives; announced-but-unread mail is one line too. The shout itself is kept: every arrival is announced
+# once, on whatever verb runs next, on the same stream as before.
 case "$cmd" in check|clear) ;; *)
-  _n=0; for _f in "$PO/$ME/inbox"/*.msg; do [ -f "$_f" ] && _n=$((_n+1)); done
-  if [ "$_n" -gt 0 ]; then
-    { printf '\n⛔⛔⛔ %s HAS %s UNREAD HQ MESSAGE(S) — READ THEM BEFORE ANYTHING ELSE ⛔⛔⛔\n' "$ME" "$_n"
-      for _f in "$PO/$ME/inbox"/*.msg; do [ -f "$_f" ] || continue; printf '    %s\n' "$(head -1 "$_f")"; done
-      printf '    bash harness/scripts/s4e_msg.sh check      <- do this now\n\n'; } >&$_bfd; fi ;;
+  _an="$PO/$ME/.banner.announced"; _lc="$PO/$ME/.last-check"; _n=0; _new=0; _unread=0; _nl=""; _keep=""
+  for _f in "$PO/$ME/inbox"/*.msg; do [ -f "$_f" ] || continue; _b="$(basename "$_f")"; _n=$((_n+1)); _keep="$_keep$_b
+"
+    grep -qxF "$_b" "$_lc" 2>/dev/null || _unread=$((_unread+1))
+    grep -qxF "$_b" "$_an" 2>/dev/null && continue
+    _new=$((_new+1)); _nl="$_nl    $(head -1 "$_f")
+"; done
+  if [ "$_n" -gt 0 ]; then mkdir -p "$PO/$ME" 2>/dev/null; printf '%s' "$_keep" > "$_an" 2>/dev/null; else rm -f "$_an" 2>/dev/null; fi
+  if [ "$_new" -gt 0 ]; then
+    { printf '\n⛔⛔⛔ %s HAS %s UNREAD HQ MESSAGE(S) — READ THEM BEFORE ANYTHING ELSE ⛔⛔⛔\n%s' "$ME" "$_new" "$_nl"
+      printf '    bash harness/scripts/s4e_msg.sh check      <- do this now\n\n'; } >&$_bfd
+  elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_n" >&$_bfd
+  elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread (announced above once); bash harness/scripts/s4e_msg.sh check\n' "$ME" "$_unread" >&$_bfd; fi ;;
 esac
 # ⭐ ONE PROTOCOL NUMBER, HOISTED (ceo 2026-08-29, row s4e-clear-needs-protocol-version-guard): next() and clear() both
 # guard on it now, and two inline copies of one value is the drift class this file convicts elsewhere. Bump it HERE and
@@ -4030,7 +4064,8 @@ TASKEOF
          echo "QUEUE EMPTY — every row claimed. Ask hq: s4e_msg.sh ask work 'queue empty'"
          [ -n "$_gw" ] && { echo "   ⭐ NOT empty of WORK — these rows are GOVERNANCE-GATED, waiting on a grant, not on a seat:"; printf '%s\n' "$_gw"; echo "   Chase the grant (route via your HQ to ceo), do not re-park these to FREE."; }
          exit 1;;
-  banner) # ⛔ FACTS ONLY -- NO PREDICTIONS (Lon 2026-08-22: "Why are you trying to predict the future. Quit saying
+  banner) [ "${2:-}" = --probe-once ] && s4e_banner_plant_once
+         # ⛔ FACTS ONLY -- NO PREDICTIONS (Lon 2026-08-22: "Why are you trying to predict the future. Quit saying
          # ⛔ FIRST THING IN THIS CASE, BEFORE ANY EXIT: the first placement was after the verdict line, which always `exit`s
          # (:1308), so the block was unreachable -- proven by deleting a hook and running banner: it did NOT come back. Falsify,
          # do not assume; a block that reads as coverage and cannot fire is the defect it was written to cure.
