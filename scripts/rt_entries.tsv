@@ -123,6 +123,7 @@ rt_assign_var_strict	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_at_cursor	leaf	OTHER	1	-	0	call,alloc
 rt_at_cursor_open	open	OTHER	1	-	1	call,alloc
 rt_at_cursor_patv	leaf	OTHER	1	-	0	call,alloc
+rt_ball_rule_set	leaf	-	0	-	0	call
 rt_binop_overload_open	open	OTHER	1	-	1	call,alloc
 rt_bomb	leaf	-	0	-	0	call
 rt_call_apply_gen_h	gen	DESCR	1	-	0	call,alloc
@@ -613,6 +614,8 @@ rt_pl_dop_trie_meta_set	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_trie_new	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_trie_slice	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_tx_db	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_undo_push	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_undo_take	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_unget_byte	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_unget_byte_s	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_unget_char	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
@@ -756,4 +759,3 @@ subscript_get2_ext_strict	leaf	DESCR	1	-	0	call,alloc
 subscript_get2_strict	leaf	DESCR	1	-	0	call,alloc
 table_find_pair_d	asm	-	0	r8|r10|r11	-	clob,asm
 to_int	leaf	OTHER	1	-	0	call,alloc
-rt_ball_rule_set	leaf	-	0	-	0	call
