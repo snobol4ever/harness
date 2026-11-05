@@ -183,7 +183,7 @@ preload_for() { case "$1" in preload1) echo "-Laa/aa.sno";; preload2) echo "-Laa
 # ⭐ IT IS A SHIM, NOT A SECOND IMPLEMENTATION, and the reason is the REGEX DIALECT rather than tidiness. The
 # harness compiles PYTHON regexes; this file's other normalisations are sed EREs. A re-implementation in awk or sed
 # would agree on every mask anyone happened to test and diverge on the first one using \d, (?i) or a lazy
-# quantifier -- one sidecar meaning two different things depending on which runner read it. util_apply_ceo409_mask.py
+# quantifier -- one sidecar meaning two different things depending on which runner read it. util_apply_line_mask.py
 # imports read_mask_sidecar() and apply_line_mask() from the harness, so the path rule, the dialect, the marker and
 # the malformed-row refusal are all the ONE authority's.
 # ⛔ DEFAULT-OFF AND MEASURABLY SO: no `<name>.mask` beside the fixture and this is byte-identical to the path that
@@ -203,7 +203,7 @@ mask_preflight() {
         [ "$n" = ALL ] || [ -f "$SUITE/$n.sno" ] || { echo "⛔ REFUSE(rc=2): $f names no program in this suite -- $n.sno is not in $SUITE."; echo "   R-409 guardrail 2: a mask that matches nothing is one nobody notices has stopped applying."; exit 2; }
         [ -f "$SUITE/$n.ref" ] || { echo "⛔ REFUSE(rc=2): $f has no $n.ref beside it, and the sidecar path is derived from the REF -- the shim would look for a file that is not there and report no masks, which is a silent nothing rather than a refusal."; exit 2; }
         # the sidecar's own row validation is the harness's, reached through the shim, so it cannot drift from it.
-        printf '' | python3 "$HERE/util_apply_ceo409_mask.py" "$SUITE/$n.ref" "$n" "$W/mask_n" >/dev/null || exit 2
+        printf '' | python3 "$HERE/util_apply_line_mask.py" "$SUITE/$n.ref" "$n" "$W/mask_n" >/dev/null || exit 2
     done
     [ "$any" = 1 ] && echo "R-409 masks: $(ls "$SUITE"/*.mask 2>/dev/null | wc -l) sidecar(s) armed and validated"
     return 0
@@ -229,7 +229,7 @@ mask_apply() { # $1=name $2=text -> echoes the masked text; leaves the replaced-
     printf '0' > "$W/mask_n"
     local mref; mref="$(mask_ref_for "$1")" || { printf '%s' "$2"; return 0; }
     local out
-    if ! out="$(printf '%s' "$2" | python3 "$HERE/util_apply_ceo409_mask.py" "$mref" "$1" "$W/mask_n" 2>"$W/mask_err")"; then
+    if ! out="$(printf '%s' "$2" | python3 "$HERE/util_apply_line_mask.py" "$mref" "$1" "$W/mask_n" 2>"$W/mask_err")"; then
         printf 'ERR' > "$W/mask_n"; printf '%s' "$2"; return 0
     fi
     printf '%s' "$out"
