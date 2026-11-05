@@ -6,7 +6,9 @@
 # THE MECHANISM is the merge queue's (a landing is tested on the tree it will become, and pushed only if that tree is green), run by the lander:
 #   preflight   every repo present is a git repo with no tracked change and no rebase in progress; the gate is named; one landing per root (flock)
 #   fetch       git fetch origin main in SCRIP, harness, corpus and .github (each under timeout)
-#   rebase      a repo with commits rebases onto origin/main, a repo without fast-forwards to it; a conflict aborts the rebase and reads RED
+#   rebase      a repo with commits rebases onto origin/main, a repo without fast-forwards to it; a conflict confined to registered generated
+#               outputs takes the replayed side and goes on (the regenerate stage rewrites them from the merged sources: step 19, generated tables
+#               merge by regeneration, never by hand; --merge-probe proves it); any other conflict aborts the rebase and reads RED
 #   regenerate  every source-phase generator of generated_tables.tsv is checked (through util_check_cache.sh) and a stale one is rewritten,
 #               re-checked and committed in its own repo as a separate commit; a generator that writes outside its declared outputs reads RED
 #   build       make -j8 in SCRIP (the Makefile joins the box-wide jobserver and fetches the build cache's entry for a clean tree)
@@ -46,6 +48,7 @@ while [ $# -gt 0 ]; do
         --gate-timeout) gt="${2:-}"; shift 2 ;;
         --tries) tries="${2:-}"; shift 2 ;;
         --probe) mode=probe; shift ;;
+        --merge-probe) mode=merge_probe; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -67,10 +70,8 @@ if [ "$mode" = tables ]; then
     for k in $(awk -F'\t' '!/^#/ && $1 != "name" && !s[$1]++ {print $1}' "$TSV"); do r="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $3; exit}' "$TSV")"; r="${r%%/*}"; [ -e "$home/$r/.git" ] || echo "# skipped in this home: $k (no $r checkout under $home)"; done
     exit 0
 fi
-probe() {
-    local src="$home" T r sha objs b n rc log k RACE="probe: a racer lands on corpus during the gate"
-    T="$(mktemp -d "/tmp/s4e/$seat/land-probe.XXXXXX")" || refuse "cannot make a scratch directory"
-    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+scratch_clone() {   # <T>: a bare scratch origin of each repo borrowing this root's objects, and a work clone of each under <T>/work (corpus sparse); the probes build on it
+    local src="$home" T="$1" r sha objs b
     mkdir -p "$T/origin" "$T/work" "$T/po"
     for r in "${ORDER[@]}"; do
         [ -e "$src/$r/.git" ] || refuse "probe: no $src/$r to borrow"
@@ -86,8 +87,53 @@ probe() {
             git clone -q --shared "$b" "$T/work/$r" || refuse "probe: cannot clone $r"
         fi
         git -C "$T/work/$r" config user.name LCherryholmes; git -C "$T/work/$r" config user.email lcherryh@yahoo.com
+    done
+}
+merge_probe() {   # step 19's proof: origin and the landing each regenerate the same table from a different source; the rebase conflicts on the output alone and the landing regenerates it from the merged source
+    local T W O log rc got
+    T="$(mktemp -d "/tmp/s4e/$seat/land-merge-probe.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    scratch_clone "$T"; W="$T/work/harness"; O="$T/other"
+    printf '%s\n' '#!/usr/bin/env bash' 'H="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; src="$H/probe_table.src"; out="$H/probe_table.out"' \
+        'want="$(printf "# generated from probe_table.src sha=%s\n" "$(sha1sum < "$src" | cut -c1-12)"; sort "$src")"' \
+        'case "${1:-}" in --check) [ -f "$out" ] && [ "$(cat "$out")" = "$want" ] && exit 0; echo "probe_table.out is stale"; exit 1 ;; --write) printf "%s\n" "$want" > "$out"; exit 0 ;; *) exit 2 ;; esac' > "$W/scripts/probe_gen.sh"
+    printf 'a\nb\nc\n' > "$W/scripts/probe_table.src"; bash "$W/scripts/probe_gen.sh" --write || refuse "merge-probe: the probe generator cannot write"
+    printf 'probe_table\tsource\tharness/scripts/probe_table.out\tbash harness/scripts/probe_gen.sh --check\tbash harness/scripts/probe_gen.sh --write\n' >> "$W/scripts/generated_tables.tsv"
+    git -C "$W" add scripts/probe_gen.sh scripts/probe_table.src scripts/probe_table.out scripts/generated_tables.tsv && git -C "$W" commit -q -m "merge-probe: a generated table, its source and its generator" \
+        && git -C "$W" push -q origin HEAD:main || refuse "merge-probe: cannot seed the scratch origin"
+    git clone -q --shared "$T/origin/harness.git" "$O" || refuse "merge-probe: cannot clone the other side"
+    git -C "$O" config user.name LCherryholmes; git -C "$O" config user.email lcherryh@yahoo.com
+    { printf 'd\n'; cat "$O/scripts/probe_table.src"; } > "$O/scripts/probe_table.src.new" && mv "$O/scripts/probe_table.src.new" "$O/scripts/probe_table.src"; bash "$O/scripts/probe_gen.sh" --write; git -C "$O" add -A && git -C "$O" commit -q -m "merge-probe: origin adds d and regenerates" && git -C "$O" push -q origin HEAD:main || refuse "merge-probe: cannot move origin"
+    printf 'e\n' >> "$W/scripts/probe_table.src"; bash "$W/scripts/probe_gen.sh" --write; git -C "$W" add -A && git -C "$W" commit -q -m "merge-probe: the landing adds e and regenerates" || refuse "merge-probe: cannot commit the landing's side"
+    log="$T/merge.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'true' harness > "$log" 2>&1; rc=$?
+    sed 's/^/    merge| /' "$log" | grep -E 'stage=rebase|stage=regenerate|LAND ok|LAND RED|REFUSE' | tail -4
+    [ "$rc" = 0 ] && grep -q '^LAND stage=rebase .*merged_outputs=1 (harness/scripts/probe_table.out' "$log" && grep -q '^LAND stage=regenerate .* 1 stale (probe_table)' "$log" \
+        || { echo "MERGE RED: the landing returned rc=$rc without one output merged by regeneration (log kept: $log)"; trap - EXIT; exit 1; }
+    git -C "$O" pull -q --rebase origin main || { echo "MERGE RED: the other side cannot pull the landed origin"; exit 1; }
+    got="$(grep -vc '^#' "$O/scripts/probe_table.out")"; bash "$O/scripts/probe_gen.sh" --check > /dev/null; rc=$?
+    [ "$rc" = 0 ] && [ "$got" = 5 ] && ! grep -q '^<<<<<<<\|^>>>>>>>' "$O/scripts/probe_table.out" && [ "$(grep -c . "$O/scripts/probe_table.src")" = 5 ] \
+        || { echo "MERGE RED: origin's output is not the regeneration of the merged source (check rc=$rc rows=$got)"; exit 1; }
+    git -C "$O" log --format=%s > "$T/log.txt"; grep -q 'merge-probe: origin adds d' "$T/log.txt" && grep -q 'merge-probe: the landing adds e' "$T/log.txt" || { echo "MERGE RED: a side's commit is missing on origin"; exit 1; }   # a file, not a pipe: grep -q under pipefail kills git log
+    git -C "$W" pull -q --rebase origin main || refuse "merge-probe: the landing's side cannot pull the landed origin"
+    printf 'g\n' >> "$O/scripts/probe_table.src"; bash "$O/scripts/probe_gen.sh" --write; git -C "$O" add -A && git -C "$O" commit -q -m "merge-probe: origin appends g" && git -C "$O" push -q origin HEAD:main || refuse "merge-probe: cannot move origin again"
+    printf 'f\n' >> "$W/scripts/probe_table.src"; bash "$W/scripts/probe_gen.sh" --write; git -C "$W" add -A && git -C "$W" commit -q -m "merge-probe: the landing appends f" || refuse "merge-probe: cannot commit the second side"
+    log="$T/merge2.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'true' harness > "$log" 2>&1; rc=$?
+    sed 's/^/    merge2| /' "$log" | grep -E 'LAND RED|LAND ok|REFUSE' | tail -2
+    [ "$rc" = 1 ] && grep -q '^LAND RED stage=rebase repo=harness conflicts= scripts/probe_table.src (not a generated output' "$log" && [ -z "$(git -C "$W" status --porcelain)" ] && [ ! -e "$(git -C "$W" rev-parse --absolute-git-dir)/rebase-merge" ] \
+        || { echo "MERGE RED: a conflict in the SOURCE (not a generated output) did not abort the rebase and read RED (rc=$rc)"; trap - EXIT; exit 1; }
+    echo "MERGE regenerated=1 conflicts=0 source_conflict=RED (the rebase met a conflict in harness/scripts/probe_table.out alone, took the replayed side, and the regenerate stage rewrote it from the merged source: 5 rows, check rc 0, both commits on origin; a conflict in the source itself aborted the rebase and read RED, the tree left as it was)"
+    exit 0
+}
+probe() {
+    local src="$home" T r sha objs b n rc log k RACE="probe: a racer lands on corpus during the gate"
+    T="$(mktemp -d "/tmp/s4e/$seat/land-probe.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    scratch_clone "$T"
+    for r in "${ORDER[@]}"; do
         git -C "$T/work/$r" commit -q --allow-empty -m "probe: the landing's own commit in $r" || refuse "probe: cannot commit in $r"
-        advance "$b" "probe: origin moved under $r before the landing"
+        advance "$T/origin/$r.git" "probe: origin moved under $r before the landing"
     done
     log="$T/arm1.log"
     declare -A was
@@ -190,6 +236,7 @@ advance() {
     c="$(git -C "$1" commit-tree "main^{tree}" -p main -m "$2")" && git -C "$1" update-ref refs/heads/main "$c" main || refuse "probe: cannot advance $1"
 }
 [ "$mode" = probe ] && probe
+[ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
 # the tree is rebased there -- a move under the row's affected set drops the lease and re-runs the gate unleased, a move outside it pushes the rebased tree with the
@@ -231,7 +278,7 @@ else [ -n "$gate" ] || refuse "no gate: name the row (--row TOPIC) or the comman
 named() { local x; [ "${#names[@]}" = 0 ] && return 0; for x in "${names[@]}"; do [ "$x" = "$1" ] && return 0; done; return 1; }
 for r in "${present[@]}"; do
     [ -n "$(git -C "$home/$r" status --porcelain --untracked-files=no)" ] && refuse "$r has uncommitted tracked changes: a landing lands commits"
-    for d in rebase-merge rebase-apply MERGE_HEAD; do [ -e "$(git -C "$home/$r" rev-parse --git-path "$d")" ] && refuse "$r has a $d in progress"; done
+    for d in rebase-merge rebase-apply MERGE_HEAD; do [ -e "$(git_state "$r" "$d")" ] && refuse "$r has a $d in progress"; done
 done
 for x in "${names[@]}"; do [ -e "$home/$x/.git" ] || refuse "named $x, and there is no $home/$x"; done
 mark preflight "home=$home seat=$seat repos=${present[*]} gate=$(printf '%s' "$gate" | cut -c1-120)"
@@ -247,16 +294,32 @@ rebase() {
         a="$(ahead "$r")"
         if [ "$a" -gt 0 ]; then
             named "$r" || refuse "$r carries $a unlanded commit(s) and is not named: the gate would read a tree that is not pushed"
-            if ! g "$r" rebase -q origin/main > "$LOG/rebase.$r" 2>&1; then
-                u="$(git -C "$home/$r" diff --name-only --diff-filter=U | head -20 | tr '\n' ' ')"
-                git -C "$home/$r" rebase --abort > /dev/null 2>&1
-                red rebase "repo=$r conflicts=${u:-?} (the rebase was aborted; the tree is as it was)"
-            fi
+            if ! g "$r" rebase -q origin/main > "$LOG/rebase.$r" 2>&1; then resolve_output_conflicts "$r"; fi
         else
             g "$r" merge -q --ff-only origin/main > "$LOG/rebase.$r" 2>&1 || red rebase "repo=$r cannot fast-forward to origin/main: $(tail -1 "$LOG/rebase.$r")"
         fi
     done
-    mark rebase "$(for r in "${present[@]}"; do printf '%s+%s ' "$r" "$(ahead "$r")"; done)"
+    mark rebase "$(for r in "${present[@]}"; do printf '%s+%s ' "$r" "$(ahead "$r")"; done)${merged_names:+merged_outputs=$merged_outputs (${merged_names# }) taken from the replayed side, regenerated by the regenerate stage}"
+}
+merged_outputs=0; merged_names=""
+git_state() { local p; p="$(git -C "$home/$1" rev-parse --git-path "$2")"; case "$p" in /*) printf '%s' "$p" ;; *) printf '%s/%s/%s' "$home" "$1" "$p" ;; esac; }   # --git-path answers relative to the repo, and this script runs elsewhere
+resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by regeneration, never by hand): while the rebase stops on conflicts confined to registered generated
+    local r="$1" f o is_out other; local -a outs u   # outputs of this repo, take the replayed side and continue; the regenerate stage then rewrites them from the merged sources. Any other conflict aborts and reads RED.
+    mapfile -t outs < <(awk -F'\t' -v p="^$r/" '!/^#/ && $1 != "name" && $3 ~ p {sub(p, "", $3); print $3}' "$TSV")
+    while [ -e "$(git_state "$r" rebase-merge)" ] || [ -e "$(git_state "$r" rebase-apply)" ]; do
+        mapfile -t u < <(git -C "$home/$r" diff --name-only --diff-filter=U)
+        other=""
+        for f in "${u[@]}"; do is_out=0; for o in "${outs[@]}"; do [ "$f" = "$o" ] && is_out=1; done; [ "$is_out" = 1 ] || other="$other $f"; done
+        if [ -n "$other" ] || [ "${#u[@]}" = 0 ]; then
+            git -C "$home/$r" rebase --abort > /dev/null 2>&1
+            red rebase "repo=$r conflicts=${other:-?} (not a generated output; the rebase was aborted; the tree is as it was)"
+        fi
+        for f in "${u[@]}"; do
+            git -C "$home/$r" checkout --theirs -- "$f" > /dev/null 2>&1 && git -C "$home/$r" add -- "$f" || { git -C "$home/$r" rebase --abort > /dev/null 2>&1; red rebase "repo=$r cannot take the replayed side of $f"; }
+            merged_outputs=$((merged_outputs + 1)); merged_names="$merged_names $r/$f"
+        done
+        GIT_EDITOR=true git -C "$home/$r" rebase --continue > "$LOG/rebase.$r" 2>&1 || true
+    done
 }
 written=(); summary=""; binfo=""
 regen() {
