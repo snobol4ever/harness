@@ -3673,8 +3673,8 @@ TASKEOF
            if [ -f "$PO/tasks/$st.task.md" ]; then printf 'task: %s\n' "$PO/tasks/$st.task.md"
              printf '      ⭐ THE BATON IS THE TASK FILE, NOT THIS PRINTOUT — read GOAL + DONE-WHEN + the ONE ## NEXT block,\n'
              printf '      work THAT, then rewrite ## NEXT before you stop. Questions go in ## QA, receipts in ## LEDGER.\n'
-             printf '      ⛔ the current block is the FIRST ^## NEXT — demote the one you replace to ## SUPERSEDED-NEXT\n'
-             printf '      (baton-one-next-block-gate, ceo ruling 2026-08-29; a few live batons still predate this).\n'
+             printf '      ⛔ the current block is the FIRST ^## NEXT — demote the one you replace to ## SUPERSEDED-NEXT; the sweep archives it to\n'
+             printf '      tasks/archive/<topic>.superseded.md and keeps NEXT under 8192 bytes (box-scheduler step 15; one-next-block gate, ceo 2026-08-29).\n'
              printf '      ⛔ a baton with NO ## NEXT block: distill one from GOAL + the latest ledger, write it, THEN work.\n'; fi
            # ⭐ V2-2: QUEUE.tsv is an INDEX (rank·topic·owner·state), not a brief store. Fields 3 and 4 are
            # owner and state now, so printing them as "brief:"/"first:" would announce "brief: unassigned".
@@ -4643,6 +4643,8 @@ TASKEOF
          s4e_sweep_verdicts   # box-scheduler step 31: a PARKED-AWAITING:<request-id> row returns to its seat when the verdict is in
          _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
          S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --check > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --apply 2>&1 | sed 's/^/sweep: /'
+         _bc="$(dirname "${BASH_SOURCE[0]}")/util_baton_check.py"   # box-scheduler step 15: every baton NEXT under the cap, SUPERSEDED blocks archived; the sweep keeps it so
+         S4E_POST="$PO" S4E_SEAT="$ME" python3 "$_bc" --all > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" python3 "$_bc" --apply 2>&1 | sed 's/^/sweep: /'
          # ⛔ A DONE ROW WITH NO COMPUTED RECEIPT IS NOT SWEPT -- AND THAT IS SAID, BY NAME, rc=2 (coo 2026-09-16, CEO-790/793). It used
          # to be kept silently, indistinguishable from a live row; the ceo's audit reads this refusal.
          _nr=0; _nrl=""
