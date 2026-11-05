@@ -20,6 +20,7 @@ emit() { local v="$1"; shift; local r="$*"
         if [ "$v" = BLOCK ]; then printf '%s' "$r" | python3 -c 'import json,sys; print(json.dumps({"decision":"block","reason":sys.stdin.read()}))'; else echo '{}'; fi
     else echo "$v $r"; fi; }
 reason=""; what=""
+if grep -q '^FLEET: IDLE' "$PO/MODE" 2>/dev/null; then emit PASS "MODE carries FLEET: IDLE (Lon 2026-11-05: the fleet is brought to idle): a seat parks its row and stops; the gate holds nobody until the line is removed"; exit 0; fi
 d="$PO/$seat/inbox"; u=$(ls "$d"/*.msg 2>/dev/null | wc -l)
 if [ "$u" -gt 0 ]; then
     heads="$(for f in "$d"/*.msg; do head -1 "$f" | sed 's/^FROM \([^ ]*\) TO [^ ]* RE /\1: /'; done | head -3 | paste -sd';' | cut -c1-240)"
