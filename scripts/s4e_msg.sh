@@ -156,8 +156,14 @@ s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null 
 # claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
 # QUEUE.done.tsv is the DONE-WHEN's own belt-and-suspenders for a blocker whose claim some future law
 # ever does prune.
+S4E_REQ_DIR="${S4E_TEST_REQUEST_DIR:-$PO/test_requests}"
+s4e_is_request_id() { case "${1:-}" in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]-*-[0-9]*) return 0;; esac; return 1; }   # s4e_test_request.sh's id
+s4e_request_verdict_in() { s4e_is_request_id "$1" && [ -f "$S4E_REQ_DIR/done/$1.req" ]; }      # the coo's loop moves a graded request to done/ with its served= line
+s4e_request_pending() { s4e_is_request_id "$1" && [ -f "$S4E_REQ_DIR/$1.req" ]; }
+s4e_request_seat() { sed -n 's/^seat=//p' "$S4E_REQ_DIR/done/$1.req" "$S4E_REQ_DIR/$1.req" 2>/dev/null | head -1; }
 s4e_blocker_done() {
     local b="$1"; [ -n "$b" ] || return 1
+    s4e_request_verdict_in "$b" && return 0   # box-scheduler step 31: PARKED-AWAITING:<request-id> clears on the coo's verdict
     [ -f "$PO/claims/$b.claim" ] && grep -q '^DONE$' "$PO/claims/$b.claim" && return 0
     # ⛔⭐ DO NOT "FIX" THIS BY ALSO CHECKING THE ROW'S STATE COLUMN — PRESENCE IS THE WHOLE SIGNAL, AND IT IS SOUND.
     # `sweep` moves a row into QUEUE.done.tsv ONLY IF its claim carries DONE — the IDENTICAL test to the line above
@@ -852,6 +858,44 @@ $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
   if [ -z "$_why" ]; then printf 'SWEEP retired plant %s (its DONE-WHEN refused on 3 consecutive sweeps, telegram to plant-owner) escalated plant %s (ASSIGNED:plant-slow silent since 2026-10-01, to %s, state FREE); the fresh row and the timing-out row kept\n' "$_r2" "$_st" "$_off"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -25 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
+s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> ASSIGNED:<the request's seat>, one telegram
+    local _l _t _st _b _seat _n=0 _v
+    while IFS= read -r _l; do
+        _t="$(printf '%s' "$_l" | cut -f2)"; _st="$(printf '%s' "$_l" | cut -f4)"
+        case "$_st" in PARKED-AWAITING:*|BLOCKED-ON:*) ;; *) continue;; esac
+        _b="$(s4e_first_resolved_blocker "${_st#*:}")" || continue; s4e_is_request_id "$_b" || continue
+        _seat="$(s4e_request_seat "$_b")"; [ -n "$_seat" ] || continue
+        _v="$(sed -n 's/^served=//p' "$S4E_REQ_DIR/done/$_b.req" | head -1 | cut -c1-80)"
+        S4E_PARK_FORCE=1 "$0" park "$_t" "ASSIGNED:$_seat" > /dev/null 2>&1 || continue
+        _n=$((_n+1)); printf -- '- [%s %s] VERDICT IN for request %s (%s): row restored to ASSIGNED:%s by the sweep (box-scheduler step 31)\n' "$ME" "$(date -u +%FT%TZ)" "$_b" "$_v" "$_seat" >> "$PO/tasks/$_t.task.md"
+        s4e_telegram "$_seat" "$_t" "sweep: the coo's verdict on test request $_b is in ($_v); your row $_t is back as ASSIGNED:$_seat -- s4e_msg.sh next serves it first (box-scheduler step 31)." 2>/dev/null
+    done < "$PO/QUEUE.tsv"
+    [ "$_n" -gt 0 ] && echo "sweep: $_n row(s) PARKED-AWAITING a test request restored on its verdict"; return 0; }
+s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pending request, a park on it, no clear before the verdict, a restore on it, a bogus id refused
+    local t po bat id o why="" st
+    [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-awaiting]: S4E_SEAT unset"; exit 2; }
+    t="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_awaiting.XXXXXX")" || { echo "REFUSE(2) [park --probe-awaiting]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$t"' EXIT
+    po="$t/po"; mkdir -p "$po/tasks" "$po/$ME/inbox" "$po/plant-lander/inbox" "$po/claims" "$t/req/done"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$po/PROTOCOL-VERSION"
+    id="20261104T000000-plant-lander-sno-rungs-$$"
+    printf '# plant queue\n2\tawaiting-plant\tplant-lander\tFREE\n' > "$po/QUEUE.tsv"
+    printf '# TASK awaiting-plant\nGOAL: plant\nDONE-WHEN: false\n## NEXT\nresume here\n## QA\n## LEDGER\n- [plant] minted\n' > "$po/tasks/awaiting-plant.task.md"
+    printf 'seat=plant-lander\nsuite=sno-rungs\ntable=tests/snobol4\nfiled=plant\nentries=a b\n' > "$t/req/$id.req"
+    run() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 S4E_TEST_REQUEST_DIR="$t/req" bash "$0" "$@" 2>&1; }
+    run park awaiting-plant "PARKED-AWAITING:$id" > /dev/null; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
+    [ "$st" = "PARKED-AWAITING:$id" ] || why="$why the park on a pending request was not written [$st];"
+    run park awaiting-plant "PARKED-AWAITING:20261104T000000-nobody-sno-rungs-1" > /dev/null; [ $? = 2 ] || why="$why a request id with no file was not refused rc 2;"
+    run sweep > /dev/null; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
+    [ "$st" = "PARKED-AWAITING:$id" ] || why="$why the sweep cleared the park before any verdict [$st];"
+    { cat "$t/req/$id.req"; echo "served=2026-11-04 18:00:00 CST tree=abc1234 rc=0 rows=2"; } > "$t/req/done/$id.req" && rm -f "$t/req/$id.req"
+    o="$(run sweep)"; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
+    [ "$st" = "ASSIGNED:plant-lander" ] || why="$why the verdict did not restore the row to its lander [$st] [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
+    grep -q 'VERDICT IN for request' "$po/tasks/awaiting-plant.task.md" || why="$why no ledger line on the baton;"
+    ls "$po/plant-lander/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
+    [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=ASSIGNED:plant-lander telegram=1 (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat with a ledger line and a telegram)"; exit 0; }
+    echo "PARK PROBE RED:$why"; exit 1; }
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
     _h="$(head -1 "$_o")"; _to="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO \([^ ]*\) RE .*$/\1/p')"
     _tp="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO [^ ]* RE \([^ :]*\).*$/\1/p')"
@@ -2636,6 +2680,7 @@ case "$cmd" in
          # it and un-parks the row back to FREE BY ITSELF the moment <other-topic>'s claim goes DONE (or it is
          # swept into QUEUE.done.tsv). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
          # it self-clearing instead of needing a human to remember to come back and re-park it.
+         [ "${2:-}" = --probe-awaiting ] && s4e_sweep_plant_awaiting
          [ -n "${2:-}" ] || s4e_need park "a topic" "s4e_msg.sh park <topic> [STATE]" "Takes a row out of the picker WITHOUT closing it (default state PARKED; park <topic> FREE puts it back). It has no no-argument listing -- \`board\` is the verb that prints the board."
          topic="$2"; st="${3:-PARKED}"; q="$PO/QUEUE.tsv"
          # ⛔⭐ ARG 3 IS THE STATE, NOT A REASON — AND IT USED TO ACCEPT ANY STRING AT ALL (hq_P, 2026-08-29,
@@ -2682,7 +2727,10 @@ case "$cmd" in
          case "$st" in
            BLOCKED-ON:*|PARKED-AWAITING:*)
              _blk="${st#*:}"
-             if [ -z "$(qrow "$_blk")" ] && ! s4e_blocker_done "$_blk"; then
+             if s4e_is_request_id "$_blk" && ! s4e_request_pending "$_blk" && ! s4e_request_verdict_in "$_blk"; then
+               printf '⛔ REFUSED (rc=2): %s names test request %s, which is neither pending under %s nor graded under its done/ -- nothing written.\n' "$st" "$_blk" "$S4E_REQ_DIR" >&2; exit 2
+             fi
+             if [ -z "$(qrow "$_blk")" ] && ! s4e_blocker_done "$_blk" && ! s4e_request_pending "$_blk"; then
                printf '\n⛔⛔⛔ REFUSED: %s names blocker "%s", which has no QUEUE.tsv row (live or swept-done) ⛔⛔⛔\n' "$st" "$_blk" >&2
                printf '    This state can never self-clear — s4e_blocker_done has nothing to ever find true for a\n' >&2
                printf '    name that is not a real row, so the block would be PERMANENT and SILENT.\n' >&2
@@ -3707,6 +3755,7 @@ TASKEOF
                  # not just a verdict, per the row's own DONE-WHEN ("prints the annotation text").
                  printf '⛔ %s reached DONE but its state explicitly excludes %s from self-clear (DOES-NOT-CLEAR) — staying %s.\n' "$resolved_blk" "$topic" "$step" >&2
                  printf '   %s state: %s\n' "$resolved_blk" "$(s4e_row_state "$resolved_blk")" >&2
+               elif [ -n "$resolved_blk" ] && s4e_is_request_id "$resolved_blk" && "$0" park "$topic" "ASSIGNED:$(s4e_request_seat "$resolved_blk")" >/dev/null 2>&1; then step="ASSIGNED:$(s4e_request_seat "$resolved_blk")"
                elif [ -n "$resolved_blk" ] && "$0" park "$topic" FREE >/dev/null 2>&1; then step=FREE
                # ⭐ CURE 1 — DEPENDENCY INVERSION (picker-dependency-and-boomerang-blindness). The blocker is
                # un-DONE, so the old code skipped this row and walked on down the rank order — which is how a
@@ -4495,6 +4544,7 @@ TASKEOF
            printf '# --- swept %s by %s: %s rows ---\n' "$(date -u +%FT%TZ)" "$ME" "$ng" >> "$d"; cat "$gone" >> "$d"
            mv "$keep" "$q"; chmod 664 "$q"; else rm -f "$keep"; fi
          rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows moved to QUEUE.done.tsv (nothing deleted; buffer backed up)\n' "$nk" "$ng"
+         s4e_sweep_verdicts   # box-scheduler step 31: a PARKED-AWAITING:<request-id> row returns to its seat when the verdict is in
          _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
          S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --check > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --apply 2>&1 | sed 's/^/sweep: /'
          # ⛔ A DONE ROW WITH NO COMPUTED RECEIPT IS NOT SWEPT -- AND THAT IS SAID, BY NAME, rc=2 (coo 2026-09-16, CEO-790/793). It used
