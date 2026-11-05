@@ -7,8 +7,9 @@
 #   util_tiers.py --check   validate the table and the readers; print ONE line
 #     TIERS seats=N tiers=T fable=F opus=O sonnet=S haiku=H spawn_table=same|differ dispatcher_patterns=N|unmeasured stop_gate_patterns=N|unmeasured
 #   The line carries the exact tokens the probe reads (test_design_fleet_queue_steps.sh --step 2) and only when every token is right; a problem is
-#   printed after it as PROBLEM, and the exit is 1 (RED). rc 2 REFUSE: no table. The dispatcher path is S4E_DISPATCHER, default
-#   harness/scripts/box_controller.sh; a dispatcher that is not in a repo is 'unmeasured', never counted as zero.
+#   printed after it as PROBLEM, and the exit is 1 (RED). rc 2 REFUSE: no table. The dispatcher path is S4E_DISPATCHER, else
+#   harness/scripts/box_tick.sh when it exists (fleet-queue step 10), else the coo's controller until the tick lands; a dispatcher
+#   that cannot be read is 'unmeasured', never counted as zero.
 import os
 import re
 import subprocess
@@ -17,7 +18,12 @@ import sys
 ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 TIERS = os.path.join(ROOT, ".github", "TIERS.tsv")
 SPAWN = os.path.join(ROOT, ".github", "scripts", "spawn_fleet.sh")
-DISPATCHER = os.environ.get("S4E_DISPATCHER") or os.path.join(ROOT, "harness", "scripts", "box_controller.sh")
+# The dispatcher is the TICK of fleet-queue step 10 (harness/scripts/box_tick.sh, written by worker_03; it takes its seat classes from
+# util_tiers.py --tier-of, never a case arm). Until that file exists the counted dispatcher is the coo's controller, outside every repo
+# (the cio's ruling, 2026-11-05 17:4x). COO_CONTROLLER is removed when the tick lands and the coo swaps its controller out.
+TICK = os.path.join(ROOT, "harness", "scripts", "box_tick.sh")
+COO_CONTROLLER = "/home/claude_coo/.scratch/verifier/box_controller.sh"
+DISPATCHER = os.environ.get("S4E_DISPATCHER") or (TICK if os.path.isfile(TICK) else COO_CONTROLLER)
 STOP_GATE = os.path.join(ROOT, "harness", "scripts", "s4e_stop_gate.sh")
 HEADER = ["seat", "name", "root", "model", "effort", "color", "tier", "role"]
 TIER_MODEL = {"1": "claude-fable-5-1", "2": "claude-opus-5-5", "3": "claude-sonnet-5-5", "4": "claude-haiku-5-5"}
