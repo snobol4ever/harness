@@ -11,7 +11,7 @@
 # red in every SnoRungs run; an eight-program bisect with three claims false on this tree.
 # ⛔ A RED PREMISE IS NOT A DEFECT. It is the row needing REWRITING before an hour goes into it -- so the
 # refusal must not lock, must not serve, must name the premise, and must say which of those two things it is.
-# TEN ARMS against a THROWAWAY postoffice under mktemp -- never the live one:
+# ELEVEN ARMS against a THROWAWAY postoffice under mktemp -- never the live one:
 #   (1) STALE-REFUSES   a red PREMISE-WHEN refuses `claim`: NO claim file, column still FREE, nonzero rc.
 #   (2) NAMES-IT        that refusal PRINTS the failing premise text and what the premise itself said. A
 #                       refusal that does not name the premise sends the seat to debug their own tree.
@@ -32,10 +32,13 @@
 #                       (a heredoc opener alone exits 0 having run nothing) must not be re-imported here.
 #  (10) NOT-SWALLOWED   a multi-line DONE-WHEN followed by PREMISE-WHEN must NOT absorb it -- otherwise the
 #                       premise runs as part of the completion test and the two contracts merge silently.
-# FAIL-ONCE: five mutants -- M1 unwires claim's gate (arm 1 red), M2 unwires the ASSIGNED path only (arm 6
+#  (11) BUDGET-HONOURED a row's own PREMISE-BUDGET: 1 bounds its premise (box-scheduler step 34, CTO-503): a 3 s red
+#                       premise under that budget is ADMITTED as unmeasured, where the 120 s default would REFUSE it.
+# FAIL-ONCE: six mutants -- M1 unwires claim's gate (arm 1 red), M2 unwires the ASSIGNED path only (arm 6
 # red, the half-wired shape), M3 blinds the gate to always-admit (arms 1/6/7 red), M4 drops PREMISE-WHEN from
-# the extractor's terminator set (arm 10 red), M5 truncates the premise to one line (arm 9 red).
-# EXIT 0 all arms hold and all five mutants go red; 1 otherwise; 2 REFUSED (fixture unbuildable).
+# the extractor's terminator set (arm 10 red), M5 truncates the premise to one line (arm 9 red), M6 ignores the
+# row's PREMISE-BUDGET and runs the 120 s default (arm 11 red).
+# EXIT 0 all arms hold and all six mutants go red; 1 otherwise; 2 REFUSED (fixture unbuildable).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
@@ -89,7 +92,13 @@ mk_po() {
     'test -f "$S4E_HOME/po/d.txt"' \
     'PREMISE-WHEN: touch "$S4E_HOME/po/premise-ran.marker"' 'LINKS: none' '## NEXT' 'go' '## LEDGER' \
     > "$PO/tasks/t-swallow.task.md"
-  printf '%s\t%s\t%s\tFREE\n' 7 t-swallow "$HQ" >> "$PO/QUEUE.tsv"; }
+  printf '%s\t%s\t%s\tFREE\n' 7 t-swallow "$HQ" >> "$PO/QUEUE.tsv"
+  # (11) THE BUDGET WITNESS (box-scheduler step 34): the row's own PREMISE-BUDGET: 1 over a 3-second premise that exits red.
+  # Under the row's 1 s budget the run is cut and admitted unmeasured; under the 120 s default it would run to its red and refuse.
+  printf '%s\n' '# TASK t-budget' 'GOAL: gate fixture.' 'DONE-WHEN: test -f "$S4E_HOME/po/NOPE"' \
+    'PREMISE-WHEN: sleep 3; test -f "$S4E_HOME/po/NOPE"' 'PREMISE-BUDGET: 1' 'LINKS: none' '## NEXT' 'go' '## LEDGER' \
+    > "$PO/tasks/t-budget.task.md"
+  printf '%s\t%s\t%s\tFREE\n' 8 t-budget "$HQ" >> "$PO/QUEUE.tsv"; }
 col() { grep -P "^[0-9]+\t\Q$1\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1 | cut -f4; }
 arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   local lbl="$1" s="$2" ok=1 out rc
@@ -151,10 +160,15 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   out="$(FIX bash "$s" done t-swallow 2>&1)"; rc=$?
   [ -f "$PO/premise-ran.marker" ] && { echo "  [$lbl] (10) \`done\` RAN THE PREMISE: a multi-line DONE-WHEN swallowed the PREMISE-WHEN under it, so the two contracts are one"; ok=0; }
   [ "$rc" = 0 ] || { echo "  [$lbl] (10) the multi-line DONE-WHEN did not close its row (done rc=$rc) -- if it swallowed the premise line the criterion no longer parses: $(grep -m1 -E '⛔|command not found' <<<"$out" | cut -c1-90)"; ok=0; }
+  # ---- (11) BUDGET-HONOURED: the row's own PREMISE-BUDGET bounds its run (box-scheduler step 34, CTO-503) ----
+  out="$(FIX bash "$s" claim t-budget 2>&1)"; rc=$?
+  [ "$rc" = 0 ] || { echo "  [$lbl] (11) a row declaring PREMISE-BUDGET: 1 was REFUSED on a 3 s premise -- the row's own budget was not read (rc=$rc)"; ok=0; }
+  grep -q 'within 1s (budget from the row' <<<"$out" || { echo "  [$lbl] (11) the row's 1 s budget did not bound the premise: $(grep -m1 -E 'FINISH|REFUSED|PREMISE' <<<"$out" | cut -c1-100)"; ok=0; }
+  [ -f "$PO/claims/t-budget.claim" ] || { echo "  [$lbl] (11) a premise cut at the row's budget did not lock the row"; ok=0; }
   [ "$ok" = 1 ]; }
 echo "claim/next compute a row's PREMISE-WHEN and refuse the lock on a red one (scratch postoffice under $W)"
 cp "$HERE/lib_release_guard.sh" "$W/" 2>/dev/null || true
-if arm PASS "$MSG"; then echo "  [PASS] stale refuses and names it · live admits · absent admits loudly · vacuous never reads as verified · ASSIGNED gated at serve · next not silent · override loud and recorded · whole field read · DONE-WHEN not swallowed"; pass=1
+if arm PASS "$MSG"; then echo "  [PASS] stale refuses and names it · live admits · absent admits loudly · vacuous never reads as verified · ASSIGNED gated at serve · next not silent · override loud and recorded · whole field read · DONE-WHEN not swallowed · the row's own PREMISE-BUDGET bounds its run"; pass=1
 else pass=$?; [ "$pass" = 2 ] && { echo "⛔ REFUSED: fixture could not be built (rc=2)"; exit 2; }; pass=0; fi
 # ⛔⭐⭐ A MUTANT IS A DIRECTORY, AND THE TARGET MAY BE A LIB. Two things changed on 2026-09-23 when the
 # DONE-WHEN EXTRACTOR MOVED INTO lib_donewhen.sh (cto's ruling: one implementation, no second reader to drift).
@@ -197,8 +211,8 @@ if arm M3-gate-blinded "$W/m3/s4e_msg.sh" >"$W/m3.log" 2>&1; then echo "  [FAIL-
 else echo "  [FAIL-ONCE M3] red as required, gate blinded: $(grep -m1 -E '\(1\)|\(6\)|\(7\)' "$W/m3.log" | sed 's/^ *//' | cut -c1-100)"; m3=1; fi
 # ⛔ M4 drops PREMISE-WHEN from the extractor's terminator set: the multi-line DONE-WHEN then swallows the
 # premise line under it. Only arm 10 can see this, and it is the reason arm 10 exists.
-mut m4 '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
-       '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
+mut m4 '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
+       '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-BUDGET|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
        lib_donewhen.sh
 if arm M4-terminator-dropped "$W/m4/s4e_msg.sh" >"$W/m4.log" 2>&1; then echo "  [FAIL-ONCE M4] ⛔ GREEN with PREMISE-WHEN dropped from the terminator set -- a DONE-WHEN may swallow the premise unseen"; m4=0
 else echo "  [FAIL-ONCE M4] red as required, terminator dropped: $(grep -m1 '(10)' "$W/m4.log" | sed 's/^ *//' | cut -c1-100)"; m4=1; fi
@@ -208,6 +222,12 @@ mut m5 's4e_premise_text()  { s4e_field_criterion_text "$1" PREMISE-WHEN; }' \
        lib_donewhen.sh
 if arm M5-premise-truncated "$W/m5/s4e_msg.sh" >"$W/m5.log" 2>&1; then echo "  [FAIL-ONCE M5] ⛔ GREEN with the premise truncated to one line -- the heredoc false green is back and arm 9 is blind to it"; m5=0
 else echo "  [FAIL-ONCE M5] red as required, premise truncated: $(grep -m1 '(9)' "$W/m5.log" | sed 's/^ *//' | cut -c1-100)"; m5=1; fi
-if [ "$pass" = 1 ] && [ "$m1" = 1 ] && [ "$m2" = 1 ] && [ "$m3" = 1 ] && [ "$m4" = 1 ] && [ "$m5" = 1 ]; then
+# ⛔ M6 IGNORES THE ROW'S OWN BUDGET: the gate runs the 120 s default whatever the baton declares. Arm 11 is the only arm that can
+# see a budget that never bounds its run -- the 3 s premise under the default runs to its red and REFUSES the row the arm expects admitted.
+mut m6 '    local to_src; read -r to to_src <<<"$(s4e_premise_budget "$b")"; log="$(mktemp)"; t0="$(date +%s)"' \
+       '    to=120; to_src=default; log="$(mktemp)"; t0="$(date +%s)"'
+if arm M6-budget-ignored "$W/m6/s4e_msg.sh" >"$W/m6.log" 2>&1; then echo "  [FAIL-ONCE M6] ⛔ GREEN with the row's PREMISE-BUDGET ignored -- arm 11 cannot see a declared budget that never bounds its run"; m6=0
+else echo "  [FAIL-ONCE M6] red as required, budget ignored: $(grep -m1 '(11)' "$W/m6.log" | sed 's/^ *//' | cut -c1-100)"; m6=1; fi
+if [ "$pass" = 1 ] && [ "$m1" = 1 ] && [ "$m2" = 1 ] && [ "$m3" = 1 ] && [ "$m4" = 1 ] && [ "$m5" = 1 ] && [ "$m6" = 1 ]; then
   echo "✅ GATE OK: claim and next compute the row's PREMISE-WHEN, refuse the lock on a measured red one and say the row needs rewriting, admit every premise they could not measure, and never read silence as verification."; exit 0; fi
-echo "⛔ GATE FAILED (pass=$pass m1-red=$m1 m2-red=$m2 m3-red=$m3 m4-red=$m4 m5-red=$m5)"; exit 1
+echo "⛔ GATE FAILED (pass=$pass m1-red=$m1 m2-red=$m2 m3-red=$m3 m4-red=$m4 m5-red=$m5 m6-red=$m6)"; exit 1

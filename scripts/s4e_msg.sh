@@ -2344,7 +2344,10 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     if s4e_donewhen_needs_compiler "$pw"; then
         printf '⚠ PREMISE NOT MEASURED (rc=2): %s. Admitted unverified -- an unbuilt tree is not a false premise.\n' "$_gca_why" >&2
         return 0; fi
-    to="${S4E_PREMISE_TIMEOUT:-120}"; log="$(mktemp)"; t0="$(date +%s)"
+    # ⭐⭐ STEP 34 (CTO-503): THE ROW'S OWN BUDGET, read by the one reader in lib_donewhen.sh -- a baton's PREMISE-BUDGET:
+    # line (default 120, capped 600). S4E_PREMISE_TIMEOUT stays the seat's explicit per-invocation override, as it was.
+    local to_src; read -r to to_src <<<"$(s4e_premise_budget "$b")"; log="$(mktemp)"; t0="$(date +%s)"
+    [ -n "${S4E_PREMISE_TIMEOUT:-}" ] && { to="$S4E_PREMISE_TIMEOUT"; to_src=env; }
     # ⭐ THE SAME ENVIRONMENT `done` GIVES A DONE-WHEN, for the same measured reason (hq_C 2026-08-27): S4E_HOME
     # exported, so a premise written as `cd "$S4E_HOME/SCRIP" && ...` -- the idiom the batons already use --
     # resolves against the LOCKING SEAT'S OWN ROOT rather than expanding to the empty string on some seats and
@@ -2354,10 +2357,11 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     case "$rc" in
       0) printf '  ✅ PREMISE-WHEN exited 0 in %ss — the row'"'"'s premise still holds on this tree.\n' "$el" >&2
          rm -f "$log"; return 0;;
-      124) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN did not FINISH within %ss (elapsed %ss). Admitted\n' "$to" "$el" >&2
+      124) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN did not FINISH within %ss (budget from the %s; elapsed %ss). Admitted\n' "$to" "$to_src" "$el" >&2
          printf '  unverified -- a premise that cannot be measured must never block work. ⛔ But a PREMISE-WHEN is meant\n' >&2
          printf '  to be THE ONE CHEAP COMMAND: one that needs more than %ss is a finding about the premise, not a slow\n' "$to" >&2
-         printf '  machine. Raise it for this claim with S4E_PREMISE_TIMEOUT=<seconds>, or make it cheaper.\n' >&2
+         printf '  machine. Declare PREMISE-BUDGET: <seconds> in the baton (max 600), set S4E_PREMISE_TIMEOUT=<seconds> for\n' >&2
+         printf '  this claim, or make it cheaper.\n' >&2
          rm -f "$log"; return 0;;
       126|127|2) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN exited %s -- %s -- so it was never graded (R-786:\n' "$rc" \
            "$([ "$rc" -eq 127 ] && echo 'command not found' || { [ "$rc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
@@ -2851,8 +2855,24 @@ case "$cmd" in
                elif s4e_donewhen_incomplete "$_pt";    then printf 'BROKEN\t%s\n' "$_pb"
                else                                         printf 'OK\t%s\n' "$_pb"; fi
              done; exit 0;;
+           --probe-budget)  # ⭐⭐ STEP 34 (box-scheduler, CTO-503): the probe of the row's own PREMISE-BUDGET line. It resolves THREE scratch
+             # batons through the gate's own reader (s4e_premise_budget: the same function claim and next call) and prints the PROOF line
+             # only when all three hold: a declared 45 is read as the row's 45; an absent line is the 120 default; a declared 9999 is capped
+             # at the harness's 600. Otherwise it prints budget=FAILED and exits 1. A pure reader: scratch files only, nothing on the bus.
+             _pbd="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_budget.XXXXXX")" || { echo 'REFUSE(2): no scratch directory for the budget probe' >&2; exit 2; }
+             printf 'PREMISE-WHEN: true\nPREMISE-BUDGET: 45\n' > "$_pbd/declared.task.md"
+             printf 'PREMISE-WHEN: true\n' > "$_pbd/absent.task.md"
+             printf 'PREMISE-WHEN: true\nPREMISE-BUDGET: 9999\n' > "$_pbd/over.task.md"
+             _pbd_d="$(s4e_premise_budget "$_pbd/declared.task.md")"; _pbd_a="$(s4e_premise_budget "$_pbd/absent.task.md")"
+             _pbd_o="$(s4e_premise_budget "$_pbd/over.task.md")"; rm -rf "$_pbd"
+             if [ "$_pbd_d" = "45 row" ] && [ "$_pbd_a" = "$S4E_PREMISE_BUDGET_DEFAULT default" ] && [ "$_pbd_o" = "$S4E_PREMISE_BUDGET_MAX row" ]; then
+               printf 'PREMISE budget=row default_s=%s max_s=%s declared_s=45 absent_s=%s over_cap_s=%s (three scratch batons, the gate'"'"'s own reader)\n' \
+                 "$S4E_PREMISE_BUDGET_DEFAULT" "$S4E_PREMISE_BUDGET_MAX" "$S4E_PREMISE_BUDGET_DEFAULT" "$S4E_PREMISE_BUDGET_MAX"; exit 0; fi
+             printf 'PREMISE budget=FAILED default_s=%s max_s=%s declared=[%s] absent=[%s] over_cap=[%s] (expected 45 row, %s default, %s row)\n' \
+               "$S4E_PREMISE_BUDGET_DEFAULT" "$S4E_PREMISE_BUDGET_MAX" "$_pbd_d" "$_pbd_a" "$_pbd_o" "$S4E_PREMISE_BUDGET_DEFAULT" "$S4E_PREMISE_BUDGET_MAX"; exit 1;;
            '') printf 'usage: %s premise <topic>    print the row PREMISE-WHEN exactly as claim/next will run it\n' "$0" >&2
-               printf '       %s premise --census   classify batons read from stdin (one path per line)\n' "$0" >&2; exit 2;;
+               printf '       %s premise --census   classify batons read from stdin (one path per line)\n' "$0" >&2
+               printf '       %s premise --probe-budget   prove the PREMISE-BUDGET reader on three scratch batons (box-scheduler step 34)\n' "$0" >&2; exit 2;;
            *) topic="$2"; b="$PO/tasks/$topic.task.md"
               [ -f "$b" ] || { printf '⛔ REFUSED (rc=2): no baton at %s -- nothing to read.\n' "$b" >&2; exit 2; }
               pw="$(s4e_premise_text "$b")"

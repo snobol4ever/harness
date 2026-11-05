@@ -262,7 +262,7 @@ s4e_field_criterion_text() {   # $1 = baton path, $2 = column-0 label (DONE-WHEN
 $(awk -v lbl="$lbl" '
             $0 ~ "^" lbl ":" && !seen { seen=1; next }
             seen && /^## / { exit }
-            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }
+            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }
             seen { print }
         ' "$b")"
     fi
@@ -274,6 +274,21 @@ $(awk -v lbl="$lbl" '
 # The two named readers. Every existing caller keeps calling s4e_donewhen_text and sees no change whatever.
 s4e_donewhen_text() { s4e_field_criterion_text "$1" DONE-WHEN; }
 s4e_premise_text()  { s4e_field_criterion_text "$1" PREMISE-WHEN; }
+# ⛔⭐ STEP 34 (box-scheduler, CTO-503; shared-box skill section 8): a baton may carry `PREMISE-BUDGET: <seconds>`, the budget its
+# PREMISE-WHEN runs under. ONE reader for the gate and for the step probe (`s4e_msg.sh premise --probe-budget`): a second copy of the
+# rule is the drift this file was written to end. Absent, empty, malformed or zero -> the default (120 s); above the step harness's
+# 600 s -> 600. Prints "<seconds> row" when the baton declares a usable budget, "<seconds> default" otherwise.
+S4E_PREMISE_BUDGET_DEFAULT=120
+S4E_PREMISE_BUDGET_MAX=600
+s4e_premise_budget() {   # $1 = baton path
+    local raw n
+    raw="$(sed -n 's/^PREMISE-BUDGET:[[:space:]]*//p' "$1" 2>/dev/null | head -1 | tr -d '[:space:]')"
+    case "$raw" in ''|*[!0-9]*) printf '%s default\n' "$S4E_PREMISE_BUDGET_DEFAULT"; return 0;; esac
+    [ "${#raw}" -gt 4 ] && { printf '%s row\n' "$S4E_PREMISE_BUDGET_MAX"; return 0; }
+    n=$((10#$raw))
+    [ "$n" -ge 1 ] || { printf '%s default\n' "$S4E_PREMISE_BUDGET_DEFAULT"; return 0; }
+    [ "$n" -le "$S4E_PREMISE_BUDGET_MAX" ] || n="$S4E_PREMISE_BUDGET_MAX"
+    printf '%s row\n' "$n"; }
 s4e_donewhen_incomplete() {   # $1 = criterion text; rc 0 = bash cannot finish reading it
     # ⛔ A TRAILING BACKSLASH (or a dangling && / || / |) IS INCOMPLETE SHELL, though `bash -n` swallows it silently (coo 2026-09-16, found by
     # R-786's rc rule: a two-line criterion 'test -f X \' + '&& test -f Y' ran only its first line -- `test -f X \` is a usage error, rc=2 --
