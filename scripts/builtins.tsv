@@ -1256,7 +1256,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1257	icn	ICN$UNAME	1	1	bt_ICNx24UNAME	leaf	-	-	0	fn_arms
 1258	icn	ICN$UPVAR	1	1	bt_ICNx24UPVAR	leaf	-	-	0	fn_arms
 1259	rk	__rk_inv	-	-	bt___rk_inv	leaf	-	-	0	rk_targets
-1260	icn	ICN$USYSTEM	1	1	bt_ICNx24USYSTEM	leaf	-	-	0	fn_arms
+1260	icn	ICN$USYSTEM	1	5	bt_ICNx24USYSTEM	leaf	-	-	0	fn_arms
 1261	rk	where	-	-	bt_rk_where	leaf	-	-	0	fn_arms
 1262	rk	seek	-	-	bt_rk_seek	leaf	-	-	0	fn_arms
 1263	rk	reverse	-	-	bt_rk_reverse	leaf	-	-	0	fn_arms
@@ -1310,3 +1310,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1311	icn	ICN$UWAIT	0	2	bt_ICNx24UWAIT	leaf	-	-	0	fn_arms
 1312	icn	ICN$UKILL	2	2	bt_ICNx24UKILL	leaf	-	-	0	fn_arms
 1313	icn	ICN$UEXEC	1	-1	bt_ICNx24UEXEC	leaf	-	-	0	fn_arms
+1314	icn	ICN$UMEMBER	1	-1	bt_ICNx24UMEMBER	leaf	-	-	0	fn_arms

@@ -111,6 +111,19 @@ PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
 def parse_error(path):
     r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
     return None if r.returncode == 0 else (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
+def string_close(lines, L, C):
+    s = lines[L - 1]; i = C - 1
+    if i >= len(s) or s[i] not in '"\'': return None
+    q = s[i]; k = L - 1; j = i + 1
+    while k < len(lines):
+        s = lines[k]
+        while j < len(s):
+            if s[j] == '\\': j += 2; continue
+            if s[j] == q: return (k, j + 1) if k > L - 1 else None
+            j += 1
+        if not s.rstrip().endswith('_'): return None
+        k += 1; j = 0
+    return None
 def fix(path, check):
     lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = preinsert(lines)
     for _ in range(500):
@@ -120,6 +133,8 @@ def fix(path, check):
         if not m: return added, err
         L, C = int(m.group(1)), int(m.group(2))
         if L < 1 or L > len(lines): return added, err
+        sc = string_close(lines, L, C)
+        if sc: lines[sc[0]] = lines[sc[0]][:sc[1]] + ';' + lines[sc[0]][sc[1]:]; added.append((sc[0] + 1, sc[1])); continue
         before = lines[L - 1]; e = settle(before, token_end(before, C))
         lines[L - 1] = before[:e] + ';' + before[e:]
         err2 = parse_error(write_tmp(path, lines))
