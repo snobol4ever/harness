@@ -164,10 +164,10 @@ FL3=""; FL4=""; UNG_LIST=""; DEFER_LIST=""; SELF_LIST=""; MASKED_TOTAL=0; MASKED
 # wired here by R-1351 for host's HOST() line -- the oracle's own identity, "x86-64:unix :Macro SPITBOL 15.01", which SCRIP does not
 # impersonate (R-1344). Applied to both streams of the STREAM arm only, counted and printed; guardrail 4 is the harness's mask_majority()
 # read back from the shim's .major, never restated here. No ALL.mask is the byte-identical stream (the shim's default-off arm).
-stream_match() {  # stream_match <m3|m4> <rc>
+stream_match() {  # stream_match <m3|m4> <rc>: the exit code is sbl's (rcO), graded beside the error number
     [ "$mask_major" = 1 ] && return 1
     python3 "$HERE/util_apply_line_mask.py" "$SUITE/ALL.ref" "$name" "$W/$1.mn" --side=scrip < "$W/$1.out" > "$W/$1.cmp" || return 1
-    gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2" && return 0
+    gate_oracle_stdout_match "$W/o.cmp" "$W/$1.cmp" "$W/$1.err" "$2" "$rcO" && return 0
     # ⭐ A PORT MAY ANSWER IN sbl's OWN VOICE (R-1858 (2), R-1864 (3)): the error report on stdout and sbl's exit status, as
     # snobol4dotnet does; the one comparison is lib_gate.sh's gate_port_answer_matches, offered under a port engine only (SCRIP's rows unmoved)
     [ "$PORT" = 1 ] && gate_port_answer_matches "$W/o.cmp" "$W/$1.cmp" "$rcO" "$2"

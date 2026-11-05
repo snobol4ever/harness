@@ -490,7 +490,7 @@ gate_floor() {
 # RULING: a witness the oracle completed NORMALLY on (no trailer) is graded exactly as before -- byte-
 # exact stdout, matched rc -- so this changes nothing for the hundreds of already-passing witnesses. A
 # witness the oracle HALTED on is graded on ERROR IDENTITY (the numeric `ERROR nnn` code, wherever each
-# side reports it) plus termination status (actual rc != 0), with the genuine pre-error program output
+# side reports it) plus the error number SCRIP's voice names (the exit code is the oracle's since exceptions step 1, SCRIP 6635f5f3f), with the genuine pre-error program output
 # compared after the oracle's trailer -- and the blank-line padding SPITBOL prints immediately before it
 # -- is stripped; command substitution's trailing-newline trim absorbs that padding on both sides.
 #
@@ -500,6 +500,7 @@ gate_floor() {
 # Returns 0 (match) or 1 (mismatch); prints nothing, same silent contract as the `cmp -s` it replaces.
 gate_oracle_stdout_match() {
     local ora="$1" act_out="$2" act_err="$3" act_rc="$4"
+    local ora_rc="${5:-}"
     local ora_code
     ora_code="$(sed -n 's/^.*: ERROR \([0-9][0-9]*\) -- .*$/\1/p' "$ora" | head -1)"
     if [ -z "$ora_code" ]; then
@@ -510,7 +511,7 @@ gate_oracle_stdout_match() {
     ora_pre="$(sed -n '/: ERROR [0-9][0-9]* -- /q; p' "$ora")"
     act_pre="$(cat "$act_out")"
     [ "$ora_pre" = "$act_pre" ] || return 1
-    [ "$act_rc" -ne 0 ] || return 1
+    [ -z "$ora_rc" ] || [ "$act_rc" -eq "$ora_rc" ] || return 1
     act_code="$(sed -n 's/^\*\* Error \([0-9][0-9]*\) in statement.*$/\1/p' "$act_err" | head -1)"
     if [ -z "$act_code" ]; then
         act_code="$(python3 "$(dirname "${BASH_SOURCE[0]}")/util_render_error_voice.py" spitbol < "$act_err" 2>/dev/null | sed -n 's/^.*: ERROR \([0-9][0-9]*\) -- .*$/\1/p' | head -1)"

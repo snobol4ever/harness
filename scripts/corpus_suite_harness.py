@@ -1297,7 +1297,10 @@ def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stder
     # nnn -- ...`). A ref cut without one (snocone ladder__rung23_..._stlimit_halts_a_loop_body: ref `before`, want_rc 1, the halt
     # graded by rc alone) must not gain a block it never had -- the first rung suites pass after the render landed read that entry
     # FAIL and wrote SncRungs 337/338 on 8c81190b7, a false red of this instrument (coo 2026-09-28 11:0x), restored the same hour.
-    if rc is not None and rc != 0 and expected_text is not None and FATAL_REF_LINE.search(expected_text):
+    # The block is appended whenever the ref carries a fatal line and SCRIP's stderr holds one, whatever the exit code -- since exceptions
+    # step 1 (SCRIP 6635f5f3f, 2026-11-04) a SNOBOL4 run-time fatal exits by &CODE as sbl -bf does (0 by default), and the rc is still
+    # graded against the declared want_rc.
+    if expected_text is not None and FATAL_REF_LINE.search(expected_text):
         got, _fatal_n = _render_fatal_into_stdout(got, err)
         # THE rc CLAUSE OF THE SAME LIST (measured 2026-09-28): sbl -bf EXITS 0 after a run-time fatal, SCRIP's one voice exits 1;
         # an entry whose ref was cut from the oracle declares want_rc 0, so a rendered fatal at rc 1 is the declared rc.
