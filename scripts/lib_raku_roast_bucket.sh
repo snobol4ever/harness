@@ -23,13 +23,19 @@ classify() {
   # A test file that reports its failures exits with the NUMBER of failures (Rakudo's Test, capped at 254), so a high status with TAP on stdout and no signal message is a FAIL the TAP
   # shows, not a crash (hq_raku 2026-10-04: 46 files with 128 to 254 failures were read as crashes). A signal death leaves "fatal signal" on stderr or no TAP at all.
   if [ "$rc" -ge 124 ] && ! { [ "$rc" -ne 124 ] && grep -qE '^(ok|not ok) [0-9]+|^1\.\.[0-9]+' "$so" 2>/dev/null && ! grep -qE 'fatal signal|core dumped' "$se" 2>/dev/null; }; then echo "CRASH"; return; fi
-  local plan ok notok
+  local plan ok notok notok_real plan_n
   plan=$(grep -cE '^1\.\.[0-9]+' "$so" 2>/dev/null)
   ok=$(grep -cE '^ok [0-9]+' "$so" 2>/dev/null)
   notok=$(grep -cE '^not ok [0-9]+' "$so" 2>/dev/null)
   if [ "$plan" -eq 0 ] && [ "$ok" -eq 0 ] && [ "$notok" -eq 0 ]; then echo "NO-TAP"; return; fi
-  if [ "$notok" -gt 0 ]; then echo "FAIL"; return; fi
+  # THE PLAN IS PART OF THE ANSWER (the cto's CTO-514 ruling 4; hq_raku 2026-11-05: six files read PASS having run 2 of 1655, 24 of 63, 0 of 1,
+  # 0 of 11, 0 of 4 and 1 of 2 tests): PASS needs rc 0, no `not ok` that is not a TODO, and as many top-level tests run (ok and not ok, a SKIP
+  # is an ok) as the top-level plan names, wherever the plan line stands; no plan at all is a run that stopped before it said how many.
+  notok_real=$(grep -E '^not ok [0-9]+' "$so" 2>/dev/null | grep -vcE '#[[:space:]]*TODO')
+  if [ "$notok_real" -gt 0 ]; then echo "FAIL"; return; fi
   if [ "$rc" -ne 0 ]; then echo "FAIL"; return; fi
+  plan_n=$(grep -m1 -oE '^1\.\.[0-9]+' "$so" 2>/dev/null | cut -d. -f3)
+  if [ -z "$plan_n" ] || [ $((ok + notok)) -ne "$plan_n" ]; then echo "FAIL"; return; fi
   echo "PASS"
 }
 # THE BUCKET. GRADED means our compiler ran the file and TAP came out; everything else is a reason it did not.
