@@ -101,6 +101,16 @@ prt_refusal_names_it() {  # want output-file: prints what the refusal named (a m
     [ -n "$_c" ] && { echo "clause-$_c"; return 0; }
     return 1
 }
+# ⛔⭐ AN EXIT STATUS IS A HANG, A CRASH OR A TERMINATION, AND ONLY THE FIRST TWO ARE NOT A REFUSAL (the coo 2026-11-05 13:13 CST, row pascal-pat-iso7185prt1744-and-iso7185prt1745-fail-in-both-modes).
+# The verdict used to admit a refusal for 0 < rc < 124 and read every rc over 124 as a crash. MEASURED on SCRIP 5217bd1e8: prt1744 and prt1745 print the right "ISO 7185 6.7.2.2" diagnostic and
+# end with exit(208) and exit(200), fpc's own runtime-error codes for x/0.0 and i div 0 (the oracle ends the same, cut live by test_gate_pas_division_by_zero_*), a normal termination read as a crash.
+# A hang is timeout's 124, or 137 after its -k kill; a crash is a signal death, 128+n through bash or timeout (129 to 159); any other nonzero status WITH the diagnostic naming its line or clause is a refusal.
+# The false-green defence is unchanged and does not rest on the status: a stub engine names no line and no clause, whatever it exits.
+prt_rc_class() {
+    if [ "$1" -eq 124 ] || [ "$1" -eq 137 ]; then echo hang
+    elif [ "$1" -ge 129 ] && [ "$1" -le 159 ]; then echo crash
+    else echo exit; fi
+}
 # ⛔⭐ THE AND PER PROGRAM (R-372, 2026-09-06), accumulated across BOTH populations below -- the rejection
 # tests and the acceptance tests -- because both feed the one TOTAL this row is stated over. A per-program
 # accumulator is the only shape that survives two loops; a post-hoc min() of P[m3] and P[m4] would not even be
@@ -168,14 +178,15 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # banner above applied to the database: CRASH and HANG are real values in that table's vocabulary,
         # and writing them here would put this suite's crash column OUTSIDE its fail column for every reader
         # who counts FAIL -- the exact two-HQs-disagree defect the verdict/diagnosis split was cut to end.
-        NAMED_IT=""; [ "$rc" -ne 0 ] && [ "$rc" -lt 124 ] && [ -s "$TMP/o" ] && NAMED_IT="$(prt_refusal_names_it "$WANT" "$TMP/o")"
+        RCC="$(prt_rc_class "$rc")"
+        NAMED_IT=""; [ "$rc" -ne 0 ] && [ "$RCC" = exit ] && [ -s "$TMP/o" ] && NAMED_IT="$(prt_refusal_names_it "$WANT" "$TMP/o")"
         if [ -n "$NAMED_IT" ]; then P[$m]=$((P[$m]+1))
             printf 'package\tpat\tpascal\t%s\t%s\tPASS\t%s\trefused-naming-the-%s\n' "$b" "$m" "$SM" "$NAMED_IT" >>"$PROG_ROWS"
             [ -n "${PAT_VERBOSE:-}" ] && echo "  $m PASS $b"
         else
             F[$m]=$((F[$m]+1)); okboth=0
-            if   [ "$rc" -eq 124 ]; then C[$m]=$((C[$m]+1)); DIAG="accepted-and-ran-to-bound"
-            elif [ "$rc" -gt 124 ]; then C[$m]=$((C[$m]+1)); DIAG="crash(rc=$rc)"
+            if   [ "$RCC" = hang ]; then C[$m]=$((C[$m]+1)); DIAG="accepted-and-ran-to-bound"
+            elif [ "$RCC" = crash ]; then C[$m]=$((C[$m]+1)); DIAG="crash(rc=$rc)"
             elif [ "$rc" -ne 0 ] && [ -s "$TMP/o" ]; then DIAG="refused-but-not-naming-the-$(echo $WANT | tr ' ' '-')"
             elif [ "$rc" -ne 0 ];   then DIAG="rejected-silently-no-diagnostic"
             else                         DIAG="accepted"; fi
