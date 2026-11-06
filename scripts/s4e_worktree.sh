@@ -14,8 +14,10 @@
 # (util_build_cache.sh fetch); a worktree never builds. The size (du -sm of the whole worktree, the fetched build included) must be at or under the
 # cap (4096 MB by default; --cap-mb names another): over the cap new rolls back and refuses. A build that does not fetch keeps the worktree, so a
 # seat can run make in it, and refuses rc 1.
-# THE CAP OF EIGHT (the cio, 2026-11-05 17:4x, from the coo's /tmp measurement): new refuses rc 2 when eight directories named wt-* already stand under
-# /tmp/s4e/<seat>/, every seat counted, and names them. rm one first.
+# THE CAP (the cio 2026-11-05 17:4x; changed by the coo's COO-476 on 2026-11-06, row fleet-the-worktree-cap-counts-dead-wt-dirs): new refuses rc 2
+# when WT_MAX worktrees that the cap counts already stand under /tmp/s4e/<seat>/ (WT_MAX defaults to 16; the environment may name another). A
+# wt-* directory is COUNTED only when its .s4e-worktree marker names a seat of .github/TIERS.tsv; every other wt-* directory (hand-made, dead, or of a
+# seat no longer in the table) is listed in the refusal and never counted, so it holds no slot. --probe proves the count on a scratch TOP.
 # THE BATON (the cio, same day): --row <topic> writes one line WORKTREE: <path> into /home/resources/postoffice/tasks/<topic>.task.md, before the first
 # ## section, once; a baton that is absent refuses rc 2 before anything is made. rm <name> deletes that line from every baton that carries it. The bus
 # reads these lines at done and park (fleet-queue step 6, worker_06).
@@ -25,12 +27,13 @@
 # and corpus/library (the .inc programs and the Snocone library; a corpus without include/ reds the snobol4 smoke, the coo 2026-11-05 18:5x). It prints
 # its WORKTREE line and PROBE-LANG, removes both, and prints nothing of the WORKTREE line when either check fails: the proof that step 36 reads green.
 # THE LINE: WORKTREE repos=4 build=fetched size_mb=N cap_mb=C corpus=full|sparse:<langs> path=<wt>
-# rc 0 made, removed or listed; rc 1 refused by a measurement (no build fetched, over the cap, a name taken, no such worktree); rc 2 usage, the cap of eight, a missing baton, or cannot measure.
+# rc 0 made, removed or listed; rc 1 refused by a measurement (no build fetched, over the cap, a name taken, no such worktree); rc 2 usage, the cap, a missing baton, or cannot measure.
 set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 REPOS="SCRIP harness corpus .github"
 CAP_MB=4096
-WT_MAX=8
+WT_MAX="${WT_MAX:-16}"
+TIERS_TSV="$ROOT/.github/TIERS.tsv"
 TOP=/tmp/s4e
 PO="${S4E_POSTOFFICE:-/home/resources/postoffice}"
 BATONS="$PO/tasks"
@@ -54,13 +57,32 @@ drop() {
     rm -rf "$wt"
 }
 
-wt_cap_check() {
-    local n=0 seats="" d
-    for d in "$TOP"/*/wt-*; do
+seat_in_tiers() {
+    [ -f "$TIERS_TSV" ] || die "REFUSE(2): no $TIERS_TSV -- the cap counts only the seats of that table, so it cannot measure" 2
+    awk -F'\t' -v s="$1" '!/^#/ && $1 == s { f = 1 } END { exit !f }' "$TIERS_TSV"
+}
+
+# wt_cap_scan TOP -- the cap's census of TOP/<seat>/wt-*. COUNTED: a directory whose .s4e-worktree marker names a seat of TIERS.tsv.
+# IGNORED: every other wt-* directory, listed in CAP_IGNORED and never counted (a hand-made or dead directory holds no slot).
+wt_cap_scan() {
+    local top="$1" d seat
+    CAP_COUNTED=0; CAP_COUNTED_LIST=""; CAP_IGNORED_N=0; CAP_IGNORED=""
+    for d in "$top"/*/wt-*; do
         [ -d "$d" ] || continue
-        n=$((n + 1)); seats="$seats $(basename "$(dirname "$d")")/$(basename "$d")"
+        seat=""
+        [ -f "$d/.s4e-worktree" ] && seat="$(sed -n 's/^seat=//p' "$d/.s4e-worktree" | head -1)"
+        if [ -n "$seat" ] && seat_in_tiers "$seat"; then
+            CAP_COUNTED=$((CAP_COUNTED + 1)); CAP_COUNTED_LIST="$CAP_COUNTED_LIST $seat/$(basename "$d")"
+        else
+            CAP_IGNORED_N=$((CAP_IGNORED_N + 1)); CAP_IGNORED="$CAP_IGNORED $(basename "$(dirname "$d")")/$(basename "$d")"
+        fi
     done
-    [ "$n" -lt "$WT_MAX" ] || die "REFUSE(2): $n worktrees named wt-* already stand under $TOP/<seat>/ (the cap is $WT_MAX):$seats -- rm one first" 2
+}
+
+wt_cap_check() {
+    case "$WT_MAX" in ""|*[!0-9]*) die "REFUSE(2): WT_MAX must be a whole number, got '$WT_MAX'" 2 ;; esac
+    wt_cap_scan "$TOP"
+    [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOP/<seat>/ (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
 }
 
 baton_add() {
@@ -142,7 +164,25 @@ new_wt() {
     exit 1
 }
 
+# cap_probe -- the cap's own proof, on a scratch TOP under the seat's directory: eight unmarked wt-* and one marked do not refuse; sixteen
+# marked do (at WT_MAX 16). Prints the CAP line the step reads and returns 0 only when both hold and the unmarked directories were ignored.
+cap_probe() {
+    local pt="$SEATDIR/capprobe-$(date -u +%H%M%S)-$$" i c1 i1 full1 full2
+    mkdir -p "$pt/$SEAT" || die "REFUSE(2): cannot make $pt" 2
+    for i in 1 2 3 4 5 6 7 8; do mkdir -p "$pt/$SEAT/wt-u$i"; done
+    mkdir -p "$pt/$SEAT/wt-m1" && printf 'name=m1\nseat=%s\n' "$SEAT" > "$pt/$SEAT/wt-m1/.s4e-worktree"
+    wt_cap_scan "$pt"; c1=$CAP_COUNTED; i1=$CAP_IGNORED_N
+    if [ "$CAP_COUNTED" -lt "$WT_MAX" ]; then full1=no; else full1=yes; fi
+    for i in $(seq 2 16); do mkdir -p "$pt/$SEAT/wt-m$i" && printf 'name=m%s\nseat=%s\n' "$i" "$SEAT" > "$pt/$SEAT/wt-m$i/.s4e-worktree"; done
+    wt_cap_scan "$pt"
+    if [ "$CAP_COUNTED" -ge "$WT_MAX" ]; then full2=yes; else full2=no; fi
+    rm -rf "$pt"
+    echo "CAP counted=marked unmarked_ignored=$i1 max=$WT_MAX marked_one=$c1 eight_unmarked_plus_one_marked_refuses=$full1 sixteen_marked_refuses=$full2"
+    [ "$full1" = no ] && [ "$full2" = yes ] && [ "$i1" -ge 1 ]
+}
+
 probe() {
+    cap_probe || { echo "PROBE REFUSED: the cap does not count what the design says -- the step does not read green"; exit 1; }
     local stamp="$(date -u +%H%M%S)-$$" name wt out rc lname lwt lout lrc inc=no lib=no
     name="probe-$stamp"; wt="$SEATDIR/wt-$name"
     out="$(new_wt "$name" origin/main "" "$CAP_MB" 2>&1)"; rc=$?
