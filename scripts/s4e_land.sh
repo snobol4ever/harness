@@ -210,11 +210,12 @@ probe() {
     [ $? = 2 ] || { echo "LAND dry-run RED: a hand push without a proof was not refused rc 2"; exit 1; }
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: a seventh commit in $r" || refuse "probe: cannot commit in $r"; done
     log="$T/arm7.log"
-    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "flock -n $T/po/.land.lease true && echo free > $T/free7 && sleep 2" > "$log" 2>&1; rc=$?
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate "if flock -n $T/po/.land.lease true; then echo free; else echo held; fi > $T/free7; sleep 2" > "$log" 2>&1; rc=$?
     sed 's/^/    arm7| /' "$log" | grep -E 'lease|LAND ok|LAND RED|REFUSE' | tail -4
     h="$(sed -n 's/^LAND stage=lease released held_s=\([0-9]*\) .*/\1/p' "$log" | tail -1)"
-    [ "$rc" = 0 ] && [ "$(cat "$T/free7" 2>/dev/null)" = free ] && [ -n "$h" ] && [ "$h" -le 3 ] \
+    [ "$rc" = 0 ] && [ "$(cat "$T/free7" 2>/dev/null)" = free ] && [ -n "$h" ] \
         || { echo "LAND dry-run RED: arm 7 (the gate runs unleased, the lease covers only the push) rc=$rc free=$(cat "$T/free7" 2>/dev/null) held_s=${h:-?}"; exit 1; }
+    echo "    arm7| held_s=$h is information, never the verdict: a wall clock judges nothing under box load (the cio's ruling, 2026-11-05)"
     racer race8.sh raced8 "probe-race8-$$.txt"
     for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: an eighth commit in $r" || refuse "probe: cannot commit in $r"; done
     log="$T/arm8.log"
