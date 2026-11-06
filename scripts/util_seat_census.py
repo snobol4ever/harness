@@ -1023,11 +1023,12 @@ def proc_check():
             rows.append(f)
     mgr = {r[0] for r in rows if r[5].startswith("/usr/lib/systemd/systemd --user")}
     work = re.compile(r"(/harness/scripts/|/SCRIP/scrip\b|/scrip --|\bas --64\b|^(\S*/)?gcc\b|^(\S*/)?make\b|corpus_suite_harness|^timeout )")
-    keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh|^ssh: \S+ \[mux\]$|^xclip -selection |util_jobserver\.sh hold )")
+    keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh|^ssh: \S+ \[mux\]$|^xclip -selection |util_jobserver\.sh hold |util_queue\.py reserve-hold |util_queue\.py hold-job )")   # the lease holder of a reserved job (fleet-queue 5: next detaches it on purpose; killing it releases the job to its tube) is a standing daemon, never an orphan
+    host = re.compile(r"^(\S*/)?(gnome-terminal-server|gnome-terminal|gnome-shell|systemd( --user)?|claude)( |$)")   # the coo 2026-11-06 09:02 (COO-478 morning): the session HOSTS are never named -- gnome-terminal-server hosts every fleet window (killing it closes thirty sessions), gnome-shell the desktop, the user systemd is the manager itself, a claude process is a seat's session; by executable path, never by pid
     orphans = []
     for pid, ppid, et, rss, cg, a in rows:
         sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
-        if ppid in mgr and int(et) >= 300 and (work.search(a) or sc in by_scope) and not keep.search(a):
+        if ppid in mgr and int(et) >= 300 and (work.search(a) or sc in by_scope) and not keep.search(a) and not host.search(a):
             who = by_scope.get(sc) or ("grader" if "s4e-grader" in cg or "s4e-mem-" in cg else "batch" if "s4e-batch" in cg else "?")
             orphans.append((int(rss), pid, who, int(et), a))
     for rss, pid, who, et, a in sorted(orphans, reverse=True):

@@ -156,7 +156,11 @@ procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope
     echo "560 2575 $2 4000 $sl/vte-a.scope ssh: /home/x/.ssh/cm-git@github.com-22 [mux]"
     echo "570 2575 $2 1000 $sl/vte-a.scope xclip -selection clipboard"
     echo "580 2575 $2 3000 $sl/vte-a.scope /usr/bin/bash /home/claude_cto/harness/scripts/util_jobserver.sh hold 8"
-    echo "550 2575 $2 30000 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Nautilus.slice/app.scope /usr/bin/nautilus --gapplication-service"; } > "$1/ps.txt"
+    echo "550 2575 $2 30000 0::/user.slice/user-1000.slice/user@1000.service/app.slice/app-org.gnome.Nautilus.slice/app.scope /usr/bin/nautilus --gapplication-service"
+    echo "590 2575 59280 256000 $sl/vte-a.scope /usr/libexec/gnome-terminal-server"
+    echo "600 2575 $2 900000 $sl/vte-b.scope claude --name B --model claude-haiku-5-5 --effort xhigh"
+    echo "610 2575 $2 500000 $sl/vte-a.scope /usr/bin/gnome-shell"
+    echo "620 2575 $2 12000 $sl/vte-a.scope python3 /home/claude_a/harness/scripts/util_queue.py reserve-hold seat-a,ask-haiku,tier-haiku --seat a --session A --claim-dir /x/claims --baton-dir /x/tasks --timeout 0"; } > "$1/ps.txt"
 }
 parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
   local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --proc-check --ps "$2/ps.txt" --root "$2/cg" --seats "$2/SEATS.tsv" --pressure-memory "$2/pmem" 2>&1)"; local rc=$?
@@ -178,6 +182,8 @@ n=$((n + 1)); out="$(python3 -I "$CENSUS" --memory-check --root "$T/proc_cache/c
 if printf '%s\n' "$out" | grep -F "  seat a scope cur=3900MB high=4096MB anon=300MB file=3600MB" >/dev/null && printf '%s\n' "$out" | grep -E 'anon=[0-9]+MB file=[0-9]+MB' >/dev/null; then echo "  ok   ARM $n: --memory-check prints each seat scope's anon against its file pages (the step-7 probe)"; else echo "  RED  ARM $n: --memory-check has no anon/file line: $(printf '%s' "$out" | head -3 | tr '\n' '|')"; fail=1; fi
 parm "COO-461 FAIL-ONCE: any process of a seat scope orphaned 25 min is red BY SEAT, its command no fleet word (the cao's ugrep)" "$T/proc_bad" 1 "orphan pid 540 of seat b, 25 min old"
 parm "control: a child whose parent lives, a standing daemon, a young orphan, a desktop app outside every seat scope, the git ssh mux, the clipboard holder and the jobserver holder are not named" "$T/proc_bad" 1 "orphans=2 " "pid 5[1235678]0"
+parm "the coo 2026-11-06 09:02 (the 1836707 false positive): the session HOSTS in a seat's unit -- gnome-terminal-server 988 min old, a claude session, gnome-shell -- are never named, by path" "$T/proc_bad" 1 "orphans=2 " "pid \(590\|600\|610\)"
+parm "fleet-queue 5: the lease holder a seat's next detached (util_queue.py reserve-hold, 25 min old) is a standing daemon, never an orphan (killing it releases the job)" "$T/proc_bad" 1 "orphans=2 " "pid 620"
 parm "control: an orphan under five minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"
 n=$((n + 1)); if grep -q 'tmp_check, proc_check' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
