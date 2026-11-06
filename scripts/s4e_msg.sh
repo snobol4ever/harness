@@ -1049,11 +1049,30 @@ $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
   if [ -z "$_why" ]; then printf 'SWEEP retired plant %s (its DONE-WHEN refused on 3 consecutive sweeps, telegram to plant-owner) escalated plant %s (ASSIGNED:plant-slow silent since 2026-10-01, to %s, state FREE); the fresh row and the timing-out row kept\n' "$_r2" "$_st" "$_off"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -25 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
-s4e_restore_state() {   # step 35: <topic> -> the state a blocked row returns to: its RESTORE-STATE: line (written by park), else ASSIGNED:<owner cell>, else FREE
-    local _b="$PO/tasks/$1.task.md" _r="" _o
+# ⭐ fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists (the cio 2026-11-06; box-scheduler 35): a RESTORE-STATE that names a seat which is not a
+# seat on this root is REFUSED, not used. A seat exists when MODE's ROSTER or the legacy port list names it, it has a postoffice mailbox, and it is not
+# DRAINED (a renamed HQ keeps its old mailbox with a DRAINED file, so a drained name is refused; hq_dotnet, hq_jvm and hq_packages are valid).
+s4e_restore_seat_ok() {   # <seat>: rc 0 when the seat exists here (see above)
+    [ -n "${1:-}" ] && s4e_is_hq "$1" && [ -d "$PO/$1/inbox" ] && [ ! -e "$PO/$1/DRAINED" ]; }
+s4e_restore_resolve() {   # <topic> -> "<label><TAB><state><TAB><stale seat>": the state a blocked row returns to. label record (a RESTORE-STATE used), derived (the owner cell, or FREE), or the fallback that replaced a refused seat: owner (the owner cell is a seat), tier (the owner tier's queue), designer (the DESIGNER: head line), free
+    local _t="$1" _b="$PO/tasks/$1.task.md" _r="" _o _d _state _s _stale _tier
     [ -f "$_b" ] && _r="$(sed -n 's/^RESTORE-STATE: //p' "$_b" | head -1)"
-    [ -n "$_r" ] && { printf '%s' "$_r"; return 0; }
-    _o="$(s4e_row_owner_named "$1")"; [ -n "$_o" ] && { printf 'ASSIGNED:%s' "$_o"; return 1; }; printf 'FREE'; return 1; }
+    _o="$(s4e_row_owner_named "$_t")"
+    if [ -n "$_r" ]; then _state="$_r"; elif [ -n "$_o" ]; then _state="ASSIGNED:$_o"; else _state="FREE"; fi
+    case "$_state" in ASSIGNED:?*|CLAIMED:?*) _s="${_state#*:}";; *) _s="";; esac
+    if [ -z "$_s" ] || s4e_restore_seat_ok "$_s"; then
+        if [ -n "$_r" ]; then printf 'record\t%s\t\n' "$_state"; else printf 'derived\t%s\t\n' "$_state"; fi; return 0
+    fi
+    _stale="$_s"
+    if [ -n "$_o" ] && s4e_restore_seat_ok "$_o"; then printf 'owner\tASSIGNED:%s\t%s\n' "$_o" "$_stale"; return 0; fi
+    case "$_o" in @*) _tier="${_o#@}"; case "$_tier" in fable|opus|sonnet|haiku) printf 'tier\tQUEUED:tier-%s\t%s\n' "$_tier" "$_stale"; return 0;; esac;; esac
+    _d="$(sed -n 's/^DESIGNER: *//p' "$_b" 2>/dev/null | head -1)"
+    if [ -n "$_d" ] && s4e_restore_seat_ok "$_d"; then printf 'designer\tASSIGNED:%s\t%s\n' "$_d" "$_stale"; return 0; fi
+    printf 'free\tFREE\t%s\n' "$_stale"; return 0; }
+s4e_restore_state() {   # step 35: <topic> -> the state a blocked row returns to (s4e_restore_resolve); rc 0 when a RESTORE-STATE line was used, 1 when derived or a fallback replaced it
+    local _lbl _st _x _res
+    _res="$(s4e_restore_resolve "$1")"; IFS=$'\t' read -r _lbl _st _x <<< "$_res"
+    printf '%s' "$_st"; [ "$_lbl" = record ]; }
 s4e_restore_record() {   # <topic> <state>: write the one RESTORE-STATE: header line (replacing any) before the baton's first ## section
     local _b="$PO/tasks/$1.task.md" _tmp; [ -f "$_b" ] || return 0
     _tmp="$(mktemp "$_b.rs.XXXXXX")" || return 1
@@ -1061,17 +1080,18 @@ s4e_restore_record() {   # <topic> <state>: write the one RESTORE-STATE: header 
 s4e_restore_forget() { local _b="$PO/tasks/$1.task.md" _tmp; [ -f "$_b" ] && grep -q '^RESTORE-STATE: ' "$_b" || return 0; _tmp="$(mktemp "$_b.rs.XXXXXX")" || return 1
     grep -v '^RESTORE-STATE: ' "$_b" > "$_tmp"; mv "$_tmp" "$_b"; }
 s4e_unblock_dependents() {   # step 35: <closed-topic> -> every row BLOCKED-ON:/PARKED-AWAITING: it (any '+' member) returns to its restore state, with a ledger line and a telegram; prints the DONE line
-    local _c="$1" _l _t _st _m _hit _n=0 _rec=1 _tg=0 _rs _who _save
+    local _c="$1" _l _t _st _m _hit _n=0 _rec=1 _tg=0 _rs _who _save _lbl _res _stale
     while IFS= read -r _l; do
         case "$_l" in \#*|'') continue;; esac
         _t="$(printf '%s' "$_l" | cut -f2)"; _st="$(printf '%s' "$_l" | cut -f4)"
         case "$_st" in BLOCKED-ON:*|PARKED-AWAITING:*) ;; *) continue;; esac
         _hit=0; _save="$IFS"; IFS='+'; for _m in ${_st#*:}; do [ "$_m" = "$_c" ] && _hit=1; done; IFS="$_save"; [ "$_hit" = 1 ] || continue
         s4e_does_not_clear "$_c" "$_t" && continue
-        if _rs="$(s4e_restore_state "$_t")"; then :; else _rec=0; fi
+        _res="$(s4e_restore_resolve "$_t")"; IFS=$'\t' read -r _lbl _rs _stale <<< "$_res"; [ "$_lbl" = record ] || _rec=0
         s4e_set_row_state "$_t" "$_rs" || continue
         _n=$((_n+1)); s4e_restore_forget "$_t"; s4e_kick_row "$_t" done
         printf -- '- [%s %s] UNBLOCKED: %s closed DONE; state %s -> %s (box-scheduler step 35)\n' "$ME" "$(date -u +%FT%TZ)" "$_c" "$_st" "$_rs" >> "$PO/tasks/$_t.task.md"
+        [ -n "$_stale" ] && printf -- '- [%s %s] RESTORE: stale seat %s refused (not a seat on this root); restored as %s by the %s fallback (fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists)\n' "$ME" "$(date -u +%FT%TZ)" "$_stale" "$_rs" "$_lbl" >> "$PO/tasks/$_t.task.md"
         case "$_rs" in ASSIGNED:?*|CLAIMED:?*) _who="${_rs#*:}";; *) _who="$(s4e_row_owner_named "$_t")";; esac
         [ -n "$_who" ] && [ -d "$PO/$_who" ] && s4e_telegram "$_who" "$_t" "done: $_c closed DONE; your row $_t was $_st and is back as $_rs -- s4e_msg.sh next serves it (box-scheduler step 35)." 2>/dev/null < /dev/null && _tg=$((_tg+1))
     done <<< "$(cat "$PO/QUEUE.tsv")"
@@ -1085,19 +1105,19 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
     a="unblock-closer-$$"; b="unblock-assigned-$$"; c="unblock-free-$$"
-    printf '# plant queue (box-scheduler step 35)\n2\t%s\t%s\tFREE\n2\t%s\tplant-x\tASSIGNED:plant-x\n2\t%s\tplant-y\tFREE\n' "$a" "$ME" "$b" "$c" > "$w/QUEUE.tsv"
+    printf '# plant queue (box-scheduler step 35)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\tplant-y\tFREE\n' "$a" "$ME" "$b" "$ME" "$ME" "$c" > "$w/QUEUE.tsv"
     for t in "$a" "$b" "$c"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" "$now" > "$w/tasks/$t.task.md"; done
     run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
     run park "$b" "BLOCKED-ON:$a" > /dev/null; run park "$c" "PARKED-AWAITING:$a" > /dev/null
-    grep -q "^RESTORE-STATE: ASSIGNED:plant-x$" "$w/tasks/$b.task.md" || why="$why park did not record RESTORE-STATE ASSIGNED:plant-x on the assigned row;"
+    grep -q "^RESTORE-STATE: ASSIGNED:$ME$" "$w/tasks/$b.task.md" || why="$why park did not record RESTORE-STATE ASSIGNED:plant-x on the assigned row;"
     [ "$(grep -P "^2\t\Q$c\E\t" "$w/QUEUE.tsv" | cut -f4)" = "PARKED-AWAITING:$a" ] || why="$why the free row was not parked;"
     run claim "$a" > /dev/null; o="$(run done "$a")"
     printf '%s\n' "$o" | grep -qE '^DONE unblocked=2 restored_state=1 telegrams=2' || why="$why done did not print the DONE unblocked line [$(printf '%s' "$o" | grep '^DONE' | head -1)];"
-    [ "$(grep -P "^2\t\Q$b\E\t" "$w/QUEUE.tsv" | cut -f4)" = "ASSIGNED:plant-x" ] || why="$why the assigned row did not return to ASSIGNED:plant-x;"
+    [ "$(grep -P "^2\t\Q$b\E\t" "$w/QUEUE.tsv" | cut -f4)" = "ASSIGNED:$ME" ] || why="$why the assigned row did not return to ASSIGNED:$ME;"
     [ "$(grep -P "^2\t\Q$c\E\t" "$w/QUEUE.tsv" | cut -f4)" = "FREE" ] || why="$why the free row did not return to FREE;"
     grep -q '^RESTORE-STATE: ' "$w/tasks/$b.task.md" && why="$why the RESTORE-STATE line was not retired;"
     grep -q 'UNBLOCKED: ' "$w/tasks/$b.task.md" && grep -q 'UNBLOCKED: ' "$w/tasks/$c.task.md" || why="$why no ledger line on a restored row;"
-    ls "$w/plant-x/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
+    ls "$w/$ME/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
 s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch postoffice: a row A with a READY job is parked BLOCKED-ON:B and its job is buried (no holder: the bury-ready road); B is done, A returns to its state and its job is kicked back to ready by that done
@@ -1147,6 +1167,25 @@ s4e_done_plant_delete() {   # step 6's done probe (done --probe-delete) on a scr
     grep -q '^DONE$' "$w/claims/$x.claim" || why="$why the claim did not read DONE;"
     if [ -z "$why" ]; then echo "DONE job_deleted=1 (probe: a claimed row closed by done; its ready job was deleted by the bus, stats-job reads not found, the JOB-RECEIPT is on the claim)"; exit 0; fi
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
+s4e_done_plant_restore_seat() {   # fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists (done --probe-restore-seat) on a scratch postoffice: a blocker A closed DONE restores B, BLOCKED-ON A with RESTORE-STATE naming hq_nobody (no mailbox, not on ROSTER), to its owner ASSIGNED:<probe seat>, never to hq_nobody, with one ledger line naming the stale seat
+    local w o why="" a b now st n stale fb
+    [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-restore-seat]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_restore_seat.XXXXXX")" || { echo "REFUSE(2) [done --probe-restore-seat]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$w"' EXIT; now="$(date -u +%FT%TZ)"; a="restore-closer-$$"; b="restore-blocked-$$"
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [done --probe-restore-seat]: cannot make the scratch postoffice"; exit 2; }
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    printf '# plant queue (fleet-done restores a blocked row to a seat that exists)\n2\t%s\t%s\tASSIGNED:%s\n2\t%s\t%s\tBLOCKED-ON:%s\n' "$a" "$ME" "$ME" "$b" "$ME" "$a" > "$w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" > "$w/tasks/$a.task.md"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nRESTORE-STATE: ASSIGNED:hq_nobody\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
+    printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$a.claim"
+    o="$(env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" done "$a" 2>&1)"; drc=$?
+    [ "$drc" = 0 ] || why="$why done of the closer returned rc $drc;"
+    st="$(awk -F'\t' -v t="$b" '$2 == t { print $4; exit }' "$w/QUEUE.tsv")"
+    [ "$st" = "ASSIGNED:$ME" ] || why="$why the blocked row went to [$st], not ASSIGNED:$ME;"
+    n="$(grep -c 'RESTORE: stale seat hq_nobody refused' "$w/tasks/$b.task.md")"; [ "$n" = 1 ] || why="$why the ledger does not name the stale seat once (count $n);"
+    case "$st" in *hq_nobody*) stale=kept; fb=none;; *) stale=refused; fb=owner;; esac
+    if [ -z "$why" ]; then echo "RESTORE stale_seat=$stale fallback=$fb ledger=$n (probe: a blocked row whose RESTORE-STATE named hq_nobody, a seat with no mailbox and not on ROSTER, came back to its owner ASSIGNED:$ME, and one ledger line names the stale seat)"; exit 0; fi
+    echo "RESTORE stale_seat=$stale fallback=$fb ledger=$n (PROBE RED:$why)"; exit 1; }
 s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next writes nothing, serves the newest assign first, prints a FREE row unlocked; an assigned row's claim passes the cap
     local w o why="" before after a b c x y z
     [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-serve]: S4E_SEAT unset"; exit 2; }
@@ -1200,16 +1239,22 @@ s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arriv
     [ -z "$why" ] && { echo "BANNER headings_reprinted=0 arrivals=3 headings=2 after_check=one-line (probe: two arrivals announced once across two verbs, one line after check, a third arrival announced alone, the record pruned on clear)"; exit 0; }
     echo "BANNER PROBE RED:$why"; exit 1; }
 s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> ASSIGNED:<the request's seat>, one telegram
-    local _l _t _st _b _seat _n=0 _v
+    local _l _t _st _b _seat _n=0 _v _to _stale _o
     while IFS= read -r _l; do
         _t="$(printf '%s' "$_l" | cut -f2)"; _st="$(printf '%s' "$_l" | cut -f4)"
         case "$_st" in PARKED-AWAITING:*|BLOCKED-ON:*) ;; *) continue;; esac
         _b="$(s4e_first_resolved_blocker "${_st#*:}")" || continue; s4e_is_request_id "$_b" || continue
         _seat="$(s4e_request_seat "$_b")"; [ -n "$_seat" ] || continue
+        _to="ASSIGNED:$_seat"; _stale=""
+        if ! s4e_restore_seat_ok "$_seat"; then   # fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists: the request's seat is not a seat here; the owner takes the row, else FREE
+            _stale="$_seat"; _o="$(s4e_row_owner_named "$_t")"
+            if s4e_restore_seat_ok "$_o"; then _seat="$_o"; _to="ASSIGNED:$_o"; else _seat=""; _to=FREE; fi
+        fi
         _v="$(sed -n 's/^served=//p' "$S4E_REQ_DIR/done/$_b.req" | head -1 | cut -c1-80)"
-        S4E_PARK_FORCE=1 "$0" park "$_t" "ASSIGNED:$_seat" > /dev/null 2>&1 || continue
-        _n=$((_n+1)); printf -- '- [%s %s] VERDICT IN for request %s (%s): row restored to ASSIGNED:%s by the sweep (box-scheduler step 31)\n' "$ME" "$(date -u +%FT%TZ)" "$_b" "$_v" "$_seat" >> "$PO/tasks/$_t.task.md"
-        s4e_telegram "$_seat" "$_t" "sweep: the coo's verdict on test request $_b is in ($_v); your row $_t is back as ASSIGNED:$_seat -- s4e_msg.sh next serves it first (box-scheduler step 31)." 2>/dev/null < /dev/null
+        S4E_PARK_FORCE=1 "$0" park "$_t" "$_to" > /dev/null 2>&1 || continue
+        _n=$((_n+1)); printf -- '- [%s %s] VERDICT IN for request %s (%s): row restored to %s by the sweep (box-scheduler step 31)\n' "$ME" "$(date -u +%FT%TZ)" "$_b" "$_v" "$_to" >> "$PO/tasks/$_t.task.md"
+        [ -n "$_stale" ] && printf -- '- [%s %s] RESTORE: stale seat %s refused on the verdict of %s; restored as %s (fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists)\n' "$ME" "$(date -u +%FT%TZ)" "$_stale" "$_b" "$_to" >> "$PO/tasks/$_t.task.md"
+        [ -n "$_seat" ] && s4e_telegram "$_seat" "$_t" "sweep: the coo's verdict on test request $_b is in ($_v); your row $_t is back as $_to -- s4e_msg.sh next serves it first (box-scheduler step 31)." 2>/dev/null < /dev/null
     done <<< "$(cat "$PO/QUEUE.tsv")"
     [ "$_n" -gt 0 ] && echo "sweep: $_n row(s) PARKED-AWAITING a test request restored on its verdict"; return 0; }
 s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pending request, a park on it, no clear before the verdict, a restore on it, a bogus id refused
@@ -1221,9 +1266,9 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$po/MODE"
     [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$po/PROTOCOL-VERSION"
     id="20261104T000000-plant-lander-sno-rungs-$$"
-    printf '# plant queue\n2\tawaiting-plant\tplant-lander\tFREE\n' > "$po/QUEUE.tsv"
+    printf '# plant queue\n2\tawaiting-plant\t%s\tFREE\n' "$ME" > "$po/QUEUE.tsv"
     printf '# TASK awaiting-plant\nGOAL: plant\nDONE-WHEN: false\n## NEXT\nresume here\n## QA\n## LEDGER\n- [plant] minted\n' > "$po/tasks/awaiting-plant.task.md"
-    printf 'seat=plant-lander\nsuite=sno-rungs\ntable=tests/snobol4\nfiled=plant\nentries=a b\n' > "$t/req/$id.req"
+    printf 'seat=%s\nsuite=sno-rungs\ntable=tests/snobol4\nfiled=plant\nentries=a b\n' "$ME" > "$t/req/$id.req"
     run() { env -u S4E_PID_LOCK S4E_POST="$po" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 S4E_TEST_REQUEST_DIR="$t/req" bash "$0" "$@" 2>&1; }
     run park awaiting-plant "PARKED-AWAITING:$id" > /dev/null; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
     [ "$st" = "PARKED-AWAITING:$id" ] || why="$why the park on a pending request was not written [$st];"
@@ -1232,9 +1277,9 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     [ "$st" = "PARKED-AWAITING:$id" ] || why="$why the sweep cleared the park before any verdict [$st];"
     { cat "$t/req/$id.req"; echo "served=2026-11-04 18:00:00 CST tree=abc1234 rc=0 rows=2"; } > "$t/req/done/$id.req" && rm -f "$t/req/$id.req"
     o="$(run sweep)"; st="$(grep -P '^2\tawaiting-plant\t' "$po/QUEUE.tsv" | cut -f4)"
-    [ "$st" = "ASSIGNED:plant-lander" ] || why="$why the verdict did not restore the row to its lander [$st] [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
+    [ "$st" = "ASSIGNED:$ME" ] || why="$why the verdict did not restore the row to its lander [$st] [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
     grep -q 'VERDICT IN for request' "$po/tasks/awaiting-plant.task.md" || why="$why no ledger line on the baton;"
-    ls "$po/plant-lander/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
+    ls "$po/$ME/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
     [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=ASSIGNED:plant-lander telegram=1 (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat with a ledger line and a telegram)"; exit 0; }
     echo "PARK PROBE RED:$why"; exit 1; }
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
@@ -3323,6 +3368,7 @@ case "$cmd" in
   done)  [ -n "${2:-}" ] || s4e_need done "a topic" "s4e_msg.sh done <topic>" "Closes a row by RUNNING its baton DONE-WHEN; it refuses on a red or an rc=2. Completion is computed, never declared."
          [ "$2" = --probe-unblock ] && s4e_done_plant_unblock
          [ "$2" = --probe-delete ] && { s4e_done_plant_delete; exit $?; }
+         [ "$2" = --probe-restore-seat ] && { s4e_done_plant_restore_seat; exit $?; }
          [ "$2" = --probe-lock ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_done_lock.sh"; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"
          # ⛔ THE BANNER FIRES ITSELF HERE (HQ 2026-08-22, after seat4 finished its row and gave NO banner until Lon
