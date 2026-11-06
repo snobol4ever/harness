@@ -237,6 +237,13 @@ s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker
     [ -n "$_id" ] || { printf '⛔ REFUSED (rc=3): park %s could not bury a job (put-buried into %s failed; util_queue.py status tells why). Nothing set.\n' "$_t" "$_tube" >&2; return 3; }
     s4e_baton_job_set "$_t" "$_id" "$_tube"; echo "  (no job to bury: job $_id put and buried in $_tube)"
     return 0; }
+s4e_baton_head_set() {   # <topic> <KEY> <value>: one KEY: line in the baton head after LINKS, replaced when present (fleet-queue step 12: RANK, OWNER, STATE)
+    local _b="$PO/tasks/$1.task.md"; [ -f "$_b" ] || return 1
+    if grep -q "^$2:" "$_b"; then sed -i "s|^$2:.*|$2: $3|" "$_b"
+    else sed -i "0,/^LINKS:/{/^LINKS:/a\\
+$2: $3
+}" "$_b"; fi; }
+s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; python3 "$S4E/harness/scripts/util_queue_view.py" --regenerate >>"/tmp/s4e/$ME/view.log" 2>&1 || echo "$(date -u +%FT%TZ) view regenerate rc=$? from $0 $*" >> "/tmp/s4e/$ME/view.err"; }   # fleet-queue step 12: QUEUE.tsv is regenerated after every state, owner or mint write
 s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
@@ -2566,6 +2573,7 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
   _tmp="$(mktemp)"
   if awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_s" '$2==t&&NF>3{$4=s} {print}' "$_q" > "$_tmp"; then cat "$_tmp" > "$_q" || _rc=1; else _rc=1; fi
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
+  s4e_baton_head_set "$_t" STATE "$_s" 2>/dev/null; s4e_queue_view   # fleet-queue step 12: the baton is the record, QUEUE.tsv the view
   return $_rc
 }
 # ⭐ recut (box-scheduler step 27, CTO-496; the cio's fleet-queue ask, the PREMISE-WHEN form): a row's DONE-WHEN or PREMISE-WHEN that is wrong is
@@ -2688,6 +2696,7 @@ s4e_backfill_owner_lane() {
   [ "$_got" = 1 ] || return 1
   _tmp="$(mktemp)"
   awk -F'\t' -v OFS='\t' -v t="$_t" -v o="$_lane" '$2==t&&NF>3&&($3==""||$3=="unassigned"){$3=o} {print}' "$_q" > "$_tmp" && cat "$_tmp" > "$_q"
+  s4e_baton_head_set "$_t" OWNER "$_lane" 2>/dev/null; s4e_queue_view   # fleet-queue step 12
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
 }
 s4e_mark_row() { mkdir -p "$PO/$ME"; printf '%s\n%s %s\n' "$1" "$2" "$(date -u +%Y-%m-%dT%H:%MZ)" > "$PO/$ME/.last-row"; }
@@ -3711,6 +3720,7 @@ case "$cmd" in
          if [ "$(wc -l < "$_tmp")" -ne "$(wc -l < "$q")" ]; then rm -f "$_tmp"; echo "⛔ REFUSED: rewrite changed the row count -- not applied. QUEUE.tsv untouched." >&2; exit 2; fi
          if ! grep -qP "^[0-9]+\t\Q$topic\E\t\Q$seat\E\t" "$_tmp"; then rm -f "$_tmp"; echo "⛔ REFUSED: rewrite did not take -- not applied. QUEUE.tsv untouched." >&2; exit 2; fi
          mv "$_tmp" "$q"; chmod 664 "$q"
+         s4e_baton_head_set "$topic" OWNER "$seat" 2>/dev/null; s4e_queue_view   # fleet-queue step 12
          printf 'reowned: %s  %s -> %s  (state %s unchanged, claim untouched)\n' "$topic" "$_old" "$seat" "$_state"
          ;;
   assign) # ⭐ V2-1 / LAW 2 — ASSIGNMENT IS THE LOCK (the retired fleet architecture page). HQ writes the seat's claim ATOMICALLY on HQ's
@@ -3987,6 +3997,9 @@ GOAL: $goal
 $dw_block${pw_block:+
 $pw_block}
 LINKS: minted via \`mint\` by $ME, $(date -u +%FT%TZ)
+RANK: $rank
+OWNER: $owner
+STATE: FREE
 ## NEXT
 Distill a real first step from the GOAL above (and a real DONE-WHEN — see the line above), then work it.
 ## QA
@@ -4017,6 +4030,7 @@ TASKEOF
          printf '%s\t%s\t%s\tFREE\n' "$rank" "$topic" "$owner" >> "$q"
          rmdir "$lock" 2>/dev/null; trap 's4e_pid_release' EXIT
          echo "minted $topic (rank $rank, owner $owner, state FREE) -> $b"
+         s4e_queue_view
          [ -n "$q_tube" ] && s4e_queue_enqueue_row "$topic" "$q_tube" "$rank" "$q_tier"
          [ -n "$pw_block" ] && {
            printf '⚠ NO PREMISE-WHEN — you are the one reader who knows what this row ASSUMES, and you are looking at\n' >&2
@@ -5068,6 +5082,7 @@ TASKEOF
            [ -s "$d" ] || printf '# S4E QUEUE — LANDED ROWS (the MEMORY; QUEUE.tsv is the BUFFER). Append-only.\n# rank\ttopic\tbrief\tfirst-step-and-done-when\n' > "$d"
            printf '# --- swept %s by %s: %s rows ---\n' "$(date -u +%FT%TZ)" "$ME" "$ng" >> "$d"; cat "$gone" >> "$d"
            mv "$keep" "$q"; chmod 664 "$q"; else rm -f "$keep"; fi
+         s4e_queue_view   # fleet-queue step 12: the sweep's move regenerates the view too
          rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows moved to QUEUE.done.tsv (nothing deleted; buffer backed up)\n' "$nk" "$ng"
          s4e_sweep_verdicts   # box-scheduler step 31: a PARKED-AWAITING:<request-id> row returns to its seat when the verdict is in
          _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
