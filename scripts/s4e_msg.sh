@@ -2913,7 +2913,13 @@ case "$cmd" in
          if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
   resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
-  ask)   [ -n "${2:-}" ] || s4e_need ask "a topic" "s4e_msg.sh ask <topic> \"your question\"" "Sends q-<topic> to the HQ named in your postoffice HQ file, and refuses rc=2 when none is set."
+  answer) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" answer "$@"; exit $?;;
+  ask)   [ "${2:-}" = --probe-queue ] && { S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" ask --probe-queue; exit $?; }
+         # fleet-queue step 8 (the cio's design; skill fleet-bus section 8): a TOPIC with no mailbox named before it is a QUEUED ask (s4e_ask.sh):
+         # the question row q-<topic>-<n> is minted, its job goes into the tube above the asker, and the asking row is parked BLOCKED-ON it.
+         # The addressed form below (a seat named first, R-2081) is unchanged.
+         if [ -n "${2:-}" ] && ! { [ -n "${3:-}" ] && [ -d "$PO/$2/inbox" ]; }; then S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" ask "$2" "${@:3}"; exit $?; fi
+         [ -n "${2:-}" ] || s4e_need ask "a topic" "s4e_msg.sh ask <topic> --stdin" "Queues a question for the tier above you (fleet-queue step 8): the row <topic> is parked BLOCKED-ON the question row; refuses rc=2 with no topic."
          # ⛔ TWO FORMS AND --stdin (R-2081). MEASURED: the cqo and the cfo each ran ask <seat> <topic> --stdin within the hour; the verb
          # took the seat as the topic and mailed the officer the literal body "<topic> --stdin", the question itself lost. A first argument that
          # names a mailbox is now the addressee, and --stdin reads the body from standard input as send does; an empty body is refused.
