@@ -25,8 +25,8 @@ spawn() { setsid bash "$root/harness/scripts/s4e_banner_cached.sh" --refresh "$r
 if [ -f "$c" ]; then
     age=$(( now - $(stat -c %Y "$c") )); out="$(cat "$c")"
     [ "$age" -gt 240 ] && [ ! -f "$c.lock" ] && spawn
-    [ "$age" -gt 60 ] && out="$out
-(banner cached ${age} s ago at load $load; a refresh is running)"
+    [ "$age" -gt 60 ] && out="(banner cached ${age} s ago at load $load; a refresh is running)
+$out"   # first section, never the end (Lon 2026-11-06: "Remove the verbaiage \"(banner cahced ... blah)\" from the end of the banner. Put it in the first section instead.")
 else
     out="$(timeout -k 5 100 bash "$root/harness/scripts/s4e_msg.sh" banner 2>&1)"
     if [ -n "$out" ]; then printf '%s' "$out" > "$c"; else out="banner: the verb printed nothing within 100 s at load $load; the first refresh runs in the background and the next turn shows it"; [ -f "$c.lock" ] || spawn; fi
