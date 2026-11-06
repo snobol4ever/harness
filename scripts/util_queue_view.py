@@ -36,6 +36,16 @@ def set_head(path, s, key, value):
     else: s = re.sub(r"^(LINKS:.*)$", lambda m: m.group(1) + "\n%s: %s" % (key, value), s, count=1, flags=re.M)
     open(path, "w").write(s); return s
 def mint_ts(d): m = re.search(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", d.get("LINKS", "")); return m.group(1) if m else ""
+def claim_rule(topic, state):
+    try: lines = open(os.path.join(PO, "claims", topic + ".claim")).read().splitlines()
+    except OSError: return state
+    if not lines: return state
+    holder = lines[0].strip()
+    if any(l.strip() == "DONE" for l in lines): return "DONE"
+    if any(l.startswith("PARKED-AROUND") for l in lines) and re.match(r"^(PARKED|BLOCKED-ON|GRANT-NEEDED|RETIRED|SUPERSEDED)", state): return state
+    if re.match(r"^MEASURING:%s:" % re.escape(holder), state): return state
+    if any(l.startswith("ASSIGNED-BY") for l in lines) and not any(l.startswith(("RUNNING", "RESERVED")) for l in lines): return "ASSIGNED:" + holder
+    return "CLAIMED:" + holder
 def claim_reserved(topic):
     try: return any(l.startswith("RESERVED job=") for l in open(os.path.join(PO, "claims", topic + ".claim")))
     except OSError: return False
@@ -53,6 +63,7 @@ def regenerate():
             s = set_head(p, s, "RANK", str(rank)); s = set_head(p, s, "OWNER", owner); s = set_head(p, s, "STATE", state); healed += 1
             d.update({"RANK": str(rank), "OWNER": owner, "STATE": state})
         rank, owner, state = int(d["RANK"] or 2), d["OWNER"], d["STATE"]
+        state = claim_rule(topic, state)   # THE CLAIM IS THE LOCK: a claim file outranks a stale STATE line (a seat on an older bus writes no STATE line)
         if state == "DONE":   # a DONE row leaves the view and lands once in QUEUE.done.tsv (the sweep's move, done here)
             if topic in old:
                 dq = os.path.join(PO, "QUEUE.done.tsv")
