@@ -9,6 +9,7 @@
 #   arm 3  THE PYTHON TAKER FOLLOWS THE SAME RULE: corpus_suite_harness._slot_knobs() equals lib_slots.sh's S4E_*_DEFAULT lines; with slots
 #          0..5 held, a grader _run_slot() returns within three seconds and an ordinary one does not
 #   arm 4  NO NESTED TAKE: under S4E_RUN_SLOT_HELD the run taker opens no slot file
+#   arm 5  ONE HOME FOR THE CAPS (fleet-queue step 18): SLOTS.tsv's standing caps equal the S4E_*_DEFAULT lines above and run = run-grader + run-seats
 # RED on the takers before the landing (S4E_SLOT_TAKERS_DIR=<a checkout of them>): a seat holds eight at once and the grader waits like anyone.
 # rc 0 GREEN, 1 RED, 2 REFUSE (no takers, no flock, no python3).
 set -u
@@ -87,6 +88,14 @@ case "$po" in PY-GOT*) red="$red arm3:python-ordinary-got-a-reserved-slot";; esa
 # arm 4: no nested take
 rm -rf "$T/run4"; S4E_RUN_SLOT_DIR="$T/run4" S4E_RUN_SLOT_HELD=1 S4E_SEAT=seatA bash "$TK/util_run_slot.sh" true
 [ -z "$(ls "$T/run4" 2>/dev/null)" ] || red="$red arm4:a-nested-take-opened-a-slot-file"
+# arm 5: ONE HOME FOR THE CAPS (fleet-queue step 18: SLOTS.tsv is the class table of the sem admission; the flock takers above keep their S4E_*_DEFAULT lines): every standing cap of the table equals the line it mirrors,
+# and the run class adds up (run = run-grader + run-seats), else the two layers admit different numbers
+for pair in "compile S4E_CC_POOL_DEFAULT" "run S4E_RUN_POOL_DEFAULT" "compile-seat S4E_CC_SEAT_CAP_DEFAULT" "run-seat S4E_RUN_SEAT_CAP_DEFAULT" "run-grader S4E_RUN_GRADER_RESERVED_DEFAULT"; do
+    set -- $pair; tv="$(awk -F'\t' -v c="$1" '$1 == c { print $3; exit }' "$HERE/SLOTS.tsv" 2>/dev/null)"; lv="$(sed -n "s/^$2=\([0-9]*\)[[:space:]]*$/\1/p" "$HERE/lib_slots.sh")"
+    [ -n "$tv" ] && [ "$tv" = "$lv" ] || red="$red arm5:SLOTS.tsv-$1=${tv:-none}-but-lib_slots.sh-$2=${lv:-none}"
+done
+rg="$(awk -F'\t' '$1 == "run-grader" { print $3; exit }' "$HERE/SLOTS.tsv" 2>/dev/null)"; rs="$(awk -F'\t' '$1 == "run-seats" { print $3; exit }' "$HERE/SLOTS.tsv" 2>/dev/null)"; rt="$(awk -F'\t' '$1 == "run" { print $3; exit }' "$HERE/SLOTS.tsv" 2>/dev/null)"
+[ -n "$rg" ] && [ -n "$rs" ] && [ "$rt" = "$((rg + rs))" ] || red="$red arm5:run-${rt:-none}-is-not-run-grader-${rg:-none}-plus-run-seats-${rs:-none}"
 kill $PIDS 2>/dev/null; wait 2>/dev/null; PIDS=""
 echo "POOLS_SEAT_CAP_BOARD maxA=$maxA maxB=$maxB pool=$maxP grader_wait=${gt}s knobs=${knobs_sh% } (tree $(git -C "$ROOT/harness" rev-parse --short HEAD 2>/dev/null))"
 if [ -z "$red" ]; then echo "GATE OK [$NAME]: two seats at pool 8 cap 4 held at most $maxA and $maxB, the grader took a reserved run slot in ${gt}s while an ordinary claimant waited, the python taker reads the same rule"; exit 0; fi

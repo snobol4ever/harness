@@ -4,13 +4,15 @@
 # CDT: load 27 on 16 cores while the box's pools sat nearly idle (1 of 8 compile slots, 2 of 8 run slots), because the heavy runs bypassed them:
 # a seat's own before-and-after binaries, a second scrip run started by hand, a compile-all sweep. The harness takes a run slot for every child it
 # starts (corpus_suite_harness.py:_run_slot, R-1894); this wrapper takes the SAME slot locks under /tmp/s4e-run-slots for a run a seat starts
-# itself, so hand runs and harness runs share one pool of S4E_RUN_SLOTS (default 8). It waits when every slot is held (rescanning every slot twice a second,
+# itself, so hand runs and harness runs share one pool of S4E_RUN_SLOTS (default 8; since fleet-queue step 18 GNU sem semaphores from SLOTS.tsv, see lib_slots.sh). It waits when every slot is held (rescanning every slot twice a second,
 # never queued on one: a serial script holding a slot for hours pinned a waiter 17 minutes, 10-30) and execs the command with
 # the lock on fd 8 for the command's whole life (the kernel frees it when the process exits, so a killed run frees its slot). A run already under
 # a harness slot (S4E_RUN_SLOT_HELD set) takes no second one.
 #   bash ../harness/scripts/util_run_slot.sh ./scrip prog.sno < /dev/null
 #   bash ../harness/scripts/util_run_slot.sh ./old.bin -d64m
-[ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>..." >&2; exit 2; }
+[ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh <command> <args>... | util_run_slot.sh --bg [--probe] <command> <args>... | util_run_slot.sh --admit <compile|run> <command>... | util_run_slot.sh --probe-sem" >&2; exit 2; }
+# --probe-sem (fleet-queue step 18): util_slot_probe.sh proves the sem pools on a scratch home through the real takers, then prints one `SLOT by=sem class=... id=... cap=... timeout_s=...` line per pool class of SLOTS.tsv.
+[ "$1" = --probe-sem ] && exec bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_slot_probe.sh"
 # --bg (box-scheduler step 22): the command runs under setsid with S4E_BG_HANDLE=<id> in its environment, stdout and stderr in /tmp/s4e/<seat>/bg/<id>.log, and
 # a handle file <id>.handle beside it (pid, seat, start, cwd, command); it prints `BG handle=<id> pid=<pid> log=<path>`. s4e_kill_mine.sh --handle <id> stops it.
 if [ "$1" = --bg ]; then
@@ -30,6 +32,20 @@ if [ "$1" = --bg ]; then
         echo "BG PROBE RED:$_why"; exit 1
     fi
     echo "BG handle=$_id pid=$_pid log=$_log"; exit 0
+fi
+# --admit <compile|run> <command> (fleet-queue step 18, the cio 2026-11-05): ADMISSION to a class by GNU sem, for a take that is rare and long (a batch job, a build, a whole suite run, a landing); the seat's share, then the
+# class pool (SLOTS.tsv; lib_slots.sh s4e_sem_admit). A run is then taken as any other (its flock slot below); a compile class runs the command on the admission alone. Skipped, silently, inside a held run slot or an
+# admission already taken (S4E_ADMITTED): a nested take would wait on its own parent. The per-entry and per-compile slots stay flock (327 M instructions a sem take against 12-19 M; the coo and the cio ruled).
+if [ "$1" = --admit ]; then
+    _class="${2:-}"; shift 2
+    case "$_class" in compile|run) ;; *) echo "usage: util_run_slot.sh --admit <compile|run> <command> <args>..." >&2; exit 2;; esac
+    [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh --admit <compile|run> <command> <args>..." >&2; exit 2; }
+    if [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
+        . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
+        s4e_sem_admit "$_class"; _rc=$?; [ "$_rc" = 2 ] && exit 2
+        s4e_slot_note "$_class-admit" "$S4E_SLOT_T0" "$@"
+    fi
+    [ "$_class" = compile ] && exec "$@"
 fi
 [ -n "${S4E_RUN_SLOT_HELD:-}" ] && exec "$@"
 # SINCE 2026-10-31 (the cto, ARCH-SHARED-DEVELOPMENT 4.3, R-2041 step 3) THE RULE LIVES IN lib_slots.sh: a seat file first (cap S4E_RUN_SEAT_CAP, default 3), then a pool slot;

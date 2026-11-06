@@ -1,0 +1,14 @@
+# SLOTS.tsv -- THE CLASS TABLE OF THE BOX'S TWO POOLS (DESIGN-PLAN fleet-queue step 18; the cio 2026-11-05, skill fleet-bus section 8: "the compile and run pools become GNU sem semaphores with a class table and a timeout").
+# The sem layer is ADMISSION to a class, taken once by a take that is rare and long (a batch job, a build, a whole suite run, a landing): util_run_slot.sh --admit <compile|run> <command>. The per-entry and per-compile
+# slots stay flock files (lib_slots.sh s4e_slot_hold, corpus_suite_harness.py _run_slot): a sem take is 327 M user instructions against 12-19 M for a flock take (perf stat, 2026-11-05) and a marginal harness entry is 0.28 G
+# (CTO-522), so the coo and the cio ruled sem off that path (coo and cio 2026-11-05 17:4x). The caps below are the standing rulings (a seat takes at most 4 compiles and 3 runs; 2 run slots are the grader's) and equal
+# lib_slots.sh's S4E_*_DEFAULT lines, which test_gate_pools_cap_a_seat_and_reserve_the_grader.sh arm 5 checks.
+# Columns (tab separated): class, id (a trailing - means the seat name follows), cap, timeout_s (the longest a taker waits by day, 06:00-21:59; - means the class row's), timeout_night_s (otherwise and for the grader), note.
+# A take holds at most TWO sems, outer to inner (the cio: never three): compile = compile-seat then compile; run = run-seat then run-seats; run for S4E_CLASS=grader = run-grader only.
+# run is the class (its cap is run-grader + run-seats); a negative --semaphoretimeout refuses, a positive one STEALS the slot (MEASURED), so the takers pass -timeout_s.
+compile	s4e-compile	8	300	900	the compile class: half the 16 cores (CEO-2041); a timeout refuses rc 2 and nothing runs
+run	s4e-run	8	300	900	the run class: the pool of heavy runs; its cap is run-grader plus run-seats
+run-grader	s4e-run-grader	2	-	-	the slots only the grader (S4E_CLASS=grader) is admitted to
+run-seats	s4e-run-seats	6	-	-	the slots every other taker shares
+compile-seat	s4e-compile-seat-	4	-	-	one seat's share of the compile class (id prefix + seat name)
+run-seat	s4e-run-seat-	3	-	-	one seat's share of the run class (id prefix + seat name)

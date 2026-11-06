@@ -44,4 +44,5 @@ if ! flock -n "$S4E_BATCH_FD"; then
 fi
 : > "$lock"; printf 'pid=%s cmd=%s\n' "$$" "$*" > "$lock"
 export S4E_BATCH_HELD=1
-exec bash "$HERE/util_run_slot.sh" python3 "$HERE/util_mem_scope.py" enter --kind batch --slice s4e-batch.slice -- bash "$HERE/util_batch.sh" --inside "$@"
+# a batch job is rare and long: it is ADMITTED to the run class by GNU sem (the seat share, then the pool; SLOTS.tsv, fleet-queue step 18) and then takes its run slot as before
+exec bash "$HERE/util_run_slot.sh" --admit run python3 "$HERE/util_mem_scope.py" enter --kind batch --slice s4e-batch.slice -- bash "$HERE/util_batch.sh" --inside "$@"
