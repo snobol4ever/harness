@@ -2539,55 +2539,101 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
   rm -f "$_tmp"; rmdir "$_lk" 2>/dev/null
   return $_rc
 }
-# ⭐ recut (box-scheduler step 27, CTO-496): a row's DONE-WHEN that is wrong is RE-CUT, never patched in place. The old block is kept
-# VERBATIM on one DONE-WHEN-WAS receipt line that sits directly above the new DONE-WHEN line (its lines joined by " ⏎ "), so the baton keeps
-# every criterion it has had. A row the sweep retired (RETIRED:criterion-refused-...) reopens to FREE; any other state stays as it is.
-# The new text passes mint's own lint (s4e_donewhen_unrunnable_why: no prose, no no-op, no placeholder) and may not carry a baton section
-# or field label at column 0, which would tear the file. rc 0 written; rc 2 refused, nothing written; rc 3 could not write.
-s4e_recut_write() {   # <topic> --stdin  |  <topic> <criterion words...>
-    local _t="$1" _b _q="$PO/QUEUE.tsv" _lk="$PO/.mint.lock" _got=0 _i _n _new _old _rec _rl _why _st _to _ln _tmp _qt _stamp
+# ⭐ recut (box-scheduler step 27, CTO-496; the cio's fleet-queue ask, the PREMISE-WHEN form): a row's DONE-WHEN or PREMISE-WHEN that is wrong is
+# RE-CUT, never patched in place. The body is column-0 labels: DONE-WHEN:, PREMISE-WHEN: (either or both) and WHY:; a body with no label is a
+# DONE-WHEN (the step-27 form). Any other column-0 label refuses. Each re-cut block keeps its old text VERBATIM on a receipt line:
+# DONE-WHEN-WAS: or PREMISE-WHEN-WAS: <stamp> by <seat> (why: <WHY>): <old block, lines joined by ' ⏎ '>. The receipts sit in the header directly
+# above the DONE-WHEN line, never under a criterion: a line under an incomplete-shell criterion would be read as part of it. A row the sweep
+# retired (RETIRED:criterion-refused-...) reopens to FREE; any other state stays. The new text passes mint's lint (s4e_donewhen_unrunnable_why: no
+# prose, no no-op, no placeholder). A body that changes neither field is refused. rc 0 written; rc 2 refused, nothing written; rc 3 could not write.
+s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
+    local _t="$1" _b _q="$PO/QUEUE.tsv" _lk="$PO/.mint.lock" _got=0 _i _n _np _body _ln _v _bad="" _cur="" _why="" _dw="" _pw="" _nl=$'\n' \
+        _hasdw=0 _haspw=0 _haswhy=0 _odw="" _opw="" _hasopw=0 _chgdw=0 _chgpw=0 _whyshow _stamp _rdw="" _rpw="" _st _to _tmp _qt _why2 _dwnote _pwnote _rl _ndw _what
     shift
-    if [ "${1:-}" = --stdin ] || [ "${1:-}" = - ]; then _new="$(cat)"; shift; else _new="$*"; fi
+    if [ "${1:-}" = --stdin ] || [ "${1:-}" = - ]; then _body="$(cat)"; shift; else _body="$*"; fi
     case "$_t" in ""|*/*|*$'\n'*) printf '⛔ REFUSED (rc=2): recut needs a topic (no slash, no newline). Nothing written.\n' >&2; return 2;; esac
     _b="$PO/tasks/$_t.task.md"
     [ -f "$_b" ] || { printf '⛔ REFUSED (rc=2): no baton %s -- recut re-cuts a row that exists. Nothing written.\n' "$_b" >&2; return 2; }
     grep -qP "^[0-9]+\t\Q$_t\E\t" "$_q" 2>/dev/null || { printf '⛔ REFUSED (rc=2): no QUEUE.tsv row is named %s. Nothing written.\n' "$_t" >&2; return 2; }
-    _n="$(grep -c '^DONE-WHEN:' "$_b")"
+    _n="$(grep -c '^DONE-WHEN:' "$_b")"; _np="$(grep -c '^PREMISE-WHEN:' "$_b")"
     [ "$_n" = 1 ] || { printf '⛔ REFUSED (rc=2): %s carries %s DONE-WHEN: lines, not one; delete the one you do not mean, then recut. Nothing written.\n' "$_t" "$_n" >&2; return 2; }
-    _new="$(printf '%s\n' "$_new" | sed '1s/^DONE-WHEN:[[:space:]]*//')"
-    [ -n "$(printf '%s' "$_new" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED (rc=2): the new criterion is empty. Nothing written.\n' >&2; return 2; }
-    if printf '%s\n' "$_new" | grep -qE '^(## |(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):)'; then
-        printf '⛔ REFUSED (rc=2): the criterion carries a baton section or field label at column 0; it would tear the file. Nothing written.\n' >&2; return 2; fi
-    _why="$(s4e_donewhen_unrunnable_why "$_new")" && { printf '⛔ REFUSED (rc=2): the new DONE-WHEN is not a runnable criterion -- %s. Nothing written; mint and recut judge a criterion by the same rule.\n   Your DONE-WHEN: %s\n' "$_why" "$(printf '%s\n' "$_new" | head -1 | cut -c1-120)" >&2; return 2; }
-    _old="$(awk 'BEGIN { s = 0 } /^DONE-WHEN:/ && !s { s = 1; sub(/^DONE-WHEN:[[:space:]]*/, ""); print; next }
-        s && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { exit }
+    [ "$_np" -le 1 ] || { printf '⛔ REFUSED (rc=2): %s carries %s PREMISE-WHEN: lines, not one or none; delete the extra ones, then recut. Nothing written.\n' "$_t" "$_np" >&2; return 2; }
+    while IFS= read -r _ln || [ -n "$_ln" ]; do
+        case "$_ln" in
+            DONE-WHEN:*) _cur=dw; _hasdw=1; _v="${_ln#DONE-WHEN:}"; _dw="${_v# }"; continue;;
+            PREMISE-WHEN:*) _cur=pw; _haspw=1; _v="${_ln#PREMISE-WHEN:}"; _pw="${_v# }"; continue;;
+            WHY:*) _cur=why; _haswhy=1; _v="${_ln#WHY:}"; _why="${_v# }"; continue;;
+        esac
+        if printf '%s' "$_ln" | grep -qE '^[A-Z][A-Z0-9-]*:'; then _bad="${_ln%%:*}"; break; fi
+        case "$_cur" in
+            dw) _dw="${_dw:+$_dw$_nl}$_ln";;
+            pw) _pw="${_pw:+$_pw$_nl}$_ln";;
+            why) _why="${_why:+$_why $_ln}";;
+            *) _cur=dw; _hasdw=1; _dw="$_ln";;
+        esac
+    done <<< "$_body"
+    if [ -n "$_bad" ]; then printf '⛔ REFUSED (rc=2): the body carries the label %s:, and recut takes only DONE-WHEN:, PREMISE-WHEN: and WHY: at column 0; any other label would tear the baton. Nothing written.\n' "$_bad" >&2; return 2; fi
+    _dw="$(printf '%s' "$_dw")"; _pw="$(printf '%s' "$_pw")"; _why="$(printf '%s' "$_why")"
+    [ "$_hasdw" = 1 ] || [ "$_haspw" = 1 ] || { printf '⛔ REFUSED (rc=2): the body names no DONE-WHEN and no PREMISE-WHEN; a re-cut must change one of them. Nothing written.\n' >&2; return 2; }
+    if [ "$_hasdw" = 1 ]; then
+        [ -n "$(printf '%s' "$_dw" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED (rc=2): the new DONE-WHEN is empty. Nothing written.\n' >&2; return 2; }
+        printf '%s\n' "$_dw" | grep -qE '^## ' && { printf '⛔ REFUSED (rc=2): the new DONE-WHEN carries a section header at column 0; it would tear the baton. Nothing written.\n' >&2; return 2; }
+        _why2="$(s4e_donewhen_unrunnable_why "$_dw")" && { printf '⛔ REFUSED (rc=2): the new DONE-WHEN is not a runnable criterion -- %s. Nothing written; mint and recut judge a criterion by the same rule.\n   Your DONE-WHEN: %s\n' "$_why2" "$(printf '%s\n' "$_dw" | head -1 | cut -c1-120)" >&2; return 2; }
+    fi
+    if [ "$_haspw" = 1 ]; then
+        [ -n "$(printf '%s' "$_pw" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN is empty. Nothing written.\n' >&2; return 2; }
+        printf '%s\n' "$_pw" | grep -qE '^## ' && { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN carries a section header at column 0; it would tear the baton. Nothing written.\n' >&2; return 2; }
+        _why2="$(s4e_donewhen_unrunnable_why "$_pw")" && { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN is not a runnable command -- %s. Nothing written.\n   Your PREMISE-WHEN: %s\n' "$_why2" "$(printf '%s\n' "$_pw" | head -1 | cut -c1-120)" >&2; return 2; }
+    fi
+    _odw="$(awk 'BEGIN { s = 0 } /^DONE-WHEN:/ && !s { s = 1; sub(/^DONE-WHEN:[[:space:]]*/, ""); print; next }
+        s && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|DONE-WHEN-WAS|PREMISE-WHEN-WAS|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { exit }
         s { print }' "$_b")"
-    [ "$_old" != "$_new" ] || { printf '⛔ REFUSED (rc=2): the new criterion is the old one; a re-cut must change the criterion. Nothing written.\n' >&2; return 2; }
-    _rec="$(printf '%s' "$_old" | awk 'NR > 1 { printf " ⏎ " } { printf "%s", $0 }')"
-    _stamp="$(date -u +%FT%TZ)"
-    _rl="DONE-WHEN-WAS: $_stamp by $ME (box-scheduler step 27, CTO-496): ${_rec:-(empty)}"
+    if [ "$_np" = 1 ]; then
+        _hasopw=1
+        _opw="$(awk 'BEGIN { s = 0 } /^PREMISE-WHEN:/ && !s { s = 1; sub(/^PREMISE-WHEN:[[:space:]]*/, ""); print; next }
+            s && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|DONE-WHEN-WAS|PREMISE-WHEN-WAS|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { exit }
+            s { print }' "$_b")"
+    fi
+    [ "$_hasdw" = 1 ] && [ "$_dw" != "$_odw" ] && _chgdw=1
+    [ "$_haspw" = 1 ] && { [ "$_hasopw" = 0 ] || [ "$_pw" != "$_opw" ]; } && _chgpw=1
+    [ "$_chgdw" = 1 ] || [ "$_chgpw" = 1 ] || { printf '⛔ REFUSED (rc=2): the body changes neither field: the DONE-WHEN is the old one (or absent) and the PREMISE-WHEN is the old one (or absent). A re-cut must change the criterion. Nothing written.\n' >&2; return 2; }
+    _whyshow="${_why:-none given}"; _stamp="$(date -u +%FT%TZ)"
+    if [ "$_chgpw" = 1 ] && [ "$_hasopw" = 1 ]; then _rpw="PREMISE-WHEN-WAS: $_stamp by $ME (why: $_whyshow): $(printf '%s' "$_opw" | awk 'NR > 1 { printf " ⏎ " } { printf "%s", $0 }')"; fi
+    if [ "$_chgdw" = 1 ]; then _rdw="DONE-WHEN-WAS: $_stamp by $ME (why: $_whyshow): $(printf '%s' "$_odw" | awk 'NR > 1 { printf " ⏎ " } { printf "%s", $0 }')"; fi
     for _i in $(seq 1 50); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
     [ "$_got" = 1 ] || { printf '⛔ REFUSED (rc=3): could not take the mint lock %s for 5s. Nothing written; retry.\n' "$_lk" >&2; return 3; }
     _st="$(awk -F'\t' -v t="$_t" '$2 == t && NF > 3 { print $4; exit }' "$_q")"
     case "$_st" in RETIRED:*) _to=FREE;; *) _to="$_st";; esac
     _tmp="$(mktemp "$_b.recut.XXXXXX")" || { rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): cannot make a temporary beside %s. Nothing written.\n' "$_b" >&2; return 3; }
-    _ln="- [$ME·$(date -u +%F)] RE-CUT DONE-WHEN (box-scheduler step 27, CTO-496): the old criterion is kept on its DONE-WHEN-WAS line above the new DONE-WHEN; state ${_st:-none} -> ${_to:-none}. New criterion: $(printf '%s' "$_new" | head -1 | cut -c1-200)"
-    B_NEW="$_new" B_REC="$_rl" awk '
-        BEGIN { nw = ENVIRON["B_NEW"]; rl = ENVIRON["B_REC"]; s = 0; d = 0 }
-        /^DONE-WHEN:/ && !d { print rl; print "DONE-WHEN: " nw; d = 1; s = 1; next }
-        s == 1 && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { s = 2 }
-        s == 1 { next }
+    _dwnote=kept; [ "$_chgdw" = 1 ] && _dwnote=changed
+    _pwnote=kept; [ "$_chgpw" = 1 ] && { _pwnote=added; [ "$_hasopw" = 1 ] && _pwnote=replaced; }
+    _ndw=""; [ "$_chgdw" = 1 ] && _ndw=" New DONE-WHEN: $(printf '%s' "$_dw" | head -1 | cut -c1-160)."
+    _rl="- [$ME·$(date -u +%F)] RE-CUT (box-scheduler step 27, CTO-496; fleet-queue recut-premise): DONE-WHEN $_dwnote, PREMISE-WHEN $_pwnote; why: $_whyshow; state ${_st:-none} -> ${_to:-none}.$_ndw"
+    B_DW="$_dw" B_PW="$_pw" B_RPW="$_rpw" B_RDW="$_rdw" C_DW="$_chgdw" C_PW="$_chgpw" awk '
+        function stop(l) { return (l ~ /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|DONE-WHEN-WAS|PREMISE-WHEN-WAS|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ || l ~ /^## /) }
+        BEGIN { skip = 0; dd = 0; pd = 0 }
+        skip { if (stop($0)) skip = 0; else next }
+        /^DONE-WHEN:/ && !dd { dd = 1
+            if (ENVIRON["B_RPW"] != "") print ENVIRON["B_RPW"]
+            if (ENVIRON["B_RDW"] != "") print ENVIRON["B_RDW"]
+            if (ENVIRON["C_DW"] == "1") { print "DONE-WHEN: " ENVIRON["B_DW"]; skip = 1 } else print
+            next }
+        /^PREMISE-WHEN:/ && !pd { pd = 1
+            if (ENVIRON["C_PW"] == "1") { print "PREMISE-WHEN: " ENVIRON["B_PW"]; skip = 1 } else print
+            next }
+        /^## / && !pd && ENVIRON["C_PW"] == "1" { pd = 1; print "PREMISE-WHEN: " ENVIRON["B_PW"]; print; next }
         { print }' "$_b" > "$_tmp" \
-    && L="$_ln" awk 'function out() { if (!done) print ENVIRON["L"]; done = 1 } /^## / && led { out(); led = 0 } { print } /^## LEDGER/ { led = 1 } END { if (led) out() }' "$_tmp" > "$_tmp.l" \
+    && L="$_rl" awk 'function out() { if (!done) print ENVIRON["L"]; done = 1 } /^## / && led { out(); led = 0 } { print } /^## LEDGER/ { led = 1 } END { if (led) out() }' "$_tmp" > "$_tmp.l" \
     && mv "$_tmp.l" "$_tmp" && mv "$_tmp" "$_b" \
         || { rm -f "$_tmp" "$_tmp.l"; rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): the baton %s could not be rewritten. Nothing written.\n' "$_b" >&2; return 3; }
     if [ "$_to" != "$_st" ]; then
         { _qt="$(mktemp "$_q.recut.XXXXXX")" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && $4 ~ /^RETIRED:/ { $4 = s } { print }' "$_q" > "$_qt" && cat "$_qt" > "$_q"; } \
-            || { rm -f "$_qt"; rmdir "$_lk" 2>/dev/null; printf '⛔ RECUT PARTIAL (rc=3): the baton %s is re-cut, but the QUEUE.tsv state of %s could not be reopened to FREE; reopen it by hand.\n' "$_b" "$_t" >&2; return 3; }
+            || { rm -f "${_qt:-}"; rmdir "$_lk" 2>/dev/null; printf '⛔ RECUT PARTIAL (rc=3): the baton %s is re-cut, but the QUEUE.tsv state of %s could not be reopened to FREE; reopen it by hand.\n' "$_b" "$_t" >&2; return 3; }
         rm -f "$_qt"
     fi
     rmdir "$_lk" 2>/dev/null
-    printf 'RECUT wrote DONE-WHEN-WAS and DONE-WHEN for %s: the old criterion is kept on its receipt above the new DONE-WHEN; state %s -> %s; baton %s\n' "$_t" "${_st:-none}" "${_to:-none}" "$_b"
+    _what=""; [ -n "$_rdw" ] && _what="DONE-WHEN-WAS"; [ -n "$_rpw" ] && _what="${_what:+$_what and }PREMISE-WHEN-WAS"; [ -n "$_what" ] || _what="PREMISE-WHEN"
+    printf 'RECUT wrote %s for %s: the old text is kept on its receipt above the DONE-WHEN line (why: %s); state %s -> %s; baton %s\n' "$_what" "$_t" "$_whyshow" "${_st:-none}" "${_to:-none}" "$_b"
     return 0
 }
 # ⭐⭐ NO BLANK OWNER CELL, THE OTHER HALF (row next-serves-a-seat-only-rows-in-its-hqs-lane-and-no-row-
