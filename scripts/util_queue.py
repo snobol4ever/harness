@@ -57,7 +57,7 @@ class _Stdlib:
         def peek_ready(self):
             r = self._cmd("peek-ready"); return _Stdlib.Job(int(r[1]), self._body(r))
         def delete(self, i): self._cmd("delete %d" % i)
-        def release(self, i, priority=1000, delay=0): self._cmd("release %d %d %d" % (i, priority, delay))
+        def release(self, i, priority=1000, delay=0): self._cmd("release %d %d %d" % (getattr(i, "id", i), priority, delay))
         def bury(self, i, priority=1000): self._cmd("bury %d %d" % (getattr(i, "id", i), priority))
         def touch(self, i): self._cmd("touch %d" % getattr(i, "id", i))
         def kick(self, n=1): return int(self._cmd("kick %d" % n)[1])
@@ -207,7 +207,7 @@ def main(a):
                     say("session %s is gone: release" % session); break
                 try: c.touch(j)
                 except Exception as e: say("touch: %s (the lease is gone)" % e); os._exit(0)
-            try: c.release(j.id, priority=int(st["pri"]))
+            try: c.release(j, priority=int(st["pri"]))
             except Exception as e: say("release: %s" % e)
             os._exit(0)
         elif v == "put-buried":
