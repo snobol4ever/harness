@@ -27,7 +27,7 @@ hits=$(grep -rnE '^[[:space:]]*#define[[:space:]]+DT_[A-Z0-9_]+' --include=*.S -
 if [ -n "$hits" ]; then echo "FAIL -- tag literal(s) shadowing the single source:"; echo "$hits" | cut -c1-160; rc=1; else echo "OK   -- 0 shadowing defines"; fi
 echo "== LOCK 2: every .S using a DT_ tag reaches the single source =="
 for f in $(grep -rlE '\bDT_[A-Z0-9_]+\b' --include=*.S src/ 2>/dev/null); do
-  if ! grep -qE '#include[[:space:]]+"(rtx_abi|descr_tags)\.inc"' "$f"; then echo "FAIL -- $f names DT_ tags but includes neither rtx_abi.inc nor descr_tags.inc"; rc=1; fi
+  if ! grep -qE '#include[[:space:]]+"([a-z_]+/)?(rtx_abi|descr_tags)\.inc"' "$f"; then echo "FAIL -- $f names DT_ tags but includes neither rtx_abi.inc nor descr_tags.inc"; rc=1; fi
 done
 [ $rc -eq 0 ] && echo "OK   -- every DT_-using .S reaches the single source"
 echo "== LOCK 3: $SRC agrees with $HDR =="
