@@ -7,7 +7,9 @@
 # What each plant shows: (1) a seat at its share is REFUSED rc 2 inside the bound and nothing runs; (2) a full compile pool refuses another seat; (3) an ordinary run is refused when the seats' pool is full while the
 # grader is still admitted, to the grader's own pool; (4) that pool refuses a second grader take; (5) an admission holds exactly TWO sems (the seat's and the pool's, never a third: the cio's ruling); (6) a holder killed
 # (SIGKILL, a pid this probe started) frees its admission and a waiter then runs; (7) an admission under S4E_RUN_SLOT_HELD opens no pool; (8) every refusal is one SLOT_WAITS line.
-# rc 0 every plant holds and the lines are printed, 1 a plant is red (SLOT PROBE RED: names it, no SLOT line), 2 cannot measure (no sem).
+# NO WALL CLOCK DECIDES A PLANT (the coo, 2026-11-06: the probe read RED rc 1 then GREEN minutes apart at box load 50): a holder lives until this probe kills it (sleep infinity, not a sleep that can run out
+# mid-probe and free a slot a later refusal expects held), an await waits for the EVENT (the sem pid file of the holder) under a 300 s hang guard, and the only seconds left are guards against a hang (300 s) and the
+# refusal bound (4 s counted from when sem starts WAITING, so a slow perl start does not shorten it). rc 0 every plant holds and the lines are printed, 1 a plant is red (SLOT PROBE RED: names it, no SLOT line), 2 cannot measure (no sem).
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_slots.sh"
 command -v "${S4E_SEM:-sem}" > /dev/null || { echo "REFUSE(2) [slot probe]: no GNU sem on PATH (apt: parallel)"; exit 2; }
@@ -22,16 +24,16 @@ unset S4E_RUN_SLOT_HELD S4E_CLASS S4E_ADMITTED
 red=""
 held() { local f c=0 p; for f in "$S4E_SEM_HOME"/semaphores/id-"$1"/*@*; do [ -e "$f" ] || continue; p="${f##*/}"; p="${p%%@*}"; kill -0 "$p" 2> /dev/null && c=$((c + 1)); done; echo "$c"; }
 await() {   # <id> <n> -- up to 90 s for at least n live holders of the sem
-    local i=0; while [ "$(held "$1")" -lt "$2" ] && [ "$i" -lt 180 ]; do sleep 0.5; i=$((i + 1)); done; [ "$(held "$1")" -ge "$2" ]
+    local i=0; while [ "$(held "$1")" -lt "$2" ] && [ "$i" -lt 600 ]; do sleep 0.5; i=$((i + 1)); done; [ "$(held "$1")" -ge "$2" ]
 }
 hold_bg() {   # <seat> <class|""> <compile|run> -- an admitted command that holds until killed; the pid is this probe's own
-    S4E_SEAT="$1" S4E_CLASS="$2" bash "$HERE/util_run_slot.sh" --admit "$3" sleep 120 &
+    S4E_SEAT="$1" S4E_CLASS="$2" bash "$HERE/util_run_slot.sh" --admit "$3" sleep infinity &
     PIDS="$PIDS $!"; LASTPID=$!
 }
 refused() {   # <label> <seat> <class|""> <compile|run> -- an admission that must be REFUSED rc 2 inside the bound with nothing run
     local out rc
-    out="$(S4E_SEAT="$2" S4E_CLASS="$3" S4E_SLOT_WAIT_MAX=4 timeout -k 2 40 bash "$HERE/util_run_slot.sh" --admit "$4" echo RAN 2>&1)"; rc=$?
-    { [ "$rc" = 2 ] && ! printf '%s' "$out" | grep -q '^RAN$'; } || red="$red $1:rc$rc"
+    out="$(S4E_SEAT="$2" S4E_CLASS="$3" S4E_SLOT_WAIT_MAX=4 timeout -k 2 300 bash "$HERE/util_run_slot.sh" --admit "$4" echo RAN 2>&1)"; rc=$?
+    { [ "$rc" = 2 ] && ! printf '%s' "$out" | grep -q '^RAN$'; } || red="$red $1:rc$rc[$(printf '%s' "$out" | head -c 160 | tr '\n' ' ')]"
 }
 hold_bg f1 "" compile; await s4e-compile 1 || red="$red compile:the-first-holder-never-held"
 refused "compile-seat-share" f1 "" compile
@@ -43,8 +45,8 @@ refused "run-seats-pool-full" r3 "" run
 hold_bg g1 grader run; await s4e-run-grader 1 || red="$red run:the-grader-was-not-admitted-to-its-own-pool"
 refused "run-grader-pool-full" g2 grader run
 kill -9 "$R1" 2> /dev/null; wait "$R1" 2> /dev/null
-out="$(S4E_SEAT=r4 S4E_SLOT_WAIT_MAX=40 timeout -k 2 60 bash "$HERE/util_run_slot.sh" --admit run echo RAN 2>&1)"; rc=$?
-{ [ "$rc" = 0 ] && printf '%s' "$out" | grep -q '^RAN$'; } || red="$red run:a-killed-holders-admission-stayed-held(rc$rc)"
+out="$(S4E_SEAT=r4 S4E_SLOT_WAIT_MAX=240 timeout -k 2 300 bash "$HERE/util_run_slot.sh" --admit run echo RAN 2>&1)"; rc=$?
+{ [ "$rc" = 0 ] && printf '%s' "$out" | grep -q '^RAN$'; } || red="$red run:a-killed-holders-admission-stayed-held(rc$rc)[$(printf '%s' "$out" | head -c 160 | tr '\n' ' ')]"
 mkdir -p "$T/nested"; S4E_SEM_HOME="$T/nested" S4E_RUN_SLOT_HELD=1 bash "$HERE/util_run_slot.sh" --admit run true
 [ -z "$(ls "$T/nested" 2> /dev/null)" ] || red="$red run:a-nested-admission-opened-the-pool"
 [ "$(grep -c 'admit-refused' "$T/waits.tsv" 2> /dev/null)" -ge 4 ] || red="$red waits:fewer-than-4-refusals-recorded($(grep -c 'admit-refused' "$T/waits.tsv" 2> /dev/null))"
