@@ -12,10 +12,17 @@ With --proof, the proof sized by what the commit touches (a Makefile line owes t
   PROOF arms=<A> smokes=<S> gates=<G> owes=<tokens> langs=<a,b|none> shared=<K> files=<F> unwired=<U> nosmoke=<a,b|-> base=<rev> commit=<rev> dirty=<0|1>
   ARM <kind> <command>      one per command the lander runs; kind is build, preflight, area, smoke or gate; A counts them, S the smokes, G the gates
   FILE <repo-relative path> <carrier> <owes>     (--why) the table row that decided each touched file
+With --eight, the blast radius of the commit named for a test request (box-scheduler step 24): the at-most-N programs to file, N being the REQUEST_CAP of s4e_test_request.sh:
+  EIGHT <suite-key> <entry>...     one line per suite, entries in the order picked; each line is the arguments of s4e_test_request.sh
+  EIGHT-TOTAL programs=<P> cap=<N> suites=<S> langs=<a,b> features=<covered>/<touched> nosuite=<a,b|-> base=<rev> commit=<rev> dirty=<0|1>
+  NO-EIGHT <why>                   (instead of both) the commit touches no program area; nothing is filed
+  The candidates are each touched language's CORE entries (PARTITION.tsv); a language the change reaches wholesale (a lowerer, a frontend, any language under a shared
+  node) touches its whole feature vocabulary, otherwise only the features the carrier map names; the pick is greedy set cover (the core entry covering most of the
+  still-uncovered touched features first, ties in core order, which ranks the entries marking most features first), one entry per language per round until the cap.
 --commit must be the tree's HEAD: the carrier map reads the working tree, and dirty=1 says uncommitted edits are counted in.
 rc 0 printed; rc 2 refused (no root, no commit, a table row or declared script missing, the area smoke refused or printed no map).
 """
-import fnmatch, os, subprocess, sys
+import fnmatch, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOS = ("SCRIP", "harness", "corpus", ".github")
@@ -104,6 +111,57 @@ def area_impact(root, corpus, base_sha, tag):
             core += sum(1 for r in open(pp, encoding="utf-8", errors="replace") if r.rstrip("\n").split("\t")[1:2] == ["core"])
     return dict(langs=langs, feats=feats, shared=shared, files=files, core=core)
 
+def request_suites(scripts, tag):
+    p = os.path.join(scripts, "s4e_test_request.sh")
+    if not os.path.isfile(p):
+        refuse(tag, "no s4e_test_request.sh at %s: the suite keys and the request cap are read from it" % scripts)
+    out = subprocess.run(["bash", p, "--suites"], capture_output=True, text=True, timeout=60).stdout
+    keys = {c[1].split("/")[1]: c[0] for c in (l.split() for l in out.splitlines()) if len(c) == 2 and c[1].startswith("tests/") and c[1].count("/") == 1}
+    cap = re.search(r"^REQUEST_CAP=(\d+)", open(p, encoding="utf-8", errors="replace").read(), re.M)
+    if not keys or not cap:
+        refuse(tag, "%s lists no tests/<lang> suite or declares no REQUEST_CAP=N" % p)
+    return keys, int(cap.group(1))
+
+def core_table(corpus, lang):
+    rows = [l.rstrip("\n").split("\t") for l in open(os.path.join(corpus, "tests", lang, "PARTITION.tsv"), encoding="utf-8", errors="replace") if l.strip() and not l.startswith("#")]
+    known, core = set(), []
+    for r in rows[1:]:
+        fs = set(r[3].split()) if len(r) > 3 else set()
+        known |= fs
+        if len(r) > 1 and r[1] == "core":
+            core.append((r[0], fs))
+    return known, core
+
+def pick_eight(a, corpus, keys, cap):
+    tests = os.path.join(corpus, "tests")
+    masters = sorted(d for d in os.listdir(tests) if os.path.isfile(os.path.join(tests, d, "PARTITION.tsv"))) if os.path.isdir(tests) else []
+    plans, nosuite = {}, []
+    for l in masters:
+        if l not in keys:
+            if l in a["langs"] or any(f.startswith(l + ":") for f in a["feats"]):
+                nosuite.append(l)
+            continue
+        known, core = core_table(corpus, l)
+        need = set(known) if l in a["langs"] else {f for f in a["feats"] if f in known} | {f.split(":", 1)[1] for f in a["feats"] if f.startswith(l + ":") and f.split(":", 1)[1] in known}
+        if need and core:
+            plans[l] = dict(need=need, core=core, covered=set(), picks=[])
+    picked, moved = 0, True
+    while picked < cap and moved:
+        moved = False
+        for l in sorted(plans):
+            if picked >= cap:
+                break
+            p = plans[l]
+            left, best, gain = p["need"] - p["covered"], None, 0
+            for e, fs in p["core"]:
+                if e not in p["picks"] and len(fs & left) > gain:
+                    best, gain = e, len(fs & left)
+            if best:
+                p["picks"].append(best)
+                p["covered"] |= dict(p["core"])[best] & p["need"]
+                picked, moved = picked + 1, True
+    return plans, nosuite, picked
+
 def wired_gates(scripts, tag):
     p = os.path.join(scripts, "gate_wiring.tsv")
     if not os.path.isfile(p):
@@ -125,8 +183,10 @@ def need_script(scripts, name, why, tag):
 def main():
     if "-h" in sys.argv or "--help" in sys.argv:
         print(__doc__.strip()); return 0
-    proof = "--proof" in sys.argv
-    tag = "PROOF" if proof else "IMPACT"
+    proof, eight = "--proof" in sys.argv, "--eight" in sys.argv
+    tag = "PROOF" if proof else "EIGHT" if eight else "IMPACT"
+    if proof and eight:
+        refuse(tag, "--proof and --eight are two questions: ask one at a time")
     root = os.path.abspath(arg("--root", "SCRIP"))
     home = os.path.dirname(root)
     corpus = os.path.abspath(arg("--corpus", os.path.join(home, "corpus")))
@@ -141,6 +201,22 @@ def main():
         refuse(tag, "--commit %s is not the tree's HEAD %s: the carrier map reads the working tree, so check the commit out first" % (head[:9], tip[:9]))
     dirty = 1 if git(root, "status", "--porcelain", "--untracked-files=no").stdout.strip() else 0
     base = commit_of(root, arg("--base", head + "^"), tag, "base")
+    if eight:
+        keys, cap = request_suites(scripts, tag)
+        if arg("--cap"):
+            cap = int(arg("--cap"))
+        a = area_impact(root, corpus, base, tag)
+        plans, nosuite, picked = pick_eight(a, corpus, keys, cap)
+        if not picked:
+            print("NO-EIGHT the commit names no program of a graded suite (area files %d, languages %s): nothing to file" % (len(a["files"]), ",".join(sorted(a["langs"])) or "none"))
+            return 0
+        for l in sorted(plans):
+            if plans[l]["picks"]:
+                print("EIGHT %s %s" % (keys[l], " ".join(plans[l]["picks"])))
+        picked_langs = sorted(l for l in plans if plans[l]["picks"])
+        print("EIGHT-TOTAL programs=%d cap=%d suites=%d langs=%s features=%d/%d nosuite=%s base=%s commit=%s dirty=%d"
+              % (picked, cap, len(picked_langs), ",".join(picked_langs), sum(len(plans[l]["covered"]) for l in picked_langs), sum(len(plans[l]["need"]) for l in picked_langs), ",".join(nosuite) or "-", base[:9], head[:9], dirty))
+        return 0
     if not proof:
         a = area_impact(root, corpus, base, tag)
         print("IMPACT lang=%s core=%d shells=%d shared=%d files=%d base=%s commit=%s dirty=%d" % (",".join(sorted(a["langs"])) or "none", a["core"], len(a["feats"]), a["shared"], len(a["files"]), base[:9], head[:9], dirty))
