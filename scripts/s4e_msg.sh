@@ -3016,6 +3016,25 @@ case "$cmd" in
                 printf '       PREMISE-WHEN: <command>   in %s\n' "$b" >&2; exit 1; fi
               printf '%s\n' "$pw"; exit 0;;
          esac;;
+  queue) # fleet-queue (the cio 2026-11-05 18:4x): an officer or a company man moves a backlog row (FREE, or its own) into a tier tube or a seat tube:
+         # queue <topic> --tier fable|opus|sonnet|haiku | --to <seat>. The baton needs a SKILLS: line for a sonnet or haiku tier (Lon: "the proper SKILL FIRST");
+         # the row's owner cell becomes @<tier> (or the seat), its state QUEUED:<tube>, its job is put (a prior job deleted), the view regenerated.
+         [ -n "${2:-}" ] || s4e_need queue "a topic" "s4e_msg.sh queue <topic> --tier haiku | --to <seat>" "Puts one job for an existing row in a tier tube or a seat tube; the row's owner becomes the tier or the seat."
+         topic="$2"; shift 2; q_tube=""; q_tier=""; q_owner=""
+         case "${1:-}" in
+           --tier) q_tier="$(s4e_tier_name "${2:?--tier needs fable|opus|sonnet|haiku}")" || { echo "⛔ REFUSED: --tier must be fable, opus, sonnet or haiku" >&2; exit 2; }; q_tube="tier-$q_tier"; q_owner="@$q_tier";;
+           --to) q_tier="$(s4e_tier_of "${2:?--to needs a seat}")" || { echo "⛔ REFUSED: --to must name a seat of $S4E_TIERS" >&2; exit 2; }; q_tube="seat-$2"; q_owner="$2";;
+           *) echo "⛔ REFUSED: queue needs --tier <tier> or --to <seat>" >&2; exit 2;;
+         esac
+         row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1)"; [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'" >&2; exit 2; }
+         _qst="$(printf '%s' "$row" | cut -f4)"; case "$_qst" in FREE|QUEUED:*) ;; *) echo "⛔ REFUSED: $topic reads $_qst; queue takes a FREE or QUEUED row (park, done or unclaim it first)" >&2; exit 2;; esac
+         s4e_skills_required_ok "$q_tier" "$(sed -n '1,/^## NEXT/p' "$PO/tasks/$topic.task.md")" || { echo "⛔ REFUSED: a $q_tier row carries a SKILLS: line in its baton head naming the skills its executor loads first; add it and queue again" >&2; exit 2; }
+         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; [ -n "$_oldjob" ] && s4e_queue_delete "$_oldjob"
+         s4e_queue_enqueue_row "$topic" "$q_tube" "$(qrank "$topic")" "$q_tier" || exit 1
+         s4e_baton_head_set "$topic" OWNER "$q_owner"; _tmp="$(mktemp)"; TOPIC="$topic" NEW="$q_owner" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$PO/QUEUE.tsv" > "$_tmp" && cat "$_tmp" > "$PO/QUEUE.tsv"; rm -f "$_tmp"
+         s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
+         printf -- '- [%s·%s] QUEUED into %s by %s (owner %s).\n' "$ME" "$(date -u +%F)" "$q_tube" "$ME" "$q_owner" > "$_tmp" 2>/dev/null; _tmp2="$(mktemp)"; awk -v l="$(cat "$_tmp" 2>/dev/null)" '{print} /^## LEDGER$/ && !d {print l; d=1}' "$PO/tasks/$topic.task.md" > "$_tmp2" && cat "$_tmp2" > "$PO/tasks/$topic.task.md"; rm -f "$_tmp" "$_tmp2"
+         echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; exit 0;;
   expire) # fleet-queue step 5 (the cio 2026-11-05): a reserved job whose holder is gone is back in its tube (beanstalkd released it when the holder's
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
