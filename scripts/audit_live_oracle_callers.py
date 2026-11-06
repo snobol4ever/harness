@@ -35,7 +35,7 @@ DEFAULT_BASELINE = os.path.join(HERE, "audit_live_oracle_callers.baseline.tsv")
 ACCESSORS = ["sbl_correctness_bin", "icont_bin", "icon_bin", "iconx_bin", "swipl_bin", "gprolog_bin", "gplc_bin", "xsb_bin", "unicon_bin",
              "rakudo_bin", "fpc_bin"]
 PATHS = [r"/home/resources/x64/bin/sbl\b", r"/usr/bin/swipl\b", r"/usr/bin/fpc\b", r"/usr/bin/raku\b", r"rakudo-local/bin/raku\b",
-         r"icon-master/bin/icon[tx]?\b", r"prologs/xsb/XSB/bin/xsb\b", r"unicon/bin/unicon\b", r"\boracle_gprolog\.sh\b",
+         r"icon-master/bin/icon[tx]?\b", r"prologs/xsb/XSB/bin/xs[b]\b", r"unicon/bin/unicon\b", r"\boracle_gprolog\.sh\b",
          r"\boracle_gplc\.sh\b", r"gprolog-mon/pristine/gprolog-1\.6\.0/bin\b"]
 EXEMPT = {
     "util_oracle.sh": "the one live-oracle caller (CEO-2041)",
