@@ -41,7 +41,28 @@ import collections, concurrent.futures, os, re, subprocess, sys
 HERE = sys.argv[1]
 SC = os.path.normpath(os.path.join(HERE, '..', '..', 'SCRIP'))
 SCRIP = os.path.join(SC, 'scrip')
-LINE = re.compile(r'^\[ZSM-FRAME\] graph=(\S+) total=(-?\d+) region=(-?\d+) resident=(\d+) frames=(\d+) addrs=(\d+) word=(\d+) resident_addrs=(\d+) outside=(\d+) unbacked=(\d+) rsp_form=(\d+)$')
+# THE LINE BY ITS FIELD NAMES, NOT BY ONE REGEX OVER ADJACENT FIELDS (the arm util_board_field_matcher_census.py's own message: a field read by name
+# survives an insertion or a reorder; one regex over adjacent fields breaks on either). Every name once, the graph as written, every count a whole
+# number (total and region may be negative, as the old regex allowed); any other line is not a [ZSM-FRAME] line, as before. The same lines give the same tuples.
+LINE = re.compile(r'^\[ZSM-FRAME\] (.*)$')
+FIELD = re.compile(r'(\w+)=(\S+)')
+
+
+def parse(text):
+    m = LINE.match(text)
+    if not m:
+        return None
+    tokens = m.group(1).split(' ')
+    if not all(FIELD.fullmatch(t) for t in tokens):   # a token that is not name=value (a graph name with a space) is not this line
+        return None
+    pairs = [FIELD.fullmatch(t).groups() for t in tokens]
+    if sorted(k for k, _ in pairs) != sorted(['graph'] + list(KEYS)) or len(pairs) != len(KEYS) + 1:
+        return None
+    got = dict(pairs)
+    for k in KEYS:
+        if not re.fullmatch(r'-?\d+' if k in ('total', 'region') else r'\d+', got[k]):
+            return None
+    return (got['graph'],) + tuple(int(got[k]) for k in KEYS)
 EXT = {'.sno': 'snobol4', '.icn': 'icon', '.pl': 'prolog', '.pas': 'pascal', '.raku': 'raku', '.sc': 'snocone', '.reb': 'rebus'}
 KEYS = ('total', 'region', 'resident', 'frames', 'addrs', 'word', 'resident_addrs', 'outside', 'unbacked', 'rsp_form')
 
@@ -96,9 +117,9 @@ def measure(job):
         return job, None, 'a compile past %d s' % timeout
     rows = []
     for line in c.stderr.decode('utf-8', 'replace').splitlines():
-        m = LINE.match(line)
-        if m:
-            rows.append((m.group(1),) + tuple(int(g) for g in m.groups()[1:]))
+        row = parse(line)
+        if row is not None:
+            rows.append(row)
     if c.returncode != 0:
         return job, None, 'compile rc %d' % c.returncode
     if not rows:
