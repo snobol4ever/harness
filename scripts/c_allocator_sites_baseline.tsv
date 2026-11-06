@@ -90,6 +90,10 @@ src/runtime/rt/portcount.c	5	0	0	0
 src/runtime/rt/porttrace.cpp	2	0	0	0
 src/runtime/rt/rt.c	7	5	0	2
 src/runtime/rt/rt_coexpr.c	4	0	0	0
+# src/runtime/rt/rt_pl_engine.c: a row for a file that POSTDATES the pre-sweep cut (ca4f73c65, 10-25), not a rewrite of the cut: it held nothing then, so its three ct_grow sites
+# (the Prolog engine registry's ent, pend and reaped tables, lines 45, 94, 100) read as CLASS-2 DEBT, not UNATTRIBUTABLE. RULED by the cao 2026-11-06 from the source: ent[i].inst is a WEAK
+# reference the collector visits itself (rt_pl_eng_gc_weak), pinned entries are roots (rt_pl_eng_gc_roots), pend holds int64 ctx and reaped int64 ids -- only the C tables' spines are arena.
+src/runtime/rt/rt_pl_engine.c	0	0	0	0
 src/runtime/rt/rt_slab.c	2	0	0	0
 src/runtime/rt/rt_stack_overflow.c	1	0	0	0
 src/runtime/rt_runtime.c	0	5	0	0

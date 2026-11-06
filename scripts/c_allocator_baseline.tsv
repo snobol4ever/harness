@@ -101,10 +101,16 @@ realloc	0
 free	0
 aliases	0
 alias_calls	0
-arena_in_runtime_ratcheted	80
+# arena_in_runtime_ratcheted and arena_in_runtime_debt 80 -> 84 (the cao's ruling 2026-11-06, written by the president, row fleet-preflight-arm-c-allocators-census-selftest-reds-on-the-ruled-permanent-arm): the net +4 since the 10-17 cut was
+# read SITE BY SITE and no added table holds a collector-visible value. rt_pl_engine.c +3 (ca4f73c65: the engine registry's weak-table spines), unification.c +5 (25ddcb67e: module counters {atom index, size, limit} and int kmod;
+# ff1944006: long meta ids; one text buffer reformatted in place) and runtime_eval.c +2 (c3ccdaf6a, 094d6ecca: C strings in compile-time AST nodes), less keywords.c -5 and gen_runtime.c -1 removed. A table that holds a heap DESCR the
+# collector does not visit is an EVASION and does not belong here: it goes to the gc-collector lane as its own row.
+arena_in_runtime_ratcheted	84
 arena_in_runtime_evasion	0
-arena_in_runtime_debt	80
-container_unmarked_live	1
+arena_in_runtime_debt	84
+# container_unmarked_live 1 -> 0: the ratchet read BETTER on origin 3660d71b3 (CONTAINER-UNMARKED LIVE=0 over 13 root walk(s)) and reds a BETTER until the baseline is lowered by a landing; nobody had, so it hid behind the WORSE lines of arena_in_runtime_*.
+# The census states its own limit: a SYNTACTIC read of *_gc_roots, LIVE=0 is not a proof that every container is marked.
+container_unmarked_live	0
 libc_owned_misuse	0
 libc_doors	0
 outside_src_sites	4
