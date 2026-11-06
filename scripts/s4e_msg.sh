@@ -1491,6 +1491,35 @@ s4e_unblock_dependents() {   # step 35: <closed-topic> -> every row BLOCKED-ON:/
         [ -n "$_who" ] && [ -d "$PO/$_who" ] && s4e_telegram "$_who" "$_t" "done: $_c closed DONE; your row $_t was $_st and is back as $_rs -- s4e_msg.sh next serves it (box-scheduler step 35)." 2>/dev/null < /dev/null && _tg=$((_tg+1))
     done <<< "$(cat "$PO/QUEUE.tsv")"
     [ "$_n" -gt 0 ] && echo "DONE unblocked=$_n restored_state=$_rec telegrams=$_tg (rows that waited on $_c)"; return 0; }
+# ⭐ fleet-queue (DONE-BUDGET-S, the cio): `done --probe-budget` on a scratch postoffice. Two rows, each with a 3 s criterion that passes once
+# it has run: one declares DONE-BUDGET-S: 2 and must be REFUSED rc 2 naming the row's budget, the other declares 5 and must be MEASURED (closed
+# rc 0). A pure probe: the scratch postoffice is deleted on exit, and no live row, claim or telegram is touched. Prints the proof line only
+# when both hold; otherwise budget=FAILED and rc 1. The line that ignores DONE-BUDGET-S reads planted_2s=measured.
+s4e_done_probe_budget() {
+    local w a b o2 o5 rc2 rc5 p2 p5 now why=""
+    [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-budget]: S4E_SEAT unset"; exit 2; }
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_budget.XXXXXX")" || { echo "REFUSE(2) [done --probe-budget]: mktemp failed"; exit 2; }
+    now="$(date -u +%FT%TZ)"
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
+    a="done-budget-2s-$$"; b="done-budget-5s-$$"
+    printf '# plant queue (fleet-queue DONE-BUDGET-S)\n2\t%s\t%s\tFREE\n2\t%s\t%s\tFREE\n' "$a" "$ME" "$b" "$ME" > "$w/QUEUE.tsv"
+    # A criterion that examines the tree (a `$` and a path, so the vacuity probe is not run on it) and takes 3 s to pass.
+    for t in "$a:2" "$b:5"; do
+      printf '# TASK %s\nGOAL: plant\nDONE-BUDGET-S: %s\nDONE-WHEN: sleep 3; test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' \
+        "${t%%:*}" "${t#*:}" "$now" > "$w/tasks/${t%%:*}.task.md"; done
+    run() { env -u S4E_PID_LOCK -u S4E_DONE_TIMEOUT -u S4E_DONE_OVERRIDE S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
+    run claim "$a" > /dev/null; o2="$(run done "$a")"; rc2=$?
+    run claim "$b" > /dev/null; o5="$(run done "$b")"; rc5=$?
+    if [ "$rc2" = 2 ] && printf '%s' "$o2" | grep -q 'budget from the row'; then p2=refused
+    elif [ "$rc2" = 0 ]; then p2=measured; else p2="unclear(rc=$rc2)"; fi
+    if [ "$rc5" = 0 ]; then p5=measured; elif [ "$rc5" = 2 ]; then p5=refused; else p5="unclear(rc=$rc5)"; fi
+    rm -rf "$w"
+    if [ "$p2" = refused ] && [ "$p5" = measured ]; then
+      printf 'DONE budget=row default_s=%s max_s=%s planted_2s=refused planted_5s=measured (scratch postoffice: a 3 s criterion under DONE-BUDGET-S: 2 is refused naming the row'"'"'s budget, under 5 it is measured)\n' "$S4E_DONE_BUDGET_DEFAULT" "$S4E_DONE_BUDGET_MAX"; return 0; fi
+    printf 'DONE budget=FAILED default_s=%s max_s=%s planted_2s=%s planted_5s=%s (expected refused and measured)\n' "$S4E_DONE_BUDGET_DEFAULT" "$S4E_DONE_BUDGET_MAX" "$p2" "$p5"
+    printf '%s\n' "$o2" | tail -3 | sed 's/^/  2s| /'; printf '%s\n' "$o5" | tail -3 | sed 's/^/  5s| /'; return 1; }
 s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row ASSIGNED:x parked BLOCKED-ON the closer returns ASSIGNED:x, a FREE row PARKED-AWAITING it returns FREE, both telegrammed
     local w o why="" now a b c
     [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-unblock]: S4E_SEAT unset"; exit 2; }
@@ -2620,7 +2649,12 @@ s4e_strip_donewhen_comment() {
 # run `make test`; a DISPATCH probe must not stall the picker for twenty minutes to answer a question it asked
 # on spec. A criterion too slow to probe is NOT a failure of the row -- it times out, which is rc=2, which
 # serves the row with a warning. The safe direction is always SERVE.
-s4e_dispatch_timeout() { printf '%s' "${S4E_DISPATCH_PROBE_TIMEOUT:-120}"; }
+# ⭐ fleet-queue (DONE-BUDGET-S): a row that DECLARES its done budget gives the same budget to every dispatch probe of it, so the probe
+# and the close can never disagree about how long the criterion may run. Undeclared rows keep the dispatch default. $1 = the row's baton.
+s4e_dispatch_timeout() {
+    local _db
+    if [ -n "${1:-}" ] && [ -f "$1" ]; then _db="$(s4e_done_budget "$1")"; case "$_db" in *" row") printf '%s' "${_db% row}"; return 0;; esac; fi
+    printf '%s' "${S4E_DISPATCH_PROBE_TIMEOUT:-120}"; }
 # ⛔ A PROBE'S BUDGET KILLS ITS WHOLE TREE (coo 2026-11-01, R-2107 as amended: "a probe that outlives its budget is killed by its timeout and reported";
 # Lon: "how do all the orphans get created? fix that."). GNU timeout signals only its own process group, and every runner wraps its programs in its OWN
 # `timeout -k 10 1500`, a second group: when the probe's timeout fired, the runner's group survived, was reparented to systemd, and ran on for up to 25
@@ -2831,7 +2865,7 @@ s4e_dispatch_probe() {
     s4e_donewhen_multiple_contracts "$b" && { _dp_why="the baton carries a SECOND column-0 DONE-WHEN: (line(s) $_dwm_lines) that is a real command and has never run -- refusing to guess which line is the contract, hoist or relabel one"; return 2; }
     s4e_donewhen_unterminated_heredoc "$dw" && { _dp_why="the DONE-WHEN opens a heredoc it never closes -- bash would treat the body as EMPTY and exit 0 having run nothing, which is a false green, so this is COULD-NOT-MEASURE and never a verdict"; return 2; }
     s4e_donewhen_needs_compiler "$dw" && { _dp_why="$_gca_why"; return 2; }   # S4E-GUARD-COMPILER-ABSENT
-    to="$(s4e_dispatch_timeout)"
+    to="$(s4e_dispatch_timeout "$b")"
     # ⛔ S4E_HOME EXPORTED, exactly as `done` does it: 11 live rows write `cd "$S4E_HOME/SCRIP" && ...` and
     # without the export that expands to the empty string and runs `cd /SCRIP`. A probe whose verdict depended
     # on the caller's environment would be worse than no probe -- it would close rows on some seats and not others.
@@ -3112,6 +3146,8 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
         _hasdw=0 _haspw=0 _haswhy=0 _odw="" _opw="" _hasopw=0 _chgdw=0 _chgpw=0 _whyshow _stamp _rdw="" _rpw="" _st _to _tmp _qt _why2 _dwnote _pwnote _rl _ndw _what
     shift
     if [ "${1:-}" = --stdin ] || [ "${1:-}" = - ]; then _body="$(cat)"; shift; else _body="$*"; fi
+    if _dbo="$(s4e_done_budget_offender "$_body")"; then   # ⭐ fleet-queue (DONE-BUDGET-S): refused at recut, nothing written
+      printf '⛔ REFUSED (rc=2): %s\n   DONE-BUDGET-S must be a whole number of seconds from 1 to 7200. Nothing written.\n' "$_dbo" >&2; return 2; fi
     case "$_t" in ""|*/*|*$'\n'*) printf '⛔ REFUSED (rc=2): recut needs a topic (no slash, no newline). Nothing written.\n' >&2; return 2;; esac
     _b="$PO/tasks/$_t.task.md"
     [ -f "$_b" ] || { printf '⛔ REFUSED (rc=2): no baton %s -- recut re-cuts a row that exists. Nothing written.\n' "$_b" >&2; return 2; }
@@ -3944,6 +3980,7 @@ case "$cmd" in
          echo "$topic state -> $st";;
   done)  [ -n "${2:-}" ] || s4e_need done "a topic" "s4e_msg.sh done <topic>" "Closes a row by RUNNING its baton DONE-WHEN; it refuses on a red or an rc=2. Completion is computed, never declared."
          [ "$2" = --probe-unblock ] && s4e_done_plant_unblock
+         [ "$2" = --probe-budget ] && { s4e_done_probe_budget; exit $?; }
          [ "$2" = --probe-delete ] && { s4e_done_plant_delete; exit $?; }
          [ "$2" = --probe-restore-seat ] && { s4e_done_plant_restore_seat; exit $?; }
          [ "$2" = --probe-lock ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_done_lock.sh"; exit $?; }
@@ -4148,7 +4185,13 @@ case "$cmd" in
                     printf '  ⛔⛔ REFUSED (rc=2) — NOT MEASURED, so NOT a verdict: %s\n' "$_gca_why" >&2
                     printf '     The claim and the QUEUE column are UNCHANGED. Build, then re-run `done`.\n' >&2
                     exit 2; fi
-                  _dwto="${S4E_DONE_TIMEOUT:-3600}"; _dwt0="$(date +%s)"
+                  # ⭐ fleet-queue (DONE-BUDGET-S, the cio): the row's own budget is the criterion's budget. S4E_DONE_TIMEOUT, when set, still wins (the
+                  # seat's explicit choice), and a notice names it whenever it differs from the row's own budget, so an override is never silent.
+                  _dbudget="$(s4e_done_budget "$tf")"; _dbs="${_dbudget% *}"; _dbsrc="${_dbudget#* }"; _dwto="$_dbs"; _dwt0="$(date +%s)"
+                  if [ -n "${S4E_DONE_TIMEOUT:-}" ]; then
+                    [ "$S4E_DONE_TIMEOUT" = "$_dbs" ] || printf '⚠ S4E_DONE_TIMEOUT=%s overrides the row'"'"'s budget of %s s (from the %s): the criterion runs under %s s.\n' "$S4E_DONE_TIMEOUT" "$_dbs" "$_dbsrc" "$S4E_DONE_TIMEOUT" >&2
+                    _dwto="$S4E_DONE_TIMEOUT"; _dbsrc=env
+                  fi
                   _dcb="$(cat "$c")"; s4e_pid_release
                   # THE CHECK CACHE (ARCH-SHARED-DEVELOPMENT 3.3, shared-dev step 7): a DONE-WHEN that names only cacheable test_gate_*.sh runs once per
                   # tree for the fleet; util_check_cache.sh replays a stored verdict on clean trees at the same hashes and runs live otherwise.
@@ -4166,7 +4209,7 @@ case "$cmd" in
                     printf '  ✅ DONE-WHEN exited 0 in %ss (timeout %ss) — completion is COMPUTED, not claimed.\n' "$_dwel" "$_dwto"
                   else
                     if [ "$rc" -eq 124 ]; then
-                      printf '\n⛔ REFUSED (rc=2): the DONE-WHEN did NOT FINISH within %ss (elapsed %ss), so `done` COULD NOT MEASURE it.\n' "$_dwto" "$_dwel" >&2
+                      printf '\n⛔ REFUSED (rc=2): the DONE-WHEN did NOT FINISH within %ss (budget from the %s; elapsed %ss), so `done` COULD NOT MEASURE it.\n' "$_dwto" "$_dbsrc" "$_dwel" >&2
                       printf '    This is NOT a red criterion, NOT a pass and NOT a skip. The claim is UNCHANGED and the row stays open.\n' >&2
                     elif [ "$rc" -eq 126 ] || [ "$rc" -eq 127 ] || [ "$rc" -eq 2 ]; then
                       # ⛔ R-786 (coo 2026-09-16; hq_prolog's rung-9 row exited 127 in zero seconds for eleven days and was read as RED): rc 126/127
@@ -4390,14 +4433,14 @@ case "$cmd" in
          s4e_pid_release
          if [ "${S4E_NO_DISPATCH_PROBE:-0}" != "1" ]; then
            _adw="$(s4e_donewhen_text "$PO/tasks/$topic.task.md")"; _alog="$(mktemp)"
-           ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$seat" S4E_DONE_WHEN_RUN=1 s4e_bounded "$(s4e_dispatch_timeout)" bash -c "$_adw" ) >"$_alog" 2>&1; _arc=$?
+           ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$seat" S4E_DONE_WHEN_RUN=1 s4e_bounded "$(s4e_dispatch_timeout "$PO/tasks/$topic.task.md")" bash -c "$_adw" ) >"$_alog" 2>&1; _arc=$?
            if [ "$_arc" -eq 126 ] || [ "$_arc" -eq 127 ] || [ "$_arc" -eq 2 ]; then
              printf '\n⛔ REFUSED(2): %s HAS AN UNRUNNABLE DONE-WHEN -- it exited %s (%s) in a probe run; a criterion that cannot run is a refusal, not a red (R-786).\n' \
                "$topic" "$_arc" "$([ "$_arc" -eq 127 ] && echo 'command not found' || { [ "$_arc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
              printf '   first line it said: %s\n   Fix the DONE-WHEN (cd "$S4E_HOME/SCRIP", name a script that exists), then assign again. No claim written.\n' "$(grep -m1 . "$_alog" | cut -c1-160)" >&2
              rm -f "$_alog"; exit 2
            fi
-           [ "$_arc" -eq 124 ] && printf '⚠ the DONE-WHEN probe of %s did not finish within %ss (the probe budget; its whole tree was killed) -- assigning, unverified\n' "$topic" "$(s4e_dispatch_timeout)" >&2
+           [ "$_arc" -eq 124 ] && printf '⚠ the DONE-WHEN probe of %s did not finish within %ss (the probe budget; its whole tree was killed) -- assigning, unverified\n' "$topic" "$(s4e_dispatch_timeout "$PO/tasks/$topic.task.md")" >&2
            rm -f "$_alog"
          fi
          # ⛔⭐ DISPATCH PROBE, ASSIGN SIDE (same ruling as next's; see s4e_dispatch_probe above). An HQ dispatching
@@ -4508,6 +4551,8 @@ case "$cmd" in
          if [[ "$topic" =~ -ceo-[0-9]+$ ]]; then echo "⛔ REFUSED: a topic may not end -ceo-NNNN; cite the ruling as R-NNNN (CIO-2)." >&2; exit 2; fi
          _ceo_line="$(printf '%s\n' "$goal" | grep -nE '\bCEO-[0-9]+\b' | head -1)"
          if [ -n "$_ceo_line" ]; then echo "⛔ REFUSED: the GOAL cites a CEO ruling (line ${_ceo_line%%:*}); cite it as R-NNNN (CIO-2), the alias of CIO-1." >&2; exit 2; fi
+         if _dbo="$(s4e_done_budget_offender "$goal")"; then   # ⭐ fleet-queue (DONE-BUDGET-S): refused at mint, never written
+            printf '⛔ REFUSED (rc=2): %s\n   DONE-BUDGET-S must be a whole number of seconds from 1 to 7200 (the row'"'"'s own done budget). Nothing written.\n' "$_dbo" >&2; exit 2; fi
          # ⛔⭐ THE SPLIT HAPPENS HERE, BEFORE THE LOCK AND BEFORE EITHER WRITE -- it used to sit inside the
          # lock, next to the baton heredoc. It is hoisted so the criterion can be JUDGED while refusing is
          # still free: a refusal after the queue row is appended is not a refusal, it is a cleanup problem.

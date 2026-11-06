@@ -262,7 +262,7 @@ s4e_field_criterion_text() {   # $1 = baton path, $2 = column-0 label (DONE-WHEN
 $(awk -v lbl="$lbl" '
             $0 ~ "^" lbl ":" && !seen { seen=1; next }
             seen && /^## / { exit }
-            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }
+            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|DONE-BUDGET-S|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }
             seen { print }
         ' "$b")"
     fi
@@ -289,6 +289,31 @@ s4e_premise_budget() {   # $1 = baton path
     [ "$n" -ge 1 ] || { printf '%s default\n' "$S4E_PREMISE_BUDGET_DEFAULT"; return 0; }
     [ "$n" -le "$S4E_PREMISE_BUDGET_MAX" ] || n="$S4E_PREMISE_BUDGET_MAX"
     printf '%s row\n' "$n"; }
+# ⛔⭐ DONE-BUDGET-S (fleet-queue, the cio; the DONE twin of PREMISE-BUDGET above): a baton may carry `DONE-BUDGET-S: <seconds>`, the
+# budget its DONE-WHEN runs under in `done` and in assign's dispatch probe. ONE reader for both, so the two can never disagree. Absent,
+# empty, malformed or zero -> the default (3600 s, the old box-wide S4E_DONE_TIMEOUT); above 7200 -> 7200. The range 1..7200 is also
+# REFUSED outright at mint and recut (s4e_done_budget_offender), so a baton written through the bus never carries an out-of-range value.
+S4E_DONE_BUDGET_DEFAULT=3600
+S4E_DONE_BUDGET_MAX=7200
+s4e_done_budget() {   # $1 = baton path; prints "<seconds> row" or "<default> default"
+    local raw n
+    raw="$(sed -n 's/^DONE-BUDGET-S:[[:space:]]*//p' "$1" 2>/dev/null | head -1 | tr -d '[:space:]')"
+    case "$raw" in ''|*[!0-9]*) printf '%s default\n' "$S4E_DONE_BUDGET_DEFAULT"; return 0;; esac
+    [ "${#raw}" -gt 4 ] && { printf '%s row\n' "$S4E_DONE_BUDGET_MAX"; return 0; }
+    n=$((10#$raw))
+    [ "$n" -ge 1 ] || { printf '%s default\n' "$S4E_DONE_BUDGET_DEFAULT"; return 0; }
+    [ "$n" -le "$S4E_DONE_BUDGET_MAX" ] || n="$S4E_DONE_BUDGET_MAX"
+    printf '%s row\n' "$n"; }
+# rc 0 and prints the first column-0 DONE-BUDGET-S line whose value is not a whole number of seconds from 1 to 7200; rc 1 when every such line is in range or there is none.
+s4e_done_budget_offender() {   # $1 = TEXT (a mint body, a recut body or a baton)
+    local line v
+    while IFS= read -r line; do
+        case "$line" in DONE-BUDGET-S:*) ;; *) continue;; esac
+        v="$(printf '%s' "${line#DONE-BUDGET-S:}" | tr -d '[:space:]')"
+        case "$v" in ''|*[!0-9]*) printf '%s\n' "$line"; return 0;; esac
+        if [ "${#v}" -gt 4 ] || [ "$((10#$v))" -lt 1 ] || [ "$((10#$v))" -gt "$S4E_DONE_BUDGET_MAX" ]; then printf '%s\n' "$line"; return 0; fi
+    done <<<"$1"
+    return 1; }
 s4e_donewhen_incomplete() {   # $1 = criterion text; rc 0 = bash cannot finish reading it
     # ⛔ A TRAILING BACKSLASH (or a dangling && / || / |) IS INCOMPLETE SHELL, though `bash -n` swallows it silently (coo 2026-09-16, found by
     # R-786's rc rule: a two-line criterion 'test -f X \' + '&& test -f Y' ran only its first line -- `test -f X \` is a usage error, rc=2 --

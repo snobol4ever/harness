@@ -211,8 +211,8 @@ if arm M3-gate-blinded "$W/m3/s4e_msg.sh" >"$W/m3.log" 2>&1; then echo "  [FAIL-
 else echo "  [FAIL-ONCE M3] red as required, gate blinded: $(grep -m1 -E '\(1\)|\(6\)|\(7\)' "$W/m3.log" | sed 's/^ *//' | cut -c1-100)"; m3=1; fi
 # ⛔ M4 drops PREMISE-WHEN from the extractor's terminator set: the multi-line DONE-WHEN then swallows the
 # premise line under it. Only arm 10 can see this, and it is the reason arm 10 exists.
-mut m4 '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
-       '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-BUDGET|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
+mut m4 '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-BUDGET|DONE-BUDGET-S|PREMISE-WHEN-HISTORY|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
+       '            seen && /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-BUDGET|DONE-BUDGET-S|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/ { exit }' \
        lib_donewhen.sh
 if arm M4-terminator-dropped "$W/m4/s4e_msg.sh" >"$W/m4.log" 2>&1; then echo "  [FAIL-ONCE M4] ⛔ GREEN with PREMISE-WHEN dropped from the terminator set -- a DONE-WHEN may swallow the premise unseen"; m4=0
 else echo "  [FAIL-ONCE M4] red as required, terminator dropped: $(grep -m1 '(10)' "$W/m4.log" | sed 's/^ *//' | cut -c1-100)"; m4=1; fi
