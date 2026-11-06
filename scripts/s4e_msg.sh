@@ -641,21 +641,40 @@ s4e_pid_live() { [ -n "${1:-}" ] && [ -n "${2:-}" ] && [ -d "/proc/$1" ] || retu
 # ⛔ RELEASES ONLY OUR OWN LOCK. An unconditional rm would let a crashed verb's cleanup delete the lock of the
 # process that legitimately took it next -- worse than never locking, because it fails in the direction of
 # pretending the identity is free.
-s4e_pid_release() { local _f="$PO/$ME/.pid" _p _t
+# ⭐ FLOCK, HELD FOR A WRITE ONLY (fleet-queue step 19, the cio, 2026-11-05; the probe is s4e_probe_flock_lock.sh). The one
+# lock file is $PO/<seat>/.pid. It is held with flock(2) on an open file description -- the kernel frees it when the holder
+# dies, so no stale-file reaping is needed -- and the file's own text names the holder for the refusal message. Release
+# EMPTIES the file and then unlocks: the text is never trusted to decide ownership, only the flock is. The file is NEVER
+# unlinked: a removed lock file lets two processes lock two different inodes, and the exclusion is gone.
+# ⛔ ONLY THE HOLDER RELEASES: a descendant shares the holder's open file description, so its unlock would drop the
+# holder's lock; _S4E_FD_OWNER names the one process that may.
+# ⭐ THE PROBE'S RECEIPT (step 19): when S4E_LOCK_TRACE names a file, the holder appends its own take and release instants, and on a take
+# the kernel's FLOCK entry on its identity file, read from /proc/locks (kernel_flock=1 when this pid holds it). The probe grades the lock
+# from these receipts, never from a sample: a hold of a few milliseconds is invisible to any sampler. Unset, this writes nothing.
+s4e_lock_trace() {
+    [ -n "${S4E_LOCK_TRACE:-}" ] || return 0
+    local _ino _k=0; _ino="$(stat -c %i "$PO/$ME/.pid" 2>/dev/null)"
+    # ⛔ THE MATCH IS ON THE INODE, NOT THE PID: /proc/locks names the flock(1) helper that created the lock, not this shell. An
+    # exclusive flock on the inode, read just after this holder's flock succeeded, can only be this holder's.
+    if [ "$1" = take ] && [ -n "$_ino" ] && awk -v i="$_ino" '$2=="FLOCK" && $6 ~ (":" i "$") {f=1} END{exit !f}' /proc/locks 2>/dev/null; then _k=1; fi
+    printf '%s %s %s kernel_flock=%s\n' "$(date +%s%N)" "$1" "$$" "$_k" >> "$S4E_LOCK_TRACE"; }
+# s4e_pid_unhold lets go of the identity and KEEPS the verb: a PREMISE or DONE-WHEN run is never under the identity (fleet-queue step 19),
+# so the run is wrapped in unhold and retake. It does not touch _cl_out: next's captured claim output must survive the run.
+s4e_pid_unhold() {
+    [ -n "${_S4E_FD_OWNER:-}" ] && [ "$_S4E_FD_OWNER" = "$$" ] || return 0
+    s4e_lock_trace release; : > "$PO/$ME/.pid" 2>/dev/null; flock -u 9 2>/dev/null; { exec 9>&-; } 2>/dev/null
+    _S4E_FD_OWNER=""; unset S4E_PID_LOCK; return 0; }
+s4e_pid_release() {   # the holder's exit: removes the claim's captured output, then lets go
     [ -n "${_cl_out:-}" ] && rm -f "$_cl_out"
-    [ -f "$_f" ] || return 0; read -r _p _t _ < "$_f" 2>/dev/null || true
-    [ "${_p:-}" = "$$" ] && rm -f "$_f"; return 0; }
+    s4e_pid_unhold; }
 s4e_pid_arm() { trap 's4e_pid_release' EXIT; trap 's4e_pid_release; exit 130' INT; trap 's4e_pid_release; exit 143' TERM HUP; }
 s4e_pid_is_mine() { local _p="$1" _cw; case "$_p" in ''|*[!0-9]*) return 1;; esac; [ -d "/proc/$_p" ] || return 1
     tr '\0' '\n' < "/proc/$_p/environ" 2>/dev/null | grep -qx "S4E_SEAT=$ME" && return 0
     _cw="$(readlink "/proc/$_p/cwd" 2>/dev/null)"; case "$_cw" in "$S4E"|"$S4E"/*|/tmp/s4e/"$ME"|/tmp/s4e/"$ME"/*) return 0;; esac; return 1; }
-s4e_pid_retake() { local _f="$PO/$ME/.pid" _mine _p _t _i; _mine="$(s4e_proc_start $$)" || return 0; [ -w "$PO/$ME" ] || return 0
-    for _i in $(seq 1 120); do
-        if ( set -o noclobber; printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f" ) 2>/dev/null; then export S4E_PID_LOCK="$ME:$$:$_mine"; return 0; fi
-        _p=""; _t=""; [ -f "$_f" ] && { read -r _p _t _ < "$_f" 2>/dev/null || true; }
-        s4e_pid_live "${_p:-}" "${_t:-}" || { rm -f "$_f" 2>/dev/null; continue; }
-        sleep 0.5
-    done
+s4e_pid_retake() { local _f="$PO/$ME/.pid" _mine _p _t; _mine="$(s4e_proc_start $$)" || return 0; [ -w "$PO/$ME" ] || return 0
+    { exec 9<>"$_f"; } 2>/dev/null || return 0
+    if flock -w 60 9; then printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f"; s4e_lock_trace take; export S4E_PID_LOCK="$ME:$$:$_mine"; _S4E_FD_OWNER=$$; return 0; fi
+    _p=""; _t=""; [ -f "$_f" ] && { read -r _p _t _ < "$_f" 2>/dev/null || true; }
     printf '⛔ REFUSED (rc=2): could not retake the identity %s for the write within 60 s (pid %s holds it); the measurement is not written -- run the verb again.\n' "$ME" "${_p:-?}" >&2; exit 2; }
 s4e_pid_acquire() {
     local _f="$PO/$ME/.pid" _mine _hs _hp _ht _p _t _at _c _tries=0
@@ -692,10 +711,15 @@ s4e_pid_acquire() {
     if [ ! -w "$PO/$ME" ]; then
       printf '⚠ one-process-per-identity guard INERT: %s is not writable, so the lock cannot be taken. Proceeding UNGUARDED.\n' "$PO/$ME" >&2; return 0; fi
     while :; do
-      # ⭐ noclobber makes this redirect O_CREAT|O_EXCL -- atomic on every POSIX filesystem, the same guarantee
-      # `mint`'s mkdir lock and `claim`'s `ln` lean on. Two verbs racing here: exactly one creates the file.
-      if ( set -o noclobber; printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f" ) 2>/dev/null; then
-        export S4E_PID_LOCK="$ME:$$:$_mine"; s4e_pid_arm; return 0; fi
+      # ⭐ FLOCK (step 19): flock -n on the one identity file. Two verbs racing here: exactly one takes the kernel lock, and the
+      # other sees it held. A second open of the file is a second open file description, so it conflicts with the holder even
+      # inside one process -- which is why the descendant pass-through above exists.
+      if ! { exec 9<>"$_f"; } 2>/dev/null; then
+        printf '⚠ one-process-per-identity guard INERT: %s cannot be opened, so the lock cannot be taken. Proceeding UNGUARDED.\n' "$_f" >&2; return 0; fi
+      if flock -n 9; then
+        printf '%s %s %s %s\n' "$$" "$_mine" "$(date -u +%FT%TZ)" "${cmd:-?}" > "$_f"; s4e_lock_trace take
+        export S4E_PID_LOCK="$ME:$$:$_mine"; _S4E_FD_OWNER=$$; s4e_pid_arm; return 0; fi
+      exec 9>&-
       _p=""; _t=""; _at=""; _c=""
       [ -f "$_f" ] && { read -r _p _t _at _c < "$_f" 2>/dev/null || true; }
       if s4e_pid_live "${_p:-}" "${_t:-}"; then
@@ -712,13 +736,15 @@ s4e_pid_acquire() {
         printf '    If pid %s is a verb of YOURS that is legitimately still running (a long `done` DONE-WHEN holds the\n' "$_p" >&2
         printf '    lock for its whole run), wait for it. The lock self-clears the moment that process is gone.\n\n' >&2
         exit 2; fi
-      # stale (holder dead, or a torn/empty file) -> self-clear and retry, bounded. Never loops forever.
+      # flock-held but the file names no live holder: the holder took the lock and has not written its line yet (microseconds),
+      # or the file is torn. Wait briefly, bounded. NEVER unlink the file (see s4e_pid_release): a dead holder's lock is freed by
+      # the kernel already, so there is no stale file to reap.
       _tries=$((_tries+1))
-      if [ "$_tries" -gt 3 ]; then
-        printf '\n⛔ REFUSED (rc=2, COULD NOT MEASURE): %s exists, names no live process, and could not be cleared after %s attempts.\n' "$_f" "$_tries" >&2
+      if [ "$_tries" -gt 30 ]; then
+        printf '\n⛔ REFUSED (rc=2, COULD NOT MEASURE): %s is flock-held, names no live process, and stayed so for 3 s.\n' "$_f" >&2
         printf '    This is not a verdict about a second process -- it is the guard saying it cannot tell. Inspect the file by hand.\n\n' >&2
         exit 2; fi
-      rm -f "$_f" 2>/dev/null || true
+      sleep 0.1
     done
 }
 cmd="${1:-check}"
@@ -2357,7 +2383,10 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     # exported, so a premise written as `cd "$S4E_HOME/SCRIP" && ...` -- the idiom the batons already use --
     # resolves against the LOCKING SEAT'S OWN ROOT rather than expanding to the empty string on some seats and
     # not others. A verdict that depends on the grader's environment is not a verdict.
+    # ⭐ fleet-queue step 19: the identity is never held across a PREMISE run. A holder releases it for the run and takes it back for its write.
+    _pl_was="${_S4E_FD_OWNER:-}"; [ "$_pl_was" = "$$" ] && s4e_pid_unhold
     ( cd "$S4E" && S4E_HOME="$S4E" S4E_SEAT="$ME" S4E_PREMISE_WHEN_RUN=1 s4e_bounded "$to" bash -c "$pw" ) >"$log" 2>&1; rc=$?
+    [ "$_pl_was" = "$$" ] && s4e_pid_retake
     el="$(( $(date +%s) - t0 ))"
     case "$rc" in
       0) printf '  ✅ PREMISE-WHEN exited 0 in %ss — the row'"'"'s premise still holds on this tree.\n' "$el" >&2
@@ -3402,7 +3431,9 @@ case "$cmd" in
                 case "$dw" in
                   */*|*'$'*) : ;;                       # names a path or expands a variable — probe would be meaningless
                   *) _vac="$(mktemp -d)"
+                     _vz_was="${_S4E_FD_OWNER:-}"; [ "$_vz_was" = "$$" ] && s4e_pid_unhold   # step 19: never held across a DONE-WHEN run
                      ( cd "$_vac" && s4e_bounded 20 bash -c "$dw" ) >/dev/null 2>&1; _vrc=$?
+                     [ "$_vz_was" = "$$" ] && s4e_pid_retake
                      rm -rf "$_vac"
                      # ⛔⭐ A TIMEOUT IS NOT AN ANSWER (hq_P 2026-08-27, source-read; hole was real and unreached).
                      # The probe used to branch on the COMMAND SUCCEEDING, so EVERY non-zero exit counted as proof the
@@ -4844,7 +4875,10 @@ TASKEOF
   # welded into one word, and it built a mailbox path out of it. ✅ The gate REFUSED rc=2 rather than proceed
   # on that, which is the behaviour working -- but a verb that answers the question directly is the cure.
   # ⛔ Deliberately silent about mail: this must stay safe to call from a script in a loop.
-  whoami) echo "$ME";;
+  whoami) # ⭐ whoami --probe-lock (fleet-queue step 19): the bus lock is flock, held for a write only, never across a DONE-WHEN run.
+          # The probe holds no identity: it releases this process's lock first, then measures on a scratch postoffice.
+          if [ "${2:-}" = --probe-lock ]; then s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_flock_lock.sh"; exit $?; fi
+          echo "$ME";;
   fleet) # ⛔ LON'S HEALTH VIEW (Lon 2026-08-22: "I'll not read much but I will check on the health").
          # ONE screen for the whole fleet, all COMPUTED. Deliberately does NOT run handoff_status.sh per seat
          # (that walks every repo, 9x over) -- it inspects each seat root's clones directly, which is the same

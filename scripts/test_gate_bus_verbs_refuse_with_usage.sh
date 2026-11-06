@@ -40,7 +40,11 @@ mk_po() {
   printf '# TASK t-row\nGOAL: fixture.\nDONE-WHEN: true\nLINKS: none\n## NEXT\ngo\n## LEDGER\n' > "$PO/tasks/t-row.task.md"; }
 # ⛔ THE FINGERPRINT INCLUDES NAMES AND CONTENTS BOTH: a refusal that DELETED a file and one that added one
 # would cancel in a count, and a checksum of contents alone cannot see a rename.
-fingerprint() { find "$PO" -type f | sort | while IFS= read -r f; do printf '%s  ' "$f"; md5sum < "$f"; done | md5sum; }
+# ⛔ THE IDENTITY FILE IS EXCLUDED, AND ITS RESIDUE IS CHECKED INSTEAD (arm 4 below). A locked verb creates <seat>/.pid
+# the first time it takes the identity's flock and never unlinks it (unlinking under a flock lets two processes lock two
+# inodes), so a refusal leaves an EMPTY lock file behind by design. That is the lock, not postoffice state a refusal can
+# corrupt; what a refusal must not leave is a holder's line in it.
+fingerprint() { find "$PO" -type f ! -name .pid | sort | while IFS= read -r f; do printf '%s  ' "$f"; md5sum < "$f"; done | md5sum; }
 arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
   local lbl="$1" s="$2" ok=1 out rc before after v
   mk_po || return 2
@@ -72,6 +76,7 @@ VERBS
   # (4) WROTE-NOTHING
   after="$(fingerprint)"
   [ "$before" = "$after" ] || { echo "  [$lbl] (4) the postoffice CHANGED across a run of refusals -- a refusal that mutates is not a refusal"; ok=0; }
+  for _pf in "$PO"/*/.pid; do [ -e "$_pf" ] && [ -s "$_pf" ] && { echo "  [$lbl] (4) an identity file still names a holder after the refusals: $_pf"; ok=0; }; done
   # (5) NO-REGRESSION: the bare-word `${N:?word}` shape, outside comments, is the defect's fingerprint.
   local reint
   reint="$(grep -nE '\$\{[0-9]:\?[^ }]*\}' "$s" | grep -v '^[0-9]*: *#' || true)"
