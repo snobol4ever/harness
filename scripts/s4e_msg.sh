@@ -791,7 +791,9 @@ cmd="${1:-check}"
 # 0ae4a57cc by hq_C 2026-09-13 (mechanism measured directly: S4E_SEAT=nosuchseat -> rc=3 before, rc=0 after), who
 # also named this cure -- keep the existence assertion on its own, ahead of and independent of the lock.
 case "$cmd" in mailbox|"") ;; *) s4e_assert_box "$ME" identity;; esac
-case "$cmd" in mailbox|banner|check|premise|"") ;; *) s4e_pid_acquire;; esac
+# ⭐ A PROBE HOLDS NO IDENTITY (fleet-queue step 19): `whoami --probe-lock` takes none, so a verb of this seat that runs at the same moment
+# cannot refuse the probe that measures the lock. The probe releases nothing it does not hold.
+case "$cmd" in mailbox|banner|check|premise|"") ;; whoami) [ "${2:-}" = --probe-lock ] || s4e_pid_acquire;; *) s4e_pid_acquire;; esac
 # /*------------------------------------------------------------------------------------------------------*/
 # ⛔⭐⭐ THE CODEGEN CONTROL ARM -- `done` COMPUTES WHETHER A LANDING TOUCHED CODEGEN, AND CITES A BOARD OF ITS
 # OWN TREE RATHER THAN RUNNING ONE.  Row done-runs-the-snobol4-master-arm-itself-for-any-row-whose-commits-touch-

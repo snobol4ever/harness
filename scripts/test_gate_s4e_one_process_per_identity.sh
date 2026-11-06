@@ -163,7 +163,8 @@ else pass=$?; [ "$pass" = 2 ] && { echo "⛔ REFUSED: fixture could not be built
 # means something else to BRE. A mutation regex that silently matched nothing would hand back an UNMUTATED copy,
 # the arm would pass, and the gate would report a fail-once it never performed -- a false green inside the very
 # mechanism that exists to prove the gate is not falsely green. Both mutants are VERIFIED below before use.
-M1_FROM='case "$cmd" in mailbox|banner|check|premise|"") ;; *) s4e_pid_acquire;; esac'
+# ⛔ THE ANCHOR FOLLOWS THE CURE: the top-level acquire arm now also names whoami, which takes no identity for --probe-lock (step 19).
+M1_FROM='case "$cmd" in mailbox|banner|check|premise|"") ;; whoami) [ "${2:-}" = --probe-lock ] || s4e_pid_acquire;; *) s4e_pid_acquire;; esac'
 M1_TO='case "$cmd" in mailbox|banner|check|premise|"") ;; *) :;; esac'
 awk -v a="$M1_FROM" -v b="$M1_TO" '$0==a{print b; n++; next} {print} END{exit !n}' "$MSG" > "$W/m1.sh" \
   || { echo "⛔ REFUSED: the acquire call site is not where M1 expects it -- the cure moved, so the mutation would be a no-op"; exit 2; }
