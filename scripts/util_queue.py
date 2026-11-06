@@ -60,6 +60,8 @@ class _Stdlib:
         def release(self, i, priority=1000, delay=0): self._cmd("release %d %d %d" % (getattr(i, "id", i), priority, delay))
         def bury(self, i, priority=1000): self._cmd("bury %d %d" % (getattr(i, "id", i), priority))
         def touch(self, i): self._cmd("touch %d" % getattr(i, "id", i))
+        def reserve_job(self, i):
+            r = self._cmd("reserve-job %d" % i); return _Stdlib.Job(int(r[1]), self._body(r))
         def kick(self, n=1): return int(self._cmd("kick %d" % n)[1])
         def kick_job(self, i): self._cmd("kick-job %d" % i)
         def stats_job(self, i): return self._yaml(self._cmd("stats-job %d" % i))
@@ -140,12 +142,12 @@ def main(a):
             c.use(a[1]); print(c.kick(int(a[2]) if len(a) > 2 else 1))
         elif v in ("bury", "touch"):
             refuse("%s acts on a job reserved by the same connection: the bus does it inside one reserve (s4e_msg.sh), not from a fresh process" % v)
-        elif v == "reserve-hold":
+        elif v in ("reserve-hold", "hold-job"):
             # fleet-queue step 4 and 5: reserve one job over TUBES, print "id<TAB>tube<TAB>pri<TAB>topic", then stay alive as a detached HOLDER on the
             # same connection (beanstalkd releases a reserved job the moment its connection closes, so the lease lives exactly as long as this process):
             # every INTERVAL s it touches the job while the claim file names --seat on its first line and the session --session is alive; it deletes
             # the job when the claim reads DONE, releases it when the claim vanishes, names another seat, or the session died, and exits.
-            tubes = a[1].split(","); seat = session = claim = None; batons = None; timeout = 0; i = 2
+            tubes = a[1].split(",") if v == "reserve-hold" else []; seat = session = claim = None; batons = None; timeout = 0; i = 2
             while i < len(a):
                 if a[i] == "--seat": seat = a[i + 1]
                 elif a[i] == "--session": session = a[i + 1]
@@ -155,12 +157,18 @@ def main(a):
                 else: refuse("reserve-hold: unknown flag " + a[i])
                 i += 2
             if not (seat and claim): refuse("reserve-hold needs --seat SEAT --claim-dir DIR (the claim is DIR/<topic>.claim, the topic being the job body)")
-            for t in tubes: c.watch(t)
-            if "default" not in tubes: c.ignore("default")
-            try:
-                j = c.reserve(timeout=timeout)
-            except gs.TimedOutError:
-                sys.exit(1)
+            if v == "hold-job":   # fleet-queue step 5: the tick re-attaches a holder to a ready job by id (beanstalkd 1.12 reserve-job) when the seat's session lives
+                try:
+                    j = c.reserve_job(int(a[1]))
+                except gs.NotFoundError:
+                    refuse("job %s is not ready or delayed (not found)" % a[1], 1)
+            else:
+                for t in tubes: c.watch(t)
+                if "default" not in tubes: c.ignore("default")
+                try:
+                    j = c.reserve(timeout=timeout)
+                except gs.TimedOutError:
+                    sys.exit(1)
             if batons and not os.path.isfile(os.path.join(batons, j.body + ".task.md")):
                 c.delete(j.id); print("STALE %d %s: no baton, deleted" % (j.id, j.body), file=sys.stderr); sys.exit(3)
             st = c.stats_job(j.id); ttr = int(st["ttr"]); interval = max(2, min(5, ttr // 3)); claim = os.path.join(claim, j.body + ".claim")
