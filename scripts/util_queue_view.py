@@ -53,7 +53,11 @@ def claim_holder(topic):
     try: return open(os.path.join(PO, "claims", topic + ".claim")).readline().strip()
     except OSError: return ""
 def regenerate():
-    gs, c = queue_client(); header, old = read_queue(); out = []; healed = 0; tubes = set()
+    gs, c = queue_client(); header, old = read_queue(); out = []; healed = 0; adopted = 0; tubes = set()
+    # AN UNSIGNED QUEUE.tsv WAS WRITTEN BY SOMETHING ELSE SINCE THE LAST REGENERATION (a seat on an older bus writes the row, not the baton): for every row
+    # whose QUEUE.tsv state or owner differs from its baton, the file is the newer truth and the baton adopts it (the cao's lost park, 2026-11-06 00:39Z)
+    try: signed = open(SIG).read().strip() == body_hash(open(Q).read())
+    except OSError: signed = False
     for p in sorted(glob.glob(os.path.join(TASKS, "*.task.md"))):
         topic = os.path.basename(p)[:-len(".task.md")]; s, d = head_of(p)
         if s is None: continue
@@ -63,6 +67,8 @@ def regenerate():
             s = set_head(p, s, "RANK", str(rank)); s = set_head(p, s, "OWNER", owner); s = set_head(p, s, "STATE", state); healed += 1
             d.update({"RANK": str(rank), "OWNER": owner, "STATE": state})
         rank, owner, state = int(d["RANK"] or 2), d["OWNER"], d["STATE"]
+        if not signed and topic in old and (old[topic][2] != state or old[topic][1] != owner):
+            rank, owner, state = old[topic]; s = set_head(p, s, "OWNER", owner); s = set_head(p, s, "STATE", state); s = set_head(p, s, "RANK", str(rank)); adopted += 1
         state = claim_rule(topic, state)   # THE CLAIM IS THE LOCK: a claim file outranks a stale STATE line (a seat on an older bus writes no STATE line)
         if state == "DONE":   # a DONE row leaves the view and lands once in QUEUE.done.tsv (the sweep's move, done here)
             if topic in old:
@@ -95,7 +101,7 @@ def regenerate():
             try: os.rmdir(LOCK)
             except OSError: pass
     if c is not None: c.close()
-    print("VIEW rows=%d tubes=%d healed=%d lock=%d" % (len(out), len(tubes), healed, int(got))); return 0
+    print("VIEW rows=%d tubes=%d healed=%d adopted=%d signed_before=%d lock=%d" % (len(out), len(tubes), healed, adopted, int(signed), int(got))); return 0
 def check():
     try: sig = open(SIG).read().strip(); age = int(time.time() - os.stat(SIG).st_mtime); gen = 1
     except OSError: sig = ""; age = 10**6; gen = 0
