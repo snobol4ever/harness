@@ -1306,7 +1306,7 @@ def selftest():
         reg = os.path.join(w, "ruled.tsv")
         RULED_PERMANENT = reg
 
-        open(reg, "w").write("# f\nsrc/runtime/perm.c\tct_alloc\t1\tCEO-854\tproven unreachable, ruled arena\n")
+        open(reg, "w").write("# f\nsrc/runtime/perm.c\tct_alloc\t1\tR-854\tproven unreachable, ruled arena\n")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
         ck("CLASS-3-RULED-PERMANENT=1" in j and "ruled by R-854" in j and "MINUS THIS = 0" in j,
            "A RULED-PERMANENT SITE IS COUNTED IN CLASS 3, NAMED WITH ITS RULING, AND TAKEN OUT OF THE RATCHETED NUMBER -- which is the whole point: it can never be rooted, so carrying it as debt makes the ratchet's target unreachable by construction")
@@ -1315,29 +1315,29 @@ def selftest():
         ck(COUNTS.get("arena_in_runtime_debt") == 0,
            "a class-3 site is NOT also counted as class-2 debt -- one site, one class, or the debt number could never reach zero")
 
-        open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tCEO-999999\tno such ruling\n")
+        open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tR-999999\tno such ruling\n")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
         ck(rc == 1 and "CITATION DOES NOT RESOLVE" in j and "R-999999" in j,
            "⛔ AN ENTRY WHOSE CITED RULING DOES NOT RESOLVE REDS -- an entry in class 3 with no ruling behind it is a CLASS 1 EVASION IN DISGUISE, and this arm is the only thing standing between a third class and a hiding place")
 
         open(os.path.join(sd, "perm2.c"), "w").write("void *g(void){ return ct_alloc(8); }\nvoid *h(void){ return ct_alloc(9); }\n")
-        open(reg, "w").write("src/runtime/perm2.c\tct_alloc\t1\tCEO-854\tone site only\n")
+        open(reg, "w").write("src/runtime/perm2.c\tct_alloc\t1\tR-854\tone site only\n")
         buf.clear(); census(w, out=buf.append); j = "\n".join(buf)
         ck("CLASS-3-RULED-PERMANENT=1" in j and COUNTS.get("arena_in_runtime_ratcheted") == 2,
            "A ROW LICENCES A COUNT, NOT A FILE: the second ct_alloc in the same file beyond the licensed 1 falls straight back into the ordinary grading, so a row can never become a blanket amnesty")
         os.remove(os.path.join(sd, "perm2.c"))
 
-        open(reg, "w").write("src/runtime/nowhere.c\tct_alloc\t1\tCEO-854\tstale\n")
+        open(reg, "w").write("src/runtime/nowhere.c\tct_alloc\t1\tR-854\tstale\n")
         buf.clear(); census(w, out=buf.append); j = "\n".join(buf)
         ck("CLASS-3 UNUSED ROW" in j and "nowhere.c" in j,
            "a row licensing a site the tree does not have is NAMED rather than silently carried -- a stale licence nobody can see is how the next one gets written for a site that never existed")
 
-        open(reg, "w").write("src/runtime/perm.c\tct_alloc\tnotanumber\tCEO-854\tbad row\n")
+        open(reg, "w").write("src/runtime/perm.c\tct_alloc\tnotanumber\tR-854\tbad row\n")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
         ck(rc == 1 and "MALFORMED ROW" in j,
            "and a MALFORMED row REDS rather than being dropped -- a row this reader silently skipped is a licence nobody granted and an evasion nobody would see")
 
-        open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tCEO-854\tok\n")
+        open(reg, "w").write("src/runtime/perm.c\tct_alloc\t1\tR-854\tok\n")
         global RECORD_OVERRIDE
         RECORD_OVERRIDE = os.path.join(w, "no-such-record", "record.md")
         buf.clear(); rc = census(w, out=buf.append); j = "\n".join(buf)
