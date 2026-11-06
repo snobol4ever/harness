@@ -15,6 +15,11 @@
 #                  census=SYMBOL:N      occurrences of SYMBOL under SCRIP/src, at most N
 #                  smoke                test_smoke_raku.sh green
 #                Red before the step lands, green after.
+#   --land N     the LANDING GATE of step N: the witnesses in both modes and the tokens a lander can prove before the push (census, smoke);
+#                the tokens that read the coo's grading of the landed code (moved, pass, chapter, row) are named as POST-LAND and not read, so
+#                s4e_land.sh gates on --land N, the lander files s4e_test_request.sh roast <entries>, parks PARKED-AWAITING the request id, and the
+#                row closes by done on --step N once the coo's reading is in (worker_11's measurement on step 2, 2026-11-06: --step 2 read pass=0/10
+#                before the landing and could never gate it). A row's PREMISE-WHEN reads --land N.
 #   --cut        re-cut every witness ref from Rakudo
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.raku_roast_causes.<pid>.* deleted at the verdict; an explicit DIR is kept)
 #
@@ -30,17 +35,18 @@ SUITES=/home/resources/progress/SUITES.tsv
 RESULTS=/home/resources/progress/results.tsv
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
-mode=""; step=""
+mode=""; step=""; land=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --list) mode=list; shift ;;
         --step) mode=step; step="${2:-}"; [ -n "$step" ] || refuse "--step takes a number"; shift 2 ;;
+        --land) mode=step; land=1; step="${2:-}"; [ -n "$step" ] || refuse "--land takes a number"; shift 2 ;;
         --cut) mode=cut; shift ;;
         --out) OUT="${2:-}"; shift 2 ;;
-        *) refuse "usage: $0 --list | --step N [--out DIR] | --cut" ;;
+        *) refuse "usage: $0 --list | --step N [--out DIR] | --land N [--out DIR] | --cut" ;;
     esac
 done
-[ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --cut"
+[ -n "$mode" ] || refuse "usage: $0 --list | --step N [--out DIR] | --land N [--out DIR] | --cut"
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default raku_roast_causes; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
@@ -92,10 +98,11 @@ latest_roast() { # prints program<TAB>m3outcome<TAB>m4outcome<TAB>m3note for eve
         END { for (k in t) { split(k, a, "\t"); p[a[1]] = 1; r[k] = o[k] }
               for (q in p) printf "%s\t%s\t%s\t%s\n", q, r[q "\tm3"], r[q "\tm4"], nt[q "\tm3"] }' "$RESULTS"
 }
-readings=""; pgreen=1
+readings=""; pgreen=1; postland=""
 [ "$probe" = "-" ] && probe=""
 for tok in $probe; do
     key="${tok%%=*}"; val="${tok#*=}"; arg="${val%%:*}"; lim="${val##*:}"
+    case "$key" in moved|pass|chapter|row) [ "$land" = 1 ] && { postland="$postland $tok"; continue; } ;; esac
     case "$key" in
         moved) ere="${val%@*}"; progs="${val##*@}"; [ -n "$ere" ] && [ -n "$progs" ] && [ "$ere" != "$val" ] || refuse "moved= takes ERE@P1,P2 in step $step"
                lr="$(latest_roast)"; c=0; miss=""; hit=""
@@ -118,5 +125,6 @@ for tok in $probe; do
     esac
 done
 verdict=GREEN; [ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && [ "$pgreen" = 1 ] || verdict=RED
+[ "$land" = 1 ] && { echo "LAND STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=${readings# } -> $verdict${reds:+ reds:$reds} (POST-LAND, read by --step $step after the coo grades:${postland:- none})"; [ "$verdict" = GREEN ] && exit 0 || exit 1; }
 echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=${readings# } -> $verdict${reds:+ reds:$reds}"
 [ "$verdict" = GREEN ] && exit 0 || exit 1
