@@ -21,7 +21,11 @@
 #               outside it pushes the rebased tree with the gate standing; the lease is released after the last push (LAND stage=lease released held_s=N)
 #   push:<repo> git push origin HEAD:main, then git ls-remote must name the local HEAD; SCRIP, harness, corpus, .github in that order. A push
 #               the origin refused (a hand push outside the lease) is recorded by s4e_push_rejected.sh and the landing goes round again from fetch
-#               (--tries, default 3), so the gate always reads the tree that is pushed
+#               (--tries, default 3), so the gate always reads the tree that is pushed. A push the SERVER refused with origin unmoved (GitHub's transient
+#               "remote: fatal error in commit_refs", a 5xx, an internal server error) is not a moved origin: the push alone is retried after a backoff
+#               (S4E_LAND_PUSH_RETRIES, default 4; S4E_LAND_PUSH_BACKOFF seconds times the retry, default 5), no rebase and no regate, and the lease is held
+#               across it; a refusal that outlasts the retries reads RED. The LAND ok line counts push_refused, retried_push, rebased_for_refusal (a round
+#               taken while origin had not moved: 0 unless a refusal went unrecognised) and origin_moved_rebases.
 # USAGE: s4e_land.sh [--home DIR] (--row TOPIC | --gate CMD) [--gate-timeout S] [--tries N] [REPO...]
 #   --home DIR   the root holding SCRIP harness corpus [.github] (default: the root this script sits in); a clean worktree layout
 #                outside the root is the usual DIR. REPO names the repos whose commits land (default: every repo ahead of origin);
@@ -30,6 +34,9 @@
 #                gate and must push nothing; arm 2 moves every origin first, plants a push race on corpus inside the gate, and must land all
 #                four repos with the race rejected, recorded in a scratch postoffice and re-landed; arm 3 finds the box-wide landing lease held, waits, names the holder,
 #                pushes nothing, then lands once it is free. Prints LAND dry-run ok stages=N.
+#   --probe-push-refusal  the push-refusal proof on scratch origins: a plant lands a real racer on corpus once (one origin-moved round) and arms a
+#                pre-receive hook that refuses the next push once with "fatal error in commit_refs" (retried as a push); prints LAND push_refused=server
+#                retried_push=N rebased_for_refusal=0 origin_moved_rebases=M. The real origins are never touched.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
@@ -49,6 +56,7 @@ while [ $# -gt 0 ]; do
         --tries) tries="${2:-}"; shift 2 ;;
         --probe) mode=probe; shift ;;
         --merge-probe) mode=merge_probe; shift ;;
+        --probe-push-refusal) mode=probe_push_refusal; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -236,7 +244,34 @@ advance() {
     local c
     c="$(git -C "$1" commit-tree "main^{tree}" -p main -m "$2")" && git -C "$1" update-ref refs/heads/main "$c" main || refuse "probe: cannot advance $1"
 }
+probe_push_refusal() {   # the push-refusal proof: a real move and a server refusal on scratch origins, told apart
+    local T log rc n m b f
+    T="$(mktemp -d "/tmp/s4e/$seat/land-push-refusal.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    scratch_clone "$T"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/racer" reset -q --hard HEAD \
+        || refuse "probe: cannot clone the racer"
+    git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
+    printf '#!/usr/bin/env bash\n[ -e "%s" ] || exit 0\nrm -f "%s"\necho "fatal error in commit_refs" >&2\nexit 1\n' "$T/refuse_once" "$T/refuse_once" > "$T/origin/corpus.git/hooks/pre-receive"
+    chmod +x "$T/origin/corpus.git/hooks/pre-receive"
+    printf '#!/usr/bin/env bash\n[ -e "%s" ] && exit 0\n: > "%s"\ncd "%s" && git pull -q --rebase origin main && echo race > tests/shared/box_scheduler/probe-refusal-race-%s.txt && git add -A && git commit -q -m "probe: a racer lands before the refusal" && git push -q origin HEAD:main && : > "%s"\n' \
+        "$T/planted" "$T/planted" "$T/racer" "$$" "$T/refuse_once" > "$T/plant.sh"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the refused landing's commit in $r" || refuse "probe: cannot commit in $r"; done
+    log="$T/refusal.log"
+    S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" S4E_LAND_PLANT="bash $T/plant.sh" S4E_LAND_PUSH_BACKOFF=1 bash "$SELF" --home "$T/work" --gate 'true' > "$log" 2>&1; rc=$?
+    sed 's/^/    refusal| /' "$log" | grep -E 'REFUSED|REJECTED|LAND ok|LAND RED|REFUSE' | tail -5
+    f="$(grep -m1 '^LAND ok ' "$log")"
+    n="$(printf '%s' "$f" | sed -n 's/.* retried_push=\([0-9]*\) .*/\1/p')"; b="$(printf '%s' "$f" | sed -n 's/.* rebased_for_refusal=\([0-9]*\) .*/\1/p')"
+    m="$(printf '%s' "$f" | sed -n 's/.* origin_moved_rebases=\([0-9]*\) .*/\1/p')"
+    [ "$rc" = 0 ] && [ -e "$T/planted" ] && [ ! -e "$T/refuse_once" ] && grep -q '^LAND stage=push:corpus REFUSED by the server' "$log" \
+        && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: a racer lands before the refusal" > /dev/null \
+        && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$(git -C "$T/work/corpus" rev-parse HEAD)" ] \
+        || { echo "LAND push-refusal probe RED rc=$rc (the plant ran: $([ -e "$T/planted" ] && echo yes || echo no); the hook fired: $([ -e "$T/refuse_once" ] && echo no || echo yes)); log kept: $log"; trap - EXIT; exit 1; }
+    echo "LAND push_refused=server retried_push=${n:-0} rebased_for_refusal=${b:-?} origin_moved_rebases=${m:-0}"
+    exit 0
+}
 [ "$mode" = probe ] && probe
+[ "$mode" = probe_push_refusal ] && probe_push_refusal
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -397,22 +432,38 @@ gate_run() {
         *) red gate "rc=$rc: nothing pushed" ;;
     esac
 }
+SERVER_REFUSAL='fatal error in commit_refs|remote rejected[^(]*\(failure\)|internal server error|returned error: 5[0-9][0-9]|HTTP 5[0-9][0-9]|error: 5[0-9][0-9] '
+push_retries="${S4E_LAND_PUSH_RETRIES:-4}"; push_backoff="${S4E_LAND_PUSH_BACKOFF:-5}"; server_refusals=0; retried_push=0; rebased_unmoved=0; moved_rounds=0
 push_one() {
-    local r="$1" mine theirs
+    local r="$1" mine theirs seen k=0 w
     [ "$(ahead "$r")" -gt 0 ] || { echo "LAND stage=push:$r nothing to push (origin $(git -C "$home/$r" rev-parse --short=9 origin/main))"; return 0; }
     named "$r" || refuse "$r carries commits and is not named"
-    mine="$(git -C "$home/$r" rev-parse HEAD)"
-    g "$r" push -q origin HEAD:refs/heads/main > "$LOG/push.$r" 2>&1
-    theirs="$(g "$r" ls-remote origin refs/heads/main | cut -f1)"
-    [ -n "$theirs" ] || red "push:$r" "git ls-remote origin read nothing after the push"
-    if [ "$theirs" = "$mine" ]; then
-        g "$r" fetch -q origin main > /dev/null 2>&1
-        mark "push:$r" "${mine:0:9} verified on origin"
-        pushed+=("$r@${mine:0:9}")
-        return 0
-    fi
+    mine="$(git -C "$home/$r" rev-parse HEAD)"; seen="$(git -C "$home/$r" rev-parse origin/main)"
+    while :; do
+        g "$r" push -q origin HEAD:refs/heads/main > "$LOG/push.$r" 2>&1
+        theirs="$(g "$r" ls-remote origin refs/heads/main | cut -f1)"
+        [ -n "$theirs" ] || red "push:$r" "git ls-remote origin read nothing after the push"
+        if [ "$theirs" = "$mine" ]; then
+            g "$r" fetch -q origin main > /dev/null 2>&1
+            mark "push:$r" "${mine:0:9} verified on origin"
+            pushed+=("$r@${mine:0:9}")
+            return 0
+        fi
+        [ "$theirs" = "$seen" ] && grep -qiE "$SERVER_REFUSAL" "$LOG/push.$r" || break
+        k=$((k + 1)); server_refusals=$((server_refusals + 1))
+        [ "$k" -gt "$push_retries" ] && red "push:$r" "the server refused the push $k times with origin unmoved at ${seen:0:9} ($(grep -m1 -iE "$SERVER_REFUSAL" "$LOG/push.$r" | cut -c1-100)); nothing rebased; land again"
+        w=$((push_backoff * k))
+        echo "LAND stage=push:$r REFUSED by the server, origin unmoved at ${seen:0:9} ($(grep -m1 -iE "$SERVER_REFUSAL" "$LOG/push.$r" | cut -c1-100)): the push alone is retried in ${w}s, no rebase, no regate (retry $k of $push_retries)"
+        retried_push=$((retried_push + 1)); sleep "$w"
+    done
     bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1
-    echo "LAND stage=push:$r REJECTED: origin is ${theirs:0:9}, not ${mine:0:9} ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
+    if [ "$theirs" = "$seen" ]; then
+        rebased_unmoved=$((rebased_unmoved + 1))
+        echo "LAND stage=push:$r REJECTED with origin unmoved at ${seen:0:9}, an unrecognised refusal ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
+    else
+        moved_rounds=$((moved_rounds + 1))
+        echo "LAND stage=push:$r REJECTED: origin moved to ${theirs:0:9}, not ${mine:0:9} ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
+    fi
     return 3
 }
 # THE AFFECTED SET (the cfo 2026-11-04 19:4x: a 40-minute gate rejected three times; the cao: runtime, templates, the Makefile and every generated table
@@ -462,7 +513,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$home/$r" rev-parse origin/main)" ] || moved=1; done
     if [ "$moved" = 1 ]; then
         rebase
-        if a="$(affected_since)"; then drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
+        if a="$(affected_since)"; then moved_rounds=$((moved_rounds + 1)); drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
         mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
         note_origins
     fi
@@ -482,8 +533,8 @@ while :; do
 done
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
-    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
+    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
 fi
 rm -rf "$LOG"
-echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
 exit 0
