@@ -253,6 +253,125 @@ s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job,
     [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $_pri --ttr $_ttr" >&2; return 1; }
     s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$_pri ttr=$_ttr"; }
 s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) echo haiku;; *) return 1;; esac; }
+s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet -> tier-opus, tier-opus -> tier-fable; rc 1 at the top
+    local _tier
+    case "$1" in seat-*) _tier="$(s4e_tier_of "${1#seat-}")" || return 1;; tier-*) _tier="${1#tier-}";; *) return 1;; esac
+    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo tier-opus;; opus) echo tier-fable;; *) return 1;; esac; }
+s4e_escalate_rung_set() {   # <topic> -> bumps the baton's RUNG: head line (absent means 1, so the first escalation writes RUNG: 2); prints the new rung
+    local _b="$PO/tasks/$1.task.md" _cur _new
+    _cur="$(sed -n 's/^RUNG:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$_b" | head -1)"; _new=$(( ${_cur:-1} + 1 ))
+    if grep -q '^RUNG:' "$_b"; then sed -i "s/^RUNG:.*/RUNG: $_new/" "$_b"
+    else sed -i "0,/^LINKS:/{/^LINKS:/a\\
+RUNG: $_new
+}" "$_b"; fi
+    echo "$_new"; }
+s4e_escalate_ledger() {   # <topic> <rung> <from> <to> <iso> <measurement-file>: the ## ESCALATION entry on the baton, newest first, the measurement quoted verbatim
+    python3 - "$PO/tasks/$1.task.md" "$2" "$3" "$4" "$5" "$6" <<'PYEOF'
+import sys
+b, rung, frm, to, iso, mf = sys.argv[1:7]
+t = open(b, encoding="utf-8").read().split("\n")
+meas = open(mf, encoding="utf-8").read().rstrip("\n").split("\n")
+entry = ["- rung %s from %s to %s at %s (measurement %s)" % (rung, frm, to, iso, mf)] + ["  > " + l for l in meas] + [""]
+if "## ESCALATION" not in t:
+    i = t.index("## LEDGER") if "## LEDGER" in t else len(t)
+    t[i:i] = ["## ESCALATION", ""]
+i = t.index("## ESCALATION") + 1
+while i < len(t) and t[i].strip() == "": i += 1
+t[i:i] = entry
+open(b, "w", encoding="utf-8").write("\n".join(t))
+PYEOF
+}
+s4e_escalate_gone() {   # <job id>: rc 0 only when beanstalkd names no such job (the holder deleted it); any other failure reads as still there
+    local _o; _o="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$1" 2>&1)"
+    case "$_o" in *"no such job"*) return 0;; esac; return 1; }
+s4e_escalate_tell() {   # <seat> <topic> <rung> <from> <to> <measurement-file>: one telegram naming the row, the rung and the measurement file
+    s4e_telegram "$1" "escalated-$2-rung$3" "ESCALATED: row $2 rung $3 moved $4 -> $5 after one honest try; the measurement is $6 (the baton's ## ESCALATION has it verbatim). No reply is owed unless you were holding the row."; }
+s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio 2026-11-05 17:5x): one honest try has failed; the claim's holder or a boss moves the job one tube up with the measurement
+    local _t="$1" _c="$PO/claims/$1.claim" _body _holder _bosses _rline _job _tube _above="" _new="" _by _des _iso _rung _mf _i _seat _tg=0 _top=0 _ttr
+    [ -t 0 ] && { printf '⛔ REFUSED: escalate reads the measurement from stdin (s4e_msg.sh escalate %s --stdin).\n' "$_t" >&2; return 2; }
+    _body="$(cat)"
+    [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED: escalate needs the measurement; an empty body is refused (one honest try, measured).\n' >&2; return 2; }
+    [ -f "$_c" ] || { printf '⛔ REFUSED: %s has no claim; escalate only a row a seat holds.\n' "$_t" >&2; return 2; }
+    _holder="$(head -1 "$_c")"
+    _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
+    case " $_bosses " in *" $ME "*) : ;; *) [ "$_holder" = "$ME" ] || { printf '⛔ REFUSED: %s is claimed by %s; only that seat or a boss may escalate it.\n' "$_t" "$_holder" >&2; return 2; };; esac
+    _rline="$(grep '^RESERVED job=' "$_c" | tail -1)"
+    _job="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=\([0-9][0-9]*\) .*/\1/p')"
+    _tube="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=[0-9]* tube=\([^ ]*\).*/\1/p')"
+    [ -n "$_job" ] && [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED job=<id> tube=<tube> line; there is no job to move.\n' "$_t" >&2; return 2; }
+    _by="$(sed -n 's/^ASSIGNED-BY \([^ ]*\).*/\1/p' "$_c" | head -1)"
+    _des="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$PO/tasks/$_t.task.md" 2>/dev/null | head -1)"
+    _iso="$(date -u +%FT%TZ)"
+    if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
+    printf 'KILL\n' >> "$_c"
+    for _i in $(seq 1 20); do s4e_escalate_gone "$_job" && break; sleep 0.5; done
+    s4e_escalate_gone "$_job" || { printf '⛔ REFUSED (rc 2): job %s is still in the queue 10 s after KILL; the holder log is /tmp/s4e/%s/queue_hold.%s.log. The row keeps its claim and is not moved.\n' "$_job" "$_holder" "$_job" >&2; return 2; }
+    _rung="$(s4e_escalate_rung_set "$_t")"
+    mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.rung$_rung.md"; printf '%s\n' "$_body" > "$_mf"
+    if [ "$_top" = 1 ]; then
+        s4e_escalate_ledger "$_t" "$_rung" "$_tube" lon-hold "$_iso" "$_mf"
+        rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-LON-HOLD:escalated" || true
+        s4e_escalate_tell cio "$_t" "$_rung" "$_tube" lon-hold "$_mf" && _tg=$((_tg+1))
+    else
+        _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "${_above#tier-}")"
+        _new="$(s4e_queue_put "$_above" "$_t" 200 "$_ttr")" || _new=""
+        [ -n "$_new" ] || { printf '⛔ REFUSED (rc 2): the put into %s failed (util_queue.py status tells why). The KILL is written and the old job is gone; the claim stays for a boss to re-put the job.\n' "$_above" >&2; return 2; }
+        s4e_baton_job_set "$_t" "$_new" "$_above"
+        s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
+        rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "@${_above#tier-}" || true
+        for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
+    fi
+    printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; return 0; }
+s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, on a scratch postoffice; plant jobs live in the real tubes for seconds and are deleted): a haiku plant reserved by worker_20 through next moves to tier-sonnet at 200 with the measurement; a fable plant held by cio parks at the top
+    local _w _t _t2 _j1 _j2 _out _ln _ok=1 _m=0 _l=0 _from="" _to="" _rung="" _top=none _s _new="" _x _m_text _tgi=0 _sh="$S4E/harness/scripts/s4e_msg.sh"
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_escalate_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
+    _t="escalate-probe-$$"; _t2="escalate-probe-top-$$"; _m_text="ONE HONEST TRY FAILED (escalate probe): the plant read red on its measurement line"
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/worker_20/inbox" "$_w/cio/inbox"; cp "$PO/MODE" "$_w/MODE"
+    printf '2\t%s\tcio\tASSIGNED:worker_20\n2\t%s\tcio\tASSIGNED:cio\n' "$_t" "$_t2" > "$_w/QUEUE.tsv"
+    for _x in "$_t" "$_t2"; do printf '# TASK %s\nGOAL: plant\nDESIGNER: cio\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant by cio\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" > "$_w/tasks/$_x.task.md"; done
+    _j1="$(s4e_queue_put tier-haiku "$_t" 1 3600)" || _j1=""
+    [ -n "$_j1" ] || { echo "REFUSE(2): the plant put into tier-haiku failed (util_queue.py status tells why)" >&2; rm -rf "$_w"; exit 2; }
+    _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$_sh" next 2>&1)"
+    printf '%s\n' "$_out" | sed 's/^/  next-as-worker_20| /' >&2
+    grep -q "^RESERVED $_t " <<< "$_out" || _ok=0
+    grep -q "RESERVED job=$_j1 " "$_w/claims/$_t.claim" 2>/dev/null || _ok=0
+    _out="$(printf '%s\n' "$_m_text" | S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$_sh" escalate "$_t" 2>&1)"
+    printf '%s\n' "$_out" | sed 's/^/  escalate-as-worker_20| /' >&2
+    _ln="$(printf '%s\n' "$_out" | grep '^escalated ' | head -1)"
+    if [ -n "$_ln" ]; then
+        _from="$(printf '%s\n' "$_ln" | sed -n 's/.* from=\([^ ]*\).*/\1/p')"
+        _rung="$(printf '%s\n' "$_ln" | sed -n 's/.* rung=\([0-9]*\).*/\1/p')"
+        _new="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_w/tasks/$_t.task.md" | head -1)"
+        _to="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" 2>/dev/null | cut -f2)"
+    else _ok=0; fi
+    [ "$_from" = tier-haiku ] || _ok=0
+    [ "$_to" = tier-sonnet ] || _ok=0
+    [ "$_rung" = 2 ] || _ok=0
+    if python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j1" >/dev/null 2>&1; then _ok=0; fi
+    if [ -n "$_new" ]; then
+        _x="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" 2>/dev/null)"
+        printf '%s\n' "$_x" | awk -F'\t' '$2=="tier-sonnet" && $4==200 {f=1} END {exit !f}' || _ok=0
+    else _ok=0; fi
+    grep -qx 'RUNG: 2' "$_w/tasks/$_t.task.md" || _ok=0
+    if grep -qF "$_m_text" "$_w/tasks/$_t.task.md"; then _m=1; else _ok=0; fi
+    if [ "$(grep -c '^- rung 2 from' "$_w/tasks/$_t.task.md")" = 1 ]; then _l=1; else _ok=0; fi
+    _tgi="$(ls "$_w/cio/inbox" | wc -l)"; [ "$_tgi" = 1 ] || _ok=0
+    _j2="$(s4e_queue_put tier-fable "$_t2" 1 14400)" || _j2=""
+    if [ -n "$_j2" ]; then
+        printf 'cio\nRESERVED job=%s tube=tier-fable %s\n' "$_j2" "$(date -u +%FT%TZ)" > "$_w/claims/$_t2.claim"
+        python3 "$S4E/harness/scripts/util_queue.py" reserve-hold tier-fable --seat cio --session CIO --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 >/dev/null 2>&1
+        _out="$(printf '%s\n' "escalation of the top rung (probe): the job has no tube above" | S4E_POST="$_w" S4E_SEAT=cio S4E_NO_BANNER=1 "$_sh" escalate "$_t2" 2>&1)"
+        printf '%s\n' "$_out" | sed 's/^/  escalate-top-as-cio| /' >&2
+        _s="$(awk -F'\t' -v t="$_t2" '$2==t {print $4; exit}' "$_w/QUEUE.tsv")"
+        if [ "$_s" = "PARKED-LON-HOLD:escalated" ]; then _top=lon-hold; else _ok=0; fi
+        if python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j2" >/dev/null 2>&1; then _ok=0; fi
+    else _ok=0; fi
+    printf 'ESCALATE from=%s to=%s rung=%s measurement=%s ledger=%s telegrams=%s top=%s\n' "${_from:-none}" "${_to:-none}" "${_rung:-0}" "$_m" "$_l" "$_tgi" "$_top"
+    [ -n "$_new" ] && s4e_queue_delete "$_new"
+    [ -n "$_j1" ] && s4e_queue_delete "$_j1"
+    [ -n "$_j2" ] && s4e_queue_delete "$_j2"
+    rm -rf "$_w"
+    [ "$_ok" = 1 ]; exit $?; }
 s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "$S4E_TIERS" 2>/dev/null; }
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
@@ -3141,6 +3260,10 @@ case "$cmd" in
                 # the same reasoning hq_P used to put the queue-column write here rather than in each verb.
                 s4e_announce_claim "$topic"
                 else rm -f "$t"; echo "RACE LOST: $(head -1 "$c" 2>/dev/null) owns it"; exit 1; fi; fi;;
+  escalate) # ⭐ fleet-queue step 7 (the cio, 2026-11-05 17:5x): after one honest try, the claim's holder (or a boss) moves the job one tube up with the measurement on stdin; at the top the row parks PARKED-LON-HOLD:escalated for Lon. escalate --probe proves it on a scratch postoffice.
+         [ "${2:-}" = --probe ] && s4e_escalate_probe
+         [ -n "${2:-}" ] || s4e_need escalate "a topic" "s4e_msg.sh escalate <topic> --stdin   (the measurement on stdin)" "Moves the job of a row you hold one tube up (haiku to sonnet to opus to fable) at priority 200, with the measurement on the baton; at the top the row parks PARKED-LON-HOLD:escalated for Lon."
+         s4e_escalate "$2"; exit $?;;
   unclaim) # ⭐ s265 — RELEASE AN UNWORKED CLAIM. Minted because THREE seats hit its absence in one day (seat08,
          # seat09, seat13): a stale-clone picker mis-locked a row, the seat correctly refused to work it, and then had
          # NO WAY TO PUT IT BACK. `done` was the only exit and `done` is COMPUTED — closing a row you never worked

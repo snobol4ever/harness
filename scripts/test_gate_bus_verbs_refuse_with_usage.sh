@@ -63,6 +63,7 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
 park
 claim
 unclaim
+escalate
 done
 mint
 ask
