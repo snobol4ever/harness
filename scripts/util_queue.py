@@ -260,4 +260,4 @@ def main(a):
         refuse("no such job or tube", 1)
     finally:
         c.close()
-main(sys.argv[1:])
+if __name__ == "__main__": main(sys.argv[1:])
