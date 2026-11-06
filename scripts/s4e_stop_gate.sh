@@ -8,6 +8,17 @@
 # Prints one line: BLOCK <reason> | PASS <why> | CAP <n> <reason>; with --json the object the Stop hook returns ({"decision":"block","reason":...} or {}).
 # S4E_STOP_CAP continuations per seat per hour (default 12; the file /tmp/s4e/<seat>/stop_blocks.<hour> counts them); past the cap the seat stops.
 set -u
+if [ "${1:-}" = --probe-queue ]; then   # fleet-queue step 11's probe on a scratch postoffice: reserved claim, a ready job in the seat tube, mail, nothing
+    HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_gate_probe.XXXXXX")"; ps="gate-probe-$$"
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ps/inbox"; cp "${S4E_POST:-/home/resources/postoffice}/MODE" "$w/MODE"; sed -i '/^FLEET: IDLE/d' "$w/MODE"
+    g() { S4E_POST="$w" bash "$0" "$w" "$ps" --dry | cut -d' ' -f1; }
+    printf '2\tgate-plant\t%s\tCLAIMED:%s\n' "$ps" "$ps" > "$w/QUEUE.tsv"; printf '# TASK gate-plant\n## NEXT\nplant\n## QA\n## LEDGER\n' > "$w/tasks/gate-plant.task.md"
+    printf '%s\nRESERVED job=0 tube=seat-%s now\n' "$ps" "$ps" > "$w/claims/gate-plant.claim"; r1="$(g)"
+    : > "$w/QUEUE.tsv"; rm -f "$w/claims/gate-plant.claim"; jid="$(python3 "$HERE/util_queue.py" put "seat-$ps" gate-plant --pri 100 --ttr 30)"; r2="$(g)"; python3 "$HERE/util_queue.py" delete "$jid" >/dev/null 2>&1
+    printf 'FROM x TO %s RE plant\nplant\n' "$ps" > "$w/$ps/inbox/1-x-plant.msg"; r3="$(g)"; rm -f "$w/$ps/inbox/1-x-plant.msg"; r4="$(g)"
+    rm -rf "$w"; printf 'GATE reserved=%s seat_tube_ready=%s mail=%s idle=%s\n' "$r1" "$r2" "$r3" "$r4"
+    [ "$r1" = BLOCK ] && [ "$r2" = BLOCK ] && [ "$r3" = BLOCK ] && [ "$r4" = PASS ]; exit $?
+fi
 root="${1:?root}"; seat="${2:?seat}"; shift 2; dry=0; json=0
 for a in "$@"; do case "$a" in --dry) dry=1;; --json) json=1;; esac; done
 PO="${S4E_POST:-/home/resources/postoffice}"
@@ -45,6 +56,13 @@ else
         reason="$reason close it by done when its DONE-WHEN is green; or park it first (park $t PARKED-AWAITING:<request-id> | BLOCKED-ON:<topic>)."
         reason="$reason A stop with a live row leaves the row to a wake by hand, which is the failure this hook removes."
         what="row=$t"
+    else
+        # fleet-queue step 11 (the cio 2026-11-05): a job ready in the seat's own tube is work assigned to it; the gate holds the seat until next reserves it
+        qr="$(python3 "$(dirname "$0")/util_queue.py" stats-tube "seat-$seat" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p')"; qr="${qr:-0}"
+        if [ "$qr" -gt 0 ]; then
+            reason="$seat is stopping while $qr job(s) wait in its queue tube seat-$seat (a directed assign). Run bash harness/scripts/s4e_msg.sh next: it reserves the job and serves its baton."
+            what="seat_tube=$qr"
+        fi
     fi
 fi
 [ -z "$reason" ] && { emit PASS "no unread mail and no row ASSIGNED or CLAIMED to $seat"; exit 0; }

@@ -58,6 +58,38 @@ sense() {   # the sensors of box_controller.sh's --decide, read the same way; se
 
 period_s() { systemctl --user cat s4e-tick.timer 2>/dev/null | sed -n 's/^OnUnitActiveSec=\([0-9]*\)$/\1/p' | head -1; }
 
+wake() {   # fleet-queue step 11: a seat whose watch list holds a ready job and that holds no reserved job gets one WAKE line (once per seat per 20 min) in $TICK_DIR/wake.pending;
+  # the Stop hook holds a seat that already has a turn, so the line is only the pointer a fresh session needs (the cio's Monitor sends it). A tier tube wakes at most
+  # as many seats of its tier as it holds ready jobs. Seats and tiers come from .github/TIERS.tsv; no seat pattern lives here.
+  local tiers="$ROOT/.github/TIERS.tsv" seat tier t ready n woken=0 lines=0 q="$ROOT/harness/scripts/util_queue.py" stamp
+  stamp=$(date '+%F %T'); mkdir -p "$TICK_DIR"
+  rd() { python3 "$q" stats-tube "$1" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p'; }
+  held() { local c; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c")" = "$1" ] || continue; grep -q '^RESERVED job=' "$c" && ! grep -q '^DONE$' "$c" && return 0; done; return 1; }
+  recent() { [ -n "$(find "$TICK_DIR" -maxdepth 1 -name "wake.told.$1" -mmin -20 2>/dev/null)" ]; }
+  for tier in 1 2 3 4; do
+    case $tier in 1) t=fable;; 2) t=opus;; 3) t=sonnet;; 4) t=haiku;; esac
+    n=$(( $(rd "tier-$t") + $(rd "ask-$t") ))
+    for seat in $(awk -F'\t' -v k="$tier" '!/^#/ && $7==k {print $1}' "$tiers"); do
+      [ -z "${S4E_WAKE_ONLY:-}" ] || [ "$seat" = "$S4E_WAKE_ONLY" ] || continue   # the probe looks at one seat
+      ready=$(rd "seat-$seat"); ready=${ready:-0}
+      if [ "$ready" -gt 0 ] || [ "$n" -gt 0 ]; then
+        held "$seat" && continue; recent "$seat" && continue
+        printf '%s WAKE %s %s :: SEND: run your sitting by CLAUDE.md, then bash harness/scripts/s4e_msg.sh next (it reserves your job from the queue)\n' "$stamp" "$(echo "$seat" | tr a-z_ A-Z-)" "$( [ "$ready" -gt 0 ] && echo "seat-$seat" || echo "tier-$t")" >> "$TICK_DIR/wake.pending"
+        touch "$TICK_DIR/wake.told.$seat"; lines=$((lines+1)); [ "$ready" -gt 0 ] || n=$((n-1))
+      fi
+    done
+  done
+  echo "WAKE lines=$lines"; return 0; }
+probe_wake() {   # step 11's probe: a scratch tick dir, a plant job in a scratch seat's tube: exactly one WAKE line, none on the second pass (told within 20 min)
+  local w q="$ROOT/harness/scripts/util_queue.py" jid out1 out2 l1
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_probe.XXXXXX")" || return 2
+  local ps; ps="$(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tail -1)"
+  jid=$(python3 "$q" put "seat-$ps" wake-plant --pri 100 --ttr 30) || { rm -rf "$w"; return 2; }
+  out1=$(S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1); l1=$(grep -c ' WAKE ' "$w/wake.pending" 2>/dev/null)
+  out2=$(S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1)
+  python3 "$q" delete "$jid" >/dev/null 2>&1; rm -rf "$w"
+  printf 'WAKE idle_with_ready=%s lines=%s by=hook second_pass=%s\n' "$( [ "${l1:-0}" -ge 1 ] && echo 1 || echo 0)" "${l1:-0}" "${out2#WAKE lines=}"
+  [ "${l1:-0}" -ge 1 ] && [ "$out2" = "WAKE lines=0" ]; }
 leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the holder died or the TTR ran out) is expired by the bus verb; one line per expiry in $TICK_DIR/leases.log
   local c t out
   for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; grep -q '^RESERVED job=' "$c" || continue; grep -q '^DONE$' "$c" && continue
@@ -83,6 +115,7 @@ tick() {
   [ -f "$OLD/decide.last" ] && old_age=$(( $(date +%s) - $(stat -c %Y "$OLD/decide.last") ))
   { printf '%s TICK law=%s agree=%s/%s old_age_s=%s plant=%s\n' "$stamp" "$law" "$agree" "$n" "$old_age" "$(printf '%s' "$plant_out" | tail -1 | cut -c1-120)"; sed "s/^/$stamp /" "$TICK_DIR/decide.last"; } >> "$TICK_DIR/shadow.log"
   [ "$(wc -l < "$TICK_DIR/shadow.log")" -gt 20000 ] && { tail -n 10000 "$TICK_DIR/shadow.log" > "$TICK_DIR/shadow.tmp" && mv "$TICK_DIR/shadow.tmp" "$TICK_DIR/shadow.log"; }
+  wake > /dev/null   # fleet-queue step 11: WAKE lines for idle seats with a ready job
   leases   # fleet-queue step 5: every claim whose reserved job is back in its tube is expired through the bus (the LEDGER line, the claim archived, QUEUED:<tube>)
   swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
   printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"
@@ -119,6 +152,8 @@ install_units() {
 case "${1:-}" in
   --tick) tick; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
+  --wake) wake; exit $?;;
+  --probe-wake) probe_wake; exit $?;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
   *) echo "usage: box_tick.sh --tick | --probe-fresh | --install" >&2; exit 2;;
