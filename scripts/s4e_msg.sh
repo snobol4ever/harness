@@ -937,6 +937,7 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
         _rk="$(awk -F'\t' -v t="$_t" '$1==t {print $2}' "$_rf" 2>/dev/null | tail -1)"; _rk=$(( ${_rk:-0} + 1 ))
         { [ -f "$_rf" ] && awk -F'\t' -v t="$_t" '$1!=t' "$_rf"; printf '%s\t%s\t%s\n' "$_t" "$_rk" "$(date -u +%FT%TZ)"; } > "$_rf.tmp" && mv "$_rf.tmp" "$_rf"
         if [ "$_rk" -ge 3 ]; then
+          s4e_park_bury "$_t" "RETIRED:criterion-refused-$_rk" || printf '⚠ the retired row %s: its job was not buried (a live holder keeps it); the row is RETIRED all the same\n' "$_t"
           rm -f "$_c"; s4e_set_row_state "$_t" "RETIRED:criterion-refused-$_rk-sweeps-$(date -u +%F)"
           printf '\n- [%s·%s] RETIRED BY THE SWEEP (box-scheduler step 9, CTO-496): its DONE-WHEN refused (rc 2, 126 or 127) on %s consecutive sweeps, the last: %s. A criterion that cannot measure is not a row; re-cut it (recut, step 27) to reopen.\n' \
             "$ME" "$(date -u +%FT%H:%MZ)" "$_rk" "$(grep -m1 'the DONE-WHEN exited' "$_log" | sed 's/^[[:space:]]*//' | cut -c1-200)" >> "$PO/tasks/$_t.task.md"
@@ -980,7 +981,7 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refusing row retires on the third sweep, a stale ASSIGNED row escalates to its lane officer, a timeout and a fresh row are kept
-  local _w _o _why="" _now _r2 _st _fr _tm _off
+  local _w _o _why="" _now _r2 _st _fr _tm _off _rj
   _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant9.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
   mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" "$_w/plant-owner/inbox" "$_w/plant-slow/inbox" "$_w/cio/inbox" "$_w/coo/inbox"; _now="$(date -u +%FT%TZ)"
   cp "$PO/MODE" "$_w/MODE" 2>/dev/null
@@ -988,6 +989,8 @@ s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refu
   printf '# plant queue (box-scheduler step 9, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n' "$_r2" "$_st" "$_fr" "$_tm" > "$_w/QUEUE.tsv"
   mk() { printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [%s·%s] minted\n' "$1" "$2" "$3" "$4" > "$_w/tasks/$1.task.md"; }
   mk "$_r2" 'cd "$S4E_HOME" && exit 2' plant-owner "$(date -u +%F)"; mk "$_st" 'cd "$S4E_HOME" && false' plant-slow 2026-10-01; mk "$_fr" 'cd "$S4E_HOME" && false' plant-slow "$(date -u +%F)"; mk "$_tm" 'cd "$S4E_HOME" && sleep 30' plant-owner "$(date -u +%F)"
+  _rj="$(python3 "$S4E/harness/scripts/util_queue.py" put "probe-retire-$$" "$_r2" --pri 1000 --ttr 60 2>/dev/null)" || _rj=""
+  [ -n "$_rj" ] && printf 'QUEUE-JOB: %s tube=probe-retire-%s\n' "$_rj" "$$" >> "$_w/tasks/$_r2.task.md"
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_r2.claim"; printf 'plant-slow\nASSIGNED-BY plant 2026-10-01T00:00:00Z\n' > "$_w/claims/$_st.claim"
   printf 'plant-slow\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_fr.claim"; cp "$_w/claims/$_fr.claim" "$_w/fresh.before"; printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_tm.claim"
   _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
@@ -1004,6 +1007,8 @@ $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
 $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
   grep -qP "^2\t\Q$_r2\E\tplant-owner\tRETIRED:criterion-refused-3-sweeps" "$_w/QUEUE.tsv" || _why="$_why the refusing row is not RETIRED after three sweeps;"
   [ -e "$_w/claims/$_r2.claim" ] && _why="$_why the retired row kept a claim;"
+  [ -n "$_rj" ] && [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_rj" 2>/dev/null | cut -f3)" = buried ] || _why="$_why the retired row's job is not buried;"
+  [ -n "$_rj" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$_rj" >/dev/null 2>&1
   grep -q 'RETIRED BY THE SWEEP' "$_w/tasks/$_r2.task.md" || _why="$_why the retired row has no ledger line;"
   ls "$_w/plant-owner/inbox" | grep -q "retired-refusing-row" || _why="$_why plant-owner got no retirement telegram;"
   grep -qP "^2\t\Q$_tm\E\tplant-owner\tASSIGNED:plant-owner$" "$_w/QUEUE.tsv" || _why="$_why the timing-out row moved;"
