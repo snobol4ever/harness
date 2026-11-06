@@ -40,9 +40,12 @@ THE ACCEPTANCE (step 17; the day is the last 1440 minutes, --now moves it):
   hand_wakes         wake rows by=hand in the day; bar 0
   ask_p95_min        p95 ask latency (an open ask counts as now minus put) in minutes ROUNDED UP, so the line never understates the bar; bar 30 min
   resumed_after_expiry  every lease that expired at least 30 min ago in the day has, as the NEXT lease on its topic, one with resume_line=1; `all`, else K/N.
-                     An expiry younger than 30 min is `pending`, neither resumed nor failed.
-  day=1 needs ticks in at least 90% of the day's 1440 minutes; below that day=0 and rc 2. A day with no ask, or no due expiry, prints NA and is rc 2:
-  a bar the day never exercised is unproven, not passed. A crossed bar is rc 1 and wins over an unmeasured one.
+                     An expiry younger than 30 min is `pending`, neither resumed nor failed. A day with NO expired lease at all (no session died) PASSES and
+                     prints `resumed_after_expiry=none expiries=0` (the coo, 2026-11-05: the lease mechanism is proven by step 5, not by waiting for a death);
+                     a day whose only expiry is still pending is NA and rc 2 until its grace is over.
+  day=1 needs ticks in at least 90% of the day's 1440 minutes; below that day=0 and rc 2. A day with no ask prints ask_p95_min=NA and is rc 2: a bar
+  the day never exercised is unproven, not passed (until the ask verb exists, step 8, then real work makes asks). A crossed bar is rc 1 and wins over an
+  unmeasured one.
 rc 0 GREEN | 1 RED, naming what is red | 2 could not measure. The db's rows are the record; a hand edit of them is a forgery.
 """
 import argparse, math, os, shutil, sqlite3, subprocess, sys, tempfile, time
@@ -352,7 +355,7 @@ def accept_render(m, now):
     due, resumed = m["due"], m["due"] - len(m["unresumed"])
     out.append("ACCEPT day=%d bottleneck_min=%d hand_wakes=%d ask_p95_min=%s resumed_after_expiry=%s expiries=%d resumed=%d pending=%d asks=%d open_asks=%d covered_min=%d of=%d" % (
         1 if covered_ok else 0, bmin, m["hand_wakes"], "NA" if asks == 0 else -(-ask_s // 60),
-        "NA" if due == 0 else ("all" if resumed == due else "%d/%d" % (resumed, due)), due, resumed, m["pending"], asks, m["open_asks"], m["ticks"], DAY_MIN))
+        "none" if due == 0 and m["pending"] == 0 else "NA" if due == 0 else ("all" if resumed == due else "%d/%d" % (resumed, due)), due, resumed, m["pending"], asks, m["open_asks"], m["ticks"], DAY_MIN))
     for ts, tube, age, idle in m["bottlenecks"][:SHOW_BOTTLENECKS]:
         out.append("BOTTLENECK ts=%s tube=%s oldest_ready_min=%d idle_above=%d" % (iso(ts), tube, age // 60, idle))
     for topic, seat, end_ts in m["unresumed"][:SHOW_BOTTLENECKS]:
@@ -369,8 +372,8 @@ def accept_render(m, now):
         unmeasured.append("the ledger holds %d tick minutes of the %d in a day (needs %d%%): the live day is missing" % (m["ticks"], DAY_MIN, COVER_PCT))
     if asks == 0:
         unmeasured.append("no ask in the day: ask latency is unproven")
-    if due == 0:
-        unmeasured.append("no expired lease old enough to have been resumed in the day: resumption is unproven (the mock load's die jobs make them)")
+    if due == 0 and m["pending"] > 0:
+        unmeasured.append("an expired lease is still inside its %d min resume grace: judge the day once the grace is over" % (RESUME_GRACE_S // 60))
     out += ["RED: " + r for r in red]
     if red:
         out += ["UNMEASURED: " + u for u in unmeasured]
@@ -398,7 +401,7 @@ def cli(db, *a, stdin=None):
     return r.returncode, r.stdout, r.stderr
 
 
-def accept_day(db, now, ticks=DAY_MIN, ask_lat=(1800, 1800, 1800), open_ask_age=None, resume_flags=(1, 1, 1), bottle=0, hand=0, double=False):
+def accept_day(db, now, ticks=DAY_MIN, ask_lat=(1800, 1800, 1800), open_ask_age=None, resume_flags=(1, 1, 1), bottle=0, hand=0, double=False, pending=True):
     c = open_rw(db)
     base = [("tier-haiku", "haiku", 2, 1800, 1), ("tier-sonnet", "sonnet", 0, 0, 0), ("tier-opus", "opus", 0, 0, 0), ("tier-fable", "fable", 0, 0, 0)]
     over = {(100, "tier-sonnet"): ("tier-sonnet", "sonnet", 1, 7200, 0), (200, "tier-sonnet"): ("tier-sonnet", "sonnet", 1, 3600, 2)}
@@ -424,7 +427,8 @@ def accept_day(db, now, ticks=DAY_MIN, ask_lat=(1800, 1800, 1800), open_ask_age=
         c.execute(ins, ("e-%d" % k, "tier-haiku", "haiku", "worker_01", end - 10000, 0, end, "expired"))
         if flag is not None:
             c.execute(ins, ("e-%d" % k, "tier-haiku", "haiku", "worker_02", end + 60, flag, end + 660, "done"))
-    c.execute(ins, ("e-pend", "tier-haiku", "haiku", "worker_01", now - 900, 0, now - 300, "expired"))
+    if pending:
+        c.execute(ins, ("e-pend", "tier-haiku", "haiku", "worker_01", now - 900, 0, now - 300, "expired"))
     if double:
         c.execute(ins, ("dbl", "tier-haiku", "haiku", "worker_01", now - 50000, 0, now - 45000, "expired"))
         c.execute(ins, ("dbl", "tier-haiku", "haiku", "worker_02", now - 44940, 0, now - 40000, "expired"))
@@ -437,7 +441,7 @@ def accept_day(db, now, ticks=DAY_MIN, ask_lat=(1800, 1800, 1800), open_ask_age=
 
 def accept_selftest(base, now, expect):
     import re
-    probe = re.compile(r"^ACCEPT day=1 bottleneck_min=0 hand_wakes=0 ask_p95_min=([0-9]|[12][0-9]|30) resumed_after_expiry=all", re.M)
+    probe = re.compile(r"^ACCEPT day=1 bottleneck_min=0 hand_wakes=0 ask_p95_min=([0-9]|[12][0-9]|30) resumed_after_expiry=(all|none)", re.M)
     n = [0]
 
     def case(name, rc_want, want_in, not_in=(), probe_green=False, **kw):
@@ -462,7 +466,13 @@ def accept_selftest(base, now, expect):
     case("a lease resumed by a LATER resumption is not the first one's resumption (4 of 5)", 1, ["resumed_after_expiry=4/5 ", "UNRESUMED topic=dbl"], [], False, double=True)
     case("1295 of 1440 minutes is not a day: rc 2, day=0, the probe cannot match", 2, ["day=0 ", "covered_min=1295 ", "the live day is missing"], [], False, ticks=1295)
     case("no ask in the day: ask_p95_min=NA, rc 2 (unproven, not a pass)", 2, ["ask_p95_min=NA ", "no ask in the day"], [], False, ask_lat=())
-    case("no expired lease in the day: resumed_after_expiry=NA, rc 2 (unproven, not a pass)", 2, ["resumed_after_expiry=NA ", "resumption is unproven"], [], False, resume_flags=())
+    case("only a 5 min old expiry (still inside the grace): resumed_after_expiry=NA, rc 2 (not yet judged, not a pass)", 2,
+         ["resumed_after_expiry=NA ", "inside its 30 min resume grace"], [], False, resume_flags=())
+    case("NO expired lease at all (no session died): PASSES as none, expiries=0 (the coo's ruling), the step-17 probe matches", 0,
+         ["resumed_after_expiry=none expiries=0 resumed=0 pending=0 "], ["RED"], True, resume_flags=(), pending=False)
+    case("ONE expiry, not resumed: still fails, 0/1 (the ruling does not loosen a day with a death)", 1,
+         ["resumed_after_expiry=0/1 ", "RED: 1 of 1 expired leases", "UNRESUMED topic=e-0"], [], False, resume_flags=(None,), pending=False)
+    case("ONE expiry, resumed from the RESUME line: all, passes", 0, ["resumed_after_expiry=all expiries=1 resumed=1 "], ["RED"], True, resume_flags=(1,), pending=False)
     case("a crossed bar beats an unmeasured one: hand wake with no ask is rc 1 and names both", 1, ["RED: hand_wakes=1", "UNMEASURED: no ask in the day"], [], False, hand=1, ask_lat=())
     rc, o, e = cli(os.path.join(base, "none.db"), "--acceptance", "--now", str(now))
     expect("acceptance on a missing db: rc 2", rc == 2 and "no ledger" in e, "rc=%d err=%r" % (rc, e))
