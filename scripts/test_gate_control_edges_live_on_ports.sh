@@ -20,7 +20,7 @@
 # NAME would never have caught IR_MOVE_LABEL, and did not, for as long as it existed.
 set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
-SRC="$HERE/../../SCRIP/src/emitter/emit.cpp"
+SRC="$HERE/../../SCRIP/src/planner/zeta_plan.cpp"
 CEIL="${IR_OPERAND_CONTROL_PUSH_CEILING:-4}"
 fail() { echo "⛔ $*"; exit 1; }
 [ -f "$SRC" ] || { echo "⛔ REFUSE(2): no $SRC -- cannot measure"; exit 2; }
