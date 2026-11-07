@@ -85,9 +85,10 @@ if arm PASS "$MSG"; then echo "  [PASS] (A) default 3600s reaches timeout; (B) r
 else pass=$?; [ "$pass" = 2 ] && { echo "⛔ REFUSED: fixture could not be built (rc=2)"; exit 2; }; pass=0; fi
 # FAIL-ONCE, one mutant per half of the cure: a gate that cannot go red for EACH defect it names is only claiming to
 # cover both. M1 reverts the default to 900 (arm A must red); M2 removes the 124 distinction (arm B must red).
-sed 's/S4E_DONE_TIMEOUT:-3600/S4E_DONE_TIMEOUT:-900/' "$MSG" > "$W/scripts/m1.sh"
+# THE DEFAULT IS READ FROM lib_donewhen.sh BY s4e_done_budget (fleet-queue DONE-BUDGET-S), so M1 overrides it at the one call in done.
+sed 's/_dbudget="\$(s4e_done_budget "\$tf")"/_dbudget="$(S4E_DONE_BUDGET_DEFAULT=900 s4e_done_budget "$tf")"/' "$MSG" > "$W/scripts/m1.sh"
 sed 's/"\$rc" -eq 124/"$rc" -eq 90124/g'               "$MSG" > "$W/scripts/m2.sh"
-grep -q 'S4E_DONE_TIMEOUT:-900' "$W/scripts/m1.sh" || { echo "⛔ REFUSED: could not build mutant M1 (the default moved?)"; exit 2; }
+grep -q 'S4E_DONE_BUDGET_DEFAULT=900 s4e_done_budget' "$W/scripts/m1.sh" || { echo "⛔ REFUSED: could not build mutant M1 (the default moved?)"; exit 2; }
 grep -q -- '-eq 90124' "$W/scripts/m2.sh"          || { echo "⛔ REFUSED: could not build mutant M2 (the 124 branch moved?)"; exit 2; }
 red=1
 for m in m1 m2; do
