@@ -1530,6 +1530,35 @@ s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch
     grep -q '^RESTORE-STATE: ' "$w/tasks/$a.task.md" && why="$why the RESTORE-STATE line was not retired;"
     if [ -z "$why" ]; then echo "PARK buried=1 kicked_by=done restored=1 other_holder_buried=$oh (probe: a parked row's ready job was buried; the blocker's done returned the row to FREE and kicked the job back to ready)"; exit 0; fi
     echo "PARK PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
+s4e_park_plant_measuring() (   # the cure of the cio's design note (2026-11-06 09:1x; row bus-park-measuring-rewrites-the-claim-and-releases-the-lease-so-next-re-reserves-the-job-over-measuring): a MEASURING park KEEPS THE HOLDER. A job that reserve-hold reserved for this seat, its claim naming this seat, stays reserved after `park <topic> MEASURING:<seat>:<pid>`, and the claim keeps its first line and gains one MEASURING line. A PRIVATE beanstalkd on a free port (never 11300) and a scratch postoffice. Prints one PARK measuring_keeps_lease=1|0 line; rc 0 when 1, rc 1 when 0, rc 2 when it cannot measure.
+    [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-bury]: S4E_SEAT unset"; exit 2; }
+    local _port _bpid _w="" _m _tube _j _hold _rj _prc _out _ce _rs _mline=0 _keep=0 _i _up=0
+    _port=$((21000 + ($$ % 20000)))
+    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bpid=$!
+    trap '[ -n "$_w" ] && rm -rf "$_w"; kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
+    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+    [ "$_up" = 1 ] || { echo "REFUSE(2) [park --probe-bury]: a private beanstalkd would not start on port $_port"; exit 2; }
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_measuring.XXXXXX")" || { echo "REFUSE(2) [park --probe-bury]: mktemp failed"; exit 2; }
+    _m="park-measuring-probe-$$"; _tube="probe-measure-$$"
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" || { echo "REFUSE(2) [park --probe-bury]: cannot make the scratch postoffice"; exit 2; }
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$_w/MODE"
+    printf '2\t%s\t%s\tCLAIMED:%s\n' "$_m" "$ME" "$ME" > "$_w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$_m" "$(date -u +%FT%TZ)" > "$_w/tasks/$_m.task.md"
+    _j="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" put "$_tube" "$_m" --pri 1000 --ttr 60 2>/dev/null)" || _j=""
+    [ -n "$_j" ] || { echo "REFUSE(2) [park --probe-bury]: no job could be put on the private beanstalkd"; exit 2; }
+    _ce="$_w/claims/$_m.claim"; printf '%s\nRESERVED job=%s tube=%s\n' "$ME" "$_j" "$_tube" > "$_ce"
+    _hold="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$_tube" --seat "$ME" --claim-dir "$_w/claims" 2>/dev/null)" || _hold=""
+    _rj="$(printf '%s' "$_hold" | cut -f1)"
+    [ -n "$_rj" ] || { echo "REFUSE(2) [park --probe-bury]: reserve-hold reserved no job"; exit 2; }
+    _out="$(env -u S4E_PID_LOCK S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 S4E_QUEUE_PORT="$_port" bash "$0" park "$_m" "MEASURING:$ME:$$" 2>&1)"; _prc=$?
+    [ "$(head -1 "$_ce")" = "$ME" ] && grep -qF "MEASURING $ME:$$ " "$_ce" && _mline=1
+    sleep 3
+    _rs="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_rj" 2>/dev/null | cut -f3)"
+    [ "$_prc" = 0 ] && [ "$_mline" = 1 ] && [ "$_rs" = reserved ] && _keep=1
+    if [ "$_keep" = 1 ]; then echo "PARK measuring_keeps_lease=1 job=$_rj claim_first_line=$ME measuring_line=$_mline reserved_after_3s=$_rs (probe: a MEASURING park keeps the claim and its reserve-hold holder, so the job stays reserved)"; exit 0; fi
+    echo "PARK measuring_keeps_lease=0 job=$_rj park_rc=$_prc claim_first_line=$(head -1 "$_ce" 2>/dev/null) measuring_line=$_mline reserved_after_3s=$_rs (probe: a MEASURING park must keep the claim; the holder then keeps the job)"
+    printf '%s\n' "$_out" | tail -3 | sed 's/^/  | /'; exit 1
+)
 s4e_done_plant_delete() {   # step 6's done probe (done --probe-delete) on a scratch postoffice: a claimed row whose READY job sits in a scratch tube; done closes it and deletes the job (stats-job reads not found), the JOB-RECEIPT on the claim
     local w o x tube j now rc why=""
     [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-delete]: S4E_SEAT unset"; exit 2; }
@@ -3738,7 +3767,7 @@ case "$cmd" in
          # swept into QUEUE.done.tsv). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
          # it self-clearing instead of needing a human to remember to come back and re-park it.
          [ "${2:-}" = --probe-awaiting ] && s4e_sweep_plant_awaiting
-         [ "${2:-}" = --probe-bury ] && { s4e_park_plant_bury; exit $?; }
+         [ "${2:-}" = --probe-bury ] && { ( s4e_park_plant_bury ); _pb=$?; s4e_park_plant_measuring; _pm=$?; [ "$_pb" = 0 ] && [ "$_pm" = 0 ]; exit $?; }
          [ -n "${2:-}" ] || s4e_need park "a topic" "s4e_msg.sh park <topic> [STATE]" "Takes a row out of the picker WITHOUT closing it (default state PARKED; park <topic> FREE puts it back). It has no no-argument listing -- \`board\` is the verb that prints the board."
          topic="$2"; st="${3:-PARKED}"; q="$PO/QUEUE.tsv"
          # ⛔⭐ ARG 3 IS THE STATE, NOT A REASON — AND IT USED TO ACCEPT ANY STRING AT ALL (hq_P, 2026-08-29,
@@ -3847,7 +3876,12 @@ case "$cmd" in
                  echo "⚠ authority mail arrived after this claim was taken and the baton was not touched since -- appended a pointer to it, re-read before trusting this row's own NEXT block" >&2
                  s4e_release_guard_note "$topic" park "$ME"
              fi
-             rm -f "$c"; echo "  (cleared my own holding claim — the state column carries this now, not a lock)"
+             # ⭐ THE CURE (the cio's design note 2026-11-06 09:1x; row bus-park-measuring-rewrites-the-claim...): a MEASURING park
+             # KEEPS THE HOLDER. Removing the claim releases the reserve-hold lease after its grace, and the job then goes back to
+             # ready and the seat's own next re-reserves it over the measurement. So the claim stays: its first line is this seat,
+             # and one MEASURING line is appended. The lease is the measurement's life.
+             if [ "${st%%:*}" = MEASURING ]; then printf 'MEASURING %s %s\n' "${st#MEASURING:}" "$(date -u +%Y-%m-%dT%H:%MZ)" >> "$c"; echo "  (MEASURING: the claim is KEPT and its holder keeps the lease)"
+             else rm -f "$c"; echo "  (cleared my own holding claim — the state column carries this now, not a lock)"; fi
              # ⛔ park-does-not-write-last-row-so-banner-misattributes-the-session (seat07 2026-09-01, cured hq_B same day).
              # s4e_mark_row was called from exactly two closing verbs, unclaim and done; park ALSO closes a row (it just
              # cleared the claim above) but was minted later and never joined that enumeration, so a session that ended
@@ -3856,7 +3890,8 @@ case "$cmd" in
              # then banner. ⭐ THE CLASS, in seat07's words, is that "a cure that enumerates its closing verbs silently
              # reopens every time a new closing verb is minted" -- so if you add a verb that removes a claim file, it
              # must call s4e_mark_row too, and the durable shape is one s4e_close_claim writer that does both.
-             s4e_mark_row "$topic" PARKED
+             # A MEASURING park closes no claim (above), so it marks no row: the seat is still measuring.
+             [ "${st%%:*}" = MEASURING ] || s4e_mark_row "$topic" PARKED
          fi
          # ⭐ picker-dependency-and-boomerang-blindness CURE 3 — A GOVERNANCE GATE IS NOT LIFTED BY `park FREE`.
          # An ordinary park is routing and anyone may lift it. A GRANT-NEEDED/PARKED-LON-HOLD row waits on a
