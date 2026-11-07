@@ -1314,3 +1314,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1316	icn	ICN$UNUMERIC	1	1	bt_ICNx24UNUMERIC	leaf	-	-	0	fn_arms
 1315	pl	$gnu_term_hash4	4	4	rt_pl_dop_gnu_term_hash4	leaf	-	-	0	dop_direct
 1317	rk	__rk_temp	-	-	bt___rk_temp	leaf	-	-	0	rk_targets
+1318	icn	ICN$USET	0	-1	bt_ICNx24USET	leaf	-	-	0	fn_arms
