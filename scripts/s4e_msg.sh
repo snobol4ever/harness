@@ -640,7 +640,7 @@ s4e_ring_foreign_blocker_owner() {   # <owner> <blocker> <blocked> <rank> <chain
 # (seat01, MODE FLEET-8 ON SNOBOL4 ONLY): `next` served and LOCKED an Icon row via s4e_servable_blocker
 # above with NO lane check and NO language-freeze check at all -- the ordinary FREE-row path below applies
 # both before it ever claims a row; the dependency-inversion promotion above applied neither. Checked
-# BEFORE $promo is ever claimed (not after, the way s4e_dispatch_gate runs post-claim) so a refusal never
+# BEFORE $promo is ever claimed (not after, the way the retired post-claim probe ran before step 32) so a refusal never
 # leaves an abandoned claim behind -- a refuse-then-unclaim two-step would race every other seat's own
 # `next` against the brief window the claim existed. Two hard preconditions, checked in the same order
 # and with the same semantics the ordinary path already uses for $topic, now applied to $promo too:
@@ -2552,7 +2552,7 @@ s4e_dispatch_probe() {
 # ⭐ THIS CHECK IS SAFE BEFORE A CLAIM EXISTS, UNLIKE s4e_dispatch_probe: s4e_donewhen_is_placeholder is a
 # pure TEXT match on the baton (no execution), so reading it twice or before anyone holds the row changes
 # nothing about the answer -- there is no race to protect against, the way there is for actually RUNNING
-# the criterion (s4e_dispatch_gate's own comment: probed after the claim, so two seats cannot race the
+# the criterion (the retired post-claim probe's own comment, before step 32: probed after the claim, so two seats cannot race the
 # same probe). Calling this before the claim is written is what makes "NO claim file written" possible.
 s4e_predispatch_placeholder_check() {   # $1 = topic; rc 0 = placeholder (refuse, do not claim), 1 = proceed; sets $_ppc_why
     local t="$1" b="$PO/tasks/$1.task.md" dw
@@ -2696,51 +2696,6 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     printf '    If the PREMISE is wrong and the ROW is right, that is a real event and the honest exit is loud:\n' >&2
     printf '       S4E_PREMISE_OVERRIDE="why" %s %s %s   (records the reason in the baton LEDGER)\n\n' "$0" "$verb" "$t" >&2
     return 1; }
-# ⛔⭐ THE DISPATCH GATE, CALLED FROM EVERY PATH IN PASS 3 THAT SERVES A ROW -- rc 0 = serve it, 1 = it was
-# closed, take the next one. ⛔ IT IS A FUNCTION BECAUSE PASS 3 SERVES FROM **TWO** PLACES AND THE FIRST DRAFT
-# OF THIS CURE ONLY WIRED ONE: the ordinary claim-and-serve at the bottom, and the DEPENDENCY INVERSION
-# promotion that serves a blocked row's blocker at the blocked row's rank. MEASURED, and it is why this is not
-# inline: with only the ordinary path wired, test_gate_s4e_unclaim_keeps_park.sh still passed -- because the
-# row it asserts on reaches the seat through the PROMOTION path, which sailed past the probe untouched. A gate
-# passing for a reason unrelated to the change is exactly how a half-wired cure reads as a whole one.
-# ⭐ THIS IS THE `park`/s4e_mark_row LESSON AGAIN, WRITTEN DOWN ONE FILE LATER: "a cure that enumerates its
-# closing verbs silently reopens every time a new closing verb is minted." Same shape, serving side. If you add
-# a third way to hand a row to a seat, it calls THIS -- do not copy the block.
-s4e_dispatch_gate() {   # $1 = topic (already claimed by us), $2 = rank, for the message only
-    local _dgt="$1" _dgr="$2" _dpb
-    # ⛔⭐ DISPATCH PROBE (see s4e_dispatch_probe above for the measured cause). PROBED AFTER THE CLAIM,
-    # DELIBERATELY: the claim is what makes the answer ours to act on. Probing first would let two seats
-    # race the same probe and both close the same row, and closing a row we do not hold is the eviction
-    # `park` already refuses to do. ⭐ AND BECAUSE THE CLAIM IS NOW OURS, THE PROBE IS `done` ITSELF --
-    # not a reimplementation of it. That buys every guard `done` already carries, for free and without a
-    # second copy to drift: the vacuity blocklist, the markdown-backtick strip, the no-baton refusal, the
-    # ROWD-manifest guard that stops a close from redding `make test` fleet-wide, the S4E_HOME export,
-    # and the claim/column mirroring. A close performed here is byte-for-byte a close performed by hand.
-    _dp_out="$(S4E_NO_BANNER=1 S4E_DONE_TIMEOUT="$(s4e_dispatch_timeout)" "$0" done "$_dgt" 2>&1)"; _dp_rc=$?
-    if [ "${S4E_NO_DISPATCH_PROBE:-0}" = "1" ]; then _dp_rc=1; _dp_out=""; fi
-    case "$_dp_rc" in
-      0) # GREEN -- the row was already satisfied. `done` has closed it; record WHY in the baton and move on.
-         _dpb="$PO/tasks/$_dgt.task.md"
-         [ -f "$_dpb" ] && printf '\n- [%s·%s] **ALREADY SATISFIED AT DISPATCH** — the picker ran this row'"'"'s own DONE-WHEN before serving it and it exited 0, so the row was closed rather than handed to a seat. Nobody worked it; if that is wrong, the DONE-WHEN is wrong (it is passing on a tree where the work is not done) and THAT is the finding. Probe budget %ss; tree %s.\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$ME" "$(s4e_dispatch_timeout)" "$S4E" >> "$_dpb"
-         printf '✅ ALREADY SATISFIED AT DISPATCH — rank-%s %s was NOT served: its own DONE-WHEN exits 0 on this tree.\n' "$_dgr" "$_dgt"
-         printf '   Closed DONE (via `done`, so every close guard applied) and a ledger line says why. Looking for the next row...\n'
-         printf '   ⛔ If you believe this row is real work, the DONE-WHEN is the defect -- it passes where the work is not done.\n'
-         # ⛔ return 1, NOT continue. `continue` inside a function does reach the caller's loop in bash, which
-         # is exactly why it is wrong here: it would work by accident from PASS 3 and silently do nothing (or
-         # worse) from any future caller that is not inside a loop. The caller spells the control flow.
-         return 1;;
-      2) # COULD NOT MEASURE -- serve it, but never silently.
-         printf '⚠ DISPATCH PROBE COULD NOT MEASURE %s -- serving it anyway, unverified.\n' "$_dgt" >&2
-         printf '%s\n' "$_dp_out" | grep -m2 -E '⛔|REFUSED|did NOT FINISH' | sed 's/^/   | /' >&2
-         printf '   Probe budget was %ss (S4E_DISPATCH_PROBE_TIMEOUT). A criterion too slow to PROBE is not a failing row.\n' "$(s4e_dispatch_timeout)" >&2;;
-      *) # RED is the only silent outcome: it is the only one that means there is real work here.
-         # ⭐ Except when `done` refused rather than measured -- it exits 1 for a vacuous criterion too,
-         # so rc alone cannot tell "no work needed" from "this row can never be closed". Say so.
-         if printf '%s' "$_dp_out" | grep -q 'REFUSED'; then
-           printf '⚠ %s has a DONE-WHEN that can never pass -- serving the row, but it cannot be CLOSED until that is fixed.\n' "$_dgt" >&2
-           printf '%s\n' "$_dp_out" | grep -m1 'REFUSED' | sed 's/^/   | /' >&2; fi;;
-    esac
-    return 0; }
 # age in whole minutes of the oldest .msg in a mailbox; empty when the box is clear.
 s4e_oldest_min() { _old=""; for _f in "$PO/$1/inbox"/*.msg; do [ -f "$_f" ] || continue
     _m=$(( ( $(date +%s) - $(stat -c %Y "$_f" 2>/dev/null || echo 0) ) / 60 ))
@@ -4493,7 +4448,7 @@ TASKEOF
            # ⛔⭐ THE ASSIGNED ROW IS GATED HERE AND NOWHERE ELSE, AND THIS IS THE PATH THAT MATTERS MOST:
            # an assigned row never passes through `claim` at all (the HQ wrote the lock), so wiring the premise
            # only into `claim` would leave the fleet's COMMONEST dispatch -- ASSIGNED->RUNNING -- completely
-           # unchecked, which is the half-wired shape s4e_dispatch_gate's own comment was written about.
+           # unchecked, which is the half-wired shape: a serve path that skips the gate. The live contract: the premise gate below refuses a red row here, and a satisfied row is closed by the sweep's close-green pass (CTO-496 step 8), never served.
            # ⛔ THE LOCK ALREADY EXISTS, so the refusal cannot decline to take it; the analogue is to decline to
            # START -- the row stays ASSIGNED, unflipped, un-served, and the seat reads why. Refusing to serve is
            # not unclaiming: putting the row back is the HQ's call or an explicit `unclaim`, never a side effect.

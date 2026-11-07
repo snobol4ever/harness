@@ -1648,7 +1648,6 @@ test_gate_rungs_suite_deferral_and_scope.sh	TASK	-	-	-
 test_gate_runtime_isolation.sh	TASK	-	-	-
 test_gate_s130_behav.sh	TASK	-	-	-
 test_gate_s130_blast.sh	TASK	-	-	-
-test_gate_s4e_next_runs_done_when_at_dispatch.sh	TASK	-	-	-
 test_gate_s4e_next_serves_own_lane.sh	TASK	-	-	-
 test_gate_s4e_one_process_per_identity.sh	TASK	-	-	-
 test_gate_s4e_park_additive_blocker.sh	TASK	-	-	-
