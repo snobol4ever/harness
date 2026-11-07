@@ -285,7 +285,7 @@ s4e_escalate_gone() {   # <job id>: rc 0 only when beanstalkd names no such job 
     local _o; _o="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$1" 2>&1)"
     case "$_o" in *"no such job"*) return 0;; esac; return 1; }
 s4e_escalate_tell() {   # <seat> <topic> <rung> <from> <to> <measurement-file>: one telegram naming the row, the rung and the measurement file
-    s4e_telegram "$1" "escalated-$2-rung$3" "ESCALATED: row $2 rung $3 moved $4 -> $5 after one honest try; the measurement is $6 (the baton's ## ESCALATION has it verbatim). No reply is owed unless you were holding the row."; }
+    s4e_telegram "$1" "escalated-$2-rung$3" "NOTICE: $2 escalated to $5 (rung $3, from $4); its owner is that tube's rung; re-cut it only by escalate --to. The measurement is $6 (the baton's ## ESCALATION has it verbatim)."; }
 s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio 2026-11-05 17:5x): one honest try has failed; the claim's holder or a boss moves the job one tube up with the measurement
     local _t="$1" _c="$PO/claims/$1.claim" _body _holder _bosses _rline _job _tube _above="" _new="" _by _des _iso _rung _mf _i _seat _tg=0 _top=0 _ttr
     [ -t 0 ] && { printf '⛔ REFUSED: escalate reads the measurement from stdin (s4e_msg.sh escalate %s --stdin).\n' "$_t" >&2; return 2; }
@@ -322,21 +322,79 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
     fi
     printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; return 0; }
-s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, on a scratch postoffice; plant jobs live in the real tubes for seconds and are deleted): a haiku plant reserved by worker_20 through next moves to tier-sonnet at 200 with the measurement; a fable plant held by cio parks at the top
-    local _w _t _t2 _j1 _j2 _out _ln _ok=1 _m=0 _l=0 _from="" _to="" _rung="" _top=none _s _new="" _x _m_text _tgi=0 _sh="$S4E/harness/scripts/s4e_msg.sh"
+s4e_step_owned_refuse() {   # <topic>: the cio's ruling 2026-11-07 (one owner per job): a sub-step (-step-N- in its topic) whose parent job sits ready or reserved in a tube this seat does not serve is refused, rc 2; rc 0 otherwise
+  local _p _j _tube _st _holder _tier
+  case "$1" in *-step-*) _p="${1%%-step-*}" ;; *) return 0 ;; esac
+  _j="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$PO/tasks/$_p.task.md" 2>/dev/null | head -1)"
+  [ -n "$_j" ] || return 0
+  read -r _tube _st <<< "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | awk -F'\t' '{print $2, $3}')"
+  case "$_st" in ready|reserved) : ;; *) return 0 ;; esac
+  _tier="$(s4e_tier_of "$ME" 2>/dev/null)"
+  case "$_tube" in seat-$ME|tier-$_tier|ask-$_tier) return 0 ;; esac
+  _holder="$(head -1 "$PO/claims/$_p.claim" 2>/dev/null)"; [ -n "$_holder" ] || _holder=unclaimed
+  printf '⛔ REFUSED (rc 2): %s is a sub-step of %s, and that step is owned by %s (%s); take it up by escalate --to %s\n' "$1" "$_p" "$_tube" "$_holder" "$_p" >&2
+  return 2; }
+s4e_escalate_takeup() {   # <topic> <tier> < reason on stdin (escalate --to, the cio's ruling 2026-11-07, bus-an-escalation-had-two-owners): a boss or a fable/opus seat takes a job up into its own tube; the job leaves the tube it sat in (the queue shows one owner), the baton's ## ESCALATION names the taker, and the previous holder is told
+  local _t="$1" _to="$2" _c="$PO/claims/$1.claim" _b="$PO/tasks/$1.task.md" _body _mytier _bosses _job _old _ttr _new _holder _iso _mf _prev _i _tg=0
+  _body="$(cat)"
+  [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED: escalate --to needs the reason on stdin.\n' >&2; return 2; }
+  case "$_to" in fable|opus|sonnet|haiku) : ;; *) printf '⛔ REFUSED: --to takes fable, opus, sonnet or haiku (got %s).\n' "$_to" >&2; return 2 ;; esac
+  _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
+  _mytier="$(s4e_tier_of "$ME" 2>/dev/null)"
+  case " $_bosses " in *" $ME "*) : ;; *) case "$_mytier" in fable|opus) : ;; *) printf '⛔ REFUSED: only a boss or a fable/opus seat takes a job up; %s is %s.\n' "$ME" "${_mytier:-untiered}" >&2; return 2 ;; esac ;; esac
+  _job="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_b" 2>/dev/null | head -1)"
+  [ -n "$_job" ] || { printf '⛔ REFUSED: %s has no QUEUE-JOB line; there is no job to take up.\n' "$_t" >&2; return 2; }
+  _old="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f2)"
+  [ -n "$_old" ] || { printf '⛔ REFUSED: job %s is in no tube.\n' "$_job" >&2; return 2; }
+  [ "$_old" = "tier-$_to" ] && { printf '⛔ REFUSED: job %s already sits in tier-%s.\n' "$_job" "$_to" >&2; return 2; }
+  _holder=""
+  if [ -f "$_c" ]; then
+    _holder="$(head -1 "$_c")"
+    if grep -q '^RESERVED job=' "$_c"; then
+      printf 'KILL\n' >> "$_c"
+      for _i in $(seq 1 20); do s4e_escalate_gone "$_job" && break; sleep 0.5; done
+      s4e_escalate_gone "$_job" || { printf '⛔ REFUSED (rc 2): job %s is still reserved 10 s after KILL; the row keeps its claim.\n' "$_job" >&2; return 2; }
+    fi
+    rm -f "$_c"
+  fi
+  s4e_escalate_gone "$_job" || s4e_queue_delete "$_job"
+  _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$_to")"
+  _new="$(s4e_queue_put "tier-$_to" "$_t" 200 "$_ttr")" || _new=""
+  [ -n "$_new" ] || { printf '⛔ REFUSED (rc 2): the put into tier-%s failed (util_queue.py status tells why); the old job is gone.\n' "$_to" >&2; return 2; }
+  s4e_baton_job_set "$_t" "$_new" "tier-$_to"
+  s4e_set_row_state "$_t" "QUEUED:tier-$_to" > /dev/null 2>&1 || true
+  s4e_reown_cell "$_t" "@$_to" > /dev/null 2>&1 || true
+  _iso="$(date -u +%FT%TZ)"; mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.takeup-$_to.$_iso.md"; printf '%s\n' "$_body" > "$_mf"
+  python3 - "$_b" "$ME" "$_to" "$_old" "$_iso" "$_mf" <<'PYEOF'
+import sys
+b, who, to, old, iso, mf = sys.argv[1:7]
+t = open(b, encoding="utf-8").read().split("\n")
+entry = ["## ESCALATION taken-up-by=%s" % who, "", "- %s taken up to tier-%s by %s (from %s; measurement %s)" % (iso, to, who, old, mf), ""]
+i = t.index("## LEDGER") if "## LEDGER" in t else len(t)
+t[i:i] = entry
+open(b, "w", encoding="utf-8").write("\n".join(t))
+PYEOF
+  _prev="$_holder"; [ -n "$_prev" ] && [ "$_prev" != "$ME" ] || _prev="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$_b" | head -1)"
+  [ -n "$_prev" ] && [ "$_prev" != "$ME" ] && { s4e_telegram "$_prev" "taken-up-$_t" "NOTICE: row $_t was taken up to tier-$_to by $ME (from $_old); its owner is that tube's rung; re-cut it only by escalate --to. The measurement is $_mf."; _tg=1; }
+  printf 'taken_up %s from=%s to=tier-%s job=%s by=%s telegrams=%s\n' "$_t" "$_old" "$_to" "$_new" "$ME" "$_tg"; return 0; }
+s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, the cio's one-owner ruling 2026-11-07): on a scratch postoffice with a PLANTED TIERS table and a PRIVATE beanstalkd on a free port (the live queue is never touched). A haiku plant reserved by worker_20 moves to tier-sonnet at 200 with the measurement on its baton, and only its designer is told, not the holder (one_owner=1); an officer takes it up --to opus and the job moves to tier-opus (take_up_moves_job=1); a company man's mint of a sub-step of that row is refused while the job sits in tier-opus (second_cut_refused=1); the top rung parks for Lon. Prints one ESCALATE line; rc 0 when every check holds
+    local _w _t _t2 _j1 _j2 _out _ln _ok=1 _m=0 _l=0 _from="" _to="" _rung="" _top=none _s _new="" _x _m_text _tgi=0 _sh="$S4E/harness/scripts/s4e_msg.sh" _port _bpid _i _up=0 _one=0 _take=0 _cut=0 _tk="" _rc
     s4e_probe_daemon || exit 2
+    _bpid="$_S4E_PROBE_BPID"
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_escalate_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
+    trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null; rm -rf "$_w"' EXIT
     _t="escalate-probe-$$"; _t2="escalate-probe-top-$$"; _m_text="ONE HONEST TRY FAILED (escalate probe): the plant read red on its measurement line"
-    mkdir -p "$_w/claims" "$_w/tasks" "$_w/worker_20/inbox" "$_w/cio/inbox"; cp "$PO/MODE" "$_w/MODE"
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/worker_20/inbox" "$_w/cio/inbox" "$_w/cao/inbox" "$_w/president/inbox"; cp "$PO/MODE" "$_w/MODE"
+    printf '# planted tiers (the probe reads no live TIERS table)\ncio\tCIO\t/home/claude_cio\tclaude-fable-5-1\thigh\tred\t1\tcio\ncao\tCAO\t/home/claude_cao\tclaude-opus-5-5\thigh\tyellow\t2\tcao\npresident\tPRESIDENT\t/home/claude_president\tclaude-sonnet-5-5\txhigh\tpurple\t3\tpresident\nworker_20\tWORKER_20\t/home/claude_worker_20\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' > "$_w/TIERS.tsv"
     printf '2\t%s\tcio\tASSIGNED:worker_20\n2\t%s\tcio\tASSIGNED:cio\n' "$_t" "$_t2" > "$_w/QUEUE.tsv"
     for _x in "$_t" "$_t2"; do printf '# TASK %s\nGOAL: plant\nDESIGNER: cio\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant by cio\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" > "$_w/tasks/$_x.task.md"; done
     _j1="$(s4e_queue_put tier-haiku "$_t" 1 3600)" || _j1=""
-    [ -n "$_j1" ] || { echo "REFUSE(2): the plant put into tier-haiku failed (util_queue.py status tells why)" >&2; rm -rf "$_w"; exit 2; }
-    _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$_sh" next 2>&1)"
+    [ -n "$_j1" ] || { echo "REFUSE(2): the plant put into tier-haiku failed (util_queue.py status tells why)" >&2; exit 2; }
+    _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" next 2>&1)"
     printf '%s\n' "$_out" | sed 's/^/  next-as-worker_20| /' >&2
     grep -q "^RESERVED $_t " <<< "$_out" || _ok=0
     grep -q "RESERVED job=$_j1 " "$_w/claims/$_t.claim" 2>/dev/null || _ok=0
-    _out="$(printf '%s\n' "$_m_text" | S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$_sh" escalate "$_t" 2>&1)"
+    _out="$(printf '%s\n' "$_m_text" | S4E_POST="$_w" S4E_SEAT=worker_20 S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t" 2>&1)"
     printf '%s\n' "$_out" | sed 's/^/  escalate-as-worker_20| /' >&2
     _ln="$(printf '%s\n' "$_out" | grep '^escalated ' | head -1)"
     if [ -n "$_ln" ]; then
@@ -357,21 +415,30 @@ s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, on a sc
     if grep -qF "$_m_text" "$_w/tasks/$_t.task.md"; then _m=1; else _ok=0; fi
     if [ "$(grep -c '^- rung 2 from' "$_w/tasks/$_t.task.md")" = 1 ]; then _l=1; else _ok=0; fi
     _tgi="$(ls "$_w/cio/inbox" | wc -l)"; [ "$_tgi" = 1 ] || _ok=0
+    if grep -qs "its owner is that tube's rung" "$_w"/cio/inbox/* && [ -z "$(ls -A "$_w/worker_20/inbox" 2>/dev/null)" ]; then _one=1; fi
+    [ "$_one" = 1 ] || _ok=0
+    _out="$(printf '%s\n' "take-up probe: the officer takes the row up one rung, to opus" | S4E_POST="$_w" S4E_SEAT=cao S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t" --to opus --stdin 2>&1)"
+    printf '%s\n' "$_out" | sed 's/^/  takeup-as-cao| /' >&2
+    _tk="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_w/tasks/$_t.task.md" | head -1)"
+    if [ -n "$_tk" ] && [ "$_tk" != "$_new" ]; then
+        python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_tk" 2>/dev/null | awk -F'\t' '$2=="tier-opus" && $4==200 {f=1} END {exit !f}' && ! python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" >/dev/null 2>&1 && _take=1
+    fi
+    [ "$_take" = 1 ] || _ok=0
+    _out="$(printf 'DONE-WHEN: true\n' | S4E_POST="$_w" S4E_SEAT=president S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" mint "$_t-step-1-sub" --stdin 2>&1)"; _rc=$?
+    printf '%s\n' "$_out" | sed 's/^/  mint-sub-as-president| /' >&2
+    if [ "$_rc" = 2 ] && printf '%s' "$_out" | grep -q 'that step is owned by tier-opus'; then _cut=1; fi
+    [ "$_cut" = 1 ] || _ok=0
     _j2="$(s4e_queue_put tier-fable "$_t2" 1 14400)" || _j2=""
     if [ -n "$_j2" ]; then
         printf 'cio\nRESERVED job=%s tube=tier-fable %s\n' "$_j2" "$(date -u +%FT%TZ)" > "$_w/claims/$_t2.claim"
         python3 "$S4E/harness/scripts/util_queue.py" reserve-hold tier-fable --seat cio --session CIO --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 >/dev/null 2>&1
-        _out="$(printf '%s\n' "escalation of the top rung (probe): the job has no tube above" | S4E_POST="$_w" S4E_SEAT=cio S4E_NO_BANNER=1 "$_sh" escalate "$_t2" 2>&1)"
+        _out="$(printf '%s\n' "escalation of the top rung (probe): the job has no tube above" | S4E_POST="$_w" S4E_SEAT=cio S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t2" 2>&1)"
         printf '%s\n' "$_out" | sed 's/^/  escalate-top-as-cio| /' >&2
         _s="$(awk -F'\t' -v t="$_t2" '$2==t {print $4; exit}' "$_w/QUEUE.tsv")"
         if [ "$_s" = "PARKED-LON-HOLD:escalated" ]; then _top=lon-hold; else _ok=0; fi
         if python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j2" >/dev/null 2>&1; then _ok=0; fi
     else _ok=0; fi
-    printf 'ESCALATE from=%s to=%s rung=%s measurement=%s ledger=%s telegrams=%s top=%s\n' "${_from:-none}" "${_to:-none}" "${_rung:-0}" "$_m" "$_l" "$_tgi" "$_top"
-    [ -n "$_new" ] && s4e_queue_delete "$_new"
-    [ -n "$_j1" ] && s4e_queue_delete "$_j1"
-    [ -n "$_j2" ] && s4e_queue_delete "$_j2"
-    rm -rf "$_w"
+    printf 'ESCALATE from=%s to=%s rung=%s measurement=%s ledger=%s telegrams=%s top=%s one_owner=%s take_up_moves_job=%s second_cut_refused=%s\n' "${_from:-none}" "${_to:-none}" "${_rung:-0}" "$_m" "$_l" "$_tgi" "$_top" "$_one" "$_take" "$_cut"
     [ "$_ok" = 1 ]; exit $?; }
 s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "$S4E_TIERS" 2>/dev/null; }
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
@@ -3526,6 +3593,7 @@ case "$cmd" in
   escalate) # ⭐ fleet-queue step 7 (the cio, 2026-11-05 17:5x): after one honest try, the claim's holder (or a boss) moves the job one tube up with the measurement on stdin; at the top the row parks PARKED-LON-HOLD:escalated for Lon. escalate --probe proves it on a scratch postoffice.
          [ "${2:-}" = --probe ] && s4e_escalate_probe
          [ -n "${2:-}" ] || s4e_need escalate "a topic" "s4e_msg.sh escalate <topic> --stdin   (the measurement on stdin)" "Moves the job of a row you hold one tube up (haiku to sonnet to opus to fable) at priority 200, with the measurement on the baton; at the top the row parks PARKED-LON-HOLD:escalated for Lon."
+         [ "${3:-}" = --to ] && { s4e_escalate_takeup "$2" "${4:-}"; exit $?; }
          s4e_escalate "$2"; exit $?;;
   unclaim) # ⭐ s265 — RELEASE AN UNWORKED CLAIM. Minted because THREE seats hit its absence in one day (seat08,
          # seat09, seat13): a stale-clone picker mis-locked a row, the seat correctly refused to work it, and then had
@@ -4313,6 +4381,7 @@ case "$cmd" in
   mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape
          [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat> | --tier fable|opus|sonnet|haiku | --to <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically, and with --tier or --to one job in the queue (fleet-queue step 3)."
          topic="$2"; shift 2
+         s4e_step_owned_refuse "$topic" || exit 2
          rank=2
          if [ -n "${1:-}" ]; then case "$1" in *[!0-9]*|'') :;; *) rank="$1"; shift;; esac; fi
          # ⭐⭐ NO BLANK OWNER CELL, HALF 2 OF 2 (row next-serves-a-seat-only-rows-in-its-hqs-lane-and-no-
@@ -4514,6 +4583,7 @@ TASKEOF
          exit 0;;
   recut) [ "${2:-}" = --probe ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_recut.sh"; exit $?; }
          [ -n "${2:-}" ] || s4e_need recut "a topic" "s4e_msg.sh recut <topic> --stdin <<'R' (the new criterion) R" "Re-cuts a row's DONE-WHEN: the old criterion is kept on a DONE-WHEN-WAS receipt, and a row the sweep retired reopens to FREE."
+         s4e_step_owned_refuse "$2" || exit 2
          s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
         [ "${3:-}" = --probe-port-check ] && { s4e_probe_port_check; exit $?; }
