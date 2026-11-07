@@ -10,6 +10,7 @@
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
 #   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
+#   box_tick.sh --probe-width-psi  the grader width arm on planted sensors (box PSI steps, the memory.events hold, the hot bar): one WIDTH_PSI line; rc 0 when every step is as ruled; writes no state
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd "$ROOT" || exit 2
 TICK_DIR=${S4E_TICK_DIR:-/home/resources/progress/tick}
@@ -26,13 +27,23 @@ seat_of_scope() {   # the seat whose claude session owns a cgroup scope (as box_
   local p sc
   for p in $(pgrep -f '^claude --name '); do sc=$(cut -d: -f3 /proc/$p/cgroup | sed 's|.*/||'); [ "$sc" = "$1" ] && { tr '\0' ' ' < /proc/$p/cmdline | awk '{print tolower($3)}' | tr '-' '_'; return 0; }; done; return 1; }
 
+events_rise() {   # events_rise <last oom> <last max> <oom> <max>: 1 when the grader's memory.events oom or max counter rose since the last tick, else 0
+  if [ "$3" -gt "$1" ] || [ "$4" -gt "$2" ]; then echo 1; else echo 0; fi; }
+up_hold_next() {  # up_hold_next <mem_rise> <up_hold>: the up_hold the tick keeps next: a rise holds the width's up step for five ticks, each later tick counts one down
+  if [ "$1" = 1 ]; then echo 5; elif [ "$2" -gt 0 ]; then echo $(( $2 - 1 )); else echo 0; fi; }
+
 sense() {   # the sensors of box_controller.sh's --decide, read the same way; sets the globals decide() reads
-  local a b c d e f g h t1 i1 sc hi cur an t0 u us0 us f s x mgr
+  local a b c d e f g h t1 i1 sc hi cur an t0 u us0 us f s x mgr eo em lo lm
   read -r _ a b c d e f g h _ < /proc/stat; t1=$((a+b+c+d+e+f+g+h)); i1=$((d+e)); sleep 2; read -r _ a b c d e f g h _ < /proc/stat
   busy=$(awk -v t=$((a+b+c+d+e+f+g+h-t1)) -v i=$((d+e-i1)) -v c=$(nproc) 'BEGIN {printf "%.1f", (t > 0 ? c * (1 - i / t) : 0)}')
   cpu60=$(awk '$1=="some" {for (i=2;i<=NF;i++) if ($i ~ /^avg60=/) {sub("avg60=","",$i); print $i}}' /proc/pressure/cpu); cpu60=${cpu60:-0}
   gcpu10=$(awk '$1=="some" {for (i=2;i<=NF;i++) if ($i ~ /^avg10=/) {sub("avg10=","",$i); print $i}}' $U/s4e.slice/s4e-grader.slice/cpu.pressure 2>/dev/null); gcpu10=${gcpu10:-0}
   gmem10=$(awk '$1=="some" {for (i=2;i<=NF;i++) if ($i ~ /^avg10=/) {sub("avg10=","",$i); print $i}}' $U/s4e.slice/s4e-grader.slice/memory.pressure 2>/dev/null); gmem10=${gmem10:-0}
+  cores=$(nproc)
+  read -r eo em < <(awk '$1=="oom" {o = $2} $1=="max" {m = $2} END {print o + 0, m + 0}' $U/s4e.slice/s4e-grader.slice/memory.events 2>/dev/null)
+  read -r lo lm < "$TICK_DIR/grader_mem_events.last" 2>/dev/null; lo=${lo:-$eo}; lm=${lm:-$em}
+  mem_rise=$(events_rise "$lo" "$lm" "$eo" "$em"); echo "$eo $em" > "$TICK_DIR/grader_mem_events.last"   # the last reading is the next tick's baseline
+  up_hold=$(cat "$TICK_DIR/grader_up_hold" 2>/dev/null); up_hold=${up_hold:-0}
   q=$(grep -c '^E' $OLD/fresh.q 2>/dev/null); q=${q:-0}
   w=$(cat $OLD/box.width 2>/dev/null); w=${w:-4}
   WMIN=1; hh=$(date +%H); if [ "$hh" -ge 22 ] || [ "$hh" -lt 6 ] || grep -qE '^FLEET: IDLE( \(|$)' $PO/MODE; then WMAX=${BOX_WMAX_NIGHT:-8}; else WMAX=${BOX_WMAX_DAY:-4}; fi
@@ -107,6 +118,7 @@ tick() {
   started=$(date +%s); stamp=$(date '+%F %T')
   sense
   decide > "$TICK_DIR/decide.new"; rc_d=$?
+  up_hold_next "$mem_rise" "$up_hold" > "$TICK_DIR/grader_up_hold"   # the width's up-hold, one count per tick (a rise arms five)
   plant_out=$(plant 2>&1); rc_p=$?
   [ "$rc_d" = 0 ] && [ "$rc_p" = 0 ] && law=1
   mv "$TICK_DIR/decide.new" "$TICK_DIR/decide.last"
@@ -163,6 +175,28 @@ render_grade_worker() {   # test-cycle step 4a (CTO-522): the grader's worker te
   echo "RENDER unit=$u slice=$slice restart=$restart exec=$exec"
   [ -n "$slice" ] && [ -n "$restart" ] && [ -n "$exec" ]; }
 
+act_line() {   # act_line <kind> <cpu60> <busy> <mem_rise> <up_hold> <grader cpu psi> <w>: the kind's ACTUATOR line decide() prints on cool sensors with these overrides (a pure read: no state, no files)
+  local k=$1; cpu60=$2 busy=$3 mem_rise=$4 up_hold=$5 gcpu10=$6 w=$7 gmem10=0 to_new=0 q=500 WMIN=1 WMAX=8 sq=800 sqc=1000 SQ_FLOOR=600 jt=4 jtc=12 JT_FLOOR=2 slotless= capped= orphans= mem= madmit=1 cores=16 decide | awk -v k="$k" '$1=="ACTUATOR" && $2==k'; }
+step_of() {   # step_of <ACTUATOR line>: down, up or hold, by its width= against its from=
+  awk '{for (i = 3; i <= NF; i++) {split($i, kv, "="); if (kv[1] == "width") t = kv[2] + 0; if (kv[1] == "from") f = kv[2] + 0}} END {print ((t < f) ? "down" : ((t > f) ? "up" : "hold"))}' <<< "$1"; }
+is_step() { [ "$(step_of "$1")" = "$2" ] && echo 1 || echo 0; }
+admit_of() { awk '{for (i = 3; i <= NF; i++) {split($i, kv, "="); if (kv[1] == "admit") print kv[2] + 0}}' <<< "$1"; }
+probe_width_psi() {   # the grader width arm's probe (the coo's 08:06 numbers; the cio's amendments 08:2x memory.events and 08:3x the hot bar): one planted override per measure on cool sensors; one WIDTH_PSI line of measured steps and one WIDTH_PSI_HOLD line; rc 0 when every measure is as ruled; writes no state
+  local s62 u35 u10 rise drise hold blocked i after_up hot a35
+  s62=$(is_step "$(act_line grader 62 6.0 0 0 1 4)" down)
+  u35=$(is_step "$(act_line grader 35 6.0 0 0 1 2)" up)
+  u10=$(is_step "$(act_line grader 10 6.0 0 0 1 2)" up)
+  rise=$(events_rise 170 105708 174 105708)
+  drise=$(is_step "$(act_line grader 10 6.0 "$rise" 0 1 4)" down)
+  hold=$(up_hold_next "$rise" 0); blocked=0
+  for i in 1 2 3 4 5; do [ "$(is_step "$(act_line grader 10 6.0 0 "$hold" 1 2)" up)" = 0 ] && blocked=$((blocked + 1)); hold=$(up_hold_next 0 "$hold"); done
+  after_up=$(is_step "$(act_line grader 10 6.0 0 "$hold" 1 2)" up)
+  hot=$([ "$(admit_of "$(act_line maint 71 11.5 0 0 1 4)")" = 0 ] && echo 1 || echo 0)
+  a35=$([ "$(admit_of "$(act_line maint 35 11.5 0 0 1 4)")" = 1 ] && echo 1 || echo 0)
+  printf 'WIDTH_PSI box_psi60=62 steps_down=%s box_psi60=35 steps_up=%s box_psi60=10 steps_up=%s mem_events_rise=%s steps_down=%s hot_at_psi71_busy11=%s\n' "$s62" "$u35" "$u10" "$rise" "$drise" "$hot"
+  printf 'WIDTH_PSI_HOLD up_blocked_ticks=%s up_after_hold=%s psi35_busy11_admit=%s\n' "$blocked" "$after_up" "$a35"
+  [ "$s62" = 1 ] && [ "$u35" = 0 ] && [ "$u10" = 1 ] && [ "$rise" = 1 ] && [ "$drise" = 1 ] && [ "$hot" = 1 ] && [ "$blocked" = 5 ] && [ "$after_up" = 1 ] && [ "$a35" = 1 ]; }
+
 case "${1:-}" in
   --tick) tick; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
@@ -172,5 +206,6 @@ case "${1:-}" in
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
   --render-grade-worker) render_grade_worker; exit $?;;
+  --probe-width-psi) probe_width_psi; exit $?;;
   *) echo "usage: box_tick.sh --tick | --probe-fresh | --install | --render-grade-worker" >&2; exit 2;;
 esac
