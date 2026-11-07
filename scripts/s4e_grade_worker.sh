@@ -155,7 +155,7 @@ if [ "$PROBE" = 2 ]; then probe_record; exit $?; fi
 if [ "$PROBE" = 3 ]; then probe_smoke; exit $?; fi
 while :; do
     python3 - "$S4E" "$TUBE" "$N" "$ONCE" "$LOG" 5 "${S4E_GRADE_SCRATCH:-}" <<'PY'
-import os, sys, json, time, subprocess, shutil
+import os, sys, json, time, subprocess, shutil, re
 S4E, TUBE, N, ONCE, LOG, TMO, SCR = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] == "1", sys.argv[5], int(sys.argv[6]), sys.argv[7]
 sys.path.insert(0, os.path.join(S4E, "harness", "scripts"))
 import util_queue
@@ -265,6 +265,15 @@ def one():
             if part is None: why = "refused: package %r cell %r" % (suite, cell)
             elif not os.path.isfile(script): why = "refused: no runner %s for %r" % (words[0], suite)
         else: why = "refused: suite %r is kind %s in SUITE_RUNNERS.tsv (the grade worker launches master and pkg rows)" % (suite, kind)
+    if why is None and not SCR and re.fullmatch(r"[0-9a-f]{7,40}", tree or ""):   # fleet-control step 10b (the cio, 2026-11-07 14:3x): the grader's root is synced and
+        # built to the job's tree before the launch, else the harness refuses rc 2 on a stale binary (jobs 1109 and 1110 were buried so at 20:31Z: the root sat
+        # at b09977688 while the jobs named eedd882b7). The sync takes the fetch slot, the make the compile slots and the build cache (a clean tree fetches).
+        head = subprocess.run(["git", "-C", os.path.join(S4E, "SCRIP"), "rev-parse", "--short=9", "HEAD"], capture_output=True, text=True).stdout.strip()
+        if not head.startswith(tree[:7]) and not tree.startswith(head[:7]):
+            sy = subprocess.run(["bash", os.path.join(S4E, "harness", "scripts", "util_sync_root.sh")], env=ENV, capture_output=True, text=True, timeout=900)
+            mk = subprocess.run(["make", "-j8", "-C", os.path.join(S4E, "SCRIP")], env=ENV, capture_output=True, text=True, timeout=1800) if sy.returncode == 0 else None
+            if sy.returncode != 0 or mk.returncode != 0:
+                why = "refused: the grader root could not reach tree %s (sync rc %d, make rc %s): %s" % (tree, sy.returncode, mk.returncode if mk else "-", ((sy.stdout + sy.stderr) if sy.returncode else (mk.stdout + mk.stderr)).strip()[-160:].replace("\n", " | "))
     if why is None:
         if kind == "master":
             cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
