@@ -77,6 +77,13 @@ def regenerate():
                 except OSError: have = False
                 if not have: open(dq, "a").write("%d\t%s\t%s\tDONE\n" % (rank, topic, owner))
             continue
+        if re.match(r"^(RETIRED|SUPERSEDED)(:|$)", state):   # fleet-control step 9 (the cio, 2026-11-07, Lon: "process the 99 ... rows by either using or
+            if topic in old:   # forgetting/deleting"): a retired or superseded row is terminal; it leaves the view and lands once in QUEUE.retired.tsv (the memory)
+                rq = os.path.join(PO, "QUEUE.retired.tsv")
+                try: have = any(l.split("\t")[1:2] == [topic] for l in open(rq))
+                except OSError: have = False
+                if not have: open(rq, "a").write("%d\t%s\t%s\t%s\n" % (rank, topic, owner, state))
+            continue
         m = re.match(r"^(\d+) tube=(\S+)", d.get("QUEUE-JOB", ""))
         if m and c is not None:
             try:
@@ -113,8 +120,28 @@ def check():
         try: tubes = len(c.tubes())
         finally: c.close()
     print("VIEW rows=%d tubes=%d age_s=%d hand_edits=%d generated=%d" % (len(rows), tubes, age, hand, gen)); return 0 if (hand == 0 and gen == 1) else 1
+def probe_retire():
+    """--probe-retire: on a scratch postoffice (S4E_POST, never the live one) two rows, one FREE and one SUPERSEDED:x, each with a baton; after --regenerate the
+    superseded row is out of QUEUE.tsv and in QUEUE.retired.tsv once, the FREE row stays; a second --regenerate appends nothing. Prints one RETIRE_PROBE line; rc 0 ok=1."""
+    import subprocess, tempfile, shutil
+    w = tempfile.mkdtemp(prefix="s4e-view-probe-", dir=os.environ.get("S4E_SCRATCH") or "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio")); os.makedirs(w + "/tasks")
+    def baton(t, st): open("%s/tasks/%s.task.md" % (w, t), "w").write("# TASK %s\nRANK: 2\nOWNER: cio\nSTATE: %s\nLINKS: minted 2026-11-07T00:00:00Z\n\n## NEXT\n- x\n" % (t, st))
+    baton("probe-live", "FREE"); baton("probe-dead", "SUPERSEDED:x"); baton("probe-gone", "RETIRED:y")
+    open(w + "/QUEUE.tsv", "w").write("# header\n2\tprobe-live\tcio\tFREE\n2\tprobe-dead\tcio\tSUPERSEDED:x\n2\tprobe-gone\tcio\tRETIRED:y\n")
+    env = dict(os.environ, S4E_POST=w, S4E_QUEUE_NO_DAEMON="1")
+    r1 = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "--regenerate"], env=env, capture_output=True, text=True)
+    q1 = open(w + "/QUEUE.tsv").read(); ret1 = open(w + "/QUEUE.retired.tsv").read() if os.path.exists(w + "/QUEUE.retired.tsv") else ""
+    r2 = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "--regenerate"], env=env, capture_output=True, text=True)
+    ret2 = open(w + "/QUEUE.retired.tsv").read() if os.path.exists(w + "/QUEUE.retired.tsv") else ""
+    live_stays = "\tprobe-live\t" in q1; dead_out = "probe-dead" not in q1 and "probe-gone" not in q1
+    landed_once = ret1.count("\tprobe-dead\t") == 1 and ret1.count("\tprobe-gone\t") == 1 and "SUPERSEDED:x" in ret1 and "RETIRED:y" in ret1
+    idempotent = ret2 == ret1
+    ok = int(r1.returncode == 0 and r2.returncode == 0 and live_stays and dead_out and landed_once and idempotent)
+    shutil.rmtree(w, ignore_errors=True)
+    print("RETIRE_PROBE rc1=%d rc2=%d live_stays=%d dead_out=%d landed_once=%d idempotent=%d ok=%d" % (r1.returncode, r2.returncode, live_stays, dead_out, landed_once, idempotent, ok)); return 0 if ok else 1
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a[:1] == ["--regenerate"]: sys.exit(regenerate())
     if a[:1] == ["--check"]: sys.exit(check())
-    print("usage: util_queue_view.py --regenerate | --check"); sys.exit(2)
+    if a[:1] == ["--probe-retire"]: sys.exit(probe_retire())
+    print("usage: util_queue_view.py --regenerate | --check | --probe-retire"); sys.exit(2)
