@@ -18,7 +18,7 @@ LANG = {"snobol4": "snobol4", "snocone": "snobol4", "rebus": "snobol4", "icon": 
 GENERATED = ("gc_allocating_table.inc", "box_cell_shapes.inc", "rtx_clobber_table.inc", "rtx_clobbers.inc")
 RULES = [   # (regex on the path, skills) -- every matching rule applies; the path is normalised to forward slashes
     (r"/SCRIP/src/templates/", ["box-templates"]),
-    (r"/SCRIP/src/[^/]*/x86_[^/]*\.(h|cpp)$|/SCRIP/src/emitter/emit\.cpp$", ["box-templates"]),
+    (r"/SCRIP/src/emitter/emit\.cpp$", ["box-templates"]),
     (r"/SCRIP/src/runtime/rtx/", ["rtx-asm-leaves"]),
     (r"/SCRIP/src/lower/", ["lowering"]),
     (r"/SCRIP/src/(planner|emitter)/|/SCRIP/src/runtime/rt/gc_", ["scrip-memory-model"]),
@@ -28,8 +28,16 @@ RULES = [   # (regex on the path, skills) -- every matching rule applies; the pa
     (r"/SCRIP/Makefile$", ["scrip-build"]),
     (r"/SCRIP/src/lower/lower_icon_class\.c$|/corpus/tests/icon/unicon/|/corpus/packages/icon/unicon_tests/|/\.github/GOAL-UNICON-100\.md$|/harness/scripts/[^/]*unicon[^/]*$", ["unicon"]),
     (r"/harness/scripts/test_[^/]*\.sh$|/corpus/(tests|packages|demos|benchmarks)/.*(\.ref|/ALL\.csv|/STEPS\.tsv|/LADDER\.tsv)$|/corpus/tests/.*\.(sno|icn|pl|pas|raku|sc|reb)$", ["gates-and-witnesses"]),
+    (r"/harness/scripts/(s4e_[^/]*\.sh|s4e_[^/]*\.py|util_fleet_[^/]*|util_sync_root\.sh|util_queue[^/]*|box_tick\.sh|handoff_status\.sh)$|/resources/postoffice/MODE$", ["fleet-bus"]),
+    (r"/harness/scripts/(lib_slots|util_batch|util_run_slot|util_cc_slot|util_mem_scope|util_jobserver|util_seat_census|box_decide)[^/]*$|/s4e-tick\.(service|timer)$|/harness/scripts/SLOTS\.tsv$|/resources/postoffice/BUDGET\.tsv$", ["shared-box"]),
+    (r"/STEPS\.tsv$|/harness/scripts/test_design_[^/]*_steps\.sh$", ["design-plans"]),
+    (r"/resources/progress/(SUITES|results)\.tsv$|/\.github/SCORE\.md$|/corpus_suite_harness\.py$|/harness/scripts/util_suite_[^/]*$|/harness/scripts/util_score_row\.py$", ["suites-and-grading"]),
+    (r"/harness/scripts/util_instr_count\.sh$|/harness/scripts/bench_[^/]*$", ["speed-measurement"]),
+    (r"/SCRIP/src/parsers/prolog/prelude/(tabling|xsb_tables)\.pl$|/SCRIP/src/templates/bb/bb_table_hdr\.cpp$", ["prolog-tabling"]),
+    (r"/SCRIP/src/parsers/prolog/prelude/(clpfd|clpq|clpr|chr_runtime)\.pl$|/SCRIP/src/lower/lower_prolog_chr\.c$", ["prolog-constraints"]),
+    (r"/SCRIP/src/runtime/rtx/rtx_plunify\.s$|/SCRIP/src/runtime/rt/rt_pl_trail\.c$|/SCRIP/src/runtime/rt/pl_trail_layout\.h$", ["prolog-engine"]),
 ]
-WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+(?P<path>[\w./~-]+)")
+WRITE_MARK = re.compile(r"(?:>>?|\btee\b(?:\s+-a)?|\bcp\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+)|\bmv\b(?:\s+-[a-zA-Z]+)*(?:\s+\S+))\s+[\"']?(?P<path>[\w./~-]+)[\"']?")   # a quoted target is a target
 INPLACE = re.compile(r"(?:\bsed\s+(?:-[a-zA-Z]*\s+)*-i[^\s]*|\bperl\s+-[a-zA-Z]*i[^\s]*)\s+(?P<rest>[^|;&]*)")   # the path is any later token of the same command
 PY_OPEN = re.compile(r"open\(\s*['\"](?P<path>[^'\"]+)['\"]\s*,\s*['\"][wa][^'\"]*['\"]")
 
@@ -44,8 +52,8 @@ def skills_for(path):
     for rx, sk in RULES:
         if re.search(rx, p):
             need += sk
-    m = re.search(r"/SCRIP/src/parsers/([a-z0-9]+)/|/SCRIP/src/lower/lower_([a-z0-9]+)|/SCRIP/src/runtime/[^/]*/(?:prelude|lib)_?([a-z0-9]+)|/corpus/(?:tests|packages|demos|benchmarks)/([a-z0-9]+)/", p)
-    if m:
+    m = re.search(r"/SCRIP/src/parsers/([a-z0-9]+)/|/SCRIP/src/lower/lower_([a-z0-9]+)|/corpus/(?:tests|packages|demos|benchmarks)/([a-z0-9]+)/", p)
+    if m and not p.endswith("/STEPS.tsv"):
         lang = next((g for g in m.groups() if g), "")
         if lang in LANG:
             need.append(LANG[lang])
@@ -64,10 +72,16 @@ def paths_of(tool, inp):
         return [p] if p else []
     if tool == "Bash":
         cmd = inp.get("command", "")
+        base = ""
+        mcd = re.search(r"\bcd\s+(?P<dir>[\w./~-]+)\s*(?:&&|;)", cmd)
+        if mcd:
+            base = mcd.group("dir").rstrip("/")
         found = [m.group("path") for m in WRITE_MARK.finditer(cmd)] + [m.group("path") for m in PY_OPEN.finditer(cmd)]
         for m in INPLACE.finditer(cmd):
-            found += [tok for tok in re.findall(r"[\w./~-]+", m.group("rest")) if "/" in tok]
-        return [p for p in found if re.search(r"SCRIP/|/src/|bootstrap/|harness/scripts/|corpus/", p)]
+            found += [tok for tok in re.findall(r"[\w./~-]+", m.group("rest").replace("\"", "").replace("'", "")) if "/" in tok]
+        if base:
+            found = [p if p.startswith(("/", "~")) else base + "/" + p for p in found]
+        return [p for p in found if re.search(r"SCRIP/|/src/|bootstrap/|harness/scripts/|corpus/|resources/postoffice/|resources/progress/|\.github/", p)]
     return []
 
 
@@ -95,7 +109,7 @@ def judge(tool, inp, transcript):
         return 0, ""
     gen = [p for p in paths if skills_for(p) is None]
     if gen:
-        return 2, "SKILL GATE: %s is a GENERATED table, regenerated and never edited (make regenerates it; CLAUDE.md THE LANDING RECIPE 2)." % os.path.basename(gen[0])
+        return 2, "SKILL GATE: %s is a GENERATED table, regenerated and never edited (make regenerates it; skill fleet-bus section 7, the landing recipe)." % os.path.basename(gen[0])
     need = []
     for p in paths:
         for s in skills_for(p):
@@ -110,7 +124,7 @@ def judge(tool, inp, transcript):
     if not missing:
         return 0, ""
     return 2, ("SKILL GATE: before this edit of %s load %s (one Skill call each: %s), then make the same edit again. "
-               "The skill carries the rules the edit must keep; CLAUDE.md THE SKILL TABLE names which skill owns which layer."
+               "The skill carries the rules the edit must keep; skill scrip-architecture section 4 names which skill owns which layer."
                % (", ".join(os.path.basename(p) for p in paths), ", ".join("/" + s for s in missing), ", ".join("Skill(%s)" % s for s in missing)))
 
 
@@ -141,12 +155,22 @@ def self_test():
         ("Edit of the collector wants gc-collector beside scrip-memory-model", "Edit", {"file_path": R + "/SCRIP/src/runtime/rt/gc_heap.c"}, none, 2, ["/gc-collector", "/scrip-memory-model"]),
         ("Edit of the call protocol wants runtime-calls", "Edit", {"file_path": R + "/SCRIP/src/runtime/rt/rt.c"}, none, 2, ["/runtime-calls"]),
         ("Edit of the Makefile wants scrip-build", "Edit", {"file_path": R + "/SCRIP/Makefile"}, none, 2, ["/scrip-build"]),
+        ("Edit of the bus wants fleet-bus", "Edit", {"file_path": R + "/harness/scripts/s4e_msg.sh"}, none, 2, ["/fleet-bus"]),
+        ("Edit of MODE wants fleet-bus", "Edit", {"file_path": "/home/resources/postoffice/MODE"}, none, 2, ["/fleet-bus"]),
+        ("Edit of the slot library wants shared-box", "Edit", {"file_path": R + "/harness/scripts/lib_slots.sh"}, none, 2, ["/shared-box"]),
+        ("Edit of a design step table wants design-plans and gates-and-witnesses, not a language", "Edit", {"file_path": R + "/corpus/tests/pascal/front_end/STEPS.tsv"}, none, 2, ["/design-plans", "/gates-and-witnesses"]),
+        ("Bash sed -i after a cd resolves the relative path and wants lowering and icon", "Bash", {"command": "cd " + R + "/SCRIP && sed -i s/a/b/ src/lower/lower_icon.c"}, none, 2, ["/lowering", "/icon"]),
+        ("Bash tee onto a quoted bus path wants fleet-bus", "Bash", {"command": "echo x | tee \"" + R + "/harness/scripts/s4e_msg.sh\""}, none, 2, ["/fleet-bus"]),
+        ("Edit of the tabling prelude wants prolog-tabling beside prolog", "Edit", {"file_path": R + "/SCRIP/src/parsers/prolog/prelude/tabling.pl"}, none, 2, ["/prolog-tabling", "/prolog"]),
+        ("Edit of the suite table wants suites-and-grading", "Edit", {"file_path": "/home/resources/progress/SUITES.tsv"}, none, 2, ["/suites-and-grading"]),
     ]
     bad = 0
     for i, (name, tool, inp, tr, want, words) in enumerate(cases, 1):
         rc, msg = judge(tool, inp, tr)
         ok = rc == want and all(w in msg for w in words) and (rc != 2 or "SKILL GATE" in msg)
         if rc == 0 and want == 0 and words == [] and tool == "Edit" and "lower_prolog" in str(inp) and "/scrip-c-code" in msg:
+            ok = False
+        if "front_end/STEPS.tsv" in str(inp) and "/pascal" in msg:
             ok = False
         print("  %s ARM %d: %s%s" % ("ok  " if ok else "RED ", i, name, "" if ok else " -- rc %d: %s" % (rc, msg[:160])))
         bad += 0 if ok else 1
