@@ -162,6 +162,41 @@ def scale_grade_workers(W):
     return "grader on=%d want=%d running=%d starts=%d stops=%d" % (on, want, len(running), len(starts), len(stops))
 
 
+def alive_seats():
+    """the seats whose claude session is alive, read from the sessions' working directories (no seat pattern: the root names the seat)"""
+    seats = set()
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            if open("/proc/%s/comm" % pid).read().strip() != "claude":
+                continue
+            cwd = os.readlink("/proc/%s/cwd" % pid)
+        except OSError:
+            continue
+        m = re.match(r"/home/claude_([a-z0-9_]+)", cwd)
+        if m: seats.add(m.group(1))
+    return seats
+
+
+def write_live_set(A, mode):
+    """fleet-control step 5: a FLEET line the controller owns (it carries "(controller") lists cio and the first A workers alive, by number;
+    a worker beyond A is dropped from the list and stops at its Stop; a hand-written FLEET line is never touched"""
+    m = re.search(r"^FLEET: IDLE EXCEPT (.*?) \((controller.*)\)$", mode, re.M)
+    if DRY or not m:
+        return "liveset=hand" if not m else "liveset=dry"
+    keep = [x for x in m.group(1).split() if not x.startswith("worker_")]
+    workers = sorted((x for x in alive_seats() if x.startswith("worker_")), key=lambda x: int(x.split("_")[1]))[:A]
+    live = keep + workers
+    line = "FLEET: IDLE EXCEPT %s (controller %s: cio and the first %d workers alive by the law of fleet-control step 5; a worker beyond the count stops at its Stop; Lon's hand replaces this line at will)" % (" ".join(live), time.strftime("%Y-%m-%d %H:%M"), A)
+    if line.split(" (controller")[0] == m.group(0).split(" (controller")[0]:
+        return "liveset=%d" % len(workers)
+    new = mode.replace(m.group(0), line, 1)
+    tmp = PO + "/MODE.tmp.%d" % os.getpid()
+    open(tmp, "w").write(new); os.replace(tmp, PO + "/MODE")
+    return "liveset=%d(written)" % len(workers)
+
+
 def write_awake(A, why, s, mode):
     """the controller alone writes WORKERS-AWAKE; a hand-written FLEET line freezes it (Lon's hand outranks the controller)"""
     if DRY or hand_fleet_line(mode) or not os.path.isfile(PO + "/MODE"):
@@ -249,15 +284,16 @@ def tick():
     open(TICK_DIR + "/box.width", "w").write("%d\n" % d["W"])
     grader = scale_grade_workers(d["W"])
     awake = write_awake(d["A"], d["why"], s, mode)
+    liveset = write_live_set(d["A"], mode_text())
     expired = expire_leases() if n % 5 == 0 else 0
     view = regenerate_view()
     with open(TICK_DIR + "/decide.last", "w") as f:
-        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, expired=expired, view=view)) + "\n")
+        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, view=view)) + "\n")
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s expired=%d %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s expired=%d %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             grader, awake, expired, view, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             grader, awake, liveset, expired, view, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
