@@ -19,8 +19,9 @@ if [ "${1:-}" = --probe-queue ]; then   # fleet-queue step 11's probe on a scrat
     printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\n%s\tP\t%s\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' "$ps" "$w" > "$w/TIERS.tsv"
     gt() { S4E_POST="$w" S4E_TIERS="$w/TIERS.tsv" S4E_TIER_TUBE_PREFIX="$ps-tier-" bash "$0" "$w" "$ps" --dry | cut -d' ' -f1; }
     jid="$(python3 "$HERE/util_queue.py" put "$ps-tier-haiku" gate-plant --pri 100 --ttr 30)"; r5="$(gt)"; python3 "$HERE/util_queue.py" delete "$jid" >/dev/null 2>&1; r6="$(gt)"
-    rm -rf "$w"; printf 'GATE reserved=%s seat_tube_ready=%s mail=%s idle=%s tier_tube_ready=%s tier_tube_empty=%s\n' "$r1" "$r2" "$r3" "$r4" "$r5" "$r6"
-    [ "$r1" = BLOCK ] && [ "$r2" = BLOCK ] && [ "$r3" = BLOCK ] && [ "$r4" = PASS ] && [ "$r5" = BLOCK ] && [ "$r6" = PASS ]; exit $?
+    r6w="$(S4E_POST="$w" S4E_TIERS="$w/TIERS.tsv" S4E_TIER_TUBE_PREFIX="$ps-tier-" bash "$0" "$w" "$ps" --dry | grep -c 'next --wait 240')"
+    rm -rf "$w"; printf 'GATE reserved=%s seat_tube_ready=%s mail=%s idle=%s tier_tube_ready=%s tier_tube_empty=%s longpoll=%s\n' "$r1" "$r2" "$r3" "$r4" "$r5" "$r6" "$r6w"
+    [ "$r1" = BLOCK ] && [ "$r2" = BLOCK ] && [ "$r3" = BLOCK ] && [ "$r4" = PASS ] && [ "$r5" = BLOCK ] && [ "$r6" = BLOCK ] && [ "$r6w" = 1 ]; exit $?
 fi
 root="${1:?root}"; seat="${2:?seat}"; shift 2; dry=0; json=0
 for a in "$@"; do case "$a" in --dry) dry=1;; --json) json=1;; esac; done
@@ -78,12 +79,20 @@ else
                 if [ "$tr" -gt 0 ]; then
                     reason="$seat is stopping idle while $tr job(s) wait ready in its tier tube $tt (THE LADDER, skill fleet-bus section 1: a seat works what the queue serves it; an idle seat beside ready work is the failure this arm removes). Run bash harness/scripts/s4e_msg.sh next: it reserves the first job and serves its baton; one honest try, then escalate with the measurement."
                     what="tier_tube=$tr"
+                else
+                    # fleet-control step 12 (the cio, 2026-11-07 14:5x; Lon: "The fleet system does not need the CIO's constant attention"): an idle session never
+                    # re-fires its Stop hook, so a seat that passed here with an empty tube stayed idle until a message woke it (eight idle workers at 14:4x with four
+                    # jobs ready a minute later). The gate now sends the seat back to LONG-POLL the tube: next --wait 240 holds the reserve open four minutes (under
+                    # the shell tool's five-minute budget) and serves the first job that lands; nothing landed, the seat stops again and is sent back again. The poll
+                    # is not a continuation against S4E_STOP_CAP (what=longpoll below): it is the seat waiting, not working.
+                    reason="$seat has no row, no mail and nothing ready in $tt: wait on the tube, do not idle. Run bash harness/scripts/s4e_msg.sh next --wait 240 (it holds the reserve open 240 s and serves the first job that lands; on nothing ready, stop again and this gate sends you back)."
+                    what="longpoll"
                 fi
             fi
         fi
     fi
 fi
 [ -z "$reason" ] && { emit PASS "no unread mail and no row ASSIGNED or CLAIMED to $seat"; exit 0; }
-[ "$n" -ge "$cap" ] && { emit CAP "$n continuations this hour (S4E_STOP_CAP $cap) -- $reason"; exit 0; }
-[ "$dry" = 1 ] || printf '%s %s\n' "$(date -u +%FT%TZ)" "$what" >> "$cf"
+[ "$n" -ge "$cap" ] && [ "$what" != longpoll ] && { emit CAP "$n continuations this hour (S4E_STOP_CAP $cap) -- $reason"; exit 0; }
+[ "$dry" = 1 ] || [ "$what" = longpoll ] || printf '%s %s\n' "$(date -u +%FT%TZ)" "$what" >> "$cf"   # a long poll is a wait, not a continuation: it never counts against the cap
 emit BLOCK "$reason"

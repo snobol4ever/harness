@@ -515,7 +515,7 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
     local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
     _watch="seat-$ME,ask-$_tier,tier-$_tier"
-    _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout 0 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }
+    _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout "${S4E_NEXT_WAIT:-0}" 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }   # S4E_NEXT_WAIT: `next --wait S` long-polls the tubes (fleet-control step 12, the cio 2026-11-07)
     local _try _rc
     for _try in 1 2 3 4 5; do
     _res="$(_rh "$_watch")"
@@ -4766,6 +4766,9 @@ TASKEOF
          s4e_step_owned_refuse "$2" || exit 2
          s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
+        # fleet-control step 12 (the cio, 2026-11-07 14:5x; Lon: the fleet runs without the cio's attention): `next --wait S` holds the reserve open S seconds
+        # (beanstalkd reserve-with-timeout), so a worker the Stop gate sends back polls the tube instead of going idle until a message wakes it; 0 is the old instant read.
+        if [ "${2:-}" = --wait ]; then case "${3:-}" in ''|*[!0-9]*) printf '⛔ REFUSED: next --wait takes whole seconds (got %s)\n' "${3:-nothing}" >&2; exit 2;; esac; export S4E_NEXT_WAIT="$3"; fi
         [ "${3:-}" = --probe-port-check ] && { s4e_probe_port_check; exit $?; }
         [ "${2:-}" = --probe-reserve ] && s4e_next_probe_reserve; [ "${2:-}" = --probe-refused-head ] && s4e_next_probe_refused_head
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
