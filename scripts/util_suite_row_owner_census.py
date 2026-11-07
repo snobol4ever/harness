@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--mode F] [--holder KEY] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
-HOLDS, AND EVERY ROSTER SEAT HAS A ROW QUEUED BEHIND ITS CURRENT ONE (the seat arm, SEAT_QUEUE_BOARD, below the suite arm; either RED is rc 1).
+"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] [--tiers F] [--claims DIR] [--tubes F] [--probe-seat-arm] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
+HOLDS, AND THE WORKER QUEUES ARE WORKED (the seat arm, SEAT_QUEUE_BOARD, below the suite arm: no starved worker, no cut job owed, no overdue escalation; either arm RED is rc 1).
 
 Lon 2026-11-01 15:5x CST, in the coo's window, verbatim: "The goal is to get to 100% test suites, duh!" / "Well of course the bug fixes need
 an owner and a row. WTF! How did you miss that." / "how will you not miss that next time. have you automated that process. you know you can
@@ -77,25 +77,87 @@ for r in rows:
 if n == 0: refuse("%s holds no SCRIP row" % SUITES)
 print("SUITE_OWNER_BOARD suites=%d below_100=%d owned=%d held_by_lon=%d unowned=%d ports_skipped=%d" % (n, below, owned, held, len(reds), ports))
 for x in reds: print(x)
-# THE SEAT ARM (Lon 2026-11-01 16:0x CST, in the coo's window, verbatim: "ensure you have work queued for all seats."): every seat MODE's ROSTER:
-# line names, the coo excepted, holds at least QUEUE_MIN live rows CLAIMED or ASSIGNED to it -- the row it works and the next one behind it, so a
-# seat that finishes is never idle for want of a row (R-2107: the coo assigns the next row AHEAD). PARKED and BLOCKED-ON rows do not count.
-MODE = arg("--mode", "/home/resources/postoffice/MODE"); QUEUE_MIN = 2
-try: roster = next((l.split(":", 1)[1].split() for l in open(MODE, encoding="utf-8") if l.startswith("ROSTER:")), None)
-except OSError as e: refuse("%s unreadable: %s" % (MODE, e))
-if not roster: refuse("%s has no ROSTER: line" % MODE)
-held_by = {}
-for f in queue:
-    if len(f) >= 4 and f[0].isdigit() and f[3].startswith(("CLAIMED:", "ASSIGNED:")): held_by.setdefault(f[3].split(":", 1)[1], []).append(f[1])
-# CTO-485 (Lon 2026-11-04, in the cto's window: HQ-COLLECTOR is ON CALL): a seat on MODE's keyed ON-CALL: line is seated but serves only when woken
-# for its own class of red, so an empty queue behind it is correct and never short; no ON-CALL: line means no seat is on call.
-try: oncall = set(next((l.split(":", 1)[1].split() for l in open(MODE, encoding="utf-8") if l.startswith("ON-CALL:")), []))
-except OSError as e: refuse("%s unreadable: %s" % (MODE, e))
-seats = [s for s in roster if s != "coo" and s not in oncall]; short = []
-for s in seats:
-    h = held_by.get(s, [])
-    if len(h) < QUEUE_MIN: short.append("  RED  seat %s holds %d live row(s)%s: nothing queued behind it -- assign its best FREE row ahead (s4e_msg.sh assign %s <topic>)" % (s, len(h), (" (" + h[0] + ")") if h else "", s))
-print("SEAT_QUEUE_BOARD seats=%d queued=%d short=%d min=%d" % (len(seats), len(seats) - len(short), len(short), QUEUE_MIN))
-for x in short: print(x)
-if reds or short: print("RED: %d suite(s) below 100 percent with no seat holding a row; %d seat(s) with nothing queued" % (len(reds), len(short))); sys.exit(1)
-print("GREEN: every suite below 100 percent has a row a seat holds, or Lon's hold; every roster seat has a row queued behind its current one"); sys.exit(0)
+# THE SEAT ARM (the cio, fleet-queue, 2026-11-07, on COO-481 and THE LADDER: a senior starts no task and serves escalations only; a worker holds only the job the queue serves it).
+# It reads three things: the TIERS table (tier 4 is a worker, tiers 1-3 are seniors), the claims (a seat holds a job when a claim file's first line is the seat and it has a RESERVED job= line and no DONE) and the tube stats (tier-haiku, every seat-<worker> tube, and ask-<tier> and tier-<tier> of tiers 1-3).
+#   STARVED       a worker to wake: an idle worker whose own seat tube holds a ready job, then one idle worker per ready tier-haiku job, its job waiting. RED, one line per starved worker.
+#   DRY           idle workers minus ready tier-haiku jobs, when positive: the designers owe that many cut jobs. RED, printed DRY owed=N by cio,cto.
+#   OVERDUE       an ask-<tier> or tier-<tier> job of tiers 1-3 ready longer than 1800 s (the escalation timeout, fleet-queue 9). RED, one line per overdue tube.
+#   SENIOR_SHORT  a senior holding exactly one row. Informational, never rc: a senior holding zero rows is GREEN.
+# rc 1 when STARVED, DRY or OVERDUE is above 0. --probe-seat-arm plants the three inputs in a scratch dir and prints SEAT_ARM_PROBE when it reads them as the cio's ruling says.
+import subprocess
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+TIERS = arg("--tiers", os.path.join(ROOT, ".github", "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
+OVERDUE_S = 1800; UQ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_queue.py")
+def table(path, need):
+    try: rows = [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
+    except OSError as e: refuse("%s unreadable: %s" % (path, e))
+    if len(rows) < 2: refuse("%s holds no rows" % path)
+    for col in need:
+        if col not in rows[0]: refuse("%s has no %s column" % (path, col))
+    return [dict(zip(rows[0], r)) for r in rows[1:] if r and r[0]]
+def live_tube(name, need_age):
+    out = subprocess.run([sys.executable, UQ, "stats-tube", name], capture_output=True, text=True, timeout=60).stdout
+    m = re.search(r"ready=(\d+)", out)
+    if m is None: refuse("util_queue.py stats-tube %s printed no ready count: %s" % (name, out.strip()))
+    ready, age = int(m.group(1)), 0
+    if ready and need_age:
+        pk = subprocess.run([sys.executable, UQ, "peek", name], capture_output=True, text=True, timeout=60).stdout.split("\t")
+        if len(pk) > 3 and pk[3].strip().isdigit(): age = int(pk[3])
+    return ready, age
+def tsv_tube(path):
+    rows = {r["tube"]: (int(r["ready"]), int(r["oldest_ready_age_s"])) for r in table(path, ("tube", "ready", "oldest_ready_age_s"))}
+    return lambda name, need_age: rows.get(name, (0, 0))
+def holdings(d):
+    if not os.path.isdir(d): refuse("%s is not a directory" % d)
+    held = {}
+    for f in sorted(os.listdir(d)):
+        if not f.endswith(".claim"): continue
+        try: lines = open(os.path.join(d, f), encoding="utf-8", errors="replace").read().split("\n")
+        except OSError: continue
+        if not lines[0].strip() or any(l.startswith("DONE") for l in lines): continue
+        if any(l.startswith("RESERVED job=") for l in lines): held.setdefault(lines[0].strip(), []).append(f)
+    return held
+def seat_arm(seats, held, tube):
+    workers = [s["seat"] for s in seats if s["tier"] == "4"]
+    idle = [w for w in workers if w not in held]
+    haiku = tube("tier-haiku", False)[0]
+    waiting = [w for w in idle if tube("seat-" + w, False)[0] > 0]
+    pool = [w for w in idle if w not in waiting][:haiku]
+    names = {}
+    for s in seats: names.setdefault(s["tier"], s["model"].split("-")[1])
+    overdue = []
+    for t in ("1", "2", "3"):
+        for pre in ("ask-", "tier-"):
+            if t not in names: continue
+            ready, age = tube(pre + names[t], True)
+            if ready and age > OVERDUE_S: overdue.append((pre + names[t], ready, age))
+    return {"workers": len(workers), "idle": len(idle), "haiku": haiku,
+            "starved": [(w, "seat-%s holds a ready job" % w) for w in waiting] + [(w, "tier-haiku ready=%d" % haiku) for w in pool],
+            "owed": max(0, len(idle) - haiku), "overdue": overdue,
+            "short": [s["seat"] for s in seats if s["tier"] in ("1", "2", "3") and len(held.get(s["seat"], [])) == 1]}
+if "--probe-seat-arm" in sys.argv[1:]:
+    import shutil, tempfile
+    d = tempfile.mkdtemp(prefix="seat_arm_probe_")
+    try:
+        with open(os.path.join(d, "TIERS.tsv"), "w") as f:
+            f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\n")
+            f.write("cio\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
+            f.write("coo\tCOO\t/x\tclaude-opus-5-5\txhigh\tgreen\t2\ttesting-officer\n")
+            f.write("president\tPRESIDENT\t/x\tclaude-sonnet-5-5\txhigh\tpurple\t3\tcompany-man\n")
+            for i in range(1, 21): f.write("worker_%02d\tWORKER_%02d\t/x\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n" % (i, i))
+        os.mkdir(os.path.join(d, "claims"))
+        with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t1\t0\nask-opus\t1\t2000\n")
+        a = seat_arm(table(os.path.join(d, "TIERS.tsv"), ("seat", "model", "tier")), holdings(os.path.join(d, "claims")), tsv_tube(os.path.join(d, "tubes.tsv")))
+    finally: shutil.rmtree(d, ignore_errors=True)
+    starved, dry, overdue, short = len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"])
+    print("SEAT_ARM_PROBE starved=%d dry=%d overdue=%d senior_short=%d owed=%d" % (starved, dry, overdue, short, a["owed"]))
+    sys.exit(0 if (starved, dry, overdue, short) == (1, 1, 1, 0) else 1)
+a = seat_arm(table(TIERS, ("seat", "model", "tier")), holdings(CLAIMS), tsv_tube(TUBES) if TUBES else live_tube)
+print("SEAT_QUEUE_BOARD workers=%d idle=%d haiku_ready=%d starved=%d dry=%d overdue=%d senior_short=%d owed=%d" % (a["workers"], a["idle"], a["haiku"], len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"]), a["owed"]))
+for w, why in a["starved"]: print("  RED  worker %s starved: wake it, its job waits (%s)" % (w, why))
+if a["owed"] > 0: print("  RED  DRY owed=%d by cio,cto: the designers owe %d cut jobs" % (a["owed"], a["owed"]))
+for t, ready, age in a["overdue"]: print("  RED  OVERDUE %s ready=%d oldest=%ds: an escalation waits past %d s (fleet-queue 9)" % (t, ready, age, OVERDUE_S))
+if a["short"]: print("  note  senior(s) holding exactly one row: %s (informational, not rc)" % " ".join(a["short"]))
+if reds or a["starved"] or a["owed"] > 0 or a["overdue"]:
+    print("RED: %d suite(s) below 100 percent with no seat holding a row; %d worker(s) starved, DRY owed %d, %d escalation tube(s) overdue" % (len(reds), len(a["starved"]), a["owed"], len(a["overdue"]))); sys.exit(1)
+print("GREEN: every suite below 100 percent has a row a seat holds, or Lon's hold; no worker starved; no cut job owed; no escalation past %d s" % OVERDUE_S); sys.exit(0)
