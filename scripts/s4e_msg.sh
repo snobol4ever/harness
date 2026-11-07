@@ -298,7 +298,12 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     _rline="$(grep '^RESERVED job=' "$_c" | tail -1)"
     _job="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=\([0-9][0-9]*\) .*/\1/p')"
     _tube="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=[0-9]* tube=\([^ ]*\).*/\1/p')"
-    [ -n "$_job" ] && [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED job=<id> tube=<tube> line; there is no job to move.\n' "$_t" >&2; return 2; }
+    if [ -z "$_job" ]; then   # the claim lost its RESERVED line (three seats in two hours, the coo 2026-11-07 15:55: worker_01, worker_03, worker_15): the job is the baton's QUEUE-JOB and its tube is read from the queue, as done reads them
+        _job="$(s4e_baton_job_get "$_t" | awk '{print $1}')"; _tube=""
+        [ -n "$_job" ] && _tube="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f2)"
+        [ -n "$_job" ] && [ -n "$_tube" ] && printf 'RESERVED job=%s tube=%s %s (restored by escalate from the baton QUEUE-JOB)\n' "$_job" "$_tube" "$(date -u +%FT%TZ)" >> "$_c"
+    fi
+    [ -n "$_job" ] && [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED job=<id> tube=<tube> line and its baton names no QUEUE-JOB in a tube; there is no job to move.\n' "$_t" >&2; return 2; }
     _by="$(sed -n 's/^ASSIGNED-BY \([^ ]*\).*/\1/p' "$_c" | head -1)"
     _des="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$PO/tasks/$_t.task.md" 2>/dev/null | head -1)"
     _iso="$(date -u +%FT%TZ)"
@@ -444,6 +449,10 @@ s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
+    # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
+    local _dr="" _r
+    for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
+    [ -z "$_dr" ] || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: this root is dirty in$_dr, and a premise graded on a dirty root is no measurement (CEO-2060). Clean the root (git -C <repo> status; a cure lives in a worktree, never in the root) and run next again." >&2; return 1; }
     # THE RED PREMISE (the cio's cut, 2026-11-07): a gate that ran and read RED returns 4, so the reserve pass can bury this head and go on; any other refusal (an rc 2 that could not measure) returns 1, as it does today.
     local _pg; _pg="$(mktemp "${TMPDIR:-/tmp}/s4e_take_pg.XXXXXX")" || return 1
     if ! s4e_premise_gate "$_t" next >"$_pg" 2>&1; then

@@ -40,6 +40,7 @@ queue_set_state() {   # <topic> <state>
 
 # Park and claim and done are the bus's own verbs, run as subprocesses: the step 6 and step 35 logic stays in one place.
 bus() { env -u S4E_PID_LOCK S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$BUS" "$@"; }
+bus_as_holder() { S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$BUS" "$@"; }   # keeps S4E_PID_LOCK: a child of the verb that holds the identity passes the one-process guard as its descendant (the secretary 2026-11-07 15:56: answer ran done without the marker and was refused by its own lock, so the question stayed CLAIMED and the answer was never delivered)
 
 ask_queue() {   # <asker-topic> <question text>
     local topic="$1" body="$2" tier above tube n qt base j row
@@ -90,12 +91,12 @@ answer_q() {   # <q-topic> <answer text>
     if [ "$claim_first" = 1 ] && ! bus claim "$q" >/dev/null 2>&1; then
         queue_set_state "$q" "$st"; refuse "claim of $q refused (s4e_msg.sh claim $q shows why)"; fi
     tmpb="$(mktemp)" || refuse "mktemp failed"
-    printf '%s\n' "$body" | awk 'NR==1 {print "ANSWER: " $0; next} {print}' > "$tmpb"
+    printf '%s\n' "$body" | awk 'NR==1 {sub(/^ANSWER: */, ""); print "ANSWER: " $0; next} {print}' > "$tmpb"   # a body that begins with its own ANSWER: marker is not doubled
     t="$(mktemp "$base.ask.XXXXXX")" || refuse "mktemp failed"
     awk -v f="$tmpb" 'BEGIN{ins=0} /^## / && !ins { while ((getline l < f) > 0) print l; ins=1 } {print}' "$base" > "$t" && mv -f "$t" "$base"
     rm -f "$tmpb"
     grep -q '^ANSWER: ' "$base" || refuse "could not write the ANSWER line into $base"
-    bus done "$q"; rc=$?
+    bus_as_holder done "$q"; rc=$?
     return "$rc"; }
 
 ask_probe() {
