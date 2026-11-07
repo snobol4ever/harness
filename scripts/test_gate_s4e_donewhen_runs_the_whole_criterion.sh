@@ -48,7 +48,7 @@ ROOT="$(cd "$HERE/../.." && pwd)"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 [ -f "$ROOT/harness/scripts/s4e_msg.sh" ] || { echo "⛔ REFUSED: sibling root not resolvable from $HERE (want $ROOT/SCRIP)"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_T; HD="$W/hd.txt"
+PO="$W/po"; ME=worker_20; HD="$W/hd.txt"
 # ⛔ EVERY criterion names a path or a `$` ON PURPOSE: done's vacuity probe skips a criterion containing `/` or `$`,
 # and without that these fixtures would be refused as decorated no-ops -- a green gate proving something else.
 mk_po() {
@@ -83,17 +83,29 @@ mk_po() {
                    printf '(readable as a spec), but `done` runs it as literal `bash -c` and prose is not a command.\n';;
       esac
       printf 'LINKS: none\n## NEXT\n(none)\n## LEDGER\n'; } > "$PO/tasks/$t.task.md"
-    S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$MSG" claim "$t" >/dev/null 2>&1 || return 2
-    [ "$(head -1 "$PO/claims/$t.claim")" = "$ME" ] || return 2
   done
 }
+# ⛔ THE LIVE-CLAIM CAP (CLAUDE.md SOP 6, R-2078): a seat holds at most two live claims. mk_po used to claim all nine rows as one
+# seat, so the third claim was refused and the fixture returned rc 2 before any arm ran. A row is now claimed by run() just before
+# its own done, and every other row this seat still holds OPEN is released first; a closed row keeps its DONE receipt and is never
+# released. FIXERR marks a claim the real bus refused: the arm reports a broken fixture (rc 2), never a red arm.
+FIXERR=0
 RC=0
-run() { S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$1" done "$2" >"$W/out" 2>&1; RC=$?; }
+run() {
+  local _x
+  for _x in t-two t-heredoc t-unterm t-green t-two-contracts t-stale-ph t-dup-contract t-receipt t-prose; do
+    [ "$_x" = "$2" ] && continue
+    [ -f "$PO/claims/$_x.claim" ] && ! closed "$_x" && S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$MSG" unclaim "$_x" >/dev/null 2>&1
+  done
+  S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$MSG" claim "$2" >/dev/null 2>&1
+  [ "$(head -1 "$PO/claims/$2.claim" 2>/dev/null)" = "$ME" ] || { FIXERR=1; RC=2; return; }
+  S4E_POST="$PO" S4E_SEAT="$ME" S4E_HOME="$ROOT" S4E_NO_BANNER=1 bash "$1" done "$2" >"$W/out" 2>&1; RC=$?; }
 say() { grep -m3 -E '⛔|NOT DONE|REFUSED|✅' "$W/out" | sed 's/^/      | /' || tail -3 "$W/out" | sed 's/^/      | /'; }
 closed() { grep -q '^DONE$' "$PO/claims/$1.claim" 2>/dev/null; }
 arm() {   # arm <label> <script> -> 0 iff all four contracts hold; 2 iff the fixture broke
   local lbl="$1" s="$2" ok=1
   mk_po || return 2
+  FIXERR=0
   run "$s" t-two
   [ "$RC" = 1 ] || { echo "  [$lbl] (A) two-line criterion whose SECOND line exits 1 returned $RC (want 1 -- measured red)"; say; ok=0; }
   closed t-two && { echo "  [$lbl] (A) ⛔ the row CLOSED -- the second line never ran"; ok=0; }
@@ -134,6 +146,7 @@ arm() {   # arm <label> <script> -> 0 iff all four contracts hold; 2 iff the fix
     *"/home/claude_icon"*) echo "  [$lbl] (I) ⛔ THE RECEIPT REACHED THE CONSUMER: the extractor handed back annotation text naming a seat root"; ok=0;;
     "") echo "  [$lbl] (I) ⛔ the extractor returned NOTHING for t-receipt -- it is not readable from its lib"; ok=0;;
   esac
+  [ "$FIXERR" = 0 ] || return 2
   [ "$ok" = 1 ]
 }
 echo "s4e done: the WHOLE DONE-WHEN runs, a heredoc body reaches its file, an unterminated one REFUSES (scratch postoffice under $W)"
