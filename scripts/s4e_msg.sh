@@ -1311,7 +1311,10 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
     case "$_st" in CLAIMED*|RUNNING*) _nl=$((_nl+1)); printf 'SWEEP kept %s (a live claim: the row reads %s)\n' "$_t" "$_st"; continue;;
       MEASURING:*) _ms="${_st#MEASURING:}"; _mp="${_ms##*:}"; _ms="${_ms%%:*}"
         if [ -d "/proc/$_mp" ]; then _nl=$((_nl+1)); printf 'SWEEP kept %s (measuring: pid %s of %s lives)\n' "$_t" "$_mp" "$_ms"; continue; fi
-        s4e_set_row_state "$_t" "ASSIGNED:$_ms" && printf 'SWEEP reverted %s to ASSIGNED:%s (its measurement pid %s ended)\n' "$_t" "$_ms" "$_mp"; _nk=$((_nk+1)); continue;; esac
+        s4e_set_row_state "$_t" "ASSIGNED:$_ms" && printf 'SWEEP reverted %s to ASSIGNED:%s (its measurement pid %s ended)\n' "$_t" "$_ms" "$_mp"
+        # ⛔ NO `continue` HERE (the cure of sweep-close-green-reverts-a-dead-pid-measuring-row-to-assigned...): a reverted row falls
+        # through to its DONE-WHEN measurement in THIS pass, so it closes on the first sweep, not the second. A revert is not a kept row.
+        ;; esac
     _c="$PO/claims/$_t.claim"; _had=0
     if [ -f "$_c" ]; then
       grep -q '^DONE$' "$_c" && continue
@@ -1388,6 +1391,22 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   { grep -qP "^2\t\Q$_sw\E\tplant-owner\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why swapped claim $_sw did not read CLAIMED:plant-other with its file left as found;"; }
   if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s, bare claim %s and swapped claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b" "$_sw"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
+}
+s4e_sweep_plant_measuring_dead() {   # the cure's probe (box-scheduler step 8): a MEASURING row whose pid is gone is reverted AND closed in ONE pass; scratch postoffice only
+  local _w _g _p _o _rev=0 _cls=0 _why=""
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant_md.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null
+  _p=$(( $(cat /proc/sys/kernel/pid_max 2>/dev/null || echo 4194304) + 1 )); _g="sweep-plant-measuring-dead-$$"
+  printf '2\t%s\tplant-owner\tMEASURING:plant-owner:%s\n' "$_g" "$_p" > "$_w/QUEUE.tsv"
+  printf '# TASK %s\nGOAL: plant\nDONE-WHEN: cd "$S4E_HOME" && test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_g" > "$_w/tasks/$_g.task.md"
+  printf 'plant-owner\nASSIGNED-BY plant %s\n' "$(date -u +%FT%TZ)" > "$_w/claims/$_g.claim"
+  _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 60 2>&1)"
+  _rev="$(printf '%s\n' "$_o" | grep -c "^SWEEP reverted $_g to ")"
+  _cls="$(printf '%s\n' "$_o" | grep -c "^SWEEP closed $_g ")"
+  grep -qP "^2\t\Q$_g\E\tplant-owner\tDONE$" "$_w/QUEUE.done.tsv" 2>/dev/null || _why="$_why the row is not archived DONE;"
+  printf 'SWEEP measuring_dead reverted=%d closed_same_pass=%d\n' "$_rev" "$_cls"
+  [ "$_rev" = 1 ] && [ "$_cls" = 1 ] && [ -z "$_why" ] && { rm -rf "$_w"; return 0; }
+  printf 'SWEEP measuring_dead RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
 s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refusing row retires on the third sweep, a stale ASSIGNED row escalates to its lane officer, a timeout and a fresh row are kept
   local _w _o _why="" _now _r2 _st _fr _tm _off _rj
@@ -5695,6 +5714,7 @@ TASKEOF
          # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
          # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
          [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
+         [ "${2:-}" = "--plant-measuring-dead" ] && { s4e_sweep_plant_measuring_dead; exit $?; }
          [ "${2:-}" = "--plant-rc2" ] && { s4e_sweep_plant_rc2_stale; exit $?; }
          if [ "${2:-}" = "--close-green" ]; then shift 2; s4e_sweep_close_green "$@" || exit $?; fi
          q="$PO/QUEUE.tsv"; d="$PO/QUEUE.done.tsv"; [ -f "$q" ] || { echo "no QUEUE.tsv"; exit 1; }
