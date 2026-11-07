@@ -602,6 +602,39 @@ SKILLS: fleet-bus" || _skills=0
     [ -n "$_id" ] && s4e_queue_delete "$_id" && _del=1
     printf 'MINT tube=tier-haiku pri=1002 ttr=3600 job=%s skills_required=%s deleted=%s\n' "${_id:-none}" "$_skills" "$_del"
     [ -n "$_id" ] && [ "$_skills" = 1 ] && [ "$_del" = 1 ]; exit $?; }
+s4e_mint_probe_ceo() {   # CIO-2 (GOAL-CIO.md 86289122f; row mint-refuses-a-topic-ending-ceo-nnnn-and-a-goal-citing-ceo-nnnn-naming-r-nnnn-cio-2): mint refuses a topic ending -ceo-NNNN and a GOAL citing CEO-NNNN, naming R-NNNN, and mints a topic citing R-NNNN. Three measurements on a scratch postoffice and a PRIVATE queue daemon (never 11300); one MINT line; exit 0 only at 1 1 1
+    local _w _rt=0 _rg=0 _ar=0 _out _rc _head _d
+    s4e_probe_daemon || return 2
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mint_ceo.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+    for _d in tasks claims cfo/inbox; do mkdir -p "$_w/$_d"; done; : > "$_w/QUEUE.tsv"; : > "$_w/BOARD.md"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
+    _head='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
+    # 1. a topic ending -ceo-NNNN is refused before any write
+    _out="$(S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "ceo-probe-topic-ceo-2030" --owner cfo --stdin 2>&1 <<BODY
+GOAL: CIO-2 probe, a topic that names a fired seat.
+DONE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$
+PREMISE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$; r=\$?; [ \$r = 2 ] && exit 2; [ \$r != 0 ]
+BODY
+)"; _rc=$?
+    [ "$_rc" = 2 ] && printf '%s' "$_out" | grep -q 'R-NNNN' && _rt=1
+    # 2. a GOAL citing CEO-NNNN is refused before any write (the topic is clean)
+    _out="$(S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "ceo-probe-goal-$$" --owner cfo --stdin 2>&1 <<BODY
+GOAL: CIO-2 probe, a GOAL citing the ruling CEO-2030.
+DONE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$
+PREMISE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$; r=\$?; [ \$r = 2 ] && exit 2; [ \$r != 0 ]
+BODY
+)"; _rc=$?
+    [ "$_rc" = 2 ] && printf '%s' "$_out" | grep -q 'R-NNNN' && _rg=1
+    # 3. the lawful citation: a topic and a GOAL citing R-2030 mint on the private daemon (rc 0)
+    _out="$(S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "ceo-probe-r-$$" --owner cfo --stdin 2>&1 <<BODY
+GOAL: CIO-2 probe, the lawful citation R-2030 (the alias of CIO-1).
+DONE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$
+PREMISE-WHEN: $_head test -f /no-such-file-s4e-mint-ceo-$$; r=\$?; [ \$r = 2 ] && exit 2; [ \$r != 0 ]
+BODY
+)"; _rc=$?
+    [ "$_rc" = 0 ] && _ar=1
+    printf 'MINT refuses_ceo_topic=%s refuses_ceo_goal=%s accepts_r=%s\n' "$_rt" "$_rg" "$_ar"
+    rm -rf "$_w"
+    [ "$_rt" = 1 ] && [ "$_rg" = 1 ] && [ "$_ar" = 1 ]; exit $?; }
 # THE PREMISE-SHAPE PROBE (the cio's cut, 2026-11-07; row bus-mint-accepts-a-premise-that-is-a-bare-inversion-of-the-done-when-so-a-refusing-probe-reads-as-an-open-problem).
 # Three measurements on scratch postoffices and a PRIVATE queue daemon (never 11300): mint refuses a PREMISE-WHEN that is the DONE-WHEN behind a
 # leading ! (a bare inversion reads rc 0 when the criterion refuses rc 2); mint accepts the lawful shape; and a row whose PREMISE-WHEN exits 2 is
@@ -4378,7 +4411,7 @@ case "$cmd" in
   # rank is sniffed, not fixed-position: the token right after topic is consumed as rank ONLY if it is
   # ALL DIGITS (never true of real GOAL prose, even prose that happens to start with a number — that always
   # has a following space/letter); otherwise it defaults to 2 and the same token starts the goal text.
-  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape
+  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape; [ "${2:-}" = --probe-ceo ] && s4e_mint_probe_ceo
          [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat> | --tier fable|opus|sonnet|haiku | --to <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically, and with --tier or --to one job in the queue (fleet-queue step 3)."
          topic="$2"; shift 2
          s4e_step_owned_refuse "$topic" || exit 2
@@ -4413,6 +4446,10 @@ case "$cmd" in
          # as send (s191), checked before either write, not after.
          case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED: topic must be a short filename-safe slug (no / and no newline). Usage: $0 mint <topic> [rank] \"GOAL text\"" >&2; exit 2;; esac
          [ -n "$goal" ] || { echo "⛔ REFUSED: empty GOAL text. Usage: $0 mint <topic> [rank] \"GOAL text\" (or --stdin)" >&2; exit 2; }
+         # ⛔ CIO-2 (GOAL-CIO.md 86289122f; row mint-refuses-a-topic-ending-ceo-nnnn-and-a-goal-citing-ceo-nnnn-naming-r-nnnn-cio-2): no new topic ends -ceo-NNNN and no new GOAL cites CEO-NNNN; the fired seat's ruling is cited as R-NNNN, the alias of CIO-1. Refused before any write.
+         if [[ "$topic" =~ -ceo-[0-9]+$ ]]; then echo "⛔ REFUSED: a topic may not end -ceo-NNNN; cite the ruling as R-NNNN (CIO-2)." >&2; exit 2; fi
+         _ceo_line="$(printf '%s\n' "$goal" | grep -nE '\bCEO-[0-9]+\b' | head -1)"
+         if [ -n "$_ceo_line" ]; then echo "⛔ REFUSED: the GOAL cites a CEO ruling (line ${_ceo_line%%:*}); cite it as R-NNNN (CIO-2), the alias of CIO-1." >&2; exit 2; fi
          # ⛔⭐ THE SPLIT HAPPENS HERE, BEFORE THE LOCK AND BEFORE EITHER WRITE -- it used to sit inside the
          # lock, next to the baton heredoc. It is hoisted so the criterion can be JUDGED while refusing is
          # still free: a refusal after the queue row is appended is not a refusal, it is a cleanup problem.
