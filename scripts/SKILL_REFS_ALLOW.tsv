@@ -23,3 +23,4 @@ rt_thread.c	written by unicon step 12 (D12 the thread scheduler); not on the tre
 corpus/packages/raku/roast/FUDGED-ORACLE.tsv	written by the roast measure-first row (skill raku reference, RULING 4); not on the tree yet
 shapes.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
 locals.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
+/home/resources/progress/LAP.tsv	written by the first lap through the grade tube (test-cycle step 7); absent until then
