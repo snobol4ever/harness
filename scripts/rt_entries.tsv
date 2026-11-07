@@ -466,6 +466,7 @@ rt_pl_dop_gnu_prolog_pid	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_gnu_sort1	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_gnu_stream_line_column	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_gnu_term_hash	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_gnu_term_hash4	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_gnu_working_directory	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_goal_guard	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_halt	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
