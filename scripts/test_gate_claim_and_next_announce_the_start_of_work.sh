@@ -1,114 +1,111 @@
 #!/usr/bin/env bash
-# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE (THE ARBITER IS THE cto since the officer left the ROSTER, Lon 2026-10-31 15:1x CDT: every arm that read the officer as the arbiter reads the cto, and the fixture the cao plays the standing seat the cto played) (coo 2026-09-20, R-1002 rank 0, row
-# instruments-claim-and-next-announce-the-start-of-work-to-every-standing-seat).
-#
-# ⛔⭐ THE DEFECT IS IN THE BUS, NOT IN A SEAT. claim and next LOCKED A ROW SILENTLY: the bus had claim, assign, ask
-# and send, and not one of them told another seat that work had STARTED -- so the only instrument that ever reported
-# a collision was a branch that would not fast-forward. WITNESS, self-reported by hq_snobol4 2026-09-20: they measured
-# the no_layout census for an hour, the cto spent their own hour on the same 30 entries and the same cause and landed
-# first at SCRIP 83fb80ee7, and hq_snobol4 found out on a failed pull. BOTH SEATS HELD ROWS. The rows did not overlap
-# BY NAME and did overlap BY POPULATION -- which a claim on a topic string can never catch.
-# ⛔ LON, in-chat, VERBATIM: "Them not telegramming before starting is YOUR FAULT! You set up the system."
-# The officer's own first draft of the law read TELEGRAM THE LANE WHEN YOU START and they retracted it in the same
-# ruling: a rule that converts a structural gap into an instruction is obeyed for a week and then not. So what is
-# graded here is MECHANISM -- what the bus does when a seat takes a row -- and never a discipline.
-#
-# ⛔⭐ WHO IS TOLD, SINCE R-2078 (2026-10-31): THE OFFICER AND EVERY STANDING SEAT HOLDING A LIVE ROW IN THE ROW'S LANE (its
-# language prefix), or a lane-neutral row (shared code overlaps everyone); every other seat reads $PO/CLAIMS.log. MEASURED before
-# the change: 6,446 bus messages in seven days, 3,288 of them claim notices mailed to all seventeen seats -- three quarters of an
-# HQ's mail, every one saying in its own text that a name cannot show the overlap. Arms 1, 2, 6 and 8 grade the narrowing: a seat
-# holding a row in another lane, or holding nothing, is NOT mailed; a neutral row still reaches every live holder.
-#
-# ⛔⭐ THE STOOD-DOWN HALF IS NOT A COURTESY, IT IS THE OTHER DIRECTION OF THE SAME TEST (arm 2). "Announce to every
-# standing seat" is only meaningful if a stood-down seat is NOT announced to: a notice in a mailbox nobody is reading
-# is the noise that trains seats to stop reading notices, and an implementation that mails every mailbox passes arm 1
-# and fails here. The roster comes from s4e_mode_stands, the ONE dispatch authority `next` itself refuses on.
-#
-# ⛔ EVERY ARM IS HERMETIC: its own scratch postoffice, its own MODE, its own queue and batons. It never reads the live
-# MODE, never touches a real inbox, and builds nothing.
+# test_gate_claim_and_next_announce_the_start_of_work.sh -- GATE for the claim notice and the picker that takes no lock.
+# RE-CUT by the cio 2026-11-07 (job 400, bus-gate-claim-and-next-announce-reads-the-pre-step-21-notice-contract): the lane contract this
+# gate graded before (the officer and every standing holder in a lane told WORK STARTED; next re-printed the neighbourhood) is retired.
+# The two landed contracts are the law, and this gate grades only them:
+#   box-scheduler step 21 (CTO-496): a claim notice goes ONLY to a seat whose LIVE row's TOUCHES: paths meet the claimed row's. A row
+#     with no TOUCHES: line tells nobody, and the claim says so. The notice names the overlapping path. The count the claim prints is
+#     the count DELIVERED. A notice that cannot be delivered is named, and the claim stands.
+#   box-scheduler step 32: next locks nothing and announces no take. It serves; `claim <topic>` is the only writer of a RUNNING claim.
+# ⛔ EVERY ARM IS HERMETIC: its own scratch postoffice (S4E_POST), its own MODE, queue, batons and claims. It never reads the live MODE
+# or queue, never touches a real inbox, and builds nothing.
+# FAIL-ONCE (gates-and-witnesses section 1): a mutant copy of the bus that mails EVERY live holder (the overlap test sed to true) must
+# read RED under arm 1. The gate refuses (rc 2) if that sed does not apply to the bus under test.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUT="${SUT:-$HERE/s4e_msg.sh}"
+export S4E_HOME="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
+# THE QUEUE IS HERMETIC TOO: next reaches for the queue daemon, and the live one is port 11300. Every bus call here runs on a port with
+# NO daemon (a free port, bound and released), so next's reserve refuses on its own socket and never touches the live queue.
+S4E_QUEUE_PORT="$(python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1]);s.close()')" || S4E_QUEUE_PORT=""
+[ -n "$S4E_QUEUE_PORT" ] || { echo "⛔ GATE REFUSES (rc=2): no free port to isolate the queue daemon"; exit 2; }
+export S4E_QUEUE_PORT
 refuse(){ echo "⛔ GATE REFUSES (rc=2): $*"; exit 2; }
 [ -f "$SUT" ] || refuse "the bus under test is not at $SUT"
+[ -f "$HERE/lib_release_guard.sh" ] && [ -f "$HERE/lib_donewhen.sh" ] || refuse "the bus sources lib_release_guard.sh and lib_donewhen.sh beside it; the mutant copy cannot run without them"
 FAIL=0; N=0
 arm(){ N=$((N+1)); if [ "$1" = 0 ]; then echo "  ✅ $2"; else echo "  ⛔ $2"; FAIL=$((FAIL+1)); fi; }
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_announce.XXXXXX")" || refuse "mktemp failed"
 cleanup(){ chmod -R u+w "$W" 2>/dev/null; rm -rf "$W"; }
 trap cleanup EXIT
-mkdir -p "$W/tasks" "$W/claims" "$W/released"
-# the roster of SEPTET as R-1662 redefined it (2026-10-11): hq_snobol4, hq_icon and hq_prolog stand, hq_raku and hq_pascal are stood down
-STANDING="cto cao cfo coo hq_snobol4 hq_icon hq_prolog"
-DOWN="hq_raku hq_pascal seat07"
-for s in $STANDING $DOWN; do mkdir -p "$W/$s/inbox" "$W/$s/archive"; done
-printf 'SEPTET\n# scratch line 2 for a gate fixture: LANES: icon=hq_icon prolog=hq_prolog snobol4=hq_snobol4 pascal=cto raku=cto\n' > "$W/MODE"
-# three LIVE claims held by other seats: one lane-neutral (cfo), one in the prolog lane, one in the icon lane
-printf '0\tprolog-row-the-coo-takes\tcoo\tFREE\n0\trow-the-coo-takes\tcoo\tFREE\n0\trow-the-cfo-already-holds\tcfo\tCLAIMED:cfo\n0\tprolog-row-hq-prolog-holds\thq_prolog\tCLAIMED:hq_prolog\n0\ticon-row-hq-icon-holds\thq_icon\tCLAIMED:hq_icon\n0\trow-for-the-picker\thq_snobol4\tFREE\n' > "$W/QUEUE.tsv"
-for t in prolog-row-the-coo-takes row-the-coo-takes row-the-cfo-already-holds prolog-row-hq-prolog-holds icon-row-hq-icon-holds row-for-the-picker; do
-  printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
-printf 'cfo\nRUNNING\n' > "$W/claims/row-the-cfo-already-holds.claim"
-printf 'hq_prolog\nRUNNING\n' > "$W/claims/prolog-row-hq-prolog-holds.claim"
-printf 'hq_icon\nRUNNING\n' > "$W/claims/icon-row-hq-icon-holds.claim"
-count(){ ls "$W/$1/inbox"/*claim-notice-$2* 2>/dev/null | wc -l; }
+SEATS="cto coo worker_17 worker_18 worker_19 worker_20"
+# frow <dir> <topic> <owner> <state> <touches-or-empty>: one QUEUE row and its baton; the TOUCHES: line only when given
+frow(){ local D="$1" t="$2" o="$3" st="$4" tc="$5"
+  printf '0\t%s\t%s\t%s\n' "$t" "$o" "$st" >> "$D/QUEUE.tsv"
+  { printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n' "$t"; [ -n "$tc" ] && printf 'TOUCHES: %s\n' "$tc"; printf '## NEXT\nfixture\n## QA\n## LEDGER\n'; } > "$D/tasks/$t.task.md"; }
+# mkfix <dir>: two holders with LIVE rows (worker_18 touches harness/scripts/, worker_20 touches SCRIP/src/lower/) and four FREE rows.
+mkfix(){ local D="$1" s
+  mkdir -p "$D/tasks" "$D/claims" "$D/released"
+  for s in $SEATS; do mkdir -p "$D/$s/inbox" "$D/$s/archive"; done
+  printf 'TENET\nROSTER: %s\n' "$SEATS" > "$D/MODE"
+  : > "$D/QUEUE.tsv"; : > "$D/CLAIMS.log"
+  frow "$D" holder-harness-row worker_18 CLAIMED:worker_18 'harness/scripts/'
+  printf 'worker_18\nRUNNING\n' > "$D/claims/holder-harness-row.claim"
+  frow "$D" holder-scrip-row worker_20 CLAIMED:worker_20 'SCRIP/src/lower/'
+  printf 'worker_20\nRUNNING\n' > "$D/claims/holder-scrip-row.claim"
+  frow "$D" row-touching-harness-file worker_19 FREE 'harness/scripts/s4e_msg.sh'
+  frow "$D" row-with-no-touches coo FREE ''
+  frow "$D" row-into-a-deaf-inbox worker_17 FREE 'harness/scripts/'
+  frow "$D" row-for-the-picker cto FREE 'harness/scripts/s4e_msg.sh'
+}
+# ovn <dir> <seat> <topic>: overlap notices (body OVERLAP BY PATH) delivered to one seat about one claim
+ovn(){ local f n=0; for f in "$1/$2/inbox"/*claim-notice-"$3".msg; do [ -f "$f" ] || continue; grep -q 'OVERLAP BY PATH' "$f" && n=$((n+1)); done; echo "$n"; }
+# allov <dir> <topic>: the same, summed over every seat's inbox
+allov(){ local s tot=0; for s in $SEATS; do tot=$((tot+$(ovn "$1" "$s" "$2"))); done; echo "$tot"; }
+# snap <dir>: every file's checksum, so an arm can prove a command wrote nothing the contract covers. The seat's identity lock
+# ($PO/<seat>/.pid, flock-held) is the one file every verb writes, claim-free and announce-free, so it is the one file left out.
+snap(){ find "$1" -type f ! -name .pid -exec cksum {} + 2>/dev/null | sort; }
 
-echo "--- ARMS 1-3: A PROLOG-LANE CLAIM ANNOUNCES ITSELF TO THE OFFICER AND THE LIVE HOLDERS OF ITS LANE AND OF NEUTRAL ROWS, AND TO NOBODY ELSE ---"
-out="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim prolog-row-the-coo-takes 2>&1)"; rc=$?
-miss=""; for s in cto hq_prolog cfo; do n=$(count $s prolog-row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
-[ "$rc" = 0 ] && [ -z "$miss" ]; arm $? "the cto, the prolog-lane holder and the neutral-row holder each got exactly one notice (rc=$rc)${miss:+ -- missing:$miss}"
-extra=""; for s in cao hq_snobol4 hq_icon coo $DOWN; do n=$(count $s ''); [ "$n" = 0 ] || extra="$extra $s($n)"; done
-[ -z "$extra" ]; arm $? "and NOT the icon-lane holder, NOT a seat holding nothing, NOT a stood-down seat, NOT the claimant${extra:+ -- mailed:$extra}"
-body="$(cat "$W/cto/inbox"/*claim-notice-prolog-row-the-coo-takes* 2>/dev/null)"
-[[ "$body" == *"WORK STARTED"* && "$body" == *coo* && "$body" == *prolog-row-the-coo-takes* ]]
-arm $? "the notice NAMES THE SEAT AND THE TOPIC in its body, not only in its filename"
+mkfix "$W"
 
-echo "--- ARMS 4-5: THE CALLER READS THE NEIGHBOURHOOD AT THE MOMENT IT TAKES THE ROW ---"
-[[ "$out" == *"the neighbourhood"* && "$out" == *"LIVE CLAIM"* && "$out" == *cfo* && "$out" == *row-the-cfo-already-holds* && "$out" == *icon-row-hq-icon-holds* ]]
-arm $? "claim prints every OTHER seat's live claim back to the caller, by holder and by row -- the icon holder too, though it was not mailed"
-[[ "$out" == *"announced to 3 standing seat(s)"* ]]
-arm $? "and says how many seats it told, so a delivery that did not happen cannot read as one"
+echo "--- ARM 1: A CLAIM NOTIFIES ONLY THE HOLDER WHOSE LIVE ROW TOUCHES THE SAME PATH (box-scheduler step 21) ---"
+out1="$(S4E_SEAT=worker_19 S4E_POST="$W" bash "$SUT" claim row-touching-harness-file 2>&1 < /dev/null)"; rc1=$?
+[ "$rc1" = 0 ] && [ -f "$W/claims/row-touching-harness-file.claim" ] || refuse "the claim verb did not take the fixture row (rc=$rc1): $out1"
+[ "$(ovn "$W" worker_18 row-touching-harness-file)" = 1 ] && [ "$(ovn "$W" worker_20 row-touching-harness-file)" = 0 ]
+arm $? "the holder whose live row touches harness/scripts/ got exactly one notice; the holder whose row touches SCRIP/src/lower/ got none"
+del1="$(allov "$W" row-touching-harness-file)"
+[ "$del1" = 1 ]
+arm $? "and that is the only overlap notice in any inbox ($del1 delivered): the idle seats and the claimant were not mailed"
 
-echo "--- ARM 6: A LANE-NEUTRAL ROW REACHES EVERY LIVE HOLDER (shared code overlaps every lane) ---"
-out6="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim row-the-coo-takes 2>&1)"; rc6=$?
-miss=""; for s in cto cfo hq_prolog hq_icon; do n=$(count $s row-the-coo-takes); [ "$n" = 1 ] || miss="$miss $s($n)"; done
-extra=""; for s in cao hq_snobol4 coo $DOWN; do n=$(count $s row-the-coo-takes); [ "$n" = 0 ] || extra="$extra $s($n)"; done
-[ "$rc6" = 0 ] && [ -z "$miss" ] && [ -z "$extra" ]; arm $? "the cto and all three holders got it, the two idle seats did not (rc=$rc6)${miss:+ -- missing:$miss}${extra:+ -- mailed:$extra}"
+echo "--- ARM 2: A ROW WITH NO TOUCHES TELLS NOBODY, AND THE CLAIM SAYS SO ---"
+out2="$(S4E_SEAT=coo S4E_POST="$W" bash "$SUT" claim row-with-no-touches 2>&1 < /dev/null)"; rc2=$?
+[ "$rc2" = 0 ] && [ "$(allov "$W" row-with-no-touches)" = 0 ] && [[ "$out2" == *"NO TOUCHES ON THE BATON"* ]]
+arm $? "a claimed row with no TOUCHES: line mailed nobody, and the claim printed that no overlap could be computed (rc=$rc2)"
 
-echo "--- ARM 7: next TAKES ITS LOCK THROUGH claim AND MUST NOT SWALLOW THE ANNOUNCEMENT ---"
-nout="$(S4E_SEAT=hq_snobol4 S4E_POST="$W" bash "$SUT" next 2>&1)"; nrc=$?
-[[ "$nout" == *"the neighbourhood"* ]] && [[ "$nout" == *"LIVE CLAIM"* ]]
-arm $? "the served seat sees the neighbourhood too (next rc=$nrc) -- the picker is where a seat is LEAST likely to know what its neighbours are on"
-n=$(count cto row-for-the-picker)
-[ "$n" = 1 ]; arm $? "and next's own take announced itself exactly once, not twice (the inner claim is the only announcer)"
+echo "--- ARM 3: THE NOTICE NAMES THE CLAIMANT, THE ROW AND THE OVERLAPPING PATH ---"
+body="$(cat "$W/worker_18/inbox"/*claim-notice-row-touching-harness-file.msg 2>/dev/null)"
+[[ "$body" == *"OVERLAP BY PATH"* && "$body" == *"worker_19"* && "$body" == *"row-touching-harness-file"* && "$body" == *"harness/scripts"* ]]
+arm $? "the notice in worker_18's inbox names the claimant, the row and the overlapping path in its body"
 
-echo "--- ARM 8: EVERY CLAIM LEAVES ONE LINE IN CLAIMS.log, WHOEVER WAS MAILED ---"
-lines=$(grep -c . "$W/CLAIMS.log" 2>/dev/null)
-[ "$lines" = 3 ] && grep -q "coo	prolog-row-the-coo-takes	lane=prolog" "$W/CLAIMS.log" && grep -q "hq_snobol4	row-for-the-picker	lane=neutral" "$W/CLAIMS.log"
-arm $? "three claims, three lines naming the seat, the topic and the lane (got $lines)"
+echo "--- ARM 4: next SERVES A ROW AND WRITES NOTHING (box-scheduler step 32) ---"
+before="$(snap "$W")"
+nout="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" next 2>&1 < /dev/null)"; nrc=$?
+after="$(snap "$W")"
+[[ "$nout" == *"take it: s4e_msg.sh claim"* ]] && [ "$before" = "$after" ]
+arm $? "next names a FREE row to take (rc=$nrc) and writes nothing the contract covers: no inbox, claim, queue row, baton or CLAIMS.log line"
 
-echo "--- ARM 9: AN ANNOUNCEMENT THAT FAILS NAMES ITSELF AND DOES NOT FAIL THE CLAIM ---"
-printf '0\trow-with-a-deaf-neighbour\thq_snobol4\tFREE\n' >> "$W/QUEUE.tsv"
-printf '# TASK row-with-a-deaf-neighbour\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' > "$W/tasks/row-with-a-deaf-neighbour.task.md"
-chmod 000 "$W/hq_icon/inbox"
-out2="$(S4E_SEAT=hq_snobol4 S4E_POST="$W" bash "$SUT" claim row-with-a-deaf-neighbour 2>&1)"; rc2=$?
-chmod 755 "$W/hq_icon/inbox"
-[ "$rc2" = 0 ] && [ "$(head -1 "$W/claims/row-with-a-deaf-neighbour.claim")" = hq_snobol4 ] && [[ "$out2" == *"COULD NOT ANNOUNCE to hq_icon"* ]]
-arm $? "an undeliverable notice is NAMED, the claim still stands (rc=$rc2), and the count does not include it"
-[[ "$out2" == *"announced to 4 standing seat(s)"* ]]
-arm $? "and the number printed is what was DELIVERED (cto cfo hq_prolog coo) -- an instrument that reports success while doing nothing is the recurring failure"
+echo "--- ARM 5: THE COUNT THE CLAIM PRINTS IS THE COUNT DELIVERED ---"
+sent1="$(printf '%s\n' "$out1" | grep -o 'notices_sent=[0-9]*' | head -1 | cut -d= -f2)"
+[ -n "$sent1" ] && [ "$sent1" = "$del1" ]
+arm $? "the claim printed notices_sent=${sent1:-none} and the inboxes hold $del1 overlap notice(s) for it"
 
-echo "--- ARM 10: A PORT IS A LANE OF ITS OWN: a port holder hears only its port's claims, and a port's claim reaches only the officer and its port (R-2081) ---"
-mkdir -p "$W/hq_dotnet/inbox" "$W/hq_dotnet/archive"
-printf 'ROSTER: cto cao cfo coo hq_snobol4 hq_icon hq_prolog hq_dotnet\n' >> "$W/MODE"; printf '0\tdotnet-row-held\thq_dotnet\tCLAIMED:hq_dotnet\n0\tgc-neutral-row\tcto\tFREE\n0\tdotnet-row-taken\tceo\tFREE\n' >> "$W/QUEUE.tsv"
-for t in dotnet-row-held gc-neutral-row dotnet-row-taken; do printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: true\n## NEXT\nfixture\n## QA\n## LEDGER\n' "$t" > "$W/tasks/$t.task.md"; done
-printf 'hq_dotnet\nRUNNING\n' > "$W/claims/dotnet-row-held.claim"
-rm -f "$W/claims/row-for-the-picker.claim" "$W/claims/row-with-a-deaf-neighbour.claim"
-o10="$(S4E_SEAT=cao S4E_POST="$W" bash "$SUT" claim gc-neutral-row 2>&1)"
-n_neutral=$(count hq_dotnet gc-neutral-row)
-o11="$(S4E_SEAT=cto S4E_POST="$W" bash "$SUT" claim dotnet-row-taken 2>&1)"
-n_portcfo=$(count cfo dotnet-row-taken); n_porticon=$(count hq_icon dotnet-row-taken)
-[ "$n_neutral" = 0 ] && [ "$n_portcfo" = 0 ] && [ "$n_porticon" = 0 ]
-arm $? "the port holder was not mailed the neutral gc- claim ($n_neutral), and the port's claim reached no SCRIP holder (cfo $n_portcfo, hq_icon $n_porticon)"
+echo "--- ARM 6: AN UNDELIVERABLE NOTICE IS NAMED, IS NOT COUNTED, AND THE CLAIM STANDS ---"
+rm -rf "$W/worker_18/inbox"
+out6="$(S4E_SEAT=worker_17 S4E_POST="$W" bash "$SUT" claim row-into-a-deaf-inbox 2>&1 < /dev/null)"; rc6=$?
+sent6="$(printf '%s\n' "$out6" | grep -o 'notices_sent=[0-9]*' | head -1 | cut -d= -f2)"
+del6="$(allov "$W" row-into-a-deaf-inbox)"
+[ "$rc6" = 0 ] && [ "$(head -1 "$W/claims/row-into-a-deaf-inbox.claim" 2>/dev/null)" = worker_17 ] && [[ "$out6" == *"COULD NOT ANNOUNCE to worker_18"* ]] && [[ "$out6" == *"FAILED"* ]] && [ -n "$sent6" ] && [ "$sent6" = "$del6" ] && [ "$del6" -ge 1 ]
+arm $? "worker_18 (no inbox) is named COULD NOT ANNOUNCE, the claim stands (rc=$rc6), and notices_sent=${sent6:-none} equals the $del6 delivered"
+
+echo "--- FAIL-ONCE: A MUTANT THAT MAILS EVERY LIVE HOLDER IS RED UNDER ARM 1 ---"
+MUT="$W/mutant"; mkdir -p "$MUT"; cp "$HERE/lib_release_guard.sh" "$HERE/lib_donewhen.sh" "$MUT/"
+sed 's/if \[ -s "\$_mine" \] && _ov="\$(s4e_paths_overlap "\$_mine" "\$_theirs")"; then/if _ov=ALL; then/' "$SUT" > "$MUT/s4e_msg.sh"
+grep -q 'if _ov=ALL; then' "$MUT/s4e_msg.sh" || refuse "the mutant sed did not apply: the overlap test line in $SUT is not the one this gate mutates"
+MF="$W/mfix"; mkfix "$MF"
+S4E_SEAT=worker_19 S4E_POST="$MF" bash "$MUT/s4e_msg.sh" claim row-touching-harness-file > /dev/null 2>&1 < /dev/null
+[ "$(ovn "$MF" worker_20 row-touching-harness-file)" -ge 1 ]
+arm $? "the mutant mailed worker_20, whose row touches SCRIP/src/lower/ and not the claimed path: arm 1 trips on it, so the gate can see the defect it grades"
 
 echo "graded $N arm(s)"
-if [ "$FAIL" = 0 ]; then echo "✅ GATE PASS: the bus announces the start of work to the cto and the live holders of the row's lane, logs every claim, and shows the caller the neighbourhood."; exit 0; fi
-echo "⛔ GATE FAIL: $FAIL of $N arm(s) red -- a claim that nobody hears is the collision nobody can prevent; a claim everybody hears is the notice nobody reads."; exit 1
+if [ "$FAIL" = 0 ]; then echo "GATE OK [test_gate_claim_and_next_announce_the_start_of_work]: a claim notice reaches exactly the live holders whose TOUCHES paths meet the claimed row's, a row with no TOUCHES tells nobody, the printed count is the delivered count, and next takes no lock."; exit 0; fi
+echo "GATE FAIL [test_gate_claim_and_next_announce_the_start_of_work]: $FAIL of $N arm(s) red -- a claim that nobody hears is the collision nobody can prevent; a claim everybody hears is the notice nobody reads."; exit 1
