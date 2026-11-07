@@ -384,14 +384,11 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     ( set -o noclobber; printf '%s\nRESERVED job=%s tube=%s %s\n' "$ME" "$2" "$3" "$(date -u +%FT%TZ)" > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
     s4e_set_row_state "$_t" "CLAIMED:$ME" || true; return 0; }
 s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the seat's watch list; prints and exits when a job is served; returns 1 when nothing is ready
-    local _tier _watch _res _id _tube _pri _topic _below
+    local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
     _watch="seat-$ME,ask-$_tier,tier-$_tier"
     _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout 0 2>/dev/null && return 0; [ $? = 3 ] || return 1; done; return 1; }
     _res="$(_rh "$_watch")"
-    if [ -z "$_res" ] && _below="$(s4e_tier_below "$_tier")"; then
-      _res="$(_rh "tier-$_below")"; [ -n "$_res" ] && _watch="$_watch,tier-$_below"
-    fi
     [ -n "$_res" ] || return 1
     _id="$(printf '%s' "$_res" | cut -f1)"; _tube="$(printf '%s' "$_res" | cut -f2)"; _pri="$(printf '%s' "$_res" | cut -f3)"; _topic="$(printf '%s' "$_res" | cut -f4)"
     # the holder watches $PO/claims/<topic>.claim: written here within its 60 s grace, else it releases the job
@@ -401,26 +398,35 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
       exit 0
     fi
     return 1; }
-s4e_next_probe_reserve() {   # fleet-queue step 4's probe on a scratch postoffice: own tube before the tube below, the claim carries the job, a haiku seat gets no FREE row
-    local _w _tier _below _own _bel _free _jo _jb _out _own_first=0 _reserved=0 _claim=0 _free_served=1 _now
-    _tier="$(s4e_tier_of "$ME")" || { echo "REFUSE(2): $ME is in no tier of $S4E_TIERS"; exit 2; }
+s4e_next_probe_reserve() {   # fleet-queue step 4's probe (the cio, 2026-11-07, the amended row): a scratch postoffice and a PRIVATE beanstalkd on a free port, never 11300; a sonnet senior (president) runs next, its own tube is served first, and an empty own tube never serves the tube below (below_served=0); a haiku seat gets no FREE row
+    local _w _seat _tier _below _own _bel _free _jo _jb _out _own_first=0 _reserved=0 _claim=0 _free_served=1 _below_served=0 _now _port _i _up=0
+    _port=$((21000 + ($$ % 20000)))
+    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bpid=$!
+    trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
+    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+    { [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; }
+    export S4E_QUEUE_PORT="$_port"
+    _seat=president
+    _tier="$(s4e_tier_of "$_seat")" || { echo "REFUSE(2): $_seat is in no tier of $S4E_TIERS"; exit 2; }
     _below="$(s4e_tier_below "$_tier")" || _below=""
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
-    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" "$_w/worker_20/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$_seat/inbox" "$_w/worker_20/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
     _own="next-probe-own-$$"; _bel="next-probe-below-$$"; _free="next-probe-free-$$"
     printf '2\t%s\t@%s\tFREE\n2\t%s\t@%s\tFREE\n2\t%s\t@haiku\tFREE\n' "$_own" "$_tier" "$_bel" "${_below:-haiku}" "$_free" > "$_w/QUEUE.tsv"
     for _x in "$_own" "$_bel" "$_free"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: minted via mint by %s, %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$ME" "$_now" > "$_w/tasks/$_x.task.md"; done
     [ -n "$_below" ] && _jb="$(s4e_queue_put "tier-$_below" "$_bel" 1001 30)"
     _jo="$(s4e_queue_put "tier-$_tier" "$_own" 1002 30)"
-    _out="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" next 2>&1)"
+    _out="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
     printf '%s\n' "$_out" | grep -q "^RESERVED $_own " && { _own_first=1; _reserved=1; }
     [ -f "$_w/claims/$_own.claim" ] && grep -q "RESERVED job=$_jo " "$_w/claims/$_own.claim" && _claim=1
+    _out="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
+    printf '%s\n' "$_out" | grep -q "^RESERVED $_bel " && _below_served=1
     _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$0" next 2>&1)"
     printf '%s\n' "$_out" | grep -q "^FREE " || _free_served=0
     rm -rf "$_w"; sleep 12   # the holder sees the claim gone and releases the own job
     [ -n "$_jo" ] && s4e_queue_delete "$_jo"; [ -n "${_jb:-}" ] && s4e_queue_delete "$_jb"
-    printf 'NEXT watch=seat,ask,tier%s own_first=%s reserved=%s claim=job writes=claim free_served=%s\n' "${_below:+,below}" "$_own_first" "$_reserved" "$_free_served"
-    [ "$_own_first" = 1 ] && [ "$_reserved" = 1 ] && [ "$_claim" = 1 ] && [ "$_free_served" = 0 ]; exit $?; }
+    printf 'NEXT watch=seat,ask,tier own_first=%s reserved=%s claim=job writes=claim free_served=%s below_served=%s\n' "$_own_first" "$_reserved" "$_free_served" "$_below_served"
+    [ "$_own_first" = 1 ] && [ "$_reserved" = 1 ] && [ "$_claim" = 1 ] && [ "$_free_served" = 0 ] && [ "$_below_served" = 0 ]; exit $?; }
 s4e_mint_probe_queue() {   # fleet-queue step 3's probe: the SKILLS gate and one put into tier-haiku, deleted again; no row minted
     local _skills=0 _id="" _del=0
     s4e_skills_required_ok haiku "GOAL: a plant with no skills line" || _skills=1
@@ -4425,7 +4431,7 @@ TASKEOF
          # tier-<tier>, then the tier below only when those hold nothing); a job served here is claimed and held; a sonnet or haiku seat with nothing ready
          # is served NO FREE row (Lon: a worker works only what is assigned); an officer with nothing ready falls through to PASS 3 as before.
          case "$(s4e_tier_of "$ME" 2>/dev/null)" in haiku|sonnet)
-           echo "nothing ready in seat-$ME, ask-$(s4e_tier_of "$ME"), tier-$(s4e_tier_of "$ME")$( [ "$(s4e_tier_of "$ME")" = sonnet ] && echo ', tier-haiku'): a $(s4e_tier_of "$ME") seat takes no FREE row; a company man or officer puts your next job in a tube (fleet-queue step 4)"; exit 0;; esac
+           echo "nothing ready in seat-$ME, ask-$(s4e_tier_of "$ME"), tier-$(s4e_tier_of "$ME"): a $(s4e_tier_of "$ME") seat takes no FREE row; a company man or officer puts your next job in a tube (fleet-queue step 4)"; exit 0;; esac
          [ -f "$q" ] || { echo "no QUEUE.tsv — ask hq"; exit 1; }
          # PASS 3 -- free rows, RANK-SORTED numerically; ties inside one rank now tie-break by MINT TIME,
          # newest first (next-tiebreak-by-mint-time-not-file-order, hq_C finding, mint 2026-09-01) --
