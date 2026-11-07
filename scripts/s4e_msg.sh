@@ -1696,6 +1696,27 @@ s4e_announce_claim() {   # <topic> -- box-scheduler step 21 (CTO-496): a claim n
   if [ "$_k" -eq 0 ]; then printf '  (no other seat holds a row right now)\n'
   else printf '  %d live row(s) by other seats; a notice went only where the paths meet (CLAIMS.log is the record for every other seat)\n' "$_k"; fi
 }
+s4e_claim_probe_premise() {   # claim --probe-premise (job 595, the cio 2026-11-07): the premise is read only where a row is FREE or QUEUED; an assigned, awaiting or self-held row and a done read none. One CLAIM line on a scratch postoffice; each 1 is the contract held.
+    local _w _a=0 _b=0 _c=0 _d=0 _o _rc _sh="$S4E/harness/scripts/s4e_msg.sh" _t
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" || { rm -rf "$_w"; echo "REFUSE(2): cannot make the scratch postoffice"; return 2; }
+    cp "$PO/MODE" "$_w/MODE" 2>/dev/null || { rm -rf "$_w"; echo "REFUSE(2): no MODE to copy"; return 2; }
+    printf '# premise probe queue\n2\tpp-free\tunassigned\tFREE\n2\tpp-assigned\t%s\tASSIGNED:%s\n2\tpp-awaiting\t%s\tPARKED-AWAITING:req-pp\n2\tpp-claimed\t%s\tCLAIMED:%s\n' "$ME" "$ME" "$ME" "$ME" "$ME" > "$_w/QUEUE.tsv"
+    for _t in pp-free pp-assigned pp-awaiting pp-claimed; do
+        printf '# TASK %s\nGOAL: premise probe.\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: test -f /no-such-file-s4e-premise-probe-%s\nLINKS: none\n## NEXT\nprobe\n## LEDGER\n' "$_t" "$_t" > "$_w/tasks/$_t.task.md"
+    done
+    printf '%s\nRUNNING\n' "$ME" > "$_w/claims/pp-claimed.claim"
+    _o="$(S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$_sh" claim pp-free 2>&1)"; _rc=$?
+    grep -q 'THE PREMISE OF THIS ROW IS RED' <<<"$_o" && [ "$_rc" != 0 ] && [ ! -f "$_w/claims/pp-free.claim" ] && _a=1
+    _o="$(S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$_sh" done pp-claimed 2>&1)"; _rc=$?
+    [ "$_rc" = 0 ] && ! grep -q 'THE PREMISE OF THIS ROW IS RED' <<<"$_o" && grep -q '^DONE$' "$_w/claims/pp-claimed.claim" 2>/dev/null && _d=1
+    _o="$(S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$_sh" claim pp-assigned 2>&1)"; _rc=$?
+    [ "$_rc" = 0 ] && ! grep -q 'THE PREMISE OF THIS ROW IS RED' <<<"$_o" && [ "$(head -1 "$_w/claims/pp-assigned.claim" 2>/dev/null)" = "$ME" ] && _b=1
+    _o="$(S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$_sh" claim pp-awaiting 2>&1)"; _rc=$?
+    [ "$_rc" = 0 ] && ! grep -q 'THE PREMISE OF THIS ROW IS RED' <<<"$_o" && [ "$(head -1 "$_w/claims/pp-awaiting.claim" 2>/dev/null)" = "$ME" ] && _c=1
+    printf 'CLAIM premise_at_free=%d premise_skipped_assigned=%d premise_skipped_awaiting=%d done_reads_no_premise=%d\n' "$_a" "$_b" "$_c" "$_d"
+    rm -rf "$_w"; [ "$_a$_b$_c$_d" = 1111 ]
+}
 s4e_claim_probe_overlap() {   # step 21's probe on a scratch postoffice: a notice only where paths meet; none when the claimed row declares none
     local _w _o _why="" _now; _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_overlap_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
     mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; for _s in probe_b probe_c probe_d probe_e; do mkdir -p "$_w/$_s/inbox"; done; _now="$(date -u +%FT%TZ)"
@@ -3249,6 +3270,7 @@ case "$cmd" in
          echo "EXPIRE $topic job=$_eid tube=$_etube holder=$_eholder claim_archived=1 ledger=1 resume_line=$([ -n "$_erl" ] && echo 1 || echo 0)"; exit 0;;
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
          [ "$2" = --probe-overlap ] && { s4e_claim_probe_overlap; exit $?; }
+         [ "$2" = --probe-premise ] && { s4e_claim_probe_premise; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"; mkdir -p "$PO/claims"
          # ⭐ AN ASSIGNED ROW ITS OWNER CLAIMS BY NAME IS STARTED, THE SAME MARK `next` WRITES WHEN IT SERVES ONE (the coo 2026-09-27, the officer
          # R-1306): PASS 1 appends RUNNING as it serves ASSIGNED->RUNNING, but `claim` on the same row said "already yours" and wrote
@@ -3295,7 +3317,10 @@ case "$cmd" in
                 echo "⛔ REFUSED (rc 1): $ME already holds $_cap_n live row(s):$_cap_list -- a seat holds at most two (CLAUDE.md SOP 6, R-2078). Finish one (done), or park the one that waits on another seat: park <topic> BLOCKED-ON:<the row it waits for> -- then claim again. Nothing written, nothing announced."
                 exit 1
               fi
-              s4e_premise_gate "$topic" claim || exit 1
+              # ⭐ job 595 (the cio 2026-11-07): the premise is read ONCE, here, at a FREE or QUEUED row (does the problem still
+              # exist before anyone works it). An ASSIGNED, PARKED-AWAITING or self-held row reads none: its problem was
+              # checked when it was cut, and a landed row retired by its own landing must still close by `done`.
+              case "$(s4e_row_state "$topic")" in FREE|QUEUED:*) s4e_premise_gate "$topic" claim || exit 1;; esac
               t="$(mktemp "$PO/claims/.c.XXXXXX")"; echo "$ME" > "$t"
               if ln "$t" "$c" 2>/dev/null; then rm -f "$t"
                 # ⭐ picker-dependency-and-boomerang-blindness CURE 2: an explicit claim IS the "another seat
