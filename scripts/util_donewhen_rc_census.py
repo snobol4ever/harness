@@ -39,7 +39,9 @@ RUNNER = re.compile(r'(?:^|[\s;&|(])(?:bash|sh|python3|\./|\$\{?[A-Za-z_])[^;|&]
 CAP = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)=\$\(')
 GUARD = ('_dwrc=$?; if [ "$_dwrc" = 2 ]; then '
          'echo "REFUSE(2): the runner could not measure (rc=2) -- this is not a red"; exit 2; fi; ')
-HEADS = r'^(GOAL|LINKS|RANK|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY|DONE-WHEN|## )'
+# ⭐ PREMISE-WHEN ends the criterion block (the cio's census cure, 2026-11-07): the block ran past it, so a rewrite and its
+# receipt carried a copy of the premise. The other baton fields end it too.
+HEADS = r'^(GOAL|LINKS|RANK|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY|DONE-WHEN|PREMISE-WHEN|STATE|QUEUE-JOB|TOUCHES|SKILLS|## )'
 def block(text):
     m = re.search(r'^DONE-WHEN:', text, re.M)
     if not m: return None
@@ -158,6 +160,12 @@ def live_ranges(s):
         i += 1
     out.append((start, len(s)))
     return out
+DELIBERATE, RULING, REFUSED = [], [], []
+def _parses(t):
+    try:
+        return subprocess.run(['bash', '-n', '/dev/stdin'], input=t, capture_output=True, text=True, timeout=20).returncode == 0
+    except Exception:
+        return None
 def bare_roots(seg):
     """-> (roots, cure_spans) over the EXECUTED, UNCOMMENTED text only.
     ⭐ S4E_DWRC_FAIL_ONCE=1 restores the PRE-2026-09-23 reader (fallback form only, bare form invisible) so
@@ -171,11 +179,25 @@ def bare_roots(seg):
         chunk = seg[a+ls:a+le]
         for m in BARE_ROOT.finditer(chunk):
             if any(f.start() <= m.start() < f.end() for f in FALLBACK.finditer(chunk)): continue
+            # the coo's own loop files are DELIBERATE absolute pins (the coo's ruling, 2026-11-07): counted, never a seat-root defect
+            if chunk[m.end():].startswith('/.scratch/'): DELIBERATE.append(m.group(0)); continue
             roots.append(m.group(0)); spans_out.append((a+ls+m.start(), a+ls+m.end()))
     return roots, spans_out
 def classB_fallback(seg):
     return [m.group(1).strip() for m in re.finditer(r'\$\{S4E_HOME:-([^}]*)\}', seg)
             if re.match(r'^/home/claude', m.group(1).strip())]
+QUEUE = os.environ.get('S4E_QUEUE', '/home/resources/postoffice/QUEUE.tsv')
+CLAIMS = os.environ.get('S4E_CLAIMS', '/home/resources/postoffice/claims')
+def _live_claimed(base):
+    # a baton whose row a seat holds RIGHT NOW (CLAIMED, ASSIGNED, RUNNING or MEASURING) is never rewritten under it
+    try:
+        for ln in open(QUEUE, encoding='utf-8', errors='replace').read().splitlines():
+            f = ln.split('\t')
+            if len(f) >= 4 and f[1] == base and re.match(r'(CLAIMED:|ASSIGNED:|RUNNING|MEASURING:)', f[3]): return True
+    except OSError:
+        return True
+    c = os.path.join(CLAIMS, base + '.claim')
+    return os.path.isfile(c) and 'DONE' not in open(c, encoding='utf-8', errors='replace').read().split()
 def main():
     # ⛔ AN UNRECOGNISED ARGUMENT IS A REFUSAL, NEVER A SILENT NO-OP (coo 2026-09-19, row
     # instrument-the-nineteen-non-gc-blocking-arms). Every flag here is read as `'--x' in sys.argv`, so
@@ -204,7 +226,10 @@ def main():
     if not files:
         print(f"REFUSE(2): no *.task.md under {tasks} -- cannot measure")
         return 2
-    A, B, SUBJ, honest, touched = [], [], [], 0, 0
+    A, B, SUBJ, honest, touched, SKIPPED = [], [], [], 0, 0, []
+    if ap_cure and not os.path.isfile(QUEUE):
+        print(f"REFUSE(2): the queue {QUEUE} is unreadable -- --cure cannot tell a live claim from a free baton; nothing written")
+        return 2
     for p in files:
         raw = open(p, encoding='utf-8', errors='replace').read()
         br = block(raw)
@@ -221,14 +246,20 @@ def main():
         # roots); every other names exactly ONE. The threshold is printed with its population so a reader
         # can challenge it, and a subject baton is COUNTED AND NAMED, never rewritten -- the same
         # treatment this file already gives the 50 honest class-A captures.
+        # ⛔ THE SUBJECT EXEMPTION IS RETIRED (the coo's ruling, 2026-11-07, the cio's GO): a criterion that pins two
+        # or more seat roots pins them exactly as a one-root criterion does, and a sweep over pinned roots grades
+        # whichever trees the seat holds. Counted as class B like any other; the B-SUBJECT line stays at 0.
         subject = len(uniq) >= 2
-        if subject and uniq: SUBJ.append({'baton': base, 'roots': uniq})
-        if fbs or (uniq and not subject):
-            B.append({'baton': base, 'fallbacks': sorted(set(fbs)), 'bare': ([] if subject else uniq),
-                      'dead': sorted(r for r in ([] if subject else uniq) if not os.path.isdir(r))})
+        if subject: SUBJ.append({'baton': base, 'roots': uniq})
+        if fbs or uniq:
+            B.append({'baton': base, 'fallbacks': sorted(set(fbs)), 'bare': uniq,
+                      'dead': sorted(r for r in uniq if not os.path.isdir(r)), 'subject': subject})
         edits, h = scan(seg); honest += h
         for var_e in edits:
             A.append({'baton': base, 'piped': var_e[3], 'at': seg[var_e[0]:var_e[0]+70].strip()})
+        if ap_cure and subject:
+            # ⭐ THE CIO RULES THE MULTI-ROOT BATONS (the coo's instruction, 2026-11-07): counted as class B, never rewritten here
+            RULING.append(base); continue
         if ap_cure:
             # ⛔ CLASS B FIRST, THEN RE-SCAN. The B substitution SHORTENS the criterion (${S4E_HOME:-/home/
             # claude_cto} -> ${S4E_HOME:-$PWD} loses 12 bytes), so class-A offsets computed against the
@@ -245,18 +276,22 @@ def main():
             # fallback cure above exactly. ⛔ Recomputed AFTER the fallback substitution for the same
             # offset reason stated there, and applied in REVERSE so earlier spans keep their offsets.
             _brs, _bsp = bare_roots(seg)
-            # ⛔ THE SUBJECT EXEMPTION IS RE-APPLIED HERE, NOT ASSUMED FROM THE DETECT PASS. Measured by the
-            # gate's arm 2d on the first run of this cure: the roster-sweep fixture was rewritten anyway,
-            # because the cure called the raw reader and the exemption lived only in main()'s counting. An
-            # exemption that exists in the census but not in the rewriter is the worse half of the pair.
-            if len(set(_brs)) >= 2: _bsp = []
             for _a, _b in reversed(_bsp):
                 seg = seg[:_a] + '${S4E_HOME:-$PWD}' + seg[_b:]
             edits, _h2 = scan(seg)
             for a, en, repl, _ in reversed(edits):
                 seg = seg[:a] + repl + seg[en:]
             if seg != orig:
-                open(p, 'w', encoding='utf-8').write(raw[:s] + seg + raw[e:]); touched += 1
+                if _live_claimed(base):
+                    SKIPPED.append(base); continue
+                # the receipt is two lines BESIDE the criterion, never inside it: a non-executable DONE-WHEN-WAS with the old
+                # criterion verbatim, and a DONE-WHEN-WHY naming the ruler (the cio) and the run
+                if _parses(seg) != _parses(orig):
+                    REFUSED.append(base); continue
+                m0 = re.search(r'^DONE-WHEN:', raw, re.M)
+                receipt = ('DONE-WHEN-WAS: ' + orig.strip() + '\n'
+                           'DONE-WHEN-WHY: census --cure 2026-11-07, ruled by the cio, run by worker_05: a seat-root pin re-homed to ${S4E_HOME:-$PWD}\n')
+                open(p, 'w', encoding='utf-8').write(raw[:m0.start()] + receipt + raw[m0.start():s] + seg + raw[e:]); touched += 1
     if '--json' in sys.argv:
         print(json.dumps({'population': len(files), 'A': A, 'B': B, 'B_subject': SUBJ, 'honest': honest}, indent=1)); return 0
     print(f"DONE-WHEN rc/root census over {len(files)} batons at {tasks}")
@@ -274,14 +309,18 @@ def main():
     # matches exactly ONE line and the diagnostic cannot silently start reporting two numbers.
     print(f"  CLASS B defective (a seat root pinned in the EXECUTED criterion, fallback or bare): {len(B)}")
     print(f"      of those {len(B)}: bare {_bare_n}, fallback {len(B) - _bare_n}, pinning a root that NO LONGER EXISTS {_dead_n}")
-    print(f"  CLASS B-SUBJECT  (sweeps >=2 roots, so the roots ARE the question):     {len(SUBJ)}  -- not a defect, never rewritten")
+    print(f"  CLASS B-SUBJECT  (sweeps >=2 roots; the cio rules, never rewritten here):     {len(SUBJ)}")
+    print(f"  DELIBERATE absolute pins (the coo's loop files, counted, never rewritten):     {len(DELIBERATE)}")
     if ap_cure:
-        print(f"  CURED IN PLACE: {touched} baton file(s) rewritten"); return 0
+        for x in SKIPPED: print(f"  SKIPPED live-claim (not rewritten): {x}")
+        for x in RULING: print(f"  RULING PENDING, the cio (multi-root, not rewritten): {x}")
+        for x in REFUSED: print(f"  REFUSED (the cure would change whether the criterion parses): {x}")
+        print(f"  CURED IN PLACE: {touched} baton file(s) rewritten (each keeps a DONE-WHEN-WAS receipt)"); return 0
     if '--list' in sys.argv:
         for x in A: print(f"    A{'|pipe' if x['piped'] else '     '} {x['baton']}  [{x['at']}]")
         for x in B:
             _d = f"  DEAD-ROOT{x['dead']}" if x.get('dead') else ""
-            print(f"    B       {x['baton']}  fallback={x['fallbacks']} bare={x.get('bare', [])}{_d}")
-        for x in SUBJ: print(f"    B|subj  {x['baton']}  {x['roots']}")
+            _k = '    B|subj ' if x.get('subject') else '    B       '
+            print(f"{_k}{x['baton']}  fallback={x['fallbacks']} bare={x.get('bare', [])}{_d}")
     return 1 if (A or B) else 0
 sys.exit(main())

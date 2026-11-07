@@ -68,12 +68,12 @@ if [ "${1:-}" = "--self-test" ]; then
     printf '%s' "$out" | grep -q "defective (captures a runner, cannot tell a refusal from a red): 2" || { echo "⛔ arm 2: expected exactly 2 defective"; fail=1; }
     printf '%s' "$out" | grep -q "pipe: 1\]" || { echo "⛔ arm 2: expected exactly 1 piped"; fail=1; }
     printf '%s' "$out" | grep -q "absent): 1" || { echo "⛔ arm 2: expected exactly 1 honest (the cured one checks rc, so it is neither)"; fail=1; }
-    printf '%s' "$out" | grep -q "fallback or bare): 3$" || { echo "⛔ arm 2: expected exactly 3 class B defective (1 fallback + 2 bare), count LAST on the line"; fail=1; }
-    printf '%s' "$out" | grep -q "of those 3: bare 2, fallback 1, pinning a root that NO LONGER EXISTS 1" || { echo "⛔ arm 2: expected bare=2 fallback=1 dead=1"; fail=1; }
+    printf '%s' "$out" | grep -q "fallback or bare): 4$" || { echo "⛔ arm 2: expected exactly 4 class B defective (1 fallback + 3 bare, the roster sweep counted: its exemption is retired), count LAST on the line"; fail=1; }
+    printf '%s' "$out" | grep -q "of those 4: bare 3, fallback 1, pinning" || { echo "⛔ arm 2: expected bare=3 fallback=1"; fail=1; }
     # ⛔ THE LIVE CRITERION'S OWN PARSE IS AN ARM, not an assumption: exactly one line may match `^ +CLASS B `
     # or the row's diagnostic reports two numbers, and the green test must be able to MATCH at zero.
     [ "$(printf '%s\n' "$out" | grep -cE '^ +CLASS B ')" = 1 ] || { echo "⛔ arm 2: exactly one line may match the criterion's ^ +CLASS B  anchor"; fail=1; }
-    printf '%s' "$out" | grep -q "B-SUBJECT.*the roots ARE the question):     1" || { echo "⛔ arm 2: expected exactly 1 class B subject"; fail=1; }
+    printf '%s' "$out" | grep -q "B-SUBJECT.*the cio rules, never rewritten here):     1" || { echo "⛔ arm 2: the roster sweep is a multi-root baton: B-SUBJECT must read 1 (held for the cio, never rewritten)"; fail=1; }
     [ "$crc" = 1 ] || { echo "⛔ arm 2: census must exit 1 when it finds defects (got $crc)"; fail=1; }
     # ---- ARM 2b: THE NEGATIVE CONTROLS ARE NAMED, not merely absent from a count. A count of 3 is also
     # what a reader that saw the comment and missed a real pin would print.
@@ -82,7 +82,7 @@ if [ "${1:-}" = "--self-test" ]; then
         printf '%s' "$lst" | grep -qE "^ +B +$good\b" || { echo "⛔ arm 2b: $good must be listed as class B"; fail=1; }; done
     for bad in selftest_bare_cmt selftest_bare_annot selftest_bare_regex; do
         printf '%s' "$lst" | grep -qE "^ +B +$bad\b" && { echo "⛔ arm 2b: $bad is NOT a defect and must not be listed"; fail=1; }; done
-    printf '%s' "$lst" | grep -qE "^ +B\|subj +selftest_bare_subj\b" || { echo "⛔ arm 2b: the roster sweep must be listed as a subject"; fail=1; }
+    printf '%s' "$lst" | grep -qE "^ +B\|subj +selftest_bare_subj\b" || { echo "⛔ arm 2b: the roster sweep must be listed as a multi-root baton (B|subj)"; fail=1; }
     echo "SELF-TEST arm 2b (negative controls named, not merely uncounted): ok"
     # ---- ARM 2c: FAIL-ONCE. Restore the pre-widening reader and REQUIRE the bare arms to go red, so a
     # future edit that quietly narrows the detector cannot leave this gate printing green.
@@ -97,10 +97,10 @@ if [ "${1:-}" = "--self-test" ]; then
     S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" --cure >/dev/null 2>&1
     S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" >/dev/null 2>&1; acrc=$?
     d2fail=0
-    { [ "$acrc" = 0 ] && S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" 2>&1 | grep -q "fallback or bare): 0"; } \
-        || { echo "⛔ arm 2d: the census must read class B 0 and exit 0 after --cure (rc=$acrc)"; fail=1; d2fail=1; }
+    { [ "$acrc" = 1 ] && S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" 2>&1 | grep -q "fallback or bare): 1$"; } \
+        || { echo "⛔ arm 2d: after --cure the census must read class B 1 (the held roster sweep) and exit 1 (rc=$acrc)"; fail=1; d2fail=1; }
     # the row's OWN green test, run verbatim against the cured output -- the only proof that a zero is readable
-    S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" 2>&1 | grep -qE "^ +CLASS B .*: +0$" \
+    S4E_TASKS="$T/tasks_cure" python3 "$CENSUS" 2>&1 | grep -qE "^ +CLASS B .*: +1$" \
         || { echo "⛔ arm 2d: the DONE-WHEN's green test ^ +CLASS B .*: +0\$ cannot match a cured census"; fail=1; d2fail=1; }
     for keep in selftest_bare_cmt selftest_bare_annot selftest_bare_regex selftest_bare_subj; do
         cmp -s "$T/tasks/$keep.task.md" "$T/tasks_cure/$keep.task.md" \
@@ -127,7 +127,7 @@ if [ "${1:-}" = "--self-test" ]; then
         . '"$HERE"'/s4e_msg.sh >/dev/null 2>&1
         for b in /home/resources/postoffice/tasks/*.task.md; do
           t="$(s4e_donewhen_text "$b" 2>/dev/null)"
-          printf "%s" "$t" | sed -E "s/\\\$\{S4E_HOME:-[^}]*\}//g" \
+          printf "%s" "$t" | sed -E "s/\\\$\{S4E_HOME:-[^}]*\}//g" | sed -E "s#/home/claude(_[A-Za-z0-9]+|[0-9]{2})/[.]scratch/##g" \
             | grep -qE "/home/claude(_[A-Za-z0-9]+|[0-9]{2})" && basename "$b" .task.md
         done' 2>/dev/null | sort)"
     if [ -z "$bus_seen" ]; then
