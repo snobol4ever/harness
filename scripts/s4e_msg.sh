@@ -2967,6 +2967,54 @@ esac
 # refuse from every clone below it until it pulls, and a pulled clone refuses the stood-down seat by name.
 # ⛔ BUMPED 6 -> 7 (R-1811, 2026-10-17, at the QUINTET redefinition): an older clone's QUINTET arm admits hq_snocone and refuses the live hq_runtime.
 S4E_PROTO=7
+s4e_seat_live() {   # <seat>: rc 0 when a live session holds it (a claude --name process for the seat, or S4E_LIVE_SEATS, the probe's plant) or its newest SEATS.tsv pid is alive; else rc 1
+  case " ${S4E_LIVE_SEATS:-} " in *" $1 "*) return 0;; esac
+  local _u; _u="$(printf '%s' "$1" | tr a-z A-Z)"
+  pgrep -f "^claude --name ($1|$_u)( |$)" > /dev/null 2>&1 && return 0
+  local _pid; _pid="$(awk -F'\t' -v s="$1" '$2 == s {p = $5} END {print p}' "${S4E_SEATS_TSV:-/home/resources/progress/SEATS.tsv}" 2>/dev/null)"
+  [ -n "$_pid" ] && kill -0 "$_pid" 2>/dev/null; }
+s4e_seat_dead() {   # <seat>: rc 0 when the seat is in no TIERS row (no-seat) or has no live session (no-session); rc 1 for a live seat
+  [ -n "$(s4e_tier_of "$1")" ] || return 0
+  s4e_seat_live "$1" && return 1
+  return 0; }
+s4e_unclaim_why() { if [ -z "$(s4e_tier_of "$1")" ]; then echo no-seat; else echo no-session; fi; }
+s4e_unclaim_evict() {   # unclaim <topic> --evict (the cio's ruling 2026-11-07, bus-no-verb-releases-a-dead-seats-claim): a BOSS (MODE BOSSES:) releases a claim whose seat is in no TIERS row or has no live session; a live seat's claim is refused. The claim is archived under claims/archive/, the row goes FREE (QUEUED:<tube> when the claim reserves a job there), and the baton's LEDGER says EVICTED
+  local _t="$1" _c _own _bosses _why _tube _arch _state _b
+  _c="$PO/claims/$_t.claim"
+  _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1)"
+  case " $_bosses " in *" $ME "*) ;; *) echo "⛔ REFUSED: --evict is a boss's verb (MODE BOSSES: ${_bosses:-none}); $ME is not one"; return 1;; esac
+  [ -f "$_c" ] || { echo "no claim on $_t -- nothing to evict"; return 1; }
+  _own="$(head -1 "$_c")"
+  s4e_seat_dead "$_own" || { echo "⛔ REFUSED: $_own holds $_t and is live (a session or a SEATS.tsv pid); --evict takes a dead seat's claim only"; return 1; }
+  _why="$(s4e_unclaim_why "$_own")"
+  _tube="$(sed -n 's/^RESERVED job=[^ ]* tube=\([^ ]*\).*/\1/p' "$_c" | head -1)"
+  if [ -n "$_tube" ]; then _state="QUEUED:$_tube"; else _state="FREE"; fi
+  _arch="$PO/claims/archive/$_t.claim.evicted-$(date -u +%Y%m%dT%H%M%SZ)"
+  mkdir -p "$PO/claims/archive" && mv "$_c" "$_arch" || { echo "REFUSE(2): could not archive the claim of $_t"; return 2; }
+  s4e_set_row_state "$_t" "$_state" > /dev/null 2>&1 || true
+  _b="$PO/tasks/$_t.task.md"
+  [ -f "$_b" ] && printf '\n- %s **EVICTED** by=%s why=%s (the claim of %s archived to %s; row %s)\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$ME" "$_why" "$_own" "${_arch##*/}" "$_state" >> "$_b"
+  echo "EVICTED $_t from $_own why=$_why state=$_state"; return 0; }
+s4e_unclaim_probe_evict() {   # unclaim --probe-evict (the cio's ruling 2026-11-07; the proof on a scratch postoffice): a dead seat's claim (in no TIERS row) is evicted by a boss, its row FREE and its LEDGER says EVICTED; a live seat's claim is refused (S4E_LIVE_SEATS plants the live session); a claim a non-boss tries to evict is refused and kept
+  [ -n "$ME" ] || { echo "REFUSE(2) [unclaim --probe-evict]: S4E_SEAT unset"; exit 2; }
+  local dead live rd rl rx o st nb=0 lv=0 de=0 lg=0
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_unclaim_evict.XXXXXX")" || { echo "REFUSE(2) [unclaim --probe-evict]: mktemp failed"; exit 2; }
+  trap 'rm -rf "$w"' EXIT
+  dead="plant-dead-$$"; live="worker_20"; rd="evict-dead-$$"; rl="evict-live-$$"; rx="evict-nonboss-$$"
+  mkdir -p "$w/claims" "$w/tasks" "$w/cio/inbox" "$w/worker_19/inbox" "$w/worker_20/inbox" || { echo "REFUSE(2) [unclaim --probe-evict]: cannot make the scratch postoffice"; exit 2; }
+  { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+  printf '# plant tiers (only worker_20 is a seat)\nworker_20\tWORKER_20\t/home/claude_worker_20\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' > "$w/TIERS.tsv"
+  printf '# plant queue (bus-no-verb-releases-a-dead-seats-claim)\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n2\t%s\t%s\tCLAIMED:%s\n' "$rd" "$dead" "$dead" "$rl" "$live" "$live" "$rx" "$dead" "$dead" > "$w/QUEUE.tsv"
+  for t in "$rd" "$rl" "$rx"; do printf '# TASK %s\nGOAL: plant\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" > "$w/tasks/$t.task.md"; done
+  printf '%s\nRUNNING\n' "$dead" > "$w/claims/$rd.claim"; printf '%s\nRUNNING\n' "$dead" > "$w/claims/$rx.claim"; printf '%s\nRUNNING\n' "$live" > "$w/claims/$rl.claim"
+  run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$1" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_NO_BANNER=1 S4E_LIVE_SEATS="$live" bash "$0" unclaim "$2" --evict 2>&1; }
+  o="$(run worker_19 "$rx")"; [ -f "$w/claims/$rx.claim" ] && printf '%s' "$o" | grep -q 'REFUSED' && nb=1
+  o="$(run cio "$rl")"; [ -f "$w/claims/$rl.claim" ] && printf '%s' "$o" | grep -q 'REFUSED' && lv=1
+  o="$(run cio "$rd")"
+  if [ ! -f "$w/claims/$rd.claim" ] && ls "$w/claims/archive" 2>/dev/null | grep -q "^$rd\.claim\.evicted-"; then st="$(grep -P "^2\t\Q$rd\E\t" "$w/QUEUE.tsv" | cut -f4)"; [ "$st" = FREE ] && de=1; fi
+  grep -q "^- .*\*\*EVICTED\*\* by=cio why=no-seat" "$w/tasks/$rd.task.md" 2>/dev/null && lg=1
+  printf 'EVICT dead_seat_released=%s live_seat_refused=%s non_boss_refused=%s ledger=%s\n' "$de" "$lv" "$nb" "$lg"
+  [ "$de$lv$nb$lg" = 1111 ]; }
 case "$cmd" in
   send)  [ -n "${2:-}" ] || s4e_need send "a destination seat" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "A prose body must come through --stdin: a body in double quotes is expanded by YOUR shell before send ever runs."
          [ -n "${3:-}" ] || s4e_need send "a topic" "s4e_msg.sh send <to> <topic> --stdin <<'MSG' ... MSG" "The topic is the subject line the recipient sorts by; it becomes a filename, so keep it a slug."
@@ -3323,6 +3371,8 @@ case "$cmd" in
          # a lock) and one you do not own. The release is APPENDED to the baton's LEDGER, so a lock that was taken and
          # returned leaves a trace instead of vanishing.
          [ "${2:-}" = --probe-column ] && { s4e_unclaim_plant_column; exit $?; }
+         [ "${2:-}" = --probe-evict ] && { s4e_unclaim_probe_evict; exit $?; }
+         [ "${3:-}" = --evict ] && { s4e_unclaim_evict "$2"; exit $?; }
          [ -n "${2:-}" ] || s4e_need unclaim "a topic" "s4e_msg.sh unclaim <topic>" "Returns a held row FREE with a receipt under released/. It is the stand-down verb, and the only exit from a row you have not worked."
          topic="$2"; c="$PO/claims/$topic.claim"; q="$PO/QUEUE.tsv"
          [ -f "$c" ] || { echo "no claim on $topic — nothing to release"; exit 1; }
