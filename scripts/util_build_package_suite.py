@@ -930,7 +930,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     hdr = next(csv.reader([csv_lines[0]]))
     ix = {c: i for i, c in enumerate(hdr)}
     known = {"rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr",
-             "compare", "stage", "answer", "mode_gap_s"} | {c for c, _fn in cols}
+             "compare", "stage", "answer", "mode_gap_s", "timeout_s"} | {c for c, _fn in cols}
     if set(hdr) - known or "entry" not in ix or "rank" not in ix:
         h.refuse(f"splice gate: {f_csv}'s header is not one the splice can fill: unknown {sorted(set(hdr) - known)}")
     for e in entries:
@@ -948,7 +948,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
     for e in entries:
         flags_row = m.attrs_for_text("\n".join(e.sno_lines), table_lang)
         v = {"entry": e.name, "origin": f"{pkg_dir.name}__{e.name}", "package": pkg_dir.name, "n_lines": len(e.sno_lines), "stdin": 1 if e.stdin else 0,
-             "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "",
+             "want_rc": e.want_rc, "heap_kb": m.DEFAULT_HEAP_KB, "stack_kb": m.DEFAULT_STACK_KB, "run_args": "", "mode_gap_s": "", "timeout_s": "",
              "compile_args": contract["unmarked_compile_args"] if contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "",
              "out_files": " ".join(getattr(e, "out_files", None) or []), "stderr": "merged" if merged else "", "compare": _cm_val(e),
              "stage": "upstream" if e.name in staged else "", "answer": ("" if staged[e.name] == "stdout" else staged[e.name]) if e.name in staged else ""}
@@ -956,7 +956,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         if e.name in row_at:
             prev = rows[row_at[e.name]]
             v["rank"] = prev[ix["rank"]]
-            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s"):
+            for c in ("heap_kb", "stack_kb", "compile_args", "run_args", "mode_gap_s", "timeout_s"):
                 if c in ix and prev[ix[c]].strip():
                     v[c] = prev[ix[c]].strip()
             out_lines[row_at[e.name] + 1] = _fmt(v)

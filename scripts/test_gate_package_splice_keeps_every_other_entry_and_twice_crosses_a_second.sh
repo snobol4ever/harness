@@ -15,6 +15,8 @@
 #   3  --twice --only D, where D prints DATE() (seconds), excludes D as nondeterministic and leaves the container as it was
 #   4  --twice --only A after A is changed to print DATE() refuses rc=2 (an excluded entry already in the container) and writes nothing
 #   5  --only B after B is changed to print 'b2' re-cuts B in place: banner number 2 kept, ref b2, A and C unchanged
+#   6  a container whose ALL.csv carries test-cycle step 6's timeout_s column (A 300, B 120, C none) re-splices --only B: rc 0, the
+#      header and A's and C's lines unchanged, B's 120 carried (the splice refused rc 2 on all 25 such containers, the cfo 2026-11-07)
 # EXIT: 0 all arms pass · 1 an arm failed · 2 REFUSED (no binary, no oracle).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -56,5 +58,9 @@ arm "--twice --only A, A now printing DATE(), refuses rc=2 (an entry in the cont
 src A "'a'"; src B "'b2'"
 bld --only B; rc=$?
 arm "--only B re-cuts B in place: banner 2 kept, ref b2, A and C unchanged" "$([ "$rc" = 0 ] && [ "$(banner "$P" B)" = 2 ] && [ "$(eref "$P" B)" = b2 ] && [ "$(eref "$P" A)" = a ] && [ "$(eref "$P" C)" = c ] && [ "$(csvline "$P" A)" = "$(csvline "$T/v1" A)" ] && [ "$(csvline "$P" C)" = "$(csvline "$T/v1" C)" ] && echo ok || echo "rc=$rc banner=$(banner "$P" B) ref=$(eref "$P" B)")"
+python3 -c 'import csv,sys; f=sys.argv[1]; r=list(csv.reader(open(f))); i=r[0].index("stack_kb")+1; v={"A":"300","B":"120"}; [x.insert(i,"timeout_s" if j==0 else v.get(x[1],"")) for j,x in enumerate(r)]; csv.writer(open(f,"w",newline=""),lineterminator="\n").writerows(r)' "$P/ALL.csv"; snap v2
+src B "'b3'"
+bld --only B; rc=$?
+arm "a container with a timeout_s column re-splices --only B: header, A and C unchanged, B's timeout_s 120 carried" "$([ "$rc" = 0 ] && [ "$(eref "$P" B)" = b3 ] && [ "$(head -1 "$P/ALL.csv")" = "$(head -1 "$T/v2/ALL.csv")" ] && [ "$(csvline "$P" A)" = "$(csvline "$T/v2" A)" ] && [ "$(csvline "$P" C)" = "$(csvline "$T/v2" C)" ] && [ "$(python3 -c 'import csv,sys; r=list(csv.DictReader(open(sys.argv[1]))); print([x["timeout_s"] for x in r if x["entry"]=="B"][0])' "$P/ALL.csv")" = 120 ] && echo ok || echo "rc=$rc ref=$(eref "$P" B) $(tail -1 "$T/build.log")")"
 [ "$fail" = 0 ] && { echo "GATE OK [$NAME]: $n arms"; exit 0; }
 echo "GATE FAIL [$NAME]: $(( n )) arms, at least one red"; exit 1
