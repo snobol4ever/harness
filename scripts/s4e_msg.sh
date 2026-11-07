@@ -377,27 +377,94 @@ s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
-    s4e_premise_gate "$_t" next || return 1
+    # THE RED PREMISE (the cio's cut, 2026-11-07): a gate that ran and read RED returns 4, so the reserve pass can bury this head and go on; any other refusal (an rc 2 that could not measure) returns 1, as it does today.
+    local _pg; _pg="$(mktemp "${TMPDIR:-/tmp}/s4e_take_pg.XXXXXX")" || return 1
+    if ! s4e_premise_gate "$_t" next >"$_pg" 2>&1; then
+        cat "$_pg" >&2
+        if grep -q 'THE PREMISE OF THIS ROW IS RED' "$_pg"; then rm -f "$_pg"; return 4; fi
+        rm -f "$_pg"; return 1
+    fi
+    cat "$_pg" >&2; rm -f "$_pg"
     if [ -f "$_c" ]; then
       [ "$(head -1 "$_c")" = "$ME" ] || { echo "⛔ $_t is claimed by $(head -1 "$_c"); the job is released" >&2; return 1; }
       grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
       printf 'RESERVED job=%s tube=%s %s\n' "$2" "$3" "$(date -u +%FT%TZ)" >> "$_c"; return 0; fi
     ( set -o noclobber; printf '%s\nRESERVED job=%s tube=%s %s\n' "$ME" "$2" "$3" "$(date -u +%FT%TZ)" > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
     s4e_set_row_state "$_t" "CLAIMED:$ME" || true; return 0; }
+# THE HEAD WHOSE PREMISE READ RED (the cio's cut, 2026-11-07; row bus-next-stops-at-a-reserved-job-whose-premise-is-red-and-serves-nothing-behind-it).
+# Before this, a reserved head whose PREMISE-WHEN read RED was released by its holder and next stopped, so the job behind it was never served.
+s4e_ledger_prepend() {   # <topic> <entry>: the entry goes under the baton's ## LEDGER heading, newest first (fleet-bus section 3); the heading is made when absent
+    python3 - "$PO/tasks/$1.task.md" "$2" <<'PYEOF'
+import sys
+b, entry = sys.argv[1], sys.argv[2]
+t = open(b, encoding="utf-8").read().split("\n")
+if "## LEDGER" not in t: t.append("## LEDGER")
+i = t.index("## LEDGER") + 1
+t[i:i] = [entry]
+open(b, "w", encoding="utf-8").write("\n".join(t))
+PYEOF
+}
+s4e_refuse_red_head() {   # <topic> <job> <tube>: bury the reserved head through its holder (PARK on the claim, BURIED back), retire its claim to claims/expired, mark its row SUPERSEDED with a LEDGER line; rc 0 = go on to the next ready job, rc 1 = stop
+    local _t="$1" _j="$2" _tb="$3" _c="$PO/claims/$1.claim" _ts _i _ok=0 _how
+    _ts="$(date -u +%FT%TZ)"
+    if ! ( set -o noclobber; printf '%s\nRESERVED job=%s tube=%s %s\nPARK SUPERSEDED:premise-red-at-dispatch\n' "$ME" "$_j" "$_tb" "$_ts" > "$_c" ) 2>/dev/null; then
+        printf '⛔ %s: a claim already exists (%s); reserved job %s is left to its holder, and the pass goes on\n' "$_t" "$(head -1 "$_c" 2>/dev/null)" "$_j" >&2
+        return 0; fi
+    for _i in $(seq 1 24); do grep -q "^BURIED job=$_j " "$_c" 2>/dev/null && { _ok=1; break; }; sleep 1; done
+    if [ "$_ok" = 1 ]; then _how="buried by its holder"; else _how="not buried within 24 s (the holder is gone or stuck; the job returns to ready when its connection closes)"; fi
+    mkdir -p "$PO/claims/expired"; mv -f "$_c" "$PO/claims/expired/$_t.claim.premise-red-$_ts" 2>/dev/null
+    s4e_set_row_state "$_t" "SUPERSEDED:premise-red-at-dispatch-$_ts" >/dev/null 2>&1 || true
+    s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch: reserved job $_j from $_tb was $_how; the row is SUPERSEDED:premise-red-at-dispatch-$_ts. The sweep closes it by done if its DONE-WHEN is green, else it stays SUPERSEDED."
+    printf 'NEXT refused_head job=%s topic=%s buried=%s state=SUPERSEDED\n' "$_j" "$_t" "$_ok"
+    return 0; }
+s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoffice and a PRIVATE beanstalkd (never 11300); a haiku probe seat with two jobs in its seat tube, the head's PREMISE-WHEN false (RED), the second's true. EXPECT the head buried, its row SUPERSEDED, its claim in claims/expired, and the second served.
+    local _port _bp _w _seat=worker_20 _x1 _x2 _j1 _j2 _o _bst _st _sv _exp _ref _ok=0 _i
+    _port=$((21000 + ($$ % 20000)))
+    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bp=$!
+    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
+    if ! { kill -0 "$_bp" 2>/dev/null && S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd'; }; then
+        kill "$_bp" 2>/dev/null; echo "NEXT refused_head RED: a private beanstalkd would not start on port $_port"; exit 1; fi
+    export S4E_QUEUE_PORT="$_port"
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_refused_head.XXXXXX")" || { kill "$_bp" 2>/dev/null; echo "NEXT refused_head RED: mktemp failed"; exit 1; }
+    mkdir -p "$_w/tasks" "$_w/claims" "$_w/$_seat/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
+    _x1="refused-head-red-$$"; _x2="refused-head-green-$$"; _now="$(date -u +%FT%TZ)"
+    printf '2\t%s\t@haiku\tQUEUED:seat-%s\n2\t%s\t@haiku\tQUEUED:seat-%s\n' "$_x1" "$_seat" "$_x2" "$_seat" > "$_w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: false\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x1" "$_now" > "$_w/tasks/$_x1.task.md"
+    printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x2" "$_now" > "$_w/tasks/$_x2.task.md"
+    _j1="$(s4e_queue_put "seat-$_seat" "$_x1" 1001 30)"; _j2="$(s4e_queue_put "seat-$_seat" "$_x2" 1002 30)"
+    if [ -z "$_j1" ] || [ -z "$_j2" ]; then kill "$_bp" 2>/dev/null; rm -rf "$_w"; echo "NEXT refused_head RED: the probe could not put its two jobs"; exit 1; fi
+    _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 S4E_HOME="$S4E" S4E_RELEASE_COOLDOWN=0 bash "$0" next 2>&1)"
+    printf '%s\n' "$_o" | grep -q "^NEXT refused_head job=$_j1 topic=$_x1 buried=1 state=SUPERSEDED" && _ref=1 || _ref=0
+    printf '%s\n' "$_o" | grep -q "^RESERVED $_x2 " && _sv=1 || _sv=0
+    _bst="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j1" 2>/dev/null | cut -f3)"
+    _st="$(awk -F'\t' -v t="$_x1" '$2==t {print $4}' "$_w/QUEUE.tsv")"
+    ls "$_w/claims/expired/$_x1.claim.premise-red-"* >/dev/null 2>&1 && _exp=1 || _exp=0
+    kill "$_bp" 2>/dev/null; wait "$_bp" 2>/dev/null
+    if [ "$_ref" = 1 ] && [ "$_bst" = buried ] && [ "${_st#SUPERSEDED:premise-red-at-dispatch}" != "$_st" ] && [ "$_exp" = 1 ] && [ "$_sv" = 1 ]; then _ok=1; fi
+    rm -rf "$_w"
+    if [ "$_ok" = 1 ]; then printf 'NEXT refused_head=1 buried=1 state=SUPERSEDED served_next=1\n'; exit 0; fi
+    printf 'NEXT refused_head RED: refused=%s buried_state=%s row_state=%s expired=%s served_next=%s\n' "$_ref" "${_bst:-none}" "${_st:-none}" "$_exp" "$_sv"; exit 1; }
 s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the seat's watch list; prints and exits when a job is served; returns 1 when nothing is ready
     local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
     _watch="seat-$ME,ask-$_tier,tier-$_tier"
     _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout 0 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }
+    local _try _rc
+    for _try in 1 2 3 4 5; do
     _res="$(_rh "$_watch")"
     [ -n "$_res" ] || return 1
     _id="$(printf '%s' "$_res" | cut -f1)"; _tube="$(printf '%s' "$_res" | cut -f2)"; _pri="$(printf '%s' "$_res" | cut -f3)"; _topic="$(printf '%s' "$_res" | cut -f4)"
     # the holder watches $PO/claims/<topic>.claim: written here within its 60 s grace, else it releases the job
-    if s4e_queue_take_claim "$_topic" "$_id" "$_tube"; then
+    s4e_queue_take_claim "$_topic" "$_id" "$_tube"; _rc=$?
+    if [ "$_rc" = 0 ]; then
       s4e_baton_job_set "$_topic" "$_id" "$_tube"
       serve "$_topic" "RESERVED" "(job $_id from $_tube at priority $_pri; watch list $_watch; the lease lives while your session does -- done deletes it, park buries it)"
       exit 0
     fi
+    # rc 4: the head's PREMISE-WHEN read RED -- bury it through its holder, supersede its row, and look at the next ready job (up to five heads in one pass)
+    [ "$_rc" = 4 ] || return 1
+    s4e_refuse_red_head "$_topic" "$_id" "$_tube" || return 1
+    done
     return 1; }
 s4e_probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts or reserves runs on ITS OWN beanstalkd on a free port, exported as S4E_QUEUE_PORT to every child and killed on exit; the live daemon (11300) is never written by it
   local _p _i _up=0
@@ -4450,7 +4517,7 @@ TASKEOF
          s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
         [ "${3:-}" = --probe-port-check ] && { s4e_probe_port_check; exit $?; }
-        [ "${2:-}" = --probe-reserve ] && s4e_next_probe_reserve
+        [ "${2:-}" = --probe-reserve ] && s4e_next_probe_reserve; [ "${2:-}" = --probe-refused-head ] && s4e_next_probe_refused_head
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line
          # ⛔⭐ MODE GATES DISPATCH -- IT IS NOT DECORATION (row next-refuses-to-dispatch-to-an-hq-seat-when-mode-
