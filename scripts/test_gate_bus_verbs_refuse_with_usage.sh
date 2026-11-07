@@ -56,7 +56,7 @@ arm() {   # arm <label> <script> -> 0 iff every contract holds on <script>
     [ "$rc" = 2 ] || { echo "  [$lbl] (1) \`$v\` with no argument exited $rc, want 2 (could-not-act)"; ok=0; }
     # (2) USAGE
     grep -q 'usage:' <<<"$out" || { echo "  [$lbl] (2) \`$v\` refused without printing a usage line"; ok=0; }
-    grep -q -- "$v" <<<"$out"  || { echo "  [$lbl] (2) \`$v\`'s refusal never names the verb the seat typed"; ok=0; }
+    grep -q -- "${v%% *}" <<<"$out"  || { echo "  [$lbl] (2) \`$v\`'s refusal never names the verb the seat typed"; ok=0; }
     # (3) NO-SHELL-DIAGNOSTIC -- the defect itself
     grep -qE 'line [0-9]+:|unbound variable' <<<"$out" && { echo "  [$lbl] (3) \`$v\` died with a SHELL diagnostic, which reads as a broken bus: $(grep -m1 -E 'line [0-9]+:' <<<"$out" | cut -c1-70)"; ok=0; }
   done <<'VERBS'
@@ -73,6 +73,7 @@ assign
 reown
 rule
 resume
+sweep --no-such-flag
 VERBS
   # (4) WROTE-NOTHING
   after="$(fingerprint)"

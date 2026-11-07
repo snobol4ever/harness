@@ -5758,6 +5758,8 @@ TASKEOF
          # nothing ever moved a landed row out, so the picker walked a graveyard and HQ re-dispatched finished work.
          # This moves every row whose claim carries DONE into QUEUE.done.tsv (the memory) and rewrites the buffer.
          # ⛔ IT NEVER DELETES: every swept row is appended to QUEUE.done.tsv and the pre-sweep buffer is backed up.
+         # ⛔ AN UNKNOWN FLAG REFUSES rc 2 BEFORE ANY WRITE (worker_08 2026-11-07 14:1x: `sweep --plant-measuring-dead`, before that flag existed, fell through to a LIVE sweep). Arguments after --close-green belong to its helper, which refuses its own unknowns.
+         for _a in "${@:2}"; do case "$_a" in --close-green) break;; --plant-green|--plant-measuring-dead|--plant-rc2) ;; --*) printf '⛔ REFUSED(2): sweep takes no flag %s\n   usage: %s sweep [--close-green --only <topic>] [--timeout <s>] | [--plant-green|--plant-measuring-dead|--plant-rc2]\n' "$_a" "$0" >&2; exit 2;; esac; done
          [ "${2:-}" = "--plant-green" ] && { s4e_sweep_plant_green; exit $?; }
          [ "${2:-}" = "--plant-measuring-dead" ] && { s4e_sweep_plant_measuring_dead; exit $?; }
          [ "${2:-}" = "--plant-rc2" ] && { s4e_sweep_plant_rc2_stale; exit $?; }
