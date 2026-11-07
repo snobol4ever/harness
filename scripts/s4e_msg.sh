@@ -2904,6 +2904,10 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     [ "${S4E_NO_PREMISE_CHECK:-0}" = "1" ] && return 0
     [ -f "$b" ] || return 0
     pw="$(s4e_premise_text "$b")"
+    # THE SERVE WARNS WHEN THE DONE-WHEN DRIVES AN UNBUILT COMPILER (gate arm 1, the cio 2026-11-07): a missing binary is COULD NOT
+    # MEASURE, named, and the row is served with that warning and is not closed by it. One line, so the fail-once mutant strips it.
+    local _gdw; _gdw="$(s4e_donewhen_text "$b")"
+    s4e_donewhen_needs_compiler "$_gdw" && printf '⚠ COULD NOT MEASURE the DONE-WHEN of %s: %s. Served with this warning; nothing is closed by it.\n' "$t" "$_gca_why" >&2  # S4E-GUARD-COMPILER-ABSENT
     # ⛔ THE BACKLOG IS NAMED, NEVER SILENTLY EXEMPT. Most live batons predate this field; they are admitted, and
     # the note says WHICH property went unchecked so a reader never mistakes "nothing ran" for "premise green".
     # ⭐ TWO LINES AND NOT FOUR, DELIBERATELY: on the day this landed it fired on 787 of 787 live rows, and a
