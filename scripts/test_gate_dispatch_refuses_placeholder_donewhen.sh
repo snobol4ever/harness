@@ -35,8 +35,18 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # ⛔ $BASHPID, not $$: a bare EXIT trap fires inside forked children too, and bash keeps $$ at the
 # original shell's pid in a subshell, so the obvious guard compares equal and deletes the fixture
 # mid-run (measured while building test_gate_s4e_one_process_per_identity.sh).
-MAINPID=$$; trap '[ "$BASHPID" = "$MAINPID" ] && rm -rf "$W"' EXIT
-PO="$W/po"; ME=hq_B; HQ=cto; SEAT=seat01; BUDGET=4
+MAINPID=$$; BDPID=""
+trap '[ "$BASHPID" = "$MAINPID" ] && { [ -n "$BDPID" ] && kill "$BDPID" 2>/dev/null; rm -rf "$W"; }' EXIT
+# ⛔ THE SCRATCH HOME CARRIES ITS OWN TIERS TABLE (every arm runs with S4E_HOME=$W, so the seats are read from $W/.github) AND A PRIVATE
+# QUEUE DAEMON (util_queue.py reads S4E_QUEUE_PORT, default 11300 = the LIVE queue; a next that reserves from live tubes takes live jobs).
+mkdir -p "$W/.github" && cp "$HERE/../../.github/TIERS.tsv" "$W/.github/TIERS.tsv" || { echo "⛔ REFUSED(2): the TIERS table is unreadable at $HERE/../../.github/TIERS.tsv"; exit 2; }
+_bp=$((21000 + ($$ % 20000))); beanstalkd -l 127.0.0.1 -p "$_bp" >/dev/null 2>&1 & BDPID=$!
+for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_bp" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
+kill -0 "$BDPID" 2>/dev/null && S4E_QUEUE_PORT="$_bp" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' || { echo "⛔ REFUSED(2): a private beanstalkd would not start on port $_bp"; exit 2; }
+export S4E_QUEUE_PORT="$_bp"
+# ⛔ THE PICKER IS AN OFFICER: a sonnet or haiku seat is served no FREE row (next's rule), so the placeholder refusal, which sits on the FREE-row
+# path, is unreachable for a worker picker. cfo (opus, TIERS tier 2) takes the FREE rows; worker_19 is the assignee; cto assigns.
+PO="$W/po"; ME=cfo; HQ=cto; SEAT=worker_19; BUDGET=4
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote a literal mode, kept in step with the live
 # fleet -- it read QUARTET, under which no HQ stands (R-911). This fixture's serving seat is hq_B, so every
@@ -79,14 +89,16 @@ arm() {   # arm <label> <script> -> 0 iff all four contracts hold on <script>
   out="$(FIX bash "$s" next 2>&1)"; rc=$?
   grep -q 'REFUSING TO DISPATCH t-placeholder' <<<"$out" || { echo "  [$lbl] (1) no refusal message for t-placeholder: $(echo "$out" | head -3)"; ok=0; }
   grep -q "$PO/tasks/t-placeholder.task.md" <<<"$out" || { echo "  [$lbl] (1) refusal did not name the baton path"; ok=0; }
-  grep -q 'LOCKED t-placeholder' <<<"$out" && { echo "  [$lbl] (1) t-placeholder was SERVED despite the refusal message -- the whole defect"; ok=0; }
+  grep -q 'FREE t-placeholder' <<<"$out" && { echo "  [$lbl] (1) t-placeholder was SERVED despite the refusal message -- the whole defect"; ok=0; }
   [ -f "$PO/claims/t-placeholder.claim" ] && { echo "  [$lbl] (1) a claim file was written for t-placeholder despite the refusal"; ok=0; }
   [ "$(col t-placeholder)" = FREE ] || { echo "  [$lbl] (1) t-placeholder column is '$(col t-placeholder)', want FREE (unclaimed, unchanged)"; ok=0; }
-  grep -q 'LOCKED t-slow' <<<"$out" || { echo "  [$lbl] (1) after refusing t-placeholder, next did not go on to serve the next candidate (rank 1): $(echo "$out" | tail -5)"; ok=0; }
+  grep -q 'FREE t-slow' <<<"$out" || { echo "  [$lbl] (1) after refusing t-placeholder, next did not go on to serve the next candidate (rank 1): $(echo "$out" | tail -5)"; ok=0; }
   [ "$rc" = 0 ] || { echo "  [$lbl] (1) next exited $rc after successfully serving a later row -- rc should be 0"; ok=0; }
-  # ---- (2) NEXT-CONTROL: t-slow (just served above) is a REAL rc=2, and was served WITH a warning ------
-  grep -q 'COULD NOT MEASURE t-slow' <<<"$out" || { echo "  [$lbl] (2) a genuine environmental rc=2 row was served without its usual warning -- this cure must not widen"; ok=0; }
-  [ -f "$PO/claims/t-slow.claim" ] || { echo "  [$lbl] (2) t-slow was not actually claimed"; ok=0; }
+  # ---- (2) NEXT-CONTROL: t-slow (just offered above) is a REAL rc=2 row and is NOT refused ------
+  # ⛔ next locks nothing (step 32, the bus as it stands 2026-11-07): it prints a FREE row and writes no claim, so the control is
+  # "not refused", not "claimed with a warning" (that warning is assign's now, arm 3).
+  grep -q 'REFUSING TO DISPATCH t-slow' <<<"$out" && { echo "  [$lbl] (2) a genuine environmental rc=2 row was REFUSED -- this cure must not widen"; ok=0; }
+  [ -f "$PO/claims/t-slow.claim" ] && { echo "  [$lbl] (2) next wrote a claim for t-slow -- step 32: next locks nothing"; ok=0; }
   # ---- (3) ASSIGN-REFUSES: t-asg-placeholder, unclaimed, assigned to $SEAT ------------------------------
   out="$(env -u S4E_PID_LOCK -u S4E_NO_DISPATCH_PROBE S4E_HOME="$W" S4E_POST="$PO" S4E_SEAT="$HQ" S4E_NO_BANNER=1 \
         S4E_DISPATCH_PROBE_TIMEOUT="$BUDGET" bash "$s" assign "$SEAT" t-asg-placeholder 2>&1)"; rc=$?
@@ -101,7 +113,7 @@ arm() {   # arm <label> <script> -> 0 iff all four contracts hold on <script>
   printf '# TASK t-blocked\nGOAL: gate fixture.\nDONE-WHEN: test -f "$S4E_HOME/po/NO-SUCH-FILE"\nLINKS: none\n## NEXT\ngo\n## LEDGER\n' > "$PO/tasks/t-blocked.task.md"
   mkrow 5 t-promo-ph "$PLACEHOLDER"
   out="$(FIX bash "$s" next 2>&1)"
-  grep -q 'LOCKED t-promo-ph' <<<"$out" && { echo "  [$lbl] (4) the placeholder blocker t-promo-ph was PROMOTED AND SERVED -- the promotion path is unwired"; ok=0; }
+  grep -q 'FREE t-promo-ph' <<<"$out" && { echo "  [$lbl] (4) the placeholder blocker t-promo-ph was PROMOTED AND SERVED -- the promotion path is unwired"; ok=0; }
   [ -f "$PO/claims/t-promo-ph.claim" ] && { echo "  [$lbl] (4) a claim file was written for the placeholder blocker t-promo-ph"; ok=0; }
   grep -qE 'REFUSING TO (DISPATCH|PROMOTE) t-promo-ph' <<<"$out" || { echo "  [$lbl] (4) no refusal message for the placeholder blocker: $(echo "$out" | head -3)"; ok=0; }
   [ "$(col t-blocked)" = "BLOCKED-ON:t-promo-ph" ] || { echo "  [$lbl] (4) t-blocked's state moved to '$(col t-blocked)' -- a refused promotion must not silently un-block it"; ok=0; }
