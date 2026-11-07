@@ -86,7 +86,7 @@ def box():
         "cpu pressure some avg10 %s avg60 %s avg300 %s" % (fmt(a10), fmt(a60), fmt(a300)),
         "law: grader width %s, sessions quota %s%%, jobserver %s tokens" % (width, q.group(1) if q else "?", jt.group(1) if jt else "?"),
         "memory free %s MB, timeouts %s, BOX.state age %ss" % (fmt(mem, 0), tmo, fmt(time.time() - os.path.getmtime(P + "/BOX.state"), 0) if os.path.exists(P + "/BOX.state") else "?"),
-        "controller %s, tick timer %s" % ("alive" if subprocess.run(["pgrep", "-xf", "bash box_controller.sh"], capture_output=True).returncode == 0 else "DOWN",
+        "controller %s, tick timer %s" % ("alive" if subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 else "DOWN",
                                             subprocess.run(["systemctl", "--user", "is-active", "-q", "s4e-tick.timer"], capture_output=True).returncode == 0 and "active" or "inactive"),
     ]
 

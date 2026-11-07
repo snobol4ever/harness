@@ -3471,6 +3471,8 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     # whatever LANES: names.
     if seat == "coo" and _engine() == "scrip":
         return
+    if seat == "grader" and os.environ.get("S4E_CLASS") == "grader" and _engine() == "scrip":   # the controller's grade worker is the coo's instrument (fleet-control step 10; lib_one_runner.sh:one_runner_seat_admitted)
+        return
     # ⛔⭐ ONE SEAT, ONE LANGUAGE (Lon 2026-09-24, verbatim: "Just have each seat run only their own test suites." / "We can not have
     # all 5 HQ's deciding to run all seven test suites simultaneously. Fix that."): an hq_* seat the LANES: line names gets neither
     # exemption below and falls through to the refusal. Mirrors lib_one_runner.sh:one_runner_seat_is_language_hq.

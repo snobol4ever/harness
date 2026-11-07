@@ -176,7 +176,7 @@ def scratch_env():
             for seat in ln.split()[1:]: os.makedirs(os.path.join(po, seat, "inbox"), exist_ok=True)
     return {"S4E_PROGRESS_DB": p + "/results.tsv", "S4E_SUITES_TSV": p + "/SUITES.tsv", "S4E_SCORE_MD": os.path.join(SCR, "SCORE.md"), "S4E_TEST_REQUEST_DIR": os.path.join(SCR, "test_requests"),
             "S4E_RESULTS": p + "/results.tsv", "S4E_SMOKE_TSV": os.path.join(SCR, "SMOKE.tsv"), "S4E_POST": po}
-SENV = scratch_env(); ENV = dict(os.environ, S4E_HOME=S4E, **SENV)
+SENV = scratch_env(); ENV = dict(os.environ, S4E_HOME=S4E, S4E_CLASS="grader", **SENV)   # S4E_CLASS=grader: the runners admit seat grader as the coo's instrument (lib_one_runner.sh:one_runner_seat_admitted)
 BAND = {100: "request", 200: "smoke", 500: "impact", 900: "lap"}
 LIB = os.path.join(S4E, "harness", "scripts", "lib_grade_cell.sh")
 PN_PY = "import sys; sys.path.insert(0, sys.argv[1]); import util_suite_rows_vs_progress as a; print(a.dbname(sys.argv[2]))"
@@ -282,20 +282,28 @@ def one():
         else:
             cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "bash", script] + words[1:]
             senv = dict(ENV, S4E_CHUNK=cell)
+        # A PACKAGE RUNNER TAKES ONE ENTRY A RUN (S4E_CHUNK=entry:<name>; the coo measured 2026-11-07 15:2x that entry:a,b is refused by the runner's partition parse), so a
+        # request cell of several entries is several runs of the runner, in order, one log; rc is the worst reading (1 if any entry read red; a refusal stops the list).
+        launches = [(cmd, dict(ENV, S4E_CHUNK="entry:" + e)) for e in entries] if kind != "master" and len(entries) > 1 else [(cmd, senv)]
         d = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT", "grade"), "grade"); os.makedirs(d, exist_ok=True)
         res_path = ENV.get("S4E_RESULTS", LIVE_PROG + "/results.tsv")
         snap = os.path.join(d, "job.%d.snap.tsv" % job.id)
         if os.path.isfile(res_path): shutil.copyfile(res_path, snap)
         else: snap = ""
+        rc = 0
         with open(os.path.join(d, "job.%d.log" % job.id), "ab") as out:
-            p = subprocess.Popen(cmd, cwd=S4E, env=senv, stdout=out, stderr=subprocess.STDOUT)
-            last = time.time()
-            while p.poll() is None:
-                time.sleep(1)
-                if time.time() - last >= 60:
-                    try: c.touch(job); last = time.time()
-                    except Exception as e: say("GRADE_LEASE job=%d touch failed: %s" % (job.id, e))
-        rc = p.returncode; why = None if rc in (0, 1) else "rc=%d from the harness launch" % rc
+            for lcmd, lenv in launches:
+                if len(launches) > 1: out.write(("GRADE_ENTRY %s\n" % lenv.get("S4E_CHUNK", "")).encode()); out.flush()
+                p = subprocess.Popen(lcmd, cwd=S4E, env=lenv, stdout=out, stderr=subprocess.STDOUT)
+                last = time.time()
+                while p.poll() is None:
+                    time.sleep(1)
+                    if time.time() - last >= 60:
+                        try: c.touch(job); last = time.time()
+                        except Exception as e: say("GRADE_LEASE job=%d touch failed: %s" % (job.id, e))
+                rc = p.returncode if p.returncode not in (0, 1) else max(rc, p.returncode)
+                if rc not in (0, 1): break
+        why = None if rc in (0, 1) else "rc=%d from the harness launch" % rc
         if rc in (0, 1) and kind != "master":
             say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=package runner writes its own rows" % job.id)
         elif rc in (0, 1):

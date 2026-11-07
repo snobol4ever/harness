@@ -338,6 +338,20 @@ def tick():
     view = regenerate_view()
     with open(TICK_DIR + "/decide.last", "w") as f:
         f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, view=view)) + "\n")
+    # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
+    # fleet_health.py, read a 520 s old width of 2). The old keys that still mean something keep their names (ts busy cores cpu_psi10 cpu_psi60 grader_width action); the rest are the tick's.
+    try:
+        if DRY: raise RuntimeError("dry tick writes no state")
+        gq = 0
+        try: gq = int(re.search(r"ready=(\d+)", subprocess.run(["python3", "-I", ROOT + "/harness/scripts/util_queue.py", "stats-tube", GRADE_TUBE], capture_output=True, text=True, timeout=10).stdout).group(1))
+        except Exception: pass
+        with open(PROG + "/BOX.state.tmp", "w") as f:
+            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ncontroller=box_tick.py\ntick=%d\n%s\n%s\n"
+                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, n,
+                       grader.replace(" ", "\n").replace("grader\n", "grader_"), liveset if liveset.startswith("liveset=") else "liveset=" + liveset))
+        os.replace(PROG + "/BOX.state.tmp", PROG + "/BOX.state")
+    except Exception as e:
+        print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
     print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s expired=%d %s %s secs=%d cpu_s=%.2f%s"
