@@ -685,6 +685,35 @@ BODY
     rm -rf "$_w" "$_wq"
     printf 'MINT refuses_bare_inversion=%d accepts_lawful=%d premise_rc2_is_refuse=%d\n' "$_rb" "$_al" "$_rq"
     [ "$_rb" = 1 ] && [ "$_al" = 1 ] && [ "$_rq" = 1 ]; exit $?; }
+s4e_mint_probe_baton() {
+    local _w _x _b _h _exp _nx _n _tl _g1=0 _g2=0 _g3=0
+    _h='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mint_baton.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
+    mkdir -p "$_w/tasks" "$_w/claims" "$_w/cfo/inbox"; : > "$_w/QUEUE.tsv"; : > "$_w/BOARD.md"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
+    _x="mint-baton-block-$$"; _b="$_w/tasks/$_x.task.md"
+    S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin > /dev/null 2>&1 <<BODY
+GOAL: probe goal one. Its first sentence is not the NEXT.
+DONE-WHEN: $_h test -f /no-such-mint-baton-one-$$
+## NEXT
+REPRODUCE: step one.
+ORACLE: none.
+BODY
+    _exp="$(printf 'REPRODUCE: step one.\nORACLE: none.')"
+    _nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f' "$_b" 2>/dev/null)"
+    _n="$(grep -c '^GOAL:' "$_b" 2>/dev/null)"; [ "${_n:-0}" = 1 ] && ! grep -q '^GOAL: GOAL:' "$_b" 2>/dev/null && _g1=1
+    [ "$_nx" = "$_exp" ] && _g2=1
+    _x="mint-baton-first-$$"; _b="$_w/tasks/$_x.task.md"
+    S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin > /dev/null 2>&1 <<BODY
+GOAL: probe goal two. Second sentence here.
+DONE-WHEN: $_h test -f /no-such-mint-baton-two-$$
+BODY
+    _exp="$(printf 'probe goal two\nDONE-WHEN: %s test -f /no-such-mint-baton-two-%s' "$_h" "$$")"
+    _nx="$(awk '/^## NEXT/{f=1;next} /^## /{f=0} f' "$_b" 2>/dev/null)"
+    [ "$_nx" = "$_exp" ] && _g3=1
+    _tl="$(cat "$_w"/tasks/*.task.md 2>/dev/null | grep -c 'Distill a real first step' 2>/dev/null)"; _tl="${_tl:-0}"
+    rm -rf "$_w"
+    printf 'MINT goal_once=%d next_from_goal=%d template_lines=%d\n' "$_g1" "$((_g2 * _g3))" "$_tl"
+    [ "$_g1" = 1 ] && [ "$_g2" = 1 ] && [ "$_g3" = 1 ] && [ "$_tl" = 0 ]; exit $?; }
 # ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
 # BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` only ever APPENDS the DONE marker (never deletes a
 # claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
@@ -4512,7 +4541,7 @@ case "$cmd" in
   # rank is sniffed, not fixed-position: the token right after topic is consumed as rank ONLY if it is
   # ALL DIGITS (never true of real GOAL prose, even prose that happens to start with a number — that always
   # has a following space/letter); otherwise it defaults to 2 and the same token starts the goal text.
-  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape; [ "${2:-}" = --probe-ceo ] && s4e_mint_probe_ceo
+  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape; [ "${2:-}" = --probe-baton ] && s4e_mint_probe_baton; [ "${2:-}" = --probe-ceo ] && s4e_mint_probe_ceo
          [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat> | --tier fable|opus|sonnet|haiku | --to <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically, and with --tier or --to one job in the queue (fleet-queue step 3)."
          topic="$2"; shift 2
          s4e_step_owned_refuse "$topic" || exit 2
@@ -4543,6 +4572,14 @@ case "$cmd" in
            if ! s4e_is_hq "$owner"; then echo "⛔ REFUSED: --owner must be a standing seat ($(s4e_hqboxes | tr '\n' ' ')), not '$owner'." >&2; exit 2; fi
            fi
          if [ "${1:-}" = "--stdin" ] || [ "${1:-}" = "-" ]; then goal="$(cat)"; else goal="$*"; fi
+         # ⭐ THE GOAL PREFIX IS WRITTEN ONCE, BY THE SKELETON (box-scheduler step 33, mint writes the GOAL once): a body that carries its own leading "GOAL: " loses it here, once.
+         goal="${goal#GOAL: }"
+         # ⭐ A BODY MAY CARRY ITS OWN NEXT (box-scheduler step 33; THE HAIKU BAR item 3, the designer writes the NEXT): the lines from its first "## NEXT" on are the baton's NEXT verbatim. Split off here, before the DONE-WHEN split, so the one-NEXT guard below never meets a second heading from the GOAL text.
+         next_body=""
+         if printf '%s\n' "$goal" | grep -q '^## NEXT'; then
+             next_body="$(printf '%s\n' "$goal" | sed -n '/^## NEXT/,$p' | sed '1d')"
+             goal="$(printf '%s\n' "$goal" | sed '/^## NEXT/,$d')"
+         fi
          # ⛔ THE TOPIC BECOMES A FILENAME TWICE OVER (a QUEUE.tsv row AND tasks/<topic>.task.md) — same guard
          # as send (s191), checked before either write, not after.
          case "$topic" in ""|*/*|*$'\n'*) echo "⛔ REFUSED: topic must be a short filename-safe slug (no / and no newline). Usage: $0 mint <topic> [rank] \"GOAL text\"" >&2; exit 2;; esac
@@ -4673,6 +4710,9 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
          # DONE-WHEN in the minted text and this placeholder is not added.
          pw_block="PREMISE-WHEN: ⛔ NOT EXPRESSED -- replace this with the ONE CHEAP COMMAND that proves this row's central claim is still true on today's tree. It is run by \`claim\` and \`next\`, and a RED one refuses the lock and says the row needs rewriting. Until it is written, this row is dispatched with its premise UNCHECKED."
          if printf '%s\n' "$dw_block" | grep -q '^PREMISE-WHEN:'; then pw_block=""; fi
+         # ⭐ THE NEXT IS THE BODY'S BLOCK VERBATIM, ELSE THE GOAL'S FIRST SENTENCE AND THE DONE-WHEN LINE -- never the template (box-scheduler step 33).
+         if [ -n "$next_body" ]; then next_text="$next_body"
+         else _first="$(printf '%s' "$goal" | tr '\n' ' ')"; next_text="$(printf '%s\n%s' "${_first%%. *}" "$(printf '%s\n' "$dw_block" | sed -n '1p')")"; fi
          cat > "$b" <<TASKEOF
 # TASK $topic
 GOAL: $goal
@@ -4683,7 +4723,7 @@ RANK: $rank
 OWNER: $owner
 STATE: FREE
 ## NEXT
-Distill a real first step from the GOAL above (and a real DONE-WHEN — see the line above), then work it.
+$next_text
 ## QA
 ## LEDGER
 - [$ME·$(date -u +%F)] Minted via \`s4e_msg.sh mint\`.
