@@ -80,6 +80,7 @@ PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.t
 if [ "$mode" = land ] && [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_LAND_UNADMITTED:-}" ]; then   # fleet-control step 3 (the cio 2026-11-07): two landings build and gate at once on the box, through GNU sem class land (SLOTS.tsv); a third waits at the door, bounded; a refusal lands nothing
     exec bash "$HERE/util_run_slot.sh" --admit land bash "$SELF" "${ORIG_ARGS[@]}"
 fi
+[ -n "$home" ] || refuse "--home is empty: name the root that holds SCRIP harness corpus and .github (worker_02 2026-11-07 16:0x: a backgrounded shell passed an unset variable)"
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 TSV="$home/harness/scripts/generated_tables.tsv"
 seat="${S4E_SEAT:-$(bash "$HERE/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')}"

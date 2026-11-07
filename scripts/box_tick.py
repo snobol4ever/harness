@@ -21,6 +21,7 @@ PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/re
 PROG = "/home/resources/progress"
 U = "/sys/fs/cgroup/user.slice/user-%d.slice/user@%d.service" % (os.getuid(), os.getuid())
 GRADER = U + "/s4e.slice/s4e-grader.slice"
+SEATS_SLICE = U + "/s4e.slice/s4e-seats.slice"
 DRY = os.environ.get("S4E_TICK_DRY") == "1"
 TICK_DIR = os.environ.get("S4E_TICK_DIR") or ("/tmp/s4e/%s/tick" % os.environ.get("S4E_SEAT", "cio"))
 STEP_EVERY = int(os.environ.get("S4E_STEP_EVERY", "2"))
@@ -90,14 +91,15 @@ def sense(planted=None):
         s.update(planted)
     else:
         a10, a60, a300 = psi("/proc/pressure/cpu")
-        g10, _, _ = psi(GRADER + "/cpu.pressure")
+        g10, g60, _ = psi(GRADER + "/cpu.pressure")
+        s10, s60, _ = psi(SEATS_SLICE + "/cpu.pressure")
         oom, mx = mem_events()
         last = TICK_DIR + "/grader_mem_events.last"
         try:
             lo, lm = [int(x) for x in open(last).read().split()[:2]]
         except (OSError, ValueError):
             lo, lm = oom, mx
-        s.update(cpu10=a10, cpu60=a60, cpu300=a300, gcpu10=g10, mem_rise=int(oom > lo or mx > lm))
+        s.update(cpu10=a10, cpu60=a60, cpu300=a300, gcpu10=g10, gcpu60=g60, scpu10=s10, scpu60=s60, mem_rise=int(oom > lo or mx > lm))
         if not DRY:
             os.makedirs(TICK_DIR, exist_ok=True)
             open(last, "w").write("%d %d\n" % (oom, mx))
@@ -116,25 +118,32 @@ def current_awake(mode):
     return int(m.group(1)) if m else 0
 
 
+def one_step(hot, quiet, may_rise):
+    if hot: return -1, "hot"
+    if quiet and may_rise: return +1, "quiet"
+    if quiet: return 0, "quiet-hold"
+    return 0, "hold"
+
+
 def decide(s, w, a, mode, tick_no):
-    """one step a tick at most, a step every STEP_EVERY ticks for a rise, at once for a fall"""
-    hot = s["cpu60"] > HOT60 or s["cpu10"] > HOT10 or s.get("mem_rise", 0) == 1
-    quiet = s["cpu60"] < QUIET and s["cpu10"] < QUIET and s.get("mem_rise", 0) == 0
+    """one step a tick at most, a step every STEP_EVERY ticks for a rise, at once for a fall.
+    EACH ACTUATOR READS ITS OWN SLICE (the coo 2026-11-07 16:05, measured: s4e-seats.slice at its 1200 percent quota read cpu PSI 60 while
+    s4e-grader.slice read 0.0, and the box PSI, which counts the seats' throttled tasks, made the tick narrow the grader 8 to 5 for a pressure
+    that was not the grader's): W, the grader width, follows s4e-grader.slice's cpu.pressure and the grader memory event; A, the workers awake,
+    follows s4e-seats.slice's cpu.pressure. The box PSI stays in the TICK line as a reading. Planted sensors that name only cpu10/cpu60 (the
+    older probes) drive both, so the law on them is unchanged."""
+    g10 = s.get("gcpu10", s["cpu10"]); g60 = s.get("gcpu60", s["cpu60"])
+    s10 = s.get("scpu10", s["cpu10"]); s60 = s.get("scpu60", s["cpu60"])
+    mem = s.get("mem_rise", 0) == 1
     WMAX = wmax(mode)
     may_rise = tick_no % STEP_EVERY == 0
-    if hot:
-        step, why = -1, "hot"
-    elif quiet and may_rise:
-        step, why = +1, "quiet"
-    elif quiet:
-        step, why = 0, "quiet-hold"
-    else:
-        step, why = 0, "hold"
+    step, why = one_step(g60 > HOT60 or g10 > HOT10 or mem, g60 < QUIET and g10 < QUIET and not mem, may_rise)
+    step_a, why_a = one_step(s60 > HOT60 or s10 > HOT10, s60 < QUIET and s10 < QUIET, may_rise)
     nw = min(WMAX, max(WMIN, w + step))
-    na = min(AMAX, max(AMIN, a + step))
+    na = min(AMAX, max(AMIN, a + step_a))
     if fleet_idle(mode):
         na = 0
-    return dict(step=step, why=why, W=nw, A=na, WMAX=WMAX, AMAX=AMAX)
+    return dict(step=step, why="%s/seats:%s" % (why, why_a) if why_a != why else why, W=nw, A=na, WMAX=WMAX, AMAX=AMAX, step_a=step_a, why_a=why_a, gcpu60=g60, scpu60=s60)
 
 
 def systemctl(*args):
@@ -370,8 +379,13 @@ def probe_width():
     hold_odd = decide(dict(cpu10=5.0, cpu60=5.0, mem_rise=0), 2, 4, mode, 1)
     ok = int(q["step"] == 1 and q["W"] == 3 and q["A"] == 5 and h["step"] == -1 and h["W"] == 1 and h["A"] == 3
              and m["step"] == 0 and r["step"] == -1 and hold_odd["step"] == 0 and q["W"] <= q["WMAX"])
-    print("WIDTH_PSI quiet=%+d hot=%+d middling=%+d mem_rise=%+d odd_tick=%+d W=%d->%d/%d A=%d->%d ok=%d"
-          % (q["step"], h["step"], m["step"], r["step"], hold_odd["step"], 2, q["W"], q["WMAX"], 4, q["A"], ok))
+    # the slices are read apart (the coo 2026-11-07 16:05): a hot seats slice beside a quiet grader slice lowers A and raises W; the reverse lowers W and raises A
+    sp = decide(dict(cpu10=70.0, cpu60=60.0, gcpu10=1.0, gcpu60=0.0, scpu10=70.0, scpu60=60.0, mem_rise=0), 2, 4, mode, 2)
+    gp = decide(dict(cpu10=30.0, cpu60=30.0, gcpu10=70.0, gcpu60=60.0, scpu10=5.0, scpu60=5.0, mem_rise=0), 2, 4, mode, 2)
+    split_ok = int(sp["step"] == 1 and sp["W"] == 3 and sp["A"] == 3 and gp["step"] == -1 and gp["W"] == 1 and gp["A"] == 5)
+    ok = ok and split_ok
+    print("WIDTH_PSI quiet=%+d hot=%+d middling=%+d mem_rise=%+d odd_tick=%+d W=%d->%d/%d A=%d->%d seats_hot_grader_quiet=W%+d/A%+d grader_hot_seats_quiet=W%+d/A%+d split_ok=%d ok=%d"
+          % (q["step"], h["step"], m["step"], r["step"], hold_odd["step"], 2, q["W"], q["WMAX"], 4, q["A"], sp["step"], sp["step_a"], gp["step"], gp["step_a"], split_ok, ok))
     return 0 if ok else 1
 
 

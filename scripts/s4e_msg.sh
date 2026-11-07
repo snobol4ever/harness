@@ -462,9 +462,21 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     fi
     cat "$_pg" >&2; rm -f "$_pg"
     if [ -f "$_c" ]; then
-      [ "$(head -1 "$_c")" = "$ME" ] || { echo "⛔ $_t is claimed by $(head -1 "$_c"); the job is released" >&2; return 1; }
-      grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
-      printf 'RESERVED job=%s tube=%s %s\n' "$2" "$3" "$(date -u +%FT%TZ)" >> "$_c"; return 0; fi
+      local _own _ts; _own="$(head -1 "$_c")"
+      if [ "$_own" != "$ME" ]; then
+        # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): beanstalkd handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
+        if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
+          mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
+          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: beanstalkd handed job $2 ($3) to $ME, so no reserve behind that claim lived (fleet-queue: the head never cycles)"
+          echo "  (stale claim of $_own on $_t archived; job $2 taken)" >&2
+        else
+          echo "⛔ $_t is claimed by $_own by hand (no RESERVED line): job $2 is buried for the claimant, whose done or park frees it; the pass goes on" >&2; return 4
+        fi
+      else
+        grep -q '^DONE$' "$_c" && { echo "⛔ $_t reads DONE on its claim; the holder deletes the job" >&2; return 1; }
+        printf 'RESERVED job=%s tube=%s %s\n' "$2" "$3" "$(date -u +%FT%TZ)" >> "$_c"; return 0
+      fi
+    fi
     ( set -o noclobber; printf '%s\nRESERVED job=%s tube=%s %s\n' "$ME" "$2" "$3" "$(date -u +%FT%TZ)" > "$_c" ) 2>/dev/null || { echo "⛔ $_t was claimed in the race ($(head -1 "$_c" 2>/dev/null)); the job is released" >&2; return 1; }
     s4e_set_row_state "$_t" "CLAIMED:$ME" || true; return 0; }
 # THE HEAD WHOSE PREMISE READ RED (the cio's cut, 2026-11-07; row bus-next-stops-at-a-reserved-job-whose-premise-is-red-and-serves-nothing-behind-it).
