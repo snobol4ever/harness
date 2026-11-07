@@ -14,6 +14,8 @@
 #   2. src/lower/lower_prolog.c        pl_ensure_gen_builtin_pred() — GEN rail     (name, arity)
 #   3. src/lower/lower_prolog.c        goal() strcmp arms           — lowered arms (name[, arity])
 #   4. src/parsers/prolog/prolog_lower.c pb_expand_goal() strcmp arms — AST expansion (name)
+#   5. src/parsers/prolog/prelude/*.pl and PL_PRELUDE_SRC in prolog_parse.c — clause heads, prelude_heads() (name, arity)
+#   6. src/lower/lower_prolog.c pl_det_leaves[] — triple rows { "name", arity, "$sym" } (name, arity)
 #
 # Usage:  bash ../harness/scripts/audit_prolog_iso_coverage.sh [--check]
 #   (no args)  regenerate the tracker
@@ -25,11 +27,12 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "${HERE}/../../SCRIP" && pwd)"
-GP="${GPROLOG_SRC:-${ROOT}/refs/gprolog-master/src/BipsPl}"
+if [ -n "${GPROLOG_SRC:-}" ]; then GP="$GPROLOG_SRC"; elif [ -d "${ROOT}/refs/gprolog-master/src/BipsPl" ]; then GP="${ROOT}/refs/gprolog-master/src/BipsPl"; else GP=/home/resources/gprolog-master/src/BipsPl; fi
 OUT="${OUT:-$S4E/.github/PROLOG-ISO-TRACKER.md}"
 MODE="${1:-}"
 if [ ! -d "$GP" ]; then
     echo "audit_prolog_iso_coverage: MISSING canonical source: $GP" >&2
+    echo "  tried in order: GPROLOG_SRC (set or not), ${ROOT}/refs/gprolog-master/src/BipsPl, /home/resources/gprolog-master/src/BipsPl" >&2
     echo "  refs/ is gitignored and not auto-populated. Re-create it (RULES.md CONSULT CANONICAL SOURCES):" >&2
     echo "  git clone --depth 1 https://github.com/didoudiaz/gprolog.git ${ROOT}/refs/gprolog-master" >&2
     exit 2
@@ -84,7 +87,112 @@ STRUCTURAL = {(',', 2), (';', 2), ('->', 2), ('!', 0), ('true', 0), ('fail', 0),
               ('initialization', 1), ('bagof', 3), ('setof', 3), ('forall', 2), ('retractall', 1),
               ('call', 1), ('call', 2), ('call', 3), ('call', 4), ('call', 5), ('call', 6),
               ('call', 7), ('call', 8), ('\\+', 1), ('not', 1), ('catch', 3), ('throw', 1)}
-admitted = det | gen | arms | STRUCTURAL
+# SIXTH ADMISSION SITE (the cto's CTO-543 NEXT, 2026-11-07): the Prolog PRELUDE. SCRIP answers every builtin its prelude
+# defines (atom_property/2, get_key/1, listing/1, call_det/2 ...) through a clause, not a C table, so the four C sites read
+# them as gaps. prelude_heads reads each clause head at column zero: the text before the first :- or --> at depth 0, or
+# before the clause's final period, its name the leading atom (plain or quoted), its arity the top-level commas of the
+# argument list plus one (0 with no argument list). A name starting with $ is internal and skipped.
+def _q_end(t, j):
+    q = t[j]; j += 1; n = len(t)
+    while j < n:
+        ch = t[j]
+        if ch == '\\': j += 2; continue
+        if ch == q:
+            if j + 1 < n and t[j + 1] == q: j += 2; continue
+            return j + 1
+        j += 1
+    return n
+def _head_na(h):
+    if not h: return None
+    if h[0] == "'":
+        j = _q_end(h, 0); name = h[1:j - 1].replace("''", "'"); k = j
+    else:
+        m = re.match(r"[a-z][A-Za-z0-9_]*|[+\-*/\\^<>=~:.?@#&$]+", h)
+        if not m: return None
+        name = m.group(0); k = m.end()
+    if k < len(h) and h[k] == '(':
+        d = 0; commas = 0; j = k; n = len(h)
+        while j < n:
+            ch = h[j]
+            if h.startswith("0'", j): j = _c0_end(h, j); continue
+            if ch in "'\"": j = _q_end(h, j); continue
+            if ch in '([{': d += 1
+            elif ch in ')]}':
+                d -= 1
+                if d == 0: break
+            elif ch == ',' and d == 1: commas += 1
+            j += 1
+        return (name, commas + 1)
+    return (name, 0)
+def _c0_end(t, i):
+    j = i + 2
+    if j < len(t) and t[j] == '\\': return j + 2
+    if t.startswith("''", j): return j + 2
+    return j + 1
+def module_exports(t):
+    k = t.find(':- module(')
+    if k < 0: return set()
+    e = t.find('])', k)
+    if e < 0: return set()
+    seg = re.sub(r'%[^\n]*', '', t[k:e]); out = set()
+    for m in re.finditer(r"('(?:[^']|'')*'|[a-z][A-Za-z0-9_]*)\s*(//|/)\s*(\d+)", seg):
+        nm = m.group(1); nm = nm[1:-1].replace("''", "'") if nm.startswith("'") else nm
+        out.add((nm, int(m.group(3)) + (2 if m.group(2) == '//' else 0)))
+    return out
+def prelude_heads(t):
+    out = set(); n = len(t); i = 0
+    while i < n:
+        while i < n:
+            if t[i].isspace(): i += 1
+            elif t[i] == '%': j = t.find('\n', i); i = n if j < 0 else j + 1
+            elif t.startswith('/*', i): j = t.find('*/', i + 2); i = n if j < 0 else j + 2
+            else: break
+        if i >= n: break
+        col0 = i == 0 or t[i - 1] == '\n'
+        h0 = i; d = 0; he = None
+        while i < n:
+            c = t[i]
+            if c == '%': j = t.find('\n', i); i = n if j < 0 else j; continue
+            if t.startswith('/*', i): j = t.find('*/', i + 2); i = n if j < 0 else j + 2; continue
+            if t.startswith("0'", i): i = _c0_end(t, i); continue
+            if c in "'\"": i = _q_end(t, i); continue
+            if c in '([{': d += 1
+            elif c in ')]}': d -= 1
+            elif d == 0 and he is None and (t.startswith(':-', i) or t.startswith('-->', i)): he = i
+            elif c == '.' and d == 0 and (i + 1 >= n or t[i + 1].isspace() or t[i + 1] == '%'):
+                if he is None: he = i
+                i += 1; break
+            i += 1
+        if col0 and he is not None:
+            r = _head_na(t[h0:he])
+            if r and not r[0].startswith('$'): out.add(r)
+    return out
+def _c_unesc(s):
+    return re.sub(r'\\(.)', lambda m: {'n': '\n', 't': '\t', '"': '"', '\\': '\\'}.get(m.group(1), '\\' + m.group(1)), s)
+def _c_prelude(src):
+    k = src.find('PL_PRELUDE_SRC =')
+    if k < 0: return ''
+    parts = []
+    for line in src[k:].split('\n')[1:]:
+        s = line.strip()
+        if not s: continue
+        if not s.startswith('"'): break
+        j = s.rfind('"')
+        if j <= 0: break
+        parts.append(_c_unesc(s[1:j]))
+    return ''.join(parts)
+pre = set()
+for f in sorted(glob.glob(os.path.join(ROOT, 'src/parsers/prolog/prelude', '*.pl'))):
+    _t = rd(f); pre |= {hd for hd in prelude_heads(_t) if hd in module_exports(_t)}
+pre |= prelude_heads(_c_prelude(rd(os.path.join(ROOT, 'src/parsers/prolog/prolog_parse.c'))))
+# SEVENTH ADMISSION SITE (2026-11-07, measured by worker_04 and re-measured here): the triple table pl_det_leaves[] in
+# lower_prolog.c. Its rows { "name", arity, "$sym" } admit setarg/3, nb_setarg/3 and their kin; no earlier reader matches a
+# triple, so they were reported as gaps (probe: setarg(1,f(a),b) prints f(b)).
+pdl = set()
+for m in re.finditer(r'pl_det_leaves\[\][^=]*=\s*\{(.*?)\}\s*;', low, re.S):
+    for t in re.finditer(r'\{\s*"((?:[^"\\]|\\.)+)"\s*,\s*(\d+)\s*,\s*"[^"]*"\s*\}', m.group(1)):
+        pdl.add((unesc(t.group(1)), int(t.group(2))))
+admitted = det | gen | arms | STRUCTURAL | pre | pdl
 def is_admitted(nm, ar):
     return (nm, ar) in admitted or nm in wild
 # ---- scope + rung assignment (by canonical source file) ----------------------------------------
