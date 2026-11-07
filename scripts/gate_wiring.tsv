@@ -1625,6 +1625,7 @@ test_gate_pl_no_synthetic_main.sh	TASK	-	-	-
 test_gate_pl_port_trace.sh	TASK	-	-	-
 test_gate_pl_rung11_lco.sh	TASK	-	-	-
 test_gate_pl_rungs_board_floor.sh	TASK	-	-	-
+test_gate_pl_xsb_an_import_from_a_module_file_beside_the_program_overrides_the_library_predicate_of_its_name_as_xsb.sh	TASK	the DONE-WHEN witness of row prolog-xsb-an-import-from-a-module-file-overrides-the-library-predicate-of-its-name-as-xsb-cto-533; red until its cure, which wires it into make test in the same landing	cfo	2026-11-07T21:57Z
 test_gate_port_exit_value_contract.sh	TASK	-	-	-
 test_gate_port_functions.sh	TASK	-	-	-
 test_gate_pristine_lock_timeout.sh	TASK	-	-	-
