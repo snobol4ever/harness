@@ -67,7 +67,9 @@ def mode_text():
 
 
 def fleet_idle(mode):
-    return re.search(r"^FLEET: IDLE", mode, re.M) is not None
+    """Lon's hand idles the fleet: a FLEET: IDLE line without the controller's marker. The controller's own line (FLEET: IDLE EXCEPT <live set> (controller ...)) is the live set, not an idle."""
+    m = re.search(r"^FLEET: IDLE.*$", mode, re.M)
+    return m is not None and "(controller" not in m.group(0)
 
 
 def hand_fleet_line(mode):
