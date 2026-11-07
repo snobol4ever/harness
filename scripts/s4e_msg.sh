@@ -3831,15 +3831,14 @@ case "$cmd" in
                exit 2
              fi ;;
          esac
-         # ⭐ s4e-park-adds-a-blocker-and-refuses-an-unresolvable-topic — A RE-PARK ADDS A BLOCKER, IT DOES NOT
-         # REPLACE ONE. seat11's correct park (BLOCKED-ON:calling-convention-depth-tracked, the row that actually
+         # ⭐ s4e-park-adds-a-blocker-and-refuses-an-unresolvable-topic (its merge RETIRED 2026-11-07, see below). The
+         # history: seat11's correct park (BLOCKED-ON:calling-convention-depth-tracked, the row that actually
          # cured it) was overwritten twice by later re-parks recording a DIFFERENT hypothesis, so when the true
          # blocker landed DONE nothing was left naming it and the row could not self-clear — eight seats released
-         # it unworked. If this row is ALREADY BLOCKED-ON:/PARKED-AWAITING: something and the new state is ALSO
-         # one of those, merge the new blocker into the existing '+'-joined set (deduped) instead of overwriting
-         # it — the row then self-clears the moment ANY recorded blocker resolves (next()'s PASS 3), which is
-         # sound: each '+' member is a real, independently-plausible reason, and one of them being true is
-         # enough to re-open dispatch, exactly the case a wrong re-park used to erase.
+         # it unworked. THE CURE IS THE ONE BLOCKER (the cio's ruling 2026-11-07, fleet-bus section 1: a row is blocked
+         # on ONE row at a time, its buried job has one reason): a re-park on a row ALREADY BLOCKED-ON:/PARKED-AWAITING:
+         # REPLACES the blocker, and the baton's LEDGER gets one line `BLOCKER <old> -> <new>`, so the change is on the
+         # record and never a silent overwrite. The '+'-joined set this comment used to describe is retired.
          _restore=""
          case "$st" in
            BLOCKED-ON:*|PARKED-AWAITING:*)
@@ -3852,11 +3851,8 @@ case "$cmd" in
              case "$_cur_st" in
                BLOCKED-ON:*|PARKED-AWAITING:*)
                  _old="${_cur_st#*:}"; _new="${st#*:}"
-                 _dup=0; _save_IFS="$IFS"; IFS='+'
-                 for _b in $_old; do [ "$_b" = "$_new" ] && _dup=1; done
-                 IFS="$_save_IFS"
-                 if [ "$_dup" = 0 ]; then st="BLOCKED-ON:${_old}+${_new}"; else st="BLOCKED-ON:${_old}"; fi
-                 echo "  (additive park: was $_cur_st, now $st)"
+                 [ "$_old" = "$_new" ] || s4e_ledger_prepend "$topic" "$(printf -- '- [%s·%s] BLOCKER %s -> %s (a re-park REPLACES the one blocker: the cio 2026-11-07, fleet-bus section 1)' "$ME" "$(date -u +%F)" "$_old" "$_new")"
+                 echo "  (re-park replaces: was $_cur_st, now $st)"
                  ;;
              esac ;;
          esac
