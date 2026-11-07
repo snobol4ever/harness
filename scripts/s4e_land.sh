@@ -644,7 +644,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     return 0
 }
 if [ "$mode" = land ]; then   # a stop order lands before the landing: unread mail newer than the claim refuses (the bypass is loud, in the LEDGER)
-    mpo="${S4E_POST:-/home/resources/postoffice}"; claim=""; [ -n "$row" ] && claim="$mpo/claims/$row.claim"
+    mpo="${S4E_POSTOFFICE:-${S4E_POST:-/home/resources/postoffice}}"; claim=""; [ -n "$row" ] && claim="$mpo/claims/$row.claim"
     if mail_guard "$mpo" "$seat" "$claim" 2>/dev/null; then :
     elif [ -n "${S4E_LAND_IGNORE_MAIL:-}" ]; then
         echo "LAND over unread mail (S4E_LAND_IGNORE_MAIL): $S4E_LAND_IGNORE_MAIL"
