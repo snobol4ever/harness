@@ -114,7 +114,7 @@ def cell(s, n, root):
         txt = ("after " + label(last[s])) if s in last else "working"; return "🟩 %s %s%s" % (nm, txt, graded(s, txt))
     if w: return "🟥 %s %s, %s" % (nm, label(w[2]), who(w[1], label(w[2])))
     if h: return "🟨 %s %s, held" % (nm, label(h[2]))
-    did = (("landed " if s in landed else "last ") + label(last[s])) if s in last else ""; did += graded(s, did)
+    did = (("landed " if s in landed else "last ") + label(last[s])) if s in last else ""; did = (did + graded(s, did)).lstrip(", ")
     if s in sleeping: return "⬛ %s %s" % (nm, did or "asleep")
     return "⬜ %s %s" % (nm, did or "idle")
 
