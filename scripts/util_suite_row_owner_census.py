@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] [--tiers F] [--claims DIR] [--tubes F] [--probe-seat-arm] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
+"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] [--tiers F] [--claims DIR] [--tubes F] [--sleeping F] [--probe-seat-arm] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
 HOLDS, AND THE WORKER QUEUES ARE WORKED (the seat arm, SEAT_QUEUE_BOARD, below the suite arm: no starved worker, no cut job owed, no overdue escalation; either arm RED is rc 1).
 
 Lon 2026-11-01 15:5x CST, in the coo's window, verbatim: "The goal is to get to 100% test suites, duh!" / "Well of course the bug fixes need
@@ -83,10 +83,12 @@ for x in reds: print(x)
 #   DRY           idle workers minus ready tier-haiku jobs, when positive: the designers owe that many cut jobs. RED, printed DRY owed=N by cio,cto.
 #   OVERDUE       an ask-<tier> or tier-<tier> job of tiers 1-3 ready longer than 1800 s (the escalation timeout, fleet-queue 9). RED, one line per overdue tube.
 #   SENIOR_SHORT  a senior holding exactly one row. Informational, never rc: a senior holding zero rows is GREEN.
-# rc 1 when STARVED, DRY or OVERDUE is above 0. --probe-seat-arm plants the three inputs in a scratch dir and prints SEAT_ARM_PROBE when it reads them as the cio's ruling says.
+#   ASLEEP        a worker named in the sleeping list (--sleeping F, default the controller's list; a missing file means nobody sleeps). A sleeping worker is neither idle nor starved and is never counted in STARVED or DRY; the board prints asleep=N (the cio's ruling, 2026-11-07, row census-seat-arm-counts-the-sleeping-workers-as-starved-under-a-workers-awake-cap).
+# rc 1 when STARVED, DRY or OVERDUE is above 0. --probe-seat-arm plants the inputs in a scratch dir, one sleeping worker among them, and prints SEAT_ARM_PROBE when it reads them as the cio's ruling says.
 import subprocess
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TIERS = arg("--tiers", os.path.join(ROOT, ".github", "TIERS.tsv")); CLAIMS = arg("--claims", "/home/resources/postoffice/claims"); TUBES = arg("--tubes", None)
+SLEEPING = arg("--sleeping", "/home/claude_coo/.scratch/verifier/sleeping")
 OVERDUE_S = 1800; UQ = os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_queue.py")
 def table(path, need):
     try: rows = [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
@@ -117,9 +119,14 @@ def holdings(d):
         if not lines[0].strip() or any(l.startswith("DONE") for l in lines): continue
         if any(l.startswith("RESERVED job=") for l in lines): held.setdefault(lines[0].strip(), []).append(f)
     return held
-def seat_arm(seats, held, tube):
+def sleepers(path):
+    if not os.path.exists(path): return set()
+    try: return {l.strip() for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")}
+    except OSError as e: refuse("%s unreadable: %s" % (path, e))
+def seat_arm(seats, held, tube, asleep):
     workers = [s["seat"] for s in seats if s["tier"] == "4"]
-    idle = [w for w in workers if w not in held]
+    napping = [w for w in workers if w in asleep]
+    idle = [w for w in workers if w not in held and w not in asleep]
     haiku = tube("tier-haiku", False)[0]
     waiting = [w for w in idle if tube("seat-" + w, False)[0] > 0]
     pool = [w for w in idle if w not in waiting][:haiku]
@@ -131,7 +138,7 @@ def seat_arm(seats, held, tube):
             if t not in names: continue
             ready, age = tube(pre + names[t], True)
             if ready and age > OVERDUE_S: overdue.append((pre + names[t], ready, age))
-    return {"workers": len(workers), "idle": len(idle), "haiku": haiku,
+    return {"workers": len(workers), "idle": len(idle), "asleep": len(napping), "haiku": haiku,
             "starved": [(w, "seat-%s holds a ready job" % w) for w in waiting] + [(w, "tier-haiku ready=%d" % haiku) for w in pool],
             "owed": max(0, len(idle) - haiku), "overdue": overdue,
             "short": [s["seat"] for s in seats if s["tier"] in ("1", "2", "3") and len(held.get(s["seat"], [])) == 1]}
@@ -147,13 +154,14 @@ if "--probe-seat-arm" in sys.argv[1:]:
             for i in range(1, 21): f.write("worker_%02d\tWORKER_%02d\t/x\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n" % (i, i))
         os.mkdir(os.path.join(d, "claims"))
         with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t1\t0\nask-opus\t1\t2000\n")
-        a = seat_arm(table(os.path.join(d, "TIERS.tsv"), ("seat", "model", "tier")), holdings(os.path.join(d, "claims")), tsv_tube(os.path.join(d, "tubes.tsv")))
+        with open(os.path.join(d, "sleeping"), "w") as f: f.write("worker_01\n")
+        a = seat_arm(table(os.path.join(d, "TIERS.tsv"), ("seat", "model", "tier")), holdings(os.path.join(d, "claims")), tsv_tube(os.path.join(d, "tubes.tsv")), sleepers(os.path.join(d, "sleeping")))
     finally: shutil.rmtree(d, ignore_errors=True)
-    starved, dry, overdue, short = len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"])
-    print("SEAT_ARM_PROBE starved=%d dry=%d overdue=%d senior_short=%d owed=%d" % (starved, dry, overdue, short, a["owed"]))
-    sys.exit(0 if (starved, dry, overdue, short) == (1, 1, 1, 0) else 1)
-a = seat_arm(table(TIERS, ("seat", "model", "tier")), holdings(CLAIMS), tsv_tube(TUBES) if TUBES else live_tube)
-print("SEAT_QUEUE_BOARD workers=%d idle=%d haiku_ready=%d starved=%d dry=%d overdue=%d senior_short=%d owed=%d" % (a["workers"], a["idle"], a["haiku"], len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"]), a["owed"]))
+    starved, dry, overdue, short, asleep = len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"]), a["asleep"]
+    print("SEAT_ARM_PROBE starved=%d dry=%d overdue=%d senior_short=%d asleep=%d owed=%d" % (starved, dry, overdue, short, asleep, a["owed"]))
+    sys.exit(0 if (starved, dry, overdue, short, asleep) == (1, 1, 1, 0, 1) else 1)
+a = seat_arm(table(TIERS, ("seat", "model", "tier")), holdings(CLAIMS), tsv_tube(TUBES) if TUBES else live_tube, sleepers(SLEEPING))
+print("SEAT_QUEUE_BOARD workers=%d idle=%d haiku_ready=%d starved=%d dry=%d overdue=%d senior_short=%d owed=%d asleep=%d" % (a["workers"], a["idle"], a["haiku"], len(a["starved"]), int(a["owed"] > 0), len(a["overdue"]), len(a["short"]), a["owed"], a["asleep"]))
 for w, why in a["starved"]: print("  RED  worker %s starved: wake it, its job waits (%s)" % (w, why))
 if a["owed"] > 0: print("  RED  DRY owed=%d by cio,cto: the designers owe %d cut jobs" % (a["owed"], a["owed"]))
 for t, ready, age in a["overdue"]: print("  RED  OVERDUE %s ready=%d oldest=%ds: an escalation waits past %d s (fleet-queue 9)" % (t, ready, age, OVERDUE_S))
