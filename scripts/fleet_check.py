@@ -69,9 +69,9 @@ for l in rd(os.path.join(PO, "QUEUE.tsv")).split("\n"):
         for m in re.finditer(r"^- (20\d\d-\d\d-\d\dT\d\d:\d\dZ) \*\*STATE -> (?:GRANT-NEEDED|BLOCKED-ON)", rd(os.path.join(PO, "tasks", topic + ".task.md")), re.M):
             t = calendar.timegm(time.strptime(m.group(1), "%Y-%m-%dT%H:%MZ"))
         if t and NOW - t < DAY and (owner not in wait or t > wait[owner][0]): wait[owner] = (t, state, topic)
-def who(state):
+def who(state, own=""):
     kind, _, rest = state.partition(":"); tok = rest.split("-")[0]
-    if kind == "BLOCKED-ON": return "blocked on " + label(rest)
+    if kind == "BLOCKED-ON": return "blocked on " + ("a row" if label(rest) == own else label(rest))
     return "waits " + tok if tok in names else "waits a grant"
 
 last, landed, seen = {}, set(), {}
@@ -110,9 +110,9 @@ def cell(s, n, root):
     if live:
         if h: return "🟩 %s %s, %s" % (nm, label(h[2]), {"MEASURING": "gate running", "CLAIMED": "working", "ASSIGNED": "starting"}[h[1]])
         if s in pending: return "🟩 %s %s, being graded" % (nm, pending[s])
-        if w: return "🟩 %s %s, %s" % (nm, label(w[2]), who(w[1]))
+        if w: return "🟩 %s %s, %s" % (nm, label(w[2]), who(w[1], label(w[2])))
         txt = ("after " + label(last[s])) if s in last else "working"; return "🟩 %s %s%s" % (nm, txt, graded(s, txt))
-    if w: return "🟥 %s %s, %s" % (nm, label(w[2]), who(w[1]))
+    if w: return "🟥 %s %s, %s" % (nm, label(w[2]), who(w[1], label(w[2])))
     if h: return "🟨 %s %s, held" % (nm, label(h[2]))
     did = (("landed " if s in landed else "last ") + label(last[s])) if s in last else ""; did += graded(s, did)
     if s in sleeping: return "⬛ %s %s" % (nm, did or "asleep")
