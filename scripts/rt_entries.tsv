@@ -257,6 +257,7 @@ rt_label_table_install	leaf	-	0	-	0	call
 rt_list_bang_at	asm	DESCR	1	r8|r10|r11	-	call,alloc,clob,asm
 rt_list_bang_elem_at	leaf	DESCR	1	-	0	call,alloc
 rt_list_bang_key_at	leaf	DESCR	1	-	0	call,alloc
+rt_list_bang_ubang_at	leaf	DESCR	1	-	0	call,alloc
 rt_list_bang_ukey_at	leaf	DESCR	1	-	0	call,alloc
 rt_list_bang_var_at	leaf	DESCR	1	-	0	call,alloc
 rt_lv_is_list	asm	-	0	none	-	clob,asm
