@@ -3959,7 +3959,11 @@ case "$cmd" in
               # the control plane written to forbid it. A law the tooling does not enforce is a hope.
               tf="$PO/tasks/$topic.task.md"
               if [ -f "$tf" ]; then
-                dw="$(s4e_donewhen_text "$tf")"
+                # ⛔ THE FLAG IS SET INSIDE THE HELPER, AND A COMMAND SUBSTITUTION RUNS IN A SUBSHELL: `dw="$(...)"` lost
+                # _dw_backticked before the announcement below read it, so the strip was SILENT (the gate's ARM1b read silent,
+                # measured 2026-11-07 on harness a662e716). The helper runs in THIS shell here; only its output goes to a file.
+                _dw_out="$(mktemp)" || exit 1
+                s4e_donewhen_text "$tf" > "$_dw_out"; dw="$(cat "$_dw_out")"; rm -f "$_dw_out"
                 # ⛔⭐⭐ A MARKDOWN-STYLED DONE-WHEN WAS BEING RUN AS COMMAND SUBSTITUTION (seat06, 2026-08-28; FINDING
                 # be4b2257). A criterion authored as `DONE-WHEN: \`bash ../harness/scripts/gate.sh\`` -- backticks meant as CODE
                 # STYLING, because this line lives in a MARKDOWN file -- reaches `bash -c "$dw"` as live substitution:
@@ -3974,7 +3978,7 @@ case "$cmd" in
                 # about what the criterion IS -- two consumers reading one value, never two copies to drift.
                 # ⛔ ONE matched OUTER pair only, and never a one-sided backtick: a lone ` is either real substitution
                 # or a typo, and both must fail LOUDLY rather than be silently rewritten. Announced, never silent.
-                [ -n "${_dw_backticked:-}" ] && printf '⚠ DONE-WHEN was wrapped in markdown backticks; stripped one matched pair before running.\n   Running: %s\n' "$dw" >&2
+                [ -n "${_dw_backticked:-}" ] && printf '⚠ DONE-WHEN was wrapped in markdown backticks; stripped one matched pair before running (fix the baton).\n' >&2
                 if [ -z "$dw" ]; then
                   echo "⛔ REFUSED: $tf has no DONE-WHEN: line. A task with no computable completion test cannot be closed." >&2; exit 1; fi
                 # ⛔⭐ REFUSE rc=2 ON AN UNTERMINATED HEREDOC -- the second, independent guard on the truncation
