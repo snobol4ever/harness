@@ -10,6 +10,7 @@
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
 #   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
+#   box_tick.sh --probe-wake-rate  the wake rate arm: five planted tier-4 seats, three --wake passes; one WAKE_RATE line (2, 2, 1 at S4E_WAKE_RATE=2); plant jobs deleted
 #   box_tick.sh --probe-width-psi  the grader width arm on planted sensors (box PSI steps, the memory.events hold, the hot bar): one WIDTH_PSI line; rc 0 when every step is as ruled; writes no state
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd "$ROOT" || exit 2
@@ -70,25 +71,32 @@ sense() {   # the sensors of box_controller.sh's --decide, read the same way; se
 
 period_s() { systemctl --user cat s4e-tick.timer 2>/dev/null | sed -n 's/^OnUnitActiveSec=\([0-9]*\)$/\1/p' | head -1; }
 
+seat_held() {   # a seat holds a RESERVED claim not yet DONE: it has its job, so the wake pass sends it nothing
+  local c; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c")" = "$1" ] || continue; grep -q '^RESERVED job=' "$c" && ! grep -q '^DONE$' "$c" && return 0; done; return 1; }
 wake() {   # fleet-queue step 11: a seat whose watch list holds a ready job and that holds no reserved job gets one WAKE line (once per seat per 20 min) in $TICK_DIR/wake.pending;
   # the Stop hook holds a seat that already has a turn, so the line is only the pointer a fresh session needs (the cio's Monitor sends it). A tier tube wakes at most
   # as many seats of its tier as it holds ready jobs. Seats and tiers come from .github/TIERS.tsv; no seat pattern lives here.
-  local tiers="$ROOT/.github/TIERS.tsv" seat tier t ready n woken=0 lines=0 q="$ROOT/harness/scripts/util_queue.py" stamp
+  # THE RATE (CTO ruling, row tick-wake-pass-has-no-rate-twenty-wake-lines-in-eight-minutes-at-a-mass-wake): at most S4E_WAKE_RATE (default 2) WAKE lines per tick,
+  # fable before opus before sonnet before haiku, and within a tier the seats whose own tube holds a job before the seats the tier tube wakes.
+  local tiers="$ROOT/.github/TIERS.tsv" seat tier t ready n seats pass woken=0 lines=0 rate=${S4E_WAKE_RATE:-2} q="$ROOT/harness/scripts/util_queue.py" stamp
   stamp=$(date '+%F %T'); mkdir -p "$TICK_DIR"
   rd() { python3 "$q" stats-tube "$1" 2>/dev/null | sed -n 's/^TUBE [^ ]* ready=\([0-9]*\).*/\1/p'; }
-  held() { local c; for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; [ "$(head -1 "$c")" = "$1" ] || continue; grep -q '^RESERVED job=' "$c" && ! grep -q '^DONE$' "$c" && return 0; done; return 1; }
   recent() { [ -n "$(find "$TICK_DIR" -maxdepth 1 -name "wake.told.$1" -mmin -20 2>/dev/null)" ]; }
   for tier in 1 2 3 4; do
     case $tier in 1) t=fable;; 2) t=opus;; 3) t=sonnet;; 4) t=haiku;; esac
     n=$(( $(rd "tier-$t") + $(rd "ask-$t") ))
-    for seat in $(awk -F'\t' -v k="$tier" '!/^#/ && $7==k {print $1}' "$tiers"); do
-      [ -z "${S4E_WAKE_ONLY:-}" ] || [ "$seat" = "$S4E_WAKE_ONLY" ] || continue   # the probe looks at one seat
-      ready=$(rd "seat-$seat"); ready=${ready:-0}
-      if [ "$ready" -gt 0 ] || [ "$n" -gt 0 ]; then
-        held "$seat" && continue; recent "$seat" && continue
+    seats=$(awk -F'\t' -v k="$tier" '!/^#/ && $7==k {print $1}' "$tiers")
+    for pass in seat tier; do
+      for seat in $seats; do
+        [ -z "${S4E_WAKE_ONLY:-}" ] || [ "$seat" = "$S4E_WAKE_ONLY" ] || continue   # the probe looks at one seat
+        [ -z "${S4E_WAKE_SEATS:-}" ] || case " $S4E_WAKE_SEATS " in *" $seat "*) ;; *) continue;; esac   # the rate probe looks at its five seats
+        ready=$(rd "seat-$seat"); ready=${ready:-0}
+        if [ "$pass" = seat ]; then [ "$ready" -gt 0 ] || continue; else [ "$ready" -gt 0 ] && continue; [ "$n" -gt 0 ] || continue; fi
+        seat_held "$seat" && continue; recent "$seat" && continue
+        [ "$lines" -lt "$rate" ] || break 3   # the rate is spent: no further WAKE line this tick
         printf '%s WAKE %s %s :: SEND: run your sitting by CLAUDE.md, then bash harness/scripts/s4e_msg.sh next (it reserves your job from the queue)\n' "$stamp" "$(echo "$seat" | tr a-z_ A-Z-)" "$( [ "$ready" -gt 0 ] && echo "seat-$seat" || echo "tier-$t")" >> "$TICK_DIR/wake.pending"
         touch "$TICK_DIR/wake.told.$seat"; lines=$((lines+1)); [ "$ready" -gt 0 ] || n=$((n-1))
-      fi
+      done
     done
   done
   echo "WAKE lines=$lines"; return 0; }
@@ -102,6 +110,22 @@ probe_wake() {   # step 11's probe: a scratch tick dir, a plant job in a scratch
   python3 "$q" delete "$jid" >/dev/null 2>&1; rm -rf "$w"
   printf 'WAKE idle_with_ready=%s lines=%s by=hook second_pass=%s\n' "$( [ "${l1:-0}" -ge 1 ] && echo 1 || echo 0)" "${l1:-0}" "${out2#WAKE lines=}"
   [ "${l1:-0}" -ge 1 ] && [ "$out2" = "WAKE lines=0" ]; }
+probe_wake_rate() {   # the rate arm (CTO ruling, row tick-wake-pass-has-no-rate-...): five tier-4 seats with no live claim, one plant job each in its own tube; three --wake passes over one scratch tick dir with the told files kept between them: the rate writes 2, 2, 1
+  local w q="$ROOT/harness/scripts/util_queue.py" s jid jids="" seats="" k=0 p1 p2 p3
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_rate.XXXXXX")" || return 2
+  for s in $(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tac); do
+    [ "$k" -lt 5 ] || break
+    seat_held "$s" && continue   # a seat with a live claim is held by the law, not by the rate: the probe does not count it
+    jid=$(python3 "$q" put "seat-$s" wake-plant --pri 100 --ttr 30) || { for jid in $jids; do python3 "$q" delete "$jid" >/dev/null 2>&1; done; rm -rf "$w"; return 2; }
+    jids="$jids $jid"; seats="$seats $s"; k=$((k+1))
+  done
+  p1=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p1=${p1#WAKE lines=}
+  p2=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p2=${p2#WAKE lines=}
+  p3=$(S4E_WAKE_RATE=2 S4E_WAKE_SEATS="${seats# }" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --wake 2>/dev/null | tail -1); p3=${p3#WAKE lines=}
+  for jid in $jids; do python3 "$q" delete "$jid" >/dev/null 2>&1; done
+  rm -rf "$w"
+  printf 'WAKE_RATE ready=%s rate=2 first_pass=%s second_pass=%s third_pass=%s\n' "$k" "$p1" "$p2" "$p3"
+  [ "$k" = 5 ] && [ "$p1" = 2 ] && [ "$p2" = 2 ] && [ "$p3" = 1 ]; }
 leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the holder died or the TTR ran out) is expired by the bus verb; one line per expiry in $TICK_DIR/leases.log
   local c t out
   for c in "$PO"/claims/*.claim; do [ -f "$c" ] || continue; grep -q '^RESERVED job=' "$c" || continue; grep -q '^DONE$' "$c" && continue
@@ -203,6 +227,7 @@ case "${1:-}" in
   --wake) wake; exit $?;;
   --view) python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate; exit $?;;
   --probe-wake) probe_wake; exit $?;;
+  --probe-wake-rate) probe_wake_rate; exit $?;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
   --render-grade-worker) render_grade_worker; exit $?;;
