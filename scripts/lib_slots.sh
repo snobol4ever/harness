@@ -98,6 +98,7 @@ s4e_sem_chain() {   # <compile|run> <seat> <grader 0|1> -- "id:cap id:cap", oute
                  if [ "$grader" = 1 ]; then printf '%s:%s' "$(s4e_slot_row run-grader 2)" "$res"
                  else [ $((n - res)) -ge 1 ] && res=$((n - res)) || res=1
                       printf '%s%s:%s %s:%s' "$(s4e_slot_row run-seat 2)" "$seat" "$cap" "$(s4e_slot_row run-seats 2)" "$res"; fi ;;
+        land)    n="${S4E_LAND_SLOTS:-$(s4e_slot_row land 3)}"; printf '%s:%s' "$(s4e_slot_row land 2)" "$n" ;;   # fleet-control step 3: one pool, no seat share, two landings on the box
         *) return 2 ;;
     esac
 }

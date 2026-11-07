@@ -12,3 +12,4 @@ run-grader	s4e-run-grader	2	-	-	the slots only the grader (S4E_CLASS=grader) is 
 run-seats	s4e-run-seats	6	-	-	the slots every other taker shares
 compile-seat	s4e-compile-seat-	4	-	-	one seat's share of the compile class (id prefix + seat name)
 run-seat	s4e-run-seat-	3	-	-	one seat's share of the run class (id prefix + seat name)
+land	s4e-land	2	600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07): two landings build and gate at once on the box, a third waits; a timeout refuses rc 2 and nothing runs

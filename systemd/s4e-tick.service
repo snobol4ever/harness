@@ -1,11 +1,11 @@
 [Unit]
-Description=Fleet queue tick, one fresh box_tick.sh process under flock (fleet-queue step 10; shadow mode)
-Documentation=file://@ROOT@/harness/scripts/box_tick.sh
+Description=The fleet controller: one fresh box_tick.py process a minute under flock (DESIGN-PLAN fleet-control step 4; it reads PSI and sets the grader width and the workers awake)
+Documentation=file://@ROOT@/harness/scripts/box_tick.py
 
 [Service]
 Type=oneshot
 Environment=S4E_HOME=@ROOT@
 Environment=S4E_SEAT=@SEAT@
 WorkingDirectory=@ROOT@
-ExecStart=/bin/bash @ROOT@/harness/scripts/box_tick.sh --tick
+ExecStart=/usr/bin/python3 -I @ROOT@/harness/scripts/box_tick.py --tick
 TimeoutStartSec=240

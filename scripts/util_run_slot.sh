@@ -38,14 +38,14 @@ fi
 # admission already taken (S4E_ADMITTED): a nested take would wait on its own parent. The per-entry and per-compile slots stay flock (327 M instructions a sem take against 12-19 M; the coo and the cio ruled).
 if [ "$1" = --admit ]; then
     _class="${2:-}"; shift 2
-    case "$_class" in compile|run) ;; *) echo "usage: util_run_slot.sh --admit <compile|run> <command> <args>..." >&2; exit 2;; esac
+    case "$_class" in compile|run|land) ;; *) echo "usage: util_run_slot.sh --admit <compile|run|land> <command> <args>..." >&2; exit 2;; esac
     [ "$#" -gt 0 ] || { echo "usage: util_run_slot.sh --admit <compile|run> <command> <args>..." >&2; exit 2; }
     if [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_RUN_SLOT_HELD:-}" ]; then
         . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_slots.sh"
         s4e_sem_admit "$_class"; _rc=$?; [ "$_rc" = 2 ] && exit 2
         s4e_slot_note "$_class-admit" "$S4E_SLOT_T0" "$@"
     fi
-    [ "$_class" = compile ] && exec "$@"
+    case "$_class" in compile|land) exec "$@";; esac   # a compile or a landing runs on the admission alone (the landing's own runs take their flock slots below it)
 fi
 [ -n "${S4E_RUN_SLOT_HELD:-}" ] && exec "$@"
 # SINCE 2026-10-31 (the cto, ARCH-SHARED-DEVELOPMENT 4.3, R-2041 step 3) THE RULE LIVES IN lib_slots.sh: a seat file first (cap S4E_RUN_SEAT_CAP, default 3), then a pool slot;

@@ -50,6 +50,7 @@ ORDER=(SCRIP harness corpus .github)
 home=""; gate=""; row=""; gt=1800; tries=3; mode=land; names=(); touches=""; proved=""
 refuse() { echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
 red() { echo "LAND RED stage=$1 $2"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 1; }
+ORIG_ARGS=("$@")   # fleet-control step 3: the landing re-runs itself under the land class admission below
 while [ $# -gt 0 ]; do
     case "$1" in
         --home) home="${2:-}"; shift 2 ;;
@@ -73,6 +74,9 @@ while [ $# -gt 0 ]; do
 done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
 PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
+if [ "$mode" = land ] && [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_LAND_UNADMITTED:-}" ]; then   # fleet-control step 3 (the cio 2026-11-07): two landings build and gate at once on the box, through GNU sem class land (SLOTS.tsv); a third waits at the door, bounded; a refusal lands nothing
+    exec bash "$HERE/util_run_slot.sh" --admit land bash "$SELF" "${ORIG_ARGS[@]}"
+fi
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 TSV="$home/harness/scripts/generated_tables.tsv"
 seat="${S4E_SEAT:-$(bash "$HERE/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')}"
