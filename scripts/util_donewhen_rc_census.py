@@ -160,7 +160,17 @@ def live_ranges(s):
         i += 1
     out.append((start, len(s)))
     return out
-DELIBERATE, RULING, REFUSED = [], [], []
+DELIBERATE, RULING, REFUSED, MULTI_DONE = [], [], [], []
+# the two unicon batons also invert their PREMISE-WHEN onto the same ROSTER loop (the coo's condition, 2026-11-07)
+PREMISE_INVERSE = {'unicon-skill-reference-distilled-from-the-unicon-documentation-langref-diffs-classes-large-string-thread-system-struct-lon-2026-11-04', 'unicon-the-unicon-skill-a-skill-of-its-own-for-the-superset-markers-oracle-classes-packages-threads-unitests-lon-2026-11-04'}
+# ⭐ THE THREE MULTI-ROOT BATONS (the cio's ruling, relayed by the coo 2026-11-07): each criterion's pinned roots become a loop
+# over the seat roots of the LIVE ROSTER (the ROSTER line of the live MODE), never a single root. Reviewed exact replacements,
+# keyed by baton; each fragment must occur exactly once in the live criterion or the baton is refused, not guessed at.
+MULTIROOT = {
+    'seat-digest-dead-map-sweep-and-computed-map': [('for r in /home/claude03 /home/claude04 /home/claude05 /home/claude06 /home/claude07 /home/claude08 /home/claude09 /home/claude10 /home/claude11 /home/claude12 /home/claude13 /home/claude14 /home/claude15 /home/claude16; do', 'for r in $(grep "^ROSTER:" /home/resources/postoffice/MODE | cut -d" " -f2- | tr " " "\\n" | sed "s#^#/home/claude_#"); do')],
+    'unicon-skill-reference-distilled-from-the-unicon-documentation-langref-diffs-classes-large-string-thread-system-struct-lon-2026-11-04': [('&& [ -f /home/claude_unicon/.claude/skills/unicon/reference.md ] && [ -f /home/claude_icon/.claude/skills/unicon/reference.md ]', '&& for r in $(grep "^ROSTER:" /home/resources/postoffice/MODE | cut -d" " -f2- | tr " " "\\n" | sed "s#^#/home/claude_#"); do [ -f "$r/.claude/skills/unicon/reference.md" ] || exit 1; done')],
+    'unicon-the-unicon-skill-a-skill-of-its-own-for-the-superset-markers-oracle-classes-packages-threads-unitests-lon-2026-11-04': [('&& [ -f /home/claude_unicon/.claude/skills/unicon/SKILL.md ] && [ -f /home/claude_icon/.claude/skills/unicon/SKILL.md ] && grep', '&& for r in $(grep "^ROSTER:" /home/resources/postoffice/MODE | cut -d" " -f2- | tr " " "\\n" | sed "s#^#/home/claude_#"); do [ -f "$r/.claude/skills/unicon/SKILL.md" ] || exit 1; done && grep')],
+}
 def _parses(t):
     try:
         return subprocess.run(['bash', '-n', '/dev/stdin'], input=t, capture_output=True, text=True, timeout=20).returncode == 0
@@ -258,8 +268,38 @@ def main():
         for var_e in edits:
             A.append({'baton': base, 'piped': var_e[3], 'at': seg[var_e[0]:var_e[0]+70].strip()})
         if ap_cure and subject:
-            # ⭐ THE CIO RULES THE MULTI-ROOT BATONS (the coo's instruction, 2026-11-07): counted as class B, never rewritten here
-            RULING.append(base); continue
+            # ⭐ MULTI-ROOT: only the three reviewed batons in MULTIROOT are rewritten (the cio's ruling); every other one is RULING PENDING
+            if base not in MULTIROOT:
+                RULING.append(base); continue
+            seg2 = seg
+            for _old, _new in MULTIROOT[base]:
+                if seg2.count(_old) != 1:
+                    REFUSED.append(base + ' (a reviewed fragment is not found exactly once in the live criterion)'); break
+                seg2 = seg2.replace(_old, _new)
+            else:
+                if _live_claimed(base):
+                    SKIPPED.append(base); continue
+                if _parses(seg2) is not True:
+                    REFUSED.append(base + ' (the rewritten criterion does not parse)'); continue
+                m0 = re.search(r'^DONE-WHEN:', raw, re.M)
+                receipt = ('DONE-WHEN-WAS: ' + orig.strip() + '\n'
+                           'DONE-WHEN-WHY: census --cure 2026-11-07, ruled by the cio (multi-root roster loop), run by worker_05: the pinned roots read the live ROSTER\n')
+                new_text = raw[:m0.start()] + receipt + raw[m0.start():s] + seg2 + raw[e:]
+                if base in PREMISE_INVERSE:
+                    # the premise is the EXACT INVERSE of the new criterion, run in a subshell so the criterion's exit cannot read as the premise's own
+                    pm = list(re.finditer(r'^PREMISE-WHEN:.*$', new_text, re.M))
+                    if len(pm) != 1 or not any(_o in pm[0].group(0) for _o, _n in MULTIROOT[base]):
+                        REFUSED.append(base + ' (the PREMISE-WHEN does not carry the reviewed fragment exactly once)'); continue
+                    body = seg2.strip()
+                    if _parses(body) is not True:
+                        REFUSED.append(base + ' (the inverted premise does not parse)'); continue
+                    old_line = pm[0].group(0)
+                    rec2 = ('PREMISE-WHEN-WAS: ' + old_line[len('PREMISE-WHEN:'):].strip() + '\n'
+                            'PREMISE-WHEN-WHY: census --cure 2026-11-07, ruled by the cio and the coo (multi-root roster loop): the premise is the exact inverse of the new DONE-WHEN, in a subshell\n')
+                    new_text = new_text[:pm[0].start()] + rec2 + 'PREMISE-WHEN: ! ( ' + body + ' )' + new_text[pm[0].end():]
+                open(p, 'w', encoding='utf-8').write(new_text); touched += 1
+                MULTI_DONE.append(base)
+            continue
         if ap_cure:
             # ⛔ CLASS B FIRST, THEN RE-SCAN. The B substitution SHORTENS the criterion (${S4E_HOME:-/home/
             # claude_cto} -> ${S4E_HOME:-$PWD} loses 12 bytes), so class-A offsets computed against the
@@ -314,6 +354,7 @@ def main():
     if ap_cure:
         for x in SKIPPED: print(f"  SKIPPED live-claim (not rewritten): {x}")
         for x in RULING: print(f"  RULING PENDING, the cio (multi-root, not rewritten): {x}")
+        for x in MULTI_DONE: print(f"  MULTI-ROOT rewritten to the live ROSTER: {x}")
         for x in REFUSED: print(f"  REFUSED (the cure would change whether the criterion parses): {x}")
         print(f"  CURED IN PLACE: {touched} baton file(s) rewritten (each keeps a DONE-WHEN-WAS receipt)"); return 0
     if '--list' in sys.argv:
