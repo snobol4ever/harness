@@ -116,6 +116,10 @@ carm "FAIL-ONCE: Lon's terminal waiting 25 percent for a CPU reds by name"      
 carm "control: the grader under 2 cores that waited 0.2 percent is its own demand, not red" "$T/cpu_lowdem" 1 "cpu pressure some avg300" "the grader reads"
 carm "control: a busy box whose load is in the pools, the grader at 2.5, reads GREEN"         "$T/cpu_ok"   0 "GREEN cpu pressure under 30" "RED"
 carm "control: a seat over 2 cores THROUGH the pools (2 run slots) is not named"              "$T/cpu_pool" 0 "GREEN" "seat a runs"
+cpuplant "$T/cpu_gr"  15.9 3 0 0 0.50 0 15.20; cgwait "$T/cpu_gr"  0.10
+cpuplant "$T/cpu_gr2" 15.9 3 0 0 0.50 0 2.00;  cgwait "$T/cpu_gr2" 0.10
+carm "control: the grader at 15.2 cores on a 15.9-busy box with 0 slots held reads GREEN, the grader inside its own door" "$T/cpu_gr"  0 "GREEN cpu pressure under 30" "RED"
+carm "FAIL-ONCE: 15.9 busy with the grader at 2.0 and 0 slots held reads RED outside the doors"       "$T/cpu_gr2" 1 "13.9 cores run outside every door"
 n=$((n + 1)); if grep -q 'for fn in (check, memory_check, cpu_check' "$CENSUS" && grep -q '"--health"' "$CENSUS"; then echo "  ok   ARM $n: --health runs --check, --memory-check and --cpu-check and returns the worst"; else echo "  RED  ARM $n: --health does not run all three arms"; fail=1; fi
 tmpplant() {   # tmpplant <dir> <seat_a_tmp_mb> <seat_b_tmp_mb>
   mkdir -p "$1"; local u; u=$(date -u +%Y-%m-%dT%H:%M:%SZ)

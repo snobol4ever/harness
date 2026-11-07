@@ -916,7 +916,7 @@ def cpu_check():
     """THE CPU ARM OF THE HEALTH CHECK (the coo 2026-11-01, Lon: "why did you not catch this when I asked you to do a health check? fix that health
     check"): the --check arm read GREEN (the ledger fresh) while the box ran 16 of 16 cores at cpu pressure 41 with the pools nearly empty, because no arm
     turned those numbers into a verdict. From the newest run: RED when cpu pressure some avg300 is 30 or more; when the box is busy (85 percent of its cores)
-    while the run and cc pools together hold half their slots or fewer (the load runs outside the doors); for every SEAT line over 2 cores holding no run
+    while the run and cc pools together hold half their slots or fewer (the load runs outside the doors, where the load is the busy cores less the grader's own, which runs inside its own door); for every SEAT line over 2 cores holding no run
     slot and no cc slot (named: the seat to throttle); when the grader reads under 2 cores on a busy box (75 percent) AND its own slice waited 10 percent or more for a CPU (under 2 cores with no wait is its own small demand); and when Lon's terminal scope waited 10 percent or more. Each RED names what to act on."""
     last, rows = newest_run(arg("--load", LOAD))
     if not last:
@@ -934,8 +934,10 @@ def cpu_check():
     gaps = []
     if p300 >= 30:
         gaps.append("cpu pressure some avg300 %.1f (30 is the bar): tasks waited for a CPU %.0f percent of the last five minutes" % (p300, p300))
-    if busy >= 0.85 * n and held <= pools / 2:
-        gaps.append("the box is busy (%.1f of %d cores) while the pools hold %d of %d slots: the load runs OUTSIDE the doors" % (busy, n, held, pools))
+    gr = next((float(r[4]) for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
+    outside = busy - (gr or 0.0)
+    if outside >= 0.85 * n and held <= pools / 2:
+        gaps.append("the box is busy (%.1f of %d cores, the grader %.1f of them inside its own door) and %.1f cores run outside every door while the pools hold %d of %d slots: the load runs OUTSIDE the doors" % (busy, n, gr or 0.0, outside, held, pools))
     for r in rows:
         if r[1] == "UNIT" and r[2] == "SEAT" and len(r) > 10:
             try:
@@ -944,7 +946,6 @@ def cpu_check():
                 continue
             if c > 2.0 and cc == 0 and rn == 0:
                 gaps.append("seat %s runs %.2f cores holding no run slot and no cc slot: throttle it (nice, -j2, the pools) or cap its scope" % (r[3], c))
-    gr = next((float(r[4]) for r in rows if r[1] == "CLASS" and r[2] == "GRADER"), None)
     root = arg("--root", CG)
     def wait300(path):
         for l in rd(path).splitlines():
