@@ -72,6 +72,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
+PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"
 TSV="$home/harness/scripts/generated_tables.tsv"
 seat="${S4E_SEAT:-$(bash "$HERE/s4e_msg.sh" whoami 2>/dev/null | tail -1 | tr -d '[:space:]')}"
@@ -141,6 +142,14 @@ merge_probe() {   # step 19's proof: origin and the landing each regenerate the 
 }
 probe() {
     local src="$home" T r sha objs b n rc log k RACE="probe: a racer lands on corpus during the gate"
+    # THE PROBE IS THE LANDER'S OWN TEST, NOT THE LANDING'S (Lon 2026-11-07 12:0x, the cio: 59 landings this morning each ran it, about 280 s of CPU
+    # apiece, 4.6 core-hours of self-test on a 16-core box). It runs once per change of the lander, for the whole box: a green probe records the
+    # lander's hash in $PROBE_GREEN; a later --probe on the same hash prints the record and exits 0. S4E_LAND_PROBE_FRESH=1 runs it regardless.
+    local key rec; key="$(sha256sum "$SELF" "$HERE/util_check_cache.sh" "$HERE/s4e_msg.sh" 2>/dev/null | sha256sum | cut -c1-16)"
+    if [ -z "${S4E_LAND_PROBE_FRESH:-}" ] && rec="$(grep -m1 "^$key	" "$PROBE_GREEN" 2>/dev/null)" && [ -n "$rec" ]; then
+        echo "LAND dry-run ok (cached: lander $key proved green by $(printf '%s' "$rec" | cut -f3) at $(printf '%s' "$rec" | cut -f2); the probe runs again when s4e_land.sh, util_check_cache.sh or s4e_msg.sh changes, or under S4E_LAND_PROBE_FRESH=1)"
+        exit 0
+    fi
     T="$(mktemp -d "/tmp/s4e/$seat/land-probe.XXXXXX")" || refuse "cannot make a scratch directory"
     trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
     scratch_clone "$T"
@@ -239,6 +248,7 @@ probe() {
         && git -C "$T/origin/corpus.git" log --format=%s main | grep -x "probe: a racer lands probe-race8-$$.txt" > /dev/null \
         && [ "$(git -C "$T/origin/corpus.git" rev-parse main)" = "$(git -C "$T/work/corpus" rev-parse HEAD)" ] \
         || { echo "LAND dry-run RED: arm 8 (a hand push between the lease's fetch and the push) rc=$rc: expected one rejected corpus push recorded, one round more, two gate runs, the racer kept"; exit 1; }
+    { mkdir -p "$(dirname "$PROBE_GREEN")"; printf '%s\t%s\t%s\tstages=%s\n' "$key" "$(date -u +%FT%TZ)" "$seat" "$n" >> "$PROBE_GREEN"; } 2>/dev/null
     echo "LAND dry-run ok stages=$n rounds=1 repos=${#ORDER[@]} arms=8 regate=affected hand_push=leased lease=push-only (scratch origins borrowing $home; a red gate pushed nothing;"\
          "moved origins rebased; a move under the gate rebased under the lease and re-gated unleased; a held lease waited on after the gate, its holder named, nothing pushed; landed once free;"\
          "a race under an untouched path did not re-gate, one under a touched path did; a hand push went under the lease with its proof recorded, and without one refused;"\
