@@ -7,11 +7,14 @@
 # source that cannot be read prints `?` and never a guess. Read-only; no bus verb; under two seconds.
 #   fleet_health.py            the grid
 #   fleet_health.py --probe    the grid from planted files under a scratch dir (every quadrant prints a verdict; rc 0)
+#   fleet_health.py --probe-seats   the seats arithmetic from planted inputs: a sleeping seat is neither idle nor starved (rc 0)
+#   fleet_health.py --sleeping F    the sleeping list F (default V/sleeping, the census's file; a missing file means nobody sleeps)
 import os, re, sys, glob, time, subprocess, json
 S4E = os.environ.get("S4E_HOME") or os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 PO = os.environ.get("S4E_POST", "/home/resources/postoffice"); P = os.environ.get("S4E_PROGRESS", "/home/resources/progress")
 V = os.environ.get("S4E_BOX_S", "/home/claude_coo/.scratch/verifier"); TIERS = os.environ.get("S4E_TIERS", S4E + "/.github/TIERS.tsv")
-W = 60   # column width of one quadrant
+W = 64   # column width of one quadrant (the seats line with asleep counts runs to 63)
+SLEEPING = os.path.join(V, "sleeping")   # one seat per line; util_suite_row_owner_census.py's sleepers() reads the same file
 
 def rd(p):
     try: return open(p, encoding="utf-8", errors="replace").read()
@@ -103,17 +106,41 @@ def queue():
         "rows closed today %d (a DONE ledger line dated today)" % done_today(),
     ]
 
-def seats():
-    tr = tiers(); live = live_sessions(); h = holders()
-    names = {1: "fable", 2: "opus", 3: "sonnet", 4: "haiku"}; lines = []; idle_workers = 0; busy_workers = 0
+def sleepers(path):
+    if not os.path.exists(path): return set()
+    try:
+        with open(path, encoding="utf-8") as f: return {l.strip() for l in f if l.strip() and not l.startswith("#")}
+    except OSError: return None
+
+def seats_count(tr, live, h, sleep, haiku_ready):
+    names = {1: "fable", 2: "opus", 3: "sonnet", 4: "haiku"}; lines = []; idle_workers = busy_workers = asleep_haiku = 0
     for k in (1, 2, 3, 4):
-        ss = sorted(s for s, t in tr.items() if t == k); awake = [s for s in ss if s in live]; holding = [s for s in ss if s in h]
-        if k == 4: idle_workers = len([s for s in awake if s not in h]); busy_workers = len(holding)
-        lines.append("%-6s %2d seats: %2d awake, %2d holding a row, %2d idle" % (names[k], len(ss), len(awake), len(holding), len([s for s in awake if s not in h])))
-    hold = "wake hold" if False else ""
-    verdict = "RED" if not live else "IDLE" if busy_workers == 0 else "STARVED" if idle_workers > 0 and (tube_stats(["tier-haiku"]).get("tier-haiku") or (0,))[0] > 0 else "OK"
+        ss = sorted(s for s, t in tr.items() if t == k)
+        asleep = [s for s in ss if s in sleep]; awake = [s for s in ss if s in live and s not in sleep]
+        holding = [s for s in ss if s in h]; idle = [s for s in awake if s not in h]
+        if k == 4: idle_workers = len(idle); busy_workers = len(holding); asleep_haiku = len(asleep)
+        lines.append("%-6s %2d seats: %2d awake, %2d asleep, %2d holding a row, %2d idle" % (names[k], len(ss), len(awake), len(asleep), len(holding), len(idle)))
+    verdict = "RED" if not live else "IDLE" if busy_workers == 0 else "STARVED" if idle_workers > 0 and haiku_ready > 0 else "OK"
     lines.append("workers idle while a haiku job waits: %d" % (idle_workers if verdict == "STARVED" else 0))
-    return "THE SEATS", verdict, lines
+    return verdict, lines, asleep_haiku, idle_workers
+
+def seats():
+    sl = sleepers(SLEEPING)
+    if sl is None: return "THE SEATS", "RED", ["sleeping list unreadable"]
+    tr = tiers(); live = live_sessions(); h = holders()
+    v, lines, _, _ = seats_count(tr, live, h, sl, (tube_stats(["tier-haiku"]).get("tier-haiku") or (0,))[0])
+    return "THE SEATS", v, lines
+
+def seats_probe():
+    tr = {"worker_01": 4, "worker_02": 4}; live = {"worker_01", "worker_02"}; h = {"worker_02": ["plant-row"]}
+    v, _, asleep, idle = seats_count(tr, live, h, {"worker_01"}, 1)
+    mv, _, _, _ = seats_count(tr, live, h, set(), 1)
+    good = (asleep, idle, v) == (1, 0, "OK")
+    if good: print("SEATS_PROBE asleep=1 awake_idle=0 starved=0 verdict=OK")
+    else: print("SEATS_PROBE RED: asleep=%d awake_idle=%d verdict=%s, want asleep=1 awake_idle=0 verdict=OK" % (asleep, idle, v))
+    mutant = mv == "STARVED"
+    print("SEATS_PROBE_MUTANT starved=%d" % int(mutant))
+    return 0 if good and mutant else 1
 
 def work():
     suites = [l.split("\t") for l in rd(P + "/SUITES.tsv").split("\n") if l and not l.startswith("#")]
@@ -158,11 +185,17 @@ def grid(quads):
     return "\n".join(out)
 
 def main():
+    global PO, P, V, SLEEPING
+    if "--probe-seats" in sys.argv: sys.exit(seats_probe())
+    if "--sleeping" in sys.argv:
+        i = sys.argv.index("--sleeping")
+        if i + 1 >= len(sys.argv): sys.exit("REFUSE(2): --sleeping takes a file")
+        SLEEPING = sys.argv[i + 1]
     if "--probe" in sys.argv:
         import tempfile
         d = tempfile.mkdtemp(prefix="fleet_health_probe.")
         for k in ("S4E_POST", "S4E_PROGRESS", "S4E_BOX_S"): os.environ[k] = d
-        global PO, P, V; PO = P = V = d
+        PO = P = V = d; SLEEPING = d + "/sleeping"
         os.makedirs(d + "/claims"); open(d + "/BOX.state", "w").write("busy=8.0\ngrader_width=4\n"); open(d + "/QUEUE.tsv", "w").write("2\tplant-row\t@haiku\tQUEUED:tier-haiku\n")
         open(d + "/QUEUE.done.tsv", "w").write(""); open(d + "/SUITES.tsv", "w").write("plant\tx\ty\tz\t10/10\n"); open(d + "/results.tsv", "w").write("")
         q = [box(), queue(), seats(), work()]
