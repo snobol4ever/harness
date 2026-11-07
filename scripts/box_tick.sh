@@ -12,6 +12,7 @@
 #   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
 #   box_tick.sh --probe-cost  the tick's cost arm on a scratch dir: a quiet tick (view=unchanged, sweep=read, cpu_s under 3) and the tenth tick (sweep=ran); one TICK_COST line; writes only scratch
 #   box_tick.sh --probe-wake-rate  the wake rate arm: five planted tier-4 seats, three --wake passes; one WAKE_RATE line (2, 2, 1 at S4E_WAKE_RATE=2); plant jobs deleted
+#   box_tick.sh --probe-act  tick-act's arm (dry, scratch): one planted ACTUATOR line of each of the eight kinds through box_act.sh (the copy of the controller's apply and BOX.state); one ACT line, want arms=8
 #   box_tick.sh --probe-scale  step 4e's arm (dry, a scratch tick dir, width 3): the absent switch leaves no grade worker running; the on switch starts s4e-grade-worker@1..3 and stops none; one SCALE line
 #   box_tick.sh --probe-width-psi  the grader width arm on planted sensors (box PSI steps, the memory.events hold, the hot bar): one WIDTH_PSI line; rc 0 when every step is as ruled; writes no state
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
@@ -284,8 +285,31 @@ probe_scale() {   # step 4e's probe (CTO-522): a scratch tick dir and a planted 
   on_s=$(printf '%s' "$on" | sed -n 's/.* starts=\([0-9]*\).*/\1/p'); on_t=$(printf '%s' "$on" | sed -n 's/.* stops=\([0-9]*\).*/\1/p')
   printf 'SCALE off_instances=%s on_width=%s starts=%s stops=%s dry=1\n' "${off_i:-x}" "${on_w:-x}" "${on_s:-x}" "${on_t:-x}"
   [ "${off_i:-x}" = 0 ] && [ "${on_w:-x}" = 3 ] && [ "${on_s:-x}" = 3 ] && [ "${on_t:-x}" = 0 ]; }
+probe_act() {   # tick-act's probe (the cio's ruling 2026-11-07): a scratch S, BOX.state and progress dir, a fake scope under a scratch terminal slice, one planted ACTUATOR line of each kind; box_act.sh under S4E_ACT_DRY=1. ACT counts the kinds with evidence (a DRY line, an apply echo, or the file the kind writes); want 8
+  local w out wid bst a=0
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_act_probe.XXXXXX")" || return 2
+  mkdir -p "$w/s/governor" "$w/s/orphan.told" "$w/p" "$w/term/fake.scope"
+  printf '%s\n' 'ACTUATOR grader width=3 from=2 floor=1 ceiling=4 why=probe' 'ACTUATOR sessions quota=800 from=1000 floor=600 ceiling=1000 why=probe' \
+    'ACTUATOR batch quota=137 from=200 floor=100 ceiling=200 why=probe' 'ACTUATOR jobserver tokens=10 floor=2 ceiling=12 from=12 why=probe' \
+    'ACTUATOR seatcap seat=worker_20 quota=200 from=400 why=slotless:cores=3' 'ACTUATOR orphan pid=424242 seat=worker_20 action=tell why=age=1000s,pcpu=60' \
+    'ACTUATOR maint admit=0 from=1 why=probe' 'ACTUATOR reclaim seat=worker_20 mb=2048 why=probe' > "$w/decide.last"
+  out="$(S4E_ACT_DRY=1 S4E_BOX_S="$w/s" S4E_BOX_STATE="$w/BOX.state" S4E_BOX_P="$w/p" bash -c '. "$1"; unit_of() { echo fake.scope; }; TERM_SL="$2"; main' _ "$ROOT/harness/scripts/box_act.sh" "$w/term" < "$w/decide.last" 2>&1)"
+  wid=0; [ "$(cat "$w/s/box.width" 2>/dev/null)" = 3 ] && wid=1
+  bst=0; grep -qx 'grader_width=3' "$w/BOX.state" 2>/dev/null && bst=1
+  [ "$wid" = 1 ] && a=$((a + 1))
+  printf '%s' "$out" | grep -q 'DRY systemctl --user set-property --runtime app-org.gnome.Terminal.slice CPUQuota=800%' && a=$((a + 1))
+  printf '%s' "$out" | grep -q 'DRY systemctl --user set-property --runtime s4e-batch.slice CPUQuota=137%' && a=$((a + 1))
+  printf '%s' "$out" | grep -q 'JOBSERVER TOKENS 12 -> 10' && a=$((a + 1))
+  [ -f "$w/s/governor/worker_20.cap" ] && a=$((a + 1))
+  [ -f "$w/s/orphan.told/424242" ] && a=$((a + 1))
+  [ "$(cat "$w/s/maint.admit" 2>/dev/null)" = 0 ] && a=$((a + 1))
+  [ -f "$w/term/fake.scope/memory.reclaim" ] && a=$((a + 1))
+  rm -rf "$w"
+  printf 'ACT dry=1 width_written=%s box_state_written=%s arms=%s\n' "$wid" "$bst" "$a"
+  [ "$wid" = 1 ] && [ "$bst" = 1 ] && [ "$a" = 8 ]; }
 case "${1:-}" in
   --tick) tick; exit $?;;
+  --probe-act) probe_act; exit $?;;
   --probe-scale) probe_scale; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
   --wake) wake; exit $?;;
