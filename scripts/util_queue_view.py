@@ -54,6 +54,8 @@ def claim_holder(topic):
     except OSError: return ""
 def regenerate():
     gs, c = queue_client(); header, old = read_queue(); out = []; healed = 0; adopted = 0; tubes = set()
+    try: closed = set(l.split("\t")[1] for l in open(os.path.join(PO, "QUEUE.done.tsv")) if not l.startswith("#") and l.count("\t") >= 3)
+    except OSError: closed = set()   # fleet-control step 9b (the cio, 2026-11-07 14:3x): QUEUE.done.tsv is the memory; a topic in it is closed whatever its baton or claim says
     # AN UNSIGNED QUEUE.tsv WAS WRITTEN BY SOMETHING ELSE SINCE THE LAST REGENERATION (a seat on an older bus writes the row, not the baton): for every row
     # whose QUEUE.tsv state or owner differs from its baton, the file is the newer truth and the baton adopts it (the cao's lost park, 2026-11-06 00:39Z)
     try: signed = open(SIG).read().strip() == body_hash(open(Q).read())
@@ -70,6 +72,7 @@ def regenerate():
         if not signed and topic in old and (old[topic][2] != state or old[topic][1] != owner):
             rank, owner, state = old[topic]; s = set_head(p, s, "OWNER", owner); s = set_head(p, s, "STATE", state); s = set_head(p, s, "RANK", str(rank)); adopted += 1
         state = claim_rule(topic, state)   # THE CLAIM IS THE LOCK: a claim file outranks a stale STATE line (a seat on an older bus writes no STATE line)
+        if topic in closed: state = "DONE"   # five DONE rows came back FREE on 2026-11-07 when their claims were collected as residue and a state repair rewrote the column (the cao's reading)
         if state == "DONE":   # a DONE row leaves the view and lands once in QUEUE.done.tsv (the sweep's move, done here)
             if topic in old:
                 dq = os.path.join(PO, "QUEUE.done.tsv")
@@ -126,19 +129,21 @@ def probe_retire():
     import subprocess, tempfile, shutil
     w = tempfile.mkdtemp(prefix="s4e-view-probe-", dir=os.environ.get("S4E_SCRATCH") or "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio")); os.makedirs(w + "/tasks")
     def baton(t, st): open("%s/tasks/%s.task.md" % (w, t), "w").write("# TASK %s\nRANK: 2\nOWNER: cio\nSTATE: %s\nLINKS: minted 2026-11-07T00:00:00Z\n\n## NEXT\n- x\n" % (t, st))
-    baton("probe-live", "FREE"); baton("probe-dead", "SUPERSEDED:x"); baton("probe-gone", "RETIRED:y")
-    open(w + "/QUEUE.tsv", "w").write("# header\n2\tprobe-live\tcio\tFREE\n2\tprobe-dead\tcio\tSUPERSEDED:x\n2\tprobe-gone\tcio\tRETIRED:y\n")
+    baton("probe-live", "FREE"); baton("probe-dead", "SUPERSEDED:x"); baton("probe-gone", "RETIRED:y"); baton("probe-closed", "FREE")
+    open(w + "/QUEUE.done.tsv", "w").write("2\tprobe-closed\tcio\tDONE\n")
+    open(w + "/QUEUE.tsv", "w").write("# header\n2\tprobe-live\tcio\tFREE\n2\tprobe-dead\tcio\tSUPERSEDED:x\n2\tprobe-gone\tcio\tRETIRED:y\n2\tprobe-closed\tcio\tFREE\n")
     env = dict(os.environ, S4E_POST=w, S4E_QUEUE_NO_DAEMON="1")
     r1 = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "--regenerate"], env=env, capture_output=True, text=True)
     q1 = open(w + "/QUEUE.tsv").read(); ret1 = open(w + "/QUEUE.retired.tsv").read() if os.path.exists(w + "/QUEUE.retired.tsv") else ""
     r2 = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "--regenerate"], env=env, capture_output=True, text=True)
     ret2 = open(w + "/QUEUE.retired.tsv").read() if os.path.exists(w + "/QUEUE.retired.tsv") else ""
-    live_stays = "\tprobe-live\t" in q1; dead_out = "probe-dead" not in q1 and "probe-gone" not in q1
+    live_stays = "\tprobe-live\t" in q1; dead_out = "probe-dead" not in q1 and "probe-gone" not in q1 and "probe-closed" not in q1
+    closed_once = open(w + "/QUEUE.done.tsv").read().count("\tprobe-closed\t") == 1
     landed_once = ret1.count("\tprobe-dead\t") == 1 and ret1.count("\tprobe-gone\t") == 1 and "SUPERSEDED:x" in ret1 and "RETIRED:y" in ret1
     idempotent = ret2 == ret1
-    ok = int(r1.returncode == 0 and r2.returncode == 0 and live_stays and dead_out and landed_once and idempotent)
+    ok = int(r1.returncode == 0 and r2.returncode == 0 and live_stays and dead_out and landed_once and idempotent and closed_once)
     shutil.rmtree(w, ignore_errors=True)
-    print("RETIRE_PROBE rc1=%d rc2=%d live_stays=%d dead_out=%d landed_once=%d idempotent=%d ok=%d" % (r1.returncode, r2.returncode, live_stays, dead_out, landed_once, idempotent, ok)); return 0 if ok else 1
+    print("RETIRE_PROBE rc1=%d rc2=%d live_stays=%d dead_out=%d landed_once=%d idempotent=%d closed_stays_closed=%d ok=%d" % (r1.returncode, r2.returncode, live_stays, dead_out, landed_once, idempotent, closed_once, ok)); return 0 if ok else 1
 if __name__ == "__main__":
     a = sys.argv[1:]
     if a[:1] == ["--regenerate"]: sys.exit(regenerate())
