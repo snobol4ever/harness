@@ -218,7 +218,7 @@ def main(a):
                     except Exception as e: say("bury: %s" % e)
                     os._exit(0)
                 if lines and lines[0].strip() != seat: say("claim names %s, not %s: release" % (lines[0].strip(), seat)); break
-                if session and os.system("pgrep -f '^claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
+                if session and os.system("pgrep -f '(^|/)claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
                     say("session %s is gone: release" % session); break
                 try: c.touch(j)
                 except Exception as e: say("touch: %s (the lease is gone)" % e); os._exit(0)
