@@ -1,3 +1,4 @@
 # SKILL_REFS_ALLOW.tsv -- the placeholders a skill uses on purpose (DESIGN-PLAN skills-complete step 1; util_skill_refs_census.py --allow). One row per token: token<TAB>reason. A token here counts in allowed=, never in missing=. A real file that is gone is FIXED in the skill, never allowed here.
 _steps.sh	the shape of a design harness name, test_design_<name>_steps.sh, written as a suffix in design-plans and gates-and-witnesses
 prog.sno	the shape of a program name in a grading example
+program.sno	the placeholder of the usage line of util_instr_count.sh: the program the caller names on the command line, never a file of the tree
