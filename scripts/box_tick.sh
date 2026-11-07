@@ -9,6 +9,7 @@
 #   box_tick.sh --tick          one tick (ExecStart of s4e-tick.service); rc 3 when another tick holds the lock; writes $TICK_DIR/last.tsv
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
+#   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd "$ROOT" || exit 2
 TICK_DIR=${S4E_TICK_DIR:-/home/resources/progress/tick}
@@ -150,6 +151,18 @@ install_units() {
   systemctl --user daemon-reload && systemctl --user enable --now s4e-tick.timer && echo "INSTALLED $d/s4e-tick.service and s4e-tick.timer, root=$ROOT"
 }
 
+render_grade_worker() {   # test-cycle step 4a (CTO-522): the grader's worker template, rendered and read back; no daemon-reload, no enable, no start (Lon's line)
+  local d=${S4E_UNIT_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user} u=s4e-grade-worker@.service src slice restart exec
+  src="$ROOT/harness/systemd/$u"; [ -f "$src" ] || { echo "REFUSE(2): $src is missing" >&2; return 2; }
+  mkdir -p "$d" || return 2
+  sed -e "s|@ROOT@|$ROOT|g" "$src" > "$d/$u" || return 2
+  grep -q '@ROOT@' "$d/$u" && { echo "REFUSE(2): $d/$u still holds @ROOT@ after the render" >&2; return 2; }
+  slice=$(sed -n 's/^Slice=//p' "$d/$u" | head -1)
+  restart=$(sed -n 's/^Restart=//p' "$d/$u" | head -1)
+  exec=$(sed -n 's|^ExecStart=[^ ]* ||p' "$d/$u" | head -1 | awk '{print $1}' | sed 's|.*/||')
+  echo "RENDER unit=$u slice=$slice restart=$restart exec=$exec"
+  [ -n "$slice" ] && [ -n "$restart" ] && [ -n "$exec" ]; }
+
 case "${1:-}" in
   --tick) tick; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
@@ -158,5 +171,6 @@ case "${1:-}" in
   --probe-wake) probe_wake; exit $?;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
-  *) echo "usage: box_tick.sh --tick | --probe-fresh | --install" >&2; exit 2;;
+  --render-grade-worker) render_grade_worker; exit $?;;
+  *) echo "usage: box_tick.sh --tick | --probe-fresh | --install | --render-grade-worker" >&2; exit 2;;
 esac
