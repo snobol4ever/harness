@@ -283,13 +283,13 @@ elif [ ! -f "$SELF_DIR/util_gc_census.py" ]; then
 elif [ ! -x "$_zls_root/scrip" ]; then
   echo "  ⛔ NOT MEASURED — no ./scrip binary under $_zls_root (run make). A census that cannot compile a rung suite must never print 0."
 else
-  _zls_out="$(cd "$_zls_root" && timeout -k 5 300s python3 ../harness/scripts/util_gc_census.py maps --zls-langs all 2>&1)"; _zls_rc=$?
+  _zls_out="$(cd "$_zls_root" && timeout -k 5 300s "$SELF_DIR"/util_run_slot.sh --admit run python3 ../harness/scripts/util_gc_census.py maps --zls-langs all 2>&1)"; _zls_rc=$?   # the census takes a pool slot (the seat share, then the run pool): a bypasser is not admitted
   if [ "$_zls_rc" = 124 ]; then
     echo "  ⛔ NOT MEASURED — the sweep timed out at 300s (load $(cut -d' ' -f1 /proc/loadavg)). No reading this run."
   else
     printf '%s\n' "$_zls_out" | grep -E '^CENSUS maps/(slot-kind swept|table [0-9]|slot-kind NOT CENSUSED)|^CENSUS maps slot-kind=' | sed 's/^/  /'
     printf '%s\n' "$_zls_out" | grep -E '^  (DIVERGENCE|REFUSED)' | sed 's/^/  /'
-    [ "$_zls_rc" = 2 ] && echo "  ⛔ the maps census REFUSED (rc=2) — read the line above; a refusal is not a red and not a pass."
+    [ "$_zls_rc" = 2 ] && echo "  ⛔ NOT MEASURED — the maps census was not admitted to a run slot or refused (rc=2); read the line above; a refusal is not a red and not a pass."
   fi
 fi
 echo "------------------------------------------------------------"
