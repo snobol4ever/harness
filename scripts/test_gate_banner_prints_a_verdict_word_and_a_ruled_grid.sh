@@ -6,8 +6,8 @@
 # one display Lon reads every turn was blank. Lon found it before the fleet did.
 # ⛔ THE LESSON THIS GATE ENCODES: a display that is only asserted through the FILE IT ALSO WRITES cannot be
 # shown to have printed. Assert the PRINT, on stdout, or a silent banner is indistinguishable from a working one.
-# ⭐ IT ASSERTS SHAPE, NEVER CONTENT: the verdict must be one of the four closed words and a ruled row must
-# appear. It must NOT assert a suite number, a suite count, or a column set -- those move every day and a gate
+# ⭐ IT ASSERTS SHAPE, NEVER CONTENT: the verdict must be one of the four closed words, the compact header must
+# carry its column names, and a data row must appear. It must NOT assert a suite number, a suite count, or a column VALUE -- those move every day and a gate
 # that pins them would red on honest movement, which is the failure class that deleted the display in the first
 # place (a gate whose subject is the display, pinned to a constant, going stale and being "fixed" by deletion).
 set -u
@@ -24,12 +24,26 @@ M="$HERE/s4e_msg.sh"
 # S4E_BANNER_NO_BOARD keeps this gate from clobbering the live BOARD.md row of whoever runs it.
 out="$(S4E_BANNER_NO_BOARD=1 timeout -k 5 100 bash "$M" banner 2>&1)"; brc=$?
 [ -n "$out" ] || { echo "⛔ RED: banner printed ZERO BYTES (rc=$brc) -- this is the exact 2026-09-13 blackout"; exit 1; }
+# THE SHAPE (2026-11-07, the coo's cut on the banner's own layout): the default banner is the double-sided grid that
+# .github/scripts/banner_compact.py prints, which draws no ruled rows (the ruled border was the single-sided grid's
+# shape, replaced 2026-11-04). The shape is: the verdict word on a line of its own; the compact header with its
+# column NAMES (Lang Suite Pass/Tot Excl M3 M4 Δ Pct Min); and at least one data row under it. Names, never values,
+# and no count is pinned: the rows are whatever the suite table holds.
+shape() {
+  printf '%s\n' "$1" | grep -qE '^(SUCCESS|IN-PROGRESS|DRAIN|STOP)$' || { echo "no verdict word on a line of its own; expected one of SUCCESS / IN-PROGRESS / DRAIN / STOP"; return 1; }
+  printf '%s\n' "$1" | grep -qE '^Lang +Suite +Pass/Tot +Excl +M3 +M4 +Δ +Pct +Min .*│' || { echo "no compact header row with the columns Lang Suite Pass/Tot Excl M3 M4 Δ Pct Min (banner_compact.py)"; return 1; }
+  printf '%s\n' "$1" | grep -qE '^[a-z]+ +[A-Za-z0-9@_.-]+ +[0-9]+/[0-9]+ .*│' || { echo "no compact data row under the header"; return 1; }
+  if printf '%s\n' "$1" | grep -qE 'SUITE GRID (MISSING|REFUSED)'; then echo "the grid renderer refused"; return 1; fi
+  return 0
+}
 rc=0
-if printf '%s\n' "$out" | grep -qE '^(SUCCESS|IN-PROGRESS|DRAIN|STOP)$'; then :
-else echo "⛔ RED: no verdict word on a line of its own; expected one of SUCCESS / IN-PROGRESS / DRAIN / STOP"; rc=1; fi
-if printf '%s\n' "$out" | grep -q '─'; then :
-else echo "⛔ RED: no ruled grid row -- the suite grid did not render"; rc=1; fi
-if printf '%s\n' "$out" | grep -qE 'SUITE GRID (MISSING|REFUSED)'; then
-  printf '%s\n' "$out" | grep -E 'SUITE GRID (MISSING|REFUSED)'; echo "⛔ RED: the grid renderer refused"; rc=1; fi
-[ "$rc" = 0 ] && echo "GATE OK: banner prints a verdict word from the closed set and a ruled suite grid (shape asserted, no number pinned)"
+r="$(shape "$out")" || { echo "⛔ RED: $r"; rc=1; }
+# FAIL-ONCE (CEO-1680): the live banner with one thing taken out must read RED on the shape, or the arm could not fail.
+p_noverdict="$(printf '%s\n' "$out" | grep -vE '^(SUCCESS|IN-PROGRESS|DRAIN|STOP)$')"
+p_nocol="$(printf '%s\n' "$out" | sed 's/ Excl / Xcl  /')"
+if r="$(shape "$p_noverdict")"; then echo "⛔ RED: the plant without the verdict word reads GREEN -- the verdict arm cannot fail"; rc=1
+else echo "  fail-once: a banner without the verdict word reads RED ($r)"; fi
+if r="$(shape "$p_nocol")"; then echo "⛔ RED: the plant with the Excl column renamed reads GREEN -- the header arm cannot fail"; rc=1
+else echo "  fail-once: a banner whose header lost Excl reads RED ($r)"; fi
+[ "$rc" = 0 ] && echo "GATE OK: banner prints a verdict word from the closed set, the compact header with its column names and a data row; a plant without the verdict word and a plant with a renamed column both read RED (names asserted, no value or count pinned)"
 exit $rc
