@@ -1727,6 +1727,42 @@ s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arriv
     run check > /dev/null; run clear > /dev/null; run whoami > /dev/null; [ -f "$w/$ME/.banner.announced" ] && why="$why the announced record outlived an emptied inbox;"
     [ -z "$why" ] && { echo "BANNER headings_reprinted=0 arrivals=3 headings=2 after_check=one-line (probe: two arrivals announced once across two verbs, one line after check, a third arrival announced alone, the record pruned on clear)"; exit 0; }
     echo "BANNER PROBE RED:$why"; exit 1; }
+s4e_banner_verdict() {   # <row> <repo>...: the banner's reading of one row (the cio, 2026-11-07): SUCCESS | FAILURE | NOTHING LANDED, from the claim, the LEDGER and each repo's origin/main as last fetched (no fetch)
+    local _r="$1" _tf="$PO/tasks/$1.task.md" _led _red _lan _h _g _n=0 _ok=1; shift
+    if [ -f "$PO/claims/$_r.claim" ] && grep -q '^DONE$' "$PO/claims/$_r.claim"; then echo SUCCESS; return 0; fi   # a closed claim: done ran its DONE-WHEN green
+    [ -f "$_tf" ] || { echo "NOTHING LANDED"; return 0; }
+    _led="$(awk '/^## LEDGER/{f=1;next} /^## /{f=0} f' "$_tf")"   # newest line first, so the smaller line number is the newer entry
+    _red="$(printf '%s\n' "$_led" | grep -nm1 'DONE-WHEN read RED' | cut -d: -f1)"   # the line done writes when its DONE-WHEN exits red
+    _lan="$(printf '%s\n' "$_led" | grep -nEm1 'LANDED|LAND ok|pushed=' | cut -d: -f1)"
+    if [ -n "$_red" ] && { [ -z "$_lan" ] || [ "$_red" -lt "$_lan" ]; }; then echo FAILURE; return 0; fi   # the last DONE-WHEN reading is red and no landing came after it
+    for _h in $(printf '%s\n' "$_led" | grep -E 'LANDED|LAND ok|pushed=' | grep -oE '[0-9a-f]{7,40}' | grep '[0-9]' | sort -u); do
+        for _g in "$@"; do
+            git -C "$_g" rev-parse -q --verify "$_h^{commit}" >/dev/null 2>&1 || continue   # a token no repo knows is prose, not a hash
+            _n=$((_n+1)); git -C "$_g" merge-base --is-ancestor "$_h" origin/main 2>/dev/null || _ok=0; break
+        done
+    done
+    if [ "$_n" -gt 0 ] && [ "$_ok" = 1 ]; then echo SUCCESS; elif [ "$_n" -gt 0 ]; then echo FAILURE; else echo "NOTHING LANDED"; fi; }   # a hash the LEDGER names that origin lacks is a landing that did not land
+s4e_banner_probe_verdict() {   # banner --probe-verdict: the readings on a scratch postoffice and a scratch origin; rc 0 only when every planted row reads as ruled
+    local w r h1 h2 s=0 n=0 f=0 ok=0 why=""
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_banner_verdict.XXXXXX")" || { echo "REFUSE(2) [banner --probe-verdict]: mktemp failed"; exit 2; }
+    trap 'rm -rf "$w"' EXIT; r="$w/repos/r"; mkdir -p "$w/po/tasks" "$w/po/claims" "$r"
+    { git init -q --bare -b main "$w/origin.git" && git init -q -b main "$r" && git -C "$r" remote add origin "$w/origin.git" \
+      && echo 1 > "$r/f" && git -C "$r" add f && git -C "$r" -c user.email=p@p -c user.name=p commit -q --no-verify -m one \
+      && git -C "$r" push -q --no-verify -u origin main 2>/dev/null && h1="$(git -C "$r" rev-parse --short=9 HEAD)" \
+      && echo 2 > "$r/f" && git -C "$r" -c user.email=p@p -c user.name=p commit -q --no-verify -a -m two && h2="$(git -C "$r" rev-parse --short=9 HEAD)"; } >/dev/null 2>&1 \
+      || { echo "REFUSE(2) [banner --probe-verdict]: the scratch origin could not be built"; exit 2; }
+    mk() { printf '# TASK %s\nGOAL: plant\nDONE-WHEN: false\n## NEXT\nplant\n## QA\n## LEDGER\n%s\n- [plant] QUEUED\n' "$1" "$2" > "$w/po/tasks/$1.task.md"; }
+    mk landed "- [plant·d] LANDED r $h1 via s4e_land.sh --row"; mk nothing ""; mk unknown "- [plant·d] LANDED r 0123456789ab"
+    mk red "- [plant·d] DONE-WHEN read RED: exited 1 after 3s"; mk unpushed "- [plant·d] LANDED r $h2 via s4e_land.sh --row"
+    mk redafter "- [plant·d] DONE-WHEN read RED: exited 1 after 3s
+- [plant·d] LANDED r $h1"; mk landafter "- [plant·d] LANDED r $h1
+- [plant·d] DONE-WHEN read RED: exited 1 after 3s"; mk closed ""; printf 'plant\nDONE\n' > "$w/po/claims/closed.claim"
+    rd() { ( PO="$w/po"; s4e_banner_verdict "$1" "$w/repos"/*/ ); }
+    [ "$(rd landed)" = SUCCESS ] && [ "$(rd landafter)" = SUCCESS ] && [ "$(rd closed)" = SUCCESS ] && s=1 || why="$why SUCCESS rows read [landed=$(rd landed) landafter=$(rd landafter) closed=$(rd closed)];"
+    [ "$(rd nothing)" = "NOTHING LANDED" ] && [ "$(rd unknown)" = "NOTHING LANDED" ] && n=1 || why="$why NOTHING LANDED rows read [nothing=$(rd nothing) unknown=$(rd unknown)];"
+    [ "$(rd red)" = FAILURE ] && [ "$(rd unpushed)" = FAILURE ] && [ "$(rd redafter)" = FAILURE ] && f=1 || why="$why FAILURE rows read [red=$(rd red) unpushed=$(rd unpushed) redafter=$(rd redafter)];"
+    [ "$s$n$f" = 111 ] && ok=1
+    echo "BANNER_VERDICT success=$s nothing=$n failure=$f ok=$ok"; [ "$ok" = 1 ] || { echo "BANNER PROBE RED:$why"; exit 1; }; exit 0; }
 s4e_sweep_verdicts() {   # step 31: for every row PARKED-AWAITING a test request whose done/<id>.req exists, state -> ASSIGNED:<the request's seat>, one telegram
     local _l _t _st _b _seat _n=0 _v _to _stale _o
     while IFS= read -r _l; do
@@ -4248,6 +4284,7 @@ case "$cmd" in
                         "$rc" "$([ "$rc" -eq 127 ] && echo 'command not found' || { [ "$rc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
                     else
                       printf '\n⛔⛔⛔ NOT DONE — the task DONE-WHEN exited %s after %ss (timeout %ss). The claim is UNCHANGED and the row stays open.\n' "$rc" "$_dwel" "$_dwto" >&2
+                      s4e_ledger_prepend "$topic" "- [$ME·$(date -u +%FT%H:%MZ)] DONE-WHEN read RED: exited $rc after ${_dwel}s (done refused, the claim unchanged); the banner reads FAILURE until a landing or a green done follows (banner --probe-verdict)" 2>/dev/null || true
                     fi
                     printf '    command : %s\n' "$dw" >&2
                     printf '    task    : %s\n' "$tf" >&2
@@ -5237,6 +5274,7 @@ TASKEOF
          [ -n "$_gw" ] && { echo "   ⭐ NOT empty of WORK — these rows are GOVERNANCE-GATED, waiting on a grant, not on a seat:"; printf '%s\n' "$_gw"; echo "   Chase the grant (route via your HQ to the cto), do not re-park these to FREE."; }
          exit 1;;
   banner) [ "${2:-}" = --probe-once ] && s4e_banner_plant_once
+         [ "${2:-}" = --probe-verdict ] && s4e_banner_probe_verdict
          # ⛔ FACTS ONLY -- NO PREDICTIONS (Lon 2026-08-22: "Why are you trying to predict the future. Quit saying
          # ⛔ FIRST THING IN THIS CASE, BEFORE ANY EXIT: the first placement was after the verdict line, which always `exit`s
          # (:1308), so the block was unreachable -- proven by deleting a hook and running banner: it did NOT come back. Falsify,
@@ -5494,7 +5532,9 @@ TASKEOF
          # digest's own class wearing new clothes: a guard keyed on a NAME is a coincidence, not a guard -- here keyed
          # on a PATH PREFIX. Matched at a path BOUNDARY now, so it counts findings/ and any historical root-level one.
          fnd=$(git -C "$S4E/.github" log --since="$since" --diff-filter=A --name-only --format= 2>/dev/null | grep -E '(^|/)FINDING-' | grep -ci -e "$ME" -e "$mealt" ${row1:+-e "$row1"} || true); fnd="${fnd:-0}"
-         if [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then lvl="⚠ NOTHING ATTRIBUTABLE LANDED"
+         vd="NOTHING LANDED"; [ -z "$row1" ] || vd="$(s4e_banner_verdict "$row1" "$S4E"/*/)"   # the row's own reading from the claim, the LEDGER and origin: a landing through a worktree or a green done is not a commit this clone made
+         if [ "$vd" = SUCCESS ]; then lvl="row ${rowst} ${row1} · landed on origin (the LEDGER's hashes or the closed claim) · ${cmts} commit(s) · ${fnd} FINDING(s), attributed since ${since}"
+         elif [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then lvl="⚠ NOTHING ATTRIBUTABLE LANDED"
          else lvl="row ${rowst}${row1:+ ${row1}} · ${cmts} commit(s) · ${fnd} FINDING(s), attributed since ${since}"; fi
          # ⛔ BEHIND-ONLY IS NOT A FAILURE. handoff_status.sh answers "is this tree in sync"; the banner answers a
          # NARROWER question -- does anything of value live ONLY in this session. A clone merely BEHIND origin (clean
@@ -5521,7 +5561,8 @@ TASKEOF
          # SUCCESS verdict. The wrong one was in the headline. Now: nothing landed => the headline says so.
          # rc is deliberately UNCHANGED -- it still answers "safe to /clear", which is a different question and the
          # one tooling consumes. The banner's TEXT is what Lon reads, and it is now the one that must be earned.
-         elif [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then line="⚠ NOTHING LANDED — $ME — tree is clean and safe to /clear, but this session produced NO commit and NO FINDING. That is not success; it is an empty session."
+         elif [ "$vd" = FAILURE ]; then line="⛔ FAILURE — $ME — row ${row1}: its last DONE-WHEN read red, or a hash its LEDGER names is not on origin/main. Do NOT /clear — $lvl"
+         elif [ "$vd" != SUCCESS ] && [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then line="⚠ NOTHING LANDED — $ME — tree is clean and safe to /clear, but this session produced NO commit and NO FINDING. That is not success; it is an empty session."
          elif [ "$onlyhere" -eq 0 ] && [ "$hrc" -ne 0 ]; then line="✅ SUCCESS — $ME — safe to /clear (behind origin, nothing unpushed) — $lvl"
          elif [ "$hrc" -eq 0 ]; then line="✅ SUCCESS — $ME — safe to /clear — $lvl"
          # ⛔⭐ IN-PROGRESS, NOT FAILURE (Lon 2026-09-13: "Does FAILURE mean IN-PROGRESS?" then "Change FAILURE
@@ -5606,6 +5647,7 @@ TASKEOF
          #     work a failure trains every reader to ignore the one word that should mean something.
          if   [ -n "$diverged" ];   then printf '%s\n' "STOP"
          elif [ "${drain:-0}" -eq 1 ]; then printf '%s\n' "DRAIN"
+         elif [ "$vd" = FAILURE ]; then printf '%s\n' "FAILURE"
          # ⛔ SUCCESS IS THE CLEAN TREE ONLY (worker_10, 2026-11-06, Lon's "You say you are finished. It says different."): a clone with
          # uncommitted or unpushed work prints IN-PROGRESS whatever the handoff check said. The old test was `hrc -eq 0 || onlyhere -eq 0`,
          # so a handoff that measured clean printed SUCCESS over unpushed work. rc is unchanged (see the exit line below).
