@@ -37,6 +37,9 @@
 #   --probe-push-refusal  the push-refusal proof on scratch origins: a plant lands a real racer on corpus once (one origin-moved round) and arms a
 #                pre-receive hook that refuses the next push once with "fatal error in commit_refs" (retried as a push); prints LAND push_refused=server
 #                retried_push=N rebased_for_refusal=0 origin_moved_rebases=M. The real origins are never touched.
+#   --probe-serial  the serial last round's proof (fleet-queue step 20) on scratch origins: a racer lands on corpus in each of three rounds (round two
+#                outside the row's TOUCHES), round three's refused push takes ONE serial gate under the lease, and a second lander queued behind that lease
+#                lands once it is free. Prints LAND serial-probe ok ... or LAND serial-probe RED: <what differed>.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
@@ -57,6 +60,7 @@ while [ $# -gt 0 ]; do
         --probe) mode=probe; shift ;;
         --merge-probe) mode=merge_probe; shift ;;
         --probe-push-refusal) mode=probe_push_refusal; shift ;;
+        --probe-serial) mode=probe_serial; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -270,8 +274,67 @@ probe_push_refusal() {   # the push-refusal proof: a real move and a server refu
     echo "LAND push_refused=server retried_push=${n:-0} rebased_for_refusal=${b:-?} origin_moved_rebases=${m:-0}"
     exit 0
 }
+probe_serial() {   # the serial last round's proof (fleet-queue step 20), on scratch origins: a racer lands on corpus in each of three rounds (round two outside the row's TOUCHES, so round three's regate stands), round three's refused push takes ONE serial gate under the lease, and a second lander queued behind that lease lands once it is free
+    local T r log rc n g h i m
+    T="$(mktemp -d "/tmp/s4e/$seat/land-serial-probe.XXXXXX")" || refuse "cannot make a scratch directory"
+    trap 'rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    red9() { echo "LAND serial-probe RED: $*"; echo "    kept: $T"; trap - EXIT; exit 1; }
+    scratch_clone "$T"
+    git clone -q --shared --no-checkout "$T/origin/corpus.git" "$T/racer" && git -C "$T/racer" sparse-checkout set --cone tests/shared/box_scheduler tests/probe9 && git -C "$T/racer" reset -q --hard HEAD \
+        || refuse "probe: cannot clone the racer"
+    git -C "$T/racer" config user.name LCherryholmes; git -C "$T/racer" config user.email lcherryh@yahoo.com
+    mkdir -p "$T/waiter"
+    for r in "${ORDER[@]}"; do
+        if [ "$r" = corpus ]; then git clone -q --shared --no-checkout "$T/origin/$r.git" "$T/waiter/$r" && git -C "$T/waiter/$r" sparse-checkout set --cone tests/shared/box_scheduler && git -C "$T/waiter/$r" reset -q --hard HEAD
+        else git clone -q --shared "$T/origin/$r.git" "$T/waiter/$r"; fi || refuse "probe: cannot clone the waiter's $r"
+        git -C "$T/waiter/$r" config user.name LCherryholmes; git -C "$T/waiter/$r" config user.email lcherryh@yahoo.com
+    done
+    git -C "$T/waiter/corpus" commit -q --allow-empty -m "probe: the waiter's commit in corpus" || refuse "probe: cannot commit the waiter"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the serial landing's own commit in $r" || refuse "probe: cannot commit in $r"; done
+    : > "$T/plants"; : > "$T/gates9"
+    cat > "$T/plant9.sh" <<'PLANT'
+#!/usr/bin/env bash
+T="$(cd "$(dirname "$0")" && pwd)"
+echo p >> "$T/plants"
+n="$(wc -l < "$T/plants")"
+d=tests/shared/box_scheduler; [ "$n" = 2 ] && d=tests/probe9
+cd "$T/racer" && git pull -q --rebase origin main && mkdir -p "$d" && echo "probe9 run $n" > "$d/probe9-$n.txt" && git add -A && git commit -q -m "probe: a serial racer lands probe9-$n" && git push -q origin HEAD:main
+PLANT
+    cat > "$T/gate9.sh" <<'GATE'
+#!/usr/bin/env bash
+T="$(cd "$(dirname "$0")" && pwd)"
+echo g >> "$T/gates9"
+n="$(wc -l < "$T/gates9")"
+if [ "$n" = 3 ]; then
+    env -u S4E_LAND_PLANT S4E_SEAT=probe-waiter bash "$1" --push --proved 'probe: the waiter lands behind the serial round' --home "$T/waiter" corpus > "$T/waiter.log" 2>&1 8>&- 9>&- &
+    for i in $(seq 1 600); do grep -q '^LAND stage=lease waiting' "$T/waiter.log" 2>/dev/null && break; sleep 0.1; done
+    grep -q '^LAND stage=lease waiting' "$T/waiter.log" 2>/dev/null || { echo "probe: the waiter never queued behind the serial gate" >&2; exit 1; }
+fi
+exit 0
+GATE
+    log="$T/serial.log"
+    S4E_LAND_PLANT="bash $T/plant9.sh" S4E_POSTOFFICE="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --tries 3 --touches 'corpus/tests/shared' --gate "bash $T/gate9.sh $SELF" > "$log" 2>&1; rc=$?
+    sed 's/^/    serial| /' "$log" | grep -E 'regate|LAND ok|LAND RED|REFUSE|lease' | tail -12
+    if [ "$rc" = 0 ]; then for i in $(seq 1 3000); do grep -q '^LAND \(ok\|RED\|REFUSE\)' "$T/waiter.log" 2>/dev/null && break; sleep 0.1; done; fi
+    sed 's/^/    waiter| /' "$T/waiter.log" 2>/dev/null | tail -4
+    n="$(wc -l < "$T/plants")"; g="$(wc -l < "$T/gates9")"
+    h="$(sed -n 's/^LAND stage=lease released held_s=\([0-9]*\) .*/\1/p' "$log" | tail -1)"
+    [ "$rc" = 0 ] || red9 "the first lander returned rc=$rc: $(grep -E 'LAND RED|REFUSE' "$log" | tail -1 | cut -c1-200)"
+    grep -q '^LAND stage=regate:lease:serial ' "$log" || red9 "no LAND stage=regate:lease:serial: the last round did not gate under the lease"
+    grep -q '^LAND ok .* attempts=3 .* serial_round=1 ' "$log" || red9 "the landing did not read attempts=3 serial_round=1: $(grep '^LAND ok' "$log" | cut -c1-200)"
+    [ "$n" = 3 ] || red9 "the racer ran $n times, expected 3 (one per round)"
+    [ "$g" = 3 ] || red9 "the gate ran $g times, expected 3 (attempt 1, regate 2, the serial gate)"
+    [ -n "$h" ] || red9 "no LAND stage=lease released held_s= line"
+    grep -q "^LAND stage=lease waiting: held by seat=$seat " "$T/waiter.log" 2>/dev/null || red9 "the waiter did not queue behind seat=$seat: $(head -n 1 "$T/waiter.log" 2>/dev/null | cut -c1-160)"
+    grep -q '^LAND ok mode=push .*pushed=corpus@' "$T/waiter.log" 2>/dev/null || red9 "the waiter did not land after the lease: $(grep -E 'LAND (ok|RED|REFUSE)' "$T/waiter.log" 2>/dev/null | tail -1 | cut -c1-200)"
+    git -C "$T/origin/corpus.git" log --format=%s main > "$T/corpus.log"
+    for m in "probe: a serial racer lands probe9-1" "probe: a serial racer lands probe9-2" "probe: a serial racer lands probe9-3" "probe: the serial landing's own commit in corpus" "probe: the waiter's commit in corpus"; do grep -qx "$m" "$T/corpus.log" || red9 "origin corpus lost: $m"; done
+    echo "LAND serial-probe ok attempts=3 serial_round=1 regate=lease:serial held_s=$h landed=1 waiter_named=1"
+    exit 0
+}
 [ "$mode" = probe ] && probe
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
+[ "$mode" = probe_serial ] && probe_serial
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -432,6 +495,20 @@ gate_run() {
         *) red gate "rc=$rc: nothing pushed" ;;
     esac
 }
+serial_cap="${S4E_LAND_SERIAL_GATE_S:-900}"; serial_round=0
+gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease (fleet-queue step 20); capped at S4E_LAND_SERIAL_GATE_S; a gate past the cap drops the lease and reads RED, nothing pushed
+    local rc sgt="$gt"
+    [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
+    serial_round=1
+    ( cd "$home" && S4E_HOME="$home" timeout -k 5 "$sgt" bash -c "$gate" ) > "$LOG/gate.log" 2>&1; rc=$?
+    tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
+    case "$rc" in
+        0) mark "regate:lease:serial" "$1 (the gate ran under the lease, cap ${sgt}s)" ;;
+        2) drop_lease "(the serial gate could not measure)"; refuse "the serial gate could not measure (rc 2) under the lease: nothing pushed" ;;
+        124|137) drop_lease "(the serial gate ran past ${serial_cap}s)"; red push "the serial gate ran past its cap: serial_gate=timeout; pushed so far: ${pushed[*]:-none}" ;;
+        *) drop_lease "(the serial gate read red)"; red gate "rc=$rc under the lease: nothing pushed" ;;
+    esac
+}
 SERVER_REFUSAL='fatal error in commit_refs|remote rejected[^(]*\(failure\)|internal server error|returned error: 5[0-9][0-9]|HTTP 5[0-9][0-9]|error: 5[0-9][0-9] '
 push_retries="${S4E_LAND_PUSH_RETRIES:-4}"; push_backoff="${S4E_LAND_PUSH_BACKOFF:-5}"; server_refusals=0; retried_push=0; rebased_unmoved=0; moved_rounds=0
 push_one() {
@@ -488,6 +565,14 @@ record_hand_push() { local f="${S4E_POSTOFFICE:-/home/resources/postoffice}/HAND
     [ -s "$f" ] || printf '# at_utc\tseat\trepo\tsha\tproof  -- hand pushes made under the landing lease (s4e_land.sh --push); the lease is what keeps origin still under a running gate\n' > "$f"
     printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%FT%TZ)" "$seat" "$1" "$2" "${proved:-gate: $(printf '%s' "$gate" | cut -c1-100)}" >> "$f"; }
 pushed=(); rejected=0; attempt=1
+pushes() {   # the pushes in ORDER; rc 3 when one is refused (land_round decides: round again, or on the last round the one serial gate and the pushes once more)
+    local r
+    for r in "${ORDER[@]}"; do
+        [ -e "$home/$r/.git" ] || continue
+        push_one "$r" || return 3
+    done
+    return 0
+}
 land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the gate unleased, then the lease only around a fetch, a rebase and the pushes; rc 3 = go round again
     local r a moved=0 rc
     fetch; rebase
@@ -513,28 +598,34 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     for r in "${present[@]}"; do [ "${origin_seen[$r]}" = "$(git -C "$home/$r" rev-parse origin/main)" ] || moved=1; done
     if [ "$moved" = 1 ]; then
         rebase
-        if a="$(affected_since)"; then moved_rounds=$((moved_rounds + 1)); drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
-        mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
-        note_origins
+        if a="$(affected_since)"; then
+            moved_rounds=$((moved_rounds + 1))
+            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then gate_run_serial "$a"; note_origins
+            else drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
+        else
+            mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
+            note_origins
+        fi
     fi
     [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
-    for r in "${ORDER[@]}"; do
-        [ -e "$home/$r/.git" ] || continue
-        push_one "$r"; rc=$?
-        [ "$rc" = 3 ] && { drop_lease "(a push was rejected: going round again)"; return 3; }
-    done
+    pushes; rc=$?
+    if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
+        fetch; rebase; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
+        pushes; rc=$?
+    fi
+    [ "$rc" = 3 ] && { drop_lease "(a push was rejected: going round again)"; return 3; }
     drop_lease "(pushed ${pushed[*]:-nothing})"
     return 0
 }
 while :; do
     if land_round; then break; fi
     rejected=$((rejected + 1)); attempt=$((attempt + 1))
-    [ "$attempt" -gt "$tries" ] && red push "the origin moved under $tries attempts; pushed so far: ${pushed[*]:-none}"
+    [ "$attempt" -gt "$tries" ] && red push "the origin moved under $tries attempts; pushed so far: ${pushed[*]:-none} serial_round=$serial_round"
 done
 if [ "$mode" = push ]; then
     for x in "${pushed[@]}"; do record_hand_push "${x%@*}" "${x#*@}"; done
-    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
+    rm -rf "$LOG"; echo "LAND ok mode=push stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt hand_push=leased push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"; exit 0
 fi
 rm -rf "$LOG"
-echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+echo "LAND ok stages=${#stage_done[@]} rounds=$rejected pushed=${pushed[*]:-none} attempts=$attempt lease=push-only push_refused=$server_refusals retried_push=$retried_push rebased_for_refusal=$rebased_unmoved origin_moved_rebases=$moved_rounds serial_round=$serial_round ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
 exit 0
