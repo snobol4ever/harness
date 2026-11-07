@@ -26,7 +26,7 @@ import fnmatch, os, re, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPOS = ("SCRIP", "harness", "corpus", ".github")
-TOKENS = {"-", "build", "preflight", "area", "refgates", "buildgates", "self"}
+TOKENS = {"-", "build", "preflight", "area", "refgates", "namegates", "buildgates", "self"}
 
 def arg(name, default=None):
     return sys.argv[sys.argv.index(name) + 1] if name in sys.argv and sys.argv.index(name) + 1 < len(sys.argv) else default
@@ -260,12 +260,14 @@ def main():
         base_name = os.path.basename(f)
         if "self" in o and os.path.isfile(os.path.join(scripts, base_name)) and f == "scripts/" + base_name:
             arm("gate", "bash harness/scripts/%s" % base_name)
-    if any("refgates" in o for _, _, o in decided):
+    if any("refgates" in o or "namegates" in o for _, _, o in decided):
         wired, texts = wired_gates(scripts, tag), gate_texts(scripts)
         named = set()
         for f, _, o in decided:
             if "refgates" in o:
                 named |= {g for g, t in texts.items() if f in t and g != os.path.basename(f)}
+            if "namegates" in o:
+                named |= {g for g, t in texts.items() if os.path.basename(f) in t and g != os.path.basename(f)}
         unwired = len(named - wired)
         for g in sorted(named & wired):
             arm("gate", "bash harness/scripts/%s" % g)

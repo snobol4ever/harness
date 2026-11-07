@@ -21,8 +21,13 @@
 #      READ FROM s4e_test_request.sh, and --cap overrides it; 13 on a shared node the cap is spread one program per suite per round, and a master with no suite key
 #      is named in nosuite and files nothing; 14 a commit that names no program prints NO-EIGHT and never an EIGHT line (the probe's grep must not pass on it);
 #      15 --proof and --eight together refuse rc 2
-#  11  THE REAL TABLE: every repo carries a `.` catch-all row, every @ directive name is a file in this scripts directory, and the declared build
-#      gates are WIRED in the real gate_wiring.tsv
+#  16  namegates (box-scheduler step 13 follow-up, the president 2026-11-07): a harness script touched owes each WIRED gate whose source holds its BASENAME
+#      (as $HERE/<name>, never as scripts/<name>); a longer name that holds it counts, the substring is the rule; the TASK gate and the gate naming
+#      nothing are not owed; 16b is the FAIL-ONCE: a sed-mutated copy of the tool (the basename test made a path test) must read red on the same plant
+#  17  the same on the REAL gate sources and wiring: for five real harness scripts the tool's ARM gate count equals an independent shell count of the
+#      WIRED gates holding the basename (the counts are printed, so a drift is visible), and the gate the path rule missed on 2026-11-05 is owed
+#  11  THE REAL TABLE: every repo carries a `.` catch-all row, every @ directive name is a file in this scripts directory, the declared build
+#      gates are WIRED in the real gate_wiring.tsv, and the harness and .github scripts/ rows owe namegates (11d)
 # FAIL_ONCE=1 corrupts the PLANTED gate_wiring.tsv (the TASK gate is marked WIRED) and arm 4 must read red; FAIL_ONCE=2 plants REQUEST_CAP=5 where the arms expect 3
 # and arms 12a and 13 must read red; nothing under src/ is planted.
 # EXIT: 0 every arm holds; 1 an arm failed; 2 could not measure. Population printed.
@@ -124,6 +129,37 @@ ck "14 rc 0, a NO-EIGHT line, no line starting EIGHT (the step probe greps for ^
 echo "--- ARM 15: --proof and --eight together refuse ---"
 o15=$(proof --eight); r15=$?
 ck "15 rc 2 naming the two questions" '[ "$r15" = 2 ] && grep -q "two questions" <<<"$o15"'
+echo "--- ARM 16: a harness script is owed the WIRED gates that hold its BASENAME (namegates); a mutant of the tool reads red ---"
+printf 'x=1\n' > "$S/util_zz_tool.py"
+printf '# planted\npython3 "$HERE/util_zz_tool.py"\n' > "$S/test_gate_names_the_tool_by_basename.sh"
+printf '# planted\nold="$HERE/util_zz_tool.py_old"\n' > "$S/test_gate_names_a_longer_name_holding_it.sh"
+printf '# planted debt\npython3 "$HERE/util_zz_tool.py"\n' > "$S/test_gate_debt_names_the_tool_by_basename.sh"
+printf '# planted\necho nothing\n' > "$S/test_gate_names_nothing.sh"
+printf 'test_gate_names_the_tool_by_basename.sh\tWIRED\t-\t-\t-\ntest_gate_names_a_longer_name_holding_it.sh\tWIRED\t-\t-\t-\ntest_gate_names_nothing.sh\tWIRED\t-\t-\t-\ntest_gate_debt_names_the_tool_by_basename.sh\tTASK\t-\t-\t-\n' >> "$S/gate_wiring.tsv"
+( G "$WORK/harness" add -A && G "$WORK/harness" commit -q -m plant16 && printf 'x=2\n' >> "$S/util_zz_tool.py" && G "$WORK/harness" commit -qam tool16 ) || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot plant arm 16"; gate_stamp; exit 2; }
+sed 's/if os\.path\.basename(f) in t and /if f in t and /' "$TOOL" > "$WORK/mutant_impact_set.py"
+if cmp -s "$TOOL" "$WORK/mutant_impact_set.py"; then echo "GATE UNPROVEN(2) [$GATE_NAME]: the mutation of the tool did not apply, so arm 16b cannot trip"; gate_stamp; exit 2; fi
+nm() { ( cd "$WORK" && S4E_HOME="$WORK" python3 "$1" --root harness --scripts "$S" --corpus "$C" --proof 2>&1 ); }
+nm_ok() { [ "$(field gates "$1")" = 2 ] && [ "$(field unwired "$1")" = 1 ] && grep -q "^ARM gate bash harness/scripts/test_gate_names_the_tool_by_basename.sh$" <<<"$1" && grep -q "^ARM gate bash harness/scripts/test_gate_names_a_longer_name_holding_it.sh$" <<<"$1" && ! grep -q "names_nothing\|debt_names" <<<"$1"; }
+o16=$(nm "$TOOL"); o16m=$(nm "$WORK/mutant_impact_set.py")
+ck "16a gates=2 (the basename gate and the longer-name gate), unwired=1 (the TASK gate), the gate naming nothing absent, owes=namegates,preflight" 'nm_ok "$o16" && grep -q "^PROOF .* owes=namegates,preflight " <<<"$o16"'
+ck "16b FAIL-ONCE: the mutated tool reads red on the same plant (gates=$(field gates "$o16m") where the tool reads $(field gates "$o16"))" '! nm_ok "$o16m"'
+echo "--- ARM 17: the real gate sources: the tool's gate count for five real harness scripts equals an independent shell count ---"
+RH="$WORK/rharness"; mkdir -p "$RH/scripts"; real5="util_c_allocator_census.py util_gate_wiring.py test_area_smoke.sh util_seat_census.py s4e_land.sh"
+awk -F'\t' '!/^#/ && $2=="WIRED" {print $1}' "$WIRING" | LC_ALL=C sort -u > "$WORK/wired.txt"
+for b in $real5; do printf 'x=1\n' > "$RH/scripts/$b"; done
+( G "$RH" init -q && G "$RH" add -A && G "$RH" commit -q -m base ) || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot plant arm 17"; gate_stamp; exit 2; }
+tot=0; bad=""; counts=""; oc=""
+for b in $real5; do
+  printf 'x=2\n' >> "$RH/scripts/$b"; G "$RH" commit -qam "edit $b"
+  ot=$( cd "$WORK" && S4E_HOME="$WORK" python3 "$TOOL" --root rharness --repo harness --scripts "$HERE" --proof 2>&1 )
+  got=$(grep -c "^ARM gate " <<<"$ot")
+  want=$( cd "$HERE" && grep -lF -- "$b" test_gate_*.sh 2>/dev/null | grep -vx -- "$b" | LC_ALL=C sort -u | LC_ALL=C comm -12 - "$WORK/wired.txt" | wc -l )
+  counts="$counts $b=$got/$want"; tot=$((tot+want)); [ "$got" = "$want" ] || bad="$bad $b"
+  [ "$b" = util_c_allocator_census.py ] && oc="$ot"
+done
+ck "17a the tool's ARM gate count equals the independent count for each real file, and the population is not empty (got/want:$counts)" '[ -z "$bad" ] && [ "$tot" -gt 0 ]'
+ck "17b the gate the path rule missed on 2026-11-05 is owed for util_c_allocator_census.py" 'grep -q "^ARM gate bash harness/scripts/test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh$" <<<"$oc"'
 echo "--- ARM 11: the real table is complete and its declared names are real ---"
 miss_repo=""; for r in SCRIP harness corpus .github; do awk -F'\t' -v r="$r" '$1==r && $2=="." {f=1} END {exit !f}' "$TABLE" || miss_repo="$miss_repo $r"; done
 miss_name=""; for g in $(decl buildgates); do [ -f "$HERE/$g" ] || miss_name="$miss_name $g"; done; for l in $(decl shared-smokes); do [ -f "$HERE/test_smoke_$l.sh" ] || miss_name="$miss_name test_smoke_$l.sh"; done
@@ -131,6 +167,8 @@ unwired=""; for g in $(decl buildgates); do awk -F'\t' -v g="$g" '$1==g && $2=="
 ck "11a every repo carries a . catch-all row" '[ -z "$miss_repo" ]'; [ -z "$miss_repo" ] || echo "      no catch-all for:$miss_repo"
 ck "11b every @ directive name is a file in $HERE" '[ -z "$miss_name" ]'; [ -z "$miss_name" ] || echo "      missing:$miss_name"
 ck "11c the declared build gates are WIRED in the real gate_wiring.tsv" '[ -z "$unwired" ]'; [ -z "$unwired" ] || echo "      not WIRED:$unwired"
+nameg=$(awk -F'\t' '($1=="harness" || $1==".github") && $2=="scripts/" && $3 ~ /namegates/ {n++} END {print n+0}' "$TABLE")
+ck "11d the harness and .github scripts/ rows owe namegates ($nameg of 2)" '[ "$nameg" = 2 ]'
 echo "------------------------------------------------------------"
 echo "population: $n check(s) over a planted home (a fixture SCRIP of $(G "$R" rev-list --count HEAD) commits, $nsh shared smokes, $nbg build gates, 3 masters)"
 if [ "$fails" -eq 0 ]; then echo "GATE OK [$GATE_NAME]: $n of $n checks hold"; gate_stamp; exit 0; fi

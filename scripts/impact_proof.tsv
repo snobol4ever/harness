@@ -8,7 +8,7 @@
 #   carrier  a file (Makefile), a directory with a trailing slash (src/), a glob over the repo-relative path (scripts/test_gate_*.sh, *.md),
 #            or `.` the repo's catch-all. THE LONGEST CARRIER THAT MATCHES A TOUCHED FILE DECIDES ITS ROW; a file no row names falls to the catch-all,
 #            so an unmapped file owes MORE proof, never less (the safe direction; the area map's own refusal still guards src/).
-#   owes     a comma list of: -  build  preflight  area  refgates  buildgates  self
+#   owes     a comma list of: -  build  preflight  area  refgates  namegates  buildgates  self
 #     build       ARM build:      cd SCRIP && make -j8
 #     preflight   ARM preflight:  cd SCRIP && make preflight   (the cheap hermetic arms, no build; the law's per-landing verdict names it)
 #     area        the file is a src/ carrier: the carrier map (test_area_smoke.sh --list-only) names the languages; ARM area, and ARM smoke
@@ -16,6 +16,12 @@
 #     refgates    ARM gate for each WIRED test_gate_*.sh whose source names this file's repo-relative path (a path literal, never the basename and
 #                 never the parent directory: MEASURED 2026-11-05 on the president's worktree, src/runtime/posix_leaves.c names 0 gates by path and
 #                 150 by its directory, so a directory match would size every runtime landing at the whole set)
+#     namegates   ARM gate for each WIRED test_gate_*.sh whose source contains this file's BASENAME as a substring (a longer name that holds it counts), never
+#                 the gate that is the file itself: the row for a harness or .github script, which a gate reaches as $HERE/<name>, never as scripts/<name>.
+#                 MEASURED 2026-11-07 on origin harness 34c6e6b (WIRED gates naming the file by path versus by basename): util_gate_wiring.py 1 vs 4,
+#                 util_c_allocator_census.py 2 vs 3 (the missed one is test_gate_c_allocators_are_eradicated_and_say_where_they_went.sh),
+#                 util_seat_census.py 0 vs 3, test_area_smoke.sh 0 vs 2, s4e_land.sh 0 vs 0. A library every gate sources (lib_gate.sh: 5 vs 289) owes them all:
+#                 the safe direction, advisory output the lander reads, never a run the tool starts.
 #     buildgates  ARM gate for each gate the @ buildgates directive names (a Makefile line is read by 54 gates, so it owes the declared few)
 #     self        the file is a gate script: ARM gate for it, wired or not, since its lander must run it
 #   `-` owes nothing: a prose or record file.
@@ -24,7 +30,7 @@
 #   A name a directive gives that is not a file in the scripts directory REFUSES rc 2: a missing arm is never dropped quietly.
 # ONLY WIRED GATES ARE OWED (gate_wiring.tsv): a TASK gate is debt and reads red by design, a RULING gate is deliberately out of make test; the PROOF
 #   line counts the ones it left out as unwired=N.
-# HYPOTHESIS, marked: a gate that reads a file through a lib_ helper or a directory sweep names no path literal and is not found by refgates; that
+# HYPOTHESIS, marked: a gate that reads a file through a lib_ helper or a directory sweep names no path literal and no basename, so neither refgates nor namegates finds it; that
 #   blind spot is the one preflight_arms.txt names for its own grep, and the eight smokes and the coo's lap are what cover a shared node.
 @	buildgates	test_gate_build_freshness_is_behavioural.sh test_gate_make_fetches_a_cached_build_on_a_clean_tree.sh
 @	shared-smokes	snobol4 icon prolog snocone rebus raku pascal polyglot
@@ -39,12 +45,12 @@ SCRIP	LICENSE	-
 SCRIP	NOTICE	-
 SCRIP	.	build,preflight,refgates
 harness	scripts/test_gate_*.sh	preflight,self
-harness	scripts/	preflight,refgates
+harness	scripts/	preflight,namegates
 harness	*.md	-
 harness	LICENSE	-
 harness	.	preflight,refgates
 corpus	*.md	-
 corpus	.	preflight,refgates
-.github	scripts/	preflight,refgates
+.github	scripts/	preflight,namegates
 .github	skills/	refgates
 .github	.	refgates
