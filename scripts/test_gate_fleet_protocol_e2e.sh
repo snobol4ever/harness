@@ -17,6 +17,8 @@ T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 P="$T/po"; mkdir -p "$P/claims" "$P/tasks" "$P/seatX/inbox" "$P/hq_C/inbox"
 printf '# idx\n0\twin-task\tb\ts\n5\tother-task\tb\ts\n' > "$P/QUEUE.tsv"
 run(){ local seat="$1"; shift; S4E_POST="$P" S4E_SEAT="$seat" S4E_NO_BANNER=1 bash "$MSG" "$@" 2>&1; }
+addrow(){ # a QUEUE row lives only beside its baton: any verb's regeneration drops a baton-less row, so the row is written here, before its assign
+  awk -F'\t' -v t="$1" '$2==t{f=1} END{exit !f}' "$P/QUEUE.tsv" || printf '5\t%s\tb\ts\n' "$1" >> "$P/QUEUE.tsv"; }
 mktask(){ # $1 topic, $2 done-when command
   cat > "$P/tasks/$1.task.md" <<EOF
 # TASK $1 · owner: hq_C · state: FREE
@@ -27,14 +29,15 @@ step one
 ## QA
 ## LEDGER
 EOF
+  addrow "$1"
 }
 
 echo "== α  HQ mints a baton and assigns it; the seat is served THAT, first =="
 mktask win-task "test -f $T/flag"
 run hq_C assign seatX win-task >/dev/null
 o="$(run seatX next)"
-case "$o" in *"ASSIGNED->RUNNING win-task"*) ok "next serves the assigned task ahead of the rank-0 free row";;
-  *) no "assigned-first" "ASSIGNED->RUNNING win-task" "$(echo "$o"|head -1)";; esac
+case "$o" in *"ASSIGNED win-task (assigned by"*) ok "next serves the assigned task ahead of the rank-0 free row";;
+  *) no "assigned-first" "ASSIGNED win-task (assigned by ...)" "$(echo "$o"|head -1)";; esac
 case "$o" in *"$P/tasks/win-task.task.md"*) ok "next prints the BATON path, not just a brief";;
   *) no "baton path printed" "tasks/win-task.task.md" "$(echo "$o"|head -3|tr '\n' ' ')";; esac
 case "$o" in *"THE BATON IS THE TASK FILE"*) ok "and tells the seat the file is authoritative, not the printout";;
@@ -84,7 +87,7 @@ DONE-WHEN: $2
 ## NEXT
 n
 EOF
-  run hq_C assign seatX "$1" >/dev/null 2>&1; run seatX next >/dev/null 2>&1
+  addrow "$1"; run hq_C assign seatX "$1" >/dev/null 2>&1; run seatX next >/dev/null 2>&1
   o="$(run seatX done "$1")"
   case "$o" in *REFUSED*) ok "refuses $3";; *) no "refuse $3" "⛔ REFUSED" "$(echo "$o"|head -1)";; esac
   grep -q '^DONE$' "$P/claims/$1.claim" 2>/dev/null && no "$3 must not close the row" "no DONE marker" "row was closed" || true; }
