@@ -69,8 +69,14 @@ class Census:
         self.root, self.skills_dir, self.bus, self.allow = root, skills_dir, bus, allow
         self.verbs = bus_verbs(bus)
         self.basenames = set()
+        for extra in ("/home/resources/progress", "/home/resources/postoffice", "/home/resources/manuals"):
+            for dp, dn, fn in os.walk(extra):
+                if "/archive" in dp or "/tasks" in dp or "/claims" in dp:
+                    continue
+                for f in fn:
+                    self.basenames.add(f)
         for dp, dn, fn in os.walk(root):
-            if "/.git" in dp or "/objdir" in dp or "/out/" in dp or "/.claude/" in dp:
+            if "/.git/" in dp or dp.endswith("/.git") or "/objdir" in dp or "/out/" in dp or "/.claude/" in dp:
                 continue
             for f in fn:
                 self.basenames.add(f)
@@ -78,10 +84,11 @@ class Census:
     def exists(self, tok):
         t = tok.strip("`'\",;:()<>")
         t = re.sub(r"^\./", "", t)
-        if any(c in t for c in "*<>{}"):
-            return "glob"
+        if any(c in t for c in "*<>{}") or t.startswith(("_", ".", "-")) or re.fullmatch(r"([a-z]|prog|foo|bar|name)\.[a-z]+", t) or "//" in t:
+            return "glob"   # a shape (_suite.sh, .task.md) or an example name (prog.sno, w.pl), never a file
+        t = re.sub(r"\.(c|cpp|s|py|sh)/\.h$", r".\1", t)   # the pair form x.c/.h names x.c and x.h
         if t.startswith("/"):
-            return "ok" if os.path.exists(t) else "missing"
+            return "ok" if os.path.exists(t) or os.path.basename(t) in self.basenames else "missing"
         cands = [t] + [os.path.join(p, t) for p in SEARCH[1:]] if "/" in t else [os.path.join(p, t) for p in SEARCH]
         for c in cands:
             if os.path.exists(os.path.join(self.root, c)):
@@ -95,7 +102,7 @@ class Census:
             if os.path.isfile(c):
                 return c
         for dp, dn, fn in os.walk(self.root):
-            if "/.git" in dp or "/.claude/" in dp:
+            if "/.git/" in dp or dp.endswith("/.git") or "/.claude/" in dp:
                 continue
             if base in fn:
                 return os.path.join(dp, base)
@@ -109,6 +116,7 @@ class Census:
             if only and not skill.startswith(only + "/"):
                 continue
             for i, ln in enumerate(open(path, errors="replace").read().split("\n"), 1):
+                ln = re.sub(r"https?://\S+", "", ln)
                 toks = set()
                 for m in FILE_RE.finditer(ln):
                     t = m.group(0)
@@ -122,7 +130,7 @@ class Census:
                     if st == "missing" and t in self.allow:
                         st = "allowed"
                     out.append((skill, t, "file", st, i))
-                for m in VERB_RE.finditer(ln):
+                for m in VERB_RE.finditer(" ".join(re.findall(r"`([^`\n]+)`", ln))):
                     v = m.group(1)
                     out.append((skill, "s4e_msg.sh " + v, "verb", "ok" if v in self.verbs else "unknown-verb", i))
                 for m in FLAG_RE.finditer(ln):

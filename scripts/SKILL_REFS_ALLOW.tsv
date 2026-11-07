@@ -2,3 +2,24 @@
 _steps.sh	the shape of a design harness name, test_design_<name>_steps.sh, written as a suffix in design-plans and gates-and-witnesses
 prog.sno	the shape of a program name in a grading example
 program.sno	the placeholder of the usage line of util_instr_count.sh: the program the caller names on the command line, never a file of the tree
+GOAL-CEO.md	the closed ruling series of the fired ceo seat (CTO-469): the file is gone from the tree and is read from history by util_redirects.py --resolve CEO-NNNN; a skill that cites it names the series, not a live file
+WAKE.txt	named only to say it does not exist (the wake rule: no wake list, no WAKE.txt)
+xa/xa_call_tail.cpp	exists only on branch cto/templates-zero-7, as the box-templates reference says
+emit_core.c	a retired name listed in scrip-architecture's table of retired names and scrip-backends' prototypes
+emit_js.c	a retired name (the 2026-08 backend prototypes), listed as retired
+emit_jvm.c	a retired name (the 2026-08 backend prototypes), listed as retired
+emit_wasm.c	a retired name (the 2026-08 backend prototypes), listed as retired
+IR.h	a retired name (now ir_node.h, ir_graph.h, ir_fwd.h), listed as retired
+src/ir/IR.h	a retired name, listed as retired
+zeta_storage.c	a retired name, listed as retired
+x86_asm.h	a retired name (became x86_asm.cpp, scrip-build reference), listed as retired
+util_suite_runners.py	written by test-cycle step 9; not on the tree yet
+harness/scripts/SUITE_RUNNERS.tsv	written by test-cycle step 9; not on the tree yet
+test_gate_no_builtin_name_strcmp.sh	written by builtin-table step 6; not on the tree yet
+util_call_box_census.sh	written by builtin-table step 6; not on the tree yet
+idx.s	a struct field (.s, the slice string), not a file (skill icon reference)
+callee.s	a struct field (.s), not a file (skill icon reference)
+rt_thread.c	written by unicon step 12 (D12 the thread scheduler); not on the tree yet
+corpus/packages/raku/roast/FUDGED-ORACLE.tsv	written by the roast measure-first row (skill raku reference, RULING 4); not on the tree yet
+shapes.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
+locals.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
