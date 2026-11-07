@@ -4,7 +4,9 @@
 # launch: corpus_suite_harness.py run <lang ALL container> <ALL.ref> --lang L --modes M --partition P, under util_run_slot.sh. The reserving connection lives in the lease
 # process (beanstalkd releases a reserved job when its connection closes), which touches the job every 60 s while the launch runs, deletes it on rc 0 or 1 (a red program
 # is a reading), and buries it on any other rc (rc 2 is a refusal; beanstalkd has no reason field, so the reason goes on the GRADE_WORKERS.log line). Each job appends one
-# line to /home/resources/progress/GRADE_WORKERS.log, never under S4E_PROGRESS_OFF=1. Package suites: SUITES.tsv has no runner column, so only a language container runs here.
+# line to /home/resources/progress/GRADE_WORKERS.log, never under S4E_PROGRESS_OFF=1. THE RUNNER TABLE (step 9): harness/scripts/SUITE_RUNNERS.tsv names each key's kind,
+# lang, runner and table. A master (kind master) launches corpus_suite_harness.py as above; a package (kind pkg) runs S4E_CHUNK=<cell> bash harness/scripts/<runner>
+# under the same util_run_slot.sh admission and the same verdict rule, and the master's record step does not run for it (its runner writes its own rows); any other kind refuses.
 # After a launch that read (rc 0 or 1) the lease RECORDS what loop8 writes (step 4c): the suite row of the rungs key of the container it graded, through util_score_row.py
 # from-progress (an incomplete population writes no row and says so); for a request-band job (pri 100) the verdict: the pending request of its seat that names its entries
 # moves to test_requests/done/ with graded=/rc= pairs and one served= line. S4E_GRADE_SCRATCH=<dir> sends every record write and the harness's progress rows to a scratch
@@ -18,12 +20,16 @@
 #                     grade_cell_after, the call the lease makes after record(); prints GRADE_SMOKE smoke_tsv= new_red_telegram= scratch= (rc 0 only if all three read 1)
 #   --probe-record    step 4c's probe: the same private daemon, a planted pending request in a scratch dir, one --once run with S4E_GRADE_SCRATCH; prints GRADE_RECORD
 #                     suite_row= verdict= scratch= (rc 0 only if all three read 1 and the request moved to done/)
+#   --probe-package   step 9's probe: the same private daemon, one job for the puzzles package (its first partition entry, a one-entry cell) in a scratch tube, one
+#                     --once run under strace with S4E_PROGRESS_OFF=1 and every progress path in a scratch copy; prints GRADE_WORKER package=1 runner=<runner>
+#                     launches=1 modes=m3,m4 deleted=1 (rc 0 only if it reads so; else GRADE_WORKER package RED: <what differed>)
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"; N=1; ONCE=0; TUBE=grade; PROBE=0; LOG=/home/resources/progress/GRADE_WORKERS.log
 while [ $# -gt 0 ]; do case "$1" in
     --once) ONCE=1; shift ;;
     --probe) PROBE=1; shift ;;
     --probe-record) PROBE=2; shift ;;
     --probe-smoke) PROBE=3; shift ;;
+    --probe-package) PROBE=4; shift ;;
     --tube) TUBE="${2:?REFUSE(2) [grade_worker]: --tube takes a tube name}"; shift 2 ;;
     -h|--help) awk 'NR>1 && !/^#/{exit} NR>1{print}' "${BASH_SOURCE[0]}"; exit 0 ;;
     [0-9]*) N="$1"; shift ;;
@@ -40,7 +46,7 @@ probe() {
     trap "kill $bpid 2>/dev/null; wait $bpid 2>/dev/null; rm -rf '$T'" EXIT
     for i in $(seq 1 50); do S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { up=1; break; }; sleep 0.1; done
     { [ "$up" = 1 ] && kill -0 "$bpid" 2>/dev/null; } || { echo "REFUSE(2) [grade_worker --probe]: a private beanstalkd would not start on port $port"; return 2; }
-    suite="$(awk -F'\t' '$4=="snobol4"{print $1; exit}' /home/resources/progress/SUITES.tsv)"
+    suite="$(awk -F'\t' '$2=="master" && $3=="snobol4"{print $1; exit}' "$S4E/harness/scripts/SUITE_RUNNERS.tsv")"
     entry="$(python3 -c 'import sys
 rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1]) if not l.startswith("#")]
 h = rows[0]
@@ -68,7 +74,7 @@ probe_record() {
     trap "kill $bpid 2>/dev/null; wait $bpid 2>/dev/null; rm -rf '$T'" EXIT
     for i in $(seq 1 50); do S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { up=1; break; }; sleep 0.1; done
     { [ "$up" = 1 ] && kill -0 "$bpid" 2>/dev/null; } || { echo "REFUSE(2) [grade_worker --probe-record]: a private beanstalkd would not start on port $port"; return 2; }
-    suite="$(awk -F'\t' '$4=="snobol4"{print $1; exit}' /home/resources/progress/SUITES.tsv)"
+    suite="$(awk -F'\t' '$2=="master" && $3=="snobol4"{print $1; exit}' "$S4E/harness/scripts/SUITE_RUNNERS.tsv")"
     entry="$(python3 -c 'import sys
 rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1]) if not l.startswith("#")]
 h = rows[0]
@@ -111,7 +117,40 @@ probe_smoke() {
     echo "GRADE_SMOKE smoke_tsv=$smoke new_red_telegram=$nrt scratch=$sc"
     [ "$smoke" = 1 ] && [ "$nrt" = 1 ] && [ "$sc" = 1 ]
 }
+probe_package() {
+    local port=$((21000 + ($$ % 20000))) bpid tube="grade-package-$$" T suite entry jid R L M D gone wrc up=0 i runner rfile pat
+    [ "$port" = 11300 ] && port=$((port + 1))
+    local dir="/tmp/s4e/${S4E_SEAT:-grade}"
+    mkdir -p "$dir" && T="$(mktemp -d "$dir/grade_package.XXXXXX")" || { echo "REFUSE(2) [grade_worker --probe-package]: cannot make $dir"; return 2; }
+    beanstalkd -l 127.0.0.1 -p "$port" >/dev/null 2>&1 & bpid=$!
+    trap "kill $bpid 2>/dev/null; wait $bpid 2>/dev/null; rm -rf '$T'" EXIT
+    for i in $(seq 1 50); do S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { up=1; break; }; sleep 0.1; done
+    { [ "$up" = 1 ] && kill -0 "$bpid" 2>/dev/null; } || { echo "REFUSE(2) [grade_worker --probe-package]: a private beanstalkd would not start on port $port"; return 2; }
+    suite=puzzles
+    runner="$(awk -F'\t' -v k="$suite" '$1 == k {print $4; exit}' "$S4E/harness/scripts/SUITE_RUNNERS.tsv")"
+    [ -n "$runner" ] && [ "$runner" != "-" ] || { echo "REFUSE(2) [grade_worker --probe-package]: no runner for $suite in SUITE_RUNNERS.tsv"; return 2; }
+    rfile="${runner%% *}"; pat="$(printf '%s' "$rfile" | sed 's/\./\\./g')"
+    entry="$(python3 -c 'import sys
+rows = [l.rstrip("\n").split("\t") for l in open(sys.argv[1]) if not l.startswith("#")]
+h = rows[0]
+print(rows[1][h.index("entry")])' "$S4E/corpus/packages/prolog/puzzles/PARTITION.tsv")" || { echo "REFUSE(2) [grade_worker --probe-package]: no entry in the puzzles partition"; return 2; }
+    jid="$(S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_grade_job.py" put --suite "$suite" --cell "entry:$entry" --band request --modes m3,m4 --tube "$tube" \
+        | sed -n 's/^job=\([0-9][0-9]*\) .*/\1/p')"
+    [ -n "$jid" ] || { echo "REFUSE(2) [grade_worker --probe-package]: util_grade_job.py put placed no job on $tube"; return 2; }
+    S4E_PROGRESS_OFF=1 S4E_GRADE_SCRATCH="$T/scratch" S4E_QUEUE_PORT="$port" strace -f -e trace=execve -s 4096 -o "$T/strace.txt" bash "${BASH_SOURCE[0]}" "$N" --once --tube "$tube" > "$T/worker.out" 2>&1; wrc=$?
+    R="$(grep -c '^GRADE_RESERVED ' "$T/worker.out")"; D="$(grep -c '^GRADE_DONE .*action=delete' "$T/worker.out")"
+    L="$(grep -c -E 'execve\("[^"]*bash", \["bash", "[^"]*util_run_slot\.sh", "bash", "[^"]*'"$pat"'"\].* = 0$' "$T/strace.txt")"
+    M="$(sed -n 's/^GRADE_RESERVED .* modes=\([^ ]*\).*/\1/p' "$T/worker.out" | head -1)"
+    S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" stats-job "$jid" > /dev/null 2>&1; gone=$?
+    if [ "$R" = 1 ] && [ "$L" = 1 ] && [ "$D" = 1 ] && [ "$gone" = 1 ] && [ "$M" = m3,m4 ]; then
+        echo "GRADE_WORKER package=1 runner=$runner launches=$L modes=$M deleted=$D"; return 0
+    fi
+    echo "GRADE_WORKER package RED: reserved=$R launches=$L modes=${M:-none} deleted=$D job_gone=$gone runner=$runner entry=$entry worker_rc=$wrc"
+    tail -n 12 "$T/worker.out" | sed 's/^/    /'
+    return 1
+}
 if [ "$PROBE" = 1 ]; then probe; exit $?; fi
+if [ "$PROBE" = 4 ]; then probe_package; exit $?; fi
 if [ "$PROBE" = 2 ]; then probe_record; exit $?; fi
 if [ "$PROBE" = 3 ]; then probe_smoke; exit $?; fi
 while :; do
@@ -145,7 +184,16 @@ def progress_name(key):
     r = subprocess.run([sys.executable, "-c", PN_PY, os.path.join(S4E, "harness", "scripts"), key], capture_output=True, text=True, env=ENV, timeout=120)
     return r.stdout.strip() or key
 def say(m): print(m, flush=True)
+RUNNERS = os.path.join(S4E, "harness", "scripts", "SUITE_RUNNERS.tsv")
+def runner_row(key):
+    for l in open(RUNNERS, encoding="utf-8"):
+        f = l.rstrip("\n").split("\t")
+        if len(f) == 5 and f[0] == key: return f
+    return None
 def lang_of(key):
+    row = runner_row(key)
+    if row is None: return None
+    if row[1] != "master": return row[2]
     for l in open(LIVE_PROG + "/SUITES.tsv"):
         f = l.rstrip("\n").split("\t")
         if len(f) > 3 and f[0] == key: return f[3]
@@ -204,23 +252,34 @@ def one():
     except Exception as e:
         why = "refused: unreadable job body (%s)" % e
     say("GRADE_RESERVED job=%d tube=%s suite=%s cell=%s modes=%s worker=%s" % (job.id, TUBE, suite, cell, modes, N))
-    rc = 2; lang = None; entries = []
+    rc = 2; lang = None; entries = []; row = runner_row(suite); kind = row[1] if row else "none"; words = []; script = ""
     if why is None:
         lang, part = lang_of(suite), part_of(cell)
         alls = os.path.join(S4E, "corpus", "tests", lang or "-", "ALL.%s" % EXT.get(lang, "-"))
         entries = cell[6:].split(",") if cell.startswith("entry:") else []
-        if lang not in EXT or part is None: why = "refused: suite %r lang %r cell %r" % (suite, lang, cell)
-        elif not os.path.isfile(alls): why = "refused: no container %s" % alls
+        if kind == "master":
+            if lang not in EXT or part is None: why = "refused: suite %r lang %r cell %r" % (suite, lang, cell)
+            elif not os.path.isfile(alls): why = "refused: no container %s" % alls
+        elif kind == "pkg":
+            words = row[3].split(); script = os.path.join(S4E, "harness", "scripts", words[0])
+            if part is None: why = "refused: package %r cell %r" % (suite, cell)
+            elif not os.path.isfile(script): why = "refused: no runner %s for %r" % (words[0], suite)
+        else: why = "refused: suite %r is kind %s in SUITE_RUNNERS.tsv (the grade worker launches master and pkg rows)" % (suite, kind)
     if why is None:
-        cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
-               "run", alls, os.path.join(os.path.dirname(alls), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
+        if kind == "master":
+            cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
+                   "run", alls, os.path.join(os.path.dirname(alls), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
+            senv = ENV
+        else:
+            cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "bash", script] + words[1:]
+            senv = dict(ENV, S4E_CHUNK=cell)
         d = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT", "grade"), "grade"); os.makedirs(d, exist_ok=True)
         res_path = ENV.get("S4E_RESULTS", LIVE_PROG + "/results.tsv")
         snap = os.path.join(d, "job.%d.snap.tsv" % job.id)
         if os.path.isfile(res_path): shutil.copyfile(res_path, snap)
         else: snap = ""
         with open(os.path.join(d, "job.%d.log" % job.id), "ab") as out:
-            p = subprocess.Popen(cmd, cwd=S4E, env=ENV, stdout=out, stderr=subprocess.STDOUT)
+            p = subprocess.Popen(cmd, cwd=S4E, env=senv, stdout=out, stderr=subprocess.STDOUT)
             last = time.time()
             while p.poll() is None:
                 time.sleep(1)
@@ -228,7 +287,9 @@ def one():
                     try: c.touch(job); last = time.time()
                     except Exception as e: say("GRADE_LEASE job=%d touch failed: %s" % (job.id, e))
         rc = p.returncode; why = None if rc in (0, 1) else "rc=%d from the harness launch" % rc
-        if rc in (0, 1):
+        if rc in (0, 1) and kind != "master":
+            say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=package runner writes its own rows" % job.id)
+        elif rc in (0, 1):
             if SCR or os.environ.get("S4E_PROGRESS_OFF") != "1":
                 try: sr, vd, sc, wy = record(lang, entries, pri, requester, tree)
                 except Exception as e: sr, vd, sc, wy = 0, 0, int(bool(SCR)), "record refused: %s" % e
