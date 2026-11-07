@@ -85,7 +85,7 @@ def counts(rows):
 
 def spawn_check(rows):
     if not os.path.isfile(SPAWN):
-        return "unmeasured", ["no spawn tool at " + SPAWN]
+        return "not-in-repo", []   # the spawn program is Lon's, in his home, not in a repo (Lon 2026-11-07 16:5x: "This is a program I run"); it reads TIERS.tsv by full path, so there is nothing here to compare
     try:
         p = subprocess.run(["bash", SPAWN, "--table"], capture_output=True, text=True, timeout=60)
     except subprocess.TimeoutExpired:

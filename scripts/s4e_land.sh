@@ -48,6 +48,15 @@
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF="$HERE/$(basename "${BASH_SOURCE[0]}")"
+# THE LANDER RUNS FROM A COPY OF ITSELF (worker_08 2026-11-07 16:1x, measured: the rebase stage moved the harness checkout the script was running from, bash reads a script by
+# offset as it goes, and git_state's definition moved out from under its call at the preflight; worker_16, worker_17 and worker_20 saw the same "command not found"). The first
+# process copies this file to the seat's scratch and re-executes the copy with S4E_LAND_SELF naming the original, so HERE and SELF still point at the harness checkout for the
+# libraries and the probes while the running text can no longer be rewritten by its own fetch and rebase. The admitted re-run below runs the same copy.
+if [ -z "${S4E_LAND_SELF:-}" ]; then
+    _lc="/tmp/s4e/${S4E_SEAT:-land}/land.self.$$.sh"; mkdir -p "$(dirname "$_lc")" && cp "$SELF" "$_lc" && S4E_LAND_SELF="$SELF" exec bash "$_lc" "$@"
+    echo "LAND REFUSE(2) could not copy $SELF to $_lc"; exit 2
+fi
+SELF="$S4E_LAND_SELF"; HERE="$(cd "$(dirname "$SELF")" && pwd)"; RUNNING_COPY="${BASH_SOURCE[0]}"
 ORDER=(SCRIP harness corpus .github)
 home=""; gate=""; row=""; gt=1800; tries=3; mode=land; names=(); touches=""; proved=""
 refuse() { echo "LAND REFUSE(2) $*"; [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"; exit 2; }
@@ -78,7 +87,7 @@ done
 [ -n "$home" ] || home="$(cd "$HERE/../.." && pwd)"
 PROBE_GREEN="${S4E_LAND_PROBE_GREEN:-/home/resources/progress/LAND_PROBE_GREEN.tsv}"   # hash, utc, seat, stages: one green probe per lander hash, box-wide
 if [ "$mode" = land ] && [ -z "${S4E_ADMITTED:-}" ] && [ -z "${S4E_LAND_UNADMITTED:-}" ]; then   # fleet-control step 3 (the cio 2026-11-07): two landings build and gate at once on the box, through GNU sem class land (SLOTS.tsv); a third waits at the door, bounded; a refusal lands nothing
-    exec bash "$HERE/util_run_slot.sh" --admit land bash "$SELF" "${ORIG_ARGS[@]}"
+    exec bash "$HERE/util_run_slot.sh" --admit land bash "$RUNNING_COPY" "${ORIG_ARGS[@]}"
 fi
 [ -n "$home" ] || refuse "--home is empty: name the root that holds SCRIP harness corpus and .github (worker_02 2026-11-07 16:0x: a backgrounded shell passed an unset variable)"
 home="$(cd "$home" 2>/dev/null && pwd)" || refuse "no root at $home"

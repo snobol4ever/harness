@@ -217,6 +217,21 @@ def entry_rcs(db, entries, lang):
         f = line.rstrip("\n").split("\t")
         if len(f) > 9 and f[6] == lang and f[7] in entries and f[8] in ("m3", "m4"): last[(f[7], f[8])] = f[9]
     return {e: (0 if last.get((e, "m3")) == "PASS" and last.get((e, "m4")) == "PASS" else 1) for e in entries}
+def move_request(key, lang, entries, pri, requester, tree):
+    """a request-band job's .req moves to done/ with graded=, rc= and served= lines, for a PACKAGE cell as for a master (the coo 2026-11-07 16:23: jobs 1147, 1172, 1173, 1214
+    were deleted with their .req left standing, so a seat waiting on a package verdict never saw one); the rows themselves are the package runner's. Returns verdict 0|1."""
+    if pri != 100 or not entries: return 0
+    path, txt = pending_request(requester, key, entries)
+    if path is None: return 0
+    rcs = entry_rcs(ENV.get("S4E_PROGRESS_DB", LIVE_PROG + "/results.tsv"), entries, lang)
+    overall = 0 if all(v == 0 for v in rcs.values()) else 1
+    body = list(txt)
+    for e in entries: body += ["graded=%s" % e, "rc=%d" % rcs[e]]
+    body.append("served=%s tree=%s rc=%d rows=%d" % (time.strftime("%Y-%m-%d %H:%M:%S CST"), tree, overall, len(entries)))
+    done = os.path.join(os.path.dirname(path), "done", os.path.basename(path))
+    os.makedirs(os.path.dirname(done), exist_ok=True)
+    with open(done, "w", encoding="utf-8") as f: f.write("\n".join(body) + "\n")
+    os.remove(path); return 1
 def record(lang, entries, pri, requester, tree):
     key = CONTAINER.get(lang)
     scratch = int(bool(SCR) and all(v.startswith(SCR + "/") for v in SENV.values()))
@@ -305,7 +320,9 @@ def one():
                 if rc not in (0, 1): break
         why = None if rc in (0, 1) else "rc=%d from the harness launch" % rc
         if rc in (0, 1) and kind != "master":
-            say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=package runner writes its own rows" % job.id)
+            try: pvd = move_request(suite, lang, entries, pri, requester, tree)
+            except Exception as e: pvd = 0; say("RECORD job=%d package request not moved: %s" % (job.id, e))
+            say("RECORD job=%d key=- suite_row=0 verdict=%d scratch=0 reason=package runner writes its own rows; the request moves to done/ here" % (job.id, pvd))
         elif rc in (0, 1):
             if SCR or os.environ.get("S4E_PROGRESS_OFF") != "1":
                 try: sr, vd, sc, wy = record(lang, entries, pri, requester, tree)
