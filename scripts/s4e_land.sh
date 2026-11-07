@@ -415,7 +415,7 @@ probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-
 # the tree is rebased there -- a move under the row's affected set drops the lease and re-runs the gate unleased, a move outside it pushes the rebased tree with the
 # gate standing (the merge-queue shape: optimistic gating, serialized pushing). A lease is held for the seconds a fetch, a rebase and four pushes take, never a gate.
 lease="${S4E_POSTOFFICE:-/home/resources/postoffice}/.land.lease"; lw="${S4E_LAND_LEASE_WAIT:-1800}"; lease_since=0
-exec 8>> "$lease" 2>/dev/null || refuse "cannot open the landing lease $lease"
+{ exec 8>> "$lease"; } 2>/dev/null || refuse "cannot open the landing lease $lease"   # the 2>/dev/null is scoped to the group: a bare `exec 8>>f 2>/dev/null` silenced the lander's stderr for the rest of the run (every REFUSE after it, the mail guard's first) -- the "silent rc 2 after preflight" of 2026-11-07, found 15:2x
 take_lease() {
     if ! flock -n 8; then
         echo "LAND stage=lease waiting: held by $(tail -1 "$lease" 2>/dev/null | cut -c1-120); the lease serializes the pushes box-wide, never a gate (box-scheduler step 18; up to $lw s)"
