@@ -1416,6 +1416,63 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     ls "$po/$ME/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
     [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=ASSIGNED:plant-lander telegram=1 (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat with a ledger line and a telegram)"; exit 0; }
     echo "PARK PROBE RED:$why"; exit 1; }
+s4e_released_state() {   # <topic> -> the QUEUE.tsv state a row reads once its claim is released (row 618, the cio 2026-11-07): QUEUED:<tube> while its QUEUE-JOB is in its tube, else FREE
+  # A RESERVED job counts as in its tube: the holder that reserved it (util_queue.py reserve-hold) releases it the moment the claim file is gone, so a reserved job is about to be ready. Reading "ready" alone wrote FREE in that window.
+  local _j _id _tube _st
+  _j="$(s4e_baton_job_get "$1")"; _id="${_j%% *}"
+  case "$_j" in *tube=*) _tube="${_j##*tube=}";; *) echo FREE; return 0;; esac
+  case "$_id" in ''|*[!0-9]*) echo FREE; return 0;; esac
+  _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_id" 2>/dev/null | cut -f3)"
+  case "$_st" in ready|reserved) echo "QUEUED:$_tube";; *) echo FREE;; esac
+}
+s4e_sweep_repair_columns() {   # row 618 CHANGE 2 (the cio 2026-11-07): a QUEUE.tsv row reading CLAIMED:<seat> or ASSIGNED:<seat> with NO claim file behind it is repaired to what a released row reads (s4e_released_state), one ledger line per repair; prints SWEEP repaired column count=N
+  local _q="$PO/QUEUE.tsv" _todo _t _st _new _n=0
+  [ -f "$_q" ] || { echo "SWEEP repaired column count=0"; return 0; }
+  # the targets are read BEFORE any write: a repair rewrites QUEUE.tsv, and a read loop over the file it rewrites would skip rows
+  _todo="$(awk -F'\t' '$1 !~ /^#/ && $4 ~ /^(CLAIMED|ASSIGNED):/ {print $2 "\t" $4}' "$_q")"
+  while IFS=$'\t' read -r _t _st; do
+    [ -n "$_t" ] || continue
+    [ -e "$PO/claims/$_t.claim" ] && continue
+    _new="$(s4e_released_state "$_t")"
+    s4e_set_row_state "$_t" "$_new" || continue
+    [ -f "$PO/tasks/$_t.task.md" ] && printf '\n- [%s·%s] SWEEP repaired column %s -> %s (no claim file)\n' "$ME" "$(date -u +%FT%TZ)" "$_st" "$_new" >> "$PO/tasks/$_t.task.md"
+    printf 'SWEEP repaired column %s %s -> %s (no claim file)\n' "$_t" "$_st" "$_new"; _n=$((_n+1))
+  done <<< "$_todo"
+  echo "SWEEP repaired column count=$_n"
+}
+s4e_unclaim_plant_column() {   # unclaim --probe-column (row 618, the cio 2026-11-07): (a) a reserved row that unclaim releases reads QUEUED:<tube>; (b) a jobless claimed row reads FREE; (c) a planted CLAIMED column with no claim file is repaired by one sweep pass (sweep_repaired=1). A PRIVATE beanstalkd on a free port and a scratch postoffice; the live queue is never written
+  local _w _port _i _up=0 _seat=worker_20 _tube=tier-haiku _now _ta _tb _tc _ja _x _o _ca _cb _cn _ok=1 _why=""
+  _port=$((21000 + ($$ % 20000)))
+  beanstalkd -l 127.0.0.1 -p "$_port" 9>&- >/dev/null 2>&1 & _bpid=$!
+  trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
+  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+  { [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; }
+  export S4E_QUEUE_PORT="$_port"
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_unclaim_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$_seat/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
+  _ta="unclaim-plant-reserved-$$"; _tb="unclaim-plant-jobless-$$"; _tc="unclaim-plant-column-$$"
+  _ja="$(s4e_queue_put "$_tube" "$_ta" 1002 3600)"
+  [ -n "$_ja" ] || { echo "REFUSE(2): the private daemon refused the put"; rm -rf "$_w"; exit 2; }
+  for _x in "$_ta" "$_tb" "$_tc"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$_now" > "$_w/tasks/$_x.task.md"; done
+  printf '2\t%s\t@haiku\tQUEUED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n' "$_ta" "$_tube" "$_tb" "$_seat" "$_tc" "$_seat" > "$_w/QUEUE.tsv"
+  # (a) the seat's own next reserves the job and takes the claim; its unclaim releases the row
+  _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
+  printf '%s\n' "$_o" | grep -q "^RESERVED $_ta " || { _ok=0; _why="$_why next did not reserve the planted job;"; }
+  _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" unclaim "$_ta" 2>&1)"
+  _ca="$(awk -F'\t' -v t="$_ta" '$2 == t {print $4; exit}' "$_w/QUEUE.tsv")"
+  [ "$_ca" = "QUEUED:$_tube" ] || { _ok=0; _why="$_why the reserved row reads '$_ca' after unclaim, not QUEUED:$_tube;"; }
+  [ -e "$_w/claims/$_ta.claim" ] && { _ok=0; _why="$_why its claim file survived unclaim;"; }
+  # (b) a jobless claimed row: its own claim, no QUEUE-JOB on its baton
+  printf '%s\n' "$_seat" > "$_w/claims/$_tb.claim"
+  _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" unclaim "$_tb" 2>&1)"
+  _cb="$(awk -F'\t' -v t="$_tb" '$2 == t {print $4; exit}' "$_w/QUEUE.tsv")"
+  [ "$_cb" = FREE ] || { _ok=0; _why="$_why the jobless row reads '$_cb' after unclaim, not FREE;"; }
+  # (c) a CLAIMED column with no claim file behind it: one sweep pass repairs it
+  _cn="$( (export S4E_POST="$_w"; PO="$_w"; s4e_sweep_repair_columns) | sed -n 's/^SWEEP repaired column count=//p')"
+  [ "$_cn" = 1 ] || { _ok=0; _why="$_why the sweep repaired ${_cn:-none} columns, not 1;"; }
+  if [ "$_ok" = 1 ]; then printf 'UNCLAIM column_after=%s jobless_after=%s sweep_repaired=%d\n' "${_ca%%:*}" "${_cb%%:*}" "${_cn:-0}"; rm -rf "$_w"; return 0; fi
+  printf 'UNCLAIM-RED column_after=%s jobless_after=%s sweep_repaired=%s why:%s\n' "$_ca" "$_cb" "${_cn:-0}" "$_why"; printf '%s\n' "$_o" | tail -5 | sed 's/^/  | /'; rm -rf "$_w"; return 1
+}
 s4e_sweep_orphans() { for _o in "$PO"/.msg.*; do [ -f "$_o" ] || continue
     _h="$(head -1 "$_o")"; _to="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO \([^ ]*\) RE .*$/\1/p')"
     _tp="$(printf '%s' "$_h" | sed -n 's/^FROM [^ ]* TO [^ ]* RE \([^ :]*\).*$/\1/p')"
@@ -3285,6 +3342,7 @@ case "$cmd" in
          # silently removed a row from the whole fleet's reach. ⛔ REFUSES a claim that is DONE (that is a receipt, not
          # a lock) and one you do not own. The release is APPENDED to the baton's LEDGER, so a lock that was taken and
          # returned leaves a trace instead of vanishing.
+         [ "${2:-}" = --probe-column ] && { s4e_unclaim_plant_column; exit $?; }
          [ -n "${2:-}" ] || s4e_need unclaim "a topic" "s4e_msg.sh unclaim <topic>" "Returns a held row FREE with a receipt under released/. It is the stand-down verb, and the only exit from a row you have not worked."
          topic="$2"; c="$PO/claims/$topic.claim"; q="$PO/QUEUE.tsv"
          [ -f "$c" ] || { echo "no claim on $topic — nothing to release"; exit 1; }
@@ -3339,11 +3397,11 @@ case "$cmd" in
          # untouched for them. Any other column value (SUPERSEDED*, BLOCKED-ON:*, PARKED-AWAITING:*, PARKED*, RETIRED,
          # GRANT-NEEDED*, RESTRICTED:*) is a park somebody wrote deliberately around the lock: it is KEPT and the receipt
          # names it. Gate: test_gate_s4e_unclaim_keeps_park.sh (both arms, throwaway postoffice, fail-once on a mutated copy).
-         { _rst="$(grep -m1 '^PRIOR-STATE ' "$c" 2>/dev/null | sed 's/^PRIOR-STATE //')"; _cur="$(s4e_row_state "$topic")"; _kept=""
+         { _rst="$(grep -m1 '^PRIOR-STATE ' "$c" 2>/dev/null | sed 's/^PRIOR-STATE //')"; _cur="$(s4e_row_state "$topic")"; _kept=""; _rel=""
            case "$_cur" in
              CLAIMED:*|ASSIGNED|ASSIGNED:*|FREE|"")
-               if [ -n "$_rst" ] && s4e_restricted_to "$_rst" >/dev/null; then s4e_set_row_state "$topic" "$_rst" || true
-               else s4e_set_row_state "$topic" "FREE" || true; fi;;
+               if [ -n "$_rst" ] && s4e_restricted_to "$_rst" >/dev/null; then _rel="$_rst"
+               else _rel="$(s4e_released_state "$topic")"; fi;;
              *) _kept="$_cur"; echo "⭐ QUEUE.tsv column KEPT as '$_cur' — a park written around this claim survives its release (only a claim-shaped column is driven to FREE)";;
            esac
            [ -z "$_kept" ] || why="$why (QUEUE.tsv column kept as $_kept)"; }
@@ -3364,7 +3422,13 @@ case "$cmd" in
          # is free" from "this row is free BECAUSE I just let it go". Written after every refusal above has been
          # passed, so a REFUSED unclaim leaves no receipt and cannot hide a row from anyone.
          s4e_release_receipt "$topic"
-         rm -f "$c"; echo "released $topic — $why";;
+         rm -f "$c"
+         # THE COLUMN IS WRITTEN AFTER THE CLAIM FILE GOES (row 618, the cio 2026-11-07; MEASURED 2026-11-07 on a scratch probe before this cure:
+         # the FREE write was made while the claim still existed, s4e_set_row_state regenerates the view, and util_queue_view's claim rule outranks
+         # a stale STATE, so the row read CLAIMED:<holder> and stayed so once the claim file was gone). A released row reads QUEUED:<tube> while its
+         # job is in its tube (s4e_released_state), else the restriction it carried, else FREE; a park written around the claim is kept (_kept above).
+         [ -n "${_rel:-}" ] && { s4e_set_row_state "$topic" "$_rel" || true; }
+         echo "released $topic — $why";;
   park)  # ⭐ s265 — TAKE A ROW OUT OF THE PICKER WITHOUT CLOSING IT. Minted with `unclaim`, same day, same cause:
          # `161-o2-red` was PARKED BY LON at s258 and its baton said so, yet QUEUE.tsv still carried it as rank-0 FREE,
          # so the rank-sorted picker served it as the TOPMOST work in the fleet. seat08 read the ruling, refused it,
@@ -5297,6 +5361,7 @@ TASKEOF
          s4e_queue_view   # fleet-queue step 12: the sweep's move regenerates the view too
          rm -f "$gone"; printf 'sweep: %s live rows kept, %s DONE rows moved to QUEUE.done.tsv (nothing deleted; buffer backed up)\n' "$nk" "$ng"
          s4e_sweep_verdicts   # box-scheduler step 31: a PARKED-AWAITING:<request-id> row returns to its seat when the verdict is in
+         s4e_sweep_repair_columns   # row 618 (the cio 2026-11-07): a CLAIMED or ASSIGNED column with no claim file behind it is repaired, one ledger line each
          _mc="$(dirname "${BASH_SOURCE[0]}")/util_mode_cap.sh"   # box-scheduler step 14: MODE capped to its header, the history archived; the sweep keeps it so
          S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --check > /dev/null 2>&1 || S4E_POST="$PO" S4E_SEAT="$ME" bash "$_mc" --apply 2>&1 | sed 's/^/sweep: /'
          _bc="$(dirname "${BASH_SOURCE[0]}")/util_baton_check.py"   # box-scheduler step 15: every baton NEXT under the cap, SUPERSEDED blocks archived; the sweep keeps it so
