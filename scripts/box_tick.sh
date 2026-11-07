@@ -10,7 +10,7 @@
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
 #   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
-#   box_tick.sh --probe-cost  the tick's cost arm on a scratch dir: a quiet tick (view=unchanged, sweep=read, cpu_s under 3) and the tenth tick (sweep=ran); one TICK_COST line; writes only scratch
+#   box_tick.sh --probe-cost  the tick's cost arm on a scratch dir: a quiet tick (view=kept, sweep=read, cpu_s under 3) and the tenth tick (sweep=ran); one TICK_COST line; writes only scratch
 #   box_tick.sh --probe-wake-rate  the wake rate arm: five planted tier-4 seats, three --wake passes; one WAKE_RATE line (2, 2, 1 at S4E_WAKE_RATE=2); plant jobs deleted
 #   box_tick.sh --probe-act  tick-act's arm (dry, scratch): one planted ACTUATOR line of each of the eight kinds through box_act.sh (the copy of the controller's apply and BOX.state); one ACT line, want arms=8
 #   box_tick.sh --probe-scale  step 4e's arm (dry, a scratch tick dir, width 3): the absent switch leaves no grade worker running; the on switch starts s4e-grade-worker@1..3 and stops none; one SCALE line
@@ -170,10 +170,14 @@ tick() {
   [ -f "$OLD/decide.last" ] && old_age=$(( $(date +%s) - $(stat -c %Y "$OLD/decide.last") ))
   { printf '%s TICK law=%s agree=%s/%s old_age_s=%s plant=%s\n' "$stamp" "$law" "$agree" "$n" "$old_age" "$(printf '%s' "$plant_out" | tail -1 | cut -c1-120)"; sed "s/^/$stamp /" "$TICK_DIR/decide.last"; } >> "$TICK_DIR/shadow.log"
   [ "$(wc -l < "$TICK_DIR/shadow.log")" -gt 20000 ] && { tail -n 10000 "$TICK_DIR/shadow.log" > "$TICK_DIR/shadow.tmp" && mv "$TICK_DIR/shadow.tmp" "$TICK_DIR/shadow.log"; }
-  vst=$(view_stamp)   # fleet-queue step 12: QUEUE.tsv regenerated when its inputs moved since the last tick, else the TICK line says view=unchanged
-  if [ "$vst" = "$(cat "$TICK_DIR/view.stamp" 2>/dev/null)" ]; then view=unchanged
-  elif python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1; then printf '%s' "$vst" > "$TICK_DIR/view.stamp"; view=regenerated
-  else view=failed; fi
+  # ⭐ THE VIEW CADENCE (the cio's cut, row fleet-tick-regenerates-the-queue-view-every-tick, 2026-11-07): the view is regenerated on
+  # every Nth tick (S4E_VIEW_EVERY, default 5) and on demand (--tick --force-view); the ticks between keep the last view (the
+  # dispatcher and the Stop gate already read QUEUE.tsv as it was written). The stamp test that regenerated on every working tick is retired.
+  if [ "${S4E_VIEW_FORCE:-0}" = 1 ] || [ $(( tkn % ${S4E_VIEW_EVERY:-5} )) -eq 0 ]; then
+    if [ "${S4E_TICK_DRY:-0}" = 1 ]; then view=regenerated
+    elif vst=$(view_stamp) && python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1; then printf '%s' "$vst" > "$TICK_DIR/view.stamp"; view=regenerated
+    else view=failed; fi
+  else view=kept; fi
   if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; scale_grade_workers > "$TICK_DIR/scale.last" 2>&1; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
   if [ $(( tkn % ${S4E_PLANT_EVERY:-10} )) -eq 0 ]; then   # the plant sweep is a self-test: every tenth tick only, the others carry the last reading
     swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
@@ -194,6 +198,17 @@ tick() {
 }
 
 tick_tok() { printf '%s\n' "$2" | tr ' ' '\n' | sed -n "s/^$1=//p" | head -1; }
+probe_view() {   # --probe-view (the cio's cut, row fleet-tick-regenerates-the-queue-view-every-tick, 2026-11-07): five dry ticks on a scratch tick dir; the view regenerates on the Nth tick only (S4E_VIEW_EVERY, default 5) and is kept between. The dry path never calls util_queue_view.py or a live tube. One TICK_VIEW line; rc 0 when kept=4 regenerated=1 of 5.
+  local w k l v kept=0 regen=0
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_tick_view.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  for k in 1 2 3 4 5; do
+    l=$(S4E_TICK_DRY=1 S4E_SEAT="${S4E_SEAT:-worker_05}" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --tick 2>/dev/null | grep '^TICK unit=' | tail -1)
+    v=$(tick_tok view "$l")
+    case "$v" in kept) kept=$((kept + 1));; regenerated) regen=$((regen + 1));; esac
+  done
+  echo "TICK_VIEW kept=$kept regenerated=$regen of 5"
+  rm -rf "$w"; [ "$kept" = 4 ] && [ "$regen" = 1 ]
+}
 probe_cost() {   # the tick's cost arm (the coo's ruling 2026-11-07, row tick-costs-13-to-20-s-cpu): a scratch tick dir and the dry path. A quiet tick (counter 5 becomes 6) with the view stamp planted from the live state: view=unchanged, sweep=read, cpu_s printed and under 3. The tenth tick (counter 9 becomes 10) runs the plant sweep: sweep=ran. Writes only scratch
   local w l1 l2 v1 s1 c1 s2 same=0 printed=0 under=0 ran=0 plant_every=${S4E_PLANT_EVERY:-10}
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_tick_cost.XXXXXX")" || return 2
@@ -203,7 +218,7 @@ probe_cost() {   # the tick's cost arm (the coo's ruling 2026-11-07, row tick-co
   l2=$(S4E_TICK_DRY=1 S4E_SEAT="${S4E_SEAT:-worker_18}" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --tick 2>/dev/null | grep '^TICK unit=' | tail -1)
   rm -rf "$w"
   v1=$(tick_tok view "$l1"); s1=$(tick_tok sweep "$l1"); c1=$(tick_tok cpu_s "$l1"); s2=$(tick_tok sweep "$l2")
-  [ "$v1" = unchanged ] && same=1
+  [ "$v1" = kept ] && same=1
   printf '%s' "$c1" | grep -qE '^[0-9]+\.[0-9]+$' && printed=1
   [ "$printed" = 1 ] && awk -v c="$c1" 'BEGIN {exit !(c < 3)}' && under=1
   [ "$s2" = ran ] && ran=1
@@ -318,7 +333,8 @@ probe_act() {   # tick-act's probe (the cio's ruling 2026-11-07): a scratch S, B
   printf 'ACT dry=1 width_written=%s box_state_written=%s arms=%s\n' "$wid" "$bst" "$a"
   [ "$wid" = 1 ] && [ "$bst" = 1 ] && [ "$a" = 8 ]; }
 case "${1:-}" in
-  --tick) tick; exit $?;;
+  --tick) [ "${2:-}" = --force-view ] && S4E_VIEW_FORCE=1; tick; exit $?;;
+  --probe-view) probe_view; exit $?;;
   --probe-act) probe_act; exit $?;;
   --probe-scale) probe_scale; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
