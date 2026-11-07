@@ -54,12 +54,17 @@ if [ -z "$ME" ]; then case "$S4E" in
     *)                      ME="$(basename "$S4E")";; esac; fi
 m="$(head -1 "$PO/MODE" 2>/dev/null)"
 if [ -n "$m" ]; then printf 'MODE: %s (computed from %s/MODE -- never assume a mode from prose)\n' "$m" "$PO"; else printf '⛔ MODE FILE ABSENT (%s/MODE) -- do not assume a mode; ask the officer.\n' "$PO"; fi
-d="$PO/$ME/inbox"
-n=$(ls "$d"/*.msg 2>/dev/null | wc -l)
-if [ "$n" -gt 0 ]; then
-  printf '⛔ POSTOFFICE [%s] -- %s UNREAD. THE LOOP step 1 binds BEFORE anything else: read, then ACT OR REPLY, then clear (an empty inbox IS the acknowledgement). Reading without replying is NOT answering -- that is the s261 failure this hook exists to prevent.\n' "$ME" "$n"
-  for f in "$d"/*.msg; do head -1 "$f"; done
+d="$PO/$ME/inbox"; lc="$PO/$ME/.last-check"; u=0; r=0; heads=""
+# ⛔ THE READ MARK IS CHECK'S OWN RECORD (fleet-bus; the cio's ruling on row bus-the-unread-banner-names-an-old-message): a message check has displayed is listed in .last-check and is never named here again
+for f in "$d"/*.msg; do [ -f "$f" ] || continue
+  if grep -qxF "$(basename "$f")" "$lc" 2>/dev/null; then r=$((r+1)); else u=$((u+1)); heads="$heads$(head -1 "$f")
+"; fi; done
+if [ "$u" -gt 0 ]; then
+  printf '⛔ POSTOFFICE [%s] -- %s UNREAD, %s read not cleared. THE LOOP step 1 binds BEFORE anything else: read, then ACT OR REPLY, then clear (an empty inbox IS the acknowledgement). Reading without replying is NOT answering -- that is the s261 failure this hook exists to prevent.\n' "$ME" "$u" "$r"
+  printf '%s' "$heads"
   printf 'bodies: bash %s/harness/scripts/s4e_msg.sh check   |   after acting: bash %s/harness/scripts/s4e_msg.sh clear\n' "$S4E" "$S4E"
+elif [ "$r" -gt 0 ]; then
+  printf '[%s] %s read, not cleared; bash %s/harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$r" "$S4E"
 else
   printf '✅ POSTOFFICE [%s] -- inbox empty. That IS the acknowledgement; nothing owed.\n' "$ME"
 fi

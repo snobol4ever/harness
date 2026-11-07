@@ -2998,10 +2998,11 @@ _bfd=1; case "$cmd" in whoami) _bfd=2;; esac
 # ("N read, not cleared") until a new message arrives; announced-but-unread mail is one line too. The shout itself is kept: every arrival is announced
 # once, on whatever verb runs next, on the same stream as before.
 case "$cmd" in check|clear) ;; *)
-  _an="$PO/$ME/.banner.announced"; _lc="$PO/$ME/.last-check"; _n=0; _new=0; _unread=0; _nl=""; _keep=""
+  _an="$PO/$ME/.banner.announced"; _lc="$PO/$ME/.last-check"; _n=0; _new=0; _unread=0; _read=0; _nl=""; _keep=""
   for _f in "$PO/$ME/inbox"/*.msg; do [ -f "$_f" ] || continue; _b="$(basename "$_f")"; _n=$((_n+1)); _keep="$_keep$_b
 "
-    grep -qxF "$_b" "$_lc" 2>/dev/null || _unread=$((_unread+1))
+    if grep -qxF "$_b" "$_lc" 2>/dev/null; then _read=$((_read+1)); continue; fi   # a message check has displayed is read: never named again (fleet-bus)
+    _unread=$((_unread+1))
     grep -qxF "$_b" "$_an" 2>/dev/null && continue
     _new=$((_new+1)); _nl="$_nl    $(head -1 "$_f")
 "; done
@@ -3009,8 +3010,8 @@ case "$cmd" in check|clear) ;; *)
   if [ "$_new" -gt 0 ]; then
     { printf '\n⛔⛔⛔ %s HAS %s UNREAD HQ MESSAGE(S) — READ THEM BEFORE ANYTHING ELSE ⛔⛔⛔\n%s' "$ME" "$_new" "$_nl"
       printf '    bash harness/scripts/s4e_msg.sh check      <- do this now\n\n'; } >&$_bfd
-  elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_n" >&$_bfd
-  elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread (announced above once); bash harness/scripts/s4e_msg.sh check\n' "$ME" "$_unread" >&$_bfd; fi ;;
+  elif [ "$_n" -gt 0 ] && [ "$_unread" = 0 ]; then printf '[%s] %s read, not cleared; bash harness/scripts/s4e_msg.sh clear archives them\n' "$ME" "$_read" >&$_bfd
+  elif [ "$_n" -gt 0 ]; then printf '[%s] %s unread, %s read not cleared (announced above once); bash harness/scripts/s4e_msg.sh check\n' "$ME" "$_unread" "$_read" >&$_bfd; fi ;;
 esac
 # ⭐ ONE PROTOCOL NUMBER, HOISTED (2026-08-29, row s4e-clear-needs-protocol-version-guard): next() and clear() both
 # guard on it now, and two inline copies of one value is the drift class this file convicts elsewhere. Bump it HERE and

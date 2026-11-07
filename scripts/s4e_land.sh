@@ -61,6 +61,7 @@ while [ $# -gt 0 ]; do
         --merge-probe) mode=merge_probe; shift ;;
         --probe-push-refusal) mode=probe_push_refusal; shift ;;
         --probe-serial) mode=probe_serial; shift ;;
+        --probe-mail) mode=probe_mail; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -332,7 +333,32 @@ GATE
     echo "LAND serial-probe ok attempts=3 serial_round=1 regate=lease:serial held_s=$h landed=1 waiter_named=1"
     exit 0
 }
+mail_guard() {   # ⛔ A STOP ORDER LANDS BEFORE THE LANDING (fleet-bus; the cio's ruling on row bus-the-unread-banner-names-an-old-message): rc 2 while seat $2 holds unread mail under PO $1 newer than its claim $3 (any unread mail when there is no claim); a message listed in the seat's .last-check was displayed by check, so it is read
+    local po="$1" sd="$2" claim="$3" f b names=""
+    for f in "$po/$sd/inbox"/*.msg; do [ -f "$f" ] || continue; b="$(basename "$f")"
+        grep -qxF "$b" "$po/$sd/.last-check" 2>/dev/null && continue
+        if [ -n "$claim" ] && [ -f "$claim" ]; then [ "$f" -nt "$claim" ] || continue; fi
+        names="$names $b"; done
+    [ -z "$names" ] && return 0
+    echo "REFUSE(2): unread mail newer than your claim:$names; read it (bash harness/scripts/s4e_msg.sh check) before landing, or S4E_LAND_IGNORE_MAIL=\"why\" is loud and goes into the baton LEDGER" >&2
+    return 2; }
+probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-names-an-old-message): (a) unread mail newer than the claim refuses; (b) after check reads it the guard passes; (c) the hook names no message check has read, and after a new arrival names only that arrival
+    local sc="/tmp/s4e/${S4E_SEAT:-worker}/land-mail.$$" po me=probe-mail rf=0 rp=0 rb=0 h1 h2
+    po="$sc/po"; mkdir -p "$po/$me/inbox" "$po/claims" || return 2
+    printf '# probe\n' > "$po/MODE"; printf 'claim\n' > "$po/claims/t-mail.claim"; touch -d @1000000000 "$po/claims/t-mail.claim"
+    printf 'FROM coo TO %s RE m1-stop-order\nbody\n' "$me" > "$po/$me/inbox/1-m1.msg"; touch -d @2000000000 "$po/$me/inbox/1-m1.msg"
+    mail_guard "$po" "$me" "$po/claims/t-mail.claim" 2>/dev/null || rf=1
+    S4E_POST="$po" S4E_SEAT="$me" S4E_NO_BANNER=1 bash "$HERE/s4e_msg.sh" check > /dev/null 2>&1
+    mail_guard "$po" "$me" "$po/claims/t-mail.claim" 2>/dev/null && rp=1
+    h1="$(S4E_HOME="$sc/noharness" S4E_POST="$po" S4E_SEAT="$me" bash "$HERE/s4e_inbox_hook.sh" 2>/dev/null)"
+    printf 'FROM coo TO %s RE m2-new-arrival\nbody\n' "$me" > "$po/$me/inbox/2-m2.msg"; touch -d @2000000100 "$po/$me/inbox/2-m2.msg"
+    h2="$(S4E_HOME="$sc/noharness" S4E_POST="$po" S4E_SEAT="$me" bash "$HERE/s4e_inbox_hook.sh" 2>/dev/null)"
+    if [ "${h1#*RE m1-stop-order}" = "$h1" ] && [ "${h2#*RE m2-new-arrival}" != "$h2" ] && [ "${h2#*RE m1-stop-order}" = "$h2" ]; then rb=1; fi
+    rm -rf "$sc"
+    printf 'LAND_MAIL unread_newer_refuses=%s read_passes=%s banner_names_new_only=%s\n' "$rf" "$rp" "$rb"
+    [ "$rf$rp$rb" = 111 ]; }
 [ "$mode" = probe ] && probe
+[ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
 [ "$mode" = probe_serial ] && probe_serial
 [ "$mode" = merge_probe ] && merge_probe
@@ -617,6 +643,14 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     drop_lease "(pushed ${pushed[*]:-nothing})"
     return 0
 }
+if [ "$mode" = land ]; then   # a stop order lands before the landing: unread mail newer than the claim refuses (the bypass is loud, in the LEDGER)
+    mpo="${S4E_POST:-/home/resources/postoffice}"; claim=""; [ -n "$row" ] && claim="$mpo/claims/$row.claim"
+    if mail_guard "$mpo" "$seat" "$claim" 2>/dev/null; then :
+    elif [ -n "${S4E_LAND_IGNORE_MAIL:-}" ]; then
+        echo "LAND over unread mail (S4E_LAND_IGNORE_MAIL): $S4E_LAND_IGNORE_MAIL"
+        [ -n "$row" ] && printf -- '- %s LAND over unread mail: %s\n' "$(date -u +%FT%TZ)" "$S4E_LAND_IGNORE_MAIL" >> "$tf"
+    else mail_guard "$mpo" "$seat" "$claim" || exit 2; fi
+fi
 while :; do
     if land_round; then break; fi
     rejected=$((rejected + 1)); attempt=$((attempt + 1))
