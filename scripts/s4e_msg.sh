@@ -387,7 +387,7 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
     local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
     _watch="seat-$ME,ask-$_tier,tier-$_tier"
-    _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout 0 2>/dev/null && return 0; [ $? = 3 ] || return 1; done; return 1; }
+    _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout 0 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }
     _res="$(_rh "$_watch")"
     [ -n "$_res" ] || return 1
     _id="$(printf '%s' "$_res" | cut -f1)"; _tube="$(printf '%s' "$_res" | cut -f2)"; _pri="$(printf '%s' "$_res" | cut -f3)"; _topic="$(printf '%s' "$_res" | cut -f4)"
