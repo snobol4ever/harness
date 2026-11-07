@@ -111,8 +111,14 @@ ask_probe() {
         case "$sl" in "QUEUE daemon=beanstalkd"*) ready=1; break;; esac; sleep 0.1; done
     [ "$ready" = 1 ] || { echo "REFUSE(2) [ask --probe-queue]: a scratch beanstalkd would not start on port $port"; exit 2; }
     export S4E_QUEUE_PORT="$port"
+    # ⛔ THE PROBE ASKS AS A PLANTED HAIKU SEAT (the cio's cut, 2026-11-07, fleet-queue step 8): the live seat's own tier is not the probe's subject, so the step reads
+    # the same from every root. Its tiers table is scratch: probe-haiku is tier 4, so the tube above it is ask-sonnet, computed from that table, not assumed.
+    ME="probe-haiku"
+    printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\nprobe-haiku\tPROBE\t/x\tclaude-haiku-5-5\txhigh\tcyan\t4\tprobe\n' > "$w/TIERS.tsv"
+    export S4E_TIERS="$w/TIERS.tsv"
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [ask --probe-queue]: cannot make the scratch postoffice"; exit 2; }
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
+    sed -i 's/^ROSTER: /ROSTER: probe-haiku /' "$w/MODE"   # the planted seat is a standing seat of the scratch roster, so its restored state is ASSIGNED, as a live seat's is
     A="ask-probe-asker-$$"
     jA="$(python3 "$UQ" put "seat-$ME" "$A" --pri 1000 --ttr 3600 2>/dev/null)" || jA=""
     [ -n "$jA" ] || { echo "REFUSE(2) [ask --probe-queue]: no job could be put on the scratch daemon"; exit 2; }
