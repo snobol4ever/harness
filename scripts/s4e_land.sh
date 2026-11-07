@@ -472,7 +472,7 @@ regen() {
     [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) &
+        ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash $home/harness/scripts/util_run_slot.sh --admit run bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) &
         pids+=($!)
     done
     wait "${pids[@]}"
