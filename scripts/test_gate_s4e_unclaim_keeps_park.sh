@@ -7,14 +7,22 @@
 # resurrected rank-0 row, and a second unclaim lost the park again). Cure: s4e_msg.sh unclaim, hq_B 2026-09-02.
 # TWO ARMS against a THROWAWAY postoffice under mktemp -- never the live one -- each run against the live s4e_msg.sh and
 # against a mutated copy with the cure removed (FAIL-ONCE, INSTRUMENT LAWS fifth batch):
-#   (A) claim -> unclaim over CLAIMED:<seat>  -> column FREE (the 2026-08-28 dispatch ruling, untouched)
+#   (A) claim -> unclaim over CLAIMED:<seat>  -> column FREE for a jobless row (the 2026-08-28 dispatch ruling); QUEUED:tier-haiku for a row
+#       whose job is ready in its tube (row 618, the cio 2026-11-07, the contract of s4e_released_state); next never locks the released row
 #   (B) claim as hq_B -> the officer force-parks around it (SUPERSEDED:..., BLOCKED-ON:<row>, PARKED, GRANT-NEEDED:...) -> hq_B unclaims
 #       -> column UNCHANGED, claim file gone, receipt names the kept state, and `next` as a third seat never locks the row.
 # EXIT 0 both arms hold on the live script AND arm (B) goes red on the mutated copy; 1 otherwise; 2 REFUSED (fixture cannot be built).
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
-W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }; trap 'rm -rf "$W"' EXIT
+W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
+# THE 618 CONTRACT NEEDS A QUEUE (row 618, the cio 2026-11-07): a released row reads QUEUED:<tube> while its job is ready in its tube, and that job lives in a queue daemon.
+# The gate starts its OWN beanstalkd on a free port and exports S4E_QUEUE_PORT, so no run here touches the live daemon (11300).
+_bport=$((21000 + ($$ % 20000))); beanstalkd -l 127.0.0.1 -p "$_bport" >/dev/null 2>&1 & _bpid=$!
+trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null; rm -rf "$W"' EXIT
+_up=0; for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_bport" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+{ [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "⛔ REFUSED: a private beanstalkd would not start on port $_bport"; exit 2; }
+export S4E_QUEUE_PORT="$_bport"
 PO="$W/po"; ME=hq_B; PARKER=cto; THIRD=hq_P
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote `TRIO` into the scratch MODE. TRIO stands
@@ -38,9 +46,9 @@ mk_po() {
       echo "    fixture: MODE = $FIXTURE_MODE (probed -- the first candidate under which the picker dispatches $THIRD)"
   fi
   printf '%s\n' "$FIXTURE_MODE" > "$PO/MODE"
-  { printf '# gate fixture queue\n'; printf '2\tt-claim-shaped\tunassigned\tFREE\n'; printf '5\tt-blocker\tunassigned\tFREE\n'
+  { printf '# gate fixture queue\n'; printf '2\tt-claim-shaped\tunassigned\tFREE\n'; printf '2\tt-queued\tunassigned\tFREE\n'; printf '5\tt-blocker\tunassigned\tFREE\n'
     local i=0 t; for t in $PARKS; do i=$((i+1)); printf '0\tt-parked-%d\tunassigned\tFREE\n' "$i"; done; } > "$PO/QUEUE.tsv"
-  local t; for t in t-claim-shaped t-blocker t-parked-1 t-parked-2 t-parked-3 t-parked-4; do
+  local t; for t in t-claim-shaped t-queued t-blocker t-parked-1 t-parked-2 t-parked-3 t-parked-4; do
   # ⛔ THE FIXTURE CRITERION MUST BE **RED**, and it used to be `test -f <the baton itself>` -- always
   # true. Since 2026-09-03 the picker RUNS a row's DONE-WHEN before serving it (row next-and-assign-
   # re-run-a-rows-done-when-before-serving-it), so a fixture row whose criterion already passes is
@@ -59,6 +67,12 @@ arm() {   # arm <label> <script> -> 0 iff the contract holds on <script>
   c="$(col t-claim-shaped)"; [ "$c" = "CLAIMED:$ME" ] || { echo "  [$lbl] fixture: after claim column=$c (want CLAIMED:$ME)"; return 2; }
   run $ME 0 "$s" unclaim t-claim-shaped gate; c="$(col t-claim-shaped)"
   [ "$c" = FREE ] || { echo "  [$lbl] (A) unclaim over CLAIMED: column=$c (want FREE -- the 2026-08-28 ruling)"; ok=0; }
+  qj="$(python3 "$HERE/util_queue.py" put tier-haiku t-queued --pri 1002 --ttr 30 2>/dev/null)" && [ -n "$qj" ] || { echo "  [$lbl] fixture: the private queue refused the job put for t-queued"; return 2; }
+  sed -i "s|^LINKS: none|LINKS: none\nQUEUE-JOB: $qj tube=tier-haiku|" "$PO/tasks/t-queued.task.md"
+  run $ME 0 "$s" claim t-queued || { echo "  [$lbl] claim t-queued failed: $(tail -1 "$W/out")"; return 2; }
+  c="$(col t-queued)"; [ "$c" = "CLAIMED:$ME" ] || { echo "  [$lbl] fixture: after claim t-queued column=$c (want CLAIMED:$ME)"; return 2; }
+  run $ME 0 "$s" unclaim t-queued gate; c="$(col t-queued)"
+  [ "$c" = "QUEUED:tier-haiku" ] || { echo "  [$lbl] (A) unclaim over CLAIMED: with a ready job in tier-haiku column=$c (want QUEUED:tier-haiku -- the 618 contract)"; ok=0; }
   for st in $PARKS; do i=$((i+1))
     run $ME 0 "$s" claim "t-parked-$i" || { echo "  [$lbl] claim t-parked-$i failed: $(tail -1 "$W/out")"; return 2; }
     run $PARKER 1 "$s" park "t-parked-$i" "$st" || { echo "  [$lbl] fixture: cto force-park $st refused: $(grep -m1 REFUSED "$W/out" | cut -c1-120)"; return 2; }
@@ -71,13 +85,17 @@ arm() {   # arm <label> <script> -> 0 iff the contract holds on <script>
     grep -q "column kept as $st" "$PO/tasks/t-parked-$i.task.md" || { echo "  [$lbl] (B) ledger line does not name the kept state $st"; ok=0; }
   done
   run $THIRD 0 "$s" next; if grep -q 'LOCKED t-parked-' "$W/out" || ls "$PO/claims/" | grep -q '^t-parked-'; then echo "  [$lbl] (B) next served a parked-around row: $(grep -m1 LOCKED "$W/out")"; ok=0; fi
-  grep -qE 'LOCKED t-(claim-shaped|blocker)' "$W/out" || { echo "  [$lbl] (A) next served neither the released claim-shaped row nor its blocker (PASS 3 serves a BLOCKED-ON row's blocker first, by design): $(grep -m1 -E 'LOCKED|EMPTY|REFUS|⛔' "$W/out" | cut -c1-120)"; ok=0; }
+  grep -q 'LOCKED t-claim-shaped' "$W/out" && { echo "  [$lbl] (A) next LOCKED the released row t-claim-shaped: $(grep -m1 'LOCKED t-claim-shaped' "$W/out")"; ok=0; }; [ -f "$PO/claims/t-claim-shaped.claim" ] && { echo "  [$lbl] (A) next left a claim file on the released row t-claim-shaped"; ok=0; }
+  grep -qE '^FREE t-blocker |LOCKED t-(claim-shaped|blocker)' "$W/out" || { echo "  [$lbl] (A) next served neither the released claim-shaped row nor its blocker (PASS 3 serves a BLOCKED-ON row's blocker first, by design): $(grep -m1 -E 'LOCKED|EMPTY|REFUS|⛔' "$W/out" | cut -c1-120)"; ok=0; }
   [ "$ok" = 1 ]
 }
 echo "s4e unclaim keeps a park written around the claim (scratch postoffice under $W)"
 if arm PASS "$MSG"; then echo "  [PASS] (A) CLAIMED -> FREE; (B) SUPERSEDED/BLOCKED-ON/PARKED/GRANT-NEEDED kept, receipt+ledger name it, next skips them"; pass=1; else pass=$?; [ "$pass" = 2 ] && { echo "⛔ REFUSED: fixture could not be built (rc=2)"; exit 2; }; pass=0; fi
-sed 's/^\(\s*\*) _kept="\$_cur";\).*$/\1 _kept=""; s4e_set_row_state "$topic" "FREE" || true;;/' "$MSG" > "$W/msg_nocure.sh"
-grep -q '_kept=""; s4e_set_row_state "$topic" "FREE" || true;;' "$W/msg_nocure.sh" || { echo "⛔ REFUSED: could not remove the cure for the fail-once arm (the kept arm moved?)"; exit 2; }
-if arm FAIL-ONCE "$W/msg_nocure.sh" >"$W/failonce" 2>&1; then echo "  [FAIL-ONCE] ⛔ the gate stayed GREEN with the cure removed -- it cannot detect the defect it exists for"; red=0; else echo "  [FAIL-ONCE] red as required with the cure removed: $(grep -m1 '(B)' "$W/failonce" | sed 's/^ *//' | cut -c1-110)"; red=1; fi
+# THE MUTANT SITS BESIDE ITS LIBRARIES (the bus sources lib_donewhen.sh and lib_release_guard.sh from its own directory): a copy alone in $W is refused
+# before it reaches the park check, and that refusal read as a fail-once red without ever running arm (B) on the mutant.
+mkdir -p "$W/mutant" && cp "$HERE"/lib_*.sh "$HERE/util_fit_columns.py" "$W/mutant/" || { echo "⛔ REFUSED: cannot stage the mutant beside its libraries"; exit 2; }
+sed 's/^\(\s*\*) _kept="\$_cur";\).*$/\1 _kept=""; s4e_set_row_state "$topic" "FREE" || true;;/' "$MSG" > "$W/mutant/s4e_msg.sh"
+grep -q '_kept=""; s4e_set_row_state "$topic" "FREE" || true;;' "$W/mutant/s4e_msg.sh" || { echo "⛔ REFUSED: could not remove the cure for the fail-once arm (the kept arm moved?)"; exit 2; }
+if arm FAIL-ONCE "$W/mutant/s4e_msg.sh" >"$W/failonce" 2>&1; then echo "  [FAIL-ONCE] ⛔ the gate stayed GREEN with the cure removed -- it cannot detect the defect it exists for"; red=0; else echo "  [FAIL-ONCE] red as required with the cure removed: $(grep -m1 -E '\((A|B)\)' "$W/failonce" | sed 's/^ *//' | cut -c1-110)"; red=1; fi
 if [ "$pass" = 1 ] && [ "$red" = 1 ]; then echo "✅ GATE OK: unclaim frees only a claim-shaped column, keeps a park written around the claim, and goes red when the cure is removed."; exit 0; fi
 echo "⛔ GATE FAILED (pass=$pass fail-once-red=$red)"; exit 1
