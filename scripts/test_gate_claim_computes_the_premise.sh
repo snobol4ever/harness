@@ -195,7 +195,7 @@ mut() {  # mut <name> <from> <to> [target-basename] -> stages $W/<name>/ with ev
 # ⛔ EXACT-STRING awk, never regex sed: these lines are dense in $ | * ( ) and a mutation that silently matched
 # nothing would hand back an unmutated copy, the arm would pass, and the gate would report a fail-once it never
 # performed -- a false green inside the mechanism that exists to disprove one.
-mut m1 '              s4e_premise_gate "$topic" claim || exit 1' '              :'
+mut m1 '              case "$(s4e_row_state "$topic")" in FREE|QUEUED:*) s4e_premise_gate "$topic" claim || exit 1;; esac' '              case "$(s4e_row_state "$topic")" in FREE|QUEUED:*) :;; esac'
 if arm M1-claim-unwired "$W/m1/s4e_msg.sh" >"$W/m1.log" 2>&1; then echo "  [FAIL-ONCE M1] ⛔ GREEN with claim's premise gate removed -- the gate cannot detect an unchecked claim"; m1=0
 else echo "  [FAIL-ONCE M1] red as required, claim unwired: $(grep -m1 '(1)' "$W/m1.log" | sed 's/^ *//' | cut -c1-100)"; m1=1; fi
 # ⛔ M2 UNWIRES ONLY THE ASSIGNED PATH -- the exact half-wired state a cure wired into `claim` alone ships in,
