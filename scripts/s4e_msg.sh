@@ -436,6 +436,56 @@ SKILLS: fleet-bus" || _skills=0
     [ -n "$_id" ] && s4e_queue_delete "$_id" && _del=1
     printf 'MINT tube=tier-haiku pri=1002 ttr=3600 job=%s skills_required=%s deleted=%s\n' "${_id:-none}" "$_skills" "$_del"
     [ -n "$_id" ] && [ "$_skills" = 1 ] && [ "$_del" = 1 ]; exit $?; }
+# THE PREMISE-SHAPE PROBE (the cio's cut, 2026-11-07; row bus-mint-accepts-a-premise-that-is-a-bare-inversion-of-the-done-when-so-a-refusing-probe-reads-as-an-open-problem).
+# Three measurements on scratch postoffices and a PRIVATE queue daemon (never 11300): mint refuses a PREMISE-WHEN that is the DONE-WHEN behind a
+# leading ! (a bare inversion reads rc 0 when the criterion refuses rc 2); mint accepts the lawful shape; and a row whose PREMISE-WHEN exits 2 is
+# SKIPPED by next, not served. Each reads what the bus does today: nothing is assumed, so the line is RED on a tree that still admits the inversion.
+s4e_mint_probe_premise_shape() {
+    local _port _bp _w _wq _rb=0 _al=0 _rq=0 _rc _out _o2 _head _x _id="$$"
+    _port=$((21000 + ($$ % 20000)))
+    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bp=$!
+    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
+    if ! { kill -0 "$_bp" 2>/dev/null && S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd'; }; then
+        kill "$_bp" 2>/dev/null; echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; fi
+    export S4E_QUEUE_PORT="$_port"
+    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_shape.XXXXXX")" && _wq="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_shape_q.XXXXXX")" \
+        || { kill "$_bp" 2>/dev/null; echo "REFUSE(2): mktemp failed"; exit 2; }
+    for _d in "$_w" "$_wq"; do mkdir -p "$_d/tasks" "$_d/claims" "$_d/cfo/inbox"; : > "$_d/QUEUE.tsv"; : > "$_d/BOARD.md"; cp "$PO/MODE" "$_d/MODE" 2>/dev/null || printf 'TENET\n' > "$_d/MODE"; done
+    _head='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
+    # 1. the bare inversion: DONE-WHEN and PREMISE-WHEN are the same command, the premise behind a leading !
+    _x="premise-shape-bare-$_id"
+    _out="$(S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin 2>&1 <<BODY
+GOAL: premise-shape probe, bare inversion.
+DONE-WHEN: $_head test -f /no-such-file-s4e-premise-shape-$_id
+PREMISE-WHEN: $_head ! test -f /no-such-file-s4e-premise-shape-$_id
+BODY
+)"; _rc=$?
+    [ "$_rc" = 2 ] && _rb=1
+    # 2. the lawful shape: the same criterion, the premise run and its rc 2 read through the lawful suffix
+    _x="premise-shape-lawful-$_id"
+    _out="$(S4E_POST="$_w" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin 2>&1 <<BODY
+GOAL: premise-shape probe, lawful shape.
+DONE-WHEN: $_head test -f /no-such-file-s4e-premise-shape-$_id
+PREMISE-WHEN: $_head test -f /no-such-file-s4e-premise-shape-$_id; r=\$?; [ \$r = 2 ] && exit 2; [ \$r != 0 ]
+BODY
+)"; _rc=$?
+    [ "$_rc" = 0 ] && _al=1
+    # 3. a row whose PREMISE-WHEN exits 2: next must skip it (it is neither open nor closed), never serve it
+    _x="premise-shape-rc2-$_id"
+    _out="$(S4E_POST="$_wq" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" bash "$0" mint "$_x" --owner cfo --stdin 2>&1 <<BODY
+GOAL: premise-shape probe, premise exits 2.
+DONE-WHEN: $_head test -f /no-such-file-s4e-premise-shape-$_id
+PREMISE-WHEN: exit 2
+BODY
+)"; _rc=$?
+    if [ "$_rc" = 0 ]; then
+        _o2="$(S4E_POST="$_wq" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" S4E_RELEASE_COOLDOWN=0 bash "$0" next 2>&1)"
+        if ! printf '%s\n' "$_o2" | grep -q "^FREE $_x " && printf '%s\n' "$_o2" | grep -q "the premise of $_x could not measure"; then _rq=1; fi
+    fi
+    kill "$_bp" 2>/dev/null; wait "$_bp" 2>/dev/null
+    rm -rf "$_w" "$_wq"
+    printf 'MINT refuses_bare_inversion=%d accepts_lawful=%d premise_rc2_is_refuse=%d\n' "$_rb" "$_al" "$_rq"
+    [ "$_rb" = 1 ] && [ "$_al" = 1 ] && [ "$_rq" = 1 ]; exit $?; }
 # ⭐ picker-skips-blocked-rows (2026-08-28) -- SHARED BY next()'s PASS 3. Is the topic named by a
 # BLOCKED-ON:/PARKED-AWAITING: state DONE? `done` only ever APPENDS the DONE marker (never deletes a
 # claim) and `park` only ever clears a LIVE non-done claim, so claims/*.claim is the durable record;
@@ -2611,6 +2661,15 @@ s4e_premise_is_placeholder() {   # $1 = raw PREMISE-WHEN text; rc 0 = the field 
     case "$(printf '%s' "${1:-}" | tr -d '[:space:]')" in
       ''|'⛔NOTEXPRESSED'*|'NOTEXPRESSED'*|TODO*|TBD*|'⛔TODO'*) return 0;; esac
     return 1; }
+# THE BARE INVERSION (the cio's ruling, 2026-11-07; row bus-mint-accepts-a-premise-that-is-a-bare-inversion-of-the-done-when-so-a-refusing-probe-reads-as-an-open-problem):
+# a PREMISE-WHEN that is its DONE-WHEN behind a leading ! reads rc 0 (the problem exists) when the criterion refuses rc 2 (could not measure), so a
+# row whose probe cannot run reads open and is served. mint and recut refuse it and print the lawful shape. Both texts lose the shared `cd ... &&`
+# head and squeeze their whitespace before the comparison; the premise must then be exactly the DONE-WHEN behind ! (or !DONE-WHEN).
+S4E_PREMISE_LAWFUL='<cmd>; r=$?; [ $r = 2 ] && exit 2; [ $r != 0 ]'
+s4e_premise_norm() { printf '%s' "$1" | sed -E 's/^[[:space:]]*cd [^&]*&&[[:space:]]*//' | tr -s '[:space:]' ' ' | sed -E 's/^ //; s/ $//'; }
+s4e_premise_is_bare_inversion() {   # $1 = the DONE-WHEN text, $2 = the PREMISE-WHEN text; rc 0 = the premise is the DONE-WHEN behind a leading !
+    local _d _p; _d="$(s4e_premise_norm "$1")"; _p="$(s4e_premise_norm "$2")"
+    [ -n "$_d" ] && { [ "$_p" = "! $_d" ] || [ "$_p" = "!$_d" ]; }; }
 # rc 0 = admit (the caller may lock/serve), rc 1 = REFUSE (the caller must NOT lock and must NOT serve).
 s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     local t="$1" verb="${2:-claim}" b="$PO/tasks/$1.task.md" pw log rc to t0 el
@@ -2661,7 +2720,9 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
          printf '  machine. Declare PREMISE-BUDGET: <seconds> in the baton (max 600), set S4E_PREMISE_TIMEOUT=<seconds> for\n' >&2
          printf '  this claim, or make it cheaper.\n' >&2
          rm -f "$log"; return 0;;
-      126|127|2) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN exited %s -- %s -- so it was never graded (R-786:\n' "$rc" \
+      2) printf 'REFUSE(2): the premise of %s could not measure (its PREMISE-WHEN exited 2): neither open nor closed, so next skips it until the PREMISE-WHEN is rewritten (the cio, 2026-11-07)\n' "$t" >&2
+         rm -f "$log"; return 1;;
+      126|127) printf '⚠ PREMISE NOT MEASURED (rc=2): the PREMISE-WHEN exited %s -- %s -- so it was never graded (R-786:\n' "$rc" \
            "$([ "$rc" -eq 127 ] && echo 'command not found' || { [ "$rc" -eq 126 ] && echo 'not executable' || echo 'the criterion itself refused'; })" >&2
          printf '  cannot measure is not red). Admitted unverified. What it said:\n' >&2
          [ -s "$log" ] && sed -e 's/^/  | /' "$log" | tail -8 >&2
@@ -2833,6 +2894,10 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
         [ -n "$(printf '%s' "$_pw" | tr -d '[:space:]')" ] || { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN is empty. Nothing written.\n' >&2; return 2; }
         printf '%s\n' "$_pw" | grep -qE '^## ' && { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN carries a section header at column 0; it would tear the baton. Nothing written.\n' >&2; return 2; }
         _why2="$(s4e_donewhen_unrunnable_why "$_pw")" && { printf '⛔ REFUSED (rc=2): the new PREMISE-WHEN is not a runnable command -- %s. Nothing written.\n   Your PREMISE-WHEN: %s\n' "$_why2" "$(printf '%s\n' "$_pw" | head -1 | cut -c1-120)" >&2; return 2; }
+        # ⛔ THE BARE INVERSION IS REFUSED AT THE RECUT TOO (the cio's ruling, 2026-11-07): the DONE-WHEN is the new one if the body gives it, else the baton's current one.
+        _dwck="$_dw"; [ "$_hasdw" = 1 ] || _dwck="$(sed -n 's/^DONE-WHEN:[[:space:]]*//p' "$_b" | head -1)"
+        if s4e_premise_is_bare_inversion "$_dwck" "$_pw"; then
+            printf '⛔ REFUSED(2): the new PREMISE-WHEN is its DONE-WHEN behind a leading ! (%s). A bare inversion reads rc 0 when the criterion refuses rc 2. Nothing written. The lawful shape: PREMISE-WHEN: %s\n' "$(printf '%s\n' "$_pw" | head -1 | cut -c1-120)" "$S4E_PREMISE_LAWFUL" >&2; return 2; fi
     fi
     _odw="$(awk 'BEGIN { s = 0 } /^DONE-WHEN:/ && !s { s = 1; sub(/^DONE-WHEN:[[:space:]]*/, ""); print; next }
         s && (/^## / || /^(GOAL|LINKS|RANK|DONE-WHEN|DONE-WHEN-HISTORY|PREMISE-WHEN|PREMISE-WHEN-HISTORY|DONE-WHEN-WAS|PREMISE-WHEN-WAS|SCOPE|LEDGER|OWNER|BLOCKED-ON|FINDING|MINTED BY):/) { exit }
@@ -4145,7 +4210,7 @@ case "$cmd" in
   # rank is sniffed, not fixed-position: the token right after topic is consumed as rank ONLY if it is
   # ALL DIGITS (never true of real GOAL prose, even prose that happens to start with a number — that always
   # has a following space/letter); otherwise it defaults to 2 and the same token starts the goal text.
-  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue
+  mint)  [ "${2:-}" = --probe-queue ] && s4e_mint_probe_queue; [ "${2:-}" = --probe-premise-shape ] && s4e_mint_probe_premise_shape
          [ -n "${2:-}" ] || s4e_need mint "a topic" "s4e_msg.sh mint <topic> [rank] [--owner <seat> | --tier fable|opus|sonnet|haiku | --to <seat>] \"GOAL text\"" "The only sanctioned way to add work: it writes a QUEUE row and a skeleton baton atomically, and with --tier or --to one job in the queue (fleet-queue step 3)."
          topic="$2"; shift 2
          rank=2
@@ -4241,6 +4306,11 @@ MINTED-WITHOUT-CRITERION: ${S4E_MINT_NO_CRITERION} (S4E_MINT_NO_CRITERION; R-138
                  printf '   See any of %s/tasks/*.task.md for live examples.\n' "$PO" >&2
                  exit 2; }
          fi
+         # ⛔ THE BARE INVERSION IS REFUSED AT THE MINT (the cio's ruling, 2026-11-07): see s4e_premise_is_bare_inversion. Nothing is written.
+         _pw_mint="$(printf '%s\n' "$dw_block" | sed -n 's/^PREMISE-WHEN:[[:space:]]*//p' | head -1)"
+         if [ -n "$_pw_mint" ] && s4e_premise_is_bare_inversion "$(printf '%s\n' "$dw_block" | sed -n '1s/^DONE-WHEN:[[:space:]]*//p')" "$_pw_mint"; then
+             printf '⛔ REFUSED(2): the PREMISE-WHEN of %s is its DONE-WHEN behind a leading ! (%s). A bare inversion reads rc 0 when the criterion refuses rc 2, so a row whose probe cannot run reads open and is served. Nothing was written: no QUEUE.tsv row, no baton. The lawful shape: PREMISE-WHEN: %s\n' "$topic" "$_pw_mint" "$S4E_PREMISE_LAWFUL" >&2
+             exit 2; fi
          if [ -n "$q_tube" ] && ! s4e_skills_required_ok "$q_tier" "$goal"; then
            printf '⛔ REFUSED (rc=2): a %s row carries a "SKILLS: <skill> ..." line naming the skills its executor loads first (Lon 2026-11-05: "given the proper SKILL FIRST"); none in the GOAL text. Nothing was written.\n' "$q_tier" >&2; exit 2; fi
          [ -n "$owner" ] || owner="$(s4e_topic_lane "$topic")"
@@ -4764,6 +4834,11 @@ TASKEOF
              cat "$_cl_out" >&2; rm -f "$_cl_out"
              printf '↩ SKIP %s (rank %s) — PREMISE RED, not claimed. The row stays FREE and is now a REWRITE,\n' "$topic" "$rank"
              printf '   not a cure: whoever rewrites it fixes the premise first. Looking for the next row...\n'
+             continue
+           elif grep -q 'REFUSE(2): the premise of' "$_cl_out" 2>/dev/null; then
+             # THE RC-2 PREMISE (the cio's ruling, 2026-11-07): a PREMISE-WHEN that exits 2 is a refusal to measure, neither open nor closed, so the row is
+             # skipped with the gate's own one line. Never silently: a silent skip is the outcome the premise gate exists to forbid.
+             cat "$_cl_out" >&2; rm -f "$_cl_out"
              continue
            fi; rm -f "$_cl_out"
          done < <(grep -P '^[0-9]+\t' "$q" | while IFS=$'\t' read -r rk tp br st; do printf '%s\t%s\t%s\t%s\t%s\n' "$rk" "$(s4e_mint_ts "$tp")" "$tp" "$br" "$st"; done | sort -t$'\t' -s -k1,1n -k2,2r | cut -f1,3-)
