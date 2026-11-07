@@ -164,6 +164,50 @@ def scale_grade_workers(W):
     return "grader on=%d want=%d running=%d starts=%d stops=%d" % (on, want, len(running), len(starts), len(stops))
 
 
+REQ_DIR = os.environ.get("S4E_TEST_REQUEST_DIR") or "/home/resources/postoffice/test_requests"
+GRADE_TUBE = os.environ.get("S4E_GRADE_TUBE") or "grade"
+def feed_requests():
+    """fleet-control step 10 (the cio, 2026-11-07, Lon: "whatever it takes to get this fleet humming"): a landed row's test request (s4e_test_request.sh, one
+    .req file: seat= suite= entries=) becomes ONE request-band grade job (util_grade_job.py put, cell entry:a,b,..., requester the seat) the first tick that
+    sees it; the .req gets a fed= line naming the job, and s4e_grade_worker.sh's record step moves it to done/ with the verdict. Nobody but the controller feeds;
+    a .req already fed or served is left alone. Returns "fed=N" (N jobs put this tick)."""
+    if DRY: return "fed=dry"
+    n = 0
+    try: names = sorted(x for x in os.listdir(REQ_DIR) if x.endswith(".req"))
+    except OSError: return "fed=nodir"
+    for name in names:
+        path = os.path.join(REQ_DIR, name)
+        try: txt = open(path, encoding="utf-8").read().splitlines()
+        except OSError: continue
+        if any(l.startswith(("fed=", "served=")) for l in txt): continue
+        f = dict(l.split("=", 1) for l in txt if "=" in l)
+        seat, suite, ents = f.get("seat", "").strip(), f.get("suite", "").strip(), f.get("entries", "").split()
+        if not (seat and suite and ents): continue
+        r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_grade_job.py"), "put", "--suite", suite, "--cell", "entry:" + ",".join(ents),
+                            "--band", "request", "--modes", "m3,m4", "--requester", seat, "--tube", GRADE_TUBE], capture_output=True, text=True, timeout=120)
+        jm = re.search(r"^job=(\d+) tube=", r.stdout, re.M); jid = jm.group(1) if jm else ""
+        if r.returncode != 0 or not jid.isdigit():
+            with open(path, "a") as fh: fh.write("fed=%s REFUSED rc=%d %s\n" % (time.strftime("%FT%TZ", time.gmtime()), r.returncode, (r.stdout + r.stderr).strip().replace("\n", " | ")[-200:]))
+            continue
+        with open(path, "a") as fh: fh.write("fed=%s job=%s tube=%s cell=entry:%s\n" % (time.strftime("%FT%TZ", time.gmtime()), jid, GRADE_TUBE, ",".join(ents)))
+        n += 1
+    return "fed=%d" % n
+def probe_feed():
+    """--probe-feed: a scratch request dir with one .req and a scratch tube; one feed puts one job and writes the fed= line, a second feed puts nothing; the job is deleted.
+    Prints FEED_PROBE ...; rc 0 only when ok=1."""
+    import tempfile
+    global REQ_DIR, GRADE_TUBE
+    d = tempfile.mkdtemp(prefix="s4e-feed-probe-", dir="/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio")); REQ_DIR = d; GRADE_TUBE = "probe-feed-%d" % os.getpid()
+    open(d + "/20260101T000000-probe-sno-rungs-1.req", "w").write("seat=probe\nsuite=sno-rungs\ntable=tests/snobol4\nfiled=probe\nentries=fence_tab_pos_branch_1\nsince=probe\n")
+    f1 = feed_requests(); txt = open(d + "/20260101T000000-probe-sno-rungs-1.req").read(); f2 = feed_requests()
+    m = re.search(r"^fed=\S+ job=(\d+) tube=(\S+) cell=entry:fence_tab_pos_branch_1$", txt, re.M)
+    st = ""
+    if m:
+        r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "stats-job", m.group(1)], capture_output=True, text=True, timeout=60); st = r.stdout.strip()
+        subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "delete", m.group(1)], capture_output=True, text=True, timeout=60)
+    shutil.rmtree(d, ignore_errors=True)
+    ok = int(f1 == "fed=1" and f2 == "fed=0" and m is not None and m.group(2) == GRADE_TUBE and GRADE_TUBE in st)
+    print("FEED_PROBE first=%s second=%s fed_line=%d job_in_tube=%d ok=%d" % (f1, f2, int(m is not None), int(bool(st) and GRADE_TUBE in st), ok)); return 0 if ok else 1
 def alive_seats():
     """the seats whose claude session is alive, read from the sessions' working directories (no seat pattern: the root names the seat)"""
     seats = set()
@@ -188,8 +232,10 @@ def write_live_set(A, mode):
     if DRY or not m:
         return "liveset=hand" if not m else "liveset=dry"
     keep = [x for x in m.group(1).split() if not x.startswith("worker_")]
-    workers = sorted((x for x in alive_seats() if x.startswith("worker_")), key=lambda x: int(x.split("_")[1]))[:A]
-    live = keep + workers
+    alive = alive_seats()
+    workers = sorted((x for x in alive if x.startswith("worker_")), key=lambda x: int(x.split("_")[1]))[:A]
+    seniors = sorted(x for x in alive if not x.startswith("worker_") and x not in keep)   # Lon 2026-11-07 13:5x ("fire any combination of Haiku, Sonnet, and Opus"):
+    live = keep + seniors + workers   # every alive company man or officer is in the live set too; only the workers are counted against A
     line = "FLEET: IDLE EXCEPT %s (controller %s: cio and the first %d workers alive by the law of fleet-control step 5; a worker beyond the count stops at its Stop; Lon's hand replaces this line at will)" % (" ".join(live), time.strftime("%Y-%m-%d %H:%M"), A)
     if line.split(" (controller")[0] == m.group(0).split(" (controller")[0]:
         return "liveset=%d" % len(workers)
@@ -288,14 +334,15 @@ def tick():
     awake = write_awake(d["A"], d["why"], s, mode)
     liveset = write_live_set(d["A"], mode_text())
     expired = expire_leases() if n % 5 == 0 else 0
+    fed = feed_requests()
     view = regenerate_view()
     with open(TICK_DIR + "/decide.last", "w") as f:
-        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, view=view)) + "\n")
+        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, view=view)) + "\n")
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s expired=%d %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s expired=%d %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             grader, awake, liveset, expired, view, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             grader, awake, liveset, expired, fed, view, int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
@@ -320,6 +367,8 @@ if __name__ == "__main__":
         sys.exit(tick())
     if arg == "--probe-width":
         sys.exit(probe_width())
+    if arg == "--probe-feed":
+        sys.exit(probe_feed())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-feed | --decide"); sys.exit(2)
