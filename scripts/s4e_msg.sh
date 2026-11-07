@@ -217,7 +217,7 @@ s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-qu
 s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker buries its job (step 6). A live holder of OUR claim buries it: PARK on the claim, BURIED back; the claim is cleared only after that, because a claim that vanishes releases the job to its tube. With no live holder the bus buries a ready job (bury-ready); a row with no job gets a put-buried one. rc 0 done or nothing to do (another seat's holder, a non-park state); rc 3 refused, nothing set.
     local _t="$1" _st="$2" _c="$PO/claims/$1.claim" _j="" _ok=0 _i _o _rc _tube="" _tier="" _ttr _pri _rank _id
     s4e_park_state_buries "$_st" || return 0
-    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && [ "$(head -1 "$_c")" != "$ME" ]; then return 0; fi
+    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && [ "$(head -1 "$_c")" != "$ME" ] && grep -q '^RESERVED job=' "$_c"; then grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"; return 0; fi
     if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && grep -q '^RESERVED job=' "$_c"; then
         _j="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
         grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"
@@ -1248,23 +1248,30 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
 s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch postoffice: a row A with a READY job is parked BLOCKED-ON:B and its job is buried (no holder: the bury-ready road); B is done, A returns to its state and its job is kicked back to ready by that done
-    local w o why="" a b tube j now drc n
+    local w o why="" a b c tube j jc now drc n oh
     [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-bury]: S4E_SEAT unset"; exit 2; }
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_bury.XXXXXX")" || { echo "REFUSE(2) [park --probe-bury]: mktemp failed"; exit 2; }
-    a="bury-parked-$$"; b="bury-closer-$$"; tube="probe-park-$$"; j=""; now="$(date -u +%FT%TZ)"
-    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1' EXIT
+    a="bury-parked-$$"; b="bury-closer-$$"; c="bury-other-$$"; tube="probe-park-$$"; j=""; jc=""; oh=0; now="$(date -u +%FT%TZ)"
+    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1; [ -n "$jc" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$jc" >/dev/null 2>&1' EXIT
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/plant-x/inbox" || { echo "REFUSE(2) [park --probe-bury]: cannot make the scratch postoffice"; exit 2; }
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$w/MODE"
     j="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$a" --pri 1000 --ttr 60 2>/dev/null)" || j=""
     [ -n "$j" ] || { echo "REFUSE(2) [park --probe-bury]: no beanstalkd job could be put (util_queue.py status tells why)"; exit 2; }
-    printf '# plant queue (fleet-queue step 6)\n2\t%s\tplant-x\tFREE\n2\t%s\t%s\tFREE\n' "$a" "$b" "$ME" > "$w/QUEUE.tsv"
+    jc="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$c" --pri 1000 --ttr 60 2>/dev/null)" || jc=""
+    [ -n "$jc" ] || { echo "REFUSE(2) [park --probe-bury]: no beanstalkd job could be put for the other-holder row (util_queue.py status tells why)"; exit 2; }
+    printf '# plant queue (fleet-queue step 6)\n2\t%s\tplant-x\tFREE\n2\t%s\t%s\tFREE\n2\t%s\tplant-x\tFREE\n' "$a" "$b" "$ME" "$c" > "$w/QUEUE.tsv"
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" "$j" "$tube" > "$w/tasks/$a.task.md"
     printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
     printf '%s\nRUNNING\n' "$ME" > "$w/claims/$b.claim"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$c" "$now" "$jc" "$tube" > "$w/tasks/$c.task.md"
+    printf 'plant_other\nRUNNING\n' > "$w/claims/$c.claim"
     run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
     run park "$a" "BLOCKED-ON:$b" > /dev/null
+    run park "$c" "BLOCKED-ON:$b" > /dev/null
     n=0; [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = buried ] && n=1
     [ "$n" = 1 ] || why="$why park did not bury the ready job;"
+    [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$jc" 2>/dev/null | cut -f3)" = buried ] && oh=1
+    [ "$oh" = 1 ] || why="$why park did not bury the ready job of another seat's claim (other_holder_buried=0);"
     grep -q "^RESTORE-STATE: FREE$" "$w/tasks/$a.task.md" || why="$why park did not record RESTORE-STATE FREE;"
     o="$(run done "$b")"; drc=$?
     [ "$drc" = 0 ] || why="$why done of the closer returned rc $drc;"
@@ -1272,7 +1279,7 @@ s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch
     [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = ready ] || why="$why the job is not ready after the done;"
     [ "$(grep -P "^2\t\Q$a\E\t" "$w/QUEUE.tsv" | cut -f4)" = FREE ] || why="$why the row did not return to FREE;"
     grep -q '^RESTORE-STATE: ' "$w/tasks/$a.task.md" && why="$why the RESTORE-STATE line was not retired;"
-    if [ -z "$why" ]; then echo "PARK buried=1 kicked_by=done restored=1 (probe: a parked row's ready job was buried; the blocker's done returned the row to FREE and kicked the job back to ready)"; exit 0; fi
+    if [ -z "$why" ]; then echo "PARK buried=1 kicked_by=done restored=1 other_holder_buried=$oh (probe: a parked row's ready job was buried; the blocker's done returned the row to FREE and kicked the job back to ready)"; exit 0; fi
     echo "PARK PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
 s4e_done_plant_delete() {   # step 6's done probe (done --probe-delete) on a scratch postoffice: a claimed row whose READY job sits in a scratch tube; done closes it and deletes the job (stats-job reads not found), the JOB-RECEIPT on the claim
     local w o x tube j now rc why=""
