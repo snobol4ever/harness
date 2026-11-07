@@ -40,6 +40,8 @@
 #   --probe-serial  the serial last round's proof (fleet-queue step 20) on scratch origins: a racer lands on corpus in each of three rounds (round two
 #                outside the row's TOUCHES), round three's refused push takes ONE serial gate under the lease, and a second lander queued behind that lease
 #                lands once it is free. Prints LAND serial-probe ok ... or LAND serial-probe RED: <what differed>.
+#   --probe-orphan-lock  the stopped lander's proof on scratch origins: a landing is sent TERM mid-gate (its gate a 120 s child); once it has exited no
+#                process of it remains, its gate held neither lock descriptor, and a second landing from the same home lands; prints LAND probe-orphan-lock second=landed orphans=0.
 #   --tables     print the generated-table registry (generated_tables.tsv) and run nothing
 # OUTPUT: one line per stage, LAND stage=<name> ...; the verdict LAND ok stages=N rejected=R pushed=..., or LAND RED stage=<name> ...
 # (rc 1), or LAND REFUSE(2) ... (rc 2). Logs under /tmp/s4e/<seat>/land.<pid>, deleted on a green verdict and kept on any other.
@@ -63,6 +65,7 @@ while [ $# -gt 0 ]; do
         --probe-push-refusal) mode=probe_push_refusal; shift ;;
         --probe-serial) mode=probe_serial; shift ;;
         --probe-mail) mode=probe_mail; shift ;;
+        --probe-orphan-lock) mode=probe_orphan_lock; shift ;;
         --tables) mode=tables; shift ;;
         --push) mode=push; shift ;;
         --proved) proved="${2:-}"; shift 2 ;;
@@ -347,6 +350,36 @@ GATE
     echo "LAND serial-probe ok attempts=3 serial_round=1 regate=lease:serial held_s=$h landed=1 waiter_named=1"
     exit 0
 }
+tokpids() { local e p; for e in /proc/[0-9]*/environ; do p="${e#/proc/}"; p="${p%/environ}"; grep -qxzF "S4E_ORPHAN_PROBE=$1" "$e" 2>/dev/null && echo "$p"; done; }   # the live processes that carry the first landing's environment token (a zombie's environ reads empty)
+probe_orphan_lock() {   # a stopped lander leaves nothing behind (row fleet-land-a-lander-stopped-mid-build-leaves-its-make-holding-the-landing-lock), on scratch origins: a landing whose gate starts
+    # a 120 s child is sent TERM once that gate has started; after it has exited (an order of events, never a clock) no process carrying its environment token remains, the gate's own
+    # descriptors named neither lock, and a second landing from the same home takes the per-root lock (flock -n, so a held lock refuses at once) and lands
+    local T rc rc2 first n left fds r second tok kept
+    T="$(mktemp -d "/tmp/s4e/$seat/land-orphan.XXXXXX")" || refuse "cannot make a scratch directory"
+    tok="orphan-lock-$$-${T##*.}"
+    trap 'for p in $(tokpids "$tok"); do kill -KILL "$p" 2>/dev/null; done; rm -rf "$T" "/tmp/s4e/$seat/land.$(printf "%s" "$T/work" | sha1sum | cut -c1-12).lock"' EXIT
+    scratch_clone "$T"
+    for r in "${ORDER[@]}"; do git -C "$T/work/$r" commit -q --allow-empty -m "probe: the stopped landing's commit in $r" || refuse "probe: cannot commit in $r"; done
+    S4E_ORPHAN_PROBE="$tok" S4E_SEM_HOME="$T/sem" S4E_POSTOFFICE="$T/po" S4E_POST="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" \
+        --gate "ls -l /proc/\$\$/fd > $T/fds1 2>&1; : > $T/started1; sleep 120; echo 'probe: the gate outlived its stop'" > "$T/first.log" 2>&1 < /dev/null & first=$!
+    while [ ! -e "$T/started1" ] && kill -0 "$first" 2>/dev/null; do sleep 1; done
+    [ -e "$T/started1" ] || { sed 's/^/    first| /' "$T/first.log" | tail -8; refuse "probe: the first landing exited before its gate started"; }
+    kill -TERM "$first"; wait "$first"; rc=$?
+    sed 's/^/    first| /' "$T/first.log" | tail -2
+    kept="$(sed -n 's/^LAND logs kept: //p' "$T/first.log" | tail -1)"; case "$kept" in "/tmp/s4e/$seat"/land.*) rm -rf "$kept" ;; esac   # the stopped landing keeps its log directory; the probe leaves nothing behind
+    left="$(tokpids "$tok" | tr '\n' ' ')"; n="$(printf '%s' "$left" | wc -w)"
+    fds="$(grep -oE '/tmp/s4e/[^ ]*/land\.[0-9a-f]{12}\.lock|[^ ]*/\.land\.lease' "$T/fds1" | sort -u | tr '\n' ' ')"
+    S4E_SEM_HOME="$T/sem" S4E_POSTOFFICE="$T/po" S4E_POST="$T/po" S4E_SEAT="$seat" bash "$SELF" --home "$T/work" --gate 'true' > "$T/second.log" 2>&1 < /dev/null; rc2=$?
+    sed 's/^/    second| /' "$T/second.log" | grep -E 'REFUSE|LAND ok|LAND RED' | tail -2
+    second=refused
+    if [ "$rc2" = 0 ]; then second=landed
+        for r in "${ORDER[@]}"; do git -C "$T/origin/$r.git" log --format=%s main | grep -x "probe: the stopped landing's commit in $r" > /dev/null || second=unlanded; done; fi
+    echo "    first| rc=$rc after TERM; orphans: ${left:-none}"
+    [ -n "$fds" ] && { echo "LAND probe-orphan-lock second=$second orphans=$n inherited=${fds% }"; exit 1; }
+    echo "LAND probe-orphan-lock second=$second orphans=$n"
+    [ "$second" = landed ] && [ "$n" = 0 ] && exit 0
+    exit 1
+}
 mail_guard() {   # ⛔ A STOP ORDER LANDS BEFORE THE LANDING (fleet-bus; the cio's ruling on row bus-the-unread-banner-names-an-old-message): rc 2 while seat $2 holds unread mail under PO $1 newer than its claim $3 (any unread mail when there is no claim); a message listed in the seat's .last-check was displayed by check, so it is read
     local po="$1" sd="$2" claim="$3" f b names=""
     for f in "$po/$sd/inbox"/*.msg; do [ -f "$f" ] || continue; b="$(basename "$f")"
@@ -375,6 +408,7 @@ probe_mail() {   # the mail guard's proof on scratch (row bus-the-unread-banner-
 [ "$mode" = probe_mail ] && { probe_mail; exit $?; }
 [ "$mode" = probe_push_refusal ] && probe_push_refusal
 [ "$mode" = probe_serial ] && probe_serial
+[ "$mode" = probe_orphan_lock ] && probe_orphan_lock
 [ "$mode" = merge_probe ] && merge_probe
 # THE LEASE IS HELD ONLY AROUND THE PUSH (the cio 2026-11-04 20:1x CST, on hq_pascal's 14-minute wait behind hq_unicon's gate and seven landings queued behind
 # hq_templates' 35-minute gate): the gate runs UNLEASED on the rebased tree; the lease is taken after it, origin is fetched again under the lease, and if it moved
@@ -402,7 +436,34 @@ for r in SCRIP harness corpus; do [ -e "$home/$r/.git" ] || refuse "no $home/$r:
 [ -f "$TSV" ] || refuse "no registry at $TSV"
 exec 9> "/tmp/s4e/$seat/land.$(printf '%s' "$home" | sha1sum | cut -c1-12).lock"
 flock -n 9 || refuse "another landing holds $home"
-g() { local r="$1"; shift; timeout -k 5 180 git -C "$home/$r" "$@"; }
+git() { command git "$@" 8>&- 9>&-; }   # NO CHILD HOLDS A LOCK (row fleet-land-a-lander-stopped-mid-build-leaves-its-make-holding-the-landing-lock): every child runs with the lease (fd 8) and the per-root lock (fd 9) closed, so both locks close with this process; --probe-orphan-lock proves it
+kid=0
+spawn() {   # <log> <dir> <cmd...>: a long child (the build, a gate) in its own session, waited on so a stop's trap runs at once; it holds neither lock
+    local log="$1" dir="$2" rc; shift 2
+    ( cd "$dir" && exec setsid --wait "$@" ) > "$log" 2>&1 < /dev/null 8>&- 9>&- & kid=$!
+    wait "$kid"; rc=$?; kid=0; return "$rc"
+}
+mine_live() {   # the live processes this lander started: its process tree (this enumeration pruned) and the session of a spawned child
+    local me="$BASHPID"   # read before the pipeline: inside it each element is its own fork, and this subshell is the parent of both to prune
+    ps -e -o pid=,ppid=,sid=,stat= 2>/dev/null | awk -v root=$$ -v skip="$me" -v sid="$kid" '{ pp[$1] = $2; sd[$1] = $3; st[$1] = $4 }
+        END { n = 1; q[1] = root; m[root] = 1
+              for (h = 1; h <= n; h++) for (i in pp) if (pp[i] == q[h] && !(i in m) && i != skip) { m[i] = 1; q[++n] = i }
+              for (i in st) if (st[i] !~ /^Z/ && i != root && i != skip && ((i in m) || (sid > 0 && sd[i] == sid))) print i }'
+}
+stop_lander() {   # <signal>: a stopped lander takes its children with it (TERM, KILL after five seconds) and refuses; nothing is left holding a lock or running a build
+    local left i=0 how=TERM
+    trap '' TERM INT HUP
+    left="$(mine_live)"; [ -n "$left" ] && kill -TERM $left 2>/dev/null
+    while left="$(mine_live)"; [ -n "$left" ] && [ "$i" -lt 10 ]; do sleep 0.5; i=$((i + 1)); done
+    if [ -n "$left" ]; then how="TERM, then KILL"; kill -KILL $left 2>/dev/null; i=0
+        while left="$(mine_live)"; [ -n "$left" ] && [ "$i" -lt 10 ]; do sleep 0.2; i=$((i + 1)); done; fi
+    [ "$kid" -gt 0 ] && wait "$kid" 2>/dev/null
+    echo "LAND REFUSE(2) stopped by $1: its children were stopped with it ($how; left: ${left:-none}); pushed so far: ${pushed[*]:-none}"
+    [ -n "${LOG:-}" ] && echo "LAND logs kept: $LOG"
+    exit 2
+}
+trap 'stop_lander TERM' TERM; trap 'stop_lander INT' INT; trap 'stop_lander HUP' HUP
+g() { local r="$1"; shift; timeout -k 5 180 git -C "$home/$r" "$@" 8>&- 9>&-; }
 if [ -n "$row" ]; then
     tf="${S4E_POSTOFFICE:-/home/resources/postoffice}/tasks/$row.task.md"
     [ -f "$tf" ] || refuse "no baton $tf"
@@ -472,7 +533,7 @@ regen() {
     [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash $home/harness/scripts/util_run_slot.sh --admit run bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) &
+        ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash $home/harness/scripts/util_run_slot.sh --admit run bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 8>&- 9>&- &
         pids+=($!)
     done
     wait "${pids[@]}"
@@ -488,8 +549,8 @@ regen() {
     for k in "${stale[@]}"; do
         w="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $5; exit}' "$TSV")"
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
-        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 || red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"
+        ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
+        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 8>&- 9>&- || red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"
         written+=("$k")
     done
     summary="${#ks[@]} checked, ${#stale[@]} stale${stale[*]:+ (${stale[*]})}${skipped[*]:+ skipped=${skipped[*]}}"
@@ -521,12 +582,12 @@ commit_regen() {
     return 0
 }
 build() {
-    ( cd "$home/SCRIP" && timeout -k 5 1800 make -j8 ) > "$LOG/make.$1.log" 2>&1 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
+    spawn "$LOG/make.$1.log" "$home/SCRIP" timeout -k 5 1800 make -j8 || red "$1" "make -j8 rc=$?: $(grep -m1 -E 'error|Error' "$LOG/make.$1.log" | cut -c1-200)"
     binfo="$(sed -n 's/^source //p' "$home/SCRIP/out/buildinfo" 2>/dev/null | head -1)"
 }
 gate_run() {
     local rc
-    ( cd "$home" && S4E_HOME="$home" timeout -k 5 "$gt" bash -c "$gate" ) > "$LOG/gate.log" 2>&1; rc=$?
+    spawn "$LOG/gate.log" "$home" env S4E_HOME="$home" timeout -k 5 "$gt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark gate "rc=0 on $(git -C "$home/SCRIP" rev-parse --short=9 HEAD)" ;;
@@ -540,7 +601,7 @@ gate_run_serial() {   # <label>: the last round's ONE gate, run UNDER the lease 
     local rc sgt="$gt"
     [ "$sgt" -gt "$serial_cap" ] && sgt="$serial_cap"
     serial_round=1
-    ( cd "$home" && S4E_HOME="$home" timeout -k 5 "$sgt" bash -c "$gate" ) > "$LOG/gate.log" 2>&1; rc=$?
+    spawn "$LOG/gate.log" "$home" env S4E_HOME="$home" timeout -k 5 "$sgt" bash -c "$gate"; rc=$?
     tail -5 "$LOG/gate.log" | sed 's/^/    gate| /'
     case "$rc" in
         0) mark "regate:lease:serial" "$1 (the gate ran under the lease, cap ${sgt}s)" ;;
@@ -573,7 +634,7 @@ push_one() {
         echo "LAND stage=push:$r REFUSED by the server, origin unmoved at ${seen:0:9} ($(grep -m1 -iE "$SERVER_REFUSAL" "$LOG/push.$r" | cut -c1-100)): the push alone is retried in ${w}s, no rebase, no regate (retry $k of $push_retries)"
         retried_push=$((retried_push + 1)); sleep "$w"
     done
-    bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1
+    bash "$home/harness/scripts/s4e_push_rejected.sh" "$home/$r" > "$LOG/rejected.$r" 2>&1 8>&- 9>&-
     if [ "$theirs" = "$seen" ]; then
         rebased_unmoved=$((rebased_unmoved + 1))
         echo "LAND stage=push:$r REJECTED with origin unmoved at ${seen:0:9}, an unrecognised refusal ($(tail -1 "$LOG/push.$r" | cut -c1-120)); recorded, going round again"
@@ -647,7 +708,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
             note_origins
         fi
     fi
-    [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
+    [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     pushes; rc=$?
     if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
         fetch; rebase; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
