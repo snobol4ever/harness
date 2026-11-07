@@ -3,7 +3,7 @@
 # ONE CELL: suite key, cell (core | shell:F | chunk:NN | entry:a,b,...), modes, tree, requester; its priority is its band (100 request, 200 smoke, 500 impact,
 # 900 lap); its TTR is the cell's declared budget: the launch (120 s) plus every row's timeout_s from ALL.csv (60 s when the table declares none yet, test-cycle
 # step 6 declares them). The body is one JSON object; util_queue.py is the one client underneath (never a second socket).
-#   util_grade_job.py put --suite KEY --cell CELL --band request|smoke|impact|lap [--modes m3,m4] [--tree HASH] [--requester SEAT] [--ttr S]   prints the GRADE_JOB line and the job id
+#   util_grade_job.py put --suite KEY --cell CELL --band request|smoke|impact|lap [--modes m3,m4] [--tree HASH] [--requester SEAT] [--ttr S] [--tube T]   prints the GRADE_JOB line and the job id (--tube T: a scratch tube for a probe, default grade; step 4b)
 #   util_grade_job.py budget --suite KEY --cell CELL                      prints "BUDGET suite= cell= entries=N ttr_s=N declared=N"
 #   util_grade_job.py --probe                                             puts one request-band core job of a snobol4 suite at origin's tree, prints its line, deletes it
 # rc 0 ok, 1 nothing/red, 2 refuse (unknown suite, unreadable table, daemon unreachable).
@@ -54,8 +54,8 @@ def q(*args):
     r = subprocess.run([sys.executable, os.path.join(S4E, "harness", "scripts", "util_queue.py")] + list(args), capture_output=True, text=True)
     if r.returncode != 0: refuse("util_queue.py %s: %s" % (args[0], (r.stdout + r.stderr).strip()[:200]), r.returncode if r.returncode in (1, 2) else 2)
     return r.stdout.strip()
-def put(j):
-    jid = q("put", "grade", json.dumps(j, sort_keys=True), "--pri", str(j["pri"]), "--ttr", str(j["ttr_s"])); return int(jid)
+def put(j, tube="grade"):
+    jid = q("put", tube, json.dumps(j, sort_keys=True), "--pri", str(j["pri"]), "--ttr", str(j["ttr_s"])); return int(jid)
 def main(a):
     if not a: refuse("usage: util_grade_job.py put|budget|--probe ...")
     if a[0] == "--probe":
@@ -74,6 +74,7 @@ def main(a):
         if band not in BAND: refuse("band %r" % band)
         lang, ents, ttr, declared = budget(opts["suite"], opts["cell"])
         j = {"suite": opts["suite"], "cell": opts["cell"], "modes": opts.get("modes", "m3,m4"), "tree": opts.get("tree") or origin_tree(), "requester": opts.get("requester") or os.environ.get("S4E_SEAT", "?"), "pri": BAND[band], "ttr_s": int(opts.get("ttr") or ttr), "entries": len(ents)}
-        jid = put(j); print(line(j)); print("job=%d tube=grade" % jid); return
+        tube = opts.get("tube", "grade")
+        jid = put(j, tube); print(line(j)); print("job=%d tube=%s" % (jid, tube)); return
     refuse("unknown verb " + a[0])
 main(sys.argv[1:])
