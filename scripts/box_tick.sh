@@ -10,6 +10,7 @@
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
 #   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
+#   box_tick.sh --probe-cost  the tick's cost arm on a scratch dir: a quiet tick (view=unchanged, sweep=read, cpu_s under 3) and the tenth tick (sweep=ran); one TICK_COST line; writes only scratch
 #   box_tick.sh --probe-wake-rate  the wake rate arm: five planted tier-4 seats, three --wake passes; one WAKE_RATE line (2, 2, 1 at S4E_WAKE_RATE=2); plant jobs deleted
 #   box_tick.sh --probe-width-psi  the grader width arm on planted sensors (box PSI steps, the memory.events hold, the hot bar): one WIDTH_PSI line; rc 0 when every step is as ruled; writes no state
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
@@ -133,14 +134,19 @@ leases() {   # fleet-queue step 5: a RESERVED claim whose job reads ready (the h
     out=$(S4E_NO_BANNER=1 timeout 60 bash "$ROOT/harness/scripts/s4e_msg.sh" expire "$t" 2>&1 < /dev/null) || continue
     printf '%s %s\n' "$(date '+%F %T')" "$(printf '%s' "$out" | tail -1 | cut -c1-200)" >> "$TICK_DIR/leases.log"
   done; return 0; }
+view_stamp() {   # the view's inputs (the coo's ruling, row tick-costs-13-to-20-s-cpu): the nanosecond mtimes of tasks/ and claims/, and every tube's counts (util_queue.py tubes: a put, a reserve or a done moves it); QUEUE.tsv is regenerated only when this moved
+  printf '%s|%s' "$(stat -c '%.9Y' "$PO/tasks" "$PO/claims" 2>/dev/null | tr '\n' ' ')" "$(python3 "$ROOT/harness/scripts/util_queue.py" tubes 2>/dev/null | md5sum | cut -c1-32)"; }
+dry_sense() {   # S4E_TICK_DRY=1: sense() is skipped and its globals are planted at the cool arm plant() already uses, so a probe reads a quiet tick with no 2 s sample
+  busy=6.0; cpu60=4; gcpu10=1; gmem10=0; mem_rise=0; up_hold=0; cores=16; q=500; w=2; WMIN=1; WMAX=8; sqc=1000; sq=800; jtc=12; jt=4; slotless=""; capped=""; orphans=""; mem=""; madmit=0; to_new=0; }
 tick() {
-  local started law=0 flk=1 swp=0 rc_d rc_p rc_s agree=0 n=0 old_age=-1 stamp mgr fresh=0 plant_out swp_out
+  local started law=0 flk=1 swp=0 rc_d rc_p rc_s agree=0 n=0 old_age=-1 stamp mgr fresh=0 plant_out swp_out tkn=0 vst="" view=unchanged sweep=read age_s=-1 cpu_s=0.00
   : "${S4E_SEAT:?REFUSE(2): the tick runs under a seat identity (S4E_SEAT unset); the unit sets it}"
   mkdir -p "$TICK_DIR" || return 2
   exec 9>>"$TICK_DIR/tick.lock"
   flock -n 9 || { echo "REFUSE(3): another tick holds $TICK_DIR/tick.lock"; return 3; }
   started=$(date +%s); stamp=$(date '+%F %T')
-  sense
+  tkn=$(( $(cat "$TICK_DIR/tick.count" 2>/dev/null || echo 0) + 1 )); echo "$tkn" > "$TICK_DIR/tick.count"   # the tick counter: the plant sweep runs on every tenth tick
+  if [ "${S4E_TICK_DRY:-0}" = 1 ]; then dry_sense; else sense; fi
   decide > "$TICK_DIR/decide.new"; rc_d=$?
   up_hold_next "$mem_rise" "$up_hold" > "$TICK_DIR/grader_up_hold"   # the width's up-hold, one count per tick (a rise arms five)
   plant_out=$(plant 2>&1); rc_p=$?
@@ -152,19 +158,45 @@ tick() {
   [ -f "$OLD/decide.last" ] && old_age=$(( $(date +%s) - $(stat -c %Y "$OLD/decide.last") ))
   { printf '%s TICK law=%s agree=%s/%s old_age_s=%s plant=%s\n' "$stamp" "$law" "$agree" "$n" "$old_age" "$(printf '%s' "$plant_out" | tail -1 | cut -c1-120)"; sed "s/^/$stamp /" "$TICK_DIR/decide.last"; } >> "$TICK_DIR/shadow.log"
   [ "$(wc -l < "$TICK_DIR/shadow.log")" -gt 20000 ] && { tail -n 10000 "$TICK_DIR/shadow.log" > "$TICK_DIR/shadow.tmp" && mv "$TICK_DIR/shadow.tmp" "$TICK_DIR/shadow.log"; }
-  python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1   # fleet-queue step 12: QUEUE.tsv regenerated every tick
-  wake > /dev/null   # fleet-queue step 11: WAKE lines for idle seats with a ready job
-  leases   # fleet-queue step 5: every claim whose reserved job is back in its tube is expired through the bus (the LEDGER line, the claim archived, QUEUED:<tube>)
-  swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
-  printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"
-  printf '%s\n' "$swp_out" | grep -q '^SWEEP closed plant ' && swp=1
+  vst=$(view_stamp)   # fleet-queue step 12: QUEUE.tsv regenerated when its inputs moved since the last tick, else the TICK line says view=unchanged
+  if [ "$vst" = "$(cat "$TICK_DIR/view.stamp" 2>/dev/null)" ]; then view=unchanged
+  elif python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1; then printf '%s' "$vst" > "$TICK_DIR/view.stamp"; view=regenerated
+  else view=failed; fi
+  if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; fi   # fleet-queue step 11 and step 5; the dry probe plants no seat and expires no claim
+  if [ $(( tkn % ${S4E_PLANT_EVERY:-10} )) -eq 0 ]; then   # the plant sweep is a self-test: every tenth tick only, the others carry the last reading
+    swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
+    printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"; sweep=ran
+    printf '%s\n' "$swp_out" | grep -q '^SWEEP closed plant ' && swp=1
+  else
+    rc_s=0; sweep=read
+    grep -q '^SWEEP closed plant ' "$TICK_DIR/sweep.last" 2>/dev/null && swp=1
+  fi
+  [ -f "$TICK_DIR/sweep.last" ] && age_s=$(( $(date +%s) - $(stat -c %Y "$TICK_DIR/sweep.last") ))
   printf '%s %s %s %s %s %s %s\n' "$$" "$PPID" "$started" "$flk" "$law" "$swp" "$rc_s" > "$TICK_DIR/last.tsv.tmp" && mv "$TICK_DIR/last.tsv.tmp" "$TICK_DIR/last.tsv"
   mgr=$(pgrep -u "$(id -u)" -x systemd | head -1); [ -n "$mgr" ] && [ "$PPID" = "$mgr" ] && fresh=1
-  printf 'TICK unit=s4e-tick.timer period_s=%s fresh_pid=%s flock=%s controller_law=%s sweep_green=%s mode=shadow applied=0 agree=%s/%s secs=%s\n' \
-    "$(period_s)" "$fresh" "$flk" "$law" "$swp" "$agree" "$n" "$(( $(date +%s) - started ))"
+  times > "$TICK_DIR/cpu.times"   # bash's times must run in this shell, not in a pipeline or $(...): a subshell reads its own zeros
+  cpu_s=$(awk '{for (i = 1; i <= NF; i++) {v = $i; sub(/s$/, "", v); split(v, a, "m"); t += a[1] * 60 + a[2]}} END {printf "%.2f", t}' "$TICK_DIR/cpu.times")   # the CPU this tick spent: the shell and its waited-for children
+  printf 'TICK unit=s4e-tick.timer period_s=%s fresh_pid=%s flock=%s controller_law=%s sweep_green=%s mode=shadow applied=0 agree=%s/%s secs=%s view=%s sweep=%s sweep_age_s=%s cpu_s=%s\n' \
+    "$(period_s)" "$fresh" "$flk" "$law" "$swp" "$agree" "$n" "$(( $(date +%s) - started ))" "$view" "$sweep" "$age_s" "$cpu_s"
   return 0
 }
 
+tick_tok() { printf '%s\n' "$2" | tr ' ' '\n' | sed -n "s/^$1=//p" | head -1; }
+probe_cost() {   # the tick's cost arm (the coo's ruling 2026-11-07, row tick-costs-13-to-20-s-cpu): a scratch tick dir and the dry path. A quiet tick (counter 5 becomes 6) with the view stamp planted from the live state: view=unchanged, sweep=read, cpu_s printed and under 3. The tenth tick (counter 9 becomes 10) runs the plant sweep: sweep=ran. Writes only scratch
+  local w l1 l2 v1 s1 c1 s2 same=0 printed=0 under=0 ran=0 plant_every=${S4E_PLANT_EVERY:-10}
+  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_tick_cost.XXXXXX")" || return 2
+  echo 5 > "$w/tick.count"; view_stamp > "$w/view.stamp"
+  l1=$(S4E_TICK_DRY=1 S4E_SEAT="${S4E_SEAT:-worker_18}" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --tick 2>/dev/null | grep '^TICK unit=' | tail -1)
+  echo 9 > "$w/tick.count"
+  l2=$(S4E_TICK_DRY=1 S4E_SEAT="${S4E_SEAT:-worker_18}" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$ROOT/harness/scripts/box_tick.sh" --tick 2>/dev/null | grep '^TICK unit=' | tail -1)
+  rm -rf "$w"
+  v1=$(tick_tok view "$l1"); s1=$(tick_tok sweep "$l1"); c1=$(tick_tok cpu_s "$l1"); s2=$(tick_tok sweep "$l2")
+  [ "$v1" = unchanged ] && same=1
+  printf '%s' "$c1" | grep -qE '^[0-9]+\.[0-9]+$' && printed=1
+  [ "$printed" = 1 ] && awk -v c="$c1" 'BEGIN {exit !(c < 3)}' && under=1
+  [ "$s2" = ran ] && ran=1
+  printf 'TICK_COST plant_every=%s view_skipped_when_unchanged=%s cpu_s_printed=%s quiet_tick_under_3s=%s quiet_sweep=%s plant_tick_sweep=%s cpu_s=%s view=%s\n' "$plant_every" "$same" "$printed" "$under" "${s1:-none}" "${s2:-none}" "${c1:-none}" "${v1:-none}"
+  [ "$same" = 1 ] && [ "$printed" = 1 ] && [ "$under" = 1 ] && [ "$s1" = read ] && [ "$ran" = 1 ] && [ "$plant_every" = 10 ]; }
 probe_fresh() {
   local mgr prev t0 srv_rc pid ppid started flk law swp rc_s i fresh=0
   mgr=$(pgrep -u "$(id -u)" -x systemd | head -1)
@@ -228,6 +260,7 @@ case "${1:-}" in
   --view) python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate; exit $?;;
   --probe-wake) probe_wake; exit $?;;
   --probe-wake-rate) probe_wake_rate; exit $?;;
+  --probe-cost) probe_cost; exit $?;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
   --render-grade-worker) render_grade_worker; exit $?;;
