@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] [--tiers F] [--claims DIR] [--tubes F] [--sleeping F] [--probe-seat-arm] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
+"""util_suite_row_owner_census.py [--suites F] [--queue F] [--tasks DIR] [--holder KEY] [--tiers F] [--claims DIR] [--tubes F] [--sleeping F] [--probe-seat-arm] [--probe-umbrella] -- EVERY SUITE BELOW 100 PERCENT HAS A ROW A SEAT
 HOLDS, AND THE WORKER QUEUES ARE WORKED (the seat arm, SEAT_QUEUE_BOARD, below the suite arm: no starved worker, no cut job owed, no overdue escalation; either arm RED is rc 1).
 
 Lon 2026-11-01 15:5x CST, in the coo's window, verbatim: "The goal is to get to 100% test suites, duh!" / "Well of course the bug fixes need
@@ -11,7 +11,7 @@ telegrams the coo while it reads RED; it is not a memory.
 Reads /home/resources/progress/SUITES.tsv (SCRIP rows: a key with no @) and, for every row not at 100 percent (today_pass < today_total,
 no reading, or VOID), the live QUEUE rows (state not DONE, RETIRED or SUPERSEDED) whose DONE-WHEN line READS THAT SUITE: it names
 util_suite_row_at_100.sh <key> or --suite <key>. A suite is
-  OWNED          a reading row is CLAIMED:<seat> or ASSIGNED:<seat>
+  OWNED          a reading row is CLAIMED:<seat> or ASSIGNED:<seat>, or a PARKED-UMBRELLA:<plan> row whose plan has a live row (CLAIMED, ASSIGNED, QUEUED or RUNNING; the topic starts with the plan prefix, the baton's PLAN: line else the text up to -cto- or -cio-)
   HELD-BY-LON    a reading row is PARKED-LON-HOLD:<ruling> (Lon's hold, named on the row), or the suite is in RULED below (a standing ruling)
   UNOWNED        no reading row, or every reading row is FREE, PARKED or BLOCKED-ON -- RED, with the rows and their states named
 Port-engine rows (<key>@<engine>) are counted and skipped: the ports are off the ROSTER by Lon's word of 2026-11-01 09:01.
@@ -33,7 +33,26 @@ SUITES = arg("--suites", "/home/resources/progress/SUITES.tsv")
 QUEUE = arg("--queue", "/home/resources/postoffice/QUEUE.tsv")
 TASKS = arg("--tasks", "/home/resources/postoffice/tasks")
 def refuse(why): print("REFUSE(2): " + why); sys.exit(2)
-try: lines = [l.rstrip("\n").split("\t") for l in open(SUITES, encoding="utf-8") if not l.startswith("#")]
+if "--probe-umbrella" in sys.argv[1:]:
+    # THE UMBRELLA PROBE (the cio, 2026-11-07, row census-suite-arm-reds-an-umbrella-row-as-unowned-though-its-steps-are-live-tier-haiku-jobs): two planted suites, each read by one PARKED-UMBRELLA row; plan planted-a has one QUEUED:tier-haiku step, plan planted-b has none. Plants only scratch files and runs this script on them (no live queue, no daemon).
+    import shutil, subprocess, tempfile
+    d = tempfile.mkdtemp(prefix="umbrella_probe_")
+    try:
+        os.mkdir(os.path.join(d, "tasks")); os.mkdir(os.path.join(d, "claims"))
+        with open(os.path.join(d, "SUITES.tsv"), "w") as f: f.write("key\ttoday_pass\ttoday_total\nplanted-a\t3\t10\nplanted-b\t3\t10\n")
+        with open(os.path.join(d, "QUEUE.tsv"), "w") as f: f.write("0\tumb-a\tworker_07\tPARKED-UMBRELLA:plana-cto-533-rest\n0\tumb-b\tworker_07\tPARKED-UMBRELLA:planb-cto-533-rest\n1\tplana-step-1-cto-533\t@haiku\tQUEUED:tier-haiku\n")
+        for t, k in (("umb-a", "planted-a"), ("umb-b", "planted-b")):
+            with open(os.path.join(d, "tasks", t + ".task.md"), "w") as f: f.write("# TASK %s\nDONE-WHEN: bash harness/scripts/util_suite_row_at_100.sh %s\n" % (t, k))
+        with open(os.path.join(d, "TIERS.tsv"), "w") as f: f.write("seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\ncio\tCIO\t/x\tclaude-fable-5-1\thigh\tred\t1\tfleet-system\n")
+        with open(os.path.join(d, "tubes.tsv"), "w") as f: f.write("tube\tready\toldest_ready_age_s\ntier-haiku\t0\t0\n")
+        r = subprocess.run([sys.executable, os.path.abspath(__file__), "--suites", os.path.join(d, "SUITES.tsv"), "--queue", os.path.join(d, "QUEUE.tsv"), "--tasks", os.path.join(d, "tasks"), "--tiers", os.path.join(d, "TIERS.tsv"), "--claims", os.path.join(d, "claims"), "--tubes", os.path.join(d, "tubes.tsv"), "--sleeping", os.path.join(d, "none")], capture_output=True, text=True, timeout=120)
+    finally: shutil.rmtree(d, ignore_errors=True)
+    m = re.search(r"^SUITE_OWNER_BOARD .* owned=(\d+) held_by_lon=\d+ unowned=(\d+) ", r.stdout, re.M)
+    if m is None: refuse("the umbrella probe read no census board: %s" % r.stdout[-300:].strip())
+    owned, unowned = int(m.group(1)), int(m.group(2))
+    print("UMBRELLA_PROBE live_counts_owned=%d empty_reds=%d" % (owned, unowned))
+    sys.exit(0 if (owned, unowned) == (1, 1) else 1)
+try: lines =[l.rstrip("\n").split("\t") for l in open(SUITES, encoding="utf-8") if not l.startswith("#")]
 except OSError as e: refuse("%s unreadable: %s" % (SUITES, e))
 if not lines: refuse("%s is empty" % SUITES)
 head = lines[0]
@@ -57,6 +76,17 @@ def holder_of(key):
     return "-"
 if "--holder" in sys.argv[1:]:
     print(holder_of(arg("--holder", ""))); sys.exit(0)
+LIVE = ("CLAIMED:", "ASSIGNED:", "QUEUED:", "RUNNING")
+live = [(f[1], f[3]) for f in queue if len(f) >= 4 and f[0].isdigit() and f[3].split(":")[0] not in CLOSED]
+def umbrella_live(tp, state):
+    # THE UMBRELLA RULE (the cio, 2026-11-07): an umbrella row counts as OWNED by its designer when a live row (CLAIMED, ASSIGNED, QUEUED or RUNNING) has a topic starting with the umbrella's plan prefix: the baton's PLAN: line when present, else the text after PARKED-UMBRELLA: up to the first -cto- or -cio-.
+    try: m = re.search(r"^PLAN:[ \t]*(\S+)", open(os.path.join(TASKS, tp + ".task.md"), encoding="utf-8", errors="replace").read(), re.M)
+    except OSError: m = None
+    if m: plan = m.group(1)
+    else:
+        text = state.split(":", 1)[1]
+        plan = text[:min([i for i in (text.find("-cto-"), text.find("-cio-")) if i >= 0] or [len(text)])]
+    return bool(plan) and any(t.startswith(plan) and s.startswith(LIVE) for t, s in live)
 n = below = owned = held = 0; ports = 0; reds = []
 for r in rows:
     k = r["key"]
@@ -71,8 +101,11 @@ for r in rows:
     if void: score += " VOID"
     rd = readers.get(k, [])
     if any(s.startswith(("CLAIMED:", "ASSIGNED:")) for _, s in rd): owned += 1; continue
+    ums = [(tp, st) for tp, st in rd if st.startswith("PARKED-UMBRELLA:")]
+    if any(umbrella_live(tp, st) for tp, st in ums): owned += 1; continue
     if k in RULED or any(s.startswith("PARKED-LON-HOLD") for _, s in rd): held += 1; continue
-    if not rd: reds.append("  RED  suite %s %s: no live row reads this suite (mint one, DONE-WHEN util_suite_row_at_100.sh %s, owner the lane, then assign)" % (k, score, k))
+    if ums: reds.append("  RED  suite %s %s: umbrella %s with no live step under it -- %s cuts or lifts it" % (k, score, ums[0][1], "cto" if "cto-" in ums[0][1] else ("cio" if "cio-" in ums[0][1] else "its designer")))
+    elif not rd: reds.append("  RED  suite %s %s: no live row reads this suite (mint one, DONE-WHEN util_suite_row_at_100.sh %s, owner the lane, then assign)" % (k, score, k))
     else: reds.append("  RED  suite %s %s: no seat holds its row -- %s (assign it to the lane)" % (k, score, "; ".join("%s [%s]" % (tp, st) for tp, st in rd)))
 if n == 0: refuse("%s holds no SCRIP row" % SUITES)
 print("SUITE_OWNER_BOARD suites=%d below_100=%d owned=%d held_by_lon=%d unowned=%d ports_skipped=%d" % (n, below, owned, held, len(reds), ports))
