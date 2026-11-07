@@ -14,6 +14,8 @@
 #   --tube T          the tube to reserve from (default grade)
 #   --probe           step 4b's probe: a private beanstalkd on a free port (never 11300), one request-band snobol4 entry put by util_grade_job.py into a scratch tube, one
 #                     --once run under strace -f -e trace=execve; prints GRADE_WORKER reserved= launches= modes= deleted= progress=off (rc 0 only if all four read as wanted)
+#   --probe-smoke     step 4d's probe: a scratch results table (a program PASS then FAIL), a scratch SMOKE.tsv and a scratch post office; drives lib_grade_cell.sh's
+#                     grade_cell_after, the call the lease makes after record(); prints GRADE_SMOKE smoke_tsv= new_red_telegram= scratch= (rc 0 only if all three read 1)
 #   --probe-record    step 4c's probe: the same private daemon, a planted pending request in a scratch dir, one --once run with S4E_GRADE_SCRATCH; prints GRADE_RECORD
 #                     suite_row= verdict= scratch= (rc 0 only if all three read 1 and the request moved to done/)
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"; N=1; ONCE=0; TUBE=grade; PROBE=0; LOG=/home/resources/progress/GRADE_WORKERS.log
@@ -21,6 +23,7 @@ while [ $# -gt 0 ]; do case "$1" in
     --once) ONCE=1; shift ;;
     --probe) PROBE=1; shift ;;
     --probe-record) PROBE=2; shift ;;
+    --probe-smoke) PROBE=3; shift ;;
     --tube) TUBE="${2:?REFUSE(2) [grade_worker]: --tube takes a tube name}"; shift 2 ;;
     -h|--help) awk 'NR>1 && !/^#/{exit} NR>1{print}' "${BASH_SOURCE[0]}"; exit 0 ;;
     [0-9]*) N="$1"; shift ;;
@@ -82,8 +85,35 @@ print(next(r[h.index("entry")] for r in rows[1:] if r[h.index("part")] == "core"
     tail -4 "$T/worker.out" | cut -c1-240
     [ "$REC" = "suite_row=1 verdict=1 scratch=1" ] && [ -f "$T/record/test_requests/done/$name" ]
 }
+probe_smoke() {
+    local dir="/tmp/s4e/${S4E_SEAT:-grade}" T scr out nt inbox smoke nrt sc lsm0 lsm1 i H
+    mkdir -p "$dir" && T="$(mktemp -d "$dir/grade_smoke.XXXXXX")" || { echo "REFUSE(2) [grade_worker --probe-smoke]: cannot make $dir"; return 2; }
+    trap "rm -rf '$T'" EXIT
+    scr="$T/smoke"; mkdir -p "$scr"
+    H="$(printf 'ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\tfingerprint\tconfig')"
+    { echo "$H"
+      printf '2026-11-07T10:00:00\taaa1111\tccc\tcoo\trungs\tfixture-smoke\tsnobol4\tfx_prog\tm3\tPASS\t0.01\t\t\t\n'
+      printf '2026-11-07T10:00:00\taaa1111\tccc\tcoo\trungs\tfixture-smoke\tsnobol4\tfx_prog\tm4\tPASS\t0.01\t\t\t\n'; } > "$scr/snap.tsv"
+    { cat "$scr/snap.tsv"
+      printf '2026-11-07T11:00:00\tbbb2222\tccc\tcoo\trungs\tfixture-smoke\tsnobol4\tfx_prog\tm3\tFAIL\t0.01\t\t\t\n'
+      printf '2026-11-07T11:00:00\tbbb2222\tccc\tcoo\trungs\tfixture-smoke\tsnobol4\tfx_prog\tm4\tPASS\t0.01\t\t\t\n'; } > "$scr/results.tsv"
+    mkdir -p "$scr/post"; cp /home/resources/postoffice/MODE "$scr/post/MODE"
+    for i in $(sed -n 's/^ROSTER: //p' "$scr/post/MODE"); do mkdir -p "$scr/post/$i/inbox"; done
+    lsm0="$(wc -l < /home/resources/progress/SMOKE.tsv 2>/dev/null || echo 0)"
+    out="$(S4E_HOME="$S4E" S4E_SEAT=worker_20 S4E_RESULTS="$scr/results.tsv" S4E_SMOKE_TSV="$scr/SMOKE.tsv" S4E_POST="$scr/post" S4E_TIERS="$S4E/.github/TIERS.tsv" \
+        bash "$S4E/harness/scripts/lib_grade_cell.sh" grade_cell_after fixture-smoke bbb2222 smoke "$scr/snap.tsv" 1 fx_prog 2>&1)"
+    lsm1="$(wc -l < /home/resources/progress/SMOKE.tsv 2>/dev/null || echo 0)"
+    echo "$out" | sed 's/^/  | /' | head -6
+    smoke=0; grep -q 'bbb2222' "$scr/SMOKE.tsv" 2>/dev/null && smoke=1
+    nt="$(echo "$out" | sed -n 's/^GRADE_CELL_AFTER .* new_reds_told=\([0-9]*\).*/\1/p')"; inbox="$(ls "$scr/post/cto/inbox" 2>/dev/null | wc -l)"
+    nrt=0; [ "${nt:-0}" = 1 ] && [ "$inbox" = 1 ] && nrt=1
+    sc=0; [ "$lsm0" = "$lsm1" ] && [ "$smoke" = 1 ] && sc=1
+    echo "GRADE_SMOKE smoke_tsv=$smoke new_red_telegram=$nrt scratch=$sc"
+    [ "$smoke" = 1 ] && [ "$nrt" = 1 ] && [ "$sc" = 1 ]
+}
 if [ "$PROBE" = 1 ]; then probe; exit $?; fi
 if [ "$PROBE" = 2 ]; then probe_record; exit $?; fi
+if [ "$PROBE" = 3 ]; then probe_smoke; exit $?; fi
 while :; do
     python3 - "$S4E" "$TUBE" "$N" "$ONCE" "$LOG" 5 "${S4E_GRADE_SCRATCH:-}" <<'PY'
 import os, sys, json, time, subprocess, shutil
@@ -100,8 +130,20 @@ def scratch_env():
     p = os.path.join(SCR, "progress"); os.makedirs(p, exist_ok=True); os.makedirs(os.path.join(SCR, "test_requests", "done"), exist_ok=True)
     for src, dst in ((LIVE_PROG + "/results.tsv", p + "/results.tsv"), (LIVE_PROG + "/SUITES.tsv", p + "/SUITES.tsv"), (os.path.join(S4E, ".github", "SCORE.md"), os.path.join(SCR, "SCORE.md"))):
         if not os.path.exists(dst): shutil.copyfile(src, dst)
-    return {"S4E_PROGRESS_DB": p + "/results.tsv", "S4E_SUITES_TSV": p + "/SUITES.tsv", "S4E_SCORE_MD": os.path.join(SCR, "SCORE.md"), "S4E_TEST_REQUEST_DIR": os.path.join(SCR, "test_requests")}
-SENV = scratch_env(); ENV = dict(os.environ, **SENV)
+    po = os.path.join(SCR, "post"); os.makedirs(po, exist_ok=True)
+    if not os.path.exists(po + "/MODE"): shutil.copyfile("/home/resources/postoffice/MODE", po + "/MODE")
+    for ln in open(po + "/MODE", encoding="utf-8", errors="replace"):
+        if ln.startswith("ROSTER:"):
+            for seat in ln.split()[1:]: os.makedirs(os.path.join(po, seat, "inbox"), exist_ok=True)
+    return {"S4E_PROGRESS_DB": p + "/results.tsv", "S4E_SUITES_TSV": p + "/SUITES.tsv", "S4E_SCORE_MD": os.path.join(SCR, "SCORE.md"), "S4E_TEST_REQUEST_DIR": os.path.join(SCR, "test_requests"),
+            "S4E_RESULTS": p + "/results.tsv", "S4E_SMOKE_TSV": os.path.join(SCR, "SMOKE.tsv"), "S4E_POST": po}
+SENV = scratch_env(); ENV = dict(os.environ, S4E_HOME=S4E, **SENV)
+BAND = {100: "request", 200: "smoke", 500: "impact", 900: "lap"}
+LIB = os.path.join(S4E, "harness", "scripts", "lib_grade_cell.sh")
+PN_PY = "import sys; sys.path.insert(0, sys.argv[1]); import util_suite_rows_vs_progress as a; print(a.dbname(sys.argv[2]))"
+def progress_name(key):
+    r = subprocess.run([sys.executable, "-c", PN_PY, os.path.join(S4E, "harness", "scripts"), key], capture_output=True, text=True, env=ENV, timeout=120)
+    return r.stdout.strip() or key
 def say(m): print(m, flush=True)
 def lang_of(key):
     for l in open(LIVE_PROG + "/SUITES.tsv"):
@@ -173,6 +215,10 @@ def one():
         cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
                "run", alls, os.path.join(os.path.dirname(alls), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
         d = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT", "grade"), "grade"); os.makedirs(d, exist_ok=True)
+        res_path = ENV.get("S4E_RESULTS", LIVE_PROG + "/results.tsv")
+        snap = os.path.join(d, "job.%d.snap.tsv" % job.id)
+        if os.path.isfile(res_path): shutil.copyfile(res_path, snap)
+        else: snap = ""
         with open(os.path.join(d, "job.%d.log" % job.id), "ab") as out:
             p = subprocess.Popen(cmd, cwd=S4E, env=ENV, stdout=out, stderr=subprocess.STDOUT)
             last = time.time()
@@ -187,6 +233,12 @@ def one():
                 try: sr, vd, sc, wy = record(lang, entries, pri, requester, tree)
                 except Exception as e: sr, vd, sc, wy = 0, 0, int(bool(SCR)), "record refused: %s" % e
                 say("RECORD job=%d key=%s suite_row=%d verdict=%d scratch=%d reason=%s" % (job.id, CONTAINER.get(lang, "-"), sr, vd, sc, wy or "-"))
+                try:
+                    ga = subprocess.run(["bash", LIB, "grade_cell_after", progress_name(CONTAINER[lang]), tree, BAND.get(pri, "other"), snap, str(int(time.time() - t0))] + entries,
+                                        cwd=S4E, env=ENV, capture_output=True, text=True, timeout=900)
+                    say((ga.stdout.strip().splitlines() or ["GRADE_CELL_AFTER no output"])[-1] + (" rc=%d" % ga.returncode if ga.returncode else ""))
+                except Exception as e: say("GRADE_CELL_AFTER refused: %s" % e)
+                if snap and os.path.isfile(snap): os.remove(snap)
             else: say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=progress off, nothing recorded" % job.id)
     action = "delete" if rc in (0, 1) and why is None else "bury"
     try:
