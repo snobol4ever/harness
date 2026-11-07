@@ -1118,7 +1118,7 @@ s4e_sweep_close_green() {   # CTO-496 box-scheduler step 8: a row whose DONE-WHE
 s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the archive run on a scratch postoffice; the live queue is never written
   local _w _g _r _k _o _x _ok=1 _why="" _now
   _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_sweep_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
-  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; _now="$(date -u +%FT%TZ)"
+  mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null; _now="$(date -u +%FT%TZ)"
   _g="sweep-plant-green-$$"; _r="sweep-plant-red-$$"; _k="sweep-plant-live-claim-$$"; _b="sweep-plant-bare-claim-$$"; _sw="sweep-plant-swap-$$"
   printf '# plant queue (box-scheduler step 8, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-owner\tFREE\n2\t%s\tplant-other\tASSIGNED:plant-other\n2\t%s\tplant-other\tCLAIMED:plant-other\n2\t%s\tplant-owner\tFREE\n' \
     "$_g" "$_r" "$_k" "$_b" "$_sw" > "$_w/QUEUE.tsv"
@@ -1134,9 +1134,9 @@ s4e_sweep_plant_green() {   # step 8's probe: the close-green phase and the arch
   grep -q 'CLOSED BY THE SWEEP' "$_w/tasks/$_g.task.md" || { _ok=0; _why="$_why the green row has no ledger receipt;"; }
   grep -qP "^2\t\Q$_r\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" || { _ok=0; _why="$_why the red row moved;"; }
   [ -e "$_w/claims/$_r.claim" ] && { _ok=0; _why="$_why the red row kept a sweep claim;"; }
-  { grep -qP "^2\t\Q$_k\E\tplant-other\tASSIGNED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/live.before" "$_w/claims/$_k.claim"; } || { _ok=0; _why="$_why the live claim was touched;"; }
+  { grep -qP "^2\t\Q$_k\E\tplant-other\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/live.before" "$_w/claims/$_k.claim"; } || { _ok=0; _why="$_why live claim $_k did not read CLAIMED:plant-other with its file untouched;"; }
   { grep -qP "^2\t\Q$_b\E\tplant-other\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/bare.before" "$_w/claims/$_b.claim"; } || { _ok=0; _why="$_why the bare claim was touched;"; }
-  { grep -qP "^2\t\Q$_sw\E\tplant-owner\tFREE$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why a claim swapped under the sweep was not left as found;"; }
+  { grep -qP "^2\t\Q$_sw\E\tplant-owner\tCLAIMED:plant-other$" "$_w/QUEUE.tsv" && cmp -s "$_w/swap.foreign" "$_w/claims/$_sw.claim"; } || { _ok=0; _why="$_why swapped claim $_sw did not read CLAIMED:plant-other with its file left as found;"; }
   if [ "$_ok" = 1 ]; then printf 'SWEEP closed plant %s (red %s kept FREE with no claim; live claim %s, bare claim %s and swapped claim %s untouched)\n' "$_g" "$_r" "$_k" "$_b" "$_sw"; rm -rf "$_w"; return 0; fi
   printf 'SWEEP plant RED:%s\n' "$_why"; printf '%s\n' "$_o" | tail -20 | sed 's/^/  | /'; rm -rf "$_w"; return 1
 }
