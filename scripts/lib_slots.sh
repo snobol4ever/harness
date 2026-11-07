@@ -16,10 +16,10 @@
 # leaf that starts nothing. The census reads the holders from /proc/*/fd (a held file is open for the holder's life: kernel truth, no sidecar). The seat is S4E_SEAT (every root's settings env sets it),
 # else the first path component under /home of the working directory. A wait of a second or more is one line in SLOT_WAITS.tsv (R-2078).
 S4E_CC_POOL_DEFAULT=8
-S4E_RUN_POOL_DEFAULT=8
+S4E_RUN_POOL_DEFAULT=14
 S4E_CC_SEAT_CAP_DEFAULT=4
 S4E_RUN_SEAT_CAP_DEFAULT=3
-S4E_RUN_GRADER_RESERVED_DEFAULT=2
+S4E_RUN_GRADER_RESERVED_DEFAULT=6
 s4e_slot_seat() { if [ -n "${S4E_SEAT:-}" ]; then printf '%s' "$S4E_SEAT"; else pwd -P | sed -n 's|^/home/\([^/]*\).*|\1|p' | grep . || printf 'seat'; fi; }
 s4e_slot_note() {   # <kind> <t0> <cmd>... -- one line per wait of a second or more
     local f w k="$1" t0="$2"; shift 2
@@ -42,7 +42,7 @@ s4e_slot_hold() {
     sfd=7; seat="$(s4e_slot_seat)"
     mkdir -p "$dir/seat/$seat" 2>/dev/null || return 1
     t0=$(date +%s.%N); local bound; bound="${S4E_SLOT_WAIT_MAX:-}"
-    if [ -z "$bound" ]; then if [ "$grader" = 1 ]; then bound=900; else case "$(date +%H)" in 0[6-9]|1[0-9]|2[01]) bound=300;; *) bound=900;; esac; fi; fi
+    if [ -z "$bound" ]; then if [ "$grader" = 1 ]; then bound=900; else case "$(date +%H)" in 0[6-9]|1[0-9]|2[01]) bound=600;; *) bound=900;; esac; fi; fi
     s4e_slot_bound() { awk -v a="$t0" -v b="$(date +%s.%N)" -v m="$bound" 'BEGIN {exit !(b - a >= m)}' || return 0
         s4e_slot_note "$kind-refused" "$t0" "bound=${bound}s"
         printf 'REFUSE(2) [util_%s_slot]: no %s slot within %s s for %s (pool %s of %s slots, seat cap %s): the box is over-admitted, the wait is recorded in SLOT_WAITS.tsv, nothing ran (box-budget step 5).\n' "$kind" "$kind" "$bound" "$seat" "$n" "$dir" "$cap" >&2
