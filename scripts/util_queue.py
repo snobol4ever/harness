@@ -16,6 +16,7 @@
 # bus keeps the connection open across its own write and then lets the TTR be the lease (step 5): see s4e_msg.sh for the reserve-then-claim shape.
 import os, sys, socket, time
 HOST = os.environ.get("S4E_QUEUE_HOST", "127.0.0.1"); PORT = int(os.environ.get("S4E_QUEUE_PORT", "11300"))
+LIVE_TASKS = "/home/resources/postoffice/tasks"   # the live batons: reserve-hold on the live port may name only these (the cio 2026-11-07)
 TIERS = ("fable", "opus", "sonnet", "haiku")
 def refuse(msg, rc=2):
     print("REFUSE(%d) [util_queue]: %s" % (rc, msg)); sys.exit(rc)
@@ -107,6 +108,12 @@ def main(a):
         if cl != "greenstalk": print("  (client=stdlib, the transport fallback: pip3 install --user greenstalk)")
         if not binlog: print("  (binlog=0: set BEANSTALKD_EXTRA=\"-b /var/lib/beanstalkd -f 1000\" in /etc/default/beanstalkd and sudo systemctl restart beanstalkd)")
         sys.exit(0 if cl == "greenstalk" and binlog else 1)
+    if v == "reserve-hold" and "--baton-dir" in a:   # refused BEFORE any connection: a scratch baton dir on the live port is the deleting shape
+        dry = "--dry" in a; a = [x for x in a if x != "--dry"]
+        bd = a[a.index("--baton-dir") + 1] if a.index("--baton-dir") + 1 < len(a) else refuse("reserve-hold: --baton-dir takes a directory")
+        if PORT == 11300 and os.path.realpath(bd) != os.path.realpath(LIVE_TASKS):
+            refuse("REFUSE(2): a scratch --baton-dir on the live port 11300 (%s): reserve-hold's STALE branch would delete live jobs; a probe starts its own beanstalkd and exports S4E_QUEUE_PORT" % bd)
+        if dry: print("RESERVE_HOLD dry=1 port=%d baton_dir=live-or-private" % PORT); sys.exit(0)
     gs, c = client()
     try:
         if v == "tubes":
@@ -170,7 +177,7 @@ def main(a):
                 except gs.TimedOutError:
                     sys.exit(1)
             if batons and not os.path.isfile(os.path.join(batons, j.body + ".task.md")):
-                c.delete(j.id); print("STALE %d %s: no baton, deleted" % (j.id, j.body), file=sys.stderr); sys.exit(3)
+                c.release(j, priority=int(c.stats_job(j.id)["pri"]), delay=0); print("STALE %d %s: no baton, released (not deleted; deletion belongs to done)" % (j.id, j.body), file=sys.stderr); sys.exit(3)
             st = c.stats_job(j.id); ttr = int(st["ttr"]); interval = max(2, min(5, ttr // 3)); claim = os.path.join(claim, j.body + ".claim")
             print("%d\t%s\t%d\t%s" % (j.id, st["tube"], st["pri"], j.body)); sys.stdout.flush()
             if os.fork() > 0: os._exit(0)

@@ -324,6 +324,7 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; return 0; }
 s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, on a scratch postoffice; plant jobs live in the real tubes for seconds and are deleted): a haiku plant reserved by worker_20 through next moves to tier-sonnet at 200 with the measurement; a fable plant held by cio parks at the top
     local _w _t _t2 _j1 _j2 _out _ln _ok=1 _m=0 _l=0 _from="" _to="" _rung="" _top=none _s _new="" _x _m_text _tgi=0 _sh="$S4E/harness/scripts/s4e_msg.sh"
+    s4e_probe_daemon || exit 2
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_escalate_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
     _t="escalate-probe-$$"; _t2="escalate-probe-top-$$"; _m_text="ONE HONEST TRY FAILED (escalate probe): the plant read red on its measurement line"
     mkdir -p "$_w/claims" "$_w/tasks" "$_w/worker_20/inbox" "$_w/cio/inbox"; cp "$PO/MODE" "$_w/MODE"
@@ -398,6 +399,36 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
       exit 0
     fi
     return 1; }
+s4e_probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts or reserves runs on ITS OWN beanstalkd on a free port, exported as S4E_QUEUE_PORT to every child and killed on exit; the live daemon (11300) is never written by it
+  local _p _i _up=0
+  _p=$((21000 + ($$ % 20000)))
+  beanstalkd -l 127.0.0.1 -p "$_p" 9>&- >/dev/null 2>&1 & _S4E_PROBE_BPID=$!
+  trap 'kill "$_S4E_PROBE_BPID" 2>/dev/null; wait "$_S4E_PROBE_BPID" 2>/dev/null' EXIT
+  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_p" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+  { [ "$_up" = 1 ] && kill -0 "$_S4E_PROBE_BPID" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_p" >&2; return 2; }
+  export S4E_QUEUE_PORT="$_p"
+}
+s4e_probe_port_check() {   # the bus-queue-probes row's proof (next --probe-reserve --probe-port-check): one PROBE_PORT line. Private daemon (a), a scratch baton dir refused on the default port by a dry call (b), a stale job released not deleted on the private daemon (c), and the two confined plants (park --probe-bury, done --probe-delete) named by their own probe-*-$$ tubes (confined_probes)
+  local _w _pd=0 _dr=0 _sr=0 _cp=0 _id _st _rc
+  s4e_probe_daemon || return 2
+  if python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && [ "$S4E_QUEUE_PORT" != 11300 ]; then _pd=1; fi
+  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_port_check.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
+  mkdir -p "$_w/tasks" "$_w/claims"
+  env -u S4E_QUEUE_PORT python3 "$S4E/harness/scripts/util_queue.py" reserve-hold tier-haiku --seat "$ME" --session x --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 --dry >/dev/null 2>&1
+  [ "$?" = 2 ] && _dr=1
+  _id="$(python3 "$S4E/harness/scripts/util_queue.py" put "probe-stale-$$" "stale-$$" --pri 1000 --ttr 30 2>/dev/null)" || _id=""
+  if [ -n "$_id" ]; then
+    python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "probe-stale-$$" --seat "$ME" --session x --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 >/dev/null 2>&1; _rc=$?
+    _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_id" 2>/dev/null | cut -f3)"
+    [ "$_rc" = 3 ] && [ "$_st" = ready ] && _sr=1
+    python3 "$S4E/harness/scripts/util_queue.py" delete "$_id" >/dev/null 2>&1
+  fi
+  grep -qF 'tube="probe-park-$$"' "${BASH_SOURCE[0]}" && _cp=$((_cp + 1))
+  grep -qF 'tube="probe-done-$$"' "${BASH_SOURCE[0]}" && _cp=$((_cp + 1))
+  rm -rf "$_w"
+  printf 'PROBE_PORT private_daemon=%d default_port_refused=%d stale_released_not_deleted=%d confined_probes=%d\n' "$_pd" "$_dr" "$_sr" "$_cp"
+  [ "$_pd" = 1 ] && [ "$_dr" = 1 ] && [ "$_sr" = 1 ] && [ "$_cp" = 2 ]
+}
 s4e_next_probe_reserve() {   # fleet-queue step 4's probe (the cio, 2026-11-07, the amended row): a scratch postoffice and a PRIVATE beanstalkd on a free port, never 11300; a sonnet senior (president) runs next, its own tube is served first, and an empty own tube never serves the tube below (below_served=0); a haiku seat gets no FREE row
     local _w _seat _tier _below _own _bel _free _jo _jb _out _own_first=0 _reserved=0 _claim=0 _free_served=1 _below_served=0 _now _port _i _up=0
     _port=$((21000 + ($$ % 20000)))
@@ -429,6 +460,7 @@ s4e_next_probe_reserve() {   # fleet-queue step 4's probe (the cio, 2026-11-07, 
     [ "$_own_first" = 1 ] && [ "$_reserved" = 1 ] && [ "$_claim" = 1 ] && [ "$_free_served" = 0 ] && [ "$_below_served" = 0 ]; exit $?; }
 s4e_mint_probe_queue() {   # fleet-queue step 3's probe: the SKILLS gate and one put into tier-haiku, deleted again; no row minted
     local _skills=0 _id="" _del=0
+    s4e_probe_daemon || return 2
     s4e_skills_required_ok haiku "GOAL: a plant with no skills line" || _skills=1
     s4e_skills_required_ok haiku "GOAL: a plant
 SKILLS: fleet-bus" || _skills=0
@@ -4417,6 +4449,7 @@ TASKEOF
          [ -n "${2:-}" ] || s4e_need recut "a topic" "s4e_msg.sh recut <topic> --stdin <<'R' (the new criterion) R" "Re-cuts a row's DONE-WHEN: the old criterion is kept on a DONE-WHEN-WAS receipt, and a row the sweep retired reopens to FREE."
          s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
+        [ "${3:-}" = --probe-port-check ] && { s4e_probe_port_check; exit $?; }
         [ "${2:-}" = --probe-reserve ] && s4e_next_probe_reserve
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line

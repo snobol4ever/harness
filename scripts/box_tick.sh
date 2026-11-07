@@ -103,9 +103,18 @@ wake() {   # fleet-queue step 11: a seat whose watch list holds a ready job and 
     done
   done
   echo "WAKE lines=$lines"; return 0; }
+probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts into a tube runs on ITS OWN beanstalkd on a free port, exported to every child and killed when this process exits; the live daemon (11300) is never written by it
+  local _p=$((21000 + ($$ % 20000))) _i _up=0
+  beanstalkd -l 127.0.0.1 -p "$_p" 9>&- >/dev/null 2>&1 & _BT_PID=$!
+  trap 'kill "$_BT_PID" 2>/dev/null' EXIT
+  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_p" python3 "$ROOT/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
+  { [ "$_up" = 1 ] && kill -0 "$_BT_PID" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_p" >&2; return 2; }
+  export S4E_QUEUE_PORT="$_p"
+}
 probe_wake() {   # step 11's probe: a scratch tick dir, a plant job in a scratch seat's tube: exactly one WAKE line, none on the second pass (told within 20 min)
   local w q="$ROOT/harness/scripts/util_queue.py" jid out1 out2 l1
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_probe.XXXXXX")" || return 2
+  probe_daemon || { rm -rf "$w"; return 2; }
   local ps; ps="$(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tail -1)"
   jid=$(python3 "$q" put "seat-$ps" wake-plant --pri 100 --ttr 30) || { rm -rf "$w"; return 2; }
   out1=$(S4E_WAKE_ONLY="$ps" S4E_TICK_DIR="$w" TICK_DIR="$w" bash "$0" --wake 2>/dev/null | tail -1); l1=$(grep -c ' WAKE ' "$w/wake.pending" 2>/dev/null)
@@ -116,6 +125,7 @@ probe_wake() {   # step 11's probe: a scratch tick dir, a plant job in a scratch
 probe_wake_rate() {   # the rate arm (CTO ruling, row tick-wake-pass-has-no-rate-...): five tier-4 seats with no live claim, one plant job each in its own tube; three --wake passes over one scratch tick dir with the told files kept between them: the rate writes 2, 2, 1
   local w q="$ROOT/harness/scripts/util_queue.py" s jid jids="" seats="" k=0 p1 p2 p3
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_wake_rate.XXXXXX")" || return 2
+  probe_daemon || { rm -rf "$w"; return 2; }
   for s in $(awk -F'\t' '!/^#/ && $7==4 {print $1}' "$ROOT/.github/TIERS.tsv" | tac); do
     [ "$k" -lt 5 ] || break
     seat_held "$s" && continue   # a seat with a live claim is held by the law, not by the rate: the probe does not count it
