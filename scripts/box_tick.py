@@ -10,12 +10,13 @@
 #   box_tick.py --probe-width    the law on planted sensors: quiet raises one step, hot lowers one step, a hold holds; one WIDTH_PSI line, rc 0/1
 #   box_tick.py --decide         print the decision for the live sensors without acting
 #   box_tick.py --probe-stall    the grader's stall on planted bury lines: one telegram each to cio and coo, one kick, no second telegram; STALL_PROBE line, rc 0/1
+#   box_tick.py --probe-lap      the lap (test-cycle step 5b): a full lap put once, a second feed puts nothing, the done mark, one oldest-suite feed; one LAP_PROBE line, rc 0/1
 # S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, no MODE write, a scratch tick dir; the TICK line still prints with its cpu_s.
 # THE LAW OF THE TWO KNOBS (one step a tick at most, a step every S4E_STEP_EVERY ticks, default 2):
 #   quiet: cpu PSI avg60 < 25 and avg10 < 25 and no grader memory event  -> W and A go up one (to WMAX, AMAX)
 #   hot:   cpu PSI avg60 > 40, or avg10 > 60, or a grader memory event   -> W and A go down one at once (to WMIN, AMIN)
 #   else hold. Night (22:00-05:59) or FLEET: IDLE raises WMAX to BOX_WMAX_NIGHT (8); day WMAX is BOX_WMAX_DAY (4). AMAX is S4E_WORKERS_MAX (20).
-import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil
+import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil, datetime, calendar
 
 ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/resources/postoffice"
@@ -322,6 +323,162 @@ def probe_stall():
     shutil.rmtree(d, ignore_errors=True)
     ok = int(w1["buries"] == 3 and w1["told"] == 2 and w1["kicked"] == 1 and w2["told"] == 0)
     print("STALL_PROBE buries=%d told=%d kicked=%d second_told=%d ok=%d" % (w1["buries"], w1["told"], w1["kicked"], w2["told"], ok)); return 0 if ok else 1
+LAP_TSV = os.environ.get("S4E_LAP_TSV") or (PROG + "/LAP.tsv")
+FEED_TSV = os.environ.get("S4E_FEED_TSV") or (PROG + "/FEED.tsv")
+SUITES_TSV = os.environ.get("S4E_SUITES_TSV") or (PROG + "/SUITES.tsv")
+RUNNERS_TSV = os.path.join(ROOT, "harness", "scripts", "SUITE_RUNNERS.tsv")
+def _rows(path):
+    try: return [l.rstrip("\n").split("\t") for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
+    except OSError: return []
+def _now(): return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+def _utc(): return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+def _append(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as fh: fh.write(text + "\n")
+def lap_tree():
+    try: return subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP"), "rev-parse", "--short=9", "origin/main"], capture_output=True, text=True, check=True, timeout=20).stdout.strip()
+    except Exception: return "0000000"
+def master_pkg_rows(): return [r for r in _rows(RUNNERS_TSV) if len(r) >= 5 and r[1] in ("master", "pkg")]
+def suite_cells(r):
+    """the cells of one SUITE_RUNNERS row: core and every chunk:NN of its PARTITION.tsv (table corpus/tests/<lang> for a master, the table column for a pkg)"""
+    d = os.path.join(ROOT, "corpus", "tests", r[2]) if r[1] == "master" else os.path.join(ROOT, r[4])
+    rows = _rows(os.path.join(d, "PARTITION.tsv"))
+    if len(rows) < 2 or "part" not in rows[0]: return []
+    ip = rows[0].index("part")
+    parts = {x[ip] for x in rows[1:] if len(x) > ip and (x[ip] == "core" or x[ip].startswith("chunk:"))}
+    return sorted(parts, key=lambda c: (c != "core", c))
+def suite_date(key):
+    for r in _rows(SUITES_TSV):
+        if r[0] == key and len(r) > 7: return r[7].strip()
+    return ""
+def fed_recently(key, now):
+    for f in _rows(FEED_TSV):
+        if len(f) >= 4 and f[3] == key:
+            try:
+                if (now - datetime.datetime.strptime(f[2], "%Y-%m-%dT%H:%M:%SZ")).total_seconds() < 86400: return True
+            except ValueError: continue
+    return False
+def pick_suite(now):
+    """the pick rule (test-cycle step 5b, the re-cut of 2026-11-08): the master or pkg row whose SUITES.tsv today_date is OLDEST and older than 24 h,
+    not fed in the last 24 h (FEED.tsv); ties by SUITE_RUNNERS.tsv row order. Returns the row or None."""
+    best = None
+    for order, r in enumerate(master_pkg_rows()):
+        try: dt = datetime.datetime.strptime(suite_date(r[0]), "%Y-%m-%d")
+        except ValueError: continue
+        if (now - dt).total_seconds() <= 86400: continue
+        if fed_recently(r[0], now) or not suite_cells(r): continue
+        key = (dt, order)
+        if best is None or key < best[0]: best = (key, r)
+    return None if best is None else best[1]
+def lap_put_today():
+    t = time.localtime()
+    for r in _rows(LAP_TSV):
+        if len(r) >= 5 and r[0] == "lap" and r[2] == "put":
+            try: u = time.localtime(calendar.timegm(time.strptime(r[4], "%Y-%m-%dT%H:%M:%SZ")))
+            except ValueError: continue
+            if (u.tm_year, u.tm_yday) == (t.tm_year, t.tm_yday): return True
+    return False
+def tube_load(tube):
+    """ready plus reserved jobs of the tube; an absent tube holds none"""
+    r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "stats-tube", tube], capture_output=True, text=True, timeout=30)
+    out = r.stdout + r.stderr
+    if "unreachable" in out: raise RuntimeError("beanstalkd unreachable")
+    m1 = re.search(r"ready=(\d+)", out); m2 = re.search(r"reserved=(\d+)", out)
+    if m1 and m2: return int(m1.group(1)) + int(m2.group(1))
+    if "NOT_FOUND" in out: return 0
+    raise RuntimeError("stats-tube %s: %s" % (tube, out.strip()[:120].replace("\n", " | ")))
+def put_cells(cells, tree, tube):
+    """ONE put-many call (util_grade_job.py, step 5a): one line per cell, band lap, one job id back per cell in order; a short count refuses"""
+    r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_grade_job.py"), "put-many", "--band", "lap", "--tree", tree, "--tube", tube, "--requester", "lap", "--stdin"],
+                       input="".join("%s\t%s\n" % sc for sc in cells), capture_output=True, text=True, timeout=600)
+    jobs = [int(m.group(1)) for m in re.finditer(r"^job=(\d+) tube=", r.stdout, re.M)]
+    if r.returncode != 0 or len(jobs) != len(cells):
+        raise RuntimeError("put-many rc=%d put=%d of %d: %s" % (r.returncode, len(jobs), len(cells), (r.stdout + r.stderr).strip()[-160:].replace("\n", " | ")))
+    return jobs
+def _record_feed(cells, jobs, tree):
+    utc = _utc()
+    for (s, c), j in zip(cells, jobs): _append(FEED_TSV, "\t".join(["lap", tree, utc, s, c, "0", str(j)]))
+def _feed_lap():
+    """THE LAP (test-cycle step 5b; design text skill suites-and-grading section 7): (a) a full lap at the first tick of local hour 22 with no lap put that day,
+    (b) a full lap when LAP.tsv holds no lap line, (c) otherwise ONE suite by the pick rule, only when the grade tube is empty and no lap is being put.
+    A lap put with the tube empty again is marked done. Returns (kind, cells, suite) with kind none | lap | suite | done."""
+    tube = GRADE_TUBE
+    last = None
+    for r in _rows(LAP_TSV):
+        if len(r) >= 6 and r[0] == "lap": last = r
+    if last is not None and last[2] == "put":
+        if tube_load(tube) == 0:
+            _append(LAP_TSV, "\t".join(["lap", last[1], "done", tube, _utc(), last[5]]))
+            return "done", 0, ""
+        return "none", 0, ""
+    if tube_load(tube) != 0: return "none", 0, ""
+    if last is None or (time.localtime().tm_hour == 22 and not lap_put_today()):
+        cells = [(r[0], c) for r in master_pkg_rows() for c in suite_cells(r)]
+        if not cells: return "none", 0, ""
+        tree = lap_tree(); jobs = put_cells(cells, tree, tube)
+        _append(LAP_TSV, "\t".join(["lap", tree, "put", tube, _utc(), "cells=%d" % len(cells)]))
+        _record_feed(cells, jobs, tree)
+        return "lap", len(cells), ""
+    r = pick_suite(_now())
+    if r is None: return "none", 0, ""
+    cells = [(r[0], c) for c in suite_cells(r)]
+    tree = lap_tree(); jobs = put_cells(cells, tree, tube); _record_feed(cells, jobs, tree)
+    return "suite", len(cells), r[0]
+def feed_lap():
+    """the tick's lap line: lap=none:0 | lap=lap:N | lap=suite:N:KEY | lap=done:0; a refusal reads lap=refused(...) and never stops the tick"""
+    if DRY: return "lap=dry"
+    try: kind, n, key = _feed_lap()
+    except Exception as e: return "lap=refused(%s)" % str(e).replace(" ", "_")[:120]
+    return "lap=%s:%d%s" % (kind, n, (":" + key) if key else "")
+def probe_lap():
+    """--probe-lap: scratch LAP, FEED and SUITES files and a scratch tube probe-lap-<pid>. Phase 1: a first feed puts every cell (kind lap). Phase 2: a second feed
+    with the tube non-empty puts nothing. The probe deletes every job; phase 3: a third feed writes the done line. Phase 4: a scratch SUITES.tsv with the first
+    master or pkg suite dated 2026-01-01, a fresh FEED file, one feed puts exactly that suite (fresh=1). Prints LAP_PROBE; rc 0 only when ok=1."""
+    import tempfile
+    global LAP_TSV, FEED_TSV, SUITES_TSV, GRADE_TUBE
+    saved = (LAP_TSV, FEED_TSV, SUITES_TSV, GRADE_TUBE)
+    d = tempfile.mkdtemp(prefix="s4e-lap-probe-", dir="/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"))
+    GRADE_TUBE = "probe-lap-%d" % os.getpid(); LAP_TSV = d + "/LAP.tsv"; FEED_TSV = d + "/FEED.tsv"
+    sys.path.insert(0, os.path.join(ROOT, "harness", "scripts")); import util_queue
+    gs, c = util_queue.client()
+    def jobs_fed(): return [int(f[6]) for f in _rows(FEED_TSV) if len(f) >= 7 and f[0] == "lap" and f[6].isdigit()]
+    def drain():
+        n = 0
+        for j in jobs_fed():
+            try: c.delete(j); n += 1
+            except gs.NotFoundError: pass
+        return n
+    tables = len(master_pkg_rows()); ok = 0; k4 = ""; fresh = 0
+    try:
+        k1, n1, _ = _feed_lap(); jobs1 = jobs_fed()
+        k2, n2, _ = _feed_lap()
+        deleted = drain()
+        k3, n3, _ = _feed_lap()
+        done = int(any(len(r) >= 3 and r[0] == "lap" and r[2] == "done" for r in _rows(LAP_TSV)))
+        planted = next((r for r in master_pkg_rows() if suite_cells(r)), None)
+        if planted is not None:
+            out = []
+            for l in open(saved[2], encoding="utf-8").read().splitlines(keepends=True):
+                f = l.rstrip("\n").split("\t")
+                if not l.startswith("#") and len(f) > 7 and f[0] == planted[0]: f[7] = "2026-01-01"; l = "\t".join(f) + "\n"
+                out.append(l)
+            open(d + "/SUITES.tsv", "w", encoding="utf-8").write("".join(out))
+            SUITES_TSV = d + "/SUITES.tsv"; FEED_TSV = d + "/FEED4.tsv"
+            k4, n4, key4 = _feed_lap()
+            expected = len(suite_cells(planted))
+            fresh = int(k4 == "suite" and key4 == planted[0] and n4 == expected and n4 > 0)
+            drain()
+        ok = int(k1 == "lap" and n1 > 0 and len(jobs1) == n1 and k2 == "none" and n2 == 0 and deleted == n1 and k3 == "done" and done == 1 and fresh == 1)
+    except Exception as e:
+        print("LAP_PROBE refused: %s" % str(e)[:160]); ok = 0; n1 = n2 = done = fresh = 0
+    finally:
+        try: drain()
+        except Exception: pass
+        c.close()
+        LAP_TSV, FEED_TSV, SUITES_TSV, GRADE_TUBE = saved
+        shutil.rmtree(d, ignore_errors=True)
+    print("LAP_PROBE tables=%d cells=%d put=%d second=%d done=%d fresh=%d ok=%d" % (tables, n1, n1, n2, done, fresh, ok))
+    return 0 if ok else 1
 def alive_seats():
     """the seats whose claude session is alive, read from the sessions' working directories (no seat pattern: the root names the seat)"""
     seats = set()
@@ -576,9 +733,10 @@ def tick():
     expired = expire_leases() if n % 5 == 0 else 0
     fed = feed_requests()
     st = watch_grader(n)
+    lapfeed = feed_lap()
     view = regenerate_view()
     with open(TICK_DIR + "/decide.last", "w") as f:
-        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, view=view)) + "\n")
+        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, lap=lapfeed, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
     # fleet_health.py, read a 520 s old width of 2). The old keys that still mean something keep their names (ts busy cores cpu_psi10 cpu_psi60 grader_width action); the rest are the tick's.
     try:
@@ -596,9 +754,9 @@ def tick():
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             sy["disp"], grader, awake, liveset, expired, fed, view, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             sy["disp"], grader, awake, liveset, expired, fed, view, lapfeed, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
@@ -647,6 +805,8 @@ if __name__ == "__main__":
         sys.exit(probe_stall())
     if arg == "--probe-sync":
         sys.exit(probe_sync())
+    if arg == "--probe-lap":
+        sys.exit(probe_lap())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --decide"); sys.exit(2)
