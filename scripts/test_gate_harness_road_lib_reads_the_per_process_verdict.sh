@@ -51,7 +51,7 @@ unset S4E_BATCH
 hr_begin "$T/off"
 hr_row hello "$T/hello.sno" /dev/null 10 "$T"
 hr_run "$SCRIP" > "$T/off.txt" 2>&1
-[ -s "$T/off/harness.list" ] && red "off-listed-a-row(S4E_BATCH unset)"
+[ -s "$T/off/harness.tsv" ] && red "off-listed-a-row(S4E_BATCH unset)"
 if hr_get hello; then red "off-hr_get-graded(S4E_BATCH unset)"; fi
 n=$(printf '%s\n' $reds | grep -c .)
 echo "HARNESS_ROAD_LIB_BOARD reds=$n (tree $(git -C "$HERE/.." rev-parse --short HEAD 2>/dev/null))"
