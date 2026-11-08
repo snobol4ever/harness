@@ -44,6 +44,7 @@ DECL="$TMP/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || refuse "a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"
 declare -A P F C
 for m in m3 m4; do P[$m]=0; F[$m]=0; C[$m]=0; done
+PAT_MODES="m3 m4"; [ "${S4E_MODES:-m3,m4}" = m3 ] && PAT_MODES=m3
 TOTAL=0; NAMED=""; UNGRADABLE=0
 PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
 # ⛔⭐ THE R-749 SHAPE FOR A REJECTION TEST THAT CARRIES NO ISO VIOLATION (R-1231, 2026-09-24, on hq_pascal's ask
@@ -129,12 +130,12 @@ for f in "$SUITE"/iso7185prt*.pas; do
         _oerr="$(cd "$TMP" && "$TIMEOUT_RETRY" 8s "$SCRIP" --dump-ast "$f" </dev/null 2>&1 >/dev/null)"; _orc=$?
         if [ "$_orc" -eq 0 ] && ! printf '%s' "$_oerr" | grep -q 'ISO 7185'; then
             OUTSIDE=$((OUTSIDE+1)); OUTSIDE_NAMES+=("$b")
-            for m in m3 m4; do printf 'package\tpat\tpascal\t%s\t%s\tUNGRADED\t0\toutside-iso-baseline-not-an-iso-error\n' "$b" "$m" >>"$PROG_ROWS"; done
+            for m in $PAT_MODES; do printf 'package\tpat\tpascal\t%s\t%s\tUNGRADED\t0\toutside-iso-baseline-not-an-iso-error\n' "$b" "$m" >>"$PROG_ROWS"; done
             continue
         fi
         STALE_NAMES+=("$b")
     fi
-    for m in m3 m4; do
+    for m in $PAT_MODES; do
         # ⛔⭐ A TIMEOUT ON A REJECTION TEST IS "ACCEPTED", NOT "CRASHED" — and the 2s bound is a CONSEQUENCE of that,
         # not a guess. A program the front end refuses dies in ~10ms; one that reaches the timeout is one scrip
         # AGREED TO RUN, which is already the FAIL this test is looking for. Measured, not assumed: the first cut of
@@ -249,7 +250,7 @@ for f in "$SUITE"/iso7185pat*.pas "${ACCEPT_FILES[@]}"; do
     # mode. `okboth` starts at 1 and only ever falls to 0 -- a CRASH and a MISMATCH both clear it -- so the AND is
     # taken from the verdicts themselves rather than reconstructed from two counts afterwards, which cannot be done.
     okboth=1
-    for m in m3 m4; do
+    for m in $PAT_MODES; do
         _t0="$(progress_clock)"
         if [ "$m" = m3 ]; then run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 20s "$SCRIP" "$f" <"$in" >"$TMP/got" 2>&1; rc=$?
         else "$TIMEOUT_RETRY" 20s "$SCRIP" --compile --out="$TMP/b.s" "$f" </dev/null >/dev/null 2>&1 && \
