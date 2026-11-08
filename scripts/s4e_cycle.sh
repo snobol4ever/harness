@@ -9,7 +9,7 @@
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
 # a master row runs corpus_suite_harness.py run <ALL.ext> <ALL.ref> --lang L --modes m3,m4 --partition <cell>; a pkg row runs S4E_CHUNK=<cell> bash $S4E/harness/scripts/<runner>, by its absolute path (a runner that cds and then sources from dirname $0, raku_roast_scoreboard.sh, refused rc 2 on a relative launch: the coo 2026-11-08);
 # both under util_run_slot.sh, S4E_CLASS=grader, S4E_BATCH=1 (one scrip --harness per partition and mode, batch-grader step 5), S4E_MODES default m3 (Lon 2026-11-08 10:2x: "We will test mode 3 only until further notice"), under timeout -k 30 of the
-# cell's declared budget (util_grade_job.py budget). After a master suite's last cell its suite row is rewritten (util_score_row.py from-progress).
+# cell's declared budget (util_grade_job.py budget). After a master suite's or a pkg row's last cell its suite row is rewritten (util_score_row.py from-progress, in S4E_MODES).
 # THE STATE is /home/resources/progress/CYCLE.state (lap, idx, total, suite, cell, status, since), one line a key, rewritten before and after every cell;
 # CYCLE.log gets one line per cell (ts lap idx/total suite cell rc secs) and one per lap; CYCLE.pid is this process. A restart reads CYCLE.state and goes on
 # at the cell after the last finished one; a cell found "running" at start killed the process, its count in CYCLE.crash rises, and at three it is skipped
@@ -68,6 +68,9 @@ record_suite() {   # lang -> the rungs suite row of that language, as the grade 
     local k; k="$(container_key "$1")"; [ -n "$k" ] || return 0
     ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$k" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
 }
+record_pkg() {   # key -> that pkg row of SUITES.tsv, from its progress rows in S4E_MODES (the cycle exports m3), after the row's last cell
+    ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
+}
 lap_start() {
     local sy mk
     ( cd "$S4E" && bash harness/scripts/util_sync_root.sh ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
@@ -123,6 +126,7 @@ while :; do
             log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
             next_key="$(printf '%s' "${ALL[$((i+1))]:-}" | cut -f1)"
             [ "$kind" = master ] && [ "$next_key" != "$key" ] && record_suite "$lang"
+            [ "$kind" = pkg ] && [ "$next_key" != "$key" ] && record_pkg "$key"
             [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
         done
         idx="$j"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
