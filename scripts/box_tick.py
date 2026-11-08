@@ -240,10 +240,10 @@ def write_live_set(A, mode):
     m = re.search(r"^FLEET: IDLE EXCEPT (.*?) \((controller.*)\)$", mode, re.M)
     if DRY or not m:
         return "liveset=hand" if not m else "liveset=dry"
-    keep = [x for x in m.group(1).split() if not x.startswith("worker_")]
+    keep = [x for x in m.group(1).split() if not x.startswith(("worker_", "junior_"))]
     alive = alive_seats()
-    workers = sorted((x for x in alive if x.startswith("worker_")), key=lambda x: int(x.split("_")[1]))[:A]
-    seniors = sorted(x for x in alive if not x.startswith("worker_") and x not in keep)   # Lon 2026-11-07 13:5x ("fire any combination of Haiku, Sonnet, and Opus"):
+    workers = sorted((x for x in alive if x.startswith(("worker_", "junior_"))), key=lambda x: int(x.split("_")[1]))[:A]
+    seniors = sorted(x for x in alive if not x.startswith(("worker_", "junior_")) and x not in keep)   # Lon 2026-11-07 13:5x ("fire any combination of Haiku, Sonnet, and Opus"):
     live = keep + seniors + workers   # every alive company man or officer is in the live set too; only the workers are counted against A
     line = "FLEET: IDLE EXCEPT %s (controller %s: cio and the first %d workers alive by the law of fleet-control step 5; a worker beyond the count stops at its Stop; Lon's hand replaces this line at will)" % (" ".join(live), time.strftime("%Y-%m-%d %H:%M"), A)
     if line.split(" (controller")[0] == m.group(0).split(" (controller")[0]:
