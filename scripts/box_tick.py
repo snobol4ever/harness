@@ -861,21 +861,24 @@ ROOTS_GLOB = os.environ.get("S4E_ROOTS_GLOB", "/home/claude_*")
 ROOTS_EVERY = 5
 def sync_seat_roots(n):
     """THE CONTROLLER FAST-FORWARDS .github AND harness IN EVERY CLEAN SEAT ROOT (the cio's design 2026-11-08 08:4x CST; cut by officer_03 under COO-484).
-    Every ROOTS_EVERY-th tick (n % ROOTS_EVERY == 0; else kind=skipped), for each directory of sorted(glob(ROOTS_GLOB)) except ROOT and GRADER_HOME that
-    holds both .github/.git and harness/.git: when both repos are clean (git status --porcelain empty), fetch origin in each under the s4e-fetch sem and
-    merge --ff-only origin/main; one line per root that moved appended to TICK_DIR/roots_sync.log; a dirty or diverged root is named in dirty and left alone.
-    Returns dict(kind=ok|skipped, moved=[roots that moved], dirty=[roots named], disp=the TICK line's roots= text). THE BODY IS THE WORKER'S ROW."""
+    Every ROOTS_EVERY-th tick and never on a dry tick (else kind=skipped), for each directory of sorted(glob(ROOTS_GLOB)) except ROOT and GRADER_HOME that
+    holds both .github/.git and harness/.git: a root whose two HEADs equal ROOT's two origin/main refs is current and skipped; else when both repos are
+    clean (git status --porcelain empty), each fetches +refs/remotes/origin/main from ROOT's same repo (a LOCAL fetch: sync_root keeps ROOT's refs current;
+    MEASURED by officer_03 2026-11-08 10:1x CST, a network fetch under the s4e-fetch sem costs 0.11-0.19 CPU-s of sem and 0.22 s wall a repo, a local fetch
+    0.01 s) and merges --ff-only origin/main; one line per root that moved is appended to TICK_DIR/roots_sync.log; a dirty or diverged root is named in
+    dirty and left alone. Returns dict(kind=ok|skipped, moved=[roots that moved], dirty=[roots named], disp=the TICK line's roots= text). THE BODY IS THE
+    WORKER'S ROW."""
     return dict(kind="ok", moved=[], dirty=[], disp="roots=none")
 
 
 def probe_roots_sync():
     """--probe-roots-sync: two LOCAL BARE origins (.github, harness), each given two commits; three scratch roots under a scratch dir, each cloned from them
     and reset one commit behind: claude_clean (clean), claude_dirty (an untracked file in harness), claude_grader (clean, named GRADER_HOME). Tick 6 is
-    skipped (nothing moves); tick 5 moves claude_clean's two repos to origin, leaves claude_dirty and claude_grader behind, names claude_dirty once and writes
+    skipped (nothing moves); ROOT is a scratch controller root cloned at the tip (outside the glob); tick 5 moves claude_clean's two repos to the tip, leaves claude_dirty and claude_grader behind, names claude_dirty once and writes
     one roots_sync.log line naming claude_clean; tick 10 moves nothing and the log keeps one line; tick() calls sync_seat_roots. Prints ROOTS_SYNC; rc 0/1."""
     import tempfile, inspect
-    global ROOTS_GLOB, TICK_DIR, GRADER_HOME
-    saved = (ROOTS_GLOB, TICK_DIR, GRADER_HOME)
+    global ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT
+    saved = (ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT)
     base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
     d = tempfile.mkdtemp(prefix="s4e-roots-probe-", dir=base)
     who = dict(GIT_AUTHOR_NAME="s4e-probe", GIT_AUTHOR_EMAIL="probe@s4e.invalid", GIT_COMMITTER_NAME="s4e-probe", GIT_COMMITTER_EMAIL="probe@s4e.invalid")
@@ -896,12 +899,14 @@ def probe_roots_sync():
                 git("add", "f.txt", cwd=w); git("commit", "-q", "-m", t, cwd=w)
             git("push", "-q", "origin", "main", cwd=w)
         tip = {r: git("rev-parse", "HEAD", cwd=d + "/work/" + r) for r in repos}
+        for r in repos:
+            git("clone", "-q", d + "/origin/" + r + ".git", d + "/controller/" + r)
         for nm in names:
             for r in repos:
                 git("clone", "-q", d + "/origin/" + r + ".git", d + "/" + nm + "/" + r); git("reset", "-q", "--hard", "HEAD~1", cwd=d + "/" + nm + "/" + r)
         open(d + "/claude_dirty/harness/untracked.txt", "w").write("dirty\n")
         behind = git("rev-parse", "HEAD", cwd=d + "/claude_clean/harness")
-        ROOTS_GLOB, TICK_DIR, GRADER_HOME = d + "/claude_*", d + "/tick", d + "/claude_grader"
+        ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT = d + "/claude_*", d + "/tick", d + "/claude_grader", d + "/controller"
         os.makedirs(TICK_DIR)
         head = lambda nm, r: git("rev-parse", "HEAD", cwd=d + "/" + nm + "/" + r)
         logn = lambda: len(open(TICK_DIR + "/roots_sync.log").read().splitlines()) if os.path.exists(TICK_DIR + "/roots_sync.log") else 0
@@ -921,7 +926,7 @@ def probe_roots_sync():
     except Exception as e:
         why.append("error " + str(e)[:200])
     finally:
-        ROOTS_GLOB, TICK_DIR, GRADER_HOME = saved
+        ROOTS_GLOB, TICK_DIR, GRADER_HOME, ROOT = saved
         shutil.rmtree(d, ignore_errors=True)
     ok = int(not why)
     print("ROOTS_SYNC moved=%d dirty_named=%d log_lines=%d ok=%d%s" % (1 if moved == 2 else 0, named, lines, ok, "" if ok else " (PROBE RED: %s)" % "; ".join(why)))
