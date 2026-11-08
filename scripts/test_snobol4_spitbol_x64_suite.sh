@@ -106,6 +106,7 @@ TIMEOUT="${TIMEOUT:-600}"; M4_ASM_MB="${SPITBOL_X64_M4_ASM_MB:-512}"; SHIPPED_EX
 # --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed <suite>@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
+NO_M4="$PORT"; [ "${S4E_MODES:-m3,m4}" = m3 ] && NO_M4=1
 ROWKEY=x64tests; [ "$PORT" = 1 ] && ROWKEY="x64tests@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
@@ -186,7 +187,7 @@ verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then 
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/spitbol_x64_tests"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
-prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; local o="$3"; case "$o" in COMPILE_FAIL|LINK_FAIL) o=FAIL;; esac; printf 'package\tspitbol_x64\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
+prog_row() { [ "$NO_M4" = 1 ] && [ "$2" = m4 ] && return 0; local o="$3"; case "$o" in COMPILE_FAIL|LINK_FAIL) o=FAIL;; esac; printf 'package\tspitbol_x64\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$o" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # the progress table's vocabulary has no COMPILE_FAIL: a graded program our toolchain refused is a FAIL there, the note keeps the word (cfo 2026-09-12: the append refused the whole run's rows, so no x64 row was ever written)
 verdict_lines() { grep -cE '^( pass: |\*FAIL: )' "$1" 2>/dev/null | tr -d ' '; }
 pass_lines()    { grep -c '^ pass: '  "$1" 2>/dev/null | tr -d ' '; }
 fail_lines()    { grep -c '^\*FAIL: ' "$1" 2>/dev/null | tr -d ' '; }
@@ -290,7 +291,7 @@ for sno in "$SUITE"/*.sbl; do
     if [ "$isx" = 1 ]; then :; elif [ "$OUT3" = PASS ]; then P3=$((P3+1)); else F3=$((F3+1)); FL3="$FL3 $name($OUT3)"; fi
     # --- mode 4
     _t0="$(progress_clock)"
-    m4why=""; if [ "$PORT" = 1 ]; then OUT4=""; N4=""   # a port has no mode 4: no compile, no row
+    m4why=""; if [ "$NO_M4" = 1 ]; then OUT4=""; N4=""   # a port has no mode 4: no compile, no row
     elif m4why="$(compile_m4 "$base" "$W/prog.bin" "$ca")"; then
         declared_answer_clear "$DECL" "$name" "$RUN" || exit 2
         run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$3"; if [ "$6" = merged ]; then : > "$4"; exec 2>&1; else exec 2> "$4"; fi; exec "$2" < "$5"' _ "$RUN" "$W/prog.bin" "$W/m4.out" "$W/m4.err" "$(stdin_of "$name")" "$SE" 2>/dev/null; rc4=$?
@@ -309,7 +310,7 @@ for sno in "$SUITE"/*.sbl; do
         if [ "$isx" = 1 ]; then :; elif [ "$OUT4" = DEFERRED ]; then D4=$((D4+1)); DEFER_LIST="$DEFER_LIST $name"
         else F4=$((F4+1)); FL4="$FL4 $name($OUT4)"; fi
     fi
-    [ "$isx" = 0 ] && [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
+    [ "$isx" = 0 ] && [ "$OUT3" = PASS ] && { [ "$NO_M4" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
     [ "$isx" = 1 ] && { XG_N=$((XG_N+1)); XG_LIST="$XG_LIST $name(m3=$OUT3,m4=$OUT4)"; XG_NAMES="$XG_NAMES $base"; }
     ROW_S4="$(progress_secs_since "$_t0")"
     prog_row "$name" m3 "$OUT3" "$N3"; prog_row "$name" m4 "$OUT4" "$N4"
