@@ -77,6 +77,11 @@ else
             # (TIERS.tsv column 7: 2 opus, 3 sonnet, 4 haiku; the fable seats are never held, their loop is Lon's) has a ready job. THE LADDER: a worker works
             # only what the queue serves it, so an idle worker beside ready work is the failure this arm removes. S4E_TIER_TUBE_PREFIX lets the probe use a scratch tube.
             tiers="${S4E_TIERS:-$root/.github/TIERS.tsv}"; tn="$(awk -F'\t' -v s="$seat" '!/^#/ && $1==s {print $7; exit}' "$tiers" 2>/dev/null)"
+            # THE BOSSES ARE NEVER HELD BY THE TIER ARM (Lon 2026-11-08 07:3x, "I see a Stop hook error. Get that fixed."; the cio): MODE's BOSSES: line (cio coo cto) names the seats whose
+            # wake is their own (the coo's loop is the one loop; the cio and the cto sleep until a design question). The coo is tier 2 in TIERS.tsv (its escalation tube), so the arm held it
+            # as a tier-opus seat and then sent the loop seat to long-poll forever (the coo, 07:39). The tier stays as it is: a boss's tube is its escalation road, not its hold.
+            bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"
+            case " $bosses " in *" $seat "*) tn=boss;; esac
             case "$tn" in 2|opus) tier=opus;; 3|sonnet) tier=sonnet;; 4|haiku) tier=haiku;; *) tier="";; esac
             if [ -n "$tier" ]; then
                 tt="${S4E_TIER_TUBE_PREFIX:-tier-}$tier"
