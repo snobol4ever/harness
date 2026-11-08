@@ -454,21 +454,54 @@ def landing_features(base):
     widen = any("->" in l and "*" in l.split("->", 1)[1].split() for l in r.stdout.splitlines() if l.startswith("AREA_SMOKE_MAP "))
     m = re.search(r"AREA_SMOKE_LIST features=(.*?) runnable_entries=", r.stdout)
     return widen, (m.group(1).split() if m else [])
+def shell_vocab(lang):
+    """the shells vocabulary of one master (test-cycle step 5c): every whitespace word of the shells column of its PARTITION.tsv, the union over the rows;
+    an absent table or column is empty. A feature outside it has no shell cell (util_suite_partition builds shells for distinctive features only)"""
+    rows = _rows(os.path.join(ROOT, "corpus", "tests", lang, "PARTITION.tsv"))
+    if not rows or "shells" not in rows[0]: return set()
+    ish = rows[0].index("shells")
+    return {w for x in rows[1:] if len(x) > ish for w in x[ish].split()}
 def impact_cells(base):
     """the impact set of the range (test-cycle step 5c): a widening puts every master's chunk:01; else for each master whose ALL.csv has the feature column the
     cell shell:<feature> (a token lang:feature names its lang's masters only)"""
     widen, feats = landing_features(base)
+    return cells_for(widen, feats)
+def cells_for(widen, feats):
+    """the cells of a range's features: see impact_cells; a feature the master's shells vocabulary lacks puts NO cell (the core carries it in the smoke band)"""
     masters = [r for r in master_pkg_rows() if r[1] == "master"]
     if widen: return [(r[0], "chunk:01") for r in masters]
     cells = {}
     for r in masters:
         try: cols = set(open(os.path.join(ROOT, "corpus", "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(","))
         except OSError: continue
+        vocab = shell_vocab(r[2])
         for t in feats:
             lang, _, f = t.rpartition(":")
-            if (lang and lang != r[2]) or f not in cols: continue
+            if (lang and lang != r[2]) or f not in cols or f not in vocab: continue
             cells[(r[0], "shell:" + f)] = None
     return list(cells)
+def probe_impact():
+    """--probe-impact (test-cycle step 5c): every master's own feature columns, run through cells_for; each cell must grade entries (util_grade_job.cell_entries),
+    and the columns a master's shells vocabulary does not carry are dropped, counted. ok=1 only when cells exist, none is empty and some column was dropped."""
+    masters = [r for r in master_pkg_rows() if r[1] == "master"]
+    feats, dropped = [], 0
+    for r in masters:
+        try: cols = open(os.path.join(ROOT, "corpus", "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(",")
+        except OSError: continue
+        vocab = shell_vocab(r[2])
+        feats += ["%s:%s" % (r[2], c) for c in cols]
+        dropped += sum(1 for c in cols if c not in vocab)
+    cells = cells_for(False, feats)
+    empty = 0
+    for key, cell in cells:
+        # util_grade_job runs its verb dispatcher at import, so the entries are read through its budget verb (cell_entries behind it); a refusal is zero
+        r = subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_grade_job.py"), "budget", "--suite", key, "--cell", cell],
+                           capture_output=True, text=True, timeout=300, env=dict(os.environ))
+        m = re.search(r"entries=(\d+)", r.stdout)
+        if r.returncode != 0 or not m or int(m.group(1)) == 0: empty += 1
+    ok = int(len(cells) > 0 and empty == 0 and dropped > 0)
+    print("IMPACT_PROBE masters=%d cells=%d empty=%d dropped=%d ok=%d" % (len(masters), len(cells), empty, dropped, ok))
+    return 0 if ok else 1
 def _feed_landing():
     """THE LANDING (test-cycle step 5c; design text skill suites-and-grading section 7): each tick reads origin/main of SCRIP; a new head puts the SMOKE (the core
     cell of every master, band smoke) and the IMPACT SET (band impact) of the range old..new, one put-many call per band, and records the head. Returns (smoke, impact, kind)."""
@@ -929,6 +962,8 @@ if __name__ == "__main__":
         sys.exit(probe_sync())
     if arg == "--probe-lap":
         sys.exit(probe_lap())
+    if arg == "--probe-impact":
+        sys.exit(probe_impact())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --probe-impact | --decide"); sys.exit(2)
