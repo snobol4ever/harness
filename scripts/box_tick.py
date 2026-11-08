@@ -447,13 +447,34 @@ def _git_out(*args):
     return subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP")] + list(args), capture_output=True, text=True, timeout=20).stdout.strip()
 def landing_features(base):
     """the impact set of the range base..origin/main: test_area_smoke.sh --list-only with AREA_SMOKE_BASE=base (its LIST line names the features; a MAP line
-    carrying `*` is a widening). Returns (widen, features). A refusal raises: nothing is put for a range that cannot be read."""
+    carrying `*` is a widening). Returns (widen, features); the reading is parse_area's."""
     r = subprocess.run(["bash", os.path.join(ROOT, "harness", "scripts", "test_area_smoke.sh"), "--list-only"], capture_output=True, text=True, timeout=300,
                        env=dict(os.environ, AREA_SMOKE_BASE=base), cwd=ROOT)
-    if r.returncode != 0: raise RuntimeError("test_area_smoke rc=%d" % r.returncode)
-    widen = any("->" in l and "*" in l.split("->", 1)[1].split() for l in r.stdout.splitlines() if l.startswith("AREA_SMOKE_MAP "))
-    m = re.search(r"AREA_SMOKE_LIST features=(.*?) runnable_entries=", r.stdout)
+    return parse_area(r.returncode, r.stdout + r.stderr)
+def parse_area(rc, out):
+    """the pure reading of one test_area_smoke --list-only run (its rc and output, never a live range). A refusal that names a touched file with NO ROW in
+    area_map.tsv widens: the file's impact cannot be read, so the whole tree is the impact (test-cycle step 5c, the cio's design answer; the range would otherwise
+    refuse on every tick, the head never moving past it). Any other refusal raises: nothing is put for a range that cannot be read."""
+    if rc != 0:
+        if "with NO ROW in" in out: return True, []
+        raise RuntimeError("test_area_smoke rc=%d" % rc)
+    widen = any("->" in l and "*" in l.split("->", 1)[1].split() for l in out.splitlines() if l.startswith("AREA_SMOKE_MAP "))
+    m = re.search(r"AREA_SMOKE_LIST features=(.*?) runnable_entries=", out)
     return widen, (m.group(1).split() if m else [])
+def probe_area_refusal():
+    """--probe-area-refusal: parse_area on three canned readings, never a live range: an unmapped file widens, another refusal raises, a listed range names its features"""
+    w, f = parse_area(2, "AREA_SMOKE REFUSE(2): touched src/ file(s) with NO ROW in ../harness/scripts/area_map.tsv: src/lower/lower_pascal_types.c")
+    unmapped = "widen" if w is True and f == [] else "wrong"
+    try:
+        parse_area(2, "AREA_SMOKE REFUSE(2): cannot read the range")
+        other = "wrong"
+    except RuntimeError:
+        other = "raise"
+    w2, f2 = parse_area(0, "AREA_SMOKE_LIST features=lang:pascal ARB runnable_entries=3")
+    listed = "features" if w2 is False and f2 == ["lang:pascal", "ARB"] else "wrong"
+    ok = int(unmapped == "widen" and other == "raise" and listed == "features")
+    print("AREA_REFUSAL_PROBE unmapped=%s other=%s listed=%s ok=%d" % (unmapped, other, listed, ok))
+    return 0 if ok else 1
 def shell_vocab(lang):
     """the shells vocabulary of one master (test-cycle step 5c): every whitespace word of the shells column of its PARTITION.tsv, the union over the rows;
     an absent table or column is empty. A feature outside it has no shell cell (util_suite_partition builds shells for distinctive features only)"""
@@ -964,6 +985,8 @@ if __name__ == "__main__":
         sys.exit(probe_lap())
     if arg == "--probe-impact":
         sys.exit(probe_impact())
+    if arg == "--probe-area-refusal":
+        sys.exit(probe_area_refusal())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --probe-impact | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --probe-impact | --probe-area-refusal | --decide"); sys.exit(2)
