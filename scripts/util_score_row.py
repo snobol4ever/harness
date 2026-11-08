@@ -1798,7 +1798,9 @@ def cmd_from_progress(a):
     # while every line this prints and the row it writes carry the full key, so the port's row and SCRIP's are never one another's
     full_key = a.suite
     key, _at, port = full_key.partition("@")
-    modes = ("m3",) if port else ("m3", "m4")
+    # MODE 3 ONLY (Lon 2026-11-08: "We will test mode 3 only until further notice"; the coo 11:29: the UniTests headline read the blended 105 while m3 read 110):
+    # with S4E_MODES=m3 in the environment (the cycle exports it; a hand write sets it) the row is graded in m3 alone, the headline today_pass the m3 count.
+    modes = ("m3",) if (port or os.environ.get("S4E_MODES", "").strip() == "m3") else ("m3", "m4")
     corpus = os.environ.get("S4E_CORPUS_ROOT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "corpus")
     tdir, dbsuite = from_progress_table(corpus, full_key)
     if not tdir:

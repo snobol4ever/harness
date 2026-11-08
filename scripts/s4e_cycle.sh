@@ -15,7 +15,7 @@
 # for good (named in CYCLE.skip, one line each) so no cell can hold the cycle forever.
 set -u
 S4E="${S4E_HOME:-/home/claude_grader}"
-export S4E_HOME="$S4E" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" TMPDIR="/tmp/s4e/grader"
+export S4E_HOME="$S4E" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="/tmp/s4e/grader"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order
 PROG=/home/resources/progress
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
 RUNNERS="$S4E/harness/scripts/SUITE_RUNNERS.tsv"
