@@ -71,6 +71,7 @@ cp -a "$SUITE"/. "$W/" || { echo "⛔ REFUSE(rc=2): could not copy the suite to 
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board. The oracle runs as before.
 # Line 2 hands the guard the same suite this runner grades (SPITBOL_TESTPGMS_SUITE), so a scratch fixture is judged as one.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSE(rc=2): lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 
@@ -122,6 +123,15 @@ TOTAL=0; SCORED=0; UNSCR=0; M3P=0; M3F=0; M4P=0; M4F=0; UNSCR_LINES=""; RED_LINE
 # that says STALE or UNRECORDED aloud rather than letting a written ruling drift away from what sbl does today.
 # BOTH is the R-372 AND per program: the suite row states both_modes_pass over the baseline, never a per-mode count.
 BOTH=0; OUTSIDE_LIST=""; OUTSIDE_TSV="$SUITE/OUTSIDE_SPITBOL_BASELINE.tsv"; MIRROR_TSV="$SUITE/UNGRADABLE.tsv"
+if [ "$PORT" = 0 ]; then
+    hr_begin "$W/hr"
+    for p in $progs; do
+        rr_admits "$p" || continue
+        [ -n "$(declared_out_files_from_table "$DECL" "$p")" ] && continue
+        hr_row "$p" "$p.spt" "$(stdin_of "$p")" "$T" "$W" $(declared_compile_args_from_table "$DECL" "$p") $(declared_switches_from_table "$DECL" "$p")
+    done
+    hr_run "$SCRIP"
+fi
 for p in $progs; do
     rr_admits "$p" || continue
     rr_yield "$p" && break
@@ -147,7 +157,11 @@ for p in $progs; do
             SCORED=$((SCORED+1)); CR_GRADED=$((CR_GRADED+1))
             ca="$(declared_compile_args_from_table "$DECL" "$p")" || exit 2
             SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$p")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
+            if hr_get "$p"; then
+                m3="$W/$p.m3"; cp "$HR_OUT" "$m3"; cp "$HR_ERR" "$m3.err"; r3=$HR_RC; ROW_S3="$HR_SECS"
+            else
             _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
+            fi
             got3="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$m3.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
             if [ "$PORT" = 1 ]; then r4=""   # a port has no mode 4: no compile, no row
             else
@@ -259,7 +273,11 @@ for p in $progs; do
     # ── mode 3 and mode 4, same scratch cwd, same stdin.
     ca="$(declared_compile_args_from_table "$DECL" "$p")" || exit 2
     SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$p")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
-    _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
+    if hr_get "$p"; then
+                m3="$W/$p.m3"; cp "$HR_OUT" "$m3"; cp "$HR_ERR" "$m3.err"; r3=$HR_RC; ROW_S3="$HR_SECS"
+            else
+            _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
+            fi
     _p3=0
     if graded_same "$m3"; then M3P=$((M3P+1)); _p3=1; else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3, $(why_red "$m3"))
 "; fi
@@ -355,7 +373,7 @@ _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp t
 if [ "$PORT" = 1 ]; then echo "SCORE.md: the $(one_runner_engine) engine writes no SCRIP row -- its row is util_score_row.py from-progress --suite $ROWKEY (R-1822), graded in m3 alone"
     if [ "$SUITE" = "$CANON_SUITE" ]; then one_runner_port_publish "$ROWKEY"; else echo "SUITES.tsv: scratch suite $SUITE -- not published (only the canonical suite publishes its row)"; fi
 elif [ "$SUITE" = "$CANON_SUITE" ]; then
-python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite testpgms --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite testpgms --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
     --text "spitbol_testpgms both_modes_pass=$BOTH/$DENOM ($TOTAL shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect -- all eight are SPITBOL's own test deck, R-1286) OUTSIDE=$UNSCR, graded $BOTH/$SCORED ($PM_GRADED of them graded through SPITBOL's fatal post-mortem, $PM_VOICE_ONLY of those on the error voice alone because sbl's whole stdout is the post-mortem and only $((PM_GRADED-PM_VOICE_ONLY)) compares a body, R-1316: they pass by stopping exactly where SPITBOL x64 stops, and running them to completion as Macro SPITBOL 370 would widen the dialect, Lon's call, not taken · $CR_GRADED graded by being REFUSED where SPITBOL x64 refuses them at compile, by the code and line of every diagnostic through the one error voice, R-1323 (test2: ERROR 214 at line 238) · $UNSCR outside the SPITBOL baseline, named with SPITBOL's own error and a source check in OUTSIDE_SPITBOL_BASELINE.tsv, Lon 2026-09-08) · masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) (R-409 in ALL.mask; test1's statement-137 trap is a R-1316 ORACLE-ONLY row for Lon's kept VALUE, R-1293) · m3 $M3P/$SCORED · m4 $M4P/$SCORED (of $TOTAL shipped · sbl -bf the one oracle, Lon 2026-09-07 · refs cut live)${INV_LINE:+ · $INV_LINE} (\`test_snobol4_spitbol_testpgms_suite.sh\`)" \
