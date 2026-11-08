@@ -151,6 +151,7 @@ sbl_flags() { echo "$(sbl_lang_flags)"; }   # ⭐ LANGUAGE ARM from the ONE auth
 # through lib_declared_arena.sh (the one reader) into one table keyed by program path, which run_one's parallel children look up
 # with one awk; a refused cell refuses the whole run before one program is graded.
 . "$HERE/lib_declared_arena.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_declared_arena.sh -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" 2>/dev/null || { echo "REFUSING: cannot load lib_harness_road.sh"; exit 2; }
 sc_decl_build() {  # $1 = table out  $2.. = program paths (or - to read them from stdin) -> "path<TAB>heap_kb<TAB>stack_kb<TAB>compile_args" per declaring program; rc 2 on a refused cell
   # ⭐ THE 4th COLUMN IS THE PROGRAM'S compile_args (clause 8 (f), R-1281, landing 4 of 5): the ALL.csv row's, or its <stem>.cmdline
   # sidecar's for a program with no table (declared_compile_args_beside), which run_one puts after --run and --compile.
@@ -374,7 +375,11 @@ run_one() {  # suite lib prog norm run_to
   # t3/t4: each mode's own wall in decimal seconds ($EPOCHREALTIME, R-1676 (c)); $SECONDS read 0 for every program under a second,
   # so 213 of gimpel's 290 progress rows of 2026-10-11 carried 0 and no chunk could be sized by them
   t0="${EPOCHREALTIME/,/.}"
+  if hr_get "$prog"; then
+    cp "$HR_OUT" "$W/m3"; cp "$HR_ERR" "$W/m3e"; rc=$HR_RC
+  else
   (cd "$d" && run_at_declared_table "$SC_DECL" "$prog" -- env SNO_LIB="$lib" "$TIMEOUT_RETRY" "$rto" "$SCRIP" $cflag --run $ca $sz "$prog" < "$in" > "$W/m3" 2>"$W/m3e"); rc=$?
+  fi
   if [ ! -s "$W/m3" ] && [ $rc -ne 0 ] && grep -q 'emit_chain.*FAILED\|unresolved forward\|bb_emit_end\|[Pp]arse error\|syntax error\|COMPILE' "$W/m3e" 2>/dev/null; then st3=COMPILE_FAIL; else st3="$(grade "$W/m3" $rc)"; fi
   t3="$(awk -v a="$t0" -v b="${EPOCHREALTIME/,/.}" 'BEGIN { printf "%.3f", b - a }')"
   # ---- m4
@@ -394,7 +399,7 @@ run_one() {  # suite lib prog norm run_to
   echo -e "$suite\t${prog#$CORPUS/}\t$st3\t$st4\t$t3\t$t4\t$note"
   rm -rf "$W"
 }
-export -f run_one sc_mask stdin_for sc_libpath sbl_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside declared_switches_from_table _declared_switch_words; export CORPUS SBL SCRIP SC DEMO _LDA_HERE SC_PORT
+export -f run_one hr_get sc_mask stdin_for sc_libpath sbl_flags sbl_died sc_oracle_run run_at_declared_table declared_compile_args_from_table declared_oracle_args_beside declared_switches_from_table _declared_switch_words; export CORPUS SBL SCRIP SC DEMO _LDA_HERE SC_PORT
 # ---------------------------------------------------------------- run
 cmd_run() {
   set -f
@@ -476,6 +481,16 @@ cmd_run() {
     # ones -- the COO-199 hole class the icon runners name since SCRIP b26afab9f. A program with no table (the sidecar model) is not a gap.
     _und="$(awk -F'\t' 'FNR==NR { if ($1 != "") d[$1] = 1; next } !($0 in d)' <(echo; cat "$out/decl.$name") "$list" | while IFS= read -r _p; do [ -n "$_p" ] && [ -f "$(dirname "$_p")/ALL.csv" ] && basename "$_p" .sno; done | tr '\n' ' ')"
     [ -z "$_und" ] || echo "   ⛔ UNDECLARED (RULES.md 8 (f)): $(printf '%s' "$_und" | wc -w) program(s) of this suite have no row in their ALL.csv and run at the runtime's defaults -- a gap named, never filled here: $_und"
+hr_begin "$out/hr.$name"
+if [ -z "${SC_PORT:-}" ] && [ "$name" != beauty_self ]; then
+    while IFS= read -r _p; do
+        [ -n "$_p" ] || continue
+        _d="$(dirname "$_p")"
+        hr_row "$_p" "$_p" "$(stdin_for "$_p")" "$rto" "$_d" "env=SNO_LIB=$(sc_libpath "$lib" "$_d")" $(declared_compile_args_from_table "$out/decl.$name" "$_p") $(declared_switches_from_table "$out/decl.$name" "$_p")
+    done < "$list"
+fi
+hr_run "$SCRIP"
+export HR_DIR
     SC_DECL="$out/decl.$name" xargs -a "$list" -P "$jobs" -I{} bash -c 'run_one "$0" "$1" "$2" "$3" "$4"' "$name" "$lib" {} "$norm" "$rto" >> "$out/results.tsv" 2>>"$out/noise.log"
     # ⛔ SCOPED TO probes_misc/bb_probes DELIBERATELY (row scorecard-probes-misc-suite-awareness, extended
     # row probe-consolidate-bb 2026-08-28): these are the two rows whose root has a live sibling

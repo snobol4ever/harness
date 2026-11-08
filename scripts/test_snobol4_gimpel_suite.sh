@@ -75,8 +75,10 @@ SMOKE_FORCE=""; [ -n "$SMOKE_KEYS" ] && SMOKE_FORCE="--force"
 # ⭐ THE ROUND ROBIN'S SEAM (R-1802/1805/1806): under S4E_CHUNK the scorecard grades only the part's drivers (its SC_ONLY_PROGRAMS filter, the smoke's
 # own road), appends their rows under their libraries' names as it always does, and this runner writes no suite row (rr_end below)
 . "$HERE/lib_rr.sh" && rr_load "$CORPUS_REAL/packages/snobol4/gimpel" || exit 2
+. "$HERE/lib_harness_road.sh" || exit 2
 rr_selected && [ -z "$SMOKE_KEYS" ] && SMOKE_KEYS="" && export SC_RR_ONLY="$(printf '%s ' ${RR_SEL:-})"
 SC_ONLY_PROGRAMS="${SMOKE_KEYS:-${SC_RR_ONLY:-}}" CORPUS="$W/corpus" bash "$HERE/scorecard_snobol4.sh" run --suites gimpel --out "$W" $SMOKE_FORCE > "$W/run.log" 2>&1
+grep -E '^HARNESS_ROAD rows=' "$W/run.log" | tail -1 || true
 rc=$?
 TSV="$W/results.tsv"
 [ -f "$TSV" ] || { echo "⛔ REFUSE(rc=2): scorecard_snobol4.sh produced no results.tsv (rc=$rc) -- run.log:"; cat "$W/run.log"; exit 2; }
@@ -286,7 +288,7 @@ if [ -z "$_cc" ]; then
         _cc="$(date +%F):R-1269-the-program-is-the-library-graded-through-its-driver-shipped-counts-the-${SHIPPED_LIBS}-libraries-not-the-${TOTAL}-drivers-OUTSIDE=${UNSCR}-named-no-driver=$(printf '%s' "$NODRV_NAMES" | wc -w)-owed"
     else _cc="$(excluded_shape_stamp gimpel "$DENOM" "$UNSCR" "$EXCL_D_N")" || exit 2; fi
 fi
-python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite gimpel --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite gimpel --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
     --text "gimpel both_modes_pass=$BOTH/$DENOM ($SHIPPED_LIBS shipped libraries minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, EXCLUDED.tsv, R-1286), each graded through its driver (R-1269) · OUTSIDE=$UNSCR whose driver SPITBOL does not answer, named with the oracle's own error in OUTSIDE_SPITBOL_BASELINE.tsv, in the denominator (R-749) · no driver $(printf '%s' "$NODRV_NAMES" | wc -w), owed (NEEDS_DRIVER) · graded $BOTH/$SCORED · m3 $M3P/$SCORED · m4 $M4P/$SCORED (sbl -bf the one oracle)${INV_LINE:+ · $INV_LINE} (\`test_snobol4_gimpel_suite.sh\`)" \
