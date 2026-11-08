@@ -4,9 +4,12 @@
 # bare). The parser is the only authority (out/parser_icon when it exists, else scrip --dump-ast, whose parse error is the same message): each pass runs out/parser_icon, reads "expected ';' after the token at line L
 # col C", finds that token's end on line L (a string literal to its closing quote, a name or number to the end of its run,
 # any other token one character) and inserts ';' there; it loops until the file parses or the error is not a semicolon.
-#   python3 ../harness/scripts/util_icon_semicolons.py [--check] FILE...     rc 0 every file parses (changed files named), 1 a file
+#   python3 ../harness/scripts/util_icon_semicolons.py [--check] [--compile-args=ARGS] FILE...     rc 0 every file parses (changed files named), 1 a file
 #   python3 ../harness/scripts/util_icon_semicolons.py [--check] --master tests/<lang>/ALL.icn   every block entry between the banners
 #   still refuses for another reason (named), 2 no parser binary. --check rewrites nothing and reports what it would add.
+#   --compile-args=ARGS (the spelling util_add_ladder_witness.py takes; CTO-544 U2) parses with scrip --dump-ast ARGS, since out/parser_icon takes no switch (it opens
+#   --dialect=unicon as a file); a package's unmarked_compile_args go here. An insertion cap of max(500, 4 * lines + 4). A file the parse completes whose import the
+#   package resolver cannot find (icon: import: cannot find package, raised after the parse, icon_driver.c) is PARSED and the import named: that is the resolver's row.
 import os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.join(os.path.dirname(os.path.dirname(HERE)), "SCRIP"); PARSER = os.path.join(ROOT, 'out', 'parser_icon')
 ERR = re.compile(r"expected ';'.*?after the token at line (\d+) col (\d+)")
@@ -108,9 +111,14 @@ def preinsert(lines):
     return added
 SCRIP_BIN = os.path.join(ROOT, 'scrip')
 PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
+UNRESOLVED = re.compile(r'^icon: import: cannot find package ')
 def parse_error(path):
     r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
-    return None if r.returncode == 0 else (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
+    if r.returncode == 0: return None
+    first = (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
+    if UNRESOLVED.match(first): UNRESOLVED_SEEN[os.path.abspath(path)] = first; return None
+    return first
+UNRESOLVED_SEEN = {}
 def string_close(lines, L, C):
     s = lines[L - 1]; i = C - 1
     if i >= len(s) or s[i] not in '"\'': return None
@@ -125,8 +133,8 @@ def string_close(lines, L, C):
         k += 1; j = 0
     return None
 def fix(path, check):
-    lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = preinsert(lines)
-    for _ in range(500):
+    lines = open(path, encoding='utf-8', newline='').read().split('\n'); added = preinsert(lines); cap = max(500, 4 * len(lines) + 4)
+    for _ in range(cap):
         err = parse_error(path if not check and not added else write_tmp(path, lines))
         if err is None: break
         m = ERR.search(err)
@@ -142,7 +150,7 @@ def fix(path, check):
             e = code_end(before); lines[L - 1] = before[:e] + ';' + before[e:]
         added.append((L, e))
     else:
-        return added, 'gave up after 500 insertions (a container of many programs is converted with --master)'
+        return added, 'gave up after %d insertions, the cap max(500, 4 * lines + 4) (a container of many programs is converted with --master)' % cap
     if added and not check: open(path, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
     return added, None
 def write_tmp(path, lines):
@@ -170,6 +178,10 @@ def fix_master(path, check):
     if not check and blocks: open(path, 'w', encoding='utf-8', newline='').write('\n'.join(lines))
     print('%s %s: entries=%d changed=%d semicolons=%d still_refused=%d' % ('WOULD CHANGE' if check else 'CHANGED', path, len(bounds), blocks, semis, bad)); return 1 if bad else 0
 def main(argv):
+    global PARSER_CMD
+    ca = [a for a in argv if a.startswith('--compile-args=')]; argv = [a for a in argv if not a.startswith('--compile-args=')]
+    args = ' '.join(a[len('--compile-args='):] for a in ca).split()
+    if args: PARSER_CMD = [SCRIP_BIN, '--dump-ast'] + args
     check = '--check' in argv
     if '--master' in argv:
         return fix_master(argv[argv.index('--master') + 1], check)
@@ -183,5 +195,7 @@ def main(argv):
         if os.path.exists(t): os.unlink(t)
         if added: changed += 1; print('%s %s: %d semicolon(s) at %s' % ('WOULD ADD' if check else 'ADDED', f, len(added), ' '.join('%d:%d' % a for a in added[:12])))
         if err: bad += 1; print('STILL REFUSED %s: %s' % (f, err[:160]))
+        u = [v for k, v in UNRESOLVED_SEEN.items() if k in (os.path.abspath(f), os.path.abspath(t))]
+        if u and not err: print('PARSED %s, its import unresolved (the package resolver runs after the parse; not this converter\'s): %s' % (f, u[-1][:160]))
     print('files=%d changed=%d still_refused=%d' % (len(files), changed, bad)); return 1 if bad else 0
 if __name__ == '__main__': sys.exit(main(sys.argv[1:]))
