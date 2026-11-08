@@ -239,7 +239,7 @@ def read_contract(pkg_dir):
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
     harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (R-2072, hq_unicon): an Icon
     package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
-    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": ""}
+    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -266,6 +266,11 @@ def read_contract(pkg_dir):
         elif f[0] == "ipath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: ipath {f[1]!r} names no directory beside the package (the run cannot find its imports)")
             out["ipath"] = str((pkg_dir / f[1]).resolve())
+        elif f[0] == "not_shipped":
+            for x in f[1].split():
+                if not (pkg_dir / x).is_dir():
+                    h.refuse(f"{cf}:{n}: not_shipped {x!r} names no directory beside the package")
+            out["not_shipped"] = f[1].strip()
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
         else:
