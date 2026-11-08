@@ -711,7 +711,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
         rebase
         if a="$(affected_since)"; then
             moved_rounds=$((moved_rounds + 1))
-            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then gate_run_serial "$a"; note_origins
+            if [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then [ "$mode" = push ] || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "$a"; note_origins
             else drop_lease "(origin moved under the gate, $a: the gate re-runs unleased)"; return 3; fi
         else
             mark "regate:lease" "$a (the gate stands: origin moved outside the row's population; the rebased tree is pushed)"
@@ -721,7 +721,7 @@ land_round() {   # one attempt: fetch, rebase, (regenerate, build, derive), the 
     [ -n "${S4E_LAND_PLANT:-}" ] && { bash -c "$S4E_LAND_PLANT" > "$LOG/plant" 2>&1 8>&- 9>&- || true; }   # the probe's plant: a hand push that lands between the lease's fetch and the push
     pushes; rc=$?
     if [ "$rc" = 3 ] && [ "$attempt" -ge "$tries" ] && [ "$serial_round" = 0 ]; then
-        fetch; rebase; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
+        fetch; rebase; [ "$mode" = push ] || { build serial; mark build:serial "${binfo:-built}"; }; gate_run_serial "rebased after a push the origin refused on the last attempt"; note_origins
         pushes; rc=$?
     fi
     [ "$rc" = 3 ] && { drop_lease "(a push was rejected: going round again)"; return 3; }
