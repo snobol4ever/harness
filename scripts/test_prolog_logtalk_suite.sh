@@ -38,7 +38,7 @@ export TIMEOUT_RETRY="${TIMEOUT_RETRY:-$HERE/util_timeout_retry.sh}"   # a grade
 ROOT="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 SUITE="${S4E_CORPUS:-$ROOT/corpus}/packages/prolog/logtalk_iso"
 SCRIP="$HERE/../../SCRIP/scrip"
-MODES="${LOGTALK_MODES:-m3,m4}"
+MODES="${LOGTALK_MODES:-${S4E_MODES:-m3,m4}}"
 JOBS="${LOGTALK_JOBS:-}"
 NAME_REDS=""
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
