@@ -81,6 +81,7 @@ empty_declared() { [ -f "$EMPTY_TSV" ] && awk -F'\t' -v n="$1" '$1 !~ /^#/ && $1
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSE(rc=2): lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 GRADED=0; UNGRADED_N=0; P3=0; F3=0; P4=0; F4=0; D4=0; BOTH=0; SELF=0; STREAM=0; XG_N=0; XG_LIST=""; XG_NAMES=""
@@ -136,6 +137,17 @@ compile_m4() {  # compile_m4 <src> <out> [<compile_args>]; on failure echoes "<O
     return 0
 }
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one chunk or a request's entries, rows as each test ends
+if [ "$PORT" = 0 ]; then
+    hr_begin "$W/hr"
+    for sno in "$SUITE"/*.spt; do
+        _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue
+        name="$(basename "$sno" .spt)"; base="$(basename "$sno")"
+        [ -n "$(declared_out_files_from_table "$DECL" "$name")" ] && continue
+        _mg=""; [ "$(declared_stderr_from_table "$DECL" "$name")" = merged ] && _mg=--merged
+        hr_row $_mg "$name" "$base" "$(stdin_of "$name")" "$TIMEOUT" "$RUN" $(declared_compile_args_from_table "$DECL" "$name") $(declared_switches_from_table "$DECL" "$name")
+    done
+    hr_run "$SCRIP"
+fi
 for sno in "$SUITE"/*.spt; do
     _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue; rr_yield "$_rrn" && break; [ "$PROG_RECORD" = 1 ] && rr_flush "$PROG_ROWS"
     name="$(basename "$sno" .spt)"; base="$(basename "$sno")"; ROW_S3=0; ROW_S4=0   # each mode's own wall for its row (R-1676 (c))
@@ -185,7 +197,11 @@ for sno in "$SUITE"/*.spt; do
     SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
     declared_answer_clear "$DECL" "$name" "$RUN" || exit 2
-    run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$4"; if [ "$8" = merged ]; then : > "$5"; exec 2>&1; else exec 2> "$5"; fi; exec "$2" --run $6 "$3" < "$7"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" "$(stdin_of "$name")" "$SE" 2>/dev/null; rc3=$?
+    if hr_get "$name"; then
+        cp "$HR_OUT" "$W/m3.out"; if [ "$SE" = merged ]; then : > "$W/m3.err"; else cp "$HR_ERR" "$W/m3.err"; fi; rc3=$HR_RC
+    else
+        run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" bash -c 'cd "$1" || exit 2; exec > "$4"; if [ "$8" = merged ]; then : > "$5"; exec 2>&1; else exec 2> "$5"; fi; exec "$2" --run $6 "$3" < "$7"' _ "$RUN" "$SCRIP" "$base" "$W/m3.out" "$W/m3.err" "$ca${SZ:+ $SZ}" "$(stdin_of "$name")" "$SE" 2>/dev/null; rc3=$?
+    fi
     ROW_S3="$(progress_secs_since "$_t0")"
     declared_answer_compose "$DECL" "$name" "$RUN" "$W/m3.out" "$W/m3.err" || exit 2
     if [ "$rc3" -eq 124 ] || [ "$rc3" -ge 128 ]; then OUT3="$(verdict_of "$rc3")"; N3="rc=$rc3: $(head -1 "$W/m3.err" | cut -c1-90)"
@@ -322,7 +338,7 @@ elif [ "$SUITE" = "$CANON_SUITE" ]; then
 EXCL_D_N="$(excluded_in_outside "$SUITE" "$(printf '%b' "${UNG_LIST:-}" | cut -f1) $XG_NAMES")" || exit 2; DENOM=$((SHIPPED - EXCL_D_N))
 echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set and its $XG_N excluded-graded program(s) (R-1345) leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || { _cc="$(excluded_shape_stamp x32tests "$DENOM" "$UNGRADED_N" "$EXCL_D_N")" || exit 2; [ "$XG_N" -gt 0 ] && _cc="${_cc/not-in-the-SPITBOL-dialect-named-in-EXCLUDED.tsv/named-in-EXCLUDED.tsv-$((EXCL_D_N - XG_N))-not-in-the-SPITBOL-dialect-R-1286-and-$XG_N-deferred-after-the-announcement-by-Lons-word-R-1345}"; }
-python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite x32tests --suite-key x32tests --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite x32tests --suite-key x32tests --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
     --text "spitbol_x32 both_modes_pass=$BOTH/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N named in EXCLUDED.tsv: not in the SPITBOL dialect, R-1286, or $XG_N deferred after the announcement by Lon's word, graded and named, R-1345; $GRADED graded) (the table's reading: the R-372 AND per program · $SELF graded by the programs' OWN \" pass:\"/\"*FAIL:\" verdict lines, $STREAM by live oracle stdout diff · $UNGRADED_N of $SHIPPED shipped still unreadable by our mandated sbl -bf, named in UNGRADED.tsv and owed to the case-conversion row) · m3 $P3/$GC · m4 $P4/$GC ($D4 m4 DEFERRED on the declared ${M4_ASM_MB}MB asm budget; a program our own toolchain could not build is COMPILE_FAIL/LINK_FAIL and counts in m4_fail, hq_T 2026-09-12) · masked_lines=$MASKED_TOTAL in $MASKED_FIX fixture(s) (R-409 ALL.mask; host's HOST() line is the oracle's own identity, R-1344/R-1351) · sbl -bf the one oracle${INV_LINE:+ · $INV_LINE} (\`test_snobol4_spitbol_x32_suite.sh\`)" \
