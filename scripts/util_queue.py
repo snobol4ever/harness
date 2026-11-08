@@ -188,7 +188,7 @@ def main(a):
             os.dup2(log.fileno(), 1); os.dup2(log.fileno(), 2); os.close(0)
             def say(m): print("%s hold job=%d %s" % (time.strftime("%FT%TZ", time.gmtime()), j.id, m)); sys.stdout.flush()
             say("start tube=%s ttr=%d interval=%d claim=%s session=%s" % (st["tube"], ttr, interval, claim, session))
-            grace = time.time() + 60
+            grace = time.time() + int(os.environ.get("S4E_HOLD_TAKE_GRACE_S", "600"))
             while True:
                 time.sleep(interval)
                 try:
@@ -227,6 +227,12 @@ def main(a):
                             try: c.delete(j.id)
                             except Exception as e: say("delete: %s" % e)
                             os._exit(0)
+                if lines and lines[0].strip() != seat and time.time() < grace:
+                    rj = [l.split()[1][4:] for l in lines if l.startswith("RESERVED job=")]
+                    if not rj or rj[-1] == str(j.id):
+                        try: c.touch(j)
+                        except Exception as e: say("touch: %s (the lease is gone)" % e); os._exit(0)
+                        continue
                 if lines and lines[0].strip() != seat: say("claim names %s, not %s: release" % (lines[0].strip(), seat)); break
                 if session and os.system("pgrep -f '(^|/)claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
                     say("session %s is gone: release" % session); break
