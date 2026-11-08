@@ -195,6 +195,10 @@ def main(a):
                     lines = open(claim).read().splitlines()
                 except OSError:
                     lines = None
+                if os.path.exists("%s.release.%d" % (claim, j.id)):   # the take refused before writing its claim (no baton, make failed, a dirty root): release now, not at the grace's end
+                    try: os.remove("%s.release.%d" % (claim, j.id))
+                    except OSError: pass
+                    say("the take refused: release"); break
                 if lines is None:
                     if not os.path.isdir(os.path.dirname(claim)): say("claim dir gone: release"); break
                     if time.time() < grace: continue
