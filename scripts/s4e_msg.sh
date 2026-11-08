@@ -258,7 +258,7 @@ s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) e
 s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> tier-opus, the escalation officers (TIERS.tsv role escalation), the double escalation; an opus tube or seat -> tier-fable, the triple escalation (COO-485, Lon 2026-11-08 13:0x: junior, senior, officer, then the cio or the cto; the bosses sleep); rc 1 at the top
     local _tier
     case "$1" in seat-*) _tier="$(s4e_tier_of "${1#seat-}" 2>/dev/null || s4e_tier_of "$ME")" || return 1;; tier-*) _tier="${1#tier-}";; *) return 1;; esac
-    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo tier-opus;; opus) echo tier-fable;; *) return 1;; esac; }
+    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo tier-opus;; opus) _ob="$(s4e_operating_boss)"; if [ -n "$_ob" ] && [ "$ME" != "$_ob" ]; then echo "seat-$_ob"; else echo tier-fable; fi;; *) return 1;; esac; }
 s4e_escalate_rung_set() {   # <topic> -> bumps the baton's RUNG: head line (absent means 1, so the first escalation writes RUNG: 2); prints the new rung
     local _b="$PO/tasks/$1.task.md" _cur _new
     _cur="$(sed -n 's/^RUNG:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$_b" | head -1)"; _new=$(( ${_cur:-1} + 1 ))
@@ -3662,6 +3662,7 @@ case "$cmd" in
          # took the seat as the topic and mailed the officer the literal body "<topic> --stdin", the question itself lost. A first argument that
          # names a mailbox is now the addressee, and --stdin reads the body from standard input as send does; an empty body is refused.
          if [ -n "${3:-}" ] && [ -d "$PO/$2/inbox" ]; then _hq="$2"; topic="$3"; shift 3; else topic="$2"; shift 2; _hq="$(s4e_hq)"; fi
+         _ob="$(s4e_operating_boss)"; case " $(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1) " in *" $_hq "*) if [ -n "$_ob" ] && [ "$ME" != "$_ob" ] && [ "$_hq" != "$_ob" ] && [ "$(s4e_tier_of "$_hq")" = fable ]; then echo "ask: $_hq is a sleeping boss (COO-496); delivered to $_ob, who decides whether to wake it."; _hq="$_ob"; fi;; esac   # COO-496
          [ -n "$_hq" ] || { echo "⛔ REFUSED: no owning HQ resolved for $ME. Name the seat: s4e_msg.sh ask <seat> <topic> --stdin, or set S4E_HQ." >&2; exit 2; }
          if [ "${1:-}" = "--stdin" ]; then _body="$(cat)"; else _body="$*"; fi
          [ -n "$(printf '%s' "$_body" | tr -d '[:space:]')" ] || { echo "⛔ REFUSED (rc 2): ask carries no question -- give it after the topic in quotes, or with --stdin on standard input. Nothing sent." >&2; exit 2; }

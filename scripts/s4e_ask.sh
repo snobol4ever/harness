@@ -51,6 +51,7 @@ ask_queue() {   # <asker-topic> <question text>
     tier="$(tier_name_of "$ME")" || refuse "$ME is not in the tiers table ($TIERS)"
     above="$(tier_above_of "$tier")" || refuse "no tier above fable: a fable's question goes to Lon through the cio (the top of the escalation, fleet-queue step 9)"
     tube="ask-$above"
+    if [ "$above" = fable ]; then _ob="$(s4e_operating_boss)"; [ -n "$_ob" ] && [ "$ME" != "$_ob" ] && tube="seat-$_ob"; fi   # COO-496: only the operating boss asks the fable tier
     row="$(queue_row_of "$topic")"; [ -n "$row" ] || refuse "no QUEUE row for $topic: the asking row must exist before it can be blocked"
     n=1; while [ -e "$PO/tasks/q-$topic-$n.task.md" ] || [ -n "$(queue_row_of "q-$topic-$n")" ]; do n=$((n+1)); done
     qt="q-$topic-$n"; base="$PO/tasks/$qt.task.md"
