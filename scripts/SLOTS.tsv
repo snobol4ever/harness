@@ -1,15 +1,15 @@
 # SLOTS.tsv -- THE CLASS TABLE OF THE BOX'S TWO POOLS (DESIGN-PLAN fleet-queue step 18; the cio 2026-11-05, skill fleet-bus section 8: "the compile and run pools become GNU sem semaphores with a class table and a timeout").
 # The sem layer is ADMISSION to a class, taken once by a take that is rare and long (a batch job, a build, a whole suite run, a landing): util_run_slot.sh --admit <compile|run> <command>. The per-entry and per-compile
 # slots stay flock files (lib_slots.sh s4e_slot_hold, corpus_suite_harness.py _run_slot): a sem take is 327 M user instructions against 12-19 M for a flock take (perf stat, 2026-11-05) and a marginal harness entry is 0.28 G
-# (CTO-522), so the coo and the cio ruled sem off that path (coo and cio 2026-11-05 17:4x). The caps below are the standing rulings (a seat takes at most 4 compiles and 3 runs; 6 of the 14 run slots are the grader's) and equal
+# (CTO-522), so the coo and the cio ruled sem off that path (coo and cio 2026-11-05 17:4x). The caps below are the standing rulings (officer_05's load design 2026-11-08: compile 6 + run 8 = the 14-core fleet cap of s4e.slice; a seat takes at most 3 compiles and 2 runs; 4 of the 8 run slots are the grader's, the cycle's width) and equal
 # lib_slots.sh's S4E_*_DEFAULT lines, which test_gate_pools_cap_a_seat_and_reserve_the_grader.sh arm 5 checks.
 # Columns (tab separated): class, id (a trailing - means the seat name follows), cap, timeout_s (the longest a taker waits by day, 06:00-21:59; - means the class row's), timeout_night_s (otherwise and for the grader), note.
 # A take holds at most TWO sems, outer to inner (the cio: never three): compile = compile-seat then compile; run = run-seat then run-seats; run for S4E_CLASS=grader = run-grader only.
 # run is the class (its cap is run-grader + run-seats); a negative --semaphoretimeout refuses, a positive one STEALS the slot (MEASURED), so the takers pass -timeout_s.
-compile	s4e-compile	8	600	900	the compile class: half the 16 cores (CEO-2041); a timeout refuses rc 2 and nothing runs
-run	s4e-run	18	600	900	the run class: the pool of heavy runs; its cap is run-grader plus run-seats (the cio 2026-11-08 10:4x on SLOT_WAITS: 11501 s of run waits by 10:35 at load 8 on 16 cores, the lander's checks 3 at a time; 14 to 18, the seat share 3 to 4, landings 2 to 4; the cio 2026-11-07 15:5x on the coo's SLOT_WAITS reading: 31175 s of waits and 53 refusals in an hour at cpu PSI 14, so the pool, not the CPU, was the limit; a day wait of 600 s beats a lost reading)
-run-grader	s4e-run-grader	6	-	-	the slots only the grader (S4E_CLASS=grader) is admitted to (6 for a grader width up to 8; PSI lowers the width, the pool never refuses a grade worker for long)
-run-seats	s4e-run-seats	12	-	-	the slots every other taker shares (12 since 2026-11-08; 8 for 39 seats before)
-compile-seat	s4e-compile-seat-	4	-	-	one seat's share of the compile class (id prefix + seat name)
-run-seat	s4e-run-seat-	4	-	-	one seat's share of the run class (id prefix + seat name; 4 since 2026-11-08)
-land	s4e-land	4	600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07; 4 since 2026-11-08 10:4x: 12 land-admit waits of 1491 s by 10:35 at load 8): four landings build and gate at once on the box, a fifth waits; a timeout refuses rc 2 and nothing runs
+compile	s4e-compile	6	600	900	the compile class: half the 16 cores (CEO-2041); a timeout refuses rc 2 and nothing runs
+run	s4e-run	8	600	900	the run class: the pool of heavy runs; its cap is run-grader plus run-seats (the cio 2026-11-08 10:4x on SLOT_WAITS: 11501 s of run waits by 10:35 at load 8 on 16 cores, the lander's checks 3 at a time; 14 to 18, the seat share 3 to 4, landings 2 to 4; the cio 2026-11-07 15:5x on the coo's SLOT_WAITS reading: 31175 s of waits and 53 refusals in an hour at cpu PSI 14, so the pool, not the CPU, was the limit; a day wait of 600 s beats a lost reading)
+run-grader	s4e-run-grader	4	-	-	the slots only the grader (S4E_CLASS=grader) is admitted to (6 for a grader width up to 8; PSI lowers the width, the pool never refuses a grade worker for long)
+run-seats	s4e-run-seats	4	-	-	the slots every other taker shares (12 since 2026-11-08; 8 for 39 seats before)
+compile-seat	s4e-compile-seat-	3	-	-	one seat's share of the compile class (id prefix + seat name)
+run-seat	s4e-run-seat-	2	-	-	one seat's share of the run class (id prefix + seat name; 4 since 2026-11-08)
+land	s4e-land	2	600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07; 4 since 2026-11-08 10:4x: 12 land-admit waits of 1491 s by 10:35 at load 8): four landings build and gate at once on the box, a fifth waits; a timeout refuses rc 2 and nothing runs
