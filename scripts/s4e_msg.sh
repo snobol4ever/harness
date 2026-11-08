@@ -311,6 +311,7 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
     _iso="$(date -u +%FT%TZ)"
     if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
     printf 'KILL\n' >> "$_c"
+    case "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f3)" in buried|ready|delayed) s4e_queue_delete "$_job";; esac   # CIO-12 W2: a job no holder reserves (buried for its claimant at a duplicate take, or released) has no holder to read the KILL; the bus deletes it
     for _i in $(seq 1 20); do s4e_escalate_gone "$_job" && break; sleep 0.5; done
     s4e_escalate_gone "$_job" || { printf '⛔ REFUSED (rc 2): job %s is still in the queue 10 s after KILL; the holder log is /tmp/s4e/%s/queue_hold.%s.log. The row keeps its claim and is not moved.\n' "$_job" "$_holder" "$_job" >&2; return 2; }
     _rung="$(s4e_escalate_rung_set "$_t")"
@@ -450,6 +451,14 @@ s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, the cio
     [ "$_ok" = 1 ]; exit $?; }
 s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "$S4E_TIERS" 2>/dev/null; }
 . "$(dirname "${BASH_SOURCE[0]}")/lib_wake.sh"   # THE WAKE LINE (the cio 2026-11-08; Lon: design flows down, problems flow up): queue, escalate, ask, answer and assign end by naming the session to SendMessage
+s4e_claim_holder_live() {   # <seat> <claim file> -> rc 0 when the claimant is ALIVE (CIO-12 W2, the cio 2026-11-08 12:5x on the coo's EMERGENCY of 12:28: job 532 taken by eight juniors, each archiving the holder's claim as STALE): its session runs in its s4e-seat-<seat>.scope, or the claim's last RESERVED line is younger than S4E_CLAIM_LIVE_S (600 s; the window a take needs for its sync, make and premise). A seat with no scope on a box that has scopes, and a claim older than the window, reads dead.
+    local _s="$1" _c="$2" _cg _ts _age _now
+    _cg="/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice/s4e-seat-$_s.scope/cgroup.procs"
+    if [ -f "$_cg" ] && [ -s "$_cg" ] && ps -o comm= -p "$(tr '\n' ',' < "$_cg" | sed 's/,$//')" 2>/dev/null | grep -q -x -E 'claude|[0-9.]+'; then return 0; fi
+    _ts="$(sed -n 's/^RESERVED job=[0-9]* tube=[^ ]* \([0-9T:Z-]*\).*/\1/p' "$_c" | tail -1)"
+    [ -n "$_ts" ] || return 1
+    _age="$(date -u -d "$_ts" +%s 2>/dev/null)" || return 1; _now="$(date -u +%s)"
+    [ $(( _now - _age )) -lt "${S4E_CLAIM_LIVE_S:-600}" ]; }
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
@@ -478,11 +487,19 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
         # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): beanstalkd handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
         _oj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
         if [ -n "$_oj" ] && [ "$_oj" != "$2" ] && [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_oj" 2>/dev/null | cut -f3)" = reserved ]; then echo "⛔ $_t has two jobs: job $_oj is live under $_own's claim, so job $2 is the duplicate; its holder deletes it (two-jobs-one-row interim guard)" >&2; return 1; fi
+        # THE HOLDER LIVES, THE JOB IS THE DUPLICATE (CIO-12 W2, the cio 2026-11-08 12:5x; the coo's EMERGENCY 12:28: job 532 of step 28 taken by eight juniors in five minutes, each take archiving the live holder's claim as STALE and the robbed holder releasing the job to the next taker). The head-never-cycles reasoning held only while a holder's reserve was continuous; a holder that released during its taker's sync and make (the 60 s grace, raised to 600 s at 4b3c63ae) left a READY job behind a LIVE claimant. So a foreign claim whose claimant is alive is a lock, RESERVED line or not: THIS seat's holder buries the job it reserved (the PARK line it reads), the claimant's done deletes it, and the pass goes on (rc 4). Only a dead claimant's RESERVED claim is archived as stale.
+        if ! grep -q '^DONE$' "$_c" && s4e_claim_holder_live "$_own" "$_c"; then
+          _ts="$(date -u +%FT%TZ)"
+          grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$_ts" >> "$_c"
+          s4e_ledger_prepend "$_t" "- [$ME·$_ts] job $2 ($3) was served to $ME while $_own holds the row and is alive: the duplicate is buried for $_own, $ME takes nothing (CIO-12 W2: a live claimant's claim is never archived at take)"
+          echo "⛔ $_t is held by $_own, who is alive: job $2 is buried for the holder, whose done or park frees it; the pass goes on" >&2; return 4
+        fi
         if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
           mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
-          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: beanstalkd handed job $2 ($3) to $ME, so no reserve behind that claim lived (fleet-queue: the head never cycles)"
+          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: beanstalkd handed job $2 ($3) to $ME and $_own is not alive (no session in its seat scope, RESERVED line older than S4E_CLAIM_LIVE_S), so no reserve behind that claim lived (fleet-queue: the head never cycles)"
           echo "  (stale claim of $_own on $_t archived; job $2 taken)" >&2
         else
+          grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$(date -u +%FT%TZ)" >> "$_c"
           echo "⛔ $_t is claimed by $_own by hand (no RESERVED line): job $2 is buried for the claimant, whose done or park frees it; the pass goes on" >&2; return 4
         fi
       else
