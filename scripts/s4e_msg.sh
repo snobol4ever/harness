@@ -472,6 +472,8 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
       local _own _ts; _own="$(head -1 "$_c")"
       if [ "$_own" != "$ME" ]; then
         # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): beanstalkd handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
+        _oj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
+        if [ -n "$_oj" ] && [ "$_oj" != "$2" ] && [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_oj" 2>/dev/null | cut -f3)" = reserved ]; then echo "⛔ $_t has two jobs: job $_oj is live under $_own's claim, so job $2 is the duplicate; its holder deletes it (two-jobs-one-row interim guard)" >&2; return 1; fi
         if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
           mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
           s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: beanstalkd handed job $2 ($3) to $ME, so no reserve behind that claim lived (fleet-queue: the head never cycles)"

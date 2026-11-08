@@ -217,6 +217,16 @@ def main(a):
                         with open(claim, "a") as f: f.write("BURIED job=%d %s %s\n" % (j.id, parks[0], time.strftime("%FT%TZ", time.gmtime())))
                     except Exception as e: say("bury: %s" % e)
                     os._exit(0)
+                if lines and lines[0].strip() != seat:
+                    oj = [l.split()[1][4:] for l in lines if l.startswith("RESERVED job=")]
+                    if oj and oj[-1] != str(j.id):
+                        try: ost = c.stats_job(int(oj[-1]))["state"]
+                        except Exception: ost = ""
+                        if ost == "reserved":
+                            say("claim names %s on live job %s: this job is a duplicate of a held row: delete" % (lines[0].strip(), oj[-1]))
+                            try: c.delete(j.id)
+                            except Exception as e: say("delete: %s" % e)
+                            os._exit(0)
                 if lines and lines[0].strip() != seat: say("claim names %s, not %s: release" % (lines[0].strip(), seat)); break
                 if session and os.system("pgrep -f '(^|/)claude --name %s( |$)' >/dev/null 2>&1" % session) != 0:
                     say("session %s is gone: release" % session); break
