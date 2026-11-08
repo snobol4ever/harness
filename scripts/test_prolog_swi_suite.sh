@@ -39,7 +39,7 @@ SWIT="${S4E_CORPUS:-$S4E/corpus}/packages/prolog/swi_tests"   # the expression l
 PLUNIT="$S4E/corpus/tests/prolog/plunit.pl"
 MATCH_PY="$HERE/util_swi_match.py"
 STO_PY="$HERE/util_swi_sto_merge.py"   # each deferred sto(rational_trees) case's ALONE verdict, put where the file's run deferred it (R-1684)
-MODES="m3,m4"; JOBS="${SWI_JOBS:-}"; ONLY_FILE=""; NAME_REDS=0; VERBOSE=0
+MODES="${S4E_MODES:-m3,m4}"; JOBS="${SWI_JOBS:-}"; ONLY_FILE=""; NAME_REDS=0; VERBOSE=0
 refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 while [ $# -gt 0 ]; do
     case "$1" in
