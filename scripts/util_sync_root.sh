@@ -11,7 +11,7 @@
 # The fetches all run before any merge, so a refused fetch never leaves one repo merged and another behind (never half a landing).
 set -uo pipefail
 ROOT="${S4E_HOME:?REFUSE(2): S4E_HOME unset}"
-REPOS="SCRIP corpus harness .github"
+REPOS="${S4E_SYNC_REPOS:-SCRIP corpus harness .github}"   # S4E_SYNC_REPOS names a subset (next syncs corpus harness .github before a premise read and leaves SCRIP, whose binary would go stale without a make; the cio 2026-11-08 11:1x on the coo's 11:05 defect)
 FETCH_SLOTS="${S4E_FETCH_SLOTS:-4}"
 FETCH_WAIT="${S4E_FETCH_WAIT:-600}"
 SEM_HOME="${S4E_SEM_HOME:-/tmp/s4e-sem}"

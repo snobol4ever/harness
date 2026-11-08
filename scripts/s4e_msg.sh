@@ -451,7 +451,7 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
     # THE ROOT IS CURRENT BEFORE THE PREMISE IS READ (the cio 2026-11-08 10:5x on the coo's measurement: junior_03, 05 and 07 one harness commit behind, so the premise of unitests-order-0-r2 exited 2 on their roots and the first UniTests row went unserved 30 minutes): a fast-forward sync is cheap and a premise graded on a stale tree is no measurement; a root that cannot fast-forward (an unpushed local commit) is named by the sync and stays as it is.
-    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
+    ( cd "$S4E" && S4E_SYNC_REPOS="corpus harness .github" timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
     # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
     local _dr="" _r
     for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
@@ -3100,6 +3100,10 @@ s4e_premise_gate() {   # $1 = topic, $2 = the verb, for the message only
     if s4e_donewhen_needs_compiler "$pw"; then
         printf '⚠ PREMISE NOT MEASURED (rc=2): %s. Admitted unverified -- an unbuilt tree is not a false premise.\n' "$_gca_why" >&2
         return 0; fi
+    # A STALE BINARY READS NOTHING (the cio 2026-11-08 11:1x; the coo 11:05 and officer_04 11:2x: step 13c and batch-grader-step-9b were retired SUPERSEDED on a premise that read red where the root's scrip was not a build of its tree, so the probe refused rc 2 and a PREMISE of the form [ rc = 1 ] read the refusal as red): a premise that drives scrip is not run on a root whose binary is stale; the row is skipped, never buried.
+    if printf '%s' "$pw" | grep -qE '(^|[^A-Za-z0-9_./-])(\./)?(SCRIP/)?scrip([[:space:]]|$)' && [ -x "$S4E/SCRIP/scrip" ] && ! ( cd "$S4E/SCRIP" && bash ../harness/scripts/util_require_fresh.sh >/dev/null 2>&1 ); then
+        printf 'REFUSE(2): the premise of %s was not read: this root'"'"'s scrip is not a build of its tree (util_require_fresh), and a refusal must never read as red. Run make -j8 in SCRIP, then next again; the row is skipped, not retired.\n' "$t" >&2
+        return 1; fi
     # ⭐⭐ STEP 34 (CTO-503): THE ROW'S OWN BUDGET, read by the one reader in lib_donewhen.sh -- a baton's PREMISE-BUDGET:
     # line (default 120, capped 600). S4E_PREMISE_TIMEOUT stays the seat's explicit per-invocation override, as it was.
     local to_src; read -r to to_src <<<"$(s4e_premise_budget "$b")"; log="$(mktemp)"; t0="$(date +%s)"
@@ -4842,6 +4846,7 @@ TASKEOF
          printf '%s\t%s\t%s\tFREE\n' "$rank" "$topic" "$owner" >> "$q"
          rmdir "$lock" 2>/dev/null; trap 's4e_pid_release' EXIT
          echo "minted $topic (rank $rank, owner $owner, state FREE) -> $b"
+         [ -n "${q_tube:-}" ] && s4e_wake_hint "$q_tube" "$topic" mint   # a mint with --tier or --to puts a job in a tube: it wakes its taker like queue (officer_03, 2026-11-08 11:03)
          s4e_queue_view
          [ -n "$q_tube" ] && s4e_queue_enqueue_row "$topic" "$q_tube" "$rank" "$q_tier"
          [ -n "$pw_block" ] && {
