@@ -54,6 +54,7 @@ SCRIP="$SD/scrip"; RT_DIR="$SD/out"; TIMEOUT="${TIMEOUT:-20s}"
 # --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed dotnet@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
+NO_M4="$PORT"; [ "${S4E_MODES:-m3,m4}" = m3 ] && NO_M4=1
 ROWKEY=dotnet; [ "$PORT" = 1 ] && ROWKEY="dotnet@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
@@ -112,7 +113,7 @@ PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/dotnet"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
 BOTH=0
-prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tdotnet\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
+prog_row() { [ "$NO_M4" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tdotnet\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
 # ⭐ THE SPITBOL BASELINE (Lon 2026-09-08, row snobol4-every-package-runner-states-its-row-over-the-spitbol-
 # baseline-measured-live; test_snoflake_suite.sh is the shape). A program the ONE ORACLE cannot run is OUTSIDE
 # the baseline and out of the denominator. This runner already MEASURES that set live -- it is exactly the
@@ -220,7 +221,7 @@ for sno in "$SUITE"/*.sno; do
     # and hq_dotnet's reading: the DOTNET_BOARD line read m3_pass=5 where its rows read 3 PASS + 2 HANG), so the board, the progress
     # row and the AND line all say HANG, which is what happened (R-372: a timed-out run is HANG, never PASS, whatever its stream).
     if [ "$rc3" -eq 124 ]; then [ "$OUT3" = PASS ] && { P3=$((P3-1)); F3=$((F3+1)); FL3="$FL3 $name(HANG)"; }; OUT3=HANG; fi
-    rc4=""; _t0="$(progress_clock)"; if [ "$PORT" = 1 ]; then OUT4=""   # a port has no mode 4: no compile, no row
+    rc4=""; _t0="$(progress_clock)"; if [ "$NO_M4" = 1 ]; then OUT4=""   # a port has no mode 4: no compile, no row
     elif compile_m4 "$sno" "$W/prog.bin" "$ca"; then
         got4="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$TIMEOUT" "$W/prog.bin" < "$inp" 2>"$W/err4")"; rc4=$?
         if [ "$DIED" = 1 ]; then got4="$(mask_dot "$(fatal_render "$got4" "$W/err4")" "$name" scrip)"; else got4="$(mask_dot "$got4" "$name" scrip)"; fi
@@ -229,7 +230,7 @@ for sno in "$SUITE"/*.sno; do
     else S4=$((S4+1)); FL4="$FL4 $name(CC)"; OUT4=SKIP
     fi
     ROW_S4="$(progress_secs_since "$_t0")"
-    [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
+    [ "$OUT3" = PASS ] && { [ "$NO_M4" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH=$((BOTH+1))   # a port's AND is its one mode
     N3="vs live sbl -bf, rc=$rc3"; [ "$OUT3" = HANG ] && N3="SCRIP hit the ${TIMEOUT} timeout (rc=124) while the oracle exited rc=$rcS; streams equal at the cut"
     N4="vs live sbl -bf${rc4:+, rc=$rc4}"; [ "$OUT4" = HANG ] && N4="SCRIP hit the ${TIMEOUT} timeout (rc=124) while the oracle exited rc=$rcS; streams equal at the cut"
     prog_row "$name" m3 "$OUT3" "$N3"; prog_row "$name" m4 "$OUT4" "$N4"
