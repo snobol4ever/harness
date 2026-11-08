@@ -42,6 +42,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SC
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
 SCRIP="$ROOT/scrip"; RT="$ROOT/out"; BD="$S4E/corpus/benchmarks/snocone"; GEN="$HERE/bench_wrap_snocone.py"
 OUTDIR=""; NITER=""; BUD=200; TMO=300; NOWRITE=0
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 # ⭐ PUBLISHING IS THE DEFAULT (R-1302 (a), lib_bench_write.sh): a whole-population pass writes its row, a subset or --no-write never does; --write is still accepted and changes nothing
 while [ $# -gt 0 ]; do case "$1" in
   --out-dir) OUTDIR="$2"; shift 2;; --n) NITER="$2"; shift 2;; --bud-ms) BUD="$2"; shift 2;; --timeout) TMO="$2"; shift 2;;
@@ -93,7 +94,7 @@ for f in "${POP[@]}"; do
   st="$(declared_stack_kb_beside "$f")" || refuse "$rel: its .stack sidecar is refused (the reader said why above)"
   read -r -a SW <<<"$(_declared_switch_words "$kb" "$st")"; heap=(env); [ ${#SW[@]} -gt 0 ] && HEAPD=$((HEAPD + 1))
   if [ ! -s "$ref" ]; then REFLESS=$((REFLESS + 1)); printf '  %-36s REFLESS -- no non-empty .ref, not a pass\n' "$rel"
-    record "$rel" m3 UNGRADED 0 "no .ref"; record "$rel" m4 UNGRADED 0 "no .ref"; continue; fi
+    for _m in $MODES; do record "$rel" "$_m" UNGRADED 0 "no .ref"; done; continue; fi
   want="$(cat "$ref")"; ok3=1; ok4=1; cells=""; o3=PASS; o4=PASS; s3=0; s4=0
   for angle in process iter time; do
     prog="$f"
@@ -101,7 +102,7 @@ for f in "${POP[@]}"; do
       if ! python3 "$GEN" "$f" --mode "$angle" ${NITER:+--n "$NITER"} --bud-ms "$BUD" -o "$W/w_$angle.sc" 2>"$W/g.err"; then
         UNWRAP=$((UNWRAP + 1)); NOTES="$NOTES\n    $rel $angle: UNWRAPPABLE -- $(head -1 "$W/g.err")"; ok3=0; ok4=0; o3=$(worst "$o3" UNPROVEN); o4=$(worst "$o4" UNPROVEN); cells="$cells ${angle}=UNWRAPPABLE"; continue; fi
       prog="$W/w_$angle.sc"; fi
-    for mode in m3 m4; do
+    for mode in $MODES; do
       if [ "$angle" = process ]; then run_one "$mode" "$prog" "$in" "p" "${heap[@]}" "$RUSAGE"; else run_one "$mode" "$prog" "$in" "$angle" "${heap[@]}"; fi
       mkdir -p "$(dirname "$OUTDIR/$name")"; cp "$W/o" "$OUTDIR/$name.$mode.$angle.stdout"
       got="$(cat "$W/o")"; v=PASS
@@ -117,16 +118,16 @@ for f in "${POP[@]}"; do
         *) SCOUT="$SCOUT\n  $rel $mode $angle $(grep -o 'iters=[0-9]* ns=[0-9]*' "$W/e" | head -1)";; esac
     done
   done
-  [ "$ok3" = 1 ] && P3=$((P3 + 1)); [ "$ok4" = 1 ] && P4=$((P4 + 1))
+  [ "$ok3" = 1 ] && P3=$((P3 + 1)); case " $MODES " in *" m4 "*) [ "$ok4" = 1 ] && P4=$((P4 + 1));; esac
   hnote=""; [ ${#SW[@]} -gt 0 ] && hnote=" at declared ${SW[*]}"
-  record "$rel" m3 "$o3" "$s3" "process/iter/time vs REF$hnote"; record "$rel" m4 "$o4" "$s4" "process/iter/time vs REF$hnote"
+  record "$rel" m3 "$o3" "$s3" "process/iter/time vs REF$hnote"; case " $MODES " in *" m4 "*) record "$rel" m4 "$o4" "$s4" "process/iter/time vs REF$hnote";; esac
   if [ "$ok3" = 1 ] && [ "$ok4" = 1 ]; then PASS=$((PASS + 1)); printf '  %-36s PASS  (6 of 6 runs print the REF)%s\n' "$rel" "$([ ${#SW[@]} -gt 0 ] && echo "  declared ${SW[*]}")"
   else printf '  %-36s FAIL %s\n' "$rel" "$cells"; fi
 done
 N=${#POP[@]}
 [ -n "$NOTES" ] && printf 'NOT PASSING, NAMED:%b\n' "$NOTES"
 printf 'SCOUTING DATA -- one run each, a loaded box, NOT A GRID (timing waits for the quiet box, R-1219):%b\n' "$SCOUT"
-LINE="SUITE_BOARD family=snocone-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$P4 angles=process,iter,time refless=$REFLESS unwrappable=$UNWRAP heap_declared=$HEAPD"
+LINE="SUITE_BOARD family=snocone-bench-ref total=$N shipped=$N all_pass=$PASS all_n=$N m3_pass=$P3 m4_pass=$([[ " $MODES " == *" m4 "* ]] && echo "$P4" || echo -) angles=process,iter,time refless=$REFLESS unwrappable=$UNWRAP heap_declared=$HEAPD"
 echo "$LINE"
 [ "$PREFUSED" = 0 ] || echo "⚠ $PREFUSED progress row(s) REFUSED (named above) -- the board stands, but it cannot be published until they are recorded"
 rr_selected && { rr_end snocone-bench-ref; [ "$PASS" = "$N" ] && exit 0 || exit 1; }
