@@ -50,7 +50,7 @@ def cell_entries(key, cell):
     head = rows[0]; rows = rows[1:]; ie = head.index("entry"); ip = head.index("part"); ish = head.index("shells") if "shells" in head else None
     if cell == "core": return [r[ie] for r in rows if r[ip] == "core"]
     if cell.startswith("shell:"):
-        f = cell[6:]; return [r[ie] for r in rows if ish is not None and f in r[ish].split(",")]
+        f = cell[6:]; return [r[ie] for r in rows if ish is not None and f in r[ish].split()]
     if cell.startswith("chunk:"): return [r[ie] for r in rows if r[ip] == cell]
     if cell.startswith("entry:"): return cell[6:].split(",")
     refuse("cell %r is not core | shell:F | chunk:NN | entry:a,b" % cell)
