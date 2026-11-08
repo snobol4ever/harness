@@ -131,7 +131,9 @@ def src_icn_known(root):
     if b is None:
         return None
     m = re.search(r'icn_known\[\]\[9\] = \{(.*?)\};', b, re.S)
-    return [unesc(x) for x in re.findall(CSTR, m.group(1)) if x] if m else []
+    if not m:
+        return None
+    return [unesc(x) for x in re.findall(CSTR, m.group(1)) if x]
 
 
 def src_gen(root):
