@@ -698,7 +698,7 @@ def rows_from_results_tsv(path, suite, lang):
                 skipped[f[0]] += 1
                 continue
         # a port engine has no mode 4 (R-1822): under S4E_ENGINE=<port> the scorecard writes "-" there, and its m3 column is the reading
-        for mode, oi, ti in ((("m3", 2, 4),) if engine() != "scrip" else (("m3", 2, 4), ("m4", 3, 5))):
+        for mode, oi, ti in ((("m3", 2, 4),) if engine() != "scrip" or os.environ.get("S4E_MODES", "").strip() == "m3" else (("m3", 2, 4), ("m4", 3, 5))):
             o = f[oi].strip().upper()
             if o not in OUTCOMES:
                 # ⛔⭐ DIFF ADDED, AND IT WAS SILENTLY EATING EVERY GIMPEL RED (coo 2026-09-08, found while trying to

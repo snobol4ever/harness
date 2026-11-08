@@ -379,7 +379,7 @@ run_one() {  # suite lib prog norm run_to
   t3="$(awk -v a="$t0" -v b="${EPOCHREALTIME/,/.}" 'BEGIN { printf "%.3f", b - a }')"
   # ---- m4
   t0="${EPOCHREALTIME/,/.}"
-  if [ -n "$SC_PORT" ]; then st4=-   # a port has no mode 4; results-tsv reads the m3 column alone under a port
+  if [ -n "$SC_PORT" ] || [ "${S4E_MODES:-m3,m4}" = m3 ]; then st4=-   # a port has no mode 4; results-tsv reads the m3 column alone under a port
   elif ! (cd "$d" && SNO_LIB="$lib" "$TIMEOUT_RETRY" 60 "$SCRIP" $cflag --compile $ca "$prog" </dev/null > "$W/p.s" 2>/dev/null) || [ ! -s "$W/p.s" ]; then st4=COMPILE_FAIL
   elif ! gcc -no-pie "$W/p.s" -L"$SC/out" -lscrip_rt -lm -Wl,-rpath,"$SC/out" -o "$W/p.bin" 2>/dev/null; then st4=ASM_FAIL
   else
