@@ -1990,7 +1990,7 @@ def cmd_from_progress(a):
         _mexcl = _n0 - len(pop)
     cnt, _pop, _xp, _labels, _bounded, _shards = _aud.tally(d, side, s_ungradable, s_ungraded)
     unread = [e for e in pop if e not in d and e not in side]
-    halfread = [e for e in pop if e in d and set(d[e]) != set(modes)]
+    halfread = [e for e in pop if e in d and not set(modes) <= set(d[e])]
     excluded = None
     if _mexcl:
         excluded = _mexcl
@@ -2041,7 +2041,7 @@ def cmd_from_progress(a):
         cnt = _c.Counter(cnt)
         cnt["PASS"] = sum(1 for e in pkg_pop if _both(e))
         unread = [e for e in pop if e in pkg_pop and e not in last_by and e not in _owed]
-        halfread = [e for e in pop if e in pkg_pop and e in last_by and set(last_by[e]) != set(modes)]
+        halfread = [e for e in pop if e in pkg_pop and e in last_by and not set(modes) <= set(last_by[e])]
         excluded = nex + len(cnames - xnames) + len(_outside_new) + len(_noref)
         if _swi_excl is not None:
             excluded = _swi_excl
