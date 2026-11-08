@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate test_design_unicon_steps || exit 2
 # test_design_unicon_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: unicon (the cto, 2026-10-31, R-2072; .github/ARCH-UNICON.md). The plan is
 # corpus/tests/icon/unicon/STEPS.tsv; the witnesses are the uni_*.icn beside it, each with a .ref cut from unicon 13.3 (/home/resources/unicon/bin/unicon,
 # the Unicon oracle through unicon_bin()), except the plain-Icon fallback witness whose ref Arizona icont/iconx cut because unicon refuses that program;
 # uni_pkg_shapes.icn is the package file the import witness loads from the folder, not a witness of its own.
 #
 #   --list         print the steps and run nothing
-#   --step N       grade step N: every witness of the step in mode 3 (./scrip w.icn) and mode 4 (--compile, gcc, run), from the witness folder,
-#                  byte-equal to its .ref with rc 0; probe 'witnesses' is green when every witness passes both modes; probe 'markers' adds
+#   --step N       grade step N: every witness of the step in each mode S4E_MODES names (a comma list of m3 and m4, default m3; CIO-7): mode 3
+#                  (./scrip w.icn), mode 4 (--compile, gcc, run), from the witness folder, byte-equal to its .ref with rc 0; an unnamed mode prints
+#                  skip; probe 'witnesses' is green when every witness passes every named mode; probe 'markers' adds
 #                  --dump-ast rc 0 on every class witness of the folder (the eight words lex and the class, package and import headers parse)
 #   --with-smoke   on the finish step (probe 'finish') also run test_smoke_icon.sh, the lander smoke of R-1928
 #   --out DIR      where the .s, binaries and logs go (default /tmp/s4e-design-unicon: never under the root, Lon 2026-10-29/31)
@@ -33,6 +35,11 @@ while [ $# -gt 0 ]; do
     esac
 done
 [ -n "$mode" ] || refuse "usage: $0 --list | --step N [--with-smoke] [--out DIR]"
+do3=0; do4=0; nm=0
+for _m in $(printf '%s' "${S4E_MODES:-m3}" | tr ',' ' '); do
+    case "$_m" in m3) do3=1;; m4) do4=1;; *) refuse "S4E_MODES=${S4E_MODES:-} names $_m: only m3 and m4 (CIO-7)";; esac
+done
+nm=$((do3 + do4)); [ "$nm" -gt 0 ] || refuse "S4E_MODES=${S4E_MODES:-} names no mode"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
     echo "DESIGN-PLAN: unicon -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF > 1' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in $WD"
@@ -54,16 +61,21 @@ m3p=0; m4p=0; n=0; reds=""
 for w in $wits; do
     n=$((n + 1)); src="$WD/$w.icn"; ref="$WD/$w.ref"; o="$OUT/step$step/$w"
     [ -f "$src" ] && [ -f "$ref" ] || refuse "witness $w has no .icn or .ref in $WD"
+    if [ "$do3" = 1 ]; then
     ( cd "$WD" && timeout -k 5 60 "$SC/scrip" "$w.icn" < /dev/null > "$o.m3.out" 2> "$o.m3.err" ); rc=$?
     if [ "$rc" = 0 ] && cmp -s "$o.m3.out" "$ref"; then m3p=$((m3p + 1)); else reds="$reds m3:$w(rc$rc)"; fi
+    fi
+    if [ "$do4" = 1 ]; then
     if ( cd "$WD" && timeout -k 5 120 "$SC/scrip" --compile --out="$o.s" "$w.icn" < /dev/null > /dev/null 2> "$o.m4c.err" ) \
        && gcc -c "$o.s" -o "$o.o" 2> /dev/null && gcc "$o.o" -L"$SC/out" -lscrip_rt -lm -lpthread -Wl,-rpath,"$SC/out" -o "$o.bin" 2> /dev/null; then
         ( cd "$WD" && timeout -k 5 60 "$o.bin" < /dev/null > "$o.m4.out" 2> "$o.m4.err" ); rc=$?
         if [ "$rc" = 0 ] && cmp -s "$o.m4.out" "$ref"; then m4p=$((m4p + 1)); else reds="$reds m4:$w(rc$rc)"; fi
     else reds="$reds m4:$w(no-build)"; fi
+    fi
 done
-pv="witnesses=$((m3p + m4p))/$((2 * n))"; pr=RED
-[ "$m3p" = "$n" ] && [ "$m4p" = "$n" ] && pr=GREEN
+pv="witnesses=$((m3p + m4p))/$((nm * n))"; pr=RED
+{ [ "$do3" = 0 ] || [ "$m3p" = "$n" ]; } && { [ "$do4" = 0 ] || [ "$m4p" = "$n" ]; } && pr=GREEN
+f3="m3=$m3p/$n"; [ "$do3" = 1 ] || f3="m3=skip"; f4="m4=$m4p/$n"; [ "$do4" = 1 ] || f4="m4=skip"
 if [ "$probe" = markers ]; then
     pa=0; na=0
     for f in "$WD"/uni_*.icn; do
@@ -76,5 +88,5 @@ fi
 if [ "$probe" = finish ] && [ "$smoke" = 1 ]; then
     if S4E_ONE_RUNNER_OVERRIDE="R-1928 lander smoke, design unicon step $step" bash "$HERE/test_smoke_icon.sh" > "$OUT/step$step/smoke_icon.log" 2>&1; then pv="$pv smoke=green"; else pv="$pv smoke=RED"; pr=RED; fi
 fi
-echo "STEP $step $slug: m3=$m3p/$n m4=$m4p/$n probe=$pv -> $pr${reds:+ (reds:$reds)}"
+echo "STEP $step $slug: $f3 $f4 probe=$pv -> $pr${reds:+ (reds:$reds)}"
 [ "$pr" = GREEN ]
