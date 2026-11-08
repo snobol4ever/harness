@@ -1365,6 +1365,13 @@ def board_line_fraction(text):
 
 
 def fraction_from_text(text, p_override, t_override):
+    p, t, why = _fraction_from_text(text, p_override, t_override)
+    if str(p).isdigit() and str(t).isdigit() and int(p) > int(t):
+        return None, None, "pass %s is above its total %s: a numerator over its denominator is no reading, so nothing is written" % (p, t)
+    return p, t, why
+
+
+def _fraction_from_text(text, p_override, t_override):
     """(pass, total, None) or (None, None, why).  EXACTLY ONE N/M or it refuses -- see the banner above."""
     if p_override is not None and t_override is not None:
         return str(p_override), str(t_override), None
