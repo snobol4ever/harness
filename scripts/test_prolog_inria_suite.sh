@@ -324,7 +324,7 @@ prog = os.path.join(tmp, "t.pl")
 for _tidx, (fam, goal, exp) in enumerate(tests):
     if _tidx in OUTSIDE or rr_skip(_tidx): continue
     want, wfun = expected_class(exp)
-    for mode in ("m3", "m4"):
+    for mode in (("m3",) if os.environ.get("S4E_MODES", "").strip() == "m3" else ("m3", "m4")):
         _cur[0] = (_tidx, mode)
         with open(prog, "w") as f:
             f.write(HARNESS_PRELUDE + dq_lead(_tidx, mode))
@@ -504,7 +504,7 @@ for _tidx, (fam, goal, exp) in enumerate(tests):
     elif sols is not None and has_fresh_named_var(goal, sols):
         excluded_fresh_named.append("%s:%s" % (fam, goal[:40]))
         sols = None
-    for mode in ("m3", "m4"):
+    for mode in (("m3",) if os.environ.get("S4E_MODES", "").strip() == "m3" else ("m3", "m4")):
         _cur[0] = (_tidx, mode)
         if sols is None:
             # Nothing finer to check than outcome class -- inherit that verdict directly (never re-derive
