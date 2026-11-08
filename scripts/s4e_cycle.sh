@@ -6,7 +6,7 @@
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang runner cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
-# a master row runs corpus_suite_harness.py run <ALL.ext> <ALL.ref> --lang L --modes m3,m4 --partition <cell>; a pkg row runs S4E_CHUNK=<cell> bash <runner>;
+# a master row runs corpus_suite_harness.py run <ALL.ext> <ALL.ref> --lang L --modes m3,m4 --partition <cell>; a pkg row runs S4E_CHUNK=<cell> bash $S4E/harness/scripts/<runner>, by its absolute path (a runner that cds and then sources from dirname $0, raku_roast_scoreboard.sh, refused rc 2 on a relative launch: the coo 2026-11-08);
 # both under util_run_slot.sh, S4E_CLASS=grader, S4E_BATCH=1 (one scrip --harness per partition and mode, batch-grader step 5), S4E_MODES default m3 (Lon 2026-11-08 10:2x: "We will test mode 3 only until further notice"), under timeout -k 30 of the
 # cell's declared budget (util_grade_job.py budget). After a master suite's last cell its suite row is rewritten (util_score_row.py from-progress).
 # THE STATE is /home/resources/progress/CYCLE.state (lap, idx, total, suite, cell, status, since), one line a key, rewritten before and after every cell;
@@ -59,7 +59,7 @@ run_cell() {   # key kind lang runner cell -> rc; the grade worker's launch
     else
         set -- $runner
         [ -f "$S4E/harness/scripts/$1" ] || { log "REFUSED $key $cell: no runner $1"; return 2; }
-        ( cd "$S4E" && S4E_CHUNK="$cell" timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh bash "harness/scripts/$@" ) > "$out" 2>&1 < /dev/null; rc=$?
+        ( cd "$S4E" && S4E_CHUNK="$cell" timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh bash "$S4E/harness/scripts/$@" ) > "$out" 2>&1 < /dev/null; rc=$?
     fi
     echo "$rc $(( $(date +%s) - t0 ))"
 }
