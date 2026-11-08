@@ -1327,3 +1327,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1328	icn	ICN$SEND	3	3	bt_ICNx24SEND	leaf	-	-	0	fn_arms
 1329	icn	ICN$RECV	3	3	bt_ICNx24RECV	leaf	-	-	0	fn_arms
 1330	icn	ICN$USEND	2	2	bt_ICNx24USEND	leaf	-	-	0	fn_arms
+1331	icn	ICN$THREAD	1	1	bt_ICNx24THREAD	leaf	-	-	0	fn_arms
+1332	icn	ICN$SCHED	0	0	bt_ICNx24SCHED	leaf	-	-	0	fn_arms
+1333	icn	ICN$THREAD_END	0	0	bt_ICNx24THREAD_END	leaf	-	-	0	fn_arms
+1334	icn	ICN$DONE	1	1	bt_ICNx24DONE	leaf	-	-	0	fn_arms
