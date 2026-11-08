@@ -55,18 +55,21 @@ container_package_run() {
     echo "$(printf '%s' "$key" | tr 'a-z-' 'A-Z_')_CHUNK $S4E_CHUNK graded: one progress row per program and mode; no suite row from a chunk -- the row is util_score_row.py from-progress --suite $key (R-1802)"
     return "$rc"
   fi
+  local modes="${S4E_MODES:-m3}" mtext
   local cpr_depth="${CPR_DEPTH:-1}"
   shipped=$(find "$suite" -maxdepth "$cpr_depth" -name "*.$ext" ! -name "ALL.$ext" | wc -l)
   local conts xc ncont
   conts="$(inventory_container_names "$suite")" && xc="$(container_package_excl "$suite" "$ext")" \
     || { echo "⛔ REFUSE(rc=2): $suite/CONTAINERS.tsv or EXCLUDED.tsv is refused (the reader said why above) -- no row over an unread exclusion"; return 2; }
   excl="${xc% *}"; ncont="${xc#* }"
-  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes m3,m4 2>&1)"; rc=$?
+  out="$(cd "$sd" && SUITE_LIST_ALL=1 python3 ../harness/scripts/corpus_suite_harness.py run "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" --modes "$modes" 2>&1)"; rc=$?
   printf '%s\n' "$out"
   board="$(printf '%s\n' "$out" | grep -m1 '^SUITE_BOARD ')"
   [ -n "$board" ] || { echo "⛔ REFUSE(rc=2): corpus_suite_harness.py printed no SUITE_BOARD line (above) -- nothing measured, no row written"; return 2; }
   field_() { printf '%s\n' "$board" | grep -oE " $1=[0-9]+" | head -1 | cut -d= -f2; }
   scored="$(field_ total)"; bothp="$(field_ all_pass)"; m3p="$(field_ m3_pass)"; m4p="$(field_ m4_pass)"
+  case ",$modes," in *,m4,*) ;; *) m4p=-;; esac
+  case ",$modes," in *,m3,*) ;; *) m3p=-;; esac
   # ⛔⭐ THE NUMERATOR IS TAKEN OVER THE SAME POPULATION AS THE DENOMINATOR (the coo 2026-10-14, R-1696): an EXCLUDED.tsv program the container
   # still grades (puzzles' 251 OUTSIDE_CLPFD, R-1593: "graded and its verdicts named, and it leaves pass, fail and the denominator") was counted in
   # the harness's all_pass while the denominator left it out -- puzzles read 26 over a population holding 16 graded programs. The harness lists every
@@ -75,7 +78,7 @@ container_package_run() {
   _gl="$(cd "$sd" && S4E_PROGRESS_OFF=1 python3 ../harness/scripts/corpus_suite_harness.py list "$suite/ALL.$ext" "$suite/ALL.ref" --lang "$lang" 2>/dev/null)"
   _ex="$(inventory_excluded_names "$suite")" || { echo "⛔ REFUSE(rc=2): $suite/EXCLUDED.tsv is refused (the reader said why above)"; return 2; }
   if [ -n "$_ex" ] && [ -n "$(comm -12 <(printf '%s\n' "$_gl" | sort -u) <(printf '%s\n' "$_ex" | sed "s/\.$ext\$//" | sort -u))" ]; then
-    read -r popg bothp m3p m4p < <(python3 - "$ext" <(printf '%s\n' "$_gl") <(printf '%s\n' "$_ex") <(printf '%s\n' "$out") <<'PYEX'
+    read -r popg bothp m3p m4p < <(python3 - "$ext" <(printf '%s\n' "$_gl") <(printf '%s\n' "$_ex") <(printf '%s\n' "$out") "$modes" <<'PYEX'
 import re, sys
 ext, gl, ex, out = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 graded = [l.strip() for l in open(gl) if l.strip()]
@@ -85,8 +88,9 @@ for l in open(out, errors="replace"):
     m = re.match(r"^  (\S+?)(?:\([^)]*\))? (m3|m4) (\S+): ", l)
     if m and not m.group(1).startswith("XPASS"):
         red[m.group(2)].add(m.group(3))
+named = sys.argv[5].split(",")
 pop = [g for g in graded if g not in excl]
-print(len(pop), sum(1 for g in pop if g not in red["m3"] and g not in red["m4"]), sum(1 for g in pop if g not in red["m3"]), sum(1 for g in pop if g not in red["m4"]))
+print(len(pop), sum(1 for g in pop if all(g not in red[m] for m in named)), sum(1 for g in pop if "m3" in named and g not in red["m3"]) if "m3" in named else "-", sum(1 for g in pop if "m4" in named and g not in red["m4"]) if "m4" in named else "-")
 PYEX
 )
     echo "NUMERATOR OVER THE DENOMINATOR'S POPULATION: $popg graded program(s) outside EXCLUDED.tsv (of $(field_ total) the container grades): both $bothp, m3 $m3p, m4 $m4p (the board's all_pass $(field_ all_pass) counted the excluded ones too)"
@@ -108,7 +112,7 @@ PYEX
     n="${f#"$suite"/}"; n="${n%".$ext"}"; grep -qxF "$n" <<<"$graded_list" && continue; grep -qxF -- "$n.$ext" <<<"$conts" && continue
     grep -qxF -- "$n.$ext" <<<"$exnames" && continue
     cls="$(awk -F'\t' -v k="$n.$ext" '$1==k {print $2; exit}' "$suite/UNGRADABLE.tsv" "$suite/UNGRADED.tsv" 2>/dev/null)"
-    printf 'package\t%s\t%s\t%s\tm3\tUNGRADED\t0\t%s\t%s\npackage\t%s\t%s\t%s\tm4\tUNGRADED\t0\t%s\t%s\n' "$key" "$lang" "$n" "${cls:-unclassed}" "$cfg" "$key" "$lang" "$n" "${cls:-unclassed}" "$cfg" >> "$ung_rows"
+    for _m in ${modes//,/ }; do printf 'package\t%s\t%s\t%s\t%s\tUNGRADED\t0\t%s\t%s\n' "$key" "$lang" "$n" "$_m" "${cls:-unclassed}" "$cfg" >> "$ung_rows"; done
   done < <(find "$suite" -maxdepth "$cpr_depth" -name "*.$ext" ! -name "ALL.$ext" | sort)
   [ -s "$ung_rows" ] && { progress_append_rows_tsv "$ung_rows" || echo "⚠ the UNGRADED progress rows were not appended (reason above) -- the row write's cross-check reads the graded population only" >&2; } )
   # the denominator is SHIPPED (R-1286): a program the container does not grade is named in UNGRADED.tsv and stays in as debt; a program a
@@ -119,9 +123,10 @@ PYEX
   inv="$(inventory_line "$scored" 0)"
   if [ -n "$inv" ]; then echo "$inv"; else echo "⚠ inventory refused (above) -- the board line still stands; the inventory does not" >&2; fi
   cc="${S4E_CRITERION_CHANGED:-}"
-  python3 "$here/util_score_row.py" write --lang "$lang" --column vendor --suite "$key" --suite-key "$key" --modes m3,m4 \
+  case "$modes" in m3) mtext="$key m3 $m3p/$denom";; m4) mtext="$key m4 $m4p/$denom";; *) mtext="$key both-modes $bothp/$denom · m3 $m3p/$denom · m4 $m4p/$denom";; esac
+  python3 "$here/util_score_row.py" write --lang "$lang" --column vendor --suite "$key" --suite-key "$key" --modes "$modes" \
       ${cc:+--criterion-changed "$cc"} --suite-pass "$bothp" --suite-total "$denom" --excluded "$excl" --measurer "${S4E_SEAT:-}" \
-      --text "$key both-modes $bothp/$denom · m3 $m3p/$denom · m4 $m4p/$denom ($scored graded of $shipped shipped, the rest named in UNGRADED.tsv as debt, EXCLUDED=$excl of which $ncont CONTAINERS.tsv fragments and the rest ruled classes -- NO_ORACLE_ANSWER (R-1696) for every program the oracle gives no answer${inv:+ · $inv} (\`$gate.sh\`))" \
+      --text "$mtext ($scored graded of $shipped shipped, the rest named in UNGRADED.tsv as debt, EXCLUDED=$excl of which $ncont CONTAINERS.tsv fragments and the rest ruled classes -- NO_ORACLE_ANSWER (R-1696) for every program the oracle gives no answer${inv:+ · $inv} (\`$gate.sh\`))" \
       || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why)"
   return "$rc"
 }
