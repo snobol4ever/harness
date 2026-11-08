@@ -378,7 +378,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     # what keeps "shipped" meaning the same count in both places; going deeper (rglob) would not (checked:
     # gnu_prolog has no depth-3 files, so this and unrestricted recursion agree here, but won't in general).
     srcs = sorted(p for p in list(pkg_dir.glob(f"*{ext}")) + list(pkg_dir.glob(f"*/*{ext}"))
-                  if not p.stem.startswith(out_prefix))
+                  if not p.stem.startswith(out_prefix) and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
     if not srcs:
         h.refuse(f"no {ext} files under {pkg_dir} (direct or one level down)")
     all_srcs = srcs
