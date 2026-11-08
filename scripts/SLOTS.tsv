@@ -7,9 +7,9 @@
 # A take holds at most TWO sems, outer to inner (the cio: never three): compile = compile-seat then compile; run = run-seat then run-seats; run for S4E_CLASS=grader = run-grader only.
 # run is the class (its cap is run-grader + run-seats); a negative --semaphoretimeout refuses, a positive one STEALS the slot (MEASURED), so the takers pass -timeout_s.
 compile	s4e-compile	8	600	900	the compile class: half the 16 cores (CEO-2041); a timeout refuses rc 2 and nothing runs
-run	s4e-run	14	600	900	the run class: the pool of heavy runs; its cap is run-grader plus run-seats (the cio 2026-11-07 15:5x on the coo's SLOT_WAITS reading: 31175 s of waits and 53 refusals in an hour at cpu PSI 14, so the pool, not the CPU, was the limit; a day wait of 600 s beats a lost reading)
+run	s4e-run	18	600	900	the run class: the pool of heavy runs; its cap is run-grader plus run-seats (the cio 2026-11-08 10:4x on SLOT_WAITS: 11501 s of run waits by 10:35 at load 8 on 16 cores, the lander's checks 3 at a time; 14 to 18, the seat share 3 to 4, landings 2 to 4; the cio 2026-11-07 15:5x on the coo's SLOT_WAITS reading: 31175 s of waits and 53 refusals in an hour at cpu PSI 14, so the pool, not the CPU, was the limit; a day wait of 600 s beats a lost reading)
 run-grader	s4e-run-grader	6	-	-	the slots only the grader (S4E_CLASS=grader) is admitted to (6 for a grader width up to 8; PSI lowers the width, the pool never refuses a grade worker for long)
-run-seats	s4e-run-seats	8	-	-	the slots every other taker shares (8 for 39 seats)
+run-seats	s4e-run-seats	12	-	-	the slots every other taker shares (12 since 2026-11-08; 8 for 39 seats before)
 compile-seat	s4e-compile-seat-	4	-	-	one seat's share of the compile class (id prefix + seat name)
-run-seat	s4e-run-seat-	3	-	-	one seat's share of the run class (id prefix + seat name)
-land	s4e-land	2	600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07): two landings build and gate at once on the box, a third waits; a timeout refuses rc 2 and nothing runs
+run-seat	s4e-run-seat-	4	-	-	one seat's share of the run class (id prefix + seat name; 4 since 2026-11-08)
+land	s4e-land	4	600	1800	the landing class (DESIGN-PLAN fleet-control step 3, the cio 2026-11-07; 4 since 2026-11-08 10:4x: 12 land-admit waits of 1491 s by 10:35 at load 8): four landings build and gate at once on the box, a fifth waits; a timeout refuses rc 2 and nothing runs

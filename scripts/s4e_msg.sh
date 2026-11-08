@@ -326,7 +326,7 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "@${_above#tier-}" || true
         for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
     fi
-    printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; return 0; }
+    printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0; }
 s4e_step_owned_refuse() {   # <topic>: the cio's ruling 2026-11-07 (one owner per job): a sub-step (-step-N- in its topic) whose parent job sits ready or reserved in a tube this seat does not serve is refused, rc 2; rc 0 otherwise
   local _p _j _tube _st _holder _tier
   case "$1" in *-step-*) _p="${1%%-step-*}" ;; *) return 0 ;; esac
@@ -446,9 +446,12 @@ s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, the cio
     printf 'ESCALATE from=%s to=%s rung=%s measurement=%s ledger=%s telegrams=%s top=%s one_owner=%s take_up_moves_job=%s second_cut_refused=%s\n' "${_from:-none}" "${_to:-none}" "${_rung:-0}" "$_m" "$_l" "$_tgi" "$_top" "$_one" "$_take" "$_cut"
     [ "$_ok" = 1 ]; exit $?; }
 s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "$S4E_TIERS" 2>/dev/null; }
+. "$(dirname "${BASH_SOURCE[0]}")/lib_wake.sh"   # THE WAKE LINE (the cio 2026-11-08; Lon: design flows down, problems flow up): queue, escalate, ask, answer and assign end by naming the session to SendMessage
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
+    # THE ROOT IS CURRENT BEFORE THE PREMISE IS READ (the cio 2026-11-08 10:5x on the coo's measurement: junior_03, 05 and 07 one harness commit behind, so the premise of unitests-order-0-r2 exited 2 on their roots and the first UniTests row went unserved 30 minutes): a fast-forward sync is cheap and a premise graded on a stale tree is no measurement; a root that cannot fast-forward (an unpushed local commit) is named by the sync and stays as it is.
+    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
     # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
     local _dr="" _r
     for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
@@ -3722,7 +3725,7 @@ case "$cmd" in
          s4e_baton_head_set "$topic" OWNER "$q_owner"; _tmp="$(mktemp)"; TOPIC="$topic" NEW="$q_owner" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$PO/QUEUE.tsv" > "$_tmp" && cat "$_tmp" > "$PO/QUEUE.tsv"; rm -f "$_tmp"
          s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
          printf -- '- [%s·%s] QUEUED into %s by %s (owner %s).\n' "$ME" "$(date -u +%F)" "$q_tube" "$ME" "$q_owner" > "$_tmp" 2>/dev/null; _tmp2="$(mktemp)"; awk -v l="$(cat "$_tmp" 2>/dev/null)" '{print} /^## LEDGER$/ && !d {print l; d=1}' "$PO/tasks/$topic.task.md" > "$_tmp2" && cat "$_tmp2" > "$PO/tasks/$topic.task.md"; rm -f "$_tmp" "$_tmp2"
-         echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; exit 0;;
+         echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; s4e_wake_hint "$q_tube" "$topic" queue; exit 0;;
   expire) # fleet-queue step 5 (the cio 2026-11-05): a reserved job whose holder is gone is back in its tube (beanstalkd released it when the holder's
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
@@ -4613,6 +4616,7 @@ case "$cmd" in
          if printf '%s' "ASSIGNED: $topic. Run: bash harness/scripts/s4e_msg.sh next — it serves this row FIRST, ahead of anything you picked yourself. The task file is authoritative; this message is only the doorbell.${_sk:+ Load before touching code (SOP step 5): $_sk}" | S4E_NO_BANNER=1 "$0" send "$seat" "task-$topic" --stdin >/dev/null 2>&1
          then echo "assigned $topic -> $seat (claim written, doorbell sent)"
          else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi
+         s4e_wake_hint "seat-$seat" "$topic" assign
          # fleet-queue step 3: the row's job moves to seat-<seat> (a directed assign); a row with no job yet gets one there
          _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; [ -n "$_oldjob" ] && s4e_queue_delete "$_oldjob"
          _atier="$(s4e_tier_of "$seat")" || _atier=haiku

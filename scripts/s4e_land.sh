@@ -543,7 +543,7 @@ regen() {
     [ "${#ks[@]}" -gt 0 ] || { summary="0 checked, 0 stale (skipped ${skipped[*]})"; return 0; }
     for k in "${ks[@]}"; do
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
-        ( cd "$home" && S4E_HOME="$home" timeout -k 5 900 bash $home/harness/scripts/util_run_slot.sh --admit run bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 8>&- 9>&- &
+        ( cd "$home" && S4E_HOME="$home" S4E_RUN_SLOT_HELD=1 timeout -k 5 900 bash "$home/harness/scripts/util_check_cache.sh" "land-$k" -- bash -c "$c" > "$LOG/check.$k" 2>&1; echo $? > "$LOG/check.$k.rc" ) 8>&- 9>&- &   # the table checks run on the landing's own admission (class land), no run slot each: 236 run-slot waits of 4413 s by the checks on 2026-11-08 by 10:35 (SLOT_WAITS.tsv), 14 checks three at a time behind a pool of 8 (the cio 10:4x)
         pids+=($!)
     done
     wait "${pids[@]}"

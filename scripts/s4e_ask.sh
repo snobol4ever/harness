@@ -10,6 +10,7 @@
 # Printed lines: "ASK q=<q-topic> tube=<ask-tube> pri=100 job=<id> blocked=<asker>"; the probe prints the line the step table reads.
 # Env, set by s4e_msg.sh: S4E_POST (the postoffice), S4E_SEAT (this seat), S4E_HOME (the root). S4E_TIERS names the tier table.
 set -uo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/lib_wake.sh"   # THE WAKE LINE (the cio 2026-11-08): ask and answer end by naming the session to SendMessage
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 PO="${S4E_POST:-/home/resources/postoffice}"
@@ -70,7 +71,7 @@ ask_queue() {   # <asker-topic> <question text>
     printf '%s\t%s\t%s\tASKED:%s\n' 2 "$qt" "$ME" "$tube" >> "$PO/QUEUE.tsv" || refuse "could not add $qt to QUEUE.tsv"
     if ! bus park "$topic" "BLOCKED-ON:$qt" >/dev/null 2>&1; then
         echo "ASK PARTIAL: q=$qt job=$j is queued in $tube, but $topic was NOT parked: run s4e_msg.sh park $topic BLOCKED-ON:$qt" >&2; exit 1; fi
-    echo "ASK q=$qt tube=$tube pri=100 job=$j blocked=$topic"; }
+    echo "ASK q=$qt tube=$tube pri=100 job=$j blocked=$topic"; s4e_wake_hint "$tube" "$qt" ask; }
 
 answer_q() {   # <q-topic> <answer text>
     local q="$1" body="$2" base row st tmpb t rc claim_first=0
@@ -97,6 +98,7 @@ answer_q() {   # <q-topic> <answer text>
     rm -f "$tmpb"
     grep -q '^ANSWER: ' "$base" || refuse "could not write the ANSWER line into $base"
     bus_as_holder done "$q"; rc=$?
+    [ "$rc" = 0 ] && s4e_wake_hint "seat-$(sed -n 's/^ASKED-BY: *//p' "$base" | head -1)" "$q" answer   # the asker is parked BLOCKED-ON this question: the answer wakes it
     return "$rc"; }
 
 ask_probe() {

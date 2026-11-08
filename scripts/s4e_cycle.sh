@@ -2,7 +2,7 @@
 # s4e_cycle.sh -- THE TEST CYCLE: ONE PROCESS RUNS EVERY SUITE CELL IN ORDER, LAP AFTER LAP (Lon, in the cio's window, 2026-11-08 09:0x CST, verbatim:
 # "write a process that runs the test suite and write a fucking monitor to start it when it crashed" / "Is it not called CRON?"). No queue, no tubes,
 # no workers, no controller: this process and the cron line that restarts it (s4e_cycle_cron.sh).
-#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv; then the next lap
+#   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang runner cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
@@ -95,14 +95,33 @@ while :; do
         lap=$(( lap + 1 )); idx=0; lap_start "$lap"
     fi
     while [ "$idx" -lt "$total" ]; do
-        IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$idx]}"
-        if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((idx+1))/$total $key $cell"; idx=$(( idx + 1 )); continue; fi
-        state_put "$lap" "$idx" "$total" "$key" "$cell" running
-        read -r rc secs <<< "$(run_cell "$key" "$kind" "$lang" "$runner" "$cell")"
-        log "CELL lap=$lap $((idx+1))/$total $key $cell rc=$rc secs=$secs"
-        next_key="$(printf '%s' "${ALL[$((idx+1))]:-}" | cut -f1)"
-        [ "$kind" = master ] && [ "$next_key" != "$key" ] && record_suite "$lang"
-        idx=$(( idx + 1 )); state_put "$lap" "$idx" "$total" "$key" "$cell" done
-        [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; exit 0; }
+        # THE WIDTH (the cio, 2026-11-08 10:4x CST; MEASURED: 20 cells in 1579 s one at a time, 78 s a cell, a lap of 190 cells 250 min, at load 8 on 16 cores
+        # with no CPU pressure): up to S4E_CYCLE_WIDTH cells (default 4; 1 under --one) run at once, each under its own run slot in the grader's pool; the
+        # state names the batch's first cell (a crash is charged to it), the log gets one CELL line per cell in order, a master's row is recorded after its last cell.
+        W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
+        B=(); j="$idx"
+        while [ "$j" -lt "$total" ] && [ "${#B[@]}" -lt "$W" ]; do
+            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$j]}"
+            if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((j+1))/$total $key $cell"; j=$(( j + 1 )); [ "${#B[@]}" -eq 0 ] && idx="$j"; continue; fi
+            B+=("$j"); j=$(( j + 1 ))
+        done
+        [ "${#B[@]}" -gt 0 ] || { idx="$j"; continue; }
+        IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[${B[0]}]}"
+        state_put "$lap" "${B[0]}" "$total" "$key" "$cell" running
+        pids=()
+        for i in "${B[@]}"; do
+            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$i]}"
+            ( run_cell "$key" "$kind" "$lang" "$runner" "$cell" > "$TMPDIR/cycle/res.$i" ) & pids+=($!)
+        done
+        wait "${pids[@]}"
+        for i in "${B[@]}"; do
+            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$i]}"
+            read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
+            log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
+            next_key="$(printf '%s' "${ALL[$((i+1))]:-}" | cut -f1)"
+            [ "$kind" = master ] && [ "$next_key" != "$key" ] && record_suite "$lang"
+            [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
+        done
+        idx="$j"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
     done
 done
