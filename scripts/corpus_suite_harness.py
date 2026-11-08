@@ -2730,6 +2730,74 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         return {m: against_expect(v, _ex) for m, v in _v.items()}
 
 
+def _batch_m3_eligible(entry, paths):
+    """An entry the one-process road can run: a flat program whose own process needs nothing beyond its source (no companion beside it,
+    no argv, no compile switches, no mask or stream option), graded exactly as run_m3 grades it. Anything else stays per-process."""
+    return ("/" not in entry.name and not getattr(entry, "stage_upstream", False) and not getattr(entry, "compile_args", None)
+            and not getattr(entry, "argv", None) and not getattr(entry, "mask", None) and not getattr(entry, "out_files", None)
+            and not getattr(entry, "merge_stderr", False) and not getattr(entry, "compare_ws", False)
+            and not getattr(entry, "answer_file", None) and not paths.get("scrip_extra") and paths["engine"] == "scrip")
+
+
+def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
+    """S4E_BATCH=1, mode 3 (DESIGN-PLAN batch-grader step 5): the eligible entries of one partition run as ONE `scrip --harness LIST --record
+    REC` process, each row forked from the warm parent (scrip.c scrip_harness_row), with stdout and stderr to files the list names. Each
+    record row is graded by the same _grade_output and against_expect the per-process road ends with, so the SUITE_BOARD is the same line.
+    Returns {entry name: {"m3": Verdict}}. An entry not returned (ineligible, a hang, a refusal, a kill by signal 9, a missing row) takes the
+    per-process road, where the timeout retry lives."""
+    work = Path(tempfile.mkdtemp(prefix="batch_m3_", dir=tmp_root)).resolve()
+    prog, outd = work / "prog", work / "out"
+    prog.mkdir()
+    outd.mkdir()
+    rows, meta = [], {}
+    for i, e in enumerate(entries):
+        if not _batch_m3_eligible(e, paths):
+            continue
+        with tempfile.TemporaryDirectory(dir=tmp_root) as td:
+            cand, expected = stage_entry(e, td, ext, companion_dir)
+            if sorted(os.listdir(td)) != [cand.name] or (prog / cand.name).exists():
+                continue   # a companion was staged beside it: the per-process road's cwd holds it, this one does not
+            shutil.copyfile(cand, prog / cand.name)
+        stdin_p = ""
+        if e.stdin is not None:
+            stdin_p = str(outd / f"{i}.in")
+            Path(stdin_p).write_bytes(e.stdin.encode())
+        _ex = getattr(e, "expect", None)
+        want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(e, "want_rc", 0)
+        t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
+        heap, stack = getattr(e, "heap_kb", None), getattr(e, "stack_kb", None)
+        rows.append("\t".join([e.name, cand.name, stdin_p, str(outd / f"{i}.out"), str(outd / f"{i}.err"),
+                               str(heap) if heap else "", str(stack) if stack else "", "%g" % t]))
+        meta[e.name] = (i, expected, want, t, _ex)
+    if not rows:
+        return {}
+    (work / "list.tsv").write_text("\n".join(rows) + "\n")
+    rec = work / "record.tsv"
+    env = dict(os.environ, SNO_LIB=str(paths["inc"]))
+    _bounded_run([str(paths["scrip_bin"]), "--harness", str(work / "list.tsv"), "--record", str(rec)],
+                 sum(m[3] for m in meta.values()) + 60, str(prog), env, None, False)
+    got = {}
+    for ln in (rec.read_text().splitlines() if rec.is_file() else []):
+        f = ln.split("\t")
+        if len(f) == 5:
+            got[f[0]] = (int(f[1]), f[2], float(f[3]))
+    out = {}
+    for name, (i, expected, want, _t, _ex) in meta.items():
+        if name not in got:
+            continue
+        rc, kind, secs = got[name]
+        if kind == "RAN" and rc != 127:
+            v = _grade_output((outd / f"{i}.out").read_bytes(), (outd / f"{i}.err").read_bytes(), rc, expected, want_rc=want)
+        elif kind == "CRASH" and rc - 128 not in (9, 127):
+            v = Verdict("ABORT" if rc - 128 == 6 else "CRASH", (outd / f"{i}.out").read_bytes(), (outd / f"{i}.err").read_bytes(), -(rc - 128),
+                        detail=f"signal {rc - 128}")
+        else:
+            continue   # HANG (the per-process timeout retry), REFUSED, a child that never opened its files, or an OOM-style kill: per-process
+        v.secs = secs
+        out[name] = {"m3": against_expect(v, _ex)}
+    return out
+
+
 # ================================================================== CLI ===
 def _expect_stdout_against_ref(out, exp):
     """The oracle's raw stdout against the entry's ref, naming the convention that matched: =ref (whole), =ref-before-fatal (the ref cut
@@ -3878,6 +3946,8 @@ def cmd_run(args):
         print(f"EXPECTED_REFUSALS n={len(expected_refusals)} from {_xr_path} -- each PASSes in a mode only when refused with /{_xr_re}/ (R-1228)")
     _xr_rx = re.compile(_xr_re.encode()) if expected_refusals else None
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
+    # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
+    _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
     fails = []
     _progress_rows = []
     for _n in _out_run:
@@ -3899,7 +3969,11 @@ def cmd_run(args):
             if _rr_stream and len(_progress_rows) > _rr_done[0]:
                 _rr_done[1] += _progress_record(args.sno, paths, _progress_rows[_rr_done[0]:], quiet=True) or 0
                 _rr_done[0] = len(_progress_rows)
-            verdicts = run_suite_entry(paths, e, tmp_root, modes, ext=ext, companion_dir=Path(args.sno).parent)
+            _bv = _batch_m3.get(e.name, {})
+            verdicts = dict(_bv)
+            _rest = [m for m in modes if m not in _bv]
+            if _rest:
+                verdicts.update(run_suite_entry(paths, e, tmp_root, _rest, ext=ext, companion_dir=Path(args.sno).parent))
             if e.name in expected_refusals:
                 for m in modes:
                     _v = verdicts[m]
