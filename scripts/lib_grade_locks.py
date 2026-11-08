@@ -74,6 +74,18 @@ def board_hold(need_sync, resync, touch=None, lock_dir=None):
     return (t, why)
 
 
+SERIAL_SUITES = ("gimpel",)  # its runner grades through scorecard_snobol4.sh run, whose board registry refuses a second live SNOBOL4 board
+
+
+def suite_hold(key, touch=None, lock_dir=None):
+    """the cells of one guarded suite run one at a time: an exclusive flock on suite.<key>.lock, taken before the root lock; None for a suite not listed"""
+    if key not in SERIAL_SUITES:
+        return None
+    fd = _open(lock_dir or LOCK_DIR, "suite.%s.lock" % key)
+    _hold(fd, fcntl.LOCK_EX, True, touch)
+    return fd
+
+
 def leave(fd):
     _close(fd)
 
@@ -153,9 +165,61 @@ def _probe_root():
     return 0 if ok else 1
 
 
+def _probe_suite():
+    seat = os.environ.get("S4E_SEAT") or "probe"
+    base = os.path.join("/tmp/s4e", seat)
+    os.makedirs(base, exist_ok=True)
+    d = tempfile.mkdtemp(dir=base, prefix="suitelock.")
+    me = os.path.abspath(__file__)
+    procs = []
+    out = "same_suite_waited=0 unlisted_takes_none=0"
+    ok = 0
+
+    def stamp(text, tag):
+        for ln in text.splitlines():
+            w = ln.split()
+            if len(w) == 2 and w[0] == tag:
+                return float(w[1])
+        return None
+    try:
+        A = subprocess.Popen([sys.executable, "-I", me, "--hold-suite", d, "gimpel", "2"], stdout=subprocess.PIPE, text=True)
+        procs.append(A)
+        first = ""
+        if select.select([A.stdout], [], [], 10)[0]:
+            first = A.stdout.readline()
+        B = subprocess.Popen([sys.executable, "-I", me, "--hold-suite", d, "gimpel", "0"], stdout=subprocess.PIPE, text=True)
+        procs.append(B)
+        a_rest = A.communicate(timeout=30)[0]
+        b_out = B.communicate(timeout=30)[0]
+        a_held, a_left, b_held = stamp(first, "HELD"), stamp(a_rest, "LEFT"), stamp(b_out, "HELD")
+        waited = int(a_held is not None and a_left is not None and b_held is not None and b_held >= a_left)
+        unlisted = int(suite_hold("arizona", lock_dir=d) is None)
+        out = "same_suite_waited=%d unlisted_takes_none=%d" % (waited, unlisted)
+        ok = int(waited == 1 and unlisted == 1)
+    except Exception as e:
+        out += " err=%s" % type(e).__name__
+    finally:
+        for p in procs:
+            if p.poll() is None:
+                p.kill()
+                p.wait()
+        shutil.rmtree(d, ignore_errors=True)
+    print("SUITE_LOCK_PROBE %s ok=%d" % (out, ok))
+    return 0 if ok else 1
+
+
 def main(argv):
     if argv[:1] == ["--probe-root"] and len(argv) == 1:
         return _probe_root()
+    if argv[:1] == ["--probe-suite"] and len(argv) == 1:
+        return _probe_suite()
+    if argv[:1] == ["--hold-suite"] and len(argv) == 4:
+        fd = suite_hold(argv[2], lock_dir=argv[1])
+        _say("HELD")
+        time.sleep(float(argv[3]))
+        _say("LEFT")
+        leave(fd)
+        return 0
     if argv[:1] == ["--hold-board"] and len(argv) == 3:
         t, _ = board_hold(False, None, lock_dir=argv[1])
         _say("HELD")
@@ -170,7 +234,7 @@ def main(argv):
         t, _ = board_hold(True, resync, lock_dir=argv[1])
         leave(t)
         return 0
-    sys.stderr.write("usage: lib_grade_locks.py --probe-root | --hold-board DIR SECS | --hold-sync DIR\n")
+    sys.stderr.write("usage: lib_grade_locks.py --probe-root | --probe-suite | --hold-board DIR SECS | --hold-sync DIR | --hold-suite DIR KEY SECS\n")
     return 2
 
 

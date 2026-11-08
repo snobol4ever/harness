@@ -293,13 +293,15 @@ def one():
         return None
     # THE ROOT LOCK (test-cycle, the cio's (2)(i), 2026-11-08): every launch holds the grader root shared from here to its record step; a sync takes it exclusive
     # (gate first, so no new board starts while it waits); the controller's sync never waits (rc 75). A job whose tree the root already carries takes no sync.
-    held = None
+    held = None; sheld = None
     if why is None:
 # fleet-control step 10b (the cio, 2026-11-07 14:3x): the grader's root is synced and
         # built to the job's tree before the launch, else the harness refuses rc 2 on a stale binary (jobs 1109 and 1110 were buried so at 20:31Z: the root sat
         # at b09977688 while the jobs named eedd882b7). The sync takes the fetch slot, the make the compile slots and the build cache (a clean tree fetches).
         need = not SCR and bool(re.fullmatch(r"[0-9a-f]{7,40}", tree or "")) and behind()
         t1 = time.time()
+        t2 = time.time(); sheld = GL.suite_hold(suite, touch=lambda: c.touch(job), lock_dir=(SCR or None))
+        if sheld is not None: say("GRADE_SUITE_LOCK job=%d suite=%s waited=%ds" % (job.id, suite, int(time.time() - t2)))
         held, w = GL.board_hold(need, resync, touch=lambda: c.touch(job), lock_dir=(SCR or None))
         why = why or w
         say("GRADE_TREE job=%d sync=%d waited=%ds" % (job.id, int(need), int(time.time() - t1)))
@@ -350,6 +352,7 @@ def one():
                 if snap and os.path.isfile(snap): os.remove(snap)
             else: say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=progress off, nothing recorded" % job.id)
     GL.leave(held)
+    GL.leave(sheld)
     action = "delete" if rc in (0, 1) and why is None else "bury"
     try:
         c.delete(job) if action == "delete" else c.bury(job, priority=pri)
