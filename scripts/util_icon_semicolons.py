@@ -29,6 +29,22 @@ def token_end(line, col):
         while j < len(line) and (line[j].isalnum() or line[j] == '_' or line[j] == '.'): j += 1
         return j
     if c == '$' and i + 1 < len(line) and line[i + 1] in '()<>': return i + 2
+    if c == '<':
+        j = i + 1
+        while j < len(line):
+            if line[j] in '"\'':
+                k = j + 1
+                while k < len(line) and line[k] != line[j]:
+                    k += 2 if line[k] == '\\' else 1
+                j = k + 1
+                continue
+            if line[j] == '[':
+                k = j + 1
+                while k < len(line) and line[k] != ']': k += 1
+                j = k + 1
+                continue
+            if line[j] == '>': return j + 1
+            j += 1
     return i + 1
 def settle(line, e):
     q = None; i = 0; s = 0
