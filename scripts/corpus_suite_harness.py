@@ -2737,6 +2737,13 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         return {m: against_expect(v, _ex) for m, v in _v.items()}
 
 
+def _batch_row(name, src, stdin_p, out_p, err_p, heap, stack, t):
+    """One keyed row of a scrip --harness list (CTO-554 step 10a; skill suites-and-grading reference section 5): the attributes as key=value
+    fields, the declared sizes as the row's -dNk -sNk switches, then the source. An empty stdin is the default /dev/null."""
+    f = ["name=" + name] + (["stdin=" + stdin_p] if stdin_p else []) + ["stdout=" + out_p, "stderr=" + err_p, "timeout_s=%g" % t]
+    return "\t".join(f + (["-d%sk" % heap] if heap else []) + (["-s%sk" % stack] if stack else []) + [src])
+
+
 def batch_m4_asm(paths, entries, tmp_root, ext, companion_dir):
     """S4E_BATCH=1, mode 4 (DESIGN-PLAN test-cycle step 2a): the eligible entries of one partition are compiled to asm by ONE
     `scrip --compile --harness LIST --record REC` process; each row whose record reads rc 0 with a non-empty .s is entered in _PRE_ASM under
@@ -2757,7 +2764,7 @@ def batch_m4_asm(paths, entries, tmp_root, ext, companion_dir):
         t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
         heap, stack = getattr(e, "heap_kb", None), getattr(e, "stack_kb", None)
         s_path, err_path = outd / f"{i}.s", outd / f"{i}.err"
-        rows.append("\t".join([e.name, cand.name, "", str(s_path), str(err_path), str(heap) if heap else "", str(stack) if stack else "", "%g" % t]))
+        rows.append(_batch_row(e.name, cand.name, "", str(s_path), str(err_path), heap, stack, t))
         meta[e.name] = (s_path, hashlib.md5((prog / cand.name).read_bytes()).hexdigest(), t)
     if not rows:
         return
@@ -2812,8 +2819,7 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
         want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(e, "want_rc", 0)
         t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
         heap, stack = getattr(e, "heap_kb", None), getattr(e, "stack_kb", None)
-        rows.append("\t".join([e.name, cand.name, stdin_p, str(outd / f"{i}.out"), str(outd / f"{i}.err"),
-                               str(heap) if heap else "", str(stack) if stack else "", "%g" % t]))
+        rows.append(_batch_row(e.name, cand.name, stdin_p, str(outd / f"{i}.out"), str(outd / f"{i}.err"), heap, stack, t))
         meta[e.name] = (i, expected, want, t, _ex)
     if not rows:
         return {}
