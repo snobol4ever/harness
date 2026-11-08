@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_box_budget_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: box-budget (the cto, 2026-11-04, CTO-474/475/478; the design text
 # in .github/skills/shared-box/SKILL.md's DESIGN section). The plan is corpus/tests/shared/box_budget/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME against the live ledgers and instruments, so a step reads RED until its instrument exists and GREEN only while

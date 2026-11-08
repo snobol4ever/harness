@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_raku_core_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-core (the cto, 2026-11-05, CTO-514 rulings 2 and 3, CTO-517;
 # skill raku section 9). The plan is corpus/tests/raku/core/STEPS.tsv; the witnesses are the .raku programs beside it, each
 # with a .ref cut from Rakudo (rakudo_bin of lib_oracle_flags.sh: rakudo-local 2026.05).

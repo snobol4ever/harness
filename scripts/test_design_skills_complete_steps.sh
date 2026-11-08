@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_skills_complete_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: skills-complete (the cio, 2026-11-07, on Lon's word: "fully scrutinize the set of skill files"; the design text
 # in .github/skills/fleet-bus/reference.md section 9). The plan is corpus/tests/shared/skills_complete/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME against the live ledgers and instruments, so a step reads RED until its instrument exists and GREEN only while

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_icon_scanning_asm_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: icon-scanning-asm (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-ICON-RTX.md section 11). The plan is corpus/tests/icon/scanning_asm/STEPS.tsv; the witnesses are the .icn programs beside
 # it, each with a .ref cut from Arizona Icon (icont -s, the binary's stdout).

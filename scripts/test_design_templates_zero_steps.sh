@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_templates_zero_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: templates-zero (the cto, 2026-11-01, R-2095;
 # .github/ARCH-CALL-FORMS.md section 9). The plan is corpus/tests/shared/templates_zero/STEPS.tsv. A step's measurement is its PROBE over the
 # SCRIP tree (the per-file template audit, a symbol census, a kind's dispatch, the pipeline order, the whole-set census) and its WITNESSES:

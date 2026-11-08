@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_pascal_front_end_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-front-end (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PASCAL-REDESIGN.md section 8). The plan is corpus/tests/pascal/front_end/STEPS.tsv; the witnesses are the .pas programs
 # beside it, each with a .ref cut from fpc 3.2.2 (fpc -v0 in the program's own mode, the binary's stdout).

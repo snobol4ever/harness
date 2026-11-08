@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_raku_roast_causes_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-roast-causes (the cao, 2026-11-05, Lon in the coo's window:
 # "Each failing program is getting fixed today."; row raku-roast-every-red-program-triaged-and-its-fix-designed-by-the-cao). One step per CAUSE of a
 # Roast red. The plan is corpus/tests/raku/roast_causes/STEPS.tsv; the witnesses are the .raku programs beside it, each with a .ref cut from Rakudo

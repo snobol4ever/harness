@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_prolog_lifo_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-lifo (the cto, 2026-10-28, R-1997/1998;
 # .github/ARCH-PROLOG-ACTIVATION-LIFETIME.md section 9). The plan is corpus/tests/prolog/lifo/STEPS.tsv; the witnesses are the .pl beside it, each
 # with a .ref cut from swipl 9.0.4 (-q -t halt), the one SWI-dialect oracle (R-1603).

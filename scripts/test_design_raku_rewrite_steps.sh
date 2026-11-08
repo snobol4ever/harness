@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_raku_rewrite_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: raku-rewrite (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-RAKU-REWRITE.md). The plan is corpus/tests/raku/rewrite/STEPS.tsv; the witnesses are the .raku programs beside it, each
 # with a .ref cut from Rakudo (rakudo_bin of lib_oracle_flags.sh: rakudo-local 2026.05).

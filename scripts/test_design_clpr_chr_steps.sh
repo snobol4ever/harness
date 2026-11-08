@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_clpr_chr_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: clpr-chr (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PROLOG-CLPR-CHR.md). The plan is corpus/tests/prolog/clpr_chr/STEPS.tsv; the witnesses are the .pl programs beside it, each
 # with a .ref cut from swipl 9.0.4 (`swipl -q -t halt w.pl < /dev/null`, stdout only).

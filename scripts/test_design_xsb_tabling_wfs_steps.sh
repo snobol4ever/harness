@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_xsb_tabling_wfs_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: xsb-tabling-wfs (the cto, 2026-10-28, R-1996/1998;
 # .github/ARCH-PROLOG-WFS-TABLING.md section 8). The plan is corpus/tests/prolog/xsb_wfs/STEPS.tsv; the witnesses are the .P programs beside it
 # (XSB's syntax, as the package corpus/packages/prolog/xsb_tests vendors XSB's own tests), each with a .ref cut from XSB 5.0.0 (xsb_bin(),

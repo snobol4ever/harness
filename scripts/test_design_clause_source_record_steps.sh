@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_clause_source_record_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: consulted-clause-source-record (the cto, 2026-10-31, R-2064/2065;
 # .github/ARCH-PROLOG-DATABASE.md section 23). The plan is corpus/tests/prolog/clause_source_record/STEPS.tsv; the witnesses are the csr_*.pl beside it,
 # each with a .ref cut from swipl 9.0.4 (-q -t halt, twice), the one SWI-dialect oracle (R-1603); csr_consulted_lib.pl is data the consult witness loads.

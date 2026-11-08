@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_prolog_gnu_gaps_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: prolog-gnu-gaps (the cto, 2026-11-07, CTO-543; skill prolog
 # reference section 8). The plan is corpus/tests/prolog/gnu_gaps/STEPS.tsv; the witnesses are the gg_*.pl beside it, each with a .ref cut from
 # GNU Prolog 1.6.0 through gprolog_bin() (lib_oracle_flags.sh: --consult-file W --query-goal halt, the output through gprolog_output_filter, run

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_pascal_packed_arrays_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-packed-arrays (the cto, 2026-11-04, R-2119; the design
 # text is the pascal skill's section 8). The plan is corpus/tests/pascal/packed_arrays/STEPS.tsv; the witnesses are the .pas programs beside it,
 # each with a .ref cut from fpc 3.2.2 through fpc_bin() (fpc -v0 in the program's own mode, the binary's stdout).

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_builtin_table_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: builtin-table (the cto, 2026-10-29, R-1996; .github/ARCH-BUILTIN-TABLE.md).
 # The plan is corpus/tests/shared/builtin_table/STEPS.tsv; the witnesses are the .sno, .icn and .raku programs beside it, each with a .ref cut from its
 # oracle (SPITBOL sbl -bf; Arizona Icon icont -s then the binary; Rakudo), stdout compared exactly.

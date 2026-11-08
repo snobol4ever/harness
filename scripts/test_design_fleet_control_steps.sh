@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_fleet_control_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: fleet-control (the cio, 2026-11-07, on Lon's word; the design text
 # in .github/skills/shared-box/reference.md section 9). The plan is corpus/tests/shared/fleet_control/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME against the live ledgers and instruments, so a step reads RED until its instrument exists and GREEN only while

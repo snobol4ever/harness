@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_random_codegen_scope_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: random-codegen-scope (the cto, 2026-10-28, R-1998/1999;
 # .github/ARCH-RANDOM-SNOBOL4-GENERATOR.md). Lon, verbatim: "CTO should make detailed plans and test sources and harnesses for the HQs to execute
 # and step through." The plan is corpus/demos/scriptix/infinite_snobol4/STEPS.tsv; the vocabulary each step must reach is COVERAGE.tsv beside it.

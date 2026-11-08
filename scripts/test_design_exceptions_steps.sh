@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_exceptions_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: exceptions, ONE ERROR PROTOCOL FOR EVERY LANGUAGE: A RAISE RETURNS, THE BOX UNWINDS (the cto, 2026-10-29;
 # R-1996; Lon in-chat to the cto, verbatim: "Do address the second flaw, i.e. skipping omega and standardizing the exception processes."; .github/ARCH-EXCEPTIONS-ONE-PROTOCOL.md).
 # The plan is corpus/tests/shared/exceptions/STEPS.tsv; the witnesses are the .sno, .icn, .pl, .pas and .raku programs beside it, each with a .ref cut from its
