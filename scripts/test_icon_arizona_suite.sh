@@ -351,6 +351,7 @@ for std in "$SUITE"/*.ref; do
   # that program REFUSED by the shipped-name guard that stood here. Linked into $RUNDIR/m4bin and run by its bare name through PATH from $SUITE, its
   # argv[0] is still the bare stem the refs were cut under (&progname, the pin above), it dies with RUNDIR's trap, and a kill leaves it in /tmp for
   # the tmp sweep; with no binary in $SUITE no shipped file can be overwritten, so the guard has nothing left to guard.
+  if [ "${S4E_MODES:-m3,m4}" != m3 ]; then
   s4=$(mktemp "${TMPDIR:-/tmp}/ariz_XXXXXX.s"); mkdir -p "$RUNDIR/m4bin" || { echo "⛔ GATE REFUSES: cannot create $RUNDIR/m4bin" >&2; exit 2; }; bin4="$RUNDIR/m4bin/$name"
   AZ_T0="$(progress_clock)"
   m4diag=$(cd "$SUITE" && ${_ipath[@]+"${_ipath[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --compile $_ca "$name.icn" 2>&1 >"$s4" </dev/null)
@@ -383,6 +384,7 @@ for std in "$SUITE"/*.ref; do
   else
     M4_FAIL=$((M4_FAIL+1)); M4_FAIL_NAMES="$M4_FAIL_NAMES $id"; arizona_progress "$id" m4 FAIL
     [ "$VERBOSE" = 1 ] && echo "  [m4 FAIL] $name"
+  fi
   fi
   rm -f "$s4" "$bin4"
 done
