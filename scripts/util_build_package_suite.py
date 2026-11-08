@@ -225,6 +225,17 @@ def icn_marked(text):
     return bool(re.search(r'\b(?:thread|critical|abstract)\b', code) or re.search(r'(?m)^[ \t]*(?:class|import)[ \t]+\w', code) or re.search(r'(?m)^[ \t]*package[ \t]+[\w"]', code))
 
 
+def _unicon_prebuild(iso, ipath, names):
+    import subprocess
+    r = subprocess.run(["bash", "-c", f". '{h.HARNESS_SCRIPTS / 'lib_oracle_flags.sh'}' && unicon_bin"], capture_output=True, text=True)
+    if r.returncode != 0 or not r.stdout.strip(): h.refuse(f"lib_oracle_flags.sh refused (unicon_bin): {r.stderr.strip()}")
+    for name in names:
+        for f in sorted(Path(ipath).glob("*.icn")):
+            if re.search(rf"(?m)^package[ \t]+{re.escape(name)}[ \t]*$", f.read_text(errors="replace")):
+                (iso / f.name).write_bytes(f.read_bytes())
+                subprocess.run([r.stdout.strip(), "-c", "-s", f.name], cwd=str(iso), capture_output=True, timeout=300)
+
+
 def read_contract(pkg_dir):
     """The package's own run contract, CONTRACT.tsv beside its sources: key<TAB>value<TAB>evidence, '#' comments. What the
     package's OWN harness does to produce its refs, declared once with the package and read here, never typed by a runner.
@@ -239,7 +250,7 @@ def read_contract(pkg_dir):
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
     harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (R-2072, hq_unicon): an Icon
     package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
-    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": ""}
+    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -266,6 +277,8 @@ def read_contract(pkg_dir):
         elif f[0] == "ipath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: ipath {f[1]!r} names no directory beside the package (the run cannot find its imports)")
             out["ipath"] = str((pkg_dir / f[1]).resolve())
+        elif f[0] == "prebuild":
+            out["prebuild"] = f[1].strip()
         elif f[0] == "not_shipped":
             for x in f[1].split():
                 if not (pkg_dir / x).is_dir():
@@ -491,6 +504,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                         if _cf.is_file() and not _cf.name.startswith("ALL.") and _cf.name != src.name:
                             (Path(_iso_dir) / _cf.name).write_bytes(_cf.read_bytes())
                 _iso_src.write_bytes(src.read_bytes())
+                if lang == "icon" and merged and contract["oracle"] == "unicon" and contract["prebuild"]:
+                    _unicon_prebuild(Path(_iso_dir), contract["ipath"], contract["prebuild"].split())
                 if lang == "icon" and merged and contract["oracle"] == "unicon":
                     return h.run_unicon_built_oracle(paths, _iso_src, paths["timeout"], stdin_text=stdin_text,
                                                                          prog_args=prog_args, out_files=out_files)
