@@ -121,6 +121,7 @@ new_wt() {
             case "$l" in ""|*[!a-z0-9_]*) die "REFUSE(2): language '$l' must be [a-z0-9_]+" 2 ;; esac
             [ -n "$(git -C "$ROOT/corpus" ls-tree -d "$base" -- "tests/$l")" ] || die "REFUSE(2): corpus at $base has no tests/$l" 2
             pats+=("/tests/$l/")
+            [ -n "$(git -C "$ROOT/corpus" ls-tree -d "$base" -- "packages/$l")" ] && pats+=("/packages/$l/")   # the language's vendored packages (the coo 2026-11-08 10:57 on officer_05's measurement: a Unicon program that calls a posix builtin links posix.icn from packages/icon/unicon_ipl, so an icon worktree without packages/icon read step 13b RED after its cure)
         done
         pats+=(/tests/shared/ /include/ /library/ /README.md /LICENSE /NOTICE /.gitignore)
     elif [ "$full" = 0 ]; then
