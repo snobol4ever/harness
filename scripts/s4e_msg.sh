@@ -3890,7 +3890,7 @@ case "$cmd" in
          # never come back to release their own claims. 9 rows were hidden from the picker by seats that are not
          # running, with no in-tool way to free them short of rm. An HQ release is ANNOTATED with who forced it.
          if [ "$own" != "$ME" ]; then
-             s4e_is_hq "$ME" || { echo "⛔ $topic is claimed by $own, not you — a lock is released by its holder or by an HQ"; exit 1; }
+             case " $(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" 2>/dev/null | head -1) " in *" $ME "*) ;; *) echo "⛔ REFUSED(2): $topic is claimed by $own, not you -- unclaim releases only your own claim; a boss (MODE BOSSES:) alone forces another seat's (the coo 2026-11-08 12:42: junior_11 released junior_07's live claim)"; exit 2;; esac
              why="${3:-released by HQ}"; why="$why (forced by $ME over $own's claim)"
          fi
          # ⛔⭐ A COMPUTED DONE AND AN OVERRIDE DONE ARE NOT THE SAME THING, AND UNTIL 2026-08-27 THIS LINE COULD NOT
