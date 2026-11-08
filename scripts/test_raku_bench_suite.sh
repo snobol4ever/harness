@@ -27,6 +27,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 BD="${BENCH_RAKU_DIR:-$S4E/corpus/benchmarks/raku}"
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"
 GATE_NAME=test_raku_bench_suite
 LANG_KEY=raku; SUITE_KEY=raku-bench-ref; EXT=raku
 SCRIP="$HERE/../../SCRIP/scrip"
@@ -129,7 +130,7 @@ for k in "${KERNELS[@]}"; do
   cfg="shipped"; [ -n "$kb" ] && { cfg="SCRIP_HEAP_CAP_KB=$kb"; HEAPD=$((HEAPD+1)); }
   [ -n "$st" ] && { cfg="$([ "$cfg" = shipped ] || printf '%s,' "$cfg")SCRIP_STACK=${st}k"; HEAPD=$((HEAPD+1)); }
   if [ ! -s "$ref" ]; then
-    for m in m3 m4; do printf 'benchmark\t%s\t%s\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
+    for m in $MODES; do printf 'benchmark\t%s\t%s\t%s\t%s\tFAIL\t0\tno-ref\t%s\n' "$SUITE_KEY" "$LANG_KEY" "$k" "$m" "$cfg" >>"$PROG_ROWS"; done
     printf '%-28s %-4s %s\n' "$k" both "FAIL no .ref -- a benchmark without a REF cannot be graded, and is counted, not skipped"; NAMED="$NAMED $k(no-ref)"; continue
   fi
   want="$(python3 -c 'import sys; print(len(open(sys.argv[1], encoding="utf-8", errors="surrogateescape").read()))' "$ref")"
@@ -137,7 +138,7 @@ for k in "${KERNELS[@]}"; do
   for a in iter time; do { [ $a = iter ] && [ $DO_I = 0 ]; } || { [ $a = time ] && [ $DO_T = 0 ]; } && continue
     python3 "$GEN" "$f" --mode "$a" --n "$ITER_N" --bud-ms "$BUD_MS" -o "$T/$k.$a.$EXT" 2>"$T/$k.$a.gen" || gen_ok=0; done
   okboth=1
-  for m in m3 m4; do
+  for m in $MODES; do
     _tm="$(progress_clock)"   # the mode's own wall for its row: its three angles, and in m4 their compile and link (R-1676 (c))
     r1=FAIL; r2=FAIL; r3=FAIL; why=""; [ $DO_P = 1 ] || r1=-; [ $DO_I = 1 ] || r2=-; [ $DO_T = 1 ] || r3=-
     if [ "$gen_ok" = 0 ]; then why="the wrapper generator REFUSED: $(head -c 160 "$T/$k.iter.gen" "$T/$k.time.gen" 2>/dev/null | tr '\n' ' ')"
@@ -175,7 +176,7 @@ for k in "${KERNELS[@]}"; do
     printf '%-28s %-4s %s (oracle arm, informational)\n' "$k" raku "$o"
   fi
 done
-LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$((TOTAL+NOUT))$([ "$NOUT" -gt 0 ] && echo " excluded=$NOUT") all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
+LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$((TOTAL+NOUT))$([ "$NOUT" -gt 0 ] && echo " excluded=$NOUT") all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=$(case " $MODES " in *" m4 "*) echo "${PASSN[m4]}";; *) echo -;; esac) angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
 echo
 echo "$LINE"
 [ -n "$NAMED" ] && echo "  not passing:$NAMED"
