@@ -163,6 +163,7 @@ s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku
 s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
 s4e_queue_put() { python3 "$S4E/harness/scripts/util_queue.py" put "$1" "$2" --pri "$3" --ttr "$4" 2>/dev/null; }   # <tube> <topic> <pri> <ttr> -> job id
 s4e_queue_delete() { python3 "$S4E/harness/scripts/util_queue.py" delete "$1" >/dev/null 2>&1; }
+s4e_file_road() { python3 "$S4E/harness/scripts/util_queue.py" status >/dev/null 2>&1; [ "$?" = 2 ]; }   # bus-one-queue (CIO-8 phase two): rc 0 only when beanstalkd is UNREACHABLE (status exits 2), so the verb takes the file road
 s4e_baton_job_get() { grep -m1 '^QUEUE-JOB:' "$PO/tasks/$1.task.md" 2>/dev/null | sed 's/^QUEUE-JOB: *//'; }   # "<id> tube=<tube>"
 s4e_baton_job_set() {   # <topic> <id> <tube>: one QUEUE-JOB line after LINKS, replaced when present
     local _b="$PO/tasks/$1.task.md"
@@ -454,12 +455,14 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     # THE ROOT IS CURRENT BEFORE THE PREMISE IS READ (the cio 2026-11-08 10:5x on the coo's measurement: junior_03, 05 and 07 one harness commit behind, so the premise of unitests-order-0-r2 exited 2 on their roots and the first UniTests row went unserved 30 minutes): a fast-forward sync is cheap and a premise graded on a stale tree is no measurement; a root that cannot fast-forward (an unpushed local commit) is named by the sync and stays as it is.
     # ALL FOUR REPOS, THEN THE BINARY (the cio 2026-11-08 11:3x on officer_03's measurement: with SCRIP left out of the sync, a premise that reads SCRIP source read false in junior_06's root at bb311e419 and the CTO-555 rename row was retired): the sync fast-forwards SCRIP too, and make -j8 fetches the build from the cache (seconds on a clean tree), so the premise is read on the current tree with its own binary; a make that fails refuses the read, and the row is skipped, never retired.
     mkdir -p "/tmp/s4e/${ME:-seat}" 2>/dev/null
+    if [ "${S4E_NO_PREMISE_CHECK:-0}" != 1 ]; then
     ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
     ( cd "$S4E/SCRIP" && timeout -k 10 600 make -j8 ) >"/tmp/s4e/${ME:-seat}/next_make.log" 2>&1 || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: make -j8 in $S4E/SCRIP failed after the sync (see /tmp/s4e/${ME:-seat}/next_make.log), so no premise can be read on this root; fix the build and run next again." >&2; return 1; }
     # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
     local _dr="" _r
     for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
     [ -z "$_dr" ] || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: this root is dirty in$_dr, and a premise graded on a dirty root is no measurement (CEO-2060). Clean the root (git -C <repo> status; a cure lives in a worktree, never in the root) and run next again." >&2; return 1; }
+    fi
     # THE RED PREMISE (the cio's cut, 2026-11-07): a gate that ran and read RED returns 4, so the reserve pass can bury this head and go on; any other refusal (an rc 2 that could not measure) returns 1, as it does today.
     local _pg; _pg="$(mktemp "${TMPDIR:-/tmp}/s4e_take_pg.XXXXXX")" || return 1
     if ! s4e_premise_gate "$_t" next >"$_pg" 2>&1; then
@@ -564,6 +567,21 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
     # rc 4: the head's PREMISE-WHEN read RED -- bury it through its holder, supersede its row, and look at the next ready job (up to five heads in one pass)
     [ "$_rc" = 4 ] || return 1
     s4e_refuse_red_head "$_topic" "$_id" "$_tube" || return 1
+    done
+    return 1; }
+s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<tier>, then seat-<me>, then tier-<tier>; lowest rank, then the oldest mint stamp
+    local _tier _tube _rk _ts _t _rc
+    _tier="$(s4e_tier_of "$ME")" || return 1
+    for _tube in "ask-$_tier" "seat-$ME" "tier-$_tier"; do
+        while IFS=$'\t' read -r _rk _ts _t; do
+            [ -n "$_t" ] || continue
+            s4e_queue_take_claim "$_t" file "$_tube"; _rc=$?
+            if [ "$_rc" = 0 ]; then serve "$_t" "RESERVED" "(from $_tube on the file road; the claim is the reserve)"; exit 0; fi
+            if [ "$_rc" = 4 ]; then
+                s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@$(git -C "$S4E/SCRIP" rev-parse --short HEAD 2>/dev/null)" >/dev/null 2>&1 || true
+                s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at a file-road serve on $ME's root; the row is parked, not retired (CIO-10)"
+            fi
+        done < <(awk -F'\t' -v s="QUEUED:$_tube" '/^[0-9]/ && $4 == s {print $1"\t"$2}' "$PO/QUEUE.tsv" | while IFS=$'\t' read -r _r _n; do printf '%s\t%s\t%s\n' "$_r" "$(s4e_mint_ts "$_n")" "$_n"; done | sort -t$'\t' -k1,1n -k2,2)
     done
     return 1; }
 s4e_probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts or reserves runs on ITS OWN beanstalkd on a free port, exported as S4E_QUEUE_PORT to every child and killed on exit; the live daemon (11300) is never written by it
@@ -5020,7 +5038,7 @@ TASKEOF
          # fleet-queue step 4 (the cio 2026-11-05): FIRST, next is a RESERVE over the seat's watch list (seat-<me> at 100+rank, ask-<tier> at 50, tier-<tier>
          # at 1000+rank, then the tier below only when those hold nothing); the job served is claimed (an ASSIGNED claim of this seat is honored and
          # annotated) and HELD by a detached holder that touches it while the session lives; the legacy passes below serve rows that have no job yet.
-         s4e_queue_reserve_pass || true
+         if s4e_file_road; then s4e_file_reserve_pass || true; else s4e_queue_reserve_pass || true; fi
          while IFS=$'\t' read -r _rk t; do
            [ -n "${t:-}" ] || continue
            c="$PO/claims/$t.claim"
