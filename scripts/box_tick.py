@@ -208,7 +208,7 @@ def feed_requests():
         seat, suite, ents = f.get("seat", "").strip(), f.get("suite", "").strip(), f.get("entries", "").split()
         if not (seat and suite and ents): continue
         r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_grade_job.py"), "put", "--suite", suite, "--cell", "entry:" + ",".join(ents),
-                            "--band", "request", "--modes", "m3,m4", "--requester", seat, "--tube", GRADE_TUBE], capture_output=True, text=True, timeout=120)
+                            "--band", "request", "--modes", os.environ.get("S4E_MODES", "m3"), "--requester", seat, "--tube", GRADE_TUBE], capture_output=True, text=True, timeout=120)
         jm = re.search(r"^job=(\d+) tube=", r.stdout, re.M); jid = jm.group(1) if jm else ""
         if r.returncode != 0 or not jid.isdigit():
             with open(path, "a") as fh: fh.write("fed=%s REFUSED rc=%d %s\n" % (time.strftime("%FT%TZ", time.gmtime()), r.returncode, (r.stdout + r.stderr).strip().replace("\n", " | ")[-200:]))
@@ -225,13 +225,15 @@ def probe_feed():
     open(d + "/20260101T000000-probe-sno-rungs-1.req", "w").write("seat=probe\nsuite=sno-rungs\ntable=tests/snobol4\nfiled=probe\nentries=fence_tab_pos_branch_1\nsince=probe\n")
     f1 = feed_requests(); txt = open(d + "/20260101T000000-probe-sno-rungs-1.req").read(); f2 = feed_requests()
     m = re.search(r"^fed=\S+ job=(\d+) tube=(\S+) cell=entry:fence_tab_pos_branch_1$", txt, re.M)
-    st = ""
+    st = ""; pk = ""
     if m:
         r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "stats-job", m.group(1)], capture_output=True, text=True, timeout=60); st = r.stdout.strip()
+        pk = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "peek", GRADE_TUBE], capture_output=True, text=True, timeout=60).stdout
         subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_queue.py"), "delete", m.group(1)], capture_output=True, text=True, timeout=60)
     shutil.rmtree(d, ignore_errors=True)
-    ok = int(f1 == "fed=1" and f2 == "fed=0" and m is not None and m.group(2) == GRADE_TUBE and GRADE_TUBE in st)
-    print("FEED_PROBE first=%s second=%s fed_line=%d job_in_tube=%d ok=%d" % (f1, f2, int(m is not None), int(bool(st) and GRADE_TUBE in st), ok)); return 0 if ok else 1
+    m3 = int('"modes": "m3"' in pk)
+    ok = int(f1 == "fed=1" and f2 == "fed=0" and m is not None and m.group(2) == GRADE_TUBE and GRADE_TUBE in st and m3 == 1)
+    print("FEED_PROBE first=%s second=%s fed_line=%d job_in_tube=%d modes_m3=%d ok=%d" % (f1, f2, int(m is not None), int(bool(st) and GRADE_TUBE in st), m3, ok)); return 0 if ok else 1
 def grader_tail():
     """the last three lines of GRADE_WORKERS.log and how many of them read the stall: action=bury naming the unreachable tree"""
     try:
@@ -1052,6 +1054,8 @@ if __name__ == "__main__":
         sys.exit(probe_rows())
     if arg == "--probe-feed":
         sys.exit(probe_feed())
+    if arg == "--feed-once":
+        print("REQUEST_FEED " + feed_requests()); sys.exit(0)
     if arg == "--probe-stall":
         sys.exit(probe_stall())
     if arg == "--probe-landing":
