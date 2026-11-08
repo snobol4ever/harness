@@ -22,7 +22,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 M="$HERE/s4e_msg.sh"
 [ -f "$M" ] || { echo "⛔ REFUSE(2): no $M"; exit 2; }
 # S4E_BANNER_NO_BOARD keeps this gate from clobbering the live BOARD.md row of whoever runs it.
-out="$(S4E_BANNER_NO_BOARD=1 timeout -k 5 100 bash "$M" banner 2>&1)"; brc=$?
+out="$(S4E_BANNER_GRID=1 S4E_BANNER_NO_BOARD=1 timeout -k 5 100 bash "$M" banner 2>&1)"; brc=$?
 [ -n "$out" ] || { echo "⛔ RED: banner printed ZERO BYTES (rc=$brc) -- this is the exact 2026-09-13 blackout"; exit 1; }
 # THE SHAPE (2026-11-07, the coo's cut on the banner's own layout): the default banner is the double-sided grid that
 # .github/scripts/banner_compact.py prints, which draws no ruled rows (the ruled border was the single-sided grid's
