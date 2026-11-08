@@ -445,6 +445,7 @@ for std in "${STDFILES[@]}"; do
     elif { python3 "$HERE/util_render_error_voice.py" icon < "$TMP/${base}.m3.out" > "$TMP/${base}.m3.voice" 2>/dev/null; ipl_graded_cmp "$IPL_ISO_FIXTURES" "$TMP/${base}.m3.voice" "$std"; }; then M3_RUN_PASS=$((M3_RUN_PASS+1)); ipl_progress "$id" m3 PASS
     else M3_RUN_FAIL=$((M3_RUN_FAIL+1)); M3_RUN_FAIL_NAMES+=("$id"); ipl_progress "$id" m3 FAIL; fi
 
+    if [ "${S4E_MODES:-m3,m4}" != m3 ]; then
     # -- m4 (--compile): emitting .s does not execute the target program, so THAT step is unisolated,
     # same as the compile tier above; only running the linked binary carries the self-mutation hazard.
     s4="$TMP/${base}.m4.s"; bin4="$TMP/${base}.m4.bin"; _t0="$(progress_clock)"
@@ -467,6 +468,7 @@ for std in "${STDFILES[@]}"; do
     else
         IPL_SECS="$(progress_secs_since "$_t0")"
         M4_RUN_FAIL=$((M4_RUN_FAIL+1)); M4_RUN_FAIL_NAMES+=("$id(compile/link)"); ipl_progress "$id" m4 FAIL
+    fi
     fi
     rm -f "$s4" "$bin4" "$TMP/${base}.m3.out" "$TMP/${base}.m4.out"
 done
