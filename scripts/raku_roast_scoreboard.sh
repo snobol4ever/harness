@@ -264,6 +264,7 @@ if [ "$DO_RUN" = 1 ]; then
     case "$_o3" in FAIL|CRASH|HANG) _e3="$(roast_first_cause "$so" "$se" "$rc")" ;; esac
     progress_append package roast raku "$pname" m3 "$_o3" "$_s3" "$_e3" >/dev/null 2>&1 || true
     if [ "$v3" = PASS ]; then m3p=$((m3p+1)); else m3f=$((m3f+1)); FAILED_M3="$FAILED_M3 $pname:$v3"; fi
+    if [ "${S4E_MODES:-m3,m4}" != m3 ]; then
     s4="$TMP/c.s"; o4="$TMP/c.o"; b4="$TMP/c.bin"
     _t0="$(progress_clock)"
     : > "$TMP/ce4"
@@ -283,6 +284,7 @@ if [ "$DO_RUN" = 1 ]; then
       # the stage that refused names itself in its first stderr line (hq_raku 2026-10-14: ~290 files pass mode 3 and fail only here)
       _ce="$(grep -m1 -v '^[[:space:]]*$' "$TMP/ce4" 2>/dev/null | tr '\t' ' ' | cut -c1-120)"
       progress_append package roast raku "$pname" m4 REJECT "$(progress_secs_since "$_t0")" "mode-4 compile or link failed${_ce:+: $_ce}" >/dev/null 2>&1 || true
+    fi
     fi
     if [ $((n % 100)) -eq 0 ]; then
       printf '  ...%d files (%ds elapsed): m3 %d/%d  m4 %d/%d\n' "$n" "$(( $(date +%s) - t0 ))" "$m3p" "$n" "$m4p" "$n" >&2
