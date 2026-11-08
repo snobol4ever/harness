@@ -8,7 +8,7 @@
 #   s4e_banner_cached.sh <root> <seat>            the hook's call: prints the JSON {systemMessage} line
 #   s4e_banner_cached.sh --refresh <root> <seat>  the background arm: rewrites the cache from the verb
 # THE WAKE BY HOOK (box-scheduler step 10, CTO-496): the Stop hook's JSON on stdin goes to s4e_stop_gate.sh; while the seat holds unread mail or a row
-# ASSIGNED or CLAIMED to it the gate answers {"decision":"block","reason":...}, merged here with the banner, and the session continues on its own work.
+# ASSIGNED or CLAIMED to it the gate answers {"decision":"block","reason":...}; since 2026-11-08 08:1x (Lon) that verdict is only shown in the banner, never returned.
 # The seat is S4E_SEAT when the session sets it (every root's settings.local.json does), else the hook's argument.
 set -u
 if [ "${1:-}" = "--refresh" ]; then
@@ -38,6 +38,10 @@ printf '%s' "$out" | G="$gate" python3 -c 'import json,os,sys
 m=sys.stdin.read()
 try: g=json.loads(os.environ.get("G") or "{}")
 except Exception: g={}
+# NO STOP IS EVER HELD (Lon 2026-11-08 08:1x CST, in the officer_01 window, verbatim: "I NEVER want to see \"Stop hook error\" ever again." /
+# "Whoops, you just displayed \"Stop hook error\". I am about to whack you."): Claude Code labels every {"decision":"block"} at a Stop as a
+# "Stop hook blocking error", so the verdict of the gate is never passed on; its reason is shown in the banner and the seat stops. A seat is woken
+# for its work by a message, never by a held stop.
 if g.get("decision")=="block":
-    m=m+"\n⛔ THE STOP IS BLOCKED BY THE WAKE HOOK (box-scheduler step 10): "+g["reason"]
-g["systemMessage"]=m; print(json.dumps(g))'
+    m=m+"\nwork waiting for this seat (the stop is not held): "+g.get("reason","")
+print(json.dumps({"systemMessage": m}))'
