@@ -71,7 +71,7 @@ for w in $wits; do
     [ -f "$WD/$w.pas" ] && [ -f "$ref" ] || refuse "witness $w has no .pas or .ref in $WD"
     n=$((n + 1))
     for m in m3 m4; do
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.pas" "$d/$w.pas"
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.pas" "$d/$w.pas"; for u in "$WD/${w}"_*.pas; do [ -f "$u" ] && cp "$u" "$d/"; done
         if [ "$m" = m3 ]; then
             ( cd "$d" && timeout -k 5 120 "$SC/scrip" -d131072k -s4096k "$w.pas" < /dev/null > "$d/out" 2> "$d/err" ); rc=$?
         else
