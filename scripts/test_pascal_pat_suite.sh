@@ -40,6 +40,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 # the one reader -- and at the shipped default when it declares nothing (the acceptance programs carry no row today); a refused cell
 # refuses the board. The oracle (fpc -Miso) runs as before.
 . "$HERE/lib_declared_arena.sh" || refuse "lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$TMP/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || refuse "a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"
 declare -A P F C
@@ -118,6 +119,15 @@ prt_rc_class() {
 # wrong in a detectable way, since it is not a count of any set of programs.
 BOTH=0
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries, rows as each test ends
+hr_begin "$TMP/hr"
+for f in "$SUITE"/iso7185prt*.pas; do
+    [ -e "$f" ] || continue
+    b="$(basename "$f" .pas)"; rr_admits "$b" || continue
+    [ -n "${ACCEPT_SET[$b]:-}" ] && continue; [ -n "${FAKE_SET[$b]:-}" ] && continue
+    [ -n "$(declared_out_files_from_table "$DECL" "$b")" ] && continue
+    hr_row --merged "$b" "$f" /dev/null 2 "$TMP" $(declared_compile_args_from_table "$DECL" "$b") $(declared_switches_from_table "$DECL" "$b")
+done
+hr_run "$SCRIP"
 # ---- rejection population -------------------------------------------------------------------------------------------
 for f in "$SUITE"/iso7185prt*.pas; do
     [ -e "$f" ] || continue
@@ -159,7 +169,7 @@ for f in "$SUITE"/iso7185prt*.pas; do
         # ⛔ A LINK FAILURE IS NOT A REFUSAL: the compiler accepted the program, so the witness FAILS (it was not
         # refused) rather than passing on a toolchain accident. test_gate_pas_pat_m4_arm_links_and_runs.sh pins this.
         _t0="$(progress_clock)"   # the mode's own wall for its row (R-1676 (c)): m4's takes its compile and link
-        if [ "$m" = m3 ]; then ( cd "$TMP" && run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 2s "$SCRIP" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
+        if [ "$m" = m3 ]; then if hr_get "$b"; then cp "$HR_OUT" "$TMP/o"; rc=$HR_RC; else ( cd "$TMP" && run_at_declared_table "$DECL" "$b" -- "$TIMEOUT_RETRY" 2s "$SCRIP" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?; fi
         else ( cd "$TMP" && exec "$TIMEOUT_RETRY" 8s "$SCRIP" --compile --out="$TMP/rj.s" "$f" </dev/null >"$TMP/o" 2>&1 ); rc=$?
              if [ "$rc" = 0 ]; then
                  if ( cd "$TMP" && cc -m64 -no-pie rj.s -o rj -L"$HERE/../../SCRIP/out" -lscrip_rt -lm -Wl,-rpath,"$HERE/../../SCRIP/out" >/dev/null 2>&1 ); then
@@ -356,7 +366,7 @@ if [ -z "$_cc" ]; then _cc="$(outside_shape_stamp pat "$TOTAL" "$OUTSIDE")" || e
 # acceptance tests fpc -Miso never builds (UNGRADABLE.tsv's ORACLE_REFUSES, re-probed above) were already outside TOTAL; their NO_ORACLE_ANSWER rows
 # now name them on the row, so shipped = denominator + Excl reads as every other package's does. Counted through lib_inventory.sh's one reader.
 _pat_excl="$(inventory_excluded_names "$SUITE" | grep -c . || true)"
-python3 "$HERE/util_score_row.py" write --lang pascal --column vendor --suite PAT --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang pascal --column vendor --suite PAT --modes "${S4E_MODES:-m3,m4}" \
     --suite-pass "$BOTH" --suite-total "$TOTAL" --excluded "${_pat_excl:-0}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" \
