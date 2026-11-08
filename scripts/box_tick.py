@@ -426,6 +426,23 @@ def regenerate_view():
     return "view=failed"
 
 
+RESULTS_TAIL = 8388608
+
+
+def rows_recent(seconds):
+    cut = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(time.time() - seconds))
+    try:
+        with open(PROG + "/results.tsv", "rb") as f:
+            size = f.seek(0, 2)
+            f.seek(max(0, size - RESULTS_TAIL))
+            lines = f.read().decode("utf-8", "replace").split("\n")
+    except OSError:
+        return 0
+    if size > RESULTS_TAIL:
+        lines = lines[1:]
+    return sum(1 for ln in lines if ln[:4].isdigit() and ln[:19] >= cut)
+
+
 def tick():
     os.makedirs(TICK_DIR, exist_ok=True)
     lock = open(TICK_DIR + "/tick.lock", "a+")
@@ -457,9 +474,10 @@ def tick():
         gq = 0
         try: gq = int(re.search(r"ready=(\d+)", subprocess.run(["python3", "-I", ROOT + "/harness/scripts/util_queue.py", "stats-tube", GRADE_TUBE], capture_output=True, text=True, timeout=10).stdout).group(1))
         except Exception: pass
+        rph, lap = rows_recent(3600), rows_recent(86400)
         with open(PROG + "/BOX.state.tmp", "w") as f:
-            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\n%s\n%s\n"
-                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, st["alarm"], n,
+            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n%s\n"
+                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, st["alarm"], n, rph, lap,
                        grader.replace(" ", "\n").replace("grader\n", "grader_"), liveset if liveset.startswith("liveset=") else "liveset=" + liveset))
         os.replace(PROG + "/BOX.state.tmp", PROG + "/BOX.state")
     except Exception as e:
@@ -492,16 +510,29 @@ def probe_width():
     return 0 if ok else 1
 
 
+def probe_rows():
+    try:
+        tail = min(os.path.getsize(PROG + "/results.tsv"), RESULTS_TAIL)
+    except OSError:
+        tail = 0
+    h, d = rows_recent(3600), rows_recent(86400)
+    ok = 1 if tail > 0 else 0
+    print("ROWS_PROBE rows_per_hour=%d lap_rows_24h=%d tail_bytes=%d ok=%d" % (h, d, tail, ok))
+    return 0 if ok else 1
+
+
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else "--tick"
     if arg == "--tick":
         sys.exit(tick())
     if arg == "--probe-width":
         sys.exit(probe_width())
+    if arg == "--probe-rows":
+        sys.exit(probe_rows())
     if arg == "--probe-feed":
         sys.exit(probe_feed())
     if arg == "--probe-stall":
         sys.exit(probe_stall())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-feed | --probe-stall | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --decide"); sys.exit(2)
