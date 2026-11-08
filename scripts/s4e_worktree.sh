@@ -108,6 +108,10 @@ new_wt() {
     valid_name "$name" || die "REFUSE(2): name '$name' must be [A-Za-z0-9._-], not dot-led" 2
     [ -e "$wt" ] && die "REFUSE(1): $wt exists -- rm $name first" 1
     wt_cap_check
+    if [ -z "$row" ] && [ -n "$SEAT" ]; then   # no --row: the seat's one live claim names the baton, so done and park remove this worktree (the coo 2026-11-08 12:39: WT_MAX full of landed work)
+        row="$(for c in "$PO/claims"/*.claim; do [ -f "$c" ] && [ "$(head -1 "$c")" = "$SEAT" ] && ! grep -qx DONE "$c" && basename "$c" .claim; done | awk 'NR == 1 { x = $0 } END { if (NR == 1) print x }')"
+        [ -n "$row" ] || echo "WARN: no --row and not exactly one live claim of $SEAT: no baton names $wt, so rm it by hand when done" >&2
+    fi
     if [ -n "$row" ]; then
         valid_name "$row" || die "REFUSE(2): --row '$row' must be [A-Za-z0-9._-], not dot-led" 2
         [ -f "$BATONS/$row.task.md" ] || die "REFUSE(2): no baton $BATONS/$row.task.md for --row $row" 2
