@@ -40,7 +40,7 @@ PY
 cd "$T" || refuse "cannot enter $T"
 rc=0
 "$SCRIP" --dump-ir probe.pl < /dev/null > probe.ir 2>/dev/null || refuse "--dump-ir refused"
-graph() { awk -v want="; proc $1" '$0 == want {p=1; next} p && /^; proc / {exit} p' probe.ir; }
+graph() { awk -v want="$1" '$1 == ";" && $2 == "proc" && $3 == want {p=1; next} p && /^; proc / {exit} p' probe.ir; }
 gm="$(graph problem/2 | grep -c '"\$mkground"')"; gc="$(graph problem/2 | grep -c '"\$mkc"')"; fm="$(graph flat/1 | grep -c '"\$mkground"')"; fc="$(graph flat/1 | grep -c '"\$mkc"')"
 [ -n "$(graph problem/2)" ] && [ -n "$(graph flat/1)" ] || refuse "the probe's graphs problem/2 and flat/1 are not in the IR dump"
 if [ "$gm" = 2 ] && [ "$gc" = 0 ] && [ "$fm" = 0 ] && [ "$fc" = 1 ]; then echo "  ok   arm 1 (IR): problem/2 carries 2 \$mkground and 0 \$mkc; flat/1 carries 0 \$mkground and 1 \$mkc"
