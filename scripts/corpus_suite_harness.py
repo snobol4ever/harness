@@ -3621,8 +3621,19 @@ def _one_runner_guard(suite_path=None, corpus_root=None, lang=None):
     sys.stderr.write("\u26d4 REFUSE(2) ONE RUNNER, ONE BOARD -- ONE RUNNER PER LANGUAGE: a %s rungs/package run is a board and seat %s is not %s, the seat MODE LANES: names for %s. Every language HQ runs its OWN language suites, once per landing, on origin HEAD, and writes its own rows (Lon 2026-09-16 10:5x, RULES.md § ONE RUNNER PER LANGUAGE, R-775); another language board is an ASK to that language HQ.\n" % (blang, seat or "?", " or ".join(who) if who else "<no seat -- the LANES line names none>", blang))
     sys.exit(2)
 
+def _pkg_ipath_for(args):
+    if getattr(args, "lang", None) != "icon" or not args.sno: return
+    cf = Path(args.sno).resolve().parent / "CONTRACT.tsv"
+    if not cf.is_file(): return
+    for line in cf.read_text().splitlines():
+        f = line.split("\t")
+        if len(f) >= 3 and f[0] == "ipath" and (cf.parent / f[1]).is_dir():
+            os.environ["IPATH"] = os.pathsep.join(x for x in (str((cf.parent / f[1]).resolve()), os.environ.get("IPATH", "")) if x)
+
+
 def cmd_run(args):
     paths = resolve_paths()
+    _pkg_ipath_for(args)
     _dseat = os.environ.get("S4E_SEAT") or ""
     if not _dseat:
         try:
