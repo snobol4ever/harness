@@ -83,6 +83,7 @@ trap 'rm -rf "$TMP"' EXIT
 # each program runs in BOTH modes at what its row in ALL.csv declares -- heap_kb, stack_kb, read once through lib_declared_arena.sh,
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSED-TO-GRADE: lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$TMP/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSED-TO-GRADE: a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 cd "$TMP"   # rungs harness convention (test_gate_em_beauty_subsystems_mode4.sh): graded programs run
@@ -105,6 +106,15 @@ PROG_ROWS="$TMP/progress.tsv"; : >"$PROG_ROWS"
 echo "=== FPC vendored-suite grade ($TOTAL pairs, $SUITE) ==="
 
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one part or a request's entries, rows as each test ends
+hr_begin "$TMP/hr"
+for name in "${PAIRS[@]}"; do
+    rr_admits "$name" || continue
+    [ -n "${REFUSE_SET[$name]:-}" ] && continue
+    [ -n "$(declared_out_files_from_table "$DECL" "$name")" ] && continue
+    _in="$SUITE/$name.in"; [ -f "$_in" ] || _in=/dev/null
+    hr_row "$name" "$SUITE/$name.pas" "$_in" "${TMO_OF[$name]:-$RUN_TIMEOUT}" "$TMP" $(declared_compile_args_from_table "$DECL" "$name") $(declared_switches_from_table "$DECL" "$name")
+done
+hr_run "$SCRIP"
 for name in "${PAIRS[@]}"; do
     rr_admits "$name" || continue; rr_yield "$name" && break; rr_flush "$PROG_ROWS"
     export S4E_TIMEOUT_KEY="$name"
@@ -158,7 +168,11 @@ for name in "${PAIRS[@]}"; do
     # carries fpc's own exit status for every entry that is not 0, same filename and format as the Icon
     # rungs'. An entry absent from that file expects 0. A line there is the oracle's answer, not a waiver.
     _t0="$(progress_clock)"
-    m3out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --run "$pas" < "$inp" 2>/dev/null); m3rc=$?
+    if hr_get "$name"; then
+        m3out="$(cat "$HR_OUT")"; m3rc=$HR_RC
+    else
+        m3out=$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --run "$pas" < "$inp" 2>/dev/null); m3rc=$?
+    fi
     S3="$(progress_secs_since "$_t0")"
     wantrc=$(awk -F'\t' -v n="$name" '$1==n{print $2; exit}' "$WANTRC" 2>/dev/null); [ -n "$wantrc" ] || wantrc=0
     if [ "$m3out" = "$exp" ] && [ "$m3rc" = "$wantrc" ]; then
@@ -282,7 +296,7 @@ _lastout="$(awk -F'\t' '$1=="fpc"{print $12; exit}' "$(. "$HERE/lib_suites_tsv.s
 if [ -z "$_cc" ] && [ -n "$_lastout" ] && [ "$_lastout" != 0 ]; then
     _cc="$(date +%F):R-1228-programs-iso-7185-refuses-and-fpc-Miso-runs-are-graded-as-expected-refusals-$NREF-named-in-ISO_EXPECTED_REFUSALS.tsv-denominator-$TOTAL-OUTSIDE=0"
 fi
-python3 "$HERE/util_score_row.py" write --lang pascal --column vendor --suite fpc --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang pascal --column vendor --suite fpc --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --suite-pass "$BOTH_PASS" --suite-total "$TOTAL" \
     --measurer "${S4E_SEAT:-}" --text "both-modes $BOTH_PASS/$TOTAL · m3 $M3_PASS/$TOTAL · m4 $M4_PASS/$TOTAL (m3_fail=$M3_FAIL m4_fail=$M4_FAIL reject=$REJECT expected_refusals=$NREF${INV_LINE:+ · $INV_LINE (\`test_pascal_fpc_suite.sh\`)})" \
