@@ -112,13 +112,16 @@ def preinsert(lines):
 SCRIP_BIN = os.path.join(ROOT, 'scrip')
 PARSER_CMD = [PARSER] if os.path.exists(PARSER) else [SCRIP_BIN, '--dump-ast']
 UNRESOLVED = re.compile(r'^icon: import: cannot find package ')
+IMPORTED = re.compile(r'^icon: parse error in imported file ')
 def parse_error(path):
     r = subprocess.run(PARSER_CMD + [os.path.basename(path)], cwd=os.path.dirname(os.path.abspath(path)), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True, timeout=60)
     if r.returncode == 0: return None
     first = (r.stderr or '').strip().splitlines()[0] if (r.stderr or '').strip() else 'parse error (no message)'
     if UNRESOLVED.match(first): UNRESOLVED_SEEN[os.path.abspath(path)] = first; return None
+    if IMPORTED.match(first): IMPORTED_SEEN[os.path.abspath(path)] = first; return None
     return first
 UNRESOLVED_SEEN = {}
+IMPORTED_SEEN = {}
 def string_close(lines, L, C):
     s = lines[L - 1]; i = C - 1
     if i >= len(s) or s[i] not in '"\'': return None
@@ -197,5 +200,7 @@ def main(argv):
         if err: bad += 1; print('STILL REFUSED %s: %s' % (f, err[:160]))
         u = [v for k, v in UNRESOLVED_SEEN.items() if k in (os.path.abspath(f), os.path.abspath(t))]
         if u and not err: print('PARSED %s, its import unresolved (the package resolver runs after the parse; not this converter\'s): %s' % (f, u[-1][:160]))
+        v = [x for k, x in IMPORTED_SEEN.items() if k in (os.path.abspath(f), os.path.abspath(t))]
+        if v and not err: print('PARSED %s, a file it imports refuses (that file is converted on its own; its error is never applied here): %s' % (f, v[-1][:160]))
     print('files=%d changed=%d still_refused=%d' % (len(files), changed, bad)); return 1 if bad else 0
 if __name__ == '__main__': sys.exit(main(sys.argv[1:]))
