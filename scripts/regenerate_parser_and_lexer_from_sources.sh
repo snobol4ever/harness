@@ -20,8 +20,16 @@ P="$SCRIP/src/parsers"
 # ⛔ THE INVOCATION TABLE MOVED TO ../harness/scripts/lib_gen_parsers.sh (hq_T 2026-09-04) and this script is now one of its TWO readers -- the
 # other is test_gate_parser_generated_files_in_sync.sh, which grades the committed outputs against exactly these commands. It was one
 # table with one reader; a gate that carried its own copy would grade the tree against a second, silently drifting idea of the flags.
-gen() { echo "GEN $1/$2"; ( cd "$P/$1" && eval "$3" ); gen_postprocess "$P/$1/$2" $( [ -f "$P/$1/${2%.c}.h" ] && echo "$P/$1/${2%.c}.h" ); }
-while IFS=$'\t' read -r d src out cmd; do gen "$d" "$out" "$cmd"; done < <(gen_parsers_table)
+gen() {
+    local w f produced; echo "GEN $1/$2"; w="$(mktemp -d)"
+    cp "$P/$1/$4" "$w/$4"
+    ( cd "$w" && eval "$3" )
+    produced="$(cd "$w" && ls -1 | grep -v -x -F -e "$4" | sort)"
+    ( cd "$w" && gen_postprocess $produced )
+    for f in $produced; do cmp -s "$w/$f" "$P/$1/$f" || cp "$w/$f" "$P/$1/$f"; done
+    rm -rf "$w"
+}
+while IFS=$'\t' read -r d src out cmd; do gen "$d" "$out" "$cmd" "$src"; done < <(gen_parsers_table)
 echo "DONE -- generated files now differing from HEAD (empty = the committed outputs already match their sources):"
 git -C "$SCRIP" status --short -- src/parsers | grep -E '\.tab\.[ch]|\.lex\.c|lex\.[a-z]+\.c' | sed 's/^/   /' || true
 echo "commit .y/.l and their outputs together; prove object identity with: bash ../harness/scripts/util_style200_oracle_yl.sh src/parsers/*/*.y src/parsers/*/*.l"
