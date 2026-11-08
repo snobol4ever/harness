@@ -24,3 +24,5 @@ corpus/packages/raku/roast/FUDGED-ORACLE.tsv	written by the roast measure-first 
 shapes.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
 locals.raku	hq_raku's witness, to be added as a rung by its landing (skill raku reference)
 /home/resources/progress/LAP.tsv	written by the first lap through the grade tube (test-cycle step 7); absent until then
+DIR/prolog_prelude.s	the prelude unit scrip --compile --prelude-out DIR writes (CTO-551, prolog-engine reference section 6): an output in the caller DIR, never a file of the tree
+DIR/prolog_prelude.warm.pl	the empty program of the mode-4 warm compile, created and unlinked by the driver (CTO-551, prolog-engine reference section 6), never a file of the tree
