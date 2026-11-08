@@ -34,6 +34,7 @@ SCRIP="${SCRIP:-$SD/scrip}"; RT_DIR="${RT_DIR:-$SD/out}"; T="${TIMEOUT:-60}"
 # --binaries is the one check, each program runs in m3 alone with its declared heap and stack as switches, its rows are keyed testpgms@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
+NO_M4="$PORT"; [ "${S4E_MODES:-m3,m4}" = m3 ] && NO_M4=1
 ROWKEY=testpgms; [ "$PORT" = 1 ] && ROWKEY="testpgms@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
@@ -84,7 +85,7 @@ declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a de
 PROG_ROWS="$W/progress.tsv"; : > "$PROG_ROWS"
 CANON_SUITE="$ROOT/corpus/packages/snobol4/spitbol_testpgms"
 PROG_RECORD=0; { [ "$SUITE" = "$CANON_SUITE" ] || [ -n "${S4E_PROGRESS_DB:-}" ]; } && PROG_RECORD=1
-prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\ttestpgms\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "${4:-}" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
+prog_row() { [ "$NO_M4" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\ttestpgms\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "${4:-}" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
 verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then echo CRASH; else echo FAIL; fi; }
 # graded_same <scrip-stdout> -- the one comparison, both modes (R-1316): stdout byte for byte against the oracle's stdout, or against
 # its body with the post-mortem block removed; and for a post-mortem answer, SCRIP's stderr (<stdout>.err) rendered through the one
@@ -163,7 +164,7 @@ for p in $progs; do
             _t0="$(progress_clock)"; m3="$W/$p.m3"; (cd "$W" && run_at_declared_table "$DECL" "$p" -- "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt $ca $SZ "$p.spt" < "$(stdin_of "$p")" > "$m3" 2>"$m3.err"); r3=$?; ROW_S3="$(progress_secs_since "$_t0")"
             fi
             got3="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$m3.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
-            if [ "$PORT" = 1 ]; then r4=""   # a port has no mode 4: no compile, no row
+            if [ "$NO_M4" = 1 ]; then r4=""   # a port has no mode 4: no compile, no row
             else
             _t0="$(progress_clock)"; s4="$W/$p.s"; (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt --compile $ca "$p.spt" > "$s4" 2>"$s4.err") </dev/null; r4=$?; ROW_S4="$(progress_secs_since "$_t0")"
             got4="$(python3 "$HERE/util_render_error_voice.py" spitbol < "$s4.err" | python3 "$HERE/util_spitbol_compile_refusal.py" pairs -)"
@@ -183,11 +184,11 @@ for p in $progs; do
             elif [ "$r3" -ne 0 ] && [ ! -s "$m3" ] && [ "$got3" = "$cr_pairs" ]; then M3P=$((M3P+1)); _p3=1
             else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got3" | tr '\t\n' ': ')], stdout $(grep -c '' "$m3") line(s))
 "; fi
-            if [ "$PORT" = 1 ]; then :
+            if [ "$NO_M4" = 1 ]; then :
             elif [ "$r4" -ne 0 ] && [ ! -s "$s4" ] && [ "$got4" = "$cr_pairs" ]; then M4P=$((M4P+1)); _p4=1
             else M4F=$((M4F+1)); RED_LINES="$RED_LINES  RED  $p m4 (compile rc=$r4; sbl refuses at compile, line:code $want; SCRIP's rendered voice read [$(printf '%s' "$got4" | tr '\t\n' ': ')], assembly $(grep -c '' "$s4") line(s))
 "; fi
-            if [ "$_p3" = 1 ] && { [ "$PORT" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
+            if [ "$_p3" = 1 ] && { [ "$NO_M4" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
             if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS
             elif [ "$PORT" = 1 ]; then prog_row "$p" m3 FAIL "sbl refuses at compile ($want, rc $orc); the engine rc=$r3, stdout against sbl's: $(diff "$ora.pm" "$m3.pm" 2>/dev/null | grep -c '^[<>]') line(s) differ"
             else prog_row "$p" m3 FAIL "sbl refuses at compile ($want); SCRIP rc=$r3"; fi
@@ -281,7 +282,7 @@ for p in $progs; do
     _p3=0
     if graded_same "$m3"; then M3P=$((M3P+1)); _p3=1; else M3F=$((M3F+1)); RED_LINES="$RED_LINES  RED  $p m3 (rc=$r3, $(why_red "$m3"))
 "; fi
-    if [ "$PORT" = 1 ]; then _p4=0; r4=""   # a port has no mode 4: no compile, no row
+    if [ "$NO_M4" = 1 ]; then _p4=0; r4=""   # a port has no mode 4: no compile, no row
     else
     s4="$W/$p.s"; b4="$W/$p.bin"; _t0="$(progress_clock)"
     (cd "$W" && "$TIMEOUT_RETRY" "$T" "$SCRIP" $cmpt --compile $ca "$p.spt" > "$s4" 2>/dev/null) </dev/null
@@ -298,7 +299,7 @@ for p in $progs; do
     fi
     # written as an if, not an && chain: this file is set -uo pipefail today, but an && chain whose last
     # link is false returns non-zero and would abort the loop the day someone adds -e.
-    if [ "$_p3" = 1 ] && { [ "$PORT" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
+    if [ "$_p3" = 1 ] && { [ "$NO_M4" = 1 ] || [ "$_p4" = 1 ]; }; then BOTH=$((BOTH+1)); fi   # a port's AND is its one mode
     if [ "$_p3" = 1 ]; then prog_row "$p" m3 PASS; else prog_row "$p" m3 "$(verdict_of "$r3")" "rc=$r3"; fi
     if [ "$_p4" = 1 ]; then prog_row "$p" m4 PASS
     elif [ "$r4" = 125 ]; then prog_row "$p" m4 FAIL "mode-4 compile or link failed"
