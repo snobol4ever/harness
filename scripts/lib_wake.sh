@@ -28,8 +28,13 @@ s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one pe
         printf '%s\n' "$_s"
     done
 }
+s4e_operating_boss() {   # COO-496: the one seat on MODE's BOSSES: line whose TIERS tier is 2 (the coo today); prints nothing when there is none
+    local _b _s; _b="$(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"
+    for _s in $_b; do [ "$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $7; exit}' "$(s4e_wake_tiers)" 2>/dev/null)" = 2 ] && { printf '%s\n' "$_s"; return 0; }; done; return 0; }
 s4e_wake_hint() {   # <tube> <topic> <verb>
     local _tube="$1" _t="$2" _v="$3" _seats _n _pick _name _others _s _tier
+    local _ob _me _ov=""; _ob="$(s4e_operating_boss)"; _me="${ME:-${S4E_SEAT:-}}"   # COO-496: a mover that is not the operating boss wakes the operating boss, never a sleeping boss
+    if [ -n "$_ob" ] && [ "$_me" != "$_ob" ]; then case "$_tube" in tier-fable|ask-fable) _ov="$_ob";; seat-*) [ "$(awk -F'\t' -v s="${_tube#seat-}" '!/^#/ && $1==s {print $7; exit}' "$(s4e_wake_tiers)" 2>/dev/null)" = 1 ] && _ov="$_ob";; esac; fi
     case "$_tube" in
         seat-*) _seats="${_tube#seat-}";;
         ask-fable) _seats="$(sed -n 's/^ON-CALL:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1 | awk '{print $1}')"; [ -n "$_seats" ] || _seats="$(s4e_wake_live_of_tier fable | tr '\n' ' ')";;   # a design ask goes to the seat MODE names ON-CALL (the cto)
@@ -37,6 +42,7 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
         ask-*) _tier="${_tube#*-}"; _seats="$(s4e_wake_live_of_tier "$_tier" | tr '\n' ' ')";;
         *) return 0;;
     esac
+    [ -n "$_ov" ] && _seats="$_ov"
     set -- $_seats; _n=$#; [ "$_n" -gt 0 ] || { printf 'WAKE: nobody of %s is in the live set (MODE FLEET: IDLE EXCEPT); the job waits in %s until a seat of that tier is spawned or the line is widened.\n' "$_tube" "$_tube"; return 0; }
     _pick=$(( $(printf '%s' "$_t" | cksum | cut -d' ' -f1) % _n + 1 )); eval "_s=\${$_pick}"
     _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
