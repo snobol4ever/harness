@@ -100,6 +100,7 @@ RUN="$W/run"; mkdir -p "$RUN"
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board. Line 2 hands the guard the
 # same suite this loop grades (DOTNET_SUITE), so a scratch fixture is judged as one and the canonical suite as a board.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSE(rc=2): lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 # ⭐ THE PROGRESS DATABASE (R-319/331; R-383 ruling 2; row snobol4-snoflake-aisnobol-and-dotnet-runners-wired-onto-
@@ -150,6 +151,17 @@ mask_dot() { # $1=text $2=name $3=side -> the text masked per ALL.mask (the harn
     printf '%s' "$out"
 }
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one chunk or a request's entries, rows as each test ends
+if [ "$PORT" = 0 ]; then
+    hr_begin "$W/hr"
+    for sno in "$SUITE"/*.sno; do
+        _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue
+        [ -e "$sno" ] || continue
+        name="$(basename "$sno" .sno)"
+        [ -n "$(declared_out_files_from_table "$DECL" "$name")" ] && continue
+        hr_row "$name" "$sno" "$(stdin_of "$sno")" "${TIMEOUT%s}" "$RUN" "env=SNO_LIB=$SUITE" $(declared_compile_args_from_table "$DECL" "$name") $(declared_switches_from_table "$DECL" "$name")
+    done
+    hr_run "$SCRIP"
+fi
 for sno in "$SUITE"/*.sno; do
     _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue; rr_yield "$_rrn" && break; [ "$PROG_RECORD" = 1 ] && rr_flush "$PROG_ROWS"
     [ -e "$sno" ] || { echo "⛔ REFUSE(rc=2): zero fixtures in $SUITE"; exit 2; }
@@ -193,7 +205,11 @@ for sno in "$SUITE"/*.sno; do
     ca="$(declared_compile_args_from_table "$DECL" "$name")" || exit 2
     SZ=""; [ "$PORT" = 1 ] && { SZ="$(declared_switches_from_table "$DECL" "$name")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
     _t0="$(progress_clock)"
+    if hr_get "$name"; then
+        got3="$(cat "$HR_OUT")"; cp "$HR_ERR" "$W/err3"; rc3=$HR_RC
+    else
     got3="$(cd "$RUN" && run_at_declared_table "$DECL" "$name" -- env SNO_LIB="$SUITE" "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $SZ "$sno" < "$inp" 2>"$W/err3")"; rc3=$?
+    fi
     ROW_S3="$(progress_secs_since "$_t0")"
     if [ "$DIED" = 1 ]; then got3="$(mask_dot "$(fatal_render "$got3" "$W/err3")" "$name" scrip)"; else got3="$(mask_dot "$got3" "$name" scrip)"; fi
     [ -n "${DOTNET_DEBUG_DIR:-}" ] && { printf '%s' "$gotS" > "$DOTNET_DEBUG_DIR/$name.oracle"; printf '%s' "$got3" > "$DOTNET_DEBUG_DIR/$name.m3"; cp "$W/err3" "$DOTNET_DEBUG_DIR/$name.err3" 2>/dev/null; }   # what this runner compared, on request (a red a reader cannot see is a red nobody can cure)
@@ -277,7 +293,7 @@ echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the
 # line, plus the EXCLUDED.tsv programs of this run's outside set -- the denominator does not move, only its classification.
 CONT_N="$(inventory_containers_of "${INV_LINE:-}")"; EXCL_ROW=$((EXCL_D_N + CONT_N))
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp dotnet "$DENOM" "$UNSCR" "$EXCL_ROW" "$CONT_N")" || exit 2
-python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite dotnet --suite-key dotnet --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite dotnet --suite-key dotnet --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BOTH" --suite-total "$DENOM" --excluded "$EXCL_ROW" \
     --text "dotnet both_modes_pass=$BOTH/$DENOM ($TOTAL shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, EXCLUDED.tsv, R-1286) OUTSIDE=$UNSCR, graded $BOTH/$SCORED ( programs SPITBOL runs clean · $UNSCR outside the SPITBOL baseline, named with the oracle's own refusal and a source check in OUTSIDE_SPITBOL_BASELINE.tsv, Lon 2026-09-08) · m3 $P3/$SCORED · m4 $P4/$SCORED (of $TOTAL shipped · sbl -bf the one oracle · live oracle diff, no refs)${INV_LINE:+ · $INV_LINE} (\`test_snobol4_dotnet_suite.sh\`)" \
