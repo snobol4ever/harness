@@ -59,6 +59,7 @@ OUT_CAP="${SNOFLAKE_OUT_CAP:-16777216}"
 # --binaries is the one check, each fixture runs in m3 alone with its declared heap and stack as switches, its rows are keyed snoflake@<engine>
 # by the one writer, and no SCRIP score row is written -- the port's row is from-progress. Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
+NO_M4="$PORT"; [ "${S4E_MODES:-m3,m4}" = m3 ] && NO_M4=1
 ROWKEY=snoflake; [ "$PORT" = 1 ] && ROWKEY="snoflake@$(one_runner_engine)"
 if [ "$PORT" = 1 ]; then SCRIP="$(one_runner_port_face)"; one_runner_port_ready snobol4 || exit 2; else
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP — build first (make)"; exit 2; }
@@ -155,7 +156,7 @@ BASE=0; BASE_BOTH=0; OUTSIDE_N=0; OUTSIDE_LIST=""; RAN_SET=""; OUTSIDE_TSV="$SUI
 # every pattern here silently moves fixtures OUT of the denominator, which is the direction that
 # flatters the board. One pattern per line, each with the date and seat that measured it.
 ORACLE_REFUSAL_RE='No END statement found in source file'   # measured 2026-09-08 (coo)
-prog_row() { [ "$PORT" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tsnoflake\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
+prog_row() { [ "$NO_M4" = 1 ] && [ "$2" = m4 ] && return 0; printf 'package\tsnoflake\tsnobol4\t%s\t%s\t%s\t%s\t%s\n' "$1" "$2" "$3" "$(progress_row_secs "$2")" "$4" >> "$PROG_ROWS"; }   # secs: ROW_S3/ROW_S4, each mode's own wall (R-1676 (c))
 verdict_of() { if [ "$1" -eq 124 ]; then echo HANG; elif [ "$1" -ge 128 ]; then echo CRASH; else echo FAIL; fi; }
 SCRIP_HASH="$(git -C "$SD" rev-parse --short HEAD 2>/dev/null || echo '?')"
 TREE_LABEL="SCRIP $SCRIP_HASH"; [ "$PORT" = 1 ] && TREE_LABEL="engine $(one_runner_port_tree)"
@@ -397,8 +398,8 @@ for sno in "$SUITE"/*.sno; do
         [ "$ORACLE_MEETS_EXPECT" = 0 ] && { DIA=$((DIA+1)); DIAL="$DIAL $name"; }
     else [ "$NSTD" = 1 ] && N3F=$((N3F+1)) || { F3=$((F3+1)); FL3="$FL3 $name"; }
         OUT3="$(verdict_of "$RC")"; NOTE3="rc=$RC vs sbl -bf"; [ "$NSTD" = 1 ] && { NOTE3="@nonstandard by snoflake's own header, yet SPITBOL runs it, so it is graded in the baseline; $NOTE3"; }; fi
-    _t0="$(progress_clock)"; OUT4=""; NOTE4=""; m4rc=3; [ "$PORT" = 1 ] || { compile_m4 "$sno" "$W/prog.bin"; m4rc=$?; }
-    if [ "$PORT" = 1 ]; then :   # a port has no mode 4: no compile, no row
+    _t0="$(progress_clock)"; OUT4=""; NOTE4=""; m4rc=3; [ "$NO_M4" = 1 ] || { compile_m4 "$sno" "$W/prog.bin"; m4rc=$?; }
+    if [ "$NO_M4" = 1 ]; then :   # a port has no mode 4: no compile, no row
     elif [ "$m4rc" -eq 0 ]; then
         run_one m4 "$sno"; M4RC=$RC
         _g="$(mask_apply "$GOT"; printf .)"; _g="${_g%.}"; if oracle_equal "$_g" "$ORACLE_CMP"; then [ "$NSTD" = 1 ] && N4P=$((N4P+1)) || P4=$((P4+1))
@@ -416,9 +417,9 @@ for sno in "$SUITE"/*.sno; do
     [ "${M3RC:-0}" -eq 124 ] && { OUT3=HANG; NOTE3="SCRIP hit the $TIMEOUT timeout; $NOTE3"; }
     [ "${M4RC:-0}" -eq 124 ] && { OUT4=HANG; NOTE4="SCRIP hit the $TIMEOUT timeout; $NOTE4"; }
     [ "$OUT3" = PASS ] && ST3=$((ST3+1)); [ "$OUT4" = PASS ] && ST4=$((ST4+1))
-    [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH_STREAM=$((BOTH_STREAM+1))   # a port's AND is its one mode
+    [ "$OUT3" = PASS ] && { [ "$NO_M4" = 1 ] || [ "$OUT4" = PASS ]; } && BOTH_STREAM=$((BOTH_STREAM+1))   # a port's AND is its one mode
     if [ "$OUTSIDE" = 1 ]; then OUT3=UNGRADED; OUT4=UNGRADED; NOTE3="OUTSIDE_SPITBOL_BASELINE: SPITBOL itself does not run it -- $OERR"; NOTE4="$NOTE3"
-    elif [ "$OUT3" = PASS ] && { [ "$PORT" = 1 ] || [ "$OUT4" = PASS ]; }; then BASE_BOTH=$((BASE_BOTH+1)); fi
+    elif [ "$OUT3" = PASS ] && { [ "$NO_M4" = 1 ] || [ "$OUT4" = PASS ]; }; then BASE_BOTH=$((BASE_BOTH+1)); fi
     ROW_S4="$(progress_secs_since "$_t0")"
     prog_row "$name" m3 "$OUT3" "$NOTE3"; prog_row "$name" m4 "$OUT4" "$NOTE4"
     if [ -n "$CSN" ]; then
