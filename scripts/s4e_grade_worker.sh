@@ -159,6 +159,7 @@ import os, sys, json, time, subprocess, shutil, re
 S4E, TUBE, N, ONCE, LOG, TMO, SCR = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] == "1", sys.argv[5], int(sys.argv[6]), sys.argv[7]
 sys.path.insert(0, os.path.join(S4E, "harness", "scripts"))
 import util_queue
+import lib_grade_locks as GL
 gs, c = util_queue.client()
 EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
 CONTAINER = {"snobol4": "sno-rungs", "icon": "icn-rungs", "prolog": "pl-rungs", "pascal": "pas-rungs", "raku": "raku-rungs", "snocone": "snc-rungs", "rebus": "reb-rungs"}
@@ -280,15 +281,28 @@ def one():
             if part is None: why = "refused: package %r cell %r" % (suite, cell)
             elif not os.path.isfile(script): why = "refused: no runner %s for %r" % (words[0], suite)
         else: why = "refused: suite %r is kind %s in SUITE_RUNNERS.tsv (the grade worker launches master and pkg rows)" % (suite, kind)
-    if why is None and not SCR and re.fullmatch(r"[0-9a-f]{7,40}", tree or ""):   # fleet-control step 10b (the cio, 2026-11-07 14:3x): the grader's root is synced and
+    def behind():
+        head = subprocess.run(["git", "-C", os.path.join(S4E, "SCRIP"), "rev-parse", "--short=9", "HEAD"], capture_output=True, text=True).stdout.strip()
+        return not head.startswith(tree[:7]) and not tree.startswith(head[:7])
+    def resync():
+        if not behind(): return None   # another worker synced to this tree while this one waited
+        sy = subprocess.run(["bash", os.path.join(S4E, "harness", "scripts", "util_sync_root.sh")], env=ENV, capture_output=True, text=True, timeout=900)
+        mk = subprocess.run(["make", "-j8", "-C", os.path.join(S4E, "SCRIP")], env=ENV, capture_output=True, text=True, timeout=1800) if sy.returncode == 0 else None
+        if sy.returncode != 0 or mk.returncode != 0:
+            return "refused: the grader root could not reach tree %s (sync rc %d, make rc %s): %s" % (tree, sy.returncode, mk.returncode if mk else "-", ((sy.stdout + sy.stderr) if sy.returncode else (mk.stdout + mk.stderr)).strip()[-160:].replace("\n", " | "))
+        return None
+    # THE ROOT LOCK (test-cycle, the cio's (2)(i), 2026-11-08): every launch holds the grader root shared from here to its record step; a sync takes it exclusive
+    # (gate first, so no new board starts while it waits); the controller's sync never waits (rc 75). A job whose tree the root already carries takes no sync.
+    held = None
+    if why is None:
+# fleet-control step 10b (the cio, 2026-11-07 14:3x): the grader's root is synced and
         # built to the job's tree before the launch, else the harness refuses rc 2 on a stale binary (jobs 1109 and 1110 were buried so at 20:31Z: the root sat
         # at b09977688 while the jobs named eedd882b7). The sync takes the fetch slot, the make the compile slots and the build cache (a clean tree fetches).
-        head = subprocess.run(["git", "-C", os.path.join(S4E, "SCRIP"), "rev-parse", "--short=9", "HEAD"], capture_output=True, text=True).stdout.strip()
-        if not head.startswith(tree[:7]) and not tree.startswith(head[:7]):
-            sy = subprocess.run(["bash", os.path.join(S4E, "harness", "scripts", "util_sync_root.sh")], env=ENV, capture_output=True, text=True, timeout=900)
-            mk = subprocess.run(["make", "-j8", "-C", os.path.join(S4E, "SCRIP")], env=ENV, capture_output=True, text=True, timeout=1800) if sy.returncode == 0 else None
-            if sy.returncode != 0 or mk.returncode != 0:
-                why = "refused: the grader root could not reach tree %s (sync rc %d, make rc %s): %s" % (tree, sy.returncode, mk.returncode if mk else "-", ((sy.stdout + sy.stderr) if sy.returncode else (mk.stdout + mk.stderr)).strip()[-160:].replace("\n", " | "))
+        need = not SCR and bool(re.fullmatch(r"[0-9a-f]{7,40}", tree or "")) and behind()
+        t1 = time.time()
+        held, w = GL.board_hold(need, resync, touch=lambda: c.touch(job), lock_dir=(SCR or None))
+        why = why or w
+        say("GRADE_TREE job=%d sync=%d waited=%ds" % (job.id, int(need), int(time.time() - t1)))
     if why is None:
         if kind == "master":
             cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
@@ -335,6 +349,7 @@ def one():
                 except Exception as e: say("GRADE_CELL_AFTER refused: %s" % e)
                 if snap and os.path.isfile(snap): os.remove(snap)
             else: say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=progress off, nothing recorded" % job.id)
+    GL.leave(held)
     action = "delete" if rc in (0, 1) and why is None else "bury"
     try:
         c.delete(job) if action == "delete" else c.bury(job, priority=pri)

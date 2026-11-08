@@ -17,6 +17,8 @@
 #   hot:   cpu PSI avg60 > 40, or avg10 > 60, or a grader memory event   -> W and A go down one at once (to WMIN, AMIN)
 #   else hold. Night (22:00-05:59) or FLEET: IDLE raises WMAX to BOX_WMAX_NIGHT (8); day WMAX is BOX_WMAX_DAY (4). AMAX is S4E_WORKERS_MAX (20).
 import os, sys, re, time, json, fcntl, resource, subprocess, glob, shutil, datetime, calendar
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import lib_grade_locks as GL
 
 ROOT = os.environ.get("S4E_HOME") or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PO = os.environ.get("S4E_POSTOFFICE") or os.environ.get("S4E_POST") or "/home/resources/postoffice"
@@ -258,8 +260,8 @@ def sync_grader():
     if forced is not None:
         return int(forced)
     try:
-        return subprocess.run(["bash", os.path.join(ROOT, "harness", "scripts", "util_sync_root.sh")], env=dict(os.environ, S4E_HOME=GRADER_HOME),
-                              capture_output=True, text=True, timeout=600, stdin=subprocess.DEVNULL).returncode
+        return GL.try_sync(lambda: subprocess.run(["bash", os.path.join(ROOT, "harness", "scripts", "util_sync_root.sh")], env=dict(os.environ, S4E_HOME=GRADER_HOME),
+                                                  capture_output=True, text=True, timeout=600, stdin=subprocess.DEVNULL).returncode)   # rc 75: a board is mid-launch, no sync, no kick
     except (OSError, subprocess.TimeoutExpired):
         return 2
 
