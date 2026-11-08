@@ -35,6 +35,11 @@ emit() { local v="$1"; shift; local r="$*"
         if [ "$v" = BLOCK ]; then printf '%s' "$r" | python3 -c 'import json,sys; print(json.dumps({"decision":"block","reason":sys.stdin.read()}))'; else echo '{}'; fi
     else echo "$v $r"; fi; }
 reason=""; what=""
+# THE BOSSES ARE NEVER HELD (Lon 2026-11-08 07:4x in the coo's window, verbatim: "I see a Stop hook error. Fix that." / "I do not want to see the words
+# "Stop hook error" EVER again."): every BLOCK this gate answers shows Lon those words, and a boss's wake is its own loop (the coo's /loop and Monitor) or a
+# pointer (the cio and the cto sleep until a command or a design question reaches them). A seat MODE BOSSES names passes at once; the banner still prints.
+bosses="$(sed -n 's/^BOSSES: *//p' "$PO/MODE" 2>/dev/null | head -1)"
+case " $bosses " in *" $seat "*) emit PASS "$seat is a boss (MODE BOSSES: $bosses): never held at its Stop; its own loop or a pointer wakes it"; exit 0;; esac
 fl="$(grep -m1 '^FLEET: IDLE' "$PO/MODE" 2>/dev/null)"
 if [ -n "$fl" ]; then
     ex="$(printf '%s' "$fl" | sed -n 's/^FLEET: IDLE EXCEPT \([^(]*\).*/\1/p')"
