@@ -577,7 +577,7 @@ _prog_rows = os.path.join(tmp, "progress_rows.tsv")
 with open(_prog_rows, "w") as _pf:
     for _i, (_fam, _goal, _exp) in enumerate(tests):
         if _i in OUTSIDE or rr_skip(_i): continue
-        for _m in ("m3", "m4"):
+        for _m in (("m3",) if os.environ.get("S4E_MODES", "").strip() == "m3" else ("m3", "m4")):
             _pf.write("package\tinria\tprolog\t%s#%d\t%s\t%s\t%.3f\toutcome-class-and-bindings\n"
                       % (_fam, _i, _m, "PASS" if bok.get((_i, _m), False) else "FAIL", isecs.get((_i, _m), 0.0)))
 assert sum(1 for _k, _v in bok.items() if _v and _k[1] == "m3") == bres["m3"][0] and sum(1 for _k, _v in bok.items() if _v and _k[1] == "m4") == bres["m4"][0], "the per-entry verdicts disagree with the bindings board's counters"
