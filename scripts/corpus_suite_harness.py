@@ -1070,6 +1070,12 @@ def read_mask_sidecar(ref_path):
                 refuse("%s: an ORACLE-ONLY row removes a line from the oracle's stream and is admitted only for a kept "
                        "enhancement the oracle lacks (R-1293, R-1316 (2)) -- its reason must cite R-1293; got %r" % (mp, ln))
             key = ("oracle_only", parts[1][len("ORACLE-ONLY:"):].rstrip("\r"))
+        elif pat.startswith("SNO:"):
+            # COO-489 (Lon 2026-11-08): SNO:<pattern> = <replacement> is one SNOBOL4 replacement statement, applied by the oracle sbl (see _sno_stream)
+            st = pat[len("SNO:"):].strip()
+            if "=" not in st:
+                refuse("%s: a SNO row is SNO:<pattern> = <replacement>, and this statement has no replacement after = -- got %r" % (mp, ln))
+            key = ("sno", st)
         else:
             key = ("line", int(m.group(1))) if m else ("regex", re.compile(pat))
         out.setdefault(parts[0].strip(), []).append((key, parts[2].strip()))
@@ -1100,6 +1106,34 @@ def masks_for(masks, name):
     still fails a fixture that would be mostly masked, and the reason column is still mandatory -- `*` widens WHICH
     entries a row is offered to, never WHAT a row is allowed to hide."""
     return list(masks.get("*", [])) + list(masks.get(name, []))
+# ⭐ COO-489 (Lon 2026-11-08, "how about a match/replace and be SMART about it"): a SNO row is one SNOBOL4 replacement statement applied ONCE to
+# every line of BOTH streams by the ORACLE sbl, never SCRIP, so a SCRIP defect cannot hide a red. &ANCHOR = 0 makes it an unanchored match:
+# only the matched part of a line changes, and the record count never does.
+SNO_ORACLE = "/home/resources/x64/bin/sbl"
+SNO_TIMEOUT = 30
+def _sno_stream(lines, stmts):
+    """The SNO rows of one entry, in file order, over one stream (a list of lines): one oracle run, exactly one output record per input record."""
+    if not os.access(SNO_ORACLE, os.X_OK):
+        refuse("SNO mask: the shared oracle sbl is missing at %s -- the mask cannot be applied (sbl_correctness_bin, lib_oracle_flags.sh)" % SNO_ORACLE)
+    prog = " &ANCHOR = 0\nL LINE = INPUT :F(END)\n" + "".join(" LINE %s\n" % st for st in stmts) + " OUTPUT = LINE :(L)\nEND\n"
+    scratch = Path("/tmp/s4e") / (os.environ.get("S4E_SEAT") or "unseated")
+    scratch.mkdir(parents=True, exist_ok=True)
+    fd, path = tempfile.mkstemp(prefix="snomask.", suffix=".sno", dir=str(scratch))
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(prog)
+        try:
+            r = subprocess.run([SNO_ORACLE, "-bf", path], input="\n".join(lines) + "\n", capture_output=True, text=True, timeout=SNO_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            refuse("SNO mask: the oracle sbl did not finish in %ds -- the mask cannot be applied (rows: %s)" % (SNO_TIMEOUT, "; ".join(stmts)))
+    finally:
+        os.unlink(path)
+    if r.returncode != 0 or not r.stdout.endswith("\n"):
+        refuse("SNO mask: the oracle sbl exited %d with no record stream on these rows -- a statement is not valid SNOBOL4, or it ends the program (rows: %s)" % (r.returncode, "; ".join(stmts)))
+    got = r.stdout[:-1].split("\n")
+    if len(got) != len(lines):
+        refuse("SNO mask: the oracle returned %d record(s) for %d line(s) -- a SNO row replaces, it never deletes or adds a line (rows: %s)" % (len(got), len(lines), "; ".join(stmts)))
+    return got
 def apply_line_mask(text, patterns, side="both"):
     """Rewrite every line matching any pattern to a canonical marker. A ("regex", rx) pattern matches by
     content against the line; a ("line", n) pattern matches by OUTPUT POSITION against line n (1-indexed),
@@ -1114,12 +1148,19 @@ def apply_line_mask(text, patterns, side="both"):
     for i, ln in enumerate(lines):
         for key, _reason in patterns:
             kind, val = key
-            if kind == "oracle_only":
+            if kind in ("oracle_only", "sno"):
                 continue
             if val.search(ln) if kind == "regex" else (val == i + 1):
                 lines[i] = "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>"
                 n += 1
                 break
+    sno = [key[1] for key, _reason in patterns if key[0] == "sno"]
+    if sno:
+        got = _sno_stream(lines, sno)
+        for was, now in zip(lines, got):
+            if was != "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>" and now != was:
+                n += 1
+        lines = [was if was == "<<R-409 MASKED IMPLEMENTATION-DEFINED LINE>>" else now for was, now in zip(lines, got)]
     if side == "oracle":
         for key, _reason in patterns:
             kind, val = key
