@@ -31,7 +31,7 @@ while IFS= read -r line; do
   [ -f "$T/$topic.task.md" ] || { nobaton=$((nobaton+1)); printf '  ⛔ NO BATON: %s\n' "$topic"; }
   len="$(printf '%s' "$line" | awk -F'\t' '{m=0;for(i=1;i<=NF;i++) if(length($i)>m) m=length($i); print m}')"
   [ "$len" -gt "$worst" ] && worst="$len"
-  shape="$(printf '%s' "$line" | awk -F'\t' '{ if ($1 !~ /^[0-9]+$/) print "rank"; else if ($2 !~ /^[a-z0-9][a-z0-9._-]*$/) print "topic"; else if ($3 !~ /^[a-z_0-9-]{1,16}$/) print "owner"; else if ($4 !~ /^[A-Z][A-Z0-9-]*(:[A-Za-z0-9._-]+)?$/) print "state"; else print "ok" }')"
+  shape="$(printf '%s' "$line" | awk -F'\t' '{ if ($1 !~ /^[0-9]+$/) print "rank"; else if ($2 !~ /^[a-z0-9][a-z0-9._-]*$/) print "topic"; else if ($3 !~ /^([a-z_0-9-]{1,16}|@(fable|opus|sonnet|haiku))$/) print "owner"; else if ($4 !~ /^[A-Z][A-Z0-9-]*(:[A-Za-z0-9._-]+)?$/) print "state"; else print "ok" }')"
   if [ "$len" -gt "$CAP" ]; then prose=$((prose+1)); printf '  ⛔ PROSE BACK IN THE INDEX (%s chars): %s\n' "$len" "$topic"
   elif [ "$shape" != ok ]; then prose=$((prose+1)); printf '  ⛔ PROSE BACK IN THE INDEX (the %s field is not its column'"'"'s shape): %s\n' "$shape" "$topic"; fi
 done < "$Q"

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-"$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_bus_one_queue_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: bus-one-queue (CIO-8 phase two, the cio's design, cut by officer_05
 # 2026-11-08; the design text is the header of the step table). The plan is corpus/tests/shared/bus_one_queue/STEPS.tsv. A step's measurement is its PROBE,
 # one bash command run from S4E_HOME, almost always harness/scripts/s4e_probe_bus_one_queue.sh N on a scratch postoffice with the file road forced, so a

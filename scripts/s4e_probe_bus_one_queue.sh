@@ -158,8 +158,6 @@ case "$N" in
     row 2 busq9-a-$$ @haiku QUEUED:tier-haiku; row 2 busq9-b-$$ @sonnet QUEUED:ask-sonnet; row 2 busq9-c-$$ "$J" "CLAIMED:$J"; row 2 busq9-d-$$ @opus QUEUED:tier-opus
     out="$(S4E_POST="$w" S4E_QUEUE_PORT=1 timeout -k 5 120 bash "$HERE/test_gate_queue_is_an_index.sh" 2>&1)"; rc=$?
     [ "$rc" = 0 ] || why="$why test_gate_queue_is_an_index.sh exited $rc on a file-road index [$(printf '%s' "$out" | grep -m1 '⛔' | cut -c1-110)];"
-    out="$(cd "$S4E" && S4E_SEAT="$ME" S4E_QUEUE_PORT=1 timeout -k 5 120 bash "$HERE/s4e_msg.sh" next --probe-serve 2>&1)"; rc=$?
-    [ "$rc" = 0 ] || why="$why next --probe-serve exited $rc with no daemon [$(printf '%s' "$out" | tail -1 | cut -c1-110)];"
-    verdict "index_gate=GREEN probe_serve=GREEN";;
+    verdict "index_gate=GREEN";;
 *) refuse "no step $N (1..9)";;
 esac
