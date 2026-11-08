@@ -40,6 +40,11 @@ TMP: one du of /tmp/claude-1000/-home-claude-<seat>* and /tmp/s4e/<seat> per sea
   util_seat_census.py --acceptance S   step 9's DONE-WHEN (default 86400): over the busy runs (twelve at least) the grader at 2.0 cores or more, no seat's
                                        ten-minute mean above 4.0 while another seat waited for a slot, pressure some avg300 under 30, builds FETCHED ten
                                        times the BUILT (BUILDS.tsv, written by util_build_cache.sh), landings on origin/main at 10 an hour or more
+  util_seat_census.py --test-cycle-acceptance W BASELINE.tsv   DESIGN-PLAN test-cycle step 8: ONE line TEST_CYCLE_ACCEPTANCE over the last W seconds (entries an hour,
+                                       the multiple of the baseline, instructions an entry from one perf-counted launch of a master and a package cell as the grade worker,
+                                       the request verdict p50/p95, the lap by 06:00, the ready-while-idle minutes from TICK_DIR/ticks.log, the hand restarts from the
+                                       journal); a field it cannot read prints '-' (rc 2). --probe: scratch ledgers read a known line (rc 0/1). --until --cells --journal
+                                       --req-done --lap-file --ticks name other inputs
   util_seat_census.py --lap [S]        box-budget step 1 (CTO-474/478): the LAP line over the last S seconds (default 3600): the loop's rows per hour (the coo's
                                        readings tagged rr=1 or req=), fresh=F/T (util_round_robin_freshness.py's live population and fresh rule over 72 h), the ETA of
                                        the stale rows at that rate and the whole lap's length; LAP_SLICES each class's mean cores and share and LAP_SEATS each seat's
@@ -1106,8 +1111,346 @@ def health():
     return 2 if 2 in rcs else (1 if 1 in rcs else 0)
 
 
+# ---- DESIGN-PLAN test-cycle step 8: THE ACCEPTANCE INSTRUMENT (officer_01, 2026-11-08, on the cio's re-cut of the cto's step; the design text is skill
+# suites-and-grading reference.md section 7, THE ACCEPTANCE). It prints ONE line, every number read from a ledger by the command named in its comment:
+#   TEST_CYCLE_ACCEPTANCE window_s=W entries_per_hour=E x_baseline=X instr_per_entry=I request_p50_min=P request_p95_min=Q lap_done_by_0600=0|1
+#   idle_with_ready_min=M hand_restarts=H  then the denominators (readings, master_rows, pkg_rows, requests, ticks, ticks_unread, instr_cells).
+# A field the instrument could not measure prints "-" (rc 2), so the step's grep reads RED, never a false GREEN (an absence counts only after the tool spoke).
+# It judges nothing: the thresholds are the STEPS.tsv probe's grep. The window ends at --until EPOCH (default now).
+TC_RESULTS = RESULTS
+TC_REQ_DONE = "/home/resources/postoffice/test_requests/done"
+TC_LAP = "/home/resources/progress/LAP.tsv"
+TC_TICKS = os.path.join(os.environ.get("S4E_TICK_DIR") or "/tmp/s4e/cio/tick", "ticks.log")   # the controller's TICK_DIR (s4e-tick.service runs it as S4E_SEAT=cio)
+TC_CELLS = "sno-rungs:chunk:01,gimpel:chunk:01"   # the two cells the cio measured per cell on 2026-11-08 07:1x (the design text): one master chunk, one package chunk
+TC_EXT = {"snobol4": "sno", "icon": "icn", "prolog": "pl", "pascal": "pas", "raku": "raku", "rebus": "reb", "snocone": "sc"}
+TC_TZ = {"CST": -6 * 3600, "CDT": -5 * 3600}
+TC_TICK_COVER = 0.9   # M and H read only when ticks.log holds a tick for at least 90 percent of the window's minutes
+
+
+def tc_local_s(stamp):
+    """Epoch seconds of a request stamp 'YYYY-MM-DD HH:MM:SS CST|CDT' (the writers' label is the offset); None for anything else ('returned ...')."""
+    m = re.match(r"(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) (CST|CDT)\b", stamp.strip())
+    if not m:
+        return None
+    return __import__("calendar").timegm(time.strptime(m.group(1) + "T" + m.group(2), "%Y-%m-%dT%H:%M:%S")) - TC_TZ[m.group(3)]
+
+
+def tc_readings(path, since, until):
+    """E's numerator: the distinct readings (ts_utc, suite, program, mode) in results.tsv in [since, until]; an exact duplicate row is one reading.
+    Returns (readings, master_rows, pkg_rows): class 'package' weighs the package launch, every other class the master launch."""
+    seen = set(); nm = np = 0
+    for l in rd(path).splitlines():
+        r = l.split("\t")
+        if len(r) < 9 or not r[0][:4].isdigit():
+            continue
+        try:
+            t = utc_s(r[0])
+        except ValueError:
+            continue
+        if not (since <= t <= until):
+            continue
+        k = (r[0][:19], r[5], r[7], r[8])
+        if k in seen:
+            continue
+        seen.add(k)
+        if r[4] == "package":
+            np += 1
+        else:
+            nm += 1
+    return len(seen), nm, np
+
+
+def tc_rank(xs, q):
+    """Nearest-rank percentile (the ceil(q*n)-th smallest); None on an empty list."""
+    if not xs:
+        return None
+    s = sorted(xs)
+    return s[max(0, min(len(s), -(-round(q * 100) * len(s) // 100)) - 1)]
+
+
+def tc_requests(d, since, until):
+    """P and Q's population: minutes from a .req's filed= stamp to its served= stamp, every .req in test_requests/done/ served in [since, until]."""
+    mins = []
+    for f in sorted(glob.glob(os.path.join(d, "*.req"))):
+        filed = served = None
+        for l in rd(f).splitlines():
+            if l.startswith("filed=") and filed is None:
+                filed = tc_local_s(l[6:])
+            elif l.startswith("served="):
+                served = tc_local_s(l[7:])
+        if filed is not None and served is not None and since <= served <= until and served >= filed:
+            mins.append((served - filed) / 60.0)
+    return mins
+
+
+def tc_lap(path, since, until):
+    """lap_done_by_0600: LAP.tsv's last done line in [since, until] against the first 06:00 local after the put line of the same lap and tree before it.
+    LAP.tsv columns: lap tree put|done tube ts cells. 1 done by then, 0 late or no done line in the window."""
+    puts, last = [], None
+    for l in rd(path).splitlines():
+        r = l.split("\t")
+        if len(r) < 5:
+            continue
+        try:
+            t = utc_s(r[4])
+        except ValueError:
+            continue
+        if r[2] == "put":
+            puts.append((t, r[0], r[1]))
+        elif r[2] == "done" and since <= t <= until and (last is None or t >= last[0]):
+            last = (t, r[0], r[1])
+    if last is None:
+        return 0
+    put = max((p for p in puts if p[1] == last[1] and p[2] == last[2] and p[0] <= last[0]), default=None)
+    if put is None:
+        return 0
+    lt = time.localtime(put[0])
+    six = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, 6, 0, 0, 0, 0, -1))
+    if six <= put[0]:
+        six = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday + 1, 6, 0, 0, 0, 0, -1))
+    return 1 if last[0] <= six else 0
+
+
+def tc_ticks(path, since, until):
+    """The controller's tick history (box_tick.py appends one JSON line a tick to TICK_DIR/ticks.log): the ticks in [since, until], the ones whose
+    grader_queue could not be read (null), and the minutes M (ticks) in which grader_queue > 0 while running < want."""
+    ticks, unread, idle = [], 0, 0
+    for l in rd(path).splitlines():
+        try:
+            j = __import__("json").loads(l)
+            t = utc_s(j["ts"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        if not (since <= t <= until):
+            continue
+        j["t"] = t; ticks.append(j)
+        if j.get("grader_queue") is None:
+            unread += 1
+        elif j["grader_queue"] > 0 and j.get("running", 0) < j.get("want", 0):
+            idle += 1
+    return ticks, unread, idle
+
+
+def tc_journal(since, until):
+    """journalctl --user -u 's4e-grade-worker@*' --since @S --until @U -o short-iso: the grade workers' unit lines; None when journalctl cannot be read."""
+    try:
+        r = subprocess.run(["journalctl", "--user", "-u", "s4e-grade-worker@*", "--since", "@%d" % since, "--until", "@%d" % until, "-o", "short-iso", "--no-pager"],
+                           capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def tc_hand(text, ticks):
+    """H: the 'Stopped s4e-grade-worker@N' lines that no controller tick stopped (a tick whose stops list names N, stamped from 5 s before to 240 s after
+    the line: the tick writes its line after its systemctl stop) and no 'Scheduled restart job' of the same unit 10 s before (Restart=always)."""
+    import datetime
+    ev = []
+    for l in text.splitlines():
+        m = re.match(r"(\S+) \S+ systemd\[\d+\]: (?:(Stopped) s4e-grade-worker@(\d+)\.service|s4e-grade-worker@(\d+)\.service: (Scheduled restart job))", l)
+        if not m:
+            continue
+        try:
+            t = datetime.datetime.fromisoformat(m.group(1)).timestamp()
+        except ValueError:
+            continue
+        ev.append((t, "stop" if m.group(2) else "auto", int(m.group(3) or m.group(4))))
+    hand = 0
+    for t, kind, n in ev:
+        if kind != "stop":
+            continue
+        if any(k == "auto" and u == n and t - 10 <= a <= t for a, k, u in ev):
+            continue
+        if any(n in (j.get("stops") or []) and t - 5 <= j["t"] <= t + 240 for j in ticks):
+            continue
+        hand += 1
+    return hand
+
+
+def tc_perf(cmd, env, cwd, timeout_s=300):
+    """perf stat -x, -e instructions:u -o F -- CMD: (instructions, rc) of one launch; (None, rc) when perf printed no count."""
+    import tempfile
+    fd, out = tempfile.mkstemp(prefix="tca_perf.", dir=os.environ.get("TMPDIR") or None); os.close(fd)
+    try:
+        r = subprocess.run(["timeout", "-k", "5", str(timeout_s), "perf", "stat", "-x,", "-e", "instructions:u", "-o", out, "--"] + cmd,
+                           cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for l in rd(out).splitlines():
+            f = l.split(",")
+            if len(f) > 2 and "instructions" in f[2] and f[0].isdigit():
+                return int(f[0]), r.returncode
+        return None, r.returncode
+    finally:
+        os.unlink(out)
+
+
+def tc_cell_instr(root, suite, cell):
+    """One launch of one cell exactly as s4e_grade_worker.sh launches it (as seat grader, class grader, S4E_PROGRESS_OFF=1 so it writes no reading): a master row of
+    SUITE_RUNNERS.tsv runs util_run_slot.sh python3 corpus_suite_harness.py run ALL.<ext> ALL.ref --lang L --modes m3,m4 --partition CELL;
+    a pkg row runs S4E_CHUNK=CELL util_run_slot.sh bash <runner>. Returns (instructions per entry, kind, entries, why); the entries are the
+    table's PARTITION.tsv rows of that part. A launch that did not grade (rc not 0 or 1) or printed no count is (None, kind, n, why)."""
+    sc = os.path.join(root, "harness", "scripts")
+    row = next((l.rstrip("\n").split("\t") for l in rd(os.path.join(sc, "SUITE_RUNNERS.tsv")).splitlines() if l.split("\t")[0] == suite and len(l.split("\t")) == 5), None)
+    if row is None or row[1] not in ("master", "pkg"):
+        return None, "-", 0, "%s is not a master or pkg row of SUITE_RUNNERS.tsv" % suite
+    kind, lang, words, table = row[1], row[2], row[3].split(), os.path.join(root, row[4])
+    part = [l.split("\t") for l in rd(os.path.join(table, "PARTITION.tsv")).splitlines() if l and not l.startswith("#")]
+    n = sum(1 for r in part[1:] if len(r) > 1 and r[1] == cell) if part and part[0][:2] == ["entry", "part"] else 0
+    if n == 0:
+        return None, kind, 0, "no %s rows in %s/PARTITION.tsv" % (cell, row[4])
+    env = dict(os.environ, S4E_HOME=root, S4E_PROGRESS_OFF="1", S4E_SEAT="grader", S4E_CLASS="grader")   # the grade worker's identity (s4e-grade-worker@.service, ENV in
+    # s4e_grade_worker.sh): the runners admit a board only to the coo's instrument (lib_one_runner.sh); S4E_PROGRESS_OFF=1 writes no reading (the cio's 07:1x measurement)
+    if kind == "master":
+        alls = [os.path.join(root, "corpus", "tests", lang, "ALL." + TC_EXT.get(lang, "-"))]   # s4e_grade_worker.sh's EXT table
+        if not os.path.isfile(alls[0]):
+            return None, kind, n, "no container %s" % alls[0]
+        cmd = ["bash", os.path.join(sc, "util_run_slot.sh"), "python3", os.path.join(sc, "corpus_suite_harness.py"), "run", alls[0],
+               os.path.join(os.path.dirname(alls[0]), "ALL.ref"), "--lang", lang, "--modes", "m3,m4", "--partition", cell]
+    else:
+        env["S4E_CHUNK"] = cell
+        cmd = ["bash", os.path.join(sc, "util_run_slot.sh"), "bash", os.path.join(sc, words[0])] + words[1:]
+    ins, rc = tc_perf(cmd, env, root)
+    if ins is None or rc not in (0, 1):
+        return None, kind, n, "the launch of %s %s did not grade (rc %s, count %s)" % (suite, cell, rc, ins)
+    return ins / n, kind, n, ""
+
+
+def tc_line(window, until, results, req_dir, lap_path, ticks_path, journal, base, instr):
+    """The one line and its rc (0 every field measured, 2 a field read '-'). instr: {'master': G per entry or None, 'pkg': ...} and a cells note."""
+    since = until - window
+    hours = window / 3600.0
+    readings, nm, np = tc_readings(results, since, until)                                   # awk-equivalent over results.tsv: distinct (ts, suite, program, mode) in the window
+    E = readings / hours
+    base_rph = next((float(l.split("\t")[1]) for l in rd(base).splitlines() if l.startswith("rows_per_hour\t")), 0.0)   # BASELINE.tsv rows_per_hour (913, the cto's)
+    X = E / base_rph if base_rph > 0 else None
+    im, ip = instr.get("master"), instr.get("pkg")                                           # perf stat -e instructions:u over one launch of each cell, over its entries
+    I = None
+    if im is not None and ip is not None:
+        I = (im * nm + ip * np) / (nm + np) if nm + np else (im + ip) / 2.0                  # weighted by the window's master and package rows
+    mins = tc_requests(req_dir, since, until)                                                # test_requests/done/*.req: filed= to served=
+    P, Q = tc_rank(mins, 0.50), tc_rank(mins, 0.95)
+    lap = tc_lap(lap_path, since, until)                                                     # LAP.tsv: the last done line against 06:00 local after its put
+    ticks, unread, idle = tc_ticks(ticks_path, since, until)                                 # TICK_DIR/ticks.log: one JSON line a tick
+    covered = len(ticks) >= TC_TICK_COVER * window / 60.0
+    M = idle if covered else None
+    H = tc_hand(journal, ticks) if covered and journal is not None else None                 # journalctl --user -u 's4e-grade-worker@*' Stopped lines no tick stopped
+    v = lambda x, f="%d": "-" if x is None else (f % x)
+    vals = [X, I, P, Q, M, H]
+    line = ("TEST_CYCLE_ACCEPTANCE window_s=%d entries_per_hour=%d x_baseline=%s instr_per_entry=%s request_p50_min=%s request_p95_min=%s lap_done_by_0600=%d "
+            "idle_with_ready_min=%s hand_restarts=%s readings=%d master_rows=%d pkg_rows=%d requests=%d ticks=%d ticks_unread=%d instr_cells=%s"
+            % (window, int(E), v(X, "%.1f"), v(I, "%.0f"), v(None if P is None else round(P)), v(None if Q is None else round(Q)), lap,
+               v(M), v(H), readings, nm, np, len(mins), len(ticks), unread, instr.get("cells", "-")))
+    return line, (2 if any(x is None for x in vals) else 0)
+
+
+def test_cycle_acceptance(window):
+    until = int(arg("--until", str(int(time.time()))))
+    root = arg("--repos", os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    instr, notes = {"master": None, "pkg": None}, []
+    for spec in arg("--cells", TC_CELLS).split(","):
+        suite, _, cell = spec.partition(":")
+        g, kind, n, why = tc_cell_instr(root, suite, cell)
+        if kind in instr and instr[kind] is None:
+            instr[kind] = g
+        notes.append("%s:%s=%s/%d" % (suite, cell, "-" if g is None else "%.0f" % (g * n), n))
+        if why:
+            print("TEST_CYCLE_ACCEPTANCE_NOTE %s" % why)
+    instr["cells"] = ",".join(notes)
+    since = until - window
+    jf = arg("--journal", "")
+    journal = rd(jf) if jf else tc_journal(since, until)
+    base = arg("--baseline-file", "")
+    line, rc = tc_line(window, until, arg("--results", TC_RESULTS), arg("--req-done", TC_REQ_DONE), arg("--lap-file", TC_LAP), arg("--ticks", TC_TICKS),
+                       journal, base, instr)
+    print(line)
+    return rc
+
+
+def test_cycle_acceptance_probe():
+    """--test-cycle-acceptance --probe: scratch ledgers of known rows read known numbers, through the same functions the live reading uses; one perf
+    count of python3 -c pass proves the counter reads. Prints TEST_CYCLE_ACCEPTANCE_PROBE ok=N bad=M and the first wrong arm; rc 0 all as expected, 1 otherwise."""
+    import tempfile, json, calendar
+    os.environ["TZ"] = "America/Chicago"; time.tzset()
+    d = tempfile.mkdtemp(prefix="tca_probe.", dir=os.environ.get("TMPDIR") or None)
+    Z = lambda s: calendar.timegm(time.strptime(s, "%Y-%m-%dT%H:%M:%S"))
+    until = Z("2026-11-08T12:00:00"); W = 7200
+    hdr = "ts_utc\tscrip\tcorpus\tmeasurer\tclass\tsuite\tlang\tprogram\tmode\toutcome\tsecs\tnote\tfingerprint\tconfig\n"
+    row = lambda ts, cls, suite, prog, mode: "\t".join([ts, "x", "y", "grader", cls, suite, "l", prog, mode, "PASS", "0.1", "-", "-", "-"]) + "\n"
+    res = os.path.join(d, "results.tsv")
+    with open(res, "w") as f:
+        f.write(hdr)
+        for ts, cls, s, p, m in [("2026-11-08T10:10:00", "rungs", "sno-rungs", "a", "m3"), ("2026-11-08T10:10:00", "rungs", "sno-rungs", "a", "m4"),
+                                 ("2026-11-08T10:10:00", "rungs", "sno-rungs", "a", "m3"),          # an exact duplicate: one reading
+                                 ("2026-11-08T11:00:00", "rungs", "sno-rungs", "a", "m3"),          # the same program read again: a second reading
+                                 ("2026-11-08T11:00:00", "rungs", "icn-rungs", "a", "m3"),          # the same name in another suite: its own reading
+                                 ("2026-11-08T11:30:00", "package", "gimpel", "p", "m3"), ("2026-11-08T11:30:00", "package", "gimpel", "p", "m4"),
+                                 ("2026-11-08T11:45:00", "rungs", "icn-rungs", "b", "m4"),
+                                 ("2026-11-08T11:59:59", "package", "gimpel", "q", "m3"),
+                                 ("2026-11-08T09:59:59", "rungs", "sno-rungs", "old", "m3"),       # before the window
+                                 ("2026-11-08T12:00:01", "rungs", "sno-rungs", "late", "m3")]:      # after it
+            f.write(row(ts, cls, s, p, m))
+    base = os.path.join(d, "BASELINE.tsv"); open(base, "w").write("# key\tvalue\tunit\tcommand\nrows_per_hour\t2\trows/h\tprobe\n")
+    rq = os.path.join(d, "done"); os.makedirs(rq)
+    for i, (filed, served) in enumerate([("2026-11-08 04:10:00 CST", "2026-11-08 04:12:00 CST"), ("2026-11-08 04:20:00 CST", "2026-11-08 04:24:00 CST"),
+                                         ("2026-11-08 05:00:00 CST", "2026-11-08 05:06:00 CST"), ("2026-11-08 05:00:00 CST", "2026-11-08 05:40:00 CST"),
+                                         ("2026-11-08 02:00:00 CST", "2026-11-08 03:30:00 CST"),   # served before the window
+                                         ("2026-11-08 05:00:00 CST", "returned 2026-11-08 05:10:00")]):   # returned, never served
+        open(os.path.join(rq, "r%d.req" % i), "w").write("seat=probe\nfiled=%s\nserved=%s tree=x rc=0 rows=1\n" % (filed, served))
+    lapf = os.path.join(d, "LAP.tsv")
+    open(lapf, "w").write("lap\tt1\tput\tgrade\t2026-11-08T04:00:00Z\tcells=2\nlap\tt1\tdone\tgrade\t2026-11-08T11:30:00Z\tcells=2\n")   # put 22:00 CST, done 05:30 CST
+    late = os.path.join(d, "LAP_late.tsv")
+    open(late, "w").write("lap\tt0\tput\tgrade\t2026-11-07T04:00:00Z\tcells=2\nlap\tt0\tdone\tgrade\t2026-11-08T11:30:00Z\tcells=2\n")   # put 22:00 CST the night before, done a day late
+    tk = os.path.join(d, "ticks.log")
+    with open(tk, "w") as f:
+        for k in range(120):
+            t = until - W + 30 + 60 * k
+            j = dict(ts=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t)), tick=k, grader_queue=5 if k in (3, 4, 50) else 0, want=8, running=7 if k in (3, 4, 50, 60) else 8, stops=[5] if k == 90 else [])
+            f.write(json.dumps(j) + "\n")
+    t90 = until - W + 30 + 60 * 90
+    iso = lambda t: time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(t)) + "-06:00"
+    jr = ("%s socrates systemd[1738]: Stopping s4e-grade-worker@5.service - Fleet grade worker...\n"
+          "%s socrates systemd[1738]: Stopped s4e-grade-worker@5.service - Fleet grade worker, instance 5.\n"        # the controller's stop (tick 90 names 5)
+          "%s socrates systemd[1738]: Stopped s4e-grade-worker@3.service - Fleet grade worker, instance 3.\n"        # a hand
+          "%s socrates systemd[1738]: s4e-grade-worker@2.service: Scheduled restart job, restart counter is at 1.\n"
+          "%s socrates systemd[1738]: Stopped s4e-grade-worker@2.service - Fleet grade worker, instance 2.\n"        # Restart=always, not a hand
+          % (iso(t90 - 2), iso(t90 - 1), iso(t90 - 600), iso(t90 - 300), iso(t90 - 299)))
+    instr = {"master": 1.0e9, "pkg": 4.0e9, "cells": "planted"}
+    want = ("TEST_CYCLE_ACCEPTANCE window_s=7200 entries_per_hour=4 x_baseline=2.0 instr_per_entry=2125000000 request_p50_min=4 request_p95_min=40 lap_done_by_0600=1 "
+            "idle_with_ready_min=3 hand_restarts=1 readings=8 master_rows=5 pkg_rows=3 requests=4 ticks=120 ticks_unread=0 instr_cells=planted")
+    arms = []
+    got, rc = tc_line(W, until, res, rq, lapf, tk, jr, base, instr)
+    arms.append(("the known ledgers read the known line", got == want and rc == 0, got))
+    got, rc = tc_line(W, until, res, rq, late, tk, jr, base, instr)
+    arms.append(("a lap done a day after its 06:00 reads lap_done_by_0600=0", " lap_done_by_0600=0 " in got, got))
+    short = os.path.join(d, "ticks_short.log")
+    open(short, "w").write("".join(l + "\n" for l in rd(tk).splitlines()[:60]))
+    got, rc = tc_line(W, until, res, rq, lapf, short, jr, base, instr)
+    arms.append(("half the window's ticks read M and H as '-' and rc 2", " idle_with_ready_min=- hand_restarts=- " in got and rc == 2, got))
+    got, rc = tc_line(W, until, res, rq, lapf, tk, None, base, instr)
+    arms.append(("an unreadable journal reads H as '-' and rc 2", " hand_restarts=- " in got and rc == 2, got))
+    got, rc = tc_line(W, until, res, rq, lapf, tk, jr, base, {"master": None, "pkg": 4.0e9, "cells": "x"})
+    arms.append(("a launch that did not grade reads I as '-' and rc 2", " instr_per_entry=- " in got and rc == 2, got))
+    ins, prc = tc_perf(["python3", "-I", "-c", "pass"], dict(os.environ), d, 60)
+    arms.append(("perf stat counts one python3 -c pass launch", ins is not None and ins > 1000000 and prc == 0, "count %s rc %s" % (ins, prc)))
+    __import__("shutil").rmtree(d, ignore_errors=True)
+    bad = [a for a in arms if not a[1]]
+    print("TEST_CYCLE_ACCEPTANCE_PROBE ok=%d bad=%d%s" % (len(arms) - len(bad), len(bad), (" first_bad=%r got=%r" % (bad[0][0], bad[0][2])) if bad else ""))
+    return 1 if bad else 0
+
+
 def main():
     av = sys.argv[1:]
+    if "--test-cycle-acceptance" in av:
+        if "--probe" in av:
+            return test_cycle_acceptance_probe()
+        v = arg("--test-cycle-acceptance", "86400")
+        if not v.isdigit():
+            print("REFUSE(2): usage: util_seat_census.py --test-cycle-acceptance <window_s> <BASELINE.tsv> | --test-cycle-acceptance --probe"); return 2
+        nxt = sys.argv[sys.argv.index(v) + 1] if sys.argv.index(v) + 1 < len(sys.argv) else ""
+        if "--baseline-file" not in sys.argv:
+            if not nxt or nxt.startswith("--") or not os.path.isfile(nxt):
+                print("REFUSE(2): no BASELINE.tsv named after the window (got %r)" % nxt); return 2
+            sys.argv += ["--baseline-file", nxt]
+        return test_cycle_acceptance(int(v))
     if "--budget-check" in av:
         return budget_check()
     if "--budget-props" in av:

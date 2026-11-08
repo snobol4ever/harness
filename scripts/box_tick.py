@@ -165,6 +165,7 @@ def systemctl(*args):
         return ""
 
 
+LAST_SCALE = {}   # the last scale's want, running and instance lists, for TICK_DIR/ticks.log (test-cycle step 8)
 def scale_grade_workers(W):
     """the grade workers follow THE SWITCH $TICK_DIR/GRADE_WORKERS (on) and W; off stops every instance"""
     try:
@@ -180,6 +181,7 @@ def scale_grade_workers(W):
     stops = [n for n in running if n > want]
     for n in starts: systemctl("start", "s4e-grade-worker@%d" % n)
     for n in stops: systemctl("stop", "s4e-grade-worker@%d" % n)
+    LAST_SCALE.update(want=want, running=len(running), starts=starts, stops=stops)
     return "grader on=%d want=%d running=%d starts=%d stops=%d" % (on, want, len(running), len(starts), len(stops))
 
 
@@ -798,6 +800,26 @@ def probe_sync():
     return 0 if ok else 1
 
 
+TICKS_LOG_MAX = 8 << 20
+def log_tick(n, gq):
+    """TICK_DIR/ticks.log: ONE JSON line a tick (DESIGN-PLAN test-cycle step 8, the acceptance instrument util_seat_census.py --test-cycle-acceptance reads it):
+    ts, tick, grader_queue (the grade tube's ready count; null when util_queue.py stats-tube could not be read), want and running (the grade worker
+    instances asked for and found running), and the instances this tick started and stopped (the controller's stops, so a hand stop is told apart).
+    Over TICKS_LOG_MAX bytes the oldest half is dropped (about 70,000 ticks, seven weeks, kept)."""
+    path = TICK_DIR + "/ticks.log"
+    try:
+        with open(path, "a") as f:
+            f.write(json.dumps(dict(ts=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), tick=n, grader_queue=gq, want=LAST_SCALE.get("want"), running=LAST_SCALE.get("running"),
+                                    starts=LAST_SCALE.get("starts", []), stops=LAST_SCALE.get("stops", []))) + "\n")
+        if os.path.getsize(path) > TICKS_LOG_MAX:
+            with open(path, "rb") as f:
+                f.seek(-(TICKS_LOG_MAX // 2), 2); keep = f.read().split(b"\n", 1)[-1]
+            with open(path + ".tmp", "wb") as f: f.write(keep)
+            os.replace(path + ".tmp", path)
+    except OSError as e:
+        print("ticks.log not written: %s" % e)
+
+
 def tick():
     os.makedirs(TICK_DIR, exist_ok=True)
     lock = open(TICK_DIR + "/tick.lock", "a+")
@@ -836,9 +858,10 @@ def tick():
     # fleet_health.py, read a 520 s old width of 2). The old keys that still mean something keep their names (ts busy cores cpu_psi10 cpu_psi60 grader_width action); the rest are the tick's.
     try:
         if DRY: raise RuntimeError("dry tick writes no state")
-        gq = 0
-        try: gq = int(re.search(r"ready=(\d+)", subprocess.run(["python3", "-I", ROOT + "/harness/scripts/util_queue.py", "stats-tube", GRADE_TUBE], capture_output=True, text=True, timeout=10).stdout).group(1))
+        gq = 0; gq_read = None
+        try: gq = gq_read = int(re.search(r"ready=(\d+)", subprocess.run(["python3", "-I", ROOT + "/harness/scripts/util_queue.py", "stats-tube", GRADE_TUBE], capture_output=True, text=True, timeout=10).stdout).group(1))
         except Exception: pass
+        log_tick(n, gq_read)
         rph, lap = rows_recent(3600), rows_recent(86400)
         with open(PROG + "/BOX.state.tmp", "w") as f:
             f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\ncontroller_sync=%s\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n%s\n"
