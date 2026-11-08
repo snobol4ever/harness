@@ -34,6 +34,9 @@ POST = os.environ.get("S4E_POST") or PO
 GRADER_HOME = os.environ.get("S4E_GRADER_HOME") or "/home/claude_grader"
 STALL_TELL_GAP, STALL_SYNC_EVERY = 3600, 10
 STALL_TREE = "could not reach tree"
+SYNC_EVERY = int(os.environ.get("S4E_TICK_SYNC_EVERY", "2"))
+SYNC_TIMEOUT = 120
+PROBING = False
 
 
 def psi(path):
@@ -443,6 +446,107 @@ def rows_recent(seconds):
     return sum(1 for ln in lines if ln[:4].isdigit() and ln[:19] >= cut)
 
 
+def sync_summary(text):
+    """the probe's word for one TICK line's sync field: ok:<moved repos joined by +, or none>, refused, or skipped"""
+    m = re.search(r"sync=(?:ok moved=(\S+)|(refused)|(skipped))", text)
+    if not m:
+        return "no-sync-field"
+    if m.group(1):
+        return "ok:" + m.group(1)
+    return "refused" if m.group(2) else "skipped"
+
+
+def sync_root(n):
+    """test-cycle step 12 (the cio, 2026-11-08): THE CONTROLLER SYNCS ITS OWN ROOT at the top of the tick, before any decision, so a landed change to this
+    file is live within two minutes without a seat. util_sync_root.sh runs under ROOT (fast-forward only, every fetch under the s4e-fetch slot), at most
+    once every SYNC_EVERY ticks. Returns dict(kind=ok|refused|skipped, moved=[repos that fast-forwarded], disp=the TICK line's sync= text). A refusal
+    (rc 1 or 2, a timeout) is named on the TICK line and in BOX.state, never a silence; the tick goes on with the tree it has."""
+    import signal
+    stamp = TICK_DIR + "/sync.tick"
+    if n - read_int(stamp, -SYNC_EVERY) < SYNC_EVERY:
+        return dict(kind="skipped", moved=[], disp="sync=skipped")
+    open(stamp, "w").write("%d\n" % n)
+    script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "util_sync_root.sh")
+    p = subprocess.Popen(["bash", script], env=dict(os.environ, S4E_HOME=ROOT), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT, text=True, start_new_session=True)
+    try:
+        out, _ = p.communicate(timeout=SYNC_TIMEOUT); rc = p.returncode
+    except subprocess.TimeoutExpired:
+        try: os.killpg(p.pid, signal.SIGKILL)
+        except OSError: pass
+        out, _ = p.communicate(); rc = 2
+        out = "sync timed out after %d s\n%s" % (SYNC_TIMEOUT, out or "")
+    lines = (out or "").splitlines()
+    moved = []
+    for ln in lines:
+        m = re.match(r"^SYNC (\S+) (\S+)\.\.(\S+)$", ln)
+        if m and m.group(2) != m.group(3):
+            moved.append(m.group(1))
+    if rc == 0:
+        return dict(kind="ok", moved=moved, disp="sync=ok moved=%s" % ("+".join(moved) or "none"))
+    first = next((ln for ln in lines if "REFUSE" in ln), (lines or ["rc=%d" % rc])[0]).strip()
+    return dict(kind="refused", moved=moved, disp="sync=refused:%s" % first)
+
+
+def probe_sync():
+    """--probe-sync (test-cycle step 12): four LOCAL BARE origins (SCRIP, corpus, harness, .github), each given two commits of one file; a scratch root cloned
+    from them with harness reset one commit behind its origin. Three dry ticks on the scratch root, a scratch tick dir, no re-exec: the first fast-forwards
+    harness (sync=ok moved=harness), the second moves nothing (sync=ok moved=none); then a planted local commit in the scratch harness and a third commit
+    pushed to its origin make the third refuse (sync=refused). Prints SYNC_PROBE first= second= third= ok=; rc 0 only when ok=1. Writes only under a scratch dir."""
+    import tempfile, contextlib, io
+    global ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING
+    saved = (ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING)
+    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
+    d = tempfile.mkdtemp(prefix="s4e-sync-probe-", dir=base)
+    who = dict(GIT_AUTHOR_NAME="s4e-probe", GIT_AUTHOR_EMAIL="probe@s4e.invalid", GIT_COMMITTER_NAME="s4e-probe", GIT_COMMITTER_EMAIL="probe@s4e.invalid")
+    def git(*a, cwd=None):
+        r = subprocess.run(["git", "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main", *a], cwd=cwd, capture_output=True, text=True, timeout=60,
+                           env=dict(os.environ, **who))
+        if r.returncode != 0:
+            raise RuntimeError("git %s: %s" % (a[0], r.stderr.strip()[:200]))
+        return r.stdout
+    def commit(cwd, text, msg):
+        with open(os.path.join(cwd, "f.txt"), "a") as fh: fh.write(text)
+        git("add", "f.txt", cwd=cwd); git("commit", "-q", "-m", msg, cwd=cwd)
+    repos = ["SCRIP", "corpus", "harness", ".github"]
+    summary, err = [], ""
+    try:
+        origin, work, root = d + "/origin", d + "/work", d + "/root"
+        for p in (origin, work, root): os.makedirs(p)
+        for r in repos:
+            bare, w = origin + "/" + r + ".git", work + "/" + r
+            git("init", "-q", "--bare", "-b", "main", bare)
+            git("init", "-q", "-b", "main", w)
+            git("remote", "add", "origin", bare, cwd=w)
+            commit(w, "one\n", "c1"); commit(w, "two\n", "c2")
+            git("push", "-q", "origin", "main", cwd=w)
+        for r in repos:
+            git("clone", "-q", origin + "/" + r + ".git", root + "/" + r)
+        git("reset", "-q", "--hard", "HEAD~1", cwd=root + "/harness")
+        ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING = root, d + "/tick", 1, True, True
+        ticks = []
+        for _ in range(2):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf): tick()
+            ticks.append(buf.getvalue())
+        commit(root + "/harness", "local\n", "planted local commit")
+        commit(work + "/harness", "third\n", "third commit on origin")
+        git("push", "-q", "origin", "main", cwd=work + "/harness")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf): tick()
+        ticks.append(buf.getvalue())
+        summary = [sync_summary(t) for t in ticks]
+    except Exception as e:
+        err = str(e)[:200]
+    finally:
+        ROOT, TICK_DIR, SYNC_EVERY, DRY, PROBING = saved
+        shutil.rmtree(d, ignore_errors=True)
+    first, second, third = (summary + ["none", "none", "none"])[:3]
+    ok = int(not err and first == "ok:harness" and second == "ok:none" and third == "refused")
+    print("SYNC_PROBE first=%s second=%s third=%s ok=%d%s" % (first, second, third, ok, (" error=" + err) if err else ""))
+    return 0 if ok else 1
+
+
 def tick():
     os.makedirs(TICK_DIR, exist_ok=True)
     lock = open(TICK_DIR + "/tick.lock", "a+")
@@ -452,6 +556,14 @@ def tick():
         print("REFUSE(3): another tick holds %s/tick.lock" % TICK_DIR); return 3
     t0 = time.time()
     n = read_int(TICK_DIR + "/tick.count", 0) + 1
+    if "S4E_TICK_REEXECED" in os.environ:
+        sy = json.loads(os.environ.pop("S4E_TICK_REEXECED"))
+    else:
+        sy = sync_root(n)
+        if "harness" in sy["moved"] and not PROBING:
+            os.environ["S4E_TICK_REEXECED"] = json.dumps(sy)
+            sys.stdout.flush()
+            os.execv(sys.executable, sys.orig_argv)
     open(TICK_DIR + "/tick.count", "w").write("%d\n" % n)
     mode = mode_text()
     s = sense(dict(cpu10=4.0, cpu60=4.0, cpu300=4.0, gcpu10=1.0, mem_rise=0) if DRY else None)
@@ -476,17 +588,17 @@ def tick():
         except Exception: pass
         rph, lap = rows_recent(3600), rows_recent(86400)
         with open(PROG + "/BOX.state.tmp", "w") as f:
-            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n%s\n"
-                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, st["alarm"], n, rph, lap,
+            f.write("ts=%s\nbusy=%.1f\ncores=%d\ncpu_psi10=%.1f\ncpu_psi60=%.1f\ncpu_psi300=%.1f\ngrader_width=%d\ngrader_wmax=%d\nworkers_awake=%d\nworkers_max=%d\naction=%s\ngrader_queue=%d\ngrader_stall=%d\ncontroller=box_tick.py\ntick=%d\ncontroller_sync=%s\nrows_per_hour=%d\nlap_rows_24h=%d\n%s\n%s\n"
+                    % (time.strftime("%Y-%m-%dT%H:%M:%S%z"), s["load1"], os.cpu_count() or 16, s["cpu10"], s["cpu60"], s["cpu300"], d["W"], d["WMAX"], d["A"], d["AMAX"], d["why"], gq, st["alarm"], n, sy["kind"], rph, lap,
                        grader.replace(" ", "\n").replace("grader\n", "grader_"), liveset if liveset.startswith("liveset=") else "liveset=" + liveset))
         os.replace(PROG + "/BOX.state.tmp", PROG + "/BOX.state")
     except Exception as e:
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s expired=%d %s %s %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             grader, awake, liveset, expired, fed, view, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             sy["disp"], grader, awake, liveset, expired, fed, view, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
@@ -533,6 +645,8 @@ if __name__ == "__main__":
         sys.exit(probe_feed())
     if arg == "--probe-stall":
         sys.exit(probe_stall())
+    if arg == "--probe-sync":
+        sys.exit(probe_sync())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --decide"); sys.exit(2)
