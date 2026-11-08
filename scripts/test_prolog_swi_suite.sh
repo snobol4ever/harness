@@ -193,7 +193,7 @@ both = 0; graded_cases = 0; noref = []
 # naming the builtin; the 14 engine cases stay in the denominator. Such a case writes no progress row and leaves the denominator
 # as Excl, counted under its class beside the oracle's own NO_ORACLE_ANSWER cases. A row with another class refuses rc 2; a row naming a
 # case the file does not declare is STALE and reads the run red, so a declaration can never outlive what it names.
-EXCL_CLASSES = ('SCRIP_EXCEEDS_ORACLE', 'NO_ORACLE_ANSWER', 'THREADS_EXCLUDED_BY_LON')
+EXCL_CLASSES = ('SCRIP_EXCEEDS_ORACLE', 'NO_ORACLE_ANSWER', 'THREADS_EXCLUDED_BY_LON', 'SWIPL_VM_INTERNAL')
 excl_cases = {}; excl_used = set()
 _ex = os.path.join(swit, 'EXCLUDED_CASES.tsv')
 if os.path.exists(_ex):
