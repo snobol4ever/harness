@@ -24,6 +24,7 @@ STEPS="$WD/STEPS.tsv"
 OUT="/tmp/s4e-design-unicon"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
 [ -f "$STEPS" ] || refuse "no step table at $STEPS"
+uq="$(python3 "$HERE/util_steps_unique.py" "$STEPS" 2>&1)" || refuse "STEPS.tsv numbers a step twice, renumber the later row: $uq"
 mode=""; step=""; smoke=0
 while [ $# -gt 0 ]; do
     case "$1" in
