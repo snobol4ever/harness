@@ -387,17 +387,17 @@ def tube_load(tube):
     if m1 and m2: return int(m1.group(1)) + int(m2.group(1))
     if "NOT_FOUND" in out: return 0
     raise RuntimeError("stats-tube %s: %s" % (tube, out.strip()[:120].replace("\n", " | ")))
-def put_cells(cells, tree, tube):
-    """ONE put-many call (util_grade_job.py, step 5a): one line per cell, band lap, one job id back per cell in order; a short count refuses"""
-    r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_grade_job.py"), "put-many", "--band", "lap", "--tree", tree, "--tube", tube, "--requester", "lap", "--stdin"],
+def put_cells(cells, tree, tube, band="lap"):
+    """ONE put-many call (util_grade_job.py, step 5a): one line per cell, one band, one job id back per cell in order; a short count refuses"""
+    r = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "harness", "scripts", "util_grade_job.py"), "put-many", "--band", band, "--tree", tree, "--tube", tube, "--requester", band, "--stdin"],
                        input="".join("%s\t%s\n" % sc for sc in cells), capture_output=True, text=True, timeout=600)
     jobs = [int(m.group(1)) for m in re.finditer(r"^job=(\d+) tube=", r.stdout, re.M)]
     if r.returncode != 0 or len(jobs) != len(cells):
         raise RuntimeError("put-many rc=%d put=%d of %d: %s" % (r.returncode, len(jobs), len(cells), (r.stdout + r.stderr).strip()[-160:].replace("\n", " | ")))
     return jobs
-def _record_feed(cells, jobs, tree):
+def _record_feed(cells, jobs, tree, band="lap", secs=0):
     utc = _utc()
-    for (s, c), j in zip(cells, jobs): _append(FEED_TSV, "\t".join(["lap", tree, utc, s, c, "0", str(j)]))
+    for (s, c), j in zip(cells, jobs): _append(FEED_TSV, "\t".join([band, tree, utc, s, c, str(secs), str(j)]))
 def _feed_lap():
     """THE LAP (test-cycle step 5b; design text skill suites-and-grading section 7): (a) a full lap at the first tick of local hour 22 with no lap put that day,
     (b) a full lap when LAP.tsv holds no lap line, (c) otherwise ONE suite by the pick rule, only when the grade tube is empty and no lap is being put.
@@ -430,6 +430,100 @@ def feed_lap():
     try: kind, n, key = _feed_lap()
     except Exception as e: return "lap=refused(%s)" % str(e).replace(" ", "_")[:120]
     return "lap=%s:%d%s" % (kind, n, (":" + key) if key else "")
+def origin_head():
+    """the short head of origin/main in SCRIP after a fetch under the s4e-fetch sem slot (the shape util_sync_root.sh uses); a fetch the slot refuses leaves the
+    last fetched origin/main standing. Returns "" when origin/main does not resolve."""
+    try:
+        subprocess.run(["sem", "--will-cite", "--id", "s4e-fetch", "-j", "4", "--fg", "--semaphoretimeout", "-60", "git", "-C", os.path.join(ROOT, "SCRIP"), "fetch", "-q", "origin", "main"],
+                       env=dict(os.environ, PARALLEL_HOME="/tmp/s4e-sem"), capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.TimeoutExpired): pass
+    r = subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP"), "rev-parse", "--short=9", "origin/main"], capture_output=True, text=True, timeout=20)
+    return r.stdout.strip() if r.returncode == 0 else ""
+def _git_out(*args):
+    return subprocess.run(["git", "-C", os.path.join(ROOT, "SCRIP")] + list(args), capture_output=True, text=True, timeout=20).stdout.strip()
+def landing_features(base):
+    """the impact set of the range base..origin/main: test_area_smoke.sh --list-only with AREA_SMOKE_BASE=base (its LIST line names the features; a MAP line
+    carrying `*` is a widening). Returns (widen, features). A refusal raises: nothing is put for a range that cannot be read."""
+    r = subprocess.run(["bash", os.path.join(ROOT, "harness", "scripts", "test_area_smoke.sh"), "--list-only"], capture_output=True, text=True, timeout=300,
+                       env=dict(os.environ, AREA_SMOKE_BASE=base), cwd=ROOT)
+    if r.returncode != 0: raise RuntimeError("test_area_smoke rc=%d" % r.returncode)
+    widen = any("->" in l and "*" in l.split("->", 1)[1].split() for l in r.stdout.splitlines() if l.startswith("AREA_SMOKE_MAP "))
+    m = re.search(r"AREA_SMOKE_LIST features=(.*?) runnable_entries=", r.stdout)
+    return widen, (m.group(1).split() if m else [])
+def impact_cells(base):
+    """the impact set of the range (test-cycle step 5c): a widening puts every master's chunk:01; else for each master whose ALL.csv has the feature column the
+    cell shell:<feature> (a token lang:feature names its lang's masters only)"""
+    widen, feats = landing_features(base)
+    masters = [r for r in master_pkg_rows() if r[1] == "master"]
+    if widen: return [(r[0], "chunk:01") for r in masters]
+    cells = {}
+    for r in masters:
+        try: cols = set(open(os.path.join(ROOT, "corpus", "tests", r[2], "ALL.csv"), encoding="utf-8").readline().strip().split(","))
+        except OSError: continue
+        for t in feats:
+            lang, _, f = t.rpartition(":")
+            if (lang and lang != r[2]) or f not in cols: continue
+            cells[(r[0], "shell:" + f)] = None
+    return list(cells)
+def _feed_landing():
+    """THE LANDING (test-cycle step 5c; design text skill suites-and-grading section 7): each tick reads origin/main of SCRIP; a new head puts the SMOKE (the core
+    cell of every master, band smoke) and the IMPACT SET (band impact) of the range old..new, one put-many call per band, and records the head. Returns (smoke, impact, kind)."""
+    new = origin_head()
+    if not new: return 0, 0, "unread"
+    path = os.path.join(TICK_DIR, "landing.head")
+    old = open(path).read().strip() if os.path.isfile(path) else ""
+    if new == old: return 0, 0, "same"
+    base = old or _git_out("rev-parse", "--short=9", new + "~1")
+    if not base: raise RuntimeError("no base for %s" % new)
+    secs = max(0, int(time.time()) - int(_git_out("log", "-1", "--format=%ct", new) or time.time()))
+    smoke = [(r[0], "core") for r in master_pkg_rows() if r[1] == "master"]
+    imp = impact_cells(base)
+    jobs_s = put_cells(smoke, new, GRADE_TUBE, "smoke") if smoke else []
+    _record_feed(smoke, jobs_s, new, "smoke", secs)
+    jobs_i = put_cells(imp, new, GRADE_TUBE, "impact") if imp else []
+    _record_feed(imp, jobs_i, new, "impact", secs)
+    os.makedirs(TICK_DIR, exist_ok=True); open(path, "w").write(new + "\n")
+    return len(smoke), len(imp), "put"
+def feed_landing():
+    """the tick's landing line: landing=same | landing=put:S+I | landing=unread | landing=refused(...); a refusal never stops the tick"""
+    if DRY: return "landing=dry"
+    try: s, i, kind = _feed_landing()
+    except Exception as e: return "landing=refused(%s)" % str(e).replace(" ", "_")[:120]
+    return "landing=%s" % (("put:%d+%d" % (s, i)) if kind == "put" else kind)
+def probe_landing():
+    """--probe-landing: a scratch TICK_DIR whose landing.head names origin/main~1, a scratch FEED file and a scratch tube probe-landing-<pid>. The first feed puts
+    the smoke and the impact jobs and writes their FEED rows; a second puts nothing; the probe deletes every job. Prints LANDING_PROBE; rc 0 only when ok=1."""
+    import tempfile
+    global TICK_DIR, GRADE_TUBE, FEED_TSV
+    saved = (TICK_DIR, GRADE_TUBE, FEED_TSV)
+    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
+    d = tempfile.mkdtemp(prefix="s4e-landing-probe-", dir=base)
+    TICK_DIR = d + "/tick"; GRADE_TUBE = "probe-landing-%d" % os.getpid(); FEED_TSV = d + "/FEED.tsv"
+    os.makedirs(TICK_DIR); open(TICK_DIR + "/landing.head", "w").write(_git_out("rev-parse", "--short=9", "origin/main~1") + "\n")
+    sys.path.insert(0, os.path.join(ROOT, "harness", "scripts")); import util_queue
+    gs, c = util_queue.client()
+    def jobs_fed(): return [int(f[6]) for f in _rows(FEED_TSV) if len(f) >= 7 and f[6].isdigit()]
+    def drain():
+        for j in jobs_fed():
+            try: c.delete(j)
+            except gs.NotFoundError: pass
+    smoke = impact = second = 0; ok = 0
+    try:
+        s1, i1, k1 = _feed_landing(); fed = jobs_fed()
+        s2, i2, k2 = _feed_landing()
+        second = s2 + i2
+        ok = int(k1 == "put" and s1 > 0 and i1 >= 0 and len(fed) == s1 + i1 and second == 0 and k2 == "same")
+        smoke, impact = s1, i1
+    except Exception as e:
+        print("LANDING_PROBE refused: %s" % str(e)[:160])
+    finally:
+        try: drain()
+        except Exception: pass
+        c.close()
+        TICK_DIR, GRADE_TUBE, FEED_TSV = saved
+        shutil.rmtree(d, ignore_errors=True)
+    print("LANDING_PROBE smoke=%d impact=%d second=%d ok=%d" % (smoke, impact, second, ok))
+    return 0 if ok else 1
 def probe_lap():
     """--probe-lap: scratch LAP, FEED and SUITES files and a scratch tube probe-lap-<pid>. Phase 1: a first feed puts every cell (kind lap). Phase 2: a second feed
     with the tube non-empty puts nothing. The probe deletes every job; phase 3: a third feed writes the done line. Phase 4: a scratch SUITES.tsv with the first
@@ -734,9 +828,10 @@ def tick():
     fed = feed_requests()
     st = watch_grader(n)
     lapfeed = feed_lap()
+    landing = feed_landing()
     view = regenerate_view()
     with open(TICK_DIR + "/decide.last", "w") as f:
-        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, lap=lapfeed, view=view)) + "\n")
+        f.write(json.dumps(dict(tick=n, sensors=s, decision=d, grader=grader, awake=awake, liveset=liveset, expired=expired, fed=fed, lap=lapfeed, landing=landing, view=view)) + "\n")
     # BOX.state: the controller is its writer (the coo 2026-11-07 15:29: the retired box_controller's file had no writer and its readers, the coo's OPS line, opswatch and
     # fleet_health.py, read a 520 s old width of 2). The old keys that still mean something keep their names (ts busy cores cpu_psi10 cpu_psi60 grader_width action); the rest are the tick's.
     try:
@@ -754,9 +849,9 @@ def tick():
         print("BOX.state not written: %s" % e)
     ru = resource.getrusage(resource.RUSAGE_SELF); rc = resource.getrusage(resource.RUSAGE_CHILDREN)
     cpu_s = ru.ru_utime + ru.ru_stime + rc.ru_utime + rc.ru_stime
-    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s %s secs=%d cpu_s=%.2f%s"
+    print("TICK unit=s4e-tick.timer controller=box_tick.py tick=%d psi10=%.1f psi60=%.1f psi300=%.1f load1=%.1f mem_rise=%d step=%+d why=%s W=%d/%d A=%d/%d %s %s %s %s expired=%d %s %s %s %s %s secs=%d cpu_s=%.2f%s"
           % (n, s["cpu10"], s["cpu60"], s["cpu300"], s["load1"], s.get("mem_rise", 0), d["step"], d["why"], d["W"], d["WMAX"], d["A"], d["AMAX"],
-             sy["disp"], grader, awake, liveset, expired, fed, view, lapfeed, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
+             sy["disp"], grader, awake, liveset, expired, fed, view, lapfeed, landing, st["line"], int(time.time() - t0), cpu_s, " dry=1" if DRY else ""))
     return 0
 
 
@@ -803,10 +898,12 @@ if __name__ == "__main__":
         sys.exit(probe_feed())
     if arg == "--probe-stall":
         sys.exit(probe_stall())
+    if arg == "--probe-landing":
+        sys.exit(probe_landing())
     if arg == "--probe-sync":
         sys.exit(probe_sync())
     if arg == "--probe-lap":
         sys.exit(probe_lap())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --decide"); sys.exit(2)
