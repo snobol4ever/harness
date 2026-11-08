@@ -68,7 +68,7 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 59	sno	SNO$PBK	2	2	rt_sno_pbk_d	leaf	-	-	0	dop_direct,ids
 60	sno	SNO$PBN	2	2	rt_sno_pbn_d	leaf	-	-	0	dop_direct,ids
 61	sno	SNO$PCUR	1	1	rt_sno_pcur_d	leaf	-	-	0	dop_direct,ids
-62	sno	SNO$PDEF	1	1	rt_sno_pdef_d	leaf	-	-	0	dop_direct,ids
+62	sno	SNO$PDEF	1	3	rt_sno_pdef_d	leaf	-	-	0	dop_direct,ids
 63	sno	SNO$PFEN	1	1	rt_sno_pfen_d	leaf	-	-	0	dop_direct,ids
 64	sno	SNO$STMT	-	-1	rt_sno_stmt_d	leaf	-	-	0	dop_direct,ids,rt_known
 65	sno	SNO$WANTNM	-	-1	rt_sno_wantnm_d	leaf	-	-	0	bn_direct,dop_direct,ids,rt_known
