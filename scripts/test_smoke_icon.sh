@@ -174,6 +174,20 @@ procedure main()
 end
 EOF
 
+# every over a suspending procedure with a two-statement do-body (2026-11-08): step 65 (SCRIP 1619a5740) zeroed the generator's
+# H link at the body statement's fenced gamma pop, so the resume SIGSEGVed in mode 3; step 79 (d7d3593f1) cured it. 1+2+3+4 = 10.
+icon "every_body_two_statements_over_a_suspending_procedure" "10" << 'EOF'
+procedure g()
+  suspend 1 to 5;
+end
+procedure main()
+  local p, s;
+  s := 0;
+  every p := g() do { s +:= p; if p > 3 then break };
+  write(s);
+end
+EOF
+
 echo ""
 echo "mode-3 (--run):      PASS=$P3 FAIL=$F3  / $N   (HARD: zero FAIL — primary native mode)"
 echo "mode-4 (--compile):  PASS=$P4 FAIL=$F4  / $N   (HARD: zero FAIL; floor MODE4_MIN=$MODE4_MIN)"
