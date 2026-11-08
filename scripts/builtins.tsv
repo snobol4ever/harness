@@ -1346,3 +1346,4 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1347	icn	ICN$CV_WOKEN	0	0	bt_ICNx24CV_WOKEN	leaf	-	-	0	fn_arms
 1348	icn	ICN$ULIST	0	2	bt_ICNx24ULIST	leaf	-	-	0	fn_arms
 1349	rk	arr_make_raw	4	4	pas_arr_make_raw	leaf	-	-	0	rt_known
+1350	rk	arr_slice	3	3	pas_slice	leaf	-	-	0	rt_known
