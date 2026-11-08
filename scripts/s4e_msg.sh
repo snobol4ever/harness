@@ -1726,6 +1726,34 @@ s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next write
     o="$(run claim "$c")"; grep -qx RUNNING "$w/claims/$c.claim" 2>/dev/null && why="$why a fourth live claim of a FREE row passed the cap of two;"
     [ -z "$why" ] && { echo "NEXT writes=0 order=assign-time counted_live=0 (probe: two assigned rows served newest-assign first with no write, a FREE row served unlocked, an assigned row claimed past two live claims, a free row refused)"; exit 0; }
     echo "NEXT PROBE RED:$why"; exit 1; }
+s4e_next_probe_no_tier() {   # next --probe-no-tier (the cio's design 2026-11-08 08:4x CST, cut by officer_03 under COO-484): a seat the ROSTER names but the TIERS table lacks is REFUSED rc 2 by next, the cure (util_sync_root.sh) named and no FREE row served; the control arm, the same scratch postoffice with the seat in TIERS at tier 4, reaches the reserve over its own tubes (nothing ready in seat-<me>) and is not refused. A scratch postoffice, a scratch TIERS.tsv and a PRIVATE beanstalkd (the live queue is never touched). One NEXT_NO_TIER line; rc 0 only when every check holds
+    local w t o rc cure free same ctl why="" before
+    [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-no-tier]: S4E_SEAT unset"; exit 2; }
+    s4e_probe_daemon || exit 2
+    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_no_tier.XXXXXX")" || { echo "REFUSE(2) [next --probe-no-tier]: mktemp failed"; exit 2; }
+    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
+    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; echo "ROSTER: $ME"; } > "$w/MODE"
+    [ -f "$PO/PROTOCOL-VERSION" ] && cp "$PO/PROTOCOL-VERSION" "$w/PROTOCOL-VERSION"
+    t="no-tier-free-$$"
+    printf '# plant queue\n2\t%s\tunassigned\tFREE\n' "$t" > "$w/QUEUE.tsv"
+    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: false\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$t" > "$w/tasks/$t.task.md"
+    printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\nprobe_other\tP\t/tmp\tclaude-haiku-5-5\txhigh\tblue\t4\tworker\n' > "$w/TIERS.none"
+    { cat "$w/TIERS.none"; printf '%s\tP\t/tmp\tclaude-haiku-5-5\txhigh\tblue\t4\tworker\n' "$ME"; } > "$w/TIERS.seat"
+    run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_TIERS="$1" S4E_NO_BANNER=1 S4E_NO_PREMISE_CHECK=1 bash "$0" next 2>&1; }
+    before="$(md5sum < "$w/QUEUE.tsv")"
+    o="$(run "$w/TIERS.none")"; rc=$?
+    cure=0; printf '%s\n' "$o" | grep -q 'util_sync_root\.sh' && cure=1
+    free=0; printf '%s\n' "$o" | grep -q "^FREE $t " && free=1
+    same=0; [ "$before" = "$(md5sum < "$w/QUEUE.tsv")" ] && [ ! -e "$w/claims/$t.claim" ] && same=1
+    o="$(run "$w/TIERS.seat")"; ctl=$?; [ "$ctl" != 2 ] && printf '%s\n' "$o" | grep -q "nothing ready in seat-$ME," && ctl=1 || ctl=0
+    rm -rf "$w"
+    [ "$rc" = 2 ] || why="$why next exited $rc, not 2, for a seat the TIERS table lacks;"
+    [ "$cure" = 1 ] || why="$why the refusal does not name util_sync_root.sh;"
+    [ "$free" = 0 ] || why="$why a FREE row was served to an untiered seat;"
+    [ "$same" = 1 ] || why="$why the queue or a claim was written;"
+    [ "$ctl" = 1 ] || why="$why the control arm (the seat in TIERS at tier 4) did not reach its own tube (nothing ready in seat-$ME);"
+    if [ -z "$why" ]; then echo "NEXT_NO_TIER rc=$rc cure_named=$cure free_served=$free queue_unchanged=$same control_served=$ctl ok=1"; exit 0; fi
+    echo "NEXT_NO_TIER rc=$rc cure_named=$cure free_served=$free queue_unchanged=$same control_served=$ctl ok=0 (PROBE RED:$why)"; exit 1; }
 s4e_banner_plant_once() {   # step 37's probe on a scratch postoffice: two arrivals, one heading across two verbs; after check one line; a third arrival, one heading again
     local w o1 o2 o3 o4 h why=""
     [ -n "$ME" ] || { echo "REFUSE(2) [banner --probe-once]: S4E_SEAT unset"; exit 2; }
@@ -4824,6 +4852,7 @@ TASKEOF
          s4e_step_owned_refuse "$2" || exit 2
          s4e_recut_write "${@:2}"; exit $?;;
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
+        [ "${2:-}" = --probe-no-tier ] && s4e_next_probe_no_tier
         # fleet-control step 12 (the cio, 2026-11-07 14:5x; Lon: the fleet runs without the cio's attention): `next --wait S` holds the reserve open S seconds
         # (beanstalkd reserve-with-timeout), so a worker the Stop gate sends back polls the tube instead of going idle until a message wakes it; 0 is the old instant read.
         if [ "${2:-}" = --wait ]; then case "${3:-}" in ''|*[!0-9]*) printf '⛔ REFUSED: next --wait takes whole seconds (got %s)\n' "${3:-nothing}" >&2; exit 2;; esac; export S4E_NEXT_WAIT="$3"; fi

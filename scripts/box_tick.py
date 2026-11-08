@@ -10,6 +10,7 @@
 #   box_tick.py --probe-width    the law on planted sensors: quiet raises one step, hot lowers one step, a hold holds; one WIDTH_PSI line, rc 0/1
 #   box_tick.py --decide         print the decision for the live sensors without acting
 #   box_tick.py --probe-stall    the grader's stall on planted bury lines: one telegram each to cio and coo, one kick, no second telegram; STALL_PROBE line, rc 0/1
+#   box_tick.py --probe-roots-sync  every clean seat root's .github and harness fast-forwarded every fifth tick, a dirty root named and left; ROOTS_SYNC line, rc 0/1
 #   box_tick.py --probe-lap      the lap (test-cycle step 5b): a full lap put once, a second feed puts nothing, the done mark, one oldest-suite feed; one LAP_PROBE line, rc 0/1
 # S4E_TICK_DRY=1: no 2 s sample, no systemctl, no expire, no MODE write, a scratch tick dir; the TICK line still prints with its cpu_s.
 # THE LAW OF THE TWO KNOBS (one step a tick at most, a step every S4E_STEP_EVERY ticks, default 2):
@@ -856,6 +857,77 @@ def probe_sync():
     return 0 if ok else 1
 
 
+ROOTS_GLOB = os.environ.get("S4E_ROOTS_GLOB", "/home/claude_*")
+ROOTS_EVERY = 5
+def sync_seat_roots(n):
+    """THE CONTROLLER FAST-FORWARDS .github AND harness IN EVERY CLEAN SEAT ROOT (the cio's design 2026-11-08 08:4x CST; cut by officer_03 under COO-484).
+    Every ROOTS_EVERY-th tick (n % ROOTS_EVERY == 0; else kind=skipped), for each directory of sorted(glob(ROOTS_GLOB)) except ROOT and GRADER_HOME that
+    holds both .github/.git and harness/.git: when both repos are clean (git status --porcelain empty), fetch origin in each under the s4e-fetch sem and
+    merge --ff-only origin/main; one line per root that moved appended to TICK_DIR/roots_sync.log; a dirty or diverged root is named in dirty and left alone.
+    Returns dict(kind=ok|skipped, moved=[roots that moved], dirty=[roots named], disp=the TICK line's roots= text). THE BODY IS THE WORKER'S ROW."""
+    return dict(kind="ok", moved=[], dirty=[], disp="roots=none")
+
+
+def probe_roots_sync():
+    """--probe-roots-sync: two LOCAL BARE origins (.github, harness), each given two commits; three scratch roots under a scratch dir, each cloned from them
+    and reset one commit behind: claude_clean (clean), claude_dirty (an untracked file in harness), claude_grader (clean, named GRADER_HOME). Tick 6 is
+    skipped (nothing moves); tick 5 moves claude_clean's two repos to origin, leaves claude_dirty and claude_grader behind, names claude_dirty once and writes
+    one roots_sync.log line naming claude_clean; tick 10 moves nothing and the log keeps one line; tick() calls sync_seat_roots. Prints ROOTS_SYNC; rc 0/1."""
+    import tempfile, inspect
+    global ROOTS_GLOB, TICK_DIR, GRADER_HOME
+    saved = (ROOTS_GLOB, TICK_DIR, GRADER_HOME)
+    base = "/tmp/s4e/%s" % os.environ.get("S4E_SEAT", "cio"); os.makedirs(base, exist_ok=True)
+    d = tempfile.mkdtemp(prefix="s4e-roots-probe-", dir=base)
+    who = dict(GIT_AUTHOR_NAME="s4e-probe", GIT_AUTHOR_EMAIL="probe@s4e.invalid", GIT_COMMITTER_NAME="s4e-probe", GIT_COMMITTER_EMAIL="probe@s4e.invalid")
+    def git(*a, cwd=None):
+        r = subprocess.run(["git", "-c", "commit.gpgsign=false", "-c", "init.defaultBranch=main", *a], cwd=cwd, capture_output=True, text=True, timeout=60,
+                           env=dict(os.environ, **who), stdin=subprocess.DEVNULL)
+        if r.returncode != 0:
+            raise RuntimeError("git %s: %s" % (a[0], r.stderr.strip()[:200]))
+        return r.stdout.strip()
+    repos, names = [".github", "harness"], ["claude_clean", "claude_dirty", "claude_grader"]
+    why, moved, named, lines = [], 0, 0, -1
+    try:
+        for r in repos:
+            bare, w = d + "/origin/" + r + ".git", d + "/work/" + r
+            git("init", "-q", "--bare", "-b", "main", bare); git("init", "-q", "-b", "main", w); git("remote", "add", "origin", bare, cwd=w)
+            for t in ("one", "two"):
+                with open(w + "/f.txt", "a") as fh: fh.write(t + "\n")
+                git("add", "f.txt", cwd=w); git("commit", "-q", "-m", t, cwd=w)
+            git("push", "-q", "origin", "main", cwd=w)
+        tip = {r: git("rev-parse", "HEAD", cwd=d + "/work/" + r) for r in repos}
+        for nm in names:
+            for r in repos:
+                git("clone", "-q", d + "/origin/" + r + ".git", d + "/" + nm + "/" + r); git("reset", "-q", "--hard", "HEAD~1", cwd=d + "/" + nm + "/" + r)
+        open(d + "/claude_dirty/harness/untracked.txt", "w").write("dirty\n")
+        behind = git("rev-parse", "HEAD", cwd=d + "/claude_clean/harness")
+        ROOTS_GLOB, TICK_DIR, GRADER_HOME = d + "/claude_*", d + "/tick", d + "/claude_grader"
+        os.makedirs(TICK_DIR)
+        head = lambda nm, r: git("rev-parse", "HEAD", cwd=d + "/" + nm + "/" + r)
+        logn = lambda: len(open(TICK_DIR + "/roots_sync.log").read().splitlines()) if os.path.exists(TICK_DIR + "/roots_sync.log") else 0
+        s6 = sync_seat_roots(6)
+        if s6.get("kind") != "skipped" or head("claude_clean", "harness") != behind: why.append("tick 6 was not skipped")
+        s5 = sync_seat_roots(5)
+        moved = sum(1 for r in repos if head("claude_clean", r) == tip[r])
+        if moved != 2: why.append("claude_clean moved %d of 2 repos" % moved)
+        if any(head(nm, r) == tip[r] for nm in ("claude_dirty", "claude_grader") for r in repos): why.append("a dirty or grader root moved")
+        named = sum(1 for x in s5.get("dirty", []) if os.path.basename(x.rstrip("/")) == "claude_dirty")
+        if named != 1 or len(s5.get("dirty", [])) != 1: why.append("dirty named %d time(s) among %s" % (named, s5.get("dirty")))
+        lines = logn()
+        if lines != 1 or "claude_clean" not in open(TICK_DIR + "/roots_sync.log").read(): why.append("roots_sync.log holds %d line(s), not one naming claude_clean" % lines)
+        s10 = sync_seat_roots(10)
+        if s10.get("moved") or logn() != 1: why.append("tick 10 moved %s, log lines %d" % (s10.get("moved"), logn()))
+        if "sync_seat_roots(" not in inspect.getsource(tick): why.append("tick() does not call sync_seat_roots")
+    except Exception as e:
+        why.append("error " + str(e)[:200])
+    finally:
+        ROOTS_GLOB, TICK_DIR, GRADER_HOME = saved
+        shutil.rmtree(d, ignore_errors=True)
+    ok = int(not why)
+    print("ROOTS_SYNC moved=%d dirty_named=%d log_lines=%d ok=%d%s" % (1 if moved == 2 else 0, named, lines, ok, "" if ok else " (PROBE RED: %s)" % "; ".join(why)))
+    return 0 if ok else 1
+
+
 TICKS_LOG_MAX = 8 << 20
 def log_tick(n, gq):
     """TICK_DIR/ticks.log: ONE JSON line a tick (DESIGN-PLAN test-cycle step 8, the acceptance instrument util_seat_census.py --test-cycle-acceptance reads it):
@@ -981,6 +1053,8 @@ if __name__ == "__main__":
         sys.exit(probe_landing())
     if arg == "--probe-sync":
         sys.exit(probe_sync())
+    if arg == "--probe-roots-sync":
+        sys.exit(probe_roots_sync())
     if arg == "--probe-lap":
         sys.exit(probe_lap())
     if arg == "--probe-impact":
@@ -989,4 +1063,4 @@ if __name__ == "__main__":
         sys.exit(probe_area_refusal())
     if arg == "--decide":
         mode = mode_text(); s = sense(); print(json.dumps(decide(s, current_width(), current_awake(mode), mode, read_int(TICK_DIR + "/tick.count", 0) + 1))); sys.exit(0)
-    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-lap | --probe-landing | --probe-impact | --probe-area-refusal | --decide"); sys.exit(2)
+    print("usage: box_tick.py --tick | --probe-width | --probe-rows | --probe-feed | --probe-stall | --probe-sync | --probe-roots-sync | --probe-lap | --probe-landing | --probe-impact | --probe-area-refusal | --decide"); sys.exit(2)
