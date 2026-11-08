@@ -533,7 +533,7 @@ resolve_output_conflicts() {   # <repo> (step 19: generated tables merge by rege
 }
 written=(); summary=""; binfo=""
 regen() {
-    local phase="$1" k c w rc stale=() pids=()
+    local phase="$1" k c w rc ph stale=() pids=()
     written=()
     mapfile -t ks < <(awk -F'\t' -v p="^($phase)\$" '!/^#/ && $1 != "name" && $2 ~ p && !s[$1]++ {print $1}' "$TSV")
     [ "${#ks[@]}" -gt 0 ] || refuse "the registry has no $phase-phase table"
@@ -560,7 +560,10 @@ regen() {
         w="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $5; exit}' "$TSV")"
         c="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $4; exit}' "$TSV")"
         ( cd "$home" && timeout -k 5 900 bash -c "$w" ) > "$LOG/write.$k" 2>&1 8>&- 9>&- || red "$2" "table=$k write failed: $(tail -1 "$LOG/write.$k")"
-        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 8>&- 9>&- || red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"
+        ph="$(awk -F'\t' -v k="$k" '!/^#/ && $1 == k {print $2; exit}' "$TSV")"
+        if [ "$ph" = built ] && [ -n "$(git -C "$home/SCRIP" status --porcelain --untracked-files=no -- src 2>/dev/null)" ]; then build derive-recheck; fi
+        ( cd "$home" && timeout -k 5 900 bash -c "$c" ) > "$LOG/recheck.$k" 2>&1 8>&- 9>&-; rc=$?
+        [ "$rc" = 0 ] || { [ "$rc" = 2 ] && red "$2" "the re-check of table $k refused (rc 2): $(head -1 "$LOG/recheck.$k")"; red "$2" "table=$k is still stale after its own write: $(tail -1 "$LOG/recheck.$k")"; }
         written+=("$k")
     done
     summary="${#ks[@]} checked, ${#stale[@]} stale${stale[*]:+ (${stale[*]})}${skipped[*]:+ skipped=${skipped[*]}}"
