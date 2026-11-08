@@ -54,7 +54,7 @@ refuse() { echo "⛔ REFUSED(2) [$GATE_NAME]: $*" >&2; exit 2; }
 # stopwatch is /usr/bin/time (SCRIP's tools/bench_rusage lives in SCRIP, which a port root does not hold; stdout untouched either way), the rows
 # are keyed snobol4-bench-ref@<engine> by the one writer, and no SCRIP score row is written. Under scrip every line reads as it did.
 PORT=0; one_runner_is_port && PORT=1
-MODES="m3 m4"; [ "$PORT" = 1 ] && MODES=m3
+MODES="$(printf "%s" "${S4E_MODES:-m3}" | tr "," " ")"; [ "$PORT" = 1 ] && MODES=m3
 # ⭐ ANGLE 3 BUDGETS BY TIME(), IN THE ENGINE'S OWN UNIT: the generator spells the budget in nanoseconds (SCRIP's rt_time_ns; the fleet's
 # SPITBOLs answer the same by NS-TIME), and a port declares its unit through one_runner_port_time_unit_ns -- snobol4dotnet mimics SPITBOL
 # exactly (Lon 2026-10-18), whose TIME() is milliseconds, so it runs at 1000000 ns per unit (read as nanoseconds, its 200 ms budget was 55
@@ -175,7 +175,8 @@ for k in "${KERNELS[@]}"; do
     printf '%-20s %-4s %-7s %-7s %-7s %s\n' "$k" sbl "$o1" "$o2" "$o3" "$([ "$o1$o2$o3" = PASSPASSPASS ] && echo PASS || echo "FAIL -- $(echo "$owhy" | sed 's/^[; ]*//')") (oracle arm, informational)"
   fi
 done
-LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=${PASSN[m3]} m4_pass=${PASSN[m4]} angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
+M3P=-; M4P=-; case " $MODES " in *" m3 "*) M3P=${PASSN[m3]};; esac; case " $MODES " in *" m4 "*) M4P=${PASSN[m4]};; esac
+LINE="SUITE_BOARD family=$SUITE_KEY total=$TOTAL shipped=$TOTAL all_pass=$BOTH all_n=$TOTAL m3_pass=$M3P m4_pass=$M4P angles=$ANGLES iter_n=$ITER_N bud_ms=$BUD_MS memory_declared=$HEAPD"
 [ "$PORT" = 1 ] && LINE="$LINE engine=$(one_runner_engine) modes=m3"
 echo
 echo "$LINE"
