@@ -6,7 +6,7 @@
 # Sourced, never executed: no set -e, no exit, functions only; each function returns.
 hr_begin() {
     mkdir -p "$1/out"
-    : > "$1/harness.list"
+    : > "$1/harness.tsv"
     rm -f "$1/harness.rec"
     HR_DIR="$1"
 }
@@ -24,15 +24,15 @@ hr_row() {
     [ "${1:-}" = -- ] && shift
     line="$line"$'\t'"$src"
     while [ $# -gt 0 ]; do line="$line"$'\t'"$1"; shift; done
-    printf '%s\n' "$line" >> "$HR_DIR/harness.list"
+    printf '%s\n' "$line" >> "$HR_DIR/harness.tsv"
     return 0
 }
 hr_run() {
     local scrip="$1" n t m ra cr hg rf
-    n=$(awk 'END{print NR+0}' "$HR_DIR/harness.list")
+    n=$(awk 'END{print NR+0}' "$HR_DIR/harness.tsv")
     if [ "$n" = 0 ]; then echo "HARNESS_ROAD rows=0"; return 0; fi
-    t=$(awk -F'\t' '{for (i=1;i<=NF;i++) if ($i ~ /^timeout_s=/) {v=$i; sub(/^timeout_s=/, "", v); s+=v}} END{print s+60}' "$HR_DIR/harness.list")
-    timeout -k 5 "$t" "$scrip" --harness "$HR_DIR/harness.list" --record "$HR_DIR/harness.rec" < /dev/null > "$HR_DIR/scrip.log" 2>&1
+    t=$(awk -F'\t' '{for (i=1;i<=NF;i++) if ($i ~ /^timeout_s=/) {v=$i; sub(/^timeout_s=/, "", v); s+=v}} END{print s+60}' "$HR_DIR/harness.tsv")
+    timeout -k 5 "$t" "$scrip" --harness "$HR_DIR/harness.tsv" --record "$HR_DIR/harness.rec" < /dev/null > "$HR_DIR/scrip.log" 2>&1
     m=0; ra=0; cr=0; hg=0; rf=0
     if [ -f "$HR_DIR/harness.rec" ]; then
         m=$(awk 'END{print NR+0}' "$HR_DIR/harness.rec")
