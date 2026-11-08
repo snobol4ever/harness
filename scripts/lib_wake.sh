@@ -9,6 +9,8 @@
 #                                            tier (chosen by the topic's checksum over the live set, so two movers spread their wakes) and list the others;
 #                                            lon-hold or an empty tube prints nothing. Reads $S4E_TIERS (seat name root model effort color tier role) and
 #                                            MODE's FLEET: IDLE EXCEPT line (the live set; no line means every seat of the tier is live).
+s4e_wake_tiers() {   # the tiers table: S4E_TIERS when the bus set it, else the root's .github/TIERS.tsv (officer_03, 2026-11-08 10:5x: from a seat root the helper read "S4E_TIERS unset" and named nobody)
+    if [ -n "${S4E_TIERS:-}" ]; then printf '%s' "$S4E_TIERS"; else printf '%s/.github/TIERS.tsv' "${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"; fi; }
 s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one per line
     local _tn _fl _ex; case "$1" in fable) _tn=1;; opus) _tn=2;; sonnet) _tn=3;; haiku) _tn=4;; *) return 0;; esac
     _fl="$(grep -m1 '^FLEET: IDLE' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null)"
@@ -18,7 +20,7 @@ s4e_wake_live_of_tier() {   # <tier name> -> the live seats of that tier, one pe
     local _cg="/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/s4e.slice/s4e-seats.slice" _have=0 _s
     [ -d "$_cg" ] && ls -d "$_cg"/s4e-seat-*.scope >/dev/null 2>&1 && _have=1
     local _bosses; _bosses=" $(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1) "   # a boss (cio coo cto) is woken by tier-fable and ask-fable only: its own tube is its escalation road, not its hold
-    awk -F'\t' -v t="$_tn" -v live=" $_ex " -v bosses="$_bosses" -v any="$([ -n "$_fl" ] && echo 0 || echo 1)" '!/^#/ && $7==t && $1!="" { if (t != 1 && index(bosses, " " $1 " ")) next; if (any || index(live, " " $1 " ")) print $1 }' "${S4E_TIERS:?S4E_TIERS unset}" 2>/dev/null | while read -r _s; do
+    awk -F'\t' -v t="$_tn" -v live=" $_ex " -v bosses="$_bosses" -v any="$([ -n "$_fl" ] && echo 0 || echo 1)" '!/^#/ && $7==t && $1!="" { if (t != 1 && index(bosses, " " $1 " ")) next; if (any || index(live, " " $1 " ")) print $1 }' "$(s4e_wake_tiers)" 2>/dev/null | while read -r _s; do
         if [ "$_have" = 1 ]; then
             [ -f "$_cg/s4e-seat-$_s.scope/cgroup.procs" ] || continue
             ps -o comm= -p $(tr '\n' ',' < "$_cg/s4e-seat-$_s.scope/cgroup.procs" | sed 's/,$//') 2>/dev/null | grep -q -x -E 'claude|[0-9.]+' || continue
@@ -36,8 +38,8 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
     esac
     set -- $_seats; _n=$#; [ "$_n" -gt 0 ] || { printf 'WAKE: nobody of %s is in the live set (MODE FLEET: IDLE EXCEPT); the job waits in %s until a seat of that tier is spawned or the line is widened.\n' "$_tube" "$_tube"; return 0; }
     _pick=$(( $(printf '%s' "$_t" | cksum | cut -d' ' -f1) % _n + 1 )); eval "_s=\${$_pick}"
-    _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "${S4E_TIERS:?}" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
-    _others=""; for _x in "$@"; do [ "$_x" = "$_s" ] || _others="$_others $(awk -F'\t' -v s="$_x" '!/^#/ && $1==s {print $2; exit}' "${S4E_TIERS:?}" 2>/dev/null)"; done
+    _name="$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; [ -n "$_name" ] || _name="$_s"
+    _others=""; for _x in "$@"; do [ "$_x" = "$_s" ] || _others="$_others $(awk -F'\t' -v s="$_x" '!/^#/ && $1==s {print $2; exit}' "$(s4e_wake_tiers)" 2>/dev/null)"; done
     printf 'WAKE: SendMessage to %s now (seat %s; tube %s%s) with this first line: "%s %s: run bash harness/scripts/s4e_msg.sh next, it serves this job"\n' "$_name" "$_s" "$_tube" "${_others:+; also live:$_others}" "$_v" "$_t"
     printf '      DESIGN FLOWS DOWN, PROBLEMS FLOW UP (Lon 2026-11-08): the seat that moves work wakes its taker before doing anything else; a telegram wakes nobody, the coo is for emergencies.\n'
 }

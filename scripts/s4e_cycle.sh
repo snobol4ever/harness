@@ -78,6 +78,8 @@ if [ "$MODE_ARG" = --list ]; then cells; echo "CELLS $(cells | wc -l)"; exit 0; 
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
 echo $$ > "$PIDF"
 trap 'rm -f "$PIDF"' EXIT
+# THE BINARY IS FRESH AT EVERY START, not only at a lap start (the cio 2026-11-08 10:5x: the grader root synced mid-lap without a make, and cells 25 to 40 refused rc 2 in 2 s each on a stale binary): make on a built tree is a no-op or a cache fetch.
+( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null || { log "START REFUSED: make rc $? (see $TMPDIR/cycle/make.log); exit 1, cron starts the next try"; exit 1; }
 lap="$(state_get lap)"; idx="$(state_get idx)"; st="$(state_get status)"; pc="$(state_get cell)"; ps="$(state_get suite)"
 [ -n "$lap" ] || lap=0; [ -n "$idx" ] || idx=0
 if [ "$st" = running ] && [ -n "$ps" ]; then
