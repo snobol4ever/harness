@@ -2,7 +2,7 @@
 # test_design_batch_grader_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: batch-grader (the cio, 2026-11-05, on Lon's word: "For the test
 # harness, you should move INTO SCRIP. Let scrip run a list of source files on the command line, and reset its base memory cleanly each time."; the
 # design text in .github/skills/suites-and-grading/SKILL.md section 5; the SCRIP side ruled by the cto). The plan is corpus/tests/shared/batch_grader/STEPS.tsv;
-# the witnesses are the programs beside it, each .ref cut from its oracle (sbl -bf; icont and iconx; swipl -q -t halt for the Prolog witnesses of steps 8 and 9, CTO-522), never from our output. A step's measurement is
+# the witnesses are the programs beside it, each .ref cut from its oracle (sbl -bf; icont and iconx, or unicon through unicon_bin() for a *_uni_* witness whose row carries --dialect=unicon, CTO-554; swipl -q -t halt for the Prolog witnesses of steps 8 and 9, CTO-522), never from our output. A step's measurement is
 # its PROBE, one bash command run from S4E_HOME, so a step reads RED until scrip has the switch and GREEN only while the witnesses say so.
 #   --list       print the steps and run nothing
 #   --step N     run step N's probe (600 s budget; S4E_SEAT names the seat whose /tmp/s4e/<seat> the probe writes under)
@@ -44,7 +44,21 @@ if [ "$mode" = cut ]; then
     done
     for src in *.icn; do
         w="${src%.icn}"; x="$(mktemp "${TMPDIR:-/tmp}/bg_icx.XXXXXX")"
-        timeout -k 5 60 "$(icont_bin)" -s -o "$x" "$src" 2>/dev/null && timeout -k 5 60 "$(iconx_bin)" "$x" < /dev/null > "$w.ref" 2>/dev/null; echo "cut $w.ref (icont/iconx rc $?): $(wc -l < "$w.ref") lines"; rm -f "$x"
+        case "$w" in
+        *_uni_*)  # CTO-554 step 10a: a markerless program the row tells scrip is Unicon (--dialect=unicon, CTO-473), so its oracle is unicon_bin(); its
+                  # row attributes live beside it: $w.cwd/ (the companions, the working directory), $w.args (one line, the argv), $w.env (NAME=VALUE lines),
+                  # $w.in (stdin); stderr is merged into the ref (stderr=merged in the row).
+            in=/dev/null; [ -f "$w.in" ] && in="$WD/$w.in"
+            args=""; [ -f "$w.args" ] && args="$(cat "$w.args")"
+            cw="$(mktemp -d "${TMPDIR:-/tmp}/bg_ucw.XXXXXX")"; [ -d "$w.cwd" ] && cp -r "$w.cwd/." "$cw/"
+            if timeout -k 5 60 "$(unicon_bin)" -s -o "$x.uni" "$src" > /dev/null 2>&1; then
+                ( cd "$cw" && [ -f "$WD/$w.env" ] && set -a && . "$WD/$w.env" && set +a; cd "$cw" && timeout -k 5 60 "$x.uni" $args < "$in" > "$WD/$w.ref" 2>&1 ); echo "cut $w.ref (unicon rc $?): $(wc -l < "$w.ref") lines"
+            else echo "cut $w.ref SKIPPED: unicon refused $src"; fi
+            rm -rf "$cw" "$x.uni" ;;
+        *)
+            timeout -k 5 60 "$(icont_bin)" -s -o "$x" "$src" 2>/dev/null && timeout -k 5 60 "$(iconx_bin)" "$x" < /dev/null > "$w.ref" 2>/dev/null; echo "cut $w.ref (icont/iconx rc $?): $(wc -l < "$w.ref") lines" ;;
+        esac
+        rm -f "$x"
     done
     exit 0
 fi
