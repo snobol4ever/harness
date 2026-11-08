@@ -24,6 +24,9 @@ def token_end(line, col):
             if line[j] == c: return j + 1
             j += 1
         return len(line)
+    if c.isdigit():
+        m = NUMBER.match(line, i)
+        if m and m.end() > i: return m.end()
     if c.isalnum() or c == '_':
         j = i
         while j < len(line) and (line[j].isalnum() or line[j] == '_' or line[j] == '.'): j += 1
