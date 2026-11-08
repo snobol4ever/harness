@@ -255,10 +255,10 @@ s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job,
     [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $_pri --ttr $_ttr" >&2; return 1; }
     s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$_pri ttr=$_ttr"; }
 s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) echo haiku;; *) return 1;; esac; }
-s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet -> tier-opus, tier-opus -> tier-fable; rc 1 at the top
+s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> seat-coo, the coo's tube; an opus tube or seat -> tier-fable (Lon 2026-11-08: junior, senior, the coo, then the cio and the cto for an emergency); rc 1 at the top
     local _tier
     case "$1" in seat-*) _tier="$(s4e_tier_of "${1#seat-}")" || return 1;; tier-*) _tier="${1#tier-}";; *) return 1;; esac
-    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo tier-opus;; opus) echo tier-fable;; *) return 1;; esac; }
+    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo seat-coo;; opus) echo tier-fable;; *) return 1;; esac; }
 s4e_escalate_rung_set() {   # <topic> -> bumps the baton's RUNG: head line (absent means 1, so the first escalation writes RUNG: 2); prints the new rung
     local _b="$PO/tasks/$1.task.md" _cur _new
     _cur="$(sed -n 's/^RUNG:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$_b" | head -1)"; _new=$(( ${_cur:-1} + 1 ))
@@ -325,7 +325,8 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         [ -n "$_new" ] || { printf '⛔ REFUSED (rc 2): the put into %s failed (util_queue.py status tells why). The KILL is written and the old job is gone; the claim stays for a boss to re-put the job.\n' "$_above" >&2; return 2; }
         s4e_baton_job_set "$_t" "$_new" "$_above"
         s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
-        rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "@${_above#tier-}" || true
+        _own="@${_above#tier-}"; case "$_above" in seat-*) _own="${_above#seat-}";; esac
+        rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "$_own" || true
         for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
     fi
     printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0; }
