@@ -1335,3 +1335,6 @@ bid	vocab	name	min	max	entry	conv	recv	flags	op	src
 1336	icn	ICN$LOCK_TRY	1	2	bt_ICNx24LOCK_TRY	leaf	-	-	0	fn_arms
 1337	icn	ICN$UNLOCK	1	1	bt_ICNx24UNLOCK	leaf	-	-	0	fn_arms
 1338	icn	ICN$UCURSOR	1	1	bt_ICNx24UCURSOR	leaf	-	-	0	fn_arms
+1339	icn	ICN$USIGTRAP	2	2	bt_ICNx24USIGTRAP	leaf	-	-	0	fn_arms
+1340	icn	ICN$USIGTAKE	0	0	bt_ICNx24USIGTAKE	leaf	-	-	0	fn_arms
+1341	icn	ICN$USIGNAME	1	1	bt_ICNx24USIGNAME	leaf	-	-	0	fn_arms
