@@ -131,6 +131,7 @@ for name in "${PAIRS[@]}"; do
             M3_FAIL=$((M3_FAIL+1)); M3_FAIL_NAMES+=("$name(expected-refusal)")
             printf 'package\tfpc\tpascal\t%s\tm3\tFAIL\t%s\texpected-refusal-not-refused-with-an-iso-diagnostic(rc=%s)\n' "$name" "$S3" "$_r3" >>"$PROG_ROWS"
         fi
+        if [ "${S4E_MODES:-m3,m4}" != m3 ]; then
         _e4="$(cd "$TMP" && "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$SCRIP" --compile "$pas" --out="$TMP/$name.s" </dev/null 2>&1 >/dev/null)"; _r4=$?
         if [ "$_r4" = 0 ] && gcc -no-pie "$TMP/$name.s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$TMP/$name.bin" 2>/dev/null; then
             _e4="$(cd "$TMP" && run_at_declared_table "$DECL" "$name" -- "$TIMEOUT_RETRY" "$RUN_TIMEOUT" "$TMP/$name.bin" <"$inp" 2>&1 >/dev/null)"; _r4=$?
@@ -142,6 +143,7 @@ for name in "${PAIRS[@]}"; do
         else
             M4_FAIL=$((M4_FAIL+1)); M4_FAIL_NAMES+=("$name(expected-refusal)")
             printf 'package\tfpc\tpascal\t%s\tm4\tFAIL\t%s\texpected-refusal-not-refused-with-an-iso-diagnostic(rc=%s)\n' "$name" "$S4" "$_r4" >>"$PROG_ROWS"
+        fi
         fi
         continue
     fi
@@ -187,6 +189,7 @@ for name in "${PAIRS[@]}"; do
         [ "$VERBOSE" -eq 1 ] && echo "  m3 FAIL $name"
     fi
 
+    if [ "${S4E_MODES:-m3,m4}" != m3 ]; then
     m4bin="$TMP/${name}.bin"; m4s="$TMP/${name}.s"; _t0="$(progress_clock)"
     if "$TIMEOUT_RETRY" "$T_RUN" "$SCRIP" --compile "$pas" --out="$m4s" < /dev/null 2>/dev/null \
         && gcc -no-pie "$m4s" -L "${HERE}/../../SCRIP/out" -lscrip_rt -Wl,-rpath,"${HERE}/../../SCRIP/out" -o "$m4bin" 2>/dev/null; then
@@ -208,6 +211,7 @@ for name in "${PAIRS[@]}"; do
         M4_FAIL=$((M4_FAIL+1)); M4_FAIL_NAMES+=("$name (build/link failed)")
         printf 'package\tfpc\tpascal\t%s\tm4\tFAIL\t%s\tbuild-or-link-failed\n' "$name" "$S4" >>"$PROG_ROWS"
         [ "$VERBOSE" -eq 1 ] && echo "  m4 FAIL $name (build/link failed)"
+    fi
     fi
 done
 
