@@ -163,6 +163,7 @@ def fix(path, check):
         if not m: return added, err
         L, C = int(m.group(1)), int(m.group(2))
         if L < 1 or L > len(lines): return added, err
+        C = len(lines[L - 1].encode('utf-8')[:C - 1].decode('utf-8', 'ignore')) + 1
         sc = string_close(lines, L, C)
         if sc: lines[sc[0]] = lines[sc[0]][:sc[1]] + ';' + lines[sc[0]][sc[1]:]; added.append((sc[0] + 1, sc[1])); continue
         before = lines[L - 1]; e = settle(before, token_end(before, C))
