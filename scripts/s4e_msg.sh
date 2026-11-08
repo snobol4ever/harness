@@ -551,10 +551,15 @@ s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the se
     local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
     _watch="$(s4e_watch_of "$ME")"
-    _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout "${S4E_NEXT_WAIT:-0}" 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }   # S4E_NEXT_WAIT: `next --wait S` long-polls the tubes (fleet-control step 12, the cio 2026-11-07)
+    _rh() { local _k _r _left="${S4E_NEXT_WAIT:-0}" _sl _m0; _m0="$(ls "$PO/$ME/inbox" 2>/dev/null | grep -c '\.msg$')"   # a long poll in slices of 15 s; a telegram that lands during the wait ends it (rc 5)
+      while :; do _sl="$_left"; [ "$_sl" -gt 15 ] && _sl=15
+        for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout "$_sl" 2>/dev/null 9>&- && return 0; _r=$?; [ "$_r" = 3 ] || break; done
+        [ "$_r" = 1 ] || return 1; _left=$((_left - _sl)); [ "$_left" -gt 0 ] || return 1
+        [ "$(ls "$PO/$ME/inbox" 2>/dev/null | grep -c '\.msg$')" -gt "$_m0" ] && return 5; done; }
     local _try _rc
     for _try in 1 2 3 4 5; do
-    _res="$(_rh "$_watch")"
+    _res="$(_rh "$_watch")"; _rc=$?
+    [ "$_rc" = 5 ] && { echo "MAIL: a telegram reached your inbox during the wait: bash harness/scripts/s4e_msg.sh check, act or reply, clear, then next --wait again"; exit 0; }
     [ -n "$_res" ] || return 1
     _id="$(printf '%s' "$_res" | cut -f1)"; _tube="$(printf '%s' "$_res" | cut -f2)"; _pri="$(printf '%s' "$_res" | cut -f3)"; _topic="$(printf '%s' "$_res" | cut -f4)"
     # the holder watches $PO/claims/<topic>.claim: written here within its 60 s grace, else it releases the job
