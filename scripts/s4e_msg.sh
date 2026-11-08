@@ -5090,6 +5090,7 @@ TASKEOF
            if [ -z "$row" ] && [ "$qrows" -gt 0 ]; then
              echo "SKIP $t — your unfinished claim names a topic with NO QUEUE.tsv row (renamed or retired out from under you). Claim KEPT as the record; falling through to live work. If you were mid-rung on it: s4e_msg.sh ask $t 'row vanished under me'"
              continue; fi
+           case "$(printf '%s' "$row" | cut -f4)" in PARKED*|BLOCKED-ON:*|QUEUED:*|DONE*) echo "SKIP $t — your claim's row reads $(printf '%s' "$row" | cut -f4), not yours to resume; claim KEPT as the record"; continue;; esac
            if [ -z "$row" ]; then
              echo "⛔ $q IS MISSING OR HAS NO ROWS — cannot tell a renamed row from an unreadable queue, so RESUMING $t rather than unpinning you. Ask hq before trusting any next(1) verdict."; fi
            s4e_cross_lane_notice "$t" resume
