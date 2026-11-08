@@ -451,7 +451,10 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; return 1; }
     # THE ROOT IS CURRENT BEFORE THE PREMISE IS READ (the cio 2026-11-08 10:5x on the coo's measurement: junior_03, 05 and 07 one harness commit behind, so the premise of unitests-order-0-r2 exited 2 on their roots and the first UniTests row went unserved 30 minutes): a fast-forward sync is cheap and a premise graded on a stale tree is no measurement; a root that cannot fast-forward (an unpushed local commit) is named by the sync and stays as it is.
-    ( cd "$S4E" && S4E_SYNC_REPOS="corpus harness .github" timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
+    # ALL FOUR REPOS, THEN THE BINARY (the cio 2026-11-08 11:3x on officer_03's measurement: with SCRIP left out of the sync, a premise that reads SCRIP source read false in junior_06's root at bb311e419 and the CTO-555 rename row was retired): the sync fast-forwards SCRIP too, and make -j8 fetches the build from the cache (seconds on a clean tree), so the premise is read on the current tree with its own binary; a make that fails refuses the read, and the row is skipped, never retired.
+    mkdir -p "/tmp/s4e/${ME:-seat}" 2>/dev/null
+    ( cd "$S4E" && timeout -k 5 120 bash harness/scripts/util_sync_root.sh ) >"/tmp/s4e/${ME:-seat}/next_sync.log" 2>&1 || echo "⚠ the root did not fully sync before the premise read (see /tmp/s4e/${ME:-seat}/next_sync.log): a repo with an unpushed local commit stays behind; save it on a branch and put main back at origin/main" >&2
+    ( cd "$S4E/SCRIP" && timeout -k 10 600 make -j8 ) >"/tmp/s4e/${ME:-seat}/next_make.log" 2>&1 || { echo "⛔ REFUSE(2): reserved job $2 ($_t) is released: make -j8 in $S4E/SCRIP failed after the sync (see /tmp/s4e/${ME:-seat}/next_make.log), so no premise can be read on this root; fix the build and run next again." >&2; return 1; }
     # A DIRTY ROOT MEASURES NOTHING (CEO-2060; CTO-544 (7), the cto 2026-11-07 15:5x: worker_10's root carried an uncommitted cure, so the dispatch-time premise read GREEN there and the row went SUPERSEDED wrongly): the premise is graded only on a clean root; a dirty one releases the job with the dirty repos named, and the seat cleans its root (commit in a worktree, or checkout) before next serves it a job.
     local _dr="" _r
     for _r in SCRIP harness corpus .github; do [ -d "$S4E/$_r/.git" ] || continue; git -C "$S4E/$_r" diff --quiet 2>/dev/null && git -C "$S4E/$_r" diff --cached --quiet 2>/dev/null || _dr="$_dr $_r"; done
@@ -504,12 +507,14 @@ s4e_refuse_red_head() {   # <topic> <job> <tube>: bury the reserved head through
     for _i in $(seq 1 24); do grep -q "^BURIED job=$_j " "$_c" 2>/dev/null && { _ok=1; break; }; sleep 1; done
     if [ "$_ok" = 1 ]; then _how="buried by its holder"; else _how="not buried within 24 s (the holder is gone or stuck; the job returns to ready when its connection closes)"; fi
     mkdir -p "$PO/claims/expired"; mv -f "$_c" "$PO/claims/expired/$_t.claim.premise-red-$_ts" 2>/dev/null
-    s4e_set_row_state "$_t" "SUPERSEDED:premise-red-at-dispatch-$_ts" >/dev/null 2>&1 || true
-    s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch: reserved job $_j from $_tb was $_how; the row is SUPERSEDED:premise-red-at-dispatch-$_ts. The sweep closes it by done if its DONE-WHEN is green, else it stays SUPERSEDED."
-    printf 'NEXT refused_head job=%s topic=%s buried=%s state=SUPERSEDED\n' "$_j" "$_t" "$_ok"
+    # A RED PREMISE AT ONE ROOT PARKS THE ROW, IT DOES NOT RETIRE IT (the cio 2026-11-08 11:3x; three false SUPERSEDED today, each re-minted by hand because no verb reopens SUPERSEDED): the row reads PARKED-PREMISE-RED:<reader>@<scrip tree>, the LEDGER names the reader and its four trees, and the designer re-checks the premise on origin, recuts it if it was wrong, and queues the row again.
+    local _h; _h="scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null) harness=$(git -C "$S4E/harness" rev-parse --short=9 HEAD 2>/dev/null) github=$(git -C "$S4E/.github" rev-parse --short=9 HEAD 2>/dev/null)"
+    s4e_set_row_state "$_t" "PARKED-PREMISE-RED:$ME@${_h#scrip=}" >/dev/null 2>&1 || true
+    s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch on $ME's root ($_h): reserved job $_j from $_tb was $_how; the row is PARKED-PREMISE-RED:$ME. The designer re-reads the premise on origin: wrong, recut it; right, the row is done or superseded by its own measurement; then queue it again."
+    printf 'NEXT refused_head job=%s topic=%s buried=%s state=PARKED-PREMISE-RED\n' "$_j" "$_t" "$_ok"
     return 0; }
-s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoffice and a PRIVATE beanstalkd (never 11300); a haiku probe seat with two jobs in its seat tube, the head's PREMISE-WHEN false (RED), the second's true. EXPECT the head buried, its row SUPERSEDED, its claim in claims/expired, and the second served.
-    local _port _bp _w _seat=worker_20 _x1 _x2 _j1 _j2 _o _bst _st _sv _exp _ref _ok=0 _i
+s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoffice and a PRIVATE beanstalkd (never 11300); a haiku probe seat with two jobs in its seat tube, the head's PREMISE-WHEN false (RED), the second's true. EXPECT the head buried, its row PARKED-PREMISE-RED, its claim in claims/expired, and the second served.
+    local _port _bp _w _seat=junior_20 _x1 _x2 _j1 _j2 _o _bst _st _sv _exp _ref _ok=0 _i
     _port=$((21000 + ($$ % 20000)))
     beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bp=$!
     for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
@@ -525,15 +530,16 @@ s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoff
     _j1="$(s4e_queue_put "seat-$_seat" "$_x1" 1001 30)"; _j2="$(s4e_queue_put "seat-$_seat" "$_x2" 1002 30)"
     if [ -z "$_j1" ] || [ -z "$_j2" ]; then kill "$_bp" 2>/dev/null; rm -rf "$_w"; echo "NEXT refused_head RED: the probe could not put its two jobs"; exit 1; fi
     _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 S4E_HOME="$S4E" S4E_RELEASE_COOLDOWN=0 bash "$0" next 2>&1)"
-    printf '%s\n' "$_o" | grep -q "^NEXT refused_head job=$_j1 topic=$_x1 buried=1 state=SUPERSEDED" && _ref=1 || _ref=0
+    printf '%s\n' "$_o" | grep -q "^NEXT refused_head job=$_j1 topic=$_x1 buried=1 state=PARKED-PREMISE-RED" && _ref=1 || _ref=0
     printf '%s\n' "$_o" | grep -q "^RESERVED $_x2 " && _sv=1 || _sv=0
     _bst="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j1" 2>/dev/null | cut -f3)"
     _st="$(awk -F'\t' -v t="$_x1" '$2==t {print $4}' "$_w/QUEUE.tsv")"
     ls "$_w/claims/expired/$_x1.claim.premise-red-"* >/dev/null 2>&1 && _exp=1 || _exp=0
     kill "$_bp" 2>/dev/null; wait "$_bp" 2>/dev/null
-    if [ "$_ref" = 1 ] && [ "$_bst" = buried ] && [ "${_st#SUPERSEDED:premise-red-at-dispatch}" != "$_st" ] && [ "$_exp" = 1 ] && [ "$_sv" = 1 ]; then _ok=1; fi
+    if [ "$_ref" = 1 ] && [ "$_bst" = buried ] && [ "${_st#PARKED-PREMISE-RED:}" != "$_st" ] && [ "$_exp" = 1 ] && [ "$_sv" = 1 ]; then _ok=1; fi
     rm -rf "$_w"
-    if [ "$_ok" = 1 ]; then printf 'NEXT refused_head=1 buried=1 state=SUPERSEDED served_next=1\n'; exit 0; fi
+    if [ "$_ok" = 1 ]; then printf 'NEXT refused_head=1 buried=1 state=PARKED-PREMISE-RED served_next=1\n'; exit 0; fi
+    printf 'NEXT refused_head RED: what next said (last 6 lines): %s\n' "$(printf '%s\n' "$_o" | tail -6 | tr '\n' '|' | cut -c1-900)" >&2
     printf 'NEXT refused_head RED: refused=%s buried_state=%s row_state=%s expired=%s served_next=%s\n' "$_ref" "${_bst:-none}" "${_st:-none}" "$_exp" "$_sv"; exit 1; }
 s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the seat's watch list; prints and exits when a job is served; returns 1 when nothing is ready
     local _tier _watch _res _id _tube _pri _topic
@@ -3600,7 +3606,7 @@ case "$cmd" in
          if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
   resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
-  answer) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" answer "$@"; exit $?;;
+  answer) shift; [ "${_S4E_FD_OWNER:-}" = "$$" ] && s4e_pid_unhold; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" answer "$@"; exit $?;;   # the identity is released first: the answer's done leg takes it as its own verb (the cto 11:2x: three of three answers refused "could not retake the identity", the holder this outer process)
   ask)   [ "${2:-}" = --probe-queue ] && { S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" ask --probe-queue; exit $?; }
          # fleet-queue step 8 (the cio's design; skill fleet-bus section 8): a TOPIC with no mailbox named before it is a QUEUED ask (s4e_ask.sh):
          # the question row q-<topic>-<n> is minted, its job goes into the tube above the asker, and the asking row is parked BLOCKED-ON it.
