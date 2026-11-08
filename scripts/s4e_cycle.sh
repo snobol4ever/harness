@@ -5,6 +5,7 @@
 #   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang runner cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
+#   bash s4e_cycle.sh --next     do the restart accounting (CYCLE.crash, CYCLE.skip) and print NEXT lap=L idx=I cell=KEY CELL, the cell a restart runs first; runs no cell (S4E_CYCLE_PROG names a scratch progress dir for a probe)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
 # a master row runs corpus_suite_harness.py run <ALL.ext> <ALL.ref> --lang L --modes m3,m4 --partition <cell>; a pkg row runs S4E_CHUNK=<cell> bash $S4E/harness/scripts/<runner>, by its absolute path (a runner that cds and then sources from dirname $0, raku_roast_scoreboard.sh, refused rc 2 on a relative launch: the coo 2026-11-08);
 # both under util_run_slot.sh, S4E_CLASS=grader, S4E_BATCH=1 (one scrip --harness per partition and mode, batch-grader step 5), S4E_MODES default m3 (Lon 2026-11-08 10:2x: "We will test mode 3 only until further notice"), under timeout -k 30 of the
@@ -16,7 +17,7 @@
 set -u
 S4E="${S4E_HOME:-/home/claude_grader}"
 export S4E_HOME="$S4E" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="/tmp/s4e/grader"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order
-PROG=/home/resources/progress
+PROG="${S4E_CYCLE_PROG:-/home/resources/progress}"
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
 RUNNERS="$S4E/harness/scripts/SUITE_RUNNERS.tsv"
 mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
@@ -87,8 +88,8 @@ if [ "$st" = running ] && [ -n "$ps" ]; then
     { grep -v -P "^\Q$ps\E\t\Q$pc\E\t" "$CRASH" 2>/dev/null; printf '%s\t%s\t%s\n' "$ps" "$pc" "$n"; } > "$CRASH.tmp" && mv "$CRASH.tmp" "$CRASH"
     log "CRASH lap=$lap idx=$idx $ps $pc killed the cycle, count=$n"
     if [ "$n" -ge 3 ]; then printf '%s\t%s\t%s\tskipped after %s deaths\n' "$(now)" "$ps" "$pc" "$n" >> "$SKIP"; log "SKIP $ps $cell for good (three deaths)"; fi
-    idx=$(( idx + 1 ))
 fi
+if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang runner cell <<< "$(cells | sed -n "$(( idx + 1 ))p")"; echo "NEXT lap=$lap idx=$idx cell=$key $cell"; exit 0; fi
 while :; do
     mapfile -t ALL < <(cells); total=${#ALL[@]}
     [ "$total" -gt 0 ] || { log "REFUSED: no cells (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
