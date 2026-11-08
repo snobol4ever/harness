@@ -1032,9 +1032,16 @@ def proc_check():
     keep = re.compile(r"(loop8\.sh|tier1\.sh|seatwatch\.sh|swap[A-Za-z0-9]*\.sh|util_seat_census\.py run|util_tmp_sweep\.sh|util_git_maintenance\.sh|^ssh: \S+ \[mux\]$|^xclip -selection |util_jobserver\.sh hold |util_queue\.py reserve-hold |util_queue\.py hold-job )")   # the lease holder of a reserved job (fleet-queue 5: next detaches it on purpose; killing it releases the job to its tube) is a standing daemon, never an orphan
     host = re.compile(r"^(\S*/)?(gnome-terminal-server|gnome-terminal|gnome-shell|systemd( --user)?|claude)( |$)")   # the coo 2026-11-06 09:02 (COO-478 morning): the session HOSTS are never named -- gnome-terminal-server hosts every fleet window (killing it closes thirty sessions), gnome-shell the desktop, the user systemd is the manager itself, a claude process is a seat's session; by executable path, never by pid
     orphans = []
+    # a pid a live row names MEASURING:<seat>:<pid> is that seat's background measurement by handle (seat-conduct section 1: setsid, reparented BY DESIGN),
+    # wanted until it exits (the coo 2026-11-08 08:0x: junior_01's lap watcher 1481355 was named an orphan while step 7 waited on it)
+    measuring = set(re.findall(r"\tMEASURING:[^:\t]+:(\d+)[ \t]*$", rd(arg("--queue", "/home/resources/postoffice/QUEUE.tsv")), re.M))
     for pid, ppid, et, rss, cg, a in rows:
         sc = os.path.basename(cg.split("::")[-1].rstrip("/"))
-        if ppid in mgr and int(et) >= 300 and (work.search(a) or sc in by_scope) and not keep.search(a) and not host.search(a):
+        if pid in measuring:
+            continue
+        # the coo 2026-11-08 07:5x (Lon: "fix the two false reds in the census"): a process in a systemd unit's own .service cgroup is that unit's process,
+        # its parent the user manager BY DESIGN (the eight s4e-grade-worker@N.service main pids were named orphans of seat grader); a real orphan keeps its .scope
+        if ppid in mgr and int(et) >= 300 and not sc.endswith(".service") and (work.search(a) or sc in by_scope) and not keep.search(a) and not host.search(a):
             who = by_scope.get(sc) or ("grader" if "s4e-grader" in cg or "s4e-mem-" in cg else "batch" if "s4e-batch" in cg else "?")
             orphans.append((int(rss), pid, who, int(et), a))
     for rss, pid, who, et, a in sorted(orphans, reverse=True):
@@ -1089,7 +1096,15 @@ def watch_check():
         if not alive and not os.path.exists(os.path.join(vd, stop)):
             gaps.append("%s is NOT RUNNING (no bash %s, no %s file in %s): restart it" % (name, script, stop, vd))
     fl = rd(os.path.join(vd, "fleet.last")).strip()
-    if not fl.isdigit():
+    tick = os.path.exists(os.path.join(vd, "STOP1"))   # the coo 2026-11-08 07:5x (Lon: "fix the two false reds in the census"): tier1 and its fleet watch stand
+    if tick:                                           # STOPPED by design (CIO-3: the loops are gone); the watch between turns is the controller's tick now
+        bs = arg("--box-state", "/home/resources/progress/BOX.state")   # box_tick.py on s4e-tick.timer (OnUnitActiveSec=60) writes it every tick
+        age = time.time() - os.path.getmtime(bs) if os.path.exists(bs) else None
+        if age is None:
+            gaps.append("the controller tick has never written %s (box_tick.py on s4e-tick.timer)" % bs)
+        elif age > 300:
+            gaps.append("the controller tick last wrote %s %d min ago (5 is the bar; s4e-tick.timer runs it every 60 s): the tick is stuck or dead" % (bs, age // 60))
+    elif not fl.isdigit():
         gaps.append("the fleet watch has never recorded a pass (no %s/fleet.last)" % vd)
     elif time.time() - int(fl) > 900:
         gaps.append("the fleet watch's last pass is %d min old (15 is the bar): tier1's watch loop is stuck or dead" % ((time.time() - int(fl)) // 60))
@@ -1098,7 +1113,10 @@ def watch_check():
         for g in gaps:
             print("  RED  " + g)
         return 1
-    print("  GREEN the loop, tier1 with its fleet watch and the seat watch are running, and the fleet watch passed within fifteen minutes")
+    if tick:
+        print("  GREEN tier1 stands stopped by design (STOP1) and the controller tick wrote BOX.state within five minutes; the loop and the seat watch are running or stopped by their STOP files")
+    else:
+        print("  GREEN the loop, tier1 with its fleet watch and the seat watch are running, and the fleet watch passed within fifteen minutes")
     return 0
 
 

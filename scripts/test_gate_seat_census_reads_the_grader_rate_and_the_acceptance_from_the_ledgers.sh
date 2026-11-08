@@ -164,10 +164,13 @@ procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope
     echo "590 2575 59280 256000 $sl/vte-a.scope /usr/libexec/gnome-terminal-server"
     echo "600 2575 $2 900000 $sl/vte-b.scope claude --name B --model claude-haiku-5-5 --effort xhigh"
     echo "610 2575 $2 500000 $sl/vte-a.scope /usr/bin/gnome-shell"
+    echo "640 2575 $2 3000 $sl/vte-a.scope bash /tmp/s4e/a/bg/watch_lap.sh"
+    echo "630 2575 $2 3000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-grader.slice/s4e-grade-worker@3.service /bin/bash /home/claude_grader/harness/scripts/s4e_grade_worker.sh 3"
     echo "620 2575 $2 12000 $sl/vte-a.scope python3 /home/claude_a/harness/scripts/util_queue.py reserve-hold seat-a,ask-haiku,tier-haiku --seat a --session A --claim-dir /x/claims --baton-dir /x/tasks --timeout 0"; } > "$1/ps.txt"
+  printf '1\tsome-row-a\ta\tMEASURING:a:640\n' > "$1/QUEUE.tsv"
 }
 parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
-  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --proc-check --ps "$2/ps.txt" --root "$2/cg" --seats "$2/SEATS.tsv" --pressure-memory "$2/pmem" 2>&1)"; local rc=$?
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --proc-check --ps "$2/ps.txt" --root "$2/cg" --seats "$2/SEATS.tsv" --pressure-memory "$2/pmem" --queue "$2/QUEUE.tsv" 2>&1)"; local rc=$?
   if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
   else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
 }
@@ -188,25 +191,28 @@ parm "COO-461 FAIL-ONCE: any process of a seat scope orphaned 25 min is red BY S
 parm "control: a child whose parent lives, a standing daemon, a young orphan, a desktop app outside every seat scope, the git ssh mux, the clipboard holder and the jobserver holder are not named" "$T/proc_bad" 1 "orphans=2 " "pid 5[1235678]0"
 parm "the coo 2026-11-06 09:02 (the 1836707 false positive): the session HOSTS in a seat's unit -- gnome-terminal-server 988 min old, a claude session, gnome-shell -- are never named, by path" "$T/proc_bad" 1 "orphans=2 " "pid \(590\|600\|610\)"
 parm "fleet-queue 5: the lease holder a seat's next detached (util_queue.py reserve-hold, 25 min old) is a standing daemon, never an orphan (killing it releases the job)" "$T/proc_bad" 1 "orphans=2 " "pid 620"
+parm "the coo 2026-11-08 (Lon: fix the two false reds): a systemd unit's own process (s4e-grade-worker@N.service, its parent the user manager by design) is never an orphan" "$T/proc_bad" 1 "orphans=2 " "pid 630"
+parm "the coo 2026-11-08: a seat's background measurement by handle that a live row names MEASURING:<seat>:<pid> is never an orphan" "$T/proc_bad" 1 "orphans=2 " "pid 640"
 parm "control: an orphan under five minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"
 n=$((n + 1)); if grep -q 'tmp_check, proc_check' "$CENSUS"; then echo "  ok   ARM $n: --health runs the process and memory arm too"; else echo "  RED  ARM $n: --health does not run --proc-check"; fail=1; fi
 # THE HEALTH CHECK OF THE HEALTH CHECK (Lon 2026-11-01: "add a health check to the healt check script"): --watch-check reds when a watcher is gone or stale.
-watchplant() {   # watchplant <dir> <fleet_last_age_s> <with_tier1:1|0> [STOPfile]
-  mkdir -p "$1/v"; echo $(( $(date +%s) - $2 )) > "$1/v/fleet.last"; [ -n "${4:-}" ] && touch "$1/v/$4"
+watchplant() {   # watchplant <dir> <fleet_last_age_s> <with_tier1:1|0> [STOPfile] [box_state_age_s]
+  mkdir -p "$1/v"; echo $(( $(date +%s) - $2 )) > "$1/v/fleet.last"; [ -n "${4:-}" ] && touch "$1/v/$4"; touch -d "@$(( $(date +%s) - ${5:-60} ))" "$1/BOX.state"
   { echo "2575 1 99999 9000 0::/x /usr/lib/systemd/systemd --user"; echo "600 2575 99999 4000 0::/x bash loop8.sh"; echo "601 2575 99999 4000 0::/x /usr/bin/bash seatwatch.sh"
     [ "$3" = 1 ] && echo "602 2575 99999 4000 0::/x /usr/bin/bash tier1.sh"; } > "$1/ps.txt"
 }
 warm() {   # warm <name> <dir> <want_rc> <must_match> [must_not_match]
-  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --watch-check --ps "$2/ps.txt" --verifier-dir "$2/v" 2>&1)"; local rc=$?
+  local out; n=$((n + 1)); out="$(python3 -I "$CENSUS" --watch-check --ps "$2/ps.txt" --verifier-dir "$2/v" --box-state "$2/BOX.state" 2>&1)"; local rc=$?
   if [ "$rc" = "$3" ] && printf '%s' "$out" | grep -q -- "$4" && { [ -z "${5:-}" ] || ! printf '%s' "$out" | grep -q -- "$5"; }; then echo "  ok   ARM $n: $1"
   else echo "  RED  ARM $n: $1 -- rc $rc wanted $3, looking for '$4':"; printf '%s\n' "$out" | sed 's/^/         /' | head -6; fail=1; fi
 }
-watchplant "$T/w_dead"  60 0; watchplant "$T/w_stale" 1800 1; watchplant "$T/w_ok" 60 1; watchplant "$T/w_stop" 60 0 STOP1
+watchplant "$T/w_dead"  60 0; watchplant "$T/w_stale" 1800 1; watchplant "$T/w_ok" 60 1; watchplant "$T/w_stop" 60 0 STOP1; watchplant "$T/w_tick" 60 0 STOP1 600
 warm "FAIL-ONCE: tier1 (the fleet watch) with no process and no STOP1 is red by name" "$T/w_dead"  1 "tier1 and its fleet watch is NOT RUNNING"
 warm "FAIL-ONCE: a fleet watch whose last pass is 30 min old is red"                "$T/w_stale" 1 "last pass is 30 min old"
 warm "control: every watcher running and a fresh pass read GREEN"                    "$T/w_ok"    0 "GREEN the loop" "RED"
-warm "control: a watcher stopped on purpose (its STOP file) is not red"              "$T/w_stop"  0 "GREEN the loop" "RED"
+warm "control: tier1 stopped on purpose (STOP1) is not red, and the controller tick that replaced it (BOX.state 1 min old) reads GREEN" "$T/w_stop"  0 "GREEN tier1 stands stopped by design" "RED"
+warm "the coo 2026-11-08 FAIL-ONCE: with tier1 stopped (STOP1) a controller tick 10 min stale is red by name, never the retired fleet.last" "$T/w_tick" 1 "the controller tick last wrote" "fleet watch"
 n=$((n + 1)); if grep -q 'proc_check, watch_check)' "$CENSUS"; then echo "  ok   ARM $n: --health runs the watch arm too"; else echo "  RED  ARM $n: --health does not run --watch-check"; fail=1; fi
 if [ "$fail" = 0 ]; then echo "GATE PASS(0) [$G]: $n arms -- the two DONE-WHENs read the ledgers, red by name on each planted defect, refused when the box was not busy; the banner shows the per-seat /tmp budget; the CPU arm of the health check reds by name on each condition and --health runs all six (the watchers themselves checked); the /tmp arm names each seat over its budget; the process arm names an orphaned run, a stalled box and a throttled scope"; exit 0
 else echo "GATE FAIL(1) [$G]: see the RED arms"; exit 1; fi
