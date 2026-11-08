@@ -1431,6 +1431,9 @@ def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
     return stdbuf_wrap(paths, argv)
 
 
+_PRE_ASM = {}
+
+
 def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     """Mirrors compile_mode4() in test_corpus_snobol4.sh exactly. Returns None on success, or a
     Verdict("SKIP", ...) describing where it failed."""
@@ -1442,11 +1445,15 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     # so-diagnostic-programs-cannot-be-graded. Bare name in argv, explicit cwd so it still resolves
     # and so a -INCLUDE (compile-time, unlike run_m3's runtime open() concern) resolves relative to
     # the file's own directory too, not wherever the caller happened to stand.
-    with open(s_path, "wb") as f:
-        r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + [sno_path.name],
-                            stdout=f, stderr=subprocess.PIPE, env=env, cwd=str(sno_path.parent))
-    if r.returncode != 0:
-        return Verdict("SKIP", stderr=r.stderr or b"", returncode=r.returncode, detail="scrip --compile failed")
+    _pre = _PRE_ASM.get(hashlib.md5(sno_path.read_bytes()).hexdigest()) if not compile_args else None
+    if _pre and Path(_pre).is_file():
+        shutil.copyfile(_pre, s_path)
+    else:
+        with open(s_path, "wb") as f:
+            r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + [sno_path.name],
+                                stdout=f, stderr=subprocess.PIPE, env=env, cwd=str(sno_path.parent))
+        if r.returncode != 0:
+            return Verdict("SKIP", stderr=r.stderr or b"", returncode=r.returncode, detail="scrip --compile failed")
     o_path = tmp_dir / "p.o"
     r = subprocess.run(["gcc", "-c", str(s_path), "-o", str(o_path)],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, cwd=str(paths["scrip_root"]))
@@ -2730,6 +2737,45 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         return {m: against_expect(v, _ex) for m, v in _v.items()}
 
 
+def batch_m4_asm(paths, entries, tmp_root, ext, companion_dir):
+    """S4E_BATCH=1, mode 4 (DESIGN-PLAN test-cycle step 2a): the eligible entries of one partition are compiled to asm by ONE
+    `scrip --compile --harness LIST --record REC` process; each row whose record reads rc 0 with a non-empty .s is entered in _PRE_ASM under
+    the md5 of its staged source, and compile_m4 copies that .s in place of its own scrip --compile. Every other row is not entered and compiles per process as today."""
+    work = Path(tempfile.mkdtemp(prefix="batch_m4_", dir=tmp_root)).resolve()
+    prog, outd = work / "prog", work / "out"
+    prog.mkdir()
+    outd.mkdir()
+    rows, meta = [], {}
+    for i, e in enumerate(entries):
+        if not _batch_m3_eligible(e, paths) or _compile_switches(paths, None):
+            continue
+        with tempfile.TemporaryDirectory(dir=tmp_root) as td:
+            cand, _expected = stage_entry(e, td, ext, companion_dir)
+            if sorted(os.listdir(td)) != [cand.name] or (prog / cand.name).exists():
+                continue
+            shutil.copyfile(cand, prog / cand.name)
+        t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
+        heap, stack = getattr(e, "heap_kb", None), getattr(e, "stack_kb", None)
+        s_path, err_path = outd / f"{i}.s", outd / f"{i}.err"
+        rows.append("\t".join([e.name, cand.name, "", str(s_path), str(err_path), str(heap) if heap else "", str(stack) if stack else "", "%g" % t]))
+        meta[e.name] = (s_path, hashlib.md5((prog / cand.name).read_bytes()).hexdigest(), t)
+    if not rows:
+        return
+    (work / "list.tsv").write_text("\n".join(rows) + "\n")
+    rec = work / "record.tsv"
+    env = dict(os.environ, SNO_LIB=str(paths["inc"]))
+    _bounded_run([str(paths["scrip_bin"]), "--compile", "--harness", str(work / "list.tsv"), "--record", str(rec)],
+                 sum(m[2] for m in meta.values()) + 60, str(prog), env, None, False)
+    got = {}
+    for ln in (rec.read_text().splitlines() if rec.is_file() else []):
+        f = ln.split("\t")
+        if len(f) == 5:
+            got[f[0]] = int(f[1])
+    for name, (s_path, key, _t) in meta.items():
+        if got.get(name) == 0 and s_path.is_file() and s_path.stat().st_size > 0:
+            _PRE_ASM[key] = str(s_path)
+
+
 def _batch_m3_eligible(entry, paths):
     """An entry the one-process road can run: a flat program whose own process needs nothing beyond its source (no companion beside it,
     no argv, no compile switches, no mask or stream option), graded exactly as run_m3 grades it. Anything else stays per-process."""
@@ -3948,6 +3994,8 @@ def cmd_run(args):
     tmp_root = Path(tempfile.mkdtemp(prefix="csh_run_"))
     # ⭐ S4E_BATCH=1 (step 5): mode 3 of every eligible entry of this partition runs in ONE scrip --harness process, before the loop (see batch_m3_verdicts)
     _batch_m3 = batch_m3_verdicts(paths, run_entries, tmp_root, ext, Path(args.sno).parent) if (os.environ.get("S4E_BATCH") == "1" and "m3" in modes) else {}
+    if os.environ.get("S4E_BATCH") == "1" and "m4" in modes:
+        batch_m4_asm(paths, run_entries, tmp_root, ext, Path(args.sno).parent)
     fails = []
     _progress_rows = []
     for _n in _out_run:
@@ -4019,6 +4067,7 @@ def cmd_run(args):
     finally:
         import shutil
         shutil.rmtree(tmp_root, ignore_errors=True)
+        _PRE_ASM.clear()
 
     family = Path(args.sno).stem
     # total= is the GRADED denominator; shipped= adds the outside entries back, outside= is their count. A row quotes all_pass over shipped with OUTSIDE named.
