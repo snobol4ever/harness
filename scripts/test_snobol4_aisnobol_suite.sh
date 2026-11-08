@@ -26,7 +26,7 @@ SUITE="${AISNOBOL_SUITE:-$ROOT/corpus/packages/snobol4/aisnobol}"
 # --binaries is the one check; the port is graded in m3 alone, its rows are keyed aisnobol@<engine> by the harness, and no SCRIP score row is
 # written -- the port's row is from-progress. Under scrip every line below reads as it did.
 PORT=0; one_runner_is_port && PORT=1
-MODES=m3,m4; ROWKEY=aisnobol; [ "$PORT" = 1 ] && { MODES=m3; ROWKEY="aisnobol@$(one_runner_engine)"; }
+MODES="${S4E_MODES:-m3,m4}"; ROWKEY=aisnobol; [ "$PORT" = 1 ] && { MODES=m3; ROWKEY="aisnobol@$(one_runner_engine)"; }
 if [ "$PORT" = 1 ]; then one_runner_port_ready snobol4 || exit 2; cd "$ROOT" || exit 2; else
 SCRIP="$SD/scrip"; RT_DIR="$SD/out"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSE(rc=2): no scrip binary at $SCRIP -- build first (make)"; exit 2; }
@@ -86,7 +86,7 @@ excl=0; [ -s "$SUITE/ALL.excluded.txt" ] && excl=$(cut -d: -f1 "$SUITE/ALL.exclu
 shipped=$((scored + excl))
 m3p="$(field m3_pass)"; m3f="$(field m3_fail)"; m3c="$(field m3_crash)"; m3h="$(field m3_hang)"
 m4p="$(field m4_pass)"; m4f="$(field m4_fail)"; m4c="$(field m4_crash)"; m4h="$(field m4_hang)"
-[ "$PORT" = 1 ] && { m4p=0; m4f=0; m4c=0; m4h=0; }   # a port has no mode 4, so the harness prints no m4 field
+{ [ "$PORT" = 1 ] || [ "$MODES" = m3 ]; } && { m4p=0; m4f=0; m4c=0; m4h=0; }   # a port has no mode 4, so the harness prints no m4 field
 
 # ⭐ THE SPITBOL BASELINE, MEASURED LIVE (Lon 2026-09-08; ruling 18:49 on this seat's own ask). This runner
 # is a thin face over the harness and never ran the oracle per program, so unlike the other package runners it
