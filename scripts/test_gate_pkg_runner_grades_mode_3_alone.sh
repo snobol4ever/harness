@@ -27,8 +27,8 @@ T="$(mktemp -d "${TMPDIR:-/tmp}/$G.XXXXXX")" || refuse "no scratch dir"
 trap 'rm -rf "$T"' EXIT
 ( cd "$ROOT" && S4E_HOME="$ROOT" S4E_MODES=m3 S4E_BATCH=1 S4E_PROGRESS_DB="$T/results.tsv" S4E_CHUNK="entry:$ENTRY" S4E_ONE_RUNNER_OVERRIDE="$G: one entry, mode 3, scratch progress" timeout -k 5 900 bash "$HERE/util_run_slot.sh" bash "$HERE/$SCRIPT" "$@" ) > "$T/run.log" 2>&1 < /dev/null
 RC=$?
-DB="$(grep -o 'db=[^ ]*' "$T/run.log" | tail -1 | cut -c4-)"
-if [ -z "$DB" ]; then B="$(grep -o 'scratch table [^ )]*' "$T/run.log" | tail -1 | cut -c15-)"; [ -n "$B" ] && DB="$B.min"; fi
+DB="$(grep -oE '(^| )db=[^ ]+' "$T/run.log" | tail -1 | sed 's/^ *db=//')"
+if [ -z "$DB" ]; then B="$(grep -o 'scratch table [^ )]*' "$T/run.log" | tail -1 | cut -c15-)"; if [ -n "$B" ] && [ -f "$B.min" ]; then DB="$B.min"; elif [ -n "$B" ]; then DB="$B"; fi; fi
 [ -n "$DB" ] || DB="$T/results.tsv"
 [ -f "$DB" ] || { echo "runner rc $RC; its last lines:"; tail -5 "$T/run.log"; refuse "$KEY wrote no scratch progress table ($DB): nothing to count"; }
 case "$DB" in "$ROOT"/*|/home/resources/progress/*) refuse "the runner named a live progress table, $DB" ;; esac
