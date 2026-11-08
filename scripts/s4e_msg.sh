@@ -3624,7 +3624,7 @@ case "$cmd" in
          esac
          t="$(mktemp "$PO/.msg.XXXXXX")"; { echo "FROM $ME TO $to RE $topic"; echo "$_body"; } > "$t"
          d="$PO/$to/inbox/$(date +%s%N)-$ME-$topic.msg"
-         if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
+         if mv "$t" "$d" && [ -s "$d" ]; then echo "sent -> $to/$topic"; s4e_wake_hint "seat-$to" "$topic" send; else rm -f "$t"; echo "⛔ NOT SENT -- could not write $d. The message was DROPPED; nothing was delivered." >&2; exit 1; fi;;
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
   resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
   answer) shift; [ "${_S4E_FD_OWNER:-}" = "$$" ] && s4e_pid_unhold; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" answer "$@"; exit $?;;   # the identity is released first: the answer's done leg takes it as its own verb (the cto 11:2x: three of three answers refused "could not retake the identity", the holder this outer process)
