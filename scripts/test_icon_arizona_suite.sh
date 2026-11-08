@@ -34,6 +34,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # attribute TSV/CSV files"; R-1167). SOURCED, never reimplemented -- this runner, its two Icon siblings
 # and corpus_suite_harness.py must not be able to disagree about what one cell means.
 . "$HERE/lib_declared_arena.sh"
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 # ⛔⭐ R-409 LINE MASKS, READ HERE THROUGH THE HARNESS'S OWN SHIM (util_apply_line_mask.py), never a
 # second implementation -- see test_snobol4_csnobol4_suite.sh for the reasoning (the regex dialect is
 # python's, and a re-implementation in sed/awk agrees on every mask anyone tested and diverges on the
@@ -221,6 +222,21 @@ for _f in "$SUITE"/*; do
   case "$_f" in *.icn) grep -qE '^[[:space:]]*procedure[[:space:]]+main[[:space:]]*\(' "$_f" && continue ;; esac
   cp -pf "$_f" "$LIBPATH/" || { echo "⛔ GATE REFUSES: cannot copy $_f into $LIBPATH" >&2; exit 2; }
 done
+hr_begin "$RUNDIR/hr/$sub"
+for std in "$SUITE"/*.ref; do
+  [ -f "$std" ] || continue
+  name=$(basename "$std" .ref)
+  _rk="$sub/$name"; rr_admits "$_rk" || { _rk="$sub/${name%_driver}"; rr_admits "$_rk"; } || continue
+  [ -f "$SUITE/$name.icn" ] || continue
+  [ "$sub/$name" = special/keyboard ] && continue
+  id="${name%_driver}"
+  _in=/dev/null; [ -f "$SUITE/$name.dat" ] && _in="$SUITE/$name.dat"
+  _env=(); case "$name" in *_driver) _env+=("env=IPATH=$LIBPATH${IPATH:+:$IPATH}") ;; esac
+  _clib="$(declared_clib_beside "$SUITE/$name.icn" "$PKG")" || continue; [ -n "$_clib" ] && _env+=("env=FPATH=. $_clib")
+  _s="$(declared_arena_switches "$PKG_CSV" "$sub/$id")" || continue
+  hr_row --merged "$name" "$name.icn" "$_in" "$TIMEOUT" "$SUITE" "${_env[@]}" $(declared_compile_args_from_table "$CA_TBL" "$sub/$id") $_s
+done
+hr_run "$SCRIP"
 for std in "$SUITE"/*.ref; do
   [ -f "$std" ] || continue
   name=$(basename "$std" .ref)
@@ -313,7 +329,11 @@ for std in "$SUITE"/*.ref; do
   if [ "$sub/$name" = "special/keyboard" ]; then
     m3out=$(cd "$SUITE" && "$TIMEOUT_RETRY" $((TIMEOUT+5)) python3 "$HERE/icn_keyboard_pty_drive.py" "$SUITE" "$TIMEOUT" -- "$SCRIP" --run $_ca $_sw "$name.icn"); m3rc=$?
   else
+    if hr_get "$name"; then
+        m3out="$(cat "$HR_OUT")"; m3rc=$HR_RC
+    else
     m3out=$(cd "$SUITE" && ${_ipath[@]+"${_ipath[@]}"} ${_fp[@]+"${_fp[@]}"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $_ca $_sw "$name.icn" < "$stdin_file" 2>&1); m3rc=$?
+    fi
     # ⛔⭐ ONE ERROR VOICE (R-625): SCRIP's error shape is rendered through the Icon equivalence list before the compare.
     m3out=$(printf '%s\n' "$m3out" | python3 "$HERE/util_render_error_voice.py" icon)
   fi
@@ -605,7 +625,7 @@ fi
 echo "ARIZONA_AND_PER_PROGRAM and_pass=$AND_PASS of $TOTAL (m3 $M3_PASS · m4 $M4_PASS · union of reds $AND_RED:$AND_NAMES)"
 _cc="${S4E_CRITERION_CHANGED:-}"
 if [ -z "$_cc" ] && [ -n "$EXCL_N" ]; then _cc="$(excluded_shape_stamp arizona "$SHIPPED" - "$EXCL_N" "$EXCL_N")" || exit 2; fi
-python3 "$HERE/util_score_row.py" write --lang icon --column vendor --suite Arizona --modes m3,m4 --suite-pass "$AND_PASS" --suite-total "$SHIPPED" \
+python3 "$HERE/util_score_row.py" write --lang icon --column vendor --suite Arizona --modes "${S4E_MODES:-m3,m4}" --suite-pass "$AND_PASS" --suite-total "$SHIPPED" \
     ${_cc:+--criterion-changed "$_cc"} ${EXCL_N:+--excluded "$EXCL_N"} \
     --measurer "${S4E_SEAT:-}" --text "AND per program $AND_PASS/$SHIPPED shipped (R-1245: the shipped population is the denominator; R-545: a program is green only if BOTH modes are; union of reds $AND_RED:$AND_NAMES) · graded $AND_PASS/$TOTAL · m3 $M3_PASS/$TOTAL · m4 $M4_PASS/$TOTAL graded (of $SHIPPED shipped, $TOTAL graded, $GAP not graded and owed -- the inventory clause splits ungraded=owed from ungradable=ruled, m3_fail=$M3_FAIL m4_fail=$M4_FAIL, reject $M3_REJECT/$M4_REJECT)${INV_LINE:+ · $INV_LINE (\`test_icon_arizona_suite.sh\`)} · $BOARD_LINE" \
     || echo "⚠ SCORE.md NOT UPDATED -- record this row by hand (the REFUSED line above says why; a denominator move wants S4E_CRITERION_CHANGED='YYYY-MM-DD:reason' on this runner's call)"
