@@ -82,6 +82,7 @@ else
             # as a tier-opus seat and then sent the loop seat to long-poll forever (the coo, 07:39). The tier stays as it is: a boss's tube is its escalation road, not its hold.
             bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1)"
             case " $bosses " in *" $seat "*) tn=boss;; esac
+            case "$(awk -F'\t' -v s="$seat" '!/^#/ && $1==s {print $8; exit}' "$tiers" 2>/dev/null)" in designer) tn=designer;; esac   # officers design only (Lon 2026-11-08): never held for a tier tube
             case "$tn" in 2|opus) tier=opus;; 3|sonnet) tier=sonnet;; 4|haiku) tier=haiku;; *) tier="";; esac
             if [ -n "$tier" ]; then
                 tt="${S4E_TIER_TUBE_PREFIX:-tier-}$tier"

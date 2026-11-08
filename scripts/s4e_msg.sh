@@ -158,6 +158,7 @@ s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null 
 S4E_TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
 s4e_tier_name() { case "$1" in 1|fable) echo fable;; 2|opus) echo opus;; 3|sonnet) echo sonnet;; 4|haiku) echo haiku;; *) return 1;; esac; }
 s4e_tier_of() { local _t; _t="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $7; exit}' "$S4E_TIERS" 2>/dev/null)"; [ -n "$_t" ] && s4e_tier_name "$_t"; }
+s4e_watch_of() { local _t _r; _t="$(s4e_tier_of "$1")" || return 1; _r="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $8; exit}' "$S4E_TIERS" 2>/dev/null)"; if [ "$_r" = designer ]; then echo "seat-$1,ask-$_t"; else echo "seat-$1,ask-$_t,tier-$_t"; fi; }   # officers design only (Lon 2026-11-08): an officer is served its seat tube and its ask tube, never a tier tube
 s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku) echo 3600;; *) echo 3600;; esac; }
 s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
 s4e_queue_put() { python3 "$S4E/harness/scripts/util_queue.py" put "$1" "$2" --pri "$3" --ttr "$4" 2>/dev/null; }   # <tube> <topic> <pri> <ttr> -> job id
@@ -544,7 +545,7 @@ s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoff
 s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the seat's watch list; prints and exits when a job is served; returns 1 when nothing is ready
     local _tier _watch _res _id _tube _pri _topic
     _tier="$(s4e_tier_of "$ME")" || return 1
-    _watch="seat-$ME,ask-$_tier,tier-$_tier"
+    _watch="$(s4e_watch_of "$ME")"
     _rh() { local _k; for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout "${S4E_NEXT_WAIT:-0}" 2>/dev/null 9>&- && return 0; [ $? = 3 ] || return 1; done; return 1; }   # S4E_NEXT_WAIT: `next --wait S` long-polls the tubes (fleet-control step 12, the cio 2026-11-07)
     local _try _rc
     for _try in 1 2 3 4 5; do
