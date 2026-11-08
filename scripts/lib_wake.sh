@@ -33,7 +33,8 @@ s4e_wake_hint() {   # <tube> <topic> <verb>
     case "$_tube" in
         seat-*) _seats="${_tube#seat-}";;
         ask-fable) _seats="$(sed -n 's/^ON-CALL:[[:space:]]*//p' "${S4E_POST:-/home/resources/postoffice}/MODE" 2>/dev/null | head -1 | awk '{print $1}')"; [ -n "$_seats" ] || _seats="$(s4e_wake_live_of_tier fable | tr '\n' ' ')";;   # a design ask goes to the seat MODE names ON-CALL (the cto)
-        tier-*|ask-*) _tier="${_tube#*-}"; _seats="$(s4e_wake_live_of_tier "$_tier" | tr '\n' ' ')";;
+        tier-*) _tier="${_tube#*-}"; _seats="$(s4e_wake_live_of_tier "$_tier" | while read -r _s; do [ "$(awk -F'\t' -v s="$_s" '!/^#/ && $1==s {print $8; exit}' "$(s4e_wake_tiers)" 2>/dev/null)" = designer ] || printf '%s ' "$_s"; done)";;   # a designing officer is served no tier tube (s4e_watch_of), so a tier wake never names one (COO-485)
+        ask-*) _tier="${_tube#*-}"; _seats="$(s4e_wake_live_of_tier "$_tier" | tr '\n' ' ')";;
         *) return 0;;
     esac
     set -- $_seats; _n=$#; [ "$_n" -gt 0 ] || { printf 'WAKE: nobody of %s is in the live set (MODE FLEET: IDLE EXCEPT); the job waits in %s until a seat of that tier is spawned or the line is widened.\n' "$_tube" "$_tube"; return 0; }

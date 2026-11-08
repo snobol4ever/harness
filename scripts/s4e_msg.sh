@@ -255,10 +255,10 @@ s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job,
     [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $_pri --ttr $_ttr" >&2; return 1; }
     s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$_pri ttr=$_ttr"; }
 s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) echo haiku;; *) return 1;; esac; }
-s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> seat-coo, the coo's tube; an opus tube or seat -> tier-fable (Lon 2026-11-08: junior, senior, the coo, then the cio and the cto for an emergency); rc 1 at the top
+s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> tier-opus, the escalation officers (TIERS.tsv role escalation), the double escalation; an opus tube or seat -> tier-fable, the triple escalation (COO-485, Lon 2026-11-08 13:0x: junior, senior, officer, then the cio or the cto; the bosses sleep); rc 1 at the top
     local _tier
     case "$1" in seat-*) _tier="$(s4e_tier_of "${1#seat-}")" || return 1;; tier-*) _tier="${1#tier-}";; *) return 1;; esac
-    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo seat-coo;; opus) echo tier-fable;; *) return 1;; esac; }
+    case "$_tier" in haiku) echo tier-sonnet;; sonnet) echo tier-opus;; opus) echo tier-fable;; *) return 1;; esac; }
 s4e_escalate_rung_set() {   # <topic> -> bumps the baton's RUNG: head line (absent means 1, so the first escalation writes RUNG: 2); prints the new rung
     local _b="$PO/tasks/$1.task.md" _cur _new
     _cur="$(sed -n 's/^RUNG:[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$_b" | head -1)"; _new=$(( ${_cur:-1} + 1 ))
