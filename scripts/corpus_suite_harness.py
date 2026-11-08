@@ -1151,7 +1151,10 @@ def _fatal_render_voice_for(lang):
 # the same stream through the same list -- icon: render(), every SCRIP block in the oracle's shape; the SNOBOL4 family:
 # replace_fatal_in_text(merged=True), as a merged 2>&1 capture of sbl -bf reads. Unrendered, both programs read FAIL here while
 # the board read them PASS. Set beside the fatal voice from the suite's language; S4E_FATAL_RENDER=0 turns both off.
-def _merged_render_voice_for(lang):
+def _merged_render_voice_for(lang, suite=""):
+    if lang == "icon" and suite:
+        c = Path(suite).resolve().parent / "CONTRACT.tsv"
+        if c.is_file() and any(l.split("\t")[:2] == ["oracle", "unicon"] for l in c.read_text().splitlines()): return "unicon"
     return "icon" if lang == "icon" else ("spitbol" if lang in ("", "snobol4", "snocone") else None)
 
 
@@ -3738,7 +3741,7 @@ def cmd_run(args):
                              x_path=sidecar_xfail_path(args.sno), w_path=sidecar_wantrc_path(args.sno),
                              a_path=sidecar_argv_path(args.sno), modes=modes)
     FATAL_RENDER["voice"] = _fatal_render_voice_for(args.lang)
-    FATAL_RENDER["merged_voice"] = _merged_render_voice_for(args.lang)
+    FATAL_RENDER["merged_voice"] = _merged_render_voice_for(args.lang, args.sno)
     _expect = read_expect_sidecar(args.sno)
     if _expect:
         _untrusted = 0
@@ -5938,7 +5941,7 @@ def cmd_smoke(args):
     try:
         for key, s, suite, lang, ext, by_name, wanted, skipped_outside, ref in plans:
             FATAL_RENDER["voice"] = _fatal_render_voice_for(lang if lang in LANG_CONFIGS else "")
-            FATAL_RENDER["merged_voice"] = _merged_render_voice_for(lang if lang in LANG_CONFIGS else "")
+            FATAL_RENDER["merged_voice"] = _merged_render_voice_for(lang if lang in LANG_CONFIGS else "", str(suite))
             masks = read_mask_sidecar(str(ref))
             heap, _ = heap_declarations(str(suite))
             stack, _ = stack_declarations(str(suite))

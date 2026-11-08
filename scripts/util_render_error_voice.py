@@ -21,6 +21,7 @@ THE LISTS (each row is what the oracle prints for the SCRIP field, measured on t
              "offending value: <image>\\n"                      when present
              "Traceback:\\n" then each frame on its own line, verbatim
              startup: "\\nRun-time error <code> in startup code\\n<text>\\n"
+  unicon   unicon 13.3 through unicon_bin() (corpus/packages/icon/unicon_tests/ALL.ref, thread/error and mt/loaderr, are the receipts): the icon list, each traceback frame indented three spaces.
   spitbol  SPITBOL x64 fork /home/resources/x64/bin/sbl -bf (RULES.md § Oracles):
              "<file>(<line>) : ERROR <code:03d> -- <text>\\nin statement <stno>\\n"   (stno 0 when SCRIP printed none;
              frames and offending value have no SPITBOL counterpart and are dropped -- SPITBOL prints none)
@@ -59,14 +60,14 @@ def render(lines, oracle):
             elif l.startswith('  in '): frames.append(l[5:])
             else: break
             j += 1
-        if oracle == 'icon':
+        if oracle in ('icon', 'unicon'):
             if startup:
                 out += ['', 'Run-time error %d in startup code' % code, text]
             else:
                 f = os.path.basename(at.group(1)) if at else ''; ln = at.group(2) if at else '0'
                 out += ['', 'Run-time error %d' % code, 'File %s; Line %s' % (f, ln), text]
                 if val is not None: out.append('offending value: ' + val)
-                out.append('Traceback:'); out += frames
+                out.append('Traceback:'); out += frames if oracle == 'icon' else ['   ' + f for f in frames]
         elif oracle == 'spitbol':
             f = at.group(1) if at else ''; ln = at.group(2) if at else '0'; st = at.group(3) if (at and at.group(3)) else '0'
             out += ['%s(%s) : ERROR %03d -- %s' % (f, ln, code, text), 'in statement %s' % st]
@@ -217,8 +218,8 @@ if __name__ == '__main__':
         args.remove('--fatal-merged'); fatal = 'merged'
     elif '--fatal-stdout' in args:
         args.remove('--fatal-stdout'); fatal = 'stdout'
-    if len(args) != 1 or args[0] not in ('icon', 'spitbol', 'raku', 'none'):
-        sys.stderr.write('REFUSE(rc=2): util_render_error_voice.py <icon|spitbol|raku|none> [--fatal-merged|--fatal-stdout]  (stdin -> stdout)\n'); sys.exit(2)
+    if len(args) != 1 or args[0] not in ('icon', 'unicon', 'spitbol', 'raku', 'none'):
+        sys.stderr.write('REFUSE(rc=2): util_render_error_voice.py <icon|unicon|spitbol|raku|none> [--fatal-merged|--fatal-stdout]  (stdin -> stdout)\n'); sys.exit(2)
     data = sys.stdin.buffer.read().decode('utf-8', 'surrogateescape')
     trailing_nl = data.endswith('\n')
     lines = data.split('\n')
