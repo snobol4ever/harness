@@ -3292,7 +3292,7 @@ s4e_set_row_state() {   # <topic> <state>  -- no-op (rc 1) when the topic has no
 # DONE-WHEN (the step-27 form). Any other column-0 label refuses. Each re-cut block keeps its old text VERBATIM on a receipt line:
 # DONE-WHEN-WAS: or PREMISE-WHEN-WAS: <stamp> by <seat> (why: <WHY>): <old block, lines joined by ' ⏎ '>. The receipts sit in the header directly
 # above the DONE-WHEN line, never under a criterion: a line under an incomplete-shell criterion would be read as part of it. A row the sweep
-# retired (RETIRED:criterion-refused-...) reopens to FREE; any other state stays. The new text passes mint's lint (s4e_donewhen_unrunnable_why: no
+# retired (RETIRED:criterion-refused-...) reopens to FREE, and a SUPERSEDED row (bus-one-queue step 6, CIO-8) reopens to FREE; any other state stays. The new text passes mint's lint (s4e_donewhen_unrunnable_why: no
 # prose, no no-op, no placeholder). A body that changes neither field is refused. rc 0 written; rc 2 refused, nothing written; rc 3 could not write.
 s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     local _t="$1" _b _q="$PO/QUEUE.tsv" _lk="$PO/.mint.lock" _got=0 _i _n _np _body _ln _v _bad="" _cur="" _why="" _dw="" _pw="" _nl=$'\n' \
@@ -3357,7 +3357,7 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     for _i in $(seq 1 50); do mkdir "$_lk" 2>/dev/null && { _got=1; break; }; sleep 0.1; done
     [ "$_got" = 1 ] || { printf '⛔ REFUSED (rc=3): could not take the mint lock %s for 5s. Nothing written; retry.\n' "$_lk" >&2; return 3; }
     _st="$(awk -F'\t' -v t="$_t" '$2 == t && NF > 3 { print $4; exit }' "$_q")"
-    case "$_st" in RETIRED:*) _to=FREE;; *) _to="$_st";; esac
+    case "$_st" in RETIRED:*|SUPERSEDED|SUPERSEDED:*) _to=FREE;; *) _to="$_st";; esac
     _tmp="$(mktemp "$_b.recut.XXXXXX")" || { rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): cannot make a temporary beside %s. Nothing written.\n' "$_b" >&2; return 3; }
     _dwnote=kept; [ "$_chgdw" = 1 ] && _dwnote=changed
     _pwnote=kept; [ "$_chgpw" = 1 ] && { _pwnote=added; [ "$_hasopw" = 1 ] && _pwnote=replaced; }
@@ -3381,7 +3381,7 @@ s4e_recut_write() {   # <topic> --stdin  |  <topic> <body words...>
     && mv "$_tmp.l" "$_tmp" && mv "$_tmp" "$_b" \
         || { rm -f "$_tmp" "$_tmp.l"; rmdir "$_lk" 2>/dev/null; printf '⛔ REFUSED (rc=3): the baton %s could not be rewritten. Nothing written.\n' "$_b" >&2; return 3; }
     if [ "$_to" != "$_st" ]; then
-        { _qt="$(mktemp "$_q.recut.XXXXXX")" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && $4 ~ /^RETIRED:/ { $4 = s } { print }' "$_q" > "$_qt" && cat "$_qt" > "$_q"; } \
+        { _qt="$(mktemp "$_q.recut.XXXXXX")" && awk -F'\t' -v OFS='\t' -v t="$_t" -v s="$_to" '$2 == t && NF > 3 && ($4 ~ /^RETIRED:/ || $4 ~ /^SUPERSEDED/) { $4 = s } { print }' "$_q" > "$_qt" && cat "$_qt" > "$_q"; } \
             || { rm -f "${_qt:-}"; rmdir "$_lk" 2>/dev/null; printf '⛔ RECUT PARTIAL (rc=3): the baton %s is re-cut, but the QUEUE.tsv state of %s could not be reopened to FREE; reopen it by hand.\n' "$_b" "$_t" >&2; return 3; }
         rm -f "$_qt"
     fi
