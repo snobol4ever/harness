@@ -19,6 +19,11 @@
 # so shipped = denominator + Excl as jcon, arizona, gnu and ipl read; the coo 2026-10-10: rosetta-prolog published 220/786 with Excl 0 over
 # 9 containers). Both files are read through lib_inventory.sh, the one reader; rc 2 when either is refused. Gate:
 # test_gate_container_package_runner_counts_its_containers_as_excl.sh.
+container_package_shipped() {
+  local suite="$1" ext="$2" depth="$3" d; local -a nsa=()
+  while IFS= read -r d; do nsa+=( ! -path "$suite/$d/*" ); done < <(inventory_not_shipped_dirs "$suite")
+  find "$suite" -maxdepth "$depth" "${nsa[@]}" -name "*.$ext" ! -name "ALL.$ext" | wc -l
+}
 container_package_excl() {
   local suite="$1" ext="$2" conts exnames nex=0 ncont=0 f
   conts="$(inventory_container_names "$suite")" || return 2
@@ -57,7 +62,7 @@ container_package_run() {
   fi
   local modes="${S4E_MODES:-m3}" mtext
   local cpr_depth="${CPR_DEPTH:-1}"
-  shipped=$(find "$suite" -maxdepth "$cpr_depth" -name "*.$ext" ! -name "ALL.$ext" | wc -l)
+  shipped=$(container_package_shipped "$suite" "$ext" "$cpr_depth")
   local conts xc ncont
   conts="$(inventory_container_names "$suite")" && xc="$(container_package_excl "$suite" "$ext")" \
     || { echo "⛔ REFUSE(rc=2): $suite/CONTAINERS.tsv or EXCLUDED.tsv is refused (the reader said why above) -- no row over an unread exclusion"; return 2; }

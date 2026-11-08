@@ -422,6 +422,11 @@ inventory_split_line() {
     return 0
 }
 
+inventory_not_shipped_dirs() {
+    local pkg="$1"
+    [ -f "$pkg/CONTRACT.tsv" ] || return 0
+    awk -F'\t' '$1=="not_shipped"{n=split($2,a," "); for(i=1;i<=n;i++) print a[i]}' "$pkg/CONTRACT.tsv"
+}
 inventory_line() {
     local graded_stream="${1:-0}" graded_narrow="${2:-0}"
     [ -n "${INV_PACKAGE:-}" ] || { inventory_refuse "INV_PACKAGE unset -- the stanza is incomplete"; return 2; }
@@ -432,6 +437,8 @@ inventory_line() {
     # had in mind. This is CLAUDE.md's own most-reused lesson (census by extension, never by the one you
     # had in mind) applied to the population that the entire lockdown percentage divides by.
     local shipped=0 e f rel
+    local -a _nsa=(); local _nsd
+    while IFS= read -r _nsd; do _nsa+=( ! -path "$INV_DIR/$_nsd/*" ); done < <(inventory_not_shipped_dirs "$INV_DIR")
     local -A _rel=() _base=() _brel=()
     for e in $INV_EXT; do
         while IFS= read -r f; do
@@ -453,7 +460,7 @@ inventory_line() {
             _base["${f##*/}"]=$(( ${_base["${f##*/}"]:-0} + 1 ))
             _brel["${f##*/}"]="$rel"
             shipped=$((shipped + 1))
-        done < <(find "$INV_DIR" -type f -name "*$e" ! -path "*.fixtures/*" 2>/dev/null)
+        done < <(find "$INV_DIR" "${_nsa[@]}" -type f -name "*$e" ! -path "*.fixtures/*" 2>/dev/null)
     done
     [ "$shipped" -gt 0 ] || { inventory_refuse "zero files matching '$INV_EXT' under $INV_DIR -- an empty shipped population is not an inventory, and a percent over zero is not a score"; return 2; }
 
