@@ -5648,6 +5648,8 @@ TASKEOF
          # rc is deliberately UNCHANGED -- it still answers "safe to /clear", which is a different question and the
          # one tooling consumes. The banner's TEXT is what Lon reads, and it is now the one that must be earned.
          elif [ "$vd" = FAILURE ]; then line="⛔ FAILURE — $ME — row ${row1}: its last DONE-WHEN read red, or a hash its LEDGER names is not on origin/main. Do NOT /clear — $lvl"
+         elif [ "$inbx" -gt 0 ]; then line="⏳ IN-PROGRESS — $ME — ${inbx} telegram(s) in the inbox: read, act or reply, clear. Do NOT /clear — $lvl"
+         elif [ -n "$row1" ] && [ "$(awk -F'\t' -v t="$row1" '$2==t{print $4; exit}' "$PO/QUEUE.tsv" 2>/dev/null)" = "CLAIMED:$ME" ]; then line="⏳ IN-PROGRESS — $ME — row ${row1} is CLAIMED:$ME and its NEXT is owed: write the NEXT and LEDGER, then park, unclaim or done. Do NOT /clear — $lvl"
          elif [ "$vd" != SUCCESS ] && [ "$cmts" -eq 0 ] && [ "$fnd" -eq 0 ]; then line="⚠ NOTHING LANDED — $ME — tree is clean and safe to /clear, but this session produced NO commit and NO FINDING. That is not success; it is an empty session."
          elif [ "$onlyhere" -eq 0 ] && [ "$hrc" -ne 0 ]; then line="✅ SUCCESS — $ME — safe to /clear (behind origin, nothing unpushed) — $lvl"
          elif [ "$hrc" -eq 0 ]; then line="✅ SUCCESS — $ME — safe to /clear — $lvl"
