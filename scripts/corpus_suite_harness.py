@@ -5342,6 +5342,59 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.mode_gap_s = int(_gap)
 
 
+def cmd_batch_list(args):
+    """THE BATCH ROAD'S LIST (CTO-554 step 10c; skill suites-and-grading reference section 5): the keyed scrip --harness list of one cell, on
+    stdout, one row per entry the scrip engine runs, built from the same declarations the per-process road reads (read_block_suite and its
+    ALL.csv columns, the heap, stack and timeout declarations) and staged by the same stage_entry: the entry's compile_args, sizes and -u
+    switch before the source, its argv after it, merge_stderr as stderr=merged, its staged directory as cwd=. Runs nothing; everything else
+    it says goes to stderr, ending BATCH_LIST cell=C eligible=N of M dir=D (D holds the staged sources and the .in/.out/.err files)."""
+    import contextlib
+    paths = resolve_paths()
+    cfg = LANG_CONFIGS[args.lang]
+    ext = cfg["ext"]
+    paths["lang"] = args.lang
+    for _label, _p in (("suite", args.sno), ("ref", args.ref)):
+        if not Path(_p).is_file():
+            refuse(f"{_label} file does not exist: {_p}")
+    with contextlib.redirect_stdout(sys.stderr):
+        entries = read_block_suite(args.sno, args.ref, banner_re_for(cfg["comment_open"], cfg["comment_close"]), in_path=sidecar_in_path(args.sno),
+                                   x_path=sidecar_xfail_path(args.sno), w_path=sidecar_wantrc_path(args.sno),
+                                   a_path=sidecar_argv_path(args.sno), modes=parse_modes(cfg["modes"], "run"))
+        _pname, _psel, _pn, _ppath = select_partition(args.sno, args.partition)
+        _by = {e.name: e for e in entries}
+        _gone = [n for n in _psel if n not in _by]
+        if _gone:
+            refuse(f"--partition {_pname}: {len(_gone)} of its entries are not in {args.sno} ({', '.join(_gone[:5])}) -- rebuild {_ppath}")
+        entries = [_by[n] for n in _psel]
+        for _decl, _attr in ((heap_declarations, "heap_kb"), (stack_declarations, "stack_kb"), (timeout_declarations, "timeout_s")):
+            _d, _src = _decl(args.sno)
+            for e in entries:
+                if e.name in _d:
+                    setattr(e, _attr, _d[e.name])
+    work = Path(tempfile.mkdtemp(prefix="batch_list_")).resolve()
+    rows = []
+    for i, e in enumerate(entries):
+        if paths["engine"] != "scrip":
+            continue
+        sd = work / ("%04d" % i)
+        sd.mkdir()
+        cand, _expected = stage_entry(e, str(sd), ext, Path(args.sno).parent)
+        cand = Path(cand)
+        stdin_p = ""
+        if e.stdin is not None:
+            stdin_p = str(work / ("%04d.in" % i))
+            Path(stdin_p).write_bytes(e.stdin.encode())
+        t = (None if ("TIMEOUT" in os.environ or not getattr(e, "timeout_s", None)) else e.timeout_s) or paths["timeout"]
+        sw = _compile_switches(paths, e.compile_args) + _size_switches(e.heap_kb, e.stack_kb) + _host_u_switch(cand, e.argv)
+        f = ["name=" + e.name] + (["stdin=" + stdin_p] if stdin_p else []) + ["stdout=" + str(work / ("%04d.out" % i)),
+             "stderr=" + ("merged" if e.merge_stderr else str(work / ("%04d.err" % i))), "cwd=" + str(cand.parent), "timeout_s=%g" % t]
+        rows.append("\t".join(f + [str(w) for w in sw] + [cand.name] + [str(a) for a in (e.argv or [])]))
+    sys.stdout.write("".join(r + "\n" for r in rows))
+    sys.stdout.flush()
+    print(f"BATCH_LIST cell={_pname} eligible={len(rows)} of {len(entries)} dir={work}", file=sys.stderr)
+    return 0
+
+
 def cmd_extract_family(args):
     """Materialize every entry of ONE family back out as a standalone SUITE PAIR (still banner-block or
     one-line, matching the rungs' own format) rather than loose individual files -- the bridge for a
@@ -6157,6 +6210,13 @@ def main():
     xc.add_argument("package")
     xc.add_argument("--names", action="store_true", help="print only the program names, one per line")
     xc.set_defaults(func=cmd_extension_check)
+
+    bl = sub.add_parser("batch-list", help="THE BATCH ROAD'S LIST (CTO-554 step 10c): write one cell's keyed scrip --harness list to stdout, run nothing; BATCH_LIST cell=C eligible=N of M dir=D on stderr")
+    bl.add_argument("sno")
+    bl.add_argument("ref")
+    bl.add_argument("--lang", required=True, choices=LANG_CHOICES, help="the LANG_CONFIGS dialect the suite is read as")
+    bl.add_argument("--partition", required=True, help="the stored PARTITION.tsv cell: core | shell:<feature> | chunk:NN | entry:<name>")
+    bl.set_defaults(func=cmd_batch_list)
 
     l = sub.add_parser("list", help="print every entry name in a suite, one per line, in file order")
     l.add_argument("sno")
