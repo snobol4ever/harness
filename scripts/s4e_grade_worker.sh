@@ -23,6 +23,11 @@
 #   --probe-package   step 9's probe: the same private daemon, one job for the puzzles package (its first partition entry, a one-entry cell) in a scratch tube, one
 #                     --once run under strace with S4E_PROGRESS_OFF=1 and every progress path in a scratch copy; prints GRADE_WORKER package=1 runner=<runner>
 #                     launches=1 modes=m3,m4 deleted=1 (rc 0 only if it reads so; else GRADE_WORKER package RED: <what differed>)
+#   --probe-third-bury  the cio's rule of 2026-11-08 (pl-rungs shell cells buried and kicked forever): the same private daemon, a scratch S4E_GRADE_SCRATCH (its log and
+#                     post office), two pl-rungs jobs on cell shell:<a feature no entry carries> (the harness refuses rc 2, the live cause). ARM 1: a fresh job, one
+#                     --once: buried, buries 1, no telegram. ARM 2: a job reserved and buried twice then kicked (buries 2), one --once: the job is gone, the log reads
+#                     action=delete reason=third rc 2 bury, the requester's and the coo's scratch inboxes hold one telegram each. Prints THIRD_BURY first=bury|<state>
+#                     deleted= logged= told= ok=; rc 0 only when ok=1, rc 2 when the daemon or a put refuses
 S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"; N=1; ONCE=0; TUBE=grade; PROBE=0; LOG=/home/resources/progress/GRADE_WORKERS.log
 while [ $# -gt 0 ]; do case "$1" in
     --once) ONCE=1; shift ;;
@@ -30,6 +35,7 @@ while [ $# -gt 0 ]; do case "$1" in
     --probe-record) PROBE=2; shift ;;
     --probe-smoke) PROBE=3; shift ;;
     --probe-package) PROBE=4; shift ;;
+    --probe-third-bury) PROBE=5; shift ;;
     --tube) TUBE="${2:?REFUSE(2) [grade_worker]: --tube takes a tube name}"; shift 2 ;;
     -h|--help) awk 'NR>1 && !/^#/{exit} NR>1{print}' "${BASH_SOURCE[0]}"; exit 0 ;;
     [0-9]*) N="$1"; shift ;;
@@ -149,10 +155,51 @@ print(rows[1][h.index("entry")])' "$S4E/corpus/packages/prolog/puzzles/PARTITION
     tail -n 12 "$T/worker.out" | sed 's/^/    /'
     return 1
 }
+probe_third_bury() {
+    local port=$((21000 + ($$ % 20000))) bpid t1="grade-bury1-$$" t2="grade-bury3-$$" T suite feat="no-such-feature-third-bury" j1 j2 up=0 i st1 rq co rqm com gone logged told first ok=0
+    [ "$port" = 11300 ] && port=$((port + 1))
+    local dir="/tmp/s4e/${S4E_SEAT:-grade}"
+    mkdir -p "$dir" && T="$(mktemp -d "$dir/grade_bury.XXXXXX")" || { echo "REFUSE(2) [grade_worker --probe-third-bury]: cannot make $dir"; return 2; }
+    beanstalkd -l 127.0.0.1 -p "$port" >/dev/null 2>&1 & bpid=$!
+    trap "kill $bpid 2>/dev/null; wait $bpid 2>/dev/null; rm -rf '$T'" EXIT
+    for i in $(seq 1 50); do S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { up=1; break; }; sleep 0.1; done
+    { [ "$up" = 1 ] && kill -0 "$bpid" 2>/dev/null; } || { echo "REFUSE(2) [grade_worker --probe-third-bury]: a private beanstalkd would not start on port $port"; return 2; }
+    suite="$(awk -F'\t' '$2=="master" && $3=="prolog"{print $1; exit}' "$S4E/harness/scripts/SUITE_RUNNERS.tsv")"
+    [ -n "$suite" ] || { echo "REFUSE(2) [grade_worker --probe-third-bury]: no prolog master in SUITE_RUNNERS.tsv"; return 2; }
+    rq="$(awk '/^ROSTER:/{for (i = 2; i <= NF; i++) if ($i != "coo") {print $i; exit}}' /home/resources/postoffice/MODE)"
+    [ -n "$rq" ] || { echo "REFUSE(2) [grade_worker --probe-third-bury]: no seat but the coo in the MODE ROSTER line"; return 2; }
+    j1="$(S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_grade_job.py" put --suite "$suite" --cell "shell:$feat" --band lap --modes m3 --requester "$rq" --tube "$t1" | sed -n 's/^job=\([0-9][0-9]*\) .*/\1/p')"
+    j2="$(S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_grade_job.py" put --suite "$suite" --cell "shell:$feat" --band lap --modes m3 --requester "$rq" --tube "$t2" | sed -n 's/^job=\([0-9][0-9]*\) .*/\1/p')"
+    { [ -n "$j1" ] && [ -n "$j2" ]; } || { echo "REFUSE(2) [grade_worker --probe-third-bury]: util_grade_job.py put placed no job"; return 2; }
+    S4E_QUEUE_PORT="$port" python3 - "$S4E" "$t2" <<'PYB' || { echo "REFUSE(2) [grade_worker --probe-third-bury]: could not bury and kick job $j2 twice"; return 2; }
+import sys; sys.path.insert(0, sys.argv[1] + "/harness/scripts"); import util_queue
+gs, c = util_queue.client(); c.use(sys.argv[2]); c.watch(sys.argv[2]); c.ignore("default")
+for _ in range(2):
+    j = c.reserve(timeout=5); c.bury(j, priority=900); c.kick(1)
+s = c.stats_job(j.id); sys.exit(0 if str(s.get("buries")) == "2" and s.get("state") == "ready" else 1)
+PYB
+    S4E_SEAT=grader S4E_GRADE_SCRATCH="$T/record" S4E_QUEUE_PORT="$port" timeout 900 bash "${BASH_SOURCE[0]}" "$N" --once --tube "$t1" > "$T/worker1.out" 2>&1
+    st1="$(S4E_QUEUE_PORT="$port" python3 -c 'import sys; sys.path.insert(0, sys.argv[1] + "/harness/scripts"); import util_queue
+gs, c = util_queue.client(); s = c.stats_job(int(sys.argv[2])); print("%s/%s" % (s.get("state"), s.get("buries")))' "$S4E" "$j1" 2>/dev/null)"
+    rqm="$(ls "$T/record/post/$rq/inbox" 2>/dev/null | grep -c '\.msg$')"; com="$(ls "$T/record/post/coo/inbox" 2>/dev/null | grep -c '\.msg$')"
+    first="bury"; { [ "$st1" = "buried/1" ] && [ "$rqm" = 0 ] && [ "$com" = 0 ]; } || first="${st1:-none}/told=$((rqm + com))"
+    S4E_SEAT=grader S4E_GRADE_SCRATCH="$T/record" S4E_QUEUE_PORT="$port" timeout 900 bash "${BASH_SOURCE[0]}" "$N" --once --tube "$t2" > "$T/worker2.out" 2>&1
+    S4E_QUEUE_PORT="$port" python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j2" > /dev/null 2>&1; [ "$?" = 1 ] && gone=1 || gone=0
+    logged="$(grep -c "job=$j2 .*action=delete .*reason=third rc 2 bury" "$T/record/GRADE_WORKERS.log" 2>/dev/null)"
+    rqm="$(ls "$T/record/post/$rq/inbox" 2>/dev/null | grep -c '\.msg$')"; com="$(ls "$T/record/post/coo/inbox" 2>/dev/null | grep -c '\.msg$')"
+    told=$(( (rqm == 1) + (com == 1) ))
+    [ "$first" = bury ] && [ "$gone" = 1 ] && [ "${logged:-0}" = 1 ] && [ "$told" = 2 ] && ok=1
+    echo "THIRD_BURY first=$first deleted=$gone logged=${logged:-0} told=$told ok=$ok"
+    echo "THIRD_BURY_PROBE port=$port suite=$suite cell=shell:$feat arm1_job=$j1 arm2_job=$j2 requester_msgs=$rqm coo_msgs=$com"
+    cat "$T/worker1.out" "$T/worker2.out"
+    [ "$ok" = 1 ] && return 0
+    return 1
+}
 if [ "$PROBE" = 1 ]; then probe; exit $?; fi
 if [ "$PROBE" = 4 ]; then probe_package; exit $?; fi
 if [ "$PROBE" = 2 ]; then probe_record; exit $?; fi
 if [ "$PROBE" = 3 ]; then probe_smoke; exit $?; fi
+if [ "$PROBE" = 5 ]; then probe_third_bury; exit $?; fi
 while :; do
     python3 - "$S4E" "$TUBE" "$N" "$ONCE" "$LOG" 5 "${S4E_GRADE_SCRATCH:-}" <<'PY'
 import os, sys, json, time, subprocess, shutil, re
