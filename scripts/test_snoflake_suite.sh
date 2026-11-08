@@ -121,6 +121,7 @@ RUN="$W/run"; mkdir -p "$RUN"; cp -p "$GIMPEL"/*.INC "$GIMPEL"/*.IN "$RUN"/ 2>/d
 # the one reader -- and at the shipped default when it declares nothing; a refused cell refuses the board. The oracle runs as before.
 # Line 2 hands the guard the same suite this runner grades (SNOFLAKE_SUITE), so a scratch fixture is judged as one.
 . "$HERE/lib_declared_arena.sh" || { echo "⛔ REFUSE(rc=2): lib_declared_arena.sh unloadable -- the one reader of a declared heap and stack"; exit 2; }
+. "$HERE/lib_harness_road.sh" || { echo "REFUSE(rc=2): lib_harness_road.sh unloadable"; exit 2; }
 DECL="$W/declared_memory.tsv"
 declared_memory_begin "$SUITE/ALL.csv" "$DECL" || { echo "⛔ REFUSE(rc=2): a declared-memory cell in $SUITE/ALL.csv is refused (named above) -- fix the cell; this board does not grade around it"; exit 2; }
 # ⭐ THE PROGRESS DATABASE (R-319/331; R-383 ruling 2; row snobol4-snoflake-aisnobol-and-dotnet-runners-wired-onto-
@@ -308,7 +309,11 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
              local ca; ca="$(declared_compile_args_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2
              local sz=""; [ "$PORT" = 1 ] && { sz="$(declared_switches_from_table "$DECL" "$(basename "$2" .sno)")" || exit 2; }   # a port reads its declared heap and stack as -dNk -sNk, never SCRIP's env
              [ "$PORT" = 1 ] && [ -n "$SCRIP_LIST_SINK" ] && rm -f "$SCRIP_LIST_SINK"
+             if hr_get "$(basename "$2" .sno)"; then
+                 GOT="$(head -c "$OUT_CAP" "$HR_OUT"; printf .)"; RC=$HR_RC; GOT="${GOT%.}"
+             else
              GOT="$(cd "$RUN" && run_at_declared_table "$DECL" "$(basename "$2" .sno)" -- env SNO_LIB="$GIMPEL" ${SCRIP_LIST_SINK:+SCRIP_SNO_LIST_SINK="$SCRIP_LIST_SINK"} "$TIMEOUT_RETRY" "$TIMEOUT" "$SCRIP" --run $ca $sz f.sno < "$inp" 2>&1 | head -c "$OUT_CAP"; _rc="${PIPESTATUS[0]}"; printf .; exit "$_rc")"; RC=$?; GOT="${GOT%.}"
+             fi
              # ⭐ A PORT THAT HONOURS THE SINK WRITES ITS &DUMP INTO IT, AS sbl DOES (hq_dotnet 2026-10-22, measured by the coo: run_snobol4dotnet.sh hands
              # snobol4dotnet the sink as -o=, and on dump-ordered its listing is byte-identical to sbl's, stdout 0 bytes on both), so a port's dump is
              # recovered from its own sink exactly as the oracle's is from $SBL_SINK; SCRIP prints its dump on stdout and keeps the arm it had.
@@ -355,6 +360,21 @@ run_one() { # $1=cmdkind $2=sno -> sets GOT RC ; input from $W/inp if HASINP
 # util_false_green_census.sh's silent stub passed both. Each capture ends in a sentinel byte the subshell prints and the caller strips, so the
 # comparison is the byte-for-byte oracle diff the law asks for.
 . "$HERE/lib_rr.sh" && rr_load "$SUITE" || exit 2   # the round robin's seam (R-1802/1805/1806): one chunk or a request's entries, rows as each test ends
+if [ "$PORT" = 0 ]; then
+    hr_begin "$W/hr"
+    for sno in "$SUITE"/*.sno; do
+        _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue
+        [ -e "$sno" ] || continue
+        name="$(basename "$sno" .sno)"
+        [ -n "$(declared_out_files_from_table "$DECL" "$name")" ] && continue
+        read -r _m _ic _ns _hi _op <<< "$(parse_fixture "$sno")"
+        _cwd="$W/hr/cwd/$name"; mkdir -p "$_cwd"; cp -al "$RUN"/. "$_cwd"/ 2>/dev/null || cp -p "$RUN"/. "$_cwd"/ -R
+        cp -pf "$sno" "$_cwd/f.sno"
+        _in=/dev/null; [ "$_hi" = 1 ] && { cp -p "$W/inp" "$_cwd/f.inp"; _in="$_cwd/f.inp"; }
+        hr_row --merged "$name" f.sno "$_in" "${TIMEOUT%s}" "$_cwd" "env=SNO_LIB=$GIMPEL" $(declared_compile_args_from_table "$DECL" "$name") $(declared_switches_from_table "$DECL" "$name")
+    done
+    hr_run "$SCRIP"
+fi
 for sno in "$SUITE"/*.sno; do
     _rrn="$(basename "$sno")"; _rrn="${_rrn%.*}"; rr_admits "$_rrn" || continue; rr_yield "$_rrn" && break; [ "$PROG_RECORD" = 1 ] && rr_flush "$PROG_ROWS"
     [ -e "$sno" ] || { echo "⛔ REFUSE(rc=2): zero fixtures in $SUITE"; exit 2; }
@@ -503,7 +523,7 @@ SHIPPED=$((BASE + OUTSIDE_N))
 EXCL_D_N="$(excluded_in_outside "$SUITE" "$(printf '%b' "$OUTSIDE_LIST" | cut -f1)")" || exit 2; DENOM=$((SHIPPED - EXCL_D_N))
 echo "EXCLUDED_NOT_SPITBOL_DIALECT=$EXCL_D_N of this run's outside set leave the denominator ($(excluded_names_count "$SUITE") named in $SUITE/EXCLUDED.tsv; Lon 2026-09-26, R-1286): pass over $DENOM"
 _cc="${S4E_CRITERION_CHANGED:-}"; [ -n "$_cc" ] || _cc="$(excluded_shape_stamp snoflake "$DENOM" "$OUTSIDE_N" "$EXCL_D_N")" || exit 2
-python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite Snoflake --modes m3,m4 \
+python3 "$HERE/util_score_row.py" write --lang snobol4 --column vendor --suite Snoflake --modes "${S4E_MODES:-m3,m4}" \
     ${_cc:+--criterion-changed "$_cc"} \
     --measurer "${S4E_SEAT:-}" --suite-pass "$BASE_BOTH" --suite-total "$DENOM" --excluded "$EXCL_D_N" \
     --text "both_modes_pass=$BASE_BOTH/$DENOM ($SHIPPED shipped minus EXCLUDED=$EXCL_D_N not in the SPITBOL dialect, EXCLUDED.tsv, R-1286) OUTSIDE=$OUTSIDE_N, graded $BASE_BOTH/$BASE · masked_lines=$MASKED_LINES in $MASKED_FIX fixture(s) (R-409, excluded at the line, fixture stays in the denominator) · baseline both_modes_pass=$BASE_BOTH/$BASE (the table's reading: fixtures SPITBOL runs clean; $OUTSIDE_N outside the SPITBOL baseline, Lon 2026-09-08) · both_modes_stream_pass=$BOTH_STREAM/$TOTAL (the runner's own label, R-372 AND per program on the R-383 stream-equal basis) · mode-3 PASS=$P3 FAIL=$F3 NSTD $N3P/$((N3P+N3F)) stream_equality=$SE3 error_number_only=$EN3 · mode-4 PASS=$P4 FAIL=$F4 SKIP(cc)=$S4 NSTD $N4P/$((N4P+N4F))${INV_LINE:+ · $INV_LINE} (\`test_snoflake_suite.sh\`)" \
