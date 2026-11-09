@@ -351,17 +351,18 @@ def one():
         held, w = GL.board_hold(need, resync, touch=lambda: c.touch(job), lock_dir=(SCR or None))
         why = why or w
         say("GRADE_TREE job=%d sync=%d waited=%ds" % (job.id, int(need), int(time.time() - t1)))
+    LENV = GL.launch_env(ENV, pri)
     if why is None:
         if kind == "master":
             cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
                    "run", alls, os.path.join(os.path.dirname(alls), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
-            senv = ENV
+            senv = LENV
         else:
             cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "bash", script] + words[1:]
-            senv = dict(ENV, S4E_CHUNK=cell)
+            senv = dict(LENV, S4E_CHUNK=cell)
         # A PACKAGE RUNNER TAKES ONE ENTRY A RUN (S4E_CHUNK=entry:<name>; the coo measured 2026-11-07 15:2x that entry:a,b is refused by the runner's partition parse), so a
         # request cell of several entries is several runs of the runner, in order, one log; rc is the worst reading (1 if any entry read red; a refusal stops the list).
-        launches = [(cmd, dict(ENV, S4E_CHUNK="entry:" + e)) for e in entries] if kind != "master" and len(entries) > 1 else [(cmd, senv)]
+        launches = [(cmd, dict(LENV, S4E_CHUNK="entry:" + e)) for e in entries] if kind != "master" and len(entries) > 1 else [(cmd, senv)]
         d = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT", "grade"), "grade"); os.makedirs(d, exist_ok=True)
         res_path = ENV.get("S4E_RESULTS", LIVE_PROG + "/results.tsv")
         snap = os.path.join(d, "job.%d.snap.tsv" % job.id)

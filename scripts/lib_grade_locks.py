@@ -20,6 +20,18 @@ def tree_behind(scrip_dir, tree):
     return subprocess.run(["git", "-C", scrip_dir, "merge-base", "--is-ancestor", tree, "HEAD"], capture_output=True).returncode != 0
 
 
+def launch_env(env, pri, psi_path="/proc/pressure/cpu"):
+    """The environment a board launch runs under: a request-band job (priority below 200) gets S4E_TIMEOUT_RETRY=0 while the cpu PSI some avg60 reads under 20, because on an idle box a retry cannot rescue a hang; otherwise the env as given."""
+    out = dict(env)
+    try:
+        avg = float(re.search(r"^some .*?avg60=([0-9.]+)", open(psi_path).read(), re.M).group(1))
+    except Exception:
+        return out
+    if pri < 200 and avg < 20:
+        out["S4E_TIMEOUT_RETRY"] = "0"
+    return out
+
+
 def _open(d, name):
     os.makedirs(d, exist_ok=True)
     return os.open(os.path.join(d, name), os.O_RDWR | os.O_CREAT, 0o644)
