@@ -41,6 +41,25 @@ def read_table(path):
     return rows, feats
 
 
+def drop_excluded_and_containers(table, rows):
+    d = os.path.dirname(os.path.abspath(table))
+    ex_p = os.path.join(d, "ALL.excluded.txt")
+    ct_p = os.path.join(d, "CONTAINERS.tsv")
+    if not os.path.isfile(ex_p) and not os.path.isfile(ct_p):
+        return rows
+    ex, ct = set(), set()
+    if os.path.isfile(ex_p):
+        with open(ex_p, encoding="utf-8", errors="replace") as f:
+            ex = set(l.split(": ", 1)[0].strip() for l in f if l.strip())
+    if os.path.isfile(ct_p):
+        with open(ct_p, encoding="utf-8", errors="replace") as f:
+            ct = set(os.path.splitext(l.split("\t", 1)[0].strip())[0] for l in f if l.strip() and not l.startswith("#"))
+    n_ex = sum(1 for r in rows if r.get("entry") in ex)
+    n_ct = sum(1 for r in rows if r.get("entry") in ct and r.get("entry") not in ex)
+    print("PARTITION_DROPPED excluded=%d containers=%d" % (n_ex, n_ct))
+    return [r for r in rows if r.get("entry") not in ex and r.get("entry") not in ct]
+
+
 def read_secs(path, key):
     secs = {}
     if not path:
@@ -171,6 +190,7 @@ def main(argv):
     if not os.path.isfile(table):
         print("REFUSE(2): no table at %s" % table); return 2
     rows, feats = read_table(table)
+    rows = drop_excluded_and_containers(table, rows)
     secs = read_secs(opts["secs"], opts["suite_key"]) if opts["secs"] and opts["suite_key"] else {}
     out, shape = build(rows, feats, opts["core_k"], opts["ubiquitous"], opts["chunk_entries"], secs)
     text = render(out, shape, opts)
