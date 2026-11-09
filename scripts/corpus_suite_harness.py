@@ -151,7 +151,7 @@ ANY_BANNER_RE = re.compile(r"^[*#%{/][*#%{/ ]*-{3,} \d+ \S+")
 LANG_CONFIGS = {
     "raku": {"ext": ".raku", "comment_open": "#", "comment_close": "", "modes": "m3,m4"},
     "rebus": {"ext": ".reb", "comment_open": "#", "comment_close": "", "modes": "m3,m4"},
-    "pascal": {"ext": ".pas", "comment_open": "{", "comment_close": "}", "modes": "m3,m4", "expected_refusal_re": r"ISO 7185 [0-9.]+ violation"},
+    "pascal": {"ext": ".pas", "comment_open": "{", "comment_close": "}", "modes": "m3,m4", "expected_refusal_re": r"ISO 7185 [0-9]+(\.[0-9]+)+( violation|:)"},   # both of SCRIP's voices, as the deleted fpc and PAT runners read them: "ISO 7185 6.1.7 violation line 7: ..." at compile, "pascal runtime error: ISO 7185 6.6.2: ..." at run time (fpc tbs_tb0068)
     "prolog": {"ext": ".pl", "comment_open": "%", "comment_close": "", "modes": "m3,m4"},
     "icon": {"ext": ".icn", "comment_open": "#", "comment_close": "", "modes": "m3,m4"},
     "snocone": {"ext": ".sc", "comment_open": "/*", "comment_close": " */", "modes": "m3,m4"},
@@ -1334,9 +1334,34 @@ def _mask_error_context(ln):
             out.append(ln[i:k]); i = k
             continue
         out.append(ln[i:comma + 1] + "_CTX)"); i = k
+def _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge_stderr):
+    """A SPITBOL COMPILE REFUSAL, GRADED BY THE CODE AND LINE OF EVERY DIAGNOSTIC (R-1323, 2026-09-27, on Lon's "I want to see TPgm go to
+    8/8. I'm tired of seeing that 1/8."; carried into the one launch by the coo 2026-11-09, measured on spitbol_testpgms test2, which the
+    deleted test_snobol4_spitbol_testpgms_suite.sh graded this way and this harness read FAIL against sbl's listing). The ref is a compile
+    refusal when it holds a diagnostic `<file>(<line>) : ERROR <code> -- `, no run-time post-mortem, and a nonzero want_rc (sbl -bf exits 0
+    after a run-time fatal): SCRIP passes by refusing too, nothing on stdout, a nonzero rc, and the (line, code) pairs of its stderr rendered
+    through the one error voice equal to the ref's. The rc alone never grades (the cfo's condition). Any other ref: None, graded as before."""
+    if FATAL_RENDER.get("voice") != "spitbol" or expected_text is None or not want_rc or merge_stderr:
+        return None
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import util_spitbol_compile_refusal as _cr
+    import util_render_error_voice as _rv
+    _ref = expected_text.split("\n")
+    want = _cr.pairs_of(_ref)
+    if not want or any(_cr.POST_MORTEM.match(l) for l in _ref):
+        return None
+    got = _cr.pairs_of(_rv.render((err or b"").decode("utf-8", "surrogateescape").split("\n"), "spitbol"))
+    if rc != 0 and not (out or b"").strip() and got == want:
+        return Verdict("PASS", out, err, rc, detail="spitbol-compile-refusal")
+    return Verdict("FAIL", out, err, rc, detail="spitbol-compile-refusal: want (line, code) %s, got %s, stdout %d bytes, rc %s" % (want, got, len(out or b""), rc))
+
+
 def _grade_output(out, err, rc, expected_text, want_rc=0, mask=None, merge_stderr=False, ws_blind=False):
     """The grade of a process that ended (no hang, no signal): its stdout against the ONE ref through the masks and the one error voice,
     its rc against the declared want_rc. Shared by every run and by a mode-4 compile refusal (R-1354), so the two cannot disagree."""
+    _crv = _spitbol_compile_refusal_verdict(out, err, rc, expected_text, want_rc, merge_stderr)
+    if _crv is not None:
+        return _crv
     got = out.decode("utf-8", "replace").rstrip("\n")
     if merge_stderr:
         got = _render_merged_stream(got)
@@ -2766,6 +2791,21 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     for _tok in (getattr(entry, 'argv', None) or []):
         if _cdir and _tok and '/' not in _tok and (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists():
             (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
+    # STDIN LINES THAT NAME A COMPANION (the coo 2026-11-09, measured on spitbol_x64_tests arcput: it reads file names from INPUT and opens
+    # each, and the builder cut its ref with every package file beside sbl; staged without them, sbl -bf and SCRIP alike loop on an
+    # unassociated FILE to &STLIMIT): a whole stdin line, no '/', that is a regular file beside the suite and not a container file travels
+    # with the entry as an argv token does.
+    # A line no file can be named by (over 255 bytes, a NUL) is never looked up: stat raises on it (measured: a SnoRungs stdin line of 'a's).
+    for _tok in ((getattr(entry, 'stdin', None) or "").split("\n") if _cdir else []):
+        _tok = _tok.strip()
+        if not _tok or '/' in _tok or '\0' in _tok or len(_tok.encode("utf-8", "surrogateescape")) > 255 or _tok.startswith("ALL."):
+            continue
+        try:
+            _hit = (Path(_cdir) / _tok).is_file() and not (cand.parent / _tok).exists()
+        except (OSError, ValueError):
+            _hit = False
+        if _hit:
+            (cand.parent / _tok).write_bytes((Path(_cdir) / _tok).read_bytes())
     return cand, expected
 
 
@@ -3890,6 +3930,31 @@ def cmd_run(args):
                    % ", ".join(_unknown))
         print("R-409 MASKS ACTIVE: %d of %d entries carry a declared implementation-defined line mask (%s)"
               % (len(_seen), len(entries), ", ".join(sorted(_seen))))
+    # ⭐ A CORRECTED REF (Lon 2026-10-05 on fpc issue #41609, quoted in ALL.corrected.tsv: "do not copy the bug"): ALL.corrected.tsv beside the
+    # container names an entry whose oracle errs, graded against <name>.ref.corrected beside it, exactly as the deleted test_pascal_fpc_suite.sh
+    # graded it (the coo 2026-11-09: the one launch lost the arm and fpc test_tisobuf3 read FAIL against fpc's own bug). A named entry the suite
+    # does not carry, a missing .ref.corrected, or one equal to the oracle's ref (the oracle no longer errs: delete the row) refuses rc 2.
+    _corr_path = Path(args.sno).with_name("ALL.corrected.tsv")
+    if _corr_path.is_file():
+        _by_name = {e.name: e for e in entries}
+        _corrected = []
+        for _l in _corr_path.read_text(encoding="utf-8", errors="replace").splitlines():
+            _c = _l.split("\t")[0].strip()
+            if not _c or _c.startswith("#"):
+                continue
+            if _c not in _by_name:
+                refuse(f"{_corr_path} names {_c}, which {args.sno} does not carry")
+            _cf = _corr_path.with_name(_c + ".ref.corrected")
+            if not _cf.is_file():
+                refuse(f"{_corr_path} names {_c} but {_cf.name} is missing beside it")
+            _cl = _read_lf_lines(_cf)
+            _ce = _by_name[_c]
+            _was = _lf_lines(_ce.ref) if isinstance(_ce.ref, str) else list(_ce.ref)
+            if "\n".join(_was).rstrip("\n") == "\n".join(_cl).rstrip("\n"):
+                refuse(f"{_cf.name} equals the oracle's ref for {_c} -- the oracle no longer errs there; delete the {_corr_path.name} row")
+            _ce.ref = "\n".join(_cl) if isinstance(_ce.ref, str) else _cl
+            _corrected.append(_c)
+        print(f"CORRECTED_REFS n={len(_corrected)} from {_corr_path} ({', '.join(_corrected)}) -- each graded against its .ref.corrected, the oracle's defect named in the row")
     require_population(paths, len(entries), 1, f"entries read from {args.sno} (a suite pair that names zero entries cannot be graded)")
     # ⛔ THE SUITE'S NAMES ARE TAKEN BEFORE THE SHARD CUTS THEM: the outside list's presence check below asks whether a name is in
     # THIS SUITE, never in this shard -- read from the sharded list, every outside name graded by another shard read as a stale row

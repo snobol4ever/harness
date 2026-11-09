@@ -609,7 +609,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         # && icont -s t.icn`) rather than inventing a new invocation contract.
         def _oracle_isolated(flags=flags):
             with tempfile.TemporaryDirectory(prefix="pkgsuite_oracle_") as _iso_dir:
-                _iso_src = Path(_iso_dir) / src.name
+                # ⛔ THE ORACLE READS THE NAME THE GRADER STAGES (the coo 2026-11-09, measured on x64tests gcbuster and testpgms test1 and test6):
+                # stage_entry writes <name><ext> (ALL.sno's .sno), so a ref cut from the shipped .sbl or .spt name prints &FILE and &LASTFILE
+                # the graded run can never print, and the three read FAIL on those two lines alone. Under --src-ext the source is staged as
+                # <stem><ext>, byte for byte; with no --src-ext the name is unchanged.
+                _iso_src = Path(_iso_dir) / (src.name if src_ext == ext else src.stem + ext)
                 # ⭐ COMPANIONS TRAVEL WITH THE SOURCE (row aisnobol-all-eight-..., cto 2026-09-07): a program that
                 # -INCLUDEs a vendored module (SIR/TEST -> SPITCORE.sno) or opens a vendored data file by name
                 # (spitlib.spt / spitlib.idx) died in the one-file isolation and was filed "oracle died" for want of
