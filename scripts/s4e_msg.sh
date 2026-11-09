@@ -207,13 +207,15 @@ s4e_done_delete_job() {   # <topic>: done deletes the row's job once its DONE li
     printf 'job_deleted=0 job=%s state=%s (a holder still reserves it after 12 s; it deletes the job on its next read of the DONE line)\n' "$_j" "${_s:-?}"
     return 0; }
 s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-queue step 6): done and park remove each WORKTREE: <path> the baton names, when s4e_worktree.sh exists (box-scheduler 36); one LEDGER line per removal
-    local _b="$PO/tasks/$1.task.md" _w _rc
+    local _b="$PO/tasks/$1.task.md" _w _rc _o _p _t _busy
     [ -f "$S4E/harness/scripts/s4e_worktree.sh" ] || return 0
     while IFS= read -r _w; do
         [ -n "$_w" ] || continue
-        _n="$(basename "$_w")"; _n="${_n#wt-}"
-        bash "$S4E/harness/scripts/s4e_worktree.sh" rm "$_n" >/dev/null 2>&1; _rc=$?
-        printf -- '- [%s·%s] WORKTREE rm %s rc=%s (fleet-queue step 6: done and park remove the worktrees the baton names)\n' "$ME" "$(date -u +%F)" "$_w" "$_rc" >> "$_b"
+        _n="$(basename "$_w")"; _n="${_n#wt-}"; _o="$(basename "$(dirname "$_w")")"; _busy=0
+        for _p in /proc/[0-9]*/cwd; do [ "$_p" = "/proc/$$/cwd" ] && continue; _t="$(readlink "$_p" 2>/dev/null)"; case "$_t" in "$_w"|"$_w"/*) _busy=1; break ;; esac; done
+        if [ "$_busy" = 1 ]; then printf -- '- [%s·%s] WORKTREE kept %s: a live process is inside (fleet-queue step 6: done and park never cut a seat off its working directory)\n' "$ME" "$(date -u +%F)" "$_w" >> "$_b"; continue; fi
+        S4E_SEAT="$_o" bash "$S4E/harness/scripts/s4e_worktree.sh" rm "$_n" >/dev/null 2>&1; _rc=$?
+        printf -- '- [%s·%s] WORKTREE rm %s as %s rc=%s (fleet-queue step 6: done and park remove the worktrees the baton names, as the seat that made them)\n' "$ME" "$(date -u +%F)" "$_w" "$_o" "$_rc" >> "$_b"
     done <<< "$(sed -n 's/^WORKTREE: //p' "$_b" 2>/dev/null)"
     return 0; }
 s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker buries its job (step 6). A live holder of OUR claim buries it: PARK on the claim, BURIED back; the claim is cleared only after that, because a claim that vanishes releases the job to its tube. With no live holder the bus buries a ready job (bury-ready); a row with no job gets a put-buried one. rc 0 done or nothing to do (another seat's holder, a non-park state); rc 3 refused, nothing set.
