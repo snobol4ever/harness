@@ -188,7 +188,12 @@ INIT_AS_CLAUSES = {"readutil": {"link_foreign": ("with no foreign readutil, link
 # name the library's own calls read.  library(gensym) builds its symbol with atom_concat(Base, N, Atom), which SWI allows for a
 # number N and SCRIP's ISO atom_concat/3 refuses outside the SWI dialect; the edit builds it with atomic_list_concat/2.
 WHY_MAIN_META = ("SCRIP's module flattener qualifies a meta-argument (:) only inside a module or a plunit unit, and none in a file without either; from user the argument arrives bare, so a bare one is read as user:X, the term swipl passes from user")
-SOURCE_EDITS = {"record": [("the directive :- record(R) asserts the clauses system:term_expansion/2 would have compiled", """record(Record) :-
+SOURCE_EDITS = {"sandbox": [("forall/2 and time/1 are SCRIP natives, so no clause of theirs is visible to safe_clauses/5; swipl reads their one clause and "
+                         "finds each safe exactly when its goal arguments are, which these safe_meta/2 facts state", """safe_meta(system:put_attr(V,M,A), Called) :-""",
+                         """safe_meta('$apply':forall(Cond, Action), [Cond, Action]).
+safe_meta(prolog_statistics:time(Goal), [Goal]).
+safe_meta(system:put_attr(V,M,A), Called) :-""")],
+                "record": [("the directive :- record(R) asserts the clauses system:term_expansion/2 would have compiled", """record(Record) :-
     throw(error(context_error(nodirective, record(Record)), _)).""", """record(Record) :-
     compile_records(Record, [_|Clauses]),
     forall(member(Clause, Clauses), record_assert(Clause)).
