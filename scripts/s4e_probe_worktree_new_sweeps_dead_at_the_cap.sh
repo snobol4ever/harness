@@ -14,6 +14,7 @@ p="$t/po"; top="$t/top"
 trap 'rm -rf "$t"' EXIT
 mkdir -p "$p/tasks" "$top/$ME"
 for n in dead dead2 live orphan; do mkdir -p "$top/$ME/wt-$n"; printf 'name=%s\nseat=%s\n' "$n" "$ME" > "$top/$ME/wt-$n/.s4e-worktree"; touch -d '2 hours ago' "$top/$ME/wt-$n"; done
+touch -d '10 minutes ago' "$top/$ME/wt-orphan"
 for r in dead dead2 live; do printf '# TASK r-%s\nGOAL: plant\nDONE-WHEN: false\nWORKTREE: %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$r" "$top/$ME/wt-$r" > "$p/tasks/r-$r.task.md"; done
 printf '3\tr-dead\t%s\tDONE\n3\tr-live\t%s\tCLAIMED:%s\n' "$ME" "$ME" "$ME" > "$p/QUEUE.tsv"
 printf '3\tr-dead2\t%s\tDONE\n' "$ME" > "$p/QUEUE.done.tsv"
@@ -21,13 +22,13 @@ rmdead2() { mv "$top/$ME/wt-dead2" "$t/dead2.parked"; }
 rmdead2
 wt() { env S4E_WT_TOP="$top" S4E_POSTOFFICE="$p" WT_MAX=2 S4E_SEAT="$ME" timeout -k 5 300 bash "$WT" "$@" < /dev/null 2>&1; }
 o="$(wt new probe-sweep-$$)"
-sw=0; printf '%s\n' "$o" | grep -q '^SWEPT 1$' && sw=1
+sw=0; printf '%s\n' "$o" | grep -q '^SWEPT 1 done=1 left=0 unnamed=0$' && sw=1
 dg=0; [ ! -e "$top/$ME/wt-dead" ] && dg=1
 ls_=0; [ -d "$top/$ME/wt-live" ] && [ -d "$top/$ME/wt-orphan" ] && ls_=1
 rc=0; printf '%s\n' "$o" | grep -q 'REFUSE(2): 2 worktrees' && rc=1
 mv "$t/dead2.parked" "$top/$ME/wt-dead2"; touch -d '2 hours ago' "$top/$ME/wt-dead2"
 o2="$(wt sweep)"
-sv=0; printf '%s\n' "$o2" | grep -q '^SWEPT 1$' && [ ! -e "$top/$ME/wt-dead2" ] && sv=1
+sv=0; printf '%s\n' "$o2" | grep -q '^SWEPT 1 done=1 left=0 unnamed=0$' && [ ! -e "$top/$ME/wt-dead2" ] && sv=1
 ok=0; [ "$sw$dg$ls_$rc$sv" = 11111 ] && ok=1
 echo "WT_SWEEP swept=$sw dead_gone=$dg live_and_unnamed_stand=$ls_ recounted=$rc sweep_verb=$sv ok=$ok"
 [ "$ok" = 1 ]

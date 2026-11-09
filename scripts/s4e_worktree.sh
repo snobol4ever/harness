@@ -65,15 +65,42 @@ seat_in_tiers() {
 # wt_unlanded <wt> -- what a rm would lose: for each repo the marker names, tracked modifications or untracked files (ignored build outputs do not count), and
 # commits whose patch is not already on origin/main (git cherry, so a landed commit the lander rebased reads landed). Prints " <repo>:dirty" and
 # " <repo>:unlanded-commits" and returns 1 when any; 0 when none.
+# wt_dirty_paths <repo dir> -- the paths one rm would lose, measured against origin/main and not the index (CIO-17): a tracked file whose content differs
+# from origin/main's (a landed edit that is on origin/main with the same bytes is not lost), and an untracked file that origin/main lacks or holds with
+# other bytes. Prints one path per line.
+wt_dirty_paths() {
+    local d="$1" f
+    git -C "$d" diff --name-only HEAD 2>/dev/null | while IFS= read -r f; do git -C "$d" diff --quiet origin/main -- "$f" 2>/dev/null || printf '%s\n' "$f"; done
+    git -C "$d" ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r f; do
+        git -C "$d" cat-file -e "origin/main:$f" 2>/dev/null && [ "$(git -C "$d" hash-object -- "$f")" = "$(git -C "$d" rev-parse "origin/main:$f")" ] || printf '%s\n' "$f"
+    done
+}
+# wt_unlanded <wt> -- what a rm would lose: for each repo the marker names, the paths of wt_dirty_paths, and commits whose patch is not already on origin/main
+# (git cherry, so a landed commit the lander rebased reads landed). Prints " <repo>:dirty" and " <repo>:unlanded-commits" and returns 1 when any; 0 when none.
 wt_unlanded() {
     local wt="$1" r out=""
     for r in $REPOS; do
         grep -qx "repo=$r" "$wt/.s4e-worktree" 2>/dev/null && [ -d "$wt/$r" ] || continue
-        [ -z "$(git -C "$wt/$r" status --porcelain 2>/dev/null)" ] || out="$out $r:dirty"
+        [ -z "$(wt_dirty_paths "$wt/$r")" ] || out="$out $r:dirty"
         ! git -C "$wt/$r" cherry origin/main HEAD 2>/dev/null | grep -q '^+' || out="$out $r:unlanded-commits"
     done
     [ -z "$out" ] || { printf '%s' "$out"; return 1; }
     return 0
+}
+# wt_save_patch <wt> <owner> <name> -- writes what a rm of <wt> would lose into $PO/escalations/worktrees/<owner>-<name>-<UTC stamp>.patch: each repo's diff
+# against origin/main and each untracked file as a diff from /dev/null. Prints the patch's path; returns 1 when it cannot be written (the sweep then keeps the worktree).
+wt_save_patch() {
+    local wt="$1" owner="$2" name="$3" r f file
+    mkdir -p "$PO/escalations/worktrees" || return 1
+    file="$PO/escalations/worktrees/$owner-$name-$(date -u +%Y%m%dT%H%M%SZ).patch"
+    : > "$file" || return 1
+    for r in $REPOS; do
+        grep -qx "repo=$r" "$wt/.s4e-worktree" 2>/dev/null && [ -d "$wt/$r" ] || continue
+        git -C "$wt/$r" diff HEAD >> "$file" 2>/dev/null
+        git -C "$wt/$r" format-patch -q --stdout origin/main..HEAD >> "$file" 2>/dev/null
+        git -C "$wt/$r" ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r f; do git -C "$wt/$r" diff --no-index /dev/null "$f" >> "$file" 2>/dev/null; done
+    done
+    printf '%s\n' "$file"
 }
 # wt_cap_scan TOP -- the cap's census of TOP/<seat>/wt-*. COUNTED: a directory whose .s4e-worktree marker names a seat of TIERS.tsv.
 # IGNORED: every other wt-* directory, listed in CAP_IGNORED and never counted (a hand-made or dead directory holds no slot).
@@ -96,28 +123,42 @@ wt_cap_scan() {
 # or QUEUE.retired.tsv), idle 30 minutes or more by its directory mtime, with no process whose cwd lies inside it, is removed AS ITS OWNER by this script's own rm
 # (so the guard of wt_unlanded applies); a worktree no baton names is never swept. Prints one line, SWEPT <n>.
 sweep_dead() {
-    local d b row st owner n=0 now p t busy
+    local d b row st owner name n=0 nd=0 nl=0 nu=0 now p t busy cls floor lost pf flag
     now="$(date +%s)"
     for d in "$TOP"/*/wt-*; do
         [ -f "$d/.s4e-worktree" ] || continue
-        b="$(grep -lxF "WORKTREE: $d" "$BATONS"/*.task.md 2>/dev/null | head -1)"; [ -n "$b" ] || continue
-        row="$(basename "$b" .task.md)"
-        st="$(awk -F'\t' -v t="$row" '!/^#/ && $2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
-        [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.done.tsv" 2>/dev/null && st=DONE; }
-        [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.retired.tsv" 2>/dev/null && st=RETIRED; }
-        case "$st" in DONE*|SUPERSEDED*|RETIRED*) ;; *) continue ;; esac
-        [ $((now - $(stat -c %Y "$d"))) -ge 1800 ] || continue
+        row=""; st=""
+        owner="$(basename "$(dirname "$d")")"; name="${d##*/wt-}"
+        b="$(grep -lxF "WORKTREE: $d" "$BATONS"/*.task.md 2>/dev/null | head -1)"
+        if [ -z "$b" ]; then cls=unnamed; floor=7200
+        else
+            row="$(basename "$b" .task.md)"
+            st="$(awk -F'\t' -v t="$row" '!/^#/ && $2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
+            [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.done.tsv" 2>/dev/null && st=DONE; }
+            [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.retired.tsv" 2>/dev/null && st=RETIRED; }
+            case "$st" in
+                DONE*|SUPERSEDED*|RETIRED*) cls=done; floor=1800 ;;
+                "CLAIMED:$owner"|"ASSIGNED:$owner") continue ;;
+                *) cls=left; floor=3600 ;;
+            esac
+        fi
+        [ $((now - $(stat -c %Y "$d"))) -ge "$floor" ] || continue
         busy=0; for p in /proc/[0-9]*/cwd; do t="$(readlink "$p" 2>/dev/null)"; case "$t" in "$d"|"$d"/*) busy=1; break ;; esac; done
         [ "$busy" = 0 ] || continue
-        owner="$(basename "$(dirname "$d")")"
-        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "${d##*/wt-}" > /dev/null 2>&1 && n=$((n + 1))
+        if lost="$(wt_unlanded "$d")"; then pf=""; flag=""
+        else pf="$(wt_save_patch "$d" "$owner" "$name")" || continue; flag=--discard; fi
+        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "$name" ${flag:+$flag} > /dev/null 2>&1 || continue
+        n=$((n + 1))
+        case "$cls" in done) nd=$((nd + 1)) ;; left) nl=$((nl + 1)) ;; unnamed) nu=$((nu + 1)) ;; esac
+        if [ -n "$pf" ] && [ -n "$b" ]; then printf -- '- [sweep] worktree %s removed %s; patch %s\n' "$d" "$cls" "$pf" >> "$b"; fi
     done
-    echo "SWEPT $n"
+    echo "SWEPT $n done=$nd left=$nl unnamed=$nu"
 }
 wt_cap_check() {
     case "$WT_MAX" in ""|*[!0-9]*) die "REFUSE(2): WT_MAX must be a whole number, got '$WT_MAX'" 2 ;; esac
     wt_cap_scan "$TOP"
-    if [ "$CAP_COUNTED" -ge "$WT_MAX" ]; then sweep_dead; wt_cap_scan "$TOP"; fi
+    sweep_dead
+    wt_cap_scan "$TOP"
     [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOP/<seat>/ (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
 }
 
