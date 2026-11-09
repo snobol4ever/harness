@@ -80,7 +80,8 @@ def origin_tree():
     try: return subprocess.run(["git", "-C", os.path.join(S4E, "SCRIP"), "rev-parse", "--short=9", "origin/main"], capture_output=True, text=True, check=True).stdout.strip()
     except Exception: return "0000000"
 def line(j): return "GRADE_JOB suite=%s cell=%s modes=%s tree=%s pri=%d ttr_s=%d requester=%s entries=%d" % (j["suite"], j["cell"], j["modes"], j["tree"], j["pri"], j["ttr_s"], j["requester"], j["entries"])
-def job_for(suite, cell, band, tree, requester, ttr=None, modes="m3,m4"):
+def job_for(suite, cell, band, tree, requester, ttr=None, modes=None):
+    modes = modes or os.environ.get("S4E_MODES") or "m3"   # mode 3 ONLY (Lon 2026-11-08 10:2x, again 2026-11-09 08:4x: "mode 4 is not being run as I have directed")
     if band not in BAND: refuse("band %r" % band)
     lang, ents, bttr, declared = budget(suite, cell)
     return {"suite": suite, "cell": cell, "modes": modes, "tree": tree, "requester": requester, "pri": BAND[band], "ttr_s": int(ttr or bttr), "entries": len(ents)}
@@ -106,7 +107,7 @@ def put_many(opts):
         if not raw.strip() or raw.startswith("#"): continue
         f = raw.split("\t")
         if len(f) != 2 or not f[0] or not f[1]: refuse("put-many line %d: want suite<TAB>cell, got %r" % (n, raw))
-        jobs.append(job_for(f[0], f[1], band, tree, requester, opts.get("ttr"), opts.get("modes", "m3,m4")))
+        jobs.append(job_for(f[0], f[1], band, tree, requester, opts.get("ttr"), opts.get("modes")))
     if not jobs: refuse("put-many: no cells on stdin")
     gs, c = queue_client()
     try:
@@ -163,7 +164,7 @@ def main(a):
     if a[0] == "put":
         band = opts.get("band") or refuse("put needs --band request|smoke|impact|lap")
         if band not in BAND: refuse("band %r" % band)
-        j = job_for(opts["suite"], opts["cell"], band, opts.get("tree") or origin_tree(), opts.get("requester") or os.environ.get("S4E_SEAT", "?"), opts.get("ttr"), opts.get("modes", "m3,m4"))
+        j = job_for(opts["suite"], opts["cell"], band, opts.get("tree") or origin_tree(), opts.get("requester") or os.environ.get("S4E_SEAT", "?"), opts.get("ttr"), opts.get("modes"))
         tube = opts.get("tube", "grade")
         jid = put(j, tube); print(line(j)); print("job=%d tube=%s" % (jid, tube)); return
     refuse("unknown verb " + a[0])

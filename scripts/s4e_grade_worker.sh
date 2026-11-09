@@ -296,7 +296,7 @@ def one():
         return 1
     t0 = time.time(); why = None; suite = cell = modes = "?"; pri = 1000; j = {}; tree = requester = "?"
     try:
-        j = json.loads(job.body); suite, cell, modes, pri = j["suite"], j["cell"], j.get("modes", "m3,m4"), int(j.get("pri", 1000))
+        j = json.loads(job.body); suite, cell, modes, pri = j["suite"], j["cell"], (os.environ.get("S4E_MODES") or "m3") if os.environ.get("S4E_MODES", "m3") == "m3" else j.get("modes", "m3"), int(j.get("pri", 1000))
         tree, requester = j.get("tree", "?"), j.get("requester", "?")
     except Exception as e:
         why = "refused: unreadable job body (%s)" % e
