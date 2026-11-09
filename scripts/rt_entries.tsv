@@ -389,6 +389,7 @@ rt_pl_dop_db_assertz_r	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_assertz_t	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_at_r	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_clause_src	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
+rt_pl_dop_db_unload_file	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_consult_done	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_consult_t	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
 rt_pl_dop_db_copy	asm	DESCR	1	r8|r10|r11	-	alloc,clob,asm
