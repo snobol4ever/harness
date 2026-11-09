@@ -389,15 +389,18 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
+    pkg_excl = {}
+    for _r in _tsv_rows(pkg_dir / "EXCLUDED.tsv"):
+        if len(_r) >= 2:
+            _nm = _r[0].strip()
+            _sx = src_ext or ext
+            pkg_excl[_nm[:-len(_sx)] if _nm.endswith(_sx) else _nm] = (_r[1].strip(), _r[2].strip() if len(_r) >= 3 else "")
     xsb_excl = {}
     if xsb and (pkg_dir / "EXCLUDED.tsv").is_file():
         # ⭐ A MEASURED EXCLUSION HOLDS ACROSS BUILDS (the coo 2026-10-23): basic_tests/preproc-opt/preproc_test writes XSB's own load messages into its
         # answer, some carrying the cpu time ("[xsbbrat loaded, cpu time used: 0.001 seconds]"), so two runs agree on one build and differ on the next
         # -- a two-run check cannot hold it. A program EXCLUDED.tsv names (its measurement recorded) is not absorbed; the row is the declaration.
-        for _ln in (pkg_dir / "EXCLUDED.tsv").read_text().splitlines():
-            _f = _ln.split("\t")
-            if len(_f) >= 3 and not _ln.startswith("#"):
-                xsb_excl[_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0]] = _f[1]
+        xsb_excl = {_k: _v[0] for _k, _v in pkg_excl.items()}
     if xsb:
         xsb_bin = h.xsb_oracle_bin()
         xsb_runs = read_oracle_runs(pkg_dir)
@@ -408,12 +411,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                 xsb_owed.add(_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0])
         print(f"contract: oracle xsb-gentest (CONTRACT.tsv) -- {xsb_bin}, each ref as XSB's own test scripts run the program "
               f"({len(xsb_runs)} runs in ORACLE_RUNS.tsv), in a copy of {contract['upstream']}; {len(xsb_owed)} UNGRADED NEEDS_RUNNER_WIRING held", file=sys.stderr)
-    uni_excl = {}
+    uni_excl = pkg_excl if contract["oracle"] == "unicon" else {}
     if contract["oracle"] == "unicon" and (pkg_dir / "EXCLUDED.tsv").is_file():
-        for _ln in (pkg_dir / "EXCLUDED.tsv").read_text().splitlines():
-            _f = _ln.split("\t")
-            if len(_f) >= 3 and not _ln.startswith("#"):
-                uni_excl[_f[0][:-len(ext)] if _f[0].endswith(ext) else _f[0]] = (_f[1], _f[2])
         print(f"contract: oracle unicon (CONTRACT.tsv) -- {len(uni_excl)} programs held out by EXCLUDED.tsv with their class and reason", file=sys.stderr)
     if ref_beside:
         print("contract: units ref-beside (CONTRACT.tsv) -- a source is a unit only with its <stem>.ref beside it", file=sys.stderr)
@@ -459,9 +458,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
               "refusal's expected naming (ISO_EXPECTED_REFUSALS.tsv), never sent to fpc (CIO-16)", file=sys.stderr)
         for _r in _tsv_rows(pkg_dir / "ISO_ACCEPTS.tsv"):
             iso_acc.add(_r[0].strip().removesuffix(".pas"))
-        for _r in _tsv_rows(pkg_dir / "EXCLUDED.tsv"):
-            if len(_r) >= 3:
-                iso_excl[_r[0].strip().removesuffix(".pas")] = (_r[1], _r[2])
+        iso_excl = pkg_excl
     # ⭐ THE ENTRY'S OWN MASK ROWS (senior_01's ruling 2026-11-09, option B): the two-run check compares the oracle's two answers UNDER the
     # rows that mask them, so a program whose only difference is an implementation-defined line (gcbuster's COLLECT and HOST memory
     # statistics, CEO-1344) is absorbed on its run-1 output. The rows come from the package's ALL.mask through the harness's own reader,
@@ -474,6 +471,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         # kind of collision THE RUNGS SUITE's CSV manifest exists to make queryable by name; a name that
         # means two different things defeats that).
         name = _name_of(src)
+        if name in pkg_excl:
+            _why = f"EXCLUDED.tsv names it {pkg_excl[name][0]} (a measured exclusion holds across builds)" if xsb else f"EXCLUDED.tsv {pkg_excl[name][0]}: {pkg_excl[name][1]}"
+            excluded.append((name, _why))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({pkg_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
+            continue
         if plunit:
             # ⭐ CIO-15 (c), the SWI container (the cio 2026-11-09): one entry per plunit file. Its program is the shim, then the file, then the
             # run_tests wrapper (the three-file run the deleted grader made, CONTAINER-SHAPED); its ref is the beside .ref read verbatim, the
