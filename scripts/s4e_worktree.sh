@@ -34,7 +34,7 @@ REPOS="SCRIP harness corpus .github"
 CAP_MB=4096
 WT_MAX="${WT_MAX:-32}"
 TIERS_TSV="$ROOT/.github/TIERS.tsv"
-TOP=/tmp/s4e
+TOP="${S4E_WT_TOP:-/tmp/s4e}"
 PO="${S4E_POSTOFFICE:-/home/resources/postoffice}"
 BATONS="$PO/tasks"
 SEAT="${S4E_SEAT:-}"
@@ -92,9 +92,32 @@ wt_cap_scan() {
     done
 }
 
+# sweep_dead -- every marker worktree under $TOP/<seat>/ that a baton names (WORKTREE: <path>) whose row reads DONE, SUPERSEDED or RETIRED (QUEUE.tsv, QUEUE.done.tsv
+# or QUEUE.retired.tsv), idle 30 minutes or more by its directory mtime, with no process whose cwd lies inside it, is removed AS ITS OWNER by this script's own rm
+# (so the guard of wt_unlanded applies); a worktree no baton names is never swept. Prints one line, SWEPT <n>.
+sweep_dead() {
+    local d b row st owner n=0 now p t busy
+    now="$(date +%s)"
+    for d in "$TOP"/*/wt-*; do
+        [ -f "$d/.s4e-worktree" ] || continue
+        b="$(grep -lxF "WORKTREE: $d" "$BATONS"/*.task.md 2>/dev/null | head -1)"; [ -n "$b" ] || continue
+        row="$(basename "$b" .task.md)"
+        st="$(awk -F'\t' -v t="$row" '!/^#/ && $2 == t { print $4; exit }' "$PO/QUEUE.tsv" 2>/dev/null)"
+        [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.done.tsv" 2>/dev/null && st=DONE; }
+        [ -n "$st" ] || { grep -qF "$(printf '\t')$row$(printf '\t')" "$PO/QUEUE.retired.tsv" 2>/dev/null && st=RETIRED; }
+        case "$st" in DONE*|SUPERSEDED*|RETIRED*) ;; *) continue ;; esac
+        [ $((now - $(stat -c %Y "$d"))) -ge 1800 ] || continue
+        busy=0; for p in /proc/[0-9]*/cwd; do t="$(readlink "$p" 2>/dev/null)"; case "$t" in "$d"|"$d"/*) busy=1; break ;; esac; done
+        [ "$busy" = 0 ] || continue
+        owner="$(basename "$(dirname "$d")")"
+        S4E_SEAT="$owner" bash "${BASH_SOURCE[0]}" rm "${d##*/wt-}" > /dev/null 2>&1 && n=$((n + 1))
+    done
+    echo "SWEPT $n"
+}
 wt_cap_check() {
     case "$WT_MAX" in ""|*[!0-9]*) die "REFUSE(2): WT_MAX must be a whole number, got '$WT_MAX'" 2 ;; esac
     wt_cap_scan "$TOP"
+    if [ "$CAP_COUNTED" -ge "$WT_MAX" ]; then sweep_dead; wt_cap_scan "$TOP"; fi
     [ "$CAP_COUNTED" -lt "$WT_MAX" ] || die "REFUSE(2): $CAP_COUNTED worktrees of the cap already stand under $TOP/<seat>/ (WT_MAX=$WT_MAX):$CAP_COUNTED_LIST; not counted (unmarked or unknown seat):${CAP_IGNORED:- none} -- rm one first" 2
 }
 
@@ -244,6 +267,7 @@ base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0
 case "$verb" in
     --probe) probe ;;
     list) list_wts ;;
+    sweep) sweep_dead; exit 0 ;;
     new|add|rm|remove)
         name="${1:-}"; [ $# -gt 0 ] && shift
         while [ $# -gt 0 ]; do
