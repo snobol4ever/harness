@@ -164,6 +164,7 @@ EXPAND_PL = os.path.join(HERE, "util_gen_prolog_prelude_libs_expand.pl")
 INIT_DROPS = {"clpb": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "clpfd": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "random": {"check_gmp": "only prints a warning when SWI is built without GMP; SCRIP's integers are unbounded"},
+              "sandbox": {"verify_predefined_safe_declarations": "only verifies the library's own safe_primitive tables at load"},
               "simplex": {"warn_if_bounded_arithmetic": "only prints a warning when the integer flag bounded is true"},
               "chr_runtime": {"chr_init": "it only sets chr_id, chr_global, chr_debug and chr_debug_history, which the library's own exception/3 hook sets at their first read",
                               "chr_debug_init": "it only sets chr_leash, which the library's own exception/3 hook sets at its first read"}}
