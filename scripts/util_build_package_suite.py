@@ -418,7 +418,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         print("contract: units ref-beside (CONTRACT.tsv) -- a source is a unit only with its <stem>.ref beside it", file=sys.stderr)
     if plunit:
         print("contract: units plunit (CONTRACT.tsv) -- every .pl under the package; a file with begin_tests and a <stem>.ref beside it is one entry "
-              "(corpus/tests/prolog/plunit.pl + file + run_tests wrapper, the ref read verbatim); CIO-15 (c)", file=sys.stderr)
+              "(the entry text is the test file alone, CIO-21: the harness supplies the shim and the run_tests wrapper at run time; the ref read verbatim)", file=sys.stderr)
     # ⭐ ONE LEVEL OF SUBDIRS, MATCHING THE TASK'S OWN DONE-WHEN EXACTLY (`find "$d" -maxdepth 2 ...`,
     # seat15 2026-09-04, measured on corpus/packages/prolog/gnu_prolog: all 62 shipped .pl files sit one
     # level down, in BipsPl/ and Pl2Wam/, zero directly in gnu_prolog/ itself -- a bare `pkg_dir.glob`
@@ -482,8 +482,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({pkg_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
             continue
         if plunit:
-            # ⭐ CIO-15 (c), the SWI container (the cio 2026-11-09): one entry per plunit file. Its program is the shim, then the file, then the
-            # run_tests wrapper (the three-file run the deleted grader made, CONTAINER-SHAPED); its ref is the beside .ref read verbatim, the
+            # ⭐ CIO-21 (the cio 2026-11-09): one entry per plunit file, and its entry text is the test file alone (the record equals the file, byte for
+            # byte); the harness supplies the shim and the run_tests wrapper and runs the origin file as the test. Its ref is the beside .ref read verbatim, the
             # oracle's per-case verdicts, never cut here. No oracle runs, so --twice has nothing to re-run.
             _ptext = src.read_text(encoding="utf-8", errors="replace")
             if not re.search(r"^[ \t]*:-[ \t]*begin_tests\(", _ptext, re.M):
@@ -494,8 +494,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                 excluded.append((name, f"no {src.stem}.ref beside it: the oracle's verdicts were not cut (util_swi_cut_refs.sh)"))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no .ref beside it)", file=sys.stderr)
                 continue
-            _shim = (paths["corpus"] / "tests" / "prolog" / "plunit.pl").read_text(encoding="utf-8")
-            _prog = _shim.rstrip("\n") + "\n" + _ptext.rstrip("\n") + "\n" + "main :- run_tests.\n:- initialization(main).\n"
+            _prog = _ptext
             _ref = src.with_suffix(".ref").read_text(encoding="utf-8", errors="replace").splitlines()
             entries.append(h.Entry("block", len(entries) + 1, name, _prog.splitlines(), _ref, stdin=None, want_rc=0))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (plunit, {len(_ref)} verdict lines)", file=sys.stderr)
