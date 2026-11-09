@@ -19,8 +19,9 @@ defects this container exists to surface. The oracle's own answer is the ref, fu
 agreement or disagreement with it is what grading measures, not a precondition for measuring at all.
 
 Six ways a shipped program is excluded rather than absorbed, each named by reason in ALL.excluded.txt:
-  1. a `-INCLUDE "X"` naming a file not vendored beside it, in the package dir or the source's own dir (a
-     corpus completeness gap, not gradable here -- the exclusion reason names the dirs it searched, never "anywhere")
+  1. a `-INCLUDE "X"` naming a file vendored in none of the dirs searched: the package dir, the source's own dir, and
+     for SNOBOL4 the grader's include dir (corpus/include, the SNO_LIB the harness grades under) -- a corpus completeness
+     gap, not gradable here; the exclusion reason names the dirs it searched, never "anywhere")
   2. the oracle itself cannot produce ground truth: crashes (signal), hangs past the timeout, or dies
      gracefully (SPITBOL's own "ERROR nnn -- ... / in statement N" fatal-report shape, ported from
      test_snobol4_aisnobol_suite.sh's sbl_died(), already measured correct on this exact package)
@@ -128,7 +129,7 @@ def has_bom(src_text):
 _INCLUDE_RE = re.compile(r"^-INCLUDE\s+['\"]([^'\"]+)['\"]", re.M)
 
 
-def find_include_gap(src_text, pkg_dir, src_dir=None):
+def find_include_gap(src_text, pkg_dir, src_dir=None, grader_inc=None):
     """The first -INCLUDE target this source names that resolves in NONE of the dirs searched, and the dirs that
     were searched. -> (name_or_None, [dirs]).
     ⛔⭐ THE RECORDED REASON USED TO OVERCLAIM, AND THE OVERCLAIM IS THE DEFECT (hq_T 2026-09-05, measured on the
@@ -143,7 +144,10 @@ def find_include_gap(src_text, pkg_dir, src_dir=None):
     tool exists to keep out of a package suite.
     ⭐ src_dir is the SOURCE FILE'S OWN directory, which is pkg_dir only when the package is flat: build() globs
     `*/*{ext}` too, so a nested source's companion sitting beside it was reported as a gap while being right there."""
-    dirs = list(dict.fromkeys([d for d in (src_dir, pkg_dir) if d is not None]))
+    # ⭐ grader_inc is the grader's SNO_LIB dir (corpus/include): the harness puts it on every SNOBOL4 run's include path, so a
+    # -INCLUDE that resolves there is a vendored dependency, not a gap. Measured 2026-11-08: the 17 math units name math_chks.inc
+    # or chks.inc, which live only there; excluded as missing beside the entry, while sbl -bf answers 616 of 616 with them staged.
+    dirs = list(dict.fromkeys([d for d in (src_dir, pkg_dir, grader_inc) if d is not None]))
     for inc in _INCLUDE_RE.findall(src_text):
         # ⛔⭐ THE STRIPPED FORM COUNTS AS VENDORED, AND THIS IS NOT LENIENCY (measured on csnobol4_suite/line.sno and
         # include.sno, which the findall widening above newly caught). Both name `-INCLUDE "line2.sno "` WITH A
@@ -331,7 +335,7 @@ def read_oracle_runs(pkg_dir):
     return runs
 
 
-def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
+def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None):
     ext = LANG_EXT[lang]
     paths = h.resolve_paths()
     h.check_scrip(paths)
@@ -383,6 +387,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     # found nothing and would have REFUSED a real, non-empty package). Matching DONE-WHEN's own depth is
     # what keeps "shipped" meaning the same count in both places; going deeper (rglob) would not (checked:
     # gnu_prolog has no depth-3 files, so this and unrestricted recursion agree here, but won't in general).
+    # ⭐ THE SOURCES' EXTENSION MAY DIFFER FROM THE CONTAINER'S (measured 2026-11-08): SPITBOL's own test suite ships 36 .sbl programs,
+    # and the container it grades is ALL.sno, the harness's SNOBOL4 extension. src_ext names what the package ships; ext names the container.
+    src_ext = src_ext or ext
     def _name_of(s):
         if plunit:
             return s.relative_to(pkg_dir).with_suffix("").as_posix()
@@ -390,14 +397,14 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     if plunit:
         _ctn = pkg_dir / "CONTAINERS.tsv"
         _cont = {_ln.split("\t")[0] for _ln in (_ctn.read_text().splitlines() if _ctn.is_file() else []) if _ln.strip() and not _ln.startswith("#")}
-        srcs = sorted(p for p in pkg_dir.rglob(f"*{ext}")
+        srcs = sorted(p for p in pkg_dir.rglob(f"*{src_ext}")
                       if not p.stem.startswith(out_prefix) and p.relative_to(pkg_dir).as_posix() not in _cont
                       and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
     else:
-        srcs = sorted(p for p in list(pkg_dir.glob(f"*{ext}")) + list(pkg_dir.glob(f"*/*{ext}"))
+        srcs = sorted(p for p in list(pkg_dir.glob(f"*{src_ext}")) + list(pkg_dir.glob(f"*/*{src_ext}"))
                       if not p.stem.startswith(out_prefix) and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
     if not srcs:
-        h.refuse(f"no {ext} files under {pkg_dir} (direct or one level down)")
+        h.refuse(f"no {src_ext} files under {pkg_dir} (direct or one level down)")
     all_srcs = srcs
     if only is not None:
         _by_name = {(f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem): s for s in srcs}
@@ -407,6 +414,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         srcs = [_by_name[n] for n in sorted(set(only))]
         print(f"splice: cutting only {len(srcs)} named program(s) of {len(all_srcs)} shipped; every other entry stays byte-identical", file=sys.stderr)
     entries, excluded, dialects = [], [], []
+    # ⭐ THE ENTRY'S OWN MASK ROWS (senior_01's ruling 2026-11-09, option B): the two-run check compares the oracle's two answers UNDER the
+    # rows that mask them, so a program whose only difference is an implementation-defined line (gcbuster's COLLECT and HOST memory
+    # statistics, CEO-1344) is absorbed on its run-1 output. The rows come from the package's ALL.mask through the harness's own reader,
+    # keyed by entry name; ALL.mask is never edited here. An entry with no rows compares exactly as before.
+    _entry_masks = h.read_mask_sidecar(pkg_dir / f"{out_prefix}.ref")
     for i, src in enumerate(srcs, 1):
         # ⭐ QUALIFY WITH PARENT DIR WHEN NESTED (measured on csnobol4_suite: aa.sno at pkg_dir root AND
         # aa/aa.sno one level down are BOTH real, byte-identical vendored fixtures -- bare name would
@@ -465,7 +477,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         # `link options` / `link io` mean the IPL library even where general/options.icn is shipped -- a name test excluded 31 such
         # programs the oracle builds single-file. A genuinely local link (jcon link1 -> link2, the three drivers) fails the
         # two-step oracle's icont ("cannot resolve reference to file 'link2.u1'") and is excluded below as a translation failure.
-        gap, gap_dirs = find_include_gap(text, pkg_dir, src.parent)
+        gap, gap_dirs = find_include_gap(text, pkg_dir, src.parent, paths["inc"] if lang in ("", "snobol4") else None)
         if gap:
             _where = ", ".join(str(d) for d in gap_dirs)
             excluded.append((name, f"missing corpus dependency: -INCLUDE {gap!r} resolves in none of {_where} "
@@ -526,6 +538,13 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                 # the files beside it. Every regular file of the package's own directory is copied into the
                 # throwaway cwd (a fresh copy per program, so the rename hazard the isolation exists for cannot
                 # leak back), the container's own ALL.* excepted; the source itself is written last, verbatim.
+                # ⭐ THE GRADER'S INCLUDES TRAVEL TOO (measured 2026-11-08 on the 17 math units): sbl opens -INCLUDE from its cwd (the
+                # bench scripts' own note: "the oracles resolve -INCLUDE from their working directory"), so an include the gap check
+                # resolved in the grader's include dir is staged beside the source here. Staged beside math_atan, sbl -bf answers
+                # 616 of 616; unstaged, ERROR 285 and "No END statement found" -- the exact red the row names. The package's own
+                # files are copied after, so a same-named package file wins.
+                if lang in ("", "snobol4"):
+                    h._copy_companions(src.read_text(errors="replace"), paths["inc"], Path(_iso_dir))
                 if lang == "icon" and merged:
                     # ⛔ STAGED AS THE GRADER STAGES (the coo 2026-10-01, measured on jcon recent, which reports the files it finds:
                     # beside the whole package it printed "found file: recogn.dat", a line the shipped ref and the board's
@@ -622,7 +641,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         # repeats itself inside one second, so the rerun waits until the clock has passed the second the first run ended in.
         if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW"):
             time.sleep(max(0.0, math.floor(_t_first) + 1.05 - time.time()))
-        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and _oracle_isolated(_fl)[:2] != (ora_text, ora_rc):
+        _run2 = _oracle_isolated(_fl)[:2] if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") else (ora_text, ora_rc)
+        _mrows = _entry_masks.get(name, [])
+        if twice and ora_kind not in ("TRANSLATE", "HANG", "UNPROVEN", "OVERFLOW") and (h.apply_line_mask(_run2[0], _mrows, "oracle")[0], _run2[1]) != (h.apply_line_mask(ora_text, _mrows, "oracle")[0], ora_rc):
             excluded.append((name, "the oracle answers differently on two runs (time, randomness or addresses in its output) -- no one ground truth"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (oracle nondeterministic)", file=sys.stderr)
             continue
@@ -1076,6 +1097,9 @@ def main():
                     help="run the oracle twice per program and exclude one whose two answers differ (time, randomness, addresses)")
     ap.add_argument("--only", action="append", default=None, metavar="NAME[,NAME...]",
                     help="cut only these programs and splice them into the existing container, every other entry byte-identical (repeatable)")
+    ap.add_argument("--src-ext", default="", metavar=".EXT",
+                    help="the extension the package's source programs carry, when it is not the lang's container extension "
+                         "(SPITBOL's own suite ships .sbl; the container is still ALL.sno for snobol4)")
     args = ap.parse_args()
     pkg_dir = Path(args.package_dir).resolve()
     if not pkg_dir.is_dir():
@@ -1085,7 +1109,7 @@ def main():
         only = [n.strip() for a in args.only for n in a.split(",") if n.strip()]
         if not only:
             h.refuse("--only names no program")
-    build(pkg_dir, args.lang, twice=args.twice, only=only)
+    build(pkg_dir, args.lang, twice=args.twice, only=only, src_ext=args.src_ext or None)
 
 
 if __name__ == "__main__":
