@@ -2,21 +2,21 @@
 # util_suite_runners.py --write-from-loop from the coo loop's ROT array and SUITES.tsv; kept by util_suite_runners.py --check (the gate).
 # Columns: key kind lang runner table. kind master|pkg|small|port|none (see util_suite_runners.py). The grade worker reads it: a master or pkg row
 # launches; a package cell runs S4E_CHUNK=<cell> bash harness/scripts/<runner> under util_run_slot.sh. SUITES.tsv itself gains no column.
-gimpel	pkg	snobol4	test_snobol4_gimpel_suite.sh	corpus/packages/snobol4/gimpel
+gimpel	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
 csnobol4	small	snobol4	test_snobol4_csnobol4_suite.sh	-
-snoflake	pkg	snobol4	test_snoflake_suite.sh	corpus/packages/snobol4/snoflake_suite
-aisnobol	pkg	snobol4	test_snobol4_aisnobol_suite.sh	corpus/packages/snobol4/aisnobol
-dotnet	pkg	snobol4	test_snobol4_dotnet_suite.sh	corpus/packages/snobol4/dotnet
-testpgms	pkg	snobol4	test_snobol4_spitbol_testpgms_suite.sh	corpus/packages/snobol4/spitbol_testpgms
-arizona	pkg	icon	test_icon_arizona_suite.sh	corpus/packages/icon/arizona_tests
+snoflake	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
+aisnobol	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aisnobol
+dotnet	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
+testpgms	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
+arizona	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/arizona_tests
 jcon	small	icon	test_icon_jcon_suite.sh	-
-ipl	pkg	icon	test_icon_ipl_suite.sh	corpus/packages/icon/ipl
-inria	pkg	prolog	test_prolog_inria_suite.sh	corpus/packages/prolog/inriasuite
-swi	pkg	prolog	test_prolog_swi_suite.sh	corpus/packages/prolog/swi_tests
+ipl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl
+inria	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/inriasuite
+swi	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/swi_tests
 gnu	small	prolog	test_prolog_gnu_suite.sh	-
-fpc	pkg	pascal	test_pascal_fpc_suite.sh	corpus/packages/pascal/fpc_tests
-pat	pkg	pascal	test_pascal_pat_suite.sh	corpus/packages/pascal/pat
-roast	pkg	raku	raku_roast_scoreboard.sh --run	corpus/packages/raku/roast
+fpc	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/fpc_tests
+pat	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/pat
+roast	pkg	raku	corpus_suite_harness.py	corpus/packages/raku/roast
 sno-rungs	master	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
 icn-rungs	master	icon	corpus_suite_harness.py	corpus/tests/icon
 pl-rungs	master	prolog	corpus_suite_harness.py	corpus/tests/prolog
@@ -25,9 +25,9 @@ raku-rungs	master	raku	corpus_suite_harness.py	corpus/tests/raku
 snc-rungs	master	snocone	corpus_suite_harness.py	corpus/tests/snocone
 snocone-bench-ref	small	snocone	test_snocone_bench_suite.sh	-
 reb-rungs	master	rebus	corpus_suite_harness.py	corpus/tests/rebus
-logtalk	pkg	prolog	test_prolog_logtalk_suite.sh	corpus/packages/prolog/logtalk_iso
-x64tests	pkg	snobol4	test_snobol4_spitbol_x64_suite.sh	corpus/packages/snobol4/spitbol_x64_tests
-x32tests	pkg	snobol4	test_snobol4_spitbol_x32_suite.sh	corpus/packages/snobol4/spitbol_x32_tests
+logtalk	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/logtalk_iso
+x64tests	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x64_tests
+x32tests	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
 snobol4-bench-ref	small	snobol4	test_snobol4_bench_suite.sh	-
 icon-bench-ref	small	icon	test_icon_bench_suite.sh	-
 prolog-bench-ref	small	prolog	test_prolog_bench_suite.sh	-
@@ -38,34 +38,34 @@ snocone-demos	small	snocone	test_demos_suite.sh snocone	-
 icon-demos	small	icon	test_demos_suite.sh icon	-
 prolog-demos	small	prolog	test_demos_suite.sh prolog	-
 scriptix-demos	small	scriptix	test_demos_suite.sh scriptix	-
-rosetta-pascal	pkg	pascal	test_pascal_rosetta_suite.sh	corpus/packages/pascal/rosetta-pascal
-rosetta-prolog	pkg	prolog	test_prolog_rosetta_suite.sh	corpus/packages/prolog/rosetta-prolog
-puzzles	pkg	prolog	test_prolog_puzzles_suite.sh	corpus/packages/prolog/puzzles
-trealla	pkg	prolog	test_prolog_trealla_suite.sh	corpus/packages/prolog/trealla_tests
-xsb	pkg	prolog	test_prolog_xsb_suite.sh	corpus/packages/prolog/xsb_tests
+rosetta-pascal	pkg	pascal	corpus_suite_harness.py	corpus/packages/pascal/rosetta-pascal
+rosetta-prolog	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/rosetta-prolog
+puzzles	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/puzzles
+trealla	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/trealla_tests
+xsb	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/xsb_tests
 pascal-demos	small	pascal	test_demos_suite.sh pascal	-
 raku-demos	small	raku	test_demos_suite.sh raku	-
 raku-bench-ref	small	raku	test_raku_bench_suite.sh	-
 sno-rungs@dotnet	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
 sno-rungs@jvm	port	snobol4	corpus_suite_harness.py	corpus/tests/snobol4
-aisnobol@dotnet	port	snobol4	test_snobol4_aisnobol_suite.sh	corpus/packages/snobol4/aisnobol
-dotnet@dotnet	port	snobol4	test_snobol4_dotnet_suite.sh	corpus/packages/snobol4/dotnet
-snoflake@dotnet	port	snobol4	test_snoflake_suite.sh	corpus/packages/snobol4/snoflake_suite
+aisnobol@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aisnobol
+dotnet@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
+snoflake@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
 csnobol4@dotnet	port	snobol4	test_snobol4_csnobol4_suite.sh	-
-aisnobol@jvm	port	snobol4	test_snobol4_aisnobol_suite.sh	corpus/packages/snobol4/aisnobol
-gimpel@dotnet	port	snobol4	test_snobol4_gimpel_suite.sh	corpus/packages/snobol4/gimpel
+aisnobol@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aisnobol
+gimpel@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
 snobol4-demos@dotnet	port	snobol4	test_demos_suite.sh snobol4	-
-testpgms@jvm	port	snobol4	test_snobol4_spitbol_testpgms_suite.sh	corpus/packages/snobol4/spitbol_testpgms
+testpgms@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
 snobol4-bench-ref@dotnet	port	snobol4	test_snobol4_bench_suite.sh	-
-x32tests@jvm	port	snobol4	test_snobol4_spitbol_x32_suite.sh	corpus/packages/snobol4/spitbol_x32_tests
-x64tests@jvm	port	snobol4	test_snobol4_spitbol_x64_suite.sh	corpus/packages/snobol4/spitbol_x64_tests
-dotnet@jvm	port	snobol4	test_snobol4_dotnet_suite.sh	corpus/packages/snobol4/dotnet
+x32tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
+x64tests@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x64_tests
+dotnet@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
 snobol4-bench-ref@jvm	port	snobol4	test_snobol4_bench_suite.sh	-
 snobol4-demos@jvm	port	snobol4	test_demos_suite.sh snobol4	-
 csnobol4@jvm	port	snobol4	test_snobol4_csnobol4_suite.sh	-
-testpgms@dotnet	port	snobol4	test_snobol4_spitbol_testpgms_suite.sh	corpus/packages/snobol4/spitbol_testpgms
-x32tests@dotnet	port	snobol4	test_snobol4_spitbol_x32_suite.sh	corpus/packages/snobol4/spitbol_x32_tests
-x64tests@dotnet	port	snobol4	test_snobol4_spitbol_x64_suite.sh	corpus/packages/snobol4/spitbol_x64_tests
-gimpel@jvm	port	snobol4	test_snobol4_gimpel_suite.sh	corpus/packages/snobol4/gimpel
-snoflake@jvm	port	snobol4	test_snoflake_suite.sh	corpus/packages/snobol4/snoflake_suite
-unitests	pkg	icon	test_icon_unicon_suite.sh	corpus/packages/icon/unicon_tests
+testpgms@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
+x32tests@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x32_tests
+x64tests@dotnet	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_x64_tests
+gimpel@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
+snoflake@jvm	port	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
+unitests	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/unicon_tests

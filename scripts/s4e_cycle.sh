@@ -3,11 +3,11 @@
 # "write a process that runs the test suite and write a fucking monitor to start it when it crashed" / "Is it not called CRON?"). No queue, no tubes,
 # no workers, no controller: this process and the cron line that restarts it (s4e_cycle_cron.sh).
 #   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
-#   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang runner cell) and their count; runs nothing
+#   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang dir cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
 #   bash s4e_cycle.sh --next     do the restart accounting (CYCLE.crash, CYCLE.skip) and print NEXT lap=L idx=I cell=KEY CELL, the cell a restart runs first; runs no cell (S4E_CYCLE_PROG names a scratch progress dir for a probe)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
-# a master row runs corpus_suite_harness.py run <ALL.ext> <ALL.ref> --lang L --modes m3,m4 --partition <cell>; a pkg row runs S4E_CHUNK=<cell> bash $S4E/harness/scripts/<runner>, by its absolute path (a runner that cds and then sources from dirname $0, raku_roast_scoreboard.sh, refused rc 2 on a relative launch: the coo 2026-11-08);
+# EVERY row, master or pkg, runs ONE launch (Lon 2026-11-08 23:0x: "ONE UNIFIED test suite system"): corpus_suite_harness.py run <dir>/ALL.<ext> <dir>/ALL.ref --lang L --modes $S4E_MODES --partition <cell>, dir the master's corpus/tests/<lang> or the pkg row's column 5; the package runner scripts are deleted; a row with no container refuses rc 2 by name;
 # both under util_run_slot.sh, S4E_CLASS=grader, S4E_BATCH=1 (one scrip --harness per partition and mode, batch-grader step 5), S4E_MODES default m3 (Lon 2026-11-08 10:2x: "We will test mode 3 only until further notice"), under timeout -k 30 of the
 # cell's declared budget (util_grade_job.py budget). After a master suite's or a pkg row's last cell its suite row is rewritten (util_score_row.py from-progress, in S4E_MODES).
 # THE STATE is /home/resources/progress/CYCLE.state (lap, idx, total, suite, cell, status, since), one line a key, rewritten before and after every cell;
@@ -28,7 +28,7 @@ log() { printf '%s %s\n' "$(now)" "$*" >> "$LOG"; }
 state_get() { sed -n "s/^$1=//p" "$STATE" 2>/dev/null | head -1; }
 state_put() {   # lap idx total suite cell status
     printf 'lap=%s\nidx=%s\ntotal=%s\nsuite=%s\ncell=%s\nstatus=%s\nsince=%s\npid=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$(now)" "$$" > "$STATE.tmp" && mv "$STATE.tmp" "$STATE"; }
-cells() {   # one line per cell: key kind lang runner cell; core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
+cells() {   # one line per cell: key kind lang dir cell (dir: the suite's container directory); core first, then chunk:NN in order, per the row order of SUITE_RUNNERS.tsv
     awk -F'\t' -v S="$S4E" '
         !/^#/ && NF >= 5 && ($2 == "master" || $2 == "pkg") {
             row++; dir = ($2 == "master") ? S "/corpus/tests/" $3 : S "/" $5
@@ -39,8 +39,8 @@ cells() {   # one line per cell: key kind lang runner cell; core first, then chu
                 if (!ip) { for (i = 1; i <= nc; i++) if (c[i] == "part") ip = i; continue }
                 if (ip && c[ip] != "" && !(c[ip] in seen)) {
                     seen[c[ip]] = 1
-                    if (c[ip] == "core") print row "\t0\t" $1 "\t" $2 "\t" $3 "\t" $4 "\tcore"
-                    else if (c[ip] ~ /^chunk:/) print row "\t1\t" $1 "\t" $2 "\t" $3 "\t" $4 "\t" c[ip]
+                    if (c[ip] == "core") print row "\t0\t" $1 "\t" $2 "\t" $3 "\t" dir "\tcore"
+                    else if (c[ip] ~ /^chunk:/) print row "\t1\t" $1 "\t" $2 "\t" $3 "\t" dir "\t" c[ip]
                 }
             }
             close(f)
@@ -49,19 +49,13 @@ cells() {   # one line per cell: key kind lang runner cell; core first, then chu
 budget() { python3 -I "$S4E/harness/scripts/util_grade_job.py" budget --suite "$1" --cell "$2" 2>/dev/null | sed -n 's/.* ttr_s=\([0-9]*\).*/\1/p' | head -1; }
 container_key() { case "$1" in snobol4) echo sno-rungs;; icon) echo icn-rungs;; prolog) echo pl-rungs;; pascal) echo pas-rungs;; raku) echo raku-rungs;; snocone) echo snc-rungs;; rebus) echo reb-rungs;; esac; }
 ext_of() { case "$1" in snobol4) echo sno;; icon) echo icn;; prolog) echo pl;; pascal) echo pas;; raku) echo raku;; rebus) echo reb;; snocone) echo sc;; esac; }
-run_cell() {   # key kind lang runner cell -> rc; the grade worker's launch
-    local key="$1" kind="$2" lang="$3" runner="$4" cell="$5" ttr alls rc t0 out
+run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23:0x, in the coo's window, verbatim: "We want ONE UNIFIED test suite system. The same ALL.tsv files etc. Same layout in corpus. Same script. Same spec on attributes and environment." / "Get those deleted and get to work with a complete test suite system."): every cell, master or pkg, is corpus_suite_harness.py run over the suite's container ALL.<ext> and ALL.ref; a suite without one refuses rc 2, named, until its container is built
+    local key="$1" kind="$2" lang="$3" dir="$4" cell="$5" ttr alls rc t0 out
     ttr="$(budget "$key" "$cell")"; [ -n "$ttr" ] || ttr=3600
     out="$TMPDIR/cycle/$key.$cell.log"; t0=$(date +%s)
-    if [ "$kind" = master ]; then
-        alls="$S4E/corpus/tests/$lang/ALL.$(ext_of "$lang")"
-        [ -f "$alls" ] || { log "REFUSED $key $cell: no container $alls"; return 2; }
-        ( cd "$S4E" && timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "${alls%/*}/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" ) > "$out" 2>&1 < /dev/null; rc=$?
-    else
-        set -- $runner
-        [ -f "$S4E/harness/scripts/$1" ] || { log "REFUSED $key $cell: no runner $1"; return 2; }
-        ( cd "$S4E" && S4E_CHUNK="$cell" timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh bash "$S4E/harness/scripts/$@" ) > "$out" 2>&1 < /dev/null; rc=$?
-    fi
+    alls="$dir/ALL.$(ext_of "$lang")"
+    if [ ! -f "$alls" ] || [ ! -f "$dir/ALL.ref" ]; then echo "REFUSE(2): no container $alls and $dir/ALL.ref -- the unified layout is owed (util_build_package_suite.py)" > "$out"; echo "2 0"; return 2; fi
+    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" ) > "$out" 2>&1 < /dev/null; rc=$?
     echo "$rc $(( $(date +%s) - t0 ))"
 }
 record_suite() {   # lang -> the rungs suite row of that language, as the grade worker's record step writes it
@@ -92,7 +86,7 @@ if [ "$st" = running ] && [ -n "$ps" ]; then
     log "CRASH lap=$lap idx=$idx $ps $pc killed the cycle, count=$n"
     if [ "$n" -ge 3 ]; then printf '%s\t%s\t%s\tskipped after %s deaths\n' "$(now)" "$ps" "$pc" "$n" >> "$SKIP"; log "SKIP $ps $pc for good (three deaths)"; fi
 fi
-if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang runner cell <<< "$(cells | sed -n "$(( idx + 1 ))p")"; echo "NEXT lap=$lap idx=$idx cell=$key $cell"; exit 0; fi
+if [ "$MODE_ARG" = --next ]; then IFS=$'\t' read -r key kind lang dir cell <<< "$(cells | sed -n "$(( idx + 1 ))p")"; echo "NEXT lap=$lap idx=$idx cell=$key $cell"; exit 0; fi
 while :; do
     mapfile -t ALL < <(cells); total=${#ALL[@]}
     [ "$total" -gt 0 ] || { log "REFUSED: no cells (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
@@ -107,21 +101,21 @@ while :; do
         W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
         B=(); j="$idx"
         while [ "$j" -lt "$total" ] && [ "${#B[@]}" -lt "$W" ]; do
-            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$j]}"
+            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"
             if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((j+1))/$total $key $cell"; j=$(( j + 1 )); [ "${#B[@]}" -eq 0 ] && idx="$j"; continue; fi
             B+=("$j"); j=$(( j + 1 ))
         done
         [ "${#B[@]}" -gt 0 ] || { idx="$j"; continue; }
-        IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[${B[0]}]}"
+        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[${B[0]}]}"
         state_put "$lap" "${B[0]}" "$total" "$key" "$cell" running
         pids=()
         for i in "${B[@]}"; do
-            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$i]}"
-            ( run_cell "$key" "$kind" "$lang" "$runner" "$cell" > "$TMPDIR/cycle/res.$i" ) & pids+=($!)
+            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
+            ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$i" ) & pids+=($!)
         done
         wait "${pids[@]}"
         for i in "${B[@]}"; do
-            IFS=$'\t' read -r key kind lang runner cell <<< "${ALL[$i]}"
+            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
             read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
             log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
             next_key="$(printf '%s' "${ALL[$((i+1))]:-}" | cut -f1)"
