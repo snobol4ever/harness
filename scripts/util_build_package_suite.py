@@ -270,6 +270,8 @@ def read_contract(pkg_dir):
             out["units"] = "ref-beside"
         elif f[0] == "units" and f[1] == "plunit":
             out["units"] = "plunit"
+        elif f[0] == "units" and f[1] == "iso-rejection":
+            out["units"] = "iso-rejection"
         elif f[0] == "dialect" and f[1] == "any-fpc-mode":
             out["dialect"] = "any-fpc-mode"
         elif f[0] == "oracle" and f[1] == "xsb-gentest":
@@ -293,11 +295,42 @@ def read_contract(pkg_dir):
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, units=plunit, dialect=any-fpc-mode, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, units=plunit, units=iso-rejection, dialect=any-fpc-mode, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
     return out
+
+
+def _tsv_rows(path):
+    """The tab-separated rows of a package table (CONTRACT-style: '#' comments and blank lines are not rows)."""
+    if not path.is_file():
+        return []
+    return [ln.split("\t") for ln in path.read_text().splitlines() if ln.strip() and not ln.startswith("#")]
+
+
+def iso_rejection_want(src):
+    """What an ISO rejection test's refusal must name (CIO-16, officer_04 2026-11-09), read as the deleted test_pascal_pat_suite.sh prt_want read
+    it: "line N1 N2 ..." -- the marked lines of the .ecp beside the source (the first field of each line that opens with a number then ****),
+    sorted and unique; else "clause X1 X2 ..." -- every clause number after "ISO 7185 reference:" on the source's lines, in order; else "" (nothing a
+    refusal can be checked against). A missing .ecp counts as no marked lines."""
+    src = Path(src)
+    ecp = src.with_suffix(".ecp")
+    marked = []
+    if ecp.is_file():
+        for ln in read_text_tolerant(ecp)[0].splitlines():
+            m = re.match(r"^[ \t]*([0-9]+)[ \t]+\*\*\*\*", ln)
+            if m:
+                marked.append(int(m.group(1)))
+    if marked:
+        return "line " + " ".join(str(n) for n in sorted(set(marked)))
+    clauses = []
+    for ln in read_text_tolerant(src)[0].splitlines():
+        if "ISO 7185 reference:" in ln:
+            clauses += re.findall(r"[0-9]+(?:\.[0-9]+)+", ln.rsplit("ISO 7185 reference:", 1)[1])
+    if clauses:
+        return "clause " + " ".join(clauses)
+    return ""
 
 
 def read_staged(pkg_dir):
@@ -347,6 +380,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     ref_beside = contract["units"] == "ref-beside"
     plunit = contract["units"] == "plunit"
+    iso_rej = contract["units"] == "iso-rejection"
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
@@ -414,6 +448,15 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         srcs = [_by_name[n] for n in sorted(set(only))]
         print(f"splice: cutting only {len(srcs)} named program(s) of {len(all_srcs)} shipped; every other entry stays byte-identical", file=sys.stderr)
     entries, excluded, dialects = [], [], []
+    iso_rej_names, iso_acc, iso_excl = [], set(), {}
+    if iso_rej:
+        print("contract: units iso-rejection (CONTRACT.tsv) -- an iso7185prt* program with a .ecp beside it is absorbed with an EMPTY ref and its "
+              "refusal's expected naming (ISO_EXPECTED_REFUSALS.tsv), never sent to fpc (CIO-16)", file=sys.stderr)
+        for _r in _tsv_rows(pkg_dir / "ISO_ACCEPTS.tsv"):
+            iso_acc.add(_r[0].strip().removesuffix(".pas"))
+        for _r in _tsv_rows(pkg_dir / "EXCLUDED.tsv"):
+            if len(_r) >= 3:
+                iso_excl[_r[0].strip().removesuffix(".pas")] = (_r[1], _r[2])
     # ⭐ THE ENTRY'S OWN MASK ROWS (senior_01's ruling 2026-11-09, option B): the two-run check compares the oracle's two answers UNDER the
     # rows that mask them, so a program whose only difference is an implementation-defined line (gcbuster's COLLECT and HOST memory
     # statistics, CEO-1344) is absorbed on its run-1 output. The rows come from the package's ALL.mask through the harness's own reader,
@@ -621,6 +664,23 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             entries.append(e)
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
             continue
+        if iso_rej and name.startswith("iso7185prt") and src.with_suffix(".ecp").is_file() and name not in iso_acc:
+            # ⭐ CIO-16 (officer_04, 2026-11-09): a PAT rejection test is never asked of fpc, which accepts or refuses it by its own mode. The
+            # program is absorbed with an EMPTY ref, and what its refusal must name is written beside the container (ISO_EXPECTED_REFUSALS.tsv).
+            # A program EXCLUDED.tsv names is excluded with its reason here, as the EXCLUDED.tsv road does for the xsb and unicon oracles.
+            if name in iso_excl:
+                excluded.append((name, f"EXCLUDED.tsv {iso_excl[name][0]}: {iso_excl[name][1]}"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({iso_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
+                continue
+            _w = iso_rejection_want(src)
+            if _w == "":
+                excluded.append((name, "NO_ORACLE_ANSWER: no marked line in its .ecp and no ISO 7185 reference in its header (R-1696)"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no marked line and no clause)", file=sys.stderr)
+                continue
+            entries.append(h.Entry("block", len(entries) + 1, name, read_text_tolerant(src)[0].splitlines(), [""], stdin=stdin_text, want_rc=0))
+            iso_rej_names.append((name, _w))
+            print(f"[{i}/{len(srcs)}] {name}: ABSORBED (iso-rejection, {_w})", file=sys.stderr)
+            continue
         _ladder = [flags, "", "-Mobjfpc", "-Mdelphi", "-Mtp"] if (lang == "pascal" and contract["dialect"] == "any-fpc-mode") else [flags]
         for _fl in _ladder:
             ora_text, ora_rc, ora_kind = _oracle_isolated(_fl)
@@ -764,6 +824,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                                + "".join(f"{n}\t{d}\n" for n, d in dialects))
     elif out_dialect.exists():
         out_dialect.unlink()
+    if iso_rej and iso_rej_names:
+        (pkg_dir / "ISO_EXPECTED_REFUSALS.tsv").write_text("# ISO_EXPECTED_REFUSALS.tsv -- written by util_build_package_suite.py under units iso-rejection (CIO-16): entry<TAB>what the refusal must name\n"
+                                                           + "".join(f"{n}\t{w}\n" for n, w in iso_rej_names))
     wr_lines = [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc]
     if wr_lines:
         out_wantrc.write_text("\n".join(wr_lines) + "\n")
