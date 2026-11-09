@@ -1158,8 +1158,9 @@ s4e_pid_unhold() {
     [ -n "${_S4E_FD_OWNER:-}" ] && [ "$_S4E_FD_OWNER" = "$$" ] || return 0
     s4e_lock_trace release; : > "$PO/$ME/.pid" 2>/dev/null; flock -u 9 2>/dev/null; { exec 9>&-; } 2>/dev/null
     _S4E_FD_OWNER=""; unset S4E_PID_LOCK; return 0; }
-s4e_pid_release() {   # the holder's exit: removes the claim's captured output, then lets go
+s4e_pid_release() {   # the holder's exit: removes the claim's captured output, stamps the seat's bus action (the Stop hook's banner cache is stale past it; s4e_banner_cached.sh), then lets go
     [ -n "${_cl_out:-}" ] && rm -f "$_cl_out"
+    { mkdir -p "/tmp/s4e/$ME" && : > "/tmp/s4e/$ME/bus.stamp"; } 2>/dev/null
     s4e_pid_unhold; }
 s4e_pid_arm() { trap 's4e_pid_release' EXIT; trap 's4e_pid_release; exit 130' INT; trap 's4e_pid_release; exit 143' TERM HUP; }
 s4e_pid_is_mine() { local _p="$1" _cw; case "$_p" in ''|*[!0-9]*) return 1;; esac; [ -d "/proc/$_p" ] || return 1

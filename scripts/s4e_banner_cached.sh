@@ -12,9 +12,9 @@
 # The seat is S4E_SEAT when the session sets it (every root's settings.local.json does), else the hook's argument.
 set -u
 if [ "${1:-}" = "--refresh" ]; then
-    root="$2"; seat="$3"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"
+    root="$2"; seat="$3"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"; : > "$c.lock"; start=$(date +%s)
     timeout -k 5 600 bash "$root/harness/scripts/s4e_msg.sh" banner > "$c.tmp" 2>&1
-    [ -s "$c.tmp" ] && mv -f "$c.tmp" "$c"
+    [ -s "$c.tmp" ] && mv -f "$c.tmp" "$c" && touch -d "@$start" "$c"   # the cache is dated by its SNAPSHOT, not by the write: a bus action after the start makes it stale
     rm -f "$c.lock" "$c.tmp"; exit 0
 fi
 root="${1:?root}"; seat="${S4E_SEAT:-${2:?seat}}"; c="/tmp/s4e/$seat/banner.cache"; mkdir -p "/tmp/s4e/$seat"
@@ -22,10 +22,23 @@ hookin=""; [ -t 0 ] || hookin="$(timeout 2 cat 2>/dev/null)"
 now=$(date +%s); load=$(cut -d' ' -f1 /proc/loadavg)
 [ -f "$c.lock" ] && [ $(( now - $(stat -c %Y "$c.lock") )) -gt 900 ] && rm -f "$c.lock"
 spawn() { setsid bash "$root/harness/scripts/s4e_banner_cached.sh" --refresh "$root" "$seat" < /dev/null > /dev/null 2>&1 & }
+# THE STALE CACHE (Lon 2026-11-08 22:4x, in the cto's window: the banner said IN-PROGRESS on a row released a minute before; "something to do with caching?").
+# MEASURED: the cache written 22:46:20 carried the BOX stamp 22:45:11, the verb's start, and the row was released at 22:45:4x; the hook served it
+# until it was 240 s old and even then showed it once more while the refresh ran. THE RULE: every state-changing bus verb stamps
+# /tmp/s4e/<seat>/bus.stamp at its exit (s4e_pid_release); a cache whose snapshot is older than the stamp is STALE and is refreshed inline
+# under the 100 s budget before it is shown; only when the verb runs over is the stale text shown, marked STALE, with the refresh spawned.
+stamp="/tmp/s4e/$seat/bus.stamp"; stale=0
+[ -f "$c" ] && [ -f "$stamp" ] && [ "$(stat -c %Y "$stamp")" -ge "$(stat -c %Y "$c")" ] && stale=1
+if [ "$stale" = 1 ] && [ ! -f "$c.lock" ]; then
+    start=$now; fresh="$(timeout -k 5 100 bash "$root/harness/scripts/s4e_msg.sh" banner 2>&1)"
+    if [ -n "$fresh" ]; then printf '%s' "$fresh" > "$c"; touch -d "@$start" "$c"; stale=0; fi
+fi
 if [ -f "$c" ]; then
     age=$(( now - $(stat -c %Y "$c") )); out="$(cat "$c")"
-    [ "$age" -gt 240 ] && [ ! -f "$c.lock" ] && spawn
-    [ "$age" -gt 60 ] && out="(banner cached ${age} s ago at load $load; a refresh is running)
+    if [ "$stale" = 1 ]; then [ -f "$c.lock" ] || spawn; out="(STALE banner: a bus action followed this snapshot of ${age} s ago at load $load; the refresh ran over 100 s and now runs in the background)
+$out"
+    else [ "$age" -gt 240 ] && [ ! -f "$c.lock" ] && spawn; fi
+    [ "$stale" = 0 ] && [ "$age" -gt 60 ] && out="(banner cached ${age} s ago at load $load; a refresh is running)
 $out"   # first section, never the end (Lon 2026-11-06: "Remove the verbaiage \"(banner cahced ... blah)\" from the end of the banner. Put it in the first section instead.")
 else
     out="$(timeout -k 5 100 bash "$root/harness/scripts/s4e_msg.sh" banner 2>&1)"
