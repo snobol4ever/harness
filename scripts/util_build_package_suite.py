@@ -453,6 +453,11 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         print(f"splice: cutting only {len(srcs)} named program(s) of {len(all_srcs)} shipped; every other entry stays byte-identical", file=sys.stderr)
     entries, excluded, dialects = [], [], []
     iso_rej_names, iso_acc, iso_excl = [], set(), {}
+    # ⭐ A PACKAGE'S OWN EXPECTED REFUSALS (officer_05, 2026-11-09, on pascal-fpc-container-in-the-one-layout): fpc_tests ships its
+    # ISO_EXPECTED_REFUSALS.tsv (R-1225, R-1228: graded as an expected refusal, its fpc-cut ref never compared) outside units iso-rejection.
+    # Such a program is absorbed with an EMPTY ref before any oracle run, as a PAT rejection is, and the table is read, never rewritten; the
+    # harness refuses a container that misses one (14 missed in junior_10's build: fpc -Miso printed nothing, so the empty-output rule took them).
+    pkg_refusals = set() if iso_rej else {_r[0].strip().removesuffix(".pas") for _r in _tsv_rows(pkg_dir / "ISO_EXPECTED_REFUSALS.tsv")}
     if iso_rej:
         print("contract: units iso-rejection (CONTRACT.tsv) -- an iso7185prt* program with a .ecp beside it is absorbed with an EMPTY ref and its "
               "refusal's expected naming (ISO_EXPECTED_REFUSALS.tsv), never sent to fpc (CIO-16)", file=sys.stderr)
@@ -694,6 +699,10 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _L1, stdin=None, want_rc=0)
             entries.append(e)
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (XSB, {len(_L1)} lines, NAME_old {_chk.split(' ')[0]})", file=sys.stderr)
+            continue
+        if name in pkg_refusals:
+            entries.append(h.Entry("block", len(entries) + 1, name, read_text_tolerant(src)[0].splitlines(), [""], stdin=stdin_text, want_rc=0))
+            print(f"[{i}/{len(srcs)}] {name}: ABSORBED (expected refusal, ISO_EXPECTED_REFUSALS.tsv)", file=sys.stderr)
             continue
         if iso_rej and name.startswith("iso7185prt") and src.with_suffix(".ecp").is_file() and name not in iso_acc:
             # ⭐ CIO-16 (officer_04, 2026-11-09): a PAT rejection test is never asked of fpc, which accepts or refuses it by its own mode. The
