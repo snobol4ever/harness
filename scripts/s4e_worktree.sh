@@ -62,6 +62,19 @@ seat_in_tiers() {
     awk -F'\t' -v s="$1" '!/^#/ && $1 == s { f = 1 } END { exit !f }' "$TIERS_TSV"
 }
 
+# wt_unlanded <wt> -- what a rm would lose: for each repo the marker names, tracked modifications or untracked files (ignored build outputs do not count), and
+# commits whose patch is not already on origin/main (git cherry, so a landed commit the lander rebased reads landed). Prints " <repo>:dirty" and
+# " <repo>:unlanded-commits" and returns 1 when any; 0 when none.
+wt_unlanded() {
+    local wt="$1" r out=""
+    for r in $REPOS; do
+        grep -qx "repo=$r" "$wt/.s4e-worktree" 2>/dev/null && [ -d "$wt/$r" ] || continue
+        [ -z "$(git -C "$wt/$r" status --porcelain 2>/dev/null)" ] || out="$out $r:dirty"
+        ! git -C "$wt/$r" cherry origin/main HEAD 2>/dev/null | grep -q '^+' || out="$out $r:unlanded-commits"
+    done
+    [ -z "$out" ] || { printf '%s' "$out"; return 1; }
+    return 0
+}
 # wt_cap_scan TOP -- the cap's census of TOP/<seat>/wt-*. COUNTED: a directory whose .s4e-worktree marker names a seat of TIERS.tsv.
 # IGNORED: every other wt-* directory, listed in CAP_IGNORED and never counted (a hand-made or dead directory holds no slot).
 wt_cap_scan() {
@@ -227,7 +240,7 @@ list_wts() {
 }
 
 verb="${1:-}"; [ $# -gt 0 ] && shift
-base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0
+base=origin/main; langs=""; cap=$CAP_MB; name=""; row=""; full=0; discard=0
 case "$verb" in
     --probe) probe ;;
     list) list_wts ;;
@@ -240,6 +253,7 @@ case "$verb" in
                 --cap-mb) [ $# -ge 2 ] || die "usage: --cap-mb <n>" 2; cap="$2"; shift 2 ;;
                 --row) [ $# -ge 2 ] || die "usage: --row <topic>" 2; row="$2"; shift 2 ;;
                 --full) full=1; shift ;;
+                --discard) discard=1; shift ;;
                 *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> | list | --probe" 2 ;;
             esac
         done
@@ -247,6 +261,7 @@ case "$verb" in
         [ -z "$row" ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --row is for new" 2 ;; esac
         [ "$full" = 0 ] || case "$verb" in new|add) ;; *) die "REFUSE(2): --full is for new" 2 ;; esac
         [ "$full" = 0 ] || [ -z "$langs" ] || die "REFUSE(2): --full and --lang both name the corpus" 2
+        [ "$discard" = 0 ] || case "$verb" in rm|remove) ;; *) die "REFUSE(2): --discard is for rm" 2 ;; esac
         ;;
     *) die "usage: s4e_worktree.sh new <name> [--base <ref>] [--lang <l1,l2>] [--cap-mb <n>] [--row <topic>] | rm <name> | list | --probe" 2 ;;
 esac
@@ -257,6 +272,8 @@ case "$verb" in
     rm|remove)
         wt="$SEATDIR/wt-$name"
         [ -d "$wt" ] || die "REFUSE(1): no worktree $name under $SEATDIR" 1
+        if [ "$discard" = 1 ]; then [ "$(sed -n 's/^seat=//p' "$wt/.s4e-worktree" 2>/dev/null | head -1)" = "$SEAT" ] || die "REFUSE(1): only the owner may --discard $wt" 1
+        else lost="$(wt_unlanded "$wt")" || die "REFUSE(1): $wt holds work that is not on origin/main:$lost -- land or save it, or the owner rm $name --discard" 1; fi
         drop "$wt"
         [ -e "$wt" ] && die "REFUSE(1): $wt is still there after drop" 1
         baton_strip "$wt"
