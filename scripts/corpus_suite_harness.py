@@ -501,6 +501,9 @@ def _size_switches(heap_kb, stack_kb):
     return sw
 
 
+def _source_path_switch(source_path):
+    return ["--source-path=" + str(source_path)] if source_path else []
+
 def _compile_switches(paths, compile_args):
     """scrip's switches before the source at the COMPILE step, the same list in both modes (scrip --run in m3, scrip
     --compile in m4): the caller's scrip_extra (capture-oracle-refs --compile-args alone, since clause 8 (f) retired the
@@ -1421,7 +1424,7 @@ def stdbuf_wrap(paths, argv):
     return argv
 
 
-def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None):
+def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None):
     timeout = timeout or paths["timeout"]
     # ⛔⭐ ARGV IS THE BARE NAME, NOT THE FULL PATH (row suite-harness-argv-echoes-a-mktemp-path-so-
     # diagnostic-programs-cannot-be-graded) -- a diagnostic that echoes its own argv (e.g. a SPITBOL
@@ -1432,7 +1435,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
         return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
                         env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
                         out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
-    argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [(str(Path(sno_path).resolve()) if run_cwd else Path(sno_path).name)])
+    argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _source_path_switch(source_path) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [(str(Path(sno_path).resolve()) if run_cwd else Path(sno_path).name)])
     # ⛔⭐ THE `--` SEPARATOR IS MANDATORY AND IS WHAT MAKES THIS SAFE. The driver has NO unknown-flag
     # diagnostic: any unrecognised argument falls through to being treated as a FILENAME, so a declared
     # program argument spelled like a flag (`-n10`, the exact shape the first witness used) would be
@@ -1478,7 +1481,7 @@ def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
 _PRE_ASM = {}
 
 
-def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=None):
+def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=None, source_path=None):
     """Mirrors compile_mode4() in test_corpus_snobol4.sh exactly. Returns None on success, or a
     Verdict("SKIP", ...) describing where it failed."""
     s_path = tmp_dir / "p.s"
@@ -1489,12 +1492,12 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=Non
     # so-diagnostic-programs-cannot-be-graded. Bare name in argv, explicit cwd so it still resolves
     # and so a -INCLUDE (compile-time, unlike run_m3's runtime open() concern) resolves relative to
     # the file's own directory too, not wherever the caller happened to stand.
-    _pre = _PRE_ASM.get(hashlib.md5(sno_path.read_bytes()).hexdigest()) if not compile_args else None
+    _pre = _PRE_ASM.get(hashlib.md5(sno_path.read_bytes()).hexdigest()) if (not compile_args and not source_path) else None
     if _pre and Path(_pre).is_file():
         shutil.copyfile(_pre, s_path)
     else:
         with open(s_path, "wb") as f:
-            r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + [(str(sno_path.resolve()) if run_cwd else sno_path.name)],
+            r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + _source_path_switch(source_path) + [(str(sno_path.resolve()) if run_cwd else sno_path.name)],
                                 stdout=f, stderr=subprocess.PIPE, env=env, cwd=str(run_cwd or sno_path.parent))
         if r.returncode != 0:
             return Verdict("SKIP", stderr=r.stderr or b"", returncode=r.returncode, detail="scrip --compile failed")
@@ -1522,7 +1525,7 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=Non
     return None
 
 
-def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None):
+def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None, source_path=None):
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
@@ -1557,7 +1560,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # seven rung suites before landing: no entry lists or globs its run directory; three print their own argv[0]
     # (icon 414 prints only its TYPE and length, icon 924 is this row, snobol4 104 prints HOST(0)).
     out_bin = (Path(bin_dir) if bin_dir else tmp_dir) / (Path(sno_path).stem or "t")
-    skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args, run_cwd=run_cwd)
+    skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args, run_cwd=run_cwd, source_path=source_path)
     if skip is not None:
         # ⛔⭐ A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (R-1354, the coo's ask of 2026-09-28 on hq_snobol4's witness; hq_raku
         # 2026-10-11 on RakRungs class_method_range_replace_6 and class_method_say_replace_49): a program whose correct behaviour IS a
@@ -1875,7 +1878,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0, run_cwd=None):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0, run_cwd=None, source_path=None):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, R-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1894,7 +1897,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, run_cwd=run_cwd, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+        out["m3"] = run_m3(paths, sno_path, expected_text, run_cwd=run_cwd, source_path=source_path, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         _gap("m4")
@@ -1902,7 +1905,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), run_cwd=run_cwd, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), run_cwd=run_cwd, source_path=source_path, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -2787,7 +2790,9 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         _ex = getattr(entry, 'expect', None)
         _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
         _rc_dir = (Path(companion_dir) / entry.cwd) if (getattr(entry, "cwd", None) and companion_dir is not None) else None
-        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin, run_cwd=_rc_dir,
+        _origin = (Path(companion_dir) / entry.cwd / (Path(entry.name).name + ext)) if (_rc_dir is not None) else None
+        _src = str(_origin.resolve()) if (_origin is not None and _origin.is_file()) else None
+        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin, run_cwd=_rc_dir, source_path=_src,
                              want_rc=_want, prog_argv=getattr(entry, 'argv', None),
                              mask=getattr(entry, 'mask', None),
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=(None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s),
@@ -2846,7 +2851,7 @@ def batch_m4_asm(paths, entries, tmp_root, ext, companion_dir):
 def _batch_m3_eligible(entry, paths):
     """An entry the one-process road can run: a flat program whose own process needs nothing beyond its source (no companion beside it,
     no argv, no compile switches, no mask or stream option), graded exactly as run_m3 grades it. Anything else stays per-process."""
-    return ("/" not in entry.name and not getattr(entry, "stage_upstream", False) and not getattr(entry, "compile_args", None)
+    return ("/" not in entry.name and not getattr(entry, "stage_upstream", False) and not getattr(entry, "compile_args", None) and not getattr(entry, "cwd", None)
             and not getattr(entry, "argv", None) and not getattr(entry, "mask", None) and not getattr(entry, "out_files", None)
             and not getattr(entry, "merge_stderr", False) and not getattr(entry, "compare_ws", False)
             and not getattr(entry, "answer_file", None) and not paths.get("scrip_extra") and paths["engine"] == "scrip")
