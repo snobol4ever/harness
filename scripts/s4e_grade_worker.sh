@@ -339,7 +339,7 @@ def one():
         return None
     # THE ROOT LOCK (test-cycle, the cio's (2)(i), 2026-11-08): every launch holds the grader root shared from here to its record step; a sync takes it exclusive
     # (gate first, so no new board starts while it waits); the controller's sync never waits (rc 75). A job whose tree the root already carries takes no sync.
-    held = None; sheld = None
+    held = None; sheld = None; home = S4E; pfd = None
     if why is None:
 # fleet-control step 10b (the cio, 2026-11-07 14:3x): the grader's root is synced and
         # built to the job's tree before the launch, else the harness refuses rc 2 on a stale binary (jobs 1109 and 1110 were buried so at 20:31Z: the root sat
@@ -348,17 +348,23 @@ def one():
         t1 = time.time()
         t2 = time.time(); sheld = GL.suite_hold(suite, touch=lambda: c.touch(job), lock_dir=(SCR or None))
         if sheld is not None: say("GRADE_SUITE_LOCK job=%d suite=%s waited=%ds" % (job.id, suite, int(time.time() - t2)))
-        held, w = GL.board_hold(need, resync, touch=lambda: c.touch(job), lock_dir=(SCR or None))
+        if need:
+            pn, pfd = GL.pool_take(["req-1", "req-2"], touch=lambda: c.touch(job))
+            wt = os.path.join(os.environ.get("S4E_WT_TOP", "/tmp/s4e"), "grader", "wt-" + pn)
+            made = os.path.isdir(wt) or subprocess.run(["bash", os.path.join(S4E, "harness", "scripts", "s4e_worktree.sh"), "new", pn], env=dict(ENV, S4E_SEAT="grader"), capture_output=True).returncode in (0, 1)
+            if made and not GL.move_worktree(wt, tree) and subprocess.run(["make", "-j8", "-C", os.path.join(wt, "SCRIP")], env=ENV, capture_output=True).returncode == 0: home = wt
+            else: GL.leave(pfd); pfd = None
+        held, w = (None, None) if home != S4E else GL.board_hold(need, resync, touch=lambda: c.touch(job), lock_dir=(SCR or None))
         why = why or w
-        say("GRADE_TREE job=%d sync=%d waited=%ds" % (job.id, int(need), int(time.time() - t1)))
-    LENV = GL.launch_env(ENV, pri)
+        say("GRADE_TREE job=%d sync=%d waited=%ds home=%s" % (job.id, int(need), int(time.time() - t1), home))
+    LENV = dict(GL.launch_env(ENV, pri), S4E_HOME=home)
     if why is None:
         if kind == "master":
-            cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(S4E, "harness", "scripts", "corpus_suite_harness.py"),
-                   "run", alls, os.path.join(os.path.dirname(alls), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
+            cmd = ["bash", os.path.join(home, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(home, "harness", "scripts", "corpus_suite_harness.py"),
+                   "run", alls.replace(S4E, home, 1), os.path.join(os.path.dirname(alls.replace(S4E, home, 1)), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
             senv = LENV
         else:
-            cmd = ["bash", os.path.join(S4E, "harness", "scripts", "util_run_slot.sh"), "bash", script] + words[1:]
+            cmd = ["bash", os.path.join(home, "harness", "scripts", "util_run_slot.sh"), "bash", script.replace(S4E, home, 1)] + words[1:]
             senv = dict(LENV, S4E_CHUNK=cell)
         # A PACKAGE RUNNER TAKES ONE ENTRY A RUN (S4E_CHUNK=entry:<name>; the coo measured 2026-11-07 15:2x that entry:a,b is refused by the runner's partition parse), so a
         # request cell of several entries is several runs of the runner, in order, one log; rc is the worst reading (1 if any entry read red; a refusal stops the list).
@@ -372,7 +378,7 @@ def one():
         with open(os.path.join(d, "job.%d.log" % job.id), "ab") as out:
             for lcmd, lenv in launches:
                 if len(launches) > 1: out.write(("GRADE_ENTRY %s\n" % lenv.get("S4E_CHUNK", "")).encode()); out.flush()
-                p = subprocess.Popen(lcmd, cwd=S4E, env=lenv, stdout=out, stderr=subprocess.STDOUT)
+                p = subprocess.Popen(lcmd, cwd=home, env=lenv, stdout=out, stderr=subprocess.STDOUT)
                 last = time.time()
                 while p.poll() is None:
                     time.sleep(1)
@@ -400,6 +406,7 @@ def one():
             else: say("RECORD job=%d key=- suite_row=0 verdict=0 scratch=0 reason=progress off, nothing recorded" % job.id)
     GL.leave(held)
     GL.leave(sheld)
+    GL.leave(pfd)
     action = "delete" if rc in (0, 1) and why is None else "bury"
     try:
         c.delete(job) if action == "delete" else c.bury(job, priority=pri)

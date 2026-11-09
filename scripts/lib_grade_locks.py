@@ -32,6 +32,38 @@ def launch_env(env, pri, psi_path="/proc/pressure/cpu"):
     return out
 
 
+def pool_take(names, lock_dir=None, wait=True, touch=None):
+    """Takes the flock of the first free request-worktree name and returns (name, fd); (None, None) when none is free and wait is false; with wait, retries every second and calls touch."""
+    d = lock_dir or LOCK_DIR
+    fds = [(n, _open(d, "wt-%s.lock" % n)) for n in names]
+    while True:
+        for n, fd in fds:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                continue
+            for m, o in fds:
+                if o != fd:
+                    os.close(o)
+            return n, fd
+        if not wait:
+            for m, o in fds:
+                os.close(o)
+            return None, None
+        if touch:
+            touch()
+        time.sleep(1)
+
+
+def move_worktree(wt, tree, repos=("SCRIP", "harness", "corpus", ".github")):
+    """Moves a request worktree to the job's tree: SCRIP to the tree, the other repos to origin/main as the root last fetched it; returns the repos whose checkout failed."""
+    bad = []
+    for r in repos:
+        target = tree if r == "SCRIP" else "origin/main"
+        if subprocess.run(["git", "-C", os.path.join(wt, r), "checkout", "-q", "--detach", target], capture_output=True).returncode != 0:
+            bad.append(r)
+    return bad
+
 def _open(d, name):
     os.makedirs(d, exist_ok=True)
     return os.open(os.path.join(d, name), os.O_RDWR | os.O_CREAT, 0o644)
