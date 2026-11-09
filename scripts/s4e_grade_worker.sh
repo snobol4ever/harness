@@ -5,8 +5,9 @@
 # process (beanstalkd releases a reserved job when its connection closes), which touches the job every 60 s while the launch runs, deletes it on rc 0 or 1 (a red program
 # is a reading), and buries it on any other rc (rc 2 is a refusal; beanstalkd has no reason field, so the reason goes on the GRADE_WORKERS.log line). Each job appends one
 # line to /home/resources/progress/GRADE_WORKERS.log, never under S4E_PROGRESS_OFF=1. THE RUNNER TABLE (step 9): harness/scripts/SUITE_RUNNERS.tsv names each key's kind,
-# lang, runner and table. A master (kind master) launches corpus_suite_harness.py as above; a package (kind pkg) runs S4E_CHUNK=<cell> bash harness/scripts/<runner>
-# under the same util_run_slot.sh admission and the same verdict rule, and the master's record step does not run for it (its runner writes its own rows); any other kind refuses.
+# lang, runner and table. A master (kind master) launches corpus_suite_harness.py as above; a package (kind pkg) makes the same one harness launch over its
+# container dir (column 5: <dir>/ALL.<ext> and <dir>/ALL.ref, CIO-18), under the same util_run_slot.sh admission, the same verdict rule and the same record step under the
+# suite key; any other kind refuses.
 # After a launch that read (rc 0 or 1) the lease RECORDS what loop8 writes (step 4c): the suite row of the rungs key of the container it graded, through util_score_row.py
 # from-progress (an incomplete population writes no row and says so); for a request-band job (pri 100) the verdict: the pending request of its seat that names its entries
 # moves to test_requests/done/ with graded=/rc= pairs and one served= line. S4E_GRADE_SCRATCH=<dir> sends every record write and the harness's progress rows to a scratch
@@ -265,23 +266,8 @@ def entry_rcs(db, entries, lang):
         f = line.rstrip("\n").split("\t")
         if len(f) > 9 and f[6] == lang and f[7] in entries and f[8] in ("m3", "m4"): last[(f[7], f[8])] = f[9]
     return {e: (0 if last.get((e, "m3")) == "PASS" and last.get((e, "m4")) == "PASS" else 1) for e in entries}
-def move_request(key, lang, entries, pri, requester, tree):
-    """a request-band job's .req moves to done/ with graded=, rc= and served= lines, for a PACKAGE cell as for a master (the coo 2026-11-07 16:23: jobs 1147, 1172, 1173, 1214
-    were deleted with their .req left standing, so a seat waiting on a package verdict never saw one); the rows themselves are the package runner's. Returns verdict 0|1."""
-    if pri != 100 or not entries: return 0
-    path, txt = pending_request(requester, key, entries)
-    if path is None: return 0
-    rcs = entry_rcs(ENV.get("S4E_PROGRESS_DB", LIVE_PROG + "/results.tsv"), entries, lang)
-    overall = 0 if all(v == 0 for v in rcs.values()) else 1
-    body = list(txt)
-    for e in entries: body += ["graded=%s" % e, "rc=%d" % rcs[e]]
-    body.append("served=%s tree=%s rc=%d rows=%d" % (time.strftime("%Y-%m-%d %H:%M:%S CST"), tree, overall, len(entries)))
-    done = os.path.join(os.path.dirname(path), "done", os.path.basename(path))
-    os.makedirs(os.path.dirname(done), exist_ok=True)
-    with open(done, "w", encoding="utf-8") as f: f.write("\n".join(body) + "\n")
-    os.remove(path); return 1
-def record(lang, entries, pri, requester, tree):
-    key = CONTAINER.get(lang)
+def record(lang, entries, pri, requester, tree, key=None):
+    key = key or CONTAINER.get(lang)
     scratch = int(bool(SCR) and all(v.startswith(SCR + "/") for v in SENV.values()))
     if key is None: return 0, 0, scratch, "no rungs key for lang %s" % lang
     r = subprocess.run([sys.executable, UR, "from-progress", "--suite", key], env=ENV, capture_output=True, text=True, timeout=900)
@@ -315,7 +301,7 @@ def one():
     except Exception as e:
         why = "refused: unreadable job body (%s)" % e
     say("GRADE_RESERVED job=%d tube=%s suite=%s cell=%s modes=%s worker=%s" % (job.id, TUBE, suite, cell, modes, N))
-    rc = 2; lang = None; entries = []; row = runner_row(suite); kind = row[1] if row else "none"; words = []; script = ""
+    rc = 2; lang = None; entries = []; row = runner_row(suite); kind = row[1] if row else "none"
     if why is None:
         lang, part = lang_of(suite), part_of(cell)
         alls = os.path.join(S4E, "corpus", "tests", lang or "-", "ALL.%s" % EXT.get(lang, "-"))
@@ -324,9 +310,9 @@ def one():
             if lang not in EXT or part is None: why = "refused: suite %r lang %r cell %r" % (suite, lang, cell)
             elif not os.path.isfile(alls): why = "refused: no container %s" % alls
         elif kind == "pkg":
-            words = row[3].split(); script = os.path.join(S4E, "harness", "scripts", words[0])
+            palls = os.path.join(S4E, row[4], "ALL.%s" % EXT.get(lang, "-")); pref = os.path.join(S4E, row[4], "ALL.ref")
             if part is None: why = "refused: package %r cell %r" % (suite, cell)
-            elif not os.path.isfile(script): why = "refused: no runner %s for %r" % (words[0], suite)
+            elif not (os.path.isfile(palls) and os.path.isfile(pref)): why = "refused: no container %s and %s -- the unified layout is owed (util_build_package_suite.py)" % (palls, pref)
         else: why = "refused: suite %r is kind %s in SUITE_RUNNERS.tsv (the grade worker launches master and pkg rows)" % (suite, kind)
     def behind():
         return GL.tree_behind(os.path.join(S4E, "SCRIP"), tree)
@@ -364,11 +350,11 @@ def one():
                    "run", alls.replace(S4E, home, 1), os.path.join(os.path.dirname(alls.replace(S4E, home, 1)), "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
             senv = LENV
         else:
-            cmd = ["bash", os.path.join(home, "harness", "scripts", "util_run_slot.sh"), "bash", script.replace(S4E, home, 1)] + words[1:]
-            senv = dict(LENV, S4E_CHUNK=cell)
-        # A PACKAGE RUNNER TAKES ONE ENTRY A RUN (S4E_CHUNK=entry:<name>; the coo measured 2026-11-07 15:2x that entry:a,b is refused by the runner's partition parse), so a
-        # request cell of several entries is several runs of the runner, in order, one log; rc is the worst reading (1 if any entry read red; a refusal stops the list).
-        launches = [(cmd, dict(LENV, S4E_CHUNK="entry:" + e)) for e in entries] if kind != "master" and len(entries) > 1 else [(cmd, senv)]
+            pdir = os.path.join(home, row[4])
+            cmd = ["bash", os.path.join(home, "harness", "scripts", "util_run_slot.sh"), "python3", os.path.join(home, "harness", "scripts", "corpus_suite_harness.py"),
+                   "run", os.path.join(pdir, "ALL.%s" % EXT.get(lang, "-")), os.path.join(pdir, "ALL.ref"), "--lang", lang, "--modes", modes, "--partition", part]
+            senv = LENV
+        launches = [(cmd, senv)]
         d = os.path.join("/tmp/s4e", os.environ.get("S4E_SEAT", "grade"), "grade"); os.makedirs(d, exist_ok=True)
         res_path = ENV.get("S4E_RESULTS", LIVE_PROG + "/results.tsv")
         snap = os.path.join(d, "job.%d.snap.tsv" % job.id)
@@ -388,17 +374,14 @@ def one():
                 rc = p.returncode if p.returncode not in (0, 1) else max(rc, p.returncode)
                 if rc not in (0, 1): break
         why = None if rc in (0, 1) else "rc=%d from the harness launch" % rc
-        if rc in (0, 1) and kind != "master":
-            try: pvd = move_request(suite, lang, entries, pri, requester, tree)
-            except Exception as e: pvd = 0; say("RECORD job=%d package request not moved: %s" % (job.id, e))
-            say("RECORD job=%d key=- suite_row=0 verdict=%d scratch=0 reason=package runner writes its own rows; the request moves to done/ here" % (job.id, pvd))
-        elif rc in (0, 1):
+        rkey = suite if kind == "pkg" else CONTAINER.get(lang, "-")
+        if rc in (0, 1):
             if SCR or os.environ.get("S4E_PROGRESS_OFF") != "1":
-                try: sr, vd, sc, wy = record(lang, entries, pri, requester, tree)
+                try: sr, vd, sc, wy = record(lang, entries, pri, requester, tree, rkey)
                 except Exception as e: sr, vd, sc, wy = 0, 0, int(bool(SCR)), "record refused: %s" % e
-                say("RECORD job=%d key=%s suite_row=%d verdict=%d scratch=%d reason=%s" % (job.id, CONTAINER.get(lang, "-"), sr, vd, sc, wy or "-"))
+                say("RECORD job=%d key=%s suite_row=%d verdict=%d scratch=%d reason=%s" % (job.id, rkey, sr, vd, sc, wy or "-"))
                 try:
-                    ga = subprocess.run(["bash", LIB, "grade_cell_after", progress_name(CONTAINER[lang]), tree, BAND.get(pri, "other"), snap, str(int(time.time() - t0))] + entries,
+                    ga = subprocess.run(["bash", LIB, "grade_cell_after", progress_name(rkey), tree, BAND.get(pri, "other"), snap, str(int(time.time() - t0))] + entries,
                                         cwd=S4E, env=ENV, capture_output=True, text=True, timeout=900)
                     say((ga.stdout.strip().splitlines() or ["GRADE_CELL_AFTER no output"])[-1] + (" rc=%d" % ga.returncode if ga.returncode else ""))
                 except Exception as e: say("GRADE_CELL_AFTER refused: %s" % e)
