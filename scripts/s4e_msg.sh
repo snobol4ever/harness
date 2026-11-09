@@ -163,6 +163,13 @@ s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku
 s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
 s4e_queue_put() { python3 "$S4E/harness/scripts/util_queue.py" put "$1" "$2" --pri "$3" --ttr "$4" 2>/dev/null; }   # <tube> <topic> <pri> <ttr> -> job id
 s4e_queue_delete() { python3 "$S4E/harness/scripts/util_queue.py" delete "$1" >/dev/null 2>&1; }
+s4e_queue_retire() {
+    local _j="$1" _i _st
+    [ -n "$_j" ] || return 0
+    for _i in $(seq 1 15); do _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | cut -f3)"; [ "$_st" = reserved ] || break; sleep 1; done
+    if [ "$_st" = reserved ]; then echo "WARN: the prior job $_j is still reserved by its holder and was not deleted: delete it when it is released (util_queue.py delete $_j)"; return 0; fi
+    s4e_queue_delete "$_j"
+}
 s4e_file_road() { python3 "$S4E/harness/scripts/util_queue.py" status >/dev/null 2>&1; [ "$?" = 2 ]; }   # bus-one-queue (CIO-8 phase two): rc 0 only when beanstalkd is UNREACHABLE (status exits 2), so the verb takes the file road
 s4e_baton_job_get() { grep -m1 '^QUEUE-JOB:' "$PO/tasks/$1.task.md" 2>/dev/null | sed 's/^QUEUE-JOB: *//'; }   # "<id> tube=<tube>"
 s4e_baton_job_set() {   # <topic> <id> <tube>: one QUEUE-JOB line after LINKS, replaced when present
@@ -3778,7 +3785,7 @@ case "$cmd" in
          row="$(grep -P "^[0-9]+\t\Q$topic\E\t" "$PO/QUEUE.tsv" 2>/dev/null | head -1)"; [ -n "$row" ] || { echo "⛔ REFUSED: no QUEUE.tsv row named '$topic'" >&2; exit 2; }
          _qst="$(printf '%s' "$row" | cut -f4)"; case "$_qst" in FREE|QUEUED:*) ;; *) echo "⛔ REFUSED: $topic reads $_qst; queue takes a FREE or QUEUED row (park, done or unclaim it first)" >&2; exit 2;; esac
          s4e_skills_required_ok "$q_tier" "$(sed -n '1,/^## NEXT/p' "$PO/tasks/$topic.task.md")" || { echo "⛔ REFUSED: a $q_tier row carries a SKILLS: line in its baton head naming the skills its executor loads first; add it and queue again" >&2; exit 2; }
-         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; [ -n "$_oldjob" ] && s4e_queue_delete "$_oldjob"
+         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; s4e_queue_retire "$_oldjob"
          s4e_queue_enqueue_row "$topic" "$q_tube" "$(qrank "$topic")" "$q_tier" || exit 1
          s4e_baton_head_set "$topic" OWNER "$q_owner"; _tmp="$(mktemp)"; TOPIC="$topic" NEW="$q_owner" awk -F'\t' -v OFS='\t' '$2==ENVIRON["TOPIC"] && /^[0-9]/ {$3=ENVIRON["NEW"]} {print}' "$PO/QUEUE.tsv" > "$_tmp" && cat "$_tmp" > "$PO/QUEUE.tsv"; rm -f "$_tmp"
          s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
@@ -3981,6 +3988,7 @@ case "$cmd" in
          # is free" from "this row is free BECAUSE I just let it go". Written after every refusal above has been
          # passed, so a REFUSED unclaim leaves no receipt and cannot hide a row from anyone.
          s4e_release_receipt "$topic"
+         _rj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$c" | tail -1)"; [ -n "$_rj" ] && : > "$PO/claims/$topic.claim.release.$_rj"
          rm -f "$c"
          # THE COLUMN IS WRITTEN AFTER THE CLAIM FILE GOES (row 618, the cio 2026-11-07; MEASURED 2026-11-07 on a scratch probe before this cure:
          # the FREE write was made while the claim still existed, s4e_set_row_state regenerates the view, and util_queue_view's claim rule outranks
