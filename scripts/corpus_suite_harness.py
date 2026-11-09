@@ -4303,7 +4303,7 @@ def _entry_note(xfail, v, shard_tag=""):
 PROGRESS_PACKAGE_KEYS = {"arizona_tests": "arizona", "jcon_tests": "jcon", "unicon_tests": "unitests", "ipl": "ipl", "csnobol4_suite": "csnobol4", "gimpel": "gimpel",
                          "snoflake_suite": "snoflake", "aisnobol": "aisnobol", "dotnet": "dotnet", "swi_tests": "swi", "gnu_prolog": "gnu",
                          "inriasuite": "inria", "fpc_tests": "fpc", "pat": "pat", "spitbol_testpgms": "testpgms", "roast": "roast",
-                         "trealla_tests": "trealla", "xsb_tests": "xsb"}   # the coo 2026-10-10: TreallaTests' row key is trealla; without this its 658 graded rows went in as trealla_tests and the writer read 0 PASS
+                         "trealla_tests": "trealla", "xsb_tests": "xsb", "spitbol_x64_tests": "spitbol_x64", "spitbol_x32_tests": "spitbol_x32"}   # the coo 2026-10-10: TreallaTests' row key is trealla; without this its 658 graded rows went in as trealla_tests and the writer read 0 PASS
 
 
 def progress_suite_for(sno_path, paths):
