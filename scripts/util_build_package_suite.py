@@ -254,7 +254,7 @@ def read_contract(pkg_dir):
     sorted temp file, checked against the upstream NAME_old (ALL.xsbold names each check); and `compare<TAB>ignore-all-space` -- the package's
     harness compares with diff -w, so every absorbed entry's ALL.csv compare cell reads ignore-all-space. And `oracle<TAB>unicon` (R-2072, hq_unicon): an Icon
     package whose refs are cut from the Unicon translator through unicon_bin() (the UniTests package), compiled by the translator with -s and -o and run as ./stem."""
-    out = {"stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": ""}
+    out = {"stdin": "", "stderr": "", "units": "", "dialect": "", "oracle": "", "upstream": "", "compare": "", "unmarked_compile_args": "", "ipath": "", "not_shipped": "", "prebuild": ""}
     cf = pkg_dir / "CONTRACT.tsv"
     if not cf.is_file():
         return out
@@ -294,8 +294,11 @@ def read_contract(pkg_dir):
             out["not_shipped"] = f[1].strip()
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
+        elif f[0] == "stdin":
+            if not (pkg_dir / f[1]).is_file(): h.refuse(f"{cf}:{n}: stdin {f[1]!r} names no file beside the package (every entry with no stem-named stdin of its own would read it)")
+            out["stdin"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, units=plunit, units=iso-rejection, dialect=any-fpc-mode, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, stdin=FILE, units=ref-beside,units=plunit, units=iso-rejection, dialect=any-fpc-mode, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
@@ -543,7 +546,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
                                             "single-program comparison)"))
                 print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (multi-program file, {n_end} END statements)", file=sys.stderr)
                 continue
-        stdin_path = stdin_for(src.stem, src.parent)  # the file's OWN dir -- == pkg_dir when flat, matters once nested
+        stdin_path = stdin_for(src.stem, src.parent) or (pkg_dir / contract["stdin"] if contract["stdin"] else None)  # the file's OWN dir -- == pkg_dir when flat, matters once nested
         # ⭐ PROGRAM ARGUMENTS SIDECAR (row aisnobol-all-eight-..., cto 2026-09-07: HSORT reads its input file name
         # from HOST(0), never stdin): `<stem>.argv` beside the source holds ONE line of TAB-separated arguments,
         # the same tokens the container's ALL.argv then declares for the entry (corpus_suite_harness.py
