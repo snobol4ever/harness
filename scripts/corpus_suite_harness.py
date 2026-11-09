@@ -2766,6 +2766,21 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     return cand, expected
 
 
+def expected_refusal_names(want, out, rc):
+    if rc == 0 or rc in (124, 137) or 129 <= rc <= 159:
+        return False
+    if want.startswith("line "):
+        for n in want.split()[1:]:
+            if not n.isdigit():
+                continue
+            for c in (int(n) - 1, int(n), int(n) + 1):
+                if re.search(rb"line " + str(c).encode() + rb"([^0-9]|$)", out, re.M):
+                    return True
+    if want.startswith("line ") or want.startswith("clause "):
+        return bool(re.search(rb"ISO 7185 [0-9]+(\.[0-9]+)+", out))
+    return False
+
+
 def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=None):
     with tempfile.TemporaryDirectory(dir=tmp_root) as td:
         cand, expected = stage_entry(entry, td, ext, companion_dir)
@@ -4079,11 +4094,15 @@ def cmd_run(args):
     _xr_re = LANG_CONFIGS.get(getattr(args, "lang", "") or "", {}).get("expected_refusal_re")
     _xr_path = Path(args.sno).with_name("ISO_EXPECTED_REFUSALS.tsv")
     expected_refusals = set()
+    refusal_want = {}
     if _xr_re and _xr_path.is_file():
         for _l in _xr_path.read_text(encoding="utf-8", errors="replace").splitlines():
             _c = _l.split("\t")[0].strip()
             if _c and not _c.startswith("#"):
-                expected_refusals.add(_c[:-len(ext)] if _c.endswith(ext) else _c)
+                _nm = _c[:-len(ext)] if _c.endswith(ext) else _c
+                expected_refusals.add(_nm)
+                _cols = _l.split("\t")
+                refusal_want[_nm] = _cols[1].strip() if len(_cols) > 1 else ""
         _stale = sorted(expected_refusals - _suite_names)
         if _stale:
             refuse(f"{_xr_path} names {len(_stale)} entr(ies) this suite does not carry: {', '.join(_stale[:10])}")
@@ -4123,7 +4142,11 @@ def cmd_run(args):
             if e.name in expected_refusals:
                 for m in modes:
                     _v = verdicts[m]
-                    _refused = _v.kind != "PASS" and (_v.kind == "SKIP" or (_v.returncode or 0) != 0) and _xr_rx.search(_v.stderr or b"")
+                    _w = refusal_want.get(e.name, "")
+                    if _w.startswith("line ") or _w.startswith("clause "):
+                        _refused = _v.kind != "PASS" and expected_refusal_names(_w, (_v.stdout or b"") + (_v.stderr or b""), 1 if _v.kind == "SKIP" and not _v.returncode else (_v.returncode or 0))
+                    else:
+                        _refused = _v.kind != "PASS" and (_v.kind == "SKIP" or (_v.returncode or 0) != 0) and _xr_rx.search(_v.stderr or b"")
                     verdicts[m] = Verdict("PASS", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal") if _refused else \
                         Verdict("FAIL", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal-not-refused-with-the-standard-diagnostic")
                     verdicts[m].secs = _v.secs
