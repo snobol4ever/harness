@@ -4684,7 +4684,7 @@ case "$cmd" in
          else echo "assigned $topic -> $seat (claim written; ⛔ DOORBELL NOT SENT — the claim still governs, $seat gets it from next)"; fi
          s4e_wake_hint "seat-$seat" "$topic" assign
          # fleet-queue step 3: the row's job moves to seat-<seat> (a directed assign); a row with no job yet gets one there
-         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; [ -n "$_oldjob" ] && s4e_queue_delete "$_oldjob"
+         _oldjob="$(s4e_baton_job_get "$topic" | cut -d' ' -f1)"; s4e_queue_retire "$_oldjob"
          _atier="$(s4e_tier_of "$seat")" || _atier=haiku
          s4e_queue_enqueue_row "$topic" "seat-$seat" "$(qrank "$topic")" "$_atier" || true;;
   # ⭐⭐ the officer RULING 2026-08-29 (row s4e-mint-subcommand, hq_C's find): A SEAT COULD NOT MINT A ROW — next|claim|
