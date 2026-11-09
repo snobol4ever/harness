@@ -48,7 +48,7 @@ PO = os.environ.get('S4E_POSTOFFICE', '/home/resources/postoffice')
 SWIT = os.environ.get('S4E_SWI_TESTS', os.path.join(S4E, 'corpus', 'packages', 'prolog', 'swi_tests'))
 SUITE = 'swi'
 LIVE = ('FREE', 'CLAIMED', 'ASSIGNED', 'BLOCKED-ON', 'GRANT-NEEDED', 'PARKED-LON-HOLD', 'PARKED-UMBRELLA', 'PARKED-AWAITING')
-EXCL_CLASSES = ('SCRIP_EXCEEDS_ORACLE', 'NO_ORACLE_ANSWER', 'THREADS_EXCLUDED_BY_LON', 'SWIPL_VM_INTERNAL')
+EXCL_CLASSES = ('SCRIP_EXCEEDS_ORACLE', 'NO_ORACLE_ANSWER', 'THREADS_EXCLUDED_BY_LON', 'SWIPL_VM_INTERNAL', 'XSB_EXCLUDED_BY_LON')
 WRAPPERS = ('once', 'ignore', 'call', 'not', 'catch')
 OPRX = re.compile(r'=\\=|=:=|=@=|\\=@=|=\.\.|\\==|==|=<|>=|@=<|@>=|@<|@>|\\=|=|<|>|\bis\b|\bas\b')
 SYMCH = set('#$&*+-./:<=>?@^~\\')
