@@ -234,7 +234,7 @@ def _unicon_prebuild(iso, ipath, names):
     r = subprocess.run(["bash", "-c", f". '{h.HARNESS_SCRIPTS / 'lib_oracle_flags.sh'}' && unicon_bin"], capture_output=True, text=True)
     if r.returncode != 0 or not r.stdout.strip(): h.refuse(f"lib_oracle_flags.sh refused (unicon_bin): {r.stderr.strip()}")
     for name in names:
-        for f in sorted(Path(ipath).glob("*.icn")):
+        for f in sorted(p for d in ipath.split(os.pathsep) for p in Path(d).glob("*.icn")):
             if re.search(rf"(?m)^package[ \t]+{re.escape(name)}[ \t]*$", f.read_text(errors="replace")):
                 (iso / f.name).write_bytes(f.read_bytes())
                 subprocess.run([r.stdout.strip(), "-c", "-s", f.name], cwd=str(iso), capture_output=True, timeout=300)
@@ -284,7 +284,7 @@ def read_contract(pkg_dir):
             out["compare"] = "ignore-all-space"
         elif f[0] == "ipath":
             if not (pkg_dir / f[1]).is_dir(): h.refuse(f"{cf}:{n}: ipath {f[1]!r} names no directory beside the package (the run cannot find its imports)")
-            out["ipath"] = str((pkg_dir / f[1]).resolve())
+            out["ipath"] = os.pathsep.join(x for x in (out["ipath"], str((pkg_dir / f[1]).resolve())) if x)
         elif f[0] == "prebuild":
             out["prebuild"] = f[1].strip()
         elif f[0] == "not_shipped":
@@ -384,6 +384,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     ref_beside = contract["units"] == "ref-beside"
     plunit = contract["units"] == "plunit"
     iso_rej = contract["units"] == "iso-rejection"
+    if lang == "icon" and contract["ipath"] and contract["oracle"] != "unicon":
+        os.environ["IPATH"] = os.pathsep.join(x for x in (contract["ipath"], os.environ.get("IPATH", "")) if x)
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
@@ -491,11 +493,23 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
             entries.append(h.Entry("block", len(entries) + 1, name, _prog.splitlines(), _ref, stdin=None, want_rc=0))
             print(f"[{i}/{len(srcs)}] {name}: ABSORBED (plunit, {len(_ref)} verdict lines)", file=sys.stderr)
             continue
+        _drv = ref_beside and src.stem.endswith("_driver") and src.with_suffix(".ref").is_file()
+        if _drv:
+            _lib = src.stem[:-len("_driver")]
+            if not (src.parent / (_lib + ".icn")).is_file():
+                h.refuse(f"{src}: a driver's ref but its library {_lib}.icn is not shipped beside it -- a vehicle with nothing to carry (R-1269)")
+            if (src.parent / (_lib + ".ref")).is_file():
+                h.refuse(f"{src}: library {_lib} carries its own .ref AND a driver -- two grading vehicles for one library (R-1269)")
         if name in uni_excl:
             excluded.append((name, f"EXCLUDED.tsv {uni_excl[name][0]}: {uni_excl[name][1]}"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({uni_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
             continue
         if ref_beside and not src.with_suffix(".ref").is_file():
+            if (src.parent / (src.stem + "_driver.ref")).is_file():
+                excluded.append((src.relative_to(pkg_dir).as_posix(), f"a library graded through its driver {src.stem}_driver, which is the entry "
+                                                                        f"{name}_driver (CONTRACT.tsv units=ref-beside, R-1269)"))
+                print(f"[{i}/{len(srcs)}] {name}: GRADED THROUGH {src.stem}_driver (the driver is the entry)", file=sys.stderr)
+                continue
             excluded.append((name, f"no {src.stem}.ref beside it -- the package grades it through another unit (a library through its "
                                    f"driver, an include through its includer) or not at all (CONTRACT.tsv units=ref-beside)"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no .ref beside it, units=ref-beside)", file=sys.stderr)
@@ -556,9 +570,21 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         if argv_path.is_file():
             _al = [ln for ln in argv_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")]
             prog_args = _al[0].rstrip("\n").split("\t") if _al else None
-        stdin_text = stdin_path.read_text() if stdin_path else None
+        stdin_text, stdin_latin1 = read_text_tolerant(stdin_path) if stdin_path else (None, False)
+        if stdin_latin1:
+            excluded.append((name, f"stdin {stdin_path.name} is not valid UTF-8 (binary or 8-bit data) -- the container's stdin cell is text, "
+                                        "so it would not be byte-identical to the file the ref was cut from (the same rule as a non-UTF-8 source)"))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (non-UTF-8 stdin {stdin_path.name})", file=sys.stderr)
+            continue
         _of_path = src.with_suffix(".outfiles")
-        out_files = h.validate_out_files_cell(" ".join(ln.strip() for ln in _of_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")), str(_of_path)) if _of_path.is_file() else None
+        _of_cell = " ".join(ln.strip() for ln in _of_path.read_text().split("\n") if ln.strip() and not ln.lstrip().startswith("#")) if _of_path.is_file() else ""
+        if any(w.startswith(".") for w in _of_cell.split()):
+            _hid = [w for w in _of_cell.split() if w.startswith(".")]
+            excluded.append((name, f"out_files names hidden file(s) {' '.join(_hid)} -- the staging rule admits a bare name with no leading '.' "
+                                        "(validate_out_files_cell), so the run cannot own them; excluded rather than refused (the whole build would stop)"))
+            print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (out_files names hidden files)", file=sys.stderr)
+            continue
+        out_files = h.validate_out_files_cell(_of_cell, str(_of_path)) if _of_path.is_file() else None
         # ⭐ ISOLATE THE ORACLE INVOCATION, ONE FILE PER THROWAWAY CWD (measured on
         # corpus/packages/icon/ipl/progs/: this project's own Icon oracle driver, run_oracle()'s
         # cwd=sno_path.parent contract landing it in a directory of `link`-directive .icn siblings, renames
@@ -769,7 +795,8 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
         # exclusion of 2026-10-09): the ref keeps it byte for byte -- the container is read back split on LF only (_read_lf_lines), so a CR
         # stays inside its line, and a container whose ref then carries a CR at end of line is declared in lf_gate_crlf_is_the_subject.tsv.
         want_rc = ora_rc if ora_rc else 0
-        e = h.Entry("block", len(entries) + 1, name, text.splitlines(), ora_text.split("\n"),
+        _exp = read_text_tolerant(src.with_suffix(".ref"))[0] if _drv else ora_text
+        e = h.Entry("block", len(entries) + 1, name, text.splitlines(), _exp.split("\n"),
                      stdin=stdin_text, want_rc=want_rc)
         entries.append(e)
         if len(_ladder) > 1:
