@@ -9,10 +9,15 @@ The controller never waits: try_sync takes both non-blocking and returns 75 on e
 
   python3 -I lib_grade_locks.py --probe-root     the proof line ROOT_LOCK_PROBE ... ok=1
 """
-import os, sys, time, fcntl, subprocess, tempfile, select, shutil
+import os, re, sys, time, fcntl, subprocess, tempfile, select, shutil
 
 LOCK_DIR = os.environ.get("S4E_GRADER_LOCK_DIR") or "/tmp/s4e/grader"
 BUSY = 75
+
+
+def tree_behind(scrip_dir, tree):
+    """True when the grader root's SCRIP HEAD does not contain the job's tree (git merge-base --is-ancestor): an object the repo lacks, or a commit HEAD does not contain, is behind; an older commit the root carries is not."""
+    return subprocess.run(["git", "-C", scrip_dir, "merge-base", "--is-ancestor", tree, "HEAD"], capture_output=True).returncode != 0
 
 
 def _open(d, name):

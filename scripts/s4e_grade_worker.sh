@@ -329,8 +329,7 @@ def one():
             elif not os.path.isfile(script): why = "refused: no runner %s for %r" % (words[0], suite)
         else: why = "refused: suite %r is kind %s in SUITE_RUNNERS.tsv (the grade worker launches master and pkg rows)" % (suite, kind)
     def behind():
-        head = subprocess.run(["git", "-C", os.path.join(S4E, "SCRIP"), "rev-parse", "--short=9", "HEAD"], capture_output=True, text=True).stdout.strip()
-        return not head.startswith(tree[:7]) and not tree.startswith(head[:7])
+        return GL.tree_behind(os.path.join(S4E, "SCRIP"), tree)
     def resync():
         if not behind(): return None   # another worker synced to this tree while this one waited
         sy = subprocess.run(["bash", os.path.join(S4E, "harness", "scripts", "util_sync_root.sh")], env=ENV, capture_output=True, text=True, timeout=900)
