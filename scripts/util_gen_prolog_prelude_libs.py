@@ -658,7 +658,7 @@ def process(path):
     if read_path:
         os.unlink(read_path)
     mod, exports, ops, kept, drops, keyed, hooks, libops = None, [], [], [], dict(init_drops), [], [], set()
-    cross, dynrep, uses, metaspec, metas = {}, {}, [], {}, []
+    cross, dynrep, uses, metaspec, metas, dictm = {}, {}, [], {}, [], []
     defined = {(n, a) for k, a, n in heads.values() if k not in ("directive", "unkeyable", "qualified") and n}
     off = 0
     for no, cl in enumerate(split_clauses(toks), 1):
@@ -768,7 +768,17 @@ def process(path):
             hooks.append((start, first, off, mod)); drops["hook %s/%d qualified with the module" % (name, arity)] = drops.get("hook %s/%d qualified with the module" % (name, arity), 0) + 1
             continue
         if (name, arity) in DICT_METHOD_HEADS:
-            drops["dict-method clause (SCRIP has no dicts)"] = drops.get("dict-method clause (SCRIP has no dicts)", 0) + 1
+            if mod is None:
+                raise Refuse("%s clause %d: a dict-method clause before the :- module directive -- its head cannot be qualified" % (path, no))
+            colon, pos = None, start
+            for t in cl:
+                if t[1] == ":=" and colon is None:
+                    colon = pos
+                pos += len(t[1])
+            if colon is None:
+                raise Refuse("%s clause %d: a dict-method clause with no := token" % (path, no))
+            dictm.append((start, first, colon, mod)); kept.append((start, off))
+            drops["dict-method clause kept, head qualified with its module"] = drops.get("dict-method clause kept, head qualified with its module", 0) + 1
             continue
         if (name, arity) in HOOK_HEADS and not (lib in LOCAL and lib in LOAD_HOOK_LIBS):
             drops["hook %s/%d" % (name, arity)] = drops.get("hook %s/%d" % (name, arity), 0) + 1
@@ -817,6 +827,21 @@ def process(path):
             raw = raw[:hk[1] - cs] + hk[3] + ":" + raw[hk[1] - cs:]
         elif hk:
             raw = raw[:hk[1] - cs] + raw[hk[1] - cs + len("user:"):]
+        dm = next((d for d in dictm if d[0] == cs), None)
+        if dm:
+            if any(dm[1] <= r[0] < dm[2] and (r[4], r[2]) in local for r in refs):
+                raise Refuse("%s: a dict-method head calls a local predicate -- its head cannot be qualified in place" % path)
+            seg = raw[dm[1] - cs:dm[2] - cs]
+            hs = seg.rstrip()
+            rest = raw[dm[2] - cs + 2:]
+            ci = rest.find(":-")
+            val, body = (rest[:ci], rest[ci + 2:]) if ci >= 0 else (rest.rstrip().rstrip(".") , " true.")
+            if hs.startswith("(") and hs.endswith(")"):
+                hs = hs[1:-1]
+            if "." not in hs:
+                raise Refuse("%s: a dict-method head %r has no Self.Function shape" % (path, hs))
+            self_t, fn_t = hs.split(".", 1)
+            raw = raw[:dm[1] - cs] + "'$dict_method'(" + quote(dm[3]) + ", " + fn_t.strip() + ", " + self_t.strip() + ", " + val.strip() + ") :-" + body
         if cs in dynrep:
             raw = raw[:dynrep[cs][0] - cs] + dynrep[cs][1]
         chunks.append(strip_comments(raw, path))
