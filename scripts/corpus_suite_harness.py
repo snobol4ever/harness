@@ -1421,7 +1421,7 @@ def stdbuf_wrap(paths, argv):
     return argv
 
 
-def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
+def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None):
     timeout = timeout or paths["timeout"]
     # ⛔⭐ ARGV IS THE BARE NAME, NOT THE FULL PATH (row suite-harness-argv-echoes-a-mktemp-path-so-
     # diagnostic-programs-cannot-be-graded) -- a diagnostic that echoes its own argv (e.g. a SPITBOL
@@ -1432,7 +1432,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
         return classify(_engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb), timeout, expected_text, cwd=str(Path(sno_path).parent),
                         env=dict(os.environ, SNO_LIB=str(paths["inc"])), stdin_text=stdin_text, want_rc=want_rc, mask=mask,
                         out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
-    argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [Path(sno_path).name])
+    argv = stdbuf_wrap(paths, [str(paths["scrip_bin"]), "--run"] + _compile_switches(paths, compile_args) + _size_switches(heap_kb, stack_kb) + _host_u_switch(sno_path, prog_argv) + [(str(Path(sno_path).resolve()) if run_cwd else Path(sno_path).name)])
     # ⛔⭐ THE `--` SEPARATOR IS MANDATORY AND IS WHAT MAKES THIS SAFE. The driver has NO unknown-flag
     # diagnostic: any unrecognised argument falls through to being treated as a FILENAME, so a declared
     # program argument spelled like a flag (`-n10`, the exact shape the first witness used) would be
@@ -1460,7 +1460,7 @@ def run_m3(paths, sno_path, expected_text, timeout=None, stdin_text=None, want_r
     # byte-identical to its .ref when run from its own directory in BOTH modes, FAIL in both from
     # anywhere else. Consistent for suite entries too: run_suite_entry materializes the entry into a
     # temp dir and passes THAT path, so parent is the temp dir -- exactly where it copies companions.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
@@ -1478,7 +1478,7 @@ def _engine_argv(paths, sno_path, prog_argv, heap_kb, stack_kb):
 _PRE_ASM = {}
 
 
-def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
+def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None, run_cwd=None):
     """Mirrors compile_mode4() in test_corpus_snobol4.sh exactly. Returns None on success, or a
     Verdict("SKIP", ...) describing where it failed."""
     s_path = tmp_dir / "p.s"
@@ -1494,8 +1494,8 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
         shutil.copyfile(_pre, s_path)
     else:
         with open(s_path, "wb") as f:
-            r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + [sno_path.name],
-                                stdout=f, stderr=subprocess.PIPE, env=env, cwd=str(sno_path.parent))
+            r = subprocess.run([str(paths["scrip_bin"]), "--compile"] + _compile_switches(paths, compile_args) + [(str(sno_path.resolve()) if run_cwd else sno_path.name)],
+                                stdout=f, stderr=subprocess.PIPE, env=env, cwd=str(run_cwd or sno_path.parent))
         if r.returncode != 0:
             return Verdict("SKIP", stderr=r.stderr or b"", returncode=r.returncode, detail="scrip --compile failed")
     o_path = tmp_dir / "p.o"
@@ -1522,7 +1522,7 @@ def compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=None):
     return None
 
 
-def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None):
+def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=None, want_rc=0, prog_argv=None, mask=None, bin_dir=None, heap_kb=None, stack_kb=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, run_cwd=None):
     timeout = timeout or paths["timeout"]
     if not (paths["rt_dir"] / "libscrip_rt.so").is_file():
         return Verdict("SKIP", detail="libscrip_rt.so not built")
@@ -1557,7 +1557,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # seven rung suites before landing: no entry lists or globs its run directory; three print their own argv[0]
     # (icon 414 prints only its TYPE and length, icon 924 is this row, snobol4 104 prints HOST(0)).
     out_bin = (Path(bin_dir) if bin_dir else tmp_dir) / (Path(sno_path).stem or "t")
-    skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args)
+    skip = compile_m4(paths, sno_path, out_bin, tmp_dir, compile_args=compile_args, run_cwd=run_cwd)
     if skip is not None:
         # ⛔⭐ A COMPILE REFUSAL IS A VERDICT, NOT A SKIP (R-1354, the coo's ask of 2026-09-28 on hq_snobol4's witness; hq_raku
         # 2026-10-11 on RakRungs class_method_range_replace_6 and class_method_say_replace_49): a program whose correct behaviour IS a
@@ -1587,7 +1587,7 @@ def run_m4(paths, sno_path, expected_text, tmp_dir, timeout=None, stdin_text=Non
     # the declared heap and stack ride the binary's command line as -d -i -s (see _size_switches), read at its first allocation
     # Same rule as run_m3 above: the compiled binary's relative opens must resolve against the
     # SOURCE's directory, not the harness's cwd. out_bin is an absolute path, so moving cwd is safe.
-    return classify(argv, timeout, expected_text, cwd=str(Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+    return classify(argv, timeout, expected_text, cwd=str(run_cwd or Path(sno_path).parent), env=env, stdin_text=stdin_text, want_rc=want_rc, mask=mask, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
 
 
 # ⛔⭐ run_ast TAKES NO prog_argv AND MUST NOT -- NOT AN OVERSIGHT. `--dump-ast` never executes the
@@ -1875,7 +1875,7 @@ def convert_one(paths, sno_path, ref_path, seq, tmp_root, modes, companion_dir=N
     return None, {"ok": False, "reason": f"NEITHER form reproduced the original's behavior: orig={orig_verdicts}"}
 
 
-def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0):
+def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=None, want_rc=0, prog_argv=None, mask=None, where="", bin_dir=None, heap_kb=None, stack_kb=None, timeout=None, compile_args=None, out_files=None, merge_stderr=False, ws_blind=False, answer_file=None, mode_gap_s=0, run_cwd=None):
     """Every mode is graded against the ONE ref: the two modes are one machine in two media (Lon 2026-09-23, R-1218/1230)."""
     out = {}
     # ⭐ A TRACE PER ENTRY AND MODE (the coo 2026-10-09, the cfo's ask for the rank-0 row gc-rt-c-c-to-bb-...): rt_c2bb_hit appends every
@@ -1894,7 +1894,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
         if _trd:
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m3.trace" % Path(sno_path).stem)
         _t0 = time.monotonic()
-        out["m3"] = run_m3(paths, sno_path, expected_text, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+        out["m3"] = run_m3(paths, sno_path, expected_text, run_cwd=run_cwd, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
         out["m3"].secs = time.monotonic() - _t0
     if "m4" in modes:
         _gap("m4")
@@ -1902,7 +1902,7 @@ def run_all_modes(paths, sno_path, expected_text, tmp_root, modes, stdin_text=No
             os.environ["SCRIP_C2BB_TRACE"] = os.path.join(_trd, "%s.m4.trace" % Path(sno_path).stem)
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             _t0 = time.monotonic()
-            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
+            out["m4"] = run_m4(paths, sno_path, expected_text, Path(td), run_cwd=run_cwd, stdin_text=stdin_text, want_rc=want_rc, timeout=timeout, prog_argv=prog_argv, mask=mask, bin_dir=bin_dir, heap_kb=heap_kb, stack_kb=stack_kb, compile_args=compile_args, out_files=out_files, merge_stderr=merge_stderr, ws_blind=ws_blind, answer_file=answer_file)
             out["m4"].secs = time.monotonic() - _t0
     if _trd:
         os.environ.pop("SCRIP_C2BB_TRACE", None)
@@ -2771,7 +2771,8 @@ def run_suite_entry(paths, entry, tmp_root, modes, ext=".sno", companion_dir=Non
         cand, expected = stage_entry(entry, td, ext, companion_dir)
         _ex = getattr(entry, 'expect', None)
         _want = _ex.rc if (_ex is not None and _ex.ending == "EXIT" and _ex.rc is not None) else getattr(entry, 'want_rc', 0)
-        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin,
+        _rc_dir = (Path(companion_dir) / entry.cwd) if (getattr(entry, "cwd", None) and companion_dir is not None) else None
+        _v = run_all_modes(paths, cand, expected, Path(td), modes, stdin_text=entry.stdin, run_cwd=_rc_dir,
                              want_rc=_want, prog_argv=getattr(entry, 'argv', None),
                              mask=getattr(entry, 'mask', None),
                              where=entry.name, bin_dir=Path(td), heap_kb=getattr(entry, 'heap_kb', None), stack_kb=getattr(entry, 'stack_kb', None), timeout=(None if ("TIMEOUT" in os.environ or not getattr(entry, 'timeout_s', None)) else entry.timeout_s),
@@ -2848,7 +2849,7 @@ def batch_m3_verdicts(paths, entries, tmp_root, ext, companion_dir):
     outd.mkdir()
     rows, meta = [], {}
     for i, e in enumerate(entries):
-        if not _batch_m3_eligible(e, paths):
+        if not _batch_m3_eligible(e, paths) or getattr(e, 'grader', None) or getattr(e, 'cwd', None):
             continue
         with tempfile.TemporaryDirectory(dir=tmp_root) as td:
             cand, expected = stage_entry(e, td, ext, companion_dir)
@@ -3672,6 +3673,42 @@ def _pkg_ipath_for(args):
             os.environ["IPATH"] = os.pathsep.join(x for x in (str((cf.parent / f[1]).resolve()), os.environ.get("IPATH", "")) if x)
 
 
+def _swi_cases_grade(e, m, v, container_dir):
+    """THE CASES ROAD (CIO-15 (a) and (b); the baton suite-harness-grader-attribute-swi-cases): an entry whose ALL.csv grader is swi-cases
+    is graded PER CASE. Its run's stdout is the plunit shim's per-case lines; util_swi_match.py grades every case the oracle's ref names
+    against swipl's verdict, by unit:test and occurrence order, with the origin source for the declared heads. The entry's own
+    stdout-equality verdict is discarded: the ref is a verdict list, not a transcript. Returns the entry's verdict (FAIL when a case
+    misses, crashes or hangs) and one progress row per case; a case's word is PASS, FAIL, UNGRADED, CRASH or HANG."""
+    with tempfile.TemporaryDirectory(prefix="swicases_") as _td:
+        _ref = Path(_td) / "ref"
+        _act = Path(_td) / "act"
+        _ref.write_text("\n".join(e.ref) + "\n", encoding="utf-8")
+        _act.write_bytes(v.stdout or b"")
+        _src = Path(container_dir) / (e.name + ".pl")
+        _rc = int(v.returncode or 0)
+        _p = subprocess.run([sys.executable, "-I", str(HARNESS_SCRIPTS / "util_swi_match.py"), str(_src), str(_ref), str(_act), str(_rc)],
+                            capture_output=True, text=True)
+    if _p.returncode != 0:
+        refuse(f"{e.name} ({m}): util_swi_match.py refused rc={_p.returncode}: {(_p.stderr or _p.stdout).strip()[:300]}")
+    rows, summary = [], None
+    for ln in _p.stdout.splitlines():
+        if ln.startswith("MATCH "):
+            summary = dict(kv.split("=", 1) for kv in ln.split()[1:])
+            continue
+        f = ln.split("\t")
+        if len(f) >= 2 and f[1] in ("PASS", "FAIL", "UNGRADED", "CRASH", "HANG"):
+            rows.append((f"{e.name}.pl:{f[0]}", m, f[1], 0, f"case of {e.name}.pl"))
+    if summary is None:
+        refuse(f"{e.name} ({m}): util_swi_match.py printed no MATCH summary line")
+    _bad = int(summary["miss"]) + int(summary["crash"]) + int(summary["hang"])
+    _ung = int(summary["ungraded"])
+    print(f"SWI_CASES {e.name} cases={summary['declared']} hit={summary['hit']} miss={_bad} ungraded={_ung} mode={m}")
+    nv = Verdict("FAIL" if _bad else "PASS", v.stdout, v.stderr, v.returncode,
+                 detail=f"swi-cases: {summary['hit']} of {summary['declared']} cases agree with swipl; {_bad} miss, {_ung} ungraded")
+    nv.secs = getattr(v, "secs", 0.0) or 0.0
+    return nv, rows
+
+
 def cmd_run(args):
     paths = resolve_paths()
     _pkg_ipath_for(args)
@@ -4090,10 +4127,15 @@ def cmd_run(args):
                     verdicts[m] = Verdict("PASS", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal") if _refused else \
                         Verdict("FAIL", _v.stdout, _v.stderr, _v.returncode, detail="expected-refusal-not-refused-with-the-standard-diagnostic")
                     verdicts[m].secs = _v.secs
+            _cases_entry = getattr(e, "grader", None) == "swi-cases"
             for m in modes:
+                if _cases_entry:
+                    verdicts[m], _crows = _swi_cases_grade(e, m, verdicts[m], Path(args.sno).parent)
+                    _progress_rows.extend(_crows)
                 kind = verdicts[m].kind
                 # ⭐ secs: the program's own wall in this mode (R-1676 row (c)) -- util_suite_partition.py build --secs sizes chunks by it
-                _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, _entry_note(e.xfail, verdicts[m], shard_tag)))
+                if not _cases_entry:
+                    _progress_rows.append((e.name, m, kind, getattr(verdicts[m], "secs", 0) or 0, _entry_note(e.xfail, verdicts[m], shard_tag)))
                 if kind == _OOMK:
                     oom_named.append((e.name, m, verdicts[m], e.xfail))
                 ck = "FAIL" if kind == _OOMK else ("CRASH" if kind == "ABORT" else kind)   # the board line's fail keeps an OOM (see _OOMK above); its crash column keeps an ABORT (SIGABRT), whose progress row says ABORT
@@ -5355,7 +5397,7 @@ def read_command_line_columns(src_path, entries, modes=None):
     import csv as _csvm
     with open(csv_path, newline="") as f:
         rdr = _csvm.DictReader(f)
-        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s") if rdr.fieldnames and c in rdr.fieldnames]
+        cols = [c for c in ("compile_args", "run_args", "out_files", "stderr", "mode_gap_s", "grader", "cwd") if rdr.fieldnames and c in rdr.fieldnames]
         if not cols:
             return
         rows = [(n, r) for n, r in enumerate(rdr, 2)]
@@ -5390,6 +5432,16 @@ def read_command_line_columns(src_path, entries, modes=None):
             e.stage_upstream = True
         if validate_answer_cell(row.get("answer"), where):
             e.answer_file = "temp"
+        _gr = (row.get("grader") or "").strip()
+        if _gr:
+            if _gr not in ("swi-cases", "logtalk-cases", "text"):
+                refuse(f"{where}: grader {_gr!r} is not swi-cases, logtalk-cases or text (or empty)")
+            e.grader = _gr
+        _cw = (row.get("cwd") or "").strip()
+        if _cw:
+            if _cw.startswith("/") or ".." in _cw.split("/"):
+                refuse(f"{where}: cwd {_cw!r} must be a directory beside the container (relative, no ..)")
+            e.cwd = _cw
         _gap = (row.get("mode_gap_s") or "").strip()
         if _gap:
             if not _gap.isdigit():
@@ -5755,7 +5807,7 @@ def cmd_partition(args):
 # not a verdict); a table with feature columns but no suite file beside them is PRINTED as not runnable, never silently
 # skipped. An xfail entry and an entry on the sibling ALL.outside.tsv are excluded from the run and named as excluded.
 _SMOKE_ATTRIBUTE_COLUMNS = frozenset(("rank", "entry", "origin", "family", "kind", "xfail", "n_lines", "package", "stdin",
-                                      "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr"))
+                                      "want_rc", "heap_kb", "stack_kb", "compile_args", "run_args", "out_files", "stderr", "grader", "cwd"))
 
 
 def smoke_tables(corpus_root):
