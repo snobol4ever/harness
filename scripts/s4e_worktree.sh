@@ -15,7 +15,7 @@
 # cap (4096 MB by default; --cap-mb names another): over the cap new rolls back and refuses. A build that does not fetch keeps the worktree, so a
 # seat can run make in it, and refuses rc 1.
 # THE CAP (the cio 2026-11-05 17:4x; changed by the coo's COO-476 on 2026-11-06, row fleet-the-worktree-cap-counts-dead-wt-dirs): new refuses rc 2
-# when WT_MAX worktrees that the cap counts already stand under /tmp/s4e/<seat>/ (WT_MAX defaults to 32 since 2026-11-07 14:1x: fourteen live seats, each with one or two worktrees, filled 16 inside an hour of the climb and blocked the cao, worker_06 and worker_08 while /tmp held 37 GB free; the environment may name another). A
+# when WT_MAX worktrees that the cap counts already stand under /tmp/s4e/<seat>/ (WT_MAX defaults to 40 since 2026-11-09 03:0x, CIO-17: twenty juniors, each needing one, and dead worktrees the sweep could not reclaim held the 32; before that 32 since 2026-11-07 14:1x: fourteen live seats, each with one or two worktrees, filled 16 inside an hour of the climb and blocked the cao, worker_06 and worker_08 while /tmp held 37 GB free; the environment may name another). A
 # wt-* directory is COUNTED only when its .s4e-worktree marker names a seat of .github/TIERS.tsv; every other wt-* directory (hand-made, dead, or of a
 # seat no longer in the table) is listed in the refusal and never counted, so it holds no slot. --probe proves the count on a scratch TOP.
 # THE BATON (the cio, same day): --row <topic> writes one line WORKTREE: <path> into /home/resources/postoffice/tasks/<topic>.task.md, before the first
@@ -32,7 +32,7 @@ set -u
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 REPOS="SCRIP harness corpus .github"
 CAP_MB=4096
-WT_MAX="${WT_MAX:-32}"
+WT_MAX="${WT_MAX:-40}"
 TIERS_TSV="$ROOT/.github/TIERS.tsv"
 TOP="${S4E_WT_TOP:-/tmp/s4e}"
 PO="${S4E_POSTOFFICE:-/home/resources/postoffice}"
