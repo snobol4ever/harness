@@ -264,6 +264,8 @@ def read_contract(pkg_dir):
             out["stderr"] = "merged"
         elif f[0] == "units" and f[1] == "ref-beside":
             out["units"] = "ref-beside"
+        elif f[0] == "units" and f[1] == "plunit":
+            out["units"] = "plunit"
         elif f[0] == "dialect" and f[1] == "any-fpc-mode":
             out["dialect"] = "any-fpc-mode"
         elif f[0] == "oracle" and f[1] == "xsb-gentest":
@@ -287,7 +289,7 @@ def read_contract(pkg_dir):
         elif f[0] == "unmarked_compile_args" and f[1].startswith("--dialect="):
             out["unmarked_compile_args"] = f[1].strip()
         else:
-            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, dialect=any-fpc-mode, "
+            h.refuse(f"{cf}:{n}: contract {f[0]!r}={f[1]!r} -- this builder admits stderr=merged, units=ref-beside, units=plunit, dialect=any-fpc-mode, "
                      f"oracle=xsb-gentest, oracle=unicon, upstream=<absolute dir>, compare=ignore-all-space and unmarked_compile_args=--dialect=NAME only")
     if out["oracle"] == "xsb-gentest" and not (out["upstream"] and Path(out["upstream"]).is_dir()):
         h.refuse(f"{cf}: oracle=xsb-gentest needs upstream=<the upstream test tree> naming a directory (got {out['upstream']!r})")
@@ -340,6 +342,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     if merged:
         print("contract: stderr merged (CONTRACT.tsv) -- every ref is cut from stdout and stderr as one stream", file=sys.stderr)
     ref_beside = contract["units"] == "ref-beside"
+    plunit = contract["units"] == "plunit"
     xsb = contract["oracle"] == "xsb-gentest"
     xsb_bin, xsb_runs, xsb_owed, xsbold = None, {}, set(), []
     staged = read_staged(pkg_dir)
@@ -371,14 +374,28 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         print(f"contract: oracle unicon (CONTRACT.tsv) -- {len(uni_excl)} programs held out by EXCLUDED.tsv with their class and reason", file=sys.stderr)
     if ref_beside:
         print("contract: units ref-beside (CONTRACT.tsv) -- a source is a unit only with its <stem>.ref beside it", file=sys.stderr)
+    if plunit:
+        print("contract: units plunit (CONTRACT.tsv) -- every .pl under the package; a file with begin_tests and a <stem>.ref beside it is one entry "
+              "(corpus/tests/prolog/plunit.pl + file + run_tests wrapper, the ref read verbatim); CIO-15 (c)", file=sys.stderr)
     # ⭐ ONE LEVEL OF SUBDIRS, MATCHING THE TASK'S OWN DONE-WHEN EXACTLY (`find "$d" -maxdepth 2 ...`,
     # seat15 2026-09-04, measured on corpus/packages/prolog/gnu_prolog: all 62 shipped .pl files sit one
     # level down, in BipsPl/ and Pl2Wam/, zero directly in gnu_prolog/ itself -- a bare `pkg_dir.glob`
     # found nothing and would have REFUSED a real, non-empty package). Matching DONE-WHEN's own depth is
     # what keeps "shipped" meaning the same count in both places; going deeper (rglob) would not (checked:
     # gnu_prolog has no depth-3 files, so this and unrestricted recursion agree here, but won't in general).
-    srcs = sorted(p for p in list(pkg_dir.glob(f"*{ext}")) + list(pkg_dir.glob(f"*/*{ext}"))
-                  if not p.stem.startswith(out_prefix) and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
+    def _name_of(s):
+        if plunit:
+            return s.relative_to(pkg_dir).with_suffix("").as_posix()
+        return f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem
+    if plunit:
+        _ctn = pkg_dir / "CONTAINERS.tsv"
+        _cont = {_ln.split("\t")[0] for _ln in (_ctn.read_text().splitlines() if _ctn.is_file() else []) if _ln.strip() and not _ln.startswith("#")}
+        srcs = sorted(p for p in pkg_dir.rglob(f"*{ext}")
+                      if not p.stem.startswith(out_prefix) and p.relative_to(pkg_dir).as_posix() not in _cont
+                      and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
+    else:
+        srcs = sorted(p for p in list(pkg_dir.glob(f"*{ext}")) + list(pkg_dir.glob(f"*/*{ext}"))
+                      if not p.stem.startswith(out_prefix) and not any(str(p.relative_to(pkg_dir)).startswith(d + "/") for d in contract["not_shipped"].split()))
     if not srcs:
         h.refuse(f"no {ext} files under {pkg_dir} (direct or one level down)")
     all_srcs = srcs
@@ -396,7 +413,26 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         # give both entries the identical name/origin ("aa"/"csnobol4_suite__aa"), which is exactly the
         # kind of collision THE RUNGS SUITE's CSV manifest exists to make queryable by name; a name that
         # means two different things defeats that).
-        name = f"{src.parent.name}/{src.stem}" if src.parent != pkg_dir else src.stem
+        name = _name_of(src)
+        if plunit:
+            # ⭐ CIO-15 (c), the SWI container (the cio 2026-11-09): one entry per plunit file. Its program is the shim, then the file, then the
+            # run_tests wrapper (the three-file run the deleted grader made, CONTAINER-SHAPED); its ref is the beside .ref read verbatim, the
+            # oracle's per-case verdicts, never cut here. No oracle runs, so --twice has nothing to re-run.
+            _ptext = src.read_text(encoding="utf-8", errors="replace")
+            if not re.search(r"^[ \t]*:-[ \t]*begin_tests\(", _ptext, re.M):
+                excluded.append((name, "no plunit unit: not a case file"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no plunit unit)", file=sys.stderr)
+                continue
+            if not src.with_suffix(".ref").is_file():
+                excluded.append((name, f"no {src.stem}.ref beside it: the oracle's verdicts were not cut (util_swi_cut_refs.sh)"))
+                print(f"[{i}/{len(srcs)}] {name}: EXCLUDED (no .ref beside it)", file=sys.stderr)
+                continue
+            _shim = (paths["corpus"] / "tests" / "prolog" / "plunit.pl").read_text(encoding="utf-8")
+            _prog = _shim.rstrip("\n") + "\n" + _ptext.rstrip("\n") + "\n" + "main :- run_tests.\n:- initialization(main).\n"
+            _ref = src.with_suffix(".ref").read_text(encoding="utf-8", errors="replace").splitlines()
+            entries.append(h.Entry("block", len(entries) + 1, name, _prog.splitlines(), _ref, stdin=None, want_rc=0))
+            print(f"[{i}/{len(srcs)}] {name}: ABSORBED (plunit, {len(_ref)} verdict lines)", file=sys.stderr)
+            continue
         if name in uni_excl:
             excluded.append((name, f"EXCLUDED.tsv {uni_excl[name][0]}: {uni_excl[name][1]}"))
             print(f"[{i}/{len(srcs)}] {name}: EXCLUDED ({uni_excl[name][0]}, EXCLUDED.tsv)", file=sys.stderr)
@@ -753,6 +789,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
         return "+".join(toks)
     _cm_col = ["compare"] if any(_cm_val(e) for e in entries) else []   # derived from CONTRACT.tsv and the refs, every build (R-1927)
     _sg_col = ["stage", "answer"] if staged else []   # derived from STAGED.tsv, every build (R-1927)
+    _gr_col = ["grader", "cwd"] if plunit else []   # CIO-15 (c): swi-cases for every entry; cwd is the entry directory (. at the top)
     # ⛔⭐ A ROW THE BOARD LOOKS UP IS NOT THE BUILDER'S TO DROP (the coo 2026-10-01, measured on jcon_tests): this table is ALSO the
     # settings table the package's own runner reads each unit's heap_kb/stack_kb/compile_args from (RULES.md 8 (f); f8282e09c added
     # 657 such rows), and a unit this build does not absorb -- a library graded through its driver, a program whose oracle output
@@ -760,7 +797,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     # lgint, link1, link2, load1, load2, loadfunc, proto, toby, traceback, tracing), and the board would have graded those at the
     # runtime's defaults. So every old row whose unit is still SHIPPED and not absorbed now is carried forward as a settings row:
     # its declarations kept, its feature cells blank (it has no block, so it marks no feature for the area smoke).
-    _shipped_names = {f"{src.parent.name}/{src.stem}" if src.parent != pkg_dir else src.stem for src in srcs}
+    _shipped_names = {_name_of(src) for src in srcs}
     _absorbed_names = {e.name for e in entries}
     _carried = []
     _gap_col = []
@@ -787,19 +824,19 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
                     _old_gap[_row.get("entry")] = _g
     with open(out_csv, "w", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gap_col + [c for c, _fn in cols])
+        w.writerow(["rank", "entry", "origin", "package", "n_lines", "stdin", "want_rc", "heap_kb", "stack_kb"] + _cmd_cols + _of_col + _se_col + _cm_col + _sg_col + _gr_col + _gap_col + [c for c, _fn in cols])
         for e in entries:
             joined = "\n".join(e.sno_lines)
             flags_row = m.attrs_for_text(joined, table_lang)
             w.writerow([e.seq, e.name, f"{pkg_dir.name}__{e.name}", pkg_dir.name, len(e.sno_lines),
-                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
+                        1 if e.stdin else 0, e.want_rc, _old_heap.get(e.name, m.DEFAULT_HEAP_KB), _old_stack.get(e.name, m.DEFAULT_STACK_KB)] + [_old_cmd.get(e.name, {}).get(c, "") or (contract["unmarked_compile_args"] if c == "compile_args" and contract["unmarked_compile_args"] and not icn_marked("\n".join(e.sno_lines)) else "") for c in _cmd_cols] + [" ".join(getattr(e, "out_files", None) or []) for c in _of_col] + ["merged" for c in _se_col] + [_cm_val(e) for c in _cm_col] + ((["upstream", "" if staged[e.name] == "stdout" else staged[e.name]] if e.name in staged else ["", ""]) if _sg_col else []) + ((["swi-cases", e.name.rsplit("/", 1)[0] if "/" in e.name else "."]) if _gr_col else []) + [_old_gap.get(e.name, "") for c in _gap_col] + [flags_row[c] for c, _fn in cols])
         _rank = max([e.seq for e in entries] or [0])
         for _row in sorted(_carried, key=lambda r: r.get("entry") or ""):
             _rank += 1
             w.writerow([_rank, _row.get("entry"), _row.get("origin") or f"{pkg_dir.name}__{_row.get('entry')}", _row.get("package") or pkg_dir.name,
                         _row.get("n_lines") or "", _row.get("stdin") or "0", _row.get("want_rc") or "0",
                         (_row.get("heap_kb") or "").strip() or m.DEFAULT_HEAP_KB, (_row.get("stack_kb") or "").strip() or m.DEFAULT_STACK_KB] + [(_row.get(c) or "").strip() for c in _cmd_cols]
-                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + [(_row.get(c) or "").strip() for c in _gap_col] + ["" for c, _fn in cols])
+                       + ["" for c in _of_col] + ["" for c in _se_col] + ["" for c in _cm_col] + ["" for c in _sg_col] + ["" for c in _gr_col] + [(_row.get(c) or "").strip() for c in _gap_col] + ["" for c, _fn in cols])
     if _carried:
         print("    settings rows: %d unit(s) still shipped and not absorbed by this build carried forward, declarations kept, no block: %s"
               % (len(_carried), ", ".join(sorted(r.get("entry") or "" for r in _carried))), file=sys.stderr)
@@ -821,7 +858,7 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None):
     # masks are written there by hand); with no sidecar at all ALL.mask is not touched.
     out_mask = pkg_dir / f"{out_prefix}.mask"
     _mask_rows = []
-    _src_of = {f"{src.parent.name}/{src.stem}" if src.parent != pkg_dir else src.stem: src for src in srcs}
+    _src_of = {_name_of(src): src for src in srcs}
     for e in entries:
         _mp = _src_of[e.name].with_suffix(".mask") if e.name in _src_of else None
         if _mp is None or not _mp.is_file():
