@@ -489,17 +489,18 @@ def main():
         refuse("--source is empty")
 
     oracle_argv = ORACLE["unicon" if getattr(args, "oracle", None) == "unicon" else lang]
+    if lang == "snocone" and not args.oracle_twin:
+        # ⭐ THE ORACLE ROAD WITH NO TWIN (the coo 2026-11-10, the snocone folder; skill snobol4 section 1: "Snocone: scrip --transpile prog.sc
+        # gives portable SNOBOL4 that runs on sbl -bf first; its output is the ref", the road rebus takes above and the builder takes, CIO-58):
+        # snocone_oracle_run.sh transpiles in a private tmpdir and SPITBOL runs the text, twice, compared as every other language is.
+        oracle_argv = [str(HERE / "snocone_oracle_run.sh")]
     if not Path(oracle_argv[0]).is_file():
         refuse("shared oracle missing at %s -- fix the shared tree, never fall back to PATH" % oracle_argv[0])
     # ⛔ WHICH FILE THE ORACLE READS IS A PER-LANGUAGE FACT, not a caller preference. snocone MUST cut from a
     # twin (its oracle cannot parse .sc at all); every other language MUST cut from the witness itself, and
     # accepting a twin there would silently let a caller grade one program while landing another.
     twin_path = Path(args.oracle_twin) if args.oracle_twin else None
-    if lang == "snocone":
-        if twin_path is None:
-            refuse("--lang snocone requires --oracle-twin: SPITBOL cannot parse a .sc source, so there is no "
-                   "way to cut this witness's ref from the witness itself (see SNOCONE SUPPORT above)")
-    elif twin_path is not None:
+    if lang != "snocone" and twin_path is not None:
         refuse("--oracle-twin is only for --lang snocone; %s's oracle reads the witness itself, and cutting "
                "the ref from a second file would grade a different program than the one landed" % lang)
     if twin_path is not None:

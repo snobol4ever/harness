@@ -16,9 +16,13 @@ set -u
 SCRIP_DIR="$S4E/SCRIP"
 SCRIP="${SCRIP:-$SCRIP_DIR/scrip}"
 CORPUS="${CORPUS:-$S4E/corpus}"
-FR="$CORPUS/tests/snocone/ladder/prog/fn_freturn.sc"
-NR="$CORPUS/tests/snocone/ladder/prog/fn_nreturn.sc"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+# ⭐ THE WITNESSES ARE ENTRIES (the coo 2026-11-10, the snocone folder, CIO-24 c): ladder/prog left the folder and each program is the entry
+# ladder_prog__<name> of the snocone master; extracted here to the same bare file name the gate always ran.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_design_witness.sh"
+for _w in fn_freturn fn_nreturn; do design_witness_extract snocone "ladder_prog__$_w" "$TMP/wit" > /dev/null 2>&1 && mv "$TMP/wit/ladder_prog__$_w.sc" "$TMP/$_w.sc"; done
+FR="$TMP/fn_freturn.sc"
+NR="$TMP/fn_nreturn.sc"
 GATE_NAME=snocone-returns-codegen
 . "$SCRIP_DIR/../harness/scripts/lib_gate.sh"   # gate_three_way: absent-line-is-UNPROVEN(2), never this row's fail()
 

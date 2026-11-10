@@ -21,7 +21,7 @@
 # Examples:
 #   bash ../harness/scripts/run_parser_sync_monitor.sh snobol4  harness/fixtures/parser_snobol4/include_once_and_copy.sno
 #   bash ../harness/scripts/run_parser_sync_monitor.sh rebus    corpus/tests/rebus/parser_paren.reb
-#   bash ../harness/scripts/run_parser_sync_monitor.sh snocone  corpus/tests/snocone/test_capture_call.sc
+#   bash ../harness/scripts/run_parser_sync_monitor.sh snocone  prog.sc   (e.g. the entry probe_loose__test_capture_call, corpus_suite_harness.py extract)
 #   bash ../harness/scripts/run_parser_sync_monitor.sh icon     harness/fixtures/parser_icon/fail_stmt.icn
 #   bash ../harness/scripts/run_parser_sync_monitor.sh raku     corpus/tests/raku/parser/str_chars.raku
 #   bash ../harness/scripts/run_parser_sync_monitor.sh prolog   corpus/tests/prolog/rung01_hello_hello.pl

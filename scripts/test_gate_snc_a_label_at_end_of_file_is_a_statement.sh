@@ -19,7 +19,7 @@
 # productions raises 37 shift/reduce -- the replacement is the conflict-free form and the addition is not.
 #
 # ⛔ THIS GATE CUTS NO REF AND TYPES NO EXPECTED OUTPUT, ON PURPOSE. Snocone has no rival implementation to cut
-# one from (corpus/tests/snocone/PROVENANCE.md), and an authored ref here would be this seat grading its own
+# one from (the oracle road for Snocone is scrip --transpile then sbl -bf, skill snobol4 section 1), and an authored ref here would be this seat grading its own
 # opinion. Instead every arm is a TWIN DIFF against the spelling the compiler ALREADY accepted: "fin:" must behave
 # byte-for-byte and rc-for-rc like "fin: ;". The control is the construct, not a number.
 #
