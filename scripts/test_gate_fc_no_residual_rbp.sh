@@ -87,13 +87,23 @@ FC_BASELINE=${FC_BASELINE:-0}
 # reported loudly every run.  A program may leave a list only by being fixed; anything arriving in a
 # list that is not already named here FAILS the gate.
 KNOWN_TIMEOUT="beauty.sno"
-KNOWN_NOCODE="f13_eval_code.sno"
+KNOWN_NOCODE="feat_f13_eval_code.sno"
 [ -x "$SCRIP" ] || { echo "GATE FAIL: no $SCRIP (run: make scrip)"; exit 2; }
-export SNO_LIB="$CORPUS/beauty_suite:$S4E/corpus/include:$S4E/corpus/library${SNO_LIB:+:$SNO_LIB}"
+export SNO_LIB="$S4E/corpus/include:$S4E/corpus/library${SNO_LIB:+:$SNO_LIB}"
 tmp=$(mktemp) || exit 2
-trap 'rm -f "$tmp" "$tmp.f"' EXIT
+wd=$(mktemp -d) || exit 2
+trap 'rm -rf "$tmp" "$tmp.f" "$wd"' EXIT
+MASTER_SNO="$CORPUS/ALL.sno"; MASTER_REF="$CORPUS/ALL.ref"; MASTER_CSV="$CORPUS/ALL.csv"
+[ -f "$MASTER_SNO" ] && [ -f "$MASTER_REF" ] && [ -f "$MASTER_CSV" ] || { echo "REFUSE(2): the master $CORPUS/ALL.{sno,ref,csv} is missing"; exit 2; }
+# the population is the master's: the rows of ALL.csv whose family cell starts with feat or demo, each extracted by origin to scratch
+pop=$(python3 -I -c 'import csv,sys
+for r in csv.DictReader(open(sys.argv[1])):
+    if r["family"].startswith(("feat","demo")): print(r["origin"])' "$MASTER_CSV" | sort -u)
 n=0
-while IFS= read -r f; do
+while IFS= read -r o; do
+  [ -n "$o" ] || continue
+  f="$wd/$o.sno"
+  python3 -I "$S4E/harness/scripts/corpus_suite_harness.py" extract "$MASTER_SNO" "$MASTER_REF" --origin "$o" "$f" --out-ref "$wd/$o.ref" --out-in "$wd/$o.in" >/dev/null 2>&1 && [ -s "$f" ] || { echo "REFUSE(2): cannot extract origin $o from the master"; exit 2; }
   n=$((n+1))
   err=$(SCRIP_FC_AUDIT=1 timeout -k 5 "$FC_TIMEOUT" "$SCRIP" --compile "$f" 2>&1 >/dev/null); rc=$?
   m=$(printf '%s' "$err" | grep -c '\[FC-MISS\]')
@@ -103,7 +113,8 @@ while IFS= read -r f; do
   else                       cls=OK
   fi
   printf '%s\t%s\t%s\n' "$cls" "$m" "$(basename "$f")" >> "$tmp"
-done < <(find "$CORPUS/demos" "$CORPUS/feat" -name '*.sno' 2>/dev/null | sort)
+done < <(printf '%s\n' "$pop")
+[ "$n" -gt 0 ] || { echo "REFUSE(2): scanned 0 program(s): no family feat* or demo* row in $MASTER_CSV (an empty population is could-not-measure, never green)"; exit 2; }
 ok_n=$(awk -F'\t' '$1=="OK"{c++} END{print c+0}' "$tmp")
 ok_m=$(awk -F'\t' '$1=="OK"{s+=$2} END{print s+0}' "$tmp")
 fail=0
