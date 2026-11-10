@@ -2,7 +2,7 @@
 # stale-binary preflight (row test-gate-scripts-that-grade-scrip-refuse-on-a-stale-binary-census-widened, hq_T 2026-09-05)
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # ../harness/scripts/test_gate_sn7_beauty_self_host.sh — SN-7 gate:
-# every *_driver.sno in corpus/tests/snobol4/beauty_suite/, under BOTH
+# every beauty driver entry of corpus/tests/snobol4/ALL.sno (origin beauty_suite_<NAME>_driver, read by origin: there is no folder), under BOTH
 # real modes (--run = m3 BINARY, --compile = m4 TEXT),
 # diff=0 vs its pre-baked .ref file (SPITBOL ground truth where valid; some
 # drivers have .ref files that reflect correct behavior SPITBOL itself fails
@@ -33,20 +33,32 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 SCRIP_ROOT="$(cd "$(dirname "$SCRIP")" && pwd)"
 CORPUS="${CORPUS:-$S4E/corpus}"
-BEAUTY="$CORPUS/tests/snobol4/beauty_suite"
 TIMEOUT="${TIMEOUT:-30}"
 
 if [ ! -x "$SCRIP" ]; then
     echo "GATE UNPROVEN(2) [sn7_beauty_self_host]: scrip not built at $SCRIP -- NOT a pass, the self-host was never attempted"
     exit 2
 fi
-if [ ! -d "$BEAUTY" ]; then
-    echo "GATE UNPROVEN(2) [sn7_beauty_self_host]: corpus not populated at $CORPUS -- NOT a pass, zero programs were compared"
-    exit 2
-fi
-
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+
+# THE DRIVERS ARE READ FROM THE MASTER, NOT FROM A FOLDER (the cleanup of corpus/tests/snobol4, CIO-38, 2026-11-10): the beauty_suite
+# folder was flattened on 2026-08-29; its seventeen *_driver programs are entries of corpus/tests/snobol4/ALL.sno, named by origin
+# beauty_suite_<NAME>_driver__<NAME>_driver in ALL.csv. Each is materialized into $BEAUTY with its ref by the one extraction authority
+# (corpus_suite_harness.py extract); the .inc files they include resolve through $CORPUS/include (SNO_LIB below).
+BEAUTY="$WORK/beauty"
+mkdir -p "$BEAUTY"
+ORIGINS="$(awk -F, 'NR>1 && $3 ~ /^beauty_suite_.*_driver__/ {print $3}' "$CORPUS/tests/snobol4/ALL.csv")"
+WANT=$(printf '%s\n' "$ORIGINS" | grep -c .)
+for o in $ORIGINS; do
+    n=${o#beauty_suite_}; n=${n%%__*}
+    python3 "$HERE/corpus_suite_harness.py" extract "$CORPUS/tests/snobol4/ALL.sno" "$CORPUS/tests/snobol4/ALL.ref" --origin "$o" "$BEAUTY/$n.sno" --out-ref "$BEAUTY/$n.ref" > /dev/null 2>&1
+done
+HAVE=$(ls "$BEAUTY"/*_driver.sno 2>/dev/null | wc -l)
+if [ "$WANT" -eq 0 ] || [ "$HAVE" -ne "$WANT" ]; then
+    echo "GATE UNPROVEN(2) [sn7_beauty_self_host]: $HAVE of $WANT beauty drivers materialized from $CORPUS/tests/snobol4/ALL.csv -- NOT a pass, the population is short"
+    exit 2
+fi
 
 PASS=0
 FAIL=0
@@ -62,7 +74,7 @@ for sno in "$BEAUTY"/*_driver.sno; do
     ref="$BEAUTY/${name}.ref"
     [ ! -f "$ref" ] && continue
 
-    got=$(SNO_LIB="$BEAUTY" timeout -k 5 "$TIMEOUT" "$SCRIP" --run "$sno" < /dev/null 2>/dev/null || true)
+    got=$(SNO_LIB="$BEAUTY:$CORPUS/include" timeout -k 5 "$TIMEOUT" "$SCRIP" --run "$sno" < /dev/null 2>/dev/null || true)
     if diff <(printf '%s\n' "$got") "$ref" > /dev/null 2>&1; then
         PASS=$((PASS + 1))
     else
@@ -71,9 +83,9 @@ for sno in "$BEAUTY"/*_driver.sno; do
     fi
 
     m4ok=0
-    if SNO_LIB="$BEAUTY" timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$sno" < /dev/null > "$WORK/$name.s" 2>/dev/null && [ -s "$WORK/$name.s" ]; then
+    if SNO_LIB="$BEAUTY:$CORPUS/include" timeout -k 5 "$TIMEOUT" "$SCRIP" --compile "$sno" < /dev/null > "$WORK/$name.s" 2>/dev/null && [ -s "$WORK/$name.s" ]; then
         if gcc -no-pie "$WORK/$name.s" -L"$SCRIP_ROOT/out" -lscrip_rt -lm -Wl,-rpath,"$SCRIP_ROOT/out" -o "$WORK/$name.bin" 2>/dev/null; then
-            got4=$(cd "$BEAUTY" && SNO_LIB="$BEAUTY" timeout -k 5 "$TIMEOUT" "$WORK/$name.bin" < /dev/null 2>/dev/null || true)
+            got4=$(cd "$BEAUTY" && SNO_LIB="$BEAUTY:$CORPUS/include" timeout -k 5 "$TIMEOUT" "$WORK/$name.bin" < /dev/null 2>/dev/null || true)
             if diff <(printf '%s\n' "$got4") "$ref" > /dev/null 2>&1; then
                 m4ok=1
             fi

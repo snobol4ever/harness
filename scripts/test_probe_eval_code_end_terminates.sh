@@ -5,10 +5,10 @@
 # whole program from inside its own flow, rather than transferring back to a label in the enclosing
 # program) SIGSEGVs -- confirmed 2026-08-29 to crash in BOTH modes (rc=139), not "m4 only" as the
 # original 2026-08-22 brief recorded -- the bug's own signature has drifted since it was minted.
-# Live-oracle-verified correct behaviour (corpus/tests/snobol4/probe/eval.ref, entries 20-21): print
+# Live-oracle-verified correct behaviour (corpus/tests/snobol4/ALL.ref, origins probe_eval__ev_code_end_terminates and probe_eval__ev_code_end_label_ctl): print
 # exactly "before" then "in fragment", then terminate CLEANLY (rc=0) -- nothing more, no crash.
 #
-# Witnesses (both currently XFAIL entries 20/21 of corpus/tests/snobol4/probe/eval.sno):
+# Witnesses (both entries of corpus/tests/snobol4/ALL.sno, origins probe_eval__ev_code_end_terminates and probe_eval__ev_code_end_label_ctl):
 #   ev_code_end_terminates  -- fragment entered via the direct code-object goto `:<C>`
 #   ev_code_end_label_ctl   -- fragment entered via an ORDINARY label goto `:(INSIDE)` instead --
 #                              proves the direct-goto grammar is not itself in the picture; the shared

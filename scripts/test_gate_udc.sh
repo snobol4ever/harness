@@ -14,11 +14,10 @@
 # therefore carry the .err_sno extension (repo convention) and no .ref, and are checked stream-by-stream below.
 #
 # ⭐ seat16 2026-08-27: 10 of the 11 witnesses below moved into the shared suite file
-# tests/snobol4/tests/snobol4/probe_loose/cn.sno/.ref (probe-consolidate-m1-and-small) and are read back out one at a time via
+# corpus/tests/snobol4/ALL.sno and ALL.ref, origins probe_cn__<name> (probe-consolidate-m1-and-small; the ten origins are in ALL.csv) and are read back out one at a time via
 # corpus_suite_harness.py's `extract` subcommand -- this gate is now JUST ANOTHER CONSUMER of that shared
 # file, not a second copy of the witness text. `cn_udc_closed` (.err_sno, no .ref, stream-separated
-# checking) does NOT fit the suite's one-.ref-per-entry model and stays a loose file permanently -- see
-# tests/snobol4/probe_loose/cn/KEEP.md. Byte-equal-or-no-delete already proved each moved witness's suite form matches its
+# checking) does NOT fit the suite's one-.ref-per-entry model and stays a loose file permanently (its KEEP.md went with the flattened folder). Byte-equal-or-no-delete already proved each moved witness's suite form matches its
 # original under the DEFAULT arm at conversion time; cn_t1_eval/cn_t2_eval_boundary/cn_t1_scalar_fold were
 # ADDITIONALLY hand-verified (both T1 arms, both media, extracted form vs the pre-move original) before
 # their loose files were deleted, since the harness's own convert step only ever exercises one arm.
@@ -104,7 +103,7 @@ done
 #
 # ⛔ cn_udc_closed stays a LOOSE FILE, permanently -- .err_sno, no .ref, stream-separated m3==m4 checking
 # (no oracle text to diff against at all). Structurally does not fit the suite's one-.ref-per-entry model;
-# see tests/snobol4/probe_loose/cn/KEEP.md. Read directly from $CN, same as before this row.
+# (its KEEP.md went with the flattened folder.) Read directly from $CN, same as before this row.
 w=cn_udc_closed
 "$SCRIP" --compile "$CN/$w.err_sno" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
