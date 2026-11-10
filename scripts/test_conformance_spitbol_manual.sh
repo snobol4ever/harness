@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # test_conformance_spitbol_manual.sh -- row `conformance-sweep-spitbol-manual`.
 #
-# Re-runs every witness under corpus/tests/snobol4/probe_loose/conformance/ (minted by the SPITBOL-manual conformance sweep --
+# not-a-corpus-path: retired dir, named in prose only. Re-runs every witness under corpus/tests/snobol4/probe_loose/conformance/ (minted by the SPITBOL-manual conformance sweep --
 # each witness is sourced from the manual's OWN worked example, v3.7) through test_one_witness.sh (m3 + m4
 # vs the live x64 sbl oracle, -bf) and reports a compact PASS/DIFF table plus a summary line. A DIFF here
-# reproduces an already-filed conformance-sweep queue row (see corpus/tests/snobol4/probe_loose/conformance/*.sno headers /
+# not-a-corpus-path: retired dir, named in prose only. reproduces an already-filed conformance-sweep queue row (see corpus/tests/snobol4/probe_loose/conformance/*.sno headers /
 # the sweep's FINDING for which row owns which witness) -- this script is a fast re-check, not a triage
 # tool: it does not classify NEW divergences, it only tells you whether a KNOWN one is still present.
 #
 # usage: bash ../harness/scripts/test_conformance_spitbol_manual.sh [--quiet]
 set -u
 ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
-D="$ROOT/../corpus/tests/snobol4/probe_loose/conformance"
+D="$ROOT/../corpus/tests/snobol4/probe_loose/conformance"   # not-a-corpus-path: retired dir; the refusal below fires rc 2 by design
 # not-a-corpus-path: tests/snobol4/probe_loose/conformance -- retired directory (deleted by corpus 11a36c87), named here only so the refusal below fires rc 2 by design
 # not-a-corpus-path: tests/snobol4/probe_loose/conformance/ -- the same retired directory in the header comment and the glob form
 QUIET=0; [ "${1:-}" = "--quiet" ] && QUIET=1

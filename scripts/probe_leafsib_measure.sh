@@ -8,7 +8,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"   # D-17 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SIBS="${SIBS:-span tab rtab rem arb bal break breakx arb_flat_red arb_flat_grn bal_flat_red bal_flat_grn}"   # the eight one-per-member siblings, plus the s193 PADDED pairs.  ⛔ RE-MEASURED 2026-08-29 (seat08, pristine, both arms): ALL TWELVE ARE NOW INERT AT HEAD -- the s193 claim that the padded pairs still discriminate the arms (arb_flat_red/bal_flat_red diverging to m4 rc=139 under SCRIP_SPAN_FRAME=0) no longer reproduces; both arms measure 12/12 pass both modes. Not root-caused here (out of this row's lane -- corpus format, not frame codegen); the leafsib README is gone (its twelve siblings are the probe_leafsib rows of ALL.csv); see FINDING-2026-08-29-seat08-leafsib-span-frame-arm-fully-inert.md.
 # ⭐ RE-POINTED 2026-08-29 (seat08, corpus-crosscheck-probe-total-conversion clause 3): corpus/probe/leafsib/
-# is gone -- converted to corpus/tests/snobol4/probe/leafsib.{sno,ref} (corpus-suites-consolidation format,
+# not-a-corpus-path: probe/leafsib.{sno,ref} is gone -- converted to corpus/tests/snobol4/probe/leafsib.{sno,ref} (corpus-suites-consolidation format,
 # byte-equal-validated both directions, both modes, BOTH killswitch arms before the loose files were deleted).
 # Same idiom as test_gate_fz_release.sh's re-point: extract every entry via corpus_suite_harness.py (the ONE
 # parsing authority) into a scratch dir, then use that exactly as the old loose-file P -- the per-sibling loop

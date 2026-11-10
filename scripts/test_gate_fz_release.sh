@@ -31,7 +31,7 @@ RT_DIR="${RT_DIR:-$HERE/../../SCRIP/out}"
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE scrip not built"; exit 2; }
 WORK=$(mktemp -d); trap 'rm -rf "$WORK"' EXIT
 # ⭐ RE-POINTED 2026-08-29 (seat16, corpus-crosscheck-probe-total-conversion clause 3): corpus/probe/fz/
-# is gone -- converted to corpus/tests/snobol4/probe/fz.{sno,ref} (corpus-suites-consolidation format).
+# not-a-corpus-path: probe/fz.{sno,ref} is gone -- converted to corpus/tests/snobol4/probe/fz.{sno,ref} (corpus-suites-consolidation format).
 # Same idiom as util_zsm_beta_skew_census.sh's ptc-grid re-point: extract every entry via
 # corpus_suite_harness.py (the ONE parsing authority) into a scratch dir, then use that as FZ so every
 # LOCK below -- including LOCK 2/4's raw-asm regex analysis, which needs standalone files to feed
