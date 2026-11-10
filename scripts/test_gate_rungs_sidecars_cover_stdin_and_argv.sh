@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
+# format-2: through the census tool, which reads the master through read_suite and fmt2_dir_of
 # ../harness/scripts/test_gate_rungs_sidecars_cover_stdin_and_argv.sh -- EVERY RUNGS ENTRY THAT READS STDIN OR TAKES
 # ARGUMENTS DECLARES THEM IN A SIDECAR, AND THE NUMBER THAT DO NOT ONLY EVER GOES DOWN.
 # AUTHORS: Lon Jones Cherryholmes · Claude Opus 5   DATE: 2026-09-08

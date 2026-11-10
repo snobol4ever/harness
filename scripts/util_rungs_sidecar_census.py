@@ -84,9 +84,13 @@ def read_rungs(tests_dir, lang):
     """Read one rung suite through the harness -- the ONE authority -- or return None if it has no rungs."""
     d = Path(tests_dir) / lang
     sno = d / f"ALL{EXT[lang]}"
+    ref = d / "ALL.ref"
+    # format 2 (CIO-24 f): the folder holds ONE.EXT, ONE.out, MULTI.md and ALL.csv and no ALL.EXT or ALL.ref; read_suite follows the
+    # folder through fmt2_dir_of, so the old command line still names the population and no presence test of ALL.EXT is made.
+    if h.fmt2_dir_of(sno) is not None:
+        return d, sno, h.read_suite(sno, ref)
     if not sno.is_file():
         return None
-    ref = d / "ALL.ref"
     if not ref.is_file():
         refuse(f"{lang}: {sno} exists but {ref} does not -- a suite pair with no refs cannot be censused")
     cfg = h.LANG_CONFIGS.get(lang)
