@@ -5,7 +5,7 @@ fp=d41d8cd9, the md5 of nothing -- "a first-stderr-line census of those programs
 
 For each suite: the progress table's NEWEST mode-3 row per program of that suite key (the table is compacted, not time-ordered, so the
 newest timestamp wins) selects every program whose row is FAIL or CRASH with fp=d41d8cd9. Those entries are cut out of the package's
-container (ALL.<ext> and ALL.ref by their banners, with their ALL.csv and ALL.wantrc rows) into a COPY of the package directory, so the
+container (ALL.<ext> and ALL.ref by their banners, with their ALL.csv and ALL.rc rows) into a COPY of the package directory, so the
 prelude and every companion file stand where the program expects them, and corpus_suite_harness.py grades that mini-container in mode 3
 with SUITE_STDERR_HEAD=1 (each red line carries err1=<the first non-empty stderr line>) and S4E_PROGRESS_OFF=1 (no progress row, no
 score row: a census is a measurement, never a reading of the suite). The first stderr lines are grouped into classes (numbers, quoted
@@ -74,7 +74,7 @@ def census(key, pkg, lang, outdir):
     # name) is not an entry, and a sidecar row naming it makes the harness refuse the whole mini-container
     nset = {m.group(2) for m in (BANNER.match(l.rstrip("\n")) for l in open(os.path.join(copy, "ALL." + ext), encoding="utf-8", errors="replace")) if m}
     open(os.path.join(copy, "ALL.ref"), "w").write(cut(os.path.join(pkg, "ALL.ref"), nset))
-    for side in ("ALL.wantrc", "ALL.argv", "ALL.in", "ISO_EXPECTED_REFUSALS.tsv"):   # every sidecar the harness checks against the entries
+    for side in ("ALL.rc", "ALL.argv", "ALL.in", "ISO_EXPECTED_REFUSALS.tsv"):   # every sidecar the harness checks against the entries
         p = os.path.join(pkg, side)
         if os.path.isfile(p):
             rows = [l for l in open(p, encoding="utf-8", errors="replace") if l.startswith("#") or l.split("\t")[0].strip() in nset]

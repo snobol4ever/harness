@@ -78,7 +78,7 @@ ipl_isolation_cleanup() { [ -n "${IPL_ISO_TEMPLATE:-}" ] && rm -rf "$IPL_ISO_TEM
 #     oracle bin and '.' on PATH       -> 120 bytes, the real evaluation
 # ⭐ THE DANGER IS THE SHAPE, NOT THE PROGRAM: `sh: 1: qei_: not found` reads as A DEFECT IN THE PROGRAM, so a
 # ref cut under one PATH and graded under another is a SILENT FALSE FAIL, and it is silent in both directions.
-# It also outlived its own evidence once already -- ALL.excluded.txt:731 records "oracle produced EMPTY output"
+# It also outlived its own evidence once already -- ALL.omit:731 records "oracle produced EMPTY output"
 # for qei, which is FALSE (the oracle answers 59 bytes on empty stdin); that line was written from a failed run
 # and survived the condition that produced it.
 # ✅ WHY A SHARED DEFINITION AND NOT A PER-PROGRAM `NAME.path` SIDECAR (the alternative hq_R offered): PATH is

@@ -13,7 +13,7 @@ Builds corpus/tests/snobol4/{ALL.sno, ALL.ref, ALL.csv} from EVERY suite pair un
    Lon's PATTERN . tz . *function(tz) example). The scanner is a lexical approximation, documented per column -- a DB row is a
    finding aid for isolating feature usage, never a semantic proof.
  - A family whose suite pair will not read (the malformed-conversion class) or that carries a stdin sidecar this merge cannot
-   represent is EXCLUDED LOUDLY on stderr and listed in ALL.csv's sibling ALL.excluded.txt -- never silently dropped (the
+   represent is EXCLUDED LOUDLY on stderr and listed in ALL.csv's sibling ALL.omit -- never silently dropped (the
    shrunken-denominator law).
  - Validation: the written pair is re-read and the entry count must equal the sum of the included families' counts, else REFUSE
    and write nothing. Grading is unchanged machinery: python3 ../harness/scripts/corpus_suite_harness.py run ALL.sno ALL.ref --modes m3,m4.
@@ -829,13 +829,13 @@ def _build_arg_parser():
                          "asked (CIO-37: a candidate is left out only for what its oracle does). A <stem>.ast-only marker is no longer read (the ast mode is retired; "
                          "a program goes to its oracle like any other). Anything that "
                          "cannot run with output -- module, non-deterministic (two oracle runs disagree), or over "
-                         "the oracle's budget -- is named in ALL.excluded.txt with a reason, never silently dropped.")
+                         "the oracle's budget -- is named in ALL.omit with a reason, never silently dropped.")
     p.add_argument("--from", dest="from_cats", default="demos,benchmarks", metavar="CAT1,CAT2,...",
                     help="with --additive: which source trees to absorb from this run -- demos, benchmarks, "
                          "programs, tests (comma list; default demos,benchmarks). `programs` is a real category "
                          "name but corpus/programs/ absorbs NOTHING yet: Lon 2026-09-04 excluded it from the "
                          "unabsorbed census (util_unabsorbed_census.py, verbatim 'Go ahead and exclude programs/* "
-                         "folders'), and this builder honours the same ruling by recording it in ALL.excluded.txt "
+                         "folders'), and this builder honours the same ruling by recording it in ALL.omit "
                          "rather than walking it -- naming it here is truthful, not silently ignored. `tests` "
                          "absorbs corpus/tests/<lang>/'s OWN loose-noref/fixture sources (the ones "
                          "util_unabsorbed_census.py calls 'fixture'/'loose no-ref') -- unlike demos/benchmarks "
@@ -1135,7 +1135,7 @@ def _additive_walk_tests(src_dir, ext, skip_loose_pairs=True):
     the rungs under a second name), and anything inside a config/ directory (KEEP.md and other bookkeeping
     live there, never source under test -- see the KEEP.md convention util_unabsorbed_census.py's own OWED
     list does not know about: an -INCLUDE-only companion of an EXISTING rungs entry is not itself owed, and
-    the correct fix for that census blind spot is naming it in ALL.excluded.txt with a reason, not walking it
+    the correct fix for that census blind spot is naming it in ALL.omit with a reason, not walking it
     here at all -- config/ is excluded from the walk defensively, in case a future KEEP.md sibling is dropped
     beside its family rather than under config/).
 
@@ -1279,7 +1279,7 @@ def _excl_digest(existing):
 
 
 def _excl_guard(path, existing):
-    """⛔⭐ REFUSE rc=2 IF ALL.excluded.txt HAS BEEN EDITED BY ANYTHING BUT THIS BUILDER (R-545, on
+    """⛔⭐ REFUSE rc=2 IF ALL.omit HAS BEEN EDITED BY ANYTHING BUT THIS BUILDER (R-545, on
     hq_V's 2026-09-10 measurement). THE DEFECT IT CLOSES, both arms measured in a scratch tree before this
     existed: (1) a hand DELETION of a line the builder still computes is SILENTLY REVERTED by the next full
     build -- `rung36_jcon_io` removed by hand came back with no word said, which is the officer's phrase exactly,
@@ -1315,7 +1315,7 @@ def _excl_guard(path, existing):
 
 
 def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=False, retract=()):
-    """Merge {key: value} into a TAB-separated sidecar (ALL.excluded.txt), keyed on column 1 --
+    """Merge {key: value} into a TAB-separated sidecar (ALL.omit), keyed on column 1 --
     new/changed keys win, everything else already on disk survives. Never a blind overwrite: a second
     --additive run (a different --lang, a different --from) must not erase the first run's lines.
     ⛔⭐ THE HEADER IS DATA TOO. This used to drop every line without a TAB, which is every comment line,
@@ -1323,7 +1323,7 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
     anything had been removed. Comments are preserved verbatim, in place.
     ⛔⭐⭐ `fresh_wins` AND `retract` EXIST BECAUSE R-545 CHANGED WHAT THE NEVER-OVERWRITE RULE PROTECTS, AND
     NOBODY MOVED THE RULE (hq_S 2026-09-12, measured on raku scrip_test). The `if k not in existing` below was
-    written to protect A HAND-WRITTEN DECLARATION AND ITS EVIDENCE. But R-545 made ALL.excluded.txt GENERATED and _excl_guard now REFUSES a hand edit to it,
+    written to protect A HAND-WRITTEN DECLARATION AND ITS EVIDENCE. But R-545 made ALL.omit GENERATED and _excl_guard now REFUSES a hand edit to it,
     so in that file there is no hand-written line left to protect: the only thing never-overwrite preserves
     there is THIS TOOL'S OWN STALE TEXT. Both arms measured on the same 15 rows: (1) eight programs absorbed
     into the rungs stayed NAMED AS EXCLUDED FROM IT -- the exact contradiction the non-additive writer's own
@@ -1353,7 +1353,7 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
         existing.pop(k, None)
     for k, v in new_lines.items():
         if fresh_wins or k not in existing:   # ⛔ never overwrite a hand-written line; a GENERATED
-            existing[k] = v                   #    reason is replaced by this run's measurement (ALL.excluded.txt)
+            existing[k] = v                   #    reason is replaced by this run's measurement (ALL.omit)
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         for line in header:
             f.write("%s\n" % line)
@@ -1364,7 +1364,7 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
 
 
 def _additive_write_excluded(outdir, absorbed, excluded_rows):
-    """Write ALL.excluded.txt for an --additive run: this run's reasons REPLACE their predecessors, and a
+    """Write ALL.omit for an --additive run: this run's reasons REPLACE their predecessors, and a
     program that reached the rungs is RETRACTED rather than named as excluded from it (see
     _additive_write_sidecar_merge's own docstring for the two measured arms and why R-545 requires it).
     ⛔ A PROGRAM ALREADY IN THE RUNGS IS IN `absorbed` AND IN `excluded_rows` AT THE SAME TIME, by design --
@@ -1374,7 +1374,7 @@ def _additive_write_excluded(outdir, absorbed, excluded_rows):
     (in the denominator AND not excluded by the live tree this run), reached from the additive side."""
     absorbed_keys = {("%s[%s]" % (row[0], row[1])) for row in absorbed}
     fresh = {("%s[%s]" % (n, c)): r for n, c, r in excluded_rows if ("%s[%s]" % (n, c)) not in absorbed_keys}
-    _additive_write_sidecar_merge(os.path.join(outdir, "ALL.excluded.txt"), fresh,
+    _additive_write_sidecar_merge(os.path.join(outdir, "ALL.omit"), fresh,
                                    digest=True, fresh_wins=True, retract=absorbed_keys)
 
 
@@ -1503,7 +1503,7 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         taken_names.add(entry_name)
         # ⛔ LF ONLY (CIO-46 D, the coo 2026-11-10; MEASURED: coverage_sno_nodes prints &ALPHABET and its ref lost the bytes 013 to 015 and 034 to 036,
         # because str.splitlines() also breaks a line there): the answer is split on LF alone, as every reader of a container splits it.
-        # ⭐ THE EXIT STATUS IS THE ORACLE'S (CIO-46 C): a program sbl ends at rc 231 (a compile refusal) or 1 is declared so in ALL.wantrc below.
+        # ⭐ THE EXIT STATUS IS THE ORACLE'S (CIO-46 C): a program sbl ends at rc 231 (a compile refusal) or 1 is declared so in ALL.rc below.
         e = h.Entry("block", 0, entry_name, list(body_lines), h._lf_lines(ref_or_ast), xfail=False, want_rc=int(ora_rc or 0))
         if stdin_text:
             e.stdin = stdin_text
@@ -1585,9 +1585,9 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         os.remove(rungs_in)
     os.replace(tmp_csv, rungs_csv)
     _wr = [(e.name, e.want_rc) for e in new_entries if getattr(e, "want_rc", 0)]
-    if _wr:   # CIO-46 C: the oracle's exit status of a new entry, merged by name into the master's ALL.wantrc (created with the harness's header when absent)
-        _wp = os.path.join(os.path.dirname(rungs_sno), "ALL.wantrc")
-        _old = open(_wp).read() if os.path.isfile(_wp) else "# ALL.wantrc -- DECLARED exit codes for entries whose CORRECT run exits nonzero; name<TAB>rc\n"
+    if _wr:   # CIO-46 C: the oracle's exit status of a new entry, merged by name into the master's ALL.rc (created with the harness's header when absent)
+        _wp = os.path.join(os.path.dirname(rungs_sno), "ALL.rc")
+        _old = open(_wp).read() if os.path.isfile(_wp) else "# ALL.rc -- DECLARED exit codes for entries whose CORRECT run exits nonzero; name<TAB>rc\n"
         _have = {ln.split("\t", 1)[0] for ln in _old.splitlines() if ln and not ln.startswith("#")}
         with open(_wp, "w") as _f:
             _f.write(_old if _old.endswith("\n") else _old + "\n")
@@ -2273,7 +2273,7 @@ def main():
     out_in = os.path.join(OUTDIR, "ALL.in")
     out_x = os.path.join(OUTDIR, "ALL.xfail")
     out_csv = os.path.join(OUTDIR, "ALL.csv")
-    out_excl = os.path.join(OUTDIR, "ALL.excluded.txt")
+    out_excl = os.path.join(OUTDIR, "ALL.omit")
     for e_i, e in enumerate(all_entries, 1):
         e.seq = e_i
     # ⛔⭐ VALIDATE BEFORE IT WRITES (requirement 3). MEASURED: the previous shape wrote ALL.sno/ALL.ref (and
@@ -2508,7 +2508,7 @@ def main():
         print("RUNGS SUITE: %d entries, NOTHING NEW ABSORBED (idempotent rebuild) -> %s" % (len(all_entries), OUTDIR), file=sys.stderr)
     if _already:
         print("ALREADY PRESENT (not a failure -- the same entries rebuilt): %d family(ies)" % len(_already), file=sys.stderr)
-    print("CANNOT ABSORB (loud, see ALL.excluded.txt): %d" % len(_cannot), file=sys.stderr)
+    print("CANNOT ABSORB (loud, see ALL.omit): %d" % len(_cannot), file=sys.stderr)
     excluded = _cannot + _already   # file keeps both, cannot-absorb first so the real problems read first
     for fam, why in excluded:
         print("  ⛔ %s: %s" % (fam, why), file=sys.stderr)

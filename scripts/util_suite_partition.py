@@ -44,7 +44,7 @@ def read_table(path):
 
 def drop_excluded_and_containers(table, rows):
     d = os.path.dirname(os.path.abspath(table))
-    ex_p = os.path.join(d, "ALL.excluded.txt")
+    ex_p = os.path.join(d, "ALL.omit")
     ct_p = os.path.join(d, "CONTAINERS.tsv")
     if not os.path.isfile(ex_p) and not os.path.isfile(ct_p):
         return rows

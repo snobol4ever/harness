@@ -314,7 +314,7 @@ fi
 # each with its own floor): every absorbed family's entries are graded through the ONE rungs pair, with
 # per-entry provenance in ALL.csv's origin column and levels as rank prefixes. The un-absorbable
 # residue (beauty_suite drivers, rtx_func_11, linker, probe_loose, stdin classes) is listed LOUDLY in
-# ALL.excluded.txt and still graded by its own blocks below (beauty) or its own instruments.
+# ALL.omit and still graded by its own blocks below (beauty) or its own instruments.
 # Counter folding is byte-identical to the retired blocks': fail+crash -> FAIL, hang/unproven -> TMOUT
 # (measured-nothing, never a verdict), m4 compile/link skip -> SKIP4. XFAIL entries are graded separately
 # by the harness (a pre-existing red never inflates FAIL); XPASS is echoed loudly -- a cured bug whose

@@ -37,7 +37,7 @@ for lang in langs:
     ref = os.path.join(d, 'ALL.ref')
     if not (os.path.isfile(src) and os.path.isfile(ref)):
         print('REFUSE(2): no master at %s' % src); sys.exit(2)
-    w = os.path.join(d, 'ALL.wantrc')
+    w = os.path.join(d, 'ALL.rc')
     w = w if os.path.isfile(w) else None
     try:
         es = (csh.read_block_suite(src, ref, csh.banner_re_for(lc['comment_open'], lc['comment_close']), w_path=w) if lc

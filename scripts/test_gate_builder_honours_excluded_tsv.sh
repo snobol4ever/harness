@@ -21,7 +21,7 @@ fail=""
 n=$(tail -n +2 "$D/ALL.csv" 2>/dev/null | grep -c .)
 [ "$n" = 1 ] || fail="$fail ALL.csv-rows($n,want 1)"
 [ "$(awk -F, 'NR==2{print $2}' "$D/ALL.csv" 2>/dev/null)" = a ] || fail="$fail ALL.csv-entry-not-a"
-grep -q '^b: EXCLUDED\.tsv PROBE_CLASS:' "$D/ALL.excluded.txt" 2>/dev/null || fail="$fail excluded-line-for-b-missing"
+grep -q '^b: EXCLUDED\.tsv PROBE_CLASS:' "$D/ALL.omit" 2>/dev/null || fail="$fail excluded-line-for-b-missing"
 [ -s "$D/ALL.ref" ] && grep -q '^a$' "$D/ALL.ref" || fail="$fail a-ref-not-cut"
 if [ -z "$fail" ]; then
     echo "GATE OK [test_gate_builder_honours_excluded_tsv]: b.sno declared PROBE_CLASS is excluded, a.sno is absorbed and its ref cut (scratch $D)"

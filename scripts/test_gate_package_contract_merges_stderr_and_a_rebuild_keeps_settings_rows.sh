@@ -122,7 +122,7 @@ printf 'x=3\n' > "$I/W.ref"; printf 'from M\n' > "$I/L.ref"
 printf '%s\n' "stderr	merged	the fixture's own harness runs ./prog <in >out 2>&1" "units	ref-beside	the fixture grades a source with a .ref beside it" > "$I/CONTRACT.tsv"
 ( cd "$ROOT" && python3 ../harness/scripts/util_build_package_suite.py "$I" --lang icon > "$T/ibuild.log" 2>&1 ) || refuse "the builder did not build the scratch Icon package: $(tail -3 "$T/ibuild.log" | tr '\n' '|')"
 iref() { awk -v e="$1" '$0 ~ "^#-+ [0-9]+ "e"$" {f=1; next} /^#-+ [0-9]+ /{f=0} f' "$I/ALL.ref"; }
-ex_l="$(grep -c "^L: the oracle's translator refused it: icont: cannot resolve reference to file 'M.u1'" "$I/ALL.excluded.txt" 2>/dev/null)"; ex_m="$(grep -c '^M: no M.ref beside it' "$I/ALL.excluded.txt" 2>/dev/null)"
+ex_l="$(grep -c "^L: the oracle's translator refused it: icont: cannot resolve reference to file 'M.u1'" "$I/ALL.omit" 2>/dev/null)"; ex_m="$(grep -c '^M: no M.ref beside it' "$I/ALL.omit" 2>/dev/null)"
 arm "the Icon refs: T is iconx's merged report, W carries no translator warning, O (links the IPL beside a sibling) absorbed, L (local link, the translator) and M (no ref) excluded" "$([ "$(iref T)" = "$(cat "$I/T.ref")" ] && [ "$(iref W)" = 'x=3' ] && [ "$(iref O)" = 'ok' ] && [ "$ex_l" = 1 ] && [ "$ex_m" = 1 ] && echo ok || echo "T [$(iref T | tr '\n' '|')] W [$(iref W | tr '\n' '|')] O [$(iref O | tr '\n' '|')] L-excluded=$ex_l M-excluded=$ex_m")"
 # O links the IPL's options: SCRIP finds the IPL beside its own binary (../corpus/packages/icon/ipl/procs), which a scratch worktree
 # does not have, so the fixture names it on IPATH from the seat root -- the same library either way.
@@ -133,7 +133,7 @@ I3="$(S4E_PROGRESS_OFF=1 irun m3)"; I4="$(S4E_PROGRESS_OFF=1 irun m4)"
 arm "m3 and m4 grade T (through the Icon equivalence list), W and O PASS" "$(ok=1; for e in T W O; do [ "$(verdict "$I3" m3 $e)" = green ] && [ "$(verdict "$I4" m4 $e)" = green ] || ok=0; done; [ $ok = 1 ] && printf '%s\n' "$I3" | grep -q 'm3_pass=5 ' && printf '%s\n' "$I4" | grep -q 'm4_pass=5 ' && echo ok || echo "$(printf '%s\n%s\n' "$I3" "$I4" | grep -E '^  FAIL|SUITE_BOARD' | cut -c1-160 | tr '\n' '|')")"
 I3b="$(S4E_PROGRESS_OFF=1 S4E_FATAL_RENDER=0 irun m3)"
 arm "with the render off, T reads FAIL in m3" "$([ "$(verdict "$I3b" m3 T)" = red ] && echo ok || echo "m3 read $(verdict "$I3b" m3 T)")"
-arm "C (a C.clib sidecar) is excluded and named" "$(grep -q '^C: loads C through C.clib' "$I/ALL.excluded.txt" 2>/dev/null && echo ok || echo "ALL.excluded.txt: $(grep '^C:' "$I/ALL.excluded.txt" 2>/dev/null | cut -c1-120)")"
+arm "C (a C.clib sidecar) is excluded and named" "$(grep -q '^C: loads C through C.clib' "$I/ALL.omit" 2>/dev/null && echo ok || echo "ALL.omit: $(grep '^C:' "$I/ALL.omit" 2>/dev/null | cut -c1-120)")"
 arm "sub/K's K.mask is in ALL.mask under its entry name" "$(grep -qP '^sub/K\tL1\t' "$I/ALL.mask" 2>/dev/null && echo ok || echo "ALL.mask: $(head -5 "$I/ALL.mask" 2>/dev/null | tr '\n' '|' | cut -c1-160)")"
 arm "m3 and m4 grade the nested sub/R (its R.dat beside it) and sub/K (masked) PASS" "$([ "$(verdict "$I3" m3 sub/R)" = green ] && [ "$(verdict "$I4" m4 sub/R)" = green ] && [ "$(verdict "$I3" m3 sub/K)" = green ] && [ "$(verdict "$I4" m4 sub/K)" = green ] && echo ok || echo "$(printf '%s\n%s\n' "$I3" "$I4" | grep -E '^  (FAIL|CRASH|HANG) m[34] sub/' | cut -c1-140 | tr '\n' '|')")"
 [ "$fail" = 0 ] && { echo "PASS [$NAME]: $n arms"; exit 0; }

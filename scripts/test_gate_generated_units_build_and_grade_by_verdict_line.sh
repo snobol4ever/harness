@@ -33,7 +33,7 @@ cells="$(python3 -c '
 import csv, sys
 for r in csv.DictReader(open(sys.argv[1])): print("%s=%s|%s" % (r["entry"], r.get("compare", "?"), r.get("cwd", "?")))' "$P/ALL.csv" 2>/dev/null | tr '\n' ' ')"
 arm "ALL.csv compare and cwd cells" "$cells" "says_succ_among_noise=verdict-line|. reads_its_cwd=verdict-line|sub says_fail=verdict-line|. says_nothing=verdict-line|. excluded_by_name=| cannot_plan=| "
-arm "ALL.excluded.txt names the two by name" "$(cut -d: -f1 "$P/ALL.excluded.txt" 2>/dev/null | tr '\n' ' ')" "cannot_plan excluded_by_name "
+arm "ALL.omit names the two by name" "$(cut -d: -f1 "$P/ALL.omit" 2>/dev/null | tr '\n' ' ')" "cannot_plan excluded_by_name "
 [ "$brc" = 0 ] && [ -f "$P/ALL.pl" ] && [ -f "$P/ALL.ref" ] || { echo "GATE FAIL [$GATE_NAME]: the builder wrote no container ($RED of $ARMS arms red; $D/build.log)"; tail -5 "$D/build.log"; exit 1; }
 ( cd "$P" && python3 "$HERE/util_suite_partition.py" build ALL.csv ) > "$D/part.log" 2>&1 || { echo "⛔ REFUSE(2) [$GATE_NAME]: util_suite_partition.py build refused on the scratch table ($(tail -1 "$D/part.log"))"; exit 2; }
 # THE GRADE: each absorbed entry alone, mode 3, its verdict and its reason.

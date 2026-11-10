@@ -12,7 +12,7 @@ One line per row of SUITE_RUNNERS.tsv that is not a port row:
   part    entries the cycle's cells name (PARTITION.tsv, core and chunk:NN)
   gone    cell entries the container lacks: the harness refuses the whole cell rc 2
   nocell  container entries no cell names: the cycle never grades them
-  owed    programs the builder left out by its OWN measurement (ALL.excluded.txt) that no package table (EXCLUDED.tsv, CONTAINERS.tsv) declares out
+  owed    programs the builder left out by its OWN measurement (ALL.omit) that no package table (EXCLUDED.tsv, CONTAINERS.tsv) declares out
           of the denominator: published, shipped, and graded by nothing since the package runners were deleted (harness cc2783502)
   cells   the cycle cells of the row; lap: the last finished lap's cells by exit code (rc:n); held: cells named in CYCLE.skip
 VERDICT words: NOT-IN-CYCLE (kind small: s4e_cycle.sh launches master and pkg rows only), NO-CONTAINER, NO-PARTITION, PARTITION-NAMES-n-ABSENT,
@@ -46,7 +46,7 @@ def table_names(d, fn):
 
 def owed_of(d):
     reasons = {}
-    p = os.path.join(d, "ALL.excluded.txt")
+    p = os.path.join(d, "ALL.omit")
     if os.path.isfile(p):
         for x in open(p, encoding="utf-8", errors="replace"):
             if ": " in x:

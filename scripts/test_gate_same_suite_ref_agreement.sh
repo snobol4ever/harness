@@ -19,7 +19,7 @@
 # 7 rung suites to zero visible error: the other four just produced zero sections and read as "nothing to
 # compare" instead of REFUSING. `corpus_suite_harness.read_suite`/`read_block_suite` already carry the
 # real per-dialect banner_re (via LANG_CONFIGS) AND the SNOBOL4 format-A/format-B mix, are exercised by
-# the actual rungs builder (util_build_rungs_suite.py) on every push, and already parse the `.wantrc`
+# the actual rungs builder (util_build_rungs_suite.py) on every push, and already parse the `.rc`
 # sidecar into `Entry.want_rc` -- so this gate does not re-derive any of that, it asks the one place that
 # already knows.
 #

@@ -116,7 +116,7 @@ def read_entries(lang, d, src_text=None, ref_text=None):
             cfg = csh.LANG_CONFIGS[lang]
             return csh.read_block_suite(str(src), str(ref), csh.banner_re_for(cfg["comment_open"], cfg["comment_close"]),
                                         in_path=str(d / "ALL.in") if (d / "ALL.in").is_file() else None,
-                                        w_path=str(d / "ALL.wantrc") if (d / "ALL.wantrc").is_file() else None)
+                                        w_path=str(d / "ALL.rc") if (d / "ALL.rc").is_file() else None)
         return csh.read_suite(str(src), str(ref),
                               in_path=str(d / "ALL.in") if (d / "ALL.in").is_file() else None,
                               x_path=str(d / "ALL.xfail") if (d / "ALL.xfail").is_file() else None)

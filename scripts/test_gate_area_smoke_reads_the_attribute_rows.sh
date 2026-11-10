@@ -36,7 +36,7 @@ ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1));
 
 # the scratch world: one table, its rows doctored by python (the ONE csv grammar), the chosen entry the first ranked row
 mkdir -p "$WORK/corpus/tests/rebus"
-for f in ALL.reb ALL.ref ALL.csv ALL.in ALL.wantrc ALL.argv ALL.mask ALL.outside.tsv ALL.xfail; do [ -f "$SRC/$f" ] && cp "$SRC/$f" "$WORK/corpus/tests/rebus/"; done
+for f in ALL.reb ALL.ref ALL.csv ALL.in ALL.rc ALL.argv ALL.mask ALL.outside.tsv ALL.xfail; do [ -f "$SRC/$f" ] && cp "$SRC/$f" "$WORK/corpus/tests/rebus/"; done
 doctor() {  # doctor <csv> <entry-or-empty>: FENCE and fence_guarded_fail 0 everywhere, FENCE 1 on the named entry
   python3 - "$1" "$2" <<'EOF'
 import csv, sys

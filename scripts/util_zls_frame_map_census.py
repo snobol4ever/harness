@@ -67,7 +67,7 @@ space) for the same reason.
 no_layout_declared is APPENDED, never inserted: the frozen token and the order and meaning of every field before it are
 untouched, and no_layout stays the TOTAL so no consumer silently changes its mind about what it is reading (R-1003,
 cto's three conditions, 2026-09-20).  It is PRINTED FOR EVERY LANGUAGE INCLUDING ZERO, so a diff of two census lines is a
-diff of numbers and never of shapes.  A DECLARED no-layout is an entry the rungs' own ALL.wantrc gives a NON-ZERO rc:
+diff of numbers and never of shapes.  A DECLARED no-layout is an entry the rungs' own ALL.rc gives a NON-ZERO rc:
 the suite declares it must not compile, so having no frame is the correct and permanent answer rather than a defect.
 words = 8-byte words of every graded graph's zls region; unkinded = words of those inside a reported hole.
 Detector arm: --dumps grades saved `--dump-zeta` texts instead of running scrip, so a gate can dump a clean
@@ -217,16 +217,16 @@ def dump_text(path):
 def wantrc_sidecar(lang, s4e_home):
     """THE DECLARATION IS ALREADY IN THE DATA (hq_raku, granted R-1003 + cto, 2026-09-20).  A program the suite itself
     declares must not compile HAS no frame layout, and that is the correct and permanent answer rather than a refusal the
-    census cannot tell from a compiler defect.  The declaration is DERIVED from the rungs' own ALL.wantrc -- the same
+    census cannot tell from a compiler defect.  The declaration is DERIVED from the rungs' own ALL.rc -- the same
     sidecar util_raku_entry_grade.sh already grades rc against -- so it cannot go stale the way a hand-kept list does, and
     it is a declaration INSIDE the printed denominator rather than a narrowing of it: no_layout keeps its meaning as the
     TOTAL and the real defects stay counted as defects.
     Returns (map name->wantrc, note).  A sidecar that EXISTS and cannot be read REFUSES (raises); an ABSENT one is itself
     data -- the rungs declares no non-zero-rc entry -- and says so on its own line rather than defaulting silently."""
     d = Path(s4e_home) / "corpus" / "tests" / lang
-    f = d / "ALL.wantrc"
+    f = d / "ALL.rc"
     if not f.is_file():
-        return {}, f"no ALL.wantrc beside {d} -- no entry can be DECLARED here, so every no_layout entry printed here is counted a defect; this is a measured zero, not a default"
+        return {}, f"no ALL.rc beside {d} -- no entry can be DECLARED here, so every no_layout entry printed here is counted a defect; this is a measured zero, not a default"
     out = {}
     for line in f.read_text().splitlines():
         if not line.strip() or line.lstrip().startswith("#"):
@@ -263,7 +263,7 @@ def main():
     ap.add_argument("--files", nargs="*", default=[], help="census these programs instead of a rung suite")
     ap.add_argument("--dumps", nargs="*", default=[], help="census these saved `scrip --dump-zeta` texts instead of running scrip (the gates' detector arm corrupts one)")
     ap.add_argument("--timeout", type=float, default=8.0)
-    ap.add_argument("--wantrc", default="", help="grade DECLARED against this ALL.wantrc instead of the rungs' own (the gate fixture seam; --files has no rungs)")
+    ap.add_argument("--wantrc", dest="rc_file", default="", help="grade DECLARED against this ALL.rc instead of the rungs' own (the gate fixture seam; --files has no rungs)")
     a = ap.parse_args()
     s4e_home = os.environ.get("S4E_HOME", str(HERE.parent.parent))
     scrip = Path(os.environ.get("SCRIP", str((HERE.parent.parent / "SCRIP") / "scrip")))
@@ -274,22 +274,22 @@ def main():
         print(f"zls-frame-map-census[{label}]: REFUSE(2): give exactly one of --lang, --files or --dumps"); return 2
     work = []
     wantrc = {}; wantrc_note = ""
-    if a.wantrc:
+    if a.rc_file:
         try:
-            for line in Path(a.wantrc).read_text().splitlines():
+            for line in Path(a.rc_file).read_text().splitlines():
                 if not line.strip() or line.lstrip().startswith("#"):
                     continue
                 parts = line.split("\t")
                 if len(parts) < 2:
-                    raise ValueError(f"{a.wantrc}: line is not <entry>TAB<rc>: {line[:80]!r}")
+                    raise ValueError(f"{a.rc_file}: line is not <entry>TAB<rc>: {line[:80]!r}")
                 wantrc[parts[0]] = int(parts[1].strip())
         except (OSError, ValueError) as e:
-            print(f"zls-frame-map-census[{label}]: REFUSE(2): --wantrc {a.wantrc}: {e}"); return 2
+            print(f"zls-frame-map-census[{label}]: REFUSE(2): --wantrc {a.rc_file}: {e}"); return 2
     elif a.lang:
         try:
             wantrc, wantrc_note = wantrc_sidecar(a.lang, s4e_home)
         except (OSError, ValueError) as e:
-            print(f"zls-frame-map-census[{label}]: REFUSE(2): the ALL.wantrc sidecar EXISTS and cannot be read, so a DECLARED no-layout cannot be told from a defect: {e}"); return 2
+            print(f"zls-frame-map-census[{label}]: REFUSE(2): the ALL.rc sidecar EXISTS and cannot be read, so a DECLARED no-layout cannot be told from a defect: {e}"); return 2
     tmp = tempfile.TemporaryDirectory(prefix="zls_census_")
     if a.lang:
         entries, ext, err, comp_dirs = rungs_entries(a.lang, s4e_home)

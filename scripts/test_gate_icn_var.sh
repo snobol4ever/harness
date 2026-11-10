@@ -286,7 +286,7 @@ echo "--- (c) corpus IR_ASSIGN bucket (ratchet floors m2>=$VAR_M2_MIN m3>=$VAR_M
 # required 62 because most rung*.icn assign-touching programs are now RUNGS-SUITE entries, not loose
 # files. Source the honest population from ALL.csv's `assign` feature column via lib_rungs_extract.sh.
 # The loose KEEPER/DEFERRED rung36_jcon_* files stay deliberately excluded from ALL.csv (each already has
-# its own LIVE row — see tests/icon/ALL.excluded.txt) so this bucket does not re-litigate them.
+# its own LIVE row — see tests/icon/ALL.omit) so this bucket does not re-litigate them.
 BUCKET_TMP="$(mktemp -d)"; trap 'rm -rf "$BUCKET_TMP"' EXIT
 RUNGS_DIR="$CORPUS" RUNGS_EXT=.icn
 . "$HERE/lib_rungs_extract.sh"

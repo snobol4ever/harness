@@ -10,7 +10,7 @@
 # column, never on the entry name, which the builder renames (directive_82 today) and never on a filename glob.
 # EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run   ·   m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
 # (the port-trace gate's exact m4 recipe). Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the
-# declared rc (corpus/tests/prolog/ALL.wantrc, keyed on the entry NAME; default 0). A timeout is a FAIL(rc=124), never a hang.
+# declared rc (corpus/tests/prolog/ALL.rc, keyed on the entry NAME; default 0). A timeout is a FAIL(rc=124), never a hang.
 # ⛔ XFAIL MARKERS ARE IGNORED HERE ON PURPOSE. The rungs board buckets a marked entry as XFAIL (reported, not gating, until
 # rung 10); this runner is the gate for the rung that OWNS the witness, and a rung is landed only when its witnesses PASS.
 # The marker's promotion (three places, lib_rungs_extract.sh's INTERIM PROMOTION PROTOCOL) is part of that rung's landing.

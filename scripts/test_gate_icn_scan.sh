@@ -295,7 +295,7 @@ echo "--- (c) corpus IR_GEN_SCAN bucket (ratchet floors m2>=$SCAN_M2_MIN m3>=$SC
 # lib_rungs_extract.sh (CLAUDE.md RUNGS SUITES: "the ONE way" to materialize a witness) instead of
 # re-deriving the filter with a second --dump-bb sniff per file. The loose KEEPER/DEFERRED files under
 # tests/icon (rung36_jcon_cxprimes/_genqueen/_recogn/_proto/_var, ...) are DELIBERATELY excluded from
-# ALL.csv by the suite's own absorption policy (tests/icon/ALL.excluded.txt) because each already has its
+# ALL.csv by the suite's own absorption policy (tests/icon/ALL.omit) because each already has its
 # own LIVE row (icon-coexpression-support-design, icn-recogn-genqueen-suspend-shape,
 # icon-v9gen-augmented-assign-and-unary-refresh-plus-two-emitter-gaps) — this bucket is not the place to
 # re-litigate them under a different name; it grades the population the rest of the project already trusts.

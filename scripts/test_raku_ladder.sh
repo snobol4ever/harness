@@ -9,7 +9,7 @@
 # OUT of the rungs by origin through lib_rungs_extract.sh (RUNGS_DIR=corpus/tests/raku, RUNGS_EXT=.raku)
 # -- keyed on the CSV `origin` column, never on the entry name or a filename glob.
 # EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run   ·   m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
-# Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.wantrc,
+# Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.rc,
 # keyed on the entry NAME; default 0, and the file need not exist -- every rung 0-9 witness here exits 0).
 # A timeout is a FAIL(rc=124), never a hang.
 # ⭐ REFS ARE ORACLE-CUT, NOT HAND-AUTHORED: every .ref line for a ladder witness is the literal captured

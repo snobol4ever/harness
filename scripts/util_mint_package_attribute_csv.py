@@ -14,7 +14,7 @@ usage: util_mint_package_attribute_csv.py --package NAME --dir DIR --glob PATTER
   --origin-root the path origins are written relative to (default DIR); for a drop read in place, the drop's root
   --filter-grep keep only files whose text matches REGEX (swi_tests: 'begin_tests\\(')
   --refresh     rewrite an existing ALL.csv, PRESERVING each entry's heap_kb; without it an existing file is REFUSED rc=2
-  stdin  = 1 when <entry>.in sits beside the program; want_rc from ALL.wantrc (entry<TAB>rc) when present, else 0
+  stdin  = 1 when <entry>.in sits beside the program; want_rc from ALL.rc (entry<TAB>rc) when present, else 0
 prints: ATTRIBUTE-CSV package=P entries=N stdin=S wantrc=W preserved_heap=H written=PATH
 """
 import argparse, csv, glob, io, os, re, sys
@@ -55,7 +55,7 @@ def main():
                 if row.get('stack_kb'): preserved_stack[row['entry']] = row['stack_kb']
                 preserved_cmd[row['entry']] = {c: (row.get(c) or '').strip() for c in ('compile_args', 'run_args')}
     wantrc = {}
-    wr = os.path.join(d, 'ALL.wantrc')
+    wr = os.path.join(d, 'ALL.rc')
     if os.path.exists(wr):
         for ln in open(wr, encoding='utf-8', errors='replace'):
             ln = ln.rstrip('\n')

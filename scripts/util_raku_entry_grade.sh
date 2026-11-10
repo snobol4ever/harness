@@ -7,7 +7,7 @@
 # ⛔ IT REFUSES rc=2 RATHER THAN PRINTING THE SUCCESS SHAPE when it cannot measure: no entry named, an entry the
 # rungs does not carry, or a build that is not there. A runner that graded zero witnesses and exited 0 is the
 # `make test` false-green trap wearing a different hat (CLAUDE.md § Testing).
-# ⛔ rc CONTRACT: the expected rc comes from ALL.wantrc when the entry is declared there and is 0 otherwise --
+# ⛔ rc CONTRACT: the expected rc comes from ALL.rc when the entry is declared there and is 0 otherwise --
 # a die test whose stdout matches is a PASS, and grading it on stdout alone would score four xfails XPASS that
 # are not (measured on this row: simple_program_10, say_die_1, sub_say_12, sub_say_6).
 # Usage: util_raku_entry_grade.sh <entry> [entry ...]        rc: 0 all green · 1 a red · 2 could not measure
@@ -25,7 +25,7 @@ for n in "$@"; do
         rm -rf "$d"; exit 2
     fi
     want_rc=0
-    if [ -f "$M/ALL.wantrc" ]; then w=$(awk -F'\t' -v n="$n" '$1==n{print $2}' "$M/ALL.wantrc" | head -1); [ -n "$w" ] && want_rc="$w"; fi
+    if [ -f "$M/ALL.rc" ]; then w=$(awk -F'\t' -v n="$n" '$1==n{print $2}' "$M/ALL.rc" | head -1); [ -n "$w" ] && want_rc="$w"; fi
     stdin_f=/dev/null; [ -f "$d/w.in" ] && stdin_f="$d/w.in"
     out3=$(cd "$d" && timeout -k 5 30 "$root/scrip" w.raku < "$stdin_f" 2>/dev/null); rc3=$?
     bad=""
@@ -44,5 +44,5 @@ for n in "$@"; do
     rm -rf "$d"
 done
 [ "$graded" -gt 0 ] || { echo "⛔ REFUSE(2) [util_raku_entry_grade]: graded zero witnesses" >&2; exit 2; }
-echo "RAKU_ENTRIES graded=$graded green=$green red=$red (both modes, rc from ALL.wantrc)"
+echo "RAKU_ENTRIES graded=$graded green=$green red=$red (both modes, rc from ALL.rc)"
 [ "$red" -eq 0 ]

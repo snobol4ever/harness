@@ -545,12 +545,12 @@ def main():
             if not args.accept_fresh:
                 refuse(_why + " -- a stale loose answer is never copied; pass --accept-fresh naming why the fresh cut is the answer")
             print("FRESH CUT ACCEPTED over the loose answer: %s; why: %s" % (_why, args.accept_fresh.strip()))
-    # ⛔⭐ A NONZERO want_rc IS DECLARED IN ALL.wantrc, NEVER ONLY IN ALL.csv (hq_I 2026-09-13, extending the
+    # ⛔⭐ A NONZERO want_rc IS DECLARED IN ALL.rc, NEVER ONLY IN ALL.csv (hq_I 2026-09-13, extending the
     # refusal that stood here). lib_ladder.sh's own wantrc() reads the sidecar and nothing else, so a witness
     # minted without that line is graded against the default rc=0 forever -- which is why the old refusal was
     # right to block rather than mint half of it. The sidecar is written below, after the rungs and the CSV,
     # under the same tmp+replace discipline and the same preserve-what-existed proof.
-    if False:   # the coo 2026-11-10: the mixed reader now reads ALL.wantrc (w_path) and the append below writes it, so a non-zero exit code is carried for snobol4 too
+    if False:   # the coo 2026-11-10: the mixed reader now reads ALL.rc (w_path) and the append below writes it, so a non-zero exit code is carried for snobol4 too
         refuse("oracle exited rc=%d and %s is a mixed (non-block) rungs, whose reader this tool drives "
                "through read_suite without a wantrc sidecar path -- extend that arm before minting a "
                "nonzero-rc witness for it" % (want_rc, lang))
@@ -567,18 +567,18 @@ def main():
     if lang in csh.LANG_CONFIGS:
         banner_re = csh.banner_re_for(cfg["comment_open"], cfg["comment_close"])
         entries = csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re,
-                                        in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.wantrc"))
+                                        in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.rc"))
         reserialize = lambda es, a, b: csh.write_block_suite(es, a, b, cfg["comment_open"], cfg["comment_close"])
-        read_entries = lambda: csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re, in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.wantrc"))
+        read_entries = lambda: csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re, in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.rc"))
     else:
         # ⛔ THE SNOBOL4 RUNGS IS MIXED: one-line entries (`stmt;END;* name`) and 80-column banner blocks in
         # ONE file, so read_block_suite REFUSES on its first line. read_suite/write_suite are the harness's
         # own readers for that shape -- the round-trip proof below is what makes using them safe, and it is
         # run against the real rungs before a single byte is written.
         entries = csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"),
-                                  x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.wantrc"))
+                                  x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.rc"))
         reserialize = lambda es, a, b: csh.write_suite(es, a, b, out_in=None, lang=lang)
-        read_entries = lambda: csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"), x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.wantrc"))
+        read_entries = lambda: csh.read_suite(str(rungs_src), str(rungs_ref), in_path=str(rungs_dir / "ALL.in"), x_path=str(rungs_dir / "ALL.xfail"), w_path=str(rungs_dir / "ALL.rc"))
     # ── ROUND-TRIP PROOF, before this tool is trusted to touch the real files: re-serialize the
     # UNCHANGED entries and diff against what is actually on disk. A mismatch here means this script's
     # understanding of the format is wrong, and it must refuse before writing anything, not after.
@@ -678,7 +678,7 @@ def main():
         print("(dry-run only -- pass --apply to write)")
         return
 
-    _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None) for n in ("ALL.in", "ALL.xfail", "ALL.wantrc")}
+    _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None) for n in ("ALL.in", "ALL.xfail", "ALL.rc")}
     def _rollback():
         try:
             rungs_src.write_text(old_src_text); rungs_ref.write_bytes(old_ref_bytes)
@@ -728,8 +728,8 @@ def main():
     # ── THE wantrc SIDECAR. Written only for a nonzero rc: read_wantrc_sidecar() REFUSES a declared rc=0
     # (it is already the default), so writing one would break every later read of this rung suite.
     if want_rc != 0:
-        w_path = rungs_dir / "ALL.wantrc"
-        header = ("# ALL.wantrc \u2014 DECLARED exit codes for entries whose CORRECT run exits nonzero.\n"
+        w_path = rungs_dir / "ALL.rc"
+        header = ("# ALL.rc \u2014 DECLARED exit codes for entries whose CORRECT run exits nonzero.\n"
                   "# Format: name<TAB>rc   \u00b7   blank lines and # comments ignored   \u00b7   rc=0 is the default and is REFUSED here.\n"
                   "#\n"
                   "# \u26d4 DECLARED, NEVER INFERRED: classify() refuses to call a nonzero-rc run a PASS unless the\n"
@@ -738,13 +738,13 @@ def main():
         if not old_w.endswith("\n"):
             old_w += "\n"
         new_w = old_w + "%s\t%d\n" % (entry_name, want_rc)
-        tmp_w = w_path.with_suffix(".wantrc.newtmp")
+        tmp_w = w_path.with_suffix(".rc.newtmp")
         tmp_w.write_text(new_w)
         if not tmp_w.read_text().startswith(old_w):
             tmp_w.unlink(missing_ok=True)
-            refuse("post-append check failed: existing ALL.wantrc lines were perturbed -- nothing written")
+            refuse("post-append check failed: existing ALL.rc lines were perturbed -- nothing written")
         tmp_w.replace(w_path)
-        print("  wrote ALL.wantrc: %s\t%d" % (entry_name, want_rc))
+        print("  wrote ALL.rc: %s\t%d" % (entry_name, want_rc))
 
     # ── PLACE THE ENTRY BY THE BUILDER'S KEY (R-2019). The write above APPENDED (its prefix proofs need that); the builder's own
     # resort_rungs now moves the new entry to its place -- the one authority for the order, content-invariant by its own proofs, and

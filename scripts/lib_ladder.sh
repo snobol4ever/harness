@@ -26,7 +26,7 @@
 # OUT of the rungs by origin through lib_rungs_extract.sh -- keyed on the CSV `origin` column, never on the
 # entry name or a filename glob.
 # EACH WITNESS RUNS ALONE IN BOTH MODES:  m3 = scrip --run  ·  m4 = scrip --compile --out=x.s + as --64 + gcc -no-pie + run
-# Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.wantrc,
+# Verdict per witness per mode: stdout byte-equal to the .ref AND rc equal to the declared rc (ALL.rc,
 # keyed on the entry NAME; default 0, and the file need not exist). A timeout is a FAIL(rc=124), never a hang.
 # ⭐ REFS ARE ORACLE-CUT, NOT HAND-AUTHORED, and this body never re-invokes an oracle at grading time: the
 # .ref is the recorded oracle answer, cut once by the language's own oracle, and the runner's only job is
@@ -105,7 +105,7 @@ PY
   # ⭐ NOT BEFORE `--list`: listing witnesses is not grading them, and a refusal there would demand a rebuild
   # to answer a question the binary is not consulted for. The refusal belongs where the verdict is minted.
   "$HERE/util_require_fresh.sh" --gate "${LADDER_SUITE}-ladder" "$SCRIP" "$RT/libscrip_rt.so" || exit 2
-  wantrc() { local n="$1"; [ -f "$RUNGS_DIR/ALL.wantrc" ] || { echo 0; return; }; local v; v=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$RUNGS_DIR/ALL.wantrc"); printf '%s\n' "${v:-0}"; }
+  wantrc() { local n="$1"; [ -f "$RUNGS_DIR/ALL.rc" ] || { echo 0; return; }; local v; v=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$RUNGS_DIR/ALL.rc"); printf '%s\n' "${v:-0}"; }
   local W; W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
   local n=0 pass=0 fail=0 pair src ref name want r3 r4 v3 v4; local -A rp rf
   # ⭐ THE DEBT COUNTER IS PART OF THE CURE, NOT A DECORATION. Capturing stderr without saying how much of it nobody

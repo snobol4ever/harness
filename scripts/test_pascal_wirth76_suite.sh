@@ -4,7 +4,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # transcribed to ISO 7185 with its driver (corpus/packages/pascal/wirth1976/, hq_pascal's row), graded in both SCRIP modes against
 # refs cut from fpc -Miso. Lon 2026-10-09 17:0x CDT, in-chat, verbatim: "Have drivers created for the Wirth 1976 and make it
 # an official test suite." (R-1580; the coo's row instruments-the-wirth76-suite-row-...). The shape of test_pascal_fpc_suite.sh, without
-# the fpc_tests history: every <name>.pas is a whole program, <name>.ref its oracle output, <name>.in its stdin when present, ALL.wantrc
+# the fpc_tests history: every <name>.pas is a whole program, <name>.ref its oracle output, <name>.in its stdin when present, ALL.rc
 # fpc's own exit status where it is not 0, ALL.timeout.tsv a declared run timeout with its reason, ALL.csv each unit's heap_kb/stack_kb.
 # A .pas with no .ref is UNGRADED (REF_NOT_CUT), never dropped. The row is THE AND PER PROGRAM (R-372): green in both modes.
 set -u
@@ -18,7 +18,7 @@ SCRIP="${HERE}/../../SCRIP/scrip"
 RT_SO="${HERE}/../../SCRIP/out/libscrip_rt.so"
 SUITE="${WIRTH76_SUITE:-$S4E/corpus/packages/pascal/wirth1976}"
 KEY="${WIRTH76_SUITE_KEY:-wirth76}"
-WANTRC="$SUITE/ALL.wantrc"
+WANTRC="$SUITE/ALL.rc"
 RUN_TIMEOUT="${WIRTH76_SUITE_RUN_TIMEOUT:-10}"
 [ -d "$SUITE" ] || { echo "⛔ REFUSED-TO-GRADE: $SUITE missing (the package is hq_pascal's row: pascal-wirth-1976-...-r-1580)"; exit 2; }
 [ -x "$SCRIP" ] || { echo "⛔ REFUSED-TO-GRADE: scrip not built"; exit 2; }

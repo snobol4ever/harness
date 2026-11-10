@@ -11,7 +11,7 @@
 #
 # These are the two named reds of the Icon rungs board (ladder_rung26_pow_pow_zero_negexp,
 # ladder_rung26_pow_pow_negbase_real) and the reason its watermark pins at 607 and not 609.
-# ALL.wantrc requires rc=1 and ALL.ref requires stdout to be exactly 'before' for both.
+# ALL.rc requires rc=1 and ALL.ref requires stdout to be exactly 'before' for both.
 #
 # ⭐⭐ THE TWO ARMS ABOVE ASSERT AN ABSENCE, AND seat05's WITNESS AUDIT (2026-09-05) IS RIGHT THAT AN
 # ABSENCE IS A WEAK ASSERTION: rc=1 with stdout "before" also passes if SCRIP raises the WRONG error

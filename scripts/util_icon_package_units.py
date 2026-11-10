@@ -16,7 +16,7 @@ A key with no row is the gap: the runner would grade that unit at the runtime's 
 names it (declared_row_in_table, lib_declared_arena.sh). WHY THIS EXISTS: corpus 4d805e1bc (2026-09-25) gave every unit the runners
 looked up a row, read off SCRIP_DECL_MISS_LOG over one full pass; the drivers of R-1269/1272 arrived after it and 382 graded units
 (IPL 356, Arizona 23, Jcon 3) plus 275 IPL compile-tier files went rowless, unread until hq_icon asked where IPL iftrace's instrumentation switch
-lives (2026-09-27). A settings row for an excluded unit is R-1261's shape: the identity check counts no row ALL.excluded.txt names.
+lives (2026-09-27). A settings row for an excluded unit is R-1261's shape: the identity check counts no row ALL.omit names.
 The row a missing key is owed carries THE PACKAGE'S OWN DECLARATION, read off its table: the one (heap_kb, stack_kb, compile_args,
 run_args) every row carries -- on 2026-09-27 SPITBOL's -d/-s written out (131072, 4096; corpus 4d805e1bc) and the instrumentation
 switch the runners typed for every unit until SCRIP 286483382. A table whose rows disagree, or that has none, is refused: the owed

@@ -30,7 +30,7 @@ arm "the builder ran (rc)" "$brc" 0
 names="$(python3 "$HERE/corpus_suite_harness.py" list "$D/corpus/tests/snobol4/ALL.sno" "$D/corpus/tests/snobol4/ALL.ref" --lang snobol4 2>/dev/null)"
 arm "a stable answer with no ref is absorbed (SCRIP prints nothing)" "$(printf '%s\n' "$names" | grep -cx 'demo_gate_stable')" 1
 arm "a stale committed ref is absorbed, not excluded" "$(printf '%s\n' "$names" | grep -cx 'demo_gate_stale')" 1
-arm "neither is named in ALL.excluded.txt" "$(grep -c 'gate_st' "$D/corpus/tests/snobol4/ALL.excluded.txt")" 0
+arm "neither is named in ALL.omit" "$(grep -c 'gate_st' "$D/corpus/tests/snobol4/ALL.omit")" 0
 python3 "$HERE/corpus_suite_harness.py" extract "$D/corpus/tests/snobol4/ALL.sno" "$D/corpus/tests/snobol4/ALL.ref" demo_gate_stale "$D/x.sno" --out-ref "$D/x.ref" > /dev/null 2>&1
 arm "the stale one's ref is the oracle's fresh answer" "$(cat "$D/x.ref" 2>/dev/null)" "fresh answer"
 arm "neither is marked xfail" "$(grep -cE 'demo_gate_st' "$D/corpus/tests/snobol4/ALL.xfail" 2>/dev/null || echo 0)" 0

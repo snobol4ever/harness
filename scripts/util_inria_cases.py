@@ -289,7 +289,7 @@ def tests_of(pkg_dir):
     out = []
     for fn in sorted(os.listdir(pkg_dir)):
         p = os.path.join(pkg_dir, fn)
-        if not os.path.isfile(p) or fn.endswith((".md", ".txt", ".pl", ".csv", ".tsv", ".ref", ".in", ".wantrc", ".mask")) or fn.startswith("ALL."):
+        if not os.path.isfile(p) or fn.endswith((".md", ".txt", ".pl", ".csv", ".tsv", ".ref", ".in", ".rc", ".mask")) or fn.startswith("ALL."):
             continue
         for goal, exp, outside in parse(p):
             out.append((fn, goal, exp, outside))

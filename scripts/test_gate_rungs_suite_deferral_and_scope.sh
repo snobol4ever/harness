@@ -7,7 +7,7 @@
 # on hq_P's own measured witnesses -- see the task file for the receipts this gate turns into assertions):
 #   A/B. NEVER ABSORBS A KEEPER OR A DEFERRED FILE (requirement 1) -- a family declared in a KEEP.md, and
 #        a family listed under a PENDING.md's `## DEFERRED` heading, both stay loose and both are recorded
-#        with a named reason in ALL.excluded.txt; neither's origin appears in ALL.csv.
+#        with a named reason in ALL.omit; neither's origin appears in ALL.csv.
 #   C.   ...AND DOES NOT OVER-EXCLUDE -- an ordinary undeclared family in the SAME tree absorbs normally.
 #   D/E. --absorb-only <families> SCOPES ABSORPTION ITSELF (requirement 2) -- naming one family among
 #        several absorbable ones absorbs exactly that one; naming a family this run cannot absorb (here,
@@ -85,16 +85,16 @@ echo "== A/B/C. KEEP.md and PENDING.md respected; an undeclared family absorbs n
 mkscratch "$W/abc"
 out="$(S4E_HOME="$W/abc" S4E_POST="$W/abc/postoffice" python3 "$BUILDER" --lang snobol4 2>&1)"; rc=$?
 csv="$W/abc/corpus/tests/snobol4/ALL.csv"
-excl="$W/abc/corpus/tests/snobol4/ALL.excluded.txt"
+excl="$W/abc/corpus/tests/snobol4/ALL.omit"
 if [ "$rc" -eq 0 ]; then good "exit 0"; else bad "expected rc=0, got rc=$rc: $out"; fi
 if ! grep -q '^[0-9]*,[^,]*,keepfam_probe__' "$csv" 2>/dev/null; then good "keepfam_probe NOT in ALL.csv (never absorbed)"
 else bad "⛔ keepfam_probe origin appears in ALL.csv -- the KEEP.md declaration was not honoured"; fi
 if ! grep -q '^[0-9]*,[^,]*,pendfam_probe__' "$csv" 2>/dev/null; then good "pendfam_probe NOT in ALL.csv (never absorbed)"
 else bad "⛔ pendfam_probe origin appears in ALL.csv -- the PENDING.md deferral was not honoured"; fi
-if grep -Pq '^keepfam_probe\tKEEPER' "$excl" 2>/dev/null; then good "keepfam_probe recorded in ALL.excluded.txt as a KEEPER, with reason"
-else bad "keepfam_probe missing (or unreasoned) in ALL.excluded.txt"; fi
-if grep -Pq '^pendfam_probe\tDEFERRED' "$excl" 2>/dev/null; then good "pendfam_probe recorded in ALL.excluded.txt as DEFERRED, with reason"
-else bad "pendfam_probe missing (or unreasoned) in ALL.excluded.txt"; fi
+if grep -Pq '^keepfam_probe\tKEEPER' "$excl" 2>/dev/null; then good "keepfam_probe recorded in ALL.omit as a KEEPER, with reason"
+else bad "keepfam_probe missing (or unreasoned) in ALL.omit"; fi
+if grep -Pq '^pendfam_probe\tDEFERRED' "$excl" 2>/dev/null; then good "pendfam_probe recorded in ALL.omit as DEFERRED, with reason"
+else bad "pendfam_probe missing (or unreasoned) in ALL.omit"; fi
 if [ -f "$W/abc/corpus/tests/snobol4/keepfam_probe.sno" ] && [ -f "$W/abc/corpus/tests/snobol4/pendfam_probe.sno" ]; then
     good "both declared files survive on disk, untouched"
 else bad "⛔ a declared file was deleted despite never being absorbed"; fi
@@ -191,7 +191,7 @@ else bad "⛔ the committed rungs changed despite the forced post-write validati
 if ! find "$W/g/corpus/tests/snobol4" -name '*.tmp-*' | grep -q .; then good "no stray .tmp-* files left behind"
 else bad "⛔ stray temp file(s) left on disk after the forced failure"; fi
 
-echo "== H. ALL.excluded.txt IS GENERATED: a hand edit REFUSES rc=2 instead of being silently absorbed (R-545) =="
+echo "== H. ALL.omit IS GENERATED: a hand edit REFUSES rc=2 instead of being silently absorbed (R-545) =="
 # ⛔ THE TWO ARMS ARE THE TWO MEASURED DEFECTS, and they used to fail in OPPOSITE directions on the same file
 # (hq_V 2026-09-10, scratch-tree measurement): a hand DELETION of a line the builder still computes was
 # SILENTLY REVERTED by the next full build, and a hand-ADDED line the builder never computes SURVIVED FOREVER
@@ -199,7 +199,7 @@ echo "== H. ALL.excluded.txt IS GENERATED: a hand edit REFUSES rc=2 instead of b
 # name cannot be red, so nobody looks. Both must now refuse. The third arm is the one that keeps this honest:
 # an UNTOUCHED file must rebuild clean, or the guard is a gate that fires on its own correct output.
 mkscratch "$W/h"
-EXCL="$W/h/corpus/tests/snobol4/ALL.excluded.txt"
+EXCL="$W/h/corpus/tests/snobol4/ALL.omit"
 S4E_HOME="$W/h" S4E_POST="$W/h/postoffice" python3 "$BUILDER" --lang snobol4 >/dev/null 2>&1
 if grep -q '^# builder-digest:' "$EXCL" 2>/dev/null; then good "a legacy file with no digest MIGRATES (stamped, not refused)"
 else bad "⛔ no builder-digest stamped -- the guard cannot arm itself"; fi

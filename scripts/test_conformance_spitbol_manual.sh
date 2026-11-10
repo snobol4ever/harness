@@ -20,7 +20,7 @@ QUIET=0; [ "${1:-}" = "--quiet" ] && QUIET=1
 # ever minted a witness?" -- YES: 132 of them. They were absorbed into the flat set by corpus
 # 11a36c87 (Lon's ZERO-SUBFOLDERS + total-absorption ruling), which deleted probe_loose/ entirely.
 # ⭐ BUT THIS IS NOT A COVERAGE HOLE AND MUST NOT BE "FIXED" BY RE-POINTING IT: all 132 carry a
-# conformance origin/family in tests/snobol4/ALL.csv, NONE is in ALL.excluded.txt, and
+# conformance origin/family in tests/snobol4/ALL.csv, NONE is in ALL.omit, and
 # test_corpus_snobol4.sh grades the whole set (total=1726). So the witnesses ARE graded, every run.
 # Re-pointing this script at ALL.* would duplicate the rungs board, not add coverage. It is a
 # retirement candidate or a focused view, not a defect -- a corpus-layout call, deliberately not

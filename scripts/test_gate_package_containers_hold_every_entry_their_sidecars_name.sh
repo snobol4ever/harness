@@ -6,7 +6,7 @@
 # gimpel's dextern_driver). THE CHECK: for every package directory under corpus/packages/<lang>/ that ships a container ALL.<ext> beside
 # an ALL.ref, the entries read by THE ONE READER (corpus_suite_harness.py read_suite for SNOBOL4, read_block_suite with the dialect's
 # banner for the others) must include every entry named by the package's ALL.csv entry column, its PARTITION.tsv entry column and its
-# ALL.mask entry column (the * wildcard excepted), UNLESS the package's exclusion files declare it -- ALL.excluded.txt (name: reason),
+# ALL.mask entry column (the * wildcard excepted), UNLESS the package's exclusion files declare it -- ALL.omit (name: reason),
 # EXCLUDED.tsv, EXCLUDED_CASES.tsv, CONTAINERS.tsv -- the officer's cure (b) of 2026-10-18 (one attribute table per package stays). A package with no container is counted and named, never a pass. GREEN iff no package
 # container misses a name. RED on corpus a5735c4a9, measured by the coo 2026-10-18 11:0x CDT: 6 of 11 containers drift, 861 names
 # (icon/ipl 773, prolog/rosetta-prolog 30, icon/arizona_tests 28, snobol4/csnobol4_suite 22, icon/jcon_tests 7, snobol4/gimpel 1). Classified
@@ -48,12 +48,12 @@ def named(p):
     return out
 def declared(p):
     out = set()
-    for fn in ("ALL.excluded.txt", "EXCLUDED.tsv", "EXCLUDED_CASES.tsv", "CONTAINERS.tsv"):
+    for fn in ("ALL.omit", "EXCLUDED.tsv", "EXCLUDED_CASES.tsv", "CONTAINERS.tsv"):
         f = p / fn
         if f.exists():
             for ln in f.read_text(encoding="utf-8", errors="replace").splitlines():
                 if ln.strip() and not ln.startswith("#"):
-                    n = (ln.split(":", 1)[0] if fn == "ALL.excluded.txt" else ln.split("\t")[0]).strip()
+                    n = (ln.split(":", 1)[0] if fn == "ALL.omit" else ln.split("\t")[0]).strip()
                     out.add(n); out.add(n.rsplit(".", 1)[0])
     return out
 def entries(lang, src, ref):

@@ -5,7 +5,7 @@
 #
 # ⛔⭐⭐ AN EXCLUSION IS A SUBTRACTION FROM THE DENOMINATOR, SO ITS REASON IS A NUMBER, NOT PROSE. Every row in
 # a package's OUTSIDE_SPITBOL_BASELINE.tsv removes one program from the score anyone quotes. The record is
-# hand-maintained -- nothing generates it, unlike a container's ALL.excluded.txt -- which is exactly why it
+# hand-maintained -- nothing generates it, unlike a container's ALL.omit -- which is exactly why it
 # needs an instrument: a reason written by a hand and re-read by a hand only ever re-confirms itself.
 #
 # ⛔⭐ THE CLASS THIS WAS BUILT AGAINST, measured 2026-09-11 by hq_R across all six SNOBOL4 packages (149 rows):

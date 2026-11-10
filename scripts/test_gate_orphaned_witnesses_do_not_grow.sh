@@ -2,7 +2,7 @@
 # ../harness/scripts/test_gate_orphaned_witnesses_do_not_grow.sh — R-414 (minted hq_P 2026-09-08).
 #
 # WHAT IT GATES.  An ORPHANED WITNESS is a committed `<name><ext>` + `<name>.ref` pair under
-# corpus/tests/<lang>/ whose name appears in NO `ALL.csv`, `ALL.xfail` or `ALL.excluded.txt`.
+# corpus/tests/<lang>/ whose name appears in NO `ALL.csv`, `ALL.xfail` or `ALL.omit`.
 # It is not passing, not expected-failing and not excluded: NO DENOMINATOR CONTAINS IT, so no
 # board has ever run it.  Of the 39 SNOBOL4 orphans measured at mint, FOUR ARE RED and one of
 # those SEGFAULTS in both modes (nested_arbno_rpos, rc=139) -- while the SNOBOL4 rungs read
@@ -64,7 +64,7 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # ⭐ AND ONE OF THE FIVE WAS NEVER A DEBT AT ALL -- IT WAS BOOKKEEPING LAG, WHICH THIS CENSUS CANNOT TELL APART FROM
 # DEBT. corpus bc1b1f900 landed an_ordinary_call_chain_prints_every_frame_in_the_traceback, which hq_S DECLARED in
 # KEEP.md in that same commit as a permanent name-echoing keeper -- correctly: its ref carries its own file name on 4
-# lines, so the rungs builder's rename would manufacture a red. It counted as an orphan only because ALL.excluded.txt
+# lines, so the rungs builder's rename would manufacture a red. It counted as an orphan only because ALL.omit
 # is written by the BUILDER and no build had run since. Verified the echo here before writing anything, then added the
 # one line the builder emits verbatim. ⛔ A DECLARED KEEPER READS AS AN ORPHAN UNTIL SOMEBODY RUNS A BUILD: the census
 # reads three files, and one of the three lags the declaration that governs it.
@@ -112,7 +112,7 @@ CENSUS="$CORPUS/tests/ORPHANED-WITNESSES.tsv"
 # witnesses had cured and were already in the master byte for byte (ladder__rung02_proc_every_return_form_returns_its_variable and
 # ladder__rung02_proc_an_if_case_block_or_limitation_is_a_variable_when_its_arm_is); w_control_structures is deleted, w_return_forms stays
 # loose only because hq_zetas' live row spine-zd-planner-arms-... compiles it by path (tests/icon/PENDING.md re-points its deferral there,
-# and the builder's regenerated ALL.excluded.txt records it, so this census no longer counts it an orphan).
+# and the builder's regenerated ALL.omit records it, so this census no longer counts it an orphan).
 # ⭐ FLOOR_snobol4 39 -> 1 (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-unabsorbed-census-
 # reads-zero): 38 of the 39 pairs are master entries now (corpus 6fed95b5c, 542589286, f1ac5ce03 and the landings after it) and
 # ORPHANED-WITNESSES.tsv is regenerated; the gates that compiled them by path extract them from the master by origin. The one left is

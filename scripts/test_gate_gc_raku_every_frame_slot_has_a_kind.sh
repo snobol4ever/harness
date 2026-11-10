@@ -45,7 +45,7 @@ if cmp -s "$W/plant.zeta" "$W/hole.zeta"; then echo "REFUSE(2) [$(basename "$0" 
 python3 "$CENSUS" --dumps "$W/hole.zeta" > "$W/plant.txt" 2>&1; rc_plant=$?
 if [ "$rc_plant" -ne 1 ]; then echo "REFUSE(2) [$(basename "$0" .sh)]: the detector arm did not fire -- the fixture's dump with its first field line dropped read rc=$rc_plant, wanted 1 (a census that cannot see a corrupted map cannot be trusted with the real ones)"; tail -2 "$W/plant.txt"; exit 2; fi
 # THE DECLARED ARM (hq_raku 2026-09-20, granted R-1003 + the cto's three conditions).  A no_layout entry the rungs' own
-# ALL.wantrc gives a NON-ZERO rc is DECLARED -- the suite says it must not compile, so having no frame is correct and permanent,
+# ALL.rc gives a NON-ZERO rc is DECLARED -- the suite says it must not compile, so having no frame is correct and permanent,
 # not a defect.  This arm is the PRICE OF THE FIELD: without it the classifier is a claim rather than a measurement.  Both
 # directions are graded on ONE uncompilable fixture, so the only thing that differs between them is the sidecar.
 cat > "$W/declared.raku" <<'FIX'

@@ -19,7 +19,7 @@ refuse() { echo "⛔ REFUSED(2) [$G]: $*" >&2; exit 2; }
 [ -x /home/resources/x64/bin/sbl ] || refuse "no SNOBOL4 oracle at /home/resources/x64/bin/sbl (the tool cuts the witness's ref from it)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 if [ -f "$M/MULTI.md" ]; then cp -r "$M" "$T/fmt2src" && python3 "$HERE/corpus_suite_harness.py" ungroup "$T/fmt2src" >/dev/null 2>&1 || refuse "could not ungroup the format-2 rungs into scratch"; M="$T/fmt2src"; fi
-fresh() { rm -rf "$T/$1"; mkdir -p "$T/$1"; cp "$M/ALL.csv" "$M/ALL.sno" "$M/ALL.ref" "$T/$1/"; [ -f "$M/ALL.wantrc" ] && cp "$M/ALL.wantrc" "$T/$1/"; echo "$T/$1"; }
+fresh() { rm -rf "$T/$1"; mkdir -p "$T/$1"; cp "$M/ALL.csv" "$M/ALL.sno" "$M/ALL.ref" "$T/$1/"; [ -f "$M/ALL.rc" ] && cp "$M/ALL.rc" "$T/$1/"; echo "$T/$1"; }
 printf "\tOUTPUT = 'gate'\nEND\n" > "$T/w.sno"
 ORIGIN=ladder__rung00_gate_attribute_columns
 # col <csv> <row-match> <column-name> -> the named column's value, read BY HEADER NAME never by position

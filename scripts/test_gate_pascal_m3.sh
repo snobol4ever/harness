@@ -25,7 +25,7 @@ RUNGS_REF="${RUNGS_REF:-$CORPUS/ALL.ref}"
 # independently, not just as part of the combined check.
 # ⛔ FIVE entries stay loose PERMANENTLY, not a residue of this repoint: read1-4 and pb35 read real stdin,
 # and the suite format has no stdin-input concept (hq_C's SNOBOL4-side ruling, 2026-08-24 — see KEEP.md
-# section 1). The rungs builder independently reaches the same conclusion (ALL.excluded.txt names all 5).
+# section 1). The rungs builder independently reaches the same conclusion (ALL.omit names all 5).
 # Register a new permanent stdin exception in BOTH this file and test_gate_pascal_m4.sh's identical list.
 STDIN_FAMILIES="read1 read2 read3 read4 pb35"
 RESULTS="${RESULTS:-/tmp/m3_results.tsv}"

@@ -2,7 +2,7 @@
 
 A witness pair is a loose `<name><ext>` beside a `<name>.ref` under `corpus/tests/<lang>/`.
 It is ORPHANED when its name appears NOWHERE in that language's `ALL.csv`, `ALL.xfail` or
-`ALL.excluded.txt` -- so it is not passing, not expected-failing, and not excluded: no
+`ALL.omit` -- so it is not passing, not expected-failing, and not excluded: no
 denominator contains it, and no board has ever run it.
 
 WHY THIS IS ITS OWN SHAPE, worse than an xfail (R-414, hq_P 2026-09-08):
@@ -25,7 +25,7 @@ def census(root):
         d = os.path.join(root,'tests',lang)
         if not os.path.isdir(d): continue
         blob = ''
-        for f in ('ALL.csv','ALL.xfail','ALL.excluded.txt'):
+        for f in ('ALL.csv','ALL.xfail','ALL.omit'):
             p = os.path.join(d,f)
             if os.path.exists(p): blob += open(p, errors='replace').read()
         loose, orph = 0, []

@@ -70,7 +70,7 @@ import corpus_suite_harness as H
 sno, ref = base + ext, base + '.ref'
 inp = base + '.in' if os.path.exists(base + '.in') else None
 arg = base + '.argv' if os.path.exists(base + '.argv') else None
-wrc = base + '.wantrc' if os.path.exists(base + '.wantrc') else None
+wrc = base + '.rc' if os.path.exists(base + '.rc') else None
 if lang == 'snobol4':
     entries = H.read_suite(sno, ref, inp, None, wrc, arg, modes=None)
 else:

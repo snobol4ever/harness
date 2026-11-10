@@ -83,11 +83,11 @@ ref_of() { awk -v n="$1" '/^%-+ [0-9]+ /{f=($NF==n); next} f' "$P/ALL.ref" 2>/de
 r=$(ref_of ft_tests_t_sorted); [ "$r" = "a b c " ] && ok "arm 1: t_sorted's ref is XSB's answer sorted: $r" || bad "arm 1: t_sorted's ref reads [$r], want [a b c ]"
 grep -qP '^ft_tests_t_sorted\tMATCH$' $P/ALL.xsbold 2>/dev/null && grep -qP '^ft_tests_t_stale\tDIFF' $P/ALL.xsbold 2>/dev/null \
   && ok "arm 2: ALL.xsbold: t_sorted MATCH, t_stale DIFF" || bad "arm 2: ALL.xsbold lacks t_sorted MATCH / t_stale DIFF: $(tr '\n' ' ' < $P/ALL.xsbold 2>/dev/null | cut -c1-160)"
-grep -q '^ft_tests_t_silent: .*FAKEABLE_NO_OBSERVABLE' $P/ALL.excluded.txt 2>/dev/null && ok "arm 3: t_silent excluded FAKEABLE_NO_OBSERVABLE" || bad "arm 3: t_silent not excluded as FAKEABLE_NO_OBSERVABLE"
+grep -q '^ft_tests_t_silent: .*FAKEABLE_NO_OBSERVABLE' $P/ALL.omit 2>/dev/null && ok "arm 3: t_silent excluded FAKEABLE_NO_OBSERVABLE" || bad "arm 3: t_silent not excluded as FAKEABLE_NO_OBSERVABLE"
 grep -q '^[0-9]*,ft_tests_t_cr,' $P/ALL.csv 2>/dev/null && [ "$(ref_of ft_tests_t_cr)" = $'a\rb ' ] && ok "arm 4b: t_cr's answer carries a CR: absorbed, ALL.ref holding a CR b byte for byte" \
   || bad "arm 4b: t_cr not absorbed, or its ref reads [$(ref_of ft_tests_t_cr | od -c | head -1 | cut -c9-)] -- want a CR b"
-grep -q '^ft_tests_t_xcl: EXCLUDED.tsv names it NO_ORACLE_ANSWER' $P/ALL.excluded.txt 2>/dev/null && ! grep -q '^[0-9]*,ft_tests_t_xcl,' $P/ALL.csv && ok "arm 4c: a program EXCLUDED.tsv names is not absorbed, though XSB answers it the same twice" || bad "arm 4c: t_xcl was absorbed despite its EXCLUDED.tsv row"
-grep -q '^ft_tests_t_norun: .*run it nowhere' $P/ALL.excluded.txt 2>/dev/null && ok "arm 4: t_norun excluded, run nowhere" || bad "arm 4: t_norun not excluded as run nowhere"
+grep -q '^ft_tests_t_xcl: EXCLUDED.tsv names it NO_ORACLE_ANSWER' $P/ALL.omit 2>/dev/null && ! grep -q '^[0-9]*,ft_tests_t_xcl,' $P/ALL.csv && ok "arm 4c: a program EXCLUDED.tsv names is not absorbed, though XSB answers it the same twice" || bad "arm 4c: t_xcl was absorbed despite its EXCLUDED.tsv row"
+grep -q '^ft_tests_t_norun: .*run it nowhere' $P/ALL.omit 2>/dev/null && ok "arm 4: t_norun excluded, run nowhere" || bad "arm 4: t_norun not excluded as run nowhere"
 n_cmp=$(python3 -c "import csv,sys; r=list(csv.DictReader(open('$P/ALL.csv'))); print(sum(1 for x in r if x.get('compare')=='ignore-all-space'), len(r))" 2>/dev/null)
 [ "$n_cmp" = "8 8" ] && ok "arm 5: 8 of 8 absorbed rows read compare=ignore-all-space" || bad "arm 5: compare cells [$n_cmp], want 8 of 8"
 n_stg=$(python3 -c "import csv; r={x['entry']:x for x in csv.DictReader(open('$P/ALL.csv'))}; print(r.get('ft_tests_t_sib',{}).get('stage'), r.get('ft_tests_t_tmp',{}).get('answer'), r.get('ft_tests_t_ws',{}).get('stage'))" 2>/dev/null)
@@ -118,9 +118,9 @@ printf ':- initialization((write(hi), nl, halt)).\n' > $O/once.pl
 printf ":- initialization((write('[ModalShowX11Window] Cannot open display'), nl, halt)).\n" > $O/window.pl
 printf ':- initialization((write(x), put_code(13), nl, write(y), nl, halt)).\n' > $O/cr.pl
 S4E_OUTPUT_CAP_MB=1 TIMEOUT=60 python3 "$HERE/util_build_package_suite.py" "$O" --lang prolog --twice > $T/ovf.out 2>&1; orc=$?
-if grep -q '^forever: .*bound' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'forever' $O/ALL.csv 2>/dev/null; then ok "arm 7: an OVERFLOW run is excluded, never absorbed (rc $orc)"
+if grep -q '^forever: .*bound' $O/ALL.omit 2>/dev/null && ! grep -q 'forever' $O/ALL.csv 2>/dev/null; then ok "arm 7: an OVERFLOW run is excluded, never absorbed (rc $orc)"
 else bad "arm 7: forever.pl was not excluded as an OVERFLOW (rc $orc; ALL.ref $(stat -c %s $O/ALL.ref 2>/dev/null || echo -) bytes)"; fi
-if grep -q '^window: .*could not open a display' $O/ALL.excluded.txt 2>/dev/null && ! grep -q 'window' $O/ALL.csv 2>/dev/null; then ok "arm 7b: an oracle's display refusal is no answer, never absorbed"
+if grep -q '^window: .*could not open a display' $O/ALL.omit 2>/dev/null && ! grep -q 'window' $O/ALL.csv 2>/dev/null; then ok "arm 7b: an oracle's display refusal is no answer, never absorbed"
 else bad "arm 7b: window.pl's 'Cannot open display' was absorbed as a ref"; fi
 crref() { awk '/^%-+ [0-9]+ cr$/{f=1; next} /^%-+ [0-9]+ /{f=0} f' "$1/ALL.ref" 2>/dev/null | od -An -c | tr -s ' ' | tr -d '\n'; }
 if grep -q '^[0-9]*,cr,' $O/ALL.csv 2>/dev/null && [ "$(crref $O)" = ' x \r \n y \n' ]; then ok "arm 11: cr.pl's answer (x CR LF y) is absorbed, its ref carrying the CR at end of line byte for byte"

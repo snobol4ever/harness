@@ -8,9 +8,9 @@ ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE.<ext>, ONE.out
 
 usage: util_tests_layout_census.py [--root S4E_HOME] [--lang L] [--list] [--check]
 For each language folder, every tracked file that is neither the container nor under config/, classed:
-  PAIR-ORPHAN      a program with its .ref beside it whose name ALL.csv and ALL.excluded.txt never mention: no cell grades it (absorb it)
+  PAIR-ORPHAN      a program with its .ref beside it whose name ALL.csv and ALL.omit never mention: no cell grades it (absorb it)
   PAIR-IN-TABLE    a program with its .ref whose name ALL.csv mentions: absorbed already, the loose copy is a duplicate (compare, then delete)
-  PAIR-EXCLUDED    a program with its .ref that ALL.excluded.txt names: left out of the container by a reason and kept loose
+  PAIR-EXCLUDED    a program with its .ref that ALL.omit names: left out of the container by a reason and kept loose
   PROGRAM-NO-REF   a program with no .ref beside it (a parser fixture, a module another program loads, a sample): no run grades it
   SIDECAR          a .ref .in .heap .stack .argv .env or the like beside a loose program
   TABLE DOC OTHER  a step table or census (.tsv .csv), a document (.md .txt), anything else
@@ -52,7 +52,7 @@ def main():
         fs = set(files)
         d = os.path.join(tests, lang)
         blob = {}
-        for n in ("ALL.csv", "ALL.excluded.txt"):
+        for n in ("ALL.csv", "ALL.omit"):
             p = os.path.join(d, n)
             blob[n] = open(p, encoding="utf-8", errors="replace").read() if os.path.isfile(p) else ""
         cls = collections.Counter()
@@ -69,7 +69,7 @@ def main():
             stem = b.rsplit(".", 1)[0]
             if ext in PROG:
                 if (rel.rsplit(".", 1)[0] + ".ref") in fs:
-                    c = "PAIR-IN-TABLE" if stem in blob["ALL.csv"] else ("PAIR-EXCLUDED" if stem in blob["ALL.excluded.txt"] else "PAIR-ORPHAN")
+                    c = "PAIR-IN-TABLE" if stem in blob["ALL.csv"] else ("PAIR-EXCLUDED" if stem in blob["ALL.omit"] else "PAIR-ORPHAN")
                 else:
                     c = "PROGRAM-NO-REF"
             elif ext in SIDE:

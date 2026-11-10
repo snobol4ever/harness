@@ -64,7 +64,7 @@ src, ref = (m/'ALL.reb').read_text(), (m/'ALL.ref').read_text()
 (w/'clean'/'ALL.ref').write_text(ref)
 (w/'red'/'ALL.reb').write_text(src)
 (w/'red'/'ALL.ref').write_text(ref.replace('\n', '\nZZZ-DELIBERATE-MISMATCH\n', 1))
-for extra in ('ALL.csv','ALL.in','ALL.xfail','ALL.wantrc','ALL.modes'):
+for extra in ('ALL.csv','ALL.in','ALL.xfail','ALL.rc','ALL.modes'):
     if (m/extra).is_file():
         t = (m/extra).read_text()
         (w/'clean'/extra).write_text(t); (w/'red'/extra).write_text(t)

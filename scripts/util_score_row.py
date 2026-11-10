@@ -1900,9 +1900,9 @@ def cmd_from_progress(a):
                         if k_ not in _mapped:
                             _mapped.append(k_)
         pop = _mapped
-        # ALL.excluded.txt names the units the container does not grade on their own (graded through another unit, an oracle that refuses...):
+        # ALL.omit names the units the container does not grade on their own (graded through another unit, an oracle that refuses...):
         # a shipped file it names is not debt the table forgot
-        _ae = os.path.join(tdir, "ALL.excluded.txt")
+        _ae = os.path.join(tdir, "ALL.omit")
         if os.path.exists(_ae):
             _aen = {_stem(l.split(":", 1)[0]) for l in open(_ae, encoding="utf-8", errors="replace") if l.strip()}
             shipped = {x for x in shipped if x in set(pop) or x not in _aen}
@@ -4343,7 +4343,7 @@ PROGRESS_COUNTED = {
     "snobol4": [("csnobol4", r"csnobol4", (118, 124, 125, 119, 120, 97, 93)), ("snoflake", r"[Ss]noflake", (180, 126)), ("gimpel", r"gimpel", (126, 127, 144, 289)), ("aisnobol", r"aisnobol", (2, 7, 8)), ("dotnet", r"dotnet", (5, 14)), ("testpgms", r"spitbol_testpgms|testpgms", (2, 8))],
     # ⛔ ipl IS 851 AND A BARE `find -name '*.icn'` WILL TELL YOU 852 -- DO NOT "FIX" IT TO 852. The 852nd
     # file is ALL.icn, our OWN generated container, and hq_I corrected this number the wrong way on
-    # 2026-09-05 on exactly that evidence. 851 = ALL.csv 78 graded entries + ALL.excluded.txt 773 named
+    # 2026-09-05 on exactly that evidence. 851 = ALL.csv 78 graded entries + ALL.omit 773 named
     # exclusions; test_icon_ipl_suite.sh now excludes the container and REFUSES if that identity breaks.
     # ⭐ Only the SHIPPED population is declared, deliberately: ipl's graded set is 60 (the oracle-cut RUN
     # tier), and declaring it would let an honest `34/60` count as 57% of a VENDOR score whose true reading

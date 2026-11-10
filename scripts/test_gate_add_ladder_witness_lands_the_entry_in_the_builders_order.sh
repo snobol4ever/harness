@@ -20,7 +20,7 @@ refuse() { echo "⛔ REFUSED(2) [$G]: $*" >&2; exit 2; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 if [ -f "$M/MULTI.md" ]; then cp -r "$M" "$T/fmt2src" && python3 "$HERE/corpus_suite_harness.py" ungroup "$T/fmt2src" >/dev/null 2>&1 || refuse "could not ungroup the format-2 rungs into scratch"; M="$T/fmt2src"; fi
 # fresh <name> -> a scratch ROOT $T/<name>/corpus/tests/snobol4 holding the live rungs and its sidecars, re-sorted into the builder's order (the order gate's S4E_HOME)
-fresh() { local r="$T/$1" f; rm -rf "$r"; mkdir -p "$r/corpus/tests/snobol4"; for f in ALL.csv ALL.sno ALL.ref ALL.in ALL.xfail ALL.wantrc; do [ -f "$M/$f" ] && cp "$M/$f" "$r/corpus/tests/snobol4/"; done
+fresh() { local r="$T/$1" f; rm -rf "$r"; mkdir -p "$r/corpus/tests/snobol4"; for f in ALL.csv ALL.sno ALL.ref ALL.in ALL.xfail ALL.rc; do [ -f "$M/$f" ] && cp "$M/$f" "$r/corpus/tests/snobol4/"; done
     python3 - "$HERE" "$r/corpus/tests/snobol4" <<'PY' >/dev/null 2>&1 || return 2
 import importlib.util, sys
 here, d = sys.argv[1], sys.argv[2]

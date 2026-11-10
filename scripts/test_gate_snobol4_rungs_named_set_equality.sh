@@ -13,7 +13,7 @@
 #   (a) some origin in ALL.csv ends with "__<basename>"            -- leaf program, absorbed directly
 #   (b) the file's own path-derived family name has ANY entries    -- the file WAS an intermediate
 #       in ALL.csv's family column                                    suite itself, absorbed wholesale
-#   (c) the basename appears in ALL.excluded.txt                   -- loudly excluded, not lost
+#   (c) the basename appears in ALL.omit                   -- loudly excluded, not lost
 # Accounted for by none of the three is a genuine gap: exit 1 and name it.
 #
 # ⛔ COMMIT DISCOVERY IS THE UNION OF TWO SIGNALS, NOT A SINGLE DATE CUTOFF. `git log --since`
@@ -33,7 +33,7 @@ S4E="${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 cd "$S4E/corpus" || exit 2
 START="${1:-2026-08-24}"
 CSV=tests/snobol4/ALL.csv
-EXC=tests/snobol4/ALL.excluded.txt
+EXC=tests/snobol4/ALL.omit
 [ -f "$CSV" ] || { echo "⛔ REFUSE: no $CSV"; exit 2; }
 [ -f "$EXC" ] || { echo "⛔ REFUSE: no $EXC"; exit 2; }
 
@@ -41,7 +41,7 @@ ORIGINS=$(mktemp); FAMILIES=$(mktemp); EXCLUDED=$(mktemp); GAPFILE=$(mktemp)
 trap 'rm -f "$ORIGINS" "$FAMILIES" "$EXCLUDED" "$GAPFILE"' EXIT
 awk -F, 'NR>1{print $3}' "$CSV" > "$ORIGINS"
 awk -F, 'NR>1{print $4}' "$CSV" | sort -u > "$FAMILIES"
-# ⛔ SKIP COMMENT LINES: ALL.excluded.txt has always been able to carry them (the builder's merge preserves a
+# ⛔ SKIP COMMENT LINES: ALL.omit has always been able to carry them (the builder's merge preserves a
 # header verbatim) and now ALWAYS ends with a `# builder-digest:` line (R-545). A bare `cut -f1` turns each
 # one into a phantom excluded NAME. Harmless by luck here -- no real basename looks like a comment -- but a
 # set-equality gate whose set is polluted by its own file format is one rename away from a false green.

@@ -8,7 +8,7 @@
 # their want_rc 1, and scrip --compile exits 1 exactly as Rakudo refuses them -- two of RakRungs' standing non-PASS cells no Raku cure could
 # close. compile_m4 returned SKIP for every failed --compile, whatever it meant.
 #
-# ARMS (a two-entry Raku block suite in mktemp, outside corpus/ (R-547), the ALL.wantrc sidecar declaring each entry's rc; nothing recorded):
+# ARMS (a two-entry Raku block suite in mktemp, outside corpus/ (R-547), the ALL.rc sidecar declaring each entry's rc; nothing recorded):
 #   (a) SHARED: hq_raku's witness text (a role's stub method a class leaves unimplemented), ref empty, want_rc 1: PASS in m3 AND in m4
 #   (b) UNSHARED: the same refusing text with a ref the oracle "ran" (ok, want_rc 0): FAIL in both modes -- a refusal the oracle does not
 #       share is a red, never a skip
@@ -27,7 +27,7 @@ class C does R { }
  my $c = C.new(); say("made"); '
 { banner 1 refusal_shared; printf '%s\n' "$SRC"; banner 2 refusal_unshared; printf '%s\n' "$SRC"; } > "$W/ALL.raku"
 { banner 1 refusal_shared; banner 2 refusal_unshared; echo ok; } > "$W/ALL.ref"
-printf 'refusal_shared\t1\n' > "$W/ALL.wantrc"
+printf 'refusal_shared\t1\n' > "$W/ALL.rc"
 fails=0; checks=0; ck(){ checks=$((checks+1)); if [ "$1" = ok ]; then printf '  ok    %s\n' "$2"; else printf '  FAIL  %s\n' "$2"; fails=$((fails+1)); fi; }
 echo "=== gate: a compile refusal grades through the one voice in both modes, never a SKIP (R-1354) ==="
 pre=""; [ -n "${FAIL_ONCE:-}" ] && pre="S4E_M4_COMPILE_REFUSAL_SKIP=1"

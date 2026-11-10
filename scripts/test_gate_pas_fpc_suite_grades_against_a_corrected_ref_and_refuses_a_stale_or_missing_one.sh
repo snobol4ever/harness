@@ -3,7 +3,7 @@
 # oracle is wrong and we are right, the program is graded PASSING against the ISO-correct output, never the oracle's defect). Exercises the block alone over mktemp
 # fixtures (the runner itself is lane-guarded and writes score rows): a good row is read and printed with its reason; a name not in the suite, a missing
 # .ref.corrected, and a .ref.corrected equal to the oracle's .ref (stale: the oracle was fixed) each REFUSE with rc 2; and the shipped test_tisobuf3 row grades
-# green in BOTH modes -- SCRIP's stdout equals its corrected ref and its exit code equals ALL.wantrc. FAIL_ONCE=1 corrupts the shipped corrected ref.
+# green in BOTH modes -- SCRIP's stdout equals its corrected ref and its exit code equals ALL.rc. FAIL_ONCE=1 corrupts the shipped corrected ref.
 set -uo pipefail
 G="$(basename "${BASH_SOURCE[0]}" .sh)"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
@@ -24,12 +24,12 @@ printf 'bug\n' > "$S/p.ref.corrected"; r=$(bash -c "SUITE='$S'; $BLOCK" >/dev/nu
 # the shipped row, both modes
 n=test_tisobuf3; [ -f "$SHIP/$n.ref.corrected" ] || { echo "⛔ GATE REFUSE(2) [$G]: no shipped $n.ref.corrected"; exit 2; }
 want="$(cat "$SHIP/$n.ref.corrected")"; [ -n "${FAIL_ONCE:-}" ] && want="$want corrupted"
-wantrc=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$SHIP/ALL.wantrc"); wantrc=${wantrc:-0}
+wantrc=$(awk -F'\t' -v n="$n" '$1==n{print $2; exit}' "$SHIP/ALL.rc"); wantrc=${wantrc:-0}
 W="$T/w"; mkdir -p "$W"; cp "$SHIP/$n.pas" "$W/"
 got3=$(cd "$W" && timeout -k 5 20 "$SCRIP" --run "$n.pas" </dev/null 2>/dev/null); rc3=$?
-chk "$n m3 prints the corrected ref" "$got3" "$want"; chk "$n m3 exits as ALL.wantrc says" "$rc3" "$wantrc"
+chk "$n m3 prints the corrected ref" "$got3" "$want"; chk "$n m3 exits as ALL.rc says" "$rc3" "$wantrc"
 ( cd "$W" && timeout -k 5 20 "$SCRIP" --compile --out="$n.s" "$n.pas" </dev/null >/dev/null 2>&1 && cc -m64 -no-pie "$n.s" -o "$n.m4" -L"$RT" -lscrip_rt -lm -Wl,-rpath,"$RT" >/dev/null 2>&1 ) || { echo "⛔ GATE REFUSE(2) [$G]: $n would not compile or link in mode 4"; exit 2; }
 got4=$(cd "$W" && timeout -k 5 20 "./$n.m4" </dev/null 2>/dev/null); rc4=$?
-chk "$n m4 prints the corrected ref" "$got4" "$want"; chk "$n m4 exits as ALL.wantrc says" "$rc4" "$wantrc"
+chk "$n m4 prints the corrected ref" "$got4" "$want"; chk "$n m4 exits as ALL.rc says" "$rc4" "$wantrc"
 if [ "$RC" = 0 ]; then echo "GATE PASS [$G]: the corrected-ref block reads, refuses stale/missing/unknown rows, and $n grades green in both modes, $N of $N arms"; else echo "GATE FAIL(1) [$G]: see above"; fi
 exit $RC

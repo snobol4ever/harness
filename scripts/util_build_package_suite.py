@@ -6,8 +6,8 @@ file, and place it into a ONE-LINER or a MULTI-LINER Python test harness.").
 
 For corpus/packages/<lang>/<pkg>/, builds an ADDITIVE container beside the shipped files -- nothing in
 the package is moved or rewritten: ALL.<ext> / ALL.ref / ALL.csv, plus ALL.in (only if some entry needs
-stdin) and ALL.wantrc (only if some entry's correct exit code is non-zero). A shipped program not
-absorbed is named, with a reason, in ALL.excluded.txt -- absorbed + excluded always equals the shipped
+stdin) and ALL.rc (only if some entry's correct exit code is non-zero). A shipped program not
+absorbed is named, with a reason, in ALL.omit -- absorbed + excluded always equals the shipped
 count (self-checked below; a mismatch REFUSES rather than silently shrinking the denominator).
 
 REFS ARE CUT FROM THE PACKAGE'S OWN ORACLE, NEVER FROM SCRIP (hq_T's doorbell, verbatim) -- via
@@ -18,7 +18,7 @@ currently-GREEN witnesses, and withholding a ref whenever SCRIP disagrees would 
 defects this container exists to surface. The oracle's own answer is the ref, full stop; SCRIP's
 agreement or disagreement with it is what grading measures, not a precondition for measuring at all.
 
-Six ways a shipped program is excluded rather than absorbed, each named by reason in ALL.excluded.txt:
+Six ways a shipped program is excluded rather than absorbed, each named by reason in ALL.omit:
   1. a `-INCLUDE "X"` naming a file vendored in none of the dirs searched: the package dir, the source's own dir, and
      for SNOBOL4 the grader's include dir (corpus/include, the SNO_LIB the harness grades under) -- a corpus completeness
      gap, not gradable here; the exclusion reason names the dirs it searched, never "anywhere")
@@ -57,8 +57,8 @@ THE SPLICE, --only NAME[,NAME...] (the cqo 2026-11-04, row corpus-the-twenty-pro
 re-cut every ref and moved 30 of the 311 its rows had graded, measured 18:2xZ): only the named programs are cut from the oracle, by the
 same checks as a whole build (--twice included), and every other entry stays byte-identical. A named program already in the container is
 re-cut IN PLACE, keeping its banner number, its rank and its declared heap_kb, stack_kb, compile_args, run_args and mode_gap_s; one not in
-it is appended after the last entry. ALL.csv, ALL.dialect, ALL.wantrc, ALL.argv and ALL.mask change only on the named entries' lines;
-ALL.excluded.txt drops a named program absorbed now and names one excluded now. THE GATE (refuse rc 2, nothing written): the container as
+it is appended after the last entry. ALL.csv, ALL.dialect, ALL.rc, ALL.argv and ALL.mask change only on the named entries' lines;
+ALL.omit drops a named program absorbed now and names one excluded now. THE GATE (refuse rc 2, nothing written): the container as
 it stands must read back byte-identically through its reader (read_suite for SNOBOL4, read_block_suite else) and write_suite; a named program in the container that this cut
 excludes refuses (removing an entry renumbers every banner after it); the spliced container is staged and every untouched entry must
 read back with the same banner number, source, ref and stdin, and every untouched ALL.csv line must be the same line.
@@ -134,7 +134,7 @@ def find_include_gap(src_text, pkg_dir, src_dir=None, grader_inc=None):
     were searched. -> (name_or_None, [dirs]).
     ⛔⭐ THE RECORDED REASON USED TO OVERCLAIM, AND THE OVERCLAIM IS THE DEFECT (hq_T 2026-09-05, measured on the
     exclusions this function itself wrote). It searched ONE directory and the caller wrote "not vendored anywhere in
-    corpus" into ALL.excluded.txt -- a sentence nobody had measured. Of the 8 exclusions on record, 3 are false by
+    corpus" into ALL.omit -- a sentence nobody had measured. Of the 8 exclusions on record, 3 are false by
     that sentence's own claim: `-INCLUDE '../modules/ndbm/ndbm.sno'` and `'../modules/time/time.sno'` name files that
     ARE vendored, as packages/snobol4/csnobol4_suite/{ndbm,time}.sno -- the vendored layout flattened the module
     tree and the sources kept naming the original path. A reason is evidence a later reader acts on; one that states
@@ -487,14 +487,14 @@ def build_generated(pkg_dir, lang, out_prefix, contract, only):
         cwd_of[n] = cwd
     if len(entries) + len(excluded) != len(table):
         h.refuse(f"population arithmetic broken: {len(entries)} absorbed + {len(excluded)} excluded != {len(table)} in the table")
-    out_excl = pkg_dir / f"{out_prefix}.excluded.txt"
+    out_excl = pkg_dir / f"{out_prefix}.omit"
     if excluded:
         out_excl.write_text("\n".join(f"{n}: {r}" for n, r in sorted(excluded)) + "\n")
     elif out_excl.exists():
         out_excl.unlink()
     if not entries:
         h.refuse(f"{pkg_dir}: zero absorbable cases of {len(table)} -- a container that grades nothing is not a container ({out_excl.name} names them)")
-    out_sno, out_ref, out_in, out_wantrc = (pkg_dir / f"{out_prefix}{x}" for x in (ext, ".ref", ".in", ".wantrc"))
+    out_sno, out_ref, out_in, out_wantrc = (pkg_dir / f"{out_prefix}{x}" for x in (ext, ".ref", ".in", ".rc"))
     if not h.write_suite(entries, str(out_sno), str(out_ref), out_in=str(out_in), lang=lang) and out_in.exists():
         out_in.unlink()
     _wr = [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc]
@@ -1009,9 +1009,9 @@ def build(pkg_dir, lang, out_prefix="ALL", twice=False, only=None, src_ext=None)
     out_sno = pkg_dir / f"{out_prefix}{ext}"
     out_ref = pkg_dir / f"{out_prefix}.ref"
     out_in = pkg_dir / f"{out_prefix}.in"
-    out_wantrc = pkg_dir / f"{out_prefix}.wantrc"
+    out_wantrc = pkg_dir / f"{out_prefix}.rc"
     out_csv = pkg_dir / f"{out_prefix}.csv"
-    out_excl = pkg_dir / f"{out_prefix}.excluded.txt"
+    out_excl = pkg_dir / f"{out_prefix}.omit"
 
     if not entries:
         # ⭐ hq_T ruling 2026-09-04 (q-package-builder-zero-absorbable-policy, to seat15): refusing the
@@ -1334,7 +1334,7 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         t = _keyed_text(_lines(pkg_dir / f), header, rows_, keys, "\t")
         staged_files[f] = None if t is None else t.encode("utf-8")
     _keyed(f"{out_prefix}.dialect", ["# the fpc mode that cut each entry's ref (CONTRACT.tsv dialect=any-fpc-mode): name<TAB>mode"], [f"{n}\t{d}" for n, d in dialects], names)
-    _keyed(f"{out_prefix}.wantrc", [], [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc], names)
+    _keyed(f"{out_prefix}.rc", [], [f"{e.name}\t{e.want_rc}" for e in entries if e.want_rc], names)
     _keyed(f"{out_prefix}.argv", [], [e.name + "\t" + "\t".join(e.argv) for e in entries if getattr(e, "argv", None)], names)
     _src_of = {f"{s.parent.name}/{s.stem}" if s.parent != pkg_dir else s.stem: s for s in all_srcs}
     _mask_rows = []
@@ -1351,9 +1351,9 @@ def splice(pkg_dir, lang, ext, out_prefix, entries, excluded, dialects, contract
         _keyed(f"{out_prefix}.mask", ["# ALL.mask -- R-409 line masks for this container (entry<TAB>L<n>-or-python-regex<TAB>reason); the rows of an entry",
                                       "# whose program ships a <stem>.mask are written from it by util_build_package_suite.py under the entry's name."],
                _mask_rows, {r.split("\t", 1)[0] for r in _mask_rows})
-    _ex = [ln for ln in _lines(pkg_dir / f"{out_prefix}.excluded.txt") if ln.split(": ", 1)[0] not in names]
+    _ex = [ln for ln in _lines(pkg_dir / f"{out_prefix}.omit") if ln.split(": ", 1)[0] not in names]
     _ex = sorted(_ex + [f"{n}: {w}" for n, w in excluded], key=lambda ln: (ln.split(": ", 1)[0], ln))
-    staged_files[f"{out_prefix}.excluded.txt"] = ("\n".join(_ex) + "\n").encode() if _ex else None
+    staged_files[f"{out_prefix}.omit"] = ("\n".join(_ex) + "\n").encode() if _ex else None
     for _f, _b in staged_files.items():
         if _b is None:
             if (pkg_dir / _f).exists():

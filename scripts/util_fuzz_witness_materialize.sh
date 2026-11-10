@@ -9,7 +9,7 @@
 # Both instruments defaulted FUZZ_DIR to that folder.  The one-flat-suite
 # cutover (corpus c06960a1, Lon 2026-08-29 total-conversion ruling) DELETED that directory: 4 of the 5
 # witnesses were absorbed into the rungs suite as XFAIL block entries under NEW names, and only the
-# 5th (fz_red_m4b, explicitly held out in ALL.excluded.txt) survives as a loose pair.  The instruments
+# 5th (fz_red_m4b, explicitly held out in ALL.omit) survives as a loose pair.  The instruments
 # refused correctly (rc=2 "witness dir missing") rather than reporting an empty set as stable — the law
 # working — but a refusal is not a measurement, and the row was left with NO instrument at all.
 # ⭐ The witnesses did not become unavailable, only unreachable BY PATH: `corpus_suite_harness.py extract`
@@ -48,7 +48,7 @@ while IFS=, read -r entry family; do
 done < <(python3 -c 'import csv,sys
 for r in csv.DictReader(open(sys.argv[1], encoding="utf-8")):
     if r["family"].startswith("probe_loose_fuzz_"): print(r["entry"] + "," + r["family"])' "$T/ALL.csv")
-# (b) the HELD-OUT witness that is still a loose pair (ALL.excluded.txt).  ⭐ It is not an oversight that
+# (b) the HELD-OUT witness that is still a loose pair (ALL.omit).  ⭐ It is not an oversight that
 # this one is a file: it is the ONLY member of the five whose distribution straddles PASS, so converting
 # it would have put a coin-flip verdict into the graded floor.  See the FINDING for the measurement.
 for f in "$T"/probe_loose_fuzz_*.sno; do
@@ -56,8 +56,8 @@ for f in "$T"/probe_loose_fuzz_*.sno; do
     b="$(basename "$f" .sno)"; short="$(printf '%s' "$b" | sed 's/^probe_loose_fuzz_//; s/_blob_defer_fence$//')"
     cp "$f" "$OUT/$short.sno" || { say "⛔ REFUSE(rc=2): cannot copy $f"; exit 2; }
     [ -f "${f%.sno}.ref" ] && cp "${f%.sno}.ref" "$OUT/$short.ref"
-    n=$((n+1)); say "  materialized  $short  <- loose pair (held out of the rungs by ALL.excluded.txt)"
+    n=$((n+1)); say "  materialized  $short  <- loose pair (held out of the rungs by ALL.omit)"
 done
-[ "$n" -eq 5 ] || { say "⛔ REFUSE(rc=2): materialized $n witnesses, expected 5 — the set changed; re-census ALL.csv and ALL.excluded.txt before grading anything against it"; exit 2; }
+[ "$n" -eq 5 ] || { say "⛔ REFUSE(rc=2): materialized $n witnesses, expected 5 — the set changed; re-census ALL.csv and ALL.omit before grading anything against it"; exit 2; }
 say "── 5/5 witnesses materialized into $OUT"
 printf '%s\n' "$OUT"

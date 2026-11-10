@@ -986,7 +986,7 @@ class Expect:
 
 
 def read_expect_sidecar(src_path):
-    """ALL.expect.tsv beside a master -> {entry: Expect}; {} when there is none (the entry then grades as before, by ALL.wantrc)."""
+    """ALL.expect.tsv beside a master -> {entry: Expect}; {} when there is none (the entry then grades as before, by ALL.rc)."""
     p = Path(src_path).with_name("ALL.expect.tsv")
     out = {}
     if not p.is_file():
@@ -1786,7 +1786,7 @@ class Entry:
                                    # free-space count) is masked AT THE LINE so the rest of the fixture keeps
                                    # grading. DECLARED beside the data, never inferred, never in a runner.
         self.want_rc = want_rc    # int: the exit code a CORRECT run of this entry produces. 0 unless the
-                                   # family declares otherwise in <family>.wantrc. DECLARED, never inferred.
+                                   # family declares otherwise in <family>.rc. DECLARED, never inferred.
         self.compile_args = None  # list[str] of scrip switches this entry DECLARES for its compile step, both modes, or None =
                                    # none (clause 8 (f), R-1281): ALL.csv's compile_args column, read by read_command_line_columns.
         self.out_files = None     # list[str] of files this entry WRITES whose bytes are its answer, or None (Lon 2026-09-27, in-chat to
@@ -2274,12 +2274,12 @@ def write_stdin_sidecar(entries, out_in, comment_open, comment_close):
 # suite keeps its current verdicts byte-for-byte. The refusals below are for the INCOHERENT cases
 # only: a reason naming no entry, and a reason on an entry that is not marked XFAIL.
 def sidecar_wantrc_path(src_path):
-    """The declared-exit-code sidecar for a suite is ALWAYS <family>.wantrc beside <family>.sno/.ref --
+    """The declared-exit-code sidecar for a suite is ALWAYS <family>.rc beside <family>.sno/.ref --
     discovered, never passed as a flag, identical to sidecar_in_path()/sidecar_xfail_path(). Absent -> None
     -> every entry expects rc 0. ⭐ Discovery rather than a flag is the whole point: every existing consumer
     -- boards, gates, runners -- picks the declaration up with ZERO changes to its own argv, so an entry that
     legitimately exits nonzero cannot silently be graded by a caller nobody remembered to update."""
-    cand = Path(src_path).with_suffix(".wantrc")
+    cand = Path(src_path).with_suffix(".rc")
     return str(cand) if cand.is_file() else None
 
 
@@ -3562,7 +3562,7 @@ def _expect_stdout_against_ref(out, exp):
 def cmd_expect(args):
     """THE EXPECTED RESULT IS THE ORACLE'S WHOLE PROCESS RECORD (Lon 2026-11-05, in the coo's window: "A process has EXIT CODE, STDOUT,
     and STDERR to choose from. ... But you still need CRASH, ABORT, and HANG as outcomes."; "Well, the master harness NEEDS ONE."). A ref
-    keeps the oracle's stdout only and ALL.wantrc an exit code declared by hand, so a SCRIP exit that differs from the oracle's, or a
+    keeps the oracle's stdout only and ALL.rc an exit code declared by hand, so a SCRIP exit that differs from the oracle's, or a
     syntax error the oracle reports on stderr and SCRIP does not, grades nowhere. This census runs every entry of a master through the
     language's oracle exactly as run_oracle does (stage_entry writes the same bytes run_suite_entry grades) and prints one line per
     entry: name, ending (EXIT, ABORT, CRASH, HANG), exit code, stdout against the entry's ref (=ref or differs), stderr (empty or text)
@@ -4088,7 +4088,7 @@ def require_lang_for_suite(subcmd, src_path, args):
     reports failures about that imaginary population with total confidence.
     ⛔ MEASURED on two committed, UNCORRUPT rung suites: `run` on the pascal rungs without --lang printed
     `family.ref is shorter than family.sno at seq 904` for a pair whose ALL.pas and ALL.ref BOTH carry exactly
-    251 entry markers, and the rebus rungs printed `ALL.wantrc: declarations with no matching entry` naming
+    251 entry markers, and the rebus rungs printed `ALL.rc: declarations with no matching entry` naming
     four entries that DO exist.
     ⛔⭐ THE DEFECT IS THE SILENT FALLBACK, NOT THE MISSING FLAG: both messages ACCUSE THE DATA, so the reader is
     sent to edit a corpus that is fine. The cfo was one step from filing two rung suites as unrunnable and telling
