@@ -441,8 +441,11 @@ def main():
     rungs_dir = Path(args.rungs_dir) if args.rungs_dir else S4E / "corpus" / "tests" / lang
     rungs_src, rungs_ref, rungs_csv = (rungs_dir / ("ALL" + cfg["ext"]), rungs_dir / "ALL.ref",
                                            rungs_dir / "ALL.csv")
-    csh.fmt2_edit_in_old_format(rungs_dir, cfg["ext"], "util_add_ladder_witness.py")
-    for p in (rungs_src, rungs_ref, rungs_csv):
+    # ⭐ FORMAT 2 IS WRITTEN DIRECTLY (CIO-54, CIO-55; officer_04): the section and the row go in through csh.write_container_dir, never
+    # through the old form, which cannot hold a block whose lines end in a ";* name" tag (the fwctx pairs: ungroup's read-back split
+    # them into one-line entries and the door refused). fmt2 is True when the folder is ONE.<ext> / MULTI.md beside ALL.csv.
+    fmt2 = csh.fmt2_dir_of(rungs_src) is not None
+    for p in ((rungs_csv,) if fmt2 else (rungs_src, rungs_ref, rungs_csv)):
         if not p.is_file():
             refuse("rungs file missing: %s" % p)
 
@@ -564,7 +567,11 @@ def main():
     # that accuses the rungs of being malformed when the caller merely picked the wrong reader. The axis is
     # the one this file's own comment above already names: membership of csh.LANG_CONFIGS IS being a block
     # suite, and SNOBOL4's absence from it IS the mixed rungs.
-    if lang in csh.LANG_CONFIGS:
+    if fmt2:
+        entries = csh.read_container_dir(rungs_dir, cfg["ext"])
+        read_entries = lambda: csh.read_container_dir(rungs_dir, cfg["ext"])
+        reserialize = None
+    elif lang in csh.LANG_CONFIGS:
         banner_re = csh.banner_re_for(cfg["comment_open"], cfg["comment_close"])
         entries = csh.read_block_suite(str(rungs_src), str(rungs_ref), banner_re,
                                         in_path=str(rungs_dir / "ALL.in"), w_path=str(rungs_dir / "ALL.rc"))
@@ -582,10 +589,28 @@ def main():
     # ── ROUND-TRIP PROOF, before this tool is trusted to touch the real files: re-serialize the
     # UNCHANGED entries and diff against what is actually on disk. A mismatch here means this script's
     # understanding of the format is wrong, and it must refuse before writing anything, not after.
-    tmp_src, tmp_ref = rungs_src.with_suffix(rungs_src.suffix + ".rtcheck"), rungs_ref.with_suffix(".ref.rtcheck")
-    reserialize(entries, str(tmp_src), str(tmp_ref))
-    same = tmp_src.read_text() == rungs_src.read_text() and tmp_ref.read_bytes() == rungs_ref.read_bytes()
-    tmp_src.unlink(missing_ok=True); tmp_ref.unlink(missing_ok=True)
+    if fmt2:
+        # THE FORMAT-2 ROUND-TRIP PROOF: the folder's entries written by write_container_dir into a scratch copy read back identical.
+        import shutil, tempfile
+        _rt = Path(tempfile.mkdtemp(prefix="witness_fmt2_rt_"))
+        try:
+            for _n in ("ALL.csv", "ONE" + cfg["ext"], "ONE.out", "MULTI.md", "ALL.rc", "ALL.prelude"):
+                if (rungs_dir / _n).is_file():
+                    shutil.copyfile(rungs_dir / _n, _rt / _n)
+            csh.write_container_dir(entries, _rt, cfg["ext"], road_of=lambda e: next(r.get("road", "direct") for r in rows if r["entry"] == e.name))
+            _rtd = csh.fmt2_identity(entries, csh.read_container_dir(_rt, cfg["ext"]))
+            same = not _rtd and all((_rt / _n).read_bytes() == (rungs_dir / _n).read_bytes() for _n in ("ONE" + cfg["ext"], "ONE.out", "MULTI.md") if (rungs_dir / _n).is_file())
+        except ValueError as exc:
+            same, _rtd = False, [str(exc)]
+        finally:
+            shutil.rmtree(_rt, ignore_errors=True)
+        if not same:
+            refuse("format-2 round-trip proof failed: write_container_dir does not reproduce %s byte for byte (%s) -- refusing to write" % (rungs_dir, "; ".join(_rtd[:3]) or "the bytes differ"))
+    else:
+        tmp_src, tmp_ref = rungs_src.with_suffix(rungs_src.suffix + ".rtcheck"), rungs_ref.with_suffix(".ref.rtcheck")
+        reserialize(entries, str(tmp_src), str(tmp_ref))
+        same = tmp_src.read_text() == rungs_src.read_text() and tmp_ref.read_bytes() == rungs_ref.read_bytes()
+        tmp_src.unlink(missing_ok=True); tmp_ref.unlink(missing_ok=True)
     if not same:
         # ⛔⭐ THE REFUSAL IS CORRECT; ITS EXPLANATION WAS FALSE, AND THAT COST FOUR LANES A DIAGNOSIS EACH
         # (hq_T 2026-09-13, on the cfo's routed brief). This message used to say only "this language's
@@ -678,10 +703,15 @@ def main():
         print("(dry-run only -- pass --apply to write)")
         return
 
-    _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None) for n in ("ALL.in", "ALL.xfail", "ALL.rc")}
+    _companions = {n: ((rungs_dir / n).read_bytes() if (rungs_dir / n).is_file() else None)
+                   for n in (("ONE" + cfg["ext"], "ONE.out", "MULTI.md", "ALL.rc") if fmt2 else ("ALL.in", "ALL.xfail", "ALL.rc"))}
+    old_csv_bytes = rungs_csv.read_bytes()
+    old_src_text = None if fmt2 else rungs_src.read_text()
+    old_ref_bytes = None if fmt2 else rungs_ref.read_bytes()
     def _rollback():
         try:
-            rungs_src.write_text(old_src_text); rungs_ref.write_bytes(old_ref_bytes)
+            if not fmt2:
+                rungs_src.write_text(old_src_text); rungs_ref.write_bytes(old_ref_bytes)
             rungs_csv.write_bytes(old_csv_bytes)
             for _n, _b in _companions.items():
                 (rungs_dir / _n).unlink(missing_ok=True) if _b is None else (rungs_dir / _n).write_bytes(_b)
@@ -689,9 +719,46 @@ def main():
         except OSError as exc:
             return "⛔ ROLLBACK ITSELF FAILED (%s) -- the rung suites are dirty, restore them from git" % exc
     all_entries = entries + [new_entry]
+    if fmt2:
+        _fmt2_write(rungs_dir, rungs_csv, cfg["ext"], lang, rows, fields, new_row, all_entries, _rollback)
+    else:
+        _old_write(rungs_src, rungs_ref, rungs_csv, rungs_dir, cfg, reserialize, rows, fields, new_row, all_entries, stdin_text, _rollback)
+    _after_write(args, lang, cfg, rungs_dir, rungs_src, rungs_ref, rungs_csv, entries, entry_name, want_rc, stdin_text, sno_text, ref_text, read_entries, fmt2, _rollback)
+
+
+def _fmt2_write(rungs_dir, rungs_csv, ext, lang, rows, fields, new_row, all_entries, _rollback):
+    """THE FORMAT-2 APPEND (CIO-54): the new entry placed by the builder's key, every row's rank renumbered positionally as resort_rungs
+    does, ALL.csv written in that order, then write_container_dir writes ONE.<ext>, ONE.out and MULTI.md and the three last columns."""
+    ordered = builder_order(lang, all_entries)
+    by = {r["entry"]: dict(r) for r in rows}
+    by[new_row["entry"]] = dict({f: "" for f in fields}, **new_row)
+    out_rows = []
+    for i, e in enumerate(ordered, 1):
+        r = by[e.name]
+        r["rank"] = str(i)
+        out_rows.append({f: r.get(f, "") for f in fields})
+    tmp_csv = rungs_csv.with_suffix(".csv.newtmp")
+    try:
+        with open(tmp_csv, "w", newline="") as fh:
+            w = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")
+            w.writeheader()
+            for r in out_rows:
+                w.writerow(r)
+        tmp_csv.replace(rungs_csv)
+        csh.write_container_dir(ordered, rungs_dir, ext)
+    except (ValueError, OSError) as exc:
+        tmp_csv.unlink(missing_ok=True)
+        refuse("the format-2 write of %s refused (%s) -- %s" % (new_row["entry"], exc, _rollback()))
+
+
+def _old_write(rungs_src, rungs_ref, rungs_csv, rungs_dir, cfg, reserialize, rows, fields, new_row, all_entries, stdin_text, _rollback):
     tmp_src2 = rungs_src.with_suffix(rungs_src.suffix + ".newtmp")
     tmp_ref2 = rungs_ref.with_suffix(".ref.newtmp")
-    reserialize(all_entries, str(tmp_src2), str(tmp_ref2))
+    try:
+        reserialize(all_entries, str(tmp_src2), str(tmp_ref2))
+    except ValueError as exc:   # ⛔ CIO-54: a writer refusal left ALL.sno.newtmp and ALL.ref.newtmp behind; a refusal leaves nothing
+        tmp_src2.unlink(missing_ok=True); tmp_ref2.unlink(missing_ok=True)
+        refuse("the old-form writer refused the new entry (%s) -- nothing written" % exc)
     # Verify the OLD entries still round-trip identically inside the new file (prefix-equality check)
     # before replacing anything -- appending must never perturb what already existed.
     old_src_text = rungs_src.read_text()
@@ -725,6 +792,8 @@ def main():
         refuse("post-append check failed: existing ALL.csv rows were perturbed by the append -- nothing written")
     tmp_csv.replace(rungs_csv)
 
+
+def _after_write(args, lang, cfg, rungs_dir, rungs_src, rungs_ref, rungs_csv, entries, entry_name, want_rc, stdin_text, sno_text, ref_text, read_entries, fmt2, _rollback):
     # ── THE wantrc SIDECAR. Written only for a nonzero rc: read_wantrc_sidecar() REFUSES a declared rc=0
     # (it is already the default), so writing one would break every later read of this rung suite.
     if want_rc != 0:
@@ -750,8 +819,11 @@ def main():
     # resort_rungs now moves the new entry to its place -- the one authority for the order, content-invariant by its own proofs, and
     # it rewrites ALL.csv's ranks and the banner numbers (ALL.<ext>, ALL.ref, ALL.in) positionally as it does for any resort. The base
     # was proved in order above, so the only entry that can move is the new one; anything else moving is refused and rolled back.
-    _bld = _builder()
-    _rc = _bld.resort_rungs(str(rungs_dir), cfg["ext"], lang, csh, cfg["comment_open"], cfg["comment_close"], _bld.LANG_TABLES[lang][0], set(), set())
+    if fmt2:
+        _rc = 0   # _fmt2_write placed the entry by the builder's key already; the check below proves it
+    else:
+        _bld = _builder()
+        _rc = _bld.resort_rungs(str(rungs_dir), cfg["ext"], lang, csh, cfg["comment_open"], cfg["comment_close"], _bld.LANG_TABLES[lang][0], set(), set())
     _placed = [e.name for e in read_entries()] if _rc == 0 else []
     if _rc != 0 or [n for n in _placed if n != entry_name] != [e.name for e in entries] or _placed != [e.name for e in builder_order(lang, read_entries())]:
         refuse("placing %s by the builder's key failed (resort rc=%s; the existing entries %s) -- %s"
