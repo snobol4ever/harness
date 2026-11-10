@@ -51,39 +51,12 @@ if [ -z "${CN:-}" ]; then
     trap 'rm -rf "$CN"' EXIT
     cp "$S4E/harness/fixtures/test_gate_udc/probe_loose_cn_cn_udc_closed.err_sno" "$CN/cn_udc_closed.err_sno"   # moved from corpus/tests/snobol4/config (the coo 2026-11-10, CIO-36)
 fi
-for w in cn_udc_declare cn_udc_reopen; do
-  extract_witness "$w" || continue
-  "$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
-  gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
-  timeout -k 5 20 "$SCRIP" --run "$EX_SNO" < /dev/null > /tmp/gate_m3.txt 2>&1
-  diff -q /tmp/gate_m3.txt "$EX_REF" > /dev/null 2>&1; chk $? "m3 $w"
-  timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null > /tmp/gate_m4.txt 2>&1
-  diff -q /tmp/gate_m4.txt "$EX_REF" > /dev/null 2>&1; chk $? "m4 $w"
-  # KW-4 deleted SCRIP_KW_STATIC, so the old `for arm in 0 1` loop ran the SAME binary path twice and
-  # counted it as two passes -- the vacuous-gate class.  One arm, graded once, honest count.
-done
-for w in cn_t1_eval cn_t2_eval_boundary cn_t1_scalar_fold; do   # ⭐ CN-11 added cn_t1_scalar_fold: it was pinned but only ever RUN in the default arm, and the T1=0 arm is where the shared-runtime keyword cascade shadowed a sealed &Pi with Icon's pi (3.141592653589793 vs the declared 3.14). A fold-tier witness must be swept in the arm where the fold is OFF -- that arm is the one that exercises the runtime read path the fold otherwise hides.
-extract_witness "$w" || continue
-for t1 in 0 1; do
-  SCRIP_CONST_T1=$t1 timeout -k 5 20 "$SCRIP" --run "$EX_SNO" < /dev/null > /tmp/gate_m3.txt 2>/dev/null
-  diff -q /tmp/gate_m3.txt "$EX_REF" > /dev/null 2>&1; chk $? "m3 $w CONST_T1=$t1"
-  # ⛔ CN-11 -- THE m4 ARM WAS VACUOUS AND IS NOW REAL. The compile+link used to sit ABOVE this loop, so the .s was
-  # produced ONCE at the DEFAULT arm and the loop then varied SCRIP_CONST_T1 on the already-built binary. T1 is a
-  # LOWERING decision: by the time the binary exists the fold is baked into its instructions, so the env var moved
-  # nothing and "m4 $w CONST_T1=0" re-tested the T1=1 program twice -- the s68 vacuous-gate class. Measured proof:
-  # with the CN-11 defect present, m3 CONST_T1=0 went red while m4 CONST_T1=0 stayed green on the SAME program.
-  # Compiling INSIDE the loop with the arm's env applied is what makes the m4 column a second real medium.
-  SCRIP_CONST_T1=$t1 "$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
-  gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
-  SCRIP_CONST_T1=$t1 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null > /tmp/gate_m4.txt 2>/dev/null
-  diff -q /tmp/gate_m4.txt "$EX_REF" > /dev/null 2>&1; chk $? "m4 $w CONST_T1=$t1"
-done
-done
+# RETIRED 2026-11-10 (batch-07 of the snobol4 cleanup, senior_05): the arms for cn_udc_declare, cn_udc_reopen, cn_t1_eval, cn_t2_eval_boundary, cn_t1_scalar_fold, cn_t1_eval_undecl and cn_indirect_seal are gone with their witnesses: corpus fa2822abb removed those entries from the master on Lon's word of 2026-10-02 (CEO-1405: "Remove any test using the experimental feature, &CONSTANT_PATTERNS, user defined constants."), so each arm refused on extract and graded nothing.
 # ⭐⭐ CN-DOLLAR-ORACLE (queue row `cn-oracle-rulings`, HQ-61 ORACLE-FAITHFUL CONFIRMED) added cn_indirect_rewrite and cn_indirect_seal to this loop.  The first is a LIVE-ORACLE .ref covering the half its
 # sibling could not see -- cn_indirect_is_ordinary_var writes each indirect cell exactly ONCE, so it was green all along against a runtime that sealed the cell and raised 341 on the SECOND write.  The
 # second is the s153 RULING-REQUEST pin, rewritten to the ruled table; it went red on the first run after the flip, which is exactly what s153 minted it to do.  Both ride the stderr-SILENT assertion too:
 # the oracle assigns in total silence, and a 341 printed before an otherwise-correct stdout is a regression the .ref alone structurally cannot see.
-for w in cn_t1_eval_undecl cn_eval_fails_not_aborts cn_indirect_is_ordinary_var cn_indirect_rewrite cn_indirect_seal; do
+for w in cn_eval_fails_not_aborts cn_indirect_is_ordinary_var cn_indirect_rewrite; do
 extract_witness "$w" || continue
 "$SCRIP" --compile "$EX_SNO" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
@@ -105,12 +78,14 @@ done
 # (no oracle text to diff against at all). Structurally does not fit the suite's one-.ref-per-entry model;
 # (its KEEP.md went with the flattened folder.) Read directly from $CN, same as before this row.
 w=cn_udc_closed
-"$SCRIP" --compile "$CN/$w.err_sno" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
+# the driver infers the frontend from the extension and refuses .err_sno (measured 2026-11-10: rc 2 unknown source extension), so the fixture runs as a .sno copy
+cp "$CN/$w.err_sno" "/tmp/gate_$w.sno"
+"$SCRIP" --compile "/tmp/gate_$w.sno" --out="/tmp/gate_$w.s" < /dev/null > /dev/null 2>&1
 gcc -no-pie "/tmp/gate_$w.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -lm -lpthread -o "/tmp/gate_$w.bin" 2>/dev/null
-timeout -k 5 20 "$SCRIP" --run "$CN/$w.err_sno" < /dev/null 2>/dev/null > /tmp/gate_o3.txt
+timeout -k 5 20 "$SCRIP" --run "/tmp/gate_$w.sno" < /dev/null 2>/dev/null > /tmp/gate_o3.txt
 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null 2>/dev/null > /tmp/gate_o4.txt
 diff -q /tmp/gate_o3.txt /tmp/gate_o4.txt > /dev/null 2>&1; chk $? "$w stdout m3==m4"
-timeout -k 5 20 "$SCRIP" --run "$CN/$w.err_sno" < /dev/null 2>/tmp/gate_e3.txt > /dev/null
+timeout -k 5 20 "$SCRIP" --run "/tmp/gate_$w.sno" < /dev/null 2>/tmp/gate_e3.txt > /dev/null
 timeout -k 5 20 "/tmp/gate_$w.bin" < /dev/null 2>/tmp/gate_e4.txt > /dev/null
 diff -q /tmp/gate_e3.txt /tmp/gate_e4.txt > /dev/null 2>&1; chk $? "$w stderr m3==m4"
 grep -q "251" /tmp/gate_e3.txt; chk $? "$w raises 251 with the namespace closed"
