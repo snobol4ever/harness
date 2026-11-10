@@ -12,6 +12,10 @@
 #   3  THE REAL CORPUS: the entries whose reading changes between the old and the new reader are EXACTLY the entries whose ref carries one
 #      of those bytes (both sets derived here, from every ALL.ref with its ALL.<ext> beside it) -- nothing else moved;
 #   4  _lf_lines keeps splitlines()'s one-trailing-newline convention: "a\n\nb\n" -> a,"",b; "" -> none; "x" -> x.
+#   5  THE RUNGS BUILDER: util_build_rungs_suite.py --additive absorbs the control program (arm 1's) from a scratch demos folder into a scratch
+#      copy of the SNOBOL4 master, and the absorbed entry's answer, read back through `corpus_suite_harness.py extract --out-ref`, equals the
+#      oracle's output byte for byte (the additive road once built it with str.splitlines(), CIO-46 D: two coverage_sno_nodes answers lost
+#      their VT/FF/CR/FS/GS/RS bytes and read red against a correct SCRIP); the builder refusing or absorbing nothing REFUSES rc 2.
 # EXIT 0 all hold; 1 an arm failed; 2 could not measure.
 export S4E_ONE_RUNNER_FIXTURE="gate arm ${0##*/}: the harness over a scratch container outside the corpus, not a board (R-547)"
 set -uo pipefail
@@ -119,7 +123,19 @@ echo "--- ARM 4: the one-trailing-newline convention is kept ---"
 o4=$(python3 -c "import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h; print(h._lf_lines('a\n\nb\n') == ['a','','b'] and h._lf_lines('') == [] and h._lf_lines('x') == ['x'] and h._lf_lines('p\x0cq\rr\n') == ['p\x0cq\rr'])" "$HERE" 2>&1)
 ck "4 _lf_lines: a,'',b / none / x / one line keeping FF and CR ($o4)" '[ "$o4" = True ]'
 
+echo "--- ARM 5: the rungs builder's additive road keeps the six bytes of an absorbed answer ---"
+B="$HERE/util_build_rungs_suite.py"; gate_require "$B" "util_build_rungs_suite.py" || exit 2
+D5="$W/b5"; mkdir -p "$D5/corpus/tests" "$D5/corpus/demos/snobol4" "$D5/corpus/benchmarks/snobol4" "$D5/corpus/include" || exit 2
+[ -f "$C/tests/snobol4/ALL.sno" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: no SNOBOL4 master at $C/tests/snobol4 to copy"; exit 2; }
+cp -r "$C/tests/snobol4" "$D5/corpus/tests/snobol4" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot copy the master into scratch"; exit 2; }
+cp "$W/ctl.sno" "$D5/corpus/demos/snobol4/lfgate_ctl.sno" || exit 2
+( cd "$S4E/SCRIP" && S4E_HOME="$D5" timeout -k 10 900 python3 "$B" --lang snobol4 --additive --from demos < /dev/null ) > "$D5/build.log" 2>&1; b5=$?
+grep -q 'new entries absorbed' "$D5/build.log" || { tail -5 "$D5/build.log"; echo "GATE UNPROVEN(2) [$GATE_NAME]: the builder printed no accounting (rc $b5) -- arm 5 cannot measure"; exit 2; }
+python3 "$H" list "$D5/corpus/tests/snobol4/ALL.sno" "$D5/corpus/tests/snobol4/ALL.ref" --lang snobol4 2>/dev/null | grep -qx 'demo_lfgate_ctl' || { tail -5 "$D5/build.log"; echo "GATE UNPROVEN(2) [$GATE_NAME]: the builder absorbed nothing named demo_lfgate_ctl (rc $b5) -- arm 5 cannot measure"; exit 2; }
+python3 "$H" extract "$D5/corpus/tests/snobol4/ALL.sno" "$D5/corpus/tests/snobol4/ALL.ref" demo_lfgate_ctl "$D5/x.sno" --out-ref "$D5/x.ref" > /dev/null 2>&1 || { echo "GATE UNPROVEN(2) [$GATE_NAME]: cannot read the absorbed entry back"; exit 2; }
+ck "5 the absorbed answer equals the oracle's output byte for byte ($(wc -c < "$W/ctl.out") bytes oracle, $(wc -c < "$D5/x.ref") bytes absorbed)" 'cmp -s "$W/ctl.out" "$D5/x.ref"'
+
 echo "------------------------------------------------------------"
-echo "population: $n check(s): one scratch container of 2 entries graded twice in 2 modes (cured, planted), $(grep -o '^CONTAINERS [0-9]* ENTRIES [0-9]*' <<<"$o3" | tr 'A-Z' 'a-z') re-read two ways"
+echo "population: $n check(s): one scratch container of 2 entries graded twice in 2 modes (cured, planted), one absorbed by the additive builder, $(grep -o '^CONTAINERS [0-9]* ENTRIES [0-9]*' <<<"$o3" | tr 'A-Z' 'a-z') re-read two ways"
 if [ "$fails" -eq 0 ]; then echo "GATE PASS [$GATE_NAME]: $n of $n checks hold"; gate_stamp; exit 0; fi
 echo "⛔ GATE FAIL [$GATE_NAME]: $fails of $n check(s) failed"; gate_stamp; exit 1
