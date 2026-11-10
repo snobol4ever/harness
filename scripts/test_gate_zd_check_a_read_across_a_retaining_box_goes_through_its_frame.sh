@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
+# format-2: through extract (the reader follows the folder to format 2); presence test is ALL.csv
 # test_gate_zd_check_a_read_across_a_retaining_box_goes_through_its_frame.sh -- A GREEN READING THAT CAN FAIL AND IS SHOWN TO HAVE BEEN EXERCISED
 # (the coo's 14:4x audit of the closed row zsm-match-defer-gamma-depth-..., the cto's row zd-check-a-read-across-a-retaining-box-reaches-its-cell-
 # through-a-frame-home-counted-and-able-to-fail-r-1925). The law: a box after a box the planner grades as retaining (a nonzero retains code, 1 to 11,
@@ -50,7 +51,7 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
     [ "$WONLY" = 0 ] || continue
     [ -z "$ONLY" ] || [ "$ONLY" = "$lang" ] || continue
     D="$CORPUS/tests/$lang"
-    [ -f "$D/PARTITION.tsv" ] && [ -f "$D/ALL.$ext" ] && [ -f "$D/ALL.ref" ] || { echo "REFUSE(2): $D has no PARTITION.tsv or ALL.$ext"; exit 2; }
+    [ -f "$D/PARTITION.tsv" ] && [ -f "$D/ALL.csv" ] || { echo "REFUSE(2): $D has no PARTITION.tsv or ALL.csv"; exit 2; }
     n=0; c=0; r=0; f=0; s=0; : > "$W/$lang.codes"
     while IFS=$'\t' read -r entry cls rest; do
         case "$entry" in ''|'#'*|entry) continue;; esac

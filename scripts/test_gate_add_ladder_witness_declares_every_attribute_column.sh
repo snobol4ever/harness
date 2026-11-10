@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: scratch copy ungrouped through the harness when the rungs is format 2; presence test is ALL.csv
 export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_add_ladder_witness_declares_every_attribute_column.sh -- util_add_ladder_witness.py WRITES EVERY ATTRIBUTE COLUMN
 # (heap_kb, stack_kb, compile_args, run_args) on the ALL.csv row it adds (R-1323, on hq_snocone's entry 1994 filled by
@@ -14,9 +15,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; S4E="${S4E_HOME:-$(cd "$HE
 G=add_ladder_witness_declares_every_attribute_column; TOOL="$HERE/util_add_ladder_witness.py"; M="$S4E/corpus/tests/snobol4"
 refuse() { echo "⛔ REFUSED(2) [$G]: $*" >&2; exit 2; }
 [ -f "$TOOL" ] || refuse "no $TOOL"
-for f in ALL.csv ALL.sno ALL.ref; do [ -s "$M/$f" ] || refuse "no $M/$f -- the SNOBOL4 rungs is the scratch source"; done
+[ -s "$M/ALL.csv" ] || refuse "no $M/ALL.csv -- the SNOBOL4 rungs is the scratch source"
 [ -x /home/resources/x64/bin/sbl ] || refuse "no SNOBOL4 oracle at /home/resources/x64/bin/sbl (the tool cuts the witness's ref from it)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+if [ -f "$M/MULTI.md" ]; then cp -r "$M" "$T/fmt2src" && python3 "$HERE/corpus_suite_harness.py" ungroup "$T/fmt2src" >/dev/null 2>&1 || refuse "could not ungroup the format-2 rungs into scratch"; M="$T/fmt2src"; fi
 fresh() { rm -rf "$T/$1"; mkdir -p "$T/$1"; cp "$M/ALL.csv" "$M/ALL.sno" "$M/ALL.ref" "$T/$1/"; [ -f "$M/ALL.wantrc" ] && cp "$M/ALL.wantrc" "$T/$1/"; echo "$T/$1"; }
 printf "\tOUTPUT = 'gate'\nEND\n" > "$T/w.sno"
 ORIGIN=ladder__rung00_gate_attribute_columns

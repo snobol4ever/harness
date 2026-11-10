@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through read_suite (the reader follows the folder to format 2); presence test is ALL.csv
 export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_harness_transitive_companions.sh -- THE ACCEPTANCE GATE for row
 # harness-copies-companions-to-closure-not-just-the-first-level (hq_T -> seat06, 2026-09-05,
@@ -37,7 +38,7 @@ H="$HERE/corpus_suite_harness.py"
 FAM="$S4E/corpus/tests/snobol4"
 [ -f "$H" ] || { echo "⛔ REFUSED-TO-GRADE rc=2: harness not found at $H"; exit 2; }
 command -v python3 >/dev/null 2>&1 || { echo "⛔ REFUSED-TO-GRADE rc=2: python3 not on PATH"; exit 2; }
-[ -f "$FAM/ALL.sno" ] && [ -f "$FAM/ALL.ref" ] || { echo "⛔ REFUSED-TO-GRADE rc=2: snobol4 rungs absent at $FAM"; exit 2; }
+[ -f "$FAM/ALL.csv" ] || { echo "⛔ REFUSED-TO-GRADE rc=2: snobol4 rungs absent at $FAM"; exit 2; }
 [ -f "$FAM/gimpel_triage_class8_sig6_perm_module.sno" ] && [ -f "$FAM/gimpel_triage_class8_sig6_perm_swap.sno" ] || {
     echo "⛔ REFUSED-TO-GRADE rc=2: the real 2-level witness companions are gone from $FAM -- ARM 1 needs the genuine corpus witness, not a synthetic stand-in"; exit 2; }
 "$HERE/util_require_fresh.sh" --gate test_gate_harness_transitive_companions >/dev/null 2>&1 || {
@@ -116,7 +117,7 @@ print("SECS budget=%.1f before=%.1f after=%.1f" % (paths["timeout"], _before_sec
 PY
 )"
 echo "$out1" | sed 's/^/    /'
-grep -q '^MISSING-ENTRY$' <<<"$out1" && { echo "⛔ REFUSED-TO-GRADE rc=2: array_replace_branch_2 is no longer in $FAM/ALL.sno -- the real witness this arm needs is gone"; exit 2; }
+grep -q '^MISSING-ENTRY$' <<<"$out1" && { echo "⛔ REFUSED-TO-GRADE rc=2: array_replace_branch_2 is no longer in the rungs at $FAM -- the real witness this arm needs is gone"; exit 2; }
 before_line="$(grep '^BEFORE' <<<"$out1")"
 after_line="$(grep '^AFTER' <<<"$out1")"
 secs_line="$(grep '^SECS' <<<"$out1")"
