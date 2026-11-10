@@ -11,7 +11,7 @@ GATE_NAME=test_gate_rungs_builder_admits_by_the_oracle_alone
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../.." && pwd)"
 SBL=/home/resources/x64/bin/sbl
 [ -x "$SBL" ] || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SPITBOL oracle at $SBL"; exit 2; }
-[ -f "$ROOT/corpus/tests/snobol4/ALL.sno" ] || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SNOBOL4 master to copy"; exit 2; }
+[ -f "$ROOT/corpus/tests/snobol4/ALL.csv" ] && { [ -f "$ROOT/corpus/tests/snobol4/ALL.sno" ] || [ -f "$ROOT/corpus/tests/snobol4/MULTI.md" ] || [ -f "$ROOT/corpus/tests/snobol4/ONE.sno" ]; } || { echo "⛔ REFUSE(2) [$GATE_NAME]: no SNOBOL4 master to copy"; exit 2; }
 D=$(mktemp -d "${TMPDIR:-/tmp}/rungs_oracle_gate.XXXXXX") || { echo "⛔ REFUSE(2) [$GATE_NAME]: no tmpdir"; exit 2; }
 trap 'rm -rf "$D"' EXIT
 [ -x "$ROOT/SCRIP/scrip" ] || { echo "⛔ REFUSE(2) [$GATE_NAME]: no scrip at $ROOT/SCRIP/scrip (the builder's own build-behaviour probe compiles with it)"; exit 2; }

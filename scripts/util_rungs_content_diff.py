@@ -42,6 +42,9 @@ def refuse(msg):
 
 def load(d, stem, lang, h):
     ext = {"snobol4": ".sno"}.get(lang, "." + lang[:3])
+    _p2 = os.path.join(d, stem + ext)
+    if getattr(h, "fmt2_dir_of", None) and h.fmt2_dir_of(_p2) is not None:   # format 2 (CIO-24 f): the harness reads it from the old command line
+        return h.read_suite(_p2, os.path.join(d, stem + ".ref"))
     for cand in (stem + ext, stem + ".sno", stem + ".pl", stem + ".icn", stem + ".pas", stem + ".sc", stem + ".raku", stem + ".reb"):
         src = os.path.join(d, cand)
         if os.path.isfile(src):
