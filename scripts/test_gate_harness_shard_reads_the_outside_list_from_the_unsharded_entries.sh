@@ -24,6 +24,7 @@
 # board -- to prove the arm trips. The row's fail-once against the old order itself is this gate RED on the cure's parent, quoted in
 # the landing's commit message.
 # rc 0 = every arm holds; rc 1 = a FAIL named; rc 2 = REFUSED-TO-GRADE (no binary, no rungs to cut the fixture from).
+# format-2: through extract, the first 4 entries cut one by one with the harness reader
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 H="$HERE/corpus_suite_harness.py"; RUNGS="${S4E_CORPUS_ROOT:-$HERE/../../corpus}/tests/snobol4"
@@ -32,10 +33,15 @@ refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -x "$HERE/../../SCRIP/scrip" ] || refuse "no ./scrip binary beside ../harness/scripts/ -- make first"
 "$HERE/util_require_fresh.sh" --gate test_gate_harness_shard_reads_the_outside_list_from_the_unsharded_entries >/dev/null 2>&1 \
   || refuse "this tree's binary is stale or unbuilt -- the harness would refuse every run for that, and arms (a)/(b) would read its refusal as the defect. Run 'make'."
-[ -f "$RUNGS/ALL.sno" ] && [ -f "$RUNGS/ALL.ref" ] || refuse "no rungs pair under $RUNGS to cut a fixture from"
+[ -f "$RUNGS/ALL.csv" ] || refuse "no rungs index under $RUNGS to cut a fixture from"
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_shard_outside.XXXXXX")" || refuse "mktemp failed"; trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/tests/snobol4"; F="$W/tests/snobol4/ALL.sno"; R="$W/tests/snobol4/ALL.ref"; O="$W/tests/snobol4/ALL.outside.tsv"
-head -4 "$RUNGS/ALL.sno" > "$F"; head -4 "$RUNGS/ALL.ref" > "$R"
+mapfile -t NAMES < <(python3 "$H" list "$RUNGS/ALL.sno" "$RUNGS/ALL.ref" 2>/dev/null)
+[ "${#NAMES[@]}" -ge 4 ] || refuse "the harness reader listed ${#NAMES[@]} entries under $RUNGS, fewer than 4"
+: > "$F"; : > "$R"; for n in "${NAMES[@]:0:4}"; do
+  python3 "$H" extract "$RUNGS/ALL.sno" "$RUNGS/ALL.ref" "$n" "$W/x.sno" --out-ref "$W/x.ref" >/dev/null 2>&1 || refuse "cannot extract $n"
+  cat "$W/x.sno" >> "$F"; cat "$W/x.ref" >> "$R"
+done
 [ "$(wc -l < "$F")" = 4 ] && [ "$(wc -l < "$R")" = 4 ] || refuse "the rungs' first four lines did not cut cleanly"
 nm(){ sed -n "${1}p" "$F" | sed 's/.*;\* //'; }
 N2="$(nm 2)"; N3="$(nm 3)"; [ -n "$N2" ] && [ -n "$N3" ] && [ "$N2" != "$N3" ] || refuse "cannot read entries 2 and 3's names from their ';* name' tails"

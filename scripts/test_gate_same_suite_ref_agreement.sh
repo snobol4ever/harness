@@ -35,6 +35,7 @@
 # EXIT 0 no contradictions (over a real, nonzero population); 1 at least one contradiction (names them);
 # 2 REFUSED -- cannot measure (no language's rungs was readable, or the population was empty: a green
 # here would be an empty claim, same vacuity guard as the cross-suite gate).
+# format-2: through the harness reader (read_suite follows the folder), presence tested on ALL.csv
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="${S4E_HOME:-$(cd "$ROOT/.." && pwd)}"
@@ -62,7 +63,7 @@ for lang in langs:
     d = os.path.join(root, lang)
     srcp = os.path.join(d, "ALL" + EXT[lang])
     refp = os.path.join(d, "ALL.ref")
-    if not (os.path.exists(srcp) and os.path.exists(refp)):
+    if not os.path.exists(os.path.join(d, "ALL.csv")):
         continue
     # sidecar_in_path/_wantrc_path do their own "absent -> None" discovery -- not re-derived here.
     ip = h.sidecar_in_path(srcp)
