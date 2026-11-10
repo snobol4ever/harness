@@ -25,7 +25,7 @@ SCRIP="${SCRIP:-$HERE/../../SCRIP/scrip}"
 CORPUS="$S4E/corpus"
 TIMEOUT="${TIMEOUT:-15}"
 SUITE="$CORPUS/packages/snobol4/csnobol4_suite"
-# ⛔ crosscheck/patterns/ is GONE -- converted into tests/snobol4/ALL.{sno,ref,csv} (corpus da0987478
+# ⛔ crosscheck/patterns/ is GONE -- converted into tests/snobol4/ALL.sno, ALL.ref and ALL.csv (corpus da0987478
 # lineage, row dead-suite-path-consumer-sweep). Extract the 10 named FENCE origins by ORIGIN (never
 # re-point at a surviving directory -- that would grade a different population and look green either
 # way, hq_P's FINDING-2026-08-30 on this exact class). Origins confirmed against ALL.csv before use;
