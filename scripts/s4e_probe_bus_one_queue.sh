@@ -105,7 +105,8 @@ case "$N" in
     printf '%s\n' "$out" | grep -qE 'job=[0-9]' && why="$why ask printed a job id;"
     if [ -n "$qt" ]; then
         out="$(printf 'this one, the probe answers\n' | NOPC=1 bus "$S" answer "$qt" --stdin)"
-        [ "$(st "$qt")" = DONE ] || why="$why the answered question reads $(st "$qt"), not DONE [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];"
+        case "$(st "$qt")" in DONE|"") ;; *) why="$why the answered question reads $(st "$qt"), not DONE or gone [$(printf '%s' "$out" | grep -m1 -E '⚠|⛔|REFUSE' | cut -c1-90)];";; esac   # CLOSED: QUEUE.tsv reads DONE or holds no row (the view moves a done row out; the cio 2026-11-10 14:5x)
+        grep -q '^ANSWER: ' "$w/tasks/$qt.task.md" 2>/dev/null || why="$why the answered question's baton carries no ANSWER;"
         case "$(st "$k")" in BLOCKED-ON:*) why="$why the asker is still blocked after the answer;";; esac
         printf '%s\n' "$out" | grep -q '^WAKE: SendMessage to PJ97 ' || why="$why answer printed no WAKE line for PJ97;"
     fi

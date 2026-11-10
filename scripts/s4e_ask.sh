@@ -56,23 +56,25 @@ ask_queue() {   # <asker-topic> <question text>
     n=1; while [ -e "$PO/tasks/q-$topic-$n.task.md" ] || [ -n "$(queue_row_of "q-$topic-$n")" ]; do n=$((n+1)); done
     qt="q-$topic-$n"; base="$PO/tasks/$qt.task.md"
     # the job first: a refused put leaves no row and no baton behind
-    j="$(python3 "$UQ" put "$tube" "$qt" --pri 100 --ttr 7200 2>/dev/null)" || j=""
-    [ -n "$j" ] || refuse "the put into $tube failed (python3 harness/scripts/util_queue.py status tells why); nothing was written"
+    local fr=0; python3 "$UQ" status >/dev/null 2>&1; [ "$?" = 2 ] && fr=1   # bus-one-queue step 4: the file road (beanstalkd unreachable, status exits 2): the column is the tube, no job is put
+    if [ "$fr" = 1 ]; then j=""; else j="$(python3 "$UQ" put "$tube" "$qt" --pri 100 --ttr 7200 2>/dev/null)" || j=""; fi
+    [ -n "$j" ] || [ "$fr" = 1 ] || refuse "the put into $tube failed (python3 harness/scripts/util_queue.py status tells why); nothing was written"
     {
         printf '# TASK %s\n' "$qt"
         printf 'GOAL: question from %s for %s: %s\n' "$ME" "$topic" "$(printf '%s' "$body" | head -1 | cut -c1-200)"
         printf 'DONE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && grep -q "^ANSWER: " "%s"\n' "$base"
         printf 'PREMISE-WHEN: cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" && ! grep -q "^ANSWER: " "%s"\n' "$base"
         printf 'SKILLS: fleet-bus\nTOUCHES: harness/scripts/s4e_ask.sh\nBUDGET: 7200\n'
-        printf 'LINKS: asked by %s for %s (fleet-queue step 8)\nASKED-BY: %s\nASKED-ROW: %s\nQUEUE-JOB: %s tube=%s\n' "$ME" "$topic" "$ME" "$topic" "$j" "$tube"
+        printf 'LINKS: asked by %s for %s (fleet-queue step 8)\nASKED-BY: %s\nASKED-ROW: %s\n' "$ME" "$topic" "$ME" "$topic"; [ -n "$j" ] && printf 'QUEUE-JOB: %s tube=%s\n' "$j" "$tube"
         printf '## NEXT\nAnswer it: s4e_msg.sh answer %s --stdin (the answer unblocks %s).\n## QA\n' "$qt" "$topic"
         printf '%s\n' "$body" | sed 's/^/> /'
-        printf '## LEDGER\n- [%s %s] asked: job %s in %s at pri 100; %s parked BLOCKED-ON:%s\n' "$ME" "$(date -u +%FT%TZ)" "$j" "$tube" "$topic" "$qt"
+        printf '## LEDGER\n- [%s %s] asked: %s in %s at pri 100; %s parked BLOCKED-ON:%s\n' "$ME" "$(date -u +%FT%TZ)" "${j:+job $j}${j:-the question row}" "$tube" "$topic" "$qt"
     } > "$base" || refuse "could not write the question baton $base"
-    printf '%s\t%s\t%s\tASKED:%s\n' 2 "$qt" "$ME" "$tube" >> "$PO/QUEUE.tsv" || refuse "could not add $qt to QUEUE.tsv"
-    if ! bus park "$topic" "BLOCKED-ON:$qt" >/dev/null 2>&1; then
+    if [ "$fr" = 1 ]; then _qs="QUEUED:$tube"; else _qs="ASKED:$tube"; fi
+    printf '%s\t%s\t%s\t%s\n' 2 "$qt" "$ME" "$_qs" >> "$PO/QUEUE.tsv" || refuse "could not add $qt to QUEUE.tsv"
+    if ! bus_as_holder park "$topic" "BLOCKED-ON:$qt" >/dev/null 2>&1; then   # a child of the ask verb that holds the identity (the one-process guard refused the plain bus)
         echo "ASK PARTIAL: q=$qt job=$j is queued in $tube, but $topic was NOT parked: run s4e_msg.sh park $topic BLOCKED-ON:$qt" >&2; exit 1; fi
-    echo "ASK q=$qt tube=$tube pri=100 job=$j blocked=$topic"; s4e_wake_hint "$tube" "$qt" ask; }
+    echo "ASK q=$qt tube=$tube pri=100${j:+ job=$j} blocked=$topic"; s4e_wake_hint "$tube" "$qt" ask; }
 
 answer_q() {   # <q-topic> <answer text>
     local q="$1" body="$2" base row st tmpb t rc claim_first=0
@@ -84,7 +86,7 @@ answer_q() {   # <q-topic> <answer text>
     row="$(queue_row_of "$q")"; [ -n "$row" ] || refuse "no QUEUE row for $q"
     st="$(printf '%s' "$row" | cut -f4)"
     case "$st" in
-        ASKED:*) queue_set_state "$q" "ASSIGNED:$ME" || refuse "could not take $q"; claim_first=1;;
+        ASKED:*|QUEUED:ask-*) queue_set_state "$q" "ASSIGNED:$ME" || refuse "could not take $q"; claim_first=1;;
         ASSIGNED:"$ME") claim_first=1;;
         CLAIMED:"$ME") claim_first=0;;   # a senior's next reserved the question's job and already holds the claim
         *) refuse "$q is $st, not an open ask";;
