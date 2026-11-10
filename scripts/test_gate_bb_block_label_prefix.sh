@@ -77,6 +77,7 @@ CORPUS="$S4E/corpus"
 SCRIP_BIN=./scrip
 WITDIR="$(mktemp -d)"
 trap 'rm -rf "$WITDIR"' EXIT
+# not-a-corpus-path: tests/snobol4/probe/indirect.sno -- prose in a comment: the history of a re-point; the live read is by origin on the next lines
 # ⭐ RE-POINTED 2026-08-30 (seat12, repo-wide dead-suite-path consumer sweep): tests/snobol4/probe/indirect.sno
 # was absorbed into THE ONE FLAT RUNGS and deleted; lib_rungs_extract.sh materializes it back out
 # by origin ("probe_indirect__indirect_pattern_operand").

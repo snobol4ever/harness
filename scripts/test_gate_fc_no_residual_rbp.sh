@@ -30,6 +30,7 @@
 #   (2) FAILED COMPILES SCORED AS CLEAN.  A program that emits "no code generated" contributes zero
 #       misses and was indistinguishable from a program that compiled perfectly.  Two of the 52 were
 #       in this state, one of them hiding the single LARGEST miss population in the corpus.
+# not-a-corpus-path: tests/snobol4/beauty_suite/ -- prose in a comment, the history of defect (3); its live SNO_LIB twin ($CORPUS/beauty_suite) is NOT cured by this line
 #   (3) INCLUDES NEVER RESOLVED.  demo/expression.sno -INCLUDEs three files that live in
 #       tests/snobol4/beauty_suite/.  The gate set no search path, so it silently took defect (2)
 #       and scored 0.  With SNO_LIB seeded it compiles clean and reports 11,662 misses -- a
