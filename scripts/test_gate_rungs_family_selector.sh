@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: presence test is ALL.csv; the fixtures are its own synthetic scratch, so the rungs is never read
 # test_gate_rungs_family_selector.sh — the executable DONE-WHEN for row
 # `master-builder-delete-absorbed-family-selector` (mint 2026-08-30).
 #
@@ -34,7 +35,7 @@ gate_parse_args "$@"
 BUILDER="$ROOT/../harness/scripts/util_build_rungs_suite.py"
 LIVE="$ROOT/../corpus/tests/snobol4"
 gate_require "$BUILDER" "the rungs builder"
-gate_require "$LIVE/ALL.sno" "the live snobol4 rungs"
+gate_require "$LIVE/ALL.csv" "the live snobol4 rungs"
 
 FAILS=0
 # ⛔⭐ COUNT THE ASSERTIONS, so the verdict line's denominator is the population it actually graded. This

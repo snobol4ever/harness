@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: scratch copy ungrouped through the harness when the rungs is format 2; presence test is ALL.csv
 export S4E_MINT_NO_CRITERION="gate fixture: the row under test exercises the bus, not work (R-1386)"
 # test_gate_add_ladder_witness_lands_the_entry_in_the_builders_order.sh -- A MINT LANDS ITS ENTRY WHERE THE BUILDER'S KEY PUTS IT (R-2019,
 # the SnoRungs order gate red at 880 of 2189 with nine hq_dotnet harvests at the tail). util_add_ladder_witness.py used to APPEND the new
@@ -14,9 +15,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; S4E="${S4E_HOME:-$(cd "$HE
 G=add_ladder_witness_lands_the_entry_in_the_builders_order; TOOL="$HERE/util_add_ladder_witness.py"; ORDER="$HERE/test_gate_rungs_order_is_the_builders_order.sh"; M="$S4E/corpus/tests/snobol4"
 refuse() { echo "⛔ REFUSED(2) [$G]: $*" >&2; exit 2; }
 [ -f "$TOOL" ] && [ -f "$ORDER" ] && [ -f "$HERE/util_build_rungs_suite.py" ] || refuse "no tool, order gate or builder beside this gate in $HERE"
-for f in ALL.csv ALL.sno ALL.ref; do [ -s "$M/$f" ] || refuse "no $M/$f -- the SNOBOL4 rungs is the scratch source"; done
+[ -s "$M/ALL.csv" ] || refuse "no $M/ALL.csv -- the SNOBOL4 rungs is the scratch source"
 [ -x /home/resources/x64/bin/sbl ] || refuse "no SNOBOL4 oracle at /home/resources/x64/bin/sbl (the tool cuts the witness's ref from it)"
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
+if [ -f "$M/MULTI.md" ]; then cp -r "$M" "$T/fmt2src" && python3 "$HERE/corpus_suite_harness.py" ungroup "$T/fmt2src" >/dev/null 2>&1 || refuse "could not ungroup the format-2 rungs into scratch"; M="$T/fmt2src"; fi
 # fresh <name> -> a scratch ROOT $T/<name>/corpus/tests/snobol4 holding the live rungs and its sidecars, re-sorted into the builder's order (the order gate's S4E_HOME)
 fresh() { local r="$T/$1" f; rm -rf "$r"; mkdir -p "$r/corpus/tests/snobol4"; for f in ALL.csv ALL.sno ALL.ref ALL.in ALL.xfail ALL.wantrc; do [ -f "$M/$f" ] && cp "$M/$f" "$r/corpus/tests/snobol4/"; done
     python3 - "$HERE" "$r/corpus/tests/snobol4" <<'PY' >/dev/null 2>&1 || return 2

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through read_suite (fmt2_dir_of); presence test accepts format 2 beside ALL.csv
 # test_gate_rungs_order_is_the_builders_order.sh -- THE COMMITTED RUNGS IS SORTED THE WAY ITS BUILDER SORTS.
 # Row promotion-re-sorts-the-master-so-rank-stays-the-greenest-prefix (ruling 2026-09-03, on hq_B's
 # routed question; FINDING-2026-09-03-hq_B-a-promotion-changes-an-entrys-sort-key-*).
@@ -45,7 +46,7 @@ for lang in langs:
     d = os.path.join(s4e, "corpus", "tests", lang)
     ext = EXTS[lang]
     sno, ref, csvp = os.path.join(d, "ALL" + ext), os.path.join(d, "ALL.ref"), os.path.join(d, "ALL.csv")
-    if not (os.path.isfile(sno) and os.path.isfile(ref) and os.path.isfile(csvp)):
+    if not (((os.path.isfile(sno) and os.path.isfile(ref)) or h.fmt2_dir_of(sno) is not None) and os.path.isfile(csvp)):
         continue
     cfg = h.LANG_CONFIGS.get(lang)
     if lang == "snobol4":
