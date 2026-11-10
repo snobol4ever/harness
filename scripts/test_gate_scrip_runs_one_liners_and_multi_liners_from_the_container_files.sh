@@ -7,9 +7,9 @@
 # wall s, cpu s, peak KB. It compares nothing. The format bytes are the ones agreed with officer_04 (both LEDGERs, 2026-11-10 09:1x CST).
 # This gate builds a scratch container in that format and reads: every result type (EXIT with its status, ABORT, CRASH, TIMEOUT, HANG,
 # OVERFLOW, REFUSED, DEFERRED); a test with stdin (whose text holds a heading-like line) and one with args (one holding a space); stdout and
-# stderr apart; a program in a four-backtick fence holding a three-backtick line; a global set by one test unset in the next; the report in
+# stderr apart; a program in a four-backtick fence holding a three-backtick line; a staged test holding a file fence (CIO-55) read as DEFERRED; a global set by one test unset in the next; the report in
 # index order; --only; --compile writing assembly and running nothing; and the refusals (rc 2, no test run) for a ONE line count off the
-# index, a heading the index lacks, an unclosed fence and an --only name the group lacks. rc 0 GREEN, 1 RED (named), 2 could not measure.
+# index, a heading the index lacks, an unclosed fence, an --only name the group lacks and a file fence in a test whose road is direct. rc 0 GREEN, 1 RED (named), 2 could not measure.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIP="$HERE/../../SCRIP/scrip"
@@ -108,6 +108,10 @@ END
 ```SNOBOL4
         OUTPUT = 'a staged test is not run'
 END
+```
+
+```file m_staged.dat
+a companion file of a staged test (CIO-55)
 ```
 
 ## m_stdin
@@ -251,9 +255,11 @@ mk open && sed -i 's/^````$/```/' "$T/open/MULTI.md"
 refusal unclosed-fence timeout -k 5 30 "$SCRIP" --run-multi-liners "$T/open" --out "$T/ro"
 echo m_no_such > nosuch.txt
 refusal only-name-the-group-lacks timeout -k 5 30 "$SCRIP" --run-multi-liners "$C" --out "$T/rn" --only nosuch.txt
+mk ffd && sed -i 's/^m_staged,multi,staged,/m_staged,multi,direct,/' "$T/ffd/ALL.csv"
+refusal file-fence-on-a-direct-road timeout -k 5 30 "$SCRIP" --run-multi-liners "$T/ffd" --out "$T/rf"
 n=0
 for r in $reds; do n=$((n + 1)); done
 echo "SCRIP_RUN_LINERS_BOARD reds=$n tests=$(cat rep1.tsv repm.tsv | wc -l) (tree $TREE)"
-[ "$n" = 0 ] && { echo "GATE OK [$G]: every result type, stdin, args, the two streams, the long fence, fresh globals, --only, --compile and four refusals read as designed"; exit 0; }
+[ "$n" = 0 ] && { echo "GATE OK [$G]: every result type, stdin, args, the two streams, the long fence, the file fence, fresh globals, --only, --compile and five refusals read as designed"; exit 0; }
 echo "GATE FAIL [$G]: $n red:$reds"
 exit 1

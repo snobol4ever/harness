@@ -2621,6 +2621,7 @@ FMT2_PARTS = ("args", "stdin", "stdout", "stderr")
 FMT2_COLS = ("group", "road", "nonl")
 FMT2_OLD = ("ALL{ext}", "ALL.ref", "ALL.in", "ALL.argv", "ALL.xfail")
 _FMT2_FENCE_RE = re.compile(r"^(`{3,})([^`]*)$")
+_FMT2_FILE_TAG_RE = re.compile(r"^file ([^/\s]+)$")   # THE FILE FENCE (CIO-55, Lon 2026-11-10 10:5x): an entry's companion file, its base name after "file "
 
 
 def fmt2_dir_of(src_path):
@@ -2678,6 +2679,8 @@ def _fmt2_section(e, tag):
     with LFs inside); of a block entry its lines, the fence absent when it has none."""
     nonl = []
     out = [f"## {e.name}\n\n", _fmt2_fence(tag, _fmt2_lines_text(e.sno_lines))]
+    for fn, body in sorted((getattr(e, "files", None) or {}).items()):
+        out.append(_fmt2_fence(f"file {fn}", body))
     if e.argv:
         bad = [a for a in e.argv if "\n" in a]
         if bad:
@@ -2716,7 +2719,48 @@ def _fmt2_write_csv(d, fields, rows):
     tmp.replace(p)
 
 
-def write_container_dir(entries, d, ext, road_of=None):
+def fmt2_companions(e, d, ext):
+    """THE FILE FENCES OF AN ENTRY (CIO-55 (2)): {base name: text} of every file stage_entry puts beside the program in a fresh directory
+    (the companion search of the container directory and its config folder), and the config paths they came from, which regroup removes
+    once the read-back is identical. An entry already carrying files keeps them. A nested name, an upstream stage or a prelude keeps the old
+    search (staged, no fence). Refuses (ValueError) a companion that is not UTF-8, or not empty and without a final newline, naming it."""
+    if getattr(e, "files", None):
+        return dict(e.files), []
+    if "/" in e.name or getattr(e, "stage_upstream", False) or (Path(d) / "ALL.prelude").is_file():
+        return {}, []
+    with tempfile.TemporaryDirectory(prefix="fmt2_files_") as td:
+        cand, _ = stage_entry(e, td, ext, str(d))
+        names = sorted(n for n in os.listdir(td) if n != cand.name)
+        if any(not (Path(td) / n).is_file() for n in names):
+            return {}, []
+        files, srcs = {}, []
+        for n in names:
+            b = (Path(td) / n).read_bytes()
+            try:
+                t = b.decode("utf-8")
+            except UnicodeDecodeError as exc:
+                raise ValueError(f"{e.name}: companion {n} is not UTF-8 ({exc}); a file fence holds text")
+            if b and not b.endswith(b"\n"):
+                raise ValueError(f"{e.name}: companion {n} does not end in a newline; a file fence cannot hold it")
+            if "\r" in t:
+                raise ValueError(f"{e.name}: companion {n} holds a carriage return; a file fence breaks lines on LF only")
+            files[n] = t
+            c = Path(d) / "config" / n
+            if not (Path(d) / n).is_file() and c.is_file():
+                srcs.append(c)
+        return files, srcs
+
+
+def fmt2_drop_config_companions(d, srcs):
+    """Remove the config copies regroup fenced, and the config folder when that leaves it empty (CIO-55 (6))."""
+    for c in sorted(set(srcs)):
+        Path(c).unlink(missing_ok=True)
+    cfg = Path(d) / "config"
+    if srcs and cfg.is_dir() and not any(cfg.iterdir()):
+        cfg.rmdir()
+
+
+def write_container_dir(entries, d, ext, road_of=None, fenced=None):
     """THE FORMAT-2 WRITER: ONE.EXT, ONE.out and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
     every row (the last three columns, CIO-50: a reader by position never sees them move), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
     writing on an XFAIL entry (no XFAIL, CEO-1696), an entry with no ALL.csv row or a row with no entry, a name holding a newline, two
@@ -2756,6 +2800,11 @@ def write_container_dir(entries, d, ext, road_of=None):
             one_src.append(e.sno_lines[0] + "\n")
             one_out.append((e.ref if e.kind == "line" else e.ref[0]) + "\n")
         else:
+            fs, srcs = fmt2_companions(e, d, ext)
+            if fs:
+                e.files = fs
+            if fenced is not None:
+                fenced.extend(srcs)
             sec, nonl = _fmt2_section(e, tag)
             r["group"], r["nonl"] = "multi", " ".join(nonl)
             md.append(sec)
@@ -2777,11 +2826,11 @@ def write_container_dir(entries, d, ext, road_of=None):
 def _fmt2_parse_md(path, ext):
     """MULTI.md -> [(name, program text, {part: text})] in file order; refuses (ValueError) on everything agreed line 5 refuses."""
     lines = _read_lf_lines(path)
-    secs, cur, i, order = [], None, 0, ("lang",) + FMT2_PARTS
+    secs, cur, i, order = [], None, 0, ("lang", "file") + FMT2_PARTS
     while i < len(lines):
         ln = lines[i]
         if ln.startswith("## "):
-            cur = {"name": ln[3:], "lang": None, "parts": {}, "last": -1, "fenced": False}
+            cur = {"name": ln[3:], "lang": None, "parts": {}, "files": {}, "last": -1, "fenced": False}
             secs.append(cur)
             i += 1
             continue
@@ -2806,6 +2855,13 @@ def _fmt2_parse_md(path, ext):
             elif t in FMT2_PARTS:
                 pos = order.index(t)
                 cur["parts"][t] = body
+            elif _FMT2_FILE_TAG_RE.match(t):
+                fn = _FMT2_FILE_TAG_RE.match(t).group(1)
+                pos = 1
+                if cur["last"] == 1 and fn <= max(cur["files"]):
+                    raise ValueError(f"{path} line {i + 1}: file fence {fn!r} of {cur['name']} is repeated or not in name order")
+                cur["files"][fn] = body
+                cur["last"] = 0
             else:
                 raise ValueError(f"{path} line {i + 1}: unknown fence tag {t!r} in {cur['name']}")
             if pos <= cur["last"]:
@@ -2880,6 +2936,10 @@ def read_container_dir(d, ext, modes=None, allow_old=False):
             e = Entry(kind, seq, r["entry"], prog, ref, stdin=stdin, argv=(argv or None))
             if "stderr" in p:
                 e.stderr_answer = cut("stderr", p["stderr"])
+            if s["files"]:
+                if r.get("road") != "staged":
+                    raise ValueError(f"{d}/ALL.csv: {r['entry']} holds a file fence and its road is {r.get('road')!r}, not staged")
+                e.files = dict(s["files"])
         entries.append(e)
     src_path = str(d / f"ALL{ext}")
     read_wantrc_sidecar(sidecar_wantrc_path(src_path), entries)
@@ -2938,8 +2998,9 @@ def cmd_regroup(args):
         old = _fmt2_old_read(work / src.name, lang)
     csv_bytes = (work / "ALL.csv").read_bytes()
     roads = {e.name: fmt2_road(e, work, ext) for e in old}
+    fenced = []
     try:
-        counts = write_container_dir(old, work, ext, road_of=lambda e: roads[e.name])
+        counts = write_container_dir(old, work, ext, road_of=lambda e: roads[e.name], fenced=fenced)
         new = read_container_dir(work, ext, allow_old=True)
         diffs = fmt2_identity(old, new)
     except ValueError as exc:
@@ -2956,11 +3017,13 @@ def cmd_regroup(args):
     if not args.dry_run:
         for n in FMT2_OLD:
             (work / n.format(ext=ext)).unlink(missing_ok=True)
+        fmt2_drop_config_companions(work, fenced)
         again = read_container_dir(work, ext)
         if fmt2_identity(old, again):
             refuse(f"regroup: {d} read back identical beside the old files and differently without them -- restore it from git")
-    print("REGROUP_BOARD dir=%s entries=%d one=%d multi=%d staged=%d%s" % (d, len(old), counts["one"], counts["multi"], nroad,
-                                                                              " dry-run" if args.dry_run else ""))
+    print("REGROUP_BOARD dir=%s entries=%d one=%d multi=%d staged=%d files=%d%s" % (d, len(old), counts["one"], counts["multi"], nroad,
+                                                                                     sum(len(getattr(e, "files", None) or {}) for e in old),
+                                                                                     " dry-run" if args.dry_run else ""))
     if args.dry_run:
         shutil.rmtree(work, ignore_errors=True)
     return 0
@@ -2976,6 +3039,18 @@ def ungroup_dir(d, ext):
     bad = [e.name for e in entries if hasattr(e, "stderr_answer")]
     if bad:
         raise ValueError(f"{d}: {len(bad)} test(s) carry a stderr fence the old format cannot hold: {bad[:8]}")
+    files = {}
+    for e in entries:
+        for fn, body in (e.__dict__.pop("files", None) or {}).items():
+            if files.get(fn, body) != body:
+                raise ValueError(f"{d}: two tests carry a file fence {fn} with different bytes; config holds one")
+            files[fn] = body
+    cfg = d / "config"
+    clash = [fn for fn, body in files.items() if (cfg / fn).exists() and (cfg / fn).read_bytes() != body.encode("utf-8")]
+    if clash:
+        raise ValueError(f"{d}: config already holds {clash[:4]} with other bytes than their file fences")
+    made_cfg = bool(files) and not cfg.is_dir()
+    made = [cfg / fn for fn in sorted(files) if not (cfg / fn).exists()]
     lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
     fields, rows = _fmt2_read_csv(d)
     csv_bytes = (d / "ALL.csv").read_bytes()
@@ -2985,6 +3060,10 @@ def ungroup_dir(d, ext):
         p.unlink()
     src, ref, inp, argv = d / f"ALL{ext}", d / "ALL.ref", d / "ALL.in", d / "ALL.argv"
     try:
+        if files:
+            cfg.mkdir(exist_ok=True)
+            for p in made:
+                p.write_bytes(files[p.name].encode("utf-8"))
         _fmt2_write_csv(d, [f for f in fields if f not in FMT2_COLS], [{k: v for k, v in r.items() if k not in FMT2_COLS} for r in rows])
         withargs = [e for e in entries if e.argv]
         if withargs:
@@ -3001,8 +3080,10 @@ def ungroup_dir(d, ext):
     except ValueError as exc:
         diffs = [f"refused: {exc}"]
     if diffs:
-        for p in (src, ref, inp, argv):
+        for p in [src, ref, inp, argv] + made:
             p.unlink(missing_ok=True)
+        if made_cfg and cfg.is_dir() and not any(cfg.iterdir()):
+            cfg.rmdir()
         for p, b in held.items():
             p.write_bytes(b)
         (d / "ALL.csv").write_bytes(csv_bytes)
@@ -3017,8 +3098,9 @@ def regroup_dir(d, ext):
     lang = next((l for l, c in LANG_CONFIGS.items() if c["ext"] == ext), "snobol4" if ext == ".sno" else None)
     old = _fmt2_old_read(d / f"ALL{ext}", lang)
     csv_bytes = (d / "ALL.csv").read_bytes()
+    fenced = []
     try:
-        counts = write_container_dir(old, d, ext)
+        counts = write_container_dir(old, d, ext, fenced=fenced)
         diffs = fmt2_identity(old, read_container_dir(d, ext, allow_old=True))
     except ValueError as exc:
         diffs, counts = [f"refused: {exc}"], None
@@ -3029,6 +3111,7 @@ def regroup_dir(d, ext):
         raise ValueError(f"{d}: regroup did not read back identical; the old format stands: " + "; ".join(diffs[:4]))
     for n in FMT2_OLD:
         (d / n.format(ext=ext)).unlink(missing_ok=True)
+    fmt2_drop_config_companions(d, fenced)
     return counts
 
 
@@ -3295,6 +3378,8 @@ def stage_entry(entry, td, ext=".sno", companion_dir=None):
     if _cdir != companion_dir:
         _copy_companions(text, companion_dir, cand.parent)   # the suite directory first, as before, so nothing a nested entry found there is lost
     _copy_companions(text, _cdir, cand.parent)               # then the entry's own directory, which wins where both hold the name
+    for _fn, _body in (getattr(entry, "files", None) or {}).items():   # THE FILE FENCES (CIO-55): the entry's own companions, beside the program
+        (cand.parent / _fn).write_bytes(_body.encode("utf-8"))
     # PROGRAM ARGUMENTS THAT NAME A COMPANION (AIS HSORT: its input file name arrives in HOST(0)): an argv token
     # that is a file beside the suite travels with the entry the same way a named include does.
     for _tok in (getattr(entry, 'argv', None) or []):
