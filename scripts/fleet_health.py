@@ -7,6 +7,7 @@
 # source that cannot be read prints `?` and never a guess. Read-only; no bus verb; under two seconds.
 #   fleet_health.py            the grid
 #   fleet_health.py --probe    the grid from planted files under a scratch dir (every quadrant prints a verdict; rc 0)
+#   fleet_health.py --probe-work   the suite count from a planted table: a port row (key@engine) is counted apart from the SCRIP suites (rc 0)
 #   fleet_health.py --probe-seats   the seats arithmetic from planted inputs: a sleeping seat is neither idle nor starved (rc 0)
 #   fleet_health.py --sleeping F    the sleeping list F (default V/sleeping, the census's file; a missing file means nobody sleeps)
 import os, re, sys, glob, time, subprocess, json
@@ -144,12 +145,17 @@ def seats_probe():
 
 def work():
     suites = [l.split("\t") for l in rd(P + "/SUITES.tsv").split("\n") if l and not l.startswith("#")]
-    at100 = below = 0; worst = []
+    at100 = below = p100 = pbelow = 0; worst = []
     for r in suites:   # SUITES.tsv: key nick emoji lang first_date first_pass first_total today_date today_pass today_total ...
         if len(r) < 10 or r[0] == "key" or not r[8].isdigit() or not r[9].isdigit(): continue
         a, b = int(r[8]), int(r[9])
+        if "@" in r[0]:   # a port engine's row (key@engine): not a SCRIP suite, counted apart so this line and the suite banner read one population
+            if b and a == b: p100 += 1
+            elif b: pbelow += 1
+            continue
         if b and a == b: at100 += 1
         elif b: below += 1; worst.append((a / b, "%s %d/%d" % (r[1] or r[0], a, b)))
+    if "--probe-work" in sys.argv: return at100, at100 + below, p100, p100 + pbelow
     worst.sort()
     now = time.time(); hour = time.strftime("%Y-%m-%dT%H", time.gmtime(now - 3600))
     res = rd(P + "/results.tsv").split("\n"); recent = [l for l in res if l[:13] >= hour]
@@ -164,7 +170,7 @@ def work():
         except Exception: pass
     verdict = "OK" if below <= 10 and fails == 0 else "REDS" if fails else "OK"
     return "THE WORK (COO-481)", verdict, [
-        "suites at 100: %d of %d; worst %s" % (at100, at100 + below, ", ".join(w for _, w in worst[:2]) or "-"),
+        "suites at 100: %d of %d; ports %d of %d; worst %s" % (at100, at100 + below, p100, p100 + pbelow, ", ".join(w for _, w in worst[:2]) or "-"),
         "test-cycle %s; batch-grader %s" % (steps(S4E + "/corpus/tests/shared/test_cycle/STEPS.tsv", "test-cycle-step-"), steps(S4E + "/corpus/tests/shared/batch_grader/STEPS.tsv", "batch-grader-step-")),
         "fleet-queue %s; fleet rows in the haiku tube %d" % (steps(S4E + "/corpus/tests/shared/fleet_queue/STEPS.tsv", "fleet-queue-step-"), sum(1 for r in queue_rows() if r[2] == "@haiku" and re.match(r"(bus|tick|census|fleet|test-cycle|sitting|law|spawn)", r[1]))),
         "last hour: %d landings, %d readings, %d FAIL" % (landings, len(recent), fails),
@@ -191,6 +197,12 @@ def main():
         i = sys.argv.index("--sleeping")
         if i + 1 >= len(sys.argv): sys.exit("REFUSE(2): --sleeping takes a file")
         SLEEPING = sys.argv[i + 1]
+    if "--probe-work" in sys.argv:
+        import tempfile
+        d = tempfile.mkdtemp(prefix="fleet_health_probe."); P = d
+        row = lambda k, a, b: "\t".join([k, "n", "e", "l", "d", "0", "0", "d", str(a), str(b)]) + "\n"
+        open(d + "/SUITES.tsv", "w").write(row("full", 5, 5) + row("short", 4, 5) + row("full@dotnet", 5, 5) + row("short@jvm", 4, 5))
+        got = work(); print("WORK_PROBE suites=%d/%d ports=%d/%d" % got); sys.exit(0 if got == (1, 2, 1, 2) else 1)
     if "--probe" in sys.argv:
         import tempfile
         d = tempfile.mkdtemp(prefix="fleet_health_probe.")
