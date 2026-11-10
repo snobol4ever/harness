@@ -92,6 +92,7 @@ lap_start() {
     fi
 }
 if [ "$MODE_ARG" = --list ]; then cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
+{ [ "${BASH_VERSINFO[0]}" -gt 5 ] || { [ "${BASH_VERSINFO[0]}" -eq 5 ] && [ "${BASH_VERSINFO[1]}" -ge 1 ]; }; } || { echo "REFUSE(2) [cycle]: bash ${BASH_VERSION} has no wait -n -p (5.1 or newer; the rolling pool needs it)"; exit 2; }
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
 echo $$ > "$PIDF"
 trap 'rm -f "$PIDF"' EXIT
@@ -117,45 +118,44 @@ while :; do
         mapfile -t ALL < <(cells); total=${#ALL[@]}
         [ "$total" -gt 0 ] || { log "REFUSED: no cells after the sync (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
     fi
-    while [ "$idx" -lt "$total" ]; do
-        # THE WIDTH (the cio, 2026-11-08 10:4x CST; MEASURED: 20 cells in 1579 s one at a time, 78 s a cell, a lap of 190 cells 250 min, at load 8 on 16 cores
-        # with no CPU pressure): up to S4E_CYCLE_WIDTH cells (default 4; 1 under --one) run at once, each under its own run slot in the grader's pool; the
-        # state names the batch's first cell (a crash is charged to it), the log gets one CELL line per cell in order, a master's row is recorded after its last cell.
-        W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
-        B=(); j="$idx"
-        while [ "$j" -lt "$total" ] && [ "${#B[@]}" -lt "$W" ]; do
-            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"
-            if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((j+1))/$total $key $cell"; j=$(( j + 1 )); [ "${#B[@]}" -eq 0 ] && idx="$j"; continue; fi
-            B+=("$j"); j=$(( j + 1 ))
+    # THE WIDTH (the cio, 2026-11-08 10:4x CST; MEASURED: 20 cells in 1579 s one at a time, 78 s a cell, a lap of 190 cells 250 min, at load 8 on 16 cores
+    # with no CPU pressure): up to S4E_CYCLE_WIDTH cells (default 4; 1 under --one) run at once, each under its own run slot in the grader's pool.
+    # THE ROLLING POOL (the cio 2026-11-10, row cycle-keeps-its-width-of-cells-running; MEASURED by the coo 20:53Z: lap 11 stood 1 h 40 min on xsb chunk:02
+    # with three of four slots idle, because a batch waited on ALL its cells): the moment ANY cell finishes (wait -n -p) it is handled and its slot is
+    # refilled with the next cell. The state names the LOWEST index still running, so a crash is charged to it and a restart resumes there (a later cell
+    # that had finished runs again: time, never a reading). CELL lines come in order of finish, each with its own index. A suite's row is recorded when
+    # the last of its cells of this lap has finished, whatever the order.
+    W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
+    declare -A RUN=() LEFT=(); nxt="$idx"
+    for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
+    while :; do
+        while [ "$nxt" -lt "$total" ] && [ "${#RUN[@]}" -lt "$W" ]; do
+            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$nxt]}"
+            if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((nxt+1))/$total $key $cell"; nxt=$(( nxt + 1 )); continue; fi
+            ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$nxt" ) & RUN[$!]="$nxt"; nxt=$(( nxt + 1 ))
         done
-        [ "${#B[@]}" -gt 0 ] || { idx="$j"; continue; }
-        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[${B[0]}]}"
-        state_put "$lap" "${B[0]}" "$total" "$key" "$cell" running
-        pids=()
-        for i in "${B[@]}"; do
-            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
-            ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$i" ) & pids+=($!)
-        done
-        wait "${pids[@]}"
-        for i in "${B[@]}"; do
-            IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
-            read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
-            log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
-            next_key="$(printf '%s' "${ALL[$((i+1))]:-}" | cut -f1)"
-            # A SUITE ROW IS WRITTEN ONLY BY A LAP THAT GRADED THE SUITE (the cio 2026-11-10; MEASURED: inria's five cells refused rc 2 in 0 s on
-            # laps 2 to 10, no grader row for inria is later than 2026-11-08T20:19Z, and its SUITES.tsv row reads today_date 2026-11-09; logtalk
-            # and dotnet the same): from-progress stamps the box-clock day, so a record after a lap in which every cell refused re-dates old
-            # readings as today's. No cell of this lap at rc 0 or 1, no record; the row keeps the day of its last reading and the log says so.
-            if [ "$next_key" != "$key" ]; then
-                if graded_this_lap "$key"; then
-                    [ "$kind" = master ] && record_suite "$lang"
-                    [ "$kind" = pkg ] && record_pkg "$key"
-                else
-                    log "NORECORD lap=$lap $key: no cell of this lap graded (every cell refused, died or was held); its suite row is not rewritten"
-                fi
+        [ "${#RUN[@]}" -gt 0 ] || break
+        low="$total"; for i in "${RUN[@]}"; do [ "$i" -lt "$low" ] && low="$i"; done
+        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running
+        dp=""; wait -n -p dp "${!RUN[@]}"; [ -n "$dp" ] && [ -n "${RUN[$dp]:-}" ] || continue
+        i="${RUN[$dp]}"; unset 'RUN[$dp]'
+        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
+        rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
+        log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
+        LEFT[$key]=$(( ${LEFT[$key]:-1} - 1 ))
+        # A SUITE ROW IS WRITTEN ONLY BY A LAP THAT GRADED THE SUITE (the cio 2026-11-10; MEASURED: inria's five cells refused rc 2 in 0 s on
+        # laps 2 to 10, no grader row for inria is later than 2026-11-08T20:19Z, and its SUITES.tsv row reads today_date 2026-11-09; logtalk
+        # and dotnet the same): from-progress stamps the box-clock day, so a record after a lap in which every cell refused re-dates old
+        # readings as today's. No cell of this lap at rc 0 or 1, no record; the row keeps the day of its last reading and the log says so.
+        if [ "${LEFT[$key]}" -le 0 ] && [ "$MODE_ARG" != --one ]; then
+            if graded_this_lap "$key"; then
+                [ "$kind" = master ] && record_suite "$lang"
+                [ "$kind" = pkg ] && record_pkg "$key"
+            else
+                log "NORECORD lap=$lap $key: no cell of this lap graded (every cell refused, died or was held); its suite row is not rewritten"
             fi
-            [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
-        done
-        idx="$j"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
+        fi
+        [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
     done
+    idx="$total"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
 done
