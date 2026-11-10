@@ -2610,7 +2610,7 @@ def read_block_suite(src_path, ref_path, banner_re, in_path=None, x_path=None, w
 # ================================================ FORMAT 2: ONE AND MULTI (CIO-24 f, CIO-25, CIO-34) ===
 # ⭐ A CONTAINER DIRECTORY IN FORMAT 2 holds ONE.EXT and ONE.out (line N of each is the Nth ALL.csv row whose group is one), MULTI.md
 # (one section a multi row, in index order: a heading of two hashes and the entry name, then fences tagged with the language, args, stdin,
-# stdout, stderr, each optional, an absent one meaning empty) and ALL.csv with three columns after entry: group (one or multi), road
+# stdout, stderr, each optional, an absent one meaning empty) and ALL.csv with three LAST columns (CIO-50): group (one or multi), road
 # (direct or staged) and nonl (the space-separated parts whose last line has no LF). THE BYTES were agreed by officer_01 (the SCRIP
 # switches, CIO-32) and officer_04 (this reader) by telegram 2026-11-10 09:1x CST; both LEDGERs carry the text. SCRIP reads the program,
 # args and stdin; this reader reads every part and gives the same Entry list read_suite or read_block_suite gave before regroup.
@@ -2718,7 +2718,7 @@ def _fmt2_write_csv(d, fields, rows):
 
 def write_container_dir(entries, d, ext, road_of=None):
     """THE FORMAT-2 WRITER: ONE.EXT, ONE.out and MULTI.md from ENTRIES, and ALL.csv's group, road and nonl columns rewritten for
-    every row (inserted after entry), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
+    every row (the last three columns, CIO-50: a reader by position never sees them move), its rows in ENTRIES' order, run_args emptied into the args fence (agreed A2). Refuses before
     writing on an XFAIL entry (no XFAIL, CEO-1696), an entry with no ALL.csv row or a row with no entry, a name holding a newline, two
     names one OUT name (A3). A group with no entry has no file. Returns {"one": n, "multi": n}."""
     d = Path(d)
@@ -2763,9 +2763,7 @@ def write_container_dir(entries, d, ext, road_of=None):
         if "run_args" in r:
             r["run_args"] = ""
         out_rows.append(r)
-    base = [f for f in fields if f not in FMT2_COLS]
-    i = base.index("entry") + 1
-    new_fields = base[:i] + list(FMT2_COLS) + base[i:]
+    new_fields = [f for f in fields if f not in FMT2_COLS] + list(FMT2_COLS)   # CIO-50: the LAST three columns; columns before them never move
     for name, parts in ((f"ONE{ext}", one_src), ("ONE.out", one_out), ("MULTI.md", md)):
         p = d / name
         if parts:

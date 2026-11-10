@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # test_gate_container_format_2_two_groups_read_back_identical.sh -- A CONTAINER DIRECTORY IN FORMAT 2 (CIO-24 f, CIO-25, CIO-34; row
 # tests-layout-the-container-is-two-groups-one-liner-and-multi-liner-with-stdin-and-stdout-named): ONE.EXT and ONE.out line for line,
-# MULTI.md one section a test (the language, args, stdin, stdout and stderr fences), ALL.csv with group, road and nonl after entry. The
+# MULTI.md one section a test (the language, args, stdin, stdout and stderr fences), ALL.csv with group, road and nonl as its last three columns (CIO-50). The
 # bytes were agreed by officer_01 (the SCRIP switches) and officer_04 (this reader) on 2026-11-10; both LEDGERs hold the text.
 # THE ARMS, over a scratch container whose answers are cut from sbl -bf (the ONE oracle, through sbl_correctness_bin):
 #   1  regroup converts it: ALL.sno, ALL.ref and ALL.in are gone, ONE.sno holds the one one-liner, MULTI.md the rest, a block holding
@@ -77,7 +77,7 @@ ck "the old files are gone" '! test -e "$W/new/ALL.sno" && ! test -e "$W/new/ALL
 ck "ONE.sno holds the one one-liner, ONE.out its answer" '[ "$(cat "$W/new/ONE.sno")" = " OUTPUT = '"'"'one'"'"';END;* a" ] && [ "$(cat "$W/new/ONE.out")" = one ]'
 ck "MULTI.md: five sections in index order; a stdin line opening with two hashes stays stdin" '[ "$(grep -x -e "## b" -e "## c" -e "## e" -e "## g" -e "## k" "$W/new/MULTI.md" | tr "\n" " ")" = "## b ## c ## e ## g ## k " ] && grep -qx "## not a heading" "$W/new/MULTI.md" && [ "$(python3 -c "import sys;sys.path.insert(0,sys.argv[1]);import corpus_suite_harness as h;print(len(h._fmt2_parse_md(sys.argv[2],\".sno\")))" "$HERE" "$W/new/MULTI.md")" = 5 ]'
 ck "three backticks inside a block take a fence of four" 'grep -qx "\`\`\`\`stdin" "$W/new/MULTI.md" && grep -qx "\`\`\`\`stdout" "$W/new/MULTI.md"'
-ck "ALL.csv: group road nonl after entry; c names stdin in nonl; g run_args emptied" 'head -1 "$W/new/ALL.csv" | grep -q "^rank,entry,group,road,nonl,origin" && grep -q "^3,c,multi,direct,stdin," "$W/new/ALL.csv" && grep -q "^5,g,multi,direct,,gate,gate,block,0,2,,,,$" "$W/new/ALL.csv"'
+ck "ALL.csv: group road nonl the LAST three columns (CIO-50), columns before them unmoved; c names stdin in nonl; g run_args emptied" 'head -1 "$W/new/ALL.csv" | grep -q "^rank,entry,origin,family,kind,xfail,n_lines,heap_kb,stack_kb,compile_args,run_args,group,road,nonl$" && python3 -c "import csv,sys;r={x[\"entry\"]:x for x in csv.DictReader(open(sys.argv[1]))};c,g=r[\"c\"],r[\"g\"];sys.exit(0 if (c[\"group\"],c[\"road\"],c[\"nonl\"])==(\"multi\",\"direct\",\"stdin\") and g[\"run_args\"]==\"\" and g[\"group\"]==\"multi\" and r[\"a\"][\"group\"]==\"one\" else 1)" "$W/new/ALL.csv"'
 ck "g's arguments are an args fence, one a line" 'awk "/^## g\$/{f=1} f" "$W/new/MULTI.md" | grep -A2 -x "\`\`\`args" | tail -2 | tr "\n" " " | grep -qx "alpha beta "'
 
 # ---- arm 2: read back identical, read here independently ------------------------------------------------------------------------

@@ -26,7 +26,7 @@ fmt2_entries "$D" "$W/e0" || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the fixture 
 [ -s "$W/e0" ] || { echo "GATE UNPROVEN(2) [$GATE_NAME]: the fixture holds no test"; exit 2; }
 fails=0; n=0
 ck() { n=$((n+1)); if eval "$2"; then echo "  ok   $1"; else fails=$((fails+1)); echo "  FAIL $1"; fi; }
-is_fmt2() { [ -f "$D/MULTI.md" ] && [ -f "$D/ONE.sno" ] && [ -f "$D/ONE.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ] && head -1 "$D/ALL.csv" | grep -q '^rank,entry,group,road,nonl,'; }
+is_fmt2() { [ -f "$D/MULTI.md" ] && [ -f "$D/ONE.sno" ] && [ -f "$D/ONE.out" ] && [ ! -e "$D/ALL.sno" ] && [ ! -e "$D/ALL.ref" ] && [ ! -e "$D/ALL.in" ] && head -1 "$D/ALL.csv" | grep -q ',group,road,nonl$'; }
 same() { fmt2_entries "$D" "$W/e1" 2>/dev/null && cmp -s "$W/e0" "$W/e1"; }
 
 S4E_HOME="$W/r" timeout -k 5 600 python3 "$B" --lang snobol4 --reindex > "$W/a1.log" 2>&1; r1=$?
