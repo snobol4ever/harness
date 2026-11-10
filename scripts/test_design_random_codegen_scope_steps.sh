@@ -16,6 +16,7 @@
 # THE RUN SLOT: the engine arms are harness children, so this script holds one of the box-wide S4E_RUN_SLOTS (R-1894) for its whole run.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 INF="$ROOT/corpus/demos/scriptix/infinite_snobol4"
 STEPS="$INF/STEPS.tsv"

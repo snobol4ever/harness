@@ -18,6 +18,7 @@
 # which take a minute, and names each.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 STEPS="$HERE/../designs/planner_finish/STEPS.tsv"   # moved from the snobol4 corpus folder (the coo 2026-11-10, CIO-33/36: a language folder is its container and config alone)

@@ -10,6 +10,7 @@
 # VERDICT: STEP N <slug>: probe rc=<rc> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 S4E="${S4E_HOME:-$(cd "$HERE/../.." && pwd)}"
 STEPS="$S4E/corpus/tests/shared/box_budget/STEPS.tsv"
 refuse() { echo "REFUSE(2) [test_design_box_budget_steps]: $*" >&2; exit 2; }

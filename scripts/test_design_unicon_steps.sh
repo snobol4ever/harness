@@ -17,6 +17,7 @@
 # no witness, no ref). It grades no corpus population: a witness folder is not a suite (R-1342); UniTests is the package suite hq_icon's row grades.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
 WD="$ROOT/corpus/tests/icon/unicon"
