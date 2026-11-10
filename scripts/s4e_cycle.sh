@@ -5,6 +5,7 @@
 #   bash s4e_cycle.sh            the cycle: a lap is sync, make, then every cell of every master or pkg row of SUITE_RUNNERS.tsv, S4E_CYCLE_WIDTH (4) cells at once; then the next lap
 #   bash s4e_cycle.sh --list     print the cells of one lap (suite kind lang dir cell) and their count; runs nothing
 #   bash s4e_cycle.sh --one      run the next unfinished cell only, then exit (the proof that one cell runs end to end)
+#   S4E_CYCLE_TMP names a scratch TMPDIR for a probe (default /tmp/s4e/grader, the live cycle's cell logs; a probe that leaves it unset overwrites them)
 #   bash s4e_cycle.sh --next     do the restart accounting (CYCLE.crash, CYCLE.skip) and print NEXT lap=L idx=I cell=KEY CELL, the cell a restart runs first; runs no cell (S4E_CYCLE_PROG names a scratch progress dir for a probe)
 # THE ROOT is S4E_HOME, default /home/claude_grader (the grader's mirror; no seat edits it). THE LAUNCH of a cell is the grade worker's launch, unchanged:
 # EVERY row, master or pkg, runs ONE launch (Lon 2026-11-08 23:0x: "ONE UNIFIED test suite system"): corpus_suite_harness.py run <dir>/ALL.<ext> <dir>/ALL.ref --lang L --modes $S4E_MODES --partition <cell>, dir the master's corpus/tests/<lang> or the pkg row's column 5; the package runner scripts are deleted; a row with no container refuses rc 2 by name;
@@ -16,13 +17,14 @@
 # for good (named in CYCLE.skip, one line each) so no cell can hold the cycle forever.
 set -u
 S4E="${S4E_HOME:-/home/claude_grader}"
-export S4E_HOME="$S4E" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="/tmp/s4e/grader"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order
+export S4E_HOME="$S4E" S4E_SEAT=grader S4E_CLASS=grader S4E_BATCH="${S4E_BATCH:-1}" S4E_MODES="${S4E_MODES:-m3}" TMPDIR="${S4E_CYCLE_TMP:-/tmp/s4e/grader}"   # S4E_MODES exported: the cells and the suite row (util_score_row.py from-progress) read the same modes, m3 alone under Lon's mode-3-only order
 PROG="${S4E_CYCLE_PROG:-/home/resources/progress}"
 STATE="$PROG/CYCLE.state"; LOG="$PROG/CYCLE.log"; PIDF="$PROG/CYCLE.pid"; CRASH="$PROG/CYCLE.crash"; SKIP="$PROG/CYCLE.skip"
 RUNNERS="$S4E/harness/scripts/SUITE_RUNNERS.tsv"
 mkdir -p "$TMPDIR/cycle" "$PROG" || exit 2
 [ -f "$RUNNERS" ] || { echo "REFUSE(2) [cycle]: no $RUNNERS"; exit 2; }
 MODE_ARG="${1:-}"
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"; SELF_SUM="$(md5sum < "$SELF" 2>/dev/null)"
 now() { date -u +%FT%TZ; }
 log() { printf '%s %s\n' "$(now)" "$*" >> "$LOG"; }
 state_get() { sed -n "s/^$1=//p" "$STATE" 2>/dev/null | head -1; }
@@ -65,12 +67,29 @@ record_suite() {   # lang -> the rungs suite row of that language, as the grade 
 record_pkg() {   # key -> that pkg row of SUITES.tsv, from its progress rows in S4E_MODES (the cycle exports m3), after the row's last cell
     ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$1" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
 }
+graded_this_lap() {   # key -> rc 0 when a cell of this lap graded that suite (rc 0 or 1); read from the log, so a restart mid-suite still knows
+    grep -qE " CELL lap=$lap [0-9]+/[0-9]+ $(printf '%s' "$1" | sed 's/[.[\*^$]/\\&/g') [^ ]+ rc=[01] " "$LOG" 2>/dev/null
+}
 lap_start() {
     local sy mk
+    # THE GRADER ROOT'S OWN RENDERING NEVER BLOCKS ITS SYNC (the cio 2026-11-10; MEASURED: sync_rc=1 at every lap start since lap 2, sync.log
+    # "Your local changes to the following files would be overwritten by merge: SCORE.md", the grader root's .github held at 75efb44b0 while origin
+    # moved to 21c79e39a): the record step re-renders SCORE.md in this root from /home/resources/progress/SUITES.tsv, which is the record; the
+    # rendering is the cycle's own scratch and is restored before the sync when it is the only tracked change, so the lap reads origin's .github.
+    if [ "$(git -C "$S4E/.github" status --porcelain --untracked-files=no 2>/dev/null)" = " M SCORE.md" ]; then git -C "$S4E/.github" checkout -q -- SCORE.md >> "$TMPDIR/cycle/sync.log" 2>&1; fi
     ( cd "$S4E" && bash harness/scripts/util_sync_root.sh ) >> "$TMPDIR/cycle/sync.log" 2>&1 < /dev/null; sy=$?
     ( cd "$S4E/SCRIP" && make -j8 ) >> "$TMPDIR/cycle/make.log" 2>&1 < /dev/null; mk=$?
     log "LAP $1 start sync_rc=$sy make_rc=$mk scrip=$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null) corpus=$(git -C "$S4E/corpus" rev-parse --short=9 HEAD 2>/dev/null)"
     [ "$mk" = 0 ] || { log "LAP $1 REFUSED: make rc $mk (see $TMPDIR/cycle/make.log); exit 1, cron starts the next try"; exit 1; }
+    # A LANDED CHANGE OF THIS SCRIPT IS LIVE AT THE NEXT LAP, WITH NO HAND SWAP (the cio 2026-11-10; MEASURED: pid 4174123 ran the code of
+    # 2026-11-08 23:14 for ten laps while three cycle cures sat synced in its own root, and the swap before it needed Lon's hand): bash holds
+    # the loop it parsed at start, so when the sync has changed this file the process replaces itself with the new text here, at the one
+    # point where no cell runs. The state is put back one lap so the new process starts this same lap; the pid and CYCLE.pid do not change.
+    if [ "$(md5sum < "$SELF" 2>/dev/null)" != "$SELF_SUM" ] && bash -n "$SELF" 2>/dev/null; then
+        log "SWAP lap=$1: s4e_cycle.sh changed under the sync; the cycle re-executes itself and starts lap $1 on the new text"
+        state_put "$(( $1 - 1 ))" 0 0 "" "" swap
+        exec bash "$SELF" ${MODE_ARG:+"$MODE_ARG"}
+    fi
 }
 if [ "$MODE_ARG" = --list ]; then cells; echo "CELLS $(cells | wc -l)"; exit 0; fi
 if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF" 2>/dev/null)" 2>/dev/null && [ "$(cat "$PIDF")" != "$$" ]; then echo "REFUSE(2) [cycle]: already running as pid $(cat "$PIDF")"; exit 2; fi
@@ -93,6 +112,10 @@ while :; do
     if [ "$idx" -eq 0 ] || [ "$idx" -ge "$total" ]; then
         [ "$idx" -ge "$total" ] && [ "$lap" -gt 0 ] && log "LAP $lap done cells=$total"
         lap=$(( lap + 1 )); idx=0; lap_start "$lap"
+        # THE LAP'S CELLS ARE READ FROM THE TREE IT GRADES, after the sync (the cio 2026-11-10: the list was read before lap_start, so a
+        # partition landed between two laps ran one lap on the old cell names, and a chunk the new table no longer has refused rc 2).
+        mapfile -t ALL < <(cells); total=${#ALL[@]}
+        [ "$total" -gt 0 ] || { log "REFUSED: no cells after the sync (SUITE_RUNNERS.tsv or the partitions unreadable)"; exit 2; }
     fi
     while [ "$idx" -lt "$total" ]; do
         # THE WIDTH (the cio, 2026-11-08 10:4x CST; MEASURED: 20 cells in 1579 s one at a time, 78 s a cell, a lap of 190 cells 250 min, at load 8 on 16 cores
@@ -119,8 +142,18 @@ while :; do
             read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
             log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
             next_key="$(printf '%s' "${ALL[$((i+1))]:-}" | cut -f1)"
-            [ "$kind" = master ] && [ "$next_key" != "$key" ] && record_suite "$lang"
-            [ "$kind" = pkg ] && [ "$next_key" != "$key" ] && record_pkg "$key"
+            # A SUITE ROW IS WRITTEN ONLY BY A LAP THAT GRADED THE SUITE (the cio 2026-11-10; MEASURED: inria's five cells refused rc 2 in 0 s on
+            # laps 2 to 10, no grader row for inria is later than 2026-11-08T20:19Z, and its SUITES.tsv row reads today_date 2026-11-09; logtalk
+            # and dotnet the same): from-progress stamps the box-clock day, so a record after a lap in which every cell refused re-dates old
+            # readings as today's. No cell of this lap at rc 0 or 1, no record; the row keeps the day of its last reading and the log says so.
+            if [ "$next_key" != "$key" ]; then
+                if graded_this_lap "$key"; then
+                    [ "$kind" = master ] && record_suite "$lang"
+                    [ "$kind" = pkg ] && record_pkg "$key"
+                else
+                    log "NORECORD lap=$lap $key: no cell of this lap graded (every cell refused, died or was held); its suite row is not rewritten"
+                fi
+            fi
             [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
         done
         idx="$j"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
