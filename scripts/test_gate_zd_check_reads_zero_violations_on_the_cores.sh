@@ -40,7 +40,7 @@ for pair in snobol4:sno icon:icn prolog:pl raku:raku pascal:pas snocone:sc rebus
     lang="${pair%%:*}"; ext="${pair##*:}"
     [ -z "$ONLY" ] || [ "$ONLY" = "$lang" ] || continue
     D="$CORPUS/tests/$lang"
-    [ -f "$D/PARTITION.tsv" ] && [ -f "$D/ALL.$ext" ] && [ -f "$D/ALL.ref" ] || { echo "REFUSE(2): $D has no PARTITION.tsv or ALL.$ext"; exit 2; }
+    [ -f "$D/PARTITION.tsv" ] && { { [ -f "$D/ALL.$ext" ] && [ -f "$D/ALL.ref" ]; } || [ -f "$D/MULTI.md" ] || [ -f "$D/ONE.$ext" ]; } || { echo "REFUSE(2): $D has no PARTITION.tsv or ALL.$ext"; exit 2; }
     n=0; c=0; g=0; ga=0; v=0; vr=0; worst=""; wv=0
     while IFS=$'\t' read -r entry cls rest; do
         case "$entry" in ''|'#'*|entry) continue;; esac

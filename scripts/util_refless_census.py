@@ -180,7 +180,7 @@ def rungs_population():
         lc = H.LANG_CONFIGS.get(lang)
         ext = lc["ext"] if lc else ".sno"
         src, ref = os.path.join(d, "ALL" + ext), os.path.join(d, "ALL.ref")
-        if not (os.path.isfile(src) and os.path.isfile(ref)):
+        if not (os.path.isfile(src) and os.path.isfile(ref)) and H.fmt2_dir_of(src) is None:   # format 2 (CIO-24 f) is read from the same names
             refused.append("%s: no ALL%s / ALL.ref pair" % (lang, ext))
             continue
         try:

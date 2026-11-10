@@ -40,10 +40,10 @@ H="$HERE/corpus_suite_harness.py"; RUNGS="${S4E_CORPUS_ROOT:-$HERE/../../corpus}
 refuse(){ echo "⛔ REFUSED-TO-GRADE: $*"; exit 2; }
 [ -f "$H" ] || refuse "no harness at $H"
 [ -x "$HERE/../../SCRIP/scrip" ] || refuse "no ./scrip binary beside ../harness/scripts/ -- make first"
-[ -f "$RUNGS/ALL.sno" ] && [ -f "$RUNGS/ALL.ref" ] || refuse "no rungs pair under $RUNGS to cut a fixture from"
+python3 "$HERE/corpus_suite_harness.py" list "$RUNGS/ALL.sno" "$RUNGS/ALL.ref" > /dev/null 2>&1 || refuse "no rungs container under $RUNGS to cut a fixture from"
 W="$(mktemp -d "${TMPDIR:-/tmp}/gate_shipped_outside.XXXXXX")" || refuse "mktemp failed"
 trap 'rm -rf "$W"' EXIT
-mkdir -p "$W/tests/snobol4"; head -3 "$RUNGS/ALL.sno" > "$W/tests/snobol4/ALL.sno"; head -3 "$RUNGS/ALL.ref" > "$W/tests/snobol4/ALL.ref"
+mkdir -p "$W/tests/snobol4"; python3 -c "import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h; e = [x for x in h.read_suite(sys.argv[2], sys.argv[3]) if x.kind == 'line'][:3]; h.write_suite(e, sys.argv[4], sys.argv[5])" "$HERE" "$RUNGS/ALL.sno" "$RUNGS/ALL.ref" "$W/tests/snobol4/ALL.sno" "$W/tests/snobol4/ALL.ref" || refuse "the rungs' first three one-line entries did not cut through the reader"
 [ "$(wc -l < "$W/tests/snobol4/ALL.sno")" = 3 ] || refuse "the rungs' first three lines did not cut cleanly"
 NAME="$(sed -n 2p "$W/tests/snobol4/ALL.sno" | sed 's/.*;\* //')"; [ -n "$NAME" ] || refuse "cannot read the second entry's name from its ';* name' tail"
 printf '%s\tORACLE_REFUSES\tfixture: the oracle refuses this entry\n' "$NAME" > "$W/tests/snobol4/ALL.outside.tsv"

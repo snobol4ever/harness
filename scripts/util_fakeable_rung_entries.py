@@ -35,7 +35,7 @@ for lang in langs:
     lc = csh.LANG_CONFIGS.get(lang)
     src = os.path.join(d, 'ALL' + (lc['ext'] if lc else EXT.get(lang, '')))
     ref = os.path.join(d, 'ALL.ref')
-    if not (os.path.isfile(src) and os.path.isfile(ref)):
+    if not (os.path.isfile(src) and os.path.isfile(ref)) and csh.fmt2_dir_of(src) is None:   # format 2 (CIO-24 f) is read from the same names
         print('REFUSE(2): no master at %s' % src); sys.exit(2)
     w = os.path.join(d, 'ALL.rc')
     w = w if os.path.isfile(w) else None
