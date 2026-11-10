@@ -3,13 +3,13 @@
 # Columns: key kind lang runner table. kind master|pkg|small|port|none (see util_suite_runners.py). The grade worker reads it: a master or pkg row
 # launches; a package cell runs S4E_CHUNK=<cell> bash harness/scripts/<runner> under util_run_slot.sh. SUITES.tsv itself gains no column.
 gimpel	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/gimpel
-csnobol4	small	snobol4	test_snobol4_csnobol4_suite.sh	-
+csnobol4	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/csnobol4_suite
 snoflake	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/snoflake_suite
 aisnobol	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/aisnobol
 dotnet	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/dotnet
 testpgms	pkg	snobol4	corpus_suite_harness.py	corpus/packages/snobol4/spitbol_testpgms
 arizona	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/arizona_tests
-jcon	small	icon	test_icon_jcon_suite.sh	-
+jcon	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/jcon_tests
 ipl	pkg	icon	corpus_suite_harness.py	corpus/packages/icon/ipl
 inria	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/inriasuite
 swi	pkg	prolog	corpus_suite_harness.py	corpus/packages/prolog/swi_tests
