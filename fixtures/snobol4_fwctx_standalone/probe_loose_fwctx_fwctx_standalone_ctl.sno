@@ -1,0 +1,66 @@
+* y1: faithful Stmt skeleton -- real seam/FENCE/epsilon-shift topology, Expr road stubbed to fail
+          $('Z' 'Z') = 1
+          &FULLSCAN = 1
+          &ALPHABET      POS(0)  LEN(1) . nul    ;* null character
+          &ALPHABET      POS(8)  LEN(1) . bs     ;* backspace
+          &ALPHABET      POS(9)  LEN(1) . ht     ;* horizontal tab
+          &ALPHABET      POS(9)  LEN(1) . tab    ;* tab
+          &ALPHABET      POS(10) LEN(1) . nl     ;* new line
+          &ALPHABET      POS(10) LEN(1) . lf     ;* line feed
+          &ALPHABET      POS(11) LEN(1) . vt     ;* vertical tab
+          &ALPHABET      POS(12) LEN(1) . ff     ;* form feed
+          &ALPHABET      POS(13) LEN(1) . cr     ;* carriage return
+          &ALPHABET      POS(47) LEN(1) . fSlash ;* forward slash
+          &ALPHABET      POS(59) LEN(1) . semicolon ;* semi-colon
+          &ALPHABET      POS(92) LEN(1) . bSlash ;* back slash
+          &ALPHABET      POS(0)                      LEN(128) . X0xxxxxxx
+          &ALPHABET      POS(128)                    LEN(128) . X1xxxxxxx
+          &ALPHABET      POS(128)                    LEN(64)  . X10xxxxxx
+          &ALPHABET      POS(128 + 64)               LEN(32)  . X110xxxxx
+          &ALPHABET      POS(128 + 64 + 32)          LEN(16)  . X1110xxxx
+          &ALPHABET      POS(128 + 64 + 32 + 16)     LEN(8)   . X11110xxx
+          &ALPHABET      POS(128 + 64 + 32 + 16 + 8) LEN(8)   . X11111xxx
+          nl = CHAR(10)
+          tab = CHAR(9)
+          DEFINE('SH(t,v)')
+          DEFINE('shf9(p,t)')
+          DEFINE('PC()')
+          DEFINE('nPush()')
+          DEFINE('nPop2()')
+          DEFINE('RD(t,n)')
+          DEFINE('red9(t,n)')
+          OPSYN('@', 'red9', 2)                         :(SEND)
+SH        OUTPUT = 'SH(' t ',' v ')'
+          SH = .dummy                                     :(NRETURN)
+shf9      shf9 = EVAL("p . thx . *SH('" t "', thx)")     :(RETURN)
+RD        OUTPUT = 'RD(' t ',' n ')'
+          RD = .dummy                                     :(NRETURN)
+red9      red9 = EVAL("epsilon . *RD(" t ", " n ")")    :(RETURN)
+PC        OUTPUT = 'PC()'
+          PC = .dummy                                     :(NRETURN)
+nPush     nPush = epsilon . *PC()                         :(RETURN)
+nPop2     nPop2 = epsilon . *PC()                         :(RETURN)
+SEND
+          White = ( SPAN(' ' tab)
++                   FENCE(nl ('+' | '.') FENCE(SPAN(' ' tab) | epsilon) | epsilon)
++                 | nl ('+' | '.') FENCE(SPAN(' ' tab) | epsilon)
++                 )
+          Gray = *White | epsilon
+          Goto2 = *Gray ':' *Gray
+          Label = shf9(BREAK(' ' tab nl ';'), 'Label')
+          XDEAD = 'ZZZNOTPRESENT'
+          Stmt3 = *Label
++                 ( *White *XDEAD
++                 | shf9(epsilon, '') shf9(epsilon, '') shf9(epsilon, '') shf9(epsilon, '')
++                 )
++                 FENCE(*Goto2 | shf9(epsilon, '') shf9(epsilon, ''))
++                 *Gray
+          Command = *Stmt3 ("'S'" @ 7) (nl | ';')
+          Parse = nPush() ARBNO(*Command) nPop2()
+          Space = SPAN(' ' tab) | epsilon
+          Src = 'START' nl
+          Src POS(0) *Parse *Space RPOS(0)                :F(NO)
+          OUTPUT = 'match'                                :(DONE)
+NO        OUTPUT = 'nomatch'
+DONE
+END
