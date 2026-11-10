@@ -94,7 +94,7 @@ def one_lang(lang, corpus_root, write, quiet=False):
     print(f"   grader reaches  : {', '.join(os.path.relpath(d, corpus_root) for d in r['grader_dirs']) or '(none)'}"
           f"   [the two the companion copy searches, plus what the harness puts on $SNO_LIB]")
     print(f"   declared path   : {', '.join(os.path.relpath(d, corpus_root) for d in r['declared_dirs']) or '(none)'}"
-          f"   [{os.path.join('tests', lang, 'config', L.PATH_DECL_BASENAME)}; default {list(L.DEFAULT_PATH_DIRS)} -- a dir belongs here ONLY if the grader cannot reach it]")
+          f"   [{os.path.join('tests', lang, L.PATH_DECL_BASENAME)}; default {list(L.DEFAULT_PATH_DIRS)} -- a dir belongs here ONLY if the grader cannot reach it]")
     if r["ambiguous"]:
         print(f"⛔ REFUSED: {len(r['ambiguous'])} basename(s) resolve to DIFFERENT files on the declared path -- this tool "
               f"will not pick one for you (a wrong pick grades an entry against another tree's data and says nothing):",

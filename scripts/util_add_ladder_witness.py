@@ -83,7 +83,7 @@ ORACLE = {
 # WHAT THE TWIN IS: the caller supplies --oracle-twin W.sno beside --source W.sc, and the ref is cut by
 # running sbl -bf on the TWIN, twice, refusing on disagreement exactly as the icon and snobol4 paths do.
 # This is legitimate rather than a dodge because Snocone's expression semantics ARE SPITBOL's -- corpus/
-# tests/snocone/config/LADDER.tsv reference (b), citing ARCH-LANGUAGES.md sec SNOCONE. The witness never
+# tests/snocone/LADDER.tsv reference (b), citing ARCH-LANGUAGES.md sec SNOCONE. The witness never
 # contributes its own output; SCRIP is never the oracle.
 # ⭐ THE METHOD WAS VALIDATED BEFORE IT WAS USED, which is the only reason it is trusted: cutting refs
 # through the twin reproduced the ALREADY-GREEN stored refs of ladder__rung00_hello and

@@ -48,7 +48,7 @@ def convention(vals):
     return 'NAMES'
 
 def census_lang(lang, root):
-    tsv = os.path.join(root, 'corpus', 'tests', lang, 'config', 'LADDER.tsv')
+    tsv = os.path.join(root, 'corpus', 'tests', lang, 'LADDER.tsv')
     if not os.path.exists(tsv): return None
     origins = load_rungs_origins(lang, root)
     if origins is None: return {'lang': lang, 'refuse': 'no ALL.csv -- cannot tell built from unbuilt'}
@@ -83,9 +83,9 @@ def main():
     ap.add_argument('--detail', action='store_true', help='name every unbuilt form')
     a = ap.parse_args()
     langs = [a.lang] if a.lang else sorted(
-        p.split('/')[-3] for p in glob.glob(os.path.join(a.root, 'corpus/tests/*/config/LADDER.tsv')))
+        p.split('/')[-2] for p in glob.glob(os.path.join(a.root, 'corpus/tests/*/LADDER.tsv')))
     if not langs:
-        print('REFUSED(2): no corpus/tests/*/config/LADDER.tsv under %s -- nothing to census' % a.root); return 2
+        print('REFUSED(2): no corpus/tests/*/LADDER.tsv under %s -- nothing to census' % a.root); return 2
     print('%-9s %-6s %6s %6s %8s %8s %8s   %s' % ('lang', 'wit_col', 'rungs', 'forms', 'built', 'AHEAD', 'PARTIAL', 'witnessed rungs with an unbuilt form'))
     tot_f = tot_u = tot_s = 0
     refused = []

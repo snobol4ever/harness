@@ -5046,8 +5046,8 @@ def cell_ambiguous(fr):
 
 
 def ladder_score(lang):
-    # (built, declared) from corpus/tests/<lang>/config/LADDER.tsv, or None when there is no census.
-    path = os.path.join(S4E, "corpus", "tests", lang, "config", "LADDER.tsv")
+    # (built, declared) from corpus/tests/<lang>/LADDER.tsv, or None when there is no census.
+    path = os.path.join(S4E, "corpus", "tests", lang, "LADDER.tsv")
     if not os.path.isfile(path):
         return None
     built = declared = 0

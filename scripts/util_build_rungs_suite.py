@@ -2462,7 +2462,7 @@ def main():
     # ⭐ WHY HERE AND NOT IN THE GRADER: the grader's isolation -- an entry sees exactly the files the corpus put
     # beside it -- is what makes a board reproducible. Teaching it to reach back into corpus/include/ at run time
     # would buy the same files at the price of that property. So the closure is resolved at BUILD time against a
-    # DECLARED path (tests/<lang>/config/COMPANION_PATH) and materialized where the grader already looks.
+    # DECLARED path (tests/<lang>/ALL.path) and materialized where the grader already looks.
     # ⛔ NEVER A CORPUS-WIDE BASENAME SCAN: `VBGinTASA.dat` names three different files in this corpus and one of
     # them is another language's (md5 48c78061 vs 98e80802). lib_companion_closure REFUSES an ambiguous basename
     # rather than picking by walk order; here that refusal is printed and the file is left alone -- the rungs is
@@ -2473,7 +2473,7 @@ def main():
         _clo = _lcc.closure(["\n".join(e.sno_lines) for e in all_entries], OUTDIR, os.path.join(S4E, "corpus"))
         for _n, _a, _b in _clo["ambiguous"]:
             print("⛔ COMPANION AMBIGUOUS, NOT COPIED: %s resolves to %s and %s (different content) -- declare a "
-                  "narrower dir in config/%s" % (_n, _a, _b, _lcc.PATH_DECL_BASENAME), file=sys.stderr)
+                  "narrower dir in %s" % (_n, _a, _b, _lcc.PATH_DECL_BASENAME), file=sys.stderr)
         if _clo["materializable"]:
             os.makedirs(_cfg, exist_ok=True)
             for _n, _src in sorted(_clo["materializable"].items()):

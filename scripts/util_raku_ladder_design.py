@@ -4,9 +4,9 @@
 
 READS  the design row's frozen snapshot (every Roast program not PASS), results.tsv (the latest mode-3 note per program: the emitter's
        refusal names a construct), corpus/packages/raku/roast/TESTS.tsv (the constructs every Roast TAP test exercises, cut from Rakudo 09-27),
-       corpus/tests/raku/config/LADDER.tsv (rung00..rung20, BUILT), corpus/tests/raku/config/CORE-NAMES.tsv (Raku's CORE:: symbols, written
+       corpus/tests/raku/LADDER.tsv (rung00..rung20, BUILT), corpus/tests/raku/config/CORE-NAMES.tsv (Raku's CORE:: symbols, written
        once from `raku -e` and read from the file after), src/runtime/rk_rakudo_method_names.inc (Rakudo's method names: the core-method filter).
-WRITES corpus/tests/raku/config/LADDER.tsv (rung21.. appended, STATUS DECLARED or HELD; rung00..20 untouched),
+WRITES corpus/tests/raku/LADDER.tsv (rung21.. appended, STATUS DECLARED or HELD; rung00..20 untouched),
        corpus/tests/raku/config/ROAST-RUNG-MAP.tsv (program TAB first-blocking rung TAB unblock rung TAB outcome TAB basis TAB construct),
        and prints the page's rung table (markdown) and the counts on stdout. --dry-run prints and writes nothing.
 THE RULE: a construct is a LANGUAGE FEATURE when its family is kw, op, lit, quote, regex, twigil, var, meta, test, or a meth/call/type/word
@@ -21,7 +21,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SN = '/home/resources/postoffice/tasks/design-raku-to-100-every-roast-feature-on-a-complexity-ordered-rung-ladder-built-incrementally-r-2044.snapshot.tsv'
 RESULTS = '/home/resources/progress/results.tsv'
 TESTS = os.path.join(ROOT, 'corpus/packages/raku/roast/TESTS.tsv')
-LADDER = os.path.join(ROOT, 'corpus/tests/raku/config/LADDER.tsv')
+LADDER = os.path.join(ROOT, 'corpus/tests/raku/LADDER.tsv')
 MAP = os.path.join(ROOT, 'corpus/tests/raku/config/ROAST-RUNG-MAP.tsv')
 CORE = os.path.join(ROOT, 'corpus/tests/raku/config/CORE-NAMES.tsv')
 METH = os.path.join(ROOT, 'SCRIP/src/runtime/rk_rakudo_method_names.inc')

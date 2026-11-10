@@ -191,7 +191,7 @@ PY
   # clothes: the runner reported PASS over the population it could see, and the population was the answer.
   # LADDER.tsv is the DECLARED census (its last line is the top); when it exists, every rung it declares at
   # or below the requested ceiling must have at least one witness, or this REFUSES rc=2 and names them.
-  _ltsv="$RUNGS_DIR/config/LADDER.tsv"
+  _ltsv="$RUNGS_DIR/LADDER.tsv"
   if [ -f "$_ltsv" ]; then
       _ceiling="${ONLY:-${TO:-9999}}"
       _undeclared=""
@@ -265,7 +265,7 @@ EOF
   _top=$(printf '%s\n' "${!rp[@]}" "${!rf[@]}" | sort -n | tail -1)
   if [ -z "$ONLY" ]; then
     _ll=$(printf '%s' "$LADDER_LANG" | tr 'A-Z' 'a-z')
-    _dtop=$( [ -f "$RUNGS_DIR/config/LADDER.tsv" ] && grep -o '^rung[0-9]*' "$RUNGS_DIR/config/LADDER.tsv" | sed 's/^rung0*//' | sort -n | tail -1 )
+    _dtop=$( [ -f "$RUNGS_DIR/LADDER.tsv" ] && grep -o '^rung[0-9]*' "$RUNGS_DIR/LADDER.tsv" | sed 's/^rung0*//' | sort -n | tail -1 )
     # ⛔ THE UNBUILT SET IS ENUMERATED, NEVER A RANGE (cfo 2026-09-13). This printed "rungs <top+1>..<dtop> NOT BUILT",
     # a contiguous-range claim derived from two numbers -- true only while every built rung is below every unbuilt one.
     # It stopped being true the moment rungs 19, 20 and 21 were built above the 17/18 gap: `--to 16` is the cumulative
@@ -276,12 +276,12 @@ EOF
     # made `--to 16` report every rung above 16 as unbuilt -- including the five that have witnesses. Measured both ways here.
     _have="$(printf '%s\n' $all_origins | sed -nE 's/^ladder__rung0*([0-9]+)_.*$/\1/p' | sort -n -u)"
     _unb=""
-    if [ -f "$RUNGS_DIR/config/LADDER.tsv" ]; then
+    if [ -f "$RUNGS_DIR/LADDER.tsv" ]; then
       while read -r _r _rest; do
         case "$_r" in rung[0-9]*) ;; *) continue;; esac
         _num=$(printf '%s' "$_r" | sed 's/^rung0*//'); [ -n "$_num" ] || _num=0
         grep -qx "$_num" <<<"$_have" || _unb="$_unb $_num"
-      done < "$RUNGS_DIR/config/LADDER.tsv"
+      done < "$RUNGS_DIR/LADDER.tsv"
     fi
     # ⛔⭐ THE CELL NAMES THE COMMAND THAT PRODUCED IT, AND THAT COMMAND MUST RUN. This printed
   # `--to ${TO:-max}`, so a cell measured with no --to told its reader to run `--to max` -- which the

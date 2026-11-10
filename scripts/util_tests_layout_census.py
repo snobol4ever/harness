@@ -4,18 +4,21 @@ cio's window, verbatim: "I suspect the $/corpus/tests folder should contain one 
 confusing is the ONE-LINER and MULTI-LINER programs are not grouped into the one file. Why are these folders not organized properly. Get to work.").
 
 THE LAW it reads against is Lon's of 2026-08-29/30 (corpus 11a36c87f): a language's folder is FLAT, its container files side by side (ALL.<ext>,
-ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE.<ext>, ONE.out and MULTI.md (CIO-24 f, CIO-44), PARTITION.tsv, and EXCLUDED.tsv, the declaration of what is out of the denominator), ONE config/ folder, and every program absorbed into the container.
+ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE.<ext>, ONE.out and MULTI.md (CIO-24 f, CIO-44), PARTITION.tsv, EXCLUDED.tsv, the declaration of what is out of the denominator, and LADDER.tsv, the construct census), and every program absorbed
+into the container. THERE IS NO config/ FOLDER (CIO-55, Lon 2026-11-10 10:5x, verbatim: "I do not see the need for a config folder inside
+$/corpus/tests/snobol4 folder. We have all other configuration files at the level one higher."): a role file stands beside the container as
+ALL.<role> (ALL.path the companion search path), and a tracked file under LANG/config/ is loose like any other subfolder's.
 
 usage: util_tests_layout_census.py [--root S4E_HOME] [--lang L] [--list] [--check]
-For each language folder, every tracked file that is neither the container nor under config/, classed:
+For each language folder, every tracked file that is not the container, classed:
   PAIR-ORPHAN      a program with its .ref beside it whose name ALL.csv and ALL.omit never mention: no cell grades it (absorb it)
   PAIR-IN-TABLE    a program with its .ref whose name ALL.csv mentions: absorbed already, the loose copy is a duplicate (compare, then delete)
   PAIR-EXCLUDED    a program with its .ref that ALL.omit names: left out of the container by a reason and kept loose
   PROGRAM-NO-REF   a program with no .ref beside it (a parser fixture, a module another program loads, a sample): no run grades it
   SIDECAR          a .ref .in .heap .stack .argv .env or the like beside a loose program
   TABLE DOC OTHER  a step table or census (.tsv .csv), a document (.md .txt), anything else
-and, for the folder as a whole, SUBFOLDERS (every directory but config/). Then the entries of corpus/tests/ that are not a language folder.
---list prints one line per file (class, path); --check: rc 0 when no selected language holds a file outside the container and config/ and, with no
+and, for the folder as a whole, SUBFOLDERS (every directory, config/ among them). Then the entries of corpus/tests/ that are not a language folder.
+--list prints one line per file (class, path); --check: rc 0 when no selected language holds a file outside the container and, with no
 --lang, corpus/tests/ holds nothing but the language folders; rc 1 otherwise; rc 2 refused. It reads; it writes nothing and runs no program."""
 import collections, os, subprocess, sys
 
@@ -61,7 +64,7 @@ def main():
         for rel in files:
             top = rel.split("/", 1)[0] if "/" in rel else "."
             b = os.path.basename(rel)
-            if top == "config" or (top == "." and (b.startswith("ALL.") or b.startswith("ONE.") or b in ("MULTI.md", "PARTITION.tsv", "EXCLUDED.tsv"))):
+            if top == "." and (b.startswith("ALL.") or b.startswith("ONE.") or b in ("MULTI.md", "PARTITION.tsv", "EXCLUDED.tsv", "LADDER.tsv")):
                 continue
             if top != ".":
                 subs[top] += 1

@@ -1,0 +1,23 @@
+*----------------------------------------------------- 1 fwctx_conjunction XFAIL
+PCX()
+SHX(Label,START)
+SHX(,)
+SHX(,)
+SHX(,)
+SHX(,)
+SHX(,)
+SHX(,)
+PCX()
+match
+*-------------------------------------------------------- 2 fwctx_standalone_ctl
+PC()
+SH(Label,START)
+SH(,)
+SH(,)
+SH(,)
+SH(,)
+SH(,)
+SH(,)
+RD(S,7)
+PC()
+match

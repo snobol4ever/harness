@@ -8,7 +8,7 @@ below. This is the instrument that says whether a language's ladder actually has
 row -- every per-language ladder DONE-WHEN refuses rc=2 until it can call this.
 
 THE CENSUS SCHEMA (this row): RUNG CONSTRUCT REFERENCE FORMS PAIRS WITNESS_ORIGIN STATUS NOTE, in
-corpus/tests/<lang>/config/LADDER.tsv. FORMS and PAIRS are slugs separated by '|', ';' or ',' -- the live
+corpus/tests/<lang>/LADDER.tsv. FORMS and PAIRS are slugs separated by '|', ';' or ',' -- the live
 censuses use '|' and the ratified schema line names only the columns. A form's witness is any origin
 in that language's ALL.csv matching ladder__<rung>_*_<form>; a pair's is ladder__<rung>_*_with_<lower>.
 
@@ -57,7 +57,7 @@ def die(msg, rc=2):
 
 
 def census_path(lang):
-    return os.path.join(CORPUS, "tests", lang, "config", "LADDER.tsv")
+    return os.path.join(CORPUS, "tests", lang, "LADDER.tsv")
 
 
 def read_census(lang, path=None):
@@ -263,7 +263,7 @@ def selftest():
     try:
         CORPUS = d
         def mk(lang, census, origins):
-            cd = os.path.join(d, "tests", lang, "config")
+            cd = os.path.join(d, "tests", lang)
             os.makedirs(cd, exist_ok=True)
             open(os.path.join(cd, "LADDER.tsv"), "w", encoding="utf-8").write(census)
             with open(os.path.join(d, "tests", lang, "ALL.csv"), "w", encoding="utf-8", newline="") as fh:

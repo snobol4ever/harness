@@ -44,14 +44,14 @@ DEFAULT_PATH_DIRS = ()
 # ⭐ THE DIRS THE HARNESS ITSELF PUTS ON THE COMPILER'S INCLUDE PATH, corpus-relative. Sourced from ONE place --
 # corpus_suite_harness.resolve_paths()["inc"], which is what it assigns to SNO_LIB -- so this cannot drift from the grader.
 GRADER_ENV_DIRS = ("include",)
-PATH_DECL_BASENAME = "COMPANION_PATH"
+PATH_DECL_BASENAME = "ALL.path"
 
 
 def _read_path_decl(suite_dir):
-    """Corpus-relative dirs declared in <suite_dir>/config/COMPANION_PATH, in order. Absent file -> DEFAULT_PATH_DIRS.
+    """Corpus-relative dirs declared in <suite_dir>/ALL.path (beside the container, CIO-55), in order. Absent file -> DEFAULT_PATH_DIRS.
     One dir per line; blank lines and `#` comments ignored. A declaration file is how a language says its companions
     live somewhere this tool could not have guessed -- never a scan, never a heuristic."""
-    decl = os.path.join(suite_dir, "config", PATH_DECL_BASENAME)
+    decl = os.path.join(suite_dir, PATH_DECL_BASENAME)
     if not os.path.isfile(decl):
         return list(DEFAULT_PATH_DIRS)
     out = []
