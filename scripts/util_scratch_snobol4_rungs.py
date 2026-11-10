@@ -20,6 +20,7 @@ test_gate_nreturn_by_name_value_broken.sh and test_gate_snocone_returns_codegen.
 1991-entry rungs as their SNOBOL4 non-regression arm, so the coo's control arm of 2026-09-26 made two whole SnoRungs passes and
 appended 7964 rows. They now grade the rungs entries their rows are about, in a root that is no checkout of the shared corpus.
 """
+# format-2: through the harness reader (read_suite and extract-family follow the folder), presence test on ALL.csv
 import csv, os, re, shutil, subprocess, sys
 from pathlib import Path
 
@@ -42,9 +43,8 @@ def main(argv):
     corpus = Path(os.environ.get("S4E_SCRATCH_SOURCE_CORPUS") or HERE.parent.parent / "corpus")
     m = corpus / "tests" / "snobol4"
     sno, ref, csvp, outside = m / "ALL.sno", m / "ALL.ref", m / "ALL.csv", m / "ALL.outside.tsv"
-    for p in (sno, ref, csvp):
-        if not p.is_file():
-            refuse("no %s" % p)
+    if not csvp.is_file():
+        refuse("no %s" % csvp)
     _in, _x = h.sidecar_in_path(str(sno)), h.sidecar_xfail_path(str(sno))
     try:   # the reads extract-family itself makes, in its order: a banner-block suite, else the mixed one-line and block reader
         entries = h.read_block_suite(str(sno), str(ref), h.banner_re_for("*", ""), in_path=_in, x_path=_x)
