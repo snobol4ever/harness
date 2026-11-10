@@ -58,7 +58,7 @@ bb_probes      10 library/probe_reference/bb                                    
 patterns       10 crosscheck/patterns                                 -maxdepth 1 -name *.sno    demo/inc     20 -
 crosscheck     10 crosscheck                                          -name *.sno -not -path */patterns/*  demo/inc  20 -
 feature_test    5 SCRIPTEST                                           -name *.sno                CORPUS       20 -
-probes_misc     5 probe                                               -name *.sno -not -path */bb/*  SELFDIR   20 ms
+probes_misc     5 MASTER                                              -name *.sno -not -path */bb/*  SELFDIR   20 ms
 csnobol4_suite  5 packages/snobol4/csnobol4_suite                             -maxdepth 1 -name *.sno    SELFDIR      20 -
 gimpel          5 packages/snobol4/gimpel                                     -name *_driver.sno         SELFDIR:include   20 -
 misc            3 MISC                                                -name *.sno                SELFDIR      20 -
@@ -87,6 +87,8 @@ EOF
 # 113's own weights are UNTOUCHED by this (probes_misc stays weight 5, per the knob rule above), only ITS OWN pass
 # rate/denominator moves.  See .github FINDING-2026-08-27-seat15-probe-conformance-already-shrank-probes-misc-fuzz-
 # stays-blocked.md for the 92-witness loss this cures, and test_gate_scorecard_suite_aware.sh for the proof.
+# ⛔ ITS LOOSE ROOT `probe` IS RETIRED (CIO-43, 2026-11-10): corpus/probe is gone (absorbed into the master's probe_* families) and graded
+# 0 programs, so the row's root is MASTER and the master fold alone grades it; the weight stays 5.
 # ⛔⭐ THE LINE THAT WAS HERE IS RETRACTED AND MUST NOT BE RESTORED: it read "OFF LIMITS MEANS NOT RUN, NOT DESTROYED: corpus/lon/ stays exactly where it is (HQ-78: do
 # not run, do not read into a transcript, do not scan, never delete)".  ⛔ THAT LAW IS VOID (Lon s269) AND THE PATH IN IT NEVER EXISTED HERE (the tree is
 # corpus/programs/lon_cherryholmes/).  Read it, scan it, quote it, compile it freely.  Only TESTS and SCORED BOARDS are closed.
@@ -324,7 +326,7 @@ run_one() {  # suite lib prog norm run_to
   # END; a suite file has one per contained entry -- format-agnostic, doesn't depend on the tag/banner spelling)
   # OR the first line matching either format's own marker (harness's ONE_LINE_TAG_RE `;\* name$` / BANNER_RE
   # `^\*-+ N name$`). Any probe/ family already converted lives in the master instead (the master fold, a disjoint
-  # path this suite's own `find $CORPUS/probe ...` glob never reaches), so this guard is a safety net against a
+  # path no loose root of this table reaches), so this guard is a safety net against a
   # FUTURE oversight, not something today's clean corpus/probe/ tree is expected to trip.
   local _endc _first
   _endc=$(grep -cE '(^|;)[[:space:]]*END([[:space:]]*;.*)?$' "$prog" 2>/dev/null)
