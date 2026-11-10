@@ -4,7 +4,7 @@ cio's window, verbatim: "I suspect the $/corpus/tests folder should contain one 
 confusing is the ONE-LINER and MULTI-LINER programs are not grouped into the one file. Why are these folders not organized properly. Get to work.").
 
 THE LAW it reads against is Lon's of 2026-08-29/30 (corpus 11a36c87f): a language's folder is FLAT, its container files side by side (ALL.<ext>,
-ALL.ref, ALL.csv and the other ALL.* sidecars, PARTITION.tsv, and EXCLUDED.tsv, the declaration of what is out of the denominator), ONE config/ folder, and every program absorbed into the container.
+ALL.ref, ALL.csv and the other ALL.* sidecars, or in format 2 ONE.<ext>, ONE.out and MULTI.md (CIO-24 f, CIO-44), PARTITION.tsv, and EXCLUDED.tsv, the declaration of what is out of the denominator), ONE config/ folder, and every program absorbed into the container.
 
 usage: util_tests_layout_census.py [--root S4E_HOME] [--lang L] [--list] [--check]
 For each language folder, every tracked file that is neither the container nor under config/, classed:
@@ -61,7 +61,7 @@ def main():
         for rel in files:
             top = rel.split("/", 1)[0] if "/" in rel else "."
             b = os.path.basename(rel)
-            if top == "config" or (top == "." and (b.startswith("ALL.") or b in ("PARTITION.tsv", "EXCLUDED.tsv"))):
+            if top == "config" or (top == "." and (b.startswith("ALL.") or b.startswith("ONE.") or b in ("MULTI.md", "PARTITION.tsv", "EXCLUDED.tsv"))):
                 continue
             if top != ".":
                 subs[top] += 1
