@@ -814,13 +814,12 @@ def _build_arg_parser():
                          "ADDITIVELY (see --from): sources and any committed .s artifacts are never touched or "
                          "deleted, unlike --delete-absorbed which is the ordinary loose-pair path's own verb. Each "
                          "candidate runs a small, sub-second, deterministic recipe; a pre-existing loose .ref is "
-                         "RE-CONFIRMED against a fresh oracle run (never trusted blindly), else one is cut fresh "
-                         "from the language's oracle through lib_oracle_flags.sh and cross-checked against scrip "
-                         "m3 AND m4 -- the same three-way agreement cmd_capture_oracle_refs already uses, reused "
-                         "rather than re-invented. A sibling <stem>.ast-only marker absorbs a parser-only fixture "
-                         "via --dump-ast instead (never sent to the oracle). Anything that "
-                         "cannot run with output -- module, non-deterministic (oracle/m3/m4 disagree), or over "
-                         "budget -- is named in ALL.excluded.txt with a reason, never silently dropped.")
+                         "RE-CONFIRMED against a fresh oracle run (never trusted blindly; a stale one is replaced by the fresh answer, named), "
+                         "and every ref is the oracle's answer through lib_oracle_flags.sh on two identical runs -- scrip is never "
+                         "asked (CIO-37: a candidate is left out only for what its oracle does). A <stem>.ast-only marker is no longer read (the ast mode is retired; "
+                         "a program goes to its oracle like any other). Anything that "
+                         "cannot run with output -- module, non-deterministic (two oracle runs disagree), or over "
+                         "the oracle's budget -- is named in ALL.excluded.txt with a reason, never silently dropped.")
     p.add_argument("--from", dest="from_cats", default="demos,benchmarks", metavar="CAT1,CAT2,...",
                     help="with --additive: which source trees to absorb from this run -- demos, benchmarks, "
                          "programs, tests (comma list; default demos,benchmarks). `programs` is a real category "
@@ -1192,34 +1191,10 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     if os.path.basename(os.path.dirname(path)) in ("include", "library"):
         return ("exclude", name, "module (include/ or library/ dir -- no runnable top level, never absorbed alone)")
 
-    if os.path.isfile(stem + ".ast-only"):
-        # parser-only fixture (requirement 3): absorbed via --dump-ast, never executed, never sent to the oracle.
-        v = h.run_ast(paths, _P(path), "", timeout=timeout)
-        if v.kind in ("HANG", "UNPROVEN", "CRASH"):
-            return ("exclude", name, "parser-only fixture (declared %s.ast-only) but --dump-ast %s"
-                                       % (os.path.basename(stem), v.kind))
-        # ⛔⭐ THE EMPTY-REF GUARD BELONGS ON THIS BRANCH TOO, AND ONLY THE RUN BRANCH HAD IT (hq_S 2026-09-12).
-        # Twenty lines down, an oracle that prints nothing is refused as "a vacuous ref is worse than none".
-        # --dump-ast printing nothing is the SAME defect and was absorbed happily: SCRIP writes its parse error
-        # to STDERR and exits 1, so a fixture our own parser cannot read yields kind=PASS with EMPTY text, and
-        # the entry lands with an empty ref it can never match. MEASURED: 13 raku parser-coverage
-        # fixtures absorbed exactly that way in this row's first pass -- `QUIT { say "quit"; }` and friends,
-        # where scrip answers "raku parse error line 1: syntax error" -- and
-        # test_gate_ast_declared_refs_are_ast_dumps.sh caught every one ("graded by --dump-ast against nothing").
-        # ⭐ THE ASYMMETRY IS THE WHOLE LESSON: the run branch's guard was written because an ORACLE can fail
-        # quietly, and nobody transplanted it to the branch where OUR OWN TOOL fails quietly. There is no oracle
-        # for SCRIP's AST (these refs are self-pins), so there is no second opinion to fall back on -- an empty
-        # dump cannot be repaired here, only refused. The fixture stays visible on its own board either way:
-        # test_raku_parser_fixtures.sh walks the tree from disk and grades all 97 by --dump-ast, so a parser gap
-        # excluded here is still red there. Excluding does not hide it; absorbing it vacuously WOULD.
-        if not v.text().strip():
-            return ("exclude", name, "parser-only fixture (declared %s.ast-only) but --dump-ast emits NOTHING -- "
-                                       "SCRIP's own parser cannot read it (the diagnostic goes to stderr and the "
-                                       "dump is empty), and a vacuous ast ref is worse than none: there is no "
-                                       "oracle for SCRIP's AST, so the ref would be a self-pin against emptiness. "
-                                       "Still graded from disk by the language's parser-fixture board."
-                                       % os.path.basename(stem))
-        return ("ast", name, body_lines, v.text())
+    # ⛔ NO PARSER-ONLY ROAD (CIO-37, the coo 2026-11-10): a <stem>.ast-only marker used to absorb the program with SCRIP's own --dump-ast as its
+    # ref -- a self-pin, no oracle asked -- and Lon's word of 2026-09-13 removed every modes=ast entry from the seven masters (corpus a6646f04c).
+    # MEASURED: a scratch run of this builder with --from tests re-absorbed 27 snobol4 parser_* fixtures that way. A marker is no longer read: the
+    # program goes to its oracle like any other, and is admitted on two identical answers or named for what the oracle did.
 
     stdin_text, stdin_src = _additive_stdin_for(stem)
     ora_text, ora_rc, ora_kind = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
@@ -1246,64 +1221,22 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     # ignoring a committed ref that was sitting beside the source -- the two instruments disagreeing about what
     # a ref IS, which is the quieter half of why that tree never absorbed.
     existing_ref = next((stem + x for x in (".ref", ".expected", ".std") if os.path.isfile(stem + x)), stem + ".ref")
-    ref_confirmed = False
+    # ⛔⭐ SCRIP IS NO TEST OF MEMBERSHIP (CIO-37, the cio 2026-11-10 on the coo's design point; Lon 2026-11-10 07:5x: "let's not assume exclusions
+    # are even correct."): a candidate is left out only for what its ORACLE does -- it refuses, crashes, hangs, prints nothing, or answers
+    # differently on two runs. This recipe ran scrip m3 and m4 beside the oracle and excluded on their verdict (a SCRIP hang, and before 2026-09-12
+    # any divergence: "non-deterministic or diverges from the oracle -- m3=FAIL"), which left out 39 programs SCRIP fails while SnoRungs read
+    # 2210 of 2210. Now the oracle runs twice and nothing else: two identical answers are the ref and the entry enters at its true colour, red
+    # if SCRIP is red. A committed .ref that disagrees with both fresh runs is stale (the 21 "committed .ref disagrees" lines): the fresh answer
+    # is the ref, named on stderr, never the stale one copied.
+    ora_text2, ora_rc2, ora_kind2 = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
+    if not (ora_kind2 == "RAN" and ora_text2 == ora_text and ora_rc2 == ora_rc):
+        return ("exclude", name, "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program disagree (rc %s then %s, %s)"
+                                   % (ora_rc, ora_rc2, "same output" if ora_text2 == ora_text else "different output"))
     if os.path.isfile(existing_ref):
         committed = open(existing_ref, encoding="utf-8", errors="replace").read().rstrip("\n")
         if committed != ora_text:
-            return ("exclude", name, "committed .ref disagrees with a fresh oracle run -- re-confirm by hand "
-                                       "(stale ref, drifted oracle, or a scale/flag this recipe does not supply)")
-        ref_confirmed = True
-
-    v3 = h.run_m3(paths, _P(path), ora_text, timeout=timeout, stdin_text=stdin_text)
-    with __import__("tempfile").TemporaryDirectory() as td:
-        v4 = h.run_m4(paths, _P(path), ora_text, _P(td), timeout=timeout, stdin_text=stdin_text)
-    if v3.kind == "HANG" or v4.kind == "HANG":
-        return ("exclude", name, "over budget (m3/m4 exceeded %.1fs)" % timeout)
-    agree3 = v3.kind == "PASS" and v3.returncode == ora_rc
-    agree4 = v4.kind == "PASS" and v4.returncode == ora_rc
-    # ⛔⭐⭐ TWO DIFFERENT QUESTIONS WERE BEING ANSWERED BY ONE GATE, AND THE WRONG ANSWER WAS UNFALSIFIABLE
-    # (hq_S 2026-09-12, row raku-absorb-every-owed-source, on R-591 re-cut and hq_V's standing
-    # practice "a wrong exclusion costs more than a wrong cure, because a red stays visible and an excluded
-    # name cannot be red"). Three-way agreement exists to keep us from PINNING A REF WE CANNOT TRUST when we
-    # are minting one from scratch -- there, m3/m4 are the only second opinion available and the guard is
-    # right. But when a COMMITTED .ref is already on disk and has just RE-CONFIRMED byte-for-byte against a
-    # fresh oracle run (ref_confirmed, twenty lines up), the ref's correctness is ESTABLISHED BY THE ORACLE
-    # and m3/m4 are no longer evidence about the ref at all -- they are evidence about US. Excluding there
-    # does not protect a ref; it deletes one of OUR OWN REDS from the denominator and writes the false reason
-    # "non-deterministic or diverges from the oracle" over it.
-    # ⛔ MEASURED, and this is what makes it a defect rather than a preference: all 17 corpus/benchmarks/raku
-    # loose pairs re-confirm against rakudo-local 2026.05 EXACTLY, and 11 of them were being excluded with that
-    # sentence while the real cause was printed on stdout by our own compiler -- "[SMX] --run: mode-3 native
-    # emitter does not yet cover this program: variable 'Inf' is read but never assigned". Nothing about those
-    # programs is non-deterministic, and nothing about them diverges from the oracle; the oracle runs all 17 at
-    # rc=0 and matches every committed ref. The reason string was not merely imprecise, it named the innocent
-    # party, so anyone auditing the exclusion list would have gone looking at the programs instead of at us.
-    # ⭐ RULES.md:214 (Lon 2026-09-03, "there is no such thing now as XFAIL... we are shooting for 100%") is the
-    # law this restores: a program we fail is a FAIL on the board, never a name in a sidecar. The absorbed entry
-    # is graded in both modes like any other, so it reads red until the emitter covers it, which is the entire point.
-    if not (agree3 and agree4):
-        if ref_confirmed:
-            return ("run", name, body_lines, ora_text, stdin_text)
-        # ⛔⭐ THE SECOND OPINION DOES NOT HAVE TO BE OUR OWN COMPILER, AND IT IS A BETTER ONE WHEN IT IS NOT.
-        # With no committed .ref the three-way guard has a real job -- do not pin a ref from a single run of a
-        # program that might be non-deterministic. But m3/m4 answer that question only by accident: they agree
-        # when we are CORRECT, and a program we simply do not implement yet reads exactly like a program whose
-        # output cannot be trusted. Asking the ORACLE TWICE separates the two cleanly -- it is the same question
-        # the guard was always trying to ask ("is this output reproducible?"), asked of the authority that
-        # defines the answer, and it costs one extra oracle run only on the path that was about to exclude.
-        # Two identical runs -> the ref is the oracle's output and the entry is absorbed, reading RED until we
-        # cover it (RULES.md:214, no XFAIL). Two different runs -> genuinely non-deterministic, and only NOW is
-        # that word the truthful reason to exclude.
-        # ⛔ THE RESIDUAL RISK, NAMED RATHER THAN PAPERED OVER: repetition catches a program that varies run to
-        # run, not one that is stable within a sitting and varies across days (a DATE()/TIME() or locale
-        # dependence). That exposure is identical for the committed-ref path directly above, which re-confirms
-        # against exactly one fresh run, so this adds no new class of error -- it inherits an existing one.
-        ora_text2, ora_rc2, ora_kind2 = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
-        if ora_kind2 == "RAN" and ora_text2 == ora_text and ora_rc2 == ora_rc:
-            return ("run", name, body_lines, ora_text, stdin_text)
-        return ("exclude", name, "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program "
-                                   "disagree (rc %s then %s), so no ref can be cut from it -- m3=%s m4=%s"
-                                   % (ora_rc, ora_rc2, v3.kind, v4.kind))
+            sys.stderr.write("  RE-CUT %s: the committed %s disagrees with two identical fresh oracle runs; the fresh answer is the ref\n"
+                             % (name, os.path.basename(existing_ref)))
     return ("run", name, body_lines, ora_text, stdin_text)
 
 
@@ -1969,23 +1902,10 @@ def main():
                 if any(h._is_entry_start(ln) for ln in sno_text):
                     excluded.append((fam, "plain body carries suite-format markers (banner or ';* tag' line) -- a block would split on re-read; quarantined class, stays as files"))
                     continue
-                # auto-XFAIL by source verdict -- convert_one's own law applied to plain absorption: a documented-red
-                # witness never inflates the rungs' FAIL count, and XPASS polices the marker the day the bug is cured.
-                import tempfile as _tf
-                _paths = h.resolve_paths()
-                _tmp = _tf.mkdtemp(prefix="mstr_")
-                try:
-                    from pathlib import Path as _P
-                    # ⛔ THE PROBE IS FED WHAT THE ENTRY WILL BE FED, or its verdict is about a different run:
-                    # an unfed probe on a stdin-reading program stops at EOF and marks the entry xfail for a
-                    # starvation the absorbed entry will never experience -- a documented red that documents
-                    # the instrument. Same argument, one line down, as carrying the stdin at all.
-                    _v = h.run_all_modes(_paths, _P(sno), open(ref).read(), _P(_tmp), ["m3", "m4"], stdin_text=_stdin_txt)
-                    _green = all(x.kind == "PASS" for x in _v.values())
-                finally:
-                    import shutil as _sh
-                    _sh.rmtree(_tmp, ignore_errors=True)
-                entries = [h.Entry("block", 1, os.path.basename(sno)[:-len(EXT)], sno_text, ref_text, stdin=_stdin_txt, xfail=not _green)]
+                # ⛔ NO AUTO-XFAIL BY SCRIP'S VERDICT (CIO-37, the coo 2026-11-10; R-753: there is no xfail): this road ran scrip m3 and m4 on the pair
+                # and marked a red one xfail, so a program SCRIP fails entered as XFAIL, not as a red. SCRIP decides no entry's membership or colour;
+                # the entry is graded like any other and reads red until SCRIP is cured -- the dialect road below has read xfail=False since R-753.
+                entries = [h.Entry("block", 1, os.path.basename(sno)[:-len(EXT)], sno_text, ref_text, stdin=_stdin_txt, xfail=False)]
         else:
             # ⛔⭐ READ EACH SOURCE PAIR WITH ITS OWN DIALECT READER (hq_B, measured: read_suite on a .pl pair returns
             # the whole file as one entry whose body still contains %--- banners -- content that looks like structure).
