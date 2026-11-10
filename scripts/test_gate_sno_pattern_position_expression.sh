@@ -53,6 +53,7 @@
 # THE SIX PROGRAMS ARE MASTER ENTRIES (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-into-the-one-master-
 # unabsorbed-census-reads-zero): each is extracted from tests/snobol4/ALL.{sno,ref} by its ORIGIN (its old loose basename,
 # the durable key in ALL.csv), never by the entry name the builder assigns and may re-sort.
+# not-a-corpus-path: tests/snobol4/ALL.{sno,ref} -- prose in a comment; the two master files it names stand and this script reads them through W
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ROOT="$(cd "$HERE/../../SCRIP" && pwd)" || { echo "REFUSE(2): no SCRIP beside harness at $HERE/../../SCRIP (a port root) -- this gate measures SCRIP and cannot from here"; exit 2; }
 S4E="$(cd "$ROOT/.." && pwd)"
