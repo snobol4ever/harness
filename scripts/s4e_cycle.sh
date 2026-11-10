@@ -60,6 +60,33 @@ run_cell() {   # key kind lang dir cell -> rc. THE ONE LAUNCH (Lon 2026-11-08 23
     ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "$cell" ) > "$out" 2>&1 < /dev/null; rc=$?
     echo "$rc $(( $(date +%s) - t0 ))"
 }
+# THE TEST REQUESTS (the cio 2026-11-10, row bus-one-queue-the-grading-tube-retires-the-cycle-serves-the-test-requests-itself, CIO-82; the grade tube,
+# its feeder and its worker retired): a request is one file test_requests/STAMP-SEAT-SUITE-N.req (seat, suite, table, filed, entries). It is PENDING while
+# it sits in that folder, whatever fed= line an old feeder wrote. Before any cell is started the pool serves the oldest pending request as one more
+# cell: the file moves to serving/ (a restart puts it back), the one launch runs its entries (entry:A,entry:B) in S4E_MODES under the budget of that
+# entry cell, the suite row is recorded, and the file lands in done/ with graded=/rc= per entry and one served= line, as the grade worker wrote it.
+RQ="${S4E_TEST_REQUEST_DIR:-/home/resources/postoffice/test_requests}"
+next_request() { local f; for f in "$RQ"/*.req; do [ -f "$f" ] && { printf '%s\n' "$f"; return 0; }; done; return 1; }
+run_request() {   # serving file -> "rc secs" on stdout; the harness log in $TMPDIR/cycle/req.<name>.log
+    local f="$1" name key ents row kind lang dir alls ttr t0 rc out
+    name="$(basename "$f")"; out="$TMPDIR/cycle/req.$name.log"; t0=$(date +%s)
+    key="$(sed -n 's/^suite=//p' "$f" | head -1)"; ents="$(sed -n 's/^entries=//p' "$f" | head -1 | tr -s ' ,' '\n\n' | grep -v '^$' | tr '\n' ',' | sed 's/,$//')"
+    row="$(awk -F'\t' -v k="$key" '!/^#/ && $1 == k && ($2 == "master" || $2 == "pkg") {print $2 "\t" $3 "\t" $5; exit}' "$RUNNERS")"
+    [ -n "$row" ] && [ -n "$ents" ] || { echo "REFUSE(2): suite $key has no master or pkg row of SUITE_RUNNERS.tsv, or the request names no entries" > "$out"; echo "2 0"; return; }
+    IFS=$'\t' read -r kind lang dir <<< "$row"; [ "$kind" = master ] && dir="$S4E/corpus/tests/$lang" || dir="$S4E/$dir"
+    alls="$dir/ALL.$(ext_of "$lang")"
+    ttr="$(budget "$key" "entry:$ents")"; [ -n "$ttr" ] || ttr=1800
+    ( cd "$S4E" && SUITE_LIST_ALL=1 timeout -k 30 "$ttr" bash harness/scripts/util_run_slot.sh python3 harness/scripts/corpus_suite_harness.py run "$alls" "$dir/ALL.ref" --lang "$lang" --modes "${S4E_MODES:-m3}" --partition "entry:${ents//,/,entry:}" ) > "$out" 2>&1 < /dev/null; rc=$?
+    [ "$kind" = master ] && record_suite "$lang"; [ "$kind" = pkg ] && record_pkg "$key"
+    echo "$rc $(( $(date +%s) - t0 ))"; }
+finish_request() {   # name rc secs: the file lands in done/ with its per-entry verdicts and one served= line
+    local name="$1" rc="$2" secs="$3" s="$RQ/serving/$1" e erc body tree n=0
+    tree="$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null)"; body="$(cat "$s" 2>/dev/null)"
+    for e in $(sed -n 's/^entries=//p' "$s" | head -1 | tr ',' ' '); do
+        erc="$rc"; [ "$rc" = 1 ] && { grep -qE "^  (FAIL|CRASH|HANG|UNPROVEN) [^ ]+ ([^ ]+__)?$e[: ]" "$TMPDIR/cycle/req.$name.log" 2>/dev/null && erc=1 || erc=0; }
+        body="$body"$'\n'"graded=$e"$'\n'"rc=$erc"; n=$((n+1)); done
+    printf '%s\nserved=%s tree=%s rc=%s rows=%s by=cycle secs=%s\n' "$body" "$(TZ=America/Chicago date '+%F %T CST')" "$tree" "$rc" "$n" "$secs" > "$RQ/done/$name" && rm -f "$s"
+    log "REQUEST lap=$lap $name rc=$rc secs=$secs entries=$n"; }
 record_suite() {   # lang -> the rungs suite row of that language, as the grade worker's record step writes it
     local k; k="$(container_key "$1")"; [ -n "$k" ] || return 0
     ( cd "$S4E" && timeout -k 30 900 python3 -I harness/scripts/util_score_row.py from-progress --suite "$k" ) >> "$TMPDIR/cycle/record.log" 2>&1 < /dev/null
@@ -113,6 +140,7 @@ while :; do
     if [ "$idx" -eq 0 ] || [ "$idx" -ge "$total" ]; then
         [ "$idx" -ge "$total" ] && [ "$lap" -gt 0 ] && log "LAP $lap done cells=$total"
         lap=$(( lap + 1 )); idx=0; lap_start "$lap"
+        cp "${S4E_RESULTS:-/home/resources/progress/results.tsv}" "$TMPDIR/cycle/lap.$lap.results" 2>/dev/null; rm -f "$TMPDIR/cycle/lap.$(( lap - 2 )).results"   # the lap's own copy: its end tells the new reds against it
         # THE LAP'S CELLS ARE READ FROM THE TREE IT GRADES, after the sync (the cio 2026-11-10: the list was read before lap_start, so a
         # partition landed between two laps ran one lap on the old cell names, and a chunk the new table no longer has refused rc 2).
         mapfile -t ALL < <(cells); total=${#ALL[@]}
@@ -127,18 +155,24 @@ while :; do
     # the last of its cells of this lap has finished, whatever the order.
     W="${S4E_CYCLE_WIDTH:-4}"; [ "$MODE_ARG" = --one ] && W=1; case "$W" in ''|*[!0-9]*|0) W=4;; esac
     declare -A RUN=() LEFT=(); nxt="$idx"
+    mkdir -p "$RQ/serving" "$RQ/done" 2>/dev/null; for f in "$RQ"/serving/*.req; do [ -f "$f" ] && mv "$f" "$RQ/" 2>/dev/null; done   # a request a dead cycle was serving is pending again
     for (( j = idx; j < total; j++ )); do IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$j]}"; grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null || LEFT[$key]=$(( ${LEFT[$key]:-0} + 1 )); done
     while :; do
+        while [ "${#RUN[@]}" -lt "$W" ] && rf="$(next_request)"; do   # the oldest pending request first, as one more cell
+            rn="$(basename "$rf")"; mv "$rf" "$RQ/serving/$rn" 2>/dev/null || break
+            ( run_request "$RQ/serving/$rn" > "$TMPDIR/cycle/rres.$rn" ) & RUN[$!]="r:$rn"
+        done
         while [ "$nxt" -lt "$total" ] && [ "${#RUN[@]}" -lt "$W" ]; do
             IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$nxt]}"
             if grep -q -P "\t\Q$key\E\t\Q$cell\E\t" "$SKIP" 2>/dev/null; then log "SKIPPED lap=$lap $((nxt+1))/$total $key $cell"; nxt=$(( nxt + 1 )); continue; fi
             ( run_cell "$key" "$kind" "$lang" "$dir" "$cell" > "$TMPDIR/cycle/res.$nxt" ) & RUN[$!]="$nxt"; nxt=$(( nxt + 1 ))
         done
         [ "${#RUN[@]}" -gt 0 ] || break
-        low="$total"; for i in "${RUN[@]}"; do [ "$i" -lt "$low" ] && low="$i"; done
-        IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running
+        low="$nxt"; for i in "${RUN[@]}"; do case "$i" in r:*) ;; *) [ "$i" -lt "$low" ] && low="$i";; esac; done
+        if [ "$low" -lt "$total" ]; then IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$low]}"; state_put "$lap" "$low" "$total" "$key" "$cell" running; fi
         dp=""; wait -n -p dp "${!RUN[@]}"; [ -n "$dp" ] && [ -n "${RUN[$dp]:-}" ] || continue
         i="${RUN[$dp]}"; unset 'RUN[$dp]'
+        case "$i" in r:*) rn="${i#r:}"; rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/rres.$rn"; rm -f "$TMPDIR/cycle/rres.$rn"; finish_request "$rn" "$rc" "$secs"; continue;; esac
         IFS=$'\t' read -r key kind lang dir cell <<< "${ALL[$i]}"
         rc=2; secs=0; read -r rc secs < "$TMPDIR/cycle/res.$i"; rm -f "$TMPDIR/cycle/res.$i"
         log "CELL lap=$lap $((i+1))/$total $key $cell rc=$rc secs=$secs"
@@ -157,5 +191,10 @@ while :; do
         fi
         [ "$MODE_ARG" = --one ] && { echo "ONE $key $cell rc=$rc secs=$secs"; state_put "$lap" "$((i+1))" "$total" "$key" "$cell" done; exit 0; }
     done
+    # THE LAP'S NEW REDS (the cio 2026-11-10, CIO-82 on the grading-tube row; Lon's law of CIO-8): one telegram per designer, once a lap, never one per red
+    if [ "$MODE_ARG" != --one ]; then
+        gk=(); for k in $(printf '%s\n' "${ALL[@]}" | cut -f1 | awk '!s[$0]++'); do graded_this_lap "$k" && gk+=("$k"); done
+        [ "${#gk[@]}" -gt 0 ] && log "$( . "$S4E/harness/scripts/lib_grade_cell.sh"; tell_lap_new_reds "$(git -C "$S4E/SCRIP" rev-parse --short=9 HEAD 2>/dev/null)" "$TMPDIR/cycle/lap.$lap.results" "${gk[@]}" ) lap=$lap suites=${#gk[@]}"
+    fi
     idx="$total"; state_put "$lap" "$idx" "$total" "$key" "$cell" done
 done

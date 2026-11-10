@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
-# lib_grade_cell.sh -- THE GRADE CELL'S RECORD OF THE SMOKE BAND AND OF THE NEW REDS (DESIGN-PLAN test-cycle step 4d, CTO-522; the cio 2026-11-07). Copied from the coo's
-# tier 1 (its SMOKE.tsv writer) and loop8.sh's tell_part_reds (read-only in the coo's scratch). The lease in s4e_grade_worker.sh calls grade_cell_after once, after record().
-#   grade_cell_after <suite> <tree> <band> <snapshot> <secs> [entry...]  a smoke-band cell writes its SMOKE.tsv line; every band tells its NEW REDs; prints GRADE_CELL_AFTER
-#   write_smoke_line <tree> <green> <red> <pass> <fail> <secs> [red-entry...]   one SMOKE.tsv line, tier 1's shape (S4E_SMOKE_TSV overrides the file)
-#   tell_new_reds <suite> <tree> <snapshot>   one telegram per NEW RED to its designer; prints how many were sent (S4E_RESULTS overrides the results table)
-#   designer_of <suite>                        the seat whose TIERS.tsv role names the suite key, else the cto (S4E_TIERS overrides the table)
-# A NEW RED is a program whose reading in <snapshot> (the results table copied before the launch) was PASS and whose reading now is not PASS (new_reds.py's v2 rule).
+# lib_grade_cell.sh -- THE LAP'S NEW REDS, TOLD ONCE A LAP, ONE TELEGRAM A DESIGNER (the cio 2026-11-10, ruling on the grading-tube row, CIO-82; Lon's law of CIO-8:
+# nobody fails without knowing). The cycle (s4e_cycle.sh) copies the results table at a lap's start and calls tell_lap_new_reds at the lap's end with every suite
+# key the lap graded. A NEW RED is a program whose latest reading in the copy was PASS and whose latest reading now is not PASS (m3 or m4). The SMOKE.tsv line
+# of the retired grade worker is gone (nothing read it after 2026-11-08). Requests served from test_requests are not told: the asker reads its own answer.
+#   tell_lap_new_reds <tree> <snapshot> <key>...   one telegram per designer naming the tree and, per suite, the count and the first twenty new reds; prints LAP_NEW_REDS
+#   designer_of <key>                              the seat whose TIERS.tsv role names the suite key, else the cto (S4E_TIERS overrides the table)
+# A telegram wakes nobody (CIO-51: the designer parks the red). S4E_RESULTS overrides the results table; S4E_POST the postoffice (a probe's scratch one).
 : "${S4E_HOME:?REFUSE(2) [lib_grade_cell]: S4E_HOME unset}"
 RESULTS="${S4E_RESULTS:-/home/resources/progress/results.tsv}"
-SMOKE_TSV="${S4E_SMOKE_TSV:-/home/resources/progress/SMOKE.tsv}"
 TIERS="${S4E_TIERS:-$S4E_HOME/.github/TIERS.tsv}"
 MSG="$S4E_HOME/harness/scripts/s4e_msg.sh"
 designer_of() {
@@ -16,68 +15,45 @@ designer_of() {
     s="$(awk -F'\t' -v k="$1" '$1 !~ /^#/ && $1 != "seat" { n = split($8, r, ","); for (i = 1; i <= n; i++) if (r[i] == k) { print $1; exit } }' "$TIERS")"
     echo "${s:-cto}"
 }
-write_smoke_line() {
-    local corpus at
-    corpus="$(git -C "$S4E_HOME/corpus" rev-parse --short HEAD 2>/dev/null || echo -)"; at="$(date -u +%FT%TZ)"
-    [ -s "$SMOKE_TSV" ] || printf 'at_utc\tscrip\tcorpus\tgreen\tred\trefused\tpass\tfail\tsecs\treds\n' > "$SMOKE_TSV"
-    printf '%s\t%s\t%s\t%s\t%s\t0\t%s\t%s\t%s\t%s\n' "$at" "$1" "$corpus" "$2" "$3" "$4" "$5" "$6" "${*:7}" >> "$SMOKE_TSV"
-}
 read -r -d '' NEWREDS_PY <<'PY'
 import os, sys
-suite, snap, res = sys.argv[1], sys.argv[2], sys.argv[3]
+here, snap, res, keys = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4:]
+sys.path.insert(0, here)
+try:
+    import util_suite_rows_vs_progress as a; name = {k: (a.dbname(k) or k) for k in keys}
+except Exception: name = {k: k for k in keys}
+want = {v: k for k, v in name.items()}
 def load(p):
     d = {}
     if not os.path.isfile(p): return d
     for line in open(p, encoding="utf-8", errors="replace"):
         f = line.rstrip("\n").split("\t")
-        if len(f) < 10 or f[5] != suite or f[8] not in ("m3", "m4"): continue
-        k = (f[7], f[8])
-        if k not in d or f[0] >= d[k][2]: d[k] = (f[9], f[1], f[0])
+        if len(f) < 10 or f[5] not in want or f[8] not in ("m3", "m4"): continue
+        k = (f[5], f[7], f[8])
+        if k not in d or f[0] >= d[k][1]: d[k] = (f[9], f[0])
     return d
 prev, now = load(snap), load(res)
 for k in sorted(now):
-    o = now[k][0]; p = prev.get(k)
-    if o != "PASS" and p and p[0] == "PASS": print("%s\t%s\t%s\t%s" % (k[0], k[1], o, p[1]))
+    p = prev.get(k)
+    if now[k][0] != "PASS" and p and p[0] == "PASS": print("%s\t%s\t%s\t%s" % (want[k[0]], k[1], k[2], now[k][0]))
 PY
-read -r -d '' COUNTS_PY <<'PY'
-import sys
-res, suite, ents = sys.argv[1], sys.argv[2], sys.argv[3:]
-last = {}
-for line in open(res, encoding="utf-8", errors="replace"):
-    f = line.rstrip("\n").split("\t")
-    if len(f) < 10 or f[5] != suite or f[8] not in ("m3", "m4") or f[7] not in ents: continue
-    if (f[7], f[8]) not in last or f[0] >= last[(f[7], f[8])][1]: last[(f[7], f[8])] = (f[9], f[0])
-green, reds, pas, fail = 0, [], 0, 0
-for e in ents:
-    outs = [last.get((e, m), ("MISSING", ""))[0] for m in ("m3", "m4")]
-    pas += outs.count("PASS"); fail += len(outs) - outs.count("PASS")
-    if all(o == "PASS" for o in outs): green += 1
-    else: reds.append(e)
-print("%d %d %d %d %s" % (green, len(reds), pas, fail, " ".join(reds)))
-PY
-tell_new_reds() {
-    local suite="$1" tree="$2" snap="$3" prog mode outc was designer range topic n=0 lines
-    lines="$(python3 -c "$NEWREDS_PY" "$suite" "$snap" "$RESULTS")" || { echo 0; return 0; }
-    while IFS=$'\t' read -r prog mode outc was; do
-        [ -n "$prog" ] || continue
-        designer="$(designer_of "$suite")"
-        range="$(git -C "$S4E_HOME/SCRIP" rev-list --count "$was..$tree" 2>/dev/null || echo unknown)"
-        topic="grade-new-red-$(printf '%s-%s-%s' "$suite" "$prog" "$mode" | tr -c 'a-zA-Z0-9-' '-' | cut -c1-40)-at-$(printf '%s' "$tree" | cut -c1-12)"
-        { echo "coo grade NEW RED, $(date '+%F %H:%M %Z'): suite $suite program $prog reads $outc in $mode on SCRIP $tree where its previous reading was PASS on $was (RANGE since that tree: $range landing(s))."
-          echo "Reproduce: bash harness/scripts/corpus_suite_harness.py run on the suite's container with --partition entry:$prog, or bash harness/scripts/test_feature_reps.sh <lang> <feature>. The cure or revert is the lane's."; } \
-            | S4E_SEAT="${S4E_SEAT:-worker_20}" "$MSG" send "$designer" "$topic" --stdin > /dev/null 2>&1 && n=$((n + 1))
+tell_lap_new_reds() {
+    local tree="$1" snap="$2" lines key prog mode outc d sent=0 total=0; shift 2
+    [ -f "$snap" ] || { echo "LAP_NEW_REDS refused=no-snapshot told=0 reds=0"; return 0; }
+    lines="$(python3 -c "$NEWREDS_PY" "$S4E_HOME/harness/scripts" "$snap" "$RESULTS" "$@")" || { echo "LAP_NEW_REDS refused=reader told=0 reds=0"; return 0; }
+    declare -A BODY=() CNT=() SHOWN=()
+    while IFS=$'\t' read -r key prog mode outc; do
+        [ -n "$key" ] || continue
+        total=$((total + 1)); d="$(designer_of "$key")"; CNT[$d|$key]=$(( ${CNT[$d|$key]:-0} + 1 ))
+        if [ "${SHOWN[$d|$key]:-0}" -lt 20 ]; then BODY[$d]="${BODY[$d]:-}  $key: $prog $mode reads $outc"$'\n'; SHOWN[$d|$key]=$(( ${SHOWN[$d|$key]:-0} + 1 )); fi
     done <<< "$lines"
-    echo "$n"
-}
-grade_cell_after() {
-    local suite="$1" tree="$2" band="$3" snap="$4" secs="$5" counts g r p f rest nt
-    shift 5
-    if [ "$band" = smoke ]; then
-        counts="$(python3 -c "$COUNTS_PY" "$RESULTS" "$suite" "$@")"
-        read -r g r p f rest <<< "$counts"
-        write_smoke_line "$tree" "$g" "$r" "$p" "$f" "$secs" $rest
-    fi
-    nt="$(tell_new_reds "$suite" "$tree" "$snap")"
-    echo "GRADE_CELL_AFTER band=$band new_reds_told=$nt"
+    for d in "${!BODY[@]}"; do
+        local sum=""; for k in "${!CNT[@]}"; do [ "${k%%|*}" = "$d" ] && sum="$sum ${k#*|}=${CNT[$k]}"; done
+        { echo "THE LAP'S NEW REDS, SCRIP $tree ($(date '+%F %H:%M %Z')): programs that read PASS at the lap's start and do not now; per suite the count:$sum; the first twenty a suite:"
+          printf '%s' "${BODY[$d]}"
+          echo "A telegram wakes nobody (CIO-51): the designer parks each red as a row; reproduce with corpus_suite_harness.py run on the suite's container with --partition entry:NAME."; } \
+            | S4E_SEAT="${S4E_SEAT:-grader}" bash "$MSG" send "$d" "lap-new-reds-$(printf '%s' "$tree" | cut -c1-12)" --stdin > /dev/null 2>&1 && sent=$((sent + 1))
+    done
+    echo "LAP_NEW_REDS told=$sent reds=$total"
 }
 if [ "${BASH_SOURCE[0]}" = "$0" ] && [ -n "${1:-}" ]; then "$@"; fi
