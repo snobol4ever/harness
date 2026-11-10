@@ -46,6 +46,7 @@ mk_scratch_corpus() {
     fi
     git clone -q "$origin" "$dir"
     [ "$freshness" = behind ] && ( cd "$dir" && git reset -q --hard "$base_sha" )
+    # not-a-corpus-path: tests/snobol4/beauty_suite -- a fixture dir this gate mkdirs under its mktemp GATE_WORK, never the real corpus
     # Required subtrees the runner refuses on if absent (a DIFFERENT refusal than the one under
     # test) -- deliberately left with no suite-family files in either arm.
     mkdir -p "$dir/crosscheck" "$dir/demo/snobol4" "$dir/tests/snobol4/beauty_suite"

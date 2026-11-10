@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # test_smoke_snobol4_js.sh — ⛔ REFUSES rc=2. THE SUBJECT IS GONE, NOT THE FIXTURES.
+# not-a-corpus-path: tests/snobol4/smoke/ -- prose and a refusal message: the path is gone and this script refuses rc 2, reading nothing from it
 # Row dead-suite-path-consumer-sweep (hq_C 2026-09-04). This script used to smoke the SNOBOL4→JavaScript
 # emitter over corpus/tests/snobol4/smoke/. BOTH halves of it are gone, and only one of them was visible:
 #   1. THE PATH: corpus/tests/snobol4/smoke/ went away with the one-flat-suite ruling. The rungs carries

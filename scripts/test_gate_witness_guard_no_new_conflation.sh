@@ -8,6 +8,7 @@
 # "A took :f" and "B took :f" under SPITBOL itself: the branch is identical. So a witness written this way
 # CANNOT DISTINGUISH A CORRECT ANSWER FROM A BROKEN CALL, and marches on to print its own PASS line.
 #
+# not-a-corpus-path: tests/snobol4/crosscheck/rung10.sno -- prose in this comment: the measured instance, now a flat-suite entry; the gate reads CORPUS on line 26, not this path
 # ⭐ MEASURED INSTANCE, and the reason this gate exists: corpus/tests/snobol4/crosscheck/rung10.sno case 1
 # printed "PASS 1010_func_recursion (4/4)" in mode 4 while facto(4) -- its OPSYN alias check -- was silently
 # failing as a call. The board was green over a wrong answer. Found via seat11's row conform-unload-noop, whose
