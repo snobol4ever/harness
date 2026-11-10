@@ -54,11 +54,15 @@ W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
 # untouched) -- built as BLOCK-kind entries via the harness's own Entry/write_suite (the same writer
 # the system uses, so the fixture cannot be wrong about the suite grammar; block kind uses an
 # explicit banner rather than a line kind's terse trailing-tag convention).
+# not-a-corpus-path: tests/snobol4/selfam_probe.sno -- a fixture this gate writes under mktemp
+# not-a-corpus-path: tests/snobol4/selfam_probe.ref -- a fixture this gate writes under mktemp
+# not-a-corpus-path: tests/snobol4/otherfam_probe.sno -- a fixture this gate writes under mktemp
+# not-a-corpus-path: tests/snobol4/otherfam_probe.ref -- a fixture this gate writes under mktemp
 mkscratch() {
     rm -rf "$1"; mkdir -p "$1/corpus/tests/snobol4"
-    python3 - "$1/corpus/tests/snobol4" <<'PY'
+    python3 - "$1/corpus/tests/snobol4" "$HERE" <<'PY'
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), "scripts"))
+sys.path.insert(0, sys.argv[2])
 import corpus_suite_harness as h
 T = sys.argv[1]
 e1 = h.Entry("block", 1, "selfam_x", ["OUTPUT = 'sel-x'", "END"], ["sel-x"])
