@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: ref master read by ungrouping a scratch copy of a format-2 folder through the harness; same output on both forms
 # ../harness/scripts/util_census_dead_pinned_refs.sh — censuses PINS (.ref/.std/ALL.ref) whose OWN CONTENT is a
 # transcript of the ORACLE'S DEATH: SPITBOL's fatal termination report, ending in its allocator counters
 # `memory used (bytes)` / `memory left (bytes)`.  Row: the officer's HOLD dispatch to hq_B, 2026-09-08 —
@@ -88,7 +89,7 @@ echo "stamp:  $(cd "$CORPUS" && git rev-parse --short HEAD 2>/dev/null || echo '
 echo
 printf '%-52s %-9s %-9s %s\n' DIRECTORY PINS DEAD NAMES
 seen_any=0; tot_pins=0; tot_dead=0; dead_dirs=""
-DEADLIST=$(mktemp) || exit 2; trap 'rm -f "$DEADLIST"' EXIT
+DEADLIST=$(mktemp) || exit 2; SC=$(mktemp -d) || exit 2; trap 'rm -f "$DEADLIST"; rm -rf "$SC"' EXIT
 while IFS= read -r d; do
   pins=0; dead=0; names=""
   while IFS= read -r f; do
@@ -110,18 +111,27 @@ done < <( { find "$CORPUS/packages" -mindepth 2 -maxdepth 2 -type d 2>/dev/null;
 # ⛔ A CONCATENATED RUNGS IS ONE FILE HOLDING MANY ENTRIES, so the per-file loop above counts it as a single
 # pin and would UNDERCOUNT it to 1.  Counted separately, by occurrence, and this is where the three hidden
 # rungs entries live.  Named by the source line of each fatal report, which carries the program's own name.
+sh_name() { local r="${1#$CORPUS/}"; printf '%s\n' "${r#$SC/}"; }
+ref_masters() {
+  local d r f
+  { find "$CORPUS" -type f -name 'ALL.ref' 2>/dev/null
+    while IFS= read -r d; do
+      r="${d#$CORPUS/}"; mkdir -p "$SC/$r" && cp -r "$d"/. "$SC/$r"/ && python3 "$HERE/corpus_suite_harness.py" ungroup "$SC/$r" > /dev/null 2>&1 && printf '%s\n' "$SC/$r/ALL.ref"
+    done < <(find "$CORPUS" -type f \( -name MULTI.md -o -name 'ONE.*' \) -printf '%h\n' 2>/dev/null | sort -u)
+  } | while IFS= read -r f; do r="${f#$CORPUS/}"; printf '%s\t%s\n' "${r#$SC/}" "$f"; done | sort | cut -f2
+}
 echo
 echo "CONCATENATED RUNG_SUITES (one file, many entries -- counted by occurrence, not by file):"
 while IFS= read -r f; do
   k=$(grep -acE '^in statement +[0-9]+$' "$f")
   if [ "${k:-0}" -gt 0 ]; then
-    printf '  %-50s dead_entries=%s\n' "${f#$CORPUS/}" "$k"
+    printf '  %-50s dead_entries=%s\n' "$(sh_name "$f")" "$k"
     grep -aoE '^[A-Za-z0-9_.-]+\.sno\([0-9]+\) : ERROR [0-9][0-9][0-9] -- .*' "$f" | sed 's/^/      /'
-    tot_dead=$((tot_dead+k)); dead_dirs="$dead_dirs ${f#$CORPUS/}"
+    tot_dead=$((tot_dead+k)); dead_dirs="$dead_dirs $(sh_name "$f")"
   else
-    printf '  %-50s dead_entries=0\n' "${f#$CORPUS/}"
+    printf '  %-50s dead_entries=0\n' "$(sh_name "$f")"
   fi
-done < <(find "$CORPUS" -type f -name 'ALL.ref' 2>/dev/null | sort)
+done < <(ref_masters)
 
 echo
 [ "$seen_any" = 1 ] || { echo "⛔ REFUSE(2): zero pin files found anywhere under $CORPUS -- a census over nothing, not a clean corpus"; exit 2; }

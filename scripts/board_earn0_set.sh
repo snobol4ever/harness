@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract (origins read from ALL.csv by column name); same output on both forms
 # board_earn0_set.sh — LOWER seat (GOAL-SN4-HOME-LOWER L-0) acceptance board.
 # Runs every corpus/probe/earn0 witness in m3 (and optionally m4), diffs vs the
 # oracle-baked .ref, and prints a BY-SET table. Judge BY SET, never by count.
@@ -12,9 +13,12 @@ SCRIP_DIR="${SCRIP_DIR:-$S4E/SCRIP}"
 # verb into an assembled dir, so the board's per-witness loop below is unchanged. EARN0= still overrides.
 if [ -z "${EARN0:-}" ]; then
   _EA="$(mktemp -d)"; trap 'rm -rf "$_EA"' EXIT
-  RUNGS_LANG="${RUNGS_LANG:-snobol4}" . "$(dirname "${BASH_SOURCE[0]}")/lib_rungs_extract.sh"   # zero-subfolders cutover: materialize the earn0 families out of THE RUNGS
-  rungs_extract_family probe_earn0 "$_EA" || true
-  rungs_extract_family probe_earn02 "$_EA" || true
+  _R="$S4E/corpus/tests/snobol4"   # the harness extract follows the folder to either form; origins come from ALL.csv by column name
+  for _fam in probe_earn0 probe_earn02; do
+    while IFS=$'\t' read -r _o _n; do
+      python3 "$(dirname "${BASH_SOURCE[0]}")/corpus_suite_harness.py" extract "$_R/ALL.sno" "$_R/ALL.ref" "$_n" "$_EA/${_o#${_fam}__}.sno" --out-ref "$_EA/${_o#${_fam}__}.ref" --out-in "$_EA/${_o#${_fam}__}.in" > /dev/null 2>&1 || true
+    done < <(awk -F, -v f="$_fam" 'NR==1{for(i=1;i<=NF;i++)c[$i]=i; next} $c["family"]==f{print $c["origin"] "\t" $c["entry"]}' "$_R/ALL.csv")
+  done
   EARN0="$_EA"
 fi
 MODE="${1:-m3}"
