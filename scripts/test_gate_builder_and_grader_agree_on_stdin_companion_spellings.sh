@@ -62,9 +62,9 @@ for SUF in $SUFFIXES; do
   for WHERE in beside config; do
     T="$WORK/$LANG-$WHERE${SUF//./_}"; D="$T/corpus/tests/$LANG"; mkdir -p "$D/config"
     if [ "$LANG" = icon ]; then
-      printf 'procedure main()\n   local line\n   while line := read() do write("got: ", line)\nend\n' > "$D/gate_stdin_probe$EXT"
+      printf 'procedure main();\n   local line;\n   while line := read() do write("got: ", line);\nend\n' > "$D/gate_stdin_probe$EXT"
       printf 'got: alpha\ngot: beta\n' > "$D/gate_stdin_probe.ref"
-      printf 'procedure main()\n   write("plain")\nend\n' > "$D/gate_plain_probe$EXT"
+      printf 'procedure main();\n   write("plain");\nend\n' > "$D/gate_plain_probe$EXT"
     else
       printf '\tOUTPUT = TRIM(INPUT)\n\tOUTPUT = TRIM(INPUT)\nEND\n' > "$D/gate_stdin_probe$EXT"
       printf 'alpha\nbeta\n' > "$D/gate_stdin_probe.ref"

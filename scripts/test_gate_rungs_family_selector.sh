@@ -66,9 +66,9 @@ import sys, os
 sys.path.insert(0, sys.argv[2])
 import corpus_suite_harness as h
 T = sys.argv[1]
-e1 = h.Entry("block", 1, "selfam_x", ["OUTPUT = 'sel-x'", "END"], ["sel-x"])
+e1 = h.Entry("block", 1, "selfam_x", ["        OUTPUT = 'sel-x'", "END"], ["sel-x"])
 h.write_suite([e1], os.path.join(T, "selfam_probe.sno"), os.path.join(T, "selfam_probe.ref"))
-e2 = h.Entry("block", 1, "otherfam_y", ["OUTPUT = 'other-y'", "END"], ["other-y"])
+e2 = h.Entry("block", 1, "otherfam_y", ["        OUTPUT = 'other-y'", "END"], ["other-y"])
 h.write_suite([e2], os.path.join(T, "otherfam_probe.sno"), os.path.join(T, "otherfam_probe.ref"))
 PY
 }

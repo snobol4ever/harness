@@ -3115,35 +3115,6 @@ def regroup_dir(d, ext):
     return counts
 
 
-def fmt2_edit_in_old_format(d, ext, who):
-    """THE WRITERS' DOOR (CIO-45 (1) b): a tool that edits a container by the old files (the builder, the add-a-witness tool) calls this
-    first. When D is format 2 it is ungrouped now (rc 2 on a refusal, nothing changed) and regrouped when the process exits, whatever its
-    exit code; a regroup that refuses prints why and exits rc 2, leaving the old files, which every reader still reads. Returns True when
-    D was format 2."""
-    import atexit
-    d = Path(d)
-    if fmt2_dir_of(d / f"ALL{ext}") is None:
-        return False
-    try:
-        n = ungroup_dir(d, ext)
-    except ValueError as exc:
-        refuse(f"{who}: {exc}")
-    print(f"FMT2 {who}: {d} ungrouped ({n} tests) for the edit; it is regrouped at exit", flush=True)
-
-    def _back():
-        if fmt2_dir_of(d / f"ALL{ext}") is not None or not (d / f"ALL{ext}").is_file():
-            return
-        try:
-            c = regroup_dir(d, ext)
-            print(f"FMT2 {who}: {d} regrouped one={c['one']} multi={c['multi']}", flush=True)
-        except ValueError as exc:
-            print(f"⛔ REFUSING: {who}: {exc} -- the folder stays in the old format", file=sys.stderr, flush=True)
-            sys.stdout.flush()
-            os._exit(2)
-    atexit.register(_back)
-    return True
-
-
 def cmd_ungroup(args):
     """corpus_suite_harness.py ungroup DIR: format 2 back to the old files, refusing rc 2 (format 2 restored) unless identical."""
     d = Path(args.dir).resolve()

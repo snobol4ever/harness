@@ -67,6 +67,7 @@ import shutil
 import argparse
 import subprocess
 import pathlib
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -90,6 +91,59 @@ def _stage_name_for(entry_name, origin, ref_lines, ext):
     if not stem or stem == entry_name:
         return ""
     return stem + ext if (stem + ext) in "\n".join(ref_lines if isinstance(ref_lines, (list, tuple)) else [str(ref_lines)]) else ""
+
+
+# ⭐ A FORMAT-2 MASTER IS EDITED NATIVELY (CIO-64, the coo 2026-11-10 on its own case of 11:59): the builder reads it through read_suite and
+# read_block_suite, which read ONE.EXT, ONE.out and MULTI.md when the directory holds them, and writes it here, through write_container_dir,
+# never through the old files. The old form cannot hold an entry whose program carries the old format's own markers (the fwctx standalone
+# entry of the snobol4 master, corpus ddbd15a22), so the edit road through ungroup (fmt2_edit_in_old_format, CIO-45 (1) b) retires.
+def fmt2_master(outdir, ext):
+    """True when outdir holds its master in format 2."""
+    return h.fmt2_dir_of(os.path.join(outdir, "ALL" + ext)) is not None
+
+
+def master_present(outdir, ext):
+    """True when outdir holds a master in either form: format 2, or the old ALL.EXT beside ALL.ref."""
+    return fmt2_master(outdir, ext) or (os.path.isfile(os.path.join(outdir, "ALL" + ext)) and os.path.isfile(os.path.join(outdir, "ALL.ref")))
+
+
+def _fmt2_core(e):
+    return (e.name, e.kind, list(e.sno_lines), e.ref if isinstance(e.ref, str) else list(e.ref), e.stdin or None,
+            list(getattr(e, "argv", None) or []), dict(getattr(e, "files", None) or {}))
+
+
+def fmt2_install(outdir, ext, entries, tmp_csv=None):
+    """Write ENTRIES as the format-2 master in OUTDIR: TMP_CSV (when given) replaces ALL.csv, then write_container_dir writes ONE.EXT,
+    ONE.out and MULTI.md and the index's last three columns, then read_container_dir reads them back. A read-back that differs from ENTRIES
+    in any entry's name, order, kind, program, answer, stdin, arguments or file fences restores the four files byte for byte and refuses
+    rc 2. The config copies the writer fenced leave, as regroup's do (CIO-55 (6)). Returns the counts {"one": n, "multi": n}."""
+    d = pathlib.Path(outdir)
+    names = ("ONE" + ext, "ONE.out", "MULTI.md", "ALL.csv")
+    back = {n: (d / n).read_bytes() for n in names if (d / n).is_file()}
+    if tmp_csv is not None:
+        os.replace(tmp_csv, d / "ALL.csv")
+    fenced = []
+    try:
+        counts = h.write_container_dir(entries, d, ext, fenced=fenced)
+        new = h.read_container_dir(d, ext)
+        diffs = []
+        if [e.name for e in entries] != [e.name for e in new]:
+            diffs.append("order or count: %d written, %d read back" % (len(entries), len(new)))
+        else:
+            diffs += ["%s differs on read-back" % a.name for a, b in zip(entries, new) if _fmt2_core(a) != _fmt2_core(b)][:8]
+    except ValueError as exc:
+        counts, diffs = None, ["refused: %s" % exc]
+    if diffs:
+        for n in names:
+            if n in back:
+                (d / n).write_bytes(back[n])
+            else:
+                (d / n).unlink(missing_ok=True)
+        sys.stderr.write("REFUSED: the format-2 write of %s did not read back identical; the master is restored: %s\n" % (d, "; ".join(diffs[:4])))
+        raise SystemExit(2)
+    h.fmt2_drop_config_companions(d, fenced)
+    print("FMT2 util_build_rungs_suite.py: %s written natively one=%d multi=%d" % (d, counts["one"], counts["multi"]), flush=True)
+    return counts
 
 
 def carried_cmd_cols(csv_path):
@@ -906,9 +960,9 @@ def resort_rungs(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, acknowled
     out_sno = os.path.join(OUTDIR, "ALL" + EXT); out_ref = os.path.join(OUTDIR, "ALL.ref")
     out_in = os.path.join(OUTDIR, "ALL.in"); out_x = os.path.join(OUTDIR, "ALL.xfail")
     out_csv = os.path.join(OUTDIR, "ALL.csv")
-    for _p in (out_sno, out_ref):
-        if not os.path.isfile(_p):
-            sys.stderr.write("REFUSED: --resort needs an existing rungs; %s is missing.\n" % _p); return 2
+    if not master_present(OUTDIR, EXT):
+        sys.stderr.write("REFUSED: --resort needs an existing rungs; %s is missing.\n" % out_sno); return 2
+    _f2 = fmt2_master(OUTDIR, EXT)
     unacknowledged = sorted(loose_families - acknowledged)
     if unacknowledged:
         sys.stderr.write("REFUSED: --resort found %d loose absorbable famil(y/ies); absorbing and re-sorting in one\n"
@@ -958,7 +1012,10 @@ def resort_rungs(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, acknowled
     try:
         for i, e in enumerate(ordered, 1):
             e.seq = i
-        if lang == "snobol4":
+        wrote_in = wrote_x = False
+        if _f2:
+            reread = list(ordered)   # format 2: fmt2_install below writes and reads the master back, entry by entry
+        elif lang == "snobol4":
             h.write_suite(ordered, tmp_sno, tmp_ref)
             wrote_in = h.write_stdin_sidecar(ordered, tmp_in, "*", "")
             wrote_x = h.write_xfail_sidecar(ordered, tmp_x, "*", "")
@@ -989,6 +1046,10 @@ def resort_rungs(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, acknowled
                             (csv_heap.get(e.name, "") or DEFAULT_HEAP_KB), (csv_stack.get(e.name, "") or DEFAULT_STACK_KB)] + [csv_cmd.get(e.name, {}).get(c, "") for c in cmd_cols] + [flags_of[e.name][c] for c, _ in COLS])
     except BaseException:
         _cleanup(); raise
+    if _f2:
+        fmt2_install(OUTDIR, EXT, ordered, tmp_csv)
+        print("--resort: %d entries re-ordered in the format-2 master" % len(ordered), file=sys.stderr)
+        return 0
     os.replace(tmp_sno, out_sno); os.replace(tmp_ref, out_ref); os.replace(tmp_csv, out_csv)
     if wrote_in:
         os.replace(tmp_in, out_in)
@@ -1024,10 +1085,9 @@ def reindex_csv_only(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, ackno
     out_csv = os.path.join(OUTDIR, "ALL.csv")
     rungs_sno = os.path.join(OUTDIR, "ALL" + EXT)
     rungs_ref = os.path.join(OUTDIR, "ALL.ref")
-    for _p in (rungs_sno, rungs_ref):
-        if not os.path.isfile(_p):
-            sys.stderr.write("REFUSED: --reindex needs an existing rungs; %s is missing -- there is nothing to index.\n" % _p)
-            return 2
+    if not master_present(OUTDIR, EXT):
+        sys.stderr.write("REFUSED: --reindex needs an existing rungs; %s is missing -- there is nothing to index.\n" % rungs_sno)
+        return 2
     unacknowledged = sorted(loose_families - acknowledged)
     if unacknowledged:
         sys.stderr.write("REFUSED: --reindex found %d loose absorbable famil(y/ies) under this tree -- nothing written:\n" % len(unacknowledged))
@@ -1076,7 +1136,10 @@ def reindex_csv_only(OUTDIR, EXT, lang, h, _CO, _CC, COLS, loose_families, ackno
         if os.path.exists(tmp_csv):
             os.remove(tmp_csv)
         raise
-    os.replace(tmp_csv, out_csv)
+    if fmt2_master(OUTDIR, EXT):
+        fmt2_install(OUTDIR, EXT, entries, tmp_csv)   # the index's group, road and nonl columns are written back with it
+    else:
+        os.replace(tmp_csv, out_csv)
     print("--reindex: %d entries indexed from %s -- ALL.csv rewritten, nothing else touched." % (len(entries), os.path.basename(rungs_sno)), file=sys.stderr)
     return 0
 
@@ -1184,6 +1247,50 @@ def _additive_stdin_for(stem):
 _ADDITIVE_MASKS = {}   # the master's own ALL.mask (read_mask_sidecar), set by additive_absorb: the two-run test compares through it
 
 
+def _oracle_cut_twice(path, oracle_bin, flags, timeout, stdin_text, name):
+    """THE ONE ORACLE CUT OF A PROGRAM (CIO-37 for the additive road; CIO-58 for the pair road): the oracle runs on `path` in its own directory
+    twice, under `timeout`, fed `stdin_text`. -> ("run", text, rc) when both runs answer and agree (through the master's ALL.mask), else
+    ("exclude", reason) naming what the ORACLE did: over budget, refused or crashed, printed nothing, or answered differently. SCRIP is never asked,
+    and nothing beside the program (a loose .ref) is read: the two answers are the ref."""
+    from pathlib import Path as _P
+    ora_text, ora_rc, ora_kind = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
+    if ora_kind == "HANG":
+        return ("exclude", "over budget (oracle exceeded %.1fs)" % timeout)
+    if ora_kind != "RAN":
+        return ("exclude", "oracle itself %s" % ora_kind)
+    if not ora_text.strip():
+        # ⛔⭐ NAME WHAT THE ORACLE SAID, NEVER A THEORY ABOUT IT (hq_S 2026-09-12, R-604). This reason used to
+        # end at "a vacuous ref is worse than none", which is true and tells the next reader nothing about WHY
+        # the oracle printed nothing -- so the reader supplies a cause, and a cause supplied once is then
+        # generalized over every program the guard caught. It was: 13 raku fixtures carried one hand-written
+        # explanation ("defines `sub main()` and never calls it") that was true of four of them, while five
+        # were compile- or run-time REFUSALS whose cause rakudo printed on stderr on every run. One extra
+        # sub-second oracle invocation on an exclusion path buys the measurement instead.
+        _diag = h.oracle_diagnostic(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
+        return ("exclude", "oracle produced EMPTY output at rc=%s -- a vacuous ref is worse than none (same "
+                                   "guard as cmd_capture_oracle_refs). THE ORACLE'S OWN FIRST DIAGNOSTIC: %s"
+                                   % (ora_rc, _diag or "(none on stderr)"))
+
+    # ⛔⭐ SCRIP IS NO TEST OF MEMBERSHIP (CIO-37, the cio 2026-11-10 on the coo's design point; Lon 2026-11-10 07:5x: "let's not assume exclusions
+    # are even correct."): a candidate is left out only for what its ORACLE does -- it refuses, crashes, hangs, prints nothing, or answers
+    # differently on two runs. This recipe ran scrip m3 and m4 beside the oracle and excluded on their verdict (a SCRIP hang, and before 2026-09-12
+    # any divergence: "non-deterministic or diverges from the oracle -- m3=FAIL"), which left out 39 programs SCRIP fails while SnoRungs read
+    # 2210 of 2210. Now the oracle runs twice and nothing else: two identical answers are the ref and the entry enters at its true colour, red
+    # if SCRIP is red. A committed .ref that disagrees with both fresh runs is stale (the 21 "committed .ref disagrees" lines): the fresh answer
+    # is the ref, named on stderr, never the stale one copied.
+    ora_text2, ora_rc2, ora_kind2 = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
+    # ⭐ THE TWO RUNS ARE COMPARED AS THE GRADER COMPARES THEM, through the master's ALL.mask (the coo 2026-11-10, measured at load 20 on 16 cores:
+    # three snobol4 programs that end in a SPITBOL fatal printed "execution time msec 0" on one run and 1 on the next and read NON-DETERMINISTIC,
+    # while their answer, stdout byte for byte under the mask, was the same; at a quiet moment both runs were identical). The mask rows are the
+    # declared implementation-defined lines (R-409); only a difference they do not cover is the oracle answering differently.
+    _mk = h.masks_for(_ADDITIVE_MASKS, name)
+    _same_text = ora_text2 == ora_text or (bool(_mk) and h.apply_line_mask(ora_text2, _mk, side="oracle")[0] == h.apply_line_mask(ora_text, _mk, side="oracle")[0])
+    if not (ora_kind2 == "RAN" and _same_text and ora_rc2 == ora_rc):
+        return ("exclude", "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program disagree (rc %s then %s, %s)"
+                                   % (ora_rc, ora_rc2, "same output" if ora_text2 == ora_text else "different output"))
+    return ("run", ora_text, ora_rc)
+
+
 def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     """-> ("ast", name, body_lines, ast_text) | ("run", name, body_lines, ref_text, stdin_text) | ("exclude", name, reason)
 
@@ -1210,53 +1317,112 @@ def _additive_classify_and_run(path, ext, oracle_bin, flags, paths, timeout):
     # program goes to its oracle like any other, and is admitted on two identical answers or named for what the oracle did.
 
     stdin_text, stdin_src = _additive_stdin_for(stem)
-    ora_text, ora_rc, ora_kind = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
-    if ora_kind == "HANG":
-        return ("exclude", name, "over budget (oracle exceeded %.1fs)" % timeout)
-    if ora_kind != "RAN":
-        return ("exclude", name, "oracle itself %s" % ora_kind)
-    if not ora_text.strip():
-        # ⛔⭐ NAME WHAT THE ORACLE SAID, NEVER A THEORY ABOUT IT (hq_S 2026-09-12, R-604). This reason used to
-        # end at "a vacuous ref is worse than none", which is true and tells the next reader nothing about WHY
-        # the oracle printed nothing -- so the reader supplies a cause, and a cause supplied once is then
-        # generalized over every program the guard caught. It was: 13 raku fixtures carried one hand-written
-        # explanation ("defines `sub main()` and never calls it") that was true of four of them, while five
-        # were compile- or run-time REFUSALS whose cause rakudo printed on stderr on every run. One extra
-        # sub-second oracle invocation on an exclusion path buys the measurement instead.
-        _diag = h.oracle_diagnostic(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
-        return ("exclude", name, "oracle produced EMPTY output at rc=%s -- a vacuous ref is worse than none (same "
-                                   "guard as cmd_capture_oracle_refs). THE ORACLE'S OWN FIRST DIAGNOSTIC: %s"
-                                   % (ora_rc, _diag or "(none on stderr)"))
-
+    _cut = _oracle_cut_twice(path, oracle_bin, flags, timeout, stdin_text, name)
+    if _cut[0] == "exclude":
+        return ("exclude", name, _cut[1])
+    ora_text, ora_rc = _cut[1], _cut[2]
     # ⛔ .expected AND .std COUNT AS A COMMITTED REF, NOT JUST .ref (hq_S 2026-09-12): util_unabsorbed_census.py
     # has always called any of the three a "loose pair" (_REF_EXTS), and corpus/tests/scrip_test/raku/ ships
     # .expected exclusively. Looking only for .ref here sent every one of those down the mint-a-fresh-ref path,
     # ignoring a committed ref that was sitting beside the source -- the two instruments disagreeing about what
     # a ref IS, which is the quieter half of why that tree never absorbed.
     existing_ref = next((stem + x for x in (".ref", ".expected", ".std") if os.path.isfile(stem + x)), stem + ".ref")
-    # ⛔⭐ SCRIP IS NO TEST OF MEMBERSHIP (CIO-37, the cio 2026-11-10 on the coo's design point; Lon 2026-11-10 07:5x: "let's not assume exclusions
-    # are even correct."): a candidate is left out only for what its ORACLE does -- it refuses, crashes, hangs, prints nothing, or answers
-    # differently on two runs. This recipe ran scrip m3 and m4 beside the oracle and excluded on their verdict (a SCRIP hang, and before 2026-09-12
-    # any divergence: "non-deterministic or diverges from the oracle -- m3=FAIL"), which left out 39 programs SCRIP fails while SnoRungs read
-    # 2210 of 2210. Now the oracle runs twice and nothing else: two identical answers are the ref and the entry enters at its true colour, red
-    # if SCRIP is red. A committed .ref that disagrees with both fresh runs is stale (the 21 "committed .ref disagrees" lines): the fresh answer
-    # is the ref, named on stderr, never the stale one copied.
-    ora_text2, ora_rc2, ora_kind2 = h.run_oracle(oracle_bin, flags, _P(path), timeout, stdin_text=stdin_text)
-    # ⭐ THE TWO RUNS ARE COMPARED AS THE GRADER COMPARES THEM, through the master's ALL.mask (the coo 2026-11-10, measured at load 20 on 16 cores:
-    # three snobol4 programs that end in a SPITBOL fatal printed "execution time msec 0" on one run and 1 on the next and read NON-DETERMINISTIC,
-    # while their answer, stdout byte for byte under the mask, was the same; at a quiet moment both runs were identical). The mask rows are the
-    # declared implementation-defined lines (R-409); only a difference they do not cover is the oracle answering differently.
-    _mk = h.masks_for(_ADDITIVE_MASKS, name)
-    _same_text = ora_text2 == ora_text or (bool(_mk) and h.apply_line_mask(ora_text2, _mk, side="oracle")[0] == h.apply_line_mask(ora_text, _mk, side="oracle")[0])
-    if not (ora_kind2 == "RAN" and _same_text and ora_rc2 == ora_rc):
-        return ("exclude", name, "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program disagree (rc %s then %s, %s)"
-                                   % (ora_rc, ora_rc2, "same output" if ora_text2 == ora_text else "different output"))
     if os.path.isfile(existing_ref):
         committed = open(existing_ref, encoding="utf-8", errors="replace").read().rstrip("\n")
         if committed != ora_text:
             sys.stderr.write("  RE-CUT %s: the committed %s disagrees with two identical fresh oracle runs; the fresh answer is the ref\n"
                              % (name, os.path.basename(existing_ref)))
     return ("run", name, body_lines, ora_text, stdin_text, ora_rc)
+
+
+def _builder_oracle(paths, lang):
+    """The oracle this builder cuts with, -> (bin, flags). Every language but rebus resolves through corpus_suite_harness.resolve_oracle_bin, the
+    one authority over lib_oracle_flags.sh. ⛔ REBUS TAKES THE TRANSPILE ROAD (CIO-58; skill snobol4: "Rebus's oracle road is the same" as
+    Snocone's): snocone_oracle_run.sh runs scrip --transpile on the program and sbl -bf on the SNOBOL4 text, so the answer is SPITBOL's, never
+    SCRIP's run. resolve_oracle_bin keeps refusing rebus under R-607 for its other callers; this builder admits a rebus program only on that
+    road's answer, given twice, and a loose .ref beside it is never the answer."""
+    if lang != "rebus":
+        return h.resolve_oracle_bin(paths, lang)
+    lib = os.path.join(HERE, "lib_oracle_flags.sh")
+    r = subprocess.run(["bash", "-c", ". '%s' && sbl_correctness_bin" % lib], capture_output=True, text=True)
+    if r.returncode != 0:
+        h.refuse("lib_oracle_flags.sh refused (sbl_correctness_bin): %s" % r.stderr.strip())
+    wrapper = os.path.join(HERE, "snocone_oracle_run.sh")
+    if not os.path.isfile(wrapper):
+        h.refuse("snocone_oracle_run.sh missing at %s -- the transpile-then-SPITBOL driver rebus is cut through" % wrapper)
+    return wrapper, ""
+
+
+def _cut_pair_entries(entries, sno, mode, lang, ext, oracle_bin, flags, timeout):
+    """⛔⭐ A LOOSE PAIR ENTERS ON THE ORACLE'S ANSWER, NEVER ON ITS .ref (CIO-58; officer_05 11:1x CST, measured on a scratch copy of the rebus
+    folder at corpus dada35095: with KEEP.md gone this road ADMITTED binary_trees and word_count from their loose .ref, while the rebus oracle
+    road timed out on both, twice). Each entry's ref is replaced by the answer _oracle_cut_twice gives; -> None when every entry was cut, else
+    the omit reason (the first entry the oracle would not answer, by name). A plain pair is cut in place, in its own directory, so its
+    companions resolve as the grader resolves them; a banner-block suite is cut one block at a time through a dot-file beside the source,
+    removed after. ⛔ A SNOBOL4 LINE SUITE is not cut: its entries are lines, not programs, and none of them runs alone."""
+    if lang == "snobol4" and mode != "plain" and any(e.kind == "line" for e in entries):
+        return ("a loose SNOBOL4 line suite of %d entries -- this road cuts a program's answer from the oracle, and a line is not a program; "
+                "split it into programs" % len(entries))
+    for e in entries:
+        if mode == "plain":
+            _cut = _oracle_cut_twice(sno, oracle_bin, flags, timeout, e.stdin, e.name)
+        else:
+            fd, tmp = tempfile.mkstemp(prefix=".oracle_cut_", suffix=ext, dir=os.path.dirname(sno))
+            try:
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    fh.write("\n".join(e.sno_lines) + "\n")
+                _cut = _oracle_cut_twice(tmp, oracle_bin, flags, timeout, e.stdin, e.name)
+            finally:
+                os.remove(tmp)
+        if _cut[0] == "exclude":
+            return "entry %s: %s" % (e.name, _cut[1])
+        _ref = e.ref if isinstance(e.ref, list) else str(e.ref).split("\n")
+        if _ref != _cut[1].splitlines():
+            sys.stderr.write("  RE-CUT %s: the loose .ref is not the oracle's answer; the answer given twice is the ref\n" % e.name)
+        e.ref = _cut[1].splitlines()
+    return None
+
+
+def _no_source_keys(keys, lang, corpus_root):
+    """⛔ AN OMIT LINE THAT NAMES NO SOURCE IS RETRACTED (CIO-58; officer_05 measured 51 such lines in the rebus ALL.omit at corpus dada35095).
+    -> the keys of `keys` that name no file under corpus_root. A key names a file when, with a trailing [category] of the additive road taken
+    off, it is a corpus-relative path that exists, the stem of a program of this language's extension anywhere in the corpus, a pair-road
+    family (its path under tests/<lang>/ with the separators turned to _), or a directory under tests/<lang>/ in the same spelling. The file
+    list is git's (tracked, minus deleted) plus what stands on disk under tests/<lang>/, so a sparse worktree that leaves demos/ out of its cone
+    retracts nothing it could not see; a corpus that is not a git tree is walked."""
+    ext = LANG_EXT[lang]
+    pre = "tests/%s/" % lang
+    files = set()
+    _ls = subprocess.run(["git", "-C", corpus_root, "ls-files"], capture_output=True, text=True)
+    if _ls.returncode == 0:
+        _del = subprocess.run(["git", "-C", corpus_root, "ls-files", "--deleted"], capture_output=True, text=True).stdout.split("\n")
+        files = set(f for f in _ls.stdout.split("\n") if f) - set(_del)
+        _walk = os.path.join(corpus_root, "tests", lang)
+    else:
+        _walk = corpus_root
+    for dp, _dn, fns in os.walk(_walk):
+        for fn in fns:
+            files.add(os.path.relpath(os.path.join(dp, fn), corpus_root).replace(os.sep, "/"))
+    named = set()
+    for f in files:
+        if f.startswith(pre):
+            parts = f[len(pre):].split("/")
+            for i in range(1, len(parts)):
+                named.add("_".join(parts[:i]))
+            if f.endswith(ext):
+                named.add(f[len(pre):-len(ext)].replace("/", "_"))
+        if f.endswith(ext):
+            named.add(os.path.basename(f)[:-len(ext)])
+    out = []
+    for k in keys:
+        b = re.sub(r"\[[^\]]*\]$", "", k)
+        if not ((b in files) if "/" in b else (b in named)):
+            out.append(k)
+    return sorted(out)
+
+
+def _print_no_source(gone):
+    sys.stderr.write("RETRACTED-NO-SOURCE %d%s\n" % (len(gone), (": " + ", ".join(gone)) if gone else ""))
 
 
 def _additive_next_name(base, taken):
@@ -1314,7 +1480,7 @@ def _excl_guard(path, existing):
     raise SystemExit(2)
 
 
-def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=False, retract=()):
+def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=False, retract=(), no_source=None):
     """Merge {key: value} into a TAB-separated sidecar (ALL.omit), keyed on column 1 --
     new/changed keys win, everything else already on disk survives. Never a blind overwrite: a second
     --additive run (a different --lang, a different --from) must not erase the first run's lines.
@@ -1351,6 +1517,11 @@ def _additive_write_sidecar_merge(path, new_lines, digest=False, fresh_wins=Fals
         _excl_guard(path, existing)
     for k in retract:                    # ⛔ in the graded denominator: it cannot also be named as excluded from it
         existing.pop(k, None)
+    if no_source:                        # ⛔ CIO-58: (lang, corpus_root): a line this run did not emit that names no file is retracted
+        _gone = _no_source_keys([k for k in existing if k not in new_lines], no_source[0], no_source[1])
+        for k in _gone:
+            existing.pop(k, None)
+        _print_no_source(_gone)
     for k, v in new_lines.items():
         if fresh_wins or k not in existing:   # ⛔ never overwrite a hand-written line; a GENERATED
             existing[k] = v                   #    reason is replaced by this run's measurement (ALL.omit)
@@ -1375,7 +1546,8 @@ def _additive_write_excluded(outdir, absorbed, excluded_rows):
     absorbed_keys = {("%s[%s]" % (row[0], row[1])) for row in absorbed}
     fresh = {("%s[%s]" % (n, c)): r for n, c, r in excluded_rows if ("%s[%s]" % (n, c)) not in absorbed_keys}
     _additive_write_sidecar_merge(os.path.join(outdir, "ALL.omit"), fresh,
-                                   digest=True, fresh_wins=True, retract=absorbed_keys)
+                                   digest=True, fresh_wins=True, retract=absorbed_keys,
+                                   no_source=(os.path.basename(os.path.normpath(outdir)), os.path.dirname(os.path.dirname(os.path.normpath(outdir)))))
 
 
 def additive_absorb(lang, categories, root, timeout, write, cols):
@@ -1479,7 +1651,8 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
     rungs_csv = os.path.join(OUTDIR, "ALL.csv")
     cmd_cols = carried_cmd_cols(rungs_csv)
     base_entries, csv_row_by_name = [], {}
-    if os.path.isfile(rungs_sno) and os.path.isfile(rungs_ref):
+    _f2 = fmt2_master(OUTDIR, EXT)
+    if master_present(OUTDIR, EXT):
         if lang == "snobol4":
             base_entries = h.read_suite(rungs_sno, rungs_ref, in_path=h.sidecar_in_path(rungs_sno), x_path=h.sidecar_xfail_path(rungs_sno))
         else:
@@ -1534,7 +1707,9 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
         # so ALL.in never carries what the entry was actually verified against. MEASURED: 4 of this row's
         # first 10 absorbed demos (json/porter/treebank/wordcount, every stdin-needing one) passed at
         # absorption and failed the very next full-suite grading, fed /dev/null instead of their recipe.
-        if lang == "snobol4":
+        if _f2:
+            reread = list(all_entries)   # format 2: fmt2_install below writes and reads the master back, entry by entry
+        elif lang == "snobol4":
             wrote_in = h.write_suite(all_entries, tmp_sno, tmp_ref, out_in=tmp_in)
             reread = h.read_suite(tmp_sno, tmp_ref, in_path=(tmp_in if wrote_in else None))
         else:
@@ -1577,13 +1752,16 @@ def additive_absorb(lang, categories, root, timeout, write, cols):
             if os.path.exists(q):
                 os.remove(q)
         raise
-    os.replace(tmp_sno, rungs_sno)
-    os.replace(tmp_ref, rungs_ref)
-    if wrote_in:
-        os.replace(tmp_in, rungs_in)
-    elif os.path.exists(rungs_in):
-        os.remove(rungs_in)
-    os.replace(tmp_csv, rungs_csv)
+    if _f2:
+        fmt2_install(OUTDIR, EXT, all_entries, tmp_csv)
+    else:
+        os.replace(tmp_sno, rungs_sno)
+        os.replace(tmp_ref, rungs_ref)
+        if wrote_in:
+            os.replace(tmp_in, rungs_in)
+        elif os.path.exists(rungs_in):
+            os.remove(rungs_in)
+        os.replace(tmp_csv, rungs_csv)
     _wr = [(e.name, e.want_rc) for e in new_entries if getattr(e, "want_rc", 0)]
     if _wr:   # CIO-46 C: the oracle's exit status of a new entry, merged by name into the master's ALL.rc (created with the harness's header when absent)
         _wp = os.path.join(os.path.dirname(rungs_sno), "ALL.rc")
@@ -1715,13 +1893,12 @@ def main():
     if not os.path.isdir(ROOT):
         sys.stderr.write("REFUSED: no corpus tree at %s -- nothing to build from.\n" % ROOT)
         raise SystemExit(2)
-    global COLS, NAME_FEATURES
+    global COLS, NAME_FEATURES, _ADDITIVE_MASKS
     COLS, NAME_FEATURES = LANG_TABLES[lang]
     os.makedirs(OUTDIR, exist_ok=True)
     if args.split_write and h.fmt2_dir_of(os.path.join(OUTDIR, "ALL" + EXT)) is not None:
         sys.stderr.write("REFUSED: --split-write writes ONE.*/MULTI.* by kind, which is not format 2 (CIO-25); %s is format 2\n" % OUTDIR)
         raise SystemExit(2)
-    h.fmt2_edit_in_old_format(OUTDIR, EXT, "util_build_rungs_suite.py")
     delete_absorbed = args.delete_absorbed
     # ⛔ SURGICAL AND NAMED, never a blanket --force. A deliberate retirement is spelled out origin by
     # origin so it lands in the shell history and the commit that performs it, which is the floor doctrine's
@@ -1858,7 +2035,7 @@ def main():
     _csv_cmd = {}     # per-entry compile_args and run_args, carried forward on the same contract (clause 8 (f), R-1281)
     _csv_heap = {}    # per-entry `heap_kb` carried forward, same contract and for the sharper reason: see
                       # the carried-forward note above -- a dropped declaration is a silent capacity red
-    if os.path.isfile(rungs_sno_path) and os.path.isfile(os.path.join(OUTDIR, "ALL.ref")):
+    if master_present(OUTDIR, EXT):
         if lang == "snobol4":
             base_entries = h.read_suite(rungs_sno_path, os.path.join(OUTDIR, "ALL.ref"),
                                         in_path=h.sidecar_in_path(rungs_sno_path), x_path=h.sidecar_xfail_path(rungs_sno_path))
@@ -1912,6 +2089,15 @@ def main():
     # base is the SAME entry rebuilt (its source should have been deleted after absorption): skip it LOUDLY, never
     # append a twin. Origin is the ready-made key -- unique per source entry by construction.
     base_origins = {e.origin for e in base_entries}
+    # ⛔⭐ THE PAIR ROAD CUTS FROM THE ORACLE (CIO-58): resolved once here, used for every family that would enter the master below. The masks
+    # are the master's own, as on the additive road; a scratch tree (S4E_HOME) is its own corpus.
+    _paths = h.resolve_paths()
+    if str(_paths["corpus"]) != os.path.join(S4E, "corpus"):
+        _paths = dict(_paths)
+        _paths["corpus"] = pathlib.Path(S4E) / "corpus"
+    _ora_bin, _ora_flags = _builder_oracle(_paths, lang)
+    _ADDITIVE_MASKS = h.read_mask_sidecar(os.path.join(OUTDIR, "ALL.ref"))
+    _cut_refs = {}   # origin -> the ref the oracle gave this run, which the BYTE-EQUAL check below compares against
     for fam, sno, ref, dir_companions in pairs:
         entries = None
         mode = "suite"
@@ -2042,6 +2228,12 @@ def main():
                 # doesn't build.
                 excluded.append((fam, "PARTIAL origin overlap (%d of %d origins already in the rungs) -- mixed new/existing family, left untouched; needs per-entry handling, not this pass's shape" % (len(_dup), len(entries))))
             continue
+        _why = _cut_pair_entries(entries, sno, mode, lang, EXT, _ora_bin, _ora_flags, args.recipe_timeout)
+        if _why:
+            excluded.append((fam, _why))
+            continue
+        for e in entries:
+            _cut_refs[e.origin] = e.ref
         per_family[fam] = len(entries)
         all_entries.extend(entries)
         absorbed_files.append((fam, sno, ref, mode))
@@ -2197,11 +2389,12 @@ def main():
                 # arb_capture_alt_replace_branch_1: WITH stdin rc=0 and 9 bytes "cat/house"; WITHOUT stdin
                 # rc=0 and ZERO bytes. IDENTICAL EXIT CODE. A stdin-starved program exits perfectly cleanly
                 # and simply produces nothing, so only comparing the FIELD detects it.
+                # ⛔ A REF CUT FROM THE ORACLE THIS RUN (CIO-58) IS WHAT THE ENTRY MUST CARRY; the loose .ref it superseded is not the answer.
                 e = by_origin.get(_origin_key(fam, os.path.basename(sno)[:-len(EXT)]))
                 _src_in = h.sidecar_in_path(sno)
                 _want_stdin = open(_src_in).read() if (_src_in and os.path.isfile(str(_src_in))) else None
                 ok = e is not None and e.sno_lines == open(sno).read().splitlines() and \
-                    (e.ref if isinstance(e.ref, list) else str(e.ref).split("\n")) == open(ref).read().splitlines() and \
+                    (e.ref if isinstance(e.ref, list) else str(e.ref).split("\n")) == _cut_refs.get(e.origin, open(ref).read().splitlines()) and \
                     (e.stdin or None) == (_want_stdin or None)
             else:
                 if lang == "snobol4":
@@ -2243,7 +2436,7 @@ def main():
                             ok = False
                             break
                     else:
-                        if e.sno_lines != se.sno_lines or e.ref != se.ref or bool(e.xfail) != bool(se.xfail):
+                        if e.sno_lines != se.sno_lines or e.ref != _cut_refs.get(e.origin, se.ref) or bool(e.xfail) != bool(se.xfail):
                             ok = False
                             break
         except Exception:
@@ -2297,8 +2490,12 @@ def main():
             if os.path.exists(p):
                 os.remove(p)
 
+    _f2 = fmt2_master(OUTDIR, EXT)
     try:
-        if lang == "snobol4":
+        if _f2:
+            wrote_in = wrote_x = False
+            reread = list(all_entries)   # format 2: fmt2_install below writes and reads the master back, entry by entry
+        elif lang == "snobol4":
             h.write_suite(all_entries, tmp_sno, tmp_ref)
             wrote_in = h.write_stdin_sidecar(all_entries, tmp_in, "*", "")
             if not wrote_in and os.path.exists(tmp_in):
@@ -2389,6 +2586,11 @@ def main():
         _retracted = sorted(k for k in _excl_existing if k in _absorbed_fams and k not in _live_excl)
         for _k in _retracted:
             del _excl_existing[_k]
+        # ⛔ CIO-58: a line this run did not emit and whose key names no file under the corpus is retracted, the count printed.
+        _gone = _no_source_keys([k for k in _excl_existing if k not in _live_excl], lang, os.path.join(S4E, "corpus"))
+        for _k in _gone:
+            del _excl_existing[_k]
+        _print_no_source(_gone)
         if _retracted:
             sys.stderr.write("⭐ EXCLUSION RETRACTED for %d absorbed famil(y/ies) -- now in the graded denominator, "
                              "so they cannot also be named as excluded from it: %s\n" % (len(_retracted), ", ".join(_retracted)))
@@ -2418,16 +2620,17 @@ def main():
     # it is a built artifact two seats cannot merge, so an INSPECTION-SHAPED invocation that rewrites all four
     # files can leave an uncommitted, unmeasured rungs under any seat that ran it to ask a question.
     _committed = []
-    os.replace(tmp_sno, out_sno); _committed.append(out_sno)
-    os.replace(tmp_ref, out_ref); _committed.append(out_ref)
-    if wrote_in:
-        os.replace(tmp_in, out_in); _committed.append(out_in)
-    elif os.path.exists(out_in):
-        os.remove(out_in); _committed.append(out_in + " (removed)")
-    if wrote_x:
-        os.replace(tmp_x, out_x); _committed.append(out_x)
-    elif os.path.exists(out_x):
-        os.remove(out_x); _committed.append(out_x + " (removed)")
+    if not _f2:
+        os.replace(tmp_sno, out_sno); _committed.append(out_sno)
+        os.replace(tmp_ref, out_ref); _committed.append(out_ref)
+        if wrote_in:
+            os.replace(tmp_in, out_in); _committed.append(out_in)
+        elif os.path.exists(out_in):
+            os.remove(out_in); _committed.append(out_in + " (removed)")
+        if wrote_x:
+            os.replace(tmp_x, out_x); _committed.append(out_x)
+        elif os.path.exists(out_x):
+            os.remove(out_x); _committed.append(out_x + " (removed)")
     os.replace(tmp_csv, out_csv); _committed.append(out_csv)
     os.replace(tmp_excl, out_excl); _committed.append(out_excl)
     # ⭐⭐ COMPANIONS GO IN config/, NOT THE FLAT DIR (hq_P 2026-08-30 routed the cure to the finder).
@@ -2444,6 +2647,9 @@ def main():
         _stale = os.path.join(OUTDIR, cf)
         if os.path.isfile(_stale) and os.path.abspath(_stale) != os.path.abspath(srcf):
             os.remove(_stale)
+    if _f2:   # CIO-64: the master in format 2 is written last, so a companion copied above is fenced into its entry's section (CIO-55)
+        fmt2_install(OUTDIR, EXT, all_entries)
+        _committed += [os.path.join(OUTDIR, n) for n in ("ONE" + EXT, "ONE.out", "MULTI.md") if os.path.isfile(os.path.join(OUTDIR, n))]
     # ⛔⭐⭐ AND THEN THE CLOSURE THE ENTRIES THEMSELVES NAME, WHICH THE LOOP ABOVE STRUCTURALLY CANNOT SEE
     # (hq_T 2026-09-05; FINDING-2026-09-05-hq_T-companions-live-outside-the-master-directory-so-26-of-31-entries-
     # cannot-resolve-them.md, the officer routed the instrument half here). The copy above rides along with an ABSORPTION:
