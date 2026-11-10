@@ -5,8 +5,6 @@
 #                                         ask-<the tier above the asker> at priority 100, and the asking row <topic> is parked BLOCKED-ON:q-...
 #   s4e_msg.sh answer <q-topic> --stdin   the answering seat takes the question, claims it, writes its ANSWER: line and runs done; done
 #                                         unblocks the asker (its job is kicked, a telegram goes to its owner: fleet-queue step 6 and box-scheduler 35)
-#   s4e_msg.sh ask --probe-queue          step 8's probe. It starts its OWN beanstalkd on a private port and a scratch postoffice, and kills
-#                                         the daemon it spawned when it ends: the live queue and the live postoffice are never written.
 # Printed lines: "ASK q=<q-topic> tube=<ask-tube> pri=100 job=<id> blocked=<asker>"; the probe prints the line the step table reads.
 # Env, set by s4e_msg.sh: S4E_POST (the postoffice), S4E_SEAT (this seat), S4E_HOME (the root). S4E_TIERS names the tier table.
 set -uo pipefail
@@ -17,7 +15,6 @@ PO="${S4E_POST:-/home/resources/postoffice}"
 ME="${S4E_SEAT:-}"
 TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
 BUS="$HERE/s4e_msg.sh"
-UQ="$HERE/util_queue.py"
 VERB="${1:-}"; shift || true
 
 refuse() { echo "REFUSE(2) [$VERB]: $*" >&2; exit 2; }
@@ -56,9 +53,7 @@ ask_queue() {   # <asker-topic> <question text>
     n=1; while [ -e "$PO/tasks/q-$topic-$n.task.md" ] || [ -n "$(queue_row_of "q-$topic-$n")" ]; do n=$((n+1)); done
     qt="q-$topic-$n"; base="$PO/tasks/$qt.task.md"
     # the job first: a refused put leaves no row and no baton behind
-    local fr=0; python3 "$UQ" status >/dev/null 2>&1; [ "$?" = 2 ] && fr=1   # bus-one-queue step 4: the file road (beanstalkd unreachable, status exits 2): the column is the tube, no job is put
-    if [ "$fr" = 1 ]; then j=""; else j="$(python3 "$UQ" put "$tube" "$qt" --pri 100 --ttr 7200 2>/dev/null)" || j=""; fi
-    [ -n "$j" ] || [ "$fr" = 1 ] || refuse "the put into $tube failed (python3 harness/scripts/util_queue.py status tells why); nothing was written"
+    local fr=1; j=""   # the file road, the only road (bus-one-queue, CIO-82): the question row's column is its tube, no job is put
     {
         printf '# TASK %s\n' "$qt"
         printf 'GOAL: question from %s for %s: %s\n' "$ME" "$topic" "$(printf '%s' "$body" | head -1 | cut -c1-200)"
@@ -70,7 +65,7 @@ ask_queue() {   # <asker-topic> <question text>
         printf '%s\n' "$body" | sed 's/^/> /'
         printf '## LEDGER\n- [%s %s] asked: %s in %s at pri 100; %s parked BLOCKED-ON:%s\n' "$ME" "$(date -u +%FT%TZ)" "${j:+job $j}${j:-the question row}" "$tube" "$topic" "$qt"
     } > "$base" || refuse "could not write the question baton $base"
-    if [ "$fr" = 1 ]; then _qs="QUEUED:$tube"; else _qs="ASKED:$tube"; fi
+    _qs="QUEUED:$tube"
     printf '%s\t%s\t%s\t%s\n' 2 "$qt" "$ME" "$_qs" >> "$PO/QUEUE.tsv" || refuse "could not add $qt to QUEUE.tsv"
     if ! bus_as_holder park "$topic" "BLOCKED-ON:$qt" >/dev/null 2>&1; then   # a child of the ask verb that holds the identity (the one-process guard refused the plain bus)
         echo "ASK PARTIAL: q=$qt job=$j is queued in $tube, but $topic was NOT parked: run s4e_msg.sh park $topic BLOCKED-ON:$qt" >&2; exit 1; fi
@@ -104,60 +99,8 @@ answer_q() {   # <q-topic> <answer text>
     [ "$rc" = 0 ] && s4e_wake_hint "seat-$(sed -n 's/^ASKED-BY: *//p' "$base" | head -1)" "$q" answer   # the asker is parked BLOCKED-ON this question: the answer wakes it
     return "$rc"; }
 
-ask_probe() {
-    [ -n "$ME" ] || { echo "REFUSE(2) [ask --probe-queue]: S4E_SEAT unset"; exit 2; }
-    local w port bpid why="" A jA out q tube j stt st o2 brc kicked stj n0 n1 blocked telegram ready=0 i arc
-    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_ask.XXXXXX")" || { echo "REFUSE(2) [ask --probe-queue]: mktemp failed"; exit 2; }
-    port=$((21000 + ($$ % 20000)))
-    beanstalkd -l 127.0.0.1 -p "$port" >/dev/null 2>&1 & bpid=$!
-    trap 'kill "$bpid" 2>/dev/null; wait "$bpid" 2>/dev/null; rm -rf "$w"' EXIT
-    # status exits 1 on a daemon with no binlog (the scratch one): readiness is the status LINE, not its exit code
-    for i in $(seq 1 50); do
-        sl="$(S4E_QUEUE_PORT="$port" python3 "$UQ" status 2>/dev/null)"
-        case "$sl" in "QUEUE daemon=beanstalkd"*) ready=1; break;; esac; sleep 0.1; done
-    [ "$ready" = 1 ] || { echo "REFUSE(2) [ask --probe-queue]: a scratch beanstalkd would not start on port $port"; exit 2; }
-    export S4E_QUEUE_PORT="$port"
-    # ⛔ THE PROBE ASKS AS A PLANTED HAIKU SEAT (the cio's cut, 2026-11-07, fleet-queue step 8): the live seat's own tier is not the probe's subject, so the step reads
-    # the same from every root. Its tiers table is scratch: probe-haiku is tier 4, so the tube above it is ask-sonnet, computed from that table, not assumed.
-    ME="probe-haiku"
-    printf 'seat\tname\troot\tmodel\teffort\tcolor\ttier\trole\nprobe-haiku\tPROBE\t/x\tclaude-haiku-5-5\txhigh\tcyan\t4\tprobe\n' > "$w/TIERS.tsv"
-    export S4E_TIERS="$w/TIERS.tsv"
-    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [ask --probe-queue]: cannot make the scratch postoffice"; exit 2; }
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; grep -E '^(ROSTER|LANES|ORDER-OF-WORK|BOSSES|ON-CALL):' "$PO/MODE" 2>/dev/null; } > "$w/MODE"
-    sed -i 's/^ROSTER: /ROSTER: probe-haiku /' "$w/MODE"   # the planted seat is a standing seat of the scratch roster, so its restored state is ASSIGNED, as a live seat's is
-    A="ask-probe-asker-$$"
-    jA="$(python3 "$UQ" put "seat-$ME" "$A" --pri 1000 --ttr 3600 2>/dev/null)" || jA=""
-    [ -n "$jA" ] || { echo "REFUSE(2) [ask --probe-queue]: no job could be put on the scratch daemon"; exit 2; }
-    printf '2\t%s\t%s\tASSIGNED:%s\n' "$A" "$ME" "$ME" > "$w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant\nQUEUE-JOB: %s tube=seat-%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$A" "$jA" "$ME" > "$w/tasks/$A.task.md"
-    printf '%s\nRUNNING\n' "$ME" > "$w/claims/$A.claim"
-    n0="$(ls "$w/$ME/inbox" | wc -l)"
-    pe() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 "$@"; }
-    out="$(pe bash "$HERE/s4e_ask.sh" ask "$A" --stdin <<< 'probe question: is the queue answered?' 2>&1)"; arc=$?
-    q="$(printf '%s' "$out" | sed -n 's/^ASK q=\([^ ]*\) .*/\1/p')"
-    tube="$(printf '%s' "$out" | sed -n 's/^ASK q=[^ ]* tube=\([^ ]*\) .*/\1/p')"
-    j="$(printf '%s' "$out" | sed -n 's/.* job=\([0-9][0-9]*\) .*/\1/p')"
-    [ "$arc" = 0 ] && [ -n "$q" ] || why="$why ask rc $arc [$(printf '%s' "$out" | tail -1 | cut -c1-120)];"
-    stt=""; [ -n "$j" ] && stt="$(python3 "$UQ" stats-job "$j" 2>/dev/null)"
-    [ "$(printf '%s' "$stt" | cut -f2)" = "$tube" ] && [ "$(printf '%s' "$stt" | cut -f4)" = 100 ] || why="$why the question job is not in ${tube:-?} at pri 100 [$stt];"
-    st="$(awk -F'\t' -v t="$A" '$2==t {print $4; exit}' "$w/QUEUE.tsv")"
-    blocked=0; [ -n "$q" ] && [ "$st" = "BLOCKED-ON:$q" ] && blocked=1
-    [ "$blocked" = 1 ] || why="$why the asker is [$st], not BLOCKED-ON:${q:-?};"
-    o2="$(pe bash "$HERE/s4e_ask.sh" answer "${q:-none}" --stdin <<< 'probe answer' 2>&1)"; brc=$?
-    [ "$brc" = 0 ] || why="$why answer rc $brc [$(printf '%s' "$o2" | tail -1 | cut -c1-120)];"
-    stj="$(python3 "$UQ" stats-job "$jA" 2>/dev/null | cut -f3)"
-    kicked=0; [ "$stj" = ready ] && printf '%s' "$o2" | grep -q "kicked_by=done job=$jA" && kicked=1
-    [ "$kicked" = 1 ] || why="$why the answer did not kick the asker's job (its state is [$stj]);"
-    st="$(awk -F'\t' -v t="$A" '$2==t {print $4; exit}' "$w/QUEUE.tsv")"
-    [ "$st" = "ASSIGNED:$ME" ] || why="$why the asker is [$st] after the answer, not ASSIGNED:$ME;"
-    n1="$(ls "$w/$ME/inbox" | wc -l)"; telegram=0; [ "$n1" -gt "$n0" ] && telegram=1
-    [ "$telegram" = 1 ] || why="$why no telegram reached the asker;"
-    if [ -z "$why" ]; then echo "ASK tube=$tube pri=100 blocked=$blocked answered_by=any kicked=$kicked telegram=$telegram"; exit 0; fi
-    echo "ASK PROBE RED:$why"; printf '%s\n' "$out" | tail -3 | sed 's/^/  | /'; printf '%s\n' "$o2" | tail -3 | sed 's/^/  | /'; exit 1; }
-
 case "$VERB" in
     ask)
-        if [ "${1:-}" = --probe-queue ]; then ask_probe; exit $?; fi
         topic="${1:-}"; shift || true
         if [ "${1:-}" = --stdin ]; then body="$(cat)"; else body="$*"; fi
         ask_queue "$topic" "$body"; exit $? ;;
@@ -165,5 +108,5 @@ case "$VERB" in
         q="${1:-}"; shift || true
         if [ "${1:-}" = --stdin ]; then body="$(cat)"; else body="$*"; fi
         answer_q "$q" "$body"; exit $? ;;
-    *) echo "usage: s4e_ask.sh ask <topic> --stdin | answer <q-topic> --stdin | ask --probe-queue" >&2; exit 2 ;;
+    *) echo "usage: s4e_ask.sh ask <topic> --stdin | answer <q-topic> --stdin" >&2; exit 2 ;;
 esac

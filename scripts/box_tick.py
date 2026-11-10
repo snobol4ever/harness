@@ -3,7 +3,7 @@
 # "gain control of the CPU problem" / "queue and limit as necessary. use modern industry proven tools"). It replaces box_tick.sh, a shell
 # script that forked about 9,000 processes a tick (7 CPU-s quiet, 18 under load, MEASURED 2026-11-07 11:4x). THE LAW: one signal, PSI
 # (/proc/pressure/cpu, the kernel's own pressure accounting); one decision a tick for two knobs, the grader width W and the workers awake A;
-# the controller alone writes them (W to systemd, the s4e-grade-worker@N instances; A to MODE's WORKERS-AWAKE line and the controller-owned
+# the controller alone writes them (W to box.width, read by the cycle, the one grader since CIO-82; A to MODE's WORKERS-AWAKE line and the controller-owned
 # FLEET: IDLE EXCEPT list the Stop gate enforces). No seat chooses. A hand-written FLEET line (no "(controller" marker) freezes A: Lon's hand
 # outranks the controller, and the controller says so on its TICK line.
 #   box_tick.py --tick           one tick: sense, decide, act, print one TICK line; under flock on $TICK_DIR/tick.lock; rc 0

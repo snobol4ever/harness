@@ -1040,7 +1040,7 @@ def proc_check():
         if pid in measuring:
             continue
         # the coo 2026-11-08 07:5x (Lon: "fix the two false reds in the census"): a process in a systemd unit's own .service cgroup is that unit's process,
-        # its parent the user manager BY DESIGN (the eight s4e-grade-worker@N.service main pids were named orphans of seat grader); a real orphan keeps its .scope
+        # its parent the user manager BY DESIGN (systemd units' main pids were once named orphans of seat grader); a real orphan keeps its .scope
         if ppid in mgr and int(et) >= 300 and not sc.endswith(".service") and (work.search(a) or sc in by_scope) and not keep.search(a) and not host.search(a):
             who = by_scope.get(sc) or ("grader" if "s4e-grader" in cg or "s4e-mem-" in cg else "batch" if "s4e-batch" in cg else "?")
             orphans.append((int(rss), pid, who, int(et), a))
@@ -1249,42 +1249,6 @@ def tc_ticks(path, since, until):
     return ticks, unread, idle
 
 
-def tc_journal(since, until):
-    """journalctl --user -u 's4e-grade-worker@*' --since @S --until @U -o short-iso: the grade workers' unit lines; None when journalctl cannot be read."""
-    try:
-        r = subprocess.run(["journalctl", "--user", "-u", "s4e-grade-worker@*", "--since", "@%d" % since, "--until", "@%d" % until, "-o", "short-iso", "--no-pager"],
-                           capture_output=True, text=True, timeout=120)
-    except (OSError, subprocess.TimeoutExpired):
-        return None
-    return r.stdout if r.returncode == 0 else None
-
-
-def tc_hand(text, ticks):
-    """H: the 'Stopped s4e-grade-worker@N' lines that no controller tick stopped (a tick whose stops list names N, stamped from 5 s before to 240 s after
-    the line: the tick writes its line after its systemctl stop) and no 'Scheduled restart job' of the same unit 10 s before (Restart=always)."""
-    import datetime
-    ev = []
-    for l in text.splitlines():
-        m = re.match(r"(\S+) \S+ systemd\[\d+\]: (?:(Stopped) s4e-grade-worker@(\d+)\.service|s4e-grade-worker@(\d+)\.service: (Scheduled restart job))", l)
-        if not m:
-            continue
-        try:
-            t = datetime.datetime.fromisoformat(m.group(1)).timestamp()
-        except ValueError:
-            continue
-        ev.append((t, "stop" if m.group(2) else "auto", int(m.group(3) or m.group(4))))
-    hand = 0
-    for t, kind, n in ev:
-        if kind != "stop":
-            continue
-        if any(k == "auto" and u == n and t - 10 <= a <= t for a, k, u in ev):
-            continue
-        if any(n in (j.get("stops") or []) and t - 5 <= j["t"] <= t + 240 for j in ticks):
-            continue
-        hand += 1
-    return hand
-
-
 def tc_perf(cmd, env, cwd, timeout_s=300):
     """perf stat -x, -e instructions:u -o F -- CMD: (instructions, rc) of one launch; (None, rc) when perf printed no count."""
     import tempfile
@@ -1315,7 +1279,7 @@ def tc_cell_instr(root, suite, cell):
     n = sum(1 for r in part[1:] if len(r) > 1 and r[1] == cell) if part and part[0][:2] == ["entry", "part"] else 0
     if n == 0:
         return None, kind, 0, "no %s rows in %s/PARTITION.tsv" % (cell, row[4])
-    env = dict(os.environ, S4E_HOME=root, S4E_PROGRESS_OFF="1", S4E_SEAT="grader", S4E_CLASS="grader")   # the cycle's identity (s4e_cycle.sh exports S4E_SEAT=grader S4E_CLASS=grader; was the grade worker's, s4e-grade-worker@.service, ENV in
+    env = dict(os.environ, S4E_HOME=root, S4E_PROGRESS_OFF="1", S4E_SEAT="grader", S4E_CLASS="grader")   # the cycle's identity (s4e_cycle.sh exports S4E_SEAT=grader S4E_CLASS=grader)
     # the cycle): the runners admit a board only to the coo's instrument (lib_one_runner.sh); S4E_PROGRESS_OFF=1 writes no reading (the cio's 07:1x measurement)
     if kind == "master":
         alls = [os.path.join(root, "corpus", "tests", lang, "ALL." + TC_EXT.get(lang, "-"))]   # s4e_cycle.sh's ext_of table
@@ -1350,7 +1314,7 @@ def tc_line(window, until, results, req_dir, lap_path, ticks_path, journal, base
     ticks, unread, idle = tc_ticks(ticks_path, since, until)                                 # TICK_DIR/ticks.log: one JSON line a tick
     covered = len(ticks) >= TC_TICK_COVER * window / 60.0
     M = idle if covered else None
-    H = tc_hand(journal, ticks) if covered and journal is not None else None                 # journalctl --user -u 's4e-grade-worker@*' Stopped lines no tick stopped
+    H = 0   # hand restarts of grade-worker units: none can exist since the units retired (CIO-82); the field stays for test_cycle step 8's probe, which reads hand_restarts=0
     v = lambda x, f="%d": "-" if x is None else (f % x)
     vals = [X, I, P, Q, M, H]
     line = ("TEST_CYCLE_ACCEPTANCE window_s=%d entries_per_hour=%d x_baseline=%s instr_per_entry=%s request_p50_min=%s request_p95_min=%s lap_done_by_0600=%d "
@@ -1374,8 +1338,7 @@ def test_cycle_acceptance(window):
             print("TEST_CYCLE_ACCEPTANCE_NOTE %s" % why)
     instr["cells"] = ",".join(notes)
     since = until - window
-    jf = arg("--journal", "")
-    journal = rd(jf) if jf else tc_journal(since, until)
+    journal = None   # the grade-worker units' journal retired with them (CIO-82)
     base = arg("--baseline-file", "")
     line, rc = tc_line(window, until, arg("--results", TC_RESULTS), arg("--req-done", TC_REQ_DONE), arg("--lap-file", TC_LAP), arg("--ticks", TC_TICKS),
                        journal, base, instr)
@@ -1423,29 +1386,19 @@ def test_cycle_acceptance_probe():
             t = until - W + 30 + 60 * k
             j = dict(ts=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t)), tick=k, grader_queue=5 if k in (3, 4, 50) else 0, want=8, running=7 if k in (3, 4, 50, 60) else 8, stops=[5] if k == 90 else [])
             f.write(json.dumps(j) + "\n")
-    t90 = until - W + 30 + 60 * 90
-    iso = lambda t: time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(t)) + "-06:00"
-    jr = ("%s socrates systemd[1738]: Stopping s4e-grade-worker@5.service - Fleet grade worker...\n"
-          "%s socrates systemd[1738]: Stopped s4e-grade-worker@5.service - Fleet grade worker, instance 5.\n"        # the controller's stop (tick 90 names 5)
-          "%s socrates systemd[1738]: Stopped s4e-grade-worker@3.service - Fleet grade worker, instance 3.\n"        # a hand
-          "%s socrates systemd[1738]: s4e-grade-worker@2.service: Scheduled restart job, restart counter is at 1.\n"
-          "%s socrates systemd[1738]: Stopped s4e-grade-worker@2.service - Fleet grade worker, instance 2.\n"        # Restart=always, not a hand
-          % (iso(t90 - 2), iso(t90 - 1), iso(t90 - 600), iso(t90 - 300), iso(t90 - 299)))
     instr = {"master": 1.0e9, "pkg": 4.0e9, "cells": "planted"}
     want = ("TEST_CYCLE_ACCEPTANCE window_s=7200 entries_per_hour=4 x_baseline=2.0 instr_per_entry=2125000000 request_p50_min=4 request_p95_min=40 lap_done_by_0600=1 "
-            "idle_with_ready_min=3 hand_restarts=1 readings=8 master_rows=5 pkg_rows=3 requests=4 ticks=120 ticks_unread=0 instr_cells=planted")
+            "idle_with_ready_min=3 hand_restarts=0 readings=8 master_rows=5 pkg_rows=3 requests=4 ticks=120 ticks_unread=0 instr_cells=planted")
     arms = []
-    got, rc = tc_line(W, until, res, rq, lapf, tk, jr, base, instr)
+    got, rc = tc_line(W, until, res, rq, lapf, tk, None, base, instr)
     arms.append(("the known ledgers read the known line", got == want and rc == 0, got))
-    got, rc = tc_line(W, until, res, rq, late, tk, jr, base, instr)
+    got, rc = tc_line(W, until, res, rq, late, tk, None, base, instr)
     arms.append(("a lap done a day after its 06:00 reads lap_done_by_0600=0", " lap_done_by_0600=0 " in got, got))
     short = os.path.join(d, "ticks_short.log")
     open(short, "w").write("".join(l + "\n" for l in rd(tk).splitlines()[:60]))
-    got, rc = tc_line(W, until, res, rq, lapf, short, jr, base, instr)
-    arms.append(("half the window's ticks read M and H as '-' and rc 2", " idle_with_ready_min=- hand_restarts=- " in got and rc == 2, got))
-    got, rc = tc_line(W, until, res, rq, lapf, tk, None, base, instr)
-    arms.append(("an unreadable journal reads H as '-' and rc 2", " hand_restarts=- " in got and rc == 2, got))
-    got, rc = tc_line(W, until, res, rq, lapf, tk, jr, base, {"master": None, "pkg": 4.0e9, "cells": "x"})
+    got, rc = tc_line(W, until, res, rq, lapf, short, None, base, instr)
+    arms.append(("half the window's ticks read M as '-' and rc 2", " idle_with_ready_min=- hand_restarts=0 " in got and rc == 2, got))
+    got, rc = tc_line(W, until, res, rq, lapf, tk, None, base, {"master": None, "pkg": 4.0e9, "cells": "x"})
     arms.append(("a launch that did not grade reads I as '-' and rc 2", " instr_per_entry=- " in got and rc == 2, got))
     ins, prc = tc_perf(["python3", "-I", "-c", "pass"], dict(os.environ), d, 60)
     arms.append(("perf stat counts one python3 -c pass launch", ins is not None and ins > 1000000 and prc == 0, "count %s rc %s" % (ins, prc)))

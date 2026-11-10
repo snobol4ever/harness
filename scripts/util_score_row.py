@@ -1104,7 +1104,7 @@ def one_runner_declines(measurer, what, lang=None):
         return None
     # THE coo IS NEVER REFUSED (Lon 2026-10-25, R-1976; lib_one_runner.sh:one_runner_seat_admitted carries the words): a board the coo
     # runs writes its own row, whatever LANES: names.
-    if (measurer or "").strip() == "coo" or ((measurer or "").strip() == "grader" and os.environ.get("S4E_CLASS") == "grader"):   # the grader (s4e-grade-worker@N) writes the coo's record: fleet-control step 10
+    if (measurer or "").strip() == "coo" or ((measurer or "").strip() == "grader" and os.environ.get("S4E_CLASS") == "grader"):   # the grader (the cycle, s4e_cycle.sh, the one grader since CIO-82) writes the coo's record: fleet-control step 10
         print("  %s writes %s rows: the coo is never refused (R-1976; lane owner %s, %s)" % (measurer.strip(), lang or "these", writer, why))
         return None
     sw = os.environ.get("S4E_SCORE_WRITE", "").strip()

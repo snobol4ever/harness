@@ -37,13 +37,9 @@ W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
 # mid-run (measured while building test_gate_s4e_one_process_per_identity.sh).
 MAINPID=$$; BDPID=""
 trap '[ "$BASHPID" = "$MAINPID" ] && { [ -n "$BDPID" ] && kill "$BDPID" 2>/dev/null; rm -rf "$W"; }' EXIT
-# ⛔ THE SCRATCH HOME CARRIES ITS OWN TIERS TABLE (every arm runs with S4E_HOME=$W, so the seats are read from $W/.github) AND A PRIVATE
-# QUEUE DAEMON (util_queue.py reads S4E_QUEUE_PORT, default 11300 = the LIVE queue; a next that reserves from live tubes takes live jobs).
+# ⛔ THE SCRATCH HOME CARRIES ITS OWN TIERS TABLE (every arm runs with S4E_HOME=$W, so the seats are read from $W/.github) AND ITS OWN
+# POSTOFFICE: the queue is its scratch QUEUE.tsv (the file road, CIO-82), so a next here never serves a live row.
 mkdir -p "$W/.github" && cp "$HERE/../../.github/TIERS.tsv" "$W/.github/TIERS.tsv" || { echo "⛔ REFUSED(2): the TIERS table is unreadable at $HERE/../../.github/TIERS.tsv"; exit 2; }
-_bp=$((21000 + ($$ % 20000))); beanstalkd -l 127.0.0.1 -p "$_bp" >/dev/null 2>&1 & BDPID=$!
-for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_bp" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
-kill -0 "$BDPID" 2>/dev/null && S4E_QUEUE_PORT="$_bp" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' || { echo "⛔ REFUSED(2): a private beanstalkd would not start on port $_bp"; exit 2; }
-export S4E_QUEUE_PORT="$_bp"
 # ⛔ THE PICKER IS AN OFFICER: a sonnet or haiku seat is served no FREE row (next's rule), so the placeholder refusal, which sits on the FREE-row
 # path, is unreachable for a worker picker. cfo (opus, TIERS tier 2) takes the FREE rows; worker_19 is the assignee; cto assigns.
 PO="$W/po"; ME=cfo; HQ=cto; SEAT=worker_19; BUDGET=4

@@ -165,8 +165,7 @@ procplant() {   # procplant <dir> <orphan_age_s> <scope_a_mb> <mem_avg60> [scope
     echo "600 2575 $2 900000 $sl/vte-b.scope claude --name B --model claude-haiku-5-5 --effort xhigh"
     echo "610 2575 $2 500000 $sl/vte-a.scope /usr/bin/gnome-shell"
     echo "640 2575 $2 3000 $sl/vte-a.scope bash /tmp/s4e/a/bg/watch_lap.sh"
-    echo "630 2575 $2 3000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-grader.slice/s4e-grade-worker@3.service /bin/bash /home/claude_grader/harness/scripts/s4e_grade_worker.sh 3"
-    echo "620 2575 $2 12000 $sl/vte-a.scope python3 /home/claude_a/harness/scripts/util_queue.py reserve-hold seat-a,ask-haiku,tier-haiku --seat a --session A --claim-dir /x/claims --baton-dir /x/tasks --timeout 0"; } > "$1/ps.txt"
+    echo "630 2575 $2 3000 0::/user.slice/user-1000.slice/user@1000.service/s4e.slice/s4e-tick.slice/s4e-tick.service /usr/bin/python3 /home/claude_cio/harness/scripts/box_tick.py --tick"; } > "$1/ps.txt"
   printf '1\tsome-row-a\ta\tMEASURING:a:640\n' > "$1/QUEUE.tsv"
 }
 parm() {   # parm <name> <dir> <want_rc> <must_match> [must_not_match]
@@ -190,8 +189,7 @@ if printf '%s\n' "$out" | grep -F "  seat a scope cur=3900MB high=4096MB anon=30
 parm "COO-461 FAIL-ONCE: any process of a seat scope orphaned 25 min is red BY SEAT, its command no fleet word (the cao's ugrep)" "$T/proc_bad" 1 "orphan pid 540 of seat b, 25 min old"
 parm "control: a child whose parent lives, a standing daemon, a young orphan, a desktop app outside every seat scope, the git ssh mux, the clipboard holder and the jobserver holder are not named" "$T/proc_bad" 1 "orphans=2 " "pid 5[1235678]0"
 parm "the coo 2026-11-06 09:02 (the 1836707 false positive): the session HOSTS in a seat's unit -- gnome-terminal-server 988 min old, a claude session, gnome-shell -- are never named, by path" "$T/proc_bad" 1 "orphans=2 " "pid \(590\|600\|610\)"
-parm "fleet-queue 5: the lease holder a seat's next detached (util_queue.py reserve-hold, 25 min old) is a standing daemon, never an orphan (killing it releases the job)" "$T/proc_bad" 1 "orphans=2 " "pid 620"
-parm "the coo 2026-11-08 (Lon: fix the two false reds): a systemd unit's own process (s4e-grade-worker@N.service, its parent the user manager by design) is never an orphan" "$T/proc_bad" 1 "orphans=2 " "pid 630"
+parm "the coo 2026-11-08 (Lon: fix the two false reds): a systemd unit's own process (a .service main pid, its parent the user manager by design) is never an orphan" "$T/proc_bad" 1 "orphans=2 " "pid 630"
 parm "the coo 2026-11-08: a seat's background measurement by handle that a live row names MEASURING:<seat>:<pid> is never an orphan" "$T/proc_bad" 1 "orphans=2 " "pid 640"
 parm "control: an orphan under five minutes is not named"                                    "$T/proc_young" 0 "GREEN no orphaned" "orphan pid"
 parm "control: no orphan, calm memory, scopes under 90 percent read GREEN"                  "$T/proc_ok"    0 "GREEN no orphaned" "RED"

@@ -16,13 +16,9 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; MSG="$HERE/s4e_msg.sh"
 [ -f "$MSG" ] || { echo "⛔ REFUSED: $MSG missing"; exit 2; }
 W="$(mktemp -d)" || { echo "⛔ REFUSED: mktemp failed"; exit 2; }
-# THE 618 CONTRACT NEEDS A QUEUE (row 618, the cio 2026-11-07): a released row reads QUEUED:<tube> while its job is ready in its tube, and that job lives in a queue daemon.
-# The gate starts its OWN beanstalkd on a free port and exports S4E_QUEUE_PORT, so no run here touches the live daemon (11300).
-_bport=$((21000 + ($$ % 20000))); beanstalkd -l 127.0.0.1 -p "$_bport" >/dev/null 2>&1 & _bpid=$!
-trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null; rm -rf "$W"' EXIT
-_up=0; for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_bport" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-{ [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "⛔ REFUSED: a private beanstalkd would not start on port $_bport"; exit 2; }
-export S4E_QUEUE_PORT="$_bport"
+# THE 618 CONTRACT ON THE FILE ROAD (row 618, the cio 2026-11-07; bus-one-queue, CIO-82): a released row reads QUEUED:<tube> when its claim was a reserve
+# of that tube (RESERVED file tube=<tube>), which a claim of a QUEUED:<tube> row writes; no queue daemon exists.
+trap 'rm -rf "$W"' EXIT
 PO="$W/po"; ME=hq_B; PARKER=cto; THIRD=hq_P
 # ⛔ THE FIXTURE MODE IS PROBED, NOT HARDCODED (COO-80, 2026-09-19, row
 # instrument-the-nineteen-non-gc-blocking-arms). mk_po below wrote `TRIO` into the scratch MODE. TRIO stands
@@ -67,12 +63,11 @@ arm() {   # arm <label> <script> -> 0 iff the contract holds on <script>
   c="$(col t-claim-shaped)"; [ "$c" = "CLAIMED:$ME" ] || { echo "  [$lbl] fixture: after claim column=$c (want CLAIMED:$ME)"; return 2; }
   run $ME 0 "$s" unclaim t-claim-shaped gate; c="$(col t-claim-shaped)"
   [ "$c" = FREE ] || { echo "  [$lbl] (A) unclaim over CLAIMED: column=$c (want FREE -- the 2026-08-28 ruling)"; ok=0; }
-  qj="$(python3 "$HERE/util_queue.py" put tier-haiku t-queued --pri 1002 --ttr 30 2>/dev/null)" && [ -n "$qj" ] || { echo "  [$lbl] fixture: the private queue refused the job put for t-queued"; return 2; }
-  sed -i "s|^LINKS: none|LINKS: none\nQUEUE-JOB: $qj tube=tier-haiku|" "$PO/tasks/t-queued.task.md"
+  awk -F'\t' -v OFS='\t' '$2 == "t-queued" {$4 = "QUEUED:tier-haiku"} {print}' "$PO/QUEUE.tsv" > "$W/q.tmp" && cat "$W/q.tmp" > "$PO/QUEUE.tsv"   # t-queued waits in tier-haiku: its column is its tube
   run $ME 0 "$s" claim t-queued || { echo "  [$lbl] claim t-queued failed: $(tail -1 "$W/out")"; return 2; }
   c="$(col t-queued)"; [ "$c" = "CLAIMED:$ME" ] || { echo "  [$lbl] fixture: after claim t-queued column=$c (want CLAIMED:$ME)"; return 2; }
   run $ME 0 "$s" unclaim t-queued gate; c="$(col t-queued)"
-  [ "$c" = "QUEUED:tier-haiku" ] || { echo "  [$lbl] (A) unclaim over CLAIMED: with a ready job in tier-haiku column=$c (want QUEUED:tier-haiku -- the 618 contract)"; ok=0; }
+  [ "$c" = "QUEUED:tier-haiku" ] || { echo "  [$lbl] (A) unclaim over CLAIMED: with a ready job in tier-haiku column=$c (want QUEUED:tier-haiku -- the 618 contract on the file road)"; ok=0; }
   for st in $PARKS; do i=$((i+1))
     run $ME 0 "$s" claim "t-parked-$i" || { echo "  [$lbl] claim t-parked-$i failed: $(tail -1 "$W/out")"; return 2; }
     run $PARKER 1 "$s" park "t-parked-$i" "$st" || { echo "  [$lbl] fixture: cto force-park $st refused: $(grep -m1 REFUSED "$W/out" | cut -c1-120)"; return 2; }

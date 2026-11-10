@@ -9,11 +9,9 @@
 #   box_tick.sh --tick          one tick (ExecStart of s4e-tick.service); rc 3 when another tick holds the lock; writes $TICK_DIR/last.tsv
 #   box_tick.sh --probe-fresh   starts s4e-tick.service through systemd (a fresh process spawned by the user manager), then prints the TICK line (rc 0 green)
 #   box_tick.sh --install       renders harness/systemd/s4e-tick.{service,timer} into ~/.config/systemd/user (@ROOT@ -> this root), daemon-reload, enable --now the timer
-#   box_tick.sh --render-grade-worker  renders harness/systemd/s4e-grade-worker@.service into $S4E_UNIT_DIR (default ~/.config/systemd/user), reads it back, prints one RENDER line; no systemctl call
 #   box_tick.sh --probe-cost  the tick's cost arm on a scratch dir: a quiet tick (view=kept, sweep=read, cpu_s under 3) and the tenth tick (sweep=ran); one TICK_COST line; writes only scratch
 #   box_tick.sh --probe-wake-rate  the wake rate arm: five planted tier-4 seats, three --wake passes; one WAKE_RATE line (2, 2, 1 at S4E_WAKE_RATE=2); plant jobs deleted
 #   box_tick.sh --probe-act  tick-act's arm (dry, scratch): one planted ACTUATOR line of each of the eight kinds through box_act.sh (the copy of the controller's apply and BOX.state); one ACT line, want arms=8
-#   box_tick.sh --probe-scale  step 4e's arm (dry, a scratch tick dir, width 3): the absent switch leaves no grade worker running; the on switch starts s4e-grade-worker@1..3 and stops none; one SCALE line
 #   box_tick.sh --probe-width-psi  the grader width arm on planted sensors (box PSI steps, the memory.events hold, the hot bar): one WIDTH_PSI line; rc 0 when every step is as ruled; writes no state
 ROOT=${S4E_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 cd "$ROOT" || exit 2
@@ -166,7 +164,7 @@ tick() {
     elif vst=$(view_stamp) && python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate > "$TICK_DIR/view.last" 2>&1; then printf '%s' "$vst" > "$TICK_DIR/view.stamp"; view=regenerated
     else view=failed; fi
   else view=kept; fi
-  if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; scale_grade_workers > "$TICK_DIR/scale.last" 2>&1; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
+  if [ "${S4E_TICK_DRY:-0}" != 1 ]; then wake > /dev/null; leases; fi   # fleet-queue step 11 and step 5; step 4e's scale; the dry probe plants no seat, expires no claim, starts no unit
   if [ $(( tkn % ${S4E_PLANT_EVERY:-10} )) -eq 0 ]; then   # the plant sweep is a self-test: every tenth tick only, the others carry the last reading
     swp_out=$(timeout 300 bash "$ROOT/harness/scripts/s4e_msg.sh" sweep --plant-green 2>&1 < /dev/null); rc_s=$?
     printf '%s\n' "$swp_out" | tail -20 > "$TICK_DIR/sweep.last"; sweep=ran
@@ -234,18 +232,6 @@ install_units() {
   systemctl --user daemon-reload && systemctl --user enable --now s4e-tick.timer && echo "INSTALLED $d/s4e-tick.service and s4e-tick.timer, root=$ROOT"
 }
 
-render_grade_worker() {   # test-cycle step 4a (CTO-522): the grader's worker template, rendered and read back; no daemon-reload, no enable, no start (Lon's line)
-  local d=${S4E_UNIT_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user} u=s4e-grade-worker@.service src slice restart exec
-  src="$ROOT/harness/systemd/$u"; [ -f "$src" ] || { echo "REFUSE(2): $src is missing" >&2; return 2; }
-  mkdir -p "$d" || return 2
-  sed -e "s|@ROOT@|$ROOT|g" "$src" > "$d/$u" || return 2
-  grep -q '@ROOT@' "$d/$u" && { echo "REFUSE(2): $d/$u still holds @ROOT@ after the render" >&2; return 2; }
-  slice=$(sed -n 's/^Slice=//p' "$d/$u" | head -1)
-  restart=$(sed -n 's/^Restart=//p' "$d/$u" | head -1)
-  exec=$(sed -n 's|^ExecStart=[^ ]* ||p' "$d/$u" | head -1 | awk '{print $1}' | sed 's|.*/||')
-  echo "RENDER unit=$u slice=$slice restart=$restart exec=$exec"
-  [ -n "$slice" ] && [ -n "$restart" ] && [ -n "$exec" ]; }
-
 act_line() {   # act_line <kind> <cpu60> <busy> <mem_rise> <up_hold> <grader cpu psi> <w>: the kind's ACTUATOR line decide() prints on cool sensors with these overrides (a pure read: no state, no files)
   local k=$1; cpu60=$2 busy=$3 mem_rise=$4 up_hold=$5 gcpu10=$6 w=$7 gmem10=0 to_new=0 q=500 WMIN=1 WMAX=8 sq=800 sqc=1000 SQ_FLOOR=600 jt=4 jtc=12 JT_FLOOR=2 slotless= capped= orphans= mem= madmit=1 cores=16 decide | awk -v k="$k" '$1=="ACTUATOR" && $2==k'; }
 step_of() {   # step_of <ACTUATOR line>: down, up or hold, by its width= against its from=
@@ -268,36 +254,6 @@ probe_width_psi() {   # the grader width arm's probe (the coo's 08:06 numbers; t
   printf 'WIDTH_PSI_HOLD up_blocked_ticks=%s up_after_hold=%s psi35_busy11_admit=%s\n' "$blocked" "$after_up" "$a35"
   [ "$s62" = 1 ] && [ "$u35" = 0 ] && [ "$u10" = 1 ] && [ "$rise" = 1 ] && [ "$drise" = 1 ] && [ "$hot" = 1 ] && [ "$blocked" = 5 ] && [ "$after_up" = 1 ] && [ "$a35" = 1 ]; }
 
-scale_grade_workers() {   # step 4e (CTO-522; the cio 2026-11-07): the grade workers follow THE SWITCH $TICK_DIR/GRADE_WORKERS (the coo writes `on` at step 7) and W, the controller's width (S4E_BOX_S overrides the file, default $OLD/box.width, 4 when absent). On: start s4e-grade-worker@1..W and stop the instances above W; any other switch stops every instance. S4E_SCALE_DRY=1 prints the systemctl lines and runs none. Prints one SCALE_PASS line.
-  local want=0 W running before n r starts=0 stops=0 after dry=${S4E_SCALE_DRY:-0} s
-  s="$(head -1 "$TICK_DIR/GRADE_WORKERS" 2>/dev/null)"; [ "$s" = on ] && want=1
-  W="$(head -1 "${S4E_BOX_S:-$OLD/box.width}" 2>/dev/null)"; case "$W" in ''|*[!0-9]*) W=4;; esac
-  [ "$want" = 1 ] || W=0
-  running_list() { systemctl --user list-units 's4e-grade-worker@*' --no-legend --plain --state=running 2>/dev/null | awk '{print $1}' | sed -n 's/^s4e-grade-worker@\([0-9][0-9]*\)\.service$/\1/p'; }
-  running="$(running_list)"; before=$(printf '%s' "$running" | grep -c .)
-  for n in $(seq 1 "$W"); do
-    printf '%s\n' "$running" | grep -qx "$n" && continue
-    starts=$((starts + 1)); if [ "$dry" = 1 ]; then echo "systemctl --user start s4e-grade-worker@$n"; else systemctl --user start "s4e-grade-worker@$n" > /dev/null 2>&1 || echo "SCALE_FAIL start $n"; fi
-  done
-  for r in $running; do
-    { [ "$want" = 0 ] || [ "$r" -gt "$W" ]; } || continue
-    stops=$((stops + 1)); if [ "$dry" = 1 ]; then echo "systemctl --user stop s4e-grade-worker@$r"; else systemctl --user stop "s4e-grade-worker@$r" > /dev/null 2>&1 || echo "SCALE_FAIL stop $r"; fi
-  done
-  if [ "$dry" = 1 ]; then after=$(( before + starts - stops )); else after=$(running_list | grep -c .); fi
-  echo "SCALE_PASS want=$want width=$W running_before=$before starts=$starts stops=$stops running_after=$after dry=$dry"
-}
-probe_scale() {   # step 4e's probe (CTO-522): a scratch tick dir and a planted width of 3, dry: the absent switch leaves no instance running and starts none; the `on` switch starts 1..3 and stops none
-  local w off on off_i on_w on_s on_t TICK_DIR
-  w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_scale_probe.XXXXXX")" || return 2
-  echo 3 > "$w/box.width"; TICK_DIR="$w"
-  off="$(S4E_SCALE_DRY=1 S4E_BOX_S="$w/box.width" scale_grade_workers | tail -1)"
-  echo on > "$w/GRADE_WORKERS"
-  on="$(S4E_SCALE_DRY=1 S4E_BOX_S="$w/box.width" scale_grade_workers | tail -1)"
-  rm -rf "$w"
-  off_i=$(printf '%s' "$off" | sed -n 's/.* running_after=\([0-9]*\).*/\1/p'); on_w=$(printf '%s' "$on" | sed -n 's/.* running_after=\([0-9]*\).*/\1/p')
-  on_s=$(printf '%s' "$on" | sed -n 's/.* starts=\([0-9]*\).*/\1/p'); on_t=$(printf '%s' "$on" | sed -n 's/.* stops=\([0-9]*\).*/\1/p')
-  printf 'SCALE off_instances=%s on_width=%s starts=%s stops=%s dry=1\n' "${off_i:-x}" "${on_w:-x}" "${on_s:-x}" "${on_t:-x}"
-  [ "${off_i:-x}" = 0 ] && [ "${on_w:-x}" = 3 ] && [ "${on_s:-x}" = 3 ] && [ "${on_t:-x}" = 0 ]; }
 probe_act() {   # tick-act's probe (the cio's ruling 2026-11-07): a scratch S, BOX.state and progress dir, a fake scope under a scratch terminal slice, one planted ACTUATOR line of each kind; box_act.sh under S4E_ACT_DRY=1. ACT counts the kinds with evidence (a DRY line, an apply echo, or the file the kind writes); want 8
   local w out wid bst a=0
   w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_act_probe.XXXXXX")" || return 2
@@ -324,7 +280,6 @@ case "${1:-}" in
   --tick) [ "${2:-}" = --force-view ] && S4E_VIEW_FORCE=1; tick; exit $?;;
   --probe-view) probe_view; exit $?;;
   --probe-act) probe_act; exit $?;;
-  --probe-scale) probe_scale; exit $?;;
   --leases) : "${S4E_SEAT:?REFUSE(2): S4E_SEAT unset}"; mkdir -p "$TICK_DIR"; leases; tail -3 "$TICK_DIR/leases.log" 2>/dev/null; exit 0;;
   --wake) wake; exit $?;;
   --view) python3 "$ROOT/harness/scripts/util_queue_view.py" --regenerate; exit $?;;
@@ -333,7 +288,6 @@ case "${1:-}" in
   --probe-cost) probe_cost; exit $?;;
   --probe-fresh) probe_fresh; exit $?;;
   --install) install_units; exit $?;;
-  --render-grade-worker) render_grade_worker; exit $?;;
   --probe-width-psi) probe_width_psi; exit $?;;
-  *) echo "usage: box_tick.sh --tick | --probe-fresh | --install | --render-grade-worker" >&2; exit 2;;
+  *) echo "usage: box_tick.sh --tick | --probe-fresh | --install" >&2; exit 2;;
 esac

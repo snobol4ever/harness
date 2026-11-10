@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# s4e_probe_bus_one_queue.sh -- THE PROBES OF DESIGN-PLAN bus-one-queue (CIO-8 phase two: beanstalkd goes, QUEUE.tsv under one flock is the one queue;
+# s4e_probe_bus_one_queue.sh -- THE PROBES OF DESIGN-PLAN bus-one-queue (CIO-8 phase two: the queue daemon goes, QUEUE.tsv under one flock is the one queue;
 # designed by the cio, cut by officer_05 2026-11-08, the eight choices answered by the cio on q-bus-one-source-of-truth-...-cio-8-phase-two-1).
 # The table is corpus/tests/shared/bus_one_queue/STEPS.tsv; test_design_bus_one_queue_steps.sh --step N runs "bash harness/scripts/s4e_probe_bus_one_queue.sh N".
 # EVERY PROBE RUNS ON A SCRATCH POSTOFFICE (S4E_POST under /tmp/s4e/<seat>/), a scratch TIERS table (junior_97 haiku, senior_97 sonnet, officer_97 opus) and
-# S4E_QUEUE_PORT=1, so util_queue.py status fails and every verb takes THE FILE ROAD (the switch, answer Q1). The live queue, the live batons and the live
-# beanstalkd are never read or written. A seat's claude process is a copy of sleep named claude in a scratch scope dir (S4E_SEAT_SCOPES), so the claim pid
+# the file road, since 2026-11-10 the only road (the acceptance, CIO-82). The live queue and the live batons
+# are never read or written. A seat's claude process is a copy of sleep named claude in a scratch scope dir (S4E_SEAT_SCOPES), so the claim pid
 # is read from cgroup.procs exactly as on the box (answer Q3 as amended: the pid in s4e-seat-<seat>.scope/cgroup.procs whose comm reads claude).
 # One line per probe: BUSQ step=N ok=1 ... (rc 0) or BUSQ step=N ok=0 ... RED:<why> (rc 1); REFUSE(2) when it cannot measure.
 set -u
@@ -33,11 +33,10 @@ baton() {   # <topic> [minted-ts] [premise] [done-when]
     printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: %s\nPREMISE-WHEN: %s\nLINKS: minted via `mint` by probe, %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [probe] minted\n' \
         "$1" "${4:-false}" "${3:-true}" "${2:-2026-11-01T00:00:00Z}" > "$w/tasks/$1.task.md"; }
 st() { awk -F'\t' -v t="$1" '$2 == t { print $4; exit }' "$w/QUEUE.tsv"; }
-bus() { local s="$1"; shift; env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$s" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_QUEUE_PORT=1 S4E_SEAT_SCOPES="$w/scopes" \
+bus() { local s="$1"; shift; env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$s" S4E_HOME="$S4E" S4E_TIERS="$w/TIERS.tsv" S4E_SEAT_SCOPES="$w/scopes" \
     S4E_NO_BANNER=1 S4E_NO_PREMISE_CHECK="${NOPC:-1}" S4E_LAND_IGNORE_MAIL=probe timeout -k 5 120 bash "$HERE/s4e_msg.sh" "$@" 2>&1; }
 why=""
 verdict() { if [ -z "$why" ]; then echo "BUSQ step=$N ok=1 $1"; exit 0; fi; echo "BUSQ step=$N ok=0 $1 RED:$why"; exit 1; }
-S4E_QUEUE_PORT=1 python3 "$HERE/util_queue.py" status >/dev/null 2>&1 && refuse "port 1 answered as a beanstalkd; the file road cannot be forced"
 case "$N" in
 1)  # next serves a QUEUED row from the file: ask-<tier>, then seat-<me>, then tier-<tier>; within a tube the lowest rank, then the oldest mint stamp (Q4)
     a=busq1-ask-$$; s=busq1-seat-$$; r1=busq1-tier-r1-$$; o=busq1-tier-old-$$; n=busq1-tier-new-$$; x=busq1-sonnet-$$
@@ -142,7 +141,7 @@ case "$N" in
     grep -q 'A STALE BINARY READS NOTHING' "$HERE/s4e_msg.sh" || why="$why s4e_premise_gate carries no stale-binary refusal;"
     grep -q "util_require_fresh.sh >/dev/null 2>&1 ); then" "$HERE/s4e_msg.sh" || why="$why the refusal does not run util_require_fresh before the PREMISE-WHEN;"
     verdict "stale_binary_refusal=landed";;
-8)  # the sweep retires every baton's QUEUE-JOB line and rewrites every live claim's RESERVED job= line to the file form, only when beanstalkd is absent
+8)  # the sweep retires every baton's QUEUE-JOB line and rewrites every live claim's RESERVED job= line to the file form, only on the file road
     a=busq8-a-$$; b=busq8-b-$$; row 2 "$a" @haiku QUEUED:tier-haiku; row 2 "$b" "$J" "CLAIMED:$J"; baton "$a"; baton "$b"
     sed -i 's/^LINKS:.*/&\nQUEUE-JOB: 4001 tube=tier-haiku/' "$w/tasks/$a.task.md" "$w/tasks/$b.task.md"
     p="$(live_claude "$J")"; printf '%s\nRESERVED job=4002 tube=tier-haiku 2026-11-08T00:00:00Z\n' "$J" > "$w/claims/$b.claim"
@@ -154,10 +153,10 @@ case "$N" in
     printf '%s\n' "$out" | grep -qE '^RETIRE-JOBS batons=2 claims=1' || why="$why no RETIRE-JOBS batons=2 claims=1 line;"
     out="$(bus "$O" sweep --retire-jobs)"; printf '%s\n' "$out" | grep -qE '^RETIRE-JOBS batons=0 claims=0' || why="$why a second run was not a no-op;"
     verdict "batons=retired claims=file";;
-9)  # the bus's own gates read GREEN with no beanstalkd: the index gate admits the file road's vocabulary, and next --probe-serve passes on the file road
+9)  # the bus's own gates read GREEN with no queue daemon: the index gate admits the file road's vocabulary, and next --probe-serve passes on the file road
     for t in busq9-a-$$ busq9-b-$$ busq9-c-$$ busq9-d-$$; do baton "$t"; done
     row 2 busq9-a-$$ @haiku QUEUED:tier-haiku; row 2 busq9-b-$$ @sonnet QUEUED:ask-sonnet; row 2 busq9-c-$$ "$J" "CLAIMED:$J"; row 2 busq9-d-$$ @opus QUEUED:tier-opus
-    out="$(S4E_POST="$w" S4E_QUEUE_PORT=1 timeout -k 5 120 bash "$HERE/test_gate_queue_is_an_index.sh" 2>&1)"; rc=$?
+    out="$(S4E_POST="$w" timeout -k 5 120 bash "$HERE/test_gate_queue_is_an_index.sh" 2>&1)"; rc=$?
     [ "$rc" = 0 ] || why="$why test_gate_queue_is_an_index.sh exited $rc on a file-road index [$(printf '%s' "$out" | grep -m1 '⛔' | cut -c1-110)];"
     verdict "index_gate=GREEN";;
 *) refuse "no step $N (1..9)";;

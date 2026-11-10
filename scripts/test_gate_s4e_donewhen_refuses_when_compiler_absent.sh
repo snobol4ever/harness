@@ -36,25 +36,16 @@ export S4E_TIERS="$(cd "$HERE/../.." && pwd)/.github/TIERS.tsv"; [ -f "$S4E_TIER
 command -v gate_pick_dispatchable_mode >/dev/null 2>&1 || { echo "⛔ REFUSED: lib_gate.sh carries no gate_pick_dispatchable_mode -- the mode-probe rule is a sourced authority and a gate must never keep a private copy of it"; exit 2; }
 FIX() { env -u S4E_PID_LOCK -u S4E_NO_DISPATCH_PROBE S4E_HOME="$W" S4E_POST="$PO" S4E_SEAT="$ME" \
         S4E_NO_BANNER=1 S4E_DISPATCH_PROBE_TIMEOUT="$BUDGET" "$@"; }
-# A PRIVATE beanstalkd per arm, on a free port: the live tube daemon (11300) is never the fixture's. The tube is the seat's
-# own job source, the way s4e_next_probe_reserve builds it; a worker takes no FREE row, so the fixture row is a tube job.
-start_daemon() { local _p _i; _p=$((21000 + ($$ % 20000) + DN)); DN=$((DN+1))
-  beanstalkd -l 127.0.0.1 -p "$_p" 9>&- >/dev/null 2>&1 & BPID=$!
-  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_p" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
-  S4E_QUEUE_PORT="$_p" python3 "$HERE/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' || { echo "⛔ REFUSED: a private beanstalkd would not start on port $_p -- the fixture cannot put its job without one"; exit 2; }
-  export S4E_QUEUE_PORT="$_p"; }
-stop_daemon() { kill "$BPID" 2>/dev/null; wait "$BPID" 2>/dev/null; BPID=""; unset S4E_QUEUE_PORT; }
+# THE FILE ROAD (bus-one-queue, CIO-82): the fixture row is QUEUED:tier-haiku in the scratch QUEUE.tsv, the seat's own job source; a worker takes no FREE row.
+start_daemon() { :; }
+stop_daemon() { :; }
 mkrow() { printf '%s\t%s\tunassigned\tFREE\n' "$1" "$2" >> "$PO/QUEUE.tsv"
           printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: %s\nLINKS: none\n## NEXT\ngo\n## LEDGER\n' "$2" "$3" > "$PO/tasks/$2.task.md"; }
-mkjob() {   # a tube job in tier-haiku on the private daemon, and its row QUEUED:tier-haiku owned by @haiku (the ladder: a worker serves a tube, never a FREE row)
-  local _j; _j="$(python3 "$HERE/util_queue.py" put tier-haiku "$2" --pri 1002 --ttr 3600 2>/dev/null)" || _j=""
-  [ -n "$_j" ] || { echo "⛔ REFUSED: the private daemon refused the put of $2"; exit 2; }
+mkjob() {   # a row QUEUED:tier-haiku owned by @haiku (the ladder: a worker serves a tube, never a FREE row); the file road has no job
   printf '%s\t%s\t@haiku\tQUEUED:tier-haiku\n' "$1" "$2" >> "$PO/QUEUE.tsv"
-  printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: %s\nLINKS: none\nQUEUE-JOB: %s tube=tier-haiku\n## NEXT\ngo\n## LEDGER\n' "$2" "$3" "$_j" > "$PO/tasks/$2.task.md"; }
+  printf '# TASK %s\nGOAL: gate fixture.\nDONE-WHEN: %s\nLINKS: none\n## NEXT\ngo\n## LEDGER\n' "$2" "$3" > "$PO/tasks/$2.task.md"; }
 mk_po() {
   rm -rf "$PO" "$W/SCRIP"; mkdir -p "$PO/tasks" "$PO/claims" "$PO/released" "$PO/$ME/inbox" "$PO/$HQ/inbox" "$W/harness/scripts" || return 2
-  # next reserves through $S4E/harness/scripts/util_queue.py (S4E_HOME is this scratch root): without the tool the reserve fails silently
-  ln -sfn "$HERE/util_queue.py" "$W/harness/scripts/util_queue.py" || return 2
   : > "$PO/BOARD.md"; : > "$PO/QUEUE.done.tsv"; printf '5\n' > "$PO/PROTOCOL-VERSION"
   if [ -z "${FIXTURE_MODE:-}" ]; then
       printf 'DECTET\n' > "$PO/MODE"

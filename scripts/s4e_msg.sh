@@ -152,25 +152,17 @@ qrank() { local row; row="$(qrow "$1")"; [ -n "$row" ] && printf '%s' "$row" | c
 # treats "unknown mint time" as OLDEST within its rank tier (a real timestamp always outranks no
 # timestamp), never as a crash or a special case.
 s4e_mint_ts() { grep -m1 'minted via `mint`' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z' | head -1; }
-# ⭐ THE QUEUE (DESIGN-PLAN fleet-queue step 3, the cio 2026-11-05; skill fleet-bus section 8): one job per row in a beanstalkd tube, put by mint
-# (--tier TIER or --to SEAT) and moved by assign (to seat-SEAT); the baton head carries "QUEUE-JOB: <id> tube=<tube>"; the tiers come from
-# .github/TIERS.tsv (step 2), never from a seat pattern here. util_queue.py is the one client; a put that fails leaves the row minted and says so.
+# ⭐ THE QUEUE IS THE FILE (DESIGN-PLAN bus-one-queue, CIO-8 phase two, CIO-82; the acceptance landed 2026-11-10): a row's column QUEUED:<tube> is its
+# place in a tube (seat-SEAT, tier-TIER, ask-TIER), its claim is the reserve, PO/QUEUE.tsv under PO/.queue.flock the one queue; the tiers come from
+# .github/TIERS.tsv, never from a seat pattern here. The queue daemon and its client are retired.
 S4E_TIERS="${S4E_TIERS:-$S4E/.github/TIERS.tsv}"
 s4e_tier_name() { case "$1" in 1|fable) echo fable;; 2|opus) echo opus;; 3|sonnet) echo sonnet;; 4|haiku) echo haiku;; *) return 1;; esac; }
 s4e_tier_of() { local _t; _t="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $7; exit}' "$S4E_TIERS" 2>/dev/null)"; [ -n "$_t" ] && s4e_tier_name "$_t"; }
 s4e_watch_of() { local _t _r; _t="$(s4e_tier_of "$1")" || return 1; _r="$(awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $8; exit}' "$S4E_TIERS" 2>/dev/null)"; if [ "$_r" = designer ]; then echo "seat-$1,ask-$_t"; else echo "seat-$1,ask-$_t,tier-$_t"; fi; }   # officers design only (Lon 2026-11-08): an officer is served its seat tube and its ask tube, never a tier tube
 s4e_tier_ttr() { case "$1" in fable|opus) echo 14400;; sonnet) echo 7200;; haiku) echo 3600;; *) echo 3600;; esac; }
 s4e_row_budget_ttr() { local _b; _b="$(grep -m1 '^BUDGET:' "$PO/tasks/$1.task.md" 2>/dev/null | grep -oE '[0-9]+' | head -1)"; [ -n "$_b" ] && echo "$_b"; }
-s4e_queue_put() { python3 "$S4E/harness/scripts/util_queue.py" put "$1" "$2" --pri "$3" --ttr "$4" 2>/dev/null; }   # <tube> <topic> <pri> <ttr> -> job id
-s4e_queue_delete() { python3 "$S4E/harness/scripts/util_queue.py" delete "$1" >/dev/null 2>&1; }
-s4e_queue_retire() {
-    local _j="$1" _i _st
-    [ -n "$_j" ] || return 0
-    for _i in $(seq 1 15); do _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | cut -f3)"; [ "$_st" = reserved ] || break; sleep 1; done
-    if [ "$_st" = reserved ]; then echo "WARN: the prior job $_j is still reserved by its holder and was not deleted: delete it when it is released (util_queue.py delete $_j)"; return 0; fi
-    s4e_queue_delete "$_j"
-}
-s4e_file_road() { python3 "$S4E/harness/scripts/util_queue.py" status >/dev/null 2>&1; [ "$?" = 2 ]; }   # bus-one-queue (CIO-8 phase two): rc 0 only when beanstalkd is UNREACHABLE (status exits 2), so the verb takes the file road
+s4e_queue_retire() { return 0; }   # the file road has no job to retire (CIO-82)
+s4e_file_road() { return 0; }   # bus-one-queue (CIO-82): the file road is the only road
 s4e_baton_job_get() { grep -m1 '^QUEUE-JOB:' "$PO/tasks/$1.task.md" 2>/dev/null | sed 's/^QUEUE-JOB: *//'; }   # "<id> tube=<tube>"
 s4e_baton_job_set() {   # <topic> <id> <tube>: one QUEUE-JOB line after LINKS, replaced when present
     local _b="$PO/tasks/$1.task.md"
@@ -189,30 +181,8 @@ s4e_done_job_id() {   # <topic> -> the row's job id: the RESERVED job of its cla
     printf '%s' "$_j"; }
 s4e_park_state_buries() {   # <state>: rc 0 for a state that takes a row OUT of the picker, and so buries its job; FREE, ASSIGNED, CLAIMED and DONE do not
     case "$1" in PARKED|PARKED-*|BLOCKED|BLOCKED-ON:*|GRANT-NEEDED|GRANT-NEEDED:*|RETIRED|RETIRED:*|SUPERSEDED|SUPERSEDED:*) return 0;; *) return 1;; esac; }
-s4e_kick_row() {   # <topic> <who>: a row that leaves its park kicks its buried job back to ready; prints kicked_by=<who> job=<id>, or kicked_by=none when there is nothing buried to kick
-    local _j
-    _j="$(s4e_baton_job_get "$1" | awk '{print $1}')"
-    [ -n "$_j" ] || { printf 'kicked_by=none job=none\n'; return 0; }
-    if python3 "$S4E/harness/scripts/util_queue.py" kick-job "$_j" >/dev/null 2>&1; then printf 'kicked_by=%s job=%s\n' "$2" "$_j"
-    else printf 'kicked_by=none job=%s (not buried: nothing to kick)\n' "$_j"; fi
-    return 0; }
-s4e_done_delete_job() {   # <topic>: done deletes the row's job once its DONE line is written. A job a live holder reserves cannot be deleted from a second connection (beanstalkd answers NOT_FOUND), so the holder deletes it on that DONE line: wait up to 12 s for it. The receipt goes on the claim as JOB-RECEIPT.
-    local _t="$1" _c="$PO/claims/$1.claim" _j _how="" _i _s
-    _j="$(s4e_done_job_id "$_t")"
-    if [ -z "$_j" ]; then printf 'job_deleted=0 job=none (the row has no job)\n'; return 0; fi
-    if python3 "$S4E/harness/scripts/util_queue.py" delete "$_j" >/dev/null 2>&1; then _how=bus
-    elif ! python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" >/dev/null 2>&1; then _how=gone
-    else
-        for _i in $(seq 1 12); do sleep 1; python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" >/dev/null 2>&1 || { _how=holder; break; }; done
-    fi
-    if [ -n "$_how" ]; then
-        printf 'job_deleted=1 job=%s by=%s\n' "$_j" "$_how"
-        [ -f "$_c" ] && printf 'JOB-RECEIPT job_deleted=1 job=%s by=%s %s by %s\n' "$_j" "$_how" "$(date -u +%FT%TZ)" "$ME" >> "$_c"
-        return 0
-    fi
-    _s="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | cut -f3)"
-    printf 'job_deleted=0 job=%s state=%s (a holder still reserves it after 12 s; it deletes the job on its next read of the DONE line)\n' "$_j" "${_s:-?}"
-    return 0; }
+s4e_kick_row() { printf 'kicked_by=none job=none (the file road: the column is the whole fact)\n'; return 0; }   # <topic> <who>: a row leaving its park has no buried job on the file road
+s4e_done_delete_job() { printf 'job_deleted=0 job=none (the file road: the row has no job)\n'; return 0; }
 s4e_worktree_rm_row() {   # <topic>: the bus half of the worktree rule (fleet-queue step 6): done and park remove each WORKTREE: <path> the baton names, when s4e_worktree.sh exists (box-scheduler 36); one LEDGER line per removal
     local _b="$PO/tasks/$1.task.md" _w _rc _o _p _t _busy
     [ -f "$S4E/harness/scripts/s4e_worktree.sh" ] || return 0
@@ -229,25 +199,6 @@ s4e_park_bury() {   # <topic> <state>: a park that takes a row out of the picker
     local _t="$1" _st="$2" _c="$PO/claims/$1.claim" _j="" _ok=0 _i _o _rc _tube="" _tier="" _ttr _pri _rank _id
     s4e_park_state_buries "$_st" || return 0
     s4e_file_road && return 0   # bus-one-queue step 2 (the cio 2026-11-10): on the file road a parked row has no job to bury, puts none and writes no QUEUE-JOB line; its column is the whole fact
-    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && [ "$(head -1 "$_c")" != "$ME" ] && grep -q '^RESERVED job=' "$_c"; then grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"; return 0; fi
-    if [ -f "$_c" ] && ! grep -q '^DONE$' "$_c" && grep -q '^RESERVED job=' "$_c"; then
-        _j="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
-        grep -q '^PARK ' "$_c" || printf 'PARK %s\n' "$_st" >> "$_c"
-        for _i in $(seq 1 24); do grep -q '^BURIED ' "$_c" && { _ok=1; break; }; sleep 1; done
-        [ "$_ok" = 1 ] && { echo "  (job $_j buried by its holder)"; return 0; }
-    fi
-    [ -n "$_j" ] || _j="$(s4e_baton_job_get "$_t" | awk '{print $1}')"
-    if [ -n "$_j" ]; then
-        _o="$(python3 "$S4E/harness/scripts/util_queue.py" bury-ready "$_j" 2>/dev/null)"; _rc=$?
-        if [ "$_rc" = 0 ]; then echo "  (job $_j buried: $_o)"; return 0; fi
-        if [ "$_rc" = 4 ]; then printf '⛔ REFUSED (rc=3): park %s: job %s is still reserved by a holder that did not bury it within 24 s (%s). Nothing set; the PARK line on the claim stays and the holder acts on its next read, so run park again.\n' "$_t" "$_j" "$_o" >&2; return 3; fi
-    fi
-    _tube="$(s4e_baton_job_get "$_t" | awk '{print $2}' | sed 's/^tube=//')"
-    if [ -z "$_tube" ]; then _tier="$(s4e_tier_of "$(s4e_row_owner_named "$_t")")"; _tube="tier-${_tier:-haiku}"; fi
-    _rank="$(qrank "$_t")"; _pri="$(s4e_queue_pri "$_tube" "$_rank")"; _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "${_tier:-haiku}")"
-    _id="$(python3 "$S4E/harness/scripts/util_queue.py" put-buried "$_tube" "$_t" --pri "$_pri" --ttr "$_ttr" 2>/dev/null)" || _id=""
-    [ -n "$_id" ] || { printf '⛔ REFUSED (rc=3): park %s could not bury a job (put-buried into %s failed; util_queue.py status tells why). Nothing set.\n' "$_t" "$_tube" >&2; return 3; }
-    s4e_baton_job_set "$_t" "$_id" "$_tube"; echo "  (no job to bury: job $_id put and buried in $_tube)"
     return 0; }
 s4e_baton_head_set() {   # <topic> <KEY> <value>: one KEY: line in the baton head after LINKS, replaced when present (fleet-queue step 12: RANK, OWNER, STATE)
     local _b="$PO/tasks/$1.task.md"; [ -f "$_b" ] || return 1
@@ -259,13 +210,7 @@ s4e_queue_view() { mkdir -p "/tmp/s4e/$ME" 2>/dev/null; python3 "$S4E/harness/sc
 s4e_skills_required_ok() {   # <tier> <goal text>: a sonnet or haiku row carries a SKILLS: line (Lon: "given the proper SKILL FIRST")
     case "$1" in sonnet|haiku) printf '%s\n' "$2" | grep -q '^SKILLS:[[:space:]]*[^[:space:]]';; *) return 0;; esac; }
 s4e_queue_pri() { case "$1" in seat-*) echo $((100 + $2));; ask-*) echo 50;; *) echo $((1000 + $2));; esac; }   # <tube> <rank>: a directed job outranks tier work, an ask outranks both
-s4e_queue_enqueue_row() {   # <topic> <tube> <rank> <tier-for-ttr>: put the job, record it on the baton, print one line; rc 1 when the daemon refused
-    local _ttr _id _pri
-    if s4e_file_road; then echo "queued tube=$2 (file road: the column is the tube, no job put)"; return 0; fi   # bus-one-queue step 3: queue and mint on the file road put no job and write no QUEUE-JOB line
-    _ttr="$(s4e_row_budget_ttr "$1")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$4")"; _pri="$(s4e_queue_pri "$2" "$3")"
-    _id="$(s4e_queue_put "$2" "$1" "$_pri" "$_ttr")" || _id=""
-    [ -n "$_id" ] || { echo "⚠ queue: the put into $2 failed (util_queue.py status tells why); the row exists, the job does not -- put it by hand: python3 harness/scripts/util_queue.py put $2 $1 --pri $_pri --ttr $_ttr" >&2; return 1; }
-    s4e_baton_job_set "$1" "$_id" "$2"; echo "queued job=$_id tube=$2 pri=$_pri ttr=$_ttr"; }
+s4e_queue_enqueue_row() { echo "queued tube=$2 (file road: the column is the tube, no job put)"; return 0; }   # <topic> <tube> <rank> <tier>: bus-one-queue (CIO-82): queue and mint write the column; no job exists
 s4e_tier_below() { case "$1" in fable) echo opus;; opus) echo sonnet;; sonnet) echo haiku;; *) return 1;; esac; }
 s4e_escalate_above() {   # <tube> -> the tube one rung up (fleet-queue step 7): tier-haiku (or a haiku seat's seat-<me>) -> tier-sonnet, tier-sonnet (or a sonnet seat) -> tier-opus, the escalation officers (TIERS.tsv role escalation), the double escalation; an opus tube or seat -> tier-fable, the triple escalation (COO-485, Lon 2026-11-08 13:0x: junior, senior, officer, then the cio or the cto; the bosses sleep); rc 1 at the top
     local _tier
@@ -295,9 +240,6 @@ t[i:i] = entry
 open(b, "w", encoding="utf-8").write("\n".join(t))
 PYEOF
 }
-s4e_escalate_gone() {   # <job id>: rc 0 only when beanstalkd names no such job (the holder deleted it); any other failure reads as still there
-    local _o; _o="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$1" 2>&1)"
-    case "$_o" in *"no such job"*) return 0;; esac; return 1; }
 s4e_escalate_tell() {   # <seat> <topic> <rung> <from> <to> <measurement-file>: one telegram naming the row, the rung and the measurement file
     s4e_telegram "$1" "escalated-$2-rung$3" "NOTICE: $2 escalated to $5 (rung $3, from $4); its owner is that tube's rung; re-cut it only by escalate --to. The measurement is $6 (the baton's ## ESCALATION has it verbatim)."; }
 s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio 2026-11-05 17:5x): one honest try has failed; the claim's holder or a boss moves the job one tube up with the measurement
@@ -326,47 +268,12 @@ s4e_escalate() {   # <topic> < measurement on stdin (fleet-queue step 7, the cio
         fi
         printf 'escalated %s rung=%s from=%s to=%s measurement=%s telegrams=%s (file road)\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0
     fi
-    _rline="$(grep '^RESERVED job=' "$_c" | tail -1)"
-    _job="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=\([0-9][0-9]*\) .*/\1/p')"
-    _tube="$(printf '%s\n' "$_rline" | sed -n 's/^RESERVED job=[0-9]* tube=\([^ ]*\).*/\1/p')"
-    if [ -z "$_job" ]; then   # the claim lost its RESERVED line (three seats in two hours, the coo 2026-11-07 15:55: worker_01, worker_03, worker_15): the job is the baton's QUEUE-JOB and its tube is read from the queue, as done reads them
-        _job="$(s4e_baton_job_get "$_t" | awk '{print $1}')"; _tube=""
-        [ -n "$_job" ] && _tube="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f2)"
-        [ -n "$_job" ] && [ -n "$_tube" ] && printf 'RESERVED job=%s tube=%s %s (restored by escalate from the baton QUEUE-JOB)\n' "$_job" "$_tube" "$(date -u +%FT%TZ)" >> "$_c"
-    fi
-    [ -n "$_job" ] && [ -n "$_tube" ] || { printf '⛔ REFUSED: the claim of %s has no RESERVED job=<id> tube=<tube> line and its baton names no QUEUE-JOB in a tube; there is no job to move.\n' "$_t" >&2; return 2; }
-    _by="$(sed -n 's/^ASSIGNED-BY \([^ ]*\).*/\1/p' "$_c" | head -1)"
-    _des="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$PO/tasks/$_t.task.md" 2>/dev/null | head -1)"
-    _iso="$(date -u +%FT%TZ)"
-    if _above="$(s4e_escalate_above "$_tube")"; then _top=0; else _top=1; _above=""; fi
-    printf 'KILL\n' >> "$_c"
-    case "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f3)" in buried|ready|delayed) s4e_queue_delete "$_job";; esac   # CIO-12 W2: a job no holder reserves (buried for its claimant at a duplicate take, or released) has no holder to read the KILL; the bus deletes it
-    for _i in $(seq 1 20); do s4e_escalate_gone "$_job" && break; sleep 0.5; done
-    s4e_escalate_gone "$_job" || { printf '⛔ REFUSED (rc 2): job %s is still in the queue 10 s after KILL; the holder log is /tmp/s4e/%s/queue_hold.%s.log. The row keeps its claim and is not moved.\n' "$_job" "$_holder" "$_job" >&2; return 2; }
-    _rung="$(s4e_escalate_rung_set "$_t")"
-    mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.rung$_rung.md"; printf '%s\n' "$_body" > "$_mf"
-    if [ "$_top" = 1 ]; then
-        s4e_escalate_ledger "$_t" "$_rung" "$_tube" lon-hold "$_iso" "$_mf"
-        rm -f "$_c"; s4e_set_row_state "$_t" "PARKED-LON-HOLD:escalated" || true
-        s4e_escalate_tell cio "$_t" "$_rung" "$_tube" lon-hold "$_mf" && _tg=$((_tg+1))
-    else
-        _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "${_above#tier-}")"
-        _new="$(s4e_queue_put "$_above" "$_t" 200 "$_ttr")" || _new=""
-        [ -n "$_new" ] || { printf '⛔ REFUSED (rc 2): the put into %s failed (util_queue.py status tells why). The KILL is written and the old job is gone; the claim stays for a boss to re-put the job.\n' "$_above" >&2; return 2; }
-        s4e_baton_job_set "$_t" "$_new" "$_above"
-        s4e_escalate_ledger "$_t" "$_rung" "$_tube" "$_above" "$_iso" "$_mf"
-        _own="@${_above#tier-}"; case "$_above" in seat-*) _own="${_above#seat-}";; esac
-        rm -f "$_c"; s4e_set_row_state "$_t" "QUEUED:$_above" || true; s4e_reown_cell "$_t" "$_own" || true
-        for _seat in $(printf '%s\n%s\n' "$_by" "$_des" | awk 'NF && !_s[$0]++'); do s4e_escalate_tell "$_seat" "$_t" "$_rung" "$_tube" "$_above" "$_mf" && _tg=$((_tg+1)); done
-    fi
-    printf 'escalated %s rung=%s from=%s to=%s job=%s measurement=%s telegrams=%s\n' "$_t" "$_rung" "$_tube" "${_above:-lon-hold}" "${_new:-none}" "$_mf" "$_tg"; s4e_wake_hint "${_above:-lon-hold}" "$_t" escalate; return 0; }
+}
 s4e_step_owned_refuse() {   # <topic>: the cio's ruling 2026-11-07 (one owner per job): a sub-step (-step-N- in its topic) whose parent job sits ready or reserved in a tube this seat does not serve is refused, rc 2; rc 0 otherwise
   local _p _j _tube _st _holder _tier
   case "$1" in *-step-*) _p="${1%%-step-*}" ;; *) return 0 ;; esac
-  _j="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$PO/tasks/$_p.task.md" 2>/dev/null | head -1)"
-  [ -n "$_j" ] || return 0
-  read -r _tube _st <<< "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j" 2>/dev/null | awk -F'\t' '{print $2, $3}')"
-  case "$_st" in ready|reserved) : ;; *) return 0 ;; esac
+  _st="$(s4e_row_state "$_p")"   # the file road (CIO-82): the parent's tube is its column QUEUED:<tube>, or its claim's RESERVED file tube= while it is held
+  case "$_st" in QUEUED:?*) _tube="${_st#QUEUED:}" ;; CLAIMED:*) _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$PO/claims/$_p.claim" 2>/dev/null | tail -1)"; [ -n "$_tube" ] || return 0 ;; *) return 0 ;; esac
   _tier="$(s4e_tier_of "$ME" 2>/dev/null)"
   case "$_tube" in seat-$ME|tier-$_tier|ask-$_tier) return 0 ;; esac
   _holder="$(head -1 "$PO/claims/$_p.claim" 2>/dev/null)"; [ -n "$_holder" ] || _holder=unclaimed
@@ -380,26 +287,12 @@ s4e_escalate_takeup() {   # <topic> <tier> < reason on stdin (escalate --to, the
   _bosses="$(sed -n 's/^BOSSES:[[:space:]]*//p' "$PO/MODE" | head -1)"
   _mytier="$(s4e_tier_of "$ME" 2>/dev/null)"
   case " $_bosses " in *" $ME "*) : ;; *) case "$_mytier" in fable|opus) : ;; *) printf '⛔ REFUSED: only a boss or a fable/opus seat takes a job up; %s is %s.\n' "$ME" "${_mytier:-untiered}" >&2; return 2 ;; esac ;; esac
-  _job="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_b" 2>/dev/null | head -1)"
-  [ -n "$_job" ] || { printf '⛔ REFUSED: %s has no QUEUE-JOB line; there is no job to take up.\n' "$_t" >&2; return 2; }
-  _old="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_job" 2>/dev/null | cut -f2)"
-  [ -n "$_old" ] || { printf '⛔ REFUSED: job %s is in no tube.\n' "$_job" >&2; return 2; }
-  [ "$_old" = "tier-$_to" ] && { printf '⛔ REFUSED: job %s already sits in tier-%s.\n' "$_job" "$_to" >&2; return 2; }
-  _holder=""
-  if [ -f "$_c" ]; then
-    _holder="$(head -1 "$_c")"
-    if grep -q '^RESERVED job=' "$_c"; then
-      printf 'KILL\n' >> "$_c"
-      for _i in $(seq 1 20); do s4e_escalate_gone "$_job" && break; sleep 0.5; done
-      s4e_escalate_gone "$_job" || { printf '⛔ REFUSED (rc 2): job %s is still reserved 10 s after KILL; the row keeps its claim.\n' "$_job" >&2; return 2; }
-    fi
-    rm -f "$_c"
-  fi
-  s4e_escalate_gone "$_job" || s4e_queue_delete "$_job"
-  _ttr="$(s4e_row_budget_ttr "$_t")"; [ -n "$_ttr" ] || _ttr="$(s4e_tier_ttr "$_to")"
-  _new="$(s4e_queue_put "tier-$_to" "$_t" 200 "$_ttr")" || _new=""
-  [ -n "$_new" ] || { printf '⛔ REFUSED (rc 2): the put into tier-%s failed (util_queue.py status tells why); the old job is gone.\n' "$_to" >&2; return 2; }
-  s4e_baton_job_set "$_t" "$_new" "tier-$_to"
+  # bus-one-queue (CIO-82): the row's tube is its column QUEUED:<tube>, or its claim's RESERVED file tube= while a seat holds it
+  _old="$(s4e_row_state "$_t")"; case "$_old" in QUEUED:?*) _old="${_old#QUEUED:}";; *) _old="";; esac
+  [ -n "$_old" ] || _old="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$_c" 2>/dev/null | tail -1)"
+  [ -n "$_old" ] || { printf '⛔ REFUSED: %s is in no tube (its column is not QUEUED:<tube> and no claim holds a RESERVED line); there is nothing to take up.\n' "$_t" >&2; return 2; }
+  [ "$_old" = "tier-$_to" ] && { printf '⛔ REFUSED: %s already sits in tier-%s.\n' "$_t" "$_to" >&2; return 2; }
+  _holder=""; [ -f "$_c" ] && { _holder="$(head -1 "$_c")"; rm -f "$_c"; }; _new=none
   s4e_set_row_state "$_t" "QUEUED:tier-$_to" > /dev/null 2>&1 || true
   s4e_reown_cell "$_t" "@$_to" > /dev/null 2>&1 || true
   _iso="$(date -u +%FT%TZ)"; mkdir -p "$PO/escalations"; _mf="$PO/escalations/$_t.takeup-$_to.$_iso.md"; printf '%s\n' "$_body" > "$_mf"
@@ -415,69 +308,6 @@ PYEOF
   _prev="$_holder"; [ -n "$_prev" ] && [ "$_prev" != "$ME" ] || _prev="$(sed -n 's/^DESIGNER:[[:space:]]*\([^ ]*\).*/\1/p' "$_b" | head -1)"
   [ -n "$_prev" ] && [ "$_prev" != "$ME" ] && { s4e_telegram "$_prev" "taken-up-$_t" "NOTICE: row $_t was taken up to tier-$_to by $ME (from $_old); its owner is that tube's rung; re-cut it only by escalate --to. The measurement is $_mf."; _tg=1; }
   printf 'taken_up %s from=%s to=tier-%s job=%s by=%s telegrams=%s\n' "$_t" "$_old" "$_to" "$_new" "$ME" "$_tg"; return 0; }
-s4e_escalate_probe() {   # escalate --probe (fleet-queue step 7's proof, the cio's one-owner ruling 2026-11-07): on a scratch postoffice with a PLANTED TIERS table and a PRIVATE beanstalkd on a free port (the live queue is never touched). A haiku plant reserved by worker_20 moves to tier-sonnet at 200 with the measurement on its baton, and only its designer is told, not the holder (one_owner=1); an officer takes it up --to opus and the job moves to tier-opus (take_up_moves_job=1); a company man's mint of a sub-step of that row is refused while the job sits in tier-opus (second_cut_refused=1); the top rung parks for Lon. Prints one ESCALATE line; rc 0 when every check holds
-    local _w _t _t2 _j1 _j2 _out _ln _ok=1 _m=0 _l=0 _from="" _to="" _rung="" _top=none _s _new="" _x _m_text _tgi=0 _sh="$S4E/harness/scripts/s4e_msg.sh" _port _bpid _i _up=0 _one=0 _take=0 _cut=0 _tk="" _rc
-    s4e_probe_daemon || exit 2
-    _bpid="$_S4E_PROBE_BPID"
-    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_escalate_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
-    trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null; rm -rf "$_w"' EXIT
-    _t="escalate-probe-$$"; _t2="escalate-probe-top-$$"; _m_text="ONE HONEST TRY FAILED (escalate probe): the plant read red on its measurement line"
-    mkdir -p "$_w/claims" "$_w/tasks" "$_w/worker_20/inbox" "$_w/cio/inbox" "$_w/cao/inbox" "$_w/president/inbox"; cp "$PO/MODE" "$_w/MODE"
-    printf '# planted tiers (the probe reads no live TIERS table)\ncio\tCIO\t/home/claude_cio\tclaude-fable-5-1\thigh\tred\t1\tcio\ncao\tCAO\t/home/claude_cao\tclaude-opus-5-5\thigh\tyellow\t2\tcao\npresident\tPRESIDENT\t/home/claude_president\tclaude-sonnet-5-5\txhigh\tpurple\t3\tpresident\nworker_20\tWORKER_20\t/home/claude_worker_20\tclaude-haiku-5-5\txhigh\tcyan\t4\tworker\n' > "$_w/TIERS.tsv"
-    printf '2\t%s\tcio\tASSIGNED:worker_20\n2\t%s\tcio\tASSIGNED:cio\n' "$_t" "$_t2" > "$_w/QUEUE.tsv"
-    for _x in "$_t" "$_t2"; do printf '# TASK %s\nGOAL: plant\nDESIGNER: cio\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant by cio\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" > "$_w/tasks/$_x.task.md"; done
-    _j1="$(s4e_queue_put tier-haiku "$_t" 1 3600)" || _j1=""
-    [ -n "$_j1" ] || { echo "REFUSE(2): the plant put into tier-haiku failed (util_queue.py status tells why)" >&2; exit 2; }
-    _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" next 2>&1)"
-    printf '%s\n' "$_out" | sed 's/^/  next-as-worker_20| /' >&2
-    grep -q "^RESERVED $_t " <<< "$_out" || _ok=0
-    grep -q "RESERVED job=$_j1 " "$_w/claims/$_t.claim" 2>/dev/null || _ok=0
-    _out="$(printf '%s\n' "$_m_text" | S4E_POST="$_w" S4E_SEAT=worker_20 S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t" 2>&1)"
-    printf '%s\n' "$_out" | sed 's/^/  escalate-as-worker_20| /' >&2
-    _ln="$(printf '%s\n' "$_out" | grep '^escalated ' | head -1)"
-    if [ -n "$_ln" ]; then
-        _from="$(printf '%s\n' "$_ln" | sed -n 's/.* from=\([^ ]*\).*/\1/p')"
-        _rung="$(printf '%s\n' "$_ln" | sed -n 's/.* rung=\([0-9]*\).*/\1/p')"
-        _new="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_w/tasks/$_t.task.md" | head -1)"
-        _to="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" 2>/dev/null | cut -f2)"
-    else _ok=0; fi
-    [ "$_from" = tier-haiku ] || _ok=0
-    [ "$_to" = tier-sonnet ] || _ok=0
-    [ "$_rung" = 2 ] || _ok=0
-    if python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j1" >/dev/null 2>&1; then _ok=0; fi
-    if [ -n "$_new" ]; then
-        _x="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" 2>/dev/null)"
-        printf '%s\n' "$_x" | awk -F'\t' '$2=="tier-sonnet" && $4==200 {f=1} END {exit !f}' || _ok=0
-    else _ok=0; fi
-    grep -qx 'RUNG: 2' "$_w/tasks/$_t.task.md" || _ok=0
-    if grep -qF "$_m_text" "$_w/tasks/$_t.task.md"; then _m=1; else _ok=0; fi
-    if [ "$(grep -c '^- rung 2 from' "$_w/tasks/$_t.task.md")" = 1 ]; then _l=1; else _ok=0; fi
-    _tgi="$(ls "$_w/cio/inbox" | wc -l)"; [ "$_tgi" = 1 ] || _ok=0
-    if grep -qs "its owner is that tube's rung" "$_w"/cio/inbox/* && [ -z "$(ls -A "$_w/worker_20/inbox" 2>/dev/null)" ]; then _one=1; fi
-    [ "$_one" = 1 ] || _ok=0
-    _out="$(printf '%s\n' "take-up probe: the officer takes the row up one rung, to opus" | S4E_POST="$_w" S4E_SEAT=cao S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t" --to opus --stdin 2>&1)"
-    printf '%s\n' "$_out" | sed 's/^/  takeup-as-cao| /' >&2
-    _tk="$(sed -n 's/^QUEUE-JOB: \([0-9][0-9]*\) tube=.*/\1/p' "$_w/tasks/$_t.task.md" | head -1)"
-    if [ -n "$_tk" ] && [ "$_tk" != "$_new" ]; then
-        python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_tk" 2>/dev/null | awk -F'\t' '$2=="tier-opus" && $4==200 {f=1} END {exit !f}' && ! python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_new" >/dev/null 2>&1 && _take=1
-    fi
-    [ "$_take" = 1 ] || _ok=0
-    _out="$(printf 'DONE-WHEN: true\n' | S4E_POST="$_w" S4E_SEAT=president S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" mint "$_t-step-1-sub" --stdin 2>&1)"; _rc=$?
-    printf '%s\n' "$_out" | sed 's/^/  mint-sub-as-president| /' >&2
-    if [ "$_rc" = 2 ] && printf '%s' "$_out" | grep -q 'that step is owned by tier-opus'; then _cut=1; fi
-    [ "$_cut" = 1 ] || _ok=0
-    _j2="$(s4e_queue_put tier-fable "$_t2" 1 14400)" || _j2=""
-    if [ -n "$_j2" ]; then
-        printf 'cio\nRESERVED job=%s tube=tier-fable %s\n' "$_j2" "$(date -u +%FT%TZ)" > "$_w/claims/$_t2.claim"
-        python3 "$S4E/harness/scripts/util_queue.py" reserve-hold tier-fable --seat cio --session CIO --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 >/dev/null 2>&1
-        _out="$(printf '%s\n' "escalation of the top rung (probe): the job has no tube above" | S4E_POST="$_w" S4E_SEAT=cio S4E_TIERS="$_w/TIERS.tsv" S4E_NO_BANNER=1 "$_sh" escalate "$_t2" 2>&1)"
-        printf '%s\n' "$_out" | sed 's/^/  escalate-top-as-cio| /' >&2
-        _s="$(awk -F'\t' -v t="$_t2" '$2==t {print $4; exit}' "$_w/QUEUE.tsv")"
-        if [ "$_s" = "PARKED-LON-HOLD:escalated" ]; then _top=lon-hold; else _ok=0; fi
-        if python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j2" >/dev/null 2>&1; then _ok=0; fi
-    else _ok=0; fi
-    printf 'ESCALATE from=%s to=%s rung=%s measurement=%s ledger=%s telegrams=%s top=%s one_owner=%s take_up_moves_job=%s second_cut_refused=%s\n' "${_from:-none}" "${_to:-none}" "${_rung:-0}" "$_m" "$_l" "$_tgi" "$_top" "$_one" "$_take" "$_cut"
-    [ "$_ok" = 1 ]; exit $?; }
 s4e_session_name_of() { awk -F'\t' -v s="$1" '!/^#/ && $1==s {print $2; exit}' "$S4E_TIERS" 2>/dev/null; }
 . "$(dirname "${BASH_SOURCE[0]}")/lib_wake.sh"   # THE WAKE LINE (the cio 2026-11-08; Lon: design flows down, problems flow up): queue, escalate, ask, answer and assign end by naming the session to SendMessage
 s4e_claim_holder_live() {   # <seat> <claim file> -> rc 0 when the claimant is ALIVE (CIO-12 W2, the cio 2026-11-08 12:5x on the coo's EMERGENCY of 12:28: job 532 taken by eight juniors, each archiving the holder's claim as STALE): its session runs in its s4e-seat-<seat>.scope, or the claim's last RESERVED line is younger than S4E_CLAIM_LIVE_S (600 s; the window a take needs for its sync, make and premise). A seat with no scope on a box that has scopes, and a claim older than the window, reads dead.
@@ -510,7 +340,6 @@ s4e_file_expire_one() {   # <topic>: bus-one-queue step 5: a claim whose RESERVE
     echo "EXPIRE $_t pid=${_pid:-none} tube=$_tube holder=$_own claim_archived=1 (file road)"; return 0; }
 s4e_sweep_retire_jobs() {   # bus-one-queue step 8: with the daemon gone, every baton's QUEUE-JOB line goes and every live claim's RESERVED job= line becomes the file form; prints RETIRE-JOBS batons=B claims=C
     local _b _c _nb=0 _nc=0 _own _tube _ts _pid _ses _tmp
-    s4e_file_road || { printf '⛔ REFUSED(2): sweep --retire-jobs runs only when beanstalkd is gone (util_queue.py status must exit 2); it answers now.\n' >&2; return 2; }
     for _b in "$PO"/tasks/*.task.md; do [ -f "$_b" ] || continue; grep -q '^QUEUE-JOB:' "$_b" || continue; sed -i '/^QUEUE-JOB:/d' "$_b" && _nb=$((_nb+1)); done
     for _c in "$PO"/claims/*.claim; do [ -f "$_c" ] || continue; grep -q '^DONE$' "$_c" && continue
         [ "$(sed -n 2p "$_c" | cut -c1-13)" = "RESERVED job=" ] || continue
@@ -519,7 +348,7 @@ s4e_sweep_retire_jobs() {   # bus-one-queue step 8: with the daemon gone, every 
         _tmp="$(mktemp)"; awk -v l="RESERVED file tube=$_tube session=$_ses pid=$_pid ${_ts:-$(date -u +%FT%TZ)}" 'NR==2 {print l; next} {print}' "$_c" > "$_tmp" && cat "$_tmp" > "$_c" && _nc=$((_nc+1)); rm -f "$_tmp"
     done
     echo "RETIRE-JOBS batons=$_nb claims=$_nc"; return 0; }
-s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (util_queue.py reserve-hold reads <topic>.claim.release.<job>)
+s4e_take_refused() { : > "$PO/claims/$1.claim.release.$2" 2>/dev/null; return 1; }   # <topic> <job>: a take that refuses before its claim tells the holder to release now (the retired queue client's reserve-hold reads <topic>.claim.release.<job>)
 s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (fleet-queue step 4); writes the claim file and the row state, nothing else
     local _t="$1" _c="$PO/claims/$1.claim"
     [ -f "$PO/tasks/$_t.task.md" ] || { echo "⛔ reserved job $2 names $_t, which has no baton; released (the tick retires it)" >&2; s4e_take_refused "$_t" "$2"; return 1; }
@@ -545,9 +374,8 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
     if [ -f "$_c" ]; then
       local _own _ts; _own="$(head -1 "$_c")"
       if [ "$_own" != "$ME" ]; then
-        # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): beanstalkd handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
+        # THE HEAD NEVER CYCLES (the cio 2026-11-07 16:2x; worker_18, worker_15, worker_20 and the coo measured job 1159 reserved by four seats in eleven minutes and job 1165 held by a claim naming job 449, every next releasing the head and serving nothing behind it): the queue handed THIS seat job $2 of row $_t, so no reserve of another seat's RESERVED claim on that row lives; such a claim is stale by construction and is archived as expire archives it, and the job is taken. A claim with no RESERVED line is a hand claim or an assignment, a real lock: the head is BURIED for its claimant (rc 4) and the pass goes on, so the jobs behind it are served.
         _oj="$(sed -n 's/^RESERVED job=\([0-9]*\).*/\1/p' "$_c" | tail -1)"
-        if [ -n "$_oj" ] && [ "$_oj" != "$2" ] && [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_oj" 2>/dev/null | cut -f3)" = reserved ]; then echo "⛔ $_t has two jobs: job $_oj is live under $_own's claim, so job $2 is the duplicate; its holder deletes it (two-jobs-one-row interim guard)" >&2; return 1; fi
         # THE HOLDER LIVES, THE JOB IS THE DUPLICATE (CIO-12 W2, the cio 2026-11-08 12:5x; the coo's EMERGENCY 12:28: job 532 of step 28 taken by eight juniors in five minutes, each take archiving the live holder's claim as STALE and the robbed holder releasing the job to the next taker). The head-never-cycles reasoning held only while a holder's reserve was continuous; a holder that released during its taker's sync and make (the 60 s grace, raised to 600 s at 4b3c63ae) left a READY job behind a LIVE claimant. So a foreign claim whose claimant is alive is a lock, RESERVED line or not: THIS seat's holder buries the job it reserved (the PARK line it reads), the claimant's done deletes it, and the pass goes on (rc 4). Only a dead claimant's RESERVED claim is archived as stale.
         if ! grep -q '^DONE$' "$_c" && s4e_claim_holder_live "$_own" "$_c"; then
           _ts="$(date -u +%FT%TZ)"
@@ -557,7 +385,7 @@ s4e_queue_take_claim() {   # <topic> <job> <tube>: the claim of a reserved job (
         fi
         if grep -q '^RESERVED job=' "$_c" && ! grep -q '^DONE$' "$_c"; then
           mkdir -p "$PO/claims/expired"; _ts="$(date -u +%FT%TZ)"; mv "$_c" "$PO/claims/expired/$_t.claim.$_ts"
-          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: beanstalkd handed job $2 ($3) to $ME and $_own is not alive (no session in its seat scope, RESERVED line older than S4E_CLAIM_LIVE_S), so no reserve behind that claim lived (fleet-queue: the head never cycles)"
+          s4e_ledger_prepend "$_t" "- [$ME·$_ts] STALE CLAIM of $_own archived at take: the queue handed job $2 ($3) to $ME and $_own is not alive (no session in its seat scope, RESERVED line older than S4E_CLAIM_LIVE_S), so no reserve behind that claim lived (fleet-queue: the head never cycles)"
           echo "  (stale claim of $_own on $_t archived; job $2 taken)" >&2
         else
           grep -q '^PARK ' "$_c" || printf 'PARK HELD-BY:%s:duplicate-job-%s-buried-at-take-by-%s %s\n' "$_own" "$2" "$ME" "$(date -u +%FT%TZ)" >> "$_c"
@@ -598,61 +426,6 @@ s4e_refuse_red_head() {   # <topic> <job> <tube>: bury the reserved head through
     s4e_ledger_prepend "$_t" "- [$ME·$(date -u +%F)] PREMISE-WHEN read RED at dispatch on $ME's root ($_h): reserved job $_j from $_tb was $_how; the row is PARKED-PREMISE-RED:$ME. The designer re-reads the premise on origin: wrong, recut it; right, the row is done or superseded by its own measurement; then queue it again."
     printf 'NEXT refused_head job=%s topic=%s buried=%s state=PARKED-PREMISE-RED\n' "$_j" "$_t" "$_ok"
     return 0; }
-s4e_next_probe_refused_head() {   # next --probe-refused-head: a scratch postoffice and a PRIVATE beanstalkd (never 11300); a haiku probe seat with two jobs in its seat tube, the head's PREMISE-WHEN false (RED), the second's true. EXPECT the head buried, its row PARKED-PREMISE-RED, its claim in claims/expired, and the second served.
-    local _port _bp _w _seat=junior_20 _x1 _x2 _j1 _j2 _o _bst _st _sv _exp _ref _ok=0 _i
-    _port=$((21000 + ($$ % 20000)))
-    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bp=$!
-    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
-    if ! { kill -0 "$_bp" 2>/dev/null && S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd'; }; then
-        kill "$_bp" 2>/dev/null; echo "NEXT refused_head RED: a private beanstalkd would not start on port $_port"; exit 1; fi
-    export S4E_QUEUE_PORT="$_port"
-    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_refused_head.XXXXXX")" || { kill "$_bp" 2>/dev/null; echo "NEXT refused_head RED: mktemp failed"; exit 1; }
-    mkdir -p "$_w/tasks" "$_w/claims" "$_w/$_seat/inbox"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
-    _x1="refused-head-red-$$"; _x2="refused-head-green-$$"; _now="$(date -u +%FT%TZ)"
-    printf '2\t%s\t@haiku\tQUEUED:seat-%s\n2\t%s\t@haiku\tQUEUED:seat-%s\n' "$_x1" "$_seat" "$_x2" "$_seat" > "$_w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: false\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x1" "$_now" > "$_w/tasks/$_x1.task.md"
-    printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: true\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x2" "$_now" > "$_w/tasks/$_x2.task.md"
-    _j1="$(s4e_queue_put "seat-$_seat" "$_x1" 1001 30)"; _j2="$(s4e_queue_put "seat-$_seat" "$_x2" 1002 30)"
-    if [ -z "$_j1" ] || [ -z "$_j2" ]; then kill "$_bp" 2>/dev/null; rm -rf "$_w"; echo "NEXT refused_head RED: the probe could not put its two jobs"; exit 1; fi
-    _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 S4E_HOME="$S4E" S4E_RELEASE_COOLDOWN=0 bash "$0" next 2>&1)"
-    printf '%s\n' "$_o" | grep -q "^NEXT refused_head job=$_j1 topic=$_x1 buried=1 state=PARKED-PREMISE-RED" && _ref=1 || _ref=0
-    printf '%s\n' "$_o" | grep -q "^RESERVED $_x2 " && _sv=1 || _sv=0
-    _bst="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_j1" 2>/dev/null | cut -f3)"
-    _st="$(awk -F'\t' -v t="$_x1" '$2==t {print $4}' "$_w/QUEUE.tsv")"
-    ls "$_w/claims/expired/$_x1.claim.premise-red-"* >/dev/null 2>&1 && _exp=1 || _exp=0
-    kill "$_bp" 2>/dev/null; wait "$_bp" 2>/dev/null
-    if [ "$_ref" = 1 ] && [ "$_bst" = buried ] && [ "${_st#PARKED-PREMISE-RED:}" != "$_st" ] && [ "$_exp" = 1 ] && [ "$_sv" = 1 ]; then _ok=1; fi
-    rm -rf "$_w"
-    if [ "$_ok" = 1 ]; then printf 'NEXT refused_head=1 buried=1 state=PARKED-PREMISE-RED served_next=1\n'; exit 0; fi
-    printf 'NEXT refused_head RED: what next said (last 6 lines): %s\n' "$(printf '%s\n' "$_o" | tail -6 | tr '\n' '|' | cut -c1-900)" >&2
-    printf 'NEXT refused_head RED: refused=%s buried_state=%s row_state=%s expired=%s served_next=%s\n' "$_ref" "${_bst:-none}" "${_st:-none}" "$_exp" "$_sv"; exit 1; }
-s4e_queue_reserve_pass() {   # fleet-queue step 4: next is a reserve over the seat's watch list; prints and exits when a job is served; returns 1 when nothing is ready
-    local _tier _watch _res _id _tube _pri _topic
-    _tier="$(s4e_tier_of "$ME")" || return 1
-    _watch="$(s4e_watch_of "$ME")"
-    _rh() { local _k _r _left="${S4E_NEXT_WAIT:-0}" _sl _m0; _m0="$(ls "$PO/$ME/inbox" 2>/dev/null | grep -c '\.msg$')"   # a long poll in slices of 15 s; a telegram that lands during the wait ends it (rc 5)
-      while :; do _sl="$_left"; [ "$_sl" -gt 15 ] && _sl=15
-        for _k in 1 2 3; do python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$1" --seat "$ME" --session "$(s4e_session_name_of "$ME")" --claim-dir "$PO/claims" --baton-dir "$PO/tasks" --timeout "$_sl" 2>/dev/null 9>&- && return 0; _r=$?; [ "$_r" = 3 ] || break; done
-        [ "$_r" = 1 ] || return 1; _left=$((_left - _sl)); [ "$_left" -gt 0 ] || return 1
-        [ "$(ls "$PO/$ME/inbox" 2>/dev/null | grep -c '\.msg$')" -gt "$_m0" ] && return 5; done; }
-    local _try _rc
-    for _try in 1 2 3 4 5; do
-    _res="$(_rh "$_watch")"; _rc=$?
-    [ "$_rc" = 5 ] && { echo "MAIL: a telegram reached your inbox during the wait: bash harness/scripts/s4e_msg.sh check, act or reply, clear, then next --wait again"; exit 0; }
-    [ -n "$_res" ] || return 1
-    _id="$(printf '%s' "$_res" | cut -f1)"; _tube="$(printf '%s' "$_res" | cut -f2)"; _pri="$(printf '%s' "$_res" | cut -f3)"; _topic="$(printf '%s' "$_res" | cut -f4)"
-    # the holder watches $PO/claims/<topic>.claim: written here within its 60 s grace, else it releases the job
-    s4e_queue_take_claim "$_topic" "$_id" "$_tube"; _rc=$?
-    if [ "$_rc" = 0 ]; then
-      s4e_baton_job_set "$_topic" "$_id" "$_tube"
-      serve "$_topic" "RESERVED" "(job $_id from $_tube at priority $_pri; watch list $_watch; the lease lives while your session does -- done deletes it, park buries it)"
-      exit 0
-    fi
-    # rc 4: the head's PREMISE-WHEN read RED -- bury it through its holder, supersede its row, and look at the next ready job (up to five heads in one pass)
-    [ "$_rc" = 4 ] || return 1
-    s4e_refuse_red_head "$_topic" "$_id" "$_tube" || return 1
-    done
-    return 1; }
 s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<tier>, then seat-<me>, then tier-<tier>; lowest rank, then the oldest mint stamp
     local _tier _tube _rk _ts _t _rc
     _tier="$(s4e_tier_of "$ME")" || return 1
@@ -668,78 +441,15 @@ s4e_file_reserve_pass() {   # bus-one-queue step 1: next on the file road; ask-<
         done < <(awk -F'\t' -v s="QUEUED:$_tube" '/^[0-9]/ && $4 == s {print $1"\t"$2}' "$PO/QUEUE.tsv" | while IFS=$'\t' read -r _r _n; do printf '%s\t%s\t%s\n' "$_r" "$(s4e_mint_ts "$_n")" "$_n"; done | sort -t$'\t' -k1,1n -k2,2)
     done
     return 1; }
-s4e_probe_daemon() {   # the cio's ruling (2026-11-07, row bus-queue-probes-put-and-reserve-on-the-live-beanstalkd): a probe that puts or reserves runs on ITS OWN beanstalkd on a free port, exported as S4E_QUEUE_PORT to every child and killed on exit; the live daemon (11300) is never written by it
-  local _p _i _up=0
-  _p=$((21000 + ($$ % 20000)))
-  beanstalkd -l 127.0.0.1 -p "$_p" 9>&- >/dev/null 2>&1 & _S4E_PROBE_BPID=$!
-  trap 'kill "$_S4E_PROBE_BPID" 2>/dev/null; wait "$_S4E_PROBE_BPID" 2>/dev/null' EXIT
-  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_p" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-  { [ "$_up" = 1 ] && kill -0 "$_S4E_PROBE_BPID" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_p" >&2; return 2; }
-  export S4E_QUEUE_PORT="$_p"
-}
-s4e_probe_port_check() {   # the bus-queue-probes row's proof (next --probe-reserve --probe-port-check): one PROBE_PORT line. Private daemon (a), a scratch baton dir refused on the default port by a dry call (b), a stale job released not deleted on the private daemon (c), and the two confined plants (park --probe-bury, done --probe-delete) named by their own probe-*-$$ tubes (confined_probes)
-  local _w _pd=0 _dr=0 _sr=0 _cp=0 _id _st _rc
-  s4e_probe_daemon || return 2
-  if python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && [ "$S4E_QUEUE_PORT" != 11300 ]; then _pd=1; fi
-  _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_port_check.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
-  mkdir -p "$_w/tasks" "$_w/claims"
-  env -u S4E_QUEUE_PORT python3 "$S4E/harness/scripts/util_queue.py" reserve-hold tier-haiku --seat "$ME" --session x --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 --dry >/dev/null 2>&1
-  [ "$?" = 2 ] && _dr=1
-  _id="$(python3 "$S4E/harness/scripts/util_queue.py" put "probe-stale-$$" "stale-$$" --pri 1000 --ttr 30 2>/dev/null)" || _id=""
-  if [ -n "$_id" ]; then
-    python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "probe-stale-$$" --seat "$ME" --session x --claim-dir "$_w/claims" --baton-dir "$_w/tasks" --timeout 0 >/dev/null 2>&1; _rc=$?
-    _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_id" 2>/dev/null | cut -f3)"
-    [ "$_rc" = 3 ] && [ "$_st" = ready ] && _sr=1
-    python3 "$S4E/harness/scripts/util_queue.py" delete "$_id" >/dev/null 2>&1
-  fi
-  grep -qF 'tube="probe-park-$$"' "${BASH_SOURCE[0]}" && _cp=$((_cp + 1))
-  grep -qF 'tube="probe-done-$$"' "${BASH_SOURCE[0]}" && _cp=$((_cp + 1))
-  rm -rf "$_w"
-  printf 'PROBE_PORT private_daemon=%d default_port_refused=%d stale_released_not_deleted=%d confined_probes=%d\n' "$_pd" "$_dr" "$_sr" "$_cp"
-  [ "$_pd" = 1 ] && [ "$_dr" = 1 ] && [ "$_sr" = 1 ] && [ "$_cp" = 2 ]
-}
-s4e_next_probe_reserve() {   # fleet-queue step 4's probe (the cio, 2026-11-07, the amended row): a scratch postoffice and a PRIVATE beanstalkd on a free port, never 11300; a sonnet senior (president) runs next, its own tube is served first, and an empty own tube never serves the tube below (below_served=0); a haiku seat gets no FREE row
-    local _w _seat _tier _below _own _bel _free _jo _jb _out _own_first=0 _reserved=0 _claim=0 _free_served=1 _below_served=0 _now _port _i _up=0
-    _port=$((21000 + ($$ % 20000)))
-    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bpid=$!
-    trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
-    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-    { [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; }
-    export S4E_QUEUE_PORT="$_port"
-    _seat=president
-    _tier="$(s4e_tier_of "$_seat")" || { echo "REFUSE(2): $_seat is in no tier of $S4E_TIERS"; exit 2; }
-    _below="$(s4e_tier_below "$_tier")" || _below=""
-    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_probe.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
-    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$_seat/inbox" "$_w/worker_20/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
-    _own="next-probe-own-$$"; _bel="next-probe-below-$$"; _free="next-probe-free-$$"
-    printf '2\t%s\t@%s\tFREE\n2\t%s\t@%s\tFREE\n2\t%s\t@haiku\tFREE\n' "$_own" "$_tier" "$_bel" "${_below:-haiku}" "$_free" > "$_w/QUEUE.tsv"
-    for _x in "$_own" "$_bel" "$_free"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: minted via mint by %s, %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$ME" "$_now" > "$_w/tasks/$_x.task.md"; done
-    [ -n "$_below" ] && _jb="$(s4e_queue_put "tier-$_below" "$_bel" 1001 30)"
-    _jo="$(s4e_queue_put "tier-$_tier" "$_own" 1002 30)"
-    _out="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
-    printf '%s\n' "$_out" | grep -q "^RESERVED $_own " && { _own_first=1; _reserved=1; }
-    [ -f "$_w/claims/$_own.claim" ] && grep -q "RESERVED job=$_jo " "$_w/claims/$_own.claim" && _claim=1
-    _out="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
-    printf '%s\n' "$_out" | grep -q "^RESERVED $_bel " && _below_served=1
-    _out="$(S4E_POST="$_w" S4E_SEAT=worker_20 S4E_NO_BANNER=1 "$0" next 2>&1)"
-    printf '%s\n' "$_out" | grep -q "^FREE " || _free_served=0
-    rm -rf "$_w"; sleep 12   # the holder sees the claim gone and releases the own job
-    [ -n "$_jo" ] && s4e_queue_delete "$_jo"; [ -n "${_jb:-}" ] && s4e_queue_delete "$_jb"
-    printf 'NEXT watch=seat,ask,tier own_first=%s reserved=%s claim=job writes=claim free_served=%s below_served=%s\n' "$_own_first" "$_reserved" "$_free_served" "$_below_served"
-    [ "$_own_first" = 1 ] && [ "$_reserved" = 1 ] && [ "$_claim" = 1 ] && [ "$_free_served" = 0 ] && [ "$_below_served" = 0 ]; exit $?; }
-s4e_mint_probe_queue() {   # fleet-queue step 3's probe: the SKILLS gate and one put into tier-haiku, deleted again; no row minted
-    local _skills=0 _id="" _del=0
-    s4e_probe_daemon || return 2
+s4e_mint_probe_queue() {   # fleet-queue step 3's probe on the file road (CIO-82): the SKILLS gate a haiku row passes only with a SKILLS: line; mint --tier writes the column (bus-one-queue probe 3), no job exists
+    local _skills=0
     s4e_skills_required_ok haiku "GOAL: a plant with no skills line" || _skills=1
     s4e_skills_required_ok haiku "GOAL: a plant
 SKILLS: fleet-bus" || _skills=0
-    _id="$(s4e_queue_put tier-haiku "probe-mint-$$" 1002 3600)" || _id=""
-    [ -n "$_id" ] && s4e_queue_delete "$_id" && _del=1
-    printf 'MINT tube=tier-haiku pri=1002 ttr=3600 job=%s skills_required=%s deleted=%s\n' "${_id:-none}" "$_skills" "$_del"
-    [ -n "$_id" ] && [ "$_skills" = 1 ] && [ "$_del" = 1 ]; exit $?; }
+    printf 'MINT tube=tier-haiku skills_required=%s (the file road: the column is the tube, no job)\n' "$_skills"
+    [ "$_skills" = 1 ]; exit $?; }
 s4e_mint_probe_ceo() {   # CIO-2 (GOAL-CIO.md 86289122f; row mint-refuses-a-topic-ending-ceo-nnnn-and-a-goal-citing-ceo-nnnn-naming-r-nnnn-cio-2): mint refuses a topic ending -ceo-NNNN and a GOAL citing CEO-NNNN, naming R-NNNN, and mints a topic citing R-NNNN. Three measurements on a scratch postoffice and a PRIVATE queue daemon (never 11300); one MINT line; exit 0 only at 1 1 1
     local _w _rt=0 _rg=0 _ar=0 _out _rc _head _d
-    s4e_probe_daemon || return 2
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_mint_ceo.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; return 2; }
     for _d in tasks claims cfo/inbox; do mkdir -p "$_w/$_d"; done; : > "$_w/QUEUE.tsv"; : > "$_w/BOARD.md"; cp "$PO/MODE" "$_w/MODE" 2>/dev/null || printf 'TENET\n' > "$_w/MODE"
     _head='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
@@ -771,19 +481,13 @@ BODY
     rm -rf "$_w"
     [ "$_rt" = 1 ] && [ "$_rg" = 1 ] && [ "$_ar" = 1 ]; exit $?; }
 # THE PREMISE-SHAPE PROBE (the cio's cut, 2026-11-07; row bus-mint-accepts-a-premise-that-is-a-bare-inversion-of-the-done-when-so-a-refusing-probe-reads-as-an-open-problem).
-# Three measurements on scratch postoffices and a PRIVATE queue daemon (never 11300): mint refuses a PREMISE-WHEN that is the DONE-WHEN behind a
+# Three measurements on scratch postoffices (the file road, CIO-82): mint refuses a PREMISE-WHEN that is the DONE-WHEN behind a
 # leading ! (a bare inversion reads rc 0 when the criterion refuses rc 2); mint accepts the lawful shape; and a row whose PREMISE-WHEN exits 2 is
 # SKIPPED by next, not served. Each reads what the bus does today: nothing is assumed, so the line is RED on a tree that still admits the inversion.
 s4e_mint_probe_premise_shape() {
-    local _port _bp _w _wq _rb=0 _al=0 _rq=0 _rc _out _o2 _head _x _id="$$"
-    _port=$((21000 + ($$ % 20000)))
-    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bp=$!
-    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && break; sleep 0.1; done
-    if ! { kill -0 "$_bp" 2>/dev/null && S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd'; }; then
-        kill "$_bp" 2>/dev/null; echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; fi
-    export S4E_QUEUE_PORT="$_port"
+    local _w _wq _rb=0 _al=0 _rq=0 _rc _out _o2 _head _x _id="$$"
     _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_shape.XXXXXX")" && _wq="$(mktemp -d "${TMPDIR:-/tmp}/s4e_premise_shape_q.XXXXXX")" \
-        || { kill "$_bp" 2>/dev/null; echo "REFUSE(2): mktemp failed"; exit 2; }
+        || { echo "REFUSE(2): mktemp failed"; exit 2; }
     for _d in "$_w" "$_wq"; do mkdir -p "$_d/tasks" "$_d/claims" "$_d/cfo/inbox"; : > "$_d/QUEUE.tsv"; : > "$_d/BOARD.md"; cp "$PO/MODE" "$_d/MODE" 2>/dev/null || printf 'TENET\n' > "$_d/MODE"; done
     _head='cd "${S4E_HOME:?REFUSE(2): S4E_HOME unset}" &&'
     # 1. the bare inversion: DONE-WHEN and PREMISE-WHEN are the same command, the premise behind a leading !
@@ -816,7 +520,6 @@ BODY
         _o2="$(S4E_POST="$_wq" S4E_SEAT=cfo S4E_NO_BANNER=1 S4E_HOME="$S4E" S4E_RELEASE_COOLDOWN=0 bash "$0" next 2>&1)"
         if ! printf '%s\n' "$_o2" | grep -q "^FREE $_x " && printf '%s\n' "$_o2" | grep -q "the premise of $_x could not measure"; then _rq=1; fi
     fi
-    kill "$_bp" 2>/dev/null; wait "$_bp" 2>/dev/null
     rm -rf "$_w" "$_wq"
     printf 'MINT refuses_bare_inversion=%d accepts_lawful=%d premise_rc2_is_refuse=%d\n' "$_rb" "$_al" "$_rq"
     [ "$_rb" = 1 ] && [ "$_al" = 1 ] && [ "$_rq" = 1 ]; exit $?; }
@@ -1582,8 +1285,6 @@ s4e_sweep_plant_rc2_stale() {   # step 9's probe on a scratch postoffice: a refu
   printf '# plant queue (box-scheduler step 9, CTO-496)\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-slow\tASSIGNED:plant-slow\n2\t%s\tplant-owner\tASSIGNED:plant-owner\n' "$_r2" "$_st" "$_fr" "$_tm" > "$_w/QUEUE.tsv"
   mk() { printf '# TASK %s\nGOAL: plant\nDONE-WHEN: %s\nLINKS: plant\n## NEXT\nplant\n## QA\n## LEDGER\n- [%s·%s] minted\n' "$1" "$2" "$3" "$4" > "$_w/tasks/$1.task.md"; }
   mk "$_r2" 'cd "$S4E_HOME" && exit 2' plant-owner "$(date -u +%F)"; mk "$_st" 'cd "$S4E_HOME" && false' plant-slow 2026-10-01; mk "$_fr" 'cd "$S4E_HOME" && false' plant-slow "$(date -u +%F)"; mk "$_tm" 'cd "$S4E_HOME" && sleep 30' plant-owner "$(date -u +%F)"
-  _rj="$(python3 "$S4E/harness/scripts/util_queue.py" put "probe-retire-$$" "$_r2" --pri 1000 --ttr 60 2>/dev/null)" || _rj=""
-  [ -n "$_rj" ] && printf 'QUEUE-JOB: %s tube=probe-retire-%s\n' "$_rj" "$$" >> "$_w/tasks/$_r2.task.md"
   printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_r2.claim"; printf 'plant-slow\nASSIGNED-BY plant 2026-10-01T00:00:00Z\n' > "$_w/claims/$_st.claim"
   printf 'plant-slow\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_fr.claim"; cp "$_w/claims/$_fr.claim" "$_w/fresh.before"; printf 'plant-owner\nASSIGNED-BY plant %s\n' "$_now" > "$_w/claims/$_tm.claim"
   _o="$(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
@@ -1600,8 +1301,6 @@ $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
 $(S4E_POST="$_w" S4E_NO_BANNER=1 "$0" sweep --close-green --timeout 2 2>&1)"
   grep -qP "^2\t\Q$_r2\E\tplant-owner\tRETIRED:criterion-refused-3-sweeps" "$_w/QUEUE.tsv" || _why="$_why the refusing row is not RETIRED after three sweeps;"
   [ -e "$_w/claims/$_r2.claim" ] && _why="$_why the retired row kept a claim;"
-  [ -n "$_rj" ] && [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_rj" 2>/dev/null | cut -f3)" = buried ] || _why="$_why the retired row's job is not buried;"
-  [ -n "$_rj" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$_rj" >/dev/null 2>&1
   grep -q 'RETIRED BY THE SWEEP' "$_w/tasks/$_r2.task.md" || _why="$_why the retired row has no ledger line;"
   ls "$_w/plant-owner/inbox" | grep -q "retired-refusing-row" || _why="$_why plant-owner got no retirement telegram;"
   grep -qP "^2\t\Q$_tm\E\tplant-owner\tASSIGNED:plant-owner$" "$_w/QUEUE.tsv" || _why="$_why the timing-out row moved;"
@@ -1709,89 +1408,6 @@ s4e_done_plant_unblock() {   # step 35's probe on a scratch postoffice: a row AS
     ls "$w/$ME/inbox" | grep -q . && ls "$w/plant-y/inbox" | grep -q . || why="$why a restored row's seat got no telegram;"
     [ -z "$why" ] && { echo "DONE unblocked=2 restored_state=1 telegrams=2 (probe: a row parked from ASSIGNED:x returned to ASSIGNED:x, a FREE row to FREE, each with a ledger line and a telegram, the RESTORE-STATE line retired)"; exit 0; }
     echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -6 | sed 's/^/  | /'; exit 1; }
-s4e_park_plant_bury() {   # step 6's park probe (park --probe-bury) on a scratch postoffice: a row A with a READY job is parked BLOCKED-ON:B and its job is buried (no holder: the bury-ready road); B is done, A returns to its state and its job is kicked back to ready by that done
-    local w o why="" a b c tube j jc now drc n oh
-    [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-bury]: S4E_SEAT unset"; exit 2; }
-    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_bury.XXXXXX")" || { echo "REFUSE(2) [park --probe-bury]: mktemp failed"; exit 2; }
-    a="bury-parked-$$"; b="bury-closer-$$"; c="bury-other-$$"; tube="probe-park-$$"; j=""; jc=""; oh=0; now="$(date -u +%FT%TZ)"
-    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1; [ -n "$jc" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$jc" >/dev/null 2>&1' EXIT
-    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" "$w/plant-x/inbox" || { echo "REFUSE(2) [park --probe-bury]: cannot make the scratch postoffice"; exit 2; }
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$w/MODE"
-    j="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$a" --pri 1000 --ttr 60 2>/dev/null)" || j=""
-    [ -n "$j" ] || { echo "REFUSE(2) [park --probe-bury]: no beanstalkd job could be put (util_queue.py status tells why)"; exit 2; }
-    jc="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$c" --pri 1000 --ttr 60 2>/dev/null)" || jc=""
-    [ -n "$jc" ] || { echo "REFUSE(2) [park --probe-bury]: no beanstalkd job could be put for the other-holder row (util_queue.py status tells why)"; exit 2; }
-    printf '# plant queue (fleet-queue step 6)\n2\t%s\tplant-x\tFREE\n2\t%s\t%s\tFREE\n2\t%s\tplant-x\tFREE\n' "$a" "$b" "$ME" "$c" > "$w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$a" "$now" "$j" "$tube" > "$w/tasks/$a.task.md"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$b" "$now" > "$w/tasks/$b.task.md"
-    printf '%s\nRUNNING\n' "$ME" > "$w/claims/$b.claim"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$c" "$now" "$jc" "$tube" > "$w/tasks/$c.task.md"
-    printf 'plant_other\nRUNNING\n' > "$w/claims/$c.claim"
-    run() { env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" "$@" 2>&1; }
-    run park "$a" "BLOCKED-ON:$b" > /dev/null
-    run park "$c" "BLOCKED-ON:$b" > /dev/null
-    n=0; [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = buried ] && n=1
-    [ "$n" = 1 ] || why="$why park did not bury the ready job;"
-    [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$jc" 2>/dev/null | cut -f3)" = buried ] && oh=1
-    [ "$oh" = 1 ] || why="$why park did not bury the ready job of another seat's claim (other_holder_buried=0);"
-    grep -q "^RESTORE-STATE: FREE$" "$w/tasks/$a.task.md" || why="$why park did not record RESTORE-STATE FREE;"
-    o="$(run done "$b")"; drc=$?
-    [ "$drc" = 0 ] || why="$why done of the closer returned rc $drc;"
-    printf '%s\n' "$o" | grep -q "kicked_by=done job=$j" || why="$why done did not kick the job [$(printf '%s' "$o" | grep -m1 'kicked_by' | cut -c1-100)];"
-    [ "$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" 2>/dev/null | cut -f3)" = ready ] || why="$why the job is not ready after the done;"
-    [ "$(grep -P "^2\t\Q$a\E\t" "$w/QUEUE.tsv" | cut -f4)" = FREE ] || why="$why the row did not return to FREE;"
-    grep -q '^RESTORE-STATE: ' "$w/tasks/$a.task.md" && why="$why the RESTORE-STATE line was not retired;"
-    if [ -z "$why" ]; then echo "PARK buried=1 kicked_by=done restored=1 other_holder_buried=$oh (probe: a parked row's ready job was buried; the blocker's done returned the row to FREE and kicked the job back to ready)"; exit 0; fi
-    echo "PARK PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
-s4e_park_plant_measuring() (   # the cure of the cio's design note (2026-11-06 09:1x; row bus-park-measuring-rewrites-the-claim-and-releases-the-lease-so-next-re-reserves-the-job-over-measuring): a MEASURING park KEEPS THE HOLDER. A job that reserve-hold reserved for this seat, its claim naming this seat, stays reserved after `park <topic> MEASURING:<seat>:<pid>`, and the claim keeps its first line and gains one MEASURING line. A PRIVATE beanstalkd on a free port (never 11300) and a scratch postoffice. Prints one PARK measuring_keeps_lease=1|0 line; rc 0 when 1, rc 1 when 0, rc 2 when it cannot measure.
-    [ -n "$ME" ] || { echo "REFUSE(2) [park --probe-bury]: S4E_SEAT unset"; exit 2; }
-    local _port _bpid _w="" _m _tube _j _hold _rj _prc _out _ce _rs _mline=0 _keep=0 _i _up=0
-    _port=$((21000 + ($$ % 20000)))
-    beanstalkd -l 127.0.0.1 -p "$_port" >/dev/null 2>&1 & _bpid=$!
-    trap '[ -n "$_w" ] && rm -rf "$_w"; kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
-    for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-    [ "$_up" = 1 ] || { echo "REFUSE(2) [park --probe-bury]: a private beanstalkd would not start on port $_port"; exit 2; }
-    _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_park_measuring.XXXXXX")" || { echo "REFUSE(2) [park --probe-bury]: mktemp failed"; exit 2; }
-    _m="park-measuring-probe-$$"; _tube="probe-measure-$$"
-    mkdir -p "$_w/claims" "$_w/tasks" "$_w/$ME/inbox" || { echo "REFUSE(2) [park --probe-bury]: cannot make the scratch postoffice"; exit 2; }
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$_w/MODE"
-    printf '2\t%s\t%s\tCLAIMED:%s\n' "$_m" "$ME" "$ME" > "$_w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$_m" "$(date -u +%FT%TZ)" > "$_w/tasks/$_m.task.md"
-    _j="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" put "$_tube" "$_m" --pri 1000 --ttr 60 2>/dev/null)" || _j=""
-    [ -n "$_j" ] || { echo "REFUSE(2) [park --probe-bury]: no job could be put on the private beanstalkd"; exit 2; }
-    _ce="$_w/claims/$_m.claim"; printf '%s\nRESERVED job=%s tube=%s\n' "$ME" "$_j" "$_tube" > "$_ce"
-    _hold="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" reserve-hold "$_tube" --seat "$ME" --claim-dir "$_w/claims" 2>/dev/null)" || _hold=""
-    _rj="$(printf '%s' "$_hold" | cut -f1)"
-    [ -n "$_rj" ] || { echo "REFUSE(2) [park --probe-bury]: reserve-hold reserved no job"; exit 2; }
-    _out="$(env -u S4E_PID_LOCK S4E_POST="$_w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 S4E_QUEUE_PORT="$_port" bash "$0" park "$_m" "MEASURING:$ME:$$" 2>&1)"; _prc=$?
-    [ "$(head -1 "$_ce")" = "$ME" ] && grep -qF "MEASURING $ME:$$ " "$_ce" && _mline=1
-    sleep 3
-    _rs="$(S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_rj" 2>/dev/null | cut -f3)"
-    [ "$_prc" = 0 ] && [ "$_mline" = 1 ] && [ "$_rs" = reserved ] && _keep=1
-    if [ "$_keep" = 1 ]; then echo "PARK measuring_keeps_lease=1 job=$_rj claim_first_line=$ME measuring_line=$_mline reserved_after_3s=$_rs (probe: a MEASURING park keeps the claim and its reserve-hold holder, so the job stays reserved)"; exit 0; fi
-    echo "PARK measuring_keeps_lease=0 job=$_rj park_rc=$_prc claim_first_line=$(head -1 "$_ce" 2>/dev/null) measuring_line=$_mline reserved_after_3s=$_rs (probe: a MEASURING park must keep the claim; the holder then keeps the job)"
-    printf '%s\n' "$_out" | tail -3 | sed 's/^/  | /'; exit 1
-)
-s4e_done_plant_delete() {   # step 6's done probe (done --probe-delete) on a scratch postoffice: a claimed row whose READY job sits in a scratch tube; done closes it and deletes the job (stats-job reads not found), the JOB-RECEIPT on the claim
-    local w o x tube j now rc why=""
-    [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-delete]: S4E_SEAT unset"; exit 2; }
-    w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_done_delete.XXXXXX")" || { echo "REFUSE(2) [done --probe-delete]: mktemp failed"; exit 2; }
-    x="delete-done-$$"; tube="probe-done-$$"; j=""; now="$(date -u +%FT%TZ)"
-    trap 'rm -rf "$w"; [ -n "$j" ] && python3 "$S4E/harness/scripts/util_queue.py" delete "$j" >/dev/null 2>&1' EXIT
-    mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox" || { echo "REFUSE(2) [done --probe-delete]: cannot make the scratch postoffice"; exit 2; }
-    { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; } > "$w/MODE"
-    j="$(python3 "$S4E/harness/scripts/util_queue.py" put "$tube" "$x" --pri 1000 --ttr 60 2>/dev/null)" || j=""
-    [ -n "$j" ] || { echo "REFUSE(2) [done --probe-delete]: no beanstalkd job could be put (util_queue.py status tells why)"; exit 2; }
-    printf '2\t%s\t%s\tASSIGNED:%s\n' "$x" "$ME" "$ME" > "$w/QUEUE.tsv"
-    printf '# TASK %s\nGOAL: plant\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nLINKS: plant %s\nQUEUE-JOB: %s tube=%s\n## NEXT\nplant\n## QA\n## LEDGER\n- [plant] minted\n' "$x" "$now" "$j" "$tube" > "$w/tasks/$x.task.md"
-    printf '%s\nASSIGNED-BY plant %s\nRUNNING\n' "$ME" "$now" > "$w/claims/$x.claim"
-    o="$(env -u S4E_PID_LOCK S4E_POST="$w" S4E_SEAT="$ME" S4E_HOME="$S4E" S4E_NO_BANNER=1 bash "$0" done "$x" 2>&1)"; rc=$?
-    [ "$rc" = 0 ] || why="$why done returned rc $rc [$(printf '%s' "$o" | tail -1 | cut -c1-120)];"
-    python3 "$S4E/harness/scripts/util_queue.py" stats-job "$j" >/dev/null 2>&1 && why="$why the job is still there after done;"
-    grep -q "^JOB-RECEIPT job_deleted=1 job=$j by=bus" "$w/claims/$x.claim" || why="$why no JOB-RECEIPT job_deleted=1 on the claim;"
-    grep -q '^DONE$' "$w/claims/$x.claim" || why="$why the claim did not read DONE;"
-    if [ -z "$why" ]; then echo "DONE job_deleted=1 (probe: a claimed row closed by done; its ready job was deleted by the bus, stats-job reads not found, the JOB-RECEIPT is on the claim)"; exit 0; fi
-    echo "DONE PROBE RED:$why"; printf '%s\n' "$o" | tail -4 | sed 's/^/  | /'; exit 1; }
 s4e_done_plant_restore_seat() {   # fleet-done-restores-a-blocked-row-only-to-a-seat-that-exists (done --probe-restore-seat) on a scratch postoffice: a blocker A closed DONE restores B, BLOCKED-ON A with RESTORE-STATE naming hq_nobody (no mailbox, not on ROSTER), to its owner ASSIGNED:<probe seat>, never to hq_nobody, with one ledger line naming the stale seat
     local w o why="" a b now st n stale fb
     [ -n "$ME" ] || { echo "REFUSE(2) [done --probe-restore-seat]: S4E_SEAT unset"; exit 2; }
@@ -1841,10 +1457,9 @@ s4e_next_plant_serve() {   # step 32's probe on a scratch postoffice: next write
     o="$(run claim "$c")"; grep -qx RUNNING "$w/claims/$c.claim" 2>/dev/null && why="$why a fourth live claim of a FREE row passed the cap of two;"
     [ -z "$why" ] && { echo "NEXT writes=0 order=assign-time counted_live=0 (probe: two assigned rows served newest-assign first with no write, a FREE row served unlocked, an assigned row claimed past two live claims, a free row refused)"; exit 0; }
     echo "NEXT PROBE RED:$why"; exit 1; }
-s4e_next_probe_no_tier() {   # next --probe-no-tier (the cio's design 2026-11-08 08:4x CST, cut by officer_03 under COO-484): a seat the ROSTER names but the TIERS table lacks is REFUSED rc 2 by next, the cure (util_sync_root.sh) named and no FREE row served; the control arm, the same scratch postoffice with the seat in TIERS at tier 4, reaches the reserve over its own tubes (nothing ready in seat-<me>) and is not refused. A scratch postoffice, a scratch TIERS.tsv and a PRIVATE beanstalkd (the live queue is never touched). One NEXT_NO_TIER line; rc 0 only when every check holds
+s4e_next_probe_no_tier() {   # next --probe-no-tier (the cio's design 2026-11-08 08:4x CST, cut by officer_03 under COO-484): a seat the ROSTER names but the TIERS table lacks is REFUSED rc 2 by next, the cure (util_sync_root.sh) named and no FREE row served; the control arm, the same scratch postoffice with the seat in TIERS at tier 4, reaches the reserve over its own tubes (nothing ready in seat-<me>) and is not refused. A scratch postoffice, a scratch TIERS.tsv and the file road (the live queue is never touched). One NEXT_NO_TIER line; rc 0 only when every check holds
     local w t o rc cure free same ctl why="" before
     [ -n "$ME" ] || { echo "REFUSE(2) [next --probe-no-tier]: S4E_SEAT unset"; exit 2; }
-    s4e_probe_daemon || exit 2
     w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_next_no_tier.XXXXXX")" || { echo "REFUSE(2) [next --probe-no-tier]: mktemp failed"; exit 2; }
     mkdir -p "$w/claims" "$w/tasks" "$w/$ME/inbox"
     { head -1 "$PO/MODE" 2>/dev/null || echo TENET; echo "# probe"; echo "ROSTER: $ME"; } > "$w/MODE"
@@ -1971,14 +1586,9 @@ s4e_sweep_plant_awaiting() {   # step 31's probe: a scratch postoffice, a pendin
     ls "$po/$ME/inbox" 2>/dev/null | grep -q . || why="$why no telegram to the lander;"
     [ -z "$why" ] && { echo "PARK awaiting=request cleared_by=verdict restored=ASSIGNED:plant-lander telegram=1 (probe: a pending request id parks, a nameless id refuses rc 2, no clear before the verdict, the sweep restores the row to the request's seat with a ledger line and a telegram)"; exit 0; }
     echo "PARK PROBE RED:$why"; exit 1; }
-s4e_released_state() {   # <topic> -> the QUEUE.tsv state a row reads once its claim is released (row 618, the cio 2026-11-07): QUEUED:<tube> while its QUEUE-JOB is in its tube, else FREE
-  # A RESERVED job counts as in its tube: the holder that reserved it (util_queue.py reserve-hold) releases it the moment the claim file is gone, so a reserved job is about to be ready. Reading "ready" alone wrote FREE in that window.
-  local _j _id _tube _st
-  _j="$(s4e_baton_job_get "$1")"; _id="${_j%% *}"
-  case "$_j" in *tube=*) _tube="${_j##*tube=}";; *) echo FREE; return 0;; esac
-  case "$_id" in ''|*[!0-9]*) echo FREE; return 0;; esac
-  _st="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_id" 2>/dev/null | cut -f3)"
-  case "$_st" in ready|reserved) echo "QUEUED:$_tube";; *) echo FREE;; esac
+s4e_released_state() {   # <topic> -> the QUEUE.tsv state a row reads once its claim is released (row 618, the cio 2026-11-07; the file road, CIO-82): QUEUED:<tube> when its claim holds a RESERVED file tube=<tube> line (a served row goes back to its tube), else FREE
+  local _tube; _tube="$(sed -n 's/^RESERVED file tube=\([^ ]*\).*/\1/p' "$PO/claims/$1.claim" 2>/dev/null | tail -1)"
+  if [ -n "$_tube" ]; then echo "QUEUED:$_tube"; else echo FREE; fi
 }
 s4e_sweep_repair_columns() {   # row 618 CHANGE 2 (the cio 2026-11-07): a QUEUE.tsv row reading CLAIMED:<seat> or ASSIGNED:<seat> with NO claim file behind it is repaired to what a released row reads (s4e_released_state), one ledger line per repair; prints SWEEP repaired column count=N
   local _q="$PO/QUEUE.tsv" _todo _t _st _new _n=0
@@ -1995,24 +1605,19 @@ s4e_sweep_repair_columns() {   # row 618 CHANGE 2 (the cio 2026-11-07): a QUEUE.
   done <<< "$_todo"
   echo "SWEEP repaired column count=$_n"
 }
-s4e_unclaim_plant_column() {   # unclaim --probe-column (row 618, the cio 2026-11-07): (a) a reserved row that unclaim releases reads QUEUED:<tube>; (b) a jobless claimed row reads FREE; (c) a planted CLAIMED column with no claim file is repaired by one sweep pass (sweep_repaired=1). A PRIVATE beanstalkd on a free port and a scratch postoffice; the live queue is never written
-  local _w _port _i _up=0 _seat=worker_20 _tube=tier-haiku _now _ta _tb _tc _ja _x _o _ca _cb _cn _ok=1 _why=""
-  _port=$((21000 + ($$ % 20000)))
-  beanstalkd -l 127.0.0.1 -p "$_port" 9>&- >/dev/null 2>&1 & _bpid=$!
-  trap 'kill "$_bpid" 2>/dev/null; wait "$_bpid" 2>/dev/null' EXIT
-  for _i in $(seq 1 50); do S4E_QUEUE_PORT="$_port" python3 "$S4E/harness/scripts/util_queue.py" status 2>/dev/null | grep -q '^QUEUE daemon=beanstalkd' && { _up=1; break; }; sleep 0.1; done
-  { [ "$_up" = 1 ] && kill -0 "$_bpid" 2>/dev/null; } || { echo "REFUSE(2): a private beanstalkd would not start on port $_port"; exit 2; }
-  export S4E_QUEUE_PORT="$_port"
+s4e_unclaim_plant_column() {   # unclaim --probe-column (row 618, the cio 2026-11-07): (a) a reserved row that unclaim releases reads QUEUED:<tube>; (b) a jobless claimed row reads FREE; (c) a planted CLAIMED column with no claim file is repaired by one sweep pass (sweep_repaired=1). A scratch scope with a claude-named process and a scratch postoffice; the live queue is never written
+  local _w _seat=worker_20 _tube=tier-haiku _now _ta _tb _tc _x _o _ca _cb _cn _ok=1 _why=""
   _w="$(mktemp -d "${TMPDIR:-/tmp}/s4e_unclaim_plant.XXXXXX")" || { echo "REFUSE(2): mktemp failed"; exit 2; }
+  # the file road (CIO-82): the seat's session is a copy of sleep named claude in a scratch scope, so next's reserve reads its pid as on the box
+  mkdir -p "$_w/scopes/s4e-seat-$_seat.scope"; cp /bin/sleep "$_w/claude"; "$_w/claude" 300 >/dev/null 2>&1 </dev/null 9>&- & S4E_UCP=$!; echo "$S4E_UCP" > "$_w/scopes/s4e-seat-$_seat.scope/cgroup.procs"
+  trap 'kill "$S4E_UCP" 2>/dev/null' EXIT; export S4E_SEAT_SCOPES="$_w/scopes"
   mkdir -p "$_w/claims" "$_w/tasks" "$_w/$_seat/inbox"; cp "$PO/MODE" "$_w/MODE"; _now="$(date -u +%FT%TZ)"
   _ta="unclaim-plant-reserved-$$"; _tb="unclaim-plant-jobless-$$"; _tc="unclaim-plant-column-$$"
-  _ja="$(s4e_queue_put "$_tube" "$_ta" 1002 3600)"
-  [ -n "$_ja" ] || { echo "REFUSE(2): the private daemon refused the put"; rm -rf "$_w"; exit 2; }
   for _x in "$_ta" "$_tb" "$_tc"; do printf '# TASK %s\nGOAL: plant\nSKILLS: fleet-bus\nDONE-WHEN: test -f "$S4E_HOME/harness/scripts/s4e_msg.sh"\nPREMISE-WHEN: true\nLINKS: plant %s\n## NEXT\nplant\n## QA\n## LEDGER\n' "$_x" "$_now" > "$_w/tasks/$_x.task.md"; done
   printf '2\t%s\t@haiku\tQUEUED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n2\t%s\t@haiku\tCLAIMED:%s\n' "$_ta" "$_tube" "$_tb" "$_seat" "$_tc" "$_seat" > "$_w/QUEUE.tsv"
-  # (a) the seat's own next reserves the job and takes the claim; its unclaim releases the row
+  # (a) the seat's own next serves the QUEUED row from the file and takes the claim; its unclaim puts the row back in its tube
   _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" next 2>&1)"
-  printf '%s\n' "$_o" | grep -q "^RESERVED $_ta " || { _ok=0; _why="$_why next did not reserve the planted job;"; }
+  printf '%s\n' "$_o" | grep -q "^RESERVED $_ta " || { _ok=0; _why="$_why next did not serve the planted row;"; }
   _o="$(S4E_POST="$_w" S4E_SEAT="$_seat" S4E_NO_BANNER=1 "$0" unclaim "$_ta" 2>&1)"
   _ca="$(awk -F'\t' -v t="$_ta" '$2 == t {print $4; exit}' "$_w/QUEUE.tsv")"
   [ "$_ca" = "QUEUED:$_tube" ] || { _ok=0; _why="$_why the reserved row reads '$_ca' after unclaim, not QUEUED:$_tube;"; }
@@ -3717,7 +3322,7 @@ case "$cmd" in
   rule)  shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_rule.sh" "$@"; exit $?;;
   resume) shift; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_resume.sh" "$@"; exit $?;;
   answer) shift; [ "${_S4E_FD_OWNER:-}" = "$$" ] && s4e_pid_unhold; S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" answer "$@"; exit $?;;   # the identity is released first: the answer's done leg takes it as its own verb (the cto 11:2x: three of three answers refused "could not retake the identity", the holder this outer process)
-  ask)   [ "${2:-}" = --probe-queue ] && { S4E_SEAT="$ME" S4E_POST="$PO" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_ask.sh" ask --probe-queue; exit $?; }
+  ask)
          # fleet-queue step 8 (the cio's design; skill fleet-bus section 8): a TOPIC with no mailbox named before it is a QUEUED ask (s4e_ask.sh):
          # the question row q-<topic>-<n> is minted, its job goes into the tube above the asker, and the asking row is parked BLOCKED-ON it.
          # The addressed form below (a seat named first, R-2081) is unchanged.
@@ -3847,26 +3452,14 @@ case "$cmd" in
          s4e_set_row_state "$topic" "QUEUED:$q_tube" || true
          printf -- '- [%s·%s] QUEUED into %s by %s (owner %s).\n' "$ME" "$(date -u +%F)" "$q_tube" "$ME" "$q_owner" > "$_tmp" 2>/dev/null; _tmp2="$(mktemp)"; awk -v l="$(cat "$_tmp" 2>/dev/null)" '{print} /^## LEDGER$/ && !d {print l; d=1}' "$PO/tasks/$topic.task.md" > "$_tmp2" && cat "$_tmp2" > "$PO/tasks/$topic.task.md"; rm -f "$_tmp" "$_tmp2"
          echo "queued $topic -> $q_tube (owner $q_owner, state QUEUED:$q_tube)"; s4e_wake_hint "$q_tube" "$topic" queue; exit 0;;
-  expire) # fleet-queue step 5 (the cio 2026-11-05): a reserved job whose holder is gone is back in its tube (beanstalkd released it when the holder's
+  expire) # fleet-queue step 5 (the cio 2026-11-05), the file road (CIO-82): a claim whose holder's pid is gone is archived and its row goes back to its tube (the queue released it when the holder's
          # connection closed, or its TTR ran out); the tick calls this for every claim whose RESERVED job reads ready: the claim is archived, the LEDGER
          # says so, the row reads QUEUED:<tube>, and the next seat that reserves it resumes at the baton's RESUME line. Nothing is deleted or re-put.
          if s4e_file_road; then   # bus-one-queue step 5: on the file road a claim's holder is its pid; no topic walks every claim
            if [ -n "${2:-}" ]; then s4e_file_expire_one "$2"; exit $?; fi
            _en=0; for _ec in "$PO"/claims/*.claim; do [ -f "$_ec" ] || continue; s4e_file_expire_one "$(basename "$_ec" .claim)" && _en=$((_en+1)); done
            echo "EXPIRE walked the claims: $_en expired"; exit 0
-         fi
-         [ -n "${2:-}" ] || s4e_need expire "a topic" "s4e_msg.sh expire <topic>" "Clears the claim of a reserved job that is back in its tube (the lease expired); the tick's verb."
-         topic="$2"; c="$PO/claims/$topic.claim"; [ -f "$c" ] || { echo "EXPIRE $topic: no claim"; exit 1; }
-         _ej="$(grep -m1 '^RESERVED job=' "$c" | sed 's/^RESERVED job=\([0-9]*\) tube=\([^ ]*\).*/\1 \2/')"; [ -n "$_ej" ] || { echo "EXPIRE $topic: the claim holds no reserved job"; exit 1; }
-         _eid="${_ej%% *}"; _etube="${_ej##* }"; _eholder="$(head -1 "$c")"
-         _est="$(python3 "$S4E/harness/scripts/util_queue.py" stats-job "$_eid" 2>/dev/null | cut -f3)"
-         case "$_est" in ready|delayed) ;; reserved) echo "EXPIRE $topic: job $_eid is still reserved (the holder lives)"; exit 1;; "") echo "EXPIRE $topic: job $_eid is gone (done or escalated); nothing to expire"; exit 1;; *) echo "EXPIRE $topic: job $_eid reads $_est"; exit 1;; esac
-         mkdir -p "$PO/claims/expired"; _ets="$(date -u +%FT%TZ)"; mv "$c" "$PO/claims/expired/$topic.claim.$_ets"
-         _erl="$(awk '/^## RESUME/{f=1;next} /^## /{f=0} f && /^RESUME /{print; exit}' "$PO/tasks/$topic.task.md" 2>/dev/null | cut -c1-200)"
-         s4e_ledger_prepend "$topic" "LEASE expired holder=$_eholder job=$_eid tube=$_etube at $_ets: the holder was gone and the job is back in $_etube; the next seat resumes at ${_erl:+the RESUME line: $_erl}${_erl:-NEXT (no RESUME line)}" 2>/dev/null \
-           || sed -i "s|^## LEDGER\$|## LEDGER\n- [$ME·$_ets] LEASE expired holder=$_eholder job=$_eid tube=$_etube: the holder was gone and the job is back in $_etube; the next seat resumes at ${_erl:+the RESUME line}${_erl:-NEXT}.|" "$PO/tasks/$topic.task.md"
-         s4e_set_row_state "$topic" "QUEUED:$_etube" || true
-         echo "EXPIRE $topic job=$_eid tube=$_etube holder=$_eholder claim_archived=1 ledger=1 resume_line=$([ -n "$_erl" ] && echo 1 || echo 0)"; exit 0;;
+         fi;;
   claim) [ -n "${2:-}" ] || s4e_need claim "a topic" "s4e_msg.sh claim <topic>" "Takes a row deliberately. Use \`next\` to be served one; this verb is for a row you have chosen by name."
          [ "$2" = --probe-overlap ] && { s4e_claim_probe_overlap; exit $?; }
          [ "$2" = --probe-premise ] && { s4e_claim_probe_premise; exit $?; }
@@ -3956,7 +3549,6 @@ case "$cmd" in
                 s4e_announce_claim "$topic"
                 else rm -f "$t"; echo "RACE LOST: $(head -1 "$c" 2>/dev/null) owns it"; exit 1; fi; fi;;
   escalate) # ⭐ fleet-queue step 7 (the cio, 2026-11-05 17:5x): after one honest try, the claim's holder (or a boss) moves the job one tube up with the measurement on stdin; at the top the row parks PARKED-LON-HOLD:escalated for Lon. escalate --probe proves it on a scratch postoffice.
-         [ "${2:-}" = --probe ] && s4e_escalate_probe
          [ -n "${2:-}" ] || s4e_need escalate "a topic" "s4e_msg.sh escalate <topic> --stdin   (the measurement on stdin)" "Moves the job of a row you hold one tube up (haiku to sonnet to opus to fable) at priority 200, with the measurement on the baton; at the top the row parks PARKED-LON-HOLD:escalated for Lon."
          [ "${3:-}" = --to ] && { s4e_escalate_takeup "$2" "${4:-}"; exit $?; }
          s4e_escalate "$2"; exit $?;;
@@ -4071,7 +3663,6 @@ case "$cmd" in
          # swept into QUEUE.done.tsv). Recording a block this way, not as bare PARKED/BLOCKED text, is what makes
          # it self-clearing instead of needing a human to remember to come back and re-park it.
          [ "${2:-}" = --probe-awaiting ] && s4e_sweep_plant_awaiting
-         [ "${2:-}" = --probe-bury ] && { ( s4e_park_plant_bury ); _pb=$?; s4e_park_plant_measuring; _pm=$?; [ "$_pb" = 0 ] && [ "$_pm" = 0 ]; exit $?; }
          [ -n "${2:-}" ] || s4e_need park "a topic" "s4e_msg.sh park <topic> [STATE]" "Takes a row out of the picker WITHOUT closing it (default state PARKED; park <topic> FREE puts it back). It has no no-argument listing -- \`board\` is the verb that prints the board."
          topic="$2"; st="${3:-PARKED}"; q="$PO/QUEUE.tsv"
          # ⛔⭐ ARG 3 IS THE STATE, NOT A REASON — AND IT USED TO ACCEPT ANY STRING AT ALL (hq_P, 2026-08-29,
@@ -4226,7 +3817,6 @@ case "$cmd" in
   done)  [ -n "${2:-}" ] || s4e_need done "a topic" "s4e_msg.sh done <topic>" "Closes a row by RUNNING its baton DONE-WHEN; it refuses on a red or an rc=2. Completion is computed, never declared."
          [ "$2" = --probe-unblock ] && s4e_done_plant_unblock
          [ "$2" = --probe-budget ] && { s4e_done_probe_budget; exit $?; }
-         [ "$2" = --probe-delete ] && { s4e_done_plant_delete; exit $?; }
          [ "$2" = --probe-restore-seat ] && { s4e_done_plant_restore_seat; exit $?; }
          [ "$2" = --probe-lock ] && { s4e_pid_release; S4E_SEAT="$ME" S4E_HOME="$S4E" bash "$(dirname "${BASH_SOURCE[0]}")/s4e_probe_done_lock.sh"; exit $?; }
          topic="$2"; c="$PO/claims/$topic.claim"
@@ -4988,10 +4578,8 @@ TASKEOF
   next) [ "${2:-}" = --probe-serve ] && s4e_next_plant_serve
         [ "${2:-}" = --probe-no-tier ] && s4e_next_probe_no_tier
         # fleet-control step 12 (the cio, 2026-11-07 14:5x; Lon: the fleet runs without the cio's attention): `next --wait S` holds the reserve open S seconds
-        # (beanstalkd reserve-with-timeout), so a worker the Stop gate sends back polls the tube instead of going idle until a message wakes it; 0 is the old instant read.
+        # (a reserve with a timeout), so a worker the Stop gate sends back polls the tube instead of going idle until a message wakes it; 0 is the old instant read.
         if [ "${2:-}" = --wait ]; then case "${3:-}" in ''|*[!0-9]*) printf '⛔ REFUSED: next --wait takes whole seconds (got %s)\n' "${3:-nothing}" >&2; exit 2;; esac; export S4E_NEXT_WAIT="$3"; fi
-        [ "${3:-}" = --probe-port-check ] && { s4e_probe_port_check; exit $?; }
-        [ "${2:-}" = --probe-reserve ] && s4e_next_probe_reserve; [ "${2:-}" = --probe-refused-head ] && s4e_next_probe_refused_head
          q="$PO/QUEUE.tsv"; mkdir -p "$PO/claims"
          s4e_mode_line
          # ⛔⭐ MODE GATES DISPATCH -- IT IS NOT DECORATION (row next-refuses-to-dispatch-to-an-hq-seat-when-mode-
@@ -5136,7 +4724,7 @@ TASKEOF
          # fleet-queue step 4 (the cio 2026-11-05): FIRST, next is a RESERVE over the seat's watch list (seat-<me> at 100+rank, ask-<tier> at 50, tier-<tier>
          # at 1000+rank, then the tier below only when those hold nothing); the job served is claimed (an ASSIGNED claim of this seat is honored and
          # annotated) and HELD by a detached holder that touches it while the session lives; the legacy passes below serve rows that have no job yet.
-         if s4e_file_road; then s4e_file_reserve_pass || true; else s4e_queue_reserve_pass || true; fi
+         s4e_file_reserve_pass || true
          while IFS=$'\t' read -r _rk t; do
            [ -n "${t:-}" ] || continue
            c="$PO/claims/$t.claim"
