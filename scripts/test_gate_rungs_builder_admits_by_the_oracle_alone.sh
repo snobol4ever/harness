@@ -52,6 +52,8 @@ R="$D/reb"; RT="$R/corpus/tests/rebus"; mkdir -p "$R/corpus/tests" "$R/corpus/in
 cp -r "$ROOT/corpus/tests/rebus" "$RT" || exit 2
 printf 'function main()\nbegin\n  while 1 do x := 1\nend\n' > "$RT/gate_hang.reb"; printf 'stale answer\n' > "$RT/gate_hang.ref"
 printf 'function main()\nbegin\n  output := "fresh answer"\nend\n' > "$RT/gate_recut.reb"; printf 'stale answer\n' > "$RT/gate_recut.ref"
+# CIO-70: a program SPITBOL refuses on the transpile road (an undefined function, ERROR 022 on both runs) is NO-ANSWER, never an entry
+printf 'function main()\nbegin\n  output := nosuchfunction(1)\nend\n' > "$RT/gate_refused.reb"; printf 'stale answer\n' > "$RT/gate_refused.ref"
 sed -i '/^# builder-digest:/d' "$RT/ALL.omit"; printf 'gate_no_source_key\tplanted by the gate: names no file\n' >> "$RT/ALL.omit"
 ( cd "$ROOT/SCRIP" && S4E_HOME="$R" SCRIP="$D/bin/scrip" timeout -k 10 900 python3 "$HERE/util_build_rungs_suite.py" --lang rebus --recipe-timeout 2 < /dev/null ) > "$R/build.log" 2>&1; rrc=$?
 grep -q '^WROTE ' "$R/build.log" || { echo "⛔ REFUSE(2) [$GATE_NAME]: the Rebus builder run wrote nothing (rc $rrc) -- cannot measure"; tail -3 "$R/build.log"; exit 2; }
@@ -62,6 +64,8 @@ arm "rebus: and it is an omit line with the measured reason" "$(grep -c '^gate_h
 # the builder names a new entry by its features; the program it came from is its ALL.csv origin cell
 rent="$(python3 -c 'import csv,sys; print("\n".join(r["entry"] for r in csv.DictReader(open(sys.argv[1])) if r.get("origin") == sys.argv[2]))' "$RT/ALL.csv" gate_recut 2>/dev/null)"
 arm "rebus: a stale loose .ref is admitted on the oracle's answer (one entry of origin gate_recut)" "$(printf '%s\n' "$rent" | grep -c .)" 1
+arm "rebus: a program SPITBOL refuses on the transpile road is not an entry (CIO-70)" "$(python3 -c 'import csv,sys; print(sum(1 for r in csv.DictReader(open(sys.argv[1])) if r.get("origin") == "gate_refused"))' "$RT/ALL.csv" 2>/dev/null)" 0
+arm "rebus: its omit line carries SPITBOL's error number and text" "$(grep -c '^gate_refused	.*SPITBOL ERROR 022 -- undefined function called' "$RT/ALL.omit")" 1
 arm "rebus: no entry comes from the timed-out program" "$(python3 -c 'import csv,sys; print(sum(1 for r in csv.DictReader(open(sys.argv[1])) if r.get("origin") == "gate_hang"))' "$RT/ALL.csv" 2>/dev/null)" 0
 rref="$(python3 - "$HERE" "$RT" "$rent" <<'PY' 2>/dev/null
 import sys; sys.path.insert(0, sys.argv[1]); import corpus_suite_harness as h

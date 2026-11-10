@@ -67,6 +67,26 @@ def main(argv):
         head, rows = rdr.fieldnames, list(rdr)
     mt = root / "corpus" / "tests" / "snobol4"
     mt.mkdir(parents=True, exist_ok=True)
+    if h.fmt2_dir_of(str(sno)) is not None:
+        # ⭐ A FORMAT-2 MASTER GIVES A FORMAT-2 SLICE (the coo 2026-11-10): the old form cannot hold an entry whose program carries its own markers
+        # (the fwctx standalone entry, corpus ddbd15a22, which a NRETURN pattern selects), so extract-family's old files would not read back. The
+        # slice is the selected rows of ALL.csv and the same entries through write_container_dir; ALL.csv is the one index in format 2, so the
+        # two-answers rule of the old form (a command line in ALL.cmdline and in ALL.csv) does not arise.
+        keep = [e for e in entries if e.name in want]
+        with open(mt / "ALL.csv", "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=head, lineterminator="\n")
+            w.writeheader()
+            by = {r["entry"]: r for r in rows}
+            for e in keep:
+                w.writerow(by[e.name])
+        try:
+            h.write_container_dir(keep, mt, ".sno")
+            back = h.read_container_dir(mt, ".sno")
+        except ValueError as e:
+            refuse("the format-2 slice did not write: %s" % e)
+        if [e.name for e in back] != [e.name for e in keep]:
+            refuse("the format-2 slice did not read back: %d written, %d read" % (len(keep), len(back)))
+        return _scratch_world(root, corpus, len(sel), argv[2])
     marked = root / "slice.csv"
     with open(marked, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=head, lineterminator="\n")
@@ -78,6 +98,10 @@ def main(argv):
     if r.returncode != 0:
         refuse("extract-family refused rc=%d: %s" % (r.returncode, (r.stderr or r.stdout).strip()[:400]))
     marked.unlink()
+    return _scratch_world(root, corpus, len(sel), argv[2])
+
+
+def _scratch_world(root, corpus, n, pattern):
     (root / "corpus" / "crosscheck").mkdir(exist_ok=True)
     # a git world with no remote: the harness judges a suite under its configured corpus root by that root's remote, and an
     # unreadable answer is a board (lib_one_runner.sh one_runner_corpus_is_the_shared_population) -- `git init` is the fixture shape
@@ -90,7 +114,7 @@ def main(argv):
     if not demos.exists():
         demos.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(corpus / "demos" / "snobol4", demos, symlinks=True)
-    print("SCRATCH_RUNGS entries=%d root=%s pattern=%s" % (len(sel), root, argv[2]))
+    print("SCRATCH_RUNGS entries=%d root=%s pattern=%s" % (n, root, pattern))
     return 0
 
 

@@ -2624,6 +2624,21 @@ _FMT2_FENCE_RE = re.compile(r"^(`{3,})([^`]*)$")
 _FMT2_FILE_TAG_RE = re.compile(r"^file ([^/\s]+)$")   # THE FILE FENCE (CIO-55, Lon 2026-11-10 10:5x): an entry's companion file, its base name after "file "
 
 
+_SPITBOL_ERROR_RE = re.compile(r"\bERROR (\d{3}) -- (.+)$")
+
+
+def transpile_refusal(text):
+    """THE TRANSPILE ROAD'S REFUSAL (CIO-70, the cio 2026-11-10 on the coo's case): on Snocone's and Rebus's oracle road (snocone_oracle_run.sh:
+    scrip --transpile, then sbl -bf on the text) the oracle is SPITBOL run on text our own transpiler wrote, so a numbered SPITBOL ERROR in its
+    answer is SPITBOL refusing that text, NO-ANSWER by CIO-60 (3), not an answer. -> "SPITBOL ERROR nnn -- text" for the first such line of
+    TEXT, else "". A language with its own oracle never calls this."""
+    for ln in (text or "").splitlines():
+        m = _SPITBOL_ERROR_RE.search(ln)
+        if m:
+            return "SPITBOL ERROR %s -- %s" % (m.group(1), m.group(2).strip())
+    return ""
+
+
 def fmt2_dir_of(src_path):
     """The container directory when SRC_PATH is the old ALL.EXT name of a directory that holds format 2, else None: every caller keeps
     its ALL.EXT ALL.ref command line through the move (CIO-24 f)."""

@@ -108,7 +108,12 @@ case "$SHARD" in ""|[0-9]*/[0-9]*) :;; *) echo "⛔ REFUSED: --shard wants k/N, 
 case "$COMBINE" in ""|[1-9]*) :;; *) echo "⛔ REFUSED: --combine wants N (a count), got '$COMBINE'"; exit 2;; esac
 [ -n "$SHARD" ] && [ -n "$COMBINE" ] && { echo "⛔ REFUSED: --shard and --combine are two different calls, not one"; exit 2; }
 CKPT="${SCRIP_BOARD_CKPT:-/tmp/si_board_shards$(printf '%s' "$S4E" | tr / -)}"
-board_stamp() { printf 'stamp scrip=%s rungs=%s-%s\n' "$(md5sum < "$SCRIP" | cut -c1-12)" "$(md5sum < "$RUNGS_SNO" | cut -c1-12)" "$(md5sum < "$RUNGS_REF" | cut -c1-12)"; }
+# ⭐ FORMAT 2 (the coo 2026-11-10): the master is ONE.sno, ONE.out and MULTI.md beside ALL.csv; the old ALL.sno and ALL.ref are absent, and the
+# harness's own reader dispatches on the folder, so the run below takes the old names unchanged. The stamp hashes whichever form stands.
+rungs_container() { local d; d="$(dirname "$RUNGS_SNO")"; if [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.sno" ]; then cat "$d/ONE.sno" "$d/MULTI.md" 2>/dev/null; else cat "$RUNGS_SNO"; fi; }
+rungs_answers() { local d; d="$(dirname "$RUNGS_SNO")"; if [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.sno" ]; then cat "$d/ONE.out" "$d/ALL.csv" 2>/dev/null; else cat "$RUNGS_REF"; fi; }
+rungs_present() { local d; d="$(dirname "$RUNGS_SNO")"; { [ -f "$d/ALL.csv" ] && { [ -f "$d/MULTI.md" ] || [ -f "$d/ONE.sno" ]; }; } || { [ -f "$RUNGS_SNO" ] && [ -f "$RUNGS_REF" ]; }; }
+board_stamp() { printf 'stamp scrip=%s rungs=%s-%s\n' "$(md5sum < "$SCRIP" | cut -c1-12)" "$(rungs_container | md5sum | cut -c1-12)" "$(rungs_answers | md5sum | cut -c1-12)"; }
 board_checkpoint_write() {   # <k/N> <run board line>
     local f="$CKPT/rungs.${1%/*}-of-${1#*/}.board"; mkdir -p "$CKPT" || { echo "⛔ REFUSED: cannot create checkpoint dir $CKPT"; exit 2; }
     { board_stamp; printf '%s\n' "$2"; } > "$f"
@@ -358,7 +363,7 @@ RUNGS_ENTRY_FLOOR="${RUNGS_ENTRY_FLOOR:-1576}"   # FLOOR, not a pinned total (RU
 if [ ! -f "$HARNESS" ]; then
     echo "⛔ GATE REFUSES: corpus_suite_harness.py missing at $HARNESS"; exit 2
 fi
-if [ ! -f "$RUNGS_SNO" ] || [ ! -f "$RUNGS_REF" ]; then
+if ! rungs_present; then
     echo "⛔ GATE REFUSES: the rungs suite is missing at $RUNGS_SNO"
     echo "   The per-family suite files were RETIRED INTO the rungs (Lon 2026-08-29 one-flat-suite ruling);"
     echo "   a checkout without it cannot grade the suite population at all. Pull corpus; do NOT read the"

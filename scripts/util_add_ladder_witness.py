@@ -536,6 +536,8 @@ def main():
             sno_lines = [note] + sno_lines
             sno_text = "\n".join(sno_lines) + "\n"
     ref_text, want_rc = run_oracle_twice(oracle_argv, twin_path if twin_path is not None else src_path, stdin_text=stdin_text, prog_args=prog_args, bare=args.stage_as_cut, merged=args.stderr_merged)
+    if str(oracle_argv[0]).endswith("snocone_oracle_run.sh") and csh.transpile_refusal(ref_text):
+        refuse("NO-ANSWER on the transpile road (CIO-70): the oracle refused the transpiled text twice, %s -- not a witness" % csh.transpile_refusal(ref_text))
     ref_lines = csh._lf_lines(ref_text)
     if args.expect:
         _ex = Path(args.expect)

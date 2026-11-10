@@ -1289,6 +1289,8 @@ def _oracle_cut_twice(path, oracle_bin, flags, timeout, stdin_text, name):
     if not (ora_kind2 == "RAN" and _same_text and ora_rc2 == ora_rc):
         return ("exclude", "NON-DETERMINISTIC, proven by repetition: two oracle runs of this program disagree (rc %s then %s, %s)"
                                    % (ora_rc, ora_rc2, "same output" if ora_text2 == ora_text else "different output"))
+    if str(oracle_bin).endswith("snocone_oracle_run.sh") and h.transpile_refusal(ora_text):
+        return ("exclude", "NO-ANSWER on the transpile road: the oracle refused the transpiled text twice, %s (CIO-70)" % h.transpile_refusal(ora_text))
     return ("run", ora_text, ora_rc)
 
 
@@ -2053,6 +2055,22 @@ def main():
         for e in base_entries:
             e.origin = _csv_origin.get(e.name) or ("rungs__%s" % e.name)
             e.src_mode = "base"
+    # ⛔ THE TRANSPILE ROAD'S REFUSED ENTRIES LEAVE THE MASTER, WITH NO OMIT LINE (CIO-70, CIO-71; the coo 2026-11-10): on Snocone's and Rebus's
+    # oracle road an answer holding a numbered SPITBOL ERROR is SPITBOL refusing the text our transpiler wrote, NO-ANSWER, not a test. Such a master
+    # entry is removed here and named on stderr with its error; no omit line is written, since its program is then on no disk (CIO-58), and the
+    # commit that lands the run is the record. Its origin is allowed to drop, so the collapse guard below reads it as named, not vanished.
+    _transpile_removed = []
+    if lang in ("snocone", "rebus") and base_entries:
+        _keep = []
+        for e in base_entries:
+            _why = h.transpile_refusal("\n".join(e.ref) if isinstance(e.ref, list) else str(e.ref))
+            if _why:
+                _transpile_removed.append(e); print("REMOVED-TRANSPILE-REFUSAL %s (origin %s): %s" % (e.name, e.origin, _why), file=sys.stderr)
+            else:
+                _keep.append(e)
+        base_entries = _keep
+        allow_drop |= {e.origin for e in _transpile_removed}
+        csv_origins -= {e.origin for e in _transpile_removed}
     # THE DANGEROUS CONDITION IS pairs << base, NOT pairs == 0 (hq_P 2026-08-30, reproduced by seat14;
     # both reverted). Measured on snobol4, which is CUT OVER -- sources retired, the rungs IS the source:
     # 21 loose pairs remain, 19 correctly refused, leaving TWO absorbable. This guard fired only at ZERO, so
@@ -2082,7 +2100,7 @@ def main():
     if not pairs and base_entries and os.path.isfile(_omit_p):
         _ok = [l.split("\t", 1)[0] for l in open(_omit_p, encoding="utf-8", errors="replace").read().split("\n") if l and not l.startswith("#") and "\t" in l]
         _omit_stale = _no_source_keys(_ok, lang, os.path.join(S4E, "corpus"))
-    if not pairs and not _omit_stale:
+    if not pairs and not _omit_stale and not _transpile_removed:
         if base_entries:
             print("RUNGS CURRENT: %d entries, zero new absorbable pairs under %s -- nothing to do." % (len(base_entries), ROOT), file=sys.stderr)
             raise SystemExit(0)

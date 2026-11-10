@@ -20,9 +20,12 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 # ⭐ THE WITNESSES ARE ENTRIES (the coo 2026-11-10, the snocone folder, CIO-24 c): ladder/prog left the folder and each program is the entry
 # ladder_prog__<name> of the snocone master; extracted here to the same bare file name the gate always ran.
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib_design_witness.sh"
-for _w in fn_freturn fn_nreturn; do design_witness_extract snocone "ladder_prog__$_w" "$TMP/wit" > /dev/null 2>&1 && mv "$TMP/wit/ladder_prog__$_w.sc" "$TMP/$_w.sc"; done
+design_witness_extract snocone ladder_prog__fn_freturn "$TMP/wit" > /dev/null 2>&1 && mv "$TMP/wit/ladder_prog__fn_freturn.sc" "$TMP/fn_freturn.sc"
 FR="$TMP/fn_freturn.sc"
-NR="$TMP/fn_nreturn.sc"
+# fn_nreturn is NOT an entry: its oracle answer is SPITBOL ERROR 239 on the transpiled text, NO-ANSWER on the transpile road (CIO-70, CIO-71),
+# so it left the master; this gate still reads its codegen, so it stands as this gate's fixture (CIO-55: a program that is not an entry and that
+# a gate needs is a harness fixture), copied from corpus 8355a61cf.
+NR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/fixtures/snocone_returns_codegen/fn_nreturn.sc"
 GATE_NAME=snocone-returns-codegen
 . "$SCRIP_DIR/../harness/scripts/lib_gate.sh"   # gate_three_way: absent-line-is-UNPROVEN(2), never this row's fail()
 
