@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract (presence tested on ALL.csv; the reader follows the folder to either form)
 # test_gate_sno_a_capture_over_succeed_or_a_bare_fence_reads_its_own_saved_cursor.sh -- a conditional or immediate capture whose body
 # is or begins with SUCCEED, or whose stored body holds a bare FENCE, assigns the substring it matched, in both modes, statically
 # compiled, stored in a variable, and inside EVAL alike, as SPITBOL answers it -- and no run prints rt_dcap_pump's CORRUPT CAPTURE ENTRY.
@@ -36,7 +37,7 @@ NAME=sno_a_capture_over_succeed_or_a_bare_fence_reads_its_own_saved_cursor
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -f "$RT_DIR/libscrip_rt.so" ] || refuse "no $RT_DIR/libscrip_rt.so -- cannot measure mode 4"
-[ -f "$S4E/corpus/tests/snobol4/ALL.sno" ] || refuse "no SNOBOL4 master under $S4E/corpus -- pull corpus"
+[ -f "$S4E/corpus/tests/snobol4/ALL.csv" ] || refuse "no SNOBOL4 master under $S4E/corpus -- pull corpus"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 SBL="$(sbl_correctness_bin 2>/dev/null || true)"; [ -n "${SBL:-}" ] && [ -x "$SBL" ] || SBL=/home/resources/x64/bin/sbl
 [ -x "$SBL" ] || refuse "no sbl oracle -- cannot measure (a missing oracle prints a full false table)"

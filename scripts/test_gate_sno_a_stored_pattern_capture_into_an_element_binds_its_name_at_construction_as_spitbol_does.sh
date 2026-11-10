@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract (presence tested on ALL.csv; the reader follows the folder to either form)
 # test_gate_sno_a_stored_pattern_capture_into_an_element_binds_its_name_at_construction_as_spitbol_does.sh -- a pattern STORED in a variable whose
 # capture target is an array or table element (P = 'y' . A[2], Q = BREAK('z') $ T['k'], C = @A[1] 'y', PAT[I] = LEN(1) . A[I]) answers as sbl -bf
 # does in both modes, also when the collector moves the array between the capture and the end-of-match commit (row
@@ -31,7 +32,7 @@ ROOT="$S4E/SCRIP"
 SCRIP="${SCRIP_BIN:-$ROOT/scrip}"; [ -x "$SCRIP" ] || { echo "⛔ GATE REFUSE(2) [$G]: no scrip at $SCRIP"; exit 2; }
 LIBDIR="$ROOT/out"; [ -f "$LIBDIR/libscrip_rt.so" ] || { echo "⛔ GATE REFUSE(2) [$G]: no libscrip_rt.so in $LIBDIR"; exit 2; }
 SBL="${SBL_BIN:-/home/resources/x64/bin/sbl}"; [ -x "$SBL" ] || { echo "⛔ GATE REFUSE(2) [$G]: no sbl at $SBL -- the ref is cut from the oracle at run time"; exit 2; }
-M="$S4E/corpus/tests/snobol4"; [ -f "$M/ALL.sno" ] || { echo "⛔ GATE REFUSE(2) [$G]: no SNOBOL4 master at $M"; exit 2; }
+M="$S4E/corpus/tests/snobol4"; [ -f "$M/ALL.csv" ] || { echo "⛔ GATE REFUSE(2) [$G]: no SNOBOL4 master at $M"; exit 2; }
 export SNO_LIB="$S4E/corpus/include" SCRIP_SNO_STMTKW=1
 T=$(mktemp -d) || exit 2; trap 'rm -rf "$T"' EXIT
 RC=0; n=0; red=""

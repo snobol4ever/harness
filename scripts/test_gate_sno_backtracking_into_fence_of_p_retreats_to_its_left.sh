@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# format-2: through extract (presence tested on ALL.csv; the reader follows the folder to either form)
 # test_gate_sno_backtracking_into_fence_of_p_retreats_to_its_left.sh -- FENCE(P) (v3.7: "the pattern FENCE(P) matches P, and if
 # the scanner backs into it, it fails WITHOUT trying the alternatives of P") fails ONLY ITSELF: the scanner goes on backing into the
 # element on its left. Bare FENCE is the other animal -- backing into it aborts the whole match. Every arm below answers as sbl -bf
@@ -35,7 +36,7 @@ NAME=sno_backtracking_into_fence_of_p_retreats_to_its_left
 refuse() { echo "GATE REFUSE(2) [$NAME]: $*"; exit 2; }
 [ -x "$SCRIP" ] || refuse "no scrip binary at $SCRIP -- cannot measure"
 [ -f "$RT_DIR/libscrip_rt.so" ] || refuse "no $RT_DIR/libscrip_rt.so -- cannot measure mode 4"
-[ -f "$RUNGS/ALL.sno" ] && [ -f "$RUNGS/ALL.ref" ] || refuse "no SNOBOL4 rungs under $RUNGS -- pull corpus"
+[ -f "$RUNGS/ALL.csv" ] || refuse "no SNOBOL4 rungs under $RUNGS -- pull corpus"
 . "$HERE/lib_oracle_flags.sh" 2>/dev/null || true
 SBL="$(sbl_correctness_bin 2>/dev/null || true)"; [ -n "${SBL:-}" ] && [ -x "$SBL" ] || SBL=/home/resources/x64/bin/sbl
 [ -x "$SBL" ] || refuse "no sbl oracle -- cannot measure (a missing oracle prints a full false table)"
