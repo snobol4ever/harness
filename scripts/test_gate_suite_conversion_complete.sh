@@ -59,8 +59,9 @@ esac
 # a converted file opens with a numbered banner block (comment leader + rule + index + entry name), which the
 # harness emits for every language -- "#--- 1 arr_get", "*--- 1 038_pat_literal". Validated at write time to
 # match all three live conventions and none of the ordinary loose programs it was tested against.
-is_suite_output() {
-    head -1 "$1" 2>/dev/null | grep -qE '^[^A-Za-z0-9]*-{10,}[[:space:]]+[0-9]+[[:space:]]+[A-Za-z0-9_]'
+is_suite_output() {   # a banner first line, or (the coo 2026-11-10) SNOBOL4's mixed master, whose first line is a one-line entry "<stmts>;END;* <name>":
+    # its ALL.sno read as a loose program until then, declared a keeper only by the prose of config/include_fixtures_KEEP.md, deleted with config's notes (CIO-36)
+    head -1 "$1" 2>/dev/null | grep -qE '^[^A-Za-z0-9]*-{10,}[[:space:]]+[0-9]+[[:space:]]+[A-Za-z0-9_]|;END;\*[[:space:]]+[A-Za-z0-9_]+[[:space:]]*$'
 }
 mapfile -t ALLF < <(find "$TREE" -type f -name "$EXT" -not -path '*/crosscheck/*' 2>/dev/null | sort)
 LOOSE=(); SUITEOUT=0

@@ -8,7 +8,7 @@
 # ALTERNATE/ARBNO (every bare-FENCE site in this grammar takes that branch) -- every element's backtrack
 # state leaked, unreleased, for the rest of the top-level match, and citm_catalog.json's `performances`
 # section exhausted the C stack (fast, deterministic SIGSEGV).
-# WITNESSES: synth_perf223/224.json (corpus/tests/snobol4/config/, gen_synth_perf.py) are a synthetic,
+# WITNESSES: synth_perf223/224.json (harness/fixtures/test_gate_json_fence0_leak/, moved from corpus/tests/snobol4/config by the coo 2026-11-10, CIO-36; gen_synth_perf.py) are a synthetic,
 # citm_catalog-independent minimal pair -- 223 always passed, 224 crashed pre-fix (rc=139). Asserts the
 # SHAPE (bounded stack for bounded input), not one pinned threshold: the exact crash boundary moved
 # between two same-session rebuilds pre-fix (233/234 -> 223/224) as an unrelated allocation change
@@ -28,7 +28,7 @@ DEMO="${DEMO:-$S4E/corpus/demos/snobol4}"   # composed below as "$DEMO/json/json
                                              # COMPOSED path needs the /snobol4/ this default was missing
 pass=0; fail=0
 # ⛔ PROBE IS ASSEMBLED, NOT ONE FIXED TREE (row dead-suite-path-consumer-sweep): the old
-# probe_loose/json_fence0_leak/ directory is gone. Each witness is a pair under tests/snobol4/config/
+# probe_loose/json_fence0_leak/ directory is gone. Each witness is a pair under harness/fixtures/test_gate_json_fence0_leak/
 # (prefixed probe_loose_json_fence0_leak_): its .json input and, beside it under the same stem, its .ref
 # (hq_snobol4 2026-10-17, row snobol4-absorb-every-owed-source-...: the .ref sat flat under tests/snobol4/
 # with no partner there, which util_unabsorbed_census.py reads as a DANGLING REF). An explicit PROBE
@@ -36,8 +36,8 @@ pass=0; fail=0
 if [ -z "${PROBE:-}" ]; then
     PROBE="$(mktemp -d)"
     trap 'rm -rf "$PROBE"' EXIT
-    for f in "$S4E"/corpus/tests/snobol4/config/probe_loose_json_fence0_leak_*.ref \
-             "$S4E"/corpus/tests/snobol4/config/probe_loose_json_fence0_leak_*.json; do
+    for f in "$S4E"/harness/fixtures/test_gate_json_fence0_leak/probe_loose_json_fence0_leak_*.ref \
+             "$S4E"/harness/fixtures/test_gate_json_fence0_leak/probe_loose_json_fence0_leak_*.json; do
         [ -f "$f" ] || continue
         cp "$f" "$PROBE/$(basename "$f" | sed 's/^probe_loose_json_fence0_leak_//')"
     done

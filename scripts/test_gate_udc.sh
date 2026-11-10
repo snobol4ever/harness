@@ -50,7 +50,7 @@ extract_witness() {
 if [ -z "${CN:-}" ]; then
     CN="$(mktemp -d)"
     trap 'rm -rf "$CN"' EXIT
-    cp "$S4E/corpus/tests/snobol4/config/probe_loose_cn_cn_udc_closed.err_sno" "$CN/cn_udc_closed.err_sno"
+    cp "$S4E/harness/fixtures/test_gate_udc/probe_loose_cn_cn_udc_closed.err_sno" "$CN/cn_udc_closed.err_sno"   # moved from corpus/tests/snobol4/config (the coo 2026-11-10, CIO-36)
 fi
 for w in cn_udc_declare cn_udc_reopen; do
   extract_witness "$w" || continue

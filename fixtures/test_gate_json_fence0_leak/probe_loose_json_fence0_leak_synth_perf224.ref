@@ -1,0 +1,10 @@
+input bytes=322337
+root=ARRAY
+objects=10528
+arrays=10305
+strings=0
+integers=12096
+reals=0
+booleans=0
+nulls=672
+maxdepth=7

@@ -1,0 +1,7 @@
+*  CN-4 -- the CLOSED path: declaring 0 restores oracle fidelity (error 251).
+*  for every undefined &name.  Error text is oracle-verbatim.
+        &USER_DECLARED_CONSTANTS = 0
+        OUTPUT = 'closed'
+        &Word = SPAN('abc')
+        OUTPUT = 'UNREACHABLE'
+END
