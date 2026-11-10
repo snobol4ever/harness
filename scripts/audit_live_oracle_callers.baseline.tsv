@@ -773,7 +773,6 @@ util_raku_ladder_design.py	2
 util_raku_roast_test_ladder.py	1
 util_raku_syntax_agreement.py	1
 util_recut_truncated_ipl_refs.sh	1
-util_regen_jcon_generated_sources.sh	1
 util_regen_parser_benchmarks.sh	1
 util_regen_parser_demos.sh	1
 util_rtx_arith_intstr_sbl_cut.sh	1

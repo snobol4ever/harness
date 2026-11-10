@@ -17,7 +17,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib_one_runner.sh" && one_runner_guard "$
 # only the former is wired here, since the latter still runs a "mode-2 (--run)" arm and CLAUDE.md
 # records modes 1 and 2 as DELETED. A package directory absent from the map is UNPROVEN with a reason:
 # either "no gate wired yet", or for icon/jcon-compiler and icon/jcon-ref specifically, "generator input
-# for util_regen_jcon_generated_sources.sh, not a graded suite" -- named rather than folded into the
+# of the committed do_ops.icn and interface.icn, not a graded suite" -- named rather than folded into the
 # same bucket as a directory nobody has gated yet, because those are two different facts.
 #
 # GRADED vs UNPROVEN follows every runner's own convention (RULES.md: a test that cannot measure
@@ -85,7 +85,7 @@ runner_for() {  # $1 = "<lang>/<name>" -> echoes the grading script's basename, 
 }
 unproven_reason_for() {  # $1 = "<lang>/<name>" -> why runner_for left it unmapped (only called then)
   case "$1" in
-    icon/jcon-compiler|icon/jcon-ref) echo "generator input for util_regen_jcon_generated_sources.sh, not a graded suite" ;;
+    icon/jcon-compiler|icon/jcon-ref) echo "generator input of the committed do_ops.icn and interface.icn, not a graded suite" ;;
     *) echo "no gate wired yet" ;;
   esac
 }

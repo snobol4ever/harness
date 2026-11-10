@@ -18,7 +18,6 @@ ICONREPO=${ICONREPO:-/home/resources/icon-master}
 JT=${JT:-$S4A/jt}
 RT="$SCRIP/out"
 JCOMPILER="$CORPUS/packages/icon/jcon-compiler"
-SEMI="$SCRIP/tools/semicolonize_icon.py"
 RTOPT='-O0 -g -fno-strict-aliasing -fwrapv -fno-omit-frame-pointer'
 
 echo "== [1/7] the sibling layout: SCRIP, corpus and the /home/resources drops read in place (no link, no refs/: R-765, R-1820) =="
@@ -36,12 +35,9 @@ echo "== [4/7] build libscrip_rt.so  RT_OPT='$RTOPT' =="
 ( cd "$SCRIP" && make -j"$(nproc)" RT_OPT="$RTOPT" libscrip_rt >/tmp/jcon_build_rt.log 2>&1 )
 [ -f "$RT/libscrip_rt.so" ] || { echo "FAIL libscrip_rt"; tail -15 /tmp/jcon_build_rt.log; exit 1; }
 
-echo "== [5/7] stage 17 jtran modules in $JT (2 generated via SCRIP + semicolonized) =="
+echo "== [5/7] stage 17 jtran modules in $JT (do_ops.icn and interface.icn are the package's committed text, semicolons in; nothing is converted, CIO-99) =="
 mkdir -p "$JT/tmp"; cp "$JCOMPILER"/*.icn "$JT"/
-"$SCRIP/scrip" --run "$JT/oplexgen.icn"      </dev/null >"$JT/do_ops_raw.icn"    2>/dev/null
-"$SCRIP/scrip" --run "$JT/interfacegen.icn"  </dev/null >"$JT/interface_raw.icn" 2>/dev/null
-python3 "$SEMI" "$JT/do_ops_raw.icn"    "$JT/do_ops.icn"
-python3 "$SEMI" "$JT/interface_raw.icn" "$JT/interface.icn"
+for g in do_ops.icn interface.icn; do [ -s "$JT/$g" ] || { echo "FAIL: $JCOMPILER/$g is missing: the generated module is committed text, never made at build time"; exit 2; }; done
 
 echo "== [6/7] compile+link SCRIP-jtran (17 mods) and SCRIP-jlink (2 mods) =="
 TRANSRC="dump.icn do_ops.icn preprocessor.icn lexer.icn ast.icn parse.icn ir.icn keyword.icn irgen.icn gen_bc.icn gen_symbolic.icn gen_dot.icn gen_ucode.icn optimize.icn interface.icn bytecode.icn jtran_main.icn"
@@ -54,8 +50,8 @@ gcc -no-pie "$JT/jlink.s" -L"$RT" -lscrip_rt -Wl,-rpath,"$RT" -o "$JT/jlink" 2>/
 
 echo "== [7/7] build JCON Java runtime jcon.zip (iTrampoline via SCRIP + javac + jar) =="
 JD="$JCONREPO/jcon"
-python3 "$SEMI" "$JD/trampgen.icn" /tmp/trampgen_sc.icn
-"$SCRIP/scrip" --run /tmp/trampgen_sc.icn </dev/null >"$JD/iTrampoline.java" 2>/dev/null
+# trampgen.icn is jcon-master's newline-style text and no program adds semicolons (Lon 2026-11-10, CIO-99): the iTrampoline.java the oracle tree already holds is used; a tree without it refuses
+[ -s "$JD/iTrampoline.java" ] || { echo "REFUSE(2): $JD/iTrampoline.java is absent and trampgen.icn has no committed semicolon text to generate it from (no on-the-fly conversion, CIO-99)"; exit 2; }
 ( cd "$JD" && CLASSPATH=.. javac -O *.java 2>/dev/null )
 mkdir -p "$JCONREPO/bin"
 ( cd "$JCONREPO" && jar cfM bin/jcon.zip jcon/*.class )

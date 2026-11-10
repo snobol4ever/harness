@@ -69,7 +69,7 @@ assert_parser_current() {
     [ -n "${deps:-}" ] || deps="$root/src/tools/parser_main.c"
     at="$(stat -Lc %Y "$art" 2>/dev/null || echo 0)"
     for f in $deps; do
-        case "$f" in /*) ;; *) f="$root/$f";; esac   # the .d file's paths are relative to the SCRIP root, not to the caller's directory (the cto 2026-11-07 15:5x: util_icon_semicolons.py run from a scratch directory refused a source that exists)
+        case "$f" in /*) ;; *) f="$root/$f";; esac   # the .d file's paths are relative to the SCRIP root, not to the caller's directory (the cto 2026-11-07 15:5x: a tool run from a scratch directory refused a source that exists)
         [ -e "$f" ] || { echo "⛔ REFUSED-TO-GRADE (rc=2): out/parser_$lang was compiled from $f, which no longer exists -- cure: cd $root && make parsers" >&2; return 2; }
         m="$(stat -Lc %Y "$f")"; [ "$m" -gt "$newest" ] && { newest="$m"; nf="$f"; }
     done
