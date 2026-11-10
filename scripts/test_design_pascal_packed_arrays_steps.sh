@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 "$(dirname "${BASH_SOURCE[0]}")/util_require_fresh.sh" --gate "$(basename "${BASH_SOURCE[0]}" .sh)" || exit $?
 # test_design_pascal_packed_arrays_steps.sh -- THE STEP-THROUGH HARNESS of DESIGN-PLAN: pascal-packed-arrays (the cto, 2026-11-04, R-2119; the design
-# text is the pascal skill's section 8). The plan is corpus/tests/pascal/packed_arrays/STEPS.tsv; the witnesses are the .pas programs beside it,
-# each with a .ref cut from fpc 3.2.2 through fpc_bin() (fpc -v0 in the program's own mode, the binary's stdout).
+# text is the pascal skill's section 8). The plan is harness/designs/packed_arrays/STEPS.tsv; a witness NAME is the entry packed_arrays__NAME of
+# the pascal master corpus/tests/pascal, its ref cut from fpc 3.2.2 twice by util_add_ladder_witness.py, extracted to the step's scratch to run.
 #
 #   --list       print the steps and run nothing
 #   --step N     grade step N: every witness in mode 3 and mode 4 at the step's declared heap (heap=KB, default 131072; -s4096k; stdout compared
@@ -11,7 +11,7 @@
 #                irgrep=REGEX@W:N (scrip --dump-ir of witness W prints at least N lines matching REGEX), irzero=REGEX@W (none), entries=a,b (the
 #                named rosetta-pascal entries through corpus_suite_harness.py smoke under the feature writeln, no progress row, at most eight,
 #                R-1677), hdrfield=NAME (gc_heap.h's rt_hblk_t declares a field uint32_t NAME). Red before the step lands, green after.
-#   --cut        re-cut every witness ref from fpc (the design seat's road; an HQ that changes a witness re-cuts it the same way)
+#   --cut        retired (refuses rc 2): a witness's ref is the master entry's, cut by util_add_ladder_witness.py (CIO-37)
 #   --out DIR    where the runs go (default a fresh /tmp/s4e/<seat>/runner_out.pascal_packed_arrays.<pid>.* deleted at the verdict, lib_runner_out.sh; an explicit DIR is kept)
 #
 # VERDICT: STEP N <slug>: m3=<pass>/<n> m4=<pass>/<n> [st=<pass>/<n>] probe=<token:reading ...> -> GREEN|RED|REFUSED; rc 0 GREEN, 1 RED, 2 could not measure.
@@ -20,8 +20,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib_one_runner.sh" && one_runner_mem_scope   # THE MEMORY DOOR (the cio 2026-11-10 12:3x): a witness at its declared heap runs in its own board scope, never in a seat's
 ROOT="$(cd "$HERE/../.." && pwd)"
 SC="$ROOT/SCRIP"
-WD="$ROOT/corpus/tests/pascal/packed_arrays"
-STEPS="$WD/STEPS.tsv"
+STEPS="$HERE/../designs/packed_arrays/STEPS.tsv"   # moved from corpus/tests/pascal/packed_arrays (the coo 2026-11-10, CIO-24 c, CIO-55, CIO-56: a language folder is its container alone)
 OUT=""
 HEAP_H="$SC/src/runtime/rt/gc_heap.h"
 refuse() { echo "REFUSE(2): $*" >&2; exit 2; }
@@ -40,20 +39,25 @@ done
 [ -n "$OUT" ] || { . "$HERE/lib_runner_out.sh" && runner_out_default pascal_packed_arrays; } || refuse "no output directory under /tmp/s4e (lib_runner_out.sh)"
 col() { awk -F'\t' -v n="$1" -v k="$2" '!/^#/ && $1 == n {print $k; exit}' "$STEPS"; }
 if [ "$mode" = list ]; then
-    echo "DESIGN-PLAN: pascal-packed-arrays -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (STEPS.tsv); witnesses in corpus/tests/pascal/packed_arrays (refs from fpc 3.2.2)"
+    echo "DESIGN-PLAN: pascal-packed-arrays -- $(awk -F'\t' '!/^#/ && $1 != "step" && NF >= 6' "$STEPS" | wc -l) steps (harness/designs/packed_arrays/STEPS.tsv); a witness is the entry packed_arrays__<name> of the pascal master (refs from fpc 3.2.2)"
     printf '%-4s %-54s %-12s %-8s %s\n' step slug executor depends witnesses
     for n in $(awk -F'\t' '!/^#/ && $1 != "step" {print $1}' "$STEPS"); do
         printf '%-4s %-54s %-12s %-8s %s\n' "$n" "$(col "$n" 2)" "$(col "$n" 3)" "$(col "$n" 4)" "$(col "$n" 6)"
     done
     exit 0
 fi
+. "$HERE/lib_design_witness.sh" || refuse "lib_design_witness.sh unloadable"
+# ⭐ A WITNESS IS AN ENTRY OF THE PASCAL MASTER (CIO-24 c, CIO-56; the coo 2026-11-10): witness NAME DIR extracts the entry packed_arrays__NAME
+# into DIR and sets WP (its .pas) and WR (its ref); the step's own runs below (its heap, stress and probes) read those files, so a step
+# measures what it measured when the witness was a loose pair.
+witness() {
+    local d="$2"; mkdir -p "$d"
+    design_witness_has pascal "packed_arrays__$1" || refuse "witness $1: no entry packed_arrays__$1 in corpus/tests/pascal"
+    design_witness_extract pascal "packed_arrays__$1" "$d" > /dev/null 2>&1 || refuse "witness $1: its entry packed_arrays__$1 did not extract"
+    WP="$d/packed_arrays__$1.pas"; WR="$d/packed_arrays__$1.ref"
+}
 if [ "$mode" = cut ]; then
-    . "$HERE/lib_oracle_flags.sh"; FPC="$(fpc_bin)"; [ -n "$FPC" ] && [ -x "$FPC" ] || refuse "no fpc through fpc_bin() (the Free Pascal oracle)"
-    T="$(mktemp -d "${TMPDIR:-/tmp}/paspa_cut.XXXXXX")"
-    for w in $(awk -F'\t' '!/^#/ && $1 != "step" && $6 != "-" {print $6}' "$STEPS" | tr ' ' '\n' | sort -u); do
-        ( cd "$T" && "$FPC" -v0 -o"$T/$w.bin" "$WD/$w.pas" > "$T/$w.cerr" 2>&1 && timeout -k 5 300 "$T/$w.bin" < /dev/null > "$WD/$w.ref" 2> /dev/null ); echo "cut $w.ref: $(wc -l < "$WD/$w.ref") lines$(grep -q 'Error' "$T/$w.cerr" && echo ' (FPC REFUSED: read the log)')"
-    done
-    rm -rf "$T"; exit 0
+    refuse "--cut retired: the witnesses are entries of corpus/tests/pascal, each ref cut from fpc twice by util_add_ladder_witness.py --lang pascal --family packed_arrays (CIO-37)"
 fi
 [ -n "$(col "$step" 1)" ] || refuse "no step $step in $STEPS (--list names them)"
 slug="$(col "$step" 2)"; probe="$(col "$step" 5)"; wits="$(col "$step" 6)"
@@ -69,12 +73,12 @@ m3p=0; m4p=0; stp=0; n=0; reds=""
 [ "$wits" = "-" ] && wits=""
 run_m3() { ( cd "$1" && timeout -k 5 300 "$SC/scrip" -d"${heap}k" -s4096k "$2.pas" < /dev/null > "$1/out" 2> "$1/err" ); }
 for w in $wits; do
-    ref="$WD/$w.ref"
-    [ -f "$WD/$w.pas" ] && [ -f "$ref" ] || refuse "witness $w has no .pas or .ref in $WD"
+    witness "$w" "$OUT/step$step/wit"; ref="$WR"
+    [ -f "$WP" ] && [ -f "$ref" ] || refuse "witness $w: no .pas or .ref after extracting packed_arrays__$w"
     n=$((n + 1))
     for m in m3 m4 st; do
         [ "$m" = st ] && [ "$stress" = 0 ] && continue
-        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WD/$w.pas" "$d/$w.pas"
+        d="$OUT/step$step/$w.$m"; rm -rf "$d"; mkdir -p "$d"; cp "$WP" "$d/$w.pas"
         if [ "$m" = m3 ]; then
             run_m3 "$d" "$w"; rc=$?
         elif [ "$m" = st ]; then
@@ -100,8 +104,8 @@ for tok in $probe; do
         kind) [ -f "$HEAP_H" ] || refuse "no $HEAP_H"; ok=0; grep -q "^#define $val " "$HEAP_H" && grep -q "== $val ? \"$val\"" "$HEAP_H" && ok=1
               readings="$readings kind_$val=$ok"; [ "$ok" = 1 ] || pgreen=0 ;;
         irgrep|irzero) re="${val%@*}"; rest="${val#*@}"; w="${rest%%:*}"; need="${rest#*:}"; [ "$key" = irzero ] && need=0
-              [ -f "$WD/$w.pas" ] || refuse "probe $tok names no witness $w"; d="$OUT/step$step/$w.ir"; mkdir -p "$d"
-              ( cd "$d" && timeout -k 5 300 "$SC/scrip" --dump-ir "$WD/$w.pas" < /dev/null > "$d/ir" 2> "$d/err" ); cnt="$(grep -c -E -- "$re" "$d/ir")"
+              d="$OUT/step$step/$w.ir"; mkdir -p "$d"; witness "$w" "$d"; cp "$WP" "$d/$w.pas"
+              ( cd "$d" && timeout -k 5 300 "$SC/scrip" --dump-ir "$d/$w.pas" < /dev/null > "$d/ir" 2> "$d/err" ); cnt="$(grep -c -E -- "$re" "$d/ir")"
               if [ "$key" = irzero ]; then readings="$readings irzero_$w=$cnt"; [ "$cnt" = 0 ] || pgreen=0
               else readings="$readings irgrep_$w=$cnt(need $need)"; [ "$cnt" -ge "$need" ] || pgreen=0; fi ;;
         entries) es="${val//,/ }"; cnt=0; for e in $es; do cnt=$((cnt + 1)); done; [ "$cnt" -le 8 ] || refuse "step $step names $cnt entries; the handful is at most eight (R-1677)"
