@@ -1718,6 +1718,10 @@ def main():
     global COLS, NAME_FEATURES
     COLS, NAME_FEATURES = LANG_TABLES[lang]
     os.makedirs(OUTDIR, exist_ok=True)
+    if args.split_write and h.fmt2_dir_of(os.path.join(OUTDIR, "ALL" + EXT)) is not None:
+        sys.stderr.write("REFUSED: --split-write writes ONE.*/MULTI.* by kind, which is not format 2 (CIO-25); %s is format 2\n" % OUTDIR)
+        raise SystemExit(2)
+    h.fmt2_edit_in_old_format(OUTDIR, EXT, "util_build_rungs_suite.py")
     delete_absorbed = args.delete_absorbed
     # ⛔ SURGICAL AND NAMED, never a blanket --force. A deliberate retirement is spelled out origin by
     # origin so it lands in the shell history and the commit that performs it, which is the floor doctrine's
