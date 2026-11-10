@@ -12,6 +12,8 @@
 set -u
 ROOT="$(cd "$(dirname "$0")/../../SCRIP" && pwd)"
 D="$ROOT/../corpus/tests/snobol4/probe_loose/conformance"
+# not-a-corpus-path: tests/snobol4/probe_loose/conformance -- retired directory (deleted by corpus 11a36c87), named here only so the refusal below fires rc 2 by design
+# not-a-corpus-path: tests/snobol4/probe_loose/conformance/ -- the same retired directory in the header comment and the glob form
 QUIET=0; [ "${1:-}" = "--quiet" ] && QUIET=1
 # ⛔⭐ THIS REFUSAL STANDS, AND HERE IS THE ANSWER TO ITS OWN QUESTION SO NOBODY RE-INVESTIGATES
 # (hq_B 2026-08-30, row graders-denominator-audit-six-families). It asks "has the conformance sweep

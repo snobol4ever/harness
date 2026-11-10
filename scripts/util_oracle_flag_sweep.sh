@@ -68,7 +68,7 @@ if [ "$_sc_rc" -ne 0 ]; then echo "FATAL: scorecard_snobol4.sh SCORECARD_PRINT_S
 SUITES="$(printf '%s\n' "$_sc_raw" | awk 'NF<7{print "FATAL: malformed SUITES row from scorecard (need >=7 fields, got "NF"): " $0 > "/dev/stderr"; bad=1; next} {fa=""; for(i=4;i<=NF-3;i++) fa=fa (fa==""?"":" ") $i; print $1, $3, fa, $(NF-2)} END{if(bad) exit 1}')" || { echo "FATAL: SUITES extraction/projection from scorecard_snobol4.sh failed -- refusing rather than falling back to a private copy." >&2; exit 1; }
 [ -n "$SUITES" ] || { echo "FATAL: projected SUITES table is empty after extraction -- refusing rather than falling back to a private copy." >&2; exit 1; }
 unset _sc_raw _sc_rc
-MISC_DIRS="tests/snobol4/feat tests/snobol4/smoke tests/snobol4/jvm_j3 tests/snobol4/linker packages/snobol4/dotnet packages/snobol4/aisnobol"
+MISC_DIRS="packages/snobol4/dotnet packages/snobol4/aisnobol"
 stdin_for() { local p="$1" b d n; b="${p%.sno}"; d="$(dirname "$p")"; n="$(basename "$b")"
   [ -f "$b.input" ] && { echo "$b.input"; return; }; [ -f "$b.in" ] && { echo "$b.in"; return; }
   case "$d" in "$DEMO") case "$n" in claws5*) echo "$DEMO/claws5/claws5.input";; treebank*) echo "$DEMO/treebank/treebank.input";; json*) echo "$DEMO/json/json.input";;

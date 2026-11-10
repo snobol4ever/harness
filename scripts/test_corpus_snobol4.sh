@@ -136,7 +136,6 @@ board_combine() {   # <N> -> prints the synthesized SUITE_BOARD line on stdout; 
 }
 TMOUT3=0; TMOUT4=0; TMOUT_LIST=""
 INC="${INC:-$CORPUS/include}"
-BEAUTY="${BEAUTY:-$CORPUS/tests/snobol4/beauty_suite}"
 DEMO="${DEMO:-$CORPUS/demos/snobol4}"
 
 # ⛔⛔⛔ s272 hq_C (officer audit correction 2) — A MISSING PREREQUISITE IS A REFUSAL (rc=2), NEVER A GREEN EXIT.
@@ -282,11 +281,11 @@ while IFS= read -r sno; do
 done < <(find "$CORPUS/crosscheck" -name "*.sno" 2>/dev/null | sort)
 # ⛔⭐ THE LOOSE CROSSCHECK TREE IS GONE, AND ITS ABSENCE HAS TWO CAUSES THAT LOOK IDENTICAL HERE
 # (hq_B 2026-08-29, on seat16's report of `find: corpus/crosscheck: No such file or directory`).
-#   (a) CONVERTED -- every loose file became a suite family under $CORPUS/tests/snobol4/crosscheck, which the
+#   (a) CONVERTED -- every loose file became a suite family under the master ALL.sno (the crosscheck_ families of ALL.csv), which the
 #       suite block below discovers and grades. Correct end state; the loop above SHOULD find nothing.
 #   (b) MOVED/RENAMED -- the layout shifted again and this path is simply stale, in which case the board loses
 #       the whole subtree and still prints FAIL=0.
-# The $DEMO/$BEAUTY guard above already refuses (b) for its two subtrees, with the right words: "A clean
+# The $DEMO guard above already refuses (b) for its subtree, with the right words: "A clean
 # numerator over a shrunken denominator is the most dangerous shape a board has, and corpus paths have moved
 # three times in two days, so this WILL happen again." It happened again, to the ONE subtree not in that list.
 # ⛔ So crosscheck gets the same refusal, conditioned on the distinguisher the other two do not need: absence of
@@ -531,7 +530,7 @@ run_test "demo_calculator_2"        "$DEMO/calculator/calculator-2.sno"        "
 # gate. A red instrument cannot also be a regression guard, so k41 guards what works and k40 keeps
 # measuring the distance left. ⛔ SELF-PINNED, never sbl-graded: SPITBOL cannot even LEX the file --
 # sbl -bf dies at the Greek line with ERROR 230 "illegal character" -- so no oracle arm exists.
-# k41_lambda_immediate: retired hardcoded row (s283h, probe total-conversion) -- the witness now lives in the conformance2 SUITE (tests/snobol4/probe/conformance2.sno, entry k41_lambda_immediate_landed) and is graded by the suite loop below; keeping the loose-path row too would double-grade it against a path that no longer exists.
+# k41_lambda_immediate: retired hardcoded row (s283h, probe total-conversion) -- the witness now lives in the conformance2 SUITE (the conformance2 family of ALL.sno) and is graded by the suite loop below; keeping the loose-path row too would double-grade it against a path that no longer exists.
 # ⭐ hq_B, independently and after the fact: the officer's retirement above is CORRECT and the verification is
 # recorded here so nobody re-derives it. corpus/probe was deleted wholesale by corpus c06960a1 (seat16, on
 # Lon's order, closing corpus-crosscheck-probe-total-conversion), which left this hardcoded path dangling and
@@ -539,7 +538,7 @@ run_test "demo_calculator_2"        "$DEMO/calculator/calculator-2.sno"        "
 # retiring an entry PERMANENTLY SHRINKS THE BOARD and must not be the reflex for an unresolvable path -- the
 # usual cause is a cross-repo window whose right action is `git pull` in corpus. VERIFIED that this was NOT
 # that case: the witness survives as `k41_lambda_immediate_landed`, entry 2 of
-# tests/snobol4/probe/conformance2.sno AND of its .ref, a boarded family the probe suite loop already grades.
+# the conformance2 family of ALL.sno AND of ALL.ref, a boarded family the probe suite loop already grades.
 # Coverage moved rather than vanished, so retiring is bookkeeping -- and a REPOINTED line would double-count.
 # ⭐ Corpus paths have moved four times in three days. When a hardcoded path breaks the question is never
 # "does the file exist" but "is the COVERAGE still graded somewhere": deleting on the first answer shrinks
